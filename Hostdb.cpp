@@ -591,10 +591,6 @@ createFile:
 			*p = '\0';
 		}
 
-		// keep these the same for now
-		h->m_externalHttpPort  = h->m_httpPort;
-		h->m_externalHttpsPort = h->m_httpsPort;
-
 		// get max group number
 		if ( h->m_type == HT_GRUNT )
 			numGrunts++;

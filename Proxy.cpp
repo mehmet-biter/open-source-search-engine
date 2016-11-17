@@ -415,7 +415,7 @@ bool Proxy::forwardRequest ( StateControl *stC ) {
 	//     h->m_hostId,h->m_httpPort);
 
 	// if sending to the temporary network, add one to port
-	int32_t port = h->m_httpPort;
+	int32_t port = h->getInternalHttpPort();
 	if ( g_conf.m_useTmpCluster ) port += 1;
 
 	// put ip at end of request

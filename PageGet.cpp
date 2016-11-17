@@ -529,7 +529,7 @@ bool processLoop ( void *state ) {
 	// local check
 	//if ( st->m_isLocal ) {
 	uint32_t  ip   = h->m_ip;
-	uint16_t port = h->m_httpPort;
+	uint16_t port = h->getInternalHttpPort();
 	//}
 	//sprintf ( x , "http://%s:%" PRId32"/get?q=" , iptoa ( ip ) , port );
 	// . we no longer put the port in here

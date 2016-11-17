@@ -82,6 +82,10 @@ public:
 
 class Host {
 public:
+	int32_t getInternalHttpPort()  const { return m_httpPort; }
+	int32_t getInternalHttpsPort() const { return m_httpsPort; }
+	int32_t getExternalHttpPort()  const { return m_httpPort; }
+	int32_t getExternalHttpsPort() const { return m_httpsPort; }
 
 	int32_t           m_hostId ;
 
@@ -101,12 +105,9 @@ public:
 	// so now this is just a secondary regular ip address for servers with
 	// dual gigabit ethernet ports. make performance much better.
 	uint32_t  m_ipShotgun;  
-	uint16_t m_externalHttpPort;
-	uint16_t m_externalHttpsPort;
 
 	uint16_t m_port ;          // Mattster Protocol (MP) UDP port
-	uint16_t m_httpPort ;      // http port
-	uint16_t m_httpsPort;
+
 	int32_t           m_ping;
 	int32_t           m_pingShotgun;
 	int32_t           m_pingMax;
@@ -218,6 +219,11 @@ public:
 	bool m_queryEnabled;
 
 	PingInfo m_pingInfo;//RequestBuf;
+
+private:
+	friend class Hostdb;
+	uint16_t m_httpPort ;      // http port
+	uint16_t m_httpsPort;
 };
 
 #include "max_hosts.h"

@@ -429,7 +429,7 @@ void Blaster::startBlastering(){
 				log(LOG_INFO, "blaster: injecting to host #0 at %s on "
 				    "http/tcp port %" PRId32,
 				    iptoa(h0->m_ip),
-				    (int32_t)h0->m_httpPort);
+				    (int32_t)h0->getInternalHttpPort());
 			}
 			// use spiderlinks=1 so we add the outlinks to spiderdb
 			// but that will slow the spider rate down since it 

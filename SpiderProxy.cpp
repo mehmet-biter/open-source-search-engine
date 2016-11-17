@@ -346,7 +346,7 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 			       "host #0</a></b>"
 			       "<br>"
 			       , iptoa(h->m_ip)
-			       , (int32_t)(h->m_httpPort)
+			       , (int32_t)(h->getInternalHttpPort())
 			       );
 		//return true;
 	}

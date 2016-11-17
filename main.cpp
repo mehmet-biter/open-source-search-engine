@@ -930,8 +930,8 @@ int main2 ( int argc , char *argv[] ) {
 		}
 
 		Host *h = g_hostdb.getProxy( proxyId );
-		uint16_t httpPort = h->m_httpPort;
-		uint16_t httpsPort = h->m_httpsPort;
+		uint16_t httpPort = h->getInternalHttpPort();
+		uint16_t httpsPort = h->getInternalHttpsPort();
 		//we need udpserver for addurl and udpserver2 for pingserver
 		uint16_t udpPort  = h->m_port;
 
@@ -1736,7 +1736,7 @@ int main2 ( int argc , char *argv[] ) {
 
 	// make sure port is available, no use loading everything up then
 	// failing because another process is already running using this port
-	if ( ! g_httpServer.m_tcp.testBind(g_hostdb.getMyHost()->m_httpPort, true)) {
+	if ( ! g_httpServer.m_tcp.testBind(g_hostdb.getMyHost()->getInternalHttpPort(), true)) {
 		// return 0 so keep alive bash loop exits
 		exit(0);
 	}
@@ -2101,7 +2101,7 @@ int main2 ( int argc , char *argv[] ) {
 	
 	// . then webserver
 	// . server should listen to a socket and register with g_loop
-	if ( ! g_httpServer.init( h9->m_httpPort, h9->m_httpsPort ) ) {
+	if ( ! g_httpServer.init( h9->getInternalHttpPort(), h9->getInternalHttpsPort() ) ) {
 		log("db: HttpServer init failed. Another gb already running?" );
 		// this is dangerous!!! do not do the shutdown thing
 		return 1;
@@ -5879,7 +5879,7 @@ void doInject ( int fd , void *state ) {
 		if ( s_rrn >= s_hosts2.getNumHosts() ) s_rrn = 0;
 		Host *h = s_hosts2.getHost ( s_rrn );
 		ip = h->m_ip;
-		port = h->m_httpPort;
+		port = h->getInternalHttpPort();
 		s_rrn++;
 	}
 
@@ -6234,7 +6234,7 @@ void doInjectWarc ( int64_t fsize ) {
 		if ( s_rrn >= s_hosts2.getNumHosts() ) s_rrn = 0;
 		Host *h = s_hosts2.getHost ( s_rrn );
 		ip = h->m_ip;
-		port = h->m_httpPort;
+		port = h->getInternalHttpPort();
 		s_rrn++;
 	}
 
@@ -6557,7 +6557,7 @@ void doInjectArc ( int64_t fsize ) {
 		if ( s_rrn >= s_hosts2.getNumHosts() ) s_rrn = 0;
 		Host *h = s_hosts2.getHost ( s_rrn );
 		ip = h->m_ip;
-		port = h->m_httpPort;
+		port = h->getInternalHttpPort();
 		s_rrn++;
 	}
 
@@ -7749,7 +7749,7 @@ int collinject ( char *newHostsConf ) {
 		       , h1->m_hostname
 		       , iptoa(h2->m_ip)
 		       //, h2->m_hostname
-		       , (int32_t)h2->m_httpPort
+		       , (int32_t)h2->getInternalHttpPort()
 		       );
 	}
 	return 1;

@@ -324,7 +324,7 @@ static void printUdpTable(SafeBuf *p, const char *title, const UdpServer *server
 			// host can have 2 ip addresses, get the one most
 			// similar to that of the requester
 			eip = iptoa(g_hostdb.getBestIp(h));
-			eport = h->m_externalHttpPort;
+			eport = h->getExternalHttpPort();
 			sprintf(tmpHostId, "%s%" PRId32, h->m_isProxy ? "proxy" : "", h->m_hostId);
 			ehostId = tmpHostId;
 		} else {
