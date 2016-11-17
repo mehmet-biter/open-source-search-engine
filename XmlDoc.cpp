@@ -10688,8 +10688,8 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 	}
 
 	// error?
-	if ( m_outlinkTagRecVectorValid && m_msge0.m_errno ) {
-		g_errno = m_msge0.m_errno;
+	if ( m_outlinkTagRecVectorValid && m_msge0.getErrno() ) {
+		g_errno = m_msge0.getErrno();
 		logTrace( g_conf.m_logTraceXmlDoc, "END, g_errno %" PRId32, g_errno);
 		return NULL;
 	}
@@ -10698,7 +10698,7 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 	if ( m_outlinkTagRecVectorValid )
 	{
 		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid (and not fake IPs)" );
-		return &m_msge0.m_tagRecPtrs;
+		return m_msge0.getTagRecPtrsPtr();
 	}
 
 	Links *links = getLinks();
@@ -10777,8 +10777,8 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 	}
 
 	// or this?
-	if ( m_msge0.m_errno ) {
-		g_errno = m_msge0.m_errno;
+	if ( m_msge0.getErrno() ) {
+		g_errno = m_msge0.getErrno();
 		logTrace( g_conf.m_logTraceXmlDoc, "END, m_msge0.m_errno=%" PRId32, g_errno);
 		return NULL;
 	}
@@ -10786,7 +10786,7 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 	//m_outlinkTagRecVector = m_msge0.m_tagRecPtrs;
 	// ptr to a list of ptrs to tag recs
 	logTrace( g_conf.m_logTraceXmlDoc, "END, got list" );
-	return &m_msge0.m_tagRecPtrs;
+	return m_msge0.getTagRecPtrsPtr();
 }
 
 

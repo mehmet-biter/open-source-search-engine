@@ -28,8 +28,14 @@ public:
 			  void         *state        ,
 			  void (*callback)(void *state) ) ;
 
-	TagRec *getTagRec   ( int32_t i ) { return m_tagRecPtrs[i]; }
+	TagRec       *getTagRec(int32_t i)       { return m_tagRecPtrs[i]; }
+	const TagRec *getTagRec(int32_t i) const { return m_tagRecPtrs[i]; }
 
+	int32_t getErrno() const { return m_errno; }
+	TagRec ***getTagRecPtrsPtr() { return &m_tagRecPtrs; } //XmlDoc needs this due to ptr-ptr idiocy
+
+private:
+	static void gotTagRecWrapper(void *state);
 	bool launchRequests ( int32_t starti ) ;
 	bool sendMsg8a      ( int32_t i );
 	bool doneSending    ( int32_t i );

@@ -4,8 +4,6 @@
 #include "ip.h"
 
 
-static void gotTagRecWrapper   ( void *state ) ;
-
 Msge0::Msge0() {
 	m_slabNum = -1;
 	m_buf = NULL;
@@ -274,7 +272,7 @@ bool Msge0::sendMsg8a ( int32_t i ) {
 	return doneSending ( i );
 }
 
-static void gotTagRecWrapper ( void *state ) { 
+void Msge0::gotTagRecWrapper(void *state) {
 	Msg8a *m     = (Msg8a *)state;
 	//TagRec *m    = (TagRec *)state;
 	Msge0  *THIS = (Msge0  *)m->m_state2;
