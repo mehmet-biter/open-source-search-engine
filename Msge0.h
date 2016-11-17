@@ -78,7 +78,6 @@ private:
 	int32_t    m_ns          [ MAX_OUTSTANDING_MSGE0 ]; 
 	bool    m_used        [ MAX_OUTSTANDING_MSGE0 ]; 
 	Msg8a   m_msg8as      [ MAX_OUTSTANDING_MSGE0 ]; //for getting tag bufs
-	//TagRec  m_tagRecs   [ MAX_OUTSTANDING_MSGE0 ];
 
 	void     *m_state;
 	void    (*m_callback)(void *state);
