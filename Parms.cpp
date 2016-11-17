@@ -5598,20 +5598,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "max heartbeat delay in milliseconds";
-	m->m_desc  = "If a heartbeat is delayed this many milliseconds "
-		"dump a core so we can see where the CPU was. "
-		"Logs 'db: missed heartbeat by %" PRId64" ms'. "
-		"Use 0 or less to disable.";
-	m->m_cgi   = "mhdms";
-	m->m_off   = offsetof(Conf,m_maxHeartbeatDelay);
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "0";
-	m->m_flags = PF_CLONE; // PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "max delay before logging a callback or handler";
 	m->m_desc  = "If a call to a message callback or message handler "
 		"in the udp server takes more than this many milliseconds, "
@@ -6305,18 +6291,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "synchronize proxy to cluster time";
-	m->m_desc = "Enable/disable the ability to synchronize time between "
-	            "the cluster and the proxy";
-	m->m_cgi = "sptct";
-	m->m_off = offsetof( Conf, m_timeSyncProxy );
-	m->m_type = TYPE_BOOL;
-	m->m_def = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page = PAGE_MASTER;
-	m->m_obj = OBJ_CONF;
-	m++;
-
 	m->m_title = "allow scaling of hosts";
 	m->m_desc  = "Allows scaling up of hosts by deleting recs not in "
 		"the correct group.  This should only happen why copying "
@@ -6528,30 +6502,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-
-	m->m_title = "wiki proxy ip";
-	m->m_desc  = "Access the wiki coll through this proxy ip";
-	m->m_cgi   = "wpi";
-	m->m_off   = offsetof(Conf,m_wikiProxyIp);
-	m->m_type  = TYPE_IP;
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-
-	m->m_title = "wiki proxy port";
-	m->m_desc  = "Access the wiki coll through this proxy port";
-	m->m_cgi   = "wpp";
-	m->m_off   = offsetof(Conf,m_wikiProxyPort);
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "0";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
 
 
 	m->m_title = "default collection";
@@ -9684,15 +9634,6 @@ void Parms::init ( ) {
 	m->m_title = "log debug disk messages";
 	m->m_cgi   = "lddi";
 	m->m_off   = offsetof(Conf,m_logDebugDisk);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "log debug disk page cache";
-	m->m_cgi   = "ldpc";
-	m->m_off   = offsetof(Conf,m_logDebugDiskPageCache);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;

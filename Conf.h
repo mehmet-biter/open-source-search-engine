@@ -92,10 +92,6 @@ class Conf {
 	int16_t m_dnsPorts[MAX_DNSIPS];            
 
 	int32_t  m_dnsMaxCacheMem;
-	bool  m_dnsSaveCache;
-
-	int32_t m_wikiProxyIp;
-	int32_t m_wikiProxyPort;
 
 	SafeBuf m_proxyIps;
 	bool    m_useProxyIps;
@@ -363,7 +359,6 @@ class Conf {
 	bool  m_logDebugDb;
 	bool  m_logDebugDirty;
 	bool  m_logDebugDisk;
-	bool  m_logDebugDiskPageCache;
 	bool  m_logDebugDns;
 	bool  m_logDebugDownloads;
 	bool  m_logDebugHttp;
@@ -456,8 +451,6 @@ class Conf {
 	// the original cluster is updated
 	bool m_useTmpCluster;
 
-	bool m_timeSyncProxy;
-
 	Xml   m_xml;
 
 	// . for specifying if this is an interface machine
@@ -475,7 +468,6 @@ class Conf {
 	bool  m_giveupOnDeadHosts;
 	bool  m_bypassValidation;
 
-	int32_t  m_maxHeartbeatDelay;
 	int32_t  m_maxCallbackDelay;
 
 	// used by Repair.cpp

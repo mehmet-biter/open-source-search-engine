@@ -423,38 +423,39 @@ class Spiderdb {
 	// this rdb holds urls waiting to be spidered or being spidered
 	Rdb m_rdb;
 
-	int64_t getUrlHash48( key128_t *k ) {
+	static int64_t getUrlHash48( key128_t *k ) {
 		return (((k->n1)<<16) | k->n0>>(64-16)) & 0xffffffffffffLL;
 	}
 	
-	bool isSpiderRequest( key128_t *k ) {
+	static bool isSpiderRequest( key128_t *k ) {
 		return (k->n0>>(64-17))&0x01;
 	}
 
-	bool isSpiderReply( key128_t *k ) {
+	static bool isSpiderReply( key128_t *k ) {
 		return ((k->n0>>(64-17))&0x01)==0x00;
 	}
 
-	int64_t getParentDocId( key128_t *k ) {
+	static int64_t getParentDocId( key128_t *k ) {
 		return (k->n0>>9)&DOCID_MASK;
 	}
 
-	int32_t getFirstIp( key128_t *k ) {
+	static int32_t getFirstIp( key128_t *k ) {
 		return (k->n1>>32);
 	}
-	
-	key128_t makeKey( int32_t firstIp, int64_t urlHash48, bool isRequest, int64_t parentDocId, bool isDel );
 
-	key128_t makeFirstKey( int32_t firstIp ) {
+	static key128_t makeKey( int32_t firstIp, int64_t urlHash48, bool isRequest, int64_t parentDocId, bool isDel );
+
+	static key128_t makeFirstKey( int32_t firstIp ) {
 		return makeKey( firstIp, 0LL, false, 0LL, true );
 	}
 
-	key128_t makeLastKey( int32_t firstIp ) {
+	static key128_t makeLastKey( int32_t firstIp ) {
 		return makeKey( firstIp, 0xffffffffffffLL, true, MAX_DOCID, false );
 	}
 
 	// print the spider rec
-	int32_t print( char *srec , SafeBuf *sb = NULL );
+	static int32_t print( char *srec , SafeBuf *sb = NULL );
+	static void printKey(const char *k);
 };
 
 void dedupSpiderdbList ( RdbList *list );
@@ -718,11 +719,11 @@ public:
 	void setDataSize ( );
 
 	int64_t  getUrlHash48() {
-		return g_spiderdb.getUrlHash48( &m_key );
+		return Spiderdb::getUrlHash48( &m_key );
 	}
 
 	int64_t getParentDocId() {
-		return g_spiderdb.getParentDocId( &m_key );
+		return Spiderdb::getParentDocId( &m_key );
 	}
 
 	int32_t print( class SafeBuf *sb );
@@ -885,11 +886,11 @@ public:
 	int32_t print ( class SafeBuf *sbarg );
 
 	int64_t  getUrlHash48  () {
-		return g_spiderdb.getUrlHash48(&m_key);
+		return Spiderdb::getUrlHash48(&m_key);
 	}
 
 	int64_t getParentDocId (){
-		return g_spiderdb.getParentDocId(&m_key);
+		return Spiderdb::getParentDocId(&m_key);
 	}
 } __attribute__((packed, aligned(4)));
 

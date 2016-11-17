@@ -1499,7 +1499,7 @@ void XmlDoc::getRevisedSpiderRequest ( SpiderRequest *revisedReq ) {
 
 	// set the key properly to reflect the new "first ip" since
 	// we shard spiderdb by that.
-	revisedReq->m_key = g_spiderdb.makeKey ( m_firstIp, uh48, true, parentDocId, false );
+	revisedReq->m_key = Spiderdb::makeKey ( m_firstIp, uh48, true, parentDocId, false );
 	revisedReq->setDataSize();
 }
 
@@ -1550,7 +1550,7 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 	long long uh48 = fu->getUrlHash48();
 	// set the key properly to reflect the new "first ip"
 	// since we shard spiderdb by that.
-	sreq->m_key = g_spiderdb.makeKey ( m_firstIp, uh48, true, 0LL, false );
+	sreq->m_key = Spiderdb::makeKey ( m_firstIp, uh48, true, 0LL, false );
 	sreq->setDataSize();
 }
 
@@ -4736,59 +4736,6 @@ float computeSimilarity ( const int32_t   *vec0,
 	if ( percent > 100 ) { g_process.shutdownAbort(true); }
 
 	return percent;
-}
-
-// this returns true if the two vecs are "percentSimilar" or more similar
-bool isSimilar_sorted ( int32_t   *vec0 ,
-			int32_t   *vec1 ,
-			int32_t nv0 , // how many int32_ts in vec?
-			int32_t nv1 , // how many int32_ts in vec?
-			// they must be this similar or more to return true
-			int32_t percentSimilar) {
-	// if both empty, assume not similar at all
-	if ( *vec0 == 0 && *vec1 == 0 ) return 0;
-	// if either is empty, return 0 to be on the safe side
-	if ( *vec0 == 0 ) return 0;
-	if ( *vec1 == 0 ) return 0;
-
-	// do not include last 0
-	nv0--;
-	nv1--;
-	int32_t total = nv0 + nv1;
-
-	// so if the "noMatched" count ever EXCEEDS (not equals) this
-	// "brink" we can bail early because there's no chance of getting
-	// the similarity "percentSimilar" provided. should save some time.
-	int32_t brink = ((100-percentSimilar) * total) / 100;
-
-	// scan each like doing a merge
-	int32_t *p0 = vec0;
-	int32_t *p1 = vec1;
-	int32_t yesMatched = 0;
-	int32_t noMatched  = 0;
-
- mergeLoop:
-
-	// stop if both exhausted. we didn't bail on brink, so it's a match
-	if ( *p0 == 0 && *p1 == 0 )
-		return true;
-
-	if ( *p0 < *p1 || *p1 == 0 ) {
-		p0++;
-		if ( ++noMatched > brink ) return false;
-		goto mergeLoop;
-	}
-
-	if ( *p1 < *p0 || *p0 == 0 ) {
-		p1++;
-		if ( ++noMatched > brink ) return false;
-		goto mergeLoop;
-	}
-
-	yesMatched += 2;
-	p1++;
-	p0++;
-	goto mergeLoop;
 }
 
 int64_t *XmlDoc::getExactContentHash64 ( ) {
@@ -10741,8 +10688,8 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 	}
 
 	// error?
-	if ( m_outlinkTagRecVectorValid && m_msge0.m_errno ) {
-		g_errno = m_msge0.m_errno;
+	if ( m_outlinkTagRecVectorValid && m_msge0.getErrno() ) {
+		g_errno = m_msge0.getErrno();
 		logTrace( g_conf.m_logTraceXmlDoc, "END, g_errno %" PRId32, g_errno);
 		return NULL;
 	}
@@ -10751,7 +10698,7 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 	if ( m_outlinkTagRecVectorValid )
 	{
 		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid (and not fake IPs)" );
-		return &m_msge0.m_tagRecPtrs;
+		return m_msge0.getTagRecPtrsPtr();
 	}
 
 	Links *links = getLinks();
@@ -10830,8 +10777,8 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 	}
 
 	// or this?
-	if ( m_msge0.m_errno ) {
-		g_errno = m_msge0.m_errno;
+	if ( m_msge0.getErrno() ) {
+		g_errno = m_msge0.getErrno();
 		logTrace( g_conf.m_logTraceXmlDoc, "END, m_msge0.m_errno=%" PRId32, g_errno);
 		return NULL;
 	}
@@ -10839,7 +10786,7 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 	//m_outlinkTagRecVector = m_msge0.m_tagRecPtrs;
 	// ptr to a list of ptrs to tag recs
 	logTrace( g_conf.m_logTraceXmlDoc, "END, got list" );
-	return &m_msge0.m_tagRecPtrs;
+	return m_msge0.getTagRecPtrsPtr();
 }
 
 
@@ -12217,7 +12164,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		else if ( rdbId == RDB_SPIDERDB ) {
 			sb->safePrintf("<td><nobr>");
 			key128_t *k2 = (key128_t *)k;
-			if ( g_spiderdb.isSpiderRequest(k2) ) {
+			if ( Spiderdb::isSpiderRequest(k2) ) {
 				SpiderRequest *sreq = (SpiderRequest *)rec;
 				sreq->print ( sb );
 			}
@@ -12522,7 +12469,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 		// print it out
 		if ( rdbId == RDB_SPIDERDB ) {
 			// get rec
-			if ( g_spiderdb.isSpiderRequest((key128_t *)rec) ) {
+			if ( Spiderdb::isSpiderRequest((key128_t *)rec) ) {
 				SpiderRequest *sreq1 = (SpiderRequest *)rec;
 				SpiderRequest *sreq2 = (SpiderRequest *)rec2;
 				sreq1->print(&sb1);
@@ -13752,7 +13699,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		m_addedSpiderReplySizeValid = true;
 
 		// sanity check - must not be a request, this is a reply
-		if (g_spiderdb.isSpiderRequest(&newsr->m_key)) {
+		if (Spiderdb::isSpiderRequest(&newsr->m_key)) {
 			g_process.shutdownAbort(true);
 		}
 

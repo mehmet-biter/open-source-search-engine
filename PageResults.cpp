@@ -1777,13 +1777,11 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 	// bail?
 	if ( ! info ) return true;
 	// now sort them up
-	Inlink *k = info->getNextInlink(NULL);
-	// #define from Linkdb.h
-	Inlink *ptrs[MAX_LINKERS];
+	Inlink *ptrs[3000]; //could use #define from Msg25/linkdb.h but we don't really have to match
 	int32_t numLinks = 0;
-	for ( ; k ; k = info->getNextInlink(k) ) {
+	for(Inlink *k = info->getNextInlink(NULL); k; k = info->getNextInlink(k)) {
 		ptrs[numLinks++] = k;
-		if ( numLinks >= MAX_LINKERS ) break;
+		if ( numLinks >= 3000 ) break;
 	}
 	// sort them
 	gbsort ( ptrs , numLinks , sizeof(Inlink *) , linkSiteRankCmp );
@@ -1796,7 +1794,7 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 	int64_t  starttime = gettimeofdayInMillisecondsLocal();
 
 	for ( int32_t i = 0 ; i < numLinks ; i++ ) {
-		k = ptrs[i];
+		Inlink *k = ptrs[i];
 		if ( ! k->getLinkText() ) continue;
 		if ( ! si->m_doQueryHighlighting && 
 		     si->m_format == FORMAT_HTML ) 

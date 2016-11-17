@@ -2,37 +2,34 @@
 #include "Process.h"
 #include "Tagdb.h"
 #include "ip.h"
+#include <new>
 
 
-static void gotTagRecWrapper   ( void *state ) ;
-
-Msge0::Msge0() {
-	m_slabNum = -1;
-	m_buf = NULL;
-	m_numReplies = 0;
-	m_n = 0;
-	m_slab = NULL;
-	m_baseTagRec = NULL;
-	m_tagRecPtrs = NULL;
-
-	// Coverity
-	m_collnum = 0;
-	m_niceness = 0;
-	m_urlPtrs = NULL;
-	m_urlFlags = NULL;
-	m_numUrls = 0;
-	m_skipOldLinks = 0;
-	m_bufSize = 0;
-	m_slab = NULL;
-	m_baseTagRec = NULL;
-	m_tagRecErrors = NULL;
-	m_tagRecPtrs = NULL;
-	m_numTags = NULL;
-	m_numRequests = 0;
-	m_i = 0;
-	m_nextPtr = NULL;
-	m_state = NULL;
-	m_callback = NULL;
+Msge0::Msge0()
+  : m_collnum(0),
+    m_niceness(0),
+    m_urlPtrs(NULL),
+    m_urlFlags(NULL),
+    m_numUrls(0),
+    m_skipOldLinks(0),
+    m_buf(NULL),
+    m_bufSize(0),
+    m_slabNum(-1),
+    m_slab(NULL),
+    m_slabPtr(NULL),
+    m_slabEnd(NULL),
+    m_baseTagRec(NULL),
+    m_tagRecErrors(NULL),
+    m_tagRecPtrs(NULL),
+    m_numTags(NULL),
+    m_numRequests(0),
+    m_numReplies(0),
+    m_n(0),
+    m_nextPtr(NULL),
+    m_state(NULL),
+    m_callback(NULL),
+    m_errno(0)
+{
 	memset(&m_ns, 0, sizeof(m_ns));
 	memset(&m_used, 0, sizeof(m_used));
 	reset();
@@ -58,7 +55,7 @@ void Msge0::reset() {
 			continue;
 		}
 		// free the rdblist memory in the TagRec::m_list
-		m_tagRecPtrs[i]->reset();
+		m_tagRecPtrs[i]->~TagRec();
 	}
 	for ( int32_t i = 0; m_slab && i <= m_slabNum; i++ ) {
 		mfree ( m_slab[i] , SLAB_SIZE , "msgeslab" );
@@ -261,7 +258,7 @@ bool Msge0::sendMsg8a ( int32_t i ) {
 	// now use it
 	m_tagRecPtrs[n] = (TagRec *)m_slabPtr;
 	// constructor
-	m_tagRecPtrs[n]->constructor();
+	new (m_tagRecPtrs[n]) TagRec();
 	// advance it
 	m_slabPtr += sizeof(TagRec);
 
@@ -274,7 +271,7 @@ bool Msge0::sendMsg8a ( int32_t i ) {
 	return doneSending ( i );
 }
 
-static void gotTagRecWrapper ( void *state ) { 
+void Msge0::gotTagRecWrapper(void *state) {
 	Msg8a *m     = (Msg8a *)state;
 	//TagRec *m    = (TagRec *)state;
 	Msge0  *THIS = (Msge0  *)m->m_state2;

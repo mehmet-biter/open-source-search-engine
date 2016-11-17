@@ -1621,7 +1621,7 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) {
 
 		case RDB_SPIDERDB:
 		case RDB2_SPIDERDB2: {
-			int32_t firstIp = g_spiderdb.getFirstIp((key128_t *)k);
+			int32_t firstIp = Spiderdb::getFirstIp((key128_t *)k);
 			// do what Spider.h getGroupId() used to do so we are
 			// backwards compatible
 			uint32_t h = (uint32_t)hash32h(firstIp,0x123456);

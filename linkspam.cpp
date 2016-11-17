@@ -6,6 +6,7 @@
 #include "linkspam.h"
 #include "Url.h"
 #include "Linkdb.h"
+#include "Xml.h"
 //#include "TitleRec.h"
 #include "Unicode.h"
 #include "matches2.h"

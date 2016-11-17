@@ -90,19 +90,30 @@ tar czf $RESULTS_ARCHIVE $RESULTS_DIR
 SHA=`git rev-parse --short HEAD`
 
 echo -e "\033[33;1mUploading Coverity Scan Analysis results...\033[0m"
-response=$(curl \
-  --silent --write-out "\n%{http_code}\n" \
+#response=$(curl \
+#  --silent --write-out "\n%{http_code}\n" \
+#  --data-urlencode project=$COVERITY_SCAN_PROJECT_NAME \
+#  --form token=$COVERITY_SCAN_TOKEN \
+#  --form email=$COVERITY_SCAN_NOTIFICATION_EMAIL \
+#  --form file=@$RESULTS_ARCHIVE \
+#  --form version=$SHA \
+#  --form description="Travis CI build" \
+#  $UPLOAD_URL)
+
+curl -v \
   --data-urlencode project=$COVERITY_SCAN_PROJECT_NAME \
   --form token=$COVERITY_SCAN_TOKEN \
   --form email=$COVERITY_SCAN_NOTIFICATION_EMAIL \
   --form file=@$RESULTS_ARCHIVE \
   --form version=$SHA \
   --form description="Travis CI build" \
-  $UPLOAD_URL)
-echo "$response"
-status_code=$(echo "$response" | sed -n '$p')
-if [ "$status_code" != "201" ]; then
-  TEXT=$(echo "$response" | sed '$d')
-  echo -e "\033[33;1mCoverity Scan upload failed: $TEXT.\033[0m"
-  exit 1
-fi
+  $UPLOAD_URL
+
+#echo -e "\033[33;response=$response\033[0m"
+
+#status_code=$(echo "$response" | sed -n '$p')
+#if [ "$status_code" != "201" ]; then
+#  TEXT=$(echo "$response" | sed '$d')
+#  echo -e "\033[33;1mCoverity Scan upload failed: $TEXT.\033[0m"
+#  exit 1
+#fi

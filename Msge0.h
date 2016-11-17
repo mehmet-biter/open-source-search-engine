@@ -28,8 +28,14 @@ public:
 			  void         *state        ,
 			  void (*callback)(void *state) ) ;
 
-	TagRec *getTagRec   ( int32_t i ) { return m_tagRecPtrs[i]; }
+	TagRec       *getTagRec(int32_t i)       { return m_tagRecPtrs[i]; }
+	const TagRec *getTagRec(int32_t i) const { return m_tagRecPtrs[i]; }
 
+	int32_t getErrno() const { return m_errno; }
+	TagRec ***getTagRecPtrsPtr() { return &m_tagRecPtrs; } //XmlDoc needs this due to ptr-ptr idiocy
+
+private:
+	static void gotTagRecWrapper(void *state);
 	bool launchRequests ( int32_t starti ) ;
 	bool sendMsg8a      ( int32_t i );
 	bool doneSending    ( int32_t i );
@@ -41,7 +47,7 @@ public:
 	linkflags_t *m_urlFlags;
 	int32_t   m_numUrls;
 
-	char   m_skipOldLinks;
+	bool   m_skipOldLinks;
 
 	// buffer to hold all the data we accumulate for all the urls in urlBuf
 	char *m_buf;
@@ -62,7 +68,6 @@ public:
 
 	int32_t  m_numRequests;
 	int32_t  m_numReplies;
-	int32_t  m_i;
 	int32_t  m_n;
 
 	// point to next url in "urlBuf" to process
@@ -72,7 +77,6 @@ public:
 	int32_t    m_ns          [ MAX_OUTSTANDING_MSGE0 ]; 
 	bool    m_used        [ MAX_OUTSTANDING_MSGE0 ]; 
 	Msg8a   m_msg8as      [ MAX_OUTSTANDING_MSGE0 ]; //for getting tag bufs
-	//TagRec  m_tagRecs   [ MAX_OUTSTANDING_MSGE0 ];
 
 	void     *m_state;
 	void    (*m_callback)(void *state);

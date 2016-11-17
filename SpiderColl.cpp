@@ -403,7 +403,7 @@ bool SpiderColl::makeWaitingTree ( ) {
 		// 16 is bad too... wtf is this?
 		if ( recSize <= 16 ) continue;
 		// skip replies
-		if ( g_spiderdb.isSpiderReply ( (key128_t *)rec ) ) continue;
+		if ( Spiderdb::isSpiderReply ( (key128_t *)rec ) ) continue;
 		// get request
 		SpiderRequest *sreq = (SpiderRequest *)rec;
 		// skip if not assigned to us
@@ -1387,8 +1387,8 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 	m_lastReplyValid   = false;
 
 	// start reading spiderdb here
-	m_nextKey = g_spiderdb.makeFirstKey(firstIp);
-	m_endKey  = g_spiderdb.makeLastKey (firstIp);
+	m_nextKey = Spiderdb::makeFirstKey(firstIp);
+	m_endKey  = Spiderdb::makeLastKey (firstIp);
 	// all done
 	return firstIp;
 }
@@ -1515,7 +1515,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// . do not include cache, those results are old and will mess
 		//   us up
 		log(LOG_DEBUG,"spider: populateWaitingTree: calling msg5: startKey=0x%" PRIx64",0x%" PRIx64" firstip=%s",
-		    m_nextKey2.n1, m_nextKey2.n0, iptoa(g_spiderdb.getFirstIp(&m_nextKey2)));
+		    m_nextKey2.n1, m_nextKey2.n0, iptoa(Spiderdb::getFirstIp(&m_nextKey2)));
 		    
 		// flag it
 		m_gettingList2 = true;
@@ -1725,7 +1725,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// nah, advance the firstip, should be a lot faster when
 		// we are only a few firstips...
 		if ( lastOne && lastOne != -1 ) { // && ! gotCorruption ) {
-			key128_t cand = g_spiderdb.makeFirstKey(lastOne+1);
+			key128_t cand = Spiderdb::makeFirstKey(lastOne+1);
 			// corruption still seems to happen, so only
 			// do this part if it increases the key to avoid
 			// putting us into an infinite loop.
@@ -1871,8 +1871,8 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	}
 
 	// set read range for scanning spiderdb
-	m_nextKey = g_spiderdb.makeFirstKey(ip);
-	m_endKey  = g_spiderdb.makeLastKey (ip);
+	m_nextKey = Spiderdb::makeFirstKey(ip);
+	m_endKey  = Spiderdb::makeLastKey (ip);
 
 	logDebug( g_conf.m_logDebugSpider, "spider: for cn=%i nextip=%s nextkey=%s",
 	          (int)m_collnum, iptoa(ip), KEYSTR( &m_nextKey, sizeof( key128_t ) ) );
@@ -2266,7 +2266,7 @@ bool SpiderColl::evalIpLoop ( ) {
 		// do not do again. 
 		m_countingPagesIndexed = false;
 		// start at the top again
-		m_nextKey = g_spiderdb.makeFirstKey(m_scanningIp);
+		m_nextKey = Spiderdb::makeFirstKey(m_scanningIp);
 		// this time m_localTable should have the quota info in it so 
 		// getUrlFilterNum() can use that
 		m_didRead = false;
@@ -2325,7 +2325,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 
 	// i guess we are always restricted to an ip, because
 	// populateWaitingTreeFromSpiderdb calls its own msg5.
-	int32_t firstIp0 = g_spiderdb.getFirstIp(&m_nextKey);
+	int32_t firstIp0 = Spiderdb::getFirstIp(&m_nextKey);
 	// sanity
 	if ( m_scanningIp != firstIp0 ) { g_process.shutdownAbort(true); }
 	// sometimes we already have this ip in doledb/doleiptable
@@ -2557,7 +2557,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			continue;
 		}
 		// if its a SpiderReply set it for an upcoming requests
-		if ( ! g_spiderdb.isSpiderRequest ( (key128_t *)rec ) ) {
+		if ( ! Spiderdb::isSpiderRequest ( (key128_t *)rec ) ) {
 
 			// see if this is the most recent one
 			SpiderReply *tmp = (SpiderReply *)rec;

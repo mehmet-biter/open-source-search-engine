@@ -1441,17 +1441,29 @@ int32_t Url::getSubPathLen ( int32_t j ) const {
 }
 
 void Url::print() {
-	logf( LOG_DEBUG, "Url::url        : %s", m_url );
-	logf( LOG_DEBUG, "Url::host       : %.*s", m_hlen, m_host );
-	logf( LOG_DEBUG, "Url::ip         : %" PRId32, m_ip );
-	logf( LOG_DEBUG, "Url::scheme     : %.*s", m_slen, m_scheme );
-	logf( LOG_DEBUG, "Url::path       : %.*s", m_plen, m_path );
-	logf( LOG_DEBUG, "Url::query      : %s", m_query );
-	logf( LOG_DEBUG, "Url::port       : %" PRId32, m_port );
-	logf( LOG_DEBUG, "Url::domain     : %.*s", m_dlen, m_domain );
-	logf( LOG_DEBUG, "Url::tld        : %.*s", m_tldLen, m_tld );
-	logf( LOG_DEBUG, "Url::mid domain : %.*s", m_mdlen, m_domain );
-	logf( LOG_DEBUG, "Url::is root    : %i", isRoot() );
+	logf(LOG_TRACE, "Url info");
+	logf(LOG_TRACE, "  url          : %s", m_url);
+	logf(LOG_TRACE, "  urlhash32    : %" PRIx32, getUrlHash32());
+	logf(LOG_TRACE, "  urlhash48    : %" PRIx64, getUrlHash48());
+	logf(LOG_TRACE, "  urlhash64    : %" PRIx64, getUrlHash64());
+
+	logf(LOG_TRACE, "  host         : %.*s", m_hlen, m_host);
+	logf(LOG_TRACE, "  hosthash32   : %" PRIx32, getHostHash32());
+	logf(LOG_TRACE, "  hosthash48   : %" PRIx64, getHostHash64());
+
+	logf(LOG_TRACE, "  ip           : %" PRId32, m_ip);
+	logf(LOG_TRACE, "  scheme       : %.*s", m_slen, m_scheme);
+	logf(LOG_TRACE, "  path         : %.*s", m_plen, m_path);
+	logf(LOG_TRACE, "  query        : %s", m_query);
+	logf(LOG_TRACE, "  port         : %" PRId32, m_port);
+
+	logf(LOG_TRACE, "  domain       : %.*s", m_dlen, m_domain);
+	logf(LOG_TRACE, "  domainhash32 : %" PRIx32, getDomainHash32());
+	logf(LOG_TRACE, "  domainhash64 : %" PRIx64, getDomainHash64());
+
+	logf(LOG_TRACE, "  tld          : %.*s", m_tldLen, m_tld);
+	logf(LOG_TRACE, "  mid domain   : %.*s", m_mdlen, m_domain);
+	logf(LOG_TRACE, "  is root      : %i", isRoot());
 }
 
 int32_t  Url::getPathDepth ( bool countFilename ) const {

@@ -1078,7 +1078,7 @@ bool RdbTree::fixTree ( ) {
 
 		char *key = &m_keys[i*m_ks];
 		if ( isSpiderdb && m_data[i] &&
-			g_spiderdb.isSpiderRequest ( (SPIDERDBKEY *)key ) ) {
+				Spiderdb::isSpiderRequest ( (SPIDERDBKEY *)key ) ) {
 			char *data = m_data[i];
 			data -= sizeof(SPIDERDBKEY);
 			data -= 4;
@@ -1179,7 +1179,7 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 
 		char *key = &m_keys[i*m_ks];
 		if ( isSpiderdb && m_data[i] &&
-			g_spiderdb.isSpiderRequest ( (SPIDERDBKEY *)key ) ) {
+				Spiderdb::isSpiderRequest ( (SPIDERDBKEY *)key ) ) {
 				char *data = m_data[i];
 				data -= sizeof(SPIDERDBKEY);
 				data -= 4;

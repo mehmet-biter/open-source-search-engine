@@ -80,26 +80,6 @@ bool Linkdb::init ( ) {
 	int32_t ip4 = getLinkerIp_uk ( &k );
 	if ( ip3 != ip4 ) { g_process.shutdownAbort(true); }
 
-	/*
-	// test similarity
-	int32_t v1[] = {86845183, 126041601, 193138017, 194832692, 209041345, 237913907, 
-		    253753116, 420176029, 425806029, 469664463, 474491119, 486025959, 524746875, 
-		    565034969, 651889954, 723451712, 735373612, 740115430, 889005385, 
-		    1104585188, 1180264907, 1190905206, 1555245401, 1585281138, 1775919002, 
-		    1780336562, 1784029178, 1799261433, 2013337516, 2095261394, 2137774538, 0};
-	int32_t v2[] = {51207128, 126041601, 237913907, 253753116, 315255440, 394767298, 
-		    420176029, 435382723, 469664463, 486025959, 536944585, 556667308, 565034969, 
-		    615792190, 624608202, 629600018, 807226240, 1107373572, 1113238204, 
-		    1134807359, 1135960080, 1200900964, 1527062593, 1585281138, 1634165777, 
-		    1694464250, 1802457437, 1943916889, 1960218442, 2058631149, -2130866760, 0};
-
-	int32_t nv1 = sizeof(v1)/4;
-	int32_t nv2 = sizeof(v2)/4;
-	if ( isSimilar_sorted (v1,v2,nv1,nv2,80,0) ) {
-		g_process.shutdownAbort(true);
-	}
-	*/
-
 	// set this for debugging
 	//int64_t maxTreeMem = 1000000;
 	int64_t maxTreeMem = 40000000; // 40MB
@@ -319,4 +299,32 @@ key224_t Linkdb::makeKey_uk ( uint32_t  linkeeSiteHash32       ,
 	if ( ! isDelete ) k.n0 |= 0x01;
  
 	return k;
+}
+
+void Linkdb::printKey(const char *k) {
+	key224_t *key = (key224_t*)k;
+	logf(LOG_TRACE, "k=%s "
+			     "linkeesitehash32=0x%08" PRIx32" "
+			     "linkeeurlhash=0x%012" PRIx64" "
+			     "linkspam=%" PRId32" "
+			     "siterank=%02" PRId32" "
+			     "ip32=%s "
+			     "docId=%012" PRIu64" "
+			     "discovered=%" PRIu32" "
+			     "lost=%" PRIu32" "
+			     "sitehash32=0x%08" PRIx32" "
+			     "shardNum=%" PRIu32" "
+			     "%s",
+	     KEYSTR(&k, sizeof(key224_t)),
+	     (int32_t)Linkdb::getLinkeeSiteHash32_uk(key),
+	     (int64_t)Linkdb::getLinkeeUrlHash64_uk(key),
+	     (int32_t)Linkdb::isLinkSpam_uk(key),
+	     (int32_t)Linkdb::getLinkerSiteRank_uk(key),
+	     iptoa((int32_t)Linkdb::getLinkerIp_uk(key)),
+	     (uint64_t)Linkdb::getLinkerDocId_uk(key),
+	     (uint32_t)Linkdb::getDiscoveryDate_uk(key),
+	     (uint32_t)Linkdb::getLostDate_uk(key),
+	     (int32_t)Linkdb::getLinkerSiteHash32_uk(key),
+	     (uint32_t)getShardNum(RDB_LINKDB, k),
+	     KEYNEG(k) ? " (delete)" : "");
 }

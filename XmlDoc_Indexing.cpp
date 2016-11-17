@@ -962,59 +962,30 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 
 	if ( ! m_linksValid ) { g_process.shutdownAbort(true); }
 
-	// we need to store this in the title rec for re-building
-	// the meta list from the title rec...
-	// is this just site info?
-	//TagRec ***pgrv = getOutlinkTagRecVector();
-	//if ( ! pgrv || pgrv == (void *)-1 ) { g_process.shutdownAbort(true); }
-	//TagRec **grv = *pgrv;
-
 	int32_t *linkSiteHashes = getLinkSiteHashes();
-	if ( ! linkSiteHashes || linkSiteHashes == (void *)-1 ){
-		g_process.shutdownAbort(true);}
-
-	// convert siteNumInlinks into a score
-	//int32_t numSiteInlinks = *xd->getSiteNumInlinks();
+	if ( ! linkSiteHashes || linkSiteHashes == (void *)-1 ) {
+		g_process.shutdownAbort(true);
+	}
 
 	unsigned char hopCount = *getHopCount();
 
 	// use spidered time! might not be current time! like if rebuilding
 	// or injecting from a past spider time
-	int32_t discoveryDate = getSpideredTime();//TimeGlobal();
-	int32_t lostDate      = 0;
+	int32_t discoveryDate = getSpideredTime();
 
 	// add in new links
 	for ( int32_t i = 0 ; i < m_links.m_numLinks ; i++ ) {
 		// skip if empty
-		if ( m_links.m_linkLens[i] == 0 ) continue;
+		if (m_links.m_linkLens[i] == 0) {
+			continue;
+		}
+
 		// . skip if spam, ALWAYS allow internal outlinks though!!
 		// . CAUTION: now we must version islinkspam()
-		bool spam = m_links.isLinkSpam(i) ;
-		// or if it has no link text, skip it
-		//if ( ! links->hasLinkText(i,TITLEREC_CURRENT_VERSION) )
-		//continue;
+		bool spam = m_links.isLinkSpam(i);
+
 		// get site of outlink from tagrec if in there
 		int32_t linkeeSiteHash32 = linkSiteHashes[i];
-		/*
-		TagRec *gr = grv[i];
-		char *site = NULL;
-		int32_t  siteLen = 0;
-		if (   gr   ) {
-			int32_t dataSize = 0;
-			site = gr->getString("site",NULL,&dataSize);
-			if ( dataSize ) siteLen = dataSize - 1;
-		}
-		// otherwise, make it the host or make it cut off at
-		// a "/user/" or "/~xxxx" or whatever path component
-		if ( ! site ) {
-			// GUESS link site... TODO: augment for /~xxx
-			char *s = m_links.getLink(i);
-			//int32_t  slen = m_links.getLinkLen(i);
-			//siteLen = slen;
-			site = ::getHost ( s , &siteLen );
-		}
-		uint32_t linkeeSiteHash32 = hash32 ( site , siteLen , 0 );
-		*/
 
 		//
 		// when setting the links class it should set the site hash
@@ -1033,15 +1004,14 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 	uint64_t tmp3 = *getDocId();
 	VALGRIND_CHECK_MEM_IS_DEFINED(&tmp3,sizeof(tmp3));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&discoveryDate,sizeof(discoveryDate));
-	VALGRIND_CHECK_MEM_IS_DEFINED(&lostDate,sizeof(lostDate));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&linkerSiteHash32,sizeof(linkerSiteHash32));
 #endif
-		// set this key, it is the entire record
-		key224_t k;
+
 		int32_t *ipptr = getIp();
 		int32_t ip = ipptr ? *ipptr : 0;
 
-		k = Linkdb::makeKey_uk ( linkeeSiteHash32 ,
+		// set this key, it is the entire record
+		key224_t k = Linkdb::makeKey_uk ( linkeeSiteHash32 ,
 					  m_links.getLinkHash64(i)   ,
 					  spam               , // link spam?
 					  siteRank     , // was quality
@@ -1049,40 +1019,18 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 					  ip,
 					  *getDocId()    ,
 					  discoveryDate      ,
-					  lostDate           ,
+					  0           ,
 					  false              , // new add?
 					  linkerSiteHash32   ,
 					  false              );// delete?
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(&k,sizeof(k));
 #endif
-		/*
-		// debug
-		if ( m_links.getLinkHash64(i) != 0x3df1c439a364e18dLL )
-			continue;
-		//char c = site[siteLen];
-		//site[siteLen]=0;
-		//char tmp[1024];
-		//sprintf(tmp,"xmldoc: hashinglink site=%s sitelen=%" PRId32" ",
-		//	site,siteLen);
-		//site[siteLen] = c;
-		log(//"%s "
-		    "url=%s "
-		    "linkeesitehash32=0x%08" PRIx32" "
-		    "linkersitehash32=0x%08" PRIx32" "
-		    "urlhash64=0x%16llx "
-		    "docid=%" PRId64" k=%s",
-		    //tmp,
-		    m_links.getLink(i),
-		    (int32_t)linkeeSiteHash32,
-		    linkerSiteHash32,
-		    m_links.getLinkHash64(i),
-		    *getDocId(),
-		    KEYSTR(&k,sizeof(key224_t))
-		    );
-		*/
+
 		// store in hash table
-		if ( ! dt->addKey ( &k , NULL ) ) return false;
+		if (!dt->addKey(&k, NULL)) {
+			return false;
+		}
 	}
 	return true;
 }
