@@ -44,10 +44,6 @@ class PingServer {
 			 bool forceIt      = false ,
 			 int32_t mxIP = 0 );
 
-	// tapping a host is telling it to store a sync point by calling
-	// Sync::addOp(OP_SYNCPT,NULL,s_timestamp);
-	void tapHost ( int32_t hostId ) ;
-
 	int32_t m_i;
 
 	// broadcast shutdown info
