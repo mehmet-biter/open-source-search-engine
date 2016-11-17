@@ -22,7 +22,7 @@ PLATFORM=`uname`
 TOOL_ARCHIVE=/tmp/cov-analysis-${PLATFORM}.tgz
 TOOL_URL=https://scan.coverity.com/download/${PLATFORM}
 TOOL_BASE=/tmp/coverity-scan-analysis
-UPLOAD_URL="https://scan.coverity.com/builds"
+UPLOAD_URL="https://scan.coverity.com/builds?project=os+search+engine"
 SCAN_URL="https://scan.coverity.com"
 
 # Do not run on pull requests
@@ -90,30 +90,18 @@ tar czf $RESULTS_ARCHIVE $RESULTS_DIR
 SHA=`git rev-parse --short HEAD`
 
 echo -e "\033[33;1mUploading Coverity Scan Analysis results...\033[0m"
-#response=$(curl \
-#  --silent --write-out "\n%{http_code}\n" \
-#  --data-urlencode project=$COVERITY_SCAN_PROJECT_NAME \
-#  --form token=$COVERITY_SCAN_TOKEN \
-#  --form email=$COVERITY_SCAN_NOTIFICATION_EMAIL \
-#  --form file=@$RESULTS_ARCHIVE \
-#  --form version=$SHA \
-#  --form description="Travis CI build" \
-#  $UPLOAD_URL)
-
-curl -v \
-  --data-urlencode project=$COVERITY_SCAN_PROJECT_NAME \
+response=$(curl \
+  --silent --write-out "\n%{http_code}\n" \
   --form token=$COVERITY_SCAN_TOKEN \
   --form email=$COVERITY_SCAN_NOTIFICATION_EMAIL \
   --form file=@$RESULTS_ARCHIVE \
   --form version=$SHA \
   --form description="Travis CI build" \
-  $UPLOAD_URL
+  $UPLOAD_URL)
 
-#echo -e "\033[33;response=$response\033[0m"
-
-#status_code=$(echo "$response" | sed -n '$p')
-#if [ "$status_code" != "201" ]; then
-#  TEXT=$(echo "$response" | sed '$d')
-#  echo -e "\033[33;1mCoverity Scan upload failed: $TEXT.\033[0m"
-#  exit 1
-#fi
+status_code=$(echo "$response" | sed -n '$p')
+if [ "$status_code" != "201" ]; then
+  TEXT=$(echo "$response" | sed '$d')
+  echo -e "\033[33;1mCoverity Scan upload failed: $TEXT.\033[0m"
+  exit 1
+fi
