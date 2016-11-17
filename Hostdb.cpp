@@ -776,8 +776,8 @@ createFile:
 	// . m_shards[i] is the first host in shardId "i"
 	// . any other hosts w/ same shardId immediately follow it
 	// . loop through each shard
-	int32_t j;
 	for ( i = 0 ; i < m_numShards ; i++ ) {
+		int32_t j;
 		for ( j = 0 ; j < m_numHosts ; j++ ) 
 			if ( m_hosts[j].m_hostId == i ) break;
 		// this points to list of all hosts in shard #j since
@@ -821,6 +821,7 @@ createFile:
 	for ( int32_t i = 1 ; i < m_numHosts ; i++ ) {
 		// see if on a machine we already numbered
 		// debug comment out
+		int32_t j;
 		for ( j = 0 ; j < i ; j++ ) 
 			if (m_hostPtrs[i]->m_ip == m_hostPtrs[j]->m_ip) break;
 		// if it matches the ip of another host it's on the same machne
