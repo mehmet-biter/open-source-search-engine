@@ -418,8 +418,6 @@ void handleRequestfd ( UdpSlot *slot , int32_t niceness ) {
 	//if ( g_proxy.isCompressionProxy() ) { g_process.shutdownAbort(true); }
 	if ( g_hostdb.m_myHost->m_type==HT_QCPROXY) {g_process.shutdownAbort(true);}
 
-	// if niceness is 0, use the higher priority udpServer
-	//UdpServer *us = &g_udpServer;
 	// get the request
 	char *request      = slot->m_readBuf;
 	int32_t  requestSize  = slot->m_readBufSize;

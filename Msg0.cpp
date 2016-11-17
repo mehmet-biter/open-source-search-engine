@@ -535,7 +535,6 @@ public:
 	UdpSlot   *m_slot;
 	int64_t  m_startTime;
 	int32_t       m_niceness;
-	UdpServer *m_us;
 	char       m_rdbId;
 	char       m_ks;
 	char       m_startKey[MAX_KEY_BYTES];
@@ -548,7 +547,6 @@ public:
 void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	logTrace( g_conf.m_logTraceMsg0, "BEGIN. Got request for an RdbList" );
 
-	UdpServer *us = &g_udpServer;
 	// get the request
 	char *request     = slot->m_readBuf;
 	int32_t  requestSize = slot->m_readBufSize;
@@ -556,7 +554,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	//if ( requestSize != MSG0_REQ_SIZE ) {
 	//	log("net: Received bad data request size of %" PRId32" bytes. "
 	//	    "Should be %" PRId32".", requestSize ,(int32_t)MSG0_REQ_SIZE);
-	//	us->sendErrorReply ( slot , EBADREQUESTSIZE );
+	//	g_udpServer.sendErrorReply ( slot , EBADREQUESTSIZE );
 	//	return;
 	//}
 	// parse the request
@@ -596,7 +594,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 		logTrace( g_conf.m_logTraceMsg0, "END. Invalid collection" );
 
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Invalid collection", __FILE__, __func__, __LINE__);
-		us->sendErrorReply(slot, EBADRDBID);
+		g_udpServer.sendErrorReply(slot, EBADRDBID);
 		return;
 	}
 
@@ -607,7 +605,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 		logTrace( g_conf.m_logTraceMsg0, "END. Invalid rdbId" );
 		
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Invalid rdbId", __FILE__, __func__, __LINE__);
-		us->sendErrorReply(slot, EBADRDBID);
+		g_udpServer.sendErrorReply(slot, EBADRDBID);
 		return;
 	}
 
@@ -624,7 +622,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 		    (int32_t)sizeof(State00),mstrerror(g_errno));
 		    
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-		us->sendErrorReply(slot, g_errno);
+		g_udpServer.sendErrorReply(slot, g_errno);
 		return; 
 	}
 	mnew ( st0 , sizeof(State00) , "State00" );
@@ -633,8 +631,6 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 		st0->m_startTime = gettimeofdayInMilliseconds();
 	// save slot in state
 	st0->m_slot = slot;
-	// save udp server to send back reply on
-	st0->m_us = us;
 	// init this one
 	st0->m_niceness = niceness;
 	st0->m_rdbId    = rdbId;
@@ -694,7 +690,6 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 	UdpSlot   *slot =  st0->m_slot;
 	RdbList   *list = &st0->m_list;
 	Msg5      *msg5 = &st0->m_msg5;
-	UdpServer *us   =  st0->m_us;
 
 	// timing debug
 	if ( g_conf.m_logTimingNet || g_conf.m_logDebugNet ) {
@@ -720,7 +715,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 		// TODO: free "slot" if this send fails
 		
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(g_errno));
-		us->sendErrorReply(slot, g_errno);
+		g_udpServer.sendErrorReply(slot, g_errno);
 		return;
 	}
 
@@ -809,7 +804,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 	// . now g_udpServer is responsible for freeing data/dataSize
 	// . the "true" means to call doneSending_ass() from the signal handler
 	//   if need be
-	st0->m_us->sendReply(data, dataSize, alloc, allocSize, slot, st0, doneSending_ass, -1, -1, true);
+	g_udpServer.sendReply(data, dataSize, alloc, allocSize, slot, st0, doneSending_ass, -1, -1, true);
 
 	logTrace( g_conf.m_logTraceMsg0, "END" );
 }	

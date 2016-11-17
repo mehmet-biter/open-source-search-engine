@@ -238,8 +238,6 @@ void Multicast::sendToGroup() {
 		//   in the group we no longer have a "totalTimeout" per se
 		// reset the g_errno for host #i
 		m_errnos [i] = 0;
-		// if niceness is 0, use the higher priority udpServer
-		UdpServer *us = &g_udpServer;
 		// send to the same port as us!
 		int16_t destPort = h->m_port;
 
@@ -253,7 +251,7 @@ void Multicast::sendToGroup() {
 		// . send to a single host
 		// . this creates a transaction control slot, "udpSlot"
 		// . returns false and sets g_errno on error
-		if (us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReply2, m_totalTimeout, m_niceness)) {
+		if (g_udpServer.sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReply2, m_totalTimeout, m_niceness)) {
 			continue;
 		}
 		// g_errno must have been set, remember it
@@ -602,8 +600,6 @@ bool Multicast::sendToHost ( int32_t i ) {
 	}
 	// get the host
 	Host *h = m_hostPtrs[i];
-	// if niceness is 0, use the higher priority udpServer
-	UdpServer *us = &g_udpServer;
 	// send to the same port as us!
 	int16_t destPort = h->m_port;
 
@@ -635,7 +631,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// . return false and sets g_errno on error
 	// . returns true on successful launch and calls callback on completion
 	ScopedLock sl(m_mtx);
-	if (!us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReply1, timeRemaining, m_niceness, NULL, -1, -1, maxResends)) {
+	if (!g_udpServer.sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReply1, timeRemaining, m_niceness, NULL, -1, -1, maxResends)) {
 		log(LOG_WARN, "net: Had error sending msgtype 0x%02x to host #%" PRId32": %s. Not retrying.",
 		    m_msgType,h->m_hostId,mstrerror(g_errno));
 		// i've seen ENOUDPSLOTS available msg here along with oom
