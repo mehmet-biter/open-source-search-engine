@@ -461,8 +461,6 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 
 	State22 *st = (State22 *)state;
-	// if niceness is 0, use the higher priority udpServer
-	UdpServer *us = &g_udpServer;
 	// shortcut
 	Msg22Request *r = st->m_r;
 
@@ -473,7 +471,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 		    mstrerror(g_errno));
 		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-		us->sendErrorReply ( st->m_slot , g_errno ); 
+		g_udpServer.sendErrorReply ( st->m_slot , g_errno );
 		mdelete ( st , sizeof(State22) , "Msg22" );
 		delete ( st ); 
 		return ;
@@ -546,7 +544,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 		// ok, if just "checking tfndb" no need to go further
 		if ( r->m_justCheckTfndb ) {
 			// send back a good reply (empty means found!)
-			us->sendReply(NULL,0,NULL,0,st->m_slot);
+			g_udpServer.sendReply(NULL,0,NULL,0,st->m_slot);
 			// don't forget to free the state
 			mdelete ( st , sizeof(State22) , "Msg22" );
 			delete ( st );
@@ -570,7 +568,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 			tlist->setOwnData(false);
 		}
 		// off ya go
-		us->sendReply(reply,recSize,reply,recSize,st->m_slot);
+		g_udpServer.sendReply(reply,recSize,reply,recSize,st->m_slot);
 		// don't forget to free the state
 		mdelete ( st , sizeof(State22) , "Msg22" );
 		delete ( st );
@@ -599,7 +597,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 		// send back the available docid
 		*(int64_t *)p = st->m_availDocId;
 		// send it
-		us->sendReply (p, 8, p, 8, st->m_slot);
+		g_udpServer.sendReply (p, 8, p, 8, st->m_slot);
 		// don't forget to free state
 		mdelete ( st , sizeof(State22) , "Msg22" );
 		delete ( st );
