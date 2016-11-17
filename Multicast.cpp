@@ -185,17 +185,15 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 		}
 
 		return retVal;
+	} else {
+		// . send to ALL hosts in this group if sendToWholeGroup is true
+		// . blocks forever until sends to all hosts are successfull
+		sendToGroup();
+	
+		// . sendToGroup() always blocks, but we return true if no g_errno
+		// . we actually keep looping until all hosts get the msg w/o error
+		return true;
 	}
-
-	//if ( ! sendToWholeGroup ) return sendToHostLoop ( key , -1 );
-
-	// . send to ALL hosts in this group if sendToWholeGroup is true
-	// . blocks forever until sends to all hosts are successfull
-	sendToGroup();
-
-	// . sendToGroup() always blocks, but we return true if no g_errno
-	// . we actually keep looping until all hosts get the msg w/o error
-	return true;
 }
 
 ///////////////////////////////////////////////////////
@@ -323,7 +321,9 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 	// if it matched no slot that's wierd
 	if ( i == m_numHosts ) {
 		//log("not our slot: mcast=%" PRIu32,(int32_t)this);
-		log(LOG_LOGIC,"net: multicast: Not our slot."); return; }
+		log(LOG_LOGIC,"net: multicast: Not our slot.");
+		return;
+	}
 	// clear a timeout error on dead hosts
 	if ( g_conf.m_giveupOnDeadHosts &&
 	     g_hostdb.isDead ( m_hostPtrs[i]->m_hostId ) ) {
@@ -391,11 +391,6 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 	// . sleepWrapper2() will call sendToGroup() for us
 	g_loop.registerSleepCallback( 5000/*ms*/, this, sleepWrapper2, m_niceness );
 	m_registeredSleep = true;
-	// . this was bad cause it looped incessantly quickly!
-	// . when we finally return, udpServer destroy this slot
-	// . try to re-send this guy again on error
-	// . this should always block
-	// sendToGroup ();
 }
 
 ///////////////////////////////////////////////////////
@@ -403,8 +398,6 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 //                  PICK & SEND                      //
 //                                                   //
 ///////////////////////////////////////////////////////
-
-//static void gotBestHostWrapper ( void *state ) ;
 
 // . returns false and sets g_errno on error
 // . returns true if managed to send to one host ok (initially at least)
@@ -419,14 +412,15 @@ bool Multicast::sendToHostLoop(int32_t key, int32_t hostNumToTry, int32_t firstH
 		// what if this host is dead?!?!?
 		int32_t i = (hostNumToTry >= 0) ? hostNumToTry : pickBestHost(key, firstHostId);
 
-		// do not resend to retired hosts
-		if( i >= 0 && m_retired[i] ) {
-			i = -1;
-		}
-
 		// . if no more hosts return FALSE
 		// . we need to return false to the caller of us below
 		if (i < 0) {
+			g_errno = ENOHOSTS;
+			return false;
+		}
+
+		// do not resend to retired hosts
+		if( m_retired[i] ) {
 			g_errno = ENOHOSTS;
 			return false;
 		}
@@ -463,26 +457,11 @@ bool Multicast::sendToHostLoop(int32_t key, int32_t hostNumToTry, int32_t firstH
 // . skip hosts in our m_retired[] list of hostIds
 // . returns -1 if none left to pick
 int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
-	// debug msg
-	//log("pickBestHost manually");
 	// bail if no hosts
 	if ( m_numHosts == 0 ) {
 		return -1;
 	}
 
-	// . should we always pick host on same machine first?
-	// . we now only run one instance of gb per physical server, not like
-	//   the old days... so this is somewhat obsolete... MDW
-	/*
-	if ( preferLocal && !g_conf.m_interfaceMachine ) {
-		for ( int32_t i = 0 ; i < m_numHosts ; i++ )
-			if ( m_hosts[i].m_machineNum == 
-			     g_hostdb.getMyMachineNum()        &&
-			     ! g_hostdb.isDead ( &m_hosts[i] ) &&
-			     ! g_hostdb.kernelErrors( &m_hosts[i] ) &&
-			     ! m_retired[i] ) return i;
-	}
-	*/
 	// . if firstHostId not -1, try it first
 	// . Msg0 uses this only to select hosts on same machine for now
 	// . Msg20 now uses this to try to make sure the lower half of docids
@@ -506,10 +485,6 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 	}
 
 	// round robin selection
-	//static int32_t s_lastGroup = 0;
-	//int32_t        count       = 0;
-	//int32_t        i ;
-	//int32_t        slow = -1;
 	int32_t   numDead   =  0;
 	int32_t   dead      = -1;
 	int32_t   n         = 0;
@@ -574,21 +549,6 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 	if ( numDead == m_numHosts ) return dead;
 	// otherwise, they weren't all dead so don't send to a deadie
 	return -1;
-	// . if no host we sent to had an error then we should send to deadies
-	// . TODO: we should only send to a deadie if we haven't got back a
-	//   reply from any live hosts!!
-	//if ( numErrors == 0 ) return dead;
-	// . now alive host was found that we haven't tried, so return -1
-	// . before we were returning hosts that were marked as dead!! This
-	//   caused problems when the only alive host returned an error code
-	//   because it would take forever for the dead host to timeout...
-	//return -1;
-	// update lastGroup
-	//if ( ++s_lastGroup >= m_numHosts ) s_lastGroup = 0;
-	// return i if we got it
-	//if ( count >= m_numHosts ) return slow;
-	// otherwise return i
-	//return i;
 }
 
 // . returns false and sets error on g_errno
@@ -638,11 +598,6 @@ bool Multicast::sendToHost ( int32_t i ) {
 			    timeRemaining,m_startTime,m_totalTimeout,
 			    nowms,m_msgType,
 			    (int32_t)m_niceness);
-		// we are timed out so do not bother re-routing
-		//g_errno = ETIMEDOUT; 		
-		//return false;
-		// give it a fighting chance of 2 seconds then
-		//timeout = 2;
 		timeRemaining = m_totalTimeout;
 	}
 	// get the host
@@ -759,8 +714,6 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 
 	switch ( THIS->m_msgType ) {
 		// msg to get a summary from a query (calls msg22)
-		// buzz takes extra long! it calls Msg25 sometimes.
-		// no more buzz.. put back to 8 seconds.
 		// put to 5 seconds now since some hosts freezeup still it seems
 		// and i haven't seen a summary generation of 5 seconds
 		case msg_type_20:
@@ -776,7 +729,6 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 			break;
 		// . msg to get an index list over the net
 		// . this limit should really be based on length of the index list
-		// . this was 15 then 12 now it is 4
 		case msg_type_0:
 			// this should just be for when a host goes down, not for
 			// performance reasons, cuz we do pretty good load balancing
@@ -842,8 +794,6 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 	if ( THIS->m_readBuf ) {
 		THIS->destroySlotsInProgress ( NULL );
 	}
-	//if ( THIS->m_replyBuf ) 
-	//	THIS->destroySlotsInProgress ( NULL );
 
 	// . do a loop over all hosts in the group
 	// . if a whole group of twins is down this will loop forever here
@@ -1145,4 +1095,3 @@ char *Multicast::getBestReply(int32_t *replySize, int32_t *replyMaxSize, bool *f
 	if ( m_readBuf ) m_ownReadBuf  = false;
 	return m_readBuf;
 }
-
