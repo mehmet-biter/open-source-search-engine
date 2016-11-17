@@ -462,10 +462,10 @@ char *strncasestr( char *haystack, int32_t haylen, const char *needle){
 	return NULL;
 }
 
-char *strnstr( const char *haystack, const char *needle, int32_t len ) {
+char *strnstr( const char *haystack, const char *needle, int32_t haystackLen ) {
 	int32_t matchLen = 0;
 	int32_t needleLen = strlen( needle );
-	for ( int32_t i = 0; i < len; ++i ) {
+	for ( int32_t i = 0; i < haystackLen; ++i ) {
 		char c1 = ( haystack[ i ] );
 		char c2 = ( needle[ matchLen ] );
 		if ( c1 != c2 ) {
