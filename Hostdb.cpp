@@ -1202,12 +1202,8 @@ bool Hostdb::isShardDead ( int32_t shardNum ) {
 	Host *shard = getShard ( shardNum );
 	//Host *live = NULL;
 	for ( int32_t i = 0 ; i < m_numHostsPerShard ; i++ ) {
-		// get it
-		Host *h = &shard[i];
-		// skip if dead
-		if ( isDead(h->m_hostId) ) continue;
-		// return it if alive
-		return false;
+		if(!isDead(shard[i].m_hostId))
+			return false;
 	}
 	return true;
 }
