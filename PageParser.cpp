@@ -857,19 +857,13 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	// . "content" may contain a MIME
 	int32_t  contentLen = 0;
 	const char *content = r->getString ( "content" , &contentLen , NULL );
-	// is the "content" url-encoded? default is true.
-	bool contentIsEncoded = true;
-	// mark doesn't like to url-encode his content
 	if ( ! content ) {
 		content    = r->getUnencodedContent    ();
 		contentLen = r->getUnencodedContentLen ();
-		contentIsEncoded = false;
 	}
 	// ensure null
 	if ( contentLen == 0 ) content = NULL;
 
-	//uint8_t contentType = CT_HTML;
-	//if ( isXml ) contentType = CT_XML;
 	int32_t ctype = r->getLong("ctype",CT_HTML);
 
 	// . use the enormous power of our new XmlDoc class
@@ -931,17 +925,6 @@ bool gotXmlDoc ( void *state ) {
 		// NO! not if set from titlerec/docid
 		if ( st->m_recompute )
 			xd->m_linkInfo1Valid = false;
-		// try a recompute regardless, because we do not store the
-		// bad inlinkers, and ppl want to see why they are bad!
-		//xd->m_linkInfo1Valid = false;
-		// now get the meta list, in the process it will print out a 
-		// bunch of junk into st->m_xbuf
-		//char *metalist = xd->getMetaList ( );
-		//if ( ! metalist ) return sendErrorReply ( st , g_errno );
-		// return false if it blocked
-		//if ( metalist == (void *)-1 ) return false;
-		// for debug...
-		//if ( ! xd->m_indexCode ) xd->doConsistencyTest ( false );
 		// . print it out
 		// . returns false if blocks, true otherwise
 		// . sets g_errno on error
