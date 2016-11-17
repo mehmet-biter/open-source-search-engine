@@ -816,29 +816,23 @@ createFile:
 	// . set the m_machineNum of each host
 	// . hostPtrs are sorted by hostId which means should also be sorted
 	//   by IP so we can get a good machine number assignment
-	if ( m_numHosts > 0 ) m_hostPtrs[0]->m_machineNum = 0;
-	int32_t next = 1;
-	for ( int32_t i = 1 ; i < m_numHosts ; i++ ) {
-		// see if on a machine we already numbered
-		// debug comment out
+	int32_t nextMachineNum = 0;
+	for(int32_t i = 1; i < m_numHosts; i++) {
+		// see if on a machine we already encountered
 		int32_t j;
-		for ( j = 0 ; j < i ; j++ ) 
-			if (m_hostPtrs[i]->m_ip == m_hostPtrs[j]->m_ip) break;
-		// if it matches the ip of another host it's on the same machne
-		if ( j < i ) {	
-			m_hostPtrs[i]->m_machineNum = 
-				m_hostPtrs[j]->m_machineNum; 
-			continue;
+		for(j = 0; j < i && m_hostPtrs[i]->m_ip != m_hostPtrs[j]->m_ip; j++)
+			;
+		// if it matches the IP of another host it's on the same machne
+		if(j < i) {
+			m_hostPtrs[i]->m_machineNum = m_hostPtrs[j]->m_machineNum;
+		} else {
+			// otherwise, it is a new IP = (new machine)
+			m_hostPtrs[i]->m_machineNum = nextMachineNum++;
 		}
-		// otherwise, a new one
-		// put this back to the bootom!!!!!!!!!!!!!!!!
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		m_hostPtrs[i]->m_machineNum = next++;
-		continue;
 	}
 	// set # of machines
-	m_numMachines = next;
-
+	m_numMachines = nextMachineNum;
+	
 	// get IPs of this server. last entry is 0.
 	int32_t *localIps = getLocalIps();
 	if ( ! localIps ) {
