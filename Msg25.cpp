@@ -282,15 +282,10 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 	req->m_ourHostHash32 = ourHostHash32;
 	req->m_ourDomHash32 = ourDomHash32;
 
-	// why did i do this?
-	// if ( g_conf.m_logDebugLinkInfo )
-	// 	req->m_printDebugMsgs = true;
-
 	Url u;
 	u.set ( req->ptr_url );
 
 	req->m_linkHash64 = (uint64_t)u.getUrlHash64();
-
 
 	req->m_siteHash32 = 0LL;
 	req->m_siteHash64 = 0LL;
@@ -612,14 +607,12 @@ bool Msg25::getLinkInfo2(char      *site,
 			 bool       isSiteLinkInfo,
 			 int32_t       ip,
 			 int64_t  docId,
-			 //char      *coll,
 			 collnum_t collnum,
 			 char      *qbuf,
 			 int32_t       qbufSize,
 			 void      *state,
 			 void (* callback)(void *state),
 			 bool       isInjecting,
-			 //SafeBuf   *pbuf,
 			 bool     printDebugMsgs,
 			 bool     printInXml,
 			 int32_t       siteNumInlinks,
@@ -640,8 +633,6 @@ bool Msg25::getLinkInfo2(char      *site,
 	// reset the ip table
 	reset();
 
-	//int32_t mode = MODE_PAGELINKINFO;
-	//m_printInXml = printInXml;
 	if ( isSiteLinkInfo )
 		m_mode = MODE_SITELINKINFO;
 	else
@@ -653,8 +644,6 @@ bool Msg25::getLinkInfo2(char      *site,
 	else
 		m_pbuf = NULL;
 
-	// sanity check
-	//if ( ! coll ) { g_process.shutdownAbort(true); }
 	m_onlyNeedGoodInlinks = onlyNeedGoodInlinks;
 	m_getLinkerTitles     = getLinkerTitles;
 	// save safebuf ptr, where we store the link info
@@ -662,10 +651,9 @@ bool Msg25::getLinkInfo2(char      *site,
 	if ( ! linkInfoBuf ) { g_process.shutdownAbort(true); }
 	// sanity check
 	if ( m_mode == MODE_PAGELINKINFO && ! docId ) { g_process.shutdownAbort(true); }
-	// must have a valid ip
-	//if ( ! ip || ip == -1 ) { g_process.shutdownAbort(true); }
+
 	// get collection rec for our collection
-	CollectionRec *cr = g_collectiondb.getRec ( collnum );//, collLen );
+	CollectionRec *cr = g_collectiondb.getRec ( collnum );
 	// bail if NULL
 	if ( ! cr ) {
 		g_errno = ENOCOLLREC;
@@ -679,7 +667,6 @@ bool Msg25::getLinkInfo2(char      *site,
 	m_spideringEnabled    = g_conf.m_spideringEnabled;
 	m_ourHostHash32 = ourHostHash32;
 	m_ourDomHash32 = ourDomHash32;
-	//m_minInlinkerHopCount = -1; // -1 -->unknown
 	m_niceness            = niceness;
 	m_maxNumLinkers       = MAX_LINKERS;
 	m_errno               = 0;
@@ -696,11 +683,8 @@ bool Msg25::getLinkInfo2(char      *site,
 	m_docIdDupsLinkdb     = 0;
 	m_ipDups              = 0;
 	m_linkSpamLinkdb      = 0;
-	//m_url                 = url;
 	m_docId               = docId;
-	//m_coll                = coll;
 	m_collnum = collnum;
-	//m_collLen             = collLen;
 	m_callback            = callback;
 	m_state               = state;
 	m_oneVotePerIpDom     = oneVotePerIpDom;
@@ -711,7 +695,6 @@ bool Msg25::getLinkInfo2(char      *site,
 	m_qbufSize            = qbufSize;
 	m_isInjecting         = isInjecting;
 	m_oldLinkInfo         = oldLinkInfo;
-	//m_pbuf                = pbuf;
 	m_ip                  = ip;
 	m_top                 = iptop(m_ip);
 	m_lastUpdateTime      = lastUpdateTime;
@@ -740,14 +723,12 @@ bool Msg25::getLinkInfo2(char      *site,
 	//log("debug: entering getlinkinfo this=%" PRIx32,(int32_t)this);
 
 	// then the url/site hash
-	//uint64_t linkHash64 = (uint64_t) u.getUrlHash64();
 	m_linkHash64 = (uint64_t) u.getUrlHash64();
-	//uint32_t hostHash32 = (uint32_t)m_url->getHostHash32();
 
 	m_round = 0;
 
 	// must have a valid ip
-	if ( ! ip || ip == -1 ) { //g_process.shutdownAbort(true); }
+	if ( ! ip || ip == -1 ) {
 		log("linkdb: no inlinks because ip is invalid");
 		g_errno = EBADENGINEER;
 		return true;
