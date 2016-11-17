@@ -403,34 +403,6 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	// count all replies
 	if ( ! g_errno ) h->m_numPingReplies++;
 
-	// but if g_errno == EUDPTIMEDOUT, mark the host as dead
-	if ( g_errno == EUDPTIMEDOUT ) {
-		// if not first time...
-		if ( ! h->m_wasAlive && 
-		     // we must have been alive at some time
-		     h->m_wasEverAlive &&
-		     // and this is lefit
-		     h->m_timeOfDeath != 0 &&
-		     // and in our group
-		     //h->m_groupId == g_hostdb.m_myHost->m_groupId ) {
-		     h->m_shardNum == getMyShardNum() ) {
-			// we did it once, do not repeat
-			h->m_timeOfDeath = 0;
-		}
-		//*pingPtr = g_conf.m_deadHostTimeout;
-		if ( h->m_wasAlive ) {
-                        const char *buf = "Host";
-                        if(h->m_isProxy)
-                                buf = "Proxy";
-			log("net: %s #%" PRId32" ip=%s is dead. Has not responded to "
-			    "ping in %" PRId32" ms.", buf, h->m_hostId,
-			    iptoa(slot->getIp()),
-			    (int32_t)g_conf.m_deadHostTimeout);
-			// set dead time
-			h->m_timeOfDeath = nowms;
-		}
-	}
-
 	// clear g_errno so we don't think any functions below set it
 	g_errno = 0;
 

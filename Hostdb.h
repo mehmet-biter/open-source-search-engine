@@ -164,7 +164,6 @@ public:
 	bool           m_retired;
 	bool           m_wasAlive;      //used by pingserver to detect state transitions
 	bool           m_wasEverAlive;  //used by pingserver to detect state transitions
-	int64_t        m_timeOfDeath;   //used by pingserver
 	// this toggles between 0 and 1 for alternating packet sends to
 	// eth0 and eth1 of this host
 	char           m_shotgunBit;
