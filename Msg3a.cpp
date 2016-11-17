@@ -389,20 +389,10 @@ bool Msg3a::getDocIds(Msg39Request *r, const SearchInput *si, Query *q, void *st
 		m->reset();
 
 		// if all hosts in group dead, just skip it!
-		// only do this if main process has been running more than
-		// 300 seconds because our brother hosts show up as "dead"
-		// until we've got a ping reply back from them.
-		// use 160 seconds. seems to take 138 secs or so to
-		// get pings from everyone.
 		if ( g_hostdb.isShardDead ( shardNum ) ) {
 			m_numReplies++;
 			log("msg3a: skipping dead shard # %i "
 			    "(elapsed=%li)",(int)shardNum,elapsed);
-			// see if this fixes the core?
-			// assume reply is empty!!
-			//m_reply[t][i] = NULL;
-			// nuke reply in there so getBestReply() returns NULL
-			//m_mcast[i].reset();
 			continue;
 		}
 
