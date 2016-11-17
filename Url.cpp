@@ -1442,28 +1442,28 @@ int32_t Url::getSubPathLen ( int32_t j ) const {
 
 void Url::print() {
 	logf(LOG_TRACE, "Url info");
-	logf(LOG_TRACE, "  url          : %s", m_url);
-	logf(LOG_TRACE, "  urlhash32    : %" PRIx32, getUrlHash32());
-	logf(LOG_TRACE, "  urlhash48    : %" PRIx64, getUrlHash48());
-	logf(LOG_TRACE, "  urlhash64    : %" PRIx64, getUrlHash64());
+	logf(LOG_TRACE, "\turl          : %s", m_url);
+	logf(LOG_TRACE, "\turlhash32    : %" PRIx32, getUrlHash32());
+	logf(LOG_TRACE, "\turlhash48    : %" PRIx64, getUrlHash48());
+	logf(LOG_TRACE, "\turlhash64    : %" PRIx64, getUrlHash64());
 
-	logf(LOG_TRACE, "  host         : %.*s", m_hlen, m_host);
-	logf(LOG_TRACE, "  hosthash32   : %" PRIx32, getHostHash32());
-	logf(LOG_TRACE, "  hosthash48   : %" PRIx64, getHostHash64());
+	logf(LOG_TRACE, "\thost         : %.*s", m_hlen, m_host);
+	logf(LOG_TRACE, "\thosthash32   : %" PRIx32, getHostHash32());
+	logf(LOG_TRACE, "\thosthash48   : %" PRIx64, getHostHash64());
 
-	logf(LOG_TRACE, "  ip           : %" PRId32, m_ip);
-	logf(LOG_TRACE, "  scheme       : %.*s", m_slen, m_scheme);
-	logf(LOG_TRACE, "  path         : %.*s", m_plen, m_path);
-	logf(LOG_TRACE, "  query        : %s", m_query);
-	logf(LOG_TRACE, "  port         : %" PRId32, m_port);
+	logf(LOG_TRACE, "\tip           : %" PRId32, m_ip);
+	logf(LOG_TRACE, "\tscheme       : %.*s", m_slen, m_scheme);
+	logf(LOG_TRACE, "\tpath         : %.*s", m_plen, m_path);
+	logf(LOG_TRACE, "\tquery        : %s", m_query);
+	logf(LOG_TRACE, "\tport         : %" PRId32, m_port);
 
-	logf(LOG_TRACE, "  domain       : %.*s", m_dlen, m_domain);
-	logf(LOG_TRACE, "  domainhash32 : %" PRIx32, getDomainHash32());
-	logf(LOG_TRACE, "  domainhash64 : %" PRIx64, getDomainHash64());
+	logf(LOG_TRACE, "\tdomain       : %.*s", m_dlen, m_domain);
+	logf(LOG_TRACE, "\tdomainhash32 : %" PRIx32, getDomainHash32());
+	logf(LOG_TRACE, "\tdomainhash64 : %" PRIx64, getDomainHash64());
 
-	logf(LOG_TRACE, "  tld          : %.*s", m_tldLen, m_tld);
-	logf(LOG_TRACE, "  mid domain   : %.*s", m_mdlen, m_domain);
-	logf(LOG_TRACE, "  is root      : %i", isRoot());
+	logf(LOG_TRACE, "\ttld          : %.*s", m_tldLen, m_tld);
+	logf(LOG_TRACE, "\tmid domain   : %.*s", m_mdlen, m_domain);
+	logf(LOG_TRACE, "\tis root      : %i", isRoot());
 }
 
 int32_t  Url::getPathDepth ( bool countFilename ) const {
