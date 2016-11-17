@@ -68,7 +68,6 @@ private:
 
 	int32_t  m_numRequests;
 	int32_t  m_numReplies;
-	int32_t  m_i;
 	int32_t  m_n;
 
 	// point to next url in "urlBuf" to process

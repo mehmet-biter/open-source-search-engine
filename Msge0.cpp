@@ -23,7 +23,6 @@ Msge0::Msge0()
     m_numTags(NULL),
     m_numRequests(0),
     m_numReplies(0),
-    m_i(0),
     m_n(0),
     m_nextPtr(NULL),
     m_state(NULL),
