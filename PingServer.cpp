@@ -245,9 +245,6 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	if ( g_conf.m_useShotgun && 
 	     h->m_pingShotgun < g_conf.m_deadHostTimeout ) isAlive = true;
 	if ( isAlive && h->m_emailCode == 0 ) h->m_startTime =nowmsLocal;//now2
-	// log it only the first time he is registered as dead
-	if ( isAlive ) h->m_wasAlive = true;
-	else           h->m_wasAlive = false;
 	Host *me = g_hostdb.m_myHost;
 	// we send our stats to host "h"
 	PingInfo *pi = &me->m_pingInfo;//RequestBuf;
@@ -422,8 +419,6 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 		// he is back up then we are free to send another alert about
 		// any other host that goes down
 		if ( h->m_hostId == s_lastSentHostId ) s_lastSentHostId = -1;
-		// mark this
-		h->m_wasEverAlive = true;
 
 		if ( h->m_pingInfo.m_percentMemUsed >= 99.0 &&
 		     h->m_firstOOMTime == 0 )
