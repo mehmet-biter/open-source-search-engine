@@ -414,21 +414,8 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 		     // and in our group
 		     //h->m_groupId == g_hostdb.m_myHost->m_groupId ) {
 		     h->m_shardNum == getMyShardNum() ) {
-			// how long dead for?
-			int64_t delta = nowms - h->m_timeOfDeath;
 			// we did it once, do not repeat
 			h->m_timeOfDeath = 0;
-			// num collections
-			int32_t nc = g_collectiondb.m_numRecs;
-			// if 5 minutes, issue reload if in our group
-			for ( int32_t i = 0 ; i < nc && delta > 2*60*1000 ; i++ ){
-				// get coll
-				SpiderColl *sc=g_spiderCache.getSpiderColl(i);
-				// skip if empty
-				if ( ! sc ) continue;
-				// flag it
-				sc->m_twinDied = true;
-			}
 		}
 		//*pingPtr = g_conf.m_deadHostTimeout;
 		if ( h->m_wasAlive ) {

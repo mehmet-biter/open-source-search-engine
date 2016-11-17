@@ -98,7 +98,6 @@ SpiderColl::SpiderColl () {
 	m_deleteMyself = false;
 	m_didRound = false;
 	m_pri2 = 0;
-	m_twinDied = false;
 	m_lastUrlFiltersUpdate = 0;
 	m_gettingList1 = false;
 	memset(&m_outstandingSpiders, 0, sizeof(m_outstandingSpiders));
@@ -523,7 +522,6 @@ void SpiderColl::clearLocks ( ) {
 	// set this to -1 here, when we enter spiderDoledUrls() it will
 	// see that its -1 and set the m_msg5StartKey
 	m_pri2 = -1; // MAX_SPIDER_PRIORITIES - 1;
-	m_twinDied = false;
 	m_lastUrlFiltersUpdate = 0;
 
 	char *coll = "unknown";
@@ -569,7 +567,6 @@ void SpiderColl::reset ( ) {
 	// set this to -1 here, when we enter spiderDoledUrls() it will
 	// see that its -1 and set the m_msg5StartKey
 	m_pri2 = -1; // MAX_SPIDER_PRIORITIES - 1;
-	m_twinDied = false;
 	m_lastUrlFiltersUpdate = 0;
 
 	m_isPopulatingDoledb = false;
