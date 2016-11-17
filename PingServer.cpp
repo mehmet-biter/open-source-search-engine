@@ -1334,9 +1334,6 @@ void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 	// is it dead now?
 	bool isDead = g_hostdb.isDead ( h );
 
-	// force it out of sync
-	if ( isDead ) h->m_inSync = false;
-
 	if( ! h->m_isProxy ) {
 		// maintain m_numHostsAlive if there was a change in state
 		if ( wasDead && ! isDead ) g_hostdb.m_numHostsAlive++;
