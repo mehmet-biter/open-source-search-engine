@@ -39,7 +39,6 @@ static LinkInfo *makeLinkInfo(const char   *coll,
 			      int64_t       linkeeDocId,
 			      int32_t       lastUpdateTime,
 			      bool          onlyNeedGoodInlinks,
-			      int32_t       niceness,
 			      Msg25        *msg25,
 			      SafeBuf      *linkInfoBuf);
 
@@ -1851,7 +1850,6 @@ bool Msg25::gotLinkText(Msg20Request *req) {
 		     m_docId,               // linkee docid
 		     m_lastUpdateTime,
 		     m_onlyNeedGoodInlinks,
-		     m_niceness,
 		     this ,
 		     m_linkInfoBuf );
 	// return true with g_errno set on error
@@ -2795,7 +2793,6 @@ static LinkInfo *makeLinkInfo(const char     *coll,
 			      int64_t         linkeeDocId,
 			      int32_t         lastUpdateTime,
 			      bool            onlyNeedGoodInlinks,
-			      int32_t         niceness,
 			      Msg25          *msg25,
 			      SafeBuf        *linkInfoBuf)
 {
