@@ -10865,8 +10865,9 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 	}
 
 	// return msge1's buf otherwise
+	//todo: why don't we check m_msge1.m_errno here just like for m_msge0 ?
 	if ( m_outlinkIpVectorValid )
-		return &m_msge1.m_ipBuf;
+		return m_msge1.getIpBufPtr();
 
 	// should we have some kinda error for msge1?
 	//if ( m_outlinkIpVectorValid && m_msge1.m_errno ) {
@@ -10921,9 +10922,10 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 	}
 	// error?
        	if ( g_errno ) return NULL;
+	//todo: why don't we check m_msge1.m_errno here just like for m_msge0 ?
 	// . ptr to a list of ptrs to tag recs
 	// . ip will be -1 on error
-	return &m_msge1.m_ipBuf;
+	return m_msge1.getIpBufPtr();
 }
 
 int32_t *XmlDoc::getUrlFilterNum ( ) {

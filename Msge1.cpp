@@ -20,7 +20,6 @@ Msge1::Msge1() {
 	m_bufSize = 0;
 	m_ipErrors = NULL;
 	m_numRequests = 0;
-	m_i = 0;
 	m_n = 0;
 	m_nextPtr = NULL;
 	m_grv = NULL;
@@ -92,7 +91,7 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 	m_bufSize = need;
 
 	// clear it all
-	memset ( m_buf , 0 , m_bufSize );
+	memset(m_buf, 0, m_bufSize);
 
 	// set the ptrs!
 	char *p = m_buf;
@@ -108,23 +107,10 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 	m_n = 0;
 
 	// clear the m_used flags
-	memset ( m_used , 0 , MAX_OUTSTANDING_MSGE1 );
+	memset(m_used, 0, sizeof(m_used));
 
 	// . launch the requests
 	// . a request can be a msg8a, msgc, msg50 or msg20 request depending
-
-
-
-
-
-
-
-
-
-
-
-
-
 	//   on what we need to get
 	// . when a reply returns, the next request is launched for that url
 	// . we keep a msge1Slot state for each active url in the buffer
@@ -237,10 +223,6 @@ bool Msge1::launchRequests ( int32_t starti ) {
 	// claim it
 	m_used[i] = true;
 
-	// note it
-	//if ( g_conf.m_logDebugSpider )
-	//	log(LOG_DEBUG,"spider: msge1: processing url %s",p);
-
 	// . start it off
 	// . this will start the pipeline for this url
 	// . it will set m_used[i] to true if we use it and block
@@ -255,7 +237,6 @@ bool Msge1::launchRequests ( int32_t starti ) {
 	goto loop;
 }
 
-static void gotMsgCWrapper ( void *state , int32_t ip ) ;
 
 bool Msge1::sendMsgC ( int32_t i , const char *host , int32_t hlen ) {
 	// we are processing the nth url
@@ -277,7 +258,7 @@ bool Msge1::sendMsgC ( int32_t i , const char *host , int32_t hlen ) {
 	return doneSending ( i );
 }	
 
-void gotMsgCWrapper ( void *state , int32_t ip ) {
+void Msge1::gotMsgCWrapper(void *state, int32_t ip) {
 	MsgC   *m    = (MsgC  *)state;
 	Msge1  *THIS = (Msge1 *)m->m_state2;
 	int32_t    i    = (int32_t   )(PTRTYPE)m->m_state3;
