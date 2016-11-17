@@ -47,7 +47,7 @@ private:
 	linkflags_t *m_urlFlags;
 	int32_t   m_numUrls;
 
-	char   m_skipOldLinks;
+	bool   m_skipOldLinks;
 
 	// buffer to hold all the data we accumulate for all the urls in urlBuf
 	char *m_buf;
