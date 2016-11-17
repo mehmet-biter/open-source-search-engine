@@ -1,10 +1,8 @@
 #include <gtest/gtest.h>
-
-#include "Mem.h"
 #include "fctypes.h"
 
 TEST(FctypesTest, VerifyStrnstrTrue) {
-	const char* haystack[] = {
+	const char *haystack[] = {
 		"/abc/def//in.123456788",
 		"aabcdefghijkl",
 		"abcdefgghijkl",
@@ -12,7 +10,7 @@ TEST(FctypesTest, VerifyStrnstrTrue) {
 		"aaaaabcdefggg"
 	};
 
-	const char* needle[] = {
+	const char *needle[] = {
 		"/in.",
 		"abc",
 		"gh",
