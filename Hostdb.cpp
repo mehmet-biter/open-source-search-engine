@@ -1209,21 +1209,6 @@ bool Hostdb::isShardDead ( int32_t shardNum ) {
 }
 
 
-// return first alive host in a shard
-Host *Hostdb::getLiveHostInShard ( int32_t shardNum ) {
-	Host *shard = getShard ( shardNum );
-	for ( int32_t i = 0 ; i < m_numHostsPerShard ; i++ ) {
-		// get it
-		Host *h = &shard[i];
-		// skip if dead
-		if ( isDead(h->m_hostId) ) continue;
-		// return it if alive
-		return h;
-	}
-	// return first one if all dead
-	return &shard[0];
-}
-
 int32_t Hostdb::getHostIdWithSpideringEnabled ( uint32_t shardNum ) {
 	Host *hosts = g_hostdb.getShard ( shardNum);
 	int32_t numHosts = g_hostdb.getNumHostsPerShard();
