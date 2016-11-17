@@ -40,6 +40,7 @@ public:
 			   int32_t          nowGlobal              ,
 			   bool          addTags                );
 
+	int32_t getErrno() const { return m_errno; }
 	int32_t **getIpBufPtr() { return &m_ipBuf; } //xdmlDoc needs this ptr-ptr
 
 private:

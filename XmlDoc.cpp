@@ -10864,8 +10864,14 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 		return &m_outlinkIpVector;
 	}
 
+	// error?
+	if ( m_outlinkTagRecVectorValid && m_msge1.getErrno() ) {
+		g_errno = m_msge1.getErrno();
+		logTrace( g_conf.m_logTraceXmlDoc, "END, g_errno %" PRId32, g_errno);
+		return NULL;
+	}
+
 	// return msge1's buf otherwise
-	//todo: why don't we check m_msge1.m_errno here just like for m_msge0 ?
 	if ( m_outlinkIpVectorValid )
 		return m_msge1.getIpBufPtr();
 
@@ -10922,7 +10928,12 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 	}
 	// error?
        	if ( g_errno ) return NULL;
-	//todo: why don't we check m_msge1.m_errno here just like for m_msge0 ?
+	// or this?
+	if ( m_msge1.getErrno() ) {
+		g_errno = m_msge1.getErrno();
+		logTrace( g_conf.m_logTraceXmlDoc, "END, m_msge1.m_errno=%" PRId32, g_errno);
+		return NULL;
+	}
 	// . ptr to a list of ptrs to tag recs
 	// . ip will be -1 on error
 	return m_msge1.getIpBufPtr();
