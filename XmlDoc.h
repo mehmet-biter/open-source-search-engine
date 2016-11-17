@@ -181,7 +181,7 @@ public:
 	uint16_t  m_isRSS:1;
 	uint16_t  m_isPermalink:1;
 	uint16_t  m_isAdult:1;
-	uint16_t  m_wasContentInjected:1;//eliminateMenus:1;
+	uint16_t  m_wasContentInjected:1;
 	uint16_t  m_spiderLinks:1;
 	uint16_t  m_isContentTruncated:1;
 	uint16_t  m_isLinkSpam:1;
@@ -194,7 +194,7 @@ public:
 	uint16_t  m_reserved800:1;
 	uint16_t  m_reserved801:1;
 	uint16_t  m_reserved802:1;
-	uint16_t  m_useTimeAxis:1; // m_reserved804:1;
+	uint16_t  m_useTimeAxis:1;
 	uint16_t  m_reserved805:1;
 	uint16_t  m_reserved806:1;
 	uint16_t  m_reserved807:1;
