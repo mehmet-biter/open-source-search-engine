@@ -162,10 +162,9 @@ public:
 	// was host in gk0 cluster and retired because its twin got
 	// ssds, so it was no longer really needed.
 	bool           m_retired;
-	// used for logging when a host goes dead for the first time
-	bool           m_wasAlive;
-	bool           m_wasEverAlive;
-	int64_t      m_timeOfDeath;
+	bool           m_wasAlive;      //used by pingserver to detect state transitions
+	bool           m_wasEverAlive;  //used by pingserver to detect state transitions
+	int64_t        m_timeOfDeath;   //used by pingserver
 	// this toggles between 0 and 1 for alternating packet sends to
 	// eth0 and eth1 of this host
 	char           m_shotgunBit;
