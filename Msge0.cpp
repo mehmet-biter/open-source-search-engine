@@ -2,6 +2,7 @@
 #include "Process.h"
 #include "Tagdb.h"
 #include "ip.h"
+#include <new>
 
 
 Msge0::Msge0()
@@ -54,7 +55,7 @@ void Msge0::reset() {
 			continue;
 		}
 		// free the rdblist memory in the TagRec::m_list
-		m_tagRecPtrs[i]->reset();
+		m_tagRecPtrs[i]->~TagRec();
 	}
 	for ( int32_t i = 0; m_slab && i <= m_slabNum; i++ ) {
 		mfree ( m_slab[i] , SLAB_SIZE , "msgeslab" );
@@ -257,7 +258,7 @@ bool Msge0::sendMsg8a ( int32_t i ) {
 	// now use it
 	m_tagRecPtrs[n] = (TagRec *)m_slabPtr;
 	// constructor
-	m_tagRecPtrs[n]->constructor();
+	new (m_tagRecPtrs[n]) TagRec();
 	// advance it
 	m_slabPtr += sizeof(TagRec);
 
