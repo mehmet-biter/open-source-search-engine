@@ -440,10 +440,10 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	     h->m_pingShotgun < g_conf.m_deadHostTimeout ) isAlive = true;
 	if ( h->m_ping < g_conf.m_deadHostTimeout        ) isAlive = true;
 		
-	// if host is not dead clear his sentEmail bit so if he goes
-	// down again we may be obliged to send another email, provided
-	// we are the hostid right after him
 	if ( isAlive ) {
+		// if host is not dead clear his sentEmail bit so if he goes
+		// down again we may be obliged to send another email, provided
+		// we are the hostid right after him
 		// allow him to receive emails again
 		h->m_emailCode = 0;
 		// if he was the subject of the last alert we emailed and now
@@ -452,27 +452,26 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 		if ( h->m_hostId == s_lastSentHostId ) s_lastSentHostId = -1;
 		// mark this
 		h->m_wasEverAlive = true;
+
+		if ( h->m_pingInfo.m_percentMemUsed >= 99.0 &&
+		     h->m_firstOOMTime == 0 )
+			h->m_firstOOMTime = nowms;
+		if ( h->m_pingInfo.m_percentMemUsed < 99.0 )
+			h->m_firstOOMTime = 0LL;
+		// if this host is alive and has been at 99% or more mem usage
+		// for the last X minutes, and we have got at least 10 ping replies
+		// from him, then send an email alert.
+		if ( h->m_pingInfo.m_percentMemUsed >= 99.0 &&
+		     nowms - h->m_firstOOMTime >= g_conf.m_sendEmailTimeout )
+			g_pingServer.sendEmail ( h , NULL , true , true );
+	} else {
+		// . if his ping was dead, try to send an email alert to the admin
+		// . returns false if blocked, true otherwise
+		// . sets g_errno on erro
+		// . send it iff both ports (if using shotgun) are dead
+		if ( nowms - h->m_startTime >= g_conf.m_sendEmailTimeout)
+			g_pingServer.sendEmail ( h ) ;
 	}
-
-	if ( isAlive && h->m_pingInfo.m_percentMemUsed >= 99.0 &&
-	     h->m_firstOOMTime == 0 )
-		h->m_firstOOMTime = nowms;
-	if ( isAlive && h->m_pingInfo.m_percentMemUsed < 99.0 )
-		h->m_firstOOMTime = 0LL;
-	// if this host is alive and has been at 99% or more mem usage
-	// for the last X minutes, and we have got at least 10 ping replies
-	// from him, then send an email alert.
-	if ( isAlive &&
-	     h->m_pingInfo.m_percentMemUsed >= 99.0 &&
-	     nowms - h->m_firstOOMTime >= g_conf.m_sendEmailTimeout )
-		g_pingServer.sendEmail ( h , NULL , true , true );
-
-	// . if his ping was dead, try to send an email alert to the admin 
-	// . returns false if blocked, true otherwise
-	// . sets g_errno on erro
-	// . send it iff both ports (if using shotgun) are dead
-	if ( ! isAlive && nowms - h->m_startTime >= g_conf.m_sendEmailTimeout) 
-		g_pingServer.sendEmail ( h ) ;
 
 	// reset in case sendEmail() set it
 	g_errno = 0;
