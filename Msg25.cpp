@@ -303,8 +303,7 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 	if ( req->m_mode == MODE_SITELINKINFO )
 		startKey = Linkdb::makeStartKey_uk ( req->m_siteHash32 );
 	else
-		startKey = Linkdb::makeStartKey_uk (req->m_siteHash32,
-						    req->m_linkHash64 );
+		startKey = Linkdb::makeStartKey_uk (req->m_siteHash32, req->m_linkHash64 );
 	// what group has this linkdb list?
 	uint32_t shardNum = getShardNum ( RDB_LINKDB, &startKey );
 	// use a biased lookup
