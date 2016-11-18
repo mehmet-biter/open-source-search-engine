@@ -680,10 +680,8 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 	if (!links1.set(false , // userellnofollow
 			&xml1,
 			&parent,//mime1.getLocationUrl(), parent Url
-			false, // setLinkHashes
 			NULL  , // baseUrl
 			TITLEREC_CURRENT_VERSION, // version
-			0 , // niceness
 			false , // parent is permalink?
 			NULL )) { // oldLinks
 		log(LOG_WARN,"blaster: Couldn't set Links Class in gotDoc2");
@@ -701,10 +699,8 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 	if (!links2.set(0,//siterec xml
 			&xml2,
 			&parent,//&st->m_u2,//mime2.getLocationUrl(),
-			false,
 			NULL,
 			TITLEREC_CURRENT_VERSION,
-			0,
 			false,
 			NULL)){
 		log(LOG_WARN,"blaster: Couldn't set links2 Class in gotDoc2");
@@ -1175,10 +1171,8 @@ void Blaster::gotDoc4 ( void *state, TcpSocket *s){
 	if (!links.set(0,//siterec xml
 		       &xml,
 		       url,
-		       false,
 		       NULL,
 		       TITLEREC_CURRENT_VERSION,
-		       0,
 		       false,
 		       NULL)){
 		log(LOG_WARN, "blaster: Coudn't set Links class in gotDoc4");

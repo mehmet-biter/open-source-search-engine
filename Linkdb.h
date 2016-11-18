@@ -625,14 +625,10 @@ public:
 	// call this before calling hash() and write()
 	bool set ( bool useRelNoFollow ,
 		   Xml *xml, 
-		   Url *parentUrl , 
-		   bool setLinkHashes ,
+		   Url *parentUrl ,
 		   // use NULL for this if you do not have a baseUrl
 		   Url *baseUrl , 
-		   int32_t version, 
-		   int32_t niceness ,
-		   //bool addSiteRootFlag = false ,
-		   //char *coll           = NULL  ,
+		   int32_t version,
 		   bool  parentIsPermalink , // = false ,
 		   Links *oldLinks         , // for LF_OLDLINKS flag
 		   // this is used by Msg13.cpp to quickly get ptrs
@@ -640,13 +636,13 @@ public:
 		   bool doQuickSet = false );
 
 	// set from a simple text buffer
-	bool set ( const char *buf , int32_t niceness ) ;
+	bool set ( const char *buf ) ;
 
 	bool print ( SafeBuf *sb ) ;
 
 	// Link in ascii text
 	bool addLink(const char *link, int32_t linkLen, int32_t nodeNum, bool setLinkHashes,
-		     int32_t titleRecVersion, int32_t niceness , bool isRSS ,
+		     int32_t titleRecVersion, bool isRSS ,
 		     int32_t tagId , linkflags_t flagsArg );
 
 	// . link spam functions. used by linkspam.cpp's setLinkSpam().

@@ -3455,15 +3455,10 @@ void Links::reset() {
 
 
 bool Links::set(bool useRelNoFollow,
-		Xml *xml, Url *parentUrl, 
-		bool setLinkHash,
-		//bool useBaseHref , 
+		Xml *xml, Url *parentUrl,
 		// use null for this if you do not want to use it
 		Url *baseUrl, 
-		int32_t version, 
-		int32_t niceness,
-		//bool addSiteRootFlags,
-		//char *coll,
+		int32_t version,
 		bool parentIsPermalink,
 		Links *oldLinks,
 		bool doQuickSet)
@@ -3471,8 +3466,7 @@ bool Links::set(bool useRelNoFollow,
 	reset();
 
 	// always for this to true now since we need them for linkdb
-	//@todo NR: Remove from function call then?
-	setLinkHash = true;
+	bool setLinkHash = true;
 	if ( doQuickSet ) setLinkHash = false;
 
 	m_xml       = xml;
@@ -3748,7 +3742,7 @@ bool Links::set(bool useRelNoFollow,
 		link = tmp;
 
 		if (!addLink ( link , linkLen , i , setLinkHash , 
-			       version , niceness , isRSS , id , flags ))
+			       version , isRSS , id , flags ))
 			return false;
 		// get the xml node
 		//XmlNode *node = m_xml->getNodePtr(i);
@@ -3764,7 +3758,7 @@ bool Links::set(bool useRelNoFollow,
 
 
 // just a NULL-terminated text buffer/file of links to add
-bool Links::set(const char *buf, int32_t niceness) {
+bool Links::set(const char *buf) {
 	reset();
 	// need "coll" for Url::isSiteRoot(), etc.
 	//m_coll = coll;
@@ -3782,7 +3776,7 @@ bool Links::set(const char *buf, int32_t niceness) {
 		int32_t len = q - p;
 		// add the link
 		if ( ! addLink ( p , len , -1 , true , 
-				 TITLEREC_CURRENT_VERSION , niceness, false,
+				 TITLEREC_CURRENT_VERSION , false,
 				 TAG_A , 0 ) ) 
 			return false;
 		// advance
@@ -3821,7 +3815,7 @@ bool Links::print(SafeBuf *sb) {
 
 bool Links::addLink(const char *link, int32_t linkLen, int32_t nodeNum,
 		    bool setLinkHash, int32_t titleRecVersion,
-		    int32_t niceness, bool isRSS, int32_t tagId,
+		    bool isRSS, int32_t tagId,
 		    int32_t flagsArg )
 {
 #ifdef _VALGRIND_

@@ -3907,13 +3907,13 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 	// so addOutlinkSpiderRecsToMetaList() will add it to spiderdb
 	//
 	if ( m_indexCodeValid && m_indexCode == EDOCSIMPLIFIEDREDIR ) {
-		m_links.set ( m_redirUrl.getUrl(), m_redirUrl.getUrlLen() );
+		m_links.set(m_redirUrl.getUrl());
 		m_linksValid = true;
 		return &m_links;
 	}
 
 	if ( m_indexCodeValid && m_indexCode == EDOCNONCANONICAL ) {
-		m_links.set(m_canonicalRedirUrl.getUrl(), m_canonicalRedirUrl.getUrlLen());
+		m_links.set(m_canonicalRedirUrl.getUrl());
 		m_linksValid = true;
 		return &m_links;
 	}
@@ -3934,10 +3934,8 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 	if ( ! m_links.set ( useRelNoFollow ,
 			     xml         ,
 			     u           ,
-			     true        , // setLinkHashes?
 			     baseUrl     ,
 			     m_version   ,
-			     m_niceness  ,
 			     *pp         , // parent url in permalink format?
 			     oldLinks    ,// oldLinks, might be NULL!
 			     doQuickSet ) )
