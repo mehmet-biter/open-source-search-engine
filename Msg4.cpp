@@ -599,7 +599,7 @@ bool sendBuffer ( int32_t hostId ) {
 	// key is useless for us
 	// timeout was 60 seconds, but if we saved the addsinprogress at the wrong time we might miss
 	// it when its between having timed out and having been resent by us!
-	if (mcast->send(request, requestSize, msg_type_4, false, shardNum, true, 0, (void *)(PTRTYPE)allocSize, (void *)mcast, gotReplyWrapper4, multicast_infinite_send_timeout, MAX_NICENESS)) {
+	if (mcast->send(request, requestSize, msg_type_4, false, shardNum, true, 0, (void *)(PTRTYPE)allocSize, (void *)mcast, gotReplyWrapper4, multicast_infinite_send_timeout, MAX_NICENESS, -1, true)) {
 		// . let storeRec() do all the allocating...
 		// . only let the buffer go once multicast succeeds
 		s_hostBufs [ hostId ] = NULL;

@@ -1104,7 +1104,7 @@ bool ImportState::importLoop ( ) {
 	// do not free it, let multicast free it after sending it
 	sbuf->detachBuf();
 
-	if (!mcast->send(req, reqSize, msg_type_7, true, shardNum, false, key, mcast, NULL, gotMulticastReplyWrapper, multicast_infinite_send_timeout, MAX_NICENESS)) {
+	if (!mcast->send(req, reqSize, msg_type_7, true, shardNum, false, key, mcast, NULL, gotMulticastReplyWrapper, multicast_infinite_send_timeout, MAX_NICENESS, -1, true)) {
 		log(LOG_WARN, "import: import mcast had error: %s",mstrerror(g_errno));
 		m_numIn++;
 	}

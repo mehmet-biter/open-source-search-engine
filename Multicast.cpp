@@ -114,7 +114,7 @@ void Multicast::reset ( ) {
 //   otherwise, it's probably on the stack or part of a larger allocate class.
 bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg, uint32_t shardNum, bool sendToWholeGroup,
                      int32_t key, void *state, void *state2, void (*callback)(void *state, void *state2),
-                     int64_t totalTimeout, int32_t niceness, int32_t firstHostId, const char *extraInfo, bool freeReplyBuf) {
+                     int64_t totalTimeout, int32_t niceness, int32_t firstHostId, bool freeReplyBuf) {
 	bool sendToSelf = true;
 
 	// make sure not being re-used!

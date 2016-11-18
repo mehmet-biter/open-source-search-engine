@@ -409,7 +409,7 @@ bool Msg3a::getDocIds(Msg39Request *r, const SearchInput *si, Query *q, void *st
 		// . if that host takes more than about 5 secs then sends to
 		//   next host
 		// . key should be largest termId in group we're sending to
-		bool status = m->send(req, m_rbufSize, msg_type_39, false, shardNum, false, (int32_t)qh, this, m, gotReplyWrapper3a, timeout, m_req39->m_niceness, firstHostId);
+		bool status = m->send(req, m_rbufSize, msg_type_39, false, shardNum, false, (int32_t)qh, this, m, gotReplyWrapper3a, timeout, m_req39->m_niceness, firstHostId, true);
 		// if successfully launch, do the next one
 		if ( status ) {
 			continue;

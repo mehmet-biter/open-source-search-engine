@@ -488,7 +488,7 @@ skip:
 	// . we return false if we block, true otherwise
 	// . will loop indefinitely if a host in this group is down
 	// key is useless for us
-	if (m_mcast.send(request, requestLen, msg_type_1, true, shardNum, true, 0, this, NULL, gotReplyWrapper1, multicast_msg1_senddata_timeout, m_niceness, -1, getDbnameFromId(m_rdbId))) {
+	if (m_mcast.send(request, requestLen, msg_type_1, true, shardNum, true, 0, this, NULL, gotReplyWrapper1, multicast_msg1_senddata_timeout, m_niceness, -1, true)) {
 		return false;
 	}
 

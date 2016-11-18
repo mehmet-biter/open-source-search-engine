@@ -328,7 +328,7 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 
 	// this should always block
 	// if timeout is too low we core in XmlDoc.cpp after getNewSpiderReply() returns a -1 because it blocks for some reason.
-	if (!mcast->send((char *)req, req->getStoredSize(), msg_type_25, false, shardNum, false, 0, req, NULL, gotMulticastReplyWrapper25, multicast_infinite_send_timeout, req->m_niceness, hostId)) {
+	if (!mcast->send((char *)req, req->getStoredSize(), msg_type_25, false, shardNum, false, 0, req, NULL, gotMulticastReplyWrapper25, multicast_infinite_send_timeout, req->m_niceness, hostId, true)) {
 		log( LOG_WARN, "linkdb: Failed to send multicast for %s err=%s", u.getUrl(),mstrerror(g_errno));
 		return true;
 	}
