@@ -3578,10 +3578,6 @@ bool Links::set(bool useRelNoFollow,
 			}
 		}
 
-		// was it an enclosure?
-		//if ( linkLen == 0 && xml->getNodeId( i ) == TAG_XMLTAG ) 
-		//	link = (char *) xml->getString ( i, "url", &linkLen );
-			
 		// . it doesn't have an "href" field (could be "name" field)
 		// . "link" may not be NULL if empty, so use linkLen
 		if ( linkLen == 0 ) 
