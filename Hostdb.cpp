@@ -1288,13 +1288,14 @@ bool Hostdb::isDead ( int32_t hostId ) {
 }
 
 bool Hostdb::isDead ( Host *h ) {
-	// retired is basically dead
-	if ( h->m_retired ) return true;
-	if ( g_hostdb.m_myHost == h ) return false;
-	if ( ! g_conf.m_useShotgun )
-		return ( h->m_ping >= g_conf.m_deadHostTimeout);
-	if ( h->m_ping        < g_conf.m_deadHostTimeout ) return false;
-	if ( h->m_pingShotgun < g_conf.m_deadHostTimeout ) return false;
+	if(h->m_retired)
+		return true; // retired means "don't use it", so it is essentially dead
+	if(g_hostdb.m_myHost == h)
+		return false; //we are not dead
+	if(h->m_ping < g_conf.m_deadHostTimeout)
+		return false; //has answered ping on normal interface recently
+	if(g_conf.m_useShotgun && h->m_pingShotgun < g_conf.m_deadHostTimeout)
+		return false; //has answered ping on shotgun interface recently
 	return true;
 }
 
