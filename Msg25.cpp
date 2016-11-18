@@ -3401,8 +3401,6 @@ Links::Links() {
 	m_parentUrl = NULL;
 	m_xml = NULL;
 	m_parentIsPermalink = false;
-	m_baseSite = NULL;
-	m_baseSiteLen = 0;
 	m_buf = NULL;
 	m_bufPtr = NULL;
 	m_linkPtrs = NULL;
@@ -3474,9 +3472,6 @@ bool Links::set(bool useRelNoFollow,
 	m_parentUrl = parentUrl;
 	m_doQuickSet = doQuickSet;
 	m_parentIsPermalink = parentIsPermalink;
-
-	m_baseSite    = NULL;
-	m_baseSiteLen = 0;
 
 	m_numLinks = 0;
 	m_numNodes = xml->getNumNodes();
@@ -4277,8 +4272,7 @@ int32_t Links::getLinkText(const char *linkee,
 			   char      **itemPtr,
 			   int32_t    *itemLen,
 			   int32_t    *retNode1,
-			   int32_t    *retLinkNum,
-			   int32_t     niceness)
+			   int32_t    *retLinkNum)
 {
 	log(LOG_DEBUG, "build: Links::getLinkText: linkee=%s", linkee);
 
@@ -4322,18 +4316,16 @@ int32_t Links::getLinkText(const char *linkee,
 
 	*retLinkNum = i;
 
-	return getLinkText2(i,buf,bufMaxLen,itemPtr,itemLen,retNode1,niceness);
+	return getLinkText2(i,buf,bufMaxLen,itemPtr,itemLen,retNode1);
 }
 
 
 int32_t Links::getLinkText2(int32_t i,
 			    char  *buf, 
-			    int32_t   bufMaxLen, 
-			    //bool   filter,
+			    int32_t   bufMaxLen,
 			    char **itemPtr,
 			    int32_t  *itemLen,
-			    int32_t  *retNode1,
-			    int32_t   niceness)
+			    int32_t  *retNode1)
 {
 	// get the node range so we can call Xml::getText()
 	int32_t node1 = m_linkNodes [ i ];
@@ -4483,28 +4475,6 @@ skipItem:
 	// return length
 	return bufLen;
 }
-
-
-// find an ascii subtring in linktext for this link and return a pointer 
-// to it, or NULL if not present
-char *Links::linkTextSubstr(int32_t linkNum, char *string, int32_t niceness) {
-	if (linkNum >= m_numLinks) return NULL;
-	int32_t nodeNum = getNodeNum(linkNum);
-	if (nodeNum >= m_xml->getNumNodes()-1) return NULL;
-	
-	for (int32_t i=nodeNum+1 ; i < m_xml->getNumNodes() ; i++ ) {
-		XmlNode *node = m_xml->getNodePtr(i);
-		if (node->getNodeId() == TAG_A) return NULL;
-		if (node->getNodeId() != TAG_TEXTNODE) continue;
-		// maybe handle img alt text here someday, too
-		char *ptr;
-		if ((ptr = strncasestr(node->getNode(), 
-				       node->getNodeLen(), string)))
-			return ptr;
-	}
-	return NULL;
-}
-
 
 int32_t Links::findLinkNum(char* url, int32_t urlLen) {
 	for(int32_t i = 0;i< m_numLinks; i++) {

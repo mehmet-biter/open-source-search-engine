@@ -692,24 +692,17 @@ public:
 			   bool   getSiteLinkInfo ,
 			   char  *buf       ,
 			   int32_t   maxBufLen ,
-			   //bool   filter    ,
 			   char **itemPtr   ,
 			   int32_t  *itemLen   ,
-			   int32_t   *retNode1 , // = NULL ,
-			   int32_t   *retLinkNum ,
-			   int32_t    niceness );
+			   int32_t   *retNode1 ,
+			   int32_t   *retLinkNum);
 
 	int32_t getLinkText2 ( int32_t i,
 			   char  *buf       ,
 			   int32_t   maxBufLen ,
-			   //bool   filter    ,
 			   char **itemPtr   ,
 			   int32_t  *itemLen   ,
-			   int32_t   *retNode1 , // = NULL ,
-			   int32_t    niceness );
-
-	// quick n dirty check for substrings in linktext
-	char *linkTextSubstr(int32_t linkNum, char *string, int32_t niceness);
+			   int32_t   *retNode1 );
 
 	// returns list of \0 terminated, normalized links
 	char          *getLinkBuf    () { 
@@ -747,12 +740,6 @@ public:
 	Url   *m_baseUrl;
 	Url   *m_parentUrl;
 	bool   m_parentIsPermalink;
-
-	char  *m_baseSite;
-	int32_t   m_baseSiteLen;
-
-	// set <base href>, if any, into m_tmpUrl so m_baseUrl can point to it
-	Url    m_tmpUrl;
 
 	// . we store all links in this buf
 	// . each link ends in a \0

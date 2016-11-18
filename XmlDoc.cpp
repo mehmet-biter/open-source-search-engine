@@ -16711,8 +16711,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 					 &rssItem            ,
 					 &rssItemLen         ,
 					 &linkNode           ,
-					 &linkNum            ,
-					 m_niceness          );
+					 &linkNum            );
 
 
 	// . BUT this skips the news topic stuff too. bad?
