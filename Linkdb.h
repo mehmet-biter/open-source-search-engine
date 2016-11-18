@@ -59,7 +59,6 @@ bool getLinkInfo ( SafeBuf *reqBuf , // store msg25 request in here
 		   void (* callback)(void *state) ,
 		   bool       isInjecting         ,
 		   SafeBuf   *pbuf                ,
-		   //class XmlDoc *xd ,
 		   bool printInXml ,
 		   int32_t       siteNumInlinks      ,
 		   const LinkInfo  *oldLinkInfo         ,
@@ -80,8 +79,8 @@ bool getLinkInfo ( SafeBuf *reqBuf , // store msg25 request in here
 		   // on your domain or hostname. set BOTH to zero
 		   // to not perform this algo in handleRequest20()'s
 		   // call to XmlDoc::getMsg20Reply().
-		   int32_t       ourHostHash32 , // = 0 ,
-		   int32_t       ourDomHash32 , // = 0 );
+		   int32_t       ourHostHash32 ,
+		   int32_t       ourDomHash32 ,
 		   SafeBuf *myLinkInfoBuf );
 
 
@@ -245,21 +244,6 @@ public:
 		return date;
 	}
 
-	// . in days since jan 1, 2012 utc
-	// . timestamp of jan 1, 2012 utc is 1325376000
-	static void setLostDate_uk ( void *k , int32_t date ) {
-		// subtract jan 1 2012
-		date -= LINKDBEPOCH;
-		// convert into days
-		date /= 86400;
-		// sanity
-		if ( date > 0x3fff || date < 0 ) { gbshutdownAbort(true); }
-		// clear old bits
-		((key224_t *)k)->n1 &= 0xffffffffffff0003LL;
-		// scale us into it
-		((key224_t *)k)->n1 |= ((uint64_t)date) << 2;
-	}
-
 	static uint32_t getLinkerSiteHash32_uk( void *k ) {
 		uint32_t sh32 = ((key224_t *)k)->n1 & 0x00000003;
 		sh32 <<= 30;
@@ -268,6 +252,7 @@ public:
 	}
 
 	static void printKey(const char *k);
+
 private:
 	Rdb m_rdb;
 };

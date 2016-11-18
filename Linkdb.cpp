@@ -44,14 +44,10 @@ bool Linkdb::init ( ) {
 	// jan 1 2008
 	uint32_t epoch = LINKDBEPOCH;
 	int32_t dd2 = (discoveryDate - epoch) / 86400;
-	if ( discoveryDate == 0 ) dd2 = 0;
 	dd2 = dd2 * 86400  + epoch;
 	int32_t ld2 = (lostDate - epoch) / 86400;
 	if ( lostDate == 0 ) ld2 = 0;
 	ld2 = ld2 * 86400  + epoch;
-
-	// try this
-	setLostDate_uk(&k,ld2 );
 
 	// now test it
 	if(getLinkeeSiteHash32_uk(&k)!=linkeeSiteHash32){g_process.shutdownAbort(true);}
@@ -63,13 +59,10 @@ bool Linkdb::init ( ) {
 	if ( getLinkerIp_uk ( &k ) != ip         ) {g_process.shutdownAbort(true);}
 	if ( getLinkerDocId_uk( &k ) != docId          ) {g_process.shutdownAbort(true);}
 	if ( getDiscoveryDate_uk(&k) != dd2  ) {g_process.shutdownAbort(true);}
-	if ( getLostDate_uk(&k) != ld2  ) {g_process.shutdownAbort(true);}
 
 	// more tests
 	setDiscoveryDate_uk (&k,discoveryDate);
-	setLostDate_uk (&k,lostDate);
 	if ( getDiscoveryDate_uk(&k) != dd2  ) {g_process.shutdownAbort(true);}
-	if ( getLostDate_uk(&k) != ld2  ) {g_process.shutdownAbort(true);}
 
 
 	int32_t ip3 = 0xabcdef12;
