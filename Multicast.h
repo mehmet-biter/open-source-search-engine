@@ -207,7 +207,7 @@ private:
 
 	bool sendToHostLoop(int32_t key, int32_t firstHostId);
 	bool sendToHost    ( int32_t i ); 
-	int32_t pickBestHost  ( uint32_t key , int32_t hostNumToTry );
+	int32_t pickBestHost(uint32_t key, int32_t firstHostId);
 	void closeUpShop   ( UdpSlot *slot ) ;
 };
 
