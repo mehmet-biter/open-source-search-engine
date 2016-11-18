@@ -159,15 +159,8 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 	memset(m_slots, 0, sizeof(m_slots));
 	memset(m_inProgress, 0, sizeof(m_inProgress));
 
-	// . get the list of hosts in this group
-	// . returns false if blocked, true otherwise
-	// . sets g_errno on error
+	// . get the list of hosts in this shard
 	Host *hostList = g_hostdb.getShard ( shardNum , &m_numHosts );
-	if ( ! hostList ) {
-		log(LOG_WARN, "mcast: no group");
-		g_errno=ENOHOSTS;
-		return false;
-	}
 
 	// now copy the ptr into our array
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
