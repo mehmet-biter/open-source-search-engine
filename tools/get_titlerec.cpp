@@ -115,11 +115,13 @@ int main(int argc, char **argv) {
 //	logf(LOG_TRACE, "\timageData  :");
 //	logf(LOG_TRACE, "\tutf8Content:");
 	logf(LOG_TRACE, "\tsite       : %.*s", xmlDoc.size_site, xmlDoc.ptr_site);
+
 	logf(LOG_TRACE, "\tlinkInfo");
 	LinkInfo* linkInfo = xmlDoc.getLinkInfo1();
 	logf(LOG_TRACE, "\t\tm_numGoodInlinks     : %d", linkInfo->m_numGoodInlinks);
 	logf(LOG_TRACE, "\t\tm_numInlinksInternal : %d", linkInfo->m_numInlinksInternal);
 	logf(LOG_TRACE, "\t\tm_numStoredInlinks   : %d", linkInfo->m_numStoredInlinks);
+
 	int i = 0;
 	for (Inlink *inlink = linkInfo->getNextInlink(NULL); inlink; inlink = linkInfo->getNextInlink(inlink)) {
 		logf(LOG_TRACE, "\t\tinlink #%d", i++);
@@ -129,9 +131,27 @@ int main(int argc, char **argv) {
 		logf(LOG_TRACE, "\t\t\tcountry      : %s", getCountryCode(inlink->m_country));
 		logf(LOG_TRACE, "\t\t\tlanguage     : %s", getLanguageAbbr(inlink->m_language));
 	}
-//	logf(LOG_TRACE, "\tlinkdbData :");
-//	logf(LOG_TRACE, "\ttagRecData :");
 
+	loghex(LOG_TRACE, xmlDoc.ptr_linkdbData, xmlDoc.size_linkdbData, "\tlinkdbData");
+
+	logf(LOG_TRACE, "\ttagRec");
+	TagRec *tagRec = xmlDoc.getTagRec();
+	for (Tag *tag = tagRec->getFirstTag(); tag; tag = tagRec->getNextTag(tag)) {
+		SafeBuf sb;
+		tag->printDataToBuf(&sb);
+		logf(LOG_TRACE, "\t\t%-12s: %s", getTagStrFromType(tag->m_type), sb.getBufStart());
+	}
+
+	logf(LOG_TRACE, "\t");
+
+	logf(LOG_TRACE, "Links info");
+	g_log.m_disabled = true;
+	Links *links = xmlDoc.getLinks();
+	g_log.m_disabled = false;
+	for (int i = 0; i < links->getNumLinks(); ++i) {
+		logf(LOG_TRACE, "\tlink      : %.*s", links->getLinkLen(i), links->getLinkPtr(i));
+
+	}
 	cleanup();
 
 	return 0;
