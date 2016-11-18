@@ -967,8 +967,6 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 		g_process.shutdownAbort(true);
 	}
 
-	unsigned char hopCount = *getHopCount();
-
 	// use spidered time! might not be current time! like if rebuilding
 	// or injecting from a past spider time
 	int32_t discoveryDate = getSpideredTime();
@@ -998,7 +996,6 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 	VALGRIND_CHECK_MEM_IS_DEFINED(&tmp1,sizeof(tmp1));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&spam,sizeof(spam));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&siteRank,sizeof(siteRank));
-	VALGRIND_CHECK_MEM_IS_DEFINED(&hopCount,sizeof(hopCount));
 //	uint32_t tmp2 = *getIp();
 //	VALGRIND_CHECK_MEM_IS_DEFINED(&tmp2,sizeof(tmp2));
 	uint64_t tmp3 = *getDocId();
@@ -1015,7 +1012,6 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 					  m_links.getLinkHash64(i)   ,
 					  spam               , // link spam?
 					  siteRank     , // was quality
-					  hopCount,
 					  ip,
 					  *getDocId()    ,
 					  discoveryDate      ,

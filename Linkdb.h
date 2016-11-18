@@ -10,10 +10,9 @@
 // . pppppppp pppppppS qqqqqqqq cccccccc c = lower ip byte, S = isLinkSpam?
 // . IIIIIIII IIIIIIII IIIIIIII dddddddd I = upper 3 bytes of ip
 // . dddddddd dddddddd dddddddd dddddd00 d = linkerdocid,h = half bit,Z =delbit
-// . mmmmmmmm mmmmmm0N xxxxxxxx xxxxxxss N = 1 if it was added to existing page
+// . mmmmmmmm mmmmmm0N 00000000 000000ss N = 1 if it was added to existing page
 // . ssssssss ssssssss ssssssss sssssshZ s = sitehash32 of linker
 //   m = discovery date in days since jan 1
-//   x = estimated date it was lost (0 if not yet lost)
 //   
 // NOTE: the "c" bits were the hopcount of the inlinker, but we changed
 // them to the lower ip byte so steve can show the # of unique ips linking
@@ -26,8 +25,6 @@
 
 #define LDBKS sizeof(key224_t)
 
-#define LDB_MAXSITERANK 0xff
-#define LDB_MAXHOPCOUNT 0xff
 #define LDB_MAXURLHASH  0x00007fffffffffffLL
 
 // The date in the records are stored as days-since-2006. That means that when
@@ -107,7 +104,6 @@ public:
 			      uint64_t  linkeeUrlHash64  ,
 			      bool      isLinkSpam     ,
 			      unsigned char linkerSiteRank , // 0-15 i guess
-			      unsigned char linkerHopCount ,
 			      uint32_t  linkerIp       ,
 			      int64_t linkerDocId    ,
 			      uint32_t      discoveryDate  ,
@@ -123,7 +119,6 @@ public:
 				    linkeeUrlHash64,
 				    false, // linkspam?
 				    255, // 15, // ~siterank
-				    0, // hopcount
 				    0, // ip
 				    0, // docid
 				    0, //discovery date
@@ -140,7 +135,6 @@ public:
 				    linkeeUrlHash64,
 				    true, // linkspam?
 				    0, // ~siterank
-				    0xff, // hopcount
 				    0xffffffff, // ip
 				    MAX_DOCID, // docid
 				    0xffffffff, //discovery date

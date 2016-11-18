@@ -14867,15 +14867,14 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		return (char *)linkSiteHashes;
 	}
 
+	int8_t *hopCount = getHopCount();
+	if ( ! hopCount || hopCount == (int8_t *)-1 )
+	{
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getHopCount failed" );
+		return (char *)hopCount;
+	}
 
 	XmlDoc  *nd  = this;
-
-	// set "od". will be NULL if no old xml doc, i.e. no old title rec
-	//XmlDoc **pod = getOldXmlDoc ( );
-	//if ( ! pod || pod == (void *)-1 ) return (char *)pod;
-	//XmlDoc  *od  = *pod;
-
-	//	onlyInternal = true;
 
 	bool    isParentRSS       = false;
 	// PageAddUrl.cpp does not supply a valid new doc, so this is NULL
