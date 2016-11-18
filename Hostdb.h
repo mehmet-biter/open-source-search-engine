@@ -300,6 +300,7 @@ class Hostdb {
 	// . we do not create an RdbList, you must do that
 	// . callback passes your RdbList back to you
 	Host *getShard ( uint32_t shardNum , int32_t *numHosts = NULL ) {
+		if(shardNum>=(unsigned)m_numShards) gbshutdownLogicError();
 		if ( numHosts ) *numHosts = m_numHostsPerShard;
 		return &m_hosts[shardNum * m_numHostsPerShard]; 
 	}
