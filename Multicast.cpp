@@ -170,7 +170,7 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 	// . pick the fastest host in the group
 	// . this should pick the fastest one we haven't already sent to yet
 	if ( ! sendToWholeGroup ) {
-		bool retVal = sendToHostLoop (key,-1,firstHostId) ;
+		bool retVal = sendToHostLoop(key,firstHostId);
 
 		// on error, un-use this class
 		if ( ! retVal ) {
@@ -395,13 +395,13 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 // . uses key to pick the first host to send to (for consistency)
 // . after we pick a host and launch the request to him the sleepWrapper1
 //   will call this at regular intervals, so be careful,
-bool Multicast::sendToHostLoop(int32_t key, int32_t hostNumToTry, int32_t firstHostId) {
+bool Multicast::sendToHostLoop(int32_t key, int32_t firstHostId) {
 	// erase any errors we may have got
 	g_errno = 0 ;
 
 	for (;;) {
 		// what if this host is dead?!?!?
-		int32_t i = (hostNumToTry >= 0) ? hostNumToTry : pickBestHost(key, firstHostId);
+		int32_t i = pickBestHost(key, firstHostId);
 
 		// . if no more hosts return FALSE
 		// . we need to return false to the caller of us below
@@ -440,7 +440,6 @@ bool Multicast::sendToHostLoop(int32_t key, int32_t hostNumToTry, int32_t firstH
 		key = 0;
 
 		// what kind of error leads us here? EBUFTOOSMALL or EBADENGINEER...
-		hostNumToTry = -1;
 	}
 }
 
@@ -806,7 +805,7 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 	// . otherwise, launch another request if we can
 	// . returns true if we successfully sent to another host
 	// . returns false and sets g_errno if no hosts left or other error
-	if ( THIS->sendToHostLoop(0,-1,-1) ) {
+	if ( THIS->sendToHostLoop(0,-1) ) {
 		// log msg that we were successful
 		int32_t hid = -1;
 		if ( hd ) hid = hd->m_hostId;
@@ -963,7 +962,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		int32_t   timeRemaining = m_startTime + m_totalTimeout - now;
 		if ( timeRemaining <= 0 ) sendToTwin = false;
 		// send to the twin
-		if ( sendToTwin && sendToHostLoop(0,-1,-1) ) {
+		if ( sendToTwin && sendToHostLoop(0,-1) ) {
 			log(LOG_INFO, "net: Trying to send request msgType=0x%" PRIx32" to a twin. (this=0x%" PTRFMT")",
 			    (int32_t)m_msgType,(PTRTYPE)this);
 			m_sentToTwin = true;

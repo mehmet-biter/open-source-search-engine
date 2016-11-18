@@ -205,7 +205,7 @@ private:
 	static void gotReply2(void *state, UdpSlot *slot);
 	void gotReply2(UdpSlot *slot);
 
-	bool sendToHostLoop(int32_t key, int32_t hostNumToTry, int32_t firstHostId);
+	bool sendToHostLoop(int32_t key, int32_t firstHostId);
 	bool sendToHost    ( int32_t i ); 
 	int32_t pickBestHost  ( uint32_t key , int32_t hostNumToTry );
 	void closeUpShop   ( UdpSlot *slot ) ;
