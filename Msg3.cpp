@@ -83,9 +83,9 @@ void Msg3::reset() {
 	m_callback = NULL;
 }
 
-key192_t makeCacheKey ( int64_t vfd ,
-			int64_t offset ,
-			int64_t readSize ) {
+static key192_t makeCacheKey(int64_t vfd,
+			     int64_t offset,
+			     int64_t readSize) {
 	key192_t k;
 	k.n2 = vfd;
 	k.n1 = readSize;

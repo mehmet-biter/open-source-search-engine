@@ -1171,7 +1171,7 @@ bool TcpServer::closeLeastUsed ( int32_t maxIdleTime ) {
 // 	return true;
 // }
 
-void readSocketWrapper2 ( int sd , void *state ) ;
+static void readSocketWrapper2(int sd, void *state);
 
 // . this is called by Loop::gotSig() when "sd" is ready for reading
 // . we registered it with Loop::registerReadCallback(sd) in wrapSocket()
@@ -1193,7 +1193,7 @@ void readSocketWrapper ( int sd , void *state ) {
 }
 
 
-void readSocketWrapper2 ( int sd , void *state ) {
+static void readSocketWrapper2(int sd, void *state) {
 	// debug msg
 	//log("........... TcpServer::readSocketWrapper %" PRId32"\n",sd);
 	// extract our this ptr

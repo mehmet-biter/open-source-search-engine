@@ -22,7 +22,7 @@
 #include "Msg13.h"
 #include "Msg3.h"
 
-bool printNumAbbr ( SafeBuf &p, int64_t vvv ) {
+static bool printNumAbbr(SafeBuf &p, int64_t vvv) {
 	float val = (float)vvv;
 	const char *suffix = "K";
 	val /= 1024;
@@ -36,7 +36,7 @@ bool printNumAbbr ( SafeBuf &p, int64_t vvv ) {
 	return true;
 }
 
-bool printUptime ( SafeBuf &sb ) {
+static bool printUptime(SafeBuf &sb) {
 	int32_t uptime = time(NULL) - g_stats.m_uptimeStart ;
 	// sanity check... wtf?
 	if ( uptime < 0 ) { uptime = 0; }

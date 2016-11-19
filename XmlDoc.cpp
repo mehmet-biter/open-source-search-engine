@@ -4127,7 +4127,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 	return true;
 }
 
-int cmp ( const void *h1 , const void *h2 ) ;
+static int cmp(const void *h1, const void *h2);
 
 // vector components are 32-bit hashes
 int32_t *XmlDoc::getTagPairHashVector ( ) {
@@ -4205,7 +4205,7 @@ int32_t *XmlDoc::getTagPairHashVector ( ) {
 }
 
 // sort in descending order
-int cmp ( const void *h1 , const void *h2 ) {
+static int cmp(const void *h1, const void *h2) {
 	return *(uint32_t *)h2 - *(uint32_t *)h1;
 }
 
@@ -6279,7 +6279,7 @@ char *XmlDoc::getIsIndexed ( ) {
 	return &m_isIndexed;
 }
 
-void gotTagRecWrapper ( void *state ) {
+static void gotTagRecWrapper(void *state) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// note it
 	THIS->setStatus ( "in got tag rec wrapper" );

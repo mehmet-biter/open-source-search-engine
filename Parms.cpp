@@ -1288,7 +1288,7 @@ static DropLangs g_drops[] = {
 // in Collectiondb.cpp's CollectionRec::setUrlFiltersToDefaults().
 // for instance, UFP_NEWS spiders sites more frequently but less deep in
 // order to get "news" pages and articles
-bool printDropDownProfile ( SafeBuf* sb, const char *name, CollectionRec *cr ) {
+static bool printDropDownProfile(SafeBuf* sb, const char *name, CollectionRec *cr) {
 	sb->safePrintf ( "<select name=%s>", name );
 	// the type of url filters profiles
 	//char *items[] = {"custom","web","news","chinese","shallow"};
@@ -1311,7 +1311,7 @@ bool printDropDownProfile ( SafeBuf* sb, const char *name, CollectionRec *cr ) {
 	return true;
 }
 
-bool printCheckBoxes ( int32_t n , SafeBuf* sb, const char *name, const char *array){
+static bool printCheckBoxes(int32_t n, SafeBuf* sb, const char *name, const char *array) {
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		if ( i > 0 )
 			sb->safePrintf ("<input type=checkbox value=1 name=%s%" PRId32,

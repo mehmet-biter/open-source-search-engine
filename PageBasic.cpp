@@ -305,7 +305,7 @@ bool printSitePatternExamples ( SafeBuf *sb , HttpRequest *hr ) {
 	return true;
 }
 
-bool printScrollingWidget ( SafeBuf *sb , CollectionRec *cr ) {
+static bool printScrollingWidget(SafeBuf *sb, CollectionRec *cr) {
 
 	sb->safePrintf("<script type=\"text/javascript\">\n\n");
 

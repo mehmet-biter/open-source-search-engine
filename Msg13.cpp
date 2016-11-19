@@ -20,12 +20,12 @@ static char g_fakeReply[] =
 	"Connection: Close\r\n"
 	"Content-Type: text/html\r\n\r\n\0";
 
-bool getIframeExpandedContent ( Msg13Request *r , TcpSocket *ts );
-void gotIframeExpandedContent ( void *state ) ;
+static bool getIframeExpandedContent(Msg13Request *r, TcpSocket *ts);
+static void gotIframeExpandedContent(void *state);
 
-bool addToHammerQueue ( Msg13Request *r ) ;
-void scanHammerQueue ( int fd , void *state );
-void downloadTheDocForReals ( Msg13Request *r ) ;
+static bool addToHammerQueue(Msg13Request *r);
+static void scanHammerQueue(int fd, void *state);
+static void downloadTheDocForReals(Msg13Request *r);
 
 static void gotForwardedReplyWrapper ( void *state , UdpSlot *slot ) ;
 static void handleRequest13 ( UdpSlot *slot , int32_t niceness ) ;
@@ -37,7 +37,7 @@ static void gotHttpReply2 ( void *state ,
 			    TcpSocket *ts ) ;
 static void passOnReply     ( void *state , UdpSlot *slot ) ;
 
-bool hasIframe           ( char *reply, int32_t replySize , int32_t niceness );
+static bool hasIframe(char *reply, int32_t replySize, int32_t niceness);
 
 
 static bool setProxiedUrlFromSquidProxiedRequest ( Msg13Request *r );
@@ -401,14 +401,14 @@ bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSi
 	return true;
 }
 
-bool isIpInTwitchyTable ( CollectionRec *cr , int32_t ip ) {
+static bool isIpInTwitchyTable(CollectionRec *cr, int32_t ip) {
 	if ( ! cr ) return false;
 	HashTableX *ht = &cr->m_twitchyTable;
 	if ( ht->m_numSlots == 0 ) return false;
 	return ( ht->getSlot ( &ip ) >= 0 );
 }
 
-bool addIpToTwitchyTable ( CollectionRec *cr , int32_t ip ) {
+static bool addIpToTwitchyTable(CollectionRec *cr, int32_t ip) {
 	if ( ! cr ) return true;
 	HashTableX *ht = &cr->m_twitchyTable;
 	if ( ht->m_numSlots == 0 )
@@ -563,7 +563,7 @@ static void gotHttpReply9 ( void *state , TcpSocket *ts ) ;
 
 static void gotProxyHostReplyWrapper ( void *state , UdpSlot *slot ) ;
 
-void downloadTheDocForReals ( Msg13Request *r ) {
+void downloadTheDocForReals(Msg13Request *r) {
 
 	// are we the first?
 	bool firstInLine = s_rt.isEmpty ( &r->m_cacheKey );
@@ -897,7 +897,7 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 
 static int32_t s_55Out = 0;
 
-void doneReportingStatsWrapper ( void *state, UdpSlot *slot ) {
+static void doneReportingStatsWrapper(void *state, UdpSlot *slot) {
 	// note it
 	if ( g_errno )
 		log("sproxy: 55 reply: %s",mstrerror(g_errno));
@@ -911,7 +911,7 @@ void doneReportingStatsWrapper ( void *state, UdpSlot *slot ) {
 	s_55Out--;
 }
 
-bool ipWasBanned ( TcpSocket *ts , const char **msg , Msg13Request *r ) {
+static bool ipWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 
 	// ts will be null if we got a fake reply from a bulk job
 	if ( ! ts )
@@ -1679,7 +1679,7 @@ bool hasIframe ( char *reply, int32_t replySize , int32_t niceness ) {
 }
 
 // returns false if blocks, true otherwise
-bool getIframeExpandedContent ( Msg13Request *r , TcpSocket *ts ) {
+static bool getIframeExpandedContent(Msg13Request *r, TcpSocket *ts) {
 
 	if ( ! ts ) { g_process.shutdownAbort(true); }
 
@@ -1846,7 +1846,7 @@ bool getIframeExpandedContent ( Msg13Request *r , TcpSocket *ts ) {
 	return true;
 }
 
-void gotIframeExpandedContent ( void *state ) {
+static void gotIframeExpandedContent(void *state) {
 	// save error in case mdelete nukes it
 	int32_t saved = g_errno;
 
@@ -1926,7 +1926,7 @@ void gotIframeExpandedContent ( void *state ) {
 #define AUTOCRAWLDELAY 5000
 
 // returns true if we queue the request to download later
-bool addToHammerQueue ( Msg13Request *r ) {
+static bool addToHammerQueue(Msg13Request *r) {
 
 	// sanity
 	if ( ! r->m_udpSlot ) { g_process.shutdownAbort(true); }
@@ -2065,7 +2065,7 @@ bool addToHammerQueue ( Msg13Request *r ) {
 
 // call this once every 10ms to launch queued up download requests so that
 // we respect crawl delay for sure
-void scanHammerQueue ( int fd , void *state ) {
+static void scanHammerQueue(int fd, void *state) {
 
 	if ( ! s_hammerQueueHead ) return;
 

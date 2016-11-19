@@ -132,7 +132,7 @@ bool Title::setTitleFromTags( Xml *xml, int32_t maxTitleLen, uint8_t contentType
 #define MAX_TIT_CANDIDATES 100
 
 // does word qualify as a subtitle delimeter?
-bool isWordQualified ( char *wp , int32_t wlen ) {
+static bool isWordQualified(char *wp, int32_t wlen) {
 	// must be punct word
 	if ( is_alnum_utf8( wp ) ) {
 		return false;

@@ -113,7 +113,7 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 
 // . do not add dups into m_diffbotSeeds safebuf
 // . return 0 if not in table, 1 if in table. -1 on error adding to table.
-int32_t isInSeedBuf ( CollectionRec *cr , const char *url, int len ) {
+static int32_t isInSeedBuf(CollectionRec *cr, const char *url, int len) {
 
 	HashTableX *ht = &cr->m_seedHashTable;
 

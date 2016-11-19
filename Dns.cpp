@@ -227,7 +227,7 @@ bool Dns::init ( uint16_t clientPort ) {
 	return true;
 }
 
-bool isTimedOut(int32_t ip) {
+static bool isTimedOut(int32_t ip) {
 	// is this ip address in the "timed out" cache. if so,
 	// then do not try again for at least 1 hour
 	char *rec;

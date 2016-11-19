@@ -299,12 +299,12 @@ void Stats::logAvgQueryTime(int64_t startTime) {
 }
 
 // draw a HORIZONTAL line in html
-void drawLine2 ( SafeBuf &sb ,
-		 int32_t x1 , 
-		 int32_t x2 ,
-		 int32_t fy1 , 
-		 int32_t color ,
-		 int32_t width ) {
+static void drawLine2(SafeBuf &sb,
+		      int32_t x1,
+		      int32_t x2,
+		      int32_t fy1, 
+		      int32_t color,
+		      int32_t width) {
 
 	sb.safePrintf("<div style=\"position:absolute;"
 		      "left:%" PRId32";"

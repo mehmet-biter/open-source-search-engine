@@ -230,7 +230,7 @@ bool sendPageLogView    ( TcpSocket *s , HttpRequest *r ) {
 }
 
 
-bool showLine ( SafeBuf *sb , char *s , int32_t len ) {
+static bool showLine(SafeBuf *sb, char *s, int32_t len) {
 	return sb->brify( s, len, 8000, "<br>", false );
 }
 

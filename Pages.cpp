@@ -320,7 +320,7 @@ int32_t Pages::getDynamicPageNumber ( HttpRequest *r ) {
 // once all hosts have received the parms, or we've at least tried to send
 // them to all hosts, then come here to return the page content back to
 // the client browser
-void doneBroadcastingParms ( void *state ) {
+static void doneBroadcastingParms(void *state) {
 	TcpSocket *sock = (TcpSocket *)state;
 	// free this mem
 	sock->m_handyBuf.purge();
