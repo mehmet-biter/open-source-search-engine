@@ -170,7 +170,7 @@ bool HttpServer::getDoc ( char   *url      ,
 	// check for a secured site
 	TcpServer *tcp = &m_tcp;
 	bool urlIsHttps = false;
-	if ( url && strncasecmp(url, "https://", 8) == 0 ) {
+	if ( strncasecmp(url, "https://", 8) == 0 ) {
 		urlIsHttps = true;
 		defPort = 443;
 	}
