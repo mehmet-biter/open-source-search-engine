@@ -5440,21 +5440,6 @@ Url **XmlDoc::getRedirUrl() {
 		allowSimplifiedRedirs = true;
 	}
 
-	// special hack for nytimes.com. do not consider simplified redirs
-	// because it uses a cookie along with redirs to get to the final
-	// page.
-	const char *dom2 = m_firstUrl.getDomain();
-	int32_t  dlen2 = m_firstUrl.getDomainLen();
-
-	//@todo BR: EEK! Improve this.
-	if ( dlen2 == 11 && strncmp(dom2,"nytimes.com",dlen2)==0 ) {
-		allowSimplifiedRedirs = true;
-	}
-
-	// same for bananarepublic.gap.com ?
-//	if ( dlen2 == 7 && strncmp(dom2,"gap.com",dlen2)==0 )
-//		allowSimplifiedRedirs = true;
-
 	// if redirect is setting cookies we have to follow the redirect
 	// all the way through so we can stop now.
 	if ( m_redirCookieBufValid && m_redirCookieBuf.length() ) {
