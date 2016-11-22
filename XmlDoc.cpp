@@ -15079,9 +15079,9 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 
 		// keep hopcount the same for redirs
 		if ( m_indexCodeValid &&
-		     ( m_indexCode == EDOCSIMPLIFIEDREDIR ||
-		       m_indexCode == EDOCNONCANONICAL ) )
+		     ( m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL ) ) {
 			ksr.m_hopCount = m_hopCount;
+		}
 
 		if ( issiteroot   ) ksr.m_hopCount = 0;
 		if ( ispingserver ) ksr.m_hopCount = 0;
@@ -15139,8 +15139,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		//   the regex, and even if it simplified redirects
 		//
 		if ( m_indexCodeValid &&
-		     ( m_indexCode == EDOCSIMPLIFIEDREDIR ||
-		       m_indexCode == EDOCNONCANONICAL ) &&
+		     ( m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL ) &&
 		     m_sreqValid ) {
 			if ( m_sreq.m_isInjecting )
 				ksr.m_isInjecting = 1;
