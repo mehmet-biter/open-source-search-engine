@@ -153,7 +153,7 @@ public:
 	uint32_t   m_spideredTime; // time_t
 	uint32_t  m_indexedTime; // slightly > m_spideredTime (time_t)
 	uint32_t  m_reserved32;
-	uint32_t  reserved3;
+	uint32_t  m_reserved33;
 	uint32_t    m_firstIndexedDate; // time_t
 	uint32_t    m_outlinksAddedDate; // time_t
 
