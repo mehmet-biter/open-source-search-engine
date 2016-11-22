@@ -50,7 +50,6 @@ Hostdb::Hostdb ( ) {
 	m_myIp = 0;
 	m_myIpShotgun = 0;
 	m_myPort = 0;
-	m_myMachineNum = -1;
 	m_myHost = NULL;
 	m_myShard = NULL;
 	m_loopbackIp = atoip ( "127.0.0.1" , 9 );
@@ -60,7 +59,6 @@ Hostdb::Hostdb ( ) {
 	m_numHostsPerShard  = 0;
 	m_numStripeHostsPerShard = 0;
 	m_bufSize = 0;
-	m_numMachines = 0;
 	m_numIps = 0;
 	m_hostId = 0;
 	m_numShards = 0;
@@ -812,26 +810,6 @@ createFile:
 		m_hosts[i].m_preferEth      = 0;
 	}
 
-	// . set the m_machineNum of each host
-	// . hostPtrs are sorted by hostId which means should also be sorted
-	//   by IP so we can get a good machine number assignment
-	int32_t nextMachineNum = 0;
-	for(int32_t i = 1; i < m_numHosts; i++) {
-		// see if on a machine we already encountered
-		int32_t j;
-		for(j = 0; j < i && m_hostPtrs[i]->m_ip != m_hostPtrs[j]->m_ip; j++)
-			;
-		// if it matches the IP of another host it's on the same machne
-		if(j < i) {
-			m_hostPtrs[i]->m_machineNum = m_hostPtrs[j]->m_machineNum;
-		} else {
-			// otherwise, it is a new IP = (new machine)
-			m_hostPtrs[i]->m_machineNum = nextMachineNum++;
-		}
-	}
-	// set # of machines
-	m_numMachines = nextMachineNum;
-	
 	// get IPs of this server. last entry is 0.
 	int32_t *localIps = getLocalIps();
 	if ( ! localIps ) {
@@ -858,7 +836,6 @@ createFile:
 	m_myIp         = host->m_ip;    // internal IP
 	m_myIpShotgun  = host->m_ipShotgun;
 	m_myPort       = host->m_port;  // low priority udp port
-	m_myMachineNum = host->m_machineNum;
 	m_myHost       = host;
 
 	// set our ping to zero
