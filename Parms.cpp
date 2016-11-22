@@ -11338,14 +11338,6 @@ public:
 static ParmNode *s_headNode = NULL;
 static ParmNode *s_tailNode = NULL;
 static int64_t s_parmId = 0LL;
-// . this let's us know which id is in progress and what the last
-//   id completed was
-static int32_t s_currentParmIdInProgress;
-static int32_t s_lastParmIdCompleted;
-static ParmNode *s_currentNodePtr;
-static int32_t s_lastTryError;
-static int32_t s_lastTryTime;
-
 
 // . will send the parm update request to each host and retry forever,
 //   until dead hosts come back up
@@ -11462,16 +11454,16 @@ static void gotParmReplyWrapper ( void *state , UdpSlot *slot ) {
 	// in case host table is dynamically modified, go by #
 	Host *h = g_hostdb.getHost((int32_t)(PTRTYPE)state);
 
-	int32_t parmId = s_currentParmIdInProgress;
+	int32_t parmId = h->m_currentParmIdInProgress;
 
-	ParmNode *pn = s_currentNodePtr;
+	ParmNode *pn = h->m_currentNodePtr;
 
 	// inc this count
 	pn->m_numReplies++;
 
 	// nothing in progress now
-	s_currentParmIdInProgress = 0;
-	s_currentNodePtr = NULL;
+	h->m_currentParmIdInProgress = 0;
+	h->m_currentNodePtr = NULL;
 
 	// this is usually timeout on a dead host i guess
 	if ( g_errno ) {
@@ -11489,8 +11481,8 @@ static void gotParmReplyWrapper ( void *state , UdpSlot *slot ) {
 
 	if ( g_errno ) {
 		// remember error info for retry
-		s_lastTryError = g_errno;
-		s_lastTryTime = getTimeLocal();
+		h->m_lastTryError = g_errno;
+		h->m_lastTryTime = getTimeLocal();
 		// if a host timed out he could be dead, so try to call
 		// the callback for this "pn" anyway. if the only hosts we
 		// do not have replies for are dead, then we'll call the
@@ -11503,10 +11495,10 @@ static void gotParmReplyWrapper ( void *state , UdpSlot *slot ) {
 	}
 
 	// no error, otherwise
-	s_lastTryError = 0;
+	h->m_lastTryError = 0;
 
 	// successfully completed
-	s_lastParmIdCompleted = parmId;
+	h->m_lastParmIdCompleted = parmId;
 
 	// inc this count
 	pn->m_numGoodReplies++;
@@ -11602,20 +11594,20 @@ bool Parms::doParmSendingLoop ( ) {
 		//if ( h->m_hostId == g_hostdb.m_myHostId ) continue;
 		// . if in progress, gotta wait for that to complete
 		// . 0 is not a legit parmid, it starts at 1
-		if ( s_currentParmIdInProgress ) continue;
+		if ( h->m_currentParmIdInProgress ) continue;
 		// if his last completed parmid is the current he is uptodate
-		if ( s_lastParmIdCompleted == s_parmId ) continue;
+		if ( h->m_lastParmIdCompleted == s_parmId ) continue;
 		// if last try had an error, wait 10 secs i guess
-		if ( s_lastTryError &&
-		     s_lastTryError != EUDPTIMEDOUT &&
-		     now - s_lastTryTime < 10 )
+		if ( h->m_lastTryError &&
+		     h->m_lastTryError != EUDPTIMEDOUT &&
+		     now - h->m_lastTryTime < 10 )
 			continue;
 		// otherwise get him the next to send
 		ParmNode *pn = s_headNode;
 		for ( ; pn ; pn = pn->m_nextNode ) {
 			// stop when we got a parmnode we have not sent to
 			// him yet, we'll send it now
-			if ( pn->m_parmId > s_lastParmIdCompleted ) break;
+			if ( pn->m_parmId > h->m_lastParmIdCompleted ) break;
 		}
 		// nothing? strange. something is not right.
 		if ( ! pn ) {
@@ -11629,8 +11621,8 @@ bool Parms::doParmSendingLoop ( ) {
 		     pn->m_hostId2 == -1 && // not a range
 		     h->m_hostId != pn->m_hostId ) {
 			// assume we sent it to him
-			s_lastParmIdCompleted = pn->m_parmId;
-			s_currentNodePtr = NULL;
+			h->m_lastParmIdCompleted = pn->m_parmId;
+			h->m_currentNodePtr = NULL;
 			continue;
 		}
 
@@ -11640,8 +11632,8 @@ bool Parms::doParmSendingLoop ( ) {
 		     ( h->m_hostId < pn->m_hostId ||
 		       h->m_hostId > pn->m_hostId2 ) ) {
 			// assume we sent it to him
-			s_lastParmIdCompleted = pn->m_parmId;
-			s_currentNodePtr = NULL;
+			h->m_lastParmIdCompleted = pn->m_parmId;
+			h->m_currentNodePtr = NULL;
 			continue;
 		}
 
@@ -11649,8 +11641,8 @@ bool Parms::doParmSendingLoop ( ) {
 		// force completion if we should NOT send to him
 		if ( (h->isProxy() && ! pn->m_sendToProxies) ||
 		     (h->isGrunt() && ! pn->m_sendToGrunts ) ) {
-			s_lastParmIdCompleted = pn->m_parmId;
-			s_currentNodePtr = NULL;
+			h->m_lastParmIdCompleted = pn->m_parmId;
+			h->m_currentNodePtr = NULL;
 			continue;
 		}
 
@@ -11666,8 +11658,8 @@ bool Parms::doParmSendingLoop ( ) {
 			continue;
 		}
 		// flag this
-		s_currentParmIdInProgress = pn->m_parmId;
-		s_currentNodePtr = pn;
+		h->m_currentParmIdInProgress = pn->m_parmId;
+		h->m_currentNodePtr = pn;
 	}
 
 	s_inLoop = false;
