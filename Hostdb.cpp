@@ -30,6 +30,7 @@ uint32_t  g_listIps   [ MAX_HOSTS * 4 ];
 uint16_t  g_listPorts [ MAX_HOSTS * 4 ];
 int32_t      g_listNumTotal = 0;
 
+static bool isMyIp(int32_t ip);
 
 void Hostdb::resetPortTables () {
 	g_hostTableUdp.reset();
@@ -1776,6 +1777,14 @@ int32_t *getLocalIps ( ) {
 	freeifaddrs ( ifap );
 	// return the static buffer
 	return s_localIps;
+}
+
+static bool isMyIp(int32_t ip) {
+	int32_t *localIp = getLocalIps();
+	for ( ; *localIp ; localIp++ ) {
+		if ( ip == *localIp ) return true;
+	}
+	return false;
 }
 
 
