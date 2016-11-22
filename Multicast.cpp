@@ -672,11 +672,6 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 	if ( THIS->m_lastLaunch > now ) THIS->m_lastLaunch = now;
 	// get elapsed time since we started the send
 	int32_t elapsed = now - THIS->m_lastLaunch;
-	int32_t docsWanted;
-	int32_t firstResultNum;
-	int32_t nqterms;
-	int32_t wait;
-	Host *hd;
 	//log("elapsed = %" PRId32" type=0x%02x",elapsed,THIS->m_msgType);
 
 	// . don't relaunch any niceness 1 stuff for a while
@@ -726,11 +721,11 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 			}
 			break;
 		// msg to get docIds from a query, may take a while
-		case msg_type_39:
+		case msg_type_39: {
 			// how many docsids request? first 4 bytes of request.
-			docsWanted = 10;
-			firstResultNum = 0;
-			nqterms        = 0;
+			int32_t docsWanted = 10;
+			int32_t firstResultNum = 0;
+			int32_t nqterms        = 0;
 			if ( THIS->m_msg ) {
 				docsWanted     = *(int32_t *)(THIS->m_msg);
 				firstResultNum = *(int32_t *)(THIS->m_msg+4);
@@ -743,7 +738,7 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 			//   clustering then docsWanted is no indication of the
 			//   actual number of titleRecs (or title keys) read
 			// . it may take a while to do dup removal on 1 million docs
-			wait = 5000 + 100  * (docsWanted+firstResultNum);
+			int32_t wait = 5000 + 100  * (docsWanted+firstResultNum);
 			// those big UOR queries should not get re-routed all the time
 			if ( nqterms > 0 ) {
 				wait += 1000 * nqterms;
@@ -755,6 +750,7 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 				return;
 			}
 			break;
+		}
 		// don't relaunch anything else unless over 8 secs
 		default:
 			if ( elapsed <  8000 ) {
@@ -764,7 +760,7 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 	}
 
 	// find out which host timedout
-	hd = NULL;
+	Host *hd = NULL;
 	if ( THIS->m_retired[0] && THIS->m_numHosts >= 1 ) {
 		hd = THIS->m_hostPtrs[0];
 	}
