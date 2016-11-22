@@ -134,8 +134,6 @@ public:
 	// send to eth 0 or 1 when sending to this host?
 	char           m_preferEth;
 
-	// machine #, a machine can have several hosts on it
-	int32_t           m_machineNum;
 	// . this is used for sending email alerts to admin about dead hosts
 	// .  0 means we can send an email for this host if he goes dead on us
 	// . +1 means we already sent an email for him since he was down and 
@@ -257,19 +255,11 @@ class Hostdb {
 	uint32_t  getMyIp         ( ) { return m_myIp; }
 	uint16_t getMyPort       ( ) { return m_myPort; }
 	int32_t           getMyHostId     ( ) { return m_hostId; }
-	int32_t           getMyMachineNum ( ) { return m_myMachineNum; }
 	uint32_t  getLoopbackIp   ( ) { return m_loopbackIp; }
 	Host          *getMyHost       ( ) { return m_myHost; }
 	bool           amProxy         ( ) { return m_myHost->isProxy(); }
 	Host          *getMyShard      ( ) { return m_myShard; }
 	int32_t getMyShardNum ( ) { return m_myHost->m_shardNum; }
-
-	// . one machine may have several hosts
-	// . get the machine # the hostId resides on
-	int32_t getMachineNum ( int32_t hostId ) {
-		return getHost(hostId)->m_machineNum; }
-
-	int32_t getNumMachines ( ) { return m_numMachines; }
 
 	// we consider the host dead if we didn't get a ping reply back
 	// after 10 seconds
@@ -376,7 +366,6 @@ class Hostdb {
 	uint32_t  m_myIp;
 	uint32_t  m_myIpShotgun;
 	uint16_t m_myPort;
-	int32_t           m_myMachineNum;
 	Host          *m_myHost;
 	Host          *m_myShard;
 
@@ -407,8 +396,6 @@ class Hostdb {
 
 	// this maps shard # to the array of hosts in that shard
 	Host *m_shards[MAX_HOSTS];
-
-	int32_t    m_numMachines;
 
 	// the hash table of the ips in hosts.conf
 	int32_t *m_ips;
