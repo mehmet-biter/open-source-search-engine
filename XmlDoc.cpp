@@ -576,9 +576,8 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 
 	reset();
 
-	if ( g_conf.m_logDebugSpider )
-		log("xmldoc: set4 uh48=%" PRIu64" parentdocid=%" PRIu64,
-		    sreq->getUrlHash48(),sreq->getParentDocId());
+	logDebug(g_conf.m_logDebugSpider, "xmldoc: set4 uh48=%" PRIu64" parentdocid=%" PRIu64,
+	         sreq->getUrlHash48(),sreq->getParentDocId());
 
 	// used by PageSpiderdb.cpp
 	m_startTime      = gettimeofdayInMilliseconds();
