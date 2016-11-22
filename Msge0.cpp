@@ -25,7 +25,6 @@ Msge0::Msge0()
     m_numRequests(0),
     m_numReplies(0),
     m_n(0),
-    m_nextPtr(NULL),
     m_state(NULL),
     m_callback(NULL),
     m_errno(0)

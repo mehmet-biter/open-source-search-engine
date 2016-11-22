@@ -21,7 +21,6 @@ Msge1::Msge1() {
 	m_ipErrors = NULL;
 	m_numRequests = 0;
 	m_n = 0;
-	m_nextPtr = NULL;
 	m_grv = NULL;
 	m_state = NULL;
 	m_callback = NULL;
