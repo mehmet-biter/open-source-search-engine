@@ -636,16 +636,6 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 
 		m_contentValid        = true;
 
-		//m_rawUtf8Content      = utf8Content;
-		//m_expandedUtf8Content = utf8Content;
-
-		//ptr_utf8Content       = utf8Content;
-		//size_utf8Content      = slen+1;
-
-		//m_rawUtf8ContentValid      = true;
-		//m_expandedUtf8ContentValid = true;
-		//m_utf8ContentValid         = true;
-
 		m_contentInjected     = true;
 		m_wasContentInjected  = true;
 		m_contentType         = contentType;
