@@ -724,12 +724,10 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 		case msg_type_39: {
 			// how many docsids request? first 4 bytes of request.
 			int32_t docsWanted = 10;
-			int32_t firstResultNum = 0;
 			int32_t nqterms        = 0;
 			if ( THIS->m_msg ) {
 				docsWanted     = *(int32_t *)(THIS->m_msg);
-				firstResultNum = *(int32_t *)(THIS->m_msg+4);
-				nqterms        = *(int32_t *)(THIS->m_msg+8);
+				nqterms        = *(int32_t *)(THIS->m_msg+4);
 			}
 
 			// never re-route if it has a rerank, those take forever
@@ -738,7 +736,7 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 			//   clustering then docsWanted is no indication of the
 			//   actual number of titleRecs (or title keys) read
 			// . it may take a while to do dup removal on 1 million docs
-			int32_t wait = 5000 + 100  * (docsWanted+firstResultNum);
+			int32_t wait = 5000 + 100  * docsWanted;
 			// those big UOR queries should not get re-routed all the time
 			if ( nqterms > 0 ) {
 				wait += 1000 * nqterms;

@@ -27,6 +27,7 @@ class Msg39Request {
 	// we are requesting that this many docids be returned. Msg40 requests
 	// of Msg3a a little more docids than it needs because it assumes
 	// some will be de-duped at summary gen time.
+	//note: Multicast.cpp decodes firts 8 bytes directly
 	int32_t    m_docsToGet;
 
 	int32_t    m_nqt; // # of query terms
