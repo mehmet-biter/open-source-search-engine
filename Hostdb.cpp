@@ -1402,81 +1402,6 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	return true;
 }
 
-bool Hostdb::saveHostsConf ( ) {
-	// open the hosts.conf file
-	char filename[1024];
-	sprintf ( filename, "%shosts.conf", m_dir );
-	log ( LOG_INFO, "conf: Writing hosts.conf file to: %s",
-			filename );
-	int fd = open ( filename, O_CREAT|O_WRONLY|O_TRUNC ,
-			    getFileCreationFlags() );
-	if ( fd < 0 ) {
-		log ( "conf: Failed to open %s for writing.", filename );
-		return false;
-	}
-	char temp[1024];
-	// write a header
-	//             000xx 000.000.000.000 000.000.000.000 00000 00000
-	sprintf(temp, "#ID   IP              LINKIP          UDP1  UDP2  "
-		      "DNS   HTTP  HTTPS I N G   DIR\n");
-	//             00000 00000 00000 0 0 000 ...
-
-	sprintf(temp,
-		"# the new hosts.conf format:\n"
-		"\n"
-		"# <hostId> <hostname> [portoffset] [# <comment>]\n"
-		"# spare    <hostname> [portoffset] [# <comment>]\n"
-		"# proxy    <hostname> [portoffset] [# <comment>]\n"
-		"\n"
-		"# we use /etc/hosts to get the ip of eth0\n"
-		"# we insert an 'i' into hostname to get ip of eth1\n"
-		"\n"
-		"working-dir: %s\n"
-		//"port-offset: %" PRId32"\n"
-		"index-splits: %" PRId32"\n"
-		"\n"
-		,
-		g_hostdb.m_dir,
-		//(int32_t)g_hostdb.m_myHost->m_httpPort - 8000,
-		g_hostdb.m_indexSplits );
-	write(fd, temp, strlen(temp));
-	// loop over each host and write the conf line
-	for ( int32_t i = 0; i < m_numTotalHosts; i++ ) {
-		Host *h;
-		if ( i < m_numHosts )
-			h = getHost(i);
-		else if ( i < m_numHosts + m_numSpareHosts )
-			h = getSpare(i - m_numHosts);
-		else
-			h = getProxy(i - m_numHosts - m_numSpareHosts);
-		// generate the host id
-		if ( i >= m_numHosts + m_numSpareHosts )
-			sprintf(temp, "proxy ");
-		else if ( i >= m_numHosts )
-			sprintf(temp, "spare ");
-
-		else if ( i < 10 )
-			sprintf(temp, "00%" PRId32"   ", i);
-		else if ( i < 100 )
-			sprintf(temp, "0%" PRId32"   ", i);
-		else
-			sprintf(temp, "%" PRId32"   ", i);
-		write(fd, temp, strlen(temp));
-
-		// the new format is just the hostname then note
-		sprintf(temp,"%s ",h->m_hostname);
-		write(fd, temp, strlen(temp));
-
-		// note
-		write(fd, h->m_note, strlen(h->m_note));
-		// end line
-		write(fd, "\n", 1);
-	}
-	// close	else the file
-	close(fd);
-	return true;
-}
-
 // use the ip that is not dead, prefer eth0
 int32_t Hostdb::getBestIp ( Host *h ) {
 	// if shotgun/eth1 ip is dead, returh eth0 ip
@@ -1695,95 +1620,146 @@ int32_t Hostdb::getCRC ( ) {
 }
 
 
-bool Hostdb::createHostsConf( const char *cwd ) {
-  fprintf(stderr,"Creating %shosts.conf\n",cwd);
+static void printHostsConfPreamble(SafeBuf *sb, int numMirrors, int indexSplits) {
+	sb->safePrintf("# The Gigablast host configuration file.\n");
+	sb->safePrintf("# Tells us what hosts are participating in the distributed search engine.\n");
+
+	sb->safePrintf("\n\n");
+	sb->safePrintf("# How many mirrors do you want? If this is 0 then your data\n");
+	sb->safePrintf("# will NOT be replicated. If it is 1 then each host listed\n");
+	sb->safePrintf("# below will have one host that mirrors it, thereby decreasing\n");
+	sb->safePrintf("# total index capacity, but increasing redundancy. If this is\n");
+	sb->safePrintf("# 1 then the first half of hosts will be replicated by the\n");
+	sb->safePrintf("# second half of the hosts listed below.\n");
+	sb->safePrintf("\n");
+	if(numMirrors>=0)
+		sb->safePrintf("num-mirrors: %d\n",numMirrors);
+	else
+		sb->safePrintf("#num-mirrors: 0\n");
+	sb->safePrintf("\n");
+	
+	sb->safePrintf("# Alternatively, how many shards(splits) are used?\n");
+	if(indexSplits>0)
+		sb->safePrintf("index-splits: %d\n",indexSplits);
+	else
+		sb->safePrintf("#index-splits: 1\n");
+	
+	sb->safePrintf("\n\n");
+	sb->safePrintf("# List of hosts. Limited to 512 from MAX_HOSTS in Hostdb.h. Increase that\n");
+	sb->safePrintf("# if you want more.\n");
+	sb->safePrintf("#\n");
+
+	sb->safePrintf("# Format:\n");
+	sb->safePrintf("#\n");
+	sb->safePrintf("# first   column: hostID (starts at 0 and increments from there)\n");
+	sb->safePrintf("# second  column: the port used by the client DNS algorithms\n");
+	sb->safePrintf("# third   column: port that HTTPS listens on\n");
+	sb->safePrintf("# fourth  column: port that HTTP  listens on\n");
+	sb->safePrintf("# fifth   column: port that udp server listens on\n");
+	sb->safePrintf("# sixth   column: IP address or hostname that has an IP address in /etc/hosts\n");
+	sb->safePrintf("# seventh column: like sixth column but for secondary ethernet port. Can be the same as the sixth column.\n");
+	sb->safePrintf("# eigth   column: Working directory");
+	sb->safePrintf("# ninth   column: An optional merge directory override");
+	sb->safePrintf("# tenth   column: An optional text note that will display in the hosts table for this host.\n");
+
+	sb->safePrintf("\n\n");
+	sb->safePrintf("#\n");
+	sb->safePrintf("# Example of a four-node distributed search index running on a single\n");
+	sb->safePrintf("# server with four cores. The working directories are /home/mwells/hostN/.\n");
+	sb->safePrintf("# The 'gb' binary resides in the working directories. We have to use\n");
+	sb->safePrintf("# different ports for each gb instance since they are all on the same\n");
+	sb->safePrintf("# server.\n");
+	sb->safePrintf("#\n");
+
+	sb->safePrintf("#\n");
+	sb->safePrintf("#0 5998 7000 8000 9000 192.0.2.4 192.0.2.5 /home/mwells/host0/\n");
+	sb->safePrintf("#1 5997 7001 8001 9001 192.0.2.4 192.0.2.5 /home/mwells/host1/\n");
+	sb->safePrintf("#2 5996 7002 8002 9002 192.0.2.4 192.0.2.5 /home/mwells/host2/\n");
+	sb->safePrintf("#3 5995 7003 8003 9003 192.0.2.4 192.0.2.5 /home/mwells/host3/\n");
+
+	sb->safePrintf("\n");
+	sb->safePrintf("# A four-node cluster with different merge dir:\n");
+	sb->safePrintf("#0 5998 7000 8000 9000 192.0.2.4 192.0.2.5 /home/mwells/host0/ /mnt/merge/host0/\n");
+	sb->safePrintf("#1 5997 7001 8001 9001 192.0.2.4 192.0.2.5 /home/mwells/host1/ /mnt/merge/host1/\n");
+	sb->safePrintf("#2 5996 7002 8002 9002 192.0.2.4 192.0.2.5 /home/mwells/host2/ /mnt/merge/host2/\n");
+	sb->safePrintf("#3 5995 7003 8003 9003 192.0.2.4 192.0.2.5 /home/mwells/host3/ /mnt/merge/host3/\n");
+
+	sb->safePrintf("\n");
+	sb->safePrintf("# A four-node cluster on four different servers:\n");
+	sb->safePrintf("#0 5998 7000 8000 9000 192.0.2.4 192.0.2.5 /home/mwells/gigablast/\n");
+	sb->safePrintf("#1 5998 7000 8000 9000 192.0.2.6 192.0.2.7 /home/mwells/gigablast/\n");
+	sb->safePrintf("#2 5998 7000 8000 9000 192.0.2.8 192.0.2.9 /home/mwells/gigablast/\n");
+	sb->safePrintf("#3 5998 7000 8000 9000 192.0.2.10 192.0.2.11 /home/mwells/gigablast/\n");
+	sb->safePrintf("\n\n");
+	sb->safePrintf("#\n");
+	sb->safePrintf("# Example of an eight-node cluster.\n");
+	sb->safePrintf("# Each line represents a single gb process with dual ethernet ports\n");
+	sb->safePrintf("# whose IP addresses are in /etc/hosts under se0, se0b, se1, se1b, ...\n");
+	sb->safePrintf("#\n");
+	sb->safePrintf("#0 5998 7000 8000 9000 se0 se0b /home/mwells/gigablast/\n");
+	sb->safePrintf("#1 5998 7000 8000 9000 se1 se1b /home/mwells/gigablast/\n");
+	sb->safePrintf("#2 5998 7000 8000 9000 se2 se2b /home/mwells/gigablast/\n");
+	sb->safePrintf("#3 5998 7000 8000 9000 se3 se3b /home/mwells/gigablast/\n");
+	sb->safePrintf("#4 5998 7000 8000 9000 se4 se4b /home/mwells/gigablast/\n");
+	sb->safePrintf("#5 5998 7000 8000 9000 se5 se5b /home/mwells/gigablast/\n");
+	sb->safePrintf("#6 5998 7000 8000 9000 se6 se6b /home/mwells/gigablast/\n");
+	sb->safePrintf("#7 5998 7000 8000 9000 se7 se7b /home/mwells/gigablast/\n");
+}
+
+
+bool Hostdb::createHostsConf(const char *cwd) {
+	fprintf(stderr,"Creating %shosts.conf\n", cwd);
+	
 	SafeBuf sb;
-	sb.safePrintf("# The Gigablast host configuration file.\n");
-	sb.safePrintf("# Tells us what hosts are participating in the distributed search engine.\n");
-	sb.safePrintf("\n");
-	sb.safePrintf("\n");
-
-	// put our cwd here
-	sb.safePrintf("0 5998 7000 8000 9000 127.0.0.1 127.0.0.1 %s\n",cwd);
-	sb.safePrintf("\n");
-	sb.safePrintf("\n");
-
-	sb.safePrintf("# How many mirrors do you want? If this is 0 then your data\n");
-	sb.safePrintf("# will NOT be replicated. If it is 1 then each host listed\n");
-	sb.safePrintf("# below will have one host that mirrors it, thereby decreasing\n");
-	sb.safePrintf("# total index capacity, but increasing redundancy. If this is\n");
-	sb.safePrintf("# 1 then the first half of hosts will be replicated by the\n");
-	sb.safePrintf("# second half of the hosts listed below.\n");
-	sb.safePrintf("\n");
-	sb.safePrintf("num-mirrors: 0\n");
-	sb.safePrintf("\n");
-	sb.safePrintf("\n");
-	sb.safePrintf("\n");
-	sb.safePrintf("# List of hosts. Limited to 512 from MAX_HOSTS in Hostdb.h. Increase that\n");
-	sb.safePrintf("# if you want more.\n");
-	sb.safePrintf("#\n");
-
-	sb.safePrintf("# Format:\n");
-	sb.safePrintf("#\n");
-	sb.safePrintf("# first   column: hostID (starts at 0 and increments from there)\n");
-	sb.safePrintf("# second  column: the port used by the client DNS algorithms\n");
-	sb.safePrintf("# third   column: port that HTTPS listens on\n");
-	sb.safePrintf("# fourth  column: port that HTTP  listens on\n");
-	sb.safePrintf("# fifth   column: port that udp server listens on\n");
-	sb.safePrintf("# sixth   column: IP address or hostname that has an IP address in /etc/hosts\n");
-	sb.safePrintf("# seventh column: like sixth column but for secondary ethernet port. Can be the same as the sixth column.\n");
-	sb.safePrintf("# eigth   column: Working directory");
-	sb.safePrintf("# ninth   column: An optional merge directory override");
-	sb.safePrintf("# tenth   column: An optional text note that will display in the hosts table for this host.\n");
-	sb.safePrintf("\n");
-	sb.safePrintf("\n");
-
-	sb.safePrintf("#\n");
-	sb.safePrintf("# Example of a four-node distributed search index running on a single\n");
-	sb.safePrintf("# server with four cores. The working directories are /home/mwells/hostN/.\n");
-	sb.safePrintf("# The 'gb' binary resides in the working directories. We have to use\n");
-	sb.safePrintf("# different ports for each gb instance since they are all on the same\n");
-	sb.safePrintf("# server.\n");
-	sb.safePrintf("#\n");
-
-	sb.safePrintf("#\n");
-	sb.safePrintf("#0 5998 7000 8000 9000 192.0.2.4 192.0.2.5 /home/mwells/host0/\n");
-	sb.safePrintf("#1 5997 7001 8001 9001 192.0.2.4 192.0.2.5 /home/mwells/host1/\n");
-	sb.safePrintf("#2 5996 7002 8002 9002 192.0.2.4 192.0.2.5 /home/mwells/host2/\n");
-	sb.safePrintf("#3 5995 7003 8003 9003 192.0.2.4 192.0.2.5 /home/mwells/host3/\n");
+	printHostsConfPreamble(&sb, 0, -1);
 
 	sb.safePrintf("\n");
-	sb.safePrintf("# A four-node cluster with different merge dir:\n");
-	sb.safePrintf("#0 5998 7000 8000 9000 192.0.2.4 192.0.2.5 /home/mwells/host0/ /mnt/merge/host0/\n");
-	sb.safePrintf("#1 5997 7001 8001 9001 192.0.2.4 192.0.2.5 /home/mwells/host1/ /mnt/merge/host1/\n");
-	sb.safePrintf("#2 5996 7002 8002 9002 192.0.2.4 192.0.2.5 /home/mwells/host2/ /mnt/merge/host2/\n");
-	sb.safePrintf("#3 5995 7003 8003 9003 192.0.2.4 192.0.2.5 /home/mwells/host3/ /mnt/merge/host3/\n");
+	sb.safePrintf("\n");
+	sb.safePrintf("0 5998 7000 8000 9000 127.0.0.1 127.0.0.1 %s\n", cwd);
 
-	sb.safePrintf("\n");
-	sb.safePrintf("# A four-node cluster on four different servers:\n");
-	sb.safePrintf("#0 5998 7000 8000 9000 192.0.2.4 192.0.2.5 /home/mwells/gigablast/\n");
-	sb.safePrintf("#1 5998 7000 8000 9000 192.0.2.6 192.0.2.7 /home/mwells/gigablast/\n");
-	sb.safePrintf("#2 5998 7000 8000 9000 192.0.2.8 192.0.2.9 /home/mwells/gigablast/\n");
-	sb.safePrintf("#3 5998 7000 8000 9000 192.0.2.10 192.0.2.11 /home/mwells/gigablast/\n");
-	sb.safePrintf("\n");
-	sb.safePrintf("\n");
-	sb.safePrintf("#\n");
-	sb.safePrintf("# Example of an eight-node cluster.\n");
-	sb.safePrintf("# Each line represents a single gb process with dual ethernet ports\n");
-	sb.safePrintf("# whose IP addresses are in /etc/hosts under se0, se0b, se1, se1b, ...\n");
-	sb.safePrintf("#\n");
-	sb.safePrintf("#0 5998 7000 8000 9000 se0 se0b /home/mwells/gigablast/\n");
-	sb.safePrintf("#1 5998 7000 8000 9000 se1 se1b /home/mwells/gigablast/\n");
-	sb.safePrintf("#2 5998 7000 8000 9000 se2 se2b /home/mwells/gigablast/\n");
-	sb.safePrintf("#3 5998 7000 8000 9000 se3 se3b /home/mwells/gigablast/\n");
-	sb.safePrintf("#4 5998 7000 8000 9000 se4 se4b /home/mwells/gigablast/\n");
-	sb.safePrintf("#5 5998 7000 8000 9000 se5 se5b /home/mwells/gigablast/\n");
-	sb.safePrintf("#6 5998 7000 8000 9000 se6 se6b /home/mwells/gigablast/\n");
-	sb.safePrintf("#7 5998 7000 8000 9000 se7 se7b /home/mwells/gigablast/\n");
 
-	log("%shosts.conf does not exist, creating.",cwd);
-	sb.save ( cwd , "hosts.conf" );
-	return true;
+	log("%shosts.conf does not exist, creating it", cwd);
+	int rc = sb.save(cwd, "hosts.conf");
+	return rc>=0;
+}
+
+
+bool Hostdb::saveHostsConf() {
+	SafeBuf sb;
+	//we don't recalculate "numMirrors" so that is always transformed into numsplits. Hrmpf.
+	printHostsConfPreamble(&sb, -1, m_indexSplits);
+	
+	for(int32_t i = 0; i < m_numTotalHosts; i++) {
+		Host *h;
+		if(i < m_numHosts)
+			h = getHost(i);
+		else if(i < m_numHosts + m_numSpareHosts)
+			h = getSpare(i - m_numHosts);
+		else
+			h = getProxy(i - m_numHosts - m_numSpareHosts);
+
+		// generate the host id
+		if(i >= m_numHosts + m_numSpareHosts)
+			sb.safePrintf("proxy ");
+		else if(i >= m_numHosts )
+			sb.safePrintf("spare ");
+		else
+			sb.safePrintf("%03d ", i);
+		
+		sb.safePrintf("%5d %5d %5d %5d %s %s %s %s %s\n",
+		              h->m_dnsClientPort,
+			      h->getInternalHttpsPort(),
+			      h->getInternalHttpPort(),
+			      h->m_port,
+			      h->m_hostname, h->m_hostname2,
+			      h->m_dir,
+			      h->m_mergeDir,
+			      h->m_note);
+	}
+	if(sb.save(m_dir,"hosts.conf")>=0)
+		return true;
+	else
+		return false;
 }
 
 
