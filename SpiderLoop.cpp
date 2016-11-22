@@ -1395,7 +1395,6 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	if( !tree ) {
 		// Sanity
 		gbshutdownLogicError();
-		return false;	// shut up, pvs..
 	}
 
 	// now we just take it out of doledb instantly

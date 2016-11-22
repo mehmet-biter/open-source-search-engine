@@ -2785,7 +2785,6 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 		if ( !s->m_ssl ) {
 			log("ssl: SSL is NULL after SSL_new");
 			g_process.shutdownAbort(true);
-			return -1; // for code analyzers..
 		}
 
 		SSL_set_fd(s->m_ssl, s->m_sd);

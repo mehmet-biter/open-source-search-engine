@@ -193,7 +193,6 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 	log("parms: missing parm type!!");
 
 	g_process.shutdownAbort(true);
-	return false;
 }
 
 
