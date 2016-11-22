@@ -5380,16 +5380,19 @@ Url **XmlDoc::getRedirUrl() {
 
 	// simpler if new path depth is shorter
 	if ( loc->getPathDepth( true ) < f->getPathDepth( true ) ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "redirected url path depth is shorter. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// simpler if old has cgi and new does not
 	if ( !simplifiedRedir && f->isCgi() && ! loc->isCgi() ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "redirected url doesn't have query param, old url does. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// simpler if new one is same as old but has a '/' at the end
 	if ( !simplifiedRedir && rlen == ulen+1 && r[rlen-1]=='/' && strncmp(r, u, ulen) == 0 ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "redirected url has '/', old url doesn't. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
@@ -5397,11 +5400,13 @@ Url **XmlDoc::getRedirUrl() {
 	// . http://news.yahoo.com/i/738;_ylt=AoL4eFRYKEdXbfDh6W2cF
 	//   redirected to http://news.yahoo.com/i/738
 	if ( !simplifiedRedir && strchr ( u, ';' ) &&  ! strchr ( r, ';' ) ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "redirected url doesn't have semicolon, old url does. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// simpler is new host is www and old is not
 	if ( !simplifiedRedir && loc->isHostWWW() && ! f->isHostWWW() ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "redirect is www & original is not. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
@@ -5412,26 +5417,31 @@ Url **XmlDoc::getRedirUrl() {
 		// crap, but www.hotmail.com redirects to live.msn.com
 		// login page ... so add this check here
 		if ( !f->isRoot() ) {
+			logTrace(g_conf.m_logTraceXmlDoc, "different domain & not root. simplifiedRedir=true");
 			simplifiedRedir = true;
 		}
 	}
 
 	bool allowSimplifiedRedirs = m_allowSimplifiedRedirs;
+	logTrace(g_conf.m_logTraceXmlDoc, "allowSimplifiedRedirs=%s", allowSimplifiedRedirs ? "true" : "false");
 
 	// follow redirects if injecting so we do not return
 	// EDOCSIMPLIFIEDREDIR
 	if ( getIsInjecting ( ) ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "is injecting. allowSimplifiedRedirs=true");
 		allowSimplifiedRedirs = true;
 	}
 
 	// or if disabled then follow the redirect
 	if ( ! cr->m_useSimplifiedRedirects ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "collection disallow useSimplifiedRedirects. allowSimplifiedRedirs=true");
 		allowSimplifiedRedirs = true;
 	}
 
 	// if redirect is setting cookies we have to follow the redirect
 	// all the way through so we can stop now.
 	if ( m_redirCookieBufValid && m_redirCookieBuf.length() ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "has redirCookie. allowSimplifiedRedirs=true");
 		allowSimplifiedRedirs = true;
 	}
 
@@ -12509,7 +12519,7 @@ void getMetaListWrapper ( void *state ) {
 // . returns (char *)-1 if it blocks and will call your callback when done
 // . generally only Repair.cpp changes these use* args to false
 char *XmlDoc::getMetaList(bool forDelete) {
-	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN forDelete=%s", forDelete ? "true" : "false" );
 
 	if (m_metaListValid) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );
