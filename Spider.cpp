@@ -84,7 +84,7 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 
 	// indicate it's a request not a reply
 	sb->safePrintf("REQ ");
-	sb->safePrintf("uh48=%" PRIu64" ",getUrlHash48());
+	sb->safePrintf("uh48=%" PRIx64" ",getUrlHash48());
 	// if negtaive bail early now
 	if ( (m_key.n0 & 0x01) == 0x00 ) {
 		sb->safePrintf("[DELETE]");
@@ -187,7 +187,7 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 	// indicate it's a reply
 	sb->safePrintf("REP ");
 
-	sb->safePrintf("uh48=%" PRIu64" ",getUrlHash48());
+	sb->safePrintf("uh48=%" PRIx64" ",getUrlHash48());
 	sb->safePrintf("parentDocId=%" PRIu64" ",getParentDocId());
 
 
