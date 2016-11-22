@@ -113,7 +113,8 @@ int main(int argc, char **argv) {
 	logf(LOG_TRACE, "\tredirUrl   : %.*s", xmlDoc.size_redirUrl, xmlDoc.ptr_redirUrl);
 	logf(LOG_TRACE, "\trootTitle  : %.*s", xmlDoc.size_rootTitleBuf, xmlDoc.ptr_rootTitleBuf);
 //	logf(LOG_TRACE, "\timageData  :");
-//	logf(LOG_TRACE, "\tutf8Content:");
+	logf(LOG_TRACE, "\t");
+	loghex(LOG_TRACE, xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "\tutf8Content:");
 	logf(LOG_TRACE, "\tsite       : %.*s", xmlDoc.size_site, xmlDoc.ptr_site);
 
 	logf(LOG_TRACE, "\tlinkInfo");
