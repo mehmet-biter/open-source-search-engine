@@ -245,8 +245,6 @@ bool processLoop ( void *state ) {
 	XmlDoc *xd = &st->m_xd;
 
 	if ( ! xd->m_loaded ) {
-		// setting just the docid. niceness is 0.
-		//xd->set3 ( st->m_docId , st->m_coll , 0 );
 		// callback
 		xd->setCallback ( state , processLoop );
 		// . and tell it to load from the old title rec
@@ -299,11 +297,9 @@ bool processLoop ( void *state ) {
 	// if we printed a special page (like rainbow sections) then return now
 	if ( st->m_printed ) {
 		bool status = g_httpServer.sendDynamicPage (s,
-							    //buf,bufLen,
 							    sb->getBufStart(),
 							    sb->length(),
 							    -1,false,
-							    //"text/html",
 							    contentType,
 							    -1, NULL, "utf8" );
 		// nuke state2
@@ -314,7 +310,6 @@ bool processLoop ( void *state ) {
 
 	// get the utf8 content
 	char **utf8 = xd->getUtf8Content();
-	//int32_t   len  = xd->size_utf8Content - 1;
 	// wait if blocked???
 	if ( utf8 == (void *)-1 ) return false;
 	// strange
@@ -332,24 +327,10 @@ bool processLoop ( void *state ) {
 		return sendErrorReply(st,EBADENGINEER );
 	}
 
-
 	char *content    = xd->ptr_utf8Content;
 	int32_t  contentLen = xd->size_utf8Content - 1;
 
-	// alloc buffer now
-	//char *buf = NULL;
-	//int32_t  bufMaxSize = 0;
-	//bufMaxSize = len + ( 32 * 1024 ) ;
-	//bufMaxSize = contentLen + ( 32 * 1024 ) ;
-	//buf        = (char *)mmalloc ( bufMaxSize , "PageGet2" );
-	//char *p          = buf;
-	//char *bufEnd     = buf + bufMaxSize;
-	//if ( ! buf ) {
-	//	return sendErrorReply ( st , g_errno );
-	//}
-
 	// for undoing the header
-	//char *start1 = p;
 	int32_t startLen1 = sb->length();
 
 	// we are always utfu
@@ -371,10 +352,8 @@ bool processLoop ( void *state ) {
 		sb->safePrintf( "\n<style type=\"text/css\">\n"
 			  "body{background-color:white;color:black;}\n"
 			  "</style>\n");
-		//p += strlen ( p );
 	}
 
-	//char format = st->m_format;
 	if ( format == FORMAT_XML ) sb->reset();
 	if ( format == FORMAT_JSON ) sb->reset();
 
@@ -428,47 +407,24 @@ bool processLoop ( void *state ) {
 	// - May eventually want to display this at a different location
 	//   on the page, or on the click 'n' scroll browser page itself
 	//   when this page is not being viewed solo.
-	// CNS: if ( ! st->m_clickNScroll ) {
 	if ( printDisclaimer ) {
-
-		sb->safePrintf(//sprintf ( p , 
-			  //"<BASE HREF=\"%s\">"
-			  //"<table border=1 width=100%%>"
-			  //"<tr><td>"
+		sb->safePrintf(
 			  "<table border=\"1\" bgcolor=\"#ffffff"
 			  "\" cellpadding=\"10\" "
-			  //"id=\"gbcnsdisctable\" class=\"gbcnsdisctable_v\""
 			  "cellspacing=\"0\" width=\"100%%\" color=\"#ffffff\">"
 			  "<tr"
-			  //" id=\"gbcnsdisctr\" class=\"gbcnsdisctr_v\""
 			  "><td>"
-			  //"<font face=times,sans-serif color=black size=-1>"
 			  "<span style=\"%s\">"
 			  "This is Gigablast's cached page of </span>"
 			  "<a href=\"%s\" style=\"%s\">%s</a>"
 			  "" , styleTitle, f->getUrl(), styleLink,
 			  f->getUrl() );
-		//p += strlen ( p );
+
 		// then the rest
-		//sprintf(p , 
-		sb->safePrintf(
-			"<span style=\"%s\">. "
-			"Gigablast is not responsible for the content of "
-			"this page.</span>", styleTitle );
-		//p += strlen ( p );
+		sb->safePrintf("<span style=\"%s\">. Gigablast is not responsible for the content of this page.</span>", styleTitle);
 
-		sb->safePrintf ( "<br/><span style=\"%s\">"
-			  "Cached: </span>"
-			  "<span style=\"%s\">",
-			  styleTitle, styleText );
-		//p += strlen ( p );
+		sb->safePrintf ("<br/><span style=\"%s\">Cached: </span><span style=\"%s\">",styleTitle, styleText );
 
-		// then the spider date in GMT
-		// time_t lastSpiderDate = xd->m_spideredTime;
-		// struct tm *timeStruct = gmtime_r(&lastSpiderDate,&tm_buf);
-		// char tbuf[100];
-		// strftime ( tbuf, 100,"%b %d, %Y UTC", timeStruct);
-		//p += strlen ( p );
 		sb->safeStrcpy(tbuf);
 
 		// Moved over from PageResults.cpp
@@ -508,13 +464,10 @@ bool processLoop ( void *state ) {
 				   "These search terms have been "
 				   "highlighted:  ",
 				   styleText );
-			//p += strlen ( p );
 		}
 		
 	}
 
-	// how much space left in p?
-	//int32_t avail = bufEnd - p;
 	// . make the url that we're outputting for (like in PageResults.cpp)
 	// . "thisUrl" is the baseUrl for click & scroll
 	char thisUrl[MAX_URL_LEN];
@@ -524,14 +477,9 @@ bool processLoop ( void *state ) {
 	// . construct the NAT mapped port
 	// . you should have used iptables to map port to the correct
 	//   internal ip:port
-	//uint32_t  ip   =g_conf.m_mainExternalIp  ; // h->m_externalIp;
-	//uint16_t port=g_conf.m_mainExternalPort;//h->m_externalHttpPort
-	// local check
-	//if ( st->m_isLocal ) {
 	uint32_t  ip   = h->m_ip;
 	uint16_t port = h->getInternalHttpPort();
-	//}
-	//sprintf ( x , "http://%s:%" PRId32"/get?q=" , iptoa ( ip ) , port );
+
 	// . we no longer put the port in here
 	// . but still need http:// since we use <base href=>
 	if (port == 80) sprintf(x,"http://%s/get?q=",iptoa(ip));
@@ -540,9 +488,7 @@ bool processLoop ( void *state ) {
 	// the query url encoded
 	int32_t elen = urlEncode ( x , thisUrlEnd - x , q , qlen );
 	x += elen;
-	// separate cgi vars with a &
-	//sprintf ( x, "&seq=%" PRId32"&rtq=%" PRId32"d=%" PRId64,
-	//	  (int32_t)st->m_seq,(int32_t)st->m_rtq,st->m_msg22.getDocId());
+
 	sprintf ( x, "&d=%" PRId64,st->m_docId );
 	x += strlen(x);		
 	// set our query for highlighting
@@ -583,7 +529,6 @@ bool processLoop ( void *state ) {
 	if ( format == FORMAT_XML ) includeHeader = false;
 	if ( format == FORMAT_JSON ) includeHeader = false;
 
-	//mfree(uq, uqCapacity, "PageGet");
 	// undo the header writes if we should
 	if ( ! includeHeader ) {
 		// including base href is off by default when not including
@@ -591,10 +536,6 @@ bool processLoop ( void *state ) {
 		if ( st->m_includeBaseHref ) sb->m_length=startLen2;//p=start2;
 		else                         sb->m_length=startLen1;//p=start1;
 	}
-
-	//sb->safeStrcpy(tbuf);
-
-
 
 	if ( format == FORMAT_XML ) {
 		sb->safePrintf("<response>\n");
@@ -676,7 +617,6 @@ bool processLoop ( void *state ) {
 		const char *ebuf = st->m_r.getString("eb");
 		if ( ! ebuf ) ebuf = "";
 
-		//p += sprintf ( p , 
 		sb->safePrintf(
 			       "<table border=1 "
 			       "cellpadding=10 "
@@ -692,7 +632,6 @@ bool processLoop ( void *state ) {
 				       "<tr>"
 				       "<td bgcolor=lightyellow>"
 				       // print cached link
-				       //"<center>"
 				       "&nbsp; "
 				       "<b>"
 				       "<a "
@@ -708,7 +647,6 @@ bool processLoop ( void *state ) {
 				       "color:#000000;\" "
 				       "href=%s>live link</a>"
 				       "</b>"
-				       //"</center>"
 				       "</td>"
 				       "</tr>\n"
 				       ,st->m_coll
@@ -757,7 +695,6 @@ bool processLoop ( void *state ) {
 
 	// it returns -1 and sets g_errno on error, line OOM
 	if ( contentLen == -1 ) {
-		//if ( buf ) mfree ( buf , bufMaxSize , "PageGet2" );	
 		return sendErrorReply ( st , g_errno );
 	}
 
@@ -824,8 +761,6 @@ bool processLoop ( void *state ) {
 	// sendErr:
 	contentType = "text/html";
 	if ( st->m_strip == 2 ) contentType = "text/xml";
-	// xml is usually buggy and this throws browser off
-	//if ( ctype == CT_XML ) contentType = "text/xml";
 
 	if ( xd->m_contentType == CT_JSON || xd->m_contentType == CT_STATUS) {
 		contentType = "application/json";
@@ -849,13 +784,6 @@ bool processLoop ( void *state ) {
 	mdelete ( st , sizeof(State2) , "PageGet1" );
 	delete (st);
 
-
-	// free out buffer that we alloc'd before returning since this
-	// should have copied it into another buffer
-
-	//if      ( ct == CT_XML ) newbuf.purge();
-	//else if ( buf          ) mfree ( buf , bufMaxSize , "PageGet2" );
-	
 	// and convey the status
 	return status;
 }
