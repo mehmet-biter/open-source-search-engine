@@ -683,7 +683,6 @@ public:
 	bool m_firstUrlValid;
 	bool m_firstUrlHash48Valid;
 	bool m_firstUrlHash64Valid;
-	bool m_lastUrlValid;
 	bool m_docIdValid;
 	bool m_availDocIdValid;
 	bool m_tagRecValid;
@@ -798,7 +797,6 @@ public:
 	bool m_isSiteRootValid;
 	bool m_wasContentInjectedValid;
 	bool m_outlinkHopCountVectorValid;
-	bool m_isFilteredValid;
 	bool m_urlFilterNumValid;
 	bool m_numOutlinksAddedValid;
 	bool m_baseUrlValid;
@@ -815,7 +813,6 @@ public:
 	bool m_collnumValid;
 	bool m_summaryValid;
 	bool m_spiderStatusDocMetaListValid;
-	bool m_isCompromisedValid;
 	bool m_isNoArchiveValid;
 	bool m_titleRecBufValid;
 	bool m_isLinkSpamValid;
@@ -1004,7 +1001,6 @@ public:
 	bool m_checkedUrlFilters;
 	
 	bool m_listAdded                ;
-	bool m_listFlushed              ;
 	bool m_check1                   ;
 	bool m_check2                   ;
 	bool m_prepared                 ;
@@ -1163,8 +1159,6 @@ public:
 
 	int64_t logQueryTimingStart();
 	void logQueryTimingEnd(const char* function, int64_t startTime);
-
-	int32_t  m_i;
 
 	void callCallback();
 };

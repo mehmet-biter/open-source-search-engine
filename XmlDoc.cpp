@@ -332,7 +332,6 @@ void XmlDoc::reset ( ) {
 
 	// keep track of updates to the rdbs we have done, so we do not re-do
 	m_listAdded                = false;
-	m_listFlushed              = false;
 	m_copied1                  = false;
 	m_updatingSiteLinkInfoTags = false;
 	m_hashedTitle              = false;
