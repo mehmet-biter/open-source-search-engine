@@ -37,7 +37,7 @@ static void gotHttpReply2 ( void *state ,
 			    TcpSocket *ts ) ;
 static void passOnReply     ( void *state , UdpSlot *slot ) ;
 
-static bool hasIframe(char *reply, int32_t replySize, int32_t niceness);
+static bool hasIframe(char *reply, int32_t replySize);
 
 
 static bool setProxiedUrlFromSquidProxiedRequest ( Msg13Request *r );
@@ -1203,8 +1203,6 @@ void gotHttpReply2 ( void *state ,
 	// save original size
 	int32_t originalSize = replySize;
 
-	int32_t niceness = r->m_niceness;
-
 	// sanity check
 	if ( replySize>0 && reply[replySize-1]!= '\0') { g_process.shutdownAbort(true); }
 
@@ -1329,7 +1327,7 @@ void gotHttpReply2 ( void *state ,
 	if ( r->m_compressReply &&
 	     goodStatus &&
 	     ! r->m_isRobotsTxt )
-		hasIframe2 = hasIframe ( reply , replySize, niceness ) ;
+		hasIframe2 = hasIframe(reply, replySize);
 
 	// sanity
 	if ( reply && replySize>0 && reply[replySize-1]!='\0') {
@@ -1660,7 +1658,7 @@ void passOnReply ( void *state , UdpSlot *slot ) {
 }
 
 // returns true if <iframe> tag in there
-bool hasIframe ( char *reply, int32_t replySize , int32_t niceness ) {
+bool hasIframe(char *reply, int32_t replySize) {
 	if ( ! reply || replySize <= 0 ) return false;
 	char *p = reply;
 	// exclude \0
