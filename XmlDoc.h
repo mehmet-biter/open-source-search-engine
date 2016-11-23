@@ -432,7 +432,6 @@ public:
 	char **getThumbnailData();
 	class Images *getImages ( ) ;
 	class TagRec ***getOutlinkTagRecVector () ;
-	char *hasFakeIpsMetaTag ( );
 	int32_t **getOutlinkFirstIpVector () ;
 	char *getIsSiteRoot ( ) ;
 	int8_t *getHopCount ( ) ;
@@ -796,7 +795,6 @@ public:
 	bool m_contentTypeValid;
 	bool m_outlinkTagRecVectorValid;
 	bool m_outlinkIpVectorValid;
-	bool m_hasUseFakeIpsMetaTagValid;
 	bool m_isSiteRootValid;
 	bool m_wasContentInjectedValid;
 	bool m_outlinkHopCountVectorValid;
@@ -942,17 +940,8 @@ public:
 	int32_t m_hostHash32a;
 	int32_t m_domHash32;
 
-	// this points into m_msge0 i guess
 	Msge0 m_msge0;
-
-	// this points into m_msge1 i guess
-	int32_t *m_outlinkIpVector;
-	SafeBuf m_fakeIpBuf;
-	char m_hasUseFakeIpsMetaTag;	// May be -1
 	Msge1 m_msge1;
-	TagRec **m_outlinkTagRecVector;
-	SafeBuf m_fakeTagRecPtrBuf;
-	TagRec m_fakeTagRec;
 
 	char *hashJSONFields2 ( HashTableX *table , HashInfo *hi , Json *jp ,
 				bool hashWithoutFieldNames ) ;

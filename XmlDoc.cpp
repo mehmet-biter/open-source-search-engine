@@ -150,9 +150,6 @@ void XmlDoc::reset ( ) {
 	m_incrementedAttemptsCount = false;
 	m_incrementedDownloadCount = false;
 
-	m_fakeIpBuf.purge();
-	m_fakeTagRecPtrBuf.purge();
-
 	m_doConsistencyTesting = g_conf.m_doConsistencyTesting;
 
 	m_computedMetaListCheckSum = false;
@@ -10651,24 +10648,6 @@ Images *XmlDoc::getImages ( ) {
 TagRec ***XmlDoc::getOutlinkTagRecVector () {
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
-	// if page has a <meta name=usefakeips content=1> tag
-	// then use the hash of the links host as the firstip.
-	// this will speed things up when adding a gbdmoz.urls.txt.*
-	// file to index every url in dmoz.
-	char *useFakeIps = hasFakeIpsMetaTag();
-	if ( ! useFakeIps || useFakeIps == (void *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, using fake IPs" );
-		return (TagRec ***)useFakeIps;
-	}
-
-	// no error and valid, return quick
-	if ( m_outlinkTagRecVectorValid && *useFakeIps )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid (using fake IPs)" );
-		return &m_outlinkTagRecVector;
-	}
-
 	// error?
 	if ( m_outlinkTagRecVectorValid && m_msge0.getErrno() ) {
 		g_errno = m_msge0.getErrno();
@@ -10688,28 +10667,6 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 	{
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getLinks returned -1" );
 		return (TagRec ***)links;
-	}
-
-	if ( *useFakeIps ) {
-		// set to those
-		m_fakeTagRec.reset();
-		// just make a bunch ptr to empty tag rec
-		int32_t need = links->m_numLinks * sizeof(TagRec *);
-		if ( ! m_fakeTagRecPtrBuf.reserve ( need ) )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, could not reserve fake IP buffer" );
-			return NULL;
-		}
-
-		// make them all point to the fake empty tag rec
-		TagRec **grv = (TagRec **)m_fakeTagRecPtrBuf.getBufStart();
-		for ( int32_t i = 0 ; i < links->m_numLinks ; i++ )
-			grv[i] = &m_fakeTagRec;
-		// set it
-		m_outlinkTagRecVector = grv;
-		m_outlinkTagRecVectorValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, point to empty buffer (using fake IPs)" );
-		return &m_outlinkTagRecVector;
 	}
 
 	CollectionRec *cr = getCollRec();
@@ -10772,58 +10729,10 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 }
 
 
-char *XmlDoc::hasFakeIpsMetaTag ( ) {
-	if ( m_hasUseFakeIpsMetaTagValid ) return &m_hasUseFakeIpsMetaTag;
-
-	char mbuf[16];
-	mbuf[0] = '\0';
-	const char *tag = "usefakeips";
-	int32_t tlen = strlen(tag);
-
-	// check the xml for a meta tag
-	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
-	xml->getMetaContent ( mbuf, 16 , tag , tlen );
-
-	m_hasUseFakeIpsMetaTag = (char)false;
-	if ( mbuf[0] == '1' ) m_hasUseFakeIpsMetaTag = (char)true;
-	m_hasUseFakeIpsMetaTagValid = true;
-	return &m_hasUseFakeIpsMetaTag;
-}
-
-
 int32_t **XmlDoc::getOutlinkFirstIpVector () {
 
 	Links *links = getLinks();
 	if ( ! links ) return NULL;
-
-	// if page has a <meta name=usefakeips content=1> tag
-	// then use the hash of the links host as the firstip.
-	// this will speed things up when adding a gbdmoz.urls.txt.*
-	// file to index every url in dmoz.
-	char *useFakeIps = hasFakeIpsMetaTag();
-	if ( ! useFakeIps || useFakeIps == (void *)-1 )
-		return (int32_t **)useFakeIps;
-
-	if ( *useFakeIps && m_outlinkIpVectorValid )
-		return &m_outlinkIpVector;
-
-	if ( *useFakeIps ) {
-		int32_t need = links->m_numLinks * 4;
-		if( !m_fakeIpBuf.reserve ( need ) ) {
-			log(LOG_WARN,"%s:%s: Could not allocate %" PRId32 " bytes for links", __FILE__, __func__, need);
-			return NULL;
-		}
-		for ( int32_t i = 0 ; i < links->m_numLinks ; i++ ) {
-			uint64_t h64 = links->getHostHash64(i);
-			int32_t ip = h64 & 0xffffffff;
-			m_fakeIpBuf.pushLong(ip);
-		}
-		int32_t *ipBuf = (int32_t *)m_fakeIpBuf.getBufStart();
-		m_outlinkIpVector = ipBuf;
-		m_outlinkIpVectorValid = true;
-		return &m_outlinkIpVector;
-	}
 
 	// error?
 	if ( m_outlinkTagRecVectorValid && m_msge1.getErrno() ) {
