@@ -759,7 +759,7 @@ bool processLoop ( void *state ) {
 	if ( xd->m_contentType == CT_JSON || xd->m_contentType == CT_STATUS) {
 		contentType = "application/json";
 	} else if ( xd->m_contentType == CT_XML ) {
-		contentType = "test/xml";
+		contentType = "text/xml";
 	}
 
 	if ( format == FORMAT_XML ) {
