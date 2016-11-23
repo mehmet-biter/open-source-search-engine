@@ -30,8 +30,7 @@ public:
 
 	bool setQueryBuffers ( class HttpRequest *hr ) ;
 
-	//void setToDefaults ( class CollectionRec *cr , int32_t niceness ) ;
-	void clear ( int32_t niceness ) ;
+	void clear();
 
 	// Msg40 likes to use this to pass the parms to a remote host
 	SearchInput      ( );
