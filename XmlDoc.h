@@ -432,7 +432,6 @@ public:
 	char **getThumbnailData();
 	class Images *getImages ( ) ;
 	class TagRec ***getOutlinkTagRecVector () ;
-	char *hasNoIndexMetaTag();
 	char *hasFakeIpsMetaTag ( );
 	int32_t **getOutlinkFirstIpVector () ;
 	char *getIsSiteRoot ( ) ;
@@ -797,7 +796,6 @@ public:
 	bool m_contentTypeValid;
 	bool m_outlinkTagRecVectorValid;
 	bool m_outlinkIpVectorValid;
-	bool m_hasNoIndexMetaTagValid;
 	bool m_hasUseFakeIpsMetaTagValid;
 	bool m_isSiteRootValid;
 	bool m_wasContentInjectedValid;
@@ -950,7 +948,6 @@ public:
 	// this points into m_msge1 i guess
 	int32_t *m_outlinkIpVector;
 	SafeBuf m_fakeIpBuf;
-	char m_hasNoIndexMetaTag;		// May be -1
 	char m_hasUseFakeIpsMetaTag;	// May be -1
 	Msge1 m_msge1;
 	TagRec **m_outlinkTagRecVector;
