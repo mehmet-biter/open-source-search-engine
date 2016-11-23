@@ -334,18 +334,12 @@ bool processLoop ( void *state ) {
 	int32_t startLen1 = sb->length();
 
 	// we are always utfu
-	if ( st->m_strip != 2 )
-		sb->safePrintf( "<meta http-equiv=\"Content-Type\" "
-			     "content=\"text/html;charset=utf8\">\n");
-
-	// base href
-	//Url *base = &xd->m_firstUrl;
-	//if ( xd->ptr_redirUrl.m_url[0] )
-	//	base = &xd->m_redirUrl;
-	char *base = xd->ptr_firstUrl;
-	if ( xd->ptr_redirUrl ) base = xd->ptr_redirUrl;
-	//Url *redir = *xd->getRedirUrl();
 	if ( st->m_strip != 2 ) {
+		sb->safePrintf( "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf8\">\n");
+
+		// base href
+		char *base = xd->ptr_firstUrl;
+		if ( xd->ptr_redirUrl ) base = xd->ptr_redirUrl;
 		sb->safePrintf ( "<BASE HREF=\"%s\">" , base );
 
 		// default colors in case css files missing
