@@ -8498,24 +8498,37 @@ uint8_t *XmlDoc::getContentType ( ) {
 // . similar to getMetaRedirUrl but look for different strings
 // . rel="canonical" or rel=canonical in a link tag.
 Url **XmlDoc::getCanonicalRedirUrl ( ) {
+	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
+
 	// return if we got it
-	if ( m_canonicalRedirUrlValid ) return &m_canonicalRedirUrlPtr;
+	if (m_canonicalRedirUrlValid) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. Already valid");
+		return &m_canonicalRedirUrlPtr;
+	}
 
 	// assume none in doc
 	m_canonicalRedirUrlPtr = NULL;
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if (!cr) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. CollectionRec is null, returning NULL");
+		return NULL;
+	}
 
-	if ( ! cr->m_useCanonicalRedirects ) {
+	if (!cr->m_useCanonicalRedirects) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. Canonical redirects is disabled. No canonical redirection");
 		m_canonicalRedirUrlValid = true;
 		return &m_canonicalRedirUrlPtr;
 	}
 
 	// are we site root page? don't follow canonical url then.
 	char *isRoot = getIsSiteRoot();
-	if ( ! isRoot || isRoot == (char *)-1 ) return (Url **)isRoot;
+	if ( ! isRoot || isRoot == (char *)-1 ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. Unable to check if site is root");
+		return (Url **)isRoot;
+	}
 	if ( *isRoot ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. Site is root. No canonical redirection");
 		m_canonicalRedirUrlValid = true;
 		return &m_canonicalRedirUrlPtr;
 	}
@@ -8524,21 +8537,29 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 	LinkInfo  *info1 = getLinkInfo1 ();
 	if ( ! info1 || info1 == (LinkInfo *)-1 ) return (Url **)info1;
 	if ( info1->getNumGoodInlinks() > 0 ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. There are inlinks to url. No canonical redirection");
 		m_canonicalRedirUrlValid = true;
 		return &m_canonicalRedirUrlPtr;
 	}
 
 	uint8_t *ct = getContentType();
-	if ( ! ct ) return NULL;
+	if ( ! ct ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. content type is null, returning NULL");
+		return NULL;
+	}
 
 	// these canonical links only supported in xml/html i think
 	if ( *ct != CT_HTML && *ct != CT_XML ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. Content type not HTML/XML. No canonical redirection");
 		m_canonicalRedirUrlValid = true;
 		return &m_canonicalRedirUrlPtr;
 	}
 
 	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (Url **)xml;
+	if ( ! xml || xml == (Xml *)-1 ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. Unable to get xml");
+		return (Url **)xml;
+	}
 
 	// scan nodes looking for a <link> node. like getBaseUrl()
 	for ( int32_t i=0 ; i < xml->getNumNodes() ; i++ ) {
@@ -8602,14 +8623,17 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 			}
 		}
 		if ( skip ) continue;
+
 		// otherwise, it is not us, we are NOT the canonical url
 		// and we should not be indexed, but just ass the canonical
 		// url as a spiderrequest into spiderdb, just like
 		// simplified meta redirect does.
 		m_canonicalRedirUrlPtr = &m_canonicalRedirUrl;
+		logTrace(g_conf.m_logTraceXmlDoc, "Got canonical url");
 		break;
 	}
 
+	logTrace(g_conf.m_logTraceXmlDoc, "END. Returning canonical url[%s]", m_canonicalRedirUrlPtr ? m_canonicalRedirUrlPtr->getUrl() : NULL);
 	m_canonicalRedirUrlValid = true;
 	return &m_canonicalRedirUrlPtr;
 }
