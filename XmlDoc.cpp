@@ -2087,7 +2087,7 @@ key96_t *XmlDoc::getTitleRecKey() {
 // . returns -1 if blocked
 int32_t *XmlDoc::getIndexCode ( ) {
 
-	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );;
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// return it now if we got it already
 	if ( m_indexCodeValid )
@@ -2103,7 +2103,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		m_indexCode = EDOCFORCEDELETE;
 		m_indexCodeValid = true;
 
-		logTrace( g_conf.m_logTraceXmlDoc, "END, delete operation. Returning EDOCFORCEDELETE" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, delete operation. Returning EDOCFORCEDELETE" );
 		return &m_indexCode;
 	}
 
@@ -2112,7 +2112,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if ( m_firstUrl.getUrlLen() <= 5 ) {
 		m_indexCode = EBADURL;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADURL. FirstURL len too short" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADURL. FirstURL len too short" );
 		return &m_indexCode;
 	}
 
@@ -2120,14 +2120,14 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		m_indexCode      = EURLTOOLONG;
 		m_indexCodeValid = true;
 
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EURLTOOLONG" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EURLTOOLONG" );
 		return &m_indexCode;
 	}
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. Could not get collection." );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. Could not get collection." );
 		return NULL;
 	}
 
@@ -2138,7 +2138,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 			m_indexCode      = ELINKLOOP;
 			m_indexCodeValid = true;
 
-			logTrace( g_conf.m_logTraceXmlDoc, "END, ELINKLOOP" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "END, ELINKLOOP" );
 			return &m_indexCode;
 		}
 	}
@@ -2147,7 +2147,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if ( m_firstUrl.getHost() && m_firstUrl.getHost()[0] == '.' ) {
 		m_indexCode      = EBADURL;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADURL (URL first char is .)" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADURL (URL first char is .)" );
 		return &m_indexCode;
 	}
 
@@ -2156,7 +2156,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		if ( m_firstUrl.isSpam() ) {
 			m_indexCode      = EDOCURLSPAM;
 			m_indexCodeValid = true;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCURLSPAM" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCURLSPAM" );
 			return &m_indexCode;
 		}
 	}
@@ -2171,7 +2171,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	     ! strncmp ( fu + fulen - 11 , "/robots.txt" , 11 )) {
 		m_indexCode = EBADURL;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADURL (robots.txt)" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADURL (robots.txt)" );
 		return &m_indexCode;
 	}
 
@@ -2185,7 +2185,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		XmlDoc **pod = getOldXmlDoc ( );
 		if ( ! pod || pod == (XmlDoc **)-1 )
 		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END return error, getOldXmlDoc failed" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "END return error, getOldXmlDoc failed" );
 			return (int32_t *)pod;
 		}
 		XmlDoc *od = *pod;
@@ -2196,7 +2196,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		if ( od && ! od->m_wasContentInjected ) {
 			m_indexCode = EABANDONED;
 			m_indexCodeValid = true;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, EABANDONED" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "END, EABANDONED" );
 			return &m_indexCode;
 		}
 		// if it was injected itself, only abandon this injection
@@ -2206,7 +2206,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		if ( od && od->m_wasContentInjected && m_newOnly == 1 ) {
 			m_indexCode = EABANDONED;
 			m_indexCodeValid = true;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, EABANDONED (2)" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "END, EABANDONED (2)" );
 			return &m_indexCode;
 		}
 
@@ -2219,7 +2219,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if ( gr->getLong("manualban",0) ) {
 		m_indexCode = EDOCBANNED;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCBANNED" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCBANNED" );
 		return &m_indexCode;
 	}
 
@@ -2230,7 +2230,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if ( *ip == 0 ) {
 		m_indexCode      = EBADIP;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADIP" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADIP" );
 		return &m_indexCode;
 	}
 
@@ -2257,14 +2257,14 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	HttpMime *mime = getMime();
 	if ( ! mime || mime == (HttpMime *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, error. Could not getMime" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, error. Could not getMime" );
 		return (int32_t *)mime;
 	}
 
 	// check redir url
 	Url **redirp = getRedirUrl();
 	if ( ! redirp || redirp == (void *)-1 ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "END, could not getRedirUrl" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, could not getRedirUrl" );
 		return (int32_t *)redirp;
 	}
 
@@ -2282,7 +2282,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if ( *d == 0LL ) {
 		m_indexCode      = ENODOCID;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, ENODOCID" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, ENODOCID" );
 		return &m_indexCode;
 	}
 
@@ -2294,7 +2294,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if ( *isWWWDup ) {
 		m_indexCode      = EDOCDUPWWW;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCDUPWWW" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCDUPWWW" );
 		return &m_indexCode;
 	}
 
@@ -2304,7 +2304,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		g_errno = 0;
 		m_indexCode      = EBADCHARSET;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADCHARSET" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADCHARSET" );
 		return &m_indexCode;
 	}
 
@@ -2314,7 +2314,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if ( ! supportedCharset(*charset) ) { //&&get_charset_str(*charset) ) {
 		m_indexCode      = EBADCHARSET;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADCHARSET (2)" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADCHARSET (2)" );
 		return &m_indexCode;
 	}
 
@@ -2322,7 +2322,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	LinkInfo   *info1 = getLinkInfo1();
 	if ( ! info1 || info1 == (LinkInfo *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getLinkInfo1 failed" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getLinkInfo1 failed" );
 		return (int32_t *)info1;
 	}
 
@@ -2336,7 +2336,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if ( disallowed ) {
 		m_indexCode      = EDOCDISALLOWED;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCDISALLOWED" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCDISALLOWED" );
 		return &m_indexCode;
 	}
 
@@ -2344,7 +2344,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	Url *cu = getCurrentUrl();
 	if ( ! cu || cu == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, error getCurrentUrl" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, error getCurrentUrl" );
 		return (int32_t *)cu;
 	}
 
@@ -2362,7 +2362,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if ( badExt && ! info1->hasLinkText() ) {
 	 	m_indexCode      = EDOCBADCONTENTTYPE;
 	 	m_indexCodeValid = true;
-	 	logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCBADCONTENTTYPE" );;
+	 	logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCBADCONTENTTYPE" );
 	 	return &m_indexCode;
 	}
 
@@ -2379,14 +2379,14 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	char *isErrorPage = getIsErrorPage();
 	if ( !isErrorPage||isErrorPage==(void *)-1)
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getIsErrorPage failed" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getIsErrorPage failed" );
 		return (int32_t *)isErrorPage;
 	}
 
 	if ( *isErrorPage ) {
 		m_indexCode      = EDOCISERRPG;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCISERRPG" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCISERRPG" );
 		return &m_indexCode;
 	}
 
@@ -2396,13 +2396,13 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	char *isDup = getIsDup();
 	if ( ! isDup || isDup == (char *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getIsDup failed" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getIsDup failed" );
 		return (int32_t *)isDup;
 	}
 	if ( *isDup ) {
 		m_indexCode      = EDOCDUP;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCDUP" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCDUP" );
 		return &m_indexCode;
 	}
 
@@ -2421,7 +2421,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		Url **canon = getCanonicalRedirUrl();
 		if ( ! canon || canon == (void *)-1 )
 		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, getCanonicalRedirUrl failed" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "END, getCanonicalRedirUrl failed" );
 			return (int32_t *)canon;
 		}
 
@@ -2430,7 +2430,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		if ( *canon ) {
 			m_indexCode = EDOCNONCANONICAL;
 			m_indexCodeValid = true;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCNONCANONICAL" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCNONCANONICAL" );
 			return &m_indexCode;
 		}
 	}
@@ -2439,7 +2439,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	XmlDoc **pod = getOldXmlDoc ( );
 	if ( ! pod || pod == (XmlDoc **)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getOldXmlDoc failed" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getOldXmlDoc failed" );
 		return (int32_t *)pod;
 	}
 
@@ -2450,7 +2450,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if ( ! od && m_recycleContent ) {
 		m_indexCode = ENOTITLEREC;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, ENOTITLEREC" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, ENOTITLEREC" );
 		return &m_indexCode;
 	}
 
@@ -2467,14 +2467,14 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		LinkInfo  *info1 = getLinkInfo1 ();
 		if ( ! info1 || info1 == (LinkInfo *)-1 )
 		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END error, getLinkInfo1 failed" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "END error, getLinkInfo1 failed" );
 			return (int32_t *)info1;
 		}
 
 		LinkInfo  *info2 = od->getLinkInfo1 ();
 		if ( ! info2 || info2 == (LinkInfo *)-1 )
 		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END error, getLinkInfo1 (od) failed" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "END error, getLinkInfo1 (od) failed" );
 			return (int32_t *)info2;
 		}
 
@@ -2506,14 +2506,14 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		int32_t *ch32 = getContentHash32();
 		if ( ! ch32 || ch32 == (void *)-1 )
 		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END error, getContentHash32 failed" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "END error, getContentHash32 failed" );
 			return (int32_t *)ch32;
 		}
 
 		if ( *ch32 == od->m_contentHash32 ) {
 			m_indexCode = EDOCUNCHANGED;
 			m_indexCodeValid = true;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCUNCHANGED" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCUNCHANGED" );
 			return &m_indexCode;
 		}
 	}
@@ -2523,7 +2523,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	Words *words = getWords();
 	if ( ! words || words == (Words *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END error, getWords failed" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END error, getWords failed" );
 		return (int32_t *)words;
 	}
 
@@ -2531,7 +2531,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	Bits *bits = getBits();
 	if ( ! bits )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END error, getBits failed" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END error, getBits failed" );
 		return NULL;
 	}
 
@@ -2546,19 +2546,19 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		g_errno = 0;
 		m_indexCode      = EBUFOVERFLOW;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EBUFOVERFLOW (Sections)" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EBUFOVERFLOW (Sections)" );
 		return &m_indexCode;
 	}
 	if (!sections||sections==(Sections *)-1)
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END error, getSections failed" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END error, getSections failed" );
 		return (int32_t *)sections;
 	}
 
 	if ( sections->m_numSections == 0 && words->getNumWords() > 0 ) {
 		m_indexCode      = EDOCBADSECTIONS;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCBADSECTIONS" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCBADSECTIONS" );
 		return &m_indexCode;
 	}
 
@@ -2573,7 +2573,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	char *isRoot = getIsSiteRoot();
 	if ( ! isRoot || isRoot == (char *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END error, getIsSiteRoot failed" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END error, getIsSiteRoot failed" );
 		return (int32_t *)isRoot;
 	}
 
@@ -2600,7 +2600,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		if ( m_isRepeatSpammer ) {
 			m_indexCode      = EDOCREPEATSPAMMER;
 			m_indexCodeValid = true;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCREPEATSPAMMER" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCREPEATSPAMMER" );
 			return &m_indexCode;
 		}
 	}
@@ -2620,20 +2620,20 @@ int32_t *XmlDoc::getIndexCode ( ) {
 			g_errno = 0;
 			m_indexCode      = EBUFOVERFLOW;
 			m_indexCodeValid = true;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, EBUFOVERFLOW (getSpiderPriority)" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "END, EBUFOVERFLOW (getSpiderPriority)" );
 			return &m_indexCode;
 		}
 		// but if it blocked, then un-validate it
 		m_indexCodeValid = false;
 		// and return to be called again i hope
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getSpiderPriority blocked" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getSpiderPriority blocked" );
 		return (int32_t *)priority;
 	}
 
 	if ( *priority  == -3 ) { // SPIDER_PRIORITY_FILTERED ) {
 		m_indexCode      = EDOCFILTERED;
 		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCFILTERED" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCFILTERED" );
 		return &m_indexCode;
 	}
 
@@ -2646,7 +2646,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	// no error otherwise
 	m_indexCode      = 0;
 	m_indexCodeValid = true;
-	logTrace( g_conf.m_logTraceXmlDoc, "END." );;
+	logTrace( g_conf.m_logTraceXmlDoc, "END." );
 	return &m_indexCode;
 }
 
@@ -4770,25 +4770,25 @@ int64_t *XmlDoc::getExactContentHash64 ( ) {
 
 
 RdbList *XmlDoc::getDupList ( ) {
-	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );;
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	if ( m_dupListValid )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );
 		return &m_dupList;
 	}
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, could not get collection" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, could not get collection" );
 		return NULL;
 	}
 
 	int64_t *ph64 = getExactContentHash64();
 	if ( ! ph64 || ph64 == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getExactContentHash64 returned -1" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getExactContentHash64 returned -1" );
 		return (RdbList *)ph64;
 	}
 
@@ -4841,24 +4841,24 @@ RdbList *XmlDoc::getDupList ( ) {
 				true ) ) // shardByTermId? THIS IS DIFFERENT!!!
 	{
 		// return -1 if this blocks
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. msg0.getList blocked." );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. msg0.getList blocked." );
 		return (RdbList *)-1;
 	}
 
 	// assume valid!
 	m_dupListValid = true;
-	logTrace( g_conf.m_logTraceXmlDoc, "END, done." );;
+	logTrace( g_conf.m_logTraceXmlDoc, "END, done." );
 	return &m_dupList;
 }
 
 
 // moved DupDetector.cpp into here...
 char *XmlDoc::getIsDup ( ) {
-	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );;
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	if ( m_isDupValid )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );
 		return &m_isDup;
 	}
 
@@ -4868,14 +4868,14 @@ char *XmlDoc::getIsDup ( ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, could not get collection" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, could not get collection" );
 		return NULL;
 	}
 
 	// skip if we should
 	if ( ! cr->m_dedupingEnabled ) {
 		m_isDupValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, deduping not enabled" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, deduping not enabled" );
 		return &m_isDup;
 	}
 
@@ -4885,7 +4885,7 @@ char *XmlDoc::getIsDup ( ) {
 	int64_t *mydocid = getDocId();
 	if ( ! mydocid || mydocid == (int64_t *)-1)
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getDocId returned -1" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getDocId returned -1" );
 		return (char *)mydocid;
 	}
 
@@ -4893,7 +4893,7 @@ char *XmlDoc::getIsDup ( ) {
 	RdbList *list = getDupList();
 	if ( ! list || list == (RdbList *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getDupList returned -1" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getDupList returned -1" );
 		return (char *)list;
 	}
 
@@ -4904,7 +4904,7 @@ char *XmlDoc::getIsDup ( ) {
 	int32_t *sni = getSiteNumInlinks();
 	if ( ! sni || sni == (int32_t *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getSiteNumInlinks returned -1" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getSiteNumInlinks returned -1" );
 		return (char *)sni;
 	}
 
@@ -4934,7 +4934,7 @@ char *XmlDoc::getIsDup ( ) {
 			m_isDup = (char)true;
 			m_isDupValid = true;
 			m_docIdWeAreADupOf = d;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, we are a duplicate" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "END, we are a duplicate" );
 			return &m_isDup;
 		}
 
@@ -4942,7 +4942,7 @@ char *XmlDoc::getIsDup ( ) {
 
 	m_isDup = (char)false;
 	m_isDupValid = true;
-	logTrace( g_conf.m_logTraceXmlDoc, "END, done. Not dup." );;
+	logTrace( g_conf.m_logTraceXmlDoc, "END, done. Not dup." );
 	return &m_isDup;
 }
 
@@ -5089,11 +5089,11 @@ Url **XmlDoc::getLastRedirUrl() {
 
 // . operates on the latest m_httpReply
 Url **XmlDoc::getRedirUrl() {
-	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );;
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	if ( m_redirUrlValid )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, returning already valid redirUrl" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, returning already valid redirUrl" );
 		return &m_redirUrlPtr;
 	}
 
@@ -5107,7 +5107,7 @@ Url **XmlDoc::getRedirUrl() {
 
 	// or recycling content from old title rec
 	if ( m_recycleContent ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return redirUrl from old TitleRec" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return redirUrl from old TitleRec" );
 		m_redirError = 0;
 		m_redirErrorValid = true;
 		m_redirUrlValid = true;
@@ -5134,7 +5134,7 @@ Url **XmlDoc::getRedirUrl() {
 		m_redirError = 0;
 		m_redirErrorValid = true;
 
-		logTrace( g_conf.m_logTraceXmlDoc, "END, returning fake. Length is 0" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, returning fake. Length is 0" );
 		// return a fake thing. content length is 0.
 		return &m_redirUrlPtr;
 	}
@@ -5152,7 +5152,7 @@ Url **XmlDoc::getRedirUrl() {
 		m_redirErrorValid = true;
 
 		// return a fake thing. content length is 0.
-		logTrace( g_conf.m_logTraceXmlDoc, "END, returning fake. Bad mime." );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, returning fake. Bad mime." );
 
 		return &m_redirUrlPtr;
 	}
@@ -5169,7 +5169,7 @@ Url **XmlDoc::getRedirUrl() {
 	// if httpStatus is not a redirect
 	//
 	if ( httpStatus < 300 || httpStatus > 399 ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "Checking meta for redirect, if not robot.txt" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "Checking meta for redirect, if not robot.txt" );
 
 		// ok, crap, i was getting the xml here to get the meta
 		// http-equiv refresh tag, but that added an element of
@@ -5178,7 +5178,7 @@ Url **XmlDoc::getRedirUrl() {
 		if ( !isRobotsTxt ) {
 			Url **mrup = getMetaRedirUrl();
 			if ( ! mrup || mrup == (void *)-1) {
-				logTrace( g_conf.m_logTraceXmlDoc, "END, bad meta?" );;
+				logTrace( g_conf.m_logTraceXmlDoc, "END, bad meta?" );
 				return (Url **)mrup;
 			}
 
@@ -5186,7 +5186,7 @@ Url **XmlDoc::getRedirUrl() {
 			loc = *mrup;
 		}
 	} else {
-		logTrace( g_conf.m_logTraceXmlDoc, "call mime.getLocationUrl" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "call mime.getLocationUrl" );
 		// get Location: url (the redirect url) from the http mime
 		loc = mime.getLocationUrl();
 	}
@@ -5194,7 +5194,7 @@ Url **XmlDoc::getRedirUrl() {
 	// get current url
 	Url *cu = getCurrentUrl();
 	if ( ! cu || cu == (void *)-1 ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "END, error, could not get current url" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, error, could not get current url" );
 		return (Url **)cu;
 	}
 
@@ -5202,7 +5202,7 @@ Url **XmlDoc::getRedirUrl() {
 	LinkInfo *info1 = getLinkInfo1();
 	// error or blocked
 	if ( ! info1 || info1 == (LinkInfo *)-1 ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "END, error, could not get LinkInfo1" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, error, could not get LinkInfo1" );
 		return (Url **)info1;
 	}
 
@@ -5253,7 +5253,7 @@ Url **XmlDoc::getRedirUrl() {
 		m_redirError = 0;
 		m_redirErrorValid = true;
 		// and return an empty one
-		logTrace( g_conf.m_logTraceXmlDoc, "END, no redir url (no loc)" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, no redir url (no loc)" );
 		return &m_redirUrlPtr;
 	}
 
@@ -5272,7 +5272,7 @@ Url **XmlDoc::getRedirUrl() {
 	if ( ! loc->getDomain() || loc->getDomainLen() <= 0 ) {
 		if ( ! keep ) m_redirError = EDOCBADREDIRECTURL;
 
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCBADREDIRECTURL" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCBADREDIRECTURL" );
 		return &m_redirUrlPtr;
 	}
 
@@ -5290,13 +5290,13 @@ Url **XmlDoc::getRedirUrl() {
 		}
 		if ( ! keep ) m_redirError = EDOCREDIRECTSTOSELF;
 
-		logTrace( g_conf.m_logTraceXmlDoc, "END, redir err" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, redir err" );
 		return &m_redirUrlPtr;
 	}
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. getCollRec returned false" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. getCollRec returned false" );
 		return NULL;
 	}
 
@@ -5307,7 +5307,7 @@ Url **XmlDoc::getRedirUrl() {
 	// . hmmm... seems to have worked though
 	if ( cr->m_recycleContent || m_recycleContent ) {
 		if ( ! keep ) m_redirError = EDOCTOOMANYREDIRECTS;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCTOOMANYREDIRECTS (recycled)" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCTOOMANYREDIRECTS (recycled)" );
 		return &m_redirUrlPtr;
 	}
 
@@ -5316,14 +5316,14 @@ Url **XmlDoc::getRedirUrl() {
 	//   had >= 4 here
 	if ( ++m_numRedirects >= 10 ) {
 		if ( ! keep ) m_redirError = EDOCTOOMANYREDIRECTS;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCTOOMANYREDIRECTS" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCTOOMANYREDIRECTS" );
 		return &m_redirUrlPtr;
 	}
 
 	// sometimes idiots don't supply us with a Location: mime
 	if ( loc->getUrlLen() == 0 ) {
 		if ( ! keep ) m_redirError = EDOCBADREDIRECTURL;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCBADREDIRECTURL" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCBADREDIRECTURL" );
 		return &m_redirUrlPtr;
 	}
 
@@ -5333,7 +5333,7 @@ Url **XmlDoc::getRedirUrl() {
 	const char *proto = loc->getScheme();
 	if ( strncmp(proto,"http://" ,7) && strncmp(proto,"https://",8) ) {
 		m_redirError = EDOCBADREDIRECTURL;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADREDIRECTURL (wrong scheme)" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADREDIRECTURL (wrong scheme)" );
 		return &m_redirUrlPtr;
 	}
 
@@ -6881,7 +6881,7 @@ bool XmlDoc::isFirstUrlRobotsTxt ( ) {
 //   so we make use of the powerful XmlDoc class for this
 bool *XmlDoc::getIsAllowed ( ) {
 
-	logTrace( g_conf.m_logTraceSpider, "BEGIN" );;
+	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
 	// return if we got it
 	if ( m_isAllowedValid )
@@ -6898,7 +6898,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		m_crawlDelay      = -1;
 		//log("xmldoc: skipping robots.txt lookup for %s",
 		//    m_firstUrl.m_url);
-		logTrace( g_conf.m_logTraceSpider, "END. !m_useRobotsTxt" );;
+		logTrace( g_conf.m_logTraceSpider, "END. !m_useRobotsTxt" );
 		return &m_isAllowed;
 	}
 
@@ -6907,14 +6907,14 @@ bool *XmlDoc::getIsAllowed ( ) {
 	if ( m_setFromTitleRec ) {
 		m_isAllowed      = true;
 		m_isAllowedValid = true;
-		logTrace( g_conf.m_logTraceSpider, "END. Allowed, m_setFromTitleRec" );;
+		logTrace( g_conf.m_logTraceSpider, "END. Allowed, m_setFromTitleRec" );
 		return &m_isAllowed;
 	}
 
 	if ( m_recycleContent ) {
 		m_isAllowed      = true;
 		m_isAllowedValid = true;
-		logTrace( g_conf.m_logTraceSpider, "END. Allowed, m_recycleContent" );;
+		logTrace( g_conf.m_logTraceSpider, "END. Allowed, m_recycleContent" );
 		return &m_isAllowed;
 	}
 
@@ -6929,7 +6929,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		m_crawlDelayValid = true;
 		// make it super fast...
 		m_crawlDelay      = 0;
-		logTrace( g_conf.m_logTraceSpider, "END. Allowed, WE are robots.txt" );;
+		logTrace( g_conf.m_logTraceSpider, "END. Allowed, WE are robots.txt" );
 		return &m_isAllowed;
 	}
 
@@ -6940,7 +6940,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// error? or blocked?
 	if ( ! ip || ip == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. getIp failed" );;
+		logTrace( g_conf.m_logTraceSpider, "END. getIp failed" );
 		return (bool *)ip;
 	}
 
@@ -6964,7 +6964,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		// is invalid in getNewSpiderReply()
 		m_crawlDelayValid = true;
 		m_crawlDelay      = -1;
-		logTrace( g_conf.m_logTraceSpider, "END. We allow it. FIX?" );;
+		logTrace( g_conf.m_logTraceSpider, "END. We allow it. FIX?" );
 		return &m_isAllowed;
 	}
 
@@ -7040,7 +7040,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		log("doc: had error getting robots.txt: %s",
 		    mstrerror(g_errno));
 
-		logTrace( g_conf.m_logTraceSpider, "END. Return NULL, ed failed" );;
+		logTrace( g_conf.m_logTraceSpider, "END. Return NULL, ed failed" );
 
 		return NULL;
 	}
@@ -7662,11 +7662,11 @@ static void gotHttpReplyWrapper ( void *state ) {
 // "NULL" can be a valid http reply (empty page) so we need to use "char **"
 char **XmlDoc::getHttpReply2 ( ) {
 
-	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );;
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	if ( m_httpReplyValid )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, already has valid reply" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already has valid reply" );
 		return &m_httpReply;
 	}
 
@@ -7679,7 +7679,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	// ended up here...
 	if ( m_recycleContent && m_sreqValid && m_sreq.m_isPageReindex ) {
 		g_errno = ENOTITLEREC;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. ENOTITLEREC (1)" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. ENOTITLEREC (1)" );
 		return NULL;
 	}
 
@@ -7687,7 +7687,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	int32_t *ip = getIp();
 	if ( ! ip || ip == (int32_t *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. no IP" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. no IP" );
 		return (char **)ip;
 	}
 
@@ -7708,7 +7708,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 			m_downloadEndTimeValid = true;
 		}
 
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return empty reply, IP is bogus" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return empty reply, IP is bogus" );
 		return &m_httpReply;
 		//return gotHttpReply ( );
 	}
@@ -7719,7 +7719,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	// error or blocked
 	if ( ! isAllowed || isAllowed == (void *)-1)
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return, not allowed." );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return, not allowed." );
 		return (char **)isAllowed;
 	}
 
@@ -7729,7 +7729,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	int32_t *cd = getFinalCrawlDelay();
 	if ( ! cd || cd == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. could not get crawl delay" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. could not get crawl delay" );
 		return (char **)cd;
 	}
 
@@ -7747,7 +7747,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 		// forbidden? assume we downloaded it and it was empty
 		m_downloadStatus = 0; // EDOCDISALLOWED;//403;
 
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return empty reply, download not allowed" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return empty reply, download not allowed" );
 		return &m_httpReply;
 		//return gotHttpReply ( );
 	}
@@ -7756,7 +7756,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	char *isRoot = getIsSiteRoot();
 	if ( ! isRoot || isRoot == (char *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return, error calling getIsSiteRoot" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return, error calling getIsSiteRoot" );
 		return (char **)isRoot;
 	}
 
@@ -7766,7 +7766,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 		 ! isFirstUrlRobotsTxt() ) {
 		    XmlDoc **pod = getOldXmlDoc ( );
 		    if ( ! pod || pod == (XmlDoc **)-1 ) {
-		    	logTrace( g_conf.m_logTraceXmlDoc, "END, return, error calling getOldXmlDoc" );;
+		    	logTrace( g_conf.m_logTraceXmlDoc, "END, return, error calling getOldXmlDoc" );
 		    	return (char **)pod;
 		    }
 		    // get ptr to old xml doc, could be NULL if non exists
@@ -7782,14 +7782,14 @@ char **XmlDoc::getHttpReply2 ( ) {
 	int32_t *pfip = getFirstIp();
 	if ( ! pfip || pfip == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return, error calling getFirstIp" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return, error calling getFirstIp" );
 		return (char **)pfip;
 	}
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. getCollRec returned false" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. getCollRec returned false" );
 		return NULL;
 	}
 
@@ -7803,7 +7803,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	Url *cu = getCurrentUrl();
 	if ( ! cu || cu == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return, getCurrentUrl returned false" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return, getCurrentUrl returned false" );
 		return (char **)cu;
 	}
 
@@ -7959,16 +7959,16 @@ char **XmlDoc::getHttpReply2 ( ) {
 	m_downloadStartTimeValid = true;
 	m_downloadStartTime = gettimeofdayInMillisecondsGlobal();
 
-	logTrace( g_conf.m_logTraceXmlDoc, "Calling msg13.getDoc" );;
+	logTrace( g_conf.m_logTraceXmlDoc, "Calling msg13.getDoc" );
 
 	if ( ! m_msg13.getDoc ( r,this , gotHttpReplyWrapper ) )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. msg13.getDoc blocked" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. msg13.getDoc blocked" );
 		// return -1 if blocked
 		return (char **)-1;
 	}
 
-	logTrace( g_conf.m_logTraceXmlDoc, "END, calling gotHttpReply and returning result" );;
+	logTrace( g_conf.m_logTraceXmlDoc, "END, calling gotHttpReply and returning result" );
 	return gotHttpReply ( );
 }
 
@@ -7976,7 +7976,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 // . sets g_errno on error
 char **XmlDoc::gotHttpReply ( ) {
 
-	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );;
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// save it
 	int32_t saved = g_errno;
@@ -8016,7 +8016,7 @@ char **XmlDoc::gotHttpReply ( ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. Could not get collection" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. Could not get collection" );
 		return NULL;
 	}
 
@@ -8029,7 +8029,7 @@ char **XmlDoc::gotHttpReply ( ) {
 
 	// fix this
 	if ( saved == EDOCUNCHANGED ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "EDOCUNCHANGED" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "EDOCUNCHANGED" );
 		// assign content from it since unchanged
 		m_recycleContent = true;
 		// clear the error
@@ -8072,21 +8072,21 @@ char **XmlDoc::gotHttpReply ( ) {
 	// over roadrunner's crappy wireless internet connection
 	if ( saved == ECORRUPTDATA )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. ECORRUPTDATA" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. ECORRUPTDATA" );
 		return NULL;
 	}
 
 	// this one happens too! for the same reason...
 	if ( saved == EBADREPLYSIZE )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. EBADREPLYSIZE" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. EBADREPLYSIZE" );
 		return NULL;
 	}
 
 	// might as well check this too while we're at it
 	if ( saved == ENOMEM )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. ENOMEM" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. ENOMEM" );
 		return NULL;
 	}
 
@@ -8108,7 +8108,7 @@ char **XmlDoc::gotHttpReply ( ) {
 		// call it data corruption i guess for now
 		g_errno = ECORRUPTDATA;
 		//g_process.shutdownAbort(true);
-		logTrace( g_conf.m_logTraceXmlDoc, "Clearing data, detected corruption" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "Clearing data, detected corruption" );
 	}
 
 	// if its a bad gzip reply, a compressed http reply, then
@@ -8120,7 +8120,7 @@ char **XmlDoc::gotHttpReply ( ) {
 	     // it like an empty page...
 	     saved == EMSGTOOBIG ) {
 
-	     logTrace( g_conf.m_logTraceXmlDoc, "Clearing data, ECORRUPTHTTPGZIP or EMSGTOOBIG" );;
+	     logTrace( g_conf.m_logTraceXmlDoc, "Clearing data, ECORRUPTHTTPGZIP or EMSGTOOBIG" );
 		// free it i guess
 		mfree ( m_httpReply, m_httpReplyAllocSize, "XmlDocHR" );
 		// and reset it
@@ -8132,7 +8132,7 @@ char **XmlDoc::gotHttpReply ( ) {
 	// clear this i guess
 	g_errno = 0;
 
-	logTrace( g_conf.m_logTraceXmlDoc, "END, returning reply." );;
+	logTrace( g_conf.m_logTraceXmlDoc, "END, returning reply." );
 	return &m_httpReply;
 }
 
@@ -8710,11 +8710,11 @@ static bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness
 
 // scan document for <meta http-equiv="refresh" content="0;URL=xxx">
 Url **XmlDoc::getMetaRedirUrl ( ) {
-	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );;
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	if ( m_metaRedirUrlValid )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );
 		return &m_metaRedirUrlPtr;
 	}
 
@@ -8722,7 +8722,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 	// get ptr to utf8 content
 	if ( ! m_httpReplyValid )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "DIE, reply not valid." );;
+		logTrace( g_conf.m_logTraceXmlDoc, "DIE, reply not valid." );
 		g_process.shutdownAbort(true);
 	}
 
@@ -8738,14 +8738,14 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getCollRec failed" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getCollRec failed" );
 		return NULL;
 	}
 
 	// if we are recycling or injecting, do not consider meta redirects
 	if ( cr->m_recycleContent || m_recycleContent )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, recycleContent - do not consider meta redirects" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, recycleContent - do not consider meta redirects" );
 		return &m_metaRedirUrlPtr;
 	}
 
@@ -8859,7 +8859,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		Url dummy;
 		if ( ! setMetaRedirUrlFromTag ( p , &dummy , m_niceness ,cu))
 		{
-			logTrace( g_conf.m_logTraceXmlDoc, "Failed to set redirect URL" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "Failed to set redirect URL" );
 			continue;
 		}
 
@@ -8870,7 +8870,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 
 	if ( ! gotOne )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, none found" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, none found" );
 		return &m_metaRedirUrlPtr;
 	}
 
@@ -8883,7 +8883,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 	// assume html since getContentType() is recursive on us.
 	if ( !xml.set( m_httpReply, m_httpReplySize - 1, m_version, CT_HTML ) ) {
 		// return NULL on error with g_errno set
-		logTrace( g_conf.m_logTraceXmlDoc, "END, xml.set failed" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, xml.set failed" );
 		return NULL;
 	}
 
@@ -8906,24 +8906,24 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		// skip if empty
 		if ( ! tag || tagLen <= 0 ) continue;
 
-		logTrace( g_conf.m_logTraceXmlDoc, "Found possible URL in XmlNode" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "Found possible URL in XmlNode" );
 		// PARSE OUT THE URL
 		if (!setMetaRedirUrlFromTag(p,&m_metaRedirUrl,m_niceness,cu) )
 		{
-			logTrace( g_conf.m_logTraceXmlDoc, "Failed to set URL from XmlNode data" );;
+			logTrace( g_conf.m_logTraceXmlDoc, "Failed to set URL from XmlNode data" );
 			continue;
 		}
 
 		// set it
 		m_metaRedirUrlPtr = &m_metaRedirUrl;
 
-		logTrace( g_conf.m_logTraceXmlDoc, "END, got redirect URL from XmlNode data" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, got redirect URL from XmlNode data" );
 		// return it
 		return &m_metaRedirUrlPtr;
 	}
 
 	// nothing found
-	logTrace( g_conf.m_logTraceXmlDoc, "END, nothing found" );;
+	logTrace( g_conf.m_logTraceXmlDoc, "END, nothing found" );
 	return &m_metaRedirUrlPtr;
 }
 
