@@ -5075,18 +5075,6 @@ int64_t XmlDoc::getFirstUrlHash64() {
 	return m_firstUrlHash64;
 }
 
-Url **XmlDoc::getLastRedirUrl() {
-
-	Url **ru = getRedirUrl();
-	if ( ! ru || ru == (void *)-1 ) return ru;
-
-	// m_redirUrlPtr will be NULL in all cases, however, the
-	// last redir url we actually got will be set in
-	// m_redirUrl.m_url so return that.
-	m_lastRedirUrlPtr = &m_redirUrl;
-	return &m_lastRedirUrlPtr;
-}
-
 // . operates on the latest m_httpReply
 Url **XmlDoc::getRedirUrl() {
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
