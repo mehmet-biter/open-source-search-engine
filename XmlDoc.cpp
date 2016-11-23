@@ -8533,6 +8533,7 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		return &m_canonicalRedirUrlPtr;
 	}
 
+	/// @todo ALC should we treat it like simplified redirection?
 	// if this page has an inlink, then let it stand
 	LinkInfo  *info1 = getLinkInfo1 ();
 	if ( ! info1 || info1 == (LinkInfo *)-1 ) return (Url **)info1;
@@ -8564,22 +8565,32 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 	// scan nodes looking for a <link> node. like getBaseUrl()
 	for ( int32_t i=0 ; i < xml->getNumNodes() ; i++ ) {
 		// 12 is the <base href> tag id
-		if ( xml->getNodeId ( i ) != TAG_LINK ) continue;
+		if ( xml->getNodeId ( i ) != TAG_LINK ) {
+			continue;
+		}
+
 		// get the href field of this base tag
 		int32_t linkLen;
-		char *link = (char *) xml->getString ( i, "href", &linkLen );
+		char *link = xml->getString ( i, "href", &linkLen );
 		// skip if not valid
-		if ( ! link || linkLen == 0 ) continue;
+		if ( ! link || linkLen == 0 ) {
+			continue;
+		}
+
 		// must also have rel=canoncial
 		int32_t relLen;
 		char *rel = xml->getString(i,"rel",&relLen);
 		if ( ! rel ) continue;
 		// skip if does not match "canonical"
-		if ( strncasecmp(rel,"canonical",relLen) != 0 ) continue;
+		if ( strncasecmp(rel,"canonical",relLen) != 0 ) {
+			continue;
+		}
+
 		// allow for relative urls
 		Url *cu = getCurrentUrl();
 		// set base to it
 		m_canonicalRedirUrl.set( cu, link, linkLen );
+
 		// assume it is not our url
 		bool isMe = false;
 		// if it is us, then skip!
@@ -8591,6 +8602,7 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		// if it is us, keep it NULL, it's not a redirect. we are
 		// the canonical url.
 		if ( isMe ) break;
+
 		// ignore if in an expanded iframe (<gbrame>) tag
 		char *pstart = xml->getContent();
 		char *p      = link;
