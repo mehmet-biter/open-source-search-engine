@@ -437,10 +437,6 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 			 &r->ptr_url,
 			 ((char*)r) + sizeof(*r) );
 
-	// . sanity - otherwise xmldoc::set cores!
-	// . no! sometimes the niceness gets converted!
-	//if ( niceness == 0 ) { g_process.shutdownAbort(true); }
-
 	// make sure we do not download gigablast.com admin pages!
 	if ( g_hostdb.isIpInNetwork ( r->m_firstIp ) && r->size_url-1 >= 7 ) {
 		Url url;
