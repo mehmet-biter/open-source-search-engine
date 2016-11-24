@@ -202,6 +202,9 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) ;
 //
 ///////////////////////////////////////////////
 
+class Msge0;
+
+
 // this msg class is for getting AND adding to tagdb
 class Msg8a {
 
@@ -258,9 +261,9 @@ private:
 	TagRec *m_tagRec;
 
 public:
-	// hack for MsgE
-	void *m_state2;
-	void *m_state3;
+	// hack for MsgE0
+	Msge0 *m_msge0;
+	int32_t m_msge0State;
 };
 
 #endif // GB_TAGDB_H

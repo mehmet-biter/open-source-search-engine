@@ -218,8 +218,8 @@ bool Msge0::sendMsg8a ( int32_t i ) {
 	Msg8a  *m   = &m_msg8as[i];
 	//TagRec *m = &m_tagRecs[i];
 	// save state into Msg8a
-	m->m_state2 =  this;
-	m->m_state3 = (void *)(PTRTYPE)i;
+	m->m_msge0 =  this;
+	m->m_msge0State = i;
 
 	// how big are all the tags we got for this url
 	int32_t need = sizeof(TagRec);
@@ -273,8 +273,8 @@ bool Msge0::sendMsg8a ( int32_t i ) {
 void Msge0::gotTagRecWrapper(void *state) {
 	Msg8a *m     = (Msg8a *)state;
 	//TagRec *m    = (TagRec *)state;
-	Msge0  *THIS = (Msge0  *)m->m_state2;
-	int32_t    i    = (int32_t   )(PTRTYPE)m->m_state3;
+	Msge0  *THIS = m->m_msge0;
+	int32_t    i    = m->m_msge0State;
 	if ( ! THIS->doneSending ( i ) ) return;
 	// try to launch more, returns false if not done
 	if ( ! THIS->launchRequests(i) ) return;

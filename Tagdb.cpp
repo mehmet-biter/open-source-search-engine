@@ -1212,8 +1212,8 @@ Msg8a::Msg8a()
     m_mtx(),
     m_errno(0),
     m_tagRec(NULL),
-    m_state2(NULL),
-    m_state3(NULL)
+    m_msge0(NULL),
+    m_msge0State(0)
 {
 }
 
