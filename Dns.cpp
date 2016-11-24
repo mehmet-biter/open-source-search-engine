@@ -2521,19 +2521,17 @@ key96_t Dns::getKey ( const char *hostname, int32_t hostnameLen ) {
 Host *Dns::getResponsibleHost ( key96_t key ) {
 	logTrace( g_conf.m_logTraceDns, "BEGIN" );
 
-	// just keep this on this cluster now
-	Hostdb *hostdb = &g_hostdb;
 	// get the hostNum that should handle this
-	int32_t hostId = key.n1 % hostdb->getNumHosts();
+	int32_t hostId = key.n1 % g_hostdb.getNumHosts();
 
-	logTrace( g_conf.m_logTraceDns, "numHosts: %" PRIu32, hostdb->getNumHosts() );
+	logTrace( g_conf.m_logTraceDns, "numHosts: %" PRIu32, g_hostdb.getNumHosts() );
 	logTrace( g_conf.m_logTraceDns, "key.n1: %" PRIu32, key.n1 );
 	logTrace( g_conf.m_logTraceDns, "hostId: %" PRIu32, hostId );
 
 	// return it if it is alive
-	Host* h = hostdb->getHost ( hostId );
+	Host* h = g_hostdb.getHost ( hostId );
 	
-	if ( h->m_spiderEnabled && ! hostdb->isDead ( hostId ) ) {
+	if ( h->m_spiderEnabled && ! g_hostdb.isDead ( hostId ) ) {
 		logTrace( g_conf.m_logTraceDns, "END. Spidering enabled and not dead. Returning." );
 		return h;
 	}
@@ -2541,7 +2539,7 @@ Host *Dns::getResponsibleHost ( key96_t key ) {
 		
 		
 	// how many are up?
-	int32_t numAlive = hostdb->getNumHostsAlive();
+	int32_t numAlive = g_hostdb.getNumHostsAlive();
 
 	logTrace( g_conf.m_logTraceDns, "Above is dead. numAlive: %" PRIu32, numAlive );
 
@@ -2557,16 +2555,16 @@ Host *Dns::getResponsibleHost ( key96_t key ) {
 	
 	// otherwise, chain to him
 	int32_t count = 0;
-	for ( int32_t i = 0 ; i < hostdb->getNumHosts() ; i++ ) {
+	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		// get the ith host
-		Host *host = &hostdb->m_hosts[i];
+		Host *host = &g_hostdb.m_hosts[i];
 		if ( !host->m_spiderEnabled ) {
 			logTrace( g_conf.m_logTraceDns, "i: %" PRId32" - spidering disabled", i );
 			continue;
 		}
 		
 		// skip him if he is dead
-		if ( hostdb->isDead ( host ) ) {
+		if ( g_hostdb.isDead ( host ) ) {
 			logTrace( g_conf.m_logTraceDns, "i: %" PRId32" - dead", i );
 			continue;
 		}
