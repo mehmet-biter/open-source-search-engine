@@ -126,8 +126,6 @@ bool MsgC::getIp(const char *hostname, int32_t hostnameLen, int32_t *ip, void *s
 	requestSize++;
 	//uint32_t groupNum=key.n0 % g_hostdb.m_numShards;
 	//uint32_t groupId=g_hostdb.getGroupId(groupNum);
-	// get a hostid that should house this ip in its local cache
-	Host *host = NULL; // g_dns.getResponsibleHost ( key );
 
 	// with the new iframe tag expansion logic in Msg13.cpp, the
 	// spider proxy will create a newXmlDoc to do that and will call
@@ -147,7 +145,8 @@ bool MsgC::getIp(const char *hostname, int32_t hostnameLen, int32_t *ip, void *s
 	// there was logic for getting ip from a proxy here
 	// removed in commit bab9e9da06a8edeb8a7677c2e90f72766f6ba782 as it was never used
 
-	host = g_dns.getResponsibleHost ( key );
+	// get a hostid that should house this ip in its local cache
+	Host *host = g_dns.getIPLookupHost(key);
 
 	if ( g_conf.m_logDebugDns ) {
 		int32_t fip = 0;

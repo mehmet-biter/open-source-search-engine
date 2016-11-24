@@ -2518,7 +2518,7 @@ key96_t Dns::getKey ( const char *hostname, int32_t hostnameLen ) {
 // . MsgC uses this to see which host is responsible for this key
 //   which is just a hash96() of the hostname (see getKey() above)
 // . returns -1 if not host available to send request to
-Host *Dns::getResponsibleHost ( key96_t key ) {
+Host *Dns::getIPLookupHost(key96_t key) {
 	logTrace( g_conf.m_logTraceDns, "BEGIN" );
 
 	// get the hostNum that should handle this
