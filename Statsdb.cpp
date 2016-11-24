@@ -324,7 +324,6 @@ bool Statsdb::addStat ( int32_t        niceness ,
 	if( !tree ) {
 		log(LOG_LOGIC,"%s:%s:%d: Rdb has no tree!", __FILE__, __func__, __LINE__);
 		gbshutdownLogicError();
-		return true;
 	}
 	// do not add stats to our tree if it is loading
 	if(tree->isLoading()) return true;

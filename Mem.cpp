@@ -834,7 +834,6 @@ int Mem::printBreech ( int32_t i) {
 	if ( flag == 0 ) return 1;
 
 	gbshutdownCorrupted();
-	return 1;	//shut up PVS-studio
 }
 
 // check all allocated memory for buffer under/overruns

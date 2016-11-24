@@ -155,7 +155,7 @@ public:
 	uint32_t   m_spideredTime; // time_t
 	uint32_t  m_indexedTime; // slightly > m_spideredTime (time_t)
 	uint32_t  m_reserved32;
-	uint32_t  reserved3;
+	uint32_t  m_reserved33;
 	uint32_t    m_firstIndexedDate; // time_t
 	uint32_t    m_outlinksAddedDate; // time_t
 
@@ -183,7 +183,7 @@ public:
 	uint16_t  m_isRSS:1;
 	uint16_t  m_isPermalink:1;
 	uint16_t  m_isAdult:1;
-	uint16_t  m_wasContentInjected:1;//eliminateMenus:1;
+	uint16_t  m_wasContentInjected:1;
 	uint16_t  m_spiderLinks:1;
 	uint16_t  m_isContentTruncated:1;
 	uint16_t  m_isLinkSpam:1;
@@ -196,7 +196,7 @@ public:
 	uint16_t  m_reserved800:1;
 	uint16_t  m_reserved801:1;
 	uint16_t  m_reserved802:1;
-	uint16_t  m_useTimeAxis:1; // m_reserved804:1;
+	uint16_t  m_useTimeAxis:1;
 	uint16_t  m_reserved805:1;
 	uint16_t  m_reserved806:1;
 	uint16_t  m_reserved807:1;
@@ -372,7 +372,6 @@ public:
 	class Url *getFirstUrl() ;
 	int64_t getFirstUrlHash48();
 	int64_t getFirstUrlHash64();
-	class Url **getLastRedirUrl() ;
 	class Url **getRedirUrl() ;
 	class Url **getMetaRedirUrl() ;
 	class Url **getCanonicalRedirUrl ( ) ;
@@ -434,8 +433,6 @@ public:
 	char **getThumbnailData();
 	class Images *getImages ( ) ;
 	class TagRec ***getOutlinkTagRecVector () ;
-	char *hasNoIndexMetaTag();
-	char *hasFakeIpsMetaTag ( );
 	int32_t **getOutlinkFirstIpVector () ;
 	char *getIsSiteRoot ( ) ;
 	int8_t *getHopCount ( ) ;
@@ -605,7 +602,6 @@ public:
 
 	Url        m_redirUrl;
 	Url       *m_redirUrlPtr;
-	Url       *m_lastRedirUrlPtr;
 	SafeBuf    m_redirCookieBuf;
 	Url        m_metaRedirUrl;
 	Url       *m_metaRedirUrlPtr;
@@ -691,7 +687,6 @@ public:
 	bool m_firstUrlValid;
 	bool m_firstUrlHash48Valid;
 	bool m_firstUrlHash64Valid;
-	bool m_lastUrlValid;
 	bool m_docIdValid;
 	bool m_availDocIdValid;
 	bool m_tagRecValid;
@@ -803,12 +798,9 @@ public:
 	bool m_contentTypeValid;
 	bool m_outlinkTagRecVectorValid;
 	bool m_outlinkIpVectorValid;
-	bool m_hasNoIndexMetaTagValid;
-	bool m_hasUseFakeIpsMetaTagValid;
 	bool m_isSiteRootValid;
 	bool m_wasContentInjectedValid;
 	bool m_outlinkHopCountVectorValid;
-	bool m_isFilteredValid;
 	bool m_urlFilterNumValid;
 	bool m_numOutlinksAddedValid;
 	bool m_baseUrlValid;
@@ -825,7 +817,6 @@ public:
 	bool m_collnumValid;
 	bool m_summaryValid;
 	bool m_spiderStatusDocMetaListValid;
-	bool m_isCompromisedValid;
 	bool m_isNoArchiveValid;
 	bool m_titleRecBufValid;
 	bool m_isLinkSpamValid;
@@ -950,18 +941,8 @@ public:
 	int32_t m_hostHash32a;
 	int32_t m_domHash32;
 
-	// this points into m_msge0 i guess
 	Msge0 m_msge0;
-
-	// this points into m_msge1 i guess
-	int32_t *m_outlinkIpVector;
-	SafeBuf m_fakeIpBuf;
-	char m_hasNoIndexMetaTag;		// May be -1
-	char m_hasUseFakeIpsMetaTag;	// May be -1
 	Msge1 m_msge1;
-	TagRec **m_outlinkTagRecVector;
-	SafeBuf m_fakeTagRecPtrBuf;
-	TagRec m_fakeTagRec;
 
 	char *hashJSONFields2 ( HashTableX *table , HashInfo *hi , Json *jp ,
 				bool hashWithoutFieldNames ) ;
@@ -1024,7 +1005,6 @@ public:
 	bool m_checkedUrlFilters;
 	
 	bool m_listAdded                ;
-	bool m_listFlushed              ;
 	bool m_check1                   ;
 	bool m_check2                   ;
 	bool m_prepared                 ;
@@ -1183,8 +1163,6 @@ public:
 
 	int64_t logQueryTimingStart();
 	void logQueryTimingEnd(const char* function, int64_t startTime);
-
-	int32_t  m_i;
 
 	void callCallback();
 };

@@ -564,10 +564,11 @@ bool SiteGetter::setRecognizedSite ( ) {
 	// popular homesteads
 	//
 	int32_t depth = 0;
-	if (strnstr(host, "vimeo.com", 9)) depth = 1;
-	if (strnstr(host, "www.myspace.com", 15)) depth = 1;
-	if (strnstr(host, "twitter.com", 11)) depth = 1;
-	if (strnstr(host, "www.facebook.com", 16)) depth = 1;
+	int32_t hostLen = path - host;
+	if (strnstr(host, "vimeo.com", hostLen)) depth = 1;
+	if (strnstr(host, "www.myspace.com", hostLen)) depth = 1;
+	if (strnstr(host, "twitter.com", hostLen)) depth = 1;
+	if (strnstr(host, "www.facebook.com", hostLen)) depth = 1;
 
 	// return false to indicate no recognized site detected
 	if ( ! depth ) {

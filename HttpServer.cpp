@@ -32,7 +32,7 @@ HttpServer g_httpServer;
 //bool sendPageSiteMap ( TcpSocket *s , HttpRequest *r ) ;
 //bool sendPageApi ( TcpSocket *s , HttpRequest *r ) ;
 bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) ;
-bool sendPagePretty ( TcpSocket *s , HttpRequest *r , const char *filename , const char *tabName ) ;
+static bool sendPagePretty(TcpSocket *s, HttpRequest *r, const char *filename, const char *tabName);
 
 // we get like 100k submissions a day!!!
 static HashTable s_htable;
@@ -170,7 +170,7 @@ bool HttpServer::getDoc ( char   *url      ,
 	// check for a secured site
 	TcpServer *tcp = &m_tcp;
 	bool urlIsHttps = false;
-	if ( url && strncasecmp(url, "https://", 8) == 0 ) {
+	if ( strncasecmp(url, "https://", 8) == 0 ) {
 		urlIsHttps = true;
 		defPort = 443;
 	}
@@ -418,8 +418,6 @@ void handleRequestfd ( UdpSlot *slot , int32_t niceness ) {
 	//if ( g_proxy.isCompressionProxy() ) { g_process.shutdownAbort(true); }
 	if ( g_hostdb.m_myHost->m_type==HT_QCPROXY) {g_process.shutdownAbort(true);}
 
-	// if niceness is 0, use the higher priority udpServer
-	//UdpServer *us = &g_udpServer;
 	// get the request
 	char *request      = slot->m_readBuf;
 	int32_t  requestSize  = slot->m_readBufSize;
@@ -751,7 +749,7 @@ bool sendPageRobotsTxt ( TcpSocket *s , HttpRequest *r ) {
 }
 */
 
-bool endsWith(char *haystack, int haystackLen, const char *needle, int needleLen) {
+static bool endsWith(char *haystack, int haystackLen, const char *needle, int needleLen) {
     return haystackLen >= needleLen && !strncmp(haystack + haystackLen - needleLen, needle, needleLen);
 }
 
@@ -2513,7 +2511,7 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 }
 
 
-bool sendPagePretty ( TcpSocket *s , HttpRequest *r , const char *filename , const char *tabName ) {
+static bool sendPagePretty(TcpSocket *s, HttpRequest *r, const char *filename, const char *tabName) {
 	SafeBuf sb;
 
 	CollectionRec *cr = g_collectiondb.getRec ( r );

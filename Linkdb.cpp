@@ -23,7 +23,6 @@ bool Linkdb::init ( ) {
 	// mask it to 32+15 bits
 	linkeeUrlHash64 &= 0x00007fffffffffffLL;
 	unsigned char linkerSiteRank = 13;
-	unsigned char      hopCount         = 7;
 	int32_t      ip               = rand();
 	int32_t      ipdom3 = ipdom(ip);
 	int64_t docId = ((uint64_t)rand() << 32 | rand()) & DOCID_MASK;
@@ -34,7 +33,6 @@ bool Linkdb::init ( ) {
 			 linkeeUrlHash64  ,
 			 linkSpam         , // islinkspam?
 			 linkerSiteRank   ,
-			 hopCount         ,
 			 ip               ,
 			 docId            ,
 			 discoveryDate    ,
@@ -46,14 +44,10 @@ bool Linkdb::init ( ) {
 	// jan 1 2008
 	uint32_t epoch = LINKDBEPOCH;
 	int32_t dd2 = (discoveryDate - epoch) / 86400;
-	if ( discoveryDate == 0 ) dd2 = 0;
 	dd2 = dd2 * 86400  + epoch;
 	int32_t ld2 = (lostDate - epoch) / 86400;
 	if ( lostDate == 0 ) ld2 = 0;
 	ld2 = ld2 * 86400  + epoch;
-
-	// try this
-	setLostDate_uk(&k,ld2 );
 
 	// now test it
 	if(getLinkeeSiteHash32_uk(&k)!=linkeeSiteHash32){g_process.shutdownAbort(true);}
@@ -61,18 +55,14 @@ bool Linkdb::init ( ) {
 	if ( isLinkSpam_uk    ( &k ) != linkSpam       ) {g_process.shutdownAbort(true);}
 	if (getLinkerSiteHash32_uk(&k)!=linkerSiteHash32){g_process.shutdownAbort(true);}
 	if ( getLinkerSiteRank_uk(&k) != linkerSiteRank){g_process.shutdownAbort(true);}
-	//if (getLinkerHopCount_uk (&k ) != hopCount  ) {g_process.shutdownAbort(true);}
 	if ( getLinkerIp24_uk ( &k ) != ipdom3         ) {g_process.shutdownAbort(true);}
 	if ( getLinkerIp_uk ( &k ) != ip         ) {g_process.shutdownAbort(true);}
 	if ( getLinkerDocId_uk( &k ) != docId          ) {g_process.shutdownAbort(true);}
 	if ( getDiscoveryDate_uk(&k) != dd2  ) {g_process.shutdownAbort(true);}
-	if ( getLostDate_uk(&k) != ld2  ) {g_process.shutdownAbort(true);}
 
 	// more tests
 	setDiscoveryDate_uk (&k,discoveryDate);
-	setLostDate_uk (&k,lostDate);
 	if ( getDiscoveryDate_uk(&k) != dd2  ) {g_process.shutdownAbort(true);}
-	if ( getLostDate_uk(&k) != ld2  ) {g_process.shutdownAbort(true);}
 
 
 	int32_t ip3 = 0xabcdef12;
@@ -201,7 +191,6 @@ key224_t Linkdb::makeKey_uk ( uint32_t  linkeeSiteHash32       ,
 			      uint64_t  linkeeUrlHash64        ,
 			      bool      isLinkSpam       ,
 			      unsigned char      linkerSiteRank   ,
-			      unsigned char      linkerHopCount         ,
 			      uint32_t  linkerIp               ,
 			      int64_t linkerDocId ,
 			      uint32_t      discoveryDate ,
@@ -209,10 +198,6 @@ key224_t Linkdb::makeKey_uk ( uint32_t  linkeeSiteHash32       ,
 			      bool      newAddToOldPage ,
 			      uint32_t linkerSiteHash32 ,
 			      bool      isDelete         ) {
-
-	//if ( linkerSiteRank > LDB_MAXSITERANK ) { g_process.shutdownAbort(true); }
-	//if ( linkerHopCount > LDB_MAXHOPCOUNT ) { g_process.shutdownAbort(true); }
-
 	// mask it
 	linkeeUrlHash64 &= LDB_MAXURLHASH;
 

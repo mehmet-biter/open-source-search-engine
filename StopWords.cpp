@@ -144,7 +144,7 @@ static HashTableX s_stopWordTable;
 static bool       s_stopWordsInitialized = false;
 static GbMutex    s_stopWordTableMutex;
 
-bool initWordTable( HashTableX *table, const char * const words[], const char *label ) {
+static bool initWordTable(HashTableX *table, const char * const words[], const char *label) {
 	// count them
 	int32_t count; for ( count = 0 ; words[count] ; count++ );
 	// set up the hash table

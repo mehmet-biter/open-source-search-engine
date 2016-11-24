@@ -1171,7 +1171,7 @@ bool TcpServer::closeLeastUsed ( int32_t maxIdleTime ) {
 // 	return true;
 // }
 
-void readSocketWrapper2 ( int sd , void *state ) ;
+static void readSocketWrapper2(int sd, void *state);
 
 // . this is called by Loop::gotSig() when "sd" is ready for reading
 // . we registered it with Loop::registerReadCallback(sd) in wrapSocket()
@@ -1193,7 +1193,7 @@ void readSocketWrapper ( int sd , void *state ) {
 }
 
 
-void readSocketWrapper2 ( int sd , void *state ) {
+static void readSocketWrapper2(int sd, void *state) {
 	// debug msg
 	//log("........... TcpServer::readSocketWrapper %" PRId32"\n",sd);
 	// extract our this ptr
@@ -2785,7 +2785,6 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 		if ( !s->m_ssl ) {
 			log("ssl: SSL is NULL after SSL_new");
 			g_process.shutdownAbort(true);
-			return -1; // for code analyzers..
 		}
 
 		SSL_set_fd(s->m_ssl, s->m_sd);

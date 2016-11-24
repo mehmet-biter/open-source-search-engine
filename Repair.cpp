@@ -1589,7 +1589,7 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 		minHostId = mh->m_hostId;
 		int32_t minHostIp = g_hostdb.getBestIp ( mh );
 		strcpy(minIpBuf,iptoa(minHostIp));
-		minPort = mh->m_httpPort;
+		minPort = mh->getInternalHttpPort();
 	}
 
 	// now show the rebuild status

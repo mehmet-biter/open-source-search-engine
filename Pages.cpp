@@ -320,7 +320,7 @@ int32_t Pages::getDynamicPageNumber ( HttpRequest *r ) {
 // once all hosts have received the parms, or we've at least tried to send
 // them to all hosts, then come here to return the page content back to
 // the client browser
-void doneBroadcastingParms ( void *state ) {
+static void doneBroadcastingParms(void *state) {
 	TcpSocket *sock = (TcpSocket *)state;
 	// free this mem
 	sock->m_handyBuf.purge();
@@ -1144,7 +1144,7 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 		if ( i >= g_hostdb.getNumHosts() ) continue;
 		// get it
 		Host *h = g_hostdb.getHost ( i );
-		uint16_t port = h->m_httpPort;
+		uint16_t port = h->getInternalHttpPort();
 		// use the ip that is not dead, prefer eth0
 		uint32_t ip = g_hostdb.getBestIp ( h );
 		// convert our current page number to a path
@@ -1173,7 +1173,7 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 			bt = "</font></b>";
 		}
 		Host *h = g_hostdb.getProxy( i );
-		uint16_t port = h->m_httpPort;
+		uint16_t port = h->getInternalHttpPort();
 		// use the ip that is not dead, prefer eth0
 		uint32_t ip = g_hostdb.getBestIp ( h );
 		const char *path = s_pages[page].m_filename;

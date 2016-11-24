@@ -139,7 +139,7 @@ void SpiderLoop::reset() {
 	m_winnerListCache.reset();
 }
 
-void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) ;
+static void updateAllCrawlInfosSleepWrapper(int fd, void *state);
 
 
 
@@ -1395,7 +1395,6 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	if( !tree ) {
 		// Sanity
 		gbshutdownLogicError();
-		return false;	// shut up, pvs..
 	}
 
 	// now we just take it out of doledb instantly
@@ -1936,7 +1935,7 @@ void SpiderLoop::buildActiveList ( ) {
 }
 
 // hostId is the remote hostid sending us the lock request
-void removeExpiredLocks ( int32_t hostId ) {
+static void removeExpiredLocks(int32_t hostId) {
 	// when we last cleaned them out
 	static time_t s_lastTime = 0;
 
@@ -1995,7 +1994,7 @@ void removeExpiredLocks ( int32_t hostId ) {
 }
 
 
-void gotCrawlInfoReply ( void *state , UdpSlot *slot);
+static void gotCrawlInfoReply(void *state, UdpSlot *slot);
 
 static int32_t s_requests = 0;
 static int32_t s_replies  = 0;
@@ -2095,7 +2094,7 @@ void spiderRoundIncremented ( CollectionRec *cr ) {
 	cr->m_needsSave = true;
 }
 
-void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
+static void gotCrawlInfoReply(void *state, UdpSlot *slot) {
 
 	// loop over each LOCAL crawlinfo we received from this host
 	CrawlInfo *ptr   = (CrawlInfo *)(slot->m_readBuf);

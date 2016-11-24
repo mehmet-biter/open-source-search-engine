@@ -488,7 +488,7 @@ skip:
 	// . we return false if we block, true otherwise
 	// . will loop indefinitely if a host in this group is down
 	// key is useless for us
-	if (m_mcast.send(request, requestLen, msg_type_1, true, shardNum, true, 0, this, NULL, gotReplyWrapper1, multicast_msg1_senddata_timeout, m_niceness, -1, getDbnameFromId(m_rdbId))) {
+	if (m_mcast.send(request, requestLen, msg_type_1, true, shardNum, true, 0, this, NULL, gotReplyWrapper1, multicast_msg1_senddata_timeout, m_niceness, -1, true)) {
 		return false;
 	}
 
@@ -557,13 +557,11 @@ static void handleRequest1(UdpSlot *slot, int32_t netnice) {
 	int32_t  readBufSize = slot->m_readBufSize;
 	int32_t niceness = slot->getNiceness();
 
-	// select udp server based on niceness
-	UdpServer *us = &g_udpServer;
 	// must at least have an rdbId
 	if ( readBufSize <= 4 ) {
 		g_errno = EREQUESTTOOSHORT;
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Request too short", __FILE__, __func__, __LINE__);
-		us->sendErrorReply(slot, g_errno);
+		g_udpServer.sendErrorReply(slot, g_errno);
 		return;
 	}
 	char *p    = readBuf;
@@ -574,7 +572,7 @@ static void handleRequest1(UdpSlot *slot, int32_t netnice) {
 	Rdb *rdb = getRdbFromId ( rdbId );
 	if ( ! rdb ) { 
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Bad rdbid", __FILE__, __func__, __LINE__);
-		us->sendErrorReply(slot, EBADRDBID);
+		g_udpServer.sendErrorReply(slot, EBADRDBID);
 		return;
 	}
 	// keep track of stats

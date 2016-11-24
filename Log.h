@@ -152,6 +152,8 @@ class Log {
 	bool m_logTimestamps;
 	bool m_logReadableTimestamps;
 
+	bool m_logPrefix;
+
  private:
 
 	const char *m_filename;

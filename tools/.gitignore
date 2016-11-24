@@ -1,5 +1,7 @@
-decode_posdbkey
+decode_rdbkey
 dump_rdbbuckets
 dump_rdbindex
 generate_rdbindex
+get_titlerec
+print_urlinfo
 validate_rdbindex

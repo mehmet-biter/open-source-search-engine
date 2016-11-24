@@ -110,7 +110,7 @@ void setInjectionRequestFromParms ( TcpSocket *sock ,
 		ir->ptr_contentDelim = NULL;
 }
 
-Host *getHostToHandleInjection ( char *url ) {
+static Host *getHostToHandleInjection(char *url) {
 	Url norm;
 	norm.set(url);
 
@@ -230,7 +230,7 @@ bool Msg7::sendInjectionRequestToHost ( InjectionRequest *ir ,
 	return false;
 }
 
-void sendHttpReplyWrapper ( void *state ) {
+static void sendHttpReplyWrapper(void *state) {
 	sendHttpReply ( state );
 }
 
@@ -475,7 +475,7 @@ static XmlDoc *s_injectTail = NULL;
 XmlDoc *getInjectHead() { return s_injectHead; }
 
 // send back a reply to the originator of the msg7 injection request
-void sendUdpReply7 ( void *state ) {
+static void sendUdpReply7(void *state) {
 	XmlDoc *xd = (XmlDoc *)state;
 
 	// remove from linked list
@@ -903,7 +903,7 @@ bool ImportState::setCurrentTitleFileAndOffset ( ) {
 	return true;//&m_bf;
 }
 
-void gotMulticastReplyWrapper ( void *state , void *state2 ) ;
+void gotMulticastReplyWrapper(void *state, void *state2);
 
 
 //
@@ -1104,7 +1104,7 @@ bool ImportState::importLoop ( ) {
 	// do not free it, let multicast free it after sending it
 	sbuf->detachBuf();
 
-	if (!mcast->send(req, reqSize, msg_type_7, true, shardNum, false, key, mcast, NULL, gotMulticastReplyWrapper, multicast_infinite_send_timeout, MAX_NICENESS)) {
+	if (!mcast->send(req, reqSize, msg_type_7, true, shardNum, false, key, mcast, NULL, gotMulticastReplyWrapper, multicast_infinite_send_timeout, MAX_NICENESS, -1, true)) {
 		log(LOG_WARN, "import: import mcast had error: %s",mstrerror(g_errno));
 		m_numIn++;
 	}

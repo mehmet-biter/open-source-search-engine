@@ -27,6 +27,7 @@ Log::Log () {
 	m_disabled = false;
 	m_logTimestamps = true;
 	m_logReadableTimestamps = true;
+	m_logPrefix = true;
 }
 
 Log::~Log () { 
@@ -230,36 +231,31 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
 	char *p    = tt;
 
 
-	if ( m_logTimestamps ) 
-	{
-        if( m_logReadableTimestamps )
-        {
-            time_t now_t = (time_t)(now / 1000);
-	    struct tm tm_buf;
-            struct tm *stm = gmtime_r(&now_t,&tm_buf);
+	if (m_logPrefix) {
+		if ( m_logTimestamps ) {
+			if( m_logReadableTimestamps ) {
+				time_t now_t = (time_t)(now / 1000);
+				struct tm tm_buf;
+				struct tm *stm = gmtime_r(&now_t,&tm_buf);
 
-            p += sprintf ( p , "%04d%02d%02d-%02d%02d%02d-%03d %04" PRId32" ", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(now%1000), g_hostdb.m_hostId );
-        }
-        else
-        {
-            if ( g_hostdb.getNumHosts() <= 999 )
-                    p += sprintf ( p , "%" PRIu64 " %03" PRId32 " ", (uint64_t)now , g_hostdb.m_hostId );
-            else if ( g_hostdb.getNumHosts() <= 9999 )
-                    p += sprintf ( p , "%" PRIu64" %04" PRId32" ", (uint64_t)now , g_hostdb.m_hostId );
-            else if ( g_hostdb.getNumHosts() <= 99999 )
-                    p += sprintf ( p , "%" PRIu64" %05" PRId32" ", (uint64_t)now , g_hostdb.m_hostId );
-        }
+				p += sprintf ( p , "%04d%02d%02d-%02d%02d%02d-%03d %04" PRId32" ", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(now%1000), g_hostdb.m_hostId );
+			} else {
+				if ( g_hostdb.getNumHosts() <= 999 )
+					p += sprintf ( p , "%" PRIu64 " %03" PRId32 " ", (uint64_t)now , g_hostdb.m_hostId );
+				else if ( g_hostdb.getNumHosts() <= 9999 )
+					p += sprintf ( p , "%" PRIu64" %04" PRId32" ", (uint64_t)now , g_hostdb.m_hostId );
+				else if ( g_hostdb.getNumHosts() <= 99999 )
+					p += sprintf ( p , "%" PRIu64" %05" PRId32" ", (uint64_t)now , g_hostdb.m_hostId );
+			}
+		}
+
+		// Get thread id. pthread_self instead?
+		unsigned tid=(unsigned)syscall(SYS_gettid);
+		p += sprintf(p, "%06u ", tid);
+
+		// Log level
+		p += sprintf(p, "%s ", getTypeString(type));
 	}
-
-
-
-	// Get thread id. pthread_self instead?
-	unsigned tid=(unsigned)syscall(SYS_gettid);
-	p += sprintf(p, "%06u ", tid);
-
-	// Log level
-	p += sprintf(p, "%s ", getTypeString(type));
-	
 
 	// then message itself
 	const char *x = msg;

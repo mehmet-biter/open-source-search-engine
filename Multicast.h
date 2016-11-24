@@ -91,9 +91,8 @@ class Multicast {
 		    void      (*callback)(void *state,void *state2),
 		    int64_t        totalTimeout    , //relative timeout in milliseconds
 		    int32_t        niceness        ,
-		    int32_t        firstHostId     = -1 ,// first host to try
-	        const char *extraInfo = NULL,
-            bool        freeReplyBuf    = true );
+		    int32_t        firstHostId,      // first host to try (-1=don't care)
+		    bool           freeReplyBuf);    //normally true
 
 	// . get the reply from your NON groupSend
 	// . if *freeReply is true then you are responsible for freeing this 
@@ -205,9 +204,9 @@ private:
 	static void gotReply2(void *state, UdpSlot *slot);
 	void gotReply2(UdpSlot *slot);
 
-	bool sendToHostLoop(int32_t key, int32_t hostNumToTry, int32_t firstHostId);
+	bool sendToHostLoop(int32_t key, int32_t firstHostId);
 	bool sendToHost    ( int32_t i ); 
-	int32_t pickBestHost  ( uint32_t key , int32_t hostNumToTry );
+	int32_t pickBestHost(uint32_t key, int32_t firstHostId);
 	void closeUpShop   ( UdpSlot *slot ) ;
 };
 

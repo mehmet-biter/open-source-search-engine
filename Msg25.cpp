@@ -39,7 +39,6 @@ static LinkInfo *makeLinkInfo(const char   *coll,
 			      int64_t       linkeeDocId,
 			      int32_t       lastUpdateTime,
 			      bool          onlyNeedGoodInlinks,
-			      int32_t       niceness,
 			      Msg25        *msg25,
 			      SafeBuf      *linkInfoBuf);
 
@@ -282,15 +281,10 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 	req->m_ourHostHash32 = ourHostHash32;
 	req->m_ourDomHash32 = ourDomHash32;
 
-	// why did i do this?
-	// if ( g_conf.m_logDebugLinkInfo )
-	// 	req->m_printDebugMsgs = true;
-
 	Url u;
 	u.set ( req->ptr_url );
 
 	req->m_linkHash64 = (uint64_t)u.getUrlHash64();
-
 
 	req->m_siteHash32 = 0LL;
 	req->m_siteHash64 = 0LL;
@@ -309,8 +303,7 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 	if ( req->m_mode == MODE_SITELINKINFO )
 		startKey = Linkdb::makeStartKey_uk ( req->m_siteHash32 );
 	else
-		startKey = Linkdb::makeStartKey_uk (req->m_siteHash32,
-						    req->m_linkHash64 );
+		startKey = Linkdb::makeStartKey_uk (req->m_siteHash32, req->m_linkHash64 );
 	// what group has this linkdb list?
 	uint32_t shardNum = getShardNum ( RDB_LINKDB, &startKey );
 	// use a biased lookup
@@ -335,7 +328,7 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 
 	// this should always block
 	// if timeout is too low we core in XmlDoc.cpp after getNewSpiderReply() returns a -1 because it blocks for some reason.
-	if (!mcast->send((char *)req, req->getStoredSize(), msg_type_25, false, shardNum, false, 0, req, NULL, gotMulticastReplyWrapper25, multicast_infinite_send_timeout, req->m_niceness, hostId)) {
+	if (!mcast->send((char *)req, req->getStoredSize(), msg_type_25, false, shardNum, false, 0, req, NULL, gotMulticastReplyWrapper25, multicast_infinite_send_timeout, req->m_niceness, hostId, true)) {
 		log( LOG_WARN, "linkdb: Failed to send multicast for %s err=%s", u.getUrl(),mstrerror(g_errno));
 		return true;
 	}
@@ -612,14 +605,12 @@ bool Msg25::getLinkInfo2(char      *site,
 			 bool       isSiteLinkInfo,
 			 int32_t       ip,
 			 int64_t  docId,
-			 //char      *coll,
 			 collnum_t collnum,
 			 char      *qbuf,
 			 int32_t       qbufSize,
 			 void      *state,
 			 void (* callback)(void *state),
 			 bool       isInjecting,
-			 //SafeBuf   *pbuf,
 			 bool     printDebugMsgs,
 			 bool     printInXml,
 			 int32_t       siteNumInlinks,
@@ -640,8 +631,6 @@ bool Msg25::getLinkInfo2(char      *site,
 	// reset the ip table
 	reset();
 
-	//int32_t mode = MODE_PAGELINKINFO;
-	//m_printInXml = printInXml;
 	if ( isSiteLinkInfo )
 		m_mode = MODE_SITELINKINFO;
 	else
@@ -653,8 +642,6 @@ bool Msg25::getLinkInfo2(char      *site,
 	else
 		m_pbuf = NULL;
 
-	// sanity check
-	//if ( ! coll ) { g_process.shutdownAbort(true); }
 	m_onlyNeedGoodInlinks = onlyNeedGoodInlinks;
 	m_getLinkerTitles     = getLinkerTitles;
 	// save safebuf ptr, where we store the link info
@@ -662,10 +649,9 @@ bool Msg25::getLinkInfo2(char      *site,
 	if ( ! linkInfoBuf ) { g_process.shutdownAbort(true); }
 	// sanity check
 	if ( m_mode == MODE_PAGELINKINFO && ! docId ) { g_process.shutdownAbort(true); }
-	// must have a valid ip
-	//if ( ! ip || ip == -1 ) { g_process.shutdownAbort(true); }
+
 	// get collection rec for our collection
-	CollectionRec *cr = g_collectiondb.getRec ( collnum );//, collLen );
+	CollectionRec *cr = g_collectiondb.getRec ( collnum );
 	// bail if NULL
 	if ( ! cr ) {
 		g_errno = ENOCOLLREC;
@@ -679,7 +665,6 @@ bool Msg25::getLinkInfo2(char      *site,
 	m_spideringEnabled    = g_conf.m_spideringEnabled;
 	m_ourHostHash32 = ourHostHash32;
 	m_ourDomHash32 = ourDomHash32;
-	//m_minInlinkerHopCount = -1; // -1 -->unknown
 	m_niceness            = niceness;
 	m_maxNumLinkers       = MAX_LINKERS;
 	m_errno               = 0;
@@ -696,11 +681,8 @@ bool Msg25::getLinkInfo2(char      *site,
 	m_docIdDupsLinkdb     = 0;
 	m_ipDups              = 0;
 	m_linkSpamLinkdb      = 0;
-	//m_url                 = url;
 	m_docId               = docId;
-	//m_coll                = coll;
 	m_collnum = collnum;
-	//m_collLen             = collLen;
 	m_callback            = callback;
 	m_state               = state;
 	m_oneVotePerIpDom     = oneVotePerIpDom;
@@ -711,7 +693,6 @@ bool Msg25::getLinkInfo2(char      *site,
 	m_qbufSize            = qbufSize;
 	m_isInjecting         = isInjecting;
 	m_oldLinkInfo         = oldLinkInfo;
-	//m_pbuf                = pbuf;
 	m_ip                  = ip;
 	m_top                 = iptop(m_ip);
 	m_lastUpdateTime      = lastUpdateTime;
@@ -740,14 +721,12 @@ bool Msg25::getLinkInfo2(char      *site,
 	//log("debug: entering getlinkinfo this=%" PRIx32,(int32_t)this);
 
 	// then the url/site hash
-	//uint64_t linkHash64 = (uint64_t) u.getUrlHash64();
 	m_linkHash64 = (uint64_t) u.getUrlHash64();
-	//uint32_t hostHash32 = (uint32_t)m_url->getHostHash32();
 
 	m_round = 0;
 
 	// must have a valid ip
-	if ( ! ip || ip == -1 ) { //g_process.shutdownAbort(true); }
+	if ( ! ip || ip == -1 ) {
 		log("linkdb: no inlinks because ip is invalid");
 		g_errno = EBADENGINEER;
 		return true;
@@ -1870,7 +1849,6 @@ bool Msg25::gotLinkText(Msg20Request *req) {
 		     m_docId,               // linkee docid
 		     m_lastUpdateTime,
 		     m_onlyNeedGoodInlinks,
-		     m_niceness,
 		     this ,
 		     m_linkInfoBuf );
 	// return true with g_errno set on error
@@ -2814,7 +2792,6 @@ static LinkInfo *makeLinkInfo(const char     *coll,
 			      int64_t         linkeeDocId,
 			      int32_t         lastUpdateTime,
 			      bool            onlyNeedGoodInlinks,
-			      int32_t         niceness,
 			      Msg25          *msg25,
 			      SafeBuf        *linkInfoBuf)
 {
@@ -3424,8 +3401,6 @@ Links::Links() {
 	m_parentUrl = NULL;
 	m_xml = NULL;
 	m_parentIsPermalink = false;
-	m_baseSite = NULL;
-	m_baseSiteLen = 0;
 	m_buf = NULL;
 	m_bufPtr = NULL;
 	m_linkPtrs = NULL;
@@ -3478,15 +3453,10 @@ void Links::reset() {
 
 
 bool Links::set(bool useRelNoFollow,
-		Xml *xml, Url *parentUrl, 
-		bool setLinkHash,
-		//bool useBaseHref , 
+		Xml *xml, Url *parentUrl,
 		// use null for this if you do not want to use it
 		Url *baseUrl, 
-		int32_t version, 
-		int32_t niceness,
-		//bool addSiteRootFlags,
-		//char *coll,
+		int32_t version,
 		bool parentIsPermalink,
 		Links *oldLinks,
 		bool doQuickSet)
@@ -3494,8 +3464,7 @@ bool Links::set(bool useRelNoFollow,
 	reset();
 
 	// always for this to true now since we need them for linkdb
-	//@todo NR: Remove from function call then?
-	setLinkHash = true;
+	bool setLinkHash = true;
 	if ( doQuickSet ) setLinkHash = false;
 
 	m_xml       = xml;
@@ -3503,9 +3472,6 @@ bool Links::set(bool useRelNoFollow,
 	m_parentUrl = parentUrl;
 	m_doQuickSet = doQuickSet;
 	m_parentIsPermalink = parentIsPermalink;
-
-	m_baseSite    = NULL;
-	m_baseSiteLen = 0;
 
 	m_numLinks = 0;
 	m_numNodes = xml->getNumNodes();
@@ -3607,10 +3573,6 @@ bool Links::set(bool useRelNoFollow,
 			}
 		}
 
-		// was it an enclosure?
-		//if ( linkLen == 0 && xml->getNodeId( i ) == TAG_XMLTAG ) 
-		//	link = (char *) xml->getString ( i, "url", &linkLen );
-			
 		// . it doesn't have an "href" field (could be "name" field)
 		// . "link" may not be NULL if empty, so use linkLen
 		if ( linkLen == 0 ) 
@@ -3771,7 +3733,7 @@ bool Links::set(bool useRelNoFollow,
 		link = tmp;
 
 		if (!addLink ( link , linkLen , i , setLinkHash , 
-			       version , niceness , isRSS , id , flags ))
+			       version , isRSS , id , flags ))
 			return false;
 		// get the xml node
 		//XmlNode *node = m_xml->getNodePtr(i);
@@ -3787,7 +3749,7 @@ bool Links::set(bool useRelNoFollow,
 
 
 // just a NULL-terminated text buffer/file of links to add
-bool Links::set(const char *buf, int32_t niceness) {
+bool Links::set(const char *buf) {
 	reset();
 	// need "coll" for Url::isSiteRoot(), etc.
 	//m_coll = coll;
@@ -3805,7 +3767,7 @@ bool Links::set(const char *buf, int32_t niceness) {
 		int32_t len = q - p;
 		// add the link
 		if ( ! addLink ( p , len , -1 , true , 
-				 TITLEREC_CURRENT_VERSION , niceness, false,
+				 TITLEREC_CURRENT_VERSION , false,
 				 TAG_A , 0 ) ) 
 			return false;
 		// advance
@@ -3844,7 +3806,7 @@ bool Links::print(SafeBuf *sb) {
 
 bool Links::addLink(const char *link, int32_t linkLen, int32_t nodeNum,
 		    bool setLinkHash, int32_t titleRecVersion,
-		    int32_t niceness, bool isRSS, int32_t tagId,
+		    bool isRSS, int32_t tagId,
 		    int32_t flagsArg )
 {
 #ifdef _VALGRIND_
@@ -4310,8 +4272,7 @@ int32_t Links::getLinkText(const char *linkee,
 			   char      **itemPtr,
 			   int32_t    *itemLen,
 			   int32_t    *retNode1,
-			   int32_t    *retLinkNum,
-			   int32_t     niceness)
+			   int32_t    *retLinkNum)
 {
 	log(LOG_DEBUG, "build: Links::getLinkText: linkee=%s", linkee);
 
@@ -4355,18 +4316,16 @@ int32_t Links::getLinkText(const char *linkee,
 
 	*retLinkNum = i;
 
-	return getLinkText2(i,buf,bufMaxLen,itemPtr,itemLen,retNode1,niceness);
+	return getLinkText2(i,buf,bufMaxLen,itemPtr,itemLen,retNode1);
 }
 
 
 int32_t Links::getLinkText2(int32_t i,
 			    char  *buf, 
-			    int32_t   bufMaxLen, 
-			    //bool   filter,
+			    int32_t   bufMaxLen,
 			    char **itemPtr,
 			    int32_t  *itemLen,
-			    int32_t  *retNode1,
-			    int32_t   niceness)
+			    int32_t  *retNode1)
 {
 	// get the node range so we can call Xml::getText()
 	int32_t node1 = m_linkNodes [ i ];
@@ -4516,28 +4475,6 @@ skipItem:
 	// return length
 	return bufLen;
 }
-
-
-// find an ascii subtring in linktext for this link and return a pointer 
-// to it, or NULL if not present
-char *Links::linkTextSubstr(int32_t linkNum, char *string, int32_t niceness) {
-	if (linkNum >= m_numLinks) return NULL;
-	int32_t nodeNum = getNodeNum(linkNum);
-	if (nodeNum >= m_xml->getNumNodes()-1) return NULL;
-	
-	for (int32_t i=nodeNum+1 ; i < m_xml->getNumNodes() ; i++ ) {
-		XmlNode *node = m_xml->getNodePtr(i);
-		if (node->getNodeId() == TAG_A) return NULL;
-		if (node->getNodeId() != TAG_TEXTNODE) continue;
-		// maybe handle img alt text here someday, too
-		char *ptr;
-		if ((ptr = strncasestr(node->getNode(), 
-				       node->getNodeLen(), string)))
-			return ptr;
-	}
-	return NULL;
-}
-
 
 int32_t Links::findLinkNum(char* url, int32_t urlLen) {
 	for(int32_t i = 0;i< m_numLinks; i++) {

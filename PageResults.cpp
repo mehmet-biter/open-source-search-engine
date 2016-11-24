@@ -59,7 +59,7 @@ static bool printTermPairs ( SafeBuf *sb , class Query *q , class PairScore *ps 
 static bool printLogoAndSearchBox (SafeBuf *sb , class HttpRequest *hr, SearchInput *si );
 
 
-bool sendReply ( State0 *st , char *reply ) {
+static bool sendReply(State0 *st, char *reply) {
 
 	int32_t savedErr = g_errno;
 

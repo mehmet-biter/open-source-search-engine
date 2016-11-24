@@ -70,9 +70,6 @@ private:
 	int32_t  m_numReplies;
 	int32_t  m_n;
 
-	// point to next url in "urlBuf" to process
-	char *m_nextPtr;
-
 	Url     m_urls        [ MAX_OUTSTANDING_MSGE0 ]; 
 	int32_t    m_ns          [ MAX_OUTSTANDING_MSGE0 ]; 
 	bool    m_used        [ MAX_OUTSTANDING_MSGE0 ]; 

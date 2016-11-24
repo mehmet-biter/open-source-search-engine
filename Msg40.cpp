@@ -1056,7 +1056,7 @@ bool gotSummaryWrapper ( void *state ) {
 	return true;
 }
 
-void doneSendingWrapper9 ( void *state , TcpSocket *sock ) {
+static void doneSendingWrapper9(void *state, TcpSocket *sock) {
 	Msg40 *THIS = (Msg40 *)state;
 
 	// the send completed, count it

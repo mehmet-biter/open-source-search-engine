@@ -48,7 +48,7 @@
 #include "ScopedLock.h"
 #include <list>
 
-void testWinnerTreeKey ( ) ;
+static void testWinnerTreeKey();
 
 int32_t g_corruptCount = 0;
 
@@ -84,7 +84,7 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 
 	// indicate it's a request not a reply
 	sb->safePrintf("REQ ");
-	sb->safePrintf("uh48=%" PRIu64" ",getUrlHash48());
+	sb->safePrintf("uh48=%" PRIx64" ",getUrlHash48());
 	// if negtaive bail early now
 	if ( (m_key.n0 & 0x01) == 0x00 ) {
 		sb->safePrintf("[DELETE]");
@@ -187,7 +187,7 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 	// indicate it's a reply
 	sb->safePrintf("REP ");
 
-	sb->safePrintf("uh48=%" PRIu64" ",getUrlHash48());
+	sb->safePrintf("uh48=%" PRIx64" ",getUrlHash48());
 	sb->safePrintf("parentDocId=%" PRIu64" ",getParentDocId());
 
 
@@ -1031,7 +1031,7 @@ void parseWinnerTreeKey ( key192_t  *k ,
 	*uh48 = (k->n0 >> 16);
 }
 
-void testWinnerTreeKey ( ) {
+static void testWinnerTreeKey() {
 	int32_t firstIp = 1234567;
 	int32_t priority = 123;
 	int64_t spiderTimeMS = 456789123LL;
@@ -1647,7 +1647,7 @@ public:
 	int16_t m_tagLen;
 };
 
-void doneAddingSeedsWrapper ( void *state ) {
+static void doneAddingSeedsWrapper(void *state) {
 	// note it
 	log("basic: done adding seeds using msg4");
 }
@@ -2020,7 +2020,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 // . the url patterns all contain a domain now, so this can use the domain
 //   hash to speed things up
 // . return ptr to the start of the line in case it has "tag:" i guess
-char *getMatchingUrlPattern ( SpiderColl *sc, SpiderRequest *sreq, char *tagArg ) { // tagArg can be NULL
+static char *getMatchingUrlPattern(SpiderColl *sc, SpiderRequest *sreq, char *tagArg) { // tagArg can be NULL
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
 	// if it has * and no negatives, we are in!

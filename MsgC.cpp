@@ -172,7 +172,7 @@ bool MsgC::getIp(const char *hostname, int32_t hostnameLen, int32_t *ip, void *s
 	int64_t timeout = (niceness==0) ? multicast_msg1c_getip_default_timeout : multicast_infinite_send_timeout;
 
 	// key is useless for us
-	if (!m_mcast.send(m_request, requestSize, msg_type_c, false, host->m_shardNum, false, 0, this, state, gotReplyWrapper, timeout, niceness, firstHostId, NULL, false)) {
+	if (!m_mcast.send(m_request, requestSize, msg_type_c, false, host->m_shardNum, false, 0, this, state, gotReplyWrapper, timeout, niceness, firstHostId, false)) {
 		//did not block, error
 		log(LOG_DEBUG,"dns: msgc: mcast had error: %s",
 		    mstrerror(g_errno));

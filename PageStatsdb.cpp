@@ -144,15 +144,8 @@ bool sendPageGraph ( TcpSocket *s, HttpRequest *r ) {
 	return true;
 }
 
-void genStatsDataset(SafeBuf *buf, StateStatsdb *st) {
-	if ( ! g_conf.m_useStatsdb ) {
-		buf->safePrintf("{\"error\":\"statsdb disabled\"}\n" );
-		return;
-	}
-}
-
 static void writeControls ( SafeBuf *buf, StateStatsdb *st ) ;
-void genStatsGraphTable(SafeBuf *buf, StateStatsdb *st) {
+static void genStatsGraphTable(SafeBuf *buf, StateStatsdb *st) {
 	if ( ! g_conf.m_useStatsdb ) 
 		buf->safePrintf("<font color=red><b>Statsdb disabled. "
 			       "Turn on in the master controls.</b>"

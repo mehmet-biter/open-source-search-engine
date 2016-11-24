@@ -40,7 +40,12 @@ public:
 			   int32_t          nowGlobal              ,
 			   bool          addTags                );
 
+	int32_t getErrno() const { return m_errno; }
+	int32_t **getIpBufPtr() { return &m_ipBuf; } //xdmlDoc needs this ptr-ptr
+
+private:
 	bool launchRequests ( int32_t starti ) ;
+	static void gotMsgCWrapper(void *state, int32_t ip);
 
 	bool sendMsgC      ( int32_t i , const char *host , int32_t hlen );
 	bool doneSending   ( int32_t i );
@@ -55,7 +60,7 @@ public:
 	int32_t   m_numUrls;
 	bool   m_addTags;
 
-	char   m_skipOldLinks;
+	bool   m_skipOldLinks;
 
 	// buffer to hold all the data we accumulate for all the urls in urlBuf
 	char *m_buf;
@@ -68,11 +73,7 @@ public:
 
 	int32_t  m_numRequests;
 	int32_t  m_numReplies;
-	int32_t  m_i;
 	int32_t  m_n;
-
-	// point to next url in "urlBuf" to process
-	char *m_nextPtr;
 
 	int32_t    m_ns          [ MAX_OUTSTANDING_MSGE1 ]; 
 	bool    m_used        [ MAX_OUTSTANDING_MSGE1 ]; 

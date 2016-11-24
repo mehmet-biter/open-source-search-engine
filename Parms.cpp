@@ -193,7 +193,6 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 	log("parms: missing parm type!!");
 
 	g_process.shutdownAbort(true);
-	return false;
 }
 
 
@@ -1288,7 +1287,7 @@ static DropLangs g_drops[] = {
 // in Collectiondb.cpp's CollectionRec::setUrlFiltersToDefaults().
 // for instance, UFP_NEWS spiders sites more frequently but less deep in
 // order to get "news" pages and articles
-bool printDropDownProfile ( SafeBuf* sb, const char *name, CollectionRec *cr ) {
+static bool printDropDownProfile(SafeBuf* sb, const char *name, CollectionRec *cr) {
 	sb->safePrintf ( "<select name=%s>", name );
 	// the type of url filters profiles
 	//char *items[] = {"custom","web","news","chinese","shallow"};
@@ -1311,7 +1310,7 @@ bool printDropDownProfile ( SafeBuf* sb, const char *name, CollectionRec *cr ) {
 	return true;
 }
 
-bool printCheckBoxes ( int32_t n , SafeBuf* sb, const char *name, const char *array){
+static bool printCheckBoxes(int32_t n, SafeBuf* sb, const char *name, const char *array) {
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		if ( i > 0 )
 			sb->safePrintf ("<input type=checkbox value=1 name=%s%" PRId32,
@@ -6665,23 +6664,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "merge buf size";
-	m->m_desc  = "Read and write this many bytes at a time when merging "
-		"files.  Smaller values are kinder to query performance, "
-		" but the merge takes longer. Use at least 1000000 for "
-		"fast merging.";
-	m->m_cgi   = "mbs";
-	m->m_off   = offsetof(Conf,m_mergeBufSize);
-	m->m_type  = TYPE_LONG;
-	// keep this way smaller than that 800k we had in here, 100k seems
-	// to be way better performance for qps
-	m->m_def   = "100000";
-	m->m_units = "bytes";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "doc count adjustment";
 	m->m_desc  = "Add this number to the total document count in the "
 		"index. Just used for displaying on the homepage.";
@@ -8402,6 +8384,24 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_size  = sizeof(Conf::m_mergespaceDirectory);
 	m->m_def   = "/tmp/gb_merge_space";
+	m->m_flags = 0;
+	m->m_page  = PAGE_RDB;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "merge buf size";
+	m->m_desc  = "Read and write this many bytes at a time when merging "
+		"files.  Smaller values are kinder to query performance, "
+		" but the merge takes longer. Use at least 1000000 for "
+		"fast merging.";
+	m->m_cgi   = "mbs";
+	m->m_off   = offsetof(Conf,m_mergeBufSize);
+	m->m_type  = TYPE_LONG;
+	// keep this way smaller than that 800k we had in here, 100k seems
+	// to be way better performance for qps
+	m->m_def   = "1000000";
+	m->m_units = "bytes";
 	m->m_flags = 0;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;

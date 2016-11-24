@@ -8,7 +8,7 @@
 
 #ifndef PRIVACORE_SAFE_VERSION
 
-bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) ;
+static bool sendPageAddDelColl(TcpSocket *s, HttpRequest *r, bool add);
 
 bool sendPageAddColl ( TcpSocket *s , HttpRequest *r ) {
 	return sendPageAddDelColl ( s , r , true ); 

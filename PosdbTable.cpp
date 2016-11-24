@@ -5779,7 +5779,6 @@ static inline bool isTermValueInRange( const char *p, const QueryTerm *qt ) {
 
 	// how did this happen?
 	gbshutdownAbort(true);
-	return false;	// shut up PVS-Studio
 }
 
 

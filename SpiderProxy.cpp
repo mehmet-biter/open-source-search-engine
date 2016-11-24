@@ -239,7 +239,7 @@ static bool s_init = true;
 static HashTableX s_proxyBannedTable;
 static HashTableX s_banCountTable;
 
-bool initProxyTables ( ) {
+static bool initProxyTables() {
 	// initialize proxy/urlip ban table?
 	if ( ! s_init ) return true;
 	s_init = false;
@@ -261,7 +261,7 @@ bool resetProxyStats ( ) {
 }
 
 
-void resetProxyStatWrapper(int fd, void *state) {
+static void resetProxyStatWrapper(int fd, void *state) {
 	resetProxyStats();
 }
 
@@ -277,7 +277,7 @@ bool saveSpiderProxyStats ( ) {
 	return s_iptab.save(g_hostdb.m_dir,"spiderproxystats.dat");
 }
 
-bool loadSpiderProxyStats ( ) {
+static bool loadSpiderProxyStats() {
 
 	initProxyTables();
 
@@ -309,7 +309,7 @@ bool loadSpiderProxyStats ( ) {
 //   this proxy
 // . returns total # of load points, i.e. downloads, in the last 
 //   LOADPOINT_EXPIRE_MS milliseconds (currently 10 minutes)
-int32_t getNumLoadPoints ( SpiderProxy *sp , int32_t *current ) {
+static int32_t getNumLoadPoints(SpiderProxy *sp, int32_t *current) {
 	// currently outstanding downloads on proxy
 	*current = 0;
 	int32_t count = 0;
@@ -346,7 +346,7 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 			       "host #0</a></b>"
 			       "<br>"
 			       , iptoa(h->m_ip)
-			       , (int32_t)(h->m_httpPort)
+			       , (int32_t)(h->getInternalHttpPort())
 			       );
 		//return true;
 	}
@@ -490,7 +490,7 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 static void returnProxy ( Msg13Request *preq , UdpSlot *udpSlot ) ;
 
 // a host is asking us (host #0) what proxy to use?
-void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
+static void handleRequest54(UdpSlot *udpSlot, int32_t niceness) {
 
 	char *request     = udpSlot->m_readBuf;
 	int32_t  requestSize = udpSlot->m_readBufSize;

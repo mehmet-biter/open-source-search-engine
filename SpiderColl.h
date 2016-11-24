@@ -253,7 +253,6 @@ class SpiderColl {
 	key96_t m_nextDoledbKey;
 	bool  m_didRound;
 	int32_t  m_pri2;
-	bool  m_twinDied;
 	int32_t  m_lastUrlFiltersUpdate;
 
 	// for reading lists from spiderdb

@@ -439,7 +439,6 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 	if( !buckets ) {
 		log(LOG_LOGIC, "%s:%s:%d: No buckets!", __FILE__, __func__, __LINE__);
 		gbshutdownLogicError();
-		return -1;	// for code analyzers not catching the abort above
 	}
 
 	int64_t numBytes = buckets->getListSize(collnum, (char *)&startKey, (char *)&endKey, NULL, NULL);

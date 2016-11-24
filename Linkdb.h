@@ -10,10 +10,9 @@
 // . pppppppp pppppppS qqqqqqqq cccccccc c = lower ip byte, S = isLinkSpam?
 // . IIIIIIII IIIIIIII IIIIIIII dddddddd I = upper 3 bytes of ip
 // . dddddddd dddddddd dddddddd dddddd00 d = linkerdocid,h = half bit,Z =delbit
-// . mmmmmmmm mmmmmm0N xxxxxxxx xxxxxxss N = 1 if it was added to existing page
+// . mmmmmmmm mmmmmm0N 00000000 000000ss N = 1 if it was added to existing page
 // . ssssssss ssssssss ssssssss sssssshZ s = sitehash32 of linker
 //   m = discovery date in days since jan 1
-//   x = estimated date it was lost (0 if not yet lost)
 //   
 // NOTE: the "c" bits were the hopcount of the inlinker, but we changed
 // them to the lower ip byte so steve can show the # of unique ips linking
@@ -26,8 +25,6 @@
 
 #define LDBKS sizeof(key224_t)
 
-#define LDB_MAXSITERANK 0xff
-#define LDB_MAXHOPCOUNT 0xff
 #define LDB_MAXURLHASH  0x00007fffffffffffLL
 
 // The date in the records are stored as days-since-2006. That means that when
@@ -62,7 +59,6 @@ bool getLinkInfo ( SafeBuf *reqBuf , // store msg25 request in here
 		   void (* callback)(void *state) ,
 		   bool       isInjecting         ,
 		   SafeBuf   *pbuf                ,
-		   //class XmlDoc *xd ,
 		   bool printInXml ,
 		   int32_t       siteNumInlinks      ,
 		   const LinkInfo  *oldLinkInfo         ,
@@ -83,8 +79,8 @@ bool getLinkInfo ( SafeBuf *reqBuf , // store msg25 request in here
 		   // on your domain or hostname. set BOTH to zero
 		   // to not perform this algo in handleRequest20()'s
 		   // call to XmlDoc::getMsg20Reply().
-		   int32_t       ourHostHash32 , // = 0 ,
-		   int32_t       ourDomHash32 , // = 0 );
+		   int32_t       ourHostHash32 ,
+		   int32_t       ourDomHash32 ,
 		   SafeBuf *myLinkInfoBuf );
 
 
@@ -107,7 +103,6 @@ public:
 			      uint64_t  linkeeUrlHash64  ,
 			      bool      isLinkSpam     ,
 			      unsigned char linkerSiteRank , // 0-15 i guess
-			      unsigned char linkerHopCount ,
 			      uint32_t  linkerIp       ,
 			      int64_t linkerDocId    ,
 			      uint32_t      discoveryDate  ,
@@ -123,7 +118,6 @@ public:
 				    linkeeUrlHash64,
 				    false, // linkspam?
 				    255, // 15, // ~siterank
-				    0, // hopcount
 				    0, // ip
 				    0, // docid
 				    0, //discovery date
@@ -140,7 +134,6 @@ public:
 				    linkeeUrlHash64,
 				    true, // linkspam?
 				    0, // ~siterank
-				    0xff, // hopcount
 				    0xffffffff, // ip
 				    MAX_DOCID, // docid
 				    0xffffffff, //discovery date
@@ -251,21 +244,6 @@ public:
 		return date;
 	}
 
-	// . in days since jan 1, 2012 utc
-	// . timestamp of jan 1, 2012 utc is 1325376000
-	static void setLostDate_uk ( void *k , int32_t date ) {
-		// subtract jan 1 2012
-		date -= LINKDBEPOCH;
-		// convert into days
-		date /= 86400;
-		// sanity
-		if ( date > 0x3fff || date < 0 ) { gbshutdownAbort(true); }
-		// clear old bits
-		((key224_t *)k)->n1 &= 0xffffffffffff0003LL;
-		// scale us into it
-		((key224_t *)k)->n1 |= ((uint64_t)date) << 2;
-	}
-
 	static uint32_t getLinkerSiteHash32_uk( void *k ) {
 		uint32_t sh32 = ((key224_t *)k)->n1 & 0x00000003;
 		sh32 <<= 30;
@@ -274,6 +252,7 @@ public:
 	}
 
 	static void printKey(const char *k);
+
 private:
 	Rdb m_rdb;
 };
@@ -625,14 +604,10 @@ public:
 	// call this before calling hash() and write()
 	bool set ( bool useRelNoFollow ,
 		   Xml *xml, 
-		   Url *parentUrl , 
-		   bool setLinkHashes ,
+		   Url *parentUrl ,
 		   // use NULL for this if you do not have a baseUrl
 		   Url *baseUrl , 
-		   int32_t version, 
-		   int32_t niceness ,
-		   //bool addSiteRootFlag = false ,
-		   //char *coll           = NULL  ,
+		   int32_t version,
 		   bool  parentIsPermalink , // = false ,
 		   Links *oldLinks         , // for LF_OLDLINKS flag
 		   // this is used by Msg13.cpp to quickly get ptrs
@@ -640,13 +615,13 @@ public:
 		   bool doQuickSet = false );
 
 	// set from a simple text buffer
-	bool set ( const char *buf , int32_t niceness ) ;
+	bool set ( const char *buf ) ;
 
 	bool print ( SafeBuf *sb ) ;
 
 	// Link in ascii text
 	bool addLink(const char *link, int32_t linkLen, int32_t nodeNum, bool setLinkHashes,
-		     int32_t titleRecVersion, int32_t niceness , bool isRSS ,
+		     int32_t titleRecVersion, bool isRSS ,
 		     int32_t tagId , linkflags_t flagsArg );
 
 	// . link spam functions. used by linkspam.cpp's setLinkSpam().
@@ -696,24 +671,17 @@ public:
 			   bool   getSiteLinkInfo ,
 			   char  *buf       ,
 			   int32_t   maxBufLen ,
-			   //bool   filter    ,
 			   char **itemPtr   ,
 			   int32_t  *itemLen   ,
-			   int32_t   *retNode1 , // = NULL ,
-			   int32_t   *retLinkNum ,
-			   int32_t    niceness );
+			   int32_t   *retNode1 ,
+			   int32_t   *retLinkNum);
 
 	int32_t getLinkText2 ( int32_t i,
 			   char  *buf       ,
 			   int32_t   maxBufLen ,
-			   //bool   filter    ,
 			   char **itemPtr   ,
 			   int32_t  *itemLen   ,
-			   int32_t   *retNode1 , // = NULL ,
-			   int32_t    niceness );
-
-	// quick n dirty check for substrings in linktext
-	char *linkTextSubstr(int32_t linkNum, char *string, int32_t niceness);
+			   int32_t   *retNode1 );
 
 	// returns list of \0 terminated, normalized links
 	char          *getLinkBuf    () { 
@@ -751,12 +719,6 @@ public:
 	Url   *m_baseUrl;
 	Url   *m_parentUrl;
 	bool   m_parentIsPermalink;
-
-	char  *m_baseSite;
-	int32_t   m_baseSiteLen;
-
-	// set <base href>, if any, into m_tmpUrl so m_baseUrl can point to it
-	Url    m_tmpUrl;
 
 	// . we store all links in this buf
 	// . each link ends in a \0

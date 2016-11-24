@@ -245,9 +245,6 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	if ( g_conf.m_useShotgun && 
 	     h->m_pingShotgun < g_conf.m_deadHostTimeout ) isAlive = true;
 	if ( isAlive && h->m_emailCode == 0 ) h->m_startTime =nowmsLocal;//now2
-	// log it only the first time he is registered as dead
-	if ( isAlive ) h->m_wasAlive = true;
-	else           h->m_wasAlive = false;
 	Host *me = g_hostdb.m_myHost;
 	// we send our stats to host "h"
 	PingInfo *pi = &me->m_pingInfo;//RequestBuf;
@@ -403,47 +400,6 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	// count all replies
 	if ( ! g_errno ) h->m_numPingReplies++;
 
-	// but if g_errno == EUDPTIMEDOUT, mark the host as dead
-	if ( g_errno == EUDPTIMEDOUT ) {
-		// if not first time...
-		if ( ! h->m_wasAlive && 
-		     // we must have been alive at some time
-		     h->m_wasEverAlive &&
-		     // and this is lefit
-		     h->m_timeOfDeath != 0 &&
-		     // and in our group
-		     //h->m_groupId == g_hostdb.m_myHost->m_groupId ) {
-		     h->m_shardNum == getMyShardNum() ) {
-			// how long dead for?
-			int64_t delta = nowms - h->m_timeOfDeath;
-			// we did it once, do not repeat
-			h->m_timeOfDeath = 0;
-			// num collections
-			int32_t nc = g_collectiondb.m_numRecs;
-			// if 5 minutes, issue reload if in our group
-			for ( int32_t i = 0 ; i < nc && delta > 2*60*1000 ; i++ ){
-				// get coll
-				SpiderColl *sc=g_spiderCache.getSpiderColl(i);
-				// skip if empty
-				if ( ! sc ) continue;
-				// flag it
-				sc->m_twinDied = true;
-			}
-		}
-		//*pingPtr = g_conf.m_deadHostTimeout;
-		if ( h->m_wasAlive ) {
-                        const char *buf = "Host";
-                        if(h->m_isProxy)
-                                buf = "Proxy";
-			log("net: %s #%" PRId32" ip=%s is dead. Has not responded to "
-			    "ping in %" PRId32" ms.", buf, h->m_hostId,
-			    iptoa(slot->getIp()),
-			    (int32_t)g_conf.m_deadHostTimeout);
-			// set dead time
-			h->m_timeOfDeath = nowms;
-		}
-	}
-
 	// clear g_errno so we don't think any functions below set it
 	g_errno = 0;
 
@@ -453,39 +409,36 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	     h->m_pingShotgun < g_conf.m_deadHostTimeout ) isAlive = true;
 	if ( h->m_ping < g_conf.m_deadHostTimeout        ) isAlive = true;
 		
-	// if host is not dead clear his sentEmail bit so if he goes
-	// down again we may be obliged to send another email, provided
-	// we are the hostid right after him
 	if ( isAlive ) {
+		// if host is not dead clear his sentEmail bit so if he goes
+		// down again we may be obliged to send another email, provided
+		// we are the hostid right after him
 		// allow him to receive emails again
 		h->m_emailCode = 0;
 		// if he was the subject of the last alert we emailed and now
 		// he is back up then we are free to send another alert about
 		// any other host that goes down
 		if ( h->m_hostId == s_lastSentHostId ) s_lastSentHostId = -1;
-		// mark this
-		h->m_wasEverAlive = true;
+
+		if ( h->m_pingInfo.m_percentMemUsed >= 99.0 &&
+		     h->m_firstOOMTime == 0 )
+			h->m_firstOOMTime = nowms;
+		if ( h->m_pingInfo.m_percentMemUsed < 99.0 )
+			h->m_firstOOMTime = 0LL;
+		// if this host is alive and has been at 99% or more mem usage
+		// for the last X minutes, and we have got at least 10 ping replies
+		// from him, then send an email alert.
+		if ( h->m_pingInfo.m_percentMemUsed >= 99.0 &&
+		     nowms - h->m_firstOOMTime >= g_conf.m_sendEmailTimeout )
+			g_pingServer.sendEmail ( h , NULL , true , true );
+	} else {
+		// . if his ping was dead, try to send an email alert to the admin
+		// . returns false if blocked, true otherwise
+		// . sets g_errno on erro
+		// . send it iff both ports (if using shotgun) are dead
+		if ( nowms - h->m_startTime >= g_conf.m_sendEmailTimeout)
+			g_pingServer.sendEmail ( h ) ;
 	}
-
-	if ( isAlive && h->m_pingInfo.m_percentMemUsed >= 99.0 &&
-	     h->m_firstOOMTime == 0 )
-		h->m_firstOOMTime = nowms;
-	if ( isAlive && h->m_pingInfo.m_percentMemUsed < 99.0 )
-		h->m_firstOOMTime = 0LL;
-	// if this host is alive and has been at 99% or more mem usage
-	// for the last X minutes, and we have got at least 10 ping replies
-	// from him, then send an email alert.
-	if ( isAlive &&
-	     h->m_pingInfo.m_percentMemUsed >= 99.0 &&
-	     nowms - h->m_firstOOMTime >= g_conf.m_sendEmailTimeout )
-		g_pingServer.sendEmail ( h , NULL , true , true );
-
-	// . if his ping was dead, try to send an email alert to the admin 
-	// . returns false if blocked, true otherwise
-	// . sets g_errno on erro
-	// . send it iff both ports (if using shotgun) are dead
-	if ( ! isAlive && nowms - h->m_startTime >= g_conf.m_sendEmailTimeout) 
-		g_pingServer.sendEmail ( h ) ;
 
 	// reset in case sendEmail() set it
 	g_errno = 0;
@@ -1380,9 +1333,6 @@ void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 
 	// is it dead now?
 	bool isDead = g_hostdb.isDead ( h );
-
-	// force it out of sync
-	if ( isDead ) h->m_inSync = false;
 
 	if( ! h->m_isProxy ) {
 		// maintain m_numHostsAlive if there was a change in state

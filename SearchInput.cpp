@@ -89,7 +89,7 @@ SearchInput::SearchInput() {
 SearchInput::~SearchInput() {
 }
 
-void SearchInput::clear ( int32_t niceness ) {
+void SearchInput::clear () {
 	// set all to 0 just to avoid any inconsistencies
 	int32_t size = (char *)&m_END_TEST - (char *)&m_START;
 	memset ( &m_START , 0x00 , size );
@@ -99,7 +99,7 @@ void SearchInput::clear ( int32_t niceness ) {
 	// set these
 	m_numLinesInSummary  = 2;
 	m_docsWanted         = 10;
-	m_niceness           = niceness;
+	m_niceness           = 0;
 }
 
 // . make a key for caching the search results page based on this input
@@ -182,8 +182,8 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 
 	m_q.reset();
 
-	// zero out everything, set niceness to 0
-	clear ( 0 ) ;
+	// zero out everything
+	clear();
 
 	m_hr.copy(r);
 

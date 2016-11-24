@@ -2299,19 +2299,19 @@ char getKeySizeFromRdbId(rdbid_t rdbId) {
 		case RDB2_SPIDERDB2:
 		case RDB_TAGDB:
 		case RDB2_TAGDB2:
-			return sizeof(key128_t); //16
+			return sizeof(key128_t); // 16
 		case RDB_POSDB:
 		case RDB2_POSDB2:
-			return sizeof(key144_t);
+			return sizeof(key144_t); // 18
 		case RDB_LINKDB:
 		case RDB2_LINKDB2:
-			return sizeof(key224_t);
+			return sizeof(key224_t); // 28
 		case RDB_NONE:
 		case RDB_END:
 			log(LOG_ERROR, "rdb: bad lookup rdbid of %i", (int)rdbId);
 			g_process.shutdownAbort(true);
 		default:
-			return sizeof(key96_t); //12
+			return sizeof(key96_t); // 12
 	}
 }
 

@@ -618,7 +618,7 @@ skipReplaceHost:
 				      iptoa(h->m_ipShotgun));
 
 			sb.safePrintf("\t\t<httpPort>%" PRId32"</httpPort>\n",
-				      (int32_t)h->m_httpPort);
+				      (int32_t)h->getInternalHttpPort());
 			sb.safePrintf("\t\t<udpPort>%" PRId32"</udpPort>\n",
 				      (int32_t)h->m_port);
 			sb.safePrintf("\t\t<dnsPort>%" PRId32"</dnsPort>\n",
@@ -741,7 +741,7 @@ skipReplaceHost:
 				      iptoa(h->m_ipShotgun));
 
 			sb.safePrintf("\t\t\"httpPort\":%" PRId32",\n",
-				      (int32_t)h->m_httpPort);
+				      (int32_t)h->getInternalHttpPort());
 			sb.safePrintf("\t\t\"udpPort\":%" PRId32",\n",
 				      (int32_t)h->m_port);
 			sb.safePrintf("\t\t\"dnsPort\":%" PRId32",\n",
@@ -910,7 +910,7 @@ skipReplaceHost:
 			  "<td nowrap=1>%s</td>"
 			  "</tr>" , 
 			  bg,//LIGHT_BLUE ,
-			  ipbuf3, h->m_httpPort, 
+			  ipbuf3, h->getInternalHttpPort(),
 			  cs, sort,
 			  i , 
 			  h->m_hostname,
@@ -923,7 +923,7 @@ skipReplaceHost:
 			  //ipbuf2,
 			  //h->m_port , 
 			  //h->m_dnsClientPort ,
-			  h->m_httpPort ,
+			  h->getInternalHttpPort(),
 			  //h->m_tokenGroupNum,
 			  //switchGroup ,
 			  //tmpN,
@@ -1053,7 +1053,7 @@ skipReplaceHost:
 						   //h->m_port , 
 						   //h->m_port2 , 
 						   //h->m_dnsClientPort ,
-						   h->m_httpPort ,
+						   h->getInternalHttpPort(),
 						   //h->m_switchId,
 						   h->m_note );
 		}

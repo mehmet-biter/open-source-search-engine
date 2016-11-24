@@ -82,6 +82,10 @@ public:
 
 class Host {
 public:
+	int32_t getInternalHttpPort()  const { return m_httpPort; }
+	int32_t getInternalHttpsPort() const { return m_httpsPort; }
+	int32_t getExternalHttpPort()  const { return m_httpPort; }
+	int32_t getExternalHttpsPort() const { return m_httpsPort; }
 
 	int32_t           m_hostId ;
 
@@ -101,12 +105,9 @@ public:
 	// so now this is just a secondary regular ip address for servers with
 	// dual gigabit ethernet ports. make performance much better.
 	uint32_t  m_ipShotgun;  
-	uint16_t m_externalHttpPort;
-	uint16_t m_externalHttpsPort;
 
 	uint16_t m_port ;          // Mattster Protocol (MP) UDP port
-	uint16_t m_httpPort ;      // http port
-	uint16_t m_httpsPort;
+
 	int32_t           m_ping;
 	int32_t           m_pingShotgun;
 	int32_t           m_pingMax;
@@ -133,8 +134,6 @@ public:
 	// send to eth 0 or 1 when sending to this host?
 	char           m_preferEth;
 
-	// machine #, a machine can have several hosts on it
-	int32_t           m_machineNum;
 	// . this is used for sending email alerts to admin about dead hosts
 	// .  0 means we can send an email for this host if he goes dead on us
 	// . +1 means we already sent an email for him since he was down and 
@@ -162,10 +161,6 @@ public:
 	// was host in gk0 cluster and retired because its twin got
 	// ssds, so it was no longer really needed.
 	bool           m_retired;
-	// used for logging when a host goes dead for the first time
-	bool           m_wasAlive;
-	bool           m_wasEverAlive;
-	int64_t      m_timeOfDeath;
 	// this toggles between 0 and 1 for alternating packet sends to
 	// eth0 and eth1 of this host
 	char           m_shotgunBit;
@@ -205,9 +200,6 @@ public:
 	//   is from when making the UdpSlot key.
 	class Hostdb  *m_hostdb;
 
-	// Syncdb.cpp uses these
-	bool           m_inSync ;
-
 	// . used by Parms.cpp for broadcasting parm change requests
 	// . each parm change request has an id
 	// . this let's us know which id is in progress and what the last
@@ -222,6 +214,11 @@ public:
 	bool m_queryEnabled;
 
 	PingInfo m_pingInfo;//RequestBuf;
+
+private:
+	friend class Hostdb;
+	uint16_t m_httpPort ;      // http port
+	uint16_t m_httpsPort;
 };
 
 #include "max_hosts.h"
@@ -258,19 +255,11 @@ class Hostdb {
 	uint32_t  getMyIp         ( ) { return m_myIp; }
 	uint16_t getMyPort       ( ) { return m_myPort; }
 	int32_t           getMyHostId     ( ) { return m_hostId; }
-	int32_t           getMyMachineNum ( ) { return m_myMachineNum; }
 	uint32_t  getLoopbackIp   ( ) { return m_loopbackIp; }
 	Host          *getMyHost       ( ) { return m_myHost; }
 	bool           amProxy         ( ) { return m_myHost->isProxy(); }
 	Host          *getMyShard      ( ) { return m_myShard; }
 	int32_t getMyShardNum ( ) { return m_myHost->m_shardNum; }
-
-	// . one machine may have several hosts
-	// . get the machine # the hostId resides on
-	int32_t getMachineNum ( int32_t hostId ) {
-		return getHost(hostId)->m_machineNum; }
-
-	int32_t getNumMachines ( ) { return m_numMachines; }
 
 	// we consider the host dead if we didn't get a ping reply back
 	// after 10 seconds
@@ -283,8 +272,6 @@ class Hostdb {
 	int64_t getNumGlobalRecs ( );
 
 	bool isShardDead ( int32_t shardNum ) ;
-
-	Host *getLiveHostInShard ( int32_t shardNum );
 
 	Host *getLeastLoadedInShard ( uint32_t shardNum , char niceness );
 	int32_t getHostIdWithSpideringEnabled ( uint32_t shardNum );
@@ -303,6 +290,7 @@ class Hostdb {
 	// . we do not create an RdbList, you must do that
 	// . callback passes your RdbList back to you
 	Host *getShard ( uint32_t shardNum , int32_t *numHosts = NULL ) {
+		if(shardNum>=(unsigned)m_numShards) gbshutdownLogicError();
 		if ( numHosts ) *numHosts = m_numHostsPerShard;
 		return &m_hosts[shardNum * m_numHostsPerShard]; 
 	}
@@ -378,7 +366,6 @@ class Hostdb {
 	uint32_t  m_myIp;
 	uint32_t  m_myIpShotgun;
 	uint16_t m_myPort;
-	int32_t           m_myMachineNum;
 	Host          *m_myHost;
 	Host          *m_myShard;
 
@@ -409,8 +396,6 @@ class Hostdb {
 
 	// this maps shard # to the array of hosts in that shard
 	Host *m_shards[MAX_HOSTS];
-
-	int32_t    m_numMachines;
 
 	// the hash table of the ips in hosts.conf
 	int32_t *m_ips;
