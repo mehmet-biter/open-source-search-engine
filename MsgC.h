@@ -19,6 +19,8 @@ returned result (the IP address) should be stored in all 4 caches.*/
 #include "Multicast.h"
 #include "Url.h"
 
+class Msge1;
+
 class MsgC {
 
  public:
@@ -41,9 +43,9 @@ class MsgC {
 
 	void (*m_callback) (void *state ,int32_t ip);
 
-	// used by MsgE to store its data
-	void *m_state2;
-	void *m_state3;
+	// used by Msge1 to store a pointer to itself
+	Msge1 *m_msge1;
+	int32_t m_msge1State;
 
 	// private:
 	Multicast m_mcast;

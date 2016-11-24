@@ -14,8 +14,8 @@ MsgC::MsgC ( ) {
 	memset(m_request, 0, sizeof(m_request));
 	m_ipPtr = NULL;
 	m_callback = NULL;
-	m_state2 = NULL;
-	m_state3 = NULL;
+	m_msge1 = NULL;
+	m_msge1State = 0;
 }
 
 MsgC::~MsgC ( ) {

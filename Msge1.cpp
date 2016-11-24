@@ -248,8 +248,8 @@ bool Msge1::sendMsgC ( int32_t i , const char *host , int32_t hlen ) {
 	// using the the ith msgC
 	MsgC  *m    = &m_msgCs[i];
 	// save i and this in the msgC itself
-	m->m_state2 = this;
-	m->m_state3 = (void *)(PTRTYPE)i;
+	m->m_msge1 = this;
+	m->m_msge1State = i;
 
 	if (!m->getIp(host, hlen, &m_ipBuf[n], m, gotMsgCWrapper)) {
 		return false;
@@ -259,8 +259,8 @@ bool Msge1::sendMsgC ( int32_t i , const char *host , int32_t hlen ) {
 
 void Msge1::gotMsgCWrapper(void *state, int32_t ip) {
 	MsgC   *m    = (MsgC  *)state;
-	Msge1  *THIS = (Msge1 *)m->m_state2;
-	int32_t    i    = (int32_t   )(PTRTYPE)m->m_state3;
+	Msge1  *THIS = m->m_msge1;
+	int32_t    i    = m->m_msge1State;
 	if ( ! THIS->doneSending ( i ) ) return;
 	// try to launch more, returns false if not done
 	if ( ! THIS->launchRequests(i) ) return;
@@ -295,8 +295,8 @@ bool Msge1::addTag ( int32_t i ) {
 	// using the the ith msgC
 	MsgC  *m    = &m_msgCs[i];
 	// save i and this in the msgC itself
-	m->m_state2 = this;
-	m->m_state3 = (void *)(PTRTYPE)i;
+	m->m_msge1 = this;
+	m->m_msge1State = i;
 	// store the domain here
 	//char *domBuf = m->m_request;
 	// get the domain
