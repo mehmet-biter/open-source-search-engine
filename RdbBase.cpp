@@ -2423,8 +2423,6 @@ void RdbBase::saveIndexes() {
 }
 
 bool RdbBase::verifyFileSharding ( ) {
-return true;
-
 	if ( m_rdb->isCollectionless() ) return true;
 
 	// if swapping in from CollectionRec::getBase() then do

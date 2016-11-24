@@ -101,7 +101,7 @@ void Msg2::incrementRequestCount() {
 bool Msg2::incrementReplyCount() {
 	ScopedLock sl(m_mtxCounters);
 	if(m_numReplies>=m_numRequests)
-		abort();
+		gbshutdownCorrupted();
 	m_numReplies++;
 	return m_numReplies==m_numRequests && !m_requestsBeingSubmitted;
 }
@@ -449,7 +449,6 @@ Msg5 *Msg2::getAvailMsg5 ( ) {
 			m_avail[i] = false;
 			return &m_msg5[i];
 		}
-//if(m_avail[i]!=0) abort();
 	}
 	return NULL;
 }

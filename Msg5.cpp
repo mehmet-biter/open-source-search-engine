@@ -62,7 +62,6 @@ Msg5::Msg5()
 	memset(m_minEndKey, 0, sizeof(m_minEndKey));
 
 	reset();
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 }
 
 Msg5::~Msg5() {
@@ -228,7 +227,6 @@ bool Msg5::getList ( rdbid_t     rdbId,
 		     bool        isRealMerge ,
 		     bool        allowPageCache ) {
 	verify_signature();
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 
 	const char *startKey = static_cast<const char*>(startKey_);
 	const char *endKey = static_cast<const char*>(endKey_);
@@ -378,7 +376,6 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 // . loops until m_minRecSizes is satisfied OR m_endKey is reached
 bool Msg5::readList ( ) {
 	verify_signature();
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	Rdb *rdb = getRdbFromId(m_rdbId);
 	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
@@ -617,7 +614,6 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 
 		// we may need to re-call getList
 		verify_signature();
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	} while(needsRecall());
 	// we did not block
 	return true;
@@ -625,7 +621,6 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 
 bool Msg5::needsRecall() {
 	verify_signature();
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	Rdb *rdb = getRdbFromId(m_rdbId);
 	RdbBase *base = getRdbBase ( m_rdbId , m_collnum );
@@ -720,10 +715,8 @@ void Msg5::gotListWrapper0(void *state) {
 
 void Msg5::gotListWrapper() {
 	verify_signature();
-//log("@@@@ Msg5(%p)::gotListWrapper()",this);
-if ( m_calledCallback ) abort();
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
-if(!m_msg3.areAllScansCompleted()) abort();
+	if(m_calledCallback) gbshutdownLogicError();
+	if(!m_msg3.areAllScansCompleted()) gbshutdownLogicError();
 	// . this sets g_errno on error
 	// . this will merge cache/tree and disk lists into m_list
 	// . it will update m_newMinRecSizes
@@ -731,7 +724,7 @@ if(!m_msg3.areAllScansCompleted()) abort();
 	// . returns false if it blocks
 	if ( ! gotList ( ) ) return;
 
-if(!m_msg3.areAllScansCompleted()) abort();
+	if(!m_msg3.areAllScansCompleted()) gbshutdownLogicError();
 	// . throw it back into the loop if necessary
 	// . only returns true if COMPLETELY done
 	if ( needsRecall() && ! readList() ) return;
@@ -752,7 +745,7 @@ if(!m_msg3.areAllScansCompleted()) abort();
 // . sets g_errno on error
 bool Msg5::gotList ( ) {
 	verify_signature();
-if(!m_msg3.areAllScansCompleted()) abort();
+	if(!m_msg3.areAllScansCompleted()) gbshutdownLogicError();
 
 	// return if g_errno is set
 	if ( g_errno && g_errno != ECORRUPTDATA ) return true;
@@ -766,7 +759,6 @@ if(!m_msg3.areAllScansCompleted()) abort();
 // . sets g_errno on error
 bool Msg5::gotList2 ( ) {
 	verify_signature();
-//log("@@@ msg5(%p)::gotList2",this);
 	// reset this
 	m_startTime = 0LL;
 	// return if g_errno is set
@@ -822,7 +814,6 @@ bool Msg5::gotList2 ( ) {
 	//if ( KEYNEG( m_minEndKey) ) {g_process.shutdownAbort(true); }
 
 	QUICKPOLL(m_niceness);
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 
 	// . is treeList included?
 	// . constrain treelist for the merge
@@ -965,7 +956,6 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	//   super quick just for this purpose
 	// . crap, rather than do that just deal with the negative recs 
 	//   in the caller code... in this case Spider.cpp::gotDoledbList2()
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	if ( m_numListPtrs == 1 && m_list->isEmpty() &&
 	     // just do this logic for doledb now, it was causing us to
 	     // return search results whose keys were negative indexdb keys.
@@ -1049,7 +1039,6 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 
 	QUICKPOLL((m_niceness));
 
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	if(m_callback) {
 		if ( g_jobScheduler.submit(mergeListsWrapper, mergeDoneWrapper, this, thread_type_query_merge, m_niceness) ) {
 			return false;
@@ -1065,15 +1054,12 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// clear g_errno because it really isn't a problem, we just block
 	g_errno = 0;
 
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// repair any corruption
 	repairLists();
 
 	// do it
-//log("@@@@ msg5(%p): gotlist2: blocking merge",this);
 	mergeLists();
 
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// . add m_list to our cache if we should
 	// . this returns false if blocked, true otherwise
 	// . sets g_errno on error
@@ -1095,7 +1081,6 @@ void Msg5::mergeListsWrapper(void *state) {
 	// repair any corruption
 	that->repairLists();
 
-//log("@@@ msg5(%p)::mergeListsWrapper()",that);
 	verify_signature_at(that->signature);
 	// do the merge
 	that->mergeLists();
@@ -1121,8 +1106,7 @@ void Msg5::mergeDoneWrapper(void *state, job_exit_t exit_type) {
 void Msg5::mergeDone(job_exit_t /*exit_type*/) {
 	verify_signature();
 
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
-	if(m_calledCallback) abort();
+	if(m_calledCallback) gbshutdownCorrupted();
 	
 	// we MAY be in a thread now
 
@@ -1136,23 +1120,21 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// . it will handle calling callback if that happens
 	if ( ! doneMerging() ) return;
 
-if(m_calledCallback) abort();
+	if(m_calledCallback) gbshutdownCorrupted();
 	// . throw it back into the loop if necessary
 	// . only returns true if COMPLETELY done
 	if ( needsRecall() ) {
-if(m_calledCallback) abort();
+	if(m_calledCallback) gbshutdownCorrupted();
 		if ( ! readList() ) return;
-if(m_calledCallback) abort();
+		if(m_calledCallback) gbshutdownCorrupted();
 	}
 
 	// sanity check
-	if ( m_calledCallback ) abort();
+	if(m_calledCallback) gbshutdownCorrupted();
 
-if(m_calledCallback) abort();
 	// we are no longer waiting for the list
 	m_waitingForList = false;
 
-if(m_calledCallback) abort();
 	// set it now
 	m_calledCallback = 3;
 
@@ -1164,7 +1146,6 @@ if(m_calledCallback) abort();
 // check lists in the thread
 void Msg5::repairLists() {
 	verify_signature();
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// assume none
 	m_hadCorruption = false;
 	// return if no need to
@@ -1236,9 +1217,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 
 void Msg5::mergeLists() {
 	verify_signature();
-//	log("@@@ Msg5(%p)::mergeLists",this);
 
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// . don't do any merge if this is true
 	// . if our fetch of remote list fails, then we'll be called
 	//   again with this set to false
@@ -1313,7 +1292,6 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 bool Msg5::doneMerging ( ) {
 	verify_signature();
 
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	//m_waitingForMerge = false;
 
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
@@ -1380,7 +1358,6 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 			// . merge the modified lists again
 			// . this is not in a thread
 			// . it should not block
-abort();
 			mergeLists();
 		}
 	}
@@ -1701,7 +1678,6 @@ bool Msg5::gotRemoteList ( ) {
 	g_errno = 0;
 	// . we have the lists ready to merge
 	// . hadCorruption should be false at this point
-log("@@@@ msg5(%p)::badList merge",this);
 	mergeLists();
 	// process the result
 	return doneMerging();
