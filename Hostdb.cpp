@@ -1635,8 +1635,8 @@ static void printHostsConfPreamble(SafeBuf *sb, int numMirrors, int indexSplits)
 	sb->safePrintf("# fifth   column: port that udp server listens on\n");
 	sb->safePrintf("# sixth   column: IP address or hostname that has an IP address in /etc/hosts\n");
 	sb->safePrintf("# seventh column: like sixth column but for secondary ethernet port. Can be the same as the sixth column.\n");
-	sb->safePrintf("# eigth   column: Working directory");
-	sb->safePrintf("# ninth   column: An optional merge directory override");
+	sb->safePrintf("# eigth   column: Working directory\n");
+	sb->safePrintf("# ninth   column: An optional merge directory override\n");
 	sb->safePrintf("# tenth   column: An optional text note that will display in the hosts table for this host.\n");
 
 	sb->safePrintf("\n\n");
