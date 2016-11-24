@@ -69,7 +69,7 @@ static void doneReadingArchiveFileWrapper ( int fd, void *state );
 XmlDoc::XmlDoc() {
 	//clear all fields in the titledb structure (which are the first fileds in this class)
 	memset(&m_headerSize, 0, (size_t)((char*)&ptr_firstUrl-(char*)&m_headerSize));
-	
+
 	m_esbuf.setLabel("exputfbuf");
 	m_freed = false;
 	m_contentInjected = false;
@@ -734,7 +734,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 
 	// it should be valid since we just set it
 	CollectionRec *cr = getCollRec();
-	
+
 	m_useRobotsTxt = cr ? cr->m_useRobotsTxt : true;
 
 	// solidify some parms
@@ -2406,28 +2406,41 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		return &m_indexCode;
 	}
 
-	// . is a non-canonical page that have <link ahref=xxx rel=canonical>
+	// . is a non-canonical page that have <link href=xxx rel=canonical>
 	// . also sets m_canonicanlUrl.m_url to it if we are not
 	// . returns NULL if we are the canonical url
 	// . do not do this check if the page was injected
 	bool checkCanonical = true;
-	if ( m_wasContentInjected ) checkCanonical = false;
-	if ( m_isInjecting && m_isInjectingValid ) checkCanonical = false;
+
+	if (m_wasContentInjected) {
+		checkCanonical = false;
+	}
+
+	if (m_isInjecting && m_isInjectingValid) {
+		checkCanonical = false;
+	}
+
 	// do not do canonical deletion if recycling content either i guess
-	if ( m_sreqValid && m_sreq.m_recycleContent ) checkCanonical = false;
+	if (m_sreqValid && m_sreq.m_recycleContent) {
+		checkCanonical = false;
+	}
+
+	/// @todo ALC do we want to delete during a query reindex?
 	// do not delete from being canonical if doing a query reindex
-	if ( m_sreqValid && m_sreq.m_isPageReindex ) checkCanonical = false;
-	if ( checkCanonical ) {
+	if (m_sreqValid && m_sreq.m_isPageReindex) {
+		checkCanonical = false;
+	}
+
+	if (checkCanonical) {
 		Url **canon = getCanonicalRedirUrl();
-		if ( ! canon || canon == (void *)-1 )
-		{
+		if (!canon || canon == (void *)-1) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, getCanonicalRedirUrl failed" );
 			return (int32_t *)canon;
 		}
 
 		// if there is one then we are it's leaf, it is the primary
 		// page so we should not index ourselves
-		if ( *canon ) {
+		if (*canon) {
 			m_indexCode = EDOCNONCANONICAL;
 			m_indexCodeValid = true;
 			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCNONCANONICAL" );
@@ -2637,12 +2650,6 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		return &m_indexCode;
 	}
 
-	// if ( *priority  == SPIDER_PRIORITY_BANNED ) {
-	// 	m_indexCode      = EDOCBANNED;
-	// 	m_indexCodeValid = true;
-	// 	return &m_indexCode;
-	// }
-
 	// no error otherwise
 	m_indexCode      = 0;
 	m_indexCodeValid = true;
@@ -2654,7 +2661,9 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
 char *XmlDoc::prepareToMakeTitleRec ( ) {
 	// do not re-call this for speed
-	if ( m_prepared ) return (char *)1;
+	if (m_prepared) {
+		return (char *)1;
+	}
 
 	int32_t *indexCode = getIndexCode();
 	if (! indexCode || indexCode == (void *)-1) return (char *)indexCode;
@@ -2668,52 +2677,68 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 	// . TODO: make sure this is cached in the event of a backoff, we
 	//   will redo this again!!! IMPORTANT!!!
 	char *isIndexed = getIsIndexed();
-	if ( ! isIndexed || isIndexed == (char *)-1) return (char *)isIndexed;
+	if (!isIndexed || isIndexed == (char *)-1) {
+		return isIndexed;
+	}
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if (!cr) {
+		return NULL;
+	}
 
 	// get our site root
 	char *mysite = getSite();
-	if ( ! mysite || mysite == (void *)-1 ) return (char *)mysite;
+	if (!mysite || mysite == (void *)-1) {
+		return mysite;
+	}
 
 	uint8_t *langId = getLangId();
-	if ( ! langId || langId == (uint8_t *)-1 ) return (char *) langId;
+	if (!langId || langId == (uint8_t *)-1) {
+		return (char *)langId;
+	}
 
 	getHostHash32a();
 	getContentHash32();
 
 	char **id = getThumbnailData();
-	if ( ! id || id == (void *)-1 ) return (char *)id;
+	if (!id || id == (void *)-1) {
+		return (char *)id;
+	}
 
 	int8_t *hopCount = getHopCount();
-	if ( ! hopCount || hopCount == (void *)-1 ) return (char *)hopCount;
+	if (!hopCount || hopCount == (void *)-1) {
+		return (char *)hopCount;
+	}
 
 	char *spiderLinks = getSpiderLinks();
-	if ( ! spiderLinks || spiderLinks == (char *)-1 )
-		return (char *)spiderLinks;
-
+	if (!spiderLinks || spiderLinks == (char *)-1) {
+		return spiderLinks;
+	}
 
 	int32_t *firstIndexedDate = getFirstIndexedDate();
-	if ( ! firstIndexedDate || firstIndexedDate == (int32_t *)-1 )
+	if (!firstIndexedDate || firstIndexedDate == (int32_t *)-1) {
 		return (char *)firstIndexedDate;
+	}
 
 	int32_t *outlinksAddedDate = getOutlinksAddedDate();
-	if ( ! outlinksAddedDate || outlinksAddedDate == (int32_t *)-1 )
+	if (!outlinksAddedDate || outlinksAddedDate == (int32_t *)-1) {
 		return (char *)outlinksAddedDate;
+	}
 
 	uint16_t *countryId = getCountryId();
-	if ( ! countryId||countryId==(uint16_t *)-1) return (char *)countryId;
+	if (!countryId || countryId == (uint16_t *)-1) {
+		return (char *)countryId;
+	}
 
 	char *trunc = getIsContentTruncated();
-	if ( ! trunc || trunc == (char *)-1 ) return (char *)trunc;
+	if (!trunc || trunc == (char *)-1) {
+		return trunc;
+	}
 
 	char *pl = getIsPermalink();
-	if ( ! pl || pl == (char *)-1 ) return (char *)pl;
-
-	//int32_t *numBannedOutlinks = getNumBannedOutlinks();
-	// set this
-	//m_numBannedOutlinks8 = score32to8 ( *numBannedOutlinks );
+	if (!pl || pl == (char *)-1) {
+		return pl;
+	}
 
 	// . before storing this into title Rec, make sure all tags
 	//   are valid and tagRec is up to date
@@ -2721,15 +2746,29 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 	//   or other tags because, for instance, contact info might not
 	//   be in there because isSpam() never required it.
 	int32_t *sni = getSiteNumInlinks();
-	if ( ! sni || sni == (int32_t *)-1 ) return (char *)sni;
+	if (!sni || sni == (int32_t *)-1) {
+		return (char *)sni;
+	}
+
 	char *ict = getIsContentTruncated();
-	if ( ! ict || ict == (char *)-1 ) return (char *)ict;
+	if (!ict || ict == (char *)-1) {
+		return ict;
+	}
+
 	char *at = getIsAdult();
-	if ( ! at || at == (void *)-1 ) return (char *)at;
+	if (!at || at == (void *)-1) {
+		return at;
+	}
+
 	char *ls = getIsLinkSpam();
-	if ( ! ls || ls == (void *)-1 ) return (char *)ls;
+	if (!ls || ls == (void *)-1) {
+		return ls;
+	}
+
 	uint32_t *tph = getTagPairHash32();
-	if ( ! tph || tph == (uint32_t *)-1 ) return (char *)tph;
+	if (!tph || tph == (uint32_t *)-1) {
+		return (char *)tph;
+	}
 
 	m_prepared = true;
 	return (char *)1;
@@ -7280,6 +7319,8 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	LinkInfo  *oldLinkInfo1 = NULL;
 	if ( *od ) oldLinkInfo1 = (*od)->getLinkInfo1();
 
+	//link info generation requires an IP for internal/external computation
+	// UNLESS we are from getSpiderStatusDocMetaList2()
 	// if ip does not exist, make it 0
 	if ( *ip == 0 || *ip == -1 ) {
 		m_linkInfo1Valid = true;
@@ -7290,21 +7331,10 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 		return ptr_linkInfo1;
 	}
 
-	//link info generation requires an IP for internal/external computation
-	// UNLESS we are from getSpiderStatusDocMetaList2() ... so handle
-	// -1 above!
-	//if ( *ip == -1 || *ip == 0 ) { g_process.shutdownAbort(true); }
-
 	// . error getting linkers?
 	// . on udp timeout we were coring below because msg25.m_linkInfo
 	//   was NULL
 	if ( g_errno && m_calledMsg25 ) return NULL;
-	// prevent core as well
-	//if ( m_calledMsg25 && ! size_linkInfo1 ) { // m_msg25.m_linkInfo ) {
-	//	log("xmldoc: msg25 had null link info");
-	//	g_errno = EBADENGINEER;
-	//	return NULL;
-	//}
 
 	// . now search for some link info for this url/doc
 	// . this queries the search engine to get linking docIds along
@@ -8591,7 +8621,7 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		// the canonical url.
 		if ( isMe ) break;
 
-		// ignore if in an expanded iframe (<gbrame>) tag
+		// ignore if in an expanded iframe (<gbframe>) tag
 		char *pstart = xml->getContent();
 		char *p      = link;
 		// scan backwards
@@ -9266,7 +9296,7 @@ char **XmlDoc::getFilteredContent ( ) {
 
 	int32_t max , max2;
 	bool filterable = false;
-	
+
 	if ( !m_calledThread ) {
 
 		// assume we do not need filtering by default
