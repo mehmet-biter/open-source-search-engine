@@ -144,8 +144,6 @@ bool HighFrequencyTermShortcuts::load()
 	//a "sanity check" due to unhealthy knowledge of not only the
 	//posdb format but also the workings and algorithms.
 	//So we have to compress the non-entries to 12 byte.
-	//technically we should also compress to 6 bytes for same docids, but
-	//we "know" that there aren't such entries in the shortcut file.
 	for(std::map<uint64_t,TermEntry>::iterator iter = entries.begin();
 	    iter!=entries.end();
 	    ++iter)
@@ -155,15 +153,27 @@ bool HighFrequencyTermShortcuts::load()
 		const char *src_end = src+src_bytes;
 		char *dst = (char*)iter->second.p;
 		size_t dst_bytes = 0;
+		char prev_full_key[18];
 		for(const char *p = src; p<src_end; p+=18) {
 			if(p==src) {
+				//full 18-byte key
+				memcpy(prev_full_key,p,18);
 				dst += 18;
 				dst_bytes +=18;
-			} else {
+			} else if(memcmp(prev_full_key+6,p+6,6)!=0) {
+				//12-byte key
+				memcpy(prev_full_key,p,12);
 				memmove(dst,p,12);
 				dst[0] |= 0x02; //now it's a 12-byte key
 				dst += 12;
 				dst_bytes += 12;
+			} else {
+				//6-byte key
+				memcpy(prev_full_key,p,6);
+				memmove(dst,p,6);
+				dst[0] |= 0x06; //now it's a 6-byte key
+				dst += 6;
+				dst_bytes += 6;
 			}
 		}
 		iter->second.bytes = dst_bytes;
