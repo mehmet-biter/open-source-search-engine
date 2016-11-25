@@ -36,7 +36,7 @@ public:
 
 	// . this is an estimate of the number of docs in the WHOLE db network
 	// . we assume each group/cluster has about the same # of docs as us
-	int64_t getGlobalNumDocs() {
+	int64_t estimateGlobalNumDocs() const {
 		return m_rdb.getNumTotalRecs() * (int64_t)g_hostdb.m_numShards;
 	}
 

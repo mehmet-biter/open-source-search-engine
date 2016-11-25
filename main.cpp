@@ -7377,7 +7377,7 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 			log( LOG_INFO, "cntDm: File Open Failed." );
 			return;
 		}		
-		int64_t total = g_titledb.getGlobalNumDocs();
+		int64_t total = g_titledb.estimateGlobalNumDocs();
 		char link_ip[]  = "http://www.gigablast.com/search?"
 			          "code=gbmonitor&q=ip%3A";
 		char link_dom[] = "http://www.gigablast.com/search?"
