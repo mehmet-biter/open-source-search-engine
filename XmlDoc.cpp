@@ -624,8 +624,8 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		//   sentence formation stops at the ';' in the "&amp;" and
 		//   we also index "amp" which is bad.
 		m_content             = utf8Content;
-		if ( m_mimeValid && m_mime.m_contentLen > 0) {
-			m_contentLen = m_mime.m_contentLen;
+		if ( m_mimeValid && m_mime.getContentLen() > 0) {
+			m_contentLen = m_mime.getContentLen();
 		} else {
 			m_contentLen = strlen(utf8Content);
 		}
@@ -658,9 +658,9 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		m_downloadEndTimeValid = true;
 		// and need a legit mime
 		if ( ! m_mimeValid ) {
-			m_mime.m_bufLen  = 1;
+			m_mime.setBufLen(1);
 			m_mimeValid      = true;
-			m_mime.m_contentType = contentType;
+			m_mime.setContentType(contentType);
 		}
 		m_isContentTruncated      = false;
 		m_isContentTruncatedValid = true;
@@ -678,7 +678,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 
 	// override content type based on mime for application/json
 	if ( m_mimeValid ) {
-		m_contentType = m_mime.m_contentType;
+		m_contentType = m_mime.getContentType();
 		m_contentTypeValid = true;
 	}
 

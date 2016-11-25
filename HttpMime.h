@@ -148,7 +148,7 @@ public:
 	// used for bz2, gz files
 	const char *getContentEncodingFromExtension ( const char *ext ) ;
 
-//private:
+private:
 	// . sets m_status, m_contentLen , ...
 	// . we need "url" to set m_locUrl if it's a relative redirect
 	bool parse ( char *mime , int32_t mimeLen , Url *url );
