@@ -101,7 +101,7 @@ void Multicast::reset ( ) {
 // . caller can now pass in his own reply buffer
 // . if "freeReplyBuf" is true that means it needs to be freed at some point
 //   otherwise, it's probably on the stack or part of a larger allocate class.
-bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg, uint32_t shardNum, bool sendToWholeGroup,
+bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg, uint32_t shardNum, bool sendToWholeGroup_,
                      int32_t key, void *state, void *state2, void (*callback)(void *state, void *state2),
                      int64_t totalTimeout, int32_t niceness, int32_t firstHostId, bool freeReplyBuf) {
 	bool sendToSelf = true;
@@ -156,7 +156,7 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 
 	// . pick the fastest host in the group
 	// . this should pick the fastest one we haven't already sent to yet
-	if ( ! sendToWholeGroup ) {
+	if ( ! sendToWholeGroup_ ) {
 		bool retVal = sendToHostLoop(key,firstHostId);
 
 		// on error, un-use this class
@@ -168,9 +168,9 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 	} else {
 		// . send to ALL hosts in this group if sendToWholeGroup is true
 		// . blocks forever until sends to all hosts are successfull
-		sendToGroup();
+		sendToWholeGroup();
 	
-		// . sendToGroup() always blocks, but we return true if no g_errno
+		// . sendToWholeGroup() always blocks, but we return true if no g_errno
 		// . we actually keep looping until all hosts get the msg w/o error
 		return true;
 	}
@@ -188,7 +188,7 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 // . it does not send to hosts whose m_errnos is 0
 // . TODO: deal with errors from g_udpServer::sendRequest() better
 // . returns false and sets g_errno on error
-void Multicast::sendToGroup() {
+void Multicast::sendToWholeGroup() {
 	ScopedLock sl(m_mtx);
 	// see if anyone gets an error
 	bool hadError = false;
@@ -268,7 +268,7 @@ void Multicast::sendToGroup() {
 void Multicast::sleepWrapper2(int bogusfd, void *state) {
 	Multicast *THIS = static_cast<Multicast*>(state);
 	// try another round of sending to see if hosts had errors or not
-	THIS->sendToGroup();
+	THIS->sendToWholeGroup();
 }
 
 
@@ -366,7 +366,7 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 	// . continue if we're already registered for sleep callbacks
 	if ( m_registeredSleep ) return ;
 	// . otherwise register for sleep callback to try again
-	// . sleepWrapper2() will call sendToGroup() for us
+	// . sleepWrapper2() will call sendToWholeGroup() for us
 	g_loop.registerSleepCallback( 5000/*ms*/, this, sleepWrapper2, m_niceness );
 	m_registeredSleep = true;
 }

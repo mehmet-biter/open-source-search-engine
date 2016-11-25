@@ -207,7 +207,7 @@ private:
 
 	void destroySlotsInProgress ( UdpSlot *slot );
 
-	void sendToGroup();
+	void sendToWholeGroup();
 
 	static void sleepWrapper1(int bogusfd, void *state);
 	static void sleepWrapper2(int bogusfd, void *state);
