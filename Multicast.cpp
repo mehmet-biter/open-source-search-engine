@@ -750,12 +750,9 @@ void Multicast::sleepCallback1() {
 
 	// find out which host timedout
 	Host *hd = NULL;
-	if ( m_host[0].m_retired && m_numHosts >= 1 ) {
-		hd = m_host[0].m_hostPtr;
-	}
-	if ( m_host[1].m_retired && m_numHosts >= 2 ) {
-		hd = m_host[1].m_hostPtr;
-	}
+	for(int i=0; i<m_numHosts && !hd; i++)
+		if(m_host[i].m_retired)
+			hd = m_host[i].m_hostPtr;
 	// 11/21/06: now we only reroute if the host we sent to is marked as
 	// dead unless it is a msg type that takes little reply generation time
 	if ( hd && ! g_hostdb.isDead(hd)  ) {
