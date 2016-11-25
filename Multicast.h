@@ -209,7 +209,8 @@ private:
 
 	void sendToWholeGroup();
 
-	static void sleepWrapper1(int bogusfd, void *state);
+	static void sleepCallback1Wrapper(int bogusfd, void *state);
+	void sleepCallback1();
 	static void sleepWrapper2(int bogusfd, void *state);
 	static void gotReply1(void *state, UdpSlot *slot);
 	void gotReply1(UdpSlot *slot);

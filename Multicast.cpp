@@ -632,8 +632,8 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// . don't re-register if we already did
 	if ( m_registeredSleep ) return true;
 	// . otherwise register for sleep callback to try again
-	// . sleepWrapper1() will call sendToHostLoop() for us
-	g_loop.registerSleepCallback(50/*ms*/, this, sleepWrapper1, m_niceness );
+	// . sleepCallback1Wrapper() will call sendToHostLoop() for us
+	g_loop.registerSleepCallback(50/*ms*/, this, sleepCallback1Wrapper, m_niceness );
 	m_registeredSleep = true;
 	// successful launch
 	return true;
@@ -641,8 +641,12 @@ bool Multicast::sendToHost ( int32_t i ) {
 
 // this is called every 50 ms so we have the chance to launch our request
 // to a more responsive host
-void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
-	Multicast *THIS = (Multicast *) state;
+void Multicast::sleepCallback1Wrapper ( int bogusfd , void    *state ) {
+	Multicast *that = static_cast<Multicast*>(state);
+	that->sleepCallback1();
+}
+
+void Multicast::sleepCallback1() {
 	// . if our last launch was less than X seconds ago, wait another tick
 	// . we often send out 2+ requests and end up getting one reply before
 	//   the others and that results in us getting unwanted dgrams...
@@ -656,15 +660,15 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 
 	int64_t now = gettimeofdayInMilliseconds();
 	// watch out for someone advancing the system clock
-	if ( THIS->m_lastLaunch > now ) THIS->m_lastLaunch = now;
+	if ( m_lastLaunch > now ) m_lastLaunch = now;
 	// get elapsed time since we started the send
-	int32_t elapsed = now - THIS->m_lastLaunch;
-	//log("elapsed = %" PRId32" type=0x%02x",elapsed,THIS->m_msgType);
+	int32_t elapsed = now - m_lastLaunch;
+	//log("elapsed = %" PRId32" type=0x%02x",elapsed,m_msgType);
 
 	// . don't relaunch any niceness 1 stuff for a while
 	// . it often gets suspended due to query traffic
-	//if ( THIS->m_niceness > 0 && elapsed < 800000 ) return;
-	if ( THIS->m_niceness > 0 ) return;
+	//if ( m_niceness > 0 && elapsed < 800000 ) return;
+	if ( m_niceness > 0 ) return;
 
 	// TODO: if the host went dead on us, re-route
 
@@ -682,7 +686,7 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 	//   excacerbates the problem. this stuff was originally put here
 	//   to reroute for when a host went down... let's keep it that way
 
-	switch ( THIS->m_msgType ) {
+	switch ( m_msgType ) {
 		// msg to get a summary from a query (calls msg22)
 		// put to 5 seconds now since some hosts freezeup still it seems
 		// and i haven't seen a summary generation of 5 seconds
@@ -712,9 +716,9 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 			// how many docsids request? first 4 bytes of request.
 			int32_t docsWanted = 10;
 			int32_t nqterms        = 0;
-			if ( THIS->m_msg ) {
-				docsWanted     = *(int32_t *)(THIS->m_msg);
-				nqterms        = *(int32_t *)(THIS->m_msg+4);
+			if ( m_msg ) {
+				docsWanted     = *(int32_t *)(m_msg);
+				nqterms        = *(int32_t *)(m_msg+4);
 			}
 
 			// never re-route if it has a rerank, those take forever
@@ -746,11 +750,11 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 
 	// find out which host timedout
 	Host *hd = NULL;
-	if ( THIS->m_host[0].m_retired && THIS->m_numHosts >= 1 ) {
-		hd = THIS->m_host[0].m_hostPtr;
+	if ( m_host[0].m_retired && m_numHosts >= 1 ) {
+		hd = m_host[0].m_hostPtr;
 	}
-	if ( THIS->m_host[1].m_retired && THIS->m_numHosts >= 2 ) {
-		hd = THIS->m_host[1].m_hostPtr;
+	if ( m_host[1].m_retired && m_numHosts >= 2 ) {
+		hd = m_host[1].m_hostPtr;
 	}
 	// 11/21/06: now we only reroute if the host we sent to is marked as
 	// dead unless it is a msg type that takes little reply generation time
@@ -760,33 +764,33 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 
 	// cancel any outstanding transactions iff we have a m_replyBuf
 	// that we must read the reply into because we cannot share!!
-	if ( THIS->m_readBuf ) {
-		THIS->destroySlotsInProgress ( NULL );
+	if ( m_readBuf ) {
+		destroySlotsInProgress ( NULL );
 	}
 
 	// . do a loop over all hosts in the group
 	// . if a whole group of twins is down this will loop forever here
 	//   every Xms, based the sleepWrapper timer for the msgType
 	if ( g_conf.m_logDebugQuery ) {
-		for (int32_t i = 0 ; i < THIS->m_numHosts ; i++ ) {
-			if ( ! THIS->m_host[i].m_slot         ) continue;
+		for (int32_t i = 0 ; i < m_numHosts ; i++ ) {
+			if ( ! m_host[i].m_slot         ) continue;
 			// transaction is not in progress ifm_host[i].m_errno is set
 			const char *ee = "";
-			if ( THIS->m_host[i].m_errno ) ee = mstrerror(THIS->m_host[i].m_errno);
+			if ( m_host[i].m_errno ) ee = mstrerror(m_host[i].m_errno);
 			log( LOG_DEBUG, "net: Multicast::sleepWrapper1: tried host "
-			    "%s:%" PRId32" %s" ,iptoa(THIS->m_host[i].m_slot->getIp()),
-			    (int32_t)THIS->m_host[i].m_slot->getPort() , ee );
+			    "%s:%" PRId32" %s" ,iptoa(m_host[i].m_slot->getIp()),
+			    (int32_t)m_host[i].m_slot->getPort() , ee );
 		}
 	}
 
 	// log msg that we are trying to re-route
 	//log("Multicast::sleepWrapper1: trying to re-route msgType=0x%02x "
-	//    "to new host",   THIS->m_msgType );	
+	//    "to new host",   m_msgType );	
 
 	// . otherwise, launch another request if we can
 	// . returns true if we successfully sent to another host
 	// . returns false and sets g_errno if no hosts left or other error
-	if ( THIS->sendToHostLoop(0,-1) ) {
+	if ( sendToHostLoop(0,-1) ) {
 		// log msg that we were successful
 		int32_t hid = -1;
 		if ( hd ) hid = hd->m_hostId;
@@ -794,10 +798,10 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 		    "net: Multicast::sleepWrapper1: rerouted msgType=0x%02x "
 		    "from host #%" PRId32" "
 		    "to new host after waiting %" PRId32" ms",
-		    THIS->m_msgType, hid,elapsed);
+		    m_msgType, hid,elapsed);
 		// . mark it in the stats for PageStats.cpp
 		// . this is timeout based rerouting
-		g_stats.m_reroutes[(int)THIS->m_msgType][THIS->m_niceness]++;
+		g_stats.m_reroutes[(int)m_msgType][m_niceness]++;
 		return;
 	}
 	// if we registered the sleep callback we must have launched a 
@@ -805,23 +809,23 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 
 	// . let replyWrapper1 be called if we got one launched
 	// . it should then call closeUpShop()
-	//if ( THIS->m_numLaunched ) return;
+	//if ( m_numLaunched ) return;
 	// otherwise, no outstanding requests and we failed to send to another
 	// host, probably because :
 	// 1. Msg34 timed out on all hosts
 	// 2. there were no udp slots available (which is bad)
 	//log("Multicast:: re-route failed for msgType=%02x. abandoning.",
-	//     THIS->m_msgType );
+	//     m_msgType );
 	// . the next send failed to send to a host, so close up shop
 	// . this is probably because the Msg34s timed out and we could not
 	//   find a next "best host" to send to because of that
-	//THIS->closeUpShop ( NULL );
+	//closeUpShop ( NULL );
 	// . we were not able to send to another host, maybe it was dead or
 	//   there are no hosts left!
 	// . i guess keep sleeping until host comes back up or transaction
 	//   is cancelled
 	//log("Multicast::sleepWrapper1: re-route of msgType=0x%02x failed",
-	//    THIS->m_msgType);
+	//    m_msgType);
 }
 
 
@@ -1007,7 +1011,7 @@ void Multicast::closeUpShop ( UdpSlot *slot ) {
 
 	// unregister our sleep wrapper if we did
 	if ( m_registeredSleep ) {
-		g_loop.unregisterSleepCallback ( this , sleepWrapper1 );
+		g_loop.unregisterSleepCallback(this, sleepCallback1Wrapper);
 		m_registeredSleep = false;
 	}
 
