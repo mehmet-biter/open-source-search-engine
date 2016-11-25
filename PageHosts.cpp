@@ -574,11 +574,11 @@ skipReplaceHost:
 			fb.safePrintf ( "y");
 
 
-		if ( format == FORMAT_HTML && !h->m_spiderEnabled) {
-			fb.safePrintf("<span title=\"Spider Disabled\" style=\"text-decoration:line-through;\">S</span>");
-		}
-		if ( format == FORMAT_HTML && !h->m_queryEnabled) {
-			fb.safePrintf("<span title=\"Query Disabled\" style=\"text-decoration:line-through;\">Q</span>");
+		if(format == FORMAT_HTML) {
+			if(!h->m_spiderEnabled)
+				fb.safePrintf("<span title=\"Spider Disabled\" style=\"text-decoration:line-through;\">S</span>");
+			if(!h->m_queryEnabled)
+				fb.safePrintf("<span title=\"Query Disabled\" style=\"text-decoration:line-through;\">Q</span>");
 		}
 
 

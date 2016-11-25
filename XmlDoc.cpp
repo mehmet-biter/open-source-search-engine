@@ -2444,7 +2444,12 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		if (*canon) {
 			m_indexCode = EDOCNONCANONICAL;
 			m_indexCodeValid = true;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCNONCANONICAL" );
+
+			// store canonical url in titlerec as well
+			ptr_redirUrl    = m_canonicalRedirUrl.getUrl();
+			size_redirUrl   = m_canonicalRedirUrl.getUrlLen()+1;
+
+			logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCNONCANONICAL");
 			return &m_indexCode;
 		}
 	}
@@ -2668,7 +2673,10 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 
 	int32_t *indexCode = getIndexCode();
 	if (! indexCode || indexCode == (void *)-1) return (char *)indexCode;
-	if ( *indexCode ) { m_prepared = true; return (char *)1; }
+	if (*indexCode && (*indexCode != EDOCSIMPLIFIEDREDIR && *indexCode != EDOCNONCANONICAL)) {
+		m_prepared = true;
+		return (char *)1;
+	}
 
 	//
 	// do all the sets here
@@ -2968,7 +2976,10 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	// return on errors with g_errno set
 	if ( ! indexCode ) return NULL;
 	// force delete? EDOCFORCEDELETE
-	if ( *indexCode ) { m_titleRecBufValid = true; return &m_titleRecBuf; }
+	if ( *indexCode && (*indexCode != EDOCSIMPLIFIEDREDIR && *indexCode != EDOCNONCANONICAL)) {
+		m_titleRecBufValid = true;
+		return &m_titleRecBuf;
+	}
 
 	// . internal callback
 	// . so if any of the functions we end up calling directly or
@@ -5480,6 +5491,10 @@ Url **XmlDoc::getRedirUrl() {
 		// as a link now, it will add a SpiderRequest for it:
 		m_redirUrl.set ( loc );
 		m_redirUrlPtr = &m_redirUrl;
+
+		// store redirUrl in titlerec as well
+		ptr_redirUrl = m_redirUrl.getUrl();
+		size_redirUrl = m_redirUrl.getUrlLen() + 1;
 
 		// mdw: let this path through so contactXmlDoc gets a proper
 		// redirect that we can follow. for the base xml doc at
@@ -8547,16 +8562,6 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 	}
 	if ( *isRoot ) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END. Site is root. No canonical redirection");
-		m_canonicalRedirUrlValid = true;
-		return &m_canonicalRedirUrlPtr;
-	}
-
-	/// @todo ALC should we treat it like simplified redirection?
-	// if this page has an inlink, then let it stand
-	LinkInfo  *info1 = getLinkInfo1 ();
-	if ( ! info1 || info1 == (LinkInfo *)-1 ) return (Url **)info1;
-	if ( info1->getNumGoodInlinks() > 0 ) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END. There are inlinks to url. No canonical redirection");
 		m_canonicalRedirUrlValid = true;
 		return &m_canonicalRedirUrlPtr;
 	}
@@ -12958,8 +12963,9 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 	bool spideringLinks = *spiderLinks3;
 
-	// shortcut
-	XmlDoc *nd = this;
+	bool addPosRec = false;
+	bool addTitleRec = false;
+	bool addClusterRec = false;
 
 	///////////////////////////////////
 	///////////////////////////////////
@@ -12972,30 +12978,29 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// OR if deleting from index, we just want to get the metalist
 	// directly from "od"
 	//
-
-	if (m_indexCode || m_deleteFromIndex) {
-		nd = NULL;
-	}
-
-	//
-	///////////////////////////////////
-	///////////////////////////////////
-
-	if (!nd) {
-		spideringLinks = false;
-	}
+	m_isInIndex  = !(m_indexCode || m_deleteFromIndex);
+	m_isInIndexValid  = true;
 
 	// set these for getNewSpiderReply() so it can set
 	// SpiderReply::m_wasIndexed and m_isIndexed...
 	m_wasInIndex = (od != NULL);
-	m_isInIndex  = (nd != NULL);
 	m_wasInIndexValid = true;
-	m_isInIndexValid  = true;
 
-	// if we are adding a simplified redirect as a link to spiderdb
-	// likewise if the error was ENONCANONICAL treat it like that
-	if (m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL) {
-		spideringLinks = true;
+	if (m_isInIndex) {
+		addPosRec = true;
+		addTitleRec = true;
+		addClusterRec = true;
+	} else {
+		if (m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL) {
+			// we're adding titlerec to keep links between redirection intact
+			addTitleRec = true;
+
+			// if we are adding a simplified redirect as a link to spiderdb
+			// likewise if the error was ENONCANONICAL treat it like that
+			spideringLinks = true;
+		} else {
+			spideringLinks = false;
+		}
 	}
 
 	//
@@ -13156,7 +13161,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// . i guess we can have link and neighborhood text too! we don't
 	//   count it here though... but add 5k for it...
 	int32_t need4 = m_words.getNumWords() * 4 + 5000;
-	if (m_usePosdb && nd) {
+	if (m_usePosdb && addPosRec) {
 		if (!tt1.set(18, 4, need4, NULL, 0, false, "posdb-indx")) {
 			logTrace(g_conf.m_logTraceXmlDoc, "tt1.set failed");
 			return NULL;
@@ -13206,7 +13211,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	need += needPosdb;
 
 	// clusterdb keys. plus one for rdbId
-	int32_t needClusterdb = nd ? 13 : 0;
+	int32_t needClusterdb = addClusterRec ? 13 : 0;
 	need += needClusterdb;
 
 	// . LINKDB
@@ -13371,7 +13376,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			g_process.shutdownAbort(true);
 		}
 
-		if (nd && !forDelete) {
+		if (addTitleRec && !forDelete) {
 			needTitledb += m_titleRecBuf.length();
 		}
 
@@ -13411,20 +13416,20 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 	// . store title rec
 	// . Repair.cpp might set useTitledb to false!
-	if (m_useTitledb && nd) {
+	if (m_useTitledb && addTitleRec) {
 		// rdbId
 		*m_p++ = m_useSecondaryRdbs ? RDB2_TITLEDB2 : RDB_TITLEDB;
 
 		// sanity
-		if (!nd->m_titleRecBufValid) {
+		if (!m_titleRecBufValid) {
 			g_process.shutdownAbort(true);
 		}
 
 		// key, dataSize, data is the whole rec
 		// if getting an "oldList" to do incremental posdb updates
 		// then do not include the data portion of the title rec
-		int32_t tsize = (forDelete) ? sizeof(key96_t) : nd->m_titleRecBuf.length();
-		gbmemcpy ( m_p , nd->m_titleRecBuf.getBufStart() , tsize );
+		int32_t tsize = (forDelete) ? sizeof(key96_t) : m_titleRecBuf.length();
+		gbmemcpy ( m_p , m_titleRecBuf.getBufStart() , tsize );
 
 		m_p += tsize;
 	}
@@ -13469,9 +13474,9 @@ char *XmlDoc::getMetaList(bool forDelete) {
 					docId = *od->getDocId();
 				} else {
 					// new doc
-					docId = *nd->getDocId();
+					docId = *getDocId();
 				}
-				
+
 				// add posdb doc key
 				*m_p++ = m_useSecondaryRdbs ? RDB2_POSDB2 : RDB_POSDB;
 
@@ -13504,7 +13509,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 	// . do we have adult content?
 	// . should already be valid!
-	if (nd && !m_isAdultValid) {
+	if (addClusterRec && !m_isAdultValid) {
 		g_process.shutdownAbort(true);
 	}
 
@@ -13512,10 +13517,10 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// . now we store even if skipIndexing is true because i'd like to
 	//   see how many titlerecs we have and count them towards the
 	//   docsIndexed count...
-	if (m_useClusterdb && nd) {
+	if (m_useClusterdb && addClusterRec) {
 		// . get new clusterdb key
 		// . we use the host hash for the site hash! hey, this is only 26 bits!
-		key96_t newk = g_clusterdb.makeClusterRecKey(*nd->getDocId(), *nd->getIsAdult(), *nd->getLangId(), nd->getHostHash32a(), false);
+		key96_t newk = g_clusterdb.makeClusterRecKey(*getDocId(), *getIsAdult(), *getLangId(), getHostHash32a(), false);
 
 		// store rdbid
 		*m_p = RDB_CLUSTERDB;

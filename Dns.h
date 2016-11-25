@@ -66,7 +66,7 @@ class Dns {
 
 	static key96_t getKey(const char *hostname, int32_t hostnameLen);
 
-	Host *getResponsibleHost(key96_t key);
+	Host *getIPLookupHost(key96_t key);
 
 private:
 	static void gotIpWrapper(void *state, UdpSlot *slot);

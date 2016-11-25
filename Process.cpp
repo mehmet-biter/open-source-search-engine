@@ -15,6 +15,7 @@
 #include "Doledb.h"
 #include "Statsdb.h"
 #include "JobScheduler.h"
+#include "Statistics.h"
 #include "PingServer.h"
 #include "Dns.h"
 #include "Repair.h"
@@ -696,6 +697,8 @@ bool Process::shutdown2() {
 
 	// turn off statsdb so it does not try to add records for these writes
 	g_statsdb.m_disabled = true;
+
+	Statistics::finalize();
 
 	log("gb: disabling threads");
 	// now disable threads so we don't exit while threads are
