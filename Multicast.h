@@ -209,6 +209,8 @@ private:
 
 	void sendToWholeGroup();
 
+	int calculateTimeout();
+
 	static void sleepCallback1Wrapper(int bogusfd, void *state);
 	void sleepCallback1();
 	static void sleepWrapper2(int bogusfd, void *state);

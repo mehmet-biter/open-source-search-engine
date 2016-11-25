@@ -630,13 +630,86 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// . let's sleep so we have a chance to launch to another host in
 	//   the same group in case this guy takes too long
 	// . don't re-register if we already did
-	if ( m_registeredSleep ) return true;
-	// . otherwise register for sleep callback to try again
-	// . sleepCallback1Wrapper() will call sendToHostLoop() for us
-	g_loop.registerSleepCallback(50/*ms*/, this, sleepCallback1Wrapper, m_niceness );
-	m_registeredSleep = true;
+	if(!m_registeredSleep) {
+		int wait = calculateTimeout();
+		if(wait>=0) {
+			// . otherwise register for sleep callback to try again
+			// . sleepCallback1Wrapper() will call sendToHostLoop() for us
+			g_loop.registerSleepCallback(wait/*ms*/, this, sleepCallback1Wrapper, m_niceness );
+			m_registeredSleep = true;
+		}
+	}
 	// successful launch
 	return true;
+}
+
+int Multicast::calculateTimeout() {
+	// . don't relaunch any niceness 1 stuff for a while
+	// . it often gets suspended due to query traffic
+	//if ( m_niceness > 0 && elapsed < 800000 ) return;
+	if ( m_niceness > 0 ) return -1;
+
+	// . Msg36 is used to get the length of an IndexList (termFreq)
+	//   and is very fast, all in memory, don't wait more than 50ms
+	// . if we do re-route this is sucks cuz we'll get slightly different
+	//   termFreqs which impact the total results count as well as summary
+	//   generation since it's based on termFreq, not too mention the
+	//   biggest impact being ordering of search results since the
+	//   score weight is based on termFreq as well
+	// . but unfortunately, this scheme doesn't increase the ping time
+	//   of dead hosts that much!!
+	// . NOTE: 2/26/04: i put most everything to 8000 ms since rerouting
+	//   too much on an already saturated network of drives just 
+	//   excacerbates the problem. this stuff was originally put here
+	//   to reroute for when a host went down... let's keep it that way
+
+	switch ( m_msgType ) {
+		// msg to get a summary from a query (calls msg22)
+		// put to 5 seconds now since some hosts freezeup still it seems
+		// and i haven't seen a summary generation of 5 seconds
+		case msg_type_20:
+			return 5000;
+		// msg 0x20 calls this to get the title rec
+		case msg_type_22:
+			return 1000;
+		// . msg to get an index list over the net
+		// . this limit should really be based on length of the index list
+		case msg_type_0:
+			// this should just be for when a host goes down, not for
+			// performance reasons, cuz we do pretty good load balancing
+			// and when things get saturated, rerouting excacerbates it
+			return 8000;
+		// msg to get docIds from a query, may take a while
+		case msg_type_39: {
+			// how many docsids request? first 4 bytes of request.
+			int32_t docsWanted = 10;
+			int32_t nqterms        = 0;
+			if ( m_msg ) {
+				docsWanted     = *(int32_t *)(m_msg);
+				nqterms        = *(int32_t *)(m_msg+4);
+			}
+
+			// never re-route if it has a rerank, those take forever
+			// . how many milliseconds of waiting before we re-route?
+			// . 100 ms per doc wanted, but if they all end up
+			//   clustering then docsWanted is no indication of the
+			//   actual number of titleRecs (or title keys) read
+			// . it may take a while to do dup removal on 1 million docs
+			int32_t wait = 5000 + 100  * docsWanted;
+			// those big UOR queries should not get re-routed all the time
+			if ( nqterms > 0 ) {
+				wait += 1000 * nqterms;
+			}
+			if ( wait < 8000 ) {
+				wait = 8000;
+			}
+			return wait;
+		}
+		// don't relaunch anything else unless over 8 secs
+		default:
+			return 8000;
+	}
+
 }
 
 // this is called every 50 ms so we have the chance to launch our request
@@ -665,88 +738,9 @@ void Multicast::sleepCallback1() {
 	int32_t elapsed = now - m_lastLaunch;
 	//log("elapsed = %" PRId32" type=0x%02x",elapsed,m_msgType);
 
-	// . don't relaunch any niceness 1 stuff for a while
-	// . it often gets suspended due to query traffic
-	//if ( m_niceness > 0 && elapsed < 800000 ) return;
-	if ( m_niceness > 0 ) return;
 
 	// TODO: if the host went dead on us, re-route
 
-	// . Msg36 is used to get the length of an IndexList (termFreq)
-	//   and is very fast, all in memory, don't wait more than 50ms
-	// . if we do re-route this is sucks cuz we'll get slightly different
-	//   termFreqs which impact the total results count as well as summary
-	//   generation since it's based on termFreq, not too mention the
-	//   biggest impact being ordering of search results since the
-	//   score weight is based on termFreq as well
-	// . but unfortunately, this scheme doesn't increase the ping time
-	//   of dead hosts that much!!
-	// . NOTE: 2/26/04: i put most everything to 8000 ms since rerouting
-	//   too much on an already saturated network of drives just 
-	//   excacerbates the problem. this stuff was originally put here
-	//   to reroute for when a host went down... let's keep it that way
-
-	switch ( m_msgType ) {
-		// msg to get a summary from a query (calls msg22)
-		// put to 5 seconds now since some hosts freezeup still it seems
-		// and i haven't seen a summary generation of 5 seconds
-		case msg_type_20:
-			if ( elapsed <  5000 ) {
-				return;
-			}
-			break;
-		// msg 0x20 calls this to get the title rec
-		case msg_type_22:
-			if ( elapsed <  1000 ) {
-				return;
-			}
-			break;
-		// . msg to get an index list over the net
-		// . this limit should really be based on length of the index list
-		case msg_type_0:
-			// this should just be for when a host goes down, not for
-			// performance reasons, cuz we do pretty good load balancing
-			// and when things get saturated, rerouting excacerbates it
-			if ( elapsed <  8000 ) {
-				return;
-			}
-			break;
-		// msg to get docIds from a query, may take a while
-		case msg_type_39: {
-			// how many docsids request? first 4 bytes of request.
-			int32_t docsWanted = 10;
-			int32_t nqterms        = 0;
-			if ( m_msg ) {
-				docsWanted     = *(int32_t *)(m_msg);
-				nqterms        = *(int32_t *)(m_msg+4);
-			}
-
-			// never re-route if it has a rerank, those take forever
-			// . how many milliseconds of waiting before we re-route?
-			// . 100 ms per doc wanted, but if they all end up
-			//   clustering then docsWanted is no indication of the
-			//   actual number of titleRecs (or title keys) read
-			// . it may take a while to do dup removal on 1 million docs
-			int32_t wait = 5000 + 100  * docsWanted;
-			// those big UOR queries should not get re-routed all the time
-			if ( nqterms > 0 ) {
-				wait += 1000 * nqterms;
-			}
-			if ( wait < 8000 ) {
-				wait = 8000;
-			}
-			if ( elapsed < wait ) {
-				return;
-			}
-			break;
-		}
-		// don't relaunch anything else unless over 8 secs
-		default:
-			if ( elapsed <  8000 ) {
-				return;
-			}
-			break;
-	}
 
 	// find out which host timedout
 	Host *hd = NULL;
