@@ -147,21 +147,33 @@ private:
 
 	// . the group we're sending to or picking from
 	// . up to MAX_HOSTS_PER_GROUP hosts
-	// . m_retired, m_slots, m_errnos correspond with these 1-1
-	Host       *m_hostPtrs[MAX_HOSTS_PER_GROUP];
+	struct HostSlot {
+		Host       *m_hostPtr;
+		bool        m_retired;          // hostIds that we've tried to send to but failed
+		bool        m_inProgress;       // transaction in progress?
+		UdpSlot    *m_slot;
+		int32_t     m_errno;            // did we have an errno with this slot?
+		int64_t     m_launchTime;
+		HostSlot()
+		  : m_hostPtr(NULL),
+		    m_retired(false),
+		    m_inProgress(false),
+		    m_slot(NULL),
+		    m_errno(0),
+		    m_launchTime(0)
+		{ }
+		void reset() {
+			m_hostPtr=NULL;
+			m_retired=false;
+			m_inProgress=false;
+			m_slot=NULL;
+			m_errno=0;
+			m_launchTime=0;
+		}
+	} m_host[MAX_HOSTS_PER_GROUP];
 	int32_t        m_numHosts;
 
-	// . hostIds that we've tried to send to but failed
-	// . pickBestHost() skips over these hostIds
-	bool        m_retired    [MAX_HOSTS_PER_GROUP];
 
-	// we can have up to 8 hosts per group
-	UdpSlot    *m_slots      [MAX_HOSTS_PER_GROUP]; 
-	// did we have an errno with this slot?
-	int32_t        m_errnos     [MAX_HOSTS_PER_GROUP]; 
-	// transaction in progress?
-	bool        m_inProgress [MAX_HOSTS_PER_GROUP];
-	int64_t   m_launchTime [MAX_HOSTS_PER_GROUP];
 
 	// steal this from the slot(s) we get
 	char       *m_readBuf;
