@@ -3919,14 +3919,18 @@ void PosdbTable::intersectLists10_r ( ) {
 
 			if(!m_documentIndexChecker->exists(m_docId)) {
 				logTrace(g_conf.m_logTracePosdb, "Document %" PRId64 " doesn't exist (in this file)", m_docId);
-				if( !advanceTermListCursors(docIdPtr, qtibuf) ) {
-					logTrace(g_conf.m_logTracePosdb, "END. advanceTermListCursors failed");
-					return;
+
+				if( currPassNum == INTERSECT_SCORING ) {
+					if( !advanceTermListCursors(docIdPtr, qtibuf) ) {
+						logTrace(g_conf.m_logTracePosdb, "END. advanceTermListCursors failed");
+						return;
+					}
+					docIdPtr += 6;
+					continue;
 				}
-				docIdPtr += 6;
-				continue;
 			}
 			logTrace(g_conf.m_logTracePosdb, "Document %" PRId64 " exists (in this file)", m_docId);
+
 
 			// second pass? for printing out transparency info.
 			if ( currPassNum == INTERSECT_DEBUG_INFO ) {
