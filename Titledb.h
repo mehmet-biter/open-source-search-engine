@@ -17,6 +17,7 @@
 // new key format:
 // . <docId>     - 38 bits
 // . <urlHash48> - 48 bits  (used when looking up by url and not docid)
+//   <reserved>  -  9 bits
 // . <delBit>    -  1 bit
 
 class Titledb {
