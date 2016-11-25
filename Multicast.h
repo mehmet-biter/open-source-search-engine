@@ -201,8 +201,6 @@ private:
 	// Msg1 might be able to add data to our tree to save a net trans.
 	bool        m_sendToSelf;
 
-	int32_t        m_retryCount;
-
 	bool        m_sentToTwin;
 
 	void destroySlotsInProgress ( UdpSlot *slot );

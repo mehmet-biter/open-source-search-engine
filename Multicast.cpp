@@ -60,7 +60,6 @@ Multicast::Multicast()
     m_freeReadBuf(false),
     m_key(0),
     m_sendToSelf(false),
-    m_retryCount(0),
     m_sentToTwin(false)
 {
 	constructor();
@@ -139,7 +138,6 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 	m_registeredSleep  = false;
 	m_sendToSelf       = sendToSelf;
 	m_sentToTwin       = false;
-	m_retryCount       = 0;
 	m_key              = key;
 
 	// clear m_retired, m_errnos, m_slots
@@ -1004,10 +1002,6 @@ void Multicast::closeUpShop ( UdpSlot *slot ) {
 	if ( m_registeredSleep ) {
 		g_loop.unregisterSleepCallback(this, sleepCallback1Wrapper);
 		m_registeredSleep = false;
-	}
-
-	if ( ! g_errno && m_retryCount > 0 ) {
-		log(LOG_INFO, "net: Multicast succeeded after %" PRId32" retries.", m_retryCount);
 	}
 
 	// allow us to be re-used now, callback might relaunch
