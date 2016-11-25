@@ -191,8 +191,6 @@ private:
 	// . in milliseconds
 	int64_t   m_lastLaunch;
 
-	Host       *m_lastLaunchHost;
-
 	// only free m_reply if this is true
 	bool        m_freeReadBuf;
 

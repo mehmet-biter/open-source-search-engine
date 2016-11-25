@@ -56,7 +56,6 @@ Multicast::Multicast()
     m_registeredSleep(false),
     m_niceness(0),
     m_lastLaunch(0),
-    m_lastLaunchHost(NULL),
     m_freeReadBuf(false),
     m_key(0),
     m_sendToSelf(false),
@@ -620,8 +619,6 @@ bool Multicast::sendToHost ( int32_t i ) {
 	m_host[i].m_inProgress = true;
 	// set our last launch date
 	m_lastLaunch = nowms ; // gettimeofdayInMilliseconds();
-	// save the host, too
-	m_lastLaunchHost = h;
 	// timing debug
 	//log("Multicast sent to hostId %" PRId32", this=%" PRId32", transId=%" PRId32,
 	//    h->m_hostId, (int32_t)this , m_host[i].m_slot->m_transId );
