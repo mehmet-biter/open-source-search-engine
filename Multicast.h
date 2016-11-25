@@ -17,7 +17,7 @@
 #ifndef GB_MULTICAST_H
 #define GB_MULTICAST_H
 
-#include "MsgType.h"
+#include "msgtype_t.h"
 #include "GbMutex.h"
 #include <inttypes.h>
 #include <stddef.h>
