@@ -1743,40 +1743,10 @@ int main2 ( int argc , char *argv[] ) {
 
 	int32_t *ips;
 
-	// move the log file name logxxx to logxxx-2016_03_16-14:59:24
-	// we did the test bind so no gb process is bound on the port yet
-	// TODO: probably should bind on the port before doing this
-	if( access(g_hostdb.m_logFilename,F_OK)==0 ) {
-		char tmp2[128];
-		SafeBuf newName(tmp2,128);
-		time_t ts = getTimeLocal();
-		struct tm tm_buf;
-		struct tm *timeStruct = localtime_r(&ts,&tm_buf);
-		//struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
-		char ppp[100];
-		strftime(ppp,100,"%Y%m%d-%H%M%S",timeStruct);
-		newName.safePrintf("%s-bak%s",g_hostdb.m_logFilename, ppp );
-		::rename ( g_hostdb.m_logFilename, newName.getBufStart() );
-	}
-
-
-	log("db: Logging to file %s.",
-	    g_hostdb.m_logFilename );
+	log("db: Logging to file %s.", g_hostdb.m_logFilename );
 
 	if ( ! g_conf.m_runAsDaemon )
-		log("db: Use 'gb -d' to run as daemon. Example: "
-		    "gb -d");
-
-	/*
-	// tmp stuff to generate new query log
-	if ( ! ucInit(g_hostdb.m_dir, true)) return 1;
-	if ( ! g_wiktionary.load() ) return 1;
-	if ( ! g_wiktionary.test() ) return 1;
-	if ( ! g_wiki.load() ) return 1;
-	if ( ! g_speller.init() && g_conf.m_isLive ) return 1;
-	return 0;
-	*/
-
+		log("db: Use 'gb -d' to run as daemon. Example: gb -d");
 
 	// start up log file
 	if ( ! g_log.init( g_hostdb.m_logFilename ) ) {
