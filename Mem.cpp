@@ -39,7 +39,14 @@ static bool freeCacheMem();
 
 
 
-static GbMutex s_lock;
+//hackish way to keep track of whether s_lock is safe to use or not. Things calls ::rmmem after s_lock has been destroyed
+static struct MemLock {
+	GbMutex actual_lock;
+	bool working;
+	MemLock() : actual_lock(), working(true) {}
+	~MemLock() { working = false; }
+	operator GbMutex&() { return actual_lock; }
+} s_lock;
 
 // a table used in debug to find mem leaks
 static void **s_mptrs ;
@@ -596,6 +603,7 @@ bool Mem::lblMem( void *mem, size_t size, const char *note ) {
 
 // this is called just before a memory block is freed and needs to be deregistered
 bool Mem::rmMem(void *mem, size_t size, const char *note, bool checksize) {
+	if(!s_lock.working) return true;
 	ScopedLock sl(s_lock);
 	logTrace( g_conf.m_logTraceMem, "mem=%p size=%zu note='%s'", mem, size, note );
 
