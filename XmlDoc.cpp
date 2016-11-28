@@ -17407,16 +17407,12 @@ int gbuncompress ( unsigned char *dest      ,
 		   const unsigned char *source,
 		   uint32_t  sourceLen ) {
 	z_stream stream;
-	int err;
 
 	stream.next_in = (Bytef*)source;
 	stream.avail_in = (uInt)sourceLen;
-	// Check for source > 64K on 16-bit machine:
-	if ((uLong)stream.avail_in != sourceLen) return Z_BUF_ERROR;
 
 	stream.next_out = dest;
 	stream.avail_out = (uInt)*destLen;
-	if ((uLong)stream.avail_out != *destLen) return Z_BUF_ERROR;
 
 	//stream.zalloc = (alloc_func)0;
 	//stream.zfree = (free_func)0;
@@ -17424,7 +17420,7 @@ int gbuncompress ( unsigned char *dest      ,
 	stream.zfree  = free_replace;//zlibfree;
 
 	//we can be gzip or deflate
-	err = inflateInit2(&stream, 47);
+	int err = inflateInit2(&stream, 47);
 
 	if (err != Z_OK) return err;
 
@@ -17445,27 +17441,14 @@ int gbuncompress ( unsigned char *dest      ,
 int gbcompress(unsigned char *dest,
 	       uint32_t *destLen,
 	       const unsigned char *source,
-	       uint32_t  sourceLen,
-	       int32_t encoding) {
+	       uint32_t  sourceLen) {
 
-	int level = Z_DEFAULT_COMPRESSION;
 	z_stream stream;
-	int err;
-	int method     = Z_DEFLATED;
-	//lots of mem, faster, more compressed, see zlib.h
-	int windowBits = 31;
-	int memLevel   = 8;
-	int strategy   = Z_DEFAULT_STRATEGY;
 
 	stream.next_in = (Bytef*)source;
 	stream.avail_in = (uInt)sourceLen;
-#ifdef MAXSEG_64K
-	// Check for source > 64K on 16-bit machine:
-	if ((uLong)stream.avail_in != sourceLen) return Z_BUF_ERROR;
-#endif
 	stream.next_out = dest;
 	stream.avail_out = (uInt)*destLen;
-	if ((uLong)stream.avail_out != *destLen) return Z_BUF_ERROR;
 
 	//stream.zalloc = (alloc_func)0;
 	//stream.zfree = (free_func)0;
@@ -17475,10 +17458,7 @@ int gbcompress(unsigned char *dest,
 	stream.opaque = (voidpf)0;
 
 	//we can be gzip or deflate
-	if(encoding == ET_DEFLATE) err = deflateInit (&stream, level);
-	else                       err = deflateInit2(&stream, level,
-						      method, windowBits,
-						      memLevel, strategy);
+	int err = deflateInit (&stream, Z_DEFAULT_COMPRESSION);
 	if (err != Z_OK) {
 		// zlib's incompatible version error?
 		if ( err == -6 ) {

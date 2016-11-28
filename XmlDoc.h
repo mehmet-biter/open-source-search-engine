@@ -102,8 +102,7 @@ int gbuncompress(unsigned char *dest,
 int gbcompress(unsigned char *dest,
 	       uint32_t *destLen,
 	       const unsigned char *source,
-	       uint32_t  sourceLen,
-	       int32_t encoding = ET_DEFLATE);
+	       uint32_t  sourceLen);
 
 
 uint32_t score8to32 ( uint8_t score8 );
