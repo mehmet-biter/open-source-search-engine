@@ -94,16 +94,16 @@ float computeSimilarity ( const int32_t   *vec0,
 
 
 // tell zlib to use our malloc/free functions
-int gbuncompress ( unsigned char *dest      ,
-		   uint32_t *destLen   ,
-		   unsigned char *source    ,
-		   uint32_t  sourceLen );
+int gbuncompress(unsigned char *dest,
+		 uint32_t *destLen,
+		 const unsigned char *source,
+		 uint32_t  sourceLen);
 
-int gbcompress   ( unsigned char *dest      ,
-		   uint32_t *destLen   ,
-		   unsigned char *source    ,
-		   uint32_t  sourceLen ,
-		   int32_t encoding = ET_DEFLATE);
+int gbcompress(unsigned char *dest,
+	       uint32_t *destLen,
+	       const unsigned char *source,
+	       uint32_t  sourceLen,
+	       int32_t encoding = ET_DEFLATE);
 
 
 uint32_t score8to32 ( uint8_t score8 );

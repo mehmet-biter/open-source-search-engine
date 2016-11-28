@@ -17404,7 +17404,7 @@ static void free_replace   ( void *pf , void *s ) {
 
 int gbuncompress ( unsigned char *dest      ,
 		   uint32_t *destLen   ,
-		   unsigned char *source    ,
+		   const unsigned char *source,
 		   uint32_t  sourceLen ) {
 	z_stream stream;
 	int err;
@@ -17442,11 +17442,11 @@ int gbuncompress ( unsigned char *dest      ,
 	return err;
 }
 
-int gbcompress ( unsigned char *dest      ,
-		 uint32_t *destLen   ,
-		 unsigned char *source    ,
-		 uint32_t  sourceLen ,
-		 int32_t encoding            ) {
+int gbcompress(unsigned char *dest,
+	       uint32_t *destLen,
+	       const unsigned char *source,
+	       uint32_t  sourceLen,
+	       int32_t encoding) {
 
 	int level = Z_DEFAULT_COMPRESSION;
 	z_stream stream;
