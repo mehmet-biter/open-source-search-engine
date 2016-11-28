@@ -2345,7 +2345,6 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 		return s;
 	}
 
-	//int32_t newSize = getGunzippedSize(s->m_readBuf, s->m_readOffset);
 	int32_t newSize = *(int32_t*)(s->m_readBuf + s->m_readOffset - 4);
 
 	if(newSize < 0 || newSize > 500*1024*1024) {
@@ -2407,12 +2406,6 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 		break;
 	}
 
-	// this was writing a number at the start of the mime and messing
-	// up our squid proxy implementation. so take out. MDW 10/2/2014
-	//if ( ! ptr1 )
-	//	ptr1 = s->m_readBuf;
-
-
 	char *src = s->m_readBuf;
 
 	// sometimes they are missing Content-Length:
@@ -2451,28 +2444,6 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 		while ( *src != '\r' && *src != '\n') src++;
 		goto subloop;
 	}
-
-
-	// copy the rest
-	// gbmemcpy ( pnew , src , mimeEnd - src );
-	// pnew += mimeEnd - src;
-	// src  += mimeEnd - src;
-
-
-	// before restLen was negative because we were skipping over
-	// leading \n's in the document body because the while loop above
-	// was bad logic
-	// if ( restLen < 0 || ! ptr1 ) {
-	// 	log("http: got bad gzipped reply2 of size=%" PRId32".",
-	// 	    newSize );
-	// 	mfree (newBuf, need, "HttpUnzipError");
-	// 	g_errno = ECORRUPTHTTPGZIP;
-	// 	return s;
-	// }
-		
-	// gbmemcpy(pnew, pold, restLen);
- 	// pold += restLen;
- 	// pnew += restLen;
 
 	uint32_t uncompressedLen = newSize;
 	int32_t compressedLen = s->m_readOffset-mime.getMimeLen();
