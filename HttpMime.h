@@ -131,7 +131,7 @@ private:
 	bool parse ( char *mime , int32_t mimeLen , Url *url );
 
 	// compute length of a possible mime starting at "buf"
-	int32_t getMimeLen ( char *buf , int32_t bufLen , int32_t *boundaryLen ) ;
+	int32_t getMimeLen(char *buf, int32_t bufLen);
 
 	// converts a string contentType like "text/html" to a int32_t
 	int32_t   getContentTypePrivate ( char *s ) ;
@@ -160,11 +160,6 @@ private:
 	char *m_contentEncodingPos;
 	char *m_contentLengthPos;
 	char *m_contentTypePos;
-
-	// the size of the terminating boundary, either 1 or 2 bytes.
-	// just the last \n in the case of a \n\n or \r in the case
-	// of a \r\r, but it is the full \r\n in the case of a last \r\n\r\n
-	int32_t m_boundaryLen;
 
 	// Content-Type: text/html;charset=euc-jp  // japanese (euc-jp)
 	// Content-Type: text/html;charset=gb2312  // chinese (gb2312)

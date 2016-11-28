@@ -55,7 +55,6 @@ HttpMime::HttpMime () {
 	memset(m_buf, 0, sizeof(m_buf));
 	m_bufLen = 0;
 	m_contentEncoding = 0;
-	m_boundaryLen = 0;
 
 	reset(); 
 }
@@ -98,21 +97,19 @@ bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
 
 	// at the very least we should have a "HTTP/x.x 404\[nc]"
 	if ( bufLen < 13 ) {
-		m_boundaryLen = 0;
 		return false;
 	}
 
 	// . get the length of the Mime, must end in \r\n\r\n , ...
 	// . m_bufLen is used as the mime length
 	m_mimeStartPtr = buf;
-	m_bufLen = getMimeLen ( buf , bufLen , &m_boundaryLen );
+	m_bufLen = getMimeLen(buf, bufLen);
 
 	// . return false if we had no mime boundary
 	// . but set m_bufLen to 0 so getMimeLen() will return 0 instead of -1
 	//   thus avoiding a potential buffer overflow
 	if ( m_bufLen < 0 ) { 
-		m_bufLen = 0; 
-		m_boundaryLen = 0; 
+		m_bufLen = 0;
 		log(LOG_WARN, "mime: no rnrn boundary detected");
 		return false; 
 	}
@@ -126,12 +123,15 @@ bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
 }
 
 // . returns -1 if no boundary found
-int32_t HttpMime::getMimeLen ( char *buf , int32_t bufLen , int32_t *bsize ) {
+int32_t HttpMime::getMimeLen(char *buf, int32_t bufLen) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufLen);
 #endif
-	// size of the boundary
-	*bsize = 0;
+	// the size of the terminating boundary, either 1 or 2 bytes.
+	// just the last \n in the case of a \n\n or \r in the case
+	// of a \r\r, but it is the full \r\n in the case of a last \r\n\r\n
+	int32_t bsize = 0;
+
 	// find the boundary
 	int32_t i;
 	for ( i = 0 ; i < bufLen ; i++ ) {
@@ -140,7 +140,7 @@ int32_t HttpMime::getMimeLen ( char *buf , int32_t bufLen , int32_t *bsize ) {
 		// boundary check
 		if ( i + 1 >= bufLen ) continue;
 		// prepare for a smaller mime size
-		*bsize = 1;
+		bsize = 1;
 		// \r\r
 		if ( buf[i  ] == '\r' && buf[i+1] == '\r' ) break;
 		// \n\n
@@ -148,7 +148,7 @@ int32_t HttpMime::getMimeLen ( char *buf , int32_t bufLen , int32_t *bsize ) {
 		// boundary check
 		if ( i + 3 >= bufLen ) continue;
 		// prepare for a larger mime size
-		*bsize = 2;
+		bsize = 2;
 		// \r\n\r\n
 		if ( buf[i  ] == '\r' && buf[i+1] == '\n' &&
 		     buf[i+2] == '\r' && buf[i+3] == '\n'  ) break;
@@ -158,7 +158,7 @@ int32_t HttpMime::getMimeLen ( char *buf , int32_t bufLen , int32_t *bsize ) {
 	}
 	// return false if could not find the end of the MIME
 	if ( i == bufLen ) return -1;
-	return i + *bsize * 2;
+	return i + bsize * 2;
 }
 
 // returns false on bad mime
