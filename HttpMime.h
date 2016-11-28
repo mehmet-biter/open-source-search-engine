@@ -66,7 +66,7 @@ public:
 
 	void setContentType(int32_t t) { m_contentType = t; }
 	void setHttpStatus(int32_t status) { m_status = status; }
-	void setBufLen(int32_t bufLen) { m_bufLen = bufLen; }
+	void setBufLen(int32_t bufLen) { m_mimeLen = bufLen; }
 
 	// http status: 404, 200, etc.
 	int32_t getHttpStatus() const { return m_status; }
@@ -111,7 +111,7 @@ public:
 
 	char *getMime() { return m_buf; }
 	// does this include the last \r\n\r\n? yes!
-	int32_t getMimeLen() const { return m_bufLen; }
+	int32_t getMimeLen() const { return m_mimeLen; }
 
 	char *getCharset() { return m_charset; }
 	int32_t getCharsetLen() const { return m_charsetLen; }
@@ -150,11 +150,11 @@ private:
 	char *m_locationField;
 	int32_t m_locationFieldLen;
 
-	char *m_mimeStartPtr;
+	const char *m_mime;
 
 	// buf used to hold a mime we create
 	char m_buf[1024];
-	int32_t m_bufLen;
+	int32_t m_mimeLen;
 
 	int32_t m_contentEncoding;
 	char *m_contentEncodingPos;

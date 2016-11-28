@@ -53,14 +53,14 @@ HttpMime::HttpMime () {
 	// Coverity
 	m_content = NULL;
 	memset(m_buf, 0, sizeof(m_buf));
-	m_bufLen = 0;
+	m_mimeLen = 0;
 	m_contentEncoding = 0;
 
 	reset(); 
 }
 
 void HttpMime::reset ( ) {
-	m_mimeStartPtr     = NULL;
+	m_mime     = NULL;
 	m_firstCookie      = NULL;
 	m_status           = -1;
 	m_contentLen       = -1;
@@ -84,11 +84,11 @@ bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufLen);
 #endif
 	// reset some stuff
-	m_mimeStartPtr     = NULL;
+	m_mime     = NULL;
 	m_firstCookie      = NULL;
 	m_contentLen       = -1;
 	m_content          = NULL;
-	m_bufLen           =  0;
+	m_mimeLen           =  0;
 	m_contentType      =  CT_HTML;
 	m_contentEncoding  =  ET_IDENTITY;
 	m_lastModifiedDate =  0;
@@ -102,24 +102,24 @@ bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
 
 	// . get the length of the Mime, must end in \r\n\r\n , ...
 	// . m_bufLen is used as the mime length
-	m_mimeStartPtr = buf;
-	m_bufLen = getMimeLen(buf, bufLen);
+	m_mime = buf;
+	m_mimeLen = getMimeLen(buf, bufLen);
 
 	// . return false if we had no mime boundary
 	// . but set m_bufLen to 0 so getMimeLen() will return 0 instead of -1
 	//   thus avoiding a potential buffer overflow
-	if ( m_bufLen < 0 ) { 
-		m_bufLen = 0;
+	if ( m_mimeLen < 0 ) {
+		m_mimeLen = 0;
 		log(LOG_WARN, "mime: no rnrn boundary detected");
 		return false; 
 	}
 
 	// set this
-	m_content = buf + m_bufLen;
+	m_content = buf + m_mimeLen;
 
 	// . parse out m_status, m_contentLen, m_lastModifiedData, contentType
 	// . returns false on bad mime
-	return parse ( buf , m_bufLen , url );
+	return parse ( buf , m_mimeLen , url );
 }
 
 // . returns -1 if no boundary found
@@ -790,8 +790,8 @@ void HttpMime::makeRedirMime ( const char *redir , int32_t redirLen ) {
 	*p++ = '\r';
 	*p++ = '\n';
 	*p = '\0';
-	m_bufLen = p - m_buf;
-	if ( m_bufLen > 1023 ) { g_process.shutdownAbort(true); }
+	m_mimeLen = p - m_buf;
+	if ( m_mimeLen > 1023 ) { g_process.shutdownAbort(true); }
 	// set the mime's length
 	//m_bufLen = strlen ( m_buf );
 }
@@ -893,16 +893,9 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 			  "Access-Control-Allow-Origin: *\r\n"
 			  "Server: Gigablast/1.0\r\n"
 			  "Content-Length: %" PRId32"\r\n"
-			  //"Expires: Wed, 23 Dec 2003 10:23:01 GMT\r\n"
-			  //"Expires: -1\r\n"
 			  "Connection: Close\r\n"
 			  "%s"
 			  "Content-Type: %s\r\n",
-			  //"Connection: Keep-Alive\r\n"
-			  //"%s"
-			  //"Location: fuck\r\n"
-			  //"Location: http://192.168.0.4:8000/cgi/3.cgi\r\n"
-			  //"Last-Modified: %s\r\n\r\n" ,
 			  httpStatus , smsg ,
 			  ns , totalContentLen , enc , contentType  );
 			  //pns ,
@@ -921,7 +914,6 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 			      "Content-Length: %" PRId32"\r\n"
 			      "Content-Range: %" PRId32"-%" PRId32"(%" PRId32")\r\n"// added "bytes"
 			      "Connection: Close\r\n"
-			      //"P3P: CP=\"CAO PSA OUR\"\r\n"
 			      // for ajax support
 			      "Access-Control-Allow-Origin: *\r\n"
 			      "Server: Gigablast/1.0\r\n"
@@ -967,9 +959,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 		if ( charset ) p += sprintf ( p , "; charset=%s", charset );
 		p += sprintf ( p , "\r\n");
 		p += sprintf ( p ,
-			       //"Connection: Keep-Alive\r\n"
 			       "Connection: Close\r\n"
-			       //"P3P: CP=\"CAO PSA OUR\"\r\n"
 			       "Access-Control-Allow-Origin: *\r\n"
 			       "Server: Gigablast/1.0\r\n"
 			       "%s"
@@ -997,7 +987,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 	p += sprintf(p, "\r\n");
 	// set the mime's length
 	//m_bufLen = strlen ( m_buf );
-	m_bufLen = p - m_buf;
+	m_mimeLen = p - m_buf;
 }
 
 
@@ -1183,8 +1173,7 @@ bool HttpMime::init ( ) {
 	if ( s_init ) return true;
 	// make sure only called once
 	s_init = true;
-	//s_mimeTable.set ( 256 );
-	//s_mimeTable.setLabel("mimetbl");
+
 	if ( ! s_mimeTable.set(4,sizeof(char *),256,NULL,0,false,"mimetbl"))
 		return false;
 	// set table from internal list
@@ -1218,11 +1207,11 @@ bool HttpMime::init ( ) {
 
 bool HttpMime::addCookiesIntoBuffer ( SafeBuf *sb ) {
 	// point to start of request
-	if ( m_bufLen <= 0 ) return true;
-	if ( ! m_mimeStartPtr ) return true;
+	if ( m_mimeLen <= 0 ) return true;
+	if ( ! m_mime ) return true;
 	if ( ! m_firstCookie  ) return true;
 	char *p = m_firstCookie;
-	char *pend = m_mimeStartPtr + m_bufLen;
+	const char *pend = m_mime + m_mimeLen;
 	while ( p < pend ) {
 		// compute the length of the string starting at p and ending
 		// at a \n or \r
