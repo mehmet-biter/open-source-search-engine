@@ -13,9 +13,6 @@ const char *extensionToContentTypeStr2 ( const char *ext , int32_t elen ) ;
 
 #include <time.h>
 
-void   getTime    ( const char *s , int *sec , int *min , int *hour ) ;
-int32_t   getMonth   ( const char *s ) ;
-int32_t   getWeekday ( const char *s ) ;
 time_t atotime    ( const char *s ) ;
 time_t atotime1   ( const char *s ) ;
 
@@ -67,9 +64,6 @@ public:
 	// . we need "url" to set m_locUrl if it's a relative redirect
 	bool set ( char *httpReply , int32_t replyLen , Url *url );
 
-	// these 2 sets are used to dress up a fake mime for passing
-	// to TitleRec::set() called from Msg16 getDoc() routine
-	void setLastModifiedDate(time_t date) { m_lastModifiedDate = date; }
 	void setContentType(int32_t t) { m_contentType = t; }
 	void setHttpStatus(int32_t status) { m_status = status; }
 	void setBufLen(int32_t bufLen) { m_bufLen = bufLen; }
@@ -80,24 +74,13 @@ public:
 	char *getContent() { return m_content; }
 	int32_t getContentLen() const { return m_contentLen; }
 
-	time_t getLastModifiedDate() const { return m_lastModifiedDate; }
-
 	int32_t getContentType() { return m_contentType; }
-
-	bool isEmpty() const { return (m_status == -1); }
 
 	Url *getLocationUrl() { return &m_locUrl; }
 
-	const char *getCookie() const { return m_cookie; }
-	int32_t getCookieLen() const { return m_cookieLen; }
-
 	// new stuff for Msg13.cpp to use
 	char *getLocationField() { return m_locationField; }
-
 	int32_t getLocationFieldLen() const { return m_locationFieldLen; }
-
-	// compute length of a possible mime starting at "buf"
-	int32_t getMimeLen ( char *buf , int32_t bufLen , int32_t *boundaryLen ) ;
 
 	// . used to create a mime
 	// . if bytesToSend is < 0 that means send totalContentLen (all doc)
@@ -109,17 +92,17 @@ public:
 	// . a cache time of 0 means use local caching rules
 	// . any other cacheTime is an explicit time to cache the page for
 	// . httpStatus of -1 means to auto determine
-	void makeMime   ( int32_t    totalContentLen        , 
-			  int32_t    cacheTime        =-1   , // -1-->noBackCache
-			  time_t  lastModified     = 0   ,
-			  int32_t    offset           = 0   , 
-			  int32_t    bytesToSend      =-1   ,
-			  const char   *ext              = NULL,
-			  bool    POSTReply        = false,
-			  const char   *contentType      = NULL ,
-			  const char   *charset          = NULL ,
-			  int32_t    httpStatus       = -1   ,
-			  const char   *cookie           = NULL );
+	void makeMime(int32_t totalContentLen,
+	              int32_t cacheTime,
+	              time_t lastModified,
+	              int32_t offset,
+	              int32_t bytesToSend,
+	              const char *ext,
+	              bool POSTReply,
+	              const char *contentType,
+	              const char *charset,
+	              int32_t httpStatus,
+	              const char *cookie);
 
 	// make a redirect mime
 	void makeRedirMime ( const char *redirUrl , int32_t redirUrlLen );
@@ -127,34 +110,34 @@ public:
 	bool addCookiesIntoBuffer ( class SafeBuf *sb ) ;
 
 	char *getMime() { return m_buf; }
-
 	// does this include the last \r\n\r\n? yes!
 	int32_t getMimeLen() const { return m_bufLen; }
 
-	int32_t getBoundaryLen() const { return m_boundaryLen; }
-
 	char *getCharset() { return m_charset; }
 	int32_t getCharsetLen() const { return m_charsetLen; }
+
 	int32_t getContentEncoding() const { return m_contentEncoding; }
 	char *getContentEncodingPos() { return m_contentEncodingPos; }
 	char *getContentLengthPos() { return m_contentLengthPos; }
 	char *getContentTypePos() { return m_contentTypePos; }
 
-
 	// convert a file extension like "gif" to "images/gif"
 	const char *getContentTypeFromExtension ( const char *ext ) ;
 	const char *getContentTypeFromExtension ( const char *ext , int32_t elen ) ;
-
-	// used for bz2, gz files
-	const char *getContentEncodingFromExtension ( const char *ext ) ;
 
 private:
 	// . sets m_status, m_contentLen , ...
 	// . we need "url" to set m_locUrl if it's a relative redirect
 	bool parse ( char *mime , int32_t mimeLen , Url *url );
 
+	// compute length of a possible mime starting at "buf"
+	int32_t getMimeLen ( char *buf , int32_t bufLen , int32_t *boundaryLen ) ;
+
 	// converts a string contentType like "text/html" to a int32_t
 	int32_t   getContentTypePrivate ( char *s ) ;
+
+	// used for bz2, gz files
+	const char *getContentEncodingFromExtension ( const char *ext ) ;
 
 	// these are set by calling set() above
 	int32_t m_status;

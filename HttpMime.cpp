@@ -13,6 +13,10 @@
 #include <valgrind/memcheck.h>
 #endif
 
+static void getTime(const char *s, int *sec, int *min, int *hour);
+static int32_t getMonth(const char *s);
+static int32_t getWeekday(const char *s);
+
 static time_t atotime2( const char *s );
 static time_t atotime3( const char *s );
 static time_t atotime4( const char *s );
