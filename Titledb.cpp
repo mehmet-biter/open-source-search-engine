@@ -99,7 +99,7 @@ bool Titledb::addColl ( char *coll, bool doVerify ) {
 	return true;
 }
 */
-bool Titledb::verify ( char *coll ) {
+bool Titledb::verify(const char *coll) {
 	log ( LOG_DEBUG, "db: Verifying Titledb for coll %s...", coll );
 
 	Msg5 msg5;
@@ -109,7 +109,7 @@ bool Titledb::verify ( char *coll ) {
 	startKey.setMin();
 	endKey.setMax();
 	//int32_t minRecSizes = 64000;
-	CollectionRec *cr = g_collectiondb.getRec(coll);
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
 
 	if ( ! msg5.getList ( RDB_TITLEDB   ,
 			      cr->m_collnum       ,
