@@ -5,4 +5,6 @@
 
 int32_t getAdultPoints ( char *s, int32_t slen, const char *url );
 
+bool isAdult(const char *s, int32_t slen, const char **loc = nullptr);
+
 #endif

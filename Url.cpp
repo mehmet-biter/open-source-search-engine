@@ -5,6 +5,7 @@
 #include "Domains.h"
 #include "HashTable.h"
 #include "Speller.h"
+#include "AdultCheck.h"
 #include "ip.h"      // atoip ( s,len)
 #include "Punycode.h"
 #include "Unicode.h"
@@ -1533,7 +1534,7 @@ bool Url::isSpam() const {
 	return false;
 }
 
-bool Url::isSpam(const char *s, int32_t slen) const {
+bool Url::isSpam(const char *s, int32_t slen) {
 
 	// no need to indent below, keep it clearer
 	if ( ! isAdult ( s, slen ) ) return false;

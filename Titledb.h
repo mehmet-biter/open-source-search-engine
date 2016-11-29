@@ -17,6 +17,7 @@
 // new key format:
 // . <docId>     - 38 bits
 // . <urlHash48> - 48 bits  (used when looking up by url and not docid)
+//   <reserved>  -  9 bits
 // . <delBit>    -  1 bit
 
 class Titledb {
@@ -24,7 +25,7 @@ public:
 	// reset rdb
 	void reset();
 
-	bool verify(char *coll);
+	bool verify(const char *coll);
 
 	// init m_rdb
 	bool init ();
@@ -32,11 +33,12 @@ public:
 	// init secondary/rebuild titledb
 	bool init2 ( int32_t treeMem ) ;
 
-	Rdb* getRdb() { return &m_rdb; }
+	Rdb       *getRdb()       { return &m_rdb; }
+	const Rdb *getRdb() const { return &m_rdb; }
 
 	// . this is an estimate of the number of docs in the WHOLE db network
 	// . we assume each group/cluster has about the same # of docs as us
-	int64_t getGlobalNumDocs() {
+	int64_t estimateGlobalNumDocs() const {
 		return m_rdb.getNumTotalRecs() * (int64_t)g_hostdb.m_numShards;
 	}
 
@@ -114,7 +116,7 @@ public:
 	// does this key/docId/url have it's titleRec stored locally?
 	static bool isLocal(int64_t docId);
 
-	static bool isLocal(Url *url) {
+	static bool isLocal(const Url *url) {
 		return isLocal(getProbableDocId(url));
 	}
 

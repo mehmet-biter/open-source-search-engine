@@ -23,29 +23,25 @@ class Speller {
 	Speller();
 	~Speller();
 
-
 	void reset();
 
 	bool init();
 
 	void test (char *ff);
 
+	void dictLookupTest ( char *ff );
+
 	int64_t getLangBits64 ( int64_t wid ) ;
 
 	int32_t getPhrasePopularity( const char *s, uint64_t h, unsigned char langId );
 
 	bool canSplitWords(const char *s, int32_t slen, bool *isPorn, char *splitWords, unsigned char langId);
+
+private:
 	
 	bool findNext(const char *s, const char *send, const char **nextWord, bool *isPorn, unsigned char langId);
 
-	// . dump out the first "numWordsToDump" words and phrases
-	//   encountered will scanning the records in Titledb
-	// . use these words/phrases to make the dictionaries
-	bool generateDicts(int32_t numWordsToDump, const char *coll);
-
 	bool loadUnifiedDict();
-
-	void dictLookupTest ( char *ff );
 
 	const char *getPhraseRecord(const char *phrase, int len);
 

@@ -7,7 +7,7 @@
 #define GB_UDPSLOT_H
 
 #include "UdpProtocol.h"
-#include "MsgType.h"
+#include "msgtype_t.h"
 
 #define SMALLDGRAMS
 

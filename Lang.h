@@ -81,6 +81,4 @@ void        languageToString ( unsigned char lang , char *buf );
 const char* getLanguageString ( unsigned char lang);
 const char* getLanguageAbbr ( unsigned char langId);
 
-bool     isAdult(const char *s, int32_t slen, const char **loc = nullptr);
-
 #endif // GB_LANG_H

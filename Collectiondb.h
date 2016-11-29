@@ -484,6 +484,10 @@ class CollectionRec {
 	// how long a robots.txt can be in the cache (Msg13.cpp/Robotdb.cpp)
 	int32_t m_maxRobotsCacheAge;
 
+	int32_t m_crawlDelayDefaultForNoRobotsTxtMS;
+	int32_t m_crawlDelayDefaultForRobotsTxtMS;
+
+
 	// use query expansion for this collection?
 	bool m_queryExpansion;
 

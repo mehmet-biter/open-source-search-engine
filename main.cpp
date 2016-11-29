@@ -1525,21 +1525,6 @@ int main2 ( int argc , char *argv[] ) {
 	//if ( ! g_threads.init()     ) {
 	//	log("db: Threads init failed." ); return 1; }
 
-	// gb gendict
-	if ( strcmp ( cmd , "gendict" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		if ( argc != cmdarg + 2 &&
-		     argc != cmdarg + 3 ) goto printHelp; // take no other args
-		char *coll = argv[cmdarg+1];
-		// get numWordsToDump
-		int32_t  nn = 10000000;
-		if ( argc == cmdarg + 3 ) nn = atoi ( argv[cmdarg+2] );
-		// . generate the dict files
-		// . use the first 100,000,000 words/phrases to make them
-		g_speller.generateDicts ( nn , coll );
-		return 0;
-	}
-
 	// . gb dump [dbLetter][coll][fileNum] [numFiles] [includeTree][termId]
 	// . spiderdb is special:
 	//   gb dump s [coll][fileNum] [numFiles] [includeTree] [0=old|1=new]
@@ -1743,40 +1728,10 @@ int main2 ( int argc , char *argv[] ) {
 
 	int32_t *ips;
 
-	// move the log file name logxxx to logxxx-2016_03_16-14:59:24
-	// we did the test bind so no gb process is bound on the port yet
-	// TODO: probably should bind on the port before doing this
-	if( access(g_hostdb.m_logFilename,F_OK)==0 ) {
-		char tmp2[128];
-		SafeBuf newName(tmp2,128);
-		time_t ts = getTimeLocal();
-		struct tm tm_buf;
-		struct tm *timeStruct = localtime_r(&ts,&tm_buf);
-		//struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
-		char ppp[100];
-		strftime(ppp,100,"%Y%m%d-%H%M%S",timeStruct);
-		newName.safePrintf("%s-bak%s",g_hostdb.m_logFilename, ppp );
-		::rename ( g_hostdb.m_logFilename, newName.getBufStart() );
-	}
-
-
-	log("db: Logging to file %s.",
-	    g_hostdb.m_logFilename );
+	log("db: Logging to file %s.", g_hostdb.m_logFilename );
 
 	if ( ! g_conf.m_runAsDaemon )
-		log("db: Use 'gb -d' to run as daemon. Example: "
-		    "gb -d");
-
-	/*
-	// tmp stuff to generate new query log
-	if ( ! ucInit(g_hostdb.m_dir, true)) return 1;
-	if ( ! g_wiktionary.load() ) return 1;
-	if ( ! g_wiktionary.test() ) return 1;
-	if ( ! g_wiki.load() ) return 1;
-	if ( ! g_speller.init() && g_conf.m_isLive ) return 1;
-	return 0;
-	*/
-
+		log("db: Use 'gb -d' to run as daemon. Example: gb -d");
 
 	// start up log file
 	if ( ! g_log.init( g_hostdb.m_logFilename ) ) {
@@ -7377,7 +7332,7 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 			log( LOG_INFO, "cntDm: File Open Failed." );
 			return;
 		}		
-		int64_t total = g_titledb.getGlobalNumDocs();
+		int64_t total = g_titledb.estimateGlobalNumDocs();
 		char link_ip[]  = "http://www.gigablast.com/search?"
 			          "code=gbmonitor&q=ip%3A";
 		char link_dom[] = "http://www.gigablast.com/search?"

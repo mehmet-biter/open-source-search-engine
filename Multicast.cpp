@@ -10,9 +10,6 @@
 #include "ip.h"
 #include "Mem.h"
 
-// up to 10 twins in a group
-//#define MAX_HOSTS_PER_GROUP 10
-
 // TODO: if we're ordered to close and we still are waiting on stuff
 //       to send we should send as much as we can and save the remaining
 //       slots to disk for sending later??
@@ -23,8 +20,8 @@ void Multicast::constructor() {
 	m_msg      = NULL;
 	m_readBuf  = NULL;
 	m_inUse    = false;
-	memset(m_hostPtrs, 0, sizeof(m_hostPtrs));
-	memset(m_slots, 0, sizeof(m_slots));
+	for(int i=0; i<MAX_HOSTS_PER_GROUP; i++)
+		m_host[i].reset();
 }
 
 void Multicast::destructor() {
@@ -50,13 +47,8 @@ Multicast::Multicast()
     m_totalTimeout(0),
     m_startTime(0),
     m_numReplies(0),
-    //m_hostPtrs
+    m_host(),
     m_numHosts(0),
-    //m_retired
-    //m_slots
-    //m_errnos
-    //m_inProgress
-    //m_launchTime
     m_readBuf(NULL),
     m_readBufSize(0),
     m_readBufMaxSize(0),
@@ -64,19 +56,11 @@ Multicast::Multicast()
     m_registeredSleep(false),
     m_niceness(0),
     m_lastLaunch(0),
-    m_lastLaunchHost(NULL),
     m_freeReadBuf(false),
     m_key(0),
     m_sendToSelf(false),
-    m_retryCount(0),
     m_sentToTwin(false)
 {
-	// PVS-Studio
-	memset(&m_retired, 0, sizeof(m_retired));
-	memset(&m_errnos, 0, sizeof(m_errnos));
-	memset(&m_inProgress, 0, sizeof(m_inProgress));
-	memset(&m_launchTime, 0, sizeof(m_launchTime));
-
 	constructor();
 }
 
@@ -104,6 +88,9 @@ void Multicast::reset ( ) {
 	m_readBuf  = NULL;
 	m_inUse    = false;
 	m_replyingHost = NULL;
+
+	for(int i=0; i<MAX_HOSTS_PER_GROUP; i++)
+		m_host[i].reset();
 }
 
 // . an individual transaction's udpSlot is not be removed because we might 
@@ -112,7 +99,7 @@ void Multicast::reset ( ) {
 // . caller can now pass in his own reply buffer
 // . if "freeReplyBuf" is true that means it needs to be freed at some point
 //   otherwise, it's probably on the stack or part of a larger allocate class.
-bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg, uint32_t shardNum, bool sendToWholeGroup,
+bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg, uint32_t shardNum, bool sendToWholeGroup_,
                      int32_t key, void *state, void *state2, void (*callback)(void *state, void *state2),
                      int64_t totalTimeout, int32_t niceness, int32_t firstHostId, bool freeReplyBuf) {
 	bool sendToSelf = true;
@@ -150,26 +137,23 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 	m_registeredSleep  = false;
 	m_sendToSelf       = sendToSelf;
 	m_sentToTwin       = false;
-	m_retryCount       = 0;
 	m_key              = key;
 
 	// clear m_retired, m_errnos, m_slots
-	memset(m_retired, 0, sizeof(m_retired));
-	memset(m_errnos, 0, sizeof(m_errnos));
-	memset(m_slots, 0, sizeof(m_slots));
-	memset(m_inProgress, 0, sizeof(m_inProgress));
+	for(int i=0; i<MAX_HOSTS_PER_GROUP; i++)
+		m_host[i].reset();
 
 	// . get the list of hosts in this shard
 	Host *hostList = g_hostdb.getShard ( shardNum , &m_numHosts );
 
 	// now copy the ptr into our array
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
-		m_hostPtrs[i] = &hostList[i];
+		m_host[i].m_hostPtr = &hostList[i];
 	}
 
 	// . pick the fastest host in the group
 	// . this should pick the fastest one we haven't already sent to yet
-	if ( ! sendToWholeGroup ) {
+	if ( ! sendToWholeGroup_ ) {
 		bool retVal = sendToHostLoop(key,firstHostId);
 
 		// on error, un-use this class
@@ -181,9 +165,9 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 	} else {
 		// . send to ALL hosts in this group if sendToWholeGroup is true
 		// . blocks forever until sends to all hosts are successfull
-		sendToGroup();
+		sendToWholeGroup();
 	
-		// . sendToGroup() always blocks, but we return true if no g_errno
+		// . sendToWholeGroup() always blocks, but we return true if no g_errno
 		// . we actually keep looping until all hosts get the msg w/o error
 		return true;
 	}
@@ -201,7 +185,7 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 // . it does not send to hosts whose m_errnos is 0
 // . TODO: deal with errors from g_udpServer::sendRequest() better
 // . returns false and sets g_errno on error
-void Multicast::sendToGroup() {
+void Multicast::sendToWholeGroup() {
 	ScopedLock sl(m_mtx);
 	// see if anyone gets an error
 	bool hadError = false;
@@ -210,17 +194,17 @@ void Multicast::sendToGroup() {
 		// cancel any errors
 		g_errno = 0;
 		// get the host
-		Host *h = m_hostPtrs[i];//&m_hosts[i];
+		Host *h = m_host[i].m_hostPtr;
 		// if we got a nice reply from him skip him
-		//slots[i] && m_slots[i]->doneReading() ) continue;
-		if ( m_retired[i] ) continue;
+		//slots[i] && m_host[i].m_slot->doneReading() ) continue;
+		if ( m_host[i].m_retired ) continue;
 		// sometimes msg1.cpp is able to add the data to the tree
 		// without problems and will save us a network trans here
 		if ( ! m_sendToSelf && 
 		     h->m_hostId == g_hostdb.m_hostId &&
 		     ! g_conf.m_interfaceMachine ) {
-			m_retired[i] = true;
-			m_errnos [i] = 0;
+			m_host[i].m_retired = true;
+			m_host[i].m_errno = 0;
 			m_numReplies++;
 			continue;
 		}
@@ -230,7 +214,7 @@ void Multicast::sendToGroup() {
 		// . since we now must get non-error replies from ALL hosts
 		//   in the group we no longer have a "totalTimeout" per se
 		// reset the g_errno for host #i
-		m_errnos [i] = 0;
+		m_host[i].m_errno = 0;
 		// send to the same port as us!
 		int16_t destPort = h->m_port;
 
@@ -239,20 +223,20 @@ void Multicast::sendToGroup() {
 		int32_t bestIp = g_hostdb.getBestHosts2IP ( h );
 
 		// retire the host to prevent resends
-		m_retired [ i ] = true;
+		m_host[i].m_retired = true;
 		int32_t hid = h->m_hostId;
 		// . send to a single host
 		// . this creates a transaction control slot, "udpSlot"
 		// . returns false and sets g_errno on error
-		if (g_udpServer.sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReply2, m_totalTimeout, m_niceness)) {
+		if (g_udpServer.sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_host[i].m_slot, this, gotReply2, m_totalTimeout, m_niceness)) {
 			continue;
 		}
 		// g_errno must have been set, remember it
-		m_errnos [ i ] = g_errno;
+		m_host[i].m_errno = g_errno;
 		// we had an error
 		hadError = true;
 		// bring him out of retirement to try again later in time
-		m_retired[i] = false;
+		m_host[i].m_retired = false;
 		// log the error
 		log("net: Got error sending add data request (0x%02x) "
 		    "to host #%" PRId32": %s. "
@@ -281,7 +265,7 @@ void Multicast::sendToGroup() {
 void Multicast::sleepWrapper2(int bogusfd, void *state) {
 	Multicast *THIS = static_cast<Multicast*>(state);
 	// try another round of sending to see if hosts had errors or not
-	THIS->sendToGroup();
+	THIS->sendToWholeGroup();
 }
 
 
@@ -308,7 +292,7 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 	//	    "group send: %s.", mstrerror(g_errno) );
 	// set m_errnos for this slot
 	int32_t i;
-	for ( i = 0 ; i < m_numHosts ; i++ ) if ( m_slots[i] == slot ) break;
+	for ( i = 0 ; i < m_numHosts ; i++ ) if ( m_host[i].m_slot == slot ) break;
 	// if it matched no slot that's wierd
 	if ( i == m_numHosts ) {
 		//log("not our slot: mcast=%" PRIu32,(int32_t)this);
@@ -317,13 +301,13 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 	}
 	// clear a timeout error on dead hosts
 	if ( g_conf.m_giveupOnDeadHosts &&
-	     g_hostdb.isDead ( m_hostPtrs[i]->m_hostId ) ) {
+	     g_hostdb.isDead ( m_host[i].m_hostPtr->m_hostId ) ) {
 		log ( "net: GIVING UP ON DEAD HOST! This will not "
 		      "return an error." );
 		g_errno = 0;
 	}
 	// set m_errnos to g_errno, if any
-	m_errnos[i] = g_errno;
+	m_host[i].m_errno = g_errno;
 	// if g_errno was not set we have a legit reply
 	if ( ! g_errno ) m_numReplies++;
 	// reset g_errno in case we do more sending
@@ -340,38 +324,38 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 		return;
 	}
 	// if this guy had no error then wait for more callbacks
-	if ( ! m_errnos[i] ) return;
+	if ( !m_host[i].m_errno ) return;
 	// bring this slot out of retirement so we can send to him again
-	m_retired[i] = false;
+	m_host[i].m_retired = false;
 	// do indeed log the try again things, cuz we have gotten into a 
 	// nasty loop with them that took me a while to track down
 	bool logIt = false;
 	static int32_t s_elastTime = 0;
-	if      ( m_errnos[i] != ETRYAGAIN ) logIt = true;
+	if      (m_host[i].m_errno != ETRYAGAIN ) logIt = true;
 	// log it every 10 seconds even if it was a try again
 	else {
 		int32_t now = getTime();
 		if (now - s_elastTime > 10) {s_elastTime = now; logIt=true;}
 	}
 	// don't log ETRYAGAIN, may come across as bad when it is normal
-	if ( m_errnos[i] == ETRYAGAIN ) logIt = false;
+	if (m_host[i].m_errno == ETRYAGAIN ) logIt = false;
 	//logIt = true;
 	// log a failure msg
-	if ( logIt ) { // m_errnos[i] != ETRYAGAIN ) {
+	if ( logIt ) { //m_host[i].m_errno != ETRYAGAIN ) {
 		Host *h = g_hostdb.getUdpHost ( slot->getIp() ,slot->getPort() );
 		if ( h ) 
 			log("net: Got error sending request to hostId %" PRId32" "
 			    "(msgType=0x%02x transId=%" PRId32" net=%s): "
 			    "%s. Retrying.",
 			    h->m_hostId, slot->getMsgType(), slot->getTransId(),
-			    g_hostdb.getNetName(),mstrerror(m_errnos[i]) );
+			    g_hostdb.getNetName(),mstrerror(m_host[i].m_errno) );
 		else
 			log("net: Got error sending request to %s:%" PRId32" "
 			    "(msgType=0x%02x transId=%" PRId32" net=%s): "
 			    "%s. Retrying.",
 			    iptoa(slot->getIp()), (int32_t)slot->getPort(),
 			    slot->getMsgType(), slot->getTransId(),
-			    g_hostdb.getNetName(),mstrerror(m_errnos[i]) );
+			    g_hostdb.getNetName(),mstrerror(m_host[i].m_errno) );
 	}
 	// . let's sleep for a second before retrying the send
 	// . the g_errno could be ETRYAGAIN which happens if we're trying to 
@@ -379,7 +363,7 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 	// . continue if we're already registered for sleep callbacks
 	if ( m_registeredSleep ) return ;
 	// . otherwise register for sleep callback to try again
-	// . sleepWrapper2() will call sendToGroup() for us
+	// . sleepWrapper2() will call sendToWholeGroup() for us
 	g_loop.registerSleepCallback( 5000/*ms*/, this, sleepWrapper2, m_niceness );
 	m_registeredSleep = true;
 }
@@ -411,7 +395,7 @@ bool Multicast::sendToHostLoop(int32_t key, int32_t firstHostId) {
 		}
 
 		// do not resend to retired hosts
-		if( m_retired[i] ) {
+		if( m_host[i].m_retired ) {
 			g_errno = ENOHOSTS;
 			return false;
 		}
@@ -462,7 +446,7 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 		// find it in group
 		int32_t i;
 		for ( i = 0 ; i < m_numHosts ; i++ )
-			if ( m_hostPtrs[i]->m_hostId == firstHostId ) break;
+			if ( m_host[i].m_hostPtr->m_hostId == firstHostId ) break;
 		// if not found bitch
 		if ( i >= m_numHosts ) {
 			log(LOG_LOGIC,"net: multicast: HostId %" PRId32" not "
@@ -470,7 +454,7 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 			g_process.shutdownAbort(true);
 		}
 		// if we got a match and it's not dead, return it
-		if ( i < m_numHosts && ! g_hostdb.isDead ( m_hostPtrs[i] ) )
+		if ( i < m_numHosts && ! g_hostdb.isDead ( m_host[i].m_hostPtr ) )
 			return i;
 	}
 
@@ -496,15 +480,15 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 		// randomize everything up a bit
 		uint32_t i = hashLong ( key ) % m_numHosts;
 		// if he's not dead or retired use him right away
-		if ( ! m_retired[i] &&
-		     ! g_hostdb.isDead ( m_hostPtrs[i] ) )
+		if ( ! m_host[i].m_retired &&
+		     ! g_hostdb.isDead ( m_host[i].m_hostPtr ) )
 			return i;
 	}
 
 	// no no no we need to randomize the order that we try them
-	Host *fh = m_hostPtrs[n];
+	Host *fh = m_host[n].m_hostPtr;
 	// if this host is not dead, use him
-	if ( ! m_retired[n] &&
+	if ( ! m_host[n].m_retired &&
 	     ! g_hostdb.isDead(fh) )
 		return n;
 
@@ -514,12 +498,12 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 	int32_t nc = 0;
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
 		// get the host
-		Host *h = m_hostPtrs[i];
+		Host *h = m_host[i].m_hostPtr;
 		// count those that are dead
 		if ( g_hostdb.isDead ( h ) )
 			numDead++;
 		// skip host if we've retired it
-		if ( m_retired[i] ) continue;
+		if ( m_host[i].m_retired ) continue;
 		// if this host is not dead use him
 		if ( !g_hostdb.isDead(h) )
 			cand[nc++] = i;
@@ -548,7 +532,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// sanity check
 	if ( i >= m_numHosts ) { g_process.shutdownAbort(true); }
 	// sanity check , bitch if retired
-	if ( m_retired [ i ] ) {
+	if ( m_host[i].m_retired ) {
 		log(LOG_LOGIC,"net: multicast: Host #%" PRId32" is retired. "
 		    "Bad engineer.",i);
 		//g_process.shutdownAbort(true);
@@ -556,11 +540,11 @@ bool Multicast::sendToHost ( int32_t i ) {
 	}
 	// . add this host to our retired list so we don't try again
 	// . only used by pickBestHost() and sendToHost()
-	m_retired [ i ] = true;
+	m_host[i].m_retired = true;
 	// what time is it now?
 	int64_t nowms = gettimeofdayInMilliseconds();
 	// save the time
-	m_launchTime [ i ] = nowms;
+	m_host[i].m_launchTime = nowms;
 	// sometimes clock is updated on us
 	if ( m_startTime > nowms )
 		m_startTime = nowms;
@@ -591,7 +575,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 		timeRemaining = m_totalTimeout;
 	}
 	// get the host
-	Host *h = m_hostPtrs[i];
+	Host *h = m_host[i].m_hostPtr;
 	// send to the same port as us!
 	int16_t destPort = h->m_port;
 
@@ -623,7 +607,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// . return false and sets g_errno on error
 	// . returns true on successful launch and calls callback on completion
 	ScopedLock sl(m_mtx);
-	if (!g_udpServer.sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReply1, timeRemaining, m_niceness, NULL, -1, -1, maxResends)) {
+	if (!g_udpServer.sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_host[i].m_slot, this, gotReply1, timeRemaining, m_niceness, NULL, -1, -1, maxResends)) {
 		log(LOG_WARN, "net: Had error sending msgtype 0x%02x to host #%" PRId32": %s. Not retrying.",
 		    m_msgType,h->m_hostId,mstrerror(g_errno));
 		// i've seen ENOUDPSLOTS available msg here along with oom
@@ -632,54 +616,33 @@ bool Multicast::sendToHost ( int32_t i ) {
 		return false;
 	}
 	// mark it as outstanding
-	m_inProgress[i] = true;
+	m_host[i].m_inProgress = true;
 	// set our last launch date
 	m_lastLaunch = nowms ; // gettimeofdayInMilliseconds();
-	// save the host, too
-	m_lastLaunchHost = h;
 	// timing debug
 	//log("Multicast sent to hostId %" PRId32", this=%" PRId32", transId=%" PRId32,
-	//    h->m_hostId, (int32_t)this , m_slots[i]->m_transId );
+	//    h->m_hostId, (int32_t)this , m_host[i].m_slot->m_transId );
 	// . let's sleep so we have a chance to launch to another host in
 	//   the same group in case this guy takes too long
 	// . don't re-register if we already did
-	if ( m_registeredSleep ) return true;
-	// . otherwise register for sleep callback to try again
-	// . sleepWrapper1() will call sendToHostLoop() for us
-	g_loop.registerSleepCallback(50/*ms*/, this, sleepWrapper1, m_niceness );
-	m_registeredSleep = true;
+	if(!m_registeredSleep) {
+		int wait = calculateTimeout();
+		if(wait>=0) {
+			// . otherwise register for sleep callback to try again
+			// . sleepCallback1Wrapper() will call sendToHostLoop() for us
+			g_loop.registerSleepCallback(wait/*ms*/, this, sleepCallback1Wrapper, m_niceness );
+			m_registeredSleep = true;
+		}
+	}
 	// successful launch
 	return true;
 }
 
-// this is called every 50 ms so we have the chance to launch our request
-// to a more responsive host
-void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
-	Multicast *THIS = (Multicast *) state;
-	// . if our last launch was less than X seconds ago, wait another tick
-	// . we often send out 2+ requests and end up getting one reply before
-	//   the others and that results in us getting unwanted dgrams...
-	// . increasing this delay here results in fewer wasted requests but
-	//   if a host goes down you don't want a user to wait too long
-	// . after a host goes down it's ping takes a few secs to decrease
-	// . if a host is shutdown properly it will broadcast a msg to
-	//   all hosts using Hostdb::broadcast() informing them that it's 
-	//   going down so they know to stop sending to it and mark him as
-	//   dead
-
-	int64_t now = gettimeofdayInMilliseconds();
-	// watch out for someone advancing the system clock
-	if ( THIS->m_lastLaunch > now ) THIS->m_lastLaunch = now;
-	// get elapsed time since we started the send
-	int32_t elapsed = now - THIS->m_lastLaunch;
-	//log("elapsed = %" PRId32" type=0x%02x",elapsed,THIS->m_msgType);
-
+int Multicast::calculateTimeout() {
 	// . don't relaunch any niceness 1 stuff for a while
 	// . it often gets suspended due to query traffic
-	//if ( THIS->m_niceness > 0 && elapsed < 800000 ) return;
-	if ( THIS->m_niceness > 0 ) return;
-
-	// TODO: if the host went dead on us, re-route
+	//if ( m_niceness > 0 && elapsed < 800000 ) return;
+	if ( m_niceness > 0 ) return -1;
 
 	// . Msg36 is used to get the length of an IndexList (termFreq)
 	//   and is very fast, all in memory, don't wait more than 50ms
@@ -695,39 +658,30 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 	//   excacerbates the problem. this stuff was originally put here
 	//   to reroute for when a host went down... let's keep it that way
 
-	switch ( THIS->m_msgType ) {
+	switch ( m_msgType ) {
 		// msg to get a summary from a query (calls msg22)
 		// put to 5 seconds now since some hosts freezeup still it seems
 		// and i haven't seen a summary generation of 5 seconds
 		case msg_type_20:
-			if ( elapsed <  5000 ) {
-				return;
-			}
-			break;
+			return 5000;
 		// msg 0x20 calls this to get the title rec
 		case msg_type_22:
-			if ( elapsed <  1000 ) {
-				return;
-			}
-			break;
+			return 1000;
 		// . msg to get an index list over the net
 		// . this limit should really be based on length of the index list
 		case msg_type_0:
 			// this should just be for when a host goes down, not for
 			// performance reasons, cuz we do pretty good load balancing
 			// and when things get saturated, rerouting excacerbates it
-			if ( elapsed <  8000 ) {
-				return;
-			}
-			break;
+			return 8000;
 		// msg to get docIds from a query, may take a while
 		case msg_type_39: {
 			// how many docsids request? first 4 bytes of request.
 			int32_t docsWanted = 10;
 			int32_t nqterms        = 0;
-			if ( THIS->m_msg ) {
-				docsWanted     = *(int32_t *)(THIS->m_msg);
-				nqterms        = *(int32_t *)(THIS->m_msg+4);
+			if ( m_msg ) {
+				docsWanted     = *(int32_t *)(m_msg);
+				nqterms        = *(int32_t *)(m_msg+4);
 			}
 
 			// never re-route if it has a rerank, those take forever
@@ -744,27 +698,50 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 			if ( wait < 8000 ) {
 				wait = 8000;
 			}
-			if ( elapsed < wait ) {
-				return;
-			}
-			break;
+			return wait;
 		}
 		// don't relaunch anything else unless over 8 secs
 		default:
-			if ( elapsed <  8000 ) {
-				return;
-			}
-			break;
+			return 8000;
 	}
+
+}
+
+// this is called every 50 ms so we have the chance to launch our request
+// to a more responsive host
+void Multicast::sleepCallback1Wrapper ( int bogusfd , void    *state ) {
+	Multicast *that = static_cast<Multicast*>(state);
+	that->sleepCallback1();
+}
+
+void Multicast::sleepCallback1() {
+	// . if our last launch was less than X seconds ago, wait another tick
+	// . we often send out 2+ requests and end up getting one reply before
+	//   the others and that results in us getting unwanted dgrams...
+	// . increasing this delay here results in fewer wasted requests but
+	//   if a host goes down you don't want a user to wait too long
+	// . after a host goes down it's ping takes a few secs to decrease
+	// . if a host is shutdown properly it will broadcast a msg to
+	//   all hosts using Hostdb::broadcast() informing them that it's 
+	//   going down so they know to stop sending to it and mark him as
+	//   dead
+
+	int64_t now = gettimeofdayInMilliseconds();
+	// watch out for someone advancing the system clock
+	if ( m_lastLaunch > now ) m_lastLaunch = now;
+	// get elapsed time since we started the send
+	int32_t elapsed = now - m_lastLaunch;
+	//log("elapsed = %" PRId32" type=0x%02x",elapsed,m_msgType);
+
+
+	// TODO: if the host went dead on us, re-route
+
 
 	// find out which host timedout
 	Host *hd = NULL;
-	if ( THIS->m_retired[0] && THIS->m_numHosts >= 1 ) {
-		hd = THIS->m_hostPtrs[0];
-	}
-	if ( THIS->m_retired[1] && THIS->m_numHosts >= 2 ) {
-		hd = THIS->m_hostPtrs[1];
-	}
+	for(int i=0; i<m_numHosts && !hd; i++)
+		if(m_host[i].m_retired)
+			hd = m_host[i].m_hostPtr;
 	// 11/21/06: now we only reroute if the host we sent to is marked as
 	// dead unless it is a msg type that takes little reply generation time
 	if ( hd && ! g_hostdb.isDead(hd)  ) {
@@ -773,33 +750,33 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 
 	// cancel any outstanding transactions iff we have a m_replyBuf
 	// that we must read the reply into because we cannot share!!
-	if ( THIS->m_readBuf ) {
-		THIS->destroySlotsInProgress ( NULL );
+	if ( m_readBuf ) {
+		destroySlotsInProgress ( NULL );
 	}
 
 	// . do a loop over all hosts in the group
 	// . if a whole group of twins is down this will loop forever here
 	//   every Xms, based the sleepWrapper timer for the msgType
 	if ( g_conf.m_logDebugQuery ) {
-		for (int32_t i = 0 ; i < THIS->m_numHosts ; i++ ) {
-			if ( ! THIS->m_slots[i]         ) continue;
-			// transaction is not in progress if m_errnos[i] is set
+		for (int32_t i = 0 ; i < m_numHosts ; i++ ) {
+			if ( ! m_host[i].m_slot         ) continue;
+			// transaction is not in progress ifm_host[i].m_errno is set
 			const char *ee = "";
-			if ( THIS->m_errnos[i] ) ee = mstrerror(THIS->m_errnos[i]);
+			if ( m_host[i].m_errno ) ee = mstrerror(m_host[i].m_errno);
 			log( LOG_DEBUG, "net: Multicast::sleepWrapper1: tried host "
-			    "%s:%" PRId32" %s" ,iptoa(THIS->m_slots[i]->getIp()),
-			    (int32_t)THIS->m_slots[i]->getPort() , ee );
+			    "%s:%" PRId32" %s" ,iptoa(m_host[i].m_slot->getIp()),
+			    (int32_t)m_host[i].m_slot->getPort() , ee );
 		}
 	}
 
 	// log msg that we are trying to re-route
 	//log("Multicast::sleepWrapper1: trying to re-route msgType=0x%02x "
-	//    "to new host",   THIS->m_msgType );	
+	//    "to new host",   m_msgType );	
 
 	// . otherwise, launch another request if we can
 	// . returns true if we successfully sent to another host
 	// . returns false and sets g_errno if no hosts left or other error
-	if ( THIS->sendToHostLoop(0,-1) ) {
+	if ( sendToHostLoop(0,-1) ) {
 		// log msg that we were successful
 		int32_t hid = -1;
 		if ( hd ) hid = hd->m_hostId;
@@ -807,10 +784,10 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 		    "net: Multicast::sleepWrapper1: rerouted msgType=0x%02x "
 		    "from host #%" PRId32" "
 		    "to new host after waiting %" PRId32" ms",
-		    THIS->m_msgType, hid,elapsed);
+		    m_msgType, hid,elapsed);
 		// . mark it in the stats for PageStats.cpp
 		// . this is timeout based rerouting
-		g_stats.m_reroutes[(int)THIS->m_msgType][THIS->m_niceness]++;
+		g_stats.m_reroutes[(int)m_msgType][m_niceness]++;
 		return;
 	}
 	// if we registered the sleep callback we must have launched a 
@@ -818,23 +795,23 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 
 	// . let replyWrapper1 be called if we got one launched
 	// . it should then call closeUpShop()
-	//if ( THIS->m_numLaunched ) return;
+	//if ( m_numLaunched ) return;
 	// otherwise, no outstanding requests and we failed to send to another
 	// host, probably because :
 	// 1. Msg34 timed out on all hosts
 	// 2. there were no udp slots available (which is bad)
 	//log("Multicast:: re-route failed for msgType=%02x. abandoning.",
-	//     THIS->m_msgType );
+	//     m_msgType );
 	// . the next send failed to send to a host, so close up shop
 	// . this is probably because the Msg34s timed out and we could not
 	//   find a next "best host" to send to because of that
-	//THIS->closeUpShop ( NULL );
+	//closeUpShop ( NULL );
 	// . we were not able to send to another host, maybe it was dead or
 	//   there are no hosts left!
 	// . i guess keep sleeping until host comes back up or transaction
 	//   is cancelled
 	//log("Multicast::sleepWrapper1: re-route of msgType=0x%02x failed",
-	//    THIS->m_msgType);
+	//    m_msgType);
 }
 
 
@@ -859,9 +836,9 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 	// that we had on our first try!
 	for ( i = 0 ; i < m_numHosts ; i++ ) {
 		// skip if not in progress
-		if ( ! m_inProgress[i] ) continue;
+		if ( ! m_host[i].m_inProgress ) continue;
 		// slot must match
-		if ( m_slots[i] == slot ) break;
+		if ( m_host[i].m_slot == slot ) break;
 	}
 	// if it matched no slot that's wierd
 	if ( i >= m_numHosts ) {
@@ -869,19 +846,19 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		g_process.shutdownAbort(true);
 	}
 
-	// set m_errnos[i], if any
+	// setm_host[i].m_errno, if any
 	if ( g_errno ) {
-		m_errnos[i] = g_errno;
+		m_host[i].m_errno = g_errno;
 	}
 
 	// mark it as no longer in progress
-	m_inProgress[i] = false;
+	m_host[i].m_inProgress = false;
 
-	Host *h = m_hostPtrs[i];
+	Host *h = m_host[i].m_hostPtr;
 
 	// save the host we got a reply from
 	m_replyingHost    = h;
-	m_replyLaunchTime = m_launchTime[i];
+	m_replyLaunchTime = m_host[i].m_launchTime;
 
 	if ( m_sentToTwin ) {
 		log(LOG_DEBUG, "net: Twin msgType=0x%" PRIx32" (this=0x%" PTRFMT") reply: %s.",
@@ -970,7 +947,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		}
 		// . otherwise we've failed on all hosts
 		// . re-instate g_errno,might have been set by sendToHostLoop()
-		g_errno = m_errnos[i];
+		g_errno =m_host[i].m_errno;
 	}
 	closeUpShop ( slot );
 }
@@ -1020,12 +997,8 @@ void Multicast::closeUpShop ( UdpSlot *slot ) {
 
 	// unregister our sleep wrapper if we did
 	if ( m_registeredSleep ) {
-		g_loop.unregisterSleepCallback ( this , sleepWrapper1 );
+		g_loop.unregisterSleepCallback(this, sleepCallback1Wrapper);
 		m_registeredSleep = false;
-	}
-
-	if ( ! g_errno && m_retryCount > 0 ) {
-		log(LOG_INFO, "net: Multicast succeeded after %" PRId32" retries.", m_retryCount);
 	}
 
 	// allow us to be re-used now, callback might relaunch
@@ -1043,23 +1016,23 @@ void Multicast::destroySlotsInProgress ( UdpSlot *slot ) {
 	for (int32_t i = 0 ; i < m_numHosts ; i++ ) {
 		// . destroy all slots but this one that are in progress
 		// . we'll be destroyed when we return from the cback
-		if ( ! m_slots[i]         ) continue;
-		// transaction is not in progress if m_errnos[i] is set
-		if (   m_errnos[i]        ) continue;
+		if ( ! m_host[i].m_slot         ) continue;
+		// transaction is not in progress ifm_host[i].m_errno is set
+		if (  m_host[i].m_errno        ) continue;
 		// dont' destroy us, it'll happen when we return
-		if (   m_slots[i] == slot ) continue;
+		if (   m_host[i].m_slot == slot ) continue;
 		// must be in progress
-		if ( ! m_inProgress[i] ) continue;
+		if ( ! m_host[i].m_inProgress ) continue;
 		// sometimes the slot is recycled from under us because
 		// we already got a reply from it
-		//if ( m_slots[i]->m_state != this ) continue;
+		//if ( m_host[i].m_slot->m_state != this ) continue;
 		// don't free his sendBuf, readBuf is ok to free, however
-		m_slots[i]->m_sendBufAlloc = NULL;
+		m_host[i].m_slot->m_sendBufAlloc = NULL;
 
 		// destroy this slot that's in progress
-		g_udpServer.destroySlot ( m_slots[i] );
+		g_udpServer.destroySlot ( m_host[i].m_slot );
 		// do not re-destroy. consider no longer in progress.
-		m_inProgress[i] = false;
+		m_host[i].m_inProgress = false;
 	}
 }
 

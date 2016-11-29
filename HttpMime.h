@@ -13,9 +13,6 @@ const char *extensionToContentTypeStr2 ( const char *ext , int32_t elen ) ;
 
 #include <time.h>
 
-void   getTime    ( const char *s , int *sec , int *min , int *hour ) ;
-int32_t   getMonth   ( const char *s ) ;
-int32_t   getWeekday ( const char *s ) ;
 time_t atotime    ( const char *s ) ;
 time_t atotime1   ( const char *s ) ;
 
@@ -56,41 +53,34 @@ extern const char * const g_contentTypeStrings[];
 #include "Url.h"
 
 class HttpMime {
+public:
+	HttpMime();
 
- public:
-
-	bool init ( ) ;
-	void reset() ;
-	HttpMime   () ;
+	bool init();
+	void reset();
 
 	// . returns false and sets errno if could not get a valid mime
 	// . just copies bits and pieces so you can free "mime" whenever
 	// . we need "url" to set m_locUrl if it's a relative redirect
 	bool set ( char *httpReply , int32_t replyLen , Url *url );
 
-	// these 2 sets are used to dress up a fake mime for passing
-	// to TitleRec::set() called from Msg16 getDoc() routine
-	void setLastModifiedDate ( time_t date ) { m_lastModifiedDate = date;}
-	void setContentType      ( int32_t   t    ) { m_contentType      = t; }
-	void setHttpStatus       ( int32_t status ) { m_status        = status; }
+	void setContentType(int32_t t) { m_contentType = t; }
+	void setHttpStatus(int32_t status) { m_status = status; }
+	void setBufLen(int32_t bufLen) { m_mimeLen = bufLen; }
 
 	// http status: 404, 200, etc.
-	int32_t   getHttpStatus      () { return m_status;           }
-	char  *getContent         () { return m_content; }
-	int32_t   getContentLen      () { return m_contentLen;       }
-	time_t getLastModifiedDate() { return m_lastModifiedDate; }
-	int32_t   getContentType     () { return m_contentType;      }
-	bool   isEmpty            () { return ( m_status == -1); }
-	Url   *getLocationUrl     () { return &m_locUrl;    }
-	const char *getCookie     () { return m_cookie; }
-	int32_t   getCookieLen       () { return m_cookieLen; }
+	int32_t getHttpStatus() const { return m_status; }
+
+	char *getContent() { return m_content; }
+	int32_t getContentLen() const { return m_contentLen; }
+
+	int32_t getContentType() { return m_contentType; }
+
+	Url *getLocationUrl() { return &m_locUrl; }
 
 	// new stuff for Msg13.cpp to use
-	char *getLocationField    () { return m_locationField; }
-	int32_t  getLocationFieldLen () { return m_locationFieldLen; }
-
-	// compute length of a possible mime starting at "buf"
-	int32_t getMimeLen ( char *buf , int32_t bufLen , int32_t *boundaryLen ) ;
+	char *getLocationField() { return m_locationField; }
+	int32_t getLocationFieldLen() const { return m_locationFieldLen; }
 
 	// . used to create a mime
 	// . if bytesToSend is < 0 that means send totalContentLen (all doc)
@@ -102,81 +92,74 @@ class HttpMime {
 	// . a cache time of 0 means use local caching rules
 	// . any other cacheTime is an explicit time to cache the page for
 	// . httpStatus of -1 means to auto determine
-	void makeMime   ( int32_t    totalContentLen        , 
-			  int32_t    cacheTime        =-1   , // -1-->noBackCache
-			  time_t  lastModified     = 0   ,
-			  int32_t    offset           = 0   , 
-			  int32_t    bytesToSend      =-1   ,
-			  const char   *ext              = NULL,
-			  bool    POSTReply        = false,
-			  const char   *contentType      = NULL ,
-			  const char   *charset          = NULL ,
-			  int32_t    httpStatus       = -1   ,
-			  const char   *cookie           = NULL );
+	void makeMime(int32_t totalContentLen,
+	              int32_t cacheTime,
+	              time_t lastModified,
+	              int32_t offset,
+	              int32_t bytesToSend,
+	              const char *ext,
+	              bool POSTReply,
+	              const char *contentType,
+	              const char *charset,
+	              int32_t httpStatus,
+	              const char *cookie);
 
 	// make a redirect mime
 	void makeRedirMime ( const char *redirUrl , int32_t redirUrlLen );
 
 	bool addCookiesIntoBuffer ( class SafeBuf *sb ) ;
 
-	char *getMime    ( ) { return m_buf; }
+	char *getMime() { return m_buf; }
 	// does this include the last \r\n\r\n? yes!
-	int32_t  getMimeLen ( ) { return m_bufLen; }
-	int32_t  getBoundaryLen ( ) { return m_boundaryLen; }
+	int32_t getMimeLen() const { return m_mimeLen; }
 
-	char *getCharset    ( ) { return m_charset   ; }
-	int32_t  getCharsetLen ( ) { return m_charsetLen; }
+	char *getCharset() { return m_charset; }
+	int32_t getCharsetLen() const { return m_charsetLen; }
 
-	int32_t  getContentEncoding () {return m_contentEncoding;}
-	char *getContentEncodingPos() {return m_contentEncodingPos;}
-	char *getContentLengthPos()      {return m_contentLengthPos;}
-	char *getContentTypePos()      {return m_contentTypePos;}
-
-
-	// private:
-
-	// . sets m_status, m_contentLen , ...
-	// . we need "url" to set m_locUrl if it's a relative redirect
-	bool parse ( char *mime , int32_t mimeLen , Url *url );
-
-	// converts a string contentType like "text/html" to a int32_t
-	int32_t   getContentTypePrivate ( char *s ) ;
+	int32_t getContentEncoding() const { return m_contentEncoding; }
+	char *getContentEncodingPos() { return m_contentEncodingPos; }
+	char *getContentLengthPos() { return m_contentLengthPos; }
+	char *getContentTypePos() { return m_contentTypePos; }
 
 	// convert a file extension like "gif" to "images/gif"
 	const char *getContentTypeFromExtension ( const char *ext ) ;
 	const char *getContentTypeFromExtension ( const char *ext , int32_t elen ) ;
 
+private:
+	// . sets m_status, m_contentLen , ...
+	// . we need "url" to set m_locUrl if it's a relative redirect
+	bool parse ( char *mime , int32_t mimeLen , Url *url );
+
+	// compute length of a possible mime starting at "buf"
+	int32_t getMimeLen(char *buf, int32_t bufLen);
+
+	// converts a string contentType like "text/html" to a int32_t
+	int32_t   getContentTypePrivate ( char *s ) ;
+
 	// used for bz2, gz files
 	const char *getContentEncodingFromExtension ( const char *ext ) ;
 
-
 	// these are set by calling set() above
-	int32_t    m_status;
-	char   *m_content;
-	int32_t    m_contentLen;
-	time_t  m_lastModifiedDate;
-	int32_t    m_contentType;
-	Url     m_locUrl;
+	int32_t m_status;
+	char *m_content;
+	int32_t m_contentLen;
+	time_t m_lastModifiedDate;
+	int32_t m_contentType;
+	Url m_locUrl;
 
-	char *m_locationField    ;
-	int32_t  m_locationFieldLen ;
+	char *m_locationField;
+	int32_t m_locationFieldLen;
 
-	char *m_mimeStartPtr;
-	
+	const char *m_mime;
+
 	// buf used to hold a mime we create
 	char m_buf[1024];
-	int32_t m_bufLen;
+	int32_t m_mimeLen;
 
-
-	int32_t    m_contentEncoding;
-	char   *m_contentEncodingPos;
-	char   *m_contentLengthPos;
-	char   *m_contentTypePos;
-
-	// the size of the terminating boundary, either 1 or 2 bytes.
-	// just the last \n in the case of a \n\n or \r in the case
-	// of a \r\r, but it is the full \r\n in the case of a last \r\n\r\n
-	int32_t m_boundaryLen;
+	int32_t m_contentEncoding;
+	char *m_contentEncodingPos;
+	char *m_contentLengthPos;
+	char *m_contentTypePos;
 
 	// Content-Type: text/html;charset=euc-jp  // japanese (euc-jp)
 	// Content-Type: text/html;charset=gb2312  // chinese (gb2312)

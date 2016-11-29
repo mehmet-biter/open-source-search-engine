@@ -41,7 +41,7 @@ void Log::reset ( ) {
 	//if ( m_fd >= 0 ) ::close ( m_fd );
 }
 
-// for example, RENAME log000 to log000-20131104-181932
+// for example, RENAME log000 to log000-bak20131104-181932
 static bool renameCurrentLogFile ( ) {
 	File f;
 	char tmp[16];

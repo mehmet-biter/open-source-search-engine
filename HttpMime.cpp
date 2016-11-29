@@ -13,6 +13,10 @@
 #include <valgrind/memcheck.h>
 #endif
 
+static void getTime(const char *s, int *sec, int *min, int *hour);
+static int32_t getMonth(const char *s);
+static int32_t getWeekday(const char *s);
+
 static time_t atotime2( const char *s );
 static time_t atotime3( const char *s );
 static time_t atotime4( const char *s );
@@ -49,15 +53,14 @@ HttpMime::HttpMime () {
 	// Coverity
 	m_content = NULL;
 	memset(m_buf, 0, sizeof(m_buf));
-	m_bufLen = 0;
+	m_mimeLen = 0;
 	m_contentEncoding = 0;
-	m_boundaryLen = 0;
 
 	reset(); 
 }
 
 void HttpMime::reset ( ) {
-	m_mimeStartPtr     = NULL;
+	m_mime     = NULL;
 	m_firstCookie      = NULL;
 	m_status           = -1;
 	m_contentLen       = -1;
@@ -81,45 +84,54 @@ bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufLen);
 #endif
 	// reset some stuff
-	m_mimeStartPtr     = NULL;
+	m_mime     = NULL;
 	m_firstCookie      = NULL;
 	m_contentLen       = -1;
 	m_content          = NULL;
-	m_bufLen           =  0;
+	m_mimeLen           =  0;
 	m_contentType      =  CT_HTML;
 	m_contentEncoding  =  ET_IDENTITY;
 	m_lastModifiedDate =  0;
 	m_charset          =  NULL;
 	m_charsetLen       =  0;
+
 	// at the very least we should have a "HTTP/x.x 404\[nc]"
-	if ( bufLen < 13 ) { m_boundaryLen = 0; return false; }
+	if ( bufLen < 13 ) {
+		return false;
+	}
+
 	// . get the length of the Mime, must end in \r\n\r\n , ...
 	// . m_bufLen is used as the mime length
-	m_mimeStartPtr = buf;
-	m_bufLen = getMimeLen ( buf , bufLen , &m_boundaryLen );
+	m_mime = buf;
+	m_mimeLen = getMimeLen(buf, bufLen);
+
 	// . return false if we had no mime boundary
 	// . but set m_bufLen to 0 so getMimeLen() will return 0 instead of -1
 	//   thus avoiding a potential buffer overflow
-	if ( m_bufLen < 0 ) { 
-		m_bufLen = 0; 
-		m_boundaryLen = 0; 
+	if ( m_mimeLen < 0 ) {
+		m_mimeLen = 0;
 		log(LOG_WARN, "mime: no rnrn boundary detected");
 		return false; 
 	}
+
 	// set this
-	m_content = buf + m_bufLen;
+	m_content = buf + m_mimeLen;
+
 	// . parse out m_status, m_contentLen, m_lastModifiedData, contentType
 	// . returns false on bad mime
-	return parse ( buf , m_bufLen , url );
+	return parse ( buf , m_mimeLen , url );
 }
 
 // . returns -1 if no boundary found
-int32_t HttpMime::getMimeLen ( char *buf , int32_t bufLen , int32_t *bsize ) {
+int32_t HttpMime::getMimeLen(char *buf, int32_t bufLen) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufLen);
 #endif
-	// size of the boundary
-	*bsize = 0;
+	// the size of the terminating boundary, either 1 or 2 bytes.
+	// just the last \n in the case of a \n\n or \r in the case
+	// of a \r\r, but it is the full \r\n in the case of a last \r\n\r\n
+	int32_t bsize = 0;
+
 	// find the boundary
 	int32_t i;
 	for ( i = 0 ; i < bufLen ; i++ ) {
@@ -128,7 +140,7 @@ int32_t HttpMime::getMimeLen ( char *buf , int32_t bufLen , int32_t *bsize ) {
 		// boundary check
 		if ( i + 1 >= bufLen ) continue;
 		// prepare for a smaller mime size
-		*bsize = 1;
+		bsize = 1;
 		// \r\r
 		if ( buf[i  ] == '\r' && buf[i+1] == '\r' ) break;
 		// \n\n
@@ -136,7 +148,7 @@ int32_t HttpMime::getMimeLen ( char *buf , int32_t bufLen , int32_t *bsize ) {
 		// boundary check
 		if ( i + 3 >= bufLen ) continue;
 		// prepare for a larger mime size
-		*bsize = 2;
+		bsize = 2;
 		// \r\n\r\n
 		if ( buf[i  ] == '\r' && buf[i+1] == '\n' &&
 		     buf[i+2] == '\r' && buf[i+3] == '\n'  ) break;
@@ -146,107 +158,114 @@ int32_t HttpMime::getMimeLen ( char *buf , int32_t bufLen , int32_t *bsize ) {
 	}
 	// return false if could not find the end of the MIME
 	if ( i == bufLen ) return -1;
-	return i + *bsize * 2;
+	return i + bsize * 2;
 }
 
 // returns false on bad mime
-bool HttpMime::parse ( char *mime , int32_t mimeLen , Url *url ) {
+bool HttpMime::parse(char *mime, int32_t mimeLen, Url *url) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(mime,mimeLen);
 #endif
 	// reset locUrl to 0
 	m_locUrl.reset();
+
 	// return if we have no valid complete mime
-	if ( mimeLen == 0 ) return false;
+	if (mimeLen == 0) {
+		return false;
+	}
+
 	// status is on first line
 	m_status = -1;
+
 	// skip HTTP/x.x till we hit a space
 	char *p = mime;
 	char *pend = mime + mimeLen;
-	while ( p < pend && !is_wspace_a(*p) ) p++;
+	while (p < pend && !is_wspace_a(*p)) p++;
 	// then skip over spaces
-	while ( p < pend &&  is_wspace_a(*p) ) p++;
+	while (p < pend && is_wspace_a(*p)) p++;
 	// return false on a problem
-	if ( p == pend ) return false;
+	if (p == pend) return false;
 	// then read in the http status
-	m_status = atol2 ( p , pend - p );
+	m_status = atol2(p, pend - p);
 	// if no Content-Type: mime field was provided, assume html
 	m_contentType = CT_HTML;
 	// assume default charset
-	m_charset    = NULL;
+	m_charset = NULL;
 	m_charsetLen = 0;
+
 	// set contentLen, lastModifiedDate, m_cookie
 	p = mime;
-	while ( p < pend ) {
+	while (p < pend) {
 		// compute the length of the string starting at p and ending
 		// at a \n or \r
 		int32_t len = 0;
-		while ( &p[len] < pend && p[len]!='\n' && p[len]!='\r' ) len++;
+		while (&p[len] < pend && p[len] != '\n' && p[len] != '\r') {
+			len++;
+		}
+
 		// . if we could not find a \n or \r there was an error
 		// . MIMEs must always end in \n or \r
-		if ( &p[len] >= pend ) return false;
+		if (&p[len] >= pend) {
+			return false;
+		}
+
 		// . stick a NULL at the end of the line 
 		// . overwrites \n or \r TEMPORARILY
-		char c = p [ len ];
-		p [ len ] = '\0';
+		char c = p[len];
+		p[len] = '\0';
 		// parse out some meaningful data
-		if      ( strncasecmp ( p , "Content-Length:" ,15) == 0 ) {
+		if (strncasecmp(p, "Content-Length:", 15) == 0) {
 			m_contentLengthPos = p + 15;
-			m_contentLen = atol( m_contentLengthPos);
-		}
-		else if ( strncasecmp ( p , "Last-Modified:"  ,14) == 0 ) {
-			m_lastModifiedDate=atotime(p+14);
+			m_contentLen = atol(m_contentLengthPos);
+		} else if (strncasecmp(p, "Last-Modified:", 14) == 0) {
+			m_lastModifiedDate = atotime(p + 14);
 			// do not let them exceed current time for purposes
 			// of sorting by date using datedb (see Msg16.cpp)
 			time_t now = time(NULL);
 			if (m_lastModifiedDate > now) m_lastModifiedDate = now;
-		}
-		else if ( strncasecmp ( p , "Content-Type:"   ,13) == 0 ) {
-			m_contentType = getContentTypePrivate ( p + 13 );
+		} else if (strncasecmp(p, "Content-Type:", 13) == 0) {
+			m_contentType = getContentTypePrivate(p + 13);
 			char *s = p + 13;
-			while ( *s == ' ' || *s == '\t' ) s++;
+			while (*s == ' ' || *s == '\t') s++;
 			m_contentTypePos = s;
-		}
-		else if ( strncasecmp ( p , "Set-Cookie:"   ,11) == 0 ) {
-			if ( ! m_firstCookie ) m_firstCookie = p;
+		} else if (strncasecmp(p, "Set-Cookie:", 11) == 0) {
+			if (!m_firstCookie) m_firstCookie = p;
 			m_cookie = p + 11;
-			if ( m_cookie[0] == ' ' ) m_cookie++;
-			m_cookieLen = strlen ( m_cookie );
-		}
-		else if ( strncasecmp ( p , "Location:"       , 9) == 0 ) {
+			if (m_cookie[0] == ' ') m_cookie++;
+			m_cookieLen = strlen(m_cookie);
+		} else if (strncasecmp(p, "Location:", 9) == 0) {
 			// point to it
 			char *tt = p + 9;
 			// skip if space
-			if ( *tt == ' ' ) tt++;
-			if ( *tt == ' ' ) tt++;
+			if (*tt == ' ') tt++;
+			if (*tt == ' ') tt++;
 			// at least set this for Msg13.cpp to use
-			m_locationField    = tt;
+			m_locationField = tt;
 			m_locationFieldLen = strlen(tt);
 			// . we skip initial spaces in this Url::set() routine
-			if(url)
-				m_locUrl.set( url, p + 9, len - 9 );
-		}
-		else if ( strncasecmp ( p , "Content-Encoding:", 17) == 0 ) {
+			if (url)
+				m_locUrl.set(url, p + 9, len - 9);
+		} else if (strncasecmp(p, "Content-Encoding:", 17) == 0) {
 			//only support gzip now, it doesn't seem like servers
 			//implement the other types much
-			m_contentEncodingPos = p+17;
-			if(strstr(m_contentEncodingPos, "gzip")) {
+			m_contentEncodingPos = p + 17;
+			if (strstr(m_contentEncodingPos, "gzip")) {
 				m_contentEncoding = ET_GZIP;
-			}
-			else if(strstr(m_contentEncodingPos, "deflate")) {
+			} else if (strstr(m_contentEncodingPos, "deflate")) {
 				//zlib's compression
 				m_contentEncoding = ET_DEFLATE;
 			}
 		}
-		//else if ( strncasecmp ( p, "Cookie:", 7) == 0 )
-		//	log (LOG_INFO, "mime: Got Cookie = %s", (p+7));
+
 		// re-insert the character that we replaced with a '\0'
-		p [ len ] = c;
+		p[len] = c;
 		// go to next line
 		p += len;
+
 		// skip over the cruft at the end of this line
-		while ( p < pend && ( *p=='\r' || *p=='\n' ) ) p++;
+		while (p < pend && (*p == '\r' || *p == '\n')) p++;
 	}
+
 	return true;
 }				
 
@@ -771,8 +790,8 @@ void HttpMime::makeRedirMime ( const char *redir , int32_t redirLen ) {
 	*p++ = '\r';
 	*p++ = '\n';
 	*p = '\0';
-	m_bufLen = p - m_buf;
-	if ( m_bufLen > 1023 ) { g_process.shutdownAbort(true); }
+	m_mimeLen = p - m_buf;
+	if ( m_mimeLen > 1023 ) { g_process.shutdownAbort(true); }
 	// set the mime's length
 	//m_bufLen = strlen ( m_buf );
 }
@@ -874,16 +893,9 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 			  "Access-Control-Allow-Origin: *\r\n"
 			  "Server: Gigablast/1.0\r\n"
 			  "Content-Length: %" PRId32"\r\n"
-			  //"Expires: Wed, 23 Dec 2003 10:23:01 GMT\r\n"
-			  //"Expires: -1\r\n"
 			  "Connection: Close\r\n"
 			  "%s"
 			  "Content-Type: %s\r\n",
-			  //"Connection: Keep-Alive\r\n"
-			  //"%s"
-			  //"Location: fuck\r\n"
-			  //"Location: http://192.168.0.4:8000/cgi/3.cgi\r\n"
-			  //"Last-Modified: %s\r\n\r\n" ,
 			  httpStatus , smsg ,
 			  ns , totalContentLen , enc , contentType  );
 			  //pns ,
@@ -902,7 +914,6 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 			      "Content-Length: %" PRId32"\r\n"
 			      "Content-Range: %" PRId32"-%" PRId32"(%" PRId32")\r\n"// added "bytes"
 			      "Connection: Close\r\n"
-			      //"P3P: CP=\"CAO PSA OUR\"\r\n"
 			      // for ajax support
 			      "Access-Control-Allow-Origin: *\r\n"
 			      "Server: Gigablast/1.0\r\n"
@@ -948,9 +959,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 		if ( charset ) p += sprintf ( p , "; charset=%s", charset );
 		p += sprintf ( p , "\r\n");
 		p += sprintf ( p ,
-			       //"Connection: Keep-Alive\r\n"
 			       "Connection: Close\r\n"
-			       //"P3P: CP=\"CAO PSA OUR\"\r\n"
 			       "Access-Control-Allow-Origin: *\r\n"
 			       "Server: Gigablast/1.0\r\n"
 			       "%s"
@@ -978,7 +987,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 	p += sprintf(p, "\r\n");
 	// set the mime's length
 	//m_bufLen = strlen ( m_buf );
-	m_bufLen = p - m_buf;
+	m_mimeLen = p - m_buf;
 }
 
 
@@ -1164,8 +1173,7 @@ bool HttpMime::init ( ) {
 	if ( s_init ) return true;
 	// make sure only called once
 	s_init = true;
-	//s_mimeTable.set ( 256 );
-	//s_mimeTable.setLabel("mimetbl");
+
 	if ( ! s_mimeTable.set(4,sizeof(char *),256,NULL,0,false,"mimetbl"))
 		return false;
 	// set table from internal list
@@ -1199,19 +1207,25 @@ bool HttpMime::init ( ) {
 
 bool HttpMime::addCookiesIntoBuffer ( SafeBuf *sb ) {
 	// point to start of request
-	if ( m_bufLen <= 0 ) return true;
-	if ( ! m_mimeStartPtr ) return true;
+	if ( m_mimeLen <= 0 ) return true;
+	if ( ! m_mime ) return true;
 	if ( ! m_firstCookie  ) return true;
 	char *p = m_firstCookie;
-	char *pend = m_mimeStartPtr + m_bufLen;
+	const char *pend = m_mime + m_mimeLen;
 	while ( p < pend ) {
 		// compute the length of the string starting at p and ending
 		// at a \n or \r
 		int32_t len = 0;
-		while ( &p[len] < pend && p[len]!='\n' && p[len]!='\r' ) len++;
+		while (&p[len] < pend && p[len] != '\n' && p[len] != '\r') {
+			len++;
+		}
+
 		// . if we could not find a \n or \r there was an error
 		// . MIMEs must always end in \n or \r
-		if ( &p[len] >= pend ) return false;
+		if (&p[len] >= pend) {
+			return false;
+		}
+
 		// . stick a NULL at the end of the line
 		// . overwrites \n or \r TEMPORARILY
 		char c = p [ len ];
