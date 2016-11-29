@@ -5,6 +5,7 @@
 #include "Domains.h"
 #include "HashTable.h"
 #include "Speller.h"
+#include "AdultCheck.h"
 #include "ip.h"      // atoip ( s,len)
 #include "Punycode.h"
 #include "Unicode.h"

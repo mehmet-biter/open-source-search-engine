@@ -1,6 +1,7 @@
 #include "Speller.h"
 #include "Query.h"
 #include "StopWords.h"
+#include "AdultCheck.h"
 #include "Hostdb.h"
 #include "Process.h"
 #include "Conf.h"
