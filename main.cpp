@@ -1525,21 +1525,6 @@ int main2 ( int argc , char *argv[] ) {
 	//if ( ! g_threads.init()     ) {
 	//	log("db: Threads init failed." ); return 1; }
 
-	// gb gendict
-	if ( strcmp ( cmd , "gendict" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		if ( argc != cmdarg + 2 &&
-		     argc != cmdarg + 3 ) goto printHelp; // take no other args
-		char *coll = argv[cmdarg+1];
-		// get numWordsToDump
-		int32_t  nn = 10000000;
-		if ( argc == cmdarg + 3 ) nn = atoi ( argv[cmdarg+2] );
-		// . generate the dict files
-		// . use the first 100,000,000 words/phrases to make them
-		g_speller.generateDicts ( nn , coll );
-		return 0;
-	}
-
 	// . gb dump [dbLetter][coll][fileNum] [numFiles] [includeTree][termId]
 	// . spiderdb is special:
 	//   gb dump s [coll][fileNum] [numFiles] [includeTree] [0=old|1=new]
