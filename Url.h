@@ -204,7 +204,7 @@ private:
 	void set( const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound, bool stripCommonFile,
 	          int32_t titledbVersion );
 
-	bool isSpam(const char *s, int32_t slen) const;
+	static bool isSpam(const char *s, int32_t slen);
 
 	// the normalized url
 	char m_url[MAX_URL_LEN];

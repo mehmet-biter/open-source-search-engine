@@ -1533,7 +1533,7 @@ bool Url::isSpam() const {
 	return false;
 }
 
-bool Url::isSpam(const char *s, int32_t slen) const {
+bool Url::isSpam(const char *s, int32_t slen) {
 
 	// no need to indent below, keep it clearer
 	if ( ! isAdult ( s, slen ) ) return false;
