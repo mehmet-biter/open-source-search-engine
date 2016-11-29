@@ -814,3 +814,16 @@ bool isAdultUrl(const char *s, int32_t slen) {
 	logf(LOG_DEBUG,"build: failed to find sequence of words to prove %s was not porn.", s );
 	return true;
 }
+
+
+bool isAdultTLD(const char *tld, size_t tld_len) {
+	if(tld) {
+		if((tld_len==5 && memcmp(tld,"adult",5)==0) ||
+		   (tld_len==4 && memcmp(tld,"porn",4)==0) ||
+		   (tld_len==3 && memcmp(tld,"sex",3)==0) ||
+		   (tld_len==4 && memcmp(tld,"sexy",4)==0) ||
+		   (tld_len==3 && memcmp(tld,"xxx",3)==0))
+			return true;
+	}
+	return false;
+}

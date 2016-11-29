@@ -1491,6 +1491,9 @@ bool Url::isHostWWW ( ) const {
 // . if it's int32_t and has 4+ hyphens, consider it spam
 // . if you add a word here, add it to PageResults.cpp:isQueryDirty()
 bool Url::isAdult() const {
+	//certain TLDs are clearly adult-oriented
+	if(isAdultTLD(m_tld,m_tldLen))
+		return true;
 	// store the hostname in a buf since we strtok it
 	char s [ MAX_URL_LEN ];
 	// don't store the .com or .org while searching for isSpam
