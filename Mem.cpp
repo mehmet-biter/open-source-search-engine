@@ -250,6 +250,8 @@ bool Mem::init  ( ) {
 
 // this is called after a memory block has been allocated and needs to be registered
 void Mem::addMem ( void *mem , size_t size , const char *note , char isnew ) {
+	if(!s_lock.working) return;
+
 	ScopedLock sl(s_lock);
 
 	logTrace( g_conf.m_logTraceMem, "mem=%p size=%zu note='%s' is_new=%d", mem, size, note, isnew );
@@ -1081,6 +1083,8 @@ char *Mem::strdup( const char *string, const char *note ) {
 }
 
 void Mem::gbfree ( void *ptr , const char *note, size_t size , bool checksize ) {
+	if(!s_lock.working) return;
+
 	logTrace( g_conf.m_logTraceMem, "ptr=%p size=%zu note='%s'", ptr, size, note );
 
 	if ((checksize && size == 0) || !ptr) {
