@@ -532,6 +532,8 @@ bool XmlDoc::setCollNum ( const char *coll ) {
 	return true;
 }
 
+
+
 CollectionRec *XmlDoc::getCollRec ( ) {
 	if ( ! m_collnumValid ) { g_process.shutdownAbort(true); }
 	CollectionRec *cr = g_collectiondb.m_recs[m_collnum];
@@ -551,6 +553,8 @@ CollectionRec *XmlDoc::getCollRec ( ) {
 	//}
 	return cr;
 }
+
+
 
 // returns false and sets g_errno on error
 bool XmlDoc::set4 ( SpiderRequest *sreq      ,
@@ -6881,26 +6885,49 @@ int32_t *XmlDoc::gotIp ( bool save ) {
 	return &m_ip;
 }
 
+
 // when doing a custom crawl we have to decide between the provided crawl
 // delay, and the one in the robots.txt...
 int32_t *XmlDoc::getFinalCrawlDelay() {
 
-	if ( m_finalCrawlDelayValid )
+	if ( m_finalCrawlDelayValid ) {
+		if ( g_conf.m_logDebugRobots  ) {
+			log(LOG_DEBUG,"getFinalCrawlDelay: returning %" PRId32 " - m_finalCrawlDelayValid is true", m_finalCrawlDelay);
+		}
 		return &m_finalCrawlDelay;
+	}
 
 	bool *isAllowed = getIsAllowed();
-	if ( ! isAllowed || isAllowed == (void *)-1 ) return (int32_t *)isAllowed;
+	if ( ! isAllowed || isAllowed == (void *)-1 ) {
+		if ( g_conf.m_logDebugRobots  ) {
+			log(LOG_DEBUG,"getFinalCrawlDelay: not allowed");
+		}
+		return (int32_t *)isAllowed;
+	}
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) {
+		if ( g_conf.m_logDebugRobots  ) {
+			log(LOG_DEBUG,"getFinalCrawlDelay: Returning NULL, no CollectionRec");
+		}
+		return NULL;
+	}
 
 	m_finalCrawlDelayValid = true;
 
 	// getIsAllowed already sets m_crawlDelayValid to true
 	m_finalCrawlDelay = m_crawlDelay;
-	// default to 250ms i guess if none specified in robots
-	// just to be somewhat nice by default
-	if ( m_crawlDelay < 0 )	m_finalCrawlDelay = 250;
+
+	// Changed previously hard coded default of 250ms to the 
+	// configurable delay for sites with no robots.txt
+	if ( m_crawlDelay < 0 )	{
+		m_finalCrawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
+	}
+
+	if ( g_conf.m_logDebugRobots  ) {
+		log(LOG_DEBUG,"getFinalCrawlDelay: returning %" PRId32 ". Setting m_finalCrawlDelayValid to true", m_finalCrawlDelay);
+	}
+
 	return &m_finalCrawlDelay;
 }
 
@@ -6932,12 +6959,20 @@ bool *XmlDoc::getIsAllowed ( ) {
 		return &m_isAllowed;
 	}
 
+	CollectionRec *cr = getCollRec();
+	if ( ! cr ) {
+		log(LOG_ERROR,"getIsAllowed - NOT allowed, could not get CollectionRec!");
+		m_isAllowed      = false;
+		return &m_isAllowed;
+	}
+
 	// could be turned off for everyone
 	if ( ! m_useRobotsTxt ) {
 		m_isAllowed      = true;
 		m_isAllowedValid = true;
 		m_crawlDelayValid = true;
-		m_crawlDelay      = -1;
+		m_crawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
+
 		//log("xmldoc: skipping robots.txt lookup for %s",
 		//    m_firstUrl.m_url);
 		logTrace( g_conf.m_logTraceSpider, "END. !m_useRobotsTxt" );
@@ -7005,7 +7040,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		// to be set, we are getting a core because crawlDelay
 		// is invalid in getNewSpiderReply()
 		m_crawlDelayValid = true;
-		m_crawlDelay      = -1;
+		m_crawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;;
 		logTrace( g_conf.m_logTraceSpider, "END. We allow it. FIX?" );
 		return &m_isAllowed;
 	}
@@ -7065,7 +7100,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// . for robots.txt it should only cache the portion of the doc
 	//   relevant to our user agent!
 	// . getHttpReply() should use msg13 to get cached reply!
-	XmlDoc **ped = getExtraDoc ( m_extraUrl.getUrl() , 3600 );
+	XmlDoc **ped = getExtraDoc(m_extraUrl.getUrl(), cr->m_maxRobotsCacheAge);
 	if ( ! ped || ped == (void *)-1 )
 	{
 		logTrace( g_conf.m_logTraceSpider, "END. getExtraDoc (ped) failed, return %s", ((bool *)ped?"true":"false"));
@@ -7115,11 +7150,12 @@ bool *XmlDoc::getIsAllowed ( ) {
 	char *content = *pcontent;
 
 	// sanity check
-	if ( content && contentLen>0 && content[contentLen] != '\0'){
+	if ( content && contentLen > 0 && content[contentLen] != '\0'){
 		g_process.shutdownAbort(true);}
 
-	// reset this. -1 means unknown or none found.
-	m_crawlDelay = -1;
+	// reset this. -1 means unknown or none found. We now use a more sane default
+	// as the caller would have defaulted to 250ms if set to -1 here.
+	m_crawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
 	m_crawlDelayValid = true;
 
 	// assume valid and ok to spider
@@ -7134,6 +7170,11 @@ bool *XmlDoc::getIsAllowed ( ) {
 		/// 3xx (redirection) : follow
 		/// 4xx (client errors) : allow
 		/// 5xx (server errors) : disallow
+
+		// We could not get robots.txt - use default crawl-delay for
+		// sites with no robots.txt
+		m_crawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
+
 
 		// BR 20151215: Do not allow spidering if we cannot read robots.txt EXCEPT if the error code is 404 (Not Found).
 		if( mime->getHttpStatus() != 404 )
@@ -7155,15 +7196,22 @@ bool *XmlDoc::getIsAllowed ( ) {
 
 	m_isAllowed = robots.isAllowed( cu );
 	m_crawlDelay = robots.getCrawlDelay();
+
+	if( m_crawlDelay == -1 ) {
+		// robots.txt found, but it contains no crawl-delay for us. Set to configured default.
+		m_crawlDelay = cr->m_crawlDelayDefaultForRobotsTxtMS;
+	}
+
 	m_isAllowedValid = true;
 
 	// nuke it to save mem
 	nukeDoc ( ed );
 
-	logTrace( g_conf.m_logTraceSpider, "END. Returning %s", (m_isAllowed?"true":"false") );
+	logTrace( g_conf.m_logTraceSpider, "END. Returning %s (m_crawlDelay=%" PRId32 "", (m_isAllowed?"true":"false"), m_crawlDelay);
 
 	return &m_isAllowed;
 }
+
 
 
 // . lookup the title rec with the "www." if we do not have that in the url
@@ -7691,6 +7739,8 @@ static void gotHttpReplyWrapper ( void *state ) {
 	// resume. this checks g_errno for being set.
 	THIS->m_masterLoop ( THIS->m_masterState );
 }
+
+
 
 // "NULL" can be a valid http reply (empty page) so we need to use "char **"
 char **XmlDoc::getHttpReply2 ( ) {
@@ -14365,8 +14415,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		//if ( m_percentChangedValid )
 		//	m_srep.m_percentChangedPerDay = m_percentChanged;
 		if ( m_crawlDelayValid && m_crawlDelay >= 0 )
-			// we already multiply x1000 in isAllowed2()
-			m_srep.m_crawlDelayMS = m_crawlDelay;// * 1000;
+			m_srep.m_crawlDelayMS = m_crawlDelay;
 		else
 			m_srep.m_crawlDelayMS = -1;
 		//if ( m_pubDateValid     ) m_srep.m_pubDate = m_pubDate;
@@ -14524,8 +14573,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	//   because Spider.cpp like it better that way
 	// . -1 implies crawl delay unknown or not found
 	if ( m_crawlDelay >= 0 && m_crawlDelayValid )
-		// we already multiply x1000 in isAllowed2()
-		m_srep.m_crawlDelayMS = m_crawlDelay;// * 1000;
+		m_srep.m_crawlDelayMS = m_crawlDelay;
 	else
 		// -1 means invalid/unknown
 		m_srep.m_crawlDelayMS = -1;

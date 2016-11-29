@@ -8543,6 +8543,50 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
+	m->m_title = "automatically back off";
+	m->m_desc  = "Set the crawl delay to 5 seconds if gb detects "
+		"that an IP is throttling or banning us from crawling "
+		"it. The crawl delay just applies to that IP. "
+		"Such throttling will be logged.";
+	m->m_cgi   = "automaticallybackoff";
+	m->m_xml   = "automaticallyBackOff";
+	m->m_off   = offsetof(CollectionRec,m_automaticallyBackOff);
+	m->m_type  = TYPE_BOOL;
+	// a lot of pages have recaptcha links but they have valid content
+	// so leave this off for now... they have it in a hidden div which
+	// popups to email the article link or whatever to someone.
+	m->m_def   = "0";
+	m->m_group = false;
+	m->m_page  = PAGE_SPIDER;
+	m->m_obj   = OBJ_COLL;
+	m->m_flags = PF_CLONE;
+	m++;
+
+	m->m_title = "Crawl-delay for sites with no robots.txt (milliseconds)";
+	m->m_desc  = "Crawl-delay for sites with no robots.txt (milliseconds).";
+	m->m_cgi  = "crwldlnorobot";
+	m->m_off   = offsetof(CollectionRec,m_crawlDelayDefaultForNoRobotsTxtMS);
+	m->m_type  = TYPE_LONG;
+	m->m_def   = "15000";
+	m->m_group = false;
+	m->m_page  = PAGE_SPIDER;
+	m->m_obj   = OBJ_COLL;
+	m->m_flags = PF_CLONE;
+	m++;
+
+	m->m_title = "Crawl-delay for sites with robots.txt but no Crawl-Delay (milliseconds)";
+	m->m_desc  = "Crawl-delay for sites with robots.txt but without a Crawl-Delay entry (milliseconds).";
+	m->m_cgi  = "crwldlrobotnodelay";
+	m->m_off   = offsetof(CollectionRec,m_crawlDelayDefaultForRobotsTxtMS);
+	m->m_type  = TYPE_LONG;
+	m->m_def   = "10000";
+	m->m_group = false;
+	m->m_page  = PAGE_SPIDER;
+	m->m_obj   = OBJ_COLL;
+	m->m_flags = PF_CLONE;
+	m++;
+
+
 
 	m->m_title = "always use spider proxies";
 	m->m_desc  = "If this is true Gigablast will ALWAYS use the proxies "
@@ -8579,26 +8623,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-
-
-	m->m_title = "automatically back off";
-	m->m_desc  = "Set the crawl delay to 5 seconds if gb detects "
-		"that an IP is throttling or banning gigabot from crawling "
-		"it. The crawl delay just applies to that IP. "
-		"Such throttling will be logged.";
-	m->m_cgi   = "automaticallybackoff";
-	m->m_xml   = "automaticallyBackOff";
-	m->m_off   = offsetof(CollectionRec,m_automaticallyBackOff);
-	m->m_type  = TYPE_BOOL;
-	// a lot of pages have recaptcha links but they have valid content
-	// so leave this off for now... they have it in a hidden div which
-	// popups to email the article link or whatever to someone.
-	m->m_def   = "0";
-	m->m_group = false;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m->m_flags = PF_CLONE;
-	m++;
 
 	m->m_title = "use time axis";
 	m->m_desc  = "If this is true Gigablast will index the same "

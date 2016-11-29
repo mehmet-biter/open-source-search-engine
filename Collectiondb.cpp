@@ -1190,6 +1190,8 @@ CollectionRec::CollectionRec() {
 	m_maxOtherDocLen = 0;
 	m_summaryMaxWidth = 0;
 	m_maxRobotsCacheAge = 0;
+	m_crawlDelayDefaultForNoRobotsTxtMS = 15000;
+	m_crawlDelayDefaultForRobotsTxtMS = 10000;
 	m_queryExpansion = false;
 	m_rcache = false;
 	m_hideAllClustered = false;
