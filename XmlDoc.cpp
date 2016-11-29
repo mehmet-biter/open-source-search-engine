@@ -2157,7 +2157,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
 	if ( cr->m_doUrlSpamCheck && ! m_check2 ) {
 		m_check2         = true;
-		if ( m_firstUrl.isSpam() ) {
+		if ( m_firstUrl.isAdult() ) {
 			m_indexCode      = EDOCURLSPAM;
 			m_indexCodeValid = true;
 			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCURLSPAM" );

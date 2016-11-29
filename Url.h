@@ -183,8 +183,8 @@ public:
 	// is it xxx.com/* or www.xxx.com/* (CAUTION: www.xxx.yyy.com)
 	bool isSimpleSubdomain() const;
 
-	// is the url a porn/spam url?
-	bool isSpam() const;
+	// is the url a porn/adult url?
+	bool isAdult() const;
 
 	// . detects crazy repetetive urls like this:
 	//   http://www.pittsburghlive.com:8000/x/tribune-review/opinion/
