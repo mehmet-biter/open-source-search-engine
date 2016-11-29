@@ -4,12 +4,12 @@
 #include "UrlParser.h"
 #include "Domains.h"
 #include "HashTable.h"
-#include "Speller.h"
 #include "AdultCheck.h"
 #include "ip.h"      // atoip ( s,len)
 #include "Punycode.h"
 #include "Unicode.h"
 #include "Lang.h"
+#include "SafeBuf.h"
 #include "Sanity.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
@@ -1527,60 +1527,11 @@ bool Url::isSpam() const {
 		const char *pend = p;
 		while ( pend < send && *pend != '.' && *pend !='-' ) pend++;
 		// check that
-		if ( isSpam ( p , pend - p ) ) return true;
+		if ( isAdultUrl ( p , pend - p ) ) return true;
 		// point to next
 		p = pend + 1;
 	}
 	return false;
-}
-
-bool Url::isSpam(const char *s, int32_t slen) {
-
-	// no need to indent below, keep it clearer
-	if ( ! isAdult ( s, slen ) ) return false;
-
-	// check for naughty words. Split words to deep check if we're surely 
-	// adult. Required because montanalinux.org is showing up as porn 
-	// because it has 'anal' in the hostname.
-	// send each phrase seperately to be tested.
-	// hotjobs.yahoo.com
-	const char *a = s;
-	const char *p = s;
-	bool foundCleanSequence = false;
-	char splitWords[1024];
-	char *splitp = splitWords;
-	while ( p < s + slen ){
-		while ( p < s + slen && *p != '.' && *p != '-' )
-			p++;
-		bool isPorn = false;
-		// TODO: do not include "ult" in the dictionary, it is
-		// always splitting "adult" as "ad ult". i'd say do not
-		// allow it to split a dirty word into two words like that.
-		if (g_speller.canSplitWords( a, p - a, &isPorn, splitp, langEnglish )){
-			if ( isPorn ){
-				log(LOG_DEBUG,"build: identified %s as "
-				    "porn  after splitting words as "
-				    "%s", s, splitp);
-				return true;
-			}
-			foundCleanSequence = true;
-			// keep searching for some porn sequence
-		}
-		p++;
-		a = p;
-		splitp += strlen(splitp);
-	}
-	// if we found a clean sequence, its not porn
-	if ( foundCleanSequence ) {
-		log(LOG_INFO,"build: did not identify url %s "
-		    "as porn after splitting words as %s", s, splitWords);
-		return false;
-	}
-	// we tried to get some seq of words but failed. Still report
-	// this as porn, since isAdult() was true
-	logf ( LOG_DEBUG,"build: failed to find sequence of words to "
-	      "prove %s was not porn.", s );
-	return true;
 }
 
 
