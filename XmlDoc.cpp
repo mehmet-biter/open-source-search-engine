@@ -15210,7 +15210,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 
 	// return current ptr
 	logTrace( g_conf.m_logTraceXmlDoc, "END, all done." );
-
 	return m_p ;
 }
 
@@ -15825,16 +15824,47 @@ Url *XmlDoc::getBaseUrl ( ) {
 		// get the href field of this base tag
 		int32_t linkLen;
 		char *link = (char *) xml->getString ( i, "href", &linkLen );
+
 		// skip if not valid
-		if ( ! link || linkLen == 0 ) continue;
+		if ( ! link || linkLen == 0 ) {
+			continue;
+		}
+
 		// set base to it
 		m_baseUrl.set( link, linkLen );
+
+		if ( m_baseUrl.getHostLen() <= 0 || m_baseUrl.getDomainLen() <= 0 ) {
+			//
+			// base href tag does not contain the domain. It is likely just "/". 
+			//
+			// We now extract the scheme and host from the current URL to form a full URL based
+			// on that and the supplied base href. Previously it wrongly used the full current
+			// URL, which is wrong. Relative links on a page resulted in wrong full URLs. E.g. a link on
+			// http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/ resulted in
+			// http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/stoet-os/giv-en-gave/giv-et-barn-en-friplads/
+			//
+			char fixed_basehref[MAX_URL_LEN];
+
+			// If base href link starts with a /, do not add it again below
+			int adjust = (link[0] == '/' ? 1 : 0);
+
+			// If base href link does not end with /, add it.
+			char endchar = (link[linkLen-1] == '/' ? 0 : '/');
+
+			snprintf(fixed_basehref, sizeof(fixed_basehref), "%.*s://%.*s/%.*s%c", 
+				cu->getSchemeLen(), cu->getScheme(), cu->getHostLen(), cu->getHost(), linkLen-adjust, link+adjust, endchar);
+			fixed_basehref[ sizeof(fixed_basehref)-1 ] = '\0';
+
+			m_baseUrl.set(fixed_basehref);
+		}
+
 		break;
 	}
 
 	// fix invalid <base href="/" target="_self"/> tag
-	if ( m_baseUrl.getHostLen  () <= 0 || m_baseUrl.getDomainLen() <= 0 )
+	if ( m_baseUrl.getHostLen() <= 0 || m_baseUrl.getDomainLen() <= 0 ) {
 		m_baseUrl.set ( cu );
+	}
 
 	m_baseUrlValid = true;
 	return &m_baseUrl;
