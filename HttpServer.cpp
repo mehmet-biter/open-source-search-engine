@@ -1720,7 +1720,6 @@ bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error ,
 	*/
 }
 
-// . this is called by the Loop class
 // . getMsgPiece() is called by TcpServer cuz we set it in TcpServer::init()
 void getMsgPieceWrapper ( int fd , void *state ) {
 	// NOTE: this socket 's' may have been closed/destroyed,
@@ -1752,7 +1751,6 @@ void getMsgPieceWrapper ( int fd , void *state ) {
 	goto loop;
 }
 
-// . this is called by the Loop class
 // . getMsgPiece() is called by TcpServer cuz we set it in TcpServer::init()
 void getSSLMsgPieceWrapper ( int fd , void *state ) {
 	// NOTE: this socket 's' may have been closed/destroyed,
