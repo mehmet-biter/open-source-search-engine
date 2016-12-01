@@ -15823,7 +15823,7 @@ Url *XmlDoc::getBaseUrl ( ) {
 		if ( xml->getNodeId ( i ) != TAG_BASE ) continue;
 		// get the href field of this base tag
 		int32_t linkLen;
-		const char *link = (char *) xml->getString ( i, "href", &linkLen );
+		const char *link = xml->getString ( i, "href", &linkLen );
 
 		// skip if not valid
 		if ( ! link || linkLen == 0 ) {
