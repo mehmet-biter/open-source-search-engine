@@ -28,9 +28,6 @@
 // a global class extern'd in .h file
 HttpServer g_httpServer;
 
-// this is defined in PageEvents.cpp
-//bool sendPageSiteMap ( TcpSocket *s , HttpRequest *r ) ;
-//bool sendPageApi ( TcpSocket *s , HttpRequest *r ) ;
 bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) ;
 static bool sendPagePretty(TcpSocket *s, HttpRequest *r, const char *filename, const char *tabName);
 
@@ -66,11 +63,6 @@ bool HttpServer::init ( int16_t port,
 	// our mime table that maps a file extension to a content type
 	HttpMime mm;
 	if ( ! mm.init() ) return false;
-	// make it essentially infinite
-	//m_maxOpenSockets = 1000000;
-
-	//well, not infinite
-	//m_maxOpenSockets = g_conf.m_httpMaxSockets;
 	
 	m_uncompressedBytes = m_bytesDownloaded = 1;
 
@@ -91,8 +83,6 @@ bool HttpServer::init ( int16_t port,
 			   port                        ,
 			   //&g_conf.m_httpMaxSockets     ) ) return false;
 			   &g_conf.m_httpMaxSockets  ) ) return false;
-	//g_conf.m_httpMaxReadBufSize , 
-	//g_conf.m_httpMaxSendBufSize ) ) return false;
 	// set our secure TcpServer class
 	if ( ! m_ssltcp.init ( handlerWrapper,
 			       getMsgSize,
@@ -100,9 +90,6 @@ bool HttpServer::init ( int16_t port,
 			       sslPort,
 			       &g_conf.m_httpsMaxSockets,
 			       true                    ) ) {
-		// this was required for communicating with an email alert
-		// web server, but no longer do i use them
-		//return false;
 		// don't break, just log and don't do SSL
 		log ( "https: SSL Server Failed To Init, Continuing..." );
 		m_ssltcp.reset();
@@ -247,9 +234,6 @@ bool HttpServer::getDoc ( char   *url      ,
 			sb.safePrintf("CONNECT ");
 			sb.safeMemcpy ( host, hostLen );
 			sb.safePrintf(":%" PRId32" HTTP/1.0\r\n",port);
-			// sb.safePrintf("Host: ");
-			// sb.safeMemcpy ( host, hostLen );
-			// sb.safePrintf("\r\n");
 			// include proxy authentication info now
 			if ( proxyUsernamePwdAuth && proxyUsernamePwdAuth[0] ){
 				sb.safePrintf("Proxy-Authorization: Basic ");
@@ -287,16 +271,6 @@ bool HttpServer::getDoc ( char   *url      ,
 	// . get the request from the static buffer and dup it
 	// . return true and set g_errno on error
 	if ( ! req ) return true;
-
-
-	// mdw23
-	//if ( g_conf.m_logDebugSpider )
-	// {
-	// 	SafeBuf tmp;
-	// 	tmp.safeMemcpy ( req , reqSize );
-	// 	tmp.nullTerm();
-	// 	log("spider: httprequest = %s", tmp.getBufStart() );
-	// }
 
 
 	// do we have an ip to send to? assume not
@@ -383,7 +357,6 @@ void gotDocWrapper ( void *state, TcpSocket *s ) {
 bool HttpServer::gotDoc ( int32_t n, TcpSocket *s ) {
 	void *state = states[n];
 	void (*callback)(void *state, TcpSocket *s) = callbacks[n];
-	// debug
 	log(LOG_DEBUG,"http: Got doc with state=%" PTRFMT".",(PTRTYPE)state);
 	states[n]    = NULL;
 	callbacks[n] = NULL;
@@ -479,7 +452,6 @@ void handleRequestfd ( UdpSlot *slot , int32_t niceness ) {
 // . NEVER calls m_tcp.destroySocket ( s )
 // . One Exception: sendErrorReply() can call it if cannot form error reply
 void HttpServer::requestHandler ( TcpSocket *s ) {
-	// debug msg
 	//log("got request, readBufUsed=%i",s->m_readOffset);
 	// parse the http request
 	HttpRequest r;
@@ -501,20 +473,6 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 	bool isAdmin = r.isLocal();
 	// never proxy admin pages for security reasons
 	if ( s->m_udpSlot ) isAdmin = false;
-	//bool isIpInNetwork = g_hostdb.isIpInNetwork ( s->m_ip );
-	// . if host does not allow http requests (except for admin) then bail
-	// . used to prevent seo/email spammers from querying other machines
-	//   and getting around our seo robot protection
-	//if ( ! g_conf.m_httpServerEnabled  ) {
-	//&& ! isAdmin  &&
-	     // quick hack so we can add ips to the connect ips list in
-	     // the master controls security table
-	  //   ! g_conf.isConnectIp ( s->m_ip ) ) {
-	//	log("query: Returning 403 Forbidden. HttpServer is disabled "
-	//	    "in the master controls. ip=%s",iptoa(s->m_ip));
-	//	sendErrorReply ( s , 403 , "Forbidden" );
-	//	return;
-	//}
 
 	// get the server this socket uses
 	TcpServer *tcp = s->m_this;
@@ -536,14 +494,6 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 		// do not consider injects to be coming from admin ever
 		isAdmin = false;
 	}
-
-	// enforce open connections here
-	//if ( used >= g_conf.m_httpMaxSockets + 10 ) {
-	//	log("query: Too many sockets open for ip=%s. Destroying.",
-	//	    iptoa(s->m_ip));
-	//	m_tcp.destroySocket ( s ); 
-	//	return; 
-	//}
 
 	// enforce the open socket quota iff not admin and not from intranet
 	if ( ! isAdmin && tcp->m_numIncomingUsed >= max && 
@@ -621,41 +571,10 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 	int32_t ip = s->m_ip;
 	// . likewise, set cgi buf up here, too
 	// . if it is a post request, log the posted data, too
-	/*
-	char cgi[20058];
-	cgi[0] = '\0';
-	if ( r.isPOSTRequest() ) {
-		int32_t  plen = r.m_cgiBufLen;
-		if (  plen >= 20052 ) plen = 20052;
-		char *pp1 = cgi ;
-		char *pp2 = r.m_cgiBuf;
-		// . when parsing cgi parms, HttpRequest converts the 
-		//   &'s to \0's so it can avoid having to malloc a 
-		//   separate m_cgiBuf
-		// . now it also converts ='s to 0's, so flip flop back
-		//   and forth
-		char dd = '=';
-		for ( int32_t i = 0 ; i < plen ; i++ , pp1++, pp2++ ) {
-			if ( *pp2 == '\0' ) { 
-				*pp1 = dd;
-				if ( dd == '=' ) dd = '&';
-				else             dd = '=';
-				continue;
-			}
-			if ( *pp2 == ' ' ) *pp1 = '+';
-			else               *pp1 = *pp2;
-		}
-		if ( r.m_cgiBufLen >= 20052 ) {
-			pp1[0]='.'; pp1[1]='.'; pp1[2]='.'; pp1 += 3; }
-		*pp1 = '\0';
-	}
-	*/
 
 	//get this value before we send the reply, because r can be 
 	//destroyed when we send.
 	int32_t dontLog = r.getLong("dontlog",0);
-	// turn off for now
-	//dontLog = 0;
 
 	// !!!!
 	// TcpServer::sendMsg() may free s->m_readBuf if doing udp forwarding
@@ -723,31 +642,8 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 			      ref,
 			      g_msg);
 	}
-
-	// if no error, we completed w/o blocking so return
-	//if ( ! g_errno ) return;
-	// if g_errno was set then send an error msg
-	//return sendErrorReply ( s, 500 , mstrerror(g_errno) );
 }
 
-/*
-// it's better to hardcode this so we never lose it!
-bool sendPageRobotsTxt ( TcpSocket *s , HttpRequest *r ) {
-	SafeBuf sb;
-	sb.safePrintf ( "User-Agent: *\n"
-			"Disallow: *\n"
-			//"Disallow: /search?makewidget=1\n"
-			//"Disallow: /search?clockset=\n"
-			"\n"
-			);
-	// this should copy it since sb is on stack
-	return g_httpServer.sendDynamicPage ( s ,
-					      sb.getBufStart(),
-					      sb.m_length ,
-					      0 ,
-					      "text/html");
-}
-*/
 
 static bool endsWith(char *haystack, int haystackLen, const char *needle, int needleLen) {
     return haystackLen >= needleLen && !strncmp(haystack + haystackLen - needleLen, needle, needleLen);
@@ -1292,15 +1188,9 @@ bool HttpServer::sendReply2 ( const char *mime,
 // . this recycling/desutruction will free s's read/send bufs
 // . this should have been called by TcpServer::makeCallback()
 void cleanUp ( void *state , TcpSocket *s ) {
-	// free the send buffer
-	//mfree ( s->m_sendBuf , s->m_sendBufSize );
-	//mfree ( s->m_readBuf , s->m_readBufSize );
-	//s->m_sendBuf     = NULL;
-	//s->m_sendBufSize = 0;
 	File *f = (File *) state;
 	if ( ! f ) return;
 	int32_t fd = -1;
-	// debug msg
 	//log("HttpServer: unregistering file fd: %i", f->getfd());
 	// unregister f from getting callbacks (might not be registerd)
 	if ( s ) {
@@ -1507,18 +1397,6 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 	// . NOTE: ctime appends a \n to the time, so we don't need to
 	char msg[1524];
 	SafeBuf sb(msg,1524,0,false);
-	// if it's a 404, redirect to home page
-	/*
-	if ( error == 404 ) 
-		sprintf ( msg ,
-			  "HTTP/1.0 301 Moved\r\n"
-			  "Content-length: 0\r\n"
-			  "Connection: Close\r\n"
-			  "Location: http://www.gigablast.com/\r\n"
-			  "Date: %s\r\n\r\n",
-			  ctime ( &now ) );
-	else 
-	*/
 	struct tm tm_buf;
 	char buf[64];
 	char *tt = asctime_r(gmtime_r(&now,&tm_buf),buf);
@@ -1578,26 +1456,8 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 	// use this new function that will compress the reply now if the
 	// request was a ZET instead of a GET mdw
 	return sendReply2 ( sb.getBufStart() , sb.length() , NULL , 0 , s );
-
-	/*
-	// . this returns false if blocked, true otherwise
-	// . this sets g_errno on error
-	// . this will destroy s on error
-	//if ( ! m_tcp.sendMsg ( s           , 
-	if (  ! tcp->sendMsg ( s           , 
-			       sendBuf     ,
-			       sendBufSize , 
-			       sendBufSize , // sendBufUsed
-			       sendBufSize , // msgTotalSize (total to send)
-			       NULL        , // callbackData passed 2 cleanUp()
-			       cleanUp     ) )
-		return false;
-	// . TcpServer will free bufs on recycle/destruction
-	// . free all if sendReply() did not block
-	// mfree ( sendBuf , sendBufSize );
-	return true;
-	*/
 }
+
 bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error , 
 				      const char *errmsg, 
 				      //int32_t  rawFormat, 
@@ -1607,117 +1467,6 @@ bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error ,
 	// just use this for now. it detects the format already...
 	log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. %d [%s]", __FILE__, __func__, __LINE__, errnum, errmsg);
 	return sendErrorReply ( s,error,errmsg,NULL);
-
-	/*
-	// clear g_errno so the send goes through
-	g_errno = 0;
-	// get time in secs since epoch
-	time_t now = getTime();
-	// . buffer for the MIME request and brief html err msg
-	// . NOTE: ctime appends a \n to the time, so we don't need to
-	char msg[2048];
-	struct tm tm_buf;
-	char buf[64];
-	char *tt = asctime_r(gmtime_r(&now,&tm_buf),buf);
-	tt [ strlen(tt) - 1 ] = '\0';
-	// fix empty strings
-	if (!content) content = "";
-
-	// sanity check
-	if ( strncasecmp(errmsg,"Success",7)==0 ) {g_process.shutdownAbort(true);}
-
-	if ( format == FORMAT_HTML ) {
-		// Page content
-		char cbuf[1024];
-		sprintf (cbuf, 
-			 "<html><head><title>Gigablast Error</title></head>"
-			 "<body><b>Error = %s</b><br><br>"
-			 "%s"
-			 "</body></html>\n", 
-			 errmsg, content);
-		// Header and content prepared for sending
-		sprintf ( msg , 
-			  "HTTP/1.0 %" PRId32" (%s)\r\n"
-			  "Content-Length: %i\r\n"
-			  "Connection: Close\r\n"
-			  "Content-type: text/html; charset=utf-8\r\n"
-			  "Date: %s UTC\r\n\r\n"
-			  "%s",
-			  error  ,
-			  errmsg ,
-			  strlen(cbuf),
-			  tt , 
-			  cbuf );
-	}
-	// XML error msg.  This needs to contain information that is useful to 
-	// an xml parser (and not break it with invalid syntax)
-	else{ 
-		// Page content
-		char cbuf[1024];
-		sprintf (cbuf, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-			 "<error status=\"%d\" msg=\"%s\">"
-			 "%s"
-			 "</error>\n",
-			 (int)error, errmsg, content);
-		sprintf ( msg , 
-			  "HTTP/1.0 %" PRId32" (%s)\r\n"
-			  "Content-Length: %i\r\n"
-			  "Connection: Close\r\n"
-			  "Content-type: text/xml; charset=utf-8\r\n"
-			  "Date: %s\r\n\r\n"
-			  "%s",
-			  error  ,
-			  errmsg ,
-			  strlen(cbuf),
-			  tt , // ctime ( &now ) ,
-			  cbuf );
-
-	}
-	// . move the reply to a send buffer
-	// . don't make sendBuf bigger than g_conf.m_httpMaxSendBufSize
-	int32_t msgSize    = strlen ( msg );
-
-	return sendReply2 ( msg , msgSize , NULL , 0 , s );
-	*/
-
-	/*
-	int32_t sendBufSize = msgSize;
-	char *sendBuf    ;
-	//if ( sendBufSize <= TCP_READ_BUF_SIZE )
-	//	sendBuf = s->m_tmpBuf;
-	//else 
-	sendBuf = (char *) mmalloc ( sendBufSize , "HttpServer");
-	// . this is the ONLY situation in which we destroy "s" ourselves
-	// . that is, when we cannot even transmit the server-side error info
-	if ( ! sendBuf ) { 
-		log("http: Failed to allocate %" PRId32" bytes for send "
-		    "buffer. Send failed.",sendBufSize);
-		// set this so it gets destroyed
-		s->m_waitingOnHandler = false;
-		//m_tcp.destroySocket ( s );
-		tcp->destroySocket ( s );
-		return true;
-	}
-	gbmemcpy ( sendBuf , msg , msgSize );
-	// erase g_errno for sending
-	g_errno = 0;
-	// . this returns false if blocked, true otherwise
-	// . this sets g_errno on error
-	// . this will destroy s on error
-	//if ( ! m_tcp.sendMsg ( s           , 
-	if (  ! tcp->sendMsg ( s           , 
-			       sendBuf     ,
-			       sendBufSize , 
-			       sendBufSize , // sendBufUsed
-			       sendBufSize , // msgTotalSize (total to send)
-			       NULL        , // callbackData passed 2 cleanUp()
-			       cleanUp     ) )
-		return false;
-	// . TcpServer will free bufs on recycle/destruction
-	// . free all if sendReply() did not block
-	// mfree ( sendBuf , sendBufSize );
-	return true;
-	*/
 }
 
 // . getMsgPiece() is called by TcpServer cuz we set it in TcpServer::init()
@@ -1879,21 +1628,7 @@ int32_t getMsgSize ( char *buf, int32_t bufSize, TcpSocket *s ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufSize);
 #endif
-	// . if the msg ends in \r\n0\r\n\r\n that's an end delimeter
-	// . this is part of HTTP/1.1's "chunked transfer encoding" thang
-	/*
-	if ( bufSize >= 7 ) {
-		if ( buf [ bufSize - 1 ] == '\n' &&
-		     buf [ bufSize - 2 ] == '\r' &&
-		     buf [ bufSize - 3 ] == '\n' &&
-		     buf [ bufSize - 4 ] == '\r' &&
-		     buf [ bufSize - 5 ] == '0'  &&
-		     buf [ bufSize - 6 ] == '\n' &&
-		     buf [ bufSize - 7 ] == '\r'   )  
-			return bufSize;
-	}
-	*/
-	// make sure we have a \n\n or \n\c\n\c or \c\c
+	// make sure we have a \n\n or \r\n\r\n or \r\r or \n\r\n\r
 	int32_t i;
 	int32_t mimeSize = 0;
 	for ( i = 0 ; i < bufSize ; i++ ) {
@@ -2157,9 +1892,6 @@ int32_t getMsgSize ( char *buf, int32_t bufSize, TcpSocket *s ) {
 
 void HttpServer::getKey ( int32_t *key, char *kname, 
 			   char *q , int32_t qlen , int32_t now , int32_t s , int32_t n ) {
-	// temp debug
-	//*key=0; kname[0]='k'; kname[1]='x'; kname[2]='x'; kname[3]=0;
-	//return;
 	getKeys ( key , NULL , kname , NULL , q , qlen , now , s , n );
 }
 
@@ -2243,16 +1975,6 @@ bool HttpServer::hasPermission ( int32_t ip , HttpRequest *r ,
 		if ( slotNum >= 0 ) s_htable.setValue ( slotNum , 1 );
 		return true;
 	}
-
-	// debug msg
-	//log("NO!!!! input--> kname1=%s kname2=%s v1=%" PRId32" v2=%" PRId32,
-	//   kname1,kname2,v1,v2);
-
-	// . you always need key if you specifiy s= or n=, no freebies for that
-	// . no, cuz they could wait a minute before hitting "Next 10" and pass
-	//   in an expired key
-	//if ( r->getLong ( "s" ,  0 ) !=  0 ) return false;
-	//if ( r->getLong ( "n" , 10 ) != 10 ) return false;
 
 	// . clean out table every 3 hours
 	// . AT_FREEBIES allowed every 3 hours
@@ -2786,4 +2508,3 @@ void gotSquidProxiedContent ( void *state ) {
 	TcpServer *tcp = &g_httpServer.m_tcp;
 	tcp->sendMsg( sock, reply, replyAllocSize, replySize, replySize, NULL, NULL );
 }
-
