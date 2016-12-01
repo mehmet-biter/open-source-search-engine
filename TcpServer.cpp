@@ -1434,12 +1434,6 @@ int32_t TcpServer::readSocket ( TcpSocket *s ) {
 
 	// deal with errors
 	if ( n < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) {
-			if ( g_conf.m_logDebugTcp )
-				log("tcp: readsocket: read got interrupted");
-			goto loop;
-		}
 		// copy errno to g_errno
 		g_errno = errno;
 		if ( g_errno == EAGAIN || 
@@ -2001,7 +1995,6 @@ int32_t TcpServer::connectSocket ( TcpSocket *s ) {
 			 ( uint32_t )(uint16_t)s->m_port );
 	}
 
- retry3:
 	// connect to the socket. This should be non-blocking!
 	if ( ::connect ( s->m_sd, (sockaddr *)(void*)&to, sizeof(to) ) == 0 ) {
 		// debug msg
@@ -2018,11 +2011,6 @@ int32_t TcpServer::connectSocket ( TcpSocket *s ) {
 
 		// hey it was successful!
 		goto connected;
-	}
-
-	// valgrind. interrupted system call?
-	if ( errno == EINTR ) {
-		goto retry3;
 	}
 
 	// copy errno to g_errno
@@ -2159,15 +2147,12 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 	//   tcp server, we do ssl handshakes on "s" so free it up here...
 	if ( s->m_ssl ) { // m_useSSL && s->m_ssl) {
 		/*
-	retry23:
 		errno = 0;
 		// shit, this blocks?
 		int ret = SSL_shutdown(s->m_ssl);
 		// ssl debug!
 		//log("ssl: ssl_shutdown returned %i (errno=%i/%s) [fd=%i]",
 		//    ret,errno,mstrerror(errno),sd);
-		// did it get interrupted?
-		if ( ret < 0 && errno == EINTR ) goto retry23;
 		// set "saved" to errno if it had a bad return value
 		//int32_t saved = 0; if ( ret < 0 ) saved = errno;
 		// sslerr is "2" if it is SSL_ERROR_WANT_READ and 3 for WRITE
@@ -2507,10 +2492,8 @@ TcpSocket *TcpServer::acceptSocket ( ) {
 	// get the new socket descriptor, "newsd"
 	struct sockaddr_in name; 
 	socklen_t  nameLen = sizeof(sockaddr);
- retry12:
+
 	int newsd = accept ( m_sock , (sockaddr *)(void*)&name , &nameLen );
-	// valgrind
-	if ( newsd < 0 && errno == EINTR ) goto retry12;
 	// assume none
 	g_errno = 0;
 	// copy errno to g_errno
@@ -2633,7 +2616,6 @@ bool TcpServer::sslAccept ( TcpSocket *s ) {
 
 	//log("ssl: SSL_accept %" PRId32,newsd);
 	int64_t now1 = gettimeofdayInMilliseconds();
- retry19:
 	// . javier put this in here, but it was not non-blocking!!!
 	// . it is non-blocking now, however, when it does block and
 	//   complete the accept it takes 10ms on sp1, a server from ~2009
@@ -2645,8 +2627,6 @@ bool TcpServer::sslAccept ( TcpSocket *s ) {
 	int64_t took = now2 - now1 ;
 	if ( took >= 2 ) 
 		log("tcp: ssl_accept %" PRId32" took %" PRId64"ms", (int32_t)newsd, took);
-	// did it block?
-	if ( r < 0 && errno == EINTR ) goto retry19;
 	// copy errno to g_errno
 	if ( r < 0 ) g_errno = errno;
 	// ignore harmless errors
