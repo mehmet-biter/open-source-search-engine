@@ -15849,6 +15849,9 @@ Url *XmlDoc::getBaseUrl ( ) {
 			int adjust = (link[0] == '/' ? 1 : 0);
 
 			// If base href link does not end with /, add it.
+			// TODO: adding an ending slash to base href is not always correct. Eg:
+			//   <base href="http://example.com/api">, and <a href="?foo"> should result in http://example.com/api?foo and not http://example.com/api/?foo
+			//   <base href="http://example.com/other_doc">, and <a href="#boo"> should result in http://example.com/api?foo and not http://example.com/api/?foo
 			char endchar = (link[linkLen-1] == '/' ? 0 : '/');
 
 			snprintf(fixed_basehref, sizeof(fixed_basehref), "%.*s://%.*s/%.*s%c", 
