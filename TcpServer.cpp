@@ -1387,125 +1387,116 @@ int32_t TcpServer::readSocket ( TcpSocket *s ) {
 		// first char is a \0
 		s->m_readBuf[0] = '\0';
 	}
- loop:
-	// . determine how many bytes we have AVAILable for storing into:
-	// . leave room to store a \0 so html docs always have it, -1
-	// . ALSO leave room for 4 bytes at the end so Proxy.cpp can store the
-	//   sender ip address in there
-	// . see HttpServer.cpp::sendDynamicPage()
-	int32_t avail = s->m_readBufSize  - s->m_readOffset - 1 - 4;
 
-	// but if going through an http proxy...
-	// if ( s->m_tunnelMode >= 1 ) {
-	// 	// read the connection response from proxy. should be like:
-	// 	// "HTTP/1.0 200 Connection established"
-	// }
+	do {
+		// . determine how many bytes we have AVAILable for storing into:
+		// . leave room to store a \0 so html docs always have it, -1
+		// . ALSO leave room for 4 bytes at the end so Proxy.cpp can store the
+		//   sender ip address in there
+		// . see HttpServer.cpp::sendDynamicPage()
+		int32_t avail = s->m_readBufSize  - s->m_readOffset - 1 - 4;
 
-	if ( g_conf.m_logDebugTcp )
-		logf(LOG_DEBUG,"tcp: readSocket: reading on sd=%" PRId32,
-	 	     (int32_t)s->m_sd);
+		// but if going through an http proxy...
+		// if ( s->m_tunnelMode >= 1 ) {
+		// 	// read the connection response from proxy. should be like:
+		// 	// "HTTP/1.0 200 Connection established"
+		// }
 
-	// do the read
-	int n;
-	if ( m_useSSL || s->m_tunnelMode == 3 ) {
-		//int64_t now1 = gettimeofdayInMilliseconds();
-		n = SSL_read(s->m_ssl, s->m_readBuf + s->m_readOffset, avail );
+		if ( g_conf.m_logDebugTcp )
+			logf(LOG_DEBUG,"tcp: readSocket: reading on sd=%" PRId32,
+			     (int32_t)s->m_sd);
+
+		// do the read
+		int n;
+		if ( m_useSSL || s->m_tunnelMode == 3 ) {
+			//int64_t now1 = gettimeofdayInMilliseconds();
+			n = SSL_read(s->m_ssl, s->m_readBuf + s->m_readOffset, avail );
 #ifdef _VALGRIND_
-		if(n>0)
-			VALGRIND_MAKE_MEM_DEFINED(s->m_readBuf + s->m_readOffset,n);
+			if(n>0)
+				VALGRIND_MAKE_MEM_DEFINED(s->m_readBuf + s->m_readOffset,n);
 #endif
-		//int64_t now2 = gettimeofdayInMilliseconds();
-		//int64_t took = now2 - now1 ;
-		//if ( took >= 2 ) log("tcp: ssl_read took %" PRId64"ms", took);
-	}
-	else
-		n = ::read ( s->m_sd, s->m_readBuf + s->m_readOffset, avail );
-
-	// deal with errors
-	if ( n < 0 ) {
-		// copy errno to g_errno
-		g_errno = errno;
-		if ( g_errno == EAGAIN || 
-		     g_errno == 0 ||
-		     g_errno == EILSEQ) { 
-			if ( g_conf.m_logDebugTcp )
-				log("tcp: readsocket: read got error "
-				    "(avail=%i) %s",
-				    (int)avail,mstrerror(g_errno));
-			g_errno = 0; 
-			return 0; 
+			//int64_t now2 = gettimeofdayInMilliseconds();
+			//int64_t took = now2 - now1 ;
+			//if ( took >= 2 ) log("tcp: ssl_read took %" PRId64"ms", took);
 		}
-		log("tcp: Failed to read on socket: %s.", mstrerror(g_errno));
-		return -1;
-	}
+		else
+			n = ::read ( s->m_sd, s->m_readBuf + s->m_readOffset, avail );
 
-	// debug msg
-	if ( g_conf.m_logDebugTcp )
-		logf(LOG_DEBUG,"tcp: readSocket: read %" PRId32" bytes on sd=%" PRId32,
-		     (int32_t)n,(int32_t)s->m_sd);
+		// deal with errors
+		if ( n < 0 ) {
+			// copy errno to g_errno
+			g_errno = errno;
+			if ( g_errno == EAGAIN ||
+			     g_errno == 0 ||
+			     g_errno == EILSEQ) {
+				if ( g_conf.m_logDebugTcp )
+					log("tcp: readsocket: read got error "
+					    "(avail=%i) %s",
+					    (int)avail,mstrerror(g_errno));
+				g_errno = 0;
+				return 0;
+			}
+			log("tcp: Failed to read on socket: %s.", mstrerror(g_errno));
+			return -1;
+		}
 
-	// debug spider proxy
-	if ( g_conf.m_logDebugProxies )
-		log("tcp: readtcpbuf(%" PRId32")=%s",
-		    (int32_t)n,s->m_readBuf+s->m_readOffset);
+		// debug msg
+		if ( g_conf.m_logDebugTcp )
+			logf(LOG_DEBUG,"tcp: readSocket: read %" PRId32" bytes on sd=%" PRId32,
+			     (int32_t)n,(int32_t)s->m_sd);
 
-	// debug msg
-	//log(".......... TcpServer read %i bytes on %i\n",n,s->m_sd);
-	// . if we read 0 bytes then that signals the end of the connection
-	// . doesn't this only apply to reading replies and not requests???
-	// . MDW: add "&& s->m_sendBuf to it"
-	// . just return -1 WITHOUT setting g_errno
-	if ( n == 0 )  {
-		// set g_errno to 0 then otherwise it seems g_errno was set to
-		// ETRYAGAIN from some other time and when readSocket
-		// calls makeCallback() it ends up calling Msg13.cpp::gotHttpReply2
-		// eventually and coring because the error is not recognized.
-		// even though there was no error but the read just finished.
-		// also see TcpServer.cpp:readSocketWrapper2() to see where
-		// it calls makeCallback() after noticing we return -1 from here.
-		// the site was content.time.com in this case that we read 0
-		// bytes on to indicate the read was done.
-		g_errno = 0;
-		// for debug. seems like content-length: is counting
-		// the \r\n when it shoulnd't be
-		//g_process.shutdownAbort(true); 
-		return -1; } // { s->m_sockState = ST_CLOSED; return 1; }
-	// update counts
-	s->m_totalRead  += n;
-	s->m_readOffset += n;
-	// NULL terminate after each read
-	if ( avail >= 0 ) s->m_readBuf [ s->m_readOffset ] = '\0';
-	// update last action time stamp
-	s->m_lastActionTime = gettimeofdayInMilliseconds();
+		// debug spider proxy
+		if ( g_conf.m_logDebugProxies )
+			log("tcp: readtcpbuf(%" PRId32")=%s",
+			    (int32_t)n,s->m_readBuf+s->m_readOffset);
 
-	// . if we don't know yet, try to determine the total msg size
-	// . it will try to set s->m_totalToRead
-	// . it will look for the end of the mime on requests and look for
-	//   the the mime's content-len: field on replies
-	// . it should look for content-len: on post requests as well
-	// . it sets it to -1 if incoming msg size is still unknown
-	if ( s->m_totalToRead <= 0 && ! setTotalToRead ( s ) ) {
-		log(LOG_LOGIC,"tcp: readSocket3: wierd error.");
-		return -1;
-	}
-	// . keep reading until we block
-	// . mdw: loop back if we can read more
-	// . obsoleted: just return false if we're NOT yet done
-	// . NOTE: loop even if we read all to read, cuz we might need to
-	//         read a 0 byte packet (a close) iff we're reading a reply
-	if ( s->m_totalToRead <= 0  ||
-	     s->m_readOffset  <  s->m_totalToRead ) goto loop; // return 0;
-	// . if it was a reply, keep looping until we read 0 byte packet
-	//   since we no longer support keep-alive
-	// . NO! i think the linksys befsr81 nat/dsl router is blocking
-	//   some FINs so we never get that freakin 0 byte packet, so
-	//   let's force the close ourselves
-	// . unfortunately, if content-len is not specified in the returned
-	//   Http MIME then this is not going to fix the lost FIN problem
-	// . shit, this doesn't help 404 pages because they don't have
-	//   a content-length: field a lot of the time
-	//if ( s->m_sendBuf ) goto loop;
-	// otherwise, we read all we needed to so return 1
+		// debug msg
+		//log(".......... TcpServer read %i bytes on %i\n",n,s->m_sd);
+		// . if we read 0 bytes then that signals the end of the connection
+		// . doesn't this only apply to reading replies and not requests???
+		// . MDW: add "&& s->m_sendBuf to it"
+		// . just return -1 WITHOUT setting g_errno
+		if ( n == 0 )  {
+			// set g_errno to 0 then otherwise it seems g_errno was set to
+			// ETRYAGAIN from some other time and when readSocket
+			// calls makeCallback() it ends up calling Msg13.cpp::gotHttpReply2
+			// eventually and coring because the error is not recognized.
+			// even though there was no error but the read just finished.
+			// also see TcpServer.cpp:readSocketWrapper2() to see where
+			// it calls makeCallback() after noticing we return -1 from here.
+			// the site was content.time.com in this case that we read 0
+			// bytes on to indicate the read was done.
+			g_errno = 0;
+			// for debug. seems like content-length: is counting
+			// the \r\n when it shoulnd't be
+			//g_process.shutdownAbort(true);
+			return -1; } // { s->m_sockState = ST_CLOSED; return 1; }
+		// update counts
+		s->m_totalRead  += n;
+		s->m_readOffset += n;
+		// NULL terminate after each read
+		if ( avail >= 0 ) s->m_readBuf [ s->m_readOffset ] = '\0';
+		// update last action time stamp
+		s->m_lastActionTime = gettimeofdayInMilliseconds();
+
+		// . if we don't know yet, try to determine the total msg size
+		// . it will try to set s->m_totalToRead
+		// . it will look for the end of the mime on requests and look for
+		//   the the mime's content-len: field on replies
+		// . it should look for content-len: on post requests as well
+		// . it sets it to -1 if incoming msg size is still unknown
+		if ( s->m_totalToRead <= 0 && ! setTotalToRead ( s ) ) {
+			log(LOG_LOGIC,"tcp: readSocket3: wierd error.");
+			return -1;
+		}
+		// . keep reading until we block
+		// . mdw: loop back if we can read more
+		// . obsoleted: just return false if we're NOT yet done
+		// . NOTE: loop even if we read all to read, cuz we might need to
+		//         read a 0 byte packet (a close) iff we're reading a reply
+	} while(s->m_totalToRead <= 0  ||
+	     s->m_readOffset  <  s->m_totalToRead);
+
 	return 1;
 }
 
