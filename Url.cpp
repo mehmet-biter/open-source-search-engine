@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "Url.h"
 #include "UrlParser.h"
 #include "Domains.h"
@@ -8,7 +6,6 @@
 #include "ip.h"      // atoip ( s,len)
 #include "Punycode.h"
 #include "Unicode.h"
-#include "Lang.h"
 #include "SafeBuf.h"
 #include "Sanity.h"
 #include "GbMutex.h"
@@ -1441,7 +1438,7 @@ int32_t Url::getSubPathLen ( int32_t j ) const {
 	return subUrlLen - m_slen - 3 - m_hlen - m_portLen; 
 }
 
-void Url::print() {
+void Url::print() const {
 	logf(LOG_TRACE, "Url info");
 	logf(LOG_TRACE, "\turl          : %s", m_url);
 	logf(LOG_TRACE, "\turlhash32    : %" PRIx32, getUrlHash32());
