@@ -2690,3 +2690,50 @@ char* Url::getDisplayUrl( const char* url, SafeBuf* sb ) {
     sb->nullTerm();
     return sb->getBufStart();
 }
+
+
+void Url::calculateBaseUrl(Url *baseUrl, const Url *currentUrl, const char *href, int32_t hrefLen) {
+	baseUrl->set(currentUrl);
+
+	// ignore if not valid
+	if( !href || hrefLen==0)
+		return;
+
+	// set base to it
+	baseUrl->set(href, hrefLen);
+
+	if(baseUrl->getHostLen() <= 0 || baseUrl->getDomainLen() <= 0) {
+		//
+		// base href tag does not contain the domain. It is likely just "/".
+		//
+		// We now extract the scheme and host from the current URL to form a full URL based
+		// on that and the supplied base href. Previously it wrongly used the full current
+		// URL, which is wrong. Relative links on a page resulted in wrong full URLs. E.g. a link on
+		// http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/ resulted in
+		// http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/stoet-os/giv-en-gave/giv-et-barn-en-friplads/
+		//
+		char fixed_basehref[MAX_URL_LEN];
+
+		// If base href link starts with a /, do not add it again below
+		int adjust = (href[0] == '/' ? 1 : 0);
+
+		// If base href link does not end with /, add it.
+		// TODO: adding an ending slash to base href is not always correct. Eg:
+		//   <base href="http://example.com/api">, and <a href="?foo"> should result in http://example.com/api?foo and not http://example.com/api/?foo
+		//   <base href="http://example.com/other_doc">, and <a href="#boo"> should result in http://example.com/api?foo and not http://example.com/api/?foo
+		char endchar = (href[hrefLen-1] == '/' ? 0 : '/');
+
+		snprintf(fixed_basehref, sizeof(fixed_basehref), "%.*s://%.*s/%.*s%c",
+			 currentUrl->getSchemeLen(), currentUrl->getScheme(), currentUrl->getHostLen(), currentUrl->getHost(),
+			 hrefLen-adjust, href+adjust,
+			 endchar);
+		fixed_basehref[ sizeof(fixed_basehref)-1 ] = '\0';
+
+		baseUrl->set(fixed_basehref);
+	}
+
+	// fix invalid <base href="/" target="_self"/> tag
+	if(baseUrl->getHostLen() <= 0 || baseUrl->getDomainLen() <= 0 ) {
+		baseUrl->set(currentUrl);
+	}
+}

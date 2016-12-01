@@ -15817,56 +15817,19 @@ Url *XmlDoc::getBaseUrl ( ) {
 	if ( ! cu || cu == (void *)-1 ) return (Url *)cu;
 
 	m_baseUrl.set ( cu );
-	// look for base url
+
+	// look for base url and use it if it exists
 	for ( int32_t i=0 ; i < xml->getNumNodes() ; i++ ) {
 		// 12 is the <base href> tag id
-		if ( xml->getNodeId ( i ) != TAG_BASE ) continue;
-		// get the href field of this base tag
-		int32_t linkLen;
-		const char *link = xml->getString ( i, "href", &linkLen );
-
-		// skip if not valid
-		if ( ! link || linkLen == 0 ) {
-			continue;
+		if ( xml->getNodeId ( i ) == TAG_BASE ) {
+			// get the href field of this base tag
+			int32_t linkLen;
+			const char *link = xml->getString ( i, "href", &linkLen );
+		
+			Url::calculateBaseUrl(&m_baseUrl, cu, link, linkLen);
+		
+			break;
 		}
-
-		// set base to it
-		m_baseUrl.set( link, linkLen );
-
-		if ( m_baseUrl.getHostLen() <= 0 || m_baseUrl.getDomainLen() <= 0 ) {
-			//
-			// base href tag does not contain the domain. It is likely just "/". 
-			//
-			// We now extract the scheme and host from the current URL to form a full URL based
-			// on that and the supplied base href. Previously it wrongly used the full current
-			// URL, which is wrong. Relative links on a page resulted in wrong full URLs. E.g. a link on
-			// http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/ resulted in
-			// http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/stoet-os/giv-en-gave/giv-et-barn-en-friplads/
-			//
-			char fixed_basehref[MAX_URL_LEN];
-
-			// If base href link starts with a /, do not add it again below
-			int adjust = (link[0] == '/' ? 1 : 0);
-
-			// If base href link does not end with /, add it.
-			// TODO: adding an ending slash to base href is not always correct. Eg:
-			//   <base href="http://example.com/api">, and <a href="?foo"> should result in http://example.com/api?foo and not http://example.com/api/?foo
-			//   <base href="http://example.com/other_doc">, and <a href="#boo"> should result in http://example.com/api?foo and not http://example.com/api/?foo
-			char endchar = (link[linkLen-1] == '/' ? 0 : '/');
-
-			snprintf(fixed_basehref, sizeof(fixed_basehref), "%.*s://%.*s/%.*s%c", 
-				cu->getSchemeLen(), cu->getScheme(), cu->getHostLen(), cu->getHost(), linkLen-adjust, link+adjust, endchar);
-			fixed_basehref[ sizeof(fixed_basehref)-1 ] = '\0';
-
-			m_baseUrl.set(fixed_basehref);
-		}
-
-		break;
-	}
-
-	// fix invalid <base href="/" target="_self"/> tag
-	if ( m_baseUrl.getHostLen() <= 0 || m_baseUrl.getDomainLen() <= 0 ) {
-		m_baseUrl.set ( cu );
 	}
 
 	m_baseUrlValid = true;
