@@ -130,6 +130,9 @@ public:
 
 		return m_nodes[node].getFieldValue( field, valueLen );
 	}
+	const char *getString(int32_t node, const char *field, int32_t *valueLen) const {
+		return const_cast<Xml*>(this)->getString(node,field,valueLen);
+	}
 
 	// called by getTextForXmlTag() below
 	char *getString( int32_t node, bool skipLeadingSpaces, int32_t *len ) const;
