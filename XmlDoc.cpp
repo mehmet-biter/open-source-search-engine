@@ -15811,7 +15811,7 @@ int32_t XmlDoc::getIndexedTime() {
 Url *XmlDoc::getBaseUrl ( ) {
 	if ( m_baseUrlValid ) return &m_baseUrl;
 	// need this
-	Xml *xml = getXml();
+	const Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (Url *)xml;
 	Url *cu = getCurrentUrl();
 	if ( ! cu || cu == (void *)-1 ) return (Url *)cu;
