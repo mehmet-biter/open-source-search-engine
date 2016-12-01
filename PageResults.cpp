@@ -318,10 +318,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 
 	st->m_numDocIds = si->m_docsWanted;
 
-	// save state in TcpSocket's m_tmp ptr for debugging. in case 
-	// we lose our string of control and Msg40::getResults() never 
-	// comes back.
-	s->m_tmp = (char *)st;
 	// add query stat
 	st->m_startTime = gettimeofdayInMilliseconds();
 	// reset
