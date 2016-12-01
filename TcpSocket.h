@@ -6,7 +6,7 @@
 #ifndef GB_TCPSOCKET_H
 #define GB_TCPSOCKET_H
 
-#include <sys/time.h>             // timeval data type
+#include "SafeBuf.h"
 #include <openssl/ssl.h>
 
 // . states of a non-blocking TcpSocket 
@@ -26,24 +26,23 @@ enum TcpSocketState {
 
 #define TCP_READ_BUF_SIZE 1024
 
-#include "SafeBuf.h"
 
 class TcpSocket {
 
  public:
 
 	// some handy little thingies...
-	bool isAvailable     ( ) { return ( m_sockState == ST_AVAILABLE  ); }
-	bool isConnecting    ( ) { return ( m_sockState == ST_CONNECTING ); }
-	//bool isClosed      ( ) { return ( m_sockState == ST_CLOSED     ); }
-	bool isReading       ( ) { return ( m_sockState == ST_READING ||
-					    m_sockState == ST_SSL_ACCEPT ); }
-	bool isSending       ( ) { return ( m_sockState == ST_WRITING    ); }
-	bool isReadingReply  ( ) { return ( isReading() && m_sendBuf); }
-	bool isSendingReply  ( ) { return ( isSending() &&   m_readBuf); }
-	bool isSendingRequest( ) { return ( isSending() && ! m_readBuf); }
-	bool sendCompleted   ( ) { return ( m_totalSent == m_totalToSend ); }
-	bool readCompleted   ( ) { return ( m_totalRead == m_totalToRead ); }
+	bool isAvailable     ( ) const { return ( m_sockState == ST_AVAILABLE  ); }
+	bool isConnecting    ( ) const { return ( m_sockState == ST_CONNECTING ); }
+	//bool isClosed      ( ) const { return ( m_sockState == ST_CLOSED     ); }
+	bool isReading       ( ) const { return ( m_sockState == ST_READING ||
+						  m_sockState == ST_SSL_ACCEPT ); }
+	bool isSending       ( ) const { return ( m_sockState == ST_WRITING    ); }
+	bool isReadingReply  ( ) const { return ( isReading() && m_sendBuf); }
+	bool isSendingReply  ( ) const { return ( isSending() &&   m_readBuf); }
+	bool isSendingRequest( ) const { return ( isSending() && ! m_readBuf); }
+	bool sendCompleted   ( ) const { return ( m_totalSent == m_totalToSend ); }
+	bool readCompleted   ( ) const { return ( m_totalRead == m_totalToRead ); }
 
 	void setTimeout   (int32_t timeout ) { m_timeout = timeout; }
 
@@ -68,9 +67,6 @@ class TcpSocket {
 	int16_t       m_port;             // port of connected host
 	TcpSocketState        m_sockState;        // see #defines above
 
-	// userid that is logged in
-	//int32_t m_userId32;
-
 	int32_t        m_numDestroys;
 
 	char m_tunnelMode;
@@ -92,9 +88,6 @@ class TcpSocket {
 	//int32_t        m_storeOffset;  // how much of it is stored (putMsgPiece)
 	int32_t        m_totalRead;    // bytes read so far
 	int32_t        m_totalToRead;    // -1 means unknown
-	//void       *m_readCallbackData; // maybe holds reception file handle
-
-	//char        m_tmpBuf[TCP_READ_BUF_SIZE];
 
 	bool        m_waitingOnHandler;
 	
