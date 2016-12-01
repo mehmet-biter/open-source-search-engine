@@ -165,7 +165,7 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 	if ( m_port == -1 || m_port == 0 ) goto skipServer;
 	// . set up our connection listening socket
 	// . sets g_errno and returns -1 on error
- retry13:
+
 	m_sock  = socket ( AF_INET, SOCK_STREAM , 0 );
 	//if ( m_sock == 0 ) log ( "tcp: socket1 gave sd=0");
 	while ( m_sock == 0 ) {
@@ -175,8 +175,6 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 		m_sock = newSock;
 	}
 	if (m_sock < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry13;
 		// copy errno to g_errno
 		g_errno = errno;
 		log(LOG_WARN,"tcp: Failed to create socket for listening :%s.",mstrerror(g_errno));
@@ -189,19 +187,14 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 	name.sin_port        = htons(port);
 	// . we want to re-use port it if we need to restart
 	// . sets g_errno and returns -1 on error
- retry14:
+
 	options = 1;
 	if(setsockopt(m_sock,SOL_SOCKET,SO_REUSEADDR,&options,sizeof(options))){
-		// valgrind
-		if ( errno == EINTR ) goto retry14;
 		g_errno = errno;
 		return false;
 	}
- retry15:
 	// bind this name to the socket
 	if ( bind ( m_sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
-		// valgrind
-		if ( errno == EINTR ) goto retry15;
 		// copy errno to g_errno
 		g_errno = errno;
 		//if ( g_errno == EINVAL ) { port++; goto again; }
@@ -209,11 +202,9 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 		log(LOG_WARN, "tcp: Failed to bind socket on port %" PRId32": %s.", (int32_t)port,mstrerror(g_errno));
 		return false;
 	}
-retry16:
+
 	// now listen for connections
 	if (listen ( m_sock , 128 ) < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry16;
 		// copy errno to g_errno
 		g_errno = errno;
 		close ( m_sock );
@@ -301,7 +292,7 @@ bool TcpServer::testBind ( uint16_t port , bool printMsg ) {
 	if ( m_port == -1 || m_port == 0 ) return true;
 	// . set up our connection listening socket
 	// . sets g_errno and returns -1 on error
- retry17:
+
 	m_sock  = socket ( AF_INET, SOCK_STREAM , 0 );
 	//if ( m_sock == 0 ) log ( "tcp: socket2 gave sd=0");
 	while ( m_sock == 0 ) {
@@ -311,8 +302,6 @@ bool TcpServer::testBind ( uint16_t port , bool printMsg ) {
 		m_sock = newSock;
 	}
 	if (m_sock < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry17;
 		// copy errno to g_errno
 		g_errno = errno;
 		log(LOG_WARN, "tcp: Failed to create socket for listening :%s.",mstrerror(g_errno));
@@ -325,20 +314,15 @@ bool TcpServer::testBind ( uint16_t port , bool printMsg ) {
 	name.sin_port        = htons(port);
 	// . we want to re-use port it if we need to restart
 	// . sets g_errno and returns -1 on error
- retry18:
 	options = 1;
 	if(setsockopt(m_sock,SOL_SOCKET,SO_REUSEADDR,&options,
 		      sizeof(options))){
-		// valgrind
-		if ( errno == EINTR ) goto retry18;
 		g_errno = errno;
 		return false;
 	}
-retry19:
+
 	// bind this name to the socket
 	if ( bind ( m_sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
-		// valgrind
-		if ( errno == EINTR ) goto retry19;
 		// copy errno to g_errno
 		g_errno = errno;
 		//if ( g_errno == EINVAL ) { port++; goto again; }
@@ -811,7 +795,6 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 			return NULL;
 		}
 
- retry4:
 	// now make a new socket descriptor
 	int sd = socket ( AF_INET , SOCK_STREAM , 0 ) ;
 
@@ -839,8 +822,6 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 	}
 	// return NULL and set g_errno on failure
 	if ( sd <  0 ) {
-		// valgrind. interrupted system call
-		if ( errno == EINTR ) goto retry4;
 		// copy errno to g_errno
 		g_errno = errno;
 		log("tcp: Failed to create new socket: %s.",
@@ -1848,8 +1829,6 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 		     "on %" PRId32,
 		     toSend,toSend,(int32_t)s->m_sd);
 
- retry10:
-
 	if ( m_useSSL || s->m_tunnelMode == 3 ) {
 		//int64_t now1 = gettimeofdayInMilliseconds();
 		n = SSL_write ( s->m_ssl, msg + s->m_sendOffset, toSend );
@@ -1861,8 +1840,6 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 		n = ::send ( s->m_sd , msg + s->m_sendOffset , toSend , 0 );
 	// cancel harmless errors, return -1 on severe ones
 	if ( n < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry10;
 		// copy errno to g_errno
 		g_errno = errno;
 		// i saw errno to be 0 after logging
@@ -1973,10 +1950,8 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 	// . sd should be destroyed
 	/* cygwin doesn't recognize tcp_cork
 	int parm = 0;
- retry11:
+
 	if ( setsockopt (s->m_sd,SOL_TCP,TCP_CORK,&parm,sizeof(int)) < 0) {
-		// valgrind
-		if ( errno == EINTR ) goto retry11;
 		// copy errno to g_errno
 		g_errno = errno;
 		log("tcp: Failed to set TCP_CORK option on socket: %s.",
