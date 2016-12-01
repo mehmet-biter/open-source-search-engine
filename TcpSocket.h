@@ -69,7 +69,7 @@ class TcpSocket {
 
 	int32_t        m_numDestroys;
 
-	char m_tunnelMode;
+	int m_tunnelMode;
 
 	// . getMsgPiece() is called when we need more to send
 	char       *m_sendBuf;
@@ -92,7 +92,7 @@ class TcpSocket {
 	bool        m_waitingOnHandler;
 	
 	// is it in incoming request socket?
-	char        m_isIncoming;
+	bool        m_isIncoming;
 
 	// timeout (ms) relative to m_lastActionTime (last read or write)
 	int32_t        m_timeout;
