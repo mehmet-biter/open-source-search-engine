@@ -74,7 +74,7 @@ public:
 	void set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound,
 	          bool stripCommonFile, int32_t titledbVersion = TITLEREC_CURRENT_VERSION );
 
-	void print  ();
+	void print() const;
 	void reset  ();
 
 	// compare another url to us
@@ -112,7 +112,7 @@ public:
 	const char *getUrl() const { return m_url; }
 	int32_t getUrlLen() const { return m_ulen; }
 
-	const char *getScheme() { return m_scheme; }
+	const char *getScheme() const { return m_scheme; }
 	int32_t getSchemeLen() const { return m_slen; }
 
 	char       *getHost()       { return m_host; }
@@ -132,7 +132,8 @@ public:
 	char       *getPath()       { return m_path; }
 	const char *getPath() const { return m_path; }
 	int32_t getPathLen() const { return m_plen; }
-	char *getPathEnd() { return m_path + m_plen; }
+	char       *getPathEnd()       { return m_path + m_plen; }
+	const char *getPathEnd() const { return m_path + m_plen; }
 
 	char       *getFilename()       { return m_filename; }
 	const char *getFilename() const { return m_filename; }
