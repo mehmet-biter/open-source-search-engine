@@ -151,116 +151,107 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 
 	// can't exceed hard limit
 	//if ( m_maxSockets > MAX_TCP_SOCKS ) m_maxSockets = MAX_TCP_SOCKS;
-	// how many bytes we can read into memory before calling putMsgPiece()
-	//m_maxReadBufSize     = maxReadBufSize;
-	// how many bytes we can hold to send at one time
-	//m_maxSendBufSize     = maxSendBufSize;
-	// sockaddr_in provides interface to sockaddr
-	struct sockaddr_in name; 
-	// parm
-	int options;
+
 	// if port is -1 don't set up a listening socket, this is used
 	// for things like blaster that are clients only. or the qatest()
 	// function.
-	if ( m_port == -1 || m_port == 0 ) goto skipServer;
-	// . set up our connection listening socket
-	// . sets g_errno and returns -1 on error
+	if(m_port != -1 && m_port != 0 ) {
+		// . set up our connection listening socket
+		// . sets g_errno and returns -1 on error
 
-	m_sock  = socket ( AF_INET, SOCK_STREAM , 0 );
-	//if ( m_sock == 0 ) log ( "tcp: socket1 gave sd=0");
-	while ( m_sock == 0 ) {
-		int newSock = socket ( AF_INET, SOCK_STREAM, 0 );
-		log ( "tcp: socket gave sd=0, reopenning1 to sd=%i", newSock );
-		//::close(m_sock);
-		m_sock = newSock;
-	}
-	if (m_sock < 0 ) {
-		// copy errno to g_errno
-		g_errno = errno;
-		log(LOG_WARN,"tcp: Failed to create socket for listening :%s.",mstrerror(g_errno));
-		return false;
-	}
-	// reset it all just to be safe
-	memset(&name,0,sizeof(name));
-	name.sin_family      = AF_INET;
-	name.sin_addr.s_addr = INADDR_ANY;
-	name.sin_port        = htons(port);
-	// . we want to re-use port it if we need to restart
-	// . sets g_errno and returns -1 on error
-
-	options = 1;
-	if(setsockopt(m_sock,SOL_SOCKET,SO_REUSEADDR,&options,sizeof(options))){
-		g_errno = errno;
-		return false;
-	}
-	// bind this name to the socket
-	if ( bind ( m_sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
-		// copy errno to g_errno
-		g_errno = errno;
-		close ( m_sock );
-		log(LOG_WARN, "tcp: Failed to bind socket on port %" PRId32": %s.", (int32_t)port,mstrerror(g_errno));
-		return false;
-	}
-
-	// now listen for connections
-	if (listen ( m_sock , 128 ) < 0 ) {
-		// copy errno to g_errno
-		g_errno = errno;
-		close ( m_sock );
-		log(LOG_WARN, "tcp: Failed to listen on socket: %s.", mstrerror(g_errno));
-		return false;
-	}
-
-	// setup SSL
-	if (m_useSSL) {
-		// init SSL
-  		// older ssl does not use "const". depends on the include files
-		SSL_library_init();
-		SSL_load_error_strings();
-		//SSLeay_add_all_algorithms();
-		//SSLeay_add_ssl_algorithms();
-		const SSL_METHOD *meth = SSLv23_method();
-		m_ctx = SSL_CTX_new(meth);
-		// get the certificate location
-		char sslCertificate[256];
-		snprintf(sslCertificate, sizeof(sslCertificate), "%sgb.pem", g_hostdb.m_dir);
-		sslCertificate[ sizeof(sslCertificate)-1 ] = '\0';
-
-		//char sslBundleFilename[256];
-		//sprintf(sslBundleFilename, "%sgd_bundle.crt",g_hostdb.m_dir);
-		log(LOG_INFO, "https: Reading SSL certificate from: %s", 
-		    sslCertificate);
-		// Load the keys
-		if (m_ctx == NULL) {
-			log(LOG_WARN, "ssl: Failed to set up an SSL context\n");
+		m_sock  = socket ( AF_INET, SOCK_STREAM , 0 );
+		//if ( m_sock == 0 ) log ( "tcp: socket1 gave sd=0");
+		while ( m_sock == 0 ) {
+			int newSock = socket ( AF_INET, SOCK_STREAM, 0 );
+			log ( "tcp: socket gave sd=0, reopenning1 to sd=%i", newSock );
+			//::close(m_sock);
+			m_sock = newSock;
+		}
+		if (m_sock < 0 ) {
+			// copy errno to g_errno
+			g_errno = errno;
+			log(LOG_WARN,"tcp: Failed to create socket for listening :%s.",mstrerror(g_errno));
 			return false;
 		}
-		if (!SSL_CTX_use_certificate_chain_file(m_ctx, sslCertificate)) {
-			log(LOG_WARN, "ssl: Failed to read certificate file");
+
+		struct sockaddr_in name;
+		memset(&name,0,sizeof(name));
+		name.sin_family      = AF_INET;
+		name.sin_addr.s_addr = INADDR_ANY;
+		name.sin_port        = htons(port);
+		// . we want to re-use port it if we need to restart
+		int options = 1;
+		if(setsockopt(m_sock,SOL_SOCKET,SO_REUSEADDR,&options,sizeof(options)) != 0) {
+			g_errno = errno;
 			return false;
 		}
-		if (!SSL_CTX_use_PrivateKey_file(m_ctx, sslCertificate, SSL_FILETYPE_PEM)) {
-			log(LOG_WARN, "ssl: Failed to read Private Key File");
+		// bind this name to the socket
+		if ( bind ( m_sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
+			// copy errno to g_errno
+			g_errno = errno;
+			close ( m_sock );
+			log(LOG_WARN, "tcp: Failed to bind socket on port %" PRId32": %s.", (int32_t)port,mstrerror(g_errno));
 			return false;
 		}
-		if (!SSL_CTX_load_verify_locations(m_ctx, sslCertificate, 0)) {
-			log(LOG_WARN, "ssl: Failed to read Certificate");
+
+		// now listen for connections
+		if (listen ( m_sock , 128 ) < 0 ) {
+			// copy errno to g_errno
+			g_errno = errno;
+			close ( m_sock );
+			log(LOG_WARN, "tcp: Failed to listen on socket: %s.", mstrerror(g_errno));
 			return false;
 		}
+
+		// setup SSL
+		if (m_useSSL) {
+			// init SSL
+			// older ssl does not use "const". depends on the include files
+			SSL_library_init();
+			SSL_load_error_strings();
+			//SSLeay_add_all_algorithms();
+			//SSLeay_add_ssl_algorithms();
+			const SSL_METHOD *meth = SSLv23_method();
+			m_ctx = SSL_CTX_new(meth);
+			// get the certificate location
+			char sslCertificate[256];
+			snprintf(sslCertificate, sizeof(sslCertificate), "%sgb.pem", g_hostdb.m_dir);
+			sslCertificate[ sizeof(sslCertificate)-1 ] = '\0';
+
+			//char sslBundleFilename[256];
+			//sprintf(sslBundleFilename, "%sgd_bundle.crt",g_hostdb.m_dir);
+			log(LOG_INFO, "https: Reading SSL certificate from: %s", sslCertificate);
+			// Load the keys
+			if (m_ctx == NULL) {
+				log(LOG_WARN, "ssl: Failed to set up an SSL context\n");
+				return false;
+			}
+			if (!SSL_CTX_use_certificate_chain_file(m_ctx, sslCertificate)) {
+				log(LOG_WARN, "ssl: Failed to read certificate file");
+				return false;
+			}
+			if (!SSL_CTX_use_PrivateKey_file(m_ctx, sslCertificate, SSL_FILETYPE_PEM)) {
+				log(LOG_WARN, "ssl: Failed to read Private Key File");
+				return false;
+			}
+			if (!SSL_CTX_load_verify_locations(m_ctx, sslCertificate, 0)) {
+				log(LOG_WARN, "ssl: Failed to read Certificate");
+				return false;
+			}
+		}
+		// . register this fd with the Loop class
+		// . this will make it nonBlocking and sigio based
+		// . when m_sock is ready for reading Loop calls acceptSocketWrapper()
+		// . this also makes m_sock nonBlocking, etc...
+		// . this returns false and sets g_errno if it couldn't register
+		// . we do our accept and connect callbacks like a write
+		// . accept/connects generate both POLLIN and POLLOUT bands @ same time
+		// . use a niceness of 0 so traffic from our server to a browser takes
+		//   precedence over spider traffic
+		if ( ! g_loop.registerReadCallback (m_sock,this,acceptSocketWrapper,0))
+			return false;
 	}
-	// . register this fd with the Loop class
-	// . this will make it nonBlocking and sigio based 
-	// . when m_sock is ready for reading Loop calls acceptSocketWrapper()
-	// . this also makes m_sock nonBlocking, etc...
-	// . this returns false and sets g_errno if it couldn't register
-	// . we do our accept and connect callbacks like a write
-	// . accept/connects generate both POLLIN and POLLOUT bands @ same time
-	// . use a niceness of 0 so traffic from our server to a browser takes
-	//   precedence over spider traffic
-	if ( ! g_loop.registerReadCallback (m_sock,this,acceptSocketWrapper,0))
-		return false;
-	// if port is -1 we skip listening to a socket
- skipServer:
+
 	// . register to receives wake up calls every 500ms so we can
 	//   check for TcpSockets that have timed out
 	// . check every 500ms now since we have timeout of 1000ms for ads
