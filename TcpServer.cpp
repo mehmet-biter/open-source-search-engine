@@ -739,7 +739,6 @@ TcpSocket *TcpServer::getAvailableSocket ( int32_t ip, int16_t port ) {
 		// reset the start time
 		s->m_startTime      = gettimeofdayInMilliseconds();
 		s->m_lastActionTime = gettimeofdayInMilliseconds();
-		s->m_shutdownStart  = 0;
 		// debug msg
 		//log("........... TcpServer found available sock "
 		//"%" PRId32"\n",i);
@@ -951,7 +950,6 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 
 	// store the last action time as now (used for timeout'ing sockets)
 	s->m_startTime      = gettimeofdayInMilliseconds();
-	s->m_shutdownStart  = 0;
 
 	// just make sure this is not 0 because we use it to mean "in use"
 	if ( s->m_startTime == 0 ) {
@@ -2132,19 +2130,6 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 			//log("ssl: ssl_shutdown did not complete fd=%i "
 			//    "(sslerr=%i)",sd,sslerr);
 			s->m_sockState = ST_SSL_SHUTDOWN;
-			// for time outs...
-			int32_t now = getTimeLocal();
-			// TODO: if we are almost out of sockets then force
-			// close this without waiting 4 seconds lest we be
-			// susceptible to a DOS attack
-			if ( s->m_shutdownStart == 0 )
-				s->m_shutdownStart = now;
-			// only wait if it hasn't been more than 4 seconds
-			if ( now - s->m_shutdownStart < 4 )
-				return;
-			// otherwise, force close the ssl socket
-			log("ssl: ssl_shutdown timed out fd=%i "
-			    "(start=%" PRId32" now=%" PRId32")",sd,s->m_shutdownStart,now);
 			//return;
 		}
 		*/

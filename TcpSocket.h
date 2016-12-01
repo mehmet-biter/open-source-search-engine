@@ -116,8 +116,6 @@ class TcpSocket {
 
 	bool m_writeRegistered;
 
-	int32_t m_shutdownStart;
-
 	// SSL members
 	SSL  *m_ssl;
 
