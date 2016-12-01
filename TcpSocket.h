@@ -11,20 +11,18 @@
 
 // . states of a non-blocking TcpSocket 
 // . held by TcpSocket's m_sockState member variable
-#define ST_AVAILABLE        0   // means it's connected but not being used
-#define ST_CONNECTING       2
-//#define ST_CLOSED           3
-#define ST_READING          4
-#define ST_WRITING          5
-#define ST_NEEDS_CLOSE      6
-#define ST_CLOSE_CALLED     7
-#define ST_SSL_ACCEPT       8
-#define ST_SSL_SHUTDOWN     9
-#define ST_SSL_HANDSHAKE    10
-// hack to repopulate the socket's send buf when its done sending
-// it's current sendbuf in order to transmit large amounts of data that
-// can't all fit in memory at the same time:
-//#define ST_SEND_AGAIN       10
+enum TcpSocketState {
+	ST_AVAILABLE      = 0,   // means it's connected but not being used
+	ST_CONNECTING     = 2,
+	//ST_CLOSED       = 3,
+	ST_READING        = 4,
+	ST_WRITING        = 5,
+	ST_NEEDS_CLOSE    = 6,
+	ST_CLOSE_CALLED   = 7,
+	ST_SSL_ACCEPT     = 8,
+	ST_SSL_SHUTDOWN   = 9,
+	ST_SSL_HANDSHAKE  = 10,
+};
 
 #define TCP_READ_BUF_SIZE 1024
 
@@ -68,7 +66,7 @@ class TcpSocket {
 	// m_ip is 0 on dns lookup error, -1 if not found
 	int32_t        m_ip;               // ip of connected host
 	int16_t       m_port;             // port of connected host
-	char        m_sockState;        // see #defines above
+	TcpSocketState        m_sockState;        // see #defines above
 
 	// userid that is logged in
 	//int32_t m_userId32;
