@@ -1042,11 +1042,8 @@ bool TcpServer::closeLeastUsed ( int32_t maxIdleTime ) {
 
 		//don't close stuff that gigablast is working on.
 		if(!(s->isReading()|| s->isAvailable())) continue;
-		// . chose either an available socket or a non paying
-		// . customer: ...lousy cheapskates...
-		// . prefLevel is set by autoban once we find a valid code.
-		if ( ! s->isAvailable()  && 
-		     !(s->m_isIncoming && s->m_prefLevel == 0) ) continue;
+		// . chose either an available incoming socket
+		if ( ! s->isAvailable()  && ! s->m_isIncoming ) continue;
 		// if we were given a VALID maxIdleTime, close any socket
 		// past that idle time
 		if ( maxIdleTime > 0 ) {
@@ -1120,8 +1117,7 @@ bool TcpServer::closeLeastUsed ( int32_t maxIdleTime ) {
 // 	for ( int32_t i = 0 ; i <= m_lastFilled ; i++ ) {
 // 		TcpSocket *s = m_tcpSockets[i];
 // 		if ( ! s ) continue;
-// 		if ( ! s->isAvailable() && 
-// 		     !(s->m_isIncoming && s->m_prefLevel == 0) ) continue;
+// 		if ( ! s->isAvailable() && ! s->m_isIncoming ) continue;
 // 		if ( s->m_lastActionTime > minTime ) continue;
 
 // 		mini    = i;

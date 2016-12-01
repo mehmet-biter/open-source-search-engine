@@ -98,7 +98,6 @@ class TcpSocket {
 
 	bool        m_waitingOnHandler;
 	
-	char        m_prefLevel;
 	// is it in incoming request socket?
 	char        m_isIncoming;
 
