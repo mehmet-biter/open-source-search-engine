@@ -197,7 +197,6 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 	if ( bind ( m_sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
 		// copy errno to g_errno
 		g_errno = errno;
-		//if ( g_errno == EINVAL ) { port++; goto again; }
 		close ( m_sock );
 		log(LOG_WARN, "tcp: Failed to bind socket on port %" PRId32": %s.", (int32_t)port,mstrerror(g_errno));
 		return false;
@@ -325,7 +324,6 @@ bool TcpServer::testBind ( uint16_t port , bool printMsg ) {
 	if ( bind ( m_sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
 		// copy errno to g_errno
 		g_errno = errno;
-		//if ( g_errno == EINVAL ) { port++; goto again; }
 		close ( m_sock );
 		if ( ! printMsg ) 
 			return false;
@@ -1699,16 +1697,6 @@ void writeSocketWrapper ( int sd , void *state ) {
 	// gets it, we have to know.
 	THIS->makeCallback ( s );
 
-	// if callback changed socket status to ST_SEND_AGAIN 
-	// then let's send the new buffer that it has. Diffbot.cpp uses this.
-	//if ( s->m_sockState == ST_SEND_AGAIN ) {
-	//	s->m_sockState = ST_WRITING;
-	//	// if nothing left to send just return
-	//	if ( ! s->m_sendBuf ) return;
-	//	// otherwise send it
-	//	goto sendAgain;
-	//}
-
 	// we have to do a final call to writeSocket with m_streamingMode
 	// set to false, so don't destroy socket just yet...
 	if ( wasStreaming ) {
@@ -1990,18 +1978,16 @@ int32_t TcpServer::connectSocket ( TcpSocket *s ) {
 	// our ip's are always in network order, but ports are in host order
 	to.sin_addr.s_addr =  s->m_ip;
 	to.sin_port        = htons ((uint16_t)( s->m_port));
-	if ( g_conf.m_logDebugTcp ) {
-		log( "........... TcpServer connecting %i to %s port %" PRIu32 "", s->m_sd, iptoa( s->m_ip ),
-			 ( uint32_t )(uint16_t)s->m_port );
-	}
+	if(g_conf.m_logDebugTcp)
+		log("........... TcpServer connecting sd=%i to %s:%u",
+		    s->m_sd, iptoa(s->m_ip), (unsigned)(uint16_t)s->m_port);
 
 	// connect to the socket. This should be non-blocking!
-	if ( ::connect ( s->m_sd, (sockaddr *)(void*)&to, sizeof(to) ) == 0 ) {
-		// debug msg
-		if ( g_conf.m_logDebugTcp ) {
-			log( "........... TcpServer connected %i to %s port %" PRIu32 "", s->m_sd, iptoa( s->m_ip ),
-				 ( uint32_t )(uint16_t)s->m_port );
-		}
+	if(::connect ( s->m_sd, (sockaddr *)(void*)&to, sizeof(to)) == 0) {
+		//immediate connect. Rare on non-blocking sockets, but not impossible
+		if(g_conf.m_logDebugTcp)
+			log("........... TcpServer connected sd=%i to %s:%u",
+			    s->m_sd, iptoa(s->m_ip), (unsigned)(uint16_t)s->m_port );
 
 		// don't listen for writing any more
 		if ( s->m_writeRegistered ) {
@@ -2009,37 +1995,54 @@ int32_t TcpServer::connectSocket ( TcpSocket *s ) {
 			s->m_writeRegistered = false;
 		}
 
-		// hey it was successful!
-		goto connected;
+		if(m_useSSL) {
+			// connect ssl
+			// enter handshake mode now
+			s->m_sockState = ST_SSL_HANDSHAKE;
+
+			// i guess state is special
+			int r = sslHandshake(s);
+
+			// there was an error
+			if(r == -1)
+				return -1;
+
+			// i guess it would block. this should register
+			// the write callback if we need to do a write operation still
+			if(r == 0)
+				return 0;
+		}
+
+		// change state so this doesn't get called again
+		s->m_sockState = ST_WRITING;
+
+		return 1;
 	}
 
 	// copy errno to g_errno
 	g_errno = errno;
 
 	if ( g_errno == EALREADY ) {
-		if ( g_conf.m_logDebugTcp ) {
+		if(g_conf.m_logDebugTcp)
 			log( "........... TcpServer got EALREADY, so must be in progress sd=%i", s->m_sd );
-		}
 
 		g_errno = EINPROGRESS;
 	}
 
 	// we blocked with the EINPROGRESS g_errno
-	if ( g_errno == EINPROGRESS ) { 
+	if(g_errno == EINPROGRESS) {
 		g_errno = 0;
 		// note that
-		if ( g_conf.m_logDebugTcp ) {
+		if(g_conf.m_logDebugTcp)
 			log("tcp: connection is in progress sd=%i",s->m_sd);
-		}
 
 		// according to 'man connect' select() needs to listen
 		// for writability
-		if ( s->m_writeRegistered ) {
+		if(s->m_writeRegistered)
 			return 0;
-		}
 
 		// make select() listen on this fd for when it can write
-		if ( !g_loop.registerWriteCallback( s->m_sd, this, writeSocketWrapper, s->m_niceness ) ) {
+		if(!g_loop.registerWriteCallback( s->m_sd, this, writeSocketWrapper, s->m_niceness)) {
 			log("tcp: failed to reg write callback2 for sd=%i", s->m_sd);
 			return -1;
 		}
@@ -2049,36 +2052,9 @@ int32_t TcpServer::connectSocket ( TcpSocket *s ) {
 	}
 	// return -1 on real error
 	if ( g_conf.m_logDebugTcp )
-		log(LOG_INFO,"tcp: Failed to connect socket: %s, %s:%" PRId32,
-		    mstrerror(g_errno), iptoa(s->m_ip), (int32_t)s->m_port);
+		log(LOG_INFO,"tcp: Failed to connect socket: %s, %s:%u",
+		    mstrerror(g_errno), iptoa(s->m_ip), (unsigned)(uint16_t)s->m_port);
 	return -1;
-
-connected:
-
-	// connect ssl
-	if ( m_useSSL ) {
-		// enter handshake mode now
-		s->m_sockState = ST_SSL_HANDSHAKE;
-
-		// i guess state is special
-		int r = sslHandshake ( s );
-
-		// there was an error
-		if ( r == -1 ) {
-			return -1;
-		}
-
-		// i guess it would block. this should register
-		// the write callback if we need to do a write operation still
-		if ( r == 0 ) {
-			return 0;
-		}
-	}
-
-	// change state so this doesn't get called again
-	s->m_sockState = ST_WRITING;
-
-	return 1;
 }
 
 // . call this on read/write/connect errors
@@ -2461,27 +2437,28 @@ void TcpServer::readTimeoutPoll ( ) {
 void acceptSocketWrapper ( int sd , void *state ) {
 	TcpServer *THIS = (TcpServer *)state;
 	int64_t startTimer = gettimeofdayInMilliseconds();
- loop:
-	// . returns true if read completed, false otherwise
-	// . sets g_errno on error
-	// . this will call ::close(sd) on error
-	TcpSocket *s = THIS->acceptSocket ( );
-	// . destroy the socket on error
-	// . this will also unregister all our callbacks for the socket
-	// . TODO: deleting nodes from under Loop::callCallbacks is dangerous!!
-	//	if ( g_errno ) THIS->destroySocket ( sd );
-	// . return true since we don't want to be removed from Loop's loop
-	//	return true;
 
-	// just return if nothing to accept
-	if ( ! s ) return;
-	// . i put this here because if i have a debug breakpoint before
-	//   this m_sd gets registered we'll miss out on some read signals
-	// . and if we miss those signals we won't read from sd then!
-	readSocketWrapper ( s->m_sd , state );
-	// keep looping until we have no more accepts on the queue
-	if(gettimeofdayInMilliseconds() - startTimer > 15) return;
-	goto loop;
+	for(;;) {
+		// . returns true if read completed, false otherwise
+		// . sets g_errno on error
+		// . this will call ::close(sd) on error
+		TcpSocket *s = THIS->acceptSocket ( );
+		// . destroy the socket on error
+		// . this will also unregister all our callbacks for the socket
+		// . TODO: deleting nodes from under Loop::callCallbacks is dangerous!!
+		//	if ( g_errno ) THIS->destroySocket ( sd );
+		// . return true since we don't want to be removed from Loop's loop
+		//	return true;
+
+		// just return if nothing to accept
+		if ( ! s ) return;
+		// . i put this here because if i have a debug breakpoint before
+		//   this m_sd gets registered we'll miss out on some read signals
+		// . and if we miss those signals we won't read from sd then!
+		readSocketWrapper ( s->m_sd , state );
+		// keep looping until we have no more accepts on the queue
+		if(gettimeofdayInMilliseconds() - startTimer > 15) return;
+	}
 }
 
 // . this is called when m_sock, our listener, is ready for reading
@@ -2531,12 +2508,6 @@ TcpSocket *TcpServer::acceptSocket ( ) {
 	if ( newsd == 0 ) {
 		log("tcp: accept gave sd = 0, strange, that's stdin! "
 		    "allowing to pass through for now.");
-
-		// so calling close(0) seems to really close it...???
-		//if ( ::close (0) == -1 )
-		//	log("tcp: close3(%" PRId32") = %s",(int32_t)0,mstrerror(errno));
-		//goto loop;
-		//return NULL;
 	}
 
 	m_numOpen++;
