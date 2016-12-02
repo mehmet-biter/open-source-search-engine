@@ -80,7 +80,7 @@ char *Xml::getString ( int32_t num , bool skipLeadingSpaces , int32_t *len ) con
 	return s;
 }
 
-int32_t Xml::getEndNode ( int32_t num ) {
+int32_t Xml::getEndNode ( int32_t num ) const {
 	if ( (num < 0) || (num >= m_numNodes) ) {
 		return -1;
 	}

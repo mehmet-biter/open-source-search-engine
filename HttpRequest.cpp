@@ -491,8 +491,8 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 	 int32_t  reqLen = m_reqBuf.length() - 1;
 
 	 // save this
-	 m_userIP = 0; if ( sock ) m_userIP = sock->m_ip;
-	 m_isSSL  = 0; if ( sock ) m_isSSL = (bool)sock->m_ssl;
+	 m_userIP = sock ? sock->m_ip : 0;
+	 m_isSSL  = sock ? (sock->m_ssl!=NULL) : false;
 
 	 // TcpServer should always give us a NULL terminated request
 	 if ( req[reqLen] != '\0' ) { g_process.shutdownAbort(true); }

@@ -1294,13 +1294,15 @@ bool RdbCache::save () {
 // returns false withe rrno set on error
 bool RdbCache::save_r ( ) {
 	// append .cache to "dbname" to get cache filename
-	char filename [ 64 ];
-	if ( strlen(m_dbname) > 50 ) {
-		log(LOG_ERROR, "db: Dbname too long. Could not save cache.");
+	char filename[1024];
+
+	if( strlen(g_hostdb.m_dir) + strlen(m_dbname) + strlen(".cache") >= sizeof(filename)) {
+		log(LOG_ERROR, "db: Dbname too long. Could not save %s cache.", m_dbname);
 		return false;
 	}
 
-	sprintf ( filename , "%s%s.cache" , g_hostdb.m_dir , m_dbname );
+	snprintf(filename, sizeof(filename), "%s%s.cache" , g_hostdb.m_dir , m_dbname);
+
 	//File f;
 	//f.set ( g_hostdb.m_dir , filename );
 	// open the file

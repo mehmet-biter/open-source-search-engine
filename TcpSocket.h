@@ -6,46 +6,43 @@
 #ifndef GB_TCPSOCKET_H
 #define GB_TCPSOCKET_H
 
-#include <sys/time.h>             // timeval data type
+#include "SafeBuf.h"
 #include <openssl/ssl.h>
 
 // . states of a non-blocking TcpSocket 
 // . held by TcpSocket's m_sockState member variable
-#define ST_AVAILABLE        0   // means it's connected but not being used
-#define ST_CONNECTING       2
-//#define ST_CLOSED           3
-#define ST_READING          4
-#define ST_WRITING          5
-#define ST_NEEDS_CLOSE      6
-#define ST_CLOSE_CALLED     7
-#define ST_SSL_ACCEPT       8
-#define ST_SSL_SHUTDOWN     9
-#define ST_SSL_HANDSHAKE    10
-// hack to repopulate the socket's send buf when its done sending
-// it's current sendbuf in order to transmit large amounts of data that
-// can't all fit in memory at the same time:
-//#define ST_SEND_AGAIN       10
+enum TcpSocketState {
+	ST_AVAILABLE      = 0,   // means it's connected but not being used
+	ST_CONNECTING     = 2,
+	//ST_CLOSED       = 3,
+	ST_READING        = 4,
+	ST_WRITING        = 5,
+	ST_NEEDS_CLOSE    = 6,
+	ST_CLOSE_CALLED   = 7,
+	ST_SSL_ACCEPT     = 8,
+	ST_SSL_SHUTDOWN   = 9,
+	ST_SSL_HANDSHAKE  = 10,
+};
 
 #define TCP_READ_BUF_SIZE 1024
 
-#include "SafeBuf.h"
 
 class TcpSocket {
 
  public:
 
 	// some handy little thingies...
-	bool isAvailable     ( ) { return ( m_sockState == ST_AVAILABLE  ); }
-	bool isConnecting    ( ) { return ( m_sockState == ST_CONNECTING ); }
-	//bool isClosed      ( ) { return ( m_sockState == ST_CLOSED     ); }
-	bool isReading       ( ) { return ( m_sockState == ST_READING ||
-					    m_sockState == ST_SSL_ACCEPT ); }
-	bool isSending       ( ) { return ( m_sockState == ST_WRITING    ); }
-	bool isReadingReply  ( ) { return ( isReading() && m_sendBuf); }
-	bool isSendingReply  ( ) { return ( isSending() &&   m_readBuf); }
-	bool isSendingRequest( ) { return ( isSending() && ! m_readBuf); }
-	bool sendCompleted   ( ) { return ( m_totalSent == m_totalToSend ); }
-	bool readCompleted   ( ) { return ( m_totalRead == m_totalToRead ); }
+	bool isAvailable     ( ) const { return ( m_sockState == ST_AVAILABLE  ); }
+	bool isConnecting    ( ) const { return ( m_sockState == ST_CONNECTING ); }
+	//bool isClosed      ( ) const { return ( m_sockState == ST_CLOSED     ); }
+	bool isReading       ( ) const { return ( m_sockState == ST_READING ||
+						  m_sockState == ST_SSL_ACCEPT ); }
+	bool isSending       ( ) const { return ( m_sockState == ST_WRITING    ); }
+	bool isReadingReply  ( ) const { return ( isReading() && m_sendBuf); }
+	bool isSendingReply  ( ) const { return ( isSending() &&   m_readBuf); }
+	bool isSendingRequest( ) const { return ( isSending() && ! m_readBuf); }
+	bool sendCompleted   ( ) const { return ( m_totalSent == m_totalToSend ); }
+	bool readCompleted   ( ) const { return ( m_totalRead == m_totalToRead ); }
 
 	void setTimeout   (int32_t timeout ) { m_timeout = timeout; }
 
@@ -68,14 +65,11 @@ class TcpSocket {
 	// m_ip is 0 on dns lookup error, -1 if not found
 	int32_t        m_ip;               // ip of connected host
 	int16_t       m_port;             // port of connected host
-	char        m_sockState;        // see #defines above
-
-	// userid that is logged in
-	//int32_t m_userId32;
+	TcpSocketState        m_sockState;        // see #defines above
 
 	int32_t        m_numDestroys;
 
-	char m_tunnelMode;
+	int m_tunnelMode;
 
 	// . getMsgPiece() is called when we need more to send
 	char       *m_sendBuf;
@@ -94,15 +88,11 @@ class TcpSocket {
 	//int32_t        m_storeOffset;  // how much of it is stored (putMsgPiece)
 	int32_t        m_totalRead;    // bytes read so far
 	int32_t        m_totalToRead;    // -1 means unknown
-	//void       *m_readCallbackData; // maybe holds reception file handle
-
-	//char        m_tmpBuf[TCP_READ_BUF_SIZE];
 
 	bool        m_waitingOnHandler;
 	
-	char        m_prefLevel;
 	// is it in incoming request socket?
-	char        m_isIncoming;
+	bool        m_isIncoming;
 
 	// timeout (ms) relative to m_lastActionTime (last read or write)
 	int32_t        m_timeout;
@@ -118,8 +108,6 @@ class TcpSocket {
 
 	bool m_writeRegistered;
 
-	int32_t m_shutdownStart;
-
 	// SSL members
 	SSL  *m_ssl;
 
@@ -132,9 +120,6 @@ class TcpSocket {
 	// this maps the requested http path to a service in our
 	// WebPages[] array. like "search" or "admin controls" etc.
 	int32_t m_pageNum;
-
-	// used for debugging, PageResults.cpp sets this to the State0 ptr
-	char *m_tmp;
 };
 
 #endif // GB_TCPSOCKET_H

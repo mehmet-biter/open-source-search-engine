@@ -557,7 +557,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 	if ( tldLen >= 3 && strncmp ( tld, "gov" , 3) == 0 ) return true;
 
 	// if linker is naughty, he cannot vote... how did he make it in?
-	if ( linker->isSpam() )
+	if ( linker->isAdult() )
 		return links->setAllSpamBits("linker is sporny"); 
 
 	// . if they link to any adult site, consider them link spam
@@ -574,7 +574,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 		// . is it near sporny links? (naughty domains or lotsa -'s)
 		// . if we are in a list of ads, chances are good the true
 		//   nature of the ads will emerge...
-		if ( uu.isSpam() ) {
+		if ( uu.isAdult() ) {
 			links->setAllSpamBits("has sporny outlinks");
 			log(LOG_DEBUG,"build: %s has sporny outlinks.",
 			    uu.getUrl());
@@ -881,7 +881,7 @@ bool isLinkSpam ( const Url *linker,
 	if ( tldLen >= 3 && strncmp ( tld, "gov" , 3) == 0 ) return false;
 
 	// if linker is naughty, he cannot vote
-	if ( linker->isSpam() ) return true;
+	if ( linker->isAdult() ) return true;
 
 	// if being called from PageTitledb.cpp for displaying a titlerec, 
 	// then do not call this, because no linkee is provided in that case.

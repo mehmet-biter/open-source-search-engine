@@ -2158,7 +2158,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
 	if ( cr->m_doUrlSpamCheck && ! m_check2 ) {
 		m_check2         = true;
-		if ( m_firstUrl.isSpam() ) {
+		if ( m_firstUrl.isAdult() ) {
 			m_indexCode      = EDOCURLSPAM;
 			m_indexCodeValid = true;
 			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCURLSPAM" );
@@ -15208,7 +15208,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 
 	// return current ptr
 	logTrace( g_conf.m_logTraceXmlDoc, "END, all done." );
-
 	return m_p ;
 }
 
@@ -15810,29 +15809,26 @@ int32_t XmlDoc::getIndexedTime() {
 Url *XmlDoc::getBaseUrl ( ) {
 	if ( m_baseUrlValid ) return &m_baseUrl;
 	// need this
-	Xml *xml = getXml();
+	const Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (Url *)xml;
-	Url *cu = getCurrentUrl();
+	const Url *cu = getCurrentUrl();
 	if ( ! cu || cu == (void *)-1 ) return (Url *)cu;
 
 	m_baseUrl.set ( cu );
-	// look for base url
+
+	// look for base url and use it if it exists
 	for ( int32_t i=0 ; i < xml->getNumNodes() ; i++ ) {
 		// 12 is the <base href> tag id
-		if ( xml->getNodeId ( i ) != TAG_BASE ) continue;
-		// get the href field of this base tag
-		int32_t linkLen;
-		char *link = (char *) xml->getString ( i, "href", &linkLen );
-		// skip if not valid
-		if ( ! link || linkLen == 0 ) continue;
-		// set base to it
-		m_baseUrl.set( link, linkLen );
-		break;
+		if ( xml->getNodeId ( i ) == TAG_BASE ) {
+			// get the href field of this base tag
+			int32_t linkLen;
+			const char *link = xml->getString ( i, "href", &linkLen );
+		
+			Url::calculateBaseUrl(&m_baseUrl, cu, link, linkLen);
+		
+			break;
+		}
 	}
-
-	// fix invalid <base href="/" target="_self"/> tag
-	if ( m_baseUrl.getHostLen  () <= 0 || m_baseUrl.getDomainLen() <= 0 )
-		m_baseUrl.set ( cu );
 
 	m_baseUrlValid = true;
 	return &m_baseUrl;

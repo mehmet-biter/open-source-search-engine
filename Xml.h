@@ -18,7 +18,7 @@ public:
 	~Xml();
 
 	// do we have any xml in here?
-	bool isEmpty() {
+	bool isEmpty() const {
 		return ( m_xml == NULL );
 	}
 
@@ -32,7 +32,7 @@ public:
 
 	void  reset ( );
 
-	int32_t getVersion() {
+	int32_t getVersion() const {
 		return m_version;
 	}
 
@@ -48,7 +48,7 @@ public:
 		return m_xmlLen;
 	}
 
-	int32_t getNumNodes() {
+	int32_t getNumNodes() const {
 		return m_numNodes;
 	}
 
@@ -61,13 +61,13 @@ public:
 	int32_t getNodeNum( int32_t n0, int32_t n1, const char *tagName, int32_t tagNameLen ) const;
 
 	// . get the back tag node for a given node
-	int32_t getEndNode ( int32_t num );
+	int32_t getEndNode(int32_t num) const;
 
-	bool isTag( int32_t n ) {
+	bool isTag( int32_t n ) const {
 		return m_nodes[n].isTag();
 	}
 
-	bool isBackTag( int32_t n ) {
+	bool isBackTag( int32_t n ) const {
 		return m_nodes[n].m_node[1] == '/';
 	}
 
@@ -78,11 +78,11 @@ public:
 		return m_nodes[n].m_node;
 	}
 
-	int32_t getNodeLen( int32_t n ) {
+	int32_t getNodeLen( int32_t n ) const {
 		return m_nodes[n].m_nodeLen;
 	}
 
-	nodeid_t getNodeId( int32_t n ) {
+	nodeid_t getNodeId( int32_t n ) const {
 		return m_nodes[n].m_nodeId;
 	}
 
@@ -129,6 +129,9 @@ public:
 		}
 
 		return m_nodes[node].getFieldValue( field, valueLen );
+	}
+	const char *getString(int32_t node, const char *field, int32_t *valueLen) const {
+		return const_cast<Xml*>(this)->getString(node,field,valueLen);
 	}
 
 	// called by getTextForXmlTag() below

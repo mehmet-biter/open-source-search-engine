@@ -143,7 +143,6 @@ private:
 	int32_t m_status;
 	char *m_content;
 	int32_t m_contentLen;
-	time_t m_lastModifiedDate;
 	int32_t m_contentType;
 	Url m_locUrl;
 

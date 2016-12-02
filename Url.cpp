@@ -1,15 +1,12 @@
-#include "gb-include.h"
-
 #include "Url.h"
 #include "UrlParser.h"
 #include "Domains.h"
 #include "HashTable.h"
-#include "Speller.h"
 #include "AdultCheck.h"
 #include "ip.h"      // atoip ( s,len)
 #include "Punycode.h"
 #include "Unicode.h"
-#include "Lang.h"
+#include "SafeBuf.h"
 #include "Sanity.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
@@ -1441,7 +1438,7 @@ int32_t Url::getSubPathLen ( int32_t j ) const {
 	return subUrlLen - m_slen - 3 - m_hlen - m_portLen; 
 }
 
-void Url::print() {
+void Url::print() const {
 	logf(LOG_TRACE, "Url info");
 	logf(LOG_TRACE, "\turl          : %s", m_url);
 	logf(LOG_TRACE, "\turlhash32    : %" PRIx32, getUrlHash32());
@@ -1486,11 +1483,14 @@ bool Url::isHostWWW ( ) const {
 	return true;
 }
 
-// . is the url a porn/spam url?
+// . is the url a porn/adult url?
 // . i use /usr/share/dict/words to check for legit words
 // . if it's int32_t and has 4+ hyphens, consider it spam
 // . if you add a word here, add it to PageResults.cpp:isQueryDirty()
-bool Url::isSpam() const {
+bool Url::isAdult() const {
+	//certain TLDs are clearly adult-oriented
+	if(isAdultTLD(m_tld,m_tldLen))
+		return true;
 	// store the hostname in a buf since we strtok it
 	char s [ MAX_URL_LEN ];
 	// don't store the .com or .org while searching for isSpam
@@ -1527,60 +1527,11 @@ bool Url::isSpam() const {
 		const char *pend = p;
 		while ( pend < send && *pend != '.' && *pend !='-' ) pend++;
 		// check that
-		if ( isSpam ( p , pend - p ) ) return true;
+		if ( isAdultUrl ( p , pend - p ) ) return true;
 		// point to next
 		p = pend + 1;
 	}
 	return false;
-}
-
-bool Url::isSpam(const char *s, int32_t slen) {
-
-	// no need to indent below, keep it clearer
-	if ( ! isAdult ( s, slen ) ) return false;
-
-	// check for naughty words. Split words to deep check if we're surely 
-	// adult. Required because montanalinux.org is showing up as porn 
-	// because it has 'anal' in the hostname.
-	// send each phrase seperately to be tested.
-	// hotjobs.yahoo.com
-	const char *a = s;
-	const char *p = s;
-	bool foundCleanSequence = false;
-	char splitWords[1024];
-	char *splitp = splitWords;
-	while ( p < s + slen ){
-		while ( p < s + slen && *p != '.' && *p != '-' )
-			p++;
-		bool isPorn = false;
-		// TODO: do not include "ult" in the dictionary, it is
-		// always splitting "adult" as "ad ult". i'd say do not
-		// allow it to split a dirty word into two words like that.
-		if (g_speller.canSplitWords( a, p - a, &isPorn, splitp, langEnglish )){
-			if ( isPorn ){
-				log(LOG_DEBUG,"build: identified %s as "
-				    "porn  after splitting words as "
-				    "%s", s, splitp);
-				return true;
-			}
-			foundCleanSequence = true;
-			// keep searching for some porn sequence
-		}
-		p++;
-		a = p;
-		splitp += strlen(splitp);
-	}
-	// if we found a clean sequence, its not porn
-	if ( foundCleanSequence ) {
-		log(LOG_INFO,"build: did not identify url %s "
-		    "as porn after splitting words as %s", s, splitWords);
-		return false;
-	}
-	// we tried to get some seq of words but failed. Still report
-	// this as porn, since isAdult() was true
-	logf ( LOG_DEBUG,"build: failed to find sequence of words to "
-	      "prove %s was not porn.", s );
-	return true;
 }
 
 
@@ -2738,4 +2689,51 @@ char* Url::getDisplayUrl( const char* url, SafeBuf* sb ) {
     sb->safePrintf("%s", labelCursor);
     sb->nullTerm();
     return sb->getBufStart();
+}
+
+
+void Url::calculateBaseUrl(Url *baseUrl, const Url *currentUrl, const char *href, int32_t hrefLen) {
+	baseUrl->set(currentUrl);
+
+	// ignore if not valid
+	if( !href || hrefLen==0)
+		return;
+
+	// set base to it
+	baseUrl->set(href, hrefLen);
+
+	if(baseUrl->getHostLen() <= 0 || baseUrl->getDomainLen() <= 0) {
+		//
+		// base href tag does not contain the domain. It is likely just "/".
+		//
+		// We now extract the scheme and host from the current URL to form a full URL based
+		// on that and the supplied base href. Previously it wrongly used the full current
+		// URL, which is wrong. Relative links on a page resulted in wrong full URLs. E.g. a link on
+		// http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/ resulted in
+		// http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/stoet-os/giv-en-gave/giv-et-barn-en-friplads/
+		//
+		char fixed_basehref[MAX_URL_LEN];
+
+		// If base href link starts with a /, do not add it again below
+		int adjust = (href[0] == '/' ? 1 : 0);
+
+		// If base href link does not end with /, add it.
+		// TODO: adding an ending slash to base href is not always correct. Eg:
+		//   <base href="http://example.com/api">, and <a href="?foo"> should result in http://example.com/api?foo and not http://example.com/api/?foo
+		//   <base href="http://example.com/other_doc">, and <a href="#boo"> should result in http://example.com/api?foo and not http://example.com/api/?foo
+		char endchar = (href[hrefLen-1] == '/' ? 0 : '/');
+
+		snprintf(fixed_basehref, sizeof(fixed_basehref), "%.*s://%.*s/%.*s%c",
+			 currentUrl->getSchemeLen(), currentUrl->getScheme(), currentUrl->getHostLen(), currentUrl->getHost(),
+			 hrefLen-adjust, href+adjust,
+			 endchar);
+		fixed_basehref[ sizeof(fixed_basehref)-1 ] = '\0';
+
+		baseUrl->set(fixed_basehref);
+	}
+
+	// fix invalid <base href="/" target="_self"/> tag
+	if(baseUrl->getHostLen() <= 0 || baseUrl->getDomainLen() <= 0 ) {
+		baseUrl->set(currentUrl);
+	}
 }
