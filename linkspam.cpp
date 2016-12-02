@@ -274,19 +274,25 @@ bool setLinkSpam ( int32_t       ip                 ,
 	if ( linker->isPingServer() ) return false;
 	// if the doc got truncated we may be missing valuable identifiers
 	// that identify the doc as a guestbook or something
-	if ( isContentTruncated )
-		return links->setAllSpamBits("doc too big");
+	if ( isContentTruncated ) {
+		links->setAllSpamBits("doc too big");
+		return true;
+	}
 	// get linker quality
 	//int32_t q = tr->getDocQuality();
 	// do not allow .info or .biz to vote ever for now
 	const char *tld    = linker->getTLD();
 	int32_t  tldLen = linker->getTLDLen();
 	if ( tldLen == 4 && strncmp ( tld, "info" , tldLen) == 0 && //q < 55 )
-	     siteNumInlinks < 20 )
-		return links->setAllSpamBits("low quality .info linker");
+	     siteNumInlinks < 20 ) {
+		links->setAllSpamBits("low quality .info linker");
+		return true;
+	}
 	if ( tldLen == 3 && strncmp ( tld, "biz" , tldLen) == 0 && //q < 55 )
-	     siteNumInlinks < 20 )
-		return links->setAllSpamBits("low quality .biz linker");
+	     siteNumInlinks < 20 ) {
+		links->setAllSpamBits("low quality .biz linker");
+		return true;
+	}
 
 	// guestbook in hostname - domain?
 	const char *hd  = linker->getHost();
@@ -295,13 +301,17 @@ bool setLinkSpam ( int32_t       ip                 ,
 	if ( hd && hd2 && hdlen < 30 ) {
 		bool hasIt = false;
 		if ( strnstr ( hd , "guestbook", hdlen ) ) hasIt = true;
-		if ( hasIt ) 
-			return links->setAllSpamBits("guestbook in hostname");
+		if ( hasIt ) {
+			links->setAllSpamBits("guestbook in hostname");
+			return true;
+		}
 	}
 
 	// do not allow any cgi url to vote
-	if ( linker->isCgi() )
-		return links->setAllSpamBits("path is cgi");
+	if ( linker->isCgi() ) {
+		links->setAllSpamBits("path is cgi");
+		return true;
+	}
 
 	int32_t plen = linker->getPathLen();
 	// if the page has just one rel=nofollow tag then we know they
@@ -355,7 +365,10 @@ bool setLinkSpam ( int32_t       ip                 ,
 			note = "path has reciprocallink" ;
 		else if ( strncasestr ( p , "/trackbacks/",plen,12 ) ) 
 			note = "path has /trackbacks/"   ;
-		if ( note ) return links->setAllSpamBits(note);
+		if ( note ) {
+			links->setAllSpamBits(note);
+			return true;
+		}
 	}
 
 	// does title contain "web statistics for"?
@@ -385,7 +398,10 @@ bool setLinkSpam ( int32_t       ip                 ,
 		else if ( strstr (buf,"surfstatsloganal"      )) val = true;
 		else if ( strstr (buf,"webstarterhelpstats"   )) val = true;
 		else if ( strstr (buf,"sitestatistics"        )) val = true;
-		if ( val ) return links->setAllSpamBits("stats page");
+		if ( val ) {
+			links->setAllSpamBits("stats page");
+			return true;
+		}
 	}
 
 	/////////////////////////////////////////////////////
@@ -425,8 +441,10 @@ bool setLinkSpam ( int32_t       ip                 ,
 		if ( s_needles1[i].m_count <= 0  ) continue;
 		// ok, if it had its section bit set to 0 that means the
 		// whole page is link spam!
-		if ( s_needles1[i].m_isSection == 0 )
-			return links->setAllSpamBits(s_needles1[i].m_string );
+		if ( s_needles1[i].m_isSection == 0 ) {
+			links->setAllSpamBits(s_needles1[i].m_string );
+			return true;
+		}
 		// get the char ptr
 		char *ptr = s_needles1[i].m_firstMatch;
 		// set to the min
@@ -477,7 +495,8 @@ bool setLinkSpam ( int32_t       ip                 ,
 		// skip if did not match
 		if ( s_needles2[i].m_count <= 0 ) continue;
 		// the whole doc is considered link spam
-		return links->setAllSpamBits(s_needles2[i].m_string); 
+		links->setAllSpamBits(s_needles2[i].m_string);
+		return true;
 	}
 
 	//skiplinks:
@@ -546,19 +565,26 @@ bool setLinkSpam ( int32_t       ip                 ,
 		// eliminate some false positives
 		//if ( val && strstr ( s , "search" ) ) val = false;
 		s[slen] = c;
-		if ( val ) return links->setAllSpamBits("post page");
+		if ( val ) {
+			links->setAllSpamBits("post page");
+			return true;
+		}
 	}
 
-	if ( gotTextArea && gotSubmit )
-		return links->setAllSpamBits("textarea tag");
+	if ( gotTextArea && gotSubmit ) {
+		links->setAllSpamBits("textarea tag");
+		return true;
+	}
 
 	// edu, gov, etc. can have link chains
 	if ( tldLen >= 3 && strncmp ( tld, "edu" , 3) == 0 ) return true;
 	if ( tldLen >= 3 && strncmp ( tld, "gov" , 3) == 0 ) return true;
 
 	// if linker is naughty, he cannot vote... how did he make it in?
-	if ( linker->isAdult() )
-		return links->setAllSpamBits("linker is sporny"); 
+	if ( linker->isAdult() ) {
+		links->setAllSpamBits("linker is sporny");
+		return true;
+	}
 
 	// . if they link to any adult site, consider them link spam
 	// . just consider a 100 link radius around linkNode
