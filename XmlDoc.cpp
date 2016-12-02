@@ -105,6 +105,7 @@ XmlDoc::XmlDoc() {
 	m_extraDoc = NULL;
 	m_statusMsg = NULL;
 	m_errno = 0;
+	m_docId = 0;
 
 	reset();
 }
