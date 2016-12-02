@@ -21,7 +21,7 @@ bool isClockInSync() {
 
 // . put all the maps here now
 // . convert "c" to lower case
-	const unsigned char g_map_to_lower[] = {
+	const unsigned char g_map_to_lower[256] = {
     	0  , 1  , 2  ,  3 ,  4 ,  5 ,  6 ,  7 ,
     	8  , 9  , 10 , 11 , 12 , 13 , 14 , 15 ,
 	    16 , 17 , 18 , 19 , 20 , 21 , 22 , 23 ,
@@ -57,7 +57,7 @@ bool isClockInSync() {
 	};
 
 // converts ascii chars and IS_O chars to their lower case versions
-	const unsigned char g_map_to_upper[] = {
+	const unsigned char g_map_to_upper[256] = {
 		0  , 1  , 2  ,  3 ,  4 ,  5 ,  6 ,  7 ,           
 		8  , 9  , 10 , 11 , 12 , 13 , 14 , 15 ,       
 		16 , 17 , 18 , 19 , 20 , 21 , 22 , 23 ,       
@@ -92,7 +92,7 @@ bool isClockInSync() {
 		216,217,218,219,220,221,222,255
 	};
 
-	const char g_map_is_upper[] = {
+	const char g_map_is_upper[256] = {
 		0,0,0,0,0,0,0,0,  // 0 -7        
 		0,0,0,0,0,0,0,0,           
 		0,0,0,0,0,0,0,0,           
@@ -127,7 +127,7 @@ bool isClockInSync() {
 		0,0,0,0,0,0,0,0}; // 248
 
 // people mix windows 1252 into latin-1 so we have to be less restrictive here...
-	const char g_map_is_binary[] = { 
+	const char g_map_is_binary[256] = {
 		1,1,1,1,1,1,1,1,
 		1,0,0,1,1,0,1,1, // \t=9 \n = 10 \r = 13
 		1,1,1,1,1,1,1,1,
@@ -163,7 +163,7 @@ bool isClockInSync() {
 
 
 // converts ascii chars and IS_O chars to their lower case versions
-	const char g_map_is_lower[] = { // 97-122 and 224-255 (excluding 247)
+	const char g_map_is_lower[256] = { // 97-122 and 224-255 (excluding 247)
 		0,0,0,0,0,0,0,0,  // 0 -7        
 		0,0,0,0,0,0,0,0,           
 		0,0,0,0,0,0,0,0,           
@@ -197,7 +197,7 @@ bool isClockInSync() {
 		1,1,1,1,1,1,1,0, // 240
 		1,1,1,1,1,1,1,1};  // 248
 
-	const char g_map_is_ascii[] = { // 32 to 126
+	const char g_map_is_ascii[256] = { // 32 to 126
 		0,0,0,0,0,0,0,0, // 0
 		0,0,0,0,0,0,0,0, // 8
 		0,0,0,0,0,0,0,0,
@@ -231,7 +231,7 @@ bool isClockInSync() {
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0};
 
-	const char g_map_is_punct[] = { // 33-47, 58-64, 91-96, 123-126, 161-191, 215,247
+	const char g_map_is_punct[256] = { // 33-47, 58-64, 91-96, 123-126, 161-191, 215,247
 		0,0,0,0,0,0,0,0, // 0
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0, // 16
@@ -265,7 +265,7 @@ bool isClockInSync() {
 		0,0,0,0,0,0,0,1, // 240
 		0,0,0,0,0,0,0,0};   // 248
 
-	const char g_map_is_alnum[] = { // 48-57, 65-90,97-122,192-255(excluding 215,247)
+	const char g_map_is_alnum[256] = { // 48-57, 65-90,97-122,192-255(excluding 215,247)
 		0,0,0,0,0,0,0,0, // 0
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0, // 16
@@ -300,7 +300,7 @@ bool isClockInSync() {
 		1,1,1,1,1,1,1,0, // 240
 		1,1,1,1,1,1,1,1};    
 
-	const char g_map_is_alpha[] = { // 65-90, 97-122, 192-255 (excluding 215, 247)
+	const char g_map_is_alpha[256] = { // 65-90, 97-122, 192-255 (excluding 215, 247)
 		0,0,0,0,0,0,0,0, // 0
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0, // 16
@@ -335,7 +335,7 @@ bool isClockInSync() {
 		1,1,1,1,1,1,1,0, // 240
 		1,1,1,1,1,1,1,1};    
 
-	const char g_map_is_digit[] = { // 48-57
+	const char g_map_is_digit[256] = { // 48-57
 		0,0,0,0,0,0,0,0, // 0
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0, // 16
@@ -370,7 +370,7 @@ bool isClockInSync() {
 		0,0,0,0,0,0,0,0};
 
 
-	const char g_map_is_hex[] = { // 48-57
+	const char g_map_is_hex[256] = { // 48-57
 		0,0,0,0,0,0,0,0, // 0
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0, // 16
@@ -405,7 +405,7 @@ bool isClockInSync() {
 		0,0,0,0,0,0,0,0};
 
 	// stolen from is_alnum, but turned on - and _
-	const char g_map_is_tagname_char [] = { // 48-57, 65-90,97-122,192-255(excluding 215,247)
+	const char g_map_is_tagname_char [256] = { // 48-57, 65-90,97-122,192-255(excluding 215,247)
 		0,0,0,0,0,0,0,0, // 0
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0, // 16

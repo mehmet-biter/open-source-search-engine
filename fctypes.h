@@ -161,18 +161,18 @@ time_t getTimeSynced (); // synced with host #0's system clock
 
 int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t strip );
 
-extern const unsigned char g_map_to_lower[];
-extern const unsigned char g_map_to_upper[];
-extern const char g_map_is_upper[];
-extern const char g_map_is_binary[];
-extern const char g_map_is_lower[];
-extern const char g_map_is_ascii[];
-extern const char g_map_is_punct[];
-extern const char g_map_is_alnum[];
-extern const char g_map_is_alpha[];
-extern const char g_map_is_digit[];
-extern const char g_map_is_hex[];
-extern const char g_map_is_tagname_char[];
+extern const unsigned char g_map_to_lower[256];
+extern const unsigned char g_map_to_upper[256];
+extern const char g_map_is_upper[256];
+extern const char g_map_is_binary[256];
+extern const char g_map_is_lower[256];
+extern const char g_map_is_ascii[256];
+extern const char g_map_is_punct[256];
+extern const char g_map_is_alnum[256];
+extern const char g_map_is_alpha[256];
+extern const char g_map_is_digit[256];
+extern const char g_map_is_hex[256];
+extern const char g_map_is_tagname_char[256];
 
 bool isClockInSync();
 
