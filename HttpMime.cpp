@@ -65,7 +65,6 @@ void HttpMime::reset ( ) {
 	m_firstCookie = NULL;
 	m_status = -1;
 	m_contentLen = -1;
-	m_lastModifiedDate = 0;
 	m_contentType = CT_HTML;
 	m_charset = NULL;
 	m_charsetLen = 0;
@@ -92,7 +91,6 @@ bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
 	m_mimeLen = 0;
 	m_contentType = CT_HTML;
 	m_contentEncoding = ET_IDENTITY;
-	m_lastModifiedDate = 0;
 	m_charset = NULL;
 	m_charsetLen = 0;
 
@@ -219,12 +217,6 @@ bool HttpMime::parse(char *mime, int32_t mimeLen, Url *url) {
 		if (strncasecmp(p, "Content-Length:", 15) == 0) {
 			m_contentLengthPos = p + 15;
 			m_contentLen = atol(m_contentLengthPos);
-		} else if (strncasecmp(p, "Last-Modified:", 14) == 0) {
-			m_lastModifiedDate = atotime(p + 14);
-			// do not let them exceed current time for purposes
-			// of sorting by date using datedb (see Msg16.cpp)
-			time_t now = time(NULL);
-			if (m_lastModifiedDate > now) m_lastModifiedDate = now;
 		} else if (strncasecmp(p, "Content-Type:", 13) == 0) {
 			m_contentType = getContentTypePrivate(p + 13);
 			char *s = p + 13;
