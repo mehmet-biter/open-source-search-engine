@@ -1279,9 +1279,6 @@ void gotHttpReply2 ( void *state ,
 			goodStatus = false;
 		}
 	}				 
-				 
-	//Xml xml;
-	//Words words;
 
 	// point to the content
 	char *content = reply + mimeLen;
