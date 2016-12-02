@@ -60,21 +60,22 @@ HttpMime::HttpMime () {
 }
 
 void HttpMime::reset ( ) {
-	m_mime     = NULL;
-	m_firstCookie      = NULL;
-	m_status           = -1;
-	m_contentLen       = -1;
-	m_lastModifiedDate =  0;
-	m_contentType      =  CT_HTML;
-	m_charset          =  NULL;
-	m_charsetLen       =  0;
-	m_cookie           =  NULL;
-	m_cookieLen        =  0;
-	m_locationField    = NULL;
+	m_mime = NULL;
+
+	m_firstCookie = NULL;
+	m_status = -1;
+	m_contentLen = -1;
+	m_lastModifiedDate = 0;
+	m_contentType = CT_HTML;
+	m_charset = NULL;
+	m_charsetLen = 0;
+	m_cookie = NULL;
+	m_cookieLen = 0;
+	m_locationField = NULL;
 	m_locationFieldLen = 0;
 	m_contentEncodingPos = NULL;
 	m_contentLengthPos = NULL;
-	m_contentTypePos   = NULL;
+	m_contentTypePos = NULL;
 }
 
 // . returns false if could not get a valid mime
@@ -84,16 +85,17 @@ bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufLen);
 #endif
 	// reset some stuff
-	m_mime     = NULL;
-	m_firstCookie      = NULL;
-	m_contentLen       = -1;
-	m_content          = NULL;
-	m_mimeLen           =  0;
-	m_contentType      =  CT_HTML;
-	m_contentEncoding  =  ET_IDENTITY;
-	m_lastModifiedDate =  0;
-	m_charset          =  NULL;
-	m_charsetLen       =  0;
+	m_mime = NULL;
+	m_firstCookie = NULL;
+	m_contentLen = -1;
+	m_content = NULL;
+	m_mimeLen = 0;
+	m_contentType = CT_HTML;
+	m_contentEncoding = ET_IDENTITY;
+	m_lastModifiedDate = 0;
+	m_charset = NULL;
+	m_charsetLen = 0;
+
 
 	// at the very least we should have a "HTTP/x.x 404\[nc]"
 	if ( bufLen < 13 ) {
