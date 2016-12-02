@@ -73,7 +73,6 @@ void Loop::reset() {
 	m_slots = NULL;
 }
 
-static void sigbadHandler ( int x , siginfo_t *info , void *y ) ;
 static void sigpwrHandler ( int x , siginfo_t *info , void *y ) ;
 static void sighupHandler ( int x , siginfo_t *info , void *y ) ;
 static void sigprofHandler(int signo, siginfo_t *info, void *context);
@@ -547,19 +546,6 @@ bool Loop::init ( ) {
 	saShutdown.sa_sigaction = sighupHandler;
 	sigaction(SIGHUP, &saShutdown, NULL);
 	sigaction(SIGTERM, &saShutdown, NULL);
-	//sigaction(SIGABRT, &sa, NULL);
-
-/*
-	// we should save our data on segv, sigill, sigfpe, sigbus
-	struct sigaction saBad;
-	sigemptyset(&saBad.sa_mask);
-	saBad.sa_flags = SA_SIGINFO | SA_RESTART;
-	saBad.sa_sigaction = sigbadHandler;
-	sigaction(SIGSEGV, &saBad, NULL);
-	sigaction(SIGILL, &saBad, NULL);
-	sigaction(SIGFPE, &saBad, NULL);
-	sigaction(SIGBUS, &saBad, NULL);
-*/
 
 	// if the UPS is about to go off it sends a SIGPWR
 	struct sigaction saPower;
@@ -603,41 +589,6 @@ void printStackTrace (bool print_location) {
 	}
 }
 
-
-// TODO: if we get a segfault while saving, what then?
-void sigbadHandler ( int x , siginfo_t *info , void *y ) {
-
-	log("loop: sigbadhandler. disabling handler from recall.");
-	// . don't allow this handler to be called again
-	// . does this work if we're in a thread?
-	struct sigaction sa;
-	sigemptyset (&sa.sa_mask);
-	sa.sa_flags = SA_SIGINFO ; //| SA_ONESHOT;
-	sa.sa_sigaction = NULL;
-	sigaction(SIGSEGV, &sa, NULL);
-	sigaction(SIGILL, &sa, NULL);
-	sigaction(SIGFPE, &sa, NULL);
-	sigaction(SIGBUS, &sa, NULL);
-	sigaction(SIGQUIT, &sa, NULL);
-	sigaction(SIGSYS, &sa, NULL);
-	// if we've already been here, or don't need to be, then bail
-	if ( g_loop.m_shutdown ) {
-		log("loop: sigbadhandler. shutdown already called.");
-		return;
-	}
-
-	// unwind
-	printStackTrace();
-
-	// if we're a thread, let main process know to shutdown
-	g_loop.m_shutdown = 2;
-	log("loop: sigbadhandler. trying to save now. mode=%" PRId32, (int32_t)g_process.m_mode);
-
-	// . this will save all Rdb's
-	// . if "urgent" is true it will dump core
-	// . if "urgent" is true it won't broadcast its shutdown to all hosts
-	g_process.shutdown ( true );
-}
 
 static void sigprofHandler(int signo, siginfo_t *info, void *context)
 {
