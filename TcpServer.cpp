@@ -223,7 +223,7 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 			log(LOG_INFO, "https: Reading SSL certificate from: %s", sslCertificate);
 			// Load the keys
 			if (m_ctx == NULL) {
-				log(LOG_WARN, "ssl: Failed to set up an SSL context\n");
+				log(LOG_WARN, "ssl: Failed to set up an SSL context");
 				return false;
 			}
 			if (!SSL_CTX_use_certificate_chain_file(m_ctx, sslCertificate)) {
@@ -740,8 +740,7 @@ TcpSocket *TcpServer::getAvailableSocket ( int32_t ip, int16_t port ) {
 		s->m_startTime      = gettimeofdayInMilliseconds();
 		s->m_lastActionTime = gettimeofdayInMilliseconds();
 		// debug msg
-		//log("........... TcpServer found available sock "
-		//"%" PRId32"\n",i);
+		//log("........... TcpServer found available sock %" PRId32"",i);
 		return s;
 	}
 	// return NULL if none pre-connected and available for this ip/port
@@ -1158,14 +1157,13 @@ void readSocketWrapper ( int sd , void *state ) {
 
 
 static void readSocketWrapper2(int sd, void *state) {
-	// debug msg
-	//log("........... TcpServer::readSocketWrapper %" PRId32"\n",sd);
 	// extract our this ptr
 	TcpServer *THIS = (TcpServer *)state;
 	// get a TcpSocket from sd
 	TcpSocket *s = THIS->getSocket ( sd );
-	// . return if does not exist
 	// . TODO: will data to be read remain on queue?
+	//log("........... TcpServer::readSocketWrapper(sd=%d,this=%p,s=%p)",sd,THIS,s);
+	// . return if does not exist
 	if ( ! s ) return ;
 	// doing an ssl accept?
 	if ( s->m_sockState == ST_SSL_ACCEPT ) {
@@ -1238,7 +1236,7 @@ static void readSocketWrapper2(int sd, void *state) {
 		}
 		if ( status != 1 ) return ;
 		// now try to read the reply
-		//log("calling readSocket now\n");
+		//log("calling readSocket now");
 	}
 	// . readSocket() returns -1 on error and sets g_errno
 	// . if socket was closed on the other end this returns -1 but does 
@@ -1346,6 +1344,7 @@ static void readSocketWrapper2(int sd, void *state) {
 //   but it does not set g_errno in that case
 // . tries to read some data from the socket "s"
 int32_t TcpServer::readSocket ( TcpSocket *s ) {
+	//log("........... TcpServer::readSocket(s=%p): s->m_sd=%d",s,s->m_sd);
 	// . otherwise, it's a normal read of normal data (request or reply)
 	// . if we got some shit to read but shouldn't be reading someone is
 	//   fucking with us so throw the shit away... it could be an attack...
@@ -1405,6 +1404,7 @@ int32_t TcpServer::readSocket ( TcpSocket *s ) {
 		if ( m_useSSL || s->m_tunnelMode == 3 ) {
 			//int64_t now1 = gettimeofdayInMilliseconds();
 			n = SSL_read(s->m_ssl, s->m_readBuf + s->m_readOffset, avail );
+			//log("........... TcpServer::readSocket(s=%p): s->m_sd=%d, SSL_read()->%d",s,s->m_sd,n);
 #ifdef _VALGRIND_
 			if(n>0)
 				VALGRIND_MAKE_MEM_DEFINED(s->m_readBuf + s->m_readOffset,n);
@@ -1412,9 +1412,10 @@ int32_t TcpServer::readSocket ( TcpSocket *s ) {
 			//int64_t now2 = gettimeofdayInMilliseconds();
 			//int64_t took = now2 - now1 ;
 			//if ( took >= 2 ) log("tcp: ssl_read took %" PRId64"ms", took);
-		}
-		else
+		} else {
 			n = ::read ( s->m_sd, s->m_readBuf + s->m_readOffset, avail );
+			//log("........... TcpServer::readSocket(s=%p): s->m_sd=%d, read()->%d",s,s->m_sd,n);
+		}
 
 		// deal with errors
 		if ( n < 0 ) {
@@ -1445,7 +1446,7 @@ int32_t TcpServer::readSocket ( TcpSocket *s ) {
 			    (int32_t)n,s->m_readBuf+s->m_readOffset);
 
 		// debug msg
-		//log(".......... TcpServer read %i bytes on %i\n",n,s->m_sd);
+		//log(".......... TcpServer read %i bytes on %i",n,s->m_sd);
 		// . if we read 0 bytes then that signals the end of the connection
 		// . doesn't this only apply to reading replies and not requests???
 		// . MDW: add "&& s->m_sendBuf to it"
@@ -1572,7 +1573,7 @@ bool TcpServer::setTotalToRead ( TcpSocket *s ) {
 // . we call this when socket is connected, too
 void writeSocketWrapper ( int sd , void *state ) {
 	// debug msg
-	//log("........... TcpServer::writeSocketWrapper sd=%" PRId32"\n",sd);
+	//log("........... TcpServer::writeSocketWrapper sd=%" PRId32"",sd);
 	TcpServer *THIS = (TcpServer *)state;
 
 	// get the TcpSocket for this socket descriptor
@@ -1796,6 +1797,7 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 	}
 	else
 		n = ::send ( s->m_sd , msg + s->m_sendOffset , toSend , 0 );
+	//if(n>=0) loghex(LOG_INFO,msg + s->m_sendOffset,toSend,"Wrote %d bytes on sd=%d",n,s->m_sd);
 	// cancel harmless errors, return -1 on severe ones
 	if ( n < 0 ) {
 		// copy errno to g_errno
@@ -1837,8 +1839,8 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 	}
 	// debug msg
 	if ( g_conf.m_logDebugTcp )
-		log("........... TcpServer wrote %i bytes on %i\n",
-		    n,s->m_sd);
+		log("........... TcpServer wrote %i bytes on %i (%s:%u)",
+		    n, s->m_sd, iptoa(s->m_ip), (unsigned)(uint16_t)s->m_port);
 
 	// if we did not write all the bytes we wanted we have to register
 	// a write callback
@@ -2087,7 +2089,8 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 	int sd = s->m_sd;
 	// debug msg
 	if ( g_conf.m_logDebugTcp )
-		logf(LOG_DEBUG,"tcp: ...... TcpServer closing sock %i\n",sd);
+		logf(LOG_DEBUG,"tcp: ...... TcpServer closing sock %i (%s:%u)",
+		     s->m_sd, iptoa(s->m_ip), (unsigned)(uint16_t)s->m_port);
 	// make it blocking for the close for testing
 	//int flags = fcntl ( sd , F_GETFL );
 	//flags &= ~O_NONBLOCK;
@@ -2695,8 +2698,8 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 	// if the connection happened return r, should be 1
 	if ( r > 0 ) {
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: ssl handshake done. entering writing mode "
-			    "sd=%i",s->m_sd);
+			log("tcp: ssl handshake done. entering writing mode sd=%i (%s:%u)",
+			s->m_sd, iptoa(s->m_ip), (unsigned)(uint16_t)s->m_port);
 		// ok, it completed, go into writing mode
 		s->m_sockState = ST_WRITING;
 		return r;
