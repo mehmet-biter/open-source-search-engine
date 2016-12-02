@@ -1183,8 +1183,6 @@ CollectionRec::CollectionRec() {
 	memset(m_summaryFrontHighlightTag, 0, sizeof(m_summaryFrontHighlightTag));
 	memset(m_summaryBackHighlightTag, 0, sizeof(m_summaryBackHighlightTag));
 	m_spellCheck = false;
-	m_spiderTimeMin = 0;
-	m_spiderTimeMax = 0;
 	m_maxAddUrlsPerIpDomPerDay = 0;
 	m_maxTextDocLen = 0;
 	m_maxOtherDocLen = 0;

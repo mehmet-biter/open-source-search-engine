@@ -9157,34 +9157,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE ;//| PF_HIDDEN;
 	m++;
 
-
-	m->m_title = "spider start time";
-	m->m_desc  = "Only spider URLs scheduled to be spidered "
-		"at this time or after. In UTC.";
-	m->m_cgi   = "sta";
-	m->m_off   = offsetof(CollectionRec,m_spiderTimeMin);
-	m->m_type  = TYPE_DATE; // date format -- very special
-	m->m_def   = "01 Jan 1970";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "spider end time";
-	m->m_desc  = "Only spider URLs scheduled to be spidered "
-		"at this time or before. If \"use current time\" is true "
-		"then the current local time is used for this value instead. "
-		"in UTC.";
-	m->m_cgi   = "stb";
-	m->m_off   = offsetof(CollectionRec,m_spiderTimeMax);
-	m->m_type  = TYPE_DATE2;
-	m->m_def   = "01 Jan 2010";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "use current time";
 	m->m_desc  = "Use the current time as the spider end time?";
 	m->m_cgi   = "uct";
