@@ -237,6 +237,7 @@ Conf::Conf ( ) {
 	m_logTraceBigFile = false;
 	m_logTraceDns = false;
 	m_logTraceFile = false;
+	m_logTraceHttpMime = false;
 	m_logTraceMem = false;
 	m_logTraceMsg0 = false;
 	m_logTraceMsg4 = false;
