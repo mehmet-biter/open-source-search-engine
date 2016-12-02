@@ -2068,7 +2068,7 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 	int32_t newSize = *(int32_t*)(s->m_readBuf + s->m_readOffset - 4);
 
 	if(newSize < 0 || newSize > 500*1024*1024) {
-		log("http: got bad gzipped reply1 of size=%" PRId32".", newSize );
+		log(LOG_WARN, "http: got bad gzipped reply1 of size=%" PRId32".", newSize );
 		g_errno = ECORRUPTHTTPGZIP;
 		return s;
 	}
@@ -2175,10 +2175,10 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 
 	if(zipErr != Z_OK ||
 	   uncompressedLen != (uint32_t)newSize) {
-		log("http: got gzipped unlikely reply of size=%" PRId32".",
+		log(LOG_WARN, "http: got gzipped unlikely reply of size=%" PRId32".",
 		    newSize );
 		mfree (newBuf, need, "HttpUnzipError");
-		g_errno = ECORRUPTHTTPGZIP;//EBADREPLYSIZE;
+		g_errno = ECORRUPTHTTPGZIP;
 		return s;
 	}
 	mfree (s->m_readBuf, s->m_readBufSize, "HttpUnzip");
