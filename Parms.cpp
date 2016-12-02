@@ -5588,11 +5588,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "afgdwd";
 	m->m_off   = offsetof(Conf,m_gzipDownloads);
 	m->m_type  = TYPE_BOOL;
-	// keep this default off because it seems some pages are huge
-	// uncomressed causing OOM errors and possibly corrupting stuff?
-	// not sure exactly, but i don't like going OOM. so maybe until
-	// that is fixed leave this off.
-	m->m_def   = "0";
+	m->m_def   = "1";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
