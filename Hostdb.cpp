@@ -1458,7 +1458,7 @@ int32_t Hostdb::getBestHosts2IP ( Host  *h ) {
 }
 
 // assume to be from posdb here
-uint32_t Hostdb::getShardNumByTermId ( const void *k ) {
+uint32_t Hostdb::getShardNumByTermId(const void *k) const {
 	return m_map [(*(uint16_t *)((char *)k + 16))>>3];
 }
 
@@ -1467,7 +1467,7 @@ uint32_t Hostdb::getShardNumByTermId ( const void *k ) {
 // . this allows us to have any # of groups in a stripe, not just power of 2
 // . now we can use 3 stripes of 96 hosts each so spiders will almost never
 //   go down
-uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) {
+uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) const {
 	switch(rdbId) {
 		case RDB_POSDB:
 		case RDB2_POSDB2:
@@ -1523,7 +1523,7 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) {
 	}
 }
 
-uint32_t Hostdb::getShardNumFromDocId ( int64_t d ) {
+uint32_t Hostdb::getShardNumFromDocId(int64_t d) const {
 	return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
 }
 
