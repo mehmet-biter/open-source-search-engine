@@ -266,8 +266,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 		   Xml       *xml                ,
 		   Links     *links              ,
 		   bool       isContentTruncated ) {
-	// get our url
-	//Url *linker = tr->getUrl();
 	// it is critical to get inlinks from all pingserver xml
 	// pages regardless if they are often large pages. we
 	// have to manually hard-code the ping servers in for now.
@@ -394,8 +392,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 	//
 	/////////////////////////////////////////////////////
 
-	//char *haystack     = tr->getContent();
-	//int32_t  haystackSize = tr->getContentLen();
 	char *haystack     = xml->getContent();
 	int32_t  haystackSize = xml->getContentLen();
 
@@ -509,16 +505,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 			if ( xml->getNodeId ( i ) == TAG_INPUT &&
 			     xml->getString(i,"submit",&len)) gotSubmit = true;
 		}
-		// check for script tag
-		/*
-		if ( xml->getNodeId(i) == TAG_SCRIPT && quality < 80 ) {
-			// <script src=blah.com/fileparse.js" 
-			// type="text/javascript"> is used to hide google
-			// ads, so don't allow those pages to vote either
-			int32_t  slen; xml->getString(i,"src",&slen);
-			if ( slen > 0 ) { *note = "script src"; return true; }
-		}
-		*/
+
 		if ( xml->getNodeId ( i ) != TAG_FORM ) continue;
 			
 		// get the method field of this base tag
@@ -526,9 +513,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 		char *s = (char *) xml->getString(i,"method",&slen);
 		// if not thee, skip it
 		if ( ! s || slen <= 0 ) continue;
-		//if ( slen != 4 ) continue;
-		// if not a post, skip it
-		//if ( strncasecmp ( s , "post" , 4 ) ) continue;
 		// get the action url
 		s = (char *) xml->getString(i,"action",&slen);
 		if ( ! s || slen <= 0 ) continue;
@@ -542,15 +526,14 @@ bool setLinkSpam ( int32_t       ip                 ,
 		else if ( strstr ( s , "/mt/" ) ) val = true;
 		// they can have these search boxes though
 		if ( val && strstr ( s , "/mt/mt-search" ) ) val = false;
-		//else if ( strstr ( s , "cgi"     ) ) val = true;
-		// eliminate some false positives
-		//if ( val && strstr ( s , "search" ) ) val = false;
 		s[slen] = c;
 		if ( val ) return links->setAllSpamBits("post page");
 	}
 
-	if ( gotTextArea && gotSubmit )
-		return links->setAllSpamBits("textarea tag");
+	if ( gotTextArea && gotSubmit ) {
+		links->setAllSpamBits("textarea tag");
+		return true;
+	}
 
 	// edu, gov, etc. can have link chains
 	if ( tldLen >= 3 && strncmp ( tld, "edu" , 3) == 0 ) return true;
@@ -715,11 +698,6 @@ bool isLinkSpam ( const Url *linker,
 		return false;
 	}
 
-	// scan through the content as fast as possible
-	char  *content    = xml->getContent(); 
-	int32_t   contentLen = xml->getContentLen();
-
-
 	// does title contain "web statistics for"?
 	int32_t  tlen ;
 	char *title = xml->getString ( "title" , &tlen );
@@ -756,16 +734,12 @@ bool isLinkSpam ( const Url *linker,
 	//
 	/////////////////////////////////////////////////////
 
-	char *haystack     = content;
-	int32_t  haystackSize = contentLen;
-
-	// get our page quality, it serves as a threshold for some algos
-	//char quality = tr->getNewQuality();
+	char *haystack     = xml->getContent();
+	int32_t  haystackSize = xml->getContentLen();
 
 	char *linkPos = NULL;
 	if ( linkNode >= 0 ) linkPos = xml->getNode ( linkNode );
 
-	// loop:
 	// do not call them "bad links" if our link occurs before any
 	// comment section. our link's position therefore needs to be known,
 	// that is why we pass in linkPos. 
@@ -881,7 +855,8 @@ bool isLinkSpam ( const Url *linker,
 	if ( tldLen >= 3 && strncmp ( tld, "gov" , 3) == 0 ) return false;
 
 	// if linker is naughty, he cannot vote
-	if ( linker->isAdult() ) return true;
+	if ( linker->isAdult() )
+		return true;
 
 	// if being called from PageTitledb.cpp for displaying a titlerec, 
 	// then do not call this, because no linkee is provided in that case.
