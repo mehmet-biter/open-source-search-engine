@@ -42,7 +42,7 @@ Msg22::~Msg22(){
 // . returns false if blocked true otherwise
 bool Msg22::getAvailDocIdOnly ( Msg22Request  *r              ,
 				int64_t preferredDocId ,
-				char *coll ,
+				const char    *coll,
 				void *state ,
 				void (* callback)(void *state) ,
 				int32_t niceness ) {
@@ -69,9 +69,9 @@ bool Msg22::getAvailDocIdOnly ( Msg22Request  *r              ,
 // . if g_errno is ENOTFOUND and m_docId is 0 then no docIds were available
 // . "url" must be NULL terminated
 bool Msg22::getTitleRec ( Msg22Request  *r              ,
-			  char          *url            ,
+			  const char    *url,
 			  int64_t      docId          ,
-			  char          *coll           ,
+			  const char    *coll,
 			  char         **titleRecPtrPtr ,
 			  int32_t          *titleRecSizePtr,
 			  bool           justCheckTfndb ,
