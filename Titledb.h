@@ -47,10 +47,9 @@ public:
 	//   in the case of a collision we pick a nearby docId that is 
 	//   different but guaranteed to be in the same group/cluster, so you 
 	//   can be assured the top 32 bits of the docId will be unchanged
-	static uint64_t getProbableDocId(const Url *url, bool mask = true) {
-		uint64_t probableDocId = hash64b(url->getUrl(),0);
-		// Linkdb::getUrlHash() does not mask it
-		if ( mask ) probableDocId = probableDocId & DOCID_MASK;
+	static uint64_t getProbableDocId(const Url *url) {
+		uint64_t probableDocId = hash64b(url->getUrl(),0) &
+			DOCID_MASK;
 		// clear bits 6-13 because we want to put the domain hash there
 		// dddddddd dddddddd ddhhhhhh hhdddddd
 		probableDocId &= 0xffffffffffffc03fULL;
