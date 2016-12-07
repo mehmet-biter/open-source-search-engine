@@ -252,6 +252,77 @@ static Needle s_needles2[] = {
 };
 
 
+//Check if a path is likely to contain uncontrolled links
+//Eg. guestbooks, blog comments, link-trade, etc. There is nothing from with them per see
+//but often a lot of them are unmonitored/unmoderated and link spammers insert links in them.
+static bool isLinkfulPath(const char *path, size_t pathLen, const char **note) {
+	if(pathLen<=1)
+		return false;
+	if(strncasestr(path,"guest",pathLen,5)) {
+		*note = "path has guest";
+		return true;
+	} else if(strncasestr(path,"cgi",pathLen,3)) {
+		*note = "path has cgi";
+		return true;
+	} else if(strncasestr(path,"gast",pathLen,4)) { // german
+		*note = "path has gast";
+		return true;
+	} else if(strncasestr(path,"gaest",pathLen,5)) { //danish
+		*note = "path has gaest";
+		return true;
+	} else if(strncasestr(path,"gbook",pathLen,5)) {
+		*note = "path has gbook";
+		return true;
+	} else if(strncasestr(path,"akobook",pathLen,7)) { // vietnamese?
+		*note = "path has akobook";
+		return true;
+	} else if(strncasestr(path,"/gb",pathLen,3)) {
+		*note = "path has /gb";
+		return true;
+	} else if(strncasestr(path,"msg",pathLen,3 )) {
+		*note = "path has msg";
+		return true;
+	} else if(strncasestr(path,"messag",pathLen,6)) {
+		*note = "path has messag";
+		return true;
+	} else if(strncasestr(path,"board",pathLen,5)) {
+		*note = "path has board";
+		return true;
+	} else if(strncasestr(path,"coment",pathLen,6)) {
+		*note = "path has coment";
+		return true;
+	} else if(strncasestr(path,"comment",pathLen,7)) {
+		*note = "path has comment";
+		return true;
+	} else if(strncasestr(path,"linktrader",pathLen,10)) {
+		*note = "path has linktrader";
+		return true;
+	} else if(strncasestr(path,"tradelinks",pathLen,10)) {
+		*note = "path has tradelinks";
+		return true;
+	} else if(strncasestr(path,"trade-links",pathLen,11)) {
+		*note = "path has trade-links";
+		return true;
+	} else if(strncasestr(path,"linkexchange",pathLen,12)) {
+		*note = "path has linkexchange";
+		return true;
+	} else if(strncasestr(path,"link-exchange",pathLen,13)) {
+		*note = "path has link-exchange";
+		return true;
+	} else if(strncasestr(path,"reciprocal-link",pathLen,15)) {
+		*note = "path has reciprocal-link";
+		return true;
+	} else if(strncasestr(path,"reciprocallink",pathLen,14)) {
+		*note = "path has reciprocallink";
+		return true;
+	} else if(strncasestr(path,"/trackbacks/",pathLen,12)) {
+		*note = "path has /trackbacks/";
+		return true;
+	}
+	return false;
+}
+
+
 // . we set the bit in linkdb for a doc if this returns true
 // . it precludes a doc from voting if its bits is set in linkdb
 // . this saves resources
@@ -311,62 +382,13 @@ bool setLinkSpam ( int32_t       ip                 ,
 		return true;
 	}
 
-	int32_t plen = linker->getPathLen();
 	// if the page has just one rel=nofollow tag then we know they
 	// are not a guestbook
 	//if ( links->hasRelNoFollow() ) plen = 0;
-	if ( plen > 1 ) {
-		const char *p    = linker->getPath();
-		//char  c    = p[plen-1];
-		//p[plen-1] = '\0';
-		//bool val = false;
-		const char *note = NULL;
-		if ( strncasestr ( p , "guest",plen,5) ) 
-			note = "path has guest"          ;
-		else if ( strncasestr ( p , "cgi",plen,3) ) 
-			note = "path has cgi"            ;
-		else if ( strncasestr ( p , "gast",plen,4) ) 
-			note = "path has gast"           ;
-		// german
-		else if ( strncasestr ( p , "gaest",plen,5) )
-			note = "path has gaest"          ;
-		else if ( strncasestr ( p , "gbook",plen,5) ) 
-			note = "path has gbook"          ;
-		// vietnamese?
-		else if ( strncasestr ( p , "akobook",plen,7) ) 
-			note = "path has akobook"        ;
-		else if ( strncasestr ( p , "/gb",plen,3) ) 
-			note = "path has /gb"            ;
-		else if ( strncasestr ( p , "msg",plen,3 ) ) 
-			note = "path has msg"            ;
-		else if ( strncasestr ( p , "messag",plen,6) ) 
-			note = "path has messag"         ;
-		else if ( strncasestr ( p , "board",plen,5) ) 
-			note = "path has board"          ;
-		else if ( strncasestr ( p , "coment",plen,6) ) 
-			note = "path has coment"         ;
-		else if ( strncasestr ( p , "comment",plen,7) ) 
-			note = "path has comment"        ;
-		else if ( strncasestr ( p , "linktrader",plen,10) ) 
-			note = "path has linktrader"     ;
-		else if ( strncasestr ( p , "tradelinks",plen,10) ) 
-			note = "path has tradelinks"     ;
-		else if ( strncasestr ( p , "trade-links",plen,11) ) 
-			note = "path has trade-links"    ;
-		else if ( strncasestr ( p , "linkexchange",plen,12) ) 
-			note = "path has linkexchange"   ;
-		else if ( strncasestr ( p , "link-exchange",plen,13  ) )
-			note = "path has link-exchange"  ;
-		else if ( strncasestr ( p , "reciprocal-link",plen,15) )
-			note = "path has reciprocal-link";
-		else if ( strncasestr ( p , "reciprocallink",plen, 14) )
-			note = "path has reciprocallink" ;
-		else if ( strncasestr ( p , "/trackbacks/",plen,12 ) ) 
-			note = "path has /trackbacks/"   ;
-		if ( note ) {
-			links->setAllSpamBits(note);
-			return true;
-		}
+	const char *note = NULL;
+	if(isLinkfulPath(linker->getPath(),linker->getPathLen(),&note)) {
+		links->setAllSpamBits(note);
+		return true;
 	}
 
 	// does title contain "web statistics for"?
@@ -429,7 +451,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 
 	// see if we got a hit
 	char *minPtr = NULL;
-	const char *note   = NULL;
+	note = NULL;
 	for ( int32_t i = 0 ; i < numNeedles1 ; i++ ) {
 		// open.thumbshots.org needs multiple counts
 		if ( i == 0 && s_needles1[i].m_count < 5 ) continue;
@@ -664,59 +686,11 @@ bool isLinkSpam ( const Url *linker,
 	// do not allow any cgi url to vote
 	if ( linker->isCgi() ) { *note = "path is cgi"; return true; }
 
-	int32_t plen = linker->getPathLen();
-
 	// if the page has just one rel=nofollow tag then we know they
 	// are not a guestbook
 	//if ( links->hasRelNoFollow() ) plen = 0;
-	if ( plen > 1 ) {
-		const char *p    = linker->getPath();
-		//char  c    = p[plen-1];
-		//p[plen-1] = '\0';
-		//bool val = false;
-		if ( strncasestr ( p , "guest",plen,5) ) {
-			*note = "path has guest"          ; return true; }
-		else if ( strncasestr ( p , "cgi",plen,3) ) { 
-			*note = "path has cgi"            ; return true; }
-		else if ( strncasestr ( p , "gast",plen,4) ) { 
-			*note = "path has gast"           ; return true; }
-		// german
-		else if ( strncasestr ( p , "gaest",plen,5) ) {
-			*note = "path has gaest"          ; return true; }
-		else if ( strncasestr ( p , "gbook",plen,5) ) { 
-			*note = "path has gbook"          ; return true; }
-		// vietnamese?
-		else if ( strncasestr ( p , "akobook",plen,7) ) { 
-			*note = "path has akobook"        ; return true; }
-		else if ( strncasestr ( p , "/gb",plen,3) ) { 
-			*note = "path has /gb"            ; return true; }
-		else if ( strncasestr ( p , "msg",plen,3 ) ) { 
-			*note = "path has msg"            ; return true; }
-		else if ( strncasestr ( p , "messag",plen,6) ) { 
-			*note = "path has messag"         ; return true; }
-		else if ( strncasestr ( p , "board",plen,5) ) { 
-			*note = "path has board"          ; return true; }
-		else if ( strncasestr ( p , "coment",plen,6) ) { 
-			*note = "path has coment"         ; return true; }
-		else if ( strncasestr ( p , "comment",plen,7) ) { 
-			*note = "path has comment"        ; return true; }
-		else if ( strncasestr ( p , "linktrader",plen,10) ) { 
-			*note = "path has linktrader"     ; return true; }
-		else if ( strncasestr ( p , "tradelinks",plen,10) ) { 
-			*note = "path has tradelinks"     ; return true; }
-		else if ( strncasestr ( p , "trade-links",plen,11) ) { 
-			*note = "path has trade-links"    ; return true; }
-		else if ( strncasestr ( p , "linkexchange",plen,12) ) { 
-			*note = "path has linkexchange"   ; return true; }
-		else if ( strncasestr ( p , "link-exchange",plen,13  ) ) {
-			*note = "path has link-exchange"  ; return true; }
-		else if ( strncasestr ( p , "reciprocal-link",plen,15) ) {
-			*note = "path has reciprocal-link"; return true; }
-		else if ( strncasestr ( p , "reciprocallink",plen, 14) ) {
-			*note = "path has reciprocallink" ; return true; }
-		else if ( strncasestr ( p , "/trackbacks/",plen,12 ) ) { 
-			*note = "path has /trackbacks/"   ; return true; }
-	}
+	if(isLinkfulPath(linker->getPath(),linker->getPathLen(),note))
+		return true;
 
 	if( !xml ) {
 		return false;
