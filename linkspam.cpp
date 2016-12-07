@@ -323,6 +323,40 @@ static bool isLinkfulPath(const char *path, size_t pathLen, const char **note) {
 }
 
 
+//Check if the document looks like a web statistics page
+static bool isWebstatisticsPage(const Xml *xml) {
+	// does title contain "web statistics for"?
+	int32_t titleLen;
+	const char *title = xml->getString("title", &titleLen);
+	if(title && titleLen > 0) {
+		// normalize title into buffer, remove non alnum chars
+		char buf[256];
+		char *dst    = buf;
+		char *dstEnd = buf + 250;
+		const char *src    = title;
+		const char *srcEnd = title + titleLen;
+		while(dst < dstEnd && src < srcEnd) {
+			// remove punct
+			if(is_alnum_a(*src) )
+				*dst++ = to_lower_a(*src);
+			src++;
+		}
+		*dst = '\0';
+		// see if it matches some catch phrases
+		bool val = false;
+		if      ( strstr (buf,"webstatisticsfor"      )) val = true;
+		if      ( strstr (buf,"webserverstatisticsfor")) val = true;
+		else if ( strstr (buf,"usagestatisticsfor"    )) val = true;
+		else if ( strstr (buf,"siteusageby"           )) val = true;
+		else if ( strstr (buf,"surfstatsloganal"      )) val = true;
+		else if ( strstr (buf,"webstarterhelpstats"   )) val = true;
+		else if ( strstr (buf,"sitestatistics"        )) val = true;
+		return val;
+	}
+	return false;
+}
+
+
 // . we set the bit in linkdb for a doc if this returns true
 // . it precludes a doc from voting if its bits is set in linkdb
 // . this saves resources
@@ -392,36 +426,9 @@ bool setLinkSpam ( int32_t       ip                 ,
 	}
 
 	// does title contain "web statistics for"?
-	int32_t  tlen ;
-	const char *title = xml->getString ( "title" , &tlen );
-	if ( title && tlen > 0 ) {
-		// normalize title into buffer, remove non alnum chars
-		char buf[256];
-		char *d    = buf;
-		char *dend = buf + 250;
-		const char *s    = title;
-		const char *send = title + tlen;
-		while ( d < dend && s < send ) {
-			// remove punct
-			if ( ! is_alnum_a(*s) ) { s++; continue; }
-			*d = to_lower_a ( *s );
-			d++;
-			s++;
-		}
-		*d = '\0';
-		// see if it matches some catch phrases
-		bool val = false;
-		if      ( strstr (buf,"webstatisticsfor"      )) val = true;
-		if      ( strstr (buf,"webserverstatisticsfor")) val = true;
-		else if ( strstr (buf,"usagestatisticsfor"    )) val = true;
-		else if ( strstr (buf,"siteusageby"           )) val = true;
-		else if ( strstr (buf,"surfstatsloganal"      )) val = true;
-		else if ( strstr (buf,"webstarterhelpstats"   )) val = true;
-		else if ( strstr (buf,"sitestatistics"        )) val = true;
-		if ( val ) {
-			links->setAllSpamBits("stats page");
-			return true;
-		}
+	if(isWebstatisticsPage(xml)) {
+		links->setAllSpamBits("stats page");
+		return true;
 	}
 
 	/////////////////////////////////////////////////////
@@ -697,33 +704,9 @@ bool isLinkSpam ( const Url *linker,
 	}
 
 	// does title contain "web statistics for"?
-	int32_t  tlen ;
-	char *title = xml->getString ( "title" , &tlen );
-	if ( title && tlen > 0 ) {
-		// normalize title into buffer, remove non alnum chars
-		char buf[256];
-		char *d    = buf;
-		char *dend = buf + 250;
-		char *s    = title;
-		char *send = title + tlen;
-		while ( d < dend && s < send ) {
-			// remove punct
-			if ( ! is_alnum_a(*s) ) { s++; continue; }
-			*d = to_lower_a ( *s );
-			d++;
-			s++;
-		}
-		*d = '\0';
-		// see if it matches some catch phrases
-		bool val = false;
-		if      ( strstr (buf,"webstatisticsfor"      )) val = true;
-		if      ( strstr (buf,"webserverstatisticsfor")) val = true;
-		else if ( strstr (buf,"usagestatisticsfor"    )) val = true;
-		else if ( strstr (buf,"siteusageby"           )) val = true;
-		else if ( strstr (buf,"surfstatsloganal"      )) val = true;
-		else if ( strstr (buf,"webstarterhelpstats"   )) val = true;
-		else if ( strstr (buf,"sitestatistics"        )) val = true;
-		if ( val ) { *note = "stats page"; return true; }
+	if(isWebstatisticsPage(xml)) {
+		*note = "stats page";
+		return true;
 	}
 
 	/////////////////////////////////////////////////////
