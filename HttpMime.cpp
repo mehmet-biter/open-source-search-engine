@@ -369,8 +369,16 @@ static time_t atotime2 ( const char *s ) {
 	// MONTH
 	t.tm_mon = getMonth ( s );
 	while ( *s && ! isdigit (*s) ) s++;
+
 	// YEAR
+	// https://tools.ietf.org/html/rfc6265#section-5.1.1
+	// If the year-value is greater than or equal to 70 and less than or equal to 99, increment the year-value by 1900.
+	// If the year-value is greater than or equal to 0 and less than or equal to 69, increment the year-value by 2000.
 	t.tm_year = atol ( s ) ;  // # of years since 1900
+	if (t.tm_year < 69) {
+		t.tm_year += 100;
+	}
+
 	while ( isdigit (*s) ) s++;
 	while ( isspace (*s) ) s++;	
 	// TIME
