@@ -2755,33 +2755,6 @@ char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
 		// . if it's a number or bool it converts into a string
 		int32_t vlen;
 		char *val = ji->getValueAsString( &vlen );
-		char tbuf[32];
-
-		// if the value is clearly a date, just hash it as
-		// a number, so use a temporary value that holds the
-		// time_t and hash with that... this will hash
-		// diffbot's article date field as a number so we can
-		// sortby and constrain by it in the search results
-		if ( name && (strcasecmp(name,"date") == 0 || strcasecmp(name,"estimatedDate") == 0)) {
-			// this is in HttpMime.cpp
-			int64_t tt = atotime1 ( val );
-			// we can't store 64-bit dates... so truncate to -2147483648
-			// which is Dec 13 1901. so we don't quite get the 1898 date
-			// for the new york times dbpedia entry. maybe if we added
-			// an extra termlist for more precision to indicate century or
-			// something.
-			if ( tt && tt < (int32_t)0x80000000 )
-				tt = (int32_t)0x80000000;
-			// likewise, we can't be too big, passed 2038
-			if ( tt && tt > 0x7fffffff )
-				tt = (int32_t)0x7fffffff;
-			if ( tt ) {
-				// print out the time_t in ascii
-				vlen = sprintf(tbuf,"%" PRId32,(int32_t)tt);
-				// and point to it for hashing/indexing
-				val = tbuf;
-			}
-		}
 
 		// index like "title:whatever"
 		hi->m_prefix = name;
