@@ -15,6 +15,7 @@
 #include "XmlDoc.h"
 #include "Process.h"
 #include "ip.h"
+#include "Mem.h"
 
 
 static void handleRequest0           ( UdpSlot *slot , int32_t niceness ) ;

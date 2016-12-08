@@ -30,6 +30,7 @@
 #include "ip.h"
 #include "SafeBuf.h"
 #include "GbUtil.h"
+#include "Mem.h"
 
 
 class WaitEntry {

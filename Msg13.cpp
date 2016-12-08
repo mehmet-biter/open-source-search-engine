@@ -13,6 +13,8 @@
 #include "ip.h"
 #include "GbUtil.h"
 #include "zlib.h"
+#include "Mem.h"
+
 
 static char g_fakeReply[] =
 	"HTTP/1.0 200 (OK)\r\n"

@@ -6,6 +6,7 @@
 #include "Hostdb.h"
 #include "Dns_internals.h"
 #include "ip.h"
+#include "Mem.h"
 #include <fcntl.h>
 
 

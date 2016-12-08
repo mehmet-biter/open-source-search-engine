@@ -11,6 +11,7 @@
 #include "XmlDoc.h"
 #include "ip.h"
 #include "Conf.h"
+#include "Mem.h"
 
 
 
