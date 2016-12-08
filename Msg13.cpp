@@ -16,7 +16,7 @@
 #include "Mem.h"
 
 
-static char g_fakeReply[] =
+static const char g_fakeReply[] =
 	"HTTP/1.0 200 (OK)\r\n"
 	"Content-Length: 0\r\n"
 	"Connection: Close\r\n"
