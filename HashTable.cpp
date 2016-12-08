@@ -4,6 +4,7 @@
 #include "BitOperations.h"
 #include "File.h"
 #include "Sanity.h"
+#include "Mem.h"
 #include <fcntl.h>
 
 
