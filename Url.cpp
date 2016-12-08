@@ -860,25 +860,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 		// If it is a non ascii domain it needs to take the form 
 		// xn--<punycoded label>.xn--<punycoded label>.../
 
-#ifdef _VALGRIND_
-		char vbits;
-		(void)VALGRIND_GET_VBITS(t+tlen,vbits,1);
-		VALGRIND_MAKE_MEM_DEFINED(t+tlen,1);
-#endif
-		char tmp = t[tlen];
-
-		if (t[tlen]) {
-			((char*)t)[tlen] = '\0'; //hack
-		}
-#ifdef _VALGRIND_
-		(void)VALGRIND_SET_VBITS(t+tlen,vbits,1);
-#endif
-
-		log(LOG_DEBUG, "build: attempting to decode unicode url %s pos at %" PRId32, t, nonAsciiPos);
-
-		if ( tmp ) {
-			( (char *)t )[tlen] = tmp;
-		}
+		log(LOG_DEBUG, "build: attempting to decode unicode url %*.*s pos at %" PRId32, (int)tlen, (int)tlen, t, nonAsciiPos);
 
 		char encoded [ MAX_URL_LEN ];
 		size_t encodedLen = MAX_URL_LEN;
