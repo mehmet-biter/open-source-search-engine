@@ -8,6 +8,7 @@
 #include "max_hosts.h"
 #include "Hostdb.h"
 #include "UdpSlot.h"
+#include "Mem.h"
 
 static void gotRemoteLogWrapper(void *state, UdpSlot *slot);
 

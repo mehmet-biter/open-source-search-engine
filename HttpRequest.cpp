@@ -5,6 +5,9 @@
 #include "Conf.h"
 #include "Process.h"
 #include "Hostdb.h"
+#include "Url.h"
+#include "TcpSocket.h"
+#include "Mem.h"
 #include <stdlib.h>
 #include <float.h>
 
