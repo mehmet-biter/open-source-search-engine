@@ -149,6 +149,7 @@ void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool
 		temp[blen++] = '/';
 	}
 	strncpy( temp + blen, s, len );
+	temp[blen] = '\0';
 	set( temp, blen + len, addWWW, stripParams, stripPound, stripCommonFile, titledbVersion );
 }
 
