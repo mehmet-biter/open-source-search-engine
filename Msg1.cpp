@@ -11,6 +11,8 @@
 #include "Conf.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
+#include "Mem.h"
+
 
 static void gotReplyWrapper1 ( void    *state , void *state2 ) ;
 static void handleRequest1   ( UdpSlot *slot  , int32_t niceness ) ;

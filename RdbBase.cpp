@@ -22,6 +22,7 @@
 #include "File.h"
 #include "GbMoveFile.h"
 #include "GbMakePath.h"
+#include "Mem.h"
 #include "ScopedLock.h"
 #include <sys/stat.h> //mkdir(), stat()
 #include <fcntl.h>

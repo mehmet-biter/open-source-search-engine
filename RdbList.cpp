@@ -7,6 +7,7 @@
 #include "Posdb.h"
 #include "Linkdb.h"
 #include "Conf.h"
+#include "Mem.h"
 #include <set>
 
 // . compares to keys split into 6 byte ptrs

@@ -6,6 +6,7 @@
 #include "Process.h"
 #include "BitOperations.h"
 #include "Conf.h"
+#include "Mem.h"
 #include <set>
 #include <unordered_set>
 #include <algorithm>

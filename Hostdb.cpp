@@ -14,6 +14,7 @@
 #include "File.h"
 #include "IPAddressChecks.h"
 #include "ip.h"
+#include "Mem.h"
 #include <fcntl.h>
 #include <sys/types.h>
 #include <ifaddrs.h>

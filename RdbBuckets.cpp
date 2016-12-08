@@ -7,6 +7,7 @@
 #include "Sanity.h"
 #include "Conf.h"
 #include "Collectiondb.h"
+#include "Mem.h"
 #include <fcntl.h>
 
 #define BUCKET_SIZE 8192

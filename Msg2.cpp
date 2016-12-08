@@ -9,6 +9,7 @@
 #include "HighFrequencyTermShortcuts.h"
 #include "Sanity.h"
 #include "Conf.h"
+#include "Mem.h"
 
 
 static int countWhitelistItems(const char *whitelist) {

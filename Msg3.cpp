@@ -9,6 +9,7 @@
 #include "ScopedLock.h"
 #include "Sanity.h"
 #include "Conf.h"
+#include "Mem.h"
 #include <new>
 
 

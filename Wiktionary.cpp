@@ -7,6 +7,7 @@
 #include "Titledb.h"
 #include "Speller.h"
 #include "Conf.h"
+#include "Mem.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
 

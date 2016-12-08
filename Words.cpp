@@ -8,6 +8,7 @@
 #include "HashTableX.h"
 #include "Sections.h"
 #include "XmlNode.h" // getTagLen()
+#include "Mem.h"
 #include "Sanity.h"
 
 
