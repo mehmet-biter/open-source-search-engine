@@ -142,8 +142,9 @@ public:
 
 	// list of collections to repair, only valid of g_conf.m_collsToRepair
 	// is not empty
-	int32_t       m_collOffs[100];
-	int32_t       m_collLens[100];
+	static const int32_t maxCollections = 100;
+	int32_t       m_collOffs[maxCollections];
+	int32_t       m_collLens[maxCollections];
 	int32_t       m_numColls;
 	// end the stuff to be saved
 	char       m_SAVE_END;

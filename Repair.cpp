@@ -558,7 +558,7 @@ void Repair::initScan ( ) {
 		// advance the number of collections
 		m_numColls++;
 		// get the next collection if under 100 collections still
-		if ( m_numColls < 100 ) goto collLoop;
+		if ( m_numColls < maxCollections ) goto collLoop;
 	}
 
 	// split the mem we have available among the rdbs
