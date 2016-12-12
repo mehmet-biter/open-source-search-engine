@@ -513,13 +513,13 @@ bool RdbIndex::generateIndex(BigFile *f) {
 		// if the readSize is less than the minRecSize, we got a bad cutoff
 		// so we can't go any more
 		if (readSize < minRecSize) {
-			mfree(buf, bufSize, "RdbMap");
+			mfree(buf, bufSize, "RdbIndex");
 			return true;
 		}
 
 		// otherwise, read it in
 		if (!f->read(buf, readSize, offset)) {
-			mfree(buf, bufSize, "RdbMap");
+			mfree(buf, bufSize, "RdbIndex");
 			log(LOG_WARN, "db: Failed to read %" PRId64" bytes of %s at offset=%" PRId64". Map generation failed.",
 			    bufSize, f->getFilename(), offset);
 			return false;
@@ -613,7 +613,7 @@ bool RdbIndex::generateIndex(BigFile *f) {
 	}
 
 	// don't forget to free this
-	mfree(buf, bufSize, "RdbMap");
+	mfree(buf, bufSize, "RdbIndex");
 
 	// make sure it's all sorted and merged
 	(void)mergePendingDocIds_unlocked();
