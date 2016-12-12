@@ -52,43 +52,20 @@ private:
 
 	bool load();
 
-	bool       m_completed;
-
 	// general scan vars
 	Msg5       m_msg5;
 	bool       m_needsCallback;
-	char       m_docQuality;
 	RdbList    m_titleRecList;
 	int64_t  m_docId;
 	bool       m_isDelete;
-	RdbList    m_ulist;
-	RdbList    m_addlist;
 	int64_t  m_totalMem;
 	int32_t       m_stage ;
-	int32_t       m_tfn;
 	int32_t       m_count;
 	bool       m_updated;
 
 	// titledb scan vars
 	key96_t      m_nextTitledbKey;
-	key96_t      m_nextSpiderdbKey;
-	key96_t      m_nextPosdbKey;
-	key128_t   m_nextLinkdbKey;
 	key96_t      m_endKey;
-	int64_t  m_uh48;
-	int32_t       m_priority;
-	uint64_t   m_contentHash;
-	key96_t      m_clusterdbKey ;
-	key96_t      m_spiderdbKey;
-	char       m_srBuf[SR_BUFSIZE];
-	char       m_tmpBuf[32];
-	RdbList    m_linkdbListToAdd;
-	uint64_t   m_chksum1LongLong;
-
-	// spiderdb scan vars
-	bool       m_isNew;
-	TagRec     m_tagRec;
-
 
 	// . state info
 	// . indicator of what we save to disk
@@ -135,11 +112,7 @@ private:
 	bool       m_rebuildNonRoots   ;
 
 	// current collection being repaired
-	//int32_t       m_collLen;
 	collnum_t  m_collnum;
-	char       m_newColl[MAX_COLL_LEN];
-	int32_t       m_newCollLen;
-	collnum_t  m_newCollnum;
 
 	// . m_colli is the index into m_colls
 	// . m_colli is the index into g_collectiondb.m_recs if the list

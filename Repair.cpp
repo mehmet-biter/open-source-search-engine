@@ -75,30 +75,15 @@ static Rdb **getAllRdbs ( int32_t *nsr ) {
 
 Repair::Repair() {
 	// Coverity
-	m_completed = false;
 	m_needsCallback = false;
-	m_docQuality = 0;
 	m_docId = 0;
 	m_isDelete = false;
 	m_totalMem = 0;
 	m_stage = 0;
-	m_tfn = 0;
 	m_count = 0;
 	m_updated = false;
 	m_nextTitledbKey = 0;
-	m_nextSpiderdbKey = 0;
-	m_nextPosdbKey = 0;
-	m_nextLinkdbKey = 0;
 	m_endKey = 0;
-	m_uh48 = 0;
-	m_priority = 0;
-	m_contentHash = 0;
-	m_clusterdbKey = 0;
-	m_spiderdbKey = 0;
-	memset(m_srBuf, 0, sizeof(m_srBuf));
-	memset(m_tmpBuf, 0, sizeof(m_tmpBuf));
-	m_chksum1LongLong = 0;
-	m_isNew = false;
 	m_SAVE_START = 0;
 	m_lastDocId = 0;
 	m_prevDocId = 0;
@@ -135,8 +120,6 @@ Repair::Repair() {
 	m_rebuildRoots = true;
 	m_rebuildNonRoots = true;
 	m_collnum = 0;
-	m_newCollLen = 0;
-	m_newCollnum = 0;
 	m_colli = 0;
 	m_numColls = 0;
 	m_SAVE_END = 0;
@@ -149,7 +132,6 @@ Repair::Repair() {
 	m_saveRepairState = false;
 	m_isRetrying = false;
 	
-	memset(m_newColl, 0, sizeof(m_newColl));
 	memset(&m_collOffs, 0, sizeof(m_collOffs));
 	memset(&m_collLens, 0, sizeof(m_collLens));
 }
@@ -162,7 +144,6 @@ bool Repair::init ( ) {
 	m_saveRepairState = false;
 	m_isRetrying      = false;
 	m_needsCallback   = false;
-	m_completed       = false;
 	if( ! g_loop.registerSleepCallback( 1 , NULL , repairWrapper ) ) {
 		log(LOG_WARN, "repair: Failed register callback.");
 		return false;
@@ -432,9 +413,6 @@ void Repair::repairWrapper(int fd, void *state) {
 
 		// ready to reset
 		g_repairMode = 8;
-
-		// mark it
-		g_repair.m_completed = true;
 	}
 
 	// go back to 0 once all hosts do not equal 5
@@ -475,10 +453,7 @@ void Repair::initScan ( ) {
 
 	// reset some stuff for the titledb scan
 	m_nextTitledbKey.setMin();
-	m_nextSpiderdbKey.setMin();
 	m_lastSpiderdbKey.setMin();
-	m_nextPosdbKey.setMin ();
-	m_nextLinkdbKey.setMin  ();
 	m_endKey.setMax();
 	m_titleRecList.reset();
 	m_count = 0;
@@ -845,8 +820,6 @@ bool Repair::load ( ) {
 
 	// resume titledb scan?
 	m_nextTitledbKey = m_lastTitledbKey;
-	// resume spiderdb scan?
-	m_nextSpiderdbKey = m_lastSpiderdbKey;
 
 	// reinstate the valuable vars
 	m_cr   = g_collectiondb.m_recs [ m_collnum ];
@@ -1243,7 +1216,6 @@ bool Repair::gotScanRecList ( ) {
 	m_isDelete = false;
 	// we need this to compute the tfndb key to add/delete
 	//m_ext = -1;
-	m_uh48 = 0LL;
 
 	// count the title recs we scan
 	m_recsScanned++;
@@ -1304,8 +1276,6 @@ bool Repair::gotScanRecList ( ) {
 	if ( m_fn == base->getNumFiles() ) id2 = 255;
 	else                               id2 = base->m_fileIds2[m_fn];
 
-	// that is the tfn...
-	m_tfn = id2;
 	*/
 
 	// is it a negative titledb key?
@@ -1586,7 +1556,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	int64_t errors2 = m_spiderRecSetErrors;
 
 	const char *newColl = " &nbsp; ";
-	//if ( m_fullRebuild ) newColl = m_newColl;
 
 	const char *oldColl = " &nbsp; ";
 	if ( m_cr ) oldColl = m_cr->m_coll;
