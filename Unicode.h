@@ -153,11 +153,15 @@ bool inline isValidUtf8Char(const char *s) {
 // Geometric Shapes
 // 25A0–25FF: Geometric Shapes
 
+// Specials
+// FFF0-FFFF: Specials
+
 // +--------------------+----------+----------+----------+----------+
 // | Code Points        | 1st Byte | 2nd Byte | 3rd Byte | 4th Byte |
 // +--------------------+----------+----------+----------+----------+
 // | U+25A0..U+25BF     | E2       | 96       | A0..BF   |          |
 // | U+25C0..U+27BF     | E2       | 97..9E   | 80..BF   |          |
+// | U+FFF0..U+FFFF     | EF       | BF       | B0..BF   |          |
 // | U+1F000..U+1F0FF   | F0       | 9F       | 80..83   | 80..BF   |
 // | U+1F1E6..U+1F1FF   | F0       | 9F       | 87       | A6..BF   |
 // | U+1F300..U+1F6FF   | F0       | 9F       | 8C..9B   | 80..BF   |
@@ -166,26 +170,31 @@ bool inline isValidUtf8Char(const char *s) {
 bool inline isUtf8UnwantedSymbols(const char *s) {
 	const uint8_t *u = (uint8_t *)s;
 
-	if ( u[0] == 0xE2 ) {
-		if ( ( u[1] == 0x96 ) &&
-		     ( u[2] >= 0xA0 && u[2] <= 0xBF ) ) {
+	if (u[0] == 0xE2) {
+		if ((u[1] == 0x96) &&
+		    (u[2] >= 0xA0 && u[2] <= 0xBF)) { // U+25A0..U+25BF
 			return true;
-		} else if ( ( u[1] >= 0x97 && u[1] <= 0x9E ) &&
-		            ( u[2] >= 0x80 && u[2] <= 0xBF ) ) { // U+25C0..U+27BF
+		} else if ((u[1] >= 0x97 && u[1] <= 0x9E) &&
+		           (u[2] >= 0x80 && u[2] <= 0xBF)) { // U+25C0..U+27BF
 			return true;
 		}
-	} else if ( u[0] == 0xF0 && u[1] == 0x9F ) {
-		if ( ( u[2] >= 0x80 && u[2] <= 0x83 ) &&
-		     ( u[3] >= 0x80 && u[3] <= 0xBF ) ) { // U+1F000..U+1F0FF
+	} else if (u[0] == 0xEF) {
+		if ((u[1] == 0xBF) &&
+		    (u[2] >= 0xB0 && u[2] <= 0xBF)) { // U+FFF0..U+FFFF
 			return true;
-		} else if ( ( u[2] == 0x87 ) &&
-		            ( u[3] >= 0xA6 && u[3] <= 0xBF ) ) { // U+1F1E6..U+1F1FF
+		}
+	} else if (u[0] == 0xF0 && u[1] == 0x9F) {
+		if ((u[2] >= 0x80 && u[2] <= 0x83) &&
+		    (u[3] >= 0x80 && u[3] <= 0xBF)) { // U+1F000..U+1F0FF
 			return true;
-		} else if ( ( u[2] >= 0x8C && u[2] <= 0x9B ) &&
-					( u[3] >= 0x80 && u[3] <= 0xBF ) ) { // U+1F300..U+1F6FF
+		} else if ((u[2] == 0x87) &&
+		           (u[3] >= 0xA6 && u[3] <= 0xBF)) { // U+1F1E6..U+1F1FF
 			return true;
-		} else if ( ( u[2] >= 0xA4 && u[2] <= 0xA7 ) &&
-					( u[3] >= 0x80 && u[3] <= 0xBF ) ) { // U+1F900..U+1F9FF
+		} else if ((u[2] >= 0x8C && u[2] <= 0x9B) &&
+		           (u[3] >= 0x80 && u[3] <= 0xBF)) { // U+1F300..U+1F6FF
+			return true;
+		} else if ((u[2] >= 0xA4 && u[2] <= 0xA7) &&
+		           (u[3] >= 0x80 && u[3] <= 0xBF)) { // U+1F900..U+1F9FF
 			return true;
 		}
 	}
