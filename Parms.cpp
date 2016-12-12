@@ -9196,9 +9196,8 @@ void Parms::init ( ) {
 
 	m->m_title = "collection to rebuild";
 	m->m_xml   = "collectionToRebuild";
-	m->m_desc  = "Name of collection to rebuild.";
-	// m->m_desc  = "Comma or space separated list of the collections "
-	// 	"to rebuild.";
+	m->m_desc  = "Comma or space separated list of the collections "
+		"to rebuild.";
 	m->m_cgi   = "rctr"; // repair collections to repair
 	m->m_off   = offsetof(Conf,m_collsToRepair);
 	m->m_type  = TYPE_SAFEBUF;//STRING;
