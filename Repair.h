@@ -57,7 +57,6 @@ private:
 
 	// general scan vars
 	Msg5       m_msg5;
-	Msg4       m_msg4;
 	bool       m_needsCallback;
 	char       m_docQuality;
 	RdbList    m_titleRecList;
