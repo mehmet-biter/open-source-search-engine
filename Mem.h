@@ -12,7 +12,6 @@
 #include <new>
 #include <stddef.h>            //for NULL
 #include <inttypes.h>
-#include "Sanity.h"
 
 
 class SafeBuf;
