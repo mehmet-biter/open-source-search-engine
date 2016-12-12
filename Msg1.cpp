@@ -8,6 +8,7 @@
 #include "Profiler.h"
 #include "Repair.h"
 #include "Process.h"
+#include "UdpServer.h"
 #include "Conf.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
