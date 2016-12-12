@@ -6068,7 +6068,13 @@ void doInjectWarc ( int64_t fsize ) {
 	if( warcDateStr ) {
 		warcDateStr += 10;
 		for(;warcDateStr && is_wspace_a(*warcDateStr);warcDateStr++);
-		if ( warcDateStr ) warcTime = atotime ( warcDateStr );
+		if ( warcDateStr ) {
+			struct tm tm;
+			// YYYY-MM-DDThh:mm:ssZ
+			if (strptime(warcDateStr, "%FT%TZ", &tm)) {
+				warcTime = timegm(&tm);
+			}
+		}
 	}
 
 	// set the url now

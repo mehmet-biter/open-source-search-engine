@@ -11,6 +11,8 @@
 #include "Posdb.h"
 #include "Collectiondb.h"
 #include "Conf.h"
+#include "Mem.h"
+
 
 static void gotReplyWrapper3a     ( void *state , void *state2 ) ;
 

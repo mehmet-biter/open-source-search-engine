@@ -24,7 +24,9 @@
 #include "ip.h"
 #include "max_niceness.h"
 #include "Conf.h"
+#include "Mem.h"
 #include <sys/stat.h> //mdir()
+
 
 Rdb::Rdb ( ) {
 

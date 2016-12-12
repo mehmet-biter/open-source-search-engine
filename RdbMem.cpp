@@ -1,5 +1,6 @@
 #include "RdbMem.h"
 #include "Rdb.h"
+#include "Mem.h"
 #include "Sanity.h"
 
 // RdbMem allocates a fixed chunk of memory and initially sets m_ptr1 to point at the start and m_ptr2 at the end

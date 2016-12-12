@@ -17,6 +17,7 @@
 #include "PingServer.h"
 #include "ip.h"
 #include "max_niceness.h"
+#include "Mem.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
 

@@ -252,6 +252,111 @@ static Needle s_needles2[] = {
 };
 
 
+//Check if a path is likely to contain uncontrolled links
+//Eg. guestbooks, blog comments, link-trade, etc. There is nothing from with them per see
+//but often a lot of them are unmonitored/unmoderated and link spammers insert links in them.
+static bool isLinkfulPath(const char *path, size_t pathLen, const char **note) {
+	if(pathLen<=1)
+		return false;
+	if(strncasestr(path,"guest",pathLen,5)) {
+		*note = "path has guest";
+		return true;
+	} else if(strncasestr(path,"cgi",pathLen,3)) {
+		*note = "path has cgi";
+		return true;
+	} else if(strncasestr(path,"gast",pathLen,4)) { // german
+		*note = "path has gast";
+		return true;
+	} else if(strncasestr(path,"gaest",pathLen,5)) { //danish
+		*note = "path has gaest";
+		return true;
+	} else if(strncasestr(path,"gbook",pathLen,5)) {
+		*note = "path has gbook";
+		return true;
+	} else if(strncasestr(path,"akobook",pathLen,7)) { // vietnamese?
+		*note = "path has akobook";
+		return true;
+	} else if(strncasestr(path,"/gb",pathLen,3)) {
+		*note = "path has /gb";
+		return true;
+	} else if(strncasestr(path,"msg",pathLen,3 )) {
+		*note = "path has msg";
+		return true;
+	} else if(strncasestr(path,"messag",pathLen,6)) {
+		*note = "path has messag";
+		return true;
+	} else if(strncasestr(path,"board",pathLen,5)) {
+		*note = "path has board";
+		return true;
+	} else if(strncasestr(path,"coment",pathLen,6)) {
+		*note = "path has coment";
+		return true;
+	} else if(strncasestr(path,"comment",pathLen,7)) {
+		*note = "path has comment";
+		return true;
+	} else if(strncasestr(path,"linktrader",pathLen,10)) {
+		*note = "path has linktrader";
+		return true;
+	} else if(strncasestr(path,"tradelinks",pathLen,10)) {
+		*note = "path has tradelinks";
+		return true;
+	} else if(strncasestr(path,"trade-links",pathLen,11)) {
+		*note = "path has trade-links";
+		return true;
+	} else if(strncasestr(path,"linkexchange",pathLen,12)) {
+		*note = "path has linkexchange";
+		return true;
+	} else if(strncasestr(path,"link-exchange",pathLen,13)) {
+		*note = "path has link-exchange";
+		return true;
+	} else if(strncasestr(path,"reciprocal-link",pathLen,15)) {
+		*note = "path has reciprocal-link";
+		return true;
+	} else if(strncasestr(path,"reciprocallink",pathLen,14)) {
+		*note = "path has reciprocallink";
+		return true;
+	} else if(strncasestr(path,"/trackbacks/",pathLen,12)) {
+		*note = "path has /trackbacks/";
+		return true;
+	}
+	return false;
+}
+
+
+//Check if the document looks like a web statistics page
+static bool isWebstatisticsPage(const Xml *xml) {
+	// does title contain "web statistics for"?
+	int32_t titleLen;
+	const char *title = xml->getString("title", &titleLen);
+	if(title && titleLen > 0) {
+		// normalize title into buffer, remove non alnum chars
+		char buf[256];
+		char *dst    = buf;
+		char *dstEnd = buf + 250;
+		const char *src    = title;
+		const char *srcEnd = title + titleLen;
+		while(dst < dstEnd && src < srcEnd) {
+			// remove punct
+			if(is_alnum_a(*src) )
+				*dst++ = to_lower_a(*src);
+			src++;
+		}
+		*dst = '\0';
+		// see if it matches some catch phrases
+		bool val = false;
+		if      ( strstr (buf,"webstatisticsfor"      )) val = true;
+		if      ( strstr (buf,"webserverstatisticsfor")) val = true;
+		else if ( strstr (buf,"usagestatisticsfor"    )) val = true;
+		else if ( strstr (buf,"siteusageby"           )) val = true;
+		else if ( strstr (buf,"surfstatsloganal"      )) val = true;
+		else if ( strstr (buf,"webstarterhelpstats"   )) val = true;
+		else if ( strstr (buf,"sitestatistics"        )) val = true;
+		return val;
+	}
+	return false;
+}
+
+
 // . we set the bit in linkdb for a doc if this returns true
 // . it precludes a doc from voting if its bits is set in linkdb
 // . this saves resources
@@ -266,27 +371,31 @@ bool setLinkSpam ( int32_t       ip                 ,
 		   Xml       *xml                ,
 		   Links     *links              ,
 		   bool       isContentTruncated ) {
-	// get our url
-	//Url *linker = tr->getUrl();
 	// it is critical to get inlinks from all pingserver xml
 	// pages regardless if they are often large pages. we
 	// have to manually hard-code the ping servers in for now.
 	if ( linker->isPingServer() ) return false;
 	// if the doc got truncated we may be missing valuable identifiers
 	// that identify the doc as a guestbook or something
-	if ( isContentTruncated )
-		return links->setAllSpamBits("doc too big");
+	if ( isContentTruncated ) {
+		links->setAllSpamBits("doc too big");
+		return true;
+	}
 	// get linker quality
 	//int32_t q = tr->getDocQuality();
 	// do not allow .info or .biz to vote ever for now
 	const char *tld    = linker->getTLD();
 	int32_t  tldLen = linker->getTLDLen();
 	if ( tldLen == 4 && strncmp ( tld, "info" , tldLen) == 0 && //q < 55 )
-	     siteNumInlinks < 20 )
-		return links->setAllSpamBits("low quality .info linker");
+	     siteNumInlinks < 20 ) {
+		links->setAllSpamBits("low quality .info linker");
+		return true;
+	}
 	if ( tldLen == 3 && strncmp ( tld, "biz" , tldLen) == 0 && //q < 55 )
-	     siteNumInlinks < 20 )
-		return links->setAllSpamBits("low quality .biz linker");
+	     siteNumInlinks < 20 ) {
+		links->setAllSpamBits("low quality .biz linker");
+		return true;
+	}
 
 	// guestbook in hostname - domain?
 	const char *hd  = linker->getHost();
@@ -295,97 +404,31 @@ bool setLinkSpam ( int32_t       ip                 ,
 	if ( hd && hd2 && hdlen < 30 ) {
 		bool hasIt = false;
 		if ( strnstr ( hd , "guestbook", hdlen ) ) hasIt = true;
-		if ( hasIt ) 
-			return links->setAllSpamBits("guestbook in hostname");
+		if ( hasIt ) {
+			links->setAllSpamBits("guestbook in hostname");
+			return true;
+		}
 	}
 
 	// do not allow any cgi url to vote
-	if ( linker->isCgi() )
-		return links->setAllSpamBits("path is cgi");
+	if ( linker->isCgi() ) {
+		links->setAllSpamBits("path is cgi");
+		return true;
+	}
 
-	int32_t plen = linker->getPathLen();
 	// if the page has just one rel=nofollow tag then we know they
 	// are not a guestbook
 	//if ( links->hasRelNoFollow() ) plen = 0;
-	if ( plen > 1 ) {
-		const char *p    = linker->getPath();
-		//char  c    = p[plen-1];
-		//p[plen-1] = '\0';
-		//bool val = false;
-		const char *note = NULL;
-		if ( strncasestr ( p , "guest",plen,5) ) 
-			note = "path has guest"          ;
-		else if ( strncasestr ( p , "cgi",plen,3) ) 
-			note = "path has cgi"            ;
-		else if ( strncasestr ( p , "gast",plen,4) ) 
-			note = "path has gast"           ;
-		// german
-		else if ( strncasestr ( p , "gaest",plen,5) )
-			note = "path has gaest"          ;
-		else if ( strncasestr ( p , "gbook",plen,5) ) 
-			note = "path has gbook"          ;
-		// vietnamese?
-		else if ( strncasestr ( p , "akobook",plen,7) ) 
-			note = "path has akobook"        ;
-		else if ( strncasestr ( p , "/gb",plen,3) ) 
-			note = "path has /gb"            ;
-		else if ( strncasestr ( p , "msg",plen,3 ) ) 
-			note = "path has msg"            ;
-		else if ( strncasestr ( p , "messag",plen,6) ) 
-			note = "path has messag"         ;
-		else if ( strncasestr ( p , "board",plen,5) ) 
-			note = "path has board"          ;
-		else if ( strncasestr ( p , "coment",plen,6) ) 
-			note = "path has coment"         ;
-		else if ( strncasestr ( p , "comment",plen,7) ) 
-			note = "path has comment"        ;
-		else if ( strncasestr ( p , "linktrader",plen,10) ) 
-			note = "path has linktrader"     ;
-		else if ( strncasestr ( p , "tradelinks",plen,10) ) 
-			note = "path has tradelinks"     ;
-		else if ( strncasestr ( p , "trade-links",plen,11) ) 
-			note = "path has trade-links"    ;
-		else if ( strncasestr ( p , "linkexchange",plen,12) ) 
-			note = "path has linkexchange"   ;
-		else if ( strncasestr ( p , "link-exchange",plen,13  ) )
-			note = "path has link-exchange"  ;
-		else if ( strncasestr ( p , "reciprocal-link",plen,15) )
-			note = "path has reciprocal-link";
-		else if ( strncasestr ( p , "reciprocallink",plen, 14) )
-			note = "path has reciprocallink" ;
-		else if ( strncasestr ( p , "/trackbacks/",plen,12 ) ) 
-			note = "path has /trackbacks/"   ;
-		if ( note ) return links->setAllSpamBits(note);
+	const char *note = NULL;
+	if(isLinkfulPath(linker->getPath(),linker->getPathLen(),&note)) {
+		links->setAllSpamBits(note);
+		return true;
 	}
 
 	// does title contain "web statistics for"?
-	int32_t  tlen ;
-	const char *title = xml->getString ( "title" , &tlen );
-	if ( title && tlen > 0 ) {
-		// normalize title into buffer, remove non alnum chars
-		char buf[256];
-		char *d    = buf;
-		char *dend = buf + 250;
-		const char *s    = title;
-		const char *send = title + tlen;
-		while ( d < dend && s < send ) {
-			// remove punct
-			if ( ! is_alnum_a(*s) ) { s++; continue; }
-			*d = to_lower_a ( *s );
-			d++;
-			s++;
-		}
-		*d = '\0';
-		// see if it matches some catch phrases
-		bool val = false;
-		if      ( strstr (buf,"webstatisticsfor"      )) val = true;
-		if      ( strstr (buf,"webserverstatisticsfor")) val = true;
-		else if ( strstr (buf,"usagestatisticsfor"    )) val = true;
-		else if ( strstr (buf,"siteusageby"           )) val = true;
-		else if ( strstr (buf,"surfstatsloganal"      )) val = true;
-		else if ( strstr (buf,"webstarterhelpstats"   )) val = true;
-		else if ( strstr (buf,"sitestatistics"        )) val = true;
-		if ( val ) return links->setAllSpamBits("stats page");
+	if(isWebstatisticsPage(xml)) {
+		links->setAllSpamBits("stats page");
+		return true;
 	}
 
 	/////////////////////////////////////////////////////
@@ -394,8 +437,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 	//
 	/////////////////////////////////////////////////////
 
-	//char *haystack     = tr->getContent();
-	//int32_t  haystackSize = tr->getContentLen();
 	char *haystack     = xml->getContent();
 	int32_t  haystackSize = xml->getContentLen();
 
@@ -417,7 +458,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 
 	// see if we got a hit
 	char *minPtr = NULL;
-	const char *note   = NULL;
+	note = NULL;
 	for ( int32_t i = 0 ; i < numNeedles1 ; i++ ) {
 		// open.thumbshots.org needs multiple counts
 		if ( i == 0 && s_needles1[i].m_count < 5 ) continue;
@@ -425,8 +466,10 @@ bool setLinkSpam ( int32_t       ip                 ,
 		if ( s_needles1[i].m_count <= 0  ) continue;
 		// ok, if it had its section bit set to 0 that means the
 		// whole page is link spam!
-		if ( s_needles1[i].m_isSection == 0 )
-			return links->setAllSpamBits(s_needles1[i].m_string );
+		if ( s_needles1[i].m_isSection == 0 ) {
+			links->setAllSpamBits(s_needles1[i].m_string );
+			return true;
+		}
 		// get the char ptr
 		char *ptr = s_needles1[i].m_firstMatch;
 		// set to the min
@@ -477,7 +520,8 @@ bool setLinkSpam ( int32_t       ip                 ,
 		// skip if did not match
 		if ( s_needles2[i].m_count <= 0 ) continue;
 		// the whole doc is considered link spam
-		return links->setAllSpamBits(s_needles2[i].m_string); 
+		links->setAllSpamBits(s_needles2[i].m_string);
+		return true;
 	}
 
 	//skiplinks:
@@ -509,16 +553,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 			if ( xml->getNodeId ( i ) == TAG_INPUT &&
 			     xml->getString(i,"submit",&len)) gotSubmit = true;
 		}
-		// check for script tag
-		/*
-		if ( xml->getNodeId(i) == TAG_SCRIPT && quality < 80 ) {
-			// <script src=blah.com/fileparse.js" 
-			// type="text/javascript"> is used to hide google
-			// ads, so don't allow those pages to vote either
-			int32_t  slen; xml->getString(i,"src",&slen);
-			if ( slen > 0 ) { *note = "script src"; return true; }
-		}
-		*/
+
 		if ( xml->getNodeId ( i ) != TAG_FORM ) continue;
 			
 		// get the method field of this base tag
@@ -526,9 +561,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 		char *s = (char *) xml->getString(i,"method",&slen);
 		// if not thee, skip it
 		if ( ! s || slen <= 0 ) continue;
-		//if ( slen != 4 ) continue;
-		// if not a post, skip it
-		//if ( strncasecmp ( s , "post" , 4 ) ) continue;
 		// get the action url
 		s = (char *) xml->getString(i,"action",&slen);
 		if ( ! s || slen <= 0 ) continue;
@@ -542,23 +574,27 @@ bool setLinkSpam ( int32_t       ip                 ,
 		else if ( strstr ( s , "/mt/" ) ) val = true;
 		// they can have these search boxes though
 		if ( val && strstr ( s , "/mt/mt-search" ) ) val = false;
-		//else if ( strstr ( s , "cgi"     ) ) val = true;
-		// eliminate some false positives
-		//if ( val && strstr ( s , "search" ) ) val = false;
 		s[slen] = c;
-		if ( val ) return links->setAllSpamBits("post page");
+		if ( val ) {
+			links->setAllSpamBits("post page");
+			return true;
+		}
 	}
 
-	if ( gotTextArea && gotSubmit )
-		return links->setAllSpamBits("textarea tag");
+	if ( gotTextArea && gotSubmit ) {
+		links->setAllSpamBits("textarea tag");
+		return true;
+	}
 
 	// edu, gov, etc. can have link chains
 	if ( tldLen >= 3 && strncmp ( tld, "edu" , 3) == 0 ) return true;
 	if ( tldLen >= 3 && strncmp ( tld, "gov" , 3) == 0 ) return true;
 
 	// if linker is naughty, he cannot vote... how did he make it in?
-	if ( linker->isAdult() )
-		return links->setAllSpamBits("linker is sporny"); 
+	if ( linker->isAdult() ) {
+		links->setAllSpamBits("linker is sporny");
+		return true;
+	}
 
 	// . if they link to any adult site, consider them link spam
 	// . just consider a 100 link radius around linkNode
@@ -657,97 +693,20 @@ bool isLinkSpam ( const Url *linker,
 	// do not allow any cgi url to vote
 	if ( linker->isCgi() ) { *note = "path is cgi"; return true; }
 
-	int32_t plen = linker->getPathLen();
-
 	// if the page has just one rel=nofollow tag then we know they
 	// are not a guestbook
 	//if ( links->hasRelNoFollow() ) plen = 0;
-	if ( plen > 1 ) {
-		const char *p    = linker->getPath();
-		//char  c    = p[plen-1];
-		//p[plen-1] = '\0';
-		//bool val = false;
-		if ( strncasestr ( p , "guest",plen,5) ) {
-			*note = "path has guest"          ; return true; }
-		else if ( strncasestr ( p , "cgi",plen,3) ) { 
-			*note = "path has cgi"            ; return true; }
-		else if ( strncasestr ( p , "gast",plen,4) ) { 
-			*note = "path has gast"           ; return true; }
-		// german
-		else if ( strncasestr ( p , "gaest",plen,5) ) {
-			*note = "path has gaest"          ; return true; }
-		else if ( strncasestr ( p , "gbook",plen,5) ) { 
-			*note = "path has gbook"          ; return true; }
-		// vietnamese?
-		else if ( strncasestr ( p , "akobook",plen,7) ) { 
-			*note = "path has akobook"        ; return true; }
-		else if ( strncasestr ( p , "/gb",plen,3) ) { 
-			*note = "path has /gb"            ; return true; }
-		else if ( strncasestr ( p , "msg",plen,3 ) ) { 
-			*note = "path has msg"            ; return true; }
-		else if ( strncasestr ( p , "messag",plen,6) ) { 
-			*note = "path has messag"         ; return true; }
-		else if ( strncasestr ( p , "board",plen,5) ) { 
-			*note = "path has board"          ; return true; }
-		else if ( strncasestr ( p , "coment",plen,6) ) { 
-			*note = "path has coment"         ; return true; }
-		else if ( strncasestr ( p , "comment",plen,7) ) { 
-			*note = "path has comment"        ; return true; }
-		else if ( strncasestr ( p , "linktrader",plen,10) ) { 
-			*note = "path has linktrader"     ; return true; }
-		else if ( strncasestr ( p , "tradelinks",plen,10) ) { 
-			*note = "path has tradelinks"     ; return true; }
-		else if ( strncasestr ( p , "trade-links",plen,11) ) { 
-			*note = "path has trade-links"    ; return true; }
-		else if ( strncasestr ( p , "linkexchange",plen,12) ) { 
-			*note = "path has linkexchange"   ; return true; }
-		else if ( strncasestr ( p , "link-exchange",plen,13  ) ) {
-			*note = "path has link-exchange"  ; return true; }
-		else if ( strncasestr ( p , "reciprocal-link",plen,15) ) {
-			*note = "path has reciprocal-link"; return true; }
-		else if ( strncasestr ( p , "reciprocallink",plen, 14) ) {
-			*note = "path has reciprocallink" ; return true; }
-		else if ( strncasestr ( p , "/trackbacks/",plen,12 ) ) { 
-			*note = "path has /trackbacks/"   ; return true; }
-	}
+	if(isLinkfulPath(linker->getPath(),linker->getPathLen(),note))
+		return true;
 
 	if( !xml ) {
 		return false;
 	}
 
-	// scan through the content as fast as possible
-	char  *content    = xml->getContent(); 
-	int32_t   contentLen = xml->getContentLen();
-
-
 	// does title contain "web statistics for"?
-	int32_t  tlen ;
-	char *title = xml->getString ( "title" , &tlen );
-	if ( title && tlen > 0 ) {
-		// normalize title into buffer, remove non alnum chars
-		char buf[256];
-		char *d    = buf;
-		char *dend = buf + 250;
-		char *s    = title;
-		char *send = title + tlen;
-		while ( d < dend && s < send ) {
-			// remove punct
-			if ( ! is_alnum_a(*s) ) { s++; continue; }
-			*d = to_lower_a ( *s );
-			d++;
-			s++;
-		}
-		*d = '\0';
-		// see if it matches some catch phrases
-		bool val = false;
-		if      ( strstr (buf,"webstatisticsfor"      )) val = true;
-		if      ( strstr (buf,"webserverstatisticsfor")) val = true;
-		else if ( strstr (buf,"usagestatisticsfor"    )) val = true;
-		else if ( strstr (buf,"siteusageby"           )) val = true;
-		else if ( strstr (buf,"surfstatsloganal"      )) val = true;
-		else if ( strstr (buf,"webstarterhelpstats"   )) val = true;
-		else if ( strstr (buf,"sitestatistics"        )) val = true;
-		if ( val ) { *note = "stats page"; return true; }
+	if(isWebstatisticsPage(xml)) {
+		*note = "stats page";
+		return true;
 	}
 
 	/////////////////////////////////////////////////////
@@ -756,16 +715,12 @@ bool isLinkSpam ( const Url *linker,
 	//
 	/////////////////////////////////////////////////////
 
-	char *haystack     = content;
-	int32_t  haystackSize = contentLen;
-
-	// get our page quality, it serves as a threshold for some algos
-	//char quality = tr->getNewQuality();
+	char *haystack     = xml->getContent();
+	int32_t  haystackSize = xml->getContentLen();
 
 	char *linkPos = NULL;
 	if ( linkNode >= 0 ) linkPos = xml->getNode ( linkNode );
 
-	// loop:
 	// do not call them "bad links" if our link occurs before any
 	// comment section. our link's position therefore needs to be known,
 	// that is why we pass in linkPos. 
@@ -881,7 +836,8 @@ bool isLinkSpam ( const Url *linker,
 	if ( tldLen >= 3 && strncmp ( tld, "gov" , 3) == 0 ) return false;
 
 	// if linker is naughty, he cannot vote
-	if ( linker->isAdult() ) return true;
+	if ( linker->isAdult() )
+		return true;
 
 	// if being called from PageTitledb.cpp for displaying a titlerec, 
 	// then do not call this, because no linkee is provided in that case.

@@ -4,6 +4,7 @@
 #include "Collectiondb.h"
 #include "Statsdb.h"
 #include "Conf.h"
+#include "Mem.h"
 #include <fcntl.h>
 
 

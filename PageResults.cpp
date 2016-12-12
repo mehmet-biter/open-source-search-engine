@@ -31,6 +31,8 @@
 #include "ip.h"
 #include "GbUtil.h"
 #include "Conf.h"
+#include "Mem.h"
+
 
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;
 static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) ;

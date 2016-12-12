@@ -4,6 +4,8 @@
 #include "HttpRequest.h"
 #include "Process.h"
 #include "Conf.h"
+#include "Mem.h"
+
 
 #define PP_NICENESS 2
 

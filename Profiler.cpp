@@ -9,6 +9,7 @@
 #include "Conf.h"
 #include "Hostdb.h"
 #include "Loop.h"
+#include "Mem.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
 

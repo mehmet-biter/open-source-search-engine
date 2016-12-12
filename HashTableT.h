@@ -3,7 +3,6 @@
 #ifndef GB_HASHTABLET_H
 #define GB_HASHTABLET_H
 
-#include "Mem.h"     // for mcalloc and mmalloc
 #include "SafeBuf.h"
 #include "types.h"
 

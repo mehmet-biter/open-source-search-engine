@@ -3,6 +3,7 @@
 #include "RdbScan.h"
 #include "Rdb.h"
 #include "Process.h"
+#include "Mem.h"
 
 
 // . readset up for a scan of slots in the RdbScans

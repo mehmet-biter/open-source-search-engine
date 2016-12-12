@@ -460,10 +460,6 @@ class CollectionRec {
 
 	HashTableX m_seedHashTable;
 
-	// only spider urls due to be spidered in this time range
-	int32_t  m_spiderTimeMin;
-	int32_t  m_spiderTimeMax;
-
 	int32_t  m_maxAddUrlsPerIpDomPerDay;
 
 	// . max content length of text/html or text/plain document

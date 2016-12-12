@@ -8,6 +8,7 @@
 #include "Process.h"
 #include "File.h"
 #include "Dns_internals.h"
+#include "Mem.h"
 #include <fcntl.h>
 
 

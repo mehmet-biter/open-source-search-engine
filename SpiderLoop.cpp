@@ -16,6 +16,7 @@
 #include "PingServer.h"
 #include "ip.h"
 #include "Conf.h"
+#include "Mem.h"
 
 
 // . this was 10 but cpu is getting pegged, so i set to 45

@@ -17,6 +17,7 @@
 #include "Conf.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
+#include "Mem.h"
 #include <new>
 
 

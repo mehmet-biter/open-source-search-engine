@@ -19,6 +19,7 @@
 #include "GigablastRequest.h"
 #include "Process.h"
 #include "GbUtil.h"
+#include "Mem.h"
 #include <fcntl.h>
 
 #ifdef _VALGRIND_
@@ -2096,9 +2097,9 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 	// so we need to rewrite the Content-Length: and the 
 	// Content-Encoding: http mime field values so they are no longer
 	// "gzip" and use the uncompressed content-length.
-	char *ptr1 = mime.getContentEncodingPos();
-	char *ptr2 = mime.getContentLengthPos();
-	char *ptr3 = NULL;
+	const char *ptr1 = mime.getContentEncodingPos();
+	const char *ptr2 = mime.getContentLengthPos();
+	const char *ptr3 = NULL;
 
 	// change the content type based on the extension before the
 	// .gz extension since we are uncompressing it
@@ -2132,7 +2133,7 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 
  subloop:
 
-	char *nextMin = (char *)-1;
+	const char *nextMin = (char *)-1;
 	if ( ptr1 && (ptr1 < nextMin || nextMin==(char *)-1)) nextMin = ptr1;
 	if ( ptr2 && (ptr2 < nextMin || nextMin==(char *)-1)) nextMin = ptr2;
 	if ( ptr3 && (ptr3 < nextMin || nextMin==(char *)-1)) nextMin = ptr3;

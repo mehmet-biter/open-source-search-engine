@@ -22,29 +22,15 @@ protected:
 	bool getField( const char **field, int32_t *fieldLen );
 	bool getValue( const char **value, int32_t *valueLen );
 
-	const char* getCurrentLine() const {
-		return m_currentLine;
-	}
+	const char* getCurrentLine() const { return m_currentLine; }
+	int32_t getCurrentLineLen() const { return m_currentLineLen; }
 
-	int32_t getCurrentLineLen() const {
-		return m_currentLineLen;
-	}
+	bool isUserAgentFound() const { return m_userAgentFound; }
+	bool isDefaultUserAgentFound() const { return m_defaultUserAgentFound; }
 
-	bool isUserAgentFound() const {
-		return m_userAgentFound;
-	}
+	bool isRulesEmpty() const { return m_rules.empty(); }
 
-	bool isDefaultUserAgentFound() const {
-		return m_defaultUserAgentFound;
-	}
-
-	bool isRulesEmpty() const {
-		return m_rules.empty();
-	}
-
-	bool isDefaultRulesEmpty() const {
-		return m_defaultRules.empty();
-	}
+	bool isDefaultRulesEmpty() const { return m_defaultRules.empty(); }
 
 private:
 	void parse();

@@ -4,6 +4,7 @@
 #include "Conf.h"
 #include "Collectiondb.h"
 #include "ip.h"
+#include "Mem.h"
 
 class XmlDocTest : public ::testing::Test {
 protected:

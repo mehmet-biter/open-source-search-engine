@@ -23,11 +23,10 @@
 //#define MAX_REQ_LEN (1024)
 
 #include "SafeBuf.h"
-#include "Mem.h"       // mdup
-#include "Url.h"       // Url class
-#include "TcpSocket.h"
+class TcpSocket;
 
 #include "GbFormat.h"
+
 
 class HttpRequest {
 

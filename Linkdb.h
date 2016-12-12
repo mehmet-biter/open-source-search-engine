@@ -627,7 +627,7 @@ public:
 	// . link spam functions. used by linkspam.cpp's setLinkSpam().
 	// . also used by Linkdb.cpp to create a linkdb list to add to rdb
 	// . we do not add outlinks to linkdb if they are "link spam"
-	bool setAllSpamBits ( const char *note ) { m_spamNote = note; return true; }
+	void setAllSpamBits ( const char *note ) { m_spamNote = note; }
 	void setSpamBit  ( const char *note , int32_t i ) { m_spamNotes[i] = note; }
 	void setSpamBits ( const char *note , int32_t i ) {
 		for (int32_t j=i ; j<m_numLinks ; j++) m_spamNotes[j] = note;}
