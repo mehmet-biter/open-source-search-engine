@@ -2915,8 +2915,11 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 		xd->reset();
 		// uncompress the title rec
 		//TitleRec tr;
-		if ( ! xd->set2 ( rec , recSize , coll ,NULL , 0 ) )
+		if ( ! xd->set2 ( rec , recSize , coll ,NULL , 0 ) ) {
+			//set2() may have logged something but not the docid
+			log(LOG_WARN, "dbdump: XmlDoc::set2() failed for docid %" PRId64, docId);
 			continue;
+		}
 
 		// extract the url
 		Url *u = xd->getFirstUrl();
