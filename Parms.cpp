@@ -9225,7 +9225,7 @@ void Parms::init ( ) {
 	m->m_desc  = "In bytes.";
 	m->m_cgi   = "rmtu"; // repair mem to use
 	m->m_off   = offsetof(Conf,m_repairMem);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_LONG_LONG;
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "200000000";
