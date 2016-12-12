@@ -193,6 +193,20 @@ void repairWrapper ( int fd , void *state ) {
 	//   when dumped, would mess up our scan.
 	if ( ! g_conf.m_repairingEnabled ) return;
 
+	if(g_conf.m_rebuildHost>=0 && getMyHostId()!=g_conf.m_rebuildHost) {
+		log(LOG_DEBUG, "repair: rebuild/repair is for host %d only and not us", g_conf.m_rebuildHost);
+		g_conf.m_repairingEnabled = false;
+		return;
+	}
+
+#ifndef PRIVACORE_SAFE_VERSION
+	if(g_conf.m_rebuildHost<0) {
+		log(LOG_DEBUG, "repair: rebuild/repair specified for all but this is not allowed in this safer version");
+		g_conf.m_repairingEnabled = false;
+		return;
+	}
+#endif
+
 	// if the power went off
 	if ( ! g_process.m_powerIsOn ) return;
 
