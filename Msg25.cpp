@@ -14,6 +14,7 @@
 #include "GbMutex.h"
 #include "ScopedLock.h"
 #include "Conf.h"
+#include "Mem.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

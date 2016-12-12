@@ -16,6 +16,7 @@
 #include "PageReindex.h"
 #include "GigablastRequest.h"
 #include "Process.h"
+#include "Mem.h"
 
 
 class State13 {

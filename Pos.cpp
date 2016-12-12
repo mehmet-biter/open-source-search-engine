@@ -4,6 +4,7 @@
 #include "Words.h"
 #include "Sections.h"
 #include "Conf.h"
+#include "Mem.h"
 
 
 Pos::Pos() {

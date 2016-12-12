@@ -8,6 +8,7 @@
 #include "SafeBuf.h"
 #include "max_niceness.h"
 #include "Conf.h"
+#include "Mem.h"
 
 class StateStatsdb {
  public:

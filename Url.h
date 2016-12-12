@@ -74,7 +74,7 @@ public:
 	void set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound,
 	          bool stripCommonFile, int32_t titledbVersion = TITLEREC_CURRENT_VERSION );
 
-	void print  ();
+	void print() const;
 	void reset  ();
 
 	// compare another url to us
@@ -112,7 +112,7 @@ public:
 	const char *getUrl() const { return m_url; }
 	int32_t getUrlLen() const { return m_ulen; }
 
-	const char *getScheme() { return m_scheme; }
+	const char *getScheme() const { return m_scheme; }
 	int32_t getSchemeLen() const { return m_slen; }
 
 	char       *getHost()       { return m_host; }
@@ -132,7 +132,8 @@ public:
 	char       *getPath()       { return m_path; }
 	const char *getPath() const { return m_path; }
 	int32_t getPathLen() const { return m_plen; }
-	char *getPathEnd() { return m_path + m_plen; }
+	char       *getPathEnd()       { return m_path + m_plen; }
+	const char *getPathEnd() const { return m_path + m_plen; }
 
 	char       *getFilename()       { return m_filename; }
 	const char *getFilename() const { return m_filename; }
@@ -183,8 +184,8 @@ public:
 	// is it xxx.com/* or www.xxx.com/* (CAUTION: www.xxx.yyy.com)
 	bool isSimpleSubdomain() const;
 
-	// is the url a porn/spam url?
-	bool isSpam() const;
+	// is the url a porn/adult url?
+	bool isAdult() const;
 
 	// . detects crazy repetetive urls like this:
 	//   http://www.pittsburghlive.com:8000/x/tribune-review/opinion/
@@ -200,11 +201,11 @@ public:
 
 	static char* getDisplayUrl( const char* url, SafeBuf* sb );
 
+	static void calculateBaseUrl(Url *baseUrl, const Url *currentUrl, const char *href, int32_t hrefLen);
+
 private:
 	void set( const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound, bool stripCommonFile,
 	          int32_t titledbVersion );
-
-	bool isSpam(const char *s, int32_t slen) const;
 
 	// the normalized url
 	char m_url[MAX_URL_LEN];

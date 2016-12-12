@@ -7,6 +7,7 @@
 #include "Parms.h"
 #include "GigablastRequest.h"
 #include "Conf.h"
+#include "Mem.h"
 
 static bool sendReply( void *state );
 

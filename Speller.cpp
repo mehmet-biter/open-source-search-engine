@@ -1,6 +1,7 @@
 #include "Speller.h"
 #include "Query.h"
 #include "StopWords.h"
+#include "AdultCheck.h"
 #include "Hostdb.h"
 #include "Process.h"
 #include "Conf.h"
@@ -60,11 +61,6 @@ void Speller::test ( char *ff ) {
 	fclose(fd);
 }
 
-bool Speller::generateDicts(int32_t numWordsToDump, const char *coll) {
-	//m_language[2].setLang(2);
-	//m_language[2].generateDicts ( numWordsToDump, coll );
-	return false;
-}
 
 // The unified dict is the combination of the word list, title rec and the top
 // query dict of all languages. It has to be created by loading each languages

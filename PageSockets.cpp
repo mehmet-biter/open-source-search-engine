@@ -8,6 +8,7 @@
 #include "SafeBuf.h"
 #include "Msg13.h"
 #include "ip.h"
+#include "Url.h"
 #include "max_coll_len.h"
 #include <algorithm>
 

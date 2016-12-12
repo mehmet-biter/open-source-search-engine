@@ -140,6 +140,10 @@ TEST(UnicodeTest, UnwantedSymbols) {
 	    "✀",
 	    "➿",
 
+		// FFF0-FFFF: Specials
+	    "￰",
+		"￿",
+
 		// 1F300–1F5FF: Miscellaneous Symbols and Pictographs
 	    "🌀",
 	    "🗿",

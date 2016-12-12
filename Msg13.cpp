@@ -13,8 +13,10 @@
 #include "ip.h"
 #include "GbUtil.h"
 #include "zlib.h"
+#include "Mem.h"
 
-static char g_fakeReply[] =
+
+static const char g_fakeReply[] =
 	"HTTP/1.0 200 (OK)\r\n"
 	"Content-Length: 0\r\n"
 	"Connection: Close\r\n"
@@ -1285,9 +1287,6 @@ void gotHttpReply2 ( void *state ,
 			goodStatus = false;
 		}
 	}				 
-				 
-	//Xml xml;
-	//Words words;
 
 	// point to the content
 	char *content = reply + mimeLen;

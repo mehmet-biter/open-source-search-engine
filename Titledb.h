@@ -17,6 +17,7 @@
 // new key format:
 // . <docId>     - 38 bits
 // . <urlHash48> - 48 bits  (used when looking up by url and not docid)
+//   <reserved>  -  9 bits
 // . <delBit>    -  1 bit
 
 class Titledb {
@@ -24,7 +25,7 @@ public:
 	// reset rdb
 	void reset();
 
-	bool verify(char *coll);
+	bool verify(const char *coll);
 
 	// init m_rdb
 	bool init ();
@@ -32,11 +33,12 @@ public:
 	// init secondary/rebuild titledb
 	bool init2 ( int32_t treeMem ) ;
 
-	Rdb* getRdb() { return &m_rdb; }
+	Rdb       *getRdb()       { return &m_rdb; }
+	const Rdb *getRdb() const { return &m_rdb; }
 
 	// . this is an estimate of the number of docs in the WHOLE db network
 	// . we assume each group/cluster has about the same # of docs as us
-	int64_t getGlobalNumDocs() {
+	int64_t estimateGlobalNumDocs() const {
 		return m_rdb.getNumTotalRecs() * (int64_t)g_hostdb.m_numShards;
 	}
 
@@ -45,19 +47,8 @@ public:
 	//   in the case of a collision we pick a nearby docId that is 
 	//   different but guaranteed to be in the same group/cluster, so you 
 	//   can be assured the top 32 bits of the docId will be unchanged
-	static uint64_t getProbableDocId(const Url *url, bool mask = true) {
-		uint64_t probableDocId = hash64b(url->getUrl(),0);
-		// Linkdb::getUrlHash() does not mask it
-		if ( mask ) probableDocId = probableDocId & DOCID_MASK;
-		// clear bits 6-13 because we want to put the domain hash there
-		// dddddddd dddddddd ddhhhhhh hhdddddd
-		probableDocId &= 0xffffffffffffc03fULL;
-		uint32_t h = hash8(url->getDomain(), url->getDomainLen());
-		//shift the hash by 6
-		h <<= 6;
-		// OR in the hash
-		probableDocId |= h;
-		return probableDocId;
+	static uint64_t getProbableDocId(const Url *url) {
+		return getProbableDocId(url->getUrl(), url->getDomain(), url->getDomainLen());
 	}
 
 	// a different way to do it
@@ -72,6 +63,7 @@ public:
 		uint64_t probableDocId = hash64b(url,0) & 
 			DOCID_MASK;
 		// clear bits 6-13 because we want to put the domain hash there
+		// dddddddd dddddddd ddhhhhhh hhdddddd
 		probableDocId &= 0xffffffffffffc03fULL;
 		uint32_t h = hash8(dom,domLen);
 		//shift the hash by 6
@@ -114,7 +106,7 @@ public:
 	// does this key/docId/url have it's titleRec stored locally?
 	static bool isLocal(int64_t docId);
 
-	static bool isLocal(Url *url) {
+	static bool isLocal(const Url *url) {
 		return isLocal(getProbableDocId(url));
 	}
 

@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <vector>
-#include "MsgType.h"
+#include "msgtype_t.h"
 
 class UdpSlot;
 

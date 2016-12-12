@@ -12,6 +12,7 @@
 #include "Xml.h"
 #include "BitOperations.h"
 #include "Process.h"
+#include "Mem.h"
 
 
 // TODO: have Matches set itself from all the meta tags, titles, link text,

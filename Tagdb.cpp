@@ -19,6 +19,7 @@
 #include "GbMutex.h"
 #include "GbUtil.h"
 #include "ScopedLock.h"
+#include "Mem.h"
 
 
 static HashTableX s_ht;

@@ -15,6 +15,7 @@
 #include "Dir.h"
 #include "ip.h"
 #include "Conf.h"
+#include "Mem.h"
 #include <fcntl.h>
 
 

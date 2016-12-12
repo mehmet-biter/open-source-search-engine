@@ -41,7 +41,7 @@ class Msg22 {
 
 	bool getAvailDocIdOnly ( class Msg22Request  *r              ,
 				 int64_t preferredDocId ,
-				 char *coll ,
+				 const char    *coll,
 				 void *state ,
 				 void (* callback)(void *state) ,
 				 int32_t niceness ) ;
@@ -49,9 +49,9 @@ class Msg22 {
 	// . make sure you keep url/coll on your stack cuz we just point to it
 	// . see the other getTitleRec() description below for more details
 	bool getTitleRec ( class Msg22Request *r ,
-			   char      *url     ,
+			   const char    *url,
 			   int64_t  docId   ,
-			   char      *coll    ,
+			   const char    *coll,
 			   char     **titleRecPtrPtr  ,
 			   int32_t      *titleRecSizePtr ,
 			   bool       justCheckTfndb ,

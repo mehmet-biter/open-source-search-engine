@@ -12,6 +12,7 @@
 #include "Linkdb.h"
 #include "Process.h"
 #include "Conf.h"
+#include "Mem.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

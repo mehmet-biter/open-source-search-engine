@@ -12,7 +12,6 @@
 #include <new>
 #include <stddef.h>            //for NULL
 #include <inttypes.h>
-#include "Sanity.h"
 
 
 class SafeBuf;
@@ -113,10 +112,6 @@ static inline void mfree(void *ptr, size_t size, const char *note) {
 
 static inline char *mdup(const void *data, size_t dataSize, const char *note) {
 	return g_mem.dup(data, dataSize, note);
-}
-
-static inline char *mstrdup(const char *string, const char *note) {
-	return g_mem.strdup(string, note);
 }
 
 static inline void mnew(void *ptr, size_t size, const char *note) {

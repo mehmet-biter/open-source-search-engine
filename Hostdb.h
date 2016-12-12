@@ -433,12 +433,12 @@ class Hostdb {
 
 	bool  m_useTmpCluster;
 
-	uint32_t getShardNum(rdbid_t rdbId, const void *key);
+	uint32_t getShardNum(rdbid_t rdbId, const void *key) const;
 
-	uint32_t getShardNumFromDocId ( int64_t d ) ;
+	uint32_t getShardNumFromDocId (int64_t d) const;
 
 	// assume to be for posdb here
-	uint32_t getShardNumByTermId ( const void *key );
+	uint32_t getShardNumByTermId(const void *key) const;
 
 	uint32_t m_map[MAX_KSLOTS];
 };

@@ -14,6 +14,8 @@
 #include "ip.h"
 #include "GbUtil.h"
 #include "Conf.h"
+#include "Mem.h"
+
 
 // TODO: redirect to host that has the titleRec locally
 

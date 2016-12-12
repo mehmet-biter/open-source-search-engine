@@ -21,6 +21,8 @@
 #include "Sections.h"
 #include "Msg13.h"
 #include "Msg3.h"
+#include "Mem.h"
+
 
 static bool printNumAbbr(SafeBuf &p, int64_t vvv) {
 	float val = (float)vvv;

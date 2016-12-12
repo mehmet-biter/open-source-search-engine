@@ -22,6 +22,7 @@
 #include "Dir.h"
 #include "File.h"
 #include "Conf.h"
+#include "Mem.h"
 #include <sys/stat.h> //mkdir()
 
 static HashTableX g_collTable;
@@ -1183,13 +1184,13 @@ CollectionRec::CollectionRec() {
 	memset(m_summaryFrontHighlightTag, 0, sizeof(m_summaryFrontHighlightTag));
 	memset(m_summaryBackHighlightTag, 0, sizeof(m_summaryBackHighlightTag));
 	m_spellCheck = false;
-	m_spiderTimeMin = 0;
-	m_spiderTimeMax = 0;
 	m_maxAddUrlsPerIpDomPerDay = 0;
 	m_maxTextDocLen = 0;
 	m_maxOtherDocLen = 0;
 	m_summaryMaxWidth = 0;
 	m_maxRobotsCacheAge = 0;
+	m_crawlDelayDefaultForNoRobotsTxtMS = 15000;
+	m_crawlDelayDefaultForRobotsTxtMS = 10000;
 	m_queryExpansion = false;
 	m_rcache = false;
 	m_hideAllClustered = false;

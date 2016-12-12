@@ -46,7 +46,9 @@
 #include "PingServer.h"
 #include "ip.h"
 #include "ScopedLock.h"
+#include "Mem.h"
 #include <list>
+
 
 static void testWinnerTreeKey();
 

@@ -460,10 +460,6 @@ class CollectionRec {
 
 	HashTableX m_seedHashTable;
 
-	// only spider urls due to be spidered in this time range
-	int32_t  m_spiderTimeMin;
-	int32_t  m_spiderTimeMax;
-
 	int32_t  m_maxAddUrlsPerIpDomPerDay;
 
 	// . max content length of text/html or text/plain document
@@ -483,6 +479,10 @@ class CollectionRec {
 
 	// how long a robots.txt can be in the cache (Msg13.cpp/Robotdb.cpp)
 	int32_t m_maxRobotsCacheAge;
+
+	int32_t m_crawlDelayDefaultForNoRobotsTxtMS;
+	int32_t m_crawlDelayDefaultForRobotsTxtMS;
+
 
 	// use query expansion for this collection?
 	bool m_queryExpansion;

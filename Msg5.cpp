@@ -11,6 +11,7 @@
 #include "ip.h"
 #include "Sanity.h"
 #include "Conf.h"
+#include "Mem.h"
 
 //#define GBSANITYCHECK
 

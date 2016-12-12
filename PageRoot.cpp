@@ -15,6 +15,7 @@
 #include "ip.h"
 #include "GbUtil.h"
 #include "Conf.h"
+#include "Mem.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

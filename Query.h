@@ -6,7 +6,6 @@
 #define GB_QUERY_H
 
 #include "SafeBuf.h"
-#include "Mem.h"
 
 // support big OR queries for image shingles
 #define ABS_MAX_QUERY_LEN 62000

@@ -9,6 +9,7 @@
 #include "TcpSocket.h"
 #include "HttpRequest.h"
 #include "Process.h"
+#include "Mem.h"
 #include "ip.h"
 #include <sys/stat.h> //umask()
 
@@ -236,6 +237,7 @@ Conf::Conf ( ) {
 	m_logTraceBigFile = false;
 	m_logTraceDns = false;
 	m_logTraceFile = false;
+	m_logTraceHttpMime = false;
 	m_logTraceMem = false;
 	m_logTraceMsg0 = false;
 	m_logTraceMsg4 = false;

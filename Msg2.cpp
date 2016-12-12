@@ -10,6 +10,7 @@
 #include "Sanity.h"
 #include "Conf.h"
 #include "ScopedLock.h"
+#include "Mem.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

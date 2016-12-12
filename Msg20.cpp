@@ -4,6 +4,7 @@
 #include "UdpSlot.h"
 #include "ip.h"
 #include "Process.h"
+#include "Mem.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

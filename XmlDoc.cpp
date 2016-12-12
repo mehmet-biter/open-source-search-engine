@@ -41,6 +41,7 @@
 #include "Statistics.h"
 #include "GbUtil.h"
 #include "ScopedLock.h"
+#include "Mem.h"
 #include <fcntl.h>
 
 
@@ -106,6 +107,7 @@ XmlDoc::XmlDoc() {
 	m_extraDoc = NULL;
 	m_statusMsg = NULL;
 	m_errno = 0;
+	m_docId = 0;
 
 	reset();
 }
@@ -533,6 +535,8 @@ bool XmlDoc::setCollNum ( const char *coll ) {
 	return true;
 }
 
+
+
 CollectionRec *XmlDoc::getCollRec ( ) {
 	if ( ! m_collnumValid ) { g_process.shutdownAbort(true); }
 	CollectionRec *cr = g_collectiondb.m_recs[m_collnum];
@@ -552,6 +556,8 @@ CollectionRec *XmlDoc::getCollRec ( ) {
 	//}
 	return cr;
 }
+
+
 
 // returns false and sets g_errno on error
 bool XmlDoc::set4 ( SpiderRequest *sreq      ,
@@ -625,8 +631,8 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		//   sentence formation stops at the ';' in the "&amp;" and
 		//   we also index "amp" which is bad.
 		m_content             = utf8Content;
-		if ( m_mimeValid && m_mime.m_contentLen > 0) {
-			m_contentLen = m_mime.m_contentLen;
+		if ( m_mimeValid && m_mime.getContentLen() > 0) {
+			m_contentLen = m_mime.getContentLen();
 		} else {
 			m_contentLen = strlen(utf8Content);
 		}
@@ -659,9 +665,9 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		m_downloadEndTimeValid = true;
 		// and need a legit mime
 		if ( ! m_mimeValid ) {
-			m_mime.m_bufLen  = 1;
+			m_mime.setBufLen(1);
 			m_mimeValid      = true;
-			m_mime.m_contentType = contentType;
+			m_mime.setContentType(contentType);
 		}
 		m_isContentTruncated      = false;
 		m_isContentTruncatedValid = true;
@@ -679,7 +685,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 
 	// override content type based on mime for application/json
 	if ( m_mimeValid ) {
-		m_contentType = m_mime.m_contentType;
+		m_contentType = m_mime.getContentType();
 		m_contentTypeValid = true;
 	}
 
@@ -2154,7 +2160,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
 	if ( cr->m_doUrlSpamCheck && ! m_check2 ) {
 		m_check2         = true;
-		if ( m_firstUrl.isSpam() ) {
+		if ( m_firstUrl.isAdult() ) {
 			m_indexCode      = EDOCURLSPAM;
 			m_indexCodeValid = true;
 			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCURLSPAM" );
@@ -6882,26 +6888,49 @@ int32_t *XmlDoc::gotIp ( bool save ) {
 	return &m_ip;
 }
 
+
 // when doing a custom crawl we have to decide between the provided crawl
 // delay, and the one in the robots.txt...
 int32_t *XmlDoc::getFinalCrawlDelay() {
 
-	if ( m_finalCrawlDelayValid )
+	if ( m_finalCrawlDelayValid ) {
+		if ( g_conf.m_logDebugRobots  ) {
+			log(LOG_DEBUG,"getFinalCrawlDelay: returning %" PRId32 " - m_finalCrawlDelayValid is true", m_finalCrawlDelay);
+		}
 		return &m_finalCrawlDelay;
+	}
 
 	bool *isAllowed = getIsAllowed();
-	if ( ! isAllowed || isAllowed == (void *)-1 ) return (int32_t *)isAllowed;
+	if ( ! isAllowed || isAllowed == (void *)-1 ) {
+		if ( g_conf.m_logDebugRobots  ) {
+			log(LOG_DEBUG,"getFinalCrawlDelay: not allowed");
+		}
+		return (int32_t *)isAllowed;
+	}
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) {
+		if ( g_conf.m_logDebugRobots  ) {
+			log(LOG_DEBUG,"getFinalCrawlDelay: Returning NULL, no CollectionRec");
+		}
+		return NULL;
+	}
 
 	m_finalCrawlDelayValid = true;
 
 	// getIsAllowed already sets m_crawlDelayValid to true
 	m_finalCrawlDelay = m_crawlDelay;
-	// default to 250ms i guess if none specified in robots
-	// just to be somewhat nice by default
-	if ( m_crawlDelay < 0 )	m_finalCrawlDelay = 250;
+
+	// Changed previously hard coded default of 250ms to the 
+	// configurable delay for sites with no robots.txt
+	if ( m_crawlDelay < 0 )	{
+		m_finalCrawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
+	}
+
+	if ( g_conf.m_logDebugRobots  ) {
+		log(LOG_DEBUG,"getFinalCrawlDelay: returning %" PRId32 ". Setting m_finalCrawlDelayValid to true", m_finalCrawlDelay);
+	}
+
 	return &m_finalCrawlDelay;
 }
 
@@ -6933,12 +6962,20 @@ bool *XmlDoc::getIsAllowed ( ) {
 		return &m_isAllowed;
 	}
 
+	CollectionRec *cr = getCollRec();
+	if ( ! cr ) {
+		log(LOG_ERROR,"getIsAllowed - NOT allowed, could not get CollectionRec!");
+		m_isAllowed      = false;
+		return &m_isAllowed;
+	}
+
 	// could be turned off for everyone
 	if ( ! m_useRobotsTxt ) {
 		m_isAllowed      = true;
 		m_isAllowedValid = true;
 		m_crawlDelayValid = true;
-		m_crawlDelay      = -1;
+		m_crawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
+
 		//log("xmldoc: skipping robots.txt lookup for %s",
 		//    m_firstUrl.m_url);
 		logTrace( g_conf.m_logTraceSpider, "END. !m_useRobotsTxt" );
@@ -7006,7 +7043,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		// to be set, we are getting a core because crawlDelay
 		// is invalid in getNewSpiderReply()
 		m_crawlDelayValid = true;
-		m_crawlDelay      = -1;
+		m_crawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;;
 		logTrace( g_conf.m_logTraceSpider, "END. We allow it. FIX?" );
 		return &m_isAllowed;
 	}
@@ -7066,7 +7103,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// . for robots.txt it should only cache the portion of the doc
 	//   relevant to our user agent!
 	// . getHttpReply() should use msg13 to get cached reply!
-	XmlDoc **ped = getExtraDoc ( m_extraUrl.getUrl() , 3600 );
+	XmlDoc **ped = getExtraDoc(m_extraUrl.getUrl(), cr->m_maxRobotsCacheAge);
 	if ( ! ped || ped == (void *)-1 )
 	{
 		logTrace( g_conf.m_logTraceSpider, "END. getExtraDoc (ped) failed, return %s", ((bool *)ped?"true":"false"));
@@ -7116,11 +7153,12 @@ bool *XmlDoc::getIsAllowed ( ) {
 	char *content = *pcontent;
 
 	// sanity check
-	if ( content && contentLen>0 && content[contentLen] != '\0'){
+	if ( content && contentLen > 0 && content[contentLen] != '\0'){
 		g_process.shutdownAbort(true);}
 
-	// reset this. -1 means unknown or none found.
-	m_crawlDelay = -1;
+	// reset this. -1 means unknown or none found. We now use a more sane default
+	// as the caller would have defaulted to 250ms if set to -1 here.
+	m_crawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
 	m_crawlDelayValid = true;
 
 	// assume valid and ok to spider
@@ -7135,6 +7173,11 @@ bool *XmlDoc::getIsAllowed ( ) {
 		/// 3xx (redirection) : follow
 		/// 4xx (client errors) : allow
 		/// 5xx (server errors) : disallow
+
+		// We could not get robots.txt - use default crawl-delay for
+		// sites with no robots.txt
+		m_crawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
+
 
 		// BR 20151215: Do not allow spidering if we cannot read robots.txt EXCEPT if the error code is 404 (Not Found).
 		if( mime->getHttpStatus() != 404 )
@@ -7156,15 +7199,22 @@ bool *XmlDoc::getIsAllowed ( ) {
 
 	m_isAllowed = robots.isAllowed( cu );
 	m_crawlDelay = robots.getCrawlDelay();
+
+	if( m_crawlDelay == -1 ) {
+		// robots.txt found, but it contains no crawl-delay for us. Set to configured default.
+		m_crawlDelay = cr->m_crawlDelayDefaultForRobotsTxtMS;
+	}
+
 	m_isAllowedValid = true;
 
 	// nuke it to save mem
 	nukeDoc ( ed );
 
-	logTrace( g_conf.m_logTraceSpider, "END. Returning %s", (m_isAllowed?"true":"false") );
+	logTrace( g_conf.m_logTraceSpider, "END. Returning %s (m_crawlDelay=%" PRId32 "", (m_isAllowed?"true":"false"), m_crawlDelay);
 
 	return &m_isAllowed;
 }
+
 
 
 // . lookup the title rec with the "www." if we do not have that in the url
@@ -7691,6 +7741,8 @@ static void gotHttpReplyWrapper ( void *state ) {
 	// resume. this checks g_errno for being set.
 	THIS->m_masterLoop ( THIS->m_masterState );
 }
+
+
 
 // "NULL" can be a valid http reply (empty page) so we need to use "char **"
 char **XmlDoc::getHttpReply2 ( ) {
@@ -14363,8 +14415,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		//if ( m_percentChangedValid )
 		//	m_srep.m_percentChangedPerDay = m_percentChanged;
 		if ( m_crawlDelayValid && m_crawlDelay >= 0 )
-			// we already multiply x1000 in isAllowed2()
-			m_srep.m_crawlDelayMS = m_crawlDelay;// * 1000;
+			m_srep.m_crawlDelayMS = m_crawlDelay;
 		else
 			m_srep.m_crawlDelayMS = -1;
 		//if ( m_pubDateValid     ) m_srep.m_pubDate = m_pubDate;
@@ -14522,8 +14573,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	//   because Spider.cpp like it better that way
 	// . -1 implies crawl delay unknown or not found
 	if ( m_crawlDelay >= 0 && m_crawlDelayValid )
-		// we already multiply x1000 in isAllowed2()
-		m_srep.m_crawlDelayMS = m_crawlDelay;// * 1000;
+		m_srep.m_crawlDelayMS = m_crawlDelay;
 	else
 		// -1 means invalid/unknown
 		m_srep.m_crawlDelayMS = -1;
@@ -15160,7 +15210,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 
 	// return current ptr
 	logTrace( g_conf.m_logTraceXmlDoc, "END, all done." );
-
 	return m_p ;
 }
 
@@ -15762,29 +15811,26 @@ int32_t XmlDoc::getIndexedTime() {
 Url *XmlDoc::getBaseUrl ( ) {
 	if ( m_baseUrlValid ) return &m_baseUrl;
 	// need this
-	Xml *xml = getXml();
+	const Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (Url *)xml;
-	Url *cu = getCurrentUrl();
+	const Url *cu = getCurrentUrl();
 	if ( ! cu || cu == (void *)-1 ) return (Url *)cu;
 
 	m_baseUrl.set ( cu );
-	// look for base url
+
+	// look for base url and use it if it exists
 	for ( int32_t i=0 ; i < xml->getNumNodes() ; i++ ) {
 		// 12 is the <base href> tag id
-		if ( xml->getNodeId ( i ) != TAG_BASE ) continue;
-		// get the href field of this base tag
-		int32_t linkLen;
-		char *link = (char *) xml->getString ( i, "href", &linkLen );
-		// skip if not valid
-		if ( ! link || linkLen == 0 ) continue;
-		// set base to it
-		m_baseUrl.set( link, linkLen );
-		break;
+		if ( xml->getNodeId ( i ) == TAG_BASE ) {
+			// get the href field of this base tag
+			int32_t linkLen;
+			const char *link = xml->getString ( i, "href", &linkLen );
+		
+			Url::calculateBaseUrl(&m_baseUrl, cu, link, linkLen);
+		
+			break;
+		}
 	}
-
-	// fix invalid <base href="/" target="_self"/> tag
-	if ( m_baseUrl.getHostLen  () <= 0 || m_baseUrl.getDomainLen() <= 0 )
-		m_baseUrl.set ( cu );
 
 	m_baseUrlValid = true;
 	return &m_baseUrl;
@@ -17513,19 +17559,15 @@ static void free_replace   ( void *pf , void *s ) {
 
 int gbuncompress ( unsigned char *dest      ,
 		   uint32_t *destLen   ,
-		   unsigned char *source    ,
+		   const unsigned char *source,
 		   uint32_t  sourceLen ) {
 	z_stream stream;
-	int err;
 
 	stream.next_in = (Bytef*)source;
 	stream.avail_in = (uInt)sourceLen;
-	// Check for source > 64K on 16-bit machine:
-	if ((uLong)stream.avail_in != sourceLen) return Z_BUF_ERROR;
 
 	stream.next_out = dest;
 	stream.avail_out = (uInt)*destLen;
-	if ((uLong)stream.avail_out != *destLen) return Z_BUF_ERROR;
 
 	//stream.zalloc = (alloc_func)0;
 	//stream.zfree = (free_func)0;
@@ -17533,7 +17575,7 @@ int gbuncompress ( unsigned char *dest      ,
 	stream.zfree  = free_replace;//zlibfree;
 
 	//we can be gzip or deflate
-	err = inflateInit2(&stream, 47);
+	int err = inflateInit2(&stream, 47);
 
 	if (err != Z_OK) return err;
 
@@ -17551,30 +17593,17 @@ int gbuncompress ( unsigned char *dest      ,
 	return err;
 }
 
-int gbcompress ( unsigned char *dest      ,
-		 uint32_t *destLen   ,
-		 unsigned char *source    ,
-		 uint32_t  sourceLen ,
-		 int32_t encoding            ) {
+int gbcompress(unsigned char *dest,
+	       uint32_t *destLen,
+	       const unsigned char *source,
+	       uint32_t  sourceLen) {
 
-	int level = Z_DEFAULT_COMPRESSION;
 	z_stream stream;
-	int err;
-	int method     = Z_DEFLATED;
-	//lots of mem, faster, more compressed, see zlib.h
-	int windowBits = 31;
-	int memLevel   = 8;
-	int strategy   = Z_DEFAULT_STRATEGY;
 
 	stream.next_in = (Bytef*)source;
 	stream.avail_in = (uInt)sourceLen;
-#ifdef MAXSEG_64K
-	// Check for source > 64K on 16-bit machine:
-	if ((uLong)stream.avail_in != sourceLen) return Z_BUF_ERROR;
-#endif
 	stream.next_out = dest;
 	stream.avail_out = (uInt)*destLen;
-	if ((uLong)stream.avail_out != *destLen) return Z_BUF_ERROR;
 
 	//stream.zalloc = (alloc_func)0;
 	//stream.zfree = (free_func)0;
@@ -17584,10 +17613,7 @@ int gbcompress ( unsigned char *dest      ,
 	stream.opaque = (voidpf)0;
 
 	//we can be gzip or deflate
-	if(encoding == ET_DEFLATE) err = deflateInit (&stream, level);
-	else                       err = deflateInit2(&stream, level,
-						      method, windowBits,
-						      memLevel, strategy);
+	int err = deflateInit (&stream, Z_DEFAULT_COMPRESSION);
 	if (err != Z_OK) {
 		// zlib's incompatible version error?
 		if ( err == -6 ) {

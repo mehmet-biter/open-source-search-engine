@@ -10,6 +10,7 @@
 #include "Sanity.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
+#include "Mem.h"
 #include <fcntl.h>
 #include <new>
 #include <vector>

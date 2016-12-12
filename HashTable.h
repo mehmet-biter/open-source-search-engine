@@ -5,7 +5,6 @@
 #ifndef GB_HASHTABLE_H
 #define GB_HASHTABLE_H
 
-#include "Mem.h"     // for mcalloc and mmalloc
 
 class HashTable {
 
