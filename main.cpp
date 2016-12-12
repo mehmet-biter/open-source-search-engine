@@ -2860,227 +2860,227 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 		return;
 	}
 
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_TITLEDB   ,
-			      cr->m_collnum          ,
-			      &list         ,
-			      startKey      ,
-			      endKey        ,
-			      minRecSizes   ,
-			      includeTree   ,
-			      0             , // max cache age
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         , // err correction?
-			      NULL          , // cache key ptr
-			      0             , // retry num
-			      -1            , // maxRetries
-			      -1LL,           // sync point
-			      false,          // isRealMerge
-			      true))          // allowPageCache
-	{
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) return;
-
-	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
-		key96_t k       = list.getCurrentKey();
-		char *rec     = list.getCurrentRec();
-		int32_t  recSize = list.getCurrentRecSize();
-		int64_t docId       = Titledb::getDocIdFromKey ( &k );
-		if ( k <= lastKey )
-			log("key out of order. "
-			    "lastKey.n1=%" PRIx32" n0=%" PRIx64" "
-			    "currKey.n1=%" PRIx32" n0=%" PRIx64" ",
-			    lastKey.n1,lastKey.n0,
-			    k.n1,k.n0);
-		lastKey = k;
-		int32_t shard = g_hostdb.getShardNum ( RDB_TITLEDB , &k );
-		// print deletes
-		if ( (k.n0 & 0x01) == 0) {
-			fprintf(stdout,"n1=%08" PRIx32" n0=%016" PRIx64" docId=%012" PRId64" "
-			       "shard=%" PRId32" (del)\n",
-				k.n1 , k.n0 , docId , shard );
-			continue;
+	for(;;) {
+		// use msg5 to get the list, should ALWAYS block since no threads
+		if ( ! msg5.getList ( RDB_TITLEDB   ,
+				      cr->m_collnum          ,
+				      &list         ,
+				      startKey      ,
+				      endKey        ,
+				      minRecSizes   ,
+				      includeTree   ,
+				      0             , // max cache age
+				      startFileNum  ,
+				      numFiles      ,
+				      NULL          , // state
+				      NULL          , // callback
+				      0             , // niceness
+				      false         , // err correction?
+				      NULL          , // cache key ptr
+				      0             , // retry num
+				      -1            , // maxRetries
+				      -1LL,           // sync point
+				      false,          // isRealMerge
+				      true))          // allowPageCache
+		{
+			log(LOG_LOGIC,"db: getList did not block.");
+			return;
 		}
-		// free the mem
-		xd->reset();
-		// uncompress the title rec
-		//TitleRec tr;
-		if ( ! xd->set2 ( rec , recSize , coll ,NULL , 0 ) ) {
-			//set2() may have logged something but not the docid
-			log(LOG_WARN, "dbdump: XmlDoc::set2() failed for docid %" PRId64, docId);
-			continue;
-		}
+		// all done if empty
+		if ( list.isEmpty() ) return;
 
-		// extract the url
-		Url *u = xd->getFirstUrl();
-
-		// get ip
-		char ipbuf [ 32 ];
-		strcpy ( ipbuf , iptoa(u->getIp() ) );
-		// pad with spaces
-		int32_t blen = strlen(ipbuf);
-		while ( blen < 15 ) ipbuf[blen++]=' ';
-		ipbuf[blen]='\0';
-		//int32_t nc = xd->size_catIds / 4;//tr.getNumCatids();
-		if ( justPrintDups ) {
-			// print into buf
-			if ( docId != prevId ) {
-				time_t ts = xd->m_spideredTime;//tr.getSpiderDa
-				struct tm tm_buf;
-				struct tm *timeStruct = localtime_r(&ts,&tm_buf);
-				//struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
-				char ppp[100];
-				strftime(ppp,100,"%b-%d-%Y-%H:%M:%S",
-					 timeStruct);
-				LinkInfo *info = xd->ptr_linkInfo1;//tr.ge
-				char foo[1024];
-				foo[0] = '\0';
-				//if ( tr.getVersion() >= 86 ) 
-				sprintf(foo,
-					//"tw=%" PRId32" hw=%" PRId32" upw=%" PRId32" "
-					"sni=%" PRId32" ",
-					//(int32_t)xd->m_titleWeight,
-					//(int32_t)xd->m_headerWeight,
-					//(int32_t)xd->m_urlPathWeight,
-					(int32_t)xd->m_siteNumInlinks);
-				const char *ru = xd->ptr_redirUrl;
-				if ( ! ru ) ru = "";
-				sprintf(ttt,
-					"n1=%08" PRIx32" n0=%016" PRIx64" docId=%012" PRId64" "
-					//hh=%07" PRIx32" ch=%08" PRIx32" "
-					"size=%07" PRId32" "
-					"ch32=%010" PRIu32" "
-					"clen=%07" PRId32" "
-					"cs=%04d "
-					"lang=%02d "
-					"sni=%03" PRId32" "
-					"usetimeaxis=%i "
-					//"cats=%" PRId32" "
-					"lastspidered=%s "
-					"ip=%s "
-					"numLinkTexts=%04" PRId32" "
-					"%s"
-					"version=%02" PRId32" "
-					//"maxLinkTextWeight=%06" PRIu32"%% "
-					"hc=%" PRId32" "
-					"redir=%s "
-					"url=%s "
-					"firstdup=1 "
-					"shard=%" PRId32" "
-					"\n", 
-					k.n1 , k.n0 , 
-					//rec[0] , 
-					docId ,
-					//hostHash ,
-					//contentHash ,
-					recSize - 16 ,
-					(uint32_t)xd->m_contentHash32,
-					xd->size_utf8Content,//tr.getContentLen
-					xd->m_charset,//tr.getCharset(),
-					xd->m_langId,//tr.getLanguage(),
-					(int32_t)xd->m_siteNumInlinks,//tr.getDo
-					xd->m_useTimeAxis,
-					//nc,
-					ppp, 
-					iptoa(xd->m_ip),//ipbuf , 
-					info->getNumGoodInlinks(),
-					foo,
-					(int32_t)xd->m_version,
-					//ms,
-					(int32_t)xd->m_hopCount,
-					ru,
-					u->getUrl() ,
-					shard );
-				prevId = docId;
-				count = 0;
+		// loop over entries in list
+		for ( list.resetListPtr() ; ! list.isExhausted() ;
+		      list.skipCurrentRecord() ) {
+			key96_t k       = list.getCurrentKey();
+			char *rec     = list.getCurrentRec();
+			int32_t  recSize = list.getCurrentRecSize();
+			int64_t docId       = Titledb::getDocIdFromKey ( &k );
+			if ( k <= lastKey )
+				log("key out of order. "
+				    "lastKey.n1=%" PRIx32" n0=%" PRIx64" "
+				    "currKey.n1=%" PRIx32" n0=%" PRIx64" ",
+				    lastKey.n1,lastKey.n0,
+				    k.n1,k.n0);
+			lastKey = k;
+			int32_t shard = g_hostdb.getShardNum ( RDB_TITLEDB , &k );
+			// print deletes
+			if ( (k.n0 & 0x01) == 0) {
+				fprintf(stdout,"n1=%08" PRIx32" n0=%016" PRIx64" docId=%012" PRId64" "
+				       "shard=%" PRId32" (del)\n",
+					k.n1 , k.n0 , docId , shard );
 				continue;
 			}
-			// print previous docid that is same as our
-			if ( count++ == 0 ) printf ( "\n%s" , ttt );
+			// free the mem
+			xd->reset();
+			// uncompress the title rec
+			//TitleRec tr;
+			if ( ! xd->set2 ( rec , recSize , coll ,NULL , 0 ) ) {
+				//set2() may have logged something but not the docid
+				log(LOG_WARN, "dbdump: XmlDoc::set2() failed for docid %" PRId64, docId);
+				continue;
+			}
+
+			// extract the url
+			Url *u = xd->getFirstUrl();
+
+			// get ip
+			char ipbuf [ 32 ];
+			strcpy ( ipbuf , iptoa(u->getIp() ) );
+			// pad with spaces
+			int32_t blen = strlen(ipbuf);
+			while ( blen < 15 ) ipbuf[blen++]=' ';
+			ipbuf[blen]='\0';
+			//int32_t nc = xd->size_catIds / 4;//tr.getNumCatids();
+			if ( justPrintDups ) {
+				// print into buf
+				if ( docId != prevId ) {
+					time_t ts = xd->m_spideredTime;//tr.getSpiderDa
+					struct tm tm_buf;
+					struct tm *timeStruct = localtime_r(&ts,&tm_buf);
+					//struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
+					char ppp[100];
+					strftime(ppp,100,"%b-%d-%Y-%H:%M:%S",
+						 timeStruct);
+					LinkInfo *info = xd->ptr_linkInfo1;//tr.ge
+					char foo[1024];
+					foo[0] = '\0';
+					//if ( tr.getVersion() >= 86 ) 
+					sprintf(foo,
+						//"tw=%" PRId32" hw=%" PRId32" upw=%" PRId32" "
+						"sni=%" PRId32" ",
+						//(int32_t)xd->m_titleWeight,
+						//(int32_t)xd->m_headerWeight,
+						//(int32_t)xd->m_urlPathWeight,
+						(int32_t)xd->m_siteNumInlinks);
+					const char *ru = xd->ptr_redirUrl;
+					if ( ! ru ) ru = "";
+					sprintf(ttt,
+						"n1=%08" PRIx32" n0=%016" PRIx64" docId=%012" PRId64" "
+						//hh=%07" PRIx32" ch=%08" PRIx32" "
+						"size=%07" PRId32" "
+						"ch32=%010" PRIu32" "
+						"clen=%07" PRId32" "
+						"cs=%04d "
+						"lang=%02d "
+						"sni=%03" PRId32" "
+						"usetimeaxis=%i "
+						//"cats=%" PRId32" "
+						"lastspidered=%s "
+						"ip=%s "
+						"numLinkTexts=%04" PRId32" "
+						"%s"
+						"version=%02" PRId32" "
+						//"maxLinkTextWeight=%06" PRIu32"%% "
+						"hc=%" PRId32" "
+						"redir=%s "
+						"url=%s "
+						"firstdup=1 "
+						"shard=%" PRId32" "
+						"\n", 
+						k.n1 , k.n0 , 
+						//rec[0] , 
+						docId ,
+						//hostHash ,
+						//contentHash ,
+						recSize - 16 ,
+						(uint32_t)xd->m_contentHash32,
+						xd->size_utf8Content,//tr.getContentLen
+						xd->m_charset,//tr.getCharset(),
+						xd->m_langId,//tr.getLanguage(),
+						(int32_t)xd->m_siteNumInlinks,//tr.getDo
+						xd->m_useTimeAxis,
+						//nc,
+						ppp, 
+						iptoa(xd->m_ip),//ipbuf , 
+						info->getNumGoodInlinks(),
+						foo,
+						(int32_t)xd->m_version,
+						//ms,
+						(int32_t)xd->m_hopCount,
+						ru,
+						u->getUrl() ,
+						shard );
+					prevId = docId;
+					count = 0;
+					continue;
+				}
+				// print previous docid that is same as our
+				if ( count++ == 0 ) printf ( "\n%s" , ttt );
+			}
+			// nice, this is never 0 for a titlerec, so we can use 0 to signal
+			// that the following bytes are not compressed, and we can store
+			// out special checksum vector there for fuzzy deduping.
+			//if ( rec[0] != 0 ) continue;
+			// print it out
+			//printf("n1=%08" PRIx32" n0=%016" PRIx64" b=0x%02hhx docId=%012" PRId64" sh=%07" PRIx32" ch=%08" PRIx32" "
+			// date indexed as local time, not GMT/UTC
+			time_t ts = xd->m_spideredTime;//tr.getSpiderDate();
+			struct tm tm_buf;
+			struct tm *timeStruct = localtime_r(&ts,&tm_buf);
+			//struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
+			char ppp[100];
+			strftime(ppp,100,"%b-%d-%Y-%H:%M:%S",timeStruct);
+
+			LinkInfo *info = xd->ptr_linkInfo1;//tr.getLinkInfo();
+
+			char foo[1024];
+			foo[0] = '\0';
+			sprintf(foo,
+				"sni=%" PRId32" ",
+				(int32_t)xd->m_siteNumInlinks);
+
+			const char *ru = xd->ptr_redirUrl;
+			if ( ! ru ) ru = "";
+
+			fprintf(stdout,
+				"n1=%08" PRIx32" n0=%016" PRIx64" docId=%012" PRId64" "
+				"size=%07" PRId32" "
+				"ch32=%010" PRIu32" "
+				"clen=%07" PRId32" "
+				"cs=%04d "
+				"ctype=%s "
+				"lang=%02d "
+				"sni=%03" PRId32" "
+				"usetimeaxis=%i "
+				"lastspidered=%s "
+				"ip=%s "
+				"numLinkTexts=%04" PRId32" "
+				"%s"
+				"version=%02" PRId32" "
+				"hc=%" PRId32" "
+				"shard=%" PRId32" "
+				"metadatasize=%" PRId32" "
+				"redir=%s "
+				"url=%s\n", 
+				k.n1 , k.n0 , 
+				docId ,
+				recSize - 16 ,
+				(uint32_t)xd->m_contentHash32,
+				xd->size_utf8Content,//tr.getContentLen() ,
+				xd->m_charset,//tr.getCharset(),
+				g_contentTypeStrings[xd->m_contentType],
+				xd->m_langId,//tr.getLanguage(),
+				(int32_t)xd->m_siteNumInlinks,//tr.getDocQuality(),
+				xd->m_useTimeAxis,
+				ppp,
+				iptoa(xd->m_ip),//ipbuf , 
+				info->getNumGoodInlinks(),
+				foo,
+				(int32_t)xd->m_version,
+				(int32_t)xd->m_hopCount,
+				shard,
+				0,
+				ru,
+				u->getUrl() );
+			// free the mem
+			xd->reset();
 		}
-		// nice, this is never 0 for a titlerec, so we can use 0 to signal
-		// that the following bytes are not compressed, and we can store
-		// out special checksum vector there for fuzzy deduping.
-		//if ( rec[0] != 0 ) continue;
-		// print it out
-		//printf("n1=%08" PRIx32" n0=%016" PRIx64" b=0x%02hhx docId=%012" PRId64" sh=%07" PRIx32" ch=%08" PRIx32" "
-		// date indexed as local time, not GMT/UTC
-		time_t ts = xd->m_spideredTime;//tr.getSpiderDate();
-		struct tm tm_buf;
-		struct tm *timeStruct = localtime_r(&ts,&tm_buf);
-		//struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
-		char ppp[100];
-		strftime(ppp,100,"%b-%d-%Y-%H:%M:%S",timeStruct);
-
-		LinkInfo *info = xd->ptr_linkInfo1;//tr.getLinkInfo();
-
-		char foo[1024];
-		foo[0] = '\0';
-		sprintf(foo,
-			"sni=%" PRId32" ",
-			(int32_t)xd->m_siteNumInlinks);
-
-		const char *ru = xd->ptr_redirUrl;
-		if ( ! ru ) ru = "";
-
-		fprintf(stdout,
-			"n1=%08" PRIx32" n0=%016" PRIx64" docId=%012" PRId64" "
-			"size=%07" PRId32" "
-			"ch32=%010" PRIu32" "
-			"clen=%07" PRId32" "
-			"cs=%04d "
-			"ctype=%s "
-			"lang=%02d "
-			"sni=%03" PRId32" "
-			"usetimeaxis=%i "
-			"lastspidered=%s "
-			"ip=%s "
-			"numLinkTexts=%04" PRId32" "
-			"%s"
-			"version=%02" PRId32" "
-			"hc=%" PRId32" "
-			"shard=%" PRId32" "
-			"metadatasize=%" PRId32" "
-			"redir=%s "
-			"url=%s\n", 
-			k.n1 , k.n0 , 
-			docId ,
-			recSize - 16 ,
-			(uint32_t)xd->m_contentHash32,
-			xd->size_utf8Content,//tr.getContentLen() ,
-			xd->m_charset,//tr.getCharset(),
-			g_contentTypeStrings[xd->m_contentType],
-			xd->m_langId,//tr.getLanguage(),
-			(int32_t)xd->m_siteNumInlinks,//tr.getDocQuality(),
-			xd->m_useTimeAxis,
-			ppp,
-			iptoa(xd->m_ip),//ipbuf , 
-			info->getNumGoodInlinks(),
-			foo,
-			(int32_t)xd->m_version,
-			(int32_t)xd->m_hopCount,
-			shard,
-			0,
-			ru,
-			u->getUrl() );
-		// free the mem
-		xd->reset();
+		startKey = *(key96_t *)list.getLastKey();
+		startKey += (uint32_t) 1;
+		// watch out for wrap around
+		if ( startKey < *(key96_t *)list.getLastKey() ) return;
 	}
-	startKey = *(key96_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
-	// watch out for wrap around
-	if ( startKey < *(key96_t *)list.getLastKey() ) return;
-	goto loop;
 }
 
 void dumpWaitingTree (const char *coll ) {
@@ -3135,81 +3135,82 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 	RdbList list;
 	key96_t oldk; oldk.setMin();
 	CollectionRec *cr = g_collectiondb.getRec(coll);
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_DOLEDB    ,
-			      cr->m_collnum          ,
-			      &list         ,
-			      startKey      ,
-			      endKey        ,
-			      minRecSizes   ,
-			      includeTree   ,
-			      0             , // max cache age
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         , // err correction?
-			      NULL,           // cacheKeyPtr
-			      0,              // retryNum
-			      -1,             // maxRetries
-			      -1,             // syncPoint
-			      false,          // isRealMerge
-			      true))          // allowPageCache
-	{
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) return;
-	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
-		key96_t k    = list.getCurrentKey();
-		if ( oldk > k ) 
-			fprintf(stdout,"got bad key order. "
-				"%" PRIx32"/%" PRIx64" > %" PRIx32"/%" PRIx64"\n",
-				oldk.n1,oldk.n0,k.n1,k.n0);
-		oldk = k;
-		// get it
-		char *drec = list.getCurrentRec();
-		// sanity check
-		if ( (drec[0] & 0x01) == 0x00 ) {g_process.shutdownAbort(true); }
-		// get spider rec in it
-		char *srec = drec + 12 + 4;
-		// print doledb info first then spider request
-		fprintf(stdout,"dolekey=%s (n1=%" PRIu32" n0=%" PRIu64") "
-			"pri=%" PRId32" "
-			"spidertime=%" PRIu32" "
-			"uh48=0x%" PRIx64"\n",
-			KEYSTR(&k,12),
-			k.n1,
-			k.n0,
-			(int32_t)g_doledb.getPriority(&k),
-			(uint32_t)g_doledb.getSpiderTime(&k),
-			g_doledb.getUrlHash48(&k));
-		fprintf(stdout,"spiderkey=");
-		// print it
-		Spiderdb::print ( srec );
-		// the \n
-		printf("\n");
-		// must be a request -- for now, for stats
-		if ( ! Spiderdb::isSpiderRequest((key128_t *)srec) ) {
-			// error!
-			continue;
+
+	for(;;) {
+		// use msg5 to get the list, should ALWAYS block since no threads
+		if ( ! msg5.getList ( RDB_DOLEDB    ,
+				      cr->m_collnum          ,
+				      &list         ,
+				      startKey      ,
+				      endKey        ,
+				      minRecSizes   ,
+				      includeTree   ,
+				      0             , // max cache age
+				      startFileNum  ,
+				      numFiles      ,
+				      NULL          , // state
+				      NULL          , // callback
+				      0             , // niceness
+				      false         , // err correction?
+				      NULL,           // cacheKeyPtr
+				      0,              // retryNum
+				      -1,             // maxRetries
+				      -1,             // syncPoint
+				      false,          // isRealMerge
+				      true))          // allowPageCache
+		{
+			log(LOG_LOGIC,"db: getList did not block.");
+			return;
 		}
-		// cast it
-		SpiderRequest *sreq = (SpiderRequest *)srec;
-		// skip negatives
-		if ( (sreq->m_key.n0 & 0x01) == 0x00 ) {
-			g_process.shutdownAbort(true); }
+		// all done if empty
+		if ( list.isEmpty() ) return;
+		// loop over entries in list
+		for ( list.resetListPtr() ; ! list.isExhausted() ;
+		      list.skipCurrentRecord() ) {
+			key96_t k    = list.getCurrentKey();
+			if ( oldk > k ) 
+				fprintf(stdout,"got bad key order. "
+					"%" PRIx32"/%" PRIx64" > %" PRIx32"/%" PRIx64"\n",
+					oldk.n1,oldk.n0,k.n1,k.n0);
+			oldk = k;
+			// get it
+			char *drec = list.getCurrentRec();
+			// sanity check
+			if ( (drec[0] & 0x01) == 0x00 ) {g_process.shutdownAbort(true); }
+			// get spider rec in it
+			char *srec = drec + 12 + 4;
+			// print doledb info first then spider request
+			fprintf(stdout,"dolekey=%s (n1=%" PRIu32" n0=%" PRIu64") "
+				"pri=%" PRId32" "
+				"spidertime=%" PRIu32" "
+				"uh48=0x%" PRIx64"\n",
+				KEYSTR(&k,12),
+				k.n1,
+				k.n0,
+				(int32_t)g_doledb.getPriority(&k),
+				(uint32_t)g_doledb.getSpiderTime(&k),
+				g_doledb.getUrlHash48(&k));
+			fprintf(stdout,"spiderkey=");
+			// print it
+			Spiderdb::print ( srec );
+			// the \n
+			printf("\n");
+			// must be a request -- for now, for stats
+			if ( ! Spiderdb::isSpiderRequest((key128_t *)srec) ) {
+				// error!
+				continue;
+			}
+			// cast it
+			SpiderRequest *sreq = (SpiderRequest *)srec;
+			// skip negatives
+			if ( (sreq->m_key.n0 & 0x01) == 0x00 ) {
+				g_process.shutdownAbort(true); }
+		}
+		startKey = *(key96_t *)list.getLastKey();
+		startKey += (uint32_t) 1;
+		// watch out for wrap around
+		if ( startKey < *(key96_t *)list.getLastKey() ) return;
 	}
-	startKey = *(key96_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
-	// watch out for wrap around
-	if ( startKey < *(key96_t *)list.getLastKey() ) return;
-	goto loop;
 }
 
 
