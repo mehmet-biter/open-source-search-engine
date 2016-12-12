@@ -13,15 +13,27 @@
 
 extern char g_repairMode;
 
+class XmlDoc;
+
 class Repair {
 public:
 
 	Repair();
 
 	// is the scan active and adding recs to the secondary rdbs?
-	bool isRepairActive() ;
+	bool isRepairActive() const;
+	bool isRepairingColl(collnum_t coll) const { return m_collnum==coll; }
 
 	bool init();
+	// if we core, call this so repair can resume where it left off
+	bool save();
+
+	// called by Parms.cpp
+	bool printRepairStatus ( SafeBuf *sb , int32_t fromIp );
+
+	bool linkdbRebuildPending() const { return m_rebuildLinkdb; }
+
+private:
 	//void allHostsReady();
 	void initScan();
 	void resetForNewCollection();
@@ -38,11 +50,7 @@ public:
 	bool getTitleRec ( );
 	bool injectTitleRec ( ) ; // TitleRec *tr );
 
-	// called by Pages.cpp
-	bool printRepairStatus ( SafeBuf *sb , int32_t fromIp );
 
-	// if we core, call these so repair can resume where it left off
-	bool save();
 	bool load();
 
 	bool       m_completed;
@@ -168,6 +176,15 @@ public:
 	bool  m_saveRepairState;
 
 	bool  m_isRetrying;
+
+	static void repairWrapper(int fd, void *state);
+	static void loopWrapper(void *state, RdbList *list, Msg5 *msg5);
+
+	static bool saveAllRdbs(void *state, void (*callback)(void *state));
+	static bool anyRdbNeedsSave();
+	static void doneSavingRdb(void *state);
+	static void doneWithIndexDoc(XmlDoc *xd);
+	static void doneWithIndexDocWrapper(void *state);
 };
 
 // the global class

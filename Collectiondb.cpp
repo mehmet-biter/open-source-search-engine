@@ -503,7 +503,7 @@ bool Collectiondb::addRdbBasesForCollRec ( CollectionRec *cr ) {
 /// this deletes the collection, not just part of a reset.
 bool Collectiondb::deleteRec2 ( collnum_t collnum ) {
 	// do not allow this if in repair mode
-	if ( g_repair.isRepairActive() && g_repair.m_collnum == collnum ) {
+	if ( g_repair.isRepairActive() && g_repair.isRepairingColl(collnum) ) {
 		log(LOG_WARN, "admin: Can not delete collection while in repair mode.");
 		g_errno = EBADENGINEER;
 		return true;
@@ -723,7 +723,7 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 // . returns true with g_errno set on error
 bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool purgeSeeds ) {
 	// do not allow this if in repair mode
-	if ( g_repair.isRepairActive() && g_repair.m_collnum == oldCollnum ) {
+	if ( g_repair.isRepairActive() && g_repair.isRepairingColl(oldCollnum) ) {
 		log(LOG_WARN, "admin: Can not delete collection while in repair mode.");
 		g_errno = EBADENGINEER;
 		return true;

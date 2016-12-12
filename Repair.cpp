@@ -22,12 +22,6 @@
 #include <fcntl.h>
 
 
-static void repairWrapper ( int fd , void *state ) ;
-static void loopWrapper   ( void *state , RdbList *list , Msg5 *msg5 ) ;
-
-static bool saveAllRdbs ( void *state , void (* callback)(void *state) ) ;
-static bool anyRdbNeedsSave ( ) ;
-static void doneSavingRdb ( void *state );
 
 char g_repairMode = 0;
 
@@ -176,13 +170,13 @@ bool Repair::init ( ) {
 	return true;
 }
 
-bool Repair::isRepairActive() { 
+bool Repair::isRepairActive() const {
 	return g_repairMode >= 4; 
 }
 
 // . call this once every second 
 // . this is responsible for advancing from one g_repairMode to the next
-void repairWrapper ( int fd , void *state ) {
+void Repair::repairWrapper(int fd, void *state) {
 
 	g_errno = 0;
 
@@ -765,7 +759,7 @@ void Repair::getNextCollToRepair ( ) {
 }
 
 
-void loopWrapper ( void *state , RdbList *list , Msg5 *msg5 ) {
+void Repair::loopWrapper(void *state, RdbList *list, Msg5 *msg5) {
 	Repair *THIS = (Repair *)state;
 	THIS->m_msg5InUse = false;
 	THIS->loop(NULL);
@@ -1333,7 +1327,8 @@ bool Repair::gotScanRecList ( ) {
 	return true;
 }
 
-static void doneWithIndexDoc ( XmlDoc *xd ) {
+
+void Repair::doneWithIndexDoc(XmlDoc *xd) {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	
 	// preserve
@@ -1364,7 +1359,8 @@ static void doneWithIndexDoc ( XmlDoc *xd ) {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
 
-static void doneWithIndexDocWrapper ( void *state ) {
+
+void Repair::doneWithIndexDocWrapper(void *state) {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	// clean up
 	doneWithIndexDoc ( (XmlDoc *)state );
@@ -1960,7 +1956,7 @@ static bool   s_savingAll = false;
 // . return false if blocked, true otherwise
 // . will call the callback when all have been saved
 // . used by Repair.cpp to save all rdbs before doing repair work
-bool saveAllRdbs ( void *state , void (* callback)(void *state) ) {
+bool Repair::saveAllRdbs(void *state, void (*callback)(void *state)) {
 	// only call once
 	if ( s_savingAll ) {
 		//log("db: Already saving all.");
@@ -1992,7 +1988,7 @@ bool saveAllRdbs ( void *state , void (* callback)(void *state) ) {
 }
 
 // return false if one or more is still not closed yet
-bool anyRdbNeedsSave ( ) {
+bool Repair::anyRdbNeedsSave() {
 	int32_t count = 0;
 	int32_t nsr;
 	Rdb **rdbs = getAllRdbs ( &nsr );
@@ -2006,7 +2002,7 @@ bool anyRdbNeedsSave ( ) {
 }
 
 // returns false if waiting on some to save
-void doneSavingRdb ( void *state ) {
+void Repair::doneSavingRdb(void *state) {
 	if ( ! anyRdbNeedsSave() ) return;
 	// all done
 	s_savingAll = false;

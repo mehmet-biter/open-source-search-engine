@@ -1504,7 +1504,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 	// they are bigger. it may add to indexdb/datedb
 	if ( g_repair.isRepairActive() &&
 	     // but only check for collection we are repairing/rebuilding
-	     collnum == g_repair.m_collnum &&
+	     g_repair.isRepairingColl(collnum) &&
 		// exception, spider status docs can be deleted from titledb
 		// if user turns off 'index spider replies' before doing
 		// the rebuild, when not rebuilding titledb.
