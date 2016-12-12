@@ -927,7 +927,7 @@ bool Repair::loop ( void *state ) {
 		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: STAGE_TITLEDB_3", __FILE__, __func__, __LINE__);
 		
 		// if we have maxed out our injects, wait for one to come back
-		if ( m_numOutstandingInjects >= g_conf.m_maxRepairSpiders ) {
+		if ( m_numOutstandingInjects >= g_conf.m_maxRepairinjections ) {
 			m_allowInjectToLoop = true;
 			return false;
 		}
@@ -940,7 +940,7 @@ bool Repair::loop ( void *state ) {
 			
 		//return false; // (state)
 		// try to launch another
-		if ( m_numOutstandingInjects<g_conf.m_maxRepairSpiders ) {
+		if ( m_numOutstandingInjects<g_conf.m_maxRepairinjections ) {
 			m_stage = STAGE_TITLEDB_0;
 			if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: Still have more free repair spiders, loop.", __FILE__, __func__, __LINE__);
 			goto loop1;

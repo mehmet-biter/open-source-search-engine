@@ -9226,7 +9226,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Maximum number of outstanding injections for "
 		"rebuild.";
 	m->m_cgi   = "mrps";
-	m->m_off   = offsetof(Conf,m_maxRepairSpiders);
+	m->m_off   = offsetof(Conf,m_maxRepairinjections);
 	m->m_type  = TYPE_LONG;
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
