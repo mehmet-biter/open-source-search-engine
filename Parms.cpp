@@ -32,7 +32,6 @@
 #include "GbUtil.h"
 #include "Mem.h"
 
-
 class WaitEntry {
 public:
 	void (* m_callback) (void *state);
@@ -158,12 +157,6 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 		return sb->safePrintf("%s",val);
 
 	if ( m_type == TYPE_LONG || m_type == TYPE_LONG_CONST )
-		return sb->safePrintf("%" PRId32,*(int32_t *)val);
-
-	if ( m_type == TYPE_DATE )
-		return sb->safePrintf("%" PRId32,*(int32_t *)val);
-
-	if ( m_type == TYPE_DATE2 )
 		return sb->safePrintf("%" PRId32,*(int32_t *)val);
 
 	if ( m_type == TYPE_FLOAT )
@@ -2258,72 +2251,6 @@ bool Parms::printParm( SafeBuf* sb,
 			       cgi    ,
 			       min  );
 	}
-
-	else if ( t == TYPE_DATE || t == TYPE_DATE2 ) {
-		// time is stored as int32_t
-		int32_t ct = *(int32_t *)s;
-		// get the time struct
-		time_t tmp_ct = ct;
-		struct tm tm_buf;
-		struct tm *tp = gmtime_r(&tmp_ct,&tm_buf);
-		// set the "selected" month for the drop down
-		const char *ss[12];
-		for ( int32_t i = 0 ; i < 12 ; i++ ) ss[i]="";
-		int32_t month = tp->tm_mon;
-		if ( month < 0 || month > 11 ) month = 0; // Jan
-		ss[month] = " selected";
-		// print the date in the input forms
-		sb->safePrintf(
-			"<input type=text name=%sday "
-			"size=2 value=%" PRId32"> "
-			"<select name=%smon>"
-			"<option value=0%s>Jan"
-			"<option value=1%s>Feb"
-			"<option value=2%s>Mar"
-			"<option value=3%s>Apr"
-			"<option value=4%s>May"
-			"<option value=5%s>Jun"
-			"<option value=6%s>Jul"
-			"<option value=7%s>Aug"
-			"<option value=8%s>Sep"
-			"<option value=9%s>Oct"
-			"<option value=10%s>Nov"
-			"<option value=11%s>Dec"
-			"</select>\n"
-			"<input type=text name=%syr size=4 value=%" PRId32">"
-			"<br>"
-			"<input type=text name=%shr size=2 "
-			"value=%02" PRId32">h "
-			"<input type=text name=%smin size=2 "
-			"value=%02" PRId32">m "
-			"<input type=text name=%ssec size=2 "
-			"value=%02" PRId32">s" ,
-			cgi    ,
-			(int32_t)tp->tm_mday ,
-			cgi    ,
-			ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[8],
-			ss[9],ss[10],ss[11],
-			cgi    ,
-			(int32_t)tp->tm_year + 1900 ,
-			cgi    ,
-			(int32_t)tp->tm_hour ,
-			cgi    ,
-			(int32_t)tp->tm_min  ,
-			cgi    ,
-			(int32_t)tp->tm_sec  );
-		/*
-		if ( t == TYPE_DATE2 ) {
-			p += strlen ( p );
-			// a int32_t after the int32_t is used for this
-			int32_t ct = *(int32_t *)(THIS+m->m_off+4);
-			char *ss = "";
-			if ( ct ) ss = " checked";
-			sprintf ( p , "<br><input type=checkbox "
-				  "name=%sct value=1%s> use current "
-				  "time\n",cgi,ss);
-		}
-		*/
-	}
 	else if ( t == TYPE_SITERULE ) {
 		// print the siterec rules as a drop down
 		const char *ss[5];
@@ -2638,16 +2565,6 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		log(LOG_LOGIC, "conf: Parms: TYPE_CMD is not a cgi var.");
 		return;	
 	}
-	else if ( t == TYPE_DATE2 || t == TYPE_DATE ) {
-		int32_t v = s ? (int32_t)atotime(s) : 0;
-		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) == v )
-			return;
-		*(int32_t *)(THIS + m->m_off + 4*j) = v;
-		if ( v < 0 ) log("conf: Date for <%s> of \""
-				 "%s\" is not in proper format like: "
-				 "01 Jan 1980 22:45",m->m_xml,s);
-		goto changed; 
-	}
 	else if ( t == TYPE_FLOAT ) {
 		if( fromRequest && almostEqualFloat(*(float *)(THIS + m->m_off + 4*j), (s ? (float)atof(s) : 0)) ) {
 			return;
@@ -2776,14 +2693,6 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 	// tell gigablast the value is EXPLICITLY given -- no longer based
 	// on default.conf
 	//if ( m->m_obj == OBJ_COLL ) ((CollectionRec *)THIS)->m_orig[mm] = 2;
-
-	// we do not recognize timezones corectly when this is serialized
-	// into coll.conf, it says UTC, which is ignored in HttpMime.cpp's
-	// atotime() function. and when we submit it i think we use the
-	// local time zone, so the values end up changing every time we
-	// submit!!! i think it might read it in as UTC then write it out
-	// as local time, or vice versa.
-	if ( t == TYPE_DATE || t == TYPE_DATE2 ) return;
 
 	// do not send if setting from startup
 	if ( ! fromRequest ) return;
@@ -3479,21 +3388,6 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 		//cdataEncode(sb, s);//, slen );//, true /*#?*/);
 		sb->htmlEncode ( s );
 	}
-	else if ( t == TYPE_DATE || t == TYPE_DATE2 ) {
-		// time is stored as int32_t
-		int32_t ct = *(int32_t *)s;
-		// get the time struct
-		time_t tmp_ct = ct;
-		struct tm tm_buf;
-		struct tm *tp = localtime_r(&tmp_ct,&tm_buf);
-		// set the "selected" month for the drop down
-		char tmp[100];
-		strftime ( tmp , 100 , "%d %b %Y %H:%M UTC" , tp );
-		sb->safeStrcpy ( tmp );
-		sb->setLabel("parm3");
-	}
-	//p += strlen ( p );
-	//return p;
 	return true;
 }
 
@@ -10385,8 +10279,6 @@ void Parms::init ( ) {
 		if ( t == TYPE_PRIORITY_BOXES ) size = 1;
 		if ( t == TYPE_RETRIES        ) size = 1;
 		if ( t == TYPE_TIME           ) size = 6;
-		if ( t == TYPE_DATE2          ) size = 4;
-		if ( t == TYPE_DATE           ) size = 4;
 		if ( t == TYPE_FLOAT          ) size = 4;
 		if ( t == TYPE_DOUBLE         ) size = 8;
 		if ( t == TYPE_IP             ) size = 4;
