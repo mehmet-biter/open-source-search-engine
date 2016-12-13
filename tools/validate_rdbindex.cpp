@@ -5,6 +5,7 @@
 #include "Conf.h"
 #include "RdbIndexQuery.h"
 #include "Collectiondb.h"
+#include "Mem.h"
 #include <libgen.h>
 #include <stdlib.h>
 #include <algorithm>
