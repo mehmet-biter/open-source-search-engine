@@ -44,8 +44,6 @@ enum {
 	TYPE_STRINGBOX        = 17,
 	TYPE_STRINGNONEMPTY   = 18,
 	TYPE_TIME             = 19,
-	TYPE_RULESET          = 22,
-	TYPE_FILTER           = 23,
 	TYPE_COMMENT          = 24,
 	TYPE_CONSTANT         = 25,
 	TYPE_LONG_CONST       = 28,

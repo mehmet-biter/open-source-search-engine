@@ -2104,7 +2104,6 @@ bool Parms::printParm( SafeBuf* sb,
 	}
 	else if ( t == TYPE_CONSTANT )
 		sb->safePrintf ("%s",m->m_title);
-	else if ( t == TYPE_RULESET ) ;
 	else if ( t == TYPE_TIME ) {
 		//time is stored as a string
 		char hr[3]="00";
@@ -2407,8 +2406,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		  t == TYPE_PRIORITY       ||
 		  t == TYPE_PRIORITY2      ||
 		  t == TYPE_UFP            ||
-		  t == TYPE_RETRIES        ||
-		  t == TYPE_FILTER           ) {
+		  t == TYPE_RETRIES        ) {
 		if ( fromRequest && *(char *)(THIS + m->m_off + j) == atol(s))
 			return;
 		if ( fromRequest) {
@@ -2460,7 +2458,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		*(int32_t *)(THIS + m->m_off + 4*j) = s ? (int32_t)atoip(s,strlen(s)) : 0;
 		goto changed; 
 	}
-	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_RULESET || t == TYPE_SITERULE ) {
+	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_SITERULE ) {
 		int32_t v = s ? atol(s) : 0;
 		// min is considered valid if >= 0
 		if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
@@ -3160,15 +3158,13 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 	     t == TYPE_PRIORITY       || t == TYPE_PRIORITY2      ||
 	     t == TYPE_UFP            ||
 	     t == TYPE_RETRIES        ||
-	     t == TYPE_FILTER         ||
 	     t == TYPE_BOOL2          || t == TYPE_CHAR2           )
 		sb->safePrintf("%" PRId32,(int32_t)*s);
 	else if ( t == TYPE_FLOAT )
 		sb->safePrintf("%f",*(float *)s);
 	else if ( t == TYPE_IP )
 		sb->safePrintf("%s",iptoa(*(int32_t *)s));
-	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_RULESET||
-		  t == TYPE_SITERULE )
+	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_SITERULE )
 		sb->safePrintf("%" PRId32,*(int32_t *)s);
 	else if ( t == TYPE_LONG_LONG )
 		sb->safePrintf("%" PRId64,*(int64_t *)s);
@@ -10087,7 +10083,6 @@ void Parms::init ( ) {
 		if ( t == TYPE_FLOAT          ) size = 4;
 		if ( t == TYPE_DOUBLE         ) size = 8;
 		if ( t == TYPE_IP             ) size = 4;
-		if ( t == TYPE_RULESET        ) size = 4;
 		if ( t == TYPE_LONG           ) size = 4;
 		if ( t == TYPE_LONG_CONST     ) size = 4;
 		if ( t == TYPE_LONG_LONG      ) size = 8;
