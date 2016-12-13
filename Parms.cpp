@@ -1393,17 +1393,7 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 		Parm *m = &m_parms[i];
 		// make sure we got the right parms for what we want
 		if ( m->m_page != page ) continue;
-		// and same object tpye. but allow OBJ_NONE for
-		// PageAddUrl.cpp
-		//if ( m->m_obj != parmObj && m->m_obj != OBJ_NONE ) continue;
-		// skip if offset is negative, that means none
-		// well then use OBJ_NONE now!!!
-		//if ( m->m_off < 0 &&
-		//     m->m_type != TYPE_MONOD2 &&
-		//     m->m_type != TYPE_MONOM2 &&
-		//     m->m_type != TYPE_CMD     ) continue;
 		// skip if hidden
-
 		if ( m->m_flags & PF_HIDDEN ) continue;
 
 		// or if should not show in html, like the
@@ -2203,18 +2193,6 @@ bool Parms::printParm( SafeBuf* sb,
 	}
 	else if ( t == TYPE_CONSTANT )
 		sb->safePrintf ("%s",m->m_title);
-	else if ( t == TYPE_MONOD2 )
-		sb->safePrintf ("%" PRId32,j / 2 );
-	else if ( t == TYPE_MONOM2 ) {
-		/*
-		if ( m->m_page == PAGE_PRIORITIES ) {
-			if ( j % 2 == 0 ) sb->safePrintf ("old");
-			else              sb->safePrintf ("new");
-		}
-		else
-		*/
-			sb->safePrintf ("%" PRId32,j % 2 );
-	}
 	else if ( t == TYPE_RULESET ) ;
 		// subscript is already included in "cgi"
 		//g_pages.printRulesetDropDown ( sb         ,
@@ -2775,8 +2753,6 @@ void Parms::setToDefault ( char *THIS , char objType , CollectionRec *argcr ) {
 		// no, we gotta set GigablastRequest::m_contentFile to NULL
 		//if ( m->m_type == TYPE_FILEUPLOADBUTTON )
 		//	continue;
-		if ( m->m_type == TYPE_MONOD2  ) continue;
-		if ( m->m_type == TYPE_MONOM2  ) continue;
 		if ( m->m_type == TYPE_CMD     ) continue;
 		if (THIS == (char *)&g_conf && m->m_obj != OBJ_CONF ) continue;
 		if (THIS != (char *)&g_conf && m->m_obj == OBJ_CONF ) continue;
@@ -2883,8 +2859,6 @@ bool Parms::setFromFile ( void *THIS        ,
 		// skip comments and command
 		if ( m->m_type == TYPE_COMMENT  ) continue;
 		if ( m->m_type == TYPE_FILEUPLOADBUTTON ) continue;
-		if ( m->m_type == TYPE_MONOD2   ) continue;
-		if ( m->m_type == TYPE_MONOM2   ) continue;
 		if ( m->m_type == TYPE_CMD      ) continue;
 		if ( m->m_type == TYPE_CONSTANT ) continue;
 		// these are special commands really
@@ -3197,8 +3171,6 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 		if ( m->m_obj == OBJ_SI ) continue;
 		if ( THIS == (char *)&g_conf && m->m_obj != OBJ_CONF) continue;
 		if ( THIS != (char *)&g_conf && m->m_obj == OBJ_CONF) continue;
-		if ( m->m_type == TYPE_MONOD2  ) continue;
-		if ( m->m_type == TYPE_MONOM2  ) continue;
 		if ( m->m_type == TYPE_CMD ) continue;
 		if ( m->m_type == TYPE_BOOL2 ) continue;
 		if ( m->m_type == TYPE_FILEUPLOADBUTTON ) continue;
@@ -3274,8 +3246,6 @@ skip2:
 		if ( m->m_type == TYPE_COMMENT ) {
 			continue;
 		}
-		if ( m->m_type == TYPE_MONOD2  ) continue;
-		if ( m->m_type == TYPE_MONOM2  ) continue;
 
 	skip:
 
@@ -10286,9 +10256,7 @@ void Parms::init ( ) {
 		     t != TYPE_SAFEBUF  &&
 		     t != TYPE_FILEUPLOADBUTTON &&
 		     t != TYPE_CONSTANT &&
-		     t != TYPE_CHARPTR &&
-		     t != TYPE_MONOD2   &&
-		     t != TYPE_MONOM2     ) {
+		     t != TYPE_CHARPTR ) {
 			log(LOG_LOGIC,"conf: Size of parm #%" PRId32" \"%s\" "
 			    "not set.", i,m_parms[i].m_title);
 			exit(-1);
@@ -10301,8 +10269,6 @@ void Parms::init ( ) {
 		if ( t == TYPE_FILEUPLOADBUTTON ) continue;
 		if ( t == TYPE_CMD      ) continue;
 		if ( t == TYPE_CONSTANT ) continue;
-		if ( t == TYPE_MONOD2   ) continue;
-		if ( t == TYPE_MONOM2   ) continue;
 		if ( t == TYPE_SAFEBUF  ) continue;
 		// search parms do not need an offset
 		if ( m_parms[i].m_off == -1 ){//&& m_parms[i].m_sparm == 0 ) {

@@ -48,8 +48,6 @@ enum {
 	TYPE_FILTER           = 23,
 	TYPE_COMMENT          = 24,
 	TYPE_CONSTANT         = 25,
-	TYPE_MONOD2           = 26,
-	TYPE_MONOM2           = 27,
 	TYPE_LONG_CONST       = 28,
 	TYPE_SITERULE         = 29,
 	TYPE_SAFEBUF          = 30,
