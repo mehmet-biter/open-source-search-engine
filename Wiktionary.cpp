@@ -605,21 +605,6 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 	// null terminate
 	buf[readSize] = '\0';
 
-	// a hack
-	/*
-	char *hack = "<title>Bob</title>\n"
-		"===Proper noun===\n"
-		"{{en-proper noun}}\n"
-		"\n"
-"# {{given name|male|diminutive=Robert}}.\n"
-"# In various fields such as [[cryptography]] and [[physics]], a conventional name for the person or system that receives a message from another person or system conventionally known as [[Alice]].\n"
-			  "====Translations====\n"
-		"<title>Poo</title>\n"
-			  ;
-	readSize = strlen(hack);
-	gbmemcpy(buf,hack,readSize+1);
-	*/
-
 	//
 	// simple filter. back to back spaces removed in next loop.
 	//
