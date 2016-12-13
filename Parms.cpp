@@ -1302,29 +1302,6 @@ static bool printDropDownProfile(SafeBuf* sb, const char *name, CollectionRec *c
 	return true;
 }
 
-static bool printCheckBoxes(int32_t n, SafeBuf* sb, const char *name, const char *array) {
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		if ( i > 0 )
-			sb->safePrintf ("<input type=checkbox value=1 name=%s%" PRId32,
-					name,i);
-		else
-			sb->safePrintf ("<input type=checkbox value=1 name=%s",
-				 name);
-		if ( array[i] ) {
-			sb->safePrintf ( " checked");
-		}
-		sb->safePrintf ( ">%" PRId32" &nbsp;" , i );
-		//if i is single digit, add another nbsp so that everything's
-		//aligned
-		if ( i < 10 )
-			sb->safePrintf("&nbsp;&nbsp;");
-
-		if ( i > 0 && (i+1) % 6 == 0 )
-			sb->safePrintf("<br>\n");
-	}
-	return true;
-}
-
 bool Parms::printParms (SafeBuf* sb, TcpSocket *s , HttpRequest *r) {
 	int32_t  page = g_pages.getDynamicPageNumber ( r );
 	int32_t nc = r->getLong("nc",1);
