@@ -173,7 +173,6 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 	     m_type == TYPE_BOOL2 ||
 	     m_type == TYPE_CHECKBOX ||
 	     m_type == TYPE_PRIORITY2 ||
-	     m_type == TYPE_UFP ||
 	     m_type == TYPE_CHAR )
 		return sb->safePrintf("%hhx",*val);
 
@@ -2405,7 +2404,6 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		  t == TYPE_BOOL2          ||
 		  t == TYPE_PRIORITY       ||
 		  t == TYPE_PRIORITY2      ||
-		  t == TYPE_UFP            ||
 		  t == TYPE_RETRIES        ) {
 		if ( fromRequest && *(char *)(THIS + m->m_off + j) == atol(s))
 			return;
@@ -3156,7 +3154,6 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 	if ( t == TYPE_CHAR           || t == TYPE_BOOL           ||
 	     t == TYPE_CHECKBOX       ||
 	     t == TYPE_PRIORITY       || t == TYPE_PRIORITY2      ||
-	     t == TYPE_UFP            ||
 	     t == TYPE_RETRIES        ||
 	     t == TYPE_BOOL2          || t == TYPE_CHAR2           )
 		sb->safePrintf("%" PRId32,(int32_t)*s);
@@ -10077,7 +10074,6 @@ void Parms::init ( ) {
 		if ( t == TYPE_CHECKBOX       ) size = 1;
 		if ( t == TYPE_PRIORITY       ) size = 1;
 		if ( t == TYPE_PRIORITY2      ) size = 1;
-		if ( t == TYPE_UFP            ) size = 1;
 		if ( t == TYPE_RETRIES        ) size = 1;
 		if ( t == TYPE_TIME           ) size = 6;
 		if ( t == TYPE_FLOAT          ) size = 4;
@@ -10459,7 +10455,6 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 		  m->m_type == TYPE_BOOL2 ||
 		  m->m_type == TYPE_CHECKBOX ||
 		  m->m_type == TYPE_PRIORITY2 ||
-		  m->m_type == TYPE_UFP ||
 		  m->m_type == TYPE_CHAR ) {
 		val8 = atol(parmValString);
 		//if ( parmValString && to_lower_a(parmValString[0]) == 'y' )

@@ -49,7 +49,6 @@ enum {
 	TYPE_LONG_CONST       = 28,
 	TYPE_SITERULE         = 29,
 	TYPE_SAFEBUF          = 30,
-	TYPE_UFP              = 31,
 	TYPE_FILEUPLOADBUTTON = 32,
 	TYPE_DOUBLE           = 33,
 	TYPE_CHARPTR          = 34
