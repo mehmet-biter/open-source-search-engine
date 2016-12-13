@@ -39,7 +39,6 @@ enum {
 	TYPE_NONE             = 11,
 	TYPE_PRIORITY         = 12,
 	TYPE_PRIORITY2        = 13,
-	TYPE_PRIORITY_BOXES   = 14,
 	TYPE_RETRIES          = 15,
 	TYPE_STRING           = 16,
 	TYPE_STRINGBOX        = 17,

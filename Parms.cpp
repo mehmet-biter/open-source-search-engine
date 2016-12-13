@@ -1462,10 +1462,7 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 		//   UNLESS these are priority checkboxes, those can all
 		//   cluster together onto one row
 		// . only add if not in a row of controls
-		if ( m->m_max > 1 && m->m_type != TYPE_PRIORITY_BOXES &&
-		     m->m_rowid == -1 &&
-		     format != FORMAT_JSON &&
-		     format != FORMAT_XML ) { // ! isJSON ) {
+		if (m->m_max > 1 && m->m_rowid == -1 && format != FORMAT_JSON && format != FORMAT_XML) {
 			//
 			// make a separate table for array of parms
 			sb->safePrintf (
@@ -2042,11 +2039,6 @@ bool Parms::printParm( SafeBuf* sb,
 	else if ( t == TYPE_FILEUPLOADBUTTON    ) {
 		sb->safePrintf("<input type=file name=%s>",cgi);
 	}
-	else if ( t == TYPE_PRIORITY_BOXES ) {
-		// print ALL the checkboxes when we get the first parm
-		if ( j != 0 ) return status;
-		printCheckBoxes ( MAX_SPIDER_PRIORITIES , sb , cgi , s );
-	}
 	else if ( t == TYPE_CMD )
 		// if cast=0 it will be executed, otherwise it will be
 		// broadcasted with cast=1 to all hosts and they will all
@@ -2541,7 +2533,6 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		  t == TYPE_PRIORITY2      ||
 		  //t == TYPE_DIFFBOT_DROPDOWN ||
 		  t == TYPE_UFP            ||
-		  t == TYPE_PRIORITY_BOXES ||
 		  t == TYPE_RETRIES        ||
 		  t == TYPE_FILTER           ) {
 		if ( fromRequest && *(char *)(THIS + m->m_off + j) == atol(s))
@@ -3352,7 +3343,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 	     t == TYPE_PRIORITY       || t == TYPE_PRIORITY2      ||
 	     //t == TYPE_DIFFBOT_DROPDOWN ||
 	     t == TYPE_UFP            ||
-	     t == TYPE_PRIORITY_BOXES || t == TYPE_RETRIES        ||
+	     t == TYPE_RETRIES        ||
 	     t == TYPE_FILTER         ||
 	     t == TYPE_BOOL2          || t == TYPE_CHAR2           )
 		sb->safePrintf("%" PRId32,(int32_t)*s);
@@ -10276,7 +10267,6 @@ void Parms::init ( ) {
 		if ( t == TYPE_PRIORITY2      ) size = 1;
 		//if ( t ==TYPE_DIFFBOT_DROPDOWN) size = 1;
 		if ( t == TYPE_UFP            ) size = 1;
-		if ( t == TYPE_PRIORITY_BOXES ) size = 1;
 		if ( t == TYPE_RETRIES        ) size = 1;
 		if ( t == TYPE_TIME           ) size = 6;
 		if ( t == TYPE_FLOAT          ) size = 4;
