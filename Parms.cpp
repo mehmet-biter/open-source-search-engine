@@ -170,7 +170,6 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 	}
 
 	if ( m_type == TYPE_BOOL ||
-	     m_type == TYPE_BOOL2 ||
 	     m_type == TYPE_CHECKBOX ||
 	     m_type == TYPE_PRIORITY2 ||
 	     m_type == TYPE_CHAR )
@@ -1669,13 +1668,13 @@ bool Parms::printParm( SafeBuf* sb,
 	// . display title and description of the control/parameter
 	// . the input cell of some parameters are colored
 	const char *color = "";
-	if ( t == TYPE_CMD  || t == TYPE_BOOL2 )
+	if (t == TYPE_CMD)
 		color = " bgcolor=#6060ff";
 	if ( t == TYPE_BOOL ) {
 		if ( *s ) color = " bgcolor=#00ff00";
 		else      color = " bgcolor=#ff0000";
 	}
-	if ( t == TYPE_BOOL || t == TYPE_BOOL2 ) {
+	if (t == TYPE_BOOL) {
 		// disable controls not allowed in read only mode
 		if ( g_conf.m_readOnlyMode && m->m_rdonly )
 			  color = " bgcolor=#ffff00";
@@ -1900,18 +1899,6 @@ bool Parms::printParm( SafeBuf* sb,
 					 g_pages.getPath(m->m_page),coll,
 					 cgi,v,//cast,
 					 tt);
-	}
-	else if ( t == TYPE_BOOL2 ) {
-		if ( g_conf.m_readOnlyMode && m->m_rdonly )
-			sb->safePrintf ( "<b><center>read-only mode"
-					 "</center></b>");
-		// always use m_def as the value for TYPE_BOOL2
-		else
-			sb->safePrintf ( "<b><a href=\"/%s?c=%s&%s=%s\">"
-					 //"cast=1\">"
-					 "<center>%s</center></a></b>",
-					 g_pages.getPath(m->m_page),coll,
-					 cgi,m->m_def, m->m_title);
 	}
 	else if ( t == TYPE_CHECKBOX ) {
 		sb->safePrintf("<nobr>");
@@ -2401,7 +2388,6 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		  t == TYPE_CHAR2          ||
 		  t == TYPE_CHECKBOX       ||
 		  t == TYPE_BOOL           ||
-		  t == TYPE_BOOL2          ||
 		  t == TYPE_PRIORITY       ||
 		  t == TYPE_PRIORITY2      ||
 		  t == TYPE_RETRIES        ) {
@@ -2704,10 +2690,6 @@ bool Parms::setFromFile ( void *THIS        ,
 		if ( m->m_type == TYPE_FILEUPLOADBUTTON ) continue;
 		if ( m->m_type == TYPE_CMD      ) continue;
 		if ( m->m_type == TYPE_CONSTANT ) continue;
-		// these are special commands really
-		if ( m->m_type == TYPE_BOOL2    ) continue;
-		//if ( strcmp ( m->m_xml , "forceDeleteUrls" ) == 0 )
-		//	log("got it");
 		// we did not get one from first xml file yet
 		bool first = true;
 		// array count
@@ -3015,7 +2997,6 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 		if ( THIS == (char *)&g_conf && m->m_obj != OBJ_CONF) continue;
 		if ( THIS != (char *)&g_conf && m->m_obj == OBJ_CONF) continue;
 		if ( m->m_type == TYPE_CMD ) continue;
-		if ( m->m_type == TYPE_BOOL2 ) continue;
 		if ( m->m_type == TYPE_FILEUPLOADBUTTON ) continue;
 		// ignore if hidden as well! no, have to keep those separate
 		// since spiderroundnum/starttime is hidden but should be saved
@@ -3155,7 +3136,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 	     t == TYPE_CHECKBOX       ||
 	     t == TYPE_PRIORITY       || t == TYPE_PRIORITY2      ||
 	     t == TYPE_RETRIES        ||
-	     t == TYPE_BOOL2          || t == TYPE_CHAR2           )
+	     t == TYPE_CHAR2           )
 		sb->safePrintf("%" PRId32,(int32_t)*s);
 	else if ( t == TYPE_FLOAT )
 		sb->safePrintf("%f",*(float *)s);
@@ -9958,8 +9939,6 @@ void Parms::init ( ) {
 	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
 	for ( int32_t j = 0 ; j < m_numParms ; j++ ) {
 		if ( j == i             ) continue;
-		if ( m_parms[i].m_type == TYPE_BOOL2 ) continue;
-		if ( m_parms[j].m_type == TYPE_BOOL2 ) continue;
 		if ( m_parms[i].m_type == TYPE_CMD   ) continue;
 		if ( m_parms[j].m_type == TYPE_CMD   ) continue;
 		if ( m_parms[i].m_type == TYPE_FILEUPLOADBUTTON ) continue;
@@ -10070,7 +10049,6 @@ void Parms::init ( ) {
 		if ( t == TYPE_CHAR           ) size = 1;
 		if ( t == TYPE_CHAR2          ) size = 1;
 		if ( t == TYPE_BOOL           ) size = 1;
-		if ( t == TYPE_BOOL2          ) size = 1;
 		if ( t == TYPE_CHECKBOX       ) size = 1;
 		if ( t == TYPE_PRIORITY       ) size = 1;
 		if ( t == TYPE_PRIORITY2      ) size = 1;
@@ -10216,10 +10194,6 @@ void Parms::overlapTest ( char step ) {
 		// skip comments
 		if ( m_parms[i].m_type == TYPE_COMMENT ) continue;
 		if ( m_parms[i].m_type == TYPE_FILEUPLOADBUTTON ) continue;
-		// skip if it is a broadcast switch, like "all spiders on"
-		// because that modifies another parm, "spidering enabled"
-		if ( m_parms[i].m_type == TYPE_BOOL2 ) continue;
-
 		if ( m_parms[i].m_type == TYPE_SAFEBUF ) continue;
 
 		// we use cr->m_spideringEnabled for PAGE_BASIC_SETTINGS too!
@@ -10265,9 +10239,6 @@ void Parms::overlapTest ( char step ) {
 		// skip comments
 		if ( m_parms[i].m_type == TYPE_COMMENT ) continue;
 		if ( m_parms[i].m_type == TYPE_FILEUPLOADBUTTON ) continue;
-		// skip if it is a broadcast switch, like "all spiders on"
-		// because that modifies another parm, "spidering enabled"
-		if ( m_parms[i].m_type == TYPE_BOOL2 ) continue;
 
 		if ( m_parms[i].m_type == TYPE_SAFEBUF ) continue;
 
@@ -10292,11 +10263,7 @@ void Parms::overlapTest ( char step ) {
 
 		for ( j = 0 ; p1 && j < size ; j++ ) {
 			if ( p1[j] == b ) continue;
-			// this has multiple parms pointing to it!
-			//if ( m_parms[i].m_type == TYPE_BOOL2 ) continue;
-			// or special cases...
-			//if ( p1 == (char *)&tmpconf.m_spideringEnabled )
-			//	continue;
+
 			// set object type
 			objStr = "??????";
 			if ( m_parms[i].m_obj == OBJ_COLL )
@@ -10452,7 +10419,6 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 		valSize = 8;
 	}
 	else if ( m->m_type == TYPE_BOOL ||
-		  m->m_type == TYPE_BOOL2 ||
 		  m->m_type == TYPE_CHECKBOX ||
 		  m->m_type == TYPE_PRIORITY2 ||
 		  m->m_type == TYPE_CHAR ) {
@@ -11885,7 +11851,6 @@ bool Parms::addAllParmsToList ( SafeBuf *parmList, collnum_t collnum ) {
 		if ( parm->m_type == TYPE_FILEUPLOADBUTTON ) continue;
 		// cmds
 		if ( parm->m_type == TYPE_CMD ) continue;
-		if ( parm->m_type == TYPE_BOOL2 ) continue;
 
 		// daily merge last started. do not sync this...
 		if ( parm->m_type == TYPE_LONG_CONST ) continue;

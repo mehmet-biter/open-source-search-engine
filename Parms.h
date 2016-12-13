@@ -27,7 +27,6 @@ enum {
 /// @note TYPE_DATE & TYPE_DATE2 is removed in commit f8e94cf3bf25b2f04a8a3aac00fe883eab346f2e
 enum {
 	TYPE_BOOL             =  1,
-	TYPE_BOOL2            =  2,
 	TYPE_CHECKBOX         =  3,
 	TYPE_CHAR             =  4,
 	TYPE_CHAR2            =  5, //needed to display char as a number (maxNumHops)

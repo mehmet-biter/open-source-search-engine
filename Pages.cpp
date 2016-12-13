@@ -1730,7 +1730,6 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 		switch ( parm->m_type ) {
 		case TYPE_CMD: sb->safePrintf("UNARY CMD (set to 1)"); break;
 		case TYPE_BOOL: sb->safePrintf ( "BOOL (0 or 1)" ); break;
-		case TYPE_BOOL2: sb->safePrintf ( "BOOL (0 or 1)" ); break;
 		case TYPE_CHECKBOX: sb->safePrintf ( "BOOL (0 or 1)" ); break;
 		case TYPE_CHAR: sb->safePrintf ( "CHAR" ); break;
 		case TYPE_CHAR2: sb->safePrintf ( "CHAR" ); break;
