@@ -645,11 +645,6 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 	}
 }
 
-
-static bool endsWith(char *haystack, int haystackLen, const char *needle, int needleLen) {
-    return haystackLen >= needleLen && !strncmp(haystack + haystackLen - needleLen, needle, needleLen);
-}
-
 #include "Pages.h" // sendPageAPI, printApiForPage()
 
 // . reply to a GET (including partial get) or HEAD request

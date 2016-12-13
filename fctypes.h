@@ -94,6 +94,10 @@ static inline char *strncasestr( const char *haystack, const char *needle, int32
 	return strncasestr(const_cast<char*>(haystack),needle,haystackSize,needleSize);
 }
 
+static inline bool endsWith(char *haystack, int haystackLen, const char *needle, int needleLen) {
+	return haystackLen >= needleLen && !strncmp(haystack + haystackLen - needleLen, needle, needleLen);
+}
+
 // https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
 static inline bool almostEqualFloat(float A, float B, float maxRelDiff = FLT_EPSILON) {
     // Calculate the difference.
