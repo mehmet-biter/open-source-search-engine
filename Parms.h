@@ -24,6 +24,7 @@ enum {
 	OBJ_NONE
 };
 
+/// @note TYPE_DATE & TYPE_DATE2 is removed in commit f8e94cf3bf25b2f04a8a3aac00fe883eab346f2e
 enum {
 	TYPE_BOOL             =  1,
 	TYPE_BOOL2            =  2,
@@ -44,8 +45,6 @@ enum {
 	TYPE_STRINGBOX        = 17,
 	TYPE_STRINGNONEMPTY   = 18,
 	TYPE_TIME             = 19,
-//	TYPE_DATE2            = 20,
-//	TYPE_DATE             = 21,
 	TYPE_RULESET          = 22,
 	TYPE_FILTER           = 23,
 	TYPE_COMMENT          = 24,
