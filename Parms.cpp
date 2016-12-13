@@ -1927,9 +1927,6 @@ bool Parms::printParm( SafeBuf* sb,
 		  m->m_obj == OBJ_COLL &&
 		  ! isCollAdmin )
 		return true;
-
-	else if ( t == TYPE_RETRIES    ) 
-		printDropDown ( 4 , sb , cgi , *s );
 	else if ( t == TYPE_FILEUPLOADBUTTON    ) {
 		sb->safePrintf("<input type=file name=%s>",cgi);
 	}
@@ -2065,8 +2062,6 @@ bool Parms::printParm( SafeBuf* sb,
 		sb->htmlEncode ( s , strlen(s), false );
 		sb->safePrintf ("</textarea>\n");
 	}
-	else if ( t == TYPE_CONSTANT )
-		sb->safePrintf ("%s",m->m_title);
 	else if ( t == TYPE_TIME ) {
 		//time is stored as a string
 		char hr[3]="00";
@@ -2088,22 +2083,6 @@ bool Parms::printParm( SafeBuf* sb,
 			       cgi    ,
 			       min  );
 	}
-	else if ( t == TYPE_SITERULE ) {
-		// print the siterec rules as a drop down
-		const char *ss[5];
-		for ( int32_t i = 0; i < 5; i++ ) ss[i] = "";
-		int32_t v = *(int32_t*)s;
-		if ( v < 0 || v > 4 ) v = 0;
-		ss[v] = " selected";
-		sb->safePrintf ( "<select name=%s>"
-				 "<option value=0%s>Hostname"
-				 "<option value=1%s>Path Depth 1"
-				 "<option value=2%s>Path Depth 2"
-				 "<option value=3%s>Path Depth 3"
-				 "</select>\n",
-				 cgi, ss[0], ss[1], ss[2], ss[3] );
-	}
-
 
 	// end the input cell
 	sb->safePrintf ( "</td>\n");
@@ -2366,8 +2345,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		  t == TYPE_CHECKBOX       ||
 		  t == TYPE_BOOL           ||
 		  t == TYPE_PRIORITY       ||
-		  t == TYPE_PRIORITY2      ||
-		  t == TYPE_RETRIES        ) {
+		  t == TYPE_PRIORITY2      ) {
 		if ( fromRequest && *(char *)(THIS + m->m_off + j) == atol(s))
 			return;
 		if ( fromRequest) {
@@ -2419,7 +2397,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		*(int32_t *)(THIS + m->m_off + 4*j) = s ? (int32_t)atoip(s,strlen(s)) : 0;
 		goto changed; 
 	}
-	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_SITERULE ) {
+	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST ) {
 		int32_t v = s ? atol(s) : 0;
 		// min is considered valid if >= 0
 		if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
@@ -2666,7 +2644,6 @@ bool Parms::setFromFile ( void *THIS        ,
 		if ( m->m_type == TYPE_COMMENT  ) continue;
 		if ( m->m_type == TYPE_FILEUPLOADBUTTON ) continue;
 		if ( m->m_type == TYPE_CMD      ) continue;
-		if ( m->m_type == TYPE_CONSTANT ) continue;
 		// we did not get one from first xml file yet
 		bool first = true;
 		// array count
@@ -3112,14 +3089,13 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 	if ( t == TYPE_CHAR           || t == TYPE_BOOL           ||
 	     t == TYPE_CHECKBOX       ||
 	     t == TYPE_PRIORITY       || t == TYPE_PRIORITY2      ||
-	     t == TYPE_RETRIES        ||
 	     t == TYPE_CHAR2           )
 		sb->safePrintf("%" PRId32,(int32_t)*s);
 	else if ( t == TYPE_FLOAT )
 		sb->safePrintf("%f",*(float *)s);
 	else if ( t == TYPE_IP )
 		sb->safePrintf("%s",iptoa(*(int32_t *)s));
-	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_SITERULE )
+	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST )
 		sb->safePrintf("%" PRId32,*(int32_t *)s);
 	else if ( t == TYPE_LONG_LONG )
 		sb->safePrintf("%" PRId64,*(int64_t *)s);
@@ -10029,7 +10005,6 @@ void Parms::init ( ) {
 		if ( t == TYPE_CHECKBOX       ) size = 1;
 		if ( t == TYPE_PRIORITY       ) size = 1;
 		if ( t == TYPE_PRIORITY2      ) size = 1;
-		if ( t == TYPE_RETRIES        ) size = 1;
 		if ( t == TYPE_TIME           ) size = 6;
 		if ( t == TYPE_FLOAT          ) size = 4;
 		if ( t == TYPE_DOUBLE         ) size = 8;
@@ -10040,13 +10015,11 @@ void Parms::init ( ) {
 		if ( t == TYPE_STRING         ) size = m_parms[i].m_size;
 		if ( t == TYPE_STRINGBOX      ) size = m_parms[i].m_size;
 		if ( t == TYPE_STRINGNONEMPTY ) size = m_parms[i].m_size;
-		if ( t == TYPE_SITERULE       ) size = 4;
 
 		// comments and commands do not control underlying variables
 		if ( size == 0 && t != TYPE_COMMENT && t != TYPE_CMD &&
 		     t != TYPE_SAFEBUF  &&
 		     t != TYPE_FILEUPLOADBUTTON &&
-		     t != TYPE_CONSTANT &&
 		     t != TYPE_CHARPTR ) {
 			log(LOG_LOGIC,"conf: Size of parm #%" PRId32" \"%s\" "
 			    "not set.", i,m_parms[i].m_title);
@@ -10059,7 +10032,6 @@ void Parms::init ( ) {
 		if ( t == TYPE_COMMENT  ) continue;
 		if ( t == TYPE_FILEUPLOADBUTTON ) continue;
 		if ( t == TYPE_CMD      ) continue;
-		if ( t == TYPE_CONSTANT ) continue;
 		if ( t == TYPE_SAFEBUF  ) continue;
 		// search parms do not need an offset
 		if ( m_parms[i].m_off == -1 ){//&& m_parms[i].m_sparm == 0 ) {
