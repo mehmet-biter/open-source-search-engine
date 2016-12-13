@@ -226,7 +226,7 @@ class Parms {
 
 	bool saveToXml ( char *THIS , char *f , char objType ) ;
 
-	bool getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s );
+	bool getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s );
 
 	bool setGigablastRequest ( class TcpSocket *s ,
 				   class HttpRequest *hr ,

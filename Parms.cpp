@@ -3273,7 +3273,7 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 	//int32_t  n   ;
 	int32_t  j   ;
 	int32_t  count = 0;
-	char *s = "";
+	const char *s = "";
 	CollectionRec *cr = NULL;
 	if ( THIS != (char *)&g_conf ) cr = (CollectionRec *)THIS;
 	// now set THIS based on the parameters in the xml file
@@ -3312,7 +3312,7 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 		// allow comments though
 		if ( m->m_type == TYPE_COMMENT ) goto skip2;
 		// skip if offset is negative, that means none
-		s = (char *)THIS + m->m_off ;
+		s = THIS + m->m_off ;
 
 		// if array, count can be 0 or more than 1
 		count = 1;
@@ -3433,7 +3433,7 @@ skip2:
 	//	   (int32_t)MAX_CONF_SIZE);
 }
 
-bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
+bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 	// do not breech the buffer
 	//if ( p + 100 >= pend ) return p;
 	// print it out
