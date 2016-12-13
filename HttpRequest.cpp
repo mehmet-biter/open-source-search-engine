@@ -447,14 +447,6 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 		 m_reqBuf.safePrintf("\r\n");
 	 }
 
-	 // set m_bufLen
-	 //m_bufLen = p - m_buf;//strlen ( m_buf );
-	 // sanity check
-	 // if ( m_bufLen + 1 > MAX_REQ_LEN ) {
-	 //	 log("build: HttpRequest buf is too small.");
-	 //	 g_process.shutdownAbort(true);
-	 // }
-
 	 // restore url buffer
 	 if ( pathEnd ) *pathEnd = '?';
 
