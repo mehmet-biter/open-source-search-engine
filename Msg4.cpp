@@ -212,7 +212,6 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
                          // longer belong because of a new hosts.conf file.
                          // This will be -1 if not be overridden.
                          int32_t       shardOverride ) {
-
 	// not in progress
 	m_inUse = false;
 
