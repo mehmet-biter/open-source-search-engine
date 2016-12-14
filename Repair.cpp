@@ -174,7 +174,7 @@ void Repair::repairWrapper(int fd, void *state) {
 		return;
 	}
 
-#ifndef PRIVACORE_SAFE_VERSION
+#ifdef PRIVACORE_SAFE_VERSION
 	if(g_conf.m_rebuildHost<0) {
 		log(LOG_DEBUG, "repair: rebuild/repair specified for all but this is not allowed in this safer version");
 		g_conf.m_repairingEnabled = false;
