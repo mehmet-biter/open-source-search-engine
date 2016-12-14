@@ -433,7 +433,7 @@ bool SafeBuf::replace ( const char *src, const char *dst ) {
 	return true;
 }
 
-bool SafeBuf::removeChunk1 ( char *p , int32_t len ) {
+bool SafeBuf::removeChunk1 ( const char *p , int32_t len ) {
 	int32_t off = p - m_buf;
 	return removeChunk2 ( off , len );
 }
