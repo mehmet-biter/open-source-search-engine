@@ -77,7 +77,7 @@ class HttpServer {
 		      //   use 1.0
 		      const char   *proto = DEFAULT_HTTP_PROTO , // "HTTP/1.0" ,
 		      bool    doPost = false ,
-		      const char   *cookie = NULL ,
+		      const char   *cookieJar = NULL ,
 		      const char *additionalHeader = NULL , // does not include \r\n
 		      // specify your own mime and post data here...
 		      const char *fullRequest = NULL ,
