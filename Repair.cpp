@@ -22,12 +22,6 @@
 #include <fcntl.h>
 
 
-static void repairWrapper ( int fd , void *state ) ;
-static void loopWrapper   ( void *state , RdbList *list , Msg5 *msg5 ) ;
-
-static bool saveAllRdbs ( void *state , void (* callback)(void *state) ) ;
-static bool anyRdbNeedsSave ( ) ;
-static void doneSavingRdb ( void *state );
 
 char g_repairMode = 0;
 
@@ -81,30 +75,15 @@ static Rdb **getAllRdbs ( int32_t *nsr ) {
 
 Repair::Repair() {
 	// Coverity
-	m_completed = false;
 	m_needsCallback = false;
-	m_docQuality = 0;
 	m_docId = 0;
 	m_isDelete = false;
 	m_totalMem = 0;
 	m_stage = 0;
-	m_tfn = 0;
 	m_count = 0;
 	m_updated = false;
 	m_nextTitledbKey = 0;
-	m_nextSpiderdbKey = 0;
-	m_nextPosdbKey = 0;
-	m_nextLinkdbKey = 0;
 	m_endKey = 0;
-	m_uh48 = 0;
-	m_priority = 0;
-	m_contentHash = 0;
-	m_clusterdbKey = 0;
-	m_spiderdbKey = 0;
-	memset(m_srBuf, 0, sizeof(m_srBuf));
-	memset(m_tmpBuf, 0, sizeof(m_tmpBuf));
-	m_chksum1LongLong = 0;
-	m_isNew = false;
 	m_SAVE_START = 0;
 	m_lastDocId = 0;
 	m_prevDocId = 0;
@@ -141,8 +120,6 @@ Repair::Repair() {
 	m_rebuildRoots = true;
 	m_rebuildNonRoots = true;
 	m_collnum = 0;
-	m_newCollLen = 0;
-	m_newCollnum = 0;
 	m_colli = 0;
 	m_numColls = 0;
 	m_SAVE_END = 0;
@@ -155,7 +132,6 @@ Repair::Repair() {
 	m_saveRepairState = false;
 	m_isRetrying = false;
 	
-	memset(m_newColl, 0, sizeof(m_newColl));
 	memset(&m_collOffs, 0, sizeof(m_collOffs));
 	memset(&m_collLens, 0, sizeof(m_collLens));
 }
@@ -168,7 +144,6 @@ bool Repair::init ( ) {
 	m_saveRepairState = false;
 	m_isRetrying      = false;
 	m_needsCallback   = false;
-	m_completed       = false;
 	if( ! g_loop.registerSleepCallback( 1 , NULL , repairWrapper ) ) {
 		log(LOG_WARN, "repair: Failed register callback.");
 		return false;
@@ -176,13 +151,13 @@ bool Repair::init ( ) {
 	return true;
 }
 
-bool Repair::isRepairActive() { 
+bool Repair::isRepairActive() const {
 	return g_repairMode >= 4; 
 }
 
 // . call this once every second 
 // . this is responsible for advancing from one g_repairMode to the next
-void repairWrapper ( int fd , void *state ) {
+void Repair::repairWrapper(int fd, void *state) {
 
 	g_errno = 0;
 
@@ -192,6 +167,20 @@ void repairWrapper ( int fd , void *state ) {
 	//   the collection we are repairing in titledb's rdbtree, which,
 	//   when dumped, would mess up our scan.
 	if ( ! g_conf.m_repairingEnabled ) return;
+
+	if(g_conf.m_rebuildHost>=0 && getMyHostId()!=g_conf.m_rebuildHost) {
+		log(LOG_DEBUG, "repair: rebuild/repair is for host %d only and not us", g_conf.m_rebuildHost);
+		g_conf.m_repairingEnabled = false;
+		return;
+	}
+
+#ifndef PRIVACORE_SAFE_VERSION
+	if(g_conf.m_rebuildHost<0) {
+		log(LOG_DEBUG, "repair: rebuild/repair specified for all but this is not allowed in this safer version");
+		g_conf.m_repairingEnabled = false;
+		return;
+	}
+#endif
 
 	// if the power went off
 	if ( ! g_process.m_powerIsOn ) return;
@@ -424,9 +413,6 @@ void repairWrapper ( int fd , void *state ) {
 
 		// ready to reset
 		g_repairMode = 8;
-
-		// mark it
-		g_repair.m_completed = true;
 	}
 
 	// go back to 0 once all hosts do not equal 5
@@ -467,10 +453,7 @@ void Repair::initScan ( ) {
 
 	// reset some stuff for the titledb scan
 	m_nextTitledbKey.setMin();
-	m_nextSpiderdbKey.setMin();
 	m_lastSpiderdbKey.setMin();
-	m_nextPosdbKey.setMin ();
-	m_nextLinkdbKey.setMin  ();
 	m_endKey.setMax();
 	m_titleRecList.reset();
 	m_count = 0;
@@ -558,7 +541,7 @@ void Repair::initScan ( ) {
 		// advance the number of collections
 		m_numColls++;
 		// get the next collection if under 100 collections still
-		if ( m_numColls < 100 ) goto collLoop;
+		if ( m_numColls < maxCollections ) goto collLoop;
 	}
 
 	// split the mem we have available among the rdbs
@@ -751,7 +734,7 @@ void Repair::getNextCollToRepair ( ) {
 }
 
 
-void loopWrapper ( void *state , RdbList *list , Msg5 *msg5 ) {
+void Repair::loopWrapper(void *state, RdbList *list, Msg5 *msg5) {
 	Repair *THIS = (Repair *)state;
 	THIS->m_msg5InUse = false;
 	THIS->loop(NULL);
@@ -837,8 +820,6 @@ bool Repair::load ( ) {
 
 	// resume titledb scan?
 	m_nextTitledbKey = m_lastTitledbKey;
-	// resume spiderdb scan?
-	m_nextSpiderdbKey = m_lastSpiderdbKey;
 
 	// reinstate the valuable vars
 	m_cr   = g_collectiondb.m_recs [ m_collnum ];
@@ -927,7 +908,7 @@ bool Repair::loop ( void *state ) {
 		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: STAGE_TITLEDB_3", __FILE__, __func__, __LINE__);
 		
 		// if we have maxed out our injects, wait for one to come back
-		if ( m_numOutstandingInjects >= g_conf.m_maxRepairSpiders ) {
+		if ( m_numOutstandingInjects >= g_conf.m_maxRepairinjections ) {
 			m_allowInjectToLoop = true;
 			return false;
 		}
@@ -940,7 +921,7 @@ bool Repair::loop ( void *state ) {
 			
 		//return false; // (state)
 		// try to launch another
-		if ( m_numOutstandingInjects<g_conf.m_maxRepairSpiders ) {
+		if ( m_numOutstandingInjects<g_conf.m_maxRepairinjections ) {
 			m_stage = STAGE_TITLEDB_0;
 			if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: Still have more free repair spiders, loop.", __FILE__, __func__, __LINE__);
 			goto loop1;
@@ -1235,7 +1216,6 @@ bool Repair::gotScanRecList ( ) {
 	m_isDelete = false;
 	// we need this to compute the tfndb key to add/delete
 	//m_ext = -1;
-	m_uh48 = 0LL;
 
 	// count the title recs we scan
 	m_recsScanned++;
@@ -1296,8 +1276,6 @@ bool Repair::gotScanRecList ( ) {
 	if ( m_fn == base->getNumFiles() ) id2 = 255;
 	else                               id2 = base->m_fileIds2[m_fn];
 
-	// that is the tfn...
-	m_tfn = id2;
 	*/
 
 	// is it a negative titledb key?
@@ -1319,7 +1297,8 @@ bool Repair::gotScanRecList ( ) {
 	return true;
 }
 
-static void doneWithIndexDoc ( XmlDoc *xd ) {
+
+void Repair::doneWithIndexDoc(XmlDoc *xd) {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	
 	// preserve
@@ -1350,7 +1329,8 @@ static void doneWithIndexDoc ( XmlDoc *xd ) {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
 
-static void doneWithIndexDocWrapper ( void *state ) {
+
+void Repair::doneWithIndexDocWrapper(void *state) {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	// clean up
 	doneWithIndexDoc ( (XmlDoc *)state );
@@ -1576,7 +1556,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	int64_t errors2 = m_spiderRecSetErrors;
 
 	const char *newColl = " &nbsp; ";
-	//if ( m_fullRebuild ) newColl = m_newColl;
 
 	const char *oldColl = " &nbsp; ";
 	if ( m_cr ) oldColl = m_cr->m_coll;
@@ -1946,7 +1925,7 @@ static bool   s_savingAll = false;
 // . return false if blocked, true otherwise
 // . will call the callback when all have been saved
 // . used by Repair.cpp to save all rdbs before doing repair work
-bool saveAllRdbs ( void *state , void (* callback)(void *state) ) {
+bool Repair::saveAllRdbs(void *state, void (*callback)(void *state)) {
 	// only call once
 	if ( s_savingAll ) {
 		//log("db: Already saving all.");
@@ -1978,7 +1957,7 @@ bool saveAllRdbs ( void *state , void (* callback)(void *state) ) {
 }
 
 // return false if one or more is still not closed yet
-bool anyRdbNeedsSave ( ) {
+bool Repair::anyRdbNeedsSave() {
 	int32_t count = 0;
 	int32_t nsr;
 	Rdb **rdbs = getAllRdbs ( &nsr );
@@ -1992,7 +1971,7 @@ bool anyRdbNeedsSave ( ) {
 }
 
 // returns false if waiting on some to save
-void doneSavingRdb ( void *state ) {
+void Repair::doneSavingRdb(void *state) {
 	if ( ! anyRdbNeedsSave() ) return;
 	// all done
 	s_savingAll = false;

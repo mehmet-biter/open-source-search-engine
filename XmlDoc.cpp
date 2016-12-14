@@ -6546,7 +6546,7 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 	// if we have already been through this
 	if ( m_updatingSiteLinkInfoTags ) valid = false;
 	// if rebuilding linkdb assume we have no links to sample from!
-	if ( tag && m_useSecondaryRdbs && g_repair.m_rebuildLinkdb )
+	if ( tag && m_useSecondaryRdbs && g_repair.linkdbRebuildPending() )
 		valid = true;
 
 	// debug log

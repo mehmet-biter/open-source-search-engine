@@ -9197,7 +9197,6 @@ void Parms::init ( ) {
 	///////////////////////////////////////////
 	//  PAGE REPAIR CONTROLS
 	///////////////////////////////////////////
-#ifndef PRIVACORE_SAFE_VERSION
 
 	m->m_title = "rebuild mode enabled";
 	m->m_desc  = "If enabled, gigablast will rebuild the rdbs as "
@@ -9215,9 +9214,8 @@ void Parms::init ( ) {
 
 	m->m_title = "collection to rebuild";
 	m->m_xml   = "collectionToRebuild";
-	m->m_desc  = "Name of collection to rebuild.";
-	// m->m_desc  = "Comma or space separated list of the collections "
-	// 	"to rebuild.";
+	m->m_desc  = "Comma or space separated list of the collections "
+		"to rebuild.";
 	m->m_cgi   = "rctr"; // repair collections to repair
 	m->m_off   = offsetof(Conf,m_collsToRepair);
 	m->m_type  = TYPE_SAFEBUF;//STRING;
@@ -9230,11 +9228,23 @@ void Parms::init ( ) {
 	m++;
 
 
+	m->m_title = "Limit rebuild to a host";
+	m->m_desc  = "Only rebuild on this host. -1 for all";
+	m->m_cgi   = "rebuild_host";
+	m->m_off   = offsetof(Conf,m_rebuildHost);
+	m->m_type  = TYPE_LONG;
+	m->m_page  = PAGE_REPAIR;
+	m->m_obj   = OBJ_CONF;
+	m->m_def   = "-1";
+	m->m_group = false;
+	m++;
+
+
 	m->m_title = "memory to use for rebuild";
 	m->m_desc  = "In bytes.";
 	m->m_cgi   = "rmtu"; // repair mem to use
 	m->m_off   = offsetof(Conf,m_repairMem);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_LONG_LONG;
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "200000000";
@@ -9246,7 +9256,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Maximum number of outstanding injections for "
 		"rebuild.";
 	m->m_cgi   = "mrps";
-	m->m_off   = offsetof(Conf,m_maxRepairSpiders);
+	m->m_off   = offsetof(Conf,m_maxRepairinjections);
 	m->m_type  = TYPE_LONG;
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
@@ -9377,7 +9387,6 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-#endif
 	///////////////////////////////////////////
 	//          END PAGE REPAIR              //
 	///////////////////////////////////////////

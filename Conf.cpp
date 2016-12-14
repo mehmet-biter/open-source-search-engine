@@ -278,7 +278,8 @@ Conf::Conf ( ) {
 	m_bypassValidation = false;
 	m_maxCallbackDelay = 0;
 	m_repairingEnabled = false;
-	m_maxRepairSpiders = 0;
+	m_maxRepairinjections = 0;
+	m_rebuildHost = -1;
 	m_repairMem = 0;
 	m_fullRebuild = true;
 	m_rebuildAddOutlinks = false;

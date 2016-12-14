@@ -473,9 +473,10 @@ class Conf {
 
 	// used by Repair.cpp
 	bool  m_repairingEnabled;
-	int32_t  m_maxRepairSpiders;
+	int32_t  m_maxRepairinjections;
 	int64_t  m_repairMem;
 	SafeBuf m_collsToRepair;
+	int32_t m_rebuildHost;
 	bool  m_fullRebuild;
 	bool  m_rebuildAddOutlinks;
 	bool  m_rebuildRecycleLinkInfo;

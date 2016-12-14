@@ -5,13 +5,14 @@
 
 #include "RdbList.h"
 #include "Msg5.h"
-#include "Msg4.h"
-#include "Tagdb.h"
-#include "max_coll_len.h"
 
 #define SR_BUFSIZE 2048
 
 extern char g_repairMode;
+
+class XmlDoc;
+class CollectionRec;
+
 
 class Repair {
 public:
@@ -19,9 +20,19 @@ public:
 	Repair();
 
 	// is the scan active and adding recs to the secondary rdbs?
-	bool isRepairActive() ;
+	bool isRepairActive() const;
+	bool isRepairingColl(collnum_t coll) const { return m_collnum==coll; }
 
 	bool init();
+	// if we core, call this so repair can resume where it left off
+	bool save();
+
+	// called by Parms.cpp
+	bool printRepairStatus ( SafeBuf *sb , int32_t fromIp );
+
+	bool linkdbRebuildPending() const { return m_rebuildLinkdb; }
+
+private:
 	//void allHostsReady();
 	void initScan();
 	void resetForNewCollection();
@@ -38,51 +49,23 @@ public:
 	bool getTitleRec ( );
 	bool injectTitleRec ( ) ; // TitleRec *tr );
 
-	// called by Pages.cpp
-	bool printRepairStatus ( SafeBuf *sb , int32_t fromIp );
 
-	// if we core, call these so repair can resume where it left off
-	bool save();
 	bool load();
-
-	bool       m_completed;
 
 	// general scan vars
 	Msg5       m_msg5;
-	Msg4       m_msg4;
 	bool       m_needsCallback;
-	char       m_docQuality;
 	RdbList    m_titleRecList;
 	int64_t  m_docId;
 	bool       m_isDelete;
-	RdbList    m_ulist;
-	RdbList    m_addlist;
 	int64_t  m_totalMem;
 	int32_t       m_stage ;
-	int32_t       m_tfn;
 	int32_t       m_count;
 	bool       m_updated;
 
 	// titledb scan vars
 	key96_t      m_nextTitledbKey;
-	key96_t      m_nextSpiderdbKey;
-	key96_t      m_nextPosdbKey;
-	key128_t   m_nextLinkdbKey;
 	key96_t      m_endKey;
-	int64_t  m_uh48;
-	int32_t       m_priority;
-	uint64_t   m_contentHash;
-	key96_t      m_clusterdbKey ;
-	key96_t      m_spiderdbKey;
-	char       m_srBuf[SR_BUFSIZE];
-	char       m_tmpBuf[32];
-	RdbList    m_linkdbListToAdd;
-	uint64_t   m_chksum1LongLong;
-
-	// spiderdb scan vars
-	bool       m_isNew;
-	TagRec     m_tagRec;
-
 
 	// . state info
 	// . indicator of what we save to disk
@@ -129,11 +112,7 @@ public:
 	bool       m_rebuildNonRoots   ;
 
 	// current collection being repaired
-	//int32_t       m_collLen;
 	collnum_t  m_collnum;
-	char       m_newColl[MAX_COLL_LEN];
-	int32_t       m_newCollLen;
-	collnum_t  m_newCollnum;
 
 	// . m_colli is the index into m_colls
 	// . m_colli is the index into g_collectiondb.m_recs if the list
@@ -142,8 +121,9 @@ public:
 
 	// list of collections to repair, only valid of g_conf.m_collsToRepair
 	// is not empty
-	int32_t       m_collOffs[100];
-	int32_t       m_collLens[100];
+	static const int32_t maxCollections = 100;
+	int32_t       m_collOffs[maxCollections];
+	int32_t       m_collLens[maxCollections];
 	int32_t       m_numColls;
 	// end the stuff to be saved
 	char       m_SAVE_END;
@@ -167,6 +147,15 @@ public:
 	bool  m_saveRepairState;
 
 	bool  m_isRetrying;
+
+	static void repairWrapper(int fd, void *state);
+	static void loopWrapper(void *state, RdbList *list, Msg5 *msg5);
+
+	static bool saveAllRdbs(void *state, void (*callback)(void *state));
+	static bool anyRdbNeedsSave();
+	static void doneSavingRdb(void *state);
+	static void doneWithIndexDoc(XmlDoc *xd);
+	static void doneWithIndexDocWrapper(void *state);
 };
 
 // the global class

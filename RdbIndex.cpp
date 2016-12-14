@@ -21,8 +21,8 @@ static const int32_t s_defaultMaxPendingTimeMs = 5000;
 static const uint32_t s_defaultMaxPendingSize = 2000000;
 
 // larger number equals more memory used; but faster generateIndex
-// 40000000 * 8 bytes = 320 megabytes
-static const uint32_t s_generateMaxPendingSize = 40000000;
+// 10000000 * 8 bytes = ~80 megabytes
+static const uint32_t s_generateMaxPendingSize = 10000000;
 
 static const int64_t s_rdbIndexCurrentVersion = 0;
 
