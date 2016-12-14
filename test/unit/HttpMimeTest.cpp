@@ -38,12 +38,11 @@ public:
 
 	using HttpMime::parseCookieDate;
 
-	void verifyCookie(const char *cookieName, const char *expectedCookie, const char *path = "", const char *domain = "", bool httpOnly = false, bool secure = false);
+	void verifyCookie(const char *cookieName, const char *expectedCookie, const char *path = "", const char *domain = "", bool httpOnly = false, bool secure = false, bool expired = false);
 
-	bool addCookieHeader(const char *url, SafeBuf *sb) {
-		SafeBuf cookieJar;
-		if (HttpMime::addToCookieJar(&m_url, &cookieJar)) {
-			return HttpMime::addCookieHeader(cookieJar.getBufStart(), url, sb);
+	bool addCookieHeader(const char *url, SafeBuf *cookieJar, SafeBuf *sb) {
+		if (HttpMime::addToCookieJar(&m_url, cookieJar)) {
+			return HttpMime::addCookieHeader(cookieJar->getBufStart(), url, sb);
 		}
 
 		return false;
@@ -229,7 +228,7 @@ TEST(HttpMimeTest, ParseCookieDateInvalid) {
 	}
 }
 
-void TestHttpMime::verifyCookie(const char *cookieName, const char *expectedCookie, const char *path, const char *domain, bool httpOnly, bool secure) {
+void TestHttpMime::verifyCookie(const char *cookieName, const char *expectedCookie, const char *path, const char *domain, bool httpOnly, bool secure, bool expired) {
 	std::stringstream ss;
 	ss << __func__ << ":"
 	   << " expectedCookie='" << expectedCookie << "'";
@@ -253,6 +252,8 @@ void TestHttpMime::verifyCookie(const char *cookieName, const char *expectedCook
 
 	EXPECT_EQ(httpOnly, cookie.m_httpOnly);
 	EXPECT_EQ(secure, cookie.m_secure);
+
+	EXPECT_EQ(expired, cookie.m_expired);
 }
 
 TEST(HttpMimeTest, SetCookieSingle) {
@@ -625,7 +626,7 @@ TEST(HttpMimeTest, SetCookieExpiresExpired) {
 
 	TestHttpMime httpMime(httpResponse, "http://www.lawdepot.com/");
 
-	ASSERT_EQ(10, httpMime.getCookies().size());
+	ASSERT_EQ(16, httpMime.getCookies().size());
 	httpMime.verifyCookie("L", "L=US", "/");
 	httpMime.verifyCookie("cb_FirstVisit", "cb_FirstVisit=2016%2F11%2F25+17%3A22%3A27", "/");
 	httpMime.verifyCookie("brand", "brand=+", "/");
@@ -636,6 +637,12 @@ TEST(HttpMimeTest, SetCookieExpiresExpired) {
 	httpMime.verifyCookie("___utmvmXEuIKXs", "___utmvmXEuIKXs=xscHtJOFkSw", "/");
 	httpMime.verifyCookie("___utmvaXEuIKXs", "___utmvaXEuIKXs=cEK^AyUTl", "/");
 	httpMime.verifyCookie("___utmvbXEuIKXs", "___utmvbXEuIKXs=mZd\r\n    XGPOvala: PtX", "/");
+	httpMime.verifyCookie("cb_Referrer", "cb_Referrer=deleted", "/", "", false, false, true);
+	httpMime.verifyCookie("ASP.NET_SessionId", "ASP.NET_SessionId=deleted", "/", "", false, false, true);
+	httpMime.verifyCookie("UID", "UID=deleted", "/", "www.lawdepot.com", false, false, true);
+	httpMime.verifyCookie("LoginID", "LoginID=deleted", "/", "www.lawdepot.com", false, false, true);
+	httpMime.verifyCookie("pricing_region", "pricing_region=deleted", "/", "www.lawdepot.com", false, false, true);
+	httpMime.verifyCookie("free_account", "free_account=deleted", "/", "www.lawdepot.com", false, false, true);
 
 }
 
@@ -700,9 +707,10 @@ TEST(HttpMimeTest, SetCookieMaxAgeZero) {
 
 	TestHttpMime httpMime(httpResponse, "http://www.panelook.com/");
 
-	ASSERT_EQ(2, httpMime.getCookies().size());
+	ASSERT_EQ(3, httpMime.getCookies().size());
 	httpMime.verifyCookie("PHPSESSID", "PHPSESSID=iull787l2g108u2t3gnhrdnp81", "/", "", true);
 	httpMime.verifyCookie("safedog-flow-item", "safedog-flow-item=05291A2AAF3F4BEAD675A8148D837FA5", "/", "panelook.com");
+	httpMime.verifyCookie("too_user", "too_user=%2BfkOkj4w4rI", "", "", false, false, true);
 }
 
 TEST(HttpMimeTest, SetCookieEmptySemicolon) {
@@ -837,8 +845,9 @@ TEST(HttpMimeTest, SetCookieMultipleLine) {
 	httpMime.verifyCookie("___utmvaLouNZtS", "___utmvaLouNZtS=VjM^AZrsi", "/");
 	httpMime.verifyCookie("___utmvbLouNZtS", "___utmvbLouNZtS=ZZQ\r\n    XZKOgalf: ztw", "/");
 
+	SafeBuf cookieJar;
 	SafeBuf sb;
-	httpMime.addCookieHeader("http://138.com", &sb);
+	httpMime.addCookieHeader("http://138.com", &cookieJar, &sb);
 	EXPECT_STREQ("Cookie: "
 	             "___utmvaLouNZtS=VjM^AZrsi;"
 	             "___utmvbLouNZtS=ZZQXZKOgalf: ztw;"
@@ -848,9 +857,10 @@ TEST(HttpMimeTest, SetCookieMultipleLine) {
 	             "visid_incap_780362=ummcL4XfSPqPE6kzQWznBwGAOVgAAAAAQUIPAAAAAADFlgKMS3kveaymHYa2wup3;"
 	             "\r\n", sb.getBufStart());
 
+	cookieJar.reset();
 	sb.reset();
 
-	httpMime.addCookieHeader("http://www.138.com", &sb);
+	httpMime.addCookieHeader("http://www.138.com", &cookieJar, &sb);
 	EXPECT_STREQ("Cookie: "
 	             "incap_ses_543_780362=39xOCBhzFCWSlPLUqB+JBwGAOVgAAAAAkwB11WvDUCsxFSM3MZ5mWQ==;"
 	             "nlbi_780362=Vxv4X1JzkTQAR/rHbnjLsgAAAADxUw2DWAG4Ije6+uOVG0N8;"
@@ -889,8 +899,10 @@ TEST(HttpMimeTest, SetCookieMultiplePath) {
 	httpMime.verifyCookie("client_timestamp", "client_timestamp=1480096605", "/", "220-volt.ru");
 	httpMime.verifyCookie("session", "session=1480096605.66301394", "/", "220-volt.ru");
 
+	SafeBuf cookieJar;
 	SafeBuf sb;
-	httpMime.addCookieHeader("http://220-volt.ru/", &sb);
+
+	httpMime.addCookieHeader("http://220-volt.ru/", &cookieJar, &sb);
 	EXPECT_STREQ("Cookie: "
 	             "advref=typein:;"
 	             "advref_first=typein:;"
@@ -898,9 +910,10 @@ TEST(HttpMimeTest, SetCookieMultiplePath) {
 	             "session=1480096605.66301394;"
 	             "\r\n", sb.getBufStart());
 
+	cookieJar.reset();
 	sb.reset();
 
-	httpMime.addCookieHeader("http://220-volt.ru/order/", &sb);
+	httpMime.addCookieHeader("http://220-volt.ru/order/", &cookieJar, &sb);
 	EXPECT_STREQ("Cookie: "
 	             "advref=typein:;"
 	             "advref_date=1480096605;"
@@ -909,4 +922,143 @@ TEST(HttpMimeTest, SetCookieMultiplePath) {
 	             "client_timestamp=1480096605;"
 	             "session=1480096605.66301394;"
 	             "\r\n", sb.getBufStart());
+}
+
+TEST(HttpMimeTest, SetCookieAnswersMicrosoftCom) {
+	SafeBuf cookieJar;
+
+	const char *url1 = "http://answers.microsoft.com/en-us/ie/";
+	const char *url2 = "https://answers.microsoft.com/en-us/site/startsignin?pageUrl=http%3A%2F%2Fanswers.microsoft.com%3A80%2Fen-us%2Fie%2F%3Fauth%3D1&silent=True";
+	const char *url3 = "https://login.live.com/login.srf?wa=wsignin1.0&rpsnv=13&checkda=1&ct=1479997321&rver=6.5.6509.0&wp=MBI_SSL&wreply=https:%2F%2Fanswers.microsoft.com%2Fen-us%2Fsite%2Fcompletesignin%3Fsilent%3DTrue%26returnUrl%3Dhttp%253A%252F%252Fanswers.microsoft.com%253A80%252Fen-us%252Fie%252F%253Fauth%253D1&id=273572";
+	const char *url4 = "https://answers.microsoft.com/en-us/site/completesignin?silent=True&returnUrl=http%3A%2F%2Fanswers.microsoft.com%3A80%2Fen-us%2Fie%2F%3Fauth%3D1";
+	const char *url5 = "http://answers.microsoft.com/en-us/ie/?auth=1";
+
+	char httpResponse1[] =
+		"HTTP/1.1 302 Moved Temporarily\r\n"
+		"Content-Type: text/html; charset=utf-8\r\n"
+		"Location: https://answers.microsoft.com/en-us/site/startsignin?pageUrl=http%3A%2F%2Fanswers.microsoft.com%3A80%2Fen-us%2Fie%2F%3Fauth%3D1&silent=True\r\n"
+		"Server: Microsoft-IIS/8.5\r\n"
+		"X-FRAME-OPTIONS: SAMEORIGIN\r\n"
+		"X-UA-Compatible: IE=edge\r\n"
+		"X-Content-Type-Options: nosniff\r\n"
+		"X-EdgeConnect-MidMile-RTT: 22\r\n"
+		"X-EdgeConnect-Origin-MEX-Latency: 30\r\n"
+		"Expires: Thu, 26 Nov 2016 14:22:00 GMT\r\n"
+		"Cache-Control: max-age=0, no-cache, no-store\r\n"
+		"Pragma: no-cache\r\n"
+		"Date: Thu, 26 Nov 2016 14:22:00 GMT\r\n"
+		"Connection: close\r\n"
+		"Set-Cookie: community.silentsignin=; domain=answers.microsoft.com; path=/; HttpOnly\r\n"
+		"Set-Cookie: MS-CACHE=CACHE-true; expires=Thu, 26-Nov-2016 13:31:41 GMT\r\n"
+		"Cache-Control: no-transform\r\n"
+		"\r\n";
+
+	TestHttpMime httpMime1(httpResponse1, url1);
+	SafeBuf sb1;
+	httpMime1.addCookieHeader(url2, &cookieJar, &sb1);
+	EXPECT_STREQ("Cookie: "
+	             "community.silentsignin=;"
+	             "\r\n", sb1.getBufStart());
+
+	char httpResponse2[] =
+		"HTTP/1.1 302 Moved Temporarily\r\n"
+		"Content-Type: text/html; charset=utf-8\r\n"
+		"Location: https://login.live.com/login.srf?wa=wsignin1.0&rpsnv=13&checkda=1&ct=1479997321&rver=6.5.6509.0&wp=MBI_SSL&wreply=https:%2F%2Fanswers.microsoft.com%2Fen-us%2Fsite%2Fcompletesignin%3Fsilent%3DTrue%26returnUrl%3Dhttp%253A%252F%252Fanswers.microsoft.com%253A80%252Fen-us%252Fie%252F%253Fauth%253D1&id=273572\r\n"
+		"Server: Microsoft-IIS/8.5\r\n"
+		"X-FRAME-OPTIONS: SAMEORIGIN\r\n"
+		"X-UA-Compatible: IE=edge\r\n"
+		"X-Content-Type-Options: nosniff\r\n"
+		"Content-Length: 577\r\n"
+		"Expires: Thu, 26 Nov 2016 14:22:00 GMT\r\n"
+		"Cache-Control: max-age=0, no-cache, no-store\r\n"
+		"Pragma: no-cache\r\n"
+		"Date: Thu, 26 Nov 2016 14:22:00 GMT\r\n"
+		"Connection: keep-alive\r\n"
+		"Set-Cookie: rtPage=http://answers.microsoft.com/en-us/ie/?auth=1; domain=answers.microsoft.com; path=/\r\n"
+		"Cache-Control: no-transform\r\n"
+		"\r\n";
+
+	TestHttpMime httpMime2(httpResponse2, url2);
+	SafeBuf sb2;
+	httpMime2.addCookieHeader(url3, &cookieJar, &sb2);
+	EXPECT_EQ(NULL, sb2.getBufStart());
+
+	char httpResponse3[] =
+		"HTTP/1.1 302 Found\r\n"
+		"Cache-Control: no-cache\r\n"
+		"Pragma: no-cache\r\n"
+		"Content-Length: 0\r\n"
+		"Content-Type: text/html; charset=utf-8\r\n"
+		"Expires: Thu, 26 Nov 2016 14:21:01 GMT\r\n"
+		"Location: https://answers.microsoft.com/en-us/site/completesignin?silent=True&returnUrl=http%3A%2F%2Fanswers.microsoft.com%3A80%2Fen-us%2Fie%2F%3Fauth%3D1\r\n"
+		"Server: Microsoft-IIS/8.5\r\n"
+		"P3P: CP=\"DSP CUR OTPi IND OTRi ONL FIN\"\r\n"
+		"Set-Cookie: uaid=0b67f5d4e948427a87b516f2362e5568; domain=login.live.com;secure= ;path=/;HTTPOnly= ;version=1\r\n"
+		"Set-Cookie: MSPRequ=lt=1479997321&co=1&id=273572; secure= ;path=/;HTTPOnly=;version=1\r\n"
+		"X-Content-Type-Options: nosniff\r\n"
+		"Strict-Transport-Security: max-age=31536000\r\n"
+		"X-XSS-Protection: 1; mode=block\r\n"
+		"Date: Thu, 26 Nov 2016 14:22:00 GMT\r\n"
+		"Connection: close\r\n"
+		"\r\n";
+
+	TestHttpMime httpMime3(httpResponse3, url3);
+	SafeBuf sb3;
+	httpMime3.addCookieHeader(url4, &cookieJar, &sb3);
+	EXPECT_STREQ("Cookie: "
+	             "community.silentsignin=;"
+	             "rtPage=http://answers.microsoft.com/en-us/ie/?auth=1;"
+	             "\r\n", sb3.getBufStart());
+
+	char httpResponse4[] =
+		"HTTP/1.1 302 Moved Temporarily\r\n"
+		"Content-Type: text/html; charset=utf-8\r\n"
+		"Location: http://answers.microsoft.com/en-us/ie/?auth=1\r\n"
+		"Server: Microsoft-IIS/8.5\r\n"
+		"X-FRAME-OPTIONS: SAMEORIGIN\r\n"
+		"X-UA-Compatible: IE=edge\r\n"
+		"X-Content-Type-Options: nosniff\r\n"
+		"X-EdgeConnect-MidMile-RTT: 43\r\n"
+		"X-EdgeConnect-Origin-MEX-Latency: 7\r\n"
+		"Expires: Thu, 26 Nov 2016 14:22:01 GMT\r\n"
+		"Cache-Control: max-age=0, no-cache, no-store\r\n"
+		"Pragma: no-cache\r\n"
+		"Date: Thu, 26 Nov 2016 14:22:01 GMT\r\n"
+		"Connection: close\r\n"
+		"Set-Cookie: rtPage=; domain=answers.microsoft.com; expires=Tue, 24-Nov-2015 14:22:01 GMT; path=/\r\n"
+		"Cache-Control: no-transform\r\n"
+		"\r\n";
+
+	TestHttpMime httpMime4(httpResponse4, url4);
+	SafeBuf sb4;
+	httpMime4.addCookieHeader(url5, &cookieJar, &sb4);
+	EXPECT_STREQ("Cookie: "
+	             "MS-CACHE=CACHE-true;"
+	             "community.silentsignin=;"
+             "\r\n", sb4.getBufStart());
+
+	char httpResponse5[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Type: text/html; charset=utf-8\r\n"
+		"Server: Microsoft-IIS/8.5\r\n"
+		"X-FRAME-OPTIONS: SAMEORIGIN\r\n"
+		"X-UA-Compatible: IE=edge\r\n"
+		"X-Content-Type-Options: nosniff\r\n"
+		"Content-Length: 42688\r\n"
+		"X-EdgeConnect-MidMile-RTT: 0\r\n"
+		"X-EdgeConnect-Origin-MEX-Latency: 62\r\n"
+		"X-EdgeConnect-MidMile-RTT: 23\r\n"
+		"X-EdgeConnect-Origin-MEX-Latency: 62\r\n"
+		"Expires: Thu, 26 Nov 2016 14:22:01 GMT\r\n"
+		"Cache-Control: max-age=0, no-cache, no-store\r\n"
+		"Pragma: no-cache\r\n"
+		"Date: Thu, 26 Nov 2016 14:22:01 GMT\r\n"
+		"Connection: keep-alive\r\n"
+		"Set-Cookie: asid=b9a84e7b-1c0e-4b93-88bb-f4ad3b8dacfe; domain=answers.microsoft.com; path=/; HttpOnly\r\n"
+		"Set-Cookie: MS-CACHE=CACHE-true; expires=Thu, 24-Nov-2016 14:22:31 GMT\r\n"
+		"Cache-Control: no-transform\r\n"
+		"\r\n";
+
+	TestHttpMime httpMime5(httpResponse5, url5);
+
 }

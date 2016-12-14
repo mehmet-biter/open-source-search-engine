@@ -135,6 +135,7 @@ protected:
 
 		size_t m_nameLen;
 
+		bool m_defaultDomain;
 		const char *m_domain;
 		size_t m_domainLen;
 
@@ -143,6 +144,8 @@ protected:
 
 		bool m_secure;
 		bool m_httpOnly;
+
+		bool m_expired;
 	};
 
 	bool getNextLine();
@@ -186,6 +189,9 @@ private:
 	// used for bz2, gz files
 	const char *getContentEncodingFromExtension ( const char *ext ) ;
 
+	static void addCookie(const httpcookie_t &cookie, const Url &currentUrl, SafeBuf *cookieJar);
+
+	static void print(const httpcookie_t &cookie, int count = 0);
 
 	const char *m_currentLine;
 	size_t m_currentLineLen;

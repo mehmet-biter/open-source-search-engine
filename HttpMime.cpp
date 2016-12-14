@@ -508,9 +508,9 @@ bool HttpMime::parseSetCookie(const char *field, size_t fieldLen) {
 
 					time_t expiry = 0;
 					if (parseCookieDate(attributeValue, attributeValueLen, &expiry) && expiry < m_currentTime) {
-						// expired (skip cookie)
+						// expired
 						logTrace(g_conf.m_logTraceHttpMime, "expires='%.*s'. expiry=%ld currentTime=%ld expired cookie. ignoring", static_cast<int>(attributeValueLen), attributeValue, expiry, m_currentTime);
-						return true;
+						cookie.m_expired = true;
 					}
 
 					continue;
@@ -528,9 +528,9 @@ bool HttpMime::parseSetCookie(const char *field, size_t fieldLen) {
 					foundMaxAge = true;
 					int32_t maxAge = strtol(attributeValue, NULL, 10);
 					if (maxAge == 0) {
-						// expired (skip cookie)
+						// expired
 						logTrace(g_conf.m_logTraceHttpMime, "max-age=%.*s. expired cookie. ignoring", static_cast<int>(attributeValueLen), attributeValue);
-						return true;
+						cookie.m_expired = true;
 					}
 					continue;
 				}
@@ -1380,6 +1380,74 @@ bool HttpMime::init ( ) {
 	return true;
 }
 
+void HttpMime::addCookie(const httpcookie_t &cookie, const Url &currentUrl, SafeBuf *cookieJar) {
+	// don't add expired cookie into cookie jar
+	if (cookie.m_expired) {
+		return;
+	}
+
+	if (cookie.m_domain) {
+		cookieJar->safeMemcpy(cookie.m_domain, cookie.m_domainLen);
+		cookieJar->pushChar('\t');
+		cookieJar->safeStrcpy(cookie.m_defaultDomain ? "FALSE\t" : "TRUE\t");
+	} else {
+		cookieJar->safeMemcpy(currentUrl.getHost(), currentUrl.getHostLen());
+		cookieJar->pushChar('\t');
+
+		cookieJar->safeStrcpy("FALSE\t");
+	}
+
+	if (cookie.m_path) {
+		cookieJar->safeMemcpy(cookie.m_path, cookie.m_pathLen);
+		cookieJar->pushChar('\t');
+	} else {
+		if (currentUrl.getPathLen()) {
+			cookieJar->safeMemcpy(currentUrl.getPath(), currentUrl.getPathLen());
+		} else {
+			cookieJar->pushChar('/');
+		}
+		cookieJar->pushChar('\t');
+	}
+
+	if (cookie.m_secure) {
+		cookieJar->safeStrcpy("TRUE\t");
+	} else {
+		cookieJar->safeStrcpy("FALSE\t");
+	}
+
+	// we're not using expiration field
+	cookieJar->safeStrcpy("0\t");
+
+	int32_t currentLen = cookieJar->length();
+	cookieJar->safeMemcpy(cookie.m_cookie, cookie.m_cookieLen);
+
+	// cater for multiline cookie
+	const char *currentPos = cookieJar->getBufStart() + currentLen;
+	const char *delPosStart = NULL;
+	int32_t delLength = 0;
+	while (currentPos < cookieJar->getBufPtr() - 1) {
+		if (delPosStart) {
+			if (is_wspace_a(*currentPos) || *currentPos == '\n' || *currentPos == '\r') {
+				++delLength;
+			} else {
+				break;
+			}
+		} else {
+			if (*currentPos == '\n' || *currentPos == '\r') {
+				delPosStart = currentPos;
+				++delLength;
+			}
+		}
+
+		++currentPos;
+	}
+	cookieJar->removeChunk1(delPosStart, delLength);
+
+	/// @todo ALC handle httpOnly attribute
+
+	cookieJar->pushChar('\n');
+}
+
 bool HttpMime::addToCookieJar(Url *currentUrl, SafeBuf *sb) {
 	/// @note Slightly modified from Netscape HTTP Cookie File format
 	/// Difference is we only have one column for name/value
@@ -1405,74 +1473,84 @@ bool HttpMime::addToCookieJar(Url *currentUrl, SafeBuf *sb) {
 	// *  Among cookies that have equal-length path fields, cookies with earlier creation-times are listed
 	// before cookies with later creation-times.
 
-	for (auto &pair : m_cookies) {
-		auto &cookie = pair.second;
+	// fill in cookies from cookieJar
+	std::map<std::string, httpcookie_t> oldCookies;
 
-		/// @todo ALC cater for multiline cookie
+	const char *cookieJar = sb->getBufStart();
+	int32_t cookieJarLen = sb->length();
 
-		if (cookie.m_domain) {
-			sb->safeMemcpy(cookie.m_domain, cookie.m_domainLen);
-			sb->pushChar('\t');
-			sb->safeStrcpy("TRUE\t");
-		} else {
-			sb->safeMemcpy(currentUrl->getHost(), currentUrl->getHostLen());
-			sb->pushChar('\t');
+	const char *lineStartPos = cookieJar;
+	const char *lineEndPos = NULL;
+	while ((lineEndPos = (const char*)memchr(lineStartPos, '\n', cookieJarLen - (lineStartPos - cookieJar))) != NULL) {
+		const char *currentPos = lineStartPos;
+		const char *tabPos = NULL;
+		unsigned fieldCount = 0;
 
-			sb->safeStrcpy("FALSE\t");
-		}
-
-		if (cookie.m_path) {
-			sb->safeMemcpy(cookie.m_path, cookie.m_pathLen);
-			sb->pushChar('\t');
-		} else {
-			/// @todo ALC calculate default path
-			if (currentUrl->getPathLen()) {
-				sb->safeMemcpy(currentUrl->getPath(), currentUrl->getPathLen());
-			} else {
-				sb->pushChar('/');
-			}
-			sb->pushChar('\t');
-		}
-
-		if (cookie.m_secure) {
-			sb->safeStrcpy("TRUE\t");
-		} else {
-			sb->safeStrcpy("FALSE\t");
-		}
-
-		// we're not using expiration field
-		sb->safeStrcpy("0\t");
-
-		int32_t currentLen = sb->length();
-		sb->safeMemcpy(cookie.m_cookie, cookie.m_cookieLen);
-
-		// cater for multiline cookie
-		const char *currentPos = sb->getBufStart() + currentLen;
-		const char *delPosStart = NULL;
-		int32_t delLength = 0;
-		while (currentPos < sb->getBufPtr() - 1) {
-			if (delPosStart) {
-				if (is_wspace_a(*currentPos) || *currentPos == '\n' || *currentPos == '\r') {
-					++delLength;
-				} else {
+		httpcookie_t cookie = {};
+		while (fieldCount < 5 && (tabPos = (const char*)memchr(currentPos, '\t', lineEndPos - currentPos)) != NULL) {
+			switch (fieldCount) {
+				case 0:
+					// domain
+					cookie.m_domain = currentPos;
+					cookie.m_domainLen = tabPos - currentPos;
 					break;
-				}
-			} else {
-				if (*currentPos == '\n' || *currentPos == '\r') {
-					delPosStart = currentPos;
-					++delLength;
-				}
+				case 1:
+					// flag
+					if (memcmp(currentPos, "TRUE", 4) != 0) {
+						cookie.m_defaultDomain = true;
+					}
+					break;
+				case 2: {
+					// path
+					cookie.m_path = currentPos;
+					cookie.m_pathLen = tabPos - currentPos;
+				} break;
+				case 3:
+					// secure
+					cookie.m_secure = (memcmp(currentPos, "TRUE", 4) == 0);
+					break;
+				case 4:
+					// expiration
+					break;
 			}
 
-			++currentPos;
+			currentPos = tabPos + 1;
+			++fieldCount;
 		}
-		sb->removeChunk1(delPosStart, delLength);
 
-		/// @todo ALC handle httpOnly attribute
+		cookie.m_cookie = currentPos;
+		cookie.m_cookieLen = lineEndPos - currentPos;
 
-		sb->pushChar('\n');
+		const char *equalPos = (const char *)memchr(cookie.m_cookie, '=', cookie.m_cookieLen);
+		if (equalPos) {
+			cookie.m_nameLen = equalPos - cookie.m_cookie;
+
+			oldCookies[std::string(cookie.m_cookie, cookie.m_nameLen)] = cookie;
+		}
+
+		lineStartPos = lineEndPos + 1;
+	}
+	// we don't need to care about the last line (we always end on \n)
+
+	SafeBuf newCookieJar;
+
+	// add old cookies
+	for (auto &pair : oldCookies) {
+		if (m_cookies.find(pair.first) == m_cookies.end()) {
+			addCookie(pair.second, *currentUrl, &newCookieJar);
+		}
 	}
 
+	// add new cookies
+	for (auto &pair : m_cookies) {
+		addCookie(pair.second, *currentUrl, &newCookieJar);
+	}
+
+	newCookieJar.nullTerm();
+
+	// replace old with new
+	sb->reset();
+	sb->safeMemcpy(&newCookieJar);
 	sb->nullTerm();
 
 	return true;
@@ -1507,12 +1585,15 @@ bool HttpMime::addCookieHeader(const char *cookieJar, const char *url, SafeBuf *
 					// flag
 					if (memcmp(currentPos, "TRUE", 4) == 0) {
 						// allow subdomain
-						if (tmpUrl.getHostLen() < domainLen) {
+						if (tmpUrl.getHostLen() >= domainLen) {
 							if (!endsWith(tmpUrl.getHost(), tmpUrl.getHostLen(), domain, domainLen)) {
 								// doesn't end with domain - ignore cookie
 								skipCookie = true;
 								break;
 							}
+						} else {
+							skipCookie = true;
+							break;
 						}
 					} else {
 						// only specific domain
@@ -1578,13 +1659,16 @@ void HttpMime::print() const {
 	logf(LOG_TRACE, "Cookies :");
 	int i = 0;
 	for (auto &pair : m_cookies) {
-		auto &cookie = pair.second;
-		logf(LOG_TRACE, "\tcookie #%d :", i++);
-		logf(LOG_TRACE, "\t\tname     : %.*s", static_cast<int>(cookie.m_nameLen), cookie.m_cookie);
-		logf(LOG_TRACE, "\t\tvalue    : %.*s", static_cast<int>(cookie.m_cookieLen - cookie.m_nameLen - 1), cookie.m_cookie + cookie.m_nameLen + 1);
-		logf(LOG_TRACE, "\t\tpath     : %.*s", static_cast<int>(cookie.m_pathLen), cookie.m_path);
-		logf(LOG_TRACE, "\t\tdomain   : %.*s", static_cast<int>(cookie.m_domainLen), cookie.m_domain);
-		logf(LOG_TRACE, "\t\tsecure   : %s", cookie.m_secure ? "true" : "false");
-		logf(LOG_TRACE, "\t\thttponly : %s", cookie.m_httpOnly ? "true" : "false");
+		print(pair.second, i++);
 	}
+}
+
+void HttpMime::print(const httpcookie_t &cookie, int count) {
+	logf(LOG_TRACE, "\tcookie #%d :", count);
+	logf(LOG_TRACE, "\t\tname     : %.*s", static_cast<int>(cookie.m_nameLen), cookie.m_cookie);
+	logf(LOG_TRACE, "\t\tvalue    : %.*s", static_cast<int>(cookie.m_cookieLen - cookie.m_nameLen - 1), cookie.m_cookie + cookie.m_nameLen + 1);
+	logf(LOG_TRACE, "\t\tpath     : %.*s", static_cast<int>(cookie.m_pathLen), cookie.m_path);
+	logf(LOG_TRACE, "\t\tdomain   : %.*s", static_cast<int>(cookie.m_domainLen), cookie.m_domain);
+	logf(LOG_TRACE, "\t\tsecure   : %s", cookie.m_secure ? "true" : "false");
+	logf(LOG_TRACE, "\t\thttponly : %s", cookie.m_httpOnly ? "true" : "false");
 }
