@@ -41,7 +41,7 @@ class HttpRequest {
 		   time_t ifModifiedSince = 0 , const char *userAgent = NULL ,
 		   const char *proto = "HTTP/1.0" ,
 		   bool doPost = false ,
-		   const char *cookie = NULL ,
+		   const char *cookieJar = NULL ,
 		   const char *additionalHeader = NULL , // does not incl \r\n
 		   int32_t postContentLen = -1 , // for content-length of POST
 		   int32_t proxyIp = 0 ,
