@@ -1352,7 +1352,7 @@ bool XmlDoc::injectDoc ( const char *url ,
 
 	int32_t contentType = CT_UNKNOWN;
 	if ( contentTypeStr && contentTypeStr[0] )
-		contentType = getContentTypeFromStr(contentTypeStr);
+		contentType = getContentTypeFromStr(contentTypeStr, strlen(contentTypeStr));
 
 	// use CT_HTML if contentTypeStr is empty or blank. default
 	if ( ! contentTypeStr || ! contentTypeStr[0] )
@@ -5257,11 +5257,8 @@ Url **XmlDoc::getRedirUrl() {
 		sentCookieLastTime = true;
 	}
 
-	// get cookie for redirect to fix nyt.com/nytimes.com
-	// for gap.com it uses multiple Set-Cookie:\r\n lines so we have
-	// to accumulate all of them into a buffer now
-	m_redirCookieBuf.reset();
-	mime.addCookiesIntoBuffer ( &m_redirCookieBuf );
+	// get cookie for redirect
+	mime.addToCookieJar(getCurrentUrl(), &m_redirCookieBuf);
 	m_redirCookieBufValid = true;
 
 	// a hack for removing session ids already in there
@@ -20372,7 +20369,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 char *XmlDoc::getWordSpamVec() {
 
 	logTrace( g_conf.m_logTraceWordSpam, "BEGIN" );
-	
+
 	if ( m_wordSpamBufValid ) {
 		char *wbuf = m_wordSpamBuf.getBufStart();
 		if ( ! wbuf ) {

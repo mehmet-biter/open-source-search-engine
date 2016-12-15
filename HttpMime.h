@@ -7,14 +7,9 @@
 
 // convert text/html to CT_HTML for instance
 // convert application/json to CT_JSON for instance
-int32_t getContentTypeFromStr ( const char *s ) ;
+int32_t getContentTypeFromStr(const char *s, size_t slen);
 
 const char *extensionToContentTypeStr2 ( const char *ext , int32_t elen ) ;
-
-#include <time.h>
-
-time_t atotime    ( const char *s ) ;
-time_t atotime1   ( const char *s ) ;
 
 // the various content types
 #define CT_UNKNOWN 0
@@ -50,7 +45,11 @@ time_t atotime1   ( const char *s ) ;
 extern const char * const g_contentTypeStrings[];
 
 #include <time.h>   // time_t mktime()
+#include <map>
+#include <string>
 #include "Url.h"
+
+class SafeBuf;
 
 class HttpMime {
 public:
@@ -71,7 +70,7 @@ public:
 	// http status: 404, 200, etc.
 	int32_t getHttpStatus() const { return m_status; }
 
-	char *getContent() { return m_content; }
+	char *getContent() { return const_cast<char*>(m_content); }
 	int32_t getContentLen() const { return m_contentLen; }
 
 	int32_t getContentType() { return m_contentType; }
@@ -79,7 +78,7 @@ public:
 	Url *getLocationUrl() { return &m_locUrl; }
 
 	// new stuff for Msg13.cpp to use
-	char *getLocationField() { return m_locationField; }
+	const char *getLocationField() { return m_locationField; }
 	int32_t getLocationFieldLen() const { return m_locationFieldLen; }
 
 	// . used to create a mime
@@ -107,68 +106,129 @@ public:
 	// make a redirect mime
 	void makeRedirMime ( const char *redirUrl , int32_t redirUrlLen );
 
-	bool addCookiesIntoBuffer ( class SafeBuf *sb ) ;
+	bool addToCookieJar(Url *currentUrl, SafeBuf *sb);
+
+	static bool addCookieHeader(const char *cookieJar, const char *url, SafeBuf *sb);
 
 	char *getMime() { return m_buf; }
 	// does this include the last \r\n\r\n? yes!
 	int32_t getMimeLen() const { return m_mimeLen; }
 
-	char *getCharset() { return m_charset; }
+	const char *getCharset() { return m_charset; }
 	int32_t getCharsetLen() const { return m_charsetLen; }
 
 	int32_t getContentEncoding() const { return m_contentEncoding; }
-	char *getContentEncodingPos() { return m_contentEncodingPos; }
-	char *getContentLengthPos() { return m_contentLengthPos; }
-	char *getContentTypePos() { return m_contentTypePos; }
+	const char *getContentEncodingPos() { return m_contentEncodingPos; }
+	const char *getContentLengthPos() { return m_contentLengthPos; }
+	const char *getContentTypePos() { return m_contentTypePos; }
 
 	// convert a file extension like "gif" to "images/gif"
 	const char *getContentTypeFromExtension ( const char *ext ) ;
 	const char *getContentTypeFromExtension ( const char *ext , int32_t elen ) ;
 
+	void print() const;
+
+protected:
+	struct httpcookie_t {
+		const char *m_cookie;
+		size_t m_cookieLen;
+
+		size_t m_nameLen;
+
+		bool m_defaultDomain;
+		const char *m_domain;
+		size_t m_domainLen;
+
+		const char *m_path;
+		size_t m_pathLen;
+
+		bool m_secure;
+		bool m_httpOnly;
+
+		bool m_expired;
+	};
+
+	bool getNextLine();
+	bool getField(const char **field, size_t *fieldLen);
+	bool getValue(const char **value, size_t *valueLen);
+	bool getAttribute(const char **attribute, size_t *attributeLen, const char **attributeValue, size_t *attributeValueLen);
+
+	const char* getCurrentLine() const { return m_currentLine; }
+	int32_t getCurrentLineLen() const { return m_currentLineLen; }
+
+	// compute length of a possible mime starting at "buf"
+	size_t getMimeLen(char *buf, size_t bufLen);
+
+	void setMime(const char *mime) { m_mime = mime; }
+	void setMimeLen(int32_t mimeLen) { m_mimeLen = mimeLen; }
+	void setContent(const char *content) { m_content = content; }
+
+	void setCurrentTime(time_t currentTime) {
+		m_fakeCurrentTime = true;
+		m_currentTime = currentTime;
+	}
+
+	const std::map<std::string, httpcookie_t>& getCookies() { return m_cookies; }
+
+	static bool parseCookieDate(const char *value, size_t valueLen, time_t *time);
+
 private:
 	// . sets m_status, m_contentLen , ...
 	// . we need "url" to set m_locUrl if it's a relative redirect
-	bool parse ( char *mime , int32_t mimeLen , Url *url );
+	bool parse(char *mime, int32_t mimeLen, Url *url);
 
-	// compute length of a possible mime starting at "buf"
-	int32_t getMimeLen(char *buf, int32_t bufLen);
+	bool parseLocation(const char *field, size_t fieldLen, Url *baseUrl);
+	bool parseSetCookie(const char *field, size_t fieldLen);
+	bool parseContentType(const char *field, size_t fieldLen);
+	bool parseContentLength(const char *field, size_t fieldLen);
+	bool parseContentEncoding(const char *field, size_t fieldLen);
 
 	// converts a string contentType like "text/html" to a int32_t
-	int32_t   getContentTypePrivate ( char *s ) ;
+	int32_t getContentTypePrivate(const char *s, size_t slen);
 
 	// used for bz2, gz files
 	const char *getContentEncodingFromExtension ( const char *ext ) ;
 
+	static void addCookie(const httpcookie_t &cookie, const Url &currentUrl, SafeBuf *cookieJar);
+
+	static void print(const httpcookie_t &cookie, int count = 0);
+
+	const char *m_currentLine;
+	size_t m_currentLineLen;
+	size_t m_nextLineStartPos;
+	size_t m_valueStartPos;
+	size_t m_attributeStartPos;
+
+	time_t m_currentTime;
+	bool m_fakeCurrentTime;
+
 	// these are set by calling set() above
 	int32_t m_status;
-	char *m_content;
+	const char *m_content;
 	int32_t m_contentLen;
 	int32_t m_contentType;
 	Url m_locUrl;
 
-	char *m_locationField;
+	const char *m_locationField;
 	int32_t m_locationFieldLen;
 
 	const char *m_mime;
 
 	// buf used to hold a mime we create
 	char m_buf[1024];
-	int32_t m_mimeLen;
+	size_t m_mimeLen;
 
 	int32_t m_contentEncoding;
-	char *m_contentEncodingPos;
-	char *m_contentLengthPos;
-	char *m_contentTypePos;
+	const char *m_contentEncodingPos;
+	const char *m_contentLengthPos;
+	const char *m_contentTypePos;
 
 	// Content-Type: text/html;charset=euc-jp  // japanese (euc-jp)
 	// Content-Type: text/html;charset=gb2312  // chinese (gb2312)
-	char *m_charset;
+	const char *m_charset;
 	int32_t  m_charsetLen;
 
-	char *m_firstCookie;
-	
-	const char *m_cookie;
-	int32_t  m_cookieLen;
+	std::map<std::string, httpcookie_t> m_cookies;
 };
 
 #endif // GB_HTTPMIME_H

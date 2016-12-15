@@ -32,7 +32,6 @@
 #include "GbUtil.h"
 #include "Mem.h"
 
-
 class WaitEntry {
 public:
 	void (* m_callback) (void *state);
@@ -160,12 +159,6 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 	if ( m_type == TYPE_LONG || m_type == TYPE_LONG_CONST )
 		return sb->safePrintf("%" PRId32,*(int32_t *)val);
 
-	if ( m_type == TYPE_DATE )
-		return sb->safePrintf("%" PRId32,*(int32_t *)val);
-
-	if ( m_type == TYPE_DATE2 )
-		return sb->safePrintf("%" PRId32,*(int32_t *)val);
-
 	if ( m_type == TYPE_FLOAT )
 		return sb->safePrintf("%f",*(float *)val);
 
@@ -177,10 +170,8 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 	}
 
 	if ( m_type == TYPE_BOOL ||
-	     m_type == TYPE_BOOL2 ||
 	     m_type == TYPE_CHECKBOX ||
 	     m_type == TYPE_PRIORITY2 ||
-	     m_type == TYPE_UFP ||
 	     m_type == TYPE_CHAR )
 		return sb->safePrintf("%hhx",*val);
 
@@ -1311,29 +1302,6 @@ static bool printDropDownProfile(SafeBuf* sb, const char *name, CollectionRec *c
 	return true;
 }
 
-static bool printCheckBoxes(int32_t n, SafeBuf* sb, const char *name, const char *array) {
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		if ( i > 0 )
-			sb->safePrintf ("<input type=checkbox value=1 name=%s%" PRId32,
-					name,i);
-		else
-			sb->safePrintf ("<input type=checkbox value=1 name=%s",
-				 name);
-		if ( array[i] ) {
-			sb->safePrintf ( " checked");
-		}
-		sb->safePrintf ( ">%" PRId32" &nbsp;" , i );
-		//if i is single digit, add another nbsp so that everything's
-		//aligned
-		if ( i < 10 )
-			sb->safePrintf("&nbsp;&nbsp;");
-
-		if ( i > 0 && (i+1) % 6 == 0 )
-			sb->safePrintf("<br>\n");
-	}
-	return true;
-}
-
 bool Parms::printParms (SafeBuf* sb, TcpSocket *s , HttpRequest *r) {
 	int32_t  page = g_pages.getDynamicPageNumber ( r );
 	int32_t nc = r->getLong("nc",1);
@@ -1400,17 +1368,7 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 		Parm *m = &m_parms[i];
 		// make sure we got the right parms for what we want
 		if ( m->m_page != page ) continue;
-		// and same object tpye. but allow OBJ_NONE for
-		// PageAddUrl.cpp
-		//if ( m->m_obj != parmObj && m->m_obj != OBJ_NONE ) continue;
-		// skip if offset is negative, that means none
-		// well then use OBJ_NONE now!!!
-		//if ( m->m_off < 0 &&
-		//     m->m_type != TYPE_MONOD2 &&
-		//     m->m_type != TYPE_MONOM2 &&
-		//     m->m_type != TYPE_CMD     ) continue;
 		// skip if hidden
-
 		if ( m->m_flags & PF_HIDDEN ) continue;
 
 		// or if should not show in html, like the
@@ -1469,10 +1427,7 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 		//   UNLESS these are priority checkboxes, those can all
 		//   cluster together onto one row
 		// . only add if not in a row of controls
-		if ( m->m_max > 1 && m->m_type != TYPE_PRIORITY_BOXES &&
-		     m->m_rowid == -1 &&
-		     format != FORMAT_JSON &&
-		     format != FORMAT_XML ) { // ! isJSON ) {
+		if (m->m_max > 1 && m->m_rowid == -1 && format != FORMAT_JSON && format != FORMAT_XML) {
 			//
 			// make a separate table for array of parms
 			sb->safePrintf (
@@ -1690,13 +1645,13 @@ bool Parms::printParm( SafeBuf* sb,
 	// . display title and description of the control/parameter
 	// . the input cell of some parameters are colored
 	const char *color = "";
-	if ( t == TYPE_CMD  || t == TYPE_BOOL2 )
+	if (t == TYPE_CMD)
 		color = " bgcolor=#6060ff";
 	if ( t == TYPE_BOOL ) {
 		if ( *s ) color = " bgcolor=#00ff00";
 		else      color = " bgcolor=#ff0000";
 	}
-	if ( t == TYPE_BOOL || t == TYPE_BOOL2 ) {
+	if (t == TYPE_BOOL) {
 		// disable controls not allowed in read only mode
 		if ( g_conf.m_readOnlyMode && m->m_rdonly )
 			  color = " bgcolor=#ffff00";
@@ -1922,41 +1877,9 @@ bool Parms::printParm( SafeBuf* sb,
 					 cgi,v,//cast,
 					 tt);
 	}
-	else if ( t == TYPE_BOOL2 ) {
-		if ( g_conf.m_readOnlyMode && m->m_rdonly )
-			sb->safePrintf ( "<b><center>read-only mode"
-					 "</center></b>");
-		// always use m_def as the value for TYPE_BOOL2
-		else
-			sb->safePrintf ( "<b><a href=\"/%s?c=%s&%s=%s\">"
-					 //"cast=1\">"
-					 "<center>%s</center></a></b>",
-					 g_pages.getPath(m->m_page),coll,
-					 cgi,m->m_def, m->m_title);
-	}
 	else if ( t == TYPE_CHECKBOX ) {
-		//char *ddd1 = "";
-		//char *ddd2 = "";
-		//if ( *s ) ddd1 = " checked";
-		//else      ddd2 = " checked";
-		// just show the parm name and value if printing in json
-		// if ( format == FORMAT_JSON ) { // isJSON ) {
-		// 	if ( ! lastRow ) {
-		// 		int32_t val = 0;
-		// 		if ( *s ) val = 1;
-		// 		sb->safePrintf("\"%s\":%" PRId32",\n",cgi,val);
-		// 	}
-		// }
-		//sb->safePrintf("<center><nobr>");
 		sb->safePrintf("<nobr>");
-		// this is part of the "HACK" fix below. you have to
-		// specify the cgi parm in the POST request, and
-		// unchecked checkboxes are not included in the POST
-		// request.
-		//if ( lastRow && m->m_page == PAGE_FILTERS )
-		//	sb->safePrintf("<input type=hidden ");
-		//char *val = "Y";
-		//if ( ! *s ) val = "N";
+
 		const char *val = "";
 		// "s" is invalid of parm has no "object"
 		if ( m->m_obj == OBJ_NONE && m->m_def && m->m_def[0] != '0' )
@@ -1973,60 +1896,21 @@ bool Parms::printParm( SafeBuf* sb,
 		// default value 1 does not work when you uncheck the box in the UI.
 		sb->safePrintf("<input type=hidden name=%s value=0>", cgi );
 
-
 		sb->safePrintf("<input type=checkbox value=1 ");
-		//"<nobr><input type=button ");
 		if ( m->m_page == PAGE_FILTERS)
 			sb->safePrintf("id=id_%s ",cgi);
 
-		sb->safePrintf("name=%s%s"
-			       //" onmouseup=\""
-			       //"if ( this.value=='N' ) {"
-			       //"this.value='Y';"
-			       //"} "
-			       //"else if ( this.value=='Y' ) {"
-			       //"this.value='N';"
-			       //"}"
-			       //"\" "
-			       ">"
-			       ,cgi
-			       ,val);//,ddd);
-		//
-		// repeat for off position
-		//
-		//if ( ! lastRow || m->m_page != PAGE_FILTERS )  {
-		//	sb->safePrintf(" Off:<input type=radio ");
-		//	if ( m->m_page == PAGE_FILTERS)
-		//		sb->safePrintf("id=id_%s ",cgi);
-		//	sb->safePrintf("value=0 name=%s%s>",
-		//		       cgi,ddd2);
-		//}
-		sb->safePrintf("</nobr>"
-			       //"</center>"
-			       );
+		sb->safePrintf("name=%s%s>", cgi, val);
+		sb->safePrintf("</nobr>");
 	}
 	else if ( t == TYPE_CHAR )
 		sb->safePrintf ("<input type=text name=%s value=\"%" PRId32"\" "
 				"size=3>",cgi,(int32_t)(*s));
-	/*	else if ( t == TYPE_CHAR2 )
-		sprintf (p,"<input type=text name=%s value=\"%" PRId32"\" "
-		"size=3>",cgi,*(char*)s);*/
-	else if ( t == TYPE_PRIORITY ) 
+	else if ( t == TYPE_PRIORITY )
 		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s );
 	else if ( t == TYPE_PRIORITY2 ) {
-		// just show the parm name and value if printing in json
-		// if ( format==FORMAT_JSON) // isJSON )
-		// 	sb->safePrintf("\"%s\":%" PRId32",\n",cgi,(int32_t)*(char *)s);
-		// else
 		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s );
 	}
-	// this url filters parm is an array of SAFEBUFs now, so each is
-	// a string and that string is the diffbot api url to use.
-	// the string is empty or zero length to indicate none.
-	//else if ( t == TYPE_DIFFBOT_DROPDOWN ) {
-	//	g_process.shutdownAbort(true);
-	//}
-	//else if ( t == TYPE_UFP )
 	else if ( t == TYPE_SAFEBUF &&
 		  strcmp(m->m_title,"url filters profile")==0)
 		// url filters profile drop down "ufp"
@@ -2043,16 +1927,8 @@ bool Parms::printParm( SafeBuf* sb,
 		  m->m_obj == OBJ_COLL &&
 		  ! isCollAdmin )
 		return true;
-
-	else if ( t == TYPE_RETRIES    ) 
-		printDropDown ( 4 , sb , cgi , *s );
 	else if ( t == TYPE_FILEUPLOADBUTTON    ) {
 		sb->safePrintf("<input type=file name=%s>",cgi);
-	}
-	else if ( t == TYPE_PRIORITY_BOXES ) {
-		// print ALL the checkboxes when we get the first parm
-		if ( j != 0 ) return status;
-		printCheckBoxes ( MAX_SPIDER_PRIORITIES , sb , cgi , s );
 	}
 	else if ( t == TYPE_CMD )
 		// if cast=0 it will be executed, otherwise it will be
@@ -2063,10 +1939,6 @@ bool Parms::printParm( SafeBuf* sb,
 			  g_pages.getPath(m->m_page),coll,
 			  cgi,m->m_title);
 	else if ( t == TYPE_FLOAT ) {
-		// just show the parm name and value if printing in json
-		// if ( format == FORMAT_JSON )//isJSON )
-		// 	sb->safePrintf("\"%s\":%f,\n",cgi,*(float *)s);
-		// else
 		sb->safePrintf ("<input type=text name=%s "
 				"value=\"%f\" "
 				// 3 was ok on firefox but need 6
@@ -2082,10 +1954,6 @@ bool Parms::printParm( SafeBuf* sb,
 					"size=12>",cgi,iptoa(*(int32_t *)s));
 	}
 	else if ( t == TYPE_LONG ) {
-		// just show the parm name and value if printing in json
-		// if ( format == FORMAT_JSON ) // isJSON )
-		// 	sb->safePrintf("\"%s\":%" PRId32",\n",cgi,*(int32_t *)s);
-		// else
 		sb->safePrintf ("<input type=text name=%s "
 				"value=\"%" PRId32"\" "
 				// 3 was ok on firefox but need 6
@@ -2157,17 +2025,6 @@ bool Parms::printParm( SafeBuf* sb,
 			tmp.safePrintf("%s",def);
 		}
 
-		// just show the parm name and value if printing in json
-		// if ( format == FORMAT_JSON ) { // isJSON ) {
-		// 	// this can be empty for the empty row i guess
-		// 	if ( sx->length() ) {
-		// 		// convert diffbot # to string
-		// 		sb->safePrintf("\"%s\":\"",cgi);
-		// 		if ( m->m_obj != OBJ_NONE )
-		// 			sb->safeUtf8ToJSON (sx->getBufStart());
-		// 		sb->safePrintf("\",\n");
-		// 	}
-		// }
 		if ( m->m_flags & PF_TEXTAREA ) {
 			int rows = 10;
 			if ( m->m_flags & PF_SMALLTEXTAREA )
@@ -2175,10 +2032,7 @@ bool Parms::printParm( SafeBuf* sb,
 			sb->safePrintf ("<textarea id=tabox "
 					"name=%s rows=%i cols=80>",
 					cgi,rows);
-			//sb->dequote ( s , strlen(s) );
-			// note it
-			//log("hack: %s",sx->getBufStart());
-			//sb->dequote ( sx->getBufStart() , sx->length() );
+
 			if ( m->m_obj != OBJ_NONE )
 				sb->htmlEncode(sx->getBufStart(),
 					       sx->length(),false);
@@ -2188,10 +2042,6 @@ bool Parms::printParm( SafeBuf* sb,
 			sb->safePrintf ("<input type=text name=%s size=%" PRId32" "
 					"value=\"",
 					cgi,size);
-			//sb->dequote ( s , strlen(s) );
-			// note it
-			//log("hack: %s",sx->getBufStart());
-
 
 			if ( cr &&
 			     (m->m_flags & PF_COLLDEFAULT) &&
@@ -2209,34 +2059,9 @@ bool Parms::printParm( SafeBuf* sb,
 	else if ( t == TYPE_STRINGBOX ) {
 		sb->safePrintf("<textarea id=tabox rows=10 cols=64 name=%s>",
 			       cgi);
-		//p += urlEncode ( p , pend - p , s , strlen(s) );
-		//p += htmlDecode ( p , s , strlen(s) );
 		sb->htmlEncode ( s , strlen(s), false );
-		//sprintf ( p , "%s" , s );
-		//p += strlen(p);
 		sb->safePrintf ("</textarea>\n");
 	}
-	else if ( t == TYPE_CONSTANT )
-		sb->safePrintf ("%s",m->m_title);
-	else if ( t == TYPE_MONOD2 )
-		sb->safePrintf ("%" PRId32,j / 2 );
-	else if ( t == TYPE_MONOM2 ) {
-		/*
-		if ( m->m_page == PAGE_PRIORITIES ) {
-			if ( j % 2 == 0 ) sb->safePrintf ("old");
-			else              sb->safePrintf ("new");
-		}
-		else
-		*/
-			sb->safePrintf ("%" PRId32,j % 2 );
-	}
-	else if ( t == TYPE_RULESET ) ;
-		// subscript is already included in "cgi"
-		//g_pages.printRulesetDropDown ( sb         ,
-		//			       user       ,
-		//			       cgi        ,
-		//			       *(int32_t *)s ,  // selected
-		//			       -1         ); // subscript
 	else if ( t == TYPE_TIME ) {
 		//time is stored as a string
 		char hr[3]="00";
@@ -2259,97 +2084,12 @@ bool Parms::printParm( SafeBuf* sb,
 			       min  );
 	}
 
-	else if ( t == TYPE_DATE || t == TYPE_DATE2 ) {
-		// time is stored as int32_t
-		int32_t ct = *(int32_t *)s;
-		// get the time struct
-		time_t tmp_ct = ct;
-		struct tm tm_buf;
-		struct tm *tp = gmtime_r(&tmp_ct,&tm_buf);
-		// set the "selected" month for the drop down
-		const char *ss[12];
-		for ( int32_t i = 0 ; i < 12 ; i++ ) ss[i]="";
-		int32_t month = tp->tm_mon;
-		if ( month < 0 || month > 11 ) month = 0; // Jan
-		ss[month] = " selected";
-		// print the date in the input forms
-		sb->safePrintf(
-			"<input type=text name=%sday "
-			"size=2 value=%" PRId32"> "
-			"<select name=%smon>"
-			"<option value=0%s>Jan"
-			"<option value=1%s>Feb"
-			"<option value=2%s>Mar"
-			"<option value=3%s>Apr"
-			"<option value=4%s>May"
-			"<option value=5%s>Jun"
-			"<option value=6%s>Jul"
-			"<option value=7%s>Aug"
-			"<option value=8%s>Sep"
-			"<option value=9%s>Oct"
-			"<option value=10%s>Nov"
-			"<option value=11%s>Dec"
-			"</select>\n"
-			"<input type=text name=%syr size=4 value=%" PRId32">"
-			"<br>"
-			"<input type=text name=%shr size=2 "
-			"value=%02" PRId32">h "
-			"<input type=text name=%smin size=2 "
-			"value=%02" PRId32">m "
-			"<input type=text name=%ssec size=2 "
-			"value=%02" PRId32">s" ,
-			cgi    ,
-			(int32_t)tp->tm_mday ,
-			cgi    ,
-			ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[8],
-			ss[9],ss[10],ss[11],
-			cgi    ,
-			(int32_t)tp->tm_year + 1900 ,
-			cgi    ,
-			(int32_t)tp->tm_hour ,
-			cgi    ,
-			(int32_t)tp->tm_min  ,
-			cgi    ,
-			(int32_t)tp->tm_sec  );
-		/*
-		if ( t == TYPE_DATE2 ) {
-			p += strlen ( p );
-			// a int32_t after the int32_t is used for this
-			int32_t ct = *(int32_t *)(THIS+m->m_off+4);
-			char *ss = "";
-			if ( ct ) ss = " checked";
-			sprintf ( p , "<br><input type=checkbox "
-				  "name=%sct value=1%s> use current "
-				  "time\n",cgi,ss);
-		}
-		*/
-	}
-	else if ( t == TYPE_SITERULE ) {
-		// print the siterec rules as a drop down
-		const char *ss[5];
-		for ( int32_t i = 0; i < 5; i++ ) ss[i] = "";
-		int32_t v = *(int32_t*)s;
-		if ( v < 0 || v > 4 ) v = 0;
-		ss[v] = " selected";
-		sb->safePrintf ( "<select name=%s>"
-				 "<option value=0%s>Hostname"
-				 "<option value=1%s>Path Depth 1"
-				 "<option value=2%s>Path Depth 2"
-				 "<option value=3%s>Path Depth 3"
-				 "</select>\n",
-				 cgi, ss[0], ss[1], ss[2], ss[3] );
-	}
-
-
 	// end the input cell
 	sb->safePrintf ( "</td>\n");
 
 	// "insert above" link? used for arrays only, where order matters
 	if ( m->m_addin && j < jend ) {//! isJSON ) {
 		sb->safePrintf ( "<td><a href=\"?c=%s&" // cast=1&"
-				 //"ins_%s=1\">insert</td>\n",coll,cgi );
-				 // insert=<rowNum>
-				 // "j" is the row #
 				 "insert=%" PRId32"\">insert</td>\n",coll,j );
 	}
 
@@ -2362,11 +2102,9 @@ bool Parms::printParm( SafeBuf* sb,
 	// . display the remove link for arrays if we need to
 	// . but don't display if next guy does NOT start a new row
 	//if ( m->m_max > 1 && lastInRow && ! isJSON ) {
-	if ( m->m_addin && j < jend ) { //! isJSON ) {
-	//     m->m_page != PAGE_PRIORITIES ) {
+	if ( m->m_addin && j < jend ) {
 		// show remove link?
 		bool show = true;
-		//if ( j >= jend )  show = false;
 
 		// get # of rows
 		int32_t *nr = (int32_t *)(THIS + m->m_arrayCountOffset);
@@ -2407,9 +2145,6 @@ bool Parms::setFromRequest ( HttpRequest *r ,
 			     CollectionRec *newcr ,
 			     char *THIS ,
 			     int32_t objType ) {
-
-	// get the page from the path... like /sockets --> PAGE_SOCKETS
-	//int32_t page = g_pages.getDynamicPageNumber ( r );
 
 	// use convertHttpRequestToParmList() for these because they
 	// are persistent records that are updated on every shard.
@@ -2609,14 +2344,8 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		  t == TYPE_CHAR2          ||
 		  t == TYPE_CHECKBOX       ||
 		  t == TYPE_BOOL           ||
-		  t == TYPE_BOOL2          ||
 		  t == TYPE_PRIORITY       ||
-		  t == TYPE_PRIORITY2      ||
-		  //t == TYPE_DIFFBOT_DROPDOWN ||
-		  t == TYPE_UFP            ||
-		  t == TYPE_PRIORITY_BOXES ||
-		  t == TYPE_RETRIES        ||
-		  t == TYPE_FILTER           ) {
+		  t == TYPE_PRIORITY2      ) {
 		if ( fromRequest && *(char *)(THIS + m->m_off + j) == atol(s))
 			return;
 		if ( fromRequest) {
@@ -2638,26 +2367,11 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		log(LOG_LOGIC, "conf: Parms: TYPE_CMD is not a cgi var.");
 		return;	
 	}
-	else if ( t == TYPE_DATE2 || t == TYPE_DATE ) {
-		int32_t v = s ? (int32_t)atotime(s) : 0;
-		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) == v )
-			return;
-		*(int32_t *)(THIS + m->m_off + 4*j) = v;
-		if ( v < 0 ) log("conf: Date for <%s> of \""
-				 "%s\" is not in proper format like: "
-				 "01 Jan 1980 22:45",m->m_xml,s);
-		goto changed; 
-	}
 	else if ( t == TYPE_FLOAT ) {
 		if( fromRequest && almostEqualFloat(*(float *)(THIS + m->m_off + 4*j), (s ? (float)atof(s) : 0)) ) {
 			return;
 		}
-		// if changed within .00001 that is ok too, do not count
-		// as changed, the atof() has roundoff errors
-		//float curVal = *(float *)(THIS + m->m_off + 4*j);
-		//float newVal = atof(s);
-		//if ( newVal < curVal && newVal + .000001 >= curVal ) return;
-		//if ( newVal > curVal && newVal - .000001 <= curVal ) return;
+
 		if ( fromRequest ) {
 			oldVal = *(float *)(THIS + m->m_off + 4*j);
 		}
@@ -2683,7 +2397,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		*(int32_t *)(THIS + m->m_off + 4*j) = s ? (int32_t)atoip(s,strlen(s)) : 0;
 		goto changed; 
 	}
-	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_RULESET || t == TYPE_SITERULE ) {
+	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST ) {
 		int32_t v = s ? atol(s) : 0;
 		// min is considered valid if >= 0
 		if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
@@ -2703,9 +2417,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 	// like TYPE_STRING but dynamically allocates
 	else if ( t == TYPE_SAFEBUF ) {
 		int32_t len = s ? strlen(s) : 0;
-		// no need to truncate since safebuf is dynamic
-		//if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
-		//char *dst = THIS + m->m_off + m->m_size*j ;
+
 		// point to the safebuf, in the case of an array of
 		// SafeBufs "j" is the # in the array, starting at 0
 		SafeBuf *sb = (SafeBuf *)(THIS+m->m_off+(j*sizeof(SafeBuf)) );
@@ -2725,19 +2437,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		sb->setLabel ( "parm1" );
 		// ensure null terminated
 		sb->nullTerm();
-		// note it
-		//log("hack: %s",s);
 
-		// null term it all
-		//dst[len] = '\0';
-		//sb->reserve ( 1 );
-		// null terminate but do not include as m_length so the
-		// memcmp() above still works right
-		//sb->m_buf[sb->m_length] = '\0';
-		// . might have to set length
-		// . used for CollectionRec::m_htmlHeadLen and m_htmlTailLen
-		//if ( m->m_plen >= 0 )
-		//	*(int32_t *)(THIS + m->m_plen) = len ;
 		goto changed;
 	}
 	else if ( t == TYPE_STRING         ||
@@ -2773,17 +2473,6 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		goto changed;
 	}
  changed:
-	// tell gigablast the value is EXPLICITLY given -- no longer based
-	// on default.conf
-	//if ( m->m_obj == OBJ_COLL ) ((CollectionRec *)THIS)->m_orig[mm] = 2;
-
-	// we do not recognize timezones corectly when this is serialized
-	// into coll.conf, it says UTC, which is ignored in HttpMime.cpp's
-	// atotime() function. and when we submit it i think we use the
-	// local time zone, so the values end up changing every time we
-	// submit!!! i think it might read it in as UTC then write it out
-	// as local time, or vice versa.
-	if ( t == TYPE_DATE || t == TYPE_DATE2 ) return;
 
 	// do not send if setting from startup
 	if ( ! fromRequest ) return;
@@ -2803,11 +2492,6 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 			    m->m_hash , // parmHash
 			    oldVal,
 			    newVal);
-
-	// if they turn spiders on or off then tell spiderloop to update
-	// the active list
-	//if ( strcmp(m->m_cgi,"cse") )
-	//	g_spiderLoop.m_activeListValid = false;
 
 	// only send email alerts if we are host 0 since everyone syncs up
 	// with host #0 anyway
@@ -2837,10 +2521,6 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 				 true  , // parm change?
 				 true  );// force it? even if disabled?
 
-	// now the spider collection can just check the collection rec
-	//int64_t nowms = gettimeofdayInMilliseconds();
-	//((CollectionRec *)THIS)->m_lastUpdateTime = nowms;
-
 	return;
 }
 
@@ -2858,15 +2538,6 @@ void Parms::setToDefault ( char *THIS , char objType , CollectionRec *argcr ) {
 	// init if we should
 	init();
 
-	// . clear out any coll rec to get the diffbotApiNum dropdowns
-	// . this is a backwards-compatibility hack since this new parm
-	//   will not be in old coll.conf files and will not be properly
-	//   initialize when displaying a url filter row.
-	//if ( THIS != (char *)&g_conf ) {
-	//	CollectionRec *cr = (CollectionRec *)THIS;
-	//	memset ( cr->m_spiderDiffbotApiNum , 0 , MAX_FILTERS);
-	//}
-
 	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
 		Parm *m = &m_parms[i];
 		if ( m->m_obj != objType ) continue;
@@ -2875,16 +2546,10 @@ void Parms::setToDefault ( char *THIS , char objType , CollectionRec *argcr ) {
 		// no, we gotta set GigablastRequest::m_contentFile to NULL
 		//if ( m->m_type == TYPE_FILEUPLOADBUTTON )
 		//	continue;
-		if ( m->m_type == TYPE_MONOD2  ) continue;
-		if ( m->m_type == TYPE_MONOM2  ) continue;
 		if ( m->m_type == TYPE_CMD     ) continue;
 		if (THIS == (char *)&g_conf && m->m_obj != OBJ_CONF ) continue;
 		if (THIS != (char *)&g_conf && m->m_obj == OBJ_CONF ) continue;
-		// what is this?
-		//if ( m->m_obj == OBJ_COLL ) {
-		//	CollectionRec *cr = (CollectionRec *)THIS;
-		//	if ( cr->m_bases[1] ) { g_process.shutdownAbort(true); }
-		//}
+
 		// sanity check, make sure it does not overflow
 		if ( m->m_obj == OBJ_COLL &&
 		     m->m_off > (int32_t)sizeof(CollectionRec)){
@@ -2915,16 +2580,12 @@ void Parms::setToDefault ( char *THIS , char objType , CollectionRec *argcr ) {
 			//if ( ! m->m_def ) { g_process.shutdownAbort(true); }
 			setParm ( THIS , m, i, 0, m->m_def, false/*not enc.*/,
 				  false );
-			//((CollectionRec *)THIS)->m_orig[i] = 1;
-			//m->m_orig = 0; // set in setToDefaults()
 		}
 		// these are special, fixed size arrays
 		if ( m->m_fixed > 0 ) {
 			for ( int32_t k = 0 ; k < m->m_fixed ; k++ ) {
 				setParm(THIS,m,i,k,m->m_def,false/*not enc.*/,
 					false);
-				//m->m_orig = 0; // set in setToDefaults()
-				//((CollectionRec *)THIS)->m_orig[i] = 1;
 			}
 			continue;
 		}
@@ -2946,8 +2607,7 @@ bool Parms::setFromFile ( void *THIS        ,
 			  char  objType ) {
 	// make sure we're init'd
 	init();
-	// let em know
-	//if ( THIS == &g_conf) log (LOG_INIT,"conf: Reading %s." , filename );
+
 	// . let the log know what we are doing
 	// . filename is NULL if a call from CollectionRec::setToDefaults()
 	Xml xml;
@@ -2983,14 +2643,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		// skip comments and command
 		if ( m->m_type == TYPE_COMMENT  ) continue;
 		if ( m->m_type == TYPE_FILEUPLOADBUTTON ) continue;
-		if ( m->m_type == TYPE_MONOD2   ) continue;
-		if ( m->m_type == TYPE_MONOM2   ) continue;
 		if ( m->m_type == TYPE_CMD      ) continue;
-		if ( m->m_type == TYPE_CONSTANT ) continue;
-		// these are special commands really
-		if ( m->m_type == TYPE_BOOL2    ) continue;
-		//if ( strcmp ( m->m_xml , "forceDeleteUrls" ) == 0 )
-		//	log("got it");
 		// we did not get one from first xml file yet
 		bool first = true;
 		// array count
@@ -3273,7 +2926,7 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 	//int32_t  n   ;
 	int32_t  j   ;
 	int32_t  count = 0;
-	char *s = "";
+	const char *s = "";
 	CollectionRec *cr = NULL;
 	if ( THIS != (char *)&g_conf ) cr = (CollectionRec *)THIS;
 	// now set THIS based on the parameters in the xml file
@@ -3297,10 +2950,7 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 		if ( m->m_obj == OBJ_SI ) continue;
 		if ( THIS == (char *)&g_conf && m->m_obj != OBJ_CONF) continue;
 		if ( THIS != (char *)&g_conf && m->m_obj == OBJ_CONF) continue;
-		if ( m->m_type == TYPE_MONOD2  ) continue;
-		if ( m->m_type == TYPE_MONOM2  ) continue;
 		if ( m->m_type == TYPE_CMD ) continue;
-		if ( m->m_type == TYPE_BOOL2 ) continue;
 		if ( m->m_type == TYPE_FILEUPLOADBUTTON ) continue;
 		// ignore if hidden as well! no, have to keep those separate
 		// since spiderroundnum/starttime is hidden but should be saved
@@ -3312,7 +2962,7 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 		// allow comments though
 		if ( m->m_type == TYPE_COMMENT ) goto skip2;
 		// skip if offset is negative, that means none
-		s = (char *)THIS + m->m_off ;
+		s = THIS + m->m_off ;
 
 		// if array, count can be 0 or more than 1
 		count = 1;
@@ -3374,8 +3024,6 @@ skip2:
 		if ( m->m_type == TYPE_COMMENT ) {
 			continue;
 		}
-		if ( m->m_type == TYPE_MONOD2  ) continue;
-		if ( m->m_type == TYPE_MONOM2  ) continue;
 
 	skip:
 
@@ -3433,7 +3081,7 @@ skip2:
 	//	   (int32_t)MAX_CONF_SIZE);
 }
 
-bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
+bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 	// do not breech the buffer
 	//if ( p + 100 >= pend ) return p;
 	// print it out
@@ -3441,18 +3089,13 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
 	if ( t == TYPE_CHAR           || t == TYPE_BOOL           ||
 	     t == TYPE_CHECKBOX       ||
 	     t == TYPE_PRIORITY       || t == TYPE_PRIORITY2      ||
-	     //t == TYPE_DIFFBOT_DROPDOWN ||
-	     t == TYPE_UFP            ||
-	     t == TYPE_PRIORITY_BOXES || t == TYPE_RETRIES        ||
-	     t == TYPE_FILTER         ||
-	     t == TYPE_BOOL2          || t == TYPE_CHAR2           )
+	     t == TYPE_CHAR2           )
 		sb->safePrintf("%" PRId32,(int32_t)*s);
 	else if ( t == TYPE_FLOAT )
 		sb->safePrintf("%f",*(float *)s);
 	else if ( t == TYPE_IP )
 		sb->safePrintf("%s",iptoa(*(int32_t *)s));
-	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_RULESET||
-		  t == TYPE_SITERULE )
+	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST )
 		sb->safePrintf("%" PRId32,*(int32_t *)s);
 	else if ( t == TYPE_LONG_LONG )
 		sb->safePrintf("%" PRId64,*(int64_t *)s);
@@ -3479,21 +3122,6 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
 		//cdataEncode(sb, s);//, slen );//, true /*#?*/);
 		sb->htmlEncode ( s );
 	}
-	else if ( t == TYPE_DATE || t == TYPE_DATE2 ) {
-		// time is stored as int32_t
-		int32_t ct = *(int32_t *)s;
-		// get the time struct
-		time_t tmp_ct = ct;
-		struct tm tm_buf;
-		struct tm *tp = localtime_r(&tmp_ct,&tm_buf);
-		// set the "selected" month for the drop down
-		char tmp[100];
-		strftime ( tmp , 100 , "%d %b %Y %H:%M UTC" , tp );
-		sb->safeStrcpy ( tmp );
-		sb->setLabel("parm3");
-	}
-	//p += strlen ( p );
-	//return p;
 	return true;
 }
 
@@ -10283,8 +9911,6 @@ void Parms::init ( ) {
 	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
 	for ( int32_t j = 0 ; j < m_numParms ; j++ ) {
 		if ( j == i             ) continue;
-		if ( m_parms[i].m_type == TYPE_BOOL2 ) continue;
-		if ( m_parms[j].m_type == TYPE_BOOL2 ) continue;
 		if ( m_parms[i].m_type == TYPE_CMD   ) continue;
 		if ( m_parms[j].m_type == TYPE_CMD   ) continue;
 		if ( m_parms[i].m_type == TYPE_FILEUPLOADBUTTON ) continue;
@@ -10395,37 +10021,25 @@ void Parms::init ( ) {
 		if ( t == TYPE_CHAR           ) size = 1;
 		if ( t == TYPE_CHAR2          ) size = 1;
 		if ( t == TYPE_BOOL           ) size = 1;
-		if ( t == TYPE_BOOL2          ) size = 1;
 		if ( t == TYPE_CHECKBOX       ) size = 1;
 		if ( t == TYPE_PRIORITY       ) size = 1;
 		if ( t == TYPE_PRIORITY2      ) size = 1;
-		//if ( t ==TYPE_DIFFBOT_DROPDOWN) size = 1;
-		if ( t == TYPE_UFP            ) size = 1;
-		if ( t == TYPE_PRIORITY_BOXES ) size = 1;
-		if ( t == TYPE_RETRIES        ) size = 1;
 		if ( t == TYPE_TIME           ) size = 6;
-		if ( t == TYPE_DATE2          ) size = 4;
-		if ( t == TYPE_DATE           ) size = 4;
 		if ( t == TYPE_FLOAT          ) size = 4;
 		if ( t == TYPE_DOUBLE         ) size = 8;
 		if ( t == TYPE_IP             ) size = 4;
-		if ( t == TYPE_RULESET        ) size = 4;
 		if ( t == TYPE_LONG           ) size = 4;
 		if ( t == TYPE_LONG_CONST     ) size = 4;
 		if ( t == TYPE_LONG_LONG      ) size = 8;
 		if ( t == TYPE_STRING         ) size = m_parms[i].m_size;
 		if ( t == TYPE_STRINGBOX      ) size = m_parms[i].m_size;
 		if ( t == TYPE_STRINGNONEMPTY ) size = m_parms[i].m_size;
-		if ( t == TYPE_SITERULE       ) size = 4;
 
 		// comments and commands do not control underlying variables
 		if ( size == 0 && t != TYPE_COMMENT && t != TYPE_CMD &&
 		     t != TYPE_SAFEBUF  &&
 		     t != TYPE_FILEUPLOADBUTTON &&
-		     t != TYPE_CONSTANT &&
-		     t != TYPE_CHARPTR &&
-		     t != TYPE_MONOD2   &&
-		     t != TYPE_MONOM2     ) {
+		     t != TYPE_CHARPTR ) {
 			log(LOG_LOGIC,"conf: Size of parm #%" PRId32" \"%s\" "
 			    "not set.", i,m_parms[i].m_title);
 			exit(-1);
@@ -10437,9 +10051,6 @@ void Parms::init ( ) {
 		if ( t == TYPE_COMMENT  ) continue;
 		if ( t == TYPE_FILEUPLOADBUTTON ) continue;
 		if ( t == TYPE_CMD      ) continue;
-		if ( t == TYPE_CONSTANT ) continue;
-		if ( t == TYPE_MONOD2   ) continue;
-		if ( t == TYPE_MONOM2   ) continue;
 		if ( t == TYPE_SAFEBUF  ) continue;
 		// search parms do not need an offset
 		if ( m_parms[i].m_off == -1 ){//&& m_parms[i].m_sparm == 0 ) {
@@ -10551,10 +10162,6 @@ void Parms::overlapTest ( char step ) {
 		// skip comments
 		if ( m_parms[i].m_type == TYPE_COMMENT ) continue;
 		if ( m_parms[i].m_type == TYPE_FILEUPLOADBUTTON ) continue;
-		// skip if it is a broadcast switch, like "all spiders on"
-		// because that modifies another parm, "spidering enabled"
-		if ( m_parms[i].m_type == TYPE_BOOL2 ) continue;
-
 		if ( m_parms[i].m_type == TYPE_SAFEBUF ) continue;
 
 		// we use cr->m_spideringEnabled for PAGE_BASIC_SETTINGS too!
@@ -10600,9 +10207,6 @@ void Parms::overlapTest ( char step ) {
 		// skip comments
 		if ( m_parms[i].m_type == TYPE_COMMENT ) continue;
 		if ( m_parms[i].m_type == TYPE_FILEUPLOADBUTTON ) continue;
-		// skip if it is a broadcast switch, like "all spiders on"
-		// because that modifies another parm, "spidering enabled"
-		if ( m_parms[i].m_type == TYPE_BOOL2 ) continue;
 
 		if ( m_parms[i].m_type == TYPE_SAFEBUF ) continue;
 
@@ -10627,11 +10231,7 @@ void Parms::overlapTest ( char step ) {
 
 		for ( j = 0 ; p1 && j < size ; j++ ) {
 			if ( p1[j] == b ) continue;
-			// this has multiple parms pointing to it!
-			//if ( m_parms[i].m_type == TYPE_BOOL2 ) continue;
-			// or special cases...
-			//if ( p1 == (char *)&tmpconf.m_spideringEnabled )
-			//	continue;
+
 			// set object type
 			objStr = "??????";
 			if ( m_parms[i].m_obj == OBJ_COLL )
@@ -10787,10 +10387,8 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 		valSize = 8;
 	}
 	else if ( m->m_type == TYPE_BOOL ||
-		  m->m_type == TYPE_BOOL2 ||
 		  m->m_type == TYPE_CHECKBOX ||
 		  m->m_type == TYPE_PRIORITY2 ||
-		  m->m_type == TYPE_UFP ||
 		  m->m_type == TYPE_CHAR ) {
 		val8 = atol(parmValString);
 		//if ( parmValString && to_lower_a(parmValString[0]) == 'y' )
@@ -12221,7 +11819,6 @@ bool Parms::addAllParmsToList ( SafeBuf *parmList, collnum_t collnum ) {
 		if ( parm->m_type == TYPE_FILEUPLOADBUTTON ) continue;
 		// cmds
 		if ( parm->m_type == TYPE_CMD ) continue;
-		if ( parm->m_type == TYPE_BOOL2 ) continue;
 
 		// daily merge last started. do not sync this...
 		if ( parm->m_type == TYPE_LONG_CONST ) continue;

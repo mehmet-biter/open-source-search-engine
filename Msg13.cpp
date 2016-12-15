@@ -1259,7 +1259,7 @@ void gotHttpReply2 ( void *state ,
 				      "Content-Length: 0\r\n" ,
 				      httpStatus );
 			// convery redirect urls back to requester
-			char *loc    = mime.getLocationField();
+			const char *loc    = mime.getLocationField();
 			int32_t  locLen = mime.getLocationFieldLen();
 			// if too big, forget it! otherwise we breach tmpBuf
 			if ( loc && locLen > 0 && locLen < 1024 ) {

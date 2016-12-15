@@ -1865,7 +1865,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 	KEYXOR(oppKey, 0x01);
 
 	if (m_useIndexFile) {
-		bool isSpecialKey = false;
+		bool isSpecialKey;
 		if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
 			isSpecialKey = (Posdb::getTermId(key) == POSDB_DELETEDOC_TERMID);
 		} else {
@@ -1876,13 +1876,18 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 		// there are no negative keys when we're using index (except special keys eg: posdb with termId 0)
 		// if we're adding key that have a corresponding opposite key, it means we want to remove the key from the tree
 		// even if it's a positive key (how else would we remove the special negative key?)
-		bool deleted = m_useTree ? m_tree.deleteNode(collnum, oppKey, true) : m_buckets.deleteNode(collnum, oppKey);
-		if (deleted) {
-			// assume that we don't need to delete from index even when we get positive special key
-			// since positive special key will only be inserted when a new document is added
-			// this means that other keys should overwrite the existing deleted docId
-			logTrace(g_conf.m_logTraceRdb, "END. %s: Key with corresponding opposite key deleted in tree. Returning true", m_dbname);
-			return true;
+
+		// we only need to delete opposing key when it's a negative key, or it's a special key (even if it's positive)
+		if (KEYNEG(key) || isSpecialKey) {
+			bool deleted = m_useTree ? m_tree.deleteNode(collnum, oppKey, true) : m_buckets.deleteNode(collnum, oppKey);
+			if (deleted) {
+				// assume that we don't need to delete from index even when we get positive special key
+				// since positive special key will only be inserted when a new document is added
+				// this means that other keys should overwrite the existing deleted docId
+				logTrace(g_conf.m_logTraceRdb,
+				         "END. %s: Key with corresponding opposite key deleted in tree. Returning true", m_dbname);
+				return true;
+			}
 		}
 
 		// if we have no files on disk for this db, don't bother preserving a a negative rec, it just wastes tree space

@@ -204,12 +204,6 @@ bool Query::set2 ( const char *query        ,
 			continue;
 		}
 
-		// dst buf must be big enough
-		// if ( p + 8 >= pend ) {
-		// 	g_errno = EBUFTOOSMALL;
-		// 	log(LOG_LOGIC,"query: query: query too big.");
-		//  return false;
-		// }
 		// translate ( and )
 		if ( boolFlag == 1 && query[i] == '(' ) {
 			m_sb.safeMemcpy ( " LeFtP " , 7 );

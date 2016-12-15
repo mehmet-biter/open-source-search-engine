@@ -198,8 +198,8 @@ enum {
 	PAGE_ADDCOLL     ,
 	PAGE_DELCOLL     , 
 	PAGE_CLONECOLL   ,
-	PAGE_REPAIR      ,
 #endif
+	PAGE_REPAIR      ,
 
 	PAGE_FILTERS     ,
 	PAGE_INJECT      , 

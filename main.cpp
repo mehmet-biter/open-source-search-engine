@@ -6412,7 +6412,7 @@ void doInjectArc ( int64_t fsize ) {
 
 
 	// arcConType needs to indexable
-	int32_t ct = getContentTypeFromStr ( arcConType );
+	int32_t ct = getContentTypeFromStr ( arcConType, strlen(arcConType) );
 	if ( ct != CT_HTML &&
 	     ct != CT_TEXT &&
 	     ct != CT_XML &&

@@ -1,26 +1,14 @@
-// -*- c-basic-offset:8 tab-width:8 -*-
-
 #include "gb-include.h"
 
 #include "HttpMime.h"
 #include "HashTable.h"
-#include "Timezone.h"
 #include "HashTableX.h"
 #include "Process.h"
-
+#include "Conf.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
-
-static void getTime(const char *s, int *sec, int *min, int *hour);
-static int32_t getMonth(const char *s);
-static int32_t getWeekday(const char *s);
-
-static time_t atotime2( const char *s );
-static time_t atotime3( const char *s );
-static time_t atotime4( const char *s );
-static time_t atotime5( const char *s );
 
 // . convert these values to strings
 // . these must be 1-1 with the #define's in HttpMime.h
@@ -62,19 +50,28 @@ HttpMime::HttpMime () {
 void HttpMime::reset ( ) {
 	m_mime = NULL;
 
-	m_firstCookie = NULL;
+	// clear values
+	m_currentLine = NULL;
+	m_currentLineLen = 0;
+	m_valueStartPos = 0;
+	m_nextLineStartPos = 0;
+	m_attributeStartPos = 0;
+
+	m_currentTime = time(NULL);
+	m_fakeCurrentTime = false;
+
 	m_status = -1;
 	m_contentLen = -1;
 	m_contentType = CT_HTML;
 	m_charset = NULL;
 	m_charsetLen = 0;
-	m_cookie = NULL;
-	m_cookieLen = 0;
 	m_locationField = NULL;
 	m_locationFieldLen = 0;
 	m_contentEncodingPos = NULL;
 	m_contentLengthPos = NULL;
 	m_contentTypePos = NULL;
+
+	m_cookies.clear();
 }
 
 // . returns false if could not get a valid mime
@@ -85,7 +82,16 @@ bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
 #endif
 	// reset some stuff
 	m_mime = NULL;
-	m_firstCookie = NULL;
+	m_currentLine = NULL;
+	m_currentLineLen = 0;
+	m_valueStartPos = 0;
+	m_nextLineStartPos = 0;
+	m_attributeStartPos = 0;
+
+	if (!m_fakeCurrentTime) {
+		m_currentTime = time(NULL);
+	}
+
 	m_contentLen = -1;
 	m_content = NULL;
 	m_mimeLen = 0;
@@ -94,6 +100,7 @@ bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
 	m_charset = NULL;
 	m_charsetLen = 0;
 
+	m_cookies.clear();
 
 	// at the very least we should have a "HTTP/x.x 404\[nc]"
 	if ( bufLen < 13 ) {
@@ -108,8 +115,7 @@ bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
 	// . return false if we had no mime boundary
 	// . but set m_bufLen to 0 so getMimeLen() will return 0 instead of -1
 	//   thus avoiding a potential buffer overflow
-	if ( m_mimeLen < 0 ) {
-		m_mimeLen = 0;
+	if (m_mimeLen == 0) {
 		log(LOG_WARN, "mime: no rnrn boundary detected");
 		return false; 
 	}
@@ -122,18 +128,22 @@ bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
 	return parse ( buf , m_mimeLen , url );
 }
 
-// . returns -1 if no boundary found
-int32_t HttpMime::getMimeLen(char *buf, int32_t bufLen) {
+// https://tools.ietf.org/html/rfc2616#section-19.3
+// The line terminator for message-header fields is the sequence CRLF. However, we recommend that applications,
+// when parsing such headers, recognize a single LF as a line terminator and ignore the leading CR.
+
+// . returns 0 if no boundary found
+size_t HttpMime::getMimeLen(char *buf, size_t bufLen) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufLen);
 #endif
 	// the size of the terminating boundary, either 1 or 2 bytes.
 	// just the last \n in the case of a \n\n or \r in the case
 	// of a \r\r, but it is the full \r\n in the case of a last \r\n\r\n
-	int32_t bsize = 0;
+	size_t bsize = 0;
 
 	// find the boundary
-	int32_t i;
+	size_t i;
 	for ( i = 0 ; i < bufLen ; i++ ) {
 		// continue until we hit a \r or \n
 		if ( buf[i] != '\r' && buf[i] != '\n' ) continue;
@@ -156,10 +166,542 @@ int32_t HttpMime::getMimeLen(char *buf, int32_t bufLen) {
 		if ( buf[i  ] == '\n' && buf[i+1] == '\r' &&
 		     buf[i+2] == '\n' && buf[i+3] == '\r'  ) break;
 	}
+
 	// return false if could not find the end of the MIME
-	if ( i == bufLen ) return -1;
+	if ( i == bufLen ) {
+		return 0;
+	}
+
 	return i + bsize * 2;
 }
+
+bool HttpMime::getNextLine() {
+	// clear values
+	m_currentLine = NULL;
+	m_currentLineLen = 0;
+	m_valueStartPos = 0;
+	m_attributeStartPos = 0;
+
+	size_t currentPos = m_nextLineStartPos;
+
+	// don't cross limit
+	if (currentPos == m_mimeLen) {
+		return false;
+	}
+
+	m_currentLine = m_mime + currentPos;
+
+	// cater for multiline header
+	size_t linePos = currentPos;
+	do {
+		bool foundLineEnding = false;
+
+		char currentChar = m_mime[currentPos];
+		while (currentPos < m_mimeLen) {
+			if (!foundLineEnding) {
+				if (currentChar == '\r' || currentChar == '\n') {
+					foundLineEnding = true;
+					m_currentLineLen = (currentPos - linePos);
+				}
+			} else {
+				if (currentChar != '\r' && currentChar != '\n') {
+					break;
+				}
+			}
+
+			currentChar = m_mime[++currentPos];
+		}
+	} while (m_currentLineLen && (m_mime[currentPos] == ' ' || m_mime[currentPos] == '\t'));
+
+	if (m_currentLineLen == 0) {
+		// set to end of mime
+		m_currentLineLen = (m_mime + m_mimeLen) - m_currentLine;
+	}
+
+	// store next lineStartPos
+	m_nextLineStartPos = currentPos;
+
+	logTrace(g_conf.m_logTraceHttpMime, "line='%.*s'", static_cast<int>(m_currentLineLen), m_currentLine);
+
+	return true;
+}
+
+bool HttpMime::getField(const char **field, size_t *fieldLen) {
+	size_t currentLinePos = m_valueStartPos;
+
+	const char *colonPos = (const char *)memchr(m_currentLine + currentLinePos, ':', m_currentLineLen);
+
+	// no colon
+	if (colonPos == NULL) {
+		return false;
+	}
+
+	currentLinePos = colonPos - m_currentLine;
+	m_valueStartPos = currentLinePos + 1;
+
+	*field = m_currentLine;
+	*fieldLen = currentLinePos;
+
+	// strip ending whitespaces
+	while (*fieldLen > 0 && is_wspace_a(m_currentLine[*fieldLen - 1])) {
+		--(*fieldLen);
+	}
+
+	logTrace(g_conf.m_logTraceHttpMime, "field='%.*s'", static_cast<int>(*fieldLen), *field);
+
+	return (*fieldLen > 0);
+}
+
+bool HttpMime::getValue(const char **value, size_t *valueLen) {
+	// strip starting whitespaces
+	while (is_wspace_a(m_currentLine[m_valueStartPos]) && (m_valueStartPos < m_currentLineLen)) {
+		++m_valueStartPos;
+	}
+
+	*value = m_currentLine + m_valueStartPos;
+	*valueLen = m_currentLineLen - m_valueStartPos;
+
+	const char *semicolonPos = (const char *)memchr(*value, ';', *valueLen);
+	if (semicolonPos) {
+		// value should end at semicolon if present
+		*valueLen = semicolonPos - *value;
+		m_attributeStartPos = semicolonPos - m_currentLine + 1;
+	}
+
+	logTrace(g_conf.m_logTraceHttpMime, "value='%.*s'", static_cast<int>(*valueLen), *value);
+
+	return (*valueLen > 0);
+}
+
+bool HttpMime::getAttribute(const char **attribute, size_t *attributeLen, const char **attributeValue, size_t *attributeValueLen) {
+	// initialize value
+	*attribute = NULL;
+	*attributeLen = 0;
+	*attributeValue = NULL;
+	*attributeValueLen = 0;
+
+	// no attribute
+	if (m_attributeStartPos == 0) {
+		return false;
+	}
+
+	// strip starting whitespaces
+	while (is_wspace_a(m_currentLine[m_attributeStartPos]) && (m_attributeStartPos < m_currentLineLen)) {
+		++m_attributeStartPos;
+	}
+
+	*attribute = m_currentLine + m_attributeStartPos;
+	*attributeLen = m_currentLineLen - m_attributeStartPos;
+
+	// next attribute
+	const char *semicolonPos = (const char *)memchr(*attribute, ';', *attributeLen);
+	if (semicolonPos) {
+		*attributeLen = semicolonPos - *attribute;
+		m_attributeStartPos = semicolonPos - m_currentLine + 1;
+	} else {
+		m_attributeStartPos = 0;
+	}
+
+	// attribute value
+	const char *equalPos = (const char *)memchr(*attribute, '=', *attributeLen);
+	if (equalPos) {
+		*attributeValueLen = *attributeLen;
+		*attributeLen = equalPos - *attribute;
+		*attributeValueLen -= *attributeLen + 1;
+		*attributeValue = equalPos + 1;
+
+		// strip ending attribute whitespace
+		while (is_wspace_a((*attribute)[*attributeLen - 1])) {
+			--(*attributeLen);
+		}
+
+		// strip starting attribute value whitespace/quote
+		while (is_wspace_a((*attributeValue)[0]) || (*attributeValue)[0] == '"' || (*attributeValue)[0] == '\'') {
+			++(*attributeValue);
+			--(*attributeValueLen);
+		}
+
+		// strip ending attribute value whitespace/quote
+		while (is_wspace_a((*attributeValue)[*attributeValueLen - 1]) || (*attributeValue)[*attributeValueLen - 1] == '"' || (*attributeValue)[*attributeValueLen - 1] == '\'') {
+			--(*attributeValueLen);
+		}
+	}
+
+	// cater for empty values between semicolon
+	// eg: Set-Cookie: name=value; Path=/; ;SECURE; HttpOnly;
+	if (*attributeLen == 0 && m_attributeStartPos) {
+		return getAttribute(attribute, attributeLen, attributeValue, attributeValueLen);
+	}
+
+	logTrace(g_conf.m_logTraceHttpMime, "attribute='%.*s' value='%.*s'", static_cast<int>(*attributeLen), *attribute, static_cast<int>(*attributeValueLen), *attributeValue);
+
+	return (*attributeLen > 0);
+}
+
+// Location
+bool HttpMime::parseLocation(const char *field, size_t fieldLen, Url *baseUrl) {
+	static const char s_location[] = "location";
+	static const size_t s_locationLen = strlen(s_location);
+
+	if (fieldLen == s_locationLen && strncasecmp(field, s_location, fieldLen) == 0) {
+		const char *value = NULL;
+		size_t valueLen = 0;
+
+		if (getValue(&value, &valueLen)) {
+			m_locationField = value;
+			m_locationFieldLen = valueLen;
+
+			if (baseUrl) {
+				m_locUrl.set(baseUrl, m_locationField, m_locationFieldLen);
+			}
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+// https://tools.ietf.org/html/rfc2616#section-3.3.1
+// Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
+// Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
+// Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
+bool HttpMime::parseCookieDate(const char *value, size_t valueLen, time_t *time) {
+	std::string dateStr(value, valueLen);
+
+	struct tm tm = {};
+	// not set by strptime()
+	tm.tm_isdst = -1;
+
+	const char *dashPos = (const char*)memchr(value, '-', valueLen);
+	const char *commaPos = (const char*)memchr(value, ',', valueLen);
+
+	// Fri, 02 Dec 2016 17:29:41 -0000
+	if (dashPos && dashPos + 4 < value + valueLen) {
+		if (memcmp(dashPos, "-0000", 5) == 0) {
+			dashPos = NULL;
+		}
+	}
+
+	if (dashPos) {
+		if (commaPos) {
+			// Sunday, 06-Nov-94 08:49:37 GMT (RFC 850)
+			if (strptime(dateStr.c_str(), "%a, %d-%b-%y %T", &tm) != NULL) {
+				*time = timegm(&tm);
+				return true;
+			}
+
+			// Sun, 27-Nov-2016 22:15:17 GMT
+			if (strptime(dateStr.c_str(), "%a, %d-%b-%Y %T", &tm) != NULL) {
+				*time = timegm(&tm);
+				return true;
+			}
+
+			// Sat, 26-11-2026 16:41:30 GMT
+			if (strptime(dateStr.c_str(), "%a, %d-%m-%Y %T", &tm) != NULL) {
+				*time = timegm(&tm);
+				return true;
+			}
+		} else {
+			// Thu 31-Dec-2020 00:00:00 GMT
+			if (strptime(dateStr.c_str(), "%a %d-%b-%Y %T", &tm) != NULL) {
+				*time = timegm(&tm);
+				return true;
+			}
+
+			// 2018-03-21 18:43:07
+			if (strptime(dateStr.c_str(), "%Y-%m-%d %T", &tm) != NULL) {
+				*time = timegm(&tm);
+				return true;
+			}
+		}
+	} else {
+		if (commaPos) {
+			// Sun, 06 Nov 1994 08:49:37 GMT (RFC 1123)
+			if (strptime(dateStr.c_str(), "%a, %d %b %Y %T", &tm) != NULL) {
+				*time = timegm(&tm);
+				return true;
+			}
+		} else {
+			// Sun Nov  6 08:49:37 1994 (asctime)
+			if (strptime(dateStr.c_str(), "%a %b %d %T %Y", &tm) != NULL) {
+				*time = timegm(&tm);
+				return true;
+			}
+
+			// Sat 26 Nov 2016 13:38:06 GMT
+			if (strptime(dateStr.c_str(), "%a %d %b %Y %T", &tm) != NULL) {
+				*time = timegm(&tm);
+				return true;
+			}
+
+			// 23 Nov 2026 23:34:25 GMT
+			if (strptime(dateStr.c_str(), "%d %b %Y %T", &tm) != NULL) {
+				*time = timegm(&tm);
+				return true;
+			}
+		}
+	}
+
+	logTrace(g_conf.m_logTraceHttpMime, "invalid date format='%.*s'", static_cast<int>(valueLen), value);
+	return false;
+}
+
+// Set-Cookie
+bool HttpMime::parseSetCookie(const char *field, size_t fieldLen) {
+	static const char s_setCookie[] = "set-cookie";
+	static const size_t s_setCookieLen = strlen(s_setCookie);
+
+	static const char s_expires[] = "expires";
+	static const size_t s_expiresLen = strlen(s_expires);
+
+	static const char s_maxAge[] = "max-age";
+	static const size_t s_maxAgeLen = strlen(s_maxAge);
+
+	static const char s_domain[] = "domain";
+	static const size_t s_domainLen = strlen(s_domain);
+
+	static const char s_path[] = "path";
+	static const size_t s_pathLen = strlen(s_path);
+
+	static const char s_secure[] = "secure";
+	static const size_t s_secureLen = strlen(s_secure);
+
+	static const char s_httpOnly[] = "httponly";
+	static const size_t s_httpOnlyLen = strlen(s_httpOnly);
+
+	if (fieldLen == s_setCookieLen && strncasecmp(field, s_setCookie, fieldLen) == 0) {
+		httpcookie_t cookie = {};
+
+		const char *value = NULL;
+		size_t valueLen = 0;
+
+		if (getValue(&value, &valueLen)) {
+			cookie.m_cookie = value;
+			cookie.m_cookieLen = valueLen;
+
+			const char *equalPos = (const char *)memchr(value, '=', valueLen);
+			if (!equalPos) {
+				// missing '=' character. ignore cookie
+				return true;
+			}
+
+			cookie.m_nameLen = equalPos - value;
+
+			logTrace(g_conf.m_logTraceHttpMime, "name=%.*s", static_cast<int>(cookie.m_nameLen), cookie.m_cookie);
+
+			// attribute
+			// https://tools.ietf.org/html/rfc6265#section-5.2
+			const char *attribute = NULL;
+			size_t attributeLen = 0;
+			const char *attributeValue = NULL;
+			size_t attributeValueLen = 0;
+
+			bool foundMaxAge = false;
+			while (getAttribute(&attribute, &attributeLen, &attributeValue, &attributeValueLen)) {
+				// expires
+				if (attributeLen == s_expiresLen && strncasecmp(attribute, s_expires, attributeLen) == 0) {
+					// max-age overrides expires
+					if (foundMaxAge) {
+						continue;
+					}
+
+					time_t expiry = 0;
+					if (parseCookieDate(attributeValue, attributeValueLen, &expiry) && expiry < m_currentTime) {
+						// expired
+						logTrace(g_conf.m_logTraceHttpMime, "expires='%.*s'. expiry=%ld currentTime=%ld expired cookie. ignoring", static_cast<int>(attributeValueLen), attributeValue, expiry, m_currentTime);
+						cookie.m_expired = true;
+					}
+
+					continue;
+				}
+
+				// max-age
+				// https://tools.ietf.org/html/rfc6265#section-5.2.2
+				// If the first character of the attribute-value is not a DIGIT or a "-"
+				// character, ignore the cookie-av.
+				// If the remainder of attribute-value contains a non-DIGIT character, ignore the cookie-av.
+				// Let delta-seconds be the attribute-value converted to an integer.
+				// If delta-seconds is less than or equal to zero (0), let expiry-time be the earliest representable date and time.
+				// Otherwise, let the expiry-time be the current date and time plus delta-seconds seconds.
+				if (attributeLen == s_maxAgeLen && strncasecmp(attribute, s_maxAge, attributeLen) == 0) {
+					foundMaxAge = true;
+					int32_t maxAge = strtol(attributeValue, NULL, 10);
+					if (maxAge == 0) {
+						// expired
+						logTrace(g_conf.m_logTraceHttpMime, "max-age=%.*s. expired cookie. ignoring", static_cast<int>(attributeValueLen), attributeValue);
+						cookie.m_expired = true;
+					}
+					continue;
+				}
+
+				// domain
+				// https://tools.ietf.org/html/rfc6265#section-5.2.3
+				// If the attribute-value is empty, the behavior is undefined.
+				// However, the user agent SHOULD ignore the cookie-av entirely.
+				// If the first character of the attribute-value string is %x2E ("."):
+				//   Let cookie-domain be the attribute-value without the leading %x2E (".") character.
+				// Otherwise:
+				//   Let cookie-domain be the entire attribute-value.
+				// Convert the cookie-domain to lower case.
+				if (attributeLen == s_domainLen && strncasecmp(attribute, s_domain, attributeLen) == 0) {
+					// ignore first '.'
+					if (attributeValue[0] == '.') {
+						++attributeValue;
+						--attributeValueLen;
+					}
+
+					cookie.m_domain = attributeValue;
+					cookie.m_domainLen = attributeValueLen;
+
+					continue;
+				}
+
+				// path
+				// https://tools.ietf.org/html/rfc6265#section-5.2.4
+				// If the attribute-value is empty or if the first character of the attribute-value is not %x2F ("/"):
+				//   Let cookie-path be the default-path.
+				// Otherwise:
+				//   Let cookie-path be the attribute-value.
+				if (attributeLen == s_pathLen && strncasecmp(attribute, s_path, attributeLen) == 0) {
+					if (attributeValueLen > 0 && attributeValue[0] == '/') {
+						cookie.m_path = attributeValue;
+						cookie.m_pathLen = attributeValueLen;
+					}
+					continue;
+				}
+
+				// secure
+				if (attributeLen == s_secureLen && strncasecmp(attribute, s_secure, attributeLen) == 0) {
+					cookie.m_secure = true;
+					continue;
+				}
+
+				// httpOnly
+				if (attributeLen == s_httpOnlyLen && strncasecmp(attribute, s_httpOnly, attributeLen) == 0) {
+					cookie.m_httpOnly = true;
+					continue;
+				}
+
+				// add parsing of other attributes here
+			}
+
+			// if we reach here means cookie should be stored
+			m_cookies[std::string(cookie.m_cookie, cookie.m_nameLen)] = cookie;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+// Content-Type
+bool HttpMime::parseContentType(const char *field, size_t fieldLen) {
+	static const char s_contentType[] = "content-type";
+	static const size_t s_contentTypeLen = strlen(s_contentType);
+
+	if (fieldLen == s_contentTypeLen && strncasecmp(field, s_contentType, fieldLen) == 0) {
+		const char *value = NULL;
+		size_t valueLen = 0;
+
+		if (getValue(&value, &valueLen)) {
+			m_contentTypePos = value;
+			m_contentType = getContentTypePrivate(value, valueLen);
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+// Content-Length
+bool HttpMime::parseContentLength(const char *field, size_t fieldLen) {
+	static const char s_contentLength[] = "content-length";
+	static const size_t s_contentLengthLen = strlen(s_contentLength);
+
+	if (fieldLen == s_contentLengthLen && strncasecmp(field, s_contentLength, fieldLen) == 0) {
+		const char *value = NULL;
+		size_t valueLen = 0;
+
+		if (getValue(&value, &valueLen)) {
+			m_contentLengthPos = value;
+			m_contentLen = strtol(m_contentLengthPos, NULL, 10);
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+// Content-Encoding
+bool HttpMime::parseContentEncoding(const char *field, size_t fieldLen) {
+	static const char s_contentEncoding[] = "content-encoding";
+	static const size_t s_contentEncodingLen = strlen(s_contentEncoding);
+
+	if (fieldLen == s_contentEncodingLen && strncasecmp(field, s_contentEncoding, fieldLen) == 0) {
+		const char *value = NULL;
+		size_t valueLen = 0;
+
+		if (getValue(&value, &valueLen)) {
+			m_contentEncodingPos = value;
+
+			static const char s_gzip[] = "gzip";
+			static const size_t s_gzipLen = strlen(s_gzip);
+
+			static const char s_deflate[] = "deflate";
+			static const size_t s_deflateLen = strlen(s_deflate);
+
+			if (valueLen == s_gzipLen && strnstr(value, s_gzip, valueLen)) {
+				m_contentEncoding = ET_GZIP;
+			} else if (valueLen == s_deflateLen && strnstr(value, s_deflate, valueLen)) {
+				m_contentEncoding = ET_DEFLATE;
+			}
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+// https://tools.ietf.org/html/rfc2616#section-2.2
+// HTTP/1.1 header field values can be folded onto multiple lines if the continuation line begins with a space or
+// horizontal tab. All linear white space, including folding, has the same semantics as SP.
+// A recipient MAY replace any linear white space with a single SP before interpreting the field value or
+// forwarding the message downstream.
+//
+// LWS            = [CRLF] 1*( SP | HT )
+
+// https://tools.ietf.org/html/rfc2616#section-4.2
+// Each header field consists of a name followed by a colon (":") and the field value. Field names are case-insensitive.
+// The field value MAY be preceded by any amount of LWS, though a single SP is preferred.
+// Header fields can be extended over multiple lines by preceding each extra line with at least one SP or HT.
+//
+// message-header = field-name ":" [ field-value ]
+// field-name     = token
+// field-value    = *( field-content | LWS )
+// field-content  = <the OCTETs making up the field-value
+//                  and consisting of either *TEXT or combinations
+//                  of token, separators, and quoted-string>
+
+// https://tools.ietf.org/html/rfc2616#section-19.3
+// Clients SHOULD be tolerant in parsing the Status-Line and servers tolerant when parsing the Request-Line.
+// In particular, they SHOULD accept any amount of SP or HT characters between fields, even though only a single SP is required.
+
+// https://tools.ietf.org/html/rfc7230#section-3.2.4
+// Historically, HTTP header field values could be extended over multiple lines by preceding each extra line with at least
+// one space or horizontal tab (obs-fold).  This specification deprecates such line folding except within the message/http media type
+//
+// A user agent that receives an obs-fold in a response message that is not within a message/http container MUST replace
+// each received obs-fold with one or more SP octets prior to interpreting the field value.
+
+/// @todo ALC we currently don't cater for multiple cookie with the same name but different domain (we take the last entry)
+/// eg: Set-Cookie: CFID=77593661; Expires=session; domain=tennisexpress.com; Path=/
+///     Set-Cookie: CFID=77593661; Expires=session; domain=.tennisexpress.com; Path=/
+///     Set-Cookie: CFID=77593661; Expires=session; domain=www.tennisexpress.com; Path=/
 
 // returns false on bad mime
 bool HttpMime::parse(char *mime, int32_t mimeLen, Url *url) {
@@ -193,403 +735,43 @@ bool HttpMime::parse(char *mime, int32_t mimeLen, Url *url) {
 	m_charset = NULL;
 	m_charsetLen = 0;
 
-	// set contentLen, lastModifiedDate, m_cookie
-	p = mime;
-	while (p < pend) {
-		// compute the length of the string starting at p and ending
-		// at a \n or \r
-		int32_t len = 0;
-		while (&p[len] < pend && p[len] != '\n' && p[len] != '\r') {
-			len++;
-		}
+	// skip over first line
+	getNextLine();
 
-		// . if we could not find a \n or \r there was an error
-		// . MIMEs must always end in \n or \r
-		if (&p[len] >= pend) {
-			return false;
-		}
+	while (getNextLine()) {
+		const char *field = NULL;
+		size_t fieldLen = 0;
 
-		// . stick a NULL at the end of the line 
-		// . overwrites \n or \r TEMPORARILY
-		char c = p[len];
-		p[len] = '\0';
-		// parse out some meaningful data
-		if (strncasecmp(p, "Content-Length:", 15) == 0) {
-			m_contentLengthPos = p + 15;
-			m_contentLen = atol(m_contentLengthPos);
-		} else if (strncasecmp(p, "Content-Type:", 13) == 0) {
-			m_contentType = getContentTypePrivate(p + 13);
-			char *s = p + 13;
-			while (*s == ' ' || *s == '\t') s++;
-			m_contentTypePos = s;
-		} else if (strncasecmp(p, "Set-Cookie:", 11) == 0) {
-			if (!m_firstCookie) m_firstCookie = p;
-			m_cookie = p + 11;
-			if (m_cookie[0] == ' ') m_cookie++;
-			m_cookieLen = strlen(m_cookie);
-		} else if (strncasecmp(p, "Location:", 9) == 0) {
-			// point to it
-			char *tt = p + 9;
-			// skip if space
-			if (*tt == ' ') tt++;
-			if (*tt == ' ') tt++;
-			// at least set this for Msg13.cpp to use
-			m_locationField = tt;
-			m_locationFieldLen = strlen(tt);
-			// . we skip initial spaces in this Url::set() routine
-			if (url)
-				m_locUrl.set(url, p + 9, len - 9);
-		} else if (strncasecmp(p, "Content-Encoding:", 17) == 0) {
-			//only support gzip now, it doesn't seem like servers
-			//implement the other types much
-			m_contentEncodingPos = p + 17;
-			if (strstr(m_contentEncodingPos, "gzip")) {
-				m_contentEncoding = ET_GZIP;
-			} else if (strstr(m_contentEncodingPos, "deflate")) {
-				//zlib's compression
-				m_contentEncoding = ET_DEFLATE;
+		if (getField(&field, &fieldLen)) {
+			if (parseContentEncoding(field, fieldLen)) {
+				continue;
 			}
+
+			if (parseContentLength(field, fieldLen)) {
+				continue;
+			}
+
+			if (parseContentType(field, fieldLen)) {
+				continue;
+			}
+
+			if (parseLocation(field, fieldLen, url)) {
+				continue;
+			}
+
+			if (parseSetCookie(field, fieldLen)) {
+				continue;
+			}
+
+			// add parsing of other header here
 		}
-
-		// re-insert the character that we replaced with a '\0'
-		p[len] = c;
-		// go to next line
-		p += len;
-
-		// skip over the cruft at the end of this line
-		while (p < pend && (*p == '\r' || *p == '\n')) p++;
 	}
 
 	return true;
-}				
-
-// . s must be null terminated
-// . http://wgc.chem.pu.ru/educate/rfc/rfc1945/part4.htm#3.3 has date formats
-// . #1: Sun, 06 Nov 1994 08:49:37 GMT  ;RFC 822, updated by RFC 1123
-// . #2: Sunday, 06-Nov-94 08:49:37 GMT ;RFC 850,obsoleted by RFC1036
-// . #3: Sun Nov  6 08:49:37 1994       ;ANSI C's asctime() format
-// . #4: 06 Nov 1994 08:49:37 GMT  ... my own
-// . #5: 2007-12-31
-// . #6: 2008-04-30T20:48:25Z (ISO8601)
-
-time_t atotime ( const char *s ) {
-
-	// Sanity check
-	if( !s ) {
-		return 0;
-	}
-
-	// skip non-alnum padding
-	while ( *s && ! isalnum (*s) ) s++;
-
-	// if first char is a num, it's type #4
-	if ( is_digit(*s) ) {
-		int32_t num = atol(s);
-		// 2007-12-31
-		if ( num > 1900 ) return atotime5 ( s );
-		return atotime4 ( s );
-	}
-
-	// . determine if we have type #1, #2 or #3 date format
-	// . now if there's hyphens we have type #2
-	const char *t = s;
-	while ( *t && *t!='-') t++;
-	if ( *t == '-' ) return atotime2 ( s );	
-
-	// now if there's a comma we have type 1
-	t = s;
-	while ( *t && *t!=',') t++;
-	if ( *t == ',' ) return atotime1 ( s );
-
-	// otherwise, must be type 3
-	return atotime3 ( s );
 }
 
 
-// #1: Sun, 06 Nov 1994 08:49:37 GMT  ;RFC 822, updated by RFC 1123
-time_t atotime1 ( const char *s ) {
-	// this time structure, once filled, will help yield a time_t
-	struct tm t;
-	// DAY OF WEEK 
-	t.tm_wday = getWeekday ( s );
-	while ( *s && ! isdigit(*s) ) s++;
-	// DAY OF MONTH
-	t.tm_mday = atol ( s );
-	while ( *s && ! isalpha (*s) ) s++;
-	// MONTH
-	t.tm_mon = getMonth ( s );
-	while ( *s && ! isdigit (*s) ) s++;
-	// YEAR
-	t.tm_year = atol ( s ) - 1900 ; // # of years since 1900
-	while ( isdigit (*s) ) s++;
-	while ( isspace (*s) ) s++;	
-	// TIME
-	getTime ( s , &t.tm_sec , &t.tm_min , &t.tm_hour );
-	// unknown if we're in  daylight savings time
-	t.tm_isdst = -1;
-
-	// translate using mktime
-	time_t global = timegm ( &t );
-
-	// skip HH:MM:SS
-	while ( *s && ! isspace (*s) ) s++;	
-
-	// no timezone following??? fix core.
-	if ( ! *s ) return global;
-
-	// skip spaces
-	while ( isspace (*s) ) s++;
-	// convert local time to "utc" or whatever timezone "s" points to,
-	// which is usually gmt or utc
-	int32_t tzoff = getTimeZone ( s ) ;
-	if ( tzoff != BADTIMEZONE ) global += tzoff;
-	return global;
-
-	// now, convert to utc
-	//time_t utc  = time(NULL);
-	// get time here locally
-	// struct tm tm_buf;
-	//time_t here = localtime_r(&utc,&tm_buf);
-	// what is the diff?
-	//int32_t delta = here - utc;
-	// modify our time to make it into utc
-	//return local - delta;
-}
-
-// #2: Sunday, 06-Nov-94 08:49:37 GMT ;RFC 850,obsoleted by RFC1036
-static time_t atotime2 ( const char *s ) {
-	// this time structure, once filled, will help yield a time_t
-	struct tm t;
-	// DAY OF WEEK 
-	t.tm_wday = getWeekday ( s ); // need getLongWeekday()?
-	while ( *s && ! isdigit ( *s ) ) s++;
-	// DAY OF MONTH
-	t.tm_mday = atol ( s );
-	while ( *s && ! isalpha (*s) ) s++;
-	// MONTH
-	t.tm_mon = getMonth ( s );
-	while ( *s && ! isdigit (*s) ) s++;
-
-	// YEAR
-	// https://tools.ietf.org/html/rfc6265#section-5.1.1
-	// If the year-value is greater than or equal to 70 and less than or equal to 99, increment the year-value by 1900.
-	// If the year-value is greater than or equal to 0 and less than or equal to 69, increment the year-value by 2000.
-	t.tm_year = atol ( s ) ;  // # of years since 1900
-	if (t.tm_year < 69) {
-		t.tm_year += 100;
-	}
-
-	while ( isdigit (*s) ) s++;
-	while ( isspace (*s) ) s++;	
-	// TIME
-	getTime ( s , &t.tm_sec , &t.tm_min , &t.tm_hour );
-	// unknown if we're in  daylight savings time
-	t.tm_isdst = -1;
-	// translate using mktime
-	time_t global = timegm ( &t );
-
-	// skip HH:MM:SS
-	while ( ! isspace (*s) ) s++;	
-	// skip spaces
-	while ( isspace (*s) ) s++;
-	// convert local time to "utc" or whatever timezone "s" points to,
-	// which is usually gmt or utc
-	int32_t tzoff = getTimeZone ( s ) ;
-	if ( tzoff != BADTIMEZONE ) global += tzoff;
-	return global;
-}
-
-// #3: Sun Nov  6 08:49:37 1994       ;ANSI C's asctime() format
-static time_t atotime3 ( const char *s ) {
-	// this time structure, once filled, will help yield a time_t
-	struct tm t;
-
-	// Sanity.. Needs at least "DDD MMM DD"
-	if( strlen(s) < 10 ) { 
-		logError("Wrong date/time format for this function [%s]", s);
-		return 0;
-	}
-	
-	// DAY OF WEEK 
-	t.tm_wday = getWeekday ( s ); // need getLongWeekday()?
-	while ( isalpha(*s) ) s++;
-	while ( isspace(*s) ) s++;
-	// MONTH
-	t.tm_mon = getMonth ( s );
-	while ( *s && ! isdigit (*s) ) s++;
-	// DAY OF MONTH
-	t.tm_mday = atol ( s );
-	while ( *s && ! isalpha (*s) ) s++;
-	// TIME
-	getTime ( s , &t.tm_sec , &t.tm_min , &t.tm_hour );
-	while ( *s && ! isspace (*s) ) s++;	
-	while ( isspace (*s) ) s++;	
-	// YEAR
-	t.tm_year = atol ( s ) - 1900 ; // # of years since 1900
-	// unknown if we're in  daylight savings time
-	t.tm_isdst = -1;
-	// translate using mktime
-	time_t tt = timegm ( &t );
-	return tt;
-}
-
-// . #4: 06 Nov 1994 08:49:37 GMT  ;RFC 822, updated by RFC 1123
-// . like atotime1()
-static time_t atotime4 ( const char *s ) {
-	// this time structure, once filled, will help yield a time_t
-	struct tm t;
-
-	// Sanity.. Needs at least "DD MMM YYYY"
-	if( strlen(s) < 11 ) { 
-		logError("Wrong date/time format for this function [%s]", s);
-		return 0;
-	}
-	// DAY OF WEEK 
-	//t.tm_wday = getWeekday ( s );
-	//while ( *s && ! isdigit(*s) ) s++;
-	// DAY OF MONTH
-	t.tm_mday = atol ( s );
-	while ( *s && ! isalpha (*s) ) s++;
-	// MONTH
-	t.tm_mon = getMonth ( s );
-	while ( *s && ! isdigit (*s) ) s++;
-	// YEAR
-	t.tm_year = atol ( s ) - 1900 ; // # of years since 1900
-	while ( *s && isdigit (*s) ) s++;
-	while ( *s && isspace (*s) ) s++;
-	// TIME
-	getTime ( s , &t.tm_sec , &t.tm_min , &t.tm_hour );
-	// unknown if we're in  daylight savings time
-	t.tm_isdst = -1;
-	// translate using mktime
-	time_t global = timegm ( &t );
-
-	// skip HH:MM:SS
-	while ( *s && !isspace (*s) ) s++;
-	// skip spaces
-	while ( *s && isspace (*s) ) s++;
-	// convert local time to "utc" or whatever timezone "s" points to,
-	// which is usually gmt or utc
-	if( *s ) {
-		int32_t tzoff = getTimeZone ( s ) ;
-		if ( tzoff != BADTIMEZONE ) global += tzoff;
-	}
-	return global;
-}
-
-// 2007-12-31
-// 2008-04-30T20:48:25Z (ISO8601)
-static time_t atotime5 ( const char *s ) {
-	// this time structure, once filled, will help yield a time_t
-	struct tm t;
-	// YEAR
-	int32_t y = atol ( s ) ;
-	// must be > 1900
-	if ( y < 1900 ) return -1;
-	if ( y > 2100 ) return -1;
-	t.tm_year = y - 1900 ; // # of years since 1900
-	// skip year
-	while ( *s && isdigit (*s) ) s++;
-	// skip the hyphen or space
-	if ( *s != '-' && *s !='/' && *s !=' ' ) return -1;
-	s++;
-	// must be a digit
-	if ( ! is_digit(*s) ) return -1;
-
-	// month
-	t.tm_mon = atol(s) - 1;
-	// skip month
-	while ( *s && isdigit (*s) ) s++;
-	// skip the hyphen or space
-	if ( *s != '-' && *s !='/' && *s !=' ' ) return -1;
-	s++;
-	// must be a digit
-	if ( ! is_digit(*s) ) return -1;
-
-	// day of week
-	t.tm_mday = atol ( s );
-	while ( isdigit (*s) ) s++;
-	while ( isspace (*s) ) s++;	
-        if (*s == 'T')         s++;
-
-	// TIME
-	getTime ( s , &t.tm_sec , &t.tm_min , &t.tm_hour );
-	// unknown if we're in  daylight savings time
-	t.tm_isdst = -1;
-	// translate using mktime
-	return timegm ( &t );
-}
-
-
-// sunday=0, monday=1, tuesday=2, wednesday=3, thursday=4, friday=5, saturday=6
-// sun=0, mon=1, tue=2, wed=3, thu=4, fri=5, sat=6
-int32_t getWeekday ( const char *s ) {
-
-	char a = tolower(s[0]);
-	char b = tolower(s[1]);
-
-	switch ( a ) {
-	case 's': 
-		if ( b=='u' ) return 0; // sun
-		return 6;                  // sat
-	case 'm': 
-		return 1;                  // mon
-	case 't':
-		if ( b=='u' ) return 2; // tue
-		return 4;                  // thu
-	case 'w':
-		return 3;                  // wed
-	case 'f':
-		return 5;                  // fri
-	}
-	//  bad week day, return sunday
-	return 0;
-}
-
-int32_t getMonth ( const char *s ) {
-
-	char a = tolower(s[0]);
-	char b = tolower(s[1]);
-	char c = tolower(s[2]);
-
-	switch ( a ) {
-	case 'j':
-		if ( b == 'a' ) return 0; // january
-		if ( c == 'n' ) return 5; // june
-		if ( c == 'l' ) return 6; // july
-	case 'm': 
-		if ( c == 'r' ) return 2; // march
-		if ( c == 'y' ) return 4; // may
-	case 'a':
-		if ( b == 'p' ) return 3; // april
-		if ( b == 'u' ) return 7; // august
-	case 'f': return  1; // feburary
-	case 's': return  8; // september
-	case 'o': return  9; // october
-	case 'n': return 10; // november
-	case 'd': return 11; // december
-	}
-	// default
-	return 0;
-}
-
-// . s = "xx:xx:xx"
-void getTime ( const char *s , int *sec , int *min , int *hour ) {
-	*hour = atol ( s );	
-
-	while ( isdigit ( *s ) ) s++;
-	if ( *s == ':' ) s++;
-	*min  = atol ( s );
-
-	while ( isdigit ( *s ) ) s++;
-	if ( *s == ':' ) s++;
-	*sec  = atol ( s );
-}
-
-int32_t getContentTypeFromStr ( const char *s ) {
-
-	int32_t slen = strlen(s);
-
+int32_t getContentTypeFromStr(const char *s, size_t slen) {
 	// trim off spaces at the end
 	char tmp[64];
 	if ( s[slen-1] == ' ' ) {
@@ -604,23 +786,23 @@ int32_t getContentTypeFromStr ( const char *s ) {
 
 	int32_t ct = CT_UNKNOWN;
 	if ( !strncasecmp(s, "text/", 5) ) {
-		if ( !strcasecmp(s,"text/html") ) {
+		if (!strncasecmp(s, "text/html", slen)) {
 			ct = CT_HTML;
-		} else if ( !strcasecmp(s,"text/plain" ) ) {
+		} else if (strncasecmp(s, "text/plain", slen) == 0) {
 			ct = CT_TEXT;
-		} else if ( !strcasecmp(s,"text/xml" ) ) {
+		} else if (strncasecmp(s, "text/xml", slen) == 0) {
 			ct = CT_XML;
-		} else if ( !strcasecmp(s,"text/txt" ) ) {
+		} else if (strncasecmp(s, "text/txt", slen) == 0) {
 			ct = CT_TEXT;
-		} else if ( !strcasecmp(s,"text/javascript" ) ) {
+		} else if (strncasecmp(s, "text/javascript", slen) == 0) {
 			ct = CT_JS;
-		} else if ( !strcasecmp(s,"text/x-js" ) ) {
+		} else if (strncasecmp(s, "text/x-js", slen) == 0) {
 			ct = CT_JS;
-		} else if ( !strcasecmp(s,"text/js" ) ) {
+		} else if (strncasecmp(s, "text/js", slen) == 0) {
 			ct = CT_JS;
-		} else if ( !strcasecmp(s,"text/css" ) ) {
+		} else if (strncasecmp(s, "text/css", slen) == 0) {
 			ct = CT_CSS;
-		} else if ( !strcasecmp(s,"text/x-vcard" ) ) {
+		} else if (strncasecmp(s, "text/x-vcard", slen) == 0) {
 			// . semicolon separated list of info, sometimes an element is html
 			// . these might have an address in them...
 			ct = CT_HTML;
@@ -668,9 +850,8 @@ int32_t getContentTypeFromStr ( const char *s ) {
 }
 
 // . s is a NULL terminated string like "text/html"
-int32_t HttpMime::getContentTypePrivate ( char *s ) {
-	char *send = NULL;
-	char c;
+int32_t HttpMime::getContentTypePrivate(const char *s, size_t slen) {
+	const char *send = NULL;
 	int32_t ct;
 	// skip spaces
 	while ( *s==' ' || *s=='\t' ) s++;
@@ -682,7 +863,7 @@ int32_t HttpMime::getContentTypePrivate ( char *s ) {
 	//
 	// point to possible charset desgination
 	//
-	char *t = send ;
+	const char *t = send ;
 	// charset follows the semicolon
 	if ( *t == ';' ) {
 		// skip semicolon
@@ -705,22 +886,15 @@ int32_t HttpMime::getContentTypePrivate ( char *s ) {
 		}
 	}
 
-	// temp term it for the strcmp() function
-	c = *send; *send = '\0';
-	// set this
-	//ct = -1;
-
 	// returns CT_UNKNOWN if unknown
-	ct = getContentTypeFromStr  ( s );
+	ct = getContentTypeFromStr(s, slen);
 
 	// log it for reference
 	//if ( ct == -1 ) { g_process.shutdownAbort(true); }
-	if ( ct == CT_UNKNOWN ) { 
-		//ct = CT_UNKNOWN;
+	if ( ct == CT_UNKNOWN ) {
 		log("http: unrecognized content type \"%s\"",s);
 	}
-	// unterm it
-	*send = c;
+
 	// return 0 for the contentType if unknown
 	return ct;
 }
@@ -998,173 +1172,173 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 
 // set hash table
 static const char * const s_ext[] = {
-      "ai" , "application/postscript",
-     "aif" , "audio/x-aiff",
-    "aifc" , "audio/x-aiff",
-    "aiff" , "audio/x-aiff",
-     "asc" , "text/plain",
-      "au" , "audio/basic",
-     "avi" , "video/x-msvideo",
-   "bcpio" , "application/x-bcpio",
-     "bin" , "application/octet-stream",
-     "bmp" , "image/gif",
-      "bz2", "application/x-bzip2",
-       "c" , "text/plain",
-      "cc" , "text/plain",
-    "ccad" , "application/clariscad",
-     "cdf" , "application/x-netcdf",
-   "class" , "application/octet-stream",
-    "cpio" , "application/x-cpio",
-     "cpt" , "application/mac-compactpro",
-     "csh" , "application/x-csh",
-     "css" , "text/css",
-     "dcr" , "application/x-director",
-     "dir" , "application/x-director",
-     "dms" , "application/octet-stream",
-     "doc" , "application/msword",
-     "drw" , "application/drafting",
-     "dvi" , "application/x-dvi",
-     "dwg" , "application/acad",
-     "dxf" , "application/dxf",
-     "dxr" , "application/x-director",
-     "eps" , "application/postscript",
-     "etx" , "text/x-setext",
-     "exe" , "application/octet-stream",
-      "ez" , "application/andrew-inset",
-       "f" , "text/plain",
-     "f90" , "text/plain",
-     "fli" , "video/x-fli",
-     "gif" , "image/gif",
-    "gtar" , "application/x-gtar",
-      "gz" , "application/x-gzip",
-       "h" , "text/plain",
-     "hdf" , "application/x-hdf",
-      "hh" , "text/plain",
-     "hqx" , "application/mac-binhex40",
-     "htm" , "text/html",
-    "html" , "text/html",
-     "ice" , "x-conference/x-cooltalk",
-     "ief" , "image/ief",
-    "iges" , "model/iges",
-     "igs" , "model/iges",
-     "ips" , "application/x-ipscript",
-     "ipx" , "application/x-ipix",
-     "jpe" , "image/jpeg",
-    "jpeg" , "image/jpeg",
-     "jpg" , "image/jpeg",
-      "js" , "application/x-javascript",
-     "kar" , "audio/midi",
-   "latex" , "application/x-latex",
-     "lha" , "application/octet-stream",
-     "lsp" , "application/x-lisp",
-     "lzh" , "application/octet-stream",
-       "m" , "text/plain",
-     "man" , "application/x-troff-man",
-      "me" , "application/x-troff-me",
-    "mesh" , "model/mesh",
-     "mid" , "audio/midi",
-    "midi" , "audio/midi",
-     "mif" , "application/vnd.mif",
-    "mime" , "www/mime",
-     "mov" , "video/quicktime",
-   "movie" , "video/x-sgi-movie",
-     "mp2" , "audio/mpeg",
-     "mp3" , "audio/mpeg",
-     "mpe" , "video/mpeg",
-    "mpeg" , "video/mpeg",
-     "mpg" , "video/mpeg",
-    "mpga" , "audio/mpeg",
-      "ms" , "application/x-troff-ms",
-     "msh" , "model/mesh",
-      "nc" , "application/x-netcdf",
-     "oda" , "application/oda",
-     "pbm" , "image/x-portable-bitmap",
-     "pdb" , "chemical/x-pdb",
-     "pdf" , "application/pdf",
-     "pgm" , "image/x-portable-graymap",
-     "pgn" , "application/x-chess-pgn",
-     "png" , "image/png",
-     "ico" , "image/x-icon",
-     "pnm" , "image/x-portable-anymap",
-     "pot" , "application/mspowerpoint",
-     "ppm" , "image/x-portable-pixmap",
-     "pps" , "application/mspowerpoint",
-     "ppt" , "application/mspowerpoint",
-     "ppz" , "application/mspowerpoint",
-     "pre" , "application/x-freelance",
-     "prt" , "application/pro_eng",
-      "ps" , "application/postscript",
-      "qt" , "video/quicktime",
-      "ra" , "audio/x-realaudio",
-     "ram" , "audio/x-pn-realaudio",
-     "ras" , "image/cmu-raster",
-     "rgb" , "image/x-rgb",
-      "rm" , "audio/x-pn-realaudio",
-    "roff" , "application/x-troff",
-     "rpm" , "audio/x-pn-realaudio-plugin",
-     "rtf" , "text/rtf",
-     "rtx" , "text/richtext",
-     "scm" , "application/x-lotusscreencam",
-     "set" , "application/set",
-     "sgm" , "text/sgml",
-    "sgml" , "text/sgml",
-      "sh" , "application/x-sh",
-    "shar" , "application/x-shar",
-    "silo" , "model/mesh",
-     "sit" , "application/x-stuffit",
-     "skd" , "application/x-koan",
-     "skm" , "application/x-koan",
-     "skp" , "application/x-koan",
-     "skt" , "application/x-koan",
-     "smi" , "application/smil",
-    "smil" , "application/smil",
-     "snd" , "audio/basic",
-     "sol" , "application/solids",
-     "spl" , "application/x-futuresplash",
-     "src" , "application/x-wais-source",
-    "step" , "application/STEP",
-     "stl" , "application/SLA",
-     "stp" , "application/STEP",
- "sv4cpio" , "application/x-sv4cpio",
-  "sv4crc" , "application/x-sv4crc",
-     "swf" , "application/x-shockwave-flash",
-       "t" , "application/x-troff",
-     "tar" , "application/x-tar",
-     "tcl" , "application/x-tcl",
-     "tex" , "application/x-tex",
-    "texi" , "application/x-texinfo",
-  "texinfo", "application/x-texinfo",
-     "tif" , "image/tiff",
-    "tiff" , "image/tiff",
-      "tr" , "application/x-troff",
-     "tsi" , "audio/TSP-audio",
-     "tsp" , "application/dsptype",
-     "tsv" , "text/tab-separated-values",
-     "txt" , "text/plain",
-     "unv" , "application/i-deas",
-   "ustar" , "application/x-ustar",
-     "vcd" , "application/x-cdlink",
-     "vda" , "application/vda",
-     "viv" , "video/vnd.vivo",
-    "vivo" , "video/vnd.vivo",
-    "vrml" , "model/vrml",
-     "wav" , "audio/x-wav",
-     "wrl" , "model/vrml",
-     "xbm" , "image/x-xbitmap",
-     "xlc" , "application/vnd.ms-excel",
-     "xll" , "application/vnd.ms-excel",
-     "xlm" , "application/vnd.ms-excel",
-     "xls" , "application/vnd.ms-excel",
-     "xlw" , "application/vnd.ms-excel",
-     "xml" , "text/xml",
-     "xpm" , "image/x-xpixmap",
-     "xwd" , "image/x-xwindowdump",
-     "xyz" , "chemical/x-pdb",
-      "zip" , "application/zip" ,
-      "xpi", "application/x-xpinstall",
-      // newstuff
-      "warc", "application/warc",
-      "arc", "application/arc"
+	"ai", "application/postscript",
+	"aif", "audio/x-aiff",
+	"aifc", "audio/x-aiff",
+	"aiff", "audio/x-aiff",
+	"asc", "text/plain",
+	"au", "audio/basic",
+	"avi", "video/x-msvideo",
+	"bcpio", "application/x-bcpio",
+	"bin", "application/octet-stream",
+	"bmp", "image/gif",
+	"bz2", "application/x-bzip2",
+	"c", "text/plain",
+	"cc", "text/plain",
+	"ccad", "application/clariscad",
+	"cdf", "application/x-netcdf",
+	"class", "application/octet-stream",
+	"cpio", "application/x-cpio",
+	"cpt", "application/mac-compactpro",
+	"csh", "application/x-csh",
+	"css", "text/css",
+	"dcr", "application/x-director",
+	"dir", "application/x-director",
+	"dms", "application/octet-stream",
+	"doc", "application/msword",
+	"drw", "application/drafting",
+	"dvi", "application/x-dvi",
+	"dwg", "application/acad",
+	"dxf", "application/dxf",
+	"dxr", "application/x-director",
+	"eps", "application/postscript",
+	"etx", "text/x-setext",
+	"exe", "application/octet-stream",
+	"ez", "application/andrew-inset",
+	"f", "text/plain",
+	"f90", "text/plain",
+	"fli", "video/x-fli",
+	"gif", "image/gif",
+	"gtar", "application/x-gtar",
+	"gz", "application/x-gzip",
+	"h", "text/plain",
+	"hdf", "application/x-hdf",
+	"hh", "text/plain",
+	"hqx", "application/mac-binhex40",
+	"htm", "text/html",
+	"html", "text/html",
+	"ice", "x-conference/x-cooltalk",
+	"ief", "image/ief",
+	"iges", "model/iges",
+	"igs", "model/iges",
+	"ips", "application/x-ipscript",
+	"ipx", "application/x-ipix",
+	"jpe", "image/jpeg",
+	"jpeg", "image/jpeg",
+	"jpg", "image/jpeg",
+	"js", "application/x-javascript",
+	"kar", "audio/midi",
+	"latex", "application/x-latex",
+	"lha", "application/octet-stream",
+	"lsp", "application/x-lisp",
+	"lzh", "application/octet-stream",
+	"m", "text/plain",
+	"man", "application/x-troff-man",
+	"me", "application/x-troff-me",
+	"mesh", "model/mesh",
+	"mid", "audio/midi",
+	"midi", "audio/midi",
+	"mif", "application/vnd.mif",
+	"mime", "www/mime",
+	"mov", "video/quicktime",
+	"movie", "video/x-sgi-movie",
+	"mp2", "audio/mpeg",
+	"mp3", "audio/mpeg",
+	"mpe", "video/mpeg",
+	"mpeg", "video/mpeg",
+	"mpg", "video/mpeg",
+	"mpga", "audio/mpeg",
+	"ms", "application/x-troff-ms",
+	"msh", "model/mesh",
+	"nc", "application/x-netcdf",
+	"oda", "application/oda",
+	"pbm", "image/x-portable-bitmap",
+	"pdb", "chemical/x-pdb",
+	"pdf", "application/pdf",
+	"pgm", "image/x-portable-graymap",
+	"pgn", "application/x-chess-pgn",
+	"png", "image/png",
+	"ico", "image/x-icon",
+	"pnm", "image/x-portable-anymap",
+	"pot", "application/mspowerpoint",
+	"ppm", "image/x-portable-pixmap",
+	"pps", "application/mspowerpoint",
+	"ppt", "application/mspowerpoint",
+	"ppz", "application/mspowerpoint",
+	"pre", "application/x-freelance",
+	"prt", "application/pro_eng",
+	"ps", "application/postscript",
+	"qt", "video/quicktime",
+	"ra", "audio/x-realaudio",
+	"ram", "audio/x-pn-realaudio",
+	"ras", "image/cmu-raster",
+	"rgb", "image/x-rgb",
+	"rm", "audio/x-pn-realaudio",
+	"roff", "application/x-troff",
+	"rpm", "audio/x-pn-realaudio-plugin",
+	"rtf", "text/rtf",
+	"rtx", "text/richtext",
+	"scm", "application/x-lotusscreencam",
+	"set", "application/set",
+	"sgm", "text/sgml",
+	"sgml", "text/sgml",
+	"sh", "application/x-sh",
+	"shar", "application/x-shar",
+	"silo", "model/mesh",
+	"sit", "application/x-stuffit",
+	"skd", "application/x-koan",
+	"skm", "application/x-koan",
+	"skp", "application/x-koan",
+	"skt", "application/x-koan",
+	"smi", "application/smil",
+	"smil", "application/smil",
+	"snd", "audio/basic",
+	"sol", "application/solids",
+	"spl", "application/x-futuresplash",
+	"src", "application/x-wais-source",
+	"step", "application/STEP",
+	"stl", "application/SLA",
+	"stp", "application/STEP",
+	"sv4cpio", "application/x-sv4cpio",
+	"sv4crc", "application/x-sv4crc",
+	"swf", "application/x-shockwave-flash",
+	"t", "application/x-troff",
+	"tar", "application/x-tar",
+	"tcl", "application/x-tcl",
+	"tex", "application/x-tex",
+	"texi", "application/x-texinfo",
+	"texinfo", "application/x-texinfo",
+	"tif", "image/tiff",
+	"tiff", "image/tiff",
+	"tr", "application/x-troff",
+	"tsi", "audio/TSP-audio",
+	"tsp", "application/dsptype",
+	"tsv", "text/tab-separated-values",
+	"txt", "text/plain",
+	"unv", "application/i-deas",
+	"ustar", "application/x-ustar",
+	"vcd", "application/x-cdlink",
+	"vda", "application/vda",
+	"viv", "video/vnd.vivo",
+	"vivo", "video/vnd.vivo",
+	"vrml", "model/vrml",
+	"wav", "audio/x-wav",
+	"wrl", "model/vrml",
+	"xbm", "image/x-xbitmap",
+	"xlc", "application/vnd.ms-excel",
+	"xll", "application/vnd.ms-excel",
+	"xlm", "application/vnd.ms-excel",
+	"xls", "application/vnd.ms-excel",
+	"xlw", "application/vnd.ms-excel",
+	"xml", "text/xml",
+	"xpm", "image/x-xpixmap",
+	"xwd", "image/x-xwindowdump",
+	"xyz", "chemical/x-pdb",
+	"zip", "application/zip",
+	"xpi", "application/x-xpinstall",
+	// newstuff
+	"warc", "application/warc",
+	"arc", "application/arc"
 };
 
 // . init s_mimeTable in this call
@@ -1206,51 +1380,295 @@ bool HttpMime::init ( ) {
 	return true;
 }
 
-
-bool HttpMime::addCookiesIntoBuffer ( SafeBuf *sb ) {
-	// point to start of request
-	if ( m_mimeLen <= 0 ) return true;
-	if ( ! m_mime ) return true;
-	if ( ! m_firstCookie  ) return true;
-	char *p = m_firstCookie;
-	const char *pend = m_mime + m_mimeLen;
-	while ( p < pend ) {
-		// compute the length of the string starting at p and ending
-		// at a \n or \r
-		int32_t len = 0;
-		while (&p[len] < pend && p[len] != '\n' && p[len] != '\r') {
-			len++;
-		}
-
-		// . if we could not find a \n or \r there was an error
-		// . MIMEs must always end in \n or \r
-		if (&p[len] >= pend) {
-			return false;
-		}
-
-		// . stick a NULL at the end of the line
-		// . overwrites \n or \r TEMPORARILY
-		char c = p [ len ];
-		p [ len ] = '\0';
-		// parse out some meaningful data
-		if ( strncasecmp ( p , "Set-Cookie:", 11) == 0 ) {
-			char *cookie = p + 11;
-			if ( cookie[0] == ' ' ) cookie++;
-			char *cookieEnd = cookie;
-			for ( ; *cookieEnd && *cookieEnd != ';';cookieEnd++);
-			int32_t cookieLen = cookieEnd - cookie;
-			// accumulate into buffer
-			sb->safeMemcpy ( cookie , cookieLen );
-			sb->pushChar(';');
-			sb->nullTerm();
-		}
-		// re-insert the character that we replaced with a '\0'
-		p [ len ] = c;
-		// go to next line
-		p += len;
-		// skip over the cruft at the end of this line
-		while ( p < pend && ( *p=='\r' || *p=='\n' ) ) p++;
+void HttpMime::addCookie(const httpcookie_t &cookie, const Url &currentUrl, SafeBuf *cookieJar) {
+	// don't add expired cookie into cookie jar
+	if (cookie.m_expired) {
+		return;
 	}
+
+	if (cookie.m_domain) {
+		cookieJar->safeMemcpy(cookie.m_domain, cookie.m_domainLen);
+		cookieJar->pushChar('\t');
+		cookieJar->safeStrcpy(cookie.m_defaultDomain ? "FALSE\t" : "TRUE\t");
+	} else {
+		cookieJar->safeMemcpy(currentUrl.getHost(), currentUrl.getHostLen());
+		cookieJar->pushChar('\t');
+
+		cookieJar->safeStrcpy("FALSE\t");
+	}
+
+	if (cookie.m_path) {
+		cookieJar->safeMemcpy(cookie.m_path, cookie.m_pathLen);
+		cookieJar->pushChar('\t');
+	} else {
+		if (currentUrl.getPathLen()) {
+			cookieJar->safeMemcpy(currentUrl.getPath(), currentUrl.getPathLen());
+		} else {
+			cookieJar->pushChar('/');
+		}
+		cookieJar->pushChar('\t');
+	}
+
+	if (cookie.m_secure) {
+		cookieJar->safeStrcpy("TRUE\t");
+	} else {
+		cookieJar->safeStrcpy("FALSE\t");
+	}
+
+	// we're not using expiration field
+	cookieJar->safeStrcpy("0\t");
+
+	int32_t currentLen = cookieJar->length();
+	cookieJar->safeMemcpy(cookie.m_cookie, cookie.m_cookieLen);
+
+	// cater for multiline cookie
+	const char *currentPos = cookieJar->getBufStart() + currentLen;
+	const char *delPosStart = NULL;
+	int32_t delLength = 0;
+	while (currentPos < cookieJar->getBufPtr() - 1) {
+		if (delPosStart) {
+			if (is_wspace_a(*currentPos) || *currentPos == '\n' || *currentPos == '\r') {
+				++delLength;
+			} else {
+				break;
+			}
+		} else {
+			if (*currentPos == '\n' || *currentPos == '\r') {
+				delPosStart = currentPos;
+				++delLength;
+			}
+		}
+
+		++currentPos;
+	}
+	cookieJar->removeChunk1(delPosStart, delLength);
+
+	/// @todo ALC handle httpOnly attribute
+
+	cookieJar->pushChar('\n');
+}
+
+bool HttpMime::addToCookieJar(Url *currentUrl, SafeBuf *sb) {
+	/// @note Slightly modified from Netscape HTTP Cookie File format
+	/// Difference is we only have one column for name/value
+
+	// http://www.cookiecentral.com/faq/#3.5
+	// The layout of Netscape's cookies.txt file is such that each line contains one name-value pair.
+	// An example cookies.txt file may have an entry that looks like this:
+	// .netscape.com TRUE / FALSE 946684799 NETSCAPE_ID 100103
+	//
+	// Each line represents a single piece of stored information. A tab is inserted between each of the fields.
+	// From left-to-right, here is what each field represents:
+	//
+	// domain - The domain that created AND that can read the variable.
+	// flag - A TRUE/FALSE value indicating if all machines within a given domain can access the variable. This value is set automatically by the browser, depending on the value you set for domain.
+	// path - The path within the domain that the variable is valid for.
+	// secure - A TRUE/FALSE value indicating if a secure connection with the domain is needed to access the variable.
+	// expiration - The UNIX time that the variable will expire on. UNIX time is defined as the number of seconds since Jan 1, 1970 00:00:00 GMT.
+	// name/value - The name/value of the variable.
+
+	/// @todo ALC we should sort cookie-list
+	// The user agent SHOULD sort the cookie-list in the following order:
+	// *  Cookies with longer paths are listed before cookies with shorter paths.
+	// *  Among cookies that have equal-length path fields, cookies with earlier creation-times are listed
+	// before cookies with later creation-times.
+
+	// fill in cookies from cookieJar
+	std::map<std::string, httpcookie_t> oldCookies;
+
+	const char *cookieJar = sb->getBufStart();
+	int32_t cookieJarLen = sb->length();
+
+	const char *lineStartPos = cookieJar;
+	const char *lineEndPos = NULL;
+	while ((lineEndPos = (const char*)memchr(lineStartPos, '\n', cookieJarLen - (lineStartPos - cookieJar))) != NULL) {
+		const char *currentPos = lineStartPos;
+		const char *tabPos = NULL;
+		unsigned fieldCount = 0;
+
+		httpcookie_t cookie = {};
+		while (fieldCount < 5 && (tabPos = (const char*)memchr(currentPos, '\t', lineEndPos - currentPos)) != NULL) {
+			switch (fieldCount) {
+				case 0:
+					// domain
+					cookie.m_domain = currentPos;
+					cookie.m_domainLen = tabPos - currentPos;
+					break;
+				case 1:
+					// flag
+					if (memcmp(currentPos, "TRUE", 4) != 0) {
+						cookie.m_defaultDomain = true;
+					}
+					break;
+				case 2: {
+					// path
+					cookie.m_path = currentPos;
+					cookie.m_pathLen = tabPos - currentPos;
+				} break;
+				case 3:
+					// secure
+					cookie.m_secure = (memcmp(currentPos, "TRUE", 4) == 0);
+					break;
+				case 4:
+					// expiration
+					break;
+			}
+
+			currentPos = tabPos + 1;
+			++fieldCount;
+		}
+
+		cookie.m_cookie = currentPos;
+		cookie.m_cookieLen = lineEndPos - currentPos;
+
+		const char *equalPos = (const char *)memchr(cookie.m_cookie, '=', cookie.m_cookieLen);
+		if (equalPos) {
+			cookie.m_nameLen = equalPos - cookie.m_cookie;
+
+			oldCookies[std::string(cookie.m_cookie, cookie.m_nameLen)] = cookie;
+		}
+
+		lineStartPos = lineEndPos + 1;
+	}
+	// we don't need to care about the last line (we always end on \n)
+
+	SafeBuf newCookieJar;
+
+	// add old cookies
+	for (auto &pair : oldCookies) {
+		if (m_cookies.find(pair.first) == m_cookies.end()) {
+			addCookie(pair.second, *currentUrl, &newCookieJar);
+		}
+	}
+
+	// add new cookies
+	for (auto &pair : m_cookies) {
+		addCookie(pair.second, *currentUrl, &newCookieJar);
+	}
+
+	newCookieJar.nullTerm();
+
+	// replace old with new
+	sb->reset();
+	sb->safeMemcpy(&newCookieJar);
+	sb->nullTerm();
+
 	return true;
 }
 
+bool HttpMime::addCookieHeader(const char *cookieJar, const char *url, SafeBuf *sb) {
+	Url tmpUrl;
+	tmpUrl.set(url);
+
+	SafeBuf tmpSb;
+
+	size_t cookieJarLen = strlen(cookieJar);
+
+	const char *lineStartPos = cookieJar;
+	const char *lineEndPos = NULL;
+	while ((lineEndPos = (const char*)memchr(lineStartPos, '\n', cookieJarLen - (lineStartPos - cookieJar))) != NULL) {
+		const char *currentPos = lineStartPos;
+		const char *tabPos = NULL;
+		unsigned fieldCount = 0;
+
+		bool skipCookie = false;
+		const char *domain = NULL;
+		int32_t domainLen = 0;
+		while (fieldCount < 5 && (tabPos = (const char*)memchr(currentPos, '\t', lineEndPos - currentPos)) != NULL) {
+			switch (fieldCount) {
+				case 0:
+					// domain
+					domain = currentPos;
+					domainLen = tabPos - currentPos;
+					break;
+				case 1:
+					// flag
+					if (memcmp(currentPos, "TRUE", 4) == 0) {
+						// allow subdomain
+						if (tmpUrl.getHostLen() >= domainLen) {
+							if (!endsWith(tmpUrl.getHost(), tmpUrl.getHostLen(), domain, domainLen)) {
+								// doesn't end with domain - ignore cookie
+								skipCookie = true;
+								break;
+							}
+						} else {
+							skipCookie = true;
+							break;
+						}
+					} else {
+						// only specific domain
+						if (tmpUrl.getHostLen() != domainLen || strncasecmp(domain, tmpUrl.getHost(), domainLen) != 0) {
+							// non-matching domain - ignore cookie
+							skipCookie = true;
+							break;
+						}
+					}
+					break;
+				case 2: {
+					// path
+					const char *path = currentPos;
+					int32_t pathLen = tabPos - currentPos;
+					if (strncasecmp(path, tmpUrl.getPath(), pathLen) == 0) {
+						if (tmpUrl.getPathLen() != pathLen) {
+							if (path[pathLen - 1] != '/' && tmpUrl.getPath()[tmpUrl.getPathLen() - 1] != '/') {
+								// non-matching path - ignore cookie
+								skipCookie = true;
+								break;
+							}
+						}
+					} else {
+						// non-matching path - ignore cookie
+						skipCookie = true;
+						break;
+					}
+				} break;
+				case 3:
+					// secure
+
+					break;
+				case 4:
+					// expiration
+
+					break;
+			}
+
+			currentPos = tabPos + 1;
+			++fieldCount;
+		}
+
+		if (!skipCookie) {
+			tmpSb.safeMemcpy(currentPos, lineEndPos - currentPos);
+			tmpSb.pushChar(';');
+		}
+
+		lineStartPos = lineEndPos + 1;
+	}
+	// we don't need to care about the last line (we always end on \n)
+
+	if (tmpSb.length() > 0) {
+		sb->safeStrcpy("Cookie: ");
+		sb->safeMemcpy(&tmpSb);
+		sb->safeStrcpy("\r\n");
+	}
+
+	return true;
+}
+
+void HttpMime::print() const {
+	logf(LOG_TRACE, "HttpMime info");
+	logf(LOG_TRACE, "Cookies :");
+	int i = 0;
+	for (auto &pair : m_cookies) {
+		print(pair.second, i++);
+	}
+}
+
+void HttpMime::print(const httpcookie_t &cookie, int count) {
+	logf(LOG_TRACE, "\tcookie #%d :", count);
+	logf(LOG_TRACE, "\t\tname     : %.*s", static_cast<int>(cookie.m_nameLen), cookie.m_cookie);
+	logf(LOG_TRACE, "\t\tvalue    : %.*s", static_cast<int>(cookie.m_cookieLen - cookie.m_nameLen - 1), cookie.m_cookie + cookie.m_nameLen + 1);
+	logf(LOG_TRACE, "\t\tpath     : %.*s", static_cast<int>(cookie.m_pathLen), cookie.m_path);
+	logf(LOG_TRACE, "\t\tdomain   : %.*s", static_cast<int>(cookie.m_domainLen), cookie.m_domain);
+	logf(LOG_TRACE, "\t\tsecure   : %s", cookie.m_secure ? "true" : "false");
+	logf(LOG_TRACE, "\t\thttponly : %s", cookie.m_httpOnly ? "true" : "false");
+}

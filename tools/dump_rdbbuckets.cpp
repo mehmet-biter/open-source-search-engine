@@ -2,6 +2,7 @@
 #include "Posdb.h"
 #include "Log.h"
 #include "Conf.h"
+#include "Mem.h"
 #include <libgen.h>
 
 static void print_usage(const char *argv0) {

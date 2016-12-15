@@ -290,8 +290,6 @@ bool Msg5::getList ( rdbid_t     rdbId,
 		endKey = fixedEndKey;
 	}
 
-	QUICKPOLL(niceness);
-
 	// remember stuff
 	m_rdbId         = rdbId;
 	m_collnum          = collnum;
@@ -337,8 +335,6 @@ bool Msg5::getList ( rdbid_t     rdbId,
 	m_readAbsolutelyNothing = false;
 
 	KEYSET(m_fileStartKey,m_startKey,m_ks);
-
-	QUICKPOLL(m_niceness);
 
 #ifdef GBSANITYCHECK
 	log("msg5: sk=%s", KEYSTR(m_startKey,m_ks));
@@ -446,7 +442,6 @@ bool Msg5::readList ( ) {
 			treeEndKey = m_msg3.m_constrainKey;
 		}
 
-		QUICKPOLL((m_niceness));
 		// . get the list from our tree
 		// . set g_errno and return true on error
 		// . it is crucial that we get tree list before spawning a thread
@@ -580,7 +575,6 @@ bool Msg5::readList ( ) {
 			m_newMinRecSizes = 20000000;
 
 
-		QUICKPOLL((m_niceness));
 		const char *diskEndKey = m_treeList.getEndKey();
 		// sanity check
 		if ( m_treeList.getKeySize() != m_ks ) { g_process.shutdownAbort(true); }
@@ -777,7 +771,6 @@ bool Msg5::gotList2 ( ) {
 		}
 		m_listPtrs [ n++ ] = list;
 	}
-	QUICKPOLL(m_niceness);
 
 	// sanity check.
 	if ( m_msg3.getNumLists() > MAX_RDB_FILES ) 
@@ -813,8 +806,6 @@ bool Msg5::gotList2 ( ) {
 
 	// sanity check
 	//if ( KEYNEG( m_minEndKey) ) {g_process.shutdownAbort(true); }
-
-	QUICKPOLL(m_niceness);
 
 	// . is treeList included?
 	// . constrain treelist for the merge
@@ -869,8 +860,6 @@ bool Msg5::gotList2 ( ) {
 	for ( int32_t i = 0 ; i < m_numListPtrs ; i++ ) {
 		m_totalSize += m_listPtrs[ i ]->getListSize();
 	}
-
-	QUICKPOLL(m_niceness);
 
 	// . but don't breach minRecSizes
 	// . this totalSize is just to see if we should spawn a thread, really
@@ -935,8 +924,6 @@ bool Msg5::gotList2 ( ) {
 		g_errno = 0;
 		// if m_doErrorCorrection is true, repairLists() should fix
 	}
-
-	QUICKPOLL((m_niceness));
 
 	// . should we remove negative recs from final merged list?
 	// . if we're reading from root and tmp merge file of root
@@ -1037,8 +1024,6 @@ bool Msg5::gotList2 ( ) {
 	} else {
 		//no need to prepare for merge. We'll just steal the one-and-only list in mergeLists()
 	}
-
-	QUICKPOLL((m_niceness));
 
 	if(m_callback) {
 		if ( g_jobScheduler.submit(mergeListsWrapper, mergeDoneWrapper, this, thread_type_query_merge, m_niceness) ) {
@@ -1454,7 +1439,6 @@ bool Msg5::doneMerging ( ) {
 		m_newMinRecSizes = 1000000000;
 
 	
-	QUICKPOLL(m_niceness);
 	// . don't exceed original min rec sizes by 5 i guess
 	// . watch out for wrap
 	//int32_t max = 5 * m_minRecSizes ;
@@ -1632,7 +1616,6 @@ bool Msg5::gotRemoteList ( ) {
 		// . TODO: fix this in Msg0::gotReply()
 		// . if it is empty, then there must be nothing else left
 		//   since the endKey was maxed in call to Msg0::getList()
-		QUICKPOLL(m_niceness);
 		if ( ! m_list->isEmpty() )
 			m_list->setEndKey ( m_list->getLastKey() );
 		const char *k = m_list->getStartKey();

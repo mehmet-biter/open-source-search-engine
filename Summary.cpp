@@ -61,6 +61,8 @@ bool Summary::isSetFromTags() {
 }
 
 bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
+	logTrace(g_conf.m_logTraceSummary, "BEGIN");
+
 	if ( m_summaryLen > 0 ) {
 		// trim elipsis
 		if ( ( titleBufLen > 4 ) && ( memcmp( (titleBuf + titleBufLen - 4), " ...", 4 ) == 0 ) ) {
@@ -72,6 +74,7 @@ bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
 			m_summaryLen = 0;
 			m_summary[0] = '\0';
 
+			logTrace(g_conf.m_logTraceSummary, "END. Returning false");
 			return false;
 		}
 
@@ -79,9 +82,11 @@ bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
 		m_numExcerpts = 1;
 		m_displayLen = m_summaryLen;
 
+		logTrace(g_conf.m_logTraceSummary, "END. Returning true");
 		return true;
 	}
 
+	logTrace(g_conf.m_logTraceSummary, "END. Returning false");
 	return false;
 }
 
@@ -91,10 +96,15 @@ bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
 // - meta name = "og:description"
 // - meta name = "description"
 bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen ) {
+	logTrace(g_conf.m_logTraceSummary, "BEGIN");
+
 	// sanity check
 	if ( maxSummaryLen >= MAX_SUMMARY_LEN ) {
 		g_errno = EBUFTOOSMALL;
-		log("query: Summary too big to hold in buffer of %" PRId32" bytes.",(int32_t)MAX_SUMMARY_LEN);
+
+		logDebug(g_conf.m_logDebugSummary, "sum: summary too big to hold in buffer of %" PRId32" bytes.",(int32_t)MAX_SUMMARY_LEN);
+		logTrace(g_conf.m_logTraceSummary, "END. maxSummaryLen[%d] >= MAX_SUMMARY_LEN[%d]. Returning false", maxSummaryLen, MAX_SUMMARY_LEN);
+
 		return false;
 	}
 
@@ -106,9 +116,8 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBu
 		if ( verifySummary( titleBuf, titleBufLen ) ) {
 			m_isSetFromTags = true;
 
-			if ( g_conf.m_logDebugSummary ) {
-				log(LOG_DEBUG, "sum: generated from itemprop description. summary='%.*s'", m_summaryLen, m_summary);
-			}
+			logDebug(g_conf.m_logDebugSummary, "sum: generated from itemprop description. summary='%.*s'", m_summaryLen, m_summary);
+			logTrace(g_conf.m_logTraceSummary, "END. Generated from itemprop description. Returning true");
 
 			return true;
 		}
@@ -119,9 +128,8 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBu
 		if ( verifySummary( titleBuf, titleBufLen ) ) {
 			m_isSetFromTags = true;
 
-			if ( g_conf.m_logDebugSummary ) {
-				log(LOG_DEBUG, "sum: generated from meta property og:description. summary='%.*s'", m_summaryLen, m_summary);
-			}
+			logDebug(g_conf.m_logDebugSummary, "sum: generated from meta property og:description. summary='%.*s'", m_summaryLen, m_summary);
+			logTrace(g_conf.m_logTraceSummary, "END. Generated from meta property og:description Returning true");
 
 			return true;
 		}
@@ -132,17 +140,15 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBu
 		if ( verifySummary( titleBuf, titleBufLen ) ) {
 			m_isSetFromTags = true;
 
-			if ( g_conf.m_logDebugSummary ) {
-				log(LOG_DEBUG, "sum: generated from meta name description. summary='%.*s'", m_summaryLen, m_summary);
-			}
+			logDebug(g_conf.m_logDebugSummary, "sum: generated from meta name description. summary='%.*s'", m_summaryLen, m_summary);
+			logTrace(g_conf.m_logTraceSummary, "END. Generated from meta name description. Returning true");
 
 			return true;
 		}
 	}
 
-	if ( g_conf.m_logDebugSummary ) {
-		log(LOG_DEBUG, "sum: unable to generate summary from itemprop/meta tags");
-	}
+	logDebug(g_conf.m_logDebugSummary, "sum: unable to generate summary from itemprop/meta tags");
+	logTrace(g_conf.m_logTraceSummary, "END. Unable to generate summary. Returning false");
 
 	return false;
 }
@@ -151,6 +157,8 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBu
 bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q, int32_t maxSummaryLen,
 						   int32_t maxNumLines, int32_t numDisplayLines, int32_t maxNumCharsPerLine, Url *f,
                            Matches *matches, char *titleBuf, int32_t titleBufLen ) {
+	logTrace(g_conf.m_logTraceSummary, "BEGIN");
+
 	m_numDisplayLines = numDisplayLines;
 	m_displayLen      = 0;
 
@@ -164,6 +172,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 	if ( maxSummaryLen >= MAX_SUMMARY_LEN ) {
 		g_errno = EBUFTOOSMALL;
 		log(LOG_WARN, "query: Summary too big to hold in buffer of %" PRId32" bytes.",(int32_t)MAX_SUMMARY_LEN);
+		logTrace(g_conf.m_logTraceSummary, "END. maxSummaryLen[%d] >= MAX_SUMMARY_LEN[%d]. Returning false", maxSummaryLen, MAX_SUMMARY_LEN);
 		return false;
 	}
 
@@ -171,12 +180,15 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 	if ( maxNumLines > 256 ) { 
 		g_errno = EBUFTOOSMALL; 
 		log(LOG_WARN, "query: More than 256 summary lines requested.");
+		logTrace(g_conf.m_logTraceSummary, "END. maxNumLines[%d] > 256. Returning false", maxNumLines);
 		return false;
 	}
 
 	// Nothing to match...print beginning of content as summary
 	if ( matches->getNumMatches() == 0 && maxNumLines > 0 ) {
-		return getDefaultSummary ( xml, words, sections, pos, maxSummaryLen );
+		bool status = getDefaultSummary(xml, words, sections, pos, maxSummaryLen);
+		logTrace(g_conf.m_logTraceSummary, "END. getDefaultSummary. Returning %s", status ? "true" : "false");
+		return status;
 	}
 
 	int32_t need1 = q->m_numWords * sizeof(float);
@@ -188,6 +200,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 	}
 
 	if ( ! m_wordWeights ) {
+		logTrace(g_conf.m_logTraceSummary, "END. !m_wordWeights. Returning false");
 		return false;
 	}
 
@@ -217,6 +230,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 
 	// if just computing absScore2...
 	if ( maxNumLines <= 0 ) {
+		logTrace(g_conf.m_logTraceSummary, "END. maxNumLines <= 0. Returning true");
 		return true;
 	}
 
@@ -234,6 +248,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 	}
 
 	if ( ! m_buf4 ) {
+		logTrace(g_conf.m_logTraceSummary, "END. !m_buf4. Returning false");
 		return false;
 	}
 
@@ -437,7 +452,6 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		}
 
 		if ( needEllipsis ) {
-			logTrace(g_conf.m_logTraceSummary, "needEllipsis");
 			// break out if no room for "..."
 			if ( p + 4 + 2 > pend ) {
 				break;
@@ -462,7 +476,6 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		}
 
 		// assume we need a trailing ellipsis
-		logTrace(g_conf.m_logTraceSummary, "needEllipsis=true");
 		needEllipsis = true;
 
 		// so next excerpt does not need to have an ellipsis if we 
@@ -523,7 +536,6 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		// if we ended on punct that can be paired across we need
 		// to add an ellipsis
 		if ( needEllipsis ) {
-			logTrace(g_conf.m_logTraceSummary, "needEllipsis");
 			if ( p + 4 + 2 > pend ) {
 				break;
 			}
@@ -570,7 +582,8 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		if ( m_numDisplayLines > 0 ) {
 			m_displayLen = m_summaryLen;
 		}
-		
+
+		logTrace(g_conf.m_logTraceSummary, "END. Unable to get summary. getDefaultSummary. Returning %s", status ? "true" : "false");
 		return status;
 	}
 
@@ -582,6 +595,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 
 	if ( m_summaryLen > 50000 ) { g_process.shutdownAbort(true); }
 
+	logTrace(g_conf.m_logTraceSummary, "END. Returning true");
 	return true;
 }
 
@@ -592,6 +606,8 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
                                  int32_t *besta, int32_t *bestb, char *gotIt,
                                  char *retired, int32_t maxExcerptLen ) {
+	logTrace(g_conf.m_logTraceSummary, "BEGIN");
+
 	// get the window around match #mm
 	const Match *m = &matches->getMatch(mm);
 
@@ -624,6 +640,8 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 		*besta = -1;
 		*bestb = -1;
 		*lasta = matchWordNum;
+
+		logTrace(g_conf.m_logTraceSummary, "END. matchWordNum[%d] >= nw[%d]. Returning 0", matchWordNum, nw);
 		return 0;
 	}
 
@@ -634,6 +652,8 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 		*besta = -1;
 		*bestb = -1;
 		*lasta = matchWordNum;
+
+		logTrace(g_conf.m_logTraceSummary, "END. word is used/bad. Returning 0");
 		return 0;
 	}
 
@@ -991,22 +1011,22 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 	}
 
 	// show it
-	if ( g_conf.m_logDebugSummary ) {
-		log(LOG_DEBUG, "sum: score=%08" PRId32" prescore=%08" PRId32" a=%05" PRId32" b=%05" PRId32" %s",
-		     (int32_t)score,oldScore,(int32_t)a,(int32_t)b,
-		     xp.getBufStart());
-	}
+	logDebug(g_conf.m_logDebugSummary, "sum: score=%08" PRId32" prescore=%08" PRId32" a=%05" PRId32" b=%05" PRId32" %s",
+	         (int32_t)score,oldScore,(int32_t)a,(int32_t)b, xp.getBufStart());
 
 	// set lasta, besta, bestb
 	*lasta = a;
 	*besta = a;
 	*bestb = b;
 
+	logTrace(g_conf.m_logTraceSummary, "END. Returning %ld", score);
 	return score;
 }
 
 // get summary when no search terms could be found
 bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos, int32_t maxSummaryLen ) {
+	logTrace(g_conf.m_logTraceSummary, "BEGIN");
+
 	char *p    = m_summary;
 
 	if (MAX_SUMMARY_LEN < maxSummaryLen) {
@@ -1106,8 +1126,11 @@ bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Po
 		}
 
 		if ( m_summaryLen > 50000 ) { g_process.shutdownAbort(true); }
+
+		logTrace(g_conf.m_logTraceSummary, "END. Returning true");
 		return true;
 	}
 
+	logTrace(g_conf.m_logTraceSummary, "END. Returning true");
 	return true;
 }	

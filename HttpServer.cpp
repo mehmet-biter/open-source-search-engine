@@ -129,7 +129,7 @@ bool HttpServer::getDoc ( char   *url      ,
 			  //bool    respectDownloadLimit ,
 			  const char    *proto ,
 			  bool     doPost ,
-			  const char    *cookie ,
+			  const char    *cookieJar ,
 			  const char    *additionalHeader ,
 			  const char    *fullRequest ,
 			  const char    *postContent ,
@@ -207,7 +207,7 @@ bool HttpServer::getDoc ( char   *url      ,
 	// this returns false and sets g_errno on error
 	if ( ! fullRequest ) {
 		if ( ! r.set ( url , offset , size , ifModifiedSince ,
-			       userAgent , proto , doPost , cookie ,
+			       userAgent , proto , doPost , cookieJar ,
 			       // pass in proxyIp because if it is a
 			       // request being sent to a proxy we have to
 			       // say "GET http://www.xyz.com/" the full
@@ -643,11 +643,6 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 			      ref,
 			      g_msg);
 	}
-}
-
-
-static bool endsWith(char *haystack, int haystackLen, const char *needle, int needleLen) {
-    return haystackLen >= needleLen && !strncmp(haystack + haystackLen - needleLen, needle, needleLen);
 }
 
 #include "Pages.h" // sendPageAPI, printApiForPage()

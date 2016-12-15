@@ -21,6 +21,8 @@ public:
 	RdbIndex();
 	~RdbIndex();
 
+	static void timedMerge(int /*fd*/, void *state);
+
 	// . does not write data to disk
 	// . frees all
 	void reset();
@@ -110,6 +112,8 @@ private:
 
 	// when close is called, must we write the index?
 	bool m_needToWrite;
+
+	bool m_registeredCallback;
 };
 
 #endif // GB_RDBINDEX_H

@@ -5,6 +5,7 @@
 #include "Conf.h"
 #include "Process.h"
 #include "Hostdb.h"
+#include "HttpMime.h"
 #include "Url.h"
 #include "TcpSocket.h"
 #include "Mem.h"
@@ -179,7 +180,7 @@ bool HttpRequest::copy(const HttpRequest *r) {
 // . NOTE: http 1.1 uses Keep-Alive by default (use Connection: close to not)
 bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSince,
 		       const char *userAgent, const char *proto, bool doPost,
-		       const char *cookie, const char *additionalHeader,
+		       const char *cookieJar, const char *additionalHeader,
 		       // if posting something, how many bytes is it?
 		       int32_t postContentLen ,
 		       // are we sending the request through an http proxy?
@@ -419,8 +420,9 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 		 m_reqBuf.safePrintf("%s\r\n",additionalHeader );
 
 	 // cookie here
-	 if ( cookie ) 
-		 m_reqBuf.safePrintf("Cookie: %s\r\n",cookie );
+	if (cookieJar) {
+		HttpMime::addCookieHeader(cookieJar, url, &m_reqBuf);
+	}
 
 	 // print content-length: if post
 	 if ( postData ) {
@@ -446,14 +448,6 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	 if ( ! doPost ) { // ! postData ) {
 		 m_reqBuf.safePrintf("\r\n");
 	 }
-
-	 // set m_bufLen
-	 //m_bufLen = p - m_buf;//strlen ( m_buf );
-	 // sanity check
-	 // if ( m_bufLen + 1 > MAX_REQ_LEN ) {
-	 //	 log("build: HttpRequest buf is too small.");
-	 //	 g_process.shutdownAbort(true);
-	 // }
 
 	 // restore url buffer
 	 if ( pathEnd ) *pathEnd = '?';

@@ -39,11 +39,15 @@ RdbIndex::RdbIndex()
 	, m_pendingDocIds(new docids_t)
 	, m_prevPendingDocId(MAX_DOCID + 1)
 	, m_lastMergeTime(gettimeofdayInMilliseconds())
-	, m_needToWrite(false) {
+	, m_needToWrite(false)
+	, m_registeredCallback(false) {
 }
 
 // dont save index on deletion!
 RdbIndex::~RdbIndex() {
+	if (m_registeredCallback) {
+		g_loop.unregisterSleepCallback(this, &timedMerge);
+	}
 }
 
 void RdbIndex::reset() {
@@ -59,6 +63,15 @@ void RdbIndex::reset() {
 	m_needToWrite = false;
 }
 
+void RdbIndex::timedMerge(int /*fd*/, void *state) {
+	RdbIndex *index = static_cast<RdbIndex*>(state);
+
+	ScopedLock sl(index->m_pendingDocIdsMtx);
+	if (gettimeofdayInMilliseconds() - index->m_lastMergeTime >= s_defaultMaxPendingTimeMs) {
+		(void)index->mergePendingDocIds_unlocked();
+	}
+}
+
 /// @todo ALC collapse RdbIndex::set into constructor
 void RdbIndex::set(const char *dir, const char *indexFilename, int32_t fixedDataSize , bool useHalfKeys ,
                    char keySize, rdbid_t rdbId) {
@@ -71,6 +84,8 @@ void RdbIndex::set(const char *dir, const char *indexFilename, int32_t fixedData
 	m_useHalfKeys = useHalfKeys;
 	m_ks = keySize;
 	m_rdbId = rdbId;
+
+	m_registeredCallback = g_loop.registerSleepCallback(s_defaultMaxPendingTimeMs, this, &timedMerge);
 }
 
 bool RdbIndex::close(bool urgent) {
@@ -82,6 +97,11 @@ bool RdbIndex::close(bool urgent) {
 	// clears and frees everything
 	if (!urgent) {
 		reset();
+	}
+
+	if (m_registeredCallback) {
+		m_registeredCallback = false;
+		g_loop.unregisterSleepCallback(this, &timedMerge);
 	}
 
 	return status;
@@ -247,7 +267,7 @@ bool RdbIndex::readIndex2() {
 }
 
 bool RdbIndex::verifyIndex() {
-	logTrace( g_conf.m_logTraceRdbIndex, "BEGIN. filename [%s]", m_file.getFilename());
+	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN. filename [%s]", m_file.getFilename());
 
 	if (m_version != s_rdbIndexCurrentVersion) {
 		logTrace(g_conf.m_logTraceRdbIndex, "END. Index format have changed m_version=%" PRId64" currentVersion=%" PRId64". Returning false",
@@ -265,8 +285,11 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds() {
 }
 
 docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked() {
+	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN");
+
 	// don't need to merge when there are no pending docIds
 	if (m_pendingDocIds->empty()) {
+		logTrace(g_conf.m_logTraceRdbIndex, "END");
 		return getDocIds();
 	}
 
@@ -296,6 +319,7 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked() {
 	swapDocIds(tmpDocIds);
 	m_pendingDocIds->clear();
 
+	logTrace(g_conf.m_logTraceRdbIndex, "END");
 	return getDocIds();
 }
 
@@ -323,15 +347,8 @@ void RdbIndex::addRecord_unlocked(char *key, bool isGenerateIndex) {
 	}
 
 	bool doMerge = false;
-	if (isGenerateIndex) {
-		if (m_pendingDocIds->size() >= s_generateMaxPendingSize) {
-			doMerge = true;
-		}
-	} else {
-		if ((m_pendingDocIds->size() >= s_defaultMaxPendingSize) ||
-		    (gettimeofdayInMilliseconds() - m_lastMergeTime >= s_defaultMaxPendingTimeMs)) {
-			doMerge = true;
-		}
+	if (m_pendingDocIds->size() >= (isGenerateIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize)) {
+		doMerge = true;
 	}
 
 	if (doMerge) {
@@ -513,13 +530,13 @@ bool RdbIndex::generateIndex(BigFile *f) {
 		// if the readSize is less than the minRecSize, we got a bad cutoff
 		// so we can't go any more
 		if (readSize < minRecSize) {
-			mfree(buf, bufSize, "RdbMap");
+			mfree(buf, bufSize, "RdbIndex");
 			return true;
 		}
 
 		// otherwise, read it in
 		if (!f->read(buf, readSize, offset)) {
-			mfree(buf, bufSize, "RdbMap");
+			mfree(buf, bufSize, "RdbIndex");
 			log(LOG_WARN, "db: Failed to read %" PRId64" bytes of %s at offset=%" PRId64". Map generation failed.",
 			    bufSize, f->getFilename(), offset);
 			return false;
@@ -581,8 +598,7 @@ bool RdbIndex::generateIndex(BigFile *f) {
 				// . this can happen if merge dumped out half-ass
 				// . the write split a record...
 				if (rec - buf == 0 && recSize <= bufSize) {
-					log(LOG_WARN,
-					    "db: Index generation failed because last record in data file was split. Power failure while writing?");
+					log(LOG_WARN, "db: Index generation failed because last record in data file was split. Power failure while writing?");
 
 					// @todo ALC do we want to abort here?
 					return false;
@@ -613,7 +629,7 @@ bool RdbIndex::generateIndex(BigFile *f) {
 	}
 
 	// don't forget to free this
-	mfree(buf, bufSize, "RdbMap");
+	mfree(buf, bufSize, "RdbIndex");
 
 	// make sure it's all sorted and merged
 	(void)mergePendingDocIds_unlocked();

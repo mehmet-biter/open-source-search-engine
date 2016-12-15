@@ -24,41 +24,30 @@ enum {
 	OBJ_NONE
 };
 
+/// @note TYPE_DATE & TYPE_DATE2 is removed in commit f8e94cf3bf25b2f04a8a3aac00fe883eab346f2e
 enum {
-	TYPE_BOOL       = 1 ,
-	TYPE_BOOL2          ,
-	TYPE_CHECKBOX       ,
-	TYPE_CHAR           ,
-	TYPE_CHAR2          , //needed to display char as a number (maxNumHops)
-	TYPE_CMD            ,
-	TYPE_FLOAT          ,
-	TYPE_IP             ,
-	TYPE_LONG           ,
-	TYPE_LONG_LONG      , // 10
-	TYPE_NONE           ,
-	TYPE_PRIORITY       ,
-	TYPE_PRIORITY2      ,
-	TYPE_PRIORITY_BOXES ,
-	TYPE_RETRIES        ,
-	TYPE_STRING         ,
-	TYPE_STRINGBOX      ,
-	TYPE_STRINGNONEMPTY ,
-	TYPE_TIME           ,
-	TYPE_DATE2          , // 20
-	TYPE_DATE           ,
-	TYPE_RULESET        ,
-	TYPE_FILTER         ,
-	TYPE_COMMENT        ,
-	TYPE_CONSTANT       ,
-	TYPE_MONOD2         ,
-	TYPE_MONOM2         ,
-	TYPE_LONG_CONST     ,
-	TYPE_SITERULE       , // 29
-	TYPE_SAFEBUF        ,
-	TYPE_UFP            ,
-	TYPE_FILEUPLOADBUTTON,
-	TYPE_DOUBLE,
-	TYPE_CHARPTR
+	TYPE_BOOL             =  1,
+	TYPE_CHECKBOX         =  3,
+	TYPE_CHAR             =  4,
+	TYPE_CHAR2            =  5, //needed to display char as a number (maxNumHops)
+	TYPE_CMD              =  6,
+	TYPE_FLOAT            =  7,
+	TYPE_IP               =  8,
+	TYPE_LONG             =  9,
+	TYPE_LONG_LONG        = 10,
+	TYPE_NONE             = 11,
+	TYPE_PRIORITY         = 12,
+	TYPE_PRIORITY2        = 13,
+	TYPE_STRING           = 16,
+	TYPE_STRINGBOX        = 17,
+	TYPE_STRINGNONEMPTY   = 18,
+	TYPE_TIME             = 19,
+	TYPE_COMMENT          = 24,
+	TYPE_LONG_CONST       = 28,
+	TYPE_SAFEBUF          = 30,
+	TYPE_FILEUPLOADBUTTON = 32,
+	TYPE_DOUBLE           = 33,
+	TYPE_CHARPTR          = 34
 };
 
 
@@ -226,7 +215,7 @@ class Parms {
 
 	bool saveToXml ( char *THIS , char *f , char objType ) ;
 
-	bool getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s );
+	bool getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s );
 
 	bool setGigablastRequest ( class TcpSocket *s ,
 				   class HttpRequest *hr ,

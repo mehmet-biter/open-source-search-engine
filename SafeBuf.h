@@ -140,7 +140,7 @@ public:
 	bool  insert ( const char *s , int32_t insertPos ) ;
 	bool  insert2 ( const char *s , int32_t slen, int32_t insertPos ) ;
 	bool  replace ( const char *src, const char *dst ) ; // must be same lengths!
-	bool removeChunk1 ( char *p , int32_t len ) ;
+	bool removeChunk1 ( const char *p , int32_t len ) ;
 	bool removeChunk2 ( int32_t pos , int32_t len ) ;
 	bool  safeReplace(const char *s, int32_t len, int32_t pos, int32_t replaceLen);
 	bool  safeReplace2 ( const char *s, int32_t slen,
