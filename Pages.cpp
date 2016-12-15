@@ -134,13 +134,12 @@ static WebPage s_pages[] = {
 	  "clone one collection's settings to another",
 	  sendPageCloneColl  , 0 ,NULL,NULL,
 	  PG_MASTERADMIN|PG_ACTIVE},
-
+#endif
 	// let's replace this with query reindex for the most part
 	{ PAGE_REPAIR    , "admin/rebuild"   , 0 , "rebuild" ,  1 , 0 ,
 	  "rebuild data",
 	  sendPageGeneric , 0 ,NULL,NULL,
 	  PG_MASTERADMIN |PG_ACTIVE},
-#endif
 
 	{ PAGE_FILTERS   , "admin/filters", 0 , "url filters" ,  1 ,M_POST,
 	  "prioritize urls for spidering",
