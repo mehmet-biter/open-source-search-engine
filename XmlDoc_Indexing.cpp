@@ -1118,8 +1118,6 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// . sanity check
 	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
-	char buf[20];
-	int32_t blen;
 
 	//
 	// HASH the url's mid domain and host as they were in the body
@@ -1251,13 +1249,18 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	setStatus ( "hashing tld for site search");
 	const char *tld = fu->getTLD();
 	int32_t tldLen = fu->getTLDLen();
-	
-	char *p = buf;
-	gbmemcpy ( p , "http://", 7 ); p += 7;
-	gbmemcpy ( p , tld, tldLen); p += tldLen;
-	gbmemcpy ( p , "/", 1 ); p += 1;
-	*p = '\0';
-	if ( ! hashSingleTerm (buf,p-buf,&hi ) ) return false;
+
+	if( tldLen > 0 && tldLen < 64 ) {
+		char tldBuf[72];	// http:// (7) + tld (63) + / (1) + 0 (1)
+		char *p = tldBuf;
+		gbmemcpy ( p , "http://", 7 ); p += 7;
+		gbmemcpy ( p , tld, tldLen); p += tldLen;
+		gbmemcpy ( p , "/", 1 ); p += 1;
+		*p = '\0';
+		if ( ! hashSingleTerm (tldBuf, p - tldBuf, &hi ) ) {
+			return false;
+		}
+	}
 
 
 	//
@@ -1332,6 +1335,9 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// HASH urlhash: urlhashdiv10: urlhashdiv100: terms
 	//
 	// this is for proving how many docs are in the index
+	char buf[20];
+	int32_t blen;
+
 	uint32_t h = hash32 ( s , slen );
 	blen = sprintf(buf,"%" PRIu32,h);
 	hi.m_prefix    = "urlhash";
