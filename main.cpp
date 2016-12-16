@@ -2796,7 +2796,6 @@ bool registerMsgHandlers2(){
 }
 
 bool registerMsgHandlers3(){
-	if ( ! Msg40::registerHandler() ) return false;
 	return true;
 }
 
