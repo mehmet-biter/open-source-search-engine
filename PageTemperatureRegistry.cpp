@@ -12,6 +12,8 @@ static const char filename[] = "page_temperatures.dat";
 
 
 bool PageTemperatureRegistry::load() {
+	log(LOG_DEBUG, "Loading %s", filename);
+
 	FILE *fp = fopen(filename, "r");
 	if(!fp) {
 		log(LOG_INFO,"Couldn't open %s, errno=%d (%s)", filename, errno, strerror(errno));
@@ -40,7 +42,7 @@ bool PageTemperatureRegistry::load() {
 	unsigned new_min_temperature = 0x3ffffff;
 	unsigned new_max_temperature = 0;
 	uint64_t tmp_slot;
-	while(fread(&slot,8,1,fp)==1) {
+	while(fread(&tmp_slot,8,1,fp)==1) {
 		uint64_t docid = tmp_slot>>26;
 		unsigned temperature = tmp_slot&0x3ffffff;
 		unsigned start_idx = ((uint32_t)docid) % new_hash_table_size;
@@ -60,8 +62,17 @@ bool PageTemperatureRegistry::load() {
 	hash_table_size = new_hash_table_size;
 	min_temperature = new_min_temperature;
 	max_temperature = new_max_temperature;
-	avg_temperature = (min_temperature+max_temperature)/2;
 
+	//Default temperature for unregistered pages is a bit tricky.
+	//Initially an unregistered page is likely just freshly crawled but an old one. So the average
+	//temperature is a good guess. On the other hand when we have crawled most of the internet
+	//then an unregistered page indicates a new page and it like has low temperature.
+	//There is no obvious correct value.
+	default_temperature = (min_temperature+max_temperature)/2;
+
+	temperature_range_for_scaling = max_temperature-min_temperature;
+
+	log(LOG_DEBUG, "%s loaded (%lu items)", filename, (unsigned long)new_entries);
 	return true;
 }
 
@@ -74,13 +85,23 @@ void PageTemperatureRegistry::unload() {
 }
 
 
-unsigned PageTemperatureRegistry::query_page_temperature(uint64_t docid) const {
+unsigned PageTemperatureRegistry::query_page_temperature_internal(uint64_t docid) const {
 	unsigned idx = ((uint32_t)docid) % hash_table_size;
 	while(slot[idx]) {
 		if(slot[idx]>>26 == docid)
 			return slot[idx]&0x3ffffff;
 		idx = (idx+1)%hash_table_size;
 	}
-	//unknown or uncrawled document. Return an average temperature
-	return avg_temperature;
+	//Unregistered page. Return an default temperature
+	return default_temperature;
+}
+
+
+double PageTemperatureRegistry::query_page_temperature(uint64_t docid) const {
+	if(hash_table_size==0)
+		return 1.0;
+	unsigned temperature_26bit = query_page_temperature_internal(docid);
+	//Then scale to a number in the rangte [0..1]
+	//It is a bit annoying to do this computation for each lookup but it saves memory
+	return ((double)(temperature_26bit - min_temperature)) / temperature_range_for_scaling;
 }

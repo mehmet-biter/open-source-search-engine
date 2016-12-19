@@ -4217,6 +4217,18 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "Use page temperature";
+	m->m_desc  = "Use page temperature (if available) for ranking";
+	m->m_cgi   = "use_page_temperature";
+	m->m_off   = offsetof(Conf,m_usePageTemperatureForRanking);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "1";
+	m->m_group = true;
+	m->m_flags = 0;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	///////////////////////////////////////////
 	//  SPIDER PROXY CONTROLS
 	//
