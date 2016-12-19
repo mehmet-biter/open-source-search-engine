@@ -40,7 +40,7 @@ bool PageTemperatureRegistry::load() {
 	unsigned new_min_temperature = 0x3ffffff;
 	unsigned new_max_temperature = 0;
 	uint64_t tmp_slot;
-	while(fread(&slot,8,1,fp)==1) {
+	while(fread(&tmp_slot,8,1,fp)==1) {
 		uint64_t docid = tmp_slot>>26;
 		unsigned temperature = tmp_slot&0x3ffffff;
 		unsigned start_idx = ((uint32_t)docid) % new_hash_table_size;
