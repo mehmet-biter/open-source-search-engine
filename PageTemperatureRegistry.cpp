@@ -68,10 +68,7 @@ bool PageTemperatureRegistry::load() {
 	//There is no obvious correct value.
 	default_temperature = (min_temperature+max_temperature)/2;
 
-	if(min_temperature!=max_temperature)
-		temperature_range_for_scaling = max_temperature-min_temperature;
-	else
-		temperature_range_for_scaling = min_temperature;
+	temperature_range_for_scaling = max_temperature-min_temperature;
 
 	return true;
 }
@@ -98,6 +95,8 @@ unsigned PageTemperatureRegistry::query_page_temperature_internal(uint64_t docid
 
 
 double PageTemperatureRegistry::query_page_temperature(uint64_t docid) const {
+	if(hash_table_size==0)
+		return 1.0;
 	unsigned temperature_26bit = query_page_temperature_internal(docid);
 	//Then scale to a number in the rangte [0..1]
 	//It is a bit annoying to do this computation for each lookup but it saves memory
