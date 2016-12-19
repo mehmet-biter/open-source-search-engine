@@ -1396,32 +1396,32 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 	char *tt = asctime_r(gmtime_r(&now,&tm_buf),buf);
 	tt [ strlen(tt) - 1 ] = '\0';
 
-	const char *ct = "text/html";
-	if ( format == FORMAT_XML  ) ct = "text/xml";
-	if ( format == FORMAT_JSON ) ct = "application/json";
-
+	const char *ct;
 	SafeBuf xb;
-
-	if ( format != FORMAT_XML && format != FORMAT_JSON )
-		xb.safePrintf("<html><b>Error = %s</b></html>",errmsg );
-
-	if ( format == FORMAT_XML ) {
-		xb.safePrintf("<response>\n"
-			      "\t<statusCode>%" PRId32"</statusCode>\n"
-			      "\t<statusMsg><![CDATA[", error );
-		cdataEncode(&xb, errmsg);
-		xb.safePrintf("]]></statusMsg>\n"
-			      "</response>\n");
-	}
-
-	if ( format == FORMAT_JSON ) {
-		xb.safePrintf("{\"response\":{\n"
-			      "\t\"statusCode\":%" PRId32",\n"
-			      "\t\"statusMsg\":\"", error );
-		xb.jsonEncode(errmsg );
-		xb.safePrintf("\"\n"
-			      "}\n"
-			      "}\n");
+	switch(format) {
+		case FORMAT_XML:
+			ct = "text/xml";
+			xb.safePrintf("<response>\n"
+				      "\t<statusCode>%" PRId32"</statusCode>\n"
+				      "\t<statusMsg><![CDATA[", error );
+			cdataEncode(&xb, errmsg);
+			xb.safePrintf("]]></statusMsg>\n"
+				      "</response>\n");
+			break;
+		case FORMAT_JSON:
+			ct = "application/json";
+			xb.safePrintf("{\"response\":{\n"
+				      "\t\"statusCode\":%" PRId32",\n"
+				      "\t\"statusMsg\":\"", error );
+			xb.jsonEncode(errmsg );
+			xb.safePrintf("\"\n"
+				      "}\n"
+				      "}\n");
+			break;
+		case FORMAT_HTML:
+		default:
+			ct = "text/html";
+			xb.safePrintf("<html><b>Error = %s</b></html>",errmsg );
 	}
 
 	StackBuf<1524> sb;
