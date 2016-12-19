@@ -60,7 +60,13 @@ bool PageTemperatureRegistry::load() {
 	hash_table_size = new_hash_table_size;
 	min_temperature = new_min_temperature;
 	max_temperature = new_max_temperature;
-	avg_temperature = (min_temperature+max_temperature)/2;
+
+	//Default temperature for unregistered pages is a bit tricky.
+	//Initially an unregistered page is likely just freshly crawled but an old one. So the average
+	//temperature is a good guess. On the other hand when we have crawled most of the internet
+	//then an unregistered page indicates a new page and it like has low temperature.
+	//There is no obvious correct value.
+	default_temperature = (min_temperature+max_temperature)/2;
 
 	return true;
 }
@@ -81,6 +87,6 @@ unsigned PageTemperatureRegistry::query_page_temperature(uint64_t docid) const {
 			return slot[idx]&0x3ffffff;
 		idx = (idx+1)%hash_table_size;
 	}
-	//unknown or uncrawled document. Return an average temperature
-	return avg_temperature;
+	//Unregistered page. Return an default temperature
+	return default_temperature;
 }

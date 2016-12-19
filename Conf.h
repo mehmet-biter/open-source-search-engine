@@ -218,6 +218,8 @@ class Conf {
 	
 	float m_synonymWeight;
 
+	bool m_usePageTemperatureForRanking;
+
 	// send emails when a host goes down?
 	bool   m_sendEmailAlerts;
 	//should we delay when only 1 host goes down out of twins till 9 30 am?

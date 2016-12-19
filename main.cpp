@@ -34,6 +34,7 @@
 #include "HttpServer.h"
 #include "Loop.h"
 #include "HighFrequencyTermShortcuts.h"
+#include "PageTemperatureRegistry.h"
 #include "IPAddressChecks.h"
 #include <sys/resource.h>  // setrlimit
 #include "Stats.h"
@@ -1982,6 +1983,9 @@ int main2 ( int argc , char *argv[] ) {
 
 	//Load the high-frequency term shortcuts (if they exist)
 	g_hfts.load();
+
+	//Load the page temperature
+	g_pageTemperatureRegistry.load();
 	
 	// test all collection dirs for write permission
 	int32_t pcount = 0;

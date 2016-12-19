@@ -13,11 +13,11 @@ class PageTemperatureRegistry {
 	unsigned hash_table_size;
 	unsigned min_temperature;
 	unsigned max_temperature;
-	unsigned avg_temperature;
+	unsigned default_temperature;
 public:
 	PageTemperatureRegistry()
 	  : slot(0), entries(0),
-	    min_temperature(0), max_temperature(10)
+	    min_temperature(0), max_temperature(10), default_temperature(5)
 	    {}
 	~PageTemperatureRegistry() { unload(); }
 	
