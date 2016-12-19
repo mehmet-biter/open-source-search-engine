@@ -3578,7 +3578,7 @@ checkNextRule:
 			if ( plen == 0 ) 
 				continue;
 			int32_t m = 1;
-			// check to see if we matched if url was int32_t enough
+			// check to see if we matched if url was long enough
 			if ( urlLen >= plen )
 				m = strncmp(pstart,url,plen);
 			if ( ( m == 0 && val == 0 ) ||
@@ -3620,7 +3620,7 @@ checkNextRule:
 			// . url has to be at least as big
 			// . match our tail
 			int32_t m = 1;
-			// check to see if we matched if url was int32_t enough
+			// check to see if we matched if url was long enough
 			if ( urlLen >= plen )
 				m = strncmp(pstart,url+urlLen-plen,plen);
 			if ( ( m == 0 && val == 0 ) ||

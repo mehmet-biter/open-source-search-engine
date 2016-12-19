@@ -1492,7 +1492,7 @@ static void getMsgPieceWrapper(int fd, void *state) {
 			log(LOG_LOGIC,"http: getMsgPiece returned -1.");
 			return;
 		}
-		// keep reading more from file and sending it as int32_t as file didn't
+		// keep reading more from file and sending it as long as file didn't
 		// block
 	}
 }
@@ -1519,7 +1519,7 @@ static void getSSLMsgPieceWrapper(int fd, void *state) {
 		// . g_errno may be set in which case TcpServer::writeSocketWrapper()
 		//   will destroy s and call s's callback, cleanUp()
 		g_loop.callCallbacks_ass ( false /*for reading?*/, sd );
-		// keep reading more from file and sending it as int32_t as file didn't
+		// keep reading more from file and sending it as long as file didn't
 		// block
 	}
 }

@@ -21270,7 +21270,7 @@ char *XmlDoc::getFragVec ( ) {
 		if ( j == k ) { g_process.shutdownAbort(true); }
 		// skip to next in chain to check later
 		if ( ++n >= nb ) n = 0;
-		// keep advancing k and j as int32_t as the words match
+		// keep advancing k and j as long as the words match
 	matchLoop:
 		// get next wid for k and j
 		while ( k < nw && ! wids[k] ) k++;

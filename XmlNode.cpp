@@ -264,7 +264,7 @@ int32_t XmlNode::set( char *node, bool pureXml ) {
 		m_hash       = 0;
 		int32_t i = 0;
 
-		// inc i as int32_t as it's NOT the beginning of a tag
+		// inc i as long as it's NOT the beginning of a tag
 		while ( node[i] && ( node[i] != '<' || !isTagStart( node + i ) ) ) {
 			++i;
 		}

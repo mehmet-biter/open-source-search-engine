@@ -1017,7 +1017,7 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 	// once in waiting tree, we will scan waiting tree and then lookup
 	// each firstIp in waiting tree in spiderdb to get the best
 	// SpiderRequest for that firstIp, then we can add it to doledb
-	// as int32_t as it can be spidered now
+	// as long as it can be spidered now
 	//bool status = addToWaitingTree ( spiderTimeMS,sreq->m_firstIp,true);
 	bool added = addToWaitingTree ( 0 , sreq->m_firstIp , true );
 

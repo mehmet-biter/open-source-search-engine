@@ -669,7 +669,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 	bool goodStart = false;
 	int32_t wordCount = 0;
 
-	// . decrease "a" as int32_t as we stay within maxNumCharsPerLine
+	// . decrease "a" as long as we stay within maxNumCharsPerLine
 	// . avoid duplicating windows by using "lasta", the last "a" of the
 	//   previous call to getBestWindow(). This can happen if our last
 	//   central query term was close to this one.
@@ -808,7 +808,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 
 	// . the match at the center of the window is match #"mm", so that
 	//   matches->m_matches[mm] is the Match class
-	// . set "mi" to it and back up "mi" as int32_t as >= a
+	// . set "mi" to it and back up "mi" as long as >= a
 	for ( mi = mm ; mi > 0 && matches->getMatch(mi-1).m_wordNum >=a ; mi-- )
 		;
 
