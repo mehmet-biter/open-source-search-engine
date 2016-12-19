@@ -12,6 +12,8 @@ static const char filename[] = "page_temperatures.dat";
 
 
 bool PageTemperatureRegistry::load() {
+	log(LOG_DEBUG, "Loading %s", filename);
+
 	FILE *fp = fopen(filename, "r");
 	if(!fp) {
 		log(LOG_INFO,"Couldn't open %s, errno=%d (%s)", filename, errno, strerror(errno));
@@ -70,6 +72,7 @@ bool PageTemperatureRegistry::load() {
 
 	temperature_range_for_scaling = max_temperature-min_temperature;
 
+	log(LOG_DEBUG, "%s loaded (%lu items)", filename, (unsigned long)new_entries);
 	return true;
 }
 

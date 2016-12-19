@@ -182,7 +182,7 @@ bool HighFrequencyTermShortcuts::load()
 #endif
 	}
 	
-	log(LOG_DEBUG, "%s loaded", filename);
+	log(LOG_DEBUG, "%s loaded (%lu terms)", filename, (unsigned long)entries.size());
 	return true;
 }
 
