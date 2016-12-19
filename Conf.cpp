@@ -124,6 +124,7 @@ Conf::Conf ( ) {
 	m_hashGroupWeightInUrl = 0.0;
 	m_hashGroupWeightInMenu = 0.0;
 	m_synonymWeight = 0.0;
+	m_usePageTemperatureForRanking = true;
 	m_sendEmailAlerts = false;
 	m_delayNonCriticalEmailAlerts = false;
 	m_sendEmailAlertsToSysadmin = false;
