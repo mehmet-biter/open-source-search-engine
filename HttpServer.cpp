@@ -1471,29 +1471,30 @@ void getMsgPieceWrapper ( int fd , void *state ) {
 	// so let's use the fd on the tcpSocket
 	//TcpSocket *s  = (TcpSocket *) state;
 	int32_t sd = (int32_t)(PTRTYPE) state;
- loop:
-	// ensure Socket has not been destroyed by callCallbacks()
-	TcpSocket *s = g_httpServer.m_tcp.m_tcpSockets[sd] ;
-	// return if it has been destroyed (cleanUp() should have been called)
-	if ( ! s ) return;
-	// read some file into the m_sendBuf of s
-	int32_t n = getMsgPiece ( s );
-	// return if nothing was read
-	if ( n == 0 ) return;
-	// . now either n is positive, in which case we read some
-	// . or n is negative and g_errno is set
-	// . send a ready-to-write signal on s->m_sd
-	// . g_errno may be set in which case TcpServer::writeSocketWrapper()
-	//   will destroy s and call s's callback, cleanUp()
-	g_loop.callCallbacks_ass ( false /*for reading?*/, sd );
-	// break the loop if n is -1, that means error in getMsgPiece()
-	if ( n < 0 ) {
-		log(LOG_LOGIC,"http: getMsgPiece returned -1.");
-		return;
+
+	for(;;) {
+		// ensure Socket has not been destroyed by callCallbacks()
+		TcpSocket *s = g_httpServer.m_tcp.m_tcpSockets[sd] ;
+		// return if it has been destroyed (cleanUp() should have been called)
+		if ( ! s ) return;
+		// read some file into the m_sendBuf of s
+		int32_t n = getMsgPiece ( s );
+		// return if nothing was read
+		if ( n == 0 ) return;
+		// . now either n is positive, in which case we read some
+		// . or n is negative and g_errno is set
+		// . send a ready-to-write signal on s->m_sd
+		// . g_errno may be set in which case TcpServer::writeSocketWrapper()
+		//   will destroy s and call s's callback, cleanUp()
+		g_loop.callCallbacks_ass ( false /*for reading?*/, sd );
+		// break the loop if n is -1, that means error in getMsgPiece()
+		if ( n < 0 ) {
+			log(LOG_LOGIC,"http: getMsgPiece returned -1.");
+			return;
+		}
+		// keep reading more from file and sending it as int32_t as file didn't
+		// block
 	}
-	// keep reading more from file and sending it as int32_t as file didn't
-	// block
-	goto loop;
 }
 
 // . getMsgPiece() is called by TcpServer cuz we set it in TcpServer::init()
@@ -1502,24 +1503,25 @@ void getSSLMsgPieceWrapper ( int fd , void *state ) {
 	// so let's use the fd on the tcpSocket
 	//TcpSocket *s  = (TcpSocket *) state;
 	int32_t sd = (int32_t)(PTRTYPE) state;
- loop:
-	// ensure Socket has not been destroyed by callCallbacks()
-	TcpSocket *s = g_httpServer.m_ssltcp.m_tcpSockets[sd] ;
-	// return if it has been destroyed (cleanUp() should have been called)
-	if ( ! s ) return;
-	// read some file into the m_sendBuf of s
-	int32_t n = getMsgPiece ( s );
-	// return if nothing was read
-	if ( n == 0 ) return;
-	// . now either n is positive, in which case we read some
-	// . or n is negative and g_errno is set
-	// . send a ready-to-write signal on s->m_sd
-	// . g_errno may be set in which case TcpServer::writeSocketWrapper()
-	//   will destroy s and call s's callback, cleanUp()
-	g_loop.callCallbacks_ass ( false /*for reading?*/, sd );
-	// keep reading more from file and sending it as int32_t as file didn't
-	// block
-	goto loop;
+
+	for(;;) {
+		// ensure Socket has not been destroyed by callCallbacks()
+		TcpSocket *s = g_httpServer.m_ssltcp.m_tcpSockets[sd] ;
+		// return if it has been destroyed (cleanUp() should have been called)
+		if ( ! s ) return;
+		// read some file into the m_sendBuf of s
+		int32_t n = getMsgPiece ( s );
+		// return if nothing was read
+		if ( n == 0 ) return;
+		// . now either n is positive, in which case we read some
+		// . or n is negative and g_errno is set
+		// . send a ready-to-write signal on s->m_sd
+		// . g_errno may be set in which case TcpServer::writeSocketWrapper()
+		//   will destroy s and call s's callback, cleanUp()
+		g_loop.callCallbacks_ass ( false /*for reading?*/, sd );
+		// keep reading more from file and sending it as int32_t as file didn't
+		// block
+	}
 }
 
 // . returns number of new bytes read
