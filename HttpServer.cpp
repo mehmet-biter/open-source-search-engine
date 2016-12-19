@@ -1391,8 +1391,6 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 
 	// . buffer for the MIME request and brief html err msg
 	// . NOTE: ctime appends a \n to the time, so we don't need to
-	char msg[1524];
-	SafeBuf sb(msg,1524,0,false);
 	struct tm tm_buf;
 	char buf[64];
 	char *tt = asctime_r(gmtime_r(&now,&tm_buf),buf);
@@ -1426,6 +1424,7 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 			      "}\n");
 	}
 
+	StackBuf<1524> sb;
 	sb.safePrintf(
 		      "HTTP/1.0 %" PRId32" (%s)\r\n"
 		      "Content-Length: %" PRId32"\r\n"
