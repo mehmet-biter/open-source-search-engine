@@ -25,7 +25,6 @@ public:
 	Msg40();
 	~Msg40();
 	void resetBuf2 ( ) ;
-	static bool registerHandler ();
 
 	// . returns false if blocked, true otherwise
 	// . sets errno on error

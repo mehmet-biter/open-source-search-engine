@@ -110,10 +110,6 @@ Msg40::~Msg40() {
 	resetBuf2();
 }
 
-bool Msg40::registerHandler ( ) {
-        return true;
-}
-
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 // . uses Msg3a to get docIds

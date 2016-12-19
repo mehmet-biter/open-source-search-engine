@@ -185,6 +185,7 @@ bool File::movePhase2(const char *newFilename) {
 	if(moveFile2Phase2(getFilename(), newFilename) != 0)
 		return false;
 	set(newFilename);
+	close(); //ensure that we release the original file if the move was across filesystems
 	return true;
 }
 

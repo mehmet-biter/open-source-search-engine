@@ -87,7 +87,6 @@
 bool registerMsgHandlers ( ) ;
 bool registerMsgHandlers1 ( ) ;
 bool registerMsgHandlers2 ( ) ;
-bool registerMsgHandlers3 ( ) ;
 
 static void dumpTitledb  (const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   int64_t docId , bool justPrintDups );
@@ -2758,7 +2757,6 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 bool registerMsgHandlers ( ) {
 	if (! registerMsgHandlers1()) return false;
 	if (! registerMsgHandlers2()) return false;
-	if (! registerMsgHandlers3()) return false;
 	if ( ! g_pingServer.registerHandler() ) return false;
 
 	// in SpiderProxy.cpp...
@@ -2792,11 +2790,6 @@ bool registerMsgHandlers2(){
 	if ( ! g_udpServer.registerHandler(msg_type_25,handleRequest25)) return false;
 	if ( ! g_udpServer.registerHandler(msg_type_7,handleRequest7)) return false;
 
-	return true;
-}
-
-bool registerMsgHandlers3(){
-	if ( ! Msg40::registerHandler() ) return false;
 	return true;
 }
 
