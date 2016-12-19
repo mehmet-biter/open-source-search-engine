@@ -351,7 +351,7 @@ bool HttpServer::getDoc ( char   *url      ,
 	return true;
 }
 
-void gotDocWrapper ( void *state, TcpSocket *s ) {
+static void gotDocWrapper(void *state, TcpSocket *s) {
 	g_httpServer.gotDoc ( (int32_t)(PTRTYPE)state, s );
 }
 
@@ -376,13 +376,13 @@ bool HttpServer::gotDoc ( int32_t n, TcpSocket *s ) {
 }
 
 // . handle an incoming HTTP request
-void requestHandlerWrapper ( TcpSocket *s ) {
+static void requestHandlerWrapper(TcpSocket *s) {
 	g_httpServer.requestHandler ( s );
 }
 
 // . a udp handler wrapper 
 // . the proxy sends us udp packets with msgtype = 0xfd ("forward")
-void handleRequestfd ( UdpSlot *slot , int32_t niceness ) {
+static void handleRequestfd(UdpSlot *slot, int32_t niceness) {
 	// if we are proxy, that is just wrong! a proxy does not send
 	// this msg to another proxy, only to the flock
 	// no! now a compression proxy will forward a query to a regular
@@ -1183,7 +1183,7 @@ bool HttpServer::sendReply2 ( const char *mime,
 // . "s" should be recycled/destroyed by TcpServer after we return
 // . this recycling/desutruction will free s's read/send bufs
 // . this should have been called by TcpServer::makeCallback()
-void cleanUp ( void *state , TcpSocket *s ) {
+static void cleanUp(void *state, TcpSocket *s) {
 	File *f = (File *) state;
 	if ( ! f ) return;
 	int32_t fd = -1;
@@ -1466,7 +1466,7 @@ bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error ,
 }
 
 // . getMsgPiece() is called by TcpServer cuz we set it in TcpServer::init()
-void getMsgPieceWrapper ( int fd , void *state ) {
+static void getMsgPieceWrapper(int fd, void *state) {
 	// NOTE: this socket 's' may have been closed/destroyed,
 	// so let's use the fd on the tcpSocket
 	//TcpSocket *s  = (TcpSocket *) state;
@@ -1498,7 +1498,7 @@ void getMsgPieceWrapper ( int fd , void *state ) {
 }
 
 // . getMsgPiece() is called by TcpServer cuz we set it in TcpServer::init()
-void getSSLMsgPieceWrapper ( int fd , void *state ) {
+static void getSSLMsgPieceWrapper(int fd, void *state) {
 	// NOTE: this socket 's' may have been closed/destroyed,
 	// so let's use the fd on the tcpSocket
 	//TcpSocket *s  = (TcpSocket *) state;
@@ -1529,7 +1529,7 @@ void getSSLMsgPieceWrapper ( int fd , void *state ) {
 // . if this gets called then the maxReadBufSize (128k?) was exceeded
 // . this is called by g_loop when "f" is ready for reading and is called
 //   by TcpServer::writeSocket() when it needs more of the file to send it
-int32_t getMsgPiece ( TcpSocket *s ) {
+static int32_t getMsgPiece ( TcpSocket *s ) {
 	// get the server this socket uses
 	TcpServer *tcp = s->m_this;
 	//CallbackData *cd = (CallbackData *) s->m_callbackData;
