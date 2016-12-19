@@ -3,7 +3,7 @@
 
 #include "gb-include.h"
 
-#include "PosdbTable.h"
+#include "PageTemperatureRegistry.h"
 #include "ScalingFunctions.h"
 #include "BitOperations.h"
 #include "Msg2.h"
@@ -4166,6 +4166,12 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 
 
+			if(g_conf.m_usePageTemperatureForRanking) {
+				double page_temperature = g_pageTemperatureRegistry.query_page_temperature(m_docId);
+				float pre_score = score;
+				score *= page_temperature;
+				logTrace(g_conf.m_logTracePosdb, "Page temperature for docId %" PRIu64 " is %.4f, score %f->%f", m_docId, page_temperature, pre_score,score);
+			}
 
 			//#
 			//# Handle sortby int/float and minimum docid/score pairs
