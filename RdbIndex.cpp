@@ -152,7 +152,7 @@ bool RdbIndex::writeIndex2() {
 
 	// make sure we always write the newest tree
 	// remove const as m_file.write does not accept const buffer
-	docids_ptr_t tmpDocIds = std::const_pointer_cast<docids_t>(mergePendingDocIds());
+	docids_ptr_t tmpDocIds = std::const_pointer_cast<docids_t>(mergePendingDocIds(true));
 
 	// first 8 bytes is the index version
 	m_file.write(&m_version, sizeof(m_version), offset);
@@ -279,17 +279,17 @@ bool RdbIndex::verifyIndex() {
 	return true;
 }
 
-docidsconst_ptr_t RdbIndex::mergePendingDocIds() {
+docidsconst_ptr_t RdbIndex::mergePendingDocIds(bool forWrite) {
 	ScopedLock sl(m_pendingDocIdsMtx);
-	return mergePendingDocIds_unlocked();
+	return mergePendingDocIds_unlocked(forWrite);
 }
 
-docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked() {
-	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN");
+docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked(bool forWrite) {
+	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN %s[%p] forWrite=%s", m_file.getFilename(), this, forWrite ? "true" : "false");
 
 	// don't need to merge when there are no pending docIds
 	if (m_pendingDocIds->empty()) {
-		logTrace(g_conf.m_logTraceRdbIndex, "END");
+		logTrace(g_conf.m_logTraceRdbIndex, "END %s[%p]", m_file.getFilename(), this);
 		return getDocIds();
 	}
 
@@ -306,7 +306,6 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked() {
 	// merge pending docIds into docIds
 	std::stable_sort(m_pendingDocIds->begin(), m_pendingDocIds->end(), cmplt_fn);
 
-
 	docids_ptr_t tmpDocIds(new docids_t);
 	auto docIds = getDocIds();
 	std::merge(docIds->begin(), docIds->end(), m_pendingDocIds->begin(), m_pendingDocIds->end(), std::back_inserter(*tmpDocIds), cmplt_fn);
@@ -315,11 +314,22 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked() {
 	auto it = std::unique(tmpDocIds->rbegin(), tmpDocIds->rend(), cmpeq_fn);
 	tmpDocIds->erase(tmpDocIds->begin(), it.base());
 
+	if (forWrite) {
+		// shrink memory usage
+		docids_t(*tmpDocIds).swap(*tmpDocIds);
+	}
+
 	// replace existing even if size doesn't change (could change from positive to negative key)
 	swapDocIds(tmpDocIds);
-	m_pendingDocIds->clear();
 
-	logTrace(g_conf.m_logTraceRdbIndex, "END");
+	if (forWrite) {
+		// make sure memory is freed
+		m_pendingDocIds.reset(new docids_t);
+	} else {
+		m_pendingDocIds->clear();
+	}
+
+	logTrace(g_conf.m_logTraceRdbIndex, "END %s[%p]", m_file.getFilename(), this);
 	return getDocIds();
 }
 

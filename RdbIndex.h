@@ -82,8 +82,8 @@ public:
 private:
 	void addRecord_unlocked(char *key, bool isGenerateIndex);
 
-	docidsconst_ptr_t mergePendingDocIds();
-	docidsconst_ptr_t mergePendingDocIds_unlocked();
+	docidsconst_ptr_t mergePendingDocIds(bool forWrite = false);
+	docidsconst_ptr_t mergePendingDocIds_unlocked(bool forWrite = false);
 
 	void swapDocIds(docidsconst_ptr_t docIds);
 
