@@ -36,6 +36,8 @@ UrlParser::UrlParser(const char *url, size_t urlLen)
 	, m_authorityLen(0)
 	, m_host(NULL)
 	, m_hostLen(0)
+	, m_port(NULL)
+	, m_portLen(0)
 	, m_domain(NULL)
 	, m_domainLen(0)
 	, m_paths()
@@ -55,6 +57,7 @@ void UrlParser::print() const {
 	logf(LOG_DEBUG, "UrlParser::authority : %.*s", static_cast<uint32_t>(m_authorityLen), m_authority);
 	logf(LOG_DEBUG, "UrlParser::host      : %.*s", static_cast<uint32_t>(m_hostLen), m_host);
 	logf(LOG_DEBUG, "UrlParser::domain    : %.*s", static_cast<uint32_t>(m_domainLen), m_domain);
+	logf(LOG_DEBUG, "UrlParser::port      : %.*s", static_cast<uint32_t>(m_portLen), m_port);
 
 	for (auto it = m_paths.begin(); it != m_paths.end(); ++it) {
 		logf(LOG_DEBUG, "UrlParser::path[%02zi]  : %s", std::distance(m_paths.begin(), it), it->getString().c_str());
@@ -111,6 +114,9 @@ void UrlParser::parse() {
 
 	const char *portPos = static_cast<const char *>(memrchr(m_host, ':', m_hostLen));
 	if (portPos != NULL) {
+		m_port = portPos + 1;
+		m_portLen = m_authorityLen - (portPos - m_authority) - 1;
+
 		m_hostLen -= (m_hostLen - (portPos - m_host));
 	}
 
