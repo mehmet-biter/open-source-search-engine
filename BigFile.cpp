@@ -570,10 +570,8 @@ bool BigFile::readwrite ( void         *buf      ,
 			  void        (* callback) ( void *state ) ,
 			  int32_t          niceness ,
 			  int32_t          allocOff ) {
-	// are we blocking?
-	bool isNonBlocking = m_flags & O_NONBLOCK;
 	// if we're non blocking and caller didn't supply an "fstate"
-	if ( isNonBlocking && ! fstate ) {
+	if ( callback && ! fstate ) {
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"disk: readwrite() call is "
 		    "specified as non-blocking, but no state provided.");
@@ -692,7 +690,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_startTime   = gettimeofdayInMilliseconds();
 	fstate->m_vfd         = m_vfd;
 
-	if(isNonBlocking && callback && g_jobScheduler.are_new_jobs_allowed()) {
+	if(callback && g_jobScheduler.are_new_jobs_allowed()) {
 		// . spawn a thread to do this i/o
 		// . this returns false and sets g_errno on error, true on success
 		// . we should return false cuz we blocked
