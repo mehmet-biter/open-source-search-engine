@@ -3859,7 +3859,6 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 			return false;
 		}
 		log("db: reading from speedtest0001.dat");
-		f.setBlocking();
 		goto doreadtest;
 	}
 	// try a read test from indexdb*.dat*
@@ -3871,7 +3870,6 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 			return false;
 		}
 		log("db: reading from indexdb0001.dat");
-		f.setBlocking();
 		goto doreadtest;
 	}
 	// try a write test to speedtest*.dat*
@@ -3883,7 +3881,6 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 			return false;
 		}
 		log("db: writing to speedtest0001.dat");
-		f.setBlocking();
 	}
 
 	// write  2 gigs to the file, 1M at a time
