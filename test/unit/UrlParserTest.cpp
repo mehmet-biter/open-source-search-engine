@@ -24,6 +24,21 @@ TEST(UrlParserTest, ParseScheme) {
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("example.com", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://www.example.com/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
+}
+
+TEST(UrlParserTest, ParseSchemeUppercase) {
+	std::string url("HTTP://www.example.com/param1=abc-123");
+	UrlParser urlParser(url.c_str(), url.size());
+
+	checkResult("HTTP", urlParser.getScheme(), urlParser.getSchemeLen());
+	checkResult("www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
+	checkResult("example.com", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://www.example.com/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParseSchemeHttps) {
@@ -33,6 +48,9 @@ TEST(UrlParserTest, ParseSchemeHttps) {
 	checkResult("https", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("example.com", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("https://www.example.com/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParseSchemeNone) {
@@ -42,6 +60,9 @@ TEST(UrlParserTest, ParseSchemeNone) {
 	checkResult(NULL, urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("example.com", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://www.example.com/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParseSchemeRelative) {
@@ -51,6 +72,9 @@ TEST(UrlParserTest, ParseSchemeRelative) {
 	checkResult(NULL, urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("example.com", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://www.example.com/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParseUserInfo) {
@@ -60,6 +84,9 @@ TEST(UrlParserTest, ParseUserInfo) {
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("username:password@www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("example.com", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://username:password@www.example.com/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParseUserInfoPort) {
@@ -69,6 +96,9 @@ TEST(UrlParserTest, ParseUserInfoPort) {
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("username:password@www.example.com:8080", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("example.com", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://username:password@www.example.com:8080/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParsePort) {
@@ -78,6 +108,9 @@ TEST(UrlParserTest, ParsePort) {
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.example.com:8080", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("example.com", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://www.example.com:8080/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParsePortSchemeNone) {
@@ -87,6 +120,9 @@ TEST(UrlParserTest, ParsePortSchemeNone) {
 	checkResult(NULL, urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.example.com:8080", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("example.com", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://www.example.com:8080/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParseIP) {
@@ -96,6 +132,9 @@ TEST(UrlParserTest, ParseIP) {
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("127.0.0.1", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("127.0.0", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://127.0.0.1/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParseIPPort) {
@@ -105,6 +144,9 @@ TEST(UrlParserTest, ParseIPPort) {
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("127.0.0.1:8080", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("127.0.0", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://127.0.0.1:8080/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParseSubdomainNone) {
@@ -114,6 +156,9 @@ TEST(UrlParserTest, ParseSubdomainNone) {
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("example.com", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://example.com/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParseSubdomainMultiple) {
@@ -124,6 +169,8 @@ TEST(UrlParserTest, ParseSubdomainMultiple) {
 	checkResult("abc.def.ghi.jkl.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("example.com", urlParser.getDomain(), urlParser.getDomainLen());
 
+	urlParser.unparse();
+	checkResult("http://abc.def.ghi.jkl.example.com/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParseTLDUnknown) {
@@ -133,6 +180,9 @@ TEST(UrlParserTest, ParseTLDUnknown) {
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("subdomain.example.abcde", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("example.abcde", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://subdomain.example.abcde/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParseTLDNone) {
@@ -142,6 +192,9 @@ TEST(UrlParserTest, ParseTLDNone) {
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("ok", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult(NULL, urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://ok/", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParseSLD) {
@@ -151,6 +204,9 @@ TEST(UrlParserTest, ParseSLD) {
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("subdomain.example.co.uk", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("example.co.uk", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://subdomain.example.co.uk/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParseSLDUnknown) {
@@ -160,6 +216,33 @@ TEST(UrlParserTest, ParseSLDUnknown) {
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("subdomain.example.fuel.aero", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("fuel.aero", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://subdomain.example.fuel.aero/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
+}
+
+TEST(UrlParserTest, ParseHost) {
+	std::string url("http://www.example.com");
+	UrlParser urlParser(url.c_str(), url.size());
+
+	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
+	checkResult("www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
+	checkResult("example.com", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://www.example.com", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
+}
+
+TEST(UrlParserTest, ParseHostUppercase) {
+	std::string url("http://www.EXAMPLE.com/param1=abc-123");
+	UrlParser urlParser(url.c_str(), url.size());
+
+	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
+	checkResult("www.EXAMPLE.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
+	checkResult("EXAMPLE.com", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://www.example.com/param1=abc-123", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }
 
 TEST(UrlParserTest, ParseIDN) {
@@ -169,4 +252,7 @@ TEST(UrlParserTest, ParseIDN) {
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.xn--relgeroskilde-5fb0y.dk", urlParser.getAuthority(), urlParser.getAuthorityLen());
 	checkResult("xn--relgeroskilde-5fb0y.dk", urlParser.getDomain(), urlParser.getDomainLen());
+
+	urlParser.unparse();
+	checkResult("http://www.xn--relgeroskilde-5fb0y.dk/", urlParser.getUrlParsed(), urlParser.getUrlParsedLen());
 }

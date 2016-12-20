@@ -224,8 +224,29 @@ void UrlParser::parse() {
 void UrlParser::unparse() {
 	m_urlParsed.clear();
 
-	// domain
-	m_urlParsed.append(m_url, (m_authority - m_url) + m_authorityLen);
+	if (m_scheme == NULL || m_schemeLen == 0) {
+		m_urlParsed.append("http");
+	} else {
+		for (size_t i = 0; i < m_schemeLen; ++i) {
+			m_urlParsed.push_back(tolower(m_scheme[i]));
+		}
+	}
+
+	m_urlParsed.append("://");
+
+	// userinfo '@'
+	m_urlParsed.append(m_authority, m_host - m_authority);
+
+	// host
+	for (size_t i = 0; i < m_hostLen; ++i) {
+		m_urlParsed.push_back(tolower(m_host[i]));
+	}
+
+	// port
+	if (m_port) {
+		m_urlParsed.push_back(':');
+		m_urlParsed.append(m_port, m_portLen);
+	}
 
 	bool isFirst = true;
 	for (auto it = m_paths.begin(); it != m_paths.end(); ++it) {
