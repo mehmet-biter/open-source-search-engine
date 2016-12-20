@@ -340,16 +340,6 @@ bool BigFile::addPart ( int32_t n ) {
 }
 
 
-void BigFile::setBlocking() {
-	m_flags &= ~((int32_t)O_NONBLOCK);
-
-}
-
-void BigFile::setNonBlocking() {
-	m_flags |= O_NONBLOCK ;
-}
-
-
 bool BigFile::doesExist() const {
 	return m_numParts != 0;
 }

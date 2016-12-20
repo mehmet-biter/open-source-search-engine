@@ -138,9 +138,6 @@ class BigFile {
 
 	void logAllData(int32_t log_type);
 
-	void setBlocking();
-	void setNonBlocking();
-
 	// . return -2 on error
 	// . return -1 if does not exist
 	// . otherwise return the big file's complete file size (can b >2gb)
