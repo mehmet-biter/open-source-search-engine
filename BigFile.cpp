@@ -1078,7 +1078,6 @@ static bool readwrite_r ( FileState *fstate ) {
 		// debug msg
 		if (g_conf.m_logDebugDisk) {
 			const char *s = (fstate->m_doWrite) ? "wrote" : "read";
-			const char *t = (fstate->m_flags & O_NONBLOCK) ? "yes" : "no";    // are we blocking?
 
 			// this is bad for real-time threads cuz our unlink() routine
 			// may have been called by RdbMerge and our m_files may be
@@ -1086,11 +1085,9 @@ static bool readwrite_r ( FileState *fstate ) {
 			// MDW: don't access m_bigfile in case bigfile was deleted
 			// since we are in a thread
 			log(LOG_DEBUG, "disk::readwrite: %s %zi bytes of %" PRId64" @ offset %" PRId64
-					    "(nonBlock=%s) "
 					    "fd %i "
 					    "cc1=%i=?%i cc2=%i=?%i errno=%s",
 			    s, n, len, localOffset,
-			    t,
 			    fd,
 			    (int) fstate->m_closeCount1,
 			    (int) getCloseCount_r(fstate->m_fd1),
