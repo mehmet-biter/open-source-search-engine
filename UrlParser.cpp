@@ -95,9 +95,6 @@ void UrlParser::parse() {
 		currentPos = pathPos + 1;
 	} else {
 		m_authorityLen = urlEnd - m_authority;
-
-		// nothing else to process
-		return;
 	}
 
 	// @todo similar logic in Url.cpp (merge this)
@@ -142,7 +139,12 @@ void UrlParser::parse() {
 		}
 	}
 
-	const char *queryPos = static_cast<const char *>( memchr(currentPos, '?', urlEnd - currentPos) );
+	if (pathPos == NULL) {
+		// nothing else to process
+		return;
+	}
+
+	const char *queryPos = static_cast<const char *>(memchr(currentPos, '?', urlEnd - currentPos));
 	if (queryPos != NULL) {
 		currentPos = queryPos + 1;
 	}
