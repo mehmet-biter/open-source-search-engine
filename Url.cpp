@@ -1229,7 +1229,6 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 	// set the default port based on the protocol
 	m_defPort = 80;
 	if ( m_slen==5 && strncmp(m_scheme, "https",5)==0 ) m_defPort = 443;
-	if ( m_slen==3 && strncmp(m_scheme, "ftp"  ,3)==0 ) m_defPort =  21;
 	// assume we're using the default port for this scheme/protocol
 	m_port = m_defPort;
 	// see if a port was provided in the hostname after a colon
