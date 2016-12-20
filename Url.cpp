@@ -1037,21 +1037,22 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
     }
 
 	// copy to "s" so we can NULL terminate it
-	char s [ MAX_URL_LEN ];
+	char s[MAX_URL_LEN];
 	int32_t len = tlen;
-	// store filtered url into s
-	gbmemcpy ( s , t , tlen );
-	s[len]='\0';
 
 	if (titledbVersion <= 122) {
-		if ( stripParams ) {
-			stripParametersv122( s, &len );
+		// store filtered url into s
+		gbmemcpy (s, t, tlen);
+		s[len] = '\0';
+
+		if (stripParams) {
+			stripParametersv122(s, &len);
 		}
 	} else {
-		UrlParser urlParser( s, len );
+		UrlParser urlParser(t, tlen);
 
-		if ( stripParams ) {
-			stripParameters( &urlParser );
+		if (stripParams) {
+			stripParameters(&urlParser);
 		}
 
 		// rebuild url
@@ -1059,10 +1060,10 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 
 		len = urlParser.getUrlParsedLen();
 
-		if ( len > MAX_URL_LEN - 10 ) {
+		if (len > MAX_URL_LEN - 10) {
 			len = MAX_URL_LEN - 10;
 		}
-		strncpy( s, urlParser.getUrlParsed(), len );
+		strncpy(s, urlParser.getUrlParsed(), len);
 		s[len] = '\0';
 	}
 
