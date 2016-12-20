@@ -41,7 +41,7 @@ public:
 
 	bool setSummary(const Xml *xml, const Words *words, const Sections *sections, Pos *pos, const Query *q,
 	                int32_t maxSummaryLen, int32_t numDisplayLines, int32_t maxNumLines, int32_t maxNumCharsPerLine,
-	                const Url *f, Matches *matches, const char *titleBuf, int32_t titleBufLen);
+	                const Url *f, const Matches *matches, const char *titleBuf, int32_t titleBufLen);
 
 	bool setSummaryFromTags(Xml *xml, int32_t maxSummaryLen, const char *titleBuf, int32_t titleBufLen);
 

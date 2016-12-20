@@ -160,7 +160,7 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, const char *t
 // returns false and sets g_errno on error
 bool Summary::setSummary(const Xml *xml, const Words *words, const Sections *sections, Pos *pos, const Query *q, int32_t maxSummaryLen,
                          int32_t maxNumLines, int32_t numDisplayLines, int32_t maxNumCharsPerLine, const Url *f,
-                         Matches *matches, const char *titleBuf, int32_t titleBufLen) {
+                         const Matches *matches, const char *titleBuf, int32_t titleBufLen) {
 	logTrace(g_conf.m_logTraceSummary, "BEGIN");
 
 	m_numDisplayLines = numDisplayLines;
