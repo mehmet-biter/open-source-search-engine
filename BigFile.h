@@ -72,6 +72,7 @@ public:
 	int32_t m_closeCount2 ;
 
 	int32_t m_flags;
+	bool m_flushAfterWrite;
 
 	// when we are given a NULL buffer to read into we must allocate
 	// in Threads.cpp right before the
@@ -107,6 +108,7 @@ public:
 		m_closeCount1 = 0;
 		m_closeCount2 = 0;
 		m_flags = 0;
+		m_flushAfterWrite = false;
 		m_allocBuf = NULL;
 		m_allocSize = 0;
 		m_allocOff = 0;
@@ -135,6 +137,8 @@ class BigFile {
 	// . if you set maxFileSize to -1 we set it to BigFile::getFileSize()
 	// . if you are opening a new file for writing, you need to provide it
 	bool open(int flags);
+
+	void setFlushingIsApplicable() { m_flushingIsApplicable=true; }
 
 	void logAllData(int32_t log_type);
 
@@ -287,6 +291,7 @@ private:
 
 
 	int32_t m_flags;
+	bool m_flushingIsApplicable; //is g_conf.m_flushWrites relevant for this file?
 
 	int32_t             m_vfd;
 

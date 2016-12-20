@@ -137,12 +137,14 @@ bool RdbDump::set(collnum_t collnum,
 	int32_t flags = O_RDWR | O_CREAT;
 	// a niceness bigger than 0 means to do non-blocking dumps
 	if (niceness > 0) {
-		flags |= O_ASYNC | O_NONBLOCK;
+		flags |= O_ASYNC;
 	}
 
 	if (!m_file->open(flags)) {
 		return true;
 	}
+
+	m_file->setFlushingIsApplicable(); //we want to flush rdb files if enabled
 
 	// Above open() actually doesn't open any file(-part). First when a fd is requested
 	// do we open/create a real file. Do that now to check for file creation errors.
