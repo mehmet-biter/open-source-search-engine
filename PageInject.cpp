@@ -365,8 +365,7 @@ bool sendHttpReply ( void *state ) {
 		return g_httpServer.sendErrorReply(sock,save,msg,NULL);
 	}
 
-	char abuf[320];
-	SafeBuf am(abuf,320,0,false);
+	StackBuf<320> am;
 	am.setLabel("injbuf");
 	const char *ct = NULL;
 

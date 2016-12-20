@@ -1234,8 +1234,7 @@ bool HttpServer::sendSuccessReply ( TcpSocket *s , char format, const char *addM
 	else                   now = getTimeLocal();
 	// . buffer for the MIME request and brief html err msg
 	// . NOTE: ctime appends a \n to the time, so we don't need to
-	char msg[1524];
-	SafeBuf sb(msg,1524,0,false);
+	StackBuf<1524> sb;
 
 	struct tm tm_buf;
 	char buf[64];
@@ -1246,8 +1245,7 @@ bool HttpServer::sendSuccessReply ( TcpSocket *s , char format, const char *addM
 	if ( format == FORMAT_XML  ) ct = "text/xml";
 	if ( format == FORMAT_JSON ) ct = "application/json";
 
-	char cbuf[1024];
-	SafeBuf cb(cbuf,1024,0,false);
+	StackBuf<1024> cb;
 
 	if ( format != FORMAT_XML && format != FORMAT_JSON )
 		cb.safePrintf("<html><b>Success</b></html>");
@@ -1309,8 +1307,7 @@ bool HttpServer::sendErrorReply ( GigablastRequest *gr ) {
 	else                   now = getTimeLocal();
 
 	int32_t format = gr->m_hr.getReplyFormat();
-	char msg[1524];
-	SafeBuf sb(msg,1524,0,false);
+	StackBuf<1524> sb;
 	struct tm tm_buf;
 	char buf[64];
 	char *tt = asctime_r(gmtime_r(&now,&tm_buf),buf);
