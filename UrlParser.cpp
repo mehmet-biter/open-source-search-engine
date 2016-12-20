@@ -25,7 +25,7 @@ static const char *strnpbrk(const char *str1, size_t len, const char *str2) {
 }
 
 /// @todo ALC we should see if we need to do relative path resolution here
-/// @todo ALC we should cater for scheme relative address ( pass in parent scheme )
+/// @todo ALC we should cater for scheme relative address (pass in parent scheme)
 /// https://tools.ietf.org/html/rfc3986#section-5.2
 UrlParser::UrlParser(const char *url, size_t urlLen)
 	: m_url(url)
@@ -50,11 +50,11 @@ UrlParser::UrlParser(const char *url, size_t urlLen)
 }
 
 void UrlParser::print() const {
-	logf(LOG_DEBUG, "UrlParser::url       : %.*s", static_cast<uint32_t>( m_urlLen ), m_url);
-	logf(LOG_DEBUG, "UrlParser::scheme    : %.*s", static_cast<uint32_t>( m_schemeLen ), m_scheme);
-	logf(LOG_DEBUG, "UrlParser::authority : %.*s", static_cast<uint32_t>( m_authorityLen ), m_authority);
-	logf(LOG_DEBUG, "UrlParser::host      : %.*s", static_cast<uint32_t>( m_hostLen ), m_host);
-	logf(LOG_DEBUG, "UrlParser::domain    : %.*s", static_cast<uint32_t>( m_domainLen ), m_domain);
+	logf(LOG_DEBUG, "UrlParser::url       : %.*s", static_cast<uint32_t>(m_urlLen), m_url);
+	logf(LOG_DEBUG, "UrlParser::scheme    : %.*s", static_cast<uint32_t>(m_schemeLen), m_scheme);
+	logf(LOG_DEBUG, "UrlParser::authority : %.*s", static_cast<uint32_t>(m_authorityLen), m_authority);
+	logf(LOG_DEBUG, "UrlParser::host      : %.*s", static_cast<uint32_t>(m_hostLen), m_host);
+	logf(LOG_DEBUG, "UrlParser::domain    : %.*s", static_cast<uint32_t>(m_domainLen), m_domain);
 
 	for (auto it = m_paths.begin(); it != m_paths.end(); ++it) {
 		logf(LOG_DEBUG, "UrlParser::path[%02zi]  : %s", std::distance(m_paths.begin(), it), it->getString().c_str());
@@ -76,7 +76,7 @@ void UrlParser::parse() {
 	//             / path-rootless
 	//             / path-empty
 
-	const char *authorityPos = static_cast<const char *>( memmem(currentPos, urlEnd - currentPos, "//", 2) );
+	const char *authorityPos = static_cast<const char *>(memmem(currentPos, urlEnd - currentPos, "//", 2));
 	if (authorityPos != NULL) {
 		if (authorityPos != currentPos) {
 			m_scheme = currentPos;
@@ -89,7 +89,7 @@ void UrlParser::parse() {
 		m_authority = currentPos;
 	}
 
-	const char *pathPos = static_cast<const char *>( memchr(currentPos, '/', urlEnd - currentPos) );
+	const char *pathPos = static_cast<const char *>(memchr(currentPos, '/', urlEnd - currentPos));
 	if (pathPos != NULL) {
 		m_authorityLen = pathPos - m_authority;
 		currentPos = pathPos + 1;
@@ -100,10 +100,10 @@ void UrlParser::parse() {
 		return;
 	}
 
-	// @todo similar logic in Url.cpp ( merge this )
+	// @todo similar logic in Url.cpp (merge this)
 
 	// authority   = [ userinfo "@" ] host [ ":" port ]
-	const char *userInfoPos = static_cast<const char *>( memchr(m_authority, '@', m_authorityLen) );
+	const char *userInfoPos = static_cast<const char *>(memchr(m_authority, '@', m_authorityLen));
 	if (userInfoPos != NULL) {
 		m_host = userInfoPos + 1;
 		m_hostLen = m_authorityLen - (userInfoPos - m_authority) - 1;
@@ -112,7 +112,7 @@ void UrlParser::parse() {
 		m_hostLen = m_authorityLen;
 	}
 
-	const char *portPos = static_cast<const char *>( memrchr(m_host, ':', m_hostLen) );
+	const char *portPos = static_cast<const char *>(memrchr(m_host, ':', m_hostLen));
 	if (portPos != NULL) {
 		m_hostLen -= (m_hostLen - (portPos - m_host));
 	}
@@ -123,14 +123,14 @@ void UrlParser::parse() {
 	int32_t ip = atoip(m_host, m_hostLen);
 	if (ip) {
 		int32_t domainLen = 0;
-		m_domain = getDomainOfIp(const_cast<char *>( m_host ), m_hostLen, &domainLen);
+		m_domain = getDomainOfIp(const_cast<char *>(m_host), m_hostLen, &domainLen);
 		m_domainLen = domainLen;
 	} else {
-		const char *tldPos = ::getTLD(const_cast<char *>( m_host ), m_hostLen);
+		const char *tldPos = ::getTLD(const_cast<char *>(m_host), m_hostLen);
 		if (tldPos) {
 			size_t tldLen = m_host + m_hostLen - tldPos;
 			if (tldLen < m_hostLen) {
-				m_domain = static_cast<const char *>( memrchr(m_host, '.', m_hostLen - tldLen - 1) );
+				m_domain = static_cast<const char *>(memrchr(m_host, '.', m_hostLen - tldLen - 1));
 				if (m_domain) {
 					m_domain += 1;
 					m_domainLen = m_hostLen - (m_domain - m_host);
@@ -147,8 +147,8 @@ void UrlParser::parse() {
 		currentPos = queryPos + 1;
 	}
 
-	const char *anchorPos = static_cast<const char *>( memrchr(currentPos, '#', urlEnd - currentPos) );
-//	if ( anchorPos != NULL ) {
+	const char *anchorPos = static_cast<const char *>(memrchr(currentPos, '#', urlEnd - currentPos));
+//	if (anchorPos != NULL) {
 //		currentPos = anchorPos + 1;
 //	}
 
