@@ -655,24 +655,6 @@ void sighupHandler ( int x , siginfo_t *info , void *y ) {
 static int64_t s_lastTime = 0;
 
 void Loop::runLoop ( ) {
-
-	// set of signals to watch for
-	sigset_t sigs0;
-
-	// clear all signals from the set
-	sigemptyset ( &sigs0 );
-
-	// . set sigs on which sigtimedwait() listens for
-	// . add this signal to our set of signals to watch (currently NONE)
-	sigaddset ( &sigs0, SIGCHLD      );
-	// . TODO: do we need to mask SIGIO too? (sig queue overflow?)
-	// . i would think so, because what if we tried to queue an important
-	//   handler to be called in the high priority UdpServer but the queue
-	//   was full? Then we would finish processing the signals on the queue
-	//   before we would address the excluded high priority signals by
-	//   calling doPoll()
-	sigaddset ( &sigs0, SIGIO );
-
 	s_lastTime = 0;
 
 	m_isDoingLoop = true;
