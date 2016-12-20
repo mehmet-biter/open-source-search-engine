@@ -138,8 +138,6 @@ class BigFile {
 
 	void logAllData(int32_t log_type);
 
-	int getFlags() { return m_flags; }
-
 	void setBlocking();
 	void setNonBlocking();
 
