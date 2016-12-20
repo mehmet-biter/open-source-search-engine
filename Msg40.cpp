@@ -205,7 +205,7 @@ bool Msg40::getResults ( SearchInput *si      ,
 	// . this allows Msg3a to allow higher scoring docids in tier #1 to
 	//   outrank lower-scoring docids in tier #0, even if such docids have
 	//   all the query terms explicitly. and we can guarantee consistency
-	//   as int32_t as we only allow for this outranking within the first
+	//   as long as we only allow for this outranking within the first
 	//   MIN_DOCS_TO_GET docids.
 	if ( get < MIN_DOCS_TO_GET ) get = MIN_DOCS_TO_GET;
 	// this is how many docids to get total, assuming that some will be

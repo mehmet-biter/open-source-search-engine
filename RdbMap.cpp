@@ -926,7 +926,7 @@ int64_t RdbMap::getAbsoluteOffset(int32_t page) const {
 int64_t RdbMap::getNextAbsoluteOffset(int32_t page) const {
 	// advance to next page
 	page++;
-	// inc page as int32_t as we need to
+	// inc page as long as we need to
 	while ( page < m_numPages && getOffset(page) == -1 ) page++;
 	// . if we hit eof then return m_offset
 	// . otherwise, we hit another key

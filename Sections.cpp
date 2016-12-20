@@ -1879,7 +1879,7 @@ bool Sections::addSentenceSections ( ) {
 				// ry/buffalo-ny-usa/places-to-go/tourist-stops
 				// like <a><b>...</div> with no ending </a> or
 				// </b> tags then we have to get the parent
-				// of the parent as int32_t as its m_b is the
+				// of the parent as long as its m_b is the
 				// same and check that before advancing addb
 				// otherwise we can miss the parent section
 				// that we want! (this is because the kid

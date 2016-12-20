@@ -351,7 +351,7 @@ bool HttpServer::getDoc ( char   *url      ,
 	return true;
 }
 
-void gotDocWrapper ( void *state, TcpSocket *s ) {
+static void gotDocWrapper(void *state, TcpSocket *s) {
 	g_httpServer.gotDoc ( (int32_t)(PTRTYPE)state, s );
 }
 
@@ -376,13 +376,13 @@ bool HttpServer::gotDoc ( int32_t n, TcpSocket *s ) {
 }
 
 // . handle an incoming HTTP request
-void requestHandlerWrapper ( TcpSocket *s ) {
+static void requestHandlerWrapper(TcpSocket *s) {
 	g_httpServer.requestHandler ( s );
 }
 
 // . a udp handler wrapper 
 // . the proxy sends us udp packets with msgtype = 0xfd ("forward")
-void handleRequestfd ( UdpSlot *slot , int32_t niceness ) {
+static void handleRequestfd(UdpSlot *slot, int32_t niceness) {
 	// if we are proxy, that is just wrong! a proxy does not send
 	// this msg to another proxy, only to the flock
 	// no! now a compression proxy will forward a query to a regular
@@ -1183,7 +1183,7 @@ bool HttpServer::sendReply2 ( const char *mime,
 // . "s" should be recycled/destroyed by TcpServer after we return
 // . this recycling/desutruction will free s's read/send bufs
 // . this should have been called by TcpServer::makeCallback()
-void cleanUp ( void *state , TcpSocket *s ) {
+static void cleanUp(void *state, TcpSocket *s) {
 	File *f = (File *) state;
 	if ( ! f ) return;
 	int32_t fd = -1;
@@ -1234,8 +1234,7 @@ bool HttpServer::sendSuccessReply ( TcpSocket *s , char format, const char *addM
 	else                   now = getTimeLocal();
 	// . buffer for the MIME request and brief html err msg
 	// . NOTE: ctime appends a \n to the time, so we don't need to
-	char msg[1524];
-	SafeBuf sb(msg,1524,0,false);
+	StackBuf<1524> sb;
 
 	struct tm tm_buf;
 	char buf[64];
@@ -1246,8 +1245,7 @@ bool HttpServer::sendSuccessReply ( TcpSocket *s , char format, const char *addM
 	if ( format == FORMAT_XML  ) ct = "text/xml";
 	if ( format == FORMAT_JSON ) ct = "application/json";
 
-	char cbuf[1024];
-	SafeBuf cb(cbuf,1024,0,false);
+	StackBuf<1024> cb;
 
 	if ( format != FORMAT_XML && format != FORMAT_JSON )
 		cb.safePrintf("<html><b>Success</b></html>");
@@ -1309,8 +1307,7 @@ bool HttpServer::sendErrorReply ( GigablastRequest *gr ) {
 	else                   now = getTimeLocal();
 
 	int32_t format = gr->m_hr.getReplyFormat();
-	char msg[1524];
-	SafeBuf sb(msg,1524,0,false);
+	StackBuf<1524> sb;
 	struct tm tm_buf;
 	char buf[64];
 	char *tt = asctime_r(gmtime_r(&now,&tm_buf),buf);
@@ -1391,41 +1388,40 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 
 	// . buffer for the MIME request and brief html err msg
 	// . NOTE: ctime appends a \n to the time, so we don't need to
-	char msg[1524];
-	SafeBuf sb(msg,1524,0,false);
 	struct tm tm_buf;
 	char buf[64];
 	char *tt = asctime_r(gmtime_r(&now,&tm_buf),buf);
 	tt [ strlen(tt) - 1 ] = '\0';
 
-	const char *ct = "text/html";
-	if ( format == FORMAT_XML  ) ct = "text/xml";
-	if ( format == FORMAT_JSON ) ct = "application/json";
-
+	const char *ct;
 	SafeBuf xb;
-
-	if ( format != FORMAT_XML && format != FORMAT_JSON )
-		xb.safePrintf("<html><b>Error = %s</b></html>",errmsg );
-
-	if ( format == FORMAT_XML ) {
-		xb.safePrintf("<response>\n"
-			      "\t<statusCode>%" PRId32"</statusCode>\n"
-			      "\t<statusMsg><![CDATA[", error );
-		cdataEncode(&xb, errmsg);
-		xb.safePrintf("]]></statusMsg>\n"
-			      "</response>\n");
+	switch(format) {
+		case FORMAT_XML:
+			ct = "text/xml";
+			xb.safePrintf("<response>\n"
+				      "\t<statusCode>%" PRId32"</statusCode>\n"
+				      "\t<statusMsg><![CDATA[", error );
+			cdataEncode(&xb, errmsg);
+			xb.safePrintf("]]></statusMsg>\n"
+				      "</response>\n");
+			break;
+		case FORMAT_JSON:
+			ct = "application/json";
+			xb.safePrintf("{\"response\":{\n"
+				      "\t\"statusCode\":%" PRId32",\n"
+				      "\t\"statusMsg\":\"", error );
+			xb.jsonEncode(errmsg );
+			xb.safePrintf("\"\n"
+				      "}\n"
+				      "}\n");
+			break;
+		case FORMAT_HTML:
+		default:
+			ct = "text/html";
+			xb.safePrintf("<html><b>Error = %s</b></html>",errmsg );
 	}
 
-	if ( format == FORMAT_JSON ) {
-		xb.safePrintf("{\"response\":{\n"
-			      "\t\"statusCode\":%" PRId32",\n"
-			      "\t\"statusMsg\":\"", error );
-		xb.jsonEncode(errmsg );
-		xb.safePrintf("\"\n"
-			      "}\n"
-			      "}\n");
-	}
-
+	StackBuf<1524> sb;
 	sb.safePrintf(
 		      "HTTP/1.0 %" PRId32" (%s)\r\n"
 		      "Content-Length: %" PRId32"\r\n"
@@ -1466,60 +1462,62 @@ bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error ,
 }
 
 // . getMsgPiece() is called by TcpServer cuz we set it in TcpServer::init()
-void getMsgPieceWrapper ( int fd , void *state ) {
+static void getMsgPieceWrapper(int fd, void *state) {
 	// NOTE: this socket 's' may have been closed/destroyed,
 	// so let's use the fd on the tcpSocket
 	//TcpSocket *s  = (TcpSocket *) state;
 	int32_t sd = (int32_t)(PTRTYPE) state;
- loop:
-	// ensure Socket has not been destroyed by callCallbacks()
-	TcpSocket *s = g_httpServer.m_tcp.m_tcpSockets[sd] ;
-	// return if it has been destroyed (cleanUp() should have been called)
-	if ( ! s ) return;
-	// read some file into the m_sendBuf of s
-	int32_t n = getMsgPiece ( s );
-	// return if nothing was read
-	if ( n == 0 ) return;
-	// . now either n is positive, in which case we read some
-	// . or n is negative and g_errno is set
-	// . send a ready-to-write signal on s->m_sd
-	// . g_errno may be set in which case TcpServer::writeSocketWrapper()
-	//   will destroy s and call s's callback, cleanUp()
-	g_loop.callCallbacks_ass ( false /*for reading?*/, sd );
-	// break the loop if n is -1, that means error in getMsgPiece()
-	if ( n < 0 ) {
-		log(LOG_LOGIC,"http: getMsgPiece returned -1.");
-		return;
+
+	for(;;) {
+		// ensure Socket has not been destroyed by callCallbacks()
+		TcpSocket *s = g_httpServer.m_tcp.m_tcpSockets[sd] ;
+		// return if it has been destroyed (cleanUp() should have been called)
+		if ( ! s ) return;
+		// read some file into the m_sendBuf of s
+		int32_t n = getMsgPiece ( s );
+		// return if nothing was read
+		if ( n == 0 ) return;
+		// . now either n is positive, in which case we read some
+		// . or n is negative and g_errno is set
+		// . send a ready-to-write signal on s->m_sd
+		// . g_errno may be set in which case TcpServer::writeSocketWrapper()
+		//   will destroy s and call s's callback, cleanUp()
+		g_loop.callCallbacks_ass ( false /*for reading?*/, sd );
+		// break the loop if n is -1, that means error in getMsgPiece()
+		if ( n < 0 ) {
+			log(LOG_LOGIC,"http: getMsgPiece returned -1.");
+			return;
+		}
+		// keep reading more from file and sending it as long as file didn't
+		// block
 	}
-	// keep reading more from file and sending it as int32_t as file didn't
-	// block
-	goto loop;
 }
 
 // . getMsgPiece() is called by TcpServer cuz we set it in TcpServer::init()
-void getSSLMsgPieceWrapper ( int fd , void *state ) {
+static void getSSLMsgPieceWrapper(int fd, void *state) {
 	// NOTE: this socket 's' may have been closed/destroyed,
 	// so let's use the fd on the tcpSocket
 	//TcpSocket *s  = (TcpSocket *) state;
 	int32_t sd = (int32_t)(PTRTYPE) state;
- loop:
-	// ensure Socket has not been destroyed by callCallbacks()
-	TcpSocket *s = g_httpServer.m_ssltcp.m_tcpSockets[sd] ;
-	// return if it has been destroyed (cleanUp() should have been called)
-	if ( ! s ) return;
-	// read some file into the m_sendBuf of s
-	int32_t n = getMsgPiece ( s );
-	// return if nothing was read
-	if ( n == 0 ) return;
-	// . now either n is positive, in which case we read some
-	// . or n is negative and g_errno is set
-	// . send a ready-to-write signal on s->m_sd
-	// . g_errno may be set in which case TcpServer::writeSocketWrapper()
-	//   will destroy s and call s's callback, cleanUp()
-	g_loop.callCallbacks_ass ( false /*for reading?*/, sd );
-	// keep reading more from file and sending it as int32_t as file didn't
-	// block
-	goto loop;
+
+	for(;;) {
+		// ensure Socket has not been destroyed by callCallbacks()
+		TcpSocket *s = g_httpServer.m_ssltcp.m_tcpSockets[sd] ;
+		// return if it has been destroyed (cleanUp() should have been called)
+		if ( ! s ) return;
+		// read some file into the m_sendBuf of s
+		int32_t n = getMsgPiece ( s );
+		// return if nothing was read
+		if ( n == 0 ) return;
+		// . now either n is positive, in which case we read some
+		// . or n is negative and g_errno is set
+		// . send a ready-to-write signal on s->m_sd
+		// . g_errno may be set in which case TcpServer::writeSocketWrapper()
+		//   will destroy s and call s's callback, cleanUp()
+		g_loop.callCallbacks_ass ( false /*for reading?*/, sd );
+		// keep reading more from file and sending it as long as file didn't
+		// block
+	}
 }
 
 // . returns number of new bytes read
@@ -1527,7 +1525,7 @@ void getSSLMsgPieceWrapper ( int fd , void *state ) {
 // . if this gets called then the maxReadBufSize (128k?) was exceeded
 // . this is called by g_loop when "f" is ready for reading and is called
 //   by TcpServer::writeSocket() when it needs more of the file to send it
-int32_t getMsgPiece ( TcpSocket *s ) {
+static int32_t getMsgPiece ( TcpSocket *s ) {
 	// get the server this socket uses
 	TcpServer *tcp = s->m_this;
 	//CallbackData *cd = (CallbackData *) s->m_callbackData;
