@@ -253,9 +253,6 @@ class RdbCache {
 	bool useDisk ( ) const { return m_useDisk; }
 	bool load ( const char *dbname );
 	bool save ();
-	bool save_r ( );
-	bool save2_r ( int fd );
-	bool load   ( );
 
 	const char *getDbname () const { return m_dbname ? m_dbname : "unknown"; }
 
@@ -272,6 +269,10 @@ class RdbCache {
 	}
 
 private:
+	bool save_r ( );
+	bool save2_r ( int fd );
+	bool load   ( );
+
 	bool addRecord ( collnum_t collnum ,
 			 const char *cacheKey ,
 			 const char *rec1     ,
