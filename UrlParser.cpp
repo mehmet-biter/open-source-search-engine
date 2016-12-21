@@ -52,19 +52,19 @@ UrlParser::UrlParser(const char *url, size_t urlLen)
 }
 
 void UrlParser::print() const {
-	logf(LOG_DEBUG, "UrlParser::url       : %.*s", static_cast<uint32_t>(m_urlLen), m_url);
-	logf(LOG_DEBUG, "UrlParser::scheme    : %.*s", static_cast<uint32_t>(m_schemeLen), m_scheme);
-	logf(LOG_DEBUG, "UrlParser::authority : %.*s", static_cast<uint32_t>(m_authorityLen), m_authority);
-	logf(LOG_DEBUG, "UrlParser::host      : %.*s", static_cast<uint32_t>(m_hostLen), m_host);
-	logf(LOG_DEBUG, "UrlParser::domain    : %.*s", static_cast<uint32_t>(m_domainLen), m_domain);
-	logf(LOG_DEBUG, "UrlParser::port      : %.*s", static_cast<uint32_t>(m_portLen), m_port);
+	logf(LOG_DEBUG, "UrlParser::url       : '%.*s'", static_cast<uint32_t>(m_urlLen), m_url);
+	logf(LOG_DEBUG, "UrlParser::scheme    : '%.*s'", static_cast<uint32_t>(m_schemeLen), m_scheme);
+	logf(LOG_DEBUG, "UrlParser::authority : '%.*s'", static_cast<uint32_t>(m_authorityLen), m_authority);
+	logf(LOG_DEBUG, "UrlParser::host      : '%.*s'", static_cast<uint32_t>(m_hostLen), m_host);
+	logf(LOG_DEBUG, "UrlParser::domain    : '%.*s'", static_cast<uint32_t>(m_domainLen), m_domain);
+	logf(LOG_DEBUG, "UrlParser::port      : '%.*s'", static_cast<uint32_t>(m_portLen), m_port);
 
 	for (auto it = m_paths.begin(); it != m_paths.end(); ++it) {
-		logf(LOG_DEBUG, "UrlParser::path[%02zi]  : %s%s", std::distance(m_paths.begin(), it), it->getString().c_str(), it->isDeleted() ? " (deleted)" : "");
+		logf(LOG_DEBUG, "UrlParser::path[%02zi]  : '%s'%s", std::distance(m_paths.begin(), it), it->getString().c_str(), it->isDeleted() ? " (deleted)" : "");
 	}
 
 	for (auto it = m_queries.begin(); it != m_queries.end(); ++it) {
-		logf(LOG_DEBUG, "UrlParser::query[%02zi] : %s%s", std::distance(m_queries.begin(), it), it->getString().c_str(), it->isDeleted() ? " (deleted)" : "");
+		logf(LOG_DEBUG, "UrlParser::query[%02zi] : '%s'%s", std::distance(m_queries.begin(), it), it->getString().c_str(), it->isDeleted() ? " (deleted)" : "");
 	}
 }
 
@@ -157,6 +157,8 @@ void UrlParser::parse() {
 
 	const char *anchorPos = static_cast<const char *>(memrchr(currentPos, '#', urlEnd - currentPos));
 //	if (anchorPos != NULL) {
+//		m_anchor = anchorPos + 1;
+//		m_anchorLen =  urlEnd - m_anchor;
 //		currentPos = anchorPos + 1;
 //	}
 
@@ -317,6 +319,11 @@ void UrlParser::unparse() {
 			m_urlParsed.append(it->getString());
 		}
 	}
+
+//	if (m_anchor) {
+//		m_urlParsed.push_back('#');
+//		m_urlParsed.append(m_anchor, m_anchorLen);
+//	}
 }
 
 void UrlParser::deleteComponent(UrlComponent *urlComponent) {
