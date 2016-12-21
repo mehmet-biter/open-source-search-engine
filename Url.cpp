@@ -109,24 +109,27 @@ void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool
 	// . but break at any non-alnum or non-hyphen
 	bool isAbsolute = false;
 	int32_t i;
-	for ( i = 0; i < len && ( is_alnum_a( s[i] ) || s[i] == '-' ); i++ )
+	for ( i = 0; i < len && ( is_alnum_a( s[i] ) || s[i] == '-' ); i++ ) {
 		;
+	}
 
-	// for ( i = 0 ; s[i] && (is_alnum_a(s[i]) || s[i]=='-') ; i++ );
-	if ( !isAbsolute )
-		isAbsolute = ( i + 2 < len && s[i + 0] == ':' && s[i + 1] == '/' ); // some are missing both /'s!
+	if ( !isAbsolute ) {
+		isAbsolute = (i + 2 < len && s[i + 0] == ':' && s[i + 1] == '/'); // some are missing both /'s!
+	}
 
-	// s[i+2]=='/'  ) ;
-	if ( !isAbsolute )
-		isAbsolute = ( i + 2 < len && s[i + 0] == ':' && s[i + 1] == '\\' );
+	if ( !isAbsolute ) {
+		isAbsolute = (i + 2 < len && s[i + 0] == ':' && s[i + 1] == '\\');
+	}
 
 	// or if s starts with // then it's also considered absolute!
-	if ( !isAbsolute && len > 1 && s[0] == '/' && s[1] == '/' )
+	if ( !isAbsolute && len > 1 && s[0] == '/' && s[1] == '/' ) {
 		isAbsolute = true;
+	}
 
 	// watch out for idiots
-	if ( !isAbsolute && len > 1 && s[0] == '\\' && s[1] == '\\' )
+	if ( !isAbsolute && len > 1 && s[0] == '\\' && s[1] == '\\' ) {
 		isAbsolute = true;
+	}
 
 	// don't use base if s is not relative
 	if ( blen==0 || isAbsolute ) {
