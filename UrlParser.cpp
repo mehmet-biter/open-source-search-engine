@@ -60,11 +60,11 @@ void UrlParser::print() const {
 	logf(LOG_DEBUG, "UrlParser::port      : %.*s", static_cast<uint32_t>(m_portLen), m_port);
 
 	for (auto it = m_paths.begin(); it != m_paths.end(); ++it) {
-		logf(LOG_DEBUG, "UrlParser::path[%02zi]  : %s", std::distance(m_paths.begin(), it), it->getString().c_str());
+		logf(LOG_DEBUG, "UrlParser::path[%02zi]  : %s%s", std::distance(m_paths.begin(), it), it->getString().c_str(), it->isDeleted() ? " (deleted)" : "");
 	}
 
 	for (auto it = m_queries.begin(); it != m_queries.end(); ++it) {
-		logf(LOG_DEBUG, "UrlParser::query[%02zi] : %s", std::distance(m_queries.begin(), it), it->getString().c_str());
+		logf(LOG_DEBUG, "UrlParser::query[%02zi] : %s%s", std::distance(m_queries.begin(), it), it->getString().c_str(), it->isDeleted() ? " (deleted)" : "");
 	}
 }
 
@@ -166,6 +166,7 @@ void UrlParser::parse() {
 	const char *queryEnd = anchorPos ? anchorPos : urlEnd;
 
 	// path
+	bool updatePathEncChar = false;
 	const char *prevPos = pathPos + 1;
 	while (prevPos && (prevPos <= pathEnd)) {
 		size_t len = pathEnd - prevPos;
@@ -176,9 +177,45 @@ void UrlParser::parse() {
 
 		UrlComponent urlPart = UrlComponent(UrlComponent::TYPE_PATH, prevPos, len, *(prevPos - 1));
 
+		// check for special cases before adding to m_paths
+		if (len == 1 && memcmp(prevPos, ".", 1) == 0) {
+			urlPart.setDeleted();
+			updatePathEncChar = true;
+		} else if (len == 2 && memcmp(prevPos, "..", 2) == 0) {
+			deleteComponent(&urlPart);
+			updatePathEncChar = true;
+
+			for (auto it = m_paths.rbegin(); it != m_paths.rend(); ++it) {
+				if (it->isDeleted()) {
+					continue;
+				}
+
+				deleteComponent(&(*it));
+
+				if (it->getSeparator() == '/') {
+					break;
+				}
+			}
+
+		}
 		m_paths.push_back(urlPart);
 
 		prevPos = currentPos ? currentPos + 1 : NULL;
+	}
+
+	// set pathEndChar to component after last non-deleted component (if exist)
+	if (updatePathEncChar) {
+		for (auto it = m_paths.rbegin(); it != m_paths.rend(); ++it) {
+			if (it->isDeleted()) {
+				continue;
+			}
+
+			if (it != m_paths.rbegin()) {
+				m_pathEndChar = std::prev(it)->getSeparator();
+			}
+
+			break;
+		}
 	}
 
 	// query

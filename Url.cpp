@@ -82,15 +82,20 @@ void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool
 		}
 	}
 
+	if ( blen == 0 && len == 0 ) {
+		return;
+	}
+
+	if (len == 0) {
+		set(baseUrl);
+		return;
+	}
+
 	// . fix baseurl = "http://xyz.com/poo/all" and s = "?page=3"
 	// . if "s" starts with ? then keep the filename in the base url
 	if ( s[0] == '?' ) {
 		for ( ; base[blen] && base[blen] != '?'; blen++ )
 			;
-	}
-
-	if ( blen == 0 && len == 0 ) {
-		return;
 	}
 
 	// skip s over spaces
@@ -1292,19 +1297,24 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 		if ( s[i] == '/'  &&  m_url[m_ulen-1] == '/' &&
 		     m_ulen-1 >= m_plen && 
 		     m_ulen >= 2 && m_url[m_ulen-2] != ':' ) continue;
-		// deal with current directories in the m_path
-		if ( s[i] == '.'  &&  m_url[m_ulen-1] == '/' && 
-		     (i+1 == j || s[i+1]=='/'))	continue;
-		// . deal with damned ..'s in the m_path
-		// . if next 2 chars are .'s and last char we wrote was '/'
-		if ( s[i] == '.' && s[i+1]=='.' && m_url[m_ulen-1] == '/' ) {
-			// dont back up over first / in path
-			if ( m_url + m_ulen - 1 > m_path ) m_ulen--;
-			while ( m_url[m_ulen-1] != '/'   ) m_ulen--;
-			// skip i to next / after these 2 dots
-			while ( s[i] && s[i]!='/' ) i++;
-			continue;
+
+		// handled by UrlParser for version 123 and above
+		if (titledbVersion <= 122) {
+			// deal with current directories in the m_path
+			if ( s[i] == '.'  &&  m_url[m_ulen-1] == '/' &&
+			     (i+1 == j || s[i+1]=='/'))	continue;
+			// . deal with damned ..'s in the m_path
+			// . if next 2 chars are .'s and last char we wrote was '/'
+			if ( s[i] == '.' && s[i+1]=='.' && (s[i+2] == '/' || s[i+2] == '\0') && m_url[m_ulen-1] == '/' ) {
+				// dont back up over first / in path
+				if ( m_url + m_ulen - 1 > m_path ) m_ulen--;
+				while ( m_url[m_ulen-1] != '/'   ) m_ulen--;
+				// skip i to next / after these 2 dots
+				while ( s[i] && s[i]!='/' ) i++;
+				continue;
+			}
 		}
+
 		// don't allow ; before the ?...probably because of stripped 
 		// sessionId...
 		// I was going to add other possible dup separators, but now
@@ -2672,51 +2682,4 @@ char* Url::getDisplayUrl( const char* url, SafeBuf* sb ) {
     sb->safePrintf("%s", labelCursor);
     sb->nullTerm();
     return sb->getBufStart();
-}
-
-
-void Url::calculateBaseUrl(Url *baseUrl, const Url *currentUrl, const char *href, int32_t hrefLen) {
-	baseUrl->set(currentUrl);
-
-	// ignore if not valid
-	if( !href || hrefLen==0)
-		return;
-
-	// set base to it
-	baseUrl->set(href, hrefLen);
-
-	if(baseUrl->getHostLen() <= 0 || baseUrl->getDomainLen() <= 0) {
-		//
-		// base href tag does not contain the domain. It is likely just "/".
-		//
-		// We now extract the scheme and host from the current URL to form a full URL based
-		// on that and the supplied base href. Previously it wrongly used the full current
-		// URL, which is wrong. Relative links on a page resulted in wrong full URLs. E.g. a link on
-		// http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/ resulted in
-		// http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/stoet-os/giv-en-gave/giv-et-barn-en-friplads/
-		//
-		char fixed_basehref[MAX_URL_LEN];
-
-		// If base href link starts with a /, do not add it again below
-		int adjust = (href[0] == '/' ? 1 : 0);
-
-		// If base href link does not end with /, add it.
-		// TODO: adding an ending slash to base href is not always correct. Eg:
-		//   <base href="http://example.com/api">, and <a href="?foo"> should result in http://example.com/api?foo and not http://example.com/api/?foo
-		//   <base href="http://example.com/other_doc">, and <a href="#boo"> should result in http://example.com/api?foo and not http://example.com/api/?foo
-		char endchar = (href[hrefLen-1] == '/' ? 0 : '/');
-
-		snprintf(fixed_basehref, sizeof(fixed_basehref), "%.*s://%.*s/%.*s%c",
-			 currentUrl->getSchemeLen(), currentUrl->getScheme(), currentUrl->getHostLen(), currentUrl->getHost(),
-			 hrefLen-adjust, href+adjust,
-			 endchar);
-		fixed_basehref[ sizeof(fixed_basehref)-1 ] = '\0';
-
-		baseUrl->set(fixed_basehref);
-	}
-
-	// fix invalid <base href="/" target="_self"/> tag
-	if(baseUrl->getHostLen() <= 0 || baseUrl->getDomainLen() <= 0 ) {
-		baseUrl->set(currentUrl);
-	}
 }

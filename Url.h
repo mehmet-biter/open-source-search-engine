@@ -201,8 +201,6 @@ public:
 
 	static char* getDisplayUrl( const char* url, SafeBuf* sb );
 
-	static void calculateBaseUrl(Url *baseUrl, const Url *currentUrl, const char *href, int32_t hrefLen);
-
 private:
 	void set( const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound, bool stripCommonFile,
 	          int32_t titledbVersion );
