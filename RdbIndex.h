@@ -7,6 +7,7 @@
 #include "GbMutex.h"
 #include <vector>
 #include <memory>
+#include <atomic>
 
 class RdbTree;
 class RdbBuckets;
@@ -22,6 +23,7 @@ public:
 	~RdbIndex();
 
 	static void timedMerge(int /*fd*/, void *state);
+	static void mergePendingDocIds(void *state);
 
 	// . does not write data to disk
 	// . frees all
@@ -80,7 +82,7 @@ public:
 	static const uint64_t s_delBitMask = 0x01ULL;
 
 private:
-	void addRecord_unlocked(char *key, bool isGenerateIndex);
+	void addRecord_unlocked(char *key);
 
 	docidsconst_ptr_t mergePendingDocIds(bool forWrite = false);
 	docidsconst_ptr_t mergePendingDocIds_unlocked(bool forWrite = false);
@@ -114,6 +116,8 @@ private:
 	bool m_needToWrite;
 
 	bool m_registeredCallback;
+
+	std::atomic<bool> m_generatingIndex;
 };
 
 #endif // GB_RDBINDEX_H
