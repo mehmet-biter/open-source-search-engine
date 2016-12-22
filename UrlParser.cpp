@@ -157,9 +157,13 @@ void UrlParser::parse() {
 
 	/// @note url fragment is stripped and not part of the rebuild url
 	const char *fragmentPos = static_cast<const char *>(memrchr(currentPos, '#', urlEnd - currentPos));
-//	if (fragmentPos != NULL) {
-//		currentPos = fragmentPos + 1;
-//	}
+	if (fragmentPos != NULL) {
+		// https://developers.google.com/webmasters/ajax-crawling/docs/getting-started
+		// don't treat '#!" as anchor
+		if (fragmentPos != urlEnd && *(fragmentPos + 1) == '!') {
+			fragmentPos = NULL;
+		}
+	}
 
 	const char *pathEnd = queryPos ? queryPos : (fragmentPos ? fragmentPos : urlEnd);
 	m_pathEndChar = *(pathEnd - 1);

@@ -980,3 +980,12 @@ TEST(UrlTest, BaseUrlRelative) {
 		EXPECT_STREQ(std::get<1>(*it), (const char *)baseUrlOld.getUrl());
 	}
 }
+
+TEST(UrlTest, HashBang) {
+	Url url;
+	url.set("http://www.example.com/ajax.html#!key=value");
+	EXPECT_STREQ("http://www.example.com/ajax.html#!key=value", url.getUrl());
+
+	url.set("http://www.example.com/ajax.html#key=value");
+	EXPECT_STREQ("http://www.example.com/ajax.html", url.getUrl());
+}
