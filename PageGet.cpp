@@ -489,7 +489,7 @@ bool processLoop ( void *state ) {
 	x += strlen(x);		
 	// set our query for highlighting
 	Query qq;
-	qq.set2 ( q, st->m_langId , true );
+	qq.set2 ( q, st->m_langId , true, true );
 
 	// print the query terms into our highlight buffer
 	Highlight hi;

@@ -415,7 +415,7 @@ class Query {
 	bool set2 ( const char *query    , 
 		    uint8_t  langId ,
 		    bool     queryExpansion ,
-		    bool     useQueryStopWords = true ,
+		    bool     useQueryStopWords,
 		    int32_t  maxQueryTerms = 0x7fffffff );
 
 	const char *getQuery() const { return m_orig; }
