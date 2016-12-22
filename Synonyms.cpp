@@ -527,16 +527,17 @@ bool Synonyms::addStripped ( const char *w , int32_t wlen , HashTableX *dt ) {
 	// avoid overflow
 	if ( wlen > 200 ) return true;
 
-	// require utf8
-	bool hadUtf8 = false;
-	char size;
-	for ( int32_t i = 0 ; i < wlen ; i += size ) {
-		size = getUtf8CharSize(w+i);
-		if ( size == 1 ) continue;
-		hadUtf8 = true;
-		break;
+	// ascii (chars<128) have no accents/diacritics. If the word is composed solely of
+	// ascii then there is no need for the more expensive utf8/unicode processing
+	bool hasNonAscii = false;
+	for(int32_t i = 0; i < wlen; i++) {
+		if((uint8_t)(w[i])>=128) {
+			hasNonAscii = true;
+			break;
+		}
 	}
-	if ( ! hadUtf8 ) return true;
+	if(!hasNonAscii)
+		return true;
 
 	// filter out accent marks
 	char abuf[256];
