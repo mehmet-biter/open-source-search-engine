@@ -67,7 +67,7 @@ private:
 	int64_t *m_aidsPtr;
 	int64_t *m_wids0Ptr;
 	int64_t *m_wids1Ptr;
-	char     **m_termPtrsPtr;
+	const char     **m_termPtrsPtr;
 	int32_t      *m_termOffsPtr;
 	int32_t      *m_termLensPtr;
 	int32_t      *m_numAlnumWordsPtr;

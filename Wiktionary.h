@@ -65,7 +65,7 @@ class Wiktionary {
 	// "en|bushmeat,bushmeats\n"
 	// so you can parse the word forms out and index them
 	// LATER we could add the Part of Speech...
-	char *getSynSet ( int64_t wid , uint8_t langId ) {
+	const char *getSynSet ( int64_t wid , uint8_t langId ) {
 		// 0? that's bad
 		if ( wid == 0LL ) { gbshutdownAbort(true); }//return NULL;
 		// hash it up like we did when adding to m_tmp table
@@ -89,7 +89,7 @@ class Wiktionary {
 		//return m_synBuf.getBufStart() + *offPtr;
 	}
 
-	char *getNextSynSet ( int64_t wid , uint8_t langId , char *prev ) {
+	const char *getNextSynSet ( int64_t wid , uint8_t langId , const char *prev ) {
 		// hash it up like we did when adding to m_tmp table
 		wid ^= g_hashtab[0][langId];
 		int32_t slot;
