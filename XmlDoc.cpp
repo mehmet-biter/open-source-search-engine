@@ -14931,6 +14931,9 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// do not add self links, pointless
 		if ( flags & LF_SELFLINK ) continue;
 
+		// do not add if no follow
+		if ( flags & LF_NOFOLLOW ) continue;
+
 		// point to url
 		char *s    = links->getLinkPtr(i);
 		int32_t  slen = links->getLinkLen(i);
