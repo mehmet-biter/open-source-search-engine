@@ -1716,7 +1716,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 
 
 bool CollectionRec::rebuildPrivacoreRules () {
-	const char *langWhitelistStr = "xx,en,bg,sr,ca,cs,da,et,fi,fr,de,el,hu,is,ga,it,lv,lt,lb,nl,pl,pt,ro,es,sv,no,vv";
+	const char *langWhitelistStr = "xx,en,bg,sr,ca,cs,da,et,fi,fr,de,el,hu,is,ga,it,la,lv,lt,lb,nl,pl,pt,ro,es,sv,no,vv";
 
 	// max spiders per ip
 	int32_t ipms = 7;
