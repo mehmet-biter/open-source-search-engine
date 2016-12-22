@@ -940,6 +940,8 @@ bool Msg40::launchMsg20s(bool recalled) {
 		req.m_getSummaryVector   = true;
 		req.m_titleMaxLen = m_si->m_titleMaxLen;
 		req.m_summaryMaxLen = cr->m_summaryMaxLen;
+		req.m_queryExpansion     = m_si->m_queryExpansion;
+		req.m_useQueryStopWords  = m_si->m_queryExpansion; //SearchInput doesn't have a m_useQueryStopWords, but if they wanted synonyms (m_queryExpansion) then they probably also want stop words
 
 		// Line means excerpt 
 		req.m_summaryMaxNumCharsPerLine = m_si->m_summaryMaxNumCharsPerLine;
