@@ -32,7 +32,6 @@ void Url::reset() {
 	m_query     = NULL;
 	m_domain    = NULL;
 	m_tld       = NULL;
-	m_anchor    = NULL;
 
 	m_url[0]    = '\0';
 	m_ulen      = 0;
@@ -42,7 +41,6 @@ void Url::reset() {
 	m_hlen      = 0;
 	m_elen      = 0;
 	m_mdlen     = 0;
-	m_anchorLen = 0;
 	// ip related stuff
 	m_ip          = 0;
 
@@ -55,13 +53,12 @@ void Url::reset() {
 	m_portLen = 0;
 }
 
-void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound,
+void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams,
                bool stripCommonFile, int32_t titledbVersion ) {
-
 	reset();
 
 	if ( ! baseUrl ) {
-		set( s, len, addWWW, false, false, false, titledbVersion );
+		set( s, len, addWWW, false, false, titledbVersion );
 		return;
 	}
 
@@ -82,15 +79,22 @@ void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool
 		}
 	}
 
-	// . fix baseurl = "http://xyz.com/poo/all" and s = "?page=3"
-	// . if "s" starts with ? then keep the filename in the base url
-	if ( s[0] == '?' ) {
-		for ( ; base[blen] && base[blen] != '?'; blen++ )
-			;
-	}
-
 	if ( blen == 0 && len == 0 ) {
 		return;
+	}
+
+	// if empty string / an url fragment, use baseUrl
+	if (len == 0 || s[0] == '#') {
+		set(baseUrl);
+		return;
+	}
+
+	// . fix baseurl = "http://xyz.com/poo/all" and s = "?page=3"
+	// . if "s" starts with ? then keep the filename in the base url
+	if (s[0] == '?') {
+		for ( ; base[blen] && base[blen] != '?'; blen++ ) {
+			;
+		}
 	}
 
 	// skip s over spaces
@@ -104,28 +108,31 @@ void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool
 	// . but break at any non-alnum or non-hyphen
 	bool isAbsolute = false;
 	int32_t i;
-	for ( i = 0; i < len && ( is_alnum_a( s[i] ) || s[i] == '-' ); i++ )
+	for ( i = 0; i < len && ( is_alnum_a( s[i] ) || s[i] == '-' ); i++ ) {
 		;
+	}
 
-	// for ( i = 0 ; s[i] && (is_alnum_a(s[i]) || s[i]=='-') ; i++ );
-	if ( !isAbsolute )
-		isAbsolute = ( i + 2 < len && s[i + 0] == ':' && s[i + 1] == '/' ); // some are missing both /'s!
+	if ( !isAbsolute ) {
+		isAbsolute = (i + 2 < len && s[i + 0] == ':' && s[i + 1] == '/'); // some are missing both /'s!
+	}
 
-	// s[i+2]=='/'  ) ;
-	if ( !isAbsolute )
-		isAbsolute = ( i + 2 < len && s[i + 0] == ':' && s[i + 1] == '\\' );
+	if ( !isAbsolute ) {
+		isAbsolute = (i + 2 < len && s[i + 0] == ':' && s[i + 1] == '\\');
+	}
 
 	// or if s starts with // then it's also considered absolute!
-	if ( !isAbsolute && len > 1 && s[0] == '/' && s[1] == '/' )
+	if ( !isAbsolute && len > 1 && s[0] == '/' && s[1] == '/' ) {
 		isAbsolute = true;
+	}
 
 	// watch out for idiots
-	if ( !isAbsolute && len > 1 && s[0] == '\\' && s[1] == '\\' )
+	if ( !isAbsolute && len > 1 && s[0] == '\\' && s[1] == '\\' ) {
 		isAbsolute = true;
+	}
 
 	// don't use base if s is not relative
 	if ( blen==0 || isAbsolute ) {
-		set( s, len, addWWW, stripParams, stripPound, false, titledbVersion );
+		set( s, len, addWWW, stripParams, false, titledbVersion );
 		return;
 	}
 
@@ -150,7 +157,7 @@ void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool
 	}
 	strncpy( temp + blen, s, len );
 	temp[blen+len] = '\0';
-	set( temp, blen + len, addWWW, stripParams, stripPound, stripCommonFile, titledbVersion );
+	set( temp, blen + len, addWWW, stripParams, stripCommonFile, titledbVersion );
 }
 
 
@@ -387,13 +394,13 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   b8d15fefe8648f7f77c6e47f7bc0b881
 	//   ddtvpkt3rpqdprsagsi52tj5o4
 	{
-		auto pathMatches = urlParser->matchPath( UrlComponent::Matcher( "osCsid" ) );
-		if ( !pathMatches.empty() ) {
-			urlParser->removePath( pathMatches, UrlComponent::Validator( 32, 32, true, ALLOW_HEX ) );
-			urlParser->removePath( pathMatches, UrlComponent::Validator( 26, 26, true, ( ALLOW_DIGIT | ALLOW_ALPHA ) ) );
+		auto pathMatches = urlParser->matchPath(UrlComponent::Matcher("osCsid"));
+		if (!pathMatches.empty()) {
+			urlParser->removePath(pathMatches, UrlComponent::Validator(32, 32, true, ALLOW_HEX));
+			urlParser->removePath(pathMatches, UrlComponent::Validator(26, 26, true, (ALLOW_DIGIT | ALLOW_ALPHA)));
 		}
 
-		urlParser->removeQueryParam( UrlComponent::Matcher( "osCsid" ), s_defaultParamValidator );
+		urlParser->removeQueryParam(UrlComponent::Matcher("osCsid"), s_defaultParamValidator);
 	}
 
 	// osCommerce (osCAdminID)
@@ -401,13 +408,13 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   20d2f836fd203140dc6391b7ba3cdd82
 	//   c40fe2ad32efad2e9cc2748a3f1f90cc
 	{
-		auto pathMatches = urlParser->matchPath( UrlComponent::Matcher( "osCAdminID" ) );
-		if ( !pathMatches.empty() ) {
-			urlParser->removePath( pathMatches, UrlComponent::Validator( 32, 32, true, ALLOW_HEX ) );
-			urlParser->removePath( pathMatches, UrlComponent::Validator( 26, 26, true, ( ALLOW_DIGIT | ALLOW_ALPHA ) ) );
+		auto pathMatches = urlParser->matchPath(UrlComponent::Matcher("osCAdminID"));
+		if (!pathMatches.empty()) {
+			urlParser->removePath(pathMatches, UrlComponent::Validator(32, 32, true, ALLOW_HEX));
+			urlParser->removePath(pathMatches, UrlComponent::Validator(26, 26, true, (ALLOW_DIGIT | ALLOW_ALPHA)));
 		}
 
-		urlParser->removeQueryParam( UrlComponent::Matcher( "osCAdminID" ), s_defaultParamValidator );
+		urlParser->removeQueryParam(UrlComponent::Matcher("osCAdminID"), s_defaultParamValidator);
 	}
 
 	// XT-commerce
@@ -415,8 +422,8 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   ha6n43ndtnlm53tpqgnclbv7ukkroue9k7m1e2o7t7rr5nb366a1
 	//   7ib1soln64vslra70ep2qcvde4s8dsm1
 	//   big3ika24atc4j19mlaha6d906
-	urlParser->removePath( UrlComponent::Matcher( "XTCsid", MATCH_CASE ), UrlComponent::Validator( 26, 52, true, ( ALLOW_DIGIT | ALLOW_ALPHA ) ) );
-	urlParser->removeQueryParam( UrlComponent::Matcher( "XTCsid", MATCH_CASE ), s_defaultParamValidator );
+	urlParser->removePath(UrlComponent::Matcher("XTCsid", MATCH_CASE), UrlComponent::Validator(26, 52, true, (ALLOW_DIGIT | ALLOW_ALPHA)));
+	urlParser->removeQueryParam(UrlComponent::Matcher("XTCsid", MATCH_CASE), s_defaultParamValidator);
 
 	// ColdFusion
 	// http://help.adobe.com/en_US/ColdFusion/9.0/Developing/WSc3ff6d0ea77859461172e0811cbec0c35c-7fef.html#WSc3ff6d0ea77859461172e0811cbec22c24-7cbf
@@ -428,27 +435,27 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   94175176
 	//   322257
 	{
-		auto pathMatches = urlParser->matchPath( UrlComponent::Matcher( "CFTOKEN" ) );
-		if ( !pathMatches.empty() ) {
-			urlParser->removePath( pathMatches, UrlComponent::Validator( 52, 52, true, ALLOW_ALL ) );
-			urlParser->removePath( pathMatches, UrlComponent::Validator( 10, 14, true, ALLOW_ALL, MANDATORY_PUNCTUATION ) );
-			urlParser->removePath( pathMatches, UrlComponent::Validator( 6, 0, true, ALLOW_DIGIT ) );
+		auto pathMatches = urlParser->matchPath(UrlComponent::Matcher("CFTOKEN"));
+		if (!pathMatches.empty()) {
+			urlParser->removePath(pathMatches, UrlComponent::Validator(52, 52, true, ALLOW_ALL));
+			urlParser->removePath(pathMatches, UrlComponent::Validator(10, 14, true, ALLOW_ALL, MANDATORY_PUNCTUATION));
+			urlParser->removePath(pathMatches, UrlComponent::Validator(6, 0, true, ALLOW_DIGIT));
 		}
 
-		urlParser->removePathParam( UrlComponent::Matcher( "CFTOKEN" ), s_defaultParamValidator );
-		urlParser->removeQueryParam( UrlComponent::Matcher( "CFTOKEN" ), s_defaultParamValidator );
+		urlParser->removePathParam(UrlComponent::Matcher("CFTOKEN"), s_defaultParamValidator);
+		urlParser->removeQueryParam(UrlComponent::Matcher("CFTOKEN"), s_defaultParamValidator);
 	}
 
 	// ColdFusion (CFID)
-	urlParser->removePath( UrlComponent::Matcher( "CFID" ), UrlComponent::Validator( 0, 0, true, ALLOW_DIGIT ) );
-	urlParser->removePathParam( UrlComponent::Matcher( "CFID" ), s_defaultParamValidator );
-	urlParser->removeQueryParam( UrlComponent::Matcher( "CFID" ), s_defaultParamValidator );
+	urlParser->removePath(UrlComponent::Matcher("CFID"), UrlComponent::Validator(0, 0, true, ALLOW_DIGIT));
+	urlParser->removePathParam(UrlComponent::Matcher("CFID"), s_defaultParamValidator);
+	urlParser->removeQueryParam(UrlComponent::Matcher("CFID"), s_defaultParamValidator);
 
-	urlParser->removeQueryParam( UrlComponent::Matcher( "cftokenPass" ), s_defaultParamValidator );
+	urlParser->removeQueryParam(UrlComponent::Matcher("cftokenPass"), s_defaultParamValidator);
 
 	/// SAP load balancer
 	// https://help.sap.com/saphelp_nw70/helpdata/de/f2/d7914b8deb48f090c0343ef1d907f0/content.htm
-	urlParser->removePathParam( UrlComponent::Matcher( "saplb_*" ), s_defaultParamValidator );
+	urlParser->removePathParam(UrlComponent::Matcher("saplb_*"), s_defaultParamValidator);
 
 	// Atlassian
 	//   https://developer.atlassian.com/confdev/confluence-plugin-guide/writing-confluence-plugins/form-token-handling
@@ -458,11 +465,11 @@ static void stripParameters( UrlParser *urlParser ) {
 	//     56c1bb338d5ad3ac262dd4e97bda482efc151f30
 	//     15BWJdAr0U
 	{
-		auto queryMatches = urlParser->matchQueryParam( UrlComponent::Matcher( "atl_token" ) );
-		if ( !queryMatches.empty() ) {
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 65, 0, true, ALLOW_ALL ) );
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 40, 40, true, ALLOW_HEX ) );
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 10, 10, true, ( ALLOW_ALPHA | ALLOW_DIGIT ) ) );
+		auto queryMatches = urlParser->matchQueryParam(UrlComponent::Matcher("atl_token"));
+		if (!queryMatches.empty()) {
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(65, 0, true, ALLOW_ALL));
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(40, 40, true, ALLOW_HEX));
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(10, 10, true, (ALLOW_ALPHA | ALLOW_DIGIT)));
 		}
 	}
 
@@ -471,27 +478,27 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   491022863920110420135759
 	//   7d01p6qvcl2e72j8ivmppk12k0
 	//   XUjuplcPFGlJD2ZF5O26ApqAj5ZNEZwZrUKX5kkA
-	urlParser->removeQueryParam( UrlComponent::Matcher( "psession" ), UrlComponent::Validator( 24, 0, ( ALLOW_ALPHA | ALLOW_DIGIT ) ) );
+	urlParser->removeQueryParam(UrlComponent::Matcher("psession"), UrlComponent::Validator(24, 0, (ALLOW_ALPHA | ALLOW_DIGIT)));
 
 	// Galileo
 	// eg:
 	//   65971783A4.z17ZHFAI
 	//   63105032A6BFxgQFfV8
-	urlParser->removeQueryParam( UrlComponent::Matcher( "GalileoSession" ), UrlComponent::Validator( 19, 19, ALLOW_ALL ) );
+	urlParser->removeQueryParam(UrlComponent::Matcher("GalileoSession"), UrlComponent::Validator(19, 19, ALLOW_ALL));
 
 	// postnuke
 	//   normally it would be hex string length of 32. but shorter length exist (looks to be chopped off somehow)
 	//   eg:
 	//     549178d5035b622229a39cd5baf75d2a
 	//     4ed3b0a832d4687020b05ce70
-	urlParser->removeQueryParam( UrlComponent::Matcher( "POSTNUKESID" ), UrlComponent::Validator( 16, 32 , ( ALLOW_HEX ) ) );
+	urlParser->removeQueryParam(UrlComponent::Matcher("POSTNUKESID"), UrlComponent::Validator(16, 32, (ALLOW_HEX)));
 
 	// jsessionid
 	// eg:
 	//   C14778D1240A6CFEE5417030DDB37D41
-	urlParser->removePath( UrlComponent::Matcher( "jsessionid" ), UrlComponent::Validator( 32, 32, false, ALLOW_HEX ) );
-	urlParser->removePathParam( UrlComponent::Matcher( "jsessionid", MATCH_PARTIAL ), UrlComponent::Validator( 20, 0, true ) );
-	urlParser->removeQueryParam( UrlComponent::Matcher( "jsessionid", MATCH_PARTIAL ), UrlComponent::Validator( 20, 0, true ) );
+	urlParser->removePath(UrlComponent::Matcher("jsessionid"), UrlComponent::Validator(32, 32, false, ALLOW_HEX));
+	urlParser->removePathParam(UrlComponent::Matcher("jsessionid", MATCH_PARTIAL), UrlComponent::Validator(20, 0, true));
+	urlParser->removeQueryParam(UrlComponent::Matcher("jsessionid", MATCH_PARTIAL), UrlComponent::Validator(20, 0, true));
 
 	// phpsessid
 	// eg:
@@ -499,20 +506,20 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   4g8v6ndp6gnnc4tagn8coam0n7
 	//   414c6917961d5b4998973d1613b7926f
 	//   qfou95mlih5jjans36kevj2pti7p847v6bl79f03nrvtaadif6u0
-	urlParser->removePath( UrlComponent::Matcher( "PHPSESSID" ), UrlComponent::Validator( 26, 32, false, ( ALLOW_ALPHA | ALLOW_DIGIT ) ) );
-	urlParser->removeQueryParam( UrlComponent::Matcher( "PHPSESSID", MATCH_PARTIAL ), s_defaultParamValidator );
+	urlParser->removePath(UrlComponent::Matcher("PHPSESSID"), UrlComponent::Validator(26, 32, false, (ALLOW_ALPHA | ALLOW_DIGIT)));
+	urlParser->removeQueryParam(UrlComponent::Matcher("PHPSESSID", MATCH_PARTIAL), s_defaultParamValidator);
 
 	// auth_sess
 	//   mostly job sites (same group?)
 	//   eg:
 	//     7ofc7ep3i8g6i2foinq6uks7e0
 	//     6ce228460946fc4b3ed154abea1530b8
-	urlParser->removeQueryParam( UrlComponent::Matcher( "auth_sess" ), UrlComponent::Validator( 26, 32, true, ( ALLOW_DIGIT | ALLOW_ALPHA ) ) );
+	urlParser->removeQueryParam(UrlComponent::Matcher("auth_sess"), UrlComponent::Validator(26, 32, true, (ALLOW_DIGIT | ALLOW_ALPHA)));
 
 	// ps_sess_id
 	// eg:
 	//   0056c53b03ee56c8b791a5cf061a910d
-	urlParser->removeQueryParam( UrlComponent::Matcher( "ps_sess_id" ), UrlComponent::Validator( 32, 32, true, ALLOW_HEX ) );
+	urlParser->removeQueryParam(UrlComponent::Matcher("ps_sess_id"), UrlComponent::Validator(32, 32, true, ALLOW_HEX));
 
 	// mysid
 	// eg:
@@ -521,11 +528,11 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   hNrnd87gxn9LU0X-N-4TS2
 	//   glwcjvci
 	{
-		auto queryMatches = urlParser->matchQueryParam( UrlComponent::Matcher( "mysid" ) );
-		if ( !queryMatches.empty() ) {
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 32, 32, false, ALLOW_HEX ) );
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 22, 22, false, ALLOW_ALL, MANDATORY_ALPHA ) );
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 8, 8, false, ALLOW_ALPHA ) );
+		auto queryMatches = urlParser->matchQueryParam(UrlComponent::Matcher("mysid"));
+		if (!queryMatches.empty()) {
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(32, 32, false, ALLOW_HEX));
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(22, 22, false, ALLOW_ALL, MANDATORY_ALPHA));
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(8, 8, false, ALLOW_ALPHA));
 		}
 	}
 
@@ -538,13 +545,13 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   v0uqho4nv0mnghv4ap3ieeqp94
 	//   K6FYyt
 	{
-		auto queryMatches = urlParser->matchQueryParam( UrlComponent::Matcher( "sid" ) );
-		if ( !queryMatches.empty() ) {
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 30, 0, false, ALLOW_ALL ) );
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 26, 26, false, ( ALLOW_ALPHA | ALLOW_DIGIT ) ) );
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 6, 6, false, ( ALLOW_ALPHA | ALLOW_DIGIT ), ( MANDATORY_ALPHA_LOWER | MANDATORY_ALPHA_UPPER ) ) );
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 6, 6, false, ( ALLOW_ALPHA | ALLOW_DIGIT ), ( MANDATORY_ALPHA_LOWER | MANDATORY_DIGIT ) ) );
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 6, 6, false, ( ALLOW_ALPHA | ALLOW_DIGIT ), ( MANDATORY_ALPHA_UPPER | MANDATORY_DIGIT ) ) );
+		auto queryMatches = urlParser->matchQueryParam(UrlComponent::Matcher("sid"));
+		if (!queryMatches.empty()) {
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(30, 0, false, ALLOW_ALL));
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(26, 26, false, (ALLOW_ALPHA | ALLOW_DIGIT)));
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(6, 6, false, (ALLOW_ALPHA | ALLOW_DIGIT), (MANDATORY_ALPHA_LOWER | MANDATORY_ALPHA_UPPER)));
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(6, 6, false, (ALLOW_ALPHA | ALLOW_DIGIT), (MANDATORY_ALPHA_LOWER | MANDATORY_DIGIT)));
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(6, 6, false, (ALLOW_ALPHA | ALLOW_DIGIT), (MANDATORY_ALPHA_UPPER | MANDATORY_DIGIT)));
 		}
 	}
 
@@ -554,11 +561,11 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   39a11261f58150fd4327a80da6daafa0
 	//   99cj5cbf6g8irau20h1hkvr8o6
 	{
-		auto queryMatches = urlParser->matchQueryParam( UrlComponent::Matcher( "ses" ) );
-		if ( !queryMatches.empty() ) {
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 34, 34, false, ( ALLOW_ALPHA | ALLOW_DIGIT ), ( MANDATORY_ALPHA | MANDATORY_DIGIT ) ) );
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 32, 32, false, ALLOW_HEX ) );
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 26, 26, false, ( ALLOW_ALPHA | ALLOW_DIGIT ), ( MANDATORY_ALPHA | MANDATORY_DIGIT ) ) );
+		auto queryMatches = urlParser->matchQueryParam(UrlComponent::Matcher("ses"));
+		if (!queryMatches.empty()) {
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(34, 34, false, (ALLOW_ALPHA | ALLOW_DIGIT), (MANDATORY_ALPHA | MANDATORY_DIGIT)));
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(32, 32, false, ALLOW_HEX));
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(26, 26, false, (ALLOW_ALPHA | ALLOW_DIGIT), (MANDATORY_ALPHA | MANDATORY_DIGIT)));
 		}
 	}
 
@@ -567,10 +574,10 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   4d9ae8a969305848227e5d6d7d0fb9672bd38d96
 	//   81cfba6ed9b66a8ad0df43c2f3d259bd
 	{
-		auto queryMatches = urlParser->matchQueryParam( UrlComponent::Matcher( "s" ) );
-		if ( !queryMatches.empty() ) {
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 40, 40, false, ALLOW_HEX, MANDATORY_ALPHA_HEX ) );
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 32, 32, false, ALLOW_HEX, MANDATORY_ALPHA_HEX ) );
+		auto queryMatches = urlParser->matchQueryParam(UrlComponent::Matcher("s"));
+		if (!queryMatches.empty()) {
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(40, 40, false, ALLOW_HEX, MANDATORY_ALPHA_HEX));
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(32, 32, false, ALLOW_HEX, MANDATORY_ALPHA_HEX));
 		}
 	}
 
@@ -578,7 +585,7 @@ static void stripParameters( UrlParser *urlParser ) {
 	// eg:
 	//   NiHhUceSP6At57u0
 	//   ospnr7npc97urgoi1p9i9kd1e4
-	urlParser->removeQueryParam( UrlComponent::Matcher( "session_id" ), UrlComponent::Validator( 16, 0, false, ALLOW_ALL, MANDATORY_ALPHA ) );
+	urlParser->removeQueryParam(UrlComponent::Matcher("session_id"), UrlComponent::Validator(16, 0, false, ALLOW_ALL, MANDATORY_ALPHA));
 
 	// sessionid
 	// eg:
@@ -587,7 +594,7 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   ej3fa4fe7eikfb8ej1fd6
 	//   ObUlshp63oxfnZzvCzwe
 	//   mN3XmQ{hXgsK8jY7VUm8
-	urlParser->removeQueryParam( UrlComponent::Matcher( "sessionid" ), UrlComponent::Validator( 20, 0, false, ALLOW_ALL, MANDATORY_ALPHA ) );
+	urlParser->removeQueryParam(UrlComponent::Matcher("sessionid"), UrlComponent::Validator(20, 0, false, ALLOW_ALL, MANDATORY_ALPHA));
 
 	// other session id variations
 
@@ -599,12 +606,12 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   f4db3ec33001c9759d095c6432651e39
 	//   82d0pbm7f6aa55no7p0rqb37r6
 	{
-		auto queryMatches = urlParser->matchQueryParam( UrlComponent::Matcher( "sessid", MATCH_PARTIAL ) );
-		if ( !queryMatches.empty() ) {
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 52, 52, false, ( ALLOW_ALPHA | ALLOW_DIGIT ), ( MANDATORY_ALPHA | MANDATORY_DIGIT ) ) );
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 40, 40, false, ALLOW_HEX, MANDATORY_ALPHA_HEX ) );
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 32, 32, false, ALLOW_HEX, MANDATORY_ALPHA_HEX ) );
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator( 26, 26, false, ( ALLOW_ALPHA | ALLOW_DIGIT ), ( MANDATORY_ALPHA | MANDATORY_DIGIT ) ) );
+		auto queryMatches = urlParser->matchQueryParam(UrlComponent::Matcher("sessid", MATCH_PARTIAL));
+		if (!queryMatches.empty()) {
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(52, 52, false, (ALLOW_ALPHA | ALLOW_DIGIT), (MANDATORY_ALPHA | MANDATORY_DIGIT)));
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(40, 40, false, ALLOW_HEX, MANDATORY_ALPHA_HEX));
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(32, 32, false, ALLOW_HEX, MANDATORY_ALPHA_HEX));
+			urlParser->removeQueryParam(queryMatches, UrlComponent::Validator(26, 26, false, (ALLOW_ALPHA | ALLOW_DIGIT), (MANDATORY_ALPHA | MANDATORY_DIGIT)));
 		}
 	}
 
@@ -622,49 +629,49 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   DMQBEXa5Z-aJ7r67ylAJ_y9H8_S2HTUaIjoafUtOjYuGcxwRefR0Q3xXzyS
 	//   bGJL_GuP2eDGwJJzoXM9T3_LRgjAsalqaREGEBDoEERJOIMIL8Wh7Q3K3FcgHtYc9hM6CuJmVKlmmCxjmSYEhwVlOdUEX5RnUXycKSHKO5iAz2_ulWoJOZ1d7QCD2Afn9WPkXkvaJaSgjo7hcfYbBnUOXhedzMolha6kfV7hvf4mRAF700MhB350--QV0wQAur9Rz47QiX8SiRXp_vQDdwInUSfO3PqOwXfBu72w4e-JySzUf7Aj9Ks9ouOUPAn1W_GtORLLT4Gho7-Tb_IwyGVYPKF97f3VMXsTfoFqUvs
 	//
-	urlParser->removeQueryParam( urlParser->matchQueryParam( UrlComponent::Matcher( "session" ) ),
-	                             UrlComponent::Validator( 20, 0, false, ALLOW_ALL, ( MANDATORY_ALPHA | MANDATORY_DIGIT) ) );
+	urlParser->removeQueryParam(urlParser->matchQueryParam(UrlComponent::Matcher("session")),
+	                            UrlComponent::Validator(20, 0, false, ALLOW_ALL, (MANDATORY_ALPHA | MANDATORY_DIGIT)));
 
 	// sess
 	//   eg: 4be234480736093ba237bc397fb6e32d
-	urlParser->removeQueryParam( UrlComponent::Matcher( "sess" ),
-	                             UrlComponent::Validator( 20, 0, false, ( ALLOW_ALPHA | ALLOW_DIGIT ) ) );
+	urlParser->removeQueryParam(UrlComponent::Matcher("sess"),
+	                            UrlComponent::Validator(20, 0, false, (ALLOW_ALPHA | ALLOW_DIGIT)));
 
 	// ts
 	// eg:
 	//   1422344216175
 	//   1425080080316
-	urlParser->removeQueryParam( UrlComponent::Matcher( "ts" ), UrlComponent::Validator( 13, 13, false, ALLOW_DIGIT ) );
+	urlParser->removeQueryParam(UrlComponent::Matcher("ts"), UrlComponent::Validator(13, 13, false, ALLOW_DIGIT));
 
 	// apache dir sort
 	//   C={N,M,S,D} O={A,D}
 	// eg:
 	//   ?C=N;O=A
-	if ( urlParser->getQueryParamCount() <= 2 ) {
-		auto cQueryMatches = urlParser->matchQueryParam( UrlComponent::Matcher( "C", MATCH_CASE ) );
-		auto oQueryMatches = urlParser->matchQueryParam( UrlComponent::Matcher( "O", MATCH_CASE ) );
+	if (urlParser->getQueryParamCount() <= 2) {
+		auto cQueryMatches = urlParser->matchQueryParam(UrlComponent::Matcher("C", MATCH_CASE));
+		auto oQueryMatches = urlParser->matchQueryParam(UrlComponent::Matcher("O", MATCH_CASE));
 
-		UrlComponent *cUrlComponent = ( cQueryMatches.size() == 1 ) ? cQueryMatches[0] : NULL;
-		UrlComponent *oUrlComponent = ( oQueryMatches.size() == 1 ) ? oQueryMatches[0] : NULL;
+		UrlComponent *cUrlComponent = (cQueryMatches.size() == 1) ? cQueryMatches[0] : NULL;
+		UrlComponent *oUrlComponent = (oQueryMatches.size() == 1) ? oQueryMatches[0] : NULL;
 
-		if ( cUrlComponent ) {
-			if ( cUrlComponent->getValueLen() == 0 ) {
-				urlParser->deleteComponent( cUrlComponent );
-			} else if ( cUrlComponent->getValueLen() == 1 ) {
-				char c = *( cUrlComponent->getValue() );
-				if ( c == 'N' || c == 'M' || c == 'S' || c == 'D' ) {
-					urlParser->deleteComponent( cUrlComponent );
+		if (cUrlComponent) {
+			if (cUrlComponent->getValueLen() == 0) {
+				urlParser->deleteComponent(cUrlComponent);
+			} else if (cUrlComponent->getValueLen() == 1) {
+				char c = *(cUrlComponent->getValue());
+				if (c == 'N' || c == 'M' || c == 'S' || c == 'D') {
+					urlParser->deleteComponent(cUrlComponent);
 				}
 			}
 		}
 
-		if ( oUrlComponent ) {
-			if ( oUrlComponent->getValueLen() == 0 ) {
-				urlParser->deleteComponent( oUrlComponent );
-			} else if ( oUrlComponent->getValueLen() == 1 ) {
-				char o = *( oUrlComponent->getValue() );
-				if ( o == 'A' || o == 'D' ) {
-					urlParser->deleteComponent( oUrlComponent );
+		if (oUrlComponent) {
+			if (oUrlComponent->getValueLen() == 0) {
+				urlParser->deleteComponent(oUrlComponent);
+			} else if (oUrlComponent->getValueLen() == 1) {
+				char o = *(oUrlComponent->getValue());
+				if (o == 'A' || o == 'D') {
+					urlParser->deleteComponent(oUrlComponent);
 				}
 			}
 		}
@@ -676,68 +683,68 @@ static void stripParameters( UrlParser *urlParser ) {
 
 	// Oracle Eloqua
 	// http://docs.oracle.com/cloud/latest/marketingcs_gs/OMCAA/index.html#Help/General/EloquaTrackingParameters.htm
-	urlParser->removeQueryParam( "elqTrackId" );
-	urlParser->removeQueryParam( "elq" );
-	urlParser->removeQueryParam( "elqCampaignId" );
-	urlParser->removeQueryParam( "elqaid" );
-	urlParser->removeQueryParam( "elqat" );
-	urlParser->removeQueryParam( "elq_mid" );
-	urlParser->removeQueryParam( "elq_cid" );
-	urlParser->removeQueryParam( "elq2" ); // others
+	urlParser->removeQueryParam("elqTrackId");
+	urlParser->removeQueryParam("elq");
+	urlParser->removeQueryParam("elqCampaignId");
+	urlParser->removeQueryParam("elqaid");
+	urlParser->removeQueryParam("elqat");
+	urlParser->removeQueryParam("elq_mid");
+	urlParser->removeQueryParam("elq_cid");
+	urlParser->removeQueryParam("elq2"); // others
 
 	// Google Analytics
 	// https://support.google.com/analytics/answer/1033867
-	urlParser->removeQueryParam( "utm_source" );
-	urlParser->removeQueryParam( "utm_medium" );
-	urlParser->removeQueryParam( "utm_term" );
-	urlParser->removeQueryParam( "utm_content" );
-	urlParser->removeQueryParam( "utm_campaign" );
-	urlParser->removeQueryParam( "utm_hp_ref" ); // Lots on huffingtonpost.com
-	urlParser->removeQueryParam( "utm_rid" ); // others
+	urlParser->removeQueryParam("utm_source");
+	urlParser->removeQueryParam("utm_medium");
+	urlParser->removeQueryParam("utm_term");
+	urlParser->removeQueryParam("utm_content");
+	urlParser->removeQueryParam("utm_campaign");
+	urlParser->removeQueryParam("utm_hp_ref"); // Lots on huffingtonpost.com
+	urlParser->removeQueryParam("utm_rid"); // others
 
 	// https://support.google.com/analytics/answer/1033981?hl=en
 	// https://support.google.com/ds/answer/6292795?hl=en
-	urlParser->removeQueryParam( "gclid" );
-	urlParser->removeQueryParam( "gclsrc" );
+	urlParser->removeQueryParam("gclid");
+	urlParser->removeQueryParam("gclsrc");
 
 	// Piwik
 	// http://piwik.org/docs/tracking-campaigns/
 	// https://plugins.piwik.org/AdvancedCampaignReporting
-	urlParser->removeQueryParam( "pk_campaign" );
-	urlParser->removeQueryParam( "pk_kwd" );
-	urlParser->removeQueryParam( "pk_source" );
-	urlParser->removeQueryParam( "pk_medium" );
-	urlParser->removeQueryParam( "pk_keyword" );
-	urlParser->removeQueryParam( "pk_content" );
-	urlParser->removeQueryParam( "pk_cid" );
+	urlParser->removeQueryParam("pk_campaign");
+	urlParser->removeQueryParam("pk_kwd");
+	urlParser->removeQueryParam("pk_source");
+	urlParser->removeQueryParam("pk_medium");
+	urlParser->removeQueryParam("pk_keyword");
+	urlParser->removeQueryParam("pk_content");
+	urlParser->removeQueryParam("pk_cid");
 
 	// Open Web Analytics
 	// https://github.com/padams/Open-Web-Analytics/wiki/Campaign-Tracking
-	urlParser->removeQueryParam( "owa_medium" );
-	urlParser->removeQueryParam( "owa_source" );
-	urlParser->removeQueryParam( "owa_campaign" );
-	urlParser->removeQueryParam( "owa_ad" );
-	urlParser->removeQueryParam( "owa_ad_type" );
+	urlParser->removeQueryParam("owa_medium");
+	urlParser->removeQueryParam("owa_source");
+	urlParser->removeQueryParam("owa_campaign");
+	urlParser->removeQueryParam("owa_ad");
+	urlParser->removeQueryParam("owa_ad_type");
 
 	// Webtrends
 	// http://help.webtrends.com/en/queryparameters/index.html
-	urlParser->removeQueryParam( "wt.mc_id" );
+	urlParser->removeQueryParam("wt.mc_id");
 
 	// Mailchimp
 	// https://apidocs.mailchimp.com/api/how-to/ecommerce.php
-	urlParser->removeQueryParam( "mc_cid" );
-	urlParser->removeQueryParam( "mc_eid" );
+	urlParser->removeQueryParam("mc_cid");
+	urlParser->removeQueryParam("mc_eid");
 
 	// Marketo
 	// http://developers.marketo.com/documentation/websites/lead-tracking-munchkin-js/
-	urlParser->removeQueryParam( "mkt_tok" );
+	urlParser->removeQueryParam("mkt_tok");
 
 	// trk
 	// eg:
 	//   ppro_cprof
 	//   prc-basic
-	urlParser->removeQueryParam( UrlComponent::Matcher( "trk" ),
-	                             UrlComponent::Validator( 0, 0, false, ALLOW_ALL, ( MANDATORY_ALPHA | MANDATORY_PUNCTUATION ) ) );
+	urlParser->removeQueryParam(UrlComponent::Matcher("trk"),
+	                            UrlComponent::Validator(0, 0, false, ALLOW_ALL, (MANDATORY_ALPHA | MANDATORY_PUNCTUATION)));
 
 	// who
 	// eg:
@@ -747,13 +754,13 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   r,0/asSWWd2MeHwFRbMqZP42yZoh0UlWB2zyP9nAoa3ejKyLPsBjxivhuAY2RH6r94BV2DcmQQYxk6MYZD4Uo6cb30qgNTwVY/_rl_BjRSWosgbpRtPuMytbSX0OmxKuNedtcT27C3fJG/oia/88wI_Ec5PIerpxyPLAgXEsi78vAyuZAXymqhujGGTf6ACryR
 	//   r,rW75z4HBqJegN3eAao88RaQcHsIgPXhAP/K1KCbI3x6dMrYllBZLlVfpuL_C0IQed0WspcLWMeT79fzDoAnb0qioGuFSnCHaZXYoH5_GZsWESFdk4CznUlTZuyeTFKsu9xblmYa56ShIKUyILXaFAI8HbNh7dpaXr7q66jIOuo_0r2_GFlbGaSScvbnAWWjH/dMPW8UZsTetZ2a9tqYaHQ--
 	{
-		auto queryMatches = urlParser->matchQueryParam( UrlComponent::Matcher( "who" ) );
-		for ( auto it = queryMatches.begin(); it != queryMatches.end(); ++it ) {
-			if ( (*it)->getValueLen() <= 130 && memcmp( (*it)->getValue(), "r,", 2 ) == 0 ) {
-				urlParser->deleteComponent( *it );
+		auto queryMatches = urlParser->matchQueryParam(UrlComponent::Matcher("who"));
+		for (auto it = queryMatches.begin(); it != queryMatches.end(); ++it) {
+			if ((*it)->getValueLen() <= 130 && memcmp((*it)->getValue(), "r,", 2) == 0) {
+				urlParser->deleteComponent(*it);
 			}
 		}
-		urlParser->removeQueryParam( UrlComponent::Matcher( "who" ), UrlComponent::Validator( 130, 0, false, ALLOW_ALL ) );
+		urlParser->removeQueryParam(UrlComponent::Matcher("who"), UrlComponent::Validator(130, 0, false, ALLOW_ALL));
 	}
 
 
@@ -770,33 +777,33 @@ static void stripParameters( UrlParser *urlParser ) {
 	/// @todo ALC cater for more affiliate links here
 
 	// only check domain specific logic when we have a domain
-	if ( urlParser->getDomain() ) {
-		if ( strncmp( urlParser->getDomain(), "amazon.", 7 ) == 0 ) {
+	if (urlParser->getDomain()) {
+		if (strncmp(urlParser->getDomain(), "amazon.", 7) == 0) {
 			// amazon
 			// https://www.reddit.com/r/GameDeals/wiki/affiliate
 
 			// affiliate
-			urlParser->removeQueryParam( "tag" );
+			urlParser->removeQueryParam("tag");
 
 			// wishlist
-			urlParser->removeQueryParam( "coliid" );
-			urlParser->removeQueryParam( "colid" );
+			urlParser->removeQueryParam("coliid");
+			urlParser->removeQueryParam("colid");
 
 			// reference
-			urlParser->removeQueryParam( "ref" );
-			urlParser->removePathParam( UrlComponent::Matcher( "ref" ),
-			                            UrlComponent::Validator( 0, 0, false, ALLOW_ALL, MANDATORY_PUNCTUATION ) );
-		} else if ( strncmp( urlParser->getDomain(), "ebay.", 5 ) == 0 ) {
+			urlParser->removeQueryParam("ref");
+			urlParser->removePathParam(UrlComponent::Matcher("ref"),
+			                           UrlComponent::Validator(0, 0, false, ALLOW_ALL, MANDATORY_PUNCTUATION));
+		} else if (strncmp(urlParser->getDomain(), "ebay.", 5) == 0) {
 			// ebay
 			// http://www.ebaypartnernetworkblog.com/en/2009/05/new-link-generator-tool-additional-information/
 
-			urlParser->removeQueryParam( "icep_ff3" );
-			urlParser->removeQueryParam( "pub" );
-			urlParser->removeQueryParam( "toolid" );
-			urlParser->removeQueryParam( "campid" );
-			urlParser->removeQueryParam( "customid" );
-			urlParser->removeQueryParam( "afepn" );
-			urlParser->removeQueryParam( "pid" );
+			urlParser->removeQueryParam("icep_ff3");
+			urlParser->removeQueryParam("pub");
+			urlParser->removeQueryParam("toolid");
+			urlParser->removeQueryParam("campid");
+			urlParser->removeQueryParam("customid");
+			urlParser->removeQueryParam("afepn");
+			urlParser->removeQueryParam("pid");
 		}
 	}
 }
@@ -807,7 +814,7 @@ static void stripParameters( UrlParser *urlParser ) {
 //    reserved purposes may be used unencoded within a URL."
 // . i know sun.com has urls like "http://sun.com/;$sessionid=123ABC$"
 // . url should be ENCODED PROPERLY for this to work properly
-void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool stripPound, bool stripCommonFile,
+void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool stripCommonFile,
                int32_t titledbVersion ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(t,tlen);
@@ -1000,7 +1007,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 		}
 
 		encoded[newUrlLen] = '\0';
-		return this->set( encoded, newUrlLen, addWWW, stripParams, stripPound, stripCommonFile, titledbVersion );
+		return this->set( encoded, newUrlLen, addWWW, stripParams, stripCommonFile, titledbVersion );
 	}
 
 	// truncate length to the first occurence of an unacceptable char
@@ -1013,45 +1020,40 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 		tlen -= 7;
 	}
 
-	// strip the "#anchor" from http://www.xyz.com/somepage.html#anchor"
-    int32_t anchorPos = 0;
-    int32_t anchorLen = 0;
-    for ( int32_t i = 0 ; i < tlen ; i++ ) {
-		if ( t[i] != '#' ) {
-			continue;
-		}
+	// only strip anchor for version <= 122 (we're stripping anchor in UrlParser)
+	if (titledbVersion <= 122) {
+		// strip the "#anchor" from http://www.xyz.com/somepage.html#anchor"
+		for (int32_t i = 0; i < tlen; i++) {
+			if (t[i] == '#') {
+				// ignore anchor if a ! follows it. 'google hash bang hack'
+				// which breaks the web and is now deprecated, but, there it is
+				if (i + 1 < tlen && t[i + 1] == '!') {
+					continue;
+				}
 
-		// ignore anchor if a ! follows it. 'google hash bang hack'
-		// which breaks the web and is now deprecated, but, there it is
-		if ( i+1<tlen && t[i+1] == '!' ) {
-			continue;
+				tlen = i;
+				break;
+			}
 		}
-
-		anchorPos = i;
-		anchorLen = tlen - i;
-
-		if ( stripPound ) {
-			tlen = i;
-		}
-		break;
-    }
+	}
 
 	// copy to "s" so we can NULL terminate it
-	char s [ MAX_URL_LEN ];
+	char s[MAX_URL_LEN];
 	int32_t len = tlen;
-	// store filtered url into s
-	gbmemcpy ( s , t , tlen );
-	s[len]='\0';
 
 	if (titledbVersion <= 122) {
-		if ( stripParams ) {
-			stripParametersv122( s, &len );
+		// store filtered url into s
+		gbmemcpy (s, t, tlen);
+		s[len] = '\0';
+
+		if (stripParams) {
+			stripParametersv122(s, &len);
 		}
 	} else {
-		UrlParser urlParser( s, len );
+		UrlParser urlParser(t, tlen);
 
-		if ( stripParams ) {
-			stripParameters( &urlParser );
+		if (stripParams) {
+			stripParameters(&urlParser);
 		}
 
 		// rebuild url
@@ -1059,10 +1061,10 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 
 		len = urlParser.getUrlParsedLen();
 
-		if ( len > MAX_URL_LEN - 10 ) {
+		if (len > MAX_URL_LEN - 10) {
 			len = MAX_URL_LEN - 10;
 		}
-		strncpy( s, urlParser.getUrlParsed(), len );
+		strncpy(s, urlParser.getUrlParsed(), len);
 		s[len] = '\0';
 	}
 
@@ -1229,7 +1231,6 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 	// set the default port based on the protocol
 	m_defPort = 80;
 	if ( m_slen==5 && strncmp(m_scheme, "https",5)==0 ) m_defPort = 443;
-	if ( m_slen==3 && strncmp(m_scheme, "ftp"  ,3)==0 ) m_defPort =  21;
 	// assume we're using the default port for this scheme/protocol
 	m_port = m_defPort;
 	// see if a port was provided in the hostname after a colon
@@ -1292,19 +1293,24 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 		if ( s[i] == '/'  &&  m_url[m_ulen-1] == '/' &&
 		     m_ulen-1 >= m_plen && 
 		     m_ulen >= 2 && m_url[m_ulen-2] != ':' ) continue;
-		// deal with current directories in the m_path
-		if ( s[i] == '.'  &&  m_url[m_ulen-1] == '/' && 
-		     (i+1 == j || s[i+1]=='/'))	continue;
-		// . deal with damned ..'s in the m_path
-		// . if next 2 chars are .'s and last char we wrote was '/'
-		if ( s[i] == '.' && s[i+1]=='.' && m_url[m_ulen-1] == '/' ) {
-			// dont back up over first / in path
-			if ( m_url + m_ulen - 1 > m_path ) m_ulen--;
-			while ( m_url[m_ulen-1] != '/'   ) m_ulen--;
-			// skip i to next / after these 2 dots
-			while ( s[i] && s[i]!='/' ) i++;
-			continue;
+
+		// handled by UrlParser for version 123 and above
+		if (titledbVersion <= 122) {
+			// deal with current directories in the m_path
+			if ( s[i] == '.'  &&  m_url[m_ulen-1] == '/' &&
+			     (i+1 == j || s[i+1]=='/'))	continue;
+			// . deal with damned ..'s in the m_path
+			// . if next 2 chars are .'s and last char we wrote was '/'
+			if ( s[i] == '.' && s[i+1]=='.' && (s[i+2] == '/' || s[i+2] == '\0') && m_url[m_ulen-1] == '/' ) {
+				// dont back up over first / in path
+				if ( m_url + m_ulen - 1 > m_path ) m_ulen--;
+				while ( m_url[m_ulen-1] != '/'   ) m_ulen--;
+				// skip i to next / after these 2 dots
+				while ( s[i] && s[i]!='/' ) i++;
+				continue;
+			}
 		}
+
 		// don't allow ; before the ?...probably because of stripped 
 		// sessionId...
 		// I was going to add other possible dup separators, but now
@@ -1350,16 +1356,6 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 
 	// null terminate our s
 	m_url[ m_ulen ]='\0';
-
-	// add the anchor after
-	m_anchor = NULL;
-	m_anchorLen = anchorLen;
-	if ( anchorLen > 0 &&
-	     m_ulen + anchorLen + 2 < MAX_URL_LEN ) {
-		m_anchor = &m_url[m_ulen+1];
-		gbmemcpy(&m_url[m_ulen+1], &t[anchorPos], anchorLen);
-		m_url[m_ulen+1+anchorLen] = '\0';
-	}
 }
 
 // hostname must also be www or NULL to be a root url
@@ -2672,51 +2668,4 @@ char* Url::getDisplayUrl( const char* url, SafeBuf* sb ) {
     sb->safePrintf("%s", labelCursor);
     sb->nullTerm();
     return sb->getBufStart();
-}
-
-
-void Url::calculateBaseUrl(Url *baseUrl, const Url *currentUrl, const char *href, int32_t hrefLen) {
-	baseUrl->set(currentUrl);
-
-	// ignore if not valid
-	if( !href || hrefLen==0)
-		return;
-
-	// set base to it
-	baseUrl->set(href, hrefLen);
-
-	if(baseUrl->getHostLen() <= 0 || baseUrl->getDomainLen() <= 0) {
-		//
-		// base href tag does not contain the domain. It is likely just "/".
-		//
-		// We now extract the scheme and host from the current URL to form a full URL based
-		// on that and the supplied base href. Previously it wrongly used the full current
-		// URL, which is wrong. Relative links on a page resulted in wrong full URLs. E.g. a link on
-		// http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/ resulted in
-		// http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/stoet-os/giv-en-gave/giv-et-barn-en-friplads/
-		//
-		char fixed_basehref[MAX_URL_LEN];
-
-		// If base href link starts with a /, do not add it again below
-		int adjust = (href[0] == '/' ? 1 : 0);
-
-		// If base href link does not end with /, add it.
-		// TODO: adding an ending slash to base href is not always correct. Eg:
-		//   <base href="http://example.com/api">, and <a href="?foo"> should result in http://example.com/api?foo and not http://example.com/api/?foo
-		//   <base href="http://example.com/other_doc">, and <a href="#boo"> should result in http://example.com/api?foo and not http://example.com/api/?foo
-		char endchar = (href[hrefLen-1] == '/' ? 0 : '/');
-
-		snprintf(fixed_basehref, sizeof(fixed_basehref), "%.*s://%.*s/%.*s%c",
-			 currentUrl->getSchemeLen(), currentUrl->getScheme(), currentUrl->getHostLen(), currentUrl->getHost(),
-			 hrefLen-adjust, href+adjust,
-			 endchar);
-		fixed_basehref[ sizeof(fixed_basehref)-1 ] = '\0';
-
-		baseUrl->set(fixed_basehref);
-	}
-
-	// fix invalid <base href="/" target="_self"/> tag
-	if(baseUrl->getHostLen() <= 0 || baseUrl->getDomainLen() <= 0 ) {
-		baseUrl->set(currentUrl);
-	}
 }

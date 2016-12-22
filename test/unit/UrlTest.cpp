@@ -868,3 +868,115 @@ TEST(UrlTest, LongUrl) {
 	url.set(bad_url);
 	EXPECT_LT(url.getUrlLen(), MAX_URL_LEN);
 }
+
+TEST(UrlTest, BaseUrlKfumspejderneDk) {
+	Url currentUrl;
+	currentUrl.set("http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/");
+
+	Url baseUrl;
+	baseUrl.set(&currentUrl, "/", 1);
+
+	Url linkUrl;
+	linkUrl.set(&baseUrl, "stoet-os/giv-en-gave/giv-et-barn-en-friplads/", strlen("stoet-os/giv-en-gave/giv-et-barn-en-friplads/"));
+
+	EXPECT_STREQ("http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/", linkUrl.getUrl());
+}
+
+TEST(UrlTest, BaseUrlQueryParam) {
+	Url currentUrl;
+	currentUrl.set("http://example.com/index.html");
+
+	Url baseUrl;
+	baseUrl.set(&currentUrl, "/api", strlen("/api"));
+
+	Url linkUrl;
+	linkUrl.set(&baseUrl, "?foo", strlen("?foo"));
+	EXPECT_STREQ("http://example.com/api?foo", linkUrl.getUrl());
+
+	linkUrl.set(&baseUrl, "#anchor", strlen("#anchor"));
+	EXPECT_STREQ("http://example.com/api", linkUrl.getUrl());
+
+	linkUrl.set(&baseUrl, "documentation", strlen("documentation"));
+	EXPECT_STREQ("http://example.com/documentation", linkUrl.getUrl());
+}
+
+TEST(UrlTest, BaseUrlRelative) {
+	Url currentUrl;
+	currentUrl.set("http://example.com/b/c/d;p?q");
+
+	/// @todo ALC fix test cases related to anchor (do we even need them?)
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// 5.4.1.  Normal Examples
+		// https://tools.ietf.org/html/rfc3986#section-5.4.1
+//		std::make_tuple("g:h", "g:h"),
+		std::make_tuple("g", "http://example.com/b/c/g"),
+		std::make_tuple("./g", "http://example.com/b/c/g"),
+		std::make_tuple("g/", "http://example.com/b/c/g/"),
+		std::make_tuple("/g", "http://example.com/g"),
+		std::make_tuple("//example.org", "http://example.org/"),
+		std::make_tuple("?y", "http://example.com/b/c/d;p?y"),
+		std::make_tuple("g?y", "http://example.com/b/c/g?y"),
+		std::make_tuple(";x", "http://example.com/b/c/;x"),
+		std::make_tuple("g;x", "http://example.com/b/c/g;x"),
+		std::make_tuple("", "http://example.com/b/c/d;p?q"),
+		std::make_tuple(".", "http://example.com/b/c/"),
+		std::make_tuple("./", "http://example.com/b/c/"),
+		std::make_tuple("..", "http://example.com/b/"),
+		std::make_tuple("../", "http://example.com/b/"),
+		std::make_tuple("../g", "http://example.com/b/g"),
+		std::make_tuple("../..", "http://example.com/"),
+		std::make_tuple("../../", "http://example.com/"),
+		std::make_tuple("../../g", "http://example.com/g"),
+
+		// we strip out url fragments
+		std::make_tuple("#s", "http://example.com/b/c/d;p?q"),
+		std::make_tuple("g#s", "http://example.com/b/c/g"),
+		std::make_tuple("g?y#s", "http://example.com/b/c/g?y"),
+		std::make_tuple("g;x?y#s", "http://example.com/b/c/g;x?y"),
+
+	    // 5.4.2.  Abnormal Examples
+		// https://tools.ietf.org/html/rfc3986#section-5.4.2
+		std::make_tuple("../../../g", "http://example.com/g"),
+		std::make_tuple("../../../../g", "http://example.com/g"),
+
+		std::make_tuple("/./g", "http://example.com/g"),
+		std::make_tuple("/../g", "http://example.com/g"),
+		std::make_tuple("g.", "http://example.com/b/c/g."),
+		std::make_tuple(".g", "http://example.com/b/c/.g"),
+		std::make_tuple("g..", "http://example.com/b/c/g.."),
+		std::make_tuple("..g", "http://example.com/b/c/..g"),
+
+		std::make_tuple("./../g", "http://example.com/b/g"),
+		/// @todo ALC this should resolve to without ending '/',
+		/// but when UrlParser is called, we can't differentiate between the relative url & original url
+		/// since it's concatenated together
+//		std::make_tuple("./g/.", "http://example.com/b/c/g"),
+		std::make_tuple("./g/.", "http://example.com/b/c/g/"),
+		std::make_tuple("g/./h", "http://example.com/b/c/g/h"),
+		std::make_tuple("g/../h", "http://example.com/b/c/h"),
+		std::make_tuple("g;x=1/./y", "http://example.com/b/c/g;x=1/y"),
+		std::make_tuple("g;x=1/../y", "http://example.com/b/c/y"),
+
+		std::make_tuple("g?y/./x", "http://example.com/b/c/g?y/./x"),
+		std::make_tuple("g?y/../x", "http://example.com/b/c/g?y/../x"),
+
+		// we strip out url fragments
+		std::make_tuple("g#s/./x", "http://example.com/b/c/g"),
+		std::make_tuple("g#s/../x", "http://example.com/b/c/g")
+
+//		std::make_tuple("http:g", "http:g")
+	};
+
+	for (auto it = test_cases.begin(); it != test_cases.end(); ++it) {
+		const char *input_href = std::get<0>(*it);
+		SCOPED_TRACE(input_href);
+
+		Url baseUrl;
+		baseUrl.set(&currentUrl, input_href, strlen(input_href));
+		EXPECT_STREQ(std::get<1>(*it), (const char *)baseUrl.getUrl());
+
+		Url baseUrlOld;
+		baseUrlOld.set(&currentUrl, input_href, strlen(input_href), false, false, false, 122);
+		EXPECT_STREQ(std::get<1>(*it), (const char *)baseUrlOld.getUrl());
+	}
+}

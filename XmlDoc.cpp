@@ -8808,7 +8808,7 @@ static bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness
 	// . redirUrl is set to the original at the top
 	else {
 		// addWWW = false, stripSessId=true
-		metaRedirUrl->set( cu, decoded, decBytes, false, true, false, false );
+		metaRedirUrl->set( cu, decoded, decBytes, false, true, false );
 	}
 
 	return true;
@@ -15824,9 +15824,15 @@ Url *XmlDoc::getBaseUrl ( ) {
 			// get the href field of this base tag
 			int32_t linkLen;
 			const char *link = xml->getString ( i, "href", &linkLen );
-		
-			Url::calculateBaseUrl(&m_baseUrl, cu, link, linkLen);
-		
+
+			// https://www.w3.org/TR/html51/document-metadata.html#the-base-element
+			// if there are multiple <base> elements with href attributes, all but the first are ignored
+			if (link == NULL) {
+				continue;
+			}
+
+			m_baseUrl.set(cu, link, linkLen);
+
 			break;
 		}
 	}
