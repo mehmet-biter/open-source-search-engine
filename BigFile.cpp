@@ -91,7 +91,8 @@ BigFile::BigFile ()
     m_renameP2JobsBeingSubmitted(false),
     m_outstandingRenameP2JobCount(0),
     m_latestsRenameP1Errno(0),
-    m_mtxMetaJobs()
+    m_mtxMetaJobs(),
+    m_flushingIsApplicable(false)
 {
 	m_flags       = O_RDWR ; // | O_DIRECT;
 	m_maxParts = 0;
@@ -148,6 +149,7 @@ bool BigFile::set(const char *dir, const char *baseFilename) {
 	// reset filsize
 	m_fileSize = -1;
 	m_lastModified = -1;
+	m_flushingIsApplicable = false;
 
 	m_dir.reset();
 	m_baseFilename.reset();
@@ -337,16 +339,6 @@ bool BigFile::addPart ( int32_t n ) {
 	
 	logTrace( g_conf.m_logTraceBigFile, "END - OK. New File object prepared. returning true" );
 	return true;
-}
-
-
-void BigFile::setBlocking() {
-	m_flags &= ~((int32_t)O_NONBLOCK);
-
-}
-
-void BigFile::setNonBlocking() {
-	m_flags |= O_NONBLOCK ;
 }
 
 
@@ -580,10 +572,8 @@ bool BigFile::readwrite ( void         *buf      ,
 			  void        (* callback) ( void *state ) ,
 			  int32_t          niceness ,
 			  int32_t          allocOff ) {
-	// are we blocking?
-	bool isNonBlocking = m_flags & O_NONBLOCK;
 	// if we're non blocking and caller didn't supply an "fstate"
-	if ( isNonBlocking && ! fstate ) {
+	if ( callback && ! fstate ) {
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"disk: readwrite() call is "
 		    "specified as non-blocking, but no state provided.");
@@ -639,6 +629,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_callback    = callback;
 	fstate->m_niceness    = niceness;
 	fstate->m_flags       = m_flags;
+	fstate->m_flushAfterWrite = g_conf.m_flushWrites && m_flushingIsApplicable;
 
 	// sanity
 	if ( fstate->m_bytesToGo > 150000000 ) {
@@ -702,7 +693,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_startTime   = gettimeofdayInMilliseconds();
 	fstate->m_vfd         = m_vfd;
 
-	if(isNonBlocking && callback && g_jobScheduler.are_new_jobs_allowed()) {
+	if(callback && g_jobScheduler.are_new_jobs_allowed()) {
 		// . spawn a thread to do this i/o
 		// . this returns false and sets g_errno on error, true on success
 		// . we should return false cuz we blocked
@@ -1090,7 +1081,6 @@ static bool readwrite_r ( FileState *fstate ) {
 		// debug msg
 		if (g_conf.m_logDebugDisk) {
 			const char *s = (fstate->m_doWrite) ? "wrote" : "read";
-			const char *t = (fstate->m_flags & O_NONBLOCK) ? "yes" : "no";    // are we blocking?
 
 			// this is bad for real-time threads cuz our unlink() routine
 			// may have been called by RdbMerge and our m_files may be
@@ -1098,11 +1088,9 @@ static bool readwrite_r ( FileState *fstate ) {
 			// MDW: don't access m_bigfile in case bigfile was deleted
 			// since we are in a thread
 			log(LOG_DEBUG, "disk::readwrite: %s %zi bytes of %" PRId64" @ offset %" PRId64
-					    "(nonBlock=%s) "
 					    "fd %i "
 					    "cc1=%i=?%i cc2=%i=?%i errno=%s",
 			    s, n, len, localOffset,
-			    t,
 			    fd,
 			    (int) fstate->m_closeCount1,
 			    (int) getCloseCount_r(fstate->m_fd1),
@@ -1147,7 +1135,7 @@ static bool readwrite_r ( FileState *fstate ) {
 		//   writes are used for when we call RdbTree::fastSave_r() and it
 		//   takes forever to dump Spiderdb if we sync each little write
 #ifndef __APPLE_
-		if (g_conf.m_flushWrites && doWrite && (fstate->m_flags & O_NONBLOCK) && fdatasync(fd) < 0) {
+		if (doWrite && fstate->m_flushAfterWrite && fdatasync(fd) < 0) {
 			log(LOG_WARN, "disk: fdatasync: %s", mstrerror(errno));
 			// ignore an error here
 			errno = 0;

@@ -76,6 +76,9 @@ private:
 	const char *m_host;
 	size_t m_hostLen;
 
+	const char *m_port;
+	size_t m_portLen;
+
 	const char *m_domain;
 	size_t m_domainLen;
 

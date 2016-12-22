@@ -37,6 +37,7 @@ enum thread_type_t {
 	thread_type_replicate_read,
 	thread_type_file_merge,
 	thread_type_file_meta_data,     //unlink/rename
+	thread_type_index_merge,
 	thread_type_statistics,         //mostly i/o
 	thread_type_unspecified_io,     //until we can be more specific
 	thread_type_generate_thumbnail,

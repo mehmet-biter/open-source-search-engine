@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "RdbIndex.h"
 #include "BigFile.h"
 #include "Titledb.h"	// For MAX_DOCID
@@ -12,6 +10,7 @@
 #include <algorithm>
 #include "RdbTree.h"
 #include "RdbBuckets.h"
+#include "JobScheduler.h"
 #include "ScopedLock.h"
 #include <fcntl.h>
 
@@ -40,7 +39,8 @@ RdbIndex::RdbIndex()
 	, m_prevPendingDocId(MAX_DOCID + 1)
 	, m_lastMergeTime(gettimeofdayInMilliseconds())
 	, m_needToWrite(false)
-	, m_registeredCallback(false) {
+	, m_registeredCallback(false)
+	, m_generatingIndex(false) {
 }
 
 // dont save index on deletion!
@@ -67,7 +67,21 @@ void RdbIndex::timedMerge(int /*fd*/, void *state) {
 	RdbIndex *index = static_cast<RdbIndex*>(state);
 
 	ScopedLock sl(index->m_pendingDocIdsMtx);
-	if (gettimeofdayInMilliseconds() - index->m_lastMergeTime >= s_defaultMaxPendingTimeMs) {
+
+	if ((index->m_pendingDocIds->size() >= (index->m_generatingIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize)) ||
+		(gettimeofdayInMilliseconds() - index->m_lastMergeTime >= s_defaultMaxPendingTimeMs)) {
+		g_jobScheduler.submit(mergePendingDocIds, NULL, state, thread_type_index_merge, 0);
+	}
+}
+
+void RdbIndex::mergePendingDocIds(void *state) {
+	RdbIndex *index = static_cast<RdbIndex*>(state);
+
+	ScopedLock sl(index->m_pendingDocIdsMtx);
+
+	// we check criteria again to avoid running merge when it's not needed
+	if ((index->m_pendingDocIds->size() >= (index->m_generatingIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize)) ||
+	    (gettimeofdayInMilliseconds() - index->m_lastMergeTime >= s_defaultMaxPendingTimeMs)) {
 		(void)index->mergePendingDocIds_unlocked();
 	}
 }
@@ -85,7 +99,9 @@ void RdbIndex::set(const char *dir, const char *indexFilename, int32_t fixedData
 	m_ks = keySize;
 	m_rdbId = rdbId;
 
-	m_registeredCallback = g_loop.registerSleepCallback(s_defaultMaxPendingTimeMs, this, &timedMerge);
+	/// @todo ALC should we only register a sleep callback when we need it?
+	/// if we're not merging/adding record we don't need to merge
+	m_registeredCallback = g_loop.registerSleepCallback(1000, this, &timedMerge);
 }
 
 bool RdbIndex::close(bool urgent) {
@@ -335,10 +351,10 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked(bool forWrite) {
 
 void RdbIndex::addRecord(char *key) {
 	ScopedLock sl(m_pendingDocIdsMtx);
-	addRecord_unlocked(key, false);
+	addRecord_unlocked(key);
 }
 
-void RdbIndex::addRecord_unlocked(char *key, bool isGenerateIndex) {
+void RdbIndex::addRecord_unlocked(char *key) {
 	m_needToWrite = true;
 
 	if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
@@ -354,15 +370,6 @@ void RdbIndex::addRecord_unlocked(char *key, bool isGenerateIndex) {
 	} else {
 		logError("Not implemented for dbname=%s", getDbnameFromId(m_rdbId));
 		gbshutdownLogicError();
-	}
-
-	bool doMerge = false;
-	if (m_pendingDocIds->size() >= (isGenerateIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize)) {
-		doMerge = true;
-	}
-
-	if (doMerge) {
-		(void)mergePendingDocIds_unlocked();
 	}
 }
 
@@ -399,7 +406,7 @@ void RdbIndex::addList(RdbList *list) {
 	ScopedLock sl(m_pendingDocIdsMtx);
 	for (; !list->isExhausted(); list->skipCurrentRecord()) {
 		list->getCurrentKey(key);
-		addRecord_unlocked(key, true);
+		addRecord_unlocked(key);
 	}
 }
 
@@ -412,6 +419,7 @@ bool RdbIndex::generateIndex(collnum_t collnum, const RdbTree *tree) {
 
 	log(LOG_INFO, "db: Generating index for %s tree", getDbnameFromId(m_rdbId));
 	m_needToWrite = true;
+	m_generatingIndex = true;
 
 	// use extremes
 	const char *startKey = KEYMIN();
@@ -421,6 +429,7 @@ bool RdbIndex::generateIndex(collnum_t collnum, const RdbTree *tree) {
 
 	RdbList list;
 	if (!tree->getList(collnum, startKey, endKey, -1, &list, &numPosRecs, &numNegRecs, m_useHalfKeys)) {
+		m_generatingIndex = false;
 		return false;
 	}
 
@@ -429,6 +438,8 @@ bool RdbIndex::generateIndex(collnum_t collnum, const RdbTree *tree) {
 
 	// make sure it's all sorted and merged
 	(void)mergePendingDocIds();
+
+	m_generatingIndex = false;
 
 	return true;
 }
@@ -442,6 +453,7 @@ bool RdbIndex::generateIndex(collnum_t collnum, const RdbBuckets *buckets) {
 
 	log(LOG_INFO, "db: Generating index for %s buckets", getDbnameFromId(m_rdbId));
 	m_needToWrite = true;
+	m_generatingIndex = true;
 
 	// use extremes
 	const char *startKey = KEYMIN();
@@ -451,6 +463,7 @@ bool RdbIndex::generateIndex(collnum_t collnum, const RdbBuckets *buckets) {
 
 	RdbList list;
 	if (!buckets->getList(collnum, startKey, endKey, -1, &list, &numPosRecs, &numNegRecs, m_useHalfKeys)) {
+		m_generatingIndex = false;
 		return false;
 	}
 
@@ -459,6 +472,8 @@ bool RdbIndex::generateIndex(collnum_t collnum, const RdbBuckets *buckets) {
 
 	// make sure it's all sorted and merged
 	(void)mergePendingDocIds();
+
+	m_generatingIndex = false;
 
 	return true;
 }
@@ -480,6 +495,7 @@ bool RdbIndex::generateIndex(BigFile *f) {
 
 	log(LOG_INFO, "db: Generating index for %s/%s", f->getDir(), f->getFilename());
 	m_needToWrite = true;
+	m_generatingIndex = true;
 
 	// scan through all the recs in f
 	int64_t offset = 0;
@@ -488,6 +504,7 @@ bool RdbIndex::generateIndex(BigFile *f) {
 	// if file is length 0, we don't need to do much
 	// g_errno should be set on error
 	if (fileSize == 0 || fileSize < 0) {
+		m_generatingIndex = false;
 		return (fileSize == 0);
 	}
 
@@ -520,6 +537,7 @@ bool RdbIndex::generateIndex(BigFile *f) {
 	int64_t next = 0LL;
 
 	ScopedLock sl(m_pendingDocIdsMtx);
+
 	// read in at most "bufSize" bytes with each read
 	for (; offset < fileSize;) {
 		// keep track of how many bytes read in the log
@@ -541,12 +559,14 @@ bool RdbIndex::generateIndex(BigFile *f) {
 		// so we can't go any more
 		if (readSize < minRecSize) {
 			mfree(buf, bufSize, "RdbIndex");
+			m_generatingIndex = false;
 			return true;
 		}
 
 		// otherwise, read it in
 		if (!f->read(buf, readSize, offset)) {
 			mfree(buf, bufSize, "RdbIndex");
+			m_generatingIndex = false;
 			log(LOG_WARN, "db: Failed to read %" PRId64" bytes of %s at offset=%" PRId64". Map generation failed.",
 			    bufSize, f->getFilename(), offset);
 			return false;
@@ -587,6 +607,8 @@ bool RdbIndex::generateIndex(BigFile *f) {
 
 			// don't chop keys
 			if (recSize < 6) {
+				m_generatingIndex = false;
+
 				log(LOG_WARN, "db: Got negative recsize of %" PRId32" at offset=%" PRId64, recSize,
 				    offset + (rec - buf));
 
@@ -608,6 +630,8 @@ bool RdbIndex::generateIndex(BigFile *f) {
 				// . this can happen if merge dumped out half-ass
 				// . the write split a record...
 				if (rec - buf == 0 && recSize <= bufSize) {
+					m_generatingIndex = false;
+
 					log(LOG_WARN, "db: Index generation failed because last record in data file was split. Power failure while writing?");
 
 					// @todo ALC do we want to abort here?
@@ -620,6 +644,8 @@ bool RdbIndex::generateIndex(BigFile *f) {
 					bufSize = recSize;
 					buf = (char *)mmalloc(bufSize, "RdbIndex");
 					if (!buf) {
+						m_generatingIndex = false;
+
 						log(LOG_WARN, "db: Got error while generating the index file: %s. offset=%" PRIu64".",
 						    mstrerror(g_errno), oldOffset);
 						return false;
@@ -630,7 +656,7 @@ bool RdbIndex::generateIndex(BigFile *f) {
 				break;
 			}
 
-			addRecord_unlocked(key, true);
+			addRecord_unlocked(key);
 		}
 
 		if (advanceOffset) {
@@ -643,6 +669,8 @@ bool RdbIndex::generateIndex(BigFile *f) {
 
 	// make sure it's all sorted and merged
 	(void)mergePendingDocIds_unlocked();
+
+	m_generatingIndex = false;
 
 	// otherwise, we're done
 	return true;

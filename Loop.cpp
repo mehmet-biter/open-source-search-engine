@@ -345,7 +345,7 @@ bool Loop::setNonBlocking ( int fd , int32_t niceness ) {
 	}
 
  retry9:
-	if ( fcntl ( fd, F_SETFL, flags|O_NONBLOCK|O_ASYNC) < 0 ) {
+	if ( fcntl ( fd, F_SETFL, flags|O_NONBLOCK) < 0 ) {
 		// valgrind
 		if ( errno == EINTR ) goto retry9;
 		g_errno = errno;

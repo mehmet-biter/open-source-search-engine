@@ -128,7 +128,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	m_wids0Ptr = m_wids0;
 	m_wids1Ptr = m_wids1;
 	m_srcPtr   = m_src;
-	m_termPtrsPtr = m_termPtrs;
+	m_termPtrsPtr = (const char**)m_termPtrs;
 	m_termOffsPtr = m_termOffs;
 	m_termLensPtr = m_termLens;
 	m_numAlnumWordsPtr = m_numAlnumWords;
@@ -146,8 +146,8 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	//
 
 	char sourceId = SOURCE_WIKTIONARY;
-	char *ss = NULL;
-	char *savedss = NULL;
+	const char *ss = NULL;
+	const char *savedss = NULL;
 	int64_t bwid;
 	char wikiLangId = langId;
 	bool hadSpace ;
@@ -285,16 +285,16 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 		int32_t count = 0;
 	addSynSet:
 		// do we have another set following this
-		char *next = g_wiktionary.getNextSynSet(bwid,langId,ss);
+		const char *next = g_wiktionary.getNextSynSet(bwid,langId,ss);
 		// if so, init the dedup table then
 		if ( next && ! dd ) {
 			dd = &dedup;
 			dd->set ( 8,0,8,dbuf,512,false,"sddbuf");
 		}
 		// get lang, 2 chars, unless zh_ch
-		char *synLangAbbr = ss;
+		const char *synLangAbbr = ss;
 		// skip over the pipe i guess
-		char *pipe = ss + 2;
+		const char *pipe = ss + 2;
 		// zh_ch?
 		if ( *pipe == '_' ) pipe += 3;
 		// sanity
@@ -304,9 +304,9 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 		int synLangAbbrLen = pipe - ss;
 
 		// point to word list
-		char *p = pipe + 1;
+		const char *p = pipe + 1;
 		// hash up the list of words, they are in utf8 and
-		char *e = p + 1;
+		const char *e = p + 1;
 
 
 		char tmp[32];
@@ -376,7 +376,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 		// and for multi alnum word synonyms
 		if ( hadSpace ) {
 			Words sw;
-			sw.set ( p , e - p , true );
+			sw.set ( const_cast<char*>(p), e - p, true );
 
 			*(int64_t *)m_wids0Ptr = sw.getWordId(0);
 			*(int64_t *)m_wids1Ptr = sw.getWordId(2);
@@ -527,16 +527,17 @@ bool Synonyms::addStripped ( const char *w , int32_t wlen , HashTableX *dt ) {
 	// avoid overflow
 	if ( wlen > 200 ) return true;
 
-	// require utf8
-	bool hadUtf8 = false;
-	char size;
-	for ( int32_t i = 0 ; i < wlen ; i += size ) {
-		size = getUtf8CharSize(w+i);
-		if ( size == 1 ) continue;
-		hadUtf8 = true;
-		break;
+	// ascii (chars<128) have no accents/diacritics. If the word is composed solely of
+	// ascii then there is no need for the more expensive utf8/unicode processing
+	bool hasNonAscii = false;
+	for(int32_t i = 0; i < wlen; i++) {
+		if((uint8_t)(w[i])>=128) {
+			hasNonAscii = true;
+			break;
+		}
 	}
-	if ( ! hadUtf8 ) return true;
+	if(!hasNonAscii)
+		return true;
 
 	// filter out accent marks
 	char abuf[256];

@@ -345,7 +345,7 @@ bool Proxy::handleRequest (TcpSocket *s){
 	const char *qs = hr.getString("q",NULL);
 	Query q;
 	if ( qs ) 
-		q.set2 ( qs , langUnknown , false ); // 2 = autodetect bool
+		q.set2 ( qs , langUnknown , false, false ); // 2 = autodetect bool
 	// clear g_errno in case Query::set() set it
 	g_errno = 0;
 	// save it. might be zero!

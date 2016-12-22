@@ -3859,7 +3859,6 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 			return false;
 		}
 		log("db: reading from speedtest0001.dat");
-		f.setBlocking();
 		goto doreadtest;
 	}
 	// try a read test from indexdb*.dat*
@@ -3871,7 +3870,6 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 			return false;
 		}
 		log("db: reading from indexdb0001.dat");
-		f.setBlocking();
 		goto doreadtest;
 	}
 	// try a write test to speedtest*.dat*
@@ -3883,7 +3881,6 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 			return false;
 		}
 		log("db: writing to speedtest0001.dat");
-		f.setBlocking();
 	}
 
 	// write  2 gigs to the file, 1M at a time
@@ -4557,7 +4554,7 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 
 	Matches matches;
 	Query q;
-	q.set2 ( query , langUnknown , false );
+	q.set2 ( query , langUnknown , false, false );
 	matches.setQuery ( &q );
 	words.set ( &xml , true ) ;
 	t = gettimeofdayInMilliseconds();
@@ -4587,7 +4584,7 @@ bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t doc
 	int64_t t = gettimeofdayInMilliseconds();
 
 	Query q;
-	q.set2 ( query , langUnknown , false );
+	q.set2 ( query , langUnknown , false, false );
 
 	char *content ;
 	int32_t  contentLen ;

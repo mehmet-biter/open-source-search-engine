@@ -56,7 +56,7 @@ void Speller::test ( char *ff ) {
 		if ( wlen <= 0 ) continue;
 		buf[wlen-1]='\0';
 		Query q;
-		q.set2 ( buf , langUnknown , false );
+		q.set2 ( buf , langUnknown , false, false );
 	}
 	fclose(fd);
 }

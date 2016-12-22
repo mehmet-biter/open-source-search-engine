@@ -6,14 +6,14 @@
 #include <string.h>
 #include <iterator>
 
-static const char* strnpbrk( const char *str1, size_t len, const char *str2 ) {
+static const char *strnpbrk(const char *str1, size_t len, const char *str2) {
 	const char *haystack = str1;
 	const char *haystackEnd = str1 + len;
 
-	while ( haystack < haystackEnd && *haystack ) {
+	while (haystack < haystackEnd && *haystack) {
 		const char *needle = str2;
-		while ( *needle ) {
-			if ( *haystack == *needle ) {
+		while (*needle) {
+			if (*haystack == *needle) {
 				return haystack;
 			}
 			++needle;
@@ -25,43 +25,46 @@ static const char* strnpbrk( const char *str1, size_t len, const char *str2 ) {
 }
 
 /// @todo ALC we should see if we need to do relative path resolution here
-/// @todo ALC we should cater for scheme relative address ( pass in parent scheme )
+/// @todo ALC we should cater for scheme relative address (pass in parent scheme)
 /// https://tools.ietf.org/html/rfc3986#section-5.2
-UrlParser::UrlParser( const char *url, size_t urlLen )
-	: m_url( url )
-	, m_urlLen( urlLen )
-	, m_scheme( NULL )
-	, m_schemeLen( 0 )
-	, m_authority( NULL )
-	, m_authorityLen( 0 )
-	, m_host( NULL )
-	, m_hostLen( 0 )
-	, m_domain( NULL )
-	, m_domainLen( 0 )
+UrlParser::UrlParser(const char *url, size_t urlLen)
+	: m_url(url)
+	, m_urlLen(urlLen)
+	, m_scheme(NULL)
+	, m_schemeLen(0)
+	, m_authority(NULL)
+	, m_authorityLen(0)
+	, m_host(NULL)
+	, m_hostLen(0)
+	, m_port(NULL)
+	, m_portLen(0)
+	, m_domain(NULL)
+	, m_domainLen(0)
 	, m_paths()
 	, m_pathEndChar('\0')
-	, m_pathsDeleteCount( 0 )
+	, m_pathsDeleteCount(0)
 	, m_queries()
 	, m_queriesMap()
-	, m_queriesDeleteCount( 0 )
+	, m_queriesDeleteCount(0)
 	, m_urlParsed() {
-	m_urlParsed.reserve( m_urlLen );
+	m_urlParsed.reserve(m_urlLen);
 	parse();
 }
 
 void UrlParser::print() const {
-	logf( LOG_DEBUG, "UrlParser::url       : %.*s", static_cast<uint32_t>( m_urlLen ), m_url );
-	logf( LOG_DEBUG, "UrlParser::scheme    : %.*s", static_cast<uint32_t>( m_schemeLen ), m_scheme );
-	logf( LOG_DEBUG, "UrlParser::authority : %.*s", static_cast<uint32_t>( m_authorityLen ), m_authority );
-	logf( LOG_DEBUG, "UrlParser::host      : %.*s", static_cast<uint32_t>( m_hostLen ), m_host );
-	logf( LOG_DEBUG, "UrlParser::domain    : %.*s", static_cast<uint32_t>( m_domainLen ), m_domain );
+	logf(LOG_DEBUG, "UrlParser::url       : '%.*s'", static_cast<uint32_t>(m_urlLen), m_url);
+	logf(LOG_DEBUG, "UrlParser::scheme    : '%.*s'", static_cast<uint32_t>(m_schemeLen), m_scheme);
+	logf(LOG_DEBUG, "UrlParser::authority : '%.*s'", static_cast<uint32_t>(m_authorityLen), m_authority);
+	logf(LOG_DEBUG, "UrlParser::host      : '%.*s'", static_cast<uint32_t>(m_hostLen), m_host);
+	logf(LOG_DEBUG, "UrlParser::domain    : '%.*s'", static_cast<uint32_t>(m_domainLen), m_domain);
+	logf(LOG_DEBUG, "UrlParser::port      : '%.*s'", static_cast<uint32_t>(m_portLen), m_port);
 
-	for ( auto it = m_paths.begin(); it != m_paths.end(); ++it ) {
-		logf( LOG_DEBUG, "UrlParser::path[%02zi]  : %s", std::distance( m_paths.begin(), it ), it->getString().c_str() );
+	for (auto it = m_paths.begin(); it != m_paths.end(); ++it) {
+		logf(LOG_DEBUG, "UrlParser::path[%02zi]  : '%s'%s", std::distance(m_paths.begin(), it), it->getString().c_str(), it->isDeleted() ? " (deleted)" : "");
 	}
 
-	for ( auto it = m_queries.begin(); it != m_queries.end(); ++it ) {
-		logf( LOG_DEBUG, "UrlParser::query[%02zi] : %s", std::distance( m_queries.begin(), it ), it->getString().c_str() );
+	for (auto it = m_queries.begin(); it != m_queries.end(); ++it) {
+		logf(LOG_DEBUG, "UrlParser::query[%02zi] : '%s'%s", std::distance(m_queries.begin(), it), it->getString().c_str(), it->isDeleted() ? " (deleted)" : "");
 	}
 }
 
@@ -76,9 +79,9 @@ void UrlParser::parse() {
 	//             / path-rootless
 	//             / path-empty
 
-	const char *authorityPos = static_cast<const char*>( memmem( currentPos, urlEnd - currentPos, "//", 2 ) );
-	if ( authorityPos != NULL ) {
-		if ( authorityPos != currentPos ) {
+	const char *authorityPos = static_cast<const char *>(memmem(currentPos, urlEnd - currentPos, "//", 2));
+	if (authorityPos != NULL) {
+		if (authorityPos != currentPos) {
 			m_scheme = currentPos;
 			m_schemeLen = authorityPos - currentPos - 1;
 		}
@@ -89,51 +92,51 @@ void UrlParser::parse() {
 		m_authority = currentPos;
 	}
 
-	const char *pathPos = static_cast<const char*>( memchr( currentPos, '/', urlEnd - currentPos ) );
-	if ( pathPos != NULL ) {
+	const char *pathPos = static_cast<const char *>(memchr(currentPos, '/', urlEnd - currentPos));
+	if (pathPos != NULL) {
 		m_authorityLen = pathPos - m_authority;
 		currentPos = pathPos + 1;
 	} else {
 		m_authorityLen = urlEnd - m_authority;
-
-		// nothing else to process
-		return;
 	}
 
-	// @todo similar logic in Url.cpp ( merge this )
+	// @todo similar logic in Url.cpp (merge this)
 
 	// authority   = [ userinfo "@" ] host [ ":" port ]
-	const char *userInfoPos = static_cast<const char *>( memchr( m_authority, '@', m_authorityLen ) );
-	if ( userInfoPos != NULL ) {
+	const char *userInfoPos = static_cast<const char *>(memchr(m_authority, '@', m_authorityLen));
+	if (userInfoPos != NULL) {
 		m_host = userInfoPos + 1;
-		m_hostLen = m_authorityLen - ( userInfoPos - m_authority ) - 1;
+		m_hostLen = m_authorityLen - (userInfoPos - m_authority) - 1;
 	} else {
 		m_host = m_authority;
 		m_hostLen = m_authorityLen;
 	}
 
-	const char *portPos = static_cast<const char *>( memrchr( m_host, ':', m_hostLen ) );
-	if ( portPos != NULL ) {
-		m_hostLen -= ( m_hostLen - ( portPos - m_host ) );
+	const char *portPos = static_cast<const char *>(memrchr(m_host, ':', m_hostLen));
+	if (portPos != NULL) {
+		m_port = portPos + 1;
+		m_portLen = m_authorityLen - (portPos - m_authority) - 1;
+
+		m_hostLen -= (m_hostLen - (portPos - m_host));
 	}
 
 	// host        = IP-literal / IPv4address / reg-name
 
 	/// @todo ALC we should remove the const cast once we fix all the const issue
-	int32_t ip = atoip( m_host, m_hostLen );
-	if ( ip ) {
+	int32_t ip = atoip(m_host, m_hostLen);
+	if (ip) {
 		int32_t domainLen = 0;
-		m_domain = getDomainOfIp ( const_cast<char *>( m_host ), m_hostLen , &domainLen );
+		m_domain = getDomainOfIp(const_cast<char *>(m_host), m_hostLen, &domainLen);
 		m_domainLen = domainLen;
 	} else {
-		const char *tldPos = ::getTLD( const_cast<char *>( m_host ), m_hostLen );
-		if ( tldPos ) {
+		const char *tldPos = ::getTLD(const_cast<char *>(m_host), m_hostLen);
+		if (tldPos) {
 			size_t tldLen = m_host + m_hostLen - tldPos;
-			if ( tldLen < m_hostLen ) {
-				m_domain = static_cast<const char *>( memrchr( m_host, '.', m_hostLen - tldLen - 1 ) );
-				if ( m_domain ) {
+			if (tldLen < m_hostLen) {
+				m_domain = static_cast<const char *>(memrchr(m_host, '.', m_hostLen - tldLen - 1));
+				if (m_domain) {
 					m_domain += 1;
-					m_domainLen = m_hostLen - ( m_domain - m_host );
+					m_domainLen = m_hostLen - (m_domain - m_host);
 				} else {
 					m_domain = m_host;
 					m_domainLen = m_hostLen;
@@ -142,63 +145,110 @@ void UrlParser::parse() {
 		}
 	}
 
-	const char *queryPos = static_cast<const char*>( memchr( currentPos, '?', urlEnd - currentPos ) );
-	if ( queryPos != NULL ) {
+	if (pathPos == NULL) {
+		// nothing else to process
+		return;
+	}
+
+	const char *queryPos = static_cast<const char *>(memchr(currentPos, '?', urlEnd - currentPos));
+	if (queryPos != NULL) {
 		currentPos = queryPos + 1;
 	}
 
-	const char *anchorPos = static_cast<const char*>( memrchr( currentPos, '#', urlEnd - currentPos ) );
-//	if ( anchorPos != NULL ) {
-//		currentPos = anchorPos + 1;
-//	}
+	/// @note url fragment is stripped and not part of the rebuild url
+	const char *fragmentPos = static_cast<const char *>(memrchr(currentPos, '#', urlEnd - currentPos));
+	if (fragmentPos != NULL) {
+		// https://developers.google.com/webmasters/ajax-crawling/docs/getting-started
+		// don't treat '#!" as anchor
+		if (fragmentPos != urlEnd && *(fragmentPos + 1) == '!') {
+			fragmentPos = NULL;
+		}
+	}
 
-	const char *pathEnd = queryPos ? queryPos : (anchorPos ? anchorPos : urlEnd);
-	m_pathEndChar = *( pathEnd - 1 );
+	const char *pathEnd = queryPos ? queryPos : (fragmentPos ? fragmentPos : urlEnd);
+	m_pathEndChar = *(pathEnd - 1);
 
-	const char *queryEnd = anchorPos ? anchorPos : urlEnd;
+	const char *queryEnd = fragmentPos ? fragmentPos : urlEnd;
 
 	// path
+	bool updatePathEncChar = false;
 	const char *prevPos = pathPos + 1;
-	while ( prevPos && ( prevPos <= pathEnd ) ) {
+	while (prevPos && (prevPos <= pathEnd)) {
 		size_t len = pathEnd - prevPos;
-		currentPos = strnpbrk( prevPos, len, "/;&" );
-		if ( currentPos ) {
+		currentPos = strnpbrk(prevPos, len, "/;&");
+		if (currentPos) {
 			len = currentPos - prevPos;
 		}
 
-		UrlComponent urlPart = UrlComponent( UrlComponent::TYPE_PATH, prevPos, len, *( prevPos - 1 ) );
+		UrlComponent urlPart = UrlComponent(UrlComponent::TYPE_PATH, prevPos, len, *(prevPos - 1));
 
-		m_paths.push_back( urlPart );
+		// check for special cases before adding to m_paths
+		if (len == 1 && memcmp(prevPos, ".", 1) == 0) {
+			urlPart.setDeleted();
+			updatePathEncChar = true;
+		} else if (len == 2 && memcmp(prevPos, "..", 2) == 0) {
+			deleteComponent(&urlPart);
+			updatePathEncChar = true;
+
+			for (auto it = m_paths.rbegin(); it != m_paths.rend(); ++it) {
+				if (it->isDeleted()) {
+					continue;
+				}
+
+				deleteComponent(&(*it));
+
+				if (it->getSeparator() == '/') {
+					break;
+				}
+			}
+
+		}
+		m_paths.push_back(urlPart);
 
 		prevPos = currentPos ? currentPos + 1 : NULL;
 	}
 
+	// set pathEndChar to component after last non-deleted component (if exist)
+	if (updatePathEncChar) {
+		for (auto it = m_paths.rbegin(); it != m_paths.rend(); ++it) {
+			if (it->isDeleted()) {
+				continue;
+			}
+
+			if (it != m_paths.rbegin()) {
+				m_pathEndChar = std::prev(it)->getSeparator();
+			}
+
+			break;
+		}
+	}
+
 	// query
-	if ( queryPos ) {
+	if (queryPos) {
 		prevPos = queryPos + 1;
 
 		bool isPrevAmpersand = false;
-		while ( prevPos && ( prevPos < queryEnd ) ) {
+		while (prevPos && (prevPos < queryEnd)) {
 			size_t len = queryEnd - prevPos;
-			currentPos = strnpbrk( prevPos, len, "&;" );
-			if ( currentPos ) {
+			currentPos = strnpbrk(prevPos, len, "&;");
+			if (currentPos) {
 				len = currentPos - prevPos;
 			}
 
-			UrlComponent urlPart = UrlComponent( UrlComponent::TYPE_QUERY, prevPos, len, *( prevPos - 1 ) );
+			UrlComponent urlPart = UrlComponent(UrlComponent::TYPE_QUERY, prevPos, len, *(prevPos - 1));
 			std::string key = urlPart.getKey();
 
 			// check previous urlPart
-			if ( isPrevAmpersand ) {
-				urlPart.setSeparator( '&' );
+			if (isPrevAmpersand) {
+				urlPart.setSeparator('&');
 			}
 
-			bool isAmpersand = ( !urlPart.hasValue() && urlPart.getKey() == "amp" );
-			if ( !key.empty() && !isAmpersand ) {
+			bool isAmpersand = (!urlPart.hasValue() && urlPart.getKey() == "amp");
+			if (!key.empty() && !isAmpersand) {
 				// we don't cater for case sensitive query parameter (eg: parm, Parm, PARM is assumed to be the same)
-				auto it = m_queriesMap.find( key );
+				auto it = m_queriesMap.find(key);
 				if (it == m_queriesMap.end()) {
-					m_queries.push_back( urlPart );
+					m_queries.push_back(urlPart);
 					m_queriesMap[key] = m_queries.size() - 1;
 				} else {
 					m_queries[it->second] = urlPart;
@@ -216,48 +266,69 @@ void UrlParser::parse() {
 void UrlParser::unparse() {
 	m_urlParsed.clear();
 
-	// domain
-	m_urlParsed.append( m_url, ( m_authority - m_url ) + m_authorityLen );
+	if (m_scheme == NULL || m_schemeLen == 0) {
+		m_urlParsed.append("http");
+	} else {
+		for (size_t i = 0; i < m_schemeLen; ++i) {
+			m_urlParsed.push_back(tolower(m_scheme[i]));
+		}
+	}
+
+	m_urlParsed.append("://");
+
+	// userinfo '@'
+	m_urlParsed.append(m_authority, m_host - m_authority);
+
+	// host
+	for (size_t i = 0; i < m_hostLen; ++i) {
+		m_urlParsed.push_back(tolower(m_host[i]));
+	}
+
+	// port
+	if (m_port) {
+		m_urlParsed.push_back(':');
+		m_urlParsed.append(m_port, m_portLen);
+	}
 
 	bool isFirst = true;
-	for ( auto it = m_paths.begin(); it != m_paths.end(); ++it ) {
-		if ( !it->isDeleted() ) {
-			if ( isFirst ) {
+	for (auto it = m_paths.begin(); it != m_paths.end(); ++it) {
+		if (!it->isDeleted()) {
+			if (isFirst) {
 				isFirst = false;
-				if ( it->getSeparator() != '/' ) {
-					m_urlParsed.append( "/" );
+				if (it->getSeparator() != '/') {
+					m_urlParsed.append("/");
 				}
 			}
 
 			m_urlParsed += it->getSeparator();
-			m_urlParsed.append( it->getString() );
+			m_urlParsed.append(it->getString());
 		}
 	}
 
-	if ( m_urlParsed[ m_urlParsed.size() - 1 ] != '/' && m_pathEndChar == '/' ) {
+	if (m_urlParsed[m_urlParsed.size() - 1] != '/' && m_pathEndChar == '/') {
 		m_urlParsed += m_pathEndChar;
 	}
 
 	isFirst = true;
-	for ( auto it = m_queries.begin(); it != m_queries.end(); ++it ) {
-		if ( !it->isDeleted() ) {
-			if ( isFirst ) {
+	for (auto it = m_queries.begin(); it != m_queries.end(); ++it) {
+		if (!it->isDeleted()) {
+			if (isFirst) {
 				isFirst = false;
-				m_urlParsed.append( "?" );
+				m_urlParsed.append("?");
 			} else {
-				m_urlParsed += ( it->getSeparator() == '?' ) ? '&' : it->getSeparator();
+				m_urlParsed += (it->getSeparator() == '?') ? '&' : it->getSeparator();
 			}
 
-			m_urlParsed.append( it->getString() );
+			m_urlParsed.append(it->getString());
 		}
 	}
 }
 
-void UrlParser::deleteComponent( UrlComponent *urlComponent ) {
-	if ( urlComponent ) {
+void UrlParser::deleteComponent(UrlComponent *urlComponent) {
+	if (urlComponent) {
 		urlComponent->setDeleted();
 
-		switch ( urlComponent->getType() ) {
+		switch (urlComponent->getType()) {
 			case UrlComponent::TYPE_PATH:
 				++m_pathsDeleteCount;
 				break;
@@ -265,66 +336,66 @@ void UrlParser::deleteComponent( UrlComponent *urlComponent ) {
 				++m_queriesDeleteCount;
 
 				// also remove from map
-				m_queriesMap.erase( urlComponent->getKey() );
+				m_queriesMap.erase(urlComponent->getKey());
 				break;
 		}
 	}
 }
 
-bool UrlParser::removeComponent( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator ) {
+bool UrlParser::removeComponent(const std::vector<UrlComponent *> &urlComponents, const UrlComponent::Validator &validator) {
 	bool hasRemoval = false;
 
-	for ( auto it = urlComponents.begin(); it != urlComponents.end(); ++it ) {
-		if ( (*it)->isDeleted() ) {
+	for (auto it = urlComponents.begin(); it != urlComponents.end(); ++it) {
+		if ((*it)->isDeleted()) {
 			continue;
 		}
 
-		if ( ( (*it)->hasValue() && validator.isValid( *(*it) ) ) ||
-		     ( !(*it)->hasValue() && validator.allowEmptyValue() ) ) {
+		if (((*it)->hasValue() && validator.isValid(*(*it))) ||
+		    (!(*it)->hasValue() && validator.allowEmptyValue())) {
 			hasRemoval = true;
-			deleteComponent( *it );
+			deleteComponent(*it);
 		}
 	}
 
 	return hasRemoval;
 }
 
-std::vector<std::pair<UrlComponent*, UrlComponent*> > UrlParser::matchPath( const UrlComponent::Matcher &matcher ) {
-	std::vector<std::pair<UrlComponent*, UrlComponent*> > result;
+std::vector<std::pair<UrlComponent *, UrlComponent *> > UrlParser::matchPath(const UrlComponent::Matcher &matcher) {
+	std::vector<std::pair<UrlComponent *, UrlComponent *> > result;
 
 	// don't need to loop if it's all deleted
-	if ( m_pathsDeleteCount == m_paths.size() ) {
+	if (m_pathsDeleteCount == m_paths.size()) {
 		return result;
 	}
 
-	for ( auto it = m_paths.begin(); it != m_paths.end(); ++it ) {
-		if ( it->isDeleted() ) {
+	for (auto it = m_paths.begin(); it != m_paths.end(); ++it) {
+		if (it->isDeleted()) {
 			continue;
 		}
 
-		if ( !it->hasValue() && matcher.isMatching( *it ) ) {
-			auto valueIt = std::next( it, 1 );
-			result.push_back( std::make_pair( &( *it ), ( valueIt != m_paths.end() ? &( *valueIt ) : NULL ) ) );
+		if (!it->hasValue() && matcher.isMatching(*it)) {
+			auto valueIt = std::next(it, 1);
+			result.push_back(std::make_pair(&(*it), (valueIt != m_paths.end() ? &(*valueIt) : NULL)));
 		}
 	}
 
 	return result;
 }
 
-bool UrlParser::removePath( const std::vector<std::pair<UrlComponent*, UrlComponent*> > &urlComponents,
-                            const UrlComponent::Validator &validator ) {
+bool UrlParser::removePath(const std::vector<std::pair<UrlComponent *, UrlComponent *> > &urlComponents,
+                           const UrlComponent::Validator &validator) {
 	bool hasRemoval = false;
-	for ( auto it = urlComponents.begin(); it != urlComponents.end(); ++it ) {
-		if ( it->second == NULL ) {
-			if ( validator.allowEmptyValue() ) {
+	for (auto it = urlComponents.begin(); it != urlComponents.end(); ++it) {
+		if (it->second == NULL) {
+			if (validator.allowEmptyValue()) {
 				hasRemoval = true;
-				deleteComponent( it->first );
+				deleteComponent(it->first);
 			}
 		} else {
-			if ( validator.isValid( *( it->second ) ) ) {
+			if (validator.isValid(*(it->second))) {
 				hasRemoval = true;
-				deleteComponent( it->first );
-				deleteComponent( it->second );
+				deleteComponent(it->first);
+				deleteComponent(it->second);
 			}
 		}
 	}
@@ -332,64 +403,64 @@ bool UrlParser::removePath( const std::vector<std::pair<UrlComponent*, UrlCompon
 	return hasRemoval;
 }
 
-bool UrlParser::removePath( const UrlComponent::Matcher &matcher, const UrlComponent::Validator &validator ) {
-	std::vector<std::pair<UrlComponent*, UrlComponent*> > matches = matchPath( matcher );
+bool UrlParser::removePath(const UrlComponent::Matcher &matcher, const UrlComponent::Validator &validator) {
+	std::vector<std::pair<UrlComponent *, UrlComponent *> > matches = matchPath(matcher);
 
-	return removePath( matches, validator );
+	return removePath(matches, validator);
 }
 
-std::vector<UrlComponent*> UrlParser::matchPathParam( const UrlComponent::Matcher &matcher ) {
-	std::vector<UrlComponent*> result;
+std::vector<UrlComponent *> UrlParser::matchPathParam(const UrlComponent::Matcher &matcher) {
+	std::vector<UrlComponent *> result;
 
 	// don't need to loop if it's all deleted
-	if ( m_pathsDeleteCount == m_paths.size() ) {
+	if (m_pathsDeleteCount == m_paths.size()) {
 		return result;
 	}
 
-	for ( auto it = m_paths.begin(); it != m_paths.end(); ++it ) {
-		if ( it->isDeleted() ) {
+	for (auto it = m_paths.begin(); it != m_paths.end(); ++it) {
+		if (it->isDeleted()) {
 			continue;
 		}
 
-		if ( it->hasValue() && matcher.isMatching( *it ) ) {
-			result.push_back( &( *it ) );
+		if (it->hasValue() && matcher.isMatching(*it)) {
+			result.push_back(&(*it));
 		}
 	}
 
 	return result;
 }
 
-bool UrlParser::removePathParam( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator ) {
-	return removeComponent( urlComponents, validator );
+bool UrlParser::removePathParam(const std::vector<UrlComponent *> &urlComponents, const UrlComponent::Validator &validator) {
+	return removeComponent(urlComponents, validator);
 }
 
-bool UrlParser::removePathParam( const UrlComponent::Matcher &matcher, const UrlComponent::Validator &validator ) {
-	std::vector<UrlComponent*> matches = matchPathParam( matcher );
+bool UrlParser::removePathParam(const UrlComponent::Matcher &matcher, const UrlComponent::Validator &validator) {
+	std::vector<UrlComponent *> matches = matchPathParam(matcher);
 
-	return removeComponent( matches, validator );
+	return removeComponent(matches, validator);
 }
 
-std::vector<UrlComponent*> UrlParser::matchQueryParam( const UrlComponent::Matcher &matcher ) {
-	std::vector<UrlComponent*> result;
+std::vector<UrlComponent *> UrlParser::matchQueryParam(const UrlComponent::Matcher &matcher) {
+	std::vector<UrlComponent *> result;
 
 	// don't need to loop if it's all deleted
-	if ( m_queriesDeleteCount == m_queries.size() ) {
+	if (m_queriesDeleteCount == m_queries.size()) {
 		return result;
 	}
 
-	if ( matcher.getMatchCriteria() == MATCH_DEFAULT ) {
-		auto it = m_queriesMap.find( matcher.getParam() );
-		if ( it != m_queriesMap.end() ) {
-			result.push_back( &(m_queries[ it->second ]) );
+	if (matcher.getMatchCriteria() == MATCH_DEFAULT) {
+		auto it = m_queriesMap.find(matcher.getParam());
+		if (it != m_queriesMap.end()) {
+			result.push_back(&(m_queries[it->second]));
 		}
 	} else {
-		for ( auto it = m_queries.begin(); it != m_queries.end(); ++it ) {
-			if ( it->isDeleted() ) {
+		for (auto it = m_queries.begin(); it != m_queries.end(); ++it) {
+			if (it->isDeleted()) {
 				continue;
 			}
 
-			if ( matcher.isMatching( *it ) ) {
-				result.push_back( &(*it));
+			if (matcher.isMatching(*it)) {
+				result.push_back(&(*it));
 			}
 		}
 	}
@@ -397,16 +468,16 @@ std::vector<UrlComponent*> UrlParser::matchQueryParam( const UrlComponent::Match
 	return result;
 }
 
-bool UrlParser::removeQueryParam( const char *param ) {
-	static const UrlComponent::Validator s_validator( 0, 0, true, ALLOW_ALL, MANDATORY_NONE );
+bool UrlParser::removeQueryParam(const char *param) {
+	static const UrlComponent::Validator s_validator(0, 0, true, ALLOW_ALL, MANDATORY_NONE);
 
-	return removeQueryParam( UrlComponent::Matcher( param ), s_validator );
+	return removeQueryParam(UrlComponent::Matcher(param), s_validator);
 }
 
-bool UrlParser::removeQueryParam( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator ) {
-	return removeComponent( urlComponents, validator );
+bool UrlParser::removeQueryParam(const std::vector<UrlComponent *> &urlComponents, const UrlComponent::Validator &validator) {
+	return removeComponent(urlComponents, validator);
 }
 
-bool UrlParser::removeQueryParam( const UrlComponent::Matcher &matcher, const UrlComponent::Validator &validator ) {
-	return removeComponent( matchQueryParam( matcher ), validator );
+bool UrlParser::removeQueryParam(const UrlComponent::Matcher &matcher, const UrlComponent::Validator &validator) {
+	return removeComponent(matchQueryParam(matcher), validator);
 }

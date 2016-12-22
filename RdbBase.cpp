@@ -1075,12 +1075,13 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	if (!isNew) {
 		// open this big data file for reading only
 		if ( mergeNum < 0 ) {
-			f->open(O_RDONLY | O_NONBLOCK | O_ASYNC);
+			f->open(O_RDONLY);
 		} else {
 			// otherwise, merge will have to be resumed so this file
 			// should be writable
-			f->open(O_RDWR | O_NONBLOCK | O_ASYNC);
+			f->open(O_RDWR);
 		}
+		f->setFlushingIsApplicable();
 	}
 
 	// find the position to add so we maintain order by fileId

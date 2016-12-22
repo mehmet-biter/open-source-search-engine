@@ -224,7 +224,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	// set query
 	int32_t qlen;
 	const char *qs = r->getString("q",&qlen,NULL);
-	if ( qs ) st->m_tq.set2 ( (char*)qs , langUnknown , true );
+	if ( qs ) st->m_tq.set2 ( (char*)qs , langUnknown , true, true );
 	// url will override docid if given
 	if ( ! st->m_u || ! st->m_u[0] ) 
 		st->m_docId = r->getLongLong ("docid",-1);
@@ -758,7 +758,7 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	// set query
 	int32_t qlen;
 	const char *qs = r->getString("q",&qlen,NULL);
-	if ( qs ) st->m_tq.set2 ( (char*)qs , langUnknown , true );
+	if ( qs ) st->m_tq.set2 ( (char*)qs , langUnknown , true, true );
 	// url will override docid if given
 	st->m_docId = r->getLongLong ("d",-1);
 	st->m_docId = r->getLongLong ("docid",st->m_docId);

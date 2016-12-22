@@ -48,19 +48,23 @@ char* Summary::getSummary() {
 	return m_summary;
 }
 
-int32_t Summary::getSummaryDisplayLen() {
+const char *Summary::getSummary() const {
+	return m_summary;
+}
+
+int32_t Summary::getSummaryDisplayLen() const {
 	return m_displayLen;
 }
 
-int32_t Summary::getSummaryLen() {
+int32_t Summary::getSummaryLen() const {
 	return m_summaryLen;
 }
 
-bool Summary::isSetFromTags() {
+bool Summary::isSetFromTags() const {
 	return m_isSetFromTags;
 }
 
-bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
+bool Summary::verifySummary(const char *titleBuf, int32_t titleBufLen) {
 	logTrace(g_conf.m_logTraceSummary, "BEGIN");
 
 	if ( m_summaryLen > 0 ) {
@@ -95,7 +99,7 @@ bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
 // - itemprop = "description"
 // - meta name = "og:description"
 // - meta name = "description"
-bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen ) {
+bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, const char *titleBuf, int32_t titleBufLen ) {
 	logTrace(g_conf.m_logTraceSummary, "BEGIN");
 
 	// sanity check
@@ -154,9 +158,9 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBu
 }
 
 // returns false and sets g_errno on error
-bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q, int32_t maxSummaryLen,
-						   int32_t maxNumLines, int32_t numDisplayLines, int32_t maxNumCharsPerLine, Url *f,
-                           Matches *matches, char *titleBuf, int32_t titleBufLen ) {
+bool Summary::setSummary(const Xml *xml, const Words *words, const Sections *sections, Pos *pos, const Query *q, int32_t maxSummaryLen,
+                         int32_t maxNumLines, int32_t numDisplayLines, int32_t maxNumCharsPerLine, const Url *f,
+                         const Matches *matches, const char *titleBuf, int32_t titleBufLen) {
 	logTrace(g_conf.m_logTraceSummary, "BEGIN");
 
 	m_numDisplayLines = numDisplayLines;
@@ -603,9 +607,9 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 // . window is defined by the half-open interval [a,b) where a and b are 
 //   word #'s in the Words array indicated by match #m
 // . return -1 and set g_errno on error
-int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
-                                 int32_t *besta, int32_t *bestb, char *gotIt,
-                                 char *retired, int32_t maxExcerptLen ) {
+int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *lasta,
+                               int32_t *besta, int32_t *bestb, char *gotIt,
+                               char *retired, int32_t maxExcerptLen) {
 	logTrace(g_conf.m_logTraceSummary, "BEGIN");
 
 	// get the window around match #mm
@@ -1024,7 +1028,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 }
 
 // get summary when no search terms could be found
-bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos, int32_t maxSummaryLen ) {
+bool Summary::getDefaultSummary(const Xml *xml, const Words *words, const Sections *sections, Pos *pos, int32_t maxSummaryLen) {
 	logTrace(g_conf.m_logTraceSummary, "BEGIN");
 
 	char *p    = m_summary;

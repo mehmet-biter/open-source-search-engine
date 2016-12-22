@@ -65,7 +65,7 @@ bool Wiktionary::test ( ) {
 	//int64_t wid = hash64Lower_utf8(str);
 	int64_t wid = hash64n(str);
 	// use this now
-	char *p = getSynSet ( wid, langEnglish );
+	const char *p = getSynSet ( wid, langEnglish );
 	//char *p = (char *)m_synTable.getValue ( &wid );
 	// must be there
 	if ( ! p ) gbshutdownLogicError();
@@ -76,17 +76,13 @@ bool Wiktionary::test ( ) {
 	// skip that
 	//p++;
 	// find new line
-	char *end = p;
+	const char *end = p;
 	for ( ; *end && *end !='\n' ; end++ );
-	// tmp set
-	*end = '\0';
 	// cast it
 	// only the first 6 bytes are valid
 	//int64_t *termIds = (int64_t *)p;
 	// header
-	log("wikt: test \"%s\" -> \"%s\"",str,p);
-	// back
-	*end = '\n';
+	log("wikt: test \"%s\" -> \"%*.*s\"",str,(int)(end-p),(int)(end-p),p);
 
 	return true;
 }

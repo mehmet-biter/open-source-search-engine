@@ -470,17 +470,6 @@ bool File::close_unlocked() {
 		log(LOG_LOGIC, "disk: In unlink mode and closing 2.");
 		return false;
 	}
-	// always block on a close
-	int flags = fcntl ( m_fd , F_GETFL ) ;
-	// turn off these 2 flags on fd to make sure
-	flags &= ~( O_NONBLOCK | O_ASYNC );
-	// return false on error
-	if ( fcntl ( m_fd, F_SETFL, flags ) < 0 ) {
-		// copy errno to g_errno
-		g_errno = errno;
-		log( LOG_WARN, "disk: fcntl(%s) : %s", getFilename(), strerror( g_errno ) );
-		return false;
-	}
 	// . tally up another close for this fd, if any
 	// . so if an open happens shortly here after, and
 	//   gets this fd, then any read that was started
@@ -734,20 +723,6 @@ bool File::closeLeastUsed () {
 
 
 	int fd = mini;
-
-	// always block on close
-	//int fd    = s_fds[mini];
-	int flags = fcntl ( fd , F_GETFL ) ;
-	// turn off these 2 flags on fd to make sure
-	flags &= ~( O_NONBLOCK | O_ASYNC );
-
-	// return false on error
-	if ( fcntl ( fd, F_SETFL, flags ) < 0 ) {
-		log( LOG_WARN, "disk: fcntl(%i): %s", fd, mstrerror( errno ) );
-
-		// return false;
-		errno = 0;
-	}
 
 	// . tally up another close for this fd, if any
 	// . so if an open happens shortly here after, and

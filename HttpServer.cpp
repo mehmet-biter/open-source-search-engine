@@ -921,7 +921,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// . could not open it for reading!
 	// . or could not set it to non-blocking
 	// . set g_errno on error
-	if ( bytesToSend > 0  &&  ! f->open(O_RDONLY | O_NONBLOCK | O_ASYNC)) {
+	if ( bytesToSend > 0  &&  ! f->open(O_RDONLY)) {
 		if ( g_conf.m_logDebugTcp )
 			log("tcp: deleting filestate=0x%" PTRFMT" [4]",
 			    (PTRTYPE)f);

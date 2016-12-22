@@ -8808,7 +8808,7 @@ static bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness
 	// . redirUrl is set to the original at the top
 	else {
 		// addWWW = false, stripSessId=true
-		metaRedirUrl->set( cu, decoded, decBytes, false, true, false, false );
+		metaRedirUrl->set( cu, decoded, decBytes, false, true, false );
 	}
 
 	return true;
@@ -15822,9 +15822,15 @@ Url *XmlDoc::getBaseUrl ( ) {
 			// get the href field of this base tag
 			int32_t linkLen;
 			const char *link = xml->getString ( i, "href", &linkLen );
-		
-			Url::calculateBaseUrl(&m_baseUrl, cu, link, linkLen);
-		
+
+			// https://www.w3.org/TR/html51/document-metadata.html#the-base-element
+			// if there are multiple <base> elements with href attributes, all but the first are ignored
+			if (link == NULL) {
+				continue;
+			}
+
+			m_baseUrl.set(cu, link, linkLen);
+
 			break;
 		}
 	}
@@ -17021,7 +17027,7 @@ Query *XmlDoc::getQuery() {
 	int64_t start = logQueryTimingStart();
 
 	// return NULL with g_errno set on error
-	if ( !m_query.set2( m_req->ptr_qbuf, m_req->m_langId, true ) ) {
+	if ( !m_query.set2( m_req->ptr_qbuf, m_req->m_langId, m_req->m_queryExpansion, m_req->m_useQueryStopWords ) ) {
 		if(!g_errno)
 			g_errno = EBADENGINEER; //can fail due to a multitude of problems
 		return NULL;

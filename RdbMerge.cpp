@@ -166,7 +166,7 @@ bool RdbMerge::gotLock() {
 
 	// . set up a a file to dump the records into
 	// . returns false and sets g_errno on error
-	// . this will open m_target as O_RDWR | O_NONBLOCK | O_ASYNC ...
+	// . this will open m_target as O_RDWR ...
 
 	m_dump.set(m_collnum,
 	           m_targetFile,

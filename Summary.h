@@ -39,24 +39,25 @@ public:
 	Summary();
 	~Summary();
 
-	bool setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q,
-			          int32_t maxSummaryLen, int32_t numDisplayLines, int32_t maxNumLines, int32_t maxNumCharsPerLine,
-			          Url *f, Matches *matches, char *titleBuf, int32_t titleBufLen );
+	bool setSummary(const Xml *xml, const Words *words, const Sections *sections, Pos *pos, const Query *q,
+	                int32_t maxSummaryLen, int32_t numDisplayLines, int32_t maxNumLines, int32_t maxNumCharsPerLine,
+	                const Url *f, const Matches *matches, const char *titleBuf, int32_t titleBufLen);
 
-	bool setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen );
+	bool setSummaryFromTags(Xml *xml, int32_t maxSummaryLen, const char *titleBuf, int32_t titleBufLen);
 
-	char *getSummary();
-	int32_t getSummaryDisplayLen();
-	int32_t getSummaryLen();
+	char       *getSummary();
+	const char *getSummary() const;
+	int32_t getSummaryDisplayLen() const;
+	int32_t getSummaryLen() const;
 
-	bool isSetFromTags();
+	bool isSetFromTags() const;
 
 private:
-	bool verifySummary( char *titleBuf, int32_t titleBufLen );
+	bool verifySummary(const char *titleBuf, int32_t titleBufLen);
 
-	bool getDefaultSummary (Xml *xml, Words *words, Sections *sections , Pos *pos, int32_t maxSummaryLen );
+	bool getDefaultSummary(const Xml *xml, const Words *words, const Sections *sections, Pos *pos, int32_t maxSummaryLen);
 
-	int64_t getBestWindow (Matches *matches, int32_t mn, int32_t *lasta, int32_t *besta, int32_t *bestb,
+	int64_t getBestWindow (const Matches *matches, int32_t mn, int32_t *lasta, int32_t *besta, int32_t *bestb,
 	                       char *gotIt, char *retired, int32_t maxExcerptLen );
 
 	// null terminate and store the summary here.
@@ -75,7 +76,7 @@ private:
 	bool m_isSetFromTags;
 
 	// ptr to the query
-	Query     *m_q;
+	const Query     *m_q;
 
 	float *m_wordWeights;
 	int32_t m_wordWeightSize;

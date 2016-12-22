@@ -63,15 +63,15 @@ public:
 	}
 
 	void set( const char *s, int32_t len, bool addWWW, bool stripParams, int32_t titledbVersion = TITLEREC_CURRENT_VERSION ) {
-		set( s, len, addWWW, stripParams, false, false, titledbVersion );
+		set( s, len, addWWW, stripParams, false, titledbVersion );
 	}
 
 	void set( const Url *baseUrl, const char *s, int32_t len ) {
-		set( baseUrl, s, len, false, false, false, false );
+		set( baseUrl, s, len, false, false, false );
 	}
 
 	// . "s" must be an ENCODED url
-	void set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound,
+	void set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams,
 	          bool stripCommonFile, int32_t titledbVersion = TITLEREC_CURRENT_VERSION );
 
 	void print() const;
@@ -201,10 +201,8 @@ public:
 
 	static char* getDisplayUrl( const char* url, SafeBuf* sb );
 
-	static void calculateBaseUrl(Url *baseUrl, const Url *currentUrl, const char *href, int32_t hrefLen);
-
 private:
-	void set( const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound, bool stripCommonFile,
+	void set( const char *s, int32_t len, bool addWWW, bool stripParams, bool stripCommonFile,
 	          int32_t titledbVersion );
 
 	// the normalized url
@@ -251,10 +249,6 @@ private:
 	int32_t m_port;
 	int32_t m_defPort;
 	int32_t m_portLen;
-
-	// anchor
-	char *m_anchor;
-	int32_t m_anchorLen;
 };
 
 #endif // GB_URL_H
