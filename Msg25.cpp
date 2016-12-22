@@ -3942,10 +3942,6 @@ bool Links::addLink(const char *link, int32_t linkLen, int32_t nodeNum,
 	}
 
 	url.set( m_baseUrl, link, linkLen, false, m_stripParams,
-	         // now i strip this thang because the rss
-	         // feeds have a link to every comment but it is
-	         // really the same url...
-	         true,
 	         // convert /index.html to /
 	         // turned this back on per john's request
 	         // will cause undeletable data in existing indexes.

@@ -155,17 +155,16 @@ void UrlParser::parse() {
 		currentPos = queryPos + 1;
 	}
 
-	const char *anchorPos = static_cast<const char *>(memrchr(currentPos, '#', urlEnd - currentPos));
-//	if (anchorPos != NULL) {
-//		m_anchor = anchorPos + 1;
-//		m_anchorLen =  urlEnd - m_anchor;
-//		currentPos = anchorPos + 1;
+	/// @note url fragment is stripped and not part of the rebuild url
+	const char *fragmentPos = static_cast<const char *>(memrchr(currentPos, '#', urlEnd - currentPos));
+//	if (fragmentPos != NULL) {
+//		currentPos = fragmentPos + 1;
 //	}
 
-	const char *pathEnd = queryPos ? queryPos : (anchorPos ? anchorPos : urlEnd);
+	const char *pathEnd = queryPos ? queryPos : (fragmentPos ? fragmentPos : urlEnd);
 	m_pathEndChar = *(pathEnd - 1);
 
-	const char *queryEnd = anchorPos ? anchorPos : urlEnd;
+	const char *queryEnd = fragmentPos ? fragmentPos : urlEnd;
 
 	// path
 	bool updatePathEncChar = false;
@@ -319,11 +318,6 @@ void UrlParser::unparse() {
 			m_urlParsed.append(it->getString());
 		}
 	}
-
-//	if (m_anchor) {
-//		m_urlParsed.push_back('#');
-//		m_urlParsed.append(m_anchor, m_anchorLen);
-//	}
 }
 
 void UrlParser::deleteComponent(UrlComponent *urlComponent) {

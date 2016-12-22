@@ -887,12 +887,17 @@ TEST(UrlTest, BaseUrlQueryParam) {
 	currentUrl.set("http://example.com/index.html");
 
 	Url baseUrl;
-	baseUrl.set(&currentUrl, "http://example.com/api", strlen("http://example.com/api"));
+	baseUrl.set(&currentUrl, "/api", strlen("/api"));
 
 	Url linkUrl;
 	linkUrl.set(&baseUrl, "?foo", strlen("?foo"));
-
 	EXPECT_STREQ("http://example.com/api?foo", linkUrl.getUrl());
+
+	linkUrl.set(&baseUrl, "#anchor", strlen("#anchor"));
+	EXPECT_STREQ("http://example.com/api", linkUrl.getUrl());
+
+	linkUrl.set(&baseUrl, "documentation", strlen("documentation"));
+	EXPECT_STREQ("http://example.com/documentation", linkUrl.getUrl());
 }
 
 TEST(UrlTest, BaseUrlRelative) {
@@ -911,12 +916,8 @@ TEST(UrlTest, BaseUrlRelative) {
 		std::make_tuple("//example.org", "http://example.org/"),
 		std::make_tuple("?y", "http://example.com/b/c/d;p?y"),
 		std::make_tuple("g?y", "http://example.com/b/c/g?y"),
-//		std::make_tuple("#s", "http://example.com/b/c/d;p?q#s"),
-//		std::make_tuple("g#s", "http://example.com/b/c/g#s"),
-//		std::make_tuple("g?y#s", "http://example.com/b/c/g?y#s"),
 		std::make_tuple(";x", "http://example.com/b/c/;x"),
 		std::make_tuple("g;x", "http://example.com/b/c/g;x"),
-//		std::make_tuple("g;x?y#s", "http://example.com/b/c/g;x?y#s"),
 		std::make_tuple("", "http://example.com/b/c/d;p?q"),
 		std::make_tuple(".", "http://example.com/b/c/"),
 		std::make_tuple("./", "http://example.com/b/c/"),
@@ -926,6 +927,12 @@ TEST(UrlTest, BaseUrlRelative) {
 		std::make_tuple("../..", "http://example.com/"),
 		std::make_tuple("../../", "http://example.com/"),
 		std::make_tuple("../../g", "http://example.com/g"),
+
+		// we strip out url fragments
+		std::make_tuple("#s", "http://example.com/b/c/d;p?q"),
+		std::make_tuple("g#s", "http://example.com/b/c/g"),
+		std::make_tuple("g?y#s", "http://example.com/b/c/g?y"),
+		std::make_tuple("g;x?y#s", "http://example.com/b/c/g;x?y"),
 
 	    // 5.4.2.  Abnormal Examples
 		// https://tools.ietf.org/html/rfc3986#section-5.4.2
@@ -951,9 +958,11 @@ TEST(UrlTest, BaseUrlRelative) {
 		std::make_tuple("g;x=1/../y", "http://example.com/b/c/y"),
 
 		std::make_tuple("g?y/./x", "http://example.com/b/c/g?y/./x"),
-		std::make_tuple("g?y/../x", "http://example.com/b/c/g?y/../x")
-//		std::make_tuple("g#s/./x", "http://example.com/b/c/g#s/./x"),
-//		std::make_tuple("g#s/../x", "http://example.com/b/c/g#s/../x"),
+		std::make_tuple("g?y/../x", "http://example.com/b/c/g?y/../x"),
+
+		// we strip out url fragments
+		std::make_tuple("g#s/./x", "http://example.com/b/c/g"),
+		std::make_tuple("g#s/../x", "http://example.com/b/c/g")
 
 //		std::make_tuple("http:g", "http:g")
 	};
@@ -967,7 +976,7 @@ TEST(UrlTest, BaseUrlRelative) {
 		EXPECT_STREQ(std::get<1>(*it), (const char *)baseUrl.getUrl());
 
 		Url baseUrlOld;
-		baseUrlOld.set(&currentUrl, input_href, strlen(input_href), false, false, false, false, 122);
+		baseUrlOld.set(&currentUrl, input_href, strlen(input_href), false, false, false, 122);
 		EXPECT_STREQ(std::get<1>(*it), (const char *)baseUrlOld.getUrl());
 	}
 }

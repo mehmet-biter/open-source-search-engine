@@ -8808,7 +8808,7 @@ static bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness
 	// . redirUrl is set to the original at the top
 	else {
 		// addWWW = false, stripSessId=true
-		metaRedirUrl->set( cu, decoded, decBytes, false, true, false, false );
+		metaRedirUrl->set( cu, decoded, decBytes, false, true, false );
 	}
 
 	return true;

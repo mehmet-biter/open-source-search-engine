@@ -32,7 +32,6 @@ void Url::reset() {
 	m_query     = NULL;
 	m_domain    = NULL;
 	m_tld       = NULL;
-	m_anchor    = NULL;
 
 	m_url[0]    = '\0';
 	m_ulen      = 0;
@@ -42,7 +41,6 @@ void Url::reset() {
 	m_hlen      = 0;
 	m_elen      = 0;
 	m_mdlen     = 0;
-	m_anchorLen = 0;
 	// ip related stuff
 	m_ip          = 0;
 
@@ -55,13 +53,12 @@ void Url::reset() {
 	m_portLen = 0;
 }
 
-void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound,
+void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams,
                bool stripCommonFile, int32_t titledbVersion ) {
-
 	reset();
 
 	if ( ! baseUrl ) {
-		set( s, len, addWWW, false, false, false, titledbVersion );
+		set( s, len, addWWW, false, false, titledbVersion );
 		return;
 	}
 
@@ -86,16 +83,18 @@ void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool
 		return;
 	}
 
-	if (len == 0) {
+	// if empty string / an url fragment, use baseUrl
+	if (len == 0 || s[0] == '#') {
 		set(baseUrl);
 		return;
 	}
 
 	// . fix baseurl = "http://xyz.com/poo/all" and s = "?page=3"
 	// . if "s" starts with ? then keep the filename in the base url
-	if ( s[0] == '?' ) {
-		for ( ; base[blen] && base[blen] != '?'; blen++ )
+	if (s[0] == '?') {
+		for ( ; base[blen] && base[blen] != '?'; blen++ ) {
 			;
+		}
 	}
 
 	// skip s over spaces
@@ -133,7 +132,7 @@ void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool
 
 	// don't use base if s is not relative
 	if ( blen==0 || isAbsolute ) {
-		set( s, len, addWWW, stripParams, stripPound, false, titledbVersion );
+		set( s, len, addWWW, stripParams, false, titledbVersion );
 		return;
 	}
 
@@ -158,7 +157,7 @@ void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool
 	}
 	strncpy( temp + blen, s, len );
 	temp[blen+len] = '\0';
-	set( temp, blen + len, addWWW, stripParams, stripPound, stripCommonFile, titledbVersion );
+	set( temp, blen + len, addWWW, stripParams, stripCommonFile, titledbVersion );
 }
 
 
@@ -815,7 +814,7 @@ static void stripParameters( UrlParser *urlParser ) {
 //    reserved purposes may be used unencoded within a URL."
 // . i know sun.com has urls like "http://sun.com/;$sessionid=123ABC$"
 // . url should be ENCODED PROPERLY for this to work properly
-void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool stripPound, bool stripCommonFile,
+void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool stripCommonFile,
                int32_t titledbVersion ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(t,tlen);
@@ -1008,7 +1007,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 		}
 
 		encoded[newUrlLen] = '\0';
-		return this->set( encoded, newUrlLen, addWWW, stripParams, stripPound, stripCommonFile, titledbVersion );
+		return this->set( encoded, newUrlLen, addWWW, stripParams, stripCommonFile, titledbVersion );
 	}
 
 	// truncate length to the first occurence of an unacceptable char
@@ -1021,28 +1020,22 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 		tlen -= 7;
 	}
 
-	// strip the "#anchor" from http://www.xyz.com/somepage.html#anchor"
-    int32_t anchorPos = 0;
-    int32_t anchorLen = 0;
-    for ( int32_t i = 0 ; i < tlen ; i++ ) {
-		if ( t[i] != '#' ) {
-			continue;
-		}
+	// only strip anchor for version <= 122 (we're stripping anchor in UrlParser)
+	if (titledbVersion <= 122) {
+		// strip the "#anchor" from http://www.xyz.com/somepage.html#anchor"
+		for (int32_t i = 0; i < tlen; i++) {
+			if (t[i] == '#') {
+				// ignore anchor if a ! follows it. 'google hash bang hack'
+				// which breaks the web and is now deprecated, but, there it is
+				if (i + 1 < tlen && t[i + 1] == '!') {
+					continue;
+				}
 
-		// ignore anchor if a ! follows it. 'google hash bang hack'
-		// which breaks the web and is now deprecated, but, there it is
-		if ( i+1<tlen && t[i+1] == '!' ) {
-			continue;
+				tlen = i;
+				break;
+			}
 		}
-
-		anchorPos = i;
-		anchorLen = tlen - i;
-
-		if ( stripPound ) {
-			tlen = i;
-		}
-		break;
-    }
+	}
 
 	// copy to "s" so we can NULL terminate it
 	char s[MAX_URL_LEN];
@@ -1363,16 +1356,6 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 
 	// null terminate our s
 	m_url[ m_ulen ]='\0';
-
-	// add the anchor after
-	m_anchor = NULL;
-	m_anchorLen = anchorLen;
-	if ( anchorLen > 0 &&
-	     m_ulen + anchorLen + 2 < MAX_URL_LEN ) {
-		m_anchor = &m_url[m_ulen+1];
-		gbmemcpy(&m_url[m_ulen+1], &t[anchorPos], anchorLen);
-		m_url[m_ulen+1+anchorLen] = '\0';
-	}
 }
 
 // hostname must also be www or NULL to be a root url
