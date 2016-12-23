@@ -211,7 +211,7 @@ bool HttpMime::getNextLine() {
 
 			currentChar = m_mime[++currentPos];
 		}
-	} while (m_currentLineLen && (m_mime[currentPos] == ' ' || m_mime[currentPos] == '\t'));
+	} while (m_currentLineLen && currentPos < m_mimeLen && (m_mime[currentPos] == ' ' || m_mime[currentPos] == '\t'));
 
 	if (m_currentLineLen == 0) {
 		// set to end of mime
