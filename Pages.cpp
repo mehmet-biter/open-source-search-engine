@@ -73,37 +73,37 @@ static WebPage s_pages[] = {
 	  "basic search", sendPageRoot  , 0 ,NULL,NULL,
 	  PG_NOAPI|PG_ACTIVE},
 
-	{ PAGE_HOSTS     , "admin/hosts"   , 0 , "hosts" ,  0 , 0 ,
+	{ PAGE_HOSTS     , "admin/hosts"   , 0 , "Hosts" ,  0 , 0 ,
 	  "hosts status", sendPageHosts    , 0 ,NULL,NULL,
 	  PG_STATUS|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_MASTER    , "admin/master"  , 0 , "master controls" ,  1 , 0 , 
+	{ PAGE_MASTER    , "admin/master"  , 0 , "Master controls" ,  1 , 0 ,
 	  "master controls", sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_RDB   , "admin/rdb"   , 0 , "rdb controls" ,1, 0,
+	{ PAGE_RDB   , "admin/rdb"   , 0 , "Rdb controls" ,1, 0,
 	  "rdb controls", sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_ACTIVE},
 
 	// use POST for html head/tail and page root html. might be large.
-	{ PAGE_SEARCH    , "admin/search"   , 0 , "search controls" ,1,M_POST,
+	{ PAGE_SEARCH    , "admin/search"   , 0 , "Search controls" ,1,M_POST,
 	  "search controls", sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_ACTIVE},
 
-	{ PAGE_RANKING   , "admin/ranking"   , 0 , "ranking controls" ,1, 0,
+	{ PAGE_RANKING   , "admin/ranking"   , 0 , "Ranking controls" ,1, 0,
 	  "ranking controls", sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_ACTIVE},
 
 	// use post now for the "site list" which can be big
-	{ PAGE_SPIDER    , "admin/spider"   , 0 , "spider controls" ,1,M_POST,
+	{ PAGE_SPIDER    , "admin/spider"   , 0 , "Spider controls" ,1,M_POST,
 	  "spider controls", sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_COLLADMIN|PG_ACTIVE},
 
-	{ PAGE_SPIDERPROXIES,"admin/proxies"   , 0 , "proxies" ,  1 , 0,
+	{ PAGE_SPIDERPROXIES,"admin/proxies"   , 0 , "Proxies" ,  1 , 0,
 	  "proxies", sendPageGeneric  , 0,NULL,NULL,
 	  PG_MASTERADMIN|PG_ACTIVE } ,
 
-	{ PAGE_LOG       , "admin/log"     , 0 , "log controls"     ,  1 , 0 ,
+	{ PAGE_LOG       , "admin/log"     , 0 , "Log controls"     ,  1 , 0 ,
 	  "log controls", sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_MASTERADMIN|PG_ACTIVE},
 
@@ -136,65 +136,65 @@ static WebPage s_pages[] = {
 	  PG_MASTERADMIN|PG_ACTIVE},
 #endif
 	// let's replace this with query reindex for the most part
-	{ PAGE_REPAIR    , "admin/rebuild"   , 0 , "rebuild" ,  1 , 0 ,
+	{ PAGE_REPAIR    , "admin/rebuild"   , 0 , "Rebuild" ,  1 , 0 ,
 	  "rebuild data",
 	  sendPageGeneric , 0 ,NULL,NULL,
 	  PG_MASTERADMIN |PG_ACTIVE},
 
-	{ PAGE_FILTERS   , "admin/filters", 0 , "url filters" ,  1 ,M_POST,
+	{ PAGE_FILTERS   , "admin/filters", 0 , "Url filters" ,  1 ,M_POST,
 	  "prioritize urls for spidering",
 	  sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},
 
-	{ PAGE_INJECT    , "admin/inject"   , 0 , "inject url" , 0,M_MULTI ,
+	{ PAGE_INJECT    , "admin/inject"   , 0 , "Inject url" , 0,M_MULTI ,
 	  "inject url in the index here",
 	  sendPageInject   , 2 ,NULL,NULL,
 	  PG_ACTIVE} ,
 
 	// this is the addurl page the the admin!
-	{ PAGE_ADDURL2   , "admin/addurl"   , 0 , "add urls" ,  0 , 0 ,
+	{ PAGE_ADDURL2   , "admin/addurl"   , 0 , "Add urls" ,  0 , 0 ,
 	  "add url page for admin",
 	  sendPageAddUrl2   , 0 ,NULL,NULL,
 	  PG_COLLADMIN|PG_ACTIVE},
 
-	{ PAGE_REINDEX   , "admin/reindex"  , 0 , "query reindex" ,  0 , 0 ,
+	{ PAGE_REINDEX   , "admin/reindex"  , 0 , "Query reindex" ,  0 , 0 ,
 	  "query delete/reindex",
 	  sendPageReindex  , 0 ,NULL,NULL,
 	  PG_COLLADMIN|PG_ACTIVE},
 
 	// master admin pages
-	{ PAGE_STATS     , "admin/stats"   , 0 , "stats" ,  0 , 0 ,
+	{ PAGE_STATS     , "admin/stats"   , 0 , "Stats" ,  0 , 0 ,
 	  "general statistics",
 	  sendPageStats    , 0 ,NULL,NULL,
 	  PG_STATUS|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_GRAPH , "admin/graph"  , 0 , "graph"  ,  0 , 0 ,
+	{ PAGE_GRAPH , "admin/graph"  , 0 , "Graph"  ,  0 , 0 ,
 	  "query stats graph",
 	  sendPageGraph  , 2  ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_PERF      , "admin/perf"    , 0 , "performance"     ,  0 , 0 ,
+	{ PAGE_PERF      , "admin/perf"    , 0 , "Performance"     ,  0 , 0 ,
 	  "function performance graph",
 	  sendPagePerf     , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_SOCKETS   , "admin/sockets" , 0 , "sockets" ,  0 , 0 ,
+	{ PAGE_SOCKETS   , "admin/sockets" , 0 , "Sockets" ,  0 , 0 ,
 	  "sockets",
 	  sendPageSockets  , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_LOGVIEW    , "admin/logview"   , 0 , "log view" ,  0 , 0 ,
+	{ PAGE_LOGVIEW    , "admin/logview"   , 0 , "Log view" ,  0 , 0 ,
 	  "logview",
 	  sendPageLogView  , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
 	// deactivate until works on 64-bit... mdw 12/14/14
-	{ PAGE_PROFILER    , "admin/profiler"   , 0 , "profiler" ,  0 ,M_POST,
+	{ PAGE_PROFILER    , "admin/profiler"   , 0 , "Profiler" ,  0 ,M_POST,
 	  "profiler",
 	  sendPageProfiler   , 0 ,NULL,NULL,
 	  PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_THREADS    , "admin/threads"   , 0 , "threads" ,  0 , 0 ,
+	{ PAGE_THREADS    , "admin/threads"   , 0 , "Threads" ,  0 , 0 ,
 	  "threads",
 	  sendPageThreads  , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
@@ -215,7 +215,7 @@ static WebPage s_pages[] = {
 	  PG_NOAPI|PG_MASTERADMIN},
 	// 1 = usePost
 
-	{ PAGE_SPIDERDB  , "admin/spiderdb" , 0 , "spider queue" ,  0 , 0 ,
+	{ PAGE_SPIDERDB  , "admin/spiderdb" , 0 , "Spider queue" ,  0 , 0 ,
 	  "spider queue",
 	  sendPageSpiderdb , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
