@@ -4773,7 +4773,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		}
 
 		startKey = *(key144_t *)list.getLastKey();
-		startKey += (uint32_t)1;
+		startKey++;
 		// watch out for wrap around
 		if (startKey < *(key144_t *)list.getLastKey()) return;
 	}
@@ -4975,7 +4975,7 @@ void dumpLinkdb ( const char *coll,
 	}
 
 	startKey = *(key224_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
+	startKey++;
 	// watch out for wrap around
 	if ( startKey < *(key224_t *)list.getLastKey() ) return;
 	goto loop;

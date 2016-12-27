@@ -213,6 +213,10 @@ class key192_t {
 		n0 += i; 
 	}
 
+	void operator++(int) {
+		(*this) += 1;
+	}
+
 	bool operator <  ( key192_t i ) const {
 		if ( n2 < i.n2 ) return true;
 		if ( n2 > i.n2 ) return false;
@@ -253,6 +257,10 @@ class key224_t {
 		if ( n1 + 1 > n1 ) { n1 += 1; n0 += i; return; }
 		if ( n2 + 1 > n2 ) { n2 += 1; n1 += 1; n0 += i; return; }
 		n3 += 1; n2 += 1; n1 += 1; n0 += i; return;
+	}
+
+	void operator++(int) {
+		(*this) += 1;
 	}
 
 	// NOTE: i must be bigger than j!?
@@ -299,10 +307,15 @@ class key144_t {
 			 i.n2 == n2 
 			 );}
 
+private:
 	void operator += ( uint32_t i ) { // watch out for carry
 		if ( (uint16_t)(n0+i) > n0 ) { n0 += i; return; }
 		if ( n1 + 1 > n1 ) { n1 += 1; n0 += i; return; }
 		n2 += 1; n1 += 1; n0 += i; return;
+	}
+public:
+	void operator++(int) {
+		(*this) += 1;
 	}
 
 	// NOTE: i must be bigger than j!?
@@ -681,12 +694,12 @@ static inline bool KEYNEG ( key96_t k ) {
 
 static inline void KEYINC(char *k, char keySize) {
 	// posdb
-	if ( keySize == 18 ) { *((key144_t *)k) += (int32_t)1; return; }
+	if ( keySize == 18 ) { (*((key144_t *)k))++; return; }
 	if ( keySize == 12 ) { (*((key96_t  *)k))++; return; }
 	if ( keySize == 16 ) { (*((key128_t *)k))++; return; }
-	if ( keySize == 8  ) { *((uint64_t *)k) += (int32_t)1; return; }
-	if ( keySize == 24 ) { *((key192_t *)k) += (int32_t)1; return; }
-	if ( keySize == 28 ) { *((key224_t *)k) += (int32_t)1; return; }
+	if ( keySize == 8  ) { (*((uint64_t *)k))++; return; }
+	if ( keySize == 24 ) { (*((key192_t *)k))++; return; }
+	if ( keySize == 28 ) { (*((key224_t *)k))++; return; }
 	gbshutdownAbort(true);
 }
 
