@@ -436,7 +436,7 @@ bool SpiderColl::makeWaitingTree ( ) {
 		}
 	}
 	startKey = *(key128_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
+	startKey++;
 	// watch out for wrap around
 	if ( startKey >= *(key128_t *)list.getLastKey() ) goto loop;
  done:
@@ -1710,7 +1710,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		}
 		else {
 			m_nextKey2  = lastKey;
-			m_nextKey2 += (uint32_t) 1;
+			m_nextKey2++;
 		}
 
 		// watch out for wrap around
@@ -2253,7 +2253,7 @@ bool SpiderColl::evalIpLoop ( ) {
 		}
 		else {
 			m_nextKey  = lastKey;
-			m_nextKey += (uint32_t) 1;
+			m_nextKey++;
 		}
 		// . watch out for wrap around
 		// . normally i would go by this to indicate that we are

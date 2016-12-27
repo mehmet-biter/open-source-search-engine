@@ -3573,7 +3573,7 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 	}
 
 	startKey = *(key128_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
+	startKey++;
 
 	// watch out for wrap around
 	if ( startKey >= *(key128_t *)list.getLastKey() ) {
@@ -4265,7 +4265,7 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 	}
 		
 	startKey = *(key128_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
+	startKey++;
 	// watch out for wrap around
 	if ( startKey < *(key128_t *)list.getLastKey() ){ 
 		printf("\n"); return;}
