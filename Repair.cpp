@@ -77,7 +77,6 @@ Repair::Repair() {
 	// Coverity
 	m_needsCallback = false;
 	m_docId = 0;
-	m_isDelete = false;
 	m_totalMem = 0;
 	m_stage = 0;
 	m_count = 0;
@@ -1142,8 +1141,6 @@ bool Repair::gotScanRecList ( ) {
 
 	// save it
 	m_docId = docId;
-	// is it a delete?
-	m_isDelete = false;
 	// we need this to compute the tfndb key to add/delete
 	//m_ext = -1;
 
@@ -1195,16 +1192,17 @@ bool Repair::gotScanRecList ( ) {
 		return true;
 	}
 
+	bool isDelete = false;
 	// is it a negative titledb key?
 	if ( (tkey.n0 & 0x01) == 0x00 ) {
 		// count it
 		m_recsNegativeKeys++;
 		// otherwise, we need to delete this
 		// docid from tfndb...
-		m_isDelete = true;
+		isDelete = true;
 	}
 
-	if ( m_isDelete ) {
+	if ( isDelete ) {
 		m_stage = STAGE_TITLEDB_0;
 		return true;
 	}
