@@ -1445,9 +1445,8 @@ readLoop:
 		// ... fix for posdb!!!
 		if (m_ks == 18) {
 			list.setListPtrLo(key + (m_ks - 12));
-		} else {
-			list.setListPtrHi(key + (m_ks - 6));
 		}
+		list.setListPtrHi(key + (m_ks - 6));
 	}
 
 	// . parse through the records in the list
