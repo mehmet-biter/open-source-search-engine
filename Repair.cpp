@@ -1248,13 +1248,11 @@ bool Repair::injectTitleRec ( ) {
 	// scan for our docid in the title rec list
 	char *titleRec = NULL;
 	int32_t titleRecSize = 0;
-	// convenience var
-	RdbList *tlist = &m_titleRecList;
 	// scan the titleRecs in the list
-	for ( ; ! tlist->isExhausted() ; tlist->skipCurrentRecord ( ) ) {
+	for ( ; ! m_titleRecList.isExhausted() ; m_titleRecList.skipCurrentRecord ( ) ) {
 		// get the rec
-		char *rec     = tlist->getCurrentRec();
-		int32_t  recSize = tlist->getCurrentRecSize();
+		char *rec     = m_titleRecList.getCurrentRec();
+		int32_t  recSize = m_titleRecList.getCurrentRecSize();
 		// get that key
 		key96_t *k = (key96_t *)rec;
 		// skip negative recs, first one should not be negative however
