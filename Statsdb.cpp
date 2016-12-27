@@ -1193,7 +1193,7 @@ bool Statsdb::processList ( ) {
 		// update start key for next disk read
 		m_list.getLastKey ( (char *)&m_startKey );
 		// add one
-		m_startKey += 1;
+		m_startKey++;
 		// done if wrapped
 		if ( m_startKey.n0 == 0LL && m_startKey.n1 == 0 )
 			m_done = true;

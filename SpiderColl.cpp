@@ -325,7 +325,7 @@ bool SpiderColl::makeDoleIPTable ( ) {
 			return false;
 	}
 	startKey = *(key96_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
+	startKey++;
 	// watch out for wrap around
 	if ( startKey >= *(key96_t *)list.getLastKey() ) goto loop;
  done:

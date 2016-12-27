@@ -1106,7 +1106,7 @@ bool Repair::gotScanRecList ( ) {
 		    KEYSTR(&m_nextTitledbKey,sizeof(key96_t)));
 		// advance one if positive, must always start on a neg
 		if ( (m_nextTitledbKey.n0 & 0x01) == 0x01 ) 
-			m_nextTitledbKey += (uint32_t)1;
+			m_nextTitledbKey++;
 		// count as error
 		m_recsCorruptErrors++;
 	}
@@ -1153,20 +1153,20 @@ bool Repair::gotScanRecList ( ) {
 		    KEYSTR(&tkey,sizeof(key96_t)),
 		    KEYSTR(&m_nextTitledbKey,sizeof(key96_t)),
 		    docId);
-		m_nextTitledbKey += (uint32_t)1;
+		m_nextTitledbKey++;
 		// advance one if positive, must always start on a negative key
 		if ( (m_nextTitledbKey.n0 & 0x01) == 0x01 ) 
-			m_nextTitledbKey += (uint32_t)1;
+			m_nextTitledbKey++;
 		m_stage = STAGE_TITLEDB_0;
 		return true;
 	}
 	else {
 		// advance m_nextTitledbKey to get next titleRec
 		m_nextTitledbKey = m_titleRecList.getCurrentKey();
-		m_nextTitledbKey += (uint32_t)1;
+		m_nextTitledbKey++;
 		// advance one if positive, must always start on a negative key
 		if ( (m_nextTitledbKey.n0 & 0x01) == 0x01 ) 
-			m_nextTitledbKey += (uint32_t)1;
+			m_nextTitledbKey++;
 	}
 
 	// are we the host this url is meant for?

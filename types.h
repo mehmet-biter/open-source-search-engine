@@ -71,6 +71,10 @@ class u_int96_t {
 		if ( n0 + i < n0 ) n1++;
 		n0 += i; }
 
+	void operator++(int) {
+		(*this) += 1;
+	}
+	
 	bool operator >  ( u_int96_t i ) const {
 		if ( n1 > i.n1 ) return true;
 		if ( n1 < i.n1 ) return false;
@@ -673,7 +677,7 @@ static inline bool KEYNEG ( key96_t k ) {
 static inline void KEYINC(char *k, char keySize) {
 	// posdb
 	if ( keySize == 18 ) { *((key144_t *)k) += (int32_t)1; return; }
-	if ( keySize == 12 ) { *((key96_t  *)k) += (int32_t)1; return; }
+	if ( keySize == 12 ) { (*((key96_t  *)k))++; return; }
 	if ( keySize == 16 ) { *((key128_t *)k) += (int32_t)1; return; }
 	if ( keySize == 8  ) { *((uint64_t *)k) += (int32_t)1; return; }
 	if ( keySize == 24 ) { *((key192_t *)k) += (int32_t)1; return; }
