@@ -167,7 +167,6 @@ int collcopy ( char *newHostsConf , char *coll , int32_t collnum ) ;
 bool doCmd ( const char *cmd , int32_t hostId , const char *filename , bool sendToHosts,
 	     bool sendToProxies, int32_t hostId2=-1 );
 int injectFile ( const char *filename , char *ips , const char *coll );
-int injectFileTest ( int32_t  reqLen  , int32_t hid ); // generates the file
 void membustest ( int32_t nb , int32_t loops , bool readf ) ;
 
 //void tryMergingWrapper ( int fd , void *state ) ;
@@ -514,10 +513,6 @@ int main2 ( int argc , char *argv[] ) {
 			"is useful for populating one search engine with "
 			"another. "
 			"\n\n"
-
-			"injecttest <requestLen> [hostId]\n"
-			"\tinject random documents into [hostId]. If [hostId] "
-			"not given 0 is assumed.\n\n"
 
 			"ping <hostId> [clientport]\n"
 			"\tperforms pings to <hostId>. [clientport] defaults "
@@ -1099,26 +1094,6 @@ int main2 ( int argc , char *argv[] ) {
 
 		pingTest ( hostId , port );
 
-		return 0;
-	}
-
-	// gb injecttest <requestLen> [hostId]
-	if ( strcmp ( cmd , "injecttest" ) == 0 ) {
-		if ( cmdarg+1 >= argc ) {
-			goto printHelp;
-		}
-
-		int32_t hostId = 0;
-		if ( cmdarg + 2 < argc ) {
-			hostId = atoi ( argv[cmdarg+2] );
-		}
-
-		int32_t reqLen = atoi ( argv[cmdarg+1] );
-		if ( reqLen == 0 ) {
-			goto printHelp;
-		}
-
-		injectFileTest ( reqLen , hostId );
 		return 0;
 	}
 
@@ -5119,81 +5094,6 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	}
 
 	goto sendLoop;
-}
-
-int injectFileTest ( int32_t reqLen , int32_t hid ) {
-
-	// make a mime
-	char *req = (char *)mmalloc ( reqLen , "injecttest");
-	if ( ! req ) {
-		log(LOG_WARN, "build: injecttest: malloc(%" PRId32") failed", reqLen);
-		return -1;
-	}
-	char *p    = req;
-	char *pend = req + reqLen;
-	sprintf ( p ,
-		  "POST /inject HTTP/1.0\r\n"
-		  "Content-Length: 000000000\r\n" // placeholder
-		  "Content-Type: text/html\r\n"
-		  "Connection: Close\r\n"
-		  "\r\n" );
-	p += strlen(p);
-	char *content = p;
-	sprintf ( p ,
-		  "u=%" PRIu32".injecttest.com&c=&"
-		  "deleteurl=0&ip=4.5.6.7&iplookups=0&"
-		  "dedup=1&rs=7&"
-		  "quick=1&hasmime=1&ucontent="
-		  "HTTP 200\r\n"
-		  "Last-Modified: Sun, 06 Nov 1994 08:49:37 GMT\r\n"
-		  "Connection: Close\r\n"
-		  "Content-Type: text/html\r\n"
-		  "\r\n" ,
-		  (uint32_t)time(NULL) );
-	p += strlen(p);
-	// now store random words (just numbers of 8 digits each)
-	while ( p + 12 < pend ) {
-		int32_t r ; r = rand();
-		sprintf ( p , "%010" PRIu32" " , (uint32_t)r );
-		p += strlen ( p );
-	}
-	// set content length
-	int32_t clen = p - content;
-	char *ptr = req ;
-	// find start of the 9 zeroes
-	while ( *ptr != '0' || ptr[1] !='0' ) ptr++;
-	// store length there
-	sprintf ( ptr , "%09" PRIu32 , (uint32_t)clen );
-	// remove the \0
-	ptr += strlen(ptr); *ptr = '\r';
-
-	// what is total request length?
-	int32_t rlen = p - req;
-
-	// generate the filename
-	const char *filename = "/tmp/inject-test";
-	File f;
-	f.set ( filename );
-	f.unlink();
-	if ( ! f.open ( O_RDWR | O_CREAT ) ) {
-		log(LOG_WARN, "build: injecttest: Failed to create file %s for testing", filename);
-		return -1;
-	}
-
-	if ( rlen != f.write ( req , rlen , 0 ) ) {
-		log(LOG_WARN, "build: injecttest: Failed to write %" PRId32" bytes to %s", rlen, filename);
-		return -1;
-	}
-	f.close();
-
-	mfree ( req , reqLen , "injecttest" );
-
-	Host *h = g_hostdb.getHost(hid);
-
-	char *ips = iptoa(h->m_ip);
-
-	// now inject the file
-	return injectFile ( filename , ips , "main");
 }
 
 #define MAX_INJECT_SOCKETS 300
