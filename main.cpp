@@ -3074,7 +3074,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 			xd->reset();
 		}
 		startKey = *(key96_t *)list.getLastKey();
-		startKey += (uint32_t) 1;
+		startKey++;
 		// watch out for wrap around
 		if ( startKey < *(key96_t *)list.getLastKey() ) return;
 	}
@@ -3204,7 +3204,7 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 				g_process.shutdownAbort(true); }
 		}
 		startKey = *(key96_t *)list.getLastKey();
-		startKey += (uint32_t) 1;
+		startKey++;
 		// watch out for wrap around
 		if ( startKey < *(key96_t *)list.getLastKey() ) return;
 	}
@@ -3573,7 +3573,7 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 	}
 
 	startKey = *(key128_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
+	startKey++;
 
 	// watch out for wrap around
 	if ( startKey >= *(key128_t *)list.getLastKey() ) {
@@ -4265,7 +4265,7 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 	}
 		
 	startKey = *(key128_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
+	startKey++;
 	// watch out for wrap around
 	if ( startKey < *(key128_t *)list.getLastKey() ){ 
 		printf("\n"); return;}
@@ -4773,7 +4773,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		}
 
 		startKey = *(key144_t *)list.getLastKey();
-		startKey += (uint32_t)1;
+		startKey++;
 		// watch out for wrap around
 		if (startKey < *(key144_t *)list.getLastKey()) return;
 	}
@@ -4866,7 +4866,7 @@ void dumpClusterdb ( const char *coll,
 	}
 
 	startKey = *(key96_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
+	startKey++;
 	// watch out for wrap around
 	if ( startKey < *(key96_t *)list.getLastKey() )
 		return;
@@ -4975,7 +4975,7 @@ void dumpLinkdb ( const char *coll,
 	}
 
 	startKey = *(key224_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
+	startKey++;
 	// watch out for wrap around
 	if ( startKey < *(key224_t *)list.getLastKey() ) return;
 	goto loop;
@@ -5550,7 +5550,7 @@ void doInject ( int fd , void *state ) {
 		// loop over entries in list
 		list.getCurrentKey((char *) &s_titledbKey);
 		// advance for next
-		s_titledbKey += 1;
+		s_titledbKey++;
 		// is it a delete?
 		char *rec     = list.getCurrentRec    ();
 		int32_t  recSize = list.getCurrentRecSize();
@@ -7240,7 +7240,7 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		//else countDocs++;
 	}
 	startKey = *(key96_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
+	startKey++;
 	// watch out for wrap around
 	if ( startKey < *(key96_t *)list.getLastKey() ) {
 		log( LOG_INFO, "cntDm: Keys wrapped around! Exiting." );

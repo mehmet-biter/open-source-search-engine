@@ -1267,8 +1267,10 @@ bool RdbBase::incorporateMerge ( ) {
 	// print out info of newly merged file
 	int64_t postmergePositiveRecords = m_fileInfo[x].m_map->getNumPositiveRecs();
 	int64_t postmergeNegativeRecords = m_fileInfo[x].m_map->getNumNegativeRecs();
-	log(LOG_INFO, "merge: Merge succeeded. %s (#%" PRId32") has %" PRId64" positive "
-	    "and %" PRId64" negative recs.", m_fileInfo[x].m_file->getFilename(), x, postmergePositiveRecords, postmergeNegativeRecords);
+	log(LOG_INFO, "merge: Merge succeeded. %s (#%d) has %" PRId64" positive and %" PRId64" negative recs.",
+	    m_fileInfo[x].m_file->getFilename(), x, postmergePositiveRecords, postmergeNegativeRecords);
+	log(LOG_INFO, "merge: Files had %" PRId64" positive and %" PRId64" negative recs.",
+	    m_premergeNumPositiveRecords, m_premergeNumNegativeRecords);
 
 
 	// . bitch if bad news

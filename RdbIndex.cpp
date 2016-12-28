@@ -304,7 +304,8 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked(bool forWrite) {
 	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN %s[%p] forWrite=%s", m_file.getFilename(), this, forWrite ? "true" : "false");
 
 	// don't need to merge when there are no pending docIds
-	if (m_pendingDocIds->empty()) {
+	// except when it's forWrite then we need to free memory from vector
+	if (!forWrite && m_pendingDocIds->empty()) {
 		logTrace(g_conf.m_logTraceRdbIndex, "END %s[%p]", m_file.getFilename(), this);
 		return getDocIds();
 	}
@@ -370,6 +371,10 @@ void RdbIndex::addRecord_unlocked(char *key) {
 	} else {
 		logError("Not implemented for dbname=%s", getDbnameFromId(m_rdbId));
 		gbshutdownLogicError();
+	}
+
+	if (m_generatingIndex && (m_pendingDocIds->size() >= s_generateMaxPendingSize)) {
+		(void)mergePendingDocIds_unlocked();
 	}
 }
 

@@ -1092,7 +1092,7 @@ bool Msg25::sendRequests() {
 			// update this
 			gbmemcpy ( &m_nextKey  , &key , LDBKS );
 
-			m_nextKey += 1;
+			m_nextKey++;
 		} else {
 			// otherwise this is a "site" key. we are getting all the
 			// inlinks to any page on the site...
@@ -1110,7 +1110,7 @@ bool Msg25::sendRequests() {
 			// update this
 			gbmemcpy ( &m_nextKey  , &key , LDBKS );
 
-			m_nextKey += 1;
+			m_nextKey++;
 		}
 
 

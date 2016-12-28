@@ -77,7 +77,6 @@ Repair::Repair() {
 	// Coverity
 	m_needsCallback = false;
 	m_docId = 0;
-	m_isDelete = false;
 	m_totalMem = 0;
 	m_stage = 0;
 	m_count = 0;
@@ -740,12 +739,6 @@ void Repair::loopWrapper(void *state, RdbList *list, Msg5 *msg5) {
 	THIS->loop(NULL);
 }
 
-//void loopWrapper3 ( void *state ) {
-//	//Repair *THIS = (Repair *)state;
-//	// this hold "tr" in one case
-//	g_repair.loop(state);
-//}
-
 
 enum {
 	STAGE_TITLEDB_0  = 0 ,
@@ -753,26 +746,7 @@ enum {
 	STAGE_TITLEDB_2      ,
 	STAGE_TITLEDB_3      ,
 	STAGE_TITLEDB_4      ,
-	/*
-	STAGE_TITLEDB_5      ,
-	STAGE_TITLEDB_6      ,
-	*/
 	STAGE_SPIDERDB_0     
-	/*
-	STAGE_SPIDERDB_1     ,
-	STAGE_SPIDERDB_2A    ,
-	STAGE_SPIDERDB_2B    ,
-	STAGE_SPIDERDB_3     ,
-	STAGE_SPIDERDB_4     ,
-
-	STAGE_INDEXDB_0      ,
-	STAGE_INDEXDB_1      ,
-	STAGE_INDEXDB_2      ,
-
-	STAGE_DATEDB_0       ,
-	STAGE_DATEDB_1       ,
-	STAGE_DATEDB_2      
-	*/
 };
 
 bool Repair::save ( ) {
@@ -1128,40 +1102,11 @@ bool Repair::gotScanRecList ( ) {
 	//RdbBase *base = g_titledb.getRdb()->getBase ( m_collnum );
 
 	if ( g_errno == ECORRUPTDATA ) {
-		log("repair: Encountered corruption1 in titledb. "
-		    "NextKey=%s",
+		log("repair: Encountered corruption1 in titledb. NextKey=%s",
 		    KEYSTR(&m_nextTitledbKey,sizeof(key96_t)));
-		/*
-		// get map for this file
-		RdbMap  *map  = base->getMap(m_fn);
-		// what page has this key?
-		int32_t page = map->getPage ( (char *)&m_nextTitledbKey );
-		// advance the page number
-	advancePage:
-		page++;
-		// if no more pages, we are done!
-		if ( page >= map->getNumPages() ) {
-			log("repair: No more pages in rdb map, done with "
-			    "titledb file.");
-			g_errno = 0; m_recsCorruptErrors++;
-			goto fileDone;
-		}
-		// get key from that page
-		key96_t next = *(key96_t *)map->getKeyPtr ( page );
-		// keep advancing if its the same key!
-		if ( next == m_nextTitledbKey ) goto advancePage;
-		// ok, we got a new key, use it
-		m_nextTitledbKey = next;
-		*/
-		// get the docid
-		//int64_t dd = Titledb::getDocIdFromKey(&m_nextTitledbKey);
-		// inc it
-		//dd++;
-		// re-make key
-		//m_nextTitledbKey = Titledb::makeFirstTitleRecKey ( dd );
 		// advance one if positive, must always start on a neg
 		if ( (m_nextTitledbKey.n0 & 0x01) == 0x01 ) 
-			m_nextTitledbKey += (uint32_t)1;
+			m_nextTitledbKey++;
 		// count as error
 		m_recsCorruptErrors++;
 	}
@@ -1177,25 +1122,11 @@ bool Repair::gotScanRecList ( ) {
 		// exit the loop code, Repair::loop() will be re-called
 		return false;
 	}
-		
-	/*
-	// a hack
-	if ( m_count > 100 ) { // && m_fn == 0 ) {
-		logf(LOG_INFO,"repair: hacking titledb complete.");
-		//m_completedFirstScan = true;
-		//m_stage = STAGE_SPIDERDB_0;
-		m_list.reset();
-		//return true;
-	}
-	*/
 
 	// all done with this bigfile if this list is empty
-	if ( m_titleRecList.isEmpty() ) { //||m_recsScanned > 10 ) {
-		// note it
-		//logf(LOG_INFO,"repair: Scanning ledb file #%" PRId32".",  m_fn );
+	if ( m_titleRecList.isEmpty() ) {
 		m_completedFirstScan = true;
-		logf(LOG_INFO,"repair: Completed titledb scan of "
-		     "%" PRId64" records.",m_recsScanned);
+		logf(LOG_INFO,"repair: Completed titledb scan of %" PRId64" records.",m_recsScanned);
 		//logf(LOG_INFO,"repair: Starting spiderdb scan.");
 		m_stage = STAGE_SPIDERDB_0;
 		// force spider scan completed now too!
@@ -1207,13 +1138,9 @@ bool Repair::gotScanRecList ( ) {
 	// nextRec2:
 	key96_t tkey = m_titleRecList.getCurrentKey();
 	int64_t docId = Titledb::getDocId ( &tkey );
-	// save it
-	//m_currentTitleRecKey = tkey;
 
 	// save it
 	m_docId = docId;
-	// is it a delete?
-	m_isDelete = false;
 	// we need this to compute the tfndb key to add/delete
 	//m_ext = -1;
 
@@ -1222,31 +1149,27 @@ bool Repair::gotScanRecList ( ) {
 
 	// skip if bad... CORRUPTION
 	if ( tkey < m_nextTitledbKey ) {
-		log("repair: Encountered corruption2 in titledb. "
-		    "key=%s < NextKey=%s"
-		    "FirstDocId=%" PRIu64".",
-		    //p1-1,
+		log("repair: Encountered corruption2 in titledb. key=%s < NextKey=%s FirstDocId=%" PRIu64".",
 		    KEYSTR(&tkey,sizeof(key96_t)),
 		    KEYSTR(&m_nextTitledbKey,sizeof(key96_t)),
 		    docId);
-		m_nextTitledbKey += (uint32_t)1;
+		m_nextTitledbKey++;
 		// advance one if positive, must always start on a negative key
 		if ( (m_nextTitledbKey.n0 & 0x01) == 0x01 ) 
-			m_nextTitledbKey += (uint32_t)1;
+			m_nextTitledbKey++;
 		m_stage = STAGE_TITLEDB_0;
 		return true;
 	}
 	else {
 		// advance m_nextTitledbKey to get next titleRec
 		m_nextTitledbKey = m_titleRecList.getCurrentKey();
-		m_nextTitledbKey += (uint32_t)1;
+		m_nextTitledbKey++;
 		// advance one if positive, must always start on a negative key
 		if ( (m_nextTitledbKey.n0 & 0x01) == 0x01 ) 
-			m_nextTitledbKey += (uint32_t)1;
+			m_nextTitledbKey++;
 	}
 
 	// are we the host this url is meant for?
-	//uint32_t gid = getGroupId ( RDB_TITLEDB , &tkey );
 	uint32_t shardNum = getShardNum (RDB_TITLEDB , &tkey );
 	if ( shardNum != getMyShardNum() ) {
 		m_recsWrongGroupId++;
@@ -1258,7 +1181,6 @@ bool Repair::gotScanRecList ( ) {
 	// . is it assigned to us? taken from assigendToUs() in SpiderCache.cpp
 	// . get our group from our hostId
 	int32_t  numHosts;
-	//Host *hosts = g_hostdb.getGroup ( g_hostdb.m_groupId, &numHosts);
 	Host *hosts = g_hostdb.getShard ( shardNum , &numHosts );
 	int32_t  ii =  docId % numHosts ;
 	// . are we the host this url is meant for?
@@ -1270,26 +1192,17 @@ bool Repair::gotScanRecList ( ) {
 		return true;
 	}
 
-	/*
-	// is the list from the tree in memory?
-	int32_t id2;
-	if ( m_fn == base->getNumFiles() ) id2 = 255;
-	else                               id2 = base->m_fileIds2[m_fn];
-
-	*/
-
+	bool isDelete = false;
 	// is it a negative titledb key?
 	if ( (tkey.n0 & 0x01) == 0x00 ) {
 		// count it
 		m_recsNegativeKeys++;
 		// otherwise, we need to delete this
 		// docid from tfndb...
-		m_isDelete = true;
+		isDelete = true;
 	}
 
-	// if not rebuilding tfndb, skip this
-	//if ( ! m_rebuildTfndb && m_isDelete ) {
-	if ( m_isDelete ) {
+	if ( isDelete ) {
 		m_stage = STAGE_TITLEDB_0;
 		return true;
 	}
@@ -1314,18 +1227,6 @@ void Repair::doneWithIndexDoc(XmlDoc *xd) {
 		g_repair.m_stage = STAGE_TITLEDB_0; // 0
 		return;
 	}
-	/*
-	// find the i
-	int32_t i ; for ( i = 0 ; i < MAX_OUT_REPAIR ; i++ ) {
-		if ( ! s_inUse[i] ) continue;
-		if ( xd == &s_docs[i] ) break;
-	}
-	if ( i >= MAX_OUT_REPAIR ) { g_process.shutdownAbort(true); }
-	// reset it i guess
-	xd->reset();
-	// give back the tr
-	s_inUse[i] = 0;
-	*/
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
 
@@ -1344,20 +1245,14 @@ void Repair::doneWithIndexDocWrapper(void *state) {
 bool Repair::injectTitleRec ( ) {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 
-	// no, now we specify in call to indexDoc() which
-	// dbs we want to update
-	//if ( ! m_fullRebuild && ! m_removeBadPages ) return true;
-
 	// scan for our docid in the title rec list
 	char *titleRec = NULL;
 	int32_t titleRecSize = 0;
-	// convenience var
-	RdbList *tlist = &m_titleRecList;
 	// scan the titleRecs in the list
-	for ( ; ! tlist->isExhausted() ; tlist->skipCurrentRecord ( ) ) {
+	for ( ; ! m_titleRecList.isExhausted() ; m_titleRecList.skipCurrentRecord ( ) ) {
 		// get the rec
-		char *rec     = tlist->getCurrentRec();
-		int32_t  recSize = tlist->getCurrentRecSize();
+		char *rec     = m_titleRecList.getCurrentRec();
+		int32_t  recSize = m_titleRecList.getCurrentRecSize();
 		// get that key
 		key96_t *k = (key96_t *)rec;
 		// skip negative recs, first one should not be negative however
@@ -1481,9 +1376,6 @@ bool Repair::injectTitleRec ( ) {
 
 	xd->m_priority = -1;
 	xd->m_priorityValid = true;
-
-	// this makes sense now that we set from docid using set3()?
-	//xd->m_recycleContent = true;
 
 	xd->m_contentValid = true;
 	xd->m_content = xd->ptr_utf8Content;

@@ -57,7 +57,6 @@ private:
 	bool       m_needsCallback;
 	RdbList    m_titleRecList;
 	int64_t  m_docId;
-	bool       m_isDelete;
 	int64_t  m_totalMem;
 	int32_t       m_stage ;
 	int32_t       m_count;

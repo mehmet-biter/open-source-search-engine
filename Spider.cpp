@@ -1295,7 +1295,7 @@ static bool printList ( State11 *st ) {
 		// update to that
 		st->m_startKey = dk;
 		// inc by one
-		st->m_startKey += 1;
+		st->m_startKey++;
 		// get spider time from that
 		int32_t spiderTime = g_doledb.getSpiderTime ( &dk );
 		// skip if in future
