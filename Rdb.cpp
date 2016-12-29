@@ -959,7 +959,7 @@ static time_t s_lastTryTime = 0;
 
 // . start dumping the tree
 // . returns false and sets g_errno on error
-bool Rdb::dumpTree ( int32_t niceness ) {
+bool Rdb::dumpTree() {
 	logTrace( g_conf.m_logTraceRdb, "BEGIN %s", m_dbname );
 
 	if (getNumUsedNodes() <= 0) {
@@ -1035,10 +1035,10 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	}
 
 	// remember niceness for calling setDump()
-	m_niceness = niceness;
+	m_niceness = 1;
 
 	// debug msg
-	log(LOG_INFO,"db: Dumping %s to disk. nice=%" PRId32,m_dbname,niceness);
+	log(LOG_INFO,"db: Dumping %s to disk. nice=%" PRId32,m_dbname,m_niceness);
 
 	// record last dump time so main.cpp will not save us this period
 	m_lastWrite = gettimeofdayInMilliseconds();
@@ -1538,7 +1538,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 		// because then we can't be interrupted with quickpoll!
 		if ( niceness != 0 ) {
 			logTrace( g_conf.m_logTraceRdb, "%s: Not enough room. Calling dumpTree", m_dbname );
-			dumpTree( 1/*niceness*/ );
+			dumpTree();
 		}
 
 		// set g_errno after intiating the dump!
@@ -1582,7 +1582,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 				// start dumping the tree to disk so we have room 4 add
 				if ( niceness != 0 ) {
 					logTrace( g_conf.m_logTraceRdb, "%s: Not enough memory. Calling dumpTree", m_dbname );
-					dumpTree( 1/*niceness*/ );
+					dumpTree();
 				}
 				// tell caller to try again later (1 second or so)
 				g_errno = ETRYAGAIN;
@@ -1607,7 +1607,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 
 	// if dump started ok, return true
 	if ( niceness != 0 ) {
-		if ( dumpTree( 1/*niceness*/ ) ) {
+		if ( dumpTree() ) {
 			logTrace( g_conf.m_logTraceRdb, "END. %s: dumped tree. Returning true", m_dbname );
 			return true;
 		}

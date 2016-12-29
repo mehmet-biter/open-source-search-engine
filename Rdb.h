@@ -260,7 +260,7 @@ public:
 
 	// . write out tree to a file with keys in order
 	// . only shift.cpp/reindex.cpp programs set niceness to 0
-	bool dumpTree ( int32_t niceness ); //= MAX_NICENESS );
+	bool dumpTree();
 
 	// . called when done saving a tree to disk (keys not ordered)
 	void doneSaving ( ) ;

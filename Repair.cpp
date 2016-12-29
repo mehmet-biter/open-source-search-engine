@@ -1015,7 +1015,7 @@ bool Repair::dumpLoop ( ) {
 		Rdb *rdb = rdbs[i];
 
 		// use niceness of 1
-		rdb->dumpTree ( 1 );
+		rdb->dumpTree();
 	}
 	g_errno = 0;
 	// . register sleep wrapper to check when dumping is done

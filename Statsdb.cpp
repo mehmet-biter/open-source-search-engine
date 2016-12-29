@@ -227,7 +227,7 @@ void flushStatsWrapper ( int fd , void *state ) {
 	if ( ! isClockInSync() ) return;
 
 	// force a dump
-	rdb->dumpTree ( 1 );
+	rdb->dumpTree();
 }
 
 void Statsdb::addDocsIndexed ( ) {

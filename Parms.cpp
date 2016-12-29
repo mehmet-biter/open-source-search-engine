@@ -735,13 +735,13 @@ static bool CommandForceIt ( char *rec ) {
 }
 
 static bool CommandDiskDump ( char *rec ) {
-	g_clusterdb.getRdb()->dumpTree  ( 1 );
-	g_tagdb.getRdb()->dumpTree     ( 1 );
-	g_spiderdb.getRdb()->dumpTree   ( 1 );
-	g_posdb.getRdb()->dumpTree    ( 1 );
-	g_titledb.getRdb()->dumpTree    ( 1 );
-	g_statsdb.getRdb()->dumpTree    ( 1 );
-	g_linkdb.getRdb() ->dumpTree    ( 1 );
+	g_clusterdb.getRdb()->dumpTree();
+	g_tagdb.getRdb()->dumpTree();
+	g_spiderdb.getRdb()->dumpTree();
+	g_posdb.getRdb()->dumpTree();
+	g_titledb.getRdb()->dumpTree();
+	g_statsdb.getRdb()->dumpTree();
+	g_linkdb.getRdb()->dumpTree();
 	g_errno = 0;
 	return true;
 }
