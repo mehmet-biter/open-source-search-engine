@@ -295,10 +295,10 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	return false;
 }
 
-bool Msg4::isInLinkedList ( Msg4 *msg4 ) {
-	Msg4 *m = s_msg4Head;
-	for ( ; m ; m = m->m_next ) 
-		if ( m == msg4 ) return true;
+bool Msg4::isInLinkedList(const Msg4 *msg4) {
+	for(Msg4 *m = s_msg4Head; m; m = m->m_next)
+		if(m == msg4)
+			return true;
 	return false;
 }
 

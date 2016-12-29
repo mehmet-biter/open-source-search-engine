@@ -29,7 +29,7 @@ public:
 	bool isInUse() const { return m_inUse; }
 
 	static bool registerHandler();
-	static bool isInLinkedList(Msg4 *msg4);
+	static bool isInLinkedList(const Msg4 *msg4);
 	static void storeLineWaiters();
 
 	SafeBuf m_tmpBuf;
