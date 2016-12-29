@@ -540,19 +540,7 @@ static bool sendBuffer(int32_t hostId) {
 		//logf(LOG_DEBUG,"build: no mcast available");
 		return false;
 	}
-	// NO! storeRec() will alloc it!
-	/*
-	// make it point to another
-	char *newBuf = (char *)mmalloc ( MAXHOSTBUFSIZE , "Msg4Buf" );
-	// assign it to the new Buf
-	s_hostBufs [ hostId ] = newBuf;
-	// reset used
-	if ( newBuf ) {
-		*(int32_t *)newBuf = 4;
-		s_hostBufSizes[hostId] = MAXHOSTBUFSIZE;
-	}
-	else 	s_hostBufSizes[hostId] = 0; //if we were oom reset size
-	*/
+
 	// get groupId
 	//uint32_t groupId = g_hostdb.getGroupIdFromHostId ( hostId );
 	Host *h = g_hostdb.getHost(hostId);
