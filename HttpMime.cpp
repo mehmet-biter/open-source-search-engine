@@ -76,7 +76,7 @@ void HttpMime::reset ( ) {
 
 // . returns false if could not get a valid mime
 // . we need the url in case there's a Location: mime that's base-relative
-bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
+bool HttpMime::set ( const char *buf , int32_t bufLen , Url *url ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufLen);
 #endif
@@ -133,7 +133,7 @@ bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
 // when parsing such headers, recognize a single LF as a line terminator and ignore the leading CR.
 
 // . returns 0 if no boundary found
-size_t HttpMime::getMimeLen(char *buf, size_t bufLen) {
+size_t HttpMime::getMimeLen(const char *buf, size_t bufLen) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufLen);
 #endif
@@ -704,7 +704,7 @@ bool HttpMime::parseContentEncoding(const char *field, size_t fieldLen) {
 ///     Set-Cookie: CFID=77593661; Expires=session; domain=www.tennisexpress.com; Path=/
 
 // returns false on bad mime
-bool HttpMime::parse(char *mime, int32_t mimeLen, Url *url) {
+bool HttpMime::parse(const char *mime, int32_t mimeLen, Url *url) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(mime,mimeLen);
 #endif
@@ -720,8 +720,8 @@ bool HttpMime::parse(char *mime, int32_t mimeLen, Url *url) {
 	m_status = -1;
 
 	// skip HTTP/x.x till we hit a space
-	char *p = mime;
-	char *pend = mime + mimeLen;
+	const char *p = mime;
+	const char *pend = mime + mimeLen;
 	while (p < pend && !is_wspace_a(*p)) p++;
 	// then skip over spaces
 	while (p < pend && is_wspace_a(*p)) p++;
