@@ -59,7 +59,7 @@ static int32_t  s_numHostBufs;
 
 // . each host has a 32k add buffer which is sent when full or every 10 seconds
 // . buffer will be more than 32k if the record to add is larger than 32k
-#define MAXHOSTBUFSIZE (32*1024)
+#define MINHOSTBUFSIZE (32*1024)
 
 // the linked list of Msg4s waiting in line
 static Msg4 *s_msg4Head = NULL;
@@ -440,7 +440,7 @@ static bool storeRec(collnum_t      collnum,
 	// if NULL, try to allocate one
 	if ( ! buf  || s_hostBufSizes[hostId] < needForBuf ) {
 		// how big to make it
-		int32_t size = MAXHOSTBUFSIZE;
+		int32_t size = MINHOSTBUFSIZE;
 		// must accomodate rec at all costs
 		if ( size < needForBuf ) size = needForBuf;
 		// make them all the same size
@@ -1194,7 +1194,7 @@ bool loadAddsInProgress(const char *prefix) {
 		}
 
 		// malloc the min buf size
-		int32_t allocSize = MAXHOSTBUFSIZE;
+		int32_t allocSize = MINHOSTBUFSIZE;
 		if ( allocSize < used ) {
 			allocSize = used;
 		}
