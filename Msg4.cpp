@@ -453,7 +453,7 @@ static bool storeRec(collnum_t      collnum,
 			gbmemcpy( buf, s_hostBufs[hostId], 
 				*(int32_t*)(s_hostBufs[hostId])); 
 			mfree ( s_hostBufs[hostId], 
-				s_hostBufSizes[hostId] , "Msg4b" );
+				s_hostBufSizes[hostId] , "Msg4a" );
 		}
 		// if we are making a brand new buf, init the used
 		// size to "4" bytes
