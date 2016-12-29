@@ -150,14 +150,14 @@ bool Msg4::registerHandler() {
 }
 
 // scan all host bufs and try to send on them
-void sleepCallback4 ( int bogusfd , void    *state ) {
+static void sleepCallback4(int bogusfd, void *state) {
 	// wait for clock to be in sync
 	if ( ! isClockInSync() ) return;
 	// flush them buffers
 	flushLocal();
 }
 
-void flushLocal ( ) {
+static void flushLocal() {
 	g_errno = 0;
 	// put the line waiters into the buffers in case they are not there
 	//storeLineWaiters();
@@ -168,7 +168,7 @@ void flushLocal ( ) {
 }
 
 // used by Repair.cpp to make sure we are not adding any more data ("writing")
-bool hasAddsInQueue   ( ) {
+bool hasAddsInQueue() {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
 	// if there is an outstanding multicast...
@@ -412,12 +412,12 @@ bool Msg4::addMetaList2 ( ) {
 // . modify each Msg4 request as follows
 // . collnum(2bytes)|rdbId(1bytes)|listSize&rawlistData|...
 // . store these requests in the buffer just like that
-bool storeRec ( collnum_t      collnum , 
-		char           rdbId   ,
-		uint32_t  shardNum,
-		int32_t           hostId  ,
-		const char          *rec     ,
-		int32_t           recSize ) {
+static bool storeRec(collnum_t      collnum,
+		     char           rdbId,
+		     uint32_t       shardNum,
+		     int32_t        hostId,
+		     const char    *rec,
+		     int32_t        recSize ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(&collnum,sizeof(collnum));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&rdbId,sizeof(rdbId));
@@ -515,7 +515,7 @@ bool storeRec ( collnum_t      collnum ,
 // . returns false if we were UNable to get a multicast to launch the buffer, 
 //   true otherwise
 // . returns false and sets g_errno on error
-bool sendBuffer ( int32_t hostId ) {
+static bool sendBuffer(int32_t hostId) {
 	//logf(LOG_DEBUG,"build: sending buf");
 	// how many bytes of the buffer are occupied or "in use"?
 	char *buf       = s_hostBufs    [hostId];
@@ -616,7 +616,7 @@ bool sendBuffer ( int32_t hostId ) {
 	return false;
 }
 
-Multicast *getMulticast ( ) {
+static Multicast *getMulticast() {
 	// get head
 	Multicast *avail = s_mcastHead;
 	// return NULL if none available
@@ -635,7 +635,7 @@ Multicast *getMulticast ( ) {
 	return avail;
 }
 
-void returnMulticast ( Multicast *mcast ) {
+static void returnMulticast(Multicast *mcast) {
 	// return this multicast
 	mcast->reset();
 	// we are at the tail, nobody is after us
@@ -651,7 +651,7 @@ void returnMulticast ( Multicast *mcast ) {
 }
 
 // just free the request
-void gotReplyWrapper4 ( void *state , void *state2 ) {
+static void gotReplyWrapper4(void *state , void *state2) {
 	int32_t allocSize = (int32_t) (PTRTYPE) state;
 	Multicast *mcast = (Multicast *) state2;
 
@@ -728,7 +728,7 @@ void Msg4::storeLineWaiters ( ) {
 // . TODO: need we send a reply back on success????
 // . NOTE: Must always call g_udpServer::sendReply or sendErrorReply() so
 //   read/send bufs can be freed
-void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
+static void handleRequest4(UdpSlot *slot, int32_t netnice) {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
 	// if we just came up we need to make sure our hosts.conf is in
@@ -839,7 +839,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 // . Syncdb.cpp will call this after it has received checkoff keys from
 //   all the alive hosts for this zid/sid
 // . returns false and sets g_errno on error, returns true otherwise
-bool addMetaList ( const char *p , UdpSlot *slot ) {
+static bool addMetaList(const char *p, UdpSlot *slot) {
 	logDebug(g_conf.m_logDebugSpider, "syncdb: calling addMetalist zid=%" PRIu64, *(int64_t *) (p + 4));
 
 	// get total buf used
@@ -1028,7 +1028,7 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 // . does not do any mallocs in case we are OOM and need to save
 // . BUG: might be trying to send an old bucket, so scan udp slots too? or
 //   keep unsent buckets in the list?
-bool saveAddsInProgress ( const char *prefix ) {
+bool saveAddsInProgress(const char *prefix) {
 
 	if ( g_conf.m_readOnlyMode ) return true;
 
@@ -1114,7 +1114,7 @@ bool saveAddsInProgress ( const char *prefix ) {
 
 // . returns false on an unrecoverable error, true otherwise
 // . sets g_errno on error
-bool loadAddsInProgress ( const char *prefix ) {
+bool loadAddsInProgress(const char *prefix) {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
 	if ( g_conf.m_readOnlyMode ) {
@@ -1326,6 +1326,3 @@ bool loadAddsInProgress ( const char *prefix ) {
 	logTrace( g_conf.m_logTraceMsg4, "END - OK, returning true" );
 	return true;
 }
-
-
-
