@@ -912,15 +912,25 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 	}
 
 	bool hasRoom = true;
+	bool anyCantAdd = false;
 	for (auto item : rdbRecSizes) {
 		Rdb *rdb = getRdbFromId(item.first);
 		if (!rdb->hasRoom(item.second.first, item.second.second)) {
 			rdb->dumpTree();
 			hasRoom = false;
 		}
+		if(!rdb->canAdd()) {
+			anyCantAdd = true;
+		}
 	}
 
 	if (!hasRoom) {
+		logDebug(g_conf.m_logDebugSpider, "One or more target Rdbs  don't have room currently. Returning try-again for this Msg4");
+		g_errno = ETRYAGAIN;
+		return false;
+	}
+	if(anyCantAdd) {
+		logDebug(g_conf.m_logDebugSpider, "One or more target Rdbs can't currently be added to. Returning try-again for this Msg4");
 		g_errno = ETRYAGAIN;
 		return false;
 	}
@@ -999,6 +1009,16 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 
 	// are we done
 	if ( g_errno ) return false;
+
+	//Initiate dumps for any Rdbs wanting it
+	for (auto item : rdbRecSizes) {
+		Rdb *rdb = getRdbFromId(item.first);
+		if(!rdb->isDumping() && rdb->needsDump()) {
+			logDebug(g_conf.m_logDebugSpider, "Rdb %d needs dumping", item.first);
+			rdb->dumpTree();
+			//we ignore the return value because we have processed the list/msg4
+		}
+	}
 
 	// success
 	return true;

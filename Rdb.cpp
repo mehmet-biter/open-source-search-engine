@@ -1588,31 +1588,7 @@ bool Rdb::addList(collnum_t collnum, RdbList *list, bool checkForRoom) {
 		}
 	} while ( list->skipCurrentRecord() ); // skip to next record, returns false on end of list
 
-	// if tree is >= 90% full dump it
-	if ( m_dump.isDumping() ) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: is already dumping. Returning true", m_dbname );
-		return true;
-	}
-
-	// return true if not ready for dump yet
-	if ( ! needsDump () ) {
-		//logTrace( g_conf.m_logTraceRdb, "END. %s: doesn't need dump. Returning true", m_dbname );
-		return true;
-	}
-
-	// if dump started ok, return true
-	if ( dumpTree() ) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: dumped tree. Returning true", m_dbname );
-		return true;
-	}
-
-	// technically, since we added the record, it is not an error
-	g_errno = 0;
-
-	// . otherwise, bitch and return false with g_errno set
-	// . usually this is because it is waiting for an unlink/rename
-	//   operation to complete... so make it LOG_INFO
-	log(LOG_INFO,"db: Failed to dump data to disk for %s.",m_dbname);
+	//Do not try initiating a dump here as it will make Msg4 unhappy being interrupted in the middle of multiple lists
 
 	return true;
 }
@@ -1716,6 +1692,22 @@ bool Rdb::hasRoom(RdbList *list) {
 	// otherwise, we do have room
 	return true;
 }
+
+
+bool Rdb::canAdd() const {
+	if(!isClockInSync())
+		return false;
+	if(!g_process.m_powerIsOn)
+		return false;
+	if(!isWritable())
+		return false;
+	if(m_isClosing)
+		return false;
+	if(m_dump.isDumping()) //this is more conservative than the actual check in addRecord()
+		return false;
+	return true;
+}
+
 
 // . NOTE: low bit should be set , only antiKeys (deletes) have low bit clear
 // . returns false and sets g_errno on error, true otherwise

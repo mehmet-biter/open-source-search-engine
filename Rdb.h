@@ -117,6 +117,8 @@ public:
 	bool hasRoom(RdbList *list);
 	bool hasRoom(int32_t numRecs, int32_t dataSize);
 
+	bool canAdd() const;
+
 	int32_t reclaimMemFromDeletedTreeNodes();
 	int32_t m_lastReclaim;
 
