@@ -251,7 +251,7 @@ bool RdbListNoMergeTest::m_savedMergeConf = g_conf.m_noInMemoryPosdbMerge;
 static void addListToTree(rdbid_t rdbId, collnum_t collNum, RdbList *list) {
 	Rdb *rdb = getRdbFromId(rdbId);
 	rdb->addList(collNum, list, 0);
-	rdb->dumpTree(1);
+	rdb->dumpTree();
 }
 
 TEST_F(RdbListNoMergeTest, MergeTestPosdbSingleDocSpiderSpiderSpider) {

@@ -10,7 +10,7 @@ static void saveAndReloadPosdbBucket() {
 }
 
 static void dumpPosdb() {
-	g_posdb.getRdb()->dumpTree(1);
+	g_posdb.getRdb()->dumpTree();
 }
 
 class PosdbTest : public ::testing::Test {
