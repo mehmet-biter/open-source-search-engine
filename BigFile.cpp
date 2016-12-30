@@ -1664,7 +1664,7 @@ void BigFile::doneP1RenameWrapper(File *f) {
 	// otherwise, it's a more serious error i guess
 	if ( g_errno ) {
 		m_latestsRenameP1Errno = g_errno;
-		log(LOG_ERROR, "%s:%s:%d: doneRenameWrapper. rename failed: [%s] [%s]", __FILE__, __func__, __LINE__, getFilename(), mstrerror(g_errno));
+		logError("doneRenameWrapper. rename failed: [%s] [%s]", getFilename(), mstrerror(g_errno));
 		logAllData(LOG_ERROR);
 		//@@@ BR: Why continue??
 	}
