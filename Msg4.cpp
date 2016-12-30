@@ -973,7 +973,7 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 		rdb->readRequestAdd(recSize);
 
 		// this returns false and sets g_errno on error
-		bool status = rdb->addList(collnum, &list);
+		bool status = rdb->addListNoSpaceCheck(collnum, &list);
 
 		// bad coll #? ignore it. common when deleting and resetting
 		// collections using crawlbot. but there are other recs in this

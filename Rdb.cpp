@@ -1474,9 +1474,10 @@ void attemptMergeAll() {
 	}
 }
 
+
 // . return false and set g_errno on error
 // . TODO: speedup with m_tree.addSortedKeys() already partially written
-bool Rdb::addList(collnum_t collnum , RdbList *list) {
+bool Rdb::addList(collnum_t collnum, RdbList *list, bool checkForRoom) {
 	// pick it
 	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
 		g_errno = ENOCOLLREC;
@@ -1524,7 +1525,7 @@ bool Rdb::addList(collnum_t collnum , RdbList *list) {
 	// . if we don't have enough room to store list, initiate a dump and
 	//   return g_errno of ETRYAGAIN
 	// . otherwise, we're guaranteed to have room for this list
-	if ( ! hasRoom(list) ) {
+	if( checkForRoom && ! hasRoom(list) ) {
 		// if tree is empty, list will never fit!!!
 		if ( m_useTree && m_tree.getNumUsedNodes() <= 0 ) {
 			g_errno = ELISTTOOBIG;

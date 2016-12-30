@@ -125,7 +125,12 @@ public:
 	// . if we can't handle all records in list we don't add any and
 	//   set errno to ETRYAGAIN or ENOMEM
 	// . we copy all data so you can free your list when we're done
-	bool addList ( collnum_t collnum , RdbList *list);
+	bool addList(collnum_t collnum, RdbList *list) {
+		return addList(collnum,list,true);
+	}
+	bool addListNoSpaceCheck(collnum_t collnum, RdbList *list) {
+		return addList(collnum,list,false);
+	}
 
 	bool isSecondaryRdb() const {
 		return ::isSecondaryRdb((unsigned char)m_rdbId);
@@ -293,6 +298,7 @@ public:
 	static void doneDumpingCollWrapper(void *state);
 
 private:
+	bool addList(collnum_t collnum, RdbList *list, bool checkForRoom);
 	// get the directory name where this rdb stores its files
 	const char *getDir() const { return g_hostdb.m_dir; }
 
