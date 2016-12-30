@@ -415,7 +415,7 @@ bool Statsdb::addStat ( int32_t        niceness ,
 			// need to add using rdb so it can gbmemcpy the data
 			RdbList list;
 			list.set((char*)&rawRdbList, sizeof(rawRdbList), (char*)&rawRdbList, sizeof(rawRdbList), m_rdb.getFixedDataSize(), false, m_rdb.useHalfKeys(), m_rdb.getKeySize());
-			if (!m_rdb.addList((collnum_t)0, &list, MAX_NICENESS)) {
+			if (!m_rdb.addList((collnum_t)0, &list)) {
 				if ( g_errno != ETRYAGAIN )
 				log("statsdb: add rec failed: %s",
 				    mstrerror(g_errno));

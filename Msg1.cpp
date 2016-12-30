@@ -604,7 +604,7 @@ static void handleRequest1(UdpSlot *slot, int32_t netnice) {
 		   rdb->getKeySize ()      ); 
 
 	// this returns false and sets g_errno on error
-	rdb->addList ( collnum , &list , niceness);
+	rdb->addList(collnum, &list);
 
 	// retry on some errors
 	addedList ( slot , rdb );

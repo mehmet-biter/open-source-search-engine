@@ -1476,7 +1476,7 @@ void attemptMergeAll() {
 
 // . return false and set g_errno on error
 // . TODO: speedup with m_tree.addSortedKeys() already partially written
-bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
+bool Rdb::addList(collnum_t collnum , RdbList *list) {
 	// pick it
 	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
 		g_errno = ENOCOLLREC;
@@ -1534,12 +1534,8 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 			return false;
 		}
 
-		// force initiate the dump now, but not if we are niceness 0
-		// because then we can't be interrupted with quickpoll!
-		if ( niceness != 0 ) {
-			logTrace( g_conf.m_logTraceRdb, "%s: Not enough room. Calling dumpTree", m_dbname );
-			dumpTree();
-		}
+		logTrace( g_conf.m_logTraceRdb, "%s: Not enough room. Calling dumpTree", m_dbname );
+		dumpTree();
 
 		// set g_errno after intiating the dump!
 		g_errno = ETRYAGAIN;
@@ -1580,10 +1576,8 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 			// force initiate the dump now if addRecord failed for no mem
 			if ( g_errno == ENOMEM ) {
 				// start dumping the tree to disk so we have room 4 add
-				if ( niceness != 0 ) {
-					logTrace( g_conf.m_logTraceRdb, "%s: Not enough memory. Calling dumpTree", m_dbname );
-					dumpTree();
-				}
+				logTrace( g_conf.m_logTraceRdb, "%s: Not enough memory. Calling dumpTree", m_dbname );
+				dumpTree();
 				// tell caller to try again later (1 second or so)
 				g_errno = ETRYAGAIN;
 			}
@@ -1606,11 +1600,9 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 	}
 
 	// if dump started ok, return true
-	if ( niceness != 0 ) {
-		if ( dumpTree() ) {
-			logTrace( g_conf.m_logTraceRdb, "END. %s: dumped tree. Returning true", m_dbname );
-			return true;
-		}
+	if ( dumpTree() ) {
+		logTrace( g_conf.m_logTraceRdb, "END. %s: dumped tree. Returning true", m_dbname );
+		return true;
 	}
 
 	// technically, since we added the record, it is not an error
