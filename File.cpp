@@ -192,7 +192,13 @@ bool File::movePhase2(const char *newFilename) {
 		return false;
 	}
 	set(newFilename);
-	close(); //ensure that we release the original file if the move was across filesystems
+
+	// ensure that we release the original file if the move was across filesystems
+	// we don't call close directly here because we may have some pending reads for the fd,
+	// so we redirect existing fd to new file
+	int fd = ::open(getFilename(), m_flags, getFileCreationFlags());
+	dup2(fd, m_fd);
+	::close(fd);
 
 	logTrace(g_conf.m_logTraceFile, "END newFilename='%s'. Returning true", newFilename);
 	return true;

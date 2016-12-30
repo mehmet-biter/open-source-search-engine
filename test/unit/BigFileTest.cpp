@@ -55,3 +55,20 @@ TEST(BigFileTest, FileRenameDestNotExist) {
 	// remove files
 	file01.unlink();
 }
+
+TEST(BigFileTest, FileRenameRead) {
+	BigFile file01;
+	createFile(&file01, "testfile01");
+	file01.logAllData(LOG_TRACE);
+
+	int fd = file01.getfd(0, true);
+	logf(LOG_TRACE, "fd = %d", fd);
+	file01.rename("testfile02", NULL);
+
+	int32_t bufSize = 1024;
+	char *buf = (char *)malloc(bufSize);
+	ASSERT_NE(-1, pread(fd, buf, bufSize, 0));
+	free(buf);
+
+	file01.unlink();
+}
