@@ -197,7 +197,16 @@ bool File::movePhase2(const char *newFilename) {
 	// we don't call close directly here because we may have some pending reads for the fd,
 	// so we redirect existing fd to new file
 	int fd = ::open(getFilename(), m_flags, getFileCreationFlags());
-	dup2(fd, m_fd);
+	if (fd == -1) {
+		logError("Unable to open %s", getFilename());
+		gbshutdownResourceError();
+	}
+
+	if (dup2(fd, m_fd) == -1) {
+		logError("dup2 failed with error=%s", mstrerror(errno));
+		gbshutdownResourceError();
+	}
+
 	::close(fd);
 
 	logTrace(g_conf.m_logTraceFile, "END newFilename='%s'. Returning true", newFilename);
