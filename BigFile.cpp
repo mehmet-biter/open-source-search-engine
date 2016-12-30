@@ -1123,7 +1123,7 @@ static bool readwrite_r ( FileState *fstate ) {
 
 		// on other errno, return -1
 		if (n < 0) {
-			log(LOG_ERROR, "disk::readwrite_r: %s", mstrerror(errno));
+			log(LOG_ERROR, "disk::readwrite_r: %s error: %s", doWrite ? "write" : "read", mstrerror(errno));
 			gbshutdownAbort(true);
 		}
 
@@ -1163,7 +1163,7 @@ bool BigFile::unlink() {
 	
 	if(m_outstandingUnlinkJobCount!=0 || m_outstandingRenameP1JobCount!=0 || m_outstandingRenameP2JobCount!=0) {
 		g_errno = EBADENGINEER;
-		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
+		logError("END. Unlink/rename threads already in progress.");
 		return true;
 	}
 	
@@ -1215,7 +1215,7 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 	
 	if(m_outstandingRenameP1JobCount!=0) {
 		g_errno = EBADENGINEER;
-		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
+		logError("END. Unlink/rename threads already in progress.");
 		return true;
 	}
 	
