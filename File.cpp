@@ -191,23 +191,29 @@ bool File::movePhase2(const char *newFilename) {
 		logTrace(g_conf.m_logTraceFile, "END newFilename='%s'. Returning false", newFilename);
 		return false;
 	}
+
 	set(newFilename);
 
-	// ensure that we release the original file if the move was across filesystems
-	// we don't call close directly here because we may have some pending reads for the fd,
-	// so we redirect existing fd to new file
-	int fd = ::open(getFilename(), m_flags, getFileCreationFlags());
-	if (fd == -1) {
-		logError("Unable to open %s", getFilename());
-		gbshutdownResourceError();
-	}
+	// only redirect fd if it's valid
+	if (m_fd != -1) {
+		// ensure that we release the original file if the move was across filesystems
+		// we don't call close directly here because we may have some pending reads for the fd,
+		// so we redirect existing fd to new file
 
-	if (dup2(fd, m_fd) == -1) {
-		logError("dup2 failed with error=%s", mstrerror(errno));
-		gbshutdownResourceError();
-	}
+		// don't use m_flags here as last open could be writeMap
+		int fd = ::open(getFilename(), O_RDWR, getFileCreationFlags());
+		if (fd == -1) {
+			logError("Unable to open %s", getFilename());
+			gbshutdownResourceError();
+		}
 
-	::close(fd);
+		if (dup2(fd, m_fd) == -1) {
+			logError("dup2 failed with error=%s", mstrerror(errno));
+			gbshutdownResourceError();
+		}
+
+		::close(fd);
+	}
 
 	logTrace(g_conf.m_logTraceFile, "END newFilename='%s'. Returning true", newFilename);
 	return true;
