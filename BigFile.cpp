@@ -365,6 +365,7 @@ static int64_t s_vfd = 0;
 //   DiskPageCache
 // . use maxFileSize of -1 for us to use getFileSize() to set it
 bool BigFile::open(int flags) {
+	logTrace(g_conf.m_logTraceBigFile, "BEGIN. flag=%d", flags);
     m_flags       = flags;
 	m_isClosing   = false;
 
@@ -375,6 +376,7 @@ bool BigFile::open(int flags) {
 	if ( m_vfd == -1 ) {
 		m_vfd = ++s_vfd;
 	}
+	logTrace(g_conf.m_logTraceBigFile, "END");
 	return true;
 }
 
