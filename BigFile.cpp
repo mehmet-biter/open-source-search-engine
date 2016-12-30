@@ -1134,13 +1134,12 @@ static bool readwrite_r ( FileState *fstate ) {
 		// . only allow syncing if file is non-blocking, because blocking
 		//   writes are used for when we call RdbTree::fastSave_r() and it
 		//   takes forever to dump Spiderdb if we sync each little write
-#ifndef __APPLE_
 		if (doWrite && fstate->m_flushAfterWrite && fdatasync(fd) < 0) {
 			log(LOG_WARN, "disk: fdatasync: %s", mstrerror(errno));
 			// ignore an error here
 			errno = 0;
 		}
-#endif
+
 		// update the count
 		bytesDone += n;
 		// inc the main offset and the buffer ptr, "p"
