@@ -80,12 +80,55 @@ bool RdbBuckets::needsDump() const {
 	return (m_maxBuckets == m_maxBucketsCapacity);
 }
 
+
+static int cmp_int(const void *pv1, const void *pv2) {
+	//the integer are all in the range [0..BUCKET_SIZE] so we don't have to worry about overflow/underflow
+	return *((const int*)pv1) - *((const int*)pv2);
+}
+
 //be very conservative with this because if we say we can fit it
 //and we can't then we'll get a partial list added and we will
 //add the whole list again.
 bool RdbBuckets::hasRoom(int32_t numRecs) const {
-	int32_t numBucketsRequired = (((numRecs / BUCKET_SIZE)+1) * 2);
-	return ( m_maxBucketsCapacity - m_numBuckets >= numBucketsRequired );
+	//Whether we have room or not depends on how many bucket splits will occur. We don't
+	//know that until we see the keys, so we must be a conservative. If we answer yes but
+	//the truth is false then we'll end up with duplicates because the caller will add a
+	//partial list, trigger a dump, and then add the full list.
+
+	int spareBuckets = m_maxBucketsCapacity-m_numBuckets;
+	
+	//If each insert would cause a split and we have enough spare buckets for that
+	//then we definitely has room for it.
+	if(numRecs <= spareBuckets)
+		return true;
+
+	//If an adversary inserts keys he'll use keys that would split the most number
+	//of buckets, so that would mean the most full buckets.
+	
+	//This computation/estimation is a bit expensive, but in default configuration
+	//we normally don't have more than 2373 buckets, and the upper layer (msg4) has
+	//been optimized to not call this for every record.
+	
+	//Fetch the fill level of all buckets and sort the list
+	int32_t *sortbuf = new int32_t[m_numBuckets];
+	for(int i=0; i<m_numBuckets; i++)
+		sortbuf[i] = m_buckets[i]->getNumKeys();
+	qsort(sortbuf,m_numBuckets,sizeof(*sortbuf),cmp_int);
+	
+	int splits=0;
+	int records=numRecs;
+	for(int i=m_numBuckets-1; i>=0 && records>0; i--) {
+		int room_in_this_bucket = BUCKET_SIZE - sortbuf[i];
+		records -= room_in_this_bucket;
+		splits++;
+	}
+	delete[] sortbuf;
+	
+//	log(LOG_INFO,"@@@ RdbBuckets::hasRoom(%d): splits=%d m_numBuckets=%d spareBuckets=%d", numRecs, splits, m_numBuckets, spareBuckets);
+	if(splits < spareBuckets)
+		return true;
+	else
+		return false;
 }
 
 #define CMPFN(ks) \
