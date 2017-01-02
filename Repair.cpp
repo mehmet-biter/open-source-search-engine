@@ -97,7 +97,6 @@ Repair::Repair() {
 	m_recsXmlErrors = 0;
 	m_recsDupDocIds = 0;
 	m_recsNegativeKeys = 0;
-	m_recsOverwritten = 0;
 	m_recsUnassigned = 0;
 	m_recsWrongGroupId = 0;
 	m_recsInjected = 0;
@@ -465,7 +464,6 @@ void Repair::initScan ( ) {
 	m_recsCorruptErrors = 0;
 	m_recsXmlErrors     = 0;
 	m_recsDupDocIds     = 0;
-	m_recsOverwritten  = 0;
 	m_recsUnassigned   = 0;
 	m_recsWrongGroupId = 0;
 
@@ -1622,8 +1620,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 			 m_recsDupDocIds ,
 			 DARK_BLUE,
 			 m_recsNegativeKeys ,
-			 //DARK_BLUE,
-			 //m_recsOverwritten ,
 			 DARK_BLUE,
 			 m_recsUnassigned ,
 

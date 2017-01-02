@@ -83,7 +83,6 @@ private:
 	int64_t  m_recsXmlErrors;
 	int64_t  m_recsDupDocIds;
 	int64_t  m_recsNegativeKeys;
-	int64_t  m_recsOverwritten;
 	int64_t  m_recsUnassigned;
 	int64_t  m_recsWrongGroupId;
 	int64_t  m_recsInjected;
