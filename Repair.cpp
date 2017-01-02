@@ -1548,12 +1548,7 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	sb->safePrintf ( 
 			 // docs done, includes overwritten title recs
 			 "<tr bgcolor=#%s><td><b>titledb recs scanned</b></td>"
-			 "<td>%" PRId64" of %" PRId64"</td></tr>\n"
-
-			 // percent complete
-			 "<tr bgcolor=#%s><td><b>titledb recs scanned "
-			 "progress</b></td>"
-			 "<td>%.2f%%</td></tr>\n"
+			 "<td>%" PRId64" of %" PRId64 " (%.2f%%)</td></tr>\n"
 
 			 // title recs set errors, parsing errors, etc.
 			 //"<tr bgcolor=#%s><td><b>title recs injected</b></td>"
@@ -1592,7 +1587,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 			 DARK_BLUE,
 			 ns     ,
 			 nr     ,
-			 DARK_BLUE,
 			 ratio  ,
 			 //DARK_BLUE,
 			 //m_recsInjected ,
