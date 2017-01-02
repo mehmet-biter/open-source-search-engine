@@ -621,11 +621,11 @@ void Repair::initScan ( ) {
 
 	// on any init2() error, reset all and return true
  hadError:
-	int32_t saved = g_errno;
+	int32_t saved_errno = g_errno;
 	// all done with these guys
 	resetSecondaryRdbs();
 	// pull back g_errno
-	g_errno = saved;
+	g_errno = saved_errno;
 	// note it
 	log("repair: Had error in repair init. %s. Exiting.",
 	    mstrerror(g_errno));
@@ -1207,14 +1207,14 @@ void Repair::doneWithIndexDoc(XmlDoc *xd) {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	
 	// preserve
-	int32_t saved = g_errno;
+	int32_t saved_errno = g_errno;
 	// nuke it
 	mdelete ( xd , sizeof(XmlDoc) , "xdprnuke");
 	delete ( xd );
 	// reduce the count
 	g_repair.m_numOutstandingInjects--;
 	// error?
-	if ( saved ) {
+	if ( saved_errno ) {
 		g_repair.m_recsetErrors++;
 		g_repair.m_stage = STAGE_TITLEDB_0; // 0
 		return;
