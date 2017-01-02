@@ -91,7 +91,6 @@ Repair::Repair() {
 	m_lastTitledbKey = 0;
 	m_lastSpiderdbKey = 0;
 	m_recsScanned = 0;
-	m_recsOutOfOrder = 0;
 	m_recsetErrors = 0;
 	m_recsCorruptErrors = 0;
 	m_recsXmlErrors = 0;
@@ -459,7 +458,6 @@ void Repair::initScan ( ) {
 	// titledb scan stats
 	m_recsScanned      = 0;
 	m_recsNegativeKeys  = 0;
-	m_recsOutOfOrder   = 0;
 	m_recsetErrors     = 0;
 	m_recsCorruptErrors = 0;
 	m_recsXmlErrors     = 0;
@@ -1429,7 +1427,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	int64_t nr     = g_titledb.getRdb()->getNumTotalRecs() ;
 	float     ratio  = nr ? ((float)ns * 100.0) / (float)nr : 0.0;
 	int64_t errors = 
-		m_recsOutOfOrder +
 		m_recsetErrors   +
 		m_recsCorruptErrors +
 		m_recsXmlErrors   +
@@ -1570,8 +1567,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 			 "<td>%" PRId64"</td></tr>\n"
 
 			 // sub errors
-			 "<tr bgcolor=#%s><td> &nbsp; key out of order</b></td>"
-			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr bgcolor=#%s><td> &nbsp; set errors</b></td>"
 			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr bgcolor=#%s><td> &nbsp; corrupt errors</b></td>"
@@ -1608,8 +1603,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 			 //m_recsInjected ,
 			 DARK_BLUE,
 			 errors ,
-			 DARK_BLUE,
-			 m_recsOutOfOrder ,
 			 DARK_BLUE,
 			 m_recsetErrors  ,
 			 DARK_BLUE,

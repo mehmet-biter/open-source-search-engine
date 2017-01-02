@@ -77,7 +77,6 @@ private:
 	key96_t      m_lastSpiderdbKey;
 
 	int64_t  m_recsScanned;
-	int64_t  m_recsOutOfOrder;
 	int64_t  m_recsetErrors;
 	int64_t  m_recsCorruptErrors;
 	int64_t  m_recsXmlErrors;
