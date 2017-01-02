@@ -86,8 +86,6 @@ private:
 	int64_t  m_recsOverwritten;
 	int64_t  m_recsUnassigned;
 	int64_t  m_recsWrongGroupId;
-	int64_t  m_recsRoot;
-	int64_t  m_recsNonRoot;
 	int64_t  m_recsInjected;
 
 	// spiderdb scan stats

@@ -100,8 +100,6 @@ Repair::Repair() {
 	m_recsOverwritten = 0;
 	m_recsUnassigned = 0;
 	m_recsWrongGroupId = 0;
-	m_recsRoot = 0;
-	m_recsNonRoot = 0;
 	m_recsInjected = 0;
 	m_spiderRecsScanned = 0;
 	m_spiderRecSetErrors = 0;
@@ -1595,11 +1593,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 			 "<tr bgcolor=#%s><td> &nbsp; wrong shard</b></td>"
 			 "<td>%" PRId64"</td></tr>\n"
 
-			 "<tr bgcolor=#%s><td> &nbsp; root urls</b></td>"
-			 "<td>%" PRId64"</td></tr>\n"
-			 "<tr bgcolor=#%s><td> &nbsp; non-root urls</b></td>"
-			 "<td>%" PRId64"</td></tr>\n"
-
 			 //"<tr><td><b> &nbsp; Other errors</b></td>"
 			 //"<td>%" PRId64"</td></tr>\n"
 
@@ -1635,12 +1628,7 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 			 m_recsUnassigned ,
 
 			 DARK_BLUE,
-			 m_recsWrongGroupId ,
-
-			 DARK_BLUE,
-			 m_recsRoot ,
-			 DARK_BLUE,
-			 m_recsNonRoot
+			 m_recsWrongGroupId
 			 );
 
 
