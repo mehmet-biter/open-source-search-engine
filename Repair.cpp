@@ -93,7 +93,6 @@ Repair::Repair() {
 	m_recsScanned = 0;
 	m_recsetErrors = 0;
 	m_recsCorruptErrors = 0;
-	m_recsXmlErrors = 0;
 	m_recsDupDocIds = 0;
 	m_recsNegativeKeys = 0;
 	m_recsUnassigned = 0;
@@ -460,7 +459,6 @@ void Repair::initScan ( ) {
 	m_recsNegativeKeys  = 0;
 	m_recsetErrors     = 0;
 	m_recsCorruptErrors = 0;
-	m_recsXmlErrors     = 0;
 	m_recsDupDocIds     = 0;
 	m_recsUnassigned   = 0;
 	m_recsWrongGroupId = 0;
@@ -1429,7 +1427,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	int64_t errors = 
 		m_recsetErrors   +
 		m_recsCorruptErrors +
-		m_recsXmlErrors   +
 		m_recsDupDocIds    ;
 
 	// the spiderdb scan stats (phase 2)
@@ -1571,8 +1568,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr bgcolor=#%s><td> &nbsp; corrupt errors</b></td>"
 			 "<td>%" PRId64"</td></tr>\n"
-			 "<tr bgcolor=#%s><td> &nbsp; xml errors</b></td>"
-			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr bgcolor=#%s><td> &nbsp; dup docid errors</b></td>"
 			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr bgcolor=#%s><td> &nbsp; negative keys</b></td>"
@@ -1607,8 +1602,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 			 m_recsetErrors  ,
 			 DARK_BLUE,
 			 m_recsCorruptErrors  ,
-			 DARK_BLUE,
-			 m_recsXmlErrors  ,
 			 DARK_BLUE,
 			 m_recsDupDocIds ,
 			 DARK_BLUE,

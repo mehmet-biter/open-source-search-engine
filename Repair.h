@@ -79,7 +79,6 @@ private:
 	int64_t  m_recsScanned;
 	int64_t  m_recsetErrors;
 	int64_t  m_recsCorruptErrors;
-	int64_t  m_recsXmlErrors;
 	int64_t  m_recsDupDocIds;
 	int64_t  m_recsNegativeKeys;
 	int64_t  m_recsUnassigned;
