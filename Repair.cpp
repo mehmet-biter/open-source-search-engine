@@ -1611,12 +1611,7 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	sb->safePrintf(
 			 // spider recs done
 			 "<tr bgcolor=#%s><td><b>spider recs scanned</b></td>"
-			 "<td>%" PRId64" of %" PRId64"</td></tr>\n"
-
-			 // percent complete
-			 "<tr bgcolor=#%s><td><b>spider recs scanned "
-			 "progress</b></td>"
-			 "<td>%.2f%%</td></tr>\n"
+			 "<td>%" PRId64" of %" PRId64" (%.2f%%)</td></tr>\n"
 
 			 // spider recs set errors, parsing errors, etc.
 			 "<tr bgcolor=#%s><td><b>spider rec not "
@@ -1640,7 +1635,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 			 LIGHT_BLUE ,
 			 ns2    ,
 			 nr2    ,
-			 LIGHT_BLUE ,
 			 ratio2 ,
 			 LIGHT_BLUE ,
 			 m_spiderRecNotAssigned ,
