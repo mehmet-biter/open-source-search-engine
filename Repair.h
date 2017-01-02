@@ -5,10 +5,10 @@
 
 #include "RdbList.h"
 #include "Msg5.h"
+#include "repair_mode.h"
 
 #define SR_BUFSIZE 2048
 
-extern char g_repairMode;
 
 class XmlDoc;
 class CollectionRec;

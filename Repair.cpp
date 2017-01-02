@@ -23,7 +23,7 @@
 
 
 
-char g_repairMode = 0;
+repair_mode_t g_repairMode = REPAIR_MODE_NONE;
 
 // the global class
 Repair g_repair;
@@ -145,7 +145,7 @@ bool Repair::init ( ) {
 }
 
 bool Repair::isRepairActive() const {
-	return g_repairMode >= 4; 
+	return g_repairMode >= REPAIR_MODE_4;
 }
 
 // . call this once every second 
@@ -180,7 +180,7 @@ void Repair::repairWrapper(int fd, void *state) {
 
 	// if it got turned back on after being suspended, start where
 	// we left off, this is how we re-enter Repair::loop()
-	if ( g_repair.m_isSuspended && g_repairMode == 4 ) {
+	if ( g_repair.m_isSuspended && g_repairMode == REPAIR_MODE_4 ) {
 		// unsuspend it
 		g_repair.m_isSuspended = false;
 		// note it
@@ -191,7 +191,7 @@ void Repair::repairWrapper(int fd, void *state) {
 	}
 
 	// if we are in retry mode
-	if ( g_repair.m_isRetrying && g_repairMode == 4 ) {
+	if ( g_repair.m_isRetrying && g_repairMode == REPAIR_MODE_4 ) {
 		// reset it
 		g_repair.m_isRetrying = false;
 		// try to read another title rec, or whatever
@@ -205,20 +205,20 @@ void Repair::repairWrapper(int fd, void *state) {
 	static bool s_oldConfSpideringEnabled = false;
 
 	// are we just starting?
-	if ( g_repairMode == 0 ) {
+	if ( g_repairMode == REPAIR_MODE_NONE ) {
 		// turn spiders off since repairing is enabled
 		s_oldConfSpideringEnabled = g_conf.m_spideringEnabled;
 		g_conf.m_spideringEnabled = false;
 
 		g_repair.m_startTime = gettimeofdayInMilliseconds();
 		// enter repair mode level 1
-		g_repairMode = 1;
+		g_repairMode = REPAIR_MODE_1;
 		// note it
 		log("repair: Waiting for all writing operations to stop.");
 	}
 
 	// we can only enter repairMode 2 once all "writing" has stopped
-	if ( g_repairMode == 1 ) {
+	if ( g_repairMode == REPAIR_MODE_1 ) {
 		// wait for all merging to stop just to be on the safe side
 		if ( g_merge.isMerging() ) return;
 		// this is >= 0 is correct, -1 means no outstanding spiders
@@ -238,14 +238,14 @@ void Repair::repairWrapper(int fd, void *state) {
 		//   because that could damage the repair. PingServer will 
 		//   call g_repair.allHostsRead() when they all report they 
 		//   have a repair mode of 2.
-		g_repairMode = 2;
+		g_repairMode = REPAIR_MODE_2;
 		// note it
 		log("repair: All oustanding writing operations stopped. ");
 		log("repair: Waiting for all other hosts to stop, too.");
 	}
 
 	// we can only enter mode 3 once all hosts are in 2 or higher
-	if ( g_repairMode == 2 ) {
+	if ( g_repairMode == REPAIR_MODE_2 ) {
 		// we are still waiting on some guy if this is <= 1
 		if ( g_pingServer.getMinRepairMode() <= 1 ) return;
 		// wait for others to sync clocks, lest xmldoc cores when
@@ -272,13 +272,13 @@ void Repair::repairWrapper(int fd, void *state) {
 		// sanity check
 		//g_process.shutdownAbort(true);
 		// hey, everyone is done "writing"
-		g_repairMode = 3;
+		g_repairMode = REPAIR_MODE_3;
 		// not eit
 		log("repair: All data saved and clock synced.");
 		log("repair: Waiting for all hosts to save and sync clocks.");
 	}
 
-	if ( g_repairMode == 3 ) {
+	if ( g_repairMode == REPAIR_MODE_3 ) {
 		// wait for others to save everything
 		if ( g_pingServer.getMinRepairMode() <= 2 ) return;
 		// start the loop
@@ -290,14 +290,14 @@ void Repair::repairWrapper(int fd, void *state) {
 		//log("repair: Scanning titledb file #%" PRId32".",  g_repair.m_fn );
 		log("repair: Starting repair scan.");
 		// advance
-		g_repairMode = 4;
+		g_repairMode = REPAIR_MODE_4;
 		// now start calling the loop. returns false if blocks
 		if ( ! g_repair.loop() ) return;
 	}
 
 	// we can only enter mode 4 once we have completed the repairs
 	// and have dumped all the in-memory data to disk
-	if ( g_repairMode == 4 ) {
+	if ( g_repairMode == REPAIR_MODE_4 ) {
 		// special case
 		if ( g_repair.m_needsCallback ) {
 			// only do once
@@ -314,11 +314,11 @@ void Repair::repairWrapper(int fd, void *state) {
 		log("repair: Scan completed.");
 		log("repair: Waiting for other hosts to complete scan.");
 		// ok, we are ready to update the data files
-		g_repairMode = 5;
+		g_repairMode = REPAIR_MODE_5;
 	}		
 
 	// we can only enter mode 5 once all hosts are in 4 or higher
-	if ( g_repairMode == 5 ) {
+	if ( g_repairMode == REPAIR_MODE_5 ) {
 		// if add queues still adding, wait, otherwise they will not
 		// be able to add to our rebuild collection
 		if ( hasAddsInQueue() ) return;
@@ -327,10 +327,10 @@ void Repair::repairWrapper(int fd, void *state) {
 		log("repair: Waiting for all other hosts to flush out their "
 		    "add operations.");
 		// update repair mode
-		g_repairMode = 6;
+		g_repairMode = REPAIR_MODE_6;
 	}
 
-	if ( g_repairMode == 6 ) {
+	if ( g_repairMode == REPAIR_MODE_6 ) {
 		// wait for everyone to get to mode 6 before we dump, otherwise
 		// data might arrive in the middle of the dumping and it stays
 		// in the in-memory RdbTree!
@@ -350,13 +350,13 @@ void Repair::repairWrapper(int fd, void *state) {
 		log("repair: Final dump completed.");
 		log("repair: Updating rdbs to use newly repaired data.");
 		// everyone is ready
-		g_repairMode = 7;
+		g_repairMode = REPAIR_MODE_7;
 	}
 
 	// we can only enter mode 6 once we are done updating the original
 	// rdbs with the rebuilt/repaired data. we move the old rdb data files
 	// into the trash and replace it with the new data.
-	if ( g_repairMode == 7 ) {
+	if ( g_repairMode == REPAIR_MODE_7 ) {
 		// wait for autosave...
 		if ( g_process.m_mode ) return; // = SAVE_MODE;
 
@@ -405,11 +405,11 @@ void Repair::repairWrapper(int fd, void *state) {
 		log("repair: Waiting for other hosts to complete update.");
 
 		// ready to reset
-		g_repairMode = 8;
+		g_repairMode = REPAIR_MODE_8;
 	}
 
 	// go back to 0 once all hosts do not equal 5
-	if ( g_repairMode == 8 ) {
+	if ( g_repairMode == REPAIR_MODE_8 ) {
 		// nobody can be in 7 (they might be 0!)
 		if ( g_pingServer.getMinRepairModeBesides0() != 8 ) return;
 
@@ -424,7 +424,7 @@ void Repair::repairWrapper(int fd, void *state) {
 		s_oldConfSpideringEnabled = false;
 
 		// ok reset
-		g_repairMode = 0;
+		g_repairMode = REPAIR_MODE_NONE;
 	}
 }
 
@@ -628,7 +628,7 @@ void Repair::initScan ( ) {
 	log("repair: Had error in repair init. %s. Exiting.",
 	    mstrerror(g_errno));
 	// back to step 0
-	g_repairMode = 0;
+	g_repairMode = REPAIR_MODE_NONE;
 
 	m_colli = -1;
 	g_conf.m_repairingEnabled = false;
@@ -925,7 +925,7 @@ bool Repair::loop ( void *state ) {
 
 	// in order for dump to work we must be in mode 4 because
 	// Rdb::dumpTree() checks that
-	g_repairMode = 4;
+	g_repairMode = REPAIR_MODE_4;
 
 	// force dump to disk of the newly rebuilt rdbs, because we need to
 	// make sure their trees are empty when the primary rdbs assume
@@ -1394,28 +1394,28 @@ bool Repair::injectTitleRec ( ) {
 bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	// default is a repairMode of 0, "not running"
 	const char *status = "not running";
-	if ( g_repairMode == 0 && g_conf.m_repairingEnabled )
+	if ( g_repairMode == REPAIR_MODE_NONE && g_conf.m_repairingEnabled )
 		status = "waiting for previous rebuild to complete";
-	if ( g_repairMode == 1 )
+	if ( g_repairMode == REPAIR_MODE_1 )
 		status = "waiting for spiders or merge to stop";
-	if ( g_repairMode == 2 )			
+	if ( g_repairMode == REPAIR_MODE_2 )			
 		status = "waiting for all hosts in network to stop "
 			"spidering and merging";
-	if ( g_repairMode == 3 )			
+	if ( g_repairMode == REPAIR_MODE_3 )
 		status = "waiting for all hosts to save";
-	if ( g_repairMode == 4 ) {
+	if ( g_repairMode == REPAIR_MODE_4 ) {
 		if ( m_completedFirstScan )
 			status = "scanning old spiderdb";
 		else
 			status = "scanning old records";
 	}
-	if ( g_repairMode == 5 ) 
+	if ( g_repairMode == REPAIR_MODE_5 )
 		status = "waiting for final dump to complete";
-	if ( g_repairMode == 6 ) 
+	if ( g_repairMode == REPAIR_MODE_6 )
 		status = "waiting for others to finish scan and dump";
-	if ( g_repairMode == 7 )			
+	if ( g_repairMode == REPAIR_MODE_7 )
 		status = "updating rdbs with new data";
-	if ( g_repairMode == 8 )			
+	if ( g_repairMode == REPAIR_MODE_8 )
 		status = "waiting for all hosts to complete update";
 	if ( ! g_process.m_powerIsOn && g_conf.m_repairingEnabled )
 		status = "waiting for power to return";
