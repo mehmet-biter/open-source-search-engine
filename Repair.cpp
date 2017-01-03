@@ -182,7 +182,7 @@ void Repair::repairWrapper(int fd, void *state) {
 	if ( g_repair.m_isSuspended && g_repairMode == REPAIR_MODE_4 ) {
 		// unsuspend it
 		g_repair.m_isSuspended = false;
-		// note it
+
 		log("repair: Resuming repair scan after suspension.");
 		// try to read another title rec, or whatever
 		g_repair.loop();
@@ -256,7 +256,7 @@ void Repair::repairWrapper(int fd, void *state) {
 		// . do this after all hosts are done writing, otherwise
 		//   they might add data to our rdbs!
 		if ( ! saveAllRdbs ( NULL , NULL ) ) return;
-		// note it
+
 		//log("repair: Initializing the new Rdbs and scan parameters.");
 		// reset scan info BEFORE calling Repair::load()
 		g_repair.resetForNewCollection();
@@ -420,7 +420,6 @@ void Repair::resetForNewCollection ( ) {
 	m_prevDocId             = 0;
 	m_completedFirstScan  = false;
 	m_completedSpiderdbScan = false;
-	//m_completedIndexdbScan  = false;
 }
 
 
@@ -591,7 +590,7 @@ void Repair::initScan ( ) {
 	resetSecondaryRdbs();
 	// pull back g_errno
 	g_errno = saved_errno;
-	// note it
+
 	log("repair: Had error in repair init. %s. Exiting.",
 	    mstrerror(g_errno));
 	// back to step 0
@@ -631,13 +630,9 @@ void Repair::getNextCollToRepair ( ) {
 		while ( ! m_cr && m_colli < g_collectiondb.m_numRecs )
 			m_cr = g_collectiondb.m_recs [ ++m_colli ];
 		if ( ! m_cr ) {
-			//m_coll = NULL;
-			//m_collLen = 0;
 			g_errno = ENOCOLLREC;
 			return;
 		}
-		//m_coll    = m_cr->m_coll;
-		//m_collLen = m_cr->m_collLen;
 	}
 
 	// collection cannot be deleted while we are in repair mode...
@@ -680,7 +675,6 @@ void Repair::getNextCollToRepair ( ) {
 	return;
 
  hadError:
-	// note it
 	log("repair: Had error getting next coll to repair: %s. Exiting.",
 	    mstrerror(g_errno));
 }
@@ -717,7 +711,7 @@ bool Repair::save ( ) {
 		log(LOG_WARN, "repair: Could not open %s : %s", ff.getFilename(), mstrerror(g_errno));
 		return false;
 	}
-	// first 8 bytes are the size of the DATA file we're mapping
+
 	g_errno = 0;
 	int32_t      size   = &m_SAVE_END - &m_SAVE_START;
 	int64_t offset = 0LL;
@@ -738,7 +732,7 @@ bool Repair::load ( ) {
 		log(LOG_WARN, "repair: Could not open %s : %s", ff.getFilename(), mstrerror(g_errno));
 		return false;
 	}
-	// first 8 bytes are the size of the DATA file we're mapping
+
 	g_errno = 0;
 	int32_t      size   = &m_SAVE_END - &m_SAVE_START;
 	int64_t offset = 0LL;
@@ -838,7 +832,6 @@ bool Repair::loop() {
 		}
 		m_stage++;
 		
-		// BEGIN NEW STUFF
 		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: injectTitleRec", __FILE__, __func__, __LINE__);
 		bool status = injectTitleRec();
 		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: injectTitleRec returned %s", __FILE__, __func__, __LINE__, status?"true":"false");
@@ -893,7 +886,7 @@ bool Repair::loop() {
 	// if we do not complete the dump here it will be monitored above
 	// in the sleep wrapper, repairWrapper(), and that will call 
 	// Repair::loop() (this function) again when the dump is done
-	// and we will be able to advance passed this m_stage
+	// and we will be able to advance past this m_stage
 	// . dump the trees of all secondary rdbs that need it
 	//dumpLoop();
 	// are we done dumping?
@@ -968,7 +961,6 @@ void Repair::resetSecondaryRdbs ( ) {
 	Rdb **rdbs = getSecondaryRdbs ( &nsr );
 	for ( int32_t i = 0 ; i < nsr ; i++ ) {
 		Rdb *rdb = rdbs[i];
-		// use niceness of 1
 		rdb->reset();
 	}
 }
@@ -979,8 +971,6 @@ bool Repair::dumpLoop ( ) {
 	Rdb **rdbs = getSecondaryRdbs ( &nsr );
 	for ( int32_t i = 0 ; i < nsr ; i++ ) {
 		Rdb *rdb = rdbs[i];
-
-		// use niceness of 1
 		rdb->dumpTree();
 	}
 	g_errno = 0;
@@ -1010,7 +1000,6 @@ bool Repair::dumpsCompleted ( ) {
 bool Repair::scanRecs ( ) {
 	// just the tree?
 	RdbBase *base = g_titledb.getRdb()->getBase ( m_collnum );
-	//if ( m_fn == base->getNumFiles() ) { nf = 0; includeTree = true; }
 	// always clear last bit of g_nextKey
 	m_nextTitledbKey.n0 &= 0xfffffffffffffffeLL;
 	// for saving
@@ -1020,7 +1009,7 @@ bool Repair::scanRecs ( ) {
 	    KEYSTR(&m_endKey,sizeof(key96_t)),
 	    m_cr->m_coll,
 	    (int32_t)m_collnum,
-	    (int32_t)base->getNumFiles());//,m_fn,nf);
+	    (int32_t)base->getNumFiles());
 	// sanity check
 	if ( m_msg5InUse ) {
 		g_process.shutdownAbort(true); }
@@ -1057,9 +1046,6 @@ bool Repair::scanRecs ( ) {
 // . this is only called from repairLoop()
 // . returns false if blocked, true otherwise
 bool Repair::gotScanRecList ( ) {
-	// get the base
-	//RdbBase *base = g_titledb.getRdb()->getBase ( m_collnum );
-
 	if ( g_errno == ECORRUPTDATA ) {
 		log("repair: Encountered corruption1 in titledb. NextKey=%s",
 		    KEYSTR(&m_nextTitledbKey,sizeof(key96_t)));
