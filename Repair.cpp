@@ -247,7 +247,7 @@ void Repair::repairWrapper(int fd, void *state) {
 	// we can only enter mode 3 once all hosts are in 2 or higher
 	if ( g_repairMode == REPAIR_MODE_2 ) {
 		// we are still waiting on some guy if this is <= 1
-		if ( g_pingServer.getMinRepairMode() <= 1 ) return;
+		if ( g_pingServer.getMinRepairMode() < REPAIR_MODE_2 ) return;
 		// wait for others to sync clocks, lest xmldoc cores when
 		// it calls getTimeGlobal() like in getNewTagBuf()
 		if ( ! isClockInSync() ) return;
@@ -280,7 +280,7 @@ void Repair::repairWrapper(int fd, void *state) {
 
 	if ( g_repairMode == REPAIR_MODE_3 ) {
 		// wait for others to save everything
-		if ( g_pingServer.getMinRepairMode() <= 2 ) return;
+		if ( g_pingServer.getMinRepairMode() < REPAIR_MODE_3 ) return;
 		// start the loop
 		log("repair: All hosts saved.");
 		log("repair: Loading repair-addsinprogress.dat");
@@ -334,7 +334,7 @@ void Repair::repairWrapper(int fd, void *state) {
 		// wait for everyone to get to mode 6 before we dump, otherwise
 		// data might arrive in the middle of the dumping and it stays
 		// in the in-memory RdbTree!
-		if ( g_pingServer.getMinRepairMode() < 6 ) return;
+		if ( g_pingServer.getMinRepairMode() < REPAIR_MODE_6 ) return;
 
 		// we might have to dump again
 		g_repair.dumpLoop();
@@ -411,7 +411,7 @@ void Repair::repairWrapper(int fd, void *state) {
 	// go back to 0 once all hosts do not equal 5
 	if ( g_repairMode == REPAIR_MODE_8 ) {
 		// nobody can be in 7 (they might be 0!)
-		if ( g_pingServer.getMinRepairModeBesides0() != 8 ) return;
+		if ( g_pingServer.getMinRepairModeBesides0() != REPAIR_MODE_8 ) return;
 
 		// note it
 		log("repair: Exiting repair mode.  took %" PRId64" ms", 
