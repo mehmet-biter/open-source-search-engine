@@ -79,7 +79,6 @@ Repair::Repair() {
 	m_docId = 0;
 	m_totalMem = 0;
 	m_stage = 0;
-	m_count = 0;
 	m_updated = false;
 	m_nextTitledbKey = 0;
 	m_endKey = 0;
@@ -433,7 +432,6 @@ void Repair::initScan ( ) {
 	m_lastSpiderdbKey.setMin();
 	m_endKey.setMax();
 	m_titleRecList.reset();
-	m_count = 0;
 
 	// all Repair::updateRdbs() to be called
 	m_updated = false;

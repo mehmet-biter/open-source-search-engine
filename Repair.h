@@ -58,7 +58,6 @@ private:
 	int64_t  m_docId;
 	int64_t  m_totalMem;
 	int32_t       m_stage ;
-	int32_t       m_count;
 	bool       m_updated;
 
 	// titledb scan vars
