@@ -28,7 +28,7 @@ public:
 	bool save();
 
 	// called by Parms.cpp
-	bool printRepairStatus ( SafeBuf *sb , int32_t fromIp );
+	bool printRepairStatus(SafeBuf *sb);
 
 	bool linkdbRebuildPending() const { return m_rebuildLinkdb; }
 

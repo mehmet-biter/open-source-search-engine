@@ -1375,7 +1375,7 @@ bool Repair::injectTitleRec ( ) {
 
 // . returns false if fails cuz buffer cannot be grown (oom)
 // . this is called by Parms.cpp
-bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
+bool Repair::printRepairStatus(SafeBuf *sb) {
 	// default is a repairMode of 0, "not running"
 	const char *status = "not running";
 	if ( g_repairMode == REPAIR_MODE_NONE && g_conf.m_repairingEnabled )

@@ -1089,10 +1089,6 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 
 	int32_t page = g_pages.getDynamicPageNumber ( r );
 
-#ifndef PRIVACORE_SAFE_VERSION
-	int32_t  fromIp   = s->m_ip;
-#endif
-
 	char format = r->getReplyFormat();
 
 	if ( page == PAGE_COLLPASSWORDS2 )
@@ -1164,7 +1160,7 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 	//   to repair all collections.
 #ifndef PRIVACORE_SAFE_VERSION
 	if ( page == PAGE_REPAIR )
-		g_repair.printRepairStatus ( sb , fromIp );
+		g_repair.printRepairStatus(sb);
 #endif
 
 	// start the table
