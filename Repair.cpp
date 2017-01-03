@@ -76,7 +76,6 @@ static Rdb **getAllRdbs ( int32_t *nsr ) {
 
 Repair::Repair() {
 	// Coverity
-	m_needsCallback = false;
 	m_docId = 0;
 	m_totalMem = 0;
 	m_stage = 0;
@@ -137,7 +136,6 @@ bool Repair::init ( ) {
 	m_isSuspended     = false;
 	m_saveRepairState = false;
 	m_isRetrying      = false;
-	m_needsCallback   = false;
 	if( ! g_loop.registerSleepCallback( 1 , NULL , repairWrapper ) ) {
 		log(LOG_WARN, "repair: Failed register callback.");
 		return false;
@@ -299,15 +297,6 @@ void Repair::repairWrapper(int fd, void *state) {
 	// we can only enter mode 4 once we have completed the repairs
 	// and have dumped all the in-memory data to disk
 	if ( g_repairMode == REPAIR_MODE_4 ) {
-		// special case
-		if ( g_repair.m_needsCallback ) {
-			// only do once
-			g_repair.m_needsCallback = false;
-			// note it in log
-			log("repair: calling needed callback for msg4");
-			// and call the loop then. returns false if blocks..
-			if ( ! g_repair.loop() ) return;
-		}
 		// wait for scan loops to complete
 		if ( ! g_repair.m_completedFirstScan  ) return;
 		if ( ! g_repair.m_completedSpiderdbScan ) return;
