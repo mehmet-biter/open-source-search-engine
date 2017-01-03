@@ -735,13 +735,13 @@ static bool CommandForceIt ( char *rec ) {
 }
 
 static bool CommandDiskDump ( char *rec ) {
-	g_clusterdb.getRdb()->dumpTree  ( 1 );
-	g_tagdb.getRdb()->dumpTree     ( 1 );
-	g_spiderdb.getRdb()->dumpTree   ( 1 );
-	g_posdb.getRdb()->dumpTree    ( 1 );
-	g_titledb.getRdb()->dumpTree    ( 1 );
-	g_statsdb.getRdb()->dumpTree    ( 1 );
-	g_linkdb.getRdb() ->dumpTree    ( 1 );
+	g_clusterdb.getRdb()->dumpTree();
+	g_tagdb.getRdb()->dumpTree();
+	g_spiderdb.getRdb()->dumpTree();
+	g_posdb.getRdb()->dumpTree();
+	g_titledb.getRdb()->dumpTree();
+	g_statsdb.getRdb()->dumpTree();
+	g_linkdb.getRdb()->dumpTree();
 	g_errno = 0;
 	return true;
 }
@@ -1089,10 +1089,6 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 
 	int32_t page = g_pages.getDynamicPageNumber ( r );
 
-#ifndef PRIVACORE_SAFE_VERSION
-	int32_t  fromIp   = s->m_ip;
-#endif
-
 	char format = r->getReplyFormat();
 
 	if ( page == PAGE_COLLPASSWORDS2 )
@@ -1164,7 +1160,7 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 	//   to repair all collections.
 #ifndef PRIVACORE_SAFE_VERSION
 	if ( page == PAGE_REPAIR )
-		g_repair.printRepairStatus ( sb , fromIp );
+		g_repair.printRepairStatus(sb);
 #endif
 
 	// start the table

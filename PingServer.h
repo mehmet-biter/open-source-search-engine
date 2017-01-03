@@ -6,8 +6,8 @@
 #include "gb-include.h"
 #include "Hostdb.h"
 #include "SafeBuf.h"
+#include "repair_mode.h"
 
-extern char g_repairMode;
 
 class PingServer {
 

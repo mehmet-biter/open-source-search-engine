@@ -558,7 +558,7 @@ static void handleRequest1(UdpSlot *slot, int32_t netnice) {
 	// extract what we read
 	char *readBuf     = slot->m_readBuf;
 	int32_t  readBufSize = slot->m_readBufSize;
-	int32_t niceness = slot->getNiceness();
+	//int32_t niceness = slot->getNiceness();
 
 	// must at least have an rdbId
 	if ( readBufSize <= 4 ) {
@@ -604,7 +604,7 @@ static void handleRequest1(UdpSlot *slot, int32_t netnice) {
 		   rdb->getKeySize ()      ); 
 
 	// this returns false and sets g_errno on error
-	rdb->addList ( collnum , &list , niceness);
+	rdb->addList(collnum, &list);
 
 	// retry on some errors
 	addedList ( slot , rdb );

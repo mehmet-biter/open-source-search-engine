@@ -117,6 +117,8 @@ public:
 	bool hasRoom(RdbList *list);
 	bool hasRoom(int32_t numRecs, int32_t dataSize);
 
+	bool canAdd() const;
+
 	int32_t reclaimMemFromDeletedTreeNodes();
 	int32_t m_lastReclaim;
 
@@ -125,7 +127,12 @@ public:
 	// . if we can't handle all records in list we don't add any and
 	//   set errno to ETRYAGAIN or ENOMEM
 	// . we copy all data so you can free your list when we're done
-	bool addList ( collnum_t collnum , RdbList *list, int32_t niceness);
+	bool addList(collnum_t collnum, RdbList *list) {
+		return addList(collnum,list,true);
+	}
+	bool addListNoSpaceCheck(collnum_t collnum, RdbList *list) {
+		return addList(collnum,list,false);
+	}
 
 	bool isSecondaryRdb() const {
 		return ::isSecondaryRdb((unsigned char)m_rdbId);
@@ -260,7 +267,7 @@ public:
 
 	// . write out tree to a file with keys in order
 	// . only shift.cpp/reindex.cpp programs set niceness to 0
-	bool dumpTree ( int32_t niceness ); //= MAX_NICENESS );
+	bool dumpTree();
 
 	// . called when done saving a tree to disk (keys not ordered)
 	void doneSaving ( ) ;
@@ -293,6 +300,7 @@ public:
 	static void doneDumpingCollWrapper(void *state);
 
 private:
+	bool addList(collnum_t collnum, RdbList *list, bool checkForRoom);
 	// get the directory name where this rdb stores its files
 	const char *getDir() const { return g_hostdb.m_dir; }
 

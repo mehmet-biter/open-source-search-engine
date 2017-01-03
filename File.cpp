@@ -145,19 +145,17 @@ void File::set ( const char *filename ) {
 bool File::rename ( const char *newFilename ) {
 	if ( ::access(newFilename, F_OK) == 0 ) {
 		// new file exists
-		log( LOG_ERROR, "%s:%s:%d: disk: trying to rename [%s] to [%s] which exists.", __FILE__, __func__, __LINE__,
-		     getFilename(), newFilename );
+		logError("disk: trying to rename [%s] to [%s] which exists.", getFilename(), newFilename);
 		gbshutdownLogicError();
 	}
 
 	if ( ::rename(getFilename(), newFilename) != 0 ) {
 		// reset errno if file does not exist
 		if ( errno == ENOENT ) {
-			log( LOG_ERROR, "%s:%s:%d: disk: file [%s] does not exist.", __FILE__, __func__, __LINE__, getFilename() );
+			logError("disk: file [%s] does not exist.", getFilename());
 			errno = 0;
 		} else {
-			log( LOG_ERROR, "%s:%s:%d: disk: rename [%s] to [%s]: [%s]",
-			     __FILE__, __func__, __LINE__, getFilename(), newFilename, mstrerror( errno ) );
+			logError("disk: rename [%s] to [%s]: [%s]", getFilename(), newFilename, mstrerror(errno));
 		}
 		logTrace( g_conf.m_logTraceFile, "END" );
 		return false;
@@ -171,31 +169,66 @@ bool File::rename ( const char *newFilename ) {
 
 
 bool File::movePhase1(const char *newFilename) {
+	logTrace(g_conf.m_logTraceFile, "BEGIN oldFilename='%s' newFilename='%s'", getFilename(), newFilename);
+
 	if(::access( newFilename,F_OK) == 0) {
-		log(LOG_ERROR, "%s:%s:%d: disk: trying to rename [%s] to [%s] which exists.", __FILE__, __func__, __LINE__,
-		    getFilename(), newFilename);
+		logError("disk: trying to rename [%s] to [%s] which exists.", getFilename(), newFilename);
 		gbshutdownLogicError();
 	}
-	if(moveFile2Phase1(getFilename(), newFilename) != 0)
+	if(moveFile2Phase1(getFilename(), newFilename) != 0) {
+		logTrace(g_conf.m_logTraceFile, "END newFilename='%s'. Returning false", newFilename);
 		return false;
+	}
+
+	logTrace(g_conf.m_logTraceFile, "END newFilename='%s'. Returning true", newFilename);
 	return true;
 }
 
 bool File::movePhase2(const char *newFilename) {
-	if(moveFile2Phase2(getFilename(), newFilename) != 0)
+	logTrace(g_conf.m_logTraceFile, "BEGIN oldFilename='%s' newFilename='%s'", getFilename(), newFilename);
+
+	if(moveFile2Phase2(getFilename(), newFilename) != 0) {
+		logTrace(g_conf.m_logTraceFile, "END newFilename='%s'. Returning false", newFilename);
 		return false;
+	}
+
 	set(newFilename);
-	close(); //ensure that we release the original file if the move was across filesystems
+
+	// only redirect fd if it's valid
+	if (m_fd != -1) {
+		// ensure that we release the original file if the move was across filesystems
+		// we don't call close directly here because we may have some pending reads for the fd,
+		// so we redirect existing fd to new file
+
+		// don't use m_flags here as last open could be writeMap
+		int fd = ::open(getFilename(), O_RDWR, getFileCreationFlags());
+		if (fd == -1) {
+			logError("Unable to open %s", getFilename());
+			gbshutdownResourceError();
+		}
+
+		if (dup2(fd, m_fd) == -1) {
+			logError("dup2 failed with error=%s", mstrerror(errno));
+			gbshutdownResourceError();
+		}
+
+		::close(fd);
+	}
+
+	logTrace(g_conf.m_logTraceFile, "END newFilename='%s'. Returning true", newFilename);
 	return true;
 }
 
 
 void File::rollbackMovePhase1(const char *newFilename) {
+	logTrace(g_conf.m_logTraceFile, "BEGIN oldFilename='%s' newFilename='%s'", getFilename(), newFilename);
+
 	if(::unlink(newFilename)!=0) {
-		log(LOG_ERROR, "%s:%s:%d: disk: trying to rollback renmae-phase1 [%s] to [%s], unlink() failed with errno=%d.", __FILE__, __func__, __LINE__,
+		log(LOG_ERROR, "%s:%s:%d: disk: trying to rollback rename-phase1 [%s] to [%s], unlink() failed with errno=%d.", __FILE__, __func__, __LINE__,
 		    getFilename(), newFilename, errno);
 	}
 	//yes, we return void because when a rollback doesn't work then there isn't much we can do
+	logTrace(g_conf.m_logTraceFile, "END newFilename='%s'", newFilename);
 }
 
 

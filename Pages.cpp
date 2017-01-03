@@ -114,7 +114,7 @@ static WebPage s_pages[] = {
 
 
 	{ PAGE_MASTERPASSWORDS, "admin/masterpasswords", 
-	  0 , "master passwords" ,  1 , 0 ,
+	  0 , "Master passwords" ,  1 , 0 ,
 	  "master passwords", 
 	  sendPageGeneric , 0 ,NULL,NULL,
 	  PG_MASTERADMIN|PG_ACTIVE},
@@ -225,12 +225,12 @@ static WebPage s_pages[] = {
 	  sendPageResults  , 0 ,NULL,NULL,
 	  PG_NOAPI},
 
-	{ PAGE_PARSER    , "admin/parser"  , 0 , "parser"          , 0,M_POST,
+	{ PAGE_PARSER    , "admin/parser"  , 0 , "Parser"          , 0,M_POST,
 	  "page parser",
 	  sendPageParser   , 2 ,NULL,NULL,
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},
 
-	{ PAGE_SITEDB    , "admin/tagdb"  , 0 , "tagdb"  ,  0 , M_POST,
+	{ PAGE_SITEDB    , "admin/tagdb"  , 0 , "Tagdb"  ,  0 , M_POST,
 	  "add/remove/get tags for sites/urls",
 	  sendPageTagdb ,  0 ,NULL,NULL,
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},	  

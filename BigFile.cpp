@@ -365,6 +365,7 @@ static int64_t s_vfd = 0;
 //   DiskPageCache
 // . use maxFileSize of -1 for us to use getFileSize() to set it
 bool BigFile::open(int flags) {
+	logTrace(g_conf.m_logTraceBigFile, "BEGIN. flag=%d", flags);
     m_flags       = flags;
 	m_isClosing   = false;
 
@@ -375,6 +376,7 @@ bool BigFile::open(int flags) {
 	if ( m_vfd == -1 ) {
 		m_vfd = ++s_vfd;
 	}
+	logTrace(g_conf.m_logTraceBigFile, "END");
 	return true;
 }
 
@@ -1123,7 +1125,7 @@ static bool readwrite_r ( FileState *fstate ) {
 
 		// on other errno, return -1
 		if (n < 0) {
-			log(LOG_ERROR, "disk::readwrite_r: %s", mstrerror(errno));
+			log(LOG_ERROR, "disk::readwrite_r: %s error: %s", doWrite ? "write" : "read", mstrerror(errno));
 			gbshutdownAbort(true);
 		}
 
@@ -1134,13 +1136,12 @@ static bool readwrite_r ( FileState *fstate ) {
 		// . only allow syncing if file is non-blocking, because blocking
 		//   writes are used for when we call RdbTree::fastSave_r() and it
 		//   takes forever to dump Spiderdb if we sync each little write
-#ifndef __APPLE_
 		if (doWrite && fstate->m_flushAfterWrite && fdatasync(fd) < 0) {
 			log(LOG_WARN, "disk: fdatasync: %s", mstrerror(errno));
 			// ignore an error here
 			errno = 0;
 		}
-#endif
+
 		// update the count
 		bytesDone += n;
 		// inc the main offset and the buffer ptr, "p"
@@ -1163,7 +1164,7 @@ bool BigFile::unlink() {
 	
 	if(m_outstandingUnlinkJobCount!=0 || m_outstandingRenameP1JobCount!=0 || m_outstandingRenameP2JobCount!=0) {
 		g_errno = EBADENGINEER;
-		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
+		logError("END. Unlink/rename threads already in progress.");
 		return true;
 	}
 	
@@ -1215,7 +1216,7 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 	
 	if(m_outstandingRenameP1JobCount!=0) {
 		g_errno = EBADENGINEER;
-		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
+		logError("END. Unlink/rename threads already in progress.");
 		return true;
 	}
 	
@@ -1664,7 +1665,7 @@ void BigFile::doneP1RenameWrapper(File *f) {
 	// otherwise, it's a more serious error i guess
 	if ( g_errno ) {
 		m_latestsRenameP1Errno = g_errno;
-		log(LOG_ERROR, "%s:%s:%d: doneRenameWrapper. rename failed: [%s] [%s]", __FILE__, __func__, __LINE__, getFilename(), mstrerror(g_errno));
+		logError("doneRenameWrapper. rename failed: [%s] [%s]", getFilename(), mstrerror(g_errno));
 		logAllData(LOG_ERROR);
 		//@@@ BR: Why continue??
 	}

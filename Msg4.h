@@ -21,7 +21,6 @@ public:
 	bool addMetaList(SafeBuf *sb, collnum_t collnum, void *state,
 	                 void (*callback)(void *state), rdbid_t rdbId = RDB_NONE, int32_t shardOverride = -1);
 
-	// this one is faster...
 	// returns false if blocked
 	bool addMetaList(const char *metaList, int32_t metaListSize, collnum_t collnum, void *state,
 	                 void (*callback)(void *state), rdbid_t rdbId = RDB_NONE, int32_t shardOverride = -1);
@@ -29,7 +28,7 @@ public:
 	bool isInUse() const { return m_inUse; }
 
 	static bool registerHandler();
-	static bool isInLinkedList(Msg4 *msg4);
+	static bool isInLinkedList(const Msg4 *msg4);
 	static void storeLineWaiters();
 
 	SafeBuf m_tmpBuf;

@@ -227,7 +227,7 @@ void flushStatsWrapper ( int fd , void *state ) {
 	if ( ! isClockInSync() ) return;
 
 	// force a dump
-	rdb->dumpTree ( 1 );
+	rdb->dumpTree();
 }
 
 void Statsdb::addDocsIndexed ( ) {
@@ -375,22 +375,25 @@ bool Statsdb::addStat ( int32_t        niceness ,
 		// . every "second" in time has a bucket
 		uint32_t t1 = tx / 1000;
 
-		StatKey sk;
-		memset(&sk,0,sizeof(sk));
-		sk.m_zero      = 0x01; // make it a positive key
-		sk.m_time1     = t1;
-		sk.m_labelHash = labelHash;
+		struct {
+			StatKey sk;
+			StatData data;
+		}  __attribute__((packed, aligned(4))) rawRdbList;
+		memset(&rawRdbList.sk,0,sizeof(rawRdbList.sk));
+		rawRdbList.sk.m_zero      = 0x01; // make it a positive key
+		rawRdbList.sk.m_time1     = t1;
+		rawRdbList.sk.m_labelHash = labelHash;
 
 		// so we can show just the stats for a particular user...
 		if ( userId32 ) {
-			sk.m_zero = userId32;
+			rawRdbList.sk.m_zero = userId32;
 			// make it positive
-			sk.m_zero |= 0x01; 
+			rawRdbList.sk.m_zero |= 0x01;
 		}
 
 		// if we already have added a bucket for this "second" then
 		// get it from the tree so we can add to its accumulated stats.
-		int32_t node1 = tree->getNode ( 0 , (char *)&sk );
+		int32_t node1 = tree->getNode ( 0 , (char *)&rawRdbList.sk );
 		int32_t node2;
 
 		StatData *sd;
@@ -401,17 +404,18 @@ bool Statsdb::addStat ( int32_t        niceness ,
 
 		// make a new one if not there
 		else {
-			StatData tmp;
-			// init it
-			memset(&tmp,0,sizeof(tmp));
-			tmp.m_totalOps      = 0.0;
-			tmp.m_totalQuantity = 0.0;
-			tmp.m_totalTime     = 0.0;
+			// init data
+			memset(&rawRdbList.data,0,sizeof(rawRdbList.data));
+			rawRdbList.data.m_totalOps      = 0.0;
+			rawRdbList.data.m_totalQuantity = 0.0;
+			rawRdbList.data.m_totalTime     = 0.0;
 
 			// save this
 			int32_t saved = g_errno;
 			// need to add using rdb so it can gbmemcpy the data
-			if (!m_rdb.addRecord((collnum_t)0, (char *)&sk, (char *)&tmp, sizeof(StatData))) {
+			RdbList list;
+			list.set((char*)&rawRdbList, sizeof(rawRdbList), (char*)&rawRdbList, sizeof(rawRdbList), m_rdb.getFixedDataSize(), false, m_rdb.useHalfKeys(), m_rdb.getKeySize());
+			if (!m_rdb.addList((collnum_t)0, &list)) {
 				if ( g_errno != ETRYAGAIN )
 				log("statsdb: add rec failed: %s",
 				    mstrerror(g_errno));
@@ -424,7 +428,7 @@ bool Statsdb::addStat ( int32_t        niceness ,
 			// get the node in the tree
 			//sd = (StatData *)tree->getData ( node1 );
 			// must be there!
-			node2 = tree->getNode ( 0 , (char *)&sk );
+			node2 = tree->getNode ( 0 , (char *)&rawRdbList.sk );
 			// must be there!
 			if ( node2 < 0 ) { g_process.shutdownAbort(true); }
 			// point to it

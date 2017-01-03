@@ -23,10 +23,11 @@
 
 
 
-char g_repairMode = 0;
+repair_mode_t g_repairMode = REPAIR_MODE_NONE;
 
-// the global class
+// the global instance
 Repair g_repair;
+
 
 static Rdb **getSecondaryRdbs ( int32_t *nsr ) {
 	static Rdb *s_rdbs[50];
@@ -75,11 +76,9 @@ static Rdb **getAllRdbs ( int32_t *nsr ) {
 
 Repair::Repair() {
 	// Coverity
-	m_needsCallback = false;
 	m_docId = 0;
 	m_totalMem = 0;
 	m_stage = 0;
-	m_count = 0;
 	m_updated = false;
 	m_nextTitledbKey = 0;
 	m_endKey = 0;
@@ -91,18 +90,12 @@ Repair::Repair() {
 	m_lastTitledbKey = 0;
 	m_lastSpiderdbKey = 0;
 	m_recsScanned = 0;
-	m_recsOutOfOrder = 0;
 	m_recsetErrors = 0;
 	m_recsCorruptErrors = 0;
-	m_recsXmlErrors = 0;
 	m_recsDupDocIds = 0;
 	m_recsNegativeKeys = 0;
-	m_recsOverwritten = 0;
 	m_recsUnassigned = 0;
-	m_noTitleRecs = 0;
 	m_recsWrongGroupId = 0;
-	m_recsRoot = 0;
-	m_recsNonRoot = 0;
 	m_recsInjected = 0;
 	m_spiderRecsScanned = 0;
 	m_spiderRecSetErrors = 0;
@@ -126,7 +119,6 @@ Repair::Repair() {
 	m_startTime = 0;
 	m_isSuspended = false;
 	m_numOutstandingInjects = 0;
-	m_allowInjectToLoop = false;
 	m_msg5InUse = false;
 	m_saveRepairState = false;
 	m_isRetrying = false;
@@ -135,14 +127,13 @@ Repair::Repair() {
 	memset(&m_collLens, 0, sizeof(m_collLens));
 }
 
-// main.cpp calls g_repair.init()
+
 bool Repair::init ( ) {
 	//logf(LOG_DEBUG,"repair: TODO: alloc s_docs[] on demand to save mem");
 	m_msg5InUse       = false;
 	m_isSuspended     = false;
 	m_saveRepairState = false;
 	m_isRetrying      = false;
-	m_needsCallback   = false;
 	if( ! g_loop.registerSleepCallback( 1 , NULL , repairWrapper ) ) {
 		log(LOG_WARN, "repair: Failed register callback.");
 		return false;
@@ -150,11 +141,13 @@ bool Repair::init ( ) {
 	return true;
 }
 
+
 bool Repair::isRepairActive() const {
-	return g_repairMode >= 4; 
+	return g_repairMode >= REPAIR_MODE_4;
 }
 
-// . call this once every second 
+
+// . called once a second by a sleep callback
 // . this is responsible for advancing from one g_repairMode to the next
 void Repair::repairWrapper(int fd, void *state) {
 
@@ -186,10 +179,10 @@ void Repair::repairWrapper(int fd, void *state) {
 
 	// if it got turned back on after being suspended, start where
 	// we left off, this is how we re-enter Repair::loop()
-	if ( g_repair.m_isSuspended && g_repairMode == 4 ) {
+	if ( g_repair.m_isSuspended && g_repairMode == REPAIR_MODE_4 ) {
 		// unsuspend it
 		g_repair.m_isSuspended = false;
-		// note it
+
 		log("repair: Resuming repair scan after suspension.");
 		// try to read another title rec, or whatever
 		g_repair.loop();
@@ -197,7 +190,7 @@ void Repair::repairWrapper(int fd, void *state) {
 	}
 
 	// if we are in retry mode
-	if ( g_repair.m_isRetrying && g_repairMode == 4 ) {
+	if ( g_repair.m_isRetrying && g_repairMode == REPAIR_MODE_4 ) {
 		// reset it
 		g_repair.m_isRetrying = false;
 		// try to read another title rec, or whatever
@@ -211,20 +204,20 @@ void Repair::repairWrapper(int fd, void *state) {
 	static bool s_oldConfSpideringEnabled = false;
 
 	// are we just starting?
-	if ( g_repairMode == 0 ) {
+	if ( g_repairMode == REPAIR_MODE_NONE ) {
 		// turn spiders off since repairing is enabled
 		s_oldConfSpideringEnabled = g_conf.m_spideringEnabled;
 		g_conf.m_spideringEnabled = false;
 
 		g_repair.m_startTime = gettimeofdayInMilliseconds();
 		// enter repair mode level 1
-		g_repairMode = 1;
-		// note it
+		g_repairMode = REPAIR_MODE_1;
+
 		log("repair: Waiting for all writing operations to stop.");
 	}
 
 	// we can only enter repairMode 2 once all "writing" has stopped
-	if ( g_repairMode == 1 ) {
+	if ( g_repairMode == REPAIR_MODE_1 ) {
 		// wait for all merging to stop just to be on the safe side
 		if ( g_merge.isMerging() ) return;
 		// this is >= 0 is correct, -1 means no outstanding spiders
@@ -244,16 +237,16 @@ void Repair::repairWrapper(int fd, void *state) {
 		//   because that could damage the repair. PingServer will 
 		//   call g_repair.allHostsRead() when they all report they 
 		//   have a repair mode of 2.
-		g_repairMode = 2;
-		// note it
+		g_repairMode = REPAIR_MODE_2;
+
 		log("repair: All oustanding writing operations stopped. ");
 		log("repair: Waiting for all other hosts to stop, too.");
 	}
 
 	// we can only enter mode 3 once all hosts are in 2 or higher
-	if ( g_repairMode == 2 ) {
+	if ( g_repairMode == REPAIR_MODE_2 ) {
 		// we are still waiting on some guy if this is <= 1
-		if ( g_pingServer.getMinRepairMode() <= 1 ) return;
+		if ( g_pingServer.getMinRepairMode() < REPAIR_MODE_2 ) return;
 		// wait for others to sync clocks, lest xmldoc cores when
 		// it calls getTimeGlobal() like in getNewTagBuf()
 		if ( ! isClockInSync() ) return;
@@ -263,7 +256,7 @@ void Repair::repairWrapper(int fd, void *state) {
 		// . do this after all hosts are done writing, otherwise
 		//   they might add data to our rdbs!
 		if ( ! saveAllRdbs ( NULL , NULL ) ) return;
-		// note it
+
 		//log("repair: Initializing the new Rdbs and scan parameters.");
 		// reset scan info BEFORE calling Repair::load()
 		g_repair.resetForNewCollection();
@@ -275,18 +268,16 @@ void Repair::repairWrapper(int fd, void *state) {
 		// save "addsinprogress" file now so that the file will be 
 		// saved as essentially an empty file at this point. 
 		saveAddsInProgress ( NULL );
-		// sanity check
-		//g_process.shutdownAbort(true);
 		// hey, everyone is done "writing"
-		g_repairMode = 3;
-		// not eit
+		g_repairMode = REPAIR_MODE_3;
+
 		log("repair: All data saved and clock synced.");
 		log("repair: Waiting for all hosts to save and sync clocks.");
 	}
 
-	if ( g_repairMode == 3 ) {
+	if ( g_repairMode == REPAIR_MODE_3 ) {
 		// wait for others to save everything
-		if ( g_pingServer.getMinRepairMode() <= 2 ) return;
+		if ( g_pingServer.getMinRepairMode() < REPAIR_MODE_3 ) return;
 		// start the loop
 		log("repair: All hosts saved.");
 		log("repair: Loading repair-addsinprogress.dat");
@@ -296,51 +287,41 @@ void Repair::repairWrapper(int fd, void *state) {
 		//log("repair: Scanning titledb file #%" PRId32".",  g_repair.m_fn );
 		log("repair: Starting repair scan.");
 		// advance
-		g_repairMode = 4;
+		g_repairMode = REPAIR_MODE_4;
 		// now start calling the loop. returns false if blocks
 		if ( ! g_repair.loop() ) return;
 	}
 
 	// we can only enter mode 4 once we have completed the repairs
 	// and have dumped all the in-memory data to disk
-	if ( g_repairMode == 4 ) {
-		// special case
-		if ( g_repair.m_needsCallback ) {
-			// only do once
-			g_repair.m_needsCallback = false;
-			// note it in log
-			log("repair: calling needed callback for msg4");
-			// and call the loop then. returns false if blocks..
-			if ( ! g_repair.loop() ) return;
-		}
+	if ( g_repairMode == REPAIR_MODE_4 ) {
 		// wait for scan loops to complete
 		if ( ! g_repair.m_completedFirstScan  ) return;
 		if ( ! g_repair.m_completedSpiderdbScan ) return;
-		// note it
+
 		log("repair: Scan completed.");
 		log("repair: Waiting for other hosts to complete scan.");
 		// ok, we are ready to update the data files
-		g_repairMode = 5;
+		g_repairMode = REPAIR_MODE_5;
 	}		
 
 	// we can only enter mode 5 once all hosts are in 4 or higher
-	if ( g_repairMode == 5 ) {
+	if ( g_repairMode == REPAIR_MODE_5 ) {
 		// if add queues still adding, wait, otherwise they will not
 		// be able to add to our rebuild collection
 		if ( hasAddsInQueue() ) return;
-		// note it
+
 		log("repair: All adds have been flushed.");
-		log("repair: Waiting for all other hosts to flush out their "
-		    "add operations.");
+		log("repair: Waiting for all other hosts to flush out their add operations.");
 		// update repair mode
-		g_repairMode = 6;
+		g_repairMode = REPAIR_MODE_6;
 	}
 
-	if ( g_repairMode == 6 ) {
+	if ( g_repairMode == REPAIR_MODE_6 ) {
 		// wait for everyone to get to mode 6 before we dump, otherwise
 		// data might arrive in the middle of the dumping and it stays
 		// in the in-memory RdbTree!
-		if ( g_pingServer.getMinRepairMode() < 6 ) return;
+		if ( g_pingServer.getMinRepairMode() < REPAIR_MODE_6 ) return;
 
 		// we might have to dump again
 		g_repair.dumpLoop();
@@ -352,17 +333,17 @@ void Repair::repairWrapper(int fd, void *state) {
 		if ( g_merge.isMerging() ) return;
 		// wait for ny outstanding unlinks or renames to finish
 		if ( BigFile::anyOngoingUnlinksOrRenames() ) return;
-		// note it
+
 		log("repair: Final dump completed.");
 		log("repair: Updating rdbs to use newly repaired data.");
 		// everyone is ready
-		g_repairMode = 7;
+		g_repairMode = REPAIR_MODE_7;
 	}
 
 	// we can only enter mode 6 once we are done updating the original
 	// rdbs with the rebuilt/repaired data. we move the old rdb data files
 	// into the trash and replace it with the new data.
-	if ( g_repairMode == 7 ) {
+	if ( g_repairMode == REPAIR_MODE_7 ) {
 		// wait for autosave...
 		if ( g_process.m_mode ) return; // = SAVE_MODE;
 
@@ -407,19 +388,17 @@ void Repair::repairWrapper(int fd, void *state) {
 		// do not save it again! we just unlinked it!!
 		g_repair.m_saveRepairState = false;
 
-		// note it
 		log("repair: Waiting for other hosts to complete update.");
 
 		// ready to reset
-		g_repairMode = 8;
+		g_repairMode = REPAIR_MODE_8;
 	}
 
-	// go back to 0 once all hosts do not equal 5
-	if ( g_repairMode == 8 ) {
-		// nobody can be in 7 (they might be 0!)
-		if ( g_pingServer.getMinRepairModeBesides0() != 8 ) return;
+	// go back to mode 0 once all hosts have reached mode 8
+	if ( g_repairMode == REPAIR_MODE_8 ) {
+		// nobody can be in <8 (they might be 0!)
+		if ( g_pingServer.getMinRepairModeBesides0() != REPAIR_MODE_8 ) return;
 
-		// note it
 		log("repair: Exiting repair mode.  took %" PRId64" ms", 
 		    gettimeofdayInMilliseconds() - g_repair.m_startTime);
 		// turn it off to prevent going back to mode 1 again
@@ -430,7 +409,7 @@ void Repair::repairWrapper(int fd, void *state) {
 		s_oldConfSpideringEnabled = false;
 
 		// ok reset
-		g_repairMode = 0;
+		g_repairMode = REPAIR_MODE_NONE;
 	}
 }
 
@@ -441,13 +420,9 @@ void Repair::resetForNewCollection ( ) {
 	m_prevDocId             = 0;
 	m_completedFirstScan  = false;
 	m_completedSpiderdbScan = false;
-	//m_completedIndexdbScan  = false;
 }
 
-// . PingServer.cpp will call this g_repair.allHostsReady() when all hosts
-//   have completely stopped spidering and merging
-// . returns false if blocked, true otherwise
-//void Repair::allHostsReady () {
+
 void Repair::initScan ( ) {
 
 	// reset some stuff for the titledb scan
@@ -455,7 +430,6 @@ void Repair::initScan ( ) {
 	m_lastSpiderdbKey.setMin();
 	m_endKey.setMax();
 	m_titleRecList.reset();
-	m_count = 0;
 
 	// all Repair::updateRdbs() to be called
 	m_updated = false;
@@ -463,15 +437,11 @@ void Repair::initScan ( ) {
 	// titledb scan stats
 	m_recsScanned      = 0;
 	m_recsNegativeKeys  = 0;
-	m_recsOutOfOrder   = 0;
 	m_recsetErrors     = 0;
 	m_recsCorruptErrors = 0;
-	m_recsXmlErrors     = 0;
 	m_recsDupDocIds     = 0;
-	m_recsOverwritten  = 0;
 	m_recsUnassigned   = 0;
 	m_recsWrongGroupId = 0;
-	m_noTitleRecs = 0;
 
 	m_spiderRecsScanned     = 0;
 	m_spiderRecSetErrors    = 0;
@@ -491,8 +461,6 @@ void Repair::initScan ( ) {
 	m_numOutstandingInjects = 0;
 
 
-	// we call Msg14::injectUrl() directly and that will add to ALL the
-	// necessary secondary rdbs automatically
 	if ( m_fullRebuild ) {
 		// why rebuild titledb? its the base. no we need to
 		// rebuild it for new event displays.
@@ -501,17 +469,6 @@ void Repair::initScan ( ) {
 		m_rebuildPosdb    = true;
 		m_rebuildClusterdb  = true;
 		m_rebuildLinkdb     = true;
-	}
-
-	// rebuilding spiderdb means we must rebuild tfndb, too
-	if ( m_rebuildSpiderdb ) {
-		logf(LOG_DEBUG,"repair: Not rebuilding tfndb like "
-		     "we should because it is broken!");
-		// TODO: put this back when it is fixed!
-		// see the comment in addToTfndb2() below
-		// YOU HAVE TO REBUILD spiderdb first then rebuild
-		// tfndb when that is done...
-		//m_rebuildTfndb = true;
 	}
 
 	// . set the list of ptrs to the collections we have to repair
@@ -574,8 +531,7 @@ void Repair::initScan ( ) {
 	if ( m_rebuildLinkdb     ) linkdbMem     = (int32_t)(( 20.0 * tt)/weight);
 
 	if ( m_numColls <= 0 ) {
-		log("rebuild: Rebuild had no collection specified. You need "
-		    "to enter a collection or list of collections.");
+		log("rebuild: Rebuild had no collection specified. You need to enter a collection or list of collections.");
 		goto hadError;
 	}
 
@@ -629,22 +585,23 @@ void Repair::initScan ( ) {
 
 	// on any init2() error, reset all and return true
  hadError:
-	int32_t saved = g_errno;
+	int32_t saved_errno = g_errno;
 	// all done with these guys
 	resetSecondaryRdbs();
 	// pull back g_errno
-	g_errno = saved;
-	// note it
+	g_errno = saved_errno;
+
 	log("repair: Had error in repair init. %s. Exiting.",
 	    mstrerror(g_errno));
 	// back to step 0
-	g_repairMode = 0;
+	g_repairMode = REPAIR_MODE_NONE;
 
 	m_colli = -1;
 	g_conf.m_repairingEnabled = false;
 	
 	return;
 }
+
 
 // . sets m_coll/m_collLen to the next collection to repair
 // . sets m_coll to NULL when none are left (we are done)
@@ -673,13 +630,9 @@ void Repair::getNextCollToRepair ( ) {
 		while ( ! m_cr && m_colli < g_collectiondb.m_numRecs )
 			m_cr = g_collectiondb.m_recs [ ++m_colli ];
 		if ( ! m_cr ) {
-			//m_coll = NULL;
-			//m_collLen = 0;
 			g_errno = ENOCOLLREC;
 			return;
 		}
-		//m_coll    = m_cr->m_coll;
-		//m_collLen = m_cr->m_collLen;
 	}
 
 	// collection cannot be deleted while we are in repair mode...
@@ -722,21 +675,15 @@ void Repair::getNextCollToRepair ( ) {
 	return;
 
  hadError:
-	// note it
 	log("repair: Had error getting next coll to repair: %s. Exiting.",
 	    mstrerror(g_errno));
-	// a mode of 5 means we are done repairing and waiting to go back to
-	// mode 0, but only PingServer.cpp will only set our mode to 0 once 
-	// it has verified all other hosts are in mode 5 or 0.
-	//g_repairMode = 5;
-	return;
 }
 
 
 void Repair::loopWrapper(void *state, RdbList *list, Msg5 *msg5) {
 	Repair *THIS = (Repair *)state;
 	THIS->m_msg5InUse = false;
-	THIS->loop(NULL);
+	THIS->loop();
 }
 
 
@@ -748,6 +695,7 @@ enum {
 	STAGE_TITLEDB_4      ,
 	STAGE_SPIDERDB_0     
 };
+
 
 bool Repair::save ( ) {
 	// do not do a blocking save for auto save if
@@ -763,7 +711,7 @@ bool Repair::save ( ) {
 		log(LOG_WARN, "repair: Could not open %s : %s", ff.getFilename(), mstrerror(g_errno));
 		return false;
 	}
-	// first 8 bytes are the size of the DATA file we're mapping
+
 	g_errno = 0;
 	int32_t      size   = &m_SAVE_END - &m_SAVE_START;
 	int64_t offset = 0LL;
@@ -773,7 +721,6 @@ bool Repair::save ( ) {
 }
 
 bool Repair::load ( ) {
-
 	char tmp[1024];
 	sprintf ( tmp , "%s/repair.dat", g_hostdb.m_dir );
 	File ff;
@@ -785,7 +732,7 @@ bool Repair::load ( ) {
 		log(LOG_WARN, "repair: Could not open %s : %s", ff.getFilename(), mstrerror(g_errno));
 		return false;
 	}
-	// first 8 bytes are the size of the DATA file we're mapping
+
 	g_errno = 0;
 	int32_t      size   = &m_SAVE_END - &m_SAVE_START;
 	int64_t offset = 0LL;
@@ -812,11 +759,9 @@ bool Repair::load ( ) {
 // . all repair callbacks given come back into this loop
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool Repair::loop ( void *state ) {
+bool Repair::loop() {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	
-	m_allowInjectToLoop = false;
-
 	// if the power went off
 	if ( ! g_process.m_powerIsOn ) {
 		// sleep 1 second and retry
@@ -883,17 +828,14 @@ bool Repair::loop ( void *state ) {
 		
 		// if we have maxed out our injects, wait for one to come back
 		if ( m_numOutstandingInjects >= g_conf.m_maxRepairinjections ) {
-			m_allowInjectToLoop = true;
 			return false;
 		}
 		m_stage++;
 		
-		// BEGIN NEW STUFF
 		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: injectTitleRec", __FILE__, __func__, __LINE__);
 		bool status = injectTitleRec();
 		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: injectTitleRec returned %s", __FILE__, __func__, __LINE__, status?"true":"false");
 			
-		//return false; // (state)
 		// try to launch another
 		if ( m_numOutstandingInjects<g_conf.m_maxRepairinjections ) {
 			m_stage = STAGE_TITLEDB_0;
@@ -925,7 +867,6 @@ bool Repair::loop ( void *state ) {
 	if ( m_numOutstandingInjects > 0 ) {
 		// tell injection complete wrapper to call us back, otherwise
 		// we never end up moving on to the spider phase
-		g_repair.m_allowInjectToLoop = true;
 		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END, return false. Have %" PRId32" outstanding injects", __FILE__, __func__, __LINE__, m_numOutstandingInjects);
 		return false;
 	}
@@ -935,7 +876,7 @@ bool Repair::loop ( void *state ) {
 
 	// in order for dump to work we must be in mode 4 because
 	// Rdb::dumpTree() checks that
-	g_repairMode = 4;
+	g_repairMode = REPAIR_MODE_4;
 
 	// force dump to disk of the newly rebuilt rdbs, because we need to
 	// make sure their trees are empty when the primary rdbs assume
@@ -945,12 +886,29 @@ bool Repair::loop ( void *state ) {
 	// if we do not complete the dump here it will be monitored above
 	// in the sleep wrapper, repairWrapper(), and that will call 
 	// Repair::loop() (this function) again when the dump is done
-	// and we will be able to advance passed this m_stage
+	// and we will be able to advance past this m_stage
 	// . dump the trees of all secondary rdbs that need it
 	//dumpLoop();
 	// are we done dumping?
 	//if ( ! dumpsCompleted() ) return false;
 	
+	log(LOG_INFO,"repair: Repair finished. %" PRId64 " titledb records scanned; errors:"
+	    " set=%" PRId64
+	    " corrupt=%" PRId64
+	    " dup=%" PRId64
+	    " negative=%" PRId64
+	    " unassigned=%" PRId64
+	    " wrong-group=%" PRId64
+	    " injected=%" PRId64,
+	    m_recsScanned,
+	    m_recsetErrors,
+	    m_recsCorruptErrors,
+	    m_recsDupDocIds,
+	    m_recsNegativeKeys,
+	    m_recsUnassigned,
+	    m_recsWrongGroupId,
+	    m_recsInjected
+	   );
 	// we are all done with the repair loop
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 	return true;
@@ -1003,19 +961,17 @@ void Repair::resetSecondaryRdbs ( ) {
 	Rdb **rdbs = getSecondaryRdbs ( &nsr );
 	for ( int32_t i = 0 ; i < nsr ; i++ ) {
 		Rdb *rdb = rdbs[i];
-		// use niceness of 1
 		rdb->reset();
 	}
 }
+
 
 bool Repair::dumpLoop ( ) {
 	int32_t nsr;
 	Rdb **rdbs = getSecondaryRdbs ( &nsr );
 	for ( int32_t i = 0 ; i < nsr ; i++ ) {
 		Rdb *rdb = rdbs[i];
-
-		// use niceness of 1
-		rdb->dumpTree ( 1 );
+		rdb->dumpTree();
 	}
 	g_errno = 0;
 	// . register sleep wrapper to check when dumping is done
@@ -1043,29 +999,22 @@ bool Repair::dumpsCompleted ( ) {
 // . grab the next scan record
 bool Repair::scanRecs ( ) {
 	// just the tree?
-	//int32_t nf          = 1;
-	//bool includeTree = false;
 	RdbBase *base = g_titledb.getRdb()->getBase ( m_collnum );
-	//if ( m_fn == base->getNumFiles() ) { nf = 0; includeTree = true; }
 	// always clear last bit of g_nextKey
 	m_nextTitledbKey.n0 &= 0xfffffffffffffffeLL;
 	// for saving
 	m_lastTitledbKey = m_nextTitledbKey;
-	log(LOG_DEBUG,"repair: nextKey=%s endKey=%s"
-	    "coll=%s collnum=%" PRId32" "
-	    "bnf=%" PRId32,//fn=%" PRId32" nf=%" PRId32,
+	log(LOG_DEBUG,"repair: nextKey=%s endKey=%s coll=%s collnum=%" PRId32" bnf=%" PRId32,
 	    KEYSTR(&m_nextTitledbKey,sizeof(key96_t)),
 	    KEYSTR(&m_endKey,sizeof(key96_t)),
 	    m_cr->m_coll,
 	    (int32_t)m_collnum,
-	    (int32_t)base->getNumFiles());//,m_fn,nf);
+	    (int32_t)base->getNumFiles());
 	// sanity check
 	if ( m_msg5InUse ) {
 		g_process.shutdownAbort(true); }
-	// when building anything but tfndb we can get the rec
-	// from the twin in case of data corruption on disk
+	// when building we can get the rec from the twin in case of data corruption on disk
 	bool fixErrors = true;
-	//if ( m_rebuildTfndb ) fixErrors = false;
 	// get the list of recs
 	g_errno = 0;
 	if ( m_msg5.getList ( RDB_TITLEDB        ,
@@ -1097,10 +1046,6 @@ bool Repair::scanRecs ( ) {
 // . this is only called from repairLoop()
 // . returns false if blocked, true otherwise
 bool Repair::gotScanRecList ( ) {
-
-	// get the base
-	//RdbBase *base = g_titledb.getRdb()->getBase ( m_collnum );
-
 	if ( g_errno == ECORRUPTDATA ) {
 		log("repair: Encountered corruption1 in titledb. NextKey=%s",
 		    KEYSTR(&m_nextTitledbKey,sizeof(key96_t)));
@@ -1131,18 +1076,14 @@ bool Repair::gotScanRecList ( ) {
 		m_stage = STAGE_SPIDERDB_0;
 		// force spider scan completed now too!
 		m_completedSpiderdbScan = true;
-		g_repair.m_allowInjectToLoop = true;
 		return true;
 	}
 
-	// nextRec2:
 	key96_t tkey = m_titleRecList.getCurrentKey();
 	int64_t docId = Titledb::getDocId ( &tkey );
 
-	// save it
+	// save the current docid
 	m_docId = docId;
-	// we need this to compute the tfndb key to add/delete
-	//m_ext = -1;
 
 	// count the title recs we scan
 	m_recsScanned++;
@@ -1215,14 +1156,14 @@ void Repair::doneWithIndexDoc(XmlDoc *xd) {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	
 	// preserve
-	int32_t saved = g_errno;
+	int32_t saved_errno = g_errno;
 	// nuke it
 	mdelete ( xd , sizeof(XmlDoc) , "xdprnuke");
 	delete ( xd );
 	// reduce the count
 	g_repair.m_numOutstandingInjects--;
 	// error?
-	if ( saved ) {
+	if ( saved_errno ) {
 		g_repair.m_recsetErrors++;
 		g_repair.m_stage = STAGE_TITLEDB_0; // 0
 		return;
@@ -1236,12 +1177,12 @@ void Repair::doneWithIndexDocWrapper(void *state) {
 	// clean up
 	doneWithIndexDoc ( (XmlDoc *)state );
 	// and re-enter the loop to get next title rec
-	g_repair.loop ( NULL );
+	g_repair.loop();
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
 
 
-//bool Repair::getTagRec ( void **state ) {
+
 bool Repair::injectTitleRec ( ) {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 
@@ -1277,8 +1218,6 @@ bool Repair::injectTitleRec ( ) {
 	}
         mnew ( xd , sizeof(XmlDoc),"xmldocpr");    
 
-	// clear out first since set2 no longer does
-	//xd->reset();
 	if ( ! xd->set2 ( titleRec,-1,m_cr->m_coll , NULL , MAX_NICENESS ) ) {
 		m_recsetErrors++;
 		m_stage = STAGE_TITLEDB_0; // 0
@@ -1300,7 +1239,7 @@ bool Repair::injectTitleRec ( ) {
 	// free it since set2() should have uncompressed it!
 	//mfree ( titleRec , titleRecSize, "repair" );
 	// and so xd doesn't free it
-	xd->m_titleRecBuf.purge();// = NULL;
+	xd->m_titleRecBuf.purge();
 
 	// use the ptr_utf8Content that we have
 	xd->m_recycleContent = true;
@@ -1399,33 +1338,34 @@ bool Repair::injectTitleRec ( ) {
 	return true;
 }
 
+
 // . returns false if fails cuz buffer cannot be grown (oom)
 // . this is called by Parms.cpp
-bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
+bool Repair::printRepairStatus(SafeBuf *sb) {
 	// default is a repairMode of 0, "not running"
 	const char *status = "not running";
-	if ( g_repairMode == 0 && g_conf.m_repairingEnabled )
+	if ( g_repairMode == REPAIR_MODE_NONE && g_conf.m_repairingEnabled )
 		status = "waiting for previous rebuild to complete";
-	if ( g_repairMode == 1 )
+	if ( g_repairMode == REPAIR_MODE_1 )
 		status = "waiting for spiders or merge to stop";
-	if ( g_repairMode == 2 )			
+	if ( g_repairMode == REPAIR_MODE_2 )			
 		status = "waiting for all hosts in network to stop "
 			"spidering and merging";
-	if ( g_repairMode == 3 )			
+	if ( g_repairMode == REPAIR_MODE_3 )
 		status = "waiting for all hosts to save";
-	if ( g_repairMode == 4 ) {
+	if ( g_repairMode == REPAIR_MODE_4 ) {
 		if ( m_completedFirstScan )
 			status = "scanning old spiderdb";
 		else
 			status = "scanning old records";
 	}
-	if ( g_repairMode == 5 ) 
+	if ( g_repairMode == REPAIR_MODE_5 )
 		status = "waiting for final dump to complete";
-	if ( g_repairMode == 6 ) 
+	if ( g_repairMode == REPAIR_MODE_6 )
 		status = "waiting for others to finish scan and dump";
-	if ( g_repairMode == 7 )			
+	if ( g_repairMode == REPAIR_MODE_7 )
 		status = "updating rdbs with new data";
-	if ( g_repairMode == 8 )			
+	if ( g_repairMode == REPAIR_MODE_8 )
 		status = "waiting for all hosts to complete update";
 	if ( ! g_process.m_powerIsOn && g_conf.m_repairingEnabled )
 		status = "waiting for power to return";
@@ -1435,10 +1375,8 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	int64_t nr     = g_titledb.getRdb()->getNumTotalRecs() ;
 	float     ratio  = nr ? ((float)ns * 100.0) / (float)nr : 0.0;
 	int64_t errors = 
-		m_recsOutOfOrder +
 		m_recsetErrors   +
 		m_recsCorruptErrors +
-		m_recsXmlErrors   +
 		m_recsDupDocIds    ;
 
 	// the spiderdb scan stats (phase 2)
@@ -1560,36 +1498,20 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	sb->safePrintf ( 
 			 // docs done, includes overwritten title recs
 			 "<tr bgcolor=#%s><td><b>titledb recs scanned</b></td>"
-			 "<td>%" PRId64" of %" PRId64"</td></tr>\n"
+			 "<td>%" PRId64" of %" PRId64 " (%.2f%%)</td></tr>\n"
 
-			 // percent complete
-			 "<tr bgcolor=#%s><td><b>titledb recs scanned "
-			 "progress</b></td>"
-			 "<td>%.2f%%</td></tr>\n"
-
-			 // title recs set errors, parsing errors, etc.
-			 //"<tr bgcolor=#%s><td><b>title recs injected</b></td>"
-			 //"<td>%" PRId64"</td></tr>\n"
-
-			 // title recs set errors, parsing errors, etc.
 			 "<tr bgcolor=#%s><td><b>titledb rec error count</b></td>"
 			 "<td>%" PRId64"</td></tr>\n"
 
 			 // sub errors
-			 "<tr bgcolor=#%s><td> &nbsp; key out of order</b></td>"
-			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr bgcolor=#%s><td> &nbsp; set errors</b></td>"
 			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr bgcolor=#%s><td> &nbsp; corrupt errors</b></td>"
-			 "<td>%" PRId64"</td></tr>\n"
-			 "<tr bgcolor=#%s><td> &nbsp; xml errors</b></td>"
 			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr bgcolor=#%s><td> &nbsp; dup docid errors</b></td>"
 			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr bgcolor=#%s><td> &nbsp; negative keys</b></td>"
 			 "<td>%" PRId64"</td></tr>\n"
-			 //"<tr bgcolor=#%s><td> &nbsp; overwritten recs</b></td>"
-			 //"<td>%" PRId64"</td></tr>\n"
 			 "<tr bgcolor=#%s><td> &nbsp; twin's "
 			 "respsponsibility</b></td>"
 			 "<td>%" PRId64"</td></tr>\n"
@@ -1597,70 +1519,33 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 			 "<tr bgcolor=#%s><td> &nbsp; wrong shard</b></td>"
 			 "<td>%" PRId64"</td></tr>\n"
 
-			 "<tr bgcolor=#%s><td> &nbsp; root urls</b></td>"
-			 "<td>%" PRId64"</td></tr>\n"
-			 "<tr bgcolor=#%s><td> &nbsp; non-root urls</b></td>"
-			 "<td>%" PRId64"</td></tr>\n"
-
-			 "<tr bgcolor=#%s><td> &nbsp; no title rec</b></td>"
-			 "<td>%" PRId64"</td></tr>\n"
-
-			 //"<tr><td><b> &nbsp; Other errors</b></td>"
-			 //"<td>%" PRId64"</td></tr>\n"
-
-			 // time left in hours
-			 //"<tr><td><b>Time Left in Phase %" PRId32"</b></td>"
-			 //"<td>%.2f hrs</td></tr>\n"
-
 			 ,
 			 DARK_BLUE,
 			 ns     ,
 			 nr     ,
-			 DARK_BLUE,
 			 ratio  ,
-			 //DARK_BLUE,
-			 //m_recsInjected ,
 			 DARK_BLUE,
 			 errors ,
-			 DARK_BLUE,
-			 m_recsOutOfOrder ,
 			 DARK_BLUE,
 			 m_recsetErrors  ,
 			 DARK_BLUE,
 			 m_recsCorruptErrors  ,
 			 DARK_BLUE,
-			 m_recsXmlErrors  ,
-			 DARK_BLUE,
 			 m_recsDupDocIds ,
 			 DARK_BLUE,
 			 m_recsNegativeKeys ,
-			 //DARK_BLUE,
-			 //m_recsOverwritten ,
 			 DARK_BLUE,
 			 m_recsUnassigned ,
 
 			 DARK_BLUE,
-			 m_recsWrongGroupId ,
-
-			 DARK_BLUE,
-			 m_recsRoot ,
-			 DARK_BLUE,
-			 m_recsNonRoot ,
-
-			 DARK_BLUE,
-			 m_noTitleRecs
+			 m_recsWrongGroupId
 			 );
 
 
 	sb->safePrintf(
 			 // spider recs done
 			 "<tr bgcolor=#%s><td><b>spider recs scanned</b></td>"
-			 "<td>%" PRId64" of %" PRId64"</td></tr>\n"
-
-			 // percent complete
-			 "<tr bgcolor=#%s><td><b>spider recs scanned "
-			 "progress</b></td>"
-			 "<td>%.2f%%</td></tr>\n"
+			 "<td>%" PRId64" of %" PRId64" (%.2f%%)</td></tr>\n"
 
 			 // spider recs set errors, parsing errors, etc.
 			 "<tr bgcolor=#%s><td><b>spider rec not "
@@ -1675,16 +1560,10 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 			 "<tr bgcolor=#%s><td><b>spider rec bad tld</b></td>"
 			 "<td>%" PRId32"</td></tr>\n"
 
-			 // time left in hours
-			 //"<tr bgcolor=#%s><td><b>"
-			 //"Time Left in Phase %" PRId32"</b></td>"
-			 //"<td>%.2f hrs</td></tr>\n"
-
 			 ,
 			 LIGHT_BLUE ,
 			 ns2    ,
 			 nr2    ,
-			 LIGHT_BLUE ,
 			 ratio2 ,
 			 LIGHT_BLUE ,
 			 m_spiderRecNotAssigned ,
@@ -1811,6 +1690,7 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 			 );
 	return true;
 }
+
 
 static bool   s_savingAll = false;
 

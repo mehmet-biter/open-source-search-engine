@@ -206,16 +206,16 @@ private:
 	RdbBucket *m_bucketsSpace;
 	char *m_masterPtr;
 	int32_t m_masterSize;
-	int32_t m_firstOpenSlot;
-	int32_t m_numBuckets;
-	int32_t m_maxBuckets;
+	int32_t m_firstOpenSlot;	//first slot in m_bucketSpace that is available (never-used or empty)
+	int32_t m_numBuckets;		//number of used buckets
+	int32_t m_maxBuckets;		//current number of (pre-)allocated buckets
 	uint8_t m_ks;
 	int32_t m_fixedDataSize;
 	int32_t m_recSize;
 	int32_t m_numKeysApprox;//includes dups
 	int32_t m_numNegKeys;
 	int32_t m_maxMem;
-	int32_t m_maxBucketsCapacity;
+	int32_t m_maxBucketsCapacity;	//max number of buckets given the memory limit
 	int32_t m_dataMemOccupied;
 
 	rdbid_t m_rdbId;

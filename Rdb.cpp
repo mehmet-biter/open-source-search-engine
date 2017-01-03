@@ -959,7 +959,7 @@ static time_t s_lastTryTime = 0;
 
 // . start dumping the tree
 // . returns false and sets g_errno on error
-bool Rdb::dumpTree ( int32_t niceness ) {
+bool Rdb::dumpTree() {
 	logTrace( g_conf.m_logTraceRdb, "BEGIN %s", m_dbname );
 
 	if (getNumUsedNodes() <= 0) {
@@ -1035,10 +1035,10 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	}
 
 	// remember niceness for calling setDump()
-	m_niceness = niceness;
+	m_niceness = 1;
 
 	// debug msg
-	log(LOG_INFO,"db: Dumping %s to disk. nice=%" PRId32,m_dbname,niceness);
+	log(LOG_INFO,"db: Dumping %s to disk. nice=%" PRId32,m_dbname,m_niceness);
 
 	// record last dump time so main.cpp will not save us this period
 	m_lastWrite = gettimeofdayInMilliseconds();
@@ -1474,9 +1474,10 @@ void attemptMergeAll() {
 	}
 }
 
+
 // . return false and set g_errno on error
 // . TODO: speedup with m_tree.addSortedKeys() already partially written
-bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
+bool Rdb::addList(collnum_t collnum, RdbList *list, bool checkForRoom) {
 	// pick it
 	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
 		g_errno = ENOCOLLREC;
@@ -1524,7 +1525,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 	// . if we don't have enough room to store list, initiate a dump and
 	//   return g_errno of ETRYAGAIN
 	// . otherwise, we're guaranteed to have room for this list
-	if ( ! hasRoom(list) ) {
+	if( checkForRoom && ! hasRoom(list) ) {
 		// if tree is empty, list will never fit!!!
 		if ( m_useTree && m_tree.getNumUsedNodes() <= 0 ) {
 			g_errno = ELISTTOOBIG;
@@ -1534,12 +1535,8 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 			return false;
 		}
 
-		// force initiate the dump now, but not if we are niceness 0
-		// because then we can't be interrupted with quickpoll!
-		if ( niceness != 0 ) {
-			logTrace( g_conf.m_logTraceRdb, "%s: Not enough room. Calling dumpTree", m_dbname );
-			dumpTree( 1/*niceness*/ );
-		}
+		logTrace( g_conf.m_logTraceRdb, "%s: Not enough room. Calling dumpTree", m_dbname );
+		dumpTree();
 
 		// set g_errno after intiating the dump!
 		g_errno = ETRYAGAIN;
@@ -1580,10 +1577,8 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 			// force initiate the dump now if addRecord failed for no mem
 			if ( g_errno == ENOMEM ) {
 				// start dumping the tree to disk so we have room 4 add
-				if ( niceness != 0 ) {
-					logTrace( g_conf.m_logTraceRdb, "%s: Not enough memory. Calling dumpTree", m_dbname );
-					dumpTree( 1/*niceness*/ );
-				}
+				logTrace( g_conf.m_logTraceRdb, "%s: Not enough memory. Calling dumpTree", m_dbname );
+				dumpTree();
 				// tell caller to try again later (1 second or so)
 				g_errno = ETRYAGAIN;
 			}
@@ -1593,33 +1588,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 		}
 	} while ( list->skipCurrentRecord() ); // skip to next record, returns false on end of list
 
-	// if tree is >= 90% full dump it
-	if ( m_dump.isDumping() ) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: is already dumping. Returning true", m_dbname );
-		return true;
-	}
-
-	// return true if not ready for dump yet
-	if ( ! needsDump () ) {
-		//logTrace( g_conf.m_logTraceRdb, "END. %s: doesn't need dump. Returning true", m_dbname );
-		return true;
-	}
-
-	// if dump started ok, return true
-	if ( niceness != 0 ) {
-		if ( dumpTree( 1/*niceness*/ ) ) {
-			logTrace( g_conf.m_logTraceRdb, "END. %s: dumped tree. Returning true", m_dbname );
-			return true;
-		}
-	}
-
-	// technically, since we added the record, it is not an error
-	g_errno = 0;
-
-	// . otherwise, bitch and return false with g_errno set
-	// . usually this is because it is waiting for an unlink/rename
-	//   operation to complete... so make it LOG_INFO
-	log(LOG_INFO,"db: Failed to dump data to disk for %s.",m_dbname);
+	//Do not try initiating a dump here as it will make Msg4 unhappy being interrupted in the middle of multiple lists
 
 	return true;
 }
@@ -1723,6 +1692,22 @@ bool Rdb::hasRoom(RdbList *list) {
 	// otherwise, we do have room
 	return true;
 }
+
+
+bool Rdb::canAdd() const {
+	if(!isClockInSync())
+		return false;
+	if(!g_process.m_powerIsOn)
+		return false;
+	if(!isWritable())
+		return false;
+	if(m_isClosing)
+		return false;
+	if(m_dump.isDumping()) //this is more conservative than the actual check in addRecord()
+		return false;
+	return true;
+}
+
 
 // . NOTE: low bit should be set , only antiKeys (deletes) have low bit clear
 // . returns false and sets g_errno on error, true otherwise

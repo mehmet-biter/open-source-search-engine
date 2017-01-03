@@ -61,7 +61,7 @@ public:
 	// . returns false and sets errno if could not get a valid mime
 	// . just copies bits and pieces so you can free "mime" whenever
 	// . we need "url" to set m_locUrl if it's a relative redirect
-	bool set ( char *httpReply , int32_t replyLen , Url *url );
+	bool set(const char *httpReply, int32_t replyLen, Url *url);
 
 	void setContentType(int32_t t) { m_contentType = t; }
 	void setHttpStatus(int32_t status) { m_status = status; }
@@ -157,7 +157,7 @@ protected:
 	int32_t getCurrentLineLen() const { return m_currentLineLen; }
 
 	// compute length of a possible mime starting at "buf"
-	size_t getMimeLen(char *buf, size_t bufLen);
+	size_t getMimeLen(const char *buf, size_t bufLen);
 
 	void setMime(const char *mime) { m_mime = mime; }
 	void setMimeLen(int32_t mimeLen) { m_mimeLen = mimeLen; }
@@ -175,7 +175,7 @@ protected:
 private:
 	// . sets m_status, m_contentLen , ...
 	// . we need "url" to set m_locUrl if it's a relative redirect
-	bool parse(char *mime, int32_t mimeLen, Url *url);
+	bool parse(const char *mime, int32_t mimeLen, Url *url);
 
 	bool parseLocation(const char *field, size_t fieldLen, Url *baseUrl);
 	bool parseSetCookie(const char *field, size_t fieldLen);

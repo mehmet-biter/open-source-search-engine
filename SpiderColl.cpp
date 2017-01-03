@@ -3965,7 +3965,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 
 	// now that doledb is tree-only and never dumps to disk, just
 	// add it directly
-	g_doledb.m_rdb.addList ( m_collnum , &tmpList , MAX_NICENESS );
+	g_doledb.m_rdb.addList(m_collnum, &tmpList);
 
 	if ( g_conf.m_logDebugSpider )
 		log("spider: adding doledb tree node size=%" PRId32,

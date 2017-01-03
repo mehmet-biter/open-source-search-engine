@@ -716,16 +716,6 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 	m_doledbKey.setMin();
 	if ( doledbKey ) m_doledbKey = *doledbKey;
 
-	// . sanity check
-	// . we really don't want the parser holding up the query pipeline
-	//   even if this page is being turked!
-	//if ( m_niceness == 0 &&
-	//     // spider proxy uses xmldoc class to expand iframe tags and
-	//     // sometimes the initiating msg13 class was re-niced to 0
-	//     // in the niceness converstion logic.
-	//     ! g_hostdb.m_myHost->m_isProxy ) {
-	//	g_process.shutdownAbort(true); }
-
 	m_sreqValid    = true;
 
 	// store the whole rec, key+dataSize+data, in case it disappears.
@@ -743,27 +733,6 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 	CollectionRec *cr = getCollRec();
 
 	m_useRobotsTxt = cr ? cr->m_useRobotsTxt : true;
-
-	// solidify some parms
-	//m_eliminateMenus       = cr->m_eliminateMenus;
-	//m_eliminateMenusValid  = true;
-
-	// validate these here too
-	/*
-	m_titleWeight            = cr->m_titleWeight;
-	m_headerWeight           = cr->m_headerWeight;
-	m_urlPathWeight          = cr->m_urlPathWeight;
-	m_externalLinkTextWeight = cr->m_externalLinkTextWeight;
-	m_internalLinkTextWeight = cr->m_internalLinkTextWeight;
-	m_conceptWeight          = cr->m_conceptWeight;
-
-	m_titleWeightValid            = true;
-	m_headerWeightValid           = true;
-	m_urlPathWeightValid          = true;
-	m_externalLinkTextWeightValid = true;
-	m_internalLinkTextWeightValid = true;
-	m_conceptWeightValid          = true;
-	*/
 
 	// fix some corruption i've seen
 	if ( m_sreq.m_urlIsDocId && ! is_digit(m_sreq.m_url[0]) ) {
@@ -5669,14 +5638,10 @@ XmlDoc **XmlDoc::getOldXmlDoc ( ) {
 
 void XmlDoc::nukeDoc ( XmlDoc *nd ) {
 	// skip if empty
-	if ( ! nd ) return;
-	// debug the mem leak
-	// if ( nd == m_oldDoc )
-	// 	log("xmldoc: nuke xmldoc1=%" PTRFMT" u=%s this=%" PTRFMT""
-	// 	    ,(PTRTYPE)m_oldDoc
-	// 	    ,m_firstUrl.getUrl()
-	// 	    ,(PTRTYPE)this
-	// 	    );
+	if (!nd) {
+		return;
+	}
+
 	// do not nuke yerself!
 	if ( nd == this ) return;
 	// or root doc!

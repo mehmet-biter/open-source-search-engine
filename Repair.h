@@ -5,10 +5,10 @@
 
 #include "RdbList.h"
 #include "Msg5.h"
+#include "repair_mode.h"
 
 #define SR_BUFSIZE 2048
 
-extern char g_repairMode;
 
 class XmlDoc;
 class CollectionRec;
@@ -28,7 +28,7 @@ public:
 	bool save();
 
 	// called by Parms.cpp
-	bool printRepairStatus ( SafeBuf *sb , int32_t fromIp );
+	bool printRepairStatus(SafeBuf *sb);
 
 	bool linkdbRebuildPending() const { return m_rebuildLinkdb; }
 
@@ -37,7 +37,7 @@ private:
 	void initScan();
 	void resetForNewCollection();
 	void getNextCollToRepair();
-	bool loop( void *state = NULL );
+	bool loop();
 	bool dumpLoop();
 	void resetSecondaryRdbs();
 	bool dumpsCompleted();
@@ -54,12 +54,10 @@ private:
 
 	// general scan vars
 	Msg5       m_msg5;
-	bool       m_needsCallback;
 	RdbList    m_titleRecList;
 	int64_t  m_docId;
 	int64_t  m_totalMem;
 	int32_t       m_stage ;
-	int32_t       m_count;
 	bool       m_updated;
 
 	// titledb scan vars
@@ -77,18 +75,12 @@ private:
 	key96_t      m_lastSpiderdbKey;
 
 	int64_t  m_recsScanned;
-	int64_t  m_recsOutOfOrder;
 	int64_t  m_recsetErrors;
 	int64_t  m_recsCorruptErrors;
-	int64_t  m_recsXmlErrors;
 	int64_t  m_recsDupDocIds;
 	int64_t  m_recsNegativeKeys;
-	int64_t  m_recsOverwritten;
 	int64_t  m_recsUnassigned;
-	int64_t  m_noTitleRecs;
 	int64_t  m_recsWrongGroupId;
-	int64_t  m_recsRoot;
-	int64_t  m_recsNonRoot;
 	int64_t  m_recsInjected;
 
 	// spiderdb scan stats
@@ -138,7 +130,6 @@ private:
 
 	// keep track of how many injects we have out
 	int32_t       m_numOutstandingInjects;
-	bool       m_allowInjectToLoop;
 
 	// sanity check
 	bool  m_msg5InUse ;

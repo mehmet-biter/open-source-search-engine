@@ -259,8 +259,8 @@ void DailyMerge::dailyMergeLoop ( ) {
 		// tell it to save, otherwise this might not get saved
 		m_cr->m_needsSave = true;
 		// initiate dumps
-		g_spiderdb.getRdb ()->dumpTree(1); // niceness = 1
-		g_linkdb.getRdb   ()->dumpTree(1); // niceness = 1
+		g_spiderdb.getRdb ()->dumpTree();
+		g_linkdb.getRdb   ()->dumpTree();
 		// if neither has recs in tree, go to next mode
 		if(g_spiderdb.getRdb()->getNumUsedNodes()>0) return;
 		if(g_linkdb  .getRdb()->getNumUsedNodes()>0) return;

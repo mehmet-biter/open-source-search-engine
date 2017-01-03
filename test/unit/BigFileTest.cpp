@@ -4,31 +4,31 @@
 #include "Process.h"
 #include <fcntl.h>
 
-static void createFile( BigFile *file, const char *file_name ) {
+static void createFile(BigFile *file, const char *file_name) {
 	int32_t bufSize = 1024;
-	char *buf = (char *) malloc ( bufSize );
+	char *buf = (char *)malloc(bufSize);
 	// store stuff in there
-	for ( int32_t i = 0 ; i < bufSize ; i++ ) {
+	for (int32_t i = 0; i < bufSize; i++) {
 		buf[i] = (char)i;
 	}
 
-	ASSERT_TRUE( file->set( ".", file_name ) );
-	if ( !file->doesExist() ) {
-		ASSERT_TRUE( file->open( O_RDWR | O_CREAT | O_SYNC ) );
+	ASSERT_TRUE(file->set(".", file_name));
+	if (!file->doesExist()) {
+		ASSERT_TRUE(file->open(O_RDWR | O_CREAT | O_SYNC));
 	}
-	ASSERT_TRUE( file->write(buf, bufSize, 0) );
+	ASSERT_TRUE(file->write(buf, bufSize, 0));
 
-	free( buf );
+	free(buf);
 }
 
-TEST( BigFileTest, FileRenameDestExist ) {
+TEST(BigFileTest, FileRenameDestExist) {
 	BigFile file01;
-	createFile( &file01, "testfile01" );
+	createFile(&file01, "testfile01");
 
 	BigFile file02;
-	createFile( &file02, "testfile02" );
+	createFile(&file02, "testfile02");
 
-	EXPECT_EXIT( file02.rename( "testfile01", NULL ), ::testing::KilledBySignal(SIGABRT), "" );
+	EXPECT_EXIT(file02.rename("testfile01", NULL), ::testing::KilledBySignal(SIGABRT), "");
 
 	// verify files
 	struct stat buffer;
@@ -41,11 +41,11 @@ TEST( BigFileTest, FileRenameDestExist ) {
 	unlink(Process::getAbortFileName());
 }
 
-TEST( BigFileTest, FileRenameDestNotExist ) {
+TEST(BigFileTest, FileRenameDestNotExist) {
 	BigFile file01;
-	createFile( &file01, "testfile01" );
+	createFile(&file01, "testfile01");
 
-	ASSERT_TRUE( file01.rename( "testfile02", NULL ) );
+	ASSERT_TRUE(file01.rename("testfile02", NULL));
 
 	// verify files
 	struct stat buffer;
@@ -53,5 +53,22 @@ TEST( BigFileTest, FileRenameDestNotExist ) {
 	EXPECT_TRUE(stat("testfile02", &buffer) == 0);
 
 	// remove files
+	file01.unlink();
+}
+
+TEST(BigFileTest, FileRenameRead) {
+	BigFile file01;
+	createFile(&file01, "testfile01");
+	file01.logAllData(LOG_TRACE);
+
+	int fd = file01.getfd(0, true);
+	logf(LOG_TRACE, "fd = %d", fd);
+	file01.rename("testfile02", NULL);
+
+	int32_t bufSize = 1024;
+	char *buf = (char *)malloc(bufSize);
+	ASSERT_NE(-1, pread(fd, buf, bufSize, 0));
+	free(buf);
+
 	file01.unlink();
 }
