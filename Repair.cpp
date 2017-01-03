@@ -324,8 +324,7 @@ void Repair::repairWrapper(int fd, void *state) {
 		if ( hasAddsInQueue() ) return;
 		// note it
 		log("repair: All adds have been flushed.");
-		log("repair: Waiting for all other hosts to flush out their "
-		    "add operations.");
+		log("repair: Waiting for all other hosts to flush out their add operations.");
 		// update repair mode
 		g_repairMode = REPAIR_MODE_6;
 	}
@@ -495,8 +494,7 @@ void Repair::initScan ( ) {
 
 	// rebuilding spiderdb means we must rebuild tfndb, too
 	if ( m_rebuildSpiderdb ) {
-		logf(LOG_DEBUG,"repair: Not rebuilding tfndb like "
-		     "we should because it is broken!");
+		logf(LOG_DEBUG,"repair: Not rebuilding tfndb like we should because it is broken!");
 		// TODO: put this back when it is fixed!
 		// see the comment in addToTfndb2() below
 		// YOU HAVE TO REBUILD spiderdb first then rebuild
@@ -564,8 +562,7 @@ void Repair::initScan ( ) {
 	if ( m_rebuildLinkdb     ) linkdbMem     = (int32_t)(( 20.0 * tt)/weight);
 
 	if ( m_numColls <= 0 ) {
-		log("rebuild: Rebuild had no collection specified. You need "
-		    "to enter a collection or list of collections.");
+		log("rebuild: Rebuild had no collection specified. You need to enter a collection or list of collections.");
 		goto hadError;
 	}
 
@@ -1041,9 +1038,7 @@ bool Repair::scanRecs ( ) {
 	m_nextTitledbKey.n0 &= 0xfffffffffffffffeLL;
 	// for saving
 	m_lastTitledbKey = m_nextTitledbKey;
-	log(LOG_DEBUG,"repair: nextKey=%s endKey=%s"
-	    "coll=%s collnum=%" PRId32" "
-	    "bnf=%" PRId32,//fn=%" PRId32" nf=%" PRId32,
+	log(LOG_DEBUG,"repair: nextKey=%s endKey=%s coll=%s collnum=%" PRId32" bnf=%" PRId32,
 	    KEYSTR(&m_nextTitledbKey,sizeof(key96_t)),
 	    KEYSTR(&m_endKey,sizeof(key96_t)),
 	    m_cr->m_coll,
