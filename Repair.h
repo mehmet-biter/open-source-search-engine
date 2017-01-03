@@ -37,7 +37,7 @@ private:
 	void initScan();
 	void resetForNewCollection();
 	void getNextCollToRepair();
-	bool loop( void *state = NULL );
+	bool loop();
 	bool dumpLoop();
 	void resetSecondaryRdbs();
 	bool dumpsCompleted();

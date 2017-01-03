@@ -689,7 +689,7 @@ void Repair::getNextCollToRepair ( ) {
 void Repair::loopWrapper(void *state, RdbList *list, Msg5 *msg5) {
 	Repair *THIS = (Repair *)state;
 	THIS->m_msg5InUse = false;
-	THIS->loop(NULL);
+	THIS->loop();
 }
 
 
@@ -765,7 +765,7 @@ bool Repair::load ( ) {
 // . all repair callbacks given come back into this loop
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool Repair::loop ( void *state ) {
+bool Repair::loop() {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	
 	// if the power went off
@@ -843,7 +843,6 @@ bool Repair::loop ( void *state ) {
 		bool status = injectTitleRec();
 		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: injectTitleRec returned %s", __FILE__, __func__, __LINE__, status?"true":"false");
 			
-		//return false; // (state)
 		// try to launch another
 		if ( m_numOutstandingInjects<g_conf.m_maxRepairinjections ) {
 			m_stage = STAGE_TITLEDB_0;
@@ -1192,7 +1191,7 @@ void Repair::doneWithIndexDocWrapper(void *state) {
 	// clean up
 	doneWithIndexDoc ( (XmlDoc *)state );
 	// and re-enter the loop to get next title rec
-	g_repair.loop ( NULL );
+	g_repair.loop();
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
 
