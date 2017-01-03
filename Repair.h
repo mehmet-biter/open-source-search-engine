@@ -130,7 +130,6 @@ private:
 
 	// keep track of how many injects we have out
 	int32_t       m_numOutstandingInjects;
-	bool       m_allowInjectToLoop;
 
 	// sanity check
 	bool  m_msg5InUse ;

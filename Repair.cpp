@@ -119,7 +119,6 @@ Repair::Repair() {
 	m_startTime = 0;
 	m_isSuspended = false;
 	m_numOutstandingInjects = 0;
-	m_allowInjectToLoop = false;
 	m_msg5InUse = false;
 	m_saveRepairState = false;
 	m_isRetrying = false;
@@ -769,8 +768,6 @@ bool Repair::load ( ) {
 bool Repair::loop ( void *state ) {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	
-	m_allowInjectToLoop = false;
-
 	// if the power went off
 	if ( ! g_process.m_powerIsOn ) {
 		// sleep 1 second and retry
@@ -837,7 +834,6 @@ bool Repair::loop ( void *state ) {
 		
 		// if we have maxed out our injects, wait for one to come back
 		if ( m_numOutstandingInjects >= g_conf.m_maxRepairinjections ) {
-			m_allowInjectToLoop = true;
 			return false;
 		}
 		m_stage++;
@@ -879,7 +875,6 @@ bool Repair::loop ( void *state ) {
 	if ( m_numOutstandingInjects > 0 ) {
 		// tell injection complete wrapper to call us back, otherwise
 		// we never end up moving on to the spider phase
-		g_repair.m_allowInjectToLoop = true;
 		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END, return false. Have %" PRId32" outstanding injects", __FILE__, __func__, __LINE__, m_numOutstandingInjects);
 		return false;
 	}
@@ -1096,7 +1091,6 @@ bool Repair::gotScanRecList ( ) {
 		m_stage = STAGE_SPIDERDB_0;
 		// force spider scan completed now too!
 		m_completedSpiderdbScan = true;
-		g_repair.m_allowInjectToLoop = true;
 		return true;
 	}
 
