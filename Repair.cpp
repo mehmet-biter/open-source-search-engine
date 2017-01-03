@@ -938,6 +938,23 @@ bool Repair::loop ( void *state ) {
 	// are we done dumping?
 	//if ( ! dumpsCompleted() ) return false;
 	
+	log(LOG_INFO,"repair: Repair finished. %" PRId64 " titledb records scanned; errors:"
+	    " set=%" PRId64
+	    " corrupt=%" PRId64
+	    " dup=%" PRId64
+	    " negative=%" PRId64
+	    " unassigned=%" PRId64
+	    " wrong-group=%" PRId64
+	    " injected=%" PRId64,
+	    m_recsScanned,
+	    m_recsetErrors,
+	    m_recsCorruptErrors,
+	    m_recsDupDocIds,
+	    m_recsNegativeKeys,
+	    m_recsUnassigned,
+	    m_recsWrongGroupId,
+	    m_recsInjected
+	   );
 	// we are all done with the repair loop
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 	return true;
