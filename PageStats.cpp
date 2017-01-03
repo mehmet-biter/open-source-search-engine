@@ -1728,9 +1728,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	// print out whos is using the most mem
 // 	ss = p.getBuf();
 // 	ssend = p.getBufEnd();
-	g_mem.printMemBreakdownTable (&p,
-				      (char *)LIGHT_BLUE , 
-				      (char *)DARK_BLUE );
+	g_mem.printMemBreakdownTable(&p);
 	//p.incrementLength(sss - ss);
 
 	p.safePrintf ( "<br><br>\n" );

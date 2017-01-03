@@ -426,9 +426,7 @@ public:
 // print out the mem table
 // but combine allocs with the same label
 // sort by mem allocated
-bool Mem::printMemBreakdownTable ( SafeBuf* sb, 
-				   char *lightblue, 
-				   char *darkblue) {
+bool Mem::printMemBreakdownTable(SafeBuf *sb) {
 	const char *ss = "";
 
 	sb->safePrintf (
@@ -444,7 +442,7 @@ bool Mem::printMemBreakdownTable ( SafeBuf* sb,
 		       "<td><b>num allocs</b></td>"
 		       "<td><b>allocated</b></td>"
 		       "</tr>" ,
-		       TABLE_STYLE, darkblue , ss , darkblue );
+		       TABLE_STYLE, DARK_BLUE , ss , DARK_BLUE );
 
 	int32_t n = m_numAllocated * 2;
 	MemEntry *e = (MemEntry *)mcalloc ( sizeof(MemEntry) * n , "Mem" );
