@@ -23,7 +23,7 @@ public:
 
 	//be careful with passing in a stackBuf! it could go out
 	//of scope independently of the safebuf.
-	SafeBuf(char* stackBuf, int32_t cap, const char* label = NULL);
+	SafeBuf(char* stackBuf, int32_t cap);
 	SafeBuf(char *heapBuf, int32_t bufMax, int32_t bytesInUse, bool ownData);
 	~SafeBuf();
 
