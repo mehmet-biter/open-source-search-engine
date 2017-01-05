@@ -28,6 +28,9 @@ repair_mode_t g_repairMode = REPAIR_MODE_NONE;
 // the global instance
 Repair g_repair;
 
+static void formRepairdatFilename(char dst[1024]) {
+	sprintf(dst, "%s/repair.dat", g_hostdb.m_dir);
+}
 
 static Rdb **getSecondaryRdbs ( int32_t *nsr ) {
 	static Rdb *s_rdbs[50];
@@ -382,7 +385,7 @@ void Repair::repairWrapper(int fd, void *state) {
 		log("repair: unlinking repair.dat");
 
 		char tmp[1024];
-		sprintf ( tmp, "%s/repair.dat", g_hostdb.m_dir );
+		formRepairdatFilename(tmp);
 		::unlink ( tmp );
 
 		// do not save it again! we just unlinked it!!
@@ -704,7 +707,7 @@ bool Repair::save ( ) {
 	// log it
 	log("repair: saving repair.dat");
 	char tmp[1024];
-	sprintf ( tmp , "%s/repair.dat", g_hostdb.m_dir );
+	formRepairdatFilename(tmp);
 	File ff;
 	ff.set ( tmp );
 	if ( ! ff.open ( O_RDWR | O_CREAT | O_TRUNC ) ) {
@@ -722,7 +725,7 @@ bool Repair::save ( ) {
 
 bool Repair::load ( ) {
 	char tmp[1024];
-	sprintf ( tmp , "%s/repair.dat", g_hostdb.m_dir );
+	formRepairdatFilename(tmp);
 	File ff;
 	ff.set ( tmp );
 
