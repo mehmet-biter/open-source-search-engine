@@ -717,9 +717,13 @@ bool Repair::save ( ) {
 
 	g_errno = 0;
 	int32_t      size   = &m_SAVE_END - &m_SAVE_START;
-	int64_t offset = 0LL;
-	ff.write ( &m_SAVE_START , size , offset ) ;
+	int bytes_written = ff.write(&m_SAVE_START, size, 0 );
 	ff.close();
+	if(bytes_written!=size) {
+		log(LOG_WARN, "repair: Could not write to %s : %s", ff.getFilename(), mstrerror(g_errno));
+		ff.unlink();
+		return false;
+	}
 	return true;
 }
 
@@ -736,19 +740,27 @@ bool Repair::load ( ) {
 		return false;
 	}
 
-	g_errno = 0;
 	int32_t      size   = &m_SAVE_END - &m_SAVE_START;
-	int64_t offset = 0LL;
-	ff.read ( &m_SAVE_START, size , offset ) ;
+	if(ff.getFileSize() != size) {
+		log(LOG_WARN, "repair: %s exists but has wrong size", ff.getFilename());
+		ff.unlink();
+		return false;
+	}
+
+	g_errno = 0;
+	int bytes_read =ff.read(&m_SAVE_START, size, 0);
 	ff.close();
+
+	if(bytes_read!=size) {
+		log(LOG_WARN, "repair: Could not read from %s : %s", ff.getFilename(), mstrerror(g_errno));
+		ff.unlink();
+	}
 
 	// resume titledb scan?
 	m_nextTitledbKey = m_lastTitledbKey;
 
 	// reinstate the valuable vars
 	m_cr   = g_collectiondb.m_recs [ m_collnum ];
-	//m_coll = m_cr->m_coll;
-
 
 	m_stage = STAGE_TITLEDB_0;
 	if ( m_completedFirstScan  ) m_stage = STAGE_SPIDERDB_0;
