@@ -6370,18 +6370,6 @@ int32_t *XmlDoc::getFirstIp ( ) {
 	//if ( tag->getTagDataSize() != 4 ) { g_process.shutdownAbort(true); }
 }
 
-uint8_t *XmlDoc::getSiteNumInlinks8 () {
-	if ( m_siteNumInlinks8Valid ) return &m_siteNumInlinks8;
-	// get the full count
-	int32_t *si = getSiteNumInlinks();
-	if ( ! si || si == (int32_t *)-1 ) return (uint8_t *)si;
-	// convert to 8
-	m_siteNumInlinks8 = score32to8 ( *si );
-	// validate
-	m_siteNumInlinks8Valid = true;
-	return &m_siteNumInlinks8;
-}
-
 // this is the # of GOOD INLINKS to the site. so it is no more than
 // 1 per c block, and it has to pass link spam detection. this is the
 // highest-level count of inlinks to the site. use it a lot.
