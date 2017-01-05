@@ -296,11 +296,8 @@ bool SiteGetter::getSiteList ( ) {
 		// i guess this is split by termid and not docid????
 		int32_t shardNum = g_hostdb.getShardNumByTermId( &start );
 
-		// shortcut
-		Msg0 *m = &m_msg0;
-
 		// get the list. returns false if blocked.
-		if (!m->getList( -1, // hostId
+		if (!m_msg0.getList( -1, // hostId
 		                 0, // ip
 		                 0, // port
 		                 0, // maxCacheAge
