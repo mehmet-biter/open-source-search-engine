@@ -97,8 +97,8 @@ uint32_t hash32n ( const char *s ) {
 	return h;
 }
 
-uint64_t hash64n ( const char *s, uint64_t startHash ) {
-	uint64_t h = startHash;
+uint64_t hash64n(const char *s) {
+	uint64_t h = 0;
 	for ( register int32_t i = 0 ; s[i] ; i++ )
 		h ^= g_hashtab [(unsigned char)i] [(unsigned char)s[i]];
 	return h;

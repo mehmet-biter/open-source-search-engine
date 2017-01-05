@@ -31,7 +31,7 @@ uint32_t hash32           ( const char *s, int32_t len,uint32_t startHash=0);
 uint32_t hash32h          ( uint32_t h1 , uint32_t h2 ) ;
 uint64_t      hash64h          ( uint64_t h1 , uint64_t h2 );
 uint32_t hash32Lower_a    ( const char *s, int32_t len,uint32_t startHash=0);
-uint64_t      hash64n          ( const char *s, uint64_t startHash =0LL);
+uint64_t hash64n(const char *s);
 uint96_t      hash96           ( const char *s, int32_t slen);
 
 // . these convert \n to \0 when hashing
