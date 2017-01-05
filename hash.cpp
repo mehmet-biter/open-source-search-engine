@@ -104,6 +104,13 @@ uint64_t hash64n(const char *s) {
 	return h;
 }
 
+uint64_t hash64n(const char *s, int32_t len) {
+	uint64_t h = 0;
+	for(int32_t i = 0; i<len; i++)
+		h ^= g_hashtab [(unsigned char)i] [(unsigned char)s[i]];
+	return h;
+}
+
 uint64_t hash64n_nospaces ( const char *s, int32_t len ) {
 	uint64_t h = 0LL;
 	int32_t k = 0;
