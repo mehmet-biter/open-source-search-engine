@@ -428,11 +428,11 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 	int64_t oldTrunc = -1;
 	// get maxKey for only the top "oldTruncLimit" docids because when
 	// we increase the trunc limit we screw up our extrapolation! BIG TIME!
-	int64_t maxRecs = m_rdb.getListSize(collnum,
-					    (char *)&startKey,
-					    (char *)&endKey,
-					    (char *)&maxKey,
-					    oldTrunc );
+	int64_t maxRecs = m_rdb.estimateListSize(collnum,
+						 (char *)&startKey,
+						 (char *)&endKey,
+						 (char *)&maxKey,
+						 oldTrunc );
 
 	RdbBuckets *buckets = m_rdb.getBuckets();
 	if( !buckets ) {

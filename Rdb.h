@@ -199,9 +199,9 @@ public:
 	}
 
 	// use the maps and tree to estimate the size of this list
-	int64_t getListSize(collnum_t collnum,
-			    const char *startKey, const char *endKey, char *maxKey,
-			    int64_t oldTruncationLimit) const;
+	int64_t estimateListSize(collnum_t collnum,
+				 const char *startKey, const char *endKey, char *maxKey,
+				 int64_t oldTruncationLimit) const;
 
 	// positive minus negative
 	int64_t getNumTotalRecs(bool useCache = false) const;
