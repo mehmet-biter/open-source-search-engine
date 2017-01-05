@@ -1626,14 +1626,6 @@ bool XmlDoc::hashBody2 ( HashTableX *tt ) {
 
 	setStatus ( "hashing body" );
 
-	// if more than X% of words are spammed to some degree, index all
-	// words with a minimum score
-	//int64_t x[] = {30,40,50,70,90};
-	//int64_t y[] = {6,8,10,20,30};
-	//int32_t mp = getY ( *getSiteNumInlinks8() , x , y , 5 );
-
-	//int32_t nw = m_words.getNumWords();
-
 	// record this
 	m_bodyStartPos = m_dist;
 	m_bodyStartPosValid = true;
