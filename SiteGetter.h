@@ -21,15 +21,22 @@ public:
 	bool getSite ( const char *url, class TagRec *gr, int32_t timestamp, collnum_t collnum, int32_t niceness,
 	               void *state    = NULL, void (* callback)(void *) = NULL ) ;
 
-
-	bool setRecognizedSite ( );
-
 	const char *getSite() const { return m_site; }
 	int32_t getSiteLen() const { return m_siteLen; }
 
-	bool getSiteList ( ) ;
-	bool gotSiteList ( ) ;
-	bool setSite ( ) ;
+	const char *getScheme() const { return m_scheme; }
+	int32_t getSchemeLen() const { return m_schemeLen; }
+
+	int32_t getErrno() const { return m_errno; }
+
+	bool allDone() const { return m_allDone; }
+
+private:
+	bool setRecognizedSite();
+	bool getSiteList();
+	bool gotSiteList();
+	bool setSite();
+	static void gotSiteListWrapper(void *state);
 
 	const char         *m_url;
 	collnum_t m_collnum;

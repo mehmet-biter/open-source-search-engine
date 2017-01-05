@@ -7483,8 +7483,8 @@ static void gotSiteWrapper ( void *state ) ;
 //   change what it thinks the site is!
 char *XmlDoc::getSite ( ) {
 	// was there a problem getting site?
-	if ( m_siteValid && m_siteGetter.m_errno ) {
-		g_errno = m_siteGetter.m_errno;
+	if ( m_siteValid && m_siteGetter.getErrno() ) {
+		g_errno = m_siteGetter.getErrno();
 		return NULL;
 	}
 	// ok, return it
@@ -7540,19 +7540,19 @@ void gotSiteWrapper ( void *state ) {
 
 void XmlDoc::gotSite ( ) {
 	// sanity check
-	if ( ! m_siteGetter.m_allDone && ! g_errno ) { g_process.shutdownAbort(true); }
+	if ( ! m_siteGetter.allDone() && ! g_errno ) { g_process.shutdownAbort(true); }
 
 	// this sets g_errno on error
-	ptr_site    = m_siteGetter.m_site;
-	size_site   = m_siteGetter.m_siteLen+1; // include \0
+	ptr_site    = const_cast<char*>(m_siteGetter.getSite());
+	size_site   = m_siteGetter.getSiteLen()+1; // include \0
 
 	// sanity check -- must have a site
 	if ( ! g_errno && size_site <= 1 ) { g_process.shutdownAbort(true); }
 
 	// BR 20151215: Part of fix that avoids defaultint to http:// when getting
 	// robots.txt and root document of a https:// site.
-	ptr_scheme    = m_siteGetter.m_scheme;
-	size_scheme   = m_siteGetter.m_schemeLen+1; // include \0
+	ptr_scheme    = const_cast<char*>(m_siteGetter.getScheme());
+	size_scheme   = m_siteGetter.getSchemeLen()+1; // include \0
 
 	// sitegetter.m_errno might be set!
 	m_siteValid = true;
@@ -7574,8 +7574,8 @@ int32_t *XmlDoc::getSiteHash32 ( ) {
 
 const char *XmlDoc::getScheme ( ) {
 	// was there a problem getting site?
-	if ( m_siteValid && m_siteGetter.m_errno ) {
-		g_errno = m_siteGetter.m_errno;
+	if ( m_siteValid && m_siteGetter.getErrno() ) {
+		g_errno = m_siteGetter.getErrno();
 		return NULL;
 	}
 	// ok, return it
@@ -20154,8 +20154,8 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 		siteGetter.getSite(url,gr,timestamp,cr->m_collnum,m_niceness);
 		// these are now valid and should reference into
 		// Links::m_buf[]
-		char *site    = siteGetter.m_site;
-		int32_t  siteLen = siteGetter.m_siteLen;
+		const char *site    = siteGetter.getSite();
+		int32_t  siteLen = siteGetter.getSiteLen();
 
 		int32_t linkIp  = (*ipv)[i];
 

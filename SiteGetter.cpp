@@ -67,8 +67,6 @@
 // a common name, like "dave", "pedro" or "williams". and possibly discard
 // subsites whose path contains categories or other names in the dictionary.
 
-static void gotSiteListWrapper ( void *state ) ;
-//static void addedTagWrapper    ( void *state ) ;
 
 SiteGetter::SiteGetter ( ) {
 	m_siteLen 	= 0;
@@ -352,7 +350,7 @@ bool SiteGetter::getSiteList ( ) {
 	}
 }
 
-void gotSiteListWrapper ( void *state ) {
+void SiteGetter::gotSiteListWrapper(void *state) {
 	SiteGetter *THIS = (SiteGetter *)state;
 	if ( ! THIS->gotSiteList() ) return;
 	// try again?
