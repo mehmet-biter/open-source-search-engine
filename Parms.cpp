@@ -7735,6 +7735,22 @@ void Parms::init ( ) {
 	m->m_group = true;
 	m++;
 
+	m->m_title = "linkdb max tree mem";
+	m->m_desc  = "";
+	m->m_cgi   = "mlkmt";
+	m->m_off   = offsetof(Conf,m_linkdbMaxTreeMem);
+	m->m_def   = "40000000";
+	m->m_type  = TYPE_LONG;
+	m->m_flags = PF_NOSYNC|PF_NOAPI;
+#ifndef PRIVACORE_TEST_VERSION
+	m->m_page  = PAGE_NONE;
+#else
+	m->m_page  = PAGE_RDB;
+#endif
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
+	m++;
+
 	////////////////////
 	// posdb settings
 	////////////////////
