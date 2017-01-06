@@ -7694,11 +7694,7 @@ void Parms::init ( ) {
 	m->m_def   = "1000000";
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
-#ifndef PRIVACORE_TEST_VERSION
-	m->m_page  = PAGE_NONE;
-#else
 	m->m_page  = PAGE_RDB;
-#endif
 	m->m_obj   = OBJ_CONF;
 	m->m_group = false;
 	m++;
@@ -7742,11 +7738,7 @@ void Parms::init ( ) {
 	m->m_def   = "40000000";
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
-#ifndef PRIVACORE_TEST_VERSION
-	m->m_page  = PAGE_NONE;
-#else
 	m->m_page  = PAGE_RDB;
-#endif
 	m->m_obj   = OBJ_CONF;
 	m->m_group = false;
 	m++;
@@ -7793,11 +7785,7 @@ void Parms::init ( ) {
 #endif
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
-#ifndef PRIVACORE_TEST_VERSION
-	m->m_page  = PAGE_NONE;
-#else
 	m->m_page  = PAGE_RDB;
-#endif
 	m->m_obj   = OBJ_CONF;
 	m->m_group = false;
 	m++;
@@ -7813,11 +7801,7 @@ void Parms::init ( ) {
 	m->m_def   = "5000000";
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
-#ifndef PRIVACORE_TEST_VERSION
-	m->m_page  = PAGE_NONE;
-#else
 	m->m_page  = PAGE_RDB;
-#endif
 	m->m_obj   = OBJ_CONF;
 	m->m_group = true;
 	m++;
@@ -7864,11 +7848,7 @@ void Parms::init ( ) {
 #endif
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
-#ifndef PRIVACORE_TEST_VERSION
-	m->m_page  = PAGE_NONE;
-#else
 	m->m_page  = PAGE_RDB;
-#endif
 	m->m_obj   = OBJ_CONF;
 	m->m_group = false;
 	m++;
@@ -7914,11 +7894,7 @@ void Parms::init ( ) {
 #endif
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
-#ifndef PRIVACORE_TEST_VERSION
-	m->m_page  = PAGE_NONE;
-#else
 	m->m_page  = PAGE_RDB;
-#endif
 	m->m_obj   = OBJ_CONF;
 	m->m_group = false;
 	m++;
@@ -7967,11 +7943,7 @@ void Parms::init ( ) {
 #endif
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
-#ifndef PRIVACORE_TEST_VERSION
-	m->m_page  = PAGE_NONE;
-#else
 	m->m_page  = PAGE_RDB;
-#endif
 	m->m_obj   = OBJ_CONF;
 	m->m_group = false;
 	m++;
