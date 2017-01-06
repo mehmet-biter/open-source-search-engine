@@ -1846,8 +1846,7 @@ bool sendReply2 ( void *state ) {
 	TcpSocket *s = st->m_socket;
 
 	// page is not more than 32k
-	char buf[1024*32];
-	SafeBuf sb(buf, 1024*32);
+	StackBuf<1024*32> sb;
 	// do they want an xml reply?
 	if( r->getLong("xml",0) ) {
 		sb.safePrintf("<?xml version=\"1.0\" "

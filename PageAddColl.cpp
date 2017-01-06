@@ -62,8 +62,7 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 	const char *addColl = r->getString("addcoll",NULL);
 
 
-	char  buf [ 64*1024 ];
-	SafeBuf p(buf, 64*1024);
+	StackBuf<64*1024> p;
 
 
 	//
@@ -308,8 +307,7 @@ bool sendPageCloneColl ( TcpSocket *s , HttpRequest *r ) {
 		return g_httpServer.sendSuccessReply(s,format);
 	}
 
-	char  buf [ 64*1024 ];
-	SafeBuf p(buf, 64*1024);
+	StackBuf<64*1024> p;
 
 	// print standard header
 	g_pages.printAdminTop ( &p , s , r );

@@ -1470,8 +1470,7 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 // then have 3 tables, the input parms,
 // the xml output table and the json output table
 bool sendPageAPI ( TcpSocket *s , HttpRequest *r ) {
-	char pbuf[32768];
-	SafeBuf p(pbuf, 32768);
+	StackBuf<32768> p;
 
 	CollectionRec *cr = g_collectiondb.getRec ( r , true );
 	const char *coll = "";

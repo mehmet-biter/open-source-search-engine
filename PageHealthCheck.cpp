@@ -7,8 +7,7 @@
 
 
 bool sendPageHealthCheck( TcpSocket *s , HttpRequest *r ) {
-	char  buf [ 64*1024 ];
-	SafeBuf p(buf, 64*1024);
+	StackBuf<64*1024> p;
 	int32_t uptime = time(NULL) - g_stats.m_uptimeStart;
 	
 	p.safePrintf("{\n\"status\":\"active\",\n\"uptime_secs\":%" PRId32"\n}\n", uptime);
