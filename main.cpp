@@ -35,6 +35,7 @@
 #include "Loop.h"
 #include "HighFrequencyTermShortcuts.h"
 #include "PageTemperatureRegistry.h"
+#include "Docid2Siteflags.h"
 #include "IPAddressChecks.h"
 #include <sys/resource.h>  // setrlimit
 #include "Stats.h"
@@ -1961,6 +1962,9 @@ int main2 ( int argc , char *argv[] ) {
 
 	//Load the page temperature
 	g_pageTemperatureRegistry.load();
+	
+	//load docid->flags/sitehash map
+	g_d2fasm.load();
 	
 	// test all collection dirs for write permission
 	int32_t pcount = 0;

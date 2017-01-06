@@ -18,7 +18,7 @@ OBJS_O0 =  \
 	Errno.o Entities.o \
 	File.o \
 	GbMutex.o \
-	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
+	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o Docid2Siteflags.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
 	iana_charset.o Images.o ip.o \
 	JobScheduler.o Json.o \
 	Lang.o LanguageIdentifier.o Log.o \
