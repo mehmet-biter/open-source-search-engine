@@ -302,8 +302,7 @@ bool Rebalance::saveRebalanceFile ( ) {
 	binToHex ( (unsigned char *)&m_nextKey , MAX_KEY_BYTES , keyStr );
 
 	//log("db: saving rebalance.txt");
-	char tmp[30000];
-	SafeBuf sb(tmp,30000);
+	StackBuf<3000> sb;
 	sb.safePrintf (
 		       "myshard: %" PRId32"\n"
 		       "numshards: %" PRId32"\n"
