@@ -3907,6 +3907,11 @@ void PosdbTable::intersectLists10_r ( ) {
 			docLang					= langUnknown;
 			highestInlinkSiteRank 	= -1;
 
+			m_docId = *(uint32_t *)(docIdPtr+1);
+			m_docId <<= 8;
+			m_docId |= (unsigned char)docIdPtr[0];
+			m_docId >>= 2;
+
 			// second pass? for printing out transparency info.
 			if ( currPassNum == INTERSECT_DEBUG_INFO ) {
 				if( genDebugScoreInfo1(&numProcessed, &topCursor, qtibuf) ) {
@@ -4007,10 +4012,6 @@ void PosdbTable::intersectLists10_r ( ) {
 
 
 			if ( m_q->m_isBoolean ) {
-				m_docId = *(uint32_t *)(docIdPtr+1);
-				m_docId <<= 8;
-				m_docId |= (unsigned char)docIdPtr[0];
-				m_docId >>= 2;
 				// add one point for each term matched in the bool query
 				// this is really just for when the terms are from different
 				// fields. if we have unfielded boolean terms we should
@@ -4047,15 +4048,6 @@ void PosdbTable::intersectLists10_r ( ) {
 			if ( currPassNum == INTERSECT_DEBUG_INFO ) {
 				dcs.reset();
 				pdcs = &dcs;
-			}
-
-			// second pass already sets m_docId above
-			if ( currPassNum == INTERSECT_SCORING ) {
-				// docid ptr points to 5 bytes of docid shifted up 2
-				m_docId = *(uint32_t *)(docIdPtr+1);
-				m_docId <<= 8;
-				m_docId |= (unsigned char)docIdPtr[0];
-				m_docId >>= 2;
 			}
 
 
