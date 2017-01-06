@@ -78,7 +78,7 @@ bool Docid2FlagsAndSiteMap::load()
 	//swap in and done.
 	std::swap(entries,new_entries);
 	
-	log(LOG_DEBUG, "%s loaded (%lu entries)", filename, (unsigned long)entries.size());
+	log(LOG_DEBUG, "Loaded %s (%lu entries)", filename, (unsigned long)entries.size());
 	return true;
 }
 
