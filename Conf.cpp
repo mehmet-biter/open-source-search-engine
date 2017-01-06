@@ -125,6 +125,12 @@ Conf::Conf ( ) {
 	m_hashGroupWeightInMenu = 0.0;
 	m_synonymWeight = 0.0;
 	m_usePageTemperatureForRanking = true;
+	m_numFlagScoreMultipliers = 26;
+	m_numFlagRankAdjustments = 26;
+	for(int i=0; i<26; i++) {
+		m_flagScoreMultiplier[i] = 1.0;
+		m_flagRankAdjustment[i] = 0;
+	}
 	m_sendEmailAlerts = false;
 	m_delayNonCriticalEmailAlerts = false;
 	m_sendEmailAlertsToSysadmin = false;

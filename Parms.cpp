@@ -4222,6 +4222,38 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+
+	m->m_title = "Score multiplier";
+	m->m_desc  = "26 flags per docid are supported. If a flag bit is set on a page the scoring and ranking can be modified.";
+	m->m_cgi   = "flag_score_multiplier";
+	m->m_xml   = "ScoreMultiplier";
+	m->m_max   = 26;
+	m->m_fixed = 26;
+	m->m_arrayCountOffset= offsetof(Conf,m_numFlagScoreMultipliers);
+	m->m_off   = offsetof(Conf,m_flagScoreMultiplier);
+	m->m_rowid = 1;
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "1.0";
+	m->m_flags = 0;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_CONF;
+	m++;
+	m->m_title = "Rank adjustment";
+	m->m_cgi   = "flag_rerank";
+	m->m_xml   = "RankAdjustment";
+	m->m_max   = 26;
+	m->m_fixed = 26;
+	m->m_arrayCountOffset= offsetof(Conf,m_numFlagRankAdjustments);
+	m->m_off   = offsetof(Conf,m_flagRankAdjustment);
+	m->m_rowid = 1;
+	m->m_type  = TYPE_LONG;
+	m->m_def   = "0";
+	m->m_flags = 0;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_CONF;
+	m++;
+	
+	
 	///////////////////////////////////////////
 	//  SPIDER PROXY CONTROLS
 	//
