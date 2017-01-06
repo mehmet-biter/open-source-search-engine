@@ -2569,8 +2569,7 @@ bool CollectionRec::save ( ) {
 		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
 	//log("coll: saving %s",tmp);
 	// in case emergency save from malloc core, do not alloc
-	char stack[1024];
-	SafeBuf sb(stack,1024);
+	StackBuf<1024> sb;
 	//m_localCrawlInfo.print ( &sb );
 	// binary now
 	sb.safeMemcpy ( &m_localCrawlInfo , sizeof(CrawlInfo) );

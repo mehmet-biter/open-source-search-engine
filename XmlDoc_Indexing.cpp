@@ -2670,8 +2670,7 @@ char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
 
 	JsonItem *ji = jp->getFirstItem();
 
-	char nb[1024];
-	SafeBuf nameBuf(nb,1024);
+	StackBuf<1024> nameBuf;
 
 	//int32_t totalHash32 = 0;
 

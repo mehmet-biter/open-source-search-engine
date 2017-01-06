@@ -1495,8 +1495,7 @@ bool printSearchResultsTail ( State0 *st ) {
 	// now print "Prev X Results" if we need to
 	if ( firstNum < 0 ) firstNum = 0;
 
-	char abuf[300];
-	SafeBuf args(abuf,300);
+	StackBuf<300> args;
 	// show banned?
 	if ( si->m_showBanned && ! si->m_isMasterAdmin )
 		args.safePrintf("&sb=1");
@@ -3109,8 +3108,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		hbuf [ hlen ] = '\0';
 
 		// make the cgi parm to add to the original url
-		char tmp[512];
-		SafeBuf qq (tmp,512);
+		StackBuf<512> qq;
 		qq.safePrintf("q=");
 		urlEncode(&qq, "site:");
 		urlEncode(&qq, hbuf);
@@ -3118,8 +3116,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		qq.safeStrcpy(st->m_qesb.getBufStart());
 		qq.nullTerm();
 		// get the original url and add/replace in query
-		char tmp2[512];
-		SafeBuf newUrl(tmp2, 512);
+		StackBuf<512> newUrl;
 		replaceParm ( qq.getBufStart() , &newUrl , hr );
 		// put show more results from this site link
 		sb->safePrintf (" - <nobr><a href=\"%s\">"
@@ -3187,9 +3184,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 		Json md;
 		JsonItem *ji = md.parseJsonStringIntoJsonItems(mr->ptr_metadataBuf);
-		char tmpBuf1[1024];
-		char tmpBuf2[1024];
-		SafeBuf nameBuf(tmpBuf1, 1024);
+		StackBuf<1024> nameBuf;
 		for ( ; ji ; ji = ji->m_next ) {
 			if(ji->isInArray()) continue;
 			if(ji->m_type == JT_ARRAY) continue;
@@ -3202,7 +3197,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 			int32_t valLen;
 			const char* valBuf = ji->getValueAsString(&valLen);
-			SafeBuf queryBuf(tmpBuf2, 1024);
+			StackBuf<1024> queryBuf;
 			// log("compound name is %s %d %d",nameBuf.getBufStart(),
 			// nameBuf.length(), valLen);
 
@@ -3270,8 +3265,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	if ( nr == 1 ) nr = 0;
 	// print breakout tables here for distance matrix
 	// final score calc
-	char tmp[1024];
-	SafeBuf ft(tmp, 1024);;
+	StackBuf<1024> ft;
 
 	// put in a hidden div so you can unhide it
 	if ( si->m_format == FORMAT_HTML )
@@ -5259,8 +5253,7 @@ static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 		// . add our cgi to the original url
 		// . so if it has &qlang=de and they select &qlang=en
 		//   we have to replace it... etc.
-		char tmp2[512];
-		SafeBuf newUrl(tmp2, 512);
+		StackBuf<512> newUrl;
 		replaceParm ( mi->m_cgi , &newUrl , hr );
 		newUrl += '\0';
 

@@ -979,8 +979,7 @@ bool printSitePatternExamples ( SafeBuf *sb , HttpRequest *hr );
 //   which is called by HttpServer::sendReply(s,r) when it gets an http request
 bool Parms::sendPageGeneric ( TcpSocket *s , HttpRequest *r ) {
 
-	char  buf [ 128000 ];
-	SafeBuf stackBuf(buf,128000);
+	StackBuf<128000> stackBuf;
 
 	SafeBuf *sb = &stackBuf;
 
@@ -1739,8 +1738,7 @@ bool Parms::printParm( SafeBuf* sb,
 	}
 
 	// if parm value is not defaut, use orange!
-	char rr[1024];
-	SafeBuf val1(rr,1024);
+	StackBuf<1024> val1;
 	if ( m->m_type != TYPE_FILEUPLOADBUTTON )
 		m->printVal ( &val1 , collnum , j ); // occNum );
 	// test it
@@ -2915,8 +2913,7 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 	// print into buffer
 	// "seeds" can be pretty big so go with safebuf now
 	// fix so if we core in malloc/free we can still save conf
-	char  tmpbuf[200000];
-	SafeBuf sb(tmpbuf,200000);
+	StackBuf<200000> sb;
 	//char *p    = buf;
 	//char *pend = buf + MAX_CONF_SIZE;
 	//int32_t  n   ;

@@ -828,8 +828,7 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 
 	// ALSO ADD authorization to the NEW proxy we are sending to
 	// r->m_proxyIp/r->m_proxyPort that has a username:password
-	char tmpBuf[1024];
-	SafeBuf newReq (tmpBuf,1024);
+	StackBuf<1024> newReq;
 	if ( r->m_isSquidProxiedUrl && r->m_proxyIp ) {
 		newReq.safeStrcpy ( exactRequest );
 		addNewProxyAuthorization ( &newReq , r );

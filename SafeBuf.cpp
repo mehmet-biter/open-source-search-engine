@@ -297,8 +297,7 @@ int32_t SafeBuf::dumpToFile(const char *filename ) const {
 int32_t SafeBuf::safeSave(const char *filename) const {
 
 	// first write to tmp file
-	char tmp[1024];
-	SafeBuf fn(tmp,1024);
+	StackBuf<1024> fn;
 	fn.safePrintf( "%s.saving",filename );
 
 	int32_t fd = open ( fn.getBufStart() ,

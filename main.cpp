@@ -4137,8 +4137,7 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 		Tag *tag = (Tag *)rec;
 
 		// print the version and site
-		char tmpBuf[1024];
-		SafeBuf sb(tmpBuf, 1024);
+		StackBuf<1024> sb;
 
 		bool match = false;
 
