@@ -4,6 +4,7 @@
 #include "gb-include.h"
 
 #include "PageTemperatureRegistry.h"
+#include "Docid2Siteflags.h"
 #include "ScalingFunctions.h"
 #include "BitOperations.h"
 #include "Msg2.h"
@@ -3922,6 +3923,16 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 
 
+			//calculate complete score multiplier
+			float completeScoreMultiplier = 1.0;
+			unsigned flags = 0;
+			if(g_d2fasm.lookupFlags(m_docId,&flags) && flags) {
+				for(int i=0; i<26; i++) {
+					if(flags&(1<<i))
+						completeScoreMultiplier *= g_conf.m_flagScoreMultiplier[i];
+				}
+			}
+
 			if( currPassNum == INTERSECT_SCORING ) {
 				//
 				// Pre-advance each termlist's cursor to skip to next docid.
@@ -3972,6 +3983,7 @@ void PosdbTable::intersectLists10_r ( ) {
 								continue;
 							}
 
+							maxScore *= completeScoreMultiplier;
 							// logTrace(g_conf.m_logTracePosdb, "maxScore=%f  minWinningScore=%f", maxScore, minWinningScore);
 							// if any one of these terms have a max score below the
 							// worst score of the 10th result, then it can not win.
@@ -3993,7 +4005,7 @@ void PosdbTable::intersectLists10_r ( ) {
 
 					if ( minWinningScore >= 0.0 && m_sortByTermNum < 0 && m_sortByTermNumInt < 0 ) {
 
-						if( !prefilterMaxPossibleScoreByDistance(qtibuf, qpos, minWinningScore) ) {
+						if( !prefilterMaxPossibleScoreByDistance(qtibuf, qpos, minWinningScore*completeScoreMultiplier) ) {
 							docIdPtr += 6;
 							prefiltBestDistMaxPossScoreFail++;
 							skipToNextDocId = true;
@@ -4074,6 +4086,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				//# SINGLE TERM SCORE LOOP
 				//#
 				minSingleScore = getMinSingleTermScoreSum(miniMergedList, miniMergedEnd, highestScoringNonBodyPos, pdcs);
+				minSingleScore *= completeScoreMultiplier;
 
 
 				//#
@@ -4105,6 +4118,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				// pointers are used when determining the minimum term pair score returned
 				// by the function.
 				float minPairScore = getMinTermPairScoreSlidingWindow(miniMergedList, miniMergedEnd, highestScoringNonBodyPos, winnerStack, xpos, scoreMatrix, pdcs);
+				minPairScore *= completeScoreMultiplier;
 
 
 				//#
