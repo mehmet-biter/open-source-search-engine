@@ -4137,8 +4137,7 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 		Tag *tag = (Tag *)rec;
 
 		// print the version and site
-		char tmpBuf[1024];
-		SafeBuf sb(tmpBuf, 1024);
+		StackBuf<1024> sb;
 
 		bool match = false;
 
@@ -4864,7 +4863,7 @@ void dumpLinkdb ( const char *coll,
 		Url u;
 		u.set( url, strlen( url ), true, false );
 		uint32_t h32 = u.getHostHash32();
-		int64_t uh64 = hash64n(url,0);
+		int64_t uh64 = hash64n(url);
 		startKey = Linkdb::makeStartKey_uk ( h32 , uh64 );
 		endKey   = Linkdb::makeEndKey_uk   ( h32 , uh64 );
 	}

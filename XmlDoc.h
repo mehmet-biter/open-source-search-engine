@@ -389,7 +389,6 @@ public:
 	class TagRec *getTagRec ( ) ;
 	// non-dup/nondup addresses only
 	int32_t *getFirstIp ( ) ;
-	uint8_t *getSiteNumInlinks8 () ;
 	int32_t *getSiteNumInlinks ( ) ;
 	class LinkInfo *getSiteLinkInfo() ;
 	int32_t *getIp ( ) ;

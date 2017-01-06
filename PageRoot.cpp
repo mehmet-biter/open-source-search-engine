@@ -1053,11 +1053,10 @@ static bool printAddUrlHomePage ( SafeBuf &sb , const char *url , HttpRequest *r
 // . call g_httpServer.sendDynamicPage() to send it
 bool sendPageRoot ( TcpSocket *s , HttpRequest *r, char *cookie ) {
 	// don't allow pages bigger than 128k in cache
-	char  buf [ 10*1024 ];//+ MAX_QUERY_LEN ];
 	// a ptr into "buf"
 	//char *p    = buf;
 	//char *pend = buf + 10*1024 + MAX_QUERY_LEN - 100 ;
-	SafeBuf sb(buf, 10*1024 );//+ MAX_QUERY_LEN);
+	StackBuf<10*1024> sb;//+ MAX_QUERY_LEN);
 	// print bgcolors, set focus, set font style
 	//p = g_httpServer.printFocus  ( p , pend );
 	//p = g_httpServer.printColors ( p , pend );
@@ -1435,8 +1434,7 @@ static void doneInjectingWrapper3 ( void *st ) {
 	//	printUrl = false;
 
 	// page is not more than 32k
-	char buf[1024*32+MAX_URL_LEN*2];
-	SafeBuf sb(buf, 1024*32+MAX_URL_LEN*2);
+	StackBuf<1024*32+MAX_URL_LEN*2> sb;
 	
 	//char rawbuf[1024*8];
 	//SafeBuf rb(rawbuf, 1024*8);	

@@ -67,8 +67,6 @@
 // a common name, like "dave", "pedro" or "williams". and possibly discard
 // subsites whose path contains categories or other names in the dictionary.
 
-static void gotSiteListWrapper ( void *state ) ;
-//static void addedTagWrapper    ( void *state ) ;
 
 SiteGetter::SiteGetter ( ) {
 	m_siteLen 	= 0;
@@ -298,11 +296,8 @@ bool SiteGetter::getSiteList ( ) {
 		// i guess this is split by termid and not docid????
 		int32_t shardNum = g_hostdb.getShardNumByTermId( &start );
 
-		// shortcut
-		Msg0 *m = &m_msg0;
-
 		// get the list. returns false if blocked.
-		if (!m->getList( -1, // hostId
+		if (!m_msg0.getList( -1, // hostId
 		                 0, // ip
 		                 0, // port
 		                 0, // maxCacheAge
@@ -352,7 +347,7 @@ bool SiteGetter::getSiteList ( ) {
 	}
 }
 
-void gotSiteListWrapper ( void *state ) {
+void SiteGetter::gotSiteListWrapper(void *state) {
 	SiteGetter *THIS = (SiteGetter *)state;
 	if ( ! THIS->gotSiteList() ) return;
 	// try again?

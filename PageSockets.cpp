@@ -23,8 +23,7 @@ static void printUdpTable  (SafeBuf *p, const char *title, const UdpServer *serv
 // . call g_httpServer.sendDynamicPage() to send it
 bool sendPageSockets ( TcpSocket *s , HttpRequest *r ) {
 	// don't allow pages bigger than 128k in cache
-	char  buf [ 128*1024 ];
-	SafeBuf p(buf, 128*1024);
+	StackBuf<128*1024> p;
 	int32_t collLen = 0;
 	const char *coll = r->getString( "c", &collLen );
 	char tmp_coll[MAX_COLL_LEN+1];

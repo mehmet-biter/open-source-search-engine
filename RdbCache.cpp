@@ -36,6 +36,8 @@ RdbCache::RdbCache() : m_dbname(NULL) {
 	m_convertMaxMem = 0;
 	m_errno = 0;
 	m_threshold = 0;
+	m_memoryLabelPtrs[0] = '\0';
+	m_memoryLabelBufs[0] = '\0';
 	m_fixedDataSize = 0;
 	m_supportLists = false;
 	m_useHalfKeys = false;
@@ -157,13 +159,15 @@ bool RdbCache::init ( int32_t  maxMem        ,
 		g_errno = 0;
 	}
 
+	//initialize memory labels
+	sprintf(m_memoryLabelPtrs,"cptrs-%s",m_dbname);
+	sprintf(m_memoryLabelBufs,"cbuf-%s",m_dbname);
+
 	// . make our hash table, zero it out
 	// . don't allow it more than 50% full for performance
 	m_threshold  = maxRecs; // (maxRecs * 50 ) / 100;
 	if ( m_threshold == m_numPtrsMax ) m_threshold--;
-	char ttt[128];
-	sprintf(ttt,"cptrs-%s",m_dbname);
-	m_ptrs = (char **) mcalloc (sizeof(char *)*m_numPtrsMax , ttt );
+	m_ptrs = (char **) mcalloc (sizeof(char *)*m_numPtrsMax, m_memoryLabelPtrs);
 	if ( ! m_ptrs ) {
 		log(LOG_WARN, "RdbCache::init: %s", mstrerror(g_errno));
 		return false;
@@ -176,7 +180,6 @@ bool RdbCache::init ( int32_t  maxMem        ,
 	// include this
 	m_memOccupied = 0;
 
-	sprintf(ttt,"cbuf-%s",m_dbname);
 	// . make the 128MB buffers
 	// . if we do more than 128MB per buf then pthread_create() will fail
 	int32_t bufMem = m_maxMem - m_memAllocated;
@@ -200,7 +203,7 @@ bool RdbCache::init ( int32_t  maxMem        ,
 		int32_t size = bufMem;
 		if ( size > BUFSIZE ) size = BUFSIZE;
 		m_bufSizes [ m_numBufs ] = size;
-		m_bufs     [ m_numBufs ] = (char *)mcalloc(size,ttt);
+		m_bufs     [ m_numBufs ] = (char *)mcalloc(size,m_memoryLabelBufs);
 		//m_bufEnds  [ m_numBufs ] = NULL;
 		if ( ! m_bufs [ m_numBufs ] ) {
 			reset();
@@ -1513,9 +1516,7 @@ bool RdbCache::load ( const char *dbname ) {
 		n = f.read ( &bufSize , 4 , off ); off += 4;
 		if ( n != 4 ) return false;
 		// alloc the buf
-		char ttt[64];
-		sprintf(ttt,"clb-%s",m_dbname);
-		m_bufs[i] = (char *) mcalloc ( bufSize , ttt );
+		m_bufs[i] = (char *) mcalloc(bufSize, m_memoryLabelBufs);
 		if ( ! m_bufs[i] ) return false;
 		m_bufSizes[i] = bufSize;
 		//m_bufEnds [i] = m_bufs[i] + end;
@@ -1541,7 +1542,7 @@ bool RdbCache::load ( const char *dbname ) {
 	int32_t *poff = (int32_t *)fix.getBufStart();
 
 	// ptrs can be 8 bytes each, if we are 64-bit
-	m_ptrs = (char **) mcalloc (m_numPtrsMax * sizeof(char *),m_dbname);
+	m_ptrs = (char **) mcalloc (m_numPtrsMax * sizeof(char *), m_memoryLabelPtrs);
 	if ( ! m_ptrs ) return false;
 
 

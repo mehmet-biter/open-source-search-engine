@@ -1422,6 +1422,12 @@ void attemptMergeAllCallback ( int fd , void *state ) {
 }
 
 
+static int compareBaseNumFilesReverse(const void *pv1, const void *pv2) {
+	const RdbBase *base_1 = *((const RdbBase**)pv1);
+	const RdbBase *base_2 = *((const RdbBase**)pv2);
+	return base_2->getNumFiles() - base_1->getNumFiles();
+}
+
 // . TODO: if rdbbase::attemptMerge() needs to launch a merge but can't
 //   then do NOT remove from linked list. maybe set a flag like 'needsMerge'
 void attemptMergeAll() {
@@ -1465,10 +1471,24 @@ void attemptMergeAll() {
 			RDB2_SPIDERDB2,
 			RDB2_CLUSTERDB2
 		};
+		static const unsigned numRdbs = sizeof(rdbid)/sizeof(rdbid[0]);
 		
-		for(unsigned i=0; i<sizeof(rdbid)/sizeof(rdbid[0]); i++) {
-			RdbBase *base = cr->getBasePtr(rdbid[i]);
-			if(base && base->attemptMerge(niceness,forceMergeAll))
+		//Try to merge the rdbbases with the most files
+		
+		//collect the bases into an array
+		RdbBase *base[numRdbs];
+		unsigned numRdbs2=0;
+		for(unsigned i=0; i<numRdbs; i++) {
+			base[numRdbs2] = cr->getBasePtr(rdbid[i]);
+			if(base[numRdbs2])
+				numRdbs2++;
+		}
+		//sort them
+		qsort(base,numRdbs2,sizeof(base[0]),compareBaseNumFilesReverse);
+		
+		//then try merging them
+		for(unsigned i=0; i<numRdbs2; i++) {
+			if(base[i]->attemptMerge(niceness,forceMergeAll))
 				return;
 		}
 	}
@@ -2092,7 +2112,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 
 // . use the maps and tree to estimate the size of this list w/o hitting disk
 // . used by Indexdb.cpp to get the size of a list for IDF weighting purposes
-int64_t Rdb::getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *max, int64_t oldTruncationLimit) const {
+int64_t Rdb::estimateListSize(collnum_t collnum, const char *startKey, const char *endKey, char *max, int64_t oldTruncationLimit) const {
 	// pick it
 	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
 		log(LOG_WARN, "db: %s bad collnum of %i", m_dbname, collnum);

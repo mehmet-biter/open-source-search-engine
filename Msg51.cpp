@@ -496,19 +496,11 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 	// time it
 	u_int64_t startTime = gettimeofdayInMilliseconds();
 
-	// init loop counter vars
-	int32_t           count = 0;
-	uint32_t  score = 0;
-	char          *crec ;
-	int64_t      h  ;
-	char          *level ;
-	bool           fakeIt ;
-
 	for(int32_t i=0; i<numRecs; i++) {
-		crec = (char *)&clusterRecs[i];
+		char *crec = (char *)&clusterRecs[i];
 		// . set this cluster level
 		// . right now will be CR_ERROR_CLUSTERDB or CR_OK...
-		level = &clusterLevels[i];
+		char *level = &clusterLevels[i];
 
 		// sanity check
 		if ( *level == CR_UNINIT ) gbshutdownLogicError();
@@ -518,7 +510,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 			continue;
 		}
 		// if error looking up in clusterdb, use a 8 bit domainhash from docid
-		fakeIt = (*level==CR_ERROR_CLUSTERDB);
+		bool fakeIt = (*level==CR_ERROR_CLUSTERDB);
 		// assume ok, show it, it is visible
 		*level = CR_OK;
 		// site hash comes next
@@ -527,6 +519,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 
 		// . get the site hash
 		// . these are only 32 bits!
+		int64_t h;
 		if(fakeIt)
 			h = Titledb::getDomHash8FromDocId(docIds[i]);
 		else
@@ -541,7 +534,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 		//if ( checkNegative && sht.getSlot((int64_t)h) > 0 ) {
 		//	*level = CR_BLACKLISTED_SITE; goto loop; }
 		// look it up
-		score = ctab.getScore(h) ;
+		uint32_t score = ctab.getScore(h) ;
 		// if still visible, just continue
 		if ( score < (uint32_t)maxDocIdsPerHostname ) {
 			if ( ! ctab.addTerm(h))
@@ -555,11 +548,11 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 
 	// debug
 	for ( int32_t i = 0 ; i < numRecs && isDebug ; i++ ) {
-		crec = (char *)&clusterRecs[i];
+		char *crec = (char *)&clusterRecs[i];
 		uint32_t siteHash26=g_clusterdb.getSiteHash26(crec);
 		logf(LOG_DEBUG,"query: msg51: hit #%" PRId32") sitehash26=%" PRIu32" "
 		     "rec.n0=%" PRIx64" docid=%" PRId64" cl=%" PRId32" (%s)",
-		     (int32_t)count++,
+		     (int32_t)i,
 		     (int32_t)siteHash26,
 		     clusterRecs[i].n0,
 		     (int64_t)docIds[i],

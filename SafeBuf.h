@@ -13,6 +13,8 @@
 #include "Sanity.h"
 
 
+template<int n=1024> class StackBuf;
+
 class SafeBuf {
 public:
 	//*TRUCTORS
@@ -21,9 +23,13 @@ public:
 
 	void constructor();
 
+private:
 	//be careful with passing in a stackBuf! it could go out
 	//of scope independently of the safebuf.
-	SafeBuf(char* stackBuf, int32_t cap, const char* label = NULL);
+	SafeBuf(char* stackBuf, int32_t cap);
+	template<int> friend class StackBuf;
+
+public:
 	SafeBuf(char *heapBuf, int32_t bufMax, int32_t bytesInUse, bool ownData);
 	~SafeBuf();
 
@@ -246,7 +252,7 @@ private:
 };
 
 
-template<int n=1024>
+template<int n>
 class StackBuf : public SafeBuf {
 	char buf[n];
 public:

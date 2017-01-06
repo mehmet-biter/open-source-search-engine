@@ -10,8 +10,7 @@
 // . call g_httpServer.sendDynamicPage() to send it
 bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
 	// don't allow pages bigger than 128k in cache
-	char  buf [ 64*1024 ];
-	SafeBuf p(buf, 64*1024);
+	StackBuf<64*1024> p;
 	p.setLabel ( "perfgrph" );
 
 	// print standard header

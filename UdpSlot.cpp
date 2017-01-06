@@ -1485,6 +1485,26 @@ void UdpSlot::readAck ( int32_t dgramNum, int64_t now ) {
 	}
 }
 
+
+static const char umsg_label[256][7] = {
+	"umsg00", "umsg01", "umsg02", "umsg03", "umsg04", "umsg05", "umsg06", "umsg07", "umsg08", "umsg09", "umsg0a", "umsg0b", "umsg0c", "umsg0d", "umsg0e", "umsg0f",
+	"umsg10", "umsg11", "umsg12", "umsg13", "umsg14", "umsg15", "umsg16", "umsg17", "umsg18", "umsg19", "umsg1a", "umsg1b", "umsg1c", "umsg1d", "umsg1e", "umsg1f",
+	"umsg20", "umsg21", "umsg22", "umsg23", "umsg24", "umsg25", "umsg26", "umsg27", "umsg28", "umsg29", "umsg2a", "umsg2b", "umsg2c", "umsg2d", "umsg2e", "umsg2f",
+	"umsg30", "umsg31", "umsg32", "umsg33", "umsg34", "umsg35", "umsg36", "umsg37", "umsg38", "umsg39", "umsg3a", "umsg3b", "umsg3c", "umsg3d", "umsg3e", "umsg3f",
+	"umsg40", "umsg41", "umsg42", "umsg43", "umsg44", "umsg45", "umsg46", "umsg47", "umsg48", "umsg49", "umsg4a", "umsg4b", "umsg4c", "umsg4d", "umsg4e", "umsg4f",
+	"umsg50", "umsg51", "umsg52", "umsg53", "umsg54", "umsg55", "umsg56", "umsg57", "umsg58", "umsg59", "umsg5a", "umsg5b", "umsg5c", "umsg5d", "umsg5e", "umsg5f",
+	"umsg60", "umsg61", "umsg62", "umsg63", "umsg64", "umsg65", "umsg66", "umsg67", "umsg68", "umsg69", "umsg6a", "umsg6b", "umsg6c", "umsg6d", "umsg6e", "umsg6f",
+	"umsg70", "umsg71", "umsg72", "umsg73", "umsg74", "umsg75", "umsg76", "umsg77", "umsg78", "umsg79", "umsg7a", "umsg7b", "umsg7c", "umsg7d", "umsg7e", "umsg7f",
+	"umsg80", "umsg81", "umsg82", "umsg83", "umsg84", "umsg85", "umsg86", "umsg87", "umsg88", "umsg89", "umsg8a", "umsg8b", "umsg8c", "umsg8d", "umsg8e", "umsg8f",
+	"umsg90", "umsg91", "umsg92", "umsg93", "umsg94", "umsg95", "umsg96", "umsg97", "umsg98", "umsg99", "umsg9a", "umsg9b", "umsg9c", "umsg9d", "umsg9e", "umsg9f",
+	"umsga0", "umsga1", "umsga2", "umsga3", "umsga4", "umsga5", "umsga6", "umsga7", "umsga8", "umsga9", "umsgaa", "umsgab", "umsgac", "umsgad", "umsgae", "umsgaf",
+	"umsgb0", "umsgb1", "umsgb2", "umsgb3", "umsgb4", "umsgb5", "umsgb6", "umsgb7", "umsgb8", "umsgb9", "umsgba", "umsgbb", "umsgbc", "umsgbd", "umsgbe", "umsgbf",
+	"umsgc0", "umsgc1", "umsgc2", "umsgc3", "umsgc4", "umsgc5", "umsgc6", "umsgc7", "umsgc8", "umsgc9", "umsgca", "umsgcb", "umsgcc", "umsgcd", "umsgce", "umsgcf",
+	"umsgd0", "umsgd1", "umsgd2", "umsgd3", "umsgd4", "umsgd5", "umsgd6", "umsgd7", "umsgd8", "umsgd9", "umsgda", "umsgdb", "umsgdc", "umsgdd", "umsgde", "umsgdf",
+	"umsge0", "umsge1", "umsge2", "umsge3", "umsge4", "umsge5", "umsge6", "umsge7", "umsge8", "umsge9", "umsgea", "umsgeb", "umsgec", "umsged", "umsgee", "umsgef",
+	"umsgf0", "umsgf1", "umsgf2", "umsgf3", "umsgf4", "umsgf5", "umsgf6", "umsgf7", "umsgf8", "umsgf9", "umsgfa", "umsgfb", "umsgfc", "umsgfd", "umsgfe", "umsgff"
+};
+
 // returns false and sets g_errno on error
 bool UdpSlot::makeReadBuf ( int32_t msgSize , int32_t numDgrams ) {
 	// bitch if it's already there
@@ -1506,24 +1526,7 @@ bool UdpSlot::makeReadBuf ( int32_t msgSize , int32_t numDgrams ) {
 
 	// . create a msg buf to hold msg, zero out everything...
 	// . label it "umsg" so we can grep the *.cpp files for it
-	char bb[10];
-	bb[0] = 'u';
-	bb[1] = 'm';
-	bb[2] = 's';
-	bb[3] = 'g';
-
-	/// @todo ALC simpler method to convert to hex?
-	// msgType is 8 bits
-	char val ;
-	val = ((m_msgType >> 4) & 0x0f);
-	if ( val <= 9 ) bb[4] = '0' + val;
-	else            bb[4] = 'a' + val - 10;
-	val = ((m_msgType     ) & 0x0f);
-	if ( val <= 9 ) bb[5] = '0' + val;
-	else            bb[5] = 'a' + val - 10;
-	bb[6] = '\0';
-	//sprintf(bb,"UdpSlot 0x%02x",m_msgType);
-	m_readBuf = (char *) mmalloc ( msgSize , bb ); // "UdpSlot") ;
+	m_readBuf = (char *) mmalloc ( msgSize, umsg_label[(uint8_t)m_msgType] );
 	if ( ! m_readBuf ) {
 		m_readBufSize = 0;
 		log(LOG_WARN, "udp: Failed to allocate %" PRId32" bytes to read request or reply on udp socket.", msgSize);

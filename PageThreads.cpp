@@ -33,8 +33,7 @@ static const char *thread_type_name(thread_type_t tt) {
 
 
 bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
-	char  buf [ 64*1024 ];
-	SafeBuf p(buf, 64*1024);
+	StackBuf<64*1024> p;
 	g_pages.printAdminTop ( &p , s , r );
 	
 	

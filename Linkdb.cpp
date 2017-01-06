@@ -70,9 +70,7 @@ bool Linkdb::init ( ) {
 	int32_t ip4 = getLinkerIp_uk ( &k );
 	if ( ip3 != ip4 ) { g_process.shutdownAbort(true); }
 
-	// set this for debugging
-	//int64_t maxTreeMem = 1000000;
-	int64_t maxTreeMem = 40000000; // 40MB
+	int64_t maxTreeMem = g_conf.m_linkdbMaxTreeMem;
 	// . what's max # of tree nodes?
 	// . key+4+left+right+parents+dataPtr = sizeof(key192_t)+4 +4+4+4+4
 	// . 32 bytes per record when in the tree

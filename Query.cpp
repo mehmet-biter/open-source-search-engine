@@ -422,7 +422,7 @@ bool Query::setQTerms ( Words &words ) {
 	Synonyms syn;
 	int32_t sn = 0;
 	if ( m_queryExpansion ) sn = m_numWords;
-	int64_t to = hash64n("to",0LL);
+	int64_t to = hash64n("to");
 	for ( int32_t i = 0 ; i < sn ; i++ ) {
 		// get query word
 		QueryWord *qw  = &m_qwords[i];

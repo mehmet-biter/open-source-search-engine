@@ -144,8 +144,7 @@ bool sendReply ( void *state ) {
 		printUrl = false;
 
 	// page is not more than 32k
-	char buf[1024*32+MAX_URL_LEN*2];
-	SafeBuf sb(buf, 1024*32+MAX_URL_LEN*2);
+	StackBuf<1024*32+MAX_URL_LEN*2> sb;
 
 	g_pages.printAdminTop ( &sb , sock , &gr->m_hr );
 

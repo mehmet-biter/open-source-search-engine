@@ -750,8 +750,7 @@ bool sendPageWidgets ( TcpSocket *socket , HttpRequest *hr ) {
 		return true;
 	}
 
-	char  buf [ 128000 ];
-	SafeBuf sb(buf,128000);
+	StackBuf<128000> sb;
 
 	printFrontPageShell ( &sb, "widgets", cr , true );
 
@@ -778,9 +777,7 @@ bool sendPageWidgets ( TcpSocket *socket , HttpRequest *hr ) {
 //
 ///////////
 bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
-	char  buf [ 128000 ];
-	SafeBuf sb(buf,128000);
-	sb.reset();
+	StackBuf<128000> sb;
 
 	char format = hr->getReplyFormat();
 

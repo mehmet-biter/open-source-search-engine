@@ -533,8 +533,7 @@ bool Conf::save ( ) {
 	}
 
 	// fix so if we core in malloc/free we can still save conf
-	char fnbuf[1024];
-	SafeBuf fn(fnbuf,1024);
+	StackBuf<1024> fn;
 	fn.safePrintf("%sgb.conf",g_hostdb.m_dir);
 	bool status = g_parms.saveToXml ( (char *)this , fn.getBufStart(), OBJ_CONF );
 

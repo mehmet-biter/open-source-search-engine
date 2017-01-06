@@ -38,12 +38,12 @@ void SafeBuf::setLabel ( const char *label ) {
 	m_label = label;
 }
 
-SafeBuf::SafeBuf(char* stackBuf, int32_t cap, const char* label) {
+SafeBuf::SafeBuf(char* stackBuf, int32_t cap) {
 	m_usingStack = true;
 	m_capacity = cap;
 	m_buf = stackBuf;
 	m_length = 0;
-	m_label = label;
+	m_label = NULL;
 }
 
 SafeBuf::SafeBuf(char *heapBuf, int32_t bufMax, int32_t bytesInUse, bool ownData) {
@@ -297,8 +297,7 @@ int32_t SafeBuf::dumpToFile(const char *filename ) const {
 int32_t SafeBuf::safeSave(const char *filename) const {
 
 	// first write to tmp file
-	char tmp[1024];
-	SafeBuf fn(tmp,1024);
+	StackBuf<1024> fn;
 	fn.safePrintf( "%s.saving",filename );
 
 	int32_t fd = open ( fn.getBufStart() ,

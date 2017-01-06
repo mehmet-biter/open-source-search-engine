@@ -35,10 +35,9 @@ static int32_t generatePingMsg( Host *h, int64_t nowms, char *buffer );
 // . call g_httpServer.sendDynamicPage() to send it
 bool sendPageHosts ( TcpSocket *s , HttpRequest *r ) {
 	// don't allow pages bigger than 128k in cache
-	char  buf [ 64*1024 ];
 	//char *p    = buf;
 	//char *pend = buf + 64*1024;
-	SafeBuf sb(buf, 64*1024);
+	StackBuf<64*1024> sb;
 
 
 	// XML OR JSON
@@ -413,8 +412,7 @@ skipReplaceHost:
 			splitTime = h->m_splitTimes / h->m_splitsDone;
 
 		//char flagString[32];
-		char tmpfb[64];
-		SafeBuf fb(tmpfb,64);
+		StackBuf<64> fb;
 		//char *fs = flagString;
 		//*fs = '\0';
 

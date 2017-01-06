@@ -330,6 +330,10 @@ private:
 	int32_t       m_numPtrsUsed;
 	int32_t       m_threshold;
 
+	//memory labels
+	char m_memoryLabelPtrs[128];
+	char m_memoryLabelBufs[128];
+
 	// cache hits and misses
 	int64_t m_numHits; // includes partial hits & cached not-founds too
 	int64_t m_numMisses;

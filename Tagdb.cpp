@@ -1158,9 +1158,25 @@ key128_t Tagdb::makeStartKey ( const char *site ) {
 	return k;
 }
 
+key128_t Tagdb::makeStartKey(const char *site, int32_t siteLen) {
+	key128_t k;
+	k.n1 = hash64n(site, siteLen);
+	// set lower 64 bits of key to hash of this url
+	k.n0 = 0;
+	return k;
+}
+
 key128_t Tagdb::makeEndKey ( const char *site ) {
 	key128_t k;
 	k.n1 = hash64n ( site );
+	// set lower 64 bits of key to hash of this url
+	k.n0 = 0xffffffffffffffffLL;
+	return k;
+}
+
+key128_t Tagdb::makeEndKey(const char *site, int32_t siteLen) {
+	key128_t k;
+	k.n1 = hash64n(site, siteLen);
 	// set lower 64 bits of key to hash of this url
 	k.n0 = 0xffffffffffffffffLL;
 	return k;
@@ -1272,7 +1288,7 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 
 	// set siteLen to the provided site if it is non-NULL
 	int32_t siteLen = 0;
-	char *site = NULL;
+	const char *site = NULL;
 
 	// . get the site
 	// . msge0 passes this in as NULL an expects us to figure it out
@@ -1281,9 +1297,9 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	SiteGetter sg;
 	sg.getSite ( url->getUrl(), NULL, 0, collnum, m_niceness );
 	// if it set it to a recognized site, like ~mwells, then set "site"
-	if ( sg.m_siteLen ) {
-		site    = sg.m_site;
-		siteLen = sg.m_siteLen;
+	if ( sg.getSiteLen() ) {
+		site    = sg.getSite();
+		siteLen = sg.getSiteLen();
 	}
 
 	// if provided site was NULL and not of a ~mwells type of form
@@ -1301,16 +1317,9 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 		return true;
 	}
 
-	// temp null terminate it
-	char c = site[siteLen];
-	site[siteLen] = '\0';
-
 	// use that
-	m_siteStartKey = g_tagdb.makeStartKey( site );
+	m_siteStartKey = g_tagdb.makeStartKey( site, siteLen );
 	m_siteEndKey = g_tagdb.makeEndKey( site );
-
-	// un NULL terminate it
-	site[siteLen] = c;
 
 	m_url = url;
 
@@ -1841,8 +1850,7 @@ bool sendReply2 ( void *state ) {
 	TcpSocket *s = st->m_socket;
 
 	// page is not more than 32k
-	char buf[1024*32];
-	SafeBuf sb(buf, 1024*32);
+	StackBuf<1024*32> sb;
 	// do they want an xml reply?
 	if( r->getLong("xml",0) ) {
 		sb.safePrintf("<?xml version=\"1.0\" "

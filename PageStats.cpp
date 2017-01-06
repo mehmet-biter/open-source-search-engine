@@ -78,8 +78,7 @@ static bool printUptime(SafeBuf &sb) {
 // . call g_httpServer.sendDynamicPage() to send it
 bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	// don't allow pages bigger than 128k in cache
-	char  buf [ 64*1024 ];
-	SafeBuf p(buf, 64*1024);
+	StackBuf<64*1024> p;
 	//char *bufEnd = buf + 256*1024;
 	// a ptr into "buf"
 	//char *p    = buf;
@@ -1728,9 +1727,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	// print out whos is using the most mem
 // 	ss = p.getBuf();
 // 	ssend = p.getBufEnd();
-	g_mem.printMemBreakdownTable (&p,
-				      (char *)LIGHT_BLUE , 
-				      (char *)DARK_BLUE );
+	g_mem.printMemBreakdownTable(&p);
 	//p.incrementLength(sss - ss);
 
 	p.safePrintf ( "<br><br>\n" );

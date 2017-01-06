@@ -862,8 +862,7 @@ bool Process::shutdown2() {
 	// make a file called 'cleanexit' so bash keep alive loop will stop
 	// because bash does not get the correct exit code, 0 in this case,
 	// even though we explicitly say 'exit(0)' !!!! poop
-	char tmp[128];
-	SafeBuf cleanFileName(tmp,128);
+	StackBuf<128> cleanFileName;
 	cleanFileName.safePrintf("%s/cleanexit",g_hostdb.m_dir);
 	SafeBuf nothing;
 	// returns # of bytes written, -1 if could not create file

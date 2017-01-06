@@ -67,9 +67,7 @@ class Mem {
 	void addnew(void *ptr, size_t size, const char *note);
 	void delnew(void *ptr, size_t size, const char *note);
 
-	bool printMemBreakdownTable(SafeBuf* sb, 
-				    char *lightblue, 
-				    char *darkblue);
+	bool printMemBreakdownTable(SafeBuf *sb);
 
 	size_t m_maxAllocated; // at any one time
 	size_t m_maxAlloc; // the biggest single alloc ever done

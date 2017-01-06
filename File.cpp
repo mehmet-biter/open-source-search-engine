@@ -764,6 +764,7 @@ bool File::closeLeastUsed () {
 	//s_closeCounts [ fd ]++;
 
 	// otherwise we gotta really close it
+	log(LOG_INFO,"disk: Closing fd %d due to fd pressure", fd);
 	if ( fd == 0 ) log("disk: closing3 fd of 0");
 	int status = ::close ( fd );
 
