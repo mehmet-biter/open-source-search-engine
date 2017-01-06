@@ -220,6 +220,11 @@ class Conf {
 
 	bool m_usePageTemperatureForRanking;
 
+	int32_t m_numFlagScoreMultipliers;
+	float m_flagScoreMultiplier[26];
+	int32_t m_numFlagRankAdjustments;
+	int m_flagRankAdjustment[26];
+	
 	// send emails when a host goes down?
 	bool   m_sendEmailAlerts;
 	//should we delay when only 1 host goes down out of twins till 9 30 am?
