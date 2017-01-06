@@ -149,6 +149,7 @@ public:
 	// so main.cpp can do gb --install and gb --allstart
 	char           m_dir[128];
 	char           m_mergeDir[128];
+	char           m_mergeLockDir[128];
 
 	char           m_hostname[16];
 

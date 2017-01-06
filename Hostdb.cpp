@@ -562,6 +562,23 @@ createFile:
 			mdirlen = p - mdir;
 		}
 
+
+		// skip spaces or until \n
+		for ( ; *p == ' ' ; p++ );
+		// then skip spaces
+		for ( ; *p && (*p==' '|| *p=='\t') ; p++ );
+
+		char *ldir = NULL;
+		int32_t ldirlen = 0;
+
+		// check for merge lock dir override
+		if ( *p == '/' ) {
+			ldir = p;
+			while ( *p && ! isspace(*p) ) p++;
+			ldirlen = p - ldir;
+		}
+
+
 		h->m_queryEnabled = true;
 		h->m_spiderEnabled = true;
 
@@ -656,6 +673,8 @@ createFile:
 		m_hosts[i].m_dir[wdirlen] = '\0';
 		memcpy(m_hosts[i].m_mergeDir, mdir, mdirlen);
 		m_hosts[i].m_mergeDir[mdirlen] = '\0';
+		memcpy(m_hosts[i].m_mergeLockDir, ldir, ldirlen);
+		m_hosts[i].m_mergeLockDir[ldirlen] = '\0';
 		
 		// reset this
 		m_hosts[i].m_lastPing = 0LL;
@@ -667,6 +686,7 @@ createFile:
 		m_hosts[i].m_pingInfo.m_flags    = 0;
 		m_hosts[i].m_pingInfo.m_cpuUsage = 0.0;
 		m_hosts[i].m_loadAvg  = 0.0;
+
 		// point to next one
 		i++;
 	}
@@ -1724,7 +1744,7 @@ bool Hostdb::saveHostsConf() {
 		else
 			sb.safePrintf("%03d ", i);
 		
-		sb.safePrintf("%5d %5d %5d %5d %s %s %s %s %s\n",
+		sb.safePrintf("%5d %5d %5d %5d %s %s %s %s %s %s\n",
 		              h->m_dnsClientPort,
 			      h->getInternalHttpsPort(),
 			      h->getInternalHttpPort(),
@@ -1732,6 +1752,7 @@ bool Hostdb::saveHostsConf() {
 			      h->m_hostname, h->m_hostname2,
 			      h->m_dir,
 			      h->m_mergeDir,
+			      h->m_mergeLockDir,
 			      h->m_note);
 	}
 	if(sb.save(m_dir,"hosts.conf")>=0)
