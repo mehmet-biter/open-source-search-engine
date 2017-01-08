@@ -7,8 +7,6 @@
 #include "Mem.h"
 
 
-#define PP_NICENESS 2
-
 class State8 {
 public:
 	//Msg16 m_msg16;
@@ -609,7 +607,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 			  NULL        ,
 			  (char*)st->m_coll  ,
 			  &st->m_wbuf        ,
-			  0 ,//PP_NICENESS ))
+			  0, //niceness
 			  (char*)content ,
 			  false, // deletefromindex
 			  0, // forced ip
@@ -875,7 +873,7 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 			  (char*)st->m_coll  ,
 			  // we need this so the term table is set!
 			  &st->m_wbuf        , // XmlDoc::m_pbuf
-			  0, // try 0 now! 1 ,//PP_NICENESS ))
+			  0, // niceness
 			  (char*)content ,
 			  false, // deletefromindex
 			  0, // forced ip
