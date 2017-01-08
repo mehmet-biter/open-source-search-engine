@@ -126,26 +126,10 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 
 	// might a simple request to addsomething to validated.*.txt file
 	// from XmlDoc::print() or XmlDoc::validateOutput()
-	const char *add = r->getString("add",NULL);
 	//int64_t uh64 = r->getLongLong("uh64",0LL);
 	const char *uh64str = r->getString("uh64",NULL);
 	//char *divTag = r->getString("div",NULL);
 	if ( uh64str ) {
-		// convert add to number
-		int32_t addNum = 0;
-		if ( to_lower_a(add[0])=='t' ) // "true" or "false"?
-			addNum = 1;
-		// convert it. skip beginning "str" inserted to prevent
-		// javascript from messing with the int64_t since it
-		// was rounding it!
-		//int64_t uh64 = atoll(uh64str);//+3);
-		// urldecode that
-		//int32_t divTagLen = strlen(divTag);
-		//int32_t newLen  = urlDecode ( divTag , divTag , divTagLen );
-		// null term?
-		//divTag[newLen] = '\0';
-		// do it. this is defined in XmlDoc.cpp
-		//addCheckboxSpan ( uh64 , divTag , addNum );
 		// make basic reply
 		const char *reply = "HTTP/1.0 200 OK\r\n"
 			"Connection: Close\r\n";
@@ -274,17 +258,13 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	// print the standard header for admin pages
 	const char *dd     = "";
 	const char *rr     = "";
-	const char *rr2    = "";
 	const char *render = "";
-	const char *oips   = "";
 	const char *us     = "";
 	if ( st->m_u && st->m_u[0] ) us = st->m_u;
 	//if ( st->m_sfn != -1 ) sprintf ( rtu , "%" PRId32,st->m_sfn );
 	if ( st->m_old ) dd = " checked";
 	if ( st->m_recycle            ) rr     = " checked";
-	if ( st->m_recycle2           ) rr2    = " checked";
 	if ( st->m_render             ) render = " checked";
-	if ( st->m_oips               ) oips   = " checked";
 
 	xbuf->safePrintf(
 			 "<style>"
@@ -570,12 +550,10 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	int32_t  contentLen = 0;
 	const char *content = r->getString ( "content" , &contentLen , NULL );
 	// is the "content" url-encoded? default is true.
-	bool contentIsEncoded = true;
 	// mark doesn't like to url-encode his content
 	if ( ! content ) {
 		content    = r->getUnencodedContent    ();
 		contentLen = r->getUnencodedContentLen ();
-		contentIsEncoded = false;
 	}
 	// ensure null
 	if ( contentLen == 0 ) content = NULL;
