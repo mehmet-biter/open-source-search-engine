@@ -50,9 +50,6 @@ class u_int96_t {
 	bool operator != ( uint32_t i ) const {
 		return ( i    != n0 ); 
 	}
-	void operator =  ( uint32_t i ) {
-		n0 = i; n1 = 0; 
-	}
 	int32_t operator &  ( uint32_t i ) const {
 		return n0 & i; 
 	}
@@ -115,10 +112,6 @@ class u_int128_t {
 		n0 = 0;
 		n1 = 0;
 	}
-	u_int128_t(uint32_t i) {
-		n0 = i;
-		n1 = 0;
-	}
 
 	void setMin ( ) { n0 = 0LL; n1 = 0LL; }
 
@@ -133,8 +126,6 @@ class u_int128_t {
 
 	bool operator != ( uint32_t i ) const {
 		return ( i    != n0 ); }
-	void operator =  ( uint32_t i ) {
-		n0 = i; n1 = 0; }
 	int32_t operator &  ( uint32_t i ) const {
 		return n0 & i; }
 
