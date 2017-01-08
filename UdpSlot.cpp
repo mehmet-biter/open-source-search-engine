@@ -219,7 +219,7 @@ bool UdpSlot::sendSetup(char *msg, int32_t msgSize, char *alloc, int32_t allocSi
 		    "recompile to fix this.",
 		    (int32_t)msgSize,(int32_t)m_maxDgramSize,
 		    (int32_t)MAX_DGRAMS,maxMsgSize,
-		    msgType);
+		    (int)msgType);
 		g_errno = EMSGTOOBIG;
 		return false;
 	}
@@ -1265,7 +1265,7 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		g_errno = EBUFTOOSMALL;
 		log( LOG_WARN, "udp: Msg size of %" PRId32" bytes is too big for the "
 			   "buffer size, %" PRId32", we allocated. msgType=0x%02x.",
-			   msgSize, m_readBufMaxSize , m_msgType );
+			   msgSize, m_readBufMaxSize, (int)m_msgType);
 		return false;
 	}
 
