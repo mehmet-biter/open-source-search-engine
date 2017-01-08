@@ -316,7 +316,7 @@ private:
 
 	int32_t      m_pageSize;
 
-	bool      m_niceness;
+	int32_t      m_niceness;
 
 	// we now determine when in merge mode
 	bool      m_isMerging;
