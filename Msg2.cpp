@@ -11,6 +11,9 @@
 #include "Conf.h"
 #include "Mem.h"
 
+// 90MB for 32 nodes we got now with about 1.3B docs
+#define DEFAULT_POSDB_READSIZE 90000000
+
 
 static int countWhitelistItems(const char *whitelist) {
 	if(!whitelist)

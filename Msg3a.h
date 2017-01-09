@@ -7,9 +7,6 @@
 
 class SearchInput;
 
-// 90MB for 32 nodes we got now with about 1.3B docs
-#define DEFAULT_POSDB_READSIZE 90000000
-
 void setTermFreqWeights ( collnum_t collnum, class Query *q );
 
 #define MAX_SHARDS 1024
