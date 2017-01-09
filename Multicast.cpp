@@ -75,7 +75,7 @@ void Multicast::reset ( ) {
 	// if this is called while we are shutting down and Scraper has a 
 	// MsgE out it cores
 	if ( m_inUse && ! g_process.m_exiting ) {
-		log(LOG_ERROR, "net: Resetting multicast which is in use. msgType=0x%02x", m_msgType);
+		log(LOG_ERROR, "net: Resetting multicast which is in use. msgType=0x%02x", (int)m_msgType);
 		g_process.shutdownAbort(true);
 	}
 
@@ -241,7 +241,7 @@ void Multicast::sendToWholeGroup() {
 		log("net: Got error sending add data request (0x%02x) "
 		    "to host #%" PRId32": %s. "
 		    "Sleeping one second and retrying.", 
-		    m_msgType,h->m_hostId,mstrerror(g_errno) );
+		    (int)m_msgType, h->m_hostId, mstrerror(g_errno));
 		// . clear it, we'll try again
 		// . if we don't clear Msg1::addList(), which returns
 		//   true if it did not block, false if it did, will pick up
@@ -347,14 +347,14 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 			log("net: Got error sending request to hostId %" PRId32" "
 			    "(msgType=0x%02x transId=%" PRId32" net=%s): "
 			    "%s. Retrying.",
-			    h->m_hostId, slot->getMsgType(), slot->getTransId(),
+			    h->m_hostId, (int)slot->getMsgType(), slot->getTransId(),
 			    g_hostdb.getNetName(),mstrerror(m_host[i].m_errno) );
 		else
 			log("net: Got error sending request to %s:%" PRId32" "
 			    "(msgType=0x%02x transId=%" PRId32" net=%s): "
 			    "%s. Retrying.",
 			    iptoa(slot->getIp()), (int32_t)slot->getPort(),
-			    slot->getMsgType(), slot->getTransId(),
+			    (int)slot->getMsgType(), slot->getTransId(),
 			    g_hostdb.getNetName(),mstrerror(m_host[i].m_errno) );
 	}
 	// . let's sleep for a second before retrying the send
@@ -570,7 +570,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 			    "now=%" PRId64". msgType=0x%02x "
 			    "niceness=%" PRId32" clock updated?",
 			    timeRemaining,m_startTime,m_totalTimeout,
-			    nowms,m_msgType,
+			    nowms, (int)m_msgType,
 			    (int32_t)m_niceness);
 		timeRemaining = m_totalTimeout;
 	}
@@ -609,7 +609,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	ScopedLock sl(m_mtx);
 	if (!g_udpServer.sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_host[i].m_slot, this, gotReply1, timeRemaining, m_niceness, NULL, -1, -1, maxResends)) {
 		log(LOG_WARN, "net: Had error sending msgtype 0x%02x to host #%" PRId32": %s. Not retrying.",
-		    m_msgType,h->m_hostId,mstrerror(g_errno));
+		    (int)m_msgType, h->m_hostId, mstrerror(g_errno));
 		// i've seen ENOUDPSLOTS available msg here along with oom
 		// condition...
 		//g_process.shutdownAbort(true); 
@@ -784,7 +784,7 @@ void Multicast::sleepCallback1() {
 		    "net: Multicast::sleepWrapper1: rerouted msgType=0x%02x "
 		    "from host #%" PRId32" "
 		    "to new host after waiting %" PRId32" ms",
-		    m_msgType, hid,elapsed);
+		    (int)m_msgType, hid,elapsed);
 		// . mark it in the stats for PageStats.cpp
 		// . this is timeout based rerouting
 		g_stats.m_reroutes[(int)m_msgType][m_niceness]++;
@@ -880,7 +880,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 						    " (msgType=0x%02x transId=%" PRId32" "
 						    "nice=%" PRId32" net=%s): "
 						    "%s.",
-				    h->m_hostId, slot->getMsgType(), slot->getTransId(),
+				    h->m_hostId, (int)slot->getMsgType(), slot->getTransId(),
 				    m_niceness,
 				    g_hostdb.getNetName(), mstrerror(g_errno));
 			} else {
@@ -888,7 +888,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 						    "(msgType=0x%02x transId=%" PRId32" nice =%" PRId32" net=%s): "
 						    "%s.",
 				    iptoa(slot->getIp()), (int32_t) slot->getPort(),
-				    slot->getMsgType(), slot->getTransId(), m_niceness,
+				    (int)slot->getMsgType(), slot->getTransId(), m_niceness,
 				    g_hostdb.getNetName(), mstrerror(g_errno));
 			}
 		}

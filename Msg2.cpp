@@ -19,6 +19,10 @@
 
 static const int signature_init = 0x7e8a32f9;
 
+// 90MB for 32 nodes we got now with about 1.3B docs
+#define DEFAULT_POSDB_READSIZE 90000000
+
+
 static int countWhitelistItems(const char *whitelist) {
 	if(!whitelist)
 		return 0;

@@ -25,12 +25,12 @@
 // node cluster....
 #define MAX_OUTSTANDING_MSG20S 200
 
-static bool printHttpMime(State0 *st);
+static bool printHttpMime(int32_t format, SafeBuf *sb);
 
 static void gotDocIdsWrapper             ( void *state );
 static bool gotSummaryWrapper            ( void *state );
 
-static bool isSubDom(char *s , int32_t len);
+static bool isSubDom(const char *s, int32_t len);
 
 Msg40::Msg40() {
 	m_socketHadError = 0;
@@ -140,7 +140,7 @@ bool Msg40::getResults ( SearchInput *si      ,
 	m_errno = 0;
 
 	// take search parms i guess from first collnum
-	collnum_t *cp = (collnum_t *)m_si->m_collnumBuf.getBufStart();
+	const collnum_t *cp = (const collnum_t *)m_si->m_collnumBuf.getBufStart();
 
 	// get the collection rec
 	CollectionRec *cr =g_collectiondb.getRec( cp[0] );
@@ -305,7 +305,7 @@ bool Msg40::getDocIds ( bool recall ) {
 bool Msg40::federatedLoop ( ) {
 
 	// search the provided collnums (collections)
-	collnum_t *cp = (collnum_t *)m_si->m_collnumBuf.getBufStart();
+	const collnum_t *cp = (const collnum_t *)m_si->m_collnumBuf.getBufStart();
 
 	// we modified m_rcache above to be true if we should read from cache
 	int32_t maxAge = 0 ;
@@ -350,7 +350,7 @@ bool Msg40::federatedLoop ( ) {
 	//
 	// how many docid splits should we do to avoid going OOM?
 	//
-	CollectionRec *cr = g_collectiondb.getRec(m_firstCollnum);
+	const CollectionRec *cr = g_collectiondb.getRec(m_firstCollnum);
 	RdbBase *base = NULL;
 	if ( cr ) g_titledb.getRdb()->getBase(cr->m_collnum);
 	//NOTE: the above line is a bug, but the obvious fix causes numDocIdSplits to become huge (eg 200)
@@ -403,9 +403,9 @@ bool Msg40::federatedLoop ( ) {
 		// assign it
 		m_msg3aPtrs[i] = mp;
 		// assign the request for it
-		gbmemcpy ( &mp->m_rrr , &mr , sizeof(Msg39Request) );
+		gbmemcpy ( &mp->m_msg39req , &mr , sizeof(Msg39Request) );
 		// then customize it to just search this collnum
-		mp->m_rrr.m_collnum = cp[i];
+		mp->m_msg39req.m_collnum = cp[i];
 
 		// launch a search request
 		m_num3aRequests++;
@@ -414,7 +414,7 @@ bool Msg40::federatedLoop ( ) {
 		// and Msg40::m_si points to that. so State0's destructor
 		// should call SearchInput's destructor which calls
 		// Query's destructor to destroy &m_si->m_q here when done.
-		if(!mp->getDocIds(&mp->m_rrr,m_si,&m_si->m_q,this,gotDocIdsWrapper))
+		if(!mp->getDocIds(&mp->m_msg39req,m_si,&m_si->m_q,this,gotDocIdsWrapper))
 			continue;
 		if ( g_errno && ! m_errno ) 
 			m_errno = g_errno;
@@ -482,7 +482,7 @@ bool Msg40::gotDocIds ( ) {
 	m_numRequests  =  0;
 	m_numReplies   =  0;
 
-	if ( ! m_urlTable.set ( m_msg3a.m_numDocIds * 2 ) ) {
+	if ( ! m_urlTable.set ( m_msg3a.getNumDocIds() * 2 ) ) {
 		m_errno = g_errno;
 		log("query: Failed to allocate memory for url deduping. "
 		    "Not deduping search results.");
@@ -522,7 +522,7 @@ bool Msg40::mergeDocIdsIntoBaseMsg3a() {
 	int32_t td = 0LL;
 	for ( int32_t i = 0 ; i < m_numCollsToSearch ; i++ ) {
 		Msg3a *mp = m_msg3aPtrs[i];
-		td += mp->m_numDocIds;
+		td += mp->getNumDocIds();
 		// reset cursor for list of docids from this collection
 		mp->m_cursor = 0;
 		// add up here too
@@ -584,7 +584,7 @@ bool Msg40::mergeDocIdsIntoBaseMsg3a() {
 	if ( maxmp ) {
 		m_msg3a.m_docIds  [next] = maxmp->m_docIds[maxmp->m_cursor];
 		m_msg3a.m_scores  [next] = maxmp->m_scores[maxmp->m_cursor];
-		m_msg3a.m_collnums[next] = maxmp->m_rrr.m_collnum;
+		m_msg3a.m_collnums[next] = maxmp->m_msg39req.m_collnum;
 		m_msg3a.m_clusterLevels[next] = CR_OK;
 		maxmp->m_cursor++;
 		next++;
@@ -852,7 +852,7 @@ bool Msg40::launchMsg20s(bool recalled) {
 		int64_t docId = m_msg3a.m_docIds[i];
 		uint32_t shardNum = g_hostdb.getShardNumFromDocId ( docId );
 		// get the collection rec
-		CollectionRec *cr = g_collectiondb.getRec(m_firstCollnum);
+		const CollectionRec *cr = g_collectiondb.getRec(m_firstCollnum);
 		// if shard is dead then do not send to it if not crawlbot
 		if ( g_hostdb.isShardDead ( shardNum ) && cr &&
 		     // this is causing us to truncate streamed results
@@ -930,7 +930,7 @@ bool Msg40::launchMsg20s(bool recalled) {
 			req.m_collnum = m_msg3a.m_collnums[i];
 		// otherwise, just one collection
 		else
-			req.m_collnum = m_msg3a.m_rrr.m_collnum;
+			req.m_collnum = m_msg3a.m_msg39req.m_collnum;
 
 		req.m_numSummaryLines    = m_si->m_numLinesInSummary;
 		req.m_maxCacheAge        = maxCacheAge;
@@ -1125,7 +1125,7 @@ bool Msg40::gotSummary ( ) {
 	if ( m_si && m_si->m_streamResults && ! m_printedHeader ) {
 		// only print header once
 		m_printedHeader = true;
-		printHttpMime ( st );
+		printHttpMime(m_si->m_format,&st->m_sb);
 		printSearchResultsHeader ( st );
 	}
 
@@ -1394,7 +1394,7 @@ bool Msg40::gotSummary ( ) {
 	int64_t took;
 
 	// shortcut
-	Query *q = &m_si->m_q;
+	const Query *q = &m_si->m_q;
 
 	// loop over each clusterLevel and set it
 	for ( int32_t i = 0 ; i < m_numReplies ; i++ ) {
@@ -1590,7 +1590,7 @@ bool Msg40::gotSummary ( ) {
 				// . remove sub-domain to fix conflicts with
 				//   sites having www,us,en,fr,de,uk,etc AND
 				//   it redirects to the same page.
-				char *host = u.getHost();
+				const char *host = u.getHost();
 				const char *mdom = u.getMidDomain();
 				if(mdom && host) {
 					int32_t  hlen = mdom - host;
@@ -1634,7 +1634,7 @@ bool Msg40::gotSummary ( ) {
 	// loop over each clusterLevel and set it
 	for ( int32_t i = 0 ; i < m_numReplies ; i++ ) {
 		// get current cluster level
-		char *level = &m_msg3a.m_clusterLevels[i];
+		const char *level = &m_msg3a.m_clusterLevels[i];
 		// on CR_OK
 		if ( *level == CR_OK ) visible++;
 		// otherwise count as ommitted
@@ -1922,14 +1922,14 @@ int32_t Msg40::serialize ( char *buf , int32_t bufLen ) {
 		// return -1 on error, g_errno should be set
 		int32_t nb = m_msg20[i]->serialize ( p , pend - p ) ;
 		// count it
-		if ( m_msg3a.m_rrr.m_debug )
+		if ( m_msg3a.m_msg39req.m_debug )
 			log("query: msg40 serialize msg20size=%" PRId32,nb);
 
 		if ( nb == -1 ) return -1;
 		p += nb;
 	}
 
-	if ( m_msg3a.m_rrr.m_debug )
+	if ( m_msg3a.m_msg39req.m_debug )
 		log("query: msg40 serialize nd=%" PRId32" "
 		    "msg3asize=%" PRId32" ",m_msg3a.m_numDocIds,nb);
 
@@ -2044,7 +2044,7 @@ static bool initSubDomTable(HashTable *table, const char * const words[], int32_
 	return true;
 }
 
-static bool isSubDom(char *s , int32_t len) {
+static bool isSubDom(const char *s , int32_t len) {
 	ScopedLock sl(s_subDomTableMutex);
 	if ( ! s_subDomInitialized ) {
 		s_subDomInitialized = 
@@ -2104,11 +2104,7 @@ bool Msg40::printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
 }
 	
 
-static bool printHttpMime(State0 *st) {
-
-	SearchInput *si = &st->m_si;
-
-	SafeBuf *sb = &st->m_sb;
+static bool printHttpMime(int32_t format, SafeBuf *sb) {
 	// reserve 1.5MB now!
 	if ( ! sb->reserve(1500000 ,"pgresbuf" ) ) // 128000) )
 		return true;
@@ -2117,9 +2113,9 @@ static bool printHttpMime(State0 *st) {
 
 	// defaults to FORMAT_HTML
 	const char *ct = "text/html";
-	if ( si->m_format == FORMAT_JSON ) {
+	if(format == FORMAT_JSON) {
 		ct = "application/json";
-	} else if ( si->m_format == FORMAT_XML ) {
+	} else if(format == FORMAT_XML) {
 		ct = "text/xml";
 	}
 

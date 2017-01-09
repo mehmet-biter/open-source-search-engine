@@ -550,6 +550,10 @@ bool File::close_unlocked() {
 // . return -1 on other errors
 // . otherwise, return the file descriptor
 int File::getfd () {
+	if ( m_fd >= MAX_NUM_FDS ) {
+		gbshutdownCorrupted();
+	}
+
 	// if m_vfd is -1 it's never been opened
 	if ( ! m_calledOpen ) { // m_vfd < 0 ) {
 		g_errno = EBADENGINEER;
@@ -557,6 +561,8 @@ int File::getfd () {
 		gbshutdownLogicError();
 	}
 
+	ScopedLock sl(s_mtx);
+	
 	// if someone closed our fd, why didn't our m_fd get set to -1 ??!?!?!!
 	if ( m_fd >= 0 && m_closeCount != s_closeCounts[m_fd] ) {
 		log(LOG_DEBUG,"disk: invalidating existing fd %i "
@@ -572,15 +578,11 @@ int File::getfd () {
 		logDebug( g_conf.m_logDebugDisk, "disk: returning existing fd %i for %s this=0x%" PTRFMT" ccSaved=%i ccNow=%i",
 		          m_fd,getFilename(),(PTRTYPE)this, (int)m_closeCount, (int)s_closeCounts[m_fd] );
 
-		if ( m_fd >= MAX_NUM_FDS ) {
-			gbshutdownCorrupted();
-		}
 		// but update the timestamp to reduce chance it closes on us
 		s_timestamps [ m_fd ] = gettimeofdayInMillisecondsLocal();
 		return m_fd;
 	}
 
-	ScopedLock sl(s_mtx);
 	// . a real fd of -1 means it's been closed and we gotta reopen it
 	// . we have to close someone if we don't have enough room
 	while ( s_numOpenFiles >= s_maxNumOpenFiles )  {

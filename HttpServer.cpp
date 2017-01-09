@@ -7,7 +7,11 @@
 #include "Collectiondb.h"
 #include "HashTable.h"
 #include "Stats.h"
-#include "XmlDoc.h" // gbzip
+#include "HttpMime.h"
+#include "Hostdb.h"
+#include "Loop.h"
+#include "Msg13.h"
+#include "GbCompress.h"
 #include "UdpServer.h"
 #include "UdpSlot.h"
 #include "Dns.h"

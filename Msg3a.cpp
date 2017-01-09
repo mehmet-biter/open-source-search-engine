@@ -138,7 +138,7 @@ void Msg3a::reset ( ) {
 //   Msg16::computeQuality(), but rather deserialize it from the TitleRec.
 //   Computing the link info takes a lot of time as well.
 bool Msg3a::getDocIds(Msg39Request *r, const SearchInput *si, Query *q, void *state, 
-	void (*callback)( void *state ), class Host *specialHost) {
+	void (*callback)( void *state )) {
 
 	// in case re-using it
 	reset();

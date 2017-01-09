@@ -597,7 +597,7 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 	slot->m_maxResends = -1;
 
 	logDebug(g_conf.m_logDebugUdp, "udp: Sending reply transId=%" PRId32" msgType=0x%02x (niceness=%" PRId32").",
-	         slot->getTransId(),slot->getMsgType(), (int32_t)slot->getNiceness());
+	         slot->getTransId(), (int)slot->getMsgType(), (int32_t)slot->getNiceness());
 	// keep sending dgrams until we have no more or hit ACK_WINDOW limit
 	if ( ! doSending(slot, true /*allow resends?*/, now) ) {
 		// . on error deal with that
@@ -798,7 +798,7 @@ UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
 // . must give level of niceness for continuing the transaction at that lvl
 bool UdpServer::registerHandler( msg_type_t msgType, void (* handler)(UdpSlot *, int32_t niceness) ) {
 	if (m_handlers[msgType]) {
-		log(LOG_LOGIC, "udp: msgType %02x already in use.", msgType);
+		log(LOG_LOGIC, "udp: msgType %02x already in use.", (int)msgType);
 		return false;
 	}
 
@@ -1107,7 +1107,7 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 				    "fromIp=%s fromPort=%i msgType=0x%02x",
 				    transId, dgramNum , readSize,
 				    iptoa((int32_t)from.sin_addr.s_addr) , 
-				    ntohs(from.sin_port) , msgType );
+				    ntohs(from.sin_port), (int)msgType);
 		cancelTrans:
 			// temporary slot for sending back bogus ack
 			UdpSlot tmp;
@@ -1230,7 +1230,7 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 			if ( now - s_lastTime >= 1000 ) {
 				s_lastTime = now;
 				log(LOG_INFO, "udp: No udp slots to handle datagram. (msgType=0x%x niceness=%" PRId32") "
-				    "Discarding. It should be resent. Dropped dgrams=%" PRId32".", msgType,niceness,g_dropped);
+				    "Discarding. It should be resent. Dropped dgrams=%" PRId32".", (int)msgType,niceness,g_dropped);
 			}
 			goto discard;
 		}
@@ -1592,7 +1592,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 			    "niceness=%" PRId32" "
 			    "callback=%p "
 			    "took %" PRId64" ms (%" PRId32" Mbps).",
-			    slot->getTransId(),msgType,
+			    slot->getTransId(), (int)msgType,
 			    mstrerror(g_errno),
 			    slot->getNiceness(),
 			    slot->m_callback ,
@@ -1651,7 +1651,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 			     elapsed >= g_conf.m_maxCallbackDelay )
 				log("udp: Took %" PRId64" ms to call "
 				    "callback for msgType=0x%02x niceness=%" PRId32,
-				    elapsed,slot->getMsgType(),
+				    elapsed, (int)slot->getMsgType(),
 				    (int32_t)slot->getNiceness());
 		}
 
@@ -1718,7 +1718,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 					    "msgType=0x%02x "
 					    "g_errno=%s callback2=%p"
 					    " took %" PRId64" ms.",
-					    slot->getTransId(),msgType,
+					    slot->getTransId(), (int)msgType,
 					    mstrerror(g_errno),
 					    slot->m_callback2,
 					    took );
@@ -1774,7 +1774,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 	// debug msg
 	if ( g_conf.m_logDebugUdp )
 		log(LOG_DEBUG,"udp: Calling handler for transId=%" PRId32" "
-		    "msgType=0x%02x.", slot->getTransId() , msgType );
+		    "msgType=0x%02x.", slot->getTransId(), (int)msgType);
 
 
 	// record some statistics on how long this was waiting to be called
@@ -1820,7 +1820,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		// log it
 		static int32_t lcount = 0;
 		if ( lcount == 0 )
-			log(LOG_DEBUG,"loop: sending back enomem for ""msg 0x%02x", slot->getMsgType());
+			log(LOG_DEBUG,"loop: sending back enomem for ""msg 0x%02x", (int)slot->getMsgType());
 		if ( ++lcount == 20 ) lcount = 0;
 		
 		g_consecutiveOOMErrors++;
@@ -1884,7 +1884,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		     slot->getNiceness() == 0 )
 			log("udp: Took %" PRId64" ms to call "
 			    "HANDLER for msgType=0x%02x niceness=%" PRId32,
-			    elapsed,slot->getMsgType(),(int32_t)slot->getNiceness());
+			    elapsed, (int)slot->getMsgType(), (int32_t)slot->getNiceness());
 	}
 
 	// bitch if it blocked for too long
@@ -1902,7 +1902,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		    "niceness=%" PRId32" "
 		    "took %" PRId64" ms.",
 		    (int32_t)slot->getTransId() , slot,
-		    msgType, (int32_t)slot->m_readBufSize , mstrerror(g_errno),
+		    (int)msgType, (int32_t)slot->m_readBufSize , mstrerror(g_errno),
 		    slot->m_callback,
 		    (int32_t)slot->getNiceness(),
 		    took );
@@ -2605,7 +2605,7 @@ void UdpServer::cancel ( void *state , msg_type_t msgType ) {
 		}
 
 		// note it
-		log(LOG_INFO,"udp: cancelled udp slot=%p msgType=0x%02x.", slot, slot->getMsgType());
+		log(LOG_INFO,"udp: cancelled udp slot=%p msgType=0x%02x.", slot, (int)slot->getMsgType());
 
 		// let them know why we are calling the callback prematurely
 		g_errno = ECANCELLED;
@@ -2688,7 +2688,7 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 		slot->resetConnect();
 		// log it
 		log(LOG_INFO, "udp: Reset Slot For Replaced Host: transId=%" PRId32" msgType=%i",
-		    slot->getTransId(), slot->getMsgType());
+		    slot->getTransId(), (int)slot->getMsgType());
 	}
 }
 

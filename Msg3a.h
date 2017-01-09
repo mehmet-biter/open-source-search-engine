@@ -7,9 +7,6 @@
 
 class SearchInput;
 
-// 90MB for 32 nodes we got now with about 1.3B docs
-#define DEFAULT_POSDB_READSIZE 90000000
-
 void setTermFreqWeights ( collnum_t collnum, class Query *q );
 
 #define MAX_SHARDS 1024
@@ -18,6 +15,9 @@ void setTermFreqWeights ( collnum_t collnum, class Query *q );
 #define MIN_DOCS_TO_GET 20
 
 #define RBUF_SIZE 2048
+
+class DocIdScore;
+
 
 class Msg3a {
 public:
@@ -43,26 +43,31 @@ public:
 			 const SearchInput *si,
 			 Query        *q          ,
 			 void         *state      ,
-			 void        (* callback) ( void *state ) ,
-			 class Host *specialHost = NULL );
+			 void        (* callback) ( void *state ));
 
 	// Msg40 calls this to get Query m_q to pass to Summary class
-	Query *getQuery ( ) { return m_q ; }
+	Query       *getQuery()       { return m_q ; }
+	const Query *getQuery() const { return m_q ; }
 
 	// Msg40 calls these to get the data pointing into the reply
-	int64_t *getDocIds        ( ) { return m_docIds;        }
-	char      *getClusterLevels ( ) { return m_clusterLevels; }
+	int64_t       *getDocIds()       { return m_docIds; }
+	const int64_t *getDocIds() const { return m_docIds; }
+	char       *getClusterLevels()       { return m_clusterLevels; }
+	const char *getClusterLevels() const { return m_clusterLevels; }
 	// we basically turn the scores we get from each msg39 split into
 	// floats (rscore_t) and store them as floats so that PostQueryRerank
 	// has an easier time
-	double *getScores        ( ) { return m_scores;        }
-	int32_t   getNumDocIds     ( ) { return m_numDocIds; }
+	double       *getScores()       { return m_scores; }
+	const double *getScores() const { return m_scores; }
+	int32_t   getNumDocIds() const { return m_numDocIds; }
+	DocIdScore       * const * getScoreInfos()       { return (DocIdScore * const *)m_scoreInfos; }
+	const DocIdScore * const * getScoreInfos() const { return (DocIdScore * const *)m_scoreInfos; }
 
 	void printTerms ( ) ;
 
 	// . estimates based on m_termFreqs, m_termSigns and m_numTerms
 	// . received in reply
-	int64_t  getNumTotalEstimatedHits ( ) { 
+	int64_t  getNumTotalEstimatedHits() const {
 		return m_numTotalEstimatedHits; }
 
 	// called when we got a reply of docIds
@@ -96,7 +101,7 @@ public:
 
 	// this is now in here so Msg40 can send out one Msg3a per
 	// collection if it wants to search an entire token
-	Msg39Request m_rrr;
+	Msg39Request m_msg39req;
 
 	// a multicast class to send the request, one for each split
 	Multicast  m_mcast[MAX_SHARDS];
