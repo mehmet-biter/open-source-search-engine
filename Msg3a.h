@@ -43,8 +43,7 @@ public:
 			 const SearchInput *si,
 			 Query        *q          ,
 			 void         *state      ,
-			 void        (* callback) ( void *state ) ,
-			 class Host *specialHost = NULL );
+			 void        (* callback) ( void *state ));
 
 	// Msg40 calls this to get Query m_q to pass to Summary class
 	Query       *getQuery()       { return m_q ; }
