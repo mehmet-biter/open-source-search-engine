@@ -19,6 +19,8 @@
 // make it 2B now. no reason not too limit it so low.
 #define MAXDOCIDSTOCOMPUTE 2000000000
 
+class DocIdScore;
+
 class Msg40 {
 public:
 
@@ -49,8 +51,8 @@ public:
 	bool federatedLoop ( ) ;
 	bool gotDocIds        ( ) ;
 	bool launchMsg20s     ( bool recalled ) ;
-	class Msg20 *getAvailMsg20();
-	class Msg20 *getCompletedSummary ( int32_t ix );
+	Msg20 *getAvailMsg20();
+	Msg20 *getCompletedSummary ( int32_t ix );
 	bool gotSummary       ( ) ;
 	bool reallocMsg20Buf ( ) ;
 
@@ -61,30 +63,34 @@ public:
 
 	// . estimated # of total hits
 	// . this is now an EXACT count... since we read all posdb termlists
-	int64_t getNumTotalHits () { return m_msg3a.getNumTotalEstimatedHits(); }
+	int64_t getNumTotalHits() const { return m_msg3a.getNumTotalEstimatedHits(); }
 
 	// . we copy query and coll to our own local buffer
 	// . these routines give us back our inputted parameters we saved
-	const char *getQuery              ( ) { return m_si->m_q.getQuery(); }
-	int32_t  getQueryLen           ( ) { return m_si->m_q.getQueryLen(); }
+	const char *getQuery() const { return m_si->m_q.getQuery(); }
+	int32_t  getQueryLen() const { return m_si->m_q.getQueryLen(); }
 
-	int32_t  getDocsWanted         ( ) { return m_si->m_docsWanted; }
-	int32_t  getFirstResultNum     ( ) { return m_si->m_firstResultNum; }
+	int32_t  getDocsWanted() const { return m_si->m_docsWanted; }
+	int32_t  getFirstResultNum() const { return m_si->m_firstResultNum; }
 
-	int32_t  getNumResults (        ){return m_msg3a.getNumDocIds(); }
+	int32_t  getNumResults() const { return m_msg3a.getNumDocIds(); }
 
-	char   getClusterLevel(int32_t i){return m_msg3a.getClusterLevels()[i];}
+	char   getClusterLevel(int32_t i) const { return m_msg3a.getClusterLevels()[i]; }
 
-	int64_t getDocId  ( int32_t i ){return m_msg3a.m_docIds[i]; }
-	double  getScore  ( int32_t i ){return m_msg3a.getScores()[i]; }
+	int64_t getDocId(int32_t i) const { return m_msg3a.m_docIds[i]; }
+	double  getScore(int32_t i) const { return m_msg3a.getScores()[i]; }
 
-	class DocIdScore *getScoreInfo(int32_t i){
+	DocIdScore *getScoreInfo(int32_t i) {
+		if ( ! m_msg3a.m_scoreInfos ) return NULL;
+		return m_msg3a.m_scoreInfos[i];
+	}
+	const DocIdScore *getScoreInfo(int32_t i) const {
 		if ( ! m_msg3a.m_scoreInfos ) return NULL;
 		return m_msg3a.m_scoreInfos[i];
 	}
 
-	bool  moreResultsFollow ( )   {return m_moreToCome; }
-	time_t getCachedTime ( )      {return m_cachedTime; }
+	bool  moreResultsFollow() const { return m_moreToCome; }
+	time_t getCachedTime() const { return m_cachedTime; }
 
 	bool printSearchResult9 ( int32_t ix, int32_t *numPrintedSoFar, class Msg20Reply *mr ) ;
 
