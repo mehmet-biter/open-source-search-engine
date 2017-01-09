@@ -23,12 +23,12 @@
 // node cluster....
 #define MAX_OUTSTANDING_MSG20S 200
 
-static bool printHttpMime(State0 *st);
+static bool printHttpMime(int32_t format, SafeBuf *sb);
 
 static void gotDocIdsWrapper             ( void *state );
 static bool gotSummaryWrapper            ( void *state );
 
-static bool isSubDom(char *s , int32_t len);
+static bool isSubDom(const char *s, int32_t len);
 
 Msg40::Msg40() {
 	m_socketHadError = 0;
@@ -138,7 +138,7 @@ bool Msg40::getResults ( SearchInput *si      ,
 	m_errno = 0;
 
 	// take search parms i guess from first collnum
-	collnum_t *cp = (collnum_t *)m_si->m_collnumBuf.getBufStart();
+	const collnum_t *cp = (const collnum_t *)m_si->m_collnumBuf.getBufStart();
 
 	// get the collection rec
 	CollectionRec *cr =g_collectiondb.getRec( cp[0] );
@@ -303,7 +303,7 @@ bool Msg40::getDocIds ( bool recall ) {
 bool Msg40::federatedLoop ( ) {
 
 	// search the provided collnums (collections)
-	collnum_t *cp = (collnum_t *)m_si->m_collnumBuf.getBufStart();
+	const collnum_t *cp = (const collnum_t *)m_si->m_collnumBuf.getBufStart();
 
 	// we modified m_rcache above to be true if we should read from cache
 	int32_t maxAge = 0 ;
@@ -348,7 +348,7 @@ bool Msg40::federatedLoop ( ) {
 	//
 	// how many docid splits should we do to avoid going OOM?
 	//
-	CollectionRec *cr = g_collectiondb.getRec(m_firstCollnum);
+	const CollectionRec *cr = g_collectiondb.getRec(m_firstCollnum);
 	RdbBase *base = NULL;
 	if ( cr ) g_titledb.getRdb()->getBase(cr->m_collnum);
 	//NOTE: the above line is a bug, but the obvious fix causes numDocIdSplits to become huge (eg 200)
@@ -850,7 +850,7 @@ bool Msg40::launchMsg20s(bool recalled) {
 		int64_t docId = m_msg3a.m_docIds[i];
 		uint32_t shardNum = g_hostdb.getShardNumFromDocId ( docId );
 		// get the collection rec
-		CollectionRec *cr = g_collectiondb.getRec(m_firstCollnum);
+		const CollectionRec *cr = g_collectiondb.getRec(m_firstCollnum);
 		// if shard is dead then do not send to it if not crawlbot
 		if ( g_hostdb.isShardDead ( shardNum ) && cr &&
 		     // this is causing us to truncate streamed results
@@ -1123,7 +1123,7 @@ bool Msg40::gotSummary ( ) {
 	if ( m_si && m_si->m_streamResults && ! m_printedHeader ) {
 		// only print header once
 		m_printedHeader = true;
-		printHttpMime ( st );
+		printHttpMime(m_si->m_format,&st->m_sb);
 		printSearchResultsHeader ( st );
 	}
 
@@ -1392,7 +1392,7 @@ bool Msg40::gotSummary ( ) {
 	int64_t took;
 
 	// shortcut
-	Query *q = &m_si->m_q;
+	const Query *q = &m_si->m_q;
 
 	// loop over each clusterLevel and set it
 	for ( int32_t i = 0 ; i < m_numReplies ; i++ ) {
@@ -1588,7 +1588,7 @@ bool Msg40::gotSummary ( ) {
 				// . remove sub-domain to fix conflicts with
 				//   sites having www,us,en,fr,de,uk,etc AND
 				//   it redirects to the same page.
-				char *host = u.getHost();
+				const char *host = u.getHost();
 				const char *mdom = u.getMidDomain();
 				if(mdom && host) {
 					int32_t  hlen = mdom - host;
@@ -1632,7 +1632,7 @@ bool Msg40::gotSummary ( ) {
 	// loop over each clusterLevel and set it
 	for ( int32_t i = 0 ; i < m_numReplies ; i++ ) {
 		// get current cluster level
-		char *level = &m_msg3a.m_clusterLevels[i];
+		const char *level = &m_msg3a.m_clusterLevels[i];
 		// on CR_OK
 		if ( *level == CR_OK ) visible++;
 		// otherwise count as ommitted
@@ -2040,7 +2040,7 @@ static bool initSubDomTable(HashTable *table, const char * const words[], int32_
 	return true;
 }
 
-static bool isSubDom(char *s , int32_t len) {
+static bool isSubDom(const char *s , int32_t len) {
 	if ( ! s_subDomInitialized ) {
 		s_subDomInitialized = 
 			initSubDomTable(&s_subDomTable, s_subDoms, 
@@ -2098,11 +2098,7 @@ bool Msg40::printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
 }
 	
 
-static bool printHttpMime(State0 *st) {
-
-	SearchInput *si = &st->m_si;
-
-	SafeBuf *sb = &st->m_sb;
+static bool printHttpMime(int32_t format, SafeBuf *sb) {
 	// reserve 1.5MB now!
 	if ( ! sb->reserve(1500000 ,"pgresbuf" ) ) // 128000) )
 		return true;
@@ -2111,9 +2107,9 @@ static bool printHttpMime(State0 *st) {
 
 	// defaults to FORMAT_HTML
 	const char *ct = "text/html";
-	if ( si->m_format == FORMAT_JSON ) {
+	if(format == FORMAT_JSON) {
 		ct = "application/json";
-	} else if ( si->m_format == FORMAT_XML ) {
+	} else if(format == FORMAT_XML) {
 		ct = "text/xml";
 	}
 
