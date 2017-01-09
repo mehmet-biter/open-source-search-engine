@@ -279,7 +279,7 @@ bool Msg1c::reindexQuery ( char *query ,
 	g_errno = 0;
 	// . get the docIds
 	// . this sets m_msg3a.m_clusterLevels[] for us
-	if ( ! m_msg3a.getDocIds ( &m_msg3a.m_msg39req, NULL, &m_qq, this, gotDocIdListWrapper )) {
+	if ( ! m_msg3a.getDocIds(NULL, &m_qq, this, gotDocIdListWrapper)) {
 		return false;
 	}
 

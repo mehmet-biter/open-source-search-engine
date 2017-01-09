@@ -39,8 +39,7 @@ public:
 	//   indexdb root file
 	// . this might ADJUST m_si->m_q.m_termFreqs[] to be more accurate
 	// . NOTE: Msg39Request MUST NOT BE ON THE STACK! keep it persistent!
-	bool getDocIds ( Msg39Request *r          ,
-			 const SearchInput *si,
+	bool getDocIds ( const SearchInput *si,
 			 Query        *q          ,
 			 void         *state      ,
 			 void        (* callback) ( void *state ));
@@ -123,7 +122,6 @@ public:
 	double m_pctSearched;
 
 	// we have one request that we send to each split
-	class Msg39Request *m_req39;
 	char               *m_rbufPtr;
 	int32_t                m_rbufSize;
 	char                m_rbuf [ RBUF_SIZE ];
