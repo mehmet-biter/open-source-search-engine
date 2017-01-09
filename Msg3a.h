@@ -101,7 +101,7 @@ public:
 
 	// this is now in here so Msg40 can send out one Msg3a per
 	// collection if it wants to search an entire token
-	Msg39Request m_rrr;
+	Msg39Request m_msg39req;
 
 	// a multicast class to send the request, one for each split
 	Multicast  m_mcast[MAX_SHARDS];

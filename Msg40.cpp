@@ -401,9 +401,9 @@ bool Msg40::federatedLoop ( ) {
 		// assign it
 		m_msg3aPtrs[i] = mp;
 		// assign the request for it
-		gbmemcpy ( &mp->m_rrr , &mr , sizeof(Msg39Request) );
+		gbmemcpy ( &mp->m_msg39req , &mr , sizeof(Msg39Request) );
 		// then customize it to just search this collnum
-		mp->m_rrr.m_collnum = cp[i];
+		mp->m_msg39req.m_collnum = cp[i];
 
 		// launch a search request
 		m_num3aRequests++;
@@ -412,7 +412,7 @@ bool Msg40::federatedLoop ( ) {
 		// and Msg40::m_si points to that. so State0's destructor
 		// should call SearchInput's destructor which calls
 		// Query's destructor to destroy &m_si->m_q here when done.
-		if(!mp->getDocIds(&mp->m_rrr,m_si,&m_si->m_q,this,gotDocIdsWrapper))
+		if(!mp->getDocIds(&mp->m_msg39req,m_si,&m_si->m_q,this,gotDocIdsWrapper))
 			continue;
 		if ( g_errno && ! m_errno ) 
 			m_errno = g_errno;
@@ -582,7 +582,7 @@ bool Msg40::mergeDocIdsIntoBaseMsg3a() {
 	if ( maxmp ) {
 		m_msg3a.m_docIds  [next] = maxmp->m_docIds[maxmp->m_cursor];
 		m_msg3a.m_scores  [next] = maxmp->m_scores[maxmp->m_cursor];
-		m_msg3a.m_collnums[next] = maxmp->m_rrr.m_collnum;
+		m_msg3a.m_collnums[next] = maxmp->m_msg39req.m_collnum;
 		m_msg3a.m_clusterLevels[next] = CR_OK;
 		maxmp->m_cursor++;
 		next++;
@@ -928,7 +928,7 @@ bool Msg40::launchMsg20s(bool recalled) {
 			req.m_collnum = m_msg3a.m_collnums[i];
 		// otherwise, just one collection
 		else
-			req.m_collnum = m_msg3a.m_rrr.m_collnum;
+			req.m_collnum = m_msg3a.m_msg39req.m_collnum;
 
 		req.m_numSummaryLines    = m_si->m_numLinesInSummary;
 		req.m_maxCacheAge        = maxCacheAge;
@@ -1920,14 +1920,14 @@ int32_t Msg40::serialize ( char *buf , int32_t bufLen ) {
 		// return -1 on error, g_errno should be set
 		int32_t nb = m_msg20[i]->serialize ( p , pend - p ) ;
 		// count it
-		if ( m_msg3a.m_rrr.m_debug )
+		if ( m_msg3a.m_msg39req.m_debug )
 			log("query: msg40 serialize msg20size=%" PRId32,nb);
 
 		if ( nb == -1 ) return -1;
 		p += nb;
 	}
 
-	if ( m_msg3a.m_rrr.m_debug )
+	if ( m_msg3a.m_msg39req.m_debug )
 		log("query: msg40 serialize nd=%" PRId32" "
 		    "msg3asize=%" PRId32" ",m_msg3a.m_numDocIds,nb);
 
