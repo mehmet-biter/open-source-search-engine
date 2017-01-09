@@ -80,6 +80,8 @@ public:
 	int64_t getDocId(int32_t i) const { return m_msg3a.getDocIds()[i]; }
 	double  getScore(int32_t i) const { return m_msg3a.getScores()[i]; }
 
+	unsigned getFlags(int32_t i) const { return m_msg3a.getFlags()[i]; }
+
 	DocIdScore *getScoreInfo(int32_t i) {
 		if ( ! m_msg3a.getScoreInfos() ) return NULL;
 		return m_msg3a.getScoreInfos()[i];

@@ -531,6 +531,7 @@ bool Msg40::mergeDocIdsIntoBaseMsg3a() {
 	int32_t need = 0;
 	need += td * 8;
 	need += td * sizeof(double);
+	need += td * sizeof(unsigned);
 	need += td * sizeof(key96_t);
 	need += td * 1;
 	need += td * sizeof(collnum_t);
@@ -543,6 +544,7 @@ bool Msg40::mergeDocIdsIntoBaseMsg3a() {
 	char *p = m_msg3a.m_finalBuf;
 	m_msg3a.m_docIds        = (int64_t *)p; p += td * 8;
 	m_msg3a.m_scores        = (double    *)p; p += td * sizeof(double);
+	m_msg3a.m_flags         = (unsigned*)p; p += td * sizeof(unsigned);
 	m_msg3a.m_clusterRecs   = (key96_t     *)p; p += td * sizeof(key96_t);
 	m_msg3a.m_clusterLevels = (char      *)p; p += td * 1;
 	m_msg3a.m_scoreInfos    = NULL;
@@ -582,6 +584,7 @@ bool Msg40::mergeDocIdsIntoBaseMsg3a() {
 	if ( maxmp ) {
 		m_msg3a.m_docIds  [next] = maxmp->m_docIds[maxmp->m_cursor];
 		m_msg3a.m_scores  [next] = maxmp->m_scores[maxmp->m_cursor];
+		m_msg3a.m_flags   [next] = maxmp->m_flags[maxmp->m_cursor];
 		m_msg3a.m_collnums[next] = maxmp->m_msg39req.m_collnum;
 		m_msg3a.m_clusterLevels[next] = CR_OK;
 		maxmp->m_cursor++;
@@ -1765,6 +1768,7 @@ bool Msg40::gotSummary ( ) {
 		// we got a winner, save it
 		m_msg3a.m_docIds        [c] = m_msg3a.m_docIds        [i];
 		m_msg3a.m_scores        [c] = m_msg3a.m_scores        [i];
+		m_msg3a.m_flags         [c] = m_msg3a.m_flags         [i];
 		m_msg3a.m_clusterLevels [c] = m_msg3a.m_clusterLevels [i];
 		m_msg20                 [c] = m_msg20                 [i];
 

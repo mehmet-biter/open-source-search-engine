@@ -1946,6 +1946,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	int64_t d = msg40->getDocId(ix);
 	// this is normally a double, but cast to float
 	float docScore = (float)msg40->getScore(ix);
+	unsigned docFlags = msg40->getFlags(ix);
 
 	if ( si->m_docIdsOnly ) {
 		if ( si->m_format == FORMAT_XML )
@@ -2811,6 +2812,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// . might have merged a bunch together
 		sb->safePrintf("\t\t\"docId\":%" PRId64",\n",mr->m_docId );
 		sb->safePrintf("\t\t\"docScore\":%f,\n",docScore);
+		sb->safePrintf("\t\t\"flags\":%u,\n",docFlags);
 		sb->safePrintf("\t\t\"cacheAvailable\":%s,\n", printCached?"true":"false");
 		sb->safePrintf("\t\t\"isAdult\":%s,\n", mr->m_isAdult?"true":"false");
 	}

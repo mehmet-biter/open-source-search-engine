@@ -109,6 +109,7 @@ public:
 	// after ptr_clusterRecs so serializeMsg() calls still work
 	char  *ptr_docIds         ; // the results, int64_t
 	char  *ptr_scores         ; // now doubles! so we can have intScores
+	char  *ptr_flags          ; // from Docid2FlagsAndSiteMap
 	char  *ptr_scoreInfo      ; // transparency info
 	char  *ptr_pairScoreBuf   ; // transparency info
 	char  *ptr_singleScoreBuf ; // transparency info
@@ -118,6 +119,7 @@ public:
 	// after size_clusterRecs so serializeMsg() calls still work
 	int32_t   size_docIds;
 	int32_t   size_scores;
+	int32_t   size_flags;
 	int32_t   size_scoreInfo;
 	int32_t   size_pairScoreBuf  ;
 	int32_t   size_singleScoreBuf;

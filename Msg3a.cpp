@@ -55,6 +55,7 @@ void Msg3a::constructor ( ) {
 	m_debug = false;
 	m_docIds = NULL;
 	m_scores = NULL;
+	m_flags = NULL;
 	m_scoreInfos = NULL;
 	m_clusterRecs = NULL;
 	m_clusterLevels = NULL;
@@ -648,20 +649,18 @@ bool Msg3a::gotAllShardReplies ( ) {
 		// cast these for printing out
 		int64_t *docIds    = (int64_t *)mr->ptr_docIds;
 		double    *scores    = (double    *)mr->ptr_scores;
+		const unsigned *flags = (const unsigned*)mr->ptr_flags;
 		// print out every docid in this shard reply
 		for ( int32_t j = 0; j < mr->m_numDocIds ; j++ ) {
 			// print out score_t
 			logf( LOG_DEBUG,
-			     "query: msg3a: [%" PTRFMT"] %03" PRId32") "
-			     "shard=%" PRId32" docId=%012" PRIu64" "
-			      "domHash=0x%02" PRIx32" "
-			     "score=%f"                     ,
-			     (PTRTYPE)this                      ,
-			     j                                        ,
-			     i                                        ,
-			     docIds [j] ,
+			     "query: msg3a: [%p] %03d shard=%d docId=%012" PRIu64" domHash=0x%02x score=%f flags=0x%04x",
+			     this,
+			     j, i,
+			     docIds[j],
 			     (int32_t)Titledb::getDomHash8FromDocId(docIds[j]),
-			      scores[j] );
+			     scores[j],
+			     flags[j]);
 		}
 	}
 
@@ -703,12 +702,14 @@ bool Msg3a::mergeLists() {
 	//   have? formerly called topExplicits in IndexTable2.cpp
 	int64_t     *diPtr [MAX_SHARDS];
 	double        *rsPtr [MAX_SHARDS];
+	unsigned    *flagsPtr[MAX_SHARDS];
 	key96_t         *ksPtr [MAX_SHARDS];
 	int64_t     *diEnd [MAX_SHARDS];
 	for(int32_t j = 0; j < m_numQueriedHosts ; j++) {
 		if(Msg39Reply *mr =m_reply[j]) {
 			diPtr[j] = (int64_t*)mr->ptr_docIds;
 			rsPtr[j] = (double*) mr->ptr_scores;
+			flagsPtr[j] = (unsigned*)mr->ptr_flags;
 			ksPtr[j] = (key96_t*)mr->ptr_clusterRecs;
 			diEnd[j] = (int64_t*)(mr->ptr_docIds + mr->m_numDocIds * 8);
 		} else {
@@ -716,6 +717,7 @@ bool Msg3a::mergeLists() {
 			diPtr[j] = NULL;
 			diEnd[j] = NULL;
 			rsPtr[j] = NULL;
+			flagsPtr[j] = NULL;
 			ksPtr[j] = NULL;
 		}
 	}
@@ -741,7 +743,7 @@ bool Msg3a::mergeLists() {
 	if(nd2 < nd1)
 		nd = nd2;
 
-	int32_t need =  nd * (8+sizeof(double)+
+	int32_t need =  nd * (8+sizeof(double)+sizeof(unsigned)+
 			   sizeof(key96_t)+sizeof(DocIdScore *)+1);
 	if(need < 0) {
 		log("msg3a: need is %i, nd = %i is too many docids",
@@ -760,6 +762,7 @@ bool Msg3a::mergeLists() {
 	char *p = m_finalBuf;
 	m_docIds        = (int64_t*)    p; p += nd * 8;
 	m_scores        = (double*)     p; p += nd * sizeof(double);
+	m_flags         = (unsigned*)   p; p += nd * sizeof(unsigned);
 	m_clusterRecs   = (key96_t*)    p; p += nd * sizeof(key96_t);
 	m_clusterLevels = (char*)       p; p += nd * 1;
 	m_scoreInfos    = (DocIdScore**)p; p+=nd*sizeof(DocIdScore *);
@@ -910,6 +913,7 @@ bool Msg3a::mergeLists() {
 			// turn it into a float, that is what rscore_t is.
 			// we do this to make it easier for PostQueryRerank.cpp
 			m_scores[m_numDocIds]=(double)*rsPtr[maxj];
+			m_flags[m_numDocIds] = *flagsPtr[maxj];
 			if(m_msg39req.m_doSiteClustering)
 				m_clusterRecs[m_numDocIds]= *ksPtr[maxj];
 
@@ -925,6 +929,7 @@ bool Msg3a::mergeLists() {
 		// increment the shard pointers from which we took the max
 		rsPtr[maxj]++;
 		diPtr[maxj]++;
+		flagsPtr[maxj]++;
 		ksPtr[maxj]++;
 		// get the next highest docid and add it in
 	} while(m_numDocIds < m_docsToGet);
@@ -945,11 +950,12 @@ bool Msg3a::mergeLists() {
 				sh=g_clusterdb.getSiteHash26((char *)
 							   &m_clusterRecs[i]);
 			// print out score_t
-			logf(LOG_DEBUG,"query: msg3a: [%" PTRFMT"] %03" PRId32") merged docId=%012" PRIu64" score=%f hosthash=0x%" PRIx32,
-			    (PTRTYPE)this,
+			logf(LOG_DEBUG,"query: msg3a: [%p] %03d) merged docId=%012" PRIu64" score=%f flags=0x%04x hosthash=0x%x",
+			     this,
 			     i,
 			     m_docIds[i],
 			     (double)m_scores[i],
+			     m_flags[i],
 			     sh);
 		}
 	}
@@ -964,7 +970,7 @@ bool Msg3a::mergeLists() {
 int32_t Msg3a::getStoredSize ( ) {
 	// docId=8, scores=sizeof(rscore_t), clusterLevel=1 bitScores=1
 	// eventIds=1
-	int32_t need = m_numDocIds * ( 8 + sizeof(double) + 1 ) +
+	int32_t need = m_numDocIds * ( 8 + sizeof(double) + sizeof(unsigned) + 1 ) +
 		4 + // m_numDocIds
 		8 ; // m_numTotalEstimatedHits (estimated # of results)
 	return need;
@@ -982,6 +988,9 @@ int32_t Msg3a::serialize   ( char *buf , char *bufEnd ) {
 	// store scores
 	gbmemcpy ( p , m_scores , m_numDocIds * sizeof(double) );
 	p +=  m_numDocIds * sizeof(double) ;
+	// store flags
+	memcpy(p, m_flags, m_numDocIds * sizeof(unsigned));
+	p +=  m_numDocIds * sizeof(unsigned);
 	// store cluster levels
 	gbmemcpy ( p , m_clusterLevels , m_numDocIds ); p += m_numDocIds;
 	// sanity check
@@ -1001,6 +1010,8 @@ int32_t Msg3a::deserialize ( char *buf , char *bufEnd ) {
 	m_docIds = (int64_t *)p; p += m_numDocIds * 8;
 	// get scores
 	m_scores = (double *)p; p += m_numDocIds * sizeof(double) ;
+	// get flags
+	m_flags = (unsigned*)p; p += m_numDocIds * sizeof(unsigned);
 	// get cluster levels
 	m_clusterLevels = (char *)p; p += m_numDocIds;
 	// sanity check

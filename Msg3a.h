@@ -59,6 +59,7 @@ public:
 	double       *getScores()       { return m_scores; }
 	const double *getScores() const { return m_scores; }
 	int32_t   getNumDocIds() const { return m_numDocIds; }
+	const unsigned *getFlags() const { return m_flags; }
 	DocIdScore       * const * getScoreInfos()       { return (DocIdScore * const *)m_scoreInfos; }
 	const DocIdScore * const * getScoreInfos() const { return (DocIdScore * const *)m_scoreInfos; }
 
@@ -138,6 +139,7 @@ public:
 	// final merged lists go here
 	int64_t      *m_docIds        ;
 	double         *m_scores        ;
+	unsigned       *m_flags;
 	class DocIdScore **m_scoreInfos ;
 	key96_t          *m_clusterRecs   ;
 	char           *m_clusterLevels ;
