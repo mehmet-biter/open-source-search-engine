@@ -1063,10 +1063,12 @@ void Msg39::estimateHitsAndSendReply(double pctSearched) {
 	// reserve space for these guys, we fill them in below
 	mr.ptr_docIds       = NULL;
 	mr.ptr_scores       = NULL;
+	mr.ptr_flags        = NULL;
 	mr.ptr_clusterRecs  = NULL;
 	// this is how much space to reserve
 	mr.size_docIds      = sizeof(int64_t) * numDocIds;
 	mr.size_scores      = sizeof(double) * numDocIds;
+	mr.size_flags       = sizeof(unsigned) * numDocIds;
 	// if not doing site clustering, we won't have these perhaps...
 	if(m_gotClusterRecs)
 		mr.size_clusterRecs = sizeof(key96_t) *numDocIds;
@@ -1097,6 +1099,7 @@ void Msg39::estimateHitsAndSendReply(double pctSearched) {
 	}
 	int64_t *topDocIds = (int64_t*)mr.ptr_docIds;
 	double *topScores  = (double*) mr.ptr_scores;
+	unsigned *topFlags = (unsigned*)mr.ptr_flags;
 	key96_t *topRecs     = (key96_t*)  mr.ptr_clusterRecs;
 
 	// sanity
@@ -1121,6 +1124,7 @@ void Msg39::estimateHitsAndSendReply(double pctSearched) {
 		//add it to the reply
 		topDocIds[docCount] = t->m_docId;
 		topScores[docCount] = t->m_score;
+		topFlags[docCount] = t->m_flags;
 		if(m_toptree.m_useIntScores)
 			topScores[docCount] = (double)t->m_intScore;
 		// supply clusterdb rec? only for full splits

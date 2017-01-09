@@ -27,6 +27,7 @@ class TopNode {
 	//unsigned char  m_tier     ;
 	float          m_score    ;
 	int64_t      m_docId;
+	unsigned     m_flags; //from Docid2FlagsAndSiteMap
 
 	// option for using int scores
 	int32_t m_intScore;

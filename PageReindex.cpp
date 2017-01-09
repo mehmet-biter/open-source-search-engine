@@ -256,22 +256,22 @@ bool Msg1c::reindexQuery ( char *query ,
 		endNum = startNum + MAXDOCIDSTOCOMPUTE;
 
 	// reset again just in case
-	m_req.reset();
+	m_msg3a.m_msg39req.reset();
 
 	// set our Msg39Request
-	m_req.m_collnum = m_collnum;
-	m_req.m_docsToGet                 = endNum;
-	m_req.m_niceness                  = 0,
-	m_req.m_getDocIdScoringInfo       = false;
-	m_req.m_doSiteClustering          = false;
-	m_req.m_doDupContentRemoval       = false;
-	m_req.ptr_query                   = m_qq.m_orig;
-	m_req.size_query                  = m_qq.m_origLen+1;
-	m_req.m_timeout                   = 86400*1000; // a whole day. todo: should we just go for infinite here?
-	m_req.m_queryExpansion            = true; // so it's like regular rslts
+	m_msg3a.m_msg39req.m_collnum = m_collnum;
+	m_msg3a.m_msg39req.m_docsToGet                 = endNum;
+	m_msg3a.m_msg39req.m_niceness                  = 0,
+	m_msg3a.m_msg39req.m_getDocIdScoringInfo       = false;
+	m_msg3a.m_msg39req.m_doSiteClustering          = false;
+	m_msg3a.m_msg39req.m_doDupContentRemoval       = false;
+	m_msg3a.m_msg39req.ptr_query                   = m_qq.m_orig;
+	m_msg3a.m_msg39req.size_query                  = m_qq.m_origLen+1;
+	m_msg3a.m_msg39req.m_timeout                   = 86400*1000; // a whole day. todo: should we just go for infinite here?
+	m_msg3a.m_msg39req.m_queryExpansion            = true; // so it's like regular rslts
 	// add language dropdown or take from [query reindex] link
-	m_req.m_language                  = langId;
-	//m_req.m_debug = 1;
+	m_msg3a.m_msg39req.m_language                  = langId;
+	//m_msg3a.m_msg39req.m_debug = 1;
 
 	// log for now
 	logf(LOG_DEBUG,"reindex: qlangid=%" PRId32" q=%s",langId,query);
@@ -279,7 +279,7 @@ bool Msg1c::reindexQuery ( char *query ,
 	g_errno = 0;
 	// . get the docIds
 	// . this sets m_msg3a.m_clusterLevels[] for us
-	if ( ! m_msg3a.getDocIds ( &m_req, NULL, &m_qq, this, gotDocIdListWrapper )) {
+	if ( ! m_msg3a.getDocIds(NULL, &m_qq, this, gotDocIdListWrapper)) {
 		return false;
 	}
 

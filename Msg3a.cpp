@@ -50,12 +50,12 @@ void Msg3a::constructor ( ) {
 	m_skippedShards = 0;
 	m_numTotalEstimatedHits = 0;
 	m_pctSearched = 0.0;
-	m_req39 = NULL;
 	m_rbufSize = 0;
 	memset(m_rbuf, 0, sizeof(m_rbuf));
 	m_debug = false;
 	m_docIds = NULL;
 	m_scores = NULL;
+	m_flags = NULL;
 	m_scoreInfos = NULL;
 	m_clusterRecs = NULL;
 	m_clusterLevels = NULL;
@@ -137,23 +137,21 @@ void Msg3a::reset ( ) {
 //   Msg25 to recompute the inlinker information used in
 //   Msg16::computeQuality(), but rather deserialize it from the TitleRec.
 //   Computing the link info takes a lot of time as well.
-bool Msg3a::getDocIds(Msg39Request *r, const SearchInput *si, Query *q, void *state, 
+bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state,
 	void (*callback)( void *state )) {
 
 	// in case re-using it
 	reset();
-	// remember ALL the stuff
-	m_req39    = r;
 	// this should be &SearchInput::m_q
 	m_q        = q;
 	m_callback = callback;
 	m_state    = state;
 
-	if ( m_req39->m_collnum < 0 )
-		log(LOG_LOGIC,"net: bad collection. msg3a. %" PRId32, (int32_t)m_req39->m_collnum);
+	if ( m_msg39req.m_collnum < 0 )
+		log(LOG_LOGIC,"net: bad collection. msg3a. %" PRId32, (int32_t)m_msg39req.m_collnum);
 
 	// for a sanity check in Msg39.cpp
-	r->m_nqt = m_q->getNumTerms();
+	m_msg39req.m_nqt = m_q->getNumTerms();
 
 	// we like to know if there was *any* problem even though we hide
 	// title recs that are not found.
@@ -163,7 +161,7 @@ bool Msg3a::getDocIds(Msg39Request *r, const SearchInput *si, Query *q, void *st
 	// total # of estimated hits
 	m_numTotalEstimatedHits = 0;
 	// we modify this, so copy it from request
-	m_docsToGet = r->m_docsToGet;
+	m_docsToGet = m_msg39req.m_docsToGet;
 
 	// . return now if query empty, no docids, or none wanted...
 	// . if query terms = 0, might have been "x AND NOT x"
@@ -173,7 +171,7 @@ bool Msg3a::getDocIds(Msg39Request *r, const SearchInput *si, Query *q, void *st
 
 	// . set g_errno if not found and return true
 	// . coll is null terminated
-	CollectionRec *cr = g_collectiondb.getRec(r->m_collnum);
+	CollectionRec *cr = g_collectiondb.getRec(m_msg39req.m_collnum);
 	if ( ! cr ) { 
 		g_errno = ENOCOLLREC; 
 		return true; 
@@ -187,7 +185,7 @@ bool Msg3a::getDocIds(Msg39Request *r, const SearchInput *si, Query *q, void *st
 
 	// a handy thing
 	m_debug = false;
-	if ( m_req39->m_debug        ) m_debug = true;
+	if ( m_msg39req.m_debug      ) m_debug = true;
 	if ( g_conf.m_logDebugQuery  ) m_debug = true;
 	if ( g_conf.m_logTimingQuery ) m_debug = true;
 
@@ -200,7 +198,7 @@ bool Msg3a::getDocIds(Msg39Request *r, const SearchInput *si, Query *q, void *st
 		     (PTRTYPE)this);
 	}
 
-	setTermFreqWeights(m_req39->m_collnum, m_q);
+	setTermFreqWeights(m_msg39req.m_collnum, m_q);
 
 	if ( m_debug ) {
 		for ( int32_t i = 0 ; i < m_q->m_numTerms ; i++ ) {
@@ -252,19 +250,19 @@ bool Msg3a::getDocIds(Msg39Request *r, const SearchInput *si, Query *q, void *st
 	}
 
 	// serialize this
-	m_req39->ptr_termFreqWeights  = (char *)tfw;//m_termFreqWeights;
-	m_req39->size_termFreqWeights = 4 * n;
+	m_msg39req.ptr_termFreqWeights  = (char *)tfw;//m_termFreqWeights;
+	m_msg39req.size_termFreqWeights = 4 * n;
 	// store query into request, might have changed since we called
 	// Query::expandQuery() above
-	m_req39->ptr_query  = m_q->m_orig;
-	m_req39->size_query = m_q->m_origLen+1;
+	m_msg39req.ptr_query  = m_q->m_orig;
+	m_msg39req.size_query = m_q->m_origLen+1;
 
 	// free us?
 	if ( m_rbufPtr && m_rbufPtr != m_rbuf ) {
 		mfree ( m_rbufPtr , m_rbufSize, "Msg3a" );
 		m_rbufPtr = NULL;
 	}
-	m_req39->m_stripe = 0;
+	m_msg39req.m_stripe = 0;
 	// . (re)serialize the request
 	// . returns NULL and sets g_errno on error
 	// . "m_rbuf" is a local storage space that can save a malloc
@@ -272,10 +270,10 @@ bool Msg3a::getDocIds(Msg39Request *r, const SearchInput *si, Query *q, void *st
 	//   called a 2nd time because m_getWeights got set to 0, then we
 	//   end up copying over ourselves.
 	m_rbufPtr = serializeMsg ( sizeof(Msg39Request),
-				   &m_req39->size_termFreqWeights,
-				   &m_req39->size_whiteList,
-				   &m_req39->ptr_termFreqWeights,
-				   m_req39,
+				   &m_msg39req.size_termFreqWeights,
+				   &m_msg39req.size_whiteList,
+				   &m_msg39req.ptr_termFreqWeights,
+				   &m_msg39req,
 				   &m_rbufSize ,
 				   m_rbuf ,
 				   RBUF_SIZE);
@@ -306,8 +304,8 @@ bool Msg3a::getDocIds(Msg39Request *r, const SearchInput *si, Query *q, void *st
 	int64_t timeout = multicast_msg3a_default_timeout;
 	// override? this is USUALLY -1, but DupDectector.cpp needs it
 	// high because it is a spider time thing.
-	if ( m_req39->m_timeout > 0 ) {
-		timeout = m_req39->m_timeout;
+	if ( m_msg39req.m_timeout > 0 ) {
+		timeout = m_msg39req.m_timeout;
 		timeout += g_conf.m_msg3a_msg39_network_overhead;
 	}
 	if ( timeout > multicast_msg3a_maximum_timeout ) {
@@ -411,7 +409,7 @@ bool Msg3a::getDocIds(Msg39Request *r, const SearchInput *si, Query *q, void *st
 		// . if that host takes more than about 5 secs then sends to
 		//   next host
 		// . key should be largest termId in group we're sending to
-		bool status = m->send(req, m_rbufSize, msg_type_39, false, shardNum, false, (int32_t)qh, this, m, gotReplyWrapper3a, timeout, m_req39->m_niceness, firstHostId, true);
+		bool status = m->send(req, m_rbufSize, msg_type_39, false, shardNum, false, (int32_t)qh, this, m, gotReplyWrapper3a, timeout, m_msg39req.m_niceness, firstHostId, true);
 		// if successfully launch, do the next one
 		if ( status ) {
 			continue;
@@ -651,20 +649,18 @@ bool Msg3a::gotAllShardReplies ( ) {
 		// cast these for printing out
 		int64_t *docIds    = (int64_t *)mr->ptr_docIds;
 		double    *scores    = (double    *)mr->ptr_scores;
+		const unsigned *flags = (const unsigned*)mr->ptr_flags;
 		// print out every docid in this shard reply
 		for ( int32_t j = 0; j < mr->m_numDocIds ; j++ ) {
 			// print out score_t
 			logf( LOG_DEBUG,
-			     "query: msg3a: [%" PTRFMT"] %03" PRId32") "
-			     "shard=%" PRId32" docId=%012" PRIu64" "
-			      "domHash=0x%02" PRIx32" "
-			     "score=%f"                     ,
-			     (PTRTYPE)this                      ,
-			     j                                        ,
-			     i                                        ,
-			     docIds [j] ,
+			     "query: msg3a: [%p] %03d shard=%d docId=%012" PRIu64" domHash=0x%02x score=%f flags=0x%04x",
+			     this,
+			     j, i,
+			     docIds[j],
 			     (int32_t)Titledb::getDomHash8FromDocId(docIds[j]),
-			      scores[j] );
+			     scores[j],
+			     flags[j]);
 		}
 	}
 
@@ -706,12 +702,14 @@ bool Msg3a::mergeLists() {
 	//   have? formerly called topExplicits in IndexTable2.cpp
 	int64_t     *diPtr [MAX_SHARDS];
 	double        *rsPtr [MAX_SHARDS];
+	unsigned    *flagsPtr[MAX_SHARDS];
 	key96_t         *ksPtr [MAX_SHARDS];
 	int64_t     *diEnd [MAX_SHARDS];
 	for(int32_t j = 0; j < m_numQueriedHosts ; j++) {
 		if(Msg39Reply *mr =m_reply[j]) {
 			diPtr[j] = (int64_t*)mr->ptr_docIds;
 			rsPtr[j] = (double*) mr->ptr_scores;
+			flagsPtr[j] = (unsigned*)mr->ptr_flags;
 			ksPtr[j] = (key96_t*)mr->ptr_clusterRecs;
 			diEnd[j] = (int64_t*)(mr->ptr_docIds + mr->m_numDocIds * 8);
 		} else {
@@ -719,6 +717,7 @@ bool Msg3a::mergeLists() {
 			diPtr[j] = NULL;
 			diEnd[j] = NULL;
 			rsPtr[j] = NULL;
+			flagsPtr[j] = NULL;
 			ksPtr[j] = NULL;
 		}
 	}
@@ -744,7 +743,7 @@ bool Msg3a::mergeLists() {
 	if(nd2 < nd1)
 		nd = nd2;
 
-	int32_t need =  nd * (8+sizeof(double)+
+	int32_t need =  nd * (8+sizeof(double)+sizeof(unsigned)+
 			   sizeof(key96_t)+sizeof(DocIdScore *)+1);
 	if(need < 0) {
 		log("msg3a: need is %i, nd = %i is too many docids",
@@ -763,6 +762,7 @@ bool Msg3a::mergeLists() {
 	char *p = m_finalBuf;
 	m_docIds        = (int64_t*)    p; p += nd * 8;
 	m_scores        = (double*)     p; p += nd * sizeof(double);
+	m_flags         = (unsigned*)   p; p += nd * sizeof(unsigned);
 	m_clusterRecs   = (key96_t*)    p; p += nd * sizeof(key96_t);
 	m_clusterLevels = (char*)       p; p += nd * 1;
 	m_scoreInfos    = (DocIdScore**)p; p+=nd*sizeof(DocIdScore *);
@@ -773,7 +773,7 @@ bool Msg3a::mergeLists() {
 	// hash table for doing site clustering, provided we
 	// are fully split and we got the site recs now
 	HashTableT<int64_t,int32_t> htable2;
-	if(m_req39->m_doSiteClustering && !htable2.set (nd*2))
+	if(m_msg39req.m_doSiteClustering && !htable2.set (nd*2))
 		return true;
 
 	//
@@ -820,14 +820,14 @@ bool Msg3a::mergeLists() {
 		}
 
 		// only do this logic if we have clusterdb recs included
-		if(m_req39->m_doSiteClustering &&
+		if(m_msg39req.m_doSiteClustering &&
 		     // if the clusterLevel was set to CR_*errorCode* then this key
 		     // will be 0, so in that case, it might have been a not found
 		     // or whatever, so let it through regardless
 		     ksPtr[maxj]->n0 != 0LL &&
 		     ksPtr[maxj]->n1 != 0  ) {
 			// if family filter on and is adult...
-			if(m_req39->m_familyFilter &&
+			if(m_msg39req.m_familyFilter &&
 			     g_clusterdb.hasAdultContent((char*)ksPtr[maxj]) )
 				goto skip;
 			// get the hostname hash, a int64_t
@@ -848,7 +848,7 @@ bool Msg3a::mergeLists() {
 				if(sh && val >= 2)
 					goto skip;
 				// if only allowing one...
-				if(sh && val >= 1 && m_req39->m_hideAllClustered)
+				if(sh && val >= 1 && m_msg39req.m_hideAllClustered)
 					goto skip;
 				// inc the count
 				val++;
@@ -884,7 +884,7 @@ bool Msg3a::mergeLists() {
 			if(!dp) {
 				// this is empty if no scoring info
 				// supplied!
-				if(m_req39->m_getDocIdScoringInfo)
+				if(m_msg39req.m_getDocIdScoringInfo)
 					log("msg3a: CRAP! got empty score info for d=%" PRId64,
 					    m_docIds[m_numDocIds]);
 			}
@@ -913,7 +913,8 @@ bool Msg3a::mergeLists() {
 			// turn it into a float, that is what rscore_t is.
 			// we do this to make it easier for PostQueryRerank.cpp
 			m_scores[m_numDocIds]=(double)*rsPtr[maxj];
-			if(m_req39->m_doSiteClustering)
+			m_flags[m_numDocIds] = *flagsPtr[maxj];
+			if(m_msg39req.m_doSiteClustering)
 				m_clusterRecs[m_numDocIds]= *ksPtr[maxj];
 
 			// point to next available slot to add to
@@ -928,6 +929,7 @@ bool Msg3a::mergeLists() {
 		// increment the shard pointers from which we took the max
 		rsPtr[maxj]++;
 		diPtr[maxj]++;
+		flagsPtr[maxj]++;
 		ksPtr[maxj]++;
 		// get the next highest docid and add it in
 	} while(m_numDocIds < m_docsToGet);
@@ -944,15 +946,16 @@ bool Msg3a::mergeLists() {
 		// show the final merged docids
 		for(int32_t i = 0; i < m_numDocIds; i++) {
 			int32_t sh = 0;
-			if(m_req39->m_doSiteClustering )
+			if(m_msg39req.m_doSiteClustering )
 				sh=g_clusterdb.getSiteHash26((char *)
 							   &m_clusterRecs[i]);
 			// print out score_t
-			logf(LOG_DEBUG,"query: msg3a: [%" PTRFMT"] %03" PRId32") merged docId=%012" PRIu64" score=%f hosthash=0x%" PRIx32,
-			    (PTRTYPE)this,
+			logf(LOG_DEBUG,"query: msg3a: [%p] %03d) merged docId=%012" PRIu64" score=%f flags=0x%04x hosthash=0x%x",
+			     this,
 			     i,
 			     m_docIds[i],
 			     (double)m_scores[i],
+			     m_flags[i],
 			     sh);
 		}
 	}
@@ -967,7 +970,7 @@ bool Msg3a::mergeLists() {
 int32_t Msg3a::getStoredSize ( ) {
 	// docId=8, scores=sizeof(rscore_t), clusterLevel=1 bitScores=1
 	// eventIds=1
-	int32_t need = m_numDocIds * ( 8 + sizeof(double) + 1 ) +
+	int32_t need = m_numDocIds * ( 8 + sizeof(double) + sizeof(unsigned) + 1 ) +
 		4 + // m_numDocIds
 		8 ; // m_numTotalEstimatedHits (estimated # of results)
 	return need;
@@ -985,6 +988,9 @@ int32_t Msg3a::serialize   ( char *buf , char *bufEnd ) {
 	// store scores
 	gbmemcpy ( p , m_scores , m_numDocIds * sizeof(double) );
 	p +=  m_numDocIds * sizeof(double) ;
+	// store flags
+	memcpy(p, m_flags, m_numDocIds * sizeof(unsigned));
+	p +=  m_numDocIds * sizeof(unsigned);
 	// store cluster levels
 	gbmemcpy ( p , m_clusterLevels , m_numDocIds ); p += m_numDocIds;
 	// sanity check
@@ -1004,6 +1010,8 @@ int32_t Msg3a::deserialize ( char *buf , char *bufEnd ) {
 	m_docIds = (int64_t *)p; p += m_numDocIds * 8;
 	// get scores
 	m_scores = (double *)p; p += m_numDocIds * sizeof(double) ;
+	// get flags
+	m_flags = (unsigned*)p; p += m_numDocIds * sizeof(unsigned);
 	// get cluster levels
 	m_clusterLevels = (char *)p; p += m_numDocIds;
 	// sanity check

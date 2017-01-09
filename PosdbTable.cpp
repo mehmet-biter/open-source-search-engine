@@ -4316,6 +4316,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				// set the score and docid ptr
 				t->m_score = score;
 				t->m_docId = m_docId;
+				t->m_flags = flags;
 
 				// use an integer score like lastSpidered timestamp?
 				if ( m_sortByTermNumInt >= 0 ) {
