@@ -47,7 +47,6 @@
 #include "Query.h"
 #include "Title.h"
 #include "Summary.h"
-#include "zlib.h" // Z_OK
 #include "Spider.h" // SpiderRequest/SpiderReply definitions
 #include "HttpMime.h" // ET_DEFLAT
 #include "Msg1.h"

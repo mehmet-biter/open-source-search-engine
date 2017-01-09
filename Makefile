@@ -70,6 +70,7 @@ OBJS_O3 = \
 	GbCopyFile.o \
 	GbMakePath.o \
 	GbUtil.o \
+	GbCompress.o \
 
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
