@@ -30,7 +30,6 @@ public:
 	void *m_state;
 	void (* m_callback) (void *state);
 	int32_t m_niceness;
-	Msg39Request m_req;
 	Msg3a m_msg3a;
 	Msg4 m_msg4;
 	SafeBuf m_sb;
