@@ -480,7 +480,7 @@ bool Msg40::gotDocIds ( ) {
 	m_numRequests  =  0;
 	m_numReplies   =  0;
 
-	if ( ! m_urlTable.set ( m_msg3a.m_numDocIds * 2 ) ) {
+	if ( ! m_urlTable.set ( m_msg3a.getNumDocIds() * 2 ) ) {
 		m_errno = g_errno;
 		log("query: Failed to allocate memory for url deduping. "
 		    "Not deduping search results.");
@@ -520,7 +520,7 @@ bool Msg40::mergeDocIdsIntoBaseMsg3a() {
 	int32_t td = 0LL;
 	for ( int32_t i = 0 ; i < m_numCollsToSearch ; i++ ) {
 		Msg3a *mp = m_msg3aPtrs[i];
-		td += mp->m_numDocIds;
+		td += mp->getNumDocIds();
 		// reset cursor for list of docids from this collection
 		mp->m_cursor = 0;
 		// add up here too

@@ -77,16 +77,16 @@ public:
 
 	char   getClusterLevel(int32_t i) const { return m_msg3a.getClusterLevels()[i]; }
 
-	int64_t getDocId(int32_t i) const { return m_msg3a.m_docIds[i]; }
+	int64_t getDocId(int32_t i) const { return m_msg3a.getDocIds()[i]; }
 	double  getScore(int32_t i) const { return m_msg3a.getScores()[i]; }
 
 	DocIdScore *getScoreInfo(int32_t i) {
-		if ( ! m_msg3a.m_scoreInfos ) return NULL;
-		return m_msg3a.m_scoreInfos[i];
+		if ( ! m_msg3a.getScoreInfos() ) return NULL;
+		return m_msg3a.getScoreInfos()[i];
 	}
 	const DocIdScore *getScoreInfo(int32_t i) const {
-		if ( ! m_msg3a.m_scoreInfos ) return NULL;
-		return m_msg3a.m_scoreInfos[i];
+		if ( ! m_msg3a.getScoreInfos() ) return NULL;
+		return m_msg3a.getScoreInfos()[i];
 	}
 
 	bool  moreResultsFollow() const { return m_moreToCome; }

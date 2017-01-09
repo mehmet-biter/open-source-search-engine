@@ -19,6 +19,9 @@ void setTermFreqWeights ( collnum_t collnum, class Query *q );
 
 #define RBUF_SIZE 2048
 
+class DocIdScore;
+
+
 class Msg3a {
 public:
 	Msg3a();
@@ -61,6 +64,8 @@ public:
 	double       *getScores()       { return m_scores; }
 	const double *getScores() const { return m_scores; }
 	int32_t   getNumDocIds() const { return m_numDocIds; }
+	DocIdScore       * const * getScoreInfos()       { return (DocIdScore * const *)m_scoreInfos; }
+	const DocIdScore * const * getScoreInfos() const { return (DocIdScore * const *)m_scoreInfos; }
 
 	void printTerms ( ) ;
 
