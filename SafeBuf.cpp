@@ -1121,7 +1121,6 @@ redo:
 	goto redo;
 }
 
-#include "XmlDoc.h"
 
 bool SafeBuf::safeTruncateEllipsis ( const char *src , int32_t maxLen ) {
 	int32_t  srcLen = strlen(src);
