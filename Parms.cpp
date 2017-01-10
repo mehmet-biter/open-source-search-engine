@@ -2636,7 +2636,6 @@ bool Parms::setFromFile ( void *THIS        ,
 			}
 		}
 		// get the value
-		//v = xml.getString ( nn , nn+2 , m->m_xml , &vlen );
 		// this only happens when tag is there, but without a value
 		if ( ! v || vlen == 0 ) {
 			vlen = 0;
