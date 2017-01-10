@@ -50,14 +50,14 @@ Conf::Conf ( ) {
 	memset(m_defaultColl, 0, sizeof(m_defaultColl));
 	memset(m_clusterName, 0, sizeof(m_clusterName));
 	m_numDns = 0;
-	memset(&m_dnsIps, 0, sizeof(m_dnsIps));
-	memset(&m_dnsPorts, 0, sizeof(m_dnsPorts));
+	memset(m_dnsIps, 0, sizeof(m_dnsIps));
+	memset(m_dnsPorts, 0, sizeof(m_dnsPorts));
 	m_dnsMaxCacheMem = 0;
 	m_useProxyIps = false;
 	m_automaticallyUseProxyIps = false;
 	m_askRootNameservers = false;
 	m_numRns = 0;
-	memset(&m_rnsIps, 0, sizeof(m_rnsIps));
+	memset(m_rnsIps, 0, sizeof(m_rnsIps));
 	m_mergeBufSize = 0;
 	m_posdbFileCacheSize = 0;
 	m_posdbMaxTreeMem = 0;

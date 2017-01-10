@@ -344,8 +344,8 @@ bool Msg2::getLists ( ) {
 		if ( ! msg5->getList ( 	   RDB_POSDB,
 					   m_collnum        ,
 					   &m_whiteLists[m_w], // listPtr
-					   &sk3,
-					   &ek3,
+					   sk3,
+					   ek3,
 					   minRecSizes,
 					   true, // include tree?
 					   0, // maxcacheage

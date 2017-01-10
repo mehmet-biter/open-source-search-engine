@@ -30,8 +30,8 @@ Msge0::Msge0()
     m_callback(NULL),
     m_errno(0)
 {
-	memset(&m_ns, 0, sizeof(m_ns));
-	memset(&m_used, 0, sizeof(m_used));
+	memset(m_ns, 0, sizeof(m_ns));
+	memset(m_used, 0, sizeof(m_used));
 	reset();
 }
 

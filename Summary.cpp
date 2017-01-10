@@ -27,7 +27,7 @@ Summary::Summary()
 
 	// PVS-Studio
 	m_summary[0] = '\0';
-	memset(&m_summaryExcerptLen, 0, sizeof(m_summaryExcerptLen));
+	memset(m_summaryExcerptLen, 0, sizeof(m_summaryExcerptLen));
 	m_tmpWordWeightsBuf[0] = '\0';
 	m_tmpBuf4[0] = '\0';
 }

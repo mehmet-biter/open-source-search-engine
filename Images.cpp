@@ -52,9 +52,9 @@ void Images::reset() {
 	m_collnum = 0;
 	m_docId = 0;
 	m_latestIp = 0;
-	memset(&m_imageNodes, 0, sizeof(m_imageNodes));
-	memset(&m_termIds, 0, sizeof(m_termIds));
-	memset(&m_errors, 0, sizeof(m_errors));
+	memset(m_imageNodes, 0, sizeof(m_imageNodes));
+	memset(m_termIds, 0, sizeof(m_termIds));
+	memset(m_errors, 0, sizeof(m_errors));
 	m_pageUrl = NULL;
 	m_xml = NULL;
 	memset(&m_msg13Request, 0, sizeof(m_msg13Request));

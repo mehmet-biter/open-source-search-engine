@@ -1077,13 +1077,13 @@ CollectionRec::CollectionRec() {
 	m_collnum = -1;
 	m_coll[0] = '\0';
 	m_updateRoundNum = 0;
-	memset(&m_bases, 0, sizeof(m_bases));
+	memset(m_bases, 0, sizeof(m_bases));
 	// how many keys in the tree of each rdb? we now store this stuff
 	// here and not in RdbTree.cpp because we no longer have a maximum
 	// # of collection recs... MAX_COLLS. each is a 32-bit "int32_t" so
 	// it is 4 * RDB_END...
-	memset(&m_numNegKeysInTree, 0, sizeof(m_numNegKeysInTree));
-	memset(&m_numPosKeysInTree, 0, sizeof(m_numPosKeysInTree));
+	memset(m_numNegKeysInTree, 0, sizeof(m_numNegKeysInTree));
+	memset(m_numPosKeysInTree, 0, sizeof(m_numPosKeysInTree));
 	m_spiderColl = NULL;
 	m_overflow  = 0x12345678;
 	m_overflow2 = 0x12345678;

@@ -40,8 +40,8 @@ TopTree::TopTree() {
 	m_docsWanted = 0;
 	m_ridiculousMax = 0;
 	m_kickedOutDocIds = false;
-	memset(&m_domCount, 0, sizeof(m_domCount));
-	memset(&m_domMinNode, 0, sizeof(m_domMinNode));
+	memset(m_domCount, 0, sizeof(m_domCount));
+	memset(m_domMinNode, 0, sizeof(m_domMinNode));
 
 	// sampleVectors = NULL; 
 	reset(); 

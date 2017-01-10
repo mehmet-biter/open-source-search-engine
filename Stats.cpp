@@ -39,7 +39,7 @@ Stats::Stats ( ) {
 	m_closedSockets = 0;
 
 	m_msg3aRecallCnt = 0;
-	memset(&m_msg3aRecalls, 0, sizeof(m_msg3aRecalls));
+	memset(m_msg3aRecalls, 0, sizeof(m_msg3aRecalls));
 
 	clearMsgStats();
 	
@@ -48,7 +48,7 @@ Stats::Stats ( ) {
 	m_msg3aSlowRecalls = 0;
 	m_msg3aFastRecalls = 0;
 	m_tier2Misses = 0;
-	memset(&m_filterStats, 0, sizeof(m_filterStats));
+	memset(m_filterStats, 0, sizeof(m_filterStats));
 };
 
 
@@ -59,25 +59,25 @@ void Stats::clearMsgStats() {
 	// Version understandable by Coverity
 
 	// char      m_start;
-	memset(&m_msgTotalOfSendTimes, 0, sizeof(m_msgTotalOfSendTimes));
-	memset(&m_msgTotalSent, 0, sizeof(m_msgTotalSent));
-	memset(&m_msgTotalSentByTime, 0, sizeof(m_msgTotalSentByTime));
-	memset(&m_msgTotalOfQueuedTimes, 0, sizeof(m_msgTotalOfQueuedTimes));
-	memset(&m_msgTotalQueued, 0, sizeof(m_msgTotalQueued));
-	memset(&m_msgTotalQueuedByTime, 0, sizeof(m_msgTotalQueuedByTime));
-	memset(&m_msgTotalOfHandlerTimes, 0, sizeof(m_msgTotalOfHandlerTimes));
-	memset(&m_msgTotalHandlersCalled, 0, sizeof(m_msgTotalHandlersCalled));
-	memset(&m_msgTotalHandlersByTime, 0, sizeof(m_msgTotalHandlersByTime));
-	memset(&m_packetsIn, 0, sizeof(m_packetsIn));
-	memset(&m_packetsOut, 0, sizeof(m_packetsOut));
-	memset(&m_acksIn, 0, sizeof(m_acksIn));
-	memset(&m_acksOut, 0, sizeof(m_acksOut));
-	memset(&m_reroutes, 0, sizeof(m_reroutes));
-	memset(&m_errors, 0, sizeof(m_errors));
-	memset(&m_timeouts, 0, sizeof(m_timeouts));
-	memset(&m_nomem, 0, sizeof(m_nomem));
-	memset(&m_dropped, 0, sizeof(m_dropped));
-	memset(&m_cancelRead, 0, sizeof(m_cancelRead));
+	memset(m_msgTotalOfSendTimes, 0, sizeof(m_msgTotalOfSendTimes));
+	memset(m_msgTotalSent, 0, sizeof(m_msgTotalSent));
+	memset(m_msgTotalSentByTime, 0, sizeof(m_msgTotalSentByTime));
+	memset(m_msgTotalOfQueuedTimes, 0, sizeof(m_msgTotalOfQueuedTimes));
+	memset(m_msgTotalQueued, 0, sizeof(m_msgTotalQueued));
+	memset(m_msgTotalQueuedByTime, 0, sizeof(m_msgTotalQueuedByTime));
+	memset(m_msgTotalOfHandlerTimes, 0, sizeof(m_msgTotalOfHandlerTimes));
+	memset(m_msgTotalHandlersCalled, 0, sizeof(m_msgTotalHandlersCalled));
+	memset(m_msgTotalHandlersByTime, 0, sizeof(m_msgTotalHandlersByTime));
+	memset(m_packetsIn, 0, sizeof(m_packetsIn));
+	memset(m_packetsOut, 0, sizeof(m_packetsOut));
+	memset(m_acksIn, 0, sizeof(m_acksIn));
+	memset(m_acksOut, 0, sizeof(m_acksOut));
+	memset(m_reroutes, 0, sizeof(m_reroutes));
+	memset(m_errors, 0, sizeof(m_errors));
+	memset(m_timeouts, 0, sizeof(m_timeouts));
+	memset(m_nomem, 0, sizeof(m_nomem));
+	memset(m_dropped, 0, sizeof(m_dropped));
+	memset(m_cancelRead, 0, sizeof(m_cancelRead));
 	m_parsingInconsistencies = 0;
 	m_totalOverflows = 0;
 	m_compressedBytesIn = 0;

@@ -76,7 +76,7 @@ SpiderColl::SpiderColl () {
 	m_tailUh48 = 0;
 	m_tailHopCount = 0;
 	m_minFutureTimeMS = 0;
-	memset(&m_priorityToUfn, 0, sizeof(m_priorityToUfn));
+	memset(m_priorityToUfn, 0, sizeof(m_priorityToUfn));
 	m_gettingList2 = false;
 	m_lastScanTime = 0;
 	m_waitingTreeNeedsRebuild = false;
@@ -101,11 +101,11 @@ SpiderColl::SpiderColl () {
 	m_pri2 = 0;
 	m_lastUrlFiltersUpdate = 0;
 	m_gettingList1 = false;
-	memset(&m_outstandingSpiders, 0, sizeof(m_outstandingSpiders));
+	memset(m_outstandingSpiders, 0, sizeof(m_outstandingSpiders));
 	m_overflowList = NULL;
 	m_totalNewSpiderRequests = 0;
 	m_lastSreqUh48 = 0;
-	memset(&m_cblocks, 0, sizeof(m_cblocks));
+	memset(m_cblocks, 0, sizeof(m_cblocks));
 	m_pageNumInlinks = 0;
 	m_lastCBlockIp = 0;
 	m_lastOverflowFirstIp = 0;

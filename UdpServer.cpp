@@ -68,7 +68,7 @@ UdpServer::UdpServer ( ) {
 
 	// Coverity
 	m_nextTransId = 0;
-	memset(&m_handlers, 0, sizeof(m_handlers));
+	memset(m_handlers, 0, sizeof(m_handlers));
 	m_needToSend = false;
 	m_port = 0;
 	m_proto = NULL;

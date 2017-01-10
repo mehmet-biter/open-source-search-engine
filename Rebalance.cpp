@@ -128,7 +128,7 @@ const char *Rebalance::getNeedsRebalance ( ) {
 	       );
 
 	// convert m_nextKey into an ascii string and store into keyStr
-	hexToBin(keyStr,strlen(keyStr), (char *)&m_nextKey);
+	hexToBin(keyStr,strlen(keyStr), (char *)m_nextKey);
 
 	m_collnum = cn;
 	//m_collnum = 4695; //debug skip
@@ -299,7 +299,7 @@ bool Rebalance::saveRebalanceFile ( ) {
 
 	char keyStr[128];
 	// convert m_nextKey 
-	binToHex ( (unsigned char *)&m_nextKey , MAX_KEY_BYTES , keyStr );
+	binToHex ( (unsigned char *)m_nextKey , MAX_KEY_BYTES , keyStr );
 
 	//log("db: saving rebalance.txt");
 	StackBuf<3000> sb;

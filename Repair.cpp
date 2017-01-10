@@ -126,8 +126,8 @@ Repair::Repair() {
 	m_saveRepairState = false;
 	m_isRetrying = false;
 	
-	memset(&m_collOffs, 0, sizeof(m_collOffs));
-	memset(&m_collLens, 0, sizeof(m_collLens));
+	memset(m_collOffs, 0, sizeof(m_collOffs));
+	memset(m_collLens, 0, sizeof(m_collLens));
 }
 
 

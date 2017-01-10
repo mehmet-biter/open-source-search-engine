@@ -847,7 +847,7 @@ Parms::Parms ( ) {
 
 	// Coverity
 	m_numParms = 0;
-	memset(&m_searchParms, 0, sizeof(m_searchParms));
+	memset(m_searchParms, 0, sizeof(m_searchParms));
 	m_numSearchParms = 0;
 }
 

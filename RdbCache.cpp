@@ -29,7 +29,7 @@ RdbCache::RdbCache() : m_dbname(NULL) {
 	m_maxMem       = 0;
 	m_numPtrsMax   = 0;
 	memset(m_bufs, 0, sizeof(m_bufs));
-	memset(&m_bufSizes, 0, sizeof(m_bufSizes));
+	memset(m_bufSizes, 0, sizeof(m_bufSizes));
 	reset();
 	m_needsSave    = false;
 	m_convertNumPtrsMax = 0;
@@ -68,7 +68,7 @@ void RdbCache::reset ( ) {
 	m_numBufs     = 0;
 	m_totalBufSize= 0;
 	memset(m_bufs, 0, sizeof(m_bufs));
-	memset(&m_bufSizes, 0, sizeof(m_bufSizes));
+	memset(m_bufSizes, 0, sizeof(m_bufSizes));
 
 	if ( m_ptrs ) {
 		mfree ( m_ptrs , m_numPtrsMax*sizeof(char *),"RdbCache");

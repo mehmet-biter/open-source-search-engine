@@ -48,10 +48,10 @@ Profiler::Profiler() :
 	m_totalFrames = 0;
 	m_lastQpoll = NULL;
 	m_lastQpollLine = 0;
-	memset(&m_quickPollInfos, 0, sizeof(m_quickPollInfos));
+	memset(m_quickPollInfos, 0, sizeof(m_quickPollInfos));
 	m_lastQPUsed = 0;
 	m_lastAddressMapIndex = 0;
-	memset(&m_fnTime, 0, sizeof(m_fnTime));
+	memset(m_fnTime, 0, sizeof(m_fnTime));
 }
 
 Profiler::~Profiler() {//reset();

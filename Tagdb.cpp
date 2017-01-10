@@ -394,7 +394,7 @@ bool Tag::isType ( const char *t ) {
 
 TagRec::TagRec() {
 	m_numListPtrs = 0;
-	memset(&m_listPtrs, 0, sizeof(m_listPtrs));
+	memset(m_listPtrs, 0, sizeof(m_listPtrs));
 }
 
 void TagRec::constructor ( ) {
