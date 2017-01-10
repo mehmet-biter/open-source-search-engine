@@ -2653,10 +2653,6 @@ bool Parms::setFromFile ( void *THIS        ,
 			//continue;
 		}
 
-		// now use proper cdata
-		// we can't do this and be backwards compatible right now
-		//nb = cdataDecode ( v , v , 0 );//, vlen , false ,0);
-
 		// now decode it into itself
 		nb = htmlDecode ( v , v , vlen , false);
 		v[nb] = '\0';
@@ -2734,16 +2730,12 @@ bool Parms::setFromFile ( void *THIS        ,
 			}
 		}
 
-		// get the value
-		//v = m_xml2.getString ( nn , nn+2 , m->m_xml , &vlen );
-
 		// this only happens when tag is there, but without a value
 		if ( !v || vlen == 0 ) {
 			vlen = 0;
 			v = tt;
 		}
 
-		//c = v[vlen];
 		v[vlen]='\0';
 
 		// now decode it into itself
@@ -2753,10 +2745,6 @@ bool Parms::setFromFile ( void *THIS        ,
 		// set our parm
 		setParm( (char *)THIS, m, i, j, v, false /*is html encoded?*/, false );
 
-		// we were set from the backup default file
-		//((CollectionRec *)THIS)->m_orig[i] = 1;
-		// go back
-		//v[vlen] = c;
 		// do not repeat same node
 		nn++;
 		// try to get the next node if we're an array
