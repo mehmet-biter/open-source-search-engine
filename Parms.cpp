@@ -1384,6 +1384,10 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 			else             bg = bg1;
 		}
 
+		//split the current table. Not pretty but works for now
+		if(m->m_flags&PF_TABLESPLIT)
+			sb->safePrintf("</table><table %s>\n",TABLE_STYLE);
+
 		// . do we have an array? if so print title on next row
 		//   UNLESS these are priority checkboxes, those can all
 		//   cluster together onto one row
@@ -4156,7 +4160,7 @@ void Parms::init ( ) {
 	m->m_rowid = 1;
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.0";
-	m->m_flags = 0;
+	m->m_flags = PF_TABLESPLIT;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
