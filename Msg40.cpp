@@ -456,6 +456,7 @@ bool Msg40::gotDocIds ( ) {
 	if ( ! mergeDocIdsIntoBaseMsg3a() )
 		log("msg40: error: %s",mstrerror(g_errno));
 
+	adjustRankingBasedOnFlags();
 
 	// log the time it took for cache lookup
 	int64_t now  = gettimeofdayInMilliseconds();
@@ -602,6 +603,42 @@ bool Msg40::mergeDocIdsIntoBaseMsg3a() {
 
 	return true;
 }
+
+
+//adjust the order of the results based on the flags of the documents
+void Msg40::adjustRankingBasedOnFlags() {
+	int *rank = (int*)mmalloc(m_msg3a.m_numDocIds * sizeof(int), "ranksort");
+	if(!rank)
+		return; //not a serious problem
+	
+	for(int i=0; i<m_msg3a.m_numDocIds; i++) {
+		unsigned flags = m_msg3a.m_flags[i];
+		int adjustment = 0;
+		if(flags) {
+			for(int bit=0; bit<26; bit++)
+				if((1<<bit)&flags)
+					adjustment += g_conf.m_flagRankAdjustment[bit];
+			rank[i] = i + adjustment;
+		} else
+			rank[i] = i;
+	}
+	
+	//There are no library functions to sort multiple side-by-side arrays. Fortunately, the positions are almost sorted, so a plain insertion sort is the ideal algorithm
+	for(int i=1; i<m_msg3a.m_numDocIds; i++) {
+		for(int j=i; j>0 && rank[j-1] > rank[j]; j--) {
+			std::swap(m_msg3a.m_docIds[j],m_msg3a.m_docIds[j-1]);
+			std::swap(m_msg3a.m_scores[j],m_msg3a.m_scores[j-1]);
+			std::swap(m_msg3a.m_flags[j],m_msg3a.m_flags[j-1]);
+			if(m_msg3a.m_collnums)
+				std::swap(m_msg3a.m_collnums[j],m_msg3a.m_collnums[j-1]);
+			std::swap(m_msg3a.m_clusterLevels[j],m_msg3a.m_clusterLevels[j-1]);
+			std::swap(rank[j],rank[j-1]);
+		}
+	}
+	
+	mfree(rank,m_msg3a.m_numDocIds * sizeof(int),"ranksort");
+}
+
 
 // . returns false and sets g_errno/m_errno on error
 // . makes m_msg3a.m_numDocIds ptrs to Msg20s. 
