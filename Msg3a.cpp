@@ -11,6 +11,7 @@
 #include "Posdb.h"
 #include "Collectiondb.h"
 #include "Conf.h"
+#include "Lang.h"
 #include "Mem.h"
 
 

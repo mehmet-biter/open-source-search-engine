@@ -16,7 +16,6 @@
 #include "max_coll_len.h"
 #include "max_url_len.h"
 #include "SafeBuf.h"
-#include "Xml.h"
 
 #define USERAGENTMAXSIZE      128
 

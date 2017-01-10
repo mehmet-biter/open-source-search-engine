@@ -13,6 +13,7 @@
 #include "Stats.h"
 #include "Conf.h"
 #include "TopTree.h"
+#include "Lang.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
 #include <math.h>
