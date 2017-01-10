@@ -460,8 +460,6 @@ class Conf {
 	// the original cluster is updated
 	bool m_useTmpCluster;
 
-	Xml   m_xml;
-
 	// . for specifying if this is an interface machine
 	//   messages are rerouted from this machine to the main
 	//   cluster set in the hosts.conf.
