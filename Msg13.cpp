@@ -894,7 +894,7 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 
 static int32_t s_55Out = 0;
 
-static void doneReportingStatsWrapper(void *state, UdpSlot *slot) {
+static void doneReportingStatsWrapper(void * /*state*/, UdpSlot *slot) {
 	// note it
 	if ( g_errno )
 		log("sproxy: 55 reply: %s",mstrerror(g_errno));
@@ -1044,7 +1044,7 @@ void gotHttpReply9 ( void *state , TcpSocket *ts ) {
 	Host *h = g_hostdb.getFirstAliveHost();
 	// now return the proxy. this will decrement the load count on
 	// host "h" for this proxy.
-	if (g_udpServer.sendRequest((char *)r, r->getProxyRequestSize(), msg_type_54, h->m_ip, h->m_port, -1, NULL, r, doneReportingStatsWrapper, 10000)) {
+	if (g_udpServer.sendRequest((char *)r, r->getProxyRequestSize(), msg_type_54, h->m_ip, h->m_port, -1, NULL, NULL, doneReportingStatsWrapper, 10000)) {
 		// it blocked!
 		//r->m_blocked = true;
 		s_55Out++;
