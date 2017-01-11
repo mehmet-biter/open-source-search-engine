@@ -198,7 +198,7 @@ static bool sendReply(State0 *st, char *reply) {
 	return true;
 }
 
-static bool printCSSHead ( SafeBuf *sb , char format ) {
+static bool printCSSHead(SafeBuf *sb) {
 	sb->safePrintf(
 			      "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML "
 			      "4.01 Transitional//EN\">\n"
@@ -740,12 +740,12 @@ bool printSearchResultsHeader ( State0 *st ) {
 				 
 
 	if ( si->m_format == FORMAT_HTML ) {
-		printCSSHead ( sb ,si->m_format );
+		printCSSHead (sb);
 		sb->safePrintf("<body>");
 	}
 
 	if ( si->m_format==FORMAT_WIDGET_IFRAME ) {
-		printCSSHead ( sb ,si->m_format );
+		printCSSHead(sb);
 		sb->safePrintf("<body style=padding:0px;margin:0px;>");
 
 		int32_t refresh = hr->getLong("refresh",0);
