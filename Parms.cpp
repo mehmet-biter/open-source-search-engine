@@ -6705,19 +6705,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(InjectionRequest,ptr_url);
 	m++;
 
-	m->m_title = "inject links";
-	m->m_desc  = "Should we inject the links found in the injected "
-		"content as well?";
-	m->m_cgi   = "injectlinks";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_CHECKBOX;
-	m->m_def   = "0";
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_INJECT;
-	m->m_off   = offsetof(InjectionRequest,m_injectLinks);
-	m++;
-
-
 	m->m_title = "spider links";
 	m->m_desc  = "Add the outlinks of the injected content into spiderdb "
 		"for spidering?";
