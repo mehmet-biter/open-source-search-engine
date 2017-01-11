@@ -1332,7 +1332,15 @@ void Rdb::doneDumpingCollWrapper ( void *state ) {
 	// so allow it to try to merge again.
 	//RdbBase *base = THIS->getBase(THIS->m_dumpCollnum);
 
-	logTrace( g_conf.m_logTraceRdb, "%s", THIS->m_dbname );
+	logTrace( g_conf.m_logTraceRdb, "dbname=%s collnum=%d", THIS->m_dbname, THIS->m_dumpCollnum );
+
+	if (g_errno == 0) {
+		RdbBase *base = THIS->getBase(THIS->m_dumpCollnum);
+		if (base) {
+			base->generateGlobalIndex();
+			base->markNewFileReadable();
+		}
+	}
 
 	// return if the loop blocked
 	if ( ! THIS->dumpCollLoop() ) {
@@ -1352,14 +1360,6 @@ void Rdb::doneDumping ( ) {
 	// free mem in the primary buffer
 	if ( ! m_dumpErrno ) {
 		m_mem.freeDumpedMem( &m_tree );
-	}
-
-	for (collnum_t collnum = 0; collnum < getNumBases(); collnum++) {
-		RdbBase *base = getBase(collnum);
-		if (base) {
-			base->generateGlobalIndex();
-			base->markNewFileReadable();
-		}
 	}
 
 	// . tell RdbDump it is done
