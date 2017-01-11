@@ -10883,6 +10883,9 @@ bool Parms::broadcastParmList ( SafeBuf *parmList ,
 	if ( hostId >= 0 )
 		pn->m_numHostsTotal = 1;
 
+	// pump the parms out to other hosts in the network
+	doParmSendingLoop ( );
+
 	// wait for replies
 	return false;
 }
