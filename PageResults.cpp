@@ -775,8 +775,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 	if ( si->m_format == FORMAT_WIDGET_IFRAME ||
 	     si->m_format == FORMAT_WIDGET_AJAX ) {
-		const char *pos = "relative";
-		if ( si->m_format == FORMAT_WIDGET_IFRAME ) pos = "absolute";
 		int32_t widgetwidth = hr->getLong("widgetwidth",150);
 		int32_t widgetHeight = hr->getLong("widgetheight",400);
 		//int32_t iconWidth = 25;
@@ -1260,14 +1258,12 @@ bool printSearchResultsHeader ( State0 *st ) {
 			maxi1 = i;
 		}
 		float maxtfw2 = 0.0;
-		int32_t maxi2;
 		for ( int32_t i = 0 ; i< dpx->m_numSingles ; i++ ) {
 			if ( i == maxi1 ) continue;
 			SingleScore *ssi = &dpx->m_singleScores[i];
 			float tfwi = ssi->m_tfWeight;
 			if ( tfwi <= maxtfw2 ) continue;
 			maxtfw2 = tfwi;
-			maxi2 = i;
 		}
 		// only 1 term?
 		if ( almostEqualFloat(maxtfw2, 0.0) ) maxtfw2 = maxtfw1;
@@ -1302,9 +1298,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 	char inbuf[128];
 	ulltoa ( inbuf , docsInColl );
-
-	bool isAdmin = (si->m_isMasterAdmin || si->m_isCollAdmin);
-	if ( si->m_format != FORMAT_HTML ) isAdmin = false;
 
 	// otherwise, we had no error
 	if ( numResults == 0 && si->m_format == FORMAT_HTML ) {
