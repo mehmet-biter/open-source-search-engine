@@ -2858,9 +2858,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	if ( mr->size_outlinks <= 0 ) outlinks = NULL;
 	// only for xml for now
 	if ( si->m_format == FORMAT_HTML ) outlinks = NULL;
-	Inlink *k;
+	Inlink *k = NULL;
 	// do we need absScore2 for outlinks?
-	//k = NULL;
 	while ( outlinks &&
 		(k =outlinks->getNextInlink(k))) 
 		// print it out
