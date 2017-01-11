@@ -2176,11 +2176,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	url    = uu.getUrl();
 	urlLen = uu.getUrlLen();
 
-	// get my site hash
-	uint64_t siteHash = 0;
-	if ( uu.getHostLen() > 0 ) 
-		siteHash = hash64(uu.getHost(),uu.getHostLen());
-
 	bool isAdmin = (si->m_isMasterAdmin || si->m_isCollAdmin);
 	if ( si->m_format == FORMAT_XML ) isAdmin = false;
 
@@ -2434,8 +2429,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		strLen = 0;
 	}
 	
-	int32_t hlen;
-
 	const char *frontTag =
 		"<font style=\"color:black;background-color:yellow\">" ;
 	const char *backTag = "</font>";
@@ -2458,7 +2451,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	StackBuf<> hb;
 	if ( str && strLen && si->m_doQueryHighlighting ) {
-		hlen = hi.set ( &hb, tmpTitle.getBufStart(), tmpTitle.length(), &si->m_hqq, frontTag, backTag);
+		hi.set ( &hb, tmpTitle.getBufStart(), tmpTitle.length(), &si->m_hqq, frontTag, backTag);
 
 		// reassign!
 		str = hb.getBufStart();
@@ -3657,13 +3650,11 @@ static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg
 	}
 	int32_t a = ps->m_wordPos2;
 	int32_t b = ps->m_wordPos1;
-	const char *es = "";
 	const char *bes = "";
 	if ( a < b ) {
 		a = ps->m_wordPos1;
 		b = ps->m_wordPos2;
 		// out of query order penalty!
-		es = "+ 1.0";
 		bes = "+ <b>1.0</b>";
 	}
 	
