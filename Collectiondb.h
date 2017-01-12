@@ -15,6 +15,7 @@ class Collectiondb  {
 
  public:
 	Collectiondb();
+	~Collectiondb();
 
 	// does nothing
 	void reset() ;

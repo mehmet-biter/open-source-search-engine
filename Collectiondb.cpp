@@ -48,6 +48,10 @@ Collectiondb::Collectiondb ( ) {
 	g_process.shutdownAbort(true);
 }
 
+Collectiondb::~Collectiondb() {
+	reset();
+}
+
 // reset rdb
 void Collectiondb::reset() {
 	log(LOG_INFO,"db: resetting collectiondb.");
