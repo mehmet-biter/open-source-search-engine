@@ -170,6 +170,7 @@ public:
 	SearchInput   *m_si;
 
 	bool mergeDocIdsIntoBaseMsg3a();
+	void adjustRankingBasedOnFlags();
 	int32_t m_numCollsToSearch;
 	class Msg3a **m_msg3aPtrs;
 	SafeBuf m_msg3aPtrBuf;

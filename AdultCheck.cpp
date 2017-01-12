@@ -3,6 +3,7 @@
 #include "Log.h"
 #include "Conf.h"
 #include "Speller.h" //g_speller for word split uses
+#include "Xml.h"
 #include <stddef.h>
 
 // . an "id" of 2 means very indicative of a dirty doc

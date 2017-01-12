@@ -402,8 +402,8 @@ bool Msg2::getLists ( ) {
 		if ( ! msg5->getSingleUnmergedList ( RDB_POSDB,
 						     m_collnum,
 						     &m_whiteLists[m_w], // listPtr
-						     &sk3,
-						     &ek3,
+						     sk3,
+						     ek3,
 						     minRecSizes,
 						     0,                 // maxcacheage
 						     m_fileNum,         // file num

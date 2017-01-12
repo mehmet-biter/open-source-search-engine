@@ -16,7 +16,6 @@
 #include "max_coll_len.h"
 #include "max_url_len.h"
 #include "SafeBuf.h"
-#include "Xml.h"
 
 #define USERAGENTMAXSIZE      128
 
@@ -458,8 +457,6 @@ class Conf {
 	// used by proxy to make proxy point to the temp cluster while
 	// the original cluster is updated
 	bool m_useTmpCluster;
-
-	Xml   m_xml;
 
 	// . for specifying if this is an interface machine
 	//   messages are rerouted from this machine to the main

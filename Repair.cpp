@@ -126,8 +126,8 @@ Repair::Repair() {
 	m_saveRepairState = false;
 	m_isRetrying = false;
 	
-	memset(&m_collOffs, 0, sizeof(m_collOffs));
-	memset(&m_collLens, 0, sizeof(m_collLens));
+	memset(m_collOffs, 0, sizeof(m_collOffs));
+	memset(m_collLens, 0, sizeof(m_collLens));
 }
 
 
@@ -630,8 +630,8 @@ void Repair::getNextCollToRepair ( ) {
 	else {
 		m_cr = NULL;
 		// loop m_colli over all the possible collnums
-		while ( ! m_cr && m_colli < g_collectiondb.m_numRecs )
-			m_cr = g_collectiondb.m_recs [ ++m_colli ];
+		while ( ! m_cr && m_colli < g_collectiondb.getNumRecs() )
+			m_cr = g_collectiondb.getRec(++m_colli);
 		if ( ! m_cr ) {
 			g_errno = ENOCOLLREC;
 			return;
@@ -760,7 +760,7 @@ bool Repair::load ( ) {
 	m_nextTitledbKey = m_lastTitledbKey;
 
 	// reinstate the valuable vars
-	m_cr   = g_collectiondb.m_recs [ m_collnum ];
+	m_cr   = g_collectiondb.getRec(m_collnum);
 
 	m_stage = STAGE_TITLEDB_0;
 	if ( m_completedFirstScan  ) m_stage = STAGE_SPIDERDB_0;

@@ -540,7 +540,7 @@ bool XmlDoc::setCollNum ( const char *coll ) {
 
 CollectionRec *XmlDoc::getCollRec ( ) {
 	if ( ! m_collnumValid ) { g_process.shutdownAbort(true); }
-	CollectionRec *cr = g_collectiondb.m_recs[m_collnum];
+	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
 	if ( ! cr ) {
 		log("build: got NULL collection rec for collnum=%" PRId32".",
 		    (int32_t)m_collnum);
@@ -11989,7 +11989,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 
 		char k[MAX_KEY_BYTES];
 		if ( ks > MAX_KEY_BYTES ) { g_process.shutdownAbort(true); }
-		gbmemcpy ( &k , p , ks );
+		gbmemcpy ( k , p , ks );
 		// is it a negative key?
 		bool neg = false;
 		if ( ! ( p[0] & 0x01 ) ) neg = true;
@@ -13483,8 +13483,8 @@ char *XmlDoc::getMetaList(bool forDelete) {
 				// add posdb doc key
 				*m_p++ = m_useSecondaryRdbs ? RDB2_POSDB2 : RDB_POSDB;
 
-				Posdb::makeKey(&key, POSDB_DELETEDOC_TERMID, docId, 0, 0, 0, 0, 0, 0, 0, 0, 0, delKey, false);
-				memcpy(m_p, &key, sizeof(posdbkey_t));
+				Posdb::makeKey(key, POSDB_DELETEDOC_TERMID, docId, 0, 0, 0, 0, 0, 0, 0, 0, 0, delKey, false);
+				memcpy(m_p, key, sizeof(posdbkey_t));
 				m_p += sizeof(posdbkey_t);
 			}
 		}

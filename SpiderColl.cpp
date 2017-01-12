@@ -76,7 +76,7 @@ SpiderColl::SpiderColl () {
 	m_tailUh48 = 0;
 	m_tailHopCount = 0;
 	m_minFutureTimeMS = 0;
-	memset(&m_priorityToUfn, 0, sizeof(m_priorityToUfn));
+	memset(m_priorityToUfn, 0, sizeof(m_priorityToUfn));
 	m_gettingList2 = false;
 	m_lastScanTime = 0;
 	m_waitingTreeNeedsRebuild = false;
@@ -101,11 +101,11 @@ SpiderColl::SpiderColl () {
 	m_pri2 = 0;
 	m_lastUrlFiltersUpdate = 0;
 	m_gettingList1 = false;
-	memset(&m_outstandingSpiders, 0, sizeof(m_outstandingSpiders));
+	memset(m_outstandingSpiders, 0, sizeof(m_outstandingSpiders));
 	m_overflowList = NULL;
 	m_totalNewSpiderRequests = 0;
 	m_lastSreqUh48 = 0;
-	memset(&m_cblocks, 0, sizeof(m_cblocks));
+	memset(m_cblocks, 0, sizeof(m_cblocks));
 	m_pageNumInlinks = 0;
 	m_lastCBlockIp = 0;
 	m_lastOverflowFirstIp = 0;
@@ -133,7 +133,7 @@ bool SpiderColl::load ( ) {
 	// error?
 	int32_t err = 0;
 	// make the dir
-	char *coll = g_collectiondb.getColl(m_collnum);
+	const char *coll = g_collectiondb.getCollName(m_collnum);
 	// sanity check
 	if ( ! coll || coll[0]=='\0' ) {
 		log("spider: bad collnum of %" PRId32,(int32_t)m_collnum);
@@ -149,7 +149,7 @@ bool SpiderColl::load ( ) {
 	// keep it kinda low if we got a ton of collections
 	int32_t maxMem = 15000;
 	int32_t maxNodes = 500;
-	if ( g_collectiondb.m_numRecsUsed > 500 ) {
+	if ( g_collectiondb.getNumRecsUsed() > 500 ) {
 		maxNodes = 100;
 		maxMem = maxNodes * 20;
 	}
@@ -336,7 +336,7 @@ bool SpiderColl::makeDoleIPTable ( ) {
 
 
 CollectionRec *SpiderColl::getCollRec() {
-	CollectionRec *cr = g_collectiondb.m_recs[m_collnum];
+	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
 	if ( ! cr ) log("spider: lost coll rec");
 	return cr;
 }
@@ -948,7 +948,7 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 	// seeds and bulk urls added from add url and can use that to
 	// determine if the collection is empty of urls or not for printing
 	// out the colored bullets in printCollectionNavBar() in Pages.cpp.
-	CollectionRec *cr = g_collectiondb.m_recs[m_collnum];
+	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
 	if ( cr ) {
 		cr->m_localCrawlInfo .m_urlsHarvested++;
 		cr->m_globalCrawlInfo.m_urlsHarvested++;

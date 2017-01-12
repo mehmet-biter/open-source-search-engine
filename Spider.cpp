@@ -759,7 +759,7 @@ void SpiderCache::save ( bool useThread ) {
 	// assume saving
 	//m_isSaving = true;
 	// loop over all SpiderColls and get the best
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
 		SpiderColl *sc = getSpiderCollIffNonNull(i);//m_spiderColls[i];
 		if ( ! sc ) continue;
 		RdbTree *tree = &sc->m_waitingTree;
@@ -814,7 +814,7 @@ void SpiderCache::save ( bool useThread ) {
 }
 
 bool SpiderCache::needsSave ( ) {
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
 		SpiderColl *sc = getSpiderCollIffNonNull(i);//m_spiderColls[i];
 		if ( ! sc ) continue;
 		if ( sc->m_waitingTree.needsSave() ) return true;
@@ -827,7 +827,7 @@ bool SpiderCache::needsSave ( ) {
 void SpiderCache::reset ( ) {
 	log(LOG_DEBUG,"spider: resetting spidercache");
 	// loop over all SpiderColls and get the best
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
 		CollectionRec *cr = g_collectiondb.getRec(i);
 		ScopedLock sl(cr->m_spiderCollMutex);
 		SpiderColl *sc = cr->m_spiderColl;
@@ -844,9 +844,9 @@ void SpiderCache::reset ( ) {
 SpiderColl *SpiderCache::getSpiderCollIffNonNull ( collnum_t collnum ) {
 	// "coll" must be invalid
 	if ( collnum < 0 ) return NULL;
-	if ( collnum >= g_collectiondb.m_numRecs ) return NULL;
+	if ( collnum >= g_collectiondb.getNumRecs()) return NULL;
 	// shortcut
-	CollectionRec *cr = g_collectiondb.m_recs[collnum];
+	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	// empty?
 	if ( ! cr ) return NULL;
 	// return it if non-NULL
@@ -921,7 +921,7 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	// if spidering disabled, do not bother creating this!
 	//if ( ! g_conf.m_spideringEnabled ) return NULL;
 	// shortcut
-	CollectionRec *cr = g_collectiondb.m_recs[collnum];
+	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	// collection might have been reset in which case collnum changes
 	if ( ! cr ) return NULL;
 	ScopedLock sl(cr->m_spiderCollMutex);

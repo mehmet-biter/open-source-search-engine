@@ -48,6 +48,10 @@ Collectiondb::Collectiondb ( ) {
 	g_process.shutdownAbort(true);
 }
 
+Collectiondb::~Collectiondb() {
+	reset();
+}
+
 // reset rdb
 void Collectiondb::reset() {
 	log(LOG_INFO,"db: resetting collectiondb.");
@@ -870,12 +874,27 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 }
 
 // a hack function
-bool addCollToTable ( const char *coll , collnum_t collnum ) {
+static bool addCollToTable(const char *coll, collnum_t collnum) {
 	// readd it to the hashtable that maps name to collnum too
 	int64_t h64 = hash64n(coll);
 	g_collTable.set(8,sizeof(collnum_t), 256,NULL,0, false,"nhshtbl");
 	return g_collTable.addKey ( &h64 , &collnum );
 }
+
+void Collectiondb::hackCollectionForInjection(CollectionRec *cr) {
+	m_recPtrBuf.reserve(4);
+	m_recs = (CollectionRec **)m_recPtrBuf.getBufStart();
+	m_recs[0] = cr;
+
+	// right now this is just for the main collection
+	const char coll[] = "main";
+	addCollToTable(coll, (collnum_t)0);
+
+	// force RdbTree.cpp not to bitch about corruption
+	// assume we are only getting out collnum 0 recs i guess
+	m_numRecs = 1;
+}
+
 
 // get coll rec specified in the HTTP request
 CollectionRec *Collectiondb::getRec ( HttpRequest *r , bool useDefaultRec ) {
@@ -964,33 +983,31 @@ CollectionRec *Collectiondb::getFirstRec ( ) {
 	return NULL;
 }
 
-collnum_t Collectiondb::getFirstCollnum ( ) {
+collnum_t Collectiondb::getFirstCollnum() const {
 	for ( int32_t i = 0 ; i < m_numRecs ; i++ )
 		if ( m_recs[i] ) return i;
 	return (collnum_t)-1;
 }
 
-char *Collectiondb::getFirstCollName ( ) {
+const char *Collectiondb::getFirstCollName() const {
 	for ( int32_t i = 0 ; i < m_numRecs ; i++ )
 		if ( m_recs[i] ) return m_recs[i]->m_coll;
 	return NULL;
 }
 
-char *Collectiondb::getCollName ( collnum_t collnum ) {
+const char *Collectiondb::getCollName(collnum_t collnum) const {
 	if ( collnum < 0 || collnum > m_numRecs ) return NULL;
 	if ( ! m_recs[(int32_t)collnum] ) return NULL;
 	return m_recs[collnum]->m_coll;
 }
 
-collnum_t Collectiondb::getCollnum ( const char *coll ) {
-
+collnum_t Collectiondb::getCollnum(const char *coll) const {
 	int32_t clen = 0;
 	if ( coll ) clen = strlen(coll );
 	return getCollnum ( coll , clen );
 }
 
-collnum_t Collectiondb::getCollnum ( const char *coll , int32_t clen ) {
-
+collnum_t Collectiondb::getCollnum ( const char *coll , int32_t clen ) const {
 	// default empty collection names
 	if ( coll && ! coll[0] ) coll = NULL;
 	if ( ! coll ) {
@@ -1077,13 +1094,13 @@ CollectionRec::CollectionRec() {
 	m_collnum = -1;
 	m_coll[0] = '\0';
 	m_updateRoundNum = 0;
-	memset(&m_bases, 0, sizeof(m_bases));
+	memset(m_bases, 0, sizeof(m_bases));
 	// how many keys in the tree of each rdb? we now store this stuff
 	// here and not in RdbTree.cpp because we no longer have a maximum
 	// # of collection recs... MAX_COLLS. each is a 32-bit "int32_t" so
 	// it is 4 * RDB_END...
-	memset(&m_numNegKeysInTree, 0, sizeof(m_numNegKeysInTree));
-	memset(&m_numPosKeysInTree, 0, sizeof(m_numPosKeysInTree));
+	memset(m_numNegKeysInTree, 0, sizeof(m_numNegKeysInTree));
+	memset(m_numPosKeysInTree, 0, sizeof(m_numPosKeysInTree));
 	m_spiderColl = NULL;
 	m_overflow  = 0x12345678;
 	m_overflow2 = 0x12345678;
@@ -1348,7 +1365,7 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 	}
 
 
-	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.m_initializing )
+	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.isInitializing() )
 		log(LOG_INFO, "coll: Loaded %s (%" PRId32") local hasurlsready=%" PRId32,
 		    m_coll,
 		    (int32_t)m_collnum,
@@ -1384,7 +1401,7 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 		// it is binary now
 		gbmemcpy ( &m_globalCrawlInfo , sb.getBufStart(),sb.length() );
 
-	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.m_initializing )
+	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.isInitializing() )
 		log(LOG_INFO, "coll: Loaded %s (%" PRId32") global hasurlsready=%" PRId32,
 		    m_coll,
 		    (int32_t)m_collnum,
@@ -2611,7 +2628,7 @@ void nukeDoledb ( collnum_t collnum );
 // . it is also called on load of the collection at startup
 bool CollectionRec::rebuildUrlFilters ( ) {
 
-	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.m_initializing )
+	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.isInitializing() )
 		log(LOG_INFO, "coll: Rebuilding url filters for %s ufp=%s",m_coll,
 		    m_urlFiltersProfile.getBufStart());
 
@@ -2647,8 +2664,8 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 	     // so we gotta do the two checks below...
 	     sc &&
 	     // must be a valid coll
-	     m_collnum < g_collectiondb.m_numRecs &&
-	     g_collectiondb.m_recs[m_collnum] ) {
+	     m_collnum < g_collectiondb.getNumRecs() &&
+	     g_collectiondb.getRec(m_collnum) ) {
 
 
 		log(LOG_INFO, "coll: resetting doledb for %s (%li)",m_coll, (long)m_collnum);

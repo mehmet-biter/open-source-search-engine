@@ -79,7 +79,7 @@ Hostdb::Hostdb ( ) {
 	memset(m_httpRootDir, 0, sizeof(m_httpRootDir));
 	memset(m_logFilename, 0, sizeof(m_logFilename));
 	memset(m_netName, 0, sizeof(m_netName));
-	memset(&m_map, 0, sizeof(m_map));
+	memset(m_map, 0, sizeof(m_map));
 }
 
 

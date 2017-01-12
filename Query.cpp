@@ -48,7 +48,7 @@ void Query::constructor ( ) {
 	m_maxQueryTerms = 0;
 	m_queryExpansion = false;
 
-	memset(&m_expressions, 0, sizeof(m_expressions));
+	memset(m_expressions, 0, sizeof(m_expressions));
 	memset(m_gbuf, 0, sizeof(m_gbuf));
 	memset(m_tmpBuf3, 0, sizeof(m_tmpBuf3));
 	memset(m_otmpBuf, 0, sizeof(m_otmpBuf));

@@ -65,11 +65,11 @@ TcpServer::TcpServer() {
 
 	// Coverity
 	m_requestHandler = NULL;
-	memset(&m_tcpSockets, 0, sizeof(m_tcpSockets));
+	memset(m_tcpSockets, 0, sizeof(m_tcpSockets));
 	m_lastFilled = 0;
 	m_numUsed = 0;
 	m_numIncomingUsed = 0;
-	memset(&m_actualSockets, 0, sizeof(m_actualSockets));
+	memset(m_actualSockets, 0, sizeof(m_actualSockets));
 	m_dummy = 0;
 	m_maxSocketsPtr = NULL;
 	m_doReadRateTimeouts = false;

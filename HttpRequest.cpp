@@ -119,7 +119,7 @@ void HttpRequest::reset() {
 	m_fileOffset = 0;
 	m_fileSize = 0;
 	memset(m_fields, 0, sizeof(m_fields));
-	memset(&m_fieldLens, 0, sizeof(m_fieldLens));
+	memset(m_fieldLens, 0, sizeof(m_fieldLens));
 	memset(m_fieldValues, 0, sizeof(m_fieldValues));
 	m_isSSL = false;
 	memset(m_redir, 0, sizeof(m_redir));

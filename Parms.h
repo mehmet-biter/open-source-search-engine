@@ -79,6 +79,7 @@ enum {
 #define PF_REBUILDACTIVELIST        0x00100000
 
 #define PF_REBUILDRANKINGSETTINGS   0x00200000 // ranking setting. Reinitialize any derived values
+#define PF_TABLESPLIT               0x00400000 // split into separate table
 
 
 class Parm {

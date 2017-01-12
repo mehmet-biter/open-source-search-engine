@@ -128,7 +128,7 @@ const char *Rebalance::getNeedsRebalance ( ) {
 	       );
 
 	// convert m_nextKey into an ascii string and store into keyStr
-	hexToBin(keyStr,strlen(keyStr), (char *)&m_nextKey);
+	hexToBin(keyStr,strlen(keyStr), (char *)m_nextKey);
 
 	m_collnum = cn;
 	//m_collnum = 4695; //debug skip
@@ -201,9 +201,9 @@ void Rebalance::rebalanceLoop ( ) {
 void Rebalance::scanLoop ( ) {
 
 	// scan all rdbs in each coll
-	for ( ; m_collnum < g_collectiondb.m_numRecs ; m_collnum++ ) {
+	for ( ; m_collnum < g_collectiondb.getNumRecs(); m_collnum++ ) {
 		// get collrec i guess
-		CollectionRec *cr = g_collectiondb.m_recs[m_collnum];
+		CollectionRec *cr = g_collectiondb.getRec(m_collnum);
 		// skip if none... like statsdb, i guess don't rebalance!!
 		if ( ! cr ) continue;
 
@@ -299,7 +299,7 @@ bool Rebalance::saveRebalanceFile ( ) {
 
 	char keyStr[128];
 	// convert m_nextKey 
-	binToHex ( (unsigned char *)&m_nextKey , MAX_KEY_BYTES , keyStr );
+	binToHex ( (unsigned char *)m_nextKey , MAX_KEY_BYTES , keyStr );
 
 	//log("db: saving rebalance.txt");
 	StackBuf<3000> sb;

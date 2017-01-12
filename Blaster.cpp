@@ -12,6 +12,7 @@
 #include "HttpMime.h"
 #include "Process.h"
 #include "ip.h"
+#include "Xml.h"
 #include "GbUtil.h"
 #include "Mem.h"
 #include <fcntl.h>

@@ -26,8 +26,8 @@ Msge1::Msge1() {
 	m_state = NULL;
 	m_callback = NULL;
 	m_nowGlobal = 0;
-	memset(&m_ns, 0, sizeof(m_ns));
-	memset(&m_used, 0, sizeof(m_used));
+	memset(m_ns, 0, sizeof(m_ns));
+	memset(m_used, 0, sizeof(m_used));
 
 	reset();
 }

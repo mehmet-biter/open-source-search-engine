@@ -5,6 +5,7 @@
 #include "Hostdb.h"
 #include "Process.h"
 #include "Conf.h"
+#include "Lang.h"
 #include <stdio.h>
 #include <ctype.h>
 

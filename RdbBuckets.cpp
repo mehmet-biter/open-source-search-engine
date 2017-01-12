@@ -1785,7 +1785,7 @@ void RdbBuckets::cleanBuckets() {
 			RdbBucket *b = m_buckets[i];
 			collnum_t collnum = b->getCollnum();
 			if (collnum < g_collectiondb.getNumRecs()) {
-				if (g_collectiondb.m_recs[collnum]) {
+				if (g_collectiondb.getRec(collnum)) {
 					continue;
 				}
 			}

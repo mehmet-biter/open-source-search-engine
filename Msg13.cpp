@@ -9,11 +9,11 @@
 #include "SpiderProxy.h" // OP_GETPROXY OP_RETPROXY
 #include "RdbCache.h"
 #include "Collectiondb.h"
-#include "Process.h"
 #include "ip.h"
 #include "GbUtil.h"
 #include "zlib.h"
 #include "Mem.h"
+#include "Sanity.h"
 
 
 static const char g_fakeReply[] =
@@ -142,8 +142,8 @@ bool Msg13::getDoc ( Msg13Request *r, void *state, void(*callback)(void *) ) {
 	m_request = r;
 
 	// sanity check
-	if ( r->m_urlIp ==  0 ) { g_process.shutdownAbort(true); }
-	if ( r->m_urlIp == -1 ) { g_process.shutdownAbort(true); }
+	if ( r->m_urlIp ==  0 ) { gbshutdownAbort(true); }
+	if ( r->m_urlIp == -1 ) { gbshutdownAbort(true); }
 
 	// set this
 	r->m_urlHash64 = hash64 ( r->ptr_url , r->size_url-1);
@@ -265,7 +265,7 @@ bool Msg13::forwardRequest ( ) {
 	// up by giving proxies the same ids as regular hosts!
 	if (!g_udpServer.sendRequest(requestBuf, requestBufSize, msg_type_13, h->m_ip, h->m_port, -1, NULL, this, gotForwardedReplyWrapper, 200000, 1)) {
 		// sanity check
-		if ( ! g_errno ) { g_process.shutdownAbort(true); }
+		if ( ! g_errno ) { gbshutdownLogicError(); }
 		// report it
 		log("spider: msg13 request: %s",mstrerror(g_errno));
 		// g_errno must be set!
@@ -292,7 +292,7 @@ bool Msg13::gotForwardedReply ( UdpSlot *slot ) {
 	// alloc() with a zero length, so fix that
 	if ( replySize == 0 ) reply = NULL;
 	// this is messed up. why is it happening?
-	if ( reply == (void *)-1 ) { g_process.shutdownAbort(true); }
+	if ( reply == (void *)-1 ) { gbshutdownAbort(true); }
 
 	// we are responsible for freeing reply now
 	if ( ! g_errno ) slot->m_readBuf = NULL;
@@ -305,7 +305,7 @@ bool Msg13::gotForwardedReply ( UdpSlot *slot ) {
 bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSize ){
 
 	// how is this happening? ah from image downloads...
-	if ( m_replyBuf ) { g_process.shutdownAbort(true); }
+	if ( m_replyBuf ) { gbshutdownAbort(true); }
 		
 	// assume none
 	m_replyBuf     = NULL;
@@ -342,7 +342,7 @@ bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSi
 	m_replyBufAllocSize = replyAllocSize;
 
 	// sanity check
-	if ( replySize > 0 && ! reply ) { g_process.shutdownAbort(true); }
+	if ( replySize > 0 && ! reply ) { gbshutdownAbort(true); }
 
 	// no uncompressing if reply is empty
 	if ( replySize == 0 ) return true;
@@ -503,7 +503,7 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 		     r->ptr_url,iptoa(r->m_firstIp));
 
 	// temporary hack
-	if ( r->m_parent ) { g_process.shutdownAbort(true); }
+	if ( r->m_parent ) { gbshutdownAbort(true); }
 
 	if ( ! s_flag ) {
 		s_flag = true;
@@ -636,7 +636,7 @@ void downloadTheDocForReals2 ( Msg13Request *r ) {
 	// just the top part of the Msg13Request is sent to handleRequest54() now
 	if (!g_udpServer.sendRequest((char *)r, r->getProxyRequestSize(), msg_type_54, h->m_ip, h->m_port, -1, NULL, r, gotProxyHostReplyWrapper, udpserver_sendrequest_infinite_timeout)) {
 		// sanity check
-		if ( ! g_errno ) { g_process.shutdownAbort(true); }
+		if ( ! g_errno ) { gbshutdownLogicError(); }
 		// report it
 		log(LOG_WARN, "spider: msg54 request1: %s %s",
 		    mstrerror(g_errno),r->ptr_url);
@@ -889,7 +889,7 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 	logf(LOG_DEBUG,"spider: http server had error: %s",mstrerror(g_errno));
 
 	// g_errno should be set
-	if ( ! g_errno ) { g_process.shutdownAbort(true); }
+	if ( ! g_errno ) { gbshutdownLogicError(); }
 
 	// if did not block -- should have been an error. call callback
 	gotHttpReply ( r , NULL );
@@ -898,7 +898,7 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 
 static int32_t s_55Out = 0;
 
-static void doneReportingStatsWrapper(void *state, UdpSlot *slot) {
+static void doneReportingStatsWrapper(void * /*state*/, UdpSlot *slot) {
 	// note it
 	if ( g_errno )
 		log("sproxy: 55 reply: %s",mstrerror(g_errno));
@@ -1048,7 +1048,7 @@ void gotHttpReply9 ( void *state , TcpSocket *ts ) {
 	Host *h = g_hostdb.getFirstAliveHost();
 	// now return the proxy. this will decrement the load count on
 	// host "h" for this proxy.
-	if (g_udpServer.sendRequest((char *)r, r->getProxyRequestSize(), msg_type_54, h->m_ip, h->m_port, -1, NULL, r, doneReportingStatsWrapper, 10000)) {
+	if (g_udpServer.sendRequest((char *)r, r->getProxyRequestSize(), msg_type_54, h->m_ip, h->m_port, -1, NULL, NULL, doneReportingStatsWrapper, 10000)) {
 		// it blocked!
 		//r->m_blocked = true;
 		s_55Out++;
@@ -1057,7 +1057,7 @@ void gotHttpReply9 ( void *state , TcpSocket *ts ) {
 			log("sproxy: s55out > 500 = %" PRId32,s_55Out);
 	}
 	// sanity check
-	//if ( ! g_errno ) { g_process.shutdownAbort(true); }
+	//if ( ! g_errno ) { gbshutdownLogicError(); }
 	// report it
 	if ( g_errno ) log("spider: msg54 request2: %s %s",
 			   mstrerror(g_errno),r->ptr_url);
@@ -1078,7 +1078,7 @@ void gotHttpReply ( void *state , TcpSocket *ts ) {
 		return;
 	}
 	// sanity check, if ts is NULL must have g_errno set
-	if ( ! g_errno ) { g_process.shutdownAbort(true); } // g_errno=EBADENG...
+	if ( ! g_errno ) { gbshutdownLogicError(); } // g_errno=EBADENG...
 	// if g_errno is set i guess ts is NULL!
 	gotHttpReply2 ( state ,  NULL ,0 , 0 , NULL );
 }
@@ -1193,21 +1193,21 @@ void gotHttpReply2 ( void *state ,
 	
 
 	// sanity. this was happening from iframe download
-	//if ( g_errno == EDNSTIMEDOUT ) { g_process.shutdownAbort(true); }
+	//if ( g_errno == EDNSTIMEDOUT ) { gbshutdownAbort(true); }
 
 	// . sanity check - robots.txt requests must always be compressed
 	// . saves space in the cache
-	if ( ! r->m_compressReply && r->m_isRobotsTxt ) {g_process.shutdownAbort(true);}
+	if ( ! r->m_compressReply && r->m_isRobotsTxt ) { gbshutdownLogicError();}
 	// null terminate it always! -- unless already null terminated...
 	if ( replySize > 0 && reply[replySize-1] ) reply[replySize++] = '\0';
 	// sanity check
-	if ( replySize > replyAllocSize ) { g_process.shutdownAbort(true); }
+	if ( replySize > replyAllocSize ) { gbshutdownLogicError(); }
 
 	// save original size
 	int32_t originalSize = replySize;
 
 	// sanity check
-	if ( replySize>0 && reply[replySize-1]!= '\0') { g_process.shutdownAbort(true); }
+	if ( replySize>0 && reply[replySize-1]!= '\0') { gbshutdownLogicError(); }
 
 	// assume http status is 200
 	bool goodStatus = true;
@@ -1272,7 +1272,7 @@ void gotHttpReply2 ( void *state ,
 			p += sprintf ( p , "\r\n" );
 			// copy it over as new reply, include \0
 			int32_t newSize = p - tmpBuf + 1;
-			if ( newSize >= 2048 ) { g_process.shutdownAbort(true); }
+			if ( newSize >= 2048 ) { gbshutdownLogicError(); }
 			// record in the stats
 			docsPtr     = &g_stats.m_compressMimeErrorDocs;
 			bytesInPtr  = &g_stats.m_compressMimeErrorBytesIn;
@@ -1321,7 +1321,8 @@ void gotHttpReply2 ( void *state ,
 
 	// sanity
 	if ( reply && replySize>0 && reply[replySize-1]!='\0') {
-		g_process.shutdownAbort(true); }
+		gbshutdownLogicError();
+	}
 
 	bool hasIframe2 = false;
 	if ( r->m_compressReply &&
@@ -1331,15 +1332,16 @@ void gotHttpReply2 ( void *state ,
 
 	// sanity
 	if ( reply && replySize>0 && reply[replySize-1]!='\0') {
-		g_process.shutdownAbort(true); }
+		gbshutdownLogicError();
+	}
 
 	if ( hasIframe2 && 
 	     ! r->m_attemptedIframeExpansion &&
 	     ! r->m_isSquidProxiedUrl ) {
 		// must have ts i think
-		if ( ! ts ) { g_process.shutdownAbort(true); }
+		if ( ! ts ) { gbshutdownAbort(true); }
 		// sanity
-		if ( ts->m_readBuf != reply ) { g_process.shutdownAbort(true);}
+		if ( ts->m_readBuf != reply ) { gbshutdownLogicError();}
 		// . try to expand each iframe tag in there
 		// . return without sending a reply back if this blocks
 		// . it will return true and set g_errno on error
@@ -1368,7 +1370,8 @@ void gotHttpReply2 ( void *state ,
 
 	// sanity
 	if ( reply && replySize>0 && reply[replySize-1]!='\0') {
-		g_process.shutdownAbort(true); }
+		gbshutdownLogicError();
+	}
 
 	// compute content hash
 	if ( r->m_contentHash32 && 
@@ -1394,7 +1397,8 @@ void gotHttpReply2 ( void *state ,
 
 	// sanity
 	if ( reply && replySize>0 && reply[replySize-1]!='\0') {
-		g_process.shutdownAbort(true); }
+		gbshutdownLogicError();
+	}
 
 	// these are typically roots!
 	if ( // override HasIFrame with "FullPageRequested" if it has
@@ -1494,7 +1498,7 @@ void gotHttpReply2 ( void *state ,
 		replySize      = 4 + compressedLen;
 		replyAllocSize = need;
 		// sanity check
-		if ( replySize<0||replySize>100000000 ) { g_process.shutdownAbort(true);}
+		if ( replySize<0||replySize>100000000 ) { gbshutdownAbort(true);}
 		// we did compress it
 		compressed = true;
 	}
@@ -1531,7 +1535,7 @@ void gotHttpReply2 ( void *state ,
 	// how many have this key?
 	int32_t count = s_rt.getCount ( &r->m_cacheKey );
 	// sanity check
-	if ( count < 1 ) { g_process.shutdownAbort(true); }
+	if ( count < 1 ) { gbshutdownAbort(true); }
 
 	// send a reply for all waiting in line
 	int32_t tableSlot;
@@ -1564,7 +1568,7 @@ void gotHttpReply2 ( void *state ,
 			     err != ECONNRESET ) {
 				log("http: bad error from httpserver get doc: %s",
 				    mstrerror(err));
-				g_process.shutdownAbort(true);
+				gbshutdownAbort(true);
 			}
 		}
 		// replicate the reply. might return NULL and set g_errno
@@ -1680,7 +1684,7 @@ bool hasIframe(char *reply, int32_t replySize) {
 // returns false if blocks, true otherwise
 static bool getIframeExpandedContent(Msg13Request *r, TcpSocket *ts) {
 
-	if ( ! ts ) { g_process.shutdownAbort(true); }
+	if ( ! ts ) { gbshutdownLogicError(); }
 
 	int32_t niceness = r->m_niceness;
 
@@ -1692,7 +1696,7 @@ static bool getIframeExpandedContent(Msg13Request *r, TcpSocket *ts) {
 	char *copy = (char *)mdup ( ts->m_readBuf , copySize , "ifrmcpy" );
 	if ( ! copy ) return true;
 	// sanity, must include \0 at the end
-	if ( copy[copySize-1] ) { g_process.shutdownAbort(true); }
+	if ( copy[copySize-1] ) { gbshutdownLogicError(); }
 
 	// need a new state for it, use XmlDoc itself
 	XmlDoc *xd;
@@ -1804,7 +1808,7 @@ static bool getIframeExpandedContent(Msg13Request *r, TcpSocket *ts) {
 	if ( ! ec ) {
 		log("scproxy: iframe expansion error: %s",mstrerror(g_errno));
 		// g_errno should be set
-		if ( ! g_errno ) { g_process.shutdownAbort(true); }
+		if ( ! g_errno ) { gbshutdownLogicError(); }
 		// clean up
 	}
 
@@ -1832,7 +1836,7 @@ static bool getIframeExpandedContent(Msg13Request *r, TcpSocket *ts) {
 
 	// we can't be messing with it!! otherwise we'd have to reutrn
 	// a new reply size i guess
-	if ( xd->m_didExpansion ) { g_process.shutdownAbort(true); }
+	if ( xd->m_didExpansion ) { gbshutdownAbort(true); }
 
 	// now nuke xmldoc
 	mdelete ( xd , sizeof(XmlDoc) , "msg13xd" );
@@ -1868,7 +1872,7 @@ static void gotIframeExpandedContent(void *state) {
 	//   be false
 	if ( ! g_errno && xd->m_didExpansion ) {
 		// original mime should have been valid
-		if ( ! xd->m_mimeValid ) { g_process.shutdownAbort(true); }
+		if ( ! xd->m_mimeValid ) { gbshutdownAbort(true); }
 		// insert the mime into the expansion buffer! m_esbuf
 		xd->m_esbuf.insert2 ( xd->m_httpReply ,
 				      xd->m_mime.getMimeLen() ,
@@ -1884,7 +1888,7 @@ static void gotIframeExpandedContent(void *state) {
 		// include \0? yes.
 		replySize = xd->m_esbuf.length() + 1;
 		// sanity. must be null terminated
-		if ( reply[replySize-1] ) { g_process.shutdownAbort(true); }
+		if ( reply[replySize-1] ) { gbshutdownLogicError(); }
 	}
 	// if expansion did not pan out, use original reply i guess
 	else if ( ! g_errno ) {
@@ -1898,7 +1902,7 @@ static void gotIframeExpandedContent(void *state) {
 		log("scproxy: error getting iframe content for url=%s : %s",
 		    r->ptr_url,mstrerror(g_errno));
 	// sanity check
-	if ( reply && reply[replySize-1] != '\0') { g_process.shutdownAbort(true); }
+	if ( reply && reply[replySize-1] != '\0') { gbshutdownLogicError(); }
 	// pass back the error we had, if any
 	g_errno = saved;
 	// . then resume the reply processing up above as if this was the
@@ -1928,7 +1932,7 @@ static void gotIframeExpandedContent(void *state) {
 static bool addToHammerQueue(Msg13Request *r) {
 
 	// sanity
-	if ( ! r->m_udpSlot ) { g_process.shutdownAbort(true); }
+	if ( ! r->m_udpSlot ) { gbshutdownLogicError(); }
 
 	// skip if not needed
 	if ( r->m_skipHammerCheck ) return false;
@@ -2125,7 +2129,7 @@ static void scanHammerQueue(int fd, void *state) {
 		//downloadTheDocForReals ( r );
 
 		// sanity check
-		if ( ! r->m_hammerCallback ) { g_process.shutdownAbort(true); }
+		if ( ! r->m_hammerCallback ) { gbshutdownLogicError(); }
 
 		// callback can now be either downloadTheDocForReals(r)
 		// or downloadTheDocForReals3b(r) if it is waiting after 

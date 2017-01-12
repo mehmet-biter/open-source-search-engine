@@ -688,8 +688,8 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 	int32_t pauseCount = 0;
 	int32_t betweenRoundsCount = 0;
 	uint32_t nowGlobal = (uint32_t)getTimeGlobal();
-	for (int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-		CollectionRec *cc = g_collectiondb.m_recs[i];
+	for (int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
+		CollectionRec *cc = g_collectiondb.getRec(i);
 		if ( ! cc ) continue;
 		CrawlInfo *ci = &cc->m_globalCrawlInfo;
 		if      ( cc->m_spideringEnabled &&
@@ -1296,7 +1296,7 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 	if ( ! qs  ) qs  = "";
 
 	// if not admin just print collection name
-	if ( g_collectiondb.m_numRecsUsed == 0 ) {
+	if ( g_collectiondb.getNumRecsUsed() == 0 ) {
 		sb->safePrintf ( "<center>"
 			  "<br/><b><font color=red>No collections found. "
 			  "Click <i>add collection</i> to add one."
@@ -1312,14 +1312,16 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 	int32_t a = collnum;
 	int32_t counta = 1;
 	while ( a > 0 && counta < 15 ) 
-		if ( g_collectiondb.m_recs[--a] ) counta++;
+		if ( g_collectiondb.getRec(--a) )
+			counta++;
 	int32_t b = collnum + 1;
 	int32_t countb = 0;
-	while ( b < g_collectiondb.m_numRecs && countb < 16 )
-		if ( g_collectiondb.m_recs[b++] ) countb++;
+	while ( b < g_collectiondb.getNumRecs() && countb < 16 )
+		if ( g_collectiondb.getRec(b++) )
+			countb++;
 
 	const char *s = "s";
-	if ( g_collectiondb.m_numRecsUsed == 1 ) s = "";
+	if ( g_collectiondb.getNumRecsUsed() == 1 ) s = "";
 
 	bool isMasterAdmin = g_conf.isMasterAdmin ( sock , hr );
 
@@ -1327,7 +1329,7 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 	if ( isMasterAdmin )
 		sb->safePrintf ( "<center><nobr><b>%" PRId32" Collection%s</b></nobr>"
 				 "</center>\n",
-				 g_collectiondb.m_numRecsUsed , s );
+				 g_collectiondb.getNumRecsUsed() , s );
 	else
 		sb->safePrintf ( "<center><nobr><b>Collections</b></nobr>"
 				 "</center>\n");
@@ -1373,8 +1375,8 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 	int32_t numPrinted = 0;
 	bool printMsg = false;
 
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-		CollectionRec *cc = g_collectiondb.m_recs[i];
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs() ; i++ ) {
+		CollectionRec *cc = g_collectiondb.getRec(i);
 		if ( ! cc ) continue;
 
 		if ( numPrinted >= 20 && ! showAll ) {
@@ -2471,7 +2473,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 
 	// are we just starting off? give them a little help.
 	CollectionRec *crm = g_collectiondb.getRec("main");
-	if ( g_collectiondb.m_numRecs == 1 && 
+	if ( g_collectiondb.getNumRecs() == 1 &&
 	     crm &&
 	     page == PAGE_ROOT && // isRootWebPage &&
 	     crm->m_globalCrawlInfo.m_pageDownloadAttempts == 0 ) {

@@ -889,7 +889,7 @@ void Process::disableTreeWrites ( bool shuttingDown ) {
 	// don't save spider related trees if not shutting down
 	if ( ! shuttingDown ) return;
 	// disable all spider trees and tables
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
 		SpiderColl *sc = g_spiderCache.getSpiderCollIffNonNull(i);
 		if ( ! sc ) {
 			continue;
@@ -910,7 +910,7 @@ void Process::enableTreeWrites ( bool shuttingDown ) {
 	// don't save spider related trees if not shutting down
 	if ( ! shuttingDown ) return;
 	// enable all waiting trees
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
 		SpiderColl *sc = g_spiderCache.getSpiderCollIffNonNull(i);
 		if ( ! sc ) continue;
 		sc->m_waitingTree .enableWrites();

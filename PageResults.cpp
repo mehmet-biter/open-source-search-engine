@@ -198,7 +198,7 @@ static bool sendReply(State0 *st, char *reply) {
 	return true;
 }
 
-static bool printCSSHead ( SafeBuf *sb , char format ) {
+static bool printCSSHead(SafeBuf *sb) {
 	sb->safePrintf(
 			      "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML "
 			      "4.01 Transitional//EN\">\n"
@@ -740,12 +740,12 @@ bool printSearchResultsHeader ( State0 *st ) {
 				 
 
 	if ( si->m_format == FORMAT_HTML ) {
-		printCSSHead ( sb ,si->m_format );
+		printCSSHead (sb);
 		sb->safePrintf("<body>");
 	}
 
 	if ( si->m_format==FORMAT_WIDGET_IFRAME ) {
-		printCSSHead ( sb ,si->m_format );
+		printCSSHead(sb);
 		sb->safePrintf("<body style=padding:0px;margin:0px;>");
 
 		int32_t refresh = hr->getLong("refresh",0);
@@ -775,8 +775,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 	if ( si->m_format == FORMAT_WIDGET_IFRAME ||
 	     si->m_format == FORMAT_WIDGET_AJAX ) {
-		const char *pos = "relative";
-		if ( si->m_format == FORMAT_WIDGET_IFRAME ) pos = "absolute";
 		int32_t widgetwidth = hr->getLong("widgetwidth",150);
 		int32_t widgetHeight = hr->getLong("widgetheight",400);
 		//int32_t iconWidth = 25;
@@ -1260,14 +1258,12 @@ bool printSearchResultsHeader ( State0 *st ) {
 			maxi1 = i;
 		}
 		float maxtfw2 = 0.0;
-		int32_t maxi2;
 		for ( int32_t i = 0 ; i< dpx->m_numSingles ; i++ ) {
 			if ( i == maxi1 ) continue;
 			SingleScore *ssi = &dpx->m_singleScores[i];
 			float tfwi = ssi->m_tfWeight;
 			if ( tfwi <= maxtfw2 ) continue;
 			maxtfw2 = tfwi;
-			maxi2 = i;
 		}
 		// only 1 term?
 		if ( almostEqualFloat(maxtfw2, 0.0) ) maxtfw2 = maxtfw1;
@@ -1302,9 +1298,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 	char inbuf[128];
 	ulltoa ( inbuf , docsInColl );
-
-	bool isAdmin = (si->m_isMasterAdmin || si->m_isCollAdmin);
-	if ( si->m_format != FORMAT_HTML ) isAdmin = false;
 
 	// otherwise, we had no error
 	if ( numResults == 0 && si->m_format == FORMAT_HTML ) {
@@ -2183,11 +2176,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	url    = uu.getUrl();
 	urlLen = uu.getUrlLen();
 
-	// get my site hash
-	uint64_t siteHash = 0;
-	if ( uu.getHostLen() > 0 ) 
-		siteHash = hash64(uu.getHost(),uu.getHostLen());
-
 	bool isAdmin = (si->m_isMasterAdmin || si->m_isCollAdmin);
 	if ( si->m_format == FORMAT_XML ) isAdmin = false;
 
@@ -2441,8 +2429,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		strLen = 0;
 	}
 	
-	int32_t hlen;
-
 	const char *frontTag =
 		"<font style=\"color:black;background-color:yellow\">" ;
 	const char *backTag = "</font>";
@@ -2465,7 +2451,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	StackBuf<> hb;
 	if ( str && strLen && si->m_doQueryHighlighting ) {
-		hlen = hi.set ( &hb, tmpTitle.getBufStart(), tmpTitle.length(), &si->m_hqq, frontTag, backTag);
+		hi.set ( &hb, tmpTitle.getBufStart(), tmpTitle.length(), &si->m_hqq, frontTag, backTag);
 
 		// reassign!
 		str = hb.getBufStart();
@@ -2858,9 +2844,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	if ( mr->size_outlinks <= 0 ) outlinks = NULL;
 	// only for xml for now
 	if ( si->m_format == FORMAT_HTML ) outlinks = NULL;
-	Inlink *k;
+	Inlink *k = NULL;
 	// do we need absScore2 for outlinks?
-	//k = NULL;
 	while ( outlinks &&
 		(k =outlinks->getNextInlink(k))) 
 		// print it out
@@ -3665,13 +3650,11 @@ static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg
 	}
 	int32_t a = ps->m_wordPos2;
 	int32_t b = ps->m_wordPos1;
-	const char *es = "";
 	const char *bes = "";
 	if ( a < b ) {
 		a = ps->m_wordPos1;
 		b = ps->m_wordPos2;
 		// out of query order penalty!
-		es = "+ 1.0";
 		bes = "+ <b>1.0</b>";
 	}
 	

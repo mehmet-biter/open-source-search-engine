@@ -11,6 +11,7 @@
 #include "Posdb.h"
 #include "Collectiondb.h"
 #include "Conf.h"
+#include "Lang.h"
 #include "Mem.h"
 
 
@@ -60,7 +61,7 @@ void Msg3a::constructor ( ) {
 	m_clusterRecs = NULL;
 	m_clusterLevels = NULL;
 	m_cursor = 0;
-	memset(&m_replyMaxSize, 0, sizeof(m_replyMaxSize));
+	memset(m_replyMaxSize, 0, sizeof(m_replyMaxSize));
 }
 
 Msg3a::~Msg3a ( ) {
