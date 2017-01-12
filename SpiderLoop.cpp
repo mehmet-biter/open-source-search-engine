@@ -465,7 +465,7 @@ subloop:
 	}
 		
 	// bail if no collections
-	if ( g_collectiondb.m_numRecs <= 0 ) {
+	if ( g_collectiondb.getNumRecs() <= 0 ) {
 		logTrace( g_conf.m_logTraceSpider, "END, no collections"  );
 		return;
 	}
@@ -1886,9 +1886,9 @@ void SpiderLoop::buildActiveList ( ) {
 
 	CollectionRec *tail = NULL;
 
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
 		// get rec
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		// skip if gone
 		if ( ! cr ) continue;
 		// stop if not enabled
@@ -1966,8 +1966,8 @@ static void removeExpiredLocks(int32_t hostId) {
 		int64_t lockKey = *(int64_t *)g_spiderLoop.m_lockTable.getKeyFromSlot(i);
 		// if collnum got deleted or reset
 		collnum_t collnum = lock->m_collnum;
-		if ( collnum >= g_collectiondb.m_numRecs ||
-		     ! g_collectiondb.m_recs[collnum] ) {
+		if ( collnum >= g_collectiondb.getNumRecs() ||
+		     ! g_collectiondb.getRec(collnum)) {
 			log("spider: removing lock from missing collnum "
 					    "%" PRId32,(int32_t)collnum);
 			goto nuke;
@@ -2203,12 +2203,8 @@ static void gotCrawlInfoReply(void *state, UdpSlot *slot) {
 	}
 
 	// loop over 
-	for ( int32_t x = 0 ; x < g_collectiondb.m_numRecs ; x++ ) {
-		// a niceness 0 routine could have nuked it?
-		if ( x >= g_collectiondb.m_numRecs )
-			break;
-
-		CollectionRec *cr = g_collectiondb.m_recs[x];
+	for ( int32_t x = 0 ; x < g_collectiondb.getNumRecs() ; x++ ) {
+		CollectionRec *cr = g_collectiondb.getRec(x);
 		if ( ! cr ) continue;
 
 		// must be in need of computation
@@ -2369,8 +2365,8 @@ void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 
 	uint64_t nowMS = gettimeofdayInMillisecondsGlobalNoCore();
 
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 
 		// shortcut

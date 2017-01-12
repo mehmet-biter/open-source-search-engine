@@ -1968,8 +1968,8 @@ int main2 ( int argc , char *argv[] ) {
 	
 	// test all collection dirs for write permission
 	int32_t pcount = 0;
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 		if ( ++pcount >= 100 ) {
 			log("rdb: not checking directory permission for more than first 100 collections to save time.");
@@ -5304,18 +5304,8 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 		g_dumpMode = true;
 
 		CollectionRec *cr = new (CollectionRec);
-		SafeBuf *rb = &g_collectiondb.m_recPtrBuf;
-		rb->reserve(4);
-		g_collectiondb.m_recs = (CollectionRec **)rb->getBufStart();
-		g_collectiondb.m_recs[0] = cr;
+		g_collectiondb.hackCollectionForInjection(cr);
 
-		// right now this is just for the main collection
-		const char *coll = "main";
-		addCollToTable ( coll , (collnum_t) 0 );
-
-		// force RdbTree.cpp not to bitch about corruption
-		// assume we are only getting out collnum 0 recs i guess
-		g_collectiondb.m_numRecs = 1;
 		g_titledb.init ();
 		// msg5::readList() requires the RdbBase for collnum 0
 		// which holds the array of files and the tree

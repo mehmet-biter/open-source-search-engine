@@ -149,7 +149,7 @@ bool SpiderColl::load ( ) {
 	// keep it kinda low if we got a ton of collections
 	int32_t maxMem = 15000;
 	int32_t maxNodes = 500;
-	if ( g_collectiondb.m_numRecsUsed > 500 ) {
+	if ( g_collectiondb.getNumRecsUsed() > 500 ) {
 		maxNodes = 100;
 		maxMem = maxNodes * 20;
 	}
@@ -336,7 +336,7 @@ bool SpiderColl::makeDoleIPTable ( ) {
 
 
 CollectionRec *SpiderColl::getCollRec() {
-	CollectionRec *cr = g_collectiondb.m_recs[m_collnum];
+	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
 	if ( ! cr ) log("spider: lost coll rec");
 	return cr;
 }
@@ -943,7 +943,7 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 	// seeds and bulk urls added from add url and can use that to
 	// determine if the collection is empty of urls or not for printing
 	// out the colored bullets in printCollectionNavBar() in Pages.cpp.
-	CollectionRec *cr = g_collectiondb.m_recs[m_collnum];
+	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
 	if ( cr ) {
 		cr->m_localCrawlInfo .m_urlsHarvested++;
 		cr->m_globalCrawlInfo.m_urlsHarvested++;

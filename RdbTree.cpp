@@ -232,7 +232,7 @@ int32_t RdbTree::clear ( ) {
 
 
 	// clear tree counts for all collections!
-	int32_t nc = g_collectiondb.m_numRecs;
+	int32_t nc = g_collectiondb.getNumRecs();
 	// BUT only if we are an Rdb::m_tree!!!
 	if ( m_rdbId == -1 ) nc = 0;
 	// otherwise, we overwrite stuff in CollectionRec we shouldn't
@@ -513,11 +513,11 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 		// collections using the same Rdb::m_tree!
 		// crap, when fixing a tree this will segfault because
 		// m_recs[collnum] is NULL.
-		if ( m_rdbId >= 0 && g_collectiondb.m_recs[collnum] ) {
+		if ( m_rdbId >= 0 && g_collectiondb.getRec(collnum) ) {
 			//if( ((unsigned char)m_rdbId)>=RDB_END){g_process.shutdownAbort(true); }
-			g_collectiondb.m_recs[collnum]->
+			g_collectiondb.getRec(collnum)->
 				m_numNegKeysInTree[(unsigned char)m_rdbId] =0;
-			g_collectiondb.m_recs[collnum]->
+			g_collectiondb.getRec(collnum)->
 				m_numPosKeysInTree[(unsigned char)m_rdbId] =0;
 		}
 	}
@@ -595,11 +595,11 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 		// collections using the same Rdb::m_tree!
 		// crap, when fixing a tree this will segfault because
 		// m_recs[collnum] is NULL.
-		if ( m_rdbId >= 0 && g_collectiondb.m_recs[collnum] ) {
+		if ( m_rdbId >= 0 && g_collectiondb.getRec(collnum) ) {
 			//if( ((unsigned char)m_rdbId)>=RDB_END){
 			//g_process.shutdownAbort(true); }
 			CollectionRec *cr ;
-			cr = g_collectiondb.m_recs[collnum];
+			cr = g_collectiondb.getRec(collnum);
 			if(cr)cr->m_numNegKeysInTree[(unsigned char)m_rdbId]++;
 		}
 	}
@@ -608,11 +608,11 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 		//m_numPosKeysPerColl[collnum]++;
 		// crap, when fixing a tree this will segfault because
 		// m_recs[collnum] is NULL.
-		if ( m_rdbId >= 0 && g_collectiondb.m_recs[collnum] ) {
+		if ( m_rdbId >= 0 && g_collectiondb.getRec(collnum) ) {
 			//if( ((unsigned char)m_rdbId)>=RDB_END){
 			//g_process.shutdownAbort(true); }
 			CollectionRec *cr ;
-			cr = g_collectiondb.m_recs[collnum];
+			cr = g_collectiondb.getRec(collnum);
 			if(cr)cr->m_numPosKeysInTree[(unsigned char)m_rdbId]++;
 		}
 	}
@@ -794,7 +794,7 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 		//m_numNegKeysPerColl[m_collnums[i]]--;
 		if ( m_rdbId >= 0 ) {
 			CollectionRec *cr;
-			cr = g_collectiondb.m_recs[m_collnums[i]];
+			cr = g_collectiondb.getRec(m_collnums[i]);
 			if(cr)cr->m_numNegKeysInTree[(unsigned char)m_rdbId]--;
 		}
 	}
@@ -803,7 +803,7 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 		//m_numPosKeysPerColl[m_collnums[i]]--;
 		if ( m_rdbId >= 0 ) {
 			CollectionRec *cr;
-			cr = g_collectiondb.m_recs[m_collnums[i]];
+			cr = g_collectiondb.getRec(m_collnums[i]);
 			if(cr)cr->m_numPosKeysInTree[(unsigned char)m_rdbId]--;
 		}
 	}
@@ -831,7 +831,7 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 		//if ( ((unsigned char)m_rdbId)>=RDB_END){
 		//g_process.shutdownAbort(true); }
 		CollectionRec *cr ;
-		cr = g_collectiondb.m_recs[m_collnums[i]];
+		cr = g_collectiondb.getRec(m_collnums[i]);
 		if(cr){
 			cr->m_numNegKeysInTree[(unsigned char)m_rdbId] = 0;
 			cr->m_numPosKeysInTree[(unsigned char)m_rdbId] = 0;
@@ -903,7 +903,7 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 		if ( m_rdbId >= 0 ) {
 			//if( ((unsigned char)m_rdbId)>=RDB_END){g_process.shutdownAbort(true); }
 			CollectionRec *cr ;
-			cr = g_collectiondb.m_recs[m_collnums[i]];
+			cr = g_collectiondb.getRec(m_collnums[i]);
 			if(cr)cr->m_numNegKeysInTree[(unsigned char)m_rdbId]--;
 		}
 	}
@@ -913,7 +913,7 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 		if ( m_rdbId >= 0 ) {
 			//if( ((unsigned char)m_rdbId)>=RDB_END){g_process.shutdownAbort(true); }
 			CollectionRec *cr ;
-			cr = g_collectiondb.m_recs[m_collnums[i]];
+			cr = g_collectiondb.getRec(m_collnums[i]);
 			if(cr)cr->m_numPosKeysInTree[(unsigned char)m_rdbId]--;
 		}
 	}
@@ -1048,8 +1048,7 @@ bool RdbTree::fixTree ( ) {
 	m_memOccupied   =  0;
 	m_nextNode      =  0;
 	m_minUnusedNode =  0; 
-	//CollectionRec *recs = g_collectiondb.m_recs;
-	int32_t           max  = g_collectiondb.m_numRecs;
+	int32_t           max  = g_collectiondb.getNumRecs();
 	log("db: Valid collection numbers range from 0 to %" PRId32".",max);
 	
 	bool isTitledb = false;
@@ -1098,7 +1097,7 @@ bool RdbTree::fixTree ( ) {
 		if ( cn <  0   ) continue;
 		if ( cn >= max ) continue;
 		// collnum of non-existent coll
-		if ( m_rdbId>=0 && ! g_collectiondb.m_recs[cn] )
+		if ( m_rdbId>=0 && ! g_collectiondb.getRec(cn) )
 			continue;
 		// now add just to set m_right/m_left/m_parent
 		if ( m_fixedDataSize == 0 )
@@ -1196,11 +1195,11 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 		// bad collnum?
 		if ( doCollRecCheck ) {
 			collnum_t cn = m_collnums[i];
-			if ( m_rdbId>=0 && (cn >= g_collectiondb.m_numRecs || cn < 0) ) {
+			if ( m_rdbId>=0 && (cn >= g_collectiondb.getNumRecs() || cn < 0) ) {
 				log(LOG_WARN, "db: bad collnum in tree");
 				return false;
 			}
-			if ( m_rdbId>=0 && ! g_collectiondb.m_recs[cn] ) {
+			if ( m_rdbId>=0 && ! g_collectiondb.getRec(cn) ) {
 				log(LOG_WARN, "db: collnum is obsolete in tree");
 				return false;
 			}
@@ -1266,8 +1265,7 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 	// debug -- just always return now
 	if ( printMsgs )logf(LOG_DEBUG,"***m_headNode=%" PRId32", m_numUsedNodes=%" PRId32,
 			      m_headNode,m_numUsedNodes);
-	//CollectionRec *recs = g_collectiondb.m_recs;
-	int32_t           max  = g_collectiondb.m_numRecs;
+	int32_t           max  = g_collectiondb.getNumRecs();
 	// verify that parent links correspond to kids
 	for ( int32_t i = 0 ; i < m_minUnusedNode ; i++ ) {
 		// verify collnum
@@ -2672,7 +2670,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 		return -1;
 	}
 	// get valid collnum ranges
-	int32_t max  = g_collectiondb.m_numRecs;
+	int32_t max  = g_collectiondb.getNumRecs();
 	// sanity check
 	//if ( max >= MAX_COLLS ) { g_process.shutdownAbort(true); }
 	// define ending node for all loops
@@ -2690,7 +2688,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 		// must have rec as well. unless it its statsdb tree
 		// or m_waitingTree which are collection-less and always use
 		// 0 for their collnum. if collection-less m_rdbId==-1.
-		if ( ! g_collectiondb.m_recs[c] && m_rdbId >= 0 ) {
+		if ( ! g_collectiondb.getRec(c) && m_rdbId >= 0 ) {
 			m_corrupt++;
 			continue;
 		}
@@ -2703,7 +2701,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 			// this is only used for Rdb::m_trees
 			//if ( m_isRealTree )
 			if ( m_rdbId >= 0 )
-				g_collectiondb.m_recs[c]->m_numNegKeysInTree[(unsigned char)m_rdbId]++;
+				g_collectiondb.getRec(c)->m_numNegKeysInTree[(unsigned char)m_rdbId]++;
 		}
 		else {
 			m_numPositiveKeys++;
@@ -2711,7 +2709,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 			// this is only used for Rdb::m_trees
 			//if ( m_isRealTree )
 			if ( m_rdbId >= 0 )
-				g_collectiondb.m_recs[c]->m_numPosKeysInTree[(unsigned char)m_rdbId]++;
+				g_collectiondb.getRec(c)->m_numPosKeysInTree[(unsigned char)m_rdbId]++;
 		}
 	}
 	// bail now if we can 
@@ -2781,7 +2779,7 @@ void RdbTree::cleanTree ( ) { // char **bases ) {
 	// the liberation count
 	int32_t count = 0;
 	collnum_t collnum;
-	int32_t max = g_collectiondb.m_numRecs;
+	int32_t max = g_collectiondb.getNumRecs();
 
 	for ( int32_t i = 0 ; i < m_minUnusedNode ; i++ ) {
 		// skip node if parents is -2 (unoccupied)
@@ -2789,7 +2787,7 @@ void RdbTree::cleanTree ( ) { // char **bases ) {
 		// is collnum valid?
 		if ( m_collnums[i] >= 0   &&
 		     m_collnums[i] <  max &&
-		     g_collectiondb.m_recs[m_collnums[i]] ) continue;
+		     g_collectiondb.getRec(m_collnums[i]) ) continue;
 		// if it is negtiave, remove it, that is wierd corruption
 		if ( m_collnums[i] < 0 )
 			deleteNode(i, true);
@@ -2821,7 +2819,7 @@ void RdbTree::cleanTree ( ) { // char **bases ) {
 int32_t  RdbTree::getNumNegativeKeys( collnum_t collnum ) const { 
 	// fix for statsdb or other collectionless rdbs
 	if ( m_rdbId < 0 ) return m_numNegativeKeys;
-	CollectionRec *cr = g_collectiondb.m_recs[collnum];
+	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return 0;
 	//if ( ! m_countsInitialized ) { g_process.shutdownAbort(true); }
 	return cr->m_numNegKeysInTree[(unsigned char)m_rdbId]; 
@@ -2830,7 +2828,7 @@ int32_t  RdbTree::getNumNegativeKeys( collnum_t collnum ) const {
 int32_t  RdbTree::getNumPositiveKeys( collnum_t collnum ) const { 
 	// fix for statsdb or other collectionless rdbs
 	if ( m_rdbId < 0 ) return m_numPositiveKeys;
-	CollectionRec *cr = g_collectiondb.m_recs[collnum];
+	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return 0;
 	//if ( ! m_countsInitialized ) { g_process.shutdownAbort(true); }
 	return cr->m_numPosKeysInTree[(unsigned char)m_rdbId]; 

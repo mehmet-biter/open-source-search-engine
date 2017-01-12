@@ -96,7 +96,7 @@ Rdb::~Rdb ( ) {
 
 
 int32_t Rdb::getNumBases() const {
-	return g_collectiondb.m_numRecs;
+	return g_collectiondb.getNumRecs();
 }
 
 RdbBase *Rdb::getBase ( collnum_t collnum )  {

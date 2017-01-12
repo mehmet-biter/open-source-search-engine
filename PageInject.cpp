@@ -769,8 +769,8 @@ bool resumeImports ( ) {
 
 	if ( g_hostdb.m_hostId != 0 ) return true;
 
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 		if ( ! cr->m_importEnabled ) continue;
 		// each import has its own state
@@ -1203,8 +1203,8 @@ Multicast *ImportState::getAvailMulticast() { // Msg7 ( ) {
 
 void saveImportStates ( ) {
 	if ( g_hostdb.m_myHost->m_hostId != 0 ) return;
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 		if ( ! cr->m_importEnabled ) continue;
 		cr->m_importState->saveFileBookMark ();

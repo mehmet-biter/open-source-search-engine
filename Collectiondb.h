@@ -9,7 +9,6 @@
 #include "rdbid_t.h"
 #include "GbMutex.h"
 
-bool addCollToTable ( const char *coll , collnum_t collnum ) ;
 
 class Collectiondb  {
 
@@ -23,14 +22,11 @@ class Collectiondb  {
 	// all the coll.*.*/coll.conf info
 	bool loadAllCollRecs ( );
 
-	// after main.cpp loads all rdb trees it calls this to remove
-	// bogus collnums from the trees i guess
-	bool cleanTrees ( ) ;
-
 	// . this will save all conf files back to disk that need it
 	// . returns false and sets g_errno on error, true on success
 	bool save ( );
-	bool m_needsSave;
+
+	bool isInitializing() const { return m_initializing; }
 
 	// returns i so that m_recs[i].m_coll = coll
 	collnum_t getCollnum(const char *coll, int32_t collLen) const;
@@ -59,11 +55,8 @@ class Collectiondb  {
 	const char          *getFirstCollName() const;
 	collnum_t            getFirstCollnum() const ;
 
-	// . how many collections we have in here
-	// . only counts valid existing collections
-	int32_t getNumRecsUsed() const { return m_numRecsUsed; }
-
 	int32_t getNumRecs() const { return m_numRecs; }
+	int32_t getNumRecsUsed() const { return m_numRecsUsed; }
 
 	// what collnum will be used the next time a coll is added?
 	collnum_t reserveCollNum ( ) ;
@@ -72,13 +65,8 @@ class Collectiondb  {
 
 	bool addNewColl( const char *coll, bool saveIt, collnum_t newCollnum ) ;
 
-	bool registerCollRec ( CollectionRec *cr ) ;
-
 	bool addRdbBaseToAllRdbsForEachCollRec ( ) ;
 	bool addRdbBasesForCollRec ( CollectionRec *cr ) ;
-
-	bool growRecPtrBuf ( collnum_t collnum ) ;
-	bool setRecPtr ( collnum_t collnum , CollectionRec *cr ) ;
 
 	// returns false if blocked, true otherwise.
 	bool deleteRec2 ( collnum_t collnum );
@@ -90,11 +78,24 @@ class Collectiondb  {
 			  collnum_t newCollnum,
 			  bool purgeSeeds );
 
-	// . keep up to 128 of them, these reference into m_list
-	// . COllectionRec now includes m_needsSave and m_lastUpdateTime
-	class CollectionRec  **m_recs;//           [ MAX_COLLS ];
+	//used by main.cpp for injecting files
+	void hackCollectionForInjection(CollectionRec *cr);
 
-	// now m_recs[] points into a safebuf that is just an array
+private:
+	// after main.cpp loads all rdb trees it calls this to remove
+	// bogus collnums from the trees i guess
+	bool cleanTrees();
+
+	bool registerCollRec(CollectionRec *cr);
+
+	bool growRecPtrBuf(collnum_t collnum);
+	bool setRecPtr(collnum_t collnum, CollectionRec *cr);
+
+	bool m_needsSave;
+
+	class CollectionRec  **m_recs;
+
+	// m_recs[] points into a safebuf that is just an array
 	// of collectionrec ptrs. so we have to grow that safebuf possibly
 	// in order to add a new collection rec ptr to m_recs
 	SafeBuf m_recPtrBuf;
@@ -107,7 +108,6 @@ class Collectiondb  {
 	int32_t m_numCollsSwappedOut;
 
 	bool m_initializing;
-	//int64_t            m_lastUpdateTime;
 };
 
 extern class Collectiondb g_collectiondb;

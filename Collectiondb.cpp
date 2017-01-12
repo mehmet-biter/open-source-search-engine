@@ -874,12 +874,27 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 }
 
 // a hack function
-bool addCollToTable ( const char *coll , collnum_t collnum ) {
+static bool addCollToTable(const char *coll, collnum_t collnum) {
 	// readd it to the hashtable that maps name to collnum too
 	int64_t h64 = hash64n(coll);
 	g_collTable.set(8,sizeof(collnum_t), 256,NULL,0, false,"nhshtbl");
 	return g_collTable.addKey ( &h64 , &collnum );
 }
+
+void Collectiondb::hackCollectionForInjection(CollectionRec *cr) {
+	m_recPtrBuf.reserve(4);
+	m_recs = (CollectionRec **)m_recPtrBuf.getBufStart();
+	m_recs[0] = cr;
+
+	// right now this is just for the main collection
+	const char coll[] = "main";
+	addCollToTable(coll, (collnum_t)0);
+
+	// force RdbTree.cpp not to bitch about corruption
+	// assume we are only getting out collnum 0 recs i guess
+	m_numRecs = 1;
+}
+
 
 // get coll rec specified in the HTTP request
 CollectionRec *Collectiondb::getRec ( HttpRequest *r , bool useDefaultRec ) {
@@ -1350,7 +1365,7 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 	}
 
 
-	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.m_initializing )
+	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.isInitializing() )
 		log(LOG_INFO, "coll: Loaded %s (%" PRId32") local hasurlsready=%" PRId32,
 		    m_coll,
 		    (int32_t)m_collnum,
@@ -1386,7 +1401,7 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 		// it is binary now
 		gbmemcpy ( &m_globalCrawlInfo , sb.getBufStart(),sb.length() );
 
-	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.m_initializing )
+	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.isInitializing() )
 		log(LOG_INFO, "coll: Loaded %s (%" PRId32") global hasurlsready=%" PRId32,
 		    m_coll,
 		    (int32_t)m_collnum,
@@ -2613,7 +2628,7 @@ void nukeDoledb ( collnum_t collnum );
 // . it is also called on load of the collection at startup
 bool CollectionRec::rebuildUrlFilters ( ) {
 
-	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.m_initializing )
+	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.isInitializing() )
 		log(LOG_INFO, "coll: Rebuilding url filters for %s ufp=%s",m_coll,
 		    m_urlFiltersProfile.getBufStart());
 
@@ -2649,8 +2664,8 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 	     // so we gotta do the two checks below...
 	     sc &&
 	     // must be a valid coll
-	     m_collnum < g_collectiondb.m_numRecs &&
-	     g_collectiondb.m_recs[m_collnum] ) {
+	     m_collnum < g_collectiondb.getNumRecs() &&
+	     g_collectiondb.getRec(m_collnum) ) {
 
 
 		log(LOG_INFO, "coll: resetting doledb for %s (%li)",m_coll, (long)m_collnum);

@@ -1703,7 +1703,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	if ( numFiles > 0 && m_dump->isDumping() ) numFiles--;
 
 	// set m_minToMerge from coll rec if we're indexdb
-	CollectionRec *cr = g_collectiondb.m_recs [ m_collnum ];
+	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
 	// now see if collection rec is there to override us
 	//if ( ! cr ) {
 	if ( ! cr && ! m_rdb->isCollectionless() ) {

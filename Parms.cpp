@@ -588,8 +588,8 @@ static bool CommandRestartColl ( char *rec , WaitEntry *we ) {
 	collnum_t oldCollnum = atol(data);
 
 	if ( oldCollnum < 0 ||
-	     oldCollnum >= g_collectiondb.m_numRecs ||
-	     ! g_collectiondb.m_recs[oldCollnum] ) {
+	     oldCollnum >= g_collectiondb.getNumRecs() ||
+	     ! g_collectiondb.getRec(oldCollnum) ) {
 		log("parms: invalid collnum %" PRId32" to restart",(int32_t)oldCollnum);
 		return true;
 	}
@@ -644,8 +644,8 @@ static bool CommandResetColl ( char *rec , WaitEntry *we ) {
 	collnum_t oldCollnum = atol(data);
 
 	if ( oldCollnum < 0 ||
-	     oldCollnum >= g_collectiondb.m_numRecs ||
-	     ! g_collectiondb.m_recs[oldCollnum] ) {
+	     oldCollnum >= g_collectiondb.getNumRecs() ||
+	     ! g_collectiondb.getRec(oldCollnum) ) {
 		log("parms: invalid collnum %" PRId32" to reset",(int32_t)oldCollnum);
 		return true;
 	}
@@ -10300,7 +10300,7 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 			return false;
 		}
 		// scan for holes if we hit the limit
-		//if ( g_collectiondb.m_numRecs >= 1LL>>sizeof(collnum_t) )
+		//if ( g_collectiondb.getNumRecs() >= 1LL>>sizeof(collnum_t) )
 	}
 	else if ( m->m_type == TYPE_IP ) {
 		// point to string
@@ -11470,9 +11470,9 @@ hadError:
 	//
 	// 0. scan our collections and clear a flag
 	//
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs() ; i++ ) {
 		// skip if empty
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 		// clear flag
 		cr->m_hackFlag = 0;
@@ -11549,9 +11549,9 @@ hadError:
 	//
 	// 3. now if he's missing one of our collections tell him to add it
 	//
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs() ; i++ ) {
 		// skip if empty
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 		// clear flag
 		if ( cr->m_hackFlag ) continue;
@@ -11601,10 +11601,10 @@ bool Parms::makeSyncHashList ( SafeBuf *hashList ) {
 	SafeBuf tmp;
 
 	// first do g_conf, collnum -1!
-	for ( int32_t i = -1 ; i < g_collectiondb.m_numRecs ; i++ ) {
+	for ( int32_t i = -1 ; i < g_collectiondb.getNumRecs() ; i++ ) {
 		// shortcut
 		CollectionRec *cr = NULL;
-		if ( i >= 0 ) cr = g_collectiondb.m_recs[i];
+		if ( i >= 0 ) cr = g_collectiondb.getRec(i);
 		// skip if empty
 		if ( i >=0 && ! cr ) continue;
 		// clear since last time
@@ -11894,8 +11894,8 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 	if ( base == cr && dst == (char *)&cr->m_spideringEnabled )
 		cr->m_localCrawlInfo.m_lastSpiderAttempt = 0;
 	if ( base == &g_conf && dst == (char *)&g_conf.m_spideringEnabled ){
-		for(int32_t i = 0;i<g_collectiondb.m_numRecs;i++){
-			CollectionRec *cr2 = g_collectiondb.m_recs[i];
+		for(int32_t i = 0; i<g_collectiondb.getNumRecs(); i++){
+			CollectionRec *cr2 = g_collectiondb.getRec(i);
 			if ( ! cr2 ) continue;
 			cr2->m_localCrawlInfo.m_lastSpiderAttempt = 0;
 		}

@@ -105,7 +105,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 
 	// . only host #0 should do this loop!!!
 	// . loop through each collection to check the time
-	for (i=0; hid==0&&m_mergeMode==0 && i<g_collectiondb.m_numRecs; i++) {
+	for (i=0; hid==0&&m_mergeMode==0 && i<g_collectiondb.getNumRecs(); i++) {
 		// get collection rec for collnum #i
 		CollectionRec *cr = g_collectiondb.getRec ( i );
 		// skip if empty, it was deleted at some point

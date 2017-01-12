@@ -201,9 +201,9 @@ void Rebalance::rebalanceLoop ( ) {
 void Rebalance::scanLoop ( ) {
 
 	// scan all rdbs in each coll
-	for ( ; m_collnum < g_collectiondb.m_numRecs ; m_collnum++ ) {
+	for ( ; m_collnum < g_collectiondb.getNumRecs(); m_collnum++ ) {
 		// get collrec i guess
-		CollectionRec *cr = g_collectiondb.m_recs[m_collnum];
+		CollectionRec *cr = g_collectiondb.getRec(m_collnum);
 		// skip if none... like statsdb, i guess don't rebalance!!
 		if ( ! cr ) continue;
 

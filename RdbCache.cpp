@@ -953,7 +953,7 @@ bool RdbCache::deleteRec ( ) {
 		log (LOG_WARN,"db: cache: deleteRec: possible "
 		     "corruption, start=%" PTRFMT" collNum=%" PRId32" "
 		     "maxCollNum=%" PRId32" dbname=%s", (PTRTYPE)start,
-		     (int32_t)collnum, g_collectiondb.m_numRecsUsed,  
+		     (int32_t)collnum, g_collectiondb.getNumRecsUsed(),
 		     m_dbname);
 		gbshutdownLogicError();
 	}

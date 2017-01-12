@@ -539,7 +539,7 @@ bool XmlDoc::setCollNum ( const char *coll ) {
 
 CollectionRec *XmlDoc::getCollRec ( ) {
 	if ( ! m_collnumValid ) { g_process.shutdownAbort(true); }
-	CollectionRec *cr = g_collectiondb.m_recs[m_collnum];
+	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
 	if ( ! cr ) {
 		log("build: got NULL collection rec for collnum=%" PRId32".",
 		    (int32_t)m_collnum);

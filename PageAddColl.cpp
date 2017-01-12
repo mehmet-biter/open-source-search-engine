@@ -254,7 +254,7 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 	//	return g_parms.sendPageGeneric2 ( s , r , PAGE_SEARCH ,
 	//					  nc , pwd );
 
-	if ( g_collectiondb.m_numRecsUsed > 0 ) {
+	if ( g_collectiondb.getNumRecsUsed() > 0 ) {
 		// print all collections out in a checklist so you can check the
 		// ones you want to delete, the values will be the id of that collectn
 		p.safePrintf (
@@ -274,8 +274,8 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 			  DARK_BLUE
 			      );
 
-		for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-			CollectionRec *cr = g_collectiondb.m_recs[i];
+		for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
+			CollectionRec *cr = g_collectiondb.getRec(i);
 			if ( ! cr ) continue;
 			p.safePrintf (
 				  "<tr bgcolor=#%s><td>"
