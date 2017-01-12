@@ -38,7 +38,6 @@ class Collectiondb  {
 	collnum_t getCollnum ( const char *coll ); // coll is NULL terminated here
 
 	char *getCollName ( collnum_t collnum );
-	char *getColl     ( collnum_t collnum ) {return getCollName(collnum);}
 
 	// get coll rec specified in the HTTP request
 	class CollectionRec *getRec ( class HttpRequest *r ,
