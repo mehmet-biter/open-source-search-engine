@@ -8,25 +8,6 @@
 #include "Sanity.h"
 
 
-/*
-int64_t TopNode::getDocId ( ) {
-	int64_t d;
-	gbmemcpy ( &d , m_docIdPtr , 6 );
-	d >>= 2;
-	d &= DOCID_MASK;
-	return d;
-}
-
-
-int64_t TopNode::getDocIdForMsg3a ( ){
-	int64_t d;
-	gbmemcpy ( &d , m_docIdPtr , 6 );
-	//	d >>= 2;
-	d &= DOCID_MASK;
-	return d;
-}
-*/
-
 TopTree::TopTree() { 
 	m_nodes = NULL; 
 
@@ -132,8 +113,6 @@ bool TopTree::setNumNodes ( int32_t docsWanted , bool doSiteClustering ) {
 
 	// return if nothing needs to be done
 	if ( m_nodes && numNodes == m_numNodes ) return true;
-	// save this
-	//m_useSampleVectors = useSampleVectors;
 	// . grow using realloc if we should
 	// . alloc for one extra to use as the "empty node"
 	//int32_t vecSize = 0;
@@ -169,7 +148,6 @@ bool TopTree::setNumNodes ( int32_t docsWanted , bool doSiteClustering ) {
 	m_numNodes = numNodes;
 	p += (numNodes+1) * sizeof(TopNode);
 	// vectors
-	//if ( m_useSampleVectors ) m_sampleVectors = (int32_t *)p;
 	// bail now if just reallocated
 	if ( updated ) return true;
 	// make empty the last
@@ -215,8 +193,6 @@ int32_t TopTree::getHighNode ( ) {
 	int32_t tn = m_headNode;
 	while ( (tn2=RIGHT(tn)) >= 0 ) tn = tn2;
 	return tn;
-	//m_highNode = tn;
-	//return m_highNode;
 }
 
 // returns true if added node. returns false if did not add node
@@ -257,22 +233,6 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		}
 		// we got a winner
 		goto addIt;
-		/*
-		if ( *(uint32_t  *)(t->m_docIdPtr+1) >
-		     *(uint32_t  *)(m_nodes[i].m_docIdPtr+1) ) {
-			m_kickedOutDocIds = true; return false; }
-		if ( *(uint32_t  *)(t->m_docIdPtr+1) <
-		     *(uint32_t  *)(m_nodes[i].m_docIdPtr+1) ) goto addIt;
-		if ( (*(unsigned char  *)(t->m_docIdPtr)&0xfc) >
-		     (*(unsigned char  *)(m_nodes[i].m_docIdPtr)&0xfc)) {
-			m_kickedOutDocIds = true; return false; }
-		if ( (*(unsigned char  *)(t->m_docIdPtr)&0xfc) <
-		     (*(unsigned char  *)(m_nodes[i].m_docIdPtr)&0xfc) ) 
-			goto addIt;
-		// a tie, skip it
-		m_kickedOutDocIds = true;
-		return false;
-		*/
 	}
 
  addIt:
@@ -316,23 +276,6 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 			i = RIGHT(i); dir = 1; continue; }
 		// if equal do not replace
 		return false;
-
-		/*
-		if ( *(uint32_t  *)(t->m_docIdPtr+1) >
-		     *(uint32_t  *)(m_nodes[i].m_docIdPtr+1) ) {
-			i = LEFT(i); dir = 0; continue; }
-		if ( *(uint32_t  *)(t->m_docIdPtr+1) <
-		     *(uint32_t  *)(m_nodes[i].m_docIdPtr+1) ) {
-			i = RIGHT(i); dir = 1; continue; }
-		if ( (*(unsigned char  *)(t->m_docIdPtr)&0xfc) >
-		     (*(unsigned char  *)(m_nodes[i].m_docIdPtr)&0xfc) ) {
-			i = LEFT(i); dir = 0; continue; }
-		if ( (*(unsigned char  *)(t->m_docIdPtr)&0xfc) <
-		     (*(unsigned char  *)(m_nodes[i].m_docIdPtr)&0xfc) ) {
-			i = RIGHT(i); dir = 1; continue; }
-		// IF EQUAL DO NOT REPLACE IT
-		return false;
-		*/
 	}
 
 	//
@@ -344,9 +287,6 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	// a variety of domains to make site clustering as "guaranteed" as
 	// possible. If not doing site clustering we could skip this block.
 	//
-
-	// debug hack
-	//m_ridiculousMax = 2;
 
 	// . make our key the dom tree, m_t2
 	// . mask out 0x80 and 0x40 in bscore
@@ -367,10 +307,6 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	k.n0  =  ((int64_t)cs)         << (64-16);
 	k.n0 |=  t->m_docId; // getDocIdFromPtr ( t->m_docIdPtr );
 
-	// do not add dups
-	//int32_t dd = m_t2.getNode ( 0 , k );
-	//if ( dd >= 0 ) return false;
-
 	// get min node now for this dom
 	int32_t min = m_domMinNode[domHash];
 	// the node we add ourselves to
@@ -386,8 +322,6 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// . add ourselves. use 0 for collnum.
 		// . dataPtr is not really a ptr, but the node
 		n = m_t2.addNode ( 0 , (const char *)&k , NULL , 4 );
-		//if ( n == 52 )
-		//	log("r2 node 52 has domHash=%" PRId32,domHash);
 		// the next node before the current min will be the next min
 		int32_t next = m_t2.getNextNode(min);
 		// sanity check
@@ -412,8 +346,6 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	// if we have not violated the ridiculous max, just add ourselves
 	else if ( m_doSiteClustering ) {
 		n = m_t2.addNode ( 0 , (const char *)&k , NULL , 4 );
-		//if ( n == 52 )
-		//	log("r2 nodeb 52 has domHash=%" PRId32,domHash);
 		// sanity check
 		//if ( min > 0 ) {
 		//	key96_t *kp1 = (key96_t *)m_t2.getKey(min);
@@ -534,7 +466,6 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		//if ( (kp2->n1) >>24 != domHash2 ) gbshutdownLogicError();
 		// the new min is the "next" of the old min
 		m_domMinNode[domHash2] = next;
-		//logf(LOG_DEBUG,"deleting %" PRId32,on);
 	}
 	return true;
 }
@@ -545,12 +476,6 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 void TopTree::deleteNode ( int32_t i , uint8_t domHash ) {
 	// sanity check
 	if ( PARENT(i) == -2 ) gbshutdownLogicError();
-	// get node
-	//TopNode *t = &m_nodes[i];
-	// debug
-	//if ( ! checkTree ( false ) ) gbshutdownLogicError();
-	//if ( i == 262 )
-	//	log("HEY");
 
 	// if it was the low node, update it
 	if ( i == m_lowNode ) {
@@ -569,9 +494,6 @@ void TopTree::deleteNode ( int32_t i , uint8_t domHash ) {
 	else if ( m_domCount[domHash] == m_cap ) m_vcount -= m_partial;
 	// update the dom count
 	m_domCount[domHash]--;
-	// debug
-	//if ( domHash == 0x35 )
-	//	log("top: domCount down for 0x%" PRIx32" now %" PRId32,domHash,m_domCount[domHash]);
 
 	// parent of i
 	int32_t iparent ;
@@ -622,9 +544,6 @@ void TopTree::deleteNode ( int32_t i , uint8_t domHash ) {
 	//if ( m_doBalancing ) 
 	setDepths ( iparent );
 
-	// debug
-	//if ( ! checkTree ( false ) ) gbshutdownLogicError();
-
 	goto done;
 
 	// . now replace node #i with node #j
@@ -674,13 +593,9 @@ void TopTree::deleteNode ( int32_t i , uint8_t domHash ) {
 	// kill i
 	PARENT(i) = -2;
 
-	// return if we don't have to balance
-	//if ( ! m_doBalancing ) return;
 	// our depth becomes that of the node we replaced, unless moving j
 	// up to i decreases the total depth, in which case setDepths() fixes
 	DEPTH ( j ) = DEPTH ( i );
-	// debug msg
-	//fprintf(stderr,"... replaced %" PRId32" it with %" PRId32" (-1 means none)\n",i,j);
 	// . recalculate depths starting at old parent of j
 	// . stops at the first node to have the correct depth
 	// . will balance at pivot nodes that need it
@@ -694,15 +609,10 @@ void TopTree::deleteNode ( int32_t i , uint8_t domHash ) {
 	m_nodes[i].m_right = m_emptyNode;
 	m_emptyNode = i;
 
-	//m_lastKickedOutDocId = m_nodes[i].m_docId;
-
 	// count it
 	m_numUsedNodes--;
 	// flag it
 	m_kickedOutDocIds = true;
-
-	// debug
-	//if ( ! checkTree ( true ) ) gbshutdownLogicError();
 }
 	
 int32_t TopTree::getPrev ( int32_t i ) { 
@@ -794,14 +704,9 @@ void TopTree::setDepths ( int32_t i ) {
 		// . return if our depth was ultimately unchanged
 		// . i may have change if we rotated, but same logic applies
 		if ( DEPTH(i) == oldDepth ) break;
-		// debug msg
-		//fprintf (stderr,"changed node %" PRId32"'s depth from %" PRId32" to %" PRId32"\n",
-		//i,oldDepth,newDepth);
 		// get his parent to continue the ascension
 		i = PARENT ( i );
 	}
-	// debug msg
-	//printTree();
 }
 
 /*
