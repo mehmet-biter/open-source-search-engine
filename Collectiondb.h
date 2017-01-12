@@ -34,10 +34,10 @@ class Collectiondb  {
 	bool m_needsSave;
 
 	// returns i so that m_recs[i].m_coll = coll
-	collnum_t getCollnum ( const char *coll , int32_t collLen );
-	collnum_t getCollnum ( const char *coll ); // coll is NULL terminated here
+	collnum_t getCollnum(const char *coll, int32_t collLen) const;
+	collnum_t getCollnum(const char *coll) const; // coll is NULL terminated here
 
-	char *getCollName ( collnum_t collnum );
+	const char *getCollName(collnum_t collnum) const;
 
 	// get coll rec specified in the HTTP request
 	class CollectionRec *getRec ( class HttpRequest *r ,
@@ -57,8 +57,8 @@ class Collectiondb  {
 	//class CollectionRec *getDefaultRec ( ) ;
 
 	class CollectionRec *getFirstRec      ( ) ;
-	char                *getFirstCollName ( ) ;
-	collnum_t            getFirstCollnum  ( ) ;
+	const char          *getFirstCollName() const;
+	collnum_t            getFirstCollnum() const ;
 
 	// . how many collections we have in here
 	// . only counts valid existing collections

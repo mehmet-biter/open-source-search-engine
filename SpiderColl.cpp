@@ -133,7 +133,7 @@ bool SpiderColl::load ( ) {
 	// error?
 	int32_t err = 0;
 	// make the dir
-	char *coll = g_collectiondb.getCollName(m_collnum);
+	const char *coll = g_collectiondb.getCollName(m_collnum);
 	// sanity check
 	if ( ! coll || coll[0]=='\0' ) {
 		log("spider: bad collnum of %" PRId32,(int32_t)m_collnum);

@@ -968,33 +968,31 @@ CollectionRec *Collectiondb::getFirstRec ( ) {
 	return NULL;
 }
 
-collnum_t Collectiondb::getFirstCollnum ( ) {
+collnum_t Collectiondb::getFirstCollnum() const {
 	for ( int32_t i = 0 ; i < m_numRecs ; i++ )
 		if ( m_recs[i] ) return i;
 	return (collnum_t)-1;
 }
 
-char *Collectiondb::getFirstCollName ( ) {
+const char *Collectiondb::getFirstCollName() const {
 	for ( int32_t i = 0 ; i < m_numRecs ; i++ )
 		if ( m_recs[i] ) return m_recs[i]->m_coll;
 	return NULL;
 }
 
-char *Collectiondb::getCollName ( collnum_t collnum ) {
+const char *Collectiondb::getCollName(collnum_t collnum) const {
 	if ( collnum < 0 || collnum > m_numRecs ) return NULL;
 	if ( ! m_recs[(int32_t)collnum] ) return NULL;
 	return m_recs[collnum]->m_coll;
 }
 
-collnum_t Collectiondb::getCollnum ( const char *coll ) {
-
+collnum_t Collectiondb::getCollnum(const char *coll) const {
 	int32_t clen = 0;
 	if ( coll ) clen = strlen(coll );
 	return getCollnum ( coll , clen );
 }
 
-collnum_t Collectiondb::getCollnum ( const char *coll , int32_t clen ) {
-
+collnum_t Collectiondb::getCollnum ( const char *coll , int32_t clen ) const {
 	// default empty collection names
 	if ( coll && ! coll[0] ) coll = NULL;
 	if ( ! coll ) {
