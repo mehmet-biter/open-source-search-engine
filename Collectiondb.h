@@ -17,7 +17,6 @@ class Collectiondb  {
 	Collectiondb();
 	~Collectiondb();
 
-	// does nothing
 	void reset() ;
 	
 	// called by main.cpp to fill in our m_recs[] array with
