@@ -81,8 +81,19 @@ bool Docid2FlagsAndSiteMap::load()
 	std::swap(entries[new_active_index],new_entries);
 	active_index.store(new_active_index,std::memory_order_release);
 
+	timestamp = st.st_mtime;
+
 	log(LOG_DEBUG, "Loaded %s (%lu entries)", filename, (unsigned long)entries [new_active_index].size());
 	return true;
+}
+
+
+void Docid2FlagsAndSiteMap::reload_if_needed() {
+	struct stat st;
+	if(stat(filename,&st)!=0)
+		return; //probably not found
+	if(timestamp==-1 || timestamp!=st.st_mtime)
+		load();
 }
 
 

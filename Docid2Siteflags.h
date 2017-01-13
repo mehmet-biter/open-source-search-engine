@@ -16,12 +16,14 @@ struct Docid2FlagsAndSiteMapEntry {
 class Docid2FlagsAndSiteMap {
 	std::vector<Docid2FlagsAndSiteMapEntry> entries[2];
 	std::atomic<unsigned> active_index;
+	long timestamp;
 
 public:
-	Docid2FlagsAndSiteMap() : active_index(0) {}
+	Docid2FlagsAndSiteMap() : active_index(0), timestamp(-1) {}
 	~Docid2FlagsAndSiteMap() {}
 	
 	bool load();
+	void reload_if_needed();
 	void unload();
 	
 	bool empty() const { return entries[active_index].empty(); }
