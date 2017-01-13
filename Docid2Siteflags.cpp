@@ -76,15 +76,19 @@ bool Docid2FlagsAndSiteMap::load()
 	std::sort(new_entries.begin(), new_entries.end(), cmp);
 	
 	//swap in and done.
-	std::swap(entries,new_entries);
 	
-	log(LOG_DEBUG, "Loaded %s (%lu entries)", filename, (unsigned long)entries.size());
+	unsigned new_active_index = 1-active_index;
+	std::swap(entries[new_active_index],new_entries);
+	active_index.store(new_active_index,std::memory_order_release);
+
+	log(LOG_DEBUG, "Loaded %s (%lu entries)", filename, (unsigned long)entries [new_active_index].size());
 	return true;
 }
 
 
 void Docid2FlagsAndSiteMap::unload() {
-	entries.clear();
+	entries[0].clear();
+	entries[1].clear();
 }
 
 
@@ -92,8 +96,9 @@ bool Docid2FlagsAndSiteMap::lookupSiteHash(uint64_t docid, uint32_t *sitehash32)
 	Docid2FlagsAndSiteMapEntry tmp;
 	tmp.docid = docid;
 	tmp.flags = 0;
-	auto pos = std::lower_bound(entries.begin(), entries.end(), tmp, cmp);
-	if(pos!=entries.end()) {
+	auto const &e = entries[active_index.load(std::memory_order_consume)];
+	auto pos = std::lower_bound(e.begin(), e.end(), tmp, cmp);
+	if(pos!=e.end()) {
 		if(pos->docid == docid) {
 			*sitehash32 = pos->sitehash32;
 			return true;
@@ -108,8 +113,9 @@ bool Docid2FlagsAndSiteMap::lookupFlags(uint64_t docid, unsigned *flags) {
 	Docid2FlagsAndSiteMapEntry tmp;
 	tmp.docid = docid;
 	tmp.flags = 0;
-	auto pos = std::lower_bound(entries.begin(), entries.end(), tmp, cmp);
-	if(pos!=entries.end()) {
+	auto const &e = entries[active_index.load(std::memory_order_consume)];
+	auto pos = std::lower_bound(e.begin(), e.end(), tmp, cmp);
+	if(pos!=e.end()) {
 		if(pos->docid == docid) {
 			*flags = pos->flags;
 			return true;
