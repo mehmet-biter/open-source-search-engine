@@ -29,7 +29,7 @@ static bool cmp(const Docid2FlagsAndSiteMapEntry &e1, const Docid2FlagsAndSiteMa
 	//  return e1.docid < e2.docid;
 	//However, we do a dirty trick here: we just treat docid+flags as a uint64_t.
 	//This works fine because we will not have duplicated docids in the table and we don't care about the flags.
-	//This generates more efficient code that what gcc does with packet structs and bitfields.
+	//This generates more efficient code than what gcc does with packed structs and bitfields.
 	return *(const uint64_t*)&e1 < *(const uint64_t*)&e2;
 }
 
