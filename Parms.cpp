@@ -1426,7 +1426,7 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 		// if not part of a complex row, just print this array right up
 		if ( rowid == -1 ) {
 			for ( int32_t j = 0 ; j < size ; j++ )
-				status &= printParm( sb,&m_parms[i],i,
+				status = status && printParm( sb,&m_parms[i],i,
 						     j, jend, (char *)THIS,
 						     coll,
 						     bg,nc,pd,
@@ -1449,7 +1449,7 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 			      k < m_numParms &&
 				      m_parms[k].m_rowid == rowid;
 			      k++ ) {
-				status &= printParm(sb,&m_parms[k],k,
+				status = status && printParm(sb,&m_parms[k],k,
 					    newj,jend,(char *)THIS,coll,
 						   bg,nc,pd,
 						   format,
@@ -1714,7 +1714,7 @@ bool Parms::printParm( SafeBuf* sb,
 			sb->safePrintf ( "<td colspan=2><center>"
 				  "<b>%s</b><br><font size=-1>",m->m_title );
 			if ( pd ) {
-				status &= sb->htmlEncode (m->m_desc,
+				status = status && sb->htmlEncode (m->m_desc,
 							  strlen(m->m_desc),
 							  false);
 				// is it required?
@@ -1738,7 +1738,7 @@ bool Parms::printParm( SafeBuf* sb,
 
 			// the "site list" parm has html in description
 			if ( pd ) {
-				status &= sb->safeStrcpy(m->m_desc);
+				status = status && sb->safeStrcpy(m->m_desc);
 				//status &= sb->htmlEncode (m->m_desc,
 				//			  strlen(m->m_desc),
 				//			  false);
@@ -1771,7 +1771,7 @@ bool Parms::printParm( SafeBuf* sb,
 				}
 				else {
 					sb->safePrintf (" Default: ");
-					status &= sb->htmlEncode (d,
+					status = status && sb->htmlEncode (d,
 								  strlen(d),
 								  false);
 				}

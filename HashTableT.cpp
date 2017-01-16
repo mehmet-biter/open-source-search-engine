@@ -363,8 +363,8 @@ bool HashTableT<Key_t, Val_t>::serialize(SafeBuf& sb) {
 	sb += m_numSlotsUsed;
 	if(m_numSlots == 0) return true;
 	bool x = true;
-	x &= sb.safeMemcpy((char*)m_keys, sizeof(Key_t) * m_numSlots);
-	x &= sb.safeMemcpy((char*)m_vals, sizeof(Val_t) * m_numSlots);
+	x = x && sb.safeMemcpy((char*)m_keys, sizeof(Key_t) * m_numSlots);
+	x = x && sb.safeMemcpy((char*)m_vals, sizeof(Val_t) * m_numSlots);
 	return x;
 }
 

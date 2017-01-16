@@ -902,7 +902,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 
 			// Convert the domain to code points and copy it to tmpbuf to be punycoded
 			for ( ; p - labelStart < labelLen; p += utf8Size( tmpBuf[tmpLen] ), tmpLen++ ) {
-				labelIsAscii &= is_ascii( *p );
+				labelIsAscii = labelIsAscii && is_ascii( *p );
 				tmpBuf[tmpLen] = utf8Decode( p );
 				if ( !tmpBuf[tmpLen] ) { // invalid char?
 					tryLatin1 = true;
