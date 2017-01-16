@@ -14,8 +14,8 @@
 
 static void printTcpTable  (SafeBuf *p, const char *title, TcpServer *server);
 static void printUdpTable  (SafeBuf *p, const char *title, const UdpServer *server,
-			     const char *coll, int32_t fromIp ,
-			    bool isDns = false );
+			    const char *coll,
+			    bool isDns);
 
 // . returns false if blocked, true otherwise
 // . sets errno on error
@@ -42,8 +42,8 @@ bool sendPageSockets ( TcpSocket *s , HttpRequest *r ) {
 	// now print out the sockets table for each tcp server we have
 	printTcpTable(&p,"HTTP Server"    ,g_httpServer.getTcp());
 	printTcpTable(&p,"HTTPS Server"    ,g_httpServer.getSSLTcp());
-	printUdpTable(&p, "Udp Server", &g_udpServer, coll, s->m_ip);
-	printUdpTable(&p, "Udp Server (dns)", &g_dns.getUdpServer(), coll, s->m_ip, true);
+	printUdpTable(&p, "Udp Server", &g_udpServer, coll, false);
+	printUdpTable(&p, "Udp Server (dns)", &g_dns.getUdpServer(), coll, true);
 
 	// from msg13.cpp print the queued url download requests
 	printHammerQueueTable ( &p );
@@ -208,7 +208,7 @@ static bool sortByStartTime(const UdpStatistic &s1, const UdpStatistic &s2) {
 	return (s1.getStartTime() < s2.getStartTime());
 }
 
-static void printUdpTable(SafeBuf *p, const char *title, const UdpServer *server, const char *coll, int32_t fromIp, bool isDns) {
+static void printUdpTable(SafeBuf *p, const char *title, const UdpServer *server, const char *coll, bool isDns) {
 	if (!coll) {
 		coll = "main";
 	}
