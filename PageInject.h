@@ -27,7 +27,6 @@ class InjectionRequest {
  public:
 
 	int32_t   m_injectDocIp;
-	char      m_injectLinks;
 	char      m_spiderLinks;
 	char      m_shortReply;
 	char      m_newOnly;

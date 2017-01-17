@@ -252,7 +252,7 @@ bool Rdb::init(const char *dbname,
 // . returns false and sets g_errno on error
 bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	// how come not in repair mode?
-	if ( ! g_repairMode ) { g_process.shutdownAbort(true); }
+	if ( g_repairMode==REPAIR_MODE_NONE ) { g_process.shutdownAbort(true); }
 	// make a dir in the trash subfolder to hold them
 	uint32_t t = (uint32_t)getTime();
 	char dstDir[256];
@@ -1332,7 +1332,15 @@ void Rdb::doneDumpingCollWrapper ( void *state ) {
 	// so allow it to try to merge again.
 	//RdbBase *base = THIS->getBase(THIS->m_dumpCollnum);
 
-	logTrace( g_conf.m_logTraceRdb, "%s", THIS->m_dbname );
+	logTrace( g_conf.m_logTraceRdb, "dbname=%s collnum=%d", THIS->m_dbname, THIS->m_dumpCollnum );
+
+	if (g_errno == 0) {
+		RdbBase *base = THIS->getBase(THIS->m_dumpCollnum);
+		if (base) {
+			base->generateGlobalIndex();
+			base->markNewFileReadable();
+		}
+	}
 
 	// return if the loop blocked
 	if ( ! THIS->dumpCollLoop() ) {
@@ -1352,14 +1360,6 @@ void Rdb::doneDumping ( ) {
 	// free mem in the primary buffer
 	if ( ! m_dumpErrno ) {
 		m_mem.freeDumpedMem( &m_tree );
-	}
-
-	for (collnum_t collnum = 0; collnum < getNumBases(); collnum++) {
-		RdbBase *base = getBase(collnum);
-		if (base) {
-			base->generateGlobalIndex();
-			base->markNewFileReadable();
-		}
 	}
 
 	// . tell RdbDump it is done
@@ -1827,7 +1827,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 			return false;
 		}
 
-		data = (char *) m_mem.dupData ( data, dataSize, collnum);
+		data = (char *) m_mem.dupData(data, dataSize);
 		if ( ! data ) { 
 			g_errno = ETRYAGAIN; 
 			log(LOG_WARN, "db: Could not allocate %" PRId32" bytes to add data to %s. Retrying.",dataSize,m_dbname);

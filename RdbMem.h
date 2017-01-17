@@ -30,10 +30,10 @@ class RdbMem {
 	void reset();
 
 	// . if a dump is not going on this uses the primary mem space
-	void *dupData(const char *data, int32_t dataSize, collnum_t collnum);
+	void *dupData(const char *data, int32_t dataSize);
 
 	// used by dupData
-	void *allocData(int32_t dataSize, collnum_t collnum);
+	void *allocData(int32_t dataSize);
 
 	// how much mem is available?
 	int32_t getAvailMem() const {

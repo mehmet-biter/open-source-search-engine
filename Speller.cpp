@@ -450,7 +450,7 @@ bool Speller::loadUnifiedDict() {
 		return false;
 
 	// save it
-	if ( m_unifiedDict.save(g_hostdb.m_dir,"unifiedDict-map.dat")<=0 )
+	if ( !m_unifiedDict.save(g_hostdb.m_dir,"unifiedDict-map.dat") )
 		return false;
 
 	// start over and load what we created

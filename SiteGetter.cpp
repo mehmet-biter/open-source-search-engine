@@ -564,6 +564,8 @@ bool SiteGetter::setRecognizedSite ( ) {
 	if (strnstr(host, "www.myspace.com", hostLen)) depth = 1;
 	if (strnstr(host, "twitter.com", hostLen)) depth = 1;
 	if (strnstr(host, "www.facebook.com", hostLen)) depth = 1;
+	if (strnstr(host, "xoomer.alice.it", hostLen)) depth = 1;
+	if (strnstr(host, "plus.google.com", hostLen)) depth = 1;
 
 	// return false to indicate no recognized site detected
 	if ( ! depth ) {

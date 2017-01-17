@@ -2,7 +2,6 @@
 #include "gb-include.h"
 #include "Mem.h"
 #include "Conf.h"
-#include "Words.h"
 #include "Sanity.h"
 #include <sys/stat.h> //O_CREAT etc.
 #include <fcntl.h>    //open()
