@@ -1827,7 +1827,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 			return false;
 		}
 
-		data = (char *) m_mem.dupData ( data, dataSize, collnum);
+		data = (char *) m_mem.dupData(data, dataSize);
 		if ( ! data ) { 
 			g_errno = ETRYAGAIN; 
 			log(LOG_WARN, "db: Could not allocate %" PRId32" bytes to add data to %s. Retrying.",dataSize,m_dbname);
