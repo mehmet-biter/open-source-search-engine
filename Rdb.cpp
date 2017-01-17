@@ -252,7 +252,7 @@ bool Rdb::init(const char *dbname,
 // . returns false and sets g_errno on error
 bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	// how come not in repair mode?
-	if ( ! g_repairMode ) { g_process.shutdownAbort(true); }
+	if ( g_repairMode==REPAIR_MODE_NONE ) { g_process.shutdownAbort(true); }
 	// make a dir in the trash subfolder to hold them
 	uint32_t t = (uint32_t)getTime();
 	char dstDir[256];
