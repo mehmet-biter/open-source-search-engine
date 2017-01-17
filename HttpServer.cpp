@@ -386,7 +386,7 @@ static void requestHandlerWrapper(TcpSocket *s) {
 
 // . a udp handler wrapper 
 // . the proxy sends us udp packets with msgtype = 0xfd ("forward")
-static void handleRequestfd(UdpSlot *slot, int32_t niceness) {
+static void handleRequestfd(UdpSlot *slot, int32_t /*niceness*/) {
 	// if we are proxy, that is just wrong! a proxy does not send
 	// this msg to another proxy, only to the flock
 	// no! now a compression proxy will forward a query to a regular

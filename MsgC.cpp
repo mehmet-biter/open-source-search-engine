@@ -261,7 +261,7 @@ int32_t MsgC::gotReply(){
 
 // . only return false if you want slot to be nuked w/o replying
 // . MUST always call g_udpServer::sendReply() or sendErrorReply()
-void handleRequest(UdpSlot *slot, int32_t niceness) {
+void handleRequest(UdpSlot *slot, int32_t /*niceness*/) {
 	// get the request, should be the hostname
 	char *hostname = slot->m_readBuf;
 

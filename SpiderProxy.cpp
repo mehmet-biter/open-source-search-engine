@@ -490,7 +490,7 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 static void returnProxy ( Msg13Request *preq , UdpSlot *udpSlot ) ;
 
 // a host is asking us (host #0) what proxy to use?
-static void handleRequest54(UdpSlot *udpSlot, int32_t niceness) {
+static void handleRequest54(UdpSlot *udpSlot, int32_t /*niceness*/) {
 
 	char *request     = udpSlot->m_readBuf;
 	int32_t  requestSize = udpSlot->m_readBufSize;

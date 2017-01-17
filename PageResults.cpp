@@ -110,8 +110,7 @@ static bool sendReply(State0 *st, char *reply) {
 			    STAT_QUERY );
 
 	// add to statsdb, use # of qterms as the value/qty
-	g_statsdb.addStat ( 0,
-			    "query",
+	g_statsdb.addStat ( "query",
 			    st->m_startTime,
 			    nowms,
 			    si->m_q.m_numTerms);

@@ -487,7 +487,7 @@ void gotReplyWrapperP3 ( void *state , UdpSlot *slot ) {
 static int64_t s_deltaTime = 0;
 
 // this may be called from a signal handler now...
-void handleRequest11(UdpSlot *slot , int32_t niceness) {
+void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 	// get request 
 	//char *request     = slot->m_readBuf;
 	int32_t  requestSize = slot->m_readBufSize;

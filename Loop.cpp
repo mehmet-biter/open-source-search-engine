@@ -328,13 +328,13 @@ bool Loop::addSlot ( bool forReading , int fd, void *state, void (* callback)(in
 	}
 
 	// set fd non-blocking
-	return setNonBlocking ( fd , niceness ) ;
+	return setNonBlocking(fd);
 }
 
 // . now make sure we're listening for an interrupt on this fd
 // . set it non-blocing and enable signal catching for it
 // . listen for an interrupt for this fd
-bool Loop::setNonBlocking ( int fd , int32_t niceness ) {
+bool Loop::setNonBlocking(int fd) {
  retry:
 	int flags = fcntl ( fd , F_GETFL ) ;
 	if ( flags < 0 ) {
@@ -498,8 +498,8 @@ bool Loop::init ( ) {
 		log(LOG_ERROR,"pipe() failed with errno=%d",errno);
 		return false;
 	}
-	setNonBlocking(m_pipeFd[0],0);
-	setNonBlocking(m_pipeFd[1],0);
+	setNonBlocking(m_pipeFd[0]);
+	setNonBlocking(m_pipeFd[1]);
 	FD_SET(m_pipeFd[0],&s_selectMaskRead);
 
 	// sighupHandler() will set this to true so we know when to shutdown

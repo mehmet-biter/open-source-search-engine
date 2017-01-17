@@ -269,10 +269,10 @@ void Statsdb::addDocsIndexed ( ) {
 
 	// add it if changed though
 	int64_t nowms = gettimeofdayInMillisecondsGlobal();
-	addStat ( MAX_NICENESS,"docs_indexed", nowms, nowms, (float)total );
+	addStat("docs_indexed", nowms, nowms, (float)total);
     // Prevent a datapoint which adds all of the docs indexed to date.
     if( s_lastTotal != 0 ) {
-        addStat ( MAX_NICENESS,"docs_per_second", nowms, nowms, docsPerSecond );
+        addStat("docs_per_second", nowms, nowms, docsPerSecond);
     }
 
 	s_lastTotal = total;
@@ -294,8 +294,7 @@ void Statsdb::addDocsIndexed ( ) {
 //   was processed.
 // . oldVal, newVal are reflect a state change, like maybe changing the
 //   value of a parm. typically for such things t1 equals t2
-bool Statsdb::addStat ( int32_t        niceness ,
-			const char    *label    ,
+bool Statsdb::addStat ( const char    *label    ,
 			int64_t   t1Arg    ,
 			int64_t   t2Arg    ,
 			float     value    , // y-value really, "numBytes"

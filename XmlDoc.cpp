@@ -8679,8 +8679,7 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 
 
 // returns false if none found
-static bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness ,
-				     Url *cu ) {
+static bool setMetaRedirUrlFromTag(char *p, Url *metaRedirUrl, Url *cu) {
 	// limit scan
 	char *limit = p + 30;
 	// skip whitespace
@@ -8919,7 +8918,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "Possible redirect URL [%s]", p);
 
 		Url dummy;
-		if ( ! setMetaRedirUrlFromTag ( p , &dummy , m_niceness ,cu))
+		if ( ! setMetaRedirUrlFromTag(p, &dummy, cu))
 		{
 			logTrace( g_conf.m_logTraceXmlDoc, "Failed to set redirect URL" );
 			continue;
@@ -8970,7 +8969,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 
 		logTrace( g_conf.m_logTraceXmlDoc, "Found possible URL in XmlNode" );
 		// PARSE OUT THE URL
-		if (!setMetaRedirUrlFromTag(p,&m_metaRedirUrl,m_niceness,cu) )
+		if (!setMetaRedirUrlFromTag(p,&m_metaRedirUrl,cu) )
 		{
 			logTrace( g_conf.m_logTraceXmlDoc, "Failed to set URL from XmlNode data" );
 			continue;

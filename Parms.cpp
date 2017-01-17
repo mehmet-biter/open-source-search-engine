@@ -2422,8 +2422,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 
 	// . note it in statsdb
 	// . record what parm change and from/to what value
-	g_statsdb.addStat ( 0, // niceness ,
-			    "parm_change" ,
+	g_statsdb.addStat ( "parm_change" ,
 			    nowms,
 			    nowms,
 			    0         , // value
@@ -11304,7 +11303,7 @@ static void handleRequest3fLoop ( void *weArg ) {
 
 // . host #0 is requesting that we update some parms
 // . the readbuf in the request is the list of the parms
-void handleRequest3f ( UdpSlot *slot , int32_t niceness ) {
+void handleRequest3f(UdpSlot *slot, int32_t /*niceness*/) {
 	log("parms: handling updated parameters (request type 3f)");
 
 	// sending to host #0 is not right...
@@ -11445,7 +11444,7 @@ bool Parms::syncParmsWithHost0 ( ) {
 //   uses 0x3f, so this just returns and empty reply on success
 // . sends CMD "addcoll" and "delcoll" cmd parms as well
 // . include an "insync" command parm as last parm
-void handleRequest3e ( UdpSlot *slot , int32_t niceness ) {
+void handleRequest3e(UdpSlot *slot, int32_t /*niceness*/) {
 	// right now we must be host #0
 	if ( g_hostdb.m_hostId != 0 ) {
 hadError:
