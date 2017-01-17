@@ -176,9 +176,7 @@ public:
 	// html-encode any of the last "len" bytes that need it
 	bool htmlEncode(int32_t len);
 
-	bool htmlDecode (const char *s,
-			 int32_t len,
-			 bool doSpecial = false);
+	bool htmlDecode(const char *s, int32_t len);
 
 	bool  dequote ( const char *t , int32_t tlen );
 

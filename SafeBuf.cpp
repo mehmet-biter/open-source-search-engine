@@ -1144,9 +1144,7 @@ bool SafeBuf::safeTruncateEllipsis ( const char *src , int32_t srcLen , int32_t 
 
 #include "sort.h"
 
-bool SafeBuf::htmlDecode ( const char *src,
-			   int32_t srcLen,
-			   bool doSpecial ) {
+bool SafeBuf::htmlDecode(const char *src, int32_t srcLen) {
 	// in case we were in use
 	purge();
 	// make sure we have enough room

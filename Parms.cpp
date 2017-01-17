@@ -2370,7 +2370,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		sb->purge();
 		// this means that we can not use string POINTERS as parms!!
 		if ( ! isHtmlEncoded ) sb->safeMemcpy ( s , len );
-		else                   len = sb->htmlDecode (s,len,false);
+		else                   len = sb->htmlDecode (s,len);
 		// tag it
 		sb->setLabel ( "parm1" );
 		// ensure null terminated
