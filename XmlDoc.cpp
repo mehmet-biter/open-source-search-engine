@@ -42,6 +42,7 @@
 #include "GbCompress.h"
 #include "GbUtil.h"
 #include "Mem.h"
+#include "UrlBlockList.h"
 #include <fcntl.h>
 
 
@@ -14927,8 +14928,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			url.hasScriptExtension() ||
 			url.hasJsonExtension() ||
 //			url.hasXmlExtension() ||
-			url.isDomainUnwantedForIndexing() ||
-			url.isPathUnwantedForIndexing() )
+			g_urlBlockList.isUrlBlocked(url.getUrl()))
 		{
 			logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", url.getUrl());
 			continue;

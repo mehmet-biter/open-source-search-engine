@@ -63,7 +63,7 @@ OBJS_O3 = \
 	RdbBuckets.o RdbIndex.o RdbIndexQuery.o RdbList.o RdbMap.o \
 	SafeBuf.o sort.o Statistics.o \
 	TopTree.o \
-	UrlComponent.o UrlParser.o UdpStatistic.o \
+	UrlBlockList.o UrlComponent.o UrlParser.o UdpStatistic.o \
 	MergeSpaceCoordinator.o \
 	GbMoveFile.o \
 	GbMoveFile2.o \

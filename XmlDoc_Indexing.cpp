@@ -11,6 +11,7 @@
 #include "ip.h"
 #include "Posdb.h"
 #include "Conf.h"
+#include "UrlBlockList.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -899,8 +900,7 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 			link.hasScriptExtension() ||
 			link.hasJsonExtension() ||
 			link.hasXmlExtension() ||
-			link.isDomainUnwantedForIndexing() ||
-			link.isPathUnwantedForIndexing() ) {
+			g_urlBlockList.isUrlBlocked(link.getUrl())) {
 
 			logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", link.getUrl());
 			continue;			

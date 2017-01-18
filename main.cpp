@@ -78,6 +78,7 @@
 #include "GbUtil.h"
 #include "Dir.h"
 #include "File.h"
+#include "UrlBlockList.h"
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -1965,7 +1966,10 @@ int main2 ( int argc , char *argv[] ) {
 	
 	//load docid->flags/sitehash map
 	g_d2fasm.load();
-	
+
+	// load url block list
+	g_urlBlockList.init();
+
 	// test all collection dirs for write permission
 	int32_t pcount = 0;
 	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {

@@ -265,6 +265,7 @@ Conf::Conf ( ) {
 	m_logTraceSummary = false;
 	m_logTraceXmlDoc = false;
 	m_logTracePhrases= false;
+	m_logTraceUrlBlockList = false;
 	m_logTraceWordSpam=false;
 	m_logTimingAddurl = false;
 	m_logTimingAdmin = false;
