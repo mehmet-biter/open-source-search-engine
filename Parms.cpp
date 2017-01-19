@@ -2247,12 +2247,10 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 	     m->m_type != TYPE_FILEUPLOADBUTTON &&
 	     m->m_defOff==-1) {
 		s = "0";
-		const char *tit = m->m_title;
-		if ( ! tit || ! tit[0] ) tit = m->m_xml;
-		log(LOG_LOGIC,"admin: Parm \"%s\" had NULL default value. "
-		    "Forcing to 0.",
-		    tit);
-		//g_process.shutdownAbort(true);
+		const char *title = m->m_title;
+		if(!title || !title[0])
+			title = m->m_xml;
+		log(LOG_LOGIC,"admin: Parm \"%s\" had NULL default value. Forcing to 0.", title);
 	}
 
 	// sanity check
