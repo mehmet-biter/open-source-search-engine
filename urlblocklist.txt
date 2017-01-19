@@ -49,6 +49,7 @@ https?://web\.archive\.org/web/
 https?://(?!www\.)(.*\.)doubleclick\.net/
 
 https?://(.*\.|)ixquick-proxy\.com/
+https?://(?!www\.)(.*\.)w3snoop\.com/
 
 # path
 https?://[^/]+/oembed[\?/]
