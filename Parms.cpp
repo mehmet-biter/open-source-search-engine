@@ -774,8 +774,7 @@ static bool CommandPowerNotice ( int32_t hasPower ) {
 	// . autosave should kick in every 30 seconds
 	g_process.m_powerIsOn = false;
 	// note the autosave
-	log("powermo: disabling spiders, suspending merges, disabling "
-	    "tree writes and saving.");
+	log("powermo: disabling spiders, suspending merges, disabling tree writes and saving.");
 	// . save everything now... this may block some when saving the
 	//   caches... then do not do ANY writes...
 	// . RdbMerge suspends all merging if power is off
@@ -2156,16 +2155,14 @@ bool Parms::insertParm ( int32_t i , int32_t an ,  char *THIS ) {
 
 	// ensure we are valid
 	if ( an >= num || an < 0 ) {
-		log("admin: Invalid insertion of element "
-		    "%" PRId32" in array of size %" PRId32" for \"%s\".",
+		log("admin: Invalid insertion of element %" PRId32" in array of size %" PRId32" for \"%s\".",
 		    an,num,m->m_title);
 		return false;
 	}
 	// also ensure that we have space to put the parm in, because in
 	// case of URl filters, it is bounded by MAX_FILTERS
 	if ( num >= MAX_FILTERS ){
-		log("admin: Invalid insert of element %" PRId32", array is full "
-		    "in size %" PRId32" for \"%s\".",an, num, m->m_title);
+		log("admin: Invalid insert of element %" PRId32", array is full in size %" PRId32" for \"%s\".",an, num, m->m_title);
 		return false;
 	}
 	// point to the place where the element is to be inserted
@@ -2202,8 +2199,7 @@ bool Parms::removeParm ( int32_t i , int32_t an , char *THIS ) {
 
 	// ensure we are valid
 	if ( an >= num || an < 0 ) {
-		log("admin: Invalid removal of element "
-		    "%" PRId32" in array of size %" PRId32" for \"%s\".",
+		log("admin: Invalid removal of element %" PRId32" in array of size %" PRId32" for \"%s\".",
 		    an,num,m->m_title);
 		return false;
 	}
@@ -2495,16 +2491,14 @@ void Parms::setToDefault(char *THIS, parameter_object_type_t objType, Collection
 		// sanity check, make sure it does not overflow
 		if ( m->m_obj == OBJ_COLL &&
 		     m->m_off > (int32_t)sizeof(CollectionRec)){
-			log(LOG_LOGIC,"admin: Parm in Parms.cpp should use "
-			    "OBJ_COLL not OBJ_CONF");
+			log(LOG_LOGIC,"admin: Parm in Parms.cpp should use OBJ_COLL not OBJ_CONF");
 			g_process.shutdownAbort(true);
 		}
 
 		if ( m->m_page > PAGE_API && // CGIPARMS &&
 		     m->m_page != PAGE_NONE &&
 		     m->m_obj == OBJ_CONF ) {
-			log(LOG_LOGIC,"admin: Page can not reference "
-			    "g_conf and be declared AFTER PAGE_CGIPARMS in "
+			log(LOG_LOGIC,"admin: Page can not reference g_conf and be declared AFTER PAGE_CGIPARMS in "
 			    "Pages.h. Title=%s",m->m_title);
 			g_process.shutdownAbort(true);
 		}
@@ -2636,8 +2630,7 @@ bool Parms::setFromFile ( void *THIS        ,
 			}
 			// should be a <![CDATA[...]]>
 			if ( vlen<12 || strncasecmp(v,"<![CDATA[",9)!=0 ) {
-				log("conf: No <![CDATA[...]]> tag found "
-				    "for \"<%s>\" tag. Trying without CDATA.",
+				log("conf: No <![CDATA[...]]> tag found for \"<%s>\" tag. Trying without CDATA.",
 				    m->m_xml);
 				v    = oldv;
 				vlen = oldvlen;
@@ -2722,8 +2715,7 @@ bool Parms::setFromFile ( void *THIS        ,
 
 			// should be a <![CDATA[...]]>
 			if ( vlen<12 || strncasecmp(v,"<![CDATA[",9)!=0 ) {
-				log("conf: No <![CDATA[...]]> tag found "
-				    "for \"<%s>\" tag. Trying without CDATA.",
+				log("conf: No <![CDATA[...]]> tag found for \"<%s>\" tag. Trying without CDATA.",
 				    m->m_xml);
 				v    = oldv;
 				vlen = oldvlen;
@@ -2901,9 +2893,7 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 		if ( m->m_fixed > 0 ) count = m->m_fixed;
 		// sanity check
 		if ( count > 100000 ) {
-			log(LOG_LOGIC,"admin: Outrageous array size in for "
-			    "parameter %s. Does the array max size int32_t "
-			    "preceed it in the conf class?",m->m_title);
+			log(LOG_LOGIC,"admin: Outrageous array size in for parameter %s. Does the array max size int32_t preceed it in the conf class?",m->m_title);
 			exit(-1);
 		}
 
@@ -9854,8 +9844,7 @@ void Parms::init ( ) {
 			// upload file buttons are always dup of another parm
 			if ( m_parms[j].m_type == TYPE_FILEUPLOADBUTTON )
 				continue;
-			log(LOG_LOGIC,"conf: Cgi parm for #%" PRId32" \"%s\" "
-			    "matches #%" PRId32" \"%s\". Exiting.",
+			log(LOG_LOGIC,"conf: Cgi parm for #%" PRId32" \"%s\" matches #%" PRId32" \"%s\". Exiting.",
 			    i,m_parms[i].m_cgi,j,m_parms[j].m_cgi);
 			exit(-1);
 		}
@@ -9887,8 +9876,7 @@ void Parms::init ( ) {
 		int32_t j = 0;
 		for ( ; m_parms[i].m_cgi && m_parms[i].m_cgi[j] ; j++ ) {
 			if ( is_digit ( m_parms[i].m_cgi[j] ) ) {
-				log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has "
-				    "number in cgi name.",
+				log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has number in cgi name.",
 				    i,m_parms[i].m_title);
 				exit(-1);
 			}
@@ -9912,8 +9900,7 @@ void Parms::init ( ) {
 		// if its a fixed size then make sure m_size is not set
 		if ( m_parms[i].m_fixed > 0 ) {
 			if ( m_parms[i].m_size != 0 ) {
-				log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" is "
-				    "fixed but size is not 0.",
+				log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" is fixed but size is not 0.",
 				    i,m_parms[i].m_title);
 				exit(-1);
 			}
@@ -9951,8 +9938,7 @@ void Parms::init ( ) {
 		     t != TYPE_SAFEBUF  &&
 		     t != TYPE_FILEUPLOADBUTTON &&
 		     t != TYPE_CHARPTR ) {
-			log(LOG_LOGIC,"conf: Size of parm #%" PRId32" \"%s\" "
-			    "not set.", i,m_parms[i].m_title);
+			log(LOG_LOGIC,"conf: Size of parm #%" PRId32" \"%s\" not set.", i,m_parms[i].m_title);
 			exit(-1);
 		}
 		m_parms[i].m_size = size;
@@ -9970,8 +9956,8 @@ void Parms::init ( ) {
 			exit(-1);
 		}
 		if ( m_parms[i].m_off < -1 ) {
-			log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has bad offset "
-			    "of %" PRId32".", i,m_parms[i].m_title,m_parms[i].m_off);
+			log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has bad offset of %" PRId32".",
+			    i, m_parms[i].m_title, m_parms[i].m_off);
 			exit(-1);
 		}
 		if ( m->m_obj == OBJ_CONF && m->m_off >= (int32_t)sizeof(Conf) ) {
@@ -10006,8 +9992,7 @@ void Parms::init ( ) {
 		// set xml based on title
 		const char *tt = m_parms[i].m_title;
 		if ( p + strlen(tt) >= pend ) {
-			log(LOG_LOGIC,"conf: Not enough room to store xml "
-			    "tag name in buffer.");
+			log(LOG_LOGIC,"conf: Not enough room to store xml tag name in buffer.");
 			exit(-1);
 		}
 
@@ -10030,8 +10015,7 @@ void Parms::init ( ) {
 		m_searchParms[n++] = &m_parms[i];
 		// sanity check
 		if ( m_parms[i].m_off == -1 ) {
-			log(LOG_LOGIC,"conf: SEARCH Parm #%" PRId32" \"%s\" has "
-			    "m_off < 0 (offset into SearchInput).",
+			log(LOG_LOGIC,"conf: SEARCH Parm #%" PRId32" \"%s\" has m_off < 0 (offset into SearchInput).",
 			    i,m_parms[i].m_title);
 			exit(-1);
 		}
@@ -10174,8 +10158,7 @@ void Parms::overlapTest ( char step ) {
 			// save it
 			infringerB = p2[j];
 			savedi = i;
-			log("conf: got b=0x%hhx when it should have been "
-			    "b=0x%hhx",p2[j],b);
+			log("conf: got b=0x%hhx when it should have been b=0x%hhx", p2[j], b);
 			goto error;
 		}
 	}
@@ -10208,8 +10191,7 @@ void Parms::overlapTest ( char step ) {
 			    m_parms[i].m_desc);
 	}
 
-	log("conf: try including \"m->m_obj = OBJ_COLL;\" or "
-	    "\"m->m_obj   = OBJ_CONF;\" in your parm definitions");
+	log("conf: try including \"m->m_obj = OBJ_COLL;\" or \"m->m_obj = OBJ_CONF;\" in your parm definitions");
 	log("conf: failed overlap test. exiting.");
 	exit(-1);
 
@@ -10554,8 +10536,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 			int32_t numAdded = 0;
 			if ( numAdded >= 1 ) {
 				g_errno = ENOPERM;
-				log("parms: already added a collection from "
-				    "this cloud user's c-block.");
+				log("parms: already added a collection from this cloud user's c-block.");
 				return false;
 			}
 			hasPerm = true;
@@ -10735,8 +10716,7 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 				if ( duplicate->m_off == parm->m_off )
 					continue;
 				// otherwise bitch about it and drop core
-				log("parms: dup parm h32=%" PRId32" "
-				    "\"%s\" vs \"%s\"",
+				log("parms: dup parm h32=%" PRId32" \"%s\" vs \"%s\"",
 				    ph32, duplicate->m_title,parm->m_title);
 				g_process.shutdownAbort(true);
 			}
@@ -11118,8 +11098,7 @@ bool Parms::doParmSendingLoop ( ) {
 		}
 
 		// debug log
-		log(LOG_INFO,"parms: sending parm request "
-		    "to hostid %" PRId32,h->m_hostId);
+		log(LOG_INFO,"parms: sending parm request to hostid %" PRId32,h->m_hostId);
 
 		// count it
 		pn->m_numRequests++;
@@ -11518,15 +11497,14 @@ hadError:
 
 		// if collection names are different delete it
 		if ( cr && collNameHash32 != hash32n ( cr->m_coll ) ) {
-			log("sync: host had collnum %i but wrong name, "
-			    "name not %s like it should be",(int)c,cr->m_coll);
+			log("sync: host had collnum %i but wrong name, name not %s like it should be",
+			    (int)c, cr->m_coll);
 			cr = NULL;
 		}
 
 		if ( c >= 0 && ! cr ) {
 			// note in log
-			logf(LOG_INFO,"sync: telling host #%" PRId32" to delete "
-			     "collnum %" PRId32, hostId,(int32_t)c);
+			logf(LOG_INFO,"sync: telling host #%" PRId32" to delete collnum %" PRId32, hostId,(int32_t)c);
 			// add the parm rec as a parm cmd
 			if (! g_parms.addNewParmToList1( &replyBuf,
 							 c,
@@ -11548,8 +11526,7 @@ hadError:
 		// if match, keep chugging, that's in sync
 		if ( h64 == m64 ) continue;
 		// note in log
-		logf(LOG_INFO,"sync: sending all parms for collnum %" PRId32" "
-		     "to host #%" PRId32, (int32_t)c, hostId);
+		logf(LOG_INFO,"sync: sending all parms for collnum %" PRId32" to host #%" PRId32, (int32_t)c, hostId);
 		// otherwise, send him the list
 		if ( ! replyBuf.safeMemcpy ( &tmp ) ) goto hadError;
 	}
@@ -11566,9 +11543,8 @@ hadError:
 		// now use lowercase, not camelcase
 		const char *cmdStr = "addcoll";
 		// note in log
-		logf(LOG_INFO,"sync: telling host #%" PRId32" to add "
-		     "collnum %" PRId32" coll=%s", hostId,(int32_t)cr->m_collnum,
-		     cr->m_coll);
+		logf(LOG_INFO,"sync: telling host #%" PRId32" to add collnum %" PRId32" coll=%s",
+		     hostId, (int32_t)cr->m_collnum, cr->m_coll);
 		// add the parm rec as a parm cmd
 		if ( ! g_parms.addNewParmToList1 ( &replyBuf,
 						   (collnum_t)i,
@@ -11725,8 +11701,7 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 		char *data = getDataFromParmRec ( rec );
 		int32_t dataSize = getDataSizeFromParmRec ( rec );
 		if ( dataSize == 0 ) data = NULL;
-		log("parmdb: running function for "
-		    "parm \"%s\" (collnum=%" PRId32") args=\"%s\""
+		log("parmdb: running function for parm \"%s\" (collnum=%" PRId32") args=\"%s\""
 		    , parm->m_title
 		    , (int32_t)collnum
 		    , data
