@@ -34,7 +34,7 @@ void UrlBlockList::reload(int /*fd*/, void *state) {
 }
 
 bool UrlBlockList::load() {
-#if GCC_VERSION > 40900
+#if (__GNUC__ > 4) || (__GNUC_MINOR__>=9)
 	logTrace(g_conf.m_logTraceUrlBlockList, "Loading %s", m_filename);
 
 	struct stat st;
