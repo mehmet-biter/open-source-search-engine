@@ -1319,7 +1319,7 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 
 	// use that
 	m_siteStartKey = g_tagdb.makeStartKey( site, siteLen );
-	m_siteEndKey = g_tagdb.makeEndKey( site );
+	m_siteEndKey = g_tagdb.makeEndKey( site, siteLen );
 
 	m_url = url;
 
