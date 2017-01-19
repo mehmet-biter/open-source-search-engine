@@ -8945,9 +8945,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_masterPwds);
 	m->m_type  = TYPE_SAFEBUF; // STRINGNONEMPTY;
 	m->m_page  = PAGE_MASTERPASSWORDS;
-	//m->m_max   = MAX_MASTER_PASSWORDS;
-	//m->m_size  = PASSWORD_MAX_LEN+1;
-	//m->m_addin = true; // "insert" follows?
 	m->m_flags = PF_PRIVATE | PF_TEXTAREA | PF_SMALLTEXTAREA;
 	m++;
 
