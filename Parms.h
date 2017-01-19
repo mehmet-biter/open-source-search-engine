@@ -15,13 +15,14 @@ class WaitEntry;
 void handleRequest3e ( UdpSlot *slot , int32_t niceness ) ;
 void handleRequest3f ( UdpSlot *slot , int32_t niceness ) ;
 
-enum {
+enum parameter_object_type_t {
 	OBJ_CONF    = 1 ,
 	OBJ_COLL        ,
 	OBJ_SI          , // SearchInput class
 	OBJ_GBREQUEST   , // for GigablastRequest class of parms
 	OBJ_IR          , // InjectionRequest class from PageInject.h
-	OBJ_NONE
+	OBJ_NONE,
+	OBJ_UNSET         // used for detecting unset values
 };
 
 /// @note TYPE_DATE & TYPE_DATE2 is removed in commit f8e94cf3bf25b2f04a8a3aac00fe883eab346f2e
@@ -99,7 +100,7 @@ class Parm {
 	char  m_colspan;
 	char  m_type;  // TYPE_BOOL, TYPE_LONG, ...
 	int32_t  m_page;  // PAGE_MASTER, PAGE_SPIDER, ... see Pages.h
-	char  m_obj;   // OBJ_CONF or OBJ_COLL
+	parameter_object_type_t  m_obj;   // OBJ_CONF/OBJ_COLL/...
 	// the maximum number of elements supported in the array.
 	// this is 1 if NOT an array (i.e. array of only one parm).
 	// in such cases a "count" is NOT stored before the parm in
@@ -196,7 +197,7 @@ class Parms {
 			      TcpSocket* s,
 			      class CollectionRec *newcr ,
 			      char *THIS ,
-			      int32_t objType );
+			      parameter_object_type_t objType);
 
 	bool insertParm ( int32_t i , int32_t an , char *THIS ) ;
 	bool removeParm ( int32_t i , int32_t an , char *THIS ) ;
@@ -204,8 +205,8 @@ class Parms {
 	void setParm ( char *THIS, Parm *m, int32_t mm, int32_t j, const char *def,
 		       bool isHtmlEncoded , bool fromRequest ) ;
 
-	void setToDefault ( char *THIS , char objType ,
-			    CollectionRec *argcr );//= NULL ) ;
+	void setToDefault(char *THIS, parameter_object_type_t objType,
+			  CollectionRec *argcr );
 
 	bool setFromFile ( void *THIS        ,
 			   char *filename    ,

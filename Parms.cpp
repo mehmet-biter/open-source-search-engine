@@ -67,7 +67,7 @@ Parm::Parm() {
 	m_colspan = 0;
 	m_type = 0;
 	m_page = 0;
-	m_obj = 0;
+	m_obj = OBJ_UNSET;
 	m_max = 0;
 	m_fixed = 0;
 	m_size = 0;
@@ -895,7 +895,7 @@ bool Parms::setGigablastRequest ( TcpSocket *socket ,
 	HttpRequest *hr = &gr->m_hr;
 
 	// need this
-	int32_t obj = OBJ_GBREQUEST;
+	parameter_object_type_t obj = OBJ_GBREQUEST;
 
 	//
 	// reset THIS to defaults. use NULL for cr since mostly for SearchInput
@@ -2082,7 +2082,7 @@ bool Parms::setFromRequest ( HttpRequest *r ,
 			     TcpSocket* s,
 			     CollectionRec *newcr ,
 			     char *THIS ,
-			     int32_t objType ) {
+			     parameter_object_type_t objType) {
 
 	// use convertHttpRequestToParmList() for these because they
 	// are persistent records that are updated on every shard.
@@ -2471,7 +2471,7 @@ Parm *Parms::getParmFromParmHash ( int32_t parmHash ) {
 }
 
 
-void Parms::setToDefault ( char *THIS , char objType , CollectionRec *argcr ) {
+void Parms::setToDefault(char *THIS, parameter_object_type_t objType, CollectionRec *argcr) {
 	// init if we should
 	init();
 
@@ -3053,7 +3053,7 @@ void Parms::init ( ) {
 		m_parms[i].m_defOff = -1; // if default pts to collrec parm
 		m_parms[i].m_type   = TYPE_NONE  ; // for detecting if not set
 		m_parms[i].m_page   = -1         ; // for detecting if not set
-		m_parms[i].m_obj    = -1         ; // for detecting if not set
+		m_parms[i].m_obj    = OBJ_UNSET  ; // for detecting if not set
 		m_parms[i].m_max    =  1         ; // max elements in array
 		m_parms[i].m_fixed  =  0         ; // size of fixed size array
 		m_parms[i].m_size   =  0         ; // max string size
