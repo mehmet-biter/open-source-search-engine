@@ -1424,7 +1424,7 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 		}
 
 		// arrays always have blank line for adding stuff
-		if ( m->m_max > 1 ) {
+		if ( m->m_max > 1 && (m->m_fixed<=0 || size<m->m_fixed)) {
 			size++;
 		}
 
