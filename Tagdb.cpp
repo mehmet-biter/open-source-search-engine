@@ -1577,8 +1577,8 @@ void Msg8a::gotAllReplies ( ) {
 
 		// panic msg
 		if ( list->getListSize() >= 10000000 ) {
-			log("tagdb: CAUTION!!! cutoff tagdb list!");
-			log("tagdb: CAUTION!!! will lost useful info!!");
+			logError("tagdb: CAUTION!!! cutoff tagdb list!");
+			logError("tagdb: CAUTION!!! will lost useful info!!");
 			g_process.shutdownAbort(true);
 		}
 
