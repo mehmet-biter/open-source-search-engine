@@ -154,13 +154,13 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 	     m_type == TYPE_STRINGNONEMPTY )
 		return sb->safePrintf("%s",val);
 
-	if ( m_type == TYPE_LONG || m_type == TYPE_LONG_CONST )
+	if ( m_type == TYPE_INT32 || m_type == TYPE_INT32_CONST )
 		return sb->safePrintf("%" PRId32,*(int32_t *)val);
 
 	if ( m_type == TYPE_FLOAT )
 		return sb->safePrintf("%f",*(float *)val);
 
-	if ( m_type == TYPE_LONG_LONG )
+	if ( m_type == TYPE_INT64 )
 		return sb->safePrintf("%" PRId64,*(int64_t *)val);
 
 	if ( m_type == TYPE_CHARPTR ) {
@@ -1900,16 +1900,16 @@ bool Parms::printParm( SafeBuf* sb,
 			sb->safePrintf ("<input type=text name=%s value=\"%s\" "
 					"size=12>",cgi,iptoa(*(int32_t *)s));
 	}
-	else if ( t == TYPE_LONG ) {
+	else if ( t == TYPE_INT32 ) {
 		sb->safePrintf ("<input type=text name=%s "
 				"value=\"%" PRId32"\" "
 				// 3 was ok on firefox but need 6
 				// on chrome
 				"size=6>",cgi,*(int32_t *)s);
 	}
-	else if ( t == TYPE_LONG_CONST )
+	else if ( t == TYPE_INT32_CONST )
 		sb->safePrintf ("%" PRId32,*(int32_t *)s);
-	else if ( t == TYPE_LONG_LONG )
+	else if ( t == TYPE_INT64 )
 		sb->safePrintf ("<input type=text name=%s value=\"%" PRId64"\" "
 				"size=12>",cgi,*(int64_t *)s);
 	else if ( t == TYPE_STRING || t == TYPE_STRINGNONEMPTY ) {
@@ -2339,7 +2339,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		*(int32_t *)(THIS + m->m_off + 4*j) = s ? (int32_t)atoip(s,strlen(s)) : 0;
 		goto changed; 
 	}
-	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST ) {
+	else if ( t == TYPE_INT32 || t == TYPE_INT32_CONST ) {
 		int32_t v = s ? atol(s) : 0;
 		// min is considered valid if >= 0
 		if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
@@ -2350,7 +2350,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		newVal = (float)*(int32_t *)(THIS + m->m_off + 4*j);
 		goto changed; 
 	}
-	else if ( t == TYPE_LONG_LONG ) {
+	else if ( t == TYPE_INT64 ) {
 		if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*j) == ( s ? strtoull(s,NULL,10) : 0) ) {
 			return;
 		}
@@ -3011,9 +3011,9 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 		sb->safePrintf("%f",*(float *)s);
 	else if ( t == TYPE_IP )
 		sb->safePrintf("%s",iptoa(*(int32_t *)s));
-	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST )
+	else if ( t == TYPE_INT32 || t == TYPE_INT32_CONST )
 		sb->safePrintf("%" PRId32,*(int32_t *)s);
-	else if ( t == TYPE_LONG_LONG )
+	else if ( t == TYPE_INT64 )
 		sb->safePrintf("%" PRId64,*(int64_t *)s);
 	else if ( t == TYPE_SAFEBUF ) {
 		SafeBuf *sb2 = (SafeBuf *)s;
@@ -3198,7 +3198,7 @@ void Parms::init ( ) {
 	m->m_desc  = "How many bytes should be used for caching DNS replies?";
 	m->m_off   = offsetof(Conf,m_dnsMaxCacheMem);
 	m->m_def   = "128000";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
@@ -3210,7 +3210,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "hmsbs";
 	m->m_off   = offsetof(Conf,m_httpMaxSendBufSize);
 	m->m_def   = "128000";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
 	m->m_flags = PF_NOAPI;
@@ -3314,7 +3314,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Time when this collection was created, or time of "
 		"the last reset or restart.";
 	m->m_off   = offsetof(CollectionRec,m_diffbotCrawlStartTime);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_def   = "0";
@@ -3325,7 +3325,7 @@ void Parms::init ( ) {
 	m->m_xml   = "crawlEndTime";
 	m->m_desc  = "If spider is done, when did it finish.";
 	m->m_off   = offsetof(CollectionRec,m_diffbotCrawlEndTime);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_def   = "0";
@@ -3503,7 +3503,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_off   = offsetof(SearchInput,m_docsWanted);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_cgi   = "n";
 	m->m_flags = PF_WIDGET_PARM | PF_API;
 	m->m_smin  = 0;
@@ -3516,7 +3516,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_off   = offsetof(SearchInput,m_firstResultNum);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_cgi   = "s";
 	m->m_smin  = 0;
 	m->m_flags = PF_REDBOX;
@@ -3615,7 +3615,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "pss";
 	m->m_off   = offsetof(SearchInput,m_percentSimilarSummary);
 	m->m_defOff= offsetof(CollectionRec,m_percentSimilarSummary);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_group = false;
 	m->m_smin  = 0;
 	m->m_smax  = 100;
@@ -3674,7 +3674,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_off   = offsetof(SearchInput,m_secsBack);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_cgi   = "secsback";
 	m->m_flags = PF_API;
@@ -3741,7 +3741,7 @@ void Parms::init ( ) {
 	m->m_title = "real max top";
 	m->m_desc  = "Only score up to this many inlink text term pairs";
 	m->m_off   = offsetof(SearchInput,m_realMaxTop);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_def   = "10";
@@ -3799,7 +3799,7 @@ void Parms::init ( ) {
 		"prevent big queries from resource hogging.";
 	m->m_cgi   = "mqt";
 	m->m_off   = offsetof(CollectionRec,m_maxQueryTerms);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "999999"; // now we got synonyms... etc
 	m->m_group = false;
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
@@ -3815,7 +3815,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "tml";
 	m->m_defOff= offsetof(CollectionRec,m_titleMaxLen);
 	m->m_off   = offsetof(SearchInput,m_titleMaxLen);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -3824,7 +3824,7 @@ void Parms::init ( ) {
 	m->m_title = "number of summary excerpts";
 	m->m_desc  = "How many summary excerpts to display per search result?";
 	m->m_cgi   = "ns";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_defOff= offsetof(CollectionRec,m_summaryMaxNumLines);
 	m->m_group = false;
 	m->m_off   = offsetof(SearchInput,m_numLinesInSummary);
@@ -3844,7 +3844,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "sw";
 	m->m_off   = offsetof(SearchInput,m_summaryMaxWidth);
 	m->m_defOff= offsetof(CollectionRec,m_summaryMaxWidth);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_group = false;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
@@ -3858,7 +3858,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "smxcpl";
 	m->m_off   = offsetof(SearchInput,m_summaryMaxNumCharsPerLine);
 	m->m_defOff= offsetof(CollectionRec,m_summaryMaxNumCharsPerLine);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_group = false;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
@@ -4162,7 +4162,7 @@ void Parms::init ( ) {
 	m->m_arrayCountOffset= offsetof(Conf,m_numFlagRankAdjustments);
 	m->m_off   = offsetof(Conf,m_flagRankAdjustment);
 	m->m_rowid = 1;
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_flags = 0;
 	m->m_page  = PAGE_RANKING;
@@ -4323,7 +4323,7 @@ void Parms::init ( ) {
 		"volatile.";
 	m->m_def   = "0";
 	m->m_off   = offsetof(SearchInput,m_minSerpDocId);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_cgi   = "minserpdocid";
 	m->m_flags = PF_API;
 	m->m_smin  = 0;
@@ -4459,7 +4459,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "minmsgthreeatimeout";
 	m->m_def   = "";
 	m->m_off   = offsetof(SearchInput,m_minMsg3aTimeout);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -4517,7 +4517,7 @@ void Parms::init ( ) {
 		"query, 1 is a slower, lower-priority query.";
 	m->m_def   = "0";
 	m->m_off   = offsetof(SearchInput,m_niceness);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_cgi   = "niceness";
 	m->m_smin  = 0;
 	m->m_smax  = 1;
@@ -4573,7 +4573,7 @@ void Parms::init ( ) {
 	m->m_title = "image width";
 	m->m_desc  = "The width of the image on the search results page.";
 	m->m_off   = offsetof(SearchInput,m_imgWidth);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_cgi   = "iw";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4585,7 +4585,7 @@ void Parms::init ( ) {
 	m->m_desc  = "The height of the image on the search results "
 		"page.";
 	m->m_off   = offsetof(SearchInput,m_imgHeight);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_cgi   = "ih";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4650,7 +4650,7 @@ void Parms::init ( ) {
 	m->m_title = "display inlinks";
 	m->m_desc  = "Display all inlinks of each result.";
 	m->m_off   = offsetof(SearchInput,m_displayInlinks);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_cgi   = "inlinks";
 	m->m_page  = PAGE_RESULTS;
@@ -4664,7 +4664,7 @@ void Parms::init ( ) {
 		"displays only external outlinks. outlinks=2 displays "
 		"external and internal outlinks.";
 	m->m_off   = offsetof(SearchInput,m_displayOutlinks);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_cgi   = "outlinks";
 	m->m_page  = PAGE_RESULTS;
@@ -4676,7 +4676,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Will cause a cached copy of content to be returned "
 		"instead of summary.";
 	m->m_off   = offsetof(SearchInput,m_includeCachedCopy);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_cgi   = "icc";
 	m->m_page  = PAGE_RESULTS;
@@ -4695,7 +4695,7 @@ void Parms::init ( ) {
 	m->m_title = "docId";
 	m->m_desc  = "The docid of the cached page to view.";
 	m->m_off   = offsetof(GigablastRequest,m_docId);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_page  = PAGE_GET;
 	m->m_obj   = OBJ_GBREQUEST; // generic request class
 	m->m_def   = "0";
@@ -4735,7 +4735,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_GBREQUEST;
 	m->m_cgi   = "strip";
 	m->m_def   = "0";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_API;
 	m++;
 
@@ -4859,7 +4859,7 @@ void Parms::init ( ) {
 	m->m_def   = "8000000000";
 	m->m_obj   = OBJ_CONF;
 	m->m_page  = PAGE_MASTER; // PAGE_NONE;
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m++;
 
 	m->m_title = "max total spiders";
@@ -4872,7 +4872,7 @@ void Parms::init ( ) {
 		"that you may have to increase as well.";
 	m->m_cgi   = "mtsp";
 	m->m_off   = offsetof(Conf,m_maxTotalSpiders);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "100";
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -4924,7 +4924,7 @@ void Parms::init ( ) {
 		"to disk. Use 0 to disable.";
 	m->m_cgi   = "asf";
 	m->m_off   = offsetof(Conf,m_autoSaveFrequency);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 #ifndef PRIVACORE_TEST_VERSION
 	m->m_def   = "5";
 #else
@@ -4942,7 +4942,7 @@ void Parms::init ( ) {
 		"sockets closed.";
 	m->m_cgi   = "ms";
 	m->m_off   = offsetof(Conf,m_httpMaxSockets);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	// up this some, am seeing sockets closed because of using gb
 	// as a cache...
 	m->m_def   = "300";
@@ -4955,7 +4955,7 @@ void Parms::init ( ) {
 		"requests. Like max http sockets, but for secure sockets.";
 	m->m_cgi   = "mss";
 	m->m_off   = offsetof(Conf,m_httpsMaxSockets);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "100";
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -5180,7 +5180,7 @@ void Parms::init ( ) {
 	m->m_cgi  = "dswdmca";
 	m->m_off  = offsetof(Conf,m_docSummaryWithDescriptionMaxCacheAge);
 	m->m_def  = "86400000"; // 1 day
-	m->m_type = TYPE_LONG_LONG;
+	m->m_type = TYPE_INT64;
 	m->m_units = "milliseconds";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5195,7 +5195,7 @@ void Parms::init ( ) {
 		"Use -1 or less to disable the logging.";
 	m->m_cgi   = "mdch";
 	m->m_off   = offsetof(Conf,m_maxCallbackDelay);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "-1";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5244,7 +5244,7 @@ void Parms::init ( ) {
 		"spidered.";
 	m->m_cgi   = "spiderRoundStart";
 	m->m_off   = offsetof(CollectionRec,m_spiderRoundStartTime);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -5289,7 +5289,7 @@ void Parms::init ( ) {
 	m->m_desc  = "The spider round number.";
 	m->m_cgi   = "spiderRoundNum";
 	m->m_off   = offsetof(CollectionRec,m_spiderRoundNum);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -5315,7 +5315,7 @@ void Parms::init ( ) {
 		"Outstanding requests may be re-routed to a twin.";
 	m->m_cgi   = "dht";
 	m->m_off   = offsetof(Conf,m_deadHostTimeout);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "4000";
 	m->m_units = "milliseconds";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
@@ -5328,7 +5328,7 @@ void Parms::init ( ) {
 		"successive pings for this many milliseconds.";
 	m->m_cgi   = "set";
 	m->m_off   = offsetof(Conf,m_sendEmailTimeout);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "62000";
 	m->m_units = "milliseconds";
 	m->m_page  = PAGE_MASTER;
@@ -5341,7 +5341,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "ps";
 	m->m_off   = offsetof(Conf,m_pingSpacer);
 	m->m_min   = 50; // i've seen values of 0 hammer the cpu
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "100";
 	m->m_units = "milliseconds";
 	m->m_group = false;
@@ -5379,7 +5379,7 @@ void Parms::init ( ) {
 		"average query latency.";
 	m->m_cgi   = "nqt";
 	m->m_off   = offsetof(Conf,m_numQueryTimes);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "300";
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -5392,7 +5392,7 @@ void Parms::init ( ) {
 		"an admin email.  Set to -1 to disable.";
 	m->m_cgi   = "mcil";
 	m->m_off   = offsetof(Conf,m_maxCorruptLists);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "5";
 	m->m_group = false;
 	m->m_flags = PF_NOSAVE;
@@ -5654,7 +5654,7 @@ void Parms::init ( ) {
 		"fails, removing the bad data.";
 	m->m_cgi   = "crr";
 	m->m_off   = offsetof(Conf,m_corruptRetries);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "100";
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -5748,7 +5748,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "stablesumcachemem";
 	m->m_xml   = "StableSummaryCacheSize";
 	m->m_off   = offsetof(Conf,m_stableSummaryCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "30000000";
 	m->m_units = "bytes";
 	m->m_flags = 0;
@@ -5762,7 +5762,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "stablesumcacheage";
 	m->m_xml   = "StableSummaryCacheAge";
 	m->m_off   = offsetof(Conf,m_stableSummaryCacheMaxAge);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "86400000";
 	m->m_units = "milliseconds";
 	m->m_flags = 0;
@@ -5776,7 +5776,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "unstablesumcachemem";
 	m->m_xml   = "UnstableSummaryCacheSize";
 	m->m_off   = offsetof(Conf,m_unstableSummaryCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "30000000";
 	m->m_units = "bytes";
 	m->m_flags = 0;
@@ -5790,7 +5790,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "unstablesumcacheage";
 	m->m_xml   = "UnstableSummaryCacheAge";
 	m->m_off   = offsetof(Conf,m_unstableSummaryCacheMaxAge);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "3600000";
 	m->m_units = "milliseconds";
 	m->m_flags = 0;
@@ -5804,7 +5804,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "tagreccachemem";
 	m->m_xml   = "TagRecCacheSize";
 	m->m_off   = offsetof(Conf, m_tagRecCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "10000000";
 	m->m_units = "bytes";
 	m->m_flags = 0;
@@ -5818,7 +5818,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "tagreccacheage";
 	m->m_xml   = "TagRecCacheAge";
 	m->m_off   = offsetof(Conf, m_tagRecCacheMaxAge);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "3600000";
 	m->m_units = "milliseconds";
 	m->m_flags = 0;
@@ -6111,7 +6111,7 @@ void Parms::init ( ) {
 		"for merging and intersecting.";
 	m->m_cgi   = "mct";
 	m->m_off   = offsetof(Conf,m_maxCpuThreads);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "2";
 	m->m_units = "threads";
 	m->m_min   = 0;
@@ -6126,7 +6126,7 @@ void Parms::init ( ) {
 		"for doing file I/O.";
 	m->m_cgi   = "max_io_threads";
 	m->m_off   = offsetof(Conf,m_maxIOThreads);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "10";
 	m->m_units = "threads";
 	m->m_min   = 0;
@@ -6141,7 +6141,7 @@ void Parms::init ( ) {
 		"for doing external calss with system() or similar..";
 	m->m_cgi   = "max_file_meta_threads";
 	m->m_off   = offsetof(Conf,m_maxExternalThreads);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "2";
 	m->m_units = "threads";
 	m->m_min   = 0;
@@ -6156,7 +6156,7 @@ void Parms::init ( ) {
 		"for doing file unlinks and renames";
 	m->m_cgi   = "max_ext_threads";
 	m->m_off   = offsetof(Conf,m_maxFileMetaThreads);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "2";
 	m->m_units = "threads";
 	m->m_min   = 0;
@@ -6215,7 +6215,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Percent of how much to use words to phrase ratio weights.";
 	m->m_cgi   = "wsp";
 	m->m_off   = offsetof(Conf,m_sliderParm);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "90";
 	m->m_units = "%%";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
@@ -6228,7 +6228,7 @@ void Parms::init ( ) {
 		"index. Just used for displaying on the homepage.";
 	m->m_cgi   = "dca";
 	m->m_off   = offsetof(Conf,m_docCountAdjustment);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
@@ -6265,7 +6265,7 @@ void Parms::init ( ) {
 		"in the log or  on the perfomance graph.";
 	m->m_cgi   = "mpt";
 	m->m_off   = offsetof(Conf,m_minProfThreshold);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "10";
 	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
@@ -6430,7 +6430,7 @@ void Parms::init ( ) {
 	m->m_max   = MAX_FILTERS;
 	m->m_arrayCountOffset	= offsetof(CollectionRec, m_numMaxSpidersPerRule);
 	m->m_off				= offsetof(CollectionRec, m_maxSpidersPerRule);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "99";
 	m->m_page  = PAGE_FILTERS;
 	m->m_obj   = OBJ_COLL;
@@ -6445,7 +6445,7 @@ void Parms::init ( ) {
 	m->m_max   = MAX_FILTERS;
 	m->m_arrayCountOffset	= offsetof(CollectionRec, m_numSpiderIpMaxSpiders);
 	m->m_off				= offsetof(CollectionRec, m_spiderIpMaxSpiders);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "7";
 	m->m_page  = PAGE_FILTERS;
 	m->m_obj   = OBJ_COLL;
@@ -6461,7 +6461,7 @@ void Parms::init ( ) {
 	m->m_max   = MAX_FILTERS;
 	m->m_arrayCountOffset 	= offsetof(CollectionRec,m_numSpiderIpWaits);
 	m->m_off   				= offsetof(CollectionRec,m_spiderIpWaits);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "1000";
 	m->m_page  = PAGE_FILTERS;
 	m->m_obj   = OBJ_COLL;
@@ -6544,7 +6544,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_IMPORT;
 	m->m_obj   = OBJ_COLL;
 	m->m_off   = offsetof(CollectionRec,m_numImportInjects);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "2";
 	m->m_flags = PF_API;
 	m++;
@@ -6795,7 +6795,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Use this hop count when injecting the page.";
 	m->m_cgi   = "hopcount";
 	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN; // | PF_API
 	m->m_page  = PAGE_INJECT;
@@ -6819,7 +6819,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Override last time spidered";
 	m->m_cgi   = "lastspidered";
 	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN; // | PF_API
 	m->m_page  = PAGE_INJECT;
@@ -6830,7 +6830,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Override first indexed time";
 	m->m_cgi   = "firstindexed";
 	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN; // | PF_API
 	m->m_page  = PAGE_INJECT;
@@ -6892,7 +6892,7 @@ void Parms::init ( ) {
 		"See iana_charset.h for the numeric values.";
 	m->m_cgi   = "charset";
 	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "-1";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_INJECT;
@@ -6982,7 +6982,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Starting with this result #. Starts at 0.";
 	m->m_cgi   = "srn";
 	m->m_off   = offsetof(GigablastRequest,m_srn);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_REINDEX;
 	m->m_obj   = OBJ_GBREQUEST;
 	m->m_def   = "0";
@@ -6993,7 +6993,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Ending with this result #. 0 is the first result #.";
 	m->m_cgi   = "ern";
 	m->m_off   = offsetof(GigablastRequest,m_ern);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_REINDEX;
 	m->m_obj   = OBJ_GBREQUEST;
 	m->m_def   = "99999999";
@@ -7112,7 +7112,7 @@ void Parms::init ( ) {
 		"results?";
 	m->m_cgi   = "tml";
 	m->m_off   = offsetof(CollectionRec,m_titleMaxLen);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_def   = "80";
 	m->m_page  = PAGE_SEARCH;
@@ -7184,7 +7184,7 @@ void Parms::init ( ) {
 		"same. 0 means no summary deduping.";
 	m->m_cgi   = "psds";
 	m->m_off   = offsetof(CollectionRec,m_percentSimilarSummary);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "90";
 	m->m_group = false;
 	m->m_smin  = 0;
@@ -7202,7 +7202,7 @@ void Parms::init ( ) {
 		"be non-zero.";
 	m->m_cgi   = "msld";
 	m->m_off   = offsetof(CollectionRec,m_summDedupNumLines);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "4";
 	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
@@ -7233,7 +7233,7 @@ void Parms::init ( ) {
 		"characters displayed in a summary for a search result?";
 	m->m_cgi   = "sml";
 	m->m_off   = offsetof(CollectionRec,m_summaryMaxLen);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "180";
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
@@ -7245,7 +7245,7 @@ void Parms::init ( ) {
 		"excerpts displayed in the summary of a search result?";
 	m->m_cgi   = "smnl";
 	m->m_off   = offsetof(CollectionRec,m_summaryMaxNumLines);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "1";
 	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
@@ -7258,7 +7258,7 @@ void Parms::init ( ) {
 		"characters allowed per summary excerpt?";
 	m->m_cgi   = "smxcpl";
 	m->m_off   = offsetof(CollectionRec,m_summaryMaxNumCharsPerLine);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "180";
 	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
@@ -7275,7 +7275,7 @@ void Parms::init ( ) {
 		"only works on html.";
 	m->m_cgi   = "smw";
 	m->m_off   = offsetof(CollectionRec,m_summaryMaxWidth);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "80";
 	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
@@ -7485,7 +7485,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "max_results_per_page";
 	m->m_off   = offsetof(Conf,m_maxDocsWanted);
 	m->m_xml   = "max_results_per_page";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "100";
@@ -7497,7 +7497,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "max_results_offset";
 	m->m_off   = offsetof(Conf,m_maxFirstResultNum);
 	m->m_xml   = "max_results_offset";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "200";
@@ -7510,7 +7510,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "min_docid_splits";
 	m->m_off   = offsetof(Conf,min_docid_splits);
 	m->m_xml   = "min_docid_splits";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "5";
@@ -7523,7 +7523,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "max_docid_splits";
 	m->m_off   = offsetof(Conf,max_docid_splits);
 	m->m_xml   = "max_docid_splits";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "15";
@@ -7537,7 +7537,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "msgfourty_msgthirtynine_timeout";
 	m->m_off   = offsetof(Conf,m_msg40_msg39_timeout);
 	m->m_xml   = "msg40_msg39_timeout";
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "5000";
@@ -7550,7 +7550,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "msgthreea_msgthirtynine_network_overhead";
 	m->m_off   = offsetof(Conf,m_msg3a_msg39_network_overhead);
 	m->m_xml   = "msg3a_msg39_network_overhead";
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "250";
@@ -7573,7 +7573,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Default validity time of a a search result. Currently static but will be more dynamic in the future.";
 	m->m_cgi   = "qresultsvaliditytime";
 	m->m_off   = offsetof(Conf,m_defaultQueryResultsValidityTime);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "1800";
@@ -7611,7 +7611,7 @@ void Parms::init ( ) {
 	             "clusterdb will not be consulted.";
 	m->m_cgi   = "dpcsc";
 	m->m_off   = offsetof(Conf,m_clusterdbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
@@ -7624,7 +7624,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mcmt";
 	m->m_off   = offsetof(Conf,m_clusterdbMaxTreeMem);
 	m->m_def   = "1000000";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
@@ -7637,7 +7637,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "cmftm";
 	m->m_off   = offsetof(Conf,m_clusterdbMinFilesToMerge);
 	m->m_def   = "-1"; // -1 means to use collection rec
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_save  = false;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
@@ -7656,7 +7656,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mlkftm";
 	m->m_off   = offsetof(CollectionRec,m_linkdbMinFilesToMerge);
 	m->m_def   = "6";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
@@ -7668,7 +7668,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mlkmt";
 	m->m_off   = offsetof(Conf,m_linkdbMaxTreeMem);
 	m->m_def   = "40000000";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
@@ -7683,7 +7683,7 @@ void Parms::init ( ) {
 	m->m_desc  = "How much file cache size to use in bytes? Posdb is the index.";
 	m->m_cgi   = "dpcsp";
 	m->m_off   = offsetof(Conf,m_posdbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
@@ -7699,7 +7699,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mpftm";
 	m->m_off   = offsetof(CollectionRec,m_posdbMinFilesToMerge);
 	m->m_def   = "6";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
@@ -7715,7 +7715,7 @@ void Parms::init ( ) {
 #else
 	m->m_def   = "20000000";
 #endif
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
@@ -7731,7 +7731,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mstmt";
 	m->m_off   = offsetof(Conf,m_statsdbMaxTreeMem);
 	m->m_def   = "5000000";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
@@ -7749,7 +7749,7 @@ void Parms::init ( ) {
 	             "a url Gigablast is spidering is already in the index.";
 	m->m_cgi   = "dpcsy";
 	m->m_off   = offsetof(Conf,m_spiderdbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
@@ -7762,7 +7762,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "msftm";
 	m->m_off   = offsetof(CollectionRec,m_spiderdbMinFilesToMerge);
 	m->m_def   = "2";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
@@ -7778,7 +7778,7 @@ void Parms::init ( ) {
 #else
 	m->m_def   = "20000000";
 #endif
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
@@ -7795,7 +7795,7 @@ void Parms::init ( ) {
 	             "if a url or outlink is banned or what its siterank is, etc.";
 	m->m_cgi   = "dpcst";
 	m->m_off   = offsetof(Conf,m_tagdbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
@@ -7808,7 +7808,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mtftgm";
 	m->m_off   = offsetof(CollectionRec,m_tagdbMinFilesToMerge);
 	m->m_def   = "2";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
@@ -7824,7 +7824,7 @@ void Parms::init ( ) {
 #else
 	m->m_def   = "200000";
 #endif
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
@@ -7842,7 +7842,7 @@ void Parms::init ( ) {
 			"a url Gigablast is spidering is already in the index.";
 	m->m_cgi   = "dpcsx";
 	m->m_off   = offsetof(Conf,m_titledbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
@@ -7856,7 +7856,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mtftm";
 	m->m_off   = offsetof(CollectionRec,m_titledbMinFilesToMerge);
 	m->m_def   = "6";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	//m->m_save  = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
@@ -7873,7 +7873,7 @@ void Parms::init ( ) {
 #else
 	m->m_def   = "20000000";
 #endif
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
@@ -7900,7 +7900,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Number of merge-space lock files";
 	m->m_cgi   = "mergespacelockfiles";
 	m->m_off   = offsetof(Conf,m_mergespaceMinLockFiles);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "3";
 	m->m_flags = 0;
 	m->m_page  = PAGE_RDB;
@@ -7928,7 +7928,7 @@ void Parms::init ( ) {
 		"fast merging.";
 	m->m_cgi   = "mbs";
 	m->m_off   = offsetof(Conf,m_mergeBufSize);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	// keep this way smaller than that 800k we had in here, 100k seems
 	// to be way better performance for qps
 	m->m_def   = "1000000";
@@ -8029,7 +8029,7 @@ void Parms::init ( ) {
 		"controlled in the <i>master controls</i>.";
 	m->m_cgi   = "mns";
 	m->m_off   = offsetof(CollectionRec,m_maxNumSpiders);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	// make it the hard max so control is really in the master controls
 	m->m_def   = "300";
 	m->m_page  = PAGE_SPIDER;
@@ -8042,7 +8042,7 @@ void Parms::init ( ) {
 		"getting the ip and downloading the page.";
 	m->m_cgi  = "sdms";
 	m->m_off   = offsetof(CollectionRec,m_spiderDelayInMilliseconds );
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -8084,7 +8084,7 @@ void Parms::init ( ) {
 		"cache.";
 	m->m_cgi   = "mrca";
 	m->m_off   = offsetof(CollectionRec,m_maxRobotsCacheAge);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "86400"; // 24*60*60 = 1day
 	m->m_units = "seconds";
 	m->m_group = false;
@@ -8116,7 +8116,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Crawl-delay for sites with no robots.txt (milliseconds).";
 	m->m_cgi  = "crwldlnorobot";
 	m->m_off   = offsetof(CollectionRec,m_crawlDelayDefaultForNoRobotsTxtMS);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "15000";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -8128,7 +8128,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Crawl-delay for sites with robots.txt but without a Crawl-Delay entry (milliseconds).";
 	m->m_cgi  = "crwldlrobotnodelay";
 	m->m_off   = offsetof(CollectionRec,m_crawlDelayDefaultForRobotsTxtMS);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "10000";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -8197,7 +8197,7 @@ void Parms::init ( ) {
 		"60*5=300 and midnight MST use 60*7=420.";
 	m->m_cgi   = "dmt";
 	m->m_off   = offsetof(CollectionRec,m_dailyMergeTrigger);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "-1";
 	m->m_units = "minutes";
 	m->m_page  = PAGE_SPIDER;
@@ -8227,7 +8227,7 @@ void Parms::init ( ) {
 		"UTC in seconds since the epoch.";
 	m->m_cgi   = "dmls";
 	m->m_off   = offsetof(CollectionRec,m_dailyMergeStarted);
-	m->m_type  = TYPE_LONG_CONST;
+	m->m_type  = TYPE_INT32_CONST;
 	m->m_def   = "-1";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -8242,7 +8242,7 @@ void Parms::init ( ) {
 		"implies no limit.";
 	m->m_cgi = "mau";
 	m->m_off = offsetof(CollectionRec,m_maxAddUrlsPerIpDomPerDay);
-	m->m_type = TYPE_LONG;
+	m->m_type = TYPE_INT32;
 	m->m_def = "0";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -8420,7 +8420,7 @@ void Parms::init ( ) {
 		     "date will be updated.";
 	m->m_cgi   = "mpspd";
 	m->m_off   = offsetof(CollectionRec,m_maxPercentSimilarPublishDate);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "80";
 	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
@@ -8615,7 +8615,7 @@ void Parms::init ( ) {
 		     "Use -1 for no max.";
 	m->m_cgi   = "mtdl";
 	m->m_off   = offsetof(CollectionRec,m_maxTextDocLen);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "10000000";
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
@@ -8630,7 +8630,7 @@ void Parms::init ( ) {
 		     "Use -1 for no max.";
 	m->m_cgi   = "modl";
 	m->m_off   = offsetof(CollectionRec,m_maxOtherDocLen);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "10000000";
 	m->m_group = 0;
 	m->m_page  = PAGE_SPIDER;
@@ -8659,7 +8659,7 @@ void Parms::init ( ) {
 		"one side will be longer than the other.";
 	m->m_cgi   = "mtwh";
 	m->m_off   = offsetof(CollectionRec,m_thumbnailMaxWidthHeight);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "250";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -8766,7 +8766,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Only rebuild on this host. -1 for all";
 	m->m_cgi   = "rebuild_host";
 	m->m_off   = offsetof(Conf,m_rebuildHost);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "-1";
@@ -8778,7 +8778,7 @@ void Parms::init ( ) {
 	m->m_desc  = "In bytes.";
 	m->m_cgi   = "rmtu"; // repair mem to use
 	m->m_off   = offsetof(Conf,m_repairMem);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "200000000";
@@ -8791,7 +8791,7 @@ void Parms::init ( ) {
 		"rebuild.";
 	m->m_cgi   = "mrps";
 	m->m_off   = offsetof(Conf,m_maxRepairinjections);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "2";
@@ -9032,7 +9032,7 @@ void Parms::init ( ) {
 		"query and the time it took to process.";
 	m->m_cgi   = "lqtt";
 	m->m_off   = offsetof(Conf,m_logQueryTimeThreshold);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "5000";
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
@@ -9043,7 +9043,7 @@ void Parms::init ( ) {
 		"bytes read and the time it took to process.";
 	m->m_cgi   = "ldrtt";
 	m->m_off   = offsetof(Conf,m_logDiskReadTimeThreshold);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "50";
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
@@ -9923,9 +9923,9 @@ void Parms::init ( ) {
 		if ( t == TYPE_FLOAT          ) size = 4;
 		if ( t == TYPE_DOUBLE         ) size = 8;
 		if ( t == TYPE_IP             ) size = 4;
-		if ( t == TYPE_LONG           ) size = 4;
-		if ( t == TYPE_LONG_CONST     ) size = 4;
-		if ( t == TYPE_LONG_LONG      ) size = 8;
+		if ( t == TYPE_INT32           ) size = 4;
+		if ( t == TYPE_INT32_CONST     ) size = 4;
+		if ( t == TYPE_INT64      ) size = 8;
 		if ( t == TYPE_STRING         ) size = m_parms[i].m_size;
 		if ( t == TYPE_STRINGBOX      ) size = m_parms[i].m_size;
 		if ( t == TYPE_STRINGNONEMPTY ) size = m_parms[i].m_size;
@@ -10245,7 +10245,7 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 		// sanity
 		if ( val[valSize-1] != '\0' ) { g_process.shutdownAbort(true); }
 	}
-	else if ( m->m_type == TYPE_LONG ) {
+	else if ( m->m_type == TYPE_INT32 ) {
 		// watch out for unsigned 32-bit numbers, so use atoLL()
 		val64 = atoll(parmValString);
 		val = (char *)&val64;
@@ -10256,7 +10256,7 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 		val = (char *)&valf;
 		valSize = 4;
 	}
-	else if ( m->m_type == TYPE_LONG_LONG ) {
+	else if ( m->m_type == TYPE_INT64 ) {
 		val64 = atoll(parmValString);
 		val = (char *)&val64;
 		valSize = 8;
@@ -11628,7 +11628,7 @@ bool Parms::addAllParmsToList ( SafeBuf *parmList, collnum_t collnum ) {
 		if ( parm->m_type == TYPE_CMD ) continue;
 
 		// daily merge last started. do not sync this...
-		if ( parm->m_type == TYPE_LONG_CONST ) continue;
+		if ( parm->m_type == TYPE_INT32_CONST ) continue;
 
 		if ( collnum == -1 && parm->m_obj != OBJ_CONF ) continue;
 		if ( collnum >=  0 && parm->m_obj != OBJ_COLL ) continue;

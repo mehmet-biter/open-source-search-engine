@@ -68,7 +68,7 @@ void setInjectionRequestFromParms ( TcpSocket *sock ,
 			continue;
 		}
 		// numbers are easy
-		else if ( m->m_type == TYPE_LONG ) {
+		else if ( m->m_type == TYPE_INT32 ) {
 			int32_t *ii = (int32_t *)((char *)ir + m->m_off);
 			int32_t def = atoll(m->m_def);
 			*ii = hr->getLong(m->m_cgi,def);

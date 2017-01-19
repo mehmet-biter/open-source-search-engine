@@ -1736,8 +1736,8 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 		case TYPE_FLOAT: sb->safePrintf ( "FLOAT32" ); break;
 		case TYPE_DOUBLE: sb->safePrintf ( "FLOAT64" ); break;
 		case TYPE_IP: sb->safePrintf ( "IP" ); break;
-		case TYPE_LONG: sb->safePrintf ( " PRId32" ); break;
-		case TYPE_LONG_LONG: sb->safePrintf ( " PRId64" ); break;
+		case TYPE_INT32: sb->safePrintf ( " PRId32" ); break;
+		case TYPE_INT64: sb->safePrintf ( " PRId64" ); break;
 		case TYPE_CHARPTR: sb->safePrintf ( "STRING" ); break;
 		case TYPE_STRING: sb->safePrintf ( "STRING" ); break;
 		case TYPE_STRINGBOX: sb->safePrintf ( "STRING" ); break;
