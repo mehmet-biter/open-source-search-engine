@@ -72,7 +72,7 @@ Parm::Parm() {
 	m_fixed = 0;
 	m_size = 0;
 	m_def = NULL;
-	m_defOff = 0;
+	m_defOff = -1;
 	m_cast = false;
 	m_units = NULL;
 	m_addin = false;
