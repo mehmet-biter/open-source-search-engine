@@ -2505,7 +2505,6 @@ void Parms::setToDefault(char *THIS, parameter_object_type_t objType, Collection
 		// if defOff >= 0 get from cr like for searchInput vals
 		// whose default is from the collectionRec...
 		if ( m->m_defOff >= 0 && argcr ) {
-			if ( ! argcr ) { g_process.shutdownAbort(true); }
 			char *def = m->m_defOff+(char *)argcr;
 			char *dst = (char *)THIS + m->m_off;
 			gbmemcpy ( dst , def , m->m_size );
