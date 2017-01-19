@@ -203,30 +203,30 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 
 	// if we had a "&c=..." in the GET request process that
 	if ( p ) {
-	loop:
-		const char *end = p;
-		for ( ; *end && ! is_wspace_a(*end) ; end++ );
-		CollectionRec *tmpcr = g_collectiondb.getRec ( p, end-p );
-		// set defaults from the FIRST one
-		if ( tmpcr && ! cr ) {
-			cr = tmpcr;
-		}
-		if ( ! tmpcr ) { 
-			g_errno = ENOCOLLREC;
-			log("query: missing collection %*.*s",(int)(end-p),(int)(end-p),p);
-			g_msg = " (error: no such collection)";		
-			return false;
-		}
-		// add to our list
-		if (!m_collnumBuf.safeMemcpy(&tmpcr->m_collnum,
-					     sizeof(collnum_t)))
-			return false;
-		// advance
-		p = end;
-		// skip to next collection name if there is one
-		while ( *p && is_wspace_a(*p) ) p++; 
-		// now add it's collection # to m_collnumBuf if there
-		if ( *p ) goto loop;
+		do {
+			const char *end = p;
+			for ( ; *end && ! is_wspace_a(*end) ; end++ );
+			CollectionRec *tmpcr = g_collectiondb.getRec ( p, end-p );
+			// set defaults from the FIRST one
+			if ( tmpcr && ! cr ) {
+				cr = tmpcr;
+			}
+			if ( ! tmpcr ) {
+				g_errno = ENOCOLLREC;
+				log("query: missing collection %*.*s",(int)(end-p),(int)(end-p),p);
+				g_msg = " (error: no such collection)";		
+				return false;
+			}
+			// add to our list
+			if (!m_collnumBuf.safeMemcpy(&tmpcr->m_collnum,
+						     sizeof(collnum_t)))
+				return false;
+			// advance
+			p = end;
+			// skip to next collection name if there is one
+			while ( *p && is_wspace_a(*p) ) p++;
+			// now add it's collection # to m_collnumBuf if there
+		} while(*p);
 	}
 
 	// use default collection if none provided
