@@ -1669,8 +1669,8 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 	count++;
 
 
-	for ( int32_t i = 0; i < g_parms.m_numParms; i++ ) {
-		Parm *parm = &g_parms.m_parms[i];
+	for ( int32_t i = 0; i < g_parms.getNumParms(); i++ ) {
+		Parm *parm = g_parms.getParm(i);
 
 		if ( parm->m_flags & PF_HIDDEN ) continue;
 		if ( parm->m_type == TYPE_COMMENT ) continue;

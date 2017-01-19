@@ -146,8 +146,8 @@ void SearchInput::test ( ) {
 	int32_t size = b - a;
 	memset ( a , 0x00 , size );
 	// loop through all possible cgi parms to set SearchInput
-	for ( int32_t i = 0 ; i < g_parms.m_numSearchParms ; i++ ) {
-		Parm *m = g_parms.m_searchParms[i];
+	for ( int32_t i = 0 ; i < g_parms.getNumSearchParms() ; i++ ) {
+		Parm *m = g_parms.getSearchParm(i);
 		unsigned char *x = (unsigned char *)this + m->m_off;
 		if ( m->m_type != TYPE_BOOL ) *(int32_t *)x = 0xffffffff;
 		else                          *(unsigned char *)x = 0xff;
@@ -160,8 +160,8 @@ void SearchInput::test ( ) {
 		// find it
 		int32_t off = i + fix;
 		const char *name = NULL; // "unknown";
-		for ( int32_t k = 0 ; k < g_parms.m_numSearchParms ; k++ ) {
-			Parm *m = g_parms.m_searchParms[k];
+		for ( int32_t k = 0 ; k < g_parms.getNumSearchParms(); k++ ) {
+			Parm *m = g_parms.getSearchParm(k);
 			if ( m->m_off != off ) continue;
 			name = m->m_title;
 			break;

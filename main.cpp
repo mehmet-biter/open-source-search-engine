@@ -185,8 +185,6 @@ extern void resetEntities      ( );
 extern void resetQuery         ( );
 extern void resetUnicode       ( );
 
-extern void tryToSyncWrapper ( int fd , void *state ) ;
-
 
 static int argc_copy;
 static char **argv_copy;
@@ -2081,7 +2079,7 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	// try to sync parms (and collection recs) with host 0
-	if ( !g_loop.registerSleepCallback(1000, NULL, tryToSyncWrapper, 0 ) ) {
+	if ( !g_loop.registerSleepCallback(1000, NULL, Parms::tryToSyncWrapper, 0 ) ) {
 		return 0;
 	}
 
@@ -2215,7 +2213,7 @@ void doCmdAll ( int fd, void *state ) {
 
 	// udpserver::sendRequest() checks we have a handle for msgs we send!
 	// so fake it out with this lest it cores
-	g_udpServer.registerHandler(msg_type_3f,handleRequest3f);
+	Parms::registerHandler3f();
 	
 
 	SafeBuf parmList;
@@ -2771,8 +2769,8 @@ bool registerMsgHandlers2(){
 
 	if ( ! Msg4::registerHandler() ) return false;
 
-	if(! g_udpServer.registerHandler(msg_type_3e,handleRequest3e)) return false;
-	if(! g_udpServer.registerHandler(msg_type_3f,handleRequest3f)) return false;
+	if(! Parms::registerHandler3e()) return false;
+	if(! Parms::registerHandler3f()) return false;
 
 	if ( ! g_udpServer.registerHandler(msg_type_25,handleRequest25)) return false;
 	if ( ! g_udpServer.registerHandler(msg_type_7,handleRequest7)) return false;

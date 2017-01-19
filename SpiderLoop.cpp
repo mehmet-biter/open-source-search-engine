@@ -477,7 +477,7 @@ subloop:
 	}
 		
 	// do not spider until collections/parms in sync with host #0
-	if ( ! g_parms.m_inSyncWithHost0 ) {
+	if ( ! g_parms.inSyncWithHost0() ) {
 		logTrace( g_conf.m_logTraceSpider, "END, not in sync with host#0"  );
 		return;
 	}

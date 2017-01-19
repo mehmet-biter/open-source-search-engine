@@ -44,8 +44,8 @@ void setInjectionRequestFromParms ( TcpSocket *sock ,
 	ir->m_collnum = cr->m_collnum;
 
 	// scan the parms
-	for ( int i = 0 ; i < g_parms.m_numParms ; i++ ) {
-		Parm *m = &g_parms.m_parms[i];
+	for ( int i = 0 ; i < g_parms.getNumParms(); i++ ) {
+		Parm *m = g_parms.getParm(i);
 		if ( m->m_obj != OBJ_IR ) continue;
 		// get it
 		if ( m->m_type == TYPE_CHARPTR ||

@@ -12,8 +12,6 @@ class UdpSlot;
 class SafeBuf;
 class WaitEntry;
 
-void handleRequest3e ( UdpSlot *slot , int32_t niceness ) ;
-void handleRequest3f ( UdpSlot *slot , int32_t niceness ) ;
 
 enum parameter_object_type_t {
 	OBJ_CONF    = 1 ,
@@ -159,6 +157,9 @@ class Parms {
 
 	void init();
 
+	static bool registerHandler3e();
+	static bool registerHandler3f();
+
 	bool sendPageGeneric ( class TcpSocket *s, class HttpRequest *r );
 
 	bool printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r );
@@ -224,6 +225,7 @@ class Parms {
 				   class HttpRequest *hr ,
 				   class GigablastRequest *gr );
 
+	bool inSyncWithHost0() const { return m_inSyncWithHost0; }
 	// . make it so a collectionrec can be copied in Collectiondb.cpp
 	// . so the rec can be copied and the old one deleted without
 	//   freeing the safebufs now used by the new one.
@@ -231,6 +233,12 @@ class Parms {
 
 	void overlapTest ( char step ) ;
 
+	Parm *getParm(int32_t i) { return m_parms+i; }
+	int32_t getNumParms() const { return m_numParms; }
+	Parm *getSearchParm(int32_t i) { return m_searchParms[i]; }
+	int32_t getNumSearchParms() const { return m_numSearchParms; }
+
+private:
 	//
 	// new functions
 	//
@@ -250,10 +258,14 @@ class Parms {
 				     collnum_t collnum ,
 				     int32_t occNum ,
 				     Parm *m ) ;
+public:
 	bool convertHttpRequestToParmList (HttpRequest *hr,SafeBuf *parmList,
 					   int32_t page , TcpSocket *sock );
+private:
 	Parm *getParmFast2 ( int32_t cgiHash32 ) ;
 	Parm *getParmFast1 ( const char *cgi , int32_t *occNum ) ;
+	Parm *getParmFromParmRec(char *rec);
+public:
 	bool broadcastParmList ( SafeBuf *parmList ,
 				 void    *state ,
 				 void   (* callback)(void *) ,
@@ -262,6 +274,7 @@ class Parms {
 				 // send to this single hostid? -1 means all
 				 int32_t hostId = -1 ,
 				 int32_t hostId2 = -1 ); // hostid range?
+private:
 	bool doParmSendingLoop ( ) ;
 	bool syncParmsWithHost0 ( ) ;
 	bool makeSyncHashList ( SafeBuf *hashList ) ;
@@ -270,6 +283,26 @@ class Parms {
 
 	bool cloneCollRec ( char *srcCR , char *dstCR ) ;
 
+	static bool CommandInsertUrlFiltersRow(char *rec);
+	static bool CommandRemoveUrlFiltersRow(char *rec);
+#ifndef PRIVACORE_SAFE_VERSION
+	static bool CommandCloneColl(char *rec);
+	static bool CommandAddColl(char *rec);
+#endif
+	static bool CommandPowerOnNotice(char *rec);
+	static bool CommandPowerOffNotice(char *rec);
+	static bool CommandInSync(char *rec);
+	static void gotParmReplyWrapper(void *state, UdpSlot *slot);
+	static void handleRequest3e(UdpSlot *slot, int32_t /*niceness*/);
+	static void gotReplyFromHost0Wrapper(void *state, UdpSlot *slot );
+public: //main.cpp needs this:
+	static void tryToSyncWrapper(int fd, void *state);
+private:
+	static void parmLoop(int fd, void *state);
+	static void handleRequest3fLoop2(void *state, UdpSlot *slot);
+	static void handleRequest3fLoop3(int fd, void *state);
+	static void handleRequest3fLoop(void *weArg);
+	static void handleRequest3f(UdpSlot *slot, int32_t /*niceness*/);
 	//
 	// end new functions
 	//

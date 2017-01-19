@@ -212,10 +212,10 @@ static int16_t getOccNumFromParmRec(const char *rec) {
 	return (int16_t)((k->n0>>16));
 }
 
-static Parm *getParmFromParmRec(char *rec) {
+Parm *Parms::getParmFromParmRec(char *rec) {
 	key96_t *k = (key96_t *)rec;
 	int32_t cgiHash32 = (k->n0 >> 32);
-	return g_parms.getParmFast2 ( cgiHash32 );
+	return getParmFast2 ( cgiHash32 );
 }
 
 static int32_t getHashFromParmRec(const char *rec) {
@@ -319,7 +319,7 @@ static bool CommandRebalance ( char *rec ) {
 }
 #endif
 
-static bool CommandInsertUrlFiltersRow ( char *rec ) {
+bool Parms::CommandInsertUrlFiltersRow(char *rec) {
 	// caller must specify collnum
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 	if ( collnum < 0 ) {
@@ -361,7 +361,7 @@ static bool CommandInsertUrlFiltersRow ( char *rec ) {
 	return true;
 }
 
-static bool CommandRemoveUrlFiltersRow ( char *rec ) {
+bool Parms::CommandRemoveUrlFiltersRow(char *rec) {
 	// caller must specify collnum
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 	if ( collnum < 0 ) {
@@ -405,7 +405,7 @@ static bool CommandRemoveUrlFiltersRow ( char *rec ) {
 
 #ifndef PRIVACORE_SAFE_VERSION
 // after we add a new coll, or at anytime after we can clone it
-static bool CommandCloneColl ( char *rec ) {
+bool Parms::CommandCloneColl(char *rec) {
 
 	// the collnum we want to affect.
 	collnum_t dstCollnum = getCollnumFromParmRec ( rec );
@@ -449,7 +449,7 @@ static bool CommandCloneColl ( char *rec ) {
 
 // . returns false if blocks true otherwise
 #ifndef PRIVACORE_SAFE_VERSION
-static bool CommandAddColl ( char *rec ) {
+bool Parms::CommandAddColl ( char *rec ) {
 
 	// caller must specify collnum
 	collnum_t newCollnum = getCollnumFromParmRec ( rec );
@@ -805,15 +805,15 @@ static bool CommandPowerNotice ( int32_t hasPower ) {
 }
 
 
-static bool CommandPowerOnNotice ( char *rec ) {
+bool Parms::CommandPowerOnNotice(char *rec) {
 	return CommandPowerNotice ( 1 );
 }
 
-static bool CommandPowerOffNotice ( char *rec ) {
+bool Parms::CommandPowerOffNotice(char *rec) {
 	return CommandPowerNotice ( 0 );
 }
 
-static bool CommandInSync ( char *rec ) {
+bool Parms::CommandInSync(char *rec) {
 	g_parms.m_inSyncWithHost0 = true;
 	return true;
 }
@@ -836,6 +836,15 @@ Parms::Parms ( ) {
 	m_numParms = 0;
 	memset(m_searchParms, 0, sizeof(m_searchParms));
 	m_numSearchParms = 0;
+}
+
+
+bool Parms::registerHandler3e() {
+	return g_udpServer.registerHandler(msg_type_3e,handleRequest3e);
+}
+
+bool Parms::registerHandler3f() {
+	return g_udpServer.registerHandler(msg_type_3f,handleRequest3f);
 }
 
 
@@ -10903,7 +10912,7 @@ static void tryToCallCallbacks ( ) {
 	}
 }
 
-static void gotParmReplyWrapper ( void *state , UdpSlot *slot ) {
+void Parms::gotParmReplyWrapper(void *state, UdpSlot *slot) {
 
 	// don't let upserver free the send buf! that's the ParmNode parmlist
 	slot->m_sendBufAlloc = NULL;
@@ -11015,7 +11024,7 @@ static void gotParmReplyWrapper ( void *state , UdpSlot *slot ) {
 	g_parms.doParmSendingLoop();
 }
 
-static void parmLoop ( int fd , void *state ) {
+void Parms::parmLoop(int fd, void *state) {
 	g_parms.doParmSendingLoop();
 }
 
@@ -11121,22 +11130,21 @@ bool Parms::doParmSendingLoop ( ) {
 	return true;
 }
 
-static void handleRequest3fLoop ( void *weArg ) ;
 
-static void handleRequest3fLoop2 ( void *state , UdpSlot *slot ) {
+void Parms::handleRequest3fLoop2(void *state, UdpSlot *slot) {
 	handleRequest3fLoop(state);
 }
 
 // if a tree is saving while we are trying to delete a collnum (or reset)
 // then the call to updateParm() below returns false and we must re-call
 // in this sleep wrapper here
-static void handleRequest3fLoop3 ( int fd , void *state ) {
+void Parms::handleRequest3fLoop3(int fd, void *state) {
 	g_loop.unregisterSleepCallback(state,handleRequest3fLoop3);
 	handleRequest3fLoop(state);
 }
 
 // . host #0 is requesting that we update some parms
-static void handleRequest3fLoop ( void *weArg ) {
+void Parms::handleRequest3fLoop(void *weArg) {
 	WaitEntry *we = (WaitEntry *)weArg;
 
 	CollectionRec *cx = NULL;
@@ -11155,7 +11163,7 @@ static void handleRequest3fLoop ( void *weArg ) {
 		p += recSize;
 
 		// get the actual parm
-		Parm *parm = getParmFromParmRec ( rec );
+		Parm *parm = g_parms.getParmFromParmRec ( rec );
 
 		if ( ! parm ) {
 			int32_t h32 = getHashFromParmRec(rec);
@@ -11309,7 +11317,7 @@ static void handleRequest3fLoop ( void *weArg ) {
 
 // . host #0 is requesting that we update some parms
 // . the readbuf in the request is the list of the parms
-void handleRequest3f(UdpSlot *slot, int32_t /*niceness*/) {
+void Parms::handleRequest3f(UdpSlot *slot, int32_t /*niceness*/) {
 	log("parms: handling updated parameters (request type 3f)");
 
 	// sending to host #0 is not right...
@@ -11364,14 +11372,14 @@ void handleRequest3f(UdpSlot *slot, int32_t /*niceness*/) {
 //    have with ETRYAGAIN in Msg4.cpp
 
 
-void tryToSyncWrapper ( int fd , void *state ) {
+void Parms::tryToSyncWrapper(int fd, void *state) {
 	g_parms.syncParmsWithHost0();
 }
 
 // host #0 just sends back an empty reply, but it will hit us with
 // 0x3f parmlist requests. that way it uses the same mechanism and can
 // guarantee ordering of the parm update requests
-static void gotReplyFromHost0Wrapper ( void *state , UdpSlot *slot ) {
+void Parms::gotReplyFromHost0Wrapper(void *state, UdpSlot *slot) {
 	// ignore his reply unless error?
 	if ( g_errno ) {
 		log("parms: got error syncing with host 0: %s. Retrying.",
@@ -11450,7 +11458,7 @@ bool Parms::syncParmsWithHost0 ( ) {
 //   uses 0x3f, so this just returns and empty reply on success
 // . sends CMD "addcoll" and "delcoll" cmd parms as well
 // . include an "insync" command parm as last parm
-void handleRequest3e(UdpSlot *slot, int32_t /*niceness*/) {
+void Parms::handleRequest3e(UdpSlot *slot, int32_t /*niceness*/) {
 	// right now we must be host #0
 	if ( g_hostdb.m_hostId != 0 ) {
 hadError:
@@ -11690,7 +11698,7 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 
 	g_errno = 0;
 
-	Parm *parm = getParmFromParmRec ( rec );
+	Parm *parm = g_parms.getParmFromParmRec ( rec );
 
 	if ( ! parm ) {
 		log("parmdb: could not find parm for rec");

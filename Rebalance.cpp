@@ -55,7 +55,7 @@ const char *Rebalance::getNeedsRebalance ( ) {
 
 	// wait for collections and parms to be in sync. new hosts won't
 	// have the collection recs and subdirs...
-	if ( ! g_parms.m_inSyncWithHost0 ) return NULL;
+	if ( ! g_parms.inSyncWithHost0() ) return NULL;
 
 	// wait for all hosts to agree
 	if ( ! g_pingServer.m_hostsConfInAgreement ) return NULL;
