@@ -37,6 +37,7 @@
 #include "Timezone.h"
 #include "CountryCode.h"
 #include "File.h"
+#include "Docid2Siteflags.h"
 #include "Conf.h"
 #include "Mem.h"
 #include <sys/statvfs.h>
@@ -222,6 +223,7 @@ bool Process::checkFiles ( const char *dir ) {
 static void heartbeatWrapper(int fd, void *state);
 static void processSleepWrapper(int fd, void *state);
 static void diskUsageWrapper(int fd, void *state);
+static void reloadDocid2SiteFlags(int fd, void *state);
 
 
 Process::Process ( ) {
@@ -329,6 +331,10 @@ bool Process::init ( ) {
 		return false;
 	}
 
+	if (!g_loop.registerSleepCallback(60000, NULL, reloadDocid2SiteFlags, 0)) {
+		return false;
+	}
+
 	// success
 	return true;
 }
@@ -391,6 +397,11 @@ void heartbeatWrapper(int /*fd*/, void * /*state*/) {
 	// it has been since we've been called, so after 10000 ms it
 	// can dump core and we can see what is holding things up
 	g_process.m_lastHeartbeatApprox = gettimeofdayInMilliseconds();
+}
+
+
+static void reloadDocid2SiteFlags(int fd, void *state) {
+	g_d2fasm.reload_if_needed();
 }
 
 

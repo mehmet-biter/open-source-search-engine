@@ -104,8 +104,8 @@ bool RdbMem::init(const Rdb *rdb, int32_t memToAlloc, const char *allocName) {
 // . if a dump is going on and this key has already been dumped
 //   (we check RdbDump::getFirstKey()/getLastKey()) add it to the
 //   secondary mem space, otherwise add it to the primary mem space
-void *RdbMem::dupData(const char *data, int32_t dataSize, collnum_t collnum ) {
-	char *s = (char*)allocData(dataSize, collnum);
+void *RdbMem::dupData(const char *data, int32_t dataSize) {
+	char *s = (char*)allocData(dataSize);
 	if(!s)
 		return NULL;
 	memcpy(s, data, dataSize);
@@ -113,7 +113,7 @@ void *RdbMem::dupData(const char *data, int32_t dataSize, collnum_t collnum ) {
 }
 
 
-void *RdbMem::allocData(int32_t dataSize, collnum_t collnum) {
+void *RdbMem::allocData(int32_t dataSize) {
 	if ( m_rdb->isInDumpLoop() ) {
 		// if secondary mem is growing down...
 		if(m_ptr2>m_ptr1) {
@@ -235,7 +235,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 			
 		// m_inDumpLoop is still true at this point so
 		// so allocData should return m_ptr2 guys
-		char *newData = (char *)allocData(size,0);
+		char *newData = (char *)allocData(size);
 		if(!newData) {
 			log("rdbmem: failed to alloc %i "
 				"bytes node %i",(int)size,(int)i);

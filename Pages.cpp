@@ -571,7 +571,7 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 		     "</head>\n",  s_pages[page].m_name);
 
 	// print bg colors
-	status &= printColors ( sb, bodyJavascript);
+	status = status && printColors ( sb, bodyJavascript);
 
 	// print form to encompass table now
 
@@ -679,7 +679,7 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 		       );
 
 	// collection navbar
-	status&=printCollectionNavBar ( sb, page , coll, qs,s,r);
+	status = status && printCollectionNavBar ( sb, page , coll, qs,s,r);
 
 	// count the statuses
 	int32_t emptyCount = 0;
@@ -806,7 +806,7 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 		       );
 
 	// print the hosts navigation bar
-	status &= printHostLinks ( sb, page , coll, s->m_ip, qs );
+	status = status && printHostLinks ( sb, page , coll, s->m_ip, qs );
 
 	sb->safePrintf("<br><br>");
 
@@ -849,7 +849,7 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 		       );
 
 	// print the menu links under that
-	status &= printAdminLinks ( sb, page , coll , isBasic );
+	status = status && printAdminLinks ( sb, page , coll , isBasic );
 
 
 	sb->safePrintf("<br>");

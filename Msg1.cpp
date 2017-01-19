@@ -618,7 +618,7 @@ static void addedList(UdpSlot *slot, Rdb *rdb) {
 	}
 
 	// doing a full rebuid will add collections
-	if ( g_errno == ENOCOLLREC && g_repairMode > 0 ) {
+	if ( g_errno == ENOCOLLREC && g_repairMode!=REPAIR_MODE_NONE ) {
 		g_errno = ETRYAGAIN;
 	}
 

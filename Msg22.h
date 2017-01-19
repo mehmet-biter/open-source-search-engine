@@ -15,10 +15,10 @@ public:
 	int32_t      m_niceness;
 	int32_t      m_maxCacheAge;
 	collnum_t m_collnum;
-	char      m_justCheckTfndb  :1;
-	char      m_getAvailDocIdOnly:1;
-	char      m_addToCache      :1;
-	char      m_inUse           :1;
+	unsigned char   m_justCheckTfndb  :1;
+	unsigned char   m_getAvailDocIdOnly:1;
+	unsigned char   m_addToCache      :1;
+	unsigned char   m_inUse           :1;
 	char      m_url[MAX_URL_LEN+1];
 
 	Msg22Request();

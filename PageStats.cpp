@@ -1745,7 +1745,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 		  TABLE_STYLE );
 
 	// make the rdbs
-	Rdb *rdbs[] = {
+	const Rdb *rdbs[] = {
 		g_posdb.getRdb(),
 		g_titledb.getRdb(),
 		g_spiderdb.getRdb(),
@@ -1988,8 +1988,8 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<tr class=poo><td><b>file cache hits %%</b></td>");
 	//totalf = 0.0;
 	for ( int32_t i = 0 ; i < nr ; i++ ) {
-		Rdb *rdb = rdbs[i];
-		RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
+		const Rdb *rdb = rdbs[i];
+		const RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
 		if ( ! rpc ) {
 			p.safePrintf("<td>--</td>");
 			continue;
@@ -2011,8 +2011,8 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<tr class=poo><td><b>file cache hits</b></td>");
 	total = 0;
 	for ( int32_t i = 0 ; i < nr ; i++ ) {
-		Rdb *rdb = rdbs[i];
-		RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
+		const Rdb *rdb = rdbs[i];
+		const RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
 		if ( ! rpc ) {
 			p.safePrintf("<td>--</td>");
 			continue;
@@ -2027,8 +2027,8 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<tr class=poo><td><b>file cache misses</b></td>");
 	total = 0;
 	for ( int32_t i = 0 ; i < nr ; i++ ) {
-		Rdb *rdb = rdbs[i];
-		RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
+		const Rdb *rdb = rdbs[i];
+		const RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
 		if ( ! rpc ) {
 			p.safePrintf("<td>--</td>");
 			continue;
@@ -2043,8 +2043,8 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<tr class=poo><td><b>file cache tries</b></td>");
 	total = 0;
 	for ( int32_t i = 0 ; i < nr ; i++ ) {
-		Rdb *rdb = rdbs[i];
-		RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
+		const Rdb *rdb = rdbs[i];
+		const RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
 		if ( ! rpc ) {
 			p.safePrintf("<td>--</td>");
 			continue;
@@ -2061,8 +2061,8 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<tr class=poo><td><b>file cache adds</b></td>");
 	total = 0;
 	for ( int32_t i = 0 ; i < nr ; i++ ) {
-		Rdb *rdb = rdbs[i];
-		RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
+		const Rdb *rdb = rdbs[i];
+		const RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
 		if ( ! rpc ) {
 			p.safePrintf("<td>--</td>");
 			continue;
@@ -2075,8 +2075,8 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<tr class=poo><td><b>file cache drops</b></td>");
 	total = 0;
 	for ( int32_t i = 0 ; i < nr ; i++ ) {
-		Rdb *rdb = rdbs[i];
-		RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
+		const Rdb *rdb = rdbs[i];
+		const RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
 		if ( ! rpc ) {
 			p.safePrintf("<td>--</td>");
 			continue;
@@ -2089,8 +2089,8 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<tr class=poo><td><b>file cache used</b></td>");
 	total = 0;
 	for ( int32_t i = 0 ; i < nr ; i++ ) {
-		Rdb *rdb = rdbs[i];
-		RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
+		const Rdb *rdb = rdbs[i];
+		const RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
 		if ( ! rpc ) {
 			p.safePrintf("<td>--</td>");
 			continue;
@@ -2105,8 +2105,8 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<tr class=poo><td><b><nobr>file cache allocated</nobr></b></td>");
 	total = 0;
 	for ( int32_t i = 0 ; i < nr ; i++ ) {
-		Rdb *rdb = rdbs[i];
-		RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
+		const Rdb *rdb = rdbs[i];
+		const RdbCache *rpc = getDiskPageCache ( rdb->getRdbId() );
 		if ( ! rpc ) {
 			p.safePrintf("<td>--</td>");
 			continue;
