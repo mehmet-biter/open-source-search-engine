@@ -48,6 +48,8 @@ https?://web\.archive\.org/web/
 
 https?://(?!www\.)(.*\.)doubleclick\.net/
 
+https?://(.*\.|)ixquick-proxy\.com/
+
 # path
 https?://[^/]+/oembed[\?/]
 https?://[^/]+/wp-includes

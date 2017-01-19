@@ -59,6 +59,7 @@ TEST(UrlBlockListTest, Real) {
 	urlBlockList.load();
 
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://t.co/0TVhTBSaxD"));
+	EXPECT_FALSE(urlBlockList.isUrlBlocked("http://at.co/"));
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://ow.ly/2U6rh6"));
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://ow.ly/i/8kNCn"));
 	EXPECT_FALSE(urlBlockList.isUrlBlocked("http://tr.im.cfg1.pl/"));
