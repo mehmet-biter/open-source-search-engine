@@ -2511,7 +2511,7 @@ void Parms::setToDefault(char *THIS, parameter_object_type_t objType, Collection
 			gbmemcpy ( dst , def , m->m_size );
 			continue;
 		}
-		if ( m->m_defOff2>=2) {
+		if ( m->m_defOff2>=0) {
 			const void *def = ((const char *)&g_conf) + m->m_defOff2;
 			char *dst = THIS + m->m_off;
 			memcpy(dst, def, m->m_size);
