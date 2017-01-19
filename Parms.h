@@ -23,7 +23,6 @@ enum parameter_object_type_t {
 	OBJ_UNSET         // used for detecting unset values
 };
 
-/// @note TYPE_DATE & TYPE_DATE2 is removed in commit f8e94cf3bf25b2f04a8a3aac00fe883eab346f2e
 enum parameter_type_t {
 	TYPE_UNSET            =  0,
 	TYPE_BOOL             =  1,
