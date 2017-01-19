@@ -65,7 +65,7 @@ Parm::Parm() {
 	m_off = 0;
 	m_arrayCountOffset = 0;
 	m_colspan = 0;
-	m_type = 0;
+	m_type = TYPE_UNSET;
 	m_page = 0;
 	m_obj = OBJ_UNSET;
 	m_max = 0;
@@ -1582,7 +1582,7 @@ bool Parms::printParm( SafeBuf* sb,
 	}
 
 	// what type of parameter?
-	char t = m->m_type;
+	parameter_type_t t = m->m_type;
 	// point to the data in THIS
 	char *s = THIS + m->m_off + m->m_size * j ;
 
@@ -2274,7 +2274,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		}
 	}
 
-	char  t   = m->m_type;
+	parameter_type_t  t   = m->m_type;
 
 	if      ( t == TYPE_CHAR           ||
 		  t == TYPE_CHAR2          ||

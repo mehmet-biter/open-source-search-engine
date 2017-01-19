@@ -26,7 +26,8 @@ enum parameter_object_type_t {
 };
 
 /// @note TYPE_DATE & TYPE_DATE2 is removed in commit f8e94cf3bf25b2f04a8a3aac00fe883eab346f2e
-enum {
+enum parameter_type_t {
+	TYPE_UNSET            =  0,
 	TYPE_BOOL             =  1,
 	TYPE_CHECKBOX         =  3,
 	TYPE_CHAR             =  4,
@@ -98,7 +99,7 @@ class Parm {
 
 
 	char  m_colspan;
-	char  m_type;  // TYPE_BOOL, TYPE_LONG, ...
+	parameter_type_t  m_type;  // TYPE_BOOL, TYPE_LONG, ...
 	int32_t  m_page;  // PAGE_MASTER, PAGE_SPIDER, ... see Pages.h
 	parameter_object_type_t  m_obj;   // OBJ_CONF/OBJ_COLL/...
 	// the maximum number of elements supported in the array.
