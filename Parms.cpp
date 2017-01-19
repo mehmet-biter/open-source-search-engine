@@ -3494,7 +3494,6 @@ void Parms::init ( ) {
 
 	m->m_title = "number of results per query";
 	m->m_desc  = "The number of results returned per page.";
-	// make it 25 not 50 since we only have like 26 balloons
 	m->m_def   = "10";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
