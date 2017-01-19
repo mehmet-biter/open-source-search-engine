@@ -1,5 +1,4 @@
 #include "UrlBlockList.h"
-#include "ScopedLock.h"
 #include "Log.h"
 #include "Conf.h"
 #include "Loop.h"
@@ -34,7 +33,7 @@ void UrlBlockList::reload(int /*fd*/, void *state) {
 }
 
 bool UrlBlockList::load() {
-#if (__GNUC__ > 4) || (__GNUC_MINOR__>=9)
+#if (__GNUC__ > 4) || (__GNUC_MINOR__ >= 9)
 	logTrace(g_conf.m_logTraceUrlBlockList, "Loading %s", m_filename);
 
 	struct stat st;
@@ -60,7 +59,7 @@ bool UrlBlockList::load() {
 			continue;
 		}
 
-		tmpUrlRegexList->push_back(std::make_pair(line, std::regex(line)));
+		tmpUrlRegexList->push_back(std::make_pair(line, std::regex(line, std::regex::optimize | std::regex::nosubs)));
 		logTrace(g_conf.m_logTraceUrlBlockList, "Adding regex '%s' to list", line.c_str());
 	}
 

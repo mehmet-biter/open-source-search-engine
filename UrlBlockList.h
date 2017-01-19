@@ -2,8 +2,9 @@
 #define GB_URLBLOCKLIST_H
 
 #include <vector>
+#include <string>
+#include <memory>
 #include <regex>
-#include "GbMutex.h"
 
 typedef std::vector<std::pair<std::string, std::regex>> regexlist_t;
 typedef std::shared_ptr<regexlist_t> regexlist_ptr_t;
