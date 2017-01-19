@@ -75,6 +75,7 @@ bool UrlBlockList::load() {
 }
 
 bool UrlBlockList::isUrlBlocked(const char *url) {
+#if (__GNUC__ > 4) || (__GNUC_MINOR__ >= 9)
 	auto urlRegexList = getUrlRegexList();
 
 	for (auto urlRegexPair : *urlRegexList) {
@@ -86,6 +87,7 @@ bool UrlBlockList::isUrlBlocked(const char *url) {
 	}
 
 	logTrace(g_conf.m_logTraceUrlBlockList, "No match found for url '%s'", url);
+#endif
 	return false;
 }
 
@@ -94,6 +96,9 @@ regexlistconst_ptr_t UrlBlockList::getUrlRegexList() {
 }
 
 void UrlBlockList::swapUrlRegexList(regexlistconst_ptr_t urlRegexList) {
+#if (__GNUC__ > 4) || (__GNUC_MINOR__ >= 9)
 	std::atomic_store(&m_urlRegexList, urlRegexList);
+#endif
+	
 }
 
