@@ -34,6 +34,7 @@ void UrlBlockList::reload(int /*fd*/, void *state) {
 }
 
 bool UrlBlockList::load() {
+#if GCC_VERSION > 40900
 	logTrace(g_conf.m_logTraceUrlBlockList, "Loading %s", m_filename);
 
 	struct stat st;
@@ -68,6 +69,9 @@ bool UrlBlockList::load() {
 
 	logTrace(g_conf.m_logTraceUrlBlockList, "Loaded %s", m_filename);
 
+#else
+	logTrace(g_conf.m_logTraceUrlBlockList, "Not loading %s (gcc <4.9 STL is broken)", m_filename);
+#endif
 	return true;
 }
 
