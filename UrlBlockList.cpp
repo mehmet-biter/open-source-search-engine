@@ -5,6 +5,7 @@
 #include "Loop.h"
 #include <fstream>
 #include <sys/stat.h>
+#include <atomic>
 
 UrlBlockList g_urlBlockList;
 
@@ -13,7 +14,6 @@ static const char s_url_filename[] = "urlblocklist.txt";
 UrlBlockList::UrlBlockList()
 	: m_filename(s_url_filename)
 	, m_urlRegexList(new regexlist_t)
-	, m_urlRegexListMtx()
 	, m_lastModifiedTime(0) {
 }
 
@@ -91,12 +91,10 @@ bool UrlBlockList::isUrlBlocked(const char *url) {
 }
 
 regexlistconst_ptr_t UrlBlockList::getUrlRegexList() {
-	ScopedLock sl(m_urlRegexListMtx);
 	return m_urlRegexList;
 }
 
 void UrlBlockList::swapUrlRegexList(regexlistconst_ptr_t urlRegexList) {
-	ScopedLock sl(m_urlRegexListMtx);
-	m_urlRegexList.swap(urlRegexList);
+	std::atomic_store(&m_urlRegexList, urlRegexList);
 }
 

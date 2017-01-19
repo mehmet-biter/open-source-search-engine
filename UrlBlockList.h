@@ -29,7 +29,6 @@ private:
 	void swapUrlRegexList(regexlistconst_ptr_t urlRegexList);
 
 	regexlistconst_ptr_t m_urlRegexList;
-	GbMutex m_urlRegexListMtx;
 
 	time_t m_lastModifiedTime;
 };
