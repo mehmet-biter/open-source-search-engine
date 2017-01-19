@@ -73,6 +73,7 @@ Parm::Parm() {
 	m_size = 0;
 	m_def = NULL;
 	m_defOff = -1;
+	m_defOff2 = -1;
 	m_cast = false;
 	m_units = NULL;
 	m_addin = false;
@@ -2516,6 +2517,12 @@ void Parms::setToDefault(char *THIS, parameter_object_type_t objType, Collection
 			gbmemcpy ( dst , def , m->m_size );
 			continue;
 		}
+		if ( m->m_defOff2>=2) {
+			const void *def = ((const char *)&g_conf) + m->m_defOff2;
+			char *dst = THIS + m->m_off;
+			memcpy(dst, def, m->m_size);
+			continue;
+		}
 		// leave arrays empty, set everything else to default
 		if ( m->m_max <= 1 ) {
 			//if ( ! m->m_def ) { g_process.shutdownAbort(true); }
@@ -3058,6 +3065,7 @@ void Parms::init ( ) {
 		m_parms[i].m_colspan= -1;
 		m_parms[i].m_def    = NULL       ; // for detecting if not set
 		m_parms[i].m_defOff = -1; // if default pts to collrec parm
+		m_parms[i].m_defOff2 = -1;
 		m_parms[i].m_type   = TYPE_NONE  ; // for detecting if not set
 		m_parms[i].m_page   = -1         ; // for detecting if not set
 		m_parms[i].m_obj    = OBJ_UNSET  ; // for detecting if not set

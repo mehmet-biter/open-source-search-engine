@@ -113,6 +113,7 @@ class Parm {
 	int32_t  m_size;  // max string size
 	const char *m_def;   // default value of this variable if not in either conf
 	int32_t  m_defOff; // if default value points to a collectionrec parm!
+	int32_t m_defOff2;  //default form g_conf
 	bool  m_cast;  // true if we should broadcast to all hosts (default)
 	const char *m_units;
 	bool  m_addin; // add "insert above" link to gui when displaying array
