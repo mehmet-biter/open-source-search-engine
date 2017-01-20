@@ -570,10 +570,10 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 
 				// if synonym or alternate word form
 				if ( Posdb::getIsSynonym(wpi) ) {
-					score *= g_conf.m_synonymWeight;
+					score *= m_msg39req->m_synonymWeight;
 				}
 				if ( Posdb::getIsSynonym(wpj) ) {
-					score *= g_conf.m_synonymWeight;
+					score *= m_msg39req->m_synonymWeight;
 				}
 
 				// word spam weights
@@ -664,10 +664,10 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 				score *= s_hashGroupWeights[hg1];
 				score *= s_hashGroupWeights[hg2];
 				// if synonym or alternate word form
-				if ( Posdb::getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
-				if ( Posdb::getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
-				//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
-				//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+				if ( Posdb::getIsSynonym(wpi) ) score *= m_msg39req->m_synonymWeight;
+				if ( Posdb::getIsSynonym(wpj) ) score *= m_msg39req->m_synonymWeight;
+				//if ( m_bflags[i] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
+				//if ( m_bflags[j] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
 				// word spam weights
 				score *= spamw1 * spamw2;
 				// huge title? do not allow 11th+ word to be weighted high
@@ -787,10 +787,10 @@ float PosdbTable::getScoreForTermPair( const char *wpi, const char *wpj, int32_t
 	score *= s_hashGroupWeights[hg1];
 	score *= s_hashGroupWeights[hg2];
 	// if synonym or alternate word form
-	if ( Posdb::getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
-	if ( Posdb::getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
-	//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
-	//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+	if ( Posdb::getIsSynonym(wpi) ) score *= m_msg39req->m_synonymWeight;
+	if ( Posdb::getIsSynonym(wpj) ) score *= m_msg39req->m_synonymWeight;
+	//if ( m_bflags[i] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
+	//if ( m_bflags[j] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
 	// word spam weights
 	score *= spamw1 * spamw2;
 	// mod by distance
@@ -990,11 +990,11 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 
 			// if synonym or alternate word form
 			if ( syn1 ) {
-				score *= g_conf.m_synonymWeight;
+				score *= m_msg39req->m_synonymWeight;
 			}
 			
 			if ( syn2 ) {
-				score *= g_conf.m_synonymWeight;
+				score *= m_msg39req->m_synonymWeight;
 			}
 			
 			// the new logic
@@ -1185,15 +1185,15 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			
 			// if synonym or alternate word form
 			if ( Posdb::getIsSynonym(wpi) ) {
-				score *= g_conf.m_synonymWeight;
+				score *= m_msg39req->m_synonymWeight;
 			}
 			
 			if ( Posdb::getIsSynonym(wpj) ) {
-				score *= g_conf.m_synonymWeight;
+				score *= m_msg39req->m_synonymWeight;
 			}
 			
-			//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
-			//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+			//if ( m_bflags[i] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
+			//if ( m_bflags[j] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
 			// word spam weights
 			score *= spamw1 * spamw2;
 			// huge title? do not allow 11th+ word to be weighted high
