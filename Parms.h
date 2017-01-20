@@ -204,8 +204,7 @@ class Parms {
 	bool insertParm ( int32_t i , int32_t an , char *THIS ) ;
 	bool removeParm ( int32_t i , int32_t an , char *THIS ) ;
 
-	void setParm ( char *THIS, Parm *m, int32_t mm, int32_t j, const char *def,
-		       bool isHtmlEncoded , bool fromRequest ) ;
+	void setParm(char *THIS, Parm *m, int32_t array_index, const char *s, bool isHtmlEncoded, bool fromRequest);
 
 	void setToDefault(char *THIS, parameter_object_type_t objType,
 			  CollectionRec *argcr );

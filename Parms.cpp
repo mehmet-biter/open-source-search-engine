@@ -956,7 +956,7 @@ bool Parms::setGigablastRequest ( TcpSocket *socket ,
 		//if ( (m->m_perms & user) == 0 ) continue;
 		// set it. now our TYPE_CHARPTR will just be set to it directly
 		// to save memory...
-		setParm ( (char *)THIS , m, j, 0, v, false,//not html enc
+		setParm ( (char *)THIS , m, 0, v, false,//not html enc
 			  false ); // true );
 	}
 
@@ -2136,7 +2136,7 @@ bool Parms::setFromRequest ( HttpRequest *r ,
 		     m->m_type != TYPE_STRING &&
 		     m->m_type != TYPE_STRINGBOX ) continue;
 		// set it
-		setParm ( (char *)THIS , m, j, 0, v, false,//not html enc
+		setParm ( (char *)THIS , m, 0, v, false,//not html enc
 			  false );//true );
 	}
 
@@ -2184,7 +2184,7 @@ bool Parms::insertParm ( int32_t i , int32_t an ,  char *THIS ) {
 	*(int32_t *)(THIS + m->m_arrayCountOffset) = *(int32_t *)(THIS + m->m_arrayCountOffset)+1;
 
 	// put the defaults in the inserted line
-	setParm ( (char *)THIS , m , i , an , m->m_def , false ,false );
+	setParm ( (char *)THIS , m, an , m->m_def , false ,false );
 	return true;
 }
 
@@ -2234,8 +2234,7 @@ bool Parms::removeParm ( int32_t i , int32_t an , char *THIS ) {
 
 
 
-void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char *s ,
-		      bool isHtmlEncoded , bool fromRequest ) {
+void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, bool isHtmlEncoded, bool fromRequest) {
 
 	if ( fromRequest ) { g_process.shutdownAbort(true); }
 
@@ -2259,24 +2258,18 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		log(LOG_LOGIC,"admin: Parm \"%s\" had NULL default value. Forcing to 0.", title);
 	}
 
-	// sanity check
-	if ( &m_parms[mm] != m ) {
-		log(LOG_LOGIC,"admin: Not sane parameters.");
-		g_process.shutdownAbort(true);
-	}
-
 	// if attempting to add beyond array max, bail out
-	if ( j >= m->m_max && j >= m->m_fixed ) {
+	if ( array_index >= m->m_max && array_index >= m->m_fixed ) {
 		log ( "admin: Attempted to set parm beyond limit. Aborting." );
 		return;
 	}
 
-	// ensure array count at least j+1
+	// ensure array count at least array_index+1
 	if ( m->m_max > 1 ) {
 		// . is this element we're adding bumping up the count?
 		// set the count to it if it is bigger than current count
-		if ( j + 1 > *(int32_t *)(THIS + m->m_arrayCountOffset) ) {
-			*(int32_t *)(THIS + m->m_arrayCountOffset) = j + 1;
+		if ( array_index + 1 > *(int32_t *)(THIS + m->m_arrayCountOffset) ) {
+			*(int32_t *)(THIS + m->m_arrayCountOffset) = array_index + 1;
 		}
 	}
 
@@ -2288,81 +2281,81 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		  t == TYPE_BOOL           ||
 		  t == TYPE_PRIORITY       ||
 		  t == TYPE_PRIORITY2      ) {
-		if ( fromRequest && *(char *)(THIS + m->m_off + j) == atol(s))
+		if ( fromRequest && *(char *)(THIS + m->m_off + array_index) == atol(s))
 			return;
 		if ( fromRequest) {
-			oldVal = (float)*(char *)(THIS + m->m_off +j);
+			oldVal = (float)*(char *)(THIS + m->m_off +array_index);
 		}
-		*(char *)(THIS + m->m_off + j) = s ? atol(s) : 0;
- 		newVal = (float)*(char *)(THIS + m->m_off + j);
+		*(char *)(THIS + m->m_off + array_index) = s ? atol(s) : 0;
+		newVal = (float)*(char *)(THIS + m->m_off + array_index);
 		goto changed; 
 	}
 	else if ( t == TYPE_CHARPTR ) {
 		// "s" might be NULL or m->m_def...
-		*(const char **)(THIS + m->m_off + j) = s;
+		*(const char **)(THIS + m->m_off + array_index) = s;
 	}
 	else if ( t == 	TYPE_FILEUPLOADBUTTON ) {
 		// "s" might be NULL or m->m_def...
-		*(const char **)(THIS + m->m_off + j) = s;
+		*(const char **)(THIS + m->m_off + array_index) = s;
 	}
 	else if ( t == TYPE_CMD ) {
 		log(LOG_LOGIC, "conf: Parms: TYPE_CMD is not a cgi var.");
 		return;	
 	}
 	else if ( t == TYPE_FLOAT ) {
-		if( fromRequest && almostEqualFloat(*(float *)(THIS + m->m_off + 4*j), (s ? (float)atof(s) : 0)) ) {
+		if( fromRequest && almostEqualFloat(*(float *)(THIS + m->m_off + 4*array_index), (s ? (float)atof(s) : 0)) ) {
 			return;
 		}
 
 		if ( fromRequest ) {
-			oldVal = *(float *)(THIS + m->m_off + 4*j);
+			oldVal = *(float *)(THIS + m->m_off + 4*array_index);
 		}
-		*(float *)(THIS + m->m_off + 4*j) = s ? (float)atof ( s ) : 0;
-		newVal = *(float *)(THIS + m->m_off + 4*j);
+		*(float *)(THIS + m->m_off + 4*array_index) = s ? (float)atof ( s ) : 0;
+		newVal = *(float *)(THIS + m->m_off + 4*array_index);
 		goto changed; 
 	}
 	else if ( t == TYPE_DOUBLE ) {
-		if( fromRequest && almostEqualFloat(*(double *)(THIS + m->m_off + 4*j), ( s ? (double)atof(s) : 0)) ) {
+		if( fromRequest && almostEqualFloat(*(double *)(THIS + m->m_off + 4*array_index), ( s ? (double)atof(s) : 0)) ) {
 			return;
 		}
 		if ( fromRequest ) {
-			oldVal = *(double *)(THIS + m->m_off + 4*j);
+			oldVal = *(double *)(THIS + m->m_off + 4*array_index);
 		}
-		*(double *)(THIS + m->m_off + 4*j) = s ? (double)atof ( s ) : 0;
-		newVal = *(double *)(THIS + m->m_off + 4*j);
+		*(double *)(THIS + m->m_off + 4*array_index) = s ? (double)atof ( s ) : 0;
+		newVal = *(double *)(THIS + m->m_off + 4*array_index);
 		goto changed; 
 	}
 	else if ( t == TYPE_IP ) {
-		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) ==
+		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*array_index) ==
 		     (s ? (int32_t)atoip(s,strlen(s)) : 0) )
 			return;
-		*(int32_t *)(THIS + m->m_off + 4*j) = s ? (int32_t)atoip(s,strlen(s)) : 0;
+		*(int32_t *)(THIS + m->m_off + 4*array_index) = s ? (int32_t)atoip(s,strlen(s)) : 0;
 		goto changed; 
 	}
 	else if ( t == TYPE_INT32 || t == TYPE_INT32_CONST ) {
 		int32_t v = s ? atol(s) : 0;
 		// min is considered valid if >= 0
 		if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
-		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) == v )
+		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*array_index) == v )
 			return;
-		if ( fromRequest)oldVal=(float)*(int32_t *)(THIS + m->m_off +4*j);
-		*(int32_t *)(THIS + m->m_off + 4*j) = v;
-		newVal = (float)*(int32_t *)(THIS + m->m_off + 4*j);
+		if ( fromRequest)oldVal=(float)*(int32_t *)(THIS + m->m_off +4*array_index);
+		*(int32_t *)(THIS + m->m_off + 4*array_index) = v;
+		newVal = (float)*(int32_t *)(THIS + m->m_off + 4*array_index);
 		goto changed; 
 	}
 	else if ( t == TYPE_INT64 ) {
-		if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*j) == ( s ? strtoull(s,NULL,10) : 0) ) {
+		if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*array_index) == ( s ? strtoull(s,NULL,10) : 0) ) {
 			return;
 		}
-		*(int64_t *)(THIS + m->m_off + 8*j) = s ? strtoull(s,NULL,10) : 0;
+		*(int64_t *)(THIS + m->m_off + 8*array_index) = s ? strtoull(s,NULL,10) : 0;
 		goto changed; }
 	// like TYPE_STRING but dynamically allocates
 	else if ( t == TYPE_SAFEBUF ) {
 		int32_t len = s ? strlen(s) : 0;
 
 		// point to the safebuf, in the case of an array of
-		// SafeBufs "j" is the # in the array, starting at 0
-		SafeBuf *sb = (SafeBuf *)(THIS+m->m_off+(j*sizeof(SafeBuf)) );
+		// SafeBufs "array_index" is the # in the array, starting at 0
+		SafeBuf *sb = (SafeBuf *)(THIS+m->m_off+(array_index*sizeof(SafeBuf)) );
 		int32_t oldLen = sb->length();
 		// why was this commented out??? we need it now that we
 		// send email alerts when parms change!
@@ -2391,7 +2384,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		}
 		int32_t len = strlen(s);
 		if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
-		char *dst = THIS + m->m_off + m->m_size*j ;
+		char *dst = THIS + m->m_off + m->m_size*array_index;
 		// why was this commented out??? we need it now that we
 		// send email alerts when parms change!
 		if ( fromRequest &&
@@ -2519,13 +2512,13 @@ void Parms::setToDefault(char *THIS, parameter_object_type_t objType, Collection
 		// leave arrays empty, set everything else to default
 		if ( m->m_max <= 1 ) {
 			//if ( ! m->m_def ) { g_process.shutdownAbort(true); }
-			setParm ( THIS , m, i, 0, m->m_def, false/*not enc.*/,
+			setParm ( THIS , m, 0, m->m_def, false/*not enc.*/,
 				  false );
 		}
 		// these are special, fixed size arrays
 		if ( m->m_fixed > 0 ) {
 			for ( int32_t k = 0 ; k < m->m_fixed ; k++ ) {
-				setParm(THIS,m,i,k,m->m_def,false/*not enc.*/,
+				setParm(THIS, m, k, m->m_def, false/*not enc.*/,
 					false);
 			}
 			continue;
@@ -2662,7 +2655,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		v[nb] = '\0';
 
 		// set our parm
-		setParm( (char *)THIS, m, i, j, v, false, false );
+		setParm( (char *)THIS, m, j, v, false, false );
 
 		// we were set from the explicit file
 		//((CollectionRec *)THIS)->m_orig[i] = 2;
@@ -2746,7 +2739,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		v[nb] = '\0';
 
 		// set our parm
-		setParm( (char *)THIS, m, i, j, v, false /*is html encoded?*/, false );
+		setParm( (char *)THIS, m, j, v, false /*is html encoded?*/, false );
 
 		// do not repeat same node
 		nn++;
