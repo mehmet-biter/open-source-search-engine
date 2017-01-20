@@ -4173,7 +4173,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 
 
-			if(g_conf.m_usePageTemperatureForRanking) {
+			if(m_msg39req->m_usePageTemperatureForRanking) {
 				double page_temperature = g_pageTemperatureRegistry.query_page_temperature(m_docId);
 				float pre_score = score;
 				score *= page_temperature;

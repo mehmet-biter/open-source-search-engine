@@ -49,6 +49,7 @@ void Msg39Request::reset() {
 	m_collnum                 = -1;
 	m_useQueryStopWords       = true;
 	m_doMaxScoreAlgo          = true;
+	m_usePageTemperatureForRanking = true;
 	for(int i=0; i<26; i++)
 		m_flagScoreMultiplier[i] = 1.0;
 	for(int i=0; i<26; i++)

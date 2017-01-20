@@ -3766,6 +3766,18 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m++;
 
+	m->m_title = "Use page temperature";
+	m->m_desc  = "Use page temperature (if available) for ranking";
+	m->m_cgi   = "use_page_temperature";
+	m->m_obj   = OBJ_SI;
+	m->m_off   = offsetof(SearchInput,m_usePageTemperatureForRanking);
+	m->m_defOff2 = offsetof(Conf,m_usePageTemperatureForRanking);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "1";
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	m->m_title = "Score multiplier";
 	m->m_desc  = "26 flags per docid are supported. If a flag bit is set on a page the scoring and ranking can be modified.";
 	m->m_cgi   = "flag_score_multiplier";

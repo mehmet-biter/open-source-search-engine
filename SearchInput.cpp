@@ -65,6 +65,7 @@ SearchInput::SearchInput() {
 	m_askOtherShards = false;
 	memset(m_queryId, 0, sizeof(m_queryId));
 	m_doMaxScoreAlgo = false;
+	m_usePageTemperatureForRanking = true;
 	m_numFlagScoreMultipliers=26;
 	for(int i=0; i<26; i++)
 		m_flagScoreMultiplier[i] = 1.0;
