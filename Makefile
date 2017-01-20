@@ -62,6 +62,7 @@ OBJS_O3 = \
 	Msg25.o \
 	RdbBuckets.o RdbIndex.o RdbIndexQuery.o RdbList.o RdbMap.o \
 	SafeBuf.o sort.o Statistics.o \
+	ScoringWeights.o \
 	TopTree.o \
 	UrlBlockList.o UrlComponent.o UrlParser.o UdpStatistic.o \
 	MergeSpaceCoordinator.o \
