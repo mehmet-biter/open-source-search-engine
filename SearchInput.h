@@ -183,7 +183,7 @@ public:
 
 	int32_t   m_docsWanted;                  // msg40
 	int32_t   m_firstResultNum;              // msg40
-	char   m_doQueryHighlighting;         // msg40
+	bool      m_doQueryHighlighting;         // msg40
 	char  *m_highlightQuery;
 	Query  m_hqq;
 

@@ -75,7 +75,7 @@ SearchInput::SearchInput() {
 	m_summaryMaxNumCharsPerLine = 0;
 	m_docsWanted = 0;
 	m_firstResultNum = 0;
-	m_doQueryHighlighting = 0;
+	m_doQueryHighlighting = false;
 	m_highlightQuery = NULL;
 	m_displayInlinks = 0;
 	m_displayOutlinks = 0;
@@ -274,7 +274,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	char tmpFormat = m_hr.getReplyFormat();
 	// now override automatic defaults for special cases
 	if ( tmpFormat != FORMAT_HTML ) {
-		m_doQueryHighlighting     = 0;
+		m_doQueryHighlighting = false;
 		m_getDocIdScoringInfo = false;
 	}
 
