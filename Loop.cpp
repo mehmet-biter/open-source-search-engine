@@ -811,7 +811,6 @@ void Loop::doPoll ( ) {
 	// handle returned threads for niceness 0
 	g_jobScheduler.cleanup_finished_jobs();
 
-	bool calledOne = false;
 	const int64_t now = gettimeofdayInMilliseconds();
 
 	if( n > 0 && FD_ISSET( m_pipeFd[0], &readfds ) ) {
@@ -834,7 +833,6 @@ void Loop::doPoll ( ) {
 		if ( g_conf.m_logDebugLoop || g_conf.m_logDebugTcp ) {
 			log( LOG_DEBUG, "loop: calling cback0 niceness=%" PRId32" fd=%i", s ? s->m_niceness : -1, fd );
 		}
-		calledOne = true;
 		callCallbacks_ass (true,fd, now,0);//read?
 	}
 	for ( int32_t i = 0 ; i < s_numWriteFds ; i++ ) {
@@ -848,7 +846,6 @@ void Loop::doPoll ( ) {
 		if ( g_conf.m_logDebugLoop || g_conf.m_logDebugTcp ) {
 			log( LOG_DEBUG, "loop: calling wcback0 niceness=%" PRId32" fd=%i", s ? s->m_niceness : -1, fd );
 		}
-		calledOne = true;
 		callCallbacks_ass (false,fd, now,0);//false=forRead?
 	}
 
@@ -867,7 +864,6 @@ void Loop::doPoll ( ) {
 		if ( g_conf.m_logDebugLoop || g_conf.m_logDebugTcp ) {
 			log( LOG_DEBUG, "loop: calling cback1 fd=%i", fd );
 		}
-		calledOne = true;
 		callCallbacks_ass (true,fd, now,1);//read?
 	}
 
@@ -895,7 +891,6 @@ void Loop::doPoll ( ) {
 				log( LOG_WARN, "loop: calling wcback1. Slot not found! fd=%i", fd );
 			}
 		}
-		calledOne = true;
 		callCallbacks_ass(false, fd, now, 1);//forread?
 	}
 
