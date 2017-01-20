@@ -152,6 +152,7 @@ public:
 	bool   m_doDupContentRemoval;     // msg40
 	bool   m_getDocIdScoringInfo;
 
+	float m_synonymWeight;
 	bool m_usePageTemperatureForRanking;
 
 	int32_t m_numFlagScoreMultipliers;

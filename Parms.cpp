@@ -3766,6 +3766,18 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m++;
 
+	m->m_title = "Synonym weight";
+	m->m_desc  = "Weight of synonyms in relation to original words";
+	m->m_cgi   = "synonym_weight";
+	m->m_obj   = OBJ_SI;
+	m->m_off   = offsetof(SearchInput,m_synonymWeight);
+	m->m_defOff2 = offsetof(Conf,m_synonymWeight);
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "0.900000";
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	m->m_title = "Use page temperature";
 	m->m_desc  = "Use page temperature (if available) for ranking";
 	m->m_cgi   = "use_page_temperature";

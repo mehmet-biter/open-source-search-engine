@@ -56,6 +56,7 @@ class Msg39Request {
 	bool    m_allowHighFrequencyTermCache;
 	bool    m_doMaxScoreAlgo;
 
+	float   m_synonymWeight;
 	bool    m_usePageTemperatureForRanking;
 
 	float m_flagScoreMultiplier[26];
