@@ -2106,38 +2106,56 @@ bool Parms::setFromRequest ( HttpRequest *r ,
 	}
 
 	// loop through cgi parms
-	for ( int32_t i = 0 ; i < r->getNumFields() ; i++ ) {
+	for(int32_t i = 0; i < r->getNumFields(); i++) {
+		// get the value of cgi parm (null terminated)
+		const char *v = r->getValue(i);
+		if(!v)
+			continue; //no value
 		// get cgi parm name
-		const char *field = r->getField    ( i );
+		const char *full_field_name = r->getField(i);
+		size_t full_field_name_len = strlen(full_field_name);
+		if(full_field_name_len>=128)
+			continue;
+		char field_base_name[128];
+		int field_index;
+		size_t nondigit_prefix_len = strcspn(full_field_name,"0123456789");
+		if(nondigit_prefix_len!=full_field_name_len) {
+			//field name contains digits. Split into base field name and index
+			memcpy(field_base_name,full_field_name,nondigit_prefix_len);
+			field_base_name[nondigit_prefix_len] = '\0';
+			char *endptr = NULL;
+			field_index = strtol(full_field_name+nondigit_prefix_len, &endptr, 10);
+			if(field_index<0)
+				continue; //hmm?
+			if(endptr && *endptr)
+				continue; //digits weren't the last part
+			
+		} else {
+			strcpy(field_base_name,full_field_name);
+			field_index = 0;
+		}
 		// find in parms list
 		int32_t  j;
 		Parm *m;
-		for ( j = 0 ; j < m_numParms ; j++ ) {
-			// get it
+		for(j = 0; j < m_numParms; j++) {
 			m = &m_parms[j];
-			// skip if not our type
-			if ( m->m_obj != objType ) continue;
-			// skip if offset is negative, that means none
-			if ( m->m_off < 0 ) continue;
-			// skip if no cgi parm, may not be configurable now
-			if ( ! m->m_cgi ) continue;
-			// otherwise, must match the cgi name exactly
-			if ( strcmp ( field,m->m_cgi ) == 0 ) break;
+			if(m->m_obj == objType &&
+			   m->m_off >= 0 &&
+			   m->m_cgi &&
+			   strcmp(field_base_name,m->m_cgi) == 0)
+				break; //found it
 		}
-		// bail if the cgi field is not in the parms list
-		if ( j >= m_numParms ) continue;
-		// get the value of cgi parm (null terminated)
-		const char *v = r->getValue ( i );
-		// empty?
-		if ( ! v ) continue;
+		if(j >= m_numParms)
+			continue; //cgi parm name not found
+		if(field_index>0 && field_index>m->m_max)
+			continue; //out-of-bounds
 		// . skip if no value was provided
 		// . unless it was a string! so we can make them empty.
-		if ( v[0] == '\0' &&
+		if(v[0] == '\0' &&
 		     m->m_type != TYPE_STRING &&
-		     m->m_type != TYPE_STRINGBOX ) continue;
+		     m->m_type != TYPE_STRINGBOX) continue;
 		// set it
-		setParm ( (char *)THIS , m, 0, v, false,//not html enc
-			  false );//true );
+		setParm(THIS, m, field_index, v, false, false);
 	}
 
 	return true;
@@ -2497,38 +2515,34 @@ void Parms::setToDefault(char *THIS, parameter_object_type_t objType, Collection
 		}
 		// if defOff >= 0 get from cr like for searchInput vals
 		// whose default is from the collectionRec...
-		if ( m->m_defOff >= 0 && argcr ) {
-			char *def = m->m_defOff+(char *)argcr;
-			char *dst = (char *)THIS + m->m_off;
-			gbmemcpy ( dst , def , m->m_size );
-			continue;
-		}
-		if ( m->m_defOff2>=0) {
-			const void *def = ((const char *)&g_conf) + m->m_defOff2;
-			char *dst = THIS + m->m_off;
-			memcpy(dst, def, m->m_size);
-			continue;
-		}
-		// leave arrays empty, set everything else to default
-		if ( m->m_max <= 1 ) {
-			//if ( ! m->m_def ) { g_process.shutdownAbort(true); }
-			setParm ( THIS , m, 0, m->m_def, false/*not enc.*/,
-				  false );
-		}
-		// these are special, fixed size arrays
-		if ( m->m_fixed > 0 ) {
+		const void *raw_default = NULL;
+		if ( m->m_defOff >= 0 && argcr )
+			raw_default = ((char *)argcr) + m->m_defOff;
+		if ( m->m_defOff2>=0)
+			raw_default = ((const char *)&g_conf) + m->m_defOff2;
+		
+		if(m->m_max<=1) {
+			//not an array
+			if(raw_default) {
+				char *dst = THIS + m->m_off;
+				memcpy(dst, raw_default, m->m_size);
+			} else
+				setParm(THIS , m, 0, m->m_def, false/*not enc.*/, false );
+		} else if(m->m_fixed<=0) {
+			//variable-sized array
+			//empty it
+			*(int32_t *)(THIS + m->m_arrayCountOffset) = 0;
+		} else {
+			//fixed-size array
 			for ( int32_t k = 0 ; k < m->m_fixed ; k++ ) {
-				setParm(THIS, m, k, m->m_def, false/*not enc.*/,
-					false);
+				if(raw_default) {
+					char *dst = THIS + m->m_off + m->m_size*k;
+					memcpy(dst, raw_default, m->m_size);
+					raw_default = ((char*)raw_default) + m->m_size;
+				} else
+					setParm(THIS, m, k, m->m_def, false/*not enc.*/, false);
 			}
-			continue;
 		}
-		// make array sizes 0
-		if ( m->m_max <= 1 ) continue;
-		// otherwise, array is not fixed size
-
-		// beautiful pragma pack(4)/32-bit dependent original code. *(int32_t *)(s-4) = 0;
-		*(int32_t *)(THIS + m->m_arrayCountOffset) = 0;
 	}
 }
 
@@ -3751,6 +3765,40 @@ void Parms::init ( ) {
 	m->m_cgi   = "dmsa";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m++;
+
+	m->m_title = "Score multiplier";
+	m->m_desc  = "26 flags per docid are supported. If a flag bit is set on a page the scoring and ranking can be modified.";
+	m->m_cgi   = "flag_score_multiplier";
+	m->m_xml   = "ScoreMultiplier";
+	m->m_max   = 26;
+	m->m_fixed = 26;
+	m->m_obj   = OBJ_SI;
+	m->m_arrayCountOffset= offsetof(SearchInput,m_numFlagScoreMultipliers);
+	m->m_off   = offsetof(SearchInput,m_flagScoreMultiplier);
+	m->m_defOff2 = offsetof(Conf,m_flagScoreMultiplier);
+	m->m_rowid = 1;
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "1.0";
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+	m->m_title = "Rank adjustment";
+	m->m_cgi   = "flag_rerank";
+	m->m_xml   = "RankAdjustment";
+	m->m_max   = 26;
+	m->m_fixed = 26;
+	m->m_obj   = OBJ_SI;
+	m->m_arrayCountOffset= offsetof(SearchInput,m_numFlagRankAdjustments);
+	m->m_off   = offsetof(SearchInput,m_flagRankAdjustment);
+	m->m_defOff2 = offsetof(Conf,m_flagRankAdjustment);
+	m->m_rowid = 1;
+	m->m_type  = TYPE_INT32;
+	m->m_def   = "0";
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+	
+	
 
 	m->m_title = "sort language preference";
 	m->m_desc  = "Default language to use for ranking results. "

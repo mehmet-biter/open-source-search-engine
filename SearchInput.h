@@ -152,6 +152,11 @@ public:
 	bool   m_doDupContentRemoval;     // msg40
 	bool   m_getDocIdScoringInfo;
 
+	int32_t m_numFlagScoreMultipliers;
+	float m_flagScoreMultiplier[26];
+	int32_t m_numFlagRankAdjustments;
+	int m_flagRankAdjustment[26];
+	
 	bool   m_hideAllClustered;
 
 	bool   m_askOtherShards;
