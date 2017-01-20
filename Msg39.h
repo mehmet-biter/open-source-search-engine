@@ -56,6 +56,9 @@ class Msg39Request {
 	bool    m_allowHighFrequencyTermCache;
 	bool    m_doMaxScoreAlgo;
 
+	float m_flagScoreMultiplier[26];
+	int m_flagRankAdjustment[26];
+
 	collnum_t m_collnum;
 
 	int64_t m_minDocId;
