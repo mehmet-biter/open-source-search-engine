@@ -12013,14 +12013,10 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
                         if ( dataSize < 0 ) { g_process.shutdownAbort(true); }
 			p += 4;
                 }
-		// point to it
-		char *data = p;
 		// skip the data
 		p += dataSize;
 		// inc it
 		recSize += dataSize;
-		// NULL it for negative keys
-		if ( dataSize == 0 ) data = NULL;
 
 		// see if one big table causes a browser slowdown
 		if ( (++rcount % TABLE_ROWS) == 0 )
@@ -14838,22 +14834,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	// redirects back into spiderdb using this function.
 	if ( m_spiderLinksValid && ! m_spiderLinks )
 		avoid = true;
-
-	// for diffbot crawlbot, if we are a seed url and redirected to a
-	// different domain... like bn.com --> barnesandnoble.com
-	int32_t redirDomHash32  = 0;
-	int32_t redirHostHash32 = 0;
-	//int32_t redirSiteHash32 = 0;
-	if ( m_hopCount == 0 &&
-	     m_redirUrlValid &&
-	     ptr_redirUrl &&
-	     //m_redirUrlPtr && (this gets reset to NULL as being LAST redir)
-	     // this is the last non-empty redir here:
-	     m_redirUrl.getUrlLen() > 0 ) {
-		log("build: seed REDIR: %s",m_redirUrl.getUrl());
-		redirDomHash32  = m_redirUrl.getDomainHash32();
-		redirHostHash32 = m_redirUrl.getHostHash32();
-	}
 
 	logTrace( g_conf.m_logTraceXmlDoc, "Handling %" PRId32" links", n);
 
@@ -18420,9 +18400,6 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 		allowed = "no";
 		allowedInt = 0;
 	}
-
-	int32_t ufn = -1;
-	if ( m_urlFilterNumValid ) ufn = m_urlFilterNum;
 
 	const char *es = mstrerror(m_indexCode);
 	if ( ! m_indexCode ) es = mstrerror(g_errno);
