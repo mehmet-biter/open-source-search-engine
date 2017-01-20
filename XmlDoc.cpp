@@ -18820,7 +18820,7 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 			       ": "
 			       "w=wordPosition "
 			       "x=densityRank "
-			       //"y=diversityRank "
+			       "y=diversityRank "
 			       "z=wordSpamRank "
 			       "<br>"
 			       "<br>"
@@ -19002,10 +19002,10 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 				);
 		sb->safePrintf(
 			       "\t<maxDens>%" PRId32"</maxDens>\n"
-			       //"\t<maxDiv>%" PRId32"</maxDiv>\n"
+			       "\t<maxDiv>%" PRId32"</maxDiv>\n"
 			       "\t<maxSpam>%" PRId32"</maxSpam>\n"
 			       , (int32_t)MAXDENSITYRANK
-			       //, (int32_t)MAXDIVERSITYRANK
+			       , (int32_t)MAXDIVERSITYRANK
 			       , (int32_t)MAXWORDSPAMRANK
 			       );
 	}
@@ -19017,7 +19017,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 		//sb->safePrintf("<i>* indicates word is a synonym or "
 		//	       "alternative word form<br><br>");
 		sb->safePrintf("N column = DensityRank (0-%" PRId32")<br>"
-			       //"V column = DiversityRank (0-%" PRId32")<br>"
+			       "V column = DiversityRank (0-%" PRId32")<br>"
 			       "S column = WordSpamRank  (0-%" PRId32") "
 			       "[or linker "
 			       "siterank if its offsite link text]<br>"
@@ -19033,7 +19033,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 			       "<br>"
 			       "<br>"
 			       , (int32_t)MAXDENSITYRANK
-			       //, (int32_t)MAXDIVERSITYRANK
+			       , (int32_t)MAXDIVERSITYRANK
 			       , (int32_t)MAXWORDSPAMRANK
 			       , getLanguageString (m_langId)
 			       , getLanguageAbbr(m_langId)
