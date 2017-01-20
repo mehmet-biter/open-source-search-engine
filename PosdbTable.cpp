@@ -5930,7 +5930,6 @@ static void initWeights ( ) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 	
 	for ( int32_t i = 0 ; i <= MAXDIVERSITYRANK ; i++ ) {
-		// disable for now
 		s_diversityWeights[i] = scale_quadratic(i,0,MAXDIVERSITYRANK,g_conf.m_diversityWeightMin,g_conf.m_diversityWeightMax);
 	}
 	// density rank to weight
