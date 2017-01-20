@@ -3930,7 +3930,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			if(g_d2fasm.lookupFlags(m_docId,&flags) && flags) {
 				for(int i=0; i<26; i++) {
 					if(flags&(1<<i))
-						completeScoreMultiplier *= g_conf.m_flagScoreMultiplier[i];
+						completeScoreMultiplier *= m_msg39req->m_flagScoreMultiplier[i];
 				}
 			}
 
