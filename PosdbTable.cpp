@@ -6046,28 +6046,3 @@ float getLinkerWeight ( unsigned char wordSpamRank ) {
 
 	return s_scoringWeights.m_linkerWeights[wordSpamRank];
 }
-
-
-float getTermFreqWeight ( int64_t termFreq, int64_t numDocsInColl ) {
-	// do not include top 6 bytes at top of list that are termid
-	//float fw = listSize - 6;
-	// sanity
-	//if ( fw < 0 ) fw = 0;
-	// estimate # of docs that have this term. the problem is
-	// that posdb keys can be 18, 12 or 6 bytes!
-	//fw /= 11.0;
-	// adjust this so its per split!
-	//int32_t nd = numDocsInColl / g_hostdb.m_numShards;
-	float fw = termFreq;
-	// what chunk are we of entire collection?
-	//if ( nd ) fw /= nd;
-	if ( numDocsInColl ) {
-		fw /= numDocsInColl;
-	}
-	
-	// limit
-	return scale_linear(fw, g_conf.m_termFreqWeightFreqMin, g_conf.m_termFreqWeightFreqMax, g_conf.m_termFreqWeightMin, g_conf.m_termFreqWeightMax);
-}
-
-
-
