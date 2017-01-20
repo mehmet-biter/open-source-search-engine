@@ -274,7 +274,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	char tmpFormat = m_hr.getReplyFormat();
 	// now override automatic defaults for special cases
 	if ( tmpFormat != FORMAT_HTML ) {
-		m_familyFilter            = false;
 		m_doQueryHighlighting     = 0;
 		m_getDocIdScoringInfo = false;
 	}
