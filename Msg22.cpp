@@ -501,8 +501,6 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 	int64_t ad1 = st->m_docId1;
 	int64_t ad2 = pd;
 
-	bool docIdWasFound = false;
-
 	// scan the titleRecs in the list
 	for ( ; ! tlist->isExhausted() ; tlist->skipCurrentRecord ( ) ) {
 		// get the rec
@@ -538,9 +536,6 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 			// compare that
 			if ( r->m_docId != dd ) continue;
 		}
-
-		// flag that we matched m_docId
-		docIdWasFound = true;
 
 		// ok, if just "checking tfndb" no need to go further
 		if ( r->m_justCheckTfndb ) {
