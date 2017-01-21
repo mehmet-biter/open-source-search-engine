@@ -1966,7 +1966,7 @@ int main2 ( int argc , char *argv[] ) {
 	g_d2fasm.load();
 
 	// load url block list
-	g_urlBlockList.init();
+//@@@ TEMPORARILY DISABLED	g_urlBlockList.init();
 
 	// test all collection dirs for write permission
 	int32_t pcount = 0;

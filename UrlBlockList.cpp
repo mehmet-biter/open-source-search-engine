@@ -6,6 +6,11 @@
 #include <sys/stat.h>
 #include <atomic>
 
+
+#if 0
+
+
+
 UrlBlockList g_urlBlockList;
 
 static const char s_url_filename[] = "urlblocklist.txt";
@@ -101,4 +106,9 @@ void UrlBlockList::swapUrlRegexList(regexlistconst_ptr_t urlRegexList) {
 #endif
 	
 }
+
+
+#endif
+
+
 
