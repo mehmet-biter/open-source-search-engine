@@ -1060,16 +1060,9 @@ void Msg3a::printTerms ( ) {
 
 static float getTermFreqWeight(int64_t termFreq, int64_t numDocsInColl) {
 	if(numDocsInColl>0)
-		scale_linear(termFreq/numDocsInColl, g_conf.m_termFreqWeightFreqMin, g_conf.m_termFreqWeightFreqMax, g_conf.m_termFreqWeightMin, g_conf.m_termFreqWeightMax);
+		return scale_linear(((float)termFreq)/numDocsInColl, g_conf.m_termFreqWeightFreqMin, g_conf.m_termFreqWeightFreqMax, g_conf.m_termFreqWeightMin, g_conf.m_termFreqWeightMax);
 	else
 		return 1.0; //whatever...
-	float fw = termFreq;
-	if ( numDocsInColl ) {
-		fw /= numDocsInColl;
-	}
-	
-	// limit
-	return scale_linear(fw, g_conf.m_termFreqWeightFreqMin, g_conf.m_termFreqWeightFreqMax, g_conf.m_termFreqWeightMin, g_conf.m_termFreqWeightMax);
 }
 
 
