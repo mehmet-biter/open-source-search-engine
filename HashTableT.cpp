@@ -145,14 +145,13 @@ int32_t HashTableT<Key_t, Val_t>::getOccupiedSlotNum ( const Key_t& key ) const 
 
 template<class Key_t, class Val_t> 
 int32_t HashTableT<Key_t, Val_t>::getNextSlot ( Key_t& key , int32_t n ) const {
-	// inc and wrap if we need to
-	if ( ++n >= m_numSlots ) n = 0;
-
- loop:
-	if ( m_keys [ n ] == (Key_t)0   ) return -1;
-	if ( m_keys [ n ] == key ) return  n;
-	if ( ++n == m_numSlots ) n = 0;
-	goto loop;
+	for(;;) {
+		// inc and wrap if we need to
+		if ( ++n >= m_numSlots ) n = 0;
+		
+		if ( m_keys [ n ] == (Key_t)0 ) return -1;
+		if ( m_keys [ n ] == key ) return  n;
+	}
 }
 
 //return NULL if key not in hash table. We do not want a getValue
