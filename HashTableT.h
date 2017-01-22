@@ -29,8 +29,6 @@ class HashTableT {
 	// remove key/value entry to hash table
 	bool removeKey ( Key_t key );
 
-	void removeSlot ( int32_t n );
-
 	// . used by ../english/Bits.h to store stop words, abbr's, ...
 	// . returns the score for this termId (0 means empty usually)
 	Val_t* getValuePointer ( Key_t key ) const;
@@ -56,8 +54,6 @@ class HashTableT {
 
 	// frees the used memory, etc.
 	void  reset  ( );
-
-	bool copy(HashTableT<Key_t, Val_t>* retval);
 
 	// removes all key/value pairs from hash table, vacates all slots
 	void  clear  ( );

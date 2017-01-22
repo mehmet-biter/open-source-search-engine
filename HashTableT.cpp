@@ -75,36 +75,6 @@ template<class Key_t, class Val_t>
 HashTableT<Key_t, Val_t>::~HashTableT() { reset ( ); }
 
 
-
-template<class Key_t, class Val_t>
-bool HashTableT<Key_t, Val_t>::copy(HashTableT<Key_t, Val_t>* src) {
-	int32_t numSlots = src->m_numSlots;
-	int32_t keySize = numSlots * sizeof(Key_t);
-	int32_t valSize = numSlots * sizeof(Val_t);
-	Key_t *newKeys = (Key_t *)mmalloc(keySize, "HashTableTk");
-	Val_t *newVals = (Val_t *)mmalloc(valSize, "HashTableTv");
-	if(!newKeys || !newVals) {
-		if (newKeys) mfree(newKeys, keySize,
-			"HashTableTk");
-		if (newVals) mfree(newVals, valSize,
-			"HashTableTv");
-		return false;
-	}
-	// maybe this should be a member copy, but that's a LOT slower and
-	//  bitwise should work with everything we're using the HashTableT 
-	//  for so far
-	gbmemcpy(newKeys, src->m_keys, keySize);
-	gbmemcpy(newVals, src->m_vals, valSize);
-	reset();
-	m_keys = newKeys;
-	m_vals = newVals;
-	m_numSlots = src->getNumSlots();
-	m_numSlotsUsed = src->getNumSlotsUsed();
-	m_allowDupKeys = src->getAllowDupKeys();
-	return true;
-}
-
-
 template<class Key_t, class Val_t>
 void HashTableT<Key_t, Val_t>::clear ( ) {
 	// vacate all slots
@@ -236,32 +206,6 @@ bool HashTableT<Key_t, Val_t>::removeKey ( Key_t key ) {
 		if ( ++n >= m_numSlots ) n = 0;		
 	}
 	return true;
-}
-
-// same as removeKey() above
-template<class Key_t, class Val_t> 
-void HashTableT<Key_t, Val_t>::removeSlot ( int32_t n ) {
-	// returns -1 if key not in hash table
-	//int32_t n = getOccupiedSlotNum(key);
-	if ( n < 0 ) return;
-	// save it
-	Key_t key = m_keys[n];
-	// sanity check, must be occupied
-	if ( key == 0 ) { g_process.shutdownAbort(true); }
-	// delete it
-	m_keys[n] = 0;
-	m_numSlotsUsed--;
-	if ( ++n >= m_numSlots ) n = 0;
-	// keep looping until we hit an empty slot
-	Val_t val;
-	while ( m_keys[n] ) {
-		key = m_keys[n];
-		val = m_vals[n];
-		m_keys[n] = 0;
-		m_numSlotsUsed--;
-		addKey ( key , val );
-		if ( ++n >= m_numSlots ) n = 0;		
-	}
 }
 
 
