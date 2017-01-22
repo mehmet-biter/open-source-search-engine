@@ -464,35 +464,6 @@ bool HashTableT<Key_t, Val_t>::save ( char* filename , char *tbuf , int32_t tsiz
 	return true;
 }
 
-// hash the space (or +) separated list of numbers in this string
-//template<class Key_t, class Val_t> 
-//bool HashTableT<Key_t,Val_t>::hashFromString ( HashTableT *ht , char *x ) {
-bool hashFromString ( HashTableT<int64_t,char> *ht , char *x ) {
-	if ( ! x ) return true;
-	char *xend = x + strlen(x);
-	int32_t  n    = 1;
-	for ( char *s = x ; s < xend ; s++ ) 
-		// i am assuming this is ascii here!
-		if (is_wspace_a(*s)||*s == '+') n++;
-	// double # slots to nd*2 so that hashtable is somewhat sparse --> fast
-	if ( ! ht->set ( n * 2 , NULL , 0 , false ) ) return false;
-	// now populate with the docids
-	for ( char *s = x ; s < xend ; ) {
-		// skip the plusses
-		while ( s < xend && (is_wspace_a(*s) || *s == '+') ) s++;
-		// are we done?
-		if ( s >= xend ) break;
-		// get the docid, a int64_t (64 bits)
-		int64_t d = atoll ( s );
-		// add it, should never fail!
-		if ( ! ht->addKey ( d , 1 ) ) return false;
-		// skip till +
-		while ( s < xend && (*s != '+' && !is_wspace_a(*s)) ) s++;
-		// are we done?
-		if ( s >= xend ) break;
-	}
-	return true;
-}
 
 // template class HashTableT<int32_t, char>;
 // template class HashTableT<int32_t, int32_t>;

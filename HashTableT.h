@@ -99,6 +99,4 @@ class HashTableT {
 	int32_t m_bufSize;
 };
 
-bool hashFromString ( HashTableT<int64_t,char> *ht , char *x ) ;
-
 #endif // GB_HASHTABLET_H

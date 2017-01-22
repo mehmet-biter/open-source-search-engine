@@ -463,13 +463,6 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 	//	return true;
 	//}
 
-	// how many negative site hashes do we have?
-	// count how many docids we got, they are a cgi value, so represented
-	// in ascii separated by +'s. i.e. "12345+435322+3439333333"
-	//HashTableT <int64_t,char> sht;
-	//if ( ! hashFromString ( &sht , noSiteIds ) ) return false;
-	//bool checkNegative = ( sht.getNumSlotsUsed() > 0 );
-
 	HashTableX ctab;
 	// init to 2*numRecs for speed. use 0 for niceness!
 	if ( ! ctab.set ( 8 , 4 , numRecs * 2,NULL,0,false,"clustertab" ) )
