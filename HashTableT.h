@@ -31,9 +31,6 @@ class HashTableT {
 
 	void removeSlot ( int32_t n );
 
-	bool load ( char *filename , char **textBuf = NULL , int32_t *textBufSize = NULL );
-	bool save ( char *filename , char  *textBuf = NULL , int32_t  textBufSize = 0    );
-
 	// . used by ../english/Bits.h to store stop words, abbr's, ...
 	// . returns the score for this termId (0 means empty usually)
 	Val_t* getValuePointer ( Key_t key ) const;
@@ -73,9 +70,6 @@ class HashTableT {
 
 	void setAllowDupKeys(bool allow) { m_allowDupKeys = allow; }
 	bool getAllowDupKeys( ) const { return m_allowDupKeys; }
-
-	bool serialize(SafeBuf& sb);
-	int32_t deserialize(char* s);
 
 	bool setTableSize ( int32_t numSlots, char *buf, int32_t bufSize );
 
