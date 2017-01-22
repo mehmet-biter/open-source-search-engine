@@ -14,7 +14,7 @@
 
 template<class Key_t, class Val_t> 
 HashTableT<Key_t, Val_t>::HashTableT() {
-/*	m_keys = NULL;
+        m_keys = NULL;
 	m_vals = NULL;
 	m_numSlots     = 0;
 	m_numSlotsUsed = 0;
@@ -22,8 +22,6 @@ HashTableT<Key_t, Val_t>::HashTableT() {
 	m_doFree = true;
 	m_buf = NULL;
 	m_bufSize = 0;
-	*/
-	constructor();
 }
 
 
@@ -42,23 +40,6 @@ void  HashTableT<Key_t, Val_t>::reset ( ) {
 	m_buf = NULL;
 	m_bufSize = 0; 
 }
-
-
-// . function used by tagdb list cache to
-//  to initialize the class members
-//  as it does not use new or local member
-template<class Key_t, class Val_t>
-void HashTableT<Key_t, Val_t>::constructor(){
-        m_keys = NULL;
-	m_vals = NULL;
-	m_numSlots     = 0;
-	m_numSlotsUsed = 0;
-	m_allowDupKeys = false;
-	m_doFree = true;
-	m_buf = NULL;
-	m_bufSize = 0;
-}
-
 
 
 // returns false and sets errno on error

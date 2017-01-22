@@ -20,8 +20,6 @@ class HashTableT {
 	 HashTableT( ) ;
 	~HashTableT( );
 
-	void constructor();
-
 	// . add key/value entry to hash table
 	// . will grow hash table if it needs to
 	bool addKey ( Key_t key , Val_t value , int32_t *slot = NULL );
