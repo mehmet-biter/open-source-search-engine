@@ -3472,7 +3472,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_query);
 	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "q";
-	m->m_flags = PF_REQUIRED | PF_COOKIE | PF_WIDGET_PARM | PF_API;
+	m->m_flags = PF_REQUIRED | PF_COOKIE | PF_API;
 	m++;
 
 	m->m_title = "collection";
@@ -3496,7 +3496,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_docsWanted);
 	m->m_type  = TYPE_INT32;
 	m->m_cgi   = "n";
-	m->m_flags = PF_WIDGET_PARM | PF_API;
+	m->m_flags = PF_API;
 	m->m_smin  = 0;
 	m++;
 

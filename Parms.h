@@ -55,7 +55,7 @@ enum parameter_type_t {
 #define PF_COOKIE                   0x00000001  // store in cookie?
 #define PF_REDBOX                   0x00000002  // redbox constraint on search results
 //#define PF_UNUSED                 0x00000004
-#define PF_WIDGET_PARM              0x00000008
+//#define PF_UNUSED                 0x00000008
 #define PF_API                      0x00000010
 #define PF_REBUILDURLFILTERS        0x00000020
 #define PF_NOSYNC                   0x00000040	// Don't synchronize the parameter value across hosts
