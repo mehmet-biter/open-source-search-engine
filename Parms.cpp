@@ -3106,7 +3106,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "c";
 	m->m_page  = PAGE_CLONECOLL;
 	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	m->m_flags = PF_API | PF_REQUIRED;
 	m->m_off   = offsetof(GigablastRequest,m_coll);
@@ -3118,7 +3118,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "c";
 	m->m_page  = PAGE_BASIC_STATUS;
 	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	m->m_flags = PF_API | PF_REQUIRED;
 	m->m_off   = offsetof(GigablastRequest,m_coll);
@@ -3129,7 +3129,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "c";
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	// do not show in html controls
 	m->m_flags = PF_API | PF_REQUIRED | PF_NOHTML;
@@ -3141,7 +3141,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "c";
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	// do not show in html controls
 	m->m_flags = PF_API | PF_REQUIRED | PF_NOHTML;
@@ -3153,7 +3153,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "c";
 	m->m_page  = PAGE_SPIDERDB;
 	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	// do not show in html controls
 	m->m_flags = PF_API | PF_REQUIRED | PF_NOHTML;
@@ -3165,7 +3165,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "c";
 	m->m_page  = PAGE_SITEDB;
 	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	// do not show in html controls
 	m->m_flags = PF_API | PF_REQUIRED | PF_NOHTML;
@@ -3497,7 +3497,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "c";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	m->m_flags = PF_API | PF_REQUIRED;
 	m->m_off   = offsetof(SearchInput,m_coll);
@@ -4786,7 +4786,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_GET;
 	m->m_obj   = OBJ_GBREQUEST;
 	m->m_off   = offsetof(GigablastRequest,m_coll);
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	m->m_flags = PF_REQUIRED | PF_API;
 	m++;
