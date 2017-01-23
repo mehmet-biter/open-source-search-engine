@@ -455,8 +455,6 @@ class CollectionRec {
 	int32_t m_overflow;
 	int32_t m_overflow2;
 
-	HashTableX m_seedHashTable;
-
 	int32_t  m_maxAddUrlsPerIpDomPerDay;
 
 	// . max content length of text/html or text/plain document

@@ -768,13 +768,6 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 	cr->m_spiderStatus = SP_INITIALIZING; // this is 0
 	//cr->m_spiderStatusMsg = NULL;
 
-	// reset seed buf
-	if ( purgeSeeds ) {
-		// reset seed dedup table
-		HashTableX *ht = &cr->m_seedHashTable;
-		ht->reset();
-	}
-
 	// so XmlDoc.cpp can detect if the collection was reset since it
 	// launched its spider:
 	cr->m_lastResetCount++;
