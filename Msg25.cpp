@@ -774,7 +774,10 @@ bool Msg25::doReadLoop() {
 
 	int32_t numFiles = -1;
 	// NO, DON't restrict because it will mess up the hopcount.
-	bool includeTree = true;
+	//bool includeTree = true;
+	//oh yes restrict, don't bother looking in the tree It's exspensive to do
+	//so and usually there are plenty of ok link texts in the normal *.dat files
+	bool includeTree = false;
 
 	// debug log
 	if ( g_conf.m_logDebugLinkInfo ) {
