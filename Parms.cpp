@@ -3475,7 +3475,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_SI;
 	m->m_page  = PAGE_RESULTS;
 	m->m_off   = offsetof(SearchInput,m_query);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "q";
 	m->m_flags = PF_REQUIRED | PF_COOKIE | PF_WIDGET_PARM | PF_API;
 	m++;
@@ -4286,7 +4286,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "proxyips";
 	m->m_xml   = "proxyIps";
 	m->m_off   = offsetof(Conf,m_proxyIps);
-	m->m_type  = TYPE_SAFEBUF; // TYPE_IP;
+	m->m_type  = TYPE_SAFEBUF;
 	m->m_def   = "";
 	m->m_flags = PF_TEXTAREA | PF_REBUILDPROXYTABLE;
 	m->m_page  = PAGE_SPIDERPROXIES;
@@ -4402,7 +4402,7 @@ void Parms::init ( ) {
 	m->m_title = "restrict search to this url";
 	m->m_desc  = "Does a url: query.";
 	m->m_off   = offsetof(SearchInput,m_url);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "url";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4412,7 +4412,7 @@ void Parms::init ( ) {
 	m->m_title = "restrict search to pages that link to this url";
 	m->m_desc  = "The url which the pages must link to.";
 	m->m_off   = offsetof(SearchInput,m_link);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "link";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4422,7 +4422,7 @@ void Parms::init ( ) {
 	m->m_desc  = "The phrase which will be quoted in the query. From the "
 		"advanced search page, adv.html.";
 	m->m_off   = offsetof(SearchInput,m_quote1);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "quotea";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4433,7 +4433,7 @@ void Parms::init ( ) {
 	m->m_desc  = "The phrase which will be quoted in the query. From the "
 		"advanced search page, adv.html.";
 	m->m_off   = offsetof(SearchInput,m_quote2);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "quoteb";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4457,7 +4457,7 @@ void Parms::init ( ) {
 		"From the advanced search page, adv.html.";
 	m->m_off   = offsetof(SearchInput,m_plus);
 	m->m_def   = NULL;
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "plus";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4468,7 +4468,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Returned results will NOT have any of the words in X. "
 		"From the advanced search page, adv.html.";
 	m->m_off   = offsetof(SearchInput,m_minus);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "minus";
 	//m->m_size  = 500;
 	m->m_page  = PAGE_RESULTS;
@@ -4538,7 +4538,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Highlight the terms in this query instead.";
 	m->m_def   = NULL;
 	m->m_off   = offsetof(SearchInput,m_highlightQuery);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "hq";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4603,7 +4603,7 @@ void Parms::init ( ) {
 	m->m_desc  = "The url of an image to co-brand on the search "
 		"results page.";
 	m->m_off   = offsetof(SearchInput,m_imgUrl);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	//m->m_size  = 512;
 	m->m_cgi   = "iu";
@@ -4616,7 +4616,7 @@ void Parms::init ( ) {
 	m->m_desc  = "The hyperlink to use on the image to co-brand on "
 		"the search results page.";
 	m->m_off   = offsetof(SearchInput,m_imgLink);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	m->m_cgi   = "ix";
 	m->m_page  = PAGE_RESULTS;
@@ -4671,7 +4671,7 @@ void Parms::init ( ) {
 	m->m_title = "GB Country";
 	m->m_desc  = "Country code to restrict search";
 	m->m_off   = offsetof(SearchInput,m_gbcountry);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	m->m_cgi   = "gbcountry";
 	m->m_page  = PAGE_RESULTS;
@@ -4692,7 +4692,7 @@ void Parms::init ( ) {
 	m->m_title = "queryCharset";
 	m->m_desc  = "Charset in which the query is encoded";
 	m->m_off   = offsetof(SearchInput,m_queryCharset);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = "utf-8";
 	m->m_cgi   = "qcs";
 	m->m_page  = PAGE_RESULTS;
@@ -6433,7 +6433,7 @@ void Parms::init ( ) {
 	m->m_arrayCountOffset 	= offsetof(CollectionRec, m_numRegExs);
 	m->m_off   				= offsetof(CollectionRec, m_regExs);
 	// this is a safebuf, dynamically allocated string really
-	m->m_type  = TYPE_SAFEBUF;//STRINGNONEMPTY
+	m->m_type  = TYPE_SAFEBUF;
 	// the size of each element in the array:
 	m->m_size  = sizeof(SafeBuf);
 	m->m_page  = PAGE_FILTERS;
@@ -7420,7 +7420,7 @@ void Parms::init ( ) {
 	m->m_xml  = "homePageHtml";
 	m->m_cgi   = "hp";
 	m->m_off   = offsetof(CollectionRec,m_htmlRoot);
-	m->m_type  = TYPE_SAFEBUF;//STRINGBOX;
+	m->m_type  = TYPE_SAFEBUF;;
 	m->m_def   = "";
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -7494,7 +7494,7 @@ void Parms::init ( ) {
 	m->m_xml   = "htmlHead";
 	m->m_cgi   = "hh";
 	m->m_off   = offsetof(CollectionRec,m_htmlHead);
-	m->m_type  = TYPE_SAFEBUF;//STRINGBOX;
+	m->m_type  = TYPE_SAFEBUF;;
 	m->m_def   = "";
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -7526,7 +7526,7 @@ void Parms::init ( ) {
 	m->m_xml   = "htmlTail";
 	m->m_cgi   = "ht";
 	m->m_off   = offsetof(CollectionRec,m_htmlTail);
-	m->m_type  = TYPE_SAFEBUF;//STRINGBOX;
+	m->m_type  = TYPE_SAFEBUF;;
 	m->m_def   = "";
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -8806,7 +8806,7 @@ void Parms::init ( ) {
 		"to rebuild.";
 	m->m_cgi   = "rctr"; // repair collections to repair
 	m->m_off   = offsetof(Conf,m_collsToRepair);
-	m->m_type  = TYPE_SAFEBUF;//STRING;
+	m->m_type  = TYPE_SAFEBUF;
 	//m->m_size  = 1024;
 	m->m_def   = "";
 	m->m_page  = PAGE_REPAIR;
@@ -8997,7 +8997,7 @@ void Parms::init ( ) {
 	m->m_def   = "";
 	m->m_obj   = OBJ_CONF;
 	m->m_off   = offsetof(Conf,m_masterPwds);
-	m->m_type  = TYPE_SAFEBUF; // STRINGNONEMPTY;
+	m->m_type  = TYPE_SAFEBUF;
 	m->m_page  = PAGE_MASTERPASSWORDS;
 	m->m_flags = PF_PRIVATE | PF_TEXTAREA | PF_SMALLTEXTAREA;
 	m++;
@@ -9011,7 +9011,7 @@ void Parms::init ( ) {
 	m->m_xml   = "masterIps";
 	m->m_page  = PAGE_MASTERPASSWORDS;
 	m->m_off   = offsetof(Conf,m_connectIps);
-	m->m_type  = TYPE_SAFEBUF;//IP;
+	m->m_type  = TYPE_SAFEBUF;
 	m->m_def   = "";
 	m->m_obj   = OBJ_CONF;
 	m->m_flags = PF_PRIVATE | PF_TEXTAREA | PF_SMALLTEXTAREA;
@@ -9030,7 +9030,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m->m_off   = offsetof(CollectionRec,m_collectionPasswords);
 	m->m_def   = "";
-	m->m_type  = TYPE_SAFEBUF; // STRINGNONEMPTY;
+	m->m_type  = TYPE_SAFEBUF;
 	m->m_page  = PAGE_COLLPASSWORDS;
 	m->m_flags = PF_PRIVATE | PF_TEXTAREA | PF_SMALLTEXTAREA;
 	m++;
@@ -9044,7 +9044,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m->m_off   = offsetof(CollectionRec,m_collectionIps);
 	m->m_def   = "";
-	m->m_type  = TYPE_SAFEBUF; // STRINGNONEMPTY;
+	m->m_type  = TYPE_SAFEBUF;
 	m->m_page  = PAGE_COLLPASSWORDS;
 	m->m_flags = PF_PRIVATE | PF_TEXTAREA | PF_SMALLTEXTAREA;
 	m++;
