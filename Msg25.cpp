@@ -81,7 +81,7 @@ Msg25::Msg25() {
 	m_state = NULL;
 	m_callback = NULL;
 	m_siteNumInlinks = 0;
-	m_mode = 0;
+	m_mode = MODE_UNSET;
 	m_printInXml = false;
 	m_ip = 0;
 	m_top = 0;
@@ -157,9 +157,6 @@ void Msg25::reset() {
 	m_docIdTable.reset();
 }
 
-
-#define MODE_PAGELINKINFO 1
-#define MODE_SITELINKINFO 2
 
 
 // . we got a reply back from the msg25 request
@@ -260,9 +257,9 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 		req->size_oldLinkInfo = 0;
 
 	if ( isSiteLinkInfo )
-		req->m_mode = MODE_SITELINKINFO;
+		req->m_mode = Msg25::MODE_SITELINKINFO;
 	else
-		req->m_mode = MODE_PAGELINKINFO;
+		req->m_mode = Msg25::MODE_PAGELINKINFO;
 	
 	req->m_ip = ip;
 	req->m_docId = docId;
@@ -301,7 +298,7 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 	key224_t startKey ;
 	//int32_t siteHash32 = hash32n ( req->ptr_site );
 	// access different parts of linkdb depending on the "mode"
-	if ( req->m_mode == MODE_SITELINKINFO )
+	if ( req->m_mode == Msg25::MODE_SITELINKINFO )
 		startKey = Linkdb::makeStartKey_uk ( req->m_siteHash32 );
 	else
 		startKey = Linkdb::makeStartKey_uk (req->m_siteHash32, req->m_linkHash64 );
@@ -420,7 +417,7 @@ void handleRequest25(UdpSlot *slot, int32_t netnice) {
 	// used by sendReply()
 	req->m_udpSlot = slot;
 
-	if ( g_conf.m_logDebugLinkInfo && req->m_mode == MODE_SITELINKINFO ) {
+	if ( g_conf.m_logDebugLinkInfo && req->m_mode == Msg25::MODE_SITELINKINFO ) {
 		log(LOG_DEBUG, "linkdb: got msg25 request sitehash64=%" PRId64" "
 		    "site=%s "
 		    ,req->m_siteHash64
@@ -441,7 +438,7 @@ void handleRequest25(UdpSlot *slot, int32_t netnice) {
 	//   just "site" link info requests
 	int32_t slotNum = -1;
 	bool isSiteLinkInfo = false;
-	if ( req->m_mode == MODE_SITELINKINFO ) {
+	if ( req->m_mode == Msg25::MODE_SITELINKINFO ) {
 		slotNum = g_lineTable.getSlot ( &req->m_siteHash64 );
 		isSiteLinkInfo = true;
 	}

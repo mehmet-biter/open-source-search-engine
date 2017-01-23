@@ -212,7 +212,11 @@ class Msg25 {
 	void     (* m_callback) ( void *state );
 
 	int32_t m_siteNumInlinks;
-	int32_t m_mode;
+	enum mode_t {
+		MODE_UNSET = 0,
+		MODE_PAGELINKINFO = 1,
+		MODE_SITELINKINFO = 2
+	} m_mode;
 	bool m_printInXml;
 
 
