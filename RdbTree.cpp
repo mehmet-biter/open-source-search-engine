@@ -265,12 +265,13 @@ int32_t RdbTree::getNode(collnum_t collnum, const char *key) {
 			continue;
 		}
 
-		if (KEYCMP(key, 0, m_keys, i, m_ks) < 0) {
+		int cmp = KEYCMP(key, 0, m_keys, i, m_ks);
+		if (cmp < 0) {
 			i = m_left[i];
 			continue;
 		}
 
-		if (KEYCMP(key, 0, m_keys, i, m_ks) > 0) {
+		if (cmp > 0) {
 			i = m_right[i];
 			continue;
 		}
@@ -309,8 +310,9 @@ int32_t RdbTree::getNextNode(collnum_t collnum, const char *key) const {
 		if ( collnum > m_collnums[i] ) { i = m_right[i]; continue;}
 		//if ( key <  m_keys[i] ) { i = m_left [i]; continue;}
 		//if ( key >  m_keys[i] ) { i = m_right[i]; continue;}
-		if (KEYCMP(key,0,m_keys,i,m_ks)<0) { i = m_left [i]; continue;}
-		if (KEYCMP(key,0,m_keys,i,m_ks)>0) { i = m_right[i]; continue;}
+		int cmp = KEYCMP(key,0,m_keys,i,m_ks);
+		if (cmp<0) { i = m_left [i]; continue;}
+		if (cmp>0) { i = m_right[i]; continue;}
 		return i;
         }
 	if ( m_collnums [ parent ] >  collnum ) return parent;
@@ -349,8 +351,9 @@ int32_t RdbTree::getPrevNode ( collnum_t collnum, const char *key ) {
 		if ( collnum > m_collnums[i] ) { i = m_right[i]; continue;}
 		//if ( key <  m_keys[i] ) { i = m_left [i]; continue;}
 		//if ( key >  m_keys[i] ) { i = m_right[i]; continue;}
-		if ( KEYCMP(key,0,m_keys,i,m_ks)<0) {i=m_left [i];continue;}
-		if ( KEYCMP(key,0,m_keys,i,m_ks)>0) {i=m_right[i];continue;}
+		int cmp = KEYCMP(key,0,m_keys,i,m_ks);
+		if ( cmp<0) {i=m_left [i];continue;}
+		if ( cmp>0) {i=m_right[i];continue;}
 		return i;
         }
 	if ( m_collnums [ parent ] <  collnum ) return parent;
@@ -481,9 +484,10 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 		iparent = i;
 		if ( collnum < m_collnums[i] ) { i = m_left [i]; continue;}
 		if ( collnum > m_collnums[i] ) { i = m_right[i]; continue;}
-		if (KEYCMP(key, 0, m_keys, i, m_ks) < 0) {
+		int cmp = KEYCMP(key, 0, m_keys, i, m_ks);
+		if (cmp < 0) {
 			i = m_left[i];
-		} else if (KEYCMP(key, 0, m_keys, i, m_ks) > 0) {
+		} else if (cmp > 0) {
 			i = m_right[i];
 		} else {
 			goto replaceIt;
