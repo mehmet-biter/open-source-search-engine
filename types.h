@@ -644,33 +644,10 @@ static inline void KEYSET ( char *k1, const char *k2, char keySize ) {
 }
 
 static inline bool KEYNEG ( const char *k, int32_t a, char keySize ) {
-	// posdb
-	if ( keySize == 18 ) {
-		if ( (k[a*18] & 0x01) == 0x00 ) return true;
+	if((k[a*keySize] & 0x01) == 0x00)
+		return true;
+	else
 		return false;
-	}
-	if ( keySize == 12 ) {
-		if ( (k[a*12] & 0x01) == 0x00 ) return true;
-		return false;
-	}
-	// otherwise, assume 16 bytes
-	if (keySize == 16 ) {
-		if ( (k[a*16] & 0x01) == 0x00 ) return true;
-		return false;
-	}
-	if ( keySize == 24 ) {
-		if ( (k[a*24] & 0x01) == 0x00 ) return true;
-		return false;
-	}
-	if ( keySize == 28 ) {
-		if ( (k[a*28] & 0x01) == 0x00 ) return true;
-		return false;
-	}
-	if ( keySize == 8 ) {
-		if ( (k[a*8] & 0x01) == 0x00 ) return true;
-		return false;
-	}
-	gbshutdownAbort(true);
 }
 
 static inline bool KEYNEG ( const char *k ) {
