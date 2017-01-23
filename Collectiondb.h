@@ -375,8 +375,6 @@ class CollectionRec {
    * !! Start Diffbot paramamters !! *
    *****/
 
-	SafeBuf m_diffbotSeeds;
-
 	// in seconds now
 	uint32_t m_diffbotCrawlStartTime;
 	uint32_t m_diffbotCrawlEndTime;

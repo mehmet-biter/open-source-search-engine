@@ -3338,16 +3338,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_NOAPI;//PF_DIFFBOT; no i want to saveToXml
 	m++;
 
-	m->m_cgi   = "seeds";
-	m->m_xml   = "diffbotSeeds";
-	m->m_off   = offsetof(CollectionRec,m_diffbotSeeds);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_flags = PF_DIFFBOT;
-	m->m_def   = "";
-	m++;
-
 	/////////////////////
 	//
 	// new cmd parms

@@ -770,8 +770,6 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 
 	// reset seed buf
 	if ( purgeSeeds ) {
-		// free the buffer of seed urls
-		cr->m_diffbotSeeds.purge();
 		// reset seed dedup table
 		HashTableX *ht = &cr->m_seedHashTable;
 		ht->reset();

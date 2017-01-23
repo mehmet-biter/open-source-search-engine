@@ -122,21 +122,6 @@ static int32_t isInSeedBuf(CollectionRec *cr, const char *url, int len) {
 		// initialize the hash table
 		if ( ! ht->set(8,0,1024,NULL,0,false,"seedtbl") )
 			return -1;
-		// populate it from list of seed urls
-		char *p = cr->m_diffbotSeeds.getBufStart();
-		for ( ; p && *p ; ) {
-			// get url
-			char *purl = p;
-			// advance to next
-			for ( ; *p && !is_wspace_a(*p) ; p++ );
-			// make end then
-			char *end = p;
-			// skip possible white space. might be \0.
-			if ( *p ) p++;
-			// hash it
-			int64_t h64 = hash64 ( purl , end-purl );
-			if ( ! ht->addKey ( &h64 ) ) return -1;
-		}
 	}
 
 	// is this url in the hash table?
@@ -265,16 +250,6 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 		if ( status == 1 ) {
 			continue;
 		}
-
-		// add url into m_diffbotSeeds, \n separated list
-		if ( cr->m_diffbotSeeds.length() ) {
-			// make it space not \n so it looks better in the
-			// json output i guess
-			cr->m_diffbotSeeds.pushChar( ' ' ); // \n
-		}
-
-		cr->m_diffbotSeeds.safeMemcpy (url.getUrl(), url.getUrlLen());
-		cr->m_diffbotSeeds.nullTerm();
 	}
 
 	// all done
