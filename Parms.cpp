@@ -1669,9 +1669,6 @@ bool Parms::printParm( SafeBuf* sb,
 			Parm *mk = &m_parms[k];
 			// not if printing json
 			//if ( format != FORMAT_HTML )continue;//isJSON )
-			// skip if hidden
-			if ( cr && (mk->m_flags & PF_DIFFBOT) )
-				continue;
 
 			sb->safePrintf ( "<td>" );
 			// if its of type checkbox in a table make it
@@ -2881,8 +2878,6 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 		// ignore if hidden as well! no, have to keep those separate
 		// since spiderroundnum/starttime is hidden but should be saved
 		if ( m->m_flags & PF_NOSAVE ) continue;
-		// ignore if diffbot and we are not a diffbot/custom crawl
-		if ( cr && (m->m_flags & PF_DIFFBOT) ) continue;
 		// skip if we should not save to xml
 		if ( ! m->m_save ) continue;
 		// allow comments though
@@ -3324,7 +3319,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_def   = "0";
-	m->m_flags = PF_NOAPI;//PF_DIFFBOT; no i want to saveToXml
+	m->m_flags = PF_NOAPI;
 	m++;
 
 	m->m_cgi   = "spiderendtime";
@@ -3335,7 +3330,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_def   = "0";
-	m->m_flags = PF_NOAPI;//PF_DIFFBOT; no i want to saveToXml
+	m->m_flags = PF_NOAPI;
 	m++;
 
 	/////////////////////
@@ -6746,7 +6741,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_IR;
 	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
-	m->m_flags = PF_HIDDEN | PF_DIFFBOT;
+	m->m_flags = PF_HIDDEN;
 	m->m_page  = PAGE_INJECT;
 	m->m_off   = offsetof(InjectionRequest,ptr_url);
 	m++;

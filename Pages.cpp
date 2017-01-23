@@ -1677,7 +1677,6 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 
 		if ( parm->m_flags & PF_DUP ) continue;
 		if ( parm->m_flags & PF_NOAPI ) continue;
-		if ( parm->m_flags & PF_DIFFBOT ) continue;
 
 		int32_t pageNum = parm->m_page;
 

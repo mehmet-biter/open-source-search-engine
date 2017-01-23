@@ -59,7 +59,6 @@ enum parameter_type_t {
 #define PF_API                      0x00000010
 #define PF_REBUILDURLFILTERS        0x00000020
 #define PF_NOSYNC                   0x00000040
-#define PF_DIFFBOT                  0x00000080
 
 #define PF_HIDDEN                   0x00000100
 #define PF_NOSAVE                   0x00000200
