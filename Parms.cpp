@@ -3510,7 +3510,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_INT32;
 	m->m_cgi   = "s";
 	m->m_smin  = 0;
-	m->m_flags = PF_REDBOX;
+	m->m_flags = 0;
 	m++;
 
 	m->m_title = "show errors";

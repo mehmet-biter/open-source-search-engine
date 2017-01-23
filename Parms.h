@@ -53,7 +53,7 @@ enum parameter_type_t {
 
 // bit flags for Parm::m_flags
 #define PF_COOKIE                   0x00000001  // store in cookie?
-#define PF_REDBOX                   0x00000002  // redbox constraint on search results
+//#define PF_UNUSED                 0x00000002
 //#define PF_UNUSED                 0x00000004
 //#define PF_UNUSED                 0x00000008
 #define PF_API                      0x00000010
