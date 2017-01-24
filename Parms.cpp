@@ -168,7 +168,6 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 		}
 		case TYPE_BOOL:
 		case TYPE_CHECKBOX:
-		case TYPE_PRIORITY2:
 		case TYPE_CHAR:
 		case TYPE_PRIORITY: {
 			return sb->safePrintf("%hhx",*val);
@@ -1861,9 +1860,6 @@ bool Parms::printParm( SafeBuf* sb,
 				"size=3>",cgi,(int8_t)(*s));
 	else if ( t == TYPE_PRIORITY )
 		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s );
-	else if ( t == TYPE_PRIORITY2 ) {
-		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s );
-	}
 	else if ( t == TYPE_SAFEBUF &&
 		  strcmp(m->m_title,"url filters profile")==0)
 		// url filters profile drop down "ufp"
@@ -2280,8 +2276,7 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		case TYPE_CHAR:
 		case TYPE_CHECKBOX:
 		case TYPE_BOOL:
-		case TYPE_PRIORITY:
-		case TYPE_PRIORITY2: {
+		case TYPE_PRIORITY: {
 			char *ptr = (char*)THIS + m->m_off + sizeof(char)*array_index;
 			if ( fromRequest && *(char*)ptr == atol(s))
 				return;
@@ -3003,7 +2998,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 	// print it out
 	if ( m->m_type == TYPE_CHAR           || m->m_type == TYPE_BOOL           ||
 	     m->m_type == TYPE_CHECKBOX       ||
-	     m->m_type == TYPE_PRIORITY       || m->m_type == TYPE_PRIORITY2)
+	     m->m_type == TYPE_PRIORITY)
 		sb->safePrintf("%" PRId32,(int8_t)*s);
 	else if ( m->m_type == TYPE_FLOAT )
 		sb->safePrintf("%f",*(float *)s);
@@ -6535,7 +6530,7 @@ void Parms::init ( ) {
 	m->m_max   = MAX_FILTERS;
 	m->m_arrayCountOffset 	= offsetof(CollectionRec,m_numSpiderPriorities);
 	m->m_off   				= offsetof(CollectionRec,m_spiderPriorities);
-	m->m_type  = TYPE_PRIORITY2; // includes UNDEFINED priority in dropdown
+	m->m_type  = TYPE_PRIORITY;
 	m->m_page  = PAGE_FILTERS;
 	m->m_obj   = OBJ_COLL;
 	m->m_rowid = 1;
@@ -9962,7 +9957,6 @@ void Parms::init ( ) {
 		if ( t == TYPE_BOOL           ) size = 1;
 		if ( t == TYPE_CHECKBOX       ) size = 1;
 		if ( t == TYPE_PRIORITY       ) size = 1;
-		if ( t == TYPE_PRIORITY2      ) size = 1;
 		if ( t == TYPE_FLOAT          ) size = 4;
 		if ( t == TYPE_DOUBLE         ) size = 8;
 		if ( t == TYPE_IP             ) size = 4;
@@ -10312,7 +10306,6 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 		case TYPE_BOOL:
 		case TYPE_CHECKBOX:
 		case TYPE_PRIORITY:
-		case TYPE_PRIORITY2:
 		case TYPE_CHAR: {
 			val8 = atol(parmValString);
 			//if ( parmValString && to_lower_a(parmValString[0]) == 'y' )

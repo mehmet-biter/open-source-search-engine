@@ -35,7 +35,6 @@ enum parameter_type_t {
 	TYPE_INT64            = 10,
 	TYPE_NONE             = 11,
 	TYPE_PRIORITY         = 12,
-	TYPE_PRIORITY2        = 13,
 	TYPE_STRING           = 16,
 	TYPE_STRINGBOX        = 17,
 	TYPE_STRINGNONEMPTY   = 18,
