@@ -141,44 +141,57 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 	// add array index to ptr
 	if ( isArray() ) val += m_size * occNum;
 
-
-	if ( m_type == TYPE_SAFEBUF ) {
-		// point to it
-		SafeBuf *sb2 = (SafeBuf *)val;
-		return sb->safePrintf("%s",sb2->getBufStart());
+	switch(m_type) {
+		case TYPE_SAFEBUF: {
+			// point to it
+			SafeBuf *sb2 = (SafeBuf *)val;
+			return sb->safePrintf("%s",sb2->getBufStart());
+		}
+		case TYPE_STRING:
+		case TYPE_STRINGBOX:
+		case TYPE_STRINGNONEMPTY: {
+			return sb->safePrintf("%s",val);
+		}
+		case TYPE_INT32:
+		case TYPE_INT32_CONST:
+		case TYPE_TIME: {
+			return sb->safePrintf("%" PRId32,*(int32_t *)val);
+		}
+		case TYPE_FLOAT: {
+			return sb->safePrintf("%f",*(float *)val);
+		}
+		case TYPE_DOUBLE: {
+			return sb->safePrintf("%f",*(double*)val);
+		}
+		case TYPE_INT64: {
+			return sb->safePrintf("%" PRId64,*(int64_t *)val);
+		}
+		case TYPE_CHARPTR: {
+			return sb->safePrintf("%s",val);
+		}
+		case TYPE_BOOL:
+		case TYPE_CHECKBOX:
+		case TYPE_PRIORITY2:
+		case TYPE_CHAR:
+		case TYPE_CHAR2:
+		case TYPE_PRIORITY: {
+			return sb->safePrintf("%hhx",*val);
+		}
+		case TYPE_CMD: {
+			return sb->safePrintf("CMD");
+		}
+		case TYPE_IP: {
+			// may print 0.0.0.0
+			return sb->safePrintf("%s",iptoa(*(int32_t *)val) );
+		}
+		case TYPE_NONE:
+		case TYPE_COMMENT:
+		case TYPE_FILEUPLOADBUTTON:
+			return true; //silently ignored
+		case TYPE_UNSET:
+			log(LOG_LOGIC,"admin: attempt to print vlaue of unset parameter %s", m_title);
+			return true;
 	}
-
-	if ( m_type == TYPE_STRING ||
-	     m_type == TYPE_STRINGBOX ||
-	     m_type == TYPE_SAFEBUF ||
-	     m_type == TYPE_STRINGNONEMPTY )
-		return sb->safePrintf("%s",val);
-
-	if ( m_type == TYPE_INT32 || m_type == TYPE_INT32_CONST )
-		return sb->safePrintf("%" PRId32,*(int32_t *)val);
-
-	if ( m_type == TYPE_FLOAT )
-		return sb->safePrintf("%f",*(float *)val);
-
-	if ( m_type == TYPE_INT64 )
-		return sb->safePrintf("%" PRId64,*(int64_t *)val);
-
-	if ( m_type == TYPE_CHARPTR ) {
-		return sb->safePrintf("%s",val);
-	}
-
-	if ( m_type == TYPE_BOOL ||
-	     m_type == TYPE_CHECKBOX ||
-	     m_type == TYPE_PRIORITY2 ||
-	     m_type == TYPE_CHAR )
-		return sb->safePrintf("%hhx",*val);
-
-	if ( m_type == TYPE_CMD )
-		return sb->safePrintf("CMD");
-
-	if ( m_type == TYPE_IP )
-		// may print 0.0.0.0
-		return sb->safePrintf("%s",iptoa(*(int32_t *)val) );
 
 	log("parms: missing parm type!!");
 
