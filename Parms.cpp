@@ -2282,13 +2282,14 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		case TYPE_BOOL:
 		case TYPE_PRIORITY:
 		case TYPE_PRIORITY2: {
-			if ( fromRequest && *(char *)(THIS + m->m_off + array_index) == atol(s))
+			char *ptr = (char*)THIS + m->m_off + sizeof(char)*array_index;
+			if ( fromRequest && *(char*)ptr == atol(s))
 				return;
 			if ( fromRequest) {
-				oldVal = (float)*(char *)(THIS + m->m_off +array_index);
+				oldVal = (float)*(char *)ptr;
 			}
-			*(char *)(THIS + m->m_off + array_index) = s ? atol(s) : 0;
-			newVal = (float)*(char *)(THIS + m->m_off + array_index);
+			*(char*)ptr = s ? atol(s) : 0;
+			newVal = (float)*(char*)ptr;
 			break;
 		}
 		case TYPE_CHARPTR: {
@@ -2306,52 +2307,56 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 			return;
 		}
 		case TYPE_FLOAT: {
-			if( fromRequest && almostEqualFloat(*(float *)(THIS + m->m_off + 4*array_index), (s ? (float)atof(s) : 0)) ) {
+			char *ptr = (char*)THIS + m->m_off + sizeof(float)*array_index;
+			if( fromRequest && almostEqualFloat(*(float *)ptr, (s ? (float)atof(s) : 0)) ) {
 				return;
 			}
 
 			if ( fromRequest ) {
-				oldVal = *(float *)(THIS + m->m_off + 4*array_index);
+				oldVal = *(float*)ptr;
 			}
-			*(float *)(THIS + m->m_off + 4*array_index) = s ? (float)atof ( s ) : 0;
-			newVal = *(float *)(THIS + m->m_off + 4*array_index);
+			*(float*)ptr = s ? (float)atof ( s ) : 0;
+			newVal = *(float*)ptr;
 			break;
 		}
 		case TYPE_DOUBLE: {
-			if( fromRequest && almostEqualFloat(*(double *)(THIS + m->m_off + 8*array_index), ( s ? (double)atof(s) : 0)) ) {
+			char *ptr = (char*)THIS + m->m_off + sizeof(double)*array_index;
+			if( fromRequest && almostEqualFloat(*(double*)ptr, ( s ? (double)atof(s) : 0)) ) {
 				return;
 			}
 			if ( fromRequest ) {
-				oldVal = *(double *)(THIS + m->m_off + 8*array_index);
+				oldVal = *(double*)ptr;
 			}
-			*(double *)(THIS + m->m_off + 8*array_index) = s ? (double)atof ( s ) : 0;
-			newVal = *(double *)(THIS + m->m_off + 8*array_index);
+			*(double*)ptr = s ? (double)atof ( s ) : 0;
+			newVal = *(double*)ptr;
 			break;
 		}
 		case TYPE_IP: {
-			if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*array_index) ==
-			     (s ? (int32_t)atoip(s,strlen(s)) : 0) )
+			char *ptr = (char*)THIS + m->m_off + sizeof(int32_t)*array_index;
+			if ( fromRequest && *(int32_t*)ptr == (s ? (int32_t)atoip(s,strlen(s)) : 0) )
 				return;
-			*(int32_t *)(THIS + m->m_off + 4*array_index) = s ? (int32_t)atoip(s,strlen(s)) : 0;
+			*(int32_t*)ptr = s ? (int32_t)atoip(s,strlen(s)) : 0;
 			break;
 		}
 		case TYPE_INT32:
 		case TYPE_INT32_CONST: {
+			char *ptr = (char*)THIS + m->m_off + sizeof(int32_t)*array_index;
 			int32_t v = s ? atol(s) : 0;
 			// min is considered valid if >= 0
 			if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
-			if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*array_index) == v )
+			if ( fromRequest && *(int32_t *)ptr == v )
 				return;
-			if ( fromRequest)oldVal=(float)*(int32_t *)(THIS + m->m_off +4*array_index);
-			*(int32_t *)(THIS + m->m_off + 4*array_index) = v;
-			newVal = (float)*(int32_t *)(THIS + m->m_off + 4*array_index);
+			if ( fromRequest)oldVal=(float)*(int32_t *)ptr;
+			*(int32_t *)ptr = v;
+			newVal = (float)*(int32_t*)ptr;
 			break;
 		}
 		case TYPE_INT64: {
-			if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*array_index) == ( s ? strtoull(s,NULL,10) : 0) ) {
+			char *ptr = (char*)THIS + m->m_off + sizeof(int64_t)*array_index;
+			if ( fromRequest && *(uint64_t*)ptr == ( s ? strtoull(s,NULL,10) : 0) ) {
 				return;
 			}
-			*(int64_t *)(THIS + m->m_off + 8*array_index) = s ? strtoull(s,NULL,10) : 0;
+			*(int64_t*)ptr = s ? strtoull(s,NULL,10) : 0;
 			break;
 		}
 		case TYPE_SAFEBUF: {
@@ -2360,7 +2365,8 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 
 			// point to the safebuf, in the case of an array of
 			// SafeBufs "array_index" is the # in the array, starting at 0
-			SafeBuf *sb = (SafeBuf *)(THIS+m->m_off+(array_index*sizeof(SafeBuf)) );
+			char *ptr = (char*)THIS + m->m_off + sizeof(SafeBuf)*array_index;
+			SafeBuf *sb = (SafeBuf *)ptr;
 			int32_t oldLen = sb->length();
 			// why was this commented out??? we need it now that we
 			// send email alerts when parms change!
