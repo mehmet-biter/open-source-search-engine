@@ -10271,72 +10271,81 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 	char val8;
 	float valf;
 
-	if ( m->m_type == TYPE_STRING ||
-	     m->m_type == TYPE_STRINGBOX ||
-	     m->m_type == TYPE_SAFEBUF ||
-	     m->m_type == TYPE_STRINGNONEMPTY ) {
-		// point to string
-		val = parmValString;
-		// include \0
-		valSize = strlen(val)+1;
-		// sanity
-		if ( val[valSize-1] != '\0' ) { g_process.shutdownAbort(true); }
-	}
-	else if ( m->m_type == TYPE_INT32 ) {
-		// watch out for unsigned 32-bit numbers, so use atoLL()
-		val64 = atoll(parmValString);
-		val = (char *)&val64;
-		valSize = 4;
-	}
-	else if ( m->m_type == TYPE_FLOAT ) {
-		valf = atof(parmValString);
-		val = (char *)&valf;
-		valSize = 4;
-	}
-	else if ( m->m_type == TYPE_INT64 ) {
-		val64 = atoll(parmValString);
-		val = (char *)&val64;
-		valSize = 8;
-	}
-	else if ( m->m_type == TYPE_BOOL ||
-		  m->m_type == TYPE_CHECKBOX ||
-		  m->m_type == TYPE_PRIORITY2 ||
-		  m->m_type == TYPE_CHAR ) {
-		val8 = atol(parmValString);
-		//if ( parmValString && to_lower_a(parmValString[0]) == 'y' )
-		//	val8 = 1;
-		//if ( parmValString && to_lower_a(parmValString[0]) == 'n' )
-		//	val8 = 0;
-		val = (char *)&val8;
-		valSize = 1;
-	}
-	// for resetting or restarting a coll i think the ascii arg is
-	// the NEW reserved collnum, but for other commands then parmValString
-	// will be NULL
-	else if ( m->m_type == TYPE_CMD ) {
-		val = parmValString;
-		if ( val ) valSize = strlen(val)+1;
-		// . addcoll collection can not be too long
-		// . TODO: supply a Parm::m_checkValFunc to ensure val is
-		//   legitimate, and set g_errno on error
-		if ( strcmp(m->m_cgi,"addcoll") == 0 &&valSize-1>MAX_COLL_LEN){
-			log("admin: addcoll coll too long");
-			g_errno = ECOLLTOOBIG;
-			return false;
+	switch(m->m_type) {
+		case TYPE_STRING:
+		case TYPE_STRINGBOX:
+		case TYPE_SAFEBUF:
+		case TYPE_STRINGNONEMPTY: {
+			// point to string
+			val = parmValString;
+			// include \0
+			valSize = strlen(val)+1;
+			// sanity
+			if ( val[valSize-1] != '\0' ) { g_process.shutdownAbort(true); }
+			break;
 		}
-		// scan for holes if we hit the limit
-		//if ( g_collectiondb.getNumRecs() >= 1LL>>sizeof(collnum_t) )
-	}
-	else if ( m->m_type == TYPE_IP ) {
-		// point to string
-		val32 = atoip(parmValString);
-		// store ip in binary format
-		val = (char *)&val32;
-		valSize = 4;
-	}
-	else {
-		log("parms: shit unsupported parm type");
-		g_process.shutdownAbort(true);
+		case TYPE_INT32: {
+			// watch out for unsigned 32-bit numbers, so use atoLL()
+			val64 = atoll(parmValString);
+			val = (char *)&val64;
+			valSize = 4;
+			break;
+		}
+		case TYPE_FLOAT: {
+			valf = atof(parmValString);
+			val = (char *)&valf;
+			valSize = 4;
+			break;
+		}
+		case TYPE_INT64: {
+			val64 = atoll(parmValString);
+			val = (char *)&val64;
+			valSize = 8;
+			break;
+		}
+		case TYPE_BOOL:
+		case TYPE_CHECKBOX:
+		case TYPE_PRIORITY2:
+		case TYPE_CHAR: {
+			val8 = atol(parmValString);
+			//if ( parmValString && to_lower_a(parmValString[0]) == 'y' )
+			//	val8 = 1;
+			//if ( parmValString && to_lower_a(parmValString[0]) == 'n' )
+			//	val8 = 0;
+			val = (char *)&val8;
+			valSize = 1;
+			break;
+		}
+		case TYPE_CMD: {
+			// for resetting or restarting a coll i think the ascii arg is
+			// the NEW reserved collnum, but for other commands then parmValString
+			// will be NULL
+			val = parmValString;
+			if ( val ) valSize = strlen(val)+1;
+			// . addcoll collection can not be too long
+			// . TODO: supply a Parm::m_checkValFunc to ensure val is
+			//   legitimate, and set g_errno on error
+			if ( strcmp(m->m_cgi,"addcoll") == 0 &&valSize-1>MAX_COLL_LEN){
+				log("admin: addcoll coll too long");
+				g_errno = ECOLLTOOBIG;
+				return false;
+			}
+			// scan for holes if we hit the limit
+			//if ( g_collectiondb.getNumRecs() >= 1LL>>sizeof(collnum_t) )
+			break;
+		}
+		case TYPE_IP: {
+			// point to string
+			val32 = atoip(parmValString);
+			// store ip in binary format
+			val = (char *)&val32;
+			valSize = 4;
+			break;
+		}
+		default: {
+			log("parms: shit unsupported parm type");
+			g_process.shutdownAbort(true);
+		}
 	}
 
 	key96_t key = makeParmKey ( collnum , m ,  occNum );
