@@ -2288,130 +2288,147 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		}
 	}
 
-	if      ( m->m_type == TYPE_CHAR           ||
-		  m->m_type == TYPE_CHAR2          ||
-		  m->m_type == TYPE_CHECKBOX       ||
-		  m->m_type == TYPE_BOOL           ||
-		  m->m_type == TYPE_PRIORITY       ||
-		  m->m_type == TYPE_PRIORITY2      ) {
-		if ( fromRequest && *(char *)(THIS + m->m_off + array_index) == atol(s))
-			return;
-		if ( fromRequest) {
-			oldVal = (float)*(char *)(THIS + m->m_off +array_index);
+	switch(m->m_type) {
+		case TYPE_CHAR:
+		case TYPE_CHAR2:
+		case TYPE_CHECKBOX:
+		case TYPE_BOOL:
+		case TYPE_PRIORITY:
+		case TYPE_PRIORITY2: {
+			if ( fromRequest && *(char *)(THIS + m->m_off + array_index) == atol(s))
+				return;
+			if ( fromRequest) {
+				oldVal = (float)*(char *)(THIS + m->m_off +array_index);
+			}
+			*(char *)(THIS + m->m_off + array_index) = s ? atol(s) : 0;
+			newVal = (float)*(char *)(THIS + m->m_off + array_index);
+			break;
 		}
-		*(char *)(THIS + m->m_off + array_index) = s ? atol(s) : 0;
-		newVal = (float)*(char *)(THIS + m->m_off + array_index);
-	}
-	else if ( m->m_type == TYPE_CHARPTR ) {
-		// "s" might be NULL or m->m_def...
-		*(const char **)(THIS + m->m_off + array_index) = s;
-	}
-	else if ( m->m_type == 	TYPE_FILEUPLOADBUTTON ) {
-		// "s" might be NULL or m->m_def...
-		*(const char **)(THIS + m->m_off + array_index) = s;
-	}
-	else if ( m->m_type == TYPE_CMD ) {
-		log(LOG_LOGIC, "conf: Parms: TYPE_CMD is not a cgi var.");
-		return;	
-	}
-	else if ( m->m_type == TYPE_FLOAT ) {
-		if( fromRequest && almostEqualFloat(*(float *)(THIS + m->m_off + 4*array_index), (s ? (float)atof(s) : 0)) ) {
+		case TYPE_CHARPTR: {
+			// "s" might be NULL or m->m_def...
+			*(const char **)(THIS + m->m_off + array_index) = s;
+			break;
+		}
+		case TYPE_FILEUPLOADBUTTON: {
+				// "s" might be NULL or m->m_def...
+			*(const char **)(THIS + m->m_off + array_index) = s;
+			break;
+		}
+		case TYPE_CMD: {
+			log(LOG_LOGIC, "conf: Parms: TYPE_CMD is not a cgi var.");
 			return;
 		}
+		case TYPE_FLOAT: {
+			if( fromRequest && almostEqualFloat(*(float *)(THIS + m->m_off + 4*array_index), (s ? (float)atof(s) : 0)) ) {
+				return;
+			}
 
-		if ( fromRequest ) {
-			oldVal = *(float *)(THIS + m->m_off + 4*array_index);
+			if ( fromRequest ) {
+				oldVal = *(float *)(THIS + m->m_off + 4*array_index);
+			}
+			*(float *)(THIS + m->m_off + 4*array_index) = s ? (float)atof ( s ) : 0;
+			newVal = *(float *)(THIS + m->m_off + 4*array_index);
+			break;
 		}
-		*(float *)(THIS + m->m_off + 4*array_index) = s ? (float)atof ( s ) : 0;
-		newVal = *(float *)(THIS + m->m_off + 4*array_index);
-	}
-	else if ( m->m_type == TYPE_DOUBLE ) {
-		if( fromRequest && almostEqualFloat(*(double *)(THIS + m->m_off + 4*array_index), ( s ? (double)atof(s) : 0)) ) {
-			return;
+		case TYPE_DOUBLE: {
+			if( fromRequest && almostEqualFloat(*(double *)(THIS + m->m_off + 4*array_index), ( s ? (double)atof(s) : 0)) ) {
+				return;
+			}
+			if ( fromRequest ) {
+				oldVal = *(double *)(THIS + m->m_off + 4*array_index);
+			}
+			*(double *)(THIS + m->m_off + 4*array_index) = s ? (double)atof ( s ) : 0;
+			newVal = *(double *)(THIS + m->m_off + 4*array_index);
+			break;
 		}
-		if ( fromRequest ) {
-			oldVal = *(double *)(THIS + m->m_off + 4*array_index);
+		case TYPE_IP: {
+			if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*array_index) ==
+			     (s ? (int32_t)atoip(s,strlen(s)) : 0) )
+				return;
+			*(int32_t *)(THIS + m->m_off + 4*array_index) = s ? (int32_t)atoip(s,strlen(s)) : 0;
+			break;
 		}
-		*(double *)(THIS + m->m_off + 4*array_index) = s ? (double)atof ( s ) : 0;
-		newVal = *(double *)(THIS + m->m_off + 4*array_index);
-	}
-	else if ( m->m_type == TYPE_IP ) {
-		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*array_index) ==
-		     (s ? (int32_t)atoip(s,strlen(s)) : 0) )
-			return;
-		*(int32_t *)(THIS + m->m_off + 4*array_index) = s ? (int32_t)atoip(s,strlen(s)) : 0;
-	}
-	else if ( m->m_type == TYPE_INT32 || m->m_type == TYPE_INT32_CONST ) {
-		int32_t v = s ? atol(s) : 0;
-		// min is considered valid if >= 0
-		if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
-		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*array_index) == v )
-			return;
-		if ( fromRequest)oldVal=(float)*(int32_t *)(THIS + m->m_off +4*array_index);
-		*(int32_t *)(THIS + m->m_off + 4*array_index) = v;
-		newVal = (float)*(int32_t *)(THIS + m->m_off + 4*array_index);
-	}
-	else if ( m->m_type == TYPE_INT64 ) {
-		if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*array_index) == ( s ? strtoull(s,NULL,10) : 0) ) {
-			return;
+		case TYPE_INT32:
+		case TYPE_INT32_CONST: {
+			int32_t v = s ? atol(s) : 0;
+			// min is considered valid if >= 0
+			if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
+			if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*array_index) == v )
+				return;
+			if ( fromRequest)oldVal=(float)*(int32_t *)(THIS + m->m_off +4*array_index);
+			*(int32_t *)(THIS + m->m_off + 4*array_index) = v;
+			newVal = (float)*(int32_t *)(THIS + m->m_off + 4*array_index);
+			break;
 		}
-		*(int64_t *)(THIS + m->m_off + 8*array_index) = s ? strtoull(s,NULL,10) : 0;
-	}
-	// like TYPE_STRING but dynamically allocates
-	else if ( m->m_type == TYPE_SAFEBUF ) {
-		int32_t len = s ? strlen(s) : 0;
+		case TYPE_INT64: {
+			if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*array_index) == ( s ? strtoull(s,NULL,10) : 0) ) {
+				return;
+			}
+			*(int64_t *)(THIS + m->m_off + 8*array_index) = s ? strtoull(s,NULL,10) : 0;
+			break;
+		}
+		case TYPE_SAFEBUF: {
+			// like TYPE_STRING but dynamically allocates
+			int32_t len = s ? strlen(s) : 0;
 
-		// point to the safebuf, in the case of an array of
-		// SafeBufs "array_index" is the # in the array, starting at 0
-		SafeBuf *sb = (SafeBuf *)(THIS+m->m_off+(array_index*sizeof(SafeBuf)) );
-		int32_t oldLen = sb->length();
-		// why was this commented out??? we need it now that we
-		// send email alerts when parms change!
-		if ( fromRequest &&
-		     ! isHtmlEncoded && oldLen == len &&
-		     memcmp ( sb->getBufStart() , s , len ) == 0 )
-			return;
-		// nuke it
-		sb->purge();
-		// this means that we can not use string POINTERS as parms!!
-		if ( ! isHtmlEncoded ) sb->safeMemcpy ( s , len );
-		else                   len = sb->htmlDecode (s,len);
-		// tag it
-		sb->setLabel ( "parm1" );
-		// ensure null terminated
-		sb->nullTerm();
-
-	}
-	else if ( m->m_type == TYPE_STRING         ||
-		  m->m_type == TYPE_STRINGBOX      ||
-		  m->m_type == TYPE_STRINGNONEMPTY ||
-		  m->m_type == TYPE_TIME            ) {
-		if( !s ) {
-			return;
+			// point to the safebuf, in the case of an array of
+			// SafeBufs "array_index" is the # in the array, starting at 0
+			SafeBuf *sb = (SafeBuf *)(THIS+m->m_off+(array_index*sizeof(SafeBuf)) );
+			int32_t oldLen = sb->length();
+			// why was this commented out??? we need it now that we
+			// send email alerts when parms change!
+			if ( fromRequest &&
+			     ! isHtmlEncoded && oldLen == len &&
+			     memcmp ( sb->getBufStart() , s , len ) == 0 )
+				return;
+			// nuke it
+			sb->purge();
+			// this means that we can not use string POINTERS as parms!!
+			if ( ! isHtmlEncoded ) sb->safeMemcpy ( s , len );
+			else                   len = sb->htmlDecode (s,len);
+			// tag it
+			sb->setLabel ( "parm1" );
+			// ensure null terminated
+			sb->nullTerm();
+			break;
 		}
-		int32_t len = strlen(s);
-		if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
-		char *dst = THIS + m->m_off + m->m_size*array_index;
-		// why was this commented out??? we need it now that we
-		// send email alerts when parms change!
-		if ( fromRequest &&
-		     ! isHtmlEncoded && (int32_t)strlen(dst) == len &&
-		     memcmp ( dst , s , len ) == 0 ) {
+		case TYPE_STRING:
+		case TYPE_STRINGBOX:
+		case TYPE_STRINGNONEMPTY:
+		case TYPE_TIME: {
+			if( !s ) {
+				return;
+			}
+			int32_t len = strlen(s);
+			if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
+			char *dst = THIS + m->m_off + m->m_size*array_index;
+			// why was this commented out??? we need it now that we
+			// send email alerts when parms change!
+			if ( fromRequest &&
+			     ! isHtmlEncoded && (int32_t)strlen(dst) == len &&
+			     memcmp ( dst , s , len ) == 0 ) {
+				return;
+			}
+
+			// this means that we can not use string POINTERS as parms!!
+			if ( !isHtmlEncoded ) {
+				gbmemcpy( dst, s, len );
+			} else {
+				len = htmlDecode( dst, s, len, false );
+			}
+
+			dst[len] = '\0';
+			// . might have to set length
+			// . used for CollectionRec::m_htmlHeadLen and m_htmlTailLen
+			if ( m->m_plen >= 0 )
+				*(int32_t *)(THIS + m->m_plen) = len ;
+			break;
+		}
+		case TYPE_UNSET:
+		case TYPE_NONE:
+		case TYPE_COMMENT:
+			log(LOG_LOGIC,"admin: attempt to set parameter %s from cgi-request", m->m_title);
 			return;
-		}
-
-		// this means that we can not use string POINTERS as parms!!
-		if ( !isHtmlEncoded ) {
-			gbmemcpy( dst, s, len );
-		} else {
-			len = htmlDecode( dst, s, len, false );
-		}
-
-		dst[len] = '\0';
-		// . might have to set length
-		// . used for CollectionRec::m_htmlHeadLen and m_htmlTailLen
-		if ( m->m_plen >= 0 )
-			*(int32_t *)(THIS + m->m_plen) = len ;
 	}
 
 	// do not send if setting from startup
