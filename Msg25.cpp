@@ -775,9 +775,16 @@ bool Msg25::doReadLoop() {
 	int32_t numFiles = -1;
 	// NO, DON't restrict because it will mess up the hopcount.
 	//bool includeTree = true;
-	//oh yes restrict, don't bother looking in the tree It's exspensive to do
-	//so and usually there are plenty of ok link texts in the normal *.dat files
-	bool includeTree = false;
+	//It's expensive to do include the tree. Can we avoid it?
+	//When injecting a mass number of documents, eg a dump from wikipedia
+	//then the document titles are usually ok already (inlink texts already
+	//match the title). When crawling normally then the tree usyally holds
+	//the parent linker document links, so in that case we want the tree.
+	bool includeTree;
+	if(m_req25->m_isInjecting)
+		includeTree = false;
+	else
+		includeTree = true;
 
 	// debug log
 	if ( g_conf.m_logDebugLinkInfo ) {
