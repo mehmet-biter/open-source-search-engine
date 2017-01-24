@@ -10311,6 +10311,7 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 		}
 		case TYPE_BOOL:
 		case TYPE_CHECKBOX:
+		case TYPE_PRIORITY:
 		case TYPE_PRIORITY2:
 		case TYPE_CHAR: {
 			val8 = atol(parmValString);
