@@ -153,7 +153,9 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 			return sb->safePrintf("%s",val);
 		}
 		case TYPE_INT32:
-		case TYPE_INT32_CONST:
+		case TYPE_INT32_CONST: {
+			return sb->safePrintf("%" PRId32,*(int32_t *)val);
+		}
 		case TYPE_FLOAT: {
 			return sb->safePrintf("%f",*(float *)val);
 		}
