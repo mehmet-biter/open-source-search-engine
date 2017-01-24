@@ -2322,10 +2322,10 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 				return;
 			}
 			if ( fromRequest ) {
-				oldVal = *(double *)(THIS + m->m_off + 4*array_index);
+				oldVal = *(double *)(THIS + m->m_off + 8*array_index);
 			}
-			*(double *)(THIS + m->m_off + 4*array_index) = s ? (double)atof ( s ) : 0;
-			newVal = *(double *)(THIS + m->m_off + 4*array_index);
+			*(double *)(THIS + m->m_off + 8*array_index) = s ? (double)atof ( s ) : 0;
+			newVal = *(double *)(THIS + m->m_off + 8*array_index);
 			break;
 		}
 		case TYPE_IP: {
