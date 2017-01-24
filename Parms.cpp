@@ -1858,7 +1858,7 @@ bool Parms::printParm( SafeBuf* sb,
 	}
 	else if ( t == TYPE_CHAR )
 		sb->safePrintf ("<input type=text name=%s value=\"%" PRId32"\" "
-				"size=3>",cgi,(int32_t)(*s));
+				"size=3>",cgi,(int8_t)(*s));
 	else if ( t == TYPE_PRIORITY )
 		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s );
 	else if ( t == TYPE_PRIORITY2 ) {
@@ -2998,7 +2998,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 	if ( m->m_type == TYPE_CHAR           || m->m_type == TYPE_BOOL           ||
 	     m->m_type == TYPE_CHECKBOX       ||
 	     m->m_type == TYPE_PRIORITY       || m->m_type == TYPE_PRIORITY2)
-		sb->safePrintf("%" PRId32,(int32_t)*s);
+		sb->safePrintf("%" PRId32,(int8_t)*s);
 	else if ( m->m_type == TYPE_FLOAT )
 		sb->safePrintf("%f",*(float *)s);
 	else if ( m->m_type == TYPE_IP )
