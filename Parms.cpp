@@ -3649,7 +3649,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_off   = offsetof(SearchInput,m_streamResults);
-	m->m_type  = TYPE_CHAR;
+	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_cgi   = "stream";
 	m->m_flags = PF_API;
