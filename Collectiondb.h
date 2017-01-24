@@ -437,7 +437,7 @@ class CollectionRec {
 	// dummy?
 	int32_t      m_numRegExs9;
 
-	char m_doQueryHighlighting;
+	bool m_doQueryHighlighting;
 
 	char  m_summaryFrontHighlightTag[SUMMARYHIGHLIGHTTAGMAXSIZE] ;
 	char  m_summaryBackHighlightTag [SUMMARYHIGHLIGHTTAGMAXSIZE] ;
