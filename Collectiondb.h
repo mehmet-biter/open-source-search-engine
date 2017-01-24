@@ -305,7 +305,7 @@ class CollectionRec {
 	char  m_doLinkSpamCheck         ; //filters dynamically generated pages
 	char  m_tagdbColl [MAX_COLL_LEN+1]; // coll to use for tagdb lookups
 	char  m_delete404s              ;
-	char  m_siteClusterByDefault    ;
+	bool  m_siteClusterByDefault    ;
 	char  m_doIpLookups             ; // considered iff using proxy
 	bool  m_useRobotsTxt            ;
 	char  m_obeyRelNoFollowLinks    ;

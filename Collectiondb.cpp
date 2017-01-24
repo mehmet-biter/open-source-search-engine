@@ -1149,7 +1149,7 @@ CollectionRec::CollectionRec() {
 	m_doLinkSpamCheck = 0;
 	memset(m_tagdbColl, 0, sizeof(m_tagdbColl));
 	m_delete404s = 0;
-	m_siteClusterByDefault = 0;
+	m_siteClusterByDefault = false;
 	m_doIpLookups = 0;
 	m_useRobotsTxt = true;
 	m_obeyRelNoFollowLinks = 0;
