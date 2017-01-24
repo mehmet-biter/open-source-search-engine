@@ -2318,7 +2318,7 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 			break;
 		}
 		case TYPE_DOUBLE: {
-			if( fromRequest && almostEqualFloat(*(double *)(THIS + m->m_off + 4*array_index), ( s ? (double)atof(s) : 0)) ) {
+			if( fromRequest && almostEqualFloat(*(double *)(THIS + m->m_off + 8*array_index), ( s ? (double)atof(s) : 0)) ) {
 				return;
 			}
 			if ( fromRequest ) {
