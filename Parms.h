@@ -28,7 +28,6 @@ enum parameter_type_t {
 	TYPE_BOOL             =  1,
 	TYPE_CHECKBOX         =  3,
 	TYPE_CHAR             =  4,
-	TYPE_CHAR2            =  5, //needed to display char as a number (maxNumHops)
 	TYPE_CMD              =  6,
 	TYPE_FLOAT            =  7,
 	TYPE_IP               =  8,

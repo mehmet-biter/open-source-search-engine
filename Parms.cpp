@@ -173,7 +173,6 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 		case TYPE_CHECKBOX:
 		case TYPE_PRIORITY2:
 		case TYPE_CHAR:
-		case TYPE_CHAR2:
 		case TYPE_PRIORITY: {
 			return sb->safePrintf("%hhx",*val);
 		}
@@ -2303,7 +2302,6 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 
 	switch(m->m_type) {
 		case TYPE_CHAR:
-		case TYPE_CHAR2:
 		case TYPE_CHECKBOX:
 		case TYPE_BOOL:
 		case TYPE_PRIORITY:
@@ -3024,8 +3022,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 	// print it out
 	if ( m->m_type == TYPE_CHAR           || m->m_type == TYPE_BOOL           ||
 	     m->m_type == TYPE_CHECKBOX       ||
-	     m->m_type == TYPE_PRIORITY       || m->m_type == TYPE_PRIORITY2      ||
-	     m->m_type == TYPE_CHAR2           )
+	     m->m_type == TYPE_PRIORITY       || m->m_type == TYPE_PRIORITY2)
 		sb->safePrintf("%" PRId32,(int32_t)*s);
 	else if ( m->m_type == TYPE_FLOAT )
 		sb->safePrintf("%f",*(float *)s);
@@ -9982,7 +9979,6 @@ void Parms::init ( ) {
 			exit(-1);
 		}
 		if ( t == TYPE_CHAR           ) size = 1;
-		if ( t == TYPE_CHAR2          ) size = 1;
 		if ( t == TYPE_BOOL           ) size = 1;
 		if ( t == TYPE_CHECKBOX       ) size = 1;
 		if ( t == TYPE_PRIORITY       ) size = 1;

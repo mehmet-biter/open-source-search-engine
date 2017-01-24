@@ -1731,7 +1731,6 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 		case TYPE_BOOL: sb->safePrintf ( "BOOL (0 or 1)" ); break;
 		case TYPE_CHECKBOX: sb->safePrintf ( "BOOL (0 or 1)" ); break;
 		case TYPE_CHAR: sb->safePrintf ( "CHAR" ); break;
-		case TYPE_CHAR2: sb->safePrintf ( "CHAR" ); break;
 		case TYPE_FLOAT: sb->safePrintf ( "FLOAT32" ); break;
 		case TYPE_DOUBLE: sb->safePrintf ( "FLOAT64" ); break;
 		case TYPE_IP: sb->safePrintf ( "IP" ); break;
