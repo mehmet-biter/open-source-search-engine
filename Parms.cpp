@@ -2288,14 +2288,12 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		}
 	}
 
-	parameter_type_t  t   = m->m_type;
-
-	if      ( t == TYPE_CHAR           ||
-		  t == TYPE_CHAR2          ||
-		  t == TYPE_CHECKBOX       ||
-		  t == TYPE_BOOL           ||
-		  t == TYPE_PRIORITY       ||
-		  t == TYPE_PRIORITY2      ) {
+	if      ( m->m_type == TYPE_CHAR           ||
+		  m->m_type == TYPE_CHAR2          ||
+		  m->m_type == TYPE_CHECKBOX       ||
+		  m->m_type == TYPE_BOOL           ||
+		  m->m_type == TYPE_PRIORITY       ||
+		  m->m_type == TYPE_PRIORITY2      ) {
 		if ( fromRequest && *(char *)(THIS + m->m_off + array_index) == atol(s))
 			return;
 		if ( fromRequest) {
@@ -2305,19 +2303,19 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		newVal = (float)*(char *)(THIS + m->m_off + array_index);
 		goto changed; 
 	}
-	else if ( t == TYPE_CHARPTR ) {
+	else if ( m->m_type == TYPE_CHARPTR ) {
 		// "s" might be NULL or m->m_def...
 		*(const char **)(THIS + m->m_off + array_index) = s;
 	}
-	else if ( t == 	TYPE_FILEUPLOADBUTTON ) {
+	else if ( m->m_type == 	TYPE_FILEUPLOADBUTTON ) {
 		// "s" might be NULL or m->m_def...
 		*(const char **)(THIS + m->m_off + array_index) = s;
 	}
-	else if ( t == TYPE_CMD ) {
+	else if ( m->m_type == TYPE_CMD ) {
 		log(LOG_LOGIC, "conf: Parms: TYPE_CMD is not a cgi var.");
 		return;	
 	}
-	else if ( t == TYPE_FLOAT ) {
+	else if ( m->m_type == TYPE_FLOAT ) {
 		if( fromRequest && almostEqualFloat(*(float *)(THIS + m->m_off + 4*array_index), (s ? (float)atof(s) : 0)) ) {
 			return;
 		}
@@ -2329,7 +2327,7 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		newVal = *(float *)(THIS + m->m_off + 4*array_index);
 		goto changed; 
 	}
-	else if ( t == TYPE_DOUBLE ) {
+	else if ( m->m_type == TYPE_DOUBLE ) {
 		if( fromRequest && almostEqualFloat(*(double *)(THIS + m->m_off + 4*array_index), ( s ? (double)atof(s) : 0)) ) {
 			return;
 		}
@@ -2340,14 +2338,14 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		newVal = *(double *)(THIS + m->m_off + 4*array_index);
 		goto changed; 
 	}
-	else if ( t == TYPE_IP ) {
+	else if ( m->m_type == TYPE_IP ) {
 		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*array_index) ==
 		     (s ? (int32_t)atoip(s,strlen(s)) : 0) )
 			return;
 		*(int32_t *)(THIS + m->m_off + 4*array_index) = s ? (int32_t)atoip(s,strlen(s)) : 0;
 		goto changed; 
 	}
-	else if ( t == TYPE_INT32 || t == TYPE_INT32_CONST ) {
+	else if ( m->m_type == TYPE_INT32 || m->m_type == TYPE_INT32_CONST ) {
 		int32_t v = s ? atol(s) : 0;
 		// min is considered valid if >= 0
 		if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
@@ -2358,14 +2356,14 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		newVal = (float)*(int32_t *)(THIS + m->m_off + 4*array_index);
 		goto changed; 
 	}
-	else if ( t == TYPE_INT64 ) {
+	else if ( m->m_type == TYPE_INT64 ) {
 		if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*array_index) == ( s ? strtoull(s,NULL,10) : 0) ) {
 			return;
 		}
 		*(int64_t *)(THIS + m->m_off + 8*array_index) = s ? strtoull(s,NULL,10) : 0;
 		goto changed; }
 	// like TYPE_STRING but dynamically allocates
-	else if ( t == TYPE_SAFEBUF ) {
+	else if ( m->m_type == TYPE_SAFEBUF ) {
 		int32_t len = s ? strlen(s) : 0;
 
 		// point to the safebuf, in the case of an array of
@@ -2390,10 +2388,10 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 
 		goto changed;
 	}
-	else if ( t == TYPE_STRING         ||
-		  t == TYPE_STRINGBOX      ||
-		  t == TYPE_STRINGNONEMPTY ||
-		  t == TYPE_TIME            ) {
+	else if ( m->m_type == TYPE_STRING         ||
+		  m->m_type == TYPE_STRINGBOX      ||
+		  m->m_type == TYPE_STRINGNONEMPTY ||
+		  m->m_type == TYPE_TIME            ) {
 		if( !s ) {
 			return;
 		}
@@ -3002,21 +3000,20 @@ skip2:
 
 bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 	// print it out
-	char t = m->m_type;
-	if ( t == TYPE_CHAR           || t == TYPE_BOOL           ||
-	     t == TYPE_CHECKBOX       ||
-	     t == TYPE_PRIORITY       || t == TYPE_PRIORITY2      ||
-	     t == TYPE_CHAR2           )
+	if ( m->m_type == TYPE_CHAR           || m->m_type == TYPE_BOOL           ||
+	     m->m_type == TYPE_CHECKBOX       ||
+	     m->m_type == TYPE_PRIORITY       || m->m_type == TYPE_PRIORITY2      ||
+	     m->m_type == TYPE_CHAR2           )
 		sb->safePrintf("%" PRId32,(int32_t)*s);
-	else if ( t == TYPE_FLOAT )
+	else if ( m->m_type == TYPE_FLOAT )
 		sb->safePrintf("%f",*(float *)s);
-	else if ( t == TYPE_IP )
+	else if ( m->m_type == TYPE_IP )
 		sb->safePrintf("%s",iptoa(*(int32_t *)s));
-	else if ( t == TYPE_INT32 || t == TYPE_INT32_CONST )
+	else if ( m->m_type == TYPE_INT32 || m->m_type == TYPE_INT32_CONST )
 		sb->safePrintf("%" PRId32,*(int32_t *)s);
-	else if ( t == TYPE_INT64 )
+	else if ( m->m_type == TYPE_INT64 )
 		sb->safePrintf("%" PRId64,*(int64_t *)s);
-	else if ( t == TYPE_SAFEBUF ) {
+	else if ( m->m_type == TYPE_SAFEBUF ) {
 		SafeBuf *sb2 = (SafeBuf *)s;
 		char *buf = sb2->getBufStart();
 		//int32_t blen = 0;
@@ -3026,10 +3023,10 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 		//cdataEncode(sb, buf);//, blen );//, true ); // #?*
 		if ( buf ) sb->htmlEncode ( buf );
 	}
-	else if ( t == TYPE_STRING         ||
-		  t == TYPE_STRINGBOX      ||
-		  t == TYPE_STRINGNONEMPTY ||
-		  t == TYPE_TIME) {
+	else if ( m->m_type == TYPE_STRING         ||
+		  m->m_type == TYPE_STRINGBOX      ||
+		  m->m_type == TYPE_STRINGNONEMPTY ||
+		  m->m_type == TYPE_TIME) {
 		sb->htmlEncode ( s );
 	}
 	return true;
