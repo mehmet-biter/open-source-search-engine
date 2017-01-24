@@ -63,7 +63,7 @@ class GigablastRequest {
 	int32_t  m_ern;
 	char *m_qlang;
 	bool  m_forceDel;
-	char  m_recycleContent;
+	bool  m_recycleContent;
 };
 
 #endif
