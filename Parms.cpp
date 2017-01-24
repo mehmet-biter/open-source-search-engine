@@ -2301,7 +2301,6 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		}
 		*(char *)(THIS + m->m_off + array_index) = s ? atol(s) : 0;
 		newVal = (float)*(char *)(THIS + m->m_off + array_index);
-		goto changed; 
 	}
 	else if ( m->m_type == TYPE_CHARPTR ) {
 		// "s" might be NULL or m->m_def...
@@ -2325,7 +2324,6 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		}
 		*(float *)(THIS + m->m_off + 4*array_index) = s ? (float)atof ( s ) : 0;
 		newVal = *(float *)(THIS + m->m_off + 4*array_index);
-		goto changed; 
 	}
 	else if ( m->m_type == TYPE_DOUBLE ) {
 		if( fromRequest && almostEqualFloat(*(double *)(THIS + m->m_off + 4*array_index), ( s ? (double)atof(s) : 0)) ) {
@@ -2336,14 +2334,12 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		}
 		*(double *)(THIS + m->m_off + 4*array_index) = s ? (double)atof ( s ) : 0;
 		newVal = *(double *)(THIS + m->m_off + 4*array_index);
-		goto changed; 
 	}
 	else if ( m->m_type == TYPE_IP ) {
 		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*array_index) ==
 		     (s ? (int32_t)atoip(s,strlen(s)) : 0) )
 			return;
 		*(int32_t *)(THIS + m->m_off + 4*array_index) = s ? (int32_t)atoip(s,strlen(s)) : 0;
-		goto changed; 
 	}
 	else if ( m->m_type == TYPE_INT32 || m->m_type == TYPE_INT32_CONST ) {
 		int32_t v = s ? atol(s) : 0;
@@ -2354,14 +2350,13 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		if ( fromRequest)oldVal=(float)*(int32_t *)(THIS + m->m_off +4*array_index);
 		*(int32_t *)(THIS + m->m_off + 4*array_index) = v;
 		newVal = (float)*(int32_t *)(THIS + m->m_off + 4*array_index);
-		goto changed; 
 	}
 	else if ( m->m_type == TYPE_INT64 ) {
 		if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*array_index) == ( s ? strtoull(s,NULL,10) : 0) ) {
 			return;
 		}
 		*(int64_t *)(THIS + m->m_off + 8*array_index) = s ? strtoull(s,NULL,10) : 0;
-		goto changed; }
+	}
 	// like TYPE_STRING but dynamically allocates
 	else if ( m->m_type == TYPE_SAFEBUF ) {
 		int32_t len = s ? strlen(s) : 0;
@@ -2386,7 +2381,6 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		// ensure null terminated
 		sb->nullTerm();
 
-		goto changed;
 	}
 	else if ( m->m_type == TYPE_STRING         ||
 		  m->m_type == TYPE_STRINGBOX      ||
@@ -2418,9 +2412,7 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		// . used for CollectionRec::m_htmlHeadLen and m_htmlTailLen
 		if ( m->m_plen >= 0 )
 			*(int32_t *)(THIS + m->m_plen) = len ;
-		goto changed;
 	}
- changed:
 
 	// do not send if setting from startup
 	if ( ! fromRequest ) return;
