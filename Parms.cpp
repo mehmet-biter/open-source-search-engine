@@ -154,9 +154,6 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 		}
 		case TYPE_INT32:
 		case TYPE_INT32_CONST:
-		case TYPE_TIME: {
-			return sb->safePrintf("%" PRId32,*(int32_t *)val);
-		}
 		case TYPE_FLOAT: {
 			return sb->safePrintf("%f",*(float *)val);
 		}
@@ -2018,27 +2015,6 @@ bool Parms::printParm( SafeBuf* sb,
 		sb->htmlEncode ( s , strlen(s), false );
 		sb->safePrintf ("</textarea>\n");
 	}
-	else if ( t == TYPE_TIME ) {
-		//time is stored as a string
-		char hr[3]="00";
-		char min[3]="00";
-		//if time is not stored properly, just write 00:00
-		if ( s[2] == ':' ) {
-			gbmemcpy ( hr, s, 2 );
-			gbmemcpy ( min, s + 3, 2 );
-		}
-		hr[2] = '\0';
-		min[2] = '\0';
-		// print the time in the input forms
-		sb->safePrintf("<input type=text name=%shr size=2 "
-			       "value=%s>h "
-			       "<input type=text name=%smin size=2 "
-			       "value=%s>m " ,
-			       cgi    ,
-			       hr ,
-			       cgi    ,
-			       min  );
-	}
 
 	// end the input cell
 	sb->safePrintf ( "</td>\n");
@@ -2405,8 +2381,7 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		}
 		case TYPE_STRING:
 		case TYPE_STRINGBOX:
-		case TYPE_STRINGNONEMPTY:
-		case TYPE_TIME: {
+		case TYPE_STRINGNONEMPTY: {
 			if( !s ) {
 				return;
 			}
@@ -3044,8 +3019,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 	}
 	else if ( m->m_type == TYPE_STRING         ||
 		  m->m_type == TYPE_STRINGBOX      ||
-		  m->m_type == TYPE_STRINGNONEMPTY ||
-		  m->m_type == TYPE_TIME) {
+		  m->m_type == TYPE_STRINGNONEMPTY) {
 		sb->htmlEncode ( s );
 	}
 	return true;
@@ -9983,7 +9957,6 @@ void Parms::init ( ) {
 		if ( t == TYPE_CHECKBOX       ) size = 1;
 		if ( t == TYPE_PRIORITY       ) size = 1;
 		if ( t == TYPE_PRIORITY2      ) size = 1;
-		if ( t == TYPE_TIME           ) size = 6;
 		if ( t == TYPE_FLOAT          ) size = 4;
 		if ( t == TYPE_DOUBLE         ) size = 8;
 		if ( t == TYPE_IP             ) size = 4;

@@ -39,7 +39,6 @@ enum parameter_type_t {
 	TYPE_STRING           = 16,
 	TYPE_STRINGBOX        = 17,
 	TYPE_STRINGNONEMPTY   = 18,
-	TYPE_TIME             = 19,
 	TYPE_COMMENT          = 24,
 	TYPE_INT32_CONST      = 28,
 	TYPE_SAFEBUF          = 30,
