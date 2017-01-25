@@ -3794,170 +3794,170 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 	int32_t typeSite = hash64Lower_a("site",4);
 	int32_t typeInlinks = hash64Lower_a("sitenuminlinks",14);
 
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_TAGDB,
-			      cr->m_collnum      ,
-			      &list         ,
-			      (char *)&startKey      ,
-			      (char *)&endKey        ,
-			      minRecSizes   ,
-			      includeTree   ,
-			      0             , // max cache age
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         , // err correction?
-			      NULL,           // cacheKeyPtr
-			      0,              // retryNum
-			      -1,             // maxRetries
-			      -1,             // syncPoint
-			      false,          // isRealMerge
-			      true))          // allowPageCache
-	{
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) return;
-	// loop over entries in list
-	for(list.resetListPtr();!list.isExhausted(); list.skipCurrentRecord()){
-		char *rec  = list.getCurrentRec();
-		//key96_t k    = list.getCurrentKey();
-		key128_t k;
-		list.getCurrentKey ( &k );
-		char *data = list.getCurrentData();
-		int32_t  size = list.getCurrentDataSize();
-		// is it a delete?
-		if ( (k.n0 & 0x01) == 0 ) {
-			if ( req == 'z' ) continue;
-			printf("k.n1=%016" PRIx64" "
-			       "k.n0=%016" PRIx64" (delete)\n",
-			       k.n1  , k.n0   | 0x01  );  // fix it!
-			continue;
+	for(;;) {
+		// use msg5 to get the list, should ALWAYS block since no threads
+		if ( ! msg5.getList ( RDB_TAGDB,
+				      cr->m_collnum      ,
+				      &list         ,
+				      (char *)&startKey      ,
+				      (char *)&endKey        ,
+				      minRecSizes   ,
+				      includeTree   ,
+				      0             , // max cache age
+				      startFileNum  ,
+				      numFiles      ,
+				      NULL          , // state
+				      NULL          , // callback
+				      0             , // niceness
+				      false         , // err correction?
+				      NULL,           // cacheKeyPtr
+				      0,              // retryNum
+				      -1,             // maxRetries
+				      -1,             // syncPoint
+				      false,          // isRealMerge
+				      true))          // allowPageCache
+		{
+			log(LOG_LOGIC,"db: getList did not block.");
+			return;
 		}
-		// point to the data
-		char  *p       = data;
-		char  *pend    = data + size;
-		// breach check
-		if ( p >= pend ) {
-			printf("corrupt tagdb rec k.n0=%" PRIu64,k.n0);
-			continue;
-		}
-
-		// parse it up
-		Tag *tag = (Tag *)rec;
-
-		// print the version and site
-		StackBuf<1024> sb;
-
-		bool match = false;
-
-		hostHash = tag->m_key.n1;
-
-		if ( hostHash == lastHostHash ) {
-			match = true;
-		}
-		else {
-			site = NULL;
-			siteNumInlinks = -1;
-		}
-
-		lastHostHash = hostHash;
-
-		// making sitelist.txt?
-		if ( tag->m_type == typeSite && req == 'z' ) {
-			site = tag->getTagData();
-			// make it null if too many .'s
-			if ( site ) {
-				char *p = site;
-				int count = 0;
-				int alpha = 0;
-				int colons = 0;
-				// foo.bar.baz.com is ok
-				for ( ; *p ; p++ ) {
-					if ( *p == '.' ) count++;
-					if ( *p == ':' ) colons++;
-					if ( is_alpha_a(*p) || *p=='-' ) 
-						alpha++;
-				}
-				if ( count >= 4 )
-					site = NULL;
-				if ( colons > 1 )
-					site = NULL;
-				// no ip addresses allowed, need an alpha char
-				if ( alpha == 0 )
-					site = NULL;
-			}
-			// ends in :?
-			int slen = 0;
-			if ( site ) slen = strlen(site);
-			if ( site && site[slen-1] == ':' )
-				site = NULL;
-			// port bug
-			if ( site && site[slen-2] == ':' && site[slen-1]=='/')
-				site = NULL;
-			// remove heavy spammers to save space
-			if ( site && strstr(site,"daily-camshow-report") )
-				site = NULL;
-			if ( site && strstr(site,".livejasminhd.") )
-				site = NULL;
-			if ( site && strstr(site,".pornlivenews.") )
-				site = NULL;
-			if ( site && strstr(site,".isapornblog.") )
-				site = NULL;
-			if ( site && strstr(site,".teen-model-24.") )
-				site = NULL;
-			if ( site && ! is_ascii2_a ( site, strlen(site) ) ) {
-				site = NULL;
+		// all done if empty
+		if ( list.isEmpty() ) return;
+		// loop over entries in list
+		for(list.resetListPtr();!list.isExhausted(); list.skipCurrentRecord()){
+			char *rec  = list.getCurrentRec();
+			//key96_t k    = list.getCurrentKey();
+			key128_t k;
+			list.getCurrentKey ( &k );
+			char *data = list.getCurrentData();
+			int32_t  size = list.getCurrentDataSize();
+			// is it a delete?
+			if ( (k.n0 & 0x01) == 0 ) {
+				if ( req == 'z' ) continue;
+				printf("k.n1=%016" PRIx64" "
+				       "k.n0=%016" PRIx64" (delete)\n",
+				       k.n1  , k.n0   | 0x01  );  // fix it!
 				continue;
 			}
-			if ( match && siteNumInlinks>=0) {
-				// if we ask for 1 or 2 we end up with 100M
-				// entries, but with 3+ we get 27M
-				if ( siteNumInlinks > 2 && site )
-					printf("%i %s\n",siteNumInlinks,site);
-				siteNumInlinks = -1;
-				site = NULL;
+			// point to the data
+			char  *p       = data;
+			char  *pend    = data + size;
+			// breach check
+			if ( p >= pend ) {
+				printf("corrupt tagdb rec k.n0=%" PRIu64,k.n0);
+				continue;
 			}
-			// save it
-			if ( site ) strcpy ( sbuf , site );
-			continue;
+
+			// parse it up
+			Tag *tag = (Tag *)rec;
+
+			// print the version and site
+			StackBuf<1024> sb;
+
+			bool match = false;
+
+			hostHash = tag->m_key.n1;
+
+			if ( hostHash == lastHostHash ) {
+				match = true;
+			}
+			else {
+				site = NULL;
+				siteNumInlinks = -1;
+			}
+
+			lastHostHash = hostHash;
+
+			// making sitelist.txt?
+			if ( tag->m_type == typeSite && req == 'z' ) {
+				site = tag->getTagData();
+				// make it null if too many .'s
+				if ( site ) {
+					char *p = site;
+					int count = 0;
+					int alpha = 0;
+					int colons = 0;
+					// foo.bar.baz.com is ok
+					for ( ; *p ; p++ ) {
+						if ( *p == '.' ) count++;
+						if ( *p == ':' ) colons++;
+						if ( is_alpha_a(*p) || *p=='-' ) 
+							alpha++;
+					}
+					if ( count >= 4 )
+						site = NULL;
+					if ( colons > 1 )
+						site = NULL;
+					// no ip addresses allowed, need an alpha char
+					if ( alpha == 0 )
+						site = NULL;
+				}
+				// ends in :?
+				int slen = 0;
+				if ( site ) slen = strlen(site);
+				if ( site && site[slen-1] == ':' )
+					site = NULL;
+				// port bug
+				if ( site && site[slen-2] == ':' && site[slen-1]=='/')
+					site = NULL;
+				// remove heavy spammers to save space
+				if ( site && strstr(site,"daily-camshow-report") )
+					site = NULL;
+				if ( site && strstr(site,".livejasminhd.") )
+					site = NULL;
+				if ( site && strstr(site,".pornlivenews.") )
+					site = NULL;
+				if ( site && strstr(site,".isapornblog.") )
+					site = NULL;
+				if ( site && strstr(site,".teen-model-24.") )
+					site = NULL;
+				if ( site && ! is_ascii2_a ( site, strlen(site) ) ) {
+					site = NULL;
+					continue;
+				}
+				if ( match && siteNumInlinks>=0) {
+					// if we ask for 1 or 2 we end up with 100M
+					// entries, but with 3+ we get 27M
+					if ( siteNumInlinks > 2 && site )
+						printf("%i %s\n",siteNumInlinks,site);
+					siteNumInlinks = -1;
+					site = NULL;
+				}
+				// save it
+				if ( site ) strcpy ( sbuf , site );
+				continue;
+			}
+
+			if ( tag->m_type == typeInlinks && req == 'z' ) {
+				siteNumInlinks = atoi(tag->getTagData());
+				if ( match && site ) {
+					// if we ask for 1 or 2 we end up with 100M
+					// entries, but with 3+ we get 27M
+					if ( siteNumInlinks > 2 )
+						printf("%i %s\n",siteNumInlinks,sbuf);
+					siteNumInlinks = -1;
+					site = NULL;
+				}
+				continue;
+			}
+
+			if ( req == 'z' )
+				continue;
+
+			// print as an add request or just normal
+			if ( req == 'A' ) tag->printToBufAsAddRequest ( &sb );
+			else              tag->printToBuf             ( &sb );
+
+			// dump it
+			printf("%s\n",sb.getBufStart());
+
 		}
 
-		if ( tag->m_type == typeInlinks && req == 'z' ) {
-			siteNumInlinks = atoi(tag->getTagData());
-			if ( match && site ) {
-				// if we ask for 1 or 2 we end up with 100M
-				// entries, but with 3+ we get 27M
-				if ( siteNumInlinks > 2 )
-					printf("%i %s\n",siteNumInlinks,sbuf);
-				siteNumInlinks = -1;
-				site = NULL;
-			}
-			continue;
-		}
-
-		if ( req == 'z' )
-			continue;
-
-		// print as an add request or just normal
-		if ( req == 'A' ) tag->printToBufAsAddRequest ( &sb );
-		else              tag->printToBuf             ( &sb );
-
-		// dump it
-		printf("%s\n",sb.getBufStart());
-
+		startKey = *(key128_t *)list.getLastKey();
+		startKey++;
+		// watch out for wrap around
+		if ( startKey < *(key128_t *)list.getLastKey() ){ 
+			printf("\n"); return;}
 	}
-		
-	startKey = *(key128_t *)list.getLastKey();
-	startKey++;
-	// watch out for wrap around
-	if ( startKey < *(key128_t *)list.getLastKey() ){ 
-		printf("\n"); return;}
-	goto loop;
 }
 
 static bool parseTest(const char *coll, int64_t docId, const char *query) {
@@ -4491,74 +4491,75 @@ static void dumpClusterdb(const char *coll,
 	Msg5 msg5;
 	RdbList list;
 	CollectionRec *cr = g_collectiondb.getRec(coll);
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_CLUSTERDB ,
-			      cr->m_collnum          ,
-			      &list         ,
-			      startKey      ,
-			      endKey        ,
-			      minRecSizes   ,
-			      includeTree   ,
-			      0             , // max cache age
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         , // err correction?
-			      NULL,           // cacheKeyPtr
-			      0,              // retryNum
-			      -1,             // maxRetries
-			      -1,             // syncPoint
-			      false,          // isRealMerge
-			      true))          // allowPageCache
-	{
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() )
-		return;
-	// loop over entries in list
-	char strLanguage[256];
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
-		key96_t k    = list.getCurrentKey();
-		// is it a delete?
-		const char *dd = "";
-		if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
-		// get the language string
-		languageToString ( g_clusterdb.getLanguage((char*)&k),
-				   strLanguage );
-		//uint32_t gid = getGroupId ( RDB_CLUSTERDB , &k );
-		uint32_t shardNum = getShardNum( RDB_CLUSTERDB , &k );
-		Host *grp = g_hostdb.getShard ( shardNum );
-		Host *hh = &grp[0];
-		// print it
-		printf("k.n1=%08" PRIx32" k.n0=%016" PRIx64" "
-		       "docId=%012" PRId64" family=%" PRIu32" "
-		       "language=%" PRId32" (%s) siteHash26=%" PRIu32"%s "
-		       "groupNum=%" PRIu32" "
-		       "shardNum=%" PRIu32"\n",
-		       k.n1, k.n0,
-		       g_clusterdb.getDocId((char*)&k) , 
-		       g_clusterdb.hasAdultContent((char*)&k) ,
-		       (int32_t)g_clusterdb.getLanguage((char*)&k),
-		       strLanguage,
-		       g_clusterdb.getSiteHash26((char*)&k)    ,
-		       dd ,
-		       (uint32_t)hh->m_hostId ,
-		       shardNum);
-		continue;
-	}
 
-	startKey = *(key96_t *)list.getLastKey();
-	startKey++;
-	// watch out for wrap around
-	if ( startKey < *(key96_t *)list.getLastKey() )
-		return;
-	goto loop;
+	for(;;) {
+		// use msg5 to get the list, should ALWAYS block since no threads
+		if ( ! msg5.getList ( RDB_CLUSTERDB ,
+				      cr->m_collnum          ,
+				      &list         ,
+				      startKey      ,
+				      endKey        ,
+				      minRecSizes   ,
+				      includeTree   ,
+				      0             , // max cache age
+				      startFileNum  ,
+				      numFiles      ,
+				      NULL          , // state
+				      NULL          , // callback
+				      0             , // niceness
+				      false         , // err correction?
+				      NULL,           // cacheKeyPtr
+				      0,              // retryNum
+				      -1,             // maxRetries
+				      -1,             // syncPoint
+				      false,          // isRealMerge
+				      true))          // allowPageCache
+		{
+			log(LOG_LOGIC,"db: getList did not block.");
+			return;
+		}
+		// all done if empty
+		if ( list.isEmpty() )
+			return;
+		// loop over entries in list
+		char strLanguage[256];
+		for ( list.resetListPtr() ; ! list.isExhausted() ;
+		      list.skipCurrentRecord() ) {
+			key96_t k    = list.getCurrentKey();
+			// is it a delete?
+			const char *dd = "";
+			if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
+			// get the language string
+			languageToString ( g_clusterdb.getLanguage((char*)&k),
+					   strLanguage );
+			//uint32_t gid = getGroupId ( RDB_CLUSTERDB , &k );
+			uint32_t shardNum = getShardNum( RDB_CLUSTERDB , &k );
+			Host *grp = g_hostdb.getShard ( shardNum );
+			Host *hh = &grp[0];
+			// print it
+			printf("k.n1=%08" PRIx32" k.n0=%016" PRIx64" "
+			       "docId=%012" PRId64" family=%" PRIu32" "
+			       "language=%" PRId32" (%s) siteHash26=%" PRIu32"%s "
+			       "groupNum=%" PRIu32" "
+			       "shardNum=%" PRIu32"\n",
+			       k.n1, k.n0,
+			       g_clusterdb.getDocId((char*)&k) , 
+			       g_clusterdb.hasAdultContent((char*)&k) ,
+			       (int32_t)g_clusterdb.getLanguage((char*)&k),
+			       strLanguage,
+			       g_clusterdb.getSiteHash26((char*)&k)    ,
+			       dd ,
+			       (uint32_t)hh->m_hostId ,
+			       shardNum);
+			continue;
+		}
+
+		startKey = *(key96_t *)list.getLastKey();
+		startKey++;
+		// watch out for wrap around
+		if ( startKey < *(key96_t *)list.getLastKey() )
+			return;
+	}
 }
 
 static void dumpLinkdb(const char *coll,
@@ -4596,77 +4597,77 @@ static void dumpLinkdb(const char *coll,
 	RdbList list;
 	CollectionRec *cr = g_collectiondb.getRec(coll);
 
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_LINKDB ,
-			      cr->m_collnum      ,
-			      &list         ,
-			      (char *)&startKey      ,
-			      (char *)&endKey        ,
-			      minRecSizes   ,
-			      includeTree   ,
-			      0             , // max cache age
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         , // err correction?
-			      NULL,           // cacheKeyPtr
-			      0,              // retryNum
-			      -1,             // maxRetries
-			      -1,             // syncPoint
-			      false,          // isRealMerge
-			      true))          // allowPageCache
-	{
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) return;
-	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
-		key224_t k;
-		list.getCurrentKey((char *) &k);
-		// is it a delete?
-		const char *dd = "";
-		if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
-		uint64_t docId = (uint64_t)Linkdb::getLinkerDocId_uk(&k);
-		int32_t shardNum = getShardNum(RDB_LINKDB,&k);
-		printf("k=%s "
-		       "linkeesitehash32=0x%08" PRIx32" "
-		       "linkeeurlhash=0x%012" PRIx64" "
-		       "linkspam=%" PRId32" "
-		       "siterank=%02" PRId32" "
-		       //"hopcount=%03hhu "
-		       "ip32=%s "
-		       "docId=%012" PRIu64" "
-		       "discovered=%" PRIu32" "
-		       "lost=%" PRIu32" "
-		       "sitehash32=0x%08" PRIx32" "
-		       "shardNum=%" PRIu32" "
-		       "%s\n",
-		       KEYSTR(&k,sizeof(key224_t)),
-		       (int32_t)Linkdb::getLinkeeSiteHash32_uk(&k),
-		       (int64_t)Linkdb::getLinkeeUrlHash64_uk(&k),
-		       (int32_t)Linkdb::isLinkSpam_uk(&k),
-		       (int32_t)Linkdb::getLinkerSiteRank_uk(&k),
-		       //hc,//Linkdb::getLinkerHopCount_uk(&k),
-		       iptoa((int32_t)Linkdb::getLinkerIp_uk(&k)),
-		       docId,
-		       (uint32_t)Linkdb::getDiscoveryDate_uk(&k),
-		       (uint32_t)Linkdb::getLostDate_uk(&k),
-		       (int32_t)Linkdb::getLinkerSiteHash32_uk(&k),
-		       (uint32_t)shardNum,
-		       dd );
-	}
+	for(;;) {
+		// use msg5 to get the list, should ALWAYS block since no threads
+		if ( ! msg5.getList ( RDB_LINKDB ,
+				      cr->m_collnum      ,
+				      &list         ,
+				      (char *)&startKey      ,
+				      (char *)&endKey        ,
+				      minRecSizes   ,
+				      includeTree   ,
+				      0             , // max cache age
+				      startFileNum  ,
+				      numFiles      ,
+				      NULL          , // state
+				      NULL          , // callback
+				      0             , // niceness
+				      false         , // err correction?
+				      NULL,           // cacheKeyPtr
+				      0,              // retryNum
+				      -1,             // maxRetries
+				      -1,             // syncPoint
+				      false,          // isRealMerge
+				      true))          // allowPageCache
+		{
+			log(LOG_LOGIC,"db: getList did not block.");
+			return;
+		}
+		// all done if empty
+		if ( list.isEmpty() ) return;
+		// loop over entries in list
+		for ( list.resetListPtr() ; ! list.isExhausted() ;
+		      list.skipCurrentRecord() ) {
+			key224_t k;
+			list.getCurrentKey((char *) &k);
+			// is it a delete?
+			const char *dd = "";
+			if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
+			uint64_t docId = (uint64_t)Linkdb::getLinkerDocId_uk(&k);
+			int32_t shardNum = getShardNum(RDB_LINKDB,&k);
+			printf("k=%s "
+			       "linkeesitehash32=0x%08" PRIx32" "
+			       "linkeeurlhash=0x%012" PRIx64" "
+			       "linkspam=%" PRId32" "
+			       "siterank=%02" PRId32" "
+			       //"hopcount=%03hhu "
+			       "ip32=%s "
+			       "docId=%012" PRIu64" "
+			       "discovered=%" PRIu32" "
+			       "lost=%" PRIu32" "
+			       "sitehash32=0x%08" PRIx32" "
+			       "shardNum=%" PRIu32" "
+			       "%s\n",
+			       KEYSTR(&k,sizeof(key224_t)),
+			       (int32_t)Linkdb::getLinkeeSiteHash32_uk(&k),
+			       (int64_t)Linkdb::getLinkeeUrlHash64_uk(&k),
+			       (int32_t)Linkdb::isLinkSpam_uk(&k),
+			       (int32_t)Linkdb::getLinkerSiteRank_uk(&k),
+			       //hc,//Linkdb::getLinkerHopCount_uk(&k),
+			       iptoa((int32_t)Linkdb::getLinkerIp_uk(&k)),
+			       docId,
+			       (uint32_t)Linkdb::getDiscoveryDate_uk(&k),
+			       (uint32_t)Linkdb::getLostDate_uk(&k),
+			       (int32_t)Linkdb::getLinkerSiteHash32_uk(&k),
+			       (uint32_t)shardNum,
+			       dd );
+		}
 
-	startKey = *(key224_t *)list.getLastKey();
-	startKey++;
-	// watch out for wrap around
-	if ( startKey < *(key224_t *)list.getLastKey() ) return;
-	goto loop;
+		startKey = *(key224_t *)list.getLastKey();
+		startKey++;
+		// watch out for wrap around
+		if ( startKey < *(key224_t *)list.getLastKey() ) return;
+	}
 }
 
 
