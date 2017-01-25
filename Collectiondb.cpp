@@ -140,7 +140,7 @@ bool Collectiondb::loadAllCollRecs ( ) {
 	// if no existing recs added... add coll.main.0 always at startup
 	if ( m_numRecs == 0 ) {
 		log("admin: adding main collection.");
-		addNewColl ( "main", true, 0 );
+		addNewColl ( "main", 0 );
 	}
 
 	m_initializing = false;
@@ -255,7 +255,7 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 //   because we are doing a './gb dump ...' cmd to dump out data from
 //   one Rdb which we will custom initialize in main.cpp where the dump
 //   code is. like for instance, posdb.
-bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
+bool Collectiondb::addNewColl ( const char *coll,
 				// Parms.cpp reserves this so it can be sure
 				// to add the same collnum to every shard
 				collnum_t newCollnum ) {
@@ -381,9 +381,6 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 
 	// start the spiders!
 	cr->m_spideringEnabled = true;
-
-	// override this?
-	saveIt = true;
 
 	//
 	// END NEW CODE

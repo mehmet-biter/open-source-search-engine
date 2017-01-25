@@ -486,7 +486,7 @@ bool Parms::CommandAddColl ( char *rec ) {
 	}
 
 	// this saves it to disk! returns false and sets g_errno on error.
-	if ( ! g_collectiondb.addNewColl ( collName, true, newCollnum ) )
+	if ( ! g_collectiondb.addNewColl ( collName, newCollnum ) )
 		// error! g_errno should be set
 		return true;
 

@@ -63,7 +63,7 @@ class Collectiondb  {
 
 	bool addExistingColl ( const char *coll, collnum_t collnum );
 
-	bool addNewColl( const char *coll, bool saveIt, collnum_t newCollnum ) ;
+	bool addNewColl( const char *coll, collnum_t newCollnum ) ;
 
 	bool addRdbBaseToAllRdbsForEachCollRec ( ) ;
 	bool addRdbBasesForCollRec ( CollectionRec *cr ) ;
