@@ -117,7 +117,7 @@ int copyFiles ( const char *dstDir ) ;
 
 const char *getAbsoluteGbDir(const char *argv0);
 
-static int32_t checkDirPerms ( char *dir ) ;
+static int32_t checkDirPerms(const char *dir);
 
 // benchmark RdbTree::addRecord() for indexdb
 bool treetest    ( ) ;
@@ -2073,7 +2073,7 @@ int main2 ( int argc , char *argv[] ) {
 }
 
 /// @todo ALC wouldn't it be faster to actually check the dir permission instead of trying to write a tmp file?
-int32_t checkDirPerms ( char *dir ) {
+int32_t checkDirPerms(const char *dir) {
 	if ( g_conf.m_readOnlyMode ) {
 		return 0;
 	}
