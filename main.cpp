@@ -156,9 +156,9 @@ typedef enum {
 static int install_file(const char *file);
 static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir = NULL,
                      int32_t hostId2 = -1, char *cmd = NULL );
-int scale   ( char *newhostsconf , bool useShotgunIp );
-int collinject ( char *newhostsconf );
-int collcopy ( char *newHostsConf , char *coll , int32_t collnum ) ;
+static int scale(const char *newhostsconf, bool useShotgunIp);
+static int collinject(const char *newhostsconf);
+static int collcopy(const char *newHostsConf, const char *coll, int32_t collnum);
 
 bool doCmd ( const char *cmd , int32_t hostId , const char *filename , bool sendToHosts,
 	     bool sendToProxies, int32_t hostId2=-1 );
@@ -2200,7 +2200,7 @@ void doCmdAll ( int fd, void *state ) {
 }
 
 // copy a collection from one network to another (defined by 2 hosts.conf's)
-int collcopy ( char *newHostsConf , char *coll , int32_t collnum ) {
+static int collcopy(const char *newHostsConf, const char *coll, int32_t collnum) {
 	Hostdb hdb;
 	//if ( ! hdb.init(newHostsConf, 0/*assume we're zero*/) ) {
 	if ( ! hdb.init( 0/*assume we're zero*/) ) {
@@ -2246,7 +2246,7 @@ int collcopy ( char *newHostsConf , char *coll , int32_t collnum ) {
 
 // generate the copies that need to be done to scale from oldhosts.conf
 // to newhosts.conf topology.
-int scale ( char *newHostsConf , bool useShotgunIp) {
+static int scale(const char *newHostsConf, bool useShotgunIp) {
 
 	g_hostdb.resetPortTables();
 
@@ -7132,7 +7132,7 @@ int dom_lcmp (const void *p1, const void *p2) {
 
 // generate the copies that need to be done to scale from oldhosts.conf
 // to newhosts.conf topology.
-int collinject ( char *newHostsConf ) {
+static int collinject(const char *newHostsConf) {
 
 	g_hostdb.resetPortTables();
 
