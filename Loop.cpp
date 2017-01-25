@@ -327,13 +327,13 @@ bool Loop::addSlot ( bool forReading , int fd, void *state, void (* callback)(in
 	}
 
 	// set fd non-blocking
-	return setNonBlocking ( fd , niceness ) ;
+	return setNonBlocking(fd);
 }
 
 // . now make sure we're listening for an interrupt on this fd
 // . set it non-blocing and enable signal catching for it
 // . listen for an interrupt for this fd
-bool Loop::setNonBlocking ( int fd , int32_t niceness ) {
+bool Loop::setNonBlocking(int fd) {
  retry:
 	int flags = fcntl ( fd , F_GETFL ) ;
 	if ( flags < 0 ) {
@@ -497,8 +497,8 @@ bool Loop::init ( ) {
 		log(LOG_ERROR,"pipe() failed with errno=%d",errno);
 		return false;
 	}
-	setNonBlocking(m_pipeFd[0],0);
-	setNonBlocking(m_pipeFd[1],0);
+	setNonBlocking(m_pipeFd[0]);
+	setNonBlocking(m_pipeFd[1]);
 	FD_SET(m_pipeFd[0],&s_selectMaskRead);
 
 	// sighupHandler() will set this to true so we know when to shutdown
@@ -764,7 +764,6 @@ void Loop::doPoll ( ) {
 	// handle returned threads for niceness 0
 	g_jobScheduler.cleanup_finished_jobs();
 
-	bool calledOne = false;
 	const int64_t now = gettimeofdayInMilliseconds();
 
 	if( n > 0 && FD_ISSET( m_pipeFd[0], &readfds ) ) {
@@ -787,7 +786,6 @@ void Loop::doPoll ( ) {
 		if ( g_conf.m_logDebugLoop || g_conf.m_logDebugTcp ) {
 			log( LOG_DEBUG, "loop: calling cback0 niceness=%" PRId32" fd=%i", s ? s->m_niceness : -1, fd );
 		}
-		calledOne = true;
 		callCallbacks_ass (true,fd, now,0);//read?
 	}
 	for ( int32_t i = 0 ; i < s_numWriteFds ; i++ ) {
@@ -801,7 +799,6 @@ void Loop::doPoll ( ) {
 		if ( g_conf.m_logDebugLoop || g_conf.m_logDebugTcp ) {
 			log( LOG_DEBUG, "loop: calling wcback0 niceness=%" PRId32" fd=%i", s ? s->m_niceness : -1, fd );
 		}
-		calledOne = true;
 		callCallbacks_ass (false,fd, now,0);//false=forRead?
 	}
 
@@ -820,7 +817,6 @@ void Loop::doPoll ( ) {
 		if ( g_conf.m_logDebugLoop || g_conf.m_logDebugTcp ) {
 			log( LOG_DEBUG, "loop: calling cback1 fd=%i", fd );
 		}
-		calledOne = true;
 		callCallbacks_ass (true,fd, now,1);//read?
 	}
 
@@ -848,7 +844,6 @@ void Loop::doPoll ( ) {
 				log( LOG_WARN, "loop: calling wcback1. Slot not found! fd=%i", fd );
 			}
 		}
-		calledOne = true;
 		callCallbacks_ass(false, fd, now, 1);//forread?
 	}
 

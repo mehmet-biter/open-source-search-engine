@@ -326,6 +326,10 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_hideAllClustered          = m_si->m_hideAllClustered;
 	mr.m_familyFilter              = m_si->m_familyFilter;
 	mr.m_doMaxScoreAlgo            = m_si->m_doMaxScoreAlgo;
+	mr.m_synonymWeight             = m_si->m_synonymWeight;
+	mr.m_usePageTemperatureForRanking = m_si->m_usePageTemperatureForRanking;
+	memcpy(mr.m_flagScoreMultiplier, m_si->m_flagScoreMultiplier, sizeof(mr.m_flagScoreMultiplier));
+	memcpy(mr.m_flagRankAdjustment, m_si->m_flagRankAdjustment, sizeof(mr.m_flagRankAdjustment));
 	mr.m_doDupContentRemoval       = m_si->m_doDupContentRemoval ;
 	mr.m_queryExpansion            = m_si->m_queryExpansion; 
 	mr.m_familyFilter              = m_si->m_familyFilter        ;

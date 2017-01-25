@@ -1475,8 +1475,6 @@ bool sendPageAPI ( TcpSocket *s , HttpRequest *r ) {
 	StackBuf<32768> p;
 
 	CollectionRec *cr = g_collectiondb.getRec ( r , true );
-	const char *coll = "";
-	if ( cr ) coll = cr->m_coll;
 
 	p.safePrintf("<html><head><title>Gigablast API</title></head><body>");
 
@@ -1669,15 +1667,14 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 	count++;
 
 
-	for ( int32_t i = 0; i < g_parms.m_numParms; i++ ) {
-		Parm *parm = &g_parms.m_parms[i];
+	for ( int32_t i = 0; i < g_parms.getNumParms(); i++ ) {
+		Parm *parm = g_parms.getParm(i);
 
 		if ( parm->m_flags & PF_HIDDEN ) continue;
 		if ( parm->m_type == TYPE_COMMENT ) continue;
 
 		if ( parm->m_flags & PF_DUP ) continue;
 		if ( parm->m_flags & PF_NOAPI ) continue;
-		if ( parm->m_flags & PF_DIFFBOT ) continue;
 
 		int32_t pageNum = parm->m_page;
 
@@ -1732,12 +1729,11 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 		case TYPE_BOOL: sb->safePrintf ( "BOOL (0 or 1)" ); break;
 		case TYPE_CHECKBOX: sb->safePrintf ( "BOOL (0 or 1)" ); break;
 		case TYPE_CHAR: sb->safePrintf ( "CHAR" ); break;
-		case TYPE_CHAR2: sb->safePrintf ( "CHAR" ); break;
 		case TYPE_FLOAT: sb->safePrintf ( "FLOAT32" ); break;
 		case TYPE_DOUBLE: sb->safePrintf ( "FLOAT64" ); break;
 		case TYPE_IP: sb->safePrintf ( "IP" ); break;
-		case TYPE_LONG: sb->safePrintf ( " PRId32" ); break;
-		case TYPE_LONG_LONG: sb->safePrintf ( " PRId64" ); break;
+		case TYPE_INT32: sb->safePrintf ( " PRId32" ); break;
+		case TYPE_INT64: sb->safePrintf ( " PRId64" ); break;
 		case TYPE_CHARPTR: sb->safePrintf ( "STRING" ); break;
 		case TYPE_STRING: sb->safePrintf ( "STRING" ); break;
 		case TYPE_STRINGBOX: sb->safePrintf ( "STRING" ); break;

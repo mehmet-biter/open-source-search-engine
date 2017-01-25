@@ -1144,9 +1144,7 @@ bool SafeBuf::safeTruncateEllipsis ( const char *src , int32_t srcLen , int32_t 
 
 #include "sort.h"
 
-bool SafeBuf::htmlDecode ( const char *src,
-			   int32_t srcLen,
-			   bool doSpecial ) {
+bool SafeBuf::htmlDecode(const char *src, int32_t srcLen) {
 	// in case we were in use
 	purge();
 	// make sure we have enough room
@@ -1188,7 +1186,7 @@ bool SafeBuf::base64Encode ( const char *sx , int32_t len ) {
 	int32_t round = 0;
 
 	// the table of 64 entities
-	static char tab[] = {
+	static const char tab[] = {
 		'A','B','C','D','E','F','G','H','I','J','K','L','M',
 		'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
 		'a','b','c','d','e','f','g','h','i','j','k','l','m',

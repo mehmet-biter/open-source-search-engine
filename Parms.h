@@ -12,38 +12,34 @@ class UdpSlot;
 class SafeBuf;
 class WaitEntry;
 
-void handleRequest3e ( UdpSlot *slot , int32_t niceness ) ;
-void handleRequest3f ( UdpSlot *slot , int32_t niceness ) ;
 
-enum {
+enum parameter_object_type_t {
 	OBJ_CONF    = 1 ,
 	OBJ_COLL        ,
 	OBJ_SI          , // SearchInput class
 	OBJ_GBREQUEST   , // for GigablastRequest class of parms
 	OBJ_IR          , // InjectionRequest class from PageInject.h
-	OBJ_NONE
+	OBJ_NONE,
+	OBJ_UNSET         // used for detecting unset values
 };
 
-/// @note TYPE_DATE & TYPE_DATE2 is removed in commit f8e94cf3bf25b2f04a8a3aac00fe883eab346f2e
-enum {
+enum parameter_type_t {
+	TYPE_UNSET            =  0,
 	TYPE_BOOL             =  1,
 	TYPE_CHECKBOX         =  3,
 	TYPE_CHAR             =  4,
-	TYPE_CHAR2            =  5, //needed to display char as a number (maxNumHops)
 	TYPE_CMD              =  6,
 	TYPE_FLOAT            =  7,
 	TYPE_IP               =  8,
-	TYPE_LONG             =  9,
-	TYPE_LONG_LONG        = 10,
+	TYPE_INT32            =  9,
+	TYPE_INT64            = 10,
 	TYPE_NONE             = 11,
 	TYPE_PRIORITY         = 12,
-	TYPE_PRIORITY2        = 13,
 	TYPE_STRING           = 16,
 	TYPE_STRINGBOX        = 17,
 	TYPE_STRINGNONEMPTY   = 18,
-	TYPE_TIME             = 19,
 	TYPE_COMMENT          = 24,
-	TYPE_LONG_CONST       = 28,
+	TYPE_INT32_CONST      = 28,
 	TYPE_SAFEBUF          = 30,
 	TYPE_FILEUPLOADBUTTON = 32,
 	TYPE_DOUBLE           = 33,
@@ -54,17 +50,16 @@ enum {
 
 // bit flags for Parm::m_flags
 #define PF_COOKIE                   0x00000001  // store in cookie?
-#define PF_REDBOX                   0x00000002  // redbox constraint on search results
+//#define PF_UNUSED                 0x00000002
 //#define PF_UNUSED                 0x00000004
-#define PF_WIDGET_PARM              0x00000008
+//#define PF_UNUSED                 0x00000008
 #define PF_API                      0x00000010
 #define PF_REBUILDURLFILTERS        0x00000020
-#define PF_NOSYNC                   0x00000040
-#define PF_DIFFBOT                  0x00000080
-
-#define PF_HIDDEN                   0x00000100
-#define PF_NOSAVE                   0x00000200
-#define PF_DUP                      0x00000400
+#define PF_NOSYNC                   0x00000040	// Don't synchronize the parameter value across hosts
+//#define PF_UNUSED                 0x00000080
+#define PF_HIDDEN                   0x00000100	// Hidden parameter/setting
+#define PF_NOSAVE                   0x00000200	// Don't save to gb.conf/coll.conf/..
+#define PF_DUP                      0x00000400	// Underlying variable is coverd by other parameter already
 #define PF_TEXTAREA                 0x00000800
 #define PF_COLLDEFAULT              0x00001000
 #define PF_NOAPI                    0x00002000
@@ -97,9 +92,9 @@ class Parm {
 
 
 	char  m_colspan;
-	char  m_type;  // TYPE_BOOL, TYPE_LONG, ...
+	parameter_type_t  m_type;  // TYPE_BOOL, TYPE_LONG, ...
 	int32_t  m_page;  // PAGE_MASTER, PAGE_SPIDER, ... see Pages.h
-	char  m_obj;   // OBJ_CONF or OBJ_COLL
+	parameter_object_type_t  m_obj;   // OBJ_CONF/OBJ_COLL/...
 	// the maximum number of elements supported in the array.
 	// this is 1 if NOT an array (i.e. array of only one parm).
 	// in such cases a "count" is NOT stored before the parm in
@@ -113,6 +108,7 @@ class Parm {
 	int32_t  m_size;  // max string size
 	const char *m_def;   // default value of this variable if not in either conf
 	int32_t  m_defOff; // if default value points to a collectionrec parm!
+	int32_t m_defOff2;  //default form g_conf
 	bool  m_cast;  // true if we should broadcast to all hosts (default)
 	const char *m_units;
 	bool  m_addin; // add "insert above" link to gui when displaying array
@@ -157,6 +153,9 @@ class Parms {
 
 	void init();
 
+	static bool registerHandler3e();
+	static bool registerHandler3f();
+
 	bool sendPageGeneric ( class TcpSocket *s, class HttpRequest *r );
 
 	bool printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r );
@@ -196,25 +195,24 @@ class Parms {
 			      TcpSocket* s,
 			      class CollectionRec *newcr ,
 			      char *THIS ,
-			      int32_t objType );
+			      parameter_object_type_t objType);
 
 	bool insertParm ( int32_t i , int32_t an , char *THIS ) ;
 	bool removeParm ( int32_t i , int32_t an , char *THIS ) ;
 
-	void setParm ( char *THIS, Parm *m, int32_t mm, int32_t j, const char *def,
-		       bool isHtmlEncoded , bool fromRequest ) ;
+	void setParm(char *THIS, Parm *m, int32_t array_index, const char *s, bool isHtmlEncoded, bool fromRequest);
 
-	void setToDefault ( char *THIS , char objType ,
-			    CollectionRec *argcr );//= NULL ) ;
+	void setToDefault(char *THIS, parameter_object_type_t objType,
+			  CollectionRec *argcr );
 
 	bool setFromFile ( void *THIS        ,
 			   char *filename    ,
 			   char *filenameDef ,
-			   char  objType ) ;
+			   parameter_object_type_t objType);
 
 	bool setXmlFromFile(Xml *xml, char *filename, class SafeBuf *sb );
 
-	bool saveToXml ( char *THIS , char *f , char objType ) ;
+	bool saveToXml(char *THIS, char *f, parameter_object_type_t objType);
 
 	bool getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s );
 
@@ -222,6 +220,7 @@ class Parms {
 				   class HttpRequest *hr ,
 				   class GigablastRequest *gr );
 
+	bool inSyncWithHost0() const { return m_inSyncWithHost0; }
 	// . make it so a collectionrec can be copied in Collectiondb.cpp
 	// . so the rec can be copied and the old one deleted without
 	//   freeing the safebufs now used by the new one.
@@ -229,6 +228,12 @@ class Parms {
 
 	void overlapTest ( char step ) ;
 
+	Parm *getParm(int32_t i) { return m_parms+i; }
+	int32_t getNumParms() const { return m_numParms; }
+	Parm *getSearchParm(int32_t i) { return m_searchParms[i]; }
+	int32_t getNumSearchParms() const { return m_numSearchParms; }
+
+private:
 	//
 	// new functions
 	//
@@ -248,10 +253,14 @@ class Parms {
 				     collnum_t collnum ,
 				     int32_t occNum ,
 				     Parm *m ) ;
+public:
 	bool convertHttpRequestToParmList (HttpRequest *hr,SafeBuf *parmList,
 					   int32_t page , TcpSocket *sock );
+private:
 	Parm *getParmFast2 ( int32_t cgiHash32 ) ;
 	Parm *getParmFast1 ( const char *cgi , int32_t *occNum ) ;
+	Parm *getParmFromParmRec(char *rec);
+public:
 	bool broadcastParmList ( SafeBuf *parmList ,
 				 void    *state ,
 				 void   (* callback)(void *) ,
@@ -260,6 +269,7 @@ class Parms {
 				 // send to this single hostid? -1 means all
 				 int32_t hostId = -1 ,
 				 int32_t hostId2 = -1 ); // hostid range?
+private:
 	bool doParmSendingLoop ( ) ;
 	bool syncParmsWithHost0 ( ) ;
 	bool makeSyncHashList ( SafeBuf *hashList ) ;
@@ -268,6 +278,26 @@ class Parms {
 
 	bool cloneCollRec ( char *srcCR , char *dstCR ) ;
 
+	static bool CommandInsertUrlFiltersRow(char *rec);
+	static bool CommandRemoveUrlFiltersRow(char *rec);
+#ifndef PRIVACORE_SAFE_VERSION
+	static bool CommandCloneColl(char *rec);
+	static bool CommandAddColl(char *rec);
+#endif
+	static bool CommandPowerOnNotice(char *rec);
+	static bool CommandPowerOffNotice(char *rec);
+	static bool CommandInSync(char *rec);
+	static void gotParmReplyWrapper(void *state, UdpSlot *slot);
+	static void handleRequest3e(UdpSlot *slot, int32_t /*niceness*/);
+	static void gotReplyFromHost0Wrapper(void *state, UdpSlot *slot );
+public: //main.cpp needs this:
+	static void tryToSyncWrapper(int fd, void *state);
+private:
+	static void parmLoop(int fd, void *state);
+	static void handleRequest3fLoop2(void *state, UdpSlot *slot);
+	static void handleRequest3fLoop3(int fd, void *state);
+	static void handleRequest3fLoop(void *weArg);
+	static void handleRequest3f(UdpSlot *slot, int32_t /*niceness*/);
 	//
 	// end new functions
 	//

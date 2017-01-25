@@ -1319,7 +1319,7 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 
 	// use that
 	m_siteStartKey = g_tagdb.makeStartKey( site, siteLen );
-	m_siteEndKey = g_tagdb.makeEndKey( site );
+	m_siteEndKey = g_tagdb.makeEndKey( site, siteLen );
 
 	m_url = url;
 
@@ -1581,8 +1581,8 @@ void Msg8a::gotAllReplies ( ) {
 
 		// panic msg
 		if ( list->getListSize() >= 10000000 ) {
-			log("tagdb: CAUTION!!! cutoff tagdb list!");
-			log("tagdb: CAUTION!!! will lost useful info!!");
+			logError("tagdb: CAUTION!!! cutoff tagdb list!");
+			logError("tagdb: CAUTION!!! will lost useful info!!");
 			g_process.shutdownAbort(true);
 		}
 

@@ -477,7 +477,7 @@ subloop:
 	}
 		
 	// do not spider until collections/parms in sync with host #0
-	if ( ! g_parms.m_inSyncWithHost0 ) {
+	if ( ! g_parms.inSyncWithHost0() ) {
 		logTrace( g_conf.m_logTraceSpider, "END, not in sync with host#0"  );
 		return;
 	}
@@ -2345,7 +2345,7 @@ static void gotCrawlInfoReply(void *state, UdpSlot *slot) {
 	s_updateRoundNum++;
 }
 
-void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
+void handleRequestc1(UdpSlot *slot, int32_t /*niceness*/) {
 	// just a single collnum
 	if ( slot->m_readBufSize != 1 ) { g_process.shutdownAbort(true); }
 

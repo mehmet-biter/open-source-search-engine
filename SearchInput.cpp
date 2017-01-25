@@ -65,6 +65,14 @@ SearchInput::SearchInput() {
 	m_askOtherShards = false;
 	memset(m_queryId, 0, sizeof(m_queryId));
 	m_doMaxScoreAlgo = false;
+	m_synonymWeight = 0.9;
+	m_usePageTemperatureForRanking = true;
+	m_numFlagScoreMultipliers=26;
+	for(int i=0; i<26; i++)
+		m_flagScoreMultiplier[i] = 1.0;
+	m_numFlagRankAdjustments=26;
+	for(int i=0; i<26; i++)
+		m_flagRankAdjustment[i] = 0;
 	m_streamResults = false;
 	m_secsBack = 0;
 	m_sortBy = 0;
@@ -75,7 +83,7 @@ SearchInput::SearchInput() {
 	m_summaryMaxNumCharsPerLine = 0;
 	m_docsWanted = 0;
 	m_firstResultNum = 0;
-	m_doQueryHighlighting = 0;
+	m_doQueryHighlighting = false;
 	m_highlightQuery = NULL;
 	m_displayInlinks = 0;
 	m_displayOutlinks = 0;
@@ -146,8 +154,8 @@ void SearchInput::test ( ) {
 	int32_t size = b - a;
 	memset ( a , 0x00 , size );
 	// loop through all possible cgi parms to set SearchInput
-	for ( int32_t i = 0 ; i < g_parms.m_numSearchParms ; i++ ) {
-		Parm *m = g_parms.m_searchParms[i];
+	for ( int32_t i = 0 ; i < g_parms.getNumSearchParms() ; i++ ) {
+		Parm *m = g_parms.getSearchParm(i);
 		unsigned char *x = (unsigned char *)this + m->m_off;
 		if ( m->m_type != TYPE_BOOL ) *(int32_t *)x = 0xffffffff;
 		else                          *(unsigned char *)x = 0xff;
@@ -160,8 +168,8 @@ void SearchInput::test ( ) {
 		// find it
 		int32_t off = i + fix;
 		const char *name = NULL; // "unknown";
-		for ( int32_t k = 0 ; k < g_parms.m_numSearchParms ; k++ ) {
-			Parm *m = g_parms.m_searchParms[k];
+		for ( int32_t k = 0 ; k < g_parms.getNumSearchParms(); k++ ) {
+			Parm *m = g_parms.getSearchParm(k);
 			if ( m->m_off != off ) continue;
 			name = m->m_title;
 			break;
@@ -203,30 +211,30 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 
 	// if we had a "&c=..." in the GET request process that
 	if ( p ) {
-	loop:
-		const char *end = p;
-		for ( ; *end && ! is_wspace_a(*end) ; end++ );
-		CollectionRec *tmpcr = g_collectiondb.getRec ( p, end-p );
-		// set defaults from the FIRST one
-		if ( tmpcr && ! cr ) {
-			cr = tmpcr;
-		}
-		if ( ! tmpcr ) { 
-			g_errno = ENOCOLLREC;
-			log("query: missing collection %*.*s",(int)(end-p),(int)(end-p),p);
-			g_msg = " (error: no such collection)";		
-			return false;
-		}
-		// add to our list
-		if (!m_collnumBuf.safeMemcpy(&tmpcr->m_collnum,
-					     sizeof(collnum_t)))
-			return false;
-		// advance
-		p = end;
-		// skip to next collection name if there is one
-		while ( *p && is_wspace_a(*p) ) p++; 
-		// now add it's collection # to m_collnumBuf if there
-		if ( *p ) goto loop;
+		do {
+			const char *end = p;
+			for ( ; *end && ! is_wspace_a(*end) ; end++ );
+			CollectionRec *tmpcr = g_collectiondb.getRec ( p, end-p );
+			// set defaults from the FIRST one
+			if ( tmpcr && ! cr ) {
+				cr = tmpcr;
+			}
+			if ( ! tmpcr ) {
+				g_errno = ENOCOLLREC;
+				log("query: missing collection %*.*s",(int)(end-p),(int)(end-p),p);
+				g_msg = " (error: no such collection)";		
+				return false;
+			}
+			// add to our list
+			if (!m_collnumBuf.safeMemcpy(&tmpcr->m_collnum,
+						     sizeof(collnum_t)))
+				return false;
+			// advance
+			p = end;
+			// skip to next collection name if there is one
+			while ( *p && is_wspace_a(*p) ) p++;
+			// now add it's collection # to m_collnumBuf if there
+		} while(*p);
 	}
 
 	// use default collection if none provided
@@ -274,8 +282,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	char tmpFormat = m_hr.getReplyFormat();
 	// now override automatic defaults for special cases
 	if ( tmpFormat != FORMAT_HTML ) {
-		m_familyFilter            = false;
-		m_doQueryHighlighting     = 0;
+		m_doQueryHighlighting = false;
 		m_getDocIdScoringInfo = false;
 	}
 

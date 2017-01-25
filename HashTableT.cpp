@@ -1,20 +1,13 @@
-#include "gb-include.h"
-
 #include "HashTableT.h"
-#include "Profiler.h" //For fnInfo struct
-#include "Title.h" // For Title::InLinkInfo
 #include "Dns.h"
-#include "types.h"
-#include "Process.h"
-#include "File.h"
 #include "Dns_internals.h"
 #include "Mem.h"
-#include <fcntl.h>
+#include "Errno.h"
 
 
 template<class Key_t, class Val_t> 
 HashTableT<Key_t, Val_t>::HashTableT() {
-/*	m_keys = NULL;
+        m_keys = NULL;
 	m_vals = NULL;
 	m_numSlots     = 0;
 	m_numSlotsUsed = 0;
@@ -22,8 +15,6 @@ HashTableT<Key_t, Val_t>::HashTableT() {
 	m_doFree = true;
 	m_buf = NULL;
 	m_bufSize = 0;
-	*/
-	constructor();
 }
 
 
@@ -44,23 +35,6 @@ void  HashTableT<Key_t, Val_t>::reset ( ) {
 }
 
 
-// . function used by tagdb list cache to
-//  to initialize the class members
-//  as it does not use new or local member
-template<class Key_t, class Val_t>
-void HashTableT<Key_t, Val_t>::constructor(){
-        m_keys = NULL;
-	m_vals = NULL;
-	m_numSlots     = 0;
-	m_numSlotsUsed = 0;
-	m_allowDupKeys = false;
-	m_doFree = true;
-	m_buf = NULL;
-	m_bufSize = 0;
-}
-
-
-
 // returns false and sets errno on error
 template<class Key_t, class Val_t> 
 bool HashTableT<Key_t, Val_t>::set ( int32_t initialNumTerms, char *buf, int32_t bufSize, bool allowDupKeys) {
@@ -73,36 +47,6 @@ bool HashTableT<Key_t, Val_t>::set ( int32_t initialNumTerms, char *buf, int32_t
 
 template<class Key_t, class Val_t>
 HashTableT<Key_t, Val_t>::~HashTableT() { reset ( ); }
-
-
-
-template<class Key_t, class Val_t>
-bool HashTableT<Key_t, Val_t>::copy(HashTableT<Key_t, Val_t>* src) {
-	int32_t numSlots = src->m_numSlots;
-	int32_t keySize = numSlots * sizeof(Key_t);
-	int32_t valSize = numSlots * sizeof(Val_t);
-	Key_t *newKeys = (Key_t *)mmalloc(keySize, "HashTableTk");
-	Val_t *newVals = (Val_t *)mmalloc(valSize, "HashTableTv");
-	if(!newKeys || !newVals) {
-		if (newKeys) mfree(newKeys, keySize,
-			"HashTableTk");
-		if (newVals) mfree(newVals, valSize,
-			"HashTableTv");
-		return false;
-	}
-	// maybe this should be a member copy, but that's a LOT slower and
-	//  bitwise should work with everything we're using the HashTableT 
-	//  for so far
-	gbmemcpy(newKeys, src->m_keys, keySize);
-	gbmemcpy(newVals, src->m_vals, valSize);
-	reset();
-	m_keys = newKeys;
-	m_vals = newVals;
-	m_numSlots = src->getNumSlots();
-	m_numSlotsUsed = src->getNumSlotsUsed();
-	m_allowDupKeys = src->getAllowDupKeys();
-	return true;
-}
 
 
 template<class Key_t, class Val_t>
@@ -145,14 +89,13 @@ int32_t HashTableT<Key_t, Val_t>::getOccupiedSlotNum ( const Key_t& key ) const 
 
 template<class Key_t, class Val_t> 
 int32_t HashTableT<Key_t, Val_t>::getNextSlot ( Key_t& key , int32_t n ) const {
-	// inc and wrap if we need to
-	if ( ++n >= m_numSlots ) n = 0;
-
- loop:
-	if ( m_keys [ n ] == (Key_t)0   ) return -1;
-	if ( m_keys [ n ] == key ) return  n;
-	if ( ++n == m_numSlots ) n = 0;
-	goto loop;
+	for(;;) {
+		// inc and wrap if we need to
+		if ( ++n >= m_numSlots ) n = 0;
+		
+		if ( m_keys [ n ] == (Key_t)0 ) return -1;
+		if ( m_keys [ n ] == key ) return  n;
+	}
 }
 
 //return NULL if key not in hash table. We do not want a getValue
@@ -237,32 +180,6 @@ bool HashTableT<Key_t, Val_t>::removeKey ( Key_t key ) {
 		if ( ++n >= m_numSlots ) n = 0;		
 	}
 	return true;
-}
-
-// same as removeKey() above
-template<class Key_t, class Val_t> 
-void HashTableT<Key_t, Val_t>::removeSlot ( int32_t n ) {
-	// returns -1 if key not in hash table
-	//int32_t n = getOccupiedSlotNum(key);
-	if ( n < 0 ) return;
-	// save it
-	Key_t key = m_keys[n];
-	// sanity check, must be occupied
-	if ( key == 0 ) { g_process.shutdownAbort(true); }
-	// delete it
-	m_keys[n] = 0;
-	m_numSlotsUsed--;
-	if ( ++n >= m_numSlots ) n = 0;
-	// keep looping until we hit an empty slot
-	Val_t val;
-	while ( m_keys[n] ) {
-		key = m_keys[n];
-		val = m_vals[n];
-		m_keys[n] = 0;
-		m_numSlotsUsed--;
-		addKey ( key , val );
-		if ( ++n >= m_numSlots ) n = 0;		
-	}
 }
 
 
@@ -357,191 +274,53 @@ bool HashTableT<Key_t, Val_t>::setTableSize ( int32_t n, char *buf, int32_t bufS
 	return true;
 }
 
-template<class Key_t, class Val_t> 
-bool HashTableT<Key_t, Val_t>::serialize(SafeBuf& sb) {
-	sb += m_numSlots;
-	sb += m_numSlotsUsed;
-	if(m_numSlots == 0) return true;
-	bool x = true;
-	x = x && sb.safeMemcpy((char*)m_keys, sizeof(Key_t) * m_numSlots);
-	x = x && sb.safeMemcpy((char*)m_vals, sizeof(Val_t) * m_numSlots);
-	return x;
-}
 
-template<class Key_t, class Val_t> 
-int32_t HashTableT<Key_t, Val_t>::deserialize(char* s) {
-	char *p = s;
-	int32_t numSlots = *(int32_t*)p;
-	p += sizeof(int32_t);
-	int32_t numSlotsUsed = *(int32_t*)p;
-	p += sizeof(int32_t);
-	setTableSize(numSlots, m_buf, m_bufSize );
-	if(m_numSlots != numSlots) {
-		return -1;
-	}
-	if(m_numSlots == 0) {
-		m_numSlotsUsed = numSlotsUsed;
-		return p - s;
-	}
-
-	gbmemcpy((char*)m_keys, p, sizeof(Key_t) * numSlots);
-	p += sizeof(Key_t) * numSlots;
-	gbmemcpy((char*)m_vals, p, sizeof(Val_t) * numSlots);
-	p += sizeof(Val_t) * numSlots;
-	m_numSlotsUsed = numSlotsUsed;
-	return p - s;
-}
-
-
-// both return false and set g_errno on error, true otherwise
-template<class Key_t, class Val_t> 
-bool HashTableT<Key_t, Val_t>::load ( char* filename , char **tbuf , int32_t *tsize ) {
-	reset();
-	File f;
-	f.set ( filename );
-	if ( ! f.doesExist() ) return true;
-	log(LOG_INFO,"admin: Loading hashtable from %s",filename);
-	if ( ! f.open ( O_RDONLY) ) return false;
-	int32_t numSlots;
-	int32_t numSlotsUsed;
-	int32_t off = 0;
-	if ( ! f.read ( &numSlots     , 4 , off ) ) return false;
-	off += 4;
-	if ( ! f.read ( &numSlotsUsed , 4 , off ) ) return false;
-	off += 4;
-	if ( ! setTableSize ( numSlots , NULL , 0 ) ) return false;
-	int32_t ks = sizeof(Key_t);
-	int32_t vs = sizeof(Val_t);
-	// corruption check
-	if ( f.getFileSize() < ks * numSlots + vs * numSlots - 8 ) return false;
-	if ( ! f.read ( m_keys        , numSlots * ks , off ) ) return false;
-	off += numSlots * ks;
-	if ( ! f.read ( m_vals        , numSlots * vs , off ) ) return false;
-	off += numSlots * vs;
-	m_numSlotsUsed = numSlotsUsed;
-	// done if no text buf
-	if ( ! tbuf ) { f.close(); return true; }
-	// read in the tbuf size, next 4 bytes
-	if ( ! f.read (  tsize     , 4 , off ) ) return false;
-	off += 4;
-	// alloc mem for reading in the contents of the text buf
-	*tbuf = (char *)mmalloc ( *tsize , "HTtxtbuf" );
-	if ( ! *tbuf ) return false;
-	// read in the contents of the text buf
-	if ( ! f.read ( *tbuf     , *tsize , off ) ) return false;
-	off += *tsize;
-	// close the file, we are done
-	f.close();
-	return true;
-}
-
-template<class Key_t, class Val_t> 
-bool HashTableT<Key_t, Val_t>::save ( char* filename , char *tbuf , int32_t tsize ) {
-	File f;
-	f.set ( filename );
-	log(LOG_INFO,"admin: Saving hashtable from %s",filename);
-	if ( ! f.open ( O_RDWR | O_CREAT ) ) return false;
-	int32_t numSlots     = m_numSlots;
-	int32_t numSlotsUsed = m_numSlotsUsed;
-	int32_t off = 0;
-	if ( ! f.write ( &numSlots     , 4 , off ) ) return false;
-	off += 4;
-	if ( ! f.write ( &numSlotsUsed , 4 , off ) ) return false;
-	off += 4;
-	int32_t ks = sizeof(Key_t);
-	int32_t vs = sizeof(Val_t);
-	if ( ! f.write ( m_keys        , numSlots * ks , off ) ) return false;
-	off += numSlots * ks;
-	if ( ! f.write ( m_vals        , numSlots * vs , off ) ) return false;
-	off += numSlots * vs;
-	if ( ! tbuf ) { f.close(); return true; }
-	// save the text buf size
-	if ( ! f.write ( &tsize        , 4 , off ) ) return false;
-	off += 4;
-	// save the text buf content
-	if ( ! f.write ( tbuf          , tsize , off ) ) return false;
-	off += tsize;
-	f.close();
-	return true;
-}
-
-// hash the space (or +) separated list of numbers in this string
-//template<class Key_t, class Val_t> 
-//bool HashTableT<Key_t,Val_t>::hashFromString ( HashTableT *ht , char *x ) {
-bool hashFromString ( HashTableT<int64_t,char> *ht , char *x ) {
-	if ( ! x ) return true;
-	char *xend = x + strlen(x);
-	int32_t  n    = 1;
-	for ( char *s = x ; s < xend ; s++ ) 
-		// i am assuming this is ascii here!
-		if (is_wspace_a(*s)||*s == '+') n++;
-	// double # slots to nd*2 so that hashtable is somewhat sparse --> fast
-	if ( ! ht->set ( n * 2 , NULL , 0 , false ) ) return false;
-	// now populate with the docids
-	for ( char *s = x ; s < xend ; ) {
-		// skip the plusses
-		while ( s < xend && (is_wspace_a(*s) || *s == '+') ) s++;
-		// are we done?
-		if ( s >= xend ) break;
-		// get the docid, a int64_t (64 bits)
-		int64_t d = atoll ( s );
-		// add it, should never fail!
-		if ( ! ht->addKey ( d , 1 ) ) return false;
-		// skip till +
-		while ( s < xend && (*s != '+' && !is_wspace_a(*s)) ) s++;
-		// are we done?
-		if ( s >= xend ) break;
-	}
-	return true;
-}
-
-template class HashTableT<int32_t, char>;
-template class HashTableT<int32_t, int32_t>;
-template class HashTableT<int64_t , int64_t>;
-template class HashTableT<int32_t , int64_t>;
+// template class HashTableT<int32_t, char>;
+// template class HashTableT<int32_t, int32_t>;
+// template class HashTableT<int64_t , int64_t>;
+// template class HashTableT<int32_t , int64_t>;
 template class HashTableT<int64_t , int32_t>;
-template class HashTableT<int64_t, uint32_t>;
-template class HashTableT<uint64_t , uint32_t>;
+// template class HashTableT<int64_t, uint32_t>;
+// template class HashTableT<uint64_t , uint32_t>;
 template class HashTableT<uint64_t , uint64_t>;
-template class HashTableT<uint64_t , char*>;
-template class HashTableT<uint32_t, uint32_t>;
+// template class HashTableT<uint64_t , char*>;
+// template class HashTableT<uint32_t, uint32_t>;
 template class HashTableT<uint32_t, bool>;
-template class HashTableT<int64_t , bool>;
-template class HashTableT<uint64_t, float>;
-template class HashTableT<uint64_t, char>;
-template class HashTableT<uint32_t, char*>;
-template class HashTableT<uint32_t, FnInfo>;
-template class HashTableT<uint32_t, FnInfo*>;
-template class HashTableT<uint32_t, QuickPollInfo*>;
-template class HashTableT<uint32_t, HashTableT<uint64_t, float>* >;
-template class HashTableT<int64_t, char>;
-template class HashTableT<uint32_t, int64_t>;
-template class HashTableT<uint32_t, int32_t>;
-template class HashTableT<uint64_t, 
-			  HashTableT<uint64_t, float> *>;
+// template class HashTableT<int64_t , bool>;
+// template class HashTableT<uint64_t, float>;
+// template class HashTableT<uint64_t, char>;
+// template class HashTableT<uint32_t, char*>;
+// template class HashTableT<uint32_t, FnInfo>;
+// template class HashTableT<uint32_t, FnInfo*>;
+// template class HashTableT<uint32_t, QuickPollInfo*>;
+// template class HashTableT<uint32_t, HashTableT<uint64_t, float>* >;
+// template class HashTableT<int64_t, char>;
+// template class HashTableT<uint32_t, int64_t>;
+// template class HashTableT<uint32_t, int32_t>;
+// template class HashTableT<uint64_t, HashTableT<uint64_t, float> *>;
 template class HashTableT<int64_t, CallbackEntry>;	// Dns.cpp
 template class HashTableT<uint32_t, TLDIPEntry>;	// Dns.cpp
-template class HashTableT<int32_t, int16_t>;
-//template class HashTableT<uint32_t, uint32_t>;
-template class HashTableT<uint32_t, uint64_t>;
-class FrameTrace;
-template class HashTableT<uint32_t, FrameTrace *>;
-//template class HashTableT<int64_t, Title::InLinkInfo>;
-template class HashTableT<uint64_t, int32_t>;
-//template class HashTableT<uint64_t, SynonymLinkGroup>;
-template class HashTableT<uint64_t, int64_t>;
+// template class HashTableT<int32_t, int16_t>;
+// template class HashTableT<uint32_t, uint32_t>;
+// template class HashTableT<uint32_t, uint64_t>;
+// class FrameTrace;
+// template class HashTableT<uint32_t, FrameTrace *>;
+// template class HashTableT<int64_t, Title::InLinkInfo>;
+// template class HashTableT<uint64_t, int32_t>;
+// template class HashTableT<uint64_t, SynonymLinkGroup>;
+// template class HashTableT<uint64_t, int64_t>;
 template class HashTableT<uint16_t, const char *>;
 template class HashTableT<uint16_t, int>;
-template class HashTableT<int32_t,uint64_t>;
-//template class HashTableT<ull_t, TimeZoneInfo>;
-//template class HashTableT<int32_t, DivSectInfo>;
-//template class HashTableT<int32_t, DivLevelInfo>;
-template class HashTableT<uint32_t, char>;
-template class HashTableT<uint64_t, bool>;
-//template class HashTableT<uint32_t, int32_t>;
-template class HashTableT<int32_t, float>;
-//template class HashTableT<uint64_t,SiteRec>;
-//#include "Spider.h"
-//template class HashTableT<uint64_t,DomSlot>;
-//template class HashTableT<int32_t,IpSlot>;
-//template class HashTableT<uint32_t,float>;
+// template class HashTableT<int32_t,uint64_t>;
+// template class HashTableT<ull_t, TimeZoneInfo>;
+// template class HashTableT<int32_t, DivSectInfo>;
+// template class HashTableT<int32_t, DivLevelInfo>;
+// template class HashTableT<uint32_t, char>;
+// template class HashTableT<uint64_t, bool>;
+// template class HashTableT<uint32_t, int32_t>;
+// template class HashTableT<int32_t, float>;
+// template class HashTableT<uint64_t,SiteRec>;
+// #include "Spider.h"
+// template class HashTableT<uint64_t,DomSlot>;
+// template class HashTableT<int32_t,IpSlot>;
+// template class HashTableT<uint32_t,float>;

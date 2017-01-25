@@ -425,6 +425,7 @@ class Conf {
 	bool m_logTraceSummary;
 	bool m_logTraceXmlDoc;
 	bool m_logTracePhrases;
+	bool m_logTraceUrlBlockList;
 	bool m_logTraceWordSpam;
 
 	// expensive timing messages

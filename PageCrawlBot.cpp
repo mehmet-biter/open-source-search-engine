@@ -114,40 +114,6 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 // . do not add dups into m_diffbotSeeds safebuf
 // . return 0 if not in table, 1 if in table. -1 on error adding to table.
 static int32_t isInSeedBuf(CollectionRec *cr, const char *url, int len) {
-
-	HashTableX *ht = &cr->m_seedHashTable;
-
-	// if table is empty, populate it
-	if ( ht->m_numSlotsUsed <= 0 ) {
-		// initialize the hash table
-		if ( ! ht->set(8,0,1024,NULL,0,false,"seedtbl") )
-			return -1;
-		// populate it from list of seed urls
-		char *p = cr->m_diffbotSeeds.getBufStart();
-		for ( ; p && *p ; ) {
-			// get url
-			char *purl = p;
-			// advance to next
-			for ( ; *p && !is_wspace_a(*p) ; p++ );
-			// make end then
-			char *end = p;
-			// skip possible white space. might be \0.
-			if ( *p ) p++;
-			// hash it
-			int64_t h64 = hash64 ( purl , end-purl );
-			if ( ! ht->addKey ( &h64 ) ) return -1;
-		}
-	}
-
-	// is this url in the hash table?
-	int64_t u64 = hash64 ( url, len );
-	
-	if ( ht->isInTable ( &u64 ) ) return 1;
-
-	// add it to hashtable
-	if ( ! ht->addKey ( &u64 ) ) return -1;
-
-	// WAS not in table
 	return 0;
 }
 
@@ -265,16 +231,6 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 		if ( status == 1 ) {
 			continue;
 		}
-
-		// add url into m_diffbotSeeds, \n separated list
-		if ( cr->m_diffbotSeeds.length() ) {
-			// make it space not \n so it looks better in the
-			// json output i guess
-			cr->m_diffbotSeeds.pushChar( ' ' ); // \n
-		}
-
-		cr->m_diffbotSeeds.safeMemcpy (url.getUrl(), url.getUrlLen());
-		cr->m_diffbotSeeds.nullTerm();
 	}
 
 	// all done

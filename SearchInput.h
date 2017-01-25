@@ -152,6 +152,14 @@ public:
 	bool   m_doDupContentRemoval;     // msg40
 	bool   m_getDocIdScoringInfo;
 
+	float m_synonymWeight;
+	bool m_usePageTemperatureForRanking;
+
+	int32_t m_numFlagScoreMultipliers;
+	float m_flagScoreMultiplier[26];
+	int32_t m_numFlagRankAdjustments;
+	int m_flagRankAdjustment[26];
+	
 	bool   m_hideAllClustered;
 
 	bool   m_askOtherShards;
@@ -183,7 +191,7 @@ public:
 
 	int32_t   m_docsWanted;                  // msg40
 	int32_t   m_firstResultNum;              // msg40
-	char   m_doQueryHighlighting;         // msg40
+	bool      m_doQueryHighlighting;         // msg40
 	char  *m_highlightQuery;
 	Query  m_hqq;
 

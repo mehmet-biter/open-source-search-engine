@@ -1131,16 +1131,15 @@ void getImageInfo ( char *buf , int32_t bufSize ,
 	*dx = 0;
 	*dy = 0;
 
-	char *strPtr;
 	// get the dimensions of the image
-	if( (strPtr = strncasestr( buf, 20, "Exif"  )) ) {
+	if( strncasestr( buf, 20, "Exif"  ) ) {
 		log(LOG_DEBUG, "image: Image Link: ");
 		log(LOG_DEBUG, "image: We currently do not handle EXIF image "
 		     "types." );
 		// try the nextone
 		return;
 	}
-	else if( (strPtr = strncasestr( buf, 20, "GIF"  )) ) {
+	else if( strncasestr( buf, 20, "GIF"  ) ) {
 		if ( it ) *it = CT_GIF;
 		log( LOG_DEBUG, "image: GIF INFORMATION:" );
 		if( bufSize > 9 ) {
@@ -1150,7 +1149,7 @@ void getImageInfo ( char *buf , int32_t bufSize ,
 			*dy += (unsigned char)buf[8];
 		}
 	}
-	else if( (strPtr = strncasestr( buf, 20, "JFIF" )) ) {
+	else if( strncasestr( buf, 20, "JFIF" ) ) {
 		if ( it ) *it = CT_JPG;
 		log( LOG_DEBUG, "image: JPEG INFORMATION:" );
 		int32_t i;
@@ -1174,7 +1173,7 @@ void getImageInfo ( char *buf , int32_t bufSize ,
 			}
 		}
 	}
-	else if( (strPtr = strncasestr( buf, 20, "PNG" )) ) {
+	else if( strncasestr( buf, 20, "PNG" ) ) {
 		if ( it ) *it = CT_PNG;
 		log( LOG_DEBUG, "image: PNG INFORMATION:" );
 		if( bufSize > 25 ) {
@@ -1185,7 +1184,7 @@ void getImageInfo ( char *buf , int32_t bufSize ,
 			*dy = ntohl(*dy);
 		}
 	}
-	else if( (strPtr = strncasestr( buf, 20, "MM" )) ) {
+	else if( strncasestr( buf, 20, "MM" ) ) {
 		if ( it ) *it = CT_TIFF;
 		log( LOG_DEBUG, "image: TIFF INFORMATION:" );
 		int32_t startCnt = (uint32_t)buf[7]+4;
@@ -1201,7 +1200,7 @@ void getImageInfo ( char *buf , int32_t bufSize ,
 					(*(uint16_t *)&buf[i+8]);
 		}
 	}
-	else if( (strPtr = strncasestr( buf, 20, "II" )) ) {
+	else if( strncasestr( buf, 20, "II" ) ) {
 		if ( it ) *it = CT_TIFF;
 		log( LOG_DEBUG, "image: TIFF INFORMATION:" );
 		int32_t startCnt = (uint32_t)buf[7]+4;
@@ -1216,7 +1215,7 @@ void getImageInfo ( char *buf , int32_t bufSize ,
 					(*(uint16_t *)&buf[i+8]);
 		}
 	}
-	else if( (strPtr = strncasestr( buf, 20, "BM" )) ) {
+	else if( strncasestr( buf, 20, "BM" ) ) {
 		if ( it ) *it = CT_BMP;
 		log( LOG_DEBUG, "image: BMP INFORMATION:" );
 		if( bufSize > 27 ) {

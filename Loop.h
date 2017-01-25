@@ -86,7 +86,7 @@ class Loop {
 	void unregisterSleepCallback ( void *state , void (* callback)(int fd,void *state) );
 
 	// sets up for signal capture by us, g_loop
-	bool setNonBlocking ( int fd , int32_t niceness ) ;
+	bool setNonBlocking(int fd);
 
 	// . keep this public so sighandler() can call it
 	// . we also call it from HttpServer::getMsgPieceWrapper() to

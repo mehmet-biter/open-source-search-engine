@@ -630,8 +630,7 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 					    color ,
 					    STAT_QUERY );
 			// add to statsdb as well
-			g_statsdb.addStat ( 0 , // niceness
-					    "query" ,
+			g_statsdb.addStat ( "query" ,
 					    stC->m_startTime ,
 					    nowms            ,
 					    stC->m_numQueryTerms );
@@ -669,8 +668,7 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 				    color ,
 				    STAT_QUERY );
 		// add to statsdb as well
-		g_statsdb.addStat ( 0 , // niceness
-				    "query" ,
+		g_statsdb.addStat ( "query" ,
 				    stC->m_startTime ,
 				    nowms            ,
 				    stC->m_numQueryTerms );

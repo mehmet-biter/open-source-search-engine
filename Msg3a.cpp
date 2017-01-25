@@ -10,6 +10,7 @@
 #include "Process.h"
 #include "Posdb.h"
 #include "Collectiondb.h"
+#include "ScalingFunctions.h"
 #include "Conf.h"
 #include "Lang.h"
 #include "Mem.h"
@@ -1055,6 +1056,15 @@ void Msg3a::printTerms ( ) {
 		}
 	}
 }
+
+
+static float getTermFreqWeight(int64_t termFreq, int64_t numDocsInColl) {
+	if(numDocsInColl>0)
+		return scale_linear(((float)termFreq)/numDocsInColl, g_conf.m_termFreqWeightFreqMin, g_conf.m_termFreqWeightFreqMax, g_conf.m_termFreqWeightMin, g_conf.m_termFreqWeightMax);
+	else
+		return 1.0; //whatever...
+}
+
 
 void setTermFreqWeights ( collnum_t collnum , Query *q ) {
 	int64_t numDocsInColl = 0;

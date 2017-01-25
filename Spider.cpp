@@ -4062,7 +4062,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 	}
 
 	// do not spider until collections/parms in sync with host #0
-	if ( ! g_parms.m_inSyncWithHost0 ) {
+	if ( ! g_parms.inSyncWithHost0() ) {
 		*status = SP_ADMIN_PAUSED;
 		return msg->safePrintf("Parms not in sync with host #0, "
 				       "spidering paused");

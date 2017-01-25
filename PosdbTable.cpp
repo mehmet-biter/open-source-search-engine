@@ -6,6 +6,7 @@
 #include "PageTemperatureRegistry.h"
 #include "Docid2Siteflags.h"
 #include "ScalingFunctions.h"
+#include "ScoringWeights.h"
 #include "BitOperations.h"
 #include "Msg2.h"
 #include "Msg39.h"
@@ -37,11 +38,7 @@ static const int INTERSECT_DEBUG_INFO = 1;
 
 static bool  s_init = false;
 static GbMutex s_mtx_weights;
-static float s_diversityWeights [MAXDIVERSITYRANK+1];
-static float s_densityWeights   [MAXDENSITYRANK+1];
-static float s_wordSpamWeights  [MAXWORDSPAMRANK+1]; // wordspam
-static float s_linkerWeights    [MAXWORDSPAMRANK+1]; // siterank of inlinker for link text
-static float s_hashGroupWeights [HASHGROUP_END];
+static ScoringWeights s_scoringWeights;
 static bool  s_isCompatible     [HASHGROUP_END][HASHGROUP_END];
 static bool  s_inBody           [HASHGROUP_END];
 
@@ -248,20 +245,20 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 			float score = 100.0;
 			// good diversity?
 			unsigned char div = Posdb::getDiversityRank ( wpi );
-			score *= s_diversityWeights[div];
-			score *= s_diversityWeights[div];
+			score *= s_scoringWeights.m_diversityWeights[div];
+			score *= s_scoringWeights.m_diversityWeights[div];
 
 			// hash group? title? body? heading? etc.
 			unsigned char hg = Posdb::getHashGroup ( wpi );
 			unsigned char mhg = hg;
 			if ( s_inBody[mhg] ) mhg = HASHGROUP_BODY;
-			score *= s_hashGroupWeights[hg];
-			score *= s_hashGroupWeights[hg];
+			score *= s_scoringWeights.m_hashGroupWeights[hg];
+			score *= s_scoringWeights.m_hashGroupWeights[hg];
 
 			// good density?
 			unsigned char dens = Posdb::getDensityRank ( wpi );
-			score *= s_densityWeights[dens];
-			score *= s_densityWeights[dens];
+			score *= s_scoringWeights.m_densityWeights[dens];
+			score *= s_scoringWeights.m_densityWeights[dens];
 
 			// to make more compatible with pair scores divide by distance of 2
 			//score /= 2.0;
@@ -270,18 +267,18 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 			unsigned char wspam = Posdb::getWordSpamRank ( wpi );
 			// word spam weight update
 			if ( hg == HASHGROUP_INLINKTEXT ) {
-				score *= s_linkerWeights  [wspam];
-				score *= s_linkerWeights  [wspam];
+				score *= s_scoringWeights.m_linkerWeights  [wspam];
+				score *= s_scoringWeights.m_linkerWeights  [wspam];
 			}
 			else {
-				score *= s_wordSpamWeights[wspam];
-				score *= s_wordSpamWeights[wspam];
+				score *= s_scoringWeights.m_wordSpamWeights[wspam];
+				score *= s_scoringWeights.m_wordSpamWeights[wspam];
 			}
 
 			// synonym
 			if ( Posdb::getIsSynonym(wpi) ) {
-				score *= g_conf.m_synonymWeight;
-				score *= g_conf.m_synonymWeight;
+				score *= m_msg39req->m_synonymWeight;
+				score *= m_msg39req->m_synonymWeight;
 			}
 
 
@@ -511,24 +508,24 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 	float spamw2 ;
 
 	if ( hg1 == HASHGROUP_INLINKTEXT ) {
-		spamw1 = s_linkerWeights[wsr1];
+		spamw1 = s_scoringWeights.m_linkerWeights[wsr1];
 	}
 	else {
-		spamw1 = s_wordSpamWeights[wsr1];
+		spamw1 = s_scoringWeights.m_wordSpamWeights[wsr1];
 	}
 
 	if ( hg2 == HASHGROUP_INLINKTEXT ) {
-		spamw2 = s_linkerWeights[wsr2];
+		spamw2 = s_scoringWeights.m_linkerWeights[wsr2];
 	}
 	else  {
-		spamw2 = s_wordSpamWeights[wsr2];
+		spamw2 = s_scoringWeights.m_wordSpamWeights[wsr2];
 	}
 
 	// density weight
 	//float denw ;
 	//if ( hg1 == HASHGROUP_BODY ) denw = 1.0;
-	float denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
-	float denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
+	float denw1 = s_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpi)];
+	float denw2 = s_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpj)];
 
 	bool firsti = true;
 	bool firstj = true;
@@ -570,22 +567,22 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 				score = 100 * denw1 * denw2;
 
 				// hashgroup modifier
-				score *= s_hashGroupWeights[hg1];
-				score *= s_hashGroupWeights[hg2];
+				score *= s_scoringWeights.m_hashGroupWeights[hg1];
+				score *= s_scoringWeights.m_hashGroupWeights[hg2];
 
 				// if synonym or alternate word form
 				if ( Posdb::getIsSynonym(wpi) ) {
-					score *= g_conf.m_synonymWeight;
+					score *= m_msg39req->m_synonymWeight;
 				}
 				if ( Posdb::getIsSynonym(wpj) ) {
-					score *= g_conf.m_synonymWeight;
+					score *= m_msg39req->m_synonymWeight;
 				}
 
 				// word spam weights
 				score *= spamw1 * spamw2;
 				// huge title? do not allow 11th+ word to be weighted high
 				//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
-				//	score /= s_hashGroupWeights[hg1];
+				//	score /= s_scoringWeights.m_hashGroupWeights[hg1];
 				// mod by distance
 				score /= (dist + 1.0);
 				// tmp hack
@@ -619,13 +616,13 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 			// hash group update
 			hg1 = Posdb::getHashGroup ( wpi );
 			// update density weight in case hash group changed
-			denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
+			denw1 = s_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpi)];
 			// word spam weight update
 			if ( hg1 == HASHGROUP_INLINKTEXT ) {
-				spamw1=s_linkerWeights[Posdb::getWordSpamRank(wpi)];
+				spamw1=s_scoringWeights.m_linkerWeights[Posdb::getWordSpamRank(wpi)];
 			}
 			else {
-				spamw1=s_wordSpamWeights[Posdb::getWordSpamRank(wpi)];
+				spamw1=s_scoringWeights.m_wordSpamWeights[Posdb::getWordSpamRank(wpi)];
 			}
 		}
 		else {
@@ -661,23 +658,23 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 				// compute score based on that junk
 				//score = (MAXWORDPOS+1) - dist;
 				// good diversity? uneeded for pair algo
-				//score *= s_diversityWeights[div1];
-				//score *= s_diversityWeights[div2];
+				//score *= s_scoringWeights.m_diversityWeights[div1];
+				//score *= s_scoringWeights.m_diversityWeights[div2];
 				// good density?
 				score = 100 * denw1 * denw2;
 				// hashgroup modifier
-				score *= s_hashGroupWeights[hg1];
-				score *= s_hashGroupWeights[hg2];
+				score *= s_scoringWeights.m_hashGroupWeights[hg1];
+				score *= s_scoringWeights.m_hashGroupWeights[hg2];
 				// if synonym or alternate word form
-				if ( Posdb::getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
-				if ( Posdb::getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
-				//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
-				//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+				if ( Posdb::getIsSynonym(wpi) ) score *= m_msg39req->m_synonymWeight;
+				if ( Posdb::getIsSynonym(wpj) ) score *= m_msg39req->m_synonymWeight;
+				//if ( m_bflags[i] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
+				//if ( m_bflags[j] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
 				// word spam weights
 				score *= spamw1 * spamw2;
 				// huge title? do not allow 11th+ word to be weighted high
 				//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
-				//	score /= s_hashGroupWeights[hg1];
+				//	score /= s_scoringWeights.m_hashGroupWeights[hg1];
 				// mod by distance
 				score /= (dist + 1.0);
 				// tmp hack
@@ -711,13 +708,13 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 			// hash group update
 			hg2 = Posdb::getHashGroup(wpj);
 			// update density weight in case hash group changed
-			denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
+			denw2 = s_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpj)];
 			// word spam weight update
 			if ( hg2 == HASHGROUP_INLINKTEXT ) {
-				spamw2=s_linkerWeights[Posdb::getWordSpamRank(wpj)];
+				spamw2=s_scoringWeights.m_linkerWeights[Posdb::getWordSpamRank(wpj)];
 			}
 			else {
-				spamw2=s_wordSpamWeights[Posdb::getWordSpamRank(wpj)];
+				spamw2=s_scoringWeights.m_wordSpamWeights[Posdb::getWordSpamRank(wpj)];
 			}
 		}
 	}
@@ -756,12 +753,12 @@ float PosdbTable::getScoreForTermPair( const char *wpi, const char *wpj, int32_t
 	float denw2;
 	float dist;
 	float score;
-	if ( hg1 ==HASHGROUP_INLINKTEXT)spamw1=s_linkerWeights[wsr1];
-	else                            spamw1=s_wordSpamWeights[wsr1];
-	if ( hg2 ==HASHGROUP_INLINKTEXT)spamw2=s_linkerWeights[wsr2];
-	else                            spamw2=s_wordSpamWeights[wsr2];
-	denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
-	denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
+	if ( hg1 ==HASHGROUP_INLINKTEXT)spamw1=s_scoringWeights.m_linkerWeights[wsr1];
+	else                            spamw1=s_scoringWeights.m_wordSpamWeights[wsr1];
+	if ( hg2 ==HASHGROUP_INLINKTEXT)spamw2=s_scoringWeights.m_linkerWeights[wsr2];
+	else                            spamw2=s_scoringWeights.m_wordSpamWeights[wsr2];
+	denw1 = s_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpi)];
+	denw2 = s_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpj)];
 	// set this
 	if ( fixedDistance != 0 ) {
 		dist = fixedDistance;
@@ -782,20 +779,20 @@ float PosdbTable::getScoreForTermPair( const char *wpi, const char *wpj, int32_t
 	}
 	// TODO: use left and right diversity if no matching query term
 	// is on the left or right
-	//score *= s_diversityWeights[div1];
-	//score *= s_diversityWeights[div2];
+	//score *= s_scoringWeights.m_diversityWeights[div1];
+	//score *= s_scoringWeights.m_diversityWeights[div2];
 	// good density?
 	score = 100 * denw1 * denw2;
 	// wikipedia phrase weight
 	//score *= ts;
 	// hashgroup modifier
-	score *= s_hashGroupWeights[hg1];
-	score *= s_hashGroupWeights[hg2];
+	score *= s_scoringWeights.m_hashGroupWeights[hg1];
+	score *= s_scoringWeights.m_hashGroupWeights[hg2];
 	// if synonym or alternate word form
-	if ( Posdb::getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
-	if ( Posdb::getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
-	//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
-	//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+	if ( Posdb::getIsSynonym(wpi) ) score *= m_msg39req->m_synonymWeight;
+	if ( Posdb::getIsSynonym(wpj) ) score *= m_msg39req->m_synonymWeight;
+	//if ( m_bflags[i] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
+	//if ( m_bflags[j] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
 	// word spam weights
 	score *= spamw1 * spamw2;
 	// mod by distance
@@ -878,22 +875,22 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	float spamw1 ;
 	float spamw2 ;
 	if( hg1 == HASHGROUP_INLINKTEXT ) {
-		spamw1 = s_linkerWeights[wsr1];
+		spamw1 = s_scoringWeights.m_linkerWeights[wsr1];
 	}
 	else {
-		spamw1 = s_wordSpamWeights[wsr1];
+		spamw1 = s_scoringWeights.m_wordSpamWeights[wsr1];
 	}
 
 	if( hg2 == HASHGROUP_INLINKTEXT ) {
-		spamw2 = s_linkerWeights[wsr2];
+		spamw2 = s_scoringWeights.m_linkerWeights[wsr2];
 	}
 	else {
-		spamw2 = s_wordSpamWeights[wsr2];
+		spamw2 = s_scoringWeights.m_wordSpamWeights[wsr2];
 	}
 
 	// density weight
-	float denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
-	float denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
+	float denw1 = s_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpi)];
+	float denw2 = s_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpj)];
 
 	bool firsti = true;
 	bool firstj = true;
@@ -990,16 +987,16 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			// good density?
 			score = 100 * denw1 * denw2;
 			// hashgroup modifier
-			score *= s_hashGroupWeights[hg1];
-			score *= s_hashGroupWeights[hg2];
+			score *= s_scoringWeights.m_hashGroupWeights[hg1];
+			score *= s_scoringWeights.m_hashGroupWeights[hg2];
 
 			// if synonym or alternate word form
 			if ( syn1 ) {
-				score *= g_conf.m_synonymWeight;
+				score *= m_msg39req->m_synonymWeight;
 			}
 			
 			if ( syn2 ) {
-				score *= g_conf.m_synonymWeight;
+				score *= m_msg39req->m_synonymWeight;
 			}
 			
 			// the new logic
@@ -1015,7 +1012,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			score *= spamw1 * spamw2;
 			// huge title? do not allow 11th+ word to be weighted high
 			//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
-			//	score /= s_hashGroupWeights[hg1];
+			//	score /= s_scoringWeights.m_hashGroupWeights[hg1];
 			// mod by distance
 			score /= (dist + 1.0);
 			// tmp hack
@@ -1116,13 +1113,13 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			mhg1 = hg1;
 			if ( s_inBody[mhg1] ) mhg1 = HASHGROUP_BODY;
 			// update density weight in case hash group changed
-			denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
+			denw1 = s_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpi)];
 			// word spam weight update
 			if ( hg1 == HASHGROUP_INLINKTEXT ) {
-				spamw1=s_linkerWeights[Posdb::getWordSpamRank(wpi)];
+				spamw1=s_scoringWeights.m_linkerWeights[Posdb::getWordSpamRank(wpi)];
 			}
 			else {
-				spamw1=s_wordSpamWeights[Posdb::getWordSpamRank(wpi)];
+				spamw1=s_scoringWeights.m_wordSpamWeights[Posdb::getWordSpamRank(wpi)];
 			}
 		}
 		else {
@@ -1180,30 +1177,30 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			// compute score based on that junk
 			//score = (MAXWORDPOS+1) - dist;
 			// good diversity? uneeded for pair algo
-			//score *= s_diversityWeights[div1];
-			//score *= s_diversityWeights[div2];
+			//score *= s_scoringWeights.m_diversityWeights[div1];
+			//score *= s_scoringWeights.m_diversityWeights[div2];
 			// good density?
 			score = 100 * denw1 * denw2;
 			// hashgroup modifier
-			score *= s_hashGroupWeights[hg1];
-			score *= s_hashGroupWeights[hg2];
+			score *= s_scoringWeights.m_hashGroupWeights[hg1];
+			score *= s_scoringWeights.m_hashGroupWeights[hg2];
 			
 			// if synonym or alternate word form
 			if ( Posdb::getIsSynonym(wpi) ) {
-				score *= g_conf.m_synonymWeight;
+				score *= m_msg39req->m_synonymWeight;
 			}
 			
 			if ( Posdb::getIsSynonym(wpj) ) {
-				score *= g_conf.m_synonymWeight;
+				score *= m_msg39req->m_synonymWeight;
 			}
 			
-			//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
-			//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+			//if ( m_bflags[i] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
+			//if ( m_bflags[j] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
 			// word spam weights
 			score *= spamw1 * spamw2;
 			// huge title? do not allow 11th+ word to be weighted high
 			//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
-			//	score /= s_hashGroupWeights[hg1];
+			//	score /= s_scoringWeights.m_hashGroupWeights[hg1];
 			// mod by distance
 			score /= (dist + 1.0);
 			// tmp hack
@@ -1304,14 +1301,14 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			}
 
 			// update density weight in case hash group changed
-			denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
+			denw2 = s_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpj)];
 
 			// word spam weight update
 			if ( hg2 == HASHGROUP_INLINKTEXT ) {
-				spamw2 = s_linkerWeights[Posdb::getWordSpamRank(wpj)];
+				spamw2 = s_scoringWeights.m_linkerWeights[Posdb::getWordSpamRank(wpj)];
 			}
 			else {
-				spamw2 = s_wordSpamWeights[Posdb::getWordSpamRank(wpj)];
+				spamw2 = s_scoringWeights.m_wordSpamWeights[Posdb::getWordSpamRank(wpj)];
 			}
 		}
 	} // for(;;)
@@ -3951,7 +3948,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			if(g_d2fasm.lookupFlags(m_docId,&flags) && flags) {
 				for(int i=0; i<26; i++) {
 					if(flags&(1<<i))
-						completeScoreMultiplier *= g_conf.m_flagScoreMultiplier[i];
+						completeScoreMultiplier *= m_msg39req->m_flagScoreMultiplier[i];
 				}
 			}
 
@@ -4194,7 +4191,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 
 
-			if(g_conf.m_usePageTemperatureForRanking) {
+			if(m_msg39req->m_usePageTemperatureForRanking) {
 				double page_temperature = g_pageTemperatureRegistry.query_page_temperature(m_docId);
 				float pre_score = score;
 				score *= page_temperature;
@@ -4459,7 +4456,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 			
 			//if ( hgrp == HASHGROUP_TITLE      ) return -1.0;
 			// loser?
-			if ( s_hashGroupWeights[hgrp] < bestHashGroupWeight ) {
+			if ( s_scoringWeights.m_hashGroupWeights[hgrp] < bestHashGroupWeight ) {
 				// if in body, it's over for this termlist 
 				// because this is the last hash group
 				// we will encounter.
@@ -4474,8 +4471,8 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 			unsigned char dr = Posdb::getDensityRank(dc);
 			
 			// a clean win?
-			if ( s_hashGroupWeights[hgrp] > bestHashGroupWeight ) {
-				bestHashGroupWeight = s_hashGroupWeights[hgrp];
+			if ( s_scoringWeights.m_hashGroupWeights[hgrp] > bestHashGroupWeight ) {
+				bestHashGroupWeight = s_scoringWeights.m_hashGroupWeights[hgrp];
 				bestDensityRank = dr;
 				continue;
 			}
@@ -4518,8 +4515,8 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	// since adjacent, 2nd term in pair will be in same sentence
 	// TODO: fix this for 'qtm' it might have a better density rank and
 	//       better hashgroup weight, like being in title!
-	score *= s_densityWeights[bestDensityRank];
-	score *= s_densityWeights[bestDensityRank];
+	score *= s_scoringWeights.m_densityWeights[bestDensityRank];
+	score *= s_scoringWeights.m_densityWeights[bestDensityRank];
 	
 	// wiki bigram?
 	if ( hadHalfStopWikiBigram ) {
@@ -5950,27 +5947,20 @@ static void initWeights ( ) {
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 	
-	for ( int32_t i = 0 ; i <= MAXDIVERSITYRANK ; i++ ) {
-		// disable for now
-		s_diversityWeights[i] = scale_quadratic(i,0,MAXDIVERSITYRANK,g_conf.m_diversityWeightMin,g_conf.m_diversityWeightMax);
-	}
-	// density rank to weight
-	for ( int32_t i = 0 ; i <= MAXDENSITYRANK ; i++ ) {
-		s_densityWeights[i] = scale_quadratic(i,0,MAXDENSITYRANK,g_conf.m_densityWeightMin,g_conf.m_densityWeightMax);
-	}
-	// . word spam rank to weight
-	// . make sure if word spam is 0 that the weight is not 0!
-	for ( int32_t i = 0 ; i <= MAXWORDSPAMRANK ; i++ )
-		s_wordSpamWeights[i] = scale_linear(i, 0,MAXWORDSPAMRANK, 1.0/MAXWORDSPAMRANK, 1.0);
+	s_scoringWeights.init(g_conf.m_diversityWeightMin, g_conf.m_diversityWeightMax,
+	                      g_conf.m_densityWeightMin, g_conf.m_densityWeightMax,
+			      g_conf.m_hashGroupWeightBody,
+			      g_conf.m_hashGroupWeightTitle,
+			      g_conf.m_hashGroupWeightHeading,
+			      g_conf.m_hashGroupWeightInlist,
+			      g_conf.m_hashGroupWeightInMetaTag,
+			      g_conf.m_hashGroupWeightInLinkText,
+			      g_conf.m_hashGroupWeightInTag,
+			      g_conf.m_hashGroupWeightNeighborhood,
+			      g_conf.m_hashGroupWeightInternalLinkText,
+			      g_conf.m_hashGroupWeightInUrl,
+			      g_conf.m_hashGroupWeightInMenu);
 
-	// site rank of inlinker
-	// to be on the same level as multiplying the final score
-	// by the siterank+1 we should make this a sqrt() type thing
-	// since we square it so that single term scores are on the same
-	// level as term pair scores
-	for ( int32_t i = 0 ; i <= MAXWORDSPAMRANK ; i++ )
-		s_linkerWeights[i] = sqrt(1.0 + i);
-	
 	// if two hashgroups are comaptible they can be paired
 	for ( int32_t i = 0 ; i < HASHGROUP_END ; i++ ) {
 		// set this
@@ -6020,27 +6010,11 @@ static void initWeights ( ) {
 		}
 	}
 
-	s_hashGroupWeights[HASHGROUP_BODY              ] = g_conf.m_hashGroupWeightBody;
-	s_hashGroupWeights[HASHGROUP_TITLE             ] = g_conf.m_hashGroupWeightTitle;
-	s_hashGroupWeights[HASHGROUP_HEADING           ] = g_conf.m_hashGroupWeightHeading;
-	s_hashGroupWeights[HASHGROUP_INLIST            ] = g_conf.m_hashGroupWeightInlist;
-	s_hashGroupWeights[HASHGROUP_INMETATAG         ] = g_conf.m_hashGroupWeightInMetaTag;
-	s_hashGroupWeights[HASHGROUP_INLINKTEXT        ] = g_conf.m_hashGroupWeightInLinkText;
-	s_hashGroupWeights[HASHGROUP_INTAG             ] = g_conf.m_hashGroupWeightInTag;
-	s_hashGroupWeights[HASHGROUP_NEIGHBORHOOD      ] = g_conf.m_hashGroupWeightNeighborhood;
-	s_hashGroupWeights[HASHGROUP_INTERNALINLINKTEXT] = g_conf.m_hashGroupWeightInternalLinkText;
-	s_hashGroupWeights[HASHGROUP_INURL             ] = g_conf.m_hashGroupWeightInUrl;
-	s_hashGroupWeights[HASHGROUP_INMENU            ] = g_conf.m_hashGroupWeightInMenu;
-	
 	s_init = true;
 
 #ifdef _VALGRIND_
 	//we read from the weight tables without locking. tell helgrind to ignore that
-	VALGRIND_HG_DISABLE_CHECKING(s_diversityWeights,sizeof(s_diversityWeights));
-	VALGRIND_HG_DISABLE_CHECKING(s_densityWeights,sizeof(s_densityWeights));
-	VALGRIND_HG_DISABLE_CHECKING(s_wordSpamWeights,sizeof(s_wordSpamWeights));
-	VALGRIND_HG_DISABLE_CHECKING(s_linkerWeights,sizeof(s_linkerWeights));
-	VALGRIND_HG_DISABLE_CHECKING(s_hashGroupWeights,sizeof(s_hashGroupWeights));
+	VALGRIND_HG_DISABLE_CHECKING(&s_scoringWeights,sizeof(s_scoringWeights));
 	VALGRIND_HG_DISABLE_CHECKING(s_isCompatible,sizeof(s_isCompatible));
 	VALGRIND_HG_DISABLE_CHECKING(s_inBody,sizeof(s_inBody));
 #endif
@@ -6063,58 +6037,33 @@ void reinitializeRankingSettings()
 float getHashGroupWeight ( unsigned char hg ) {
 	initWeights();
 
-	return s_hashGroupWeights[hg];
+	return s_scoringWeights.m_hashGroupWeights[hg];
 }
 
 
 float getDiversityWeight ( unsigned char diversityRank ) {
 	initWeights();
 
-	return s_diversityWeights[diversityRank];
+	return s_scoringWeights.m_diversityWeights[diversityRank];
 }
 
 
 float getDensityWeight ( unsigned char densityRank ) {
 	initWeights();
 
-	return s_densityWeights[densityRank];
+	return s_scoringWeights.m_densityWeights[densityRank];
 }
 
 
 float getWordSpamWeight ( unsigned char wordSpamRank ) {
 	initWeights();
 
-	return s_wordSpamWeights[wordSpamRank];
+	return s_scoringWeights.m_wordSpamWeights[wordSpamRank];
 }
 
 
 float getLinkerWeight ( unsigned char wordSpamRank ) {
 	initWeights();
 
-	return s_linkerWeights[wordSpamRank];
+	return s_scoringWeights.m_linkerWeights[wordSpamRank];
 }
-
-
-float getTermFreqWeight ( int64_t termFreq, int64_t numDocsInColl ) {
-	// do not include top 6 bytes at top of list that are termid
-	//float fw = listSize - 6;
-	// sanity
-	//if ( fw < 0 ) fw = 0;
-	// estimate # of docs that have this term. the problem is
-	// that posdb keys can be 18, 12 or 6 bytes!
-	//fw /= 11.0;
-	// adjust this so its per split!
-	//int32_t nd = numDocsInColl / g_hostdb.m_numShards;
-	float fw = termFreq;
-	// what chunk are we of entire collection?
-	//if ( nd ) fw /= nd;
-	if ( numDocsInColl ) {
-		fw /= numDocsInColl;
-	}
-	
-	// limit
-	return scale_linear(fw, g_conf.m_termFreqWeightFreqMin, g_conf.m_termFreqWeightFreqMax, g_conf.m_termFreqWeightMin, g_conf.m_termFreqWeightMax);
-}
-
-
-

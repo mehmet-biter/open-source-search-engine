@@ -104,6 +104,12 @@ void Msg39Request::reset() {
 	m_collnum                 = -1;
 	m_useQueryStopWords       = true;
 	m_doMaxScoreAlgo          = true;
+	m_synonymWeight           = 0.9;
+	m_usePageTemperatureForRanking = true;
+	for(int i=0; i<26; i++)
+		m_flagScoreMultiplier[i] = 1.0;
+	for(int i=0; i<26; i++)
+		m_flagRankAdjustment[i] = 0;
 
 	ptr_query                 = NULL; // in utf8?
 	ptr_whiteList             = NULL;

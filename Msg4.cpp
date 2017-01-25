@@ -791,7 +791,7 @@ static void handleRequest4(UdpSlot *slot, int32_t netnice) {
 	}
 
 	// if we did not sync our parms up yet with host 0, wait...
-	if ( g_hostdb.m_hostId != 0 && ! g_parms.m_inSyncWithHost0 ) {
+	if ( g_hostdb.m_hostId != 0 && ! g_parms.inSyncWithHost0() ) {
 		// limit logging to once per second
 		static int32_t s_lastTime = 0;
 		int32_t now = getTimeLocal();

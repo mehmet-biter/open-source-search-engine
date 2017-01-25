@@ -43,6 +43,7 @@
 #include "GbUtil.h"
 #include "ScopedLock.h"
 #include "Mem.h"
+#include "UrlBlockList.h"
 #include <fcntl.h>
 
 
@@ -8679,8 +8680,7 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 
 
 // returns false if none found
-static bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness ,
-				     Url *cu ) {
+static bool setMetaRedirUrlFromTag(char *p, Url *metaRedirUrl, Url *cu) {
 	// limit scan
 	char *limit = p + 30;
 	// skip whitespace
@@ -8919,7 +8919,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "Possible redirect URL [%s]", p);
 
 		Url dummy;
-		if ( ! setMetaRedirUrlFromTag ( p , &dummy , m_niceness ,cu))
+		if ( ! setMetaRedirUrlFromTag(p, &dummy, cu))
 		{
 			logTrace( g_conf.m_logTraceXmlDoc, "Failed to set redirect URL" );
 			continue;
@@ -8970,7 +8970,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 
 		logTrace( g_conf.m_logTraceXmlDoc, "Found possible URL in XmlNode" );
 		// PARSE OUT THE URL
-		if (!setMetaRedirUrlFromTag(p,&m_metaRedirUrl,m_niceness,cu) )
+		if (!setMetaRedirUrlFromTag(p,&m_metaRedirUrl,cu) )
 		{
 			logTrace( g_conf.m_logTraceXmlDoc, "Failed to set URL from XmlNode data" );
 			continue;
@@ -12013,14 +12013,10 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
                         if ( dataSize < 0 ) { g_process.shutdownAbort(true); }
 			p += 4;
                 }
-		// point to it
-		char *data = p;
 		// skip the data
 		p += dataSize;
 		// inc it
 		recSize += dataSize;
-		// NULL it for negative keys
-		if ( dataSize == 0 ) data = NULL;
 
 		// see if one big table causes a browser slowdown
 		if ( (++rcount % TABLE_ROWS) == 0 )
@@ -14837,22 +14833,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	if ( m_spiderLinksValid && ! m_spiderLinks )
 		avoid = true;
 
-	// for diffbot crawlbot, if we are a seed url and redirected to a
-	// different domain... like bn.com --> barnesandnoble.com
-	int32_t redirDomHash32  = 0;
-	int32_t redirHostHash32 = 0;
-	//int32_t redirSiteHash32 = 0;
-	if ( m_hopCount == 0 &&
-	     m_redirUrlValid &&
-	     ptr_redirUrl &&
-	     //m_redirUrlPtr && (this gets reset to NULL as being LAST redir)
-	     // this is the last non-empty redir here:
-	     m_redirUrl.getUrlLen() > 0 ) {
-		log("build: seed REDIR: %s",m_redirUrl.getUrl());
-		redirDomHash32  = m_redirUrl.getDomainHash32();
-		redirHostHash32 = m_redirUrl.getHostHash32();
-	}
-
 	logTrace( g_conf.m_logTraceXmlDoc, "Handling %" PRId32" links", n);
 
 	bool is_privacore = (strcmp(cr->m_urlFiltersProfile.getBufStart(), "privacore") == 0);
@@ -14924,10 +14904,10 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// BR 20160125: Do not create spiderdb entries for media URLs etc.
 		if(	url.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION) ||
 			url.hasScriptExtension() ||
-			url.hasJsonExtension() ||
+			url.hasJsonExtension() 
 //			url.hasXmlExtension() ||
-			url.isDomainUnwantedForIndexing() ||
-			url.isPathUnwantedForIndexing() )
+//@@@ TEMPORARILY DISABLED			g_urlBlockList.isUrlBlocked(url.getUrl())
+			)
 		{
 			logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", url.getUrl());
 			continue;
@@ -18531,9 +18511,6 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 		allowedInt = 0;
 	}
 
-	int32_t ufn = -1;
-	if ( m_urlFilterNumValid ) ufn = m_urlFilterNum;
-
 	const char *es = mstrerror(m_indexCode);
 	if ( ! m_indexCode ) es = mstrerror(g_errno);
 
@@ -18953,7 +18930,7 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 			       ": "
 			       "w=wordPosition "
 			       "x=densityRank "
-			       //"y=diversityRank "
+			       "y=diversityRank "
 			       "z=wordSpamRank "
 			       "<br>"
 			       "<br>"
@@ -19135,10 +19112,10 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 				);
 		sb->safePrintf(
 			       "\t<maxDens>%" PRId32"</maxDens>\n"
-			       //"\t<maxDiv>%" PRId32"</maxDiv>\n"
+			       "\t<maxDiv>%" PRId32"</maxDiv>\n"
 			       "\t<maxSpam>%" PRId32"</maxSpam>\n"
 			       , (int32_t)MAXDENSITYRANK
-			       //, (int32_t)MAXDIVERSITYRANK
+			       , (int32_t)MAXDIVERSITYRANK
 			       , (int32_t)MAXWORDSPAMRANK
 			       );
 	}
@@ -19150,7 +19127,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 		//sb->safePrintf("<i>* indicates word is a synonym or "
 		//	       "alternative word form<br><br>");
 		sb->safePrintf("N column = DensityRank (0-%" PRId32")<br>"
-			       //"V column = DiversityRank (0-%" PRId32")<br>"
+			       "V column = DiversityRank (0-%" PRId32")<br>"
 			       "S column = WordSpamRank  (0-%" PRId32") "
 			       "[or linker "
 			       "siterank if its offsite link text]<br>"
@@ -19166,7 +19143,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 			       "<br>"
 			       "<br>"
 			       , (int32_t)MAXDENSITYRANK
-			       //, (int32_t)MAXDIVERSITYRANK
+			       , (int32_t)MAXDIVERSITYRANK
 			       , (int32_t)MAXWORDSPAMRANK
 			       , getLanguageString (m_langId)
 			       , getLanguageAbbr(m_langId)
@@ -19411,6 +19388,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 		float score = 1.0;
 		// square this like we do in the query ranking algo
 		score *= getHashGroupWeight(hg) * getHashGroupWeight(hg);
+		score *= getDiversityWeight(tp[i]->m_diversityRank);
 		score *= getDensityWeight(tp[i]->m_densityRank);
 		if ( tp[i]->m_synSrc ) score *= g_conf.m_synonymWeight;
 		if ( hg == HASHGROUP_INLINKTEXT ) score *= getLinkerWeight(ws);

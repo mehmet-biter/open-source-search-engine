@@ -140,7 +140,7 @@ bool Collectiondb::loadAllCollRecs ( ) {
 	// if no existing recs added... add coll.main.0 always at startup
 	if ( m_numRecs == 0 ) {
 		log("admin: adding main collection.");
-		addNewColl ( "main", true, 0 );
+		addNewColl ( "main", 0 );
 	}
 
 	m_initializing = false;
@@ -255,7 +255,7 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 //   because we are doing a './gb dump ...' cmd to dump out data from
 //   one Rdb which we will custom initialize in main.cpp where the dump
 //   code is. like for instance, posdb.
-bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
+bool Collectiondb::addNewColl ( const char *coll,
 				// Parms.cpp reserves this so it can be sure
 				// to add the same collnum to every shard
 				collnum_t newCollnum ) {
@@ -381,9 +381,6 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 
 	// start the spiders!
 	cr->m_spideringEnabled = true;
-
-	// override this?
-	saveIt = true;
 
 	//
 	// END NEW CODE
@@ -768,15 +765,6 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 	cr->m_spiderStatus = SP_INITIALIZING; // this is 0
 	//cr->m_spiderStatusMsg = NULL;
 
-	// reset seed buf
-	if ( purgeSeeds ) {
-		// free the buffer of seed urls
-		cr->m_diffbotSeeds.purge();
-		// reset seed dedup table
-		HashTableX *ht = &cr->m_seedHashTable;
-		ht->reset();
-	}
-
 	// so XmlDoc.cpp can detect if the collection was reset since it
 	// launched its spider:
 	cr->m_lastResetCount++;
@@ -1144,32 +1132,32 @@ CollectionRec::CollectionRec() {
 	m_indexSpiderReplies = 0;
 	m_indexBody = 0;
 	m_outlinksRecycleFrequencyDays = 0.0;
-	m_dedupingEnabled = 0;
-	m_dupCheckWWW = 0;
-	m_detectCustomErrorPages = 0;
-	m_useSimplifiedRedirects = 0;
-	m_useIfModifiedSince = 0;
-	m_useTimeAxis = 0;
-	m_buildVecFromCont = 0;
+	m_dedupingEnabled = false;
+	m_dupCheckWWW = false;
+	m_detectCustomErrorPages = false;
+	m_useSimplifiedRedirects = false;
+	m_useIfModifiedSince = false;
+	m_useTimeAxis = false;
+	m_buildVecFromCont = false;
 	m_maxPercentSimilarPublishDate = 0;
-	m_useSimilarityPublishDate = 0;
-	m_oneVotePerIpDom = 0;
-	m_doUrlSpamCheck = 0;
-	m_doLinkSpamCheck = 0;
+	m_useSimilarityPublishDate = false;
+	m_oneVotePerIpDom = false;
+	m_doUrlSpamCheck = false;
+	m_doLinkSpamCheck = false;
 	memset(m_tagdbColl, 0, sizeof(m_tagdbColl));
-	m_delete404s = 0;
-	m_siteClusterByDefault = 0;
-	m_doIpLookups = 0;
+	m_delete404s = false;
+	m_siteClusterByDefault = false;
+	m_doIpLookups = true;
 	m_useRobotsTxt = true;
-	m_obeyRelNoFollowLinks = 0;
-	m_forceUseFloaters = 0;
-	m_automaticallyUseProxies = 0;
-	m_automaticallyBackOff = 0;
-	m_recycleContent = 0;
-	m_getLinkInfo = 0;
-	m_computeSiteNumInlinks = 0;
-	m_indexInlinkNeighborhoods = 0;
-	m_removeBannedPages = 0;
+	m_obeyRelNoFollowLinks = true;
+	m_forceUseFloaters = false;
+	m_automaticallyUseProxies = false;
+	m_automaticallyBackOff = false;
+	m_recycleContent = false;
+	m_getLinkInfo = true;
+	m_computeSiteNumInlinks = true;
+	m_indexInlinkNeighborhoods = true;
+	m_removeBannedPages = true;
 	m_percentSimilarSummary = 0;
 	m_summDedupNumLines = 0;
 	m_maxQueryTerms = 0;
@@ -1182,13 +1170,13 @@ CollectionRec::CollectionRec() {
 	m_linkdbMinFilesToMerge = 0;
 	m_tagdbMinFilesToMerge = 0;
 	m_spiderdbMinFilesToMerge = 0;
-	m_dedupResultsByDefault = 0;
-	m_doTagdbLookups = 0;
-	m_deleteTimeouts = 0;
+	m_dedupResultsByDefault = false;
+	m_doTagdbLookups = true;
+	m_deleteTimeouts = false;
 	m_allowAdultDocs = 0;
-	m_useCanonicalRedirects = 0;
+	m_useCanonicalRedirects = true;
 	m_maxNumSpiders = 0;
-	m_useCurrentTime = 0;
+	m_useCurrentTime = true;
 	m_titleMaxLen = 0;
 	m_summaryMaxLen = 0;
 	m_summaryMaxNumLines = 0;
@@ -1197,7 +1185,7 @@ CollectionRec::CollectionRec() {
 	m_diffbotCrawlStartTime = 0;
 	m_diffbotCrawlEndTime = 0;
 	m_numRegExs9 = 0;
-	m_doQueryHighlighting = 0;
+	m_doQueryHighlighting = false;
 	memset(m_summaryFrontHighlightTag, 0, sizeof(m_summaryFrontHighlightTag));
 	memset(m_summaryBackHighlightTag, 0, sizeof(m_summaryBackHighlightTag));
 	m_spellCheck = false;

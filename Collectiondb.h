@@ -63,7 +63,7 @@ class Collectiondb  {
 
 	bool addExistingColl ( const char *coll, collnum_t collnum );
 
-	bool addNewColl( const char *coll, bool saveIt, collnum_t newCollnum ) ;
+	bool addNewColl( const char *coll, collnum_t newCollnum ) ;
 
 	bool addRdbBaseToAllRdbsForEachCollRec ( ) ;
 	bool addRdbBasesForCollRec ( CollectionRec *cr ) ;
@@ -291,32 +291,32 @@ class CollectionRec {
 	// have elapsed since the last time we added them to spiderdb
 	float m_outlinksRecycleFrequencyDays ;
 
-	char  m_dedupingEnabled         ; // dedup content on same hostname
-	char  m_dupCheckWWW             ;
-	char  m_detectCustomErrorPages  ;
-	char  m_useSimplifiedRedirects  ;
-	char  m_useIfModifiedSince      ;
-	char  m_useTimeAxis             ;
-	char  m_buildVecFromCont        ;
+	bool  m_dedupingEnabled         ; // dedup content on same hostname
+	bool  m_dupCheckWWW             ;
+	bool  m_detectCustomErrorPages  ;
+	bool  m_useSimplifiedRedirects  ;
+	bool  m_useIfModifiedSince      ;
+	bool  m_useTimeAxis             ;
+	bool  m_buildVecFromCont        ;
 	int32_t  m_maxPercentSimilarPublishDate;
-	char  m_useSimilarityPublishDate;
-	char  m_oneVotePerIpDom         ;
-	char  m_doUrlSpamCheck          ; //filter urls w/ naughty hostnames
-	char  m_doLinkSpamCheck         ; //filters dynamically generated pages
+	bool  m_useSimilarityPublishDate;
+	bool  m_oneVotePerIpDom         ;
+	bool  m_doUrlSpamCheck          ; //filter urls w/ naughty hostnames
+	bool  m_doLinkSpamCheck         ; //filters dynamically generated pages
 	char  m_tagdbColl [MAX_COLL_LEN+1]; // coll to use for tagdb lookups
-	char  m_delete404s              ;
-	char  m_siteClusterByDefault    ;
-	char  m_doIpLookups             ; // considered iff using proxy
+	bool  m_delete404s              ;
+	bool  m_siteClusterByDefault    ;
+	bool  m_doIpLookups             ; // considered iff using proxy
 	bool  m_useRobotsTxt            ;
-	char  m_obeyRelNoFollowLinks    ;
-	char  m_forceUseFloaters        ;
-	char  m_automaticallyUseProxies ;
-	char  m_automaticallyBackOff    ;
-	char  m_recycleContent          ;
-	char  m_getLinkInfo             ; // turn off to save seeks
-	char  m_computeSiteNumInlinks   ;
-	char  m_indexInlinkNeighborhoods;
-	char  m_removeBannedPages       ;
+	bool  m_obeyRelNoFollowLinks    ;
+	bool  m_forceUseFloaters        ;
+	bool  m_automaticallyUseProxies ;
+	bool  m_automaticallyBackOff    ;
+	bool  m_recycleContent          ;
+	bool  m_getLinkInfo             ; // turn off to save seeks
+	bool  m_computeSiteNumInlinks   ;
+	bool  m_indexInlinkNeighborhoods;
+	bool  m_removeBannedPages       ;
 
 	int32_t  m_percentSimilarSummary       ; // Dedup by summary similiarity
 	int32_t  m_summDedupNumLines           ;
@@ -350,18 +350,18 @@ class CollectionRec {
 	int32_t m_tagdbMinFilesToMerge ;
 	int32_t m_spiderdbMinFilesToMerge;
 
-	char  m_dedupResultsByDefault   ;
-	char  m_doTagdbLookups        ;
-	char  m_deleteTimeouts          ; // can delete docs that time out?
-	char  m_allowAdultDocs          ;
-	char  m_useCanonicalRedirects   ;
+	bool  m_dedupResultsByDefault   ;
+	bool  m_doTagdbLookups        ;
+	bool  m_deleteTimeouts          ; // can delete docs that time out?
+	bool  m_allowAdultDocs          ;
+	bool  m_useCanonicalRedirects   ;
 
 	int32_t  m_maxNumSpiders             ; // per local spider host
 
 	int32_t m_lastResetCount;
 
 	// start another set of flags using the old m_spiderTimeShift
-	char  m_useCurrentTime          ; // ... for m_spiderTime2
+	bool  m_useCurrentTime          ; // ... for m_spiderTime2
 
 	// controls for query-dependent summary/title generation
 	int32_t m_titleMaxLen;
@@ -374,8 +374,6 @@ class CollectionRec {
   /*****
    * !! Start Diffbot paramamters !! *
    *****/
-
-	SafeBuf m_diffbotSeeds;
 
 	// in seconds now
 	uint32_t m_diffbotCrawlStartTime;
@@ -439,7 +437,7 @@ class CollectionRec {
 	// dummy?
 	int32_t      m_numRegExs9;
 
-	char m_doQueryHighlighting;
+	bool m_doQueryHighlighting;
 
 	char  m_summaryFrontHighlightTag[SUMMARYHIGHLIGHTTAGMAXSIZE] ;
 	char  m_summaryBackHighlightTag [SUMMARYHIGHLIGHTTAGMAXSIZE] ;
@@ -456,8 +454,6 @@ class CollectionRec {
 
 	int32_t m_overflow;
 	int32_t m_overflow2;
-
-	HashTableX m_seedHashTable;
 
 	int32_t  m_maxAddUrlsPerIpDomPerDay;
 

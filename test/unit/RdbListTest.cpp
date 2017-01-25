@@ -4,6 +4,7 @@
 #include "sort.h"
 #include "GigablastTestUtils.h"
 #include "Conf.h"
+#include "Lang.h"
 
 #define sizeof_arr(x) (sizeof(x) / sizeof(x[0]))
 
@@ -252,6 +253,7 @@ static void addListToTree(rdbid_t rdbId, collnum_t collNum, RdbList *list) {
 	Rdb *rdb = getRdbFromId(rdbId);
 	rdb->addList(collNum, list);
 	rdb->dumpTree();
+	rdb->getBase(0)->generateGlobalIndex();
 }
 
 TEST_F(RdbListNoMergeTest, MergeTestPosdbSingleDocSpiderSpiderSpider) {

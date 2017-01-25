@@ -735,12 +735,10 @@ bool sendPageProfiler ( TcpSocket *s , HttpRequest *r ) {
 
 	//read in all of the possible cgi parms off the bat:
 	const char *coll = r->getString ("c");
-	int32_t collLen;
 	if ( ! coll || ! coll[0] ) {
 		coll = g_conf.getDefaultColl( );
 	}
 
-	collLen = strlen(coll);
 	int startRt=(int)r->getLong("rtstart",0);
 	int stopRt=(int)r->getLong("rtstop",0);
 	

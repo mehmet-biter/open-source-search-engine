@@ -1,0 +1,7 @@
+# block by domain
+https?://www\.badsite\.com/
+http://www\.httponly\.com/
+https://www\.httpsonly\.com/
+https?://(.*\.|)allsubdomain.com/
+http://www\.onlyroot\.com/$
+https?://(?!www\.)(.*\.)example\.com/

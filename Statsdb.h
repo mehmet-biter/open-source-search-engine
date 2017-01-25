@@ -43,8 +43,7 @@ class Statsdb {
 	//   we might be dumping statsdb to disk or something it is possible
 	//   we get an ETRYAGAIN error, so we try to accumulate stats in a
 	//   local buffer in that case
-	bool addStat ( int32_t        niceness ,
-		       const char    *label    ,
+	bool addStat ( const char    *label    ,
 		       int64_t   t1       ,
 		       int64_t   t2       ,
 		       float       value    , // y-value really, "numBytes"

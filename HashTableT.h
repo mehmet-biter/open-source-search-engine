@@ -3,8 +3,8 @@
 #ifndef GB_HASHTABLET_H
 #define GB_HASHTABLET_H
 
-#include "SafeBuf.h"
-#include "types.h"
+#include <inttypes.h>
+#include <stddef.h>
 
 
 template<class Key_t, class Val_t>
@@ -20,19 +20,12 @@ class HashTableT {
 	 HashTableT( ) ;
 	~HashTableT( );
 
-	void constructor();
-
 	// . add key/value entry to hash table
 	// . will grow hash table if it needs to
 	bool addKey ( Key_t key , Val_t value , int32_t *slot = NULL );
 
 	// remove key/value entry to hash table
 	bool removeKey ( Key_t key );
-
-	void removeSlot ( int32_t n );
-
-	bool load ( char *filename , char **textBuf = NULL , int32_t *textBufSize = NULL );
-	bool save ( char *filename , char  *textBuf = NULL , int32_t  textBufSize = 0    );
 
 	// . used by ../english/Bits.h to store stop words, abbr's, ...
 	// . returns the score for this termId (0 means empty usually)
@@ -60,8 +53,6 @@ class HashTableT {
 	// frees the used memory, etc.
 	void  reset  ( );
 
-	bool copy(HashTableT<Key_t, Val_t>* retval);
-
 	// removes all key/value pairs from hash table, vacates all slots
 	void  clear  ( );
 
@@ -73,9 +64,6 @@ class HashTableT {
 
 	void setAllowDupKeys(bool allow) { m_allowDupKeys = allow; }
 	bool getAllowDupKeys( ) const { return m_allowDupKeys; }
-
-	bool serialize(SafeBuf& sb);
-	int32_t deserialize(char* s);
 
 	bool setTableSize ( int32_t numSlots, char *buf, int32_t bufSize );
 
@@ -98,7 +86,5 @@ class HashTableT {
 	char *m_buf; //. hash table buffer points to callers buffer on stack
 	int32_t m_bufSize;
 };
-
-bool hashFromString ( HashTableT<int64_t,char> *ht , char *x ) ;
 
 #endif // GB_HASHTABLET_H

@@ -1,0 +1,57 @@
+# shortener
+https?://(.*\.|)t\.co/
+https?://(.*\.|)ow\.ly/
+https?://(.*\.|)tr\.im/
+https?://(.*\.|)bit\.ly/
+https?://(.*\.|)goo\.gl/
+https?://(.*\.|)tinyurl\.cc/
+
+# tumblr
+https?://(.*\.|)tumblr\.com/share
+https?://(.*\.|)tumblr\.com/widgets/share/tool
+https?://(.*\.|)tumblr\.com/login\?
+
+# yahoo
+https?://(.*\.|)yimg\.com/
+https?://(.*\.|)staticflickr.com/
+
+# facebook
+https?://(.*\.|)facebook\.com/sharer/
+https?://(.*\.|)atdmt\.com/
+
+# google
+https?://plus\.google\.com/share\?
+https?://accounts.google\.com/
+https?://(.*\.|)gstatic\.com/
+https?://(.*\.|)googleapis\.com/
+https?://(.*\.|)ytimg\.com/
+
+# twitter
+https?://search\.twitter\.com/
+https?://(.*\.|)twitter\.com/(share|search)\?
+https?://(.*\.|)twitter\.com/intent/
+
+https?://(.*\.|)pinterest\.com/pin/create/
+
+https?://(.*\.|)linkedin\.com/shareArticle
+
+https?://(.*\.|)akamaihd\.net/
+https?://(.*\.|)akamaized\.net/
+https?://(.*\.|)vimeocdn\.net/
+https?://(.*\.|)disquscdn\.com/
+https?://(.*\.|)netdna-cdn\.com/
+https?://(.*\.|)cloudfront\.net/
+
+https?://(.*\.|)imdb\.com/.*/imdb/embed\?
+
+https?://web\.archive\.org/web/
+
+https?://(?!www\.)(.*\.)doubleclick\.net/
+
+# path
+https?://[^/]+/oembed[\?/]
+https?://[^/]+/wp-includes
+https?://[^/]+/wp-json
+https?://[^/]+/wp-admin/
+https?://[^/]+/wp-login.php
+https?://[^/]+/xmlrpc.php

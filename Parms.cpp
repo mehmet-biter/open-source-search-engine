@@ -65,14 +65,15 @@ Parm::Parm() {
 	m_off = 0;
 	m_arrayCountOffset = 0;
 	m_colspan = 0;
-	m_type = 0;
+	m_type = TYPE_UNSET;
 	m_page = 0;
-	m_obj = 0;
+	m_obj = OBJ_UNSET;
 	m_max = 0;
 	m_fixed = 0;
 	m_size = 0;
 	m_def = NULL;
-	m_defOff = 0;
+	m_defOff = -1;
+	m_defOff2 = -1;
 	m_cast = false;
 	m_units = NULL;
 	m_addin = false;
@@ -140,44 +141,54 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 	// add array index to ptr
 	if ( isArray() ) val += m_size * occNum;
 
-
-	if ( m_type == TYPE_SAFEBUF ) {
-		// point to it
-		SafeBuf *sb2 = (SafeBuf *)val;
-		return sb->safePrintf("%s",sb2->getBufStart());
+	switch(m_type) {
+		case TYPE_SAFEBUF: {
+			// point to it
+			SafeBuf *sb2 = (SafeBuf *)val;
+			return sb->safePrintf("%s",sb2->getBufStart());
+		}
+		case TYPE_STRING:
+		case TYPE_STRINGBOX:
+		case TYPE_STRINGNONEMPTY: {
+			return sb->safePrintf("%s",val);
+		}
+		case TYPE_INT32:
+		case TYPE_INT32_CONST: {
+			return sb->safePrintf("%" PRId32,*(int32_t *)val);
+		}
+		case TYPE_FLOAT: {
+			return sb->safePrintf("%f",*(float *)val);
+		}
+		case TYPE_DOUBLE: {
+			return sb->safePrintf("%f",*(double*)val);
+		}
+		case TYPE_INT64: {
+			return sb->safePrintf("%" PRId64,*(int64_t *)val);
+		}
+		case TYPE_CHARPTR: {
+			return sb->safePrintf("%s",val);
+		}
+		case TYPE_BOOL:
+		case TYPE_CHECKBOX:
+		case TYPE_CHAR:
+		case TYPE_PRIORITY: {
+			return sb->safePrintf("%hhx",*val);
+		}
+		case TYPE_CMD: {
+			return sb->safePrintf("CMD");
+		}
+		case TYPE_IP: {
+			// may print 0.0.0.0
+			return sb->safePrintf("%s",iptoa(*(int32_t *)val) );
+		}
+		case TYPE_NONE:
+		case TYPE_COMMENT:
+		case TYPE_FILEUPLOADBUTTON:
+			return true; //silently ignored
+		case TYPE_UNSET:
+			log(LOG_LOGIC,"admin: attempt to print vlaue of unset parameter %s", m_title);
+			return true;
 	}
-
-	if ( m_type == TYPE_STRING ||
-	     m_type == TYPE_STRINGBOX ||
-	     m_type == TYPE_SAFEBUF ||
-	     m_type == TYPE_STRINGNONEMPTY )
-		return sb->safePrintf("%s",val);
-
-	if ( m_type == TYPE_LONG || m_type == TYPE_LONG_CONST )
-		return sb->safePrintf("%" PRId32,*(int32_t *)val);
-
-	if ( m_type == TYPE_FLOAT )
-		return sb->safePrintf("%f",*(float *)val);
-
-	if ( m_type == TYPE_LONG_LONG )
-		return sb->safePrintf("%" PRId64,*(int64_t *)val);
-
-	if ( m_type == TYPE_CHARPTR ) {
-		return sb->safePrintf("%s",val);
-	}
-
-	if ( m_type == TYPE_BOOL ||
-	     m_type == TYPE_CHECKBOX ||
-	     m_type == TYPE_PRIORITY2 ||
-	     m_type == TYPE_CHAR )
-		return sb->safePrintf("%hhx",*val);
-
-	if ( m_type == TYPE_CMD )
-		return sb->safePrintf("CMD");
-
-	if ( m_type == TYPE_IP )
-		// may print 0.0.0.0
-		return sb->safePrintf("%s",iptoa(*(int32_t *)val) );
 
 	log("parms: missing parm type!!");
 
@@ -212,10 +223,10 @@ static int16_t getOccNumFromParmRec(const char *rec) {
 	return (int16_t)((k->n0>>16));
 }
 
-static Parm *getParmFromParmRec(char *rec) {
+Parm *Parms::getParmFromParmRec(char *rec) {
 	key96_t *k = (key96_t *)rec;
 	int32_t cgiHash32 = (k->n0 >> 32);
-	return g_parms.getParmFast2 ( cgiHash32 );
+	return getParmFast2 ( cgiHash32 );
 }
 
 static int32_t getHashFromParmRec(const char *rec) {
@@ -319,7 +330,7 @@ static bool CommandRebalance ( char *rec ) {
 }
 #endif
 
-static bool CommandInsertUrlFiltersRow ( char *rec ) {
+bool Parms::CommandInsertUrlFiltersRow(char *rec) {
 	// caller must specify collnum
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 	if ( collnum < 0 ) {
@@ -361,7 +372,7 @@ static bool CommandInsertUrlFiltersRow ( char *rec ) {
 	return true;
 }
 
-static bool CommandRemoveUrlFiltersRow ( char *rec ) {
+bool Parms::CommandRemoveUrlFiltersRow(char *rec) {
 	// caller must specify collnum
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 	if ( collnum < 0 ) {
@@ -405,7 +416,7 @@ static bool CommandRemoveUrlFiltersRow ( char *rec ) {
 
 #ifndef PRIVACORE_SAFE_VERSION
 // after we add a new coll, or at anytime after we can clone it
-static bool CommandCloneColl ( char *rec ) {
+bool Parms::CommandCloneColl(char *rec) {
 
 	// the collnum we want to affect.
 	collnum_t dstCollnum = getCollnumFromParmRec ( rec );
@@ -449,7 +460,7 @@ static bool CommandCloneColl ( char *rec ) {
 
 // . returns false if blocks true otherwise
 #ifndef PRIVACORE_SAFE_VERSION
-static bool CommandAddColl ( char *rec ) {
+bool Parms::CommandAddColl ( char *rec ) {
 
 	// caller must specify collnum
 	collnum_t newCollnum = getCollnumFromParmRec ( rec );
@@ -475,7 +486,7 @@ static bool CommandAddColl ( char *rec ) {
 	}
 
 	// this saves it to disk! returns false and sets g_errno on error.
-	if ( ! g_collectiondb.addNewColl ( collName, true, newCollnum ) )
+	if ( ! g_collectiondb.addNewColl ( collName, newCollnum ) )
 		// error! g_errno should be set
 		return true;
 
@@ -773,8 +784,7 @@ static bool CommandPowerNotice ( int32_t hasPower ) {
 	// . autosave should kick in every 30 seconds
 	g_process.m_powerIsOn = false;
 	// note the autosave
-	log("powermo: disabling spiders, suspending merges, disabling "
-	    "tree writes and saving.");
+	log("powermo: disabling spiders, suspending merges, disabling tree writes and saving.");
 	// . save everything now... this may block some when saving the
 	//   caches... then do not do ANY writes...
 	// . RdbMerge suspends all merging if power is off
@@ -805,15 +815,15 @@ static bool CommandPowerNotice ( int32_t hasPower ) {
 }
 
 
-static bool CommandPowerOnNotice ( char *rec ) {
+bool Parms::CommandPowerOnNotice(char *rec) {
 	return CommandPowerNotice ( 1 );
 }
 
-static bool CommandPowerOffNotice ( char *rec ) {
+bool Parms::CommandPowerOffNotice(char *rec) {
 	return CommandPowerNotice ( 0 );
 }
 
-static bool CommandInSync ( char *rec ) {
+bool Parms::CommandInSync(char *rec) {
 	g_parms.m_inSyncWithHost0 = true;
 	return true;
 }
@@ -836,6 +846,15 @@ Parms::Parms ( ) {
 	m_numParms = 0;
 	memset(m_searchParms, 0, sizeof(m_searchParms));
 	m_numSearchParms = 0;
+}
+
+
+bool Parms::registerHandler3e() {
+	return g_udpServer.registerHandler(msg_type_3e,handleRequest3e);
+}
+
+bool Parms::registerHandler3f() {
+	return g_udpServer.registerHandler(msg_type_3f,handleRequest3f);
 }
 
 
@@ -895,7 +914,7 @@ bool Parms::setGigablastRequest ( TcpSocket *socket ,
 	HttpRequest *hr = &gr->m_hr;
 
 	// need this
-	int32_t obj = OBJ_GBREQUEST;
+	parameter_object_type_t obj = OBJ_GBREQUEST;
 
 	//
 	// reset THIS to defaults. use NULL for cr since mostly for SearchInput
@@ -947,7 +966,7 @@ bool Parms::setGigablastRequest ( TcpSocket *socket ,
 		//if ( (m->m_perms & user) == 0 ) continue;
 		// set it. now our TYPE_CHARPTR will just be set to it directly
 		// to save memory...
-		setParm ( (char *)THIS , m, j, 0, v, false,//not html enc
+		setParm ( (char *)THIS , m, 0, v, false,//not html enc
 			  false ); // true );
 	}
 
@@ -1415,7 +1434,7 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 		}
 
 		// arrays always have blank line for adding stuff
-		if ( m->m_max > 1 ) {
+		if ( m->m_max > 1 && (m->m_fixed<=0 || size<m->m_fixed)) {
 			size++;
 		}
 
@@ -1582,7 +1601,7 @@ bool Parms::printParm( SafeBuf* sb,
 	}
 
 	// what type of parameter?
-	char t = m->m_type;
+	parameter_type_t t = m->m_type;
 	// point to the data in THIS
 	char *s = THIS + m->m_off + m->m_size * j ;
 
@@ -1660,9 +1679,6 @@ bool Parms::printParm( SafeBuf* sb,
 			Parm *mk = &m_parms[k];
 			// not if printing json
 			//if ( format != FORMAT_HTML )continue;//isJSON )
-			// skip if hidden
-			if ( cr && (mk->m_flags & PF_DIFFBOT) )
-				continue;
 
 			sb->safePrintf ( "<td>" );
 			// if its of type checkbox in a table make it
@@ -1843,12 +1859,9 @@ bool Parms::printParm( SafeBuf* sb,
 	}
 	else if ( t == TYPE_CHAR )
 		sb->safePrintf ("<input type=text name=%s value=\"%" PRId32"\" "
-				"size=3>",cgi,(int32_t)(*s));
+				"size=3>",cgi,(int8_t)(*s));
 	else if ( t == TYPE_PRIORITY )
 		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s );
-	else if ( t == TYPE_PRIORITY2 ) {
-		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s );
-	}
 	else if ( t == TYPE_SAFEBUF &&
 		  strcmp(m->m_title,"url filters profile")==0)
 		// url filters profile drop down "ufp"
@@ -1891,16 +1904,16 @@ bool Parms::printParm( SafeBuf* sb,
 			sb->safePrintf ("<input type=text name=%s value=\"%s\" "
 					"size=12>",cgi,iptoa(*(int32_t *)s));
 	}
-	else if ( t == TYPE_LONG ) {
+	else if ( t == TYPE_INT32 ) {
 		sb->safePrintf ("<input type=text name=%s "
 				"value=\"%" PRId32"\" "
 				// 3 was ok on firefox but need 6
 				// on chrome
 				"size=6>",cgi,*(int32_t *)s);
 	}
-	else if ( t == TYPE_LONG_CONST )
+	else if ( t == TYPE_INT32_CONST )
 		sb->safePrintf ("%" PRId32,*(int32_t *)s);
-	else if ( t == TYPE_LONG_LONG )
+	else if ( t == TYPE_INT64 )
 		sb->safePrintf ("<input type=text name=%s value=\"%" PRId64"\" "
 				"size=12>",cgi,*(int64_t *)s);
 	else if ( t == TYPE_STRING || t == TYPE_STRINGNONEMPTY ) {
@@ -2000,27 +2013,6 @@ bool Parms::printParm( SafeBuf* sb,
 		sb->htmlEncode ( s , strlen(s), false );
 		sb->safePrintf ("</textarea>\n");
 	}
-	else if ( t == TYPE_TIME ) {
-		//time is stored as a string
-		char hr[3]="00";
-		char min[3]="00";
-		//if time is not stored properly, just write 00:00
-		if ( s[2] == ':' ) {
-			gbmemcpy ( hr, s, 2 );
-			gbmemcpy ( min, s + 3, 2 );
-		}
-		hr[2] = '\0';
-		min[2] = '\0';
-		// print the time in the input forms
-		sb->safePrintf("<input type=text name=%shr size=2 "
-			       "value=%s>h "
-			       "<input type=text name=%smin size=2 "
-			       "value=%s>m " ,
-			       cgi    ,
-			       hr ,
-			       cgi    ,
-			       min  );
-	}
 
 	// end the input cell
 	sb->safePrintf ( "</td>\n");
@@ -2082,7 +2074,7 @@ bool Parms::setFromRequest ( HttpRequest *r ,
 			     TcpSocket* s,
 			     CollectionRec *newcr ,
 			     char *THIS ,
-			     int32_t objType ) {
+			     parameter_object_type_t objType) {
 
 	// use convertHttpRequestToParmList() for these because they
 	// are persistent records that are updated on every shard.
@@ -2097,38 +2089,56 @@ bool Parms::setFromRequest ( HttpRequest *r ,
 	}
 
 	// loop through cgi parms
-	for ( int32_t i = 0 ; i < r->getNumFields() ; i++ ) {
+	for(int32_t i = 0; i < r->getNumFields(); i++) {
+		// get the value of cgi parm (null terminated)
+		const char *v = r->getValue(i);
+		if(!v)
+			continue; //no value
 		// get cgi parm name
-		const char *field = r->getField    ( i );
+		const char *full_field_name = r->getField(i);
+		size_t full_field_name_len = strlen(full_field_name);
+		if(full_field_name_len>=128)
+			continue;
+		char field_base_name[128];
+		int field_index;
+		size_t nondigit_prefix_len = strcspn(full_field_name,"0123456789");
+		if(nondigit_prefix_len!=full_field_name_len) {
+			//field name contains digits. Split into base field name and index
+			memcpy(field_base_name,full_field_name,nondigit_prefix_len);
+			field_base_name[nondigit_prefix_len] = '\0';
+			char *endptr = NULL;
+			field_index = strtol(full_field_name+nondigit_prefix_len, &endptr, 10);
+			if(field_index<0)
+				continue; //hmm?
+			if(endptr && *endptr)
+				continue; //digits weren't the last part
+			
+		} else {
+			strcpy(field_base_name,full_field_name);
+			field_index = 0;
+		}
 		// find in parms list
 		int32_t  j;
 		Parm *m;
-		for ( j = 0 ; j < m_numParms ; j++ ) {
-			// get it
+		for(j = 0; j < m_numParms; j++) {
 			m = &m_parms[j];
-			// skip if not our type
-			if ( m->m_obj != objType ) continue;
-			// skip if offset is negative, that means none
-			if ( m->m_off < 0 ) continue;
-			// skip if no cgi parm, may not be configurable now
-			if ( ! m->m_cgi ) continue;
-			// otherwise, must match the cgi name exactly
-			if ( strcmp ( field,m->m_cgi ) == 0 ) break;
+			if(m->m_obj == objType &&
+			   m->m_off >= 0 &&
+			   m->m_cgi &&
+			   strcmp(field_base_name,m->m_cgi) == 0)
+				break; //found it
 		}
-		// bail if the cgi field is not in the parms list
-		if ( j >= m_numParms ) continue;
-		// get the value of cgi parm (null terminated)
-		const char *v = r->getValue ( i );
-		// empty?
-		if ( ! v ) continue;
+		if(j >= m_numParms)
+			continue; //cgi parm name not found
+		if(field_index>0 && field_index>m->m_max)
+			continue; //out-of-bounds
 		// . skip if no value was provided
 		// . unless it was a string! so we can make them empty.
-		if ( v[0] == '\0' &&
+		if(v[0] == '\0' &&
 		     m->m_type != TYPE_STRING &&
-		     m->m_type != TYPE_STRINGBOX ) continue;
+		     m->m_type != TYPE_STRINGBOX) continue;
 		// set it
-		setParm ( (char *)THIS , m, j, 0, v, false,//not html enc
-			  false );//true );
+		setParm(THIS, m, field_index, v, false, false);
 	}
 
 	return true;
@@ -2146,16 +2156,14 @@ bool Parms::insertParm ( int32_t i , int32_t an ,  char *THIS ) {
 
 	// ensure we are valid
 	if ( an >= num || an < 0 ) {
-		log("admin: Invalid insertion of element "
-		    "%" PRId32" in array of size %" PRId32" for \"%s\".",
+		log("admin: Invalid insertion of element %" PRId32" in array of size %" PRId32" for \"%s\".",
 		    an,num,m->m_title);
 		return false;
 	}
 	// also ensure that we have space to put the parm in, because in
 	// case of URl filters, it is bounded by MAX_FILTERS
 	if ( num >= MAX_FILTERS ){
-		log("admin: Invalid insert of element %" PRId32", array is full "
-		    "in size %" PRId32" for \"%s\".",an, num, m->m_title);
+		log("admin: Invalid insert of element %" PRId32", array is full in size %" PRId32" for \"%s\".",an, num, m->m_title);
 		return false;
 	}
 	// point to the place where the element is to be inserted
@@ -2177,7 +2185,7 @@ bool Parms::insertParm ( int32_t i , int32_t an ,  char *THIS ) {
 	*(int32_t *)(THIS + m->m_arrayCountOffset) = *(int32_t *)(THIS + m->m_arrayCountOffset)+1;
 
 	// put the defaults in the inserted line
-	setParm ( (char *)THIS , m , i , an , m->m_def , false ,false );
+	setParm ( (char *)THIS , m, an , m->m_def , false ,false );
 	return true;
 }
 
@@ -2192,8 +2200,7 @@ bool Parms::removeParm ( int32_t i , int32_t an , char *THIS ) {
 
 	// ensure we are valid
 	if ( an >= num || an < 0 ) {
-		log("admin: Invalid removal of element "
-		    "%" PRId32" in array of size %" PRId32" for \"%s\".",
+		log("admin: Invalid removal of element %" PRId32" in array of size %" PRId32" for \"%s\".",
 		    an,num,m->m_title);
 		return false;
 	}
@@ -2228,8 +2235,7 @@ bool Parms::removeParm ( int32_t i , int32_t an , char *THIS ) {
 
 
 
-void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char *s ,
-		      bool isHtmlEncoded , bool fromRequest ) {
+void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, bool isHtmlEncoded, bool fromRequest) {
 
 	if ( fromRequest ) { g_process.shutdownAbort(true); }
 
@@ -2247,170 +2253,172 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 	     m->m_type != TYPE_FILEUPLOADBUTTON &&
 	     m->m_defOff==-1) {
 		s = "0";
-		const char *tit = m->m_title;
-		if ( ! tit || ! tit[0] ) tit = m->m_xml;
-		log(LOG_LOGIC,"admin: Parm \"%s\" had NULL default value. "
-		    "Forcing to 0.",
-		    tit);
-		//g_process.shutdownAbort(true);
-	}
-
-	// sanity check
-	if ( &m_parms[mm] != m ) {
-		log(LOG_LOGIC,"admin: Not sane parameters.");
-		g_process.shutdownAbort(true);
+		const char *title = m->m_title;
+		if(!title || !title[0])
+			title = m->m_xml;
+		log(LOG_LOGIC,"admin: Parm \"%s\" had NULL default value. Forcing to 0.", title);
 	}
 
 	// if attempting to add beyond array max, bail out
-	if ( j >= m->m_max && j >= m->m_fixed ) {
+	if ( array_index >= m->m_max && array_index >= m->m_fixed ) {
 		log ( "admin: Attempted to set parm beyond limit. Aborting." );
 		return;
 	}
 
-	// ensure array count at least j+1
+	// ensure array count at least array_index+1
 	if ( m->m_max > 1 ) {
 		// . is this element we're adding bumping up the count?
 		// set the count to it if it is bigger than current count
-		if ( j + 1 > *(int32_t *)(THIS + m->m_arrayCountOffset) ) {
-			*(int32_t *)(THIS + m->m_arrayCountOffset) = j + 1;
+		if ( array_index + 1 > *(int32_t *)(THIS + m->m_arrayCountOffset) ) {
+			*(int32_t *)(THIS + m->m_arrayCountOffset) = array_index + 1;
 		}
 	}
 
-	char  t   = m->m_type;
+	switch(m->m_type) {
+		case TYPE_CHAR:
+		case TYPE_CHECKBOX:
+		case TYPE_BOOL:
+		case TYPE_PRIORITY: {
+			char *ptr = (char*)THIS + m->m_off + sizeof(char)*array_index;
+			if ( fromRequest && *(char*)ptr == atol(s))
+				return;
+			if ( fromRequest) {
+				oldVal = (float)*(char *)ptr;
+			}
+			*(char*)ptr = s ? atol(s) : 0;
+			newVal = (float)*(char*)ptr;
+			break;
+		}
+		case TYPE_CHARPTR: {
+			// "s" might be NULL or m->m_def...
+			*(const char **)(THIS + m->m_off + array_index) = s;
+			break;
+		}
+		case TYPE_FILEUPLOADBUTTON: {
+				// "s" might be NULL or m->m_def...
+			*(const char **)(THIS + m->m_off + array_index) = s;
+			break;
+		}
+		case TYPE_CMD: {
+			log(LOG_LOGIC, "conf: Parms: TYPE_CMD is not a cgi var.");
+			return;
+		}
+		case TYPE_FLOAT: {
+			char *ptr = (char*)THIS + m->m_off + sizeof(float)*array_index;
+			if( fromRequest && almostEqualFloat(*(float *)ptr, (s ? (float)atof(s) : 0)) ) {
+				return;
+			}
 
-	if      ( t == TYPE_CHAR           ||
-		  t == TYPE_CHAR2          ||
-		  t == TYPE_CHECKBOX       ||
-		  t == TYPE_BOOL           ||
-		  t == TYPE_PRIORITY       ||
-		  t == TYPE_PRIORITY2      ) {
-		if ( fromRequest && *(char *)(THIS + m->m_off + j) == atol(s))
-			return;
-		if ( fromRequest) {
-			oldVal = (float)*(char *)(THIS + m->m_off +j);
+			if ( fromRequest ) {
+				oldVal = *(float*)ptr;
+			}
+			*(float*)ptr = s ? (float)atof ( s ) : 0;
+			newVal = *(float*)ptr;
+			break;
 		}
-		*(char *)(THIS + m->m_off + j) = s ? atol(s) : 0;
- 		newVal = (float)*(char *)(THIS + m->m_off + j);
-		goto changed; 
-	}
-	else if ( t == TYPE_CHARPTR ) {
-		// "s" might be NULL or m->m_def...
-		*(const char **)(THIS + m->m_off + j) = s;
-	}
-	else if ( t == 	TYPE_FILEUPLOADBUTTON ) {
-		// "s" might be NULL or m->m_def...
-		*(const char **)(THIS + m->m_off + j) = s;
-	}
-	else if ( t == TYPE_CMD ) {
-		log(LOG_LOGIC, "conf: Parms: TYPE_CMD is not a cgi var.");
-		return;	
-	}
-	else if ( t == TYPE_FLOAT ) {
-		if( fromRequest && almostEqualFloat(*(float *)(THIS + m->m_off + 4*j), (s ? (float)atof(s) : 0)) ) {
-			return;
+		case TYPE_DOUBLE: {
+			char *ptr = (char*)THIS + m->m_off + sizeof(double)*array_index;
+			if( fromRequest && almostEqualFloat(*(double*)ptr, ( s ? (double)atof(s) : 0)) ) {
+				return;
+			}
+			if ( fromRequest ) {
+				oldVal = *(double*)ptr;
+			}
+			*(double*)ptr = s ? (double)atof ( s ) : 0;
+			newVal = *(double*)ptr;
+			break;
 		}
+		case TYPE_IP: {
+			char *ptr = (char*)THIS + m->m_off + sizeof(int32_t)*array_index;
+			if ( fromRequest && *(int32_t*)ptr == (s ? (int32_t)atoip(s,strlen(s)) : 0) )
+				return;
+			*(int32_t*)ptr = s ? (int32_t)atoip(s,strlen(s)) : 0;
+			break;
+		}
+		case TYPE_INT32:
+		case TYPE_INT32_CONST: {
+			char *ptr = (char*)THIS + m->m_off + sizeof(int32_t)*array_index;
+			int32_t v = s ? atol(s) : 0;
+			// min is considered valid if >= 0
+			if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
+			if ( fromRequest && *(int32_t *)ptr == v )
+				return;
+			if ( fromRequest)oldVal=(float)*(int32_t *)ptr;
+			*(int32_t *)ptr = v;
+			newVal = (float)*(int32_t*)ptr;
+			break;
+		}
+		case TYPE_INT64: {
+			char *ptr = (char*)THIS + m->m_off + sizeof(int64_t)*array_index;
+			if ( fromRequest && *(uint64_t*)ptr == ( s ? strtoull(s,NULL,10) : 0) ) {
+				return;
+			}
+			*(int64_t*)ptr = s ? strtoull(s,NULL,10) : 0;
+			break;
+		}
+		case TYPE_SAFEBUF: {
+			// like TYPE_STRING but dynamically allocates
+			int32_t len = s ? strlen(s) : 0;
 
-		if ( fromRequest ) {
-			oldVal = *(float *)(THIS + m->m_off + 4*j);
+			// point to the safebuf, in the case of an array of
+			// SafeBufs "array_index" is the # in the array, starting at 0
+			char *ptr = (char*)THIS + m->m_off + sizeof(SafeBuf)*array_index;
+			SafeBuf *sb = (SafeBuf *)ptr;
+			int32_t oldLen = sb->length();
+			// why was this commented out??? we need it now that we
+			// send email alerts when parms change!
+			if ( fromRequest &&
+			     ! isHtmlEncoded && oldLen == len &&
+			     memcmp ( sb->getBufStart() , s , len ) == 0 )
+				return;
+			// nuke it
+			sb->purge();
+			// this means that we can not use string POINTERS as parms!!
+			if ( ! isHtmlEncoded ) sb->safeMemcpy ( s , len );
+			else                   len = sb->htmlDecode (s,len);
+			// tag it
+			sb->setLabel ( "parm1" );
+			// ensure null terminated
+			sb->nullTerm();
+			break;
 		}
-		*(float *)(THIS + m->m_off + 4*j) = s ? (float)atof ( s ) : 0;
-		newVal = *(float *)(THIS + m->m_off + 4*j);
-		goto changed; 
-	}
-	else if ( t == TYPE_DOUBLE ) {
-		if( fromRequest && almostEqualFloat(*(double *)(THIS + m->m_off + 4*j), ( s ? (double)atof(s) : 0)) ) {
-			return;
-		}
-		if ( fromRequest ) {
-			oldVal = *(double *)(THIS + m->m_off + 4*j);
-		}
-		*(double *)(THIS + m->m_off + 4*j) = s ? (double)atof ( s ) : 0;
-		newVal = *(double *)(THIS + m->m_off + 4*j);
-		goto changed; 
-	}
-	else if ( t == TYPE_IP ) {
-		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) ==
-		     (s ? (int32_t)atoip(s,strlen(s)) : 0) )
-			return;
-		*(int32_t *)(THIS + m->m_off + 4*j) = s ? (int32_t)atoip(s,strlen(s)) : 0;
-		goto changed; 
-	}
-	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST ) {
-		int32_t v = s ? atol(s) : 0;
-		// min is considered valid if >= 0
-		if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
-		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) == v )
-			return;
-		if ( fromRequest)oldVal=(float)*(int32_t *)(THIS + m->m_off +4*j);
-		*(int32_t *)(THIS + m->m_off + 4*j) = v;
-		newVal = (float)*(int32_t *)(THIS + m->m_off + 4*j);
-		goto changed; 
-	}
-	else if ( t == TYPE_LONG_LONG ) {
-		if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*j) == ( s ? strtoull(s,NULL,10) : 0) ) {
-			return;
-		}
-		*(int64_t *)(THIS + m->m_off + 8*j) = s ? strtoull(s,NULL,10) : 0;
-		goto changed; }
-	// like TYPE_STRING but dynamically allocates
-	else if ( t == TYPE_SAFEBUF ) {
-		int32_t len = s ? strlen(s) : 0;
+		case TYPE_STRING:
+		case TYPE_STRINGBOX:
+		case TYPE_STRINGNONEMPTY: {
+			if( !s ) {
+				return;
+			}
+			int32_t len = strlen(s);
+			if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
+			char *dst = THIS + m->m_off + m->m_size*array_index;
+			// why was this commented out??? we need it now that we
+			// send email alerts when parms change!
+			if ( fromRequest &&
+			     ! isHtmlEncoded && (int32_t)strlen(dst) == len &&
+			     memcmp ( dst , s , len ) == 0 ) {
+				return;
+			}
 
-		// point to the safebuf, in the case of an array of
-		// SafeBufs "j" is the # in the array, starting at 0
-		SafeBuf *sb = (SafeBuf *)(THIS+m->m_off+(j*sizeof(SafeBuf)) );
-		int32_t oldLen = sb->length();
-		// why was this commented out??? we need it now that we
-		// send email alerts when parms change!
-		if ( fromRequest &&
-		     ! isHtmlEncoded && oldLen == len &&
-		     memcmp ( sb->getBufStart() , s , len ) == 0 )
-			return;
-		// nuke it
-		sb->purge();
-		// this means that we can not use string POINTERS as parms!!
-		if ( ! isHtmlEncoded ) sb->safeMemcpy ( s , len );
-		else                   len = sb->htmlDecode (s,len,false);
-		// tag it
-		sb->setLabel ( "parm1" );
-		// ensure null terminated
-		sb->nullTerm();
+			// this means that we can not use string POINTERS as parms!!
+			if ( !isHtmlEncoded ) {
+				gbmemcpy( dst, s, len );
+			} else {
+				len = htmlDecode( dst, s, len, false );
+			}
 
-		goto changed;
+			dst[len] = '\0';
+			// . might have to set length
+			// . used for CollectionRec::m_htmlHeadLen and m_htmlTailLen
+			if ( m->m_plen >= 0 )
+				*(int32_t *)(THIS + m->m_plen) = len ;
+			break;
+		}
+		case TYPE_UNSET:
+		case TYPE_NONE:
+		case TYPE_COMMENT:
+			log(LOG_LOGIC,"admin: attempt to set parameter %s from cgi-request", m->m_title);
+			return;
 	}
-	else if ( t == TYPE_STRING         ||
-		  t == TYPE_STRINGBOX      ||
-		  t == TYPE_STRINGNONEMPTY ||
-		  t == TYPE_TIME            ) {
-		if( !s ) {
-			return;
-		}
-		int32_t len = strlen(s);
-		if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
-		char *dst = THIS + m->m_off + m->m_size*j ;
-		// why was this commented out??? we need it now that we
-		// send email alerts when parms change!
-		if ( fromRequest &&
-		     ! isHtmlEncoded && (int32_t)strlen(dst) == len &&
-		     memcmp ( dst , s , len ) == 0 ) {
-			return;
-		}
-
-		// this means that we can not use string POINTERS as parms!!
-		if ( !isHtmlEncoded ) {
-			gbmemcpy( dst, s, len );
-		} else {
-			len = htmlDecode( dst, s, len, false );
-		}
-
-		dst[len] = '\0';
-		// . might have to set length
-		// . used for CollectionRec::m_htmlHeadLen and m_htmlTailLen
-		if ( m->m_plen >= 0 )
-			*(int32_t *)(THIS + m->m_plen) = len ;
-		goto changed;
-	}
- changed:
 
 	// do not send if setting from startup
 	if ( ! fromRequest ) return;
@@ -2422,8 +2430,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 
 	// . note it in statsdb
 	// . record what parm change and from/to what value
-	g_statsdb.addStat ( 0, // niceness ,
-			    "parm_change" ,
+	g_statsdb.addStat ( "parm_change" ,
 			    nowms,
 			    nowms,
 			    0         , // value
@@ -2472,7 +2479,7 @@ Parm *Parms::getParmFromParmHash ( int32_t parmHash ) {
 }
 
 
-void Parms::setToDefault ( char *THIS , char objType , CollectionRec *argcr ) {
+void Parms::setToDefault(char *THIS, parameter_object_type_t objType, CollectionRec *argcr) {
 	// init if we should
 	init();
 
@@ -2488,48 +2495,47 @@ void Parms::setToDefault ( char *THIS , char objType , CollectionRec *argcr ) {
 		// sanity check, make sure it does not overflow
 		if ( m->m_obj == OBJ_COLL &&
 		     m->m_off > (int32_t)sizeof(CollectionRec)){
-			log(LOG_LOGIC,"admin: Parm in Parms.cpp should use "
-			    "OBJ_COLL not OBJ_CONF");
+			log(LOG_LOGIC,"admin: Parm in Parms.cpp should use OBJ_COLL not OBJ_CONF");
 			g_process.shutdownAbort(true);
 		}
 
 		if ( m->m_page > PAGE_API && // CGIPARMS &&
 		     m->m_page != PAGE_NONE &&
 		     m->m_obj == OBJ_CONF ) {
-			log(LOG_LOGIC,"admin: Page can not reference "
-			    "g_conf and be declared AFTER PAGE_CGIPARMS in "
+			log(LOG_LOGIC,"admin: Page can not reference g_conf and be declared AFTER PAGE_CGIPARMS in "
 			    "Pages.h. Title=%s",m->m_title);
 			g_process.shutdownAbort(true);
 		}
 		// if defOff >= 0 get from cr like for searchInput vals
 		// whose default is from the collectionRec...
-		if ( m->m_defOff >= 0 && argcr ) {
-			if ( ! argcr ) { g_process.shutdownAbort(true); }
-			char *def = m->m_defOff+(char *)argcr;
-			char *dst = (char *)THIS + m->m_off;
-			gbmemcpy ( dst , def , m->m_size );
-			continue;
-		}
-		// leave arrays empty, set everything else to default
-		if ( m->m_max <= 1 ) {
-			//if ( ! m->m_def ) { g_process.shutdownAbort(true); }
-			setParm ( THIS , m, i, 0, m->m_def, false/*not enc.*/,
-				  false );
-		}
-		// these are special, fixed size arrays
-		if ( m->m_fixed > 0 ) {
+		const void *raw_default = NULL;
+		if ( m->m_defOff >= 0 && argcr )
+			raw_default = ((char *)argcr) + m->m_defOff;
+		if ( m->m_defOff2>=0)
+			raw_default = ((const char *)&g_conf) + m->m_defOff2;
+		
+		if(m->m_max<=1) {
+			//not an array
+			if(raw_default) {
+				char *dst = THIS + m->m_off;
+				memcpy(dst, raw_default, m->m_size);
+			} else
+				setParm(THIS , m, 0, m->m_def, false/*not enc.*/, false );
+		} else if(m->m_fixed<=0) {
+			//variable-sized array
+			//empty it
+			*(int32_t *)(THIS + m->m_arrayCountOffset) = 0;
+		} else {
+			//fixed-size array
 			for ( int32_t k = 0 ; k < m->m_fixed ; k++ ) {
-				setParm(THIS,m,i,k,m->m_def,false/*not enc.*/,
-					false);
+				if(raw_default) {
+					char *dst = THIS + m->m_off + m->m_size*k;
+					memcpy(dst, raw_default, m->m_size);
+					raw_default = ((char*)raw_default) + m->m_size;
+				} else
+					setParm(THIS, m, k, m->m_def, false/*not enc.*/, false);
 			}
-			continue;
 		}
-		// make array sizes 0
-		if ( m->m_max <= 1 ) continue;
-		// otherwise, array is not fixed size
-
-		// beautiful pragma pack(4)/32-bit dependent original code. *(int32_t *)(s-4) = 0;
-		*(int32_t *)(THIS + m->m_arrayCountOffset) = 0;
 	}
 }
 
@@ -2539,7 +2545,7 @@ void Parms::setToDefault ( char *THIS , char objType , CollectionRec *argcr ) {
 bool Parms::setFromFile ( void *THIS        ,
 			  char *filename    ,
 			  char *filenameDef ,
-			  char  objType ) {
+			  parameter_object_type_t objType) {
 	// make sure we're init'd
 	init();
 
@@ -2623,8 +2629,7 @@ bool Parms::setFromFile ( void *THIS        ,
 			}
 			// should be a <![CDATA[...]]>
 			if ( vlen<12 || strncasecmp(v,"<![CDATA[",9)!=0 ) {
-				log("conf: No <![CDATA[...]]> tag found "
-				    "for \"<%s>\" tag. Trying without CDATA.",
+				log("conf: No <![CDATA[...]]> tag found for \"<%s>\" tag. Trying without CDATA.",
 				    m->m_xml);
 				v    = oldv;
 				vlen = oldvlen;
@@ -2657,7 +2662,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		v[nb] = '\0';
 
 		// set our parm
-		setParm( (char *)THIS, m, i, j, v, false, false );
+		setParm( (char *)THIS, m, j, v, false, false );
 
 		// we were set from the explicit file
 		//((CollectionRec *)THIS)->m_orig[i] = 2;
@@ -2709,8 +2714,7 @@ bool Parms::setFromFile ( void *THIS        ,
 
 			// should be a <![CDATA[...]]>
 			if ( vlen<12 || strncasecmp(v,"<![CDATA[",9)!=0 ) {
-				log("conf: No <![CDATA[...]]> tag found "
-				    "for \"<%s>\" tag. Trying without CDATA.",
+				log("conf: No <![CDATA[...]]> tag found for \"<%s>\" tag. Trying without CDATA.",
 				    m->m_xml);
 				v    = oldv;
 				vlen = oldvlen;
@@ -2742,7 +2746,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		v[nb] = '\0';
 
 		// set our parm
-		setParm( (char *)THIS, m, i, j, v, false /*is html encoded?*/, false );
+		setParm( (char *)THIS, m, j, v, false /*is html encoded?*/, false );
 
 		// do not repeat same node
 		nn++;
@@ -2835,15 +2839,13 @@ bool Parms::setXmlFromFile(Xml *xml, char *filename, SafeBuf *sb ) {
 //#define MAX_CONF_SIZE 200000
 
 // returns false and sets g_errno on error
-bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
+bool Parms::saveToXml(char *THIS, char *f, parameter_object_type_t objType) {
 	if ( g_conf.m_readOnlyMode ) return true;
 	// print into buffer
 	StackBuf<200000> sb;
 	int32_t  j   ;
 	int32_t  count = 0;
 	const char *s = "";
-	CollectionRec *cr = NULL;
-	if ( THIS != (char *)&g_conf ) cr = (CollectionRec *)THIS;
 	// now set THIS based on the parameters in the xml file
 	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
 		// get it
@@ -2870,8 +2872,6 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 		// ignore if hidden as well! no, have to keep those separate
 		// since spiderroundnum/starttime is hidden but should be saved
 		if ( m->m_flags & PF_NOSAVE ) continue;
-		// ignore if diffbot and we are not a diffbot/custom crawl
-		if ( cr && (m->m_flags & PF_DIFFBOT) ) continue;
 		// skip if we should not save to xml
 		if ( ! m->m_save ) continue;
 		// allow comments though
@@ -2888,9 +2888,7 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 		if ( m->m_fixed > 0 ) count = m->m_fixed;
 		// sanity check
 		if ( count > 100000 ) {
-			log(LOG_LOGIC,"admin: Outrageous array size in for "
-			    "parameter %s. Does the array max size int32_t "
-			    "preceed it in the conf class?",m->m_title);
+			log(LOG_LOGIC,"admin: Outrageous array size in for parameter %s. Does the array max size int32_t preceed it in the conf class?",m->m_title);
 			exit(-1);
 		}
 
@@ -2998,21 +2996,19 @@ skip2:
 
 bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 	// print it out
-	char t = m->m_type;
-	if ( t == TYPE_CHAR           || t == TYPE_BOOL           ||
-	     t == TYPE_CHECKBOX       ||
-	     t == TYPE_PRIORITY       || t == TYPE_PRIORITY2      ||
-	     t == TYPE_CHAR2           )
-		sb->safePrintf("%" PRId32,(int32_t)*s);
-	else if ( t == TYPE_FLOAT )
+	if ( m->m_type == TYPE_CHAR           || m->m_type == TYPE_BOOL           ||
+	     m->m_type == TYPE_CHECKBOX       ||
+	     m->m_type == TYPE_PRIORITY)
+		sb->safePrintf("%" PRId32,(int8_t)*s);
+	else if ( m->m_type == TYPE_FLOAT )
 		sb->safePrintf("%f",*(float *)s);
-	else if ( t == TYPE_IP )
+	else if ( m->m_type == TYPE_IP )
 		sb->safePrintf("%s",iptoa(*(int32_t *)s));
-	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST )
+	else if ( m->m_type == TYPE_INT32 || m->m_type == TYPE_INT32_CONST )
 		sb->safePrintf("%" PRId32,*(int32_t *)s);
-	else if ( t == TYPE_LONG_LONG )
+	else if ( m->m_type == TYPE_INT64 )
 		sb->safePrintf("%" PRId64,*(int64_t *)s);
-	else if ( t == TYPE_SAFEBUF ) {
+	else if ( m->m_type == TYPE_SAFEBUF ) {
 		SafeBuf *sb2 = (SafeBuf *)s;
 		char *buf = sb2->getBufStart();
 		//int32_t blen = 0;
@@ -3022,10 +3018,9 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 		//cdataEncode(sb, buf);//, blen );//, true ); // #?*
 		if ( buf ) sb->htmlEncode ( buf );
 	}
-	else if ( t == TYPE_STRING         ||
-		  t == TYPE_STRINGBOX      ||
-		  t == TYPE_STRINGNONEMPTY ||
-		  t == TYPE_TIME) {
+	else if ( m->m_type == TYPE_STRING         ||
+		  m->m_type == TYPE_STRINGBOX      ||
+		  m->m_type == TYPE_STRINGNONEMPTY) {
 		sb->htmlEncode ( s );
 	}
 	return true;
@@ -3052,9 +3047,10 @@ void Parms::init ( ) {
 		m_parms[i].m_colspan= -1;
 		m_parms[i].m_def    = NULL       ; // for detecting if not set
 		m_parms[i].m_defOff = -1; // if default pts to collrec parm
+		m_parms[i].m_defOff2 = -1;
 		m_parms[i].m_type   = TYPE_NONE  ; // for detecting if not set
 		m_parms[i].m_page   = -1         ; // for detecting if not set
-		m_parms[i].m_obj    = -1         ; // for detecting if not set
+		m_parms[i].m_obj    = OBJ_UNSET  ; // for detecting if not set
 		m_parms[i].m_max    =  1         ; // max elements in array
 		m_parms[i].m_fixed  =  0         ; // size of fixed size array
 		m_parms[i].m_size   =  0         ; // max string size
@@ -3096,7 +3092,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "c";
 	m->m_page  = PAGE_CLONECOLL;
 	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	m->m_flags = PF_API | PF_REQUIRED;
 	m->m_off   = offsetof(GigablastRequest,m_coll);
@@ -3108,7 +3104,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "c";
 	m->m_page  = PAGE_BASIC_STATUS;
 	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	m->m_flags = PF_API | PF_REQUIRED;
 	m->m_off   = offsetof(GigablastRequest,m_coll);
@@ -3119,7 +3115,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "c";
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	// do not show in html controls
 	m->m_flags = PF_API | PF_REQUIRED | PF_NOHTML;
@@ -3131,7 +3127,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "c";
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	// do not show in html controls
 	m->m_flags = PF_API | PF_REQUIRED | PF_NOHTML;
@@ -3143,7 +3139,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "c";
 	m->m_page  = PAGE_SPIDERDB;
 	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	// do not show in html controls
 	m->m_flags = PF_API | PF_REQUIRED | PF_NOHTML;
@@ -3155,7 +3151,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "c";
 	m->m_page  = PAGE_SITEDB;
 	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	// do not show in html controls
 	m->m_flags = PF_API | PF_REQUIRED | PF_NOHTML;
@@ -3194,7 +3190,7 @@ void Parms::init ( ) {
 	m->m_desc  = "How many bytes should be used for caching DNS replies?";
 	m->m_off   = offsetof(Conf,m_dnsMaxCacheMem);
 	m->m_def   = "128000";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
@@ -3206,7 +3202,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "hmsbs";
 	m->m_off   = offsetof(Conf,m_httpMaxSendBufSize);
 	m->m_def   = "128000";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
 	m->m_flags = PF_NOAPI;
@@ -3310,32 +3306,22 @@ void Parms::init ( ) {
 	m->m_desc  = "Time when this collection was created, or time of "
 		"the last reset or restart.";
 	m->m_off   = offsetof(CollectionRec,m_diffbotCrawlStartTime);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_def   = "0";
-	m->m_flags = PF_NOAPI;//PF_DIFFBOT; no i want to saveToXml
+	m->m_flags = PF_NOAPI;
 	m++;
 
 	m->m_cgi   = "spiderendtime";
 	m->m_xml   = "crawlEndTime";
 	m->m_desc  = "If spider is done, when did it finish.";
 	m->m_off   = offsetof(CollectionRec,m_diffbotCrawlEndTime);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_def   = "0";
-	m->m_flags = PF_NOAPI;//PF_DIFFBOT; no i want to saveToXml
-	m++;
-
-	m->m_cgi   = "seeds";
-	m->m_xml   = "diffbotSeeds";
-	m->m_off   = offsetof(CollectionRec,m_diffbotSeeds);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_flags = PF_DIFFBOT;
-	m->m_def   = "";
+	m->m_flags = PF_NOAPI;
 	m++;
 
 	/////////////////////
@@ -3475,9 +3461,9 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_SI;
 	m->m_page  = PAGE_RESULTS;
 	m->m_off   = offsetof(SearchInput,m_query);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "q";
-	m->m_flags = PF_REQUIRED | PF_COOKIE | PF_WIDGET_PARM | PF_API;
+	m->m_flags = PF_REQUIRED | PF_COOKIE | PF_API;
 	m++;
 
 	m->m_title = "collection";
@@ -3487,7 +3473,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "c";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	m->m_flags = PF_API | PF_REQUIRED;
 	m->m_off   = offsetof(SearchInput,m_coll);
@@ -3495,14 +3481,13 @@ void Parms::init ( ) {
 
 	m->m_title = "number of results per query";
 	m->m_desc  = "The number of results returned per page.";
-	// make it 25 not 50 since we only have like 26 balloons
 	m->m_def   = "10";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_off   = offsetof(SearchInput,m_docsWanted);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_cgi   = "n";
-	m->m_flags = PF_WIDGET_PARM | PF_API;
+	m->m_flags = PF_API;
 	m->m_smin  = 0;
 	m++;
 
@@ -3513,10 +3498,10 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_off   = offsetof(SearchInput,m_firstResultNum);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_cgi   = "s";
 	m->m_smin  = 0;
-	m->m_flags = PF_REDBOX;
+	m->m_flags = 0;
 	m++;
 
 	m->m_title = "show errors";
@@ -3612,7 +3597,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "pss";
 	m->m_off   = offsetof(SearchInput,m_percentSimilarSummary);
 	m->m_defOff= offsetof(CollectionRec,m_percentSimilarSummary);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_group = false;
 	m->m_smin  = 0;
 	m->m_smax  = 100;
@@ -3659,7 +3644,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_off   = offsetof(SearchInput,m_streamResults);
-	m->m_type  = TYPE_CHAR;
+	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_cgi   = "stream";
 	m->m_flags = PF_API;
@@ -3671,7 +3656,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_off   = offsetof(SearchInput,m_secsBack);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_cgi   = "secsback";
 	m->m_flags = PF_API;
@@ -3738,7 +3723,7 @@ void Parms::init ( ) {
 	m->m_title = "real max top";
 	m->m_desc  = "Only score up to this many inlink text term pairs";
 	m->m_off   = offsetof(SearchInput,m_realMaxTop);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_def   = "10";
@@ -3756,6 +3741,64 @@ void Parms::init ( ) {
 	m->m_cgi   = "dmsa";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m++;
+
+	m->m_title = "Synonym weight";
+	m->m_desc  = "Weight of synonyms in relation to original words";
+	m->m_cgi   = "synonym_weight";
+	m->m_obj   = OBJ_SI;
+	m->m_off   = offsetof(SearchInput,m_synonymWeight);
+	m->m_defOff2 = offsetof(Conf,m_synonymWeight);
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "0.900000";
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "Use page temperature";
+	m->m_desc  = "Use page temperature (if available) for ranking";
+	m->m_cgi   = "use_page_temperature";
+	m->m_obj   = OBJ_SI;
+	m->m_off   = offsetof(SearchInput,m_usePageTemperatureForRanking);
+	m->m_defOff2 = offsetof(Conf,m_usePageTemperatureForRanking);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "1";
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "Score multiplier";
+	m->m_desc  = "26 flags per docid are supported. If a flag bit is set on a page the scoring and ranking can be modified.";
+	m->m_cgi   = "flag_score_multiplier";
+	m->m_xml   = "ScoreMultiplier";
+	m->m_max   = 26;
+	m->m_fixed = 26;
+	m->m_obj   = OBJ_SI;
+	m->m_arrayCountOffset= offsetof(SearchInput,m_numFlagScoreMultipliers);
+	m->m_off   = offsetof(SearchInput,m_flagScoreMultiplier);
+	m->m_defOff2 = offsetof(Conf,m_flagScoreMultiplier);
+	m->m_rowid = 1;
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "1.0";
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+	m->m_title = "Rank adjustment";
+	m->m_cgi   = "flag_rerank";
+	m->m_xml   = "RankAdjustment";
+	m->m_max   = 26;
+	m->m_fixed = 26;
+	m->m_obj   = OBJ_SI;
+	m->m_arrayCountOffset= offsetof(SearchInput,m_numFlagRankAdjustments);
+	m->m_off   = offsetof(SearchInput,m_flagRankAdjustment);
+	m->m_defOff2 = offsetof(Conf,m_flagRankAdjustment);
+	m->m_rowid = 1;
+	m->m_type  = TYPE_INT32;
+	m->m_def   = "0";
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+	
+	
 
 	m->m_title = "sort language preference";
 	m->m_desc  = "Default language to use for ranking results. "
@@ -3796,7 +3839,7 @@ void Parms::init ( ) {
 		"prevent big queries from resource hogging.";
 	m->m_cgi   = "mqt";
 	m->m_off   = offsetof(CollectionRec,m_maxQueryTerms);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "999999"; // now we got synonyms... etc
 	m->m_group = false;
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
@@ -3812,7 +3855,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "tml";
 	m->m_defOff= offsetof(CollectionRec,m_titleMaxLen);
 	m->m_off   = offsetof(SearchInput,m_titleMaxLen);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -3821,7 +3864,7 @@ void Parms::init ( ) {
 	m->m_title = "number of summary excerpts";
 	m->m_desc  = "How many summary excerpts to display per search result?";
 	m->m_cgi   = "ns";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_defOff= offsetof(CollectionRec,m_summaryMaxNumLines);
 	m->m_group = false;
 	m->m_off   = offsetof(SearchInput,m_numLinesInSummary);
@@ -3841,7 +3884,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "sw";
 	m->m_off   = offsetof(SearchInput,m_summaryMaxWidth);
 	m->m_defOff= offsetof(CollectionRec,m_summaryMaxWidth);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_group = false;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
@@ -3855,7 +3898,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "smxcpl";
 	m->m_off   = offsetof(SearchInput,m_summaryMaxNumCharsPerLine);
 	m->m_defOff= offsetof(CollectionRec,m_summaryMaxNumCharsPerLine);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_group = false;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
@@ -4159,7 +4202,7 @@ void Parms::init ( ) {
 	m->m_arrayCountOffset= offsetof(Conf,m_numFlagRankAdjustments);
 	m->m_off   = offsetof(Conf,m_flagRankAdjustment);
 	m->m_rowid = 1;
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_flags = 0;
 	m->m_page  = PAGE_RANKING;
@@ -4229,7 +4272,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "proxyips";
 	m->m_xml   = "proxyIps";
 	m->m_off   = offsetof(Conf,m_proxyIps);
-	m->m_type  = TYPE_SAFEBUF; // TYPE_IP;
+	m->m_type  = TYPE_SAFEBUF;
 	m->m_def   = "";
 	m->m_flags = PF_TEXTAREA | PF_REBUILDPROXYTABLE;
 	m->m_page  = PAGE_SPIDERPROXIES;
@@ -4320,7 +4363,7 @@ void Parms::init ( ) {
 		"volatile.";
 	m->m_def   = "0";
 	m->m_off   = offsetof(SearchInput,m_minSerpDocId);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_cgi   = "minserpdocid";
 	m->m_flags = PF_API;
 	m->m_smin  = 0;
@@ -4345,7 +4388,7 @@ void Parms::init ( ) {
 	m->m_title = "restrict search to this url";
 	m->m_desc  = "Does a url: query.";
 	m->m_off   = offsetof(SearchInput,m_url);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "url";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4355,7 +4398,7 @@ void Parms::init ( ) {
 	m->m_title = "restrict search to pages that link to this url";
 	m->m_desc  = "The url which the pages must link to.";
 	m->m_off   = offsetof(SearchInput,m_link);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "link";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4365,7 +4408,7 @@ void Parms::init ( ) {
 	m->m_desc  = "The phrase which will be quoted in the query. From the "
 		"advanced search page, adv.html.";
 	m->m_off   = offsetof(SearchInput,m_quote1);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "quotea";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4376,7 +4419,7 @@ void Parms::init ( ) {
 	m->m_desc  = "The phrase which will be quoted in the query. From the "
 		"advanced search page, adv.html.";
 	m->m_off   = offsetof(SearchInput,m_quote2);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "quoteb";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4400,7 +4443,7 @@ void Parms::init ( ) {
 		"From the advanced search page, adv.html.";
 	m->m_off   = offsetof(SearchInput,m_plus);
 	m->m_def   = NULL;
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "plus";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4411,7 +4454,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Returned results will NOT have any of the words in X. "
 		"From the advanced search page, adv.html.";
 	m->m_off   = offsetof(SearchInput,m_minus);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "minus";
 	//m->m_size  = 500;
 	m->m_page  = PAGE_RESULTS;
@@ -4456,7 +4499,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "minmsgthreeatimeout";
 	m->m_def   = "";
 	m->m_off   = offsetof(SearchInput,m_minMsg3aTimeout);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -4481,7 +4524,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Highlight the terms in this query instead.";
 	m->m_def   = NULL;
 	m->m_off   = offsetof(SearchInput,m_highlightQuery);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_cgi   = "hq";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4514,7 +4557,7 @@ void Parms::init ( ) {
 		"query, 1 is a slower, lower-priority query.";
 	m->m_def   = "0";
 	m->m_off   = offsetof(SearchInput,m_niceness);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_cgi   = "niceness";
 	m->m_smin  = 0;
 	m->m_smax  = 1;
@@ -4546,7 +4589,7 @@ void Parms::init ( ) {
 	m->m_desc  = "The url of an image to co-brand on the search "
 		"results page.";
 	m->m_off   = offsetof(SearchInput,m_imgUrl);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	//m->m_size  = 512;
 	m->m_cgi   = "iu";
@@ -4559,7 +4602,7 @@ void Parms::init ( ) {
 	m->m_desc  = "The hyperlink to use on the image to co-brand on "
 		"the search results page.";
 	m->m_off   = offsetof(SearchInput,m_imgLink);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	m->m_cgi   = "ix";
 	m->m_page  = PAGE_RESULTS;
@@ -4570,7 +4613,7 @@ void Parms::init ( ) {
 	m->m_title = "image width";
 	m->m_desc  = "The width of the image on the search results page.";
 	m->m_off   = offsetof(SearchInput,m_imgWidth);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_cgi   = "iw";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4582,7 +4625,7 @@ void Parms::init ( ) {
 	m->m_desc  = "The height of the image on the search results "
 		"page.";
 	m->m_off   = offsetof(SearchInput,m_imgHeight);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_cgi   = "ih";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4614,7 +4657,7 @@ void Parms::init ( ) {
 	m->m_title = "GB Country";
 	m->m_desc  = "Country code to restrict search";
 	m->m_off   = offsetof(SearchInput,m_gbcountry);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	m->m_cgi   = "gbcountry";
 	m->m_page  = PAGE_RESULTS;
@@ -4635,7 +4678,7 @@ void Parms::init ( ) {
 	m->m_title = "queryCharset";
 	m->m_desc  = "Charset in which the query is encoded";
 	m->m_off   = offsetof(SearchInput,m_queryCharset);
-	m->m_type  = TYPE_CHARPTR;//STRING;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = "utf-8";
 	m->m_cgi   = "qcs";
 	m->m_page  = PAGE_RESULTS;
@@ -4647,7 +4690,7 @@ void Parms::init ( ) {
 	m->m_title = "display inlinks";
 	m->m_desc  = "Display all inlinks of each result.";
 	m->m_off   = offsetof(SearchInput,m_displayInlinks);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_cgi   = "inlinks";
 	m->m_page  = PAGE_RESULTS;
@@ -4661,7 +4704,7 @@ void Parms::init ( ) {
 		"displays only external outlinks. outlinks=2 displays "
 		"external and internal outlinks.";
 	m->m_off   = offsetof(SearchInput,m_displayOutlinks);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_cgi   = "outlinks";
 	m->m_page  = PAGE_RESULTS;
@@ -4673,7 +4716,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Will cause a cached copy of content to be returned "
 		"instead of summary.";
 	m->m_off   = offsetof(SearchInput,m_includeCachedCopy);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_cgi   = "icc";
 	m->m_page  = PAGE_RESULTS;
@@ -4692,7 +4735,7 @@ void Parms::init ( ) {
 	m->m_title = "docId";
 	m->m_desc  = "The docid of the cached page to view.";
 	m->m_off   = offsetof(GigablastRequest,m_docId);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_page  = PAGE_GET;
 	m->m_obj   = OBJ_GBREQUEST; // generic request class
 	m->m_def   = "0";
@@ -4719,7 +4762,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_GET;
 	m->m_obj   = OBJ_GBREQUEST;
 	m->m_off   = offsetof(GigablastRequest,m_coll);
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
+	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
 	m->m_flags = PF_REQUIRED | PF_API;
 	m++;
@@ -4732,7 +4775,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_GBREQUEST;
 	m->m_cgi   = "strip";
 	m->m_def   = "0";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_API;
 	m++;
 
@@ -4845,7 +4888,7 @@ void Parms::init ( ) {
 	m->m_def   = "8000000000";
 	m->m_obj   = OBJ_CONF;
 	m->m_page  = PAGE_MASTER; // PAGE_NONE;
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m++;
 
 	m->m_title = "max total spiders";
@@ -4858,7 +4901,7 @@ void Parms::init ( ) {
 		"that you may have to increase as well.";
 	m->m_cgi   = "mtsp";
 	m->m_off   = offsetof(Conf,m_maxTotalSpiders);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "100";
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -4910,7 +4953,7 @@ void Parms::init ( ) {
 		"to disk. Use 0 to disable.";
 	m->m_cgi   = "asf";
 	m->m_off   = offsetof(Conf,m_autoSaveFrequency);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 #ifndef PRIVACORE_TEST_VERSION
 	m->m_def   = "5";
 #else
@@ -4928,7 +4971,7 @@ void Parms::init ( ) {
 		"sockets closed.";
 	m->m_cgi   = "ms";
 	m->m_off   = offsetof(Conf,m_httpMaxSockets);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	// up this some, am seeing sockets closed because of using gb
 	// as a cache...
 	m->m_def   = "300";
@@ -4941,7 +4984,7 @@ void Parms::init ( ) {
 		"requests. Like max http sockets, but for secure sockets.";
 	m->m_cgi   = "mss";
 	m->m_off   = offsetof(Conf,m_httpsMaxSockets);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "100";
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -5166,7 +5209,7 @@ void Parms::init ( ) {
 	m->m_cgi  = "dswdmca";
 	m->m_off  = offsetof(Conf,m_docSummaryWithDescriptionMaxCacheAge);
 	m->m_def  = "86400000"; // 1 day
-	m->m_type = TYPE_LONG_LONG;
+	m->m_type = TYPE_INT64;
 	m->m_units = "milliseconds";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5181,7 +5224,7 @@ void Parms::init ( ) {
 		"Use -1 or less to disable the logging.";
 	m->m_cgi   = "mdch";
 	m->m_off   = offsetof(Conf,m_maxCallbackDelay);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "-1";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5230,7 +5273,7 @@ void Parms::init ( ) {
 		"spidered.";
 	m->m_cgi   = "spiderRoundStart";
 	m->m_off   = offsetof(CollectionRec,m_spiderRoundStartTime);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -5275,7 +5318,7 @@ void Parms::init ( ) {
 	m->m_desc  = "The spider round number.";
 	m->m_cgi   = "spiderRoundNum";
 	m->m_off   = offsetof(CollectionRec,m_spiderRoundNum);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -5301,7 +5344,7 @@ void Parms::init ( ) {
 		"Outstanding requests may be re-routed to a twin.";
 	m->m_cgi   = "dht";
 	m->m_off   = offsetof(Conf,m_deadHostTimeout);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "4000";
 	m->m_units = "milliseconds";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
@@ -5314,7 +5357,7 @@ void Parms::init ( ) {
 		"successive pings for this many milliseconds.";
 	m->m_cgi   = "set";
 	m->m_off   = offsetof(Conf,m_sendEmailTimeout);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "62000";
 	m->m_units = "milliseconds";
 	m->m_page  = PAGE_MASTER;
@@ -5327,7 +5370,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "ps";
 	m->m_off   = offsetof(Conf,m_pingSpacer);
 	m->m_min   = 50; // i've seen values of 0 hammer the cpu
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "100";
 	m->m_units = "milliseconds";
 	m->m_group = false;
@@ -5365,7 +5408,7 @@ void Parms::init ( ) {
 		"average query latency.";
 	m->m_cgi   = "nqt";
 	m->m_off   = offsetof(Conf,m_numQueryTimes);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "300";
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -5378,7 +5421,7 @@ void Parms::init ( ) {
 		"an admin email.  Set to -1 to disable.";
 	m->m_cgi   = "mcil";
 	m->m_off   = offsetof(Conf,m_maxCorruptLists);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "5";
 	m->m_group = false;
 	m->m_flags = PF_NOSAVE;
@@ -5640,7 +5683,7 @@ void Parms::init ( ) {
 		"fails, removing the bad data.";
 	m->m_cgi   = "crr";
 	m->m_off   = offsetof(Conf,m_corruptRetries);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "100";
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -5734,7 +5777,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "stablesumcachemem";
 	m->m_xml   = "StableSummaryCacheSize";
 	m->m_off   = offsetof(Conf,m_stableSummaryCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "30000000";
 	m->m_units = "bytes";
 	m->m_flags = 0;
@@ -5748,7 +5791,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "stablesumcacheage";
 	m->m_xml   = "StableSummaryCacheAge";
 	m->m_off   = offsetof(Conf,m_stableSummaryCacheMaxAge);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "86400000";
 	m->m_units = "milliseconds";
 	m->m_flags = 0;
@@ -5762,7 +5805,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "unstablesumcachemem";
 	m->m_xml   = "UnstableSummaryCacheSize";
 	m->m_off   = offsetof(Conf,m_unstableSummaryCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "30000000";
 	m->m_units = "bytes";
 	m->m_flags = 0;
@@ -5776,7 +5819,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "unstablesumcacheage";
 	m->m_xml   = "UnstableSummaryCacheAge";
 	m->m_off   = offsetof(Conf,m_unstableSummaryCacheMaxAge);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "3600000";
 	m->m_units = "milliseconds";
 	m->m_flags = 0;
@@ -5790,7 +5833,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "tagreccachemem";
 	m->m_xml   = "TagRecCacheSize";
 	m->m_off   = offsetof(Conf, m_tagRecCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "10000000";
 	m->m_units = "bytes";
 	m->m_flags = 0;
@@ -5804,7 +5847,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "tagreccacheage";
 	m->m_xml   = "TagRecCacheAge";
 	m->m_off   = offsetof(Conf, m_tagRecCacheMaxAge);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "3600000";
 	m->m_units = "milliseconds";
 	m->m_flags = 0;
@@ -6097,7 +6140,7 @@ void Parms::init ( ) {
 		"for coordinating a query.";
 	m->m_cgi   = "mcct";
 	m->m_off   = offsetof(Conf,m_maxCoordinatorThreads);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "2";
 	m->m_units = "threads";
 	m->m_min   = 0;
@@ -6112,7 +6155,7 @@ void Parms::init ( ) {
 		"for merging and intersecting.";
 	m->m_cgi   = "mct";
 	m->m_off   = offsetof(Conf,m_maxCpuThreads);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "2";
 	m->m_units = "threads";
 	m->m_min   = 0;
@@ -6127,7 +6170,7 @@ void Parms::init ( ) {
 		"for summary generation.";
 	m->m_cgi   = "mst";
 	m->m_off   = offsetof(Conf,m_maxSummaryThreads);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "2";
 	m->m_units = "threads";
 	m->m_min   = 0;
@@ -6142,7 +6185,7 @@ void Parms::init ( ) {
 		"for doing file I/O.";
 	m->m_cgi   = "max_io_threads";
 	m->m_off   = offsetof(Conf,m_maxIOThreads);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "10";
 	m->m_units = "threads";
 	m->m_min   = 0;
@@ -6157,7 +6200,7 @@ void Parms::init ( ) {
 		"for doing external calss with system() or similar..";
 	m->m_cgi   = "max_file_meta_threads";
 	m->m_off   = offsetof(Conf,m_maxExternalThreads);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "2";
 	m->m_units = "threads";
 	m->m_min   = 0;
@@ -6172,7 +6215,7 @@ void Parms::init ( ) {
 		"for doing file unlinks and renames";
 	m->m_cgi   = "max_ext_threads";
 	m->m_off   = offsetof(Conf,m_maxFileMetaThreads);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "2";
 	m->m_units = "threads";
 	m->m_min   = 0;
@@ -6231,7 +6274,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Percent of how much to use words to phrase ratio weights.";
 	m->m_cgi   = "wsp";
 	m->m_off   = offsetof(Conf,m_sliderParm);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "90";
 	m->m_units = "%%";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
@@ -6244,7 +6287,7 @@ void Parms::init ( ) {
 		"index. Just used for displaying on the homepage.";
 	m->m_cgi   = "dca";
 	m->m_off   = offsetof(Conf,m_docCountAdjustment);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
@@ -6281,7 +6324,7 @@ void Parms::init ( ) {
 		"in the log or  on the perfomance graph.";
 	m->m_cgi   = "mpt";
 	m->m_off   = offsetof(Conf,m_minProfThreshold);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "10";
 	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
@@ -6395,7 +6438,7 @@ void Parms::init ( ) {
 	m->m_arrayCountOffset 	= offsetof(CollectionRec, m_numRegExs);
 	m->m_off   				= offsetof(CollectionRec, m_regExs);
 	// this is a safebuf, dynamically allocated string really
-	m->m_type  = TYPE_SAFEBUF;//STRINGNONEMPTY
+	m->m_type  = TYPE_SAFEBUF;
 	// the size of each element in the array:
 	m->m_size  = sizeof(SafeBuf);
 	m->m_page  = PAGE_FILTERS;
@@ -6446,7 +6489,7 @@ void Parms::init ( ) {
 	m->m_max   = MAX_FILTERS;
 	m->m_arrayCountOffset	= offsetof(CollectionRec, m_numMaxSpidersPerRule);
 	m->m_off				= offsetof(CollectionRec, m_maxSpidersPerRule);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "99";
 	m->m_page  = PAGE_FILTERS;
 	m->m_obj   = OBJ_COLL;
@@ -6461,7 +6504,7 @@ void Parms::init ( ) {
 	m->m_max   = MAX_FILTERS;
 	m->m_arrayCountOffset	= offsetof(CollectionRec, m_numSpiderIpMaxSpiders);
 	m->m_off				= offsetof(CollectionRec, m_spiderIpMaxSpiders);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "7";
 	m->m_page  = PAGE_FILTERS;
 	m->m_obj   = OBJ_COLL;
@@ -6477,7 +6520,7 @@ void Parms::init ( ) {
 	m->m_max   = MAX_FILTERS;
 	m->m_arrayCountOffset 	= offsetof(CollectionRec,m_numSpiderIpWaits);
 	m->m_off   				= offsetof(CollectionRec,m_spiderIpWaits);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "1000";
 	m->m_page  = PAGE_FILTERS;
 	m->m_obj   = OBJ_COLL;
@@ -6506,7 +6549,7 @@ void Parms::init ( ) {
 	m->m_max   = MAX_FILTERS;
 	m->m_arrayCountOffset 	= offsetof(CollectionRec,m_numSpiderPriorities);
 	m->m_off   				= offsetof(CollectionRec,m_spiderPriorities);
-	m->m_type  = TYPE_PRIORITY2; // includes UNDEFINED priority in dropdown
+	m->m_type  = TYPE_PRIORITY;
 	m->m_page  = PAGE_FILTERS;
 	m->m_obj   = OBJ_COLL;
 	m->m_rowid = 1;
@@ -6560,7 +6603,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_IMPORT;
 	m->m_obj   = OBJ_COLL;
 	m->m_off   = offsetof(CollectionRec,m_numImportInjects);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "2";
 	m->m_flags = PF_API;
 	m++;
@@ -6708,7 +6751,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_IR;
 	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
-	m->m_flags = PF_HIDDEN | PF_DIFFBOT;
+	m->m_flags = PF_HIDDEN;
 	m->m_page  = PAGE_INJECT;
 	m->m_off   = offsetof(InjectionRequest,ptr_url);
 	m++;
@@ -6811,7 +6854,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Use this hop count when injecting the page.";
 	m->m_cgi   = "hopcount";
 	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN; // | PF_API
 	m->m_page  = PAGE_INJECT;
@@ -6835,7 +6878,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Override last time spidered";
 	m->m_cgi   = "lastspidered";
 	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN; // | PF_API
 	m->m_page  = PAGE_INJECT;
@@ -6846,7 +6889,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Override first indexed time";
 	m->m_cgi   = "firstindexed";
 	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN; // | PF_API
 	m->m_page  = PAGE_INJECT;
@@ -6908,7 +6951,7 @@ void Parms::init ( ) {
 		"See iana_charset.h for the numeric values.";
 	m->m_cgi   = "charset";
 	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "-1";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_INJECT;
@@ -6998,7 +7041,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Starting with this result #. Starts at 0.";
 	m->m_cgi   = "srn";
 	m->m_off   = offsetof(GigablastRequest,m_srn);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_REINDEX;
 	m->m_obj   = OBJ_GBREQUEST;
 	m->m_def   = "0";
@@ -7009,7 +7052,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Ending with this result #. 0 is the first result #.";
 	m->m_cgi   = "ern";
 	m->m_off   = offsetof(GigablastRequest,m_ern);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_REINDEX;
 	m->m_obj   = OBJ_GBREQUEST;
 	m->m_def   = "99999999";
@@ -7128,7 +7171,7 @@ void Parms::init ( ) {
 		"results?";
 	m->m_cgi   = "tml";
 	m->m_off   = offsetof(CollectionRec,m_titleMaxLen);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_def   = "80";
 	m->m_page  = PAGE_SEARCH;
@@ -7200,7 +7243,7 @@ void Parms::init ( ) {
 		"same. 0 means no summary deduping.";
 	m->m_cgi   = "psds";
 	m->m_off   = offsetof(CollectionRec,m_percentSimilarSummary);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "90";
 	m->m_group = false;
 	m->m_smin  = 0;
@@ -7218,7 +7261,7 @@ void Parms::init ( ) {
 		"be non-zero.";
 	m->m_cgi   = "msld";
 	m->m_off   = offsetof(CollectionRec,m_summDedupNumLines);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "4";
 	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
@@ -7249,7 +7292,7 @@ void Parms::init ( ) {
 		"characters displayed in a summary for a search result?";
 	m->m_cgi   = "sml";
 	m->m_off   = offsetof(CollectionRec,m_summaryMaxLen);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "180";
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
@@ -7261,7 +7304,7 @@ void Parms::init ( ) {
 		"excerpts displayed in the summary of a search result?";
 	m->m_cgi   = "smnl";
 	m->m_off   = offsetof(CollectionRec,m_summaryMaxNumLines);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "1";
 	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
@@ -7274,7 +7317,7 @@ void Parms::init ( ) {
 		"characters allowed per summary excerpt?";
 	m->m_cgi   = "smxcpl";
 	m->m_off   = offsetof(CollectionRec,m_summaryMaxNumCharsPerLine);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "180";
 	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
@@ -7291,7 +7334,7 @@ void Parms::init ( ) {
 		"only works on html.";
 	m->m_cgi   = "smw";
 	m->m_off   = offsetof(CollectionRec,m_summaryMaxWidth);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "80";
 	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
@@ -7382,7 +7425,7 @@ void Parms::init ( ) {
 	m->m_xml  = "homePageHtml";
 	m->m_cgi   = "hp";
 	m->m_off   = offsetof(CollectionRec,m_htmlRoot);
-	m->m_type  = TYPE_SAFEBUF;//STRINGBOX;
+	m->m_type  = TYPE_SAFEBUF;;
 	m->m_def   = "";
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -7456,7 +7499,7 @@ void Parms::init ( ) {
 	m->m_xml   = "htmlHead";
 	m->m_cgi   = "hh";
 	m->m_off   = offsetof(CollectionRec,m_htmlHead);
-	m->m_type  = TYPE_SAFEBUF;//STRINGBOX;
+	m->m_type  = TYPE_SAFEBUF;;
 	m->m_def   = "";
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -7488,7 +7531,7 @@ void Parms::init ( ) {
 	m->m_xml   = "htmlTail";
 	m->m_cgi   = "ht";
 	m->m_off   = offsetof(CollectionRec,m_htmlTail);
-	m->m_type  = TYPE_SAFEBUF;//STRINGBOX;
+	m->m_type  = TYPE_SAFEBUF;;
 	m->m_def   = "";
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -7501,7 +7544,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "max_results_per_page";
 	m->m_off   = offsetof(Conf,m_maxDocsWanted);
 	m->m_xml   = "max_results_per_page";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "100";
@@ -7513,7 +7556,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "max_results_offset";
 	m->m_off   = offsetof(Conf,m_maxFirstResultNum);
 	m->m_xml   = "max_results_offset";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "200";
@@ -7526,7 +7569,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "min_docid_splits";
 	m->m_off   = offsetof(Conf,min_docid_splits);
 	m->m_xml   = "min_docid_splits";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "5";
@@ -7539,7 +7582,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "max_docid_splits";
 	m->m_off   = offsetof(Conf,max_docid_splits);
 	m->m_xml   = "max_docid_splits";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "15";
@@ -7553,7 +7596,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "msgfourty_msgthirtynine_timeout";
 	m->m_off   = offsetof(Conf,m_msg40_msg39_timeout);
 	m->m_xml   = "msg40_msg39_timeout";
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "5000";
@@ -7566,7 +7609,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "msgthreea_msgthirtynine_network_overhead";
 	m->m_off   = offsetof(Conf,m_msg3a_msg39_network_overhead);
 	m->m_xml   = "msg3a_msg39_network_overhead";
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "250";
@@ -7589,7 +7632,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Default validity time of a a search result. Currently static but will be more dynamic in the future.";
 	m->m_cgi   = "qresultsvaliditytime";
 	m->m_off   = offsetof(Conf,m_defaultQueryResultsValidityTime);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "1800";
@@ -7627,7 +7670,7 @@ void Parms::init ( ) {
 	             "clusterdb will not be consulted.";
 	m->m_cgi   = "dpcsc";
 	m->m_off   = offsetof(Conf,m_clusterdbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
@@ -7640,7 +7683,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mcmt";
 	m->m_off   = offsetof(Conf,m_clusterdbMaxTreeMem);
 	m->m_def   = "1000000";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
@@ -7653,7 +7696,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "cmftm";
 	m->m_off   = offsetof(Conf,m_clusterdbMinFilesToMerge);
 	m->m_def   = "-1"; // -1 means to use collection rec
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_save  = false;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
@@ -7672,7 +7715,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mlkftm";
 	m->m_off   = offsetof(CollectionRec,m_linkdbMinFilesToMerge);
 	m->m_def   = "6";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
@@ -7684,7 +7727,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mlkmt";
 	m->m_off   = offsetof(Conf,m_linkdbMaxTreeMem);
 	m->m_def   = "40000000";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
@@ -7699,7 +7742,7 @@ void Parms::init ( ) {
 	m->m_desc  = "How much file cache size to use in bytes? Posdb is the index.";
 	m->m_cgi   = "dpcsp";
 	m->m_off   = offsetof(Conf,m_posdbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
@@ -7715,7 +7758,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mpftm";
 	m->m_off   = offsetof(CollectionRec,m_posdbMinFilesToMerge);
 	m->m_def   = "6";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
@@ -7731,7 +7774,7 @@ void Parms::init ( ) {
 #else
 	m->m_def   = "20000000";
 #endif
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
@@ -7747,7 +7790,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mstmt";
 	m->m_off   = offsetof(Conf,m_statsdbMaxTreeMem);
 	m->m_def   = "5000000";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
@@ -7765,7 +7808,7 @@ void Parms::init ( ) {
 	             "a url Gigablast is spidering is already in the index.";
 	m->m_cgi   = "dpcsy";
 	m->m_off   = offsetof(Conf,m_spiderdbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
@@ -7778,7 +7821,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "msftm";
 	m->m_off   = offsetof(CollectionRec,m_spiderdbMinFilesToMerge);
 	m->m_def   = "2";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
@@ -7794,7 +7837,7 @@ void Parms::init ( ) {
 #else
 	m->m_def   = "20000000";
 #endif
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
@@ -7811,7 +7854,7 @@ void Parms::init ( ) {
 	             "if a url or outlink is banned or what its siterank is, etc.";
 	m->m_cgi   = "dpcst";
 	m->m_off   = offsetof(Conf,m_tagdbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
@@ -7824,7 +7867,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mtftgm";
 	m->m_off   = offsetof(CollectionRec,m_tagdbMinFilesToMerge);
 	m->m_def   = "2";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
@@ -7840,7 +7883,7 @@ void Parms::init ( ) {
 #else
 	m->m_def   = "200000";
 #endif
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
@@ -7858,7 +7901,7 @@ void Parms::init ( ) {
 			"a url Gigablast is spidering is already in the index.";
 	m->m_cgi   = "dpcsx";
 	m->m_off   = offsetof(Conf,m_titledbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
@@ -7872,7 +7915,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mtftm";
 	m->m_off   = offsetof(CollectionRec,m_titledbMinFilesToMerge);
 	m->m_def   = "6";
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	//m->m_save  = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
@@ -7889,7 +7932,7 @@ void Parms::init ( ) {
 #else
 	m->m_def   = "20000000";
 #endif
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
@@ -7916,7 +7959,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Number of merge-space lock files";
 	m->m_cgi   = "mergespacelockfiles";
 	m->m_off   = offsetof(Conf,m_mergespaceMinLockFiles);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "3";
 	m->m_flags = 0;
 	m->m_page  = PAGE_RDB;
@@ -7944,7 +7987,7 @@ void Parms::init ( ) {
 		"fast merging.";
 	m->m_cgi   = "mbs";
 	m->m_off   = offsetof(Conf,m_mergeBufSize);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	// keep this way smaller than that 800k we had in here, 100k seems
 	// to be way better performance for qps
 	m->m_def   = "1000000";
@@ -8045,7 +8088,7 @@ void Parms::init ( ) {
 		"controlled in the <i>master controls</i>.";
 	m->m_cgi   = "mns";
 	m->m_off   = offsetof(CollectionRec,m_maxNumSpiders);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	// make it the hard max so control is really in the master controls
 	m->m_def   = "1";
 	m->m_page  = PAGE_SPIDER;
@@ -8058,8 +8101,8 @@ void Parms::init ( ) {
 		"getting the ip and downloading the page.";
 	m->m_cgi  = "sdms";
 	m->m_off   = offsetof(CollectionRec,m_spiderDelayInMilliseconds );
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "1000";
+	m->m_type  = TYPE_INT32;
+	m->m_def   = "0";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
@@ -8100,7 +8143,7 @@ void Parms::init ( ) {
 		"cache.";
 	m->m_cgi   = "mrca";
 	m->m_off   = offsetof(CollectionRec,m_maxRobotsCacheAge);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "86400"; // 24*60*60 = 1day
 	m->m_units = "seconds";
 	m->m_group = false;
@@ -8132,7 +8175,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Crawl-delay for sites with no robots.txt (milliseconds).";
 	m->m_cgi  = "crwldlnorobot";
 	m->m_off   = offsetof(CollectionRec,m_crawlDelayDefaultForNoRobotsTxtMS);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "15000";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -8144,7 +8187,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Crawl-delay for sites with robots.txt but without a Crawl-Delay entry (milliseconds).";
 	m->m_cgi  = "crwldlrobotnodelay";
 	m->m_off   = offsetof(CollectionRec,m_crawlDelayDefaultForRobotsTxtMS);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "10000";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -8213,7 +8256,7 @@ void Parms::init ( ) {
 		"60*5=300 and midnight MST use 60*7=420.";
 	m->m_cgi   = "dmt";
 	m->m_off   = offsetof(CollectionRec,m_dailyMergeTrigger);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "-1";
 	m->m_units = "minutes";
 	m->m_page  = PAGE_SPIDER;
@@ -8243,7 +8286,7 @@ void Parms::init ( ) {
 		"UTC in seconds since the epoch.";
 	m->m_cgi   = "dmls";
 	m->m_off   = offsetof(CollectionRec,m_dailyMergeStarted);
-	m->m_type  = TYPE_LONG_CONST;
+	m->m_type  = TYPE_INT32_CONST;
 	m->m_def   = "-1";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -8258,7 +8301,7 @@ void Parms::init ( ) {
 		"implies no limit.";
 	m->m_cgi = "mau";
 	m->m_off = offsetof(CollectionRec,m_maxAddUrlsPerIpDomPerDay);
-	m->m_type = TYPE_LONG;
+	m->m_type = TYPE_INT32;
 	m->m_def = "0";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -8436,7 +8479,7 @@ void Parms::init ( ) {
 		     "date will be updated.";
 	m->m_cgi   = "mpspd";
 	m->m_off   = offsetof(CollectionRec,m_maxPercentSimilarPublishDate);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "80";
 	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
@@ -8631,7 +8674,7 @@ void Parms::init ( ) {
 		     "Use -1 for no max.";
 	m->m_cgi   = "mtdl";
 	m->m_off   = offsetof(CollectionRec,m_maxTextDocLen);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "10000000";
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
@@ -8646,7 +8689,7 @@ void Parms::init ( ) {
 		     "Use -1 for no max.";
 	m->m_cgi   = "modl";
 	m->m_off   = offsetof(CollectionRec,m_maxOtherDocLen);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "10000000";
 	m->m_group = 0;
 	m->m_page  = PAGE_SPIDER;
@@ -8675,7 +8718,7 @@ void Parms::init ( ) {
 		"one side will be longer than the other.";
 	m->m_cgi   = "mtwh";
 	m->m_off   = offsetof(CollectionRec,m_thumbnailMaxWidthHeight);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "250";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
@@ -8768,7 +8811,7 @@ void Parms::init ( ) {
 		"to rebuild.";
 	m->m_cgi   = "rctr"; // repair collections to repair
 	m->m_off   = offsetof(Conf,m_collsToRepair);
-	m->m_type  = TYPE_SAFEBUF;//STRING;
+	m->m_type  = TYPE_SAFEBUF;
 	//m->m_size  = 1024;
 	m->m_def   = "";
 	m->m_page  = PAGE_REPAIR;
@@ -8782,7 +8825,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Only rebuild on this host. -1 for all";
 	m->m_cgi   = "rebuild_host";
 	m->m_off   = offsetof(Conf,m_rebuildHost);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "-1";
@@ -8794,7 +8837,7 @@ void Parms::init ( ) {
 	m->m_desc  = "In bytes.";
 	m->m_cgi   = "rmtu"; // repair mem to use
 	m->m_off   = offsetof(Conf,m_repairMem);
-	m->m_type  = TYPE_LONG_LONG;
+	m->m_type  = TYPE_INT64;
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "200000000";
@@ -8807,7 +8850,7 @@ void Parms::init ( ) {
 		"rebuild.";
 	m->m_cgi   = "mrps";
 	m->m_off   = offsetof(Conf,m_maxRepairinjections);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "2";
@@ -8959,11 +9002,8 @@ void Parms::init ( ) {
 	m->m_def   = "";
 	m->m_obj   = OBJ_CONF;
 	m->m_off   = offsetof(Conf,m_masterPwds);
-	m->m_type  = TYPE_SAFEBUF; // STRINGNONEMPTY;
+	m->m_type  = TYPE_SAFEBUF;
 	m->m_page  = PAGE_MASTERPASSWORDS;
-	//m->m_max   = MAX_MASTER_PASSWORDS;
-	//m->m_size  = PASSWORD_MAX_LEN+1;
-	//m->m_addin = true; // "insert" follows?
 	m->m_flags = PF_PRIVATE | PF_TEXTAREA | PF_SMALLTEXTAREA;
 	m++;
 
@@ -8976,7 +9016,7 @@ void Parms::init ( ) {
 	m->m_xml   = "masterIps";
 	m->m_page  = PAGE_MASTERPASSWORDS;
 	m->m_off   = offsetof(Conf,m_connectIps);
-	m->m_type  = TYPE_SAFEBUF;//IP;
+	m->m_type  = TYPE_SAFEBUF;
 	m->m_def   = "";
 	m->m_obj   = OBJ_CONF;
 	m->m_flags = PF_PRIVATE | PF_TEXTAREA | PF_SMALLTEXTAREA;
@@ -8995,7 +9035,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m->m_off   = offsetof(CollectionRec,m_collectionPasswords);
 	m->m_def   = "";
-	m->m_type  = TYPE_SAFEBUF; // STRINGNONEMPTY;
+	m->m_type  = TYPE_SAFEBUF;
 	m->m_page  = PAGE_COLLPASSWORDS;
 	m->m_flags = PF_PRIVATE | PF_TEXTAREA | PF_SMALLTEXTAREA;
 	m++;
@@ -9009,7 +9049,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m->m_off   = offsetof(CollectionRec,m_collectionIps);
 	m->m_def   = "";
-	m->m_type  = TYPE_SAFEBUF; // STRINGNONEMPTY;
+	m->m_type  = TYPE_SAFEBUF;
 	m->m_page  = PAGE_COLLPASSWORDS;
 	m->m_flags = PF_PRIVATE | PF_TEXTAREA | PF_SMALLTEXTAREA;
 	m++;
@@ -9051,7 +9091,7 @@ void Parms::init ( ) {
 		"query and the time it took to process.";
 	m->m_cgi   = "lqtt";
 	m->m_off   = offsetof(Conf,m_logQueryTimeThreshold);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "5000";
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
@@ -9062,7 +9102,7 @@ void Parms::init ( ) {
 		"bytes read and the time it took to process.";
 	m->m_cgi   = "ldrtt";
 	m->m_off   = offsetof(Conf,m_logDiskReadTimeThreshold);
-	m->m_type  = TYPE_LONG;
+	m->m_type  = TYPE_INT32;
 	m->m_def   = "50";
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
@@ -9700,6 +9740,15 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "log trace info for UrlBlockList";
+	m->m_cgi   = "ltrc_urlbl";
+	m->m_off   = offsetof(Conf,m_logTraceUrlBlockList);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	m->m_title = "log trace info for Word Spam detection";
 	m->m_cgi   = "ltrc_wordspam";
 	m->m_off   = offsetof(Conf,m_logTraceWordSpam);
@@ -9851,8 +9900,7 @@ void Parms::init ( ) {
 			// upload file buttons are always dup of another parm
 			if ( m_parms[j].m_type == TYPE_FILEUPLOADBUTTON )
 				continue;
-			log(LOG_LOGIC,"conf: Cgi parm for #%" PRId32" \"%s\" "
-			    "matches #%" PRId32" \"%s\". Exiting.",
+			log(LOG_LOGIC,"conf: Cgi parm for #%" PRId32" \"%s\" matches #%" PRId32" \"%s\". Exiting.",
 			    i,m_parms[i].m_cgi,j,m_parms[j].m_cgi);
 			exit(-1);
 		}
@@ -9884,8 +9932,7 @@ void Parms::init ( ) {
 		int32_t j = 0;
 		for ( ; m_parms[i].m_cgi && m_parms[i].m_cgi[j] ; j++ ) {
 			if ( is_digit ( m_parms[i].m_cgi[j] ) ) {
-				log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has "
-				    "number in cgi name.",
+				log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has number in cgi name.",
 				    i,m_parms[i].m_title);
 				exit(-1);
 			}
@@ -9909,8 +9956,7 @@ void Parms::init ( ) {
 		// if its a fixed size then make sure m_size is not set
 		if ( m_parms[i].m_fixed > 0 ) {
 			if ( m_parms[i].m_size != 0 ) {
-				log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" is "
-				    "fixed but size is not 0.",
+				log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" is fixed but size is not 0.",
 				    i,m_parms[i].m_title);
 				exit(-1);
 			}
@@ -9927,18 +9973,15 @@ void Parms::init ( ) {
 			exit(-1);
 		}
 		if ( t == TYPE_CHAR           ) size = 1;
-		if ( t == TYPE_CHAR2          ) size = 1;
 		if ( t == TYPE_BOOL           ) size = 1;
 		if ( t == TYPE_CHECKBOX       ) size = 1;
 		if ( t == TYPE_PRIORITY       ) size = 1;
-		if ( t == TYPE_PRIORITY2      ) size = 1;
-		if ( t == TYPE_TIME           ) size = 6;
 		if ( t == TYPE_FLOAT          ) size = 4;
 		if ( t == TYPE_DOUBLE         ) size = 8;
 		if ( t == TYPE_IP             ) size = 4;
-		if ( t == TYPE_LONG           ) size = 4;
-		if ( t == TYPE_LONG_CONST     ) size = 4;
-		if ( t == TYPE_LONG_LONG      ) size = 8;
+		if ( t == TYPE_INT32           ) size = 4;
+		if ( t == TYPE_INT32_CONST     ) size = 4;
+		if ( t == TYPE_INT64      ) size = 8;
 		if ( t == TYPE_STRING         ) size = m_parms[i].m_size;
 		if ( t == TYPE_STRINGBOX      ) size = m_parms[i].m_size;
 		if ( t == TYPE_STRINGNONEMPTY ) size = m_parms[i].m_size;
@@ -9948,8 +9991,7 @@ void Parms::init ( ) {
 		     t != TYPE_SAFEBUF  &&
 		     t != TYPE_FILEUPLOADBUTTON &&
 		     t != TYPE_CHARPTR ) {
-			log(LOG_LOGIC,"conf: Size of parm #%" PRId32" \"%s\" "
-			    "not set.", i,m_parms[i].m_title);
+			log(LOG_LOGIC,"conf: Size of parm #%" PRId32" \"%s\" not set.", i,m_parms[i].m_title);
 			exit(-1);
 		}
 		m_parms[i].m_size = size;
@@ -9967,8 +10009,8 @@ void Parms::init ( ) {
 			exit(-1);
 		}
 		if ( m_parms[i].m_off < -1 ) {
-			log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has bad offset "
-			    "of %" PRId32".", i,m_parms[i].m_title,m_parms[i].m_off);
+			log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has bad offset of %" PRId32".",
+			    i, m_parms[i].m_title, m_parms[i].m_off);
 			exit(-1);
 		}
 		if ( m->m_obj == OBJ_CONF && m->m_off >= (int32_t)sizeof(Conf) ) {
@@ -10003,8 +10045,7 @@ void Parms::init ( ) {
 		// set xml based on title
 		const char *tt = m_parms[i].m_title;
 		if ( p + strlen(tt) >= pend ) {
-			log(LOG_LOGIC,"conf: Not enough room to store xml "
-			    "tag name in buffer.");
+			log(LOG_LOGIC,"conf: Not enough room to store xml tag name in buffer.");
 			exit(-1);
 		}
 
@@ -10027,8 +10068,7 @@ void Parms::init ( ) {
 		m_searchParms[n++] = &m_parms[i];
 		// sanity check
 		if ( m_parms[i].m_off == -1 ) {
-			log(LOG_LOGIC,"conf: SEARCH Parm #%" PRId32" \"%s\" has "
-			    "m_off < 0 (offset into SearchInput).",
+			log(LOG_LOGIC,"conf: SEARCH Parm #%" PRId32" \"%s\" has m_off < 0 (offset into SearchInput).",
 			    i,m_parms[i].m_title);
 			exit(-1);
 		}
@@ -10105,7 +10145,6 @@ void Parms::overlapTest ( char step ) {
 	if ( step == -1 ) b--;
 	else              b = 0;
 	const char *objStr = "none";
-	int32_t  obj;
 	char  infringerB;
 	int32_t  j;
 	int32_t savedi = -1;
@@ -10131,8 +10170,6 @@ void Parms::overlapTest ( char step ) {
 		p2 = NULL;
 		int32_t size = m_parms[i].m_size;
 		b = (char) i;
-		// save it
-		obj = m_parms[i].m_obj;
 
 		//log("conf: testing %" PRId32" bytes for %s at 0x%" PRIx32" char=0x%hhx "
 		//    "i=%" PRId32, size,m_parms[i].m_title,(int32_t)p1,b,i);
@@ -10171,8 +10208,7 @@ void Parms::overlapTest ( char step ) {
 			// save it
 			infringerB = p2[j];
 			savedi = i;
-			log("conf: got b=0x%hhx when it should have been "
-			    "b=0x%hhx",p2[j],b);
+			log("conf: got b=0x%hhx when it should have been b=0x%hhx", p2[j], b);
 			goto error;
 		}
 	}
@@ -10205,8 +10241,7 @@ void Parms::overlapTest ( char step ) {
 			    m_parms[i].m_desc);
 	}
 
-	log("conf: try including \"m->m_obj = OBJ_COLL;\" or "
-	    "\"m->m_obj   = OBJ_CONF;\" in your parm definitions");
+	log("conf: try including \"m->m_obj = OBJ_COLL;\" or \"m->m_obj = OBJ_CONF;\" in your parm definitions");
 	log("conf: failed overlap test. exiting.");
 	exit(-1);
 
@@ -10252,72 +10287,81 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 	char val8;
 	float valf;
 
-	if ( m->m_type == TYPE_STRING ||
-	     m->m_type == TYPE_STRINGBOX ||
-	     m->m_type == TYPE_SAFEBUF ||
-	     m->m_type == TYPE_STRINGNONEMPTY ) {
-		// point to string
-		val = parmValString;
-		// include \0
-		valSize = strlen(val)+1;
-		// sanity
-		if ( val[valSize-1] != '\0' ) { g_process.shutdownAbort(true); }
-	}
-	else if ( m->m_type == TYPE_LONG ) {
-		// watch out for unsigned 32-bit numbers, so use atoLL()
-		val64 = atoll(parmValString);
-		val = (char *)&val64;
-		valSize = 4;
-	}
-	else if ( m->m_type == TYPE_FLOAT ) {
-		valf = atof(parmValString);
-		val = (char *)&valf;
-		valSize = 4;
-	}
-	else if ( m->m_type == TYPE_LONG_LONG ) {
-		val64 = atoll(parmValString);
-		val = (char *)&val64;
-		valSize = 8;
-	}
-	else if ( m->m_type == TYPE_BOOL ||
-		  m->m_type == TYPE_CHECKBOX ||
-		  m->m_type == TYPE_PRIORITY2 ||
-		  m->m_type == TYPE_CHAR ) {
-		val8 = atol(parmValString);
-		//if ( parmValString && to_lower_a(parmValString[0]) == 'y' )
-		//	val8 = 1;
-		//if ( parmValString && to_lower_a(parmValString[0]) == 'n' )
-		//	val8 = 0;
-		val = (char *)&val8;
-		valSize = 1;
-	}
-	// for resetting or restarting a coll i think the ascii arg is
-	// the NEW reserved collnum, but for other commands then parmValString
-	// will be NULL
-	else if ( m->m_type == TYPE_CMD ) {
-		val = parmValString;
-		if ( val ) valSize = strlen(val)+1;
-		// . addcoll collection can not be too long
-		// . TODO: supply a Parm::m_checkValFunc to ensure val is
-		//   legitimate, and set g_errno on error
-		if ( strcmp(m->m_cgi,"addcoll") == 0 &&valSize-1>MAX_COLL_LEN){
-			log("admin: addcoll coll too long");
-			g_errno = ECOLLTOOBIG;
-			return false;
+	switch(m->m_type) {
+		case TYPE_STRING:
+		case TYPE_STRINGBOX:
+		case TYPE_SAFEBUF:
+		case TYPE_STRINGNONEMPTY: {
+			// point to string
+			val = parmValString;
+			// include \0
+			valSize = strlen(val)+1;
+			// sanity
+			if ( val[valSize-1] != '\0' ) { g_process.shutdownAbort(true); }
+			break;
 		}
-		// scan for holes if we hit the limit
-		//if ( g_collectiondb.getNumRecs() >= 1LL>>sizeof(collnum_t) )
-	}
-	else if ( m->m_type == TYPE_IP ) {
-		// point to string
-		val32 = atoip(parmValString);
-		// store ip in binary format
-		val = (char *)&val32;
-		valSize = 4;
-	}
-	else {
-		log("parms: shit unsupported parm type");
-		g_process.shutdownAbort(true);
+		case TYPE_INT32: {
+			// watch out for unsigned 32-bit numbers, so use atoLL()
+			val64 = atoll(parmValString);
+			val = (char *)&val64;
+			valSize = 4;
+			break;
+		}
+		case TYPE_FLOAT: {
+			valf = atof(parmValString);
+			val = (char *)&valf;
+			valSize = 4;
+			break;
+		}
+		case TYPE_INT64: {
+			val64 = atoll(parmValString);
+			val = (char *)&val64;
+			valSize = 8;
+			break;
+		}
+		case TYPE_BOOL:
+		case TYPE_CHECKBOX:
+		case TYPE_PRIORITY:
+		case TYPE_CHAR: {
+			val8 = atol(parmValString);
+			//if ( parmValString && to_lower_a(parmValString[0]) == 'y' )
+			//	val8 = 1;
+			//if ( parmValString && to_lower_a(parmValString[0]) == 'n' )
+			//	val8 = 0;
+			val = (char *)&val8;
+			valSize = 1;
+			break;
+		}
+		case TYPE_CMD: {
+			// for resetting or restarting a coll i think the ascii arg is
+			// the NEW reserved collnum, but for other commands then parmValString
+			// will be NULL
+			val = parmValString;
+			if ( val ) valSize = strlen(val)+1;
+			// . addcoll collection can not be too long
+			// . TODO: supply a Parm::m_checkValFunc to ensure val is
+			//   legitimate, and set g_errno on error
+			if ( strcmp(m->m_cgi,"addcoll") == 0 &&valSize-1>MAX_COLL_LEN){
+				log("admin: addcoll coll too long");
+				g_errno = ECOLLTOOBIG;
+				return false;
+			}
+			// scan for holes if we hit the limit
+			//if ( g_collectiondb.getNumRecs() >= 1LL>>sizeof(collnum_t) )
+			break;
+		}
+		case TYPE_IP: {
+			// point to string
+			val32 = atoip(parmValString);
+			// store ip in binary format
+			val = (char *)&val32;
+			valSize = 4;
+			break;
+		}
+		default: {
+			log("parms: shit unsupported parm type");
+			g_process.shutdownAbort(true);
+		}
 	}
 
 	key96_t key = makeParmKey ( collnum , m ,  occNum );
@@ -10551,8 +10595,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 			int32_t numAdded = 0;
 			if ( numAdded >= 1 ) {
 				g_errno = ENOPERM;
-				log("parms: already added a collection from "
-				    "this cloud user's c-block.");
+				log("parms: already added a collection from this cloud user's c-block.");
 				return false;
 			}
 			hasPerm = true;
@@ -10732,8 +10775,7 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 				if ( duplicate->m_off == parm->m_off )
 					continue;
 				// otherwise bitch about it and drop core
-				log("parms: dup parm h32=%" PRId32" "
-				    "\"%s\" vs \"%s\"",
+				log("parms: dup parm h32=%" PRId32" \"%s\" vs \"%s\"",
 				    ph32, duplicate->m_title,parm->m_title);
 				g_process.shutdownAbort(true);
 			}
@@ -10917,7 +10959,7 @@ static void tryToCallCallbacks ( ) {
 	}
 }
 
-static void gotParmReplyWrapper ( void *state , UdpSlot *slot ) {
+void Parms::gotParmReplyWrapper(void *state, UdpSlot *slot) {
 
 	// don't let upserver free the send buf! that's the ParmNode parmlist
 	slot->m_sendBufAlloc = NULL;
@@ -11029,7 +11071,7 @@ static void gotParmReplyWrapper ( void *state , UdpSlot *slot ) {
 	g_parms.doParmSendingLoop();
 }
 
-static void parmLoop ( int fd , void *state ) {
+void Parms::parmLoop(int fd, void *state) {
 	g_parms.doParmSendingLoop();
 }
 
@@ -11115,8 +11157,7 @@ bool Parms::doParmSendingLoop ( ) {
 		}
 
 		// debug log
-		log(LOG_INFO,"parms: sending parm request "
-		    "to hostid %" PRId32,h->m_hostId);
+		log(LOG_INFO,"parms: sending parm request to hostid %" PRId32,h->m_hostId);
 
 		// count it
 		pn->m_numRequests++;
@@ -11135,22 +11176,21 @@ bool Parms::doParmSendingLoop ( ) {
 	return true;
 }
 
-static void handleRequest3fLoop ( void *weArg ) ;
 
-static void handleRequest3fLoop2 ( void *state , UdpSlot *slot ) {
+void Parms::handleRequest3fLoop2(void *state, UdpSlot *slot) {
 	handleRequest3fLoop(state);
 }
 
 // if a tree is saving while we are trying to delete a collnum (or reset)
 // then the call to updateParm() below returns false and we must re-call
 // in this sleep wrapper here
-static void handleRequest3fLoop3 ( int fd , void *state ) {
+void Parms::handleRequest3fLoop3(int fd, void *state) {
 	g_loop.unregisterSleepCallback(state,handleRequest3fLoop3);
 	handleRequest3fLoop(state);
 }
 
 // . host #0 is requesting that we update some parms
-static void handleRequest3fLoop ( void *weArg ) {
+void Parms::handleRequest3fLoop(void *weArg) {
 	WaitEntry *we = (WaitEntry *)weArg;
 
 	CollectionRec *cx = NULL;
@@ -11169,7 +11209,7 @@ static void handleRequest3fLoop ( void *weArg ) {
 		p += recSize;
 
 		// get the actual parm
-		Parm *parm = getParmFromParmRec ( rec );
+		Parm *parm = g_parms.getParmFromParmRec ( rec );
 
 		if ( ! parm ) {
 			int32_t h32 = getHashFromParmRec(rec);
@@ -11323,7 +11363,7 @@ static void handleRequest3fLoop ( void *weArg ) {
 
 // . host #0 is requesting that we update some parms
 // . the readbuf in the request is the list of the parms
-void handleRequest3f ( UdpSlot *slot , int32_t niceness ) {
+void Parms::handleRequest3f(UdpSlot *slot, int32_t /*niceness*/) {
 	log("parms: handling updated parameters (request type 3f)");
 
 	// sending to host #0 is not right...
@@ -11378,14 +11418,14 @@ void handleRequest3f ( UdpSlot *slot , int32_t niceness ) {
 //    have with ETRYAGAIN in Msg4.cpp
 
 
-void tryToSyncWrapper ( int fd , void *state ) {
+void Parms::tryToSyncWrapper(int fd, void *state) {
 	g_parms.syncParmsWithHost0();
 }
 
 // host #0 just sends back an empty reply, but it will hit us with
 // 0x3f parmlist requests. that way it uses the same mechanism and can
 // guarantee ordering of the parm update requests
-static void gotReplyFromHost0Wrapper ( void *state , UdpSlot *slot ) {
+void Parms::gotReplyFromHost0Wrapper(void *state, UdpSlot *slot) {
 	// ignore his reply unless error?
 	if ( g_errno ) {
 		log("parms: got error syncing with host 0: %s. Retrying.",
@@ -11464,7 +11504,7 @@ bool Parms::syncParmsWithHost0 ( ) {
 //   uses 0x3f, so this just returns and empty reply on success
 // . sends CMD "addcoll" and "delcoll" cmd parms as well
 // . include an "insync" command parm as last parm
-void handleRequest3e ( UdpSlot *slot , int32_t niceness ) {
+void Parms::handleRequest3e(UdpSlot *slot, int32_t /*niceness*/) {
 	// right now we must be host #0
 	if ( g_hostdb.m_hostId != 0 ) {
 hadError:
@@ -11516,15 +11556,14 @@ hadError:
 
 		// if collection names are different delete it
 		if ( cr && collNameHash32 != hash32n ( cr->m_coll ) ) {
-			log("sync: host had collnum %i but wrong name, "
-			    "name not %s like it should be",(int)c,cr->m_coll);
+			log("sync: host had collnum %i but wrong name, name not %s like it should be",
+			    (int)c, cr->m_coll);
 			cr = NULL;
 		}
 
 		if ( c >= 0 && ! cr ) {
 			// note in log
-			logf(LOG_INFO,"sync: telling host #%" PRId32" to delete "
-			     "collnum %" PRId32, hostId,(int32_t)c);
+			logf(LOG_INFO,"sync: telling host #%" PRId32" to delete collnum %" PRId32, hostId,(int32_t)c);
 			// add the parm rec as a parm cmd
 			if (! g_parms.addNewParmToList1( &replyBuf,
 							 c,
@@ -11546,8 +11585,7 @@ hadError:
 		// if match, keep chugging, that's in sync
 		if ( h64 == m64 ) continue;
 		// note in log
-		logf(LOG_INFO,"sync: sending all parms for collnum %" PRId32" "
-		     "to host #%" PRId32, (int32_t)c, hostId);
+		logf(LOG_INFO,"sync: sending all parms for collnum %" PRId32" to host #%" PRId32, (int32_t)c, hostId);
 		// otherwise, send him the list
 		if ( ! replyBuf.safeMemcpy ( &tmp ) ) goto hadError;
 	}
@@ -11564,9 +11602,8 @@ hadError:
 		// now use lowercase, not camelcase
 		const char *cmdStr = "addcoll";
 		// note in log
-		logf(LOG_INFO,"sync: telling host #%" PRId32" to add "
-		     "collnum %" PRId32" coll=%s", hostId,(int32_t)cr->m_collnum,
-		     cr->m_coll);
+		logf(LOG_INFO,"sync: telling host #%" PRId32" to add collnum %" PRId32" coll=%s",
+		     hostId, (int32_t)cr->m_collnum, cr->m_coll);
 		// add the parm rec as a parm cmd
 		if ( ! g_parms.addNewParmToList1 ( &replyBuf,
 						   (collnum_t)i,
@@ -11653,7 +11690,7 @@ bool Parms::addAllParmsToList ( SafeBuf *parmList, collnum_t collnum ) {
 		if ( parm->m_type == TYPE_CMD ) continue;
 
 		// daily merge last started. do not sync this...
-		if ( parm->m_type == TYPE_LONG_CONST ) continue;
+		if ( parm->m_type == TYPE_INT32_CONST ) continue;
 
 		if ( collnum == -1 && parm->m_obj != OBJ_CONF ) continue;
 		if ( collnum >=  0 && parm->m_obj != OBJ_COLL ) continue;
@@ -11704,7 +11741,7 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 
 	g_errno = 0;
 
-	Parm *parm = getParmFromParmRec ( rec );
+	Parm *parm = g_parms.getParmFromParmRec ( rec );
 
 	if ( ! parm ) {
 		log("parmdb: could not find parm for rec");
@@ -11723,8 +11760,7 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 		char *data = getDataFromParmRec ( rec );
 		int32_t dataSize = getDataSizeFromParmRec ( rec );
 		if ( dataSize == 0 ) data = NULL;
-		log("parmdb: running function for "
-		    "parm \"%s\" (collnum=%" PRId32") args=\"%s\""
+		log("parmdb: running function for parm \"%s\" (collnum=%" PRId32") args=\"%s\""
 		    , parm->m_title
 		    , (int32_t)collnum
 		    , data
