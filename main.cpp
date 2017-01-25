@@ -87,9 +87,9 @@
 #include <valgrind/helgrind.h>
 #endif
 
-bool registerMsgHandlers ( ) ;
-bool registerMsgHandlers1 ( ) ;
-bool registerMsgHandlers2 ( ) ;
+static bool registerMsgHandlers();
+static bool registerMsgHandlers1();
+static bool registerMsgHandlers2();
 
 static void dumpTitledb  (const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   int64_t docId , bool justPrintDups );
@@ -99,37 +99,36 @@ static int32_t dumpSpiderdb ( const char *coll,int32_t sfn,int32_t numFiles,bool
 static void dumpTagdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char req,
 		      const char *site);
 
+//dumpPosdb() is not local becaue it is called directly by unittests
 void dumpPosdb  ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree, 
 		  int64_t termId , bool justVerify ) ;
 static void dumpWaitingTree( const char *coll );
 static void dumpDoledb  ( const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 
-void dumpClusterdb       ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
+static void dumpClusterdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 
 //void dumpStatsdb 	 ( int32_t startFileNum, int32_t numFiles, bool includeTree,
 //			   int test );
 			   
-void dumpLinkdb          ( const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
-			   const char *url );
+static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, const char *url);
 
-int copyFiles ( const char *dstDir ) ;
+static int copyFiles(const char *dstDir);
 
 
-const char *getAbsoluteGbDir(const char *argv0);
+static const char *getAbsoluteGbDir(const char *argv0);
 
 static int32_t checkDirPerms(const char *dir);
 
 // benchmark RdbTree::addRecord() for indexdb
-bool treetest    ( ) ;
-bool hashtest    ( ) ;
+static bool treetest();
+static bool hashtest();
 // how fast to parse the content of this docId?
-bool parseTest ( const char *coll , int64_t docId , const char *query );
-bool summaryTest1   ( char *rec, int32_t listSize, const char *coll , int64_t docId ,
-		      const char *query );
+static bool parseTest(const char *coll, int64_t docId, const char *query);
+static bool summaryTest1(char *rec, int32_t listSize, const char *coll, int64_t docId, const char *query );
 
-bool pingTest ( int32_t hid , uint16_t clientPort );
-bool cacheTest();
-void countdomains( const char* coll, int32_t numRecs, int32_t verb, int32_t output );
+static bool pingTest(int32_t hid , uint16_t clientPort);
+static bool cacheTest();
+static void countdomains(const char* coll, int32_t numRecs, int32_t verb, int32_t output);
 
 static void wakeupPollLoop() {
 	g_loop.wakeupPollLoop();
@@ -2694,7 +2693,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 	return 0;
 }
 
-bool registerMsgHandlers ( ) {
+static bool registerMsgHandlers() {
 	if (! registerMsgHandlers1()) return false;
 	if (! registerMsgHandlers2()) return false;
 	if ( ! g_pingServer.registerHandler() ) return false;
@@ -2704,7 +2703,7 @@ bool registerMsgHandlers ( ) {
 	return true;
 }
 
-bool registerMsgHandlers1(){
+static bool registerMsgHandlers1() {
 	if ( ! Msg20::registerHandler()) return false;
 	if ( ! MsgC::registerHandler()) return false;
 
@@ -2713,7 +2712,7 @@ bool registerMsgHandlers1(){
 	return true;
 }
 
-bool registerMsgHandlers2(){
+static bool registerMsgHandlers2() {
 	if ( ! Msg0::registerHandler()) return false;
 	if ( ! Msg1::registerHandler()) return false;
 
@@ -3651,7 +3650,7 @@ int keycmp ( const void *p1 , const void *p2 ) {
 }
 
 // time speed of inserts into RdbTree for indexdb
-bool treetest ( ) {
+static bool treetest() {
 	int32_t numKeys = 500000;
 	log("db: speedtest: generating %" PRId32" random keys.",numKeys);
 	// seed randomizer
@@ -3719,7 +3718,7 @@ bool treetest ( ) {
 
 
 // time speed of inserts into RdbTree for indexdb
-bool hashtest ( ) {
+static bool hashtest() {
 	// load em up
 	int32_t numKeys = 1000000;
 	log("db: speedtest: generating %" PRId32" random keys.",numKeys);
@@ -3962,7 +3961,7 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 	goto loop;
 }
 
-bool parseTest ( const char *coll, int64_t docId, const char *query ) {
+static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	g_conf.m_maxMem = 2000000000LL; // 2G
 	g_titledb.init ();
 	g_titledb.getRdb()->addRdbBase1 ( coll );
@@ -4268,7 +4267,7 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 
 
 
-bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t docId, const char *query ) {
+static bool summaryTest1(char *rec, int32_t listSize, const char *coll, int64_t docId, const char *query) {
 
 	// start the timer
 	int64_t t = gettimeofdayInMilliseconds();
@@ -4469,10 +4468,10 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 	}
 }
 
-void dumpClusterdb ( const char *coll,
-		     int32_t startFileNum,
-		     int32_t numFiles,
-		     bool includeTree ) {
+static void dumpClusterdb(const char *coll,
+			  int32_t startFileNum,
+			  int32_t numFiles,
+			  bool includeTree) {
 	g_clusterdb.init ();
 	g_clusterdb.getRdb()->addRdbBase1(coll );
 	key96_t startKey ;
@@ -4563,11 +4562,11 @@ void dumpClusterdb ( const char *coll,
 	goto loop;
 }
 
-void dumpLinkdb ( const char *coll,
-		  int32_t startFileNum,
-		  int32_t numFiles,
-		  bool includeTree ,
-		  const char *url ) {
+static void dumpLinkdb(const char *coll,
+		       int32_t startFileNum,
+		       int32_t numFiles,
+		       bool includeTree ,
+		       const char *url) {
 	g_linkdb.init ();
 	g_linkdb.getRdb()->addRdbBase1(coll );
 	key224_t startKey ;
@@ -4672,7 +4671,7 @@ void dumpLinkdb ( const char *coll,
 }
 
 
-bool pingTest ( int32_t hid , uint16_t clientPort ) {
+static bool pingTest(int32_t hid, uint16_t clientPort) {
 	Host *h = g_hostdb.getHost ( hid );
 	if ( ! h ) {
 		log(LOG_WARN, "net: pingtest: hostId %" PRId32" is invalid.",hid);
@@ -6240,7 +6239,7 @@ void injectedWrapper ( void *state , TcpSocket *s ) {
 }
 
 
-bool cacheTest() {
+static bool cacheTest() {
 
 	g_conf.m_maxMem = 2000000000LL; // 2G
 	//g_mem.m_maxMem  = 2000000000LL; // 2G
@@ -6457,7 +6456,7 @@ static int ip_dcmp  (const void *p1, const void *p2);
 static int dom_fcmp (const void *p1, const void *p2);
 static int dom_lcmp (const void *p1, const void *p2);
 
-void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t output ) {
+static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, int32_t output) {
 	struct ip_info **ip_table;
 	struct dom_info **dom_table;
 
@@ -7179,7 +7178,7 @@ int collinject ( char *newHostsConf ) {
 }
 
 
-const char *getAbsoluteGbDir(const char *argv0) {
+static const char *getAbsoluteGbDir(const char *argv0) {
 	static char s_buf[1024];
 	
 	char *s = realpath(argv0, NULL);
@@ -7206,7 +7205,7 @@ const char *getAbsoluteGbDir(const char *argv0) {
 // used to make package to install files for the package
 //
 ///////
-int copyFiles ( const char *dstDir ) {
+static int copyFiles(const char *dstDir) {
 
 	const char *srcDir = "./";
 	SafeBuf fileListBuf;
