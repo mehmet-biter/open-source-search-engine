@@ -2846,8 +2846,6 @@ bool Parms::saveToXml(char *THIS, char *f, parameter_object_type_t objType) {
 	int32_t  j   ;
 	int32_t  count = 0;
 	const char *s = "";
-	CollectionRec *cr = NULL;
-	if ( THIS != (char *)&g_conf ) cr = (CollectionRec *)THIS;
 	// now set THIS based on the parameters in the xml file
 	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
 		// get it
@@ -10128,7 +10126,6 @@ void Parms::overlapTest ( char step ) {
 	if ( step == -1 ) b--;
 	else              b = 0;
 	const char *objStr = "none";
-	int32_t  obj;
 	char  infringerB;
 	int32_t  j;
 	int32_t savedi = -1;
@@ -10154,8 +10151,6 @@ void Parms::overlapTest ( char step ) {
 		p2 = NULL;
 		int32_t size = m_parms[i].m_size;
 		b = (char) i;
-		// save it
-		obj = m_parms[i].m_obj;
 
 		//log("conf: testing %" PRId32" bytes for %s at 0x%" PRIx32" char=0x%hhx "
 		//    "i=%" PRId32, size,m_parms[i].m_title,(int32_t)p1,b,i);
