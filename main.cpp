@@ -2276,14 +2276,14 @@ static int scale(const char *newHostsConf, bool useShotgunIp) {
 	//   though, if have same ip and working dir, because that would
 	//   interfere with a file copy.
 	for ( int32_t i = 0 ; i < hdb1->getNumHosts() ; i++ ) {
-	Host *h = &hdb1->m_hosts[i];
-	// look in new guy
-	for ( int32_t j = 0 ; j < hdb2->getNumHosts() ; j++ ) {
-		Host *h2 = &hdb2->m_hosts[j];
-		// if a match, ensure same group
-		if ( h2->m_ip != h->m_ip ) continue;
-		if ( strcmp ( h2->m_dir , h->m_dir ) != 0 ) continue;
-	}
+		Host *h = &hdb1->m_hosts[i];
+		// look in new guy
+		for ( int32_t j = 0 ; j < hdb2->getNumHosts() ; j++ ) {
+			Host *h2 = &hdb2->m_hosts[j];
+			// if a match, ensure same group
+			if ( h2->m_ip != h->m_ip ) continue;
+			if ( strcmp ( h2->m_dir , h->m_dir ) != 0 ) continue;
+		}
 	}
 
 	// . ensure that:
@@ -2315,85 +2315,85 @@ static int scale(const char *newHostsConf, bool useShotgunIp) {
 	char done [ 8196 ];
 	memset ( done , 0 , 8196 );
 	for ( int32_t i = 0 ; i < hdb1->getNumHosts() ; i++ ) {
-	Host *h = &hdb1->m_hosts[i];
-	char flag = 0;
-	// look in new guy
-	for ( int32_t j = 0 ; j < hdb2->getNumHosts() ; j++ ) {
-		Host *h2 = &hdb2->m_hosts[j];
-		// do not copy to oneself
-		if ( h2->m_ip == h->m_ip &&
-		     strcmp ( h2->m_dir , h->m_dir ) == 0 ) continue;
-		// skip if not derivative groupId for titledb
-		//if ( (h2->m_groupId & hdb1->m_groupMask) !=
-		//     h->m_groupId ) continue;
-		// continue if already copying to here
-		if ( done[j] ) continue;
-		// mark as done
-		done[j] = 1;
+		Host *h = &hdb1->m_hosts[i];
+		char flag = 0;
+		// look in new guy
+		for ( int32_t j = 0 ; j < hdb2->getNumHosts() ; j++ ) {
+			Host *h2 = &hdb2->m_hosts[j];
+			// do not copy to oneself
+			if ( h2->m_ip == h->m_ip &&
+			     strcmp ( h2->m_dir , h->m_dir ) == 0 ) continue;
+			// skip if not derivative groupId for titledb
+			//if ( (h2->m_groupId & hdb1->m_groupMask) !=
+			//     h->m_groupId ) continue;
+			// continue if already copying to here
+			if ( done[j] ) continue;
+			// mark as done
+			done[j] = 1;
 
-		// skip local copies for now!!
-		//if ( h->m_ip == h2->m_ip ) continue;
+			// skip local copies for now!!
+			//if ( h->m_ip == h2->m_ip ) continue;
 
-		// use ; separator
-		if ( flag ) fprintf(stderr,"; ");
-		//else        fprintf(stderr,"ssh %s \"",iptoa(h->m_ip));
-		else        fprintf(stderr,"ssh %s \"",h->m_hostname);
-		// flag
-		flag = 1;
-		// print the copy
-		//fprintf(stderr,"rcp %s:%s*db*.dat* ",
-		//	iptoa( h->m_ip), h->m_dir  );
-		// if same ip then do a 'cp' not rcp
-		const char *cmd = "rcp -r";
-		if ( h->m_ip == h2->m_ip ) cmd = "cp -pr";
+			// use ; separator
+			if ( flag ) fprintf(stderr,"; ");
+			//else        fprintf(stderr,"ssh %s \"",iptoa(h->m_ip));
+			else        fprintf(stderr,"ssh %s \"",h->m_hostname);
+			// flag
+			flag = 1;
+			// print the copy
+			//fprintf(stderr,"rcp %s:%s*db*.dat* ",
+			//	iptoa( h->m_ip), h->m_dir  );
+			// if same ip then do a 'cp' not rcp
+			const char *cmd = "rcp -r";
+			if ( h->m_ip == h2->m_ip ) cmd = "cp -pr";
 
-		fprintf(stderr,"%s %s*db*.dat* ", cmd, h->m_dir  );
+			fprintf(stderr,"%s %s*db*.dat* ", cmd, h->m_dir  );
 
-		if ( h->m_ip == h2->m_ip )
-			fprintf(stderr,"%s ;", h2->m_dir );
-		else {
-			//int32_t ip = h2->m_ip;
-			//if ( useShotgunIp ) ip = h2->m_ipShotgun;
-			//fprintf(stderr,"%s:%s ;",iptoa(ip), h2->m_dir );
-			char *hn = h2->m_hostname;
-			if ( useShotgunIp ) hn = h2->m_hostname;//2
-			fprintf(stderr,"%s:%s ;",hn, h2->m_dir );
+			if ( h->m_ip == h2->m_ip )
+				fprintf(stderr,"%s ;", h2->m_dir );
+			else {
+				//int32_t ip = h2->m_ip;
+				//if ( useShotgunIp ) ip = h2->m_ipShotgun;
+				//fprintf(stderr,"%s:%s ;",iptoa(ip), h2->m_dir );
+				char *hn = h2->m_hostname;
+				if ( useShotgunIp ) hn = h2->m_hostname;//2
+				fprintf(stderr,"%s:%s ;",hn, h2->m_dir );
 
+			}
+
+			//fprintf(stderr," rcp -p %s*.map* ", h->m_dir );
+			fprintf(stderr," %s %scoll.* ", cmd, h->m_dir );
+
+			if ( h->m_ip == h2->m_ip )
+				fprintf(stderr,"%s " , h2->m_dir );
+			else {
+				//int32_t ip = h2->m_ip;
+				//if ( useShotgunIp ) ip = h2->m_ipShotgun;
+				//fprintf(stderr,"%s:%s " ,iptoa(ip), h2->m_dir );
+				char *hn = h2->m_hostname;
+				if ( useShotgunIp ) hn = h2->m_hostname;//2;
+				fprintf(stderr,"%s:%s " ,hn, h2->m_dir );
+			}
+
+			/*
+			fprintf(stderr,"scp %s:%s/titledb* %s:%s\n",
+				iptoa( h->m_ip), h->m_dir  ,
+				iptoa(h2->m_ip), h2->m_dir );
+			fprintf(stderr,"scp %s:%s/indexdb* %s:%s\n",
+				iptoa( h->m_ip), h->m_dir  ,
+				iptoa(h2->m_ip), h2->m_dir );
+			fprintf(stderr,"scp %s:%s/spiderdb* %s:%s\n",
+				iptoa( h->m_ip), h->m_dir  ,
+				iptoa(h2->m_ip), h2->m_dir );
+			fprintf(stderr,"scp %s:%s/clusterdb* %s:%s\n",
+				iptoa( h->m_ip), h->m_dir  ,
+				iptoa(h2->m_ip), h2->m_dir );
+			fprintf(stderr,"scp %s:%s/tagdb* %s:%s\n",
+				iptoa( h->m_ip), h->m_dir  ,
+				iptoa(h2->m_ip), h2->m_dir );
+			*/
 		}
-
-		//fprintf(stderr," rcp -p %s*.map* ", h->m_dir );
-		fprintf(stderr," %s %scoll.* ", cmd, h->m_dir );
-
-		if ( h->m_ip == h2->m_ip )
-			fprintf(stderr,"%s " , h2->m_dir );
-		else {
-			//int32_t ip = h2->m_ip;
-			//if ( useShotgunIp ) ip = h2->m_ipShotgun;
-			//fprintf(stderr,"%s:%s " ,iptoa(ip), h2->m_dir );
-			char *hn = h2->m_hostname;
-			if ( useShotgunIp ) hn = h2->m_hostname;//2;
-			fprintf(stderr,"%s:%s " ,hn, h2->m_dir );
-		}
-
-		/*
-		fprintf(stderr,"scp %s:%s/titledb* %s:%s\n",
-			iptoa( h->m_ip), h->m_dir  ,
-			iptoa(h2->m_ip), h2->m_dir );
-		fprintf(stderr,"scp %s:%s/indexdb* %s:%s\n",
-			iptoa( h->m_ip), h->m_dir  ,
-			iptoa(h2->m_ip), h2->m_dir );
-		fprintf(stderr,"scp %s:%s/spiderdb* %s:%s\n",
-			iptoa( h->m_ip), h->m_dir  ,
-			iptoa(h2->m_ip), h2->m_dir );
-		fprintf(stderr,"scp %s:%s/clusterdb* %s:%s\n",
-			iptoa( h->m_ip), h->m_dir  ,
-			iptoa(h2->m_ip), h2->m_dir );
-		fprintf(stderr,"scp %s:%s/tagdb* %s:%s\n",
-			iptoa( h->m_ip), h->m_dir  ,
-			iptoa(h2->m_ip), h2->m_dir );
-		*/
-	}
-	if ( flag ) fprintf(stderr,"\" &\n");
+		if ( flag ) fprintf(stderr,"\" &\n");
 	}
 	return 1;
 }
@@ -3135,8 +3135,7 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 			// cast it
 			SpiderRequest *sreq = (SpiderRequest *)srec;
 			// skip negatives
-			if ( (sreq->m_key.n0 & 0x01) == 0x00 ) {
-				g_process.shutdownAbort(true); }
+			if ( (sreq->m_key.n0 & 0x01) == 0x00 ) { g_process.shutdownAbort(true); }
 		}
 		startKey = *(key96_t *)list.getLastKey();
 		startKey++;
@@ -4677,32 +4676,32 @@ static bool pingTest(int32_t hid, uint16_t clientPort) {
 		log(LOG_WARN, "net: pingtest: hostId %" PRId32" is invalid.",hid);
 		return false;
 	}
-    // set up our socket
-    int sock  = socket ( AF_INET, SOCK_DGRAM , 0 );
-    if ( sock < 0 ) {
-	    log(LOG_WARN, "net: pingtest: socket: %s.", strerror(errno));
-	    return false;
-    }
+	// set up our socket
+	int sock  = socket ( AF_INET, SOCK_DGRAM , 0 );
+	if ( sock < 0 ) {
+		log(LOG_WARN, "net: pingtest: socket: %s.", strerror(errno));
+		return false;
+	}
 
-    // sockaddr_in provides interface to sockaddr
-    struct sockaddr_in name;
-    // reset it all just to be safe
-    memset((char *)&name, 0,sizeof(name));
-    name.sin_family      = AF_INET;
-    name.sin_addr.s_addr = INADDR_ANY;
-    name.sin_port        = htons(clientPort);
-    // we want to re-use port it if we need to restart
-    int options = 1;
-    if ( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR , &options,sizeof(options)) < 0 ) {
+	// sockaddr_in provides interface to sockaddr
+	struct sockaddr_in name;
+	// reset it all just to be safe
+	memset((char *)&name, 0,sizeof(name));
+	name.sin_family      = AF_INET;
+	name.sin_addr.s_addr = INADDR_ANY;
+	name.sin_port        = htons(clientPort);
+	// we want to re-use port it if we need to restart
+	int options = 1;
+	if ( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR , &options,sizeof(options)) < 0 ) {
 		close( sock );
-	    log(LOG_WARN, "net: pingtest: setsockopt: %s.", strerror(errno));
-	    return false;
-    }
-    // bind this name to the socket
-    if ( bind ( sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
+		log(LOG_WARN, "net: pingtest: setsockopt: %s.", strerror(errno));
+		return false;
+	}
+	// bind this name to the socket
+	if ( bind ( sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
 		close ( sock );
 		log(LOG_WARN, "net: pingtest: Bind on port %hu: %s.", clientPort,strerror(errno));
-	    return false;
+		return false;
 	}
 
 	int fd = sock;
