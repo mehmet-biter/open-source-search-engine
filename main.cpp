@@ -129,7 +129,6 @@ bool summaryTest1   ( char *rec, int32_t listSize, const char *coll , int64_t do
 
 // time a big write, read and then seeks
 bool thrutest ( char *testdir , int64_t fileSize ) ;
-void seektest ( const char *testdir , int32_t numThreads , int32_t maxReadSize , const char *filename );
 
 bool pingTest ( int32_t hid , uint16_t clientPort );
 bool cacheTest();
@@ -544,10 +543,6 @@ int main2 ( int argc , char *argv[] ) {
 			/*
 			"thrutest [dir] [fileSize]\n\tdisk write/read speed "
 			"test\n\n"
-
-			"seektest [dir] [numThreads] [maxReadSize] "
-			"[filename]\n"
-			"\tdisk seek speed test\n\n"
 			*/
 
 			/*
@@ -744,19 +739,6 @@ int main2 ( int argc , char *argv[] ) {
 		char     *testdir         = argv[cmdarg+1];
 		int64_t fileSize        = atoll1 ( argv[cmdarg+2] );
 		thrutest ( testdir , fileSize );
-		return 0;
-	}
-	// gb seektest <testdir> <numThreads> <maxReadSize>
-	if ( strcmp ( cmd , "seektest" ) == 0 ) {
-		const char     *testdir         = "/tmp/";
-		int32_t      numThreads      = 20; //30;
-		int64_t maxReadSize     = 20000;
-		char     *filename        = NULL;
-		if ( cmdarg+1 < argc ) testdir     = argv[cmdarg+1];
-		if ( cmdarg+2 < argc ) numThreads  = atol(argv[cmdarg+2]);
-		if ( cmdarg+3 < argc ) maxReadSize = atoll1(argv[cmdarg+3]);
-		if ( cmdarg+4 < argc ) filename    = argv[cmdarg+4];
-		seektest ( testdir , numThreads , maxReadSize , filename );
 		return 0;
 	}
 
@@ -3903,147 +3885,6 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 	return true;
 }
 
-//
-// SEEK TEST
-//
-
-#include <sys/time.h>  // gettimeofday()
-#include <sys/time.h>
-#include <sys/resource.h>
-//#include <pthread.h>
-#include <time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-static void startUp ( void *state );
-static int32_t s_count = 0;
-static int64_t s_filesize = 0;
-//static int32_t s_lock = 1;
-//static int s_fd1 ; // , s_fd2;
-static BigFile s_f;
-static int32_t s_numThreads = 0;
-static int64_t s_maxReadSize = 1;
-static int64_t s_startTime = 0;
-//#define MAX_READ_SIZE (2000000)
-#include <sys/types.h>
-#include <sys/wait.h>
-
-void seektest ( const char *testdir, int32_t numThreads, int32_t maxReadSize , const char *filename ) {
-
-	g_loop.init();
-	g_jobScheduler.initialize(numThreads,numThreads,numThreads,numThreads);
-	s_numThreads = numThreads;
-	s_maxReadSize = maxReadSize;
-	if ( s_maxReadSize <= 0 ) s_maxReadSize = 1;
-	//if ( s_maxReadSize > MAX_READ_SIZE ) s_maxReadSize = MAX_READ_SIZE;
-
-	log(LOG_INIT,"admin: dir=%s threads=%" PRId32" maxReadSize=%" PRId32" file=%s\n",
-	    testdir,(int32_t)s_numThreads, (int32_t)s_maxReadSize , filename );
-
-	// maybe its a filename in the cwd
-	if ( filename ) {
-		s_f.set(testdir,filename);
-		if ( s_f.doesExist() ) {
-			log(LOG_INIT,"admin: reading from %s.",
-			    s_f.getFilename());
-			goto skip;
-		}
-		log("admin: %s does not exists. Use ./gb thrutest ... "
-		    "to create speedtest* files.",
-		    s_f.getFilename());
-		return;
-	}
-	// check other defaults
-	s_f.set ( testdir , "speedtest" );
-	if ( s_f.doesExist() ) {
-		log(LOG_INIT,"admin: reading from speedtest*.dat.");
-		goto skip;
-	}
-	// try a read test from indexdb*.dat*
-	s_f.set (testdir,"indexdb0001.dat");
-	if ( s_f.doesExist() ) {
-		log(LOG_INIT,"admin: reading from indexdb0001.dat.");
-		goto skip;
-	}
-
-	log("admin: Neither speedtest* or indexdb0001.dat* "
-	    "exist. Use ./gb thrutest ... to create speedtest* files.");
-	return;
-skip:
-	s_f.open ( O_RDONLY );
-	s_filesize = s_f.getFileSize();
-	log ( LOG_INIT, "admin: file size = %" PRId64".",s_filesize);
-	// always block
-	//g_jobScheduler.disallow_new_jobs();
-	// seed rand
-	srand(time(NULL));
-
-	// set time
-	s_startTime = gettimeofdayInMilliseconds();
-
-	int32_t stksize = 1000000 ;
-	int32_t bufsize = stksize * s_numThreads ;
-	char *buf = (char *)malloc( bufsize );
-	if ( ! buf ) { 
-		log("test: malloc of %" PRId32" failed.",bufsize); 
-		return; 
-	}
-
-	g_jobScheduler.allow_new_jobs();
-	//int pid;
-	for ( int32_t i = 0 ; i < s_numThreads ; i++ ) {
-		if ( !g_jobScheduler.submit(startUp, NULL, (void *)(PTRTYPE)i, thread_type_unspecified_io, 0)) {
-			log("test: Thread launch failed."); 
-			free(buf);
-			return; 
-		}
-		log(LOG_INIT,"test: Launched thread #%" PRId32".",i);
-	}
-	// sleep til done
-#undef sleep
-	while ( 1 == 1 ) sleep(1000);
-#define sleep(a) { g_process.shutdownAbort(true); }
-}
-
-
-// Use of ThreadEntry parameter is NOT thread safe
-void startUp ( void *state ) {
-	int32_t id = (int32_t) (PTRTYPE)state;
-	// read buf
-	char *buf = (char *) malloc ( s_maxReadSize );
-	if ( ! buf ) { 
-		fprintf(stderr,"MALLOC FAILED in thread\n");
-		return;
-	}
-	// we got ourselves
-	// msg
-	fprintf(stderr,"id=%" PRId32" launched. Performing 100000 reads.\n",id);
-	// now do a stupid loop
-	int64_t off , size;
-	for ( int32_t i = 0 ; i < 100000 ; i++ ) {
-		uint64_t r = rand();
-		r <<= 32 ;
-		r |= rand();
-		off = r % (s_filesize - s_maxReadSize );
-		size = s_maxReadSize;
-		// time it
-		int64_t start = gettimeofdayInMilliseconds();
-		s_f.read ( buf , size , off );
-		int64_t now = gettimeofdayInMilliseconds();
-		usleep(0);
-		s_count++;
-		float sps = (float)((float)s_count * 1000.0) / 
-			(float)(now - s_startTime);
-		fprintf(stderr,"count=%" PRId32" off=%012" PRId64" size=%" PRId32" time=%" PRId32"ms "
-			"(%.2f seeks/sec)\n",
-			(int32_t)s_count,
-			(int64_t)off,
-			(int32_t)size,
-			(int32_t)(now - start) , 
-			sps );
-	}
-}
 
 static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char req,
 		      const char *siteArg) {
