@@ -127,9 +127,6 @@ bool parseTest ( const char *coll , int64_t docId , const char *query );
 bool summaryTest1   ( char *rec, int32_t listSize, const char *coll , int64_t docId ,
 		      const char *query );
 
-// time a big write, read and then seeks
-bool thrutest ( char *testdir , int64_t fileSize ) ;
-
 bool pingTest ( int32_t hid , uint16_t clientPort );
 bool cacheTest();
 void countdomains( const char* coll, int32_t numRecs, int32_t verb, int32_t output );
@@ -541,11 +538,6 @@ int main2 ( int argc , char *argv[] ) {
 			*/
 
 			/*
-			"thrutest [dir] [fileSize]\n\tdisk write/read speed "
-			"test\n\n"
-			*/
-
-			/*
 			// Quality Tests
 			"countdomains <coll> <X>\n"
 			"\tCounts the domains and IPs in collection coll and "
@@ -732,15 +724,6 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	// need threads here for tests?
-
-	// gb thrutest <testDir> <fileSize>
-	if ( strcmp ( cmd , "thrutest" ) == 0 ) {
-		if ( cmdarg+2 >= argc ) goto printHelp;
-		char     *testdir         = argv[cmdarg+1];
-		int64_t fileSize        = atoll1 ( argv[cmdarg+2] );
-		thrutest ( testdir , fileSize );
-		return 0;
-	}
 
 	// note the stack size for debug purposes
 	struct rlimit rl;
@@ -3778,110 +3761,6 @@ bool hashtest ( ) {
 	// add times
 	log("db: deleted %" PRId32" keys in %" PRId64" ms",numKeys,e - t);
 
-	return true;
-}
-
-
-// time speed of big write, read and the seeks
-bool thrutest ( char *testdir , int64_t fileSize ) {
-
-	// a read/write buffer of 30M
-	int32_t bufSize = 30000000;  // 30M
-	//int64_t fileSize = 4000000000LL; // 4G
-	char *buf = (char *) malloc ( bufSize );
-	if ( ! buf ) {
-		log(LOG_WARN, "speedtestdisk: %s",strerror(errno));
-		return false;
-	}
-	// store stuff in there
-	for ( int32_t i = 0 ; i < bufSize ; i++ ) buf[i] = (char)i;
-
-	BigFile f;
-	// try a read test from speedtest*.dat*
-	f.set (testdir,"speedtest");
-	if ( f.doesExist() ) {
-		if ( ! f.open ( O_RDONLY ) ) {
-			log(LOG_WARN, "speedtestdisk: cannot open %s/%s", testdir, "speedtest");
-			free(buf);
-			return false;
-		}
-		// ensure big enough
-		if ( f.getFileSize() < fileSize ) {
-			log(LOG_WARN, "speedtestdisk: File %s/%s is too small for requested read size.", testdir, "speedtest");
-			free(buf);
-			return false;
-		}
-		log("db: reading from speedtest0001.dat");
-		goto doreadtest;
-	}
-	// try a read test from indexdb*.dat*
-	f.set (testdir,"indexdb0001.dat");
-	if ( f.doesExist() ) {
-		if ( ! f.open ( O_RDONLY ) ) {
-			log(LOG_WARN, "speedtestdisk: cannot open %s/%s", testdir, "indexdb0001.dat");
-			free(buf);
-			return false;
-		}
-		log("db: reading from indexdb0001.dat");
-		goto doreadtest;
-	}
-	// try a write test to speedtest*.dat*
-	f.set (testdir,"speedtest");
-	if ( ! f.doesExist() ) {
-		if ( ! f.open ( O_RDWR | O_CREAT | O_SYNC ) ) {
-			log(LOG_WARN, "speedtestdisk: cannot open %s/%s", testdir, "speedtest");
-			free(buf);
-			return false;
-		}
-		log("db: writing to speedtest0001.dat");
-	}
-
-	// write  2 gigs to the file, 1M at a time
-	{
-	int64_t t1 = gettimeofdayInMilliseconds();
-	int32_t numLoops = fileSize / bufSize;
-	int64_t off = 0LL;
-	int32_t next = 0;
-	for ( int32_t i = 0 ; i < numLoops ; i++ ) {
-		f.write ( buf , bufSize , off );
-		sync(); // f.flush ( );
-		off  += bufSize ;
-		next += bufSize;
-		//if ( i >= numLoops || next < 100000000 ) continue;
-		if ( i + 1 < numLoops && next < 100000000 ) continue;
-		next = 0;
-		// print speed every X seconds
-		int64_t t2 = gettimeofdayInMilliseconds();
-		float mBps = (float)off / (float)(t2-t1) / 1000.0 ;
-		fprintf(stderr,"wrote %" PRId64" bytes in %" PRId64" ms (%.1f MB/s)\n",
-			off,t2-t1,mBps);
-	}
-	}
-		
- doreadtest:
-
-	{
-	int64_t t1 = gettimeofdayInMilliseconds();
-	int32_t numLoops = fileSize / bufSize;
-	int64_t off = 0LL;
-	int32_t next = 0;
-	for ( int32_t i = 0 ; i < numLoops ; i++ ) {
-		f.read ( buf , bufSize , off );
-		//sync(); // f.flush ( );
-		off  += bufSize ;
-		next += bufSize;
-		//if ( i >= numLoops || next < 100000000 ) continue;
-		if ( i + 1 < numLoops && next < 100000000 ) continue;
-		next = 0;
-		// print speed every X seconds
-		int64_t t2 = gettimeofdayInMilliseconds();
-		float mBps = (float)off / (float)(t2-t1) / 1000.0 ;
-		fprintf(stderr,"read %" PRId64" bytes in %" PRId64" ms (%.1f MB/s)\n",
-			off,t2-t1,mBps);
-	}
-	}
-
-	free(buf);
 	return true;
 }
 
