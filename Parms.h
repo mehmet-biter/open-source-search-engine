@@ -208,11 +208,11 @@ class Parms {
 	bool setFromFile ( void *THIS        ,
 			   char *filename    ,
 			   char *filenameDef ,
-			   char  objType ) ;
+			   parameter_object_type_t objType);
 
 	bool setXmlFromFile(Xml *xml, char *filename, class SafeBuf *sb );
 
-	bool saveToXml ( char *THIS , char *f , char objType ) ;
+	bool saveToXml(char *THIS, char *f, parameter_object_type_t objType);
 
 	bool getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s );
 

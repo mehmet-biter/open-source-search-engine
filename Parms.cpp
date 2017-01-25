@@ -2545,7 +2545,7 @@ void Parms::setToDefault(char *THIS, parameter_object_type_t objType, Collection
 bool Parms::setFromFile ( void *THIS        ,
 			  char *filename    ,
 			  char *filenameDef ,
-			  char  objType ) {
+			  parameter_object_type_t objType) {
 	// make sure we're init'd
 	init();
 
@@ -2839,7 +2839,7 @@ bool Parms::setXmlFromFile(Xml *xml, char *filename, SafeBuf *sb ) {
 //#define MAX_CONF_SIZE 200000
 
 // returns false and sets g_errno on error
-bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
+bool Parms::saveToXml(char *THIS, char *f, parameter_object_type_t objType) {
 	if ( g_conf.m_readOnlyMode ) return true;
 	// print into buffer
 	StackBuf<200000> sb;
