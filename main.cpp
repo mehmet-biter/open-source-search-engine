@@ -132,7 +132,6 @@ bool thrutest ( char *testdir , int64_t fileSize ) ;
 void seektest ( const char *testdir , int32_t numThreads , int32_t maxReadSize , const char *filename );
 
 bool pingTest ( int32_t hid , uint16_t clientPort );
-bool memTest();
 bool cacheTest();
 void countdomains( const char* coll, int32_t numRecs, int32_t verb, int32_t output );
 
@@ -169,7 +168,6 @@ int collcopy ( char *newHostsConf , char *coll , int32_t collnum ) ;
 bool doCmd ( const char *cmd , int32_t hostId , const char *filename , bool sendToHosts,
 	     bool sendToProxies, int32_t hostId2=-1 );
 int injectFile ( const char *filename , char *ips , const char *coll );
-void membustest ( int32_t nb , int32_t loops , bool readf ) ;
 
 //void tryMergingWrapper ( int fd , void *state ) ;
 
@@ -550,9 +548,6 @@ int main2 ( int argc , char *argv[] ) {
 			"seektest [dir] [numThreads] [maxReadSize] "
 			"[filename]\n"
 			"\tdisk seek speed test\n\n"
-			
-			"memtest\n"
-			"\t Test how much memory we can use\n\n"
 			*/
 
 			/*
@@ -689,11 +684,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 	// these tests do not need a hosts.conf
-	if ( strcmp ( cmd , "memtest" ) == 0 ) {
-		if ( argc > cmdarg+1 ) goto printHelp;
-		memTest();
-		return 0;
-	}
 	if ( strcmp ( cmd , "cachetest" ) == 0 ) {
 		if ( argc > cmdarg+1 ) goto printHelp;
 		cacheTest();
@@ -6527,147 +6517,6 @@ void injectedWrapper ( void *state , TcpSocket *s ) {
 	char *reply = s->m_readBuf;
 	logf(LOG_INFO,"inject: reply=\"%s\"",reply);
 	doInject(0,NULL);
-}
-
-bool memTest() {
-	// let's ensure our core file can dump
-	struct rlimit lim;
-	lim.rlim_cur = lim.rlim_max = RLIM_INFINITY;
-	if ( setrlimit(RLIMIT_CORE,&lim) )
-		log("db: setrlimit: %s.", mstrerror(errno) );
-
-	void *ptrs[4096];
-	int numPtrs=0;
-	int i;
-	g_conf.m_maxMem = 0xffffffffLL;
-	g_mem.init( );//g_mem.m_maxMem );
-	
-
-	fprintf(stderr, "memtest: Testing memory bus bandwidth.\n");
-	// . read in 20MB 100 times (~2GB total)
-	// . tests main memory throughput
-	fprintf(stderr, "memtest: Testing main memory.\n");
-	membustest ( 20*1024*1024 , 100 , true );
-	// . read in 1MB 2,000 times (~2GB)
-	// . tests the L2 cache
-	fprintf(stderr, "memtest: Testing 1MB L2 cache.\n");
-	membustest ( 1024*1024 , 2000 , true );
-	// . read in 8000 200,000 times (~1.6GB)
-	// . tests the L1 cache
-	fprintf(stderr, "memtest: Testing 8KB L1 cache.\n");
-	membustest ( 8000 , 100000 , true );
-
-	fprintf(stderr, "memtest: Allocating up to %" PRIu64" bytes\n",
-		g_conf.m_maxMem);
-	for (i=0;i<4096;i++) {
-		ptrs[numPtrs] = mmalloc(1024*1024, "memtest");
-		if (!ptrs[numPtrs]) break;
-		numPtrs++;
-	}
-
-	fprintf(stderr, "memtest: Was able to allocate %" PRIu64" bytes of a "
-		"total of "
-	    "%" PRIu64" bytes of memory attempted.\n",
-	    g_mem.getUsedMem(),g_conf.m_maxMem);
-
-	return true;
-}
-
-// . read in "nb" bytes, loops times, 
-// . if readf is false, do write test, not read test
-void membustest ( int32_t nb , int32_t loops , bool readf ) {
-	int32_t count = loops;
-
-	// don't exceed 50NB
-	if ( nb > 50*1024*1024 ) {
-		fprintf(stderr,"memtest: truncating to 50 Megabytes.\n");
-		nb = 50*1024*1024;
-	}
-
-	int32_t n = nb ; //* 1024 * 1024 ;
-
-	int32_t bufSize = 50*1024*1024;
-	char *buf = (char *) mmalloc ( bufSize , "main" );
-	if ( ! buf ) return;
-	char *bufStart = buf;
-	char *bufEnd = buf + n;
-
-	// pre-read it so sbrk() can do its thing
-	for ( int32_t i = 0 ; i < n ; i++ ) buf[i] = 1;
-
-	// time stamp
-	int64_t t = gettimeofdayInMilliseconds();
-
-	fprintf(stderr,"memtest: start = %" PRId64"\n",t);
-
-	// . time the read loop
-	// . each read should only be 2 assenbly movl instructions:
-	//   movl	-52(%ebp), %eax
-	//   movl	(%eax), %eax
-	//   movl	-52(%ebp), %eax
-	//   movl	4(%eax), %eax
-	//   ...
- loop:
-	int32_t c;
-
-	if ( readf ) {
-		while ( buf < bufEnd ) {
-			// repeat 16x for efficiency.limit comparison to bufEnd
-			c = *(int32_t *)(buf+ 0);
-			c = *(int32_t *)(buf+ 4);
-			c = *(int32_t *)(buf+ 8);
-			c = *(int32_t *)(buf+12);
-			c = *(int32_t *)(buf+16);
-			c = *(int32_t *)(buf+20);
-			c = *(int32_t *)(buf+24);
-			c = *(int32_t *)(buf+28);
-			c = *(int32_t *)(buf+32);
-			c = *(int32_t *)(buf+36);
-			c = *(int32_t *)(buf+40);
-			c = *(int32_t *)(buf+44);
-			c = *(int32_t *)(buf+48);
-			c = *(int32_t *)(buf+52);
-			c = *(int32_t *)(buf+56);
-			c = *(int32_t *)(buf+60);
-			buf += 64;
-		}
-	}
-	else {
-		while ( buf < bufEnd ) {
-			// repeat 8x for efficiency. limit comparison to bufEnd
-			*(int32_t *)(buf+ 0) = 0;
-			*(int32_t *)(buf+ 4) = 1;
-			*(int32_t *)(buf+ 8) = 2;
-			*(int32_t *)(buf+12) = 3;
-			*(int32_t *)(buf+16) = 4;
-			*(int32_t *)(buf+20) = 5;
-			*(int32_t *)(buf+24) = 6;
-			*(int32_t *)(buf+28) = 7;
-			buf += 32;
-		}
-	}
-	if ( --count > 0 ) {
-		buf = bufStart;
-		goto loop;
-	}
-
-	// completed
-	int64_t now = gettimeofdayInMilliseconds();
-	fprintf(stderr,"memtest: now = %" PRId64"\n",t);
-	// multiply by 4 since these are int32_ts
-	const char *op = "read";
-	if ( ! readf ) op = "wrote";
-	fprintf(stderr,"memtest: %s %" PRId32" bytes (x%" PRId32") in"
-		"%" PRIu64" ms.\n",
-		 op , n , loops , (uint64_t)(now - t) );
-	// stats
-	if ( now - t == 0 ) now++;
-	double d = (1000.0*(double)loops*(double)(n)) / ((double)(now - t));
-	fprintf(stderr,"memtest: we did %.2f MB/sec.\n" , d/(1024.0*1024.0));
-
-	mfree ( bufStart , bufSize , "main" );
-
-	return ;
 }
 
 
