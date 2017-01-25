@@ -1475,8 +1475,6 @@ bool sendPageAPI ( TcpSocket *s , HttpRequest *r ) {
 	StackBuf<32768> p;
 
 	CollectionRec *cr = g_collectiondb.getRec ( r , true );
-	const char *coll = "";
-	if ( cr ) coll = cr->m_coll;
 
 	p.safePrintf("<html><head><title>Gigablast API</title></head><body>");
 
