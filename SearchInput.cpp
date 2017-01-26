@@ -91,7 +91,6 @@ SearchInput::SearchInput() {
 	m_formatStr = NULL;
 	m_queryExpansion = false;
 	m_END_HASH = 0;
-	m_END_TEST = 0;
 }
 
 SearchInput::~SearchInput() {
@@ -99,7 +98,7 @@ SearchInput::~SearchInput() {
 
 void SearchInput::clear () {
 	// set all to 0 just to avoid any inconsistencies
-	int32_t size = (char *)&m_END_TEST - (char *)&m_START;
+	int32_t size = (char *)&m_END_HASH - (char *)&m_START;
 	memset ( &m_START , 0x00 , size );
 	m_sbuf1.reset();
 	m_sbuf2.reset();
@@ -145,39 +144,6 @@ key96_t SearchInput::makeKey ( ) {
 	}
 
 	return k;
-}
-
-void SearchInput::test ( ) {
-	// set all to 0 just to avoid any inconsistencies
-	char *a = ((char *)&m_START) + 4 ; // msg40->m_dpf;
-	char *b =  (char *)&m_END_TEST;
-	int32_t size = b - a;
-	memset ( a , 0x00 , size );
-	// loop through all possible cgi parms to set SearchInput
-	for ( int32_t i = 0 ; i < g_parms.getNumSearchParms() ; i++ ) {
-		Parm *m = g_parms.getSearchParm(i);
-		unsigned char *x = (unsigned char *)this + m->m_off;
-		if ( m->m_type != TYPE_BOOL ) *(int32_t *)x = 0xffffffff;
-		else                          *(unsigned char *)x = 0xff;
-	}
-	// ensure we're all zeros now!
-	int32_t fix = a - (char *)this;
-	unsigned char *p = (unsigned char *)a;
-	for ( int32_t i = 0 ; i < size ; i++ ) {
-		if ( p[i] == 0xff ) continue;
-		// find it
-		int32_t off = i + fix;
-		const char *name = NULL; // "unknown";
-		for ( int32_t k = 0 ; k < g_parms.getNumSearchParms(); k++ ) {
-			Parm *m = g_parms.getSearchParm(k);
-			if ( m->m_off != off ) continue;
-			name = m->m_title;
-			break;
-		}
-		if ( ! name ) continue;
-		log("query: Got uncovered SearchInput parm at offset "
-		    "%" PRId32" in SearchInput. name=%s.",off,name);
-	}
 }
 
 void SearchInput::copy ( class SearchInput *si ) {

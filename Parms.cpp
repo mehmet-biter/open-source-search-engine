@@ -9375,11 +9375,6 @@ void Parms::init ( ) {
 	}
 	m_numSearchParms = n;
 
-	// . sanity check
-	// . we should have it all covered!
-	SearchInput si;
-	si.test();
-
 	//
 	// parm overlap detector
 	//
