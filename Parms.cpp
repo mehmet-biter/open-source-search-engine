@@ -3052,12 +3052,20 @@ namespace {
 	template<> parameter_type_t c_type_to_pf_type<float>() { return TYPE_FLOAT; }
 	template<> parameter_type_t c_type_to_pf_type<double>() { return TYPE_DOUBLE; }
 	template<> parameter_type_t c_type_to_pf_type<SafeBuf>() { return TYPE_SAFEBUF; }
+	
+	static void simple_m_set_checkbox_field_must_be_a_bool(const bool *) {}
 }
 
 #define simple_m_set(C,field) \
 	m->m_obj = c_to_obj_type<C>(); \
 	m->m_off = offsetof(C,field); \
 	m->m_type = c_type_to_pf_type<__typeof__(((C*)0)->field)>();
+
+#define simple_m_set_checkbox(C,field) \
+	m->m_obj = c_to_obj_type<C>(); \
+	m->m_off = offsetof(C,field); \
+	simple_m_set_checkbox_field_must_be_a_bool(&((C*)0)->field); \
+	m->m_type = TYPE_CHECKBOX;
 
 // Sensitive programmers and C++ language purists: You can now open your eyes
 
@@ -6355,9 +6363,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Strip added urls of their session ids.";
 	m->m_cgi   = "strip";
 	m->m_page  = PAGE_ADDURL2;
-	m->m_obj   = OBJ_GBREQUEST;
-	m->m_off   = offsetof(GigablastRequest,m_stripBox);
-	m->m_type  = TYPE_CHECKBOX;
+	simple_m_set_checkbox(GigablastRequest,m_stripBox);
 	m->m_def   = "0";
 	m->m_flags = PF_API;
 	m++;
@@ -6366,9 +6372,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Harvest links of added urls so we can spider them?.";
 	m->m_cgi   = "spiderlinks";
 	m->m_page  = PAGE_ADDURL2;
-	m->m_obj   = OBJ_GBREQUEST;
-	m->m_off   = offsetof(GigablastRequest,m_harvestLinks);
-	m->m_type  = TYPE_CHECKBOX;
+	simple_m_set_checkbox(GigablastRequest,m_harvestLinks);
 	m->m_def   = "0";
 	m->m_flags = PF_API;
 	m++;
@@ -6379,9 +6383,7 @@ void Parms::init ( ) {
 		"is already indexed.";
 	m->m_cgi   = "force";
 	m->m_page  = PAGE_ADDURL2;
-	m->m_obj   = OBJ_GBREQUEST;
-	m->m_off   = offsetof(GigablastRequest,m_forceRespiderBox);
-	m->m_type  = TYPE_CHECKBOX;
+	simple_m_set_checkbox(GigablastRequest,m_forceRespiderBox);
 	m->m_def   = "0";
 	m->m_flags = PF_API;
 	m++;
@@ -6474,47 +6476,39 @@ void Parms::init ( ) {
 	m->m_desc  = "Add the outlinks of the injected content into spiderdb "
 		"for spidering?";
 	m->m_cgi   = "spiderlinks";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_CHECKBOX;
 	// leave off because could start spidering whole web unintentionally
 	m->m_def   = "0";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_INJECT;
-	m->m_off   = offsetof(InjectionRequest,m_spiderLinks);
+	simple_m_set_checkbox(InjectionRequest,m_spiderLinks);
 	m++;
 
 	m->m_title = "short reply";
 	m->m_desc  = "Should the injection response be short and simple?";
 	m->m_cgi   = "quick";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_CHECKBOX;
 	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN;
 	m->m_page  = PAGE_INJECT;
-	m->m_off   = offsetof(InjectionRequest,m_shortReply);
+	simple_m_set_checkbox(InjectionRequest,m_shortReply);
 	m++;
 
 	m->m_title = "only inject content if new";
 	m->m_desc  = "If the specified url is already in the index then "
 		"skip the injection.";
 	m->m_cgi   = "newonly";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_CHECKBOX;
 	m->m_def   = "0";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_INJECT;
-	m->m_off   = offsetof(InjectionRequest,m_newOnly);
+	simple_m_set_checkbox(InjectionRequest,m_newOnly);
 	m++;
 
 	m->m_title = "delete from index";
 	m->m_desc  = "Delete the specified url from the index.";
 	m->m_cgi   = "deleteurl";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_CHECKBOX;
 	m->m_def   = "0";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_INJECT;
-	m->m_off   = offsetof(InjectionRequest,m_deleteUrl);
+	simple_m_set_checkbox(InjectionRequest,m_deleteUrl);
 	m++;
 
 	m->m_title = "recycle content";
@@ -6522,35 +6516,29 @@ void Parms::init ( ) {
 		"re-download the content, just use the content that was "
 		"stored in the cache from last time.";
 	m->m_cgi   = "recycle";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_CHECKBOX;
 	m->m_def   = "0";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_INJECT;
-	m->m_off   = offsetof(InjectionRequest,m_recycle);
+	simple_m_set_checkbox(InjectionRequest,m_recycle);
 	m++;
 
 	m->m_title = "dedup url";
 	m->m_desc  = "Do not index the url if there is already another "
 		"url in the index with the same content.";
 	m->m_cgi   = "dedup";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_CHECKBOX;
 	m->m_def   = "0";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_INJECT;
-	m->m_off   = offsetof(InjectionRequest,m_dedup);
+	simple_m_set_checkbox(InjectionRequest,m_dedup);
 	m++;
 
 	m->m_title = "do consistency checking";
 	m->m_desc  = "Turn this on for debugging.";
 	m->m_cgi   = "consist";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_CHECKBOX;
 	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN; // | PF_API
 	m->m_page  = PAGE_INJECT;
-	m->m_off   = offsetof(InjectionRequest,m_doConsistencyTesting);
+	simple_m_set_checkbox(InjectionRequest,m_doConsistencyTesting);
 	m++;
 
 	m->m_title = "hop count";
@@ -6598,12 +6586,10 @@ void Parms::init ( ) {
 	m->m_desc  = "If the content of the url is provided below, does "
 		"it begin with an HTTP mime header?";
 	m->m_cgi   = "hasmime";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_CHECKBOX;
 	m->m_def   = "0";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_INJECT;
-	m->m_off   = offsetof(InjectionRequest,m_hasMime);
+	simple_m_set_checkbox(InjectionRequest,m_hasMime);
 	m++;
 
 	m->m_title = "content delimeter";
@@ -6772,12 +6758,10 @@ void Parms::init ( ) {
 		"the index to pick up new inlink text or fresher "
 		"sitenuminlinks counts which influence ranking.";
 	m->m_cgi   = "qrecycle";
-	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHECKBOX;
 	m->m_def   = "0";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_REINDEX;
-	m->m_off   = offsetof(GigablastRequest,m_recycleContent);
+	simple_m_set_checkbox(GigablastRequest,m_recycleContent);
 	m++;
 
 
@@ -6785,10 +6769,8 @@ void Parms::init ( ) {
 	m->m_desc  = "Check this checkbox to delete the results, not just "
 		"reindex them.";
 	m->m_cgi   = "forcedel";
-	m->m_off   = offsetof(GigablastRequest,m_forceDel);
-	m->m_type  = TYPE_CHECKBOX;
+	simple_m_set_checkbox(GigablastRequest,m_forceDel);
 	m->m_page  = PAGE_REINDEX;
-	m->m_obj   = OBJ_GBREQUEST;
 	m->m_def   = "0";
 	m->m_flags = PF_API ;
 	m++;
