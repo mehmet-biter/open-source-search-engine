@@ -101,9 +101,7 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 	}
 	Rdb *rdb = getRdbFromId(m_rdbId);
 	// set start time
-	int64_t start ;
-	if(m_newMinRecSizes > 64)
-		start = gettimeofdayInMilliseconds();
+	int64_t start = gettimeofdayInMilliseconds();
 	// . returns false on error and sets g_errno
 	// . endKey of m_treeList may be less than m_endKey
 	const char *structName;
@@ -149,16 +147,14 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 		structName = "buckets";
 	}
 
-	if(m_newMinRecSizes > 64) {
-		int64_t now  = gettimeofdayInMilliseconds();
-		int64_t took = now - start;
-		if(took > 9)
-			logf(LOG_INFO,"net: Got list from %s "
-			     "in %" PRIu64" ms. size=%" PRId32" db=%s "
-			     "niceness=%" PRId32".",
-			     structName, took,m_treeList.getListSize(),
-			     base->getDbName(),m_niceness);
-	}
+	int64_t now  = gettimeofdayInMilliseconds();
+	int64_t took = now - start;
+	if(took > 9)
+		logf(LOG_INFO,"net: Got list from %s "
+		     "in %" PRIu64" ms. size=%" PRId32" db=%s "
+		     "niceness=%" PRId32".",
+		     structName, took,m_treeList.getListSize(),
+		     base->getDbName(),m_niceness);
 
 	return true;
 }
