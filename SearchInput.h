@@ -25,8 +25,6 @@ public:
 	// why provide query here, it is in "hr"
 	bool set ( class TcpSocket *s , class HttpRequest *hr );
 
-	key96_t makeKey ( ) ;
-
 	bool setQueryBuffers ( class HttpRequest *hr ) ;
 
 	void clear();
@@ -215,9 +213,7 @@ public:
 	//
 	////////
 
-	// . end the section we hash in SearchInput::makeKey()
-	// . we also hash displayMetas and Query into the key
-	int32_t   m_END_HASH;
+	int32_t   m_END;
 };
 
 #endif // GB_SEARCHINPUT_H
