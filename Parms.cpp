@@ -9237,11 +9237,13 @@ void Parms::init ( ) {
 		//	m_parms[i].m_obj = m_parms[i-1].m_obj;
 		// sanity now
 		if ( m_parms[i].m_page == -1 ) {
-			log("parms: bad page \"%s\"",m_parms[i].m_title);
-			g_process.shutdownAbort(true); }
+			log("parms: bad page in parameter \"%s\"",m_parms[i].m_title);
+			g_process.shutdownAbort(true);
+		}
 		if ( m_parms[i].m_obj == -1 ) {
-			log("parms: bad obj \"%s\"",m_parms[i].m_title);
-			g_process.shutdownAbort(true); }
+			log("parms: bad obj in parameter \"%s\"",m_parms[i].m_title);
+			g_process.shutdownAbort(true);
+		}
 
 		// if its a fixed size then make sure m_size is not set
 		if ( m_parms[i].m_fixed > 0 ) {
