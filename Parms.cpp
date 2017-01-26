@@ -9159,6 +9159,14 @@ void Parms::init ( ) {
 		m_parms[i].m_cgiHash = hash32n ( m_parms[i].m_cgi );
 	}
 
+	//check that all parameters have m_type set
+	for(int i = 0; i < m_numParms; i++) {
+		if(m_parms[i].m_type==TYPE_UNSET) {
+			log("parms: obj with unset type \"%s\"",m_parms[i].m_title);
+			g_process.shutdownAbort(true);
+		}
+	}
+	
 	// sanity check: ensure all cgi parms are different
 	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
 		for ( int32_t j = 0 ; j < m_numParms ; j++ ) {
