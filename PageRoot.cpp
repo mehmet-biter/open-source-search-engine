@@ -1360,7 +1360,7 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	ir->size_url = strlen(ir->ptr_url)+1;
 
 	// get back a short reply so we can show the status code easily
-	ir->m_shortReply = 1;
+	ir->m_shortReply = true;
 
 	ir->m_spiderLinks = st1->m_spiderLinks;
 
