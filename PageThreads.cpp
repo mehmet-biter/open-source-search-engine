@@ -150,10 +150,10 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 		p.safePrintf("<!-- %lu %lu %lu %lu %lu -->\n", js.second.job_count,js.second.queue_time,js.second.running_time,js.second.done_time,js.second.cleanup_time);
 		p.safePrintf("    <td>%lu</td>\n",js.second.job_count);
 		if(js.second.job_count!=0) {
-			p.safePrintf("    <td>%.3f</td>\n", js.second.queue_time/js.second.job_count/1000.0);
-			p.safePrintf("    <td>%.3f</td>\n", js.second.running_time/js.second.job_count/1000.0);
-			p.safePrintf("    <td>%.3f</td>\n", js.second.done_time/js.second.job_count/1000.0);
-			p.safePrintf("    <td>%.3f</td>\n", js.second.cleanup_time/js.second.job_count/1000.0);
+			p.safePrintf("    <td>%.3f</td>\n", (double)js.second.queue_time/js.second.job_count/1000.0);
+			p.safePrintf("    <td>%.3f</td>\n", (double)js.second.running_time/js.second.job_count/1000.0);
+			p.safePrintf("    <td>%.3f</td>\n", (double)js.second.done_time/js.second.job_count/1000.0);
+			p.safePrintf("    <td>%.3f</td>\n", (double)js.second.cleanup_time/js.second.job_count/1000.0);
 		} else {
 			p.safePrintf("    <td>-</td>\n");
 			p.safePrintf("    <td>-</td>\n");
