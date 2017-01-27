@@ -41,7 +41,7 @@ class WaitEntry {
 public:
 	void (* m_callback) (void *state);
 	// ptr to list of parm recs for Parms.cpp
-	char *m_parmPtr;
+	const char *m_parmPtr;
 	char *m_parmEnd;
 	class UdpSlot *m_slot;
 	bool m_doRebuilds;
@@ -208,7 +208,7 @@ static int32_t getDataSizeFromParmRec(const char *rec) {
 	return *(const int32_t *)(rec+sizeof(key96_t));
 }
 
-static char *getDataFromParmRec ( char *rec ) {
+static const char *getDataFromParmRec(const char *rec) {
 	return rec+sizeof(key96_t)+4;
 }
 
@@ -223,8 +223,8 @@ static int16_t getOccNumFromParmRec(const char *rec) {
 	return (int16_t)((k->n0>>16));
 }
 
-Parm *Parms::getParmFromParmRec(char *rec) {
-	key96_t *k = (key96_t *)rec;
+Parm *Parms::getParmFromParmRec(const char *rec) {
+	const key96_t *k = (const key96_t*)rec;
 	int32_t cgiHash32 = (k->n0 >> 32);
 	return getParmFast2 ( cgiHash32 );
 }
@@ -277,9 +277,9 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) ;
 
 
 // from Spider.cpp:
-bool updateSiteListBuf(collnum_t collnum,bool addSeeds,char *siteListArg);
+bool updateSiteListBuf(collnum_t collnum, bool addSeeds, const char *siteListArg);
 
-static bool CommandUpdateSiteList ( char *rec ) {
+static bool CommandUpdateSiteList(const char *rec) {
 	// caller must specify collnum
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 	if ( collnum < 0 ) {
@@ -301,7 +301,7 @@ static bool CommandUpdateSiteList ( char *rec ) {
 		return true;
 	}
 	// get the sitelist
-	char *data = getDataFromParmRec ( rec );
+	const char *data = getDataFromParmRec ( rec );
 	// update the table that maps site to whether we should spider it
 	// and also add newly introduced sites in "data" into spiderdb.
 	updateSiteListBuf ( collnum ,
@@ -318,10 +318,10 @@ static bool CommandUpdateSiteList ( char *rec ) {
 // . require user manually execute this to prevent us fucking up the data
 //   at first initially because of a bad hosts.conf file!!!
 // . maybe put a red 'A' in the hosts table on the web page to indicate
-//   we detected records that don't belong to our shard so user knows to
+//   we detected records that don't belong to our shard so user knows to(const char *rec)
 //   rebalance?
 // . we'll show it in a special msg box on all admin pages if required
-static bool CommandRebalance ( char *rec ) {
+static bool CommandRebalance(const char *rec) {
 	g_rebalance.m_userApproved = true;
 	// force this to on so it goes through
 	g_rebalance.m_numForeignRecs = 1;
@@ -330,7 +330,7 @@ static bool CommandRebalance ( char *rec ) {
 }
 #endif
 
-bool Parms::CommandInsertUrlFiltersRow(char *rec) {
+bool Parms::CommandInsertUrlFiltersRow(const char *rec) {
 	// caller must specify collnum
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 	if ( collnum < 0 ) {
@@ -354,7 +354,7 @@ bool Parms::CommandInsertUrlFiltersRow(char *rec) {
 	}
 
 	// get the row #
-	char *data = getDataFromParmRec ( rec );
+	const char *data = getDataFromParmRec ( rec );
 	int32_t rowNum = atol(data);//*(int32_t *)data;
 	// scan all parms for url filter parms
 	for ( int32_t i = 0 ; i < g_parms.m_numParms ; i++ ) {
@@ -372,7 +372,7 @@ bool Parms::CommandInsertUrlFiltersRow(char *rec) {
 	return true;
 }
 
-bool Parms::CommandRemoveUrlFiltersRow(char *rec) {
+bool Parms::CommandRemoveUrlFiltersRow(const char *rec) {
 	// caller must specify collnum
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 	if ( collnum < 0 ) {
@@ -396,7 +396,7 @@ bool Parms::CommandRemoveUrlFiltersRow(char *rec) {
 	}
 
 	// get the row #
-	char *data = getDataFromParmRec ( rec );
+	const char *data = getDataFromParmRec ( rec );
 	int32_t rowNum = atol(data);
 	// scan all parms for url filter parms
 	for ( int32_t i = 0 ; i < g_parms.m_numParms ; i++ ) {
@@ -416,18 +416,18 @@ bool Parms::CommandRemoveUrlFiltersRow(char *rec) {
 
 #ifndef PRIVACORE_SAFE_VERSION
 // after we add a new coll, or at anytime after we can clone it
-bool Parms::CommandCloneColl(char *rec) {
+bool Parms::CommandCloneColl(const char *rec) {
 
 	// the collnum we want to affect.
 	collnum_t dstCollnum = getCollnumFromParmRec ( rec );
 
 	// . data is the collnum in ascii.
 	// . from "&restart=467" for example
-	char *data = rec + sizeof(key96_t) + 4;
+	const char *data = rec + sizeof(key96_t) + 4;
 	int32_t dataSize = *(int32_t *)(rec + sizeof(key96_t));
 	//if ( dataSize < 1 ) { g_process.shutdownAbort(true); }
 	// copy parm settings from this collection name
-	char *srcColl = data;
+	const char *srcColl = data;
 
 	// return if none to clone from
 	if ( dataSize <= 0 ) return true;
@@ -460,7 +460,7 @@ bool Parms::CommandCloneColl(char *rec) {
 
 // . returns false if blocks true otherwise
 #ifndef PRIVACORE_SAFE_VERSION
-bool Parms::CommandAddColl ( char *rec ) {
+bool Parms::CommandAddColl(const char *rec) {
 
 	// caller must specify collnum
 	collnum_t newCollnum = getCollnumFromParmRec ( rec );
@@ -472,13 +472,13 @@ bool Parms::CommandAddColl ( char *rec ) {
 		return true;
 	}
 
-	char *data = rec + sizeof(key96_t) + 4;
+	const char *data = rec + sizeof(key96_t) + 4;
 	int32_t dataSize = *(int32_t *)(rec + sizeof(key96_t));
 	// collection name must be at least 2 bytes (includes \0)
 	if ( dataSize <= 1 ) { g_process.shutdownAbort(true); }
 
 	// then collname, \0 terminated
-	char *collName = data;
+	const char *collName = data;
 
 	if ( strlen(collName) > MAX_COLL_LEN ) {
 		log("crawlbot: collection name too long");
@@ -495,7 +495,7 @@ bool Parms::CommandAddColl ( char *rec ) {
 
 #endif
 
-static bool CommandResetProxyTable ( char *rec ) {
+static bool CommandResetProxyTable(const char *rec) {
 	// from SpiderProxy.h
 	return resetProxyStats();
 }
@@ -504,7 +504,7 @@ static bool CommandResetProxyTable ( char *rec ) {
 #ifndef PRIVACORE_SAFE_VERSION
 // . returns true and sets g_errno on error
 // . returns false if would block
-static bool CommandDeleteColl ( char *rec , WaitEntry *we ) {
+static bool CommandDeleteColl(const char *rec, WaitEntry *we) {
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 
 	// the delete might block because the tree is saving and we can't
@@ -518,9 +518,9 @@ static bool CommandDeleteColl ( char *rec , WaitEntry *we ) {
 
 // . returns true and sets g_errno on error
 // . returns false if would block
-static bool CommandDeleteColl2 ( char *rec , WaitEntry *we ) {
-	char *data = rec + sizeof(key96_t) + 4;
-	char *coll = (char *)data;
+static bool CommandDeleteColl2(const char *rec, WaitEntry *we) {
+	const char *data = rec + sizeof(key96_t) + 4;
+	const char *coll = (char *)data;
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
 
 	if ( collnum < 0 ) {
@@ -539,7 +539,7 @@ static bool CommandDeleteColl2 ( char *rec , WaitEntry *we ) {
 
 
 
-static bool CommandForceNextSpiderRound ( char *rec ) {
+static bool CommandForceNextSpiderRound(const char *rec) {
 
 	// caller must specify collnum
 	collnum_t collnum = getCollnumFromParmRec ( rec );
@@ -555,7 +555,7 @@ static bool CommandForceNextSpiderRound ( char *rec ) {
 	// seems like parmlist is an rdblist, so we have a key96_t followed
 	// by 4 bytes of datasize then the data... which is an ascii string
 	// in our case...
-	char *data = getDataFromParmRec ( rec );
+	const char *data = getDataFromParmRec ( rec );
 	uint32_t roundStartTime;
 	int32_t newRoundNum;
 	// see the HACK: in Parms::convertHttpRequestToParmList() where we
@@ -587,13 +587,13 @@ static bool CommandForceNextSpiderRound ( char *rec ) {
 #ifndef PRIVACORE_SAFE_VERSION
 // . returns true and sets g_errno on error
 // . returns false if would block
-static bool CommandRestartColl ( char *rec , WaitEntry *we ) {
+static bool CommandRestartColl(const char *rec, WaitEntry *we) {
 
 	collnum_t newCollnum = getCollnumFromParmRec ( rec );
 
 	// . data is the collnum in ascii.
 	// . from "&restart=467" for example
-	char *data = rec + sizeof(key96_t) + 4;
+	const char *data = rec + sizeof(key96_t) + 4;
 	int32_t dataSize = *(int32_t *)(rec + sizeof(key96_t));
 	if ( dataSize < 1 ) { g_process.shutdownAbort(true); }
 	collnum_t oldCollnum = atol(data);
@@ -643,13 +643,13 @@ static bool CommandRestartColl ( char *rec , WaitEntry *we ) {
 #ifndef PRIVACORE_SAFE_VERSION
 // . returns true and sets g_errno on error
 // . returns false if would block
-static bool CommandResetColl ( char *rec , WaitEntry *we ) {
+static bool CommandResetColl(const char *rec, WaitEntry *we) {
 
 	collnum_t newCollnum = getCollnumFromParmRec ( rec );
 
 	// . data is the collnum in ascii.
 	// . from "&restart=467" for example
-	char *data = rec + sizeof(key96_t) + 4;
+	const char *data = rec + sizeof(key96_t) + 4;
 	int32_t dataSize = *(int32_t *)(rec + sizeof(key96_t));
 	if ( dataSize < 1 ) { g_process.shutdownAbort(true); }
 	collnum_t oldCollnum = atol(data);
@@ -697,45 +697,45 @@ static bool CommandResetColl ( char *rec , WaitEntry *we ) {
 }
 #endif
 
-static bool CommandMergePosdb(char *rec) {
+static bool CommandMergePosdb(const char *rec) {
 	forceMergeAll(RDB_POSDB);
 	return true;
 }
 
 
-static bool CommandMergeTitledb(char *rec) {
+static bool CommandMergeTitledb(const char *rec) {
 	forceMergeAll(RDB_TITLEDB);
 	return true;
 }
 
 
-static bool CommandMergeSpiderdb(char *rec) {
+static bool CommandMergeSpiderdb(const char *rec) {
 	forceMergeAll(RDB_SPIDERDB);
 	return true;
 }
 
-static bool CommandMergeLinkdb(char *rec) {
+static bool CommandMergeLinkdb(const char *rec) {
 	forceMergeAll(RDB_LINKDB);
 	return true;
 }
 
-static bool CommandMergeTagdb(char *rec) {
+static bool CommandMergeTagdb(const char *rec) {
 	forceMergeAll(RDB_TAGDB);
 	return true;
 }
 
 
-static bool CommandDiskPageCacheOff ( char *rec ) {
+static bool CommandDiskPageCacheOff(const char *rec) {
 	g_process.resetPageCaches();
 	return true;
 }
 
-static bool CommandForceIt ( char *rec ) {
+static bool CommandForceIt(const char *rec) {
 	g_conf.m_forceIt = true;
 	return true;
 }
 
-static bool CommandDiskDump ( char *rec ) {
+static bool CommandDiskDump(const char *rec) {
 	g_clusterdb.getRdb()->dumpTree();
 	g_tagdb.getRdb()->dumpTree();
 	g_spiderdb.getRdb()->dumpTree();
@@ -748,14 +748,14 @@ static bool CommandDiskDump ( char *rec ) {
 }
 
 
-static bool CommandJustSave ( char *rec ) {
+static bool CommandJustSave(const char *rec) {
 	// returns false if blocked, true otherwise
 	g_process.save ();
 	// always return true here
 	return true;
 }
 
-static bool CommandSaveAndExit ( char *rec ) {
+static bool CommandSaveAndExit(const char *rec) {
 	// return true if this blocks
 	g_process.shutdown ( false , NULL , NULL );
 	return true;
@@ -815,15 +815,15 @@ static bool CommandPowerNotice ( int32_t hasPower ) {
 }
 
 
-bool Parms::CommandPowerOnNotice(char *rec) {
+bool Parms::CommandPowerOnNotice(const char *rec) {
 	return CommandPowerNotice ( 1 );
 }
 
-bool Parms::CommandPowerOffNotice(char *rec) {
+bool Parms::CommandPowerOffNotice(const char *rec) {
 	return CommandPowerNotice ( 0 );
 }
 
-bool Parms::CommandInSync(char *rec) {
+bool Parms::CommandInSync(const char *rec) {
 	g_parms.m_inSyncWithHost0 = true;
 	return true;
 }
@@ -10630,10 +10630,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	bool rebuildRankingSettings = false;
 
 	// process them
-	char *p = we->m_parmPtr;
+	const char *p = we->m_parmPtr;
 	for ( ; p < we->m_parmEnd ; ) {
 		// shortcut
-		char *rec = p;
+		const char *rec = p;
 		// get size
 		int32_t dataSize = *(int32_t *)(rec+sizeof(key96_t));
 		int32_t recSize = sizeof(key96_t) + 4 + dataSize;
@@ -11167,7 +11167,7 @@ void resetImportLoopFlag (); //in PageInject.cpp
 //   replaced by Parmdb, just an RdbTree really.
 // . returns false if blocked
 // . returns true and sets g_errno on error
-bool Parms::updateParm ( char *rec , WaitEntry *we ) {
+bool Parms::updateParm(const char *rec, WaitEntry *we) {
 
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 
@@ -11189,7 +11189,7 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 	     parm->m_func ) {
 		// all parm rec data for TYPE_CMD should be ascii/utf8 chars
 		// and should be \0 terminated
-		char *data = getDataFromParmRec ( rec );
+		const char *data = getDataFromParmRec(rec);
 		int32_t dataSize = getDataSizeFromParmRec ( rec );
 		if ( dataSize == 0 ) data = NULL;
 		log("parmdb: running function for parm \"%s\" (collnum=%" PRId32") args=\"%s\""
@@ -11252,7 +11252,7 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 
 	// get data
 	int32_t dataSize = *(int32_t *)(rec+sizeof(key96_t));
-	char *data = rec+sizeof(key96_t)+4;
+	const char *data = rec+sizeof(key96_t)+4;
 
 	// point to where to copy the data into collrect
 	char *dst = (char *)base + parm->m_off;
