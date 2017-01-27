@@ -508,9 +508,6 @@ class CollectionRec {
 	// for poulating the sortbydate table
 	class Msg5 *m_msg5;
 
-	// used by Parms.cpp
-	char m_hackFlag;
-
 	// each Rdb has a tree, so keep the pos/neg key count here so
 	// that RdbTree does not have to have its own array limited by
 	// MAX_COLLS which we did away with because we made this dynamic.

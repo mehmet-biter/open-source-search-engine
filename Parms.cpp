@@ -35,6 +35,8 @@
 #include "Tagdb.h"
 #include "Clusterdb.h"
 #include "Collectiondb.h"
+#include <set>
+
 
 
 class WaitEntry {
@@ -10945,16 +10947,7 @@ hadError:
 		return;
 	}
 
-	//
-	// 0. scan our collections and clear a flag
-	//
-	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs() ; i++ ) {
-		// skip if empty
-		CollectionRec *cr = g_collectiondb.getRec(i);
-		if ( ! cr ) continue;
-		// clear flag
-		cr->m_hackFlag = 0;
-	}
+	std::set<collnum_t> seen_collections;
 
 	Host *host = slot->m_host;
 	int32_t hostId = -1;
@@ -11006,8 +10999,7 @@ hadError:
 			// ok, get next collection hash
 			continue;
 		}
-		// set our hack flag so we know he has this collection
-		if ( cr ) cr->m_hackFlag = 1;
+		seen_collections.insert(c);
 		// get our parmlist for that collnum
 		tmp.reset();
 		// c is -1 for g_conf
@@ -11029,8 +11021,8 @@ hadError:
 		// skip if empty
 		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
-		// clear flag
-		if ( cr->m_hackFlag ) continue;
+		if(seen_collections.find(cr->m_collnum)!=seen_collections.end())
+			continue; //other host already have this collection
 		// now use lowercase, not camelcase
 		const char *cmdStr = "addcoll";
 		// note in log
