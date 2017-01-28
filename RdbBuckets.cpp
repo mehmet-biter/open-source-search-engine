@@ -1770,11 +1770,6 @@ bool RdbBucket::deleteList(RdbList *list) {
 
 // remove keys from any non-existent collection
 void RdbBuckets::cleanBuckets() {
-	// what buckets have -1 rdbid???
-	if (m_rdbId < 0) {
-		return;
-	}
-
 	// the liberation count
 	int32_t count = 0;
 
