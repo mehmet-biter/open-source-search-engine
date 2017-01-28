@@ -1750,7 +1750,8 @@ bool Repair::anyRdbNeedsSave() {
 	Rdb **rdbs = getAllRdbs ( &nsr );
 	for ( int32_t i = 0 ; i < nsr ; i++ ) {
 		Rdb *rdb = rdbs[i];
-		count += rdb->needsSave();
+		if(rdb->needsSave())
+			count++;
 	}
 	if ( count ) return true;
 	s_savingAll = false;
