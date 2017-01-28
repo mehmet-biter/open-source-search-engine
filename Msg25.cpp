@@ -1483,7 +1483,7 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	// get it
 	Msg20 *msg20 = NULL;
 	// the reply
-	Msg20Reply *r = NULL;
+	Msg20Reply *msg20reply = NULL;
 	// the alloc size of the reply
 	int32_t replySize = 0;
 	// the original request
@@ -1493,7 +1493,7 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 		// get the msg20
 		msg20 = &m_msg20s[j];
 		// set the reply
-		r = msg20->m_r;
+		msg20reply = msg20->m_r;
 		// the reply size
 		replySize = msg20->m_replyMaxSize;
 		// inc # of replies
@@ -1507,12 +1507,12 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 		m_inUse [ j ] = 0;
 		// . propagate internal error to g_errno
 		// . if g_errno was set then the reply will be empty
-		if ( r && r->m_errno && ! g_errno )
-			g_errno = r->m_errno;
+		if ( msg20reply && msg20reply->m_errno && ! g_errno )
+			g_errno = msg20reply->m_errno;
 		// if it had an error print it for now
-		if ( r && r->m_errno )
+		if ( msg20reply && msg20reply->m_errno )
 			log(LOG_WARN, "query: msg25: msg20 had error for docid %" PRId64" : "
-			    "%s",r->m_docId, mstrerror(r->m_errno));
+			    "%s",msg20reply->m_docId, mstrerror(msg20reply->m_errno));
 	}
 	
 	// what is the reason it cannot vote...?
@@ -1527,7 +1527,7 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 		// a dummy docid
 		int64_t docId = -1LL;
 		// set it right
-		if ( r ) docId = r->m_docId;
+		if ( msg20reply ) docId = msg20reply->m_docId;
 		// we often restrict link: termlist lookup to indexdb root
 		// file, so we end up including terms from deleted docs...
 		// this we get a lot of ENOTFOUND errors. 
@@ -1559,21 +1559,21 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 
 	// are we an "internal" inlink?
 	bool internal = false;
-	if ( r && iptop(r->m_firstIp) == m_top )
+	if ( msg20reply && iptop(msg20reply->m_firstIp) == m_top )
 		internal = true;
-	if ( r && iptop(r->m_ip) == m_top )
+	if ( msg20reply && iptop(msg20reply->m_ip) == m_top )
 		internal = true;
 
 	// . if the mid domain hash of the inlinker matches ours, no voting
 	// . this is set to 0 for recycles
-	if ( r && good && r->m_midDomHash == m_midDomHash && ! internal ) {
+	if ( msg20reply && good && msg20reply->m_midDomHash == m_midDomHash && ! internal ) {
 		good = false;
 		m_sameMidDomain++;
 		note = "same mid domain";
 	}
 
 	// is the inlinker banned?
-	if ( r && good && r->m_isBanned ) {
+	if ( msg20reply && good && msg20reply->m_isBanned ) {
 		// it is no longer good
 		good = false;
 		// inc the general count, too
@@ -1585,24 +1585,24 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 
 	// get the linker url
 	Url linker; 
-	if ( r )
-		linker.set( r->ptr_ubuf, r->size_ubuf );
+	if ( msg20reply )
+		linker.set( msg20reply->ptr_ubuf, msg20reply->size_ubuf );
 
 	// sanity check, Xml::set() requires this...
-	if ( r&&r->size_rssItem > 0 && r->ptr_rssItem[r->size_rssItem-1]!=0 ) {
+	if ( msg20reply && msg20reply->size_rssItem > 0 && msg20reply->ptr_rssItem[msg20reply->size_rssItem-1]!=0 ) {
 		log(LOG_WARN, "admin: received corrupt rss item of size "
 		    "%" PRId32" not null terminated  from linker %s",
-		    r->size_rssItem,r->ptr_ubuf);
+		    msg20reply->size_rssItem,msg20reply->ptr_ubuf);
 		// ignore it for now
-		r->size_rssItem = 0;
-		r->ptr_rssItem  = NULL;
+		msg20reply->size_rssItem = 0;
+		msg20reply->ptr_rssItem  = NULL;
 	}
 
 	// . if no link text, count as error
 	// . linkText->getLinkTextLen()
-	if ( r && good && 
-	     r->size_linkText <= 0 && 
-	     r->size_rssItem  <= 0 && 
+	if ( msg20reply && good &&
+	     msg20reply->size_linkText <= 0 &&
+	     msg20reply->size_rssItem  <= 0 &&
 	     // allow if from a ping server because like 
 	     // rpc.weblogs.com/shortChanges.xml so we can use
 	     // "inlink==xxx" in the url filters to assign any page linked
@@ -1620,7 +1620,7 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 
 	// discount if LinkText::isLinkSpam() or isLinkSpam2() said it
 	// should not vote
-	if ( r && good && ! internal && r->m_isLinkSpam &&
+	if ( msg20reply && good && ! internal && msg20reply->m_isLinkSpam &&
 	     // we can no allow link spam iff it is below the max!
 	     ++m_spamCount >= m_maxSpam ) {
 		// it is no longer good
@@ -1629,16 +1629,16 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 		m_spamLinks++;
 		// count each *type* of "link spam". the type is given
 		// by linkText->m_note and is a string...
-		note    = r-> ptr_note;
-		noteLen = r->size_note - 1; // includes \0
+		note    = msg20reply-> ptr_note;
+		noteLen = msg20reply->size_note - 1; // includes \0
 	}
 
-	// loop over all the replies we got so far to see if "r" is a dup
-	// or if another reply is a dup of "r"
+	// loop over all the replies we got so far to see if "msg20reply" is a dup
+	// or if another reply is a dup of "msg20reply"
 	int32_t n = m_numReplyPtrs;
 	// do not do the deduping if no reply given
-	if ( ! r ) n = 0; 
-	// do not do this if "r" already considered bad
+	if ( ! msg20reply ) n = 0;
+	// do not do this if "msg20reply" already considered bad
 	if ( ! good ) n = 0;
 	// this is the "dup"
 	Msg20Reply *dup  = NULL;
@@ -1661,16 +1661,16 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 		if ( pinternal )
 			continue;
 		// is "p" a dup of us? (or we of it?)
-		const char *dupNote = isDup ( r , p ) ;
+		const char *dupNote = isDup ( msg20reply , p ) ;
 		// if it is not a dup, keep going
 		if ( ! dupNote )
 			continue;
-		// getLoser() returns the lowest-scoring reply of "r" and "p"
-		Msg20Reply *tmp = getLoser ( r , p );
+		// getLoser() returns the lowest-scoring reply of "msg20reply" and "p"
+		Msg20Reply *tmp = getLoser ( msg20reply , p );
 		// is it worse than the current "dup"? if so, update "dup"
 		dup = getLoser ( tmp , dup );
 		// get the "i" value
-		if ( dup == r ) dupi = j;
+		if ( dup == msg20reply ) dupi = j;
 		if ( dup == p ) dupi = i;
 		// we got a dup
 		good = false;
@@ -1680,26 +1680,26 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	// inc this count
 	if ( dup ) m_dupCount++;
 
-	// if "p" is the lower-scoring dup, put "r" in its place, and then
-	// set "r" to "p" doing a swap operation
-	if ( dup && dup != r ) {
+	// if "p" is the lower-scoring dup, put "msg20reply" in its place, and then
+	// set "msg20reply" to "p" doing a swap operation
+	if ( dup && dup != msg20reply ) {
 		// sanity check
 		if ( dupi < 0 ) { g_process.shutdownAbort(true); }
 		// HACK: swap them
 		Msg20Reply *tmp      = m_replyPtrs [dupi];
 		int32_t        tmpSize  = m_replySizes[dupi];
-		m_replyPtrs [dupi] = r;
+		m_replyPtrs [dupi] = msg20reply;
 		m_replySizes[dupi] = replySize;
-		r                    = tmp;
+		msg20reply           = tmp;
 		replySize            = tmpSize;
 		// make Msg20 point to that old "dup" reply
-		msg20->m_r            = r;
+		msg20->m_r            = msg20reply;
 		msg20->m_replyMaxSize = replySize;
 	}
 
-	if ( r && good ) {
-		int32_t iptop1 = iptop(r->m_ip);
-		int32_t iptop2 = iptop(r->m_firstIp);
+	if ( msg20reply && good ) {
+		int32_t iptop1 = iptop(msg20reply->m_ip);
+		int32_t iptop2 = iptop(msg20reply->m_firstIp);
 		if ( m_firstIpTable.isInTable ( &iptop1 ) ||
 		     m_firstIpTable.isInTable ( &iptop2 ) ) {
 			good = false;
@@ -1721,15 +1721,15 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 		note = "ip dup";
 	}
 
-	if ( r && ! good && ! note )
+	if ( msg20reply && ! good && ! note )
 		note = "unknown reason";
 
 	// compile the reason it could not vote
-	if ( r && ! good ) {
+	if ( msg20reply && ! good ) {
 		// set "noteLen" if not yet set
 		if ( note && noteLen == 0 ) noteLen = strlen ( note );
 		// add it to our table
-		addNote ( note , noteLen , r->m_docId );
+		addNote ( note , noteLen , msg20reply->m_docId );
 		// . free the reply since it cannot vote
 		// . no, it should be auto-freed when the msg20 is re-used
 	}
@@ -1748,20 +1748,20 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	if ( ! m_onlyNeedGoodInlinks ) store = true;
 
 	// how is this NULL?
-	if ( ! r )
+	if ( ! msg20reply )
 		store = false;
 
 	if ( store ) {
 		// save the reply
-		m_replyPtrs [m_numReplyPtrs] = r;
+		m_replyPtrs [m_numReplyPtrs] = msg20reply;
 		m_replySizes[m_numReplyPtrs] = replySize;
 		// why we do this?
-		if ( note && ! r->ptr_note ) {
-			r->ptr_note = (char*)note;
-			r->size_note = noteLen+1;
+		if ( note && ! msg20reply->ptr_note ) {
+			msg20reply->ptr_note = (char*)note;
+			msg20reply->size_note = noteLen+1;
 		}
 		// store this in the reply for convenience
-		r->m_discoveryDate = msg20req->m_discoveryDate;
+		msg20reply->m_discoveryDate = msg20req->m_discoveryDate;
 		m_numReplyPtrs++;
 		// debug note
 		//log("linkdb: stored %" PRId32" msg20replies",m_numReplyPtrs);
