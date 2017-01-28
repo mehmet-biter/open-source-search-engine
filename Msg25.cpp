@@ -1479,17 +1479,16 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	//log("debug: entering gotlinktext this=%" PRIx32,(int32_t)this);
 
 	int32_t j = -1;
-	if ( msg20req ) j = msg20req->m_j;
-	// get it
 	Msg20 *msg20 = NULL;
-	// the reply
 	Msg20Reply *msg20reply = NULL;
 	// the alloc size of the reply
 	int32_t replySize = 0;
-	// the original request
 
 	// set the reply
-	if ( j >= 0 ) {
+	if(msg20req) {
+		j = msg20req->m_j;
+		if(m_msg20Requests[j].m_j != j)
+			g_process.shutdownAbort(true);
 		// get the msg20
 		msg20 = &m_msg20s[j];
 		// set the reply
@@ -1498,10 +1497,8 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 		replySize = msg20->m_replyMaxSize;
 		// inc # of replies
 		m_numReplies++;
-		// get the request
-		Msg20Request *req = &m_msg20Requests[j];
 		// discount this if was linkspam
-		if ( req->m_isLinkSpam )
+		if ( msg20req->m_isLinkSpam )
 			m_linkSpamOut--;
 		// "make available" msg20 and msg20Request #j for re-use
 		m_inUse [ j ] = 0;
