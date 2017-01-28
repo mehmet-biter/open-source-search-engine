@@ -1474,28 +1474,28 @@ static const char *getExplanation(const char *note) {
 // . returns false if not all replies have been received (or timed/erroredout)
 // . returns true if done
 // . sets g_errno on error
-bool Msg25::gotLinkText(Msg20Request *req) {
+bool Msg25::gotLinkText(Msg20Request *msg20req) {
 
 	//log("debug: entering gotlinktext this=%" PRIx32,(int32_t)this);
 
 	int32_t j = -1;
-	if ( req ) j = req->m_j;
+	if ( msg20req ) j = msg20req->m_j;
 	// get it
-	Msg20 *m = NULL;
+	Msg20 *msg20 = NULL;
 	// the reply
 	Msg20Reply *r = NULL;
 	// the alloc size of the reply
-	int32_t rsize = 0;
+	int32_t replySize = 0;
 	// the original request
 
 	// set the reply
 	if ( j >= 0 ) {
 		// get the msg20
-		m = &m_msg20s[j];
+		msg20 = &m_msg20s[j];
 		// set the reply
-		r = m->m_r;
+		r = msg20->m_r;
 		// the reply size
-		rsize = m->m_replyMaxSize;
+		replySize = msg20->m_replyMaxSize;
 		// inc # of replies
 		m_numReplies++;
 		// get the request
@@ -1689,12 +1689,12 @@ bool Msg25::gotLinkText(Msg20Request *req) {
 		Msg20Reply *tmp      = m_replyPtrs [dupi];
 		int32_t        tmpSize  = m_replySizes[dupi];
 		m_replyPtrs [dupi] = r;
-		m_replySizes[dupi] = rsize;
+		m_replySizes[dupi] = replySize;
 		r                    = tmp;
-		rsize                = tmpSize;
+		replySize            = tmpSize;
 		// make Msg20 point to that old "dup" reply
-		m->m_r            = r;
-		m->m_replyMaxSize = rsize;
+		msg20->m_r            = r;
+		msg20->m_replyMaxSize = replySize;
 	}
 
 	if ( r && good ) {
@@ -1754,26 +1754,26 @@ bool Msg25::gotLinkText(Msg20Request *req) {
 	if ( store ) {
 		// save the reply
 		m_replyPtrs [m_numReplyPtrs] = r;
-		m_replySizes[m_numReplyPtrs] = rsize;
+		m_replySizes[m_numReplyPtrs] = replySize;
 		// why we do this?
 		if ( note && ! r->ptr_note ) {
 			r->ptr_note = (char*)note;
 			r->size_note = noteLen+1;
 		}
 		// store this in the reply for convenience
-		r->m_discoveryDate = req->m_discoveryDate;
+		r->m_discoveryDate = msg20req->m_discoveryDate;
 		m_numReplyPtrs++;
 		// debug note
 		//log("linkdb: stored %" PRId32" msg20replies",m_numReplyPtrs);
 		// do not allow Msg20 to free it
-		m->m_r = NULL;
+		msg20->m_r = NULL;
 	}
 
 	// free the reply buf of this msg20 now to save mem because
 	// we can't send out like 100,000 of these for yahoo.com to find
 	// less than 1000 good ones!
 	// tell msg20 to free the reply if not null
-	if ( m ) m->reset();
+	if ( msg20 ) msg20->reset();
 
 	// wait for all replies to come in
 	if ( m_numReplies < m_numRequests )
