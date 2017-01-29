@@ -391,7 +391,6 @@ public:
 	// . what QueryTerms are UNDER the influence of the NOT opcode?
 	// . we read in the WHOLE termlist of those that are (like '-' sign)
 	// . returned bit vector is 1-1 with m_qterms in Query class
-	void print (SafeBuf *sbuf);
 
 	int32_t m_expressionStartWord;
 	int32_t m_numWordsInExpression;
