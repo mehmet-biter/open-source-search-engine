@@ -41,7 +41,6 @@ class RdbScan {
 		       bool       useHalfKeys   ,
 		       rdbid_t    rdbId,
 		       int32_t       niceness , // = MAX_NICENESS ,
-		       bool       allowPageCache , // = true ,
 		       bool       hitDisk        ); // = true );
 
 	// RdbGet likes to get our list
