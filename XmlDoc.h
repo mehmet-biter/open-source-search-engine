@@ -934,7 +934,7 @@ public:
 	Msge0 m_msge0;
 	Msge1 m_msge1;
 
-	char *hashJSONFields2 ( HashTableX *table , HashInfo *hi , Json *jp ,
+	char *hashJSONFields2 ( HashInfo *hi , Json *jp ,
 				bool hashWithoutFieldNames ) ;
 
 	Json *getParsedJson();
