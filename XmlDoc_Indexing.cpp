@@ -571,7 +571,7 @@ bool XmlDoc::setSpiderStatusDocMetaList ( SafeBuf *jd , int64_t uqd ) {
 	hi.m_useSections = false;
 
 	// fill up tt4. false -> do not hash without field prefixes.
-	hashJSONFields2 ( &tt4 , &hi , &jp2 , false );
+	hashJSONFields2 ( &hi , &jp2 , false );
 
 	// store keys in safebuf then to make our own meta list
 	addTable144 ( &tt4 , uqd , &m_spiderStatusDocMetaList );
@@ -2658,8 +2658,7 @@ bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , const char
 
 #include "Json.h"
 
-char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
-				HashInfo *hi , Json *jp ,
+char *XmlDoc::hashJSONFields2 ( HashInfo *hi , Json *jp ,
 				bool hashWithoutFieldNames ) {
 
 	JsonItem *ji = jp->getFirstItem();
