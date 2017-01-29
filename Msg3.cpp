@@ -573,7 +573,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		                                      startKey2, endKey2, m_ks, &m_scan[i].m_list,
 		                                      callback ? this : NULL,
 		                                      callback ? &doneScanningWrapper : NULL,
-		                                      base->useHalfKeys(), m_rdbId, m_niceness, true, true);
+		                                      base->useHalfKeys(), m_rdbId, m_niceness, true);
 
 		// debug msg
 		//fprintf(stderr,"Msg3:: reading %" PRId32" bytes from file #%" PRId32","
