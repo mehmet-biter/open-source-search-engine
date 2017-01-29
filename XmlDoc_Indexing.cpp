@@ -1924,16 +1924,12 @@ bool XmlDoc::hashString( char *s, int32_t slen, HashInfo *hi ) {
 
 	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
-	int32_t *sni = getSiteNumInlinks();
 	return   hashString3( s                ,
 			      slen             ,
 			      hi               ,
 			      &m_countTable    ,
-			      m_pbuf           ,
 			      m_wts            ,
-			      &m_wbuf          ,
-			      m_version        ,
-			      *sni             );
+			      &m_wbuf          );
 }
 
 
@@ -1941,11 +1937,8 @@ bool XmlDoc::hashString3( char       *s              ,
 		  int32_t        slen           ,
 		  HashInfo   *hi             ,
 		  HashTableX *countTable     ,
-		  SafeBuf    *pbuf           ,
 		  HashTableX *wts            ,
-		  SafeBuf    *wbuf           ,
-		  int32_t        version        ,
-		  int32_t        siteNumInlinks ) {
+		  SafeBuf    *wbuf) {
 	Words   words;
 	Bits    bits;
 	Phrases phrases;
