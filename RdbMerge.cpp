@@ -128,13 +128,13 @@ void RdbMerge::getLockWrapper(int /*fd*/, void *state) {
 
 
 void RdbMerge::getLock() {
-	log(LOG_DEBUG,"Rdbmerge(%p)::getLock(), m_rdbId=%d",this,m_rdbId);
+	log(LOG_DEBUG,"Rdbmerge(%p)::getLock(), m_rdbId=%d",this,(int)m_rdbId);
 	if(m_mergeSpaceCoordinator->acquire(m_spaceNeededForMerge)) {
-		log(LOG_INFO,"Rdbmerge(%p)::getLock(), m_rdbId=%d: got lock for %" PRIu64 " bytes", this, m_rdbId, m_spaceNeededForMerge);
+		log(LOG_INFO,"Rdbmerge(%p)::getLock(), m_rdbId=%d: got lock for %" PRIu64 " bytes", this, (int)m_rdbId, m_spaceNeededForMerge);
 		g_loop.unregisterSleepCallback(this,getLockWrapper);
 		gotLock();
 	} else
-		log(LOG_INFO,"Rdbmerge(%p)::getLock(), m_rdbId=%d: Didn't get lock for %" PRIu64 " bytes; retrying in a bit...", this, m_rdbId, m_spaceNeededForMerge);
+		log(LOG_INFO,"Rdbmerge(%p)::getLock(), m_rdbId=%d: Didn't get lock for %" PRIu64 " bytes; retrying in a bit...", this, (int)m_rdbId, m_spaceNeededForMerge);
 }
 
 

@@ -90,8 +90,7 @@ SearchInput::SearchInput() {
 	m_docIdsOnly = 0;
 	m_formatStr = NULL;
 	m_queryExpansion = false;
-	m_END_HASH = 0;
-	m_END_TEST = 0;
+	m_END = 0;
 }
 
 SearchInput::~SearchInput() {
@@ -99,7 +98,7 @@ SearchInput::~SearchInput() {
 
 void SearchInput::clear () {
 	// set all to 0 just to avoid any inconsistencies
-	int32_t size = (char *)&m_END_TEST - (char *)&m_START;
+	int32_t size = (char *)&m_END - (char *)&m_START;
 	memset ( &m_START , 0x00 , size );
 	m_sbuf1.reset();
 	m_sbuf2.reset();
@@ -108,76 +107,6 @@ void SearchInput::clear () {
 	m_numLinesInSummary  = 2;
 	m_docsWanted         = 10;
 	m_niceness           = 0;
-}
-
-// . make a key for caching the search results page based on this input
-// . do not use all vars, like the m_*ToDisplay should not be included
-key96_t SearchInput::makeKey ( ) {
-	// hash the query
-	int32_t n = m_q.getNumTerms();
-	key96_t k;
-	k.n1 = 0;
-
-	// user defined weights, for weighting each query term separately
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		k.n0 = hash64 ((char *)&m_q.m_qterms[i].m_termId    ,4, k.n0);
-		k.n0 = hash64 ((char *)&m_q.m_qterms[i].m_termSign  ,1, k.n0);
-		k.n0 = hash64 ((char *)&m_q.m_qterms[i].m_userWeight,4, k.n0);
-		k.n0 = hash64 ((char *)&m_q.m_qterms[i].m_userType  ,1, k.n0);
-	}
-	// space separated, NULL terminated, list of meta tag names to display
-	if ( m_displayMetas )
-		k.n0 = hash64b ( m_displayMetas          , k.n0 );
-
-	// . now include the hash of the search parameters
-	char *a = ((char *)&m_START) + 4 ; // msg40->m_dpf;
-	char *b =  (char *)&m_END_HASH   ; // msg40->m_topicGroups;
-	int32_t size = b - a; 
-	// and hash it all up
-	k.n0 = hash64 ( a , size , k.n0 );
-	// . boolean queries have operators (AND OR NOT ( ) ) that we need
-	//   to consider in this hash as well. so
-	// . so just hash the whole damn query
-	if ( m_q.m_isBoolean ) {
-		const char *q    = m_q.getQuery();
-		int32_t  qlen = m_q.getQueryLen();
-		k.n0 = hash64 ( q , qlen , k.n0 );
-	}
-
-	return k;
-}
-
-void SearchInput::test ( ) {
-	// set all to 0 just to avoid any inconsistencies
-	char *a = ((char *)&m_START) + 4 ; // msg40->m_dpf;
-	char *b =  (char *)&m_END_TEST;
-	int32_t size = b - a;
-	memset ( a , 0x00 , size );
-	// loop through all possible cgi parms to set SearchInput
-	for ( int32_t i = 0 ; i < g_parms.getNumSearchParms() ; i++ ) {
-		Parm *m = g_parms.getSearchParm(i);
-		unsigned char *x = (unsigned char *)this + m->m_off;
-		if ( m->m_type != TYPE_BOOL ) *(int32_t *)x = 0xffffffff;
-		else                          *(unsigned char *)x = 0xff;
-	}
-	// ensure we're all zeros now!
-	int32_t fix = a - (char *)this;
-	unsigned char *p = (unsigned char *)a;
-	for ( int32_t i = 0 ; i < size ; i++ ) {
-		if ( p[i] == 0xff ) continue;
-		// find it
-		int32_t off = i + fix;
-		const char *name = NULL; // "unknown";
-		for ( int32_t k = 0 ; k < g_parms.getNumSearchParms(); k++ ) {
-			Parm *m = g_parms.getSearchParm(k);
-			if ( m->m_off != off ) continue;
-			name = m->m_title;
-			break;
-		}
-		if ( ! name ) continue;
-		log("query: Got uncovered SearchInput parm at offset "
-		    "%" PRId32" in SearchInput. name=%s.",off,name);
-	}
 }
 
 void SearchInput::copy ( class SearchInput *si ) {

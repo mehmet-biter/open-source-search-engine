@@ -11,6 +11,7 @@
 #include "PosdbTable.h"
 #include "TopTree.h"
 #include "Msg51.h"
+#include "ScoringWeights.h"
 #include "JobScheduler.h"
 
 
@@ -58,6 +59,7 @@ class Msg39Request {
 	bool    m_allowHighFrequencyTermCache;
 	bool    m_doMaxScoreAlgo;
 
+	ScoringWeights m_scoringWeights;
 	float   m_synonymWeight;
 	bool    m_usePageTemperatureForRanking;
 

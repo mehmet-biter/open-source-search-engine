@@ -25,9 +25,6 @@ public:
 	// why provide query here, it is in "hr"
 	bool set ( class TcpSocket *s , class HttpRequest *hr );
 
-	void  test    ( );
-	key96_t makeKey ( ) ;
-
 	bool setQueryBuffers ( class HttpRequest *hr ) ;
 
 	void clear();
@@ -152,6 +149,22 @@ public:
 	bool   m_doDupContentRemoval;     // msg40
 	bool   m_getDocIdScoringInfo;
 
+	float m_diversityWeightMin;
+	float m_diversityWeightMax;
+	float m_densityWeightMin;
+	float m_densityWeightMax;
+	float m_hashGroupWeightBody;
+	float m_hashGroupWeightTitle;
+	float m_hashGroupWeightHeading;
+	float m_hashGroupWeightInlist;
+	float m_hashGroupWeightInMetaTag;
+	float m_hashGroupWeightInLinkText;
+	float m_hashGroupWeightInTag;
+	float m_hashGroupWeightNeighborhood;
+	float m_hashGroupWeightInternalLinkText;
+	float m_hashGroupWeightInUrl;
+	float m_hashGroupWeightInMenu;
+
 	float m_synonymWeight;
 	bool m_usePageTemperatureForRanking;
 
@@ -216,13 +229,7 @@ public:
 	//
 	////////
 
-	// . end the section we hash in SearchInput::makeKey()
-	// . we also hash displayMetas and Query into the key
-	int32_t   m_END_HASH;
-
-	// a marker for SearchInput::test()
-	int32_t      m_END_TEST;
-
+	int32_t   m_END;
 };
 
 #endif // GB_SEARCHINPUT_H

@@ -1200,7 +1200,6 @@ CollectionRec::CollectionRec() {
 	m_rcache = false;
 	m_hideAllClustered = false;
 	m_END_COPY = 0;
-	m_hackFlag = 0;
 }
 
 CollectionRec::~CollectionRec() {

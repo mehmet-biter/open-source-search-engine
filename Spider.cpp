@@ -1669,7 +1669,7 @@ static void doneAddingSeedsWrapper(void *state) {
 //   the fake firstip!!! that way only one shard does the add.
 bool updateSiteListBuf ( collnum_t collnum ,
                          bool addSeeds ,
-                         char *siteListArg ) {
+                         const char *siteListArg ) {
 
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
 	if ( ! cr ) return true;
@@ -1760,7 +1760,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 	//char *siteList = cr->m_siteListBuf.getBufStart();
 
 	// scan the list
-	char *pn = siteListArg;
+	const char *pn = siteListArg;
 
 	// completely empty?
 	if ( ! pn ) return true;
@@ -1774,15 +1774,15 @@ bool updateSiteListBuf ( collnum_t collnum ,
 	for ( ; *pn ; lineNum++ ) {
 
 		// get end
-		char *s = pn;
+		const char *s = pn;
 		// skip to end of line marker
 		for ( ; *pn && *pn != '\n' ; pn++ ) ;
 
 		// point to the pattern (skips over "tag:xxx " if there)
-		char *patternStart = s;
+		const char *patternStart = s;
 
 		// back p up over spaces in case ended in spaces
-		char *pe = pn;
+		const char *pe = pn;
 		for ( ; pe > s && is_wspace_a(pe[-1]) ; pe-- );
 
 		// skip over the \n so pn points to next line for next time
@@ -1814,7 +1814,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 		//	continue;
 		//}
 
-		char *tag = NULL;
+		const char *tag = NULL;
 		int32_t tagLen = 0;
 
 		innerLoop:
@@ -1975,7 +1975,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 			pd.m_tagLen = 0;
 		}
 		// scan url pattern, it should start at "s"
-		char *x = s;
+		const char *x = s;
 		// go all the way to the end
 		for ( ; *x && x < pe ; x++ ) {
 			// skip ://

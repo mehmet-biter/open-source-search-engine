@@ -17,7 +17,6 @@ Profiler g_profiler;
 
 #include "HashTableX.h"
 static HashTableX realTimeProfilerData;
-static PTRTYPE lastQuickPollAddress = 0;
 static uint64_t lastQuickPollTime = 0;
 
 Profiler::Profiler() : 
@@ -531,8 +530,6 @@ bool Profiler::pause(const char* caller, int32_t lineno, int32_t took) {
 	uint64_t nowLocal = lastQuickPollTime / 1000;
 	void *trace[3];
 	backtrace(trace, 3);
-	const void *stackPtr = trace[2];
-	lastQuickPollAddress = (PTRTYPE)stackPtr; 
 	for(int32_t i = 0; i < m_activeFns.getNumSlots(); i++) {
 		//if(m_activeFns.getKey(i) == 0) continue;
 		if ( m_activeFns.isEmpty(i) ) continue;

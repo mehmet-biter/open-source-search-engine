@@ -117,10 +117,10 @@ class Parm {
 	bool  m_hdrs;  // print headers for row or print title/desc for single?
 	int32_t  m_flags;
 	int32_t  m_parmNum; // slot # in the m_parms[] array that we are
-	bool (*m_func)(char *parmRec);
+	bool (*m_func)(const char *parmRec);
 	// some functions can block, like when deleting a coll because
 	// the tree might be saving, so they take a "we" ptr
-	bool (*m_func2)(char *parmRec,class WaitEntry *we);
+	bool (*m_func2)(const char *parmRec, class WaitEntry *we);
 	int32_t  m_plen;  // offset of length for TYPE_STRINGS (m_htmlHeadLen...)
 	bool  m_group; // start of a new group of controls?
 	bool  m_save;  // save to xml file? almost always true
@@ -259,7 +259,7 @@ public:
 private:
 	Parm *getParmFast2 ( int32_t cgiHash32 ) ;
 	Parm *getParmFast1 ( const char *cgi , int32_t *occNum ) ;
-	Parm *getParmFromParmRec(char *rec);
+	Parm *getParmFromParmRec(const char *rec);
 public:
 	bool broadcastParmList ( SafeBuf *parmList ,
 				 void    *state ,
@@ -274,19 +274,19 @@ private:
 	bool syncParmsWithHost0 ( ) ;
 	bool makeSyncHashList ( SafeBuf *hashList ) ;
 	bool addAllParmsToList ( SafeBuf *parmList, collnum_t collnum ) ;
-	bool updateParm ( char *rec , class WaitEntry *we ) ;
+	bool updateParm(const char *rec, class WaitEntry *we);
 
 	bool cloneCollRec ( char *srcCR , char *dstCR ) ;
 
-	static bool CommandInsertUrlFiltersRow(char *rec);
-	static bool CommandRemoveUrlFiltersRow(char *rec);
+	static bool CommandInsertUrlFiltersRow(const char *rec);
+	static bool CommandRemoveUrlFiltersRow(const char *rec);
 #ifndef PRIVACORE_SAFE_VERSION
-	static bool CommandCloneColl(char *rec);
-	static bool CommandAddColl(char *rec);
+	static bool CommandCloneColl(const char *rec);
+	static bool CommandAddColl(const char *rec);
 #endif
-	static bool CommandPowerOnNotice(char *rec);
-	static bool CommandPowerOffNotice(char *rec);
-	static bool CommandInSync(char *rec);
+	static bool CommandPowerOnNotice(const char *rec);
+	static bool CommandPowerOffNotice(const char *rec);
+	static bool CommandInSync(const char *rec);
 	static void gotParmReplyWrapper(void *state, UdpSlot *slot);
 	static void handleRequest3e(UdpSlot *slot, int32_t /*niceness*/);
 	static void gotReplyFromHost0Wrapper(void *state, UdpSlot *slot );

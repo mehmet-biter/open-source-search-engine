@@ -571,7 +571,7 @@ bool XmlDoc::setSpiderStatusDocMetaList ( SafeBuf *jd , int64_t uqd ) {
 	hi.m_useSections = false;
 
 	// fill up tt4. false -> do not hash without field prefixes.
-	hashJSONFields2 ( &tt4 , &hi , &jp2 , false );
+	hashJSONFields2 ( &hi , &jp2 , false );
 
 	// store keys in safebuf then to make our own meta list
 	addTable144 ( &tt4 , uqd , &m_spiderStatusDocMetaList );
@@ -1924,16 +1924,12 @@ bool XmlDoc::hashString( char *s, int32_t slen, HashInfo *hi ) {
 
 	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
-	int32_t *sni = getSiteNumInlinks();
 	return   hashString3( s                ,
 			      slen             ,
 			      hi               ,
 			      &m_countTable    ,
-			      m_pbuf           ,
 			      m_wts            ,
-			      &m_wbuf          ,
-			      m_version        ,
-			      *sni             );
+			      &m_wbuf          );
 }
 
 
@@ -1941,11 +1937,8 @@ bool XmlDoc::hashString3( char       *s              ,
 		  int32_t        slen           ,
 		  HashInfo   *hi             ,
 		  HashTableX *countTable     ,
-		  SafeBuf    *pbuf           ,
 		  HashTableX *wts            ,
-		  SafeBuf    *wbuf           ,
-		  int32_t        version        ,
-		  int32_t        siteNumInlinks ) {
+		  SafeBuf    *wbuf) {
 	Words   words;
 	Bits    bits;
 	Phrases phrases;
@@ -2665,8 +2658,7 @@ bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , const char
 
 #include "Json.h"
 
-char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
-				HashInfo *hi , Json *jp ,
+char *XmlDoc::hashJSONFields2 ( HashInfo *hi , Json *jp ,
 				bool hashWithoutFieldNames ) {
 
 	JsonItem *ji = jp->getFirstItem();

@@ -27,14 +27,14 @@ class InjectionRequest {
  public:
 
 	int32_t   m_injectDocIp;
-	char      m_spiderLinks;
-	char      m_shortReply;
-	char      m_newOnly;
-	char      m_deleteUrl;
-	char      m_recycle;
-	char      m_dedup;
-	char      m_hasMime;
-	char      m_doConsistencyTesting;
+	bool      m_spiderLinks;
+	bool      m_shortReply;
+	bool      m_newOnly;
+	bool      m_deleteUrl;
+	bool      m_recycle;
+	bool      m_dedup;
+	bool      m_hasMime;
+	bool      m_doConsistencyTesting;
 	int32_t   m_charset;
 	int32_t   m_hopCount;
 	collnum_t m_collnum; // more reliable than m_coll

@@ -536,8 +536,7 @@ public:
 					 char *langVec, class HashTableX *wts, class SafeBuf *wbuf );
 
 	bool hashString3( char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
-					  class SafeBuf *pbuf, class HashTableX *wts, class SafeBuf *wbuf, int32_t version,
-					  int32_t siteNumInlinks );
+			  class HashTableX *wts, class SafeBuf *wbuf);
 
 	// gbfieldmatch:
 	bool hashFieldMatchTerm ( char *val, int32_t vlen, class HashInfo *hi);
@@ -941,7 +940,7 @@ public:
 	Msge0 m_msge0;
 	Msge1 m_msge1;
 
-	char *hashJSONFields2 ( HashTableX *table , HashInfo *hi , Json *jp ,
+	char *hashJSONFields2 ( HashInfo *hi , Json *jp ,
 				bool hashWithoutFieldNames ) ;
 
 	Json *getParsedJson();
