@@ -22,7 +22,6 @@ bool RdbScan::setRead ( BigFile  *file         ,
 			bool      useHalfKeys  ,
 			rdbid_t   rdbId ,
 			int32_t      niceness     ,
-			bool      allowPageCache ,
 			bool      hitDisk        ) {
 	// remember list
 	m_rdblist = list;
