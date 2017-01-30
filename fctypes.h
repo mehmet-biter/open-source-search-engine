@@ -54,9 +54,6 @@ int32_t urlDecodeNoZeroes ( char *dest , const char *src , int32_t tlen ) ;
 
 bool is_urlchar(char s);
 
-// convert hex digit to value
-int32_t htob ( char s ) ;
-char btoh ( char s ) ;
 // convert hex ascii string into binary
 void hexToBin ( const char *src , int32_t srcLen , char *dst );
 // convert binary number of size srcLen bytes into hex string in "dst"
@@ -64,15 +61,10 @@ void binToHex ( const unsigned char *src , int32_t srcLen , char *dst );
 
 // the _a suffix denotes an ascii string
 bool has_alpha_utf8(char *s, char *send ) ;
-bool is_cap_utf8  (const char *s,int32_t len) ;
-
-// does it have at least one upper case character in it?
-void to_lower3_a  (const char *s,int32_t len, char *buf) ;
 
 int32_t to_lower_utf8        (char *dst , const char *src ) ;
 int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src ) ;
 int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src, const char *srcEnd) ;
-void to_upper3_a          (const char *s,int32_t len, char *buf) ;
 
 // . get the # of words in this string
 int32_t      getNumWords ( char *s , int32_t len, int32_t titleVersion ) ;
@@ -224,22 +216,9 @@ inline bool is_ascii2_a(const char *s, int32_t len) {
 	return true;
 }
 
-inline bool is_cap_utf8 (const char *s, int32_t len) {
-	if ( ! is_upper_utf8 ( s ) ) return false;
-	const char *send = s + len;
-	for ( ; s < send ; s += getUtf8CharSize ( s ) ) 
-		if ( is_upper_utf8 ( s ) ) return false;
-	return true;
-}
-
 inline void to_lower3_a(const char *s, int32_t len, char *buf) {
 	for (int32_t i=0;i<len ;i++)
 		buf[i]=to_lower_a((unsigned char)s[i]);
-}
-
-inline void to_upper3_a(const char *s, int32_t len, char *buf) {
-	for (int32_t i=0;i<len;i++)
-		buf[i]=to_upper_a(s[i]);
 }
 
 inline bool is_binary_utf8 ( const char *p ) {
