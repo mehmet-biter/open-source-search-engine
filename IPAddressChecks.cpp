@@ -106,7 +106,7 @@ bool is_internal_net_ip(uint32_t ip/*network-order*/)
 	//On direct lan?
 	for(size_t i=0; i<local_nets; i++)
 		if((ip&local_net_mask[i])==(local_net_address[i]&local_net_mask[i]))
-			return ip_distance_lan;
+			return true;
 	
 	//todo: allow configuration of "intranet networks"
 	
@@ -141,7 +141,7 @@ bool is_trusted_protocol_ip(uint32_t ip/*network-order*/)
 	//On direct lan?
 	for(size_t i=0; i<local_nets; i++)
 		if((ip&local_net_mask[i])==(local_net_address[i]&local_net_mask[i]))
-			return ip_distance_lan;
+			return true;
 	
 	//Trusted/private networks could still be over a WAN link
 	//todo: allow configuration of "trusted networks"

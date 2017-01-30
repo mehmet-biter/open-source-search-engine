@@ -3419,30 +3419,6 @@ bool Expression::isTruth(const unsigned char *bitVec, int32_t vecSize) const {
 	return true;
 }
 
-// print boolean expression for debug purposes
-void Expression::print(SafeBuf *sbuf) {
-	/*
-	if (m_hasNOT) sbuf->safePrintf("NOT ");
-	if (m_operand){
-		m_operand->print(sbuf);
-		return;
-	}
-	sbuf->safePrintf("(");
-	for (int32_t i=0; i < m_numChildren ; i++) {
-		m_children[i]->print(sbuf);
-		
-		if (i >= m_numChildren-1) break;
-		switch (m_opcode) {
-		case OP_OR:   sbuf->safePrintf(" OR "  ); break;
-		case OP_AND:  sbuf->safePrintf(" AND " ); break;
-		case OP_UOR:  sbuf->safePrintf(" UOR " ); break;
-		case OP_PIPE: sbuf->safePrintf(" PIPE "); break;
-		}
-	}
-	sbuf->safePrintf(")");
-	*/
-}
-
 // if any one query term is split, msg3a has to split the query
 bool Query::isSplit() const {
 	for(int32_t i = 0; i < m_numTerms; i++) 

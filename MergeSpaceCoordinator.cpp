@@ -113,13 +113,13 @@ bool MergeSpaceCoordinator::acquire(uint64_t how_much) {
 					//perhaps it is a pid of a running process
 					if(kill((pid_t)pid,0)==0) {
 						//it is a pid of a running process. Has the file actually been touched the past 30 seconds?
-						struct stat st;
-						if(fstat(fd,&st)!=0) {
+						struct stat st2;
+						if(fstat(fd,&st2)!=0) {
 							log(LOG_ERROR,"fstat(%s) failed with errno %d (%s)", filename.c_str(), errno, strerror(errno));
 							close(fd);
 							continue;
 						}
-						if(st.st_mtim.tv_sec + touch_interval*2+1 > time(0)) {
+						if(st2.st_mtim.tv_sec + touch_interval*2+1 > time(0)) {
 							//touched the past 61 seconds, so the process holds the lock
 							close(fd);
 							continue;

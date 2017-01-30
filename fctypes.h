@@ -54,9 +54,6 @@ int32_t urlDecodeNoZeroes ( char *dest , const char *src , int32_t tlen ) ;
 
 bool is_urlchar(char s);
 
-// convert hex digit to value
-int32_t htob ( char s ) ;
-char btoh ( char s ) ;
 // convert hex ascii string into binary
 void hexToBin ( const char *src , int32_t srcLen , char *dst );
 // convert binary number of size srcLen bytes into hex string in "dst"
@@ -64,15 +61,10 @@ void binToHex ( const unsigned char *src , int32_t srcLen , char *dst );
 
 // the _a suffix denotes an ascii string
 bool has_alpha_utf8(char *s, char *send ) ;
-bool is_cap_utf8  (const char *s,int32_t len) ;
-
-// does it have at least one upper case character in it?
-void to_lower3_a  (const char *s,int32_t len, char *buf) ;
 
 int32_t to_lower_utf8        (char *dst , const char *src ) ;
 int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src ) ;
 int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src, const char *srcEnd) ;
-void to_upper3_a          (const char *s,int32_t len, char *buf) ;
 
 // . get the # of words in this string
 int32_t      getNumWords ( char *s , int32_t len, int32_t titleVersion ) ;
@@ -224,22 +216,9 @@ inline bool is_ascii2_a(const char *s, int32_t len) {
 	return true;
 }
 
-inline bool is_cap_utf8 (const char *s, int32_t len) {
-	if ( ! is_upper_utf8 ( s ) ) return false;
-	const char *send = s + len;
-	for ( ; s < send ; s += getUtf8CharSize ( s ) ) 
-		if ( is_upper_utf8 ( s ) ) return false;
-	return true;
-}
-
 inline void to_lower3_a(const char *s, int32_t len, char *buf) {
 	for (int32_t i=0;i<len ;i++)
 		buf[i]=to_lower_a((unsigned char)s[i]);
-}
-
-inline void to_upper3_a(const char *s, int32_t len, char *buf) {
-	for (int32_t i=0;i<len;i++)
-		buf[i]=to_upper_a(s[i]);
 }
 
 inline bool is_binary_utf8 ( const char *p ) {
@@ -319,47 +298,6 @@ inline bool is_wspace_utf8 ( const char *src ) {
 	UChar32 x = utf8Decode((char *)src);
 	// is this codepoint a whitespace?
 	return ucIsWhiteSpace( x );
-}
-
-// . returns bytes stored into "dst" from "src"
-// . just do one character, which may be from 1 to 4 bytes
-// . TODO: make a native utf8 to_lower to avoid converting to a code point
-inline int32_t to_lower_utf8 ( char *dst , const char *src ) {
-	// if in ascii do it quickly
-	if ( is_ascii3(*src) ) { *dst = to_lower_a ( *src ); return 1; }
-	// convert to a code point
-	UChar32 x = utf8Decode(src);
-	// covert to lower
-	UChar32 y = ucToLower ( x );
-	// put it back to utf8. return bytes stored.
-	return utf8Encode ( y , dst );
-}
-
-inline int32_t to_upper_utf8 ( char *dst , char *src ) {
-	// if in ascii do it quickly
-	if ( is_ascii3(*src) ) { *dst = to_upper_a ( *src ); return 1; }
-	// convert to a code point
-	UChar32 x = utf8Decode(src);
-	// covert to lower
-	UChar32 y = ucToUpper ( x );
-	// put it back to utf8. return bytes stored.
-	return utf8Encode ( y , dst );
-}
-
-inline int32_t to_lower_utf8 (char *dst, char * /*dstEnd*/, const char *src, const char *srcEnd ){
-	char *dstart = dst;
-	for ( ; src < srcEnd ; src += getUtf8CharSize((uint8_t *)src) )
-		dst += to_lower_utf8 ( dst , src );
-	// return bytes written
-	return dst - dstart;
-}
-
-inline int32_t to_lower_utf8 (char *dst, char * /*dstEnd*/, const char *src ){
-	char *dstart = dst;
-	for ( ; *src ; src += getUtf8CharSize((uint8_t *)src) )
-		dst += to_lower_utf8 ( dst , src );
-	// return bytes written
-	return dst - dstart;
 }
 
 void getCalendarFromMs(int64_t ms, 
