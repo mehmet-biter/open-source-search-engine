@@ -300,47 +300,6 @@ inline bool is_wspace_utf8 ( const char *src ) {
 	return ucIsWhiteSpace( x );
 }
 
-// . returns bytes stored into "dst" from "src"
-// . just do one character, which may be from 1 to 4 bytes
-// . TODO: make a native utf8 to_lower to avoid converting to a code point
-inline int32_t to_lower_utf8 ( char *dst , const char *src ) {
-	// if in ascii do it quickly
-	if ( is_ascii3(*src) ) { *dst = to_lower_a ( *src ); return 1; }
-	// convert to a code point
-	UChar32 x = utf8Decode(src);
-	// covert to lower
-	UChar32 y = ucToLower ( x );
-	// put it back to utf8. return bytes stored.
-	return utf8Encode ( y , dst );
-}
-
-inline int32_t to_upper_utf8 ( char *dst , char *src ) {
-	// if in ascii do it quickly
-	if ( is_ascii3(*src) ) { *dst = to_upper_a ( *src ); return 1; }
-	// convert to a code point
-	UChar32 x = utf8Decode(src);
-	// covert to lower
-	UChar32 y = ucToUpper ( x );
-	// put it back to utf8. return bytes stored.
-	return utf8Encode ( y , dst );
-}
-
-inline int32_t to_lower_utf8 (char *dst, char * /*dstEnd*/, const char *src, const char *srcEnd ){
-	char *dstart = dst;
-	for ( ; src < srcEnd ; src += getUtf8CharSize((uint8_t *)src) )
-		dst += to_lower_utf8 ( dst , src );
-	// return bytes written
-	return dst - dstart;
-}
-
-inline int32_t to_lower_utf8 (char *dst, char * /*dstEnd*/, const char *src ){
-	char *dstart = dst;
-	for ( ; *src ; src += getUtf8CharSize((uint8_t *)src) )
-		dst += to_lower_utf8 ( dst , src );
-	// return bytes written
-	return dst - dstart;
-}
-
 void getCalendarFromMs(int64_t ms, 
 		       int32_t* days, 
 		       int32_t* hours, 
