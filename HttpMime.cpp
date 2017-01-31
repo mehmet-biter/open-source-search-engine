@@ -310,22 +310,27 @@ bool HttpMime::getAttribute(const char **attribute, size_t *attributeLen, const 
 		*attributeValueLen -= *attributeLen + 1;
 		*attributeValue = equalPos + 1;
 
+		logTrace(g_conf.m_logTraceHttpMime, "attributeLen=%d attributeValueLen=%d", static_cast<int>(*attributeLen), static_cast<int>(*attributeValueLen));
+
 		// strip ending attribute whitespace
-		while (is_wspace_a((*attribute)[*attributeLen - 1])) {
+		while (*attributeValueLen && is_wspace_a((*attribute)[*attributeLen - 1])) {
 			--(*attributeLen);
 		}
 
 		// strip starting attribute value whitespace/quote
-		while (is_wspace_a((*attributeValue)[0]) || (*attributeValue)[0] == '"' || (*attributeValue)[0] == '\'') {
+		while (*attributeValueLen && (is_wspace_a((*attributeValue)[0]) || (*attributeValue)[0] == '"' || (*attributeValue)[0] == '\'')) {
 			++(*attributeValue);
 			--(*attributeValueLen);
 		}
 
 		// strip ending attribute value whitespace/quote
-		while (is_wspace_a((*attributeValue)[*attributeValueLen - 1]) || (*attributeValue)[*attributeValueLen - 1] == '"' || (*attributeValue)[*attributeValueLen - 1] == '\'') {
+		while (*attributeValueLen && (is_wspace_a((*attributeValue)[*attributeValueLen - 1]) || (*attributeValue)[*attributeValueLen - 1] == '"' || (*attributeValue)[*attributeValueLen - 1] == '\'')) {
 			--(*attributeValueLen);
 		}
 	}
+
+	logTrace(g_conf.m_logTraceHttpMime, "attributeLen=%d attributeValueLen=%d", static_cast<int>(*attributeLen), static_cast<int>(*attributeValueLen));
+
 
 	// cater for empty values between semicolon
 	// eg: Set-Cookie: name=value; Path=/; ;SECURE; HttpOnly;
@@ -488,7 +493,7 @@ bool HttpMime::parseSetCookie(const char *field, size_t fieldLen) {
 
 			cookie.m_nameLen = equalPos - value;
 
-			logTrace(g_conf.m_logTraceHttpMime, "name=%.*s", static_cast<int>(cookie.m_nameLen), cookie.m_cookie);
+			logTrace(g_conf.m_logTraceHttpMime, "name=%.*s (len=%d)", static_cast<int>(cookie.m_nameLen), cookie.m_cookie, static_cast<int>(cookie.m_nameLen));
 
 			// attribute
 			// https://tools.ietf.org/html/rfc6265#section-5.2
@@ -499,6 +504,9 @@ bool HttpMime::parseSetCookie(const char *field, size_t fieldLen) {
 
 			bool foundMaxAge = false;
 			while (getAttribute(&attribute, &attributeLen, &attributeValue, &attributeValueLen)) {
+				logTrace(g_conf.m_logTraceHttpMime, "attribute=%.*s (len=%d)", static_cast<int>(attributeLen), attribute, static_cast<int>(attributeLen));
+				logTrace(g_conf.m_logTraceHttpMime, "attributeValueLen=%d", static_cast<int>(attributeValueLen) );
+
 				// expires
 				if (attributeLen == s_expiresLen && strncasecmp(attribute, s_expires, attributeLen) == 0) {
 					// max-age overrides expires
