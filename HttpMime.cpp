@@ -313,7 +313,7 @@ bool HttpMime::getAttribute(const char **attribute, size_t *attributeLen, const 
 		logTrace(g_conf.m_logTraceHttpMime, "attributeLen=%d attributeValueLen=%d", static_cast<int>(*attributeLen), static_cast<int>(*attributeValueLen));
 
 		// strip ending attribute whitespace
-		while (*attributeValueLen && is_wspace_a((*attribute)[*attributeLen - 1])) {
+		while (*attributeLen && is_wspace_a((*attribute)[*attributeLen - 1])) {
 			--(*attributeLen);
 		}
 
