@@ -1403,9 +1403,13 @@ int32_t TcpServer::readSocket ( TcpSocket *s ) {
 		int n;
 		if ( m_useSSL || s->m_tunnelMode == 3 ) {
 			//int64_t now1 = gettimeofdayInMilliseconds();
+#ifdef _VALGRIND_
+			VALGRIND_DISABLE_ERROR_REPORTING;
+#endif
 			n = SSL_read(s->m_ssl, s->m_readBuf + s->m_readOffset, avail );
 			//log("........... TcpServer::readSocket(s=%p): s->m_sd=%d, SSL_read()->%d",s,s->m_sd,n);
 #ifdef _VALGRIND_
+			VALGRIND_ENABLE_ERROR_REPORTING;
 			if(n>0)
 				VALGRIND_MAKE_MEM_DEFINED(s->m_readBuf + s->m_readOffset,n);
 #endif

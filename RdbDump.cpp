@@ -430,7 +430,7 @@ bool RdbDump::dumpTree(bool recall) {
 			if( m_rdb ) {
 				log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i k1=%s k2=%s)", s, (int)m_collnum, ks1,
 				    ks2);
-				m_list->checkList_r(false, m_rdb->getRdbId());
+				m_list->checkList_r(true, m_rdb->getRdbId());
 			}
 		}
 

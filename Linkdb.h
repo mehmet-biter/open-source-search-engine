@@ -279,19 +279,8 @@ class LinkInfo {
 	int32_t   getSize        ( ) const { return m_lisize; }
 	time_t getLastUpdated ( ) const { return (time_t)m_lastUpdated; }
 
-	int32_t   getNumLinkTexts ( ) const {
-		if ( this == NULL ) {
-			return 0;
-		}
-		return m_numStoredInlinks;
-	}
-
-	int32_t   getNumGoodInlinks ( ) const {
-		if ( this == NULL ) {
-			return 0;
-		}
-		return m_numGoodInlinks;
-	}
+	int32_t   getNumLinkTexts() const { return m_numStoredInlinks; }
+	int32_t   getNumGoodInlinks() const { return m_numGoodInlinks; }
 
 	class Inlink *getNextInlink ( class Inlink *k ) ;
 
