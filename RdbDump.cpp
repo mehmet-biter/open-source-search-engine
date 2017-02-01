@@ -515,7 +515,7 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 		m_isDumping = true;
 
 		// don't check list if we're dumping an unordered list from tree!
-		if (g_conf.m_verifyWrites) {
+		if (g_conf.m_verifyDumpedLists) {
 			m_list->checkList_r(true);
 		}
 
@@ -543,7 +543,7 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 			}
 		}
 
-		if (g_conf.m_verifyWrites) {
+		if (g_conf.m_verifyDumpedLists) {
 			rdbid_t rdbId = RDB_NONE;
 			if (m_rdb) rdbId = m_rdb->getRdbId();
 			m_list->checkList_r(true, rdbId);
