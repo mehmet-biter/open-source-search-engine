@@ -516,7 +516,7 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 
 		// don't check list if we're dumping an unordered list from tree!
 		if (g_conf.m_verifyWrites) {
-			m_list->checkList_r();
+			m_list->checkList_r(true);
 		}
 
 		// before calling RdbMap::addList(), always reset list ptr
@@ -546,7 +546,7 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 		if (g_conf.m_verifyWrites) {
 			rdbid_t rdbId = RDB_NONE;
 			if (m_rdb) rdbId = m_rdb->getRdbId();
-			m_list->checkList_r(false, rdbId);
+			m_list->checkList_r(true, rdbId);
 			m_list->resetListPtr();
 		}
 
