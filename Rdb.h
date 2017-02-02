@@ -134,6 +134,8 @@ public:
 		return addList(collnum,list,false);
 	}
 
+	void verifyTreeIntegrity();
+
 	bool isSecondaryRdb() const {
 		return ::isSecondaryRdb((unsigned char)m_rdbId);
 	}

@@ -1610,15 +1610,17 @@ bool Rdb::addList(collnum_t collnum, RdbList *list, bool checkForRoom) {
 
 	//Do not try initiating a dump here as it will make Msg4 unhappy being interrupted in the middle of multiple lists
 
-	if(g_conf.m_verifyTreeIntegrity) {
-		if(m_useTree)
-			m_tree.verifyIntegrity();
-		else
-			m_buckets.verifyIntegrity();
-	}
-
 	return true;
 }
+
+
+void Rdb::verifyTreeIntegrity() {
+	if(m_useTree)
+		m_tree.verifyIntegrity();
+	else
+		m_buckets.verifyIntegrity();
+}
+
 
 bool Rdb::needsDump ( ) const {
 	if ( m_mem.is90PercentFull () ) {
