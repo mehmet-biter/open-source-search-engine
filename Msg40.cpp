@@ -28,7 +28,7 @@ static bool printHttpMime(int32_t format, SafeBuf *sb);
 static void gotDocIdsWrapper             ( void *state );
 static bool gotSummaryWrapper            ( void *state );
 
-static bool isSubDom(const char *s, int32_t len);
+static bool isVariantLikeSubDomain(const char *s, int32_t len);
 
 Msg40::Msg40() {
 	m_socketHadError = 0;
@@ -1647,7 +1647,7 @@ bool Msg40::gotSummary ( ) {
 				const char *mdom = u.getMidDomain();
 				if(mdom && host) {
 					int32_t  hlen = mdom - host;
-					if (isSubDom(host, hlen-1))
+					if (isVariantLikeSubDomain(host, hlen-1))
 						url = mdom;
 				}
 			}
@@ -2038,7 +2038,13 @@ int32_t Msg40::deserialize ( char *buf , int32_t bufSize ) {
 }
 
 
-static const char * const s_subDoms[] = {
+//For the purpose of clustering and result suppression these hosts are considered the same:
+//  example.com
+//  www.example.com
+//  fr.example.com
+//  pl.example.com
+//etc.
+static const char * const s_variantLikeSubDomains[] = {
         // Common Language sub-domains
         "en" ,
         "fr" ,
@@ -2072,9 +2078,9 @@ static const char * const s_subDoms[] = {
         // Common web sub-domains
         "www"
 };
-static HashTable  s_subDomTable;
-static bool       s_subDomInitialized = false;
-static bool initSubDomTable(HashTable *table, const char * const words[], int32_t size ){
+static HashTable  s_variantLikeSubDomainTable;
+static bool       s_variantLikeSubDomainInitialized = false;
+static bool initVariantLikeSubDomainTable(HashTable *table, const char * const words[], int32_t size ){
 	// set up the hash table
 	if ( ! table->set ( size * 2 ) ) {
 		log(LOG_INIT, "build: Could not init sub-domain table.");
@@ -2096,17 +2102,16 @@ static bool initSubDomTable(HashTable *table, const char * const words[], int32_
 	return true;
 }
 
-static bool isSubDom(const char *s , int32_t len) {
-	if ( ! s_subDomInitialized ) {
-		s_subDomInitialized = 
-			initSubDomTable(&s_subDomTable, s_subDoms, 
-				      sizeof(s_subDoms));
-		if (!s_subDomInitialized) return false;
+static bool isVariantLikeSubDomain(const char *s , int32_t len) {
+	if ( ! s_variantLikeSubDomainInitialized ) {
+		s_variantLikeSubDomainInitialized = initVariantLikeSubDomainTable(&s_variantLikeSubDomainTable, s_variantLikeSubDomains, sizeof(s_variantLikeSubDomains));
+		if (!s_variantLikeSubDomainInitialized)
+			return false;
 	} 
 
 	// get from table
         int32_t h = hash32Lower_a(s, len);
-        if(s_subDomTable.getSlot(h) == -1)
+        if(s_variantLikeSubDomainTable.getSlot(h) == -1)
                 return false;
 	return true;
 }		
