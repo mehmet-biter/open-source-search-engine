@@ -68,8 +68,6 @@ class Multicast {
 	//   is false
 	// . Msg40 uses largest termId in winning group as the key to ensure
 	//   that queries with the same largest termId go to the same machine
-	// . likewise, Msg37 uses it to get the term frequency consistently
-	//   so it doesn't jitter
 	// . if you pass in a "replyBuf" we'll store the reply in there
 	// . "doDiskLoadBalancing" is no longer used.
 	bool send ( char       *msg             ,
