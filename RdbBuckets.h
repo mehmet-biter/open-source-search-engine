@@ -182,10 +182,6 @@ public:
 	//just for this collection
 	int32_t getNumKeys(collnum_t collnum) const;
 
-	//syntactic sugar
- 	RdbBucket* bucketFactory();
-	void updateNumRecs(int32_t n, int32_t bytes, int32_t numNeg);
-
 	//DEBUG
 	bool selfTest(bool thorough, bool core);
 	int32_t addTree(RdbTree *rt);
@@ -195,9 +191,15 @@ public:
 
 	//Save/Load/Dump
 	bool fastSave(const char *dir, bool useThread, void *state, void (*callback)(void *state));
+	bool loadBuckets(const char *dbname);
+
+private:
+	//syntactic sugar
+	RdbBucket* bucketFactory();
+	void updateNumRecs(int32_t n, int32_t bytes, int32_t numNeg);
+
 	bool fastSave_r();
 	int64_t fastSaveColl_r(int fd);
-	bool loadBuckets(const char *dbname);
 	bool fastLoad(BigFile *f, const char *dbname);
 	int64_t fastLoadColl(BigFile *f, const char *dbname);
 
