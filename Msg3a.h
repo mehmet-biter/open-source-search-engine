@@ -31,7 +31,6 @@ public:
         // . sets errno on error
         // . "query/coll/docIds" should NOT be on the stack in case we block
 	// . uses Query class to parse query
-	// . uses Msg37 to retrieve term frequencies for each termId in query
 	// . uses Indexdb class to intersect the lists to get results
 	// . fills docIds buf with the resulting docIds
 	// . sets *numDocIds to the # of resulting docIds

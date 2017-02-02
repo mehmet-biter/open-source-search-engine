@@ -31,7 +31,6 @@ public:
 	// . returns false if blocked, true otherwise
 	// . sets errno on error
 	// . uses Query class to parse query
-	// . uses Msg37 to retrieve term frequencies for each termId in query
 	// . uses Indexdb class to intersect the lists to get results
 	// . fills local buffer, m_docIds, with resulting docIds
 	// . set m_numDocIds to number of docIds in m_docIds
