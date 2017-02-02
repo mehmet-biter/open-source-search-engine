@@ -6114,13 +6114,13 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-	m->m_title = "verify written lists";
-	m->m_desc  = "Ensure lists being written to disk are not corrupt. "
+	m->m_title = "verify dumped lists";
+	m->m_desc  = "Ensure lists being dumped to disk are not corrupt. "
 		"That title recs appear valid, etc. Helps isolate sources "
 		"of corruption. Used for debugging.";
 	m->m_cgi   = "vwl";
 	simple_m_set(Conf,m_verifyDumpedLists);
-	m->m_def   = "0";
+	m->m_def   = "1";
 	m->m_group = 0;
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
