@@ -1057,6 +1057,12 @@ bool RdbBuckets::repair() {
 	return true;
 }
 
+
+void RdbBuckets::verifyIntegrity() {
+	selfTest(true,true);
+}
+
+
 bool RdbBuckets::selfTest(bool thorough, bool core) {
 	if (m_numBuckets == 0 && m_numKeysApprox != 0) {
 		return false;
@@ -1078,7 +1084,7 @@ bool RdbBuckets::selfTest(bool thorough, bool core) {
 				if (!core) {
 					return false;
 				}
-				gbshutdownAbort(true);
+				gbshutdownCorrupted();
 			}
 		}
 
@@ -1092,7 +1098,7 @@ bool RdbBuckets::selfTest(bool thorough, bool core) {
 			if (!core) {
 				return false;
 			}
-			gbshutdownAbort(true);
+			gbshutdownCorrupted();
 		}
 
 		last = kk;

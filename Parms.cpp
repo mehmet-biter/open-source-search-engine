@@ -6114,6 +6114,18 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	m->m_title = "verify tree integrity";
+	m->m_desc  = "Ensure that tree/buckets have not been corrupted after modifcations. "
+		"Helps isolate sources of corruption. Used for debugging.";
+	m->m_cgi   = "verify_tree_integrity";
+	simple_m_set(Conf,m_verifyTreeIntegrity);
+	m->m_def   = "0";
+	m->m_group = 0;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_group = 0;
+	m++;
+
 	m->m_title = "verify dumped lists";
 	m->m_desc  = "Ensure lists being dumped to disk are not corrupt. "
 		"That title recs appear valid, etc. Helps isolate sources "

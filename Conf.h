@@ -279,6 +279,9 @@ class Conf {
 	//bool   m_useBiasedTfndb;
 
   
+	//verify integrity of tree/buckets after modification operations
+	bool m_verifyTreeIntegrity;
+
 	// just ensure lists being written are valid rdb records (titlerecs)
 	// trying to isolate titlerec corruption
 	bool m_verifyDumpedLists;

@@ -283,6 +283,7 @@ public:
 
 	int32_t getMinUnusedNode() const { return m_minUnusedNode; }
 
+	void verifyIntegrity() { } //todo
 	bool checkTree  ( bool printMsgs , bool doChainTest );
 	bool checkTree2 ( bool printMsgs , bool doChainTest );
 	bool fixTree    ( );

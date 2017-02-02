@@ -183,6 +183,7 @@ public:
 	int32_t getNumKeys(collnum_t collnum) const;
 
 	//DEBUG
+	void verifyIntegrity();
 	bool selfTest(bool thorough, bool core);
 	int32_t addTree(RdbTree *rt);
 	void printBuckets(std::function<void(const char*, int32_t)> print_fn = nullptr);
