@@ -17,7 +17,11 @@
 // a global class extern'd in Log.h
 Log g_log;
 
-static GbMutex s_lock;
+//'s_lock' really should be a nice instance but due to the undefined destruction
+//order of global objects we can easily end up using it after it has been destroyed
+//so for now we just use a plain old pthread_mtuex_t and never destroy it.
+//static GbMutex s_lock;
+static pthread_mutex_t s_lock = PTHREAD_MUTEX_INITIALIZER;
 
 
 Log::Log () { 
