@@ -1396,16 +1396,6 @@ bool Msg40::gotSummary ( ) {
 		// it won't launch now if we are bottlnecked waiting for
 		// m_printi's summary to come in
 		if ( m_si->m_streamResults ) {
-			// it won't launch any if we printed out enough as well
-			// and it printed "waiting on remaining 0 to return".
-			// we shouldn't be waiting for more to come in b/c
-			// we are in gotSummart() so one just came in 
-			// freeing up a msg20 to launch another, so assume
-			// this means we are basically done. and it
-			// set m_numRequests=m_msg3a.m_numDocIds etc.
-			//if ( m_numRequests == m_msg3a.m_numDocIds )
-			//	goto printTail;
-			// otherwise, keep chugging
 			goto complete;
 		}
 
