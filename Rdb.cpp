@@ -1507,7 +1507,9 @@ bool Rdb::addList(collnum_t collnum, RdbList *list, bool checkForRoom) {
 	// make sure list is reset
 	list->resetListPtr();
 	// if nothing then just return true
-	if ( list->isExhausted() ) return true;
+	if ( list->isExhausted() ) {
+		return true;
+	}
 	// sanity check
 	if ( list->getKeySize() != m_ks ) { g_process.shutdownAbort(true); }
 	// we now call getTimeGlobal() so we need to be in sync with host #0

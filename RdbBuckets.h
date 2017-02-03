@@ -60,6 +60,7 @@ public:
 	const char *getEndKey() const { return m_endKey; }
 
 	int32_t getNumKeys() const { return m_numKeys; }
+	int32_t getNumSortedKeys() const { return m_lastSorted; }
 
 	const char *getKeys() const { return m_keys; }
 
@@ -86,8 +87,9 @@ public:
 	int64_t fastLoad(BigFile *f, int64_t offset);
 	
 	//Debug
-	bool selfTest(const char *prevKey);
-	void printBucket(std::function<void(const char*, int32_t)> print_fn = nullptr);
+	bool selfTest(int32_t bucketnum, const char *prevKey);
+	void printBucket(int32_t idx, std::function<void(const char*, int32_t)> print_fn = nullptr);
+	void printBucketStartEnd(int32_t idx);
 
 	bool sort();
 	RdbBucket *split(RdbBucket *newBucket);
@@ -187,6 +189,8 @@ public:
 	bool selfTest(bool thorough, bool core);
 	int32_t addTree(RdbTree *rt);
 	void printBuckets(std::function<void(const char*, int32_t)> print_fn = nullptr);
+	void printBucketsStartEnd();
+
 	bool repair();
 	bool testAndRepair();
 
