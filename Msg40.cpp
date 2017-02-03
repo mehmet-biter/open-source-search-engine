@@ -1334,8 +1334,6 @@ bool Msg40::gotSummary ( ) {
 	} //m_si->m_streamResults
 
 
-	TcpServer *tcp = &g_httpServer.m_tcp;
-
 	// do we still own this socket? i am thinking it got closed somewhere
 	// and the socket descriptor was re-assigned to another socket
 	// getting a diffbot reply from XmLDoc::getDiffbotReply()
@@ -1367,10 +1365,10 @@ bool Msg40::gotSummary ( ) {
 	     // did client browser close the socket on us midstream?
 	     ! m_socketHadError &&
 	     st->m_socket &&
-	     ! tcp->sendChunk ( st->m_socket , 
-				&st->m_sb,
-				this ,
-				doneSendingWrapper9 ) )
+	     ! g_httpServer.m_tcp.sendChunk ( st->m_socket , 
+					      &st->m_sb,
+					      this ,
+				              doneSendingWrapper9 ) )
 		// if it blocked, inc this count. we'll only call m_callback 
 		// above when m_sendsIn equals m_sendsOut... and 
 		// m_numReplies == m_numRequests
