@@ -1172,9 +1172,7 @@ bool Msg40::gotSummary ( ) {
 
  doAgain:
 
-	SafeBuf *sb = &st->m_sb;
-
-	sb->reset();
+	st->m_sb.reset();
 
 	// this is in PageResults.cpp
 	if ( m_si->m_streamResults && ! m_printedHeader ) {
@@ -1365,12 +1363,12 @@ bool Msg40::gotSummary ( ) {
 	// . when we are truly done sending all the data, then we set lastChunk
 	//   to true and TcpServer.cpp will destroy m_socket when done.
 	//   no, actually we just set m_streamingMode to false i guess above
-	if ( sb->length() &&
+	if ( st->m_sb.length() &&
 	     // did client browser close the socket on us midstream?
 	     ! m_socketHadError &&
 	     st->m_socket &&
 	     ! tcp->sendChunk ( st->m_socket , 
-				sb  ,
+				&st->m_sb,
 				this ,
 				doneSendingWrapper9 ) )
 		// if it blocked, inc this count. we'll only call m_callback 
