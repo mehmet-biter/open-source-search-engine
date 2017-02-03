@@ -1177,14 +1177,14 @@ bool Msg40::gotSummary ( ) {
 	sb->reset();
 
 	// this is in PageResults.cpp
-	if ( m_si && m_si->m_streamResults && ! m_printedHeader ) {
+	if ( m_si->m_streamResults && ! m_printedHeader ) {
 		// only print header once
 		m_printedHeader = true;
 		printHttpMime(m_si->m_format,&st->m_sb);
 		printSearchResultsHeader ( st );
 	}
 
-	for ( ; m_si && m_si->m_streamResults&&m_printi<m_msg3a.m_numDocIds ; m_printi++) {
+	for ( ; m_si->m_streamResults && m_printi<m_msg3a.m_numDocIds ; m_printi++) {
 		// if we are waiting on our previous send to complete... wait..
 		if ( m_sendsOut > m_sendsIn ) break;
 
@@ -1209,7 +1209,7 @@ bool Msg40::gotSummary ( ) {
 
 		// primitive deduping. for diffbot json exclude url's from the
 		// XmlDoc::m_contentHash32.. it will be zero if invalid i guess
-		if ( m_si && m_si->m_doDupContentRemoval && // &dr=1
+		if ( m_si->m_doDupContentRemoval && // &dr=1
 		     mr->m_contentHash32 &&
 		     // do not dedup CT_STATUS results, those are
 		     // spider reply "documents" that indicate the last
@@ -1227,7 +1227,7 @@ bool Msg40::gotSummary ( ) {
 		}
 
 		// return true with g_errno set on error
-		if ( m_si && m_si->m_doDupContentRemoval && // &dr=1
+		if ( m_si->m_doDupContentRemoval && // &dr=1
 		     mr->m_contentHash32 &&
 		     // do not dedup CT_STATUS results, those are
 		     // spider reply "documents" that indicate the last
@@ -1244,7 +1244,7 @@ bool Msg40::gotSummary ( ) {
 		//log("msg40: numdisplayed=%" PRId32,m_numDisplayed);
 
 		// do not print it if before the &s=X start position though
-		if ( m_si && m_numDisplayed <= m_si->m_firstResultNum ){
+		if ( m_numDisplayed <= m_si->m_firstResultNum ){
 			if ( m_printCount == 0 ) 
 				log("msg40: hiding #%" PRId32" (%" PRIu32")"
 				    "(d=%" PRId64")",
@@ -1267,7 +1267,7 @@ bool Msg40::gotSummary ( ) {
 	// . set it to true on all but the last thing we send!
 	// . after each chunk of data we send out, TcpServer::sendChunk
 	//   will call our callback, doneSendingWrapper9 
-	if ( m_si && m_si->m_streamResults && st->m_socket )
+	if ( m_si->m_streamResults && st->m_socket )
 		st->m_socket->m_streamingMode = true;
 
 
@@ -1276,7 +1276,7 @@ bool Msg40::gotSummary ( ) {
 	// we already have from the shards. if this still does not provide
 	// enough docids then we will need to issue a new msg39 request to
 	// each shard to get even more docids from each shard.
-	if ( m_si && m_si->m_streamResults &&
+	if ( m_si->m_streamResults &&
 	     // this is coring as well on multi collection federated searches
 	     // so disable that for now too. it is because Msg3a::m_r is
 	     // NULL.
@@ -1323,8 +1323,7 @@ bool Msg40::gotSummary ( ) {
 
 	// . wrap it up with Next 10 etc.
 	// . this is in PageResults.cpp
-	if ( m_si && 
-	     m_si->m_streamResults && 
+	if ( m_si->m_streamResults &&
 	     ! m_printedTail &&
 	     m_printi >= m_msg3a.m_numDocIds ) {
 		m_printedTail = true;
@@ -1430,7 +1429,7 @@ bool Msg40::gotSummary ( ) {
 		return false;
 
 	// if streaming results, we are done
-	if ( m_si && m_si->m_streamResults ) {
+	if ( m_si->m_streamResults ) {
 		// unless waiting for last transmit to complete
 		if ( m_sendsOut > m_sendsIn ) return false;
 		// delete everything! no, doneSendingWrapper9 does...
