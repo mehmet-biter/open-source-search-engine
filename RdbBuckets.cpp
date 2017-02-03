@@ -1679,7 +1679,7 @@ bool RdbBucket::deleteNode(int32_t i) {
 
 	// delete record
 	int32_t numNeg = KEYNEG(rec);
-	memmove(rec, rec + recSize, m_numKeys * recSize);
+	memmove(rec, rec + recSize, (m_numKeys-i-1) * recSize);
 	m_parent->updateNumRecs(-1, -dataSize, -numNeg);
 	--m_numKeys;
 
