@@ -365,9 +365,9 @@ public:
 // . those bytes should be stored in m_sendBuf, but not overwrite what 
 //   has not been sent yet
 bool TcpServer::sendMsg( const char *hostname, int32_t hostnameLen, int16_t port, char *sendBuf,
-						 int32_t sendBufSize, int32_t sendBufUsed, int32_t msgTotalSize, void *state,
-						 void ( *callback )( void *state, TcpSocket *s ), int32_t timeout,
-						 int32_t maxTextDocLen, int32_t maxOtherDocLen ) {
+			 int32_t sendBufSize, int32_t sendBufUsed, int32_t msgTotalSize, void *state,
+			 void ( *callback )( void *state, TcpSocket *s ), int32_t timeout,
+			 int32_t maxTextDocLen, int32_t maxOtherDocLen ) {
 	// make sure hostname not too big
 	if ( hostnameLen >= 254 ) {
 		g_errno = EBUFTOOSMALL;
@@ -512,9 +512,9 @@ bool TcpServer::gotTcpServerIp ( TcpState *tst , int32_t ip ) {
 // . NOTE: should not be called by user since does not copy "msg"
 // . NOTE: we do not copy "msg" so keep it on your stack
 bool TcpServer::sendMsg( const char *hostname, int32_t hostnameLen, int32_t ip, int16_t port, char *sendBuf,
-						 int32_t sendBufSize, int32_t sendBufUsed, int32_t msgTotalSize, void *state,
-						 void ( *callback )( void *state, TcpSocket *s ), int32_t timeout,
-						 int32_t maxTextDocLen, int32_t maxOtherDocLen, bool useHttpTunnel ) {
+			 int32_t sendBufSize, int32_t sendBufUsed, int32_t msgTotalSize, void *state,
+			 void ( *callback )( void *state, TcpSocket *s ), int32_t timeout,
+			 int32_t maxTextDocLen, int32_t maxOtherDocLen, bool useHttpTunnel ) {
 	// debug
 	log(LOG_DEBUG,"tcp: Getting doc for ip=%s.", iptoa(ip));
 
@@ -648,8 +648,8 @@ bool TcpServer::sendMsg( const char *hostname, int32_t hostnameLen, int32_t ip, 
 // . this is called by m_requestHander() to send a reply
 // . this is called by sendMsg(ip,...) above to send a request
 bool TcpServer::sendMsg( TcpSocket *s, char *sendBuf, int32_t sendBufSize, int32_t sendBufUsed,
-						 int32_t msgTotalSize, void *state, void ( *callback )( void *state, TcpSocket *s ),
-						 int32_t timeout, int32_t maxTextDocLen, int32_t maxOtherDocLen ) {
+			 int32_t msgTotalSize, void *state, void ( *callback )( void *state, TcpSocket *s ),
+			 int32_t timeout, int32_t maxTextDocLen, int32_t maxOtherDocLen ) {
 	//reset any previous g_errno so we don't think it was our call to write
 	g_errno = 0;
 
@@ -2629,10 +2629,10 @@ void TcpServer::cancel ( void *state ) {
 #include "SafeBuf.h"
 
 bool TcpServer::sendChunk( TcpSocket *s, SafeBuf *sb, void *state,
-						   // call this function when done sending this chunk
-						   // so that it can read another chunk and call
-						   // sendChunk() again.
-						   void ( *doneSendingWrapper )( void *, TcpSocket * ) ) {
+			   // call this function when done sending this chunk
+			   // so that it can read another chunk and call
+			   // sendChunk() again.
+			   void ( *doneSendingWrapper )( void *, TcpSocket * ) ) {
 	log( "tcp: sending chunk of %" PRId32 " bytes sd=%i", sb->length(), s->m_sd );
 
 	// if socket had shit on there already, free that memory
@@ -2774,4 +2774,3 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 	// we would block
 	return 0;
 }
-
