@@ -1434,9 +1434,6 @@ bool Msg40::gotSummary ( ) {
 	int64_t startTime = gettimeofdayInMilliseconds();
 	int64_t took;
 
-	// shortcut
-	const Query *q = &m_si->m_q;
-
 	// loop over each clusterLevel and set it
 	for ( int32_t i = 0 ; i < m_numReplies ; i++ ) {
 		// did we skip the first X summaries because we were
@@ -1597,8 +1594,8 @@ bool Msg40::gotSummary ( ) {
 	// . ONLY DEDUP URL if it explicitly enabled AND we are not performing
 	//   a site: or suburl: query.
 	if(m_si->m_dedupURL &&
-	   !q->m_hasPositiveSiteField && 
-	   !q->m_hasSubUrlField) { 
+	   !m_si->m_q.m_hasPositiveSiteField &&
+	   !m_si->m_q.m_hasSubUrlField) {
 		for(int32_t i = 0 ; i < m_msg3a.m_numDocIds ; i++) {
 			// skip if already invisible
 			if(m_msg3a.m_clusterLevels[i] != CR_OK) continue;
