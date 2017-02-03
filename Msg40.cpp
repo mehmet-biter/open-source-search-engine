@@ -1364,24 +1364,25 @@ bool Msg40::gotSummary ( ) {
 	if ( st->m_sb.length() &&
 	     // did client browser close the socket on us midstream?
 	     ! m_socketHadError &&
-	     st->m_socket &&
-	     ! g_httpServer.m_tcp.sendChunk ( st->m_socket , 
-					      &st->m_sb,
-					      this ,
-				              doneSendingWrapper9 ) )
-		// if it blocked, inc this count. we'll only call m_callback 
-		// above when m_sendsIn equals m_sendsOut... and 
-		// m_numReplies == m_numRequests
-		m_sendsOut++;
+	     st->m_socket)
+	{
+		if( ! g_httpServer.m_tcp.sendChunk ( st->m_socket,
+						     &st->m_sb,
+						     this,
+						     doneSendingWrapper9 ) )
+			// if it blocked, inc this count. we'll only call m_callback
+			// above when m_sendsIn equals m_sendsOut... and
+			// m_numReplies == m_numRequests
+			m_sendsOut++;
 
-
-	// writing on closed socket?
-	if ( g_errno ) {
-		if ( ! m_socketHadError ) m_socketHadError = g_errno;
-		log("msg40: got tcp error : %s",mstrerror(g_errno));
-		// disown it here so we do not damage in case it gets 
-		// reopened by someone else
-		st->m_socket = NULL;
+		// writing on closed socket?
+		if ( g_errno ) {
+			if ( ! m_socketHadError ) m_socketHadError = g_errno;
+			log("msg40: got tcp error : %s",mstrerror(g_errno));
+			// disown it here so we do not damage in case it gets
+			// reopened by someone else
+			st->m_socket = NULL;
+		}
 	}
 
 	// do we need to launch another batch of summary requests?
