@@ -27,6 +27,7 @@
 #include <functional>
 #include "rdbid_t.h"
 #include "types.h"
+#include "GbMutex.h"
 
 class BigFile;
 class RdbList;
@@ -209,6 +210,7 @@ private:
 	int64_t fastLoadColl(BigFile *f, const char *dbname);
 
 private:
+	GbMutex m_mtx;
 	RdbBucket **m_buckets;
 	RdbBucket *m_bucketsSpace;
 	char *m_masterPtr;

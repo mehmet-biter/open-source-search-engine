@@ -8,6 +8,7 @@
 #include "Conf.h"
 #include "Collectiondb.h"
 #include "Mem.h"
+#include "ScopedLock.h"
 #include <fcntl.h>
 
 #define BUCKET_SIZE 8192
@@ -546,7 +547,9 @@ void RdbBucket::printBucketStartEnd(int32_t idx) {
 }
 
 
-RdbBuckets::RdbBuckets() {
+RdbBuckets::RdbBuckets()
+  : m_mtx()
+{
 	m_numBuckets = 0; 
 	m_masterPtr = NULL;
 	m_buckets = NULL;
@@ -793,6 +796,7 @@ bool RdbBuckets::resizeTable( int32_t numNeeded ) {
 }
 
 int32_t RdbBuckets::addNode(collnum_t collnum, const char *key, const char *data, int32_t dataSize) {
+	ScopedLock sl(m_mtx);
 	if (!m_isWritable || m_isSaving) {
 		g_errno = ETRYAGAIN;
 		return -1;
@@ -927,6 +931,8 @@ bool RdbBuckets::addBucket (RdbBucket* newBucket, int32_t i) {
 
 bool RdbBuckets::getList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes,
                          RdbList *list, int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys) const {
+	//this method is logically const but mutex locks are not, so const-cast is needed.
+	 ScopedLock sl(const_cast<RdbBuckets*>(this)->m_mtx);
 
 	if (numNegRecs) {
 		*numNegRecs = 0;
@@ -982,7 +988,7 @@ bool RdbBuckets::getList(collnum_t collnum, const char *startKey, const char *en
 	if (endBucket == m_numBuckets || m_buckets[endBucket]->getCollnum() != collnum) {
 		endBucket--;
 	}
-
+	
 	if (m_buckets[endBucket]->getCollnum() != collnum) {
 		gbshutdownAbort(true);
 	}
@@ -1044,6 +1050,8 @@ bool RdbBuckets::getList(collnum_t collnum, const char *startKey, const char *en
 }
 
 int RdbBuckets::getListSizeExact(collnum_t collnum, const char *startKey, const char *endKey) {
+	ScopedLock sl(m_mtx);
+
 	int numBytes = 0;
 
 	int32_t startBucket = getBucketNum(collnum, startKey);
@@ -1149,6 +1157,7 @@ bool RdbBuckets::repair() {
 
 
 void RdbBuckets::verifyIntegrity() {
+	ScopedLock sl(m_mtx);
 	selfTest(true,true);
 }
 
@@ -1791,6 +1800,8 @@ bool RdbBuckets::deleteList(collnum_t collnum, RdbList *list) {
 	if (list->getListSize() == 0) {
 		return true;
 	}
+
+	ScopedLock sl(m_mtx);
 
 	if (!m_isWritable || m_isSaving) {
 		g_errno = EAGAIN;
