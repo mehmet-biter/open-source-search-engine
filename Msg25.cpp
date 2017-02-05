@@ -30,8 +30,7 @@ public:
 };
 
 
-static LinkInfo *makeLinkInfo(const char   *coll,
-			      int32_t       ip,
+static LinkInfo *makeLinkInfo(int32_t       ip,
 			      int32_t       siteNumInlinks,
 			      Msg20Reply  **replies,
 			      int32_t       numReplies,
@@ -1844,8 +1843,7 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	// . returns an allocated ptr to a LinkInfo class
 	// . we are responsible for freeing
 	// . LinkInfo::getSize() returns the allocated size
-	makeLinkInfo(coll,
-		     m_ip,
+	makeLinkInfo(m_ip,
 		     m_siteNumInlinks,
 		     m_replyPtrs,
 		     m_numReplyPtrs,
@@ -2787,8 +2785,7 @@ bool Msg25::addNote(const char *note, int32_t noteLen, int64_t docId) {
 //   LinkInfo's Inlinks to get their weights, etc.
 // . returns the LinkInfo on success
 // . returns NULL and sets g_errno on error
-static LinkInfo *makeLinkInfo(const char     *coll,
-			      int32_t         ip,
+static LinkInfo *makeLinkInfo(int32_t         ip,
 			      int32_t         siteNumInlinks,
 			      Msg20Reply    **replies,
 			      int32_t         numReplies,
