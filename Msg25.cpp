@@ -30,8 +30,7 @@ public:
 };
 
 
-static LinkInfo *makeLinkInfo(const char   *coll,
-			      int32_t       ip,
+static LinkInfo *makeLinkInfo(int32_t       ip,
 			      int32_t       siteNumInlinks,
 			      Msg20Reply  **replies,
 			      int32_t       numReplies,
@@ -1074,7 +1073,7 @@ bool Msg25::sendRequests() {
 			// recycle old inlinks at this point
 			if ( m_k == (Inlink *)-1 ) m_k = NULL;
 			// get it
-			m_k = m_oldLinkInfo->getNextInlink ( m_k );
+			m_k = m_oldLinkInfo ? m_oldLinkInfo->getNextInlink ( m_k ) : NULL;
 			// if none left, we really are done
 			if ( ! m_k )
 				break;
@@ -1464,8 +1463,7 @@ static const char *getExplanation(const char *note) {
 			"of a comment page, guestbook page or "
 			"link exchange";
 
-	return 
-		"inlinker's page contains the described text, indicative of "
+	return  "inlinker's page contains the described text, indicative of "
 		"being a link exchange or being in a comment section or "
 		"being an otherwise spammy page";
 }
@@ -1844,8 +1842,7 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	// . returns an allocated ptr to a LinkInfo class
 	// . we are responsible for freeing
 	// . LinkInfo::getSize() returns the allocated size
-	makeLinkInfo(coll,
-		     m_ip,
+	makeLinkInfo(m_ip,
 		     m_siteNumInlinks,
 		     m_replyPtrs,
 		     m_numReplyPtrs,
@@ -2787,8 +2784,7 @@ bool Msg25::addNote(const char *note, int32_t noteLen, int64_t docId) {
 //   LinkInfo's Inlinks to get their weights, etc.
 // . returns the LinkInfo on success
 // . returns NULL and sets g_errno on error
-static LinkInfo *makeLinkInfo(const char     *coll,
-			      int32_t         ip,
+static LinkInfo *makeLinkInfo(int32_t         ip,
 			      int32_t         siteNumInlinks,
 			      Msg20Reply    **replies,
 			      int32_t         numReplies,
@@ -3001,7 +2997,6 @@ static LinkInfo *makeLinkInfo(const char     *coll,
 
 
 Inlink *LinkInfo::getNextInlink(Inlink *k) {
-	if ( this == NULL ) return NULL;
 	// if none, return NULL
 	if ( m_numStoredInlinks == 0 ) return NULL;
 	// if k is NULL, return the first
@@ -3292,18 +3287,18 @@ char *Inlink::serialize(int32_t *retSize     ,
 
 
 // used by PageTitledb.cpp
-bool LinkInfo::print(SafeBuf *sb, char *coll) {
+bool LinkInfo::print(SafeBuf *sb, const char *coll) {
 	int32_t count = 1;
 
 	// loop through the link texts
 	for ( Inlink *k = NULL; (k = getNextInlink(k)) ; count++ ) {
-		char *s    = k->getLinkText();//ptr_linkText;
+		const char *s    = k->getLinkText();//ptr_linkText;
 		int32_t  slen = k->size_linkText - 1;
-		char *d    = k->getSurroundingText();//ptr_surroundingText;
+		const char *d    = k->getSurroundingText();//ptr_surroundingText;
 		int32_t  dlen = k->size_surroundingText - 1;
-		char *r    = k->getRSSItem();//ptr_rssItem;
+		const char *r    = k->getRSSItem();//ptr_rssItem;
 		int32_t  rlen = k->size_rssItem - 1;
-		char *g    = k->getGigabitQuery();
+		const char *g    = k->getGigabitQuery();
 		int32_t  glen = k->size_gigabitQuery - 1;
 		const char *c    = k->getCategories();//ptr_categories;
 		int32_t  clen = k->size_categories - 1;
@@ -3463,7 +3458,7 @@ bool Links::set(bool useRelNoFollow,
 		Url *baseUrl, 
 		int32_t version,
 		bool parentIsPermalink,
-		Links *oldLinks,
+		const Links *oldLinks,
 		bool doQuickSet)
 {
 	reset();
@@ -4503,7 +4498,7 @@ static int32_t getLinkBufferSize(int32_t numLinks){
 
 
 // returns false and sets g_errno on error
-bool Links::flagOldLinks(Links *old) {
+bool Links::flagOldLinks(const Links *old) {
 	// do not double call
 	if ( m_flagged ) return true;
 	// only call once

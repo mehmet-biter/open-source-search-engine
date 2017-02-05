@@ -94,7 +94,7 @@ public:
 	bool init();
 	bool init2(int32_t treeMem);
 
-	bool verify(char *coll);
+	bool verify(const char *coll);
 
 	Rdb *getRdb() { return &m_rdb; }
 
@@ -147,11 +147,11 @@ public:
 	// accessors for "url" keys in linkdb
 	//
 
-	static uint32_t getLinkeeSiteHash32_uk ( key224_t *key ) {
+	static uint32_t getLinkeeSiteHash32_uk(const key224_t *key) {
 		return (key->n3) >> 32;
 	}
 
-	static uint64_t getLinkeeUrlHash64_uk ( key224_t *key ) {
+	static uint64_t getLinkeeUrlHash64_uk(const key224_t *key) {
 		uint64_t h = key->n3;
 		h &= 0x00000000ffffffffLL;
 		h <<= 15;
@@ -159,19 +159,19 @@ public:
 		return h;
 	}
 
-	static bool isLinkSpam_uk (key224_t *key ) {
+	static bool isLinkSpam_uk(const key224_t *key) {
 		if ((key->n2) & 0x1000000000000LL) return true; 
 		return false;
 	}
 
-	static unsigned char getLinkerSiteRank_uk ( key224_t *k ) {
+	static unsigned char getLinkerSiteRank_uk(const key224_t *k) {
 		unsigned char rank = (k->n2 >> 40) & 0xff;
 		// complement it back
 		rank = (unsigned char)~rank;//LDB_MAXSITERANK - rank;
 		return rank;
 	}
 
-	static int32_t getLinkerIp_uk ( key224_t *k ) {
+	static int32_t getLinkerIp_uk(const key224_t *k) {
 		uint32_t ip ;
 		// the most significant part of the ip is the lower byte!!!
 		ip = (uint32_t)((k->n2>>8)&0x00ffffff);
@@ -190,11 +190,11 @@ public:
 
 
 	// we are missing the lower byte, it will be zero
-	static int32_t getLinkerIp24_uk ( key224_t *k ) {
+	static int32_t getLinkerIp24_uk(const key224_t *k) {
 		return (int32_t)((k->n2>>8)&0x00ffffff); 
 	}
 
-	static int64_t getLinkerDocId_uk( key224_t *k ) {
+	static int64_t getLinkerDocId_uk(const key224_t *k) {
 		uint64_t d = k->n2 & 0xff;
 		d <<= 30;
 		d |= k->n1 >>34;
@@ -203,8 +203,8 @@ public:
 
 	// . in days since jan 1, 2012 utc
 	// . timestamp of jan 1, 2012 utc is 1325376000
-	static int32_t getDiscoveryDate_uk ( void *k ) {
-		uint32_t date = ((key224_t *)k)->n1 >> 18;
+	static int32_t getDiscoveryDate_uk(const void *k) {
+		uint32_t date = ((const key224_t *)k)->n1 >> 18;
 		date &= 0x00003fff;
 		// if 0 return that
 		if ( date == 0 ) return 0;
@@ -231,8 +231,8 @@ public:
 		((key224_t *)k)->n1 |= ((uint64_t)date) << 18;
 	}
 
-	static int32_t getLostDate_uk ( void *k ) {
-		uint32_t date = ((key224_t *)k)->n1 >> 2;
+	static int32_t getLostDate_uk(const void *k) {
+		uint32_t date = ((const key224_t *)k)->n1 >> 2;
 		date &= 0x00003fff;
 		// if 0 return that
 		if ( date == 0 ) return 0;
@@ -244,10 +244,10 @@ public:
 		return date;
 	}
 
-	static uint32_t getLinkerSiteHash32_uk( void *k ) {
-		uint32_t sh32 = ((key224_t *)k)->n1 & 0x00000003;
+	static uint32_t getLinkerSiteHash32_uk(const void *k) {
+		uint32_t sh32 = ((const key224_t *)k)->n1 & 0x00000003;
 		sh32 <<= 30;
-		sh32 |= ((key224_t *)k)->n0 >> 2;
+		sh32 |= ((const key224_t *)k)->n0 >> 2;
 		return sh32;
 	}
 
@@ -289,7 +289,7 @@ class LinkInfo {
 	bool hasLinkText ( );
 
 	// for PageTitledb
-	bool print ( class SafeBuf *sb , char *coll );
+	bool print(class SafeBuf *sb, const char *coll );
 
 	bool hasRSSItem();
 
@@ -598,7 +598,7 @@ public:
 		   Url *baseUrl , 
 		   int32_t version,
 		   bool  parentIsPermalink , // = false ,
-		   Links *oldLinks         , // for LF_OLDLINKS flag
+		   const Links *oldLinks         , // for LF_OLDLINKS flag
 		   // this is used by Msg13.cpp to quickly get ptrs
 		   // to the links in the document, no normalization!
 		   bool doQuickSet = false );
@@ -623,12 +623,12 @@ public:
 	// . m_spamNote is set if it is ALL link spam... set above
 	// . internal outlinks are never considered link spam since we "dedup"
 	//   them by ip in Msg25/LinkInfo::merge() anyway
-	bool isLinkSpam ( int32_t i ) { 
+	bool isLinkSpam(int32_t i) const {
 		if ( isInternalDom(i) ) return false; 
 		if ( m_spamNote       ) return true; 
 		return m_spamNotes[i]; 
 	}
-	const char *getSpamNote ( int32_t i ) {
+	const char *getSpamNote(int32_t i) const {
 	        if ( isInternalDom(i) ) return "good";
 		if ( m_spamNote       ) return m_spamNote;
 		if ( m_spamNotes[i]   ) return m_spamNotes[i];
@@ -637,17 +637,17 @@ public:
 
 	// for spidering links purposes, we consider "internal" to be same 
 	// hostname
-	bool isInternalHost ( int32_t i ) {return (m_linkFlags[i] & LF_SAMEHOST);}
+	bool isInternalHost(int32_t i) const { return (m_linkFlags[i] & LF_SAMEHOST); }
 
 	// we do not subjugate same domain links to link spam detection in
 	// linkspam.cpp::setLinkSpam()
-	bool isInternalDom  ( int32_t i ) { return (m_linkFlags[i] & LF_SAMEDOM);}
+	bool isInternalDom(int32_t i) const { return (m_linkFlags[i] & LF_SAMEDOM); }
 
-	bool isOld ( int32_t i ) { return m_linkFlags[i] & LF_OLDLINK; }
+	bool isOld(int32_t i) const { return m_linkFlags[i] & LF_OLDLINK; }
 
 	// . returns false and sets g_errno on error
 	// . remove links from our m_linkPtrs[] if they are in "old"
-	bool flagOldLinks ( class Links *old ) ;
+	bool flagOldLinks ( const class Links *old ) ;
 
 	// . does link #n have link text that has at least 1 alnum char in it?
 	// . used for scoring link: terms to make link-text adds more efficient
@@ -673,34 +673,32 @@ public:
 			   int32_t   *retNode1 );
 
 	// returns list of \0 terminated, normalized links
-	char          *getLinkBuf    () { 
-		return m_allocBuf; 
-	}
-	int32_t           getLinkBufLen () { 
+	char       *getLinkBuf()       { return m_allocBuf; }
+	const char *getLinkBuf() const { return m_allocBuf; }
+	int32_t getLinkBufLen() const {
 		if ( m_allocBuf ) return m_bufPtr - m_allocBuf;
 		return 0;
-		//return m_allocBuf?m_bufPtr-m_allocBuf:0; 
 	}
 	//uint32_t *getLinkHashes () { return m_linkHashes; }
-	int32_t           getNumLinks   () { return m_numLinks; }
+	int32_t getNumLinks() const { return m_numLinks; }
 
-	int32_t           getLinkLen    ( int32_t i ) { return m_linkLens  [i]; }
-	char          *getLinkPtr    ( int32_t i ) { return m_linkPtrs  [i]; }
-	uint32_t       getLinkHash32 ( int32_t i ) { 
-		return (uint32_t)m_linkHashes[i]; }
-	uint64_t       getLinkHash64 ( int32_t i ) { return m_linkHashes[i]; }
-	uint64_t       getHostHash64 ( int32_t i ) { return m_hostHashes[i]; }
-	int32_t           getDomHash32  ( int32_t i ) { return m_domHashes[i]; }
-	int32_t           getNodeNum    ( int32_t i ) { return m_linkNodes[i];  }
-	bool hasRelNoFollow() { return m_hasRelNoFollow; }
+	int32_t getLinkLen(int32_t i) const { return m_linkLens[i]; }
+	char       *getLinkPtr(int32_t i)	{ return m_linkPtrs  [i]; }
+	const char *getLinkPtr(int32_t i) const { return m_linkPtrs  [i]; }
+	uint32_t    getLinkHash32 ( int32_t i ) const { return (uint32_t)m_linkHashes[i]; }
+	uint64_t    getLinkHash64(int32_t i) const { return m_linkHashes[i]; }
+	uint64_t    getHostHash64(int32_t i) const { return m_hostHashes[i]; }
+	int32_t     getDomHash32(int32_t i) const { return m_domHashes[i]; }
+	int32_t     getNodeNum(int32_t i) const { return m_linkNodes[i];  }
+	bool        hasRelNoFollow() const { return m_hasRelNoFollow; }
 
 	int32_t findLinkNum(char* url, int32_t urlLen);
 
-	int32_t getMemUsed () { return m_allocSize; }
+	int32_t getMemUsed() const { return m_allocSize; }
 
-	bool hasSelfPermalink ( ) { return m_hasSelfPermalink; }
-	bool hasRSSOutlink    ( ) { return m_hasRSSOutlink; }
-	bool hasSubdirOutlink ( ) { return m_hasSubdirOutlink; }
+	bool hasSelfPermalink() const { return m_hasSelfPermalink; }
+	bool hasRSSOutlink() const { return m_hasRSSOutlink; }
+	bool hasSubdirOutlink() const { return m_hasSubdirOutlink; }
 
 	// private:
 

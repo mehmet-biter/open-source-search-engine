@@ -1492,14 +1492,14 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) const {
 	switch(rdbId) {
 		case RDB_POSDB:
 		case RDB2_POSDB2:
-			if( g_posdb.isShardedByTermId ( k ) ) {
+			if( Posdb::isShardedByTermId ( k ) ) {
 				// based on termid NOT docid!!!!!!
 				// good for page checksums so we only have to do disk
 				// seek on one shard, not all shards.
 				// use top 13 bits of key.
 				return m_map [(*(uint16_t *)((char *)k + 16))>>3];
 			} else {
-				uint64_t d = g_posdb.getDocId ( k );
+				uint64_t d = Posdb::getDocId ( k );
 				return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
 			}
 
@@ -1525,7 +1525,7 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) const {
 
 		case RDB_CLUSTERDB:
 		case RDB2_CLUSTERDB2: {
-			uint64_t d = g_clusterdb.getDocId ( k );
+			uint64_t d = Clusterdb::getDocId ( k );
 			return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
 		}
 

@@ -291,8 +291,8 @@ bool Msg51::sendRequest ( int32_t    i ) {
 	// count it
 	m_numRequests++;
 	// lookup in clusterdb, need a start and endkey
-	key96_t startKey = g_clusterdb.makeFirstClusterRecKey ( d );
-	key96_t endKey   = g_clusterdb.makeLastClusterRecKey  ( d );
+	key96_t startKey = Clusterdb::makeFirstClusterRecKey ( d );
+	key96_t endKey   = Clusterdb::makeLastClusterRecKey  ( d );
 	
 	// bias clusterdb lookups (from Msg22.cpp)
 //	int32_t           numTwins     = g_hostdb.getNumHostsPerShard();
@@ -421,10 +421,10 @@ void Msg51::gotClusterRec(Slot *slot) {
 	    "build: had clusterdb SUCCESS for d=%" PRId64" dptr=%" PRIu32" "
 	    "rec.n1=%" PRIx32",%016" PRIx64" sitehash26=0x%" PRIx32".", (int64_t)docId, (int32_t)ci,
 	    rec->n1,rec->n0,
-	    g_clusterdb.getSiteHash26((char *)rec));
+	    Clusterdb::getSiteHash26((char *)rec));
 
 	// check for docid mismatch
-	int64_t docId2 = g_clusterdb.getDocId ( rec );
+	int64_t docId2 = Clusterdb::getDocId ( rec );
 	if ( docId != docId2 ) {
 		logf(LOG_DEBUG,"query: docid mismatch in clusterdb.");
 		return;
@@ -498,7 +498,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 		// sanity check
 		if ( *level == CR_UNINIT ) gbshutdownLogicError();
 		// and the adult bit, for cleaning the results
-		if ( familyFilter && g_clusterdb.hasAdultContent ( crec ) ) {
+		if ( familyFilter && Clusterdb::hasAdultContent ( crec ) ) {
 			*level = CR_DIRTY;
 			continue;
 		}
@@ -516,7 +516,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 		if(fakeIt)
 			h = Titledb::getDomHash8FromDocId(docIds[i]);
 		else
-			h = g_clusterdb.getSiteHash26 ( crec );
+			h = Clusterdb::getSiteHash26 ( crec );
 
 		// inc this count!
 		if ( fakeIt ) {
@@ -542,7 +542,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 	// debug
 	for ( int32_t i = 0 ; i < numRecs && isDebug ; i++ ) {
 		char *crec = (char *)&clusterRecs[i];
-		uint32_t siteHash26=g_clusterdb.getSiteHash26(crec);
+		uint32_t siteHash26 = Clusterdb::getSiteHash26(crec);
 		logf(LOG_DEBUG,"query: msg51: hit #%" PRId32") sitehash26=%" PRIu32" "
 		     "rec.n0=%" PRIx64" docid=%" PRId64" cl=%" PRId32" (%s)",
 		     (int32_t)i,

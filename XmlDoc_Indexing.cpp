@@ -1444,7 +1444,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 	hi.m_startDist = 0;
 
 	// loop through the link texts and hash them
-	for ( Inlink *k = NULL; (k = linkInfo->getNextInlink(k)) ; ) {
+	for ( Inlink *k = NULL; linkInfo && (k = linkInfo->getNextInlink(k)) ; ) {
 		// is this inlinker internal?
 		bool internal=((m_ip&0x0000ffff)==(k->m_ip&0x0000ffff));
 		// count external inlinks we have for indexing gbmininlinks:
@@ -1519,7 +1519,7 @@ bool XmlDoc::hashNeighborhoods ( HashTableX *tt ) {
 	Inlink *k = NULL;
  loop:
 	// get the next inlink
-	k = linkInfo->getNextInlink( k );
+	k = linkInfo ? linkInfo->getNextInlink( k ) : NULL;
 	// break if done
 	if ( ! k ) return true;
 

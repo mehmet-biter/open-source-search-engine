@@ -324,8 +324,7 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 	// . loop through each link text and it its matches
 
 	// loop through the Inlinks
-	Inlink *k = NULL;
-	for ( ; (k = linkInfo->getNextInlink(k)) ; ) {
+	for (Inlink *k = NULL; linkInfo && (k = linkInfo->getNextInlink(k)); ) {
 		// does it have link text? skip if not.
 		if ( k->size_linkText <= 1 ) {
 			continue;

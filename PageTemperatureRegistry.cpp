@@ -35,7 +35,7 @@ bool PageTemperatureRegistry::load() {
 	
 	size_t new_entries = st.st_size/8;
 	
-	unsigned new_hash_table_size = new_entries * 1.125;
+	unsigned new_hash_table_size = (unsigned)(new_entries * 1.125);
 	uint64_t *new_slot = new uint64_t[new_hash_table_size];
 	memset(new_slot, 0, sizeof(uint64_t)*new_hash_table_size);
 	

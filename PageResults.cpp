@@ -3741,7 +3741,7 @@ static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg
 		// if offsite inlink text show the inlinkid for matching
 		// to an <inlink>
 		LinkInfo *info = (LinkInfo *)mr->ptr_linkInfo;//inlinks;
-		Inlink *k = info->getNextInlink(NULL);
+		Inlink *k = info ? info->getNextInlink(NULL) : NULL;
 		for (;k&&hg1==HASHGROUP_INLINKTEXT ; k=info->getNextInlink(k)){
 			if ( ! k->getLinkText() ) continue;
 			if ( k->m_wordPosStart > wp1 ) continue;
@@ -3753,7 +3753,7 @@ static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg
 				      k->m_siteHash);
 		}
 
-		k = info->getNextInlink(NULL);
+		k = info ? info->getNextInlink(NULL) : NULL;
 		for (;k&&hg2==HASHGROUP_INLINKTEXT ; k=info->getNextInlink(k)){
 			if ( ! k->getLinkText() ) continue;
 			if ( k->m_wordPosStart > wp2 ) continue;
@@ -4252,7 +4252,7 @@ static bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Ms
 		// if offsite inlink text show the inlinkid for matching
 		// to an <inlink>
 		LinkInfo *info = (LinkInfo *)mr->ptr_linkInfo;//inlinks;
-		Inlink *k = info->getNextInlink(NULL);
+		Inlink *k = info ? info->getNextInlink(NULL) : NULL;
 		sb->safePrintf("\t\t\t\"inlinkIds\": [,\n");
 		for ( ; k && ss->m_hashGroup==HASHGROUP_INLINKTEXT ;
 		      k=info->getNextInlink(k)){
@@ -4406,7 +4406,7 @@ static bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Ms
 		// if offsite inlink text show the inlinkid for matching
 		// to an <inlink>
 		LinkInfo *info = (LinkInfo *)mr->ptr_linkInfo;//inlinks;
-		Inlink *k = info->getNextInlink(NULL);
+		Inlink *k = info ? info->getNextInlink(NULL) : NULL;
 		for ( ; k && ss->m_hashGroup==HASHGROUP_INLINKTEXT ; 
 		      k=info->getNextInlink(k)){
 			if ( ! k->getLinkText() ) continue;

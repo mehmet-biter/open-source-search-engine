@@ -283,8 +283,8 @@ bool SiteGetter::getSiteList ( ) {
 		// get all pages that have this as their termid!
 		key144_t start;
 		key144_t end;
-		g_posdb.makeStartKey( &start, termId );
-		g_posdb.makeEndKey( &end, termId );
+		Posdb::makeStartKey( &start, termId );
+		Posdb::makeEndKey( &end, termId );
 
 		// . now see how many urls art at this path depth from this hostname
 		// . if it is a huge # then we know they are all subsites!

@@ -4316,8 +4316,8 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 	startKey.setMin();
 	endKey.setMax();
 	if ( termId >= 0 ) {
-		g_posdb.makeStartKey ( &startKey, termId );
-		g_posdb.makeEndKey  ( &endKey, termId );
+		Posdb::makeStartKey ( &startKey, termId );
+		Posdb::makeEndKey  ( &endKey, termId );
 		printf("termid=%" PRIu64"\n", (uint64_t)termId);
 		printf("startkey=%s\n",KEYSTR(&startKey,sizeof(posdbkey_t)));
 		printf("endkey=%s\n",KEYSTR(&endKey,sizeof(posdbkey_t)));
@@ -4390,7 +4390,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			// is it a delete?
 			const char *dd = "";
 			if ((k.n0 & 0x01) == 0x00) dd = " (delete)";
-			int64_t d = g_posdb.getDocId(&k);
+			int64_t d = Posdb::getDocId(&k);
 			uint8_t dh = Titledb::getDomHash8FromDocId(d);
 			char *rec = list.getCurrentRec();
 			int32_t recSize = 18;
@@ -4441,17 +4441,17 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 					       "%s" // err
 					       "\n",
 			       KEYSTR(&k, sizeof(key144_t)),
-			       (uint64_t)g_posdb.getTermId(&k),
+			       (uint64_t)Posdb::getTermId(&k),
 			       d,
-			       (int32_t)g_posdb.getSiteRank(&k),
-			       (int32_t)g_posdb.getLangId(&k),
-			       (int32_t)g_posdb.getWordPos(&k),
-			       (int32_t)g_posdb.getHashGroup(&k),
-			       (int32_t)g_posdb.getWordSpamRank(&k),
-			       (int32_t)g_posdb.getDiversityRank(&k),
-			       (int32_t)g_posdb.getIsSynonym(&k),
-			       (int32_t)g_posdb.getDensityRank(&k),
-			       (int32_t)g_posdb.getMultiplier(&k),
+			       (int32_t)Posdb::getSiteRank(&k),
+			       (int32_t)Posdb::getLangId(&k),
+			       (int32_t)Posdb::getWordPos(&k),
+			       (int32_t)Posdb::getHashGroup(&k),
+			       (int32_t)Posdb::getWordSpamRank(&k),
+			       (int32_t)Posdb::getDiversityRank(&k),
+			       (int32_t)Posdb::getIsSynonym(&k),
+			       (int32_t)Posdb::getDensityRank(&k),
+			       (int32_t)Posdb::getMultiplier(&k),
 			       (int32_t)dh,
 			       recSize,
 			       dd,
@@ -4530,7 +4530,7 @@ static void dumpClusterdb(const char *coll,
 			const char *dd = "";
 			if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
 			// get the language string
-			languageToString ( g_clusterdb.getLanguage((char*)&k),
+			languageToString ( Clusterdb::getLanguage((char*)&k),
 					   strLanguage );
 			//uint32_t gid = getGroupId ( RDB_CLUSTERDB , &k );
 			uint32_t shardNum = getShardNum( RDB_CLUSTERDB , &k );
@@ -4543,11 +4543,11 @@ static void dumpClusterdb(const char *coll,
 			       "groupNum=%" PRIu32" "
 			       "shardNum=%" PRIu32"\n",
 			       k.n1, k.n0,
-			       g_clusterdb.getDocId((char*)&k) , 
-			       g_clusterdb.hasAdultContent((char*)&k) ,
-			       (int32_t)g_clusterdb.getLanguage((char*)&k),
+			       Clusterdb::getDocId((char*)&k) ,
+			       Clusterdb::hasAdultContent((char*)&k) ,
+			       (int32_t)Clusterdb::getLanguage((char*)&k),
 			       strLanguage,
-			       g_clusterdb.getSiteHash26((char*)&k)    ,
+			       Clusterdb::getSiteHash26((char*)&k)    ,
 			       dd ,
 			       (uint32_t)hh->m_hostId ,
 			       shardNum);
