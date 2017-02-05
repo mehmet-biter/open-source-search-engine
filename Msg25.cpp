@@ -1463,8 +1463,7 @@ static const char *getExplanation(const char *note) {
 			"of a comment page, guestbook page or "
 			"link exchange";
 
-	return 
-		"inlinker's page contains the described text, indicative of "
+	return  "inlinker's page contains the described text, indicative of "
 		"being a link exchange or being in a comment section or "
 		"being an otherwise spammy page";
 }
