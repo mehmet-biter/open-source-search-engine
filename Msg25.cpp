@@ -3292,18 +3292,18 @@ char *Inlink::serialize(int32_t *retSize     ,
 
 
 // used by PageTitledb.cpp
-bool LinkInfo::print(SafeBuf *sb, char *coll) {
+bool LinkInfo::print(SafeBuf *sb, const char *coll) {
 	int32_t count = 1;
 
 	// loop through the link texts
 	for ( Inlink *k = NULL; (k = getNextInlink(k)) ; count++ ) {
-		char *s    = k->getLinkText();//ptr_linkText;
+		const char *s    = k->getLinkText();//ptr_linkText;
 		int32_t  slen = k->size_linkText - 1;
-		char *d    = k->getSurroundingText();//ptr_surroundingText;
+		const char *d    = k->getSurroundingText();//ptr_surroundingText;
 		int32_t  dlen = k->size_surroundingText - 1;
-		char *r    = k->getRSSItem();//ptr_rssItem;
+		const char *r    = k->getRSSItem();//ptr_rssItem;
 		int32_t  rlen = k->size_rssItem - 1;
-		char *g    = k->getGigabitQuery();
+		const char *g    = k->getGigabitQuery();
 		int32_t  glen = k->size_gigabitQuery - 1;
 		const char *c    = k->getCategories();//ptr_categories;
 		int32_t  clen = k->size_categories - 1;
@@ -3463,7 +3463,7 @@ bool Links::set(bool useRelNoFollow,
 		Url *baseUrl, 
 		int32_t version,
 		bool parentIsPermalink,
-		Links *oldLinks,
+		const Links *oldLinks,
 		bool doQuickSet)
 {
 	reset();
@@ -4503,7 +4503,7 @@ static int32_t getLinkBufferSize(int32_t numLinks){
 
 
 // returns false and sets g_errno on error
-bool Links::flagOldLinks(Links *old) {
+bool Links::flagOldLinks(const Links *old) {
 	// do not double call
 	if ( m_flagged ) return true;
 	// only call once

@@ -113,7 +113,7 @@ bool Linkdb::init2 ( int32_t treeMem ) {
 			    false);         //useIndexFile
 }
 
-bool Linkdb::verify ( char *coll ) {
+bool Linkdb::verify(const char *coll) {
 	log ( LOG_DEBUG, "db: Verifying Linkdb for coll %s...", coll );
 
 	Msg5 msg5;
