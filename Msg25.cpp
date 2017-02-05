@@ -1073,7 +1073,7 @@ bool Msg25::sendRequests() {
 			// recycle old inlinks at this point
 			if ( m_k == (Inlink *)-1 ) m_k = NULL;
 			// get it
-			m_k = m_oldLinkInfo->getNextInlink ( m_k );
+			m_k = m_oldLinkInfo ? m_oldLinkInfo->getNextInlink ( m_k ) : NULL;
 			// if none left, we really are done
 			if ( ! m_k )
 				break;
@@ -2997,7 +2997,6 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 
 
 Inlink *LinkInfo::getNextInlink(Inlink *k) {
-	if ( this == NULL ) return NULL;
 	// if none, return NULL
 	if ( m_numStoredInlinks == 0 ) return NULL;
 	// if k is NULL, return the first
