@@ -322,7 +322,7 @@ skip:
 		    //g_hostdb.makeHostId ( m_groupId ) ,
 		    m_shardNum,
 		    (PTRTYPE)m_list,
-		    m_minRecSizes, g_posdb.getTermId(m_startKey) , 
+		    m_minRecSizes, Posdb::getTermId(m_startKey) ,
 		    //m_startKey.n1,m_startKey.n0 , (int32_t)m_niceness);
 		    KEY1(m_startKey,m_ks),KEY0(m_startKey),
 		    (int32_t)m_niceness);
@@ -480,7 +480,7 @@ void Msg0::gotReply ( char *reply , int32_t replySize , int32_t replyMaxSize ) {
 	if ( g_conf.m_logTimingNet && m_rdbId==RDB_POSDB && m_startTime > 0 )
 		log(LOG_TIMING,"net: msg0: Got termlist, termId=%" PRIu64". "
 		    "Took %" PRId64" ms, replySize=%" PRId32" (niceness=%" PRId32").",
-		    g_posdb.getTermId ( m_startKey ) ,
+		    Posdb::getTermId ( m_startKey ) ,
 		    gettimeofdayInMilliseconds()-m_startTime,
 		    replySize,m_niceness);
 	// TODO: insert some seals for security, may have to alloc
@@ -702,7 +702,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 		    "Now sending data termId=%" PRIu64" size=%" PRId32
 		    " transId=%" PRId32" ip=%s port=%i took=%" PRId64" "
 		    "(niceness=%" PRId32").",
-		    g_posdb.getTermId(st0->m_startKey),
+		    Posdb::getTermId(st0->m_startKey),
 		    size,slot->getTransId(),
 		    iptoa(slot->getIp()),slot->getPort(),
 		    gettimeofdayInMilliseconds() - st0->m_startTime ,

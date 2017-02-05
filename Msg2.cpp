@@ -166,8 +166,8 @@ bool Msg2::getLists ( ) {
 			key144_t *ek ;
 			sk = (key144_t *)m_qterms[m_i].m_startKey;
 			ek = (key144_t *)m_qterms[m_i].m_endKey;
-			int64_t docId0 = g_posdb.getDocId(sk);
-			int64_t docId1 = g_posdb.getDocId(ek);
+			int64_t docId0 = Posdb::getDocId(sk);
+			int64_t docId1 = Posdb::getDocId(ek);
 			log("query: reading termlist #%" PRId32" "//from "
 			    //"distributed cache on host #%" PRId32". "
 			    "termId=%" PRId64". sk=%s ek=%s "
@@ -175,7 +175,7 @@ bool Msg2::getLists ( ) {
 			    "docid1=%" PRId64").",
 			    m_i,
 			    //hostId, 
-			    g_posdb.getTermId(sk),
+			    Posdb::getTermId(sk),
 			    KEYSTR(sk,sizeof(posdbkey_t)),
 			    KEYSTR(ek,sizeof(posdbkey_t)),
 			    //sk->n2,
@@ -315,8 +315,8 @@ bool Msg2::getLists ( ) {
 		//   apply here as well...
 		char sk3[MAX_KEY_BYTES];
 		char ek3[MAX_KEY_BYTES];
-		g_posdb.makeStartKey ( sk3 , finalTermId , m_docIdStart );
-		g_posdb.makeEndKey   ( ek3 , finalTermId , m_docIdEnd );
+		Posdb::makeStartKey ( sk3 , finalTermId , m_docIdStart );
+		Posdb::makeEndKey   ( ek3 , finalTermId , m_docIdEnd );
 		// get one
 		Msg5 *msg5 = getAvailMsg5();
 		if(!msg5) gbshutdownLogicError();

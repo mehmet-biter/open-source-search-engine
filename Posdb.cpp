@@ -39,7 +39,7 @@ bool Posdb::init ( ) {
 	int32_t multiplier = 13;
 	char shardedByTermId = 1;
 	char isSynonym = 1;
-	g_posdb.makeKey ( &k ,
+	Posdb::makeKey ( &k ,
 			  termId ,
 			  docId,
 			  dist,
@@ -54,43 +54,43 @@ bool Posdb::init ( ) {
 			  false , // delkey?
 			  shardedByTermId );
 	// test it out
-	if ( g_posdb.getTermId ( &k ) != termId ) gbshutdownLogicError();
-	//int64_t d2 = g_posdb.getDocId(&k);
-	if ( g_posdb.getDocId (&k ) != docId ) gbshutdownLogicError();
-	if ( g_posdb.getHashGroup ( &k ) !=hashGroup) gbshutdownLogicError();
-	if ( g_posdb.getWordPos ( &k ) !=  dist ) gbshutdownLogicError();
-	if ( g_posdb.getDensityRank (&k)!=densityRank)gbshutdownLogicError();
-	if ( g_posdb.getDiversityRank(&k)!=diversityRank)gbshutdownLogicError();
-	if ( g_posdb.getWordSpamRank(&k)!=wordSpamRank)gbshutdownLogicError();
-	if ( g_posdb.getSiteRank (&k) != siteRank ) gbshutdownLogicError();
-	if ( g_posdb.getLangId ( &k ) != langId ) gbshutdownLogicError();
-	if ( g_posdb.getMultiplier ( &k ) !=multiplier)gbshutdownLogicError();
-	if ( g_posdb.getIsSynonym ( &k ) != isSynonym) gbshutdownLogicError();
-	if ( g_posdb.isShardedByTermId(&k)!=shardedByTermId)gbshutdownLogicError();
+	if ( Posdb::getTermId ( &k ) != termId ) gbshutdownLogicError();
+	//int64_t d2 = Posdb::getDocId(&k);
+	if ( Posdb::getDocId (&k ) != docId ) gbshutdownLogicError();
+	if ( Posdb::getHashGroup ( &k ) !=hashGroup) gbshutdownLogicError();
+	if ( Posdb::getWordPos ( &k ) !=  dist ) gbshutdownLogicError();
+	if ( Posdb::getDensityRank (&k)!=densityRank)gbshutdownLogicError();
+	if ( Posdb::getDiversityRank(&k)!=diversityRank)gbshutdownLogicError();
+	if ( Posdb::getWordSpamRank(&k)!=wordSpamRank)gbshutdownLogicError();
+	if ( Posdb::getSiteRank (&k) != siteRank ) gbshutdownLogicError();
+	if ( Posdb::getLangId ( &k ) != langId ) gbshutdownLogicError();
+	if ( Posdb::getMultiplier ( &k ) !=multiplier)gbshutdownLogicError();
+	if ( Posdb::getIsSynonym ( &k ) != isSynonym) gbshutdownLogicError();
+	if ( Posdb::isShardedByTermId(&k)!=shardedByTermId)gbshutdownLogicError();
 	// more tests
 	setDocIdBits ( &k, docId );
 	setMultiplierBits ( &k, multiplier );
 	setSiteRankBits ( &k, siteRank );
 	setLangIdBits ( &k, langId );
 	// test it out
-	if ( g_posdb.getTermId ( &k ) != termId ) gbshutdownLogicError();
-	if ( g_posdb.getDocId (&k ) != docId ) gbshutdownLogicError();
-	if ( g_posdb.getWordPos ( &k ) !=  dist ) gbshutdownLogicError();
-	if ( g_posdb.getDensityRank (&k)!=densityRank)gbshutdownLogicError();
-	if ( g_posdb.getDiversityRank(&k)!=diversityRank)gbshutdownLogicError();
-	if ( g_posdb.getWordSpamRank(&k)!=wordSpamRank)gbshutdownLogicError();
-	if ( g_posdb.getSiteRank (&k) != siteRank ) gbshutdownLogicError();
-	if ( g_posdb.getHashGroup ( &k ) !=hashGroup) gbshutdownLogicError();
-	if ( g_posdb.getLangId ( &k ) != langId ) gbshutdownLogicError();
-	if ( g_posdb.getMultiplier ( &k ) !=multiplier)gbshutdownLogicError();
-	if ( g_posdb.getIsSynonym ( &k ) != isSynonym) gbshutdownLogicError();
+	if ( Posdb::getTermId ( &k ) != termId ) gbshutdownLogicError();
+	if ( Posdb::getDocId (&k ) != docId ) gbshutdownLogicError();
+	if ( Posdb::getWordPos ( &k ) !=  dist ) gbshutdownLogicError();
+	if ( Posdb::getDensityRank (&k)!=densityRank)gbshutdownLogicError();
+	if ( Posdb::getDiversityRank(&k)!=diversityRank)gbshutdownLogicError();
+	if ( Posdb::getWordSpamRank(&k)!=wordSpamRank)gbshutdownLogicError();
+	if ( Posdb::getSiteRank (&k) != siteRank ) gbshutdownLogicError();
+	if ( Posdb::getHashGroup ( &k ) !=hashGroup) gbshutdownLogicError();
+	if ( Posdb::getLangId ( &k ) != langId ) gbshutdownLogicError();
+	if ( Posdb::getMultiplier ( &k ) !=multiplier)gbshutdownLogicError();
+	if ( Posdb::getIsSynonym ( &k ) != isSynonym) gbshutdownLogicError();
 
 	/*
 	// more tests
 	key144_t sk;
 	key144_t ek;
-	g_posdb.makeStartKey(&sk,termId);
-	g_posdb.makeEndKey  (&ek,termId);
+	Posdb::makeStartKey(&sk,termId);
+	Posdb::makeEndKey  (&ek,termId);
 
 	RdbList list;
 	list.set(NULL,0,NULL,0,0,true,true,18);
@@ -507,10 +507,10 @@ void printTermList ( int32_t i, const char *list, int32_t listSize ) {
 	const char *px = list;//->m_list;
 	const char *pxend = px + listSize;//list->m_listSize;
 	for ( ; px < pxend ; ) {
-		int32_t wp = g_posdb.getWordPos(px);
-		int32_t dr = g_posdb.getDensityRank(px);
-		int32_t hg = g_posdb.getHashGroup(px);
-		int32_t syn = g_posdb.getIsSynonym(px);
+		int32_t wp = Posdb::getWordPos(px);
+		int32_t dr = Posdb::getDensityRank(px);
+		int32_t hg = Posdb::getHashGroup(px);
+		int32_t syn = Posdb::getIsSynonym(px);
 		log("seo: qterm#%" PRId32" pos=%" PRId32" dr=%" PRId32" hg=%s syn=%" PRId32
 		    , i
 		    , wp
@@ -518,9 +518,9 @@ void printTermList ( int32_t i, const char *list, int32_t listSize ) {
 		    , getHashGroupString(hg)
 		    , syn
 		    );
-		if ( firstKey && g_posdb.getKeySize(px)!=12)
+		if ( firstKey && Posdb::getKeySize(px)!=12)
 			gbshutdownLogicError();
-		else if ( ! firstKey&& g_posdb.getKeySize(px)!=6)
+		else if ( ! firstKey&& Posdb::getKeySize(px)!=6)
 			gbshutdownLogicError();
 		if ( firstKey ) px += 12;
 		else            px += 6;
@@ -570,7 +570,7 @@ int Posdb::printList ( RdbList &list ) {
 		// is it a delete?
 		const char *dd = "";
 		if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
-		int64_t d = g_posdb.getDocId(&k);
+		int64_t d = Posdb::getDocId(&k);
 		uint8_t dh = Titledb::getDomHash8FromDocId(d);
 		char *rec = list.getCurrentRec();
 		int32_t recSize = 18;
@@ -578,11 +578,11 @@ int Posdb::printList ( RdbList &list ) {
 		else if ( rec[0] & 0x02 ) recSize = 12;
 		// alignment bits check
 		if ( recSize == 6  && !(rec[1] & 0x02) ) {
-			int64_t nd1 = g_posdb.getDocId(rec+6);
+			int64_t nd1 = Posdb::getDocId(rec+6);
 			// seems like nd2 is it, so it really is 12 bytes but
 			// does not have the alignment bit set...
-			//int64_t nd2 = g_posdb.getDocId(rec+12);
-			//int64_t nd3 = g_posdb.getDocId(rec+18);
+			//int64_t nd2 = Posdb::getDocId(rec+12);
+			//int64_t nd3 = Posdb::getDocId(rec+18);
 			// what size is it really?
 			// seems like 12 bytes
 			//log("debug1: d=%" PRId64" nd1=%" PRId64" nd2=%" PRId64" nd3=%" PRId64,
@@ -592,11 +592,11 @@ int Posdb::printList ( RdbList &list ) {
 			//g_process.shutdownAbort(true);
 		}
 		if ( recSize == 12 && !(rec[1] & 0x02) )  {
-			//int64_t nd1 = g_posdb.getDocId(rec+6);
+			//int64_t nd1 = Posdb::getDocId(rec+6);
 			// seems like nd2 is it, so it really is 12 bytes but
 			// does not have the alignment bit set...
-			int64_t nd2 = g_posdb.getDocId(rec+12);
-			//int64_t nd3 = g_posdb.getDocId(rec+18);
+			int64_t nd2 = Posdb::getDocId(rec+12);
+			//int64_t nd3 = Posdb::getDocId(rec+18);
 			// what size is it really?
 			// seems like 12 bytes
 			//log("debug1: d=%" PRId64" nd1=%" PRId64" nd2=%" PRId64" nd3=%" PRId64,
@@ -608,11 +608,11 @@ int Posdb::printList ( RdbList &list ) {
 		}
 		// if it 
 		if ( recSize == 12 &&  (rec[7] & 0x02)) { 
-			//int64_t nd1 = g_posdb.getDocId(rec+6);
+			//int64_t nd1 = Posdb::getDocId(rec+6);
 			// seems like nd2 is it, so it really is 12 bytes but
 			// does not have the alignment bit set...
-			int64_t nd2 = g_posdb.getDocId(rec+12);
-			//int64_t nd3 = g_posdb.getDocId(rec+18);
+			int64_t nd2 = Posdb::getDocId(rec+12);
+			//int64_t nd3 = Posdb::getDocId(rec+18);
 			// what size is it really?
 			// seems like 12 bytes really as well!
 			//log("debug2: d=%" PRId64" nd1=%" PRId64" nd2=%" PRId64" nd3=%" PRId64,
@@ -643,17 +643,17 @@ int Posdb::printList ( RdbList &list ) {
 		       "%s" // err
 		       "\n" ,
 		       KEYSTR(&k,sizeof(key144_t)),
-		       (int64_t)g_posdb.getTermId(&k),
+		       (int64_t)Posdb::getTermId(&k),
 		       d ,
-		       (int32_t)g_posdb.getSiteRank(&k),
-		       (int32_t)g_posdb.getLangId(&k),
-		       (int32_t)g_posdb.getWordPos(&k),
-		       (int32_t)g_posdb.getHashGroup(&k),
-		       (int32_t)g_posdb.getWordSpamRank(&k),
-		       (int32_t)g_posdb.getDiversityRank(&k),
-		       (int32_t)g_posdb.getIsSynonym(&k),
-		       (int32_t)g_posdb.getDensityRank(&k),
-		       (int32_t)g_posdb.getMultiplier(&k),
+		       (int32_t)Posdb::getSiteRank(&k),
+		       (int32_t)Posdb::getLangId(&k),
+		       (int32_t)Posdb::getWordPos(&k),
+		       (int32_t)Posdb::getHashGroup(&k),
+		       (int32_t)Posdb::getWordSpamRank(&k),
+		       (int32_t)Posdb::getDiversityRank(&k),
+		       (int32_t)Posdb::getIsSynonym(&k),
+		       (int32_t)Posdb::getDensityRank(&k),
+		       (int32_t)Posdb::getMultiplier(&k),
 		       (int32_t)dh,
 		       recSize,
 		       dd ,

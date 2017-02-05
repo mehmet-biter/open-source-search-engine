@@ -1582,7 +1582,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 			continue;
 		}
 		// if its a SpiderReply skip it
-		if ( ! g_spiderdb.isSpiderRequest ( (key128_t *)rec)) 
+		if ( ! Spiderdb::isSpiderRequest ( (key128_t *)rec))
 		{
 			continue;
 		}

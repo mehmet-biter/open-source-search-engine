@@ -136,7 +136,7 @@ bool Proxy::initProxy ( int32_t proxyId, uint16_t udpPort,
 	//forward. html/gif's, etc can be taken care here itself.
 	g_pages.init ( );
 
-	Msg13 msg13;	if ( ! msg13.registerHandler () ) return false;	
+	if ( ! Msg13::registerHandler () ) return false;
 
 	// . then dns Distributed client
 	// . server should listen to a socket and register with g_loop
@@ -144,7 +144,7 @@ bool Proxy::initProxy ( int32_t proxyId, uint16_t udpPort,
 	if ( ! g_dns.init( g_hostdb.m_myHost->m_dnsClientPort ) ) {
 		log("db: Dns distributed client init failed." ); return 1; }
 
-	MsgC msgc; if ( ! msgc.registerHandler() ) return false;
+	if ( ! MsgC::registerHandler() ) return false;
 
 	//need to init collectiondb too because of addurl
 	//set isdump to true because we aren't going to store any data in the

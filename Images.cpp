@@ -329,8 +329,8 @@ bool Images::getThumbnail ( char *pageSite ,
 
 	key144_t startKey ;
 	key144_t endKey   ;
-	g_posdb.makeStartKey(&startKey,termId);
-	g_posdb.makeEndKey  (&endKey  ,termId);
+	Posdb::makeStartKey(&startKey,termId);
+	Posdb::makeEndKey  (&endKey  ,termId);
 
 	// get shard of that (this termlist is sharded by termid -
 	// see XmlDoc.cpp::hashNoSplit() where it hashes gbsitetemplate: term)
@@ -430,8 +430,8 @@ bool Images::launchRequests ( ) {
 		// it is repeated on other pages.
 		key144_t startKey ; 
 		key144_t endKey   ;
-		g_posdb.makeStartKey(&startKey,m_termIds[i]);
-		g_posdb.makeEndKey  (&endKey  ,m_termIds[i]);
+		Posdb::makeStartKey(&startKey,m_termIds[i]);
+		Posdb::makeEndKey  (&endKey  ,m_termIds[i]);
 		uint32_t shardNum;
 		// assume to be for posdb here
 		shardNum = g_hostdb.getShardNumByTermId ( &startKey );

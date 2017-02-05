@@ -12082,10 +12082,10 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		else if ( rdbId == RDB_CLUSTERDB ) {
 			key128_t *k2 = (key128_t *)k;
 			char *r = (char *)k2;
-			int32_t siteHash26 = g_clusterdb.getSiteHash26   ( r );
-			char lang       = g_clusterdb.getLanguage     ( r );
-			int64_t docId = g_clusterdb.getDocId        ( r );
-			char ff         = g_clusterdb.getFamilyFilter ( r );
+			int32_t siteHash26 = Clusterdb::getSiteHash26   ( r );
+			char lang       = Clusterdb::getLanguage     ( r );
+			int64_t docId = Clusterdb::getDocId        ( r );
+			char ff         = Clusterdb::getFamilyFilter ( r );
 			// sanity check
 			if(dataSize!=0){g_process.shutdownAbort(true);}
 			sb->safePrintf("<td>"
@@ -13521,7 +13521,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	if (m_useClusterdb && addClusterRec) {
 		// . get new clusterdb key
 		// . we use the host hash for the site hash! hey, this is only 26 bits!
-		key96_t newk = g_clusterdb.makeClusterRecKey(*getDocId(), *getIsAdult(), *getLangId(), getHostHash32a(), false);
+		key96_t newk = Clusterdb::makeClusterRecKey(*getDocId(), *getIsAdult(), *getLangId(), getHostHash32a(), false);
 
 		// store rdbid
 		*m_p = RDB_CLUSTERDB;

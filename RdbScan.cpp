@@ -225,7 +225,7 @@ void RdbScan::gotList ( ) {
 		m_shifted = 12;
 	}
 	// if first key is already full (12 bytes) no need to do anything
-	else if ( m_rdblist->isHalfBitOn ( p ) ) {
+	else if ( RdbList::isHalfBitOn ( p ) ) {
 		// otherwise, make it full
 		m_rdblist->setList(m_rdblist->getList() - 6);
 		m_rdblist->setListSize(m_rdblist->getListSize() + 6);

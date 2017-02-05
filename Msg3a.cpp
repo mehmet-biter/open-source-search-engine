@@ -830,10 +830,10 @@ bool Msg3a::mergeLists() {
 		     ksPtr[maxj]->n1 != 0  ) {
 			// if family filter on and is adult...
 			if(m_msg39req.m_familyFilter &&
-			     g_clusterdb.hasAdultContent((char*)ksPtr[maxj]) )
+			     Clusterdb::hasAdultContent((char*)ksPtr[maxj]) )
 				goto skip;
 			// get the hostname hash, a int64_t
-			int32_t sh = g_clusterdb.getSiteHash26 ((char*)ksPtr[maxj]);
+			int32_t sh = Clusterdb::getSiteHash26 ((char*)ksPtr[maxj]);
 			// do we have enough from this hostname already?
 			int32_t slot = htable2.getSlot(sh );
 			// if this hostname already visible, do not over-display it...
@@ -949,7 +949,7 @@ bool Msg3a::mergeLists() {
 		for(int32_t i = 0; i < m_numDocIds; i++) {
 			int32_t sh = 0;
 			if(m_msg39req.m_doSiteClustering )
-				sh=g_clusterdb.getSiteHash26((char *)
+				sh=Clusterdb::getSiteHash26((char *)
 							   &m_clusterRecs[i]);
 			// print out score_t
 			logf(LOG_DEBUG,"query: msg3a: [%p] %03d) merged docId=%012" PRIu64" score=%f flags=0x%04x hosthash=0x%x",
