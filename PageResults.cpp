@@ -1083,16 +1083,13 @@ bool printSearchResultsHeader ( State0 *st ) {
 			}
 
 			if ( sq ) {
-				char *term = sq->m_term;
-				char c = term[sq->m_termLen];
-				term[sq->m_termLen] = '\0';
+				const char *term = sq->m_term;
 				const char *printTerm = term;
 				if ( is_wspace_a(term[0])) printTerm++;
 				sb->safePrintf("\t\t\t<synonymOf>"
-					       "<![CDATA[%s]]>"
+					       "<![CDATA[%*.*s]]>"
 					       "</synonymOf>\n"
-					       ,printTerm);
-				term[sq->m_termLen] = c;
+					       ,(int)sq->m_termLen,(int)sq->m_termLen,printTerm);
 			}				
 			//int64_t tf = msg40->m_msg3a.m_termFreqs[i];
 			int64_t tf = qt->m_termFreq;
