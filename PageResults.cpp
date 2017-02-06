@@ -2394,13 +2394,13 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	// the a href tag
 	if ( si->m_format == FORMAT_HTML ) {
-		sb->safePrintf ( "<a href=" );
+		sb->safePrintf ( "<a href=\"" );
 		// truncate off -diffbotxyz%" PRId32"
 		int32_t newLen = urlLen;
 		// print the url in the href tag
 		sb->safeMemcpy ( url , newLen ); 
 		// then finish the a href tag and start a bold for title
-		sb->safePrintf ( ">");
+		sb->safePrintf ( "\">");
 	}
 
 
