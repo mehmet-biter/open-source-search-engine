@@ -899,9 +899,8 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 		if( link.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION) ||	// @todo BR: For now ignore actual TitleDB version. // m_version) ||
 			link.hasScriptExtension() ||
 			link.hasJsonExtension() ||
-			link.hasXmlExtension() 
-//@@@ TEMPORARILY DISABLED			g_urlBlockList.isUrlBlocked(link.getUrl())
-		) {
+			link.hasXmlExtension() ||
+			g_urlBlockList.isUrlBlocked(link.getUrl())) {
 
 			logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", link.getUrl());
 			continue;			

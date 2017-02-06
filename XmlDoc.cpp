@@ -14906,10 +14906,9 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// BR 20160125: Do not create spiderdb entries for media URLs etc.
 		if(	url.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION) ||
 			url.hasScriptExtension() ||
-			url.hasJsonExtension() 
+			url.hasJsonExtension() ||
 //			url.hasXmlExtension() ||
-//@@@ TEMPORARILY DISABLED			g_urlBlockList.isUrlBlocked(url.getUrl())
-			)
+			g_urlBlockList.isUrlBlocked(url.getUrl()))
 		{
 			logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", url.getUrl());
 			continue;
