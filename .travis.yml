@@ -16,10 +16,6 @@ script:
     make CXX=g++-5 -j4;
   fi
 
-branches:
-  only:
-  - master
-
 addons:
   sonarqube: true
   apt:
