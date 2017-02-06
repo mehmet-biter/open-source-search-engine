@@ -1822,63 +1822,31 @@ bool Msg40::gotSummary ( ) {
 	// END HACK
 	// 
 
-	// . uc = use cache?
-	// . store in cache now if we need to
-	bool uc = false;
-	if ( m_si->m_useCache   ) uc = true;
-	if ( m_si->m_wcache     ) uc = true;
-	// . do not store if there was an error
-	// . no, allow errors in cache since we often have lots of 
-	//   docid not founds and what not, due to index corruption and
-	//   being out of sync with titledb
-	if ( m_errno            &&
-	     // forgive "Record not found" errors, they are quite common
-	     m_errno != ENOTFOUND ) {
-		logf(LOG_DEBUG,"query: not storing in cache: %s",
-		     mstrerror(m_errno));
-		uc = false;
-	}
-	if ( m_si->m_docIdsOnly ) uc = false;
+	//Old logic for whether to store the msg40+results in the cache or not. Logic looks fine
+	//but the cache has been removed a long time ago.
+	//
+	// // . uc = use cache?
+	// // . store in cache now if we need to
+	// bool uc = false;
+	// if ( m_si->m_useCache   ) uc = true;
+	// if ( m_si->m_wcache     ) uc = true;
+	// // . do not store if there was an error
+	// // . no, allow errors in cache since we often have lots of
+	// //   docid not founds and what not, due to index corruption and
+	// //   being out of sync with titledb
+	// if ( m_errno            &&
+	//      // forgive "Record not found" errors, they are quite common
+	//      m_errno != ENOTFOUND ) {
+	// 	logf(LOG_DEBUG,"query: not storing in cache: %s",
+	// 	     mstrerror(m_errno));
+	// 	uc = false;
+	// }
+	// if ( m_si->m_docIdsOnly ) uc = false;
+	//
+	// // all done if not storing in cache
+	// if ( ! uc ) return true;
 
-	// all done if not storing in cache
-	if ( ! uc ) return true;
 
-	// debug
-	if ( m_si->m_debug )
-		logf(LOG_DEBUG,"query: [%" PTRFMT"] Storing output in cache.",
-		     (PTRTYPE)this);
-	// store in this buffer
-	char tmpBuf [ 64 * 1024 ];
-	// use that
-	char *p = tmpBuf;
-	// how much room?
-	int32_t tmpSize = getStoredSize();
-	// unless too small
-	if ( tmpSize > 64*1024 ) 
-		p = (char *)mmalloc(tmpSize,"Msg40Cache");
-	if ( ! p ) {
-		// this is just for cachinig, not critical... ignore errors
-		g_errno = 0;
-		logf ( LOG_INFO ,
-		       "query: Size of cached search results page (and "
-		       "all associated data) is %" PRId32" bytes. Max is %i. "
-		       "Page not cached.", tmpSize, 32*1024 );
-		return true;
-	}
-	// serialize into tmp
-	int32_t nb = serialize ( p , tmpSize );
-	// it must fit exactly
-	if ( nb != tmpSize || nb == 0 ) {
-		g_errno = EBADENGINEER;
-		log (LOG_LOGIC,
-		     "query: Size of cached search results page (%" PRId32") "
-		     "does not match what it should be. (%" PRId32")",
-		     nb, tmpSize );
-		return true;
-	}
-
-	// free it, cache will copy it into its ring buffer
-	if ( p != tmpBuf ) mfree ( p , tmpSize , "Msg40Cache" );
 	// ignore errors
 	g_errno = 0;
  	return true;
