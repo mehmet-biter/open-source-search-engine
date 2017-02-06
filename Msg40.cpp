@@ -1451,7 +1451,7 @@ bool Msg40::gotSummary ( ) {
 		// convenient var
 		Msg20 *m = m_msg20[i];
 		// get the Msg20 reply
-		Msg20Reply *mr = m->m_r;
+		const Msg20Reply *mr = m->m_r;
 		// if no reply, all hosts must have been dead i guess so
 		// filter out this guy
 		if ( ! mr && ! m->m_errno ) {
@@ -1531,7 +1531,7 @@ bool Msg40::gotSummary ( ) {
 		if ( m_msg20[i]->m_errno ) continue;
 
 		// get it
-		Msg20Reply *mri = m_msg20[i]->m_r;
+		const Msg20Reply *mri = m_msg20[i]->m_r;
 		// do not dedup CT_STATUS results, those are
 		// spider reply "documents" that indicate the last
 		// time a doc was spidered and the error code or 
@@ -1547,15 +1547,15 @@ bool Msg40::gotSummary ( ) {
 			// get it
 			if ( m_msg20[m]->m_errno ) continue;
 
-			Msg20Reply *mrm = m_msg20[m]->m_r;
+			const Msg20Reply *mrm = m_msg20[m]->m_r;
 			// do not dedup CT_STATUS results, those are
 			// spider reply "documents" that indicate the last
 			// time a doc was spidered and the error code or 
 			// success code
 			if ( mrm->m_contentType == CT_STATUS ) continue;
 			// use gigabit vector to do topic clustering, etc.
-			int32_t *vi = (int32_t *)mri->ptr_vbuf;
-			int32_t *vm = (int32_t *)mrm->ptr_vbuf;
+			const int32_t *vi = (int32_t *)mri->ptr_vbuf;
+			const int32_t *vm = (int32_t *)mrm->ptr_vbuf;
 			float s ;
 			s = computeSimilarity(vi,vm,NULL,NULL,NULL);
 			// skip if not similar
@@ -1587,7 +1587,7 @@ bool Msg40::gotSummary ( ) {
 			if(m_msg3a.m_clusterLevels[i] != CR_OK) continue;
 
 			// get it
-			Msg20Reply *mr = m_msg20[i]->m_r;
+			const Msg20Reply *mr = m_msg20[i]->m_r;
 
 			// hash the URL all in lower case to catch wiki dups
 			const char *url  = mr-> ptr_ubuf;
