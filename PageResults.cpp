@@ -1053,16 +1053,13 @@ bool printSearchResultsHeader ( State0 *st ) {
 			sb->safePrintf("\t\t<term>\n");
 			QueryTerm *qt = &q->m_qterms[i];
 			sb->safePrintf("\t\t\t<termNum>%i</termNum>\n",i);
-			char *term = qt->m_term;
-			char c = term[qt->m_termLen];
-			term[qt->m_termLen] = '\0';
+			const char *term = qt->m_term;
 			sb->safePrintf("\t\t\t<termStr><![CDATA[");
 			const char *printTerm = qt->m_term;
 			if ( is_wspace_a(term[0])) printTerm++;
-			cdataEncode(sb, printTerm);
+			cdataEncode(sb, printTerm,qt->m_termLen);
 			sb->safePrintf("]]>"
 				       "</termStr>\n");
-			term[qt->m_termLen] = c;
 			// syn?
 			QueryTerm *sq = qt->m_synonymOf;
 			// what language did synonym come from?
