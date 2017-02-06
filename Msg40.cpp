@@ -1505,18 +1505,6 @@ bool Msg40::gotSummary ( ) {
 			continue;
 		}
 
-		// filter out urls with <![CDATA in them
-		if ( mr && strstr( mr->ptr_ubuf, "<![CDATA[" ) ) {
-			*level = CR_BAD_URL;
-			continue;
-		}
-
-		// also filter urls with ]]> in them
-		if ( mr && strstr( mr->ptr_ubuf, "]]>" ) ) {
-			*level = CR_BAD_URL;
-			continue;
-		}
-
 		// filter empty title & summaries
 		if ( mr && mr->size_tbuf <= 1 && mr->size_displaySum <= 1 ) {
 			if ( ! m_si->m_showErrors ) {
