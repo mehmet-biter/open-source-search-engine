@@ -13,7 +13,7 @@ script:
     ./runCoverityAnalysis.sh;
     ./runSonarQubeAnalysis.sh;
   else
-    make CXX=g++-4.9 -j4;
+    make CXX=g++-5 -j4;
   fi
 
 branches:
@@ -26,5 +26,5 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     packages:
-    - g++-4.9
+    - g++-5
     - libssl-dev
