@@ -1137,13 +1137,9 @@ bool printSearchResultsHeader ( State0 *st ) {
 			sb->safePrintf("\t\t{\n");
 			QueryTerm *qt = &q->m_qterms[i];
 			sb->safePrintf("\t\t\"termNum\":%i,\n",i);
-			char *term = qt->m_term;
-			char c = term[qt->m_termLen];
-			term[qt->m_termLen] = '\0';
 			sb->safePrintf("\t\t\"termStr\":\"");
-			sb->jsonEncode (qt->m_term);
+			sb->jsonEncode (qt->m_term,qt->m_termLen);
 			sb->safePrintf("\",\n");
-			term[qt->m_termLen] = c;
 			// syn?
 			QueryTerm *sq = qt->m_synonymOf;
 			// what language did synonym come from?
@@ -1163,13 +1159,9 @@ bool printSearchResultsHeader ( State0 *st ) {
 			}
 
 			if ( sq ) {
-				char *term = sq->m_term;
-				char c = term[sq->m_termLen];
-				term[sq->m_termLen] = '\0';
 				sb->safePrintf("\t\t\"synonymOf\":\"");
-				sb->jsonEncode(sq->m_term);
+				sb->jsonEncode(sq->m_term,sq->m_termLen);
 				sb->safePrintf("\",\n");
-				term[sq->m_termLen] = c;
 			}				
 			//int64_t tf = msg40->m_msg3a.m_termFreqs[i];
 			int64_t tf = qt->m_termFreq;
