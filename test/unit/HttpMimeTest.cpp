@@ -429,6 +429,35 @@ TEST(HttpMimeTest, SetCookieWithoutName) {
 	httpMime.verifyCookie("sn", "sn=%7B%22id%22%3A%223a87d966df3fb25d01054ed8b303f17d%22%2C%22fl%22%3A%5B%7B%22key%22%3A4074%2C%22label%22%3A%22Milano%22%7D%2C%7B%22key%22%3A5913%2C%22label%22%3A%22Roma%22%7D%2C%7B%22key%22%3A4579%2C%22label%22%3A%22Napoli%22%7D%5D%7D", "/", "3bmeteo.com");
 }
 
+TEST(HttpMimeTest, SetCookieWithoutValue) {
+	char httpResponse[] =
+		"Server: Apache\r\n"
+		"X-DC-Name: 2\r\n"
+		"P3P: policyref=\"/w3c/tmau/p3p.xml\", CP=\"IDC DSP COR NID CURa ADMa DEVa PSAa OUR IND COM NAV INT\"\r\n"
+		"Cache-Control: no-store, no-cache, must-revalidate, max-age=0\r\n"
+		"Pragma: no-cache\r\n"
+		"Expires: Thu,  1 Jan 1970 00:00:00 GMT\r\n"
+		"Content-Type: text/html; charset=utf-8\r\n"
+		"Date: Mon, 06 Feb 2017 10:16:48 GMT\r\n"
+		"Transfer-Encoding:  chunked\r\n"
+		"Connection: keep-alive\r\n"
+		"Connection: Transfer-Encoding\r\n"
+		"Set-Cookie: SID=u7FcA7TMdnm4wFfZNTApBpVDMXwARKzsuMm4IryBE53KkUyIQdoR8DYYzSrpAjF-R5xylGzcnGy6zgd5; path=/; domain=.ticketmaster.com.au\r\n"
+		"Set-Cookie: BID=36kCSCjBw5bNr9rcUGleJZHiXlEQLD_7oecOaE2IWZ--BLcaYzax1n0eQBsp7RAszmdWgt_GLM9stbJj6jMt; path=/; domain=.ticketmaster.com.au; expires=Fri, 01-Jan-2038 00:00:01 GMT\r\n"
+		"Set-Cookie: GEORAN=1; path=/; domain=.ticketmaster.com.au; expires=\r\n"
+		"Set-Cookie: GEO_OUT=1; path=/; domain=.ticketmaster.com.au\r\n"
+		"Set-Cookie: GEO_OMN=out; path=/; domain=.ticketmaster.com.au\r\n"
+		"Set-Cookie: csrf_token=9a26b1c07837ccebb295bee74b572719; path=/; domain=.ticketmaster.com.au\r\n"
+		"Set-Cookie: TM_PAGES_REBRANDED=; path=/; domain=.ticketmaster.com.au; expires=Thu Jan  1 00:00:00 1970\r\n"
+		"Set-Cookie: CMPS=AFbhEZ8xhZxQp8svtaWnCfu3I+mO6szzNNlxNNbswmyYIdEL3yc6ivXjJSAO68VqQQa0unO3V4A=; path=/\r\n"
+		"\r\n";
+
+	TestHttpMime httpMime(httpResponse, "http://www.ticketmaster.com.au/");
+
+	ASSERT_EQ(8, httpMime.getCookies().size());
+	httpMime.verifyCookie("GEORAN", "GEORAN=1", "/", "ticketmaster.com.au");
+}
+
 TEST(HttpMimeTest, SetCookieExpiresFormatBadColon) {
 	char httpResponse[] =
 		"HTTP/1.1 200 OK\r\n"
