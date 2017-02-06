@@ -333,7 +333,7 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked(bool forWrite) {
 
 	if (forWrite) {
 		// shrink memory usage
-		docids_t(*tmpDocIds).swap(*tmpDocIds);
+		tmpDocIds->shrink_to_fit();
 	}
 
 	// replace existing even if size doesn't change (could change from positive to negative key)
