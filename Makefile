@@ -133,7 +133,7 @@ CPPFLAGS += $(CONFIG_CPPFLAGS)
 # export to sub-make
 export CONFIG_CPPFLAGS
 
-ifeq ($(CXX), g++)
+ifeq ($(findstring g++, $(CXX)),g++)
 # dependencies
 CPPFLAGS += -MMD -MP
 
@@ -181,7 +181,7 @@ CPPFLAGS += -Wno-maybe-uninitialized
 CPPFLAGS += -Wno-unused-but-set-variable
 CPPFLAGS += -Wno-unused-parameter
 
-else ifeq ($(CXX), clang++)
+else ifeq ($(findstring clang++, $(CXX)),clang++)
 # dependencies
 CPPFLAGS += -MMD -MP
 
