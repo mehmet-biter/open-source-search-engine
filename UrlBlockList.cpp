@@ -71,7 +71,7 @@ bool UrlBlockList::load() {
 	logTrace(g_conf.m_logTraceUrlBlockList, "Loaded %s", m_filename);
 #else
 #warning "Url block feature is disabled"
-	logTrace(g_conf.m_logTraceUrlBlockList, "Not loading %s (g++ <4.9 regex STL is broken; std::atomic_store is supported)", m_filename);
+	logTrace(g_conf.m_logTraceUrlBlockList, "Not loading %s (g++ <4.9 regex STL is broken; std::atomic_store is not supported)", m_filename);
 #endif
 #endif
 	return true;
