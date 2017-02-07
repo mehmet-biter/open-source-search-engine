@@ -1430,7 +1430,6 @@ bool Msg40::gotSummary ( ) {
 	}
 
 	int64_t startTime = gettimeofdayInMilliseconds();
-	int64_t took;
 
 	// loop over each clusterLevel and set it
 	for ( int32_t i = 0 ; i < m_numReplies ; i++ ) {
@@ -1458,6 +1457,7 @@ bool Msg40::gotSummary ( ) {
 			logf(LOG_DEBUG,"query: msg 20 reply was null.");
 			m->m_errno = ENOHOSTS;
 		}
+
 		if ( m_si->m_familyFilter && mr && mr->m_isAdult) {
 			logf(LOG_DEBUG,"query: msg20.is_adult and family filter is on.");
 			m->m_errno = EDOCADULT;
@@ -1651,6 +1651,16 @@ bool Msg40::gotSummary ( ) {
 	// END URL NORMALIZE AND COMPARE
 	//
 
+	// show time
+	int64_t took = gettimeofdayInMilliseconds() - startTime;
+	if ( took > 3 )
+		log(LOG_INFO,"query: Took %" PRId64" ms to do clustering and dup removal.",took);
+
+	return gotEnoughSummaries();
+}
+
+
+bool Msg40::gotEnoughSummaries() {
 	m_omitCount = 0;
 
 	// count how many are visible!
@@ -1664,11 +1674,6 @@ bool Msg40::gotSummary ( ) {
 		// otherwise count as ommitted
 		else m_omitCount++;
 	}
-
-	// show time
-	took = gettimeofdayInMilliseconds() - startTime;
-	if ( took > 3 )
-		log(LOG_INFO,"query: Took %" PRId64" ms to do clustering and dup removal.",took);
 
 	// . let's wait for the tasks to complete before even trying to launch
 	//   more than the first MAX_OUTSTANDING msg20s

@@ -53,6 +53,7 @@ public:
 	Msg20 *getAvailMsg20();
 	Msg20 *getCompletedSummary ( int32_t ix );
 	bool gotSummary       ( ) ;
+	bool gotEnoughSummaries();
 	bool reallocMsg20Buf ( ) ;
 
 	// serialization routines used for caching Msg40s by Msg17
