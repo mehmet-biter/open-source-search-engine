@@ -73,6 +73,7 @@ OBJS_O3 = \
 	GbMakePath.o \
 	GbUtil.o \
 	GbCompress.o \
+	GbRegex.o \
 
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
@@ -222,7 +223,7 @@ CPPFLAGS += -Wno-format-nonliteral
 
 endif
 
-LIBS = -lm -lpthread -lssl -lcrypto -lz
+LIBS = -lm -lpthread -lssl -lcrypto -lz -lpcre
 
 # to build static libiconv.a do a './configure --enable-static' then 'make' in the iconv directory
 
