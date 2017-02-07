@@ -274,17 +274,16 @@ slacktee.sh:
 	ln -sf third-party/slacktee/slacktee.sh slacktee.sh 2>/dev/null
 
 
-.PHONY: vclean
-vclean:
-	rm -f Version.o
+Version.o: FORCE
+FORCE:
 
 
-gb: vclean $(OBJS) main.o $(LIBFILES)
+gb: $(OBJS) main.o $(LIBFILES)
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ main.o $(OBJS) $(LIBS)
 
 
 .PHONY: static
-static: vclean $(OBJS) main.o $(LIBFILES)
+static: $(OBJS) main.o $(LIBFILES)
 	$(CXX) $(DEFS) $(CPPFLAGS) -static -o gb main.o $(OBJS) $(LIBS)
 
 
