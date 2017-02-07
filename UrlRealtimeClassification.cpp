@@ -177,7 +177,7 @@ static void convertRequestToWireFormat(IOBuffer *out_buffer, uint32_t seq, const
 
 
 static void processInBuffer(IOBuffer *in_buffer, std::map<uint32_t,OutstandingRequest> *outstanding_requests) {
-log("url-classification:  in_buffer: %*.*s", (int)in_buffer->used(), (int)in_buffer->used(), in_buffer->begin());
+	log(LOG_TRACE,"url-classification:  in_buffer: %*.*s", (int)in_buffer->used(), (int)in_buffer->used(), in_buffer->begin());
 	while(!in_buffer->empty()) {
 		char *nl = (char*)memchr(in_buffer->begin(),'\n',in_buffer->used());
 		if(!nl)
@@ -230,16 +230,13 @@ static void runCommunicationLoop(int fd) {
 		pfd[1].fd = wakeup_fd[0];
 		pfd[1].events = POLLIN;
 		
-log("url-classification:  polling");
 		int rc = poll(pfd,2,-1);
-log("url-classification:  poll--->%d",rc);
 		
 		if(rc<0) {
 			log(LOG_ERROR,"url-classification: poll() failed with errno=%d (%s)",errno,strerror(errno));
 			continue;
 		}
 		if(pfd[0].revents & POLLIN) {
-log("url-classification:  pollin(fd)");
 			in_buffer.reserve_extra(8192);
 			ssize_t bytes_read = ::read(fd,in_buffer.end(),in_buffer.spare());
 			if(bytes_read<0) {
@@ -250,20 +247,20 @@ log("url-classification:  pollin(fd)");
 				log(LOG_INFO,"url-classification: read(%d) returned 0 (server closed socket)", fd);
 				break;
 			}
+			log(LOG_TRACE,"url-classification: Received  %zd from classification server",bytes_read);
 			in_buffer.push_back((size_t)bytes_read);
 			processInBuffer(&in_buffer,&outstanding_requests);
 		}
 		if(pfd[0].revents&POLLOUT && !out_buffer.empty()) {
-log("url-classification:  pollout(fd)");
 			ssize_t bytes_written = ::write(fd,out_buffer.begin(),out_buffer.used());
 			if(bytes_written<0) {
 				log(LOG_ERROR,"url-classification: write(%d) failed with errno=%d (%s)",fd,errno,strerror(errno));
 				break;
+				log(LOG_TRACE,"Sent %zu bytes to classification server",bytes_written);
 			}
 			out_buffer.pop_front((size_t)bytes_written);
 		}
 		if(pfd[1].revents&POLLIN) {
-log("url-classification:  pollin(pipe)");
 			drainWakeupPipe();
 			std::vector<OutstandingRequest> tmp;
 			{

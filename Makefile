@@ -65,6 +65,7 @@ OBJS_O3 = \
 	ScoringWeights.o \
 	TopTree.o \
 	UrlBlockList.o UrlComponent.o UrlParser.o UdpStatistic.o \
+	UrlRealtimeClassification.o \
 	MergeSpaceCoordinator.o \
 	GbMoveFile.o \
 	GbMoveFile2.o \

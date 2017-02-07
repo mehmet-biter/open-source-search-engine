@@ -36,6 +36,7 @@
 #include "HighFrequencyTermShortcuts.h"
 #include "PageTemperatureRegistry.h"
 #include "Docid2Siteflags.h"
+#include "UrlRealtimeClassification.h"
 #include "IPAddressChecks.h"
 #include <sys/resource.h>  // setrlimit
 #include "Stats.h"
@@ -2041,6 +2042,8 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
+	initializeRealtimeUrlClassification();
+	
 	if(g_recoveryMode) {
 		//now that everything is init-ed send the message.
 		char buf[256];

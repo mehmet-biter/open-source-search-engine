@@ -38,6 +38,7 @@
 #include "CountryCode.h"
 #include "File.h"
 #include "Docid2Siteflags.h"
+#include "UrlRealtimeClassification.h"
 #include "Conf.h"
 #include "Mem.h"
 #include <sys/statvfs.h>
@@ -709,6 +710,8 @@ bool Process::shutdown2() {
 
 	// turn off statsdb so it does not try to add records for these writes
 	g_statsdb.m_disabled = true;
+
+	finalizeRealtimeUrlClassification(),
 
 	Statistics::finalize();
 
