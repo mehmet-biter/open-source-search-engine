@@ -25,11 +25,15 @@ GbRegex::GbRegex(const char *pattern, int options, int study_options)
 	}
 }
 
-GbRegex::GbRegex(const GbRegex& rhs) {
-	m_pattern = rhs.m_pattern;
-	m_compile_options = rhs.m_compile_options;
-	m_study_options = rhs.m_study_options;
-
+GbRegex::GbRegex(const GbRegex& rhs)
+	: m_pattern(rhs.m_pattern)
+	, m_pcre(NULL)
+	, m_extra(NULL)
+	, m_compile_options(rhs.m_compile_options)
+	, m_compile_error(NULL)
+	, m_compile_error_offset(0)
+	, m_study_options(rhs.m_study_options)
+	, m_study_error(NULL) {
 	m_pcre = pcre_compile(m_pattern.c_str(), m_compile_options, &m_compile_error, &m_compile_error_offset, NULL);
 	if (m_pcre) {
 		m_extra = pcre_study(m_pcre, m_study_options, &m_study_error);
