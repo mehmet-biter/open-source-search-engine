@@ -47,6 +47,7 @@
 #include "ip.h"
 #include "ScopedLock.h"
 #include "Mem.h"
+#include "UrlBlockList.h"
 #include <list>
 
 
@@ -3823,6 +3824,11 @@ void dedupSpiderdbList ( RdbList *list ) {
 			}
 		}
 #endif
+
+		if (g_urlBlockList.isUrlBlocked(sreq->m_url)) {
+			logDebug(g_conf.m_logDebugSpider, "Url is blocked [%s]", sreq->m_url);
+			continue;
+		}
 
 		// shortcut
 		int64_t uh48 = sreq->getUrlHash48();
