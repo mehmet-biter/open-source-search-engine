@@ -3825,6 +3825,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		}
 #endif
 
+		/// @todo ALC only need this to clean out existing spiderdb records. (remove once it's cleaned up!)
 		if (g_urlBlockList.isUrlBlocked(sreq->m_url)) {
 			logDebug(g_conf.m_logDebugSpider, "Url is blocked [%s]", sreq->m_url);
 			continue;
