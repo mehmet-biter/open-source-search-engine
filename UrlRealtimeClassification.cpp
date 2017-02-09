@@ -331,6 +331,9 @@ bool initializeRealtimeUrlClassification() {
 		return false;
 	}
 	
+	//set thread name so "perf top" et al can show a nice name
+	pthread_setname_np(tid,"urlclass");
+	
 	return true;
 }
 
