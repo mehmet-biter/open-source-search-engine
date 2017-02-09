@@ -15,6 +15,7 @@
 #include "Msg20.h"      // for getting summary from docId
 #include "Msg3a.h"
 #include "HashTableT.h"
+#include "GbMutex.h"
 
 // make it 2B now. no reason not too limit it so low.
 #define MAXDOCIDSTOCOMPUTE 2000000000
@@ -174,6 +175,20 @@ public:
 	collnum_t m_firstCollnum;
 
 	HashTableT<uint64_t, uint64_t> m_urlTable;
+
+private:
+	int32_t      m_numRealtimeClassificationsStarted;
+	int32_t      m_numRealtimeClassificationsCompleted;
+	GbMutex      m_mtxRealtimeClassificationsCounters;
+	bool         m_realtimeClassificationsSubmitted;
+	void incrementRealtimeClassificationsStarted();
+	bool incrementRealtimeClassificationsCompleted();
+	bool areAllRealtimeClassificationsCompleted() const;
+
+	bool submitUrlRealtimeClassification();
+	
+	static void urlClassificationCallback0(void *context, uint32_t classification);
+	void urlClassificationCallback1(int i, uint32_t classification);
 };
 
 #endif // GB_MSG40_H

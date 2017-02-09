@@ -14,8 +14,10 @@
 #include "HashTable.h"
 #include "AdultCheck.h"
 #include "Process.h"
+#include "UrlRealtimeClassification.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "ScopedLock.h"
 #include <new>
 
 
@@ -30,7 +32,12 @@ static bool gotSummaryWrapper            ( void *state );
 
 static bool isVariantLikeSubDomain(const char *s, int32_t len);
 
-Msg40::Msg40() {
+Msg40::Msg40()
+  : m_numRealtimeClassificationsStarted(0),
+    m_numRealtimeClassificationsCompleted(0),
+    m_mtxRealtimeClassificationsCounters(),
+    m_realtimeClassificationsSubmitted(false)
+{
 	m_socketHadError = 0;
 	m_buf           = NULL;
 	m_buf2          = NULL;
@@ -1631,7 +1638,73 @@ bool Msg40::gotSummary ( ) {
 	if ( took > 3 )
 		log(LOG_INFO,"query: Took %" PRId64" ms to do clustering and dup removal.",took);
 
-	return gotEnoughSummaries();
+	if(!submitUrlRealtimeClassification())
+		return false;
+	else
+		return gotEnoughSummaries();
+}
+
+
+struct UrlClassificationContext {
+	Msg40 *msg40;
+	int i;
+	UrlClassificationContext(Msg40 *msg40_, int i_) : msg40(msg40_), i(i_) {}
+};
+
+//start classifying the URLs of the results
+bool Msg40::submitUrlRealtimeClassification() {
+	{
+		ScopedLock sl(m_mtxRealtimeClassificationsCounters);
+		m_realtimeClassificationsSubmitted = true;
+	}
+	
+	for(int i=0; i<m_numReplies; i++) {
+		if(m_msg3a.m_clusterLevels[i]==CR_OK) {
+			Msg20 *m = m_msg20[i];
+			std::string url(m->m_r->ptr_ubuf,m->m_r->size_ubuf);
+			UrlClassificationContext *ucc = new UrlClassificationContext(this,i);
+			incrementRealtimeClassificationsStarted();
+			if(classifyUrl(url.c_str(),&urlClassificationCallback0,ucc))
+				log(LOG_TRACE,"URL classification of '%s' started",url.c_str());
+			else {
+				incrementRealtimeClassificationsCompleted();
+				delete ucc;
+			}
+		}
+	}
+	
+	bool done;
+	{
+		ScopedLock sl(m_mtxRealtimeClassificationsCounters);
+		m_realtimeClassificationsSubmitted = false;
+		if(m_numRealtimeClassificationsCompleted==m_numRealtimeClassificationsStarted)
+			done = true;
+		else
+			done = false;
+	}
+	
+	return done;
+}
+
+
+void Msg40::urlClassificationCallback0(void *context, uint32_t classification) {
+	UrlClassificationContext *ucc = reinterpret_cast<UrlClassificationContext*>(context);
+	ucc->msg40->urlClassificationCallback1(ucc->i,classification);
+	delete ucc;
+}
+
+void Msg40::urlClassificationCallback1(int i, uint32_t classification) {
+	if(classification&URL_CLASSIFICATION_MALICIOUS)
+		m_msg3a.m_clusterLevels[i] = CR_MALICIOUS;
+	if(incrementRealtimeClassificationsCompleted()) {
+		log(LOG_INFO,"@@@ all URL classifications completed");
+		if(gotEnoughSummaries()) {
+			log(LOG_INFO,"@@@ gotEnoughSummaries returned true, calling callback");
+			m_callback(m_state);
+		}
+		else log(LOG_INFO,"@@@ gotEnoughSummaries returned false");
+	}
+	else log(LOG_INFO,"@@@ still outstanding IRL classifications");
 }
 
 
@@ -1978,4 +2051,23 @@ static bool printHttpMime(int32_t format, SafeBuf *sb) {
 			NULL ); //cookie
 	sb->safeMemcpy(mime.getMime(),mime.getMimeLen() );
 	return true;
+}
+
+
+void Msg40::incrementRealtimeClassificationsStarted() {
+	ScopedLock sl(m_mtxRealtimeClassificationsCounters);
+	m_numRealtimeClassificationsStarted++;
+	if(m_numRealtimeClassificationsCompleted>=m_numRealtimeClassificationsStarted) gbshutdownLogicError();
+}
+
+bool Msg40::incrementRealtimeClassificationsCompleted() {
+	ScopedLock sl(m_mtxRealtimeClassificationsCounters);
+	m_numRealtimeClassificationsCompleted++;
+	if(m_numRealtimeClassificationsCompleted>m_numRealtimeClassificationsStarted) gbshutdownLogicError();
+	return m_numRealtimeClassificationsCompleted==m_numRealtimeClassificationsStarted && !m_realtimeClassificationsSubmitted;
+}
+
+bool Msg40::areAllRealtimeClassificationsCompleted() const {
+	ScopedLock sl(const_cast<GbMutex&>(m_mtxRealtimeClassificationsCounters));
+	return (!m_realtimeClassificationsSubmitted) && (m_numRealtimeClassificationsCompleted==m_numRealtimeClassificationsStarted);
 }

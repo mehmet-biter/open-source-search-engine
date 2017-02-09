@@ -39,6 +39,7 @@ const char * const g_crStrings[] = {
 	"visible"                ,
 	"blacklisted"            ,
 	"ruleset filtered"       ,
+	"malicious",
 	"end -- do not use"      
 };
 
