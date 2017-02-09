@@ -65,6 +65,7 @@ OBJS_O3 = \
 	ScoringWeights.o \
 	TopTree.o \
 	UrlBlockList.o UrlComponent.o UrlParser.o UdpStatistic.o \
+	UrlRealtimeClassification.o \
 	MergeSpaceCoordinator.o \
 	GbMoveFile.o \
 	GbMoveFile2.o \
@@ -73,6 +74,7 @@ OBJS_O3 = \
 	GbUtil.o \
 	GbSignature.o \
 	GbCompress.o \
+	GbRegex.o \
 
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
@@ -135,13 +137,13 @@ CPPFLAGS += $(CONFIG_CPPFLAGS)
 # export to sub-make
 export CONFIG_CPPFLAGS
 
-ifeq ($(CXX), g++)
+ifeq ($(findstring g++, $(CXX)),g++)
 # dependencies
 CPPFLAGS += -MMD -MP
 
 # versions
-GCC_VER_MIN_61 := $(shell echo `g++ -dumpversion |cut -f1-2 -d.` \>= 6.1 |bc)
-GCC_VER_MIN_51 := $(shell echo `g++ -dumpversion |cut -f1-2 -d.` \>= 5.1 |bc)
+GCC_VER_MIN_61 := $(shell echo `$(CXX) -dumpversion |cut -f1-2 -d.` \>= 6.1 |bc)
+GCC_VER_MIN_51 := $(shell echo `$(CXX) -dumpversion |cut -f1-2 -d.` \>= 5.1 |bc)
 
 # warnings
 CPPFLAGS += -Wall
@@ -183,7 +185,7 @@ CPPFLAGS += -Wno-maybe-uninitialized
 CPPFLAGS += -Wno-unused-but-set-variable
 CPPFLAGS += -Wno-unused-parameter
 
-else ifeq ($(CXX), clang++)
+else ifeq ($(findstring clang++, $(CXX)),clang++)
 # dependencies
 CPPFLAGS += -MMD -MP
 
@@ -223,7 +225,7 @@ CPPFLAGS += -Wno-format-nonliteral
 
 endif
 
-LIBS = -lm -lpthread -lssl -lcrypto -lz
+LIBS = -lm -lpthread -lssl -lcrypto -lz -lpcre
 
 # to build static libiconv.a do a './configure --enable-static' then 'make' in the iconv directory
 
@@ -276,17 +278,16 @@ slacktee.sh:
 	ln -sf third-party/slacktee/slacktee.sh slacktee.sh 2>/dev/null
 
 
-.PHONY: vclean
-vclean:
-	rm -f Version.o
+Version.o: FORCE
+FORCE:
 
 
-gb: vclean $(OBJS) main.o $(LIBFILES)
+gb: $(OBJS) main.o $(LIBFILES)
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ main.o $(OBJS) $(LIBS)
 
 
 .PHONY: static
-static: vclean $(OBJS) main.o $(LIBFILES)
+static: $(OBJS) main.o $(LIBFILES)
 	$(CXX) $(DEFS) $(CPPFLAGS) -static -o gb main.o $(OBJS) $(LIBS)
 
 

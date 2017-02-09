@@ -5,11 +5,7 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <atomic>
-
-
-#if 0
-
-
+#include <features.h>
 
 UrlBlockList g_urlBlockList;
 
@@ -38,7 +34,8 @@ void UrlBlockList::reload(int /*fd*/, void *state) {
 }
 
 bool UrlBlockList::load() {
-#if (__GNUC__ > 4) || (__GNUC_MINOR__ >= 9)
+#if defined(__GNUC__) || defined(__clang__)
+#if __GNUC_PREREQ(5, 0) || defined(__clang__)
 	logTrace(g_conf.m_logTraceUrlBlockList, "Loading %s", m_filename);
 
 	struct stat st;
@@ -64,7 +61,7 @@ bool UrlBlockList::load() {
 			continue;
 		}
 
-		tmpUrlRegexList->push_back(std::make_pair(line, std::regex(line, std::regex::optimize | std::regex::nosubs)));
+		tmpUrlRegexList->push_back(std::make_pair(line, GbRegex(line.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE)));
 		logTrace(g_conf.m_logTraceUrlBlockList, "Adding regex '%s' to list", line.c_str());
 	}
 
@@ -72,26 +69,28 @@ bool UrlBlockList::load() {
 	m_lastModifiedTime = st.st_mtime;
 
 	logTrace(g_conf.m_logTraceUrlBlockList, "Loaded %s", m_filename);
-
 #else
-	logTrace(g_conf.m_logTraceUrlBlockList, "Not loading %s (gcc <4.9 STL is broken)", m_filename);
+#warning "Url block feature is disabled"
+	logTrace(g_conf.m_logTraceUrlBlockList, "Not loading %s (g++ <4.9 regex STL is broken; std::atomic_store is not supported)", m_filename);
+#endif
 #endif
 	return true;
 }
 
 bool UrlBlockList::isUrlBlocked(const char *url) {
-#if (__GNUC__ > 4) || (__GNUC_MINOR__ >= 9)
+#if defined(__GNUC__) || defined(__clang__)
+#if __GNUC_PREREQ(5, 0) || defined(__clang__)
 	auto urlRegexList = getUrlRegexList();
 
-	for (auto urlRegexPair : *urlRegexList) {
-		std::cmatch match;
-		if (std::regex_search(url, match, urlRegexPair.second)) {
+	for (auto const &urlRegexPair : *urlRegexList) {
+		if (urlRegexPair.second.match(url)) {
 			logTrace(g_conf.m_logTraceUrlBlockList, "Regex '%s' matched url '%s'", urlRegexPair.first.c_str(), url);
 			return true;
 		}
 	}
 
 	logTrace(g_conf.m_logTraceUrlBlockList, "No match found for url '%s'", url);
+#endif
 #endif
 	return false;
 }
@@ -101,14 +100,10 @@ regexlistconst_ptr_t UrlBlockList::getUrlRegexList() {
 }
 
 void UrlBlockList::swapUrlRegexList(regexlistconst_ptr_t urlRegexList) {
-#if (__GNUC__ > 4) || (__GNUC_MINOR__ >= 9)
+#if defined(__GNUC__) || defined(__clang__)
+#if __GNUC_PREREQ(5, 0) || defined(__clang__)
 	std::atomic_store(&m_urlRegexList, urlRegexList);
 #endif
-	
-}
-
-
 #endif
-
-
+}
 

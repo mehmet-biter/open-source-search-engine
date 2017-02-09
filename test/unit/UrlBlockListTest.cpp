@@ -35,6 +35,8 @@ TEST(UrlBlockListTest, Domain) {
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://sub2.allsubdomain.com/"));
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://sub1.sub2.allsubdomain.com/"));
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://allsubdomain.com/"));
+	EXPECT_FALSE(urlBlockList.isUrlBlocked("http://something.com/sub1.allsubdomain.com/"));
+	EXPECT_FALSE(urlBlockList.isUrlBlocked("http://something.com/www.allsubdomain.com/"));
 	EXPECT_FALSE(urlBlockList.isUrlBlocked("http://sub1.diffdomain.com/"));
 
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://www.onlyroot.com/"));
@@ -42,6 +44,7 @@ TEST(UrlBlockListTest, Domain) {
 
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://sub1.sub2.example.com/"));
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://sub1.example.com/"));
+	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://www.sub1.example.com/"));
 	EXPECT_FALSE(urlBlockList.isUrlBlocked("http://www.example.com/"));
 	EXPECT_FALSE(urlBlockList.isUrlBlocked("http://example.com/"));
 }

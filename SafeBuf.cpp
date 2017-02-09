@@ -936,61 +936,42 @@ bool SafeBuf::safeUtf8ToJSON ( const char *utf8 ) {
 			}
 
 			// refer to: http://json.org/
-			// backspace (08)
-			if ( *src == '\b' ) {
-				*dst++ = '\\';
-				*dst++ = 'b';
-				continue;
+			switch(*src) {
+				case '\b': // backspace (08)
+					*dst++ = '\\';
+					*dst++ = 'b';
+					break;
+				case '\t': // horizontal tab (09)
+					*dst++ = '\\';
+					*dst++ = 't';
+					break;
+				case '\n': // newline (10)
+					*dst++ = '\\';
+					*dst++ = 'n';
+					break;
+				case '\f': // formfeed (12)
+					*dst++ = '\\';
+					*dst++ = 'f';
+					break;
+				case '\r': // carriage return (13)
+					*dst++ = '\\';
+					*dst++ = 'r';
+					break;
+				case '\"': // quotation mark
+					*dst++ = '\\';
+					*dst++ = '\"';
+					break;
+				case '\\': // reverse solidus
+					*dst++ = '\\';
+					*dst++ = '\\';
+					break;
+				default:
+					*dst++ = *src;
 			}
-
-			// horizontal tab (09)
-			if ( *src == '\t' ) {
-				*dst++ = '\\';
-				*dst++ = 't';
-				continue;
+		} else {
+			for (int i = 0; i < size; ++i) {
+				*dst++ = src[i];
 			}
-
-			// newline (10)
-			if ( *src == '\n' ) {
-				*dst++ = '\\';
-				*dst++ = 'n';
-				continue;
-			}
-
-			// formfeed (12)
-			if ( *src == '\f' ) {
-				*dst++ = '\\';
-				*dst++ = 'f';
-				continue;
-			}
-
-			// carriage return (13)
-			if ( *src == '\r' ) {
-				*dst++ = '\\';
-				*dst++ = 'r';
-				continue;
-			}
-
-			// quotation mark
-			if ( *src == '\"' ) {
-				*dst++ = '\\';
-				*dst++ = '\"';
-				continue;
-			}
-
-			// reverse solidus
-			if ( *src == '\\' ) {
-				*dst++ = '\\';
-				*dst++ = '\\';
-				continue;
-			}
-
-			*dst++ = *src;
-			continue;
-		}
-
-		for (int i = 0; i < size; ++i) {
-			*dst++ = src[i];
 		}
 	}
 

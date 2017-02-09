@@ -4,10 +4,9 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include <regex>
+#include "GbRegex.h"
 
-#if 0
-typedef std::vector<std::pair<std::string, std::regex>> regexlist_t;
+typedef std::vector<std::pair<std::string, GbRegex>> regexlist_t;
 typedef std::shared_ptr<regexlist_t> regexlist_ptr_t;
 typedef std::shared_ptr<const regexlist_t> regexlistconst_ptr_t;
 
@@ -36,7 +35,5 @@ private:
 };
 
 extern UrlBlockList g_urlBlockList;
-#endif
-
 
 #endif //GB_URLBLOCKLIST_H

@@ -8,6 +8,8 @@ bool cdataEncode(SafeBuf *dstBuf, const char *src) {
 
 
 bool cdataEncode(SafeBuf *dstBuf, const char *src, size_t len) {
+	if(len<3)
+		return dstBuf->safeMemcpy(src,len);
 	if(!dstBuf->reserve(len))
 		return false;
 	const char *endptr = src+len;

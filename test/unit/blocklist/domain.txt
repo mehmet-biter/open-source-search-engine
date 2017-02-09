@@ -2,6 +2,6 @@
 https?://www\.badsite\.com/
 http://www\.httponly\.com/
 https://www\.httpsonly\.com/
-https?://(.*\.|)allsubdomain.com/
+https?://([^/]*\.|)allsubdomain.com/
 http://www\.onlyroot\.com/$
-https?://(?!www\.)(.*\.)example\.com/
+https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))example\.com/

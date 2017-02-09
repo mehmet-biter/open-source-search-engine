@@ -44,7 +44,7 @@ CPPFLAGS += -std=c++11
 CPPFLAGS += $(CONFIG_CPPFLAGS)
 
 LIBS += -L./ -lgtest 
-LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto
+LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto -lpcre
 LIBS += -L$(BASE_DIR) -lcld2_full
 
 $(TARGET): libgtest.so libgb.a $(BASE_DIR)/libcld2_full.so $(OBJECTS)

@@ -1432,7 +1432,6 @@ bool Msg40::gotSummary ( ) {
 	}
 
 	int64_t startTime = gettimeofdayInMilliseconds();
-	int64_t took;
 
 	// loop over each clusterLevel and set it
 	for ( int32_t i = 0 ; i < m_numReplies ; i++ ) {
@@ -1453,13 +1452,14 @@ bool Msg40::gotSummary ( ) {
 		// convenient var
 		Msg20 *m = m_msg20[i];
 		// get the Msg20 reply
-		Msg20Reply *mr = m->m_r;
+		const Msg20Reply *mr = m->m_r;
 		// if no reply, all hosts must have been dead i guess so
 		// filter out this guy
 		if ( ! mr && ! m->m_errno ) {
 			logf(LOG_DEBUG,"query: msg 20 reply was null.");
 			m->m_errno = ENOHOSTS;
 		}
+
 		if ( m_si->m_familyFilter && mr && mr->m_isAdult) {
 			logf(LOG_DEBUG,"query: msg20.is_adult and family filter is on.");
 			m->m_errno = EDOCADULT;
@@ -1507,18 +1507,6 @@ bool Msg40::gotSummary ( ) {
 			continue;
 		}
 
-		// filter out urls with <![CDATA in them
-		if ( mr && strstr( mr->ptr_ubuf, "<![CDATA[" ) ) {
-			*level = CR_BAD_URL;
-			continue;
-		}
-
-		// also filter urls with ]]> in them
-		if ( mr && strstr( mr->ptr_ubuf, "]]>" ) ) {
-			*level = CR_BAD_URL;
-			continue;
-		}
-
 		// filter empty title & summaries
 		if ( mr && mr->size_tbuf <= 1 && mr->size_displaySum <= 1 ) {
 			if ( ! m_si->m_showErrors ) {
@@ -1545,7 +1533,7 @@ bool Msg40::gotSummary ( ) {
 		if ( m_msg20[i]->m_errno ) continue;
 
 		// get it
-		Msg20Reply *mri = m_msg20[i]->m_r;
+		const Msg20Reply *mri = m_msg20[i]->m_r;
 		// do not dedup CT_STATUS results, those are
 		// spider reply "documents" that indicate the last
 		// time a doc was spidered and the error code or 
@@ -1561,15 +1549,15 @@ bool Msg40::gotSummary ( ) {
 			// get it
 			if ( m_msg20[m]->m_errno ) continue;
 
-			Msg20Reply *mrm = m_msg20[m]->m_r;
+			const Msg20Reply *mrm = m_msg20[m]->m_r;
 			// do not dedup CT_STATUS results, those are
 			// spider reply "documents" that indicate the last
 			// time a doc was spidered and the error code or 
 			// success code
 			if ( mrm->m_contentType == CT_STATUS ) continue;
 			// use gigabit vector to do topic clustering, etc.
-			int32_t *vi = (int32_t *)mri->ptr_vbuf;
-			int32_t *vm = (int32_t *)mrm->ptr_vbuf;
+			const int32_t *vi = (int32_t *)mri->ptr_vbuf;
+			const int32_t *vm = (int32_t *)mrm->ptr_vbuf;
 			float s ;
 			s = computeSimilarity(vi,vm,NULL,NULL,NULL);
 			// skip if not similar
@@ -1601,7 +1589,7 @@ bool Msg40::gotSummary ( ) {
 			if(m_msg3a.m_clusterLevels[i] != CR_OK) continue;
 
 			// get it
-			Msg20Reply *mr = m_msg20[i]->m_r;
+			const Msg20Reply *mr = m_msg20[i]->m_r;
 
 			// hash the URL all in lower case to catch wiki dups
 			const char *url  = mr-> ptr_ubuf;
@@ -1665,6 +1653,16 @@ bool Msg40::gotSummary ( ) {
 	// END URL NORMALIZE AND COMPARE
 	//
 
+	// show time
+	int64_t took = gettimeofdayInMilliseconds() - startTime;
+	if ( took > 3 )
+		log(LOG_INFO,"query: Took %" PRId64" ms to do clustering and dup removal.",took);
+
+	return gotEnoughSummaries();
+}
+
+
+bool Msg40::gotEnoughSummaries() {
 	m_omitCount = 0;
 
 	// count how many are visible!
@@ -1678,11 +1676,6 @@ bool Msg40::gotSummary ( ) {
 		// otherwise count as ommitted
 		else m_omitCount++;
 	}
-
-	// show time
-	took = gettimeofdayInMilliseconds() - startTime;
-	if ( took > 3 )
-		log(LOG_INFO,"query: Took %" PRId64" ms to do clustering and dup removal.",took);
 
 	// . let's wait for the tasks to complete before even trying to launch
 	//   more than the first MAX_OUTSTANDING msg20s
@@ -1836,63 +1829,31 @@ bool Msg40::gotSummary ( ) {
 	// END HACK
 	// 
 
-	// . uc = use cache?
-	// . store in cache now if we need to
-	bool uc = false;
-	if ( m_si->m_useCache   ) uc = true;
-	if ( m_si->m_wcache     ) uc = true;
-	// . do not store if there was an error
-	// . no, allow errors in cache since we often have lots of 
-	//   docid not founds and what not, due to index corruption and
-	//   being out of sync with titledb
-	if ( m_errno            &&
-	     // forgive "Record not found" errors, they are quite common
-	     m_errno != ENOTFOUND ) {
-		logf(LOG_DEBUG,"query: not storing in cache: %s",
-		     mstrerror(m_errno));
-		uc = false;
-	}
-	if ( m_si->m_docIdsOnly ) uc = false;
+	//Old logic for whether to store the msg40+results in the cache or not. Logic looks fine
+	//but the cache has been removed a long time ago.
+	//
+	// // . uc = use cache?
+	// // . store in cache now if we need to
+	// bool uc = false;
+	// if ( m_si->m_useCache   ) uc = true;
+	// if ( m_si->m_wcache     ) uc = true;
+	// // . do not store if there was an error
+	// // . no, allow errors in cache since we often have lots of
+	// //   docid not founds and what not, due to index corruption and
+	// //   being out of sync with titledb
+	// if ( m_errno            &&
+	//      // forgive "Record not found" errors, they are quite common
+	//      m_errno != ENOTFOUND ) {
+	// 	logf(LOG_DEBUG,"query: not storing in cache: %s",
+	// 	     mstrerror(m_errno));
+	// 	uc = false;
+	// }
+	// if ( m_si->m_docIdsOnly ) uc = false;
+	//
+	// // all done if not storing in cache
+	// if ( ! uc ) return true;
 
-	// all done if not storing in cache
-	if ( ! uc ) return true;
 
-	// debug
-	if ( m_si->m_debug )
-		logf(LOG_DEBUG,"query: [%" PTRFMT"] Storing output in cache.",
-		     (PTRTYPE)this);
-	// store in this buffer
-	char tmpBuf [ 64 * 1024 ];
-	// use that
-	char *p = tmpBuf;
-	// how much room?
-	int32_t tmpSize = getStoredSize();
-	// unless too small
-	if ( tmpSize > 64*1024 ) 
-		p = (char *)mmalloc(tmpSize,"Msg40Cache");
-	if ( ! p ) {
-		// this is just for cachinig, not critical... ignore errors
-		g_errno = 0;
-		logf ( LOG_INFO ,
-		       "query: Size of cached search results page (and "
-		       "all associated data) is %" PRId32" bytes. Max is %i. "
-		       "Page not cached.", tmpSize, 32*1024 );
-		return true;
-	}
-	// serialize into tmp
-	int32_t nb = serialize ( p , tmpSize );
-	// it must fit exactly
-	if ( nb != tmpSize || nb == 0 ) {
-		g_errno = EBADENGINEER;
-		log (LOG_LOGIC,
-		     "query: Size of cached search results page (%" PRId32") "
-		     "does not match what it should be. (%" PRId32")",
-		     nb, tmpSize );
-		return true;
-	}
-
-	// free it, cache will copy it into its ring buffer
-	if ( p != tmpBuf ) mfree ( p , tmpSize , "Msg40Cache" );
 	// ignore errors
 	g_errno = 0;
  	return true;
