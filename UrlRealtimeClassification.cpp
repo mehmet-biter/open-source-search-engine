@@ -81,6 +81,8 @@ static void waitForTimeToConnect() {
 
 
 static int runConnectLoop(const char *hostname, int port_number) {
+	next_connect_attempt = time(0) + 30;
+	
 	if(!hostname)
 		return -1;
 	if(!hostname[0])
@@ -89,8 +91,6 @@ static int runConnectLoop(const char *hostname, int port_number) {
 		return -1;
 	char port_number_str[16];
 	sprintf(port_number_str,"%d",port_number);
-	
-	next_connect_attempt = time(0) + 30;
 	
 	addrinfo hints;
 	memset(&hints,0,sizeof(hints));
@@ -299,7 +299,7 @@ static void *communicationThread(void *) {
 		waitForTimeToConnect();
 		if(please_stop)
 			break;
-		int fd = runConnectLoop("localhost",8079);
+		int fd = runConnectLoop(g_conf.m_urlClassificationServerName,g_conf.m_urlClassificationServerPort);
 		if(please_stop)
 			break;
 		if(fd>=0) {

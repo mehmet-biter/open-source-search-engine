@@ -2,10 +2,10 @@
 #define GB_MSG3A_H_
 
 #include "Msg39.h"
-#include "Msg0.h"
-#include "Msg1.h"
+#include "Multicast.h"
 
 class SearchInput;
+class Query;
 
 void setTermFreqWeights ( collnum_t collnum, class Query *q );
 
@@ -73,14 +73,6 @@ public:
 	bool gotAllShardReplies ( );
 
 	bool mergeLists ( );
-
-	// . deserialize ourselves for the cache
-	// . returns bytes written
-	// . returns -1 and sets g_errno on error
-	int32_t getStoredSize ( );
-	int32_t serialize   ( char *buf , char *bufEnd );
-	int32_t deserialize ( char *buf , char *bufEnd );
-
 
 	// incoming parameters passed to Msg39::getDocIds() function
 	Query     *m_q;

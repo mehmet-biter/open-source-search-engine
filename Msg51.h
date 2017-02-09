@@ -59,6 +59,8 @@ enum {
 	CR_BLACKLISTED_SITE  ,
 	// was filtered because of ruleset
 	CR_RULESET_FILTERED ,
+	// URL (or site) classified as malicious (spyware, trojan, phishing, ...)
+	CR_MALICIOUS,
 	// verify this is LAST entry cuz we use i<CR_END for ending for-loops
 	CR_END
 };

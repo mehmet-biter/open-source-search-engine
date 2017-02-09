@@ -14,10 +14,12 @@
 #include "HashTable.h"
 #include "AdultCheck.h"
 #include "Process.h"
+#include "UrlRealtimeClassification.h"
 #include "Conf.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
 #include "Mem.h"
+#include "ScopedLock.h"
 #include <new>
 
 
@@ -32,7 +34,12 @@ static bool gotSummaryWrapper            ( void *state );
 
 static bool isVariantLikeSubDomain(const char *s, int32_t len);
 
-Msg40::Msg40() {
+Msg40::Msg40()
+  : m_numRealtimeClassificationsStarted(0),
+    m_numRealtimeClassificationsCompleted(0),
+    m_mtxRealtimeClassificationsCounters(),
+    m_realtimeClassificationsSubmitted(false)
+{
 	m_socketHadError = 0;
 	m_buf           = NULL;
 	m_buf2          = NULL;
@@ -1633,7 +1640,73 @@ bool Msg40::gotSummary ( ) {
 	if ( took > 3 )
 		log(LOG_INFO,"query: Took %" PRId64" ms to do clustering and dup removal.",took);
 
-	return gotEnoughSummaries();
+	if(!submitUrlRealtimeClassification())
+		return false;
+	else
+		return gotEnoughSummaries();
+}
+
+
+struct UrlClassificationContext {
+	Msg40 *msg40;
+	int i;
+	UrlClassificationContext(Msg40 *msg40_, int i_) : msg40(msg40_), i(i_) {}
+};
+
+//start classifying the URLs of the results
+bool Msg40::submitUrlRealtimeClassification() {
+	{
+		ScopedLock sl(m_mtxRealtimeClassificationsCounters);
+		m_realtimeClassificationsSubmitted = true;
+	}
+	
+	for(int i=0; i<m_numReplies; i++) {
+		if(m_msg3a.m_clusterLevels[i]==CR_OK) {
+			Msg20 *m = m_msg20[i];
+			std::string url(m->m_r->ptr_ubuf,m->m_r->size_ubuf);
+			UrlClassificationContext *ucc = new UrlClassificationContext(this,i);
+			incrementRealtimeClassificationsStarted();
+			if(classifyUrl(url.c_str(),&urlClassificationCallback0,ucc))
+				log(LOG_TRACE,"URL classification of '%s' started",url.c_str());
+			else {
+				incrementRealtimeClassificationsCompleted();
+				delete ucc;
+			}
+		}
+	}
+	
+	bool done;
+	{
+		ScopedLock sl(m_mtxRealtimeClassificationsCounters);
+		m_realtimeClassificationsSubmitted = false;
+		if(m_numRealtimeClassificationsCompleted==m_numRealtimeClassificationsStarted)
+			done = true;
+		else
+			done = false;
+	}
+	
+	return done;
+}
+
+
+void Msg40::urlClassificationCallback0(void *context, uint32_t classification) {
+	UrlClassificationContext *ucc = reinterpret_cast<UrlClassificationContext*>(context);
+	ucc->msg40->urlClassificationCallback1(ucc->i,classification);
+	delete ucc;
+}
+
+void Msg40::urlClassificationCallback1(int i, uint32_t classification) {
+	if(classification&URL_CLASSIFICATION_MALICIOUS) {
+		m_msg3a.m_clusterLevels[i] = CR_MALICIOUS;
+		log(LOG_DEBUG,"URL '%*.*s' classified as malicous. Filtering it out",
+		    (int)m_msg20[i]->m_r->size_ubuf, (int)m_msg20[i]->m_r->size_ubuf, m_msg20[i]->m_r->ptr_ubuf);
+	}
+	if(incrementRealtimeClassificationsCompleted()) {
+		log(LOG_TRACE,"msg40: all URL classifications completed");
+		if(gotEnoughSummaries()) {
+			m_callback(m_state);
+		}
+	}
 }
 
 
@@ -1828,131 +1901,6 @@ bool Msg40::gotEnoughSummaries() {
  	return true;
 }
 
-int32_t Msg40::getStoredSize ( ) {
-	// moreToCome=1
-	int32_t size = 1;
-	// msg3a
-	size += m_msg3a.getStoredSize();
-	// add each summary
-	for ( int32_t i = 0 ; i < m_msg3a.m_numDocIds; i++ ) {
-		// getting rid of this makes it take up less room
-		m_msg20[i]->clearLinks();
-		m_msg20[i]->clearVectors();
-		// if not visisble, do not store!
-		if ( m_msg3a.m_clusterLevels[i] != CR_OK ) continue;
-		// otherwise, store it
-		size += m_msg20[i]->getStoredSize();
-	}
-
-	return size;
-}
-
-// . serialize ourselves for the cache
-// . returns bytes written
-// . returns -1 and sets g_errno on error
-int32_t Msg40::serialize ( char *buf , int32_t bufLen ) {
-	// set the ptr stuff
-	char *p    = buf;
-	char *pend = buf + bufLen;
-
-	// miscellaneous
-	*p++ = m_moreToCome;
-
-	// msg3a:
-	// m_numDocIds[]
-	// m_docIds[]
-	// m_scores[]
-	// m_clusterLevels[]
-	// m_totalHits (estimated)
-	int32_t nb = m_msg3a.serialize ( p , pend );
-	// return -1 on error
-	if ( nb < 0 ) return -1;
-	// otherwise, inc over it
-	p += nb;
-
-	// . then summary excerpts, keep them word aligned...
-	// . TODO: make sure empty Msg20s are very little space!
-	for ( int32_t i = 0 ; i < m_msg3a.m_numDocIds ; i++ ) {
-		// sanity check
-		if ( m_msg3a.m_clusterLevels[i] == CR_OK && ! m_msg20[i] ) {
-			g_process.shutdownAbort(true); }
-		// if null skip it
-		if ( ! m_msg20[i] ) continue;
-		// do not store the big samples if we're not storing cached 
-		// copy. if "includeCachedCopy" is true then the page itself 
-		// will be the summary.
-		//if ( ! m_si->m_includeCachedCopy )
-		//	m_msg20[i]->clearBigSample();
-		// getting rid of this makes it take up less room
-		m_msg20[i]->clearLinks();
-		m_msg20[i]->clearVectors();
-		// if not visisble, do not store!
-		if ( m_msg3a.m_clusterLevels[i] != CR_OK ) continue;
-		// return -1 on error, g_errno should be set
-		int32_t nb = m_msg20[i]->serialize ( p , pend - p ) ;
-		// count it
-		if ( m_msg3a.m_msg39req.m_debug )
-			log("query: msg40 serialize msg20size=%" PRId32,nb);
-
-		if ( nb == -1 ) return -1;
-		p += nb;
-	}
-
-	if ( m_msg3a.m_msg39req.m_debug )
-		log("query: msg40 serialize nd=%" PRId32" "
-		    "msg3asize=%" PRId32" ",m_msg3a.m_numDocIds,nb);
-
-	// return bytes stored
-	return p - buf;
-}
-
-// . deserialize ourselves for the cache
-// . returns bytes written
-// . returns -1 and sets g_errno on error
-int32_t Msg40::deserialize ( char *buf , int32_t bufSize ) {
-
-	// we OWN the buffer
-	m_buf        = buf;
-	m_bufMaxSize = bufSize;
-
-	// set the ptr stuff
-	char *p    = buf;
-	char *pend = buf + bufSize;
-
-	// miscellaneous
-	m_moreToCome      = *p++;
-
-	// msg3a:
-	// m_numDocIds
-	// m_docIds[]
-	// m_scores[]
-	// m_clusterLevels[]
-	// m_totalHits (estimated)
-	int32_t nb = m_msg3a.deserialize ( p , pend );
-	// return -1 on error
-	if ( nb < 0 ) return -1;
-	// otherwise, inc over it
-	p += nb;
-
-	// . alloc buf to hold all m_msg20[i] ptrs and the Msg20s they point to
-	// . return -1 if this failed! it will set g_errno/m_errno already
-	if ( ! reallocMsg20Buf() ) return -1;
-
-	// MDW: then summary excerpts, keep them word aligned...
-	for ( int32_t i = 0 ; i < m_msg3a.m_numDocIds ; i++ ) {
-		// if flag is 0 that means a NULL msg20
-		if ( m_msg3a.m_clusterLevels[i] != CR_OK ) continue;
-		// return -1 on error, g_errno should be set
-		int32_t x = m_msg20[i]->deserialize ( p , pend - p ) ;
-		if ( x == -1 ) return -1;
-		p += x;
-	}
-
-	// return bytes read
-	return p - buf;
-}
-
-
 //For the purpose of clustering and result suppression these hosts are considered the same:
 //  example.com
 //  www.example.com
@@ -2109,4 +2057,23 @@ static bool printHttpMime(int32_t format, SafeBuf *sb) {
 			NULL ); //cookie
 	sb->safeMemcpy(mime.getMime(),mime.getMimeLen() );
 	return true;
+}
+
+
+void Msg40::incrementRealtimeClassificationsStarted() {
+	ScopedLock sl(m_mtxRealtimeClassificationsCounters);
+	m_numRealtimeClassificationsStarted++;
+	if(m_numRealtimeClassificationsCompleted>=m_numRealtimeClassificationsStarted) gbshutdownLogicError();
+}
+
+bool Msg40::incrementRealtimeClassificationsCompleted() {
+	ScopedLock sl(m_mtxRealtimeClassificationsCounters);
+	m_numRealtimeClassificationsCompleted++;
+	if(m_numRealtimeClassificationsCompleted>m_numRealtimeClassificationsStarted) gbshutdownLogicError();
+	return m_numRealtimeClassificationsCompleted==m_numRealtimeClassificationsStarted && !m_realtimeClassificationsSubmitted;
+}
+
+bool Msg40::areAllRealtimeClassificationsCompleted() const {
+	ScopedLock sl(const_cast<GbMutex&>(m_mtxRealtimeClassificationsCounters));
+	return (!m_realtimeClassificationsSubmitted) && (m_numRealtimeClassificationsCompleted==m_numRealtimeClassificationsStarted);
 }
