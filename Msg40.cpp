@@ -1697,14 +1697,11 @@ void Msg40::urlClassificationCallback1(int i, uint32_t classification) {
 	if(classification&URL_CLASSIFICATION_MALICIOUS)
 		m_msg3a.m_clusterLevels[i] = CR_MALICIOUS;
 	if(incrementRealtimeClassificationsCompleted()) {
-		log(LOG_INFO,"@@@ all URL classifications completed");
+		log(LOG_TRACE,"msg40: all URL classifications completed");
 		if(gotEnoughSummaries()) {
-			log(LOG_INFO,"@@@ gotEnoughSummaries returned true, calling callback");
 			m_callback(m_state);
 		}
-		else log(LOG_INFO,"@@@ gotEnoughSummaries returned false");
 	}
-	else log(LOG_INFO,"@@@ still outstanding IRL classifications");
 }
 
 
