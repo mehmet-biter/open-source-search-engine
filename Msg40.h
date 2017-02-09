@@ -56,11 +56,6 @@ public:
 	bool gotEnoughSummaries();
 	bool reallocMsg20Buf ( ) ;
 
-	// serialization routines used for caching Msg40s by Msg17
-	int32_t  getStoredSize ( ) ;
-	int32_t  serialize     ( char *buf , int32_t bufLen ) ;
-	int32_t  deserialize   ( char *buf , int32_t bufLen ) ;
-
 	// . estimated # of total hits
 	// . this is now an EXACT count... since we read all posdb termlists
 	int64_t getNumTotalHits() const { return m_msg3a.getNumTotalEstimatedHits(); }
