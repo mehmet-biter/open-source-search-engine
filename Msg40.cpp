@@ -574,39 +574,34 @@ bool Msg40::mergeDocIdsIntoBaseMsg3a() {
 	// begin the collection merge
 	//
 
-	int32_t next = 0;
+	for(int32_t next = 0; next<td; next++) {
+		// get next biggest score in the msg3as
+		double max  = -1000000000.0;
+		Msg3a *maxmp = NULL;
+		for ( int32_t i = 0 ; i < m_numCollsToSearch ; i++ ) {
+			// shortcut
+			Msg3a *mp = m_msg3aPtrs[i];
+			// get cursor
+			int32_t cursor = mp->m_cursor;
+			// skip if exhausted
+			if ( cursor >= mp->m_numDocIds ) continue;
+			// get his next score
+			double score = mp->m_scores[ cursor ];
+			if ( score <= max ) continue;
+			// got a new winner
+			max = score;
+			maxmp = mp;
+		}
 
- loop:
-
-	// get next biggest score
-	double max  = -1000000000.0;
-	Msg3a *maxmp = NULL;
-
-	for ( int32_t i = 0 ; i < m_numCollsToSearch ; i++ ) {
-		// shortcut
-		Msg3a *mp = m_msg3aPtrs[i];
-		// get cursor
-		int32_t cursor = mp->m_cursor;
-		// skip if exhausted
-		if ( cursor >= mp->m_numDocIds ) continue;
-		// get his next score 
-		double score = mp->m_scores[ cursor ];
-		if ( score <= max ) continue;
-		// got a new winner
-		max = score;
-		maxmp = mp;
-	}
-
-	// store him
-	if ( maxmp ) {
+		if(!maxmp )
+			break; //done
+		// store him
 		m_msg3a.m_docIds  [next] = maxmp->m_docIds[maxmp->m_cursor];
 		m_msg3a.m_scores  [next] = maxmp->m_scores[maxmp->m_cursor];
 		m_msg3a.m_flags   [next] = maxmp->m_flags[maxmp->m_cursor];
 		m_msg3a.m_collnums[next] = maxmp->m_msg39req.m_collnum;
 		m_msg3a.m_clusterLevels[next] = CR_OK;
 		maxmp->m_cursor++;
-		next++;
-		goto loop;
 	}
 
 	// free tmp msg3as now
