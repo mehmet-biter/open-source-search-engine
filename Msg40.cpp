@@ -245,11 +245,9 @@ bool Msg40::prepareToGetDocIds ( ) {
 	if ( g_conf.m_logTimingQuery || m_si->m_debug || g_conf.m_logDebugQuery) {
 		int64_t now  = gettimeofdayInMilliseconds();
 		int64_t took = now - m_startTime;
-		logf(LOG_TIMING,"query: [%" PTRFMT"] Not found in cache. "
-		     "Lookup took %" PRId64" ms.",(PTRTYPE)this,took);
+		logf(LOG_TIMING,"query: [%" PTRFMT"] Not found in cache. Lookup took %" PRId64" ms.",(PTRTYPE)this,took);
 		m_startTime = now;
-		logf(LOG_TIMING,"query: msg40: [%" PTRFMT"] Getting up to %" PRId32" "
-		     "(docToGet=%" PRId32") docids", (PTRTYPE)this,
+		logf(LOG_TIMING,"query: msg40: [%" PTRFMT"] Getting up to %" PRId32" (docToGet=%" PRId32") docids", (PTRTYPE)this,
 		     m_docsToGetVisible,  m_docsToGet);
 	}
 
@@ -482,8 +480,8 @@ bool Msg40::gotDocIds ( ) {
 		int64_t took = now - m_startTime;
 		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Got %" PRId32" docids in %" PRId64" ms",
 		     (PTRTYPE)this,m_msg3a.getNumDocIds(),took);
-		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Getting up to %" PRId32" "
-		     "summaries", (PTRTYPE)this,m_docsToGetVisible);
+		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Getting up to %" PRId32" summaries",
+		     (PTRTYPE)this,m_docsToGetVisible);
 	}
 
 	// save any covered up error
@@ -500,8 +498,7 @@ bool Msg40::gotDocIds ( ) {
 
 	if ( ! m_urlTable.set ( m_msg3a.getNumDocIds() * 2 ) ) {
 		m_errno = g_errno;
-		log("query: Failed to allocate memory for url deduping. "
-		    "Not deduping search results.");
+		log("query: Failed to allocate memory for url deduping. Not deduping search results.");
 		return true;
 	}
 
@@ -519,8 +516,8 @@ bool Msg40::gotDocIds ( ) {
 
 	// debug msg
 	if ( m_si->m_debug || g_conf.m_logDebugQuery )
-		logf(LOG_DEBUG,"query: [%" PTRFMT"] Getting "
-		     "reference pages and dir pages.",(PTRTYPE)this);
+		logf(LOG_DEBUG,"query: [%" PTRFMT"] Getting reference pages and dir pages.",
+		     (PTRTYPE)this);
 
 	return launchMsg20s ( false );
 }
@@ -915,9 +912,7 @@ bool Msg40::launchMsg20s(bool recalled) {
 		     // host is dead because the server is locking up 
 		     // periodically
 		     ! m_si->m_streamResults ) {
-			log("msg40: skipping summary "
-			    "lookup #%" PRId32" of "
-			    "docid %" PRId64" for dead shard #%" PRId32
+			log("msg40: skipping summary lookup #%" PRId32" of docid %" PRId64" for dead shard #%" PRId32
 			    , i
 			    , docId
 			    , shardNum );
@@ -947,8 +942,7 @@ bool Msg40::launchMsg20s(bool recalled) {
 		g_errno = 0;
 		// debug msg
 		if ( m_si->m_debug || g_conf.m_logDebugQuery )
-			logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Getting "
-			     "summary #%" PRId32" for docId=%" PRId64,
+			logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Getting summary #%" PRId32" for docId=%" PRId64,
 			     (PTRTYPE)this,i,m_msg3a.m_docIds[i]);
 		// launch it
 		m_numRequests++;
@@ -1096,7 +1090,7 @@ bool gotSummaryWrapper ( void *state ) {
 	if ( (THIS->m_numReplies % 10) == 0 ) {
 		log( "msg40: got %" PRId32 " summaries out of %" PRId32 "",
 		     THIS->m_numReplies,
-			 THIS->m_msg3a.m_numDocIds );
+		     THIS->m_msg3a.m_numDocIds );
 	}
 
 	// it returns false if we're still awaiting replies
@@ -1148,8 +1142,7 @@ static void doneSendingWrapper9(void *state, TcpSocket *sock) {
 bool Msg40::gotSummary ( ) {
 	// now m_linkInfo[i] (for some i, i dunno which) is filled
 	if ( m_si->m_debug || g_conf.m_logDebugQuery )
-		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Got summary. "
-		     "Total got=#%" PRId32".",
+		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Got summary. Total got=#%" PRId32".",
 		     (PTRTYPE)this,m_numReplies);
 
 	// did we have a problem getting this summary?
@@ -1217,8 +1210,7 @@ bool Msg40::gotSummary ( ) {
 			     mr->m_contentType != CT_STATUS &&
 			     m_dedupTable.isInTable ( &mr->m_contentHash32 ) ) {
 				//if ( g_conf.m_logDebugQuery )
-				log("msg40: dup sum #%" PRId32" (%" PRIu32")"
-				    "(d=%" PRId64")",m_printi,
+				log("msg40: dup sum #%" PRId32" (%" PRIu32") (d=%" PRId64")",m_printi,
 				    mr->m_contentHash32,mr->m_docId);
 				// make it available to be reused
 				m20->reset();
@@ -1245,8 +1237,7 @@ bool Msg40::gotSummary ( ) {
 			// do not print it if before the &s=X start position though
 			if ( m_numDisplayed <= m_si->m_firstResultNum ){
 				if ( m_printCount == 0 )
-					log("msg40: hiding #%" PRId32" (%" PRIu32")"
-					    "(d=%" PRId64")",
+					log("msg40: hiding #%" PRId32" (%" PRIu32") (d=%" PRId64")",
 					    m_printi,mr->m_contentHash32,mr->m_docId);
 				m_printCount++;
 				if ( m_printCount == 100 ) m_printCount = 0;
@@ -1302,11 +1293,8 @@ bool Msg40::gotSummary ( ) {
 			int32_t need = m_msg3a.m_docsToGet + 20;
 			// note it
 			log("msg40: too many summaries deduped. "
-			    "getting more "
-			    "docids from msg3a merge and getting summaries. "
-			    "%" PRId32" are visible, need %" PRId32". "
-			    "changing docsToGet from %" PRId32" to %" PRId32". "
-			    "numReplies=%" PRId32" numRequests=%" PRId32,
+			    "getting more docids from msg3a merge and getting summaries. "
+			    "%" PRId32" are visible, need %" PRId32". changing docsToGet from %" PRId32" to %" PRId32". numReplies=%" PRId32" numRequests=%" PRId32,
 			    m_numDisplayed,
 			    m_docsToGetVisible,
 			    m_msg3a.m_docsToGet,
@@ -1339,8 +1327,7 @@ bool Msg40::gotSummary ( ) {
 	// getting a diffbot reply from XmLDoc::getDiffbotReply()
 	if ( st->m_socket && 
 	     st->m_socket->m_startTime != st->m_socketStartTimeHack ) {
-		log("msg40: lost control of socket. sd=%i. the socket "
-		    "descriptor closed on us and got re-used by someone else.",
+		log("msg40: lost control of socket. sd=%i. the socket descriptor closed on us and got re-used by someone else.",
 		    (int)st->m_socket->m_sd);
 		// if there wasn't already an error like 'broken pipe' then
 		// set it here so we stop getting summaries if streaming.
@@ -1423,8 +1410,8 @@ bool Msg40::gotSummary ( ) {
 		//mdelete(st, sizeof(State0), "msg40st0");
 		//delete st;
 		// otherwise, all done!
-		log("msg40: did not send last search result summary. "
-		    "this=0x%" PTRFMT" because had error: %s",(PTRTYPE)this,
+		log("msg40: did not send last search result summary. this=0x%" PTRFMT" because had error: %s",
+		    (PTRTYPE)this,
 		    mstrerror(m_socketHadError));
 		return true;
 	}
@@ -1467,8 +1454,7 @@ bool Msg40::gotSummary ( ) {
 		// have gotten search results.
 		if ( m->m_errno ) {
 			if ( m_si->m_debug || g_conf.m_logDebugQuery ) {
-				logf( LOG_DEBUG, "query: result %" PRId32 " (docid=%" PRId64 ") had "
-								 "an error (%s) and will not be shown.",
+				logf( LOG_DEBUG, "query: result %" PRId32 " (docid=%" PRId64 ") had an error (%s) and will not be shown.",
 				      i, m_msg3a.m_docIds[i], mstrerror( m->m_errno ) );
 			}
 
@@ -1491,8 +1477,7 @@ bool Msg40::gotSummary ( ) {
 
 		if ( ! m_si->m_showBanned && mr && mr->m_isBanned ) {
 			if ( m_si->m_debug || g_conf.m_logDebugQuery )
-				logf( LOG_DEBUG, "query: result %" PRId32 " (docid=%" PRId64 ") is "
-								 "banned and will not be shown.",
+				logf( LOG_DEBUG, "query: result %" PRId32 " (docid=%" PRId64 ") is banned and will not be shown.",
 					  i, m_msg3a.m_docIds[i] );
 			*level = CR_BANNED_URL;
 			continue;
@@ -1562,9 +1547,7 @@ bool Msg40::gotSummary ( ) {
 			if ( (int32_t)s < dedupPercent ) continue;
 			// otherwise mark it as a summary dup
 			if ( m_si->m_debug || g_conf.m_logDebugQuery )
-				logf( LOG_DEBUG, "query: result #%" PRId32" "
-				      "(docid=%" PRId64") is %.02f%% similar-"
-				      "summary of #%" PRId32" (docid=%" PRId64")",
+				logf( LOG_DEBUG, "query: result #%" PRId32" (docid=%" PRId64") is %.02f%% similar-summary of #%" PRId32" (docid=%" PRId64")",
 				      m, m_msg3a.m_docIds[m] , 
 				      s, i, m_msg3a.m_docIds[i] );
 			*level = CR_DUP_SUMMARY;
@@ -1636,10 +1619,7 @@ bool Msg40::gotSummary ( ) {
 				// cluster level URL already exited previously
 				char *level = &m_msg3a.m_clusterLevels[i];
 				if(m_si->m_debug || g_conf.m_logDebugQuery)
-					logf(LOG_DEBUG, "query: result #%" PRId32" "
-								 "(docid=%" PRId64") is the "
-								 "same URL as "
-								 "(docid=%" PRId64")",
+					logf(LOG_DEBUG, "query: result #%" PRId32" (docid=%" PRId64") is the same URL as (docid=%" PRId64")",
 						 i,m_msg3a.m_docIds[i],
 						 m_urlTable.getValueFromSlot(slot));
 				*level = CR_DUP_URL;
@@ -1688,8 +1668,7 @@ bool Msg40::gotEnoughSummaries() {
 		if ( cn < 0 || cn >= CR_END ) { g_process.shutdownAbort(true); }
 		const char *s = g_crStrings[cn];
 		if ( ! s ) { g_process.shutdownAbort(true); }
-		logf(LOG_DEBUG, "query: msg40 final hit #%" PRId32") d=%" PRIu64" "
-		     "cl=%" PRId32" (%s)",
+		logf(LOG_DEBUG, "query: msg40 final hit #%" PRId32") d=%" PRIu64" cl=%" PRId32" (%s)",
 		     i,m_msg3a.m_docIds[i],(int32_t)m_msg3a.m_clusterLevels[i],s);
 	}
 
@@ -1714,11 +1693,8 @@ bool Msg40::gotEnoughSummaries() {
 		// increase by 25 percent as well
 		need *= 1.25;
 		// note it
-		log("msg40: too many summaries invisible. getting more "
-		    "docids from msg3a merge and getting summaries. "
-		    "%" PRId32" are visible, need %" PRId32". "
-		    "%" PRId32" to %" PRId32". "
-		    "numReplies=%" PRId32" numRequests=%" PRId32,
+		log("msg40: too many summaries invisible. getting more docids from msg3a merge and getting summaries. "
+		    "%" PRId32" are visible, need %" PRId32". %" PRId32" to %" PRId32". numReplies=%" PRId32" numRequests=%" PRId32,
 		    visible, m_docsToGetVisible,
 		    m_msg3a.m_docsToGet, need,
 		    m_numReplies, m_numRequests);
@@ -1745,8 +1721,7 @@ bool Msg40::gotEnoughSummaries() {
 
 	// timestamp log
 	if ( g_conf.m_logTimingQuery || m_si->m_debug )
-		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Got %" PRId32" summaries in "
-		    "%" PRId64" ms",
+		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Got %" PRId32" summaries in %" PRId64" ms",
 		     (PTRTYPE)this ,
 		     visible, // m_visibleContiguous,
 		     now - m_startTime );
@@ -1818,8 +1793,7 @@ bool Msg40::gotEnoughSummaries() {
 
 	// debug
 	for ( int32_t i = 0 ; debug && i < m_msg3a.m_numDocIds ; i++ )
-		logf(LOG_DEBUG, "query: msg40 clipped hit #%" PRId32") d=%" PRIu64" "
-		     "cl=%" PRId32" (%s)", 
+		logf(LOG_DEBUG, "query: msg40 clipped hit #%" PRId32") d=%" PRIu64" cl=%" PRId32" (%s)",
 		     i,m_msg3a.m_docIds[i],(int32_t)m_msg3a.m_clusterLevels[i],
 		     g_crStrings[(int32_t)m_msg3a.m_clusterLevels[i]]);
 
@@ -2080,8 +2054,7 @@ bool Msg40::printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
 		m_moreToCome = true;
 		// hide if above limit
 		if ( m_printCount == 0 )
-			log(LOG_INFO,"msg40: hiding above docsWanted "
-			    "#%" PRId32" (%" PRIu32")(d=%" PRId64")",
+			log(LOG_INFO,"msg40: hiding above docsWanted #%" PRId32" (%" PRIu32")(d=%" PRId64")",
 			    m_printi,mr->m_contentHash32,mr->m_docId);
 		m_printCount++;
 		if ( m_printCount == 100 ) m_printCount = 0;
