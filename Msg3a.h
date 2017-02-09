@@ -2,10 +2,10 @@
 #define GB_MSG3A_H_
 
 #include "Msg39.h"
-#include "Msg0.h"
-#include "Msg1.h"
+#include "Multicast.h"
 
 class SearchInput;
+class Query;
 
 void setTermFreqWeights ( collnum_t collnum, class Query *q );
 

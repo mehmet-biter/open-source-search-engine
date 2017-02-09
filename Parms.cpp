@@ -5708,6 +5708,32 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+
+	m->m_title = "URL realtime classification server name";
+	m->m_desc  = "";
+	m->m_cgi   = "url_class_server_name";
+	m->m_off   = offsetof(Conf,m_urlClassificationServerName);
+	m->m_type  = TYPE_STRING;
+	m->m_def   = "localhost";
+	m->m_size  = sizeof(Conf::m_urlClassificationServerName);
+	m->m_obj   = OBJ_CONF;
+	m->m_group = true;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
+	m->m_title = "URL realtime classification server port";
+	m->m_desc  = "(0=disable)";
+	m->m_cgi   = "url_class_server_port";
+	simple_m_set(Conf,m_urlClassificationServerPort);
+	m->m_def   = "8079";
+	m->m_smin  = 0;
+	m->m_smax  = 65535;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+
 	m->m_title = "stable-summary cache size";
 	m->m_desc  = "How much memory to use for stable summaries, viz. generated from meta tags and the same for all users and queries";
 	m->m_cgi   = "stablesumcachemem";
@@ -5717,7 +5743,7 @@ void Parms::init ( ) {
 	m->m_units = "bytes";
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
-	m->m_group = false;
+	m->m_group = true;
 	m++;
 
 	m->m_title = "stable-summary cache max age";

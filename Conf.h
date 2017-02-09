@@ -102,6 +102,9 @@ class Conf {
 	int32_t  m_numRns;
 	int32_t  m_rnsIps[MAX_RNSIPS];
 
+	char m_urlClassificationServerName[64];
+	int32_t m_urlClassificationServerPort;
+	
 	// used to limit all rdb's to one merge per machine at a time
 	int32_t  m_mergeBufSize;
 
