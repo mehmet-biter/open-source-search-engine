@@ -74,14 +74,6 @@ public:
 
 	bool mergeLists ( );
 
-	// . deserialize ourselves for the cache
-	// . returns bytes written
-	// . returns -1 and sets g_errno on error
-	int32_t getStoredSize ( );
-	int32_t serialize   ( char *buf , char *bufEnd );
-	int32_t deserialize ( char *buf , char *bufEnd );
-
-
 	// incoming parameters passed to Msg39::getDocIds() function
 	Query     *m_q;
 	int32_t       m_docsToGet;

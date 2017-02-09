@@ -969,59 +969,6 @@ bool Msg3a::mergeLists() {
 	return true;
 }
 
-int32_t Msg3a::getStoredSize ( ) {
-	// docId=8, scores=sizeof(rscore_t), clusterLevel=1 bitScores=1
-	// eventIds=1
-	int32_t need = m_numDocIds * ( 8 + sizeof(double) + sizeof(unsigned) + 1 ) +
-		4 + // m_numDocIds
-		8 ; // m_numTotalEstimatedHits (estimated # of results)
-	return need;
-}
-
-int32_t Msg3a::serialize   ( char *buf , char *bufEnd ) {
-	char *p    = buf;
-	char *pend = bufEnd;
-	// store # of docids we have
-	*(int32_t *)p = m_numDocIds; p += 4;
-	// estimated # of total hits
-	*(int32_t *)p = m_numTotalEstimatedHits; p += 8;
-	// store each docid, 8 bytes each
-	gbmemcpy ( p , m_docIds , m_numDocIds * 8 ); p += m_numDocIds * 8;
-	// store scores
-	gbmemcpy ( p , m_scores , m_numDocIds * sizeof(double) );
-	p +=  m_numDocIds * sizeof(double) ;
-	// store flags
-	memcpy(p, m_flags, m_numDocIds * sizeof(unsigned));
-	p +=  m_numDocIds * sizeof(unsigned);
-	// store cluster levels
-	gbmemcpy ( p , m_clusterLevels , m_numDocIds ); p += m_numDocIds;
-	// sanity check
-	if ( p > pend ) { g_process.shutdownAbort(true); }
-	// return how much we did
-	return p - buf;
-}
-
-int32_t Msg3a::deserialize ( char *buf , char *bufEnd ) {
-	char *p    = buf;
-	char *pend = bufEnd;
-	// get # of docids we have
-	m_numDocIds = *(int32_t *)p; p += 4;
-	// estimated # of total hits
-	m_numTotalEstimatedHits = *(int32_t *)p; p += 8;
-	// get each docid, 8 bytes each
-	m_docIds = (int64_t *)p; p += m_numDocIds * 8;
-	// get scores
-	m_scores = (double *)p; p += m_numDocIds * sizeof(double) ;
-	// get flags
-	m_flags = (unsigned*)p; p += m_numDocIds * sizeof(unsigned);
-	// get cluster levels
-	m_clusterLevels = (char *)p; p += m_numDocIds;
-	// sanity check
-	if ( p > pend ) { g_process.shutdownAbort(true); }
-	// return how much we did
-	return p - buf;
-}
-
 void Msg3a::printTerms ( ) {
 	// loop over all query terms
 	int32_t n = m_q->getNumTerms();
