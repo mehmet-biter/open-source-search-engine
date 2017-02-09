@@ -1694,8 +1694,11 @@ void Msg40::urlClassificationCallback0(void *context, uint32_t classification) {
 }
 
 void Msg40::urlClassificationCallback1(int i, uint32_t classification) {
-	if(classification&URL_CLASSIFICATION_MALICIOUS)
+	if(classification&URL_CLASSIFICATION_MALICIOUS) {
 		m_msg3a.m_clusterLevels[i] = CR_MALICIOUS;
+		log(LOG_DEBUG,"URL '%*.*s' classified as malicous. Filtering it out",
+		    (int)m_msg20[i]->m_r->size_ubuf, (int)m_msg20[i]->m_r->size_ubuf, m_msg20[i]->m_r->ptr_ubuf);
+	}
 	if(incrementRealtimeClassificationsCompleted()) {
 		log(LOG_TRACE,"msg40: all URL classifications completed");
 		if(gotEnoughSummaries()) {
