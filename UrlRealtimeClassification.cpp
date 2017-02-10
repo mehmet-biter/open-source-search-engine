@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <time.h>
 #include <errno.h>
 #include <atomic>
 
@@ -42,13 +43,16 @@ struct Request {
 	url_realtime_classification_callback_t callback;
 	void *context;
 	std::string url;
+	timespec deadline;
 	Request() : callback(0), context(0), url("") {}
 	Request(url_realtime_classification_callback_t callback_,
 			  void *context_,
-			  const std::string &url_)
+			  const std::string &url_,
+			  const timespec &deadline_)
 	  : callback(callback_),
 	    context(context_),
-	    url(url_)
+	    url(url_),
+	    deadline(deadline_)
 	{}
 };
 } //anonymous namespace
@@ -217,6 +221,29 @@ static void processInBuffer(IOBuffer *in_buffer, std::map<uint32_t,Request> *out
 }
 
 
+static int calculateEarliestTimeout(const std::map<uint32_t,Request> &outstanding_requests) {
+	if(outstanding_requests.empty())
+		return -1;
+	auto iter = outstanding_requests.begin();
+	timespec earliest_deadline = iter->second.deadline;
+	++iter;
+	for(; iter!=outstanding_requests.end(); ++iter) {
+		if(iter->second.deadline.tv_sec>earliest_deadline.tv_sec)
+			earliest_deadline = iter->second.deadline;
+		else if(iter->second.deadline.tv_sec==earliest_deadline.tv_sec &&
+		        iter->second.deadline.tv_nsec>earliest_deadline.tv_nsec)
+			earliest_deadline = iter->second.deadline;
+	}
+	timespec now;
+	clock_gettime(CLOCK_REALTIME,&now);
+	int timeout = (now.tv_sec - earliest_deadline.tv_sec) * 1000 +
+	              (now.tv_nsec - earliest_deadline.tv_nsec) / 1000000;
+	if(timeout<0)
+		return 0;  //already passed
+	return timeout;
+}
+
+
 static void runCommunicationLoop(int fd) {
 	communication_works = true;
 	IOBuffer in_buffer;
@@ -225,6 +252,8 @@ static void runCommunicationLoop(int fd) {
 	uint32_t request_sequencer = 0;
 	
 	while(!please_stop) {
+		int timeout = calculateEarliestTimeout(outstanding_requests);
+		
 		struct pollfd pfd[2];
 		memset(pfd,0,sizeof(pfd));
 		pfd[0].fd = fd;
@@ -234,7 +263,7 @@ static void runCommunicationLoop(int fd) {
 		pfd[1].fd = wakeup_fd[0];
 		pfd[1].events = POLLIN;
 		
-		int rc = poll(pfd,2,-1);
+		int rc = poll(pfd,2,timeout);
 		
 		if(rc<0) {
 			log(LOG_ERROR,"url-classification: poll() failed with errno=%d (%s)",errno,strerror(errno));
@@ -277,6 +306,19 @@ static void runCommunicationLoop(int fd) {
 				outstanding_requests[seq] = r;
 				outstanding_request_count++;
 			}
+		}
+		//timeout out requests
+		timespec now;
+		clock_gettime(CLOCK_REALTIME,&now);
+		for(auto iter=outstanding_requests.begin(); iter!=outstanding_requests.end(); ) {
+			if(iter->second.deadline.tv_sec>now.tv_sec ||
+			   (iter->second.deadline.tv_sec==now.tv_sec && iter->second.deadline.tv_nsec>now.tv_nsec))
+				++iter;
+			else {
+				(iter->second.callback)(iter->second.context,URL_CLASSIFICATION_UNKNOWN);
+				iter = outstanding_requests.erase(iter);
+			}
+			   
 		}
 	}
 	
@@ -345,6 +387,14 @@ bool initializeRealtimeUrlClassification() {
 
 
 bool classifyUrl(const char *url, url_realtime_classification_callback_t callback, void *context) {
+	timespec deadline;
+	clock_gettime(CLOCK_REALTIME,&deadline);
+	deadline.tv_sec += g_conf.m_urlClassificationTimeout/1000;
+	deadline.tv_nsec += (g_conf.m_urlClassificationTimeout%1000)*1000000;
+	if(deadline.tv_nsec>=1000000000) {
+		deadline.tv_sec++;
+		deadline.tv_nsec -= 1000000000;
+	}
 	if(outstanding_request_count >= g_conf.m_maxOutstandingUrlClassifications)
 		return false;
 	ScopedLock sl(mtx_queued_requests);
@@ -352,7 +402,7 @@ bool classifyUrl(const char *url, url_realtime_classification_callback_t callbac
 		return false;
 	if(outstanding_request_count + queued_requests.size() >= g_conf.m_maxOutstandingUrlClassifications)
 		return false;
-	queued_requests.push_back(Request(callback,context,url));
+	queued_requests.emplace_back(callback,context,url,deadline);
 	char dummy='d';
 	(void)write(wakeup_fd[1],&dummy,1);
 	return true;

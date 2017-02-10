@@ -5744,6 +5744,17 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "URL realtime classification timeout";
+	m->m_desc  = "Per-URL timeout. In milliseconds";
+	m->m_cgi   = "url_classification_timeout";
+	simple_m_set(Conf,m_urlClassificationTimeout);
+	m->m_def   = "500";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 
 	m->m_title = "stable-summary cache size";
 	m->m_desc  = "How much memory to use for stable summaries, viz. generated from meta tags and the same for all users and queries";
