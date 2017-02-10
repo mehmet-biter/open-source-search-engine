@@ -184,7 +184,8 @@ static void convertRequestToWireFormat(IOBuffer *out_buffer, uint32_t seq, const
 
 
 static void processInBuffer(IOBuffer *in_buffer, std::map<uint32_t,Request> *outstanding_requests) {
-	log(LOG_TRACE,"url-classification:  in_buffer: %*.*s", (int)in_buffer->used(), (int)in_buffer->used(), in_buffer->begin());
+	if(g_conf.m_logTraceUrlClassification)
+		log(LOG_TRACE,"url-classification:  in_buffer: %*.*s", (int)in_buffer->used(), (int)in_buffer->used(), in_buffer->begin());
 	while(!in_buffer->empty()) {
 		char *nl = (char*)memchr(in_buffer->begin(),'\n',in_buffer->used());
 		if(!nl)
@@ -206,7 +207,8 @@ static void processInBuffer(IOBuffer *in_buffer, std::map<uint32_t,Request> *out
 				}
 				auto iter = outstanding_requests->find(seq);
 				if(iter!=outstanding_requests->end()) {
-					log(LOG_DEBUG,"url-classification: Got classification %08x or %s",classification,iter->second.url.c_str());
+					if(g_conf.m_logTraceUrlClassification)
+						log(LOG_TRACE,"url-classification: Got classification %08x or %s",classification,iter->second.url.c_str());
 					(*iter->second.callback)(iter->second.context,classification);
 					outstanding_requests->erase(iter);
 					outstanding_request_count--;
@@ -280,7 +282,8 @@ static void runCommunicationLoop(int fd) {
 				log(LOG_INFO,"url-classification: read(%d) returned 0 (server closed socket)", fd);
 				break;
 			}
-			log(LOG_TRACE,"url-classification: Received  %zd from classification server",bytes_read);
+			if(g_conf.m_logTraceUrlClassification)
+				log(LOG_TRACE,"url-classification: Received %zd bytes from classification server",bytes_read);
 			in_buffer.push_back((size_t)bytes_read);
 			processInBuffer(&in_buffer,&outstanding_requests);
 		}
@@ -289,8 +292,9 @@ static void runCommunicationLoop(int fd) {
 			if(bytes_written<0) {
 				log(LOG_ERROR,"url-classification: write(%d) failed with errno=%d (%s)",fd,errno,strerror(errno));
 				break;
-				log(LOG_TRACE,"Sent %zu bytes to classification server",bytes_written);
 			}
+			if(g_conf.m_logTraceUrlClassification)
+				log(LOG_TRACE,"Sent %zu bytes to classification server",bytes_written);
 			out_buffer.pop_front((size_t)bytes_written);
 		}
 		if(pfd[1].revents&POLLIN) {
