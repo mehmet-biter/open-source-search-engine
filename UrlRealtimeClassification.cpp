@@ -37,12 +37,13 @@
 
 
 
-struct OutstandingRequest {
+namespace {
+struct Request {
 	url_realtime_classification_callback_t callback;
 	void *context;
 	std::string url;
-	OutstandingRequest() : callback(0), context(0), url("") {}
-	OutstandingRequest(url_realtime_classification_callback_t callback_,
+	Request() : callback(0), context(0), url("") {}
+	Request(url_realtime_classification_callback_t callback_,
 			  void *context_,
 			  const std::string &url_)
 	  : callback(callback_),
@@ -50,8 +51,9 @@ struct OutstandingRequest {
 	    url(url_)
 	{}
 };
+} //anonymous namespace
 
-static std::vector<OutstandingRequest> queued_requests;
+static std::vector<Request> queued_requests;
 static GbMutex mtx_queued_requests;
 static pthread_t tid;
 static bool please_stop = false;
@@ -163,7 +165,7 @@ static int runConnectLoop(const char *hostname, int port_number) {
 }
 
 
-static void convertRequestToWireFormat(IOBuffer *out_buffer, uint32_t seq, const OutstandingRequest &r) {
+static void convertRequestToWireFormat(IOBuffer *out_buffer, uint32_t seq, const Request &r) {
 	out_buffer->reserve_extra(8+1+r.url.size()+1);
 	sprintf(out_buffer->end(),"%08x",seq);
 	out_buffer->push_back(8);
@@ -176,7 +178,7 @@ static void convertRequestToWireFormat(IOBuffer *out_buffer, uint32_t seq, const
 }
 
 
-static void processInBuffer(IOBuffer *in_buffer, std::map<uint32_t,OutstandingRequest> *outstanding_requests) {
+static void processInBuffer(IOBuffer *in_buffer, std::map<uint32_t,Request> *outstanding_requests) {
 	log(LOG_TRACE,"url-classification:  in_buffer: %*.*s", (int)in_buffer->used(), (int)in_buffer->used(), in_buffer->begin());
 	while(!in_buffer->empty()) {
 		char *nl = (char*)memchr(in_buffer->begin(),'\n',in_buffer->used());
@@ -217,7 +219,7 @@ static void runCommunicationLoop(int fd) {
 	communication_works = true;
 	IOBuffer in_buffer;
 	IOBuffer out_buffer;
-	std::map<uint32_t,OutstandingRequest> outstanding_requests;
+	std::map<uint32_t,Request> outstanding_requests;
 	uint32_t request_sequencer = 0;
 	
 	while(!please_stop) {
@@ -262,7 +264,7 @@ static void runCommunicationLoop(int fd) {
 		}
 		if(pfd[1].revents&POLLIN) {
 			drainWakeupPipe();
-			std::vector<OutstandingRequest> tmp;
+			std::vector<Request> tmp;
 			{
 				ScopedLock sl(mtx_queued_requests);
 				tmp.swap(queued_requests);
@@ -284,7 +286,7 @@ static void runCommunicationLoop(int fd) {
 
 
 static void finishQueuedRequests() {
-	std::vector<OutstandingRequest> tmp;
+	std::vector<Request> tmp;
 	{
 		ScopedLock sl(mtx_queued_requests);
 		tmp.swap(queued_requests);
@@ -342,7 +344,7 @@ bool classifyUrl(const char *url, url_realtime_classification_callback_t callbac
 	ScopedLock sl(mtx_queued_requests);
 	if(!communication_works)
 		return false;
-	queued_requests.push_back(OutstandingRequest(callback,context,url));
+	queued_requests.push_back(Request(callback,context,url));
 	char dummy='d';
 	(void)write(wakeup_fd[1],&dummy,1);
 	return true;
