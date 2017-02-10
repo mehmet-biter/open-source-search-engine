@@ -329,7 +329,7 @@ bool initializeRealtimeUrlClassification() {
 	if(rc!=0) {
 		close(wakeup_fd[0]);
 		close(wakeup_fd[1]);
-		log(LOG_ERROR,"pthraed_create() failed with rc=%d (%s)",rc,strerror(rc));
+		log(LOG_ERROR,"pthread_create() failed with rc=%d (%s)",rc,strerror(rc));
 		return false;
 	}
 	
