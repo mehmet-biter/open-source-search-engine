@@ -5733,6 +5733,17 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "URL realtime classification max outstanding requests";
+	m->m_desc  = "(0=disable)";
+	m->m_cgi   = "url_class_server_max_oustanding_requests";
+	simple_m_set(Conf,m_maxOutstandingUrlClassifications);
+	m->m_def   = "1000";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 
 	m->m_title = "stable-summary cache size";
 	m->m_desc  = "How much memory to use for stable summaries, viz. generated from meta tags and the same for all users and queries";

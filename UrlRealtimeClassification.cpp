@@ -58,8 +58,9 @@ static GbMutex mtx_queued_requests;
 static pthread_t tid;
 static bool please_stop = false;
 static int wakeup_fd[2];
-static 	time_t next_connect_attempt = 0;
+static time_t next_connect_attempt = 0;
 static std::atomic<bool> communication_works(false);
+static std::atomic<unsigned> outstanding_request_count(0);
 
 
 static void drainWakeupPipe() {
@@ -204,6 +205,7 @@ static void processInBuffer(IOBuffer *in_buffer, std::map<uint32_t,Request> *out
 					log(LOG_DEBUG,"url-classification: Got classification %08x or %s",classification,iter->second.url.c_str());
 					(*iter->second.callback)(iter->second.context,classification);
 					outstanding_requests->erase(iter);
+					outstanding_request_count--;
 				} else
 					log(LOG_WARN,"url-classification: Got unmatched response for seq %08x",seq);
 			}
@@ -273,6 +275,7 @@ static void runCommunicationLoop(int fd) {
 				uint32_t seq = request_sequencer++;
 				convertRequestToWireFormat(&out_buffer,seq,r);
 				outstanding_requests[seq] = r;
+				outstanding_request_count++;
 			}
 		}
 	}
@@ -282,6 +285,7 @@ static void runCommunicationLoop(int fd) {
 	//call callbacks on queued and oustanding requests
 	for(auto const &r : outstanding_requests)
 		(*r.second.callback)(r.second.context,URL_CLASSIFICATION_UNKNOWN);
+	outstanding_request_count = 0;
 }
 
 
@@ -341,8 +345,12 @@ bool initializeRealtimeUrlClassification() {
 
 
 bool classifyUrl(const char *url, url_realtime_classification_callback_t callback, void *context) {
+	if(outstanding_request_count >= g_conf.m_maxOutstandingUrlClassifications)
+		return false;
 	ScopedLock sl(mtx_queued_requests);
 	if(!communication_works)
+		return false;
+	if(outstanding_request_count + queued_requests.size() >= g_conf.m_maxOutstandingUrlClassifications)
 		return false;
 	queued_requests.push_back(Request(callback,context,url));
 	char dummy='d';

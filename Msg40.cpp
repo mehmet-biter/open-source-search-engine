@@ -1665,8 +1665,9 @@ bool Msg40::submitUrlRealtimeClassification() {
 			UrlClassificationContext *ucc = new UrlClassificationContext(this,i);
 			incrementRealtimeClassificationsStarted();
 			if(classifyUrl(url.c_str(),&urlClassificationCallback0,ucc))
-				log(LOG_TRACE,"URL classification of '%s' started",url.c_str());
+				log(LOG_INFO,"URL classification of '%s' started",url.c_str());
 			else {
+				log(LOG_INFO,"URL classification of '%s' NOT started",url.c_str());
 				incrementRealtimeClassificationsCompleted();
 				delete ucc;
 			}

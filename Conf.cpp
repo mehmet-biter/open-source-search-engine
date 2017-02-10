@@ -60,6 +60,7 @@ Conf::Conf ( ) {
 	memset(m_rnsIps, 0, sizeof(m_rnsIps));
 	m_urlClassificationServerName[0] = '\0';
 	m_urlClassificationServerPort = 0;
+	m_maxOutstandingUrlClassifications = 0;
 	m_mergeBufSize = 0;
 	m_posdbFileCacheSize = 0;
 	m_posdbMaxTreeMem = 0;
