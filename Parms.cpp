@@ -10267,17 +10267,16 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 			// get its hash of its cgi
 			int32_t ph32 = parm->m_cgiHash;
 			// sanity!
-			if ( s_pht.isInTable ( &ph32 ) ) {
-				// get the dup guy
-				Parm *duplicate = *(Parm **)s_pht.getValue(&ph32);
+			Parm **duplicate = (Parm **)s_pht.getValue(&ph32);
+			if ( duplicate ) {
 				// same underlying parm?
 				// like for "all spiders on" vs.
 				// "all spiders off"?
-				if ( duplicate->m_off == parm->m_off )
+				if ( (*duplicate)->m_off == parm->m_off )
 					continue;
 				// otherwise bitch about it and drop core
 				log("parms: dup parm h32=%" PRId32" \"%s\" vs \"%s\"",
-				    ph32, duplicate->m_title,parm->m_title);
+				    ph32, (*duplicate)->m_title, parm->m_title);
 				g_process.shutdownAbort(true);
 			}
 			// add that to hash table
