@@ -119,7 +119,11 @@ static int runConnectLoop(const char *hostname, int port_number) {
 			most_recent_error=errno;
 			continue;
 		}
-		fcntl(fd,F_SETFL,O_NONBLOCK);
+		if(fcntl(fd,F_SETFL,O_NONBLOCK)<0) {
+			most_recent_error = errno;
+			close(fd);
+			continue;
+		}
 		
 		if(connect(fd,ai->ai_addr,ai->ai_addrlen)==0) {
 			//Immediate connect. Usually only happenes on solaris when connecting over the
@@ -372,8 +376,14 @@ bool initializeRealtimeUrlClassification() {
 		log(LOG_ERROR,"pipe() failed with errno=%d (%s)", errno, strerror(errno));
 		return false;
 	}
-	fcntl(wakeup_fd[0],F_SETFL,O_NONBLOCK);
-	fcntl(wakeup_fd[1],F_SETFL,O_NONBLOCK);
+	if(fcntl(wakeup_fd[0],F_SETFL,O_NONBLOCK)<0 ||
+	   fcntl(wakeup_fd[1],F_SETFL,O_NONBLOCK)<0)
+	{
+		log(LOG_ERROR,"fcntl(pipe,nonblock) failed with errno=%d (%s)",errno,strerror(errno));
+		close(wakeup_fd[0]);
+		close(wakeup_fd[1]);
+		return false;
+	}
 	
 	int rc = pthread_create(&tid,NULL,communicationThread,NULL);
 	if(rc!=0) {
