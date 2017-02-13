@@ -60,6 +60,13 @@
 ^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))w3lookup\.net/
 ^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))siteaero\.com/
 ^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))outerstats\.com/
+^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))webstatsdomain\.org/
+^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))websitevaluespy\.com/
+^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))wenotify\.com/
+^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))moresitesalike\.org/
+# stopped updating site and won't remove old software versions 
+^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))softonic\.com/
+
 
 # path
 ^https?://[^/]+/oembed[\?/]
