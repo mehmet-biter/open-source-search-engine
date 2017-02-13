@@ -476,7 +476,7 @@ class Query {
 
 	bool m_useQueryStopWords;
 
-	// use a generic buffer for m_qwords and m_expressions to point into
+	// use a generic buffer for m_qwords to point into
 	// so we don't have to malloc for them
 	char      m_gbuf [ GBUF_SIZE ];
 	char     *m_gnext;
@@ -521,7 +521,6 @@ class Query {
 	char m_otmpBuf[128];
 
 	// . we now contain the parsing components for boolean queries
-	// . m_expressions points into m_gbuf or is allocated
 	Expression        m_expressions[MAX_EXPRESSIONS];
 	int32_t              m_numExpressions;
 
