@@ -441,7 +441,7 @@ class Query {
 			 class Words &words , class Phrases &phrases ) ;
 
 	// sets m_qterms[] array from the m_qwords[] array
-	bool setQTerms ( class Words &words ) ;
+	bool setQTerms ( const class Words &words ) ;
 
 	// helper funcs for parsing query into m_qwords[]
 	bool        isConnection(const char *s, int32_t len) const;

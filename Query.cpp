@@ -375,7 +375,7 @@ bool Query::set2 ( const char *query        ,
 }
 
 // returns false and sets g_errno on error
-bool Query::setQTerms ( Words &words ) {
+bool Query::setQTerms ( const Words &words ) {
 
 	// . set m_qptrs/m_qtermIds/m_qbits
 	// . use one bit position for each phraseId and wordId
