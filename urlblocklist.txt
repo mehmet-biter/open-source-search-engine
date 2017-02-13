@@ -58,6 +58,8 @@
 ^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))ipaddress\.com/
 ^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))w3lookup\.com/
 ^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))w3lookup\.net/
+^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))siteaero\.com/
+^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))outerstats\.com/
 
 # path
 ^https?://[^/]+/oembed[\?/]
