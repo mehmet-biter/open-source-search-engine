@@ -936,7 +936,7 @@ bool Query::setQTerms ( const Words &words ) {
 				// to a line in memory of wiktionary-buf.txt.
 				if ( ! ptr ) {
 					int32_t off = syn.m_termOffs[j];
-// 					if ( off < 0 ) {
+					if ( off < 0 ) {
 						g_process.shutdownAbort(true); }
 					if ( off > qw->m_synWordBuf.length() ) {
 						g_process.shutdownAbort(true); }
