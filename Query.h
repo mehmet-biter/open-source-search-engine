@@ -134,7 +134,8 @@ enum ignore_reason_t {
 	IGNORE_FIELDNAME = 5,	// word is a field name, like title:
 	IGNORE_BREECH    = 6,	// query exceeded MAX_QUERY_TERMS so we ignored part
 	IGNORE_BOOLOP    = 7,	// boolean operator (OR,AND,NOT)
-	IGNORE_QUOTED    = 8	// word in quotes is ignored. "the day"
+	IGNORE_QUOTED    = 8,	// word in quotes is ignored. "the day"
+	IGNORE_HIGHFREMTERM = 9	//trem(word) is a high-freq-term and is too expensive to look up
 };
 
 // boolean query operators (m_opcode field in QueryWord)

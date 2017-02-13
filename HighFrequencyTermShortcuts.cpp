@@ -214,3 +214,8 @@ bool HighFrequencyTermShortcuts::query_term_shortcut(uint64_t term_id,
 	}
 }
 
+
+bool HighFrequencyTermShortcuts::is_registered_term(uint64_t term_id)
+{
+	return entries.find(term_id)!=entries.end();
+}

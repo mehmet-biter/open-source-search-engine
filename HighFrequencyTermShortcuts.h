@@ -34,6 +34,8 @@ public:
 	bool query_term_shortcut(uint64_t term_id,
 	                         const void **posdb_entries, size_t *bytes,
 	                         void *start_key, void *end_key);
+
+	bool is_registered_term(uint64_t term_id);
 };
 
 extern HighFrequencyTermShortcuts g_hfts;

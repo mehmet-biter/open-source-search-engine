@@ -14,6 +14,7 @@
 #include "Msg3a.h"
 #include "HashTableX.h"
 #include "Synonyms.h"
+#include "HighFrequencyTermShortcuts.h"
 #include "Wiki.h"
 #include "RdbList.h"
 #include "Process.h"
@@ -2044,8 +2045,32 @@ bool Query::setQWords ( char boolFlag ,
 
 		// do not ignore the word
 		qw->m_ignoreWord = IGNORE_NO_IGNORE;
+		
+		//except if it is a high-frequency-term and expensive to look up. In that case ignore the word but keep the phrases/bigrams thereof
+		uint64_t termId = (wid & TERMID_MASK);
+		if(g_hfts.is_registered_term(termId)) {
+			log(LOG_DEBUG, "query: termId %lu is a highfreq term. Marking it for ignoring",termId);
+			qw->m_ignoreWord = IGNORE_HIGHFREMTERM;
+		}
 	}
 
+	//If there's only one alphanumerical word and it was ignored due to high-freq-term then the query is treated as 0 terms and will return an empty
+	//result. Therefore un-ignore the single word and let it fetch (best-efort) results from the high-freq-term-cache
+	int numAlfanumWords = 0;
+	int numAlfanumWordsHighFreqTerms = 0;
+	int alfanumWordIndex = -1;
+	for(int i=0; i<numWords; i++) {
+		if(words.isAlnum(i)) {
+			alfanumWordIndex = i;
+			numAlfanumWords++;
+			if(m_qwords[i].m_ignoreWord==IGNORE_HIGHFREMTERM)
+				numAlfanumWordsHighFreqTerms++;
+		
+		}
+	}
+	if(numAlfanumWords == 1 && numAlfanumWordsHighFreqTerms==1)
+		m_qwords[alfanumWordIndex].m_ignoreWord = IGNORE_NO_IGNORE;
+	
 	// pipe those that should be piped
 	for ( int32_t i = 0 ; i < pi ; i++ ) m_qwords[i].m_piped = true;
 
@@ -2114,7 +2139,7 @@ bool Query::setQWords ( char boolFlag ,
 			//   can be any part of a phrase
 			// . no pair across any change of field code
 			// . 'girl title:boy' --> no "girl title" phrase!
-			if ( qw->m_ignoreWord ) {
+			if ( qw->m_ignoreWord && qw->m_ignoreWord!=IGNORE_HIGHFREMTERM ) {
 				b &= ~D_CAN_PAIR_ACROSS;
 				b &= ~D_CAN_BE_IN_PHRASE;
 			}
@@ -2203,7 +2228,9 @@ bool Query::setQWords ( char boolFlag ,
 		// get the ith QueryWord
 		QueryWord *qw = &m_qwords[i];
 
-		if ( qw->m_ignoreWord ) continue;
+		//if word is ignored (and it is not due to high-freq-term) then don't generate a phrase/bigram query term
+		if(qw->m_ignoreWord && qw->m_ignoreWord!=IGNORE_HIGHFREMTERM)
+			continue;
 		if ( qw->m_fieldCode && qw->m_quoteStart < 0) continue;
 		// get the first word # to our left that starts a phrase
 		// of which we are a member
