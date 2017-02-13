@@ -125,14 +125,17 @@ struct QueryField {
 extern struct QueryField g_fields[];
 	
 // reasons why we ignore a particular QueryWord's word or phrase
-#define IGNORE_DEFAULT   1 // punct
-#define IGNORE_CONNECTED 2 // connected sequence (cd-rom)
-#define IGNORE_QSTOP     3 // query stop word (come 'to' me)
-#define IGNORE_REPEAT    4 // repeated term (time after time)
-#define IGNORE_FIELDNAME 5 // word is a field name, like title:
-#define IGNORE_BREECH    6 // query exceeded MAX_QUERY_TERMS so we ignored part
-#define IGNORE_BOOLOP    7 // boolean operator (OR,AND,NOT)
-#define IGNORE_QUOTED    8 // word in quotes is ignored. "the day"
+enum ignore_reason_t {
+	IGNORE_NO_IGNORE = 0,
+	IGNORE_DEFAULT   = 1,	// punct
+	IGNORE_CONNECTED = 2,	// connected sequence (cd-rom)
+	IGNORE_QSTOP     = 3,	// query stop word (come 'to' me)
+	IGNORE_REPEAT    = 4,	// repeated term (time after time)
+	IGNORE_FIELDNAME = 5,	// word is a field name, like title:
+	IGNORE_BREECH    = 6,	// query exceeded MAX_QUERY_TERMS so we ignored part
+	IGNORE_BOOLOP    = 7,	// boolean operator (OR,AND,NOT)
+	IGNORE_QUOTED    = 8	// word in quotes is ignored. "the day"
+};
 
 // boolean query operators (m_opcode field in QueryWord)
 #define OP_OR         1
@@ -200,9 +203,9 @@ class QueryWord {
 	char        m_opcode;
 	// . the ignore code
 	// . explains why this query term should be ignored
-	// . see #define'd IGNORE_* codes above
-	char        m_ignoreWord   ;
-	char        m_ignorePhrase ;
+	// . see IGNORE_* enums above
+	ignore_reason_t m_ignoreWord;
+	ignore_reason_t m_ignorePhrase;
 
 	// so we ignore gbsortby:offerprice in bool expressions
 	bool        m_ignoreWordInBoolQuery;

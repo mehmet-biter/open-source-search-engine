@@ -1919,7 +1919,7 @@ bool Query::setQWords ( char boolFlag ,
 			qw->m_isQueryStopWord = false;
 
 			// do not ignore the wordId
-			qw->m_ignoreWord = 0;
+			qw->m_ignoreWord = IGNORE_NO_IGNORE;
 
 			// we are the first word?
 			firstWord = false;
@@ -2040,7 +2040,7 @@ bool Query::setQWords ( char boolFlag ,
 		}
 
 		// do not ignore the word
-		qw->m_ignoreWord = 0;
+		qw->m_ignoreWord = IGNORE_NO_IGNORE;
 	}
 
 	// pipe those that should be piped
@@ -2147,7 +2147,7 @@ bool Query::setQWords ( char boolFlag ,
 		// punctuation words can no longer start a quote
 		if ( words.isPunct(j) && qs == -1 ) continue;
 		// uningore him if we should
-		if ( keepAllSingles ) m_qwords[j].m_ignoreWord = 0;
+		if ( keepAllSingles ) m_qwords[j].m_ignoreWord = IGNORE_NO_IGNORE;
 		// if already in quotes, don't bother!
 		if ( m_qwords[j].m_quoteStart >= 0 ) continue;
 		// remember him
@@ -2262,7 +2262,7 @@ bool Query::setQWords ( char boolFlag ,
 			qw->m_phraseLen = plen2;
 
 			// do not ignore the phrase, it's valid
-			qw->m_ignorePhrase = 0;
+			qw->m_ignorePhrase = IGNORE_NO_IGNORE;
 		}
 
 
@@ -2481,7 +2481,7 @@ bool Query::setQWords ( char boolFlag ,
 		for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 			QueryWord *qw = &m_qwords[i];
 			if ( qw->m_ignoreWord != IGNORE_QSTOP ) continue;
-			qw->m_ignoreWord = 0;
+			qw->m_ignoreWord = IGNORE_NO_IGNORE;
 			count++;
 			break;
 		}
