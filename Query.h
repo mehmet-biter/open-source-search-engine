@@ -495,7 +495,6 @@ class Query {
 
 	// site: field will disable site clustering
 	// ip: field will disable ip clustering
-	// site:, ip: and url: queries will disable caching
 	bool m_hasPositiveSiteField;
 	bool m_hasIpField;
 	bool m_hasUrlField;
