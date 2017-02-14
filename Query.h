@@ -154,7 +154,7 @@ enum ignore_reason_t {
 class QueryWord {
 
  public:
-	bool isAlphaWord() { return is_alnum_utf8(m_word); }
+	bool isAlphaWord() const { return is_alnum_utf8(m_word); }
 
 	void constructor ();
 	void destructor ();
