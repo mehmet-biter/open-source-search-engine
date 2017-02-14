@@ -82,6 +82,7 @@ static void waitForTimeToConnect() {
 	struct pollfd pfd;
 	memset(&pfd,0,sizeof(pfd));
 	pfd.fd = wakeup_fd[0];
+	pfd.events = POLLIN;
 	(void)poll(&pfd,1,(next_connect_attempt-now)*1000);
 	drainWakeupPipe();
 }
