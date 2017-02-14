@@ -417,13 +417,11 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 	makeStartKey(&startKey, termId);
 	makeEndKey  (&endKey  , termId);
 
-	// turn this off for this
-	int64_t oldTrunc = -1;
 	int64_t maxRecs = m_rdb.estimateListSize(collnum,
 						 (const char*)&startKey,
 						 (const char*)&endKey,
 						 (char *)&maxKey,
-						 oldTrunc );
+						 -1 ); //no truncation
 
 	RdbBuckets *buckets = m_rdb.getBuckets();
 	if( !buckets ) {
