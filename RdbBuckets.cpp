@@ -1754,6 +1754,8 @@ int RdbBucket::getListSizeExact(const char *startKey, const char *endKey) {
 }
 
 bool RdbBuckets::deleteNode(collnum_t collnum, const char *key) {
+	ScopedLock sl(m_mtx);
+
 	int32_t i = getBucketNum(collnum, key);
 
 	logTrace(g_conf.m_logTraceRdbBuckets, "key=%s, bucket=%" PRId32 "", KEYSTR(key, getRecSize()), i);
