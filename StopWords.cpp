@@ -2444,7 +2444,7 @@ static const char      *s_commonWords[] = {
 	"til",		// to/at/for/until/against/by/of/into,
 	"er",		// present
 	"som",		// who,
-	"pЕ",		// on/upon/in/on/at/to/after/of/with/for,
+	"på",		// on/upon/in/on/at/to/after/of/with/for,
 	"de",		// they
 	"med",		// with/by/in,
 	"han",		// he
@@ -2487,8 +2487,8 @@ static const char      *s_commonWords[] = {
 	"blev",		// past
 	"kunne",	// could
 	"ind",		// in
-	"nЕr",	// when
-	"vФre",	// present
+	"når",	// when
+	"være",	// present
 	"dog",	// however/yet/after
 	"noget",	// something
 	"ville",	// would
@@ -2501,7 +2501,7 @@ static const char      *s_commonWords[] = {
 	"end",	// than
 	"dette",	// this
 	"mit",	// my/mine
-	"ogsЕ",		// also
+	"også",		// also
 	"ogsa",		// also
 	"under",	// under/beneath/below/during,
 	"have",		// have
@@ -2525,11 +2525,11 @@ static const char      *s_commonWords[] = {
 	"ad",		// by/through
 	"bliver",	// present
 	"hendes",	// her/hers
-	"vФret",	// be
+	"været",	// be
 	"vaeret",	// be
 	"thi",		// for
 	"jer",		// you
-	"sЕdan",	// such,
+	"sådan",	// such,
 
 	// dutch stop words
 	"de",		// the
@@ -2782,7 +2782,7 @@ static const char      *s_commonWords[] = {
 	"euren",	// 
 	"eurer",	// 
 	"eures",	// 
-	"fЭr",		// for
+	"für",		// for
 	"gegen",	// towards
 	"gewesen",	// p.p.
 	"hab",		// have
@@ -2827,8 +2827,8 @@ static const char      *s_commonWords[] = {
 	"keinen",	// 
 	"keiner",	// 
 	"keines",	// 
-	"kЖnnen",	// can
-	"kЖnnte",	// could
+	"können",	// can
+	"könnte",	// could
 	"machen",	// do
 	"man",		// one
 	"manche",	// some,
@@ -2876,7 +2876,7 @@ static const char      *s_commonWords[] = {
 	"sollte",	// should
 	"sondern",	// but
 	"sonst",	// else
-	"Эber",		// over
+	"über",		// over
 	"um",		// about,
 	"und",		// and
 	"uns",		// us
@@ -2890,7 +2890,7 @@ static const char      *s_commonWords[] = {
 	"vom",		// von
 	"von",		// from
 	"vor",		// before
-	"wДhrend",	// while
+	"während",	// while
 //		"war",		// was
 	"waren",	// were
 	"warst",	// wast
@@ -2915,8 +2915,8 @@ static const char      *s_commonWords[] = {
 	"wo",		// where
 	"wollen",	// want
 	"wollte",	// wanted
-	"wЭrde",	// would
-	"wЭrden",	// would
+	"würde",	// would
+	"würden",	// would
 	"zu",		// to
 	"zum",		// zu
 	"zur",		// zu

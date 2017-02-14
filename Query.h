@@ -125,14 +125,18 @@ struct QueryField {
 extern struct QueryField g_fields[];
 	
 // reasons why we ignore a particular QueryWord's word or phrase
-#define IGNORE_DEFAULT   1 // punct
-#define IGNORE_CONNECTED 2 // connected sequence (cd-rom)
-#define IGNORE_QSTOP     3 // query stop word (come 'to' me)
-#define IGNORE_REPEAT    4 // repeated term (time after time)
-#define IGNORE_FIELDNAME 5 // word is a field name, like title:
-#define IGNORE_BREECH    6 // query exceeded MAX_QUERY_TERMS so we ignored part
-#define IGNORE_BOOLOP    7 // boolean operator (OR,AND,NOT)
-#define IGNORE_QUOTED    8 // word in quotes is ignored. "the day"
+enum ignore_reason_t {
+	IGNORE_NO_IGNORE = 0,
+	IGNORE_DEFAULT   = 1,	// punct
+	IGNORE_CONNECTED = 2,	// connected sequence (cd-rom)
+	IGNORE_QSTOP     = 3,	// query stop word (come 'to' me)
+	IGNORE_REPEAT    = 4,	// repeated term (time after time)
+	IGNORE_FIELDNAME = 5,	// word is a field name, like title:
+	IGNORE_BREECH    = 6,	// query exceeded MAX_QUERY_TERMS so we ignored part
+	IGNORE_BOOLOP    = 7,	// boolean operator (OR,AND,NOT)
+	IGNORE_QUOTED    = 8,	// word in quotes is ignored. "the day"
+	IGNORE_HIGHFREMTERM = 9	//trem(word) is a high-freq-term and is too expensive to look up
+};
 
 // boolean query operators (m_opcode field in QueryWord)
 #define OP_OR         1
@@ -150,7 +154,7 @@ extern struct QueryField g_fields[];
 class QueryWord {
 
  public:
-	bool isAlphaWord() { return is_alnum_utf8(m_word); }
+	bool isAlphaWord() const { return is_alnum_utf8(m_word); }
 
 	void constructor ();
 	void destructor ();
@@ -200,9 +204,9 @@ class QueryWord {
 	char        m_opcode;
 	// . the ignore code
 	// . explains why this query term should be ignored
-	// . see #define'd IGNORE_* codes above
-	char        m_ignoreWord   ;
-	char        m_ignorePhrase ;
+	// . see IGNORE_* enums above
+	ignore_reason_t m_ignoreWord;
+	ignore_reason_t m_ignorePhrase;
 
 	// so we ignore gbsortby:offerprice in bool expressions
 	bool        m_ignoreWordInBoolQuery;
@@ -441,7 +445,7 @@ class Query {
 			 class Words &words , class Phrases &phrases ) ;
 
 	// sets m_qterms[] array from the m_qwords[] array
-	bool setQTerms ( class Words &words ) ;
+	bool setQTerms ( const class Words &words ) ;
 
 	// helper funcs for parsing query into m_qwords[]
 	bool        isConnection(const char *s, int32_t len) const;
@@ -472,7 +476,7 @@ class Query {
 
 	bool m_useQueryStopWords;
 
-	// use a generic buffer for m_qwords and m_expressions to point into
+	// use a generic buffer for m_qwords to point into
 	// so we don't have to malloc for them
 	char      m_gbuf [ GBUF_SIZE ];
 	char     *m_gnext;
@@ -491,7 +495,6 @@ class Query {
 
 	// site: field will disable site clustering
 	// ip: field will disable ip clustering
-	// site:, ip: and url: queries will disable caching
 	bool m_hasPositiveSiteField;
 	bool m_hasIpField;
 	bool m_hasUrlField;
@@ -517,7 +520,6 @@ class Query {
 	char m_otmpBuf[128];
 
 	// . we now contain the parsing components for boolean queries
-	// . m_expressions points into m_gbuf or is allocated
 	Expression        m_expressions[MAX_EXPRESSIONS];
 	int32_t              m_numExpressions;
 

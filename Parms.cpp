@@ -5724,6 +5724,28 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "URL realtime classification max outstanding requests";
+	m->m_desc  = "(0=disable)";
+	m->m_cgi   = "url_class_server_max_oustanding_requests";
+	simple_m_set(Conf,m_maxOutstandingUrlClassifications);
+	m->m_def   = "1000";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "URL realtime classification timeout";
+	m->m_desc  = "Per-URL timeout. In milliseconds";
+	m->m_cgi   = "url_classification_timeout";
+	simple_m_set(Conf,m_urlClassificationTimeout);
+	m->m_def   = "500";
+	m->m_smin  = 0;
+	m->m_group = false;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 
 	m->m_title = "stable-summary cache size";
 	m->m_desc  = "How much memory to use for stable summaries, viz. generated from meta tags and the same for all users and queries";
@@ -9262,6 +9284,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for URL realtime classification";
+	m->m_cgi   = "ltrc_urlclass";
+	simple_m_set(Conf,m_logTraceUrlClassification);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log timing messages for build";
 	m->m_desc  = "Log various timing related messages.";
 	m->m_cgi   = "ltb";
@@ -10259,17 +10288,16 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 			// get its hash of its cgi
 			int32_t ph32 = parm->m_cgiHash;
 			// sanity!
-			if ( s_pht.isInTable ( &ph32 ) ) {
-				// get the dup guy
-				Parm *duplicate = *(Parm **)s_pht.getValue(&ph32);
+			Parm **duplicate = (Parm **)s_pht.getValue(&ph32);
+			if ( duplicate ) {
 				// same underlying parm?
 				// like for "all spiders on" vs.
 				// "all spiders off"?
-				if ( duplicate->m_off == parm->m_off )
+				if ( (*duplicate)->m_off == parm->m_off )
 					continue;
 				// otherwise bitch about it and drop core
 				log("parms: dup parm h32=%" PRId32" \"%s\" vs \"%s\"",
-				    ph32, duplicate->m_title,parm->m_title);
+				    ph32, (*duplicate)->m_title, parm->m_title);
 				g_process.shutdownAbort(true);
 			}
 			// add that to hash table

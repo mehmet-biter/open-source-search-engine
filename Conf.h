@@ -104,6 +104,8 @@ class Conf {
 
 	char m_urlClassificationServerName[64];
 	int32_t m_urlClassificationServerPort;
+	unsigned m_maxOutstandingUrlClassifications;
+	unsigned m_urlClassificationTimeout;
 	
 	// used to limit all rdb's to one merge per machine at a time
 	int32_t  m_mergeBufSize;
@@ -433,6 +435,7 @@ class Conf {
 	bool m_logTracePhrases;
 	bool m_logTraceUrlBlockList;
 	bool m_logTraceWordSpam;
+	bool m_logTraceUrlClassification;
 
 	// expensive timing messages
 	bool m_logTimingAddurl;

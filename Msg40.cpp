@@ -1660,20 +1660,29 @@ bool Msg40::submitUrlRealtimeClassification() {
 		m_realtimeClassificationsSubmitted = true;
 	}
 	
+	int num_started = 0;
+	int num_wanted_to_start = 0;
 	for(int i=0; i<m_numReplies; i++) {
 		if(m_msg3a.m_clusterLevels[i]==CR_OK) {
+			num_wanted_to_start++;
 			Msg20 *m = m_msg20[i];
 			std::string url(m->m_r->ptr_ubuf,m->m_r->size_ubuf);
 			UrlClassificationContext *ucc = new UrlClassificationContext(this,i);
 			incrementRealtimeClassificationsStarted();
-			if(classifyUrl(url.c_str(),&urlClassificationCallback0,ucc))
-				log(LOG_TRACE,"URL classification of '%s' started",url.c_str());
-			else {
+			if(classifyUrl(url.c_str(),&urlClassificationCallback0,ucc)) {
+				if(g_conf.m_logTraceUrlClassification)
+					log(LOG_TRACE,"URL classification of '%s' started",url.c_str());
+				num_started++;
+			} else {
+				if(g_conf.m_logTraceUrlClassification)
+					log(LOG_TRACE,"URL classification of '%s' NOT started",url.c_str());
 				incrementRealtimeClassificationsCompleted();
 				delete ucc;
 			}
 		}
 	}
+	
+	log(LOG_DEBUG,"msg40: Started URL classification on %d out of %d URLs (wanted %d)", num_started, m_numReplies, num_wanted_to_start);
 	
 	bool done;
 	{

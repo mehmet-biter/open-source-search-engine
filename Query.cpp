@@ -14,6 +14,7 @@
 #include "Msg3a.h"
 #include "HashTableX.h"
 #include "Synonyms.h"
+#include "HighFrequencyTermShortcuts.h"
 #include "Wiki.h"
 #include "RdbList.h"
 #include "Process.h"
@@ -377,7 +378,7 @@ bool Query::set2 ( const char *query        ,
 }
 
 // returns false and sets g_errno on error
-bool Query::setQTerms ( Words &words ) {
+bool Query::setQTerms ( const Words &words ) {
 
 	// . set m_qptrs/m_qtermIds/m_qbits
 	// . use one bit position for each phraseId and wordId
@@ -420,44 +421,44 @@ bool Query::setQTerms ( Words &words ) {
 	}
 	// thirdly, count synonyms
 	Synonyms syn;
-	int32_t sn = 0;
-	if ( m_queryExpansion ) sn = m_numWords;
-	int64_t to = hash64n("to");
-	for ( int32_t i = 0 ; i < sn ; i++ ) {
-		// get query word
-		QueryWord *qw  = &m_qwords[i];
-		// skip if in quotes, we will not get synonyms for it
-		if ( qw->m_inQuotes ) continue;
-		// skip if has plus sign in front
-		if ( qw->m_wordSign == '+' ) continue;
-		// not '-' either i guess
-		if ( qw->m_wordSign == '-' ) continue;
-		// no url: stuff, maybe only title
-		if ( qw->m_fieldCode &&
-		     qw->m_fieldCode != FIELD_TITLE &&
-		     qw->m_fieldCode != FIELD_GENERIC )
-			continue;
-		// ignore title: etc. words, they are field names
-		if ( qw->m_ignoreWord == IGNORE_FIELDNAME ) continue;
-		// ignore boolean operators
-		if ( qw->m_ignoreWord ) continue;// IGNORE_BOOLOP
-		// no, hurts 'Greencastle IN economic development'
-		if ( qw->m_wordId == to ) continue;
-		// single letters...
-		if ( qw->m_wordLen == 1 ) continue;
-		// set the synonyms for this word
-		char tmpBuf [ TMPSYNBUFSIZE ];
-		int32_t naids = syn.getSynonyms ( &words ,
-					       i ,
-						  // language of the query.
-						  // 0 means unknown. if this
-						  // is 0 we sample synonyms
-						  // from all languages.
-						  m_langId , 
-					       tmpBuf );
-		// if no synonyms, all done
-		if ( naids <= 0 ) continue;
-		nqt += naids;
+	if ( m_queryExpansion ) {
+		int64_t to = hash64n("to");
+		for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
+			// get query word
+			QueryWord *qw  = &m_qwords[i];
+			// skip if in quotes, we will not get synonyms for it
+			if ( qw->m_inQuotes ) continue;
+			// skip if has plus sign in front
+			if ( qw->m_wordSign == '+' ) continue;
+			// not '-' either i guess
+			if ( qw->m_wordSign == '-' ) continue;
+			// no url: stuff, maybe only title
+			if ( qw->m_fieldCode &&
+			qw->m_fieldCode != FIELD_TITLE &&
+			qw->m_fieldCode != FIELD_GENERIC )
+				continue;
+			// ignore title: etc. words, they are field names
+			if ( qw->m_ignoreWord == IGNORE_FIELDNAME ) continue;
+			// ignore boolean operators
+			if ( qw->m_ignoreWord ) continue;// IGNORE_BOOLOP
+			// no, hurts 'Greencastle IN economic development'
+			if ( qw->m_wordId == to ) continue;
+			// single letters...
+			if ( qw->m_wordLen == 1 ) continue;
+			// set the synonyms for this word
+			char tmpBuf [ TMPSYNBUFSIZE ];
+			int32_t naids = syn.getSynonyms ( &words ,
+							  i ,
+							  // language of the query.
+							  // 0 means unknown. if this
+							  // is 0 we sample synonyms
+							  // from all languages.
+							  m_langId ,
+							  tmpBuf );
+			// if no synonyms, all done
+			if ( naids <= 0 ) continue;
+			nqt += naids;
+		}
 	}
 
 	m_numTermsUntruncated = nqt;
@@ -789,178 +790,181 @@ bool Query::setQTerms ( Words &words ) {
 	//
 	////////////
 
-	for ( int32_t i = 0 ; i < sn ; i++ ) {
-		// get query word
-		QueryWord *qw  = &m_qwords[i];
-		// skip if in quotes, we will not get synonyms for it
-		if ( qw->m_inQuotes ) continue;
-		// skip if has plus sign in front
-		if ( qw->m_wordSign == '+' ) continue;
-		// not '-' either i guess
-		if ( qw->m_wordSign == '-' ) continue;
-		// no url: stuff, maybe only title
-		if ( qw->m_fieldCode &&
-		     qw->m_fieldCode != FIELD_TITLE &&
-		     qw->m_fieldCode != FIELD_GENERIC )
-			continue;
-		// skip if ignored like a stopword (stop to->too)
-		//if ( qw->m_ignoreWord ) continue;
-		// ignore title: etc. words, they are field names
-		if ( qw->m_ignoreWord == IGNORE_FIELDNAME ) continue;
-		// ignore boolean operators
-		if ( qw->m_ignoreWord ) continue;// IGNORE_BOOLOP
-		// no, hurts 'Greencastle IN economic development'
-		if ( qw->m_wordId == to ) continue;
-		// single letters...
-		if ( qw->m_wordLen == 1 ) continue;
-		// set the synonyms for this word
-		char tmpBuf [ TMPSYNBUFSIZE ];
-		int32_t naids = syn.getSynonyms ( &words ,
-					       i ,
-						  // language of the query.
-						  // 0 means unknown. if this
-						  // is 0 we sample synonyms
-						  // from all languages.
-						  m_langId , 
-					       tmpBuf );
-		// if no synonyms, all done
-		if ( naids <= 0 ) continue;
-		// sanity
-		if ( naids > MAX_SYNS ) { g_process.shutdownAbort(true); }
-		// now make the buffer to hold them for us
-		qw->m_synWordBuf.setLabel("qswbuf");
-		qw->m_synWordBuf.safeMemcpy ( &syn.m_synWordBuf );
-		// get the term for this word
-		QueryTerm *origTerm = qw->m_queryWordTerm;
-		// loop over synonyms for word #i now
-		for ( int32_t j = 0 ; j < naids ; j++ ) {
-			// stop breach
-			if ( n >= ABS_MAX_QUERY_TERMS ) {
-				log("query: lost synonyms due to max term "
-				    "limit of %" PRId32,
-				    (int32_t)ABS_MAX_QUERY_TERMS );
-				break;
-			}
-			// this happens for 'da da da'
-			if ( ! origTerm ) continue;
+	if(m_queryExpansion) {
+		int64_t to = hash64n("to");
+		for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
+			// get query word
+			QueryWord *qw  = &m_qwords[i];
+			// skip if in quotes, we will not get synonyms for it
+			if ( qw->m_inQuotes ) continue;
+			// skip if has plus sign in front
+			if ( qw->m_wordSign == '+' ) continue;
+			// not '-' either i guess
+			if ( qw->m_wordSign == '-' ) continue;
+			// no url: stuff, maybe only title
+			if ( qw->m_fieldCode &&
+			qw->m_fieldCode != FIELD_TITLE &&
+			qw->m_fieldCode != FIELD_GENERIC )
+				continue;
+			// skip if ignored like a stopword (stop to->too)
+			//if ( qw->m_ignoreWord ) continue;
+			// ignore title: etc. words, they are field names
+			if ( qw->m_ignoreWord == IGNORE_FIELDNAME ) continue;
+			// ignore boolean operators
+			if ( qw->m_ignoreWord ) continue;// IGNORE_BOOLOP
+			// no, hurts 'Greencastle IN economic development'
+			if ( qw->m_wordId == to ) continue;
+			// single letters...
+			if ( qw->m_wordLen == 1 ) continue;
+			// set the synonyms for this word
+			char tmpBuf [ TMPSYNBUFSIZE ];
+			int32_t naids = syn.getSynonyms ( &words ,
+							  i ,
+							  // language of the query.
+							  // 0 means unknown. if this
+							  // is 0 we sample synonyms
+							  // from all languages.
+							  m_langId ,
+							  tmpBuf );
+			// if no synonyms, all done
+			if ( naids <= 0 ) continue;
+			// sanity
+			if ( naids > MAX_SYNS ) { g_process.shutdownAbort(true); }
+			// now make the buffer to hold them for us
+			qw->m_synWordBuf.setLabel("qswbuf");
+			qw->m_synWordBuf.safeMemcpy ( &syn.m_synWordBuf );
+			// get the term for this word
+			QueryTerm *origTerm = qw->m_queryWordTerm;
+			// loop over synonyms for word #i now
+			for ( int32_t j = 0 ; j < naids ; j++ ) {
+				// stop breach
+				if ( n >= ABS_MAX_QUERY_TERMS ) {
+					log("query: lost synonyms due to max term "
+					"limit of %" PRId32,
+					(int32_t)ABS_MAX_QUERY_TERMS );
+					break;
+				}
+				// this happens for 'da da da'
+				if ( ! origTerm ) continue;
+				
+				if ( n >= m_maxQueryTerms ) {
+					log("query: lost synonyms due to max cr term "
+					"limit of %" PRId32,
+					(int32_t)m_maxQueryTerms);
+					break;
+				}
+				
+				if(n>=nqt)
+					break;
+				
+				// add that query term
+				QueryTerm *qt   = &m_qterms[n];
+				qt->m_qword     = qw; // NULL;
+				qt->m_piped     = qw->m_piped;
+				qt->m_isPhrase  = false ;
+				qt->m_isUORed   = false;
+				qt->m_UORedTerm = NULL;
+				qt->m_langIdBits = 0;
+				// synonym of this term...
+				qt->m_synonymOf = origTerm;
+				// nuke this crap since it was done above and we
+				// missed out!
+				qt->m_rightPhraseTermNum = -1;
+				qt->m_leftPhraseTermNum  = -1;
+				qt->m_rightPhraseTerm    = NULL;
+				qt->m_leftPhraseTerm     = NULL;
+				// need this for displaying language of syn in
+				// the json/xml feed in PageResults.cpp
+				qt->m_langIdBitsValid = true;
+				int langId = syn.m_langIds[j];
+				uint64_t langBit = (uint64_t)1 << langId;
+				if ( langId >= 64 ) langBit = 0;
+				qt->m_langIdBits |= langBit;
+				// need this for Matches.cpp
+				qt->m_synWids0 = syn.m_wids0[j];
+				qt->m_synWids1 = syn.m_wids1[j];
+				int32_t na        = syn.m_numAlnumWords[j];
+				// how many words were in the base we used to
+				// get the synonym. i.e. if the base is "new jersey"
+				// then it's 2! and the synonym "nj" has one alnum
+				// word.
+				int32_t ba        = syn.m_numAlnumWordsInBase[j];
+				qt->m_numAlnumWordsInSynonym = na;
+				qt->m_numAlnumWordsInBase    = ba;
 
-			if ( n >= m_maxQueryTerms ) {
-				log("query: lost synonyms due to max cr term "
-				    "limit of %" PRId32,
-				    (int32_t)m_maxQueryTerms);
-				break;
-			}
+				// crap, "nj" is a synonym of the PHRASE TERM
+				// bigram "new jersey" not of the single word term
+				// "new" so fix that.
+				if ( ba == 2 && origTerm->m_rightPhraseTerm )
+					qt->m_synonymOf = origTerm->m_rightPhraseTerm;
 
-			if(n>=nqt)
-				break;
-
-			// add that query term
-			QueryTerm *qt   = &m_qterms[n];
-			qt->m_qword     = qw; // NULL;
-			qt->m_piped     = qw->m_piped;
-			qt->m_isPhrase  = false ;
-			qt->m_isUORed   = false;
-			qt->m_UORedTerm = NULL;
-			qt->m_langIdBits = 0;
-			// synonym of this term...
-			qt->m_synonymOf = origTerm;
-			// nuke this crap since it was done above and we
-			// missed out!
-			qt->m_rightPhraseTermNum = -1;
-			qt->m_leftPhraseTermNum  = -1;
-			qt->m_rightPhraseTerm    = NULL;
-			qt->m_leftPhraseTerm     = NULL;
-			// need this for displaying language of syn in
-			// the json/xml feed in PageResults.cpp
-			qt->m_langIdBitsValid = true;
-			int langId = syn.m_langIds[j];
-			uint64_t langBit = (uint64_t)1 << langId;
-			if ( langId >= 64 ) langBit = 0;
-			qt->m_langIdBits |= langBit;
-			// need this for Matches.cpp
-			qt->m_synWids0 = syn.m_wids0[j];
-			qt->m_synWids1 = syn.m_wids1[j];
-			int32_t na        = syn.m_numAlnumWords[j];
-			// how many words were in the base we used to
-			// get the synonym. i.e. if the base is "new jersey"
-			// then it's 2! and the synonym "nj" has one alnum
-			// word.
-			int32_t ba        = syn.m_numAlnumWordsInBase[j];
-			qt->m_numAlnumWordsInSynonym = na;
-			qt->m_numAlnumWordsInBase    = ba;
-
-			// crap, "nj" is a synonym of the PHRASE TERM
-			// bigram "new jersey" not of the single word term
-			// "new" so fix that.
-			if ( ba == 2 && origTerm->m_rightPhraseTerm )
-				qt->m_synonymOf = origTerm->m_rightPhraseTerm;
-
-			// ignore some synonym terms if tf is too low
-			qt->m_ignored = qw->m_ignoreWord;
-			// stop word? no, we're a phrase term
-			qt->m_isQueryStopWord = qw->m_isQueryStopWord;
-			// change in both places
-			int64_t wid = syn.m_aids[j];
-			// might be in a title: field or something
-			if ( qw->m_prefixHash ) {
-				int64_t ph = qw->m_prefixHash;
-				wid= hash64h(wid,ph);
-			}
-			qt->m_termId    = wid & TERMID_MASK;
-			qt->m_rawTermId = syn.m_aids[j];
-			// assume explicit bit is 0
-			qt->m_explicitBit = 0;
-			qt->m_matchesExplicitBits = 0;
-			// boolean queries are not allowed term signs
-			if ( m_isBoolean ) {
-				qt->m_termSign = '\0';
-				// boolean fix for "health OR +sports" because
-				// the + there means exact word match, no syns
-				if ( qw->m_wordSign == '+' ) {
+				// ignore some synonym terms if tf is too low
+				qt->m_ignored = qw->m_ignoreWord;
+				// stop word? no, we're a phrase term
+				qt->m_isQueryStopWord = qw->m_isQueryStopWord;
+				// change in both places
+				int64_t wid = syn.m_aids[j];
+				// might be in a title: field or something
+				if ( qw->m_prefixHash ) {
+					int64_t ph = qw->m_prefixHash;
+					wid= hash64h(wid,ph);
+				}
+				qt->m_termId    = wid & TERMID_MASK;
+				qt->m_rawTermId = syn.m_aids[j];
+				// assume explicit bit is 0
+				qt->m_explicitBit = 0;
+				qt->m_matchesExplicitBits = 0;
+				// boolean queries are not allowed term signs
+				if ( m_isBoolean ) {
+					qt->m_termSign = '\0';
+					// boolean fix for "health OR +sports" because
+					// the + there means exact word match, no syns
+					if ( qw->m_wordSign == '+' ) {
+						qt->m_termSign  = qw->m_wordSign;
+					}
+				}
+				// if not bool, ensure to change signs in both places
+				else {
 					qt->m_termSign  = qw->m_wordSign;
 				}
+				// do not use an explicit bit up if we got a hard count
+				qt->m_hardCount = qw->m_hardCount;
+				// IndexTable.cpp uses this one
+				qt->m_inQuotes  = qw->m_inQuotes;
+				// usually this is right
+				char *ptr = syn.m_termPtrs[j];
+				// buf if it is NULL that means we transformed the
+				// word by like removing accent marks and stored
+				// it in m_synWordBuf, as opposed to just pointing
+				// to a line in memory of wiktionary-buf.txt.
+				if ( ! ptr ) {
+					int32_t off = syn.m_termOffs[j];
+					if ( off < 0 ) {
+						g_process.shutdownAbort(true); }
+					if ( off > qw->m_synWordBuf.length() ) {
+						g_process.shutdownAbort(true); }
+					// use QueryWord::m_synWordBuf which should
+					// be persistent and not disappear like
+					// syn.m_synWordBuf.
+					ptr = qw->m_synWordBuf.getBufStart() + off;
+				}
+				// point to the string itself that is the word
+				qt->m_term     = ptr;
+				qt->m_termLen  = syn.m_termLens[j];
+				// reset our implicit bits to 0
+				qt->m_implicitBits = 0;
+				// assign score weight, we're a phrase here
+				qt->m_userWeight = qw->m_userWeight ;
+				qt->m_userType   = qw->m_userType   ;
+				qt->m_fieldCode  = qw->m_fieldCode  ;
+				// stuff before a pipe always has a weight of 1
+				if ( qt->m_piped ) {
+					qt->m_userWeight = 1;
+					qt->m_userType   = 'a';
+				}
+				// otherwise, add it
+				n++;
 			}
-			// if not bool, ensure to change signs in both places
-			else {
-				qt->m_termSign  = qw->m_wordSign;
-			}
-			// do not use an explicit bit up if we got a hard count
-			qt->m_hardCount = qw->m_hardCount;
-			// IndexTable.cpp uses this one
-			qt->m_inQuotes  = qw->m_inQuotes;
-			// usually this is right
-			char *ptr = syn.m_termPtrs[j];
-			// buf if it is NULL that means we transformed the
-			// word by like removing accent marks and stored
-			// it in m_synWordBuf, as opposed to just pointing
-			// to a line in memory of wiktionary-buf.txt.
-			if ( ! ptr ) {
-				int32_t off = syn.m_termOffs[j];
-				if ( off < 0 ) { 
-					g_process.shutdownAbort(true); }
-				if ( off > qw->m_synWordBuf.length() ) {
-					g_process.shutdownAbort(true); }
-				// use QueryWord::m_synWordBuf which should
-				// be persistent and not disappear like
-				// syn.m_synWordBuf.
-				ptr = qw->m_synWordBuf.getBufStart() + off;
-			}
-			// point to the string itself that is the word
-			qt->m_term     = ptr;
-			qt->m_termLen  = syn.m_termLens[j];
-			// reset our implicit bits to 0
-			qt->m_implicitBits = 0;
-			// assign score weight, we're a phrase here
-			qt->m_userWeight = qw->m_userWeight ;
-			qt->m_userType   = qw->m_userType   ;
-			qt->m_fieldCode  = qw->m_fieldCode  ;
-			// stuff before a pipe always has a weight of 1
-			if ( qt->m_piped ) {
-				qt->m_userWeight = 1;
-				qt->m_userType   = 'a';
-			}
-			// otherwise, add it
-			n++;
 		}
 	}
 
@@ -1921,7 +1925,7 @@ bool Query::setQWords ( char boolFlag ,
 			qw->m_isQueryStopWord = false;
 
 			// do not ignore the wordId
-			qw->m_ignoreWord = 0;
+			qw->m_ignoreWord = IGNORE_NO_IGNORE;
 
 			// we are the first word?
 			firstWord = false;
@@ -2042,9 +2046,33 @@ bool Query::setQWords ( char boolFlag ,
 		}
 
 		// do not ignore the word
-		qw->m_ignoreWord = 0;
+		qw->m_ignoreWord = IGNORE_NO_IGNORE;
+		
+		//except if it is a high-frequency-term and expensive to look up. In that case ignore the word but keep the phrases/bigrams thereof
+		uint64_t termId = (wid & TERMID_MASK);
+		if(g_hfts.is_registered_term(termId)) {
+			log(LOG_DEBUG, "query: termId %lu is a highfreq term. Marking it for ignoring",termId);
+			qw->m_ignoreWord = IGNORE_HIGHFREMTERM;
+		}
 	}
 
+	//If there's only one alphanumerical word and it was ignored due to high-freq-term then the query is treated as 0 terms and will return an empty
+	//result. Therefore un-ignore the single word and let it fetch (best-efort) results from the high-freq-term-cache
+	int numAlfanumWords = 0;
+	int numAlfanumWordsHighFreqTerms = 0;
+	int alfanumWordIndex = -1;
+	for(int i=0; i<numWords; i++) {
+		if(words.isAlnum(i)) {
+			alfanumWordIndex = i;
+			numAlfanumWords++;
+			if(m_qwords[i].m_ignoreWord==IGNORE_HIGHFREMTERM)
+				numAlfanumWordsHighFreqTerms++;
+		
+		}
+	}
+	if(numAlfanumWords == 1 && numAlfanumWordsHighFreqTerms==1)
+		m_qwords[alfanumWordIndex].m_ignoreWord = IGNORE_NO_IGNORE;
+	
 	// pipe those that should be piped
 	for ( int32_t i = 0 ; i < pi ; i++ ) m_qwords[i].m_piped = true;
 
@@ -2113,7 +2141,7 @@ bool Query::setQWords ( char boolFlag ,
 			//   can be any part of a phrase
 			// . no pair across any change of field code
 			// . 'girl title:boy' --> no "girl title" phrase!
-			if ( qw->m_ignoreWord ) {
+			if ( qw->m_ignoreWord && qw->m_ignoreWord!=IGNORE_HIGHFREMTERM ) {
 				b &= ~D_CAN_PAIR_ACROSS;
 				b &= ~D_CAN_BE_IN_PHRASE;
 			}
@@ -2149,7 +2177,7 @@ bool Query::setQWords ( char boolFlag ,
 		// punctuation words can no longer start a quote
 		if ( words.isPunct(j) && qs == -1 ) continue;
 		// uningore him if we should
-		if ( keepAllSingles ) m_qwords[j].m_ignoreWord = 0;
+		if ( keepAllSingles ) m_qwords[j].m_ignoreWord = IGNORE_NO_IGNORE;
 		// if already in quotes, don't bother!
 		if ( m_qwords[j].m_quoteStart >= 0 ) continue;
 		// remember him
@@ -2202,7 +2230,9 @@ bool Query::setQWords ( char boolFlag ,
 		// get the ith QueryWord
 		QueryWord *qw = &m_qwords[i];
 
-		if ( qw->m_ignoreWord ) continue;
+		//if word is ignored (and it is not due to high-freq-term) then don't generate a phrase/bigram query term
+		if(qw->m_ignoreWord && qw->m_ignoreWord!=IGNORE_HIGHFREMTERM)
+			continue;
 		if ( qw->m_fieldCode && qw->m_quoteStart < 0) continue;
 		// get the first word # to our left that starts a phrase
 		// of which we are a member
@@ -2264,7 +2294,7 @@ bool Query::setQWords ( char boolFlag ,
 			qw->m_phraseLen = plen2;
 
 			// do not ignore the phrase, it's valid
-			qw->m_ignorePhrase = 0;
+			qw->m_ignorePhrase = IGNORE_NO_IGNORE;
 		}
 
 
@@ -2483,7 +2513,7 @@ bool Query::setQWords ( char boolFlag ,
 		for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 			QueryWord *qw = &m_qwords[i];
 			if ( qw->m_ignoreWord != IGNORE_QSTOP ) continue;
-			qw->m_ignoreWord = 0;
+			qw->m_ignoreWord = IGNORE_NO_IGNORE;
 			count++;
 			break;
 		}
