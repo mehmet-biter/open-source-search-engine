@@ -463,6 +463,7 @@ class Query {
 	// query word num
 	int32_t getWordNum(int64_t wordId) const;
 
+private:
 	// . bit vector that is 1-1 with m_qterms[]
 	// . only has bits that we must have if we were default AND
 	qvec_t         m_requiredBits;
@@ -473,6 +474,7 @@ class Query {
 	qvec_t         m_synonymBits;  
 	int32_t           m_numRequired;
 
+public:
 	// language of the query
 	uint8_t m_langId;
 
