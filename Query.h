@@ -421,8 +421,8 @@ class Query {
 		    bool     useQueryStopWords,
 		    int32_t  maxQueryTerms = 0x7fffffff );
 
-	const char *getQuery() const { return m_orig; }
-	int32_t     getQueryLen() const { return m_origLen; }
+	const char *getQuery() const { return m_originalQuery.getBufStart(); }
+	int32_t     getQueryLen() const { return m_originalQuery.length(); }
 
 	int32_t     getNumTerms() const { return m_numTerms; }
 	char        getTermSign(int32_t i) const { return m_qterms[i].m_termSign; }
@@ -452,7 +452,7 @@ class Query {
 
 	void dumpToLog() const;
 
-	const char *originalQuery() const { return m_orig; }
+	const char *originalQuery() const { return m_originalQuery.getBufStart(); }
 
  public:
 
@@ -518,10 +518,7 @@ private:
 	// for holding the filtered query, in utf8
 	SmallBuf<128> m_filteredQuery;
 
-	char *m_orig;
-	int32_t m_origLen;
-	SafeBuf m_osb;
-	char m_otmpBuf[128];
+	SmallBuf<128> m_originalQuery;
 public:
 
 	// . we now contain the parsing components for boolean queries

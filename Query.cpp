@@ -22,7 +22,8 @@
 
 
 Query::Query()
-  : m_filteredQuery("qrystk")
+  : m_filteredQuery("qrystk"),
+    m_originalQuery("oqbuf")
 {
 	constructor();
 }
@@ -45,13 +46,11 @@ void Query::constructor ( ) {
 	m_useQueryStopWords = false;
 	m_numTermsUntruncated = 0;
 	m_isBoolean = false;
-	m_orig = NULL;
 	m_maxQueryTerms = 0;
 	m_queryExpansion = false;
 
 	memset(m_expressions, 0, sizeof(m_expressions));
 	memset(m_gbuf, 0, sizeof(m_gbuf));
-	memset(m_otmpBuf, 0, sizeof(m_otmpBuf));
 
 	reset ( );
 }
@@ -78,9 +77,8 @@ void Query::reset ( ) {
 	m_qterms = NULL;
 
 	m_filteredQuery.purge();
-	m_osb.purge();
+	m_originalQuery.purge();
 	m_docIdRestriction = 0LL;
-	m_origLen     = 0;
 	m_numWords    = 0;
 	m_numTerms    = 0;
 
@@ -144,19 +142,14 @@ bool Query::set2 ( const char *query        ,
 		m_truncated = true;
 	}
 	// save original query
-	m_osb.setBuf ( m_otmpBuf , 128 , 0 , false );
-	m_osb.setLabel ("oqbuf" );
-	if( !m_osb.reserve ( queryLen + 1 ) ) {
+	if( !m_originalQuery.reserve ( queryLen + 1 ) ) {
 		logError("Failed to reserve %" PRId32 " bytes, bailing", queryLen+1);
 		return true;
 	}
-	m_osb.safeMemcpy ( query , queryLen );
-	m_osb.nullTerm ();
+	m_originalQuery.safeMemcpy(query, queryLen);
+	m_originalQuery.nullTerm();
 	
-	m_orig = m_osb.getBufStart();
-	m_origLen = m_osb.length();
-
-	log(LOG_DEBUG, "query: set called = %s", m_orig);
+	log(LOG_DEBUG, "query: set called = %s", m_originalQuery.getBufStart());
 
 	const char *q = query;
 	// see if it should be boolean...
@@ -687,7 +680,7 @@ bool Query::setQTerms ( const Words &words ) {
 			// fix for query
 			// text:""  foo bar   ""
 			if ( pw-1 < i ) {
-				log("query: bad query %s",m_orig);
+				log("query: bad query %s",m_originalQuery.getBufStart());
 				g_errno = EMALFORMEDQUERY;
 				return false;
 			}
