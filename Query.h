@@ -492,7 +492,9 @@ class Query {
 
 	int32_t m_numTermsUntruncated;
 
+private:
 	SafeBuf    m_stackBuf;
+public:
 	QueryTerm *m_qterms         ;
 
 	// site: field will disable site clustering
@@ -512,11 +514,11 @@ class Query {
 	// if they got a gbdocid: in the query and it's not boolean, set these
 	int64_t m_docIdRestriction;
 
+private:
 	// for holding the filtered query, in utf8
 	SafeBuf m_sb;
 	char m_tmpBuf3[128];
 
-private:
 	char *m_orig;
 	int32_t m_origLen;
 	SafeBuf m_osb;
