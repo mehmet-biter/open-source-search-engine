@@ -21,7 +21,9 @@
 #include "termid_mask.h"
 
 
-Query::Query ( ) {
+Query::Query()
+  : m_filteredQuery("qrystk")
+{
 	constructor();
 }
 
@@ -49,7 +51,6 @@ void Query::constructor ( ) {
 
 	memset(m_expressions, 0, sizeof(m_expressions));
 	memset(m_gbuf, 0, sizeof(m_gbuf));
-	memset(m_tmpBuf3, 0, sizeof(m_tmpBuf3));
 	memset(m_otmpBuf, 0, sizeof(m_otmpBuf));
 
 	reset ( );
@@ -76,7 +77,7 @@ void Query::reset ( ) {
 	m_stackBuf.purge();
 	m_qterms = NULL;
 
-	m_sb.purge();
+	m_filteredQuery.purge();
 	m_osb.purge();
 	m_docIdRestriction = 0LL;
 	m_origLen     = 0;
@@ -179,10 +180,8 @@ bool Query::set2 ( const char *query        ,
 	if ( boolFlag == 2 ) boolFlag = 0;
 	
 	// reserve some space, guessing how much we'd need
-	m_sb.setBuf(m_tmpBuf3,128,0,false);
-	m_sb.setLabel("qrystk");
 	int32_t need = queryLen * 2 + 32;
-	if ( ! m_sb.reserve ( need ) ) 
+	if ( ! m_filteredQuery.reserve ( need ) )
 		return false;
 
 	bool inQuotesFlag = false;
@@ -199,21 +198,21 @@ bool Query::set2 ( const char *query        ,
 		if ( inQuotesFlag ) {
 			//*p = query [i];
 			//p++;
-			m_sb.pushChar(query[i]);
+			m_filteredQuery.pushChar(query[i]);
 			continue;
 		}
 
 		// translate ( and )
 		if ( boolFlag == 1 && query[i] == '(' ) {
-			m_sb.safeMemcpy ( " LeFtP " , 7 );
+			m_filteredQuery.safeMemcpy ( " LeFtP " , 7 );
 			continue;
 		}
 		if ( boolFlag == 1 && query[i] == ')' ) {
-			m_sb.safeMemcpy ( " RiGhP " , 7 );
+			m_filteredQuery.safeMemcpy ( " RiGhP " , 7 );
 			continue;
 		}
 		if ( query[i] == '|' ) {
-			m_sb.safeMemcpy ( " PiiPE " , 7 );
+			m_filteredQuery.safeMemcpy ( " PiiPE " , 7 );
 			continue;
 		}
 		// translate [#a] [#r] [#ap] [#rp] [] [p] to operators
@@ -223,36 +222,36 @@ bool Query::set2 ( const char *query        ,
 			while ( is_digit(query[j]) ) j++;
 			char c = query[j];
 			if ( (c == 'a' || c == 'r') && query[j+1]==']' ) {
-				m_sb.safePrintf(" LeFtB %" PRId32" %c RiGhB ",
+				m_filteredQuery.safePrintf(" LeFtB %" PRId32" %c RiGhB ",
 					  val,c);
 				i = j + 1;
 				continue;
 			}
 			else if ( (c == 'a' || c == 'r') && 
 				  query[j+1]=='p' && query[j+2]==']') {
-				m_sb.safePrintf(" LeFtB %" PRId32" %cp RiGhB ",
+				m_filteredQuery.safePrintf(" LeFtB %" PRId32" %cp RiGhB ",
 				val,c);
 				i = j + 2;
 				continue;
 			}
 		}
 		if ( query[i] == '[' && query[i+1] == ']' ) {
-			m_sb.safePrintf ( " LeFtB RiGhB ");
+			m_filteredQuery.safePrintf ( " LeFtB RiGhB ");
 			i = i + 1;
 			continue;
 		}
 		if ( query[i] == '[' && query[i+1] == 'p' && query[i+2]==']') {
-			m_sb.safePrintf ( " LeFtB RiGhB ");
+			m_filteredQuery.safePrintf ( " LeFtB RiGhB ");
 			i = i + 2;
 			continue;
 		}
  
 		// TODO: copy altavista's operators here? & | !
 		// otherwise, just a plain copy
-		m_sb.pushChar ( query[i] );
+		m_filteredQuery.pushChar ( query[i] );
 	}
 	// NULL terminate
-	m_sb.nullTerm();
+	m_filteredQuery.nullTerm();
 
 	Words words;
 	Phrases phrases;
@@ -1249,7 +1248,7 @@ bool Query::setQWords ( char boolFlag ,
 	// . break query up into Words and phrases
 	// . because we now deal with boolean queries, we make parentheses
 	//   their own separate Word, so tell "words" we're setting a query
-	if ( !words.set( m_sb.getBufStart(), m_sb.length(), true ) ) {
+	if ( !words.set( m_filteredQuery.getBufStart(), m_filteredQuery.length(), true ) ) {
 		log(LOG_WARN, "query: Had error parsing query: %s.", mstrerror(g_errno));
 		return false;
 	}
@@ -1288,8 +1287,8 @@ bool Query::setQWords ( char boolFlag ,
 
 	// is all alpha chars in query in upper case? caps lock on?
 	bool allUpper = true;
-	const char *p    = m_sb.getBufStart();//m_buf;
-	const char *pend = m_sb.getBufPtr(); // m_buf + m_bufLen;
+	const char *p    = m_filteredQuery.getBufStart();
+	const char *pend = m_filteredQuery.getBufPtr();
 	for ( ; p < pend ; p += getUtf8CharSize(p) )
 		if ( is_alpha_utf8 ( p ) && ! is_upper_utf8 ( p ) ) {
 			allUpper = false; break; }

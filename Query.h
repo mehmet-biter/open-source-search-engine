@@ -516,8 +516,7 @@ public:
 
 private:
 	// for holding the filtered query, in utf8
-	SafeBuf m_sb;
-	char m_tmpBuf3[128];
+	SmallBuf<128> m_filteredQuery;
 
 	char *m_orig;
 	int32_t m_origLen;
