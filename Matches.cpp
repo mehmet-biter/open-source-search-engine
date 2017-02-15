@@ -101,7 +101,7 @@ void Matches::setQuery ( Query *q ) {
 		m_qwordFlags = (mf_t *)mmalloc ( need , "mmqf" );
 
 	if ( ! m_qwordFlags ) {
-		log("matches: alloc failed for query %s",q->m_orig);
+		log("matches: alloc failed for query %s",q->originalQuery());
 		return;
 	}
 

@@ -452,6 +452,8 @@ class Query {
 
 	void dumpToLog() const;
 
+	const char *originalQuery() const { return m_orig; }
+
  public:
 
 	// hash of all the query terms
@@ -514,10 +516,12 @@ class Query {
 	SafeBuf m_sb;
 	char m_tmpBuf3[128];
 
+private:
 	char *m_orig;
 	int32_t m_origLen;
 	SafeBuf m_osb;
 	char m_otmpBuf[128];
+public:
 
 	// . we now contain the parsing components for boolean queries
 	Expression        m_expressions[MAX_EXPRESSIONS];
