@@ -495,7 +495,7 @@ public:
 	int32_t m_numTermsUntruncated;
 
 private:
-	SafeBuf    m_stackBuf;
+	SafeBuf    m_queryTermBuf;
 public:
 	QueryTerm *m_qterms         ;
 

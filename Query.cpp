@@ -73,7 +73,7 @@ void Query::reset ( ) {
 		qw->destructor();
 	}
 
-	m_stackBuf.purge();
+	m_queryTermBuf.purge();
 	m_qterms = NULL;
 
 	m_filteredQuery.purge();
@@ -458,13 +458,13 @@ bool Query::setQTerms ( const Words &words ) {
 	// allocate the stack buf
 	if ( nqt ) {
 		int32_t need = nqt * sizeof(QueryTerm) ;
-		if ( ! m_stackBuf.reserve ( need ) )
+		if ( ! m_queryTermBuf.reserve ( need ) )
 			return false;
-		m_stackBuf.setLabel("stkbuf3");
-		const char *pp = m_stackBuf.getBufStart();
+		m_queryTermBuf.setLabel("stkbuf3");
+		const char *pp = m_queryTermBuf.getBufStart();
 		m_qterms = (QueryTerm *)pp;
 		pp += sizeof(QueryTerm);
-		if ( pp > m_stackBuf.getBufEnd() ) { g_process.shutdownAbort(true); }
+		if ( pp > m_queryTermBuf.getBufEnd() ) { g_process.shutdownAbort(true); }
 	}
 
 	// call constructor on each one here
