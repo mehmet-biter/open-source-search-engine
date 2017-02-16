@@ -22,7 +22,8 @@
 
 
 Query::Query()
-  : m_filteredQuery("qrystk"),
+  : m_queryWordBuf("Query4"),
+    m_filteredQuery("qrystk"),
     m_originalQuery("oqbuf")
 {
 	constructor();
@@ -31,7 +32,6 @@ Query::Query()
 void Query::constructor ( ) {
 	m_qwords      = NULL;
 	m_numWords = 0;
-	m_qwordsAllocSize      = 0;
 	m_qwords               = NULL;
 	m_numTerms = 0;
 
@@ -50,7 +50,6 @@ void Query::constructor ( ) {
 	m_queryExpansion = false;
 
 	memset(m_expressions, 0, sizeof(m_expressions));
-	memset(m_gbuf, 0, sizeof(m_gbuf));
 
 	reset ( );
 }
@@ -82,12 +81,9 @@ void Query::reset ( ) {
 	m_numWords    = 0;
 	m_numTerms    = 0;
 
-	if ( m_qwordsAllocSize )
-		mfree ( m_qwords      , m_qwordsAllocSize      , "Query4" );
-	m_qwordsAllocSize      = 0;
+	m_queryWordBuf.purge();
 	m_qwords               = NULL;
 	m_numExpressions       = 0;
-	m_gnext                = m_gbuf;
 	m_hasUOR               = false;
 	// the site: and ip: query terms will disable site clustering & caching
 	m_hasPositiveSiteField         = false;
@@ -1257,23 +1253,13 @@ bool Query::setQWords ( char boolFlag ,
 	// alloc the mem if we need to (mdw left off here)
 	int32_t need = m_numWords * sizeof(QueryWord);
 	// sanity check
-	if ( m_qwords || m_qwordsAllocSize ) { g_process.shutdownAbort(true); }
+	if ( m_qwords ) { g_process.shutdownAbort(true); }
 	// point m_qwords to our generic buffer if it will fit
-	if ( m_gnext + need < m_gbuf + GBUF_SIZE && 
-	     // it can wrap so watch out with this:
-	     need < GBUF_SIZE ) {
-		m_qwords = (QueryWord *)m_gnext;
-		m_gnext += need;
+	if(!m_queryWordBuf.reserve(need)) {
+		log(LOG_WARN, "query: Could not allocate mem for query.");
+		return false;
 	}
-	// otherwise, we must allocate memory for it
-	else {
-		m_qwords = (QueryWord *)mmalloc ( need , "Query4" );
-		if ( ! m_qwords ) {
-			log(LOG_WARN, "query: Could not allocate mem for query.");
-			return false;
-		}
-		m_qwordsAllocSize = need;
-	}
+	m_qwords = (QueryWord *)m_queryWordBuf.getBufStart();
 	// reset safebuf in there
 	for ( int32_t i = 0 ; i < m_numWords ; i++ )
 		m_qwords[i].constructor();

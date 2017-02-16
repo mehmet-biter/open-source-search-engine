@@ -480,14 +480,14 @@ public:
 
 	bool m_useQueryStopWords;
 
+private:
 	// use a generic buffer for m_qwords to point into
 	// so we don't have to malloc for them
-	char      m_gbuf [ GBUF_SIZE ];
-	char     *m_gnext;
+	SmallBuf<GBUF_SIZE> m_queryWordBuf;
 
+public:
 	QueryWord *m_qwords;
 	int32_t       m_numWords;
-	int32_t       m_qwordsAllocSize;
 
 	// QueryWords are converted to QueryTerms
 	int32_t      m_numTerms;
