@@ -1282,7 +1282,7 @@ bool XmlDoc::injectDoc ( const char *url ,
 			 bool contentHasMimeArg ,
 			 int32_t hopCount,
 			 int32_t charset,
-
+			 int32_t langId,
 			 bool deleteUrl,
 			 const char *contentTypeStr, // text/html application/json
 			 bool spiderLinks ,
@@ -1381,6 +1381,11 @@ bool XmlDoc::injectDoc ( const char *url ,
 	if ( charset != -1 && charset != csUnknown && charset != 0 ) {
 		m_charset = charset;
 		m_charsetValid = true;
+	}
+
+	if (langId > langUnknown && langId < langLast) {
+		m_langId = langId;
+		m_langIdValid = true;
 	}
 
 	// avoid looking up ip of each outlink to add "firstip" tag to tagdb
@@ -2505,10 +2510,16 @@ int32_t *XmlDoc::getIndexCode ( ) {
 			return (int32_t *)ch32;
 		}
 
-		if ( *ch32 == od->m_contentHash32 ) {
+		// disable content hash check if language differ (we could have overridden language when injecting doc)
+		bool checkContentHash = true;
+		if (m_wasContentInjected && m_langIdValid && m_langId != od->m_langId) {
+			checkContentHash = false;
+		}
+
+		if (checkContentHash && *ch32 == od->m_contentHash32) {
 			m_indexCode = EDOCUNCHANGED;
 			m_indexCodeValid = true;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCUNCHANGED" );
+			logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCUNCHANGED");
 			return &m_indexCode;
 		}
 	}

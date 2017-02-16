@@ -6814,6 +6814,17 @@ void Parms::init ( ) {
 	simple_m_set(InjectionRequest,m_charset);
 	m++;
 
+	m->m_title = "content language";
+	m->m_desc  = "A number representing the language of the content "
+		"if provided below. 1 is english. Only set if supplying content below. "
+		"See Lang.h for the numeric values.";
+	m->m_cgi   = "langid";
+	m->m_def   = "0";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_INJECT;
+	simple_m_set(InjectionRequest,m_langId);
+	m++;
+
 	m->m_title = "upload content file";
 	m->m_desc  = "Instead of specifying the content to be injected in "
 		"the text box below, upload this file for it.";

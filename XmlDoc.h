@@ -1138,7 +1138,7 @@ public:
 			 bool contentHasMime ,
 			 int32_t hopCount,
 			 int32_t charset,
-
+			 int32_t langId,
 			 bool deleteUrl,
 			 const char *contentTypeStr, // text/html, text/xml etc.
 			 bool spiderLinks ,

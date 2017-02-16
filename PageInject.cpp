@@ -588,7 +588,7 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 			       ir->m_hasMime, // content starts with http mime?
 			       ir->m_hopCount,
 			       ir->m_charset,
-
+			       ir->m_langId,
 			       ir->m_deleteUrl,
 			       // warcs/arcs include the mime so we don't
 			       // look at this in that case in 
