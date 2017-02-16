@@ -421,8 +421,8 @@ class Query {
 		    bool     useQueryStopWords,
 		    int32_t  maxQueryTerms = 0x7fffffff );
 
-	const char *getQuery() const { return m_orig; }
-	int32_t     getQueryLen() const { return m_origLen; }
+	const char *getQuery() const { return m_originalQuery.getBufStart(); }
+	int32_t     getQueryLen() const { return m_originalQuery.length(); }
 
 	int32_t     getNumTerms() const { return m_numTerms; }
 	char        getTermSign(int32_t i) const { return m_qterms[i].m_termSign; }
@@ -452,6 +452,8 @@ class Query {
 
 	void dumpToLog() const;
 
+	const char *originalQuery() const { return m_originalQuery.getBufStart(); }
+
  public:
 
 	// hash of all the query terms
@@ -461,6 +463,7 @@ class Query {
 	// query word num
 	int32_t getWordNum(int64_t wordId) const;
 
+private:
 	// . bit vector that is 1-1 with m_qterms[]
 	// . only has bits that we must have if we were default AND
 	qvec_t         m_requiredBits;
@@ -471,6 +474,7 @@ class Query {
 	qvec_t         m_synonymBits;  
 	int32_t           m_numRequired;
 
+public:
 	// language of the query
 	uint8_t m_langId;
 
@@ -490,7 +494,9 @@ class Query {
 
 	int32_t m_numTermsUntruncated;
 
-	SafeBuf    m_stackBuf;
+private:
+	SafeBuf    m_queryTermBuf;
+public:
 	QueryTerm *m_qterms         ;
 
 	// site: field will disable site clustering
@@ -510,14 +516,12 @@ class Query {
 	// if they got a gbdocid: in the query and it's not boolean, set these
 	int64_t m_docIdRestriction;
 
+private:
 	// for holding the filtered query, in utf8
-	SafeBuf m_sb;
-	char m_tmpBuf3[128];
+	SmallBuf<128> m_filteredQuery;
 
-	char *m_orig;
-	int32_t m_origLen;
-	SafeBuf m_osb;
-	char m_otmpBuf[128];
+	SmallBuf<128> m_originalQuery;
+public:
 
 	// . we now contain the parsing components for boolean queries
 	Expression        m_expressions[MAX_EXPRESSIONS];

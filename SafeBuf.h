@@ -14,6 +14,7 @@
 
 
 template<int n=1024> class StackBuf;
+template<int n=1024> class SmallBuf;
 
 class SafeBuf {
 public:
@@ -28,6 +29,7 @@ private:
 	//of scope independently of the safebuf.
 	SafeBuf(char* stackBuf, int32_t cap);
 	template<int n> friend class StackBuf;
+	template<int n> friend class SmallBuf;
 
 public:
 	SafeBuf(char *heapBuf, int32_t bufMax, int32_t bytesInUse, bool ownData);
@@ -257,6 +259,16 @@ public:
 	StackBuf() : SafeBuf(buf,sizeof(buf)) {}
 };
 
+template<int n>
+class SmallBuf : public SafeBuf {
+	char buf[n];
+public:
+	SmallBuf(const char *label)
+	  : SafeBuf(buf,sizeof(buf))
+	{
+		setLabel(label);
+	}
+};
 
 
 #endif // GB_SAFEBUF_H

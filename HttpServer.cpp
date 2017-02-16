@@ -829,7 +829,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// that we set s->m_sd to something that won't conflict with real
 	// TcpSocket descriptors (see m_sd above)
 	if ( s->m_udpSlot ) { 
-		log("http: proxy should have handled this request");
+		log(LOG_WARN, "http: proxy should have handled this request");
 		// i've seen this core once on a GET /logo-small.png request
 		// and i am not sure why... so let it slide...
 		//g_process.shutdownAbort(true); }
@@ -849,7 +849,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// return true and set g_errno if couldn't make a new File class
 	catch ( ... ) { 
 		g_errno = ENOMEM;
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. new(%" PRId32": %s", __FILE__, __func__, __LINE__, (int32_t)sizeof(File),mstrerror(g_errno));
+		logError("call sendErrorReply. new(%" PRId32": %s", (int32_t)sizeof(File),mstrerror(g_errno));
 		return sendErrorReply(s,500,mstrerror(g_errno)); 
 	}
 	mnew ( f, sizeof(File), "HttpServer");
@@ -864,7 +864,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f);
 		g_errno = EBADREQUEST;
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. request url path too big", __FILE__, __func__, __LINE__);
+		logError("call sendErrorReply. request url path too big");
 		return sendErrorReply(s,500,"request url path too big");
 	}
 	// set the filepath/name
@@ -903,7 +903,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f);
 		
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Not found", __FILE__, __func__, __LINE__);
+		logError("call sendErrorReply. Not found");
 		return sendErrorReply ( s , 404 , "Not Found" );
 	}
 	// when was this file last modified
@@ -931,7 +931,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 			    (PTRTYPE)f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f); 
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Not found", __FILE__, __func__, __LINE__);
+		logError("call sendErrorReply. Not found");
 		return sendErrorReply ( s , 404 , "Not Found" );
 	}
 	// are we sending partial content?
@@ -980,7 +980,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f); 
 		g_errno = EBADREQUEST;
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Bad request", __FILE__, __func__, __LINE__);
+		logError("call sendErrorReply. Bad request");
 		return sendErrorReply(s,500,mstrerror(g_errno));
 	}
 	// . move the reply to a send buffer
@@ -996,7 +996,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 			    (PTRTYPE)f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f); 
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Could not alloc sendBuf (%" PRId32")", __FILE__, __func__, __LINE__, sendBufSize);
+		logError("call sendErrorReply. Could not alloc sendBuf (%" PRId32")", sendBufSize);
 		return sendErrorReply(s,500,mstrerror(g_errno));
 	}
 	gbmemcpy ( sendBuf , m.getMime() , mimeLen );

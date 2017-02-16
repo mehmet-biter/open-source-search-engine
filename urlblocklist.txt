@@ -1,77 +1,8 @@
-# shortener
-^https?://([^/]*\.|)t\.co/
-^https?://([^/]*\.|)ow\.ly/
-^https?://([^/]*\.|)tr\.im/
-^https?://([^/]*\.|)bit\.ly/
-^https?://([^/]*\.|)goo\.gl/
-^https?://([^/]*\.|)tinyurl\.cc/
-
-# tumblr
-^https?://([^/]*\.|)tumblr\.com/share
-^https?://([^/]*\.|)tumblr\.com/widgets/share/tool
-^https?://([^/]*\.|)tumblr\.com/login\?
-
-# yahoo
-^https?://([^/]*\.|)yimg\.com/
-^https?://([^/]*\.|)staticflickr.com/
-
-# facebook
-^https?://([^/]*\.|)facebook\.com/sharer/
-^https?://([^/]*\.|)atdmt\.com/
-
-# google
-^https?://plus\.google\.com/share\?
-^https?://accounts.google\.com/
-^https?://([^/]*\.|)gstatic\.com/
-^https?://([^/]*\.|)googleapis\.com/
-^https?://([^/]*\.|)ytimg\.com/
-
-# twitter
-^https?://search\.twitter\.com/
-^https?://([^/]*\.|)twitter\.com/(share|search)\?
-^https?://([^/]*\.|)twitter\.com/intent/
-
-^https?://([^/]*\.|)pinterest\.com/pin/create/
-
-^https?://([^/]*\.|)linkedin\.com/shareArticle
-
-^https?://([^/]*\.|)akamaihd\.net/
-^https?://([^/]*\.|)akamaized\.net/
-^https?://([^/]*\.|)vimeocdn\.net/
-^https?://([^/]*\.|)disquscdn\.com/
-^https?://([^/]*\.|)netdna-cdn\.com/
-^https?://([^/]*\.|)cloudfront\.net/
-
-^https?://([^/]*\.|)imdb\.com/.*/imdb/embed\?
-
-^https?://web\.archive\.org/web/
-
-^https?://([^/]*\.|)ixquick-proxy\.com/
-
-# if www is present, use the first group before conditional bar, else use the second group
-# block all subdomain except www
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))doubleclick\.net/
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))w3snoop\.com/
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))cutestat\.com/
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))nerdydata\.com/
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))hypestat\.com/
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))ipaddress\.com/
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))w3lookup\.com/
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))w3lookup\.net/
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))siteaero\.com/
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))outerstats\.com/
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))webstatsdomain\.org/
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))websitevaluespy\.com/
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))wenotify\.com/
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))moresitesalike\.org/
-# stopped updating site and won't remove old software versions 
-^https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))softonic\.com/
-
+# this file accepts pcre regex. 
+# blocks url from being inserted into spiderdb
+# one line per regex
 
 # path
-^https?://[^/]+/oembed[\?/]
-^https?://[^/]+/wp-includes
-^https?://[^/]+/wp-json
 ^https?://[^/]+/wp-admin/
 ^https?://[^/]+/wp-login.php
 ^https?://[^/]+/xmlrpc.php

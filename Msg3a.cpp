@@ -181,7 +181,7 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state,
 
 	// query is truncated if had too many terms in it
 	if ( m_q->m_truncated ) {
-		log("query: query truncated: %s", m_q->m_orig);
+		log("query: query truncated: %s", m_q->originalQuery());
 		m_errno = EQUERYTRUNCATED;
 	}
 
@@ -256,8 +256,8 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state,
 	m_msg39req.size_termFreqWeights = 4 * n;
 	// store query into request, might have changed since we called
 	// Query::expandQuery() above
-	m_msg39req.ptr_query  = m_q->m_orig;
-	m_msg39req.size_query = m_q->m_origLen+1;
+	m_msg39req.ptr_query  = const_cast<char*>(m_q->originalQuery()); //we won't modify it
+	m_msg39req.size_query = strlen(m_q->originalQuery())+1;
 
 	// free us?
 	if ( m_rbufPtr && m_rbufPtr != m_rbuf ) {
