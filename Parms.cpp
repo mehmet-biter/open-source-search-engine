@@ -6627,9 +6627,6 @@ void Parms::init ( ) {
 		"information contained in the containing archive file."
 		;
 	m->m_cgi   = "url";
-	//m->m_cgi2  = "u";
-	//m->m_cgi3  = "seed"; // pagerawlbot
-	//m->m_cgi4  = "injecturl";
 	m->m_obj   = OBJ_IR;
 	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
