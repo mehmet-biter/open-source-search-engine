@@ -1484,11 +1484,16 @@ bool Msg8a::launchGetRequests ( ) {
 						   -1                  , // numFiles
 						   msg0_getlist_infinite_timeout );// timeout
 
-			// error?
-			if ( status && g_errno ) {
-				// g_errno should be set, we had an error
-				m_errno = g_errno;
-				break;
+			if (status) {
+				mdelete(state, sizeof(*state), "msg8astate");
+				delete state;
+
+				// error?
+				if (g_errno) {
+					// g_errno should be set, we had an error
+					m_errno = g_errno;
+					break;
+				}
 			}
 
 			ScopedLock sl(m_mtx);
