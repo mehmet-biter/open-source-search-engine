@@ -6707,27 +6707,6 @@ void Parms::init ( ) {
 	simple_m_set_checkbox(InjectionRequest,m_deleteUrl);
 	m++;
 
-	m->m_title = "recycle content";
-	m->m_desc  = "If the url is already in the index, then do not "
-		"re-download the content, just use the content that was "
-		"stored in the cache from last time.";
-	m->m_cgi   = "recycle";
-	m->m_def   = "0";
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_INJECT;
-	simple_m_set_checkbox(InjectionRequest,m_recycle);
-	m++;
-
-	m->m_title = "dedup url";
-	m->m_desc  = "Do not index the url if there is already another "
-		"url in the index with the same content.";
-	m->m_cgi   = "dedup";
-	m->m_def   = "0";
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_INJECT;
-	simple_m_set_checkbox(InjectionRequest,m_dedup);
-	m++;
-
 	m->m_title = "do consistency checking";
 	m->m_desc  = "Turn this on for debugging.";
 	m->m_cgi   = "consist";

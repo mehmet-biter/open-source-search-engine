@@ -31,8 +31,6 @@ class InjectionRequest {
 	bool      m_shortReply;
 	bool      m_newOnly;
 	bool      m_deleteUrl;
-	bool      m_recycle;
-	bool      m_dedup;
 	bool      m_hasMime;
 	bool      m_doConsistencyTesting;
 	int32_t   m_charset;
