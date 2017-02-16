@@ -424,6 +424,11 @@ bool classifyUrl(const char *url, url_realtime_classification_callback_t callbac
 }
 
 
+bool realtimeUrlClassificationWorks() {
+	return communication_works;
+}
+
+
 void finalizeRealtimeUrlClassification() {
 	please_stop = true;
 	char dummy='d';

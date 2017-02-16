@@ -16,6 +16,7 @@
 //will eventually be called. Returns false if classification has not been initated.
 typedef void (*url_realtime_classification_callback_t)(void *context, uint32_t classification);
 bool classifyUrl(const char *url, url_realtime_classification_callback_t callback, void *context);
+bool realtimeUrlClassificationWorks();
 
 bool initializeRealtimeUrlClassification();
 void finalizeRealtimeUrlClassification();

@@ -1653,6 +1653,11 @@ struct UrlClassificationContext {
 
 //start classifying the URLs of the results
 bool Msg40::submitUrlRealtimeClassification() {
+	if(!realtimeUrlClassificationWorks()) {
+		log(LOG_DEBUG,"Bypassing URL realtime classification because it is diabled or not working");
+		return true; //done
+	}
+	
 	{
 		ScopedLock sl(m_mtxRealtimeClassificationsCounters);
 		m_realtimeClassificationsSubmitted = true;
