@@ -119,7 +119,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 		// in Msg14.cpp
 		if ( ! q.set2 ( buf , langUnknown , false, false ) ) return;
 		// sanity test
-		if ( q.getNumTerms() != 1 ) { g_process.shutdownAbort(true); }
+		if(q.getNumTerms()!=1) { g_process.shutdownAbort(true); }
 		// store the termid
 		m_termIds[m_numImages] = q.getTermId(0);
 		// advance the counter
@@ -249,10 +249,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 		if ( ! q.set2 ( buf , langUnknown , false, false ) )
 			// return true with g_errno set on error
 			return;
-		if(q.getNumTerms()<1) {
-			//uhm what?
-			continue;
-		}
+		if(q.getNumTerms()!= 1) { g_process.shutdownAbort(true); }
 		// store the termid
 		m_termIds[m_numImages] = q.getTermId(0);
 
@@ -325,6 +322,7 @@ bool Images::getThumbnail ( const char *pageSite,
 	if ( ! q.set2 ( buf , langUnknown , false, false ) )
 		// return true with g_errno set on error
 		return true;
+	if(q.getNumTerms()!=1) { g_process.shutdownAbort(true); }
 	// store the termid
 	int64_t termId = q.getTermId(0);
 
