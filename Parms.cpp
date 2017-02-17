@@ -6698,6 +6698,16 @@ void Parms::init ( ) {
 	simple_m_set_checkbox(InjectionRequest,m_newOnly);
 	m++;
 
+	m->m_title = "skip content hash check";
+	m->m_desc  = "Skip content hash check to force reindexing of document even "
+		"when content is identical";
+	m->m_cgi   = "skiphash";
+	m->m_def   = "0";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_INJECT;
+	simple_m_set_checkbox(InjectionRequest,m_skipContentHashCheck);
+	m++;
+
 	m->m_title = "delete from index";
 	m->m_desc  = "Delete the specified url from the index.";
 	m->m_cgi   = "deleteurl";

@@ -218,6 +218,7 @@ void XmlDoc::reset ( ) {
 
 	// if this is true, then only index if new
 	m_newOnly = 0;
+	m_skipContentHashCheck = false;
 
 	if ( m_httpReplyValid && m_httpReply ) {
 		mfree(m_httpReply,m_httpReplyAllocSize,"httprep");
@@ -1287,7 +1288,7 @@ bool XmlDoc::injectDoc ( const char *url ,
 			 const char *contentTypeStr, // text/html application/json
 			 bool spiderLinks ,
 			 char newOnly, // index iff new
-
+			 bool skipContentHashCheck,
 			 void *state,
 			 void (*callback)(void *state) ,
 
@@ -1397,6 +1398,8 @@ bool XmlDoc::injectDoc ( const char *url ,
 	// . newOnly is true --> do not inject if document is already indexed!
 	// . maybe just set indexCode
 	m_newOnly = newOnly;
+
+	m_skipContentHashCheck = skipContentHashCheck;
 
 	// do not re-lookup the robots.txt
 	m_isAllowed      = true;
@@ -2512,8 +2515,10 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
 		// disable content hash check if language differ (we could have overridden language when injecting doc)
 		bool checkContentHash = true;
-		if (m_wasContentInjected && m_langIdValid && m_langId != od->m_langId) {
-			checkContentHash = false;
+		if (m_wasContentInjected) {
+			if (m_skipContentHashCheck || (m_langIdValid && m_langId != od->m_langId)) {
+				checkContentHash = false;
+			}
 		}
 
 		if (checkContentHash && *ch32 == od->m_contentHash32) {

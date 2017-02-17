@@ -907,6 +907,7 @@ public:
 	// for limiting # of iframe tag expansions
 	int32_t m_numExpansions;
 	char m_newOnly;
+	bool m_skipContentHashCheck;
 	char m_isWWWDup;	// May be -1
 
 	SafeBuf m_linkSiteHashBuf;
@@ -1143,7 +1144,7 @@ public:
 			 const char *contentTypeStr, // text/html, text/xml etc.
 			 bool spiderLinks ,
 			 char newOnly, // index iff new
-
+			 bool skipContentHashCheck,
 			 void *state,
 			 void (*callback)(void *state) ,
 

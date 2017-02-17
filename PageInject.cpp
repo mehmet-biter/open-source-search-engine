@@ -596,7 +596,7 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 			       ir->ptr_contentTypeStr, // text/html text/xml
 			       ir->m_spiderLinks ,
 			       ir->m_newOnly, // index iff new
-
+			       ir->m_skipContentHashCheck,
 			       xd, // state ,
 			       sendUdpReply7 ,
 

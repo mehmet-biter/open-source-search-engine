@@ -30,6 +30,7 @@ class InjectionRequest {
 	bool      m_spiderLinks;
 	bool      m_shortReply;
 	bool      m_newOnly;
+	bool      m_skipContentHashCheck;
 	bool      m_deleteUrl;
 	bool      m_hasMime;
 	bool      m_doConsistencyTesting;
