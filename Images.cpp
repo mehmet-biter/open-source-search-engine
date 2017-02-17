@@ -249,6 +249,10 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 		if ( ! q.set2 ( buf , langUnknown , false, false ) )
 			// return true with g_errno set on error
 			return;
+		if(q.getNumTerms()<1) {
+			//uhm what?
+			continue;
+		}
 		// store the termid
 		m_termIds[m_numImages] = q.getTermId(0);
 
