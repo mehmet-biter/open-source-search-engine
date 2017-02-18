@@ -35,7 +35,6 @@ static const char MAGICCHAR = (char)0xda;
 
 class Mem g_mem;
 
-static bool freeCacheMem();
 
 
 
@@ -59,7 +58,7 @@ static bool   s_initialized = 0;
 
 //note: the ScopedMemoryLimitBypass is not thread-safe. The "bypass" flag should really
 //be per-thread. Or RdbBase should be reworked to use another technique than artificially
-//raising the memory limit while adding a file. Eg. make freeCacheMem() work again?
+//raising the memory limit while adding a file.
 ScopedMemoryLimitBypass::ScopedMemoryLimitBypass()
   : oldMaxMem(g_conf.m_maxMem)
 {
@@ -908,13 +907,10 @@ void *Mem::gbmalloc ( size_t size , const char *note ) {
 		return NULL;
 	} 
 
-retry:
 	size_t max = g_conf.m_maxMem;
 
 	// don't go over max
 	if ( g_mem.getUsedMem() + size + UNDERPAD + OVERPAD >= max ) {
-		// try to free temp mem. returns true if it freed some.
-		if ( freeCacheMem() ) goto retry;
 		g_errno = ENOMEM;
 		log( LOG_WARN, "mem: malloc(%zu): Out of memory", size );
 		return NULL;
@@ -928,8 +924,6 @@ retry:
 mallocmemloop:
 	if ( ! mem && size > 0 ) {
 		g_mem.m_outOfMems++;
-		// try to free temp mem. returns true if it freed some.
-		if ( freeCacheMem() ) goto retry;
 		g_errno = errno;
 		static int64_t s_lastTime;
 		static int32_t s_missed = 0;
@@ -1002,16 +996,12 @@ void *Mem::gbrealloc ( void *ptr , size_t oldSize , size_t newSize , const char 
 		return (void *)0x7fffffff;
 	}
 
-retry:
-
 	// hack so hostid #0 can use more mem
 	size_t max = g_conf.m_maxMem;
 	//if ( g_hostdb.m_hostId == 0 )  max += 2000000000;
 
 	// don't go over max
 	if ( g_mem.getUsedMem() + newSize - oldSize >= max ) {
-		// try to free temp mem. returns true if it freed some.
-		if ( freeCacheMem() ) goto retry;
 		g_errno = ENOMEM;
 		log( LOG_WARN, "mem: realloc(%zu,%zu): Out of memory.",oldSize,newSize);
 		return NULL;
@@ -1107,16 +1097,4 @@ void Mem::gbfree ( void *ptr , const char *note, size_t size , bool checksize ) 
 
 	if ( isnew ) sysfree ( (char *)ptr );
 	else         sysfree ( (char *)ptr - UNDERPAD );
-}
-
-
-//#include "Msg20.h"
-
-static bool freeCacheMem() {
-	// returns true if it did free some stuff
-	//if ( resetMsg20Cache() ) {
-	//	log("mem: freed cache mem.");
-	//	return true;
-	//}
-	return false;
 }
