@@ -920,8 +920,6 @@ void *Mem::gbmalloc ( size_t size , const char *note ) {
 
 	mem = (void *)sysmalloc ( size + UNDERPAD + OVERPAD );
 
-	int32_t memLoop = 0;
-mallocmemloop:
 	if ( ! mem && size > 0 ) {
 		g_mem.m_outOfMems++;
 		g_errno = errno;
@@ -945,24 +943,6 @@ mallocmemloop:
 		}
 
 		return NULL;
-	}
-	if ( (PTRTYPE)mem < 0x00010000 ) {
-		void *remem = sysmalloc(size);
-		log( LOG_WARN, "mem: Caught low memory allocation "
-		      "at %08" PTRFMT", "
-		      "reallocated to %08" PTRFMT"",
-		      (PTRTYPE)mem, (PTRTYPE)remem );
-		sysfree(mem);
-		mem = remem;
-		memLoop++;
-		if ( memLoop > 100 ) {
-			log( LOG_WARN, "mem: Attempted to reallocate low "
-					"memory allocation 100 times, "
-					"aborting and returning NOMEM." );
-			g_errno = ENOMEM;
-			return NULL;
-		}
-		goto mallocmemloop;
 	}
 
 	logTrace( g_conf.m_logTraceMem, "mem=%p size=%zu note='%s'", mem, size, note );
