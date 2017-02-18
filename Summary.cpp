@@ -301,7 +301,7 @@ bool Summary::setSummary(const Xml *xml, const Words *words, const Sections *sec
 
 		if(lastNumFinal == numFinal) {
 			if(maxLoops-- <= 0) {
-				log(LOG_WARN, "query: got infinite loop bug, query is %s url is %s", m_q->m_orig, f->getUrl());
+				log(LOG_WARN, "query: got infinite loop bug, query is %s url is %s", m_q->originalQuery(), f->getUrl());
 				break;
 			}
 		}
@@ -638,7 +638,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 	// . sanity check
 	// . this prevents a core i've seen
 	if ( matchWordNum >= nw ) {
-		log("summary: got overflow condition for q=%s",m_q->m_orig);
+		log("summary: got overflow condition for q=%s",m_q->originalQuery());
 
 		// assume no best window
 		*besta = -1;

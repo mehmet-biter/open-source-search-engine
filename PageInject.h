@@ -30,12 +30,12 @@ class InjectionRequest {
 	bool      m_spiderLinks;
 	bool      m_shortReply;
 	bool      m_newOnly;
+	bool      m_skipContentHashCheck;
 	bool      m_deleteUrl;
-	bool      m_recycle;
-	bool      m_dedup;
 	bool      m_hasMime;
 	bool      m_doConsistencyTesting;
 	int32_t   m_charset;
+	int32_t   m_langId;
 	int32_t   m_hopCount;
 	collnum_t m_collnum; // more reliable than m_coll
 	uint32_t  m_firstIndexed;

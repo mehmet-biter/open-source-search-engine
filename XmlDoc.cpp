@@ -219,6 +219,7 @@ void XmlDoc::reset ( ) {
 
 	// if this is true, then only index if new
 	m_newOnly = 0;
+	m_skipContentHashCheck = false;
 
 	if ( m_httpReplyValid && m_httpReply ) {
 		mfree(m_httpReply,m_httpReplyAllocSize,"httprep");
@@ -1283,12 +1284,12 @@ bool XmlDoc::injectDoc ( const char *url ,
 			 bool contentHasMimeArg ,
 			 int32_t hopCount,
 			 int32_t charset,
-
+			 int32_t langId,
 			 bool deleteUrl,
 			 const char *contentTypeStr, // text/html application/json
 			 bool spiderLinks ,
 			 char newOnly, // index iff new
-
+			 bool skipContentHashCheck,
 			 void *state,
 			 void (*callback)(void *state) ,
 
@@ -1384,6 +1385,11 @@ bool XmlDoc::injectDoc ( const char *url ,
 		m_charsetValid = true;
 	}
 
+	if (langId > langUnknown && langId < langLast) {
+		m_langId = langId;
+		m_langIdValid = true;
+	}
+
 	// avoid looking up ip of each outlink to add "firstip" tag to tagdb
 	// because that can be slow!!!!!!!
 	m_spiderLinks = (char)spiderLinks;
@@ -1393,6 +1399,8 @@ bool XmlDoc::injectDoc ( const char *url ,
 	// . newOnly is true --> do not inject if document is already indexed!
 	// . maybe just set indexCode
 	m_newOnly = newOnly;
+
+	m_skipContentHashCheck = skipContentHashCheck;
 
 	// do not re-lookup the robots.txt
 	m_isAllowed      = true;
@@ -2506,10 +2514,18 @@ int32_t *XmlDoc::getIndexCode ( ) {
 			return (int32_t *)ch32;
 		}
 
-		if ( *ch32 == od->m_contentHash32 ) {
+		// disable content hash check if language differ (we could have overridden language when injecting doc)
+		bool checkContentHash = true;
+		if (m_wasContentInjected) {
+			if (m_skipContentHashCheck || (m_langIdValid && m_langId != od->m_langId)) {
+				checkContentHash = false;
+			}
+		}
+
+		if (checkContentHash && *ch32 == od->m_contentHash32) {
 			m_indexCode = EDOCUNCHANGED;
 			m_indexCodeValid = true;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCUNCHANGED" );
+			logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCUNCHANGED");
 			return &m_indexCode;
 		}
 	}

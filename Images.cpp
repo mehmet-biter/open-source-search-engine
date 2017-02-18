@@ -20,7 +20,7 @@
 //static void gotTermFreqWrapper ( void *state ) ;
 static void gotTermListWrapper ( void *state ) ;
 static void thumbStartWrapper_r ( void *state );
-static void getImageInfo ( char *buf, int32_t size, int32_t *dx, int32_t *dy, int32_t *it);
+static void getImageInfo(const char *buf, int32_t size, int32_t *dx, int32_t *dy, int32_t *it);
 
 Images::Images ( ) {
 	reset();
@@ -119,7 +119,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 		// in Msg14.cpp
 		if ( ! q.set2 ( buf , langUnknown , false, false ) ) return;
 		// sanity test
-		if ( q.getNumTerms() != 1 ) { g_process.shutdownAbort(true); }
+		if(q.getNumTerms()!=1) { g_process.shutdownAbort(true); }
 		// store the termid
 		m_termIds[m_numImages] = q.getTermId(0);
 		// advance the counter
@@ -200,7 +200,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 		if ( height != -1 && height < 50 ) continue;
 		// get the url of the image
 		int32_t  srcLen;
-		char *src = xml->getString(nn,"src",&srcLen);
+		const char *src = xml->getString(nn,"src",&srcLen);
 		// skip if none
 		if ( srcLen <= 2 ) continue;
 		// set it to the full url
@@ -214,7 +214,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 		//if ( iu.getDomainLen() != dlen ) continue;
 		//if(strncmp(iu.getDomain(),pageUrl->getDomain(),dlen))continue
 		// get the full url
-		char *u    = iu.getUrl();
+		const char *u    = iu.getUrl();
 		int32_t  ulen = iu.getUrlLen();
 		// skip common crap
 		if ( strncasestr(u,ulen,"logo"           ) ) continue;
@@ -249,6 +249,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 		if ( ! q.set2 ( buf , langUnknown , false, false ) )
 			// return true with g_errno set on error
 			return;
+		if(q.getNumTerms()!= 1) { g_process.shutdownAbort(true); }
 		// store the termid
 		m_termIds[m_numImages] = q.getTermId(0);
 
@@ -262,7 +263,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 
 // . returns false if blocked, returns true otherwise
 // . sets g_errno on error
-bool Images::getThumbnail ( char *pageSite ,
+bool Images::getThumbnail ( const char *pageSite,
 			    int32_t  siteLen  ,
 			    int64_t docId ,
 			    XmlDoc *xd ,
@@ -311,19 +312,17 @@ bool Images::getThumbnail ( char *pageSite ,
 	// . see how many pages we have from our same site with our same 
 	//   html template (and that are permalinks)
 	char buf[2000];
-	char c = pageSite[siteLen];
-	pageSite[siteLen]=0;
 	// site MUST NOT start with "http://"
-	if ( strncmp ( pageSite , "http://", 7)==0){g_process.shutdownAbort(true);}
+	if ( siteLen>=7 && memcmp(pageSite, "http://", 7)==0) { g_process.shutdownAbort(true); }
 	// this must match what we hash in XmlDoc::hashNoSplit()
-	sprintf ( buf , "gbsitetemplate:%" PRIu32"%s", (uint32_t)*tph,pageSite );
-	pageSite[siteLen]=c;
+	sprintf ( buf , "gbsitetemplate:%" PRIu32"%*.*s", (uint32_t)*tph, (int)siteLen,(int)siteLen,pageSite);
 	// TODO: make sure this is a no-split termid storage thingy
 	// in Msg14.cpp
 	Query q;
 	if ( ! q.set2 ( buf , langUnknown , false, false ) )
 		// return true with g_errno set on error
 		return true;
+	if(q.getNumTerms()!=1) { g_process.shutdownAbort(true); }
 	// store the termid
 	int64_t termId = q.getTermId(0);
 
@@ -360,8 +359,8 @@ bool Images::getThumbnail ( char *pageSite ,
 				RDB_POSDB ,
 				m_collnum      ,
 				&m_list     , // RdbList ptr
-				(char *)&startKey    ,
-				(char *)&endKey      ,
+				(const char *)&startKey,
+				(const char *)&endKey,
 				1024        , // minRecSize
 				this        ,
 				gotTermListWrapper ,
@@ -448,8 +447,8 @@ bool Images::launchRequests ( ) {
 					RDB_POSDB,
 					m_collnum      ,
 					&m_list     , // RdbList ptr
-					(char *)&startKey    ,
-					(char *)&endKey      ,
+					(const char *)&startKey,
+					(const char *)&endKey,
 					1024        , // minRecSize
 					this        ,
 					gotTermListWrapper ,
@@ -515,7 +514,7 @@ bool Images::downloadImages() {
 	//if ( m_thumbnailValid ) return true;
 
 	int32_t  srcLen;
-	char *src = NULL;
+	const char *src = NULL;
 
 	// . download each leftover image
 	// . stop as soon as we get one with good dimensions
@@ -757,7 +756,7 @@ bool Images::makeThumb ( ) {
 	// get img tag node
 	// get the url of the image
 	int32_t  srcLen;
-	char *src = getImageUrl ( m_j , &srcLen );
+	const char *src = getImageUrl ( m_j , &srcLen );
 	// set it to the full url
 	Url iu;
 	// use "pageUrl" as the baseUrl
@@ -1123,9 +1122,11 @@ void Images::thumbStart_r ( bool amThread ) {
 	log( LOG_DEBUG, "image: Thumbnail generated in %" PRId64"ms.", stop-start );
 }
 
+
 // . *it is the image type
-void getImageInfo ( char *buf , int32_t bufSize , 
-		    int32_t *dx , int32_t *dy , int32_t *it ) {
+void getImageInfo(const char *buf, int32_t bufSize,
+                  int32_t *dx, int32_t *dy, int32_t *it)
+{
 
 	// default to zeroes
 	*dx = 0;
@@ -1294,7 +1295,7 @@ bool ThumbnailInfo::printThumbnailInHtml ( SafeBuf *sb ,
 }
 
 
-char *Images::getImageUrl ( int32_t j , int32_t *urlLen ) {
+const char *Images::getImageUrl ( int32_t j , int32_t *urlLen ) {
 
 	int32_t node = m_imageNodes[j];
 	int32_t srcLen = 0;

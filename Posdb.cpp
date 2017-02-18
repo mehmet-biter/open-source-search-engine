@@ -373,14 +373,6 @@ static bool s_cacheInit = false;
 // . because this is over POSDB now and not indexdb, a document is counted
 //   once for every occurence of term "termId" it has... :{
 int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
-
-	// establish the list boundary keys
-	key144_t startKey ;
-	key144_t endKey   ;
-	makeStartKey ( &startKey, termId );
-	makeEndKey   ( &endKey  , termId );
-
-
 	if ( ! s_cacheInit ) {
 		int32_t maxMem = 5000000; // 5MB now... save mem (was: 20000000)
 		int32_t maxNodes = maxMem / 17; // 8+8+1
@@ -402,7 +394,6 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 	}
 
 	// . check cache for super speed
-	// . TODO: make key incorporate collection
 	// . colnum is 0 for now
 	RdbCacheLock rcl(g_termFreqCache); //todo: we should really release the lock while scanning the posdb-freq
 	int64_t val = g_termFreqCache.getLongLong2 ( collnum ,
@@ -420,20 +411,18 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 
 	// . ask rdb for an upper bound on this list size
 	// . but actually, it will be somewhat of an estimate 'cuz of RdbTree
+	// establish the list boundary keys
+	key144_t startKey;
+	key144_t endKey;
 	key144_t maxKey;
-	//int64_t maxRecs;
-	// . don't count more than these many in the map
-	// . that's our old truncation limit, the new stuff isn't as dense
-	//int32_t oldTrunc = 100000;
-	// turn this off for this
-	int64_t oldTrunc = -1;
-	// get maxKey for only the top "oldTruncLimit" docids because when
-	// we increase the trunc limit we screw up our extrapolation! BIG TIME!
+	makeStartKey(&startKey, termId);
+	makeEndKey  (&endKey  , termId);
+
 	int64_t maxRecs = m_rdb.estimateListSize(collnum,
-						 (char *)&startKey,
-						 (char *)&endKey,
+						 (const char*)&startKey,
+						 (const char*)&endKey,
 						 (char *)&maxKey,
-						 oldTrunc );
+						 -1 ); //no truncation
 
 	RdbBuckets *buckets = m_rdb.getBuckets();
 	if( !buckets ) {
@@ -441,41 +430,13 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 		gbshutdownLogicError();
 	}
 
-	int64_t numBytes = buckets->getListSize(collnum, (char *)&startKey, (char *)&endKey, NULL, NULL);
+	int64_t numBytes = buckets->getListSize(collnum, (const char*)&startKey, (const char*)&endKey, NULL, NULL);
 
 	// convert from size in bytes to # of recs
 	maxRecs += numBytes / sizeof(posdbkey_t);
 
-	// RdbList list;
-	// makeStartKey ( &startKey, termId );
-	// makeEndKey   ( &endKey  , termId );
-	// int numNeg = 0;
-	// int numPos = 0;
-	// m_rdb.m_buckets.getList ( collnum ,
-	// 			  (char *)&startKey,
-	// 			  (char *)&endKey,
-	// 			  -1 , // minrecsizes
-	// 			  &list,
-	// 			  &numPos,
-	// 			  &numNeg,
-	// 			  true );
-	// if ( numPos*18 != numBytes ) {
-	// 	gbshutdownLogicError(); }
-
-	
-
 	// and assume each shard has about the same #
 	maxRecs *= g_hostdb.m_numShards;
-
-	// over all splits!
-	//maxRecs *= g_hostdb.m_numShards;
-	// . assume about 8 bytes per key on average for posdb.
-	// . because of compression we got 12 and 6 byte keys in here typically
-	//   for a single termid
-	//maxRecs /= 8;
-
-	// log it
-	//log("posdb: approx=%" PRId64" exact=%" PRId64,maxRecs,numBytes);
 
 	// now cache it. it sets g_errno to zero.
 	g_termFreqCache.addLongLong2 ( collnum, termId, maxRecs );

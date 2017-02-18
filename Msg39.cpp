@@ -363,7 +363,7 @@ void Msg39::getDocIds2() {
 		    "which are the only parms that could be different in "
 		    "Query::set2(). You probably have different mysynoyms.txt "
 		    "files on two different hosts! check that!!"
-		    ,m_query.m_orig
+		    ,m_query.originalQuery()
 		    ,(int)m_query.getNumTerms()
 		    ,(int)m_msg39req->m_nqt
 		    ,(int32_t)m_msg39req->m_language
@@ -374,7 +374,7 @@ void Msg39::getDocIds2() {
 	// debug
 	if ( m_debug )
 		logf(LOG_DEBUG,"query: msg39: [%" PTRFMT"] Got request "
-		     "for q=%s", (PTRTYPE) this,m_query.m_orig);
+		     "for q=%s", (PTRTYPE) this,m_query.originalQuery());
 
 	// reset this
 	m_toptree.reset();
@@ -1110,7 +1110,7 @@ void Msg39::estimateHitsAndSendReply(double pctSearched) {
 
 	// sanity
 	if(nqt!=m_msg2.getNumLists())
-		log("query: nqt mismatch for q=%s",m_query.m_orig);
+		log("query: nqt mismatch for q=%s",m_query.originalQuery());
 
 	int32_t docCount = 0;
 	// loop over all results in the TopTree

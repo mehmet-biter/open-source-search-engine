@@ -23,14 +23,17 @@
 #include "GbMutex.h"
 #include "ScopedLock.h"
 
-Query::Query ( ) {
+Query::Query()
+  : m_queryWordBuf("Query4"),
+    m_filteredQuery("qrystk"),
+    m_originalQuery("oqbuf")
+{
 	constructor();
 }
 
 void Query::constructor ( ) {
 	m_qwords      = NULL;
 	m_numWords = 0;
-	m_qwordsAllocSize      = 0;
 	m_qwords               = NULL;
 	m_numTerms = 0;
 
@@ -45,14 +48,10 @@ void Query::constructor ( ) {
 	m_useQueryStopWords = false;
 	m_numTermsUntruncated = 0;
 	m_isBoolean = false;
-	m_orig = NULL;
 	m_maxQueryTerms = 0;
 	m_queryExpansion = false;
 
 	memset(m_expressions, 0, sizeof(m_expressions));
-	memset(m_gbuf, 0, sizeof(m_gbuf));
-	memset(m_tmpBuf3, 0, sizeof(m_tmpBuf3));
-	memset(m_otmpBuf, 0, sizeof(m_otmpBuf));
 
 	reset ( );
 }
@@ -75,22 +74,18 @@ void Query::reset ( ) {
 		qw->destructor();
 	}
 
-	m_stackBuf.purge();
+	m_queryTermBuf.purge();
 	m_qterms = NULL;
 
-	m_sb.purge();
-	m_osb.purge();
+	m_filteredQuery.purge();
+	m_originalQuery.purge();
 	m_docIdRestriction = 0LL;
-	m_origLen     = 0;
 	m_numWords    = 0;
 	m_numTerms    = 0;
 
-	if ( m_qwordsAllocSize )
-		mfree ( m_qwords      , m_qwordsAllocSize      , "Query4" );
-	m_qwordsAllocSize      = 0;
+	m_queryWordBuf.purge();
 	m_qwords               = NULL;
 	m_numExpressions       = 0;
-	m_gnext                = m_gbuf;
 	m_hasUOR               = false;
 	// the site: and ip: query terms will disable site clustering & caching
 	m_hasPositiveSiteField         = false;
@@ -145,19 +140,14 @@ bool Query::set2 ( const char *query        ,
 		m_truncated = true;
 	}
 	// save original query
-	m_osb.setBuf ( m_otmpBuf , 128 , 0 , false );
-	m_osb.setLabel ("oqbuf" );
-	if( !m_osb.reserve ( queryLen + 1 ) ) {
+	if( !m_originalQuery.reserve ( queryLen + 1 ) ) {
 		logError("Failed to reserve %" PRId32 " bytes, bailing", queryLen+1);
 		return true;
 	}
-	m_osb.safeMemcpy ( query , queryLen );
-	m_osb.nullTerm ();
+	m_originalQuery.safeMemcpy(query, queryLen);
+	m_originalQuery.nullTerm();
 	
-	m_orig = m_osb.getBufStart();
-	m_origLen = m_osb.length();
-
-	log(LOG_DEBUG, "query: set called = %s", m_orig);
+	log(LOG_DEBUG, "query: set called = %s", m_originalQuery.getBufStart());
 
 	const char *q = query;
 	// see if it should be boolean...
@@ -181,10 +171,8 @@ bool Query::set2 ( const char *query        ,
 	if ( boolFlag == 2 ) boolFlag = 0;
 	
 	// reserve some space, guessing how much we'd need
-	m_sb.setBuf(m_tmpBuf3,128,0,false);
-	m_sb.setLabel("qrystk");
 	int32_t need = queryLen * 2 + 32;
-	if ( ! m_sb.reserve ( need ) ) 
+	if ( ! m_filteredQuery.reserve ( need ) )
 		return false;
 
 	bool inQuotesFlag = false;
@@ -201,21 +189,21 @@ bool Query::set2 ( const char *query        ,
 		if ( inQuotesFlag ) {
 			//*p = query [i];
 			//p++;
-			m_sb.pushChar(query[i]);
+			m_filteredQuery.pushChar(query[i]);
 			continue;
 		}
 
 		// translate ( and )
 		if ( boolFlag == 1 && query[i] == '(' ) {
-			m_sb.safeMemcpy ( " LeFtP " , 7 );
+			m_filteredQuery.safeMemcpy ( " LeFtP " , 7 );
 			continue;
 		}
 		if ( boolFlag == 1 && query[i] == ')' ) {
-			m_sb.safeMemcpy ( " RiGhP " , 7 );
+			m_filteredQuery.safeMemcpy ( " RiGhP " , 7 );
 			continue;
 		}
 		if ( query[i] == '|' ) {
-			m_sb.safeMemcpy ( " PiiPE " , 7 );
+			m_filteredQuery.safeMemcpy ( " PiiPE " , 7 );
 			continue;
 		}
 		// translate [#a] [#r] [#ap] [#rp] [] [p] to operators
@@ -225,36 +213,36 @@ bool Query::set2 ( const char *query        ,
 			while ( is_digit(query[j]) ) j++;
 			char c = query[j];
 			if ( (c == 'a' || c == 'r') && query[j+1]==']' ) {
-				m_sb.safePrintf(" LeFtB %" PRId32" %c RiGhB ",
+				m_filteredQuery.safePrintf(" LeFtB %" PRId32" %c RiGhB ",
 					  val,c);
 				i = j + 1;
 				continue;
 			}
 			else if ( (c == 'a' || c == 'r') && 
 				  query[j+1]=='p' && query[j+2]==']') {
-				m_sb.safePrintf(" LeFtB %" PRId32" %cp RiGhB ",
+				m_filteredQuery.safePrintf(" LeFtB %" PRId32" %cp RiGhB ",
 				val,c);
 				i = j + 2;
 				continue;
 			}
 		}
 		if ( query[i] == '[' && query[i+1] == ']' ) {
-			m_sb.safePrintf ( " LeFtB RiGhB ");
+			m_filteredQuery.safePrintf ( " LeFtB RiGhB ");
 			i = i + 1;
 			continue;
 		}
 		if ( query[i] == '[' && query[i+1] == 'p' && query[i+2]==']') {
-			m_sb.safePrintf ( " LeFtB RiGhB ");
+			m_filteredQuery.safePrintf ( " LeFtB RiGhB ");
 			i = i + 2;
 			continue;
 		}
  
 		// TODO: copy altavista's operators here? & | !
 		// otherwise, just a plain copy
-		m_sb.pushChar ( query[i] );
+		m_filteredQuery.pushChar ( query[i] );
 	}
 	// NULL terminate
-	m_sb.nullTerm();
+	m_filteredQuery.nullTerm();
 
 	Words words;
 	Phrases phrases;
@@ -468,13 +456,13 @@ bool Query::setQTerms ( const Words &words ) {
 	// allocate the stack buf
 	if ( nqt ) {
 		int32_t need = nqt * sizeof(QueryTerm) ;
-		if ( ! m_stackBuf.reserve ( need ) )
+		if ( ! m_queryTermBuf.reserve ( need ) )
 			return false;
-		m_stackBuf.setLabel("stkbuf3");
-		const char *pp = m_stackBuf.getBufStart();
+		m_queryTermBuf.setLabel("stkbuf3");
+		const char *pp = m_queryTermBuf.getBufStart();
 		m_qterms = (QueryTerm *)pp;
 		pp += sizeof(QueryTerm);
-		if ( pp > m_stackBuf.getBufEnd() ) { g_process.shutdownAbort(true); }
+		if ( pp > m_queryTermBuf.getBufEnd() ) { g_process.shutdownAbort(true); }
 	}
 
 	// call constructor on each one here
@@ -690,7 +678,7 @@ bool Query::setQTerms ( const Words &words ) {
 			// fix for query
 			// text:""  foo bar   ""
 			if ( pw-1 < i ) {
-				log("query: bad query %s",m_orig);
+				log("query: bad query %s",m_originalQuery.getBufStart());
 				g_errno = EMALFORMEDQUERY;
 				return false;
 			}
@@ -1251,7 +1239,7 @@ bool Query::setQWords ( char boolFlag ,
 	// . break query up into Words and phrases
 	// . because we now deal with boolean queries, we make parentheses
 	//   their own separate Word, so tell "words" we're setting a query
-	if ( !words.set( m_sb.getBufStart(), m_sb.length(), true ) ) {
+	if ( !words.set( m_filteredQuery.getBufStart(), m_filteredQuery.length(), true ) ) {
 		log(LOG_WARN, "query: Had error parsing query: %s.", mstrerror(g_errno));
 		return false;
 	}
@@ -1267,31 +1255,21 @@ bool Query::setQWords ( char boolFlag ,
 	// alloc the mem if we need to (mdw left off here)
 	int32_t need = m_numWords * sizeof(QueryWord);
 	// sanity check
-	if ( m_qwords || m_qwordsAllocSize ) { g_process.shutdownAbort(true); }
+	if ( m_qwords ) { g_process.shutdownAbort(true); }
 	// point m_qwords to our generic buffer if it will fit
-	if ( m_gnext + need < m_gbuf + GBUF_SIZE && 
-	     // it can wrap so watch out with this:
-	     need < GBUF_SIZE ) {
-		m_qwords = (QueryWord *)m_gnext;
-		m_gnext += need;
+	if(!m_queryWordBuf.reserve(need)) {
+		log(LOG_WARN, "query: Could not allocate mem for query.");
+		return false;
 	}
-	// otherwise, we must allocate memory for it
-	else {
-		m_qwords = (QueryWord *)mmalloc ( need , "Query4" );
-		if ( ! m_qwords ) {
-			log(LOG_WARN, "query: Could not allocate mem for query.");
-			return false;
-		}
-		m_qwordsAllocSize = need;
-	}
+	m_qwords = (QueryWord *)m_queryWordBuf.getBufStart();
 	// reset safebuf in there
 	for ( int32_t i = 0 ; i < m_numWords ; i++ )
 		m_qwords[i].constructor();
 
 	// is all alpha chars in query in upper case? caps lock on?
 	bool allUpper = true;
-	const char *p    = m_sb.getBufStart();//m_buf;
-	const char *pend = m_sb.getBufPtr(); // m_buf + m_bufLen;
+	const char *p    = m_filteredQuery.getBufStart();
+	const char *pend = m_filteredQuery.getBufPtr();
 	for ( ; p < pend ; p += getUtf8CharSize(p) )
 		if ( is_alpha_utf8 ( p ) && ! is_upper_utf8 ( p ) ) {
 			allUpper = false; break; }

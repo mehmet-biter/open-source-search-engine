@@ -353,8 +353,8 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_familyFilter              = m_si->m_familyFilter        ;
 	mr.m_allowHighFrequencyTermCache = m_si->m_allowHighFrequencyTermCache;
 	mr.m_language                  = (unsigned char)m_si->m_queryLangId;
-	mr.ptr_query                   = m_si->m_q.m_orig;
-	mr.size_query                  = m_si->m_q.m_origLen+1;
+	mr.ptr_query                   = const_cast<char*>(m_si->m_q.originalQuery());
+	mr.size_query                  = strlen(m_si->m_q.originalQuery())+1;
 	int32_t slen = 0; if ( m_si->m_sites ) slen=strlen(m_si->m_sites)+1;
 	mr.ptr_whiteList               = m_si->m_sites;
 	mr.size_whiteList              = slen;
@@ -1655,6 +1655,11 @@ struct UrlClassificationContext {
 
 //start classifying the URLs of the results
 bool Msg40::submitUrlRealtimeClassification() {
+	if(!realtimeUrlClassificationWorks()) {
+		log(LOG_DEBUG,"Bypassing URL realtime classification because it is diabled or not working");
+		return true; //done
+	}
+	
 	{
 		ScopedLock sl(m_mtxRealtimeClassificationsCounters);
 		m_realtimeClassificationsSubmitted = true;

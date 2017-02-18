@@ -6648,9 +6648,6 @@ void Parms::init ( ) {
 		"information contained in the containing archive file."
 		;
 	m->m_cgi   = "url";
-	//m->m_cgi2  = "u";
-	//m->m_cgi3  = "seed"; // pagerawlbot
-	//m->m_cgi4  = "injecturl";
 	m->m_obj   = OBJ_IR;
 	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = NULL;
@@ -6722,6 +6719,16 @@ void Parms::init ( ) {
 	simple_m_set_checkbox(InjectionRequest,m_newOnly);
 	m++;
 
+	m->m_title = "skip content hash check";
+	m->m_desc  = "Skip content hash check to force reindexing of document even "
+		"when content is identical";
+	m->m_cgi   = "skiphash";
+	m->m_def   = "0";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_INJECT;
+	simple_m_set_checkbox(InjectionRequest,m_skipContentHashCheck);
+	m++;
+
 	m->m_title = "delete from index";
 	m->m_desc  = "Delete the specified url from the index.";
 	m->m_cgi   = "deleteurl";
@@ -6729,27 +6736,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_INJECT;
 	simple_m_set_checkbox(InjectionRequest,m_deleteUrl);
-	m++;
-
-	m->m_title = "recycle content";
-	m->m_desc  = "If the url is already in the index, then do not "
-		"re-download the content, just use the content that was "
-		"stored in the cache from last time.";
-	m->m_cgi   = "recycle";
-	m->m_def   = "0";
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_INJECT;
-	simple_m_set_checkbox(InjectionRequest,m_recycle);
-	m++;
-
-	m->m_title = "dedup url";
-	m->m_desc  = "Do not index the url if there is already another "
-		"url in the index with the same content.";
-	m->m_cgi   = "dedup";
-	m->m_def   = "0";
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_INJECT;
-	simple_m_set_checkbox(InjectionRequest,m_dedup);
 	m++;
 
 	m->m_title = "do consistency checking";
@@ -6857,6 +6843,17 @@ void Parms::init ( ) {
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_INJECT;
 	simple_m_set(InjectionRequest,m_charset);
+	m++;
+
+	m->m_title = "content language";
+	m->m_desc  = "A number representing the language of the content "
+		"if provided below. 1 is english. Only set if supplying content below. "
+		"See Lang.h for the numeric values.";
+	m->m_cgi   = "langid";
+	m->m_def   = "0";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_INJECT;
+	simple_m_set(InjectionRequest,m_langId);
 	m++;
 
 	m->m_title = "upload content file";

@@ -470,7 +470,7 @@ static bool gotResults ( void *state ) {
 		    ,(PTRTYPE)st->m_socket
 		    ,(int)st->m_socket->m_sd
 		    ,(PTRTYPE)msg40
-		    ,si->m_q.m_orig
+		    ,si->m_q.originalQuery()
 
 		    , msg40->m_numMsg20sIn
 		    , msg40->m_numMsg20sOut
@@ -505,7 +505,7 @@ static bool gotResults ( void *state ) {
 
 	// this causes ooms everywhere, not a good fix
 	if ( ! msg40->m_msg20 && ! si->m_docIdsOnly && msg40->m_errno ) {
-	 	log("msg40: failed to get results q=%s",si->m_q.m_orig);
+		log("msg40: failed to get results q=%s",si->m_q.originalQuery());
 	 	//g_errno = ENOMEM;
 		g_errno = msg40->m_errno;
 	 	return sendReply(st,NULL);
@@ -1021,7 +1021,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 		Query *q = &si->m_q;
 		sb->safePrintf("\t<queryInfo>\n");
 		sb->safePrintf("\t\t<fullQuery><![CDATA[");
-		cdataEncode(sb, q->m_orig);
+		cdataEncode(sb, q->originalQuery());
 		sb->safePrintf("]]></fullQuery>\n");
 		sb->safePrintf("\t\t<queryLanguageAbbr>"
 			       "<![CDATA[%s]]>"
@@ -1109,7 +1109,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 		Query *q = &si->m_q;
 		sb->safePrintf("\"queryInfo\":{\n");
 		sb->safePrintf("\t\"fullQuery\":\"");
-		sb->jsonEncode(q->m_orig);
+		sb->jsonEncode(q->originalQuery());
 		sb->safePrintf("\",\n");
 		sb->safePrintf("\t\"queryLanguageAbbr\":\"");
 		sb->jsonEncode ( getLanguageAbbr(si->m_queryLangId) );

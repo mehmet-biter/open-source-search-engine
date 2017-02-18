@@ -82,6 +82,7 @@ static void waitForTimeToConnect() {
 	struct pollfd pfd;
 	memset(&pfd,0,sizeof(pfd));
 	pfd.fd = wakeup_fd[0];
+	pfd.events = POLLIN;
 	(void)poll(&pfd,1,(next_connect_attempt-now)*1000);
 	drainWakeupPipe();
 }
@@ -420,6 +421,11 @@ bool classifyUrl(const char *url, url_realtime_classification_callback_t callbac
 	char dummy='d';
 	(void)write(wakeup_fd[1],&dummy,1);
 	return true;
+}
+
+
+bool realtimeUrlClassificationWorks() {
+	return communication_works;
 }
 
 

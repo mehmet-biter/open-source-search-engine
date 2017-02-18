@@ -27,11 +27,7 @@ static bool sendHttpReply        ( void *state );
 // but if we call serialize() then it makes news ones into its own blob.
 // so we gotta know our first and last ptr_* pointers for serialize/deseria().
 // kinda like how search input works
-void setInjectionRequestFromParms ( TcpSocket *sock , 
-				    HttpRequest *hr ,
-				    CollectionRec *cr ,
-				    InjectionRequest *ir ) {
-
+void setInjectionRequestFromParms(TcpSocket *sock, HttpRequest *hr, CollectionRec *cr, InjectionRequest *ir) {
 	// just in case set all to zero
 	memset ( ir , 0 , sizeof(InjectionRequest ));
 
@@ -259,7 +255,7 @@ bool sendPageInject ( TcpSocket *sock , HttpRequest *hr ) {
 	const char *coll  = hr->getString("c",NULL);
 
 	// no url parm?
-	if ( format != FORMAT_HTML && ! coll ) {//hr->getString("c",NULL) ) {
+	if ( format != FORMAT_HTML && ! coll ) {
 		g_errno = ENOCOLLREC;
 		const char *msg = mstrerror(g_errno);
 		return g_httpServer.sendErrorReply(sock,g_errno,msg,NULL);
@@ -592,7 +588,7 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 			       ir->m_hasMime, // content starts with http mime?
 			       ir->m_hopCount,
 			       ir->m_charset,
-
+			       ir->m_langId,
 			       ir->m_deleteUrl,
 			       // warcs/arcs include the mime so we don't
 			       // look at this in that case in 
@@ -600,7 +596,7 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 			       ir->ptr_contentTypeStr, // text/html text/xml
 			       ir->m_spiderLinks ,
 			       ir->m_newOnly, // index iff new
-
+			       ir->m_skipContentHashCheck,
 			       xd, // state ,
 			       sendUdpReply7 ,
 

@@ -87,7 +87,7 @@ class Images {
 	// . sets errno on error
 	// . "termFreq" should NOT be on the stack in case we block
 	// . sets *termFreq to UPPER BOUND on # of records with that "termId"
-	bool getThumbnail ( char *pageSite ,
+	bool getThumbnail ( const char *pageSite,
 			    int32_t  siteLen  ,
 			    int64_t docId ,
 			    class XmlDoc *xd ,
@@ -114,7 +114,7 @@ class Images {
 	bool downloadImage();
 	bool makeThumb();
 
-	char *getImageUrl ( int32_t j , int32_t *urlLen ) ;
+	const char *getImageUrl(int32_t j, int32_t *urlLen);
 
 	//bool gotImage ( );
 	void thumbStart_r ( bool amThread );
