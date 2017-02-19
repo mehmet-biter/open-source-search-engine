@@ -1043,10 +1043,6 @@ char *Mem::dup ( const void *data , size_t dataSize , const char *note ) {
 	return mem;
 }
 
-char *Mem::strdup( const char *string, const char *note ) {
-	return dup(string, strlen(string) + 1, note);
-}
-
 void Mem::gbfree ( void *ptr , const char *note, size_t size , bool checksize ) {
 	if(!s_lock.working) return;
 

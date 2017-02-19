@@ -31,9 +31,6 @@ class Mem {
 	void *gbrealloc ( void *oldPtr, size_t oldSize, size_t newSize, const char *note);
 	void gbfree(void *ptr, const char *note, size_t size, bool checksize);
 	char *dup     ( const void *data , size_t dataSize , const char *note);
-	char *strdup  ( const char *string, const char *note );
-
-	int32_t validate();
 
 	// this one does not include new/delete mem, only *alloc()/free() mem
 	size_t getUsedMem() const;
@@ -74,6 +71,8 @@ class Mem {
 	const char *m_maxAllocBy; // the biggest single alloc ever done
 
 private:
+	int32_t validate();
+
 	int32_t getMemSlot(void *mem);
 
 	// currently used mem (estimate)
