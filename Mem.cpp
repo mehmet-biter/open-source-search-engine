@@ -124,8 +124,9 @@ void Mem::delnew ( void *ptr , size_t size , const char *note ) {
 void * operator new (size_t size) throw (std::bad_alloc) {
 	logTrace( g_conf.m_logTraceMem, "size=%zu", size );
 
-	// don't let electric fence zap us
-	if ( size == 0 ) return (void *)0x7fffffff;
+	//new operator is required to return a unique pointer even for zero-byte allocations
+	if(size==0)
+		size = 1;
 
 	if ( allocationShouldFailRandomly() ) {
 		g_errno = ENOMEM; 
@@ -162,8 +163,9 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 void * operator new [] (size_t size) throw (std::bad_alloc) {
 	logTrace( g_conf.m_logTraceMem, "size=%zu", size );
 
-	// don't let electric fence zap us
-	if ( size == 0 ) return (void *)0x7fffffff;
+	//new operator is required to return a unique pointer even for zero-byte allocations
+	if(size==0)
+		size = 1;
 	
 	size_t max = g_conf.m_maxMem;
 
@@ -898,8 +900,9 @@ int Mem::printMem ( ) {
 void *Mem::gbmalloc ( size_t size , const char *note ) {
 	logTrace( g_conf.m_logTraceMem, "size=%zu note='%s'", size, note );
 
-	// don't let electric fence zap us
-	if ( size == 0 ) return (void *)0x7fffffff;
+	//malloc() can return a NULL pointer if the size is zero
+	if(size==0)
+		return NULL;
 	
 	if ( allocationShouldFailRandomly() ) {
 		g_errno = ENOMEM; 
@@ -965,15 +968,13 @@ void *Mem::gbcalloc ( size_t size , const char *note ) {
 void *Mem::gbrealloc ( void *ptr , size_t oldSize , size_t newSize , const char *note ) {
 	logTrace( g_conf.m_logTraceMem, "ptr=%p oldSize=%zu newSize=%zu note='%s'", ptr, oldSize, newSize, note );
 
-	// return dummy values since realloc() returns NULL if failed
-	if ( oldSize == 0 && newSize == 0 ) return (void *)0x7fffffff;
 	// do nothing if size is same
 	if ( oldSize == newSize ) return ptr;
 
 	// if newSize is 0...
 	if ( newSize == 0 ) {
 		gbfree(ptr, note, oldSize, true);
-		return (void *)0x7fffffff;
+		return NULL;
 	}
 
 	// hack so hostid #0 can use more mem
@@ -996,8 +997,6 @@ void *Mem::gbrealloc ( void *ptr , size_t oldSize , size_t newSize , const char 
 	rmMem(ptr, oldSize, note, true);
 
 	// . do the actual realloc
-	// . CAUTION: don't pass in 0x7fffffff in as "ptr" 
-	// . this was causing problems
 	char *mem = (char *)sysrealloc ( (char *)ptr - UNDERPAD , newSize + UNDERPAD + OVERPAD );
 
 	// remove old guy on sucess
