@@ -1150,7 +1150,8 @@ bool HttpServer::sendReply2 ( const char *mime,
 	// if we are a proxy, and not a compression proxy, then just forward
 	// the blob as-is if it is a "ZET" (GET-compressed=ZET)
 	else if ( (myHostType & HT_PROXY) && (*rb == 'Z') ) {
-		gbmemcpy ( sendBuf , content, contentLen );
+		if(content)
+			gbmemcpy ( sendBuf , content, contentLen );
 		// sanity check
 		if ( sendBufSize != contentLen ) { g_process.shutdownAbort(true); }
 		// note it
@@ -1161,7 +1162,8 @@ bool HttpServer::sendReply2 ( const char *mime,
 		gbmemcpy ( p , mime , mimeLen );
 		p += mimeLen;
 		// then the page
-		gbmemcpy ( p , content, contentLen );
+		if(content)
+			gbmemcpy ( p , content, contentLen );
 		p += contentLen;
 		// sanity check
 		if ( sendBufSize != contentLen+mimeLen) { g_process.shutdownAbort(true);}
