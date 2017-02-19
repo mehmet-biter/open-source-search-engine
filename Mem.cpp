@@ -1032,7 +1032,7 @@ void *Mem::gbrealloc ( void *ptr , size_t oldSize , size_t newSize , const char 
 	return mem;
 }
 
-char *Mem::dup ( const void *data , size_t dataSize , const char *note ) {
+void *Mem::dup ( const void *data , size_t dataSize , const char *note ) {
 	logTrace( g_conf.m_logTraceMem, "data=%p dataSize=%zu note='%s'", data, dataSize, note );
 
 	// keep it simple

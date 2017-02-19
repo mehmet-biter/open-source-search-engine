@@ -30,7 +30,7 @@ class Mem {
 	void *gbcalloc  ( size_t size , const char *note);
 	void *gbrealloc ( void *oldPtr, size_t oldSize, size_t newSize, const char *note);
 	void gbfree(void *ptr, const char *note, size_t size, bool checksize);
-	char *dup     ( const void *data , size_t dataSize , const char *note);
+	void *dup     ( const void *data , size_t dataSize , const char *note);
 
 	// this one does not include new/delete mem, only *alloc()/free() mem
 	size_t getUsedMem() const;
@@ -107,7 +107,7 @@ static inline void mfree(void *ptr, size_t size, const char *note) {
 	return g_mem.gbfree(ptr, note, size, true);
 }
 
-static inline char *mdup(const void *data, size_t dataSize, const char *note) {
+static inline void *mdup(const void *data, size_t dataSize, const char *note) {
 	return g_mem.dup(data, dataSize, note);
 }
 
