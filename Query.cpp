@@ -131,9 +131,8 @@ bool Query::set2 ( const char *query        ,
 
 	// truncate query if too big
 	if ( queryLen >= ABS_MAX_QUERY_LEN ) {
-		log("query: Query length of %" PRId32" must be "
-		    "less than %" PRId32". "
-		    "Truncating.",queryLen,(int32_t)ABS_MAX_QUERY_LEN);
+		log("query: Query length of %" PRId32" must be less than %" PRId32". Truncating.",
+		    queryLen,(int32_t)ABS_MAX_QUERY_LEN);
 		queryLen = ABS_MAX_QUERY_LEN - 1;
 		m_truncated = true;
 	}
@@ -482,13 +481,13 @@ bool Query::setQTerms ( const Words &words ) {
 
 		// stop breach
 		if ( n >= ABS_MAX_QUERY_TERMS ) {
-			log("query: lost query phrase terms to max term "
-			    "limit of %" PRId32,(int32_t)ABS_MAX_QUERY_TERMS );
+			log("query: lost query phrase terms to max term limit of %" PRId32,
+			    (int32_t)ABS_MAX_QUERY_TERMS);
 			break;
 		}
 		if ( n >= m_maxQueryTerms ) {
-			log("query: lost query phrase terms to max term cr "
-			    "limit of %" PRId32,(int32_t)m_maxQueryTerms);
+			log("query: lost query phrase terms to max term cr limit of %" PRId32,
+			    (int32_t)m_maxQueryTerms);
 			break;
 		}
 
@@ -577,13 +576,13 @@ bool Query::setQTerms ( const Words &words ) {
 
 		// stop breach
 		if ( n >= ABS_MAX_QUERY_TERMS ) {
-			log("query: lost query terms to max term "
-			    "limit of %" PRId32,(int32_t)ABS_MAX_QUERY_TERMS );
+			log("query: lost query terms to max term limit of %" PRId32,
+			    (int32_t)ABS_MAX_QUERY_TERMS);
 			break;
 		}
 		if ( n >= m_maxQueryTerms ) {
-			log("query: lost query terms to max term cr "
-			    "limit of %" PRId32,(int32_t)m_maxQueryTerms);
+			log("query: lost query terms to max term cr limit of %" PRId32,
+			    (int32_t)m_maxQueryTerms);
 			break;
 		}
 
@@ -825,18 +824,16 @@ bool Query::setQTerms ( const Words &words ) {
 			for ( int32_t j = 0 ; j < naids ; j++ ) {
 				// stop breach
 				if ( n >= ABS_MAX_QUERY_TERMS ) {
-					log("query: lost synonyms due to max term "
-					"limit of %" PRId32,
-					(int32_t)ABS_MAX_QUERY_TERMS );
+					log("query: lost synonyms due to max term limit of %" PRId32,
+					    (int32_t)ABS_MAX_QUERY_TERMS);
 					break;
 				}
 				// this happens for 'da da da'
 				if ( ! origTerm ) continue;
 				
 				if ( n >= m_maxQueryTerms ) {
-					log("query: lost synonyms due to max cr term "
-					"limit of %" PRId32,
-					(int32_t)m_maxQueryTerms);
+					log("query: lost synonyms due to max cr term limit of %" PRId32,
+					    (int32_t)m_maxQueryTerms);
 					break;
 				}
 				
