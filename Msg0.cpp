@@ -99,8 +99,6 @@ bool Msg0::registerHandler ( ) {
 //   the list updates it on disk it can't flush our cache... so use a small
 //   maxCacheAge of like , 30 seconds or so...
 bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
-		     int32_t      ip          , // info on hostId
-		     int16_t     port        ,
 		     int32_t      maxCacheAge , // max cached age in seconds
 		     bool      addToCache  , // add net recv'd list to cache?
 		     rdbid_t   rdbId       , // specifies the rdb
@@ -114,7 +112,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     int32_t      niceness    ,
 		     bool      doErrorCorrection ,
 		     bool      includeTree ,
-		     bool      doMerge     ,
 		     int32_t      firstHostId   ,
 		     int32_t      startFileNum  ,
 		     int32_t      numFiles      ,
