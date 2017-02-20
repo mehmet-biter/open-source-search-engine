@@ -243,7 +243,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 			try { m_msg5 = new ( Msg5 ); } 
 			catch ( ... ) {
 				g_errno = ENOMEM;
-				log("net: Local alloc for disk read failed "
+				log(LOG_WARN, "net: Local alloc for disk read failed "
 				    "while tring to read data for %s. "
 				    "Trying remote request.",
 				    getDbnameFromId(m_rdbId));
