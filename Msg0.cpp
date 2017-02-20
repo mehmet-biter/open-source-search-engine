@@ -253,7 +253,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 			m_deleteMsg5 = true;
 		}
 
-		if ( ! m_msg5->getList ( (rdbid_t)rdbId,
+		if ( ! m_msg5->getList ( rdbId,
 					 m_collnum ,
 					 m_list ,
 					 m_startKey ,
