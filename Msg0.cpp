@@ -183,11 +183,9 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	if ( hostId >= 0 && m_rdbId == RDB_SPIDERDB )
 		m_shardNum = 0;
 	// did they force it? core until i figure out what this is
-	else if ( forceParitySplit >= 0 ) 
-		//m_groupId =  g_hostdb.getGroupId ( forceParitySplit );
+	else if ( forceParitySplit >= 0 )
 		m_shardNum = forceParitySplit;
 	else
-		//m_groupId = getGroupId ( m_rdbId , startKey , ! noSplit );
 		m_shardNum = getShardNum ( m_rdbId , startKey );
 
 	// if we are looking up a termlist in posdb that is split by termid and

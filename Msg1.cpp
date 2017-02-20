@@ -463,28 +463,12 @@ skip:
 	*p = 0;
 	if ( m_injecting ) *p |= 0x80;
 	p++;
-	// then collection name
-	//gbmemcpy ( p , m_coll , collLen );
-	//p += collLen;
-	//*p++ = '\0';
+
 	*(collnum_t *)p = m_collnum;
 	p += sizeof(collnum_t);
-	// sanity check
-	//if ( collLen <= 0 ) {
-	//	log(LOG_LOGIC,"net: No collection specified for list add.");
-	//	//g_process.shutdownAbort(true);
-	//	g_errno = ENOCOLLREC;
-	//	return true;
-	//}
-	//if ( m_deleteRecs    ) request[1] |= 0x80;
-	//if ( m_overwriteRecs ) request[1] |= 0x40;
+
 	// store the list after coll
 	gbmemcpy ( p , listData , listSize );
-
-	// for small packets
-	//int32_t niceness = 2;
-	//if ( requestLen < TMPBUFSIZE - 32 ) niceness = 0;
-	//log("msg1: sending mcast niceness=%" PRId32,m_niceness);
 
 	// . multicast to all hosts in group "groupId"
 	// . multicast::send() returns false and sets g_errno on error
