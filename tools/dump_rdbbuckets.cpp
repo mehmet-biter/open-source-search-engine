@@ -58,13 +58,12 @@ int main(int argc, char **argv) {
 
 	g_conf.init(NULL);
 
-	BigFile bigFile;
-	bigFile.set(dir, filename);
+	strcpy(g_hostdb.m_dir, dir);
 
 	RdbBuckets buckets;
 	if (starts_with(filename, "posdb")) {
 		buckets.set(Posdb::getFixedDataSize(), g_conf.m_posdbMaxTreeMem, "buckets-posdb", RDB_POSDB, "posdb", Posdb::getKeySize());
-		if (!buckets.fastLoad(&bigFile, "posdb")) {
+		if (!buckets.loadBuckets("posdb")) {
 			fprintf(stdout, "Unable to load bucket\n");
 			return 1;
 		}

@@ -131,9 +131,8 @@ bool Query::set2 ( const char *query        ,
 
 	// truncate query if too big
 	if ( queryLen >= ABS_MAX_QUERY_LEN ) {
-		log("query: Query length of %" PRId32" must be "
-		    "less than %" PRId32". "
-		    "Truncating.",queryLen,(int32_t)ABS_MAX_QUERY_LEN);
+		log("query: Query length of %" PRId32" must be less than %" PRId32". Truncating.",
+		    queryLen,(int32_t)ABS_MAX_QUERY_LEN);
 		queryLen = ABS_MAX_QUERY_LEN - 1;
 		m_truncated = true;
 	}
@@ -254,7 +253,7 @@ bool Query::set2 ( const char *query        ,
 
 	// disable stuff for site:, ip: and url: queries
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
-		QueryWord *qw = &m_qwords[i];
+		const QueryWord *qw = &m_qwords[i];
 		if ( qw->m_ignoreWord  ) continue;
 		if      ( qw->m_fieldCode == FIELD_SITE &&
 			  qw->m_wordSign != '-' ) 
@@ -263,8 +262,6 @@ bool Query::set2 ( const char *query        ,
 			m_hasIpField   = true;
 		else if ( qw->m_fieldCode == FIELD_URL )
 			m_hasUrlField  = true;
-		else if ( qw->m_fieldCode == FIELD_QUOTA )
-			m_hasQuotaField = true;
 		else if ( qw->m_fieldCode == FIELD_SUBURL )
 			m_hasSubUrlField = true;
 		else if ( qw->m_fieldCode == FIELD_SUBURL2 )
@@ -377,7 +374,7 @@ bool Query::setQTerms ( const Words &words ) {
 	// count phrases first for allocating
 	int32_t nqt = 0;
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
-		QueryWord *qw  = &m_qwords[i];
+		const QueryWord *qw  = &m_qwords[i];
 		// skip if ignored... mdw...
 		if ( ! qw->m_phraseId ) continue;
 		if (   qw->m_ignorePhrase ) continue; // could be a repeat
@@ -388,7 +385,7 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 	// count single terms
 	for ( int32_t i = 0 ; i < m_numWords; i++ ) {
-		QueryWord *qw  = &m_qwords[i];
+		const QueryWord *qw  = &m_qwords[i];
  		if ( qw->m_ignoreWord && 
  		     qw->m_ignoreWord != IGNORE_QSTOP) continue;
 		// ignore if in quotes and part of phrase, watch out
@@ -411,7 +408,7 @@ bool Query::setQTerms ( const Words &words ) {
 		int64_t to = hash64n("to");
 		for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 			// get query word
-			QueryWord *qw  = &m_qwords[i];
+			const QueryWord *qw  = &m_qwords[i];
 			// skip if in quotes, we will not get synonyms for it
 			if ( qw->m_inQuotes ) continue;
 			// skip if has plus sign in front
@@ -482,13 +479,13 @@ bool Query::setQTerms ( const Words &words ) {
 
 		// stop breach
 		if ( n >= ABS_MAX_QUERY_TERMS ) {
-			log("query: lost query phrase terms to max term "
-			    "limit of %" PRId32,(int32_t)ABS_MAX_QUERY_TERMS );
+			log("query: lost query phrase terms to max term limit of %" PRId32,
+			    (int32_t)ABS_MAX_QUERY_TERMS);
 			break;
 		}
 		if ( n >= m_maxQueryTerms ) {
-			log("query: lost query phrase terms to max term cr "
-			    "limit of %" PRId32,(int32_t)m_maxQueryTerms);
+			log("query: lost query phrase terms to max term cr limit of %" PRId32,
+			    (int32_t)m_maxQueryTerms);
 			break;
 		}
 
@@ -577,13 +574,13 @@ bool Query::setQTerms ( const Words &words ) {
 
 		// stop breach
 		if ( n >= ABS_MAX_QUERY_TERMS ) {
-			log("query: lost query terms to max term "
-			    "limit of %" PRId32,(int32_t)ABS_MAX_QUERY_TERMS );
+			log("query: lost query terms to max term limit of %" PRId32,
+			    (int32_t)ABS_MAX_QUERY_TERMS);
 			break;
 		}
 		if ( n >= m_maxQueryTerms ) {
-			log("query: lost query terms to max term cr "
-			    "limit of %" PRId32,(int32_t)m_maxQueryTerms);
+			log("query: lost query terms to max term cr limit of %" PRId32,
+			    (int32_t)m_maxQueryTerms);
 			break;
 		}
 
@@ -720,7 +717,7 @@ bool Query::setQTerms ( const Words &words ) {
 	// . set implicit bits, m_implicitBits
 	// . set m_inPhrase
 	for (int32_t i = 0; i < m_numWords ; i++ ){
-		QueryWord *qw = &m_qwords[i];
+		const QueryWord *qw = &m_qwords[i];
 		QueryTerm *qt = qw->m_queryWordTerm;
 		if (!qt) continue;
  		if ( qw->m_queryPhraseTerm )
@@ -750,7 +747,7 @@ bool Query::setQTerms ( const Words &words ) {
 		//   was working.
 		for ( int32_t j = 0 ; j < m_numWords ; j++ ) {
 			// must be our same wordId (same word, different occ.)
-			QueryWord *qw2 = &m_qwords[j];
+			const QueryWord *qw2 = &m_qwords[j];
 			if ( qw2->m_wordId != qw->m_wordId ) continue;
 			// get first word in the phrase that jth word is in
 			int32_t pn2 = qw2->m_leftPhraseStart;
@@ -825,18 +822,16 @@ bool Query::setQTerms ( const Words &words ) {
 			for ( int32_t j = 0 ; j < naids ; j++ ) {
 				// stop breach
 				if ( n >= ABS_MAX_QUERY_TERMS ) {
-					log("query: lost synonyms due to max term "
-					"limit of %" PRId32,
-					(int32_t)ABS_MAX_QUERY_TERMS );
+					log("query: lost synonyms due to max term limit of %" PRId32,
+					    (int32_t)ABS_MAX_QUERY_TERMS);
 					break;
 				}
 				// this happens for 'da da da'
 				if ( ! origTerm ) continue;
 				
 				if ( n >= m_maxQueryTerms ) {
-					log("query: lost synonyms due to max cr term "
-					"limit of %" PRId32,
-					(int32_t)m_maxQueryTerms);
+					log("query: lost synonyms due to max cr term limit of %" PRId32,
+					    (int32_t)m_maxQueryTerms);
 					break;
 				}
 				
@@ -1012,8 +1007,7 @@ bool Query::setQTerms ( const Words &words ) {
 	m_forcedBits   = 0; // terms with + signs
 	m_synonymBits  = 0;
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		// QueryTerms are derived from QueryWords
-		QueryTerm *qt = &m_qterms[i];
+		const QueryTerm *qt = &m_qterms[i];
 		// don't require if negative
 		if ( qt->m_termSign == '-' ) {
 			m_negativeBits |= qt->m_explicitBit; // (1 << i );
@@ -1038,8 +1032,7 @@ bool Query::setQTerms ( const Words &words ) {
 	// set m_matchRequiredBits which we use for Matches.cpp
 	m_matchRequiredBits = 0;
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		// QueryTerms are derived from QueryWords
-		QueryTerm *qt = &m_qterms[i];
+		const QueryTerm *qt = &m_qterms[i];
 		// don't require if negative
 		if ( qt->m_termSign == '-' ) continue;
 		// skip all phrase terms
@@ -1068,7 +1061,6 @@ bool Query::setQTerms ( const Words &words ) {
 
 	m_numRequired = 0;
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		// QueryTerms are derived from QueryWords
 		QueryTerm *qt = &m_qterms[i];
 		// assume not required
 		qt->m_isRequired = false;
@@ -1085,9 +1077,22 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 
 
+	//workaround/hack for double-highfreqterm searchs, such as "of a" or "the the" or "the who"
+	if(m_numWords==3 &&
+	   m_qwords[0].m_ignoreWord==IGNORE_HIGHFREMTERM &&
+	   m_qwords[2].m_ignoreWord==IGNORE_HIGHFREMTERM &&
+	   m_numTerms==1 &&
+	   !m_qterms[0].m_isRequired)
+	{
+		log(LOG_DEBUG, "query: Looks like a highfreqterm-highfreqterm query type. Requiring one-and-only QueryTerm/bigram");
+		m_qterms[0].m_isRequired = true;
+		//todo: we should investigate if QueryTerm::m_isRequired actually has any effect. It is used
+		//in a single place in PosdbTable for not generating a QueryTermInfo, but it appears it works
+		//fine even with the QTI.
+	}
+	
 	// required quoted phrase terms
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		// QueryTerms are derived from QueryWords
 		QueryTerm *qt = &m_qterms[i];
 		// quoted phrase?
 		if ( ! qt->m_isPhrase ) continue;
@@ -1109,21 +1114,20 @@ bool Query::setQTerms ( const Words &words ) {
 	// . for 'in the nick' , a wiki phrase, make "in the" required
 	//   and give a big bonus for "the nick" below.
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		// QueryTerms are derived from QueryWords
 		QueryTerm *qt = &m_qterms[i];
 		// don't require if negative
 		if ( qt->m_termSign == '-' ) continue;
 		// only check bigrams here
 		if ( ! qt->m_isPhrase ) continue;
 		// get the query word that starts this phrase
-		QueryWord *qw1 = qt->m_qword;
+		const QueryWord *qw1 = qt->m_qword;
 		// must be in a wikiphrase
 		if ( qw1->m_wikiPhraseId <= 0 ) continue;
 		// what query word # is that?
 		int32_t qwn = qw1 - m_qwords;
 		// get the next alnum word after that
 		// assume its the last word in our bigram phrase
-		QueryWord *qw2 = &m_qwords[qwn+2];
+		const QueryWord *qw2 = &m_qwords[qwn+2];
 		// must be in same wikiphrase
 		if ( qw2->m_wikiPhraseId != qw1->m_wikiPhraseId ) continue;
 		// must be two stop words
@@ -1189,7 +1193,6 @@ bool Query::setQTerms ( const Words &words ) {
 	//   is a synonym term of the single word term "enough" and is treated
 	//   as such in the Posdb.cpp logic.
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		// QueryTerms are derived from QueryWords
 		QueryTerm *qt = &m_qterms[i];
 		// assume not!
 		qt->m_isWikiHalfStopBigram = 0;
@@ -1198,14 +1201,14 @@ bool Query::setQTerms ( const Words &words ) {
 		// only check bigrams here
 		if ( ! qt->m_isPhrase ) continue;
 		// get the query word that starts this phrase
-		QueryWord *qw1 = qt->m_qword;
+		const QueryWord *qw1 = qt->m_qword;
 		// must be in a wikiphrase
 		if ( qw1->m_wikiPhraseId <= 0 ) continue;
 		// what query word # is that?
 		int32_t qwn = qw1 - m_qwords;
 		// get the next alnum word after that
 		// assume its the last word in our bigram phrase
-		QueryWord *qw2 = &m_qwords[qwn+2];
+		const QueryWord *qw2 = &m_qwords[qwn+2];
 		// must be in same wikiphrase
 		if ( qw2->m_wikiPhraseId != qw1->m_wikiPhraseId ) continue;
 		// if both query stop words, should have been handled above
@@ -1716,7 +1719,6 @@ bool Query::setQWords ( char boolFlag ,
 		     fieldCode == FIELD_SITE ||
 		     fieldCode == FIELD_IP   ||
 		     fieldCode == FIELD_ISCLEAN ||
-		     fieldCode == FIELD_QUOTA ||
 		     fieldCode == FIELD_GBSORTBYFLOAT ||
 		     fieldCode == FIELD_GBREVSORTBYFLOAT ||
 		     // gbmin:price:1.23
@@ -2199,7 +2201,7 @@ bool Query::setQWords ( char boolFlag ,
 	if ( !phrases.set( &words, &bits ) )
 		return false;
 
-	int64_t *wids = words.getWordIds();
+	const int64_t *wids = words.getWordIds();
 
 	// do phrases stuff
 	for ( int32_t i = 0 ; i < numWords ; i++ ) {
@@ -2472,13 +2474,13 @@ bool Query::setQWords ( char boolFlag ,
 	// . how many non-negative, non-ignored words/phrases do we have?
 	count = 0;
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
-		QueryWord *qw = &m_qwords[i];
+		const QueryWord *qw = &m_qwords[i];
 		if ( qw->m_ignoreWord      ) continue;
 		if ( qw->m_wordSign == '-' ) continue;
 		count++;
 	}
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
-		QueryWord *qw = &m_qwords[i];
+		const QueryWord *qw = &m_qwords[i];
 		if ( qw->m_ignorePhrase      ) continue;
 		if ( qw->m_phraseSign == '-' ) continue;
 		if ( qw->m_phraseId == 0LL   ) continue;
@@ -2590,7 +2592,7 @@ int32_t Query::getWordNum(int64_t wordId) const {
 	// skip if punct or whatever
 	if ( wordId == 0LL || wordId == -1LL ) return -1;
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
-		QueryWord *qw = &m_qwords[i];
+		const QueryWord *qw = &m_qwords[i];
 		// the non-raw word id includes a hash with "0", which
 		// signifies an empty field term
 		if ( qw->m_rawWordId == wordId ) return i;
@@ -3339,7 +3341,7 @@ bool Expression::isTruth(const unsigned char *bitVec, int32_t vecSize) const {
 
 
 		// so operands are expressions as well
-		Expression *e = (Expression *)qw->m_expressionPtr;
+		const Expression *e = (const Expression *)qw->m_expressionPtr;
 		if ( e ) {
 			// save prev one. -1 means no prev.
 			prevResult = opResult;
@@ -3371,7 +3373,7 @@ bool Expression::isTruth(const unsigned char *bitVec, int32_t vecSize) const {
 			// save old one
 			prevResult = opResult;
 			// convert word to term #
-			QueryTerm *qt = qw->m_queryWordTerm;
+			const QueryTerm *qt = qw->m_queryWordTerm;
 			// fix title:"notre dame" AND NOT irish
 			if ( ! qt ) qt = qw->m_queryPhraseTerm;
 			if ( ! qt ) continue;
@@ -3474,8 +3476,6 @@ void QueryTerm::constructor ( ) {
 
 bool QueryTerm::isSplit() const {
 	if(!m_fieldCode) return true;
-	if(m_fieldCode == FIELD_QUOTA)           return false;
-	if(m_fieldCode == FIELD_GBSECTIONHASH)  return false;
 	if(m_fieldCode == FIELD_GBCONTENTHASH)  return false;
 	return true;
 }

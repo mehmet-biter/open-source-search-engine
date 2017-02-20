@@ -298,8 +298,6 @@ bool SiteGetter::getSiteList ( ) {
 
 		// get the list. returns false if blocked.
 		if (!m_msg0.getList( -1, // hostId
-		                 0, // ip
-		                 0, // port
 		                 0, // maxCacheAge
 		                 false, // addToCache
 		                 RDB_POSDB,
@@ -314,7 +312,6 @@ bool SiteGetter::getSiteList ( ) {
 		                 // default parms follow
 				         true,  // doErrorCorrection?
 				         true,  // includeTree?
-				         true,  // doMerge?
 				         -1,  // firstHostId
 				         0,  // startFileNum
 				         -1,  // numFiles

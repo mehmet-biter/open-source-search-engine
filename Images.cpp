@@ -352,8 +352,6 @@ bool Images::getThumbnail ( const char *pageSite,
 
 	// just use msg0 and limit to like 1k or something
 	if ( ! m_msg0.getList ( -1    , // hostid
-				-1    , // ip
-				-1    , // port
 				0     , // maxAge
 				false , // addToCache?
 				RDB_POSDB ,
@@ -367,7 +365,6 @@ bool Images::getThumbnail ( const char *pageSite,
 				MAX_NICENESS       ,
 				false , // err correction?
 				true  , // inc tree?
-				true  , // domergeobsolete
 				-1    , // firstHostId
 				0     , // start filenum
 				-1    , // numFiles
@@ -440,8 +437,6 @@ bool Images::launchRequests ( ) {
 
 		// get the termlist
 		if ( ! m_msg0.getList ( -1    , // hostid
-					-1    , // ip
-					-1    , // port
 					0     , // maxAge
 					false , // addToCache?
 					RDB_POSDB,
@@ -455,7 +450,6 @@ bool Images::launchRequests ( ) {
 					MAX_NICENESS       ,
 					false , // err correction?
 					true  , // inc tree?
-					true  , // domergeobsolete
 					-1    , // firstHostId
 					0     , // start filenum
 					-1    , // numFiles

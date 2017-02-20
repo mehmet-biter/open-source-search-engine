@@ -62,7 +62,7 @@ void Matches::reset2() {
 }
 
 bool Matches::isMatchableTerm(const QueryTerm *qt) const {
-	QueryWord *qw = qt->m_qword;
+	const QueryWord *qw = qt->m_qword;
 	// not derived from  a query word? how?
 	if ( ! qw ) return false;
 	if ( qw->m_ignoreWord == IGNORE_DEFAULT        ) return false;
@@ -160,7 +160,7 @@ void Matches::setQuery ( Query *q ) {
 		}
 
 		// get the word it is from
-		QueryWord *qw = qt->m_qword;
+		const QueryWord *qw = qt->m_qword;
 
 		// get word #
 		int32_t qwn = qw - q->m_qwords;

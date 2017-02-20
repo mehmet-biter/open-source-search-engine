@@ -67,7 +67,7 @@ typedef uint64_t qvec_t;
 //#define FIELD_UNUSED    38
 //#define FIELD_UNUSED   39
 //#define FIELD_UNUSED       40
-#define FIELD_QUOTA            41
+//#define FIELD_UNUSED            41
 //#define FIELD_UNUSED      42
 //#define FIELD_UNUSED         43
 //#define FIELD_UNUSED   44
@@ -78,7 +78,7 @@ typedef uint64_t qvec_t;
 #define FIELD_GBPERMALINK      49
 //#define FIELD_UNUSED         50
 #define FIELD_GBTERMID         50
-#define FIELD_GBSECTIONHASH    51
+//#define FIELD_UNUSED    51
 #define FIELD_GBDOCID          52
 #define FIELD_GBCONTENTHASH    53 // for deduping at spider time
 #define FIELD_GBSORTBYFLOAT    54 // i.e. sortby:price -> numeric termlist
@@ -265,7 +265,7 @@ class QueryTerm {
 	void constructor ( ) ;
 
 	// the query word we were derived from
-	QueryWord *m_qword;
+	const QueryWord *m_qword;
 
 	// . are we a phrase termid or single word termid from that QueryWord?
 	// . the QueryWord instance represents both, so we must choose

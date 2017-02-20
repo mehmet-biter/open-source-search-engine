@@ -296,8 +296,6 @@ bool Msg51::sendRequest ( int32_t    i ) {
 	// . returns false and sets g_errno on error
 	// . otherwise, it blocks and returns true
 	bool s = m_slot[i].m_msg0.getList( -1            , // hostid
-				     -1            , // ip
-				     -1            , // port 
 				     m_maxCacheAge ,
 				     m_addToCache  ,
 				     RDB_CLUSTERDB ,
@@ -311,7 +309,6 @@ bool Msg51::sendRequest ( int32_t    i ) {
 				     m_niceness    ,
 				     true        , // doErrorCorrection
 				     true        , // includeTree
-				     true        , // doMerge?
 				     firstHostId ,
 				     0           , // startFileNum
 				     -1          , // numFiles
