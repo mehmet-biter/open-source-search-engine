@@ -58,7 +58,6 @@ Multicast::Multicast()
     m_lastLaunch(0),
     m_freeReadBuf(false),
     m_key(0),
-    m_sendToSelf(false),
     m_sentToTwin(false)
 {
 	constructor();
@@ -102,8 +101,6 @@ void Multicast::reset ( ) {
 bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg, uint32_t shardNum, bool sendToWholeGroup_,
                      int32_t key, void *state, void *state2, void (*callback)(void *state, void *state2),
                      int64_t totalTimeout, int32_t niceness, int32_t firstHostId, bool freeReplyBuf) {
-	bool sendToSelf = true;
-
 	// make sure not being re-used!
 	if ( m_inUse ) {
 		log( LOG_ERROR, "net: Attempt to re-use active multicast");
@@ -135,7 +132,6 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 	m_readBufSize      = 0;
 	m_readBufMaxSize   = 0;
 	m_registeredSleep  = false;
-	m_sendToSelf       = sendToSelf;
 	m_sentToTwin       = false;
 	m_key              = key;
 
@@ -198,16 +194,7 @@ void Multicast::sendToWholeGroup() {
 		// if we got a nice reply from him skip him
 		//slots[i] && m_host[i].m_slot->doneReading() ) continue;
 		if ( m_host[i].m_retired ) continue;
-		// sometimes msg1.cpp is able to add the data to the tree
-		// without problems and will save us a network trans here
-		if ( ! m_sendToSelf && 
-		     h->m_hostId == g_hostdb.m_hostId &&
-		     ! g_conf.m_interfaceMachine ) {
-			m_host[i].m_retired = true;
-			m_host[i].m_errno = 0;
-			m_numReplies++;
-			continue;
-		}
+
 		// . timeout is in seconds
 		// . timeout is just the time remaining for the whole groupcast
 		// int32_t timeout = m_startTime + m_totalTimeout - getTime();
