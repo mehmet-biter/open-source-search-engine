@@ -106,9 +106,8 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 		log( LOG_ERROR, "net: Attempt to re-use active multicast");
 		g_process.shutdownAbort(true);
 	}
-	// reset to free "m_msg" in case we are being re-used (like by Msg14)
-	//log(LOG_DEBUG, "Multicast: send() 0x%02x",msgType);
 	reset();
+
 	// it is now in use
 	m_inUse = true;
 	// set the parameters in this class
@@ -118,7 +117,6 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 	m_freeReadBuf      = freeReplyBuf;
 	m_msgSize          = msgSize;
 	m_msgType          = msgType;
-	//m_groupId          = groupId;
 	m_state            = state;
 	m_state2           = state2;
 	m_callback         = callback;

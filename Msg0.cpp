@@ -288,13 +288,10 @@ skip:
 		log(LOG_DEBUG,"net: msg0: Sending request for data to "
 		    "shard=%" PRIu32" "
 		    "listPtr=%" PTRFMT" minRecSizes=%" PRId32" termId=%" PRIu64" "
-		    //"startKey.n1=%" PRIx32",n0=%" PRIx64" (niceness=%" PRId32")",
 		    "startKey.n1=%" PRIx64",n0=%" PRIx64" (niceness=%" PRId32")",
-		    //g_hostdb.makeHostId ( m_groupId ) ,
 		    m_shardNum,
 		    (PTRTYPE)m_list,
 		    m_minRecSizes, Posdb::getTermId(m_startKey) ,
-		    //m_startKey.n1,m_startKey.n0 , (int32_t)m_niceness);
 		    KEY1(m_startKey,m_ks),KEY0(m_startKey),
 		    (int32_t)m_niceness);
 
@@ -317,8 +314,6 @@ skip:
 	*p               = (char)m_allowPageCache; p++;
 	KEYSET(p,m_startKey,m_ks);          ; p+=m_ks;
 	KEYSET(p,m_endKey,m_ks);            ; p+=m_ks;
-	// NULL terminated collection name
-	//strcpy ( p , coll ); p += strlen ( coll ); *p++ = '\0';
 	*(collnum_t *)p = m_collnum; p += sizeof(collnum_t);
 	m_requestSize    = p - m_request;
 	// ask an individual host for this list if hostId is NOT -1
@@ -363,7 +358,6 @@ skip:
 	// . need to send out to all the indexdb split hosts
 	m_numRequests = 0;
 	m_numReplies  = 0;
-	//for ( int32_t i = 0; i < m_numSplit; i++ ) {
 
 	// get the multicast
 	Multicast *m = &m_mcast;
