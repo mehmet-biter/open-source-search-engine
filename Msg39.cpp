@@ -610,7 +610,7 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			//char *tpc = qt->m_term + qt->m_termLen;
 			char sign = qt->m_termSign;
 			if ( sign == 0 ) sign = '0';
-			QueryWord *qw = qt->m_qword;
+			const QueryWord *qw = qt->m_qword;
 			int32_t wikiPhrId = qw->m_wikiPhraseId;
 			if ( m_query.isPhrase(i) ) wikiPhrId = 0;
 			char leftwikibigram = 0;

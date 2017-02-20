@@ -1524,13 +1524,15 @@ bool UdpSlot::makeReadBuf ( int32_t msgSize , int32_t numDgrams ) {
 	// if msgSize is -1 then it is under 1 dgram, but assume the worst
 	if ( msgSize == -1 ) msgSize = m_maxDgramSize;
 
-	// . create a msg buf to hold msg, zero out everything...
-	// . label it "umsg" so we can grep the *.cpp files for it
-	m_readBuf = (char *) mmalloc ( msgSize, umsg_label[(uint8_t)m_msgType] );
-	if ( ! m_readBuf ) {
-		m_readBufSize = 0;
-		log(LOG_WARN, "udp: Failed to allocate %" PRId32" bytes to read request or reply on udp socket.", msgSize);
-		return false;
+	if(msgSize!=0) {
+		// . create a msg buf to hold msg, zero out everything...
+		// . label it "umsg" so we can grep the *.cpp files for it
+		m_readBuf = (char *) mmalloc ( msgSize, umsg_label[(uint8_t)m_msgType] );
+		if ( ! m_readBuf ) {
+			m_readBufSize = 0;
+			log(LOG_WARN, "udp: Failed to allocate %" PRId32" bytes to read request or reply on udp socket.", msgSize);
+			return false;
+		}
 	}
 	m_readBufMaxSize = msgSize;
 	// let the caller know we're good

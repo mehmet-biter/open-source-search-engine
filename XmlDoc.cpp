@@ -4855,8 +4855,6 @@ RdbList *XmlDoc::getDupList ( ) {
 	m_dupListValid = true;
 	// this is a no-split lookup by default now
 	if ( ! m_msg0.getList ( -1    , // hostId
-				0     , // ip
-				0     , // port
 				0     , // maxCacheAge
 				false , // add to cache?
 				RDB_POSDB, // INDEXDB ,
@@ -4870,7 +4868,6 @@ RdbList *XmlDoc::getDupList ( ) {
 				m_niceness    ,
 				true , // error correction?
 				true , // include tree?
-				true , // domerge?
 				-1 , // firsthosti
 				0 , // startfilenum
 				-1, // # files

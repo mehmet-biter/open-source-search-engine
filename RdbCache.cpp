@@ -514,7 +514,7 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	*rec = p;
 	// copy the data and set "list" with it iff "doCopy" is true
 	if ( doCopy && *recSize > 0 ) {
-		*rec = mdup ( p , *recSize , "RdbCache3" );
+		*rec = (char*)mdup ( p , *recSize , "RdbCache3" );
 		if ( ! *rec ) {
 			log(LOG_WARN, "db: Could not allocate space for cached record for %s of %" PRId32" bytes.",
 			    m_dbname,*recSize);

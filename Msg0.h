@@ -43,8 +43,6 @@ class Msg0 {
 	//   out of sync with the data
 	// . a maxCacheAge of 0 (or negative) means not to check the cache
 	bool getList ( int64_t hostId      , // -1 if unspecified
-		       int32_t      ip          , // info on hostId
-		       int16_t     port        ,
 		       int32_t      maxCacheAge , // max cached age in seconds
 		       bool      addToCache  , // add net recv'd list to cache?
 		       rdbid_t   rdbId       , // specifies the rdb
@@ -58,7 +56,6 @@ class Msg0 {
 		       int32_t      niceness    ,
 		       bool      doErrorCorrection = true ,
 		       bool      includeTree       = true ,
-		       bool      doMerge           = true ,
 		       int32_t      firstHostId       = -1   ,
 		       int32_t      startFileNum      =  0   ,
 		       int32_t      numFiles          = -1   ,

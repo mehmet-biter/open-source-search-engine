@@ -1466,8 +1466,6 @@ bool Msg8a::launchGetRequests ( ) {
 			// . launch this request, even if to ourselves
 			// . TODO: just use msg0!!
 			bool status = m->getList ( firstHostId     , // hostId
-						   0          , // ip
-						   0          , // port
 						   0          , // maxCacheAge
 						   false      , // addToCache
 						   RDB_TAGDB  ,
@@ -1481,7 +1479,6 @@ bool Msg8a::launchGetRequests ( ) {
 						   m_niceness          ,
 						   true                , // error correction?
 						   true                , // include tree?
-						   true                , // doMerge?
 						   firstHostId         , // firstHostId
 						   0                   , // startFileNum
 						   -1                  , // numFiles

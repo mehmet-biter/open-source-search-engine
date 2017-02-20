@@ -99,8 +99,6 @@ bool Msg0::registerHandler ( ) {
 //   the list updates it on disk it can't flush our cache... so use a small
 //   maxCacheAge of like , 30 seconds or so...
 bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
-		     int32_t      ip          , // info on hostId
-		     int16_t     port        ,
 		     int32_t      maxCacheAge , // max cached age in seconds
 		     bool      addToCache  , // add net recv'd list to cache?
 		     rdbid_t   rdbId       , // specifies the rdb
@@ -114,7 +112,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     int32_t      niceness    ,
 		     bool      doErrorCorrection ,
 		     bool      includeTree ,
-		     bool      doMerge     ,
 		     int32_t      firstHostId   ,
 		     int32_t      startFileNum  ,
 		     int32_t      numFiles      ,
@@ -228,32 +225,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// it it stored locally?
 	bool isLocal = ( m_hostId == -1 && m_shardNum == getMyShardNum() );
 
-	/*
-	int64_t singleDocIdQuery = 0LL;
-	if ( rdbId == RDB_POSDB ) {
-		int64_t d1 = g_posdb.getDocId(m_startKey);
-		int64_t d2 = g_posdb.getDocId(m_endKey);
-		if ( d1+1 == d2 ) singleDocIdQuery = d1;
-	}
-
-	// . try the LOCAL termlist cache
-	// . so when msg2 is evaluating a gbdocid:| query and it has to
-	//   use msg0 to go across the network to get the same damn termlist
-	//   over and over again for the same docid, this will help alot.
-	// . ideally it'd be nice if the seo pipe in xmldoc.cpp can try to
-	//   send the same gbdocid:xxxx docids to the same hosts. maybe hash
-	//   based on docid into the list of hosts and if that host is busy
-	//   just chain until we find someone not busy.
-	if ( singleDocIdQuery &&
-	     getListFromTermListCache ( coll,
-					m_startKey,
-					m_endKey,
-					maxCacheAge,
-					list ) )
-		// found!
-		return true;
-	*/
-
 	// but always local if only one host
 	if ( g_hostdb.getNumHosts() == 1 ) isLocal = true;
 
@@ -272,7 +243,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 			try { m_msg5 = new ( Msg5 ); } 
 			catch ( ... ) {
 				g_errno = ENOMEM;
-				log("net: Local alloc for disk read failed "
+				log(LOG_WARN, "net: Local alloc for disk read failed "
 				    "while tring to read data for %s. "
 				    "Trying remote request.",
 				    getDbnameFromId(m_rdbId));
@@ -282,7 +253,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 			m_deleteMsg5 = true;
 		}
 
-		if ( ! m_msg5->getList ( (rdbid_t)rdbId,
+		if ( ! m_msg5->getList ( rdbId,
 					 m_collnum ,
 					 m_list ,
 					 m_startKey ,
@@ -317,13 +288,10 @@ skip:
 		log(LOG_DEBUG,"net: msg0: Sending request for data to "
 		    "shard=%" PRIu32" "
 		    "listPtr=%" PTRFMT" minRecSizes=%" PRId32" termId=%" PRIu64" "
-		    //"startKey.n1=%" PRIx32",n0=%" PRIx64" (niceness=%" PRId32")",
 		    "startKey.n1=%" PRIx64",n0=%" PRIx64" (niceness=%" PRId32")",
-		    //g_hostdb.makeHostId ( m_groupId ) ,
 		    m_shardNum,
 		    (PTRTYPE)m_list,
 		    m_minRecSizes, Posdb::getTermId(m_startKey) ,
-		    //m_startKey.n1,m_startKey.n0 , (int32_t)m_niceness);
 		    KEY1(m_startKey,m_ks),KEY0(m_startKey),
 		    (int32_t)m_niceness);
 
@@ -346,8 +314,6 @@ skip:
 	*p               = (char)m_allowPageCache; p++;
 	KEYSET(p,m_startKey,m_ks);          ; p+=m_ks;
 	KEYSET(p,m_endKey,m_ks);            ; p+=m_ks;
-	// NULL terminated collection name
-	//strcpy ( p , coll ); p += strlen ( coll ); *p++ = '\0';
 	*(collnum_t *)p = m_collnum; p += sizeof(collnum_t);
 	m_requestSize    = p - m_request;
 	// ask an individual host for this list if hostId is NOT -1
@@ -392,7 +358,6 @@ skip:
 	// . need to send out to all the indexdb split hosts
 	m_numRequests = 0;
 	m_numReplies  = 0;
-	//for ( int32_t i = 0; i < m_numSplit; i++ ) {
 
 	// get the multicast
 	Multicast *m = &m_mcast;

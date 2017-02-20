@@ -651,7 +651,7 @@ static bool printIgnoredWords ( SafeBuf *sb , const SearchInput *si ) {
 	bool firstIgnored = true;
 	for ( int32_t i = 0 ; i < qq2->m_numWords ; i++ ) {
 		//if ( si->m_xml ) break;
-		QueryWord *qw = &qq2->m_qwords[i];
+		const QueryWord *qw = &qq2->m_qwords[i];
 		// only print out words ignored cuz they were stop words
 		if ( qw->m_ignoreWord != IGNORE_QSTOP ) continue;
 		// print header -- we got one
@@ -1096,7 +1096,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 				       ,qt->m_termId);
 			sb->safePrintf("\t\t\t<termHash64>%" PRIu64"</termHash64>\n"
 				       ,qt->m_rawTermId);
-			QueryWord *qw = qt->m_qword;
+			const QueryWord *qw = qt->m_qword;
 			sb->safePrintf("\t\t\t<prefixHash64>%" PRIu64"</prefixHash64>\n"
 				       ,qw->m_prefixHash);
 			sb->safePrintf("\t\t</term>\n");
@@ -1174,7 +1174,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 				       ,qt->m_rawTermId);
 
 			// don't end last query term attr on a omma
-			QueryWord *qw = qt->m_qword;
+			const QueryWord *qw = qt->m_qword;
 			sb->safePrintf("\t\t\"prefixHash64\":%" PRIu64"\n"
 				       ,qw->m_prefixHash);
 

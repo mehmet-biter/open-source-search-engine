@@ -4881,7 +4881,7 @@ void Parms::init ( ) {
 		"an error message if a shard was down and did not return "
 		"results for a query. The XML and JSON feed let's you know "
 		"when a shard is down and will give you the results back "
-		"any way, but if you would rather have just and error message "
+		"any way, but if you would rather have just an error message "
 		"and no results, then set then set this to 'NO'.";
 	m->m_cgi   = "rra";
 	simple_m_set(Conf,m_returnResultsAnyway);

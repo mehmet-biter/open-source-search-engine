@@ -1529,8 +1529,6 @@ bool Msg5::getRemoteList ( ) {
 	//   data
 	verify_signature();
 	if ( ! m_msg0->getList ( h->m_hostId          ,
-				 h->m_ip              ,
-				 h->m_port            ,
 				 0                    , // max cached age
 				 false                , // add to cache?
 				 m_rdbId              , // rdbId
@@ -1544,7 +1542,6 @@ bool Msg5::getRemoteList ( ) {
 				 m_niceness           ,
 				 false                , // do error correction?
 				 true                 , // include tree?
-				 true                 , // do merge? (obsolete)
 				 -1                   , // first hostid
 				 0                    , // startFileNum
 				 -1                   , // numFiles (-1=all)

@@ -1521,8 +1521,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	// point to those
 	QueryTermInfo *qtibuf = (QueryTermInfo *)m_qiBuf.getBufStart();
 
-	RdbList *list = NULL;
-
 	int32_t nrg = 0;
 
 	// assume not sorting by a numeric termlist
@@ -1553,7 +1551,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		}
 		
 		// set this stff
-		QueryWord     *qw =   qt->m_qword;
+		const QueryWord     *qw =   qt->m_qword;
 		//int32_t wordNum = qw - &m_q->m_qwords[0];
 		// get one
 		QueryTermInfo *qti = &qtibuf[nrg];
@@ -1630,7 +1628,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			leftAlreadyAdded = true;
 			// get list
 			//list = m_msg2->getList(left);
-			list = m_q->m_qterms[left].m_posdbListPtr;
+			RdbList *list = m_q->m_qterms[left].m_posdbListPtr;
 			// add list ptr into our required group
 			qti->m_subLists[nn] = list;
 			// left bigram is #2
@@ -1680,7 +1678,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			rightAlreadyAdded = true;
 			// get list
 			//list = m_msg2->getList(right);
-			list = m_q->m_qterms[right].m_posdbListPtr;
+			RdbList *list = m_q->m_qterms[right].m_posdbListPtr;
 			// add list ptr into our required group
 			qti->m_subLists[nn] = list;
 			// right bigram is #3
@@ -1730,7 +1728,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// add to it. add backwards since we give precedence to
 		// the first list and we want that to be the NEWEST list!
 		//list = m_msg2->getList(i);
-		list = m_q->m_qterms[i].m_posdbListPtr;
+		RdbList *list = m_q->m_qterms[i].m_posdbListPtr;
 		// add list ptr into our required group
 		qti->m_subLists[nn] = list;
 		// how many in there?

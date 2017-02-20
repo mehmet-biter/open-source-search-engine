@@ -44,3 +44,4 @@ CMakeLists.txt
 *.gcno
 coverage*.html
 vgcore.*
+Make.depend

@@ -226,6 +226,13 @@ bool Msg13::forwardRequest ( ) {
 		if ( ++hostId >= nh ) hostId = 0;
 	}
 
+	if(!h) {
+		//all spider hosts dead (or misconfiguration)
+		if(!g_errno)
+			g_errno = ENOHOSTS;
+		log("spider: msg13 request: %s",mstrerror(g_errno));
+		return true;
+	}
 
 	hostId = 0; // HACK!!
 

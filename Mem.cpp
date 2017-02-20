@@ -35,7 +35,6 @@ static const char MAGICCHAR = (char)0xda;
 
 class Mem g_mem;
 
-static bool freeCacheMem();
 
 
 
@@ -59,7 +58,7 @@ static bool   s_initialized = 0;
 
 //note: the ScopedMemoryLimitBypass is not thread-safe. The "bypass" flag should really
 //be per-thread. Or RdbBase should be reworked to use another technique than artificially
-//raising the memory limit while adding a file. Eg. make freeCacheMem() work again?
+//raising the memory limit while adding a file.
 ScopedMemoryLimitBypass::ScopedMemoryLimitBypass()
   : oldMaxMem(g_conf.m_maxMem)
 {
@@ -125,8 +124,9 @@ void Mem::delnew ( void *ptr , size_t size , const char *note ) {
 void * operator new (size_t size) throw (std::bad_alloc) {
 	logTrace( g_conf.m_logTraceMem, "size=%zu", size );
 
-	// don't let electric fence zap us
-	if ( size == 0 ) return (void *)0x7fffffff;
+	//new operator is required to return a unique pointer even for zero-byte allocations
+	if(size==0)
+		size = 1;
 
 	if ( allocationShouldFailRandomly() ) {
 		g_errno = ENOMEM; 
@@ -163,8 +163,9 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 void * operator new [] (size_t size) throw (std::bad_alloc) {
 	logTrace( g_conf.m_logTraceMem, "size=%zu", size );
 
-	// don't let electric fence zap us
-	if ( size == 0 ) return (void *)0x7fffffff;
+	//new operator is required to return a unique pointer even for zero-byte allocations
+	if(size==0)
+		size = 1;
 	
 	size_t max = g_conf.m_maxMem;
 
@@ -899,8 +900,9 @@ int Mem::printMem ( ) {
 void *Mem::gbmalloc ( size_t size , const char *note ) {
 	logTrace( g_conf.m_logTraceMem, "size=%zu note='%s'", size, note );
 
-	// don't let electric fence zap us
-	if ( size == 0 ) return (void *)0x7fffffff;
+	//malloc() can return a NULL pointer if the size is zero
+	if(size==0)
+		return NULL;
 	
 	if ( allocationShouldFailRandomly() ) {
 		g_errno = ENOMEM; 
@@ -908,13 +910,10 @@ void *Mem::gbmalloc ( size_t size , const char *note ) {
 		return NULL;
 	} 
 
-retry:
 	size_t max = g_conf.m_maxMem;
 
 	// don't go over max
 	if ( g_mem.getUsedMem() + size + UNDERPAD + OVERPAD >= max ) {
-		// try to free temp mem. returns true if it freed some.
-		if ( freeCacheMem() ) goto retry;
 		g_errno = ENOMEM;
 		log( LOG_WARN, "mem: malloc(%zu): Out of memory", size );
 		return NULL;
@@ -924,12 +923,8 @@ retry:
 
 	mem = (void *)sysmalloc ( size + UNDERPAD + OVERPAD );
 
-	int32_t memLoop = 0;
-mallocmemloop:
 	if ( ! mem && size > 0 ) {
 		g_mem.m_outOfMems++;
-		// try to free temp mem. returns true if it freed some.
-		if ( freeCacheMem() ) goto retry;
 		g_errno = errno;
 		static int64_t s_lastTime;
 		static int32_t s_missed = 0;
@@ -952,24 +947,6 @@ mallocmemloop:
 
 		return NULL;
 	}
-	if ( (PTRTYPE)mem < 0x00010000 ) {
-		void *remem = sysmalloc(size);
-		log( LOG_WARN, "mem: Caught low memory allocation "
-		      "at %08" PTRFMT", "
-		      "reallocated to %08" PTRFMT"",
-		      (PTRTYPE)mem, (PTRTYPE)remem );
-		sysfree(mem);
-		mem = remem;
-		memLoop++;
-		if ( memLoop > 100 ) {
-			log( LOG_WARN, "mem: Attempted to reallocate low "
-					"memory allocation 100 times, "
-					"aborting and returning NOMEM." );
-			g_errno = ENOMEM;
-			return NULL;
-		}
-		goto mallocmemloop;
-	}
 
 	logTrace( g_conf.m_logTraceMem, "mem=%p size=%zu note='%s'", mem, size, note );
 
@@ -991,18 +968,14 @@ void *Mem::gbcalloc ( size_t size , const char *note ) {
 void *Mem::gbrealloc ( void *ptr , size_t oldSize , size_t newSize , const char *note ) {
 	logTrace( g_conf.m_logTraceMem, "ptr=%p oldSize=%zu newSize=%zu note='%s'", ptr, oldSize, newSize, note );
 
-	// return dummy values since realloc() returns NULL if failed
-	if ( oldSize == 0 && newSize == 0 ) return (void *)0x7fffffff;
 	// do nothing if size is same
 	if ( oldSize == newSize ) return ptr;
 
 	// if newSize is 0...
 	if ( newSize == 0 ) {
 		gbfree(ptr, note, oldSize, true);
-		return (void *)0x7fffffff;
+		return NULL;
 	}
-
-retry:
 
 	// hack so hostid #0 can use more mem
 	size_t max = g_conf.m_maxMem;
@@ -1010,8 +983,6 @@ retry:
 
 	// don't go over max
 	if ( g_mem.getUsedMem() + newSize - oldSize >= max ) {
-		// try to free temp mem. returns true if it freed some.
-		if ( freeCacheMem() ) goto retry;
 		g_errno = ENOMEM;
 		log( LOG_WARN, "mem: realloc(%zu,%zu): Out of memory.",oldSize,newSize);
 		return NULL;
@@ -1026,8 +997,6 @@ retry:
 	rmMem(ptr, oldSize, note, true);
 
 	// . do the actual realloc
-	// . CAUTION: don't pass in 0x7fffffff in as "ptr" 
-	// . this was causing problems
 	char *mem = (char *)sysrealloc ( (char *)ptr - UNDERPAD , newSize + UNDERPAD + OVERPAD );
 
 	// remove old guy on sucess
@@ -1063,7 +1032,7 @@ retry:
 	return mem;
 }
 
-char *Mem::dup ( const void *data , size_t dataSize , const char *note ) {
+void *Mem::dup ( const void *data , size_t dataSize , const char *note ) {
 	logTrace( g_conf.m_logTraceMem, "data=%p dataSize=%zu note='%s'", data, dataSize, note );
 
 	// keep it simple
@@ -1072,10 +1041,6 @@ char *Mem::dup ( const void *data , size_t dataSize , const char *note ) {
 
 	if ( mem ) memcpy ( mem , data , dataSize );
 	return mem;
-}
-
-char *Mem::strdup( const char *string, const char *note ) {
-	return dup(string, strlen(string) + 1, note);
 }
 
 void Mem::gbfree ( void *ptr , const char *note, size_t size , bool checksize ) {
@@ -1107,16 +1072,4 @@ void Mem::gbfree ( void *ptr , const char *note, size_t size , bool checksize ) 
 
 	if ( isnew ) sysfree ( (char *)ptr );
 	else         sysfree ( (char *)ptr - UNDERPAD );
-}
-
-
-//#include "Msg20.h"
-
-static bool freeCacheMem() {
-	// returns true if it did free some stuff
-	//if ( resetMsg20Cache() ) {
-	//	log("mem: freed cache mem.");
-	//	return true;
-	//}
-	return false;
 }
