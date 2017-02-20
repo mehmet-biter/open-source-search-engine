@@ -1012,7 +1012,6 @@ bool Query::setQTerms ( const Words &words ) {
 	m_forcedBits   = 0; // terms with + signs
 	m_synonymBits  = 0;
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		// QueryTerms are derived from QueryWords
 		QueryTerm *qt = &m_qterms[i];
 		// don't require if negative
 		if ( qt->m_termSign == '-' ) {
@@ -1038,7 +1037,6 @@ bool Query::setQTerms ( const Words &words ) {
 	// set m_matchRequiredBits which we use for Matches.cpp
 	m_matchRequiredBits = 0;
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		// QueryTerms are derived from QueryWords
 		QueryTerm *qt = &m_qterms[i];
 		// don't require if negative
 		if ( qt->m_termSign == '-' ) continue;
@@ -1068,7 +1066,6 @@ bool Query::setQTerms ( const Words &words ) {
 
 	m_numRequired = 0;
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		// QueryTerms are derived from QueryWords
 		QueryTerm *qt = &m_qterms[i];
 		// assume not required
 		qt->m_isRequired = false;
@@ -1087,7 +1084,6 @@ bool Query::setQTerms ( const Words &words ) {
 
 	// required quoted phrase terms
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		// QueryTerms are derived from QueryWords
 		QueryTerm *qt = &m_qterms[i];
 		// quoted phrase?
 		if ( ! qt->m_isPhrase ) continue;
@@ -1109,7 +1105,6 @@ bool Query::setQTerms ( const Words &words ) {
 	// . for 'in the nick' , a wiki phrase, make "in the" required
 	//   and give a big bonus for "the nick" below.
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		// QueryTerms are derived from QueryWords
 		QueryTerm *qt = &m_qterms[i];
 		// don't require if negative
 		if ( qt->m_termSign == '-' ) continue;
@@ -1189,7 +1184,6 @@ bool Query::setQTerms ( const Words &words ) {
 	//   is a synonym term of the single word term "enough" and is treated
 	//   as such in the Posdb.cpp logic.
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		// QueryTerms are derived from QueryWords
 		QueryTerm *qt = &m_qterms[i];
 		// assume not!
 		qt->m_isWikiHalfStopBigram = 0;
