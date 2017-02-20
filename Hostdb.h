@@ -226,11 +226,6 @@ private:
 #define MAX_SPARES 64
 #define MAX_PROXIES 6
 
-// . this is used by Bandwidth.h and Msg21.cpp
-// . it should really be about the same as MAX_HOSTS if we have one host
-//   per machine
-#define MAX_MACHINES 256
-
 // for table for mapping key to a groupid
 #define MAX_KSLOTS 8192
 
