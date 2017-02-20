@@ -26,7 +26,7 @@ CPPFLAGS += -std=c++11
 # exported in parent make
 CPPFLAGS += $(CONFIG_CPPFLAGS)
 
-LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto
+LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto -lpcre
 LIBS += -L$(BASE_DIR) -lcld2_full
 
 %: libgb.a $(BASE_DIR)/libcld2_full.so %.cpp
