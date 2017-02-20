@@ -1079,6 +1079,20 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 
 
+	//workaround/hack for double-highfreqterm searchs, such as "of a" or "the the" or "the who"
+	if(m_numWords==3 &&
+	   m_qwords[0].m_ignoreWord==IGNORE_HIGHFREMTERM &&
+	   m_qwords[2].m_ignoreWord==IGNORE_HIGHFREMTERM &&
+	   m_numTerms==1 &&
+	   !m_qterms[0].m_isRequired)
+	{
+		log(LOG_DEBUG, "query: Looks like a highfreqterm-highfreqterm query type. Requiring one-and-only QueryTerm/bigram");
+		m_qterms[0].m_isRequired = true;
+		//todo: we should investigate if QueryTerm::m_isRequired actually has any effect. It is used
+		//in a single place in PosdbTable for not generating a QueryTermInfo, but it appears it works
+		//fine even with the QTI.
+	}
+	
 	// required quoted phrase terms
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
 		QueryTerm *qt = &m_qterms[i];
