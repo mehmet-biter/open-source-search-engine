@@ -264,8 +264,6 @@ bool Query::set2 ( const char *query        ,
 			m_hasIpField   = true;
 		else if ( qw->m_fieldCode == FIELD_URL )
 			m_hasUrlField  = true;
-		else if ( qw->m_fieldCode == FIELD_QUOTA )
-			m_hasQuotaField = true;
 		else if ( qw->m_fieldCode == FIELD_SUBURL )
 			m_hasSubUrlField = true;
 		else if ( qw->m_fieldCode == FIELD_SUBURL2 )
@@ -1723,7 +1721,6 @@ bool Query::setQWords ( char boolFlag ,
 		     fieldCode == FIELD_SITE ||
 		     fieldCode == FIELD_IP   ||
 		     fieldCode == FIELD_ISCLEAN ||
-		     fieldCode == FIELD_QUOTA ||
 		     fieldCode == FIELD_GBSORTBYFLOAT ||
 		     fieldCode == FIELD_GBREVSORTBYFLOAT ||
 		     // gbmin:price:1.23
@@ -3483,8 +3480,6 @@ void QueryTerm::constructor ( ) {
 
 bool QueryTerm::isSplit() const {
 	if(!m_fieldCode) return true;
-	if(m_fieldCode == FIELD_QUOTA)           return false;
-	if(m_fieldCode == FIELD_GBSECTIONHASH)  return false;
 	if(m_fieldCode == FIELD_GBCONTENTHASH)  return false;
 	return true;
 }

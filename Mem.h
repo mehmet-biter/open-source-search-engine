@@ -66,11 +66,11 @@ class Mem {
 
 	bool printMemBreakdownTable(SafeBuf *sb);
 
+private:
 	size_t m_maxAllocated; // at any one time
 	size_t m_maxAlloc; // the biggest single alloc ever done
 	const char *m_maxAllocBy; // the biggest single alloc ever done
 
-private:
 	int32_t validate();
 
 	int32_t getMemSlot(void *mem);
