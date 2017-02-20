@@ -398,23 +398,32 @@ bool Msg2::getLists ( ) {
 
 		// start up the read. thread will wait in thread queue to 
 		// launch if too many threads are out.
-		incrementRequestCount();
-		if ( ! msg5->getSingleUnmergedList ( RDB_POSDB,
-						     m_collnum,
-						     &m_whiteLists[m_w], // listPtr
-						     sk3,
-						     ek3,
-						     minRecSizes,
-						     0,                 // maxcacheage
-						     m_fileNum,         // file num
-						     this,
-						     gotListWrapper,
-						     m_niceness ) )
-		{
-			continue;
-		}
+		if(m_fileNum>=0) {
+			incrementRequestCount();
+			if ( ! msg5->getSingleUnmergedList ( RDB_POSDB,
+							     m_collnum,
+							     &m_whiteLists[m_w], // listPtr
+							     sk3,
+							     ek3,
+							     minRecSizes,
+							     0,                 // maxcacheage
+							     m_fileNum,         // file num
+							     this,
+							     gotListWrapper,
+							     m_niceness ) )
+			{
+				continue;
+			}
 
-		incrementReplyCount();
+			incrementReplyCount();
+		} else if(m_fileNum==-1) {
+			//get the tree
+			if(!msg5->getTreeList(&m_whiteLists[m_w],RDB_POSDB,m_collnum,sk3,ek3)) {
+				log("query: Msg5::getTreeList() failed");
+				goto skip;
+			}
+		} else
+			gbshutdownLogicError();
 		// . return the msg5 now
 		msg5->reset();
 		returnMsg5 ( msg5 );
