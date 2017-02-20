@@ -265,7 +265,7 @@ class QueryTerm {
 	void constructor ( ) ;
 
 	// the query word we were derived from
-	QueryWord *m_qword;
+	const QueryWord *m_qword;
 
 	// . are we a phrase termid or single word termid from that QueryWord?
 	// . the QueryWord instance represents both, so we must choose

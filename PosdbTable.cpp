@@ -1546,7 +1546,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		}
 		
 		// set this stff
-		QueryWord     *qw =   qt->m_qword;
+		const QueryWord     *qw =   qt->m_qword;
 		//int32_t wordNum = qw - &m_q->m_qwords[0];
 		// get one
 		QueryTermInfo *qti = &qtibuf[nrg];
