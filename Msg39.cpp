@@ -857,7 +857,7 @@ bool Msg39::getClusterRecs ( ) {
 	m_clusterBufSize = numDocIds * nodeSize;
 	m_clusterBuf = (char *)mmalloc(m_clusterBufSize, "Msg39cluster");
 	// on error, return true, g_errno should be set
-	if ( ! m_clusterBuf ) {
+	if ( m_clusterBufSize>0 && ! m_clusterBuf ) {
 		log("query: msg39: Failed to alloc buf for clustering.");
 		sendReply(m_slot,this,NULL,0,0,true);
 		return true; 
