@@ -228,32 +228,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// it it stored locally?
 	bool isLocal = ( m_hostId == -1 && m_shardNum == getMyShardNum() );
 
-	/*
-	int64_t singleDocIdQuery = 0LL;
-	if ( rdbId == RDB_POSDB ) {
-		int64_t d1 = g_posdb.getDocId(m_startKey);
-		int64_t d2 = g_posdb.getDocId(m_endKey);
-		if ( d1+1 == d2 ) singleDocIdQuery = d1;
-	}
-
-	// . try the LOCAL termlist cache
-	// . so when msg2 is evaluating a gbdocid:| query and it has to
-	//   use msg0 to go across the network to get the same damn termlist
-	//   over and over again for the same docid, this will help alot.
-	// . ideally it'd be nice if the seo pipe in xmldoc.cpp can try to
-	//   send the same gbdocid:xxxx docids to the same hosts. maybe hash
-	//   based on docid into the list of hosts and if that host is busy
-	//   just chain until we find someone not busy.
-	if ( singleDocIdQuery &&
-	     getListFromTermListCache ( coll,
-					m_startKey,
-					m_endKey,
-					maxCacheAge,
-					list ) )
-		// found!
-		return true;
-	*/
-
 	// but always local if only one host
 	if ( g_hostdb.getNumHosts() == 1 ) isLocal = true;
 

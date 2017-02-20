@@ -567,7 +567,6 @@ bool Multicast::sendToHost ( int32_t i ) {
 	int16_t destPort = h->m_port;
 
 	// if from hosts2.conf pick the best ip!
-	//int32_t  bestIp   = h->m_ip;
 	int32_t bestIp = g_hostdb.getBestHosts2IP ( h );
 
 	// sanity check
