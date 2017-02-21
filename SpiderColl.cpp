@@ -2146,7 +2146,9 @@ bool SpiderColl::evalIpLoop ( ) {
 			// so do not 'own' it.
 			SafeBuf sb;
 			sb.setBuf ( doleBuf, doleBufSize, doleBufSize, false );
-	
+
+			rcl.unlock();
+
 			// now add the first rec m_doleBuf into doledb's tree
 			// and re-add the rest back to the cache with the same key.
 			bool rc = addDoleBufIntoDoledb(&sb,true);//,cachedTimestamp)
