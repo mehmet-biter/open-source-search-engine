@@ -1227,7 +1227,7 @@ void RdbBuckets::updateNumRecs(int32_t n, int32_t bytes, int32_t numNeg) {
 	m_numNegKeys += numNeg;
 }
 
-char *RdbBucket::getFirstKey() {
+const char *RdbBucket::getFirstKey() {
 	sort();
 	return m_keys;
 }
