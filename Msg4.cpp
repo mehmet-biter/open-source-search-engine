@@ -79,7 +79,7 @@ static void flushLocal();
 static bool sendBuffer(int32_t hostId);
 static Multicast *getMulticast();
 static void returnMulticast(Multicast *mcast);
-static bool storeRec(collnum_t collnum, char rdbId, uint32_t gid, int32_t hostId, const char *rec, int32_t recSize);
+static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *rec, int32_t recSize);
 
 
 Msg4::Msg4() : m_inUse(false) {
@@ -378,7 +378,7 @@ bool Msg4::addMetaList2 ( ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(key,p-key);
 #endif
-		if ( storeRec ( m_collnum, rdbId, shardNum, hostId, key, p - key )) {
+		if ( storeRec ( m_collnum, rdbId, hostId, key, p - key )) {
 			// . point to next record
 			// . will point past records if no more left!
 			m_currentPtr = p;
@@ -414,7 +414,6 @@ bool Msg4::addMetaList2 ( ) {
 // . store these requests in the buffer just like that
 static bool storeRec(collnum_t      collnum,
 		     char           rdbId,
-		     uint32_t       shardNum,
 		     int32_t        hostId,
 		     const char    *rec,
 		     int32_t        recSize ) {
