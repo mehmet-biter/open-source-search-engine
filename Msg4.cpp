@@ -369,7 +369,7 @@ bool Msg4::addMetaList2 ( ) {
 		int32_t hostId = hosts[0].m_hostId;
 
 		logTrace(g_conf.m_logTraceMsg4, "  rdb=%s key=%s keySize=%" PRId32" isDel=%d dataSize=%" PRId32" shardNum=%" PRId32" hostId=%" PRId32,
-		         getDbnameFromId(rdbId), KEYSTR(key, ks), ks, del, shardNum, dataSize, hostId);
+		         getDbnameFromId(rdbId), KEYSTR(key, ks), ks, del, dataSize, shardNum, hostId);
 
 		// . add that rec to this groupId, gid, includes the key
 		// . these are NOT allowed to be compressed (half bit set)
@@ -390,7 +390,7 @@ bool Msg4::addMetaList2 ( ) {
 		// g_errno is not set if the store rec could not send the
 		// buffer because no multicast was available
 		if ( g_errno ) {
-			log( LOG_ERROR, "%s:%s: build: Msg4 storeRec had error: %s.", __FILE__, __func__, mstrerror(g_errno) );
+			logError("build: Msg4 storeRec had error: %s.", mstrerror(g_errno));
 		}
 
 		// clear this just in case
