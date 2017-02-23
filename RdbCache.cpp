@@ -152,16 +152,16 @@ bool RdbCache::init ( int32_t  maxMem        ,
 	// it might have been provided though, too
 	if ( numPtrsMax > 0 ) m_numPtrsMax = numPtrsMax;
 
+	//initialize memory labels
+	sprintf(m_memoryLabelPtrs,"cptrs-%s",m_dbname);
+	sprintf(m_memoryLabelBufs,"cbuf-%s",m_dbname);
+
 	// try loading from disk before anything else
 	if ( m_useDisk ) {
 		if ( load ( m_dbname ) ) return true;
 		//log("RdbCache::init: cache load failed");
 		g_errno = 0;
 	}
-
-	//initialize memory labels
-	sprintf(m_memoryLabelPtrs,"cptrs-%s",m_dbname);
-	sprintf(m_memoryLabelBufs,"cbuf-%s",m_dbname);
 
 	// . make our hash table, zero it out
 	// . don't allow it more than 50% full for performance

@@ -55,7 +55,7 @@ public:
 	void reset();
 	void reBuf(char *newbuf);
 
-	char *getFirstKey();
+	const char *getFirstKey();
 	const char *getFirstKey() const { return const_cast<RdbBucket *>(this)->getFirstKey(); }
 
 	const char *getEndKey() const { return m_endKey; }
