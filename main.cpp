@@ -554,7 +554,7 @@ int main2 ( int argc , char *argv[] ) {
 			"all events as if the time is UTCtimestamp.\n\n"
 			*/
 
-			"dump <db> <collection>\n\tDump a db from disk. "
+			"dump <db> <collection> <fileNum> <numFiles> <includeTree>\n\tDump a db from disk. "
 			"Example: gb dump t main\n"
 			"\t<collection> is the name of the collection.\n"
 
