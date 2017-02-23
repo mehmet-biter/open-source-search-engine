@@ -1779,7 +1779,7 @@ bool RdbBuckets::deleteNode(collnum_t collnum, const char *key) {
 		logTrace(g_conf.m_logTraceRdbBuckets, "bucket->deleteNode returned false. Moving up bucket");
 
 		m_buckets[i]->reset();
-		memmove(m_buckets[i], m_buckets[i + 1], m_numBuckets - i - 1);
+		memmove(&m_buckets[i], &m_buckets[i + 1], (m_numBuckets - i - 1)*sizeof(RdbBuckets*));
 		--m_numBuckets;
 	}
 
