@@ -1578,6 +1578,7 @@ int main2 ( int argc , char *argv[] ) {
 		}
 		// disable any further logging so final log msg is clear
 		g_log.m_disabled = true;
+		g_collectiondb.reset();
 		return 0;
 	}
 
