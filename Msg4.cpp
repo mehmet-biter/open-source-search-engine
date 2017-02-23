@@ -79,6 +79,7 @@ static void flushLocal();
 static bool sendBuffer(int32_t hostId);
 static Multicast *getMulticast();
 static void returnMulticast(Multicast *mcast);
+static bool prepareBuffer(int32_t hostId, int32_t totalRecSize);
 static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *rec, int32_t recSize);
 
 
@@ -302,6 +303,7 @@ bool Msg4::isInLinkedList(const Msg4 *msg4) {
 	return false;
 }
 
+/// @todo ALC check if m_currentPtr is still needed
 bool Msg4::addMetaList2 ( ) {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
@@ -408,15 +410,51 @@ bool Msg4::addMetaList2 ( ) {
 	return true;
 }
 
+static bool prepareBuffer(int32_t hostId, int32_t totalRecSize) {
+	// how many bytes of the buffer are occupied or "in use"?
+	char *buf = s_hostBufs[hostId];
+	// if NULL, try to allocate one
+	if (!buf || s_hostBufSizes[hostId] < totalRecSize) {
+		// how big to make it
+		int32_t size = MINHOSTBUFSIZE;
+
+		// must accomodate rec at all costs
+		if (size < totalRecSize) {
+			size = totalRecSize;
+		}
+
+		// make them all the same size
+		buf = (char *)mmalloc(size, "Msg4a");
+		if (!buf) {
+			// if still no luck, we cannot send this msg
+			return false;
+		}
+
+		if (s_hostBufs[hostId]) {
+			//if the old buf was too small, resize
+			gbmemcpy(buf, s_hostBufs[hostId], *(int32_t *)(s_hostBufs[hostId]));
+			mfree(s_hostBufs[hostId], s_hostBufSizes[hostId], "Msg4a");
+		} else {
+			// if we are making a brand new buf, init the used size to "4" bytes
+
+			// itself(4) PLUS the zid (8 bytes)
+			*(int32_t *)buf = 4 + 8;
+			//clear zid. Not needed, but otherwise leads to uninitialized btyes in a write() syscall
+			*(int64_t *)(buf + 4) = 0;
+		}
+
+		// add it
+		s_hostBufs[hostId] = buf;
+		s_hostBufSizes[hostId] = size;
+	}
+
+	return true;
+}
 
 // . modify each Msg4 request as follows
 // . collnum(2bytes)|rdbId(1bytes)|listSize&rawlistData|...
 // . store these requests in the buffer just like that
-static bool storeRec(collnum_t      collnum,
-		     char           rdbId,
-		     int32_t        hostId,
-		     const char    *rec,
-		     int32_t        recSize ) {
+static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *rec, int32_t recSize) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(&collnum,sizeof(collnum));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&rdbId,sizeof(rdbId));
@@ -434,37 +472,14 @@ static bool storeRec(collnum_t      collnum,
 	int32_t  needForBuf = 4 + needForRec;
 	// 8 bytes for the zid
 	needForBuf += 8;
+
+	if (!prepareBuffer(hostId, needForBuf)) {
+		return false;
+	}
+
 	// how many bytes of the buffer are occupied or "in use"?
 	char *buf = s_hostBufs[hostId];
-	// if NULL, try to allocate one
-	if ( ! buf  || s_hostBufSizes[hostId] < needForBuf ) {
-		// how big to make it
-		int32_t size = MINHOSTBUFSIZE;
-		// must accomodate rec at all costs
-		if ( size < needForBuf ) size = needForBuf;
-		// make them all the same size
-		buf = (char *)mmalloc ( size , "Msg4a" );
-		// if still no luck, we cannot send this msg
-		if ( ! buf ) return false;
-		
-		if(s_hostBufs[hostId]) {
-			//if the old buf was too small, resize
-			gbmemcpy( buf, s_hostBufs[hostId], 
-				*(int32_t*)(s_hostBufs[hostId])); 
-			mfree ( s_hostBufs[hostId], 
-				s_hostBufSizes[hostId] , "Msg4a" );
-		}
-		// if we are making a brand new buf, init the used
-		// size to "4" bytes
-		else {
-			// itself(4) PLUS the zid (8 bytes)
-			*(int32_t *)buf = 4 + 8;
-			*(int64_t *)(buf+4) = 0; //clear zid. Not needed, but otherwise leads to uninitialized btyes in a write() syscall
-		}
-		// add it
-		s_hostBufs    [hostId] = buf;
-		s_hostBufSizes[hostId] = size;
-	}
+
 	// . first int32_t is how much of "buf" is used
 	// . includes everything even itself
 #ifdef _VALGRIND_
@@ -473,6 +488,7 @@ static bool storeRec(collnum_t      collnum,
 	int32_t  used = *(int32_t *)buf;
 	// sanity chec. "used" must include the 4 bytes of itself
 	if ( used < 12 ) { g_process.shutdownAbort(true); }
+
 	// how much total buf space do we have, used or unused?
 	int32_t  maxSize = s_hostBufSizes[hostId];
 	// how many bytes are available in "buf"?
@@ -515,7 +531,6 @@ static bool storeRec(collnum_t      collnum,
 //   true otherwise
 // . returns false and sets g_errno on error
 static bool sendBuffer(int32_t hostId) {
-	//logf(LOG_DEBUG,"build: sending buf");
 	// how many bytes of the buffer are occupied or "in use"?
 	char *buf       = s_hostBufs    [hostId];
 	int32_t  allocSize = s_hostBufSizes[hostId];
