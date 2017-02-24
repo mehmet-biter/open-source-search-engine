@@ -562,16 +562,6 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 	bool  isPng = ( f && flen >= 4 && strncmp(&f[flen-4],".png",4) == 0 );
 	bool  isIco = ( f && flen >= 4 && strncmp(&f[flen-4],".ico",4) == 0 );
 	bool  isPic = (isGif || isJpg || isBmp || isPng || isIco);
-	// get time format: 7/23/1971 10:45:32
-	// . crap this cores if we use getTimeGlobal() and we are not synced
-	//   with host #0, so just use local time i guess in that case
-	time_t tt ;
-	if ( isClockInSync() ) tt = getTimeGlobal();
-	else                   tt = getTimeLocal();
-	struct tm tm_buf;
-	struct tm *timeStruct = localtime_r(&tt,&tm_buf);
-	char buf[64];
-	strftime ( buf , 100 , "%b %d %T", timeStruct);
 	// save ip in case "s" gets destroyed
 	int32_t ip = s->m_ip;
 	// . likewise, set cgi buf up here, too
@@ -584,11 +574,11 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 	// !!!!
 	// TcpServer::sendMsg() may free s->m_readBuf if doing udp forwarding
 	// !!!!
-	char stackMem[1024];
-	int32_t maxLen = s->m_readOffset;
-	if ( maxLen > 1020 ) maxLen = 1020;
-	gbmemcpy(stackMem,s->m_readBuf,maxLen);
-	stackMem[maxLen] = '\0';
+	char stackMem[1024+1];
+	size_t completeRequestSize = s->m_readOffset;
+	size_t truncatedRequestSize = completeRequestSize<sizeof(stackMem) ? completeRequestSize : sizeof(stackMem)-1;
+	memcpy(stackMem, s->m_readBuf ,truncatedRequestSize);
+	stackMem[truncatedRequestSize] = '\0';
 
 	// . sendReply returns false if blocked, true otherwise
 	// . sets g_errno on error
@@ -635,17 +625,31 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 		// . log the request
 		// . electric fence (efence) seg faults here on iptoa() for
 		//   some strange reason
-		else if ( g_conf.m_logHttpRequests ) // && ! cgi[0] ) 
-			logf (LOG_INFO,"http: %s %s %s %s %s",
-			      buf,iptoa(ip),
-			      // can't use s->m_readBuf[] here because
-			      // might have called TcpServer::sendMsg() which
-			      // might have freed it if doing udp forwarding.
-			      // can't use r.getRequest() because it inserts
-			      // \0's in there for cgi parm parsing.
-			      stackMem,
-			      ref,
-			      g_msg);
+		else if ( g_conf.m_logHttpRequests ) {
+			if(truncatedRequestSize==completeRequestSize)
+				logf (LOG_INFO,"http: request: %s %s %s %s",
+				      iptoa(ip),
+				      // can't use s->m_readBuf[] here because
+				      // might have called TcpServer::sendMsg() which
+				      // might have freed it if doing udp forwarding.
+				      // can't use r.getRequest() because it inserts
+				      // \0's in there for cgi parm parsing.
+				      stackMem,
+				      ref,
+				      g_msg);
+			else
+				logf (LOG_INFO,"http: request: %s First %zd bytes of %zd: %s %s %s",
+				      iptoa(ip),
+				      truncatedRequestSize, completeRequestSize,
+				      // can't use s->m_readBuf[] here because
+				      // might have called TcpServer::sendMsg() which
+				      // might have freed it if doing udp forwarding.
+				      // can't use r.getRequest() because it inserts
+				      // \0's in there for cgi parm parsing.
+				      stackMem,
+				      ref,
+				      g_msg);
+		}
 	}
 }
 
