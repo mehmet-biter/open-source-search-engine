@@ -736,6 +736,8 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 			continue;
 		}
 
+		if(isInMergeDir)
+			log(LOG_WARN,"db: found leftover merge file in merge dir: %s", fullFilename.getBufStart());
 		// . put this file into our array of files/maps for this db
 		// . MUST be in order of fileId for merging purposes
 		// . we assume older files come first so newer can override
