@@ -43,7 +43,7 @@ SUPPORTED PLATFORMS
 -------------------
 Primary:
 
-*    Ubuntu 14.04, g++ 4.9.3, Python 2.7.6
+*    Ubuntu 16.04, g++ 5.4.0, Python 2.7.6
 
 Secondary:
 
