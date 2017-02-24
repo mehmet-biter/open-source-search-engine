@@ -1241,7 +1241,7 @@ bool printDropDown ( int32_t n , SafeBuf* sb, char *name, int32_t select ) {	// 
 	if ( select < 0 ) select = 0;
 
 	for ( int32_t i = 0 ; i < n ; ++i ) {
-		sb->safePrintf( "<option value=%" PRId32"%s>%" PRId32, i, ( i == select ) ? "selected" : "", i );
+		sb->safePrintf( "<option value=%" PRId32"%s>%" PRId32, i, ( i == select ) ? " selected" : "", i );
 	}
 
 	sb->safePrintf ( "</select>" );
