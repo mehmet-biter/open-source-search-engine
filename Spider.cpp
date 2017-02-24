@@ -3813,6 +3813,9 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 		/// @note if we need to clean out existing spiderdb records, add it here
 #ifdef PRIVACORE_SAFE_VERSION
+
+#if 0
+//¤¤¤ REMOVED UNTIL MOVED TO A THREAD
 		{
 			/// @todo ALC only need this to clean out existing spiderdb records. (remove once it's cleaned up!)
 			Url url;
@@ -3824,12 +3827,17 @@ void dedupSpiderdbList ( RdbList *list ) {
 			}
 		}
 #endif
+#endif
 
+#if 0
+//¤¤¤ REMOVED UNTIL MOVED TO A THREAD
 		/// @todo ALC only need this to clean out existing spiderdb records. (remove once it's cleaned up!)
 		if (g_urlBlockList.isUrlBlocked(sreq->m_url)) {
 			logDebug(g_conf.m_logDebugSpider, "Url is blocked [%s]", sreq->m_url);
 			continue;
 		}
+#endif
+
 
 		// shortcut
 		int64_t uh48 = sreq->getUrlHash48();
