@@ -726,8 +726,6 @@ void Loop::doPoll ( ) {
 	// based it only goes off when that much "cpu time" has elapsed.
 	v.tv_usec = 10 * 1000;
 
- again:
-
 	// gotta copy to our own since bits get cleared by select() function
 	fd_set readfds = s_selectMaskRead;
 	fd_set writefds = s_selectMaskWrite;
@@ -747,53 +745,15 @@ void Loop::doPoll ( ) {
 		    NULL,//&exceptfds,
 		    &v );
 
-	if ( n >= 0 ) errno = 0;
-
-	logDebug( g_conf.m_logDebugLoop, "loop: out select n=%" PRId32" errno=%" PRId32" errnomsg=%s ms_wait=%i",
-	          (int32_t)n,(int32_t)errno,mstrerror(errno), (int)v.tv_sec*1000);
-
-	if ( n < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) {
-			// got it. if we get a sig alarm or vt alarm or
-			// SIGCHLD (from Threads.cpp) we end up here.
-			//log("loop: got errno=%" PRId32,(int32_t)errno);
-
-			// if not linux we have to decrease this by 1ms
-			//count -= 1000;
-
-			// and re-assign to wait less time. we are
-			// assuming SIGALRM goes off once per ms and if
-			// that is not what interrupted us we may end
-			// up exiting early
-			//if ( count <= 0 && m_shutdown ) return;
-
-			// wait less this time around
-			//v.tv_usec = count;
-
-			// if shutting down was it a sigterm ?
-			if ( m_shutdown ) goto again;
-
-			// handle returned threads for niceness 0
-			g_jobScheduler.cleanup_finished_jobs();
-
-			// high niceness threads
-			g_jobScheduler.cleanup_finished_jobs();
-
-			goto again;
-		}
+	if(n<0) {
 		g_errno = errno;
 		log( LOG_WARN, "loop: select: %s.", strerror( g_errno ) );
 		return;
 	}
+	
+	errno = 0;
 
-	// if we wait for 10ms with nothing happening, fix cpu usage here too
-	// if ( n == 0 ) {
-	// 	Host *h = g_hostdb.m_myHost;
-	// 	h->m_cpuUsage = .99 * h->m_cpuUsage + .01 * 000;
-	// }
-
-	logDebug( g_conf.m_logDebugLoop, "loop: Got %" PRId32" fds waiting.", n );
+	logDebug( g_conf.m_logDebugLoop, "loop: select() returned %d", n);
 
 	if (g_conf.m_logDebugLoop || g_conf.m_logDebugTcp) {
 		for ( int32_t i = 0; i < MAX_NUM_FDS; i++) {
