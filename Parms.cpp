@@ -5748,10 +5748,11 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "URL realtime classification timeout";
-	m->m_desc  = "Per-URL timeout. In milliseconds";
+	m->m_desc  = "Per-URL timeout.";
 	m->m_cgi   = "url_classification_timeout";
 	simple_m_set(Conf,m_urlClassificationTimeout);
 	m->m_def   = "500";
+	m->m_units = "milliseconds";
 	m->m_smin  = 0;
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -5772,11 +5773,12 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "stable-summary cache max age";
-	m->m_desc  = "How long to cache stable summaries, in milliseconds";
+	m->m_desc  = "How long to cache stable summaries.";
 	m->m_cgi   = "stablesumcacheage";
 	m->m_xml   = "StableSummaryCacheAge";
 	simple_m_set(Conf,m_stableSummaryCacheMaxAge);
 	m->m_def   = "86400000";
+	m->m_units = "milliseconds";
 	m->m_units = "milliseconds";
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
@@ -5796,7 +5798,7 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "stable-summary cache max age";
-	m->m_desc  = "How long to cache unstable summaries, in milliseconds";
+	m->m_desc  = "How long to cache unstable summaries.";
 	m->m_cgi   = "unstablesumcacheage";
 	m->m_xml   = "UnstableSummaryCacheAge";
 	simple_m_set(Conf,m_unstableSummaryCacheMaxAge);
@@ -5820,7 +5822,7 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "TagRec (Msg8a) cache max age";
-	m->m_desc  = "How long to cache TagRec, in milliseconds";
+	m->m_desc  = "How long to cache TagRec.";
 	m->m_cgi   = "tagreccacheage";
 	m->m_xml   = "TagRecCacheAge";
 	simple_m_set(Conf, m_tagRecCacheMaxAge);
@@ -7433,12 +7435,13 @@ void Parms::init ( ) {
 
 
 	m->m_title = "msg40->39 timeout";
-	m->m_desc  = "Timeout for Msg40/Msg3a to collect candidate docids with Msg39. In milliseconds";
+	m->m_desc  = "Timeout for Msg40/Msg3a to collect candidate docids with Msg39.";
 	m->m_cgi   = "msgfourty_msgthirtynine_timeout";
 	simple_m_set(Conf,m_msg40_msg39_timeout);
 	m->m_xml   = "msg40_msg39_timeout";
 	m->m_page  = PAGE_SEARCH;
 	m->m_def   = "5000";
+	m->m_units = "milliseconds";
 	m->m_flags = 0;
 	m++;
 
@@ -7496,14 +7499,14 @@ void Parms::init ( ) {
 	////////////////////
 
 	m->m_title = "clusterdb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? "
-	             "Gigablast does a lookup in clusterdb for each search result at query time to "
+	m->m_desc  = "Gigablast does a lookup in clusterdb for each search result at query time to "
 	             "get its site information for site clustering. If you "
 	             "disable site clustering in the search controls then "
 	             "clusterdb will not be consulted.";
 	m->m_cgi   = "dpcsc";
 	simple_m_set(Conf,m_clusterdbFileCacheSize);
 	m->m_def   = "30000000";
+	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_group = true;
@@ -7562,10 +7565,11 @@ void Parms::init ( ) {
 	////////////////////
 
 	m->m_title = "posdb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? Posdb is the index.";
+	m->m_desc  = "Posdb is the index.";
 	m->m_cgi   = "dpcsp";
 	simple_m_set(Conf,m_posdbFileCacheSize);
 	m->m_def   = "30000000";
+	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_group = true;
@@ -7617,13 +7621,14 @@ void Parms::init ( ) {
 	////////////////////
 
 	m->m_title = "spiderdb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? Titledb "
+	m->m_desc  = "Titledb "
 	             "holds the cached web pages, compressed. Gigablast consults "
 	             "it to generate a summary for a search result, or to see if "
 	             "a url Gigablast is spidering is already in the index.";
 	m->m_cgi   = "dpcsy";
 	simple_m_set(Conf,m_spiderdbFileCacheSize);
 	m->m_def   = "30000000";
+	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_group = true;
@@ -7658,12 +7663,13 @@ void Parms::init ( ) {
 	////////////////////
 
 	m->m_title = "tagdb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? Tagdb is "
+	m->m_desc  = "Tagdb is "
 	             "consulted at spider time and query time to determine "
 	             "if a url or outlink is banned or what its siterank is, etc.";
 	m->m_cgi   = "dpcst";
 	simple_m_set(Conf,m_tagdbFileCacheSize);
 	m->m_def   = "30000000";
+	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_group = true;
@@ -7698,13 +7704,14 @@ void Parms::init ( ) {
 	////////////////////
 
 	m->m_title = "titledb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? Titledb "
+	m->m_desc  = "Titledb "
 			"holds the cached web pages, compressed. Gigablast consults "
 			"it to generate a summary for a search result, or to see if "
 			"a url Gigablast is spidering is already in the index.";
 	m->m_cgi   = "dpcsx";
 	simple_m_set(Conf,m_titledbFileCacheSize);
 	m->m_def   = "30000000";
+	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_group = true;
@@ -7885,12 +7892,13 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-	m->m_title = "spider delay in milliseconds";
-	m->m_desc  = "make each spider wait this many milliseconds before "
+	m->m_title = "spider delay";
+	m->m_desc  = "make each spider wait this long before "
 		"getting the ip and downloading the page.";
 	m->m_cgi  = "sdms";
 	simple_m_set(CollectionRec,m_spiderDelayInMilliseconds );
 	m->m_def   = "0";
+	m->m_units = "milliseconds";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_CLONE;
