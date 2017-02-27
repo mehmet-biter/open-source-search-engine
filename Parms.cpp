@@ -6149,6 +6149,19 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	m->m_title = "max job cleanup time";
+	m->m_desc  = "Maximum number of milliseconds the main thread is allow to spend on cleanup up finished jobs. "
+		"Disable with =0. If enabled the main thraed will abort the process if it detects a job cleanup taking too long.";
+	m->m_cgi   = "maxjobcleanuptime";
+	simple_m_set(Conf,m_maxJobCleanupTime);
+	m->m_def   = "0";
+	m->m_units = "milliseconds";
+	m->m_min   = 0;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
 
 	m->m_title = "flush disk writes";
 	m->m_desc  = "If enabled then all writes will be flushed to disk. "

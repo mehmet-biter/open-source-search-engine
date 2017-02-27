@@ -699,7 +699,31 @@ void Loop::runLoop ( ) {
 		//
 		doPoll();
 	}
+
 }
+
+
+static void cleanupFinishedJobs() {
+	if(g_conf.m_maxJobCleanupTime<=0)
+		g_jobScheduler.cleanup_finished_jobs();
+	else {
+		struct timespec ts_start;
+		clock_gettime(CLOCK_MONOTONIC,&ts_start);
+		
+		g_jobScheduler.cleanup_finished_jobs();
+		
+		struct timespec ts_end;
+		clock_gettime(CLOCK_MONOTONIC,&ts_end);
+		
+		int msecs = (ts_end.tv_sec - ts_start.tv_sec)*1000
+		          + (ts_end.tv_nsec - ts_start.tv_nsec)/1000000;
+		if(msecs>g_conf.m_maxJobCleanupTime) {
+			log(LOG_LOGIC,"Cleaning up job(s) took %dms hwich is more than allowed. Dumping core",msecs);
+			g_process.shutdownAbort();
+		}
+	}
+}
+
 
 //--- TODO: flush the signal queue after polling until done
 //--- are we getting stale signals resolved by flush so we get
@@ -768,8 +792,7 @@ void Loop::doPoll ( ) {
 		}
 	}
 
-	// handle returned threads for niceness 0
-	g_jobScheduler.cleanup_finished_jobs();
+	cleanupFinishedJobs();
 
 	const int64_t now = gettimeofdayInMilliseconds();
 
@@ -809,8 +832,7 @@ void Loop::doPoll ( ) {
 		callCallbacks_ass (false,fd, now,0);//false=forRead?
 	}
 
-	// handle returned threads for niceness 0
-	g_jobScheduler.cleanup_finished_jobs();
+	cleanupFinishedJobs();
 
 	// now for lower priority fds
 	for ( int32_t i = 0 ; i < s_numReadFds ; i++ ) {
@@ -854,8 +876,7 @@ void Loop::doPoll ( ) {
 		callCallbacks_ass(false, fd, now, 1);//forread?
 	}
 
-	// handle returned threads for all other nicenesses
-	g_jobScheduler.cleanup_finished_jobs();
+	cleanupFinishedJobs();
 
 	// call sleepers if they need it
 	// call this every (about) 1 second
@@ -871,8 +892,7 @@ void Loop::doPoll ( ) {
 		callCallbacks_ass ( true , MAX_NUM_FDS , gettimeofdayInMilliseconds() );
 		// note the last time we called them
 		s_lastTime = gettimeofdayInMilliseconds();
-		// handle returned threads for all other nicenesses
-		g_jobScheduler.cleanup_finished_jobs();
+		cleanupFinishedJobs();
 	}
 
 	logDebug( g_conf.m_logDebugLoop, "loop: Exited doPoll.");

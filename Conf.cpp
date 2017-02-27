@@ -84,6 +84,7 @@ Conf::Conf ( ) {
 	m_maxCpuThreads = 0;
 	m_maxIOThreads = 0;
 	m_maxExternalThreads = 0;
+	m_maxJobCleanupTime = 0;
 	m_deadHostTimeout = 0;
 	m_sendEmailTimeout = 0;
 	m_pingSpacer = 0;

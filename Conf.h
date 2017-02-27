@@ -153,6 +153,8 @@ class Conf {
 	int32_t  m_maxExternalThreads;
 	int32_t  m_maxFileMetaThreads;
 
+	int32_t  m_maxJobCleanupTime;
+
 	int32_t  m_deadHostTimeout;
 	int32_t  m_sendEmailTimeout;
 	int32_t  m_pingSpacer;
