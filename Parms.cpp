@@ -6107,7 +6107,7 @@ void Parms::init ( ) {
 	m->m_min   = 0;
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
-	m->m_group = false;
+	m->m_group = true;
 	m++;
 
 	m->m_title = "max IO threads";
@@ -6172,7 +6172,7 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m->m_flags = PF_API;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
-	m->m_group = false;
+	m->m_group = true;
 	m++;
 
 	m->m_title = "verify tree integrity";
