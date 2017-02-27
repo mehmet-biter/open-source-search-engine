@@ -2016,6 +2016,9 @@ bool Parms::printParm( SafeBuf* sb,
 		sb->safePrintf ("</textarea>\n");
 	}
 
+	if(m->m_units && (t==TYPE_CHAR || t==TYPE_FLOAT || t==TYPE_INT32 || t==TYPE_INT64 || TYPE_INT32_CONST || t==TYPE_DOUBLE))
+		sb->safePrintf(" %s",m->m_units);
+
 	// end the input cell
 	sb->safePrintf ( "</td>\n");
 
