@@ -7747,7 +7747,9 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "Merge space directory";
-	m->m_desc  = "Location of merge-space";
+	m->m_desc  = "Location of merge-space. "
+	             "The location should be a persistent storage so it isn't wipred upon reboot or similar. "
+		     "Using /tmp if it is a regular storage file system is fine. If it is 'tmpfs' then data loss will happen if server is rebooted while a merge is going on.";
 	m->m_cgi   = "mergespacedir";
 	m->m_off   = offsetof(Conf,m_mergespaceDirectory);
 	m->m_type  = TYPE_STRING;
