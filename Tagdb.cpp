@@ -1633,7 +1633,6 @@ public:
 	TcpSocket   *m_socket;
 	bool         m_adding;
 	collnum_t m_collnum;
-	bool         m_isLocal;
 	HttpRequest  m_r;
 	TagRec       m_tagRec;
 	TagRec       m_newtr;
@@ -1644,7 +1643,6 @@ public:
 	Msg1         m_msg1;
 	RdbList      m_list;
 	int32_t         m_niceness;
-	bool         m_mergeTags;
 };
 
 // . returns false if blocked, true otherwise
@@ -1725,9 +1723,6 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 		urls = "";
 	}
 
-	// are we coming from a local machine?
-	st->m_isLocal = r->isLocal();
-
 	// it references into the request, should be ok
 	st->m_collnum = cr->m_collnum;
 
@@ -1751,7 +1746,6 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 
 	// regardless, we have to get the tagrec for all operations
 	st->m_url.set( urls );
-	st->m_mergeTags = merge;
 
 	return getTagRec ( st );
 }
