@@ -280,21 +280,6 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
 	// the total length, not including the \0
 	int32_t tlen = p - tt;
 
-	// . filter out nasty chars from the message
-	// . replace with ~'s
-	char cs;
-	char *ttp    = tt;
-	char *ttpend = tt + tlen;
-	for ( ; ttp < ttpend ; ttp += cs ) {
-		cs = getUtf8CharSize ( ttp );
-		if ( is_binary_utf8 ( ttp ) ) {
-			for ( int32_t k = 0 ; k < cs ; k++ ) *ttp++ = '.';
-			// careful not to skip the already skipped bytes
-			cs = 0;
-			continue;
-		}
-	}
-
 	// . if filesize would be too big then make a new log file
 	// . should make a new m_fd
 	if ( m_logFileSize + tlen+1 > MAXLOGFILESIZE && g_conf.m_logToFile )
