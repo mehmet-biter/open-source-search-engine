@@ -667,6 +667,13 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 	// the ST_SITE field anyway...
 	if ( ! ufu && ! us ) return true;
 
+	const CollectionRec *cr = g_collectiondb.getRec(r);
+	if(!cr) {
+		//uhm?
+		return true;
+	}
+	collnum_t collnum = cr->m_collnum;
+
 	// make it null terminated since we no longer do this automatically
 	fou.pushChar('\0');
 
@@ -734,12 +741,16 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 
 			// save buffer spot in case we have to rewind
 			int32_t saved = m_sbuf.length();
+			
+			SiteGetter sg;
+			sg.getSite(urlPtr, NULL, 0, collnum, 0);
+			
 
 			// . add to tag rdb recs in safebuf
 			// . this pushes the rdbid as first byte
 			// . mdwmdwmdw
 			Tag *tag = Tagdb::addTag(&m_sbuf,
-						 urlPtr,
+						 sg.getSite(),
 						 tagTypeStr ,
 						 tagTime ,
 						 tagUser ,
@@ -1422,7 +1433,7 @@ bool Msg8a::launchGetRequests ( ) {
 			startKey = m_siteStartKey;
 			endKey   = m_siteEndKey;
 
-			log( LOG_DEBUG, "tagdb: looking up site tags for %s", m_url->getUrl() );
+			log( LOG_DEBUG, "tagdb: looking up site tags for site-part of URL %s", m_url->getUrl() );
 		}
 
 		// get the next mcast
@@ -1480,7 +1491,6 @@ bool Msg8a::launchGetRequests ( ) {
 						   0                   , // startFileNum
 						   -1                  , // numFiles
 						   msg0_getlist_infinite_timeout );// timeout
-
 			if (status) {
 				mdelete(state, sizeof(*state), "msg8astate");
 				delete state;
