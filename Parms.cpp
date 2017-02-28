@@ -1489,6 +1489,35 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 }
 
 
+//calculate how wide a form field should be based in the value range
+//todo: handle this correctly for 64-bit integers
+static int calculateFieldWidth(int32_t smin, int32_t smax) {
+	int width_for_sign = smin<0 ? 1 : 0;
+	int width_for_digits;
+	if(     smax>=1000000000)
+		width_for_digits = 10;
+	else if(smax>= 100000000)
+		width_for_digits = 9;
+	else if(smax>=  10000000)
+		width_for_digits = 8;
+	else if(smax>=   1000000)
+		width_for_digits = 7;
+	else if(smax>=    100000)
+		width_for_digits = 6;
+	else if(smax>=     10000)
+		width_for_digits = 5;
+	else if(smax>=      1000)
+		width_for_digits = 4;
+	else if(smax>=       100)
+		width_for_digits = 3;
+	else if(smax>=        10)
+		width_for_digits = 2;
+	else
+		width_for_digits = 1;
+	return width_for_sign + width_for_digits;
+}
+
+
 bool Parms::printParm( SafeBuf* sb,
 			Parm *m    ,
 			int32_t  mm   , // m = &m_parms[mm]
@@ -1859,10 +1888,11 @@ bool Parms::printParm( SafeBuf* sb,
 		sb->safePrintf("name=%s%s>", cgi, val);
 		sb->safePrintf("</nobr>");
 	}
-	else if ( t == TYPE_CHAR )
+	else if ( t == TYPE_CHAR ) {
+		int width = calculateFieldWidth(m->m_smin,m->m_smax);
 		sb->safePrintf ("<input type=text name=%s value=\"%" PRId32"\" "
-				"size=3>",cgi,(int8_t)(*s));
-	else if ( t == TYPE_PRIORITY )
+				"size=%d>",cgi,(int8_t)(*s),width);
+	} else if ( t == TYPE_PRIORITY )
 		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s );
 	else if ( t == TYPE_SAFEBUF &&
 		  strcmp(m->m_title,"url filters profile")==0)
@@ -1901,24 +1931,24 @@ bool Parms::printParm( SafeBuf* sb,
 	else if ( t == TYPE_IP ) {
 		if ( m->m_max > 0 && j == jend )
 			sb->safePrintf ("<input type=text name=%s value=\"\" "
-					"size=12>",cgi);
+					"size=15>",cgi);
 		else
 			sb->safePrintf ("<input type=text name=%s value=\"%s\" "
-					"size=12>",cgi,iptoa(*(int32_t *)s));
+					"size=15>",cgi,iptoa(*(int32_t *)s));
 	}
 	else if ( t == TYPE_INT32 ) {
+		int width = calculateFieldWidth(m->m_smin,m->m_smax);
 		sb->safePrintf ("<input type=text name=%s "
 				"value=\"%" PRId32"\" "
-				// 3 was ok on firefox but need 6
-				// on chrome
-				"size=6>",cgi,*(int32_t *)s);
+				"size=%d>",cgi,*(int32_t *)s,width);
 	}
 	else if ( t == TYPE_INT32_CONST )
 		sb->safePrintf ("%" PRId32,*(int32_t *)s);
-	else if ( t == TYPE_INT64 )
+	else if ( t == TYPE_INT64 ) {
+		int width = calculateFieldWidth(m->m_smin,m->m_smax);
 		sb->safePrintf ("<input type=text name=%s value=\"%" PRId64"\" "
-				"size=12>",cgi,*(int64_t *)s);
-	else if ( t == TYPE_STRING || t == TYPE_STRINGNONEMPTY ) {
+				"size=%d>",cgi,*(int64_t *)s,width);
+	} else if ( t == TYPE_STRING || t == TYPE_STRINGNONEMPTY ) {
 		int32_t size = m->m_size;
 		if ( size > 20 ) size = 20;
 		sb->safePrintf ("<input type=text name=%s size=%" PRId32" value=\"",
