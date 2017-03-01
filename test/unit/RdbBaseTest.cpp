@@ -6,14 +6,6 @@
 
 class RdbBaseTest : public ::testing::Test {
 public:
-	static void SetUpTestCase() {
-		g_conf.m_noInMemoryPosdbMerge = true;
-	}
-
-	static void TearDownTestCase() {
-		g_conf.m_noInMemoryPosdbMerge = m_savedMergeConf;
-	}
-
 	void SetUp() {
 		GbTest::initializeRdbs();
 	}
@@ -21,11 +13,7 @@ public:
 	void TearDown() {
 		GbTest::resetRdbs();
 	}
-
-	static bool m_savedMergeConf;
 };
-
-bool RdbBaseTest::m_savedMergeConf = g_conf.m_noInMemoryPosdbMerge;
 
 class RdbBasePosdbIndexSingleDocTest : public RdbBaseTest, public ::testing::WithParamInterface<::testing::tuple<int64_t, int64_t, int64_t>> {
 };

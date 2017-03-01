@@ -8,14 +8,6 @@
 
 class XmlDocTest : public ::testing::Test {
 protected:
-	static void SetUpTestCase() {
-		g_conf.m_noInMemoryPosdbMerge = true;
-	}
-
-	static void TearDownTestCase() {
-		g_conf.m_noInMemoryPosdbMerge = m_savedMergeConf;
-	}
-
 	void SetUp() {
 		GbTest::initializeRdbs();
 	}
@@ -23,11 +15,7 @@ protected:
 	void TearDown() {
 		GbTest::resetRdbs();
 	}
-
-	static bool m_savedMergeConf;
 };
-
-bool XmlDocTest::m_savedMergeConf = g_conf.m_noInMemoryPosdbMerge;
 
 static void initializeDocForPosdb(XmlDoc *xmlDoc, const char *url, char *content) {
 	CollectionRec *cr = g_collectiondb.getRec(static_cast<collnum_t >(0));

@@ -160,14 +160,6 @@ TEST_F(PosdbTest, AddRecordDeleteDoc) {
 
 class PosdbNoMergeTest : public ::testing::Test {
 protected:
-	static void SetUpTestCase() {
-		g_conf.m_noInMemoryPosdbMerge = true;
-	}
-
-	static void TearDownTestCase() {
-		g_conf.m_noInMemoryPosdbMerge = m_savedMergeConf;
-	}
-
 	void SetUp() {
 		GbTest::initializeRdbs();
 		m_rdb = g_posdb.getRdb();
@@ -178,11 +170,7 @@ protected:
 	}
 
 	Rdb *m_rdb;
-
-	static bool m_savedMergeConf;
 };
-
-bool PosdbNoMergeTest::m_savedMergeConf = g_conf.m_noInMemoryPosdbMerge;
 
 TEST_F(PosdbNoMergeTest, AddRecord) {
 	static const int total_records = 10;
