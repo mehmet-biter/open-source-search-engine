@@ -1,1 +1,2 @@
-https?://[^/]+/wp-admin/
+path    /wp-admin/
+regex   *   https?://[^/]+/file1.html

@@ -1,0 +1,105 @@
+#include "UrlBlock.h"
+#include "Url.h"
+#include "hash.h"
+#include "GbUtil.h"
+#include "Log.h"
+#include "Conf.h"
+#include <algorithm>
+
+urlblockdomain_t::urlblockdomain_t(const std::string &domain, const std::string &allow)
+	: m_domain(domain)
+	, m_allow(split(allow, ',')) {
+}
+
+urlblockhost_t::urlblockhost_t(const std::string &host)
+	: m_host(host) {
+}
+
+urlblockpath_t::urlblockpath_t(const std::string &path)
+	: m_path(path) {
+}
+
+urlblockregex_t::urlblockregex_t(const std::string &regexStr, const GbRegex &regex, const std::string &domain)
+	: m_regex(regex)
+	, m_regexStr(regexStr)
+	, m_domain(domain) {
+}
+
+UrlBlock::UrlBlock(const std::shared_ptr<urlblockdomain_t> &urlblockdomain)
+	: m_type(url_block_domain)
+	, m_domain(urlblockdomain) {
+}
+
+UrlBlock::UrlBlock(const std::shared_ptr<urlblockhost_t> &urlblockhost)
+	: m_type(url_block_host)
+	, m_host(urlblockhost) {
+}
+
+UrlBlock::UrlBlock(const std::shared_ptr<urlblockpath_t> &urlblockpath)
+	: m_type(url_block_path)
+	, m_path(urlblockpath) {
+
+}
+
+UrlBlock::UrlBlock(const std::shared_ptr<urlblockregex_t> &urlblockregex)
+	: m_type(url_block_regex)
+	, m_regex(urlblockregex) {
+}
+
+bool UrlBlock::match(const Url &url) const {
+	switch (m_type) {
+		case url_block_domain:
+			if (m_domain->m_domain.length() == static_cast<size_t>(url.getDomainLen()) &&
+			   memcmp(m_domain->m_domain.c_str(), url.getDomain(), url.getDomainLen()) == 0) {
+				// check subdomain
+				if (!m_domain->m_allow.empty()) {
+					auto subDomainLen = (url.getDomain() == url.getHost()) ? 0 : url.getDomain() - url.getHost() - 1;
+					std::string subDomain(url.getHost(), subDomainLen);
+					return (std::find(m_domain->m_allow.cbegin(), m_domain->m_allow.cend(), subDomain) == m_domain->m_allow.cend());
+				}
+
+				return true;
+			}
+			break;
+		case url_block_host:
+			return (m_host->m_host.length() == static_cast<size_t>(url.getHostLen()) &&
+			        memcmp(m_host->m_host.c_str(), url.getHost(), url.getHostLen()) == 0);
+		case url_block_path:
+			return (memcmp(m_path->m_path.c_str(), url.getPath(), m_path->m_path.length()) == 0);
+		case url_block_regex:
+			if (m_regex->m_domain.empty() || (!m_regex->m_domain.empty() &&
+				m_regex->m_domain.length() == static_cast<size_t>(url.getDomainLen()) &&
+				memcmp(m_regex->m_domain.c_str(), url.getDomain(), url.getDomainLen()) == 0)) {
+				return m_regex->m_regex.match(url.getUrl());
+			}
+			break;
+	}
+
+	return false;
+}
+
+void UrlBlock::logMatch(const Url &url) const {
+	const char *type = NULL;
+	const char *value = NULL;
+
+	switch (m_type) {
+		case url_block_domain:
+			type = "domain";
+			value = m_domain->m_domain.c_str();
+			break;
+		case url_block_host:
+			type = "host";
+			value = m_host->m_host.c_str();
+			break;
+		case url_block_path:
+			type = "path";
+			value = m_path->m_path.c_str();
+			break;
+		case url_block_regex:
+			type = "regex";
+			value = m_regex->m_regexStr.c_str();
+			break;
+	}
+
+	logTrace(g_conf.m_logTraceUrlBlockList, "Url block criteria %s='%s' matched url '%s'", type, value, url.getUrl());
+}

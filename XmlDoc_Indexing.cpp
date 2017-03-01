@@ -900,7 +900,7 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 			link.hasScriptExtension() ||
 			link.hasJsonExtension() ||
 			link.hasXmlExtension() ||
-			g_urlBlockList.isUrlBlocked(link.getUrl())) {
+			g_urlBlockList.isUrlBlocked(link)) {
 
 			logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", link.getUrl());
 			continue;			

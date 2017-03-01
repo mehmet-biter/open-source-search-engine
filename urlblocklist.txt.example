@@ -1,0 +1,42 @@
+# this file accepts multiple criteria types
+# blocks url from being inserted into spiderdb
+# one line criteria per line
+#
+# types:
+#   - domain
+#   - host
+#   - path
+#   - regex (pcre)
+#
+# domain example
+# ==============
+# block all subdomain of example.com domain
+#   blocks: www.example.com, sub.example.com, example.com
+domain	example.com
+
+# block all of example.com except empty subdomain & www
+#   blocks: sub.example.com
+#   allows: example.com, www.example.com
+domain	example.com	allow=,www
+
+# host example
+# ============
+# block specific host
+#   blocks: www.example.com
+#   allows: sub.example.com
+host	www.example.com
+
+# path example
+# ============
+# blocks specific path (prefix)
+#   blocks: www.example.com/wp-admin, www.example.com/wp-admin/login
+#   allows: www.example.com/en/wp-admin
+path	/wp-admin
+
+# regex example
+# =============
+# blocks url by regex
+regex * https?://example\.com/(a|b)\.html
+
+# blocks url by regex (specific domain)
+regex example.com https?://example\.com/(a|b)\.html

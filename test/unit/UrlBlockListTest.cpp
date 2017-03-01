@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "UrlBlockList.h"
+#include "Url.h"
 
 class TestUrlBlockList : public UrlBlockList {
 public:
@@ -8,6 +9,12 @@ public:
 		m_filename = filename;
 	}
 
+	bool isUrlBlocked(const char *urlStr) {
+		Url url;
+		url.set(urlStr);
+
+		return UrlBlockList::isUrlBlocked(url);
+	}
 	using UrlBlockList::load;
 };
 
@@ -47,6 +54,10 @@ TEST(UrlBlockListTest, Domain) {
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://www.sub1.example.com/"));
 	EXPECT_FALSE(urlBlockList.isUrlBlocked("http://www.example.com/"));
 	EXPECT_FALSE(urlBlockList.isUrlBlocked("http://example.com/"));
+
+	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://specific.host.com/"));
+	EXPECT_TRUE(urlBlockList.isUrlBlocked("https://specific.host.com/"));
+	EXPECT_FALSE(urlBlockList.isUrlBlocked("https://www.host.com/"));
 }
 
 TEST(UrlBlockListTest, Path) {
@@ -55,4 +66,7 @@ TEST(UrlBlockListTest, Path) {
 
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://www.example.com/wp-admin/"));
 	EXPECT_FALSE(urlBlockList.isUrlBlocked("http://www.example.com/tag/wp-admin/"));
+
+	EXPECT_TRUE(urlBlockList.isUrlBlocked("https://www.host.com/file1.html"));
+	EXPECT_TRUE(urlBlockList.isUrlBlocked("https://www.example.com/file1.html"));
 }
