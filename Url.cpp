@@ -10,9 +10,9 @@
 #include "Sanity.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
+#include "GbUtil.h"
 #include <vector>
 #include <algorithm>
-#include <sstream>
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -1775,16 +1775,6 @@ bool Url::hasNonIndexableExtension( int32_t version ) const {
 	}
 	
 	return true;
-}
-
-static std::vector<std::string> split(const std::string &str, char delimiter) {
-	std::vector<std::string> elements;
-	std::stringstream ss(str);
-	std::string element;
-	while (std::getline(ss, element, delimiter)) {
-		elements.push_back(element);
-	}
-	return elements;
 }
 
 bool Url::isTLDInPrivacoreBlacklist() const {

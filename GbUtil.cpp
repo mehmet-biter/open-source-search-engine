@@ -1,6 +1,7 @@
 #include "GbUtil.h"
 #include "SafeBuf.h"
 #include <string.h>
+#include <sstream>
 
 bool cdataEncode(SafeBuf *dstBuf, const char *src) {
 	return cdataEncode(dstBuf,src,strlen(src));
@@ -172,4 +173,24 @@ bool printTimeAgo(SafeBuf *sb, time_t ago, time_t now, bool shorthand) {
 		sb->safeStrcpy(tmp);
 	}
 	return true;
+}
+
+std::vector<std::string> split(const std::string &str, char delimiter) {
+	std::vector<std::string> elements;
+	std::stringstream ss(str);
+	std::string element;
+	while (std::getline(ss, element, delimiter)) {
+		elements.push_back(element);
+	}
+	return elements;
+}
+
+bool starts_with(const char *haystack, const char *needle) {
+	size_t haystackLen = strlen(haystack);
+	size_t needleLen = strlen(needle);
+	if (haystackLen < needleLen) {
+		return false;
+	}
+
+	return (memcmp(haystack, needle, needleLen) == 0);
 }

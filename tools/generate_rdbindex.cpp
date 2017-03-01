@@ -4,6 +4,7 @@
 #include "Log.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "GbUtil.h"
 #include <libgen.h>
 
 static void print_usage(const char *argv0) {
@@ -11,16 +12,6 @@ static void print_usage(const char *argv0) {
 	fprintf(stdout, "Generate RDB index from FILE\n");
 	fprintf(stdout, "\n");
 	fprintf(stdout, "  -h, --help     display this help and exit\n");
-}
-
-static bool starts_with(const char *haystack, const char *needle) {
-	size_t haystackLen = strlen(haystack);
-	size_t needleLen = strlen(needle);
-	if (haystackLen < needleLen) {
-		return false;
-	}
-
-	return (memcmp(haystack, needle, needleLen) == 0);
 }
 
 int main(int argc, char **argv) {
