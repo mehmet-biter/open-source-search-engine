@@ -14919,7 +14919,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			url.hasScriptExtension() ||
 			url.hasJsonExtension() ||
 //			url.hasXmlExtension() ||
-			g_urlBlockList.isUrlBlocked(url.getUrl()))
+			g_urlBlockList.isUrlBlocked(url))
 		{
 			logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", url.getUrl());
 			continue;

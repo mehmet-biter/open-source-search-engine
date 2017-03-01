@@ -1,7 +1,8 @@
 # block by domain
-https?://www\.badsite\.com/
-http://www\.httponly\.com/
-https://www\.httpsonly\.com/
-https?://([^/]*\.|)allsubdomain.com/
-http://www\.onlyroot\.com/$
-https?:\/\/(?(?=www)(.*\.){2,}|(.*\.))example\.com/
+regex   badsite.com https?://www\.badsite\.com/
+regex   httponly.com    http://www\.httponly\.com/
+regex   httpsonly.com   https://www\.httpsonly\.com/
+domain  allsubdomain.com
+regex   onlyroot.com    http://www\.onlyroot\.com/$
+domain  example.com allow=,www
+host    specific.host.com

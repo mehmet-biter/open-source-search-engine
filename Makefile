@@ -64,7 +64,7 @@ OBJS_O3 = \
 	SafeBuf.o sort.o Statistics.o \
 	ScoringWeights.o \
 	TopTree.o \
-	UrlBlockList.o UrlComponent.o UrlParser.o UdpStatistic.o \
+	UrlBlock.o UrlBlockList.o UrlComponent.o UrlParser.o UdpStatistic.o \
 	UrlRealtimeClassification.o \
 	MergeSpaceCoordinator.o \
 	GbMoveFile.o \

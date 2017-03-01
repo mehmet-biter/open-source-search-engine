@@ -2,10 +2,11 @@
 #include "Log.h"
 #include "Conf.h"
 #include "Loop.h"
+#include "Url.h"
+#include "GbUtil.h"
 #include <fstream>
 #include <sys/stat.h>
 #include <atomic>
-#include <features.h>
 
 UrlBlockList g_urlBlockList;
 
@@ -13,7 +14,7 @@ static const char s_url_filename[] = "urlblocklist.txt";
 
 UrlBlockList::UrlBlockList()
 	: m_filename(s_url_filename)
-	, m_urlRegexList(new regexlist_t)
+	, m_urlBlockList(new urlblocklist_t)
 	, m_lastModifiedTime(0) {
 }
 
@@ -34,8 +35,6 @@ void UrlBlockList::reload(int /*fd*/, void *state) {
 }
 
 bool UrlBlockList::load() {
-#if defined(__GNUC__) || defined(__clang__)
-#if __GNUC_PREREQ(5, 0) || defined(__clang__)
 	logTrace(g_conf.m_logTraceUrlBlockList, "Loading %s", m_filename);
 
 	struct stat st;
@@ -51,7 +50,7 @@ bool UrlBlockList::load() {
 		return true;
 	}
 
-	regexlist_ptr_t tmpUrlRegexList(new regexlist_t);
+	urlblocklist_ptr_t tmpUrlBlockList(new urlblocklist_t);
 
 	std::ifstream file(m_filename);
 	std::string line;
@@ -61,49 +60,110 @@ bool UrlBlockList::load() {
 			continue;
 		}
 
-		tmpUrlRegexList->push_back(std::make_pair(line, GbRegex(line.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE)));
-		logTrace(g_conf.m_logTraceUrlBlockList, "Adding regex '%s' to list", line.c_str());
+		// look for first space or tab
+		auto firstColEnd = line.find_first_of(" \t");
+		size_t secondCol = line.find_first_not_of(" \t", firstColEnd);
+
+		if (firstColEnd == std::string::npos || secondCol == std::string::npos) {
+			// invalid format
+			continue;
+		}
+
+		size_t secondColEnd = line.find_first_of(" \t", secondCol);
+		size_t thirdCol = line.find_first_not_of(" \t", secondColEnd);
+
+		std::string col2(line, secondCol, secondColEnd - secondCol);
+		std::string col3;
+		if (thirdCol != std::string::npos) {
+			col3 = std::string(line, thirdCol);
+		}
+
+		switch (line[0]) {
+			case 'd':
+				// domain
+				if (memcmp(line.c_str(), "domain", firstColEnd) != 0) {
+					logTrace(g_conf.m_logTraceUrlBlockList, "");
+					continue;
+				}
+
+				if (starts_with(col3.c_str(), "allow=")) {
+					col3.erase(0, 6);
+				} else {
+					col3.clear();
+				}
+				tmpUrlBlockList->push_back(UrlBlock(std::shared_ptr<urlblockdomain_t>(new urlblockdomain_t(col2, col3))));
+				break;
+			case 'h':
+				// host
+				if (memcmp(line.c_str(), "host", firstColEnd) != 0) {
+					logTrace(g_conf.m_logTraceUrlBlockList, "");
+					continue;
+				}
+
+				tmpUrlBlockList->push_back(UrlBlock(std::shared_ptr<urlblockhost_t>(new urlblockhost_t(col2))));
+				break;
+			case 'p':
+				// path
+				if (memcmp(line.c_str(), "path", firstColEnd) != 0) {
+					logTrace(g_conf.m_logTraceUrlBlockList, "");
+					continue;
+				}
+
+				tmpUrlBlockList->push_back(UrlBlock(std::shared_ptr<urlblockpath_t>(new urlblockpath_t(col2))));
+				break;
+			case 'r':
+				// regex
+				if (memcmp(line.c_str(), "regex", firstColEnd) != 0) {
+					logTrace(g_conf.m_logTraceUrlBlockList, "");
+					continue;
+				}
+
+				if (col3.empty()) {
+					// invalid format
+					continue;
+				}
+
+				// check for wildcard domain
+				if (col2.length() == 1 && col2[0] == '*') {
+					col2.clear();
+				}
+
+				tmpUrlBlockList->push_back(UrlBlock(std::shared_ptr<urlblockregex_t>(new urlblockregex_t(col3, GbRegex(col3.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE), col2))));
+				break;
+			default:
+				continue;
+		}
+
+		logTrace(g_conf.m_logTraceUrlBlockList, "Adding criteria '%s' to list", line.c_str());
 	}
 
-	swapUrlRegexList(tmpUrlRegexList);
+	swapUrlBlockList(tmpUrlBlockList);
 	m_lastModifiedTime = st.st_mtime;
 
 	logTrace(g_conf.m_logTraceUrlBlockList, "Loaded %s", m_filename);
-#else
-#warning "Url block feature is disabled"
-	logTrace(g_conf.m_logTraceUrlBlockList, "Not loading %s (g++ <4.9 regex STL is broken; std::atomic_store is not supported)", m_filename);
-#endif
-#endif
 	return true;
 }
 
-bool UrlBlockList::isUrlBlocked(const char *url) {
-#if defined(__GNUC__) || defined(__clang__)
-#if __GNUC_PREREQ(5, 0) || defined(__clang__)
-	auto urlRegexList = getUrlRegexList();
+bool UrlBlockList::isUrlBlocked(const Url &url) {
+	auto urlRegexList = getUrlBlockList();
 
-	for (auto const &urlRegexPair : *urlRegexList) {
-		if (urlRegexPair.second.match(url)) {
-			logTrace(g_conf.m_logTraceUrlBlockList, "Regex '%s' matched url '%s'", urlRegexPair.first.c_str(), url);
+	for (auto const &urlBlock : *urlRegexList) {
+		if (urlBlock.match(url)) {
+			if (g_conf.m_logTraceUrlBlockList) {
+				urlBlock.logMatch(url);
+			}
 			return true;
 		}
 	}
 
-	logTrace(g_conf.m_logTraceUrlBlockList, "No match found for url '%s'", url);
-#endif
-#endif
 	return false;
 }
 
-regexlistconst_ptr_t UrlBlockList::getUrlRegexList() {
-	return m_urlRegexList;
+urlblocklistconst_ptr_t UrlBlockList::getUrlBlockList() {
+	return m_urlBlockList;
 }
 
-void UrlBlockList::swapUrlRegexList(regexlistconst_ptr_t urlRegexList) {
-#if defined(__GNUC__) || defined(__clang__)
-#if __GNUC_PREREQ(5, 0) || defined(__clang__)
-	std::atomic_store(&m_urlRegexList, urlRegexList);
-#endif
-#endif
+void UrlBlockList::swapUrlBlockList(urlblocklistconst_ptr_t urlRegexList) {
+	std::atomic_store(&m_urlBlockList, urlRegexList);
 }
 

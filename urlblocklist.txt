@@ -1,8 +1,0 @@
-# this file accepts pcre regex. 
-# blocks url from being inserted into spiderdb
-# one line per regex
-
-# path
-^https?://[^/]+/wp-admin/
-^https?://[^/]+/wp-login.php
-^https?://[^/]+/xmlrpc.php
