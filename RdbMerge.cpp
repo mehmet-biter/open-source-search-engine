@@ -248,6 +248,11 @@ bool RdbMerge::resumeMerge() {
 			return true;
 		}
 
+		// return if this blocked
+		if (!dedupList()) {
+			return false;
+		}
+
 		// . otherwise dump the list we read to our target file
 		// . this returns false if blocked, true otherwise
 		if (!dumpList()) {
@@ -377,6 +382,11 @@ void RdbMerge::gotListWrapper(void *state, RdbList * /*list*/, Msg5 * /*msg5*/) 
 		}
 
 		// return if this blocked
+		if (!THIS->dedupList()) {
+			return;
+		}
+
+		// return if this blocked
 		if (!THIS->dumpList()) {
 			return;
 		}
@@ -414,7 +424,93 @@ void RdbMerge::tryAgainWrapper(int /*fd*/, void *state) {
 	// if this didn't block do the loop
 	gotListWrapper(THIS, NULL, NULL);
 }
-		
+
+void RdbMerge::dedupListWrapper(void *state) {
+	RdbMerge *THIS = (RdbMerge *)state;
+
+	if (THIS->m_rdbId == RDB_SPIDERDB) {
+		dedupSpiderdbList(&(THIS->m_list));
+	}
+}
+
+// similar to gotListWrapper but we call dumpList() before dedupList()
+void RdbMerge::dedupDoneWrapper(void *state, job_exit_t exit_type) {
+	// get a ptr to ourselves
+	RdbMerge *THIS = (RdbMerge *)state;
+
+	for (;;) {
+		// return if this blocked
+		if (!THIS->dumpList()) {
+			return;
+		}
+
+		// return if this blocked
+		if (!THIS->getNextList()) {
+			return;
+		}
+
+		// if g_errno is out of memory then msg3 wasn't able to get the lists
+		// so we should sleep and retry
+		if (g_errno == ENOMEM) {
+			THIS->doSleep();
+			return;
+		}
+
+		// if g_errno we're done
+		if (g_errno || THIS->m_doneMerging) {
+			THIS->doneMerging();
+			return;
+		}
+
+		// return if this blocked
+		if (!THIS->dedupList()) {
+			return;
+		}
+
+		// otherwise, keep on trucking
+	}
+}
+
+bool RdbMerge::dedupList() {
+	// return true on g_errno
+	if (g_errno) {
+		return true;
+	}
+
+	// . it's suspended so we count this as blocking
+	// . resumeMerge() will call getNextList() again, not dumpList() so
+	//   don't advance m_startKey
+	if(m_isHalted) {
+		return false;
+	}
+
+	// if we use getLastKey() for this the merge completes but then
+	// tries to merge two empty lists and cores in the merge function
+	// because of that. i guess it relies on endkey rollover only and
+	// not on reading less than minRecSizes to determine when to stop
+	// doing the merge.
+	m_list.getEndKey(m_startKey) ;
+	KEYINC(m_startKey,m_ks);
+
+	/////
+	//
+	// dedup for spiderdb before we dump it. try to save disk space.
+	//
+	/////
+	if (m_rdbId == RDB_SPIDERDB) {
+		if (g_jobScheduler.submit(dedupListWrapper, dedupDoneWrapper, this, thread_type_spider_dedup, 0)) {
+			return false;
+		}
+
+		log(LOG_WARN, "db: Unable to submit job for deduping spiderdb. Will run in main thread");
+
+		// fall back to dedup without thread
+		dedupSpiderdbList(&m_list);
+	}
+
+	return true;
+}
+
 // similar to gotListWrapper but we call getNextList() before dumpList()
 void RdbMerge::dumpListWrapper(void *state) {
 	// debug msg
@@ -454,6 +550,11 @@ void RdbMerge::dumpListWrapper(void *state) {
 		}
 
 		// return if this blocked
+		if (!THIS->dedupList()) {
+			return;
+		}
+
+		// return if this blocked
 		if (!THIS->dumpList()) {
 			return;
 		}
@@ -467,35 +568,6 @@ void RdbMerge::dumpListWrapper(void *state) {
 // . list should be truncated, possible have all negative keys removed,
 //   and de-duped thanks to RdbList::indexMerge_r() and RdbList::merge_r()
 bool RdbMerge::dumpList() {
-	// return true on g_errno
-	if (g_errno) {
-		return true;
-	}
-
-	// . it's suspended so we count this as blocking
-	// . resumeMerge() will call getNextList() again, not dumpList() so
-	//   don't advance m_startKey
-	if(m_isHalted) {
-		return false;
-	}
-
-	// if we use getLastKey() for this the merge completes but then
-	// tries to merge two empty lists and cores in the merge function
-	// because of that. i guess it relies on endkey rollover only and
-	// not on reading less than minRecSizes to determine when to stop
-	// doing the merge.
-	m_list.getEndKey(m_startKey) ;
-	KEYINC(m_startKey,m_ks);
-
-	/////
-	//
-	// dedup for spiderdb before we dump it. try to save disk space.
-	//
-	/////
-	if (m_rdbId == RDB_SPIDERDB) {
-		dedupSpiderdbList( &m_list );
-	}
-
 	// if the startKey rolled over we're done
 	if (KEYCMP(m_startKey, KEYMIN(), m_ks) == 0) {
 		m_doneMerging = true;

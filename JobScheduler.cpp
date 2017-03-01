@@ -409,6 +409,7 @@ bool JobScheduler_impl::submit(thread_type_t thread_type, JobEntry &e)
 			case thread_type_spider_write:       job_queue = &cpu_job_queue;      break;
 			case thread_type_spider_filter:      job_queue = &external_job_queue; break;
 			case thread_type_spider_query:       job_queue = &cpu_job_queue;      break;
+			case thread_type_spider_dedup:       job_queue = &cpu_job_queue;      break;
 			case thread_type_replicate_write:    job_queue = &cpu_job_queue;      break;
 			case thread_type_replicate_read:     job_queue = &cpu_job_queue;      break;
 			case thread_type_file_merge:         job_queue = &merge_job_queue;    break;
