@@ -19,6 +19,7 @@ static const char *thread_type_name(thread_type_t tt) {
 		case thread_type_spider_write:       return "spider-write";
 		case thread_type_spider_filter:      return "spider-filter";
 		case thread_type_spider_query:       return "spider-query";
+		case thread_type_spider_dedup:       return "spider-dedup";
 		case thread_type_replicate_write:    return "replicate-write";
 		case thread_type_replicate_read:     return "replicate-read";
 		case thread_type_file_merge:         return "file-merge";
