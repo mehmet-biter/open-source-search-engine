@@ -458,7 +458,6 @@ static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(&collnum,sizeof(collnum));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&rdbId,sizeof(rdbId));
-	VALGRIND_CHECK_MEM_IS_DEFINED(&shardNum,sizeof(shardNum));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&recSize,sizeof(recSize));
 	VALGRIND_CHECK_MEM_IS_DEFINED(rec,recSize);
 #endif
