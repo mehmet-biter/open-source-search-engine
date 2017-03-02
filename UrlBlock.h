@@ -34,6 +34,13 @@ struct urlblockregex_t {
 	std::string m_domain;
 };
 
+struct urlblocktld_t {
+	urlblocktld_t(const std::string &tlds);
+
+	std::string m_tldsStr;
+	std::vector<std::string> m_tlds;
+};
+
 class Url;
 
 class UrlBlock {
@@ -42,6 +49,7 @@ public:
 	UrlBlock(const std::shared_ptr<urlblockhost_t> &urlblockhost);
 	UrlBlock(const std::shared_ptr<urlblockpath_t> &urlblockpath);
 	UrlBlock(const std::shared_ptr<urlblockregex_t> &urlblockregex);
+	UrlBlock(const std::shared_ptr<urlblocktld_t> &urlblocktld);
 
 	bool match(const Url &url) const;
 	void logMatch(const Url &url) const;
@@ -51,7 +59,8 @@ private:
 		url_block_domain,
 		url_block_host,
 		url_block_path,
-		url_block_regex
+		url_block_regex,
+		url_block_tld
 	};
 
 	urlblocktype_t m_type;
@@ -60,6 +69,7 @@ private:
 	std::shared_ptr<urlblockhost_t> m_host;
 	std::shared_ptr<urlblockpath_t> m_path;
 	std::shared_ptr<urlblockregex_t> m_regex;
+	std::shared_ptr<urlblocktld_t> m_tld;
 };
 
 #endif //GB_URLBLOCK_H
