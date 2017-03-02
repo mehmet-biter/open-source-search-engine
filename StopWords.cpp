@@ -1783,7 +1783,7 @@ static const char *s_queryStopWordsGerman[] = {
 	"dem",		// 
 	"die",		// 
 	"das",		// 
-	//"daъ",		// that
+	//"daß",		// that
 	"derselbe",	// the
 	"derselben",	// 
 	"denselben",	// 
@@ -1838,7 +1838,7 @@ static const char *s_queryStopWordsGerman[] = {
 	//"euren",	// 
 	//"eurer",	// 
 	//"eures",	// 
-	"fЭr",		// for
+	"für",		// for
 	//"gegen",	// towards
 	//"gewesen",	// p.p.
 	//"hab",		// have
@@ -1932,7 +1932,7 @@ static const char *s_queryStopWordsGerman[] = {
 	//"sollte",	// should
 	//"sondern",	// but
 	//"sonst",	// else
-	"Эber",		// over
+	"über",		// over
 	//"um",		// about,
 	"und",		// and
 	//"uns",		// us
@@ -1971,8 +1971,8 @@ static const char *s_queryStopWordsGerman[] = {
 	//"wo",		// where
 	//"wollen",	// want
 	//"wollte",	// wanted
-	//"wЭrde",	// would
-	//"wЭrden",	// would
+	//"würde",	// would
+	//"würden",	// would
 	"zu",		// to
 	"zum",		// zu
 	"zur",	// zu
@@ -3019,7 +3019,7 @@ static const char      *s_commonWords[] = {
 	"ma",		// but
 	"ed",		// and
 	"se",		// if
-	"perchИ",	// why,
+	"perché",	// why,
 	"anche",	// also
 //		"come",		// how
 	"dov",		// where
@@ -3063,7 +3063,7 @@ static const char      *s_commonWords[] = {
 	"til",		// to
 	"er",		// is
 	"som",		// who/that
-	"pЕ",		// on
+	"på",		// on
 	"de",		// they
 	"med",		// with
 	"han",		// he
@@ -3071,7 +3071,7 @@ static const char      *s_commonWords[] = {
 	"ikke",		// not
 	"inte",		// not
 	"der",		// there
-	"sЕ",		// so
+	"så",		// so
 	"var",		// was
 	"meg",		// me
 	"seg",		// you
@@ -3086,7 +3086,7 @@ static const char      *s_commonWords[] = {
 	"hade",		// had
 	"hu",		// she
 	"hun",		// she
-	"nЕ",		// now
+	"nå",		// now
 	"over",		// over
 	"da",		// when/as
 	"ved",		// by/know
@@ -3105,7 +3105,7 @@ static const char      *s_commonWords[] = {
 	"hva",		// what
 	"skal",		// shall/must
 	"selv",		// self
-	"sjЬl",		// self
+	"sjøl",		// self
 	"her",		// here
 	"alle",		// all
 	"vil",		// will
@@ -3115,8 +3115,8 @@ static const char      *s_commonWords[] = {
 	"blitt",	// have
 	"kunne",	// could
 	"inn",		// in
-	"nЕr",		// when
-	"vФre",		// be
+	"når",		// when
+	"være",		// be
 	"kom",		// come
 	"noen",		// some
 	"noe",		// some
@@ -3137,7 +3137,7 @@ static const char      *s_commonWords[] = {
 	"sine",		// hers/his
 	"sitt",		// hers/his
 	"mot",		// against
-	"Е",		// to
+	"å",		// to
 	"meget",	// much
 	"hvorfor",	// why
 	"sia",		// since
@@ -3155,18 +3155,18 @@ static const char      *s_commonWords[] = {
 	"samme",	// same
 	"hvilken",	// which
 	"hvilke",	// which
-	"sЕnn",		// such
+	"sånn",		// such
 	"inni",		// inside/within
 	"mellom",	// between
-	"vЕr",		// our
+	"vår",		// our
 	"hver",		// each
 	"hvem",		// who
 	"vors",		// us/ours
 	"dere",		// their
 	"deres",	// theirs
 	"hvis",		// whose
-	"bЕde",		// both
-	"bЕe",		// both
+	"både",		// both
+	"båe",		// both
 	"begge",	// both
 	"siden",	// since
 	"dykk",		// your
@@ -3184,7 +3184,7 @@ static const char      *s_commonWords[] = {
 	"eitt",		// a/an
 	"elles",	// or
 	"honom",	// he
-	"hjЕ",		// at
+	"hjå",		// at
 	"ho",		// she
 	"hoe",		// she
 	"henne",	// her
@@ -3231,9 +3231,9 @@ static const char      *s_commonWords[] = {
 	"varte",	// became
 	"vart",		// became
 	"er",		// am
-	"vФre",		// to
+	"være",		// to
 	"var",		// was
-	"Е",		// on
+	"å",		// on
 
 
 	// portuguese stop words
@@ -3845,8 +3845,8 @@ int32_t isCommonWord ( int64_t h ) {
 			if ( ! s_commonWordTable.addTerm(swh,i+1 ) )
 				return 0;
 			// . add w/o accent marks too!
-			// . skip "fЭr" though because fur is an eng. word
-			//if ( *sw=='f' && *(sw+1)=='Э' &&
+			// . skip "für" though because fur is an eng. word
+			//if ( *sw=='f' && *(sw+1)=='ü' &&
 			//     *(sw+2)=='r' && swlen == 3 ) continue;
 			//swh   = hash64AsciiLower ( sw , swlen );
 			//s_commonWordTable.addTerm(swh,i+1,i+1,true);

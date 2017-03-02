@@ -736,6 +736,8 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 			continue;
 		}
 
+		if(isInMergeDir)
+			log(LOG_WARN,"db: found leftover merge file in merge dir: %s", fullFilename.getBufStart());
 		// . put this file into our array of files/maps for this db
 		// . MUST be in order of fileId for merging purposes
 		// . we assume older files come first so newer can override
@@ -1372,6 +1374,11 @@ bool RdbBase::incorporateMerge ( ) {
 		}
 	}
 
+	if(g_errno) {
+		log(LOG_ERROR, "merge: unlinking source files failed, g_errno=%d (%s)", g_errno, mstrerror(g_errno));
+		gbshutdownAbort(true);
+	}
+	
 	// wait for the above unlinks to finish before we do this rename
 	// otherwise, we might end up doing this rename first and deleting
 	// it!
@@ -1396,6 +1403,10 @@ void RdbBase::unlinkDoneWrapper(void *state) {
 
 
 void RdbBase::unlinkDone() {
+	if(g_errno) {
+		log(LOG_ERROR, "merge: unlinking source files failed, g_errno=%d (%s)", g_errno, mstrerror(g_errno));
+		gbshutdownAbort(true);
+	}
 	// bail if waiting for more to come back
 	if(!decrementOustandingJobs())
 		return; //still more to finish
@@ -1405,6 +1416,11 @@ void RdbBase::unlinkDone() {
 void RdbBase::unlinksDone() {
 	// debug msg
 	log (LOG_INFO,"merge: Done unlinking all files.");
+
+	if(g_errno) {
+		log(LOG_ERROR, "merge: unlinking source files failed, g_errno=%d (%s)", g_errno, mstrerror(g_errno));
+		gbshutdownAbort(true);
+	}
 
 	// merge source range [a..b), merge target x
 	int32_t a = m_mergeStartFileNum;
@@ -1437,6 +1453,9 @@ void RdbBase::unlinksDone() {
 	generateMapFilename(newMapFilename,sizeof(newMapFilename),m_fileInfo[x].m_fileId,m_fileInfo[x].m_fileId2,0,-1);
 	if ( ! m_fileInfo[x].m_map->rename(newMapFilename, m_collectionDirName, renameDoneWrapper, this) ) {
 		incrementOutstandingJobs();
+	} else if(g_errno) {
+		log(LOG_ERROR, "merge: renaming file(s) failed, g_errno=%d (%s)", g_errno, mstrerror(g_errno));
+		gbshutdownAbort(true);
 	}
 
 	if( m_useIndexFile ) {
@@ -1444,6 +1463,9 @@ void RdbBase::unlinksDone() {
 		generateIndexFilename(newIndexFilename,sizeof(newIndexFilename),m_fileInfo[x].m_fileId,m_fileInfo[x].m_fileId2,0,-1);
 		if ( ! m_fileInfo[x].m_index->rename(newIndexFilename, m_collectionDirName, renameDoneWrapper, this) ) {
 			incrementOutstandingJobs();
+		} else if(g_errno) {
+			log(LOG_ERROR, "merge: renaming file(s) failed, g_errno=%d (%s)", g_errno, mstrerror(g_errno));
+			gbshutdownAbort(true);
 		}
 	}
 
@@ -1452,6 +1474,9 @@ void RdbBase::unlinksDone() {
 	// rename it, this may block
 	if ( ! m_fileInfo[x].m_file->rename(newDataName, m_collectionDirName, renameDoneWrapper,this) ) {
 		incrementOutstandingJobs();
+	} else if(g_errno) {
+		log(LOG_ERROR, "merge: renaming file(s) failed, g_errno=%d (%s)", g_errno, mstrerror(g_errno));
+		gbshutdownAbort(true);
 	}
 
 	{
@@ -1481,6 +1506,10 @@ void RdbBase::checkThreadsAgainWrapper(int /*fd*/, void *state) {
 
 
 void RdbBase::renameDone() {
+	if(g_errno) {
+		log(LOG_ERROR, "merge: renaming file(s) failed, g_errno=%d (%s)", g_errno, mstrerror(g_errno));
+		gbshutdownAbort(true);
+	}
 	// bail if waiting for more to come back
 	if(!decrementOustandingJobs())
 		return;

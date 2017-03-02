@@ -667,6 +667,13 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 	// the ST_SITE field anyway...
 	if ( ! ufu && ! us ) return true;
 
+	const CollectionRec *cr = g_collectiondb.getRec(r);
+	if(!cr) {
+		//uhm?
+		return true;
+	}
+	collnum_t collnum = cr->m_collnum;
+
 	// make it null terminated since we no longer do this automatically
 	fou.pushChar('\0');
 
@@ -734,12 +741,16 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 
 			// save buffer spot in case we have to rewind
 			int32_t saved = m_sbuf.length();
+			
+			SiteGetter sg;
+			sg.getSite(urlPtr, NULL, 0, collnum, 0);
+			
 
 			// . add to tag rdb recs in safebuf
 			// . this pushes the rdbid as first byte
 			// . mdwmdwmdw
 			Tag *tag = Tagdb::addTag(&m_sbuf,
-						 urlPtr,
+						 sg.getSite(),
 						 tagTypeStr ,
 						 tagTime ,
 						 tagUser ,
@@ -1422,7 +1433,7 @@ bool Msg8a::launchGetRequests ( ) {
 			startKey = m_siteStartKey;
 			endKey   = m_siteEndKey;
 
-			log( LOG_DEBUG, "tagdb: looking up site tags for %s", m_url->getUrl() );
+			log( LOG_DEBUG, "tagdb: looking up site tags for site-part of URL %s", m_url->getUrl() );
 		}
 
 		// get the next mcast
@@ -1483,7 +1494,6 @@ bool Msg8a::launchGetRequests ( ) {
 						   0                   , // startFileNum
 						   -1                  , // numFiles
 						   msg0_getlist_infinite_timeout );// timeout
-
 			if (status) {
 				mdelete(state, sizeof(*state), "msg8astate");
 				delete state;
@@ -1637,7 +1647,6 @@ public:
 	TcpSocket   *m_socket;
 	bool         m_adding;
 	collnum_t m_collnum;
-	bool         m_isLocal;
 	HttpRequest  m_r;
 	TagRec       m_tagRec;
 	TagRec       m_newtr;
@@ -1648,7 +1657,6 @@ public:
 	Msg1         m_msg1;
 	RdbList      m_list;
 	int32_t         m_niceness;
-	bool         m_mergeTags;
 };
 
 // . returns false if blocked, true otherwise
@@ -1729,9 +1737,6 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 		urls = "";
 	}
 
-	// are we coming from a local machine?
-	st->m_isLocal = r->isLocal();
-
 	// it references into the request, should be ok
 	st->m_collnum = cr->m_collnum;
 
@@ -1755,7 +1760,6 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 
 	// regardless, we have to get the tagrec for all operations
 	st->m_url.set( urls );
-	st->m_mergeTags = merge;
 
 	return getTagRec ( st );
 }

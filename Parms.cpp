@@ -1241,7 +1241,7 @@ bool printDropDown ( int32_t n , SafeBuf* sb, char *name, int32_t select ) {	// 
 	if ( select < 0 ) select = 0;
 
 	for ( int32_t i = 0 ; i < n ; ++i ) {
-		sb->safePrintf( "<option value=%" PRId32"%s>%" PRId32, i, ( i == select ) ? "selected" : "", i );
+		sb->safePrintf( "<option value=%" PRId32"%s>%" PRId32, i, ( i == select ) ? " selected" : "", i );
 	}
 
 	sb->safePrintf ( "</select>" );
@@ -1486,6 +1486,35 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 	}
 
 	return status;
+}
+
+
+//calculate how wide a form field should be based in the value range
+//todo: handle this correctly for 64-bit integers
+static int calculateFieldWidth(int32_t smin, int32_t smax) {
+	int width_for_sign = smin<0 ? 1 : 0;
+	int width_for_digits;
+	if(     smax>=1000000000)
+		width_for_digits = 10;
+	else if(smax>= 100000000)
+		width_for_digits = 9;
+	else if(smax>=  10000000)
+		width_for_digits = 8;
+	else if(smax>=   1000000)
+		width_for_digits = 7;
+	else if(smax>=    100000)
+		width_for_digits = 6;
+	else if(smax>=     10000)
+		width_for_digits = 5;
+	else if(smax>=      1000)
+		width_for_digits = 4;
+	else if(smax>=       100)
+		width_for_digits = 3;
+	else if(smax>=        10)
+		width_for_digits = 2;
+	else
+		width_for_digits = 1;
+	return width_for_sign + width_for_digits;
 }
 
 
@@ -1859,10 +1888,11 @@ bool Parms::printParm( SafeBuf* sb,
 		sb->safePrintf("name=%s%s>", cgi, val);
 		sb->safePrintf("</nobr>");
 	}
-	else if ( t == TYPE_CHAR )
+	else if ( t == TYPE_CHAR ) {
+		int width = calculateFieldWidth(m->m_smin,m->m_smax);
 		sb->safePrintf ("<input type=text name=%s value=\"%" PRId32"\" "
-				"size=3>",cgi,(int8_t)(*s));
-	else if ( t == TYPE_PRIORITY )
+				"size=%d>",cgi,(int8_t)(*s),width);
+	} else if ( t == TYPE_PRIORITY )
 		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s );
 	else if ( t == TYPE_SAFEBUF &&
 		  strcmp(m->m_title,"url filters profile")==0)
@@ -1901,24 +1931,24 @@ bool Parms::printParm( SafeBuf* sb,
 	else if ( t == TYPE_IP ) {
 		if ( m->m_max > 0 && j == jend )
 			sb->safePrintf ("<input type=text name=%s value=\"\" "
-					"size=12>",cgi);
+					"size=15>",cgi);
 		else
 			sb->safePrintf ("<input type=text name=%s value=\"%s\" "
-					"size=12>",cgi,iptoa(*(int32_t *)s));
+					"size=15>",cgi,iptoa(*(int32_t *)s));
 	}
 	else if ( t == TYPE_INT32 ) {
+		int width = calculateFieldWidth(m->m_smin,m->m_smax);
 		sb->safePrintf ("<input type=text name=%s "
 				"value=\"%" PRId32"\" "
-				// 3 was ok on firefox but need 6
-				// on chrome
-				"size=6>",cgi,*(int32_t *)s);
+				"size=%d>",cgi,*(int32_t *)s,width);
 	}
 	else if ( t == TYPE_INT32_CONST )
 		sb->safePrintf ("%" PRId32,*(int32_t *)s);
-	else if ( t == TYPE_INT64 )
+	else if ( t == TYPE_INT64 ) {
+		int width = calculateFieldWidth(m->m_smin,m->m_smax);
 		sb->safePrintf ("<input type=text name=%s value=\"%" PRId64"\" "
-				"size=12>",cgi,*(int64_t *)s);
-	else if ( t == TYPE_STRING || t == TYPE_STRINGNONEMPTY ) {
+				"size=%d>",cgi,*(int64_t *)s,width);
+	} else if ( t == TYPE_STRING || t == TYPE_STRINGNONEMPTY ) {
 		int32_t size = m->m_size;
 		if ( size > 20 ) size = 20;
 		sb->safePrintf ("<input type=text name=%s size=%" PRId32" value=\"",
@@ -2015,6 +2045,9 @@ bool Parms::printParm( SafeBuf* sb,
 		sb->htmlEncode ( s , strlen(s), false );
 		sb->safePrintf ("</textarea>\n");
 	}
+
+	if(m->m_units && (t==TYPE_CHAR || t==TYPE_FLOAT || t==TYPE_INT32 || t==TYPE_INT64 || t==TYPE_INT32_CONST || t==TYPE_DOUBLE))
+		sb->safePrintf(" %s",m->m_units);
 
 	// end the input cell
 	sb->safePrintf ( "</td>\n");
@@ -5736,10 +5769,11 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "URL realtime classification timeout";
-	m->m_desc  = "Per-URL timeout. In milliseconds";
+	m->m_desc  = "Per-URL timeout.";
 	m->m_cgi   = "url_classification_timeout";
 	simple_m_set(Conf,m_urlClassificationTimeout);
 	m->m_def   = "500";
+	m->m_units = "milliseconds";
 	m->m_smin  = 0;
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -5760,11 +5794,12 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "stable-summary cache max age";
-	m->m_desc  = "How long to cache stable summaries, in milliseconds";
+	m->m_desc  = "How long to cache stable summaries.";
 	m->m_cgi   = "stablesumcacheage";
 	m->m_xml   = "StableSummaryCacheAge";
 	simple_m_set(Conf,m_stableSummaryCacheMaxAge);
 	m->m_def   = "86400000";
+	m->m_units = "milliseconds";
 	m->m_units = "milliseconds";
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
@@ -5784,7 +5819,7 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "stable-summary cache max age";
-	m->m_desc  = "How long to cache unstable summaries, in milliseconds";
+	m->m_desc  = "How long to cache unstable summaries.";
 	m->m_cgi   = "unstablesumcacheage";
 	m->m_xml   = "UnstableSummaryCacheAge";
 	simple_m_set(Conf,m_unstableSummaryCacheMaxAge);
@@ -5808,7 +5843,7 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "TagRec (Msg8a) cache max age";
-	m->m_desc  = "How long to cache TagRec, in milliseconds";
+	m->m_desc  = "How long to cache TagRec.";
 	m->m_cgi   = "tagreccacheage";
 	m->m_xml   = "TagRecCacheAge";
 	simple_m_set(Conf, m_tagRecCacheMaxAge);
@@ -6113,7 +6148,7 @@ void Parms::init ( ) {
 	m->m_min   = 0;
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
-	m->m_group = false;
+	m->m_group = true;
 	m++;
 
 	m->m_title = "max summary threads";
@@ -6170,6 +6205,19 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	m->m_title = "max job cleanup time";
+	m->m_desc  = "Maximum number of milliseconds the main thread is allow to spend on cleanup up finished jobs. "
+		"Disable with =0. If enabled the main thraed will abort the process if it detects a job cleanup taking too long.";
+	m->m_cgi   = "maxjobcleanuptime";
+	simple_m_set(Conf,m_maxJobCleanupTime);
+	m->m_def   = "0";
+	m->m_units = "milliseconds";
+	m->m_min   = 0;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
 
 	m->m_title = "flush disk writes";
 	m->m_desc  = "If enabled then all writes will be flushed to disk. "
@@ -6180,7 +6228,7 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m->m_flags = PF_API;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
-	m->m_group = false;
+	m->m_group = true;
 	m++;
 
 	m->m_title = "verify tree integrity";
@@ -7438,12 +7486,13 @@ void Parms::init ( ) {
 
 
 	m->m_title = "msg40->39 timeout";
-	m->m_desc  = "Timeout for Msg40/Msg3a to collect candidate docids with Msg39. In milliseconds";
+	m->m_desc  = "Timeout for Msg40/Msg3a to collect candidate docids with Msg39.";
 	m->m_cgi   = "msgfourty_msgthirtynine_timeout";
 	simple_m_set(Conf,m_msg40_msg39_timeout);
 	m->m_xml   = "msg40_msg39_timeout";
 	m->m_page  = PAGE_SEARCH;
 	m->m_def   = "5000";
+	m->m_units = "milliseconds";
 	m->m_flags = 0;
 	m++;
 
@@ -7501,14 +7550,14 @@ void Parms::init ( ) {
 	////////////////////
 
 	m->m_title = "clusterdb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? "
-	             "Gigablast does a lookup in clusterdb for each search result at query time to "
+	m->m_desc  = "Gigablast does a lookup in clusterdb for each search result at query time to "
 	             "get its site information for site clustering. If you "
 	             "disable site clustering in the search controls then "
 	             "clusterdb will not be consulted.";
 	m->m_cgi   = "dpcsc";
 	simple_m_set(Conf,m_clusterdbFileCacheSize);
 	m->m_def   = "30000000";
+	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_group = true;
@@ -7567,10 +7616,11 @@ void Parms::init ( ) {
 	////////////////////
 
 	m->m_title = "posdb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? Posdb is the index.";
+	m->m_desc  = "Posdb is the index.";
 	m->m_cgi   = "dpcsp";
 	simple_m_set(Conf,m_posdbFileCacheSize);
 	m->m_def   = "30000000";
+	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_group = true;
@@ -7622,13 +7672,14 @@ void Parms::init ( ) {
 	////////////////////
 
 	m->m_title = "spiderdb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? Titledb "
+	m->m_desc  = "Titledb "
 	             "holds the cached web pages, compressed. Gigablast consults "
 	             "it to generate a summary for a search result, or to see if "
 	             "a url Gigablast is spidering is already in the index.";
 	m->m_cgi   = "dpcsy";
 	simple_m_set(Conf,m_spiderdbFileCacheSize);
 	m->m_def   = "30000000";
+	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_group = true;
@@ -7663,12 +7714,13 @@ void Parms::init ( ) {
 	////////////////////
 
 	m->m_title = "tagdb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? Tagdb is "
+	m->m_desc  = "Tagdb is "
 	             "consulted at spider time and query time to determine "
 	             "if a url or outlink is banned or what its siterank is, etc.";
 	m->m_cgi   = "dpcst";
 	simple_m_set(Conf,m_tagdbFileCacheSize);
 	m->m_def   = "30000000";
+	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_group = true;
@@ -7703,13 +7755,14 @@ void Parms::init ( ) {
 	////////////////////
 
 	m->m_title = "titledb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? Titledb "
+	m->m_desc  = "Titledb "
 			"holds the cached web pages, compressed. Gigablast consults "
 			"it to generate a summary for a search result, or to see if "
 			"a url Gigablast is spidering is already in the index.";
 	m->m_cgi   = "dpcsx";
 	simple_m_set(Conf,m_titledbFileCacheSize);
 	m->m_def   = "30000000";
+	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_group = true;
@@ -7768,7 +7821,9 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "Merge space directory";
-	m->m_desc  = "Location of merge-space";
+	m->m_desc  = "Location of merge-space. "
+	             "The location should be a persistent storage so it isn't wipred upon reboot or similar. "
+		     "Using /tmp if it is a regular storage file system is fine. If it is 'tmpfs' then data loss will happen if server is rebooted while a merge is going on.";
 	m->m_cgi   = "mergespacedir";
 	m->m_off   = offsetof(Conf,m_mergespaceDirectory);
 	m->m_type  = TYPE_STRING;
@@ -7888,12 +7943,13 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-	m->m_title = "spider delay in milliseconds";
-	m->m_desc  = "make each spider wait this many milliseconds before "
+	m->m_title = "spider delay";
+	m->m_desc  = "make each spider wait this long before "
 		"getting the ip and downloading the page.";
 	m->m_cgi  = "sdms";
 	simple_m_set(CollectionRec,m_spiderDelayInMilliseconds );
 	m->m_def   = "0";
+	m->m_units = "milliseconds";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_CLONE;

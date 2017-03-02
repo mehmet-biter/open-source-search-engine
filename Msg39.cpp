@@ -357,16 +357,15 @@ void Msg39::getDocIds2() {
 	// ensure matches with the msg3a sending us this request
 	if ( m_query.getNumTerms() != m_msg39req->m_nqt ) {
 		g_errno = EBADENGINEER;
-		log("query: Query parsing inconsistency for q=%s. "
-		    "%i != %i. "
-		    "langid=%" PRId32". Check langids and m_queryExpansion parms "
+		log(LOG_ERROR, "query: Query parsing inconsistency for q='%s'. %i != %i. "
+		    "langid=%d. Check langids and m_queryExpansion parms "
 		    "which are the only parms that could be different in "
 		    "Query::set2(). You probably have different mysynoyms.txt "
 		    "files on two different hosts! check that!!"
 		    ,m_query.originalQuery()
 		    ,(int)m_query.getNumTerms()
 		    ,(int)m_msg39req->m_nqt
-		    ,(int32_t)m_msg39req->m_language
+		    ,(int)m_msg39req->m_language
 		    );
 		sendReply ( m_slot , this , NULL , 0 , 0 , true );
 		return ; 

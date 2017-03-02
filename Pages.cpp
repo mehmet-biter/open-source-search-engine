@@ -428,22 +428,14 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 	// TODO: make this a function we can call.
 	if ( g_conf.m_logHttpRequests && page == PAGE_MASTER ) { 
 		//&& pg->m_function==CommandSaveAndExit ) {
-		// get time format: 7/23/1971 10:45:32
-		time_t tt ;//= getTimeGlobal();
-		if ( isClockInSync() ) tt = getTimeGlobal();
-		else                   tt = getTimeLocal();
-		struct tm tm_buf;
-		struct tm *timeStruct = localtime_r(&tt,&tm_buf);
-		char buf[100];
-		strftime ( buf , 100 , "%b %d %T", timeStruct);
 		// what url refered user to this one?
 		char *ref = r->getReferer();
 		// skip over http:// in the referer
 		if ( strncasecmp ( ref , "http://" , 7 ) == 0 ) ref += 7;
 		// save ip in case "s" gets destroyed
 		int32_t ip = s->m_ip;
-		logf (LOG_INFO,"http: %s %s %s %s %s",
-		      buf,iptoa(ip),r->getRequest(),ref,
+		logf (LOG_INFO,"http: %s %s %s %s",
+		      iptoa(ip),r->getRequest(),ref,
 		      r->getUserAgent());
 	}
 

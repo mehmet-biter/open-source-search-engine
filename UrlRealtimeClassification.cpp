@@ -430,6 +430,8 @@ bool realtimeUrlClassificationWorks() {
 
 
 void finalizeRealtimeUrlClassification() {
+	if(wakeup_fd[1]<0)
+		return; //not active
 	please_stop = true;
 	char dummy='d';
 	(void)write(wakeup_fd[1],&dummy,1);

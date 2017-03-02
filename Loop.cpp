@@ -652,7 +652,31 @@ void Loop::runLoop ( ) {
 		//
 		doPoll();
 	}
+
 }
+
+
+static void cleanupFinishedJobs() {
+	if(g_conf.m_maxJobCleanupTime<=0)
+		g_jobScheduler.cleanup_finished_jobs();
+	else {
+		struct timespec ts_start;
+		clock_gettime(CLOCK_MONOTONIC,&ts_start);
+		
+		g_jobScheduler.cleanup_finished_jobs();
+		
+		struct timespec ts_end;
+		clock_gettime(CLOCK_MONOTONIC,&ts_end);
+		
+		int msecs = (ts_end.tv_sec - ts_start.tv_sec)*1000
+		          + (ts_end.tv_nsec - ts_start.tv_nsec)/1000000;
+		if(msecs>g_conf.m_maxJobCleanupTime) {
+			log(LOG_LOGIC,"Cleaning up job(s) took %dms hwich is more than allowed. Dumping core",msecs);
+			g_process.shutdownAbort();
+		}
+	}
+}
+
 
 //--- TODO: flush the signal queue after polling until done
 //--- are we getting stale signals resolved by flush so we get
@@ -679,8 +703,6 @@ void Loop::doPoll ( ) {
 	// based it only goes off when that much "cpu time" has elapsed.
 	v.tv_usec = 10 * 1000;
 
- again:
-
 	// gotta copy to our own since bits get cleared by select() function
 	fd_set readfds = s_selectMaskRead;
 	fd_set writefds = s_selectMaskWrite;
@@ -700,53 +722,15 @@ void Loop::doPoll ( ) {
 		    NULL,//&exceptfds,
 		    &v );
 
-	if ( n >= 0 ) errno = 0;
-
-	logDebug( g_conf.m_logDebugLoop, "loop: out select n=%" PRId32" errno=%" PRId32" errnomsg=%s ms_wait=%i",
-	          (int32_t)n,(int32_t)errno,mstrerror(errno), (int)v.tv_sec*1000);
-
-	if ( n < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) {
-			// got it. if we get a sig alarm or vt alarm or
-			// SIGCHLD (from Threads.cpp) we end up here.
-			//log("loop: got errno=%" PRId32,(int32_t)errno);
-
-			// if not linux we have to decrease this by 1ms
-			//count -= 1000;
-
-			// and re-assign to wait less time. we are
-			// assuming SIGALRM goes off once per ms and if
-			// that is not what interrupted us we may end
-			// up exiting early
-			//if ( count <= 0 && m_shutdown ) return;
-
-			// wait less this time around
-			//v.tv_usec = count;
-
-			// if shutting down was it a sigterm ?
-			if ( m_shutdown ) goto again;
-
-			// handle returned threads for niceness 0
-			g_jobScheduler.cleanup_finished_jobs();
-
-			// high niceness threads
-			g_jobScheduler.cleanup_finished_jobs();
-
-			goto again;
-		}
+	if(n<0) {
 		g_errno = errno;
 		log( LOG_WARN, "loop: select: %s.", strerror( g_errno ) );
 		return;
 	}
+	
+	errno = 0;
 
-	// if we wait for 10ms with nothing happening, fix cpu usage here too
-	// if ( n == 0 ) {
-	// 	Host *h = g_hostdb.m_myHost;
-	// 	h->m_cpuUsage = .99 * h->m_cpuUsage + .01 * 000;
-	// }
-
-	logDebug( g_conf.m_logDebugLoop, "loop: Got %" PRId32" fds waiting.", n );
+	logDebug( g_conf.m_logDebugLoop, "loop: select() returned %d", n);
 
 	if (g_conf.m_logDebugLoop || g_conf.m_logDebugTcp) {
 		for ( int32_t i = 0; i < MAX_NUM_FDS; i++) {
@@ -761,8 +745,7 @@ void Loop::doPoll ( ) {
 		}
 	}
 
-	// handle returned threads for niceness 0
-	g_jobScheduler.cleanup_finished_jobs();
+	cleanupFinishedJobs();
 
 	const int64_t now = gettimeofdayInMilliseconds();
 
@@ -802,8 +785,7 @@ void Loop::doPoll ( ) {
 		callCallbacks_ass (false,fd, now,0);//false=forRead?
 	}
 
-	// handle returned threads for niceness 0
-	g_jobScheduler.cleanup_finished_jobs();
+	cleanupFinishedJobs();
 
 	// now for lower priority fds
 	for ( int32_t i = 0 ; i < s_numReadFds ; i++ ) {
@@ -847,8 +829,7 @@ void Loop::doPoll ( ) {
 		callCallbacks_ass(false, fd, now, 1);//forread?
 	}
 
-	// handle returned threads for all other nicenesses
-	g_jobScheduler.cleanup_finished_jobs();
+	cleanupFinishedJobs();
 
 	// call sleepers if they need it
 	// call this every (about) 1 second
@@ -864,8 +845,7 @@ void Loop::doPoll ( ) {
 		callCallbacks_ass ( true , MAX_NUM_FDS , gettimeofdayInMilliseconds() );
 		// note the last time we called them
 		s_lastTime = gettimeofdayInMilliseconds();
-		// handle returned threads for all other nicenesses
-		g_jobScheduler.cleanup_finished_jobs();
+		cleanupFinishedJobs();
 	}
 
 	logDebug( g_conf.m_logDebugLoop, "loop: Exited doPoll.");
