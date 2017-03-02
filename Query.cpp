@@ -109,6 +109,8 @@ bool Query::set2 ( const char *query        ,
 		   bool     queryExpansion ,
 		   bool     useQueryStopWords ,
 		   int32_t  maxQueryTerms  ) {
+	log(LOG_DEBUG,"query: set2(query='%s', queryExpansion=%s, useQueryStopWords=%s maxQueryTerms=%d)",
+	    query, queryExpansion?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
 
 	reset();
 
@@ -131,7 +133,7 @@ bool Query::set2 ( const char *query        ,
 
 	// truncate query if too big
 	if ( queryLen >= ABS_MAX_QUERY_LEN ) {
-		log("query: Query length of %" PRId32" must be less than %" PRId32". Truncating.",
+		log(LOG_WARN, "query: Query length of %" PRId32" must be less than %" PRId32". Truncating.",
 		    queryLen,(int32_t)ABS_MAX_QUERY_LEN);
 		queryLen = ABS_MAX_QUERY_LEN - 1;
 		m_truncated = true;
@@ -144,8 +146,6 @@ bool Query::set2 ( const char *query        ,
 	m_originalQuery.safeMemcpy(query, queryLen);
 	m_originalQuery.nullTerm();
 	
-	log(LOG_DEBUG, "query: set called = %s", m_originalQuery.getBufStart());
-
 	const char *q = query;
 	// see if it should be boolean...
 	for ( int32_t i = 0 ; i < queryLen ; i++ ) {
@@ -298,6 +298,8 @@ bool Query::set2 ( const char *query        ,
 			return false;
 	}
 
+
+	log(LOG_DEBUG,"query: m_numWords=%d, m_numTerms=%d", m_numWords, m_numTerms);
 
 	// . if it is not truncated, no need to use hard counts
 	// . comment this line and the next one out for testing hard counts
