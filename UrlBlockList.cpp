@@ -130,6 +130,14 @@ bool UrlBlockList::load() {
 
 				tmpUrlBlockList->push_back(UrlBlock(std::shared_ptr<urlblockregex_t>(new urlblockregex_t(col3, GbRegex(col3.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE), col2))));
 				break;
+			case 't':
+				if (memcmp(line.c_str(), "tld", firstColEnd) != 0) {
+					logTrace(g_conf.m_logTraceUrlBlockList, "");
+					continue;
+				}
+
+				tmpUrlBlockList->push_back(UrlBlock(std::shared_ptr<urlblocktld_t>(new urlblocktld_t(col2))));
+				break;
 			default:
 				continue;
 		}

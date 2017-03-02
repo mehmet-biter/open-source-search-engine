@@ -7,6 +7,7 @@
 #   - host
 #   - path
 #   - regex (pcre)
+#   - tld
 #
 # domain example
 # ==============
@@ -40,3 +41,11 @@ regex * https?://example\.com/(a|b)\.html
 
 # blocks url by regex (specific domain)
 regex example.com https?://example\.com/(a|b)\.html
+
+# tld example
+# ===========
+# block entire country specific domain
+#   blocks: www.example.my
+#   blocks: www.example.com.my
+#   blocks: www.example.sg
+tld	my,sg

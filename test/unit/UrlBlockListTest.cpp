@@ -58,6 +58,10 @@ TEST(UrlBlockListTest, Domain) {
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://specific.host.com/"));
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("https://specific.host.com/"));
 	EXPECT_FALSE(urlBlockList.isUrlBlocked("https://www.host.com/"));
+
+	EXPECT_TRUE(urlBlockList.isUrlBlocked("https://specific.host.dk/"));
+	EXPECT_TRUE(urlBlockList.isUrlBlocked("https://www.host.my/"));
+	EXPECT_TRUE(urlBlockList.isUrlBlocked("https://www.host.com.my/"));
 }
 
 TEST(UrlBlockListTest, Path) {
