@@ -8634,6 +8634,13 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		// set base to it
 		m_canonicalRedirUrl.set( cu, link, linkLen );
 
+		// Detect invalid canonical URLs like <link rel="canonical" href="https://://jobs.dart.biz/search/" />
+		// The Url class really should have a "isValid" function...
+		if( m_canonicalRedirUrl.getTLDLen() == 0 || m_canonicalRedirUrl.getDomainLen() == 0 ) {
+			log(LOG_DEBUG, "Invalid canonical URL ignored [%.*s]", linkLen, link);
+			continue;
+		}
+
 		// assume it is not our url
 		bool isMe = false;
 		// if it is us, then skip!
