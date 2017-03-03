@@ -858,8 +858,6 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 		return false;
 	}
 
-	bool is_privacore = (strcmp(cr->m_urlFiltersProfile.getBufStart(), "privacore") == 0);
-
 	// see ../url/Url2.cpp for hashAsLink() algorithm
 	for ( int32_t i = 0 ; i < m_links.m_numLinks ; i++ ) {
 		// skip links with zero 0 length
@@ -901,17 +899,8 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 			link.hasJsonExtension() ||
 			link.hasXmlExtension() ||
 			g_urlBlockList.isUrlBlocked(link)) {
-
 			logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", link.getUrl());
 			continue;			
-		}
-
-		if (is_privacore) {
-			// tld
-			if (link.isTLDInPrivacoreBlacklist()) {
-				logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", link.getUrl());
-				continue;
-			}
 		}
 
 		// dedup this crap

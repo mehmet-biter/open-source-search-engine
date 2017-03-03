@@ -98,10 +98,6 @@ const char *getTLD ( const char *host , int32_t hostLen ) {
 	return tld;
 }
 
-const char* getPrivacoreBlacklistedTLD() {
-	return "bn,cn,id,in,hk,jp,kh,kr,lk,mm,my,ph,pk,pw,ru,sg,th,tw,ua,vn";
-}
-
 //static TermTable  s_table(false);
 static HashTableX s_table;
 static bool       s_isInitialized = false;

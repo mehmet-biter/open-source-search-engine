@@ -15,6 +15,4 @@ char *getDomainOfIp ( char *host , int32_t hostLen , int32_t *dlen );
 // used by getDomain() above
 const char *getTLD ( const char *host , int32_t hostLen ) ;
 
-const char* getPrivacoreBlacklistedTLD();
-
 #endif // GB_DOMAINS_H

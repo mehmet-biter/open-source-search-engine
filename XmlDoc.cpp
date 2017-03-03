@@ -14848,8 +14848,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 
 	logTrace( g_conf.m_logTraceXmlDoc, "Handling %" PRId32" links", n);
 
-	bool is_privacore = (strcmp(cr->m_urlFiltersProfile.getBufStart(), "privacore") == 0);
-
 	//
 	// serialize each link into the metalist now
 	//
@@ -14923,14 +14921,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		{
 			logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", url.getUrl());
 			continue;
-		}
-
-		if (is_privacore) {
-			// tld
-			if (url.isTLDInPrivacoreBlacklist()) {
-				logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", url.getUrl());
-				continue;
-			}
 		}
 
 		// get # of inlinks to this site... if recorded...

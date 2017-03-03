@@ -3812,25 +3812,11 @@ void dedupSpiderdbList ( RdbList *list ) {
 		}
 
 		/// @note if we need to clean out existing spiderdb records, add it here
-#ifdef PRIVACORE_SAFE_VERSION
-		{
-			/// @todo ALC only need this to clean out existing spiderdb records. (remove once it's cleaned up!)
-			Url url;
-			// we don't need to strip parameter here, speed up
-			url.set( sreq->m_url, strlen( sreq->m_url ), false, false, 122 );
-			if ( url.isTLDInPrivacoreBlacklist() ) {
-				logDebug( g_conf.m_logDebugSpider, "Unwanted for indexing [%s]", url.getUrl());
-				continue;
-			}
-		}
-#endif
-
-		{
+		if (!sreq->m_urlIsDocId) {
 			Url url;
 			// we don't need to strip parameter here, speed up
 			url.set(sreq->m_url, strlen(sreq->m_url), false, false, 122);
 
-			/// @todo ALC only need this to clean out existing spiderdb records. (remove once it's cleaned up!)
 			if (g_urlBlockList.isUrlBlocked(url)) {
 				logDebug(g_conf.m_logDebugSpider, "Url is blocked [%s]", sreq->m_url);
 				continue;
