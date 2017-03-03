@@ -5079,8 +5079,11 @@ Url *XmlDoc::getFirstUrl() {
 	// shortcut
 	XmlDoc *od = *pod;
 	// now set it
-	setFirstUrl ( od->ptr_firstUrl );
-	m_firstUrlValid = true;
+	if (od) {
+		setFirstUrl(od->ptr_firstUrl);
+		m_firstUrlValid = true;
+	}
+
 	return &m_firstUrl;
 }
 
