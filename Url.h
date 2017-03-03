@@ -91,7 +91,6 @@ public:
 	//returns True if the extension is in the list of 
 	//badExtensions - extensions not to be parsed
 	bool hasNonIndexableExtension(int32_t xxx) const;
-	bool isTLDInPrivacoreBlacklist() const;
 
 	// is it http://rpc.weblogs.com/shortChanges.xml, etc.?
 	bool isPingServer ( ) const;

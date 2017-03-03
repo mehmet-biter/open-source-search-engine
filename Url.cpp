@@ -1781,17 +1781,6 @@ bool Url::hasNonIndexableExtension( int32_t version ) const {
 	return true;
 }
 
-bool Url::isTLDInPrivacoreBlacklist() const {
-	static const std::vector<std::string> s_blacklist = split(getPrivacoreBlacklistedTLD(), ',');
-
-	if ( ! m_tld || m_tldLen > 2 ) {
-		return false;
-	}
-
-	std::string tld(m_tld, 2);
-	return (std::find(s_blacklist.begin(), s_blacklist.end(), tld) != s_blacklist.end());
-}
-
 bool Url::hasXmlExtension ( ) const {
 
 	if ( ! m_extension || ! m_elen || m_elen > 3 ) return false;
