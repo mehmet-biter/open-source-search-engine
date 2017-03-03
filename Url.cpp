@@ -1470,6 +1470,10 @@ bool Url::isAdult() const {
 	//certain TLDs are clearly adult-oriented
 	if(isAdultTLD(m_tld,m_tldLen))
 		return true;
+	if(m_hlen<=0)
+		return false; // Invalid URL (no hostname)
+	if(m_tldLen<=0)
+		return false; // no TLD
 	// store the hostname in a buf since we strtok it
 	char s [ MAX_URL_LEN ];
 	// don't store the .com or .org while searching for isSpam
