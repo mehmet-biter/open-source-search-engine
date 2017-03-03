@@ -271,7 +271,19 @@ bool Msg1c::reindexQuery ( char *query ,
 	m_msg3a.m_msg39req.m_queryExpansion            = true; // so it's like regular rslts
 	// add language dropdown or take from [query reindex] link
 	m_msg3a.m_msg39req.m_language                  = langId;
-	//m_msg3a.m_msg39req.m_debug = 1;
+	m_msg3a.m_msg39req.m_scoringWeights.init(g_conf.m_diversityWeightMin, g_conf.m_diversityWeightMax,
+	                                         g_conf.m_densityWeightMin, g_conf.m_densityWeightMax,
+	                                         g_conf.m_hashGroupWeightBody,
+	                                         g_conf.m_hashGroupWeightTitle,
+	                                         g_conf.m_hashGroupWeightHeading,
+	                                         g_conf.m_hashGroupWeightInlist,
+	                                         g_conf.m_hashGroupWeightInMetaTag,
+	                                         g_conf.m_hashGroupWeightInLinkText,
+	                                         g_conf.m_hashGroupWeightInTag,
+	                                         g_conf.m_hashGroupWeightNeighborhood,
+	                                         g_conf.m_hashGroupWeightInternalLinkText,
+	                                         g_conf.m_hashGroupWeightInUrl,
+	                                         g_conf.m_hashGroupWeightInMenu);
 
 	// log for now
 	logf(LOG_DEBUG,"reindex: qlangid=%" PRId32" q=%s",langId,query);
