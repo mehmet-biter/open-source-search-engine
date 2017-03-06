@@ -154,6 +154,7 @@ class Conf {
 	int32_t  m_maxIOThreads;
 	int32_t  m_maxExternalThreads;
 	int32_t  m_maxFileMetaThreads;
+	int32_t  m_maxMergeThreads;
 
 	int32_t  m_maxJobCleanupTime;
 
