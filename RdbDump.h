@@ -67,6 +67,9 @@ private:
 	bool dumpTree(bool recall);
 
 	bool dumpList(RdbList *list, bool isRecall);
+	static void checkList(void *state);
+	static void checkedList(void *state, job_exit_t /*exit_type*/);
+	bool dumpList2(bool recall);
 	
 	void doneDumping();
 	bool doneReadingForVerify();

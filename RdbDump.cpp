@@ -515,8 +515,28 @@ bool RdbDump::dumpList(RdbList *list, bool recall) {
 		m_isDumping = true;
 
 		if (g_conf.m_verifyDumpedLists) {
+			if(g_jobScheduler.submit(&checkList,&checkedList,this,thread_type_verify_data,m_niceness))
+				return false;
 			m_list->checkList_r(true, m_rdb ? m_rdb->getRdbId() : RDB_NONE);
 		}
+	}
+	return dumpList2(recall);
+}
+
+
+void RdbDump::checkList(void *state) {
+	RdbDump *that = reinterpret_cast<RdbDump*>(state);
+	that->m_list->checkList_r(true, that->m_rdb ? that->m_rdb->getRdbId() : RDB_NONE);
+}
+
+void RdbDump::checkedList(void *state, job_exit_t /*exit_type*/) {
+	RdbDump *that = reinterpret_cast<RdbDump*>(state);
+	that->dumpList2(false);
+}
+
+
+bool RdbDump::dumpList2(bool recall) {
+	if(!recall) {
 
 		m_list->resetListPtr();
 
