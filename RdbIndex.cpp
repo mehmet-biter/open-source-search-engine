@@ -52,7 +52,7 @@ RdbIndex::~RdbIndex() {
 	}
 
 	ScopedLock sl(m_pendingDocIdsMtx);
-	if (m_pendingMerge) {
+	while (m_pendingMerge) { // spurious wakeup
 		pthread_cond_wait(&m_pendingMergeCond, &(m_pendingDocIdsMtx.mtx));
 	}
 }
