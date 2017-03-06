@@ -496,6 +496,13 @@ bool RdbDump::dumpTree(bool recall) {
 // . sets g_errno on error
 // . this one is also called by RdbMerge to dump lists
 bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
+	// save ptr to list
+	m_list = list;
+	// nothing to do if list is empty
+	if (m_list->isEmpty()) {
+		return true;
+	}
+	
 	// if we had a write error and are being recalled...
 	if (recall) {
 		m_offset -= m_bytesToWrite;
@@ -503,13 +510,6 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 		// assume we don't hack the list
 		m_hacked = false;
 		m_hacked12 = false;
-
-		// save ptr to list... why?
-		m_list = list;
-		// nothing to do if list is empty
-		if (m_list->isEmpty()) {
-			return true;
-		}
 
 		// we're now in dump mode again
 		m_isDumping = true;
