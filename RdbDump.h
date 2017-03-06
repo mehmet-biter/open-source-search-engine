@@ -53,8 +53,8 @@ public:
 
 	void setSuspended() { m_isSuspended = true; }
 
-	bool dumpList(RdbList *list, int32_t niceness) {
-		return dumpList(list,niceness,false);
+	bool dumpList(RdbList *list) {
+		return dumpList(list,false);
 	}
 
 	static void doneWritingWrapper(void *state);
@@ -66,7 +66,7 @@ private:
 	// . returns false if blocked, true otherwise
 	bool dumpTree(bool recall);
 
-	bool dumpList(RdbList *list, int32_t niceness, bool isRecall);
+	bool dumpList(RdbList *list, bool isRecall);
 	
 	void doneDumping();
 	bool doneReadingForVerify();

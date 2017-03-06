@@ -474,7 +474,7 @@ bool RdbDump::dumpTree(bool recall) {
 		// . sets g_errno on error
 
 		// . if this blocks it should call us (dumpTree() back)
-		if (!dumpList(m_list, m_niceness, false)) {
+		if (!dumpList(m_list, false)) {
 			logTrace(g_conf.m_logTraceRdbDump, "END - after dumpList, returning false");
 			return false;
 		}
@@ -495,7 +495,7 @@ bool RdbDump::dumpTree(bool recall) {
 // . return false if blocked, true otherwise
 // . sets g_errno on error
 // . this one is also called by RdbMerge to dump lists
-bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
+bool RdbDump::dumpList(RdbList *list, bool recall) {
 	// save ptr to list
 	m_list = list;
 	// nothing to do if list is empty
@@ -630,7 +630,7 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 	// . otherwise, use doneWritingWrapper() which will call dumpTree()
 	// . BigFile::write() return 0 if blocked,-1 on error,>0 on completion
 	// . it also sets g_errno on error
-	bool isDone = m_file->write(m_buf, m_bytesToWrite, offset, &m_fstate, this, doneWritingWrapper, niceness);
+	bool isDone = m_file->write(m_buf, m_bytesToWrite, offset, &m_fstate, this, doneWritingWrapper, m_niceness);
 
 	// return false if it blocked
 	if (!isDone) {
@@ -669,7 +669,7 @@ bool RdbDump::doneDumpingList() {
 		} else {
 			logError("db: Had error dumping data: %s. Retrying.", mstrerror(g_errno));
 
-			bool rc = dumpList(m_list, m_niceness, true);
+			bool rc = dumpList(m_list, true);
 			logTrace(g_conf.m_logTraceRdbDump, "END. Returning %s", rc ? "true" : "false");
 			return rc;
 		}
@@ -752,7 +752,7 @@ bool RdbDump::doneReadingForVerify ( ) {
 		         m_bytesToWrite, m_file->getFilename(), m_offset - m_bytesToWrite);
 
 		// try writing again
-		bool rc = dumpList(m_list, m_niceness, true);
+		bool rc = dumpList(m_list, true);
 		logTrace( g_conf.m_logTraceRdbDump, "END - after retrying dumpList. Returning %s", rc ? "true" : "false" );
 		return rc;
 	}
