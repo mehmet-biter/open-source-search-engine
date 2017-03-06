@@ -35,6 +35,8 @@ RdbIndex::RdbIndex()
 	, m_docIds(new docids_t)
 	, m_docIdsMtx()
 	, m_pendingDocIdsMtx()
+	, m_pendingMergeCond(PTHREAD_COND_INITIALIZER)
+	, m_pendingMerge(false)
 	, m_pendingDocIds(new docids_t)
 	, m_prevPendingDocId(MAX_DOCID + 1)
 	, m_lastMergeTime(gettimeofdayInMilliseconds())
@@ -47,6 +49,11 @@ RdbIndex::RdbIndex()
 RdbIndex::~RdbIndex() {
 	if (m_registeredCallback) {
 		g_loop.unregisterSleepCallback(this, &timedMerge);
+	}
+
+	ScopedLock sl(m_pendingDocIdsMtx);
+	if (m_pendingMerge) {
+		pthread_cond_wait(&m_pendingMergeCond, &(m_pendingDocIdsMtx.mtx));
 	}
 }
 
@@ -68,9 +75,14 @@ void RdbIndex::timedMerge(int /*fd*/, void *state) {
 
 	ScopedLock sl(index->m_pendingDocIdsMtx);
 
+	// make sure there is only a single merge job at one time
+	if (index->m_pendingMerge) {
+		return;
+	}
+
 	if ((index->m_pendingDocIds->size() >= (index->m_generatingIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize)) ||
 		(gettimeofdayInMilliseconds() - index->m_lastMergeTime >= s_defaultMaxPendingTimeMs)) {
-		g_jobScheduler.submit(mergePendingDocIds, NULL, state, thread_type_index_merge, 0);
+		index->m_pendingMerge = g_jobScheduler.submit(mergePendingDocIds, NULL, state, thread_type_index_merge, 0);
 	}
 }
 
@@ -84,6 +96,9 @@ void RdbIndex::mergePendingDocIds(void *state) {
 	    (gettimeofdayInMilliseconds() - index->m_lastMergeTime >= s_defaultMaxPendingTimeMs)) {
 		(void)index->mergePendingDocIds_unlocked();
 	}
+
+	index->m_pendingMerge = false;
+	pthread_cond_signal(&(index->m_pendingMergeCond));
 }
 
 /// @todo ALC collapse RdbIndex::set into constructor
