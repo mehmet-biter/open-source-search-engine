@@ -67,7 +67,7 @@ bool MergeSpaceCoordinator::acquire(uint64_t how_much) {
 		return true;
 	
 	if(min_lock_files<=0) {
-		log(LOG_ERROR,"MergeSpaceCoordinator::acquire: min_lock_files=%d. Lockin will never succeed",min_lock_files);
+		log(LOG_ERROR,"MergeSpaceCoordinator::acquire: min_lock_files=%d. Locking will never succeed",min_lock_files);
 		return false;
 	}
 	
@@ -159,7 +159,7 @@ bool MergeSpaceCoordinator::acquire(uint64_t how_much) {
 			close(fd);
 			if(bytes_read!=bytes_written) {
 				//file size changed or there was a read error. In either case the lock failed
-				log(LOG_DEBUG,"%s chagned size", filename.c_str());
+				log(LOG_DEBUG,"%s changed size", filename.c_str());
 				continue;
 			}
 			buf[bytes_read] = '\0';
@@ -176,6 +176,7 @@ bool MergeSpaceCoordinator::acquire(uint64_t how_much) {
 			
 			//hurray!
 			held_lock_number = lock_number;
+			log(LOG_DEBUG,"MergeSpaceCoordinator::acquire: got lock #%d for %" PRIu64" bytes", held_lock_number, how_much);
 			return true;
 		} else {
 			if(lock_number<min_lock_files)
@@ -195,6 +196,7 @@ bool MergeSpaceCoordinator::acquired() const {
 
 void MergeSpaceCoordinator::relinquish() {
 	if(held_lock_number>=0) {
+		log(LOG_DEBUG,"MergeSpaceCoordinator::relinquish(): held_lock_number=%d", held_lock_number);
 		ScopedLock sl(mtx);
 		int tmp = held_lock_number;
 		held_lock_number = -1;

@@ -1558,6 +1558,8 @@ void RdbBase::renamesDone() {
 
 	// exit merge mode
 	m_isMerging = false;
+	
+	g_merge.mergeIncorporated(this);
 
 	// try to merge more when we are done
 	attemptMergeAll();

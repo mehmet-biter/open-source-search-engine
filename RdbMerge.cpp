@@ -633,12 +633,15 @@ void RdbMerge::doneMerging() {
 
 	// pass g_errno on to incorporate merge so merged file can be unlinked
 	base->incorporateMerge();
-
-	relinquishMergespaceLock();
 }
 
 
 void RdbMerge::relinquishMergespaceLock() {
 	if(m_mergeSpaceCoordinator)
 		m_mergeSpaceCoordinator->relinquish();
+}
+
+
+void RdbMerge::mergeIncorporated(const RdbBase * /*currently irrelevant*/) {
+	relinquishMergespaceLock();
 }

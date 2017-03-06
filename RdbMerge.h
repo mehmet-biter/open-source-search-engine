@@ -32,6 +32,7 @@
 
 class RdbIndex;
 class MergeSpaceCoordinator;
+class RdbBase;
 
 
 class RdbMerge {
@@ -59,6 +60,8 @@ public:
 
 	// stop further actions
 	void haltMerge();
+
+	void mergeIncorporated(const RdbBase *);
 
 private:
 	static void getLockWrapper(int /*fd*/, void *state);
