@@ -509,7 +509,7 @@ bool RdbMerge::dumpList() {
 	// . it calls dumpListWrapper when done dumping
 	// . return true if m_dump had an error or it did not block
 	// . if it gets a EFILECLOSED error it will keep retrying forever
-	return m_dump.dumpList(&m_list, m_niceness, false);
+	return m_dump.dumpList(&m_list, m_niceness);
 }
 
 void RdbMerge::doneMerging() {
