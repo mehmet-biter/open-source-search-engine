@@ -6,7 +6,8 @@
 #include "Rebalance.h"
 #include "Process.h"
 #include "Conf.h"
-
+#include "XmlDoc.h"
+#include "UrlBlockList.h"
 
 Titledb g_titledb;
 Titledb g_titledb2;
@@ -247,3 +248,65 @@ key96_t Titledb::makeKey ( int64_t docId, int64_t uh48, bool isDel ){
 	key.n0 = n0;
 	return key;
 };
+
+void Titledb::printKey(const char *k) {
+	logf(LOG_TRACE, "k=%s "
+		     "docId=%012" PRId64" "
+		     "urlHash48=%02" PRId64" "
+		     "isDel=%d",
+	     KEYSTR(k, sizeof(key96_t)),
+	     getDocId((key96_t*)k),
+	     getUrlHash48((key96_t*)k),
+	     KEYNEG(k));
+}
+
+void filterTitledbList(RdbList *list) {
+	char *newList = list->getList();
+	char *dst = newList;
+	char *lastKey = NULL;
+
+	int32_t oldSize = list->getListSize();
+	int32_t filteredCount = 0;
+	for (list->resetListPtr(); !list->isExhausted();) {
+		char *rec = list->getCurrentRec();
+		int32_t  recSize = list->getCurrentRecSize();
+
+		// pre skip it (necessary because we manipulate the raw list below)
+		list->skipCurrentRecord();
+
+		if (!KEYNEG(rec)) {
+			XmlDoc xd;
+			if (xd.set2(rec, recSize, "main", NULL, 0)) {
+				if (g_urlBlockList.isUrlBlocked(*(xd.getFirstUrl()))) {
+					++filteredCount;
+					continue;
+				}
+			}
+		}
+
+		lastKey = dst;
+		memmove(dst, rec, recSize);
+		dst += recSize;
+	}
+
+	// sanity check
+	if ( dst < list->getList() || dst > list->getListEnd() ) {
+		g_process.shutdownAbort(true);
+	}
+
+	// and stick our newly filtered list in there
+	list->setListSize(dst - newList);
+	// set to end i guess
+	list->setListEnd(list->getList() + list->getListSize());
+	list->setListPtr(dst);
+	list->setListPtrHi(NULL);
+
+	log(LOG_DEBUG, "db: filtered %" PRId32" entries of %" PRId32 " bytes out of %" PRId32 " bytes.",
+	    filteredCount, oldSize - list->getListSize(), oldSize);
+
+	if( !lastKey ) {
+		logError("lastKey is null. Should not happen?");
+	} else {
+		list->setLastKey(lastKey);
+	}
+}

@@ -249,7 +249,7 @@ bool RdbMerge::resumeMerge() {
 		}
 
 		// return if this blocked
-		if (!dedupList()) {
+		if (!filterList()) {
 			return false;
 		}
 
@@ -382,7 +382,7 @@ void RdbMerge::gotListWrapper(void *state, RdbList * /*list*/, Msg5 * /*msg5*/) 
 		}
 
 		// return if this blocked
-		if (!THIS->dedupList()) {
+		if (!THIS->filterList()) {
 			return;
 		}
 
@@ -425,16 +425,18 @@ void RdbMerge::tryAgainWrapper(int /*fd*/, void *state) {
 	gotListWrapper(THIS, NULL, NULL);
 }
 
-void RdbMerge::dedupListWrapper(void *state) {
+void RdbMerge::filterListWrapper(void *state) {
 	RdbMerge *THIS = (RdbMerge *)state;
 
 	if (THIS->m_rdbId == RDB_SPIDERDB) {
 		dedupSpiderdbList(&(THIS->m_list));
-	}
+	} //else if (THIS->m_rdbId == RDB_TITLEDB) {
+//		filterTitledbList(&(THIS->m_list));
+//	}
 }
 
 // similar to gotListWrapper but we call dumpList() before dedupList()
-void RdbMerge::dedupDoneWrapper(void *state, job_exit_t exit_type) {
+void RdbMerge::filterDoneWrapper(void *state, job_exit_t exit_type) {
 	// get a ptr to ourselves
 	RdbMerge *THIS = (RdbMerge *)state;
 
@@ -463,7 +465,7 @@ void RdbMerge::dedupDoneWrapper(void *state, job_exit_t exit_type) {
 		}
 
 		// return if this blocked
-		if (!THIS->dedupList()) {
+		if (!THIS->filterList()) {
 			return;
 		}
 
@@ -471,7 +473,7 @@ void RdbMerge::dedupDoneWrapper(void *state, job_exit_t exit_type) {
 	}
 }
 
-bool RdbMerge::dedupList() {
+bool RdbMerge::filterList() {
 	// return true on g_errno
 	if (g_errno) {
 		return true;
@@ -497,15 +499,19 @@ bool RdbMerge::dedupList() {
 	// dedup for spiderdb before we dump it. try to save disk space.
 	//
 	/////
-	if (m_rdbId == RDB_SPIDERDB) {
-		if (g_jobScheduler.submit(dedupListWrapper, dedupDoneWrapper, this, thread_type_spider_dedup, 0)) {
+	if (m_rdbId == RDB_SPIDERDB || m_rdbId == RDB_TITLEDB) {
+		if (g_jobScheduler.submit(filterListWrapper, filterDoneWrapper, this, thread_type_merge_filter, 0)) {
 			return false;
 		}
 
-		log(LOG_WARN, "db: Unable to submit job for deduping spiderdb. Will run in main thread");
+		log(LOG_WARN, "db: Unable to submit job for merge filter. Will run in main thread");
 
-		// fall back to dedup without thread
-		dedupSpiderdbList(&m_list);
+		// fall back to filter without thread
+		if (m_rdbId == RDB_SPIDERDB) {
+			dedupSpiderdbList(&m_list);
+		} else {
+			filterTitledbList(&m_list);
+		}
 	}
 
 	return true;
@@ -550,7 +556,7 @@ void RdbMerge::dumpListWrapper(void *state) {
 		}
 
 		// return if this blocked
-		if (!THIS->dedupList()) {
+		if (!THIS->filterList()) {
 			return;
 		}
 
@@ -581,7 +587,7 @@ bool RdbMerge::dumpList() {
 	// . it calls dumpListWrapper when done dumping
 	// . return true if m_dump had an error or it did not block
 	// . if it gets a EFILECLOSED error it will keep retrying forever
-	return m_dump.dumpList(&m_list, m_niceness, false);
+	return m_dump.dumpList(&m_list);
 }
 
 void RdbMerge::doneMerging() {

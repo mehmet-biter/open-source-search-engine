@@ -123,10 +123,13 @@ public:
 		return makeKey(docId, 0xffffffffffffLL, false);
 	}
 
+	static void printKey(const char *key);
 private:
 	// holds binary format title entries
 	Rdb m_rdb;
 };
+
+void filterTitledbList(RdbList *list);
 
 extern class Titledb g_titledb;
 extern class Titledb g_titledb2;

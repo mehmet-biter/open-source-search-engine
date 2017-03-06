@@ -806,7 +806,7 @@ bool Msg3::doneScanning ( ) {
 	if ( ! g_errno ) { // && g_conf.m_doErrorCorrection ) {
 		int32_t i;
 		for ( i = 0 ; i < m_numFileNums ; i++ )
-			if ( ! m_scan[i].m_list.checkList_r ( false, false ) ) break;
+			if ( ! m_scan[i].m_list.checkList_r ( false ) ) break;
 		if ( i < m_numFileNums ) {
 			g_errno = ECORRUPTDATA;
 			m_errno = ECORRUPTDATA;

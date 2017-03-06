@@ -874,7 +874,7 @@ bool Msg5::gotList2 ( ) {
 	// removes them for fears of delayed positive keys not finding their
 	// negative key because it was merged out by RdbMerge
 	for ( int32_t i = 0 ; i < m_numListPtrs ; i++ )
-		m_listPtrs[i]->checkList_r ( false , true );
+		m_listPtrs[i]->checkList_r(true);
 #endif
 
 	// . if no lists we're done
@@ -1161,8 +1161,8 @@ void Msg5::repairLists() {
 			    m_minRecSizes );
 
 #ifdef GBSANITYCHECK
-		// sleep on corruption if doing a sanity check (core dumps)
-		bool status = m_listPtrs[i]->checkList_r(false, true);
+		// core dump on corruption
+		bool status = m_listPtrs[i]->checkList_r(true);
 #else
 		// this took like 50ms (-O3) on lenny on a 4meg list
 		bool status = m_listPtrs[i]->checkList_r(false);
@@ -1360,8 +1360,6 @@ bool Msg5::doneMerging ( ) {
 			    "net: Took %" PRIu64" ms to do merge. %" PRId32" lists merged "
 			     "into one list of %" PRId32" bytes.",
 			     took , m_numListPtrs , m_list->getListSize() );
-		//log("Msg5:: of that %" PRIu64" ms was in checkList_r()s",
-		//     m_checkTime );
 	}
 
 
@@ -1378,7 +1376,7 @@ bool Msg5::doneMerging ( ) {
 	// . scan merged list for problems
 	// . this caught an incorrectly set m_list->m_lastKey before
 #ifdef GBSANITYCHECK
-	m_list->checkList_r ( false , true , m_rdbId );
+	m_list->checkList_r(true, m_rdbId);
 #endif
 
 	// . TODO: call freeList() on each m_list[i] here rather than destructr

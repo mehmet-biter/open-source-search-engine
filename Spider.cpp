@@ -3968,7 +3968,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		// get rec
 		char *rec = list->getCurrentRec();
 
-		// pre skip it
+		// pre skip it (necessary because we manipulate the raw list below)
 		list->skipCurrentRecord();
 
 		// skip if negative, just copy over
@@ -4019,9 +4019,8 @@ void dedupSpiderdbList ( RdbList *list ) {
 	     (int)delta,(int)corrupt,(int)oldSize);
 
 	if( !lastKey ) {
-		log(LOG_WARN, "%s:%s:%d: lastKey is null. Should not happen?", __FILE__, __func__, __LINE__);
-	}
-	else {
+		logError("lastKey is null. Should not happen?");
+	} else {
 		list->setLastKey(lastKey);
 	}
 }
