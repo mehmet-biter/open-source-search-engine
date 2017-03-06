@@ -63,13 +63,13 @@ public:
 private:
 	static void getLockWrapper(int /*fd*/, void *state);
 	void getLock();
-	static void dedupListWrapper(void *state);
-	static void dedupDoneWrapper(void *state, job_exit_t exit_type);
+	static void filterListWrapper(void *state);
+	static void filterDoneWrapper(void *state, job_exit_t exit_type);
 	static void dumpListWrapper(void *state);
 	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
 	static void tryAgainWrapper(int fd, void *state);
 
-	bool dedupList();
+	bool filterList();
 	bool dumpList();
 	bool getNextList();
 	bool getAnotherList();
