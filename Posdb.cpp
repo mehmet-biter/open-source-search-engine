@@ -111,7 +111,7 @@ bool Posdb::init ( ) {
 		log("db: %02" PRId32") 0x%02" PRIx32,p-list.m_list,
 		    (int32_t)(*(unsigned char *)p));
 	list.resetListPtr();
-	list.checkList_r(false,true,RDB_POSDB);
+	list.checkList_r(false,RDB_POSDB);
 	gbshutdownLogicError();
 	*/
 
