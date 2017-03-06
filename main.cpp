@@ -1415,7 +1415,7 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
-	if ( ! g_jobScheduler.initialize(g_conf.m_maxCpuThreads, g_conf.m_maxIOThreads, g_conf.m_maxExternalThreads, g_conf.m_maxFileMetaThreads, wakeupPollLoop)) {
+	if ( ! g_jobScheduler.initialize(g_conf.m_maxCpuThreads, g_conf.m_maxIOThreads, g_conf.m_maxExternalThreads, g_conf.m_maxFileMetaThreads, g_conf.m_maxMergeThreads, wakeupPollLoop)) {
 		log( LOG_ERROR, "db: JobScheduler init failed." );
 		return 1;
 	}
@@ -4983,7 +4983,7 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 		if ( ! g_loop.init() ) {
 			log("db: Loop init failed." ); exit(0); }
 		// set up the threads, might need g_conf
-		if ( ! g_jobScheduler.initialize(2,4,2,1) ) {
+		if ( ! g_jobScheduler.initialize(2,4,2,1,3) ) {
 			log("db: Threads init failed." ); exit(0); }
 		s_injectTitledb = true;
 		s_titledbKey.setMin();

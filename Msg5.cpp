@@ -983,7 +983,7 @@ bool Msg5::gotList2 ( ) {
 	}
 
 	if(m_callback) {
-		if ( g_jobScheduler.submit(mergeListsWrapper, mergeDoneWrapper, this, thread_type_query_merge, m_niceness) ) {
+		if ( g_jobScheduler.submit(mergeListsWrapper, mergeDoneWrapper, this, m_rdbId == RDB_POSDB ? thread_type_file_merge : thread_type_query_merge, m_niceness) ) {
 			return false;
 		}
 
