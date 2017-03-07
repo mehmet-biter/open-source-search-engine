@@ -273,16 +273,12 @@ void DailyMerge::dailyMergeLoop ( ) {
 	// start the merge
 	if ( m_mergeMode == 5 ) {
 		// kick off the merges if not already going
-		// if has more than one file, bail on it
-		RdbBase *base;
 
-		base = g_spiderdb.getRdb()->getBase(m_cr->m_collnum);
-		base->attemptMerge (1,true,2);
-		if ( base->getNumFiles() >= 2 ) return;
+		if(g_spiderdb.getRdb()->getBase(m_cr->m_collnum)->attemptMerge(1,true,2))
+			return;
 
-		base = g_linkdb  .getRdb()->getBase(m_cr->m_collnum);
-		base->attemptMerge (1,true,2);
-		if ( base->getNumFiles() >= 2 ) return;
+		if(g_linkdb.getRdb()->getBase(m_cr->m_collnum)->attemptMerge(1,true,2))
+			return;
 
 		// . minimize titledb merging at spider time, too
 		// . will perform a merge IFF there are 200 or more titledb 
@@ -291,12 +287,11 @@ void DailyMerge::dailyMergeLoop ( ) {
 		//   AFTER the merge is completed.
 		// . do NOT force merge ALL files on this one, we just want
 		//   to make sure there are not 200+ titledb files
-		base = g_titledb .getRdb()->getBase(m_cr->m_collnum);
 		// we seem to dump about 70 per day at a decent spider rate
 		// so merge enough so that we don't have to merge while 
 		// spidering
-		base->attemptMerge (1,false,230-70);
-		if ( base->getNumFiles() >= 230-70 ) return;
+		if(g_titledb.getRdb()->getBase(m_cr->m_collnum)->attemptMerge(1,false,230-70))
+			return;
 
 		// set m_cr to NULL up here, so that the last guy to
 		// complete the daily merge, does not "cycle back" and
