@@ -8,4 +8,4 @@ domain  example.com allow=,www
 host    specific.host.com
 tld	    my,dk
 host    www.somesite.com    /badpath/
-regex   itsybitsy.com ^https?://([^/]*\.|)itsybitsy\.com/spider/.+
+regex   itsybitsy.com ^https?://(www\.|nursery\.|)itsybitsy\.com/spider/.+

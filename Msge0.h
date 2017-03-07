@@ -36,7 +36,7 @@ public:
 
 private:
 	static void gotTagRecWrapper(void *state);
-	bool launchRequests ( int32_t starti ) ;
+	bool launchRequests();
 	bool sendMsg8a      ( int32_t i );
 	bool doneSending    ( int32_t i );
 
