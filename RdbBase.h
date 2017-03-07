@@ -303,6 +303,9 @@ private:
 	// should our next merge in waiting force itself?
 	bool      m_nextMergeForced;
 
+	// state for call to attemptMerge()
+	bool         m_attemptOnlyMergeResumption;
+
 	// . when we dump list to an rdb file, can we use short keys?
 	// . currently exclusively used by indexdb
 	bool      m_useHalfKeys;

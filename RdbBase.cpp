@@ -88,6 +88,7 @@ RdbBase::RdbBase()
   : m_numFiles(0),
     m_mtxFileInfo(),
     m_docIdFileIndex(new docids_t),
+    m_attemptOnlyMergeResumption(true),
     m_submittingJobs(false),
     m_outstandingJobCount(0),
     m_mtxJobCount()
@@ -1632,7 +1633,7 @@ int32_t RdbBase::getMinToMerge(const CollectionRec *cr, rdbid_t rdbId, int32_t m
 	// if m_minToMerge is -1 then we should let cr override, but if m_minToMerge
 	// is actually valid at this point, use it as is
 	if(m_minToMerge>0) {
-		log(LOG_INFO, "merge: Using already-set m_minToMerge of %d", m_minToMerge);
+		log(LOG_INFO, "merge: Using already-set m_minToMerge of %d for %s", m_minToMerge, m_dbname);
 		return m_minToMerge;
 	}
 	
@@ -1675,7 +1676,7 @@ int32_t RdbBase::getMinToMerge(const CollectionRec *cr, rdbid_t rdbId, int32_t m
 				; //no per-collection override
 		}
 	}
-	log(LOG_INFO, "merge: Using min files to merge %d", result);
+	log(LOG_INFO, "merge: Using min files to merge %d for %s", result, m_dbname);
 	return result;
 }
 
@@ -1755,7 +1756,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	}
 
 	// print it
-	log( LOG_INFO, "merge: Attempting to merge %" PRId32" %s files on disk. %" PRId32" files needed to trigger a merge.",
+	log( LOG_INFO, "merge: Considering merging %" PRId32" %s files on disk. %" PRId32" files needed to trigger a merge.",
 	     numFiles, m_dbname, m_minToMerge );
 	
 	if ( g_merge.isMerging() )
@@ -1781,6 +1782,15 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 			break;
 		}
 	}
+
+	if(m_attemptOnlyMergeResumption && !resuming) {
+		m_attemptOnlyMergeResumption = false;
+		log(LOG_INFO, "merge: No interrupted merge of %s. Won't consider initiating a merge until next call", m_dbname);
+		logTrace( g_conf.m_logTraceRdbBase, "END, no interrupted merge" );
+		return false;
+	}
+	//on next call to attempMerge() we are allowed to do normal non-interrupted merges
+	m_attemptOnlyMergeResumption = false;
 
 	// this triggers the negative rec concentration and
 	// tries to merge on one file...
