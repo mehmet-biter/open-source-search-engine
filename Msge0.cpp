@@ -146,70 +146,70 @@ bool Msge0::getTagRecs ( char        **urlPtrs           ,
 bool Msge0::launchRequests ( int32_t starti ) {
 	// reset any error code
 	g_errno = 0;
- loop:
-	// stop if no more urls. return true if we got all replies! no block.
-	if ( m_n >= m_numUrls ) return (m_numRequests == m_numReplies);
-	// if all hosts are getting a diffbot reply with 50 spiders and they
-	// all timeout at the same time we can very easily clog up the
-	// udp sockets, so use this to limit... i've seen the whole
-	// spider tables stuck with "getting outlink tag rec vector"statuses
-	int32_t maxOut = MAX_OUTSTANDING_MSGE0;
-	if ( g_udpServer.getNumUsedSlots() > 500 ) maxOut = 1;
-	// if we are maxed out, we basically blocked!
-	if (m_numRequests - m_numReplies >= maxOut ) return false;
-	// . skip if "old"
-	// . we are not planning on adding this to spiderdb, so Msg16
-	//   want to skip the ip lookup, etc.
-	if ( m_urlFlags && (m_urlFlags[m_n] & LF_OLDLINK) && m_skipOldLinks ) {
-		m_numRequests++; 
-		m_numReplies++; 
-		m_n++; 
-		goto loop; 
-	}
-	// if url is same host as the tagrec provided, just reference that!
-	if ( m_urlFlags && (m_urlFlags[m_n] & LF_SAMEHOST) && m_baseTagRec) {
-		m_tagRecPtrs[m_n] = (TagRec *)m_baseTagRec;
-		m_numRequests++; 
-		m_numReplies++; 
-		m_n++; 
-		goto loop; 
-	}
-	// . get the next url
-	// . if m_xd is set, create the url from the ad id
-	char *p = m_urlPtrs[m_n];
-	// get the length
-	int32_t  plen = strlen(p);
-	// . grab a slot
-	// . m_msg8as[i], m_msgCs[i], m_msg50s[i], m_msg20s[i]
-	int32_t i;
-	// make this 0 since "maxOut" now changes!!
-	for ( i = 0 /*starti*/ ; i < MAX_OUTSTANDING_MSGE0 ; i++ )
-		if ( ! m_used[i] ) break;
-	// sanity check
-	if ( i >= MAX_OUTSTANDING_MSGE0 ) { g_process.shutdownAbort(true); }
-	// normalize the url
-	m_urls[i].set( p, plen );
-	// save the url number, "n"
-	m_ns  [i] = m_n;
-	// claim it
-	m_used[i] = true;
 
-	// note it
-	//if ( g_conf.m_logDebugSpider )
-	//	log(LOG_DEBUG,"spider: msge0: processing url %s",
-	//	    m_urls[i].getUrl());
+	for(;;) {
+		// stop if no more urls. return true if we got all replies! no block.
+		if ( m_n >= m_numUrls ) return (m_numRequests == m_numReplies);
+		// if all hosts are getting a diffbot reply with 50 spiders and they
+		// all timeout at the same time we can very easily clog up the
+		// udp sockets, so use this to limit... i've seen the whole
+		// spider tables stuck with "getting outlink tag rec vector"statuses
+		int32_t maxOut = MAX_OUTSTANDING_MSGE0;
+		if ( g_udpServer.getNumUsedSlots() > 500 ) maxOut = 1;
+		// if we are maxed out, we basically blocked!
+		if (m_numRequests - m_numReplies >= maxOut ) return false;
+		// . skip if "old"
+		// . we are not planning on adding this to spiderdb, so Msg16
+		//   want to skip the ip lookup, etc.
+		if ( m_urlFlags && (m_urlFlags[m_n] & LF_OLDLINK) && m_skipOldLinks ) {
+			m_numRequests++;
+			m_numReplies++;
+			m_n++;
+			continue;
+		}
+		// if url is same host as the tagrec provided, just reference that!
+		if ( m_urlFlags && (m_urlFlags[m_n] & LF_SAMEHOST) && m_baseTagRec) {
+			m_tagRecPtrs[m_n] = (TagRec *)m_baseTagRec;
+			m_numRequests++;
+			m_numReplies++;
+			m_n++;
+			continue;
+		}
+		// . get the next url
+		// . if m_xd is set, create the url from the ad id
+		char *p = m_urlPtrs[m_n];
+		// get the length
+		int32_t  plen = strlen(p);
+		// . grab a slot
+		// . m_msg8as[i], m_msgCs[i], m_msg50s[i], m_msg20s[i]
+		int32_t i;
+		// make this 0 since "maxOut" now changes!!
+		for ( i = 0 /*starti*/ ; i < MAX_OUTSTANDING_MSGE0 ; i++ )
+			if ( ! m_used[i] ) break;
+		// sanity check
+		if ( i >= MAX_OUTSTANDING_MSGE0 ) { g_process.shutdownAbort(true); }
+		// normalize the url
+		m_urls[i].set( p, plen );
+		// save the url number, "n"
+		m_ns  [i] = m_n;
+		// claim it
+		m_used[i] = true;
 
-	// . start it off
-	// . this will start the pipeline for this url
-	// . it will set m_used[i] to true if we use it and block
-	// . it will increment m_numRequests and NOT m_numReplies if it blocked
-	sendMsg8a ( i );
-	// consider it launched
-	m_numRequests++;
-	// inc the url count
-	m_n++;
-	// try to do another
-	goto loop;
+		// note it
+		//if ( g_conf.m_logDebugSpider )
+		//	log(LOG_DEBUG,"spider: msge0: processing url %s",
+		//	    m_urls[i].getUrl());
+
+		// . start it off
+		// . this will start the pipeline for this url
+		// . it will set m_used[i] to true if we use it and block
+		// . it will increment m_numRequests and NOT m_numReplies if it blocked
+		sendMsg8a ( i );
+		// consider it launched
+		m_numRequests++;
+		// inc the url count
+		m_n++;
+	}
 }
 
 bool Msge0::sendMsg8a ( int32_t i ) {
