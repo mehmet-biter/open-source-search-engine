@@ -100,7 +100,7 @@ bool UrlBlockList::load() {
 					continue;
 				}
 
-				tmpUrlBlockList->push_back(UrlBlock(std::shared_ptr<urlblockhost_t>(new urlblockhost_t(col2))));
+				tmpUrlBlockList->push_back(UrlBlock(std::shared_ptr<urlblockhost_t>(new urlblockhost_t(col2, col3))));
 				break;
 			case 'p':
 				// path

@@ -884,8 +884,10 @@ bool Process::shutdown2() {
 		log( LOG_WARN, "gb: could not create %s", cleanFileName.getBufStart() );
 	}
 
-	// exit abruptly
-	exit(0);
+	// exit abruptly. Yes, _exit() and not plain exit(). The reason is that the above cleanup is not complete.
+	// Eg. some globals can ahve a Msg5 which can have a Msg3 which may believe they have outstanding RdbScans
+	// and thus core dump in sanity checks.
+	_exit(0);
 }
 
 

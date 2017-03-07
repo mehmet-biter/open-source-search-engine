@@ -6,4 +6,6 @@ domain  allsubdomain.com
 regex   onlyroot.com    http://www\.onlyroot\.com/$
 domain  example.com allow=,www
 host    specific.host.com
-tld		my,dk
+tld	    my,dk
+host    www.somesite.com    /badpath/
+regex   itsybitsy.com ^https?://([^/]*\.|)itsybitsy\.com/spider/.+

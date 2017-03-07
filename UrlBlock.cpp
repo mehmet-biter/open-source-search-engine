@@ -16,8 +16,9 @@ urlblockdomain_t::urlblockdomain_t(const std::string &domain, const std::string 
 	, m_allow(split(allow, ',')) {
 }
 
-urlblockhost_t::urlblockhost_t(const std::string &host)
-	: m_host(host) {
+urlblockhost_t::urlblockhost_t(const std::string &host, const std::string &path)
+	: m_host(host)
+	, m_path(path) {
 }
 
 urlblockpath_t::urlblockpath_t(const std::string &path)
@@ -72,8 +73,16 @@ bool UrlBlock::match(const Url &url) const {
 			}
 			break;
 		case url_block_host:
-			return (m_host->m_host.length() == static_cast<size_t>(url.getHostLen()) &&
-			        memcmp(m_host->m_host.c_str(), url.getHost(), url.getHostLen()) == 0);
+			if (m_host->m_host.length() == static_cast<size_t>(url.getHostLen()) &&
+			    memcmp(m_host->m_host.c_str(), url.getHost(), url.getHostLen()) == 0) {
+				if (m_host->m_path.empty()) {
+					return true;
+				}
+
+				return (m_host->m_path.length() <= static_cast<size_t>(url.getPathLenWithCgi()) &&
+				        memcmp(m_host->m_path.c_str(), url.getPath(), m_host->m_path.length()) == 0);
+			}
+			break;
 		case url_block_path:
 			return (m_path->m_path.length() <= static_cast<size_t>(url.getPathLenWithCgi()) &&
 			        memcmp(m_path->m_path.c_str(), url.getPath(), m_path->m_path.length()) == 0);

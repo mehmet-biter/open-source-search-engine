@@ -430,9 +430,9 @@ void RdbMerge::filterListWrapper(void *state) {
 
 	if (THIS->m_rdbId == RDB_SPIDERDB) {
 		dedupSpiderdbList(&(THIS->m_list));
-	} //else if (THIS->m_rdbId == RDB_TITLEDB) {
+	} else if (THIS->m_rdbId == RDB_TITLEDB) {
 //		filterTitledbList(&(THIS->m_list));
-//	}
+	}
 }
 
 // similar to gotListWrapper but we call dumpList() before dedupList()
@@ -510,7 +510,7 @@ bool RdbMerge::filterList() {
 		if (m_rdbId == RDB_SPIDERDB) {
 			dedupSpiderdbList(&m_list);
 		} else {
-			filterTitledbList(&m_list);
+//			filterTitledbList(&m_list);
 		}
 	}
 

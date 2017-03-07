@@ -507,76 +507,82 @@ bool HttpMime::parseSetCookie(const char *field, size_t fieldLen) {
 				logTrace(g_conf.m_logTraceHttpMime, "attribute=%.*s (len=%d)", static_cast<int>(attributeLen), attribute, static_cast<int>(attributeLen));
 				logTrace(g_conf.m_logTraceHttpMime, "attributeValueLen=%d", static_cast<int>(attributeValueLen) );
 
-				// expires
-				if (attributeLen == s_expiresLen && strncasecmp(attribute, s_expires, attributeLen) == 0) {
-					// max-age overrides expires
-					if (foundMaxAge) {
+				if (attributeValueLen > 0) {
+					// everything inside here needs an attribute value
+
+					// expires
+					if (attributeLen == s_expiresLen && strncasecmp(attribute, s_expires, attributeLen) == 0) {
+						// max-age overrides expires
+						if (foundMaxAge) {
+							continue;
+						}
+
+						time_t expiry = 0;
+						if (parseCookieDate(attributeValue, attributeValueLen, &expiry) && expiry < m_currentTime) {
+							// expired
+							logTrace(g_conf.m_logTraceHttpMime,
+							         "expires='%.*s'. expiry=%ld currentTime=%ld expired cookie. ignoring",
+							         static_cast<int>(attributeValueLen), attributeValue, expiry, m_currentTime);
+							cookie.m_expired = true;
+						}
+
 						continue;
 					}
 
-					time_t expiry = 0;
-					if (parseCookieDate(attributeValue, attributeValueLen, &expiry) && expiry < m_currentTime) {
-						// expired
-						logTrace(g_conf.m_logTraceHttpMime, "expires='%.*s'. expiry=%ld currentTime=%ld expired cookie. ignoring", static_cast<int>(attributeValueLen), attributeValue, expiry, m_currentTime);
-						cookie.m_expired = true;
+					// max-age
+					// https://tools.ietf.org/html/rfc6265#section-5.2.2
+					// If the first character of the attribute-value is not a DIGIT or a "-"
+					// character, ignore the cookie-av.
+					// If the remainder of attribute-value contains a non-DIGIT character, ignore the cookie-av.
+					// Let delta-seconds be the attribute-value converted to an integer.
+					// If delta-seconds is less than or equal to zero (0), let expiry-time be the earliest representable date and time.
+					// Otherwise, let the expiry-time be the current date and time plus delta-seconds seconds.
+					if (attributeLen == s_maxAgeLen && strncasecmp(attribute, s_maxAge, attributeLen) == 0) {
+						foundMaxAge = true;
+						int32_t maxAge = strtol(attributeValue, NULL, 10);
+						if (maxAge == 0) {
+							// expired
+							logTrace(g_conf.m_logTraceHttpMime, "max-age=%.*s. expired cookie. ignoring",
+							         static_cast<int>(attributeValueLen), attributeValue);
+							cookie.m_expired = true;
+						}
+						continue;
 					}
 
-					continue;
-				}
+					// domain
+					// https://tools.ietf.org/html/rfc6265#section-5.2.3
+					// If the attribute-value is empty, the behavior is undefined.
+					// However, the user agent SHOULD ignore the cookie-av entirely.
+					// If the first character of the attribute-value string is %x2E ("."):
+					//   Let cookie-domain be the attribute-value without the leading %x2E (".") character.
+					// Otherwise:
+					//   Let cookie-domain be the entire attribute-value.
+					// Convert the cookie-domain to lower case.
+					if (attributeLen == s_domainLen && strncasecmp(attribute, s_domain, attributeLen) == 0) {
+						// ignore first '.'
+						if (attributeValue[0] == '.') {
+							++attributeValue;
+							--attributeValueLen;
+						}
 
-				// max-age
-				// https://tools.ietf.org/html/rfc6265#section-5.2.2
-				// If the first character of the attribute-value is not a DIGIT or a "-"
-				// character, ignore the cookie-av.
-				// If the remainder of attribute-value contains a non-DIGIT character, ignore the cookie-av.
-				// Let delta-seconds be the attribute-value converted to an integer.
-				// If delta-seconds is less than or equal to zero (0), let expiry-time be the earliest representable date and time.
-				// Otherwise, let the expiry-time be the current date and time plus delta-seconds seconds.
-				if (attributeLen == s_maxAgeLen && strncasecmp(attribute, s_maxAge, attributeLen) == 0) {
-					foundMaxAge = true;
-					int32_t maxAge = strtol(attributeValue, NULL, 10);
-					if (maxAge == 0) {
-						// expired
-						logTrace(g_conf.m_logTraceHttpMime, "max-age=%.*s. expired cookie. ignoring", static_cast<int>(attributeValueLen), attributeValue);
-						cookie.m_expired = true;
-					}
-					continue;
-				}
-
-				// domain
-				// https://tools.ietf.org/html/rfc6265#section-5.2.3
-				// If the attribute-value is empty, the behavior is undefined.
-				// However, the user agent SHOULD ignore the cookie-av entirely.
-				// If the first character of the attribute-value string is %x2E ("."):
-				//   Let cookie-domain be the attribute-value without the leading %x2E (".") character.
-				// Otherwise:
-				//   Let cookie-domain be the entire attribute-value.
-				// Convert the cookie-domain to lower case.
-				if (attributeLen == s_domainLen && strncasecmp(attribute, s_domain, attributeLen) == 0) {
-					// ignore first '.'
-					if (attributeValue[0] == '.') {
-						++attributeValue;
-						--attributeValueLen;
+						cookie.m_domain = attributeValue;
+						cookie.m_domainLen = attributeValueLen;
+						continue;
 					}
 
-					cookie.m_domain = attributeValue;
-					cookie.m_domainLen = attributeValueLen;
-
-					continue;
-				}
-
-				// path
-				// https://tools.ietf.org/html/rfc6265#section-5.2.4
-				// If the attribute-value is empty or if the first character of the attribute-value is not %x2F ("/"):
-				//   Let cookie-path be the default-path.
-				// Otherwise:
-				//   Let cookie-path be the attribute-value.
-				if (attributeLen == s_pathLen && strncasecmp(attribute, s_path, attributeLen) == 0) {
-					if (attributeValueLen > 0 && attributeValue[0] == '/') {
-						cookie.m_path = attributeValue;
-						cookie.m_pathLen = attributeValueLen;
+					// path
+					// https://tools.ietf.org/html/rfc6265#section-5.2.4
+					// If the attribute-value is empty or if the first character of the attribute-value is not %x2F ("/"):
+					//   Let cookie-path be the default-path.
+					// Otherwise:
+					//   Let cookie-path be the attribute-value.
+					if (attributeLen == s_pathLen && strncasecmp(attribute, s_path, attributeLen) == 0) {
+						if (attributeValue[0] == '/') {
+							cookie.m_path = attributeValue;
+							cookie.m_pathLen = attributeValueLen;
+						}
+						continue;
 					}
-					continue;
 				}
 
 				// secure
