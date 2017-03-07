@@ -765,6 +765,40 @@ TEST(HttpMimeTest, SetCookieEmptySemicolon) {
 	httpMime.verifyCookie("CFTOKEN", "CFTOKEN=1a391de588a50a62-3E92F4DD-155D-A808-00D18B6F3D258A09", "/", "turners.com", true, true);
 }
 
+TEST(HttpMimeTest, SetCookieEmptyDomain) {
+	char httpResponse[] =
+		"HTTP/1.1 401 Access Denied\r\n"
+		"Server: nginx/1.7.10\r\n"
+		"Date: Tue, 07 Mar 2017 00:10:34 GMT\r\n"
+		"Content-Type: text/html; charset=\"utf-8\"\r\n"
+		"Content-Length: 12222\r\n"
+		"Connection: close\r\n"
+		"Set-Cookie: cprelogin=no; HttpOnly; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/; port=8000\r\n"
+		"Set-Cookie: cpsession=%3aIa1JSUWG3rmgmJPJ%2cba2c1f0cce997290e7d42c8fc00da4a7; HttpOnly; path=/; port=8000\r\n"
+		"Set-Cookie: roundcube_sessid=expired; HttpOnly; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/; port=8000\r\n"
+		"Set-Cookie: Horde=expired; HttpOnly; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/horde; port=8000\r\n"
+		"Set-Cookie: PPA_ID=expired; HttpOnly; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/; port=8000\r\n"
+		"Set-Cookie: imp_key=expired; HttpOnly; domain; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/horde; port=8000\r\n"
+		"Set-Cookie: key=expired; HttpOnly; domain; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/3rdparty/squirrelmail/; port=8000\r\n"
+		"Set-Cookie: SQMSESSID=expired; HttpOnly; domain; expires=Thu, 01-Jan-1970 00:00:01 GMT; path=/; port=8000\r\n"
+		"Cache-Control: no-cache, must-revalidate\r\n"
+		"Pragma: no-cache\r\n"
+		"Content-Encoding: gzip\r\n"
+		"\r\n";
+
+	TestHttpMime httpMime(httpResponse, "http://www.zaldibareitten.com/");
+
+	ASSERT_EQ(8, httpMime.getCookies().size());
+	httpMime.verifyCookie("cprelogin", "cprelogin=no", "/", "", true, false, true);
+	httpMime.verifyCookie("cpsession", "cpsession=%3aIa1JSUWG3rmgmJPJ%2cba2c1f0cce997290e7d42c8fc00da4a7", "/", "", true, false);
+	httpMime.verifyCookie("roundcube_sessid", "roundcube_sessid=expired", "/", "", true, false, true);
+	httpMime.verifyCookie("Horde", "Horde=expired", "/horde", "", true, false, true);
+	httpMime.verifyCookie("PPA_ID", "PPA_ID=expired", "/", "", true, false, true);
+	httpMime.verifyCookie("imp_key", "imp_key=expired", "/horde", "", true, false, true);
+	httpMime.verifyCookie("key", "key=expired", "/3rdparty/squirrelmail/", "", true, false, true);
+	httpMime.verifyCookie("SQMSESSID", "SQMSESSID=expired", "/", "", true, false, true);
+}
+
 TEST(HttpMimeTest, SetCookieDuplicate) {
 	char httpResponse[] =
 		"HTTP/1.1 200 OK\r\n"
