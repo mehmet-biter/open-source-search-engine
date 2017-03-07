@@ -135,7 +135,7 @@ bool Msge0::getTagRecs ( char        **urlPtrs           ,
 	// . when a reply returns, the next request is launched for that url
 	// . we keep a msgESlot state for each active url in the buffer
 	// . we can have up to MAX_ACTIVE urls active
-	if ( ! launchRequests ( 0 ) ) return false;
+	if ( ! launchRequests() ) return false;
 
 	// none blocked, we are done
 	return true;
@@ -143,7 +143,7 @@ bool Msge0::getTagRecs ( char        **urlPtrs           ,
 
 // we only come back up here 1) in the very beginning or 2) when a url 
 // completes its pipeline of requests
-bool Msge0::launchRequests ( int32_t starti ) {
+bool Msge0::launchRequests() {
 	// reset any error code
 	g_errno = 0;
 
@@ -184,7 +184,7 @@ bool Msge0::launchRequests ( int32_t starti ) {
 		// . m_msg8as[i], m_msgCs[i], m_msg50s[i], m_msg20s[i]
 		int32_t i;
 		// make this 0 since "maxOut" now changes!!
-		for ( i = 0 /*starti*/ ; i < MAX_OUTSTANDING_MSGE0 ; i++ )
+		for ( i = 0; i < MAX_OUTSTANDING_MSGE0 ; i++ )
 			if ( ! m_used[i] ) break;
 		// sanity check
 		if ( i >= MAX_OUTSTANDING_MSGE0 ) { g_process.shutdownAbort(true); }
@@ -278,7 +278,7 @@ void Msge0::gotTagRecWrapper(void *state) {
 	int32_t    i    = m->m_msge0State;
 	if ( ! THIS->doneSending ( i ) ) return;
 	// try to launch more, returns false if not done
-	if ( ! THIS->launchRequests(i) ) return;
+	if ( ! THIS->launchRequests() ) return;
 	// must be all done, call the callback
 	THIS->m_callback ( THIS->m_state );
 }
