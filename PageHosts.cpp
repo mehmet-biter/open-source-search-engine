@@ -346,7 +346,9 @@ skipReplaceHost:
 	}
 
 
-	// print it
+	if(format==FORMAT_JSON)
+		sb.safePrintf("\t\"hosts\": [\n");
+	
 	//int32_t ng = g_hostdb.getNumGroups();
 	for ( int32_t si = 0 ; si < nh ; si++ ) {
 		int32_t i = hostSort[si];
@@ -728,101 +730,103 @@ skipReplaceHost:
 		//
 		if ( format == FORMAT_JSON ) {
 			
-			sb.safePrintf("\t\"host\":{\n");
-			sb.safePrintf("\t\t\"name\":\"%s\",\n",h->m_hostname);
-			sb.safePrintf("\t\t\"shard\":%" PRId32",\n",
+			sb.safePrintf("\t\t\t{\n");
+			sb.safePrintf("\t\t\t\t\"name\":\"%s\",\n",h->m_hostname);
+			sb.safePrintf("\t\t\t\t\"shard\":%" PRId32",\n",
 				      (int32_t)h->m_shardNum);
-			sb.safePrintf("\t\t\"mirror\":%" PRId32",\n", h->m_stripe);
+			sb.safePrintf("\t\t\t\t\"mirror\":%" PRId32",\n", h->m_stripe);
 
-			sb.safePrintf("\t\t\"ip1\":\"%s\",\n",iptoa(h->m_ip));
-			sb.safePrintf("\t\t\"ip2\":\"%s\",\n",
+			sb.safePrintf("\t\t\t\t\"ip1\":\"%s\",\n",iptoa(h->m_ip));
+			sb.safePrintf("\t\t\t\t\"ip2\":\"%s\",\n",
 				      iptoa(h->m_ipShotgun));
 
-			sb.safePrintf("\t\t\"httpPort\":%" PRId32",\n",
+			sb.safePrintf("\t\t\t\t\"httpPort\":%" PRId32",\n",
 				      (int32_t)h->getInternalHttpPort());
-			sb.safePrintf("\t\t\"udpPort\":%" PRId32",\n",
+			sb.safePrintf("\t\t\t\t\"udpPort\":%" PRId32",\n",
 				      (int32_t)h->m_port);
-			sb.safePrintf("\t\t\"dnsPort\":%" PRId32",\n",
+			sb.safePrintf("\t\t\t\t\"dnsPort\":%" PRId32",\n",
 				      (int32_t)h->m_dnsClientPort);
 
-			sb.safePrintf("\t\t\"gbVersion\":\"%s\",\n",vbuf);
+			sb.safePrintf("\t\t\t\t\"gbVersion\":\"%s\",\n",vbuf);
 
-			sb.safePrintf("\t\t\"resends\":%" PRId32",\n",
+			sb.safePrintf("\t\t\t\t\"resends\":%" PRId32",\n",
 				      h->m_pingInfo.m_totalResends);
 
 			/*
-			sb.safePrintf("\t\t\"errorReplies\":%" PRId32",\n",
+			sb.safePrintf("\t\t\t\t\"errorReplies\":%" PRId32",\n",
 				      h->m_errorReplies);
 			*/
-			sb.safePrintf("\t\t\"errorTryAgains\":%" PRId32",\n",
+			sb.safePrintf("\t\t\t\t\"errorTryAgains\":%" PRId32",\n",
 				      h->m_pingInfo.m_etryagains);
-			sb.safePrintf("\t\t\"udpSlotsInUse\":%" PRId32",\n",
+			sb.safePrintf("\t\t\t\t\"udpSlotsInUse\":%" PRId32",\n",
 				      h->m_pingInfo.m_udpSlotsInUseIncoming);
-			sb.safePrintf("\t\t\"tcpSocketsInUse\":%" PRId32",\n",
+			sb.safePrintf("\t\t\t\t\"tcpSocketsInUse\":%" PRId32",\n",
 				      h->m_pingInfo.m_tcpSocketsInUse);
 
 			/*
-			sb.safePrintf("\t\t\"dgramsTo\":%" PRId64",\n",
+			sb.safePrintf("\t\t\t\t\"dgramsTo\":%" PRId64",\n",
 				      h->m_dgramsTo);
-			sb.safePrintf("\t\t\"dgramsFrom\":%" PRId64",\n",
+			sb.safePrintf("\t\t\t\t\"dgramsFrom\":%" PRId64",\n",
 				      h->m_dgramsFrom);
 			*/
 
 
-			sb.safePrintf("\t\t\"numCorruptDiskReads\":%" PRId32",\n"
+			sb.safePrintf("\t\t\t\t\"numCorruptDiskReads\":%" PRId32",\n"
 				      ,h->m_pingInfo.m_numCorruptDiskReads);
-			sb.safePrintf("\t\t\"numOutOfMems\":%" PRId32",\n"
+			sb.safePrintf("\t\t\t\t\"numOutOfMems\":%" PRId32",\n"
 				      ,h->m_pingInfo.m_numOutOfMems);
-			sb.safePrintf("\t\t\"numClosedSockets\":%" PRId32",\n"
+			sb.safePrintf("\t\t\t\t\"numClosedSockets\":%" PRId32",\n"
 				      ,h->m_pingInfo.
 				      m_socketsClosedFromHittingLimit);
-			sb.safePrintf("\t\t\"numOutstandingSpiders\":%" PRId32
+			sb.safePrintf("\t\t\t\t\"numOutstandingSpiders\":%" PRId32
 				      ",\n"
 				      ,h->m_pingInfo.m_currentSpiders );
 
 
-			sb.safePrintf("\t\t\"splitTime\":%" PRId32",\n",
+			sb.safePrintf("\t\t\t\t\"splitTime\":%" PRId32",\n",
 				      splitTime);
-			sb.safePrintf("\t\t\"splitsDone\":%" PRId32",\n",
+			sb.safePrintf("\t\t\t\t\"splitsDone\":%" PRId32",\n",
 				      h->m_splitsDone);
 			
-			sb.safePrintf("\t\t\"status\":\"%s\",\n",
+			sb.safePrintf("\t\t\t\t\"status\":\"%s\",\n",
 				      fb.getBufStart());
 
-			sb.safePrintf("\t\t\"slowDiskReads\":%" PRId32",\n",
+			sb.safePrintf("\t\t\t\t\"slowDiskReads\":%" PRId32",\n",
 				      h->m_pingInfo.m_slowDiskReads);
 
-			sb.safePrintf("\t\t\"docsIndexed\":%" PRId32",\n",
+			sb.safePrintf("\t\t\t\t\"docsIndexed\":%" PRId32",\n",
 				      h->m_pingInfo.m_totalDocsIndexed);
 
-			sb.safePrintf("\t\t\"percentMemUsed\":\"%.1f%%\",\n",
+			sb.safePrintf("\t\t\t\t\"percentMemUsed\":\"%.1f%%\",\n",
 				      h->m_pingInfo.m_percentMemUsed); // float
 
-			sb.safePrintf("\t\t\"cpuUsage\":\"%.1f%%\",\n",cpu);
+			sb.safePrintf("\t\t\t\t\"cpuUsage\":\"%.1f%%\",\n",cpu);
 
-			sb.safePrintf("\t\t\"percentDiskUsed\":\"%s\",\n",
+			sb.safePrintf("\t\t\t\t\"percentDiskUsed\":\"%s\",\n",
 				      diskUsageMsg);
 
-			sb.safePrintf("\t\t\"maxPing1\":\"%s\",\n",pms);
+			sb.safePrintf("\t\t\t\t\"maxPing1\":\"%s\",\n",pms);
 
-			sb.safePrintf("\t\t\"maxPingAge1\":\"%" PRId32"ms\",\n",
+			sb.safePrintf("\t\t\t\t\"maxPingAge1\":\"%" PRId32"ms\",\n",
 				      pingAge );
 
-			sb.safePrintf("\t\t\"ping1\":\"%s\",\n",
+			sb.safePrintf("\t\t\t\t\"ping1\":\"%s\",\n",
 				      ptr );
 
-			sb.safePrintf("\t\t\"note\":\"%s\"\n",
+			sb.safePrintf("\t\t\t\t\"note\":\"%s\",\n",
 				      h->m_note );
 
-			sb.safePrintf("\t\t\"spider\":\"%" PRId32"\"\n",
+			sb.safePrintf("\t\t\t\t\"spider\":\"%" PRId32"\",\n",
 						  (int32_t)h->m_spiderEnabled );
 
-			sb.safePrintf("\t\t\"query\":\"%" PRId32"\"\n",
+			sb.safePrintf("\t\t\t\t\"query\":\"%" PRId32"\"\n",
 						  (int32_t)h->m_queryEnabled );
 
 
-            
-			sb.safePrintf("\t},\n");
+			sb.safePrintf("\t\t\t}");
+			if(si+1 < nh)
+				sb.safePrintf(",");
+			sb.safePrintf("\n");
 
 			continue;
 		}
@@ -976,9 +980,9 @@ skipReplaceHost:
 	}
 
 	if ( format == FORMAT_JSON ) {
-		// remove last \n, from json host{}
-		sb.m_length -= 2;
-		sb.safePrintf("\n}\n}");
+		sb.safePrintf("\t\t]");
+		sb.safePrintf("\n}");
+		sb.safePrintf("}");
 		return g_httpServer.sendDynamicPage ( s , 
 						      sb.getBufStart(),
 						      sb.length() ,
