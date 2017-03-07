@@ -27,6 +27,13 @@ domain	example.com	allow=,www
 #   allows: sub.example.com
 host	www.example.com
 
+# block specific host with path (prefix)
+#   blocks: www.example.com/path/abc
+#   blocks: www.example.com/path/def
+#   allows: www.example.com/
+#   allows: www.example.com/some/
+host	www.example.com	/path/
+
 # path example
 # ============
 # blocks specific path (prefix)
@@ -37,7 +44,7 @@ path	/wp-admin
 # regex example
 # =============
 # blocks url by regex
-regex * https?://example\.com/(a|b)\.html
+regex	*	https?://example\.com/(a|b)\.html
 
 # blocks url by regex (specific domain)
 regex example.com https?://example\.com/(a|b)\.html

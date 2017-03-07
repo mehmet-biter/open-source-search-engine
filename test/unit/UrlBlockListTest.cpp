@@ -62,6 +62,14 @@ TEST(UrlBlockListTest, Domain) {
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("https://specific.host.dk/"));
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("https://www.host.my/"));
 	EXPECT_TRUE(urlBlockList.isUrlBlocked("https://www.host.com.my/"));
+
+	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://www.somesite.com/badpath/"));
+	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://www.somesite.com/badpath/me.html"));
+	EXPECT_FALSE(urlBlockList.isUrlBlocked("http://www.somesite.com/path/me.html"));
+	EXPECT_FALSE(urlBlockList.isUrlBlocked("http://sub.somesite.com/badpath/"));
+
+	EXPECT_FALSE(urlBlockList.isUrlBlocked("http://www.itsybitsy.com/spider/"));
+	EXPECT_TRUE(urlBlockList.isUrlBlocked("http://www.itsybitsy.com/spider/waterspout.html"));
 }
 
 TEST(UrlBlockListTest, Path) {

@@ -15,9 +15,10 @@ struct urlblockdomain_t {
 };
 
 struct urlblockhost_t {
-	urlblockhost_t(const std::string &host);
+	urlblockhost_t(const std::string &host, const std::string &path);
 
 	std::string m_host;
+	std::string m_path;
 };
 
 struct urlblockpath_t {
