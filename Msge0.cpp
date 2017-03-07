@@ -67,6 +67,7 @@ void Msge0::reset() {
 		mfree ( m_buf , m_bufSize,"Msge0buf");
 	}
 	m_buf = NULL;
+	m_numRequests = 0;
 	m_numReplies = 0;
 	m_n = 0;
 }
