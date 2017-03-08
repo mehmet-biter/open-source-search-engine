@@ -2802,21 +2802,6 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 	char ttbuf[2048];
 	// must init it!
 	tt.set ( 8 ,4,128,ttbuf,2048,false,"linknfo");
-	// how many internal linkers do we have?
-	int32_t icount = 0;
-	// we are currently only sampling from 10
-	for ( int32_t i = 0 ; i < numReplies ; i++ ) {
-		// replies are NULL if MsgE had an error, like ENOTFOUND
-		if ( ! replies[i] ) continue;
-		//if ( texts[i]->m_errno ) continue;
-		bool internal = false;
-		if ( is_same_network_linkwise(replies[i]->m_ip,ip) )
-			internal = true;
-		if ( is_same_network_linkwise(replies[i]->m_firstIp,ip) )
-			internal = true;
-		if ( internal )
-			icount++;
-	}
 
 	// we can estimate our quality here
 	int32_t numGoodInlinks = 0;
@@ -2827,10 +2812,7 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 		Msg20Reply *r = replies[i];
 		// replies are NULL if MsgE had an error, like ENOTFOUND
 		if ( ! r ) continue;
-		// get the weight
-		//int32_t w = r->m_linkTextScoreWeight;
-		// skip weights 0 or less
-		//if ( w <= 0 ) continue;
+
 		// get the link text itself
 		char *txt    = r->ptr_linkText;
 		int32_t  txtLen = r->size_linkText;
