@@ -35,10 +35,12 @@ RdbIndex::RdbIndex()
 	, m_docIds(new docids_t)
 	, m_docIdsMtx()
 	, m_pendingDocIdsMtx()
-	, m_pendingMergeCond(PTHREAD_COND_INITIALIZER)
-	, m_pendingMerge(false)
 	, m_pendingDocIds(new docids_t)
 	, m_prevPendingDocId(MAX_DOCID + 1)
+	, m_pendingMergeMtx()
+	, m_pendingMergeCond(PTHREAD_COND_INITIALIZER)
+	, m_mergeDocIds(new docids_t)
+	, m_pendingMerge(false)
 	, m_lastMergeTime(gettimeofdayInMilliseconds())
 	, m_needToWrite(false)
 	, m_registeredCallback(false)
@@ -51,9 +53,9 @@ RdbIndex::~RdbIndex() {
 		g_loop.unregisterSleepCallback(this, &timedMerge);
 	}
 
-	ScopedLock sl(m_pendingDocIdsMtx);
+	ScopedLock sl(m_pendingMergeMtx);
 	while (m_pendingMerge) { // spurious wakeup
-		pthread_cond_wait(&m_pendingMergeCond, &(m_pendingDocIdsMtx.mtx));
+		pthread_cond_wait(&m_pendingMergeCond, &(m_pendingMergeMtx.mtx));
 	}
 }
 
@@ -73,15 +75,23 @@ void RdbIndex::reset() {
 void RdbIndex::timedMerge(int /*fd*/, void *state) {
 	RdbIndex *index = static_cast<RdbIndex*>(state);
 
-	ScopedLock sl(index->m_pendingDocIdsMtx);
+	ScopedLock sl(index->m_pendingMergeMtx);
 
 	// make sure there is only a single merge job at one time
 	if (index->m_pendingMerge) {
 		return;
 	}
 
+	ScopedLock sl2(index->m_pendingDocIdsMtx);
+
+	// don't submit job if it's empty
+	if (index->m_pendingDocIds->empty()) {
+		return;
+	}
+
 	if ((index->m_pendingDocIds->size() >= (index->m_generatingIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize)) ||
 		(gettimeofdayInMilliseconds() - index->m_lastMergeTime >= s_defaultMaxPendingTimeMs)) {
+		index->m_mergeDocIds.swap(index->m_pendingDocIds);
 		index->m_pendingMerge = g_jobScheduler.submit(mergePendingDocIds, NULL, state, thread_type_index_merge, 0);
 	}
 }
@@ -89,13 +99,9 @@ void RdbIndex::timedMerge(int /*fd*/, void *state) {
 void RdbIndex::mergePendingDocIds(void *state) {
 	RdbIndex *index = static_cast<RdbIndex*>(state);
 
-	ScopedLock sl(index->m_pendingDocIdsMtx);
+	ScopedLock sl(index->m_pendingMergeMtx);
 
-	// we check criteria again to avoid running merge when it's not needed
-	if ((index->m_pendingDocIds->size() >= (index->m_generatingIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize)) ||
-	    (gettimeofdayInMilliseconds() - index->m_lastMergeTime >= s_defaultMaxPendingTimeMs)) {
-		(void)index->mergePendingDocIds_unlocked();
-	}
+	(void)index->mergeDocIds_unlocked(index->m_mergeDocIds);
 
 	index->m_pendingMerge = false;
 	pthread_cond_signal(&(index->m_pendingMergeCond));
@@ -316,11 +322,15 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds(bool forWrite) {
 }
 
 docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked(bool forWrite) {
+	return mergeDocIds_unlocked(m_pendingDocIds, forWrite);
+}
+
+docidsconst_ptr_t RdbIndex::mergeDocIds_unlocked(docids_ptr_t mergeDocIds, bool forWrite) {
 	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN %s[%p] forWrite=%s", m_file.getFilename(), this, forWrite ? "true" : "false");
 
 	// don't need to merge when there are no pending docIds
 	// except when it's forWrite then we need to free memory from vector
-	if (!forWrite && m_pendingDocIds->empty()) {
+	if (!forWrite && mergeDocIds->empty()) {
 		logTrace(g_conf.m_logTraceRdbIndex, "END %s[%p]", m_file.getFilename(), this);
 		return getDocIds();
 	}
@@ -336,11 +346,11 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked(bool forWrite) {
 	};
 
 	// merge pending docIds into docIds
-	std::stable_sort(m_pendingDocIds->begin(), m_pendingDocIds->end(), cmplt_fn);
+	std::stable_sort(mergeDocIds->begin(), mergeDocIds->end(), cmplt_fn);
 
 	docids_ptr_t tmpDocIds(new docids_t);
 	auto docIds = getDocIds();
-	std::merge(docIds->begin(), docIds->end(), m_pendingDocIds->begin(), m_pendingDocIds->end(), std::back_inserter(*tmpDocIds), cmplt_fn);
+	std::merge(docIds->begin(), docIds->end(), mergeDocIds->begin(), mergeDocIds->end(), std::back_inserter(*tmpDocIds), cmplt_fn);
 
 	// in reverse because we want to keep the newest entry
 	auto it = std::unique(tmpDocIds->rbegin(), tmpDocIds->rend(), cmpeq_fn);
@@ -356,9 +366,9 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked(bool forWrite) {
 
 	if (forWrite) {
 		// make sure memory is freed
-		m_pendingDocIds.reset(new docids_t);
+		mergeDocIds.reset(new docids_t);
 	} else {
-		m_pendingDocIds->clear();
+		mergeDocIds->clear();
 	}
 
 	logTrace(g_conf.m_logTraceRdbIndex, "END %s[%p]", m_file.getFilename(), this);
