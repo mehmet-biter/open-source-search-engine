@@ -2850,9 +2850,7 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 
 		if ( r->m_isLinkSpam ) {
 			// linkdb debug
-			if ( g_conf.m_logDebugLinkInfo ) 
-				log("linkdb: inlink #%" PRId32" is link spam: %s",
-				    i,r->ptr_note);
+			logDebug(g_conf.m_logDebugLinkInfo, "linkdb: inlink #%" PRId32" is link spam: %s", i,r->ptr_note);
 			if ( onlyNeedGoodInlinks )
 				continue;
 		}
