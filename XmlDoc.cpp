@@ -12988,6 +12988,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	bool addPosRec = false;
 	bool addTitleRec = false;
 	bool addClusterRec = false;
+	bool addLinkInfo = true;
 
 	///////////////////////////////////
 	///////////////////////////////////
@@ -13020,6 +13021,9 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			// if we are adding a simplified redirect as a link to spiderdb
 			// likewise if the error was ENONCANONICAL treat it like that
 			spideringLinks = true;
+
+			// don't add linkinfo since titlerec is empty
+			addLinkInfo = false;
 		} else {
 			spideringLinks = false;
 		}
@@ -13582,7 +13586,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	saved = m_p;
 
 	// add that table to the metalist (LINKDB)
-	if (m_useLinkdb && !addTable224(&kt1)) {
+	if (m_useLinkdb && addLinkInfo && !addTable224(&kt1)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "addTable224 failed");
 		return NULL;
 	}
