@@ -2864,9 +2864,6 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 
 	// we need space for our header
 	need += sizeof(LinkInfo);
-	// alloc the buffer
-	//char *buf = (char *)mmalloc ( need,"LinkInfo");
-	//if ( ! buf ) return NULL;
 	if ( ! linkInfoBuf->reserve ( need , "LinkInfo" ) )
 		return NULL;
 	// set ourselves to this new buffer
