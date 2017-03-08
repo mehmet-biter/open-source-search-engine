@@ -31,11 +31,8 @@ public:
 
 
 static LinkInfo *makeLinkInfo(int32_t       ip,
-			      int32_t       siteNumInlinks,
 			      Msg20Reply  **replies,
 			      int32_t       numReplies,
-			      int32_t       spamWeight,
-			      bool          oneVotePerIpTop,
 			      int64_t       linkeeDocId,
 			      int32_t       lastUpdateTime,
 			      bool          onlyNeedGoodInlinks,
@@ -1843,11 +1840,8 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	// . we are responsible for freeing
 	// . LinkInfo::getSize() returns the allocated size
 	makeLinkInfo(m_ip,
-		     m_siteNumInlinks,
 		     m_replyPtrs,
 		     m_numReplyPtrs,
-		     m_spamWeight,
-		     m_oneVotePerIpDom,
 		     m_docId,               // linkee docid
 		     m_lastUpdateTime,
 		     m_onlyNeedGoodInlinks,
@@ -2785,11 +2779,8 @@ bool Msg25::addNote(const char *note, int32_t noteLen, int64_t docId) {
 // . returns the LinkInfo on success
 // . returns NULL and sets g_errno on error
 static LinkInfo *makeLinkInfo(int32_t         ip,
-			      int32_t         siteNumInlinks,
 			      Msg20Reply    **replies,
 			      int32_t         numReplies,
-			      int32_t         spamWeight, // if link spam give this weight
-			      bool            oneVotePerIpTop,
 			      int64_t         linkeeDocId,
 			      int32_t         lastUpdateTime,
 			      bool            onlyNeedGoodInlinks,
