@@ -2856,8 +2856,7 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 		Msg20Reply *r = replies[i];
 		// replies are NULL if MsgE had an error, like ENOTFOUND
 		if ( ! r ) continue;
-		// ignore if spam
-		//if ( onlyNeedGoodInlinks && r->m_isLinkSpam ) continue;
+
 		if ( r->m_isLinkSpam ) {
 			// linkdb debug
 			if ( g_conf.m_logDebugLinkInfo ) 
@@ -2922,10 +2921,7 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 		Msg20Reply *r = replies[i];
 		// replies are NULL if MsgE had an error, like ENOTFOUND
 		if ( ! r ) continue;
-		// skip weights 0 or less
-		//if ( r->m_linkTextScoreWeight <= 0 ) continue;
-		// ignore if spam
-		//if ( onlyNeedGoodInlinks && r->m_isLinkSpam ) continue;
+
 		if ( r->m_isLinkSpam && onlyNeedGoodInlinks ) continue;
 		// are we internal?
 		bool internal = false;
@@ -2966,12 +2962,6 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 #endif
 
 	linkInfoBuf->setLength ( need );
-
-	// sanity parse it
-	//int32_t ss = 0;
-	//for ( Inlink *k =NULL; (k=info->getNextInlink(k)) ; ) 
-	//	ss += k->getStoredSize();
-	//if ( info->m_buf + ss != pend ) { g_process.shutdownAbort(true);}
 
 	// success
 	return info;
