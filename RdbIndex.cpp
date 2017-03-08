@@ -64,7 +64,11 @@ void RdbIndex::reset() {
 
 	/// @todo ALC do we need to lock here?
 	m_docIds.reset(new docids_t);
+
 	m_pendingDocIds.reset(new docids_t);
+	m_pendingDocIds->reserve(m_generatingIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize);
+
+	m_mergeDocIds.reset(new docids_t);
 
 	m_prevPendingDocId = MAX_DOCID + 1;
 	m_lastMergeTime = gettimeofdayInMilliseconds();
@@ -369,6 +373,7 @@ docidsconst_ptr_t RdbIndex::mergeDocIds_unlocked(docids_ptr_t mergeDocIds, bool 
 		mergeDocIds.reset(new docids_t);
 	} else {
 		mergeDocIds->clear();
+		mergeDocIds->reserve(m_generatingIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize);
 	}
 
 	logTrace(g_conf.m_logTraceRdbIndex, "END %s[%p]", m_file.getFilename(), this);
