@@ -31,11 +31,8 @@ public:
 
 
 static LinkInfo *makeLinkInfo(int32_t       ip,
-			      int32_t       siteNumInlinks,
 			      Msg20Reply  **replies,
 			      int32_t       numReplies,
-			      int32_t       spamWeight,
-			      bool          oneVotePerIpTop,
 			      int64_t       linkeeDocId,
 			      int32_t       lastUpdateTime,
 			      bool          onlyNeedGoodInlinks,
@@ -1843,11 +1840,8 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	// . we are responsible for freeing
 	// . LinkInfo::getSize() returns the allocated size
 	makeLinkInfo(m_ip,
-		     m_siteNumInlinks,
 		     m_replyPtrs,
 		     m_numReplyPtrs,
-		     m_spamWeight,
-		     m_oneVotePerIpDom,
 		     m_docId,               // linkee docid
 		     m_lastUpdateTime,
 		     m_onlyNeedGoodInlinks,
@@ -2785,11 +2779,8 @@ bool Msg25::addNote(const char *note, int32_t noteLen, int64_t docId) {
 // . returns the LinkInfo on success
 // . returns NULL and sets g_errno on error
 static LinkInfo *makeLinkInfo(int32_t         ip,
-			      int32_t         siteNumInlinks,
 			      Msg20Reply    **replies,
 			      int32_t         numReplies,
-			      int32_t         spamWeight, // if link spam give this weight
-			      bool            oneVotePerIpTop,
 			      int64_t         linkeeDocId,
 			      int32_t         lastUpdateTime,
 			      bool            onlyNeedGoodInlinks,
@@ -2802,21 +2793,6 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 	char ttbuf[2048];
 	// must init it!
 	tt.set ( 8 ,4,128,ttbuf,2048,false,"linknfo");
-	// how many internal linkers do we have?
-	int32_t icount = 0;
-	// we are currently only sampling from 10
-	for ( int32_t i = 0 ; i < numReplies ; i++ ) {
-		// replies are NULL if MsgE had an error, like ENOTFOUND
-		if ( ! replies[i] ) continue;
-		//if ( texts[i]->m_errno ) continue;
-		bool internal = false;
-		if ( is_same_network_linkwise(replies[i]->m_ip,ip) )
-			internal = true;
-		if ( is_same_network_linkwise(replies[i]->m_firstIp,ip) )
-			internal = true;
-		if ( internal )
-			icount++;
-	}
 
 	// we can estimate our quality here
 	int32_t numGoodInlinks = 0;
@@ -2827,10 +2803,7 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 		Msg20Reply *r = replies[i];
 		// replies are NULL if MsgE had an error, like ENOTFOUND
 		if ( ! r ) continue;
-		// get the weight
-		//int32_t w = r->m_linkTextScoreWeight;
-		// skip weights 0 or less
-		//if ( w <= 0 ) continue;
+
 		// get the link text itself
 		char *txt    = r->ptr_linkText;
 		int32_t  txtLen = r->size_linkText;
@@ -2874,13 +2847,10 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 		Msg20Reply *r = replies[i];
 		// replies are NULL if MsgE had an error, like ENOTFOUND
 		if ( ! r ) continue;
-		// ignore if spam
-		//if ( onlyNeedGoodInlinks && r->m_isLinkSpam ) continue;
+
 		if ( r->m_isLinkSpam ) {
 			// linkdb debug
-			if ( g_conf.m_logDebugLinkInfo ) 
-				log("linkdb: inlink #%" PRId32" is link spam: %s",
-				    i,r->ptr_note);
+			logDebug(g_conf.m_logDebugLinkInfo, "linkdb: inlink #%" PRId32" is link spam: %s", i,r->ptr_note);
 			if ( onlyNeedGoodInlinks )
 				continue;
 		}
@@ -2894,9 +2864,6 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 
 	// we need space for our header
 	need += sizeof(LinkInfo);
-	// alloc the buffer
-	//char *buf = (char *)mmalloc ( need,"LinkInfo");
-	//if ( ! buf ) return NULL;
 	if ( ! linkInfoBuf->reserve ( need , "LinkInfo" ) )
 		return NULL;
 	// set ourselves to this new buffer
@@ -2940,10 +2907,7 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 		Msg20Reply *r = replies[i];
 		// replies are NULL if MsgE had an error, like ENOTFOUND
 		if ( ! r ) continue;
-		// skip weights 0 or less
-		//if ( r->m_linkTextScoreWeight <= 0 ) continue;
-		// ignore if spam
-		//if ( onlyNeedGoodInlinks && r->m_isLinkSpam ) continue;
+
 		if ( r->m_isLinkSpam && onlyNeedGoodInlinks ) continue;
 		// are we internal?
 		bool internal = false;
@@ -2984,12 +2948,6 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 #endif
 
 	linkInfoBuf->setLength ( need );
-
-	// sanity parse it
-	//int32_t ss = 0;
-	//for ( Inlink *k =NULL; (k=info->getNextInlink(k)) ; ) 
-	//	ss += k->getStoredSize();
-	//if ( info->m_buf + ss != pend ) { g_process.shutdownAbort(true);}
 
 	// success
 	return info;

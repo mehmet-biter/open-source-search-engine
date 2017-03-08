@@ -10,6 +10,7 @@ os:
 
 script:
 - if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
+    export CXX=g++-5;
     ./runCoverityAnalysis.sh;
     ./runSonarQubeAnalysis.sh;
   else
