@@ -87,8 +87,6 @@ private:
 	docidsconst_ptr_t mergePendingDocIds(bool forWrite = false);
 	docidsconst_ptr_t mergePendingDocIds_unlocked(bool forWrite = false);
 
-	docidsconst_ptr_t mergeDocIds_unlocked(docids_ptr_t mergeDocIds, bool forWrite = false);
-
 	void swapDocIds(docidsconst_ptr_t docIds);
 
 	// the index file
@@ -108,13 +106,11 @@ private:
 
 	// newest record pending merge into m_docIds
 	GbMutex m_pendingDocIdsMtx;
+	pthread_cond_t m_pendingMergeCond;
+	bool m_pendingMerge;
+
 	docids_ptr_t m_pendingDocIds;
 	uint64_t m_prevPendingDocId;
-
-	GbMutex m_pendingMergeMtx;
-	pthread_cond_t m_pendingMergeCond;
-	docids_ptr_t m_mergeDocIds;
-	bool m_pendingMerge;
 
 	int64_t m_lastMergeTime;
 
