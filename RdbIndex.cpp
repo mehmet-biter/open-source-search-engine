@@ -82,6 +82,11 @@ void RdbIndex::timedMerge(int /*fd*/, void *state) {
 		return;
 	}
 
+	// don't need to merge if it's empty
+	if (index->m_pendingDocIds->empty()) {
+		return;
+	}
+
 	if ((index->m_pendingDocIds->size() >= (index->m_generatingIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize)) ||
 		(gettimeofdayInMilliseconds() - index->m_lastMergeTime >= s_defaultMaxPendingTimeMs)) {
 		index->m_pendingMerge = g_jobScheduler.submit(mergePendingDocIds, NULL, state, thread_type_index_merge, 0);
