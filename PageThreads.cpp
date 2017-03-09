@@ -24,6 +24,7 @@ static const char *thread_type_name(thread_type_t tt) {
 		case thread_type_file_merge:         return "file-merge";
 		case thread_type_file_meta_data:     return "file-meta-data";
 		case thread_type_index_merge:        return "index-merge";
+		case thread_type_index_generate:     return "index-generate";
 		case thread_type_verify_data:        return "verify-data";
 		case thread_type_statistics:         return "statistics";
 		case thread_type_unspecified_io:     return "unspecified IO";

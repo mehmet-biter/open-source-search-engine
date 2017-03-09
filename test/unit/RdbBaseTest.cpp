@@ -116,47 +116,13 @@ TEST_F(RdbBaseTest, PosdbUpdateIndex) {
 	}
 
 	static const int32_t mergeFilePos = 2;
-	static const int32_t startFilePos = 3;
 	static const int32_t fileMergeCount = 2;
 
-
-	// insert file
-	base->updateGlobalIndexInsertFile(mergeFilePos);
-
-	{
-		SCOPED_TRACE("insert file");
-		auto globalIndex = base->getGlobalIndex();
-		ASSERT_EQ(6, globalIndex->size());
-
-		EXPECT_EQ((((1 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 0, globalIndex->at(0));
-		EXPECT_EQ((((2 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 1, globalIndex->at(1));
-		EXPECT_EQ((((3 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 3, globalIndex->at(2));
-		EXPECT_EQ((((4 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 4, globalIndex->at(3));
-		EXPECT_EQ((((5 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 5, globalIndex->at(4));
-		EXPECT_EQ((((6 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 6, globalIndex->at(5));
-	}
-
 	// update file
-	base->updateGlobalIndexUpdateFile(mergeFilePos, startFilePos, fileMergeCount);
+	base->updateGlobalIndexUpdateFile(mergeFilePos, fileMergeCount);
 
 	{
 		SCOPED_TRACE("update file");
-		auto globalIndex = base->getGlobalIndex();
-		ASSERT_EQ(6, globalIndex->size());
-
-		EXPECT_EQ((((1 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 0, globalIndex->at(0));
-		EXPECT_EQ((((2 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 1, globalIndex->at(1));
-		EXPECT_EQ((((3 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 2, globalIndex->at(2));
-		EXPECT_EQ((((4 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 2, globalIndex->at(3));
-		EXPECT_EQ((((5 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 5, globalIndex->at(4));
-		EXPECT_EQ((((6 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 6, globalIndex->at(5));
-	}
-
-	// delete file
-	base->updateGlobalIndexDeleteFile(mergeFilePos, fileMergeCount);
-
-	{
-		SCOPED_TRACE("delete file");
 		auto globalIndex = base->getGlobalIndex();
 		ASSERT_EQ(6, globalIndex->size());
 

@@ -224,9 +224,7 @@ private:
 
 public:
 	void generateGlobalIndex();
-	void updateGlobalIndexInsertFile(int32_t mergeFilePos);
-	void updateGlobalIndexUpdateFile(int32_t mergeFilePos, int32_t startFilePos, int32_t fileMergeCount);
-	void updateGlobalIndexDeleteFile(int32_t mergeFilePos, int32_t fileMergeCount);
+	void updateGlobalIndexUpdateFile(int32_t mergeFilePos, int32_t fileMergeCount);
 	void printGlobalIndex();
 
 	static const char s_docIdFileIndex_docIdOffset = 24;
@@ -234,6 +232,9 @@ public:
 	static const uint64_t s_docIdFileIndex_docIdMask    = 0xfffffffffc000000ULL;
 	static const uint64_t s_docIdFileIndex_delBitMask   = 0x0000000001000000ULL;
 	static const uint64_t s_docIdFileIndex_filePosMask  = 0x000000000000ffffULL;
+
+	void incrementOutstandingJobs();
+	bool decrementOustandingJobs();
 
 private:
 	void selectFilesToMerge(int32_t mergeNum, int32_t numFiles, int32_t *p_mini);
@@ -332,8 +333,6 @@ private:
 	bool m_submittingJobs;
 	int m_outstandingJobCount;
 	GbMutex m_mtxJobCount;
-	void incrementOutstandingJobs();
-	bool decrementOustandingJobs();
 };
 
 extern bool g_dumpMode;

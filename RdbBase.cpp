@@ -1552,6 +1552,10 @@ void RdbBase::renamesDone() {
 		gbshutdownLogicError();
 	}
 
+	// regenerate index since things have moved
+	// m_mergeStartFileNum is the file num before bury file and contains the merge file as well. hence we need to deduct by one.
+	updateGlobalIndexUpdateFile(m_mergeStartFileNum - 1, m_numFilesToMerge);
+
 	// decrement this count
 	if ( m_isMerging ) {
 		m_rdb->decrementNumMerges();
@@ -1616,9 +1620,6 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 	// sanity
 	log("rdb: bury files: numFiles now %" PRId32" (b=%" PRId32" a=%" PRId32" collnum=%" PRId32")",
 	    m_numFiles,b,a,(int32_t)m_collnum);
-
-	// regenerate index since things have moved
-	generateGlobalIndex();
 }
 
 
@@ -2621,7 +2622,7 @@ void RdbBase::generateGlobalIndex() {
 	m_docIdFileIndex.swap(tmpDocIdFileIndex);
 }
 
-void RdbBase::updateGlobalIndexInsertFile(int32_t mergeFilePos) {
+void RdbBase::updateGlobalIndexUpdateFile(int32_t mergeFilePos, int32_t fileMergeCount) {
 	if (!m_useIndexFile) {
 		return;
 	}
@@ -2630,53 +2631,15 @@ void RdbBase::updateGlobalIndexInsertFile(int32_t mergeFilePos) {
 	docids_ptr_t tmpDocIdFileIndex(new docids_t(*m_docIdFileIndex.get()));
 	sl.unlock();
 
+	int32_t endFilePos = mergeFilePos + fileMergeCount;
+	int32_t delFileCount = fileMergeCount - 1;
 	for (auto it = tmpDocIdFileIndex->begin(); it != tmpDocIdFileIndex->end(); ++it) {
 		int32_t filePos = static_cast<int32_t>(*it & RdbBase::s_docIdFileIndex_filePosMask);
-		if (filePos >= mergeFilePos) {
-			*it = (*it & ~s_docIdFileIndex_filePosMask) | (filePos + 1);
-		}
-	}
-
-	// replace with new index
-	ScopedLock sl2(m_docIdFileIndexMtx);
-	m_docIdFileIndex.swap(tmpDocIdFileIndex);
-}
-
-void RdbBase::updateGlobalIndexUpdateFile(int32_t mergeFilePos, int32_t startFilePos, int32_t fileMergeCount) {
-	if (!m_useIndexFile) {
-		return;
-	}
-
-	ScopedLock sl(m_docIdFileIndexMtx);
-	docids_ptr_t tmpDocIdFileIndex(new docids_t(*m_docIdFileIndex.get()));
-	sl.unlock();
-
-	int32_t endFilePos = startFilePos + fileMergeCount;
-	for (auto it = tmpDocIdFileIndex->begin(); it != tmpDocIdFileIndex->end(); ++it) {
-		int32_t filePos = static_cast<int32_t>(*it & RdbBase::s_docIdFileIndex_filePosMask);
-		if (filePos >= startFilePos && filePos <  endFilePos) {
+		if (filePos >= mergeFilePos && filePos <  endFilePos) {
 			*it = (*it & ~s_docIdFileIndex_filePosMask) | mergeFilePos;
-		}
-	}
-
-	// replace with new index
-	ScopedLock sl2(m_docIdFileIndexMtx);
-	m_docIdFileIndex.swap(tmpDocIdFileIndex);
-}
-
-void RdbBase::updateGlobalIndexDeleteFile(int32_t mergeFilePos, int32_t fileMergeCount) {
-	if (!m_useIndexFile) {
-		return;
-	}
-
-	ScopedLock sl(m_docIdFileIndexMtx);
-	docids_ptr_t tmpDocIdFileIndex(new docids_t(*m_docIdFileIndex.get()));
-	sl.unlock();
-
-	for (auto it = tmpDocIdFileIndex->begin(); it != tmpDocIdFileIndex->end(); ++it) {
-		int32_t filePos = static_cast<int32_t>(*it & RdbBase::s_docIdFileIndex_filePosMask);
-		if (filePos > mergeFilePos) {
-			*it = (*it & ~s_docIdFileIndex_filePosMask) | (filePos - fileMergeCount);
+		} else if (filePos >= endFilePos) {
+			// file pos after merge file
+			*it = (*it & ~s_docIdFileIndex_filePosMask) | (filePos - delFileCount);
 		}
 	}
 

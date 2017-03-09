@@ -415,6 +415,7 @@ bool JobScheduler_impl::submit(thread_type_t thread_type, JobEntry &e)
 			case thread_type_file_merge:         job_queue = &merge_job_queue;    break;
 			case thread_type_file_meta_data:     job_queue = &file_meta_job_queue;break;
 			case thread_type_index_merge:        job_queue = &cpu_job_queue;      break;
+			case thread_type_index_generate:     job_queue = &merge_job_queue;    break;
 			case thread_type_verify_data:        job_queue = &cpu_job_queue;      break;
 			case thread_type_statistics:         job_queue = &cpu_job_queue;      break;
 			case thread_type_unspecified_io:     job_queue = &cpu_job_queue;      break;
