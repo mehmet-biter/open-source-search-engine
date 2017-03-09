@@ -7891,8 +7891,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 	r->m_urlIp                  = *ip;
 	r->m_firstIp                = m_firstIp;
 	r->m_urlHash48              = getFirstUrlHash48();
- 	if ( r->m_maxTextDocLen  < 100000 ) r->m_maxTextDocLen  = 100000;
-	if ( r->m_maxOtherDocLen < 200000 ) r->m_maxOtherDocLen = 200000;
 	r->m_spideredTime           = getSpideredTime();//m_spideredTime;
 	r->m_ifModifiedSince        = 0;
 	r->m_skipHammerCheck        = 0;
