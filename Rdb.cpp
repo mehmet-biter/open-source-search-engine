@@ -1160,6 +1160,8 @@ bool Rdb::dumpCollLoop ( ) {
 			      base->getFile(m_fn)->getFileSize() <= 0) ) {
 				log("build: File %s is zero bytes, removing from memory.",base->getFile(m_fn)->getFilename());
 				base->buryFiles ( m_fn , m_fn+1 );
+
+				// nothing is dumped. don't need to regenerate index
 			}
 
 			// game over, man
@@ -1328,18 +1330,51 @@ bool Rdb::dumpCollLoop ( ) {
 void Rdb::doneDumpingCollWrapper ( void *state ) {
 	Rdb *THIS = (Rdb *)state;
 
-	// we just finished dumping to a file, 
-	// so allow it to try to merge again.
-	//RdbBase *base = THIS->getBase(THIS->m_dumpCollnum);
-
 	logTrace( g_conf.m_logTraceRdb, "dbname=%s collnum=%d", THIS->m_dbname, THIS->m_dumpCollnum );
 
-	if (g_errno == 0) {
+	if (g_errno == 0 && THIS->isUseIndexFile()) {
 		RdbBase *base = THIS->getBase(THIS->m_dumpCollnum);
 		if (base) {
-			base->generateGlobalIndex();
-			base->markNewFileReadable();
+			base->incrementOutstandingJobs();
 		}
+		if (g_jobScheduler.submit(generateGlobalIndexWrapper, generateGlobalIndexDoneWrapper, state, thread_type_index_generate, 0)) {
+			return;
+		}
+
+		if (base) {
+			base->decrementOustandingJobs();
+		}
+
+		// unable to submit job
+		generateGlobalIndexWrapper(state);
+	}
+
+	// return if the loop blocked
+	if ( ! THIS->dumpCollLoop() ) {
+		return;
+	}
+
+	// otherwise, call big wrapper
+	THIS->doneDumping();
+}
+
+void Rdb::generateGlobalIndexWrapper(void *state) {
+	Rdb *THIS = (Rdb *)state;
+
+	RdbBase *base = THIS->getBase(THIS->m_dumpCollnum);
+	if (base) {
+		base->generateGlobalIndex();
+		base->markNewFileReadable();
+		base->decrementOustandingJobs();
+	}
+}
+
+void Rdb::generateGlobalIndexDoneWrapper(void *state, job_exit_t exit_type) {
+	Rdb *THIS = (Rdb *)state;
+
+	// job was not run
+	if (exit_type != job_exit_normal) {
+		generateGlobalIndexWrapper(state);
 	}
 
 	// return if the loop blocked

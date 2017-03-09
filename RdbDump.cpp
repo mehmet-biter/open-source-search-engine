@@ -788,6 +788,10 @@ bool RdbDump::doneReadingForVerify ( ) {
 
 	bool triedToFix = false;
 
+	// we're using the list multiple times. if hi/lo are 'hacked', then we need to save it when using it the second time.
+	const char *savedListPtrHi = m_list->getListPtrHi();
+	const char *savedListPtrLo = m_list->getListPtrLo();
+
 tryAgain:
 	// . register this with the map now
 	// . only register AFTER it's ALL on disk so we don't get partial
@@ -832,6 +836,10 @@ tryAgain:
 	log(LOG_TIMING, "db: adding to map took %" PRIu64" ms", t2 - t1);
 
 	if (m_index) {
+		// restore hi/lo ptr which was reset after generating map
+		m_list->setListPtrHi(savedListPtrHi);
+		m_list->setListPtrLo(savedListPtrLo);
+
 		m_index->addList(m_list);
 		log(LOG_TIMING, "db: adding to index took %" PRIu64" ms", gettimeofdayInMilliseconds() - t2);
 	}

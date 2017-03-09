@@ -104,8 +104,13 @@ public:
 	char *getCurrentRec() { return m_listPtr; }
 	char *getListPtr() { return m_listPtr; }
 	void setListPtr(char *listPtr) { m_listPtr = listPtr; }
-	void setListPtrHi(char *listPtrHi) { m_listPtrHi = listPtrHi; }
-	void setListPtrLo(char *listPtrLo) { m_listPtrLo = listPtrLo; }
+
+	const char* getListPtrHi() const { return m_listPtrHi; }
+	void setListPtrHi(const char *listPtrHi) { m_listPtrHi = listPtrHi; }
+
+	const char* getListPtrLo() const { return m_listPtrLo; }
+	void setListPtrLo(const char *listPtrLo) { m_listPtrLo = listPtrLo; }
+
 	void resetListPtr();
 
 	// often these equal m_list/m_listSize, but they may encompass
