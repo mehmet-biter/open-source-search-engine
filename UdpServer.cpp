@@ -584,6 +584,7 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 		mfree ( alloc , allocSize , "UdpServer");
 		// was EBADENGINEER
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		sl.unlock();
 		sendErrorReply ( slot , g_errno);
 		return ;
 	}
