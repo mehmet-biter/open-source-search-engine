@@ -10,6 +10,7 @@
 #define GB_MSG13_H
 
 #include "SpiderProxy.h" // MAXUSERNAMEPWD
+#include <stddef.h>
 
 // max crawl delay form proxy backoff of 1 minute (60 seconds)
 #define MAX_PROXYCRAWLDELAYMS 60000
@@ -25,7 +26,7 @@ public:
 	// the top portion of Msg13Request is sent to handleRequest54()
 	// in SpiderProxy.cpp to get and return proxies, as well as to
 	// ban proxies.
-	int32_t getProxyRequestSize() { return (char *)&m_lastHack-(char *)this;}
+	int32_t getProxyRequestSize() const { return offsetof(Msg13Request,m_lastHack); }
 	int32_t  m_urlIp;
 	int32_t  m_lbId; // loadbucket id
 	// the http proxy to use to download
@@ -119,8 +120,8 @@ public:
 
 	// variable data starts here
 
-	int32_t getSize() {
-		return ((char *)ptr_url-(char *)this) +size_url+size_cookie;
+	int32_t getSize() const {
+		return offsetof(Msg13Request,ptr_url) + size_url + size_cookie;
 	}
 
 	// zero it all out
