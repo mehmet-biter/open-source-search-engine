@@ -213,17 +213,17 @@ bool Msge0::launchRequests() {
 	}
 }
 
-bool Msge0::sendMsg8a ( int32_t i ) {
+bool Msge0::sendMsg8a(int32_t slotIndex) {
 	// handle errors
 	if ( g_errno && ! m_errno ) m_errno = g_errno;
 	g_errno = 0;
-	Msg8a  *m   = &m_msg8as[i];
+	Msg8a  *m   = &m_msg8as[slotIndex];
 	// save state into Msg8a
 	m->m_msge0 =  this;
-	m->m_msge0State = i;
+	m->m_msge0State = slotIndex;
 
 	// we are processing the nth url
-	int32_t n = m_ns[i];
+	int32_t n = m_ns[slotIndex];
 	// now use it
 	m_tagRecPtrs[n] = allocateTagRec();
 	if(!m_tagRecPtrs[n]) {
@@ -235,26 +235,26 @@ bool Msge0::sendMsg8a ( int32_t i ) {
 	// . that is really a hack until we find a way to identify subsites
 	//   on a domain automatically, like blogspot.com/users/harry/ is a 
 	//   subsite.
-	if ( !m->getTagRec( &m_urls[i], m_collnum, m_niceness, m, gotTagRecWrapper, m_tagRecPtrs[n] ))
+	if ( !m->getTagRec( &m_urls[slotIndex], m_collnum, m_niceness, m, gotTagRecWrapper, m_tagRecPtrs[n] ))
 		return false;
-	return doneSending ( i );
+	return doneSending(slotIndex);
 }
 
 void Msge0::gotTagRecWrapper(void *state) {
 	Msg8a *m     = (Msg8a *)state;
 	//TagRec *m    = (TagRec *)state;
 	Msge0  *THIS = m->m_msge0;
-	int32_t    i    = m->m_msge0State;
-	if ( ! THIS->doneSending ( i ) ) return;
+	int32_t    slotIndex    = m->m_msge0State;
+	if ( ! THIS->doneSending (slotIndex) ) return;
 	// try to launch more, returns false if not done
 	if ( ! THIS->launchRequests() ) return;
 	// must be all done, call the callback
 	THIS->m_callback ( THIS->m_state );
 }
 
-bool Msge0::doneSending ( int32_t i ) {
+bool Msge0::doneSending(int32_t slotIndex) {
 	// we are processing the nth url
-	int32_t   n    = m_ns[i];
+	int32_t   n    = m_ns[slotIndex];
 	// save the error if msg8a had one
 	m_tagRecErrors[n] = g_errno;
 	// also, set m_errno for this Msge0 class...
@@ -271,9 +271,9 @@ bool Msge0::doneSending ( int32_t i ) {
 	m_numReplies++;
 	//if ( m_getSiteRecs ) ruleset = m_siteRecBuf[n].m_filenum;
 	//log ( LOG_DEBUG, "build: Finished Msge0 for url [%" PRId32",%" PRId32"]: %s",
-	//      n, i, m_urls[i].getUrl() );
+	//      n, slotIndex, m_urls[slotIndex].getUrl() );
 	// free it
-	m_used[i] = false;
+	m_used[slotIndex] = false;
 	// we did not block
 	return true;
 }
