@@ -1841,9 +1841,10 @@ int32_t getMsgSize(const char *buf, int32_t bufSize, TcpSocket *s) {
 	if ( ! is_digit ( buf[i] ) ) return bufSize;
 	// . if not a 200 then we can return bufSize and not read anymore
 	// . we get a lot of 404s here from getting robots.txt's
-	if ( buf[i+0] != '2'  ) return bufSize;
-	if ( buf[i+1] != '0'  ) return bufSize;
-	if ( buf[i+2] != '0'  ) return bufSize;
+	if(buf[i+0] != '2' ||
+	   buf[i+1] != '0' ||
+	   buf[i+2] != '0')
+		return mimeSize;
 	// . don't read more than total max
 	// . http://autos.link2link.com/ was sending us an infinite amount
 	//   of content (no content-length) very slowly
