@@ -565,6 +565,7 @@ bool RdbDump::dumpList2(bool recall) {
 				    KEYSTR(lastKey, m_ks),
 				    KEYSTR(k, m_ks));
 				g_errno = EBADENGINEER;
+				m_map->printMap();
 				gbshutdownLogicError();
 			}
 		}
