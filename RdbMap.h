@@ -285,9 +285,9 @@ class RdbMap {
 
 	bool truncateFile ( BigFile *f ) ;
 
+	void printMap ();
  private:
 
-	void printMap ();
 
 	// the map file
         BigFile m_file;
