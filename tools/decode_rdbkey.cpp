@@ -58,6 +58,8 @@ int main(int argc, char **argv) {
 		Posdb::printKey(key);
 	} else if (strcmp(rdb, "spiderdb") == 0) {
 		Spiderdb::printKey(key);
+	} else if (strcmp(rdb, "titledb") == 0) {
+		Titledb::printKey(key);
 	} else {
 		fprintf(stdout, "Unsupported RDB %s\n", rdb);
 		return 1;
