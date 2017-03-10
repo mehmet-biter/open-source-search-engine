@@ -38,7 +38,7 @@ private:
 	static void gotTagRecWrapper(void *state);
 	bool launchRequests();
 	bool sendMsg8a(int32_t slotIndex);
-	bool doneSending(int32_t slotIndex);
+	void doneSending(int32_t slotIndex);
 
 	TagRec *allocateTagRec();
 

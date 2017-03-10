@@ -237,7 +237,8 @@ bool Msge0::sendMsg8a(int32_t slotIndex) {
 	//   subsite.
 	if ( !m->getTagRec( &m_urls[slotIndex], m_collnum, m_niceness, m, gotTagRecWrapper, m_tagRecPtrs[n] ))
 		return false;
-	return doneSending(slotIndex);
+	doneSending(slotIndex);
+	return true;
 }
 
 void Msge0::gotTagRecWrapper(void *state) {
@@ -245,14 +246,14 @@ void Msge0::gotTagRecWrapper(void *state) {
 	//TagRec *m    = (TagRec *)state;
 	Msge0  *THIS = m->m_msge0;
 	int32_t    slotIndex    = m->m_msge0State;
-	if ( ! THIS->doneSending (slotIndex) ) return;
+	THIS->doneSending(slotIndex);
 	// try to launch more, returns false if not done
 	if ( ! THIS->launchRequests() ) return;
 	// must be all done, call the callback
 	THIS->m_callback ( THIS->m_state );
 }
 
-bool Msge0::doneSending(int32_t slotIndex) {
+void Msge0::doneSending(int32_t slotIndex) {
 	// we are processing the nth url
 	int32_t   n    = m_ns[slotIndex];
 	// save the error if msg8a had one
@@ -266,8 +267,6 @@ bool Msge0::doneSending(int32_t slotIndex) {
 	m_numReplies++;
 	// free it
 	m_used[slotIndex] = false;
-	// we did not block
-	return true;
 }
 
 
