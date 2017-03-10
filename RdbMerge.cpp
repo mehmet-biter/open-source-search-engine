@@ -306,10 +306,8 @@ bool RdbMerge::getAnotherList() {
 		return true;
 	}
 
-	// if merging titledb files, we must adjust m_endKey so we do
-	// not have to read a huge 200MB+ tfndb list
-	char newEndKey[MAX_KEY_BYTES];
-	KEYSET(newEndKey,m_endKey,m_ks);
+	logTrace(g_conf.m_logTraceRdbMerge, "list=%p startKey=%s endKey=%s",
+	         &m_list, KEYSTR(m_startKey, m_ks), KEYSTR(m_endKey, m_ks));
 
 	// . this returns false if blocked, true otherwise
 	// . sets g_errno on error
@@ -339,7 +337,7 @@ bool RdbMerge::getAnotherList() {
 				 m_collnum,
 				 &m_list,
 				 m_startKey,
-				 newEndKey,       // usually is maxed!
+				 m_endKey,       // usually is maxed!
 				 bufSize,
 				 false,           // includeTree?
 				 0,               // max cache age for lookup
@@ -364,6 +362,9 @@ bool RdbMerge::getAnotherList() {
 void RdbMerge::gotListWrapper(void *state, RdbList * /*list*/, Msg5 * /*msg5*/) {
 	// get a ptr to ourselves
 	RdbMerge *THIS = (RdbMerge *)state;
+
+	logTrace(g_conf.m_logTraceRdbMerge, "list=%p startKey=%s endKey=%s",
+	         &(THIS->m_list), KEYSTR(THIS->m_startKey, THIS->m_ks), KEYSTR(THIS->m_endKey, THIS->m_ks));
 
 	THIS->m_getListOutstanding = false;
 
@@ -525,6 +526,9 @@ void RdbMerge::dumpListWrapper(void *state) {
 	// get a ptr to ourselves
 	RdbMerge *THIS = (RdbMerge *)state;
 
+	logTrace(g_conf.m_logTraceRdbMerge, "list=%p startKey=%s endKey=%s",
+	         &(THIS->m_list), KEYSTR(THIS->m_startKey, THIS->m_ks), KEYSTR(THIS->m_endKey, THIS->m_ks));
+
 	for (;;) {
 		// collection reset or deleted while RdbDump.cpp was writing out?
 		if (g_errno == ENOCOLLREC) {
@@ -580,6 +584,9 @@ bool RdbMerge::dumpList() {
 	}
 
 	log(LOG_DEBUG,"db: Dumping list.");
+
+	logTrace(g_conf.m_logTraceRdbMerge, "list=%p startKey=%s endKey=%s",
+	         &m_list, KEYSTR(m_startKey, m_ks), KEYSTR(m_endKey, m_ks));
 
 	// . send the whole list to the dump
 	// . it returns false if blocked, true otherwise

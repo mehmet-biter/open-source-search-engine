@@ -115,8 +115,7 @@ void TcpServer::reset() {
 //   the entire request beforehand for allocation purposes
 // . getMsgSize() must return -1 if it cannot determine the size of the request
 bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
-		       int32_t (* getMsgSize    )(char *msg , int32_t msgBytesRead,
-					       TcpSocket *s ),
+		       int32_t (* getMsgSize    )(const char *msg, int32_t msgBytesRead, TcpSocket *s),
 		       int32_t (* getMsgPiece   )(TcpSocket *s ),
 		       int16_t      port           , 
 		       int32_t      *maxSocketsPtr  ,
