@@ -30,7 +30,7 @@ class HttpRequest;
 
 
 typedef void (*tcp_callback_t)(void *, TcpSocket *);
-int32_t getMsgSize ( char *buf , int32_t bufSize , TcpSocket *s );
+int32_t getMsgSize(const char *buf, int32_t bufSize, TcpSocket *s);
 
 class HttpServer {
 

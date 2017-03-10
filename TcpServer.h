@@ -46,8 +46,7 @@ class TcpServer {
 	// . getMsgSize is called to get the total size of an incoming msg
 	// . it returns -1 if it doesn't yet know
 	bool init ( void (* requestHandler)(TcpSocket *s) ,
-		    int32_t (* getMsgSize    )(char *msg , int32_t msgBytesRead,
-					    TcpSocket *s ),
+		    int32_t (* getMsgSize    )(const char *msg, int32_t msgBytesRead, TcpSocket *s),
 		    int32_t (* getMsgPiece   )(TcpSocket *s ),
 		    int16_t     port                        , 
 		    int32_t     *maxSocketsPtr = NULL        , //MAX_TCP_SOCS def
@@ -185,7 +184,7 @@ class TcpServer {
 	//int32_t        m_maxSendBufSize;
 
 	// these callbacks should be set in init()
-	int32_t (* m_getMsgSize    )(char *msg , int32_t msgBytesRead, TcpSocket *s);
+	int32_t (* m_getMsgSize    )(const char *msg, int32_t msgBytesRead, TcpSocket *s);
 	int32_t (* m_getMsgPiece   )(TcpSocket *s );
 
 	// flag to specify SSL or not

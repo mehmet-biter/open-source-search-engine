@@ -1628,7 +1628,7 @@ static int32_t getMsgPiece ( TcpSocket *s ) {
 //   one alloc() and forget about having to do more...
 // . up to 128 bytes of the reply can be stored in a static buffer
 //   contained in TcpSocket, until we need to alloc...
-int32_t getMsgSize ( char *buf, int32_t bufSize, TcpSocket *s ) {
+int32_t getMsgSize(const char *buf, int32_t bufSize, TcpSocket *s) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufSize);
 #endif
@@ -1690,8 +1690,8 @@ int32_t getMsgSize ( char *buf, int32_t bufSize, TcpSocket *s ) {
 		// don't allow posts of more than 100k
 		max = 200*1024;
 		// point to requested url path
-		char *pp    = buf + 5;
-		char *ppend = buf + bufSize;
+		const char *pp    = buf + 5;
+		const char *ppend = buf + bufSize;
 		while ( pp < ppend && is_wspace_a(*pp) ) pp++;
 		// if post is a /inject allow 10 megs
 		if ( pp + 7 < ppend && strncmp ( pp ,"/inject" , 7 ) == 0 )
@@ -1726,8 +1726,8 @@ int32_t getMsgSize ( char *buf, int32_t bufSize, TcpSocket *s ) {
 
 	// look for a Content-Type: field because we now limit how much
 	// we read based on this
-	char *p          = buf;
-	char *pend       = buf + i;
+	const char *p          = buf;
+	const char *pend       = buf + i;
 	// if it is pointless to partially download the doc then
 	// set allOrNothing to true
 	bool  allOrNothing = false;
