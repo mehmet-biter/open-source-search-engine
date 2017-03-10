@@ -306,11 +306,6 @@ bool RdbMerge::getAnotherList() {
 		return true;
 	}
 
-	// if merging titledb files, we must adjust m_endKey so we do
-	// not have to read a huge 200MB+ tfndb list
-	char newEndKey[MAX_KEY_BYTES];
-	KEYSET(newEndKey,m_endKey,m_ks);
-
 	// . this returns false if blocked, true otherwise
 	// . sets g_errno on error
 	// . we return false if it blocked
@@ -339,7 +334,7 @@ bool RdbMerge::getAnotherList() {
 				 m_collnum,
 				 &m_list,
 				 m_startKey,
-				 newEndKey,       // usually is maxed!
+				 m_endKey,       // usually is maxed!
 				 bufSize,
 				 false,           // includeTree?
 				 0,               // max cache age for lookup
