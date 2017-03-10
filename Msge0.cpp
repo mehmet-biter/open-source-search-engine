@@ -128,7 +128,8 @@ bool Msge0::getTagRecs ( char        **urlPtrs           ,
 	// . url # m_n
 	m_n = 0;
 	// clear the m_used flags
-	memset ( m_used , 0 , MAX_OUTSTANDING_MSGE0 );
+	for(int i=0; i<MAX_OUTSTANDING_MSGE0; i++)
+		m_used[i] = false;
 
 	// . launch the requests
 	// . a request can be a msg8a, msgc, msg50 or msg20 request depending
