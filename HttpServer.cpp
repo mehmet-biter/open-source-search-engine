@@ -2072,7 +2072,7 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 	int32_t newSize = *(int32_t*)(s->m_readBuf + s->m_readOffset - 4);
 
 	if(newSize < 0 || newSize > 500*1024*1024) {
-		log(LOG_WARN, "http: got bad gzipped reply1 of size=%" PRId32".", newSize );
+		log(LOG_WARN, "http: got bad gzipped reply1. Compressed size: %d bytes, Supposedly uncompressed size: %d", s->m_readOffset, newSize);
 		g_errno = ECORRUPTHTTPGZIP;
 		return s;
 	}
