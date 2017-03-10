@@ -39,7 +39,7 @@ Msge0::~Msge0() {
 	reset();
 }
 
-#define SLAB_SIZE (8*1024)
+static const size_t SLAB_SIZE = sizeof(TagRec)*20;
 
 void Msge0::reset() {
 	m_errno = 0;
@@ -219,50 +219,14 @@ bool Msge0::sendMsg8a ( int32_t i ) {
 	if ( g_errno && ! m_errno ) m_errno = g_errno;
 	g_errno = 0;
 	Msg8a  *m   = &m_msg8as[i];
-	//TagRec *m = &m_tagRecs[i];
 	// save state into Msg8a
 	m->m_msge0 =  this;
 	m->m_msge0State = i;
 
-	// how big are all the tags we got for this url
-	int32_t need = sizeof(TagRec);
-	// sanity check
-	if ( need > SLAB_SIZE ) { g_process.shutdownAbort(true); }
-	// how much space left in the latest buffer
-	if ( m_slabPtr + need > m_slabEnd ) {
-		// inc the buffer number
-		m_slabNum++;
-		// allocate a new 8k buffer
-		m_slab[m_slabNum] = (char *)mmalloc (SLAB_SIZE,"msgeslab");
-		// failed?
-		if ( ! m_slab[m_slabNum] ) {
-			// do not free if null above
-			m_slabNum--;
-			// count as reply
-			m_numReplies++;
-			// make it available again
-			m_used[i] = false;
-			// record error
-			if ( ! m_errno ) m_errno = g_errno;
-			// error out
-			log("msge0: slab alloc: %s",mstrerror(g_errno));
-			return true;
-		}
-		// uh oh?
-		if ( ! m_slab[m_slabNum] && m_errno == 0 ) 
-			m_errno = g_errno;
-		// set it (will be NULL if malloc failed)
-		m_slabPtr = m_slab[m_slabNum];
-		m_slabEnd = m_slabPtr + SLAB_SIZE;
-	}
 	// we are processing the nth url
 	int32_t n = m_ns[i];
 	// now use it
-	m_tagRecPtrs[n] = (TagRec *)m_slabPtr;
-	// constructor
-	new (m_tagRecPtrs[n]) TagRec();
-	// advance it
-	m_slabPtr += sizeof(TagRec);
+	m_tagRecPtrs[n] = allocateTagRec();
 
 	// . this now employs the tagdb filters table for lookups
 	// . that is really a hack until we find a way to identify subsites
@@ -309,4 +273,26 @@ bool Msge0::doneSending ( int32_t i ) {
 	m_used[i] = false;
 	// we did not block
 	return true;
+}
+
+
+
+TagRec *Msge0::allocateTagRec() {
+	static const int32_t need = sizeof(TagRec);
+	// how much space left in the latest buffer
+	if ( m_slabPtr + need > m_slabEnd ) {
+		char *newSlab = (char *)mmalloc (SLAB_SIZE,"msgeslab");
+		if(!newSlab) {
+			if ( ! m_errno ) m_errno = g_errno;
+			// error out
+			log("msge0: slab alloc: %s",mstrerror(g_errno));
+			return NULL;
+		}
+		m_slab[++m_slabNum] = newSlab;
+		m_slabPtr = m_slab[m_slabNum];
+		m_slabEnd = m_slabPtr + SLAB_SIZE;
+	}
+	TagRec *tagRec = new (m_slabPtr) TagRec();
+	m_slabPtr += sizeof(TagRec);
+	return tagRec;
 }

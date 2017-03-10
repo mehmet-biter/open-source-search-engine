@@ -40,6 +40,8 @@ private:
 	bool sendMsg8a      ( int32_t i );
 	bool doneSending    ( int32_t i );
 
+	TagRec *allocateTagRec();
+
 	collnum_t m_collnum;
 	int32_t  m_niceness  ;
 
