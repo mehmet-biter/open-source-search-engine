@@ -828,7 +828,8 @@ bool RdbMap::addList(RdbList *list) {
 
 	if (g_conf.m_logTraceRdbMap) {
 		getLastKey(lastKey);
-		logTrace(g_conf.m_logTraceRdbMap, "END lastKey=%s", KEYSTR(lastKey, list->getKeySize()));
+		logTrace(g_conf.m_logTraceRdbMap, "END listLastKey=%s maplastKey=%s",
+		         KEYSTR(key, list->getKeySize()), KEYSTR(lastKey, list->getKeySize()));
 	}
 	return true;
 }

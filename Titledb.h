@@ -20,6 +20,10 @@
 //   <reserved>  -  9 bits
 // . <delBit>    -  1 bit
 
+// dddddddd dddddddd dddddddd dddddddd      d: docId
+// dddddduu uuuuuuuu uuuuuuuu uuuuuuuu      u: urlHash48
+// uuuuuuuu uuuuuuuu uuuuuuxx xxxxxxxD      D: delBit
+
 class Titledb {
 public:
 	// reset rdb
