@@ -761,14 +761,8 @@ bool RdbMap::prealloc ( RdbList *list ) {
 
 // . call addRecord() or addKey() for each record in this list
 bool RdbMap::addList(RdbList *list) {
-	char lastKey[MAX_KEY_BYTES];
-
-	if (g_conf.m_logTraceRdbMap) {
-		getLastKey(lastKey);
-		logTrace(g_conf.m_logTraceRdbMap, "BEGIN. startKey=%s endKey=%s lastKey=%s",
-		         KEYSTR(list->getStartKey(), list->getKeySize()), KEYSTR(list->getEndKey(), list->getKeySize()),
-		         KEYSTR(lastKey, list->getKeySize()));
-	}
+	logTrace(g_conf.m_logTraceRdbMap, "BEGIN. startKey=%s endKey=%s",
+	         KEYSTR(list->getStartKey(), list->getKeySize()), KEYSTR(list->getEndKey(), list->getKeySize()));
 
 	// sanity check
 	if (list->getKeySize() != m_ks) {
@@ -785,6 +779,17 @@ bool RdbMap::addList(RdbList *list) {
 	if ( list->isEmpty() ) {
 		logTrace(g_conf.m_logTraceRdbMap, "END");
 		return true;
+	}
+
+	if (g_conf.m_logTraceRdbMap) {
+		char firstKey[MAX_KEY_BYTES];
+		list->getCurrentKey(firstKey);
+
+		char lastKey[MAX_KEY_BYTES];
+		getLastKey(lastKey);
+
+		logTrace(g_conf.m_logTraceRdbMap, "BEGIN. firstKey=%s lastKey=%s",
+		         KEYSTR(firstKey, list->getKeySize()), KEYSTR(lastKey, list->getKeySize()));
 	}
 
 	// what is the last page we touch?
@@ -827,8 +832,9 @@ bool RdbMap::addList(RdbList *list) {
 	list->resetListPtr();
 
 	if (g_conf.m_logTraceRdbMap) {
+		char lastKey[MAX_KEY_BYTES];
 		getLastKey(lastKey);
-		logTrace(g_conf.m_logTraceRdbMap, "END listLastKey=%s maplastKey=%s",
+		logTrace(g_conf.m_logTraceRdbMap, "END listLastKey=%s mapLastKey=%s",
 		         KEYSTR(key, list->getKeySize()), KEYSTR(lastKey, list->getKeySize()));
 	}
 	return true;
