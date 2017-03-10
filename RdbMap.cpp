@@ -761,7 +761,7 @@ bool RdbMap::prealloc ( RdbList *list ) {
 
 // . call addRecord() or addKey() for each record in this list
 bool RdbMap::addList(RdbList *list) {
-	logTrace(g_conf.m_logTraceRdbMap, "BEGIN. startKey=%s endKey=%s",
+	logTrace(g_conf.m_logTraceRdbMap, "BEGIN. listStartKey=%s listEndKey=%s",
 	         KEYSTR(list->getStartKey(), list->getKeySize()), KEYSTR(list->getEndKey(), list->getKeySize()));
 
 	// sanity check
@@ -788,7 +788,7 @@ bool RdbMap::addList(RdbList *list) {
 		char lastKey[MAX_KEY_BYTES];
 		getLastKey(lastKey);
 
-		logTrace(g_conf.m_logTraceRdbMap, "BEGIN. firstKey=%s lastKey=%s",
+		logTrace(g_conf.m_logTraceRdbMap, "BEGIN. listFirstKey=%s mapLastKey=%s",
 		         KEYSTR(firstKey, list->getKeySize()), KEYSTR(lastKey, list->getKeySize()));
 	}
 
