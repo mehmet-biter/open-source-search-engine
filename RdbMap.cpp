@@ -761,6 +761,9 @@ bool RdbMap::prealloc ( RdbList *list ) {
 
 // . call addRecord() or addKey() for each record in this list
 bool RdbMap::addList(RdbList *list) {
+	logTrace(g_conf.m_logTraceRdbMap, "BEGIN. startKey=%s endKey=%s",
+	         KEYSTR(list->getStartKey(), list->getKeySize()), KEYSTR(list->getEndKey(), list->getKeySize()));
+
 	// sanity check
 	if (list->getKeySize() != m_ks) {
 		g_process.shutdownAbort(true);
@@ -773,7 +776,10 @@ bool RdbMap::addList(RdbList *list) {
 	//list->resetListPtr();
 
 	// bail now if it's empty
-	if ( list->isEmpty() ) return true;
+	if ( list->isEmpty() ) {
+		logTrace(g_conf.m_logTraceRdbMap, "END");
+		return true;
+	}
 
 	// what is the last page we touch?
 	int32_t lastPageNum = (m_offset + list->getListSize() - 1) / m_pageSize;
@@ -785,6 +791,7 @@ bool RdbMap::addList(RdbList *list) {
 	while ( lastPageNum + 2 >= m_maxNumPages ) {
 		if ( ! addSegment() ) {
 			log( LOG_WARN, "db: Failed to add segment to map file %s.", m_file.getFilename() );
+			logTrace(g_conf.m_logTraceRdbMap, "END. Failed to add segment to map");
 			return false;
 		}
 	}
@@ -802,6 +809,7 @@ bool RdbMap::addList(RdbList *list) {
 		char *rec = list->getCurrentRec();
 		if (!addRecord(key, rec, recSize)) {
 			log(LOG_WARN, "db: Failed to add record to map: %s.", mstrerror(g_errno));
+			logTrace(g_conf.m_logTraceRdbMap, "END. Failed to add record to map");
 			// allow caller to try to fix the tree in the case of dumpinga tree to a file on disk
 			return false;
 		}
@@ -811,6 +819,8 @@ bool RdbMap::addList(RdbList *list) {
 	//verifyMap2();
 
 	list->resetListPtr();
+
+	logTrace(g_conf.m_logTraceRdbMap, "END");
 	return true;
 }
 

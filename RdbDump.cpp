@@ -496,10 +496,13 @@ bool RdbDump::dumpTree(bool recall) {
 // . sets g_errno on error
 // . this one is also called by RdbMerge to dump lists
 bool RdbDump::dumpList(RdbList *list, bool recall) {
+	logTrace(g_conf.m_logTraceRdbDump, "BEGIN. list=%p recall=%d", list, recall);
+
 	// save ptr to list
 	m_list = list;
 	// nothing to do if list is empty
 	if (m_list->isEmpty()) {
+		logTrace(g_conf.m_logTraceRdbDump, "END. Empty list.");
 		return true;
 	}
 	
@@ -515,8 +518,10 @@ bool RdbDump::dumpList(RdbList *list, bool recall) {
 		m_isDumping = true;
 
 		if (g_conf.m_verifyDumpedLists) {
-			if(g_jobScheduler.submit(&checkList,&checkedList,this,thread_type_verify_data,m_niceness))
+			if(g_jobScheduler.submit(&checkList,&checkedList,this,thread_type_verify_data,m_niceness)) {
+				logTrace(g_conf.m_logTraceRdbDump, "END. Submitted checkList job.");
 				return false;
+			}
 			m_list->checkList_r(true, m_rdb ? m_rdb->getRdbId() : RDB_NONE);
 		}
 	}
@@ -526,12 +531,17 @@ bool RdbDump::dumpList(RdbList *list, bool recall) {
 
 void RdbDump::checkList(void *state) {
 	RdbDump *that = reinterpret_cast<RdbDump*>(state);
+
+	logTrace(g_conf.m_logTraceRdbDump, "BEGIN. list=%p", that->m_list);
 	that->m_list->checkList_r(true, that->m_rdb ? that->m_rdb->getRdbId() : RDB_NONE);
+	logTrace(g_conf.m_logTraceRdbDump, "END. list=%p", that->m_list);
 }
 
 void RdbDump::checkedList(void *state, job_exit_t /*exit_type*/) {
 	RdbDump *that = reinterpret_cast<RdbDump*>(state);
+	logTrace(g_conf.m_logTraceRdbDump, "BEGIN. list=%p", that->m_list);
 	that->dumpList2(false);
+	logTrace(g_conf.m_logTraceRdbDump, "END. list=%p", that->m_list);
 }
 
 

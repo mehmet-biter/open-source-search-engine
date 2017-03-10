@@ -9269,6 +9269,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for RdbMerge";
+	m->m_cgi   = "ltrc_rmrg";
+	simple_m_set(Conf,m_logTraceRdbMerge);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for RdbTree";
 	m->m_cgi   = "ltrc_rt";
 	simple_m_set(Conf,m_logTraceRdbTree);
