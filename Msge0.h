@@ -18,7 +18,7 @@ public:
 	~Msge0();
 	void reset();
 
-	bool getTagRecs ( char        **urlPtrs      ,
+	bool getTagRecs ( const char        **urlPtrs      ,
 			  linkflags_t  *urlFlags     ,
 			  int32_t          numUrls      ,
 			  bool          skipOldLinks ,
@@ -43,7 +43,7 @@ private:
 	collnum_t m_collnum;
 	int32_t  m_niceness  ;
 
-	char **m_urlPtrs;
+	const char **m_urlPtrs;
 	linkflags_t *m_urlFlags;
 	int32_t   m_numUrls;
 

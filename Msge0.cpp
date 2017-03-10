@@ -77,7 +77,7 @@ void Msge0::reset() {
 // . urls in "urlBuf" are \0 terminated
 // . used to be called getSiteRecs()
 // . you can pass in a list of docIds rather than urlPtrs
-bool Msge0::getTagRecs ( char        **urlPtrs           ,
+bool Msge0::getTagRecs ( const char        **urlPtrs           ,
 			 linkflags_t  *urlFlags          , //Links::m_linkFlags
 			 int32_t          numUrls           ,
 			// if skipOldLinks && urlFlags[i]&LF_OLDLINK, skip it
@@ -179,7 +179,7 @@ bool Msge0::launchRequests() {
 		}
 		// . get the next url
 		// . if m_xd is set, create the url from the ad id
-		char *p = m_urlPtrs[m_n];
+		const char *p = m_urlPtrs[m_n];
 		// get the length
 		int32_t  plen = strlen(p);
 		// . grab a slot

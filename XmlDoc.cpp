@@ -10771,7 +10771,7 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 	// assume valid
 	m_outlinkTagRecVectorValid = true;
 	// go get it
-	if ( ! m_msge0.getTagRecs ( links->m_linkPtrs  ,
+	if ( ! m_msge0.getTagRecs ( const_cast<const char **>(links->m_linkPtrs),
 				    links->m_linkFlags ,
 				    links->m_numLinks  ,
 				    false              , // skip old?
