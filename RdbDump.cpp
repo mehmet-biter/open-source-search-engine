@@ -559,7 +559,8 @@ bool RdbDump::dumpList2(bool recall) {
 			char lastKey[MAX_KEY_BYTES];
 			m_map->getLastKey(lastKey);
 
-			if (KEYCMP(k, lastKey, m_ks) <= 0) {
+			/// @todo ALC HACK! temp fix to prevent core dump with same keys being requested again
+			if (KEYCMP(k, lastKey, m_ks) < 0) {
 				log(LOG_LOGIC, "db: Dumping list key out of order. "
 						    "lastKey=%s k=%s",
 				    KEYSTR(lastKey, m_ks),
