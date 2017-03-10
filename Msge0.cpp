@@ -262,16 +262,8 @@ bool Msge0::doneSending(int32_t slotIndex) {
 	// reset error for successive calls to other msgs
 	g_errno = 0;
 
-	//
-	// copy the Tags from Msg8a into a "slab".
-	// alloc a new slab if not enough room.
-	//
-
 	// tally it up
 	m_numReplies++;
-	//if ( m_getSiteRecs ) ruleset = m_siteRecBuf[n].m_filenum;
-	//log ( LOG_DEBUG, "build: Finished Msge0 for url [%" PRId32",%" PRId32"]: %s",
-	//      n, slotIndex, m_urls[slotIndex].getUrl() );
 	// free it
 	m_used[slotIndex] = false;
 	// we did not block
