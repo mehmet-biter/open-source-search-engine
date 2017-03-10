@@ -1740,6 +1740,9 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	KEYSET(m_startKey,startKey,m_ks);
 	KEYSET(m_endKey,endKey,m_ks);
 
+	// . NEVER end in a negative rec key (dangling negative rec key)
+	// . we don't want any positive recs to go un annhilated
+	// . but don't worry about this check if start and end keys are equal
 	// . MDW: this happens during the qainject1() qatest in qa.cpp that
 	//   deletes all the urls then does a dump of just negative keys.
 	//   so let's comment it out for now
