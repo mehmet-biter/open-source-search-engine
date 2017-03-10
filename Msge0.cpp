@@ -206,9 +206,8 @@ bool Msge0::launchRequests() {
 		// . this will start the pipeline for this url
 		// . it will set m_used[i] to true if we use it and block
 		// . it will increment m_numRequests and NOT m_numReplies if it blocked
-		sendMsg8a ( i );
-		// consider it launched
 		m_numRequests++;
+		sendMsg8a(i);
 		// inc the url count
 		m_n++;
 	}
@@ -227,6 +226,10 @@ bool Msge0::sendMsg8a ( int32_t i ) {
 	int32_t n = m_ns[i];
 	// now use it
 	m_tagRecPtrs[n] = allocateTagRec();
+	if(!m_tagRecPtrs[n]) {
+		m_numReplies++; //we won't get a response on that one
+		return true;
+	}
 
 	// . this now employs the tagdb filters table for lookups
 	// . that is really a hack until we find a way to identify subsites
