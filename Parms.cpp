@@ -5231,19 +5231,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
-	m->m_title = "max delay before logging a callback or handler";
-	m->m_desc  = "If a call to a message callback or message handler "
-		"in the udp server takes more than this many milliseconds, "
-		"then log it. "
-		"Logs 'udp: Took %" PRId64" ms to call callback for msgType="
-		"0x%hhx niceness=%" PRId32"'. "
-		"Use -1 or less to disable the logging.";
-	m->m_cgi   = "mdch";
-	simple_m_set(Conf,m_maxCallbackDelay);
-	m->m_def   = "-1";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
 	m->m_title = "send email alerts";
 	m->m_desc  = "Sends emails to admin if a host goes down.";
 	m->m_cgi   = "sea";
@@ -5799,7 +5786,6 @@ void Parms::init ( ) {
 	m->m_xml   = "StableSummaryCacheAge";
 	simple_m_set(Conf,m_stableSummaryCacheMaxAge);
 	m->m_def   = "86400000";
-	m->m_units = "milliseconds";
 	m->m_units = "milliseconds";
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
@@ -8808,6 +8794,40 @@ void Parms::init ( ) {
 	// LOG CONTROLS
 	///////////////////////////////////////////
 
+	m->m_title = "max delay before logging a callback or handler";
+	m->m_desc  = "If a call to a message callback or message handler "
+		"in the udp server takes more than this many milliseconds, "
+		"then log it. "
+		"Logs 'udp: Took %" PRId64" ms to call callback for msgType="
+		"0x%hhx niceness=%" PRId32"'. "
+		"Use -1 or less to disable the logging.";
+	m->m_cgi   = "mdch";
+	simple_m_set(Conf,m_maxCallbackDelay);
+	m->m_def   = "-1";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log query time threshold";
+	m->m_desc  = "If a query took this many millliseconds or longer, then log the "
+		"query and the time it took to process.";
+	m->m_cgi   = "lqtt";
+	simple_m_set(Conf,m_logQueryTimeThreshold);
+	m->m_def   = "5000";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log disk read time threshold";
+	m->m_desc  = "If a disk read took this many millliseconds or longer, then log the "
+		"bytes read and the time it took to process.";
+	m->m_cgi   = "ldrtt";
+	simple_m_set(Conf,m_logDiskReadTimeThreshold);
+	m->m_def   = "50";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log http requests";
 	m->m_desc  = "Log GET and POST requests received from the "
 		"http server?";
@@ -8825,25 +8845,6 @@ void Parms::init ( ) {
 	m->m_def   = "1";
 	m->m_page  = PAGE_LOG;
 	m++;
-
-	m->m_title = "log query time threshold";
-	m->m_desc  = "If a query took this many millliseconds or longer, then log the "
-		"query and the time it took to process.";
-	m->m_cgi   = "lqtt";
-	simple_m_set(Conf,m_logQueryTimeThreshold);
-	m->m_def   = "5000";
-	m->m_page  = PAGE_LOG;
-	m++;
-
-	m->m_title = "log disk read time threshold";
-	m->m_desc  = "If a disk read took this many millliseconds or longer, then log the "
-		"bytes read and the time it took to process.";
-	m->m_cgi   = "ldrtt";
-	simple_m_set(Conf,m_logDiskReadTimeThreshold);
-	m->m_def   = "50";
-	m->m_page  = PAGE_LOG;
-	m++;
-
 
 	m->m_title = "log query reply";
 	m->m_desc  = "Log query reply in proxy, but only for those queries "
