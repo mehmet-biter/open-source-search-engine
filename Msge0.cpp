@@ -22,7 +22,6 @@ Msge0::Msge0()
     m_baseTagRec(NULL),
     m_tagRecErrors(NULL),
     m_tagRecPtrs(NULL),
-    m_numTags(NULL),
     m_numRequests(0),
     m_numReplies(0),
     m_n(0),

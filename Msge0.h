@@ -66,7 +66,6 @@ private:
 	// url that we get in urlBuf
 	int32_t        *m_tagRecErrors;
 	TagRec     **m_tagRecPtrs;
-	int32_t        *m_numTags;
 
 	int32_t  m_numRequests;
 	int32_t  m_numReplies;
