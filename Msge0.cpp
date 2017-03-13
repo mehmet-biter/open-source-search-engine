@@ -40,19 +40,10 @@ Msge0::~Msge0() {
 
 void Msge0::reset() {
 	m_errno = 0;
+	//free TagRecs that are not the base tag
 	for ( int32_t i = 0 ; i < m_n ; i++ ) {
-		// cast it
-		TagRec *tr = m_tagRecPtrs[i];
-		// skip if empty
-		if ( ! tr ) {
-			continue;
-		}
-		// skip if base
-		if ( tr == m_baseTagRec ) {
-			continue;
-		}
-		// free the rdblist memory in the TagRec::m_list
-		m_tagRecPtrs[i]->~TagRec();
+		if(m_tagRecPtrs[i] && m_tagRecPtrs[i]!=m_baseTagRec)
+			m_tagRecPtrs[i]->~TagRec();
 	}
 	if ( m_buf ) {
 		mfree ( m_buf , m_bufSize,"Msge0buf");
