@@ -167,15 +167,8 @@ bool Msge0::launchRequests() {
 		// claim it
 		m_used[i] = true;
 
-		// note it
-		//if ( g_conf.m_logDebugSpider )
-		//	log(LOG_DEBUG,"spider: msge0: processing url %s",
-		//	    m_urls[i].getUrl());
-
 		// . start it off
 		// . this will start the pipeline for this url
-		// . it will set m_used[i] to true if we use it and block
-		// . it will increment m_numRequests and NOT m_numReplies if it blocked
 		m_numRequests++;
 		sendMsg8a(i);
 		// inc the url count
