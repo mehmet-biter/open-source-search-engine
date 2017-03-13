@@ -10774,7 +10774,6 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 	if ( ! m_msge0.getTagRecs ( const_cast<const char **>(links->m_linkPtrs),
 				    links->m_linkFlags ,
 				    links->m_numLinks  ,
-				    false              , // skip old?
 				    // make it point to this basetagrec if
 				    // the LF_SAMEHOST flag is set for the link
 				    gr ,

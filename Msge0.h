@@ -19,7 +19,6 @@ public:
 	bool getTagRecs ( const char        **urlPtrs      ,
 			  const linkflags_t *urlFlags,
 			  int32_t          numUrls      ,
-			  bool          skipOldLinks ,
 			  TagRec *baseTagRec ,
 			  collnum_t  collnum,
 			  int32_t          niceness     ,

@@ -12,7 +12,6 @@ Msge0::Msge0()
     m_urlPtrs(NULL),
     m_urlFlags(NULL),
     m_numUrls(0),
-    m_skipOldLinks(false),
     m_buf(NULL),
     m_bufSize(0),
     m_baseTagRec(NULL),
@@ -69,8 +68,6 @@ void Msge0::reset() {
 bool Msge0::getTagRecs ( const char        **urlPtrs           ,
 			 const linkflags_t *urlFlags          , //Links::m_linkFlags
 			 int32_t          numUrls           ,
-			// if skipOldLinks && urlFlags[i]&LF_OLDLINK, skip it
-			 bool          skipOldLinks      ,
 			 TagRec       *baseTagRec        ,
 			 collnum_t     collnum,
 			 int32_t          niceness          ,
@@ -84,7 +81,6 @@ bool Msge0::getTagRecs ( const char        **urlPtrs           ,
 	m_urlPtrs          = urlPtrs;
 	m_urlFlags         = urlFlags;
 	m_numUrls          = numUrls;
-	m_skipOldLinks     = skipOldLinks;
 	m_baseTagRec       = baseTagRec;
 	m_collnum          = collnum;
 	m_niceness         = niceness;
@@ -147,15 +143,6 @@ bool Msge0::launchRequests() {
 		if ( g_udpServer.getNumUsedSlots() > 500 ) maxOut = 1;
 		// if we are maxed out, we basically blocked!
 		if (m_numRequests - m_numReplies >= maxOut ) return false;
-		// . skip if "old"
-		// . we are not planning on adding this to spiderdb, so Msg16
-		//   want to skip the ip lookup, etc.
-		if ( m_urlFlags && (m_urlFlags[m_n] & LF_OLDLINK) && m_skipOldLinks ) {
-			m_numRequests++;
-			m_numReplies++;
-			m_n++;
-			continue;
-		}
 		// if url is same host as the tagrec provided, just reference that!
 		if ( m_urlFlags && (m_urlFlags[m_n] & LF_SAMEHOST) && m_baseTagRec) {
 			m_tagRecPtrs[m_n] = (TagRec *)m_baseTagRec;
