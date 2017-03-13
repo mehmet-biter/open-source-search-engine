@@ -132,17 +132,13 @@ bool Msge0::launchRequests() {
 	// reset any error code
 	g_errno = 0;
 
-	for(;;) {
-		// stop if no more urls. return true if we got all replies! no block.
-		if ( m_n >= m_numUrls ) return (m_numRequests == m_numReplies);
-		// if all hosts are getting a diffbot reply with 50 spiders and they
-		// all timeout at the same time we can very easily clog up the
-		// udp sockets, so use this to limit... i've seen the whole
-		// spider tables stuck with "getting outlink tag rec vector"statuses
-		int32_t maxOut = MAX_OUTSTANDING_MSGE0;
-		if ( g_udpServer.getNumUsedSlots() > 500 ) maxOut = 1;
-		// if we are maxed out, we basically blocked!
-		if (m_numRequests - m_numReplies >= maxOut ) return false;
+	// if all hosts are getting a diffbot reply with 50 spiders and they
+	// all timeout at the same time we can very easily clog up the
+	// udp sockets, so use this to limit... i've seen the whole
+	// spider tables stuck with "getting outlink tag rec vector"statuses
+	const int32_t maxOut = g_udpServer.getNumUsedSlots() > 500 ? 1 : MAX_OUTSTANDING_MSGE0;
+	
+	while(m_n < m_numUrls && m_numRequests - m_numReplies < maxOut) {
 		// if url is same host as the tagrec provided, just reference that!
 		if ( m_urlFlags && (m_urlFlags[m_n] & LF_SAMEHOST) && m_baseTagRec) {
 			m_tagRecPtrs[m_n] = (TagRec *)m_baseTagRec;
@@ -185,6 +181,10 @@ bool Msge0::launchRequests() {
 		// inc the url count
 		m_n++;
 	}
+	
+	if( m_n >= m_numUrls )
+		return m_numRequests == m_numReplies;
+	return false;
 }
 
 bool Msge0::sendMsg8a(int32_t slotIndex) {
