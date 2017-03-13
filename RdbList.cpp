@@ -1899,7 +1899,7 @@ top:
 		goto done;
 	}
 
-	if ( KEYCMP(minKey,endKey,m_ks)>0 ) {
+	if ( KEYCMP(minKey,m_endKey,m_ks)>0 ) {
 		goto done;
 	}
 
@@ -2002,7 +2002,7 @@ skip:
 	if ( removeNegRecs ) {
 		// . keep chugging if there MAY be keys left
 		// . they will replace us if they are added cuz "removeNegRecs" is true
-		if ( mini >= 0 && KEYCMP(minKey,endKey,m_ks)<0 ) {
+		if ( mini >= 0 && KEYCMP(minKey,m_endKey,m_ks)<0 ) {
 			goto top;
 		}
 		// . otherwise, all lists were exhausted

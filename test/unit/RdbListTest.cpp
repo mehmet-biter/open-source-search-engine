@@ -13,6 +13,18 @@ static const char* makePosdbKey(char *key, int64_t termId, uint64_t docId, int32
 	return key;
 }
 
+static const char* makeTitledbKey(char *key, uint64_t docId, int64_t urlHash48, bool isDelKey) {
+	key96_t k = Titledb::makeKey(docId, urlHash48, isDelKey);
+	memcpy(key, &k, sizeof(key96_t));
+	return key;
+}
+
+static const char* makeTitledbData(const char *data) {
+	char *mdata = (char*)malloc(strlen(data) + 1);
+	strcpy(mdata, data);
+	return mdata;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 // RdbList test                                                               //
@@ -218,6 +230,150 @@ TEST_F(RdbListTest, MergeTestPosdbVerifyRemoveNegRecords) {
 		EXPECT_EQ(list2.getCurrentRecSize(), final2.getCurrentRecSize());
 		EXPECT_EQ(0, memcmp(list2.getCurrentRec(), final2.getCurrentRec(), list2.getCurrentRecSize()));
 	}
+}
+
+TEST_F(RdbListTest, MergeTestTitledb) {
+	char key[MAX_KEY_BYTES];
+
+	// setup test
+	RdbList list1;
+	list1.set(nullptr, 0, nullptr, 0, Titledb::getFixedDataSize(), true, Titledb::getUseHalfKeys(), Titledb::getKeySize());
+	list1.addRecord(makeTitledbKey(key, 0x01, 0x01, false), 1, makeTitledbData("1"));
+	list1.addRecord(makeTitledbKey(key, 0x02, 0x02, false), 1, makeTitledbData("2"));
+	list1.addRecord(makeTitledbKey(key, 0x03, 0x03, false), 1, makeTitledbData("3"));
+
+	RdbList list2;
+	list2.set(nullptr, 0, nullptr, 0, Titledb::getFixedDataSize(), true, Titledb::getUseHalfKeys(), Titledb::getKeySize());
+	list2.addRecord(makeTitledbKey(key, 0x04, 0x04, false), 1, makeTitledbData("4"));
+	list2.addRecord(makeTitledbKey(key, 0x05, 0x05, false), 1, makeTitledbData("5"));
+	list2.addRecord(makeTitledbKey(key, 0x06, 0x06, false), 1, makeTitledbData("6"));
+
+	RdbList *lists1[2];
+	lists1[0] = &list1;
+	lists1[1] = &list2;
+	size_t lists1_size = sizeof_arr(lists1);
+
+	char startKey[MAX_KEY_BYTES];
+	char endKey[MAX_KEY_BYTES];
+
+	makeTitledbKey(startKey, 0x01, 0x01, false);
+	makeTitledbKey(endKey, 0x06, 0x06, false);
+
+	RdbList final1;
+	final1.set(nullptr, 0, nullptr, 0, Titledb::getFixedDataSize(), true, Titledb::getUseHalfKeys(), Titledb::getKeySize());
+	final1.prepareForMerge(lists1, lists1_size, -1);
+	final1.merge_r(lists1, lists1_size, startKey, endKey, -1, false, RDB_TITLEDB, 0, 0);
+
+	// verify merged list
+	int i = 1;
+	for (final1.resetListPtr(); !final1.isExhausted(); final1.skipCurrentRecord()) {
+		key96_t k = final1.getCurrentKey();
+		makeTitledbKey(key, i, i, false);
+		EXPECT_EQ(0, memcmp(key, &k, 12));
+		++i;
+	}
+
+	// total records + 1
+	EXPECT_EQ(7, i);
+
+	final1.getEndKey(endKey);
+	EXPECT_EQ(0, memcmp(endKey, makeTitledbKey(key, 0x06, 0x06, false), 12));
+}
+
+TEST_F(RdbListTest, MergeTestTitledbDelEndKey) {
+	char key[MAX_KEY_BYTES];
+
+	// setup test
+	RdbList list1;
+	list1.set(nullptr, 0, nullptr, 0, Titledb::getFixedDataSize(), true, Titledb::getUseHalfKeys(), Titledb::getKeySize());
+	list1.addRecord(makeTitledbKey(key, 0x01, 0x01, false), 1, makeTitledbData("1"));
+	list1.addRecord(makeTitledbKey(key, 0x02, 0x02, false), 1, makeTitledbData("2"));
+	list1.addRecord(makeTitledbKey(key, 0x03, 0x03, false), 1, makeTitledbData("3"));
+
+	RdbList list2;
+	list2.set(nullptr, 0, nullptr, 0, Titledb::getFixedDataSize(), true, Titledb::getUseHalfKeys(), Titledb::getKeySize());
+	list2.addRecord(makeTitledbKey(key, 0x04, 0x04, false), 1, makeTitledbData("4"));
+	list2.addRecord(makeTitledbKey(key, 0x05, 0x05, false), 1, makeTitledbData("5"));
+	list2.addRecord(makeTitledbKey(key, 0x06, 0x06, true), 0, nullptr);
+
+	RdbList *lists1[2];
+	lists1[0] = &list1;
+	lists1[1] = &list2;
+	size_t lists1_size = sizeof_arr(lists1);
+
+	char startKey[MAX_KEY_BYTES];
+	char endKey[MAX_KEY_BYTES];
+
+	makeTitledbKey(startKey, 0x01, 0x01, false);
+	makeTitledbKey(endKey, 0x06, 0x06, true);
+
+	RdbList final1;
+	final1.set(nullptr, 0, nullptr, 0, Titledb::getFixedDataSize(), true, Titledb::getUseHalfKeys(), Titledb::getKeySize());
+	final1.prepareForMerge(lists1, lists1_size, -1);
+	final1.merge_r(lists1, lists1_size, startKey, endKey, -1, false, RDB_TITLEDB, 0, 0);
+
+	// verify merged list
+	int i = 1;
+	for (final1.resetListPtr(); !final1.isExhausted(); final1.skipCurrentRecord()) {
+		key96_t k = final1.getCurrentKey();
+		makeTitledbKey(key, i, i, false);
+		EXPECT_EQ(0, memcmp(key, &k, 12));
+		++i;
+	}
+
+	// total records + 1
+	EXPECT_EQ(6, i);
+
+	final1.getEndKey(endKey);
+	EXPECT_EQ(0, memcmp(endKey, makeTitledbKey(key, 0x05, 0x05, false), 12));
+}
+
+TEST_F(RdbListTest, MergeTestTitledbDoubleDelEndKey) {
+	char key[MAX_KEY_BYTES];
+
+	// setup test
+	RdbList list1;
+	list1.set(nullptr, 0, nullptr, 0, Titledb::getFixedDataSize(), true, Titledb::getUseHalfKeys(), Titledb::getKeySize());
+	list1.addRecord(makeTitledbKey(key, 0x01, 0x01, false), 1, makeTitledbData("1"));
+	list1.addRecord(makeTitledbKey(key, 0x02, 0x02, false), 1, makeTitledbData("2"));
+	list1.addRecord(makeTitledbKey(key, 0x03, 0x03, false), 1, makeTitledbData("3"));
+
+	RdbList list2;
+	list2.set(nullptr, 0, nullptr, 0, Titledb::getFixedDataSize(), true, Titledb::getUseHalfKeys(), Titledb::getKeySize());
+	list2.addRecord(makeTitledbKey(key, 0x04, 0x04, false), 1, makeTitledbData("4"));
+	list2.addRecord(makeTitledbKey(key, 0x05, 0x05, true), 0, nullptr);
+	list2.addRecord(makeTitledbKey(key, 0x06, 0x06, true), 0, nullptr);
+
+	RdbList *lists1[2];
+	lists1[0] = &list1;
+	lists1[1] = &list2;
+	size_t lists1_size = sizeof_arr(lists1);
+
+	char startKey[MAX_KEY_BYTES];
+	char endKey[MAX_KEY_BYTES];
+
+	makeTitledbKey(startKey, 0x01, 0x01, false);
+	makeTitledbKey(endKey, 0x06, 0x06, true);
+
+	RdbList final1;
+	final1.set(nullptr, 0, nullptr, 0, Titledb::getFixedDataSize(), true, Titledb::getUseHalfKeys(), Titledb::getKeySize());
+	final1.prepareForMerge(lists1, lists1_size, -1);
+	final1.merge_r(lists1, lists1_size, startKey, endKey, -1, false, RDB_TITLEDB, 0, 0);
+
+	// verify merged list
+	int i = 1;
+	for (final1.resetListPtr(); !final1.isExhausted(); final1.skipCurrentRecord()) {
+		key96_t k = final1.getCurrentKey();
+		makeTitledbKey(key, i, i, (i == 5));
+		EXPECT_EQ(0, memcmp(key, &k, 12));
+		++i;
+	}
+
+	// total records + 1
+	EXPECT_EQ(6, i);
+
+	final1.getEndKey(endKey);
+	EXPECT_EQ(0, memcmp(endKey, makeTitledbKey(key, 0x05, 0x05, false), 12));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
