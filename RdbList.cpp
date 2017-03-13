@@ -1809,6 +1809,9 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	KEYSET(m_startKey,startKey,m_ks);
 	KEYSET(m_endKey,endKey,m_ks);
 
+	// . NEVER end in a negative rec key (dangling negative rec key)
+	// . we don't want any positive recs to go un annhilated
+	// . but don't worry about this check if start and end keys are equal
 	// . MDW: this happens during the qainject1() qatest in qa.cpp that
 	//   deletes all the urls then does a dump of just negative keys.
 	//   so let's comment it out for now
@@ -1966,7 +1969,7 @@ top:
 		goto done;
 	}
 
-	if ( KEYCMP(minKey,endKey,m_ks)>0 ) {
+	if ( KEYCMP(minKey,m_endKey,m_ks)>0 ) {
 		goto done;
 	}
 
@@ -2069,7 +2072,7 @@ skip:
 	if ( removeNegRecs ) {
 		// . keep chugging if there MAY be keys left
 		// . they will replace us if they are added cuz "removeNegRecs" is true
-		if ( mini >= 0 && KEYCMP(minKey,endKey,m_ks)<0 ) {
+		if ( mini >= 0 && KEYCMP(minKey,m_endKey,m_ks)<0 ) {
 			goto top;
 		}
 		// . otherwise, all lists were exhausted
@@ -2146,18 +2149,23 @@ skip:
 	if ( m_listSize >= minRecSizes && keysRemain ) {
 		// the highestKey may have been annihilated, but it is still
 		// good for m_endKey, just not m_lastKey
-		char endKey[MAX_KEY_BYTES];
-		if ( KEYCMP(m_lastKey,highestKey,m_ks)<0 )
-			KEYSET(endKey,highestKey,m_ks);
-		else
-			KEYSET(endKey,m_lastKey ,m_ks);
+		char newEndKey[MAX_KEY_BYTES];
+		if ( KEYCMP(m_lastKey,highestKey,m_ks)<0 ) {
+			KEYSET(newEndKey, highestKey, m_ks);
+		} else {
+			KEYSET(newEndKey, m_lastKey, m_ks);
+		}
+
+		/// @todo ALC is this the right logic?
 		// if endkey is now negative we must have a dangling negative
 		// so make it positive (dangling = unmatched)
-		if ( KEYNEG(endKey) )
-			KEYINC(endKey,m_ks);
+		if ( KEYNEG(newEndKey) ) { ;
+			KEYINC(newEndKey, m_ks);
+		}
 		// be careful not to increase original endkey, though
-		if ( KEYCMP(endKey,m_endKey,m_ks)<0 )
-			KEYSET(m_endKey,endKey,m_ks);
+		if ( KEYCMP(newEndKey,m_endKey,m_ks)<0 ) {
+			KEYSET(m_endKey, newEndKey, m_ks);
+		}
 	}
 
 	// . sanity check. if merging one list, make sure we get it

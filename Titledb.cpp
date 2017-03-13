@@ -51,17 +51,17 @@ bool Titledb::init ( ) {
 	int32_t maxTreeNodes  = g_conf.m_titledbMaxTreeMem / (1*1024);
 
 	// initialize our own internal rdb
-	return m_rdb.init ( "titledb"                   ,
-			    -1                          , // fixed record size
-			    //g_conf.m_titledbMinFilesToMerge ,
-			    // this should not really be changed...
-			    -1,
-			    g_conf.m_titledbMaxTreeMem  ,
-			    maxTreeNodes                ,
-			    false,                         // half keys?
-			    12,             // key size
-			    false,          //isCollectionLess
-			    false);         //useIndexFile
+	return m_rdb.init("titledb",
+	                  getFixedDataSize(),
+	                  //g_conf.m_titledbMinFilesToMerge ,
+	                  // this should not really be changed...
+	                  -1,
+	                  g_conf.m_titledbMaxTreeMem,
+	                  maxTreeNodes,
+	                  getUseHalfKeys(),
+	                  getKeySize(),
+	                  false,          //isCollectionLess
+	                  false);         //useIndexFile
 
 	// validate
 	//return verify ( );
@@ -74,15 +74,15 @@ bool Titledb::init2 ( int32_t treeMem ) {
 	// . NOTE: overhead is about 32 bytes per node
 	int32_t maxTreeNodes  = treeMem / (1*1024);
 	// initialize our own internal rdb
-	return m_rdb.init ( "titledbRebuild"            ,
-			    -1                          , // fixed record size
-			    240                         , // MinFilesToMerge
-			    treeMem                     ,
-			    maxTreeNodes                ,
-			    false,                         // half keys?
-			    12,             // key size
-			    false,          //isCollectionLess
-			    false);         //useIndexFile
+	return m_rdb.init("titledbRebuild",
+	                  getFixedDataSize(),
+	                  240, // MinFilesToMerge
+	                  treeMem,
+	                  maxTreeNodes,
+	                  getUseHalfKeys(),
+	                  getKeySize(),
+	                  false,          //isCollectionLess
+	                  false);         //useIndexFile
 
 	// validate
 	//return verify ( );
