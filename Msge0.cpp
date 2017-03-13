@@ -65,6 +65,11 @@ void Msge0::reset() {
 	m_numRequests = 0;
 	m_numReplies = 0;
 	m_n = 0;
+	
+	for(int i=0; i<MAX_OUTSTANDING_MSGE0; i++)
+		m_urls[i].reset();
+	for(int i=0; i<MAX_OUTSTANDING_MSGE0; i++)
+		m_msg8as[i].reset();
 }
 
 
