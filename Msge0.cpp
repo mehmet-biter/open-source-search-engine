@@ -30,7 +30,6 @@ Msge0::Msge0()
 		m_ns[i] = 0;
 	for(int i=0; i<MAX_OUTSTANDING_MSGE0; i++)
 		m_used[i] = false;
-	reset();
 }
 
 Msge0::~Msge0() {
