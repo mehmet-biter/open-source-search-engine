@@ -37,7 +37,6 @@ Msge0::~Msge0() {
 	reset();
 }
 
-static const size_t SLAB_SIZE = sizeof(TagRec)*20;
 
 void Msge0::reset() {
 	m_errno = 0;
