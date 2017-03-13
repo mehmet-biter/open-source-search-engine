@@ -201,7 +201,7 @@ TEST(RdbIndexTest, AddDeleteKey) {
 	GbTest::addPosdbKey(&index, termId, docId, wordPos, true);
 
 	// force merge
-	index.writeIndex();
+	index.writeIndex(true);
 
 	auto docIds = index.getDocIds();
 	EXPECT_EQ(1, docIds->size());
@@ -224,7 +224,7 @@ TEST(RdbIndexTest, DeleteAddKey) {
 	GbTest::addPosdbKey(&index, termId, docId, wordPos, false);
 
 	// force merge
-	index.writeIndex();
+	index.writeIndex(true);
 
 	auto docIds = index.getDocIds();
 	EXPECT_EQ(1, docIds->size());
@@ -244,10 +244,10 @@ TEST(RdbIndexTest, DeleteAddKeySave) {
 	static const int32_t wordPos = 1;
 
 	GbTest::addPosdbKey(&index, termId, docId, wordPos, true);
-	index.writeIndex();
+	index.writeIndex(true);
 
 	GbTest::addPosdbKey(&index, termId, docId, wordPos, false);
-	index.writeIndex();
+	index.writeIndex(true);
 
 	auto docIds = index.getDocIds();
 	EXPECT_EQ(1, docIds->size());

@@ -12,17 +12,13 @@ Msge0::Msge0()
     m_urlPtrs(NULL),
     m_urlFlags(NULL),
     m_numUrls(0),
-    m_skipOldLinks(0),
+    m_skipOldLinks(false),
     m_buf(NULL),
     m_bufSize(0),
-    m_slabNum(-1),
-    m_slab(NULL),
-    m_slabPtr(NULL),
-    m_slabEnd(NULL),
     m_baseTagRec(NULL),
     m_tagRecErrors(NULL),
     m_tagRecPtrs(NULL),
-    m_numTags(NULL),
+    m_tagRecs(NULL),
     m_numRequests(0),
     m_numReplies(0),
     m_n(0),
@@ -30,46 +26,39 @@ Msge0::Msge0()
     m_callback(NULL),
     m_errno(0)
 {
-	memset(m_ns, 0, sizeof(m_ns));
-	memset(m_used, 0, sizeof(m_used));
-	reset();
+	for(int i=0; i<MAX_OUTSTANDING_MSGE0; i++)
+		m_ns[i] = 0;
+	for(int i=0; i<MAX_OUTSTANDING_MSGE0; i++)
+		m_used[i] = false;
 }
 
 Msge0::~Msge0() {
 	reset();
 }
 
-static const size_t SLAB_SIZE = sizeof(TagRec)*20;
 
 void Msge0::reset() {
 	m_errno = 0;
+	//free TagRecs that are not the base tag
 	for ( int32_t i = 0 ; i < m_n ; i++ ) {
-		// cast it
-		TagRec *tr = m_tagRecPtrs[i];
-		// skip if empty
-		if ( ! tr ) {
-			continue;
-		}
-		// skip if base
-		if ( tr == m_baseTagRec ) {
-			continue;
-		}
-		// free the rdblist memory in the TagRec::m_list
-		m_tagRecPtrs[i]->~TagRec();
+		if(m_tagRecPtrs[i] && m_tagRecPtrs[i]!=m_baseTagRec)
+			m_tagRecPtrs[i]->~TagRec();
 	}
-	for ( int32_t i = 0; m_slab && i <= m_slabNum; i++ ) {
-		mfree ( m_slab[i] , SLAB_SIZE , "msgeslab" );
-	}
-	m_slabNum = -1;
-	m_slabPtr = NULL;
-	m_slabEnd = NULL;
 	if ( m_buf ) {
 		mfree ( m_buf , m_bufSize,"Msge0buf");
 	}
 	m_buf = NULL;
+	m_tagRecErrors = NULL;
+	m_tagRecPtrs = NULL;
+	m_tagRecs = NULL;
 	m_numRequests = 0;
 	m_numReplies = 0;
 	m_n = 0;
+	
+	for(int i=0; i<MAX_OUTSTANDING_MSGE0; i++)
+		m_urls[i].reset();
+	for(int i=0; i<MAX_OUTSTANDING_MSGE0; i++)
+		m_msg8as[i].reset();
 }
 
 
@@ -78,7 +67,7 @@ void Msge0::reset() {
 // . used to be called getSiteRecs()
 // . you can pass in a list of docIds rather than urlPtrs
 bool Msge0::getTagRecs ( const char        **urlPtrs           ,
-			 linkflags_t  *urlFlags          , //Links::m_linkFlags
+			 const linkflags_t *urlFlags          , //Links::m_linkFlags
 			 int32_t          numUrls           ,
 			// if skipOldLinks && urlFlags[i]&LF_OLDLINK, skip it
 			 bool          skipOldLinks      ,
@@ -104,23 +93,23 @@ bool Msge0::getTagRecs ( const char        **urlPtrs           ,
 
 	// . how much mem to alloc?
 	// . include an extra 4 bytes for each one to hold possible errno
-	int32_t need = 
-		4 + // error
-		sizeof(TagRec *) + // tag ptr
-		sizeof(char *) ; // slab ptr
+	int32_t needPerUrl = sizeof(int32_t)  // error
+		           + sizeof(TagRec*)  // tag ptr
+		           + sizeof(TagRec);  // m_tagRecs
+		
 	// one per url
-	need *= numUrls;
+	int32_t needTotal = needPerUrl *= numUrls;
 	// allocate the buffer to hold all the info we gather
-	m_buf = (char *)mcalloc ( need , "Msge0buf" );
+	m_buf = (char *)mcalloc ( needTotal , "Msge0buf" );
 	if ( ! m_buf ) return true;
-	m_bufSize = need;
+	m_bufSize = needTotal;
 	// clear it all
 	memset ( m_buf , 0 , m_bufSize );
 	// set the ptrs!
 	char *p = m_buf;
-	m_tagRecErrors      = (int32_t    *)p ; p += numUrls * 4;
+	m_tagRecErrors      = (int32_t *)p ; p += numUrls * sizeof(int32_t);
 	m_tagRecPtrs        = (TagRec **)p ; p += numUrls * sizeof(TagRec *);
-	m_slab              = (char   **)p ; p += numUrls * sizeof(char *);
+	m_tagRecs           = (TagRec*)p;    p += numUrls * sizeof(TagRec);
 	// initialize
 	m_numRequests = 0;
 	m_numReplies  = 0;
@@ -225,11 +214,7 @@ bool Msge0::sendMsg8a(int32_t slotIndex) {
 	// we are processing the nth url
 	int32_t n = m_ns[slotIndex];
 	// now use it
-	m_tagRecPtrs[n] = allocateTagRec();
-	if(!m_tagRecPtrs[n]) {
-		m_numReplies++; //we won't get a response on that one
-		return true;
-	}
+	m_tagRecPtrs[n] = new (m_tagRecs+n) TagRec();
 
 	// . this now employs the tagdb filters table for lookups
 	// . that is really a hack until we find a way to identify subsites
@@ -237,7 +222,8 @@ bool Msge0::sendMsg8a(int32_t slotIndex) {
 	//   subsite.
 	if ( !m->getTagRec( &m_urls[slotIndex], m_collnum, m_niceness, m, gotTagRecWrapper, m_tagRecPtrs[n] ))
 		return false;
-	return doneSending(slotIndex);
+	doneSending(slotIndex);
+	return true;
 }
 
 void Msge0::gotTagRecWrapper(void *state) {
@@ -245,14 +231,14 @@ void Msge0::gotTagRecWrapper(void *state) {
 	//TagRec *m    = (TagRec *)state;
 	Msge0  *THIS = m->m_msge0;
 	int32_t    slotIndex    = m->m_msge0State;
-	if ( ! THIS->doneSending (slotIndex) ) return;
+	THIS->doneSending(slotIndex);
 	// try to launch more, returns false if not done
 	if ( ! THIS->launchRequests() ) return;
 	// must be all done, call the callback
 	THIS->m_callback ( THIS->m_state );
 }
 
-bool Msge0::doneSending(int32_t slotIndex) {
+void Msge0::doneSending(int32_t slotIndex) {
 	// we are processing the nth url
 	int32_t   n    = m_ns[slotIndex];
 	// save the error if msg8a had one
@@ -262,40 +248,8 @@ bool Msge0::doneSending(int32_t slotIndex) {
 	// reset error for successive calls to other msgs
 	g_errno = 0;
 
-	//
-	// copy the Tags from Msg8a into a "slab".
-	// alloc a new slab if not enough room.
-	//
-
 	// tally it up
 	m_numReplies++;
-	//if ( m_getSiteRecs ) ruleset = m_siteRecBuf[n].m_filenum;
-	//log ( LOG_DEBUG, "build: Finished Msge0 for url [%" PRId32",%" PRId32"]: %s",
-	//      n, slotIndex, m_urls[slotIndex].getUrl() );
 	// free it
 	m_used[slotIndex] = false;
-	// we did not block
-	return true;
-}
-
-
-
-TagRec *Msge0::allocateTagRec() {
-	static const int32_t need = sizeof(TagRec);
-	// how much space left in the latest buffer
-	if ( m_slabPtr + need > m_slabEnd ) {
-		char *newSlab = (char *)mmalloc (SLAB_SIZE,"msgeslab");
-		if(!newSlab) {
-			if ( ! m_errno ) m_errno = g_errno;
-			// error out
-			log("msge0: slab alloc: %s",mstrerror(g_errno));
-			return NULL;
-		}
-		m_slab[++m_slabNum] = newSlab;
-		m_slabPtr = m_slab[m_slabNum];
-		m_slabEnd = m_slabPtr + SLAB_SIZE;
-	}
-	TagRec *tagRec = new (m_slabPtr) TagRec();
-	m_slabPtr += sizeof(TagRec);
-	return tagRec;
 }

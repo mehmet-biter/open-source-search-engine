@@ -257,7 +257,7 @@ bool RdbBase::init(const char *dir,
 				//   when main.cpp calls attemptMerge()
 				log("db: Saving generated index file to disk.");
 
-				bool status = m_treeIndex.writeIndex();
+				bool status = m_treeIndex.writeIndex(false);
 				if (!status) {
 					log(LOG_ERROR, "db: Save failed.");
 					return false;
@@ -1061,7 +1061,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 			// cause this write to fail!
 			g_statsdb.m_disabled = true;
 
-			bool status = in->writeIndex();
+			bool status = in->writeIndex(true);
 			g_statsdb.m_disabled = false;
 			if ( ! status ) {
 				log( LOG_ERROR, "db: Save failed." );
@@ -1259,7 +1259,7 @@ bool RdbBase::incorporateMerge ( ) {
 	}
 
 	if( m_useIndexFile ) {
-		status = m_fileInfo[x].m_index->writeIndex();
+		status = m_fileInfo[x].m_index->writeIndex(true);
 		if ( !status ) {
 			// unable to write, let's abort
 			log( LOG_ERROR, "db: Could not write index for %s, Exiting.", m_dbname);
@@ -2439,7 +2439,7 @@ void RdbBase::saveTreeIndex() {
 		return;
 	}
 
-	if (!m_treeIndex.writeIndex()) {
+	if (!m_treeIndex.writeIndex(false)) {
 		// unable to write, let's abort
 		gbshutdownResourceError();
 	}
@@ -2460,7 +2460,7 @@ void RdbBase::saveIndexes() {
 			continue;
 		}
 
-		if (!m_fileInfo[i].m_index->writeIndex()) {
+		if (!m_fileInfo[i].m_index->writeIndex(true)) {
 			// unable to write, let's abort
 			gbshutdownResourceError();
 		}

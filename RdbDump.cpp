@@ -253,7 +253,7 @@ void RdbDump::doneDumping() {
 	}
 
 	if (m_index) {
-		m_index->writeIndex();
+		m_index->writeIndex(true);
 	}
 #ifdef GBSANITYCHECK
 	// sanity check

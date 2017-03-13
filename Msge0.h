@@ -8,8 +8,6 @@
 #include "Linkdb.h"
 #include "Tagdb.h"
 
-class TagRec;
-
 class Msge0 {
 
 public:
@@ -19,7 +17,7 @@ public:
 	void reset();
 
 	bool getTagRecs ( const char        **urlPtrs      ,
-			  linkflags_t  *urlFlags     ,
+			  const linkflags_t *urlFlags,
 			  int32_t          numUrls      ,
 			  bool          skipOldLinks ,
 			  TagRec *baseTagRec ,
@@ -38,15 +36,13 @@ private:
 	static void gotTagRecWrapper(void *state);
 	bool launchRequests();
 	bool sendMsg8a(int32_t slotIndex);
-	bool doneSending(int32_t slotIndex);
-
-	TagRec *allocateTagRec();
+	void doneSending(int32_t slotIndex);
 
 	collnum_t m_collnum;
 	int32_t  m_niceness  ;
 
 	const char **m_urlPtrs;
-	linkflags_t *m_urlFlags;
+	const linkflags_t *m_urlFlags;
 	int32_t   m_numUrls;
 
 	bool   m_skipOldLinks;
@@ -55,18 +51,13 @@ private:
 	char *m_buf;
 	int32_t  m_bufSize;
 
-	int32_t   m_slabNum;
-	char **m_slab;
-	char  *m_slabPtr;
-	char  *m_slabEnd;
-
 	TagRec *m_baseTagRec;
 
-	// sub-buffers of the great "m_buf", where we store the data for eacu
+	// sub-buffers of the great "m_buf", where we store the data for each
 	// url that we get in urlBuf
 	int32_t        *m_tagRecErrors;
 	TagRec     **m_tagRecPtrs;
-	int32_t        *m_numTags;
+	TagRec     *m_tagRecs;
 
 	int32_t  m_numRequests;
 	int32_t  m_numReplies;

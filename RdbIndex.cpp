@@ -18,10 +18,12 @@
 
 static const int32_t s_defaultMaxPendingTimeMs = 5000;
 static const uint32_t s_defaultMaxPendingSize = 2000000;
+static const uint32_t s_defaultReserveSize = 2200000;
 
 // larger number equals more memory used; but faster generateIndex
 // 10000000 * 8 bytes = ~80 megabytes
 static const uint32_t s_generateMaxPendingSize = 10000000;
+static const uint32_t s_generateReserveSize = 11000000;
 
 static const int64_t s_rdbIndexCurrentVersion = 0;
 
@@ -64,7 +66,7 @@ void RdbIndex::reset() {
 	m_docIds.reset(new docids_t);
 
 	m_pendingDocIds.reset(new docids_t);
-	m_pendingDocIds->reserve(m_generatingIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize);
+	m_pendingDocIds->reserve(m_generatingIndex ? s_generateReserveSize : s_defaultReserveSize);
 
 	m_prevPendingDocId = MAX_DOCID + 1;
 	m_lastMergeTime = gettimeofdayInMilliseconds();
@@ -129,7 +131,7 @@ void RdbIndex::set(const char *dir, const char *indexFilename, int32_t fixedData
 bool RdbIndex::close(bool urgent) {
 	bool status = true;
 	if (m_needToWrite) {
-		status = writeIndex();
+		status = writeIndex(true);
 	}
 
 	// clears and frees everything
@@ -145,7 +147,7 @@ bool RdbIndex::close(bool urgent) {
 	return status;
 }
 
-bool RdbIndex::writeIndex() {
+bool RdbIndex::writeIndex(bool finalWrite) {
 	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN. filename [%s]", m_file.getFilename());
 
 	if (g_conf.m_readOnlyMode) {
@@ -169,7 +171,7 @@ bool RdbIndex::writeIndex() {
 	}
 
 	// write index data
-	bool status = writeIndex2();
+	bool status = writeIndex2(finalWrite);
 
 	// on success, we don't need to write it anymore
 	if (status) {
@@ -181,7 +183,7 @@ bool RdbIndex::writeIndex() {
 	return status;
 }
 
-bool RdbIndex::writeIndex2() {
+bool RdbIndex::writeIndex2(bool finalWrite) {
 	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN. filename [%s]", m_file.getFilename());
 
 	g_errno = 0;
@@ -190,7 +192,7 @@ bool RdbIndex::writeIndex2() {
 
 	// make sure we always write the newest tree
 	// remove const as m_file.write does not accept const buffer
-	docids_ptr_t tmpDocIds = std::const_pointer_cast<docids_t>(mergePendingDocIds(true));
+	docids_ptr_t tmpDocIds = std::const_pointer_cast<docids_t>(mergePendingDocIds(finalWrite));
 
 	// first 8 bytes is the index version
 	m_file.write(&m_version, sizeof(m_version), offset);
@@ -317,17 +319,17 @@ bool RdbIndex::verifyIndex() {
 	return true;
 }
 
-docidsconst_ptr_t RdbIndex::mergePendingDocIds(bool forWrite) {
+docidsconst_ptr_t RdbIndex::mergePendingDocIds(bool finalWrite) {
 	ScopedLock sl(m_pendingDocIdsMtx);
-	return mergePendingDocIds_unlocked(forWrite);
+	return mergePendingDocIds_unlocked(finalWrite);
 }
 
-docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked(bool forWrite) {
-	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN %s[%p] forWrite=%s", m_file.getFilename(), this, forWrite ? "true" : "false");
+docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked(bool finalWrite) {
+	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN %s[%p] finalWrite=%s", m_file.getFilename(), this, finalWrite ? "true" : "false");
 
 	// don't need to merge when there are no pending docIds
 	// except when it's forWrite then we need to free memory from vector
-	if (!forWrite && m_pendingDocIds->empty()) {
+	if (!finalWrite && m_pendingDocIds->empty()) {
 		logTrace(g_conf.m_logTraceRdbIndex, "END %s[%p]", m_file.getFilename(), this);
 		return getDocIds();
 	}
@@ -353,7 +355,7 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked(bool forWrite) {
 	auto it = std::unique(tmpDocIds->rbegin(), tmpDocIds->rend(), cmpeq_fn);
 	tmpDocIds->erase(tmpDocIds->begin(), it.base());
 
-	if (forWrite) {
+	if (finalWrite) {
 		// shrink memory usage
 		tmpDocIds->shrink_to_fit();
 	}
@@ -361,12 +363,12 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked(bool forWrite) {
 	// replace existing even if size doesn't change (could change from positive to negative key)
 	swapDocIds(tmpDocIds);
 
-	if (forWrite) {
+	if (finalWrite) {
 		// make sure memory is freed
 		m_pendingDocIds.reset(new docids_t);
 	} else {
 		m_pendingDocIds->clear();
-		m_pendingDocIds->reserve(m_generatingIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize);
+		m_pendingDocIds->reserve(m_generatingIndex ? s_generateReserveSize : s_defaultReserveSize);
 	}
 
 	logTrace(g_conf.m_logTraceRdbIndex, "END %s[%p]", m_file.getFilename(), this);

@@ -46,11 +46,8 @@ public:
 
 	bool close( bool urgent );
 
-	bool writeIndex();
-	bool writeIndex2();
-
+	bool writeIndex(bool finalWrite);
 	bool readIndex();
-	bool readIndex2();
 
 	bool verifyIndex();
 
@@ -84,8 +81,11 @@ public:
 private:
 	void addRecord_unlocked(char *key);
 
-	docidsconst_ptr_t mergePendingDocIds(bool forWrite = false);
-	docidsconst_ptr_t mergePendingDocIds_unlocked(bool forWrite = false);
+	bool writeIndex2(bool finalWrite);
+	bool readIndex2();
+
+	docidsconst_ptr_t mergePendingDocIds(bool finalWrite = false);
+	docidsconst_ptr_t mergePendingDocIds_unlocked(bool finalWrite = false);
 
 	void swapDocIds(docidsconst_ptr_t docIds);
 
