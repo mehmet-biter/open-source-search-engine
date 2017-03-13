@@ -73,7 +73,7 @@ void Msge0::reset() {
 // . used to be called getSiteRecs()
 // . you can pass in a list of docIds rather than urlPtrs
 bool Msge0::getTagRecs ( const char        **urlPtrs           ,
-			 linkflags_t  *urlFlags          , //Links::m_linkFlags
+			 const linkflags_t *urlFlags          , //Links::m_linkFlags
 			 int32_t          numUrls           ,
 			// if skipOldLinks && urlFlags[i]&LF_OLDLINK, skip it
 			 bool          skipOldLinks      ,

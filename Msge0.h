@@ -17,7 +17,7 @@ public:
 	void reset();
 
 	bool getTagRecs ( const char        **urlPtrs      ,
-			  linkflags_t  *urlFlags     ,
+			  const linkflags_t *urlFlags,
 			  int32_t          numUrls      ,
 			  bool          skipOldLinks ,
 			  TagRec *baseTagRec ,
@@ -42,7 +42,7 @@ private:
 	int32_t  m_niceness  ;
 
 	const char **m_urlPtrs;
-	linkflags_t *m_urlFlags;
+	const linkflags_t *m_urlFlags;
 	int32_t   m_numUrls;
 
 	bool   m_skipOldLinks;
