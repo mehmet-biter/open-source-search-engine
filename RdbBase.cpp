@@ -2460,6 +2460,11 @@ void RdbBase::saveIndexes() {
 			continue;
 		}
 
+		if ((m_fileInfo[i].m_fileId & 0x01) == 0) {
+			// don't write index for files that are merging
+			continue;
+		}
+
 		if (!m_fileInfo[i].m_index->writeIndex(true)) {
 			// unable to write, let's abort
 			gbshutdownResourceError();
