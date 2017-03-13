@@ -7,6 +7,7 @@
 
 #include "Linkdb.h"
 #include "Tagdb.h"
+#include "GbMutex.h"
 
 class Msge0 {
 
@@ -36,6 +37,7 @@ private:
 	bool launchRequests();
 	bool sendMsg8a(int32_t slotIndex);
 	void doneSending(int32_t slotIndex);
+	void doneSending_unlocked(int32_t slotIndex);
 
 	collnum_t m_collnum;
 	int32_t  m_niceness  ;
@@ -61,6 +63,7 @@ private:
 	int32_t  m_numRequests;
 	int32_t  m_numReplies;
 	int32_t  m_n;
+	GbMutex m_mtx;
 
 	Url     m_urls        [ MAX_OUTSTANDING_MSGE0 ]; 
 	int32_t    m_ns          [ MAX_OUTSTANDING_MSGE0 ]; 
