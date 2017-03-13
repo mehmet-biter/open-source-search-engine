@@ -128,6 +128,12 @@ public:
 	}
 
 	static void printKey(const char *key);
+
+	// Rdb init variables
+	static inline int32_t getFixedDataSize() { return -1; }
+	static inline bool getUseHalfKeys() { return false; }
+	static inline char getKeySize() { return 12; }
+
 private:
 	// holds binary format title entries
 	Rdb m_rdb;
