@@ -46,19 +46,19 @@ TEST_P(RdbBasePosdbIndexSingleDocTest, PosdbGenerateIndexSingleDocId) {
 	RdbIndex *index0 = base->getIndex(0);
 	int64_t termId0 = ::testing::get<0>(GetParam());
 	GbTest::addPosdbKey(index0, termId0, docId, 0, ::testing::get<0>(GetParam()) == POSDB_DELETEDOC_TERMID);
-	index0->writeIndex();
+	index0->writeIndex(true);
 
 	ASSERT_EQ(1, base->addNewFile());
 	RdbIndex *index1 = base->getIndex(1);
 	int64_t termId1 = ::testing::get<1>(GetParam());
 	GbTest::addPosdbKey(index1, termId1, docId, 0, ::testing::get<1>(GetParam()) == POSDB_DELETEDOC_TERMID);
-	index1->writeIndex();
+	index1->writeIndex(true);
 
 	ASSERT_EQ(2, base->addNewFile());
 	RdbIndex *index2 = base->getIndex(2);
 	int64_t termId2 = ::testing::get<2>(GetParam());
 	GbTest::addPosdbKey(index2, termId2, docId, 0, ::testing::get<2>(GetParam()) == POSDB_DELETEDOC_TERMID);
-	index2->writeIndex();
+	index2->writeIndex(true);
 
 	base->generateGlobalIndex();
 	auto globalIndex = base->getGlobalIndex();
@@ -75,32 +75,32 @@ TEST_F(RdbBaseTest, PosdbUpdateIndex) {
 	ASSERT_EQ(0, base->addNewFile());
 	RdbIndex *index0 = base->getIndex(0);
 	GbTest::addPosdbKey(index0, 'A', 1, 0);
-	index0->writeIndex();
+	index0->writeIndex(true);
 
 	ASSERT_EQ(1, base->addNewFile());
 	RdbIndex *index1 = base->getIndex(1);
 	GbTest::addPosdbKey(index1, 'B', 2, 0);
-	index1->writeIndex();
+	index1->writeIndex(true);
 
 	ASSERT_EQ(2, base->addNewFile());
 	RdbIndex *index2 = base->getIndex(2);
 	GbTest::addPosdbKey(index2, 'C', 3, 0);
-	index2->writeIndex();
+	index2->writeIndex(true);
 
 	ASSERT_EQ(3, base->addNewFile());
 	RdbIndex *index3 = base->getIndex(3);
 	GbTest::addPosdbKey(index3, 'D', 4, 0);
-	index3->writeIndex();
+	index3->writeIndex(true);
 
 	ASSERT_EQ(4, base->addNewFile());
 	RdbIndex *index4 = base->getIndex(4);
 	GbTest::addPosdbKey(index4, 'E', 5, 0);
-	index4->writeIndex();
+	index4->writeIndex(true);
 
 	ASSERT_EQ(5, base->addNewFile());
 	RdbIndex *index5 = base->getIndex(5);
 	GbTest::addPosdbKey(index5, 'F', 6, 0);
-	index5->writeIndex();
+	index5->writeIndex(true);
 
 	base->generateGlobalIndex();
 	{
