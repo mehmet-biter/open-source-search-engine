@@ -2079,18 +2079,23 @@ skip:
 	if ( m_listSize >= minRecSizes && keysRemain ) {
 		// the highestKey may have been annihilated, but it is still
 		// good for m_endKey, just not m_lastKey
-		char endKey[MAX_KEY_BYTES];
-		if ( KEYCMP(m_lastKey,highestKey,m_ks)<0 )
-			KEYSET(endKey,highestKey,m_ks);
-		else
-			KEYSET(endKey,m_lastKey ,m_ks);
+		char newEndKey[MAX_KEY_BYTES];
+		if ( KEYCMP(m_lastKey,highestKey,m_ks)<0 ) {
+			KEYSET(newEndKey, highestKey, m_ks);
+		} else {
+			KEYSET(newEndKey, m_lastKey, m_ks);
+		}
+
+		/// @todo ALC is this the right logic?
 		// if endkey is now negative we must have a dangling negative
 		// so make it positive (dangling = unmatched)
-		if ( KEYNEG(endKey) )
-			KEYINC(endKey,m_ks);
+		if ( KEYNEG(newEndKey) ) { ;
+			KEYINC(newEndKey, m_ks);
+		}
 		// be careful not to increase original endkey, though
-		if ( KEYCMP(endKey,m_endKey,m_ks)<0 )
-			KEYSET(m_endKey,endKey,m_ks);
+		if ( KEYCMP(newEndKey,m_endKey,m_ks)<0 ) {
+			KEYSET(m_endKey, newEndKey, m_ks);
+		}
 	}
 
 	// . sanity check. if merging one list, make sure we get it
