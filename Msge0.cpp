@@ -121,8 +121,6 @@ bool Msge0::getTagRecs ( const char        **urlPtrs           ,
 		m_used[i] = false;
 
 	// . launch the requests
-	// . a request can be a msg8a, msgc, msg50 or msg20 request depending
-	//   on what we need to get
 	// . when a reply returns, the next request is launched for that url
 	// . we keep a msgESlot state for each active url in the buffer
 	// . we can have up to MAX_ACTIVE urls active
