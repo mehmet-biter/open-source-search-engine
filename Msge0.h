@@ -8,8 +8,6 @@
 #include "Linkdb.h"
 #include "Tagdb.h"
 
-class TagRec;
-
 class Msge0 {
 
 public:
@@ -40,8 +38,6 @@ private:
 	bool sendMsg8a(int32_t slotIndex);
 	void doneSending(int32_t slotIndex);
 
-	TagRec *allocateTagRec();
-
 	collnum_t m_collnum;
 	int32_t  m_niceness  ;
 
@@ -55,17 +51,13 @@ private:
 	char *m_buf;
 	int32_t  m_bufSize;
 
-	int32_t   m_slabNum;
-	char **m_slab;
-	char  *m_slabPtr;
-	char  *m_slabEnd;
-
 	TagRec *m_baseTagRec;
 
-	// sub-buffers of the great "m_buf", where we store the data for eacu
+	// sub-buffers of the great "m_buf", where we store the data for each
 	// url that we get in urlBuf
 	int32_t        *m_tagRecErrors;
 	TagRec     **m_tagRecPtrs;
+	TagRec     *m_tagRecs;
 
 	int32_t  m_numRequests;
 	int32_t  m_numReplies;
