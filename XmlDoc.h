@@ -1061,8 +1061,6 @@ public:
 
 	int32_t  m_maxCacheAge;
 
-	bool      m_registeredSleepCallback;
-
 	bool          m_hashedTitle;
 	bool          m_hashedMetas;
 
