@@ -1553,7 +1553,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 	int64_t start = 0;
 	int64_t now ;
 	int32_t delta , n , bucket;
-	bool saved2;
 	//bool incInt;
 
 	// debug timing
@@ -1751,10 +1750,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		destroySlot ( slot );
 		return false;
 	}
-	// save it
-	saved2 = g_inHandler;
-	// flag it so Loop.cpp does not re-nice quickpoll niceness
-	g_inHandler = true;
+
 	// . otherwise it was an incoming request we haven't answered yet
 	// . call the registered handler to handle it
 	// . bail if no handler
@@ -1763,12 +1759,9 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		    "udp: makeCallback: Recvd unsupported msg type 0x%02x."
 		    " Did you forget to call registerHandler() for your "
 		    "message class from main.cpp?", (char)msgType);
-		g_inHandler = false;
 		destroySlot ( slot );
 		return false;
 	}
-	// let loop.cpp know we're done then
-	g_inHandler = saved2;
 
 	// debug msg
 	if ( g_conf.m_logDebugUdp )
@@ -1838,10 +1831,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		{
 			g_consecutiveOOMErrors = 0;
 		}
-		// save it
-		bool saved2 = g_inHandler;
-		// flag it so Loop.cpp does not re-nice quickpoll niceness
-		g_inHandler = true;
+
 		// sanity
 		if ( slot->hasCalledHandler() ) {
 			g_process.shutdownAbort(true);
@@ -1856,8 +1846,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		// . this is the niceness of the server, not the slot
 		// . NO, now it is the slot's niceness. that makes sense.
 		m_handlers [ slot->getMsgType() ] ( slot , slot->getNiceness() ) ;
-		// let loop.cpp know we're done then
-		g_inHandler = saved2;
 	}
 
 	if ( slot->getMsgType() != msg_type_11 && g_conf.m_logDebugLoop )
