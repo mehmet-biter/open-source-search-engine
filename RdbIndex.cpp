@@ -18,7 +18,7 @@
 
 static const int32_t s_defaultMaxPendingTimeMs = 5000;
 static const uint32_t s_defaultMaxPendingSize = 2000000;
-static const uint32_t s_defaultReserveSize = 2200000;
+static const uint32_t s_defaultReserveSize = 3000000;
 
 // larger number equals more memory used; but faster generateIndex
 // 10000000 * 8 bytes = ~80 megabytes
