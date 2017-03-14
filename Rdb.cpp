@@ -1332,21 +1332,26 @@ void Rdb::doneDumpingCollWrapper ( void *state ) {
 
 	logTrace( g_conf.m_logTraceRdb, "dbname=%s collnum=%d", THIS->m_dbname, THIS->m_dumpCollnum );
 
-	if (g_errno == 0 && THIS->isUseIndexFile()) {
+	if (g_errno == 0) {
 		RdbBase *base = THIS->getBase(THIS->m_dumpCollnum);
-		if (base) {
-			base->incrementOutstandingJobs();
-		}
-		if (g_jobScheduler.submit(generateGlobalIndexWrapper, generateGlobalIndexDoneWrapper, state, thread_type_index_generate, 0)) {
-			return;
-		}
+		if (THIS->isUseIndexFile()) {
+			if (base) {
+				base->incrementOutstandingJobs();
+			}
 
-		if (base) {
-			base->decrementOustandingJobs();
-		}
+			if (g_jobScheduler.submit(generateGlobalIndexWrapper, generateGlobalIndexDoneWrapper, state, thread_type_index_generate, 0)) {
+				return;
+			}
 
-		// unable to submit job
-		generateGlobalIndexWrapper(state);
+			if (base) {
+				base->decrementOustandingJobs();
+			}
+
+			// unable to submit job
+			generateGlobalIndexWrapper(state);
+		} else {
+			base->markNewFileReadable();
+		}
 	}
 
 	// return if the loop blocked
