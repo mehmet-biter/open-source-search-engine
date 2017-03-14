@@ -1342,8 +1342,6 @@ void Rdb::doneDumpingCollWrapper ( void *state ) {
 					return;
 				}
 
-				base->decrementOustandingJobs();
-
 				// unable to submit job
 				generateGlobalIndexWrapper(state);
 			} else {
