@@ -723,18 +723,10 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 
 		// cleanup&skip if 0 bytes
 		if (st.st_size == 0) {
-			// if we leave it there and we start writing
-			// to that file id, exit, then restart, it
-			// causes problems...
-			char dst[1024];
-			sprintf(dst, "%s/trash/%s", g_hostdb.m_dir, filename);
-			log(LOG_WARN, "db: Moving file %s of 0 bytes into trash subdir. Move to %s",
-			    fullFilename.getBufStart(), dst);
-			if (::rename(fullFilename.getBufStart(), dst)) {
-				log(LOG_WARN, "db: Moving file had error: %s.", mstrerror(errno));
-				return false;
-			}
-			continue;
+			// this used to move it to trash. but we probably want to know if we have any 0 byte file.
+			// so force a core
+			logError("zero sized file found");
+			gbshutdownCorrupted();
 		}
 
 		if(isInMergeDir)
@@ -860,8 +852,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	BigFile *f;
 
 	const char *dirName = !isInMergeDir ? m_collectionDirName : m_mergeDirName ;
-	
- tryAgain:
 
 	try {
 		f = new (BigFile);
@@ -877,31 +867,20 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	// if new ensure does not exist
 	if ( isNew && f->doesExist() ) {
 		log( LOG_WARN, "rdb: creating NEW file %s/%s which already exists!", f->getDir(), f->getFilename() );
-		// if length is NOT 0 then that sucks, just return
-		bool isEmpty = ( f->getFileSize() == 0 );
 
-		// move to trash if empty
-		if ( isEmpty ) {
-			// otherwise, move it to the trash
-			SafeBuf src_filename;
-			src_filename.safePrintf("%s/%s", f->getDir(), f->getFilename());
-			SafeBuf dst_filename;
-			dst_filename.safePrintf("%s/trash/%s", g_hostdb.m_dir, f->getFilename());
-			moveFile(src_filename.getBufStart(), dst_filename.getBufStart());
+		if (f->getFileSize() == 0) {
+			// this used to move it to trash. but we probably want to know if we have any 0 byte file.
+			// so force a core
+			logError("zero sized file found");
+			gbshutdownCorrupted();
 		}
 
 		// nuke it either way
 		mdelete ( f , sizeof(BigFile),"RdbBFile");
 		delete (f); 
 
-		// if it was not empty, we are done. i guess merges
-		// will stockpile, that sucks... things will slow down
-		if ( ! isEmpty ) {
-			return -1;
-		}
-
-		// ok, now try again since bogus file is gone
-		goto tryAgain;
+		// we are done. i guess merges will stockpile, that sucks... things will slow down
+		return -1;
 	}
 
 	RdbMap  *m ;
