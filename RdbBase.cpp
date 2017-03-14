@@ -2112,6 +2112,20 @@ void RdbBase::selectFilesToMerge(int32_t mergeFileCount, int32_t numFiles, int32
 	bool minOld = false;
 	int32_t nowLocal = getTimeLocal();
 	for(int32_t i = 0; i + mergeFileCount <= numFiles; i++) {
+		//Consider the filees [i..i+mergeFileCount)
+
+		//if any of the files in the range are makred unreadable then skip that range.
+		//This should only happen for the last range while a new file is being dumped
+		bool anyUnreadableFiles = false;
+		for(int32_t j = i; j < i + mergeFileCount; j++) {
+			if(!m_fileInfo[i].m_allowReads)
+				anyUnreadableFiles = true;
+		}
+		if(anyUnreadableFiles) {
+			log(LOG_DEBUG,"merge: file range [%d..%d] contains unreadable files", i, i+mergeFileCount-1);
+			continue;
+		}
+
 		// oldest file
 		time_t date = -1;
 		// add up the string
