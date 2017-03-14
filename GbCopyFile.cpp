@@ -1,5 +1,6 @@
 #include "GbCopyFile.h"
 #include "Log.h"
+#include "Sanity.h"
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -93,7 +94,16 @@ int copyFile(const char *src, const char *dst)
 			}
 		}
 	}
-    
+
+	struct stat st_dst;
+	(void)fstat(fd_dst, &st_dst);
+
+	if (st_dst.st_size != st_src.st_size) {
+		logError("copying file from src=%s to dst=%s ends up with different file sizes. src=%ld bytes dst=%ld bytes",
+		         src, dst, st_src.st_size, st_dst.st_size);
+		gbshutdownCorrupted();
+	}
+
 	close(fd_src);
 	close(fd_dst);
 	delete[] buffer;

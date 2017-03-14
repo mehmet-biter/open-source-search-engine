@@ -107,7 +107,6 @@ private:
 	RdbIndex *m_targetIndex;
 
 	char m_startKey[MAX_KEY_BYTES];
-	char m_endKey[MAX_KEY_BYTES];
 
 	bool m_isMerging;
 	bool m_isHalted;

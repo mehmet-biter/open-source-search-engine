@@ -1310,6 +1310,11 @@ bool RdbBase::incorporateMerge ( ) {
 	m_fileInfo[x].m_file->invalidateFileSize();
 
 	int64_t fs = m_fileInfo[x].m_file->getFileSize();
+	if (fs == 0) {
+		// zero sized file?
+		logError("zero sized file after merge for file=%s", m_fileInfo[x].m_file->getFilename());
+		gbshutdownCorrupted();
+	}
 
 	// get file size from map
 	int64_t fs2 = m_fileInfo[x].m_map->getFileSize();
@@ -2509,10 +2514,6 @@ bool RdbBase::verifyFileSharding ( ) {
 
 	Msg5 msg5;
 	RdbList list;
-	char startKey[MAX_KEY_BYTES];
-	char endKey[MAX_KEY_BYTES];
-	KEYMIN(startKey,MAX_KEY_BYTES);
-	KEYMAX(endKey,MAX_KEY_BYTES);
 	int32_t minRecSizes = 64000;
 	rdbid_t rdbId = m_rdb->getRdbId();
 	if ( rdbId == RDB_TITLEDB ) minRecSizes = 640000;
@@ -2523,8 +2524,8 @@ bool RdbBase::verifyFileSharding ( ) {
 	if ( ! msg5.getList ( m_rdb->getRdbId(),
 			      m_collnum       ,
 			      &list         ,
-			      startKey      ,
-			      endKey        ,
+			      KEYMIN()      ,
+			      KEYMAX()      ,
 			      minRecSizes   ,
 			      true          , // includeTree   ,
 			      0             , // max cache age

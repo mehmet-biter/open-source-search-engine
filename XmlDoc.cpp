@@ -92,6 +92,7 @@ XmlDoc::XmlDoc() {
 	void *pend = &m_VALIDEND;
 	memset ( p , 0 , (char *)pend - (char *)p );//(int32_t)pend-(int32_t)p
 	m_msg22Request.m_inUse = 0;
+	m_indexedDoc = false;
 	m_msg4Waiting = false;
 	m_msg4Launched = false;
 	m_dupTrPtr = NULL;
@@ -149,6 +150,7 @@ void XmlDoc::reset ( ) {
 
 	m_loaded = false;
 
+	m_indexedDoc = false;
 	m_msg4Launched = false;
 
 	//m_downloadAttempted = false;
@@ -1229,6 +1231,31 @@ void XmlDoc::setCallback ( void *state, bool (*callback) (void *state) ) {
 
 
 
+static void indexDoc3(void *state) {
+	XmlDoc *that = reinterpret_cast<XmlDoc*>(state);
+	logTrace( g_conf.m_logTraceXmlDoc, "Calling XmlDoc::indexDoc" );
+	// return if it blocked
+	if (!that->indexDoc()) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, indexDoc blocked");
+		return;
+	}
+	
+	// otherwise, all done, call the caller callback
+	
+	that->m_indexedDoc = true;
+
+	logTrace(g_conf.m_logTraceXmlDoc, "END");
+}
+
+static void indexedDoc3(void *state, job_exit_t exit_type) {
+	XmlDoc *that = reinterpret_cast<XmlDoc*>(state);
+	if(that->m_indexedDoc) {
+		logTrace(g_conf.m_logTraceXmlDoc, "Calling callback");
+		that->callCallback();
+	}
+}
+
+
 static void indexDocWrapper ( void *state ) {
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
@@ -1238,29 +1265,16 @@ static void indexDocWrapper ( void *state ) {
 	// note it
 	THIS->setStatus ( "in index doc wrapper" );
 
-	logTrace( g_conf.m_logTraceXmlDoc, "Calling XmlDoc::indexDoc" );
-	// return if it blocked
-	if ( ! THIS->indexDoc( ) )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, indexDoc blocked" );
+	//shovel this off to a thread
+	if(g_jobScheduler.submit(&indexDoc3,indexedDoc3,THIS,thread_type_spider_index,THIS->m_niceness)) {
+		//excellent
+		logTrace( g_conf.m_logTraceXmlDoc, "END, queued for thread" );
 		return;
 	}
-
-	// otherwise, all done, call the caller callback
-
-	// g_statsdb.addStat ( MAX_NICENESS,
-	// 		    "docs_indexed",
-	// 		    20,
-	// 		    21,
-	// 		    );
-
-
-	logTrace( g_conf.m_logTraceXmlDoc, "Calling callback" );
-	THIS->callCallback();
-
-	logTrace( g_conf.m_logTraceXmlDoc, "END" );
+	//threads not available (or oom or simmilar)
+	indexDoc3(THIS);
+	
 }
-
 
 
 // . the highest level function in here
