@@ -32,6 +32,7 @@ enum thread_type_t {
 	thread_type_spider_write,
 	thread_type_spider_filter,      //pdf2html/doc2html/...
 	thread_type_spider_query,       //?
+	thread_type_spider_index,
 	thread_type_merge_filter,
 	thread_type_replicate_write,
 	thread_type_replicate_read,
