@@ -10859,7 +10859,7 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 	// . this just dns looks up the DOMAINS of each outlink because these
 	//   are *first* ips and ONLY used by Spider.cpp for throttling!!!
 	if ( ! m_msge1.getFirstIps ( *grv               ,
-				     links->m_linkPtrs  ,
+				     const_cast<const char**>(links->m_linkPtrs),
 				     links->m_linkFlags ,
 				     links->m_numLinks  ,
 				     false              , // skip old?

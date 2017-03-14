@@ -51,8 +51,8 @@ void Msge1::reset() {
 // . used to be called getSiteRecs()
 // . you can pass in a list of docIds rather than urlPtrs
 bool Msge1::getFirstIps ( TagRec **grv ,
-			  char   **urlPtrs                ,
-			  linkflags_t *urlFlags           ,//Links::m_linkFlags
+			  const char **urlPtrs,
+			  const linkflags_t *urlFlags,
 			  int32_t     numUrls                ,
 			  // if skipOldLinks && urlFlags[i]&LF_OLDLINK, skip it
 			  bool     skipOldLinks           ,
@@ -186,7 +186,7 @@ bool Msge1::launchRequests ( int32_t starti ) {
 
 	// . get the next url
 	// . if m_xd is set, create the url from the ad id
-	char *p = m_urlPtrs[m_n];
+	const char *p = m_urlPtrs[m_n];
 
 	// if it is ip based that makes things easy
 	int32_t  hlen = 0;
