@@ -2515,10 +2515,6 @@ bool RdbBase::verifyFileSharding ( ) {
 
 	Msg5 msg5;
 	RdbList list;
-	char startKey[MAX_KEY_BYTES];
-	char endKey[MAX_KEY_BYTES];
-	KEYMIN(startKey,MAX_KEY_BYTES);
-	KEYMAX(endKey,MAX_KEY_BYTES);
 	int32_t minRecSizes = 64000;
 	rdbid_t rdbId = m_rdb->getRdbId();
 	if ( rdbId == RDB_TITLEDB ) minRecSizes = 640000;
@@ -2529,8 +2525,8 @@ bool RdbBase::verifyFileSharding ( ) {
 	if ( ! msg5.getList ( m_rdb->getRdbId(),
 			      m_collnum       ,
 			      &list         ,
-			      startKey      ,
-			      endKey        ,
+			      KEYMIN()      ,
+			      KEYMAX()      ,
 			      minRecSizes   ,
 			      true          , // includeTree   ,
 			      0             , // max cache age
