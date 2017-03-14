@@ -44,7 +44,7 @@ private:
 	static void gotMsgCWrapper(void *state, int32_t ip);
 	bool launchRequests(int32_t starti);
 	bool sendMsgC(int32_t slotIndex, const char *host, int32_t hlen);
-	bool doneSending(int32_t slotIndex);
+	void doneSending(int32_t slotIndex);
 	bool addTag(int32_t slotIndex);
 	bool doneAddingTag(int32_t slotIndex);
 

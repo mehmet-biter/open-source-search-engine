@@ -228,24 +228,26 @@ bool Msge1::sendMsgC(int32_t slotIndex, const char *host, int32_t hlen) {
 	m->m_msge1 = this;
 	m->m_msge1State = slotIndex;
 
-	if (!m->getIp(host, hlen, &m_ipBuf[n], m, gotMsgCWrapper)) {
+	if (!m->getIp(host, hlen, &m_ipBuf[n], m, gotMsgCWrapper))
 		return false;
-	}
-	return doneSending(slotIndex);
+	doneSending(slotIndex);
+	return true;
 }	
 
 void Msge1::gotMsgCWrapper(void *state, int32_t ip) {
 	MsgC   *m    = (MsgC  *)state;
 	Msge1  *THIS = m->m_msge1;
 	int32_t    i    = m->m_msge1State;
-	if ( ! THIS->doneSending(i) ) return;
+
+	THIS->doneSending(i);
+
 	// try to launch more, returns false if not done
 	if ( ! THIS->launchRequests(i) ) return;
 	// must be all done, call the callback
 	THIS->m_callback ( THIS->m_state );
 }
 
-bool Msge1::doneSending ( int32_t slotIndex ) {
+void Msge1::doneSending(int32_t slotIndex) {
 	// we are processing the nth url
 	int32_t n = m_ns[slotIndex];
 	// save the error
@@ -259,6 +261,4 @@ bool Msge1::doneSending ( int32_t slotIndex ) {
 	m_numReplies++;
 	// free it
 	m_used[slotIndex] = false;
-	// we did not block
-	return true;
 }
