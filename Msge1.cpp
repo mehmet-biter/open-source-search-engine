@@ -181,10 +181,6 @@ bool Msge1::launchRequests ( int32_t starti ) {
 	if ( host && is_digit(host[0]) ) ip = atoip ( host , hlen );
 	// if legit this is non-zero
 	if ( ip ) {
-		// what is this? i no longer have this bug really - i fixed
-		// it - but it did core here probably from a bad dns reply!
-		// so take this out...
-		//if ( ip == 3 ) { g_process.shutdownAbort(true); }
 		m_ipBuf[m_n] = ip;
 		m_numRequests++; 
 		m_numReplies++; 
@@ -193,14 +189,11 @@ bool Msge1::launchRequests ( int32_t starti ) {
 	}
 
 	// . grab a slot
-	// . m_msg8as[i], m_msgCs[i], m_msg50s[i], m_msg20s[i]
 	int32_t i;
 	for ( i = starti ; i < MAX_OUTSTANDING_MSGE1 ; i++ )
 		if ( ! m_used[i] ) break;
 	// sanity check
 	if ( i >= MAX_OUTSTANDING_MSGE1 ) { g_process.shutdownAbort(true); }
-	// normalize the url
-	//m_urls[i].set ( p , plen );
 	// save the url number, "n"
 	m_ns  [i] = m_n;
 	// claim it
@@ -281,11 +274,6 @@ bool Msge1::addTag ( int32_t i ) {
 	// save i and this in the msgC itself
 	m->m_msge1 = this;
 	m->m_msge1State = i;
-	// store the domain here
-	//char *domBuf = m->m_request;
-	// get the domain
-	//int32_t  dlen = 0;
-	//char *dom  = getDomFast ( m_urlPtrs[n] , &dlen );
 
 	// make it all host based
 	//char *hostBuf = m->m_request;
@@ -306,8 +294,6 @@ bool Msge1::addTag ( int32_t i ) {
 }
 
 bool Msge1::doneAddingTag ( int32_t i ) {
-	// unmangle
-	//*m_pathPtr[i] = '/';
 	m_numReplies++;
 	// free it
 	m_used[i] = false;
