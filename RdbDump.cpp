@@ -238,6 +238,15 @@ void RdbDump::doneDumping() {
 		return;
 	}
 
+	// check dumped file size
+	if (m_file) {
+		m_file->invalidateFileSize();
+		if (m_file->getFileSize() == 0) {
+			logError("dumped zero byte file");
+			gbshutdownCorrupted();
+		}
+	}
+
 	// save the map to disk. true = allDone
 	if (m_map) {
 		m_map->writeMap(true);
