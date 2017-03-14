@@ -30,7 +30,6 @@ RdbMerge::RdbMerge()
     m_ks(0)
 {
 	memset(m_startKey, 0, sizeof(m_startKey));
-	memset(m_endKey, 0, sizeof(m_endKey));
 }
 
 RdbMerge::~RdbMerge() {
@@ -96,7 +95,6 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	// . set the key range we want to retrieve from the files
 	// . just get from the files, not tree (not cache?)
 	KEYMIN(m_startKey,m_ks);
-	KEYMAX(m_endKey,m_ks);
 
 	// if we're resuming a killed merge, set m_startKey to last
 	// key the map knows about.
@@ -311,8 +309,8 @@ bool RdbMerge::getAnotherList() {
 		return true;
 	}
 
-	logTrace(g_conf.m_logTraceRdbMerge, "list=%p startKey=%s endKey=%s",
-	         &m_list, KEYSTR(m_startKey, m_ks), KEYSTR(m_endKey, m_ks));
+	logTrace(g_conf.m_logTraceRdbMerge, "list=%p startKey=%s",
+	         &m_list, KEYSTR(m_startKey, m_ks));
 
 	// . this returns false if blocked, true otherwise
 	// . sets g_errno on error
@@ -342,7 +340,7 @@ bool RdbMerge::getAnotherList() {
 				 m_collnum,
 				 &m_list,
 				 m_startKey,
-				 m_endKey,       // usually is maxed!
+				 KEYMAX(),        // usually is maxed!
 				 bufSize,
 				 false,           // includeTree?
 				 0,               // max cache age for lookup
@@ -368,8 +366,8 @@ void RdbMerge::gotListWrapper(void *state, RdbList * /*list*/, Msg5 * /*msg5*/) 
 	// get a ptr to ourselves
 	RdbMerge *THIS = (RdbMerge *)state;
 
-	logTrace(g_conf.m_logTraceRdbMerge, "list=%p startKey=%s endKey=%s",
-	         &(THIS->m_list), KEYSTR(THIS->m_startKey, THIS->m_ks), KEYSTR(THIS->m_endKey, THIS->m_ks));
+	logTrace(g_conf.m_logTraceRdbMerge, "list=%p startKey=%s",
+	         &(THIS->m_list), KEYSTR(THIS->m_startKey, THIS->m_ks));
 
 	THIS->m_getListOutstanding = false;
 
@@ -551,8 +549,8 @@ void RdbMerge::dumpListWrapper(void *state) {
 	// get a ptr to ourselves
 	RdbMerge *THIS = (RdbMerge *)state;
 
-	logTrace(g_conf.m_logTraceRdbMerge, "list=%p startKey=%s endKey=%s",
-	         &(THIS->m_list), KEYSTR(THIS->m_startKey, THIS->m_ks), KEYSTR(THIS->m_endKey, THIS->m_ks));
+	logTrace(g_conf.m_logTraceRdbMerge, "list=%p startKey=%s",
+	         &(THIS->m_list), KEYSTR(THIS->m_startKey, THIS->m_ks));
 
 	for (;;) {
 		// collection reset or deleted while RdbDump.cpp was writing out?
@@ -616,8 +614,8 @@ bool RdbMerge::dumpList() {
 
 	log(LOG_DEBUG,"db: Dumping list.");
 
-	logTrace(g_conf.m_logTraceRdbMerge, "list=%p startKey=%s endKey=%s",
-	         &m_list, KEYSTR(m_startKey, m_ks), KEYSTR(m_endKey, m_ks));
+	logTrace(g_conf.m_logTraceRdbMerge, "list=%p startKey=%s",
+	         &m_list, KEYSTR(m_startKey, m_ks));
 
 	// . send the whole list to the dump
 	// . it returns false if blocked, true otherwise
