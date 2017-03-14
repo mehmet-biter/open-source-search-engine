@@ -7,8 +7,7 @@
 #include "Msge1.h"
 
 Msge1::Msge1()
-  : m_coll(NULL),
-    m_niceness(0),
+  : m_niceness(0),
     m_urlPtrs(NULL),
     m_urlFlags(NULL),
     m_numUrls(0),
@@ -63,7 +62,6 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 			  const char **urlPtrs,
 			  const linkflags_t *urlFlags,
 			  int32_t     numUrls                ,
-			  char    *coll                   ,
 			  int32_t     niceness               ,
 			  void    *state                  ,
 			  void   (*callback)(void *state) ,
@@ -79,7 +77,6 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 	m_urlPtrs          = urlPtrs;
 	m_urlFlags         = urlFlags;
 	m_numUrls          = numUrls;
-	m_coll             = coll;
 	m_niceness         = niceness;
 	m_state            = state;
 	m_callback         = callback;

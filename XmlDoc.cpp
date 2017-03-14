@@ -10862,7 +10862,6 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 				     const_cast<const char**>(links->m_linkPtrs),
 				     links->m_linkFlags ,
 				     links->m_numLinks  ,
-				     cr->m_coll             ,
 				     m_niceness         ,
 				     m_masterState      ,
 				     m_masterLoop       ,

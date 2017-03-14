@@ -31,7 +31,6 @@ public:
 			   const char **urlPtrs,
 			   const linkflags_t *urlFlags,
 			   int32_t          numUrls                ,
-			   char         *coll                   ,
 			   int32_t          niceness               ,
 			   void         *state                  ,
 			   void        (*callback)(void *state) ,
@@ -50,7 +49,6 @@ private:
 	bool addTag        ( int32_t i );
 	bool doneAddingTag ( int32_t i );
 
-	char *m_coll      ;
 	int32_t  m_niceness  ;
 
 	const char **m_urlPtrs;
