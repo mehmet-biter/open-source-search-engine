@@ -34,8 +34,7 @@ public:
 			   int32_t          niceness               ,
 			   void         *state                  ,
 			   void        (*callback)(void *state) ,
-			   int32_t          nowGlobal              ,
-			   bool          addTags                );
+			   int32_t          nowGlobal);
 
 	int32_t getErrno() const { return m_errno; }
 	int32_t **getIpBufPtr() { return &m_ipBuf; } //xdmlDoc needs this ptr-ptr

@@ -65,8 +65,7 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 			  int32_t     niceness               ,
 			  void    *state                  ,
 			  void   (*callback)(void *state) ,
-			  int32_t     nowGlobal              ,
-			  bool     addTags                ) {
+			  int32_t     nowGlobal) {
 
 	reset();
 	// bail if no urls or linkee
@@ -81,7 +80,6 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 	m_state            = state;
 	m_callback         = callback;
 	m_nowGlobal        = nowGlobal;
-	m_addTags          = addTags;
 
 	// . how much mem to alloc?
 	// . include an extra 4 bytes for each one to hold possible errno

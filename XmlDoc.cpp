@@ -10865,8 +10865,7 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 				     m_niceness         ,
 				     m_masterState      ,
 				     m_masterLoop       ,
-				     nowGlobal          ,
-				     addTags            )) {
+				     nowGlobal          )) {
 		// sanity check
 		if ( m_doingConsistencyCheck ) { g_process.shutdownAbort(true); }
 		// we blocked
