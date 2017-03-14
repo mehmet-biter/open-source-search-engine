@@ -85,22 +85,20 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 
 	// . how much mem to alloc?
 	// . include an extra 4 bytes for each one to hold possible errno
-	int32_t need = 4 + 4; // ip + error
+	int32_t needPerUrl = sizeof(*m_ipBuf)
+	                   + sizeof(*m_ipErrors);
 	// one per url
-	need *= numUrls;
+	int32_t needTotal = needPerUrl * numUrls;
 	// allocate the buffer to hold all the info we gather
-	m_buf = (char *)mcalloc ( need , "Msge1buf" );
+	m_buf = (char *)mcalloc ( needTotal , "Msge1buf" );
 	if ( ! m_buf ) return true;
-	m_bufSize = need;
-
+	m_bufSize = needTotal;
 	// clear it all
-	memset(m_buf, 0, m_bufSize);
-
+	memset ( m_buf , 0 , m_bufSize );
 	// set the ptrs!
 	char *p = m_buf;
-	m_ipBuf             = (int32_t *)p ; p += numUrls * 4;
-	m_ipErrors          = (int32_t *)p ; p += numUrls * 4;
-
+	m_ipBuf             = (int32_t *)p ; p += numUrls * sizeof(*m_ipBuf);
+	m_ipErrors          = (int32_t *)p ; p += numUrls * sizeof(*m_ipErrors);
 	// initialize
 	m_numRequests = 0;
 	m_numReplies  = 0;
@@ -110,7 +108,8 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 	m_n = 0;
 
 	// clear the m_used flags
-	memset(m_used, 0, sizeof(m_used));
+	for(int i=0; i<MAX_OUTSTANDING_MSGE1; i++)
+		m_used[i] = false;
 
 	// . launch the requests
 	// . a request can be a msg8a, msgc, msg50 or msg20 request depending
