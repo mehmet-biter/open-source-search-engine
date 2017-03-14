@@ -118,99 +118,101 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 bool Msge1::launchRequests ( int32_t starti ) {
 	// reset any error code
 	g_errno = 0;
- loop:
-	// stop if no more urls. return true if we got all replies! no block.
-	if ( m_n >= m_numUrls ) return (m_numRequests == m_numReplies);
-	// if we are maxed out, we basically blocked!
-	if (m_numRequests - m_numReplies >= MAX_OUTSTANDING_MSGE1)return false;
 
-	// grab the "firstip" from the tagRec if we can
-	TagRec *gr  = m_grv[m_n];
-	Tag    *tag = NULL;
-	if ( gr ) tag = gr->getTag("firstip");
-	int32_t ip;
-	// grab the ip that was in there
-	if ( tag ) ip = atoip(tag->getTagData());
-	// if we had it but it was 0 or -1, then time that out
-	// after a day or so in case it works again! 0 and -1 mean
-	// NXDOMAIN or timeout error, etc.
-	if ( tag && ( ip == 0 || ip == -1 ) ) 
-		if ( m_nowGlobal - tag->m_timestamp > 3600*24 ) tag = NULL;
-	// . if we still got the tag, use that, even if ip is 0 or -1
-	// . this keeps things fast
-	// . this makes sure doConsistencyCheck() does not block too in
-	//   XmlDoc.cpp... cuz it cores if it does block
-	if ( tag ) {
-		// now "ip" might actually be -1 or 0 (invalid) so be careful
-		m_ipBuf[m_n] = ip;
-		// what is this?
-		//if ( ip == 3 ) { g_process.shutdownAbort(true); }
-		m_numRequests++; 
-		m_numReplies++; 
-		m_n++; 
-		goto loop; 
+	const int32_t maxOut = MAX_OUTSTANDING_MSGE1;
+
+	while(m_n < m_numUrls && m_numRequests - m_numReplies < maxOut) {
+		// grab the "firstip" from the tagRec if we can
+		TagRec *gr  = m_grv[m_n];
+		Tag    *tag = NULL;
+		if ( gr ) tag = gr->getTag("firstip");
+		int32_t ip;
+		// grab the ip that was in there
+		if ( tag ) ip = atoip(tag->getTagData());
+		// if we had it but it was 0 or -1, then time that out
+		// after a day or so in case it works again! 0 and -1 mean
+		// NXDOMAIN or timeout error, etc.
+		if ( tag && ( ip == 0 || ip == -1 ) )
+			if ( m_nowGlobal - tag->m_timestamp > 3600*24 ) tag = NULL;
+		// . if we still got the tag, use that, even if ip is 0 or -1
+		// . this keeps things fast
+		// . this makes sure doConsistencyCheck() does not block too in
+		//   XmlDoc.cpp... cuz it cores if it does block
+		if ( tag ) {
+			// now "ip" might actually be -1 or 0 (invalid) so be careful
+			m_ipBuf[m_n] = ip;
+			// what is this?
+			//if ( ip == 3 ) { g_process.shutdownAbort(true); }
+			m_numRequests++;
+			m_numReplies++;
+			m_n++;
+			continue;
+		}
+
+		// or if banned
+		Tag *btag = NULL;
+		if ( gr ) btag = gr->getTag("manualban");
+		if ( btag && btag->getTagData()[0] !='0') {
+			// debug for now
+			if ( g_conf.m_logDebugDns )
+				log("dns: skipping dns lookup on banned hostname");
+			// -1 means time out i guess
+			m_ipBuf[m_n] = -1;
+			m_numRequests++;
+			m_numReplies++;
+			m_n++;
+			continue;
+		}
+
+
+		// . get the next url
+		// . if m_xd is set, create the url from the ad id
+		const char *p = m_urlPtrs[m_n];
+
+		// if it is ip based that makes things easy
+		int32_t  hlen = 0;
+		const char *host = getHostFast ( p , &hlen );
+
+		// reset this again
+		ip = 0;
+		// see if the hostname is actually an ip like "1.2.3.4"
+		if ( host && is_digit(host[0]) ) ip = atoip ( host , hlen );
+		// if legit this is non-zero
+		if ( ip ) {
+			m_ipBuf[m_n] = ip;
+			m_numRequests++;
+			m_numReplies++;
+			m_n++;
+			continue;
+		}
+
+		// . grab a slot
+		int32_t i;
+		for ( i = starti ; i < MAX_OUTSTANDING_MSGE1 ; i++ )
+			if ( ! m_used[i] ) break;
+		// sanity check
+		if ( i >= MAX_OUTSTANDING_MSGE1 ) { g_process.shutdownAbort(true); }
+		// save the url number, "n"
+		m_ns  [i] = m_n;
+		// claim it
+		m_used[i] = true;
+
+		// . start it off
+		// . this will start the pipeline for this url
+		// . it will set m_used[i] to true if we use it and block
+		// . it will increment m_numRequests and NOT m_numReplies if it blocked
+		//sendMsgC ( i , dom , dlen );
+		sendMsgC ( i , host , hlen );
+		// consider it launched
+		m_numRequests++;
+		// inc the url count
+		m_n++;
+		// try to do another
 	}
 
-	// or if banned
-	Tag *btag = NULL;
-	if ( gr ) btag = gr->getTag("manualban");
-	if ( btag && btag->getTagData()[0] !='0') {
-		// debug for now
-		if ( g_conf.m_logDebugDns )
-			log("dns: skipping dns lookup on banned hostname");
-		// -1 means time out i guess
-		m_ipBuf[m_n] = -1;
-		m_numRequests++; 
-		m_numReplies++; 
-		m_n++; 
-		goto loop; 
-	}
-
-
-	// . get the next url
-	// . if m_xd is set, create the url from the ad id
-	const char *p = m_urlPtrs[m_n];
-
-	// if it is ip based that makes things easy
-	int32_t  hlen = 0;
-	const char *host = getHostFast ( p , &hlen );
-
-	// reset this again
-	ip = 0;
-	// see if the hostname is actually an ip like "1.2.3.4"
-	if ( host && is_digit(host[0]) ) ip = atoip ( host , hlen );
-	// if legit this is non-zero
-	if ( ip ) {
-		m_ipBuf[m_n] = ip;
-		m_numRequests++; 
-		m_numReplies++; 
-		m_n++; 
-		goto loop; 
-	}
-
-	// . grab a slot
-	int32_t i;
-	for ( i = starti ; i < MAX_OUTSTANDING_MSGE1 ; i++ )
-		if ( ! m_used[i] ) break;
-	// sanity check
-	if ( i >= MAX_OUTSTANDING_MSGE1 ) { g_process.shutdownAbort(true); }
-	// save the url number, "n"
-	m_ns  [i] = m_n;
-	// claim it
-	m_used[i] = true;
-
-	// . start it off
-	// . this will start the pipeline for this url
-	// . it will set m_used[i] to true if we use it and block
-	// . it will increment m_numRequests and NOT m_numReplies if it blocked
-	//sendMsgC ( i , dom , dlen );
-	sendMsgC ( i , host , hlen );
-	// consider it launched
-	m_numRequests++;
-	// inc the url count
-	m_n++;
-	// try to do another
-	goto loop;
+	if( m_n >= m_numUrls )
+		return m_numRequests == m_numReplies;
+	return false;
 }
 
 
