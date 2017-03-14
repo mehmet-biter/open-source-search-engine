@@ -932,14 +932,14 @@ tryAgain:
 		m_tried = true;
 
 		if (m_file) {
-			log(LOG_ERROR, "db: Corruption in tree detected when dumping to %s. Fixing. Your memory had an error. "
+			log(LOG_ERROR, "db: Corruption in tree detected when dumping to %s. Your memory had an error. "
 			               "Consider replacing it.", m_file->getFilename());
 		}
 
 		log(LOG_WARN, "db: was collection restarted/reset/deleted before we could delete list from tree? collnum=%hd", m_collnum);
 
-		// reset error in that case
-		g_errno = 0;
+		// we're not fixing it. don't ignore error
+		gbshutdownCorrupted();
 	}
 
 	log(LOG_TIMING,"db: dump: deleteList: took %" PRId64,gettimeofdayInMilliseconds()-t3);
