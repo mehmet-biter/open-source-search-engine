@@ -31,8 +31,6 @@ public:
 			   const char **urlPtrs,
 			   const linkflags_t *urlFlags,
 			   int32_t          numUrls                ,
-			   // if urlFlags[i]&LF_OLDLINK is true, skip it
-			   bool          skipOldLinks           ,
 			   char         *coll                   ,
 			   int32_t          niceness               ,
 			   void         *state                  ,
@@ -59,8 +57,6 @@ private:
 	const linkflags_t *m_urlFlags;
 	int32_t   m_numUrls;
 	bool   m_addTags;
-
-	bool   m_skipOldLinks;
 
 	// buffer to hold all the data we accumulate for all the urls in urlBuf
 	char *m_buf;
