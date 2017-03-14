@@ -1275,6 +1275,11 @@ bool RdbBase::incorporateMerge ( ) {
 	log(LOG_INFO, "merge: Files had %" PRId64" positive and %" PRId64" negative recs.",
 	    m_premergeNumPositiveRecords, m_premergeNumNegativeRecords);
 
+	// there should never be a scenario where we get 0 positive recs
+	if (postmergePositiveRecords == 0) {
+		logError("Merge ended with 0 positive records.");
+		gbshutdownCorrupted();
+	}
 
 	// . bitch if bad news
 	if ( postmergePositiveRecords > m_premergeNumPositiveRecords ) {

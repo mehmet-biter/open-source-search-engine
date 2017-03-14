@@ -342,8 +342,6 @@ void XmlDoc::reset ( ) {
 	m_updatingSiteLinkInfoTags = false;
 	m_hashedTitle              = false;
 
-	m_registeredSleepCallback  = false;
-
 	m_numRedirects             = 0;
 	m_numOutlinksAdded         = 0;
 	m_useRobotsTxt             = true;
@@ -1265,15 +1263,6 @@ static void indexDocWrapper ( void *state ) {
 
 
 
-// for registerSleepCallback
-static void indexDocWrapper2 ( int fd , void *state ) {
-	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
-
-	indexDocWrapper ( state );
-
-	logTrace( g_conf.m_logTraceXmlDoc, "END" );
-}
-
 // . the highest level function in here
 // . user is requesting to inject this url
 // . returns false if blocked and your callback will be called when done
@@ -1988,12 +1977,6 @@ bool XmlDoc::indexDoc2 ( ) {
 	// ignore errors from that
 	g_errno = 0;
 
-
-	// unregister any sleep callback
-	if ( m_registeredSleepCallback ) {
-		g_loop.unregisterSleepCallback(m_masterState,indexDocWrapper2);
-		m_registeredSleepCallback = false;
-	}
 
 	// now add it
 	if ( ! m_listAdded && m_metaListSize ) {
