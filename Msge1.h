@@ -41,13 +41,12 @@ public:
 	int32_t **getIpBufPtr() { return &m_ipBuf; } //xdmlDoc needs this ptr-ptr
 
 private:
-	bool launchRequests ( int32_t starti ) ;
 	static void gotMsgCWrapper(void *state, int32_t ip);
-
-	bool sendMsgC      ( int32_t i , const char *host , int32_t hlen );
-	bool doneSending   ( int32_t i );
-	bool addTag        ( int32_t i );
-	bool doneAddingTag ( int32_t i );
+	bool launchRequests(int32_t starti);
+	bool sendMsgC(int32_t slotIndex, const char *host, int32_t hlen);
+	bool doneSending(int32_t slotIndex);
+	bool addTag(int32_t slotIndex);
+	bool doneAddingTag(int32_t slotIndex);
 
 	int32_t  m_niceness  ;
 

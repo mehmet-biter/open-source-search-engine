@@ -214,53 +214,53 @@ bool Msge1::launchRequests ( int32_t starti ) {
 }
 
 
-bool Msge1::sendMsgC ( int32_t i , const char *host , int32_t hlen ) {
+bool Msge1::sendMsgC(int32_t slotIndex, const char *host, int32_t hlen) {
 	// we are processing the nth url
-	int32_t   n    = m_ns[i];
+	int32_t   n    = m_ns[slotIndex];
 	// set m_errno if we should at this point
 	if ( ! m_errno && g_errno != ENOTFOUND ) m_errno = g_errno;
 	// reset it
 	g_errno = 0;
 
 	// using the the ith msgC
-	MsgC  *m    = &m_msgCs[i];
+	MsgC  *m    = &m_msgCs[slotIndex];
 	// save i and this in the msgC itself
 	m->m_msge1 = this;
-	m->m_msge1State = i;
+	m->m_msge1State = slotIndex;
 
 	if (!m->getIp(host, hlen, &m_ipBuf[n], m, gotMsgCWrapper)) {
 		return false;
 	}
-	return doneSending ( i );
+	return doneSending(slotIndex);
 }	
 
 void Msge1::gotMsgCWrapper(void *state, int32_t ip) {
 	MsgC   *m    = (MsgC  *)state;
 	Msge1  *THIS = m->m_msge1;
 	int32_t    i    = m->m_msge1State;
-	if ( ! THIS->doneSending ( i ) ) return;
+	if ( ! THIS->doneSending(i) ) return;
 	// try to launch more, returns false if not done
 	if ( ! THIS->launchRequests(i) ) return;
 	// must be all done, call the callback
 	THIS->m_callback ( THIS->m_state );
 }
 
-bool Msge1::doneSending ( int32_t i ) {
+bool Msge1::doneSending ( int32_t slotIndex ) {
 	// we are processing the nth url
-	int32_t n = m_ns[i];
+	int32_t n = m_ns[slotIndex];
 	// save the error
 	m_ipErrors[n] = g_errno;
 	// save m_errno
 	if ( g_errno && ! m_errno ) m_errno = g_errno;
 	// clear it
 	g_errno = 0;
-	return addTag ( i );
+	return addTag(slotIndex);
 }
 
-bool Msge1::addTag ( int32_t i ) {
+bool Msge1::addTag ( int32_t slotIndex ) {
 
 	// we are processing the nth url
-	int32_t n = m_ns[i];
+	int32_t n = m_ns[slotIndex];
 	// get ip we got
 	//int32_t ip = m_ipBuf[n];
 
@@ -270,10 +270,10 @@ bool Msge1::addTag ( int32_t i ) {
 	//
 
 	// using the the ith msgC
-	MsgC  *m    = &m_msgCs[i];
+	MsgC  *m    = &m_msgCs[slotIndex];
 	// save i and this in the msgC itself
 	m->m_msge1 = this;
-	m->m_msge1State = i;
+	m->m_msge1State = slotIndex;
 
 	// make it all host based
 	//char *hostBuf = m->m_request;
@@ -284,19 +284,19 @@ bool Msge1::addTag ( int32_t i ) {
 
 	// if invalid or ip-based, skip it!
 	if ( ! host || hlen <= 0 ) 
-		return doneAddingTag ( i );
+		return doneAddingTag(slotIndex);
 
 	if ( ! m_addTags )
-		return doneAddingTag ( i );
+		return doneAddingTag(slotIndex);
 
 	// now let xmldoc add the firstip tags of each outlink!
-	return doneAddingTag ( i );
+	return doneAddingTag(slotIndex);
 }
 
-bool Msge1::doneAddingTag ( int32_t i ) {
+bool Msge1::doneAddingTag(int32_t slotIndex) {
 	m_numReplies++;
 	// free it
-	m_used[i] = false;
+	m_used[slotIndex] = false;
 	// we did not block
 	return true;
 }
