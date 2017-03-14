@@ -254,46 +254,8 @@ bool Msge1::doneSending ( int32_t slotIndex ) {
 	if ( g_errno && ! m_errno ) m_errno = g_errno;
 	// clear it
 	g_errno = 0;
-	return addTag(slotIndex);
-}
 
-bool Msge1::addTag ( int32_t slotIndex ) {
-
-	// we are processing the nth url
-	int32_t n = m_ns[slotIndex];
-	// get ip we got
-	//int32_t ip = m_ipBuf[n];
-
-	//
-	// HACK: hijack this MsgC to use as a "state" for call to msg9a
-	// so we can add the "firstip" tag, since we did not have one!
-	//
-
-	// using the the ith msgC
-	MsgC  *m    = &m_msgCs[slotIndex];
-	// save i and this in the msgC itself
-	m->m_msge1 = this;
-	m->m_msge1State = slotIndex;
-
-	// make it all host based
-	//char *hostBuf = m->m_request;
-	// get the host
-	int32_t  hlen = 0;
-	const char *host  = getHostFast ( m_urlPtrs[n] , &hlen );
-
-
-	// if invalid or ip-based, skip it!
-	if ( ! host || hlen <= 0 ) 
-		return doneAddingTag(slotIndex);
-
-	if ( ! m_addTags )
-		return doneAddingTag(slotIndex);
-
-	// now let xmldoc add the firstip tags of each outlink!
-	return doneAddingTag(slotIndex);
-}
-
-bool Msge1::doneAddingTag(int32_t slotIndex) {
+	// tally it up
 	m_numReplies++;
 	// free it
 	m_used[slotIndex] = false;
