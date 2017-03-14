@@ -1310,6 +1310,11 @@ bool RdbBase::incorporateMerge ( ) {
 	m_fileInfo[x].m_file->invalidateFileSize();
 
 	int64_t fs = m_fileInfo[x].m_file->getFileSize();
+	if (fs == 0) {
+		// zero sized file?
+		logError("zero sized file after merge for file=%s", m_fileInfo[x].m_file->getFilename());
+		gbshutdownCorrupted();
+	}
 
 	// get file size from map
 	int64_t fs2 = m_fileInfo[x].m_map->getFileSize();
