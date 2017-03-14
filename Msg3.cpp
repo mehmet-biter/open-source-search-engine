@@ -720,7 +720,7 @@ bool Msg3::doneScanning ( ) {
 			biggest = m_scan[i].m_scan.getBytesToRead();
 		}
 		if ( biggest > 500000000 ) {
-			log("db: Max read size was %" PRId32" > 500000000. Assuming "
+			log(LOG_WARN,"db: Max read size was %" PRId32" > 500000000. Assuming "
 			    "corrupt data in data file.",biggest);
 			m_errno = ECORRUPTDATA;
 			m_hadCorruption = true;
@@ -754,7 +754,7 @@ bool Msg3::doneScanning ( ) {
 			g_errno = ECORRUPTDATA;
 			m_errno = ECORRUPTDATA;
 			max     = g_conf.m_corruptRetries; // try 100 times
-			log("db: Encountered corrupt list in file %s.",
+			log(LOG_WARN,"db: Encountered corrupt list in file %s.",
 			    base->getFile(m_scan[i].m_fileNum)->getFilename());
 		}
 		else
@@ -819,7 +819,7 @@ bool Msg3::doneScanning ( ) {
 		}
 
 		// otherwise, registration failed
-		log(
+		log(LOG_ERROR,
 		    "net: Failed to register sleep callback for retry. "
 		    "Abandoning read. This is bad.");
 		// return, g_errno should be set
@@ -830,7 +830,7 @@ bool Msg3::doneScanning ( ) {
 
 	// if we got an error and should not retry any more then give up
 	if ( g_errno ) {
-		log(
+		log(LOG_ERROR,
 		    "net: Had error reading %s: %s. Giving up after %" PRId32" "
 		    "retries.",
 		    base->getDbName(),mstrerror(g_errno) , m_retryNum );
@@ -915,7 +915,7 @@ bool Msg3::doneScanning ( ) {
 			     ( m_scan[i].m_list.getListSize() != recSize-1 ||
 			       memcmp ( m_scan[i].m_list.getList() , rec+1,recSize-1) != 0 ||
 			       *rec != m_scan[i].m_scan.shiftCount() ) ) {
-				log("msg3: cache did not validate");
+				log(LOG_ERROR, "msg3: cache did not validate");
 				g_process.shutdownAbort(true);
 			}
 			mfree ( rec , recSize , "vca" );
@@ -1064,7 +1064,7 @@ void Msg3::setPageRanges(RdbBase *base) {
 		// sanity check
 		if ( lastMinKeyIsValid && KEYCMP(minKey,lastMinKey,m_ks)<=0 ) {
 			g_errno = ECORRUPTDATA;
-			log("db: Got corrupted map in memory for %s. This is almost "
+			log(LOG_ERROR, "db: Got corrupted map in memory for %s. This is almost "
 			    "always because of bad memory. Please replace your RAM.",
 			    base->getDbName());
 			gbshutdownCorrupted();

@@ -202,12 +202,12 @@ bool Msg5::getList ( rdbid_t     rdbId,
 	
 	// make sure we are not being re-used prematurely
 	if ( m_waitingForList ) {
-		log("disk: Trying to reset a class waiting for a reply.");
+		log(LOG_LOGIC,"disk: Trying to reset a class waiting for a reply.");
 		g_process.shutdownAbort(true); 
 	}
 
 	if ( collnum < 0 ) {
-		log("msg5: called with bad collnum=%" PRId32,(int32_t)collnum);
+		log(LOG_WARN,"msg5: called with bad collnum=%" PRId32,(int32_t)collnum);
 		g_errno = ENOCOLLREC;
 		return true;
 	}
@@ -400,7 +400,7 @@ bool Msg5::readList ( ) {
 					   m_maxRetries     , // -1=def
 					   true);             // just get endKey?
 			if ( g_errno ) {
-				log("db: Msg5: getting endKey: %s",mstrerror(g_errno));
+				log(LOG_ERROR,"db: Msg5: getting endKey: %s",mstrerror(g_errno));
 				return true;
 			}
 			treeEndKey = m_msg3.m_constrainKey;
@@ -589,7 +589,7 @@ bool Msg5::needsRecall() {
 
 	// if collection was deleted from under us, base will be NULL
 	if ( ! base && ! g_errno ) {
-		log("msg5: base lost for rdbid=%" PRId32" collnum %" PRId32,
+		log(LOG_WARN,"msg5: base lost for rdbid=%" PRId32" collnum %" PRId32,
 		    (int32_t)m_rdbId,(int32_t)m_collnum);
 		g_errno = ENOCOLLREC;
 		return false;
@@ -614,7 +614,7 @@ bool Msg5::needsRecall() {
 	// seems to be ok, let's open it up to fix this bug where we try
 	// to read too many bytes a small titledb and it does an infinite loop
 	if( rc && m_readAbsolutelyNothing ) {
-		log("rdb: read absolutely nothing more for dbname=%s on cn=%" PRId32, base->getDbName(),(int32_t)m_collnum);
+		log(LOG_WARN, "rdb: read absolutely nothing more for dbname=%s on cn=%" PRId32, base->getDbName(),(int32_t)m_collnum);
 		rc = false;
 	}
 
@@ -642,7 +642,7 @@ bool Msg5::needsRecall() {
 		}
 
 		if ( logIt ) {
-			log("db: Reading %" PRId32" again from %s (need %" PRId32" total "
+			log(LOG_WARN,"db: Reading %" PRId32" again from %s (need %" PRId32" total "
 			     "got %" PRId32" totalListSizes=%" PRId32" sk=%s) "
 			     "cn=%" PRId32" this=0x%" PTRFMT" round=%" PRId32".", 
 			     m_newMinRecSizes , base->getDbName() , m_minRecSizes, 
