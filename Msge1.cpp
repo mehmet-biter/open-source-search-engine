@@ -102,25 +102,15 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 	// initialize
 	m_numRequests = 0;
 	m_numReplies  = 0;
-
 	// . point to first url to process
 	// . url # m_n
 	m_n = 0;
-
 	// clear the m_used flags
 	for(int i=0; i<MAX_OUTSTANDING_MSGE1; i++)
 		m_used[i] = false;
 
 	// . launch the requests
-	// . a request can be a msg8a, msgc, msg50 or msg20 request depending
-	//   on what we need to get
-	// . when a reply returns, the next request is launched for that url
-	// . we keep a msge1Slot state for each active url in the buffer
-	// . we can have up to MAX_ACTIVE urls active
-	if ( ! launchRequests ( 0 ) ) return false;
-
-	// none blocked, we are done
-	return true;
+	return launchRequests(0);
 }
 
 // we only come back up here 1) in the very beginning or 2) when a url 
