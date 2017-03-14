@@ -743,7 +743,8 @@ static bool CommandDiskDump(const char *rec) {
 	g_spiderdb.getRdb()->dumpTree();
 	g_posdb.getRdb()->dumpTree();
 	g_titledb.getRdb()->dumpTree();
-	g_statsdb.getRdb()->dumpTree();
+	// disable statsdb from dump to disk command to prevent 0 byte file from being created
+	//g_statsdb.getRdb()->dumpTree();
 	g_linkdb.getRdb()->dumpTree();
 	g_errno = 0;
 	return true;

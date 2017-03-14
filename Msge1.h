@@ -28,12 +28,9 @@ public:
 	//   doling/throttling these urls/requests out to other hosts to
 	//   spider them. see Spider.h/.cpp for more info
 	bool getFirstIps ( class TagRec **grv                   ,
-			   char        **urlPtrs                ,
-			   linkflags_t  *urlFlags               ,
+			   const char **urlPtrs,
+			   const linkflags_t *urlFlags,
 			   int32_t          numUrls                ,
-			   // if urlFlags[i]&LF_OLDLINK is true, skip it
-			   bool          skipOldLinks           ,
-			   char         *coll                   ,
 			   int32_t          niceness               ,
 			   void         *state                  ,
 			   void        (*callback)(void *state) ,
@@ -52,15 +49,12 @@ private:
 	bool addTag        ( int32_t i );
 	bool doneAddingTag ( int32_t i );
 
-	char *m_coll      ;
 	int32_t  m_niceness  ;
 
-	char **m_urlPtrs;
-	linkflags_t *m_urlFlags;
+	const char **m_urlPtrs;
+	const linkflags_t *m_urlFlags;
 	int32_t   m_numUrls;
 	bool   m_addTags;
-
-	bool   m_skipOldLinks;
 
 	// buffer to hold all the data we accumulate for all the urls in urlBuf
 	char *m_buf;

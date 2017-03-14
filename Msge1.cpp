@@ -6,30 +6,30 @@
 
 #include "Msge1.h"
 
-Msge1::Msge1() {
-	m_buf = NULL;
-	m_numReplies = 0;
-
-	// Coverity
-	m_coll = NULL;
-	m_niceness = 0;
-	m_urlPtrs = NULL;
-	m_urlFlags = NULL;
-	m_numUrls = 0;
-	m_addTags = false;
-	m_skipOldLinks = 0;
-	m_bufSize = 0;
-	m_ipErrors = NULL;
-	m_numRequests = 0;
-	m_n = 0;
-	m_grv = NULL;
-	m_state = NULL;
-	m_callback = NULL;
-	m_nowGlobal = 0;
-	memset(m_ns, 0, sizeof(m_ns));
-	memset(m_used, 0, sizeof(m_used));
-
-	reset();
+Msge1::Msge1()
+  : m_niceness(0),
+    m_urlPtrs(NULL),
+    m_urlFlags(NULL),
+    m_numUrls(0),
+    m_addTags(false),
+    m_buf(NULL),
+    m_bufSize(0),
+    m_ipBuf(NULL),
+    m_ipErrors(NULL),
+    m_numRequests(0),
+    m_numReplies(0),
+    m_n(0),
+    m_msgCs(),
+    m_grv(NULL),
+    m_state(NULL),
+    m_callback(NULL),
+    m_nowGlobal(0),
+    m_errno(0)
+{
+	for(int i=0; i<MAX_OUTSTANDING_MSGE1; i++)
+		m_ns[i] = 0;
+	for(int i=0; i<MAX_OUTSTANDING_MSGE1; i++)
+		m_used[i] = false;
 }
 
 Msge1::~Msge1() {
@@ -38,12 +38,20 @@ Msge1::~Msge1() {
 
 void Msge1::reset() {
 	m_errno = 0;
-	m_ipBuf = NULL;
 	if ( m_buf ) {
 		mfree(m_buf, m_bufSize, "Msge1buf");
 		m_buf = NULL;
 	}
+	m_ipBuf = NULL;
+	m_ipErrors = NULL;
+	m_numRequests = 0;
 	m_numReplies = 0;
+	m_n = 0;
+	
+	for(int i=0; i<MAX_OUTSTANDING_MSGE1; i++)
+		m_ns[i] = 0;
+	for(int i=0; i<MAX_OUTSTANDING_MSGE1; i++)
+		m_used[i] = false;
 }
 
 // . get various information for each url in a list of urls
@@ -51,12 +59,9 @@ void Msge1::reset() {
 // . used to be called getSiteRecs()
 // . you can pass in a list of docIds rather than urlPtrs
 bool Msge1::getFirstIps ( TagRec **grv ,
-			  char   **urlPtrs                ,
-			  linkflags_t *urlFlags           ,//Links::m_linkFlags
+			  const char **urlPtrs,
+			  const linkflags_t *urlFlags,
 			  int32_t     numUrls                ,
-			  // if skipOldLinks && urlFlags[i]&LF_OLDLINK, skip it
-			  bool     skipOldLinks           ,
-			  char    *coll                   ,
 			  int32_t     niceness               ,
 			  void    *state                  ,
 			  void   (*callback)(void *state) ,
@@ -72,8 +77,6 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 	m_urlPtrs          = urlPtrs;
 	m_urlFlags         = urlFlags;
 	m_numUrls          = numUrls;
-	m_skipOldLinks     = skipOldLinks;
-	m_coll             = coll;
 	m_niceness         = niceness;
 	m_state            = state;
 	m_callback         = callback;
@@ -131,15 +134,6 @@ bool Msge1::launchRequests ( int32_t starti ) {
 	if ( m_n >= m_numUrls ) return (m_numRequests == m_numReplies);
 	// if we are maxed out, we basically blocked!
 	if (m_numRequests - m_numReplies >= MAX_OUTSTANDING_MSGE1)return false;
-	// . skip if "old"
-	// . we are not planning on adding this to spiderdb, so Msg16
-	//   want to skip the ip lookup, etc.
-	if ( m_urlFlags && (m_urlFlags[m_n] & LF_OLDLINK) && m_skipOldLinks ) {
-		m_numRequests++; 
-		m_numReplies++; 
-		m_n++; 
-		goto loop; 
-	}
 
 	// grab the "firstip" from the tagRec if we can
 	TagRec *gr  = m_grv[m_n];
@@ -186,7 +180,7 @@ bool Msge1::launchRequests ( int32_t starti ) {
 
 	// . get the next url
 	// . if m_xd is set, create the url from the ad id
-	char *p = m_urlPtrs[m_n];
+	const char *p = m_urlPtrs[m_n];
 
 	// if it is ip based that makes things easy
 	int32_t  hlen = 0;
