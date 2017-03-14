@@ -6,30 +6,32 @@
 
 #include "Msge1.h"
 
-Msge1::Msge1() {
-	m_buf = NULL;
-	m_numReplies = 0;
-
-	// Coverity
-	m_coll = NULL;
-	m_niceness = 0;
-	m_urlPtrs = NULL;
-	m_urlFlags = NULL;
-	m_numUrls = 0;
-	m_addTags = false;
-	m_skipOldLinks = 0;
-	m_bufSize = 0;
-	m_ipErrors = NULL;
-	m_numRequests = 0;
-	m_n = 0;
-	m_grv = NULL;
-	m_state = NULL;
-	m_callback = NULL;
-	m_nowGlobal = 0;
-	memset(m_ns, 0, sizeof(m_ns));
-	memset(m_used, 0, sizeof(m_used));
-
-	reset();
+Msge1::Msge1()
+  : m_coll(NULL),
+    m_niceness(0),
+    m_urlPtrs(NULL),
+    m_urlFlags(NULL),
+    m_numUrls(0),
+    m_addTags(false),
+    m_skipOldLinks(false),
+    m_buf(NULL),
+    m_bufSize(0),
+    m_ipBuf(NULL),
+    m_ipErrors(NULL),
+    m_numRequests(0),
+    m_numReplies(0),
+    m_n(0),
+    m_msgCs(),
+    m_grv(NULL),
+    m_state(NULL),
+    m_callback(NULL),
+    m_nowGlobal(0),
+    m_errno(0)
+{
+	for(int i=0; i<MAX_OUTSTANDING_MSGE1; i++)
+		m_ns[i] = 0;
+	for(int i=0; i<MAX_OUTSTANDING_MSGE1; i++)
+		m_used[i] = false;
 }
 
 Msge1::~Msge1() {
@@ -38,12 +40,20 @@ Msge1::~Msge1() {
 
 void Msge1::reset() {
 	m_errno = 0;
-	m_ipBuf = NULL;
 	if ( m_buf ) {
 		mfree(m_buf, m_bufSize, "Msge1buf");
 		m_buf = NULL;
 	}
+	m_ipBuf = NULL;
+	m_ipErrors = NULL;
+	m_numRequests = 0;
 	m_numReplies = 0;
+	m_n = 0;
+	
+	for(int i=0; i<MAX_OUTSTANDING_MSGE1; i++)
+		m_ns[i] = 0;
+	for(int i=0; i<MAX_OUTSTANDING_MSGE1; i++)
+		m_used[i] = false;
 }
 
 // . get various information for each url in a list of urls
