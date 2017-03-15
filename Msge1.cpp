@@ -4,6 +4,7 @@
 #include "ip.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "ScopedLock.h"
 
 
 Msge1::Msge1()
@@ -19,6 +20,7 @@ Msge1::Msge1()
     m_numRequests(0),
     m_numReplies(0),
     m_n(0),
+    m_mtx(),
     m_msgCs(),
     m_grv(NULL),
     m_state(NULL),
@@ -121,6 +123,7 @@ bool Msge1::launchRequests ( int32_t starti ) {
 
 	const int32_t maxOut = MAX_OUTSTANDING_MSGE1;
 
+	ScopedLock sl(m_mtx);
 	while(m_n < m_numUrls && m_numRequests - m_numReplies < maxOut) {
 		// grab the "firstip" from the tagRec if we can
 		TagRec *gr  = m_grv[m_n];
@@ -225,7 +228,7 @@ bool Msge1::sendMsgC(int32_t slotIndex, const char *host, int32_t hlen) {
 
 	if (!m->getIp(host, hlen, &m_ipBuf[n], m, gotMsgCWrapper))
 		return false;
-	doneSending(slotIndex);
+	doneSending_unlocked(slotIndex);
 	return true;
 }
 
@@ -245,7 +248,14 @@ void Msge1::gotMsgCWrapper(void *state, int32_t ip) {
 	THIS->m_callback ( THIS->m_state );
 }
 
+
 void Msge1::doneSending(int32_t slotIndex) {
+	ScopedLock sl(m_mtx);
+	doneSending_unlocked(slotIndex);
+}
+
+
+void Msge1::doneSending_unlocked(int32_t slotIndex) {
 	// we are processing the nth url
 	int32_t n = m_ns[slotIndex];
 	// save the error if msgC had one
