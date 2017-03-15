@@ -1272,7 +1272,7 @@ static void indexDocWrapper ( void *state ) {
 	}
 	//threads not available (or oom or simmilar)
 	indexDoc3(THIS);
-	
+	indexedDoc3(THIS, job_exit_normal);
 }
 
 
