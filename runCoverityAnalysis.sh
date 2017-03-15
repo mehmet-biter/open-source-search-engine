@@ -13,7 +13,7 @@ fi
 
 # setup parameters
 export COVERITY_SCAN_PROJECT_NAME="os search engine"
-export COVERITY_SCAN_NOTIFICATION_EMAIL="br@privacore.com"
+export COVERITY_SCAN_NOTIFICATION_EMAIL="alc@privacore.com"
 export COVERITY_SCAN_BUILD_COMMAND_PREPEND="make clean && make libcld2_full.so slacktee.sh"
 export COVERITY_SCAN_BUILD_COMMAND="make"
 export COVERITY_SCAN_BRANCH_PATTERN="master"
@@ -79,6 +79,7 @@ echo -e "\033[33;1mRunning Coverity Scan Analysis Tool...\033[0m"
 COV_BUILD_OPTIONS=""
 #COV_BUILD_OPTIONS="--return-emit-failures 8 --parse-error-threshold 85"
 RESULTS_DIR="cov-int"
+cov-configure --comptype gcc --compiler /usr/bin/$(CXX)
 eval "${COVERITY_SCAN_BUILD_COMMAND_PREPEND}"
 COVERITY_UNSUPPORTED=1 cov-build --dir $RESULTS_DIR $COV_BUILD_OPTIONS $COVERITY_SCAN_BUILD_COMMAND
 cov-import-scm --dir $RESULTS_DIR --scm git --log $RESULTS_DIR/scm_log.txt 2>&1
