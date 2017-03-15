@@ -144,6 +144,7 @@ bool Msge0::launchRequests() {
 			m_n++;
 			continue;
 		}
+
 		// . get the next url
 		// . if m_xd is set, create the url from the ad id
 		const char *p = m_urlPtrs[m_n];
@@ -167,16 +168,17 @@ bool Msge0::launchRequests() {
 		m_numRequests++;
 		sendMsg8a(i);
 	}
-	
+
 	if( m_n >= m_numUrls )
 		return m_numRequests == m_numReplies;
 	return false;
 }
 
 bool Msge0::sendMsg8a(int32_t slotIndex) {
-	// handle errors
+	// set m_errno if we should at this point
 	if ( g_errno && ! m_errno ) m_errno = g_errno;
 	g_errno = 0;
+
 	Msg8a  *m   = &m_msg8as[slotIndex];
 	// save state into Msg8a
 	m->m_msge0 =  this;
@@ -204,9 +206,9 @@ void Msge0::gotTagRecWrapper(void *state) {
 	
 	if(!THIS->m_used[slotIndex])
 		g_process.shutdownAbort(true);
-	
+
 	THIS->doneSending(slotIndex);
-	
+
 	// try to launch more, returns false if not done
 	if ( ! THIS->launchRequests() ) return;
 	// must be all done, call the callback
@@ -222,7 +224,7 @@ void Msge0::doneSending(int32_t slotIndex) {
 
 void Msge0::doneSending_unlocked(int32_t slotIndex) {
 	// we are processing the nth url
-	int32_t   n    = m_ns[slotIndex];
+	int32_t n = m_ns[slotIndex];
 	// save the error if msg8a had one
 	m_tagRecErrors[n] = g_errno;
 	// also, set m_errno for this Msge0 class...
