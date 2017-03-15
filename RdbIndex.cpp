@@ -59,14 +59,16 @@ RdbIndex::~RdbIndex() {
 	}
 }
 
-void RdbIndex::reset() {
+void RdbIndex::reset(bool isStatic) {
 	m_file.reset();
 
 	/// @todo ALC do we need to lock here?
 	m_docIds.reset(new docids_t);
 
 	m_pendingDocIds.reset(new docids_t);
-	m_pendingDocIds->reserve(m_generatingIndex ? s_generateReserveSize : s_defaultReserveSize);
+	if (!isStatic) {
+		m_pendingDocIds->reserve(m_generatingIndex ? s_generateReserveSize : s_defaultReserveSize);
+	}
 
 	m_prevPendingDocId = MAX_DOCID + 1;
 	m_lastMergeTime = gettimeofdayInMilliseconds();
@@ -111,11 +113,11 @@ void RdbIndex::mergePendingDocIds(void *state) {
 }
 
 /// @todo ALC collapse RdbIndex::set into constructor
-void RdbIndex::set(const char *dir, const char *indexFilename, int32_t fixedDataSize , bool useHalfKeys ,
-                   char keySize, rdbid_t rdbId) {
+void RdbIndex::set(const char *dir, const char *indexFilename, int32_t fixedDataSize, bool useHalfKeys,
+                   char keySize, rdbid_t rdbId, bool isStatic) {
 	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN. dir [%s], indexFilename [%s]", dir, indexFilename);
 
-	reset();
+	reset(isStatic);
 
 	m_fixedDataSize = fixedDataSize;
 	m_file.set(dir, indexFilename);
@@ -123,9 +125,10 @@ void RdbIndex::set(const char *dir, const char *indexFilename, int32_t fixedData
 	m_ks = keySize;
 	m_rdbId = rdbId;
 
-	/// @todo ALC should we only register a sleep callback when we need it?
-	/// if we're not merging/adding record we don't need to merge
-	m_registeredCallback = g_loop.registerSleepCallback(1000, this, &timedMerge);
+	if (!isStatic) {
+		/// if we're not merging/adding record we don't need to merge
+		m_registeredCallback = g_loop.registerSleepCallback(1000, this, &timedMerge);
+	}
 }
 
 bool RdbIndex::close(bool urgent) {
@@ -136,7 +139,7 @@ bool RdbIndex::close(bool urgent) {
 
 	// clears and frees everything
 	if (!urgent) {
-		reset();
+		reset(true);
 	}
 
 	if (m_registeredCallback) {
@@ -441,7 +444,7 @@ void RdbIndex::addList(RdbList *list) {
 }
 
 bool RdbIndex::generateIndex(collnum_t collnum, const RdbTree *tree) {
-	reset();
+	reset(false);
 
 	if (g_conf.m_readOnlyMode) {
 		return false;
@@ -475,7 +478,7 @@ bool RdbIndex::generateIndex(collnum_t collnum, const RdbTree *tree) {
 }
 
 bool RdbIndex::generateIndex(collnum_t collnum, const RdbBuckets *buckets) {
-	reset();
+	reset(false);
 
 	if (g_conf.m_readOnlyMode) {
 		return false;
@@ -511,7 +514,7 @@ bool RdbIndex::generateIndex(collnum_t collnum, const RdbBuckets *buckets) {
 // . attempts to auto-generate from data file, f
 // . returns false and sets g_errno on error
 bool RdbIndex::generateIndex(BigFile *f) {
-	reset();
+	reset(false);
 
 	if (g_conf.m_readOnlyMode) {
 		return false;
