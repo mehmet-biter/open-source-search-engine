@@ -96,7 +96,7 @@ bool Msge0::getTagRecs ( const char        **urlPtrs           ,
 		           + sizeof(TagRec);  // m_tagRecs
 		
 	// one per url
-	int32_t needTotal = needPerUrl *= numUrls;
+	int32_t needTotal = needPerUrl = numUrls;
 	// allocate the buffer to hold all the info we gather
 	m_buf = (char *)mcalloc ( needTotal , "Msge0buf" );
 	if ( ! m_buf ) return true;
