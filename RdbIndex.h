@@ -27,10 +27,11 @@ public:
 
 	// . does not write data to disk
 	// . frees all
-	void reset();
+	void reset(bool isStatic);
 
 	// set the filename, and if it's fixed data size or not
-	void set(const char *dir, const char *indexFilename, int32_t fixedDataSize, bool useHalfKeys, char keySize, rdbid_t rdbId);
+	void set(const char *dir, const char *indexFilename, int32_t fixedDataSize, bool useHalfKeys, char keySize,
+	         rdbid_t rdbId, bool isStatic);
 
 	bool rename(const char *newIndexFilename) {
 		return m_file.rename(newIndexFilename, NULL);

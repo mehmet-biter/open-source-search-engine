@@ -1273,7 +1273,7 @@ static void indexDocWrapper ( void *state ) {
 	}
 	//threads not available (or oom or simmilar)
 	indexDoc3(THIS);
-	
+	indexedDoc3(THIS, job_exit_normal);
 }
 
 
@@ -10865,8 +10865,7 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 				     m_niceness         ,
 				     m_masterState      ,
 				     m_masterLoop       ,
-				     nowGlobal          ,
-				     addTags            )) {
+				     nowGlobal          )) {
 		// sanity check
 		if ( m_doingConsistencyCheck ) { g_process.shutdownAbort(true); }
 		// we blocked

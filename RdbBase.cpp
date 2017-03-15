@@ -228,7 +228,7 @@ bool RdbBase::init(const char *dir,
 	if (m_useIndexFile) {
 		char indexName[64];
 		sprintf(indexName, "%s-saved.idx", m_dbname);
-		m_treeIndex.set(m_collectionDirName, indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
+		m_treeIndex.set(m_collectionDirName, indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId(), false);
 
 		// only attempt to read/generate when we have tree/bucket
 		if ((m_tree && m_tree->getNumUsedNodes() > 0) || (m_buckets && m_buckets->getNumKeys() > 0)) {
@@ -1004,7 +1004,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 		// set the index file's  filename
 		generateIndexFilename(indexName,sizeof(indexName),fileId,fileId2,0,-1);
-		in->set(dirName, indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
+		in->set(dirName, indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId(), !isNew);
 		if (!isNew && !(in->readIndex() && in->verifyIndex())) {
 			// if out of memory, do not try to regen for that
 			if (g_errno == ENOMEM) {
