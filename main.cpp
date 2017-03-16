@@ -2727,6 +2727,7 @@ static bool registerMsgHandlers2() {
 	if ( ! Msg39::registerHandler()) return false;
 
 	if ( ! registerMsg4Handler() ) return false;
+	if ( ! Msg4::initializeOutHandling() ) return false;
 
 	if(! Parms::registerHandler3e()) return false;
 	if(! Parms::registerHandler3f()) return false;

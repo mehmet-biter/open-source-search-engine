@@ -71,12 +71,73 @@ static Msg4 *s_msg4Tail = NULL;
 // . also, need to update spiderdb rec for the url in Msg14 using Msg4 too!
 // . need to add support for passing in array of lists for Msg14
 
+static void sleepCallback4(int bogusfd, void *state);
+static void flushLocal();
 static void gotReplyWrapper4(void *state, void *state2);
 static bool sendBuffer(int32_t hostId);
 static Multicast *getMulticast();
 static void returnMulticast(Multicast *mcast);
 static bool prepareBuffer(int32_t hostId, int32_t totalRecSize);
 static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *rec, int32_t recSize);
+
+
+bool Msg4::initializeOutHandling() {
+	// clear the host bufs
+	s_numHostBufs = g_hostdb.getNumShards();
+	for(int32_t i = 0; i < s_numHostBufs; i++)
+		s_hostBufs[i] = NULL;
+
+	// init the linked list of multicasts
+	s_mcastHead = &s_mcasts[0];
+	s_mcastTail = &s_mcasts[MAX_MCASTS-1];
+	for(int32_t i = 0; i < MAX_MCASTS - 1; i++)
+		s_mcasts[i].m_next = &s_mcasts[i+1];
+	// last guy has nobody after him
+	s_mcastTail->m_next = NULL;
+
+	// nobody is waiting in line
+	s_msg4Head = NULL;
+	s_msg4Tail = NULL;
+
+	// . restore state from disk
+	// . false means repair is not active
+	if(!loadAddsInProgress(NULL)) {
+		log(LOG_WARN, "init: Could not load addsinprogress.dat. Ignoring.");
+		g_errno = 0;
+	}
+
+	// . register sleep handler every 5 seconds = 5000 ms
+	// . right now MSG4_WAIT is 100ms... i lowered it from 5s
+	//   to speed up spidering so it would harvest outlinks
+	//   faster and be able to spider them right away.
+	// . returns false on failure
+	bool rc = g_loop.registerSleepCallback( MSG4_WAIT, NULL, sleepCallback4 );
+
+	logTrace( g_conf.m_logTraceMsg4, "END - returning %s", rc?"true":"false");
+
+	return rc;
+}
+
+
+// scan all host bufs and try to send on them
+static void sleepCallback4(int bogusfd, void *state) {
+	// wait for clock to be in sync
+	if(!isClockInSync())
+		return;
+	// flush them buffers
+	flushLocal();
+}
+
+
+static void flushLocal() {
+	g_errno = 0;
+	// put the line waiters into the buffers in case they are not there
+	//storeLineWaiters();
+	// now try to send the buffers
+	for(int32_t i = 0; i < s_numHostBufs; i++)
+		sendBuffer(i);
+	g_errno = 0;
+}
 
 
 Msg4::Msg4() : m_inUse(false) {
