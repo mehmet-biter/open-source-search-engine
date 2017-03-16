@@ -1,10 +1,11 @@
-#include "gb-include.h"
+#include "Msge1.h"
 #include "Process.h"
+#include "Tagdb.h"
 #include "ip.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "ScopedLock.h"
 
-#include "Msge1.h"
 
 Msge1::Msge1()
   : m_niceness(0),
@@ -19,6 +20,7 @@ Msge1::Msge1()
     m_numRequests(0),
     m_numReplies(0),
     m_n(0),
+    m_mtx(),
     m_msgCs(),
     m_grv(NULL),
     m_state(NULL),
@@ -35,6 +37,7 @@ Msge1::Msge1()
 Msge1::~Msge1() {
 	reset();
 }
+
 
 void Msge1::reset() {
 	m_errno = 0;
@@ -53,6 +56,7 @@ void Msge1::reset() {
 	for(int i=0; i<MAX_OUTSTANDING_MSGE1; i++)
 		m_used[i] = false;
 }
+
 
 // . get various information for each url in a list of urls
 // . urls in "urlBuf" are \0 terminated
@@ -119,6 +123,7 @@ bool Msge1::launchRequests ( int32_t starti ) {
 
 	const int32_t maxOut = MAX_OUTSTANDING_MSGE1;
 
+	ScopedLock sl(m_mtx);
 	while(m_n < m_numUrls && m_numRequests - m_numReplies < maxOut) {
 		// grab the "firstip" from the tagRec if we can
 		TagRec *gr  = m_grv[m_n];
@@ -162,7 +167,6 @@ bool Msge1::launchRequests ( int32_t starti ) {
 			continue;
 		}
 
-
 		// . get the next url
 		// . if m_xd is set, create the url from the ad id
 		const char *p = m_urlPtrs[m_n];
@@ -191,7 +195,7 @@ bool Msge1::launchRequests ( int32_t starti ) {
 		// sanity check
 		if ( i >= MAX_OUTSTANDING_MSGE1 ) { g_process.shutdownAbort(true); }
 		// save the url number, "n"
-		m_ns  [i] = m_n;
+		m_ns  [i] = m_n++;
 		// claim it
 		m_used[i] = true;
 
@@ -199,13 +203,8 @@ bool Msge1::launchRequests ( int32_t starti ) {
 		// . this will start the pipeline for this url
 		// . it will set m_used[i] to true if we use it and block
 		// . it will increment m_numRequests and NOT m_numReplies if it blocked
-		//sendMsgC ( i , dom , dlen );
-		sendMsgC ( i , host , hlen );
-		// consider it launched
 		m_numRequests++;
-		// inc the url count
-		m_n++;
-		// try to do another
+		sendMsgC ( i , host , hlen );
 	}
 
 	if( m_n >= m_numUrls )
@@ -215,46 +214,55 @@ bool Msge1::launchRequests ( int32_t starti ) {
 
 
 bool Msge1::sendMsgC(int32_t slotIndex, const char *host, int32_t hlen) {
-	// we are processing the nth url
-	int32_t   n    = m_ns[slotIndex];
 	// set m_errno if we should at this point
 	if ( ! m_errno && g_errno != ENOTFOUND ) m_errno = g_errno;
-	// reset it
 	g_errno = 0;
 
-	// using the the ith msgC
 	MsgC  *m    = &m_msgCs[slotIndex];
-	// save i and this in the msgC itself
+	// save state into MsgC
 	m->m_msge1 = this;
 	m->m_msge1State = slotIndex;
 
+	// we are processing the nth url
+	int32_t n = m_ns[slotIndex];
+
 	if (!m->getIp(host, hlen, &m_ipBuf[n], m, gotMsgCWrapper))
 		return false;
-	doneSending(slotIndex);
+	doneSending_unlocked(slotIndex);
 	return true;
-}	
+}
 
 void Msge1::gotMsgCWrapper(void *state, int32_t ip) {
 	MsgC   *m    = (MsgC  *)state;
 	Msge1  *THIS = m->m_msge1;
-	int32_t    i    = m->m_msge1State;
+	int32_t    slotIndex    = m->m_msge1State;
 
-	THIS->doneSending(i);
+	if(!THIS->m_used[slotIndex])
+		g_process.shutdownAbort(true);
+
+	THIS->doneSending(slotIndex);
 
 	// try to launch more, returns false if not done
-	if ( ! THIS->launchRequests(i) ) return;
+	if ( ! THIS->launchRequests(slotIndex) ) return;
 	// must be all done, call the callback
 	THIS->m_callback ( THIS->m_state );
 }
 
+
 void Msge1::doneSending(int32_t slotIndex) {
+	ScopedLock sl(m_mtx);
+	doneSending_unlocked(slotIndex);
+}
+
+
+void Msge1::doneSending_unlocked(int32_t slotIndex) {
 	// we are processing the nth url
 	int32_t n = m_ns[slotIndex];
-	// save the error
+	// save the error if msgC had one
 	m_ipErrors[n] = g_errno;
 	// save m_errno
 	if ( g_errno && ! m_errno ) m_errno = g_errno;
-	// clear it
+	// reset error for successive calls to other msgs
 	g_errno = 0;
 
 	// tally it up
