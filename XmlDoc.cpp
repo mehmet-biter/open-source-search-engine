@@ -6241,39 +6241,34 @@ char *XmlDoc::getIsIndexed ( ) {
 	else                url   = ptr_firstUrl;
 
 	// note it
-	if ( ! m_calledMsg22e )
+	if(!m_calledMsg22e) {
 		setStatus ( "checking titledb for old title rec");
-	else
+		m_calledMsg22e = true;
+
+		// . consult the title rec tree!
+		// . "justCheckTfndb" is set to true here!
+		if(!m_msg22e.getTitleRec(&m_msg22Request,
+					 url,
+					 docId                , // probable docid
+					 cr->m_coll               ,
+					 // . msg22 will set this to point to it!
+					 // . if NULL that means NOT FOUND
+					 NULL                 , // tr ptr
+					 NULL                 , // tr size ptr
+					 true                 , // just chk tfndb?
+					 false, // getavaildocidonly
+					 m_masterState        ,
+					 m_masterLoop         ,
+					 m_niceness           , // niceness
+					 999999               )){ // timeout seconds
+			logTrace( g_conf.m_logTraceXmlDoc, "END, called msg22e.getTitleRec, which blocked. Return -1" );
+			// return -1 if we blocked
+			return (char *)-1;
+		}
+		logTrace( g_conf.m_logTraceXmlDoc, "msg22e.getTitleRec did not block" );
+	} else
 		setStatus ( "back from msg22e call");
 
-	// . consult the title rec tree!
-	// . "justCheckTfndb" is set to true here!
-        if ( ! m_calledMsg22e &&
-	     ! m_msg22e.getTitleRec ( &m_msg22Request      ,
-				      url                  ,
-				      docId                , // probable docid
-				      cr->m_coll               ,
-				      // . msg22 will set this to point to it!
-				      // . if NULL that means NOT FOUND
-				      NULL                 , // tr ptr
-				      NULL                 , // tr size ptr
-				      true                 , // just chk tfndb?
-				      false, // getavaildocidonly
-				      m_masterState        ,
-				      m_masterLoop         ,
-				      m_niceness           , // niceness
-				      999999               )){ // timeout seconds
-		// validate
-		m_calledMsg22e = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, called msg22e.getTitleRec, which blocked. Return -1" );
-		// return -1 if we blocked
-		return (char *)-1;
-	}
-
-	logTrace( g_conf.m_logTraceXmlDoc, "msg22e.getTitleRec did not block" );
-
-	// got it
-	m_calledMsg22e = true;
 	// error?
 	if ( g_errno ) return NULL;
 	// get it
