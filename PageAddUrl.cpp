@@ -2,7 +2,7 @@
 
 #include "Pages.h"
 #include "Collectiondb.h"
-#include "Msg4.h"
+#include "Msg4Out.h"
 #include "Spider.h"
 #include "Parms.h"
 #include "GigablastRequest.h"

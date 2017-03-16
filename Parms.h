@@ -7,6 +7,9 @@
 #ifndef GB_PARMS_H
 #define GB_PARMS_H
 
+#include "types.h" //collnum_t
+#include <inttypes.h>
+
 class CollectionRec;
 class UdpSlot;
 class SafeBuf;

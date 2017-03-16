@@ -2,8 +2,8 @@
 
 // like Msg1.h but buffers up the add requests to avoid packet storms
 
-#ifndef GB_MSG4_H
-#define GB_MSG4_H
+#ifndef GB_MSG4OUT_H
+#define GB_MSG4OUT_H
 
 bool saveAddsInProgress ( const char *filenamePrefix );
 bool loadAddsInProgress ( const char *filenamePrefix );
@@ -27,7 +27,6 @@ public:
 
 	bool isInUse() const { return m_inUse; }
 
-	static bool registerHandler();
 	static bool isInLinkedList(const Msg4 *msg4);
 	static void storeLineWaiters();
 
@@ -53,4 +52,4 @@ private:
 	Msg4 *m_next;
 };
 
-#endif // GB_MSG4_H
+#endif // GB_MSG4OUT_H

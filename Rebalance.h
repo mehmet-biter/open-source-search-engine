@@ -6,7 +6,7 @@
 #include "gb-include.h"
 #include "types.h"
 #include "RdbList.h"
-#include "Msg4.h"
+#include "Msg4Out.h"
 #include "Msg5.h"
 #include "SafeBuf.h"
 

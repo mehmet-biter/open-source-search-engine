@@ -26,7 +26,7 @@
 #include "Speller.h"
 #include "Spider.h"
 #include "Profiler.h"
-#include "Msg4.h"
+#include "Msg4Out.h"
 #include "Msg5.h"
 #include "Wiki.h"
 #include "Wiktionary.h"
