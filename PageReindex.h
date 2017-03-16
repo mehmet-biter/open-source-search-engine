@@ -1,7 +1,7 @@
 #ifndef GB_PAGEREINDEX_H
 #define GB_PAGEREINDEX_H
 
-#include "Msg4.h"
+#include "Msg4Out.h"
 #include "SafeBuf.h"
 
 // . for adding docid-based spider requests to spiderdb

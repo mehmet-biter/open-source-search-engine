@@ -4,7 +4,7 @@
 class HttpRequest;
 class TcpSocket;
 
-#include "Msg4.h"
+#include "Msg4Out.h"
 #include "HttpRequest.h"
 
 // generic gigablast request. for all apis offered.

@@ -8,7 +8,7 @@
 #include "RdbTree.h"
 #include "HashTableX.h"
 #include "Msg5.h"
-#include "Msg4.h"
+#include "Msg4Out.h"
 #include "hash.h"
 #include "RdbCache.h"
 #include "Spider.h"  //MAX_SP_REPLY_SIZE

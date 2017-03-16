@@ -29,7 +29,7 @@
 #include "Sections.h"
 #include "Msge0.h"
 #include "Msge1.h"
-#include "Msg4.h"
+#include "Msg4Out.h"
 
 #include "SearchInput.h"
 #include "Msg40.h"
