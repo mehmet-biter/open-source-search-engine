@@ -24,7 +24,7 @@ TEST(RdbIndexTest, GenerateFromBucketSingleTermIdSingleDocIdSingleWordPos) {
 	GbTest::addPosdbKey(&buckets, termId, docId, wordPos);
 
 	RdbIndex index;
-	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB, false);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
@@ -46,7 +46,7 @@ TEST(RdbIndexTest, GenerateFromBucketSingleTermIdSingleDocIdMultipleWordPos) {
 	}
 
 	RdbIndex index;
-	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB, false);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
@@ -68,7 +68,7 @@ TEST(RdbIndexTest, GenerateFromBucketSingleTermIdMultipleDocIdSingleWordPos) {
 	}
 
 	RdbIndex index;
-	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB, false);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
@@ -91,7 +91,7 @@ TEST(RdbIndexTest, GenerateFromBucketSingleTermIdMultipleDocIdMultipleWordPos) {
 	}
 
 	RdbIndex index;
-	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB, false);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
@@ -115,7 +115,7 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdSingleDocIdSingleWordPos) {
 	}
 
 	RdbIndex index;
-	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB, false);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
@@ -136,7 +136,7 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdSingleDocIdMultipleWordPos) {
 	}
 
 	RdbIndex index;
-	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB, false);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
@@ -157,7 +157,7 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdMultipleDocIdSingleWordPos) {
 	}
 
 	RdbIndex index;
-	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB, false);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
@@ -179,7 +179,7 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdMultipleDocIdMultipleWordPos)
 	}
 
 	RdbIndex index;
-	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB, false);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
@@ -191,7 +191,7 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdMultipleDocIdMultipleWordPos)
 
 TEST(RdbIndexTest, AddDeleteKey) {
 	RdbIndex index;
-	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB, false);
 
 	static const int64_t termId = 1;
 	static const int64_t docId = 1;
@@ -214,7 +214,7 @@ TEST(RdbIndexTest, AddDeleteKey) {
 
 TEST(RdbIndexTest, DeleteAddKey) {
 	RdbIndex index;
-	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB, false);
 
 	static const int64_t termId = 1;
 	static const int64_t docId = 1;
@@ -237,7 +237,7 @@ TEST(RdbIndexTest, DeleteAddKey) {
 
 TEST(RdbIndexTest, DeleteAddKeySave) {
 	RdbIndex index;
-	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB, false);
 
 	static const int64_t termId = 1;
 	static const int64_t docId = 1;

@@ -409,6 +409,7 @@ static void addListToTree(rdbid_t rdbId, collnum_t collNum, RdbList *list) {
 	Rdb *rdb = getRdbFromId(rdbId);
 	rdb->addList(collNum, list);
 	rdb->dumpTree();
+	rdb->getBase(0)->markNewFileReadable();
 	rdb->getBase(0)->generateGlobalIndex();
 }
 
@@ -640,7 +641,6 @@ TEST_F(RdbListNoMergeTest, MergeTestPosdbMultiDocS1S2N1S2S1N2) {
 	const int64_t docId1 = 1;
 	const int64_t docId2 = 2;
 
-
 	// spider doc 1 (a, b, c, d, e)
 	// spider doc 2 (a, b, c)
 	RdbList list1;
@@ -683,6 +683,10 @@ TEST_F(RdbListNoMergeTest, MergeTestPosdbMultiDocS1S2N1S2S1N2) {
 
 	size_t lists1_size = sizeof_arr(lists1);
 
+	Rdb *rdb = getRdbFromId(RDB_POSDB);
+	rdb->getBase(0)->generateGlobalIndex();
+	rdb->getBase(0)->printGlobalIndex();
+
 	// merge
 	RdbList final1;
 	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
@@ -691,7 +695,8 @@ TEST_F(RdbListNoMergeTest, MergeTestPosdbMultiDocS1S2N1S2S1N2) {
 
 	EXPECT_EQ(list2.getListSize() + list3.getListSize(), final1.getListSize());
 
-	for (list2.resetListPtr(), final1.resetListPtr(); !list2.isExhausted(); list2.skipCurrentRecord(), final1.skipCurrentRecord()) {
+	final1.resetListPtr();
+	for (list2.resetListPtr(); !list2.isExhausted(); list2.skipCurrentRecord(), final1.skipCurrentRecord()) {
 		EXPECT_EQ(list2.getCurrentRecSize(), final1.getCurrentRecSize());
 		EXPECT_EQ(0, memcmp(list2.getCurrentRec(), final1.getCurrentRec(), list2.getCurrentRecSize()));
 	}

@@ -130,11 +130,19 @@ void RdbMerge::getLock() {
 	if(m_mergeSpaceCoordinator->acquire(m_spaceNeededForMerge)) {
 		log(LOG_INFO,"Rdbmerge(%p)::getLock(), m_rdbId=%d: got lock for %" PRIu64 " bytes", this, (int)m_rdbId, m_spaceNeededForMerge);
 		g_loop.unregisterSleepCallback(this,getLockWrapper);
+
 		gotLock();
 	} else
 		log(LOG_INFO,"Rdbmerge(%p)::getLock(), m_rdbId=%d: Didn't get lock for %" PRIu64 " bytes; retrying in a bit...", this, (int)m_rdbId, m_spaceNeededForMerge);
 }
 
+void RdbMerge::gotLockWrapper(int /*fd*/, void *state) {
+	log(LOG_TRACE,"RdbMerge::gotLockWrapper(%p)", state);
+	RdbMerge *that = static_cast<RdbMerge*>(state);
+	g_loop.unregisterSleepCallback(state, gotLockWrapper);
+
+	that->gotLock();
+}
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
@@ -162,6 +170,14 @@ bool RdbMerge::gotLock() {
 		m_isMerging = false;
 		//no need for calling incorporateMerge() because the base/collection is cone
 		return true;
+	}
+
+	/// @note ALC currently this working because only posdb is using index
+	/// if we ever enable more rdb to use indexes, we could potentially have a lot more
+	/// global index jobs. means this mechanism will have to be changed.
+	if (base->hasPendingGlobalIndexJob()) {
+		// wait until no more pending global index job
+		g_loop.registerSleepCallback(1000, this, gotLockWrapper);
 	}
 
 	// . set up a a file to dump the records into

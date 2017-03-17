@@ -29,6 +29,7 @@
 #include "RdbDump.h"
 #include "Msg3.h"               // MAX_RDB_FILES definition
 #include "RdbIndex.h"
+#include "GbThreadQueue.h"
 #include "rdbid_t.h"
 #include "GbMutex.h"
 
@@ -223,8 +224,30 @@ private:
 	GbMutex m_docIdFileIndexMtx;
 
 public:
+	static bool initializeGlobalIndexThread();
+	static void finalizeGlobalIndexThread();
+	static void generateGlobalIndex(void *item);
+
+	struct ThreadQueueItem {
+		ThreadQueueItem(RdbBase *base, docids_ptr_t docIdFileIndex, bool markFileReadable, int32_t fileIndex)
+			: m_base(base)
+			, m_docIdFileIndex(docIdFileIndex)
+			, m_markFileReadable(markFileReadable)
+			, m_fileIndex(fileIndex) {
+		}
+
+		RdbBase *m_base;
+		docids_ptr_t m_docIdFileIndex;
+		bool m_markFileReadable;
+		int32_t m_fileIndex;
+	};
+
+	void submitGlobalIndexJob(bool markFileReadable, int32_t fileIndex);
+	void submitGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileIndex);
+	bool hasPendingGlobalIndexJob();
+
 	void generateGlobalIndex();
-	void updateGlobalIndexUpdateFile(int32_t mergeFilePos, int32_t fileMergeCount);
+
 	void printGlobalIndex();
 
 	static const char s_docIdFileIndex_docIdOffset = 24;
@@ -233,10 +256,10 @@ public:
 	static const uint64_t s_docIdFileIndex_delBitMask   = 0x0000000001000000ULL;
 	static const uint64_t s_docIdFileIndex_filePosMask  = 0x000000000000ffffULL;
 
-	void incrementOutstandingJobs();
-	bool decrementOustandingJobs();
-
 private:
+	docids_ptr_t prepareGlobalIndexJob(bool markFileReadable, int32_t fileIndex);
+	docids_ptr_t prepareGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileIndex);
+
 	void selectFilesToMerge(int32_t mergeNum, int32_t numFiles, int32_t *p_mini);
 
 	bool hasFileId(int32_t fildId) const;
@@ -270,6 +293,8 @@ private:
 	// Add a (new) file to the m_files/m_maps/m_fileIds arrays
 	// Return return array position of new entry, or -1 on error
 	int32_t addFile(bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId, bool isInMergeDir);
+
+	static GbThreadQueue m_globalIndexThreadQueue;
 
 	// this class contains a ptr to us
 	class Rdb           *m_rdb;
@@ -333,6 +358,9 @@ private:
 	bool m_submittingJobs;
 	int m_outstandingJobCount;
 	GbMutex m_mtxJobCount;
+
+	void incrementOutstandingJobs();
+	bool decrementOustandingJobs();
 };
 
 extern bool g_dumpMode;
