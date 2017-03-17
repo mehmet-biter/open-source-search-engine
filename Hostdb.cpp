@@ -1538,6 +1538,7 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) const {
 
 		case RDB_LINKDB:
 		case RDB2_LINKDB2:
+			// sharded by part of linkee sitehash32
 			return m_map [(*(uint16_t *)((char *)k + 26))>>3];
 
 		case RDB_TITLEDB:
