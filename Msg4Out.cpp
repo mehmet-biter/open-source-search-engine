@@ -54,6 +54,7 @@ static GbMutex s_mtxMcasts; //protects above
 // we have one buffer for each host in the cluster
 static char *s_hostBufs     [MAX_HOSTS];
 static int32_t  s_hostBufSizes [MAX_HOSTS];
+static GbMutex s_mtxHostBuf[MAX_HOSTS];
 static int32_t  s_numHostBufs;
 
 // . each host has a 32k add buffer which is sent when full or every 10 seconds
@@ -141,8 +142,10 @@ static void flushLocal() {
 	// put the line waiters into the buffers in case they are not there
 	//storeLineWaiters();
 	// now try to send the buffers
-	for(int32_t i = 0; i < s_numHostBufs; i++)
+	for(int32_t i = 0; i < s_numHostBufs; i++) {
+		ScopedLock sl(s_mtxHostBuf[i]); //has to lock at this level
 		sendBuffer(i);
+	}
 	g_errno = 0;
 }
 
@@ -191,6 +194,7 @@ bool hasAddsInQueue() {
 		
 	// if we have a host buf that has something in it...
 	for ( int32_t i = 0 ; i < s_numHostBufs ; i++ ) {
+		ScopedLock sl(s_mtxHostBuf[i]);
 		if ( ! s_hostBufs[i] ) {
 			continue;
 		}
@@ -458,6 +462,8 @@ static bool storeRec(collnum_t      collnum,
 		s_hostBufs    [hostId] = newBuf;
 		s_hostBufSizes[hostId] = newSize;
 	}
+	ScopedLock sl(s_mtxHostBuf[hostId]);
+
 	char *buf = s_hostBufs[hostId];
 	// . first int32_t is how much of "buf" is used
 	// . includes everything even itself
@@ -721,10 +727,13 @@ bool saveAddsInProgress(const char *prefix) {
 
 	log(LOG_INFO,"build: Saving %s",filename);
 
+	//TODO: saving data is not thread-safe and the reuslting file may contain inconsistencies
+
 	// the # of host bufs
 	write ( fd , (char *)&s_numHostBufs , 4 );
 	// serialize each hostbuf
 	for ( int32_t i = 0 ; i < s_numHostBufs ; i++ ) {
+		ScopedLock sl(s_mtxHostBuf[i]);
 		// get the size
 		int32_t used = 0;
 		// if not null, how many bytes are used in it?
