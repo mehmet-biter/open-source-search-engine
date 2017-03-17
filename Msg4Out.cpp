@@ -18,6 +18,8 @@
 #include "ip.h"
 #include "max_niceness.h"
 #include "Mem.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
 
@@ -49,6 +51,7 @@
 static Multicast  s_mcasts[MAX_MCASTS];
 static bool s_multicastInUse[MAX_MCASTS];
 static int32_t s_multicastInUseCount = 0;
+static GbMutex s_mtxMcasts; //protects above
 
 // we have one buffer for each host in the cluster
 static char *s_hostBufs     [MAX_HOSTS];
@@ -161,10 +164,12 @@ bool hasAddsInQueue() {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
 	// if there is an outstanding multicast...
+	ScopedLock sl(s_mtxMcasts);
 	if ( s_multicastInUseCount>0 ) {
 		logTrace( g_conf.m_logTraceMsg4, "END - multicast waiting, returning true" );
 		return true;
 	}
+	sl.unlock();
 	
 	// if we have a msg4 waiting in line...
 	if ( s_msg4Head ) {
@@ -208,7 +213,7 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	if ( metaListSize == 0 ) return true;
 
 	// sanity
-	if ( collnum < 0 ) { g_process.shutdownAbort(true); }
+	if ( collnum < 0 ) { gbshutdownAbort(true); }
 
 	// if first time set this
 	m_currentPtr   = metaList;
@@ -254,7 +259,6 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	// . FURTHEMORE the multicast seems to always be called with
 	//   MAX_NICENESS so i'm not sure how niceness 0 will really help
 	//   with any of this stuff.
-	//if ( s_msg4Head || s_msg4Tail ) { g_process.shutdownAbort(true); }
 	if ( s_msg4Head || s_msg4Tail ) {
 		log( LOG_WARN, "msg4: got unexpected head");
 		goto retry;
@@ -300,7 +304,7 @@ bool Msg4::addMetaList2 ( ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(p,pend-p);
 #endif
-	if ( m_collnum < 0 ) { g_process.shutdownAbort(true); }
+	if ( m_collnum < 0 ) { gbshutdownAbort(true); }
 
 	// store each record in the list into the send buffers
 	for ( ; p < pend ; ) {
@@ -340,7 +344,7 @@ bool Msg4::addMetaList2 ( ) {
 			// -1 means to read it in
 			dataSize = *(int32_t *)p;
 			// sanity check
-			if ( dataSize < 0 ) { g_process.shutdownAbort(true); }
+			if ( dataSize < 0 ) { gbshutdownCorrupted(); }
 
 			// skip dataSize
 			p += 4;
@@ -350,7 +354,7 @@ bool Msg4::addMetaList2 ( ) {
 		p += dataSize;
 		
 		// breach us?
-		if ( p > pend ) { g_process.shutdownAbort(true); }
+		if ( p > pend ) { gbshutdownCorrupted(); }
  		
 		// convert the gid to the hostid of the first host in this
 		// group. uses a quick hash table.
@@ -459,7 +463,7 @@ static bool storeRec(collnum_t      collnum,
 #endif
 	int32_t  used = *(int32_t *)buf;
 	// sanity chec. "used" must include the 4 bytes of itself
-	if ( used < 12 ) { g_process.shutdownAbort(true); }
+	if ( used < 12 ) { gbshutdownAbort(true); }
 	// how much total buf space do we have, used or unused?
 	int32_t  maxSize = s_hostBufSizes[hostId];
 	// how many bytes are available in "buf"?
@@ -539,7 +543,6 @@ static bool sendBuffer(int32_t hostId) {
 	if ( ! isClockInSync() ) { 
 		log("msg4: msg4: warning sending out adds but clock not in "
 		    "sync with host #0");
-		//g_process.shutdownAbort(true); }
 	}
 	// try to keep all zids unique, regardless of their group
 	static uint64_t s_lastZid = 0;
@@ -591,13 +594,14 @@ static bool sendBuffer(int32_t hostId) {
 }
 
 static Multicast *getMulticast() {
+	ScopedLock sl(s_mtxMcasts);
 	if(s_multicastInUseCount>=MAX_MCASTS)
 		return NULL;
 	for(int i=0; i<MAX_MCASTS; i++) {
 		if(!s_multicastInUse[i]) {
 			// sanity
 			if(s_mcasts[i].m_inUse)
-				g_process.shutdownAbort(true);
+				gbshutdownCorrupted();
 			s_multicastInUse[i] = true;
 			s_multicastInUseCount++;
 			return s_mcasts+i;
@@ -605,18 +609,19 @@ static Multicast *getMulticast() {
 		}
 	}
 	//inconsistency between s_multicastInUseCount and s_multicastInUse[]
-	g_process.shutdownAbort(true);
+	gbshutdownCorrupted();
 }
 
 static void returnMulticast(Multicast *mcast) {
 	int i = mcast - s_mcasts;
 	//sanity checks
 	if(i<0 || i>=MAX_MCASTS)
-		g_process.shutdownAbort(true);
+		gbshutdownCorrupted();
+	ScopedLock sl(s_mtxMcasts);
 	if(!s_multicastInUse[i])
-		g_process.shutdownAbort(true);
+		gbshutdownCorrupted();
 	if(s_multicastInUseCount==0)
-		g_process.shutdownAbort(true);
+		gbshutdownCorrupted();
 	
 	// return this multicast
 	mcast->reset();
@@ -642,7 +647,7 @@ static void gotReplyWrapper4(void *state , void *state2) {
 	// get the udpslot that is replying here
 	UdpSlot *replyingSlot = mcast->m_slot;
 	if (!replyingSlot) {
-		g_process.shutdownAbort(true);
+		gbshutdownAbort(true);
 	}
 
 	returnMulticast(mcast);
@@ -677,7 +682,7 @@ void Msg4::storeLineWaiters ( ) {
 		// . if his callback was NULL, then was loaded in loadAddsInProgress()
 		// . we no longer do that so callback should never be null now
 		if (!msg4->m_callback) {
-			g_process.shutdownAbort(true);
+			gbshutdownLogicError();
 		}
 
 		// log this now i guess. seems to happen a lot if not using threads
