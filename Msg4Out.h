@@ -47,9 +47,6 @@ private:
 	const char *m_metaList;
 	int32_t m_metaListSize;
 	const char *m_currentPtr; // into m_metaList
-
-	// the linked list for waiting in line
-	Msg4 *m_next;
 };
 
 #endif // GB_MSG4OUT_H
