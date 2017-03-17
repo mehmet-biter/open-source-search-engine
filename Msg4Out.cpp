@@ -245,7 +245,7 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 		s_msg4Tail = this;
 		// debug log. seems to happen a lot if not using threads..
 		if ( g_jobScheduler.are_new_jobs_allowed() )
-			log("msg4: queueing body msg4=0x%" PTRFMT"",(PTRTYPE)this);
+			log(LOG_DEBUG, "msg4: queueing body msg4=0x%" PTRFMT"",(PTRTYPE)this);
 		// mark it
 		m_inUse = true;
 		// all done then, but return false so caller does not free
