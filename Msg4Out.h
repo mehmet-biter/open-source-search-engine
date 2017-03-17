@@ -10,8 +10,9 @@ bool loadAddsInProgress ( const char *filenamePrefix );
 // used by Repair.cpp to make sure we are not adding any more data ("writing")
 bool hasAddsInQueue     ( ) ;
 
-#include "SafeBuf.h"
 #include "rdbid_t.h"
+#include "types.h"
+class SafeBuf;
 
 class Msg4 {
 public:

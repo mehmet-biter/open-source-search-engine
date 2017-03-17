@@ -83,6 +83,7 @@ bool g_dumpMode = false;
 // does not scale well to many files
 static const int32_t absoluteMaxFilesToMerge = 50;
 
+GbThreadQueue RdbBase::m_globalIndexThreadQueue;
 
 RdbBase::RdbBase()
   : m_numFiles(0),
@@ -1314,11 +1315,17 @@ bool RdbBase::incorporateMerge ( ) {
 		    "outage and the generated map file is off a bit.");
 	}
 
-	//allow/disallow reads while incorporating merged file
-	m_fileInfo[x].m_allowReads = true; //newly merge file is finished and valid
-	for(int i=a; i<b; i++)
-		m_fileInfo[i].m_allowReads = false; //source files will be deleted shortly
+	{
+		ScopedLock sl(m_mtxFileInfo);
 
+		//allow/disallow reads while incorporating merged file
+		m_fileInfo[x].m_allowReads = true; //newly merge file is finished and valid
+		for (int i = a; i < b; i++) {
+			m_fileInfo[i].m_allowReads = false; //source files will be deleted shortly
+		}
+
+		submitGlobalIndexJob_unlocked(false, -1);
+	}
 
 	{
 		ScopedLock sl(m_mtxJobCount);
@@ -1534,16 +1541,14 @@ void RdbBase::renamesDone() {
 	{
 		ScopedLock sl(m_mtxFileInfo); //lock while manipulating m_fileInfo
 		buryFiles(a, b);
+		submitGlobalIndexJob_unlocked(false, -1);
 	}
+
 	// sanity check
 	if ( m_numFilesToMerge != (b-a) ) {
 		log(LOG_LOGIC,"db: Bury oops.");
 		gbshutdownLogicError();
 	}
-
-	// regenerate index since things have moved
-	// m_mergeStartFileNum is the file num before bury file and contains the merge file as well. hence we need to deduct by one.
-	updateGlobalIndexUpdateFile(m_mergeStartFileNum - 1, m_numFilesToMerge);
 
 	// decrement this count
 	if ( m_isMerging ) {
@@ -2001,6 +2006,9 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 			// we must hold the mutex while colling addFile() which modifies the array.
 			ScopedLock sl(m_mtxFileInfo);
 			mergeFileNum = addFile ( true, mergeFileId , fileId2, mergeFileCount, endMergeFileId, true );
+			if (mergeFileNum >= 0) {
+				submitGlobalIndexJob_unlocked(false, -1);
+			}
 		}
 
 		if ( mergeFileNum < 0 ) {
@@ -2585,6 +2593,99 @@ float RdbBase::getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const {
 	return percent;
 }
 
+bool RdbBase::initializeGlobalIndexThread() {
+	return m_globalIndexThreadQueue.initialize(generateGlobalIndex, "generate-index");
+}
+
+void RdbBase::finalizeGlobalIndexThread() {
+	m_globalIndexThreadQueue.finalize();
+}
+
+docids_ptr_t RdbBase::prepareGlobalIndexJob(bool markFileReadable, int32_t fileIndex) {
+	ScopedLock sl(m_mtxFileInfo);
+	return prepareGlobalIndexJob_unlocked(markFileReadable, fileIndex);
+}
+
+docids_ptr_t RdbBase::prepareGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileIndex) {
+	docids_ptr_t tmpDocIdFileIndex(new docids_t);
+
+	// global index does not include RdbIndex from tree/buckets
+	for (int32_t i = 0; i < m_numFiles; i++) {
+		if(m_fileInfo[i].m_allowReads || (markFileReadable && fileIndex == i)) {
+			auto docIds = m_fileInfo[i].m_index->getDocIds();
+			tmpDocIdFileIndex->reserve(tmpDocIdFileIndex->size() + docIds->size());
+			std::transform(docIds->begin(), docIds->end(), std::back_inserter(*tmpDocIdFileIndex),
+			               [i](uint64_t docId) {
+				               return ((docId << s_docIdFileIndex_docIdOffset) | i); // docId has delete key
+			               });
+		}
+	}
+
+	return tmpDocIdFileIndex;
+}
+
+void RdbBase::submitGlobalIndexJob(bool markFileReadable, int32_t fileIndex) {
+	if (!m_useIndexFile) {
+		return;
+	}
+
+	ThreadQueueItem *item = new ThreadQueueItem(this, prepareGlobalIndexJob(markFileReadable, fileIndex), markFileReadable, fileIndex);
+	m_globalIndexThreadQueue.addItem(item);
+
+	log(LOG_INFO, "db: Submitted job %p to generate global index for %s", item, m_rdb->getDbname());
+}
+
+void RdbBase::submitGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileIndex) {
+	if (!m_useIndexFile) {
+		return;
+	}
+
+	ThreadQueueItem *item = new ThreadQueueItem(this, prepareGlobalIndexJob_unlocked(markFileReadable, fileIndex), markFileReadable, fileIndex);
+	m_globalIndexThreadQueue.addItem(item);
+
+	log(LOG_INFO, "db: Submitted job %p to generate global index for %s", item, m_rdb->getDbname());
+}
+
+bool RdbBase::hasPendingGlobalIndexJob() {
+	if (!m_useIndexFile) {
+		return false;
+	}
+
+	return !m_globalIndexThreadQueue.isEmpty();
+}
+
+void RdbBase::generateGlobalIndex(void *item) {
+	ThreadQueueItem *queueItem = static_cast<ThreadQueueItem*>(item);
+
+	log(LOG_INFO, "db: Processing job %p to generate global index", item);
+
+	std::stable_sort(queueItem->m_docIdFileIndex->begin(), queueItem->m_docIdFileIndex->end(),
+	                 [](uint64_t a, uint64_t b) {
+		                 return (a & s_docIdFileIndex_docIdMask) < (b & s_docIdFileIndex_docIdMask);
+	                 });
+
+	// in reverse because we want to keep the highest file position
+	auto it = std::unique(queueItem->m_docIdFileIndex->rbegin(), queueItem->m_docIdFileIndex->rend(),
+	                      [](uint64_t a, uint64_t b) {
+		                      return (a & s_docIdFileIndex_docIdMask) == (b & s_docIdFileIndex_docIdMask);
+	                      });
+	queueItem->m_docIdFileIndex->erase(queueItem->m_docIdFileIndex->begin(), it.base());
+
+	// free up used space
+	queueItem->m_docIdFileIndex->shrink_to_fit();
+
+	// replace with new index
+	ScopedLock sl(queueItem->m_base->m_mtxFileInfo);
+	ScopedLock sl2(queueItem->m_base->m_docIdFileIndexMtx);
+	queueItem->m_base->m_docIdFileIndex.swap(queueItem->m_docIdFileIndex);
+
+	if (queueItem->m_markFileReadable) {
+		queueItem->m_base->m_fileInfo[queueItem->m_fileIndex].m_allowReads = true;
+	}
+
+	log(LOG_INFO, "db: Processed job %p to generate global index", item);
+}
+
 /// @todo ALC we should free up m_fileInfo[i].m_index->m_docIds when we don't need it, and load it back when we do
 void RdbBase::generateGlobalIndex() {
 	if (!m_useIndexFile) {
@@ -2595,8 +2696,13 @@ void RdbBase::generateGlobalIndex() {
 
 	docids_ptr_t tmpDocIdFileIndex(new docids_t);
 
+	ScopedLock sl(m_mtxFileInfo);
 	// global index does not include RdbIndex from tree/buckets
 	for (int32_t i = 0; i < m_numFiles; i++) {
+		if(!m_fileInfo[i].m_allowReads) {
+			continue;
+		}
+
 		auto docIds = m_fileInfo[i].m_index->getDocIds();
 		tmpDocIdFileIndex->reserve(tmpDocIdFileIndex->size() + docIds->size());
 		std::transform(docIds->begin(), docIds->end(), std::back_inserter(*tmpDocIdFileIndex),
@@ -2604,6 +2710,7 @@ void RdbBase::generateGlobalIndex() {
 			               return ((docId << s_docIdFileIndex_docIdOffset) | i); // docId has delete key
 		               });
 	}
+	sl.unlock();
 
 	std::stable_sort(tmpDocIdFileIndex->begin(), tmpDocIdFileIndex->end(),
 	          [](uint64_t a, uint64_t b) {
@@ -2621,37 +2728,13 @@ void RdbBase::generateGlobalIndex() {
 	tmpDocIdFileIndex->shrink_to_fit();
 
 	// replace with new index
-	ScopedLock sl(m_docIdFileIndexMtx);
-	m_docIdFileIndex.swap(tmpDocIdFileIndex);
-}
-
-void RdbBase::updateGlobalIndexUpdateFile(int32_t mergeFilePos, int32_t fileMergeCount) {
-	if (!m_useIndexFile) {
-		return;
-	}
-
-	ScopedLock sl(m_docIdFileIndexMtx);
-	docids_ptr_t tmpDocIdFileIndex(new docids_t(*m_docIdFileIndex.get()));
-	sl.unlock();
-
-	int32_t endFilePos = mergeFilePos + fileMergeCount;
-	int32_t delFileCount = fileMergeCount - 1;
-	for (auto it = tmpDocIdFileIndex->begin(); it != tmpDocIdFileIndex->end(); ++it) {
-		int32_t filePos = static_cast<int32_t>(*it & RdbBase::s_docIdFileIndex_filePosMask);
-		if (filePos >= mergeFilePos && filePos <  endFilePos) {
-			*it = (*it & ~s_docIdFileIndex_filePosMask) | mergeFilePos;
-		} else if (filePos >= endFilePos) {
-			// file pos after merge file
-			*it = (*it & ~s_docIdFileIndex_filePosMask) | (filePos - delFileCount);
-		}
-	}
-
-	// replace with new index
 	ScopedLock sl2(m_docIdFileIndexMtx);
 	m_docIdFileIndex.swap(tmpDocIdFileIndex);
 }
 
 void RdbBase::printGlobalIndex() {
+	logf(LOG_TRACE, "db: global index");
+
 	auto globalIndex = getGlobalIndex();
 	for (auto key : *globalIndex) {
 		logf(LOG_TRACE, "db: docId=%" PRId64" index=%" PRId64" isDel=%d key=%" PRIx64,

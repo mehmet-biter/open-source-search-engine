@@ -3,21 +3,19 @@
 
 #include "UdpServer.h"
 #include "Hostdb.h"
-#include "Msg0.h"      // for getRdb(char rdbId)
 #include "Conf.h"
 #include "UdpSlot.h"
-#include "Clusterdb.h"
-#include "Spider.h"
-#include "Rdb.h"
-#include "Profiler.h"
-#include "Repair.h"
+#include "Loop.h"
+#include "Rdb.h" //getDbnameFromId()/getKeySizeFromRdbId()/getDataSizeFromRdbId()
 #include "Multicast.h"
+#include "SafeBuf.h"
 #include "JobScheduler.h"
-#include "Process.h"
-#include "PingServer.h"
 #include "ip.h"
+#include "Log.h"
 #include "max_niceness.h"
 #include "Mem.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
 
@@ -47,10 +45,9 @@
 // we have up to this many outstanding Multicasts to send add requests to hosts
 #define MAX_MCASTS 128
 static Multicast  s_mcasts[MAX_MCASTS];
-static Multicast *s_mcastHead = NULL;
-static Multicast *s_mcastTail = NULL;
-static int32_t       s_mcastsOut = 0;
-static int32_t       s_mcastsIn  = 0;
+static bool s_multicastInUse[MAX_MCASTS];
+static int32_t s_multicastInUseCount = 0;
+static GbMutex s_mtxMcasts; //protects above
 
 // we have one buffer for each host in the cluster
 static char *s_hostBufs     [MAX_HOSTS];
@@ -65,11 +62,6 @@ static int32_t  s_numHostBufs;
 static Msg4 *s_msg4Head = NULL;
 static Msg4 *s_msg4Tail = NULL;
 
-// . TODO: use this instead of spiderrestore.dat
-// . call this once for every Msg14 so it can add all at once...
-// . make Msg14 add the links before anything else since that uses Msg10
-// . also, need to update spiderdb rec for the url in Msg14 using Msg4 too!
-// . need to add support for passing in array of lists for Msg14
 
 static void sleepCallback4(int bogusfd, void *state);
 static void flushLocal();
@@ -87,13 +79,11 @@ bool Msg4::initializeOutHandling() {
 	for(int32_t i = 0; i < s_numHostBufs; i++)
 		s_hostBufs[i] = NULL;
 
-	// init the linked list of multicasts
-	s_mcastHead = &s_mcasts[0];
-	s_mcastTail = &s_mcasts[MAX_MCASTS-1];
+	// init the multicasts
 	for(int32_t i = 0; i < MAX_MCASTS - 1; i++)
-		s_mcasts[i].m_next = &s_mcasts[i+1];
+		s_multicastInUse[i] = false;
+	s_multicastInUseCount = 0;
 	// last guy has nobody after him
-	s_mcastTail->m_next = NULL;
 
 	// nobody is waiting in line
 	s_msg4Head = NULL;
@@ -166,10 +156,12 @@ bool hasAddsInQueue() {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
 	// if there is an outstanding multicast...
-	if ( s_mcastsOut > s_mcastsIn ) {
+	ScopedLock sl(s_mtxMcasts);
+	if ( s_multicastInUseCount>0 ) {
 		logTrace( g_conf.m_logTraceMsg4, "END - multicast waiting, returning true" );
 		return true;
 	}
+	sl.unlock();
 	
 	// if we have a msg4 waiting in line...
 	if ( s_msg4Head ) {
@@ -213,7 +205,7 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	if ( metaListSize == 0 ) return true;
 
 	// sanity
-	if ( collnum < 0 ) { g_process.shutdownAbort(true); }
+	if ( collnum < 0 ) { gbshutdownAbort(true); }
 
 	// if first time set this
 	m_currentPtr   = metaList;
@@ -259,7 +251,6 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	// . FURTHEMORE the multicast seems to always be called with
 	//   MAX_NICENESS so i'm not sure how niceness 0 will really help
 	//   with any of this stuff.
-	//if ( s_msg4Head || s_msg4Tail ) { g_process.shutdownAbort(true); }
 	if ( s_msg4Head || s_msg4Tail ) {
 		log( LOG_WARN, "msg4: got unexpected head");
 		goto retry;
@@ -306,7 +297,7 @@ bool Msg4::addMetaList2 ( ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(p,pend-p);
 #endif
-	if ( m_collnum < 0 ) { g_process.shutdownAbort(true); }
+	if ( m_collnum < 0 ) { gbshutdownAbort(true); }
 
 	// store each record in the list into the send buffers
 	for ( ; p < pend ; ) {
@@ -346,7 +337,7 @@ bool Msg4::addMetaList2 ( ) {
 			// -1 means to read it in
 			dataSize = *(int32_t *)p;
 			// sanity check
-			if ( dataSize < 0 ) { g_process.shutdownAbort(true); }
+			if ( dataSize < 0 ) { gbshutdownCorrupted(); }
 
 			// skip dataSize
 			p += 4;
@@ -356,7 +347,7 @@ bool Msg4::addMetaList2 ( ) {
 		p += dataSize;
 		
 		// breach us?
-		if ( p > pend ) { g_process.shutdownAbort(true); }
+		if ( p > pend ) { gbshutdownCorrupted(); }
  		
 		// convert the gid to the hostid of the first host in this
 		// group. uses a quick hash table.
@@ -476,8 +467,7 @@ static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *
 #endif
 	int32_t  used = *(int32_t *)buf;
 	// sanity chec. "used" must include the 4 bytes of itself
-	if ( used < 12 ) { g_process.shutdownAbort(true); }
-
+	if ( used < 12 ) { gbshutdownAbort(true); }
 	// how much total buf space do we have, used or unused?
 	int32_t  maxSize = s_hostBufSizes[hostId];
 	// how many bytes are available in "buf"?
@@ -506,7 +496,7 @@ static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *
 	*(collnum_t *)p = collnum; p += sizeof(collnum_t);
 	*(char      *)p = rdbId  ; p += 1;
 	*(int32_t      *)p = recSize; p += 4;
-	gbmemcpy ( p , rec , recSize ); p += recSize;
+	memcpy( p , rec , recSize ); p += recSize;
 	// update buffer used
 	*(int32_t *)buf = used + (p - start);
 	// all done, did not "block"
@@ -544,19 +534,14 @@ static bool sendBuffer(int32_t hostId) {
 		return false;
 	}
 
-	// get groupId
-	//uint32_t groupId = g_hostdb.getGroupIdFromHostId ( hostId );
 	Host *h = g_hostdb.getHost(hostId);
 	uint32_t shardNum = h->m_shardNum;
-	// get group #
-	//int32_t groupNum = g_hostdb.getGroupNum ( groupId );
 
 	// sanity check. our clock must be in sync with host #0's or with
 	// a host from his group, group #0
 	if ( ! isClockInSync() ) { 
 		log("msg4: msg4: warning sending out adds but clock not in "
 		    "sync with host #0");
-		//g_process.shutdownAbort(true); }
 	}
 	// try to keep all zids unique, regardless of their group
 	static uint64_t s_lastZid = 0;
@@ -587,7 +572,6 @@ static bool sendBuffer(int32_t hostId) {
 	// . in that case we should restart from the top and we will add
 	//   the dead host ids to the top, and multicast will avoid sending
 	//   to hostids that are dead now
-	// key is useless for us
 	// timeout was 60 seconds, but if we saved the addsinprogress at the wrong time we might miss
 	// it when its between having timed out and having been resent by us!
 	if (mcast->send(request, requestSize, msg_type_4, false, shardNum, true, 0, (void *)(PTRTYPE)allocSize, (void *)mcast, gotReplyWrapper4, multicast_infinite_send_timeout, MAX_NICENESS, -1, true)) {
@@ -608,37 +592,39 @@ static bool sendBuffer(int32_t hostId) {
 }
 
 static Multicast *getMulticast() {
-	// get head
-	Multicast *avail = s_mcastHead;
-	// return NULL if none available
-	if ( ! avail ) return NULL;
-	// if all are out then forget it!
-	if ( s_mcastsOut - s_mcastsIn >= MAX_MCASTS ) return NULL;
-	// remove from head of linked list
-	s_mcastHead = avail->m_next;
-	// if we were the tail, none now
-	if ( s_mcastTail == avail ) s_mcastTail = NULL;
-	// count it
-	s_mcastsOut++;
-	// sanity
-	if ( avail->m_inUse ) { g_process.shutdownAbort(true); }
-	// return that
-	return avail;
+	ScopedLock sl(s_mtxMcasts);
+	if(s_multicastInUseCount>=MAX_MCASTS)
+		return NULL;
+	for(int i=0; i<MAX_MCASTS; i++) {
+		if(!s_multicastInUse[i]) {
+			// sanity
+			if(s_mcasts[i].m_inUse)
+				gbshutdownCorrupted();
+			s_multicastInUse[i] = true;
+			s_multicastInUseCount++;
+			return s_mcasts+i;
+		
+		}
+	}
+	//inconsistency between s_multicastInUseCount and s_multicastInUse[]
+	gbshutdownCorrupted();
 }
 
 static void returnMulticast(Multicast *mcast) {
+	int i = mcast - s_mcasts;
+	//sanity checks
+	if(i<0 || i>=MAX_MCASTS)
+		gbshutdownCorrupted();
+	ScopedLock sl(s_mtxMcasts);
+	if(!s_multicastInUse[i])
+		gbshutdownCorrupted();
+	if(s_multicastInUseCount==0)
+		gbshutdownCorrupted();
+	
 	// return this multicast
 	mcast->reset();
-	// we are at the tail, nobody is after us
-	mcast->m_next = NULL;
-	// if no tail we are both head and tail
-	if ( ! s_mcastTail ) s_mcastHead         = mcast;
-	// put after the tail
-	else                 s_mcastTail->m_next = mcast;
-	// and we are the new tail
-	s_mcastTail = mcast;
-	// count it
-	s_mcastsIn++;
+	s_multicastInUse[i] = false;
+	s_multicastInUseCount--;
 }
 
 // just free the request
@@ -659,7 +645,7 @@ static void gotReplyWrapper4(void *state , void *state2) {
 	// get the udpslot that is replying here
 	UdpSlot *replyingSlot = mcast->m_slot;
 	if (!replyingSlot) {
-		g_process.shutdownAbort(true);
+		gbshutdownAbort(true);
 	}
 
 	returnMulticast(mcast);
@@ -694,7 +680,7 @@ void Msg4::storeLineWaiters ( ) {
 		// . if his callback was NULL, then was loaded in loadAddsInProgress()
 		// . we no longer do that so callback should never be null now
 		if (!msg4->m_callback) {
-			g_process.shutdownAbort(true);
+			gbshutdownLogicError();
 		}
 
 		// log this now i guess. seems to happen a lot if not using threads
@@ -728,9 +714,6 @@ void Msg4::storeLineWaiters ( ) {
 bool saveAddsInProgress(const char *prefix) {
 
 	if ( g_conf.m_readOnlyMode ) return true;
-
-	// this does not work so skip it for now
-	//return true;
 
 	// open the file
 	char filename[1024];
@@ -773,21 +756,6 @@ bool saveAddsInProgress(const char *prefix) {
 
 	// save in progress msg4 requests too!
 	g_udpServer.saveActiveSlots(fd, msg_type_4);
-
-	// MDW: if msg4 was stored in the linked list then caller 
-	// never got his callback called, so the spider will redo
-	// this url later...
-
-	// . serialize each Msg4 that is waiting in line
-	// . need to preserve their list ptrs so to avoid re-adds?
-	/*
-	Msg4 *msg4 = s_msg4Head;
-	while ( msg4 ) {
-		msg4->save ( fd );
-		// next msg4
-		msg4 = msg4->m_next;
-	}
-	*/
 
 	// all done
 	close ( fd );
@@ -936,7 +904,7 @@ bool loadAddsInProgress(const char *prefix) {
 		// sanity check
 		if ( *(int32_t *)buf != used ) {
 			log(LOG_ERROR, "%s:%s: file %s is bad.",__FILE__,__func__,filename);
-			g_process.shutdownAbort(false);
+			return false;
 		}
 		// set the array
 		s_hostBufs     [i] = buf;

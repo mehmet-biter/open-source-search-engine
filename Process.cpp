@@ -715,6 +715,8 @@ bool Process::shutdown2() {
 
 	Statistics::finalize();
 
+	RdbBase::finalizeGlobalIndexThread();
+
 	log("gb: disabling threads");
 	// now disable threads so we don't exit while threads are
 	// outstanding

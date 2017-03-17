@@ -1925,6 +1925,12 @@ int main2 ( int argc , char *argv[] ) {
 	// load url block list
 	g_urlBlockList.init();
 
+	// initialize generate global index thread
+	if (!RdbBase::initializeGlobalIndexThread()) {
+		logError("Unable to initialize global index thread");
+		return 1;
+	}
+
 	// test all collection dirs for write permission
 	int32_t pcount = 0;
 	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {

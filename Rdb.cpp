@@ -25,6 +25,7 @@
 #include "max_niceness.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "ScopedLock.h"
 #include <sys/stat.h> //mdir()
 
 
@@ -1161,7 +1162,8 @@ bool Rdb::dumpCollLoop ( ) {
 				log("build: File %s is zero bytes, removing from memory.",base->getFile(m_fn)->getFilename());
 				base->buryFiles ( m_fn , m_fn+1 );
 
-				// nothing is dumped. don't need to regenerate index
+				// nothing is dumped. we still need to regenerate index
+				base->submitGlobalIndexJob(false, -1);
 			}
 
 			// game over, man
@@ -1336,46 +1338,11 @@ void Rdb::doneDumpingCollWrapper ( void *state ) {
 		RdbBase *base = THIS->getBase(THIS->m_dumpCollnum);
 		if (base) {
 			if (THIS->isUseIndexFile()) {
-				base->incrementOutstandingJobs();
-
-				if (g_jobScheduler.submit(generateGlobalIndexWrapper, generateGlobalIndexDoneWrapper, state, thread_type_index_generate, 0)) {
-					return;
-				}
-
-				// unable to submit job
-				generateGlobalIndexWrapper(state);
+				base->submitGlobalIndexJob(true, THIS->m_fn);
 			} else {
 				base->markNewFileReadable();
 			}
 		}
-	}
-
-	// return if the loop blocked
-	if ( ! THIS->dumpCollLoop() ) {
-		return;
-	}
-
-	// otherwise, call big wrapper
-	THIS->doneDumping();
-}
-
-void Rdb::generateGlobalIndexWrapper(void *state) {
-	Rdb *THIS = (Rdb *)state;
-
-	RdbBase *base = THIS->getBase(THIS->m_dumpCollnum);
-	if (base) {
-		base->generateGlobalIndex();
-		base->markNewFileReadable();
-		base->decrementOustandingJobs();
-	}
-}
-
-void Rdb::generateGlobalIndexDoneWrapper(void *state, job_exit_t exit_type) {
-	Rdb *THIS = (Rdb *)state;
-
-	// job was not run
-	if (exit_type != job_exit_normal) {
-		generateGlobalIndexWrapper(state);
 	}
 
 	// return if the loop blocked

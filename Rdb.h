@@ -301,9 +301,6 @@ public:
 
 	static void doneDumpingCollWrapper(void *state);
 
-	static void generateGlobalIndexWrapper(void *state);
-	static void generateGlobalIndexDoneWrapper(void *state, job_exit_t exit_type);
-
 private:
 	bool addList(collnum_t collnum, RdbList *list, bool checkForRoom);
 	// get the directory name where this rdb stores its files

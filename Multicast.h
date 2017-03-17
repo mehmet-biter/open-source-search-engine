@@ -115,9 +115,6 @@ class Multicast {
 
 	bool        m_inUse;
 
-	// for linked list of available Multicasts in Msg4.cpp
-	class Multicast *m_next;
-
 	// host we got reply from. used by Msg3a for timing.
 	Host      *m_replyingHost;
 	// when the request was launched to the m_replyingHost

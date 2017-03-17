@@ -35,18 +35,21 @@ TEST_P(RdbBasePosdbIndexSingleDocTest, PosdbGenerateIndexSingleDocId) {
 	int64_t termId0 = ::testing::get<0>(GetParam());
 	GbTest::addPosdbKey(index0, termId0, docId, 0, ::testing::get<0>(GetParam()) == POSDB_DELETEDOC_TERMID);
 	index0->writeIndex(true);
+	base->markNewFileReadable();
 
 	ASSERT_EQ(1, base->addNewFile());
 	RdbIndex *index1 = base->getIndex(1);
 	int64_t termId1 = ::testing::get<1>(GetParam());
 	GbTest::addPosdbKey(index1, termId1, docId, 0, ::testing::get<1>(GetParam()) == POSDB_DELETEDOC_TERMID);
 	index1->writeIndex(true);
+	base->markNewFileReadable();
 
 	ASSERT_EQ(2, base->addNewFile());
 	RdbIndex *index2 = base->getIndex(2);
 	int64_t termId2 = ::testing::get<2>(GetParam());
 	GbTest::addPosdbKey(index2, termId2, docId, 0, ::testing::get<2>(GetParam()) == POSDB_DELETEDOC_TERMID);
 	index2->writeIndex(true);
+	base->markNewFileReadable();
 
 	base->generateGlobalIndex();
 	auto globalIndex = base->getGlobalIndex();
@@ -64,31 +67,37 @@ TEST_F(RdbBaseTest, PosdbUpdateIndex) {
 	RdbIndex *index0 = base->getIndex(0);
 	GbTest::addPosdbKey(index0, 'A', 1, 0);
 	index0->writeIndex(true);
+	base->markNewFileReadable();
 
 	ASSERT_EQ(1, base->addNewFile());
 	RdbIndex *index1 = base->getIndex(1);
 	GbTest::addPosdbKey(index1, 'B', 2, 0);
 	index1->writeIndex(true);
+	base->markNewFileReadable();
 
 	ASSERT_EQ(2, base->addNewFile());
 	RdbIndex *index2 = base->getIndex(2);
 	GbTest::addPosdbKey(index2, 'C', 3, 0);
 	index2->writeIndex(true);
+	base->markNewFileReadable();
 
 	ASSERT_EQ(3, base->addNewFile());
 	RdbIndex *index3 = base->getIndex(3);
 	GbTest::addPosdbKey(index3, 'D', 4, 0);
 	index3->writeIndex(true);
+	base->markNewFileReadable();
 
 	ASSERT_EQ(4, base->addNewFile());
 	RdbIndex *index4 = base->getIndex(4);
 	GbTest::addPosdbKey(index4, 'E', 5, 0);
 	index4->writeIndex(true);
+	base->markNewFileReadable();
 
 	ASSERT_EQ(5, base->addNewFile());
 	RdbIndex *index5 = base->getIndex(5);
 	GbTest::addPosdbKey(index5, 'F', 6, 0);
 	index5->writeIndex(true);
+	base->markNewFileReadable();
 
 	base->generateGlobalIndex();
 	{
@@ -101,24 +110,5 @@ TEST_F(RdbBaseTest, PosdbUpdateIndex) {
 		EXPECT_EQ((((4 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 3, globalIndex->at(3));
 		EXPECT_EQ((((5 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 4, globalIndex->at(4));
 		EXPECT_EQ((((6 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 5, globalIndex->at(5));
-	}
-
-	static const int32_t mergeFilePos = 2;
-	static const int32_t fileMergeCount = 2;
-
-	// update file
-	base->updateGlobalIndexUpdateFile(mergeFilePos, fileMergeCount);
-
-	{
-		SCOPED_TRACE("update file");
-		auto globalIndex = base->getGlobalIndex();
-		ASSERT_EQ(6, globalIndex->size());
-
-		EXPECT_EQ((((1 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 0, globalIndex->at(0));
-		EXPECT_EQ((((2 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 1, globalIndex->at(1));
-		EXPECT_EQ((((3 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 2, globalIndex->at(2));
-		EXPECT_EQ((((4 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 2, globalIndex->at(3));
-		EXPECT_EQ((((5 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 3, globalIndex->at(4));
-		EXPECT_EQ((((6 << RdbIndex::s_docIdOffset) | 1) << RdbBase::s_docIdFileIndex_docIdOffset) | 4, globalIndex->at(5));
 	}
 }

@@ -84,6 +84,7 @@ private:
 
 	// . called to continue merge initialization after lock is secure
 	// . lock is g_isMergingLock
+	static void gotLockWrapper(int /*fd*/, void *state);
 	bool gotLock();
 
 	void doSleep();
