@@ -503,6 +503,7 @@ void Posdb::printKey(const char *k) {
 			     "syn=%01" PRId32" "
 			     "densRank=%02" PRId32" "
 			     "mult=%02" PRId32" "
+			     "shardByTermId=%d "
 			     "isDel=%d",
 	     KEYSTR(k, sizeof(key144_t)),
 	     getTermId(k),
@@ -516,6 +517,7 @@ void Posdb::printKey(const char *k) {
 	     (int32_t)getIsSynonym(k),
 	     (int32_t)getDensityRank(k),
 	     (int32_t)getMultiplier(k),
+	     isShardedByTermId(k),
 	     KEYNEG(k));
 }
 

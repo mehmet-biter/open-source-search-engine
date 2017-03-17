@@ -8559,6 +8559,7 @@ void Parms::init ( ) {
 	///////////////////////////////////////////
 	//  PAGE REPAIR CONTROLS
 	///////////////////////////////////////////
+#ifndef PRIVACORE_SAFE_VERSION
 
 	m->m_title = "rebuild mode enabled";
 	m->m_desc  = "If enabled, gigablast will rebuild the rdbs as "
@@ -8584,17 +8585,6 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m->m_flags = PF_REQUIRED;// | PF_COLLDEFAULT;//| PF_NOHTML;
 	m++;
-
-
-	m->m_title = "Limit rebuild to a host";
-	m->m_desc  = "Only rebuild on this host. -1 for all";
-	m->m_cgi   = "rebuild_host";
-	simple_m_set(Conf,m_rebuildHost);
-	m->m_page  = PAGE_REPAIR;
-	m->m_def   = "-1";
-	m->m_group = false;
-	m++;
-
 
 	m->m_title = "memory to use for rebuild";
 	m->m_desc  = "In bytes.";
@@ -8719,6 +8709,7 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+#endif
 	///////////////////////////////////////////
 	//          END PAGE REPAIR              //
 	///////////////////////////////////////////

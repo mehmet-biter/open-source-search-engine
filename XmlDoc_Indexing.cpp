@@ -176,42 +176,9 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	hi.m_prefix    = "gbcontenthash";
 	if ( ! hashString ( cbuf,clen,&hi ) ) return false;
 
-	////
-	//
-	// let's stop here for now, until other stuff is actually used again
-	//
-	////
-
-	// let's bring back image thumbnail support for the widget project
-	//return true;
-
-
-
 	char *host = fu->getHost    ();
-	//int32_t  hlen = fu->getHostLen ();
-
-	/*
-	setStatus ( "hashing no-split qdom keys" );
-
-	char *dom  = fu->getDomain   ();
-	int32_t  dlen = fu->getDomainLen();
-
-	// desc is NULL, prefix will be used as desc
-	hi.m_prefix    = "qdom";
-	if ( ! hashString ( dom,dlen,&hi ) ) return false;
-
-
-	setStatus ( "hashing no-split qhost keys" );
-
-	// desc is NULL, prefix will be used as desc
-	hi.m_prefix = "qhost";
-	if ( ! hashString ( host,hlen,&hi ) ) return false;
-	*/
-
 
 	// now hash the site
-
-
 	setStatus ( "hashing no-split SiteGetter terms");
 
 	//

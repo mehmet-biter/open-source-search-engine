@@ -148,7 +148,7 @@ void RdbList::set(char *list, int32_t listSize, char *alloc, int32_t allocSize, 
 	verify_signature();
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN. list=%p listSize=%" PRId32" alloc=%p allocSize=%" PRId32,
 	         list, listSize, alloc, allocSize);
-	char logbuf1[50],logbuf2[50];
+	char logbuf1[MAX_KEYSTR_BYTES],logbuf2[MAX_KEYSTR_BYTES];
 	logTrace(g_conf.m_logTraceRdbList, "startKey=%s endKey=%s keySize=%hhu fixedDataSize=%" PRId32,
 	         KEYSTR(startKey, keySize,logbuf1), KEYSTR(endKey, keySize,logbuf2), keySize, fixedDataSize);
 

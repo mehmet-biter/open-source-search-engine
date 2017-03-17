@@ -7,6 +7,7 @@
 //   wwwwwwww wwwwwwww wwGGGGss ssvvvvFF  w = word postion , s = wordspamrank
 //   pppppb1N MMMMLZZD                    v = diversityrank, p = densityrank
 //                                        M = multiplier, b = in outlink text
+//                                        N = shard by termId
 //                                        L = langIdShiftBit (upper bit)
 //   G: 0 = body 
 //      1 = intitletag 

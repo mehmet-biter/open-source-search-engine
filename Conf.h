@@ -494,7 +494,6 @@ class Conf {
 	int32_t  m_maxRepairinjections;
 	int64_t  m_repairMem;
 	SafeBuf m_collsToRepair;
-	int32_t m_rebuildHost;
 	bool  m_fullRebuild;
 	bool  m_rebuildAddOutlinks;
 	bool  m_rebuildRecycleLinkInfo;
