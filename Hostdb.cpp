@@ -15,6 +15,7 @@
 #include "IPAddressChecks.h"
 #include "ip.h"
 #include "Mem.h"
+#include "ScopedLock.h"
 #include <fcntl.h>
 #include <sys/types.h>
 #include <ifaddrs.h>
@@ -1240,6 +1241,7 @@ Host *Hostdb::getLeastLoadedInShard ( uint32_t shardNum , char niceness ) {
 	int32_t minOutstandingRequestsIndex = -1;
 	Host *shard = getShard ( shardNum );
 	Host *bestDead = NULL;
+	ScopedLock sl(m_mtxPinginfo);
 	for(int32_t i = 0; i < m_numHostsPerShard; i++) {
 		Host *hh = &shard[i];
 		// don't pick a 'no spider' host if niceness is 1
@@ -1477,6 +1479,37 @@ int32_t Hostdb::getBestHosts2IP ( Host  *h ) {
 	// just try the primary then
 	return h->m_ip;
 }
+
+
+void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
+	ScopedLock sl(m_mtxPinginfo);
+
+	h->m_pingInfo.m_localHostTimeMS = pi.m_localHostTimeMS;
+	h->m_pingInfo.m_hostId = pi.m_hostId;
+	h->m_pingInfo.m_loadAvg = pi.m_loadAvg;
+	h->m_pingInfo.m_percentMemUsed = pi.m_percentMemUsed;
+	h->m_pingInfo.m_cpuUsage = pi.m_cpuUsage;
+	h->m_pingInfo.m_totalDocsIndexed = pi.m_totalDocsIndexed;
+	h->m_pingInfo.m_slowDiskReads = pi.m_slowDiskReads;
+	h->m_pingInfo.m_hostsConfCRC = pi.m_hostsConfCRC;
+	h->m_pingInfo.m_diskUsage = pi.m_diskUsage;
+	h->m_pingInfo.m_flags = pi.m_flags;
+	h->m_pingInfo.m_numCorruptDiskReads = pi.m_numCorruptDiskReads;
+	h->m_pingInfo.m_numOutOfMems = pi.m_numOutOfMems;
+	h->m_pingInfo.m_socketsClosedFromHittingLimit = pi.m_socketsClosedFromHittingLimit;
+	//m_totalResends is updated direclty by UdpSlot
+	//h->m_pingInfo.m_totalResends = pi.m_totalResends;
+	//m_etryagains is updated directly by UdpServer
+	//h->m_pingInfo.m_etryagains = pi.m_etryagains;
+	h->m_pingInfo.m_udpSlotsInUseIncoming = pi.m_udpSlotsInUseIncoming;
+	h->m_pingInfo.m_tcpSocketsInUse = pi.m_tcpSocketsInUse;
+	h->m_pingInfo.m_currentSpiders = pi.m_currentSpiders;
+	h->m_pingInfo.m_dailyMergeCollnum = pi.m_dailyMergeCollnum;
+	memcpy(h->m_pingInfo.m_gbVersionStr,pi.m_gbVersionStr,sizeof(pi.m_gbVersionStr));
+	h->m_pingInfo.m_repairMode = pi.m_repairMode;
+	h->m_pingInfo.m_recoveryLevel = pi.m_recoveryLevel;
+}
+
 
 // assume to be from posdb here
 uint32_t Hostdb::getShardNumByTermId(const void *k) const {

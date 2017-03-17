@@ -248,39 +248,41 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	if ( isAlive && h->m_emailCode == 0 ) h->m_startTime =nowmsLocal;//now2
 	Host *me = g_hostdb.m_myHost;
 	// we send our stats to host "h"
-	PingInfo *pi = &me->m_pingInfo;//RequestBuf;
+	
+	//first we update our pinginfo
+	PingInfo newPingInfo;
 
-	pi->m_numCorruptDiskReads = g_numCorrupt;
-	pi->m_numOutOfMems = g_mem.getOOMCount();
-	pi->m_socketsClosedFromHittingLimit = g_stats.m_closedSockets;
-	pi->m_currentSpiders = g_spiderLoop.m_numSpidersOut;
+	newPingInfo.m_numCorruptDiskReads = g_numCorrupt;
+	newPingInfo.m_numOutOfMems = g_mem.getOOMCount();
+	newPingInfo.m_socketsClosedFromHittingLimit = g_stats.m_closedSockets;
+	newPingInfo.m_currentSpiders = g_spiderLoop.m_numSpidersOut;
 
 	// let the receiver know our repair mode
-	pi->m_repairMode = g_repairMode;
+	newPingInfo.m_repairMode = g_repairMode;
 
 	int32_t l_loadavg = (int32_t) (g_process.getLoadAvg() * 100.0);
 	//gbmemcpy(p, &l_loadavg, sizeof(int32_t));	p += sizeof(int32_t);
-	pi->m_loadAvg = l_loadavg ;
+	newPingInfo.m_loadAvg = l_loadavg ;
 
 	// then our percent mem used
 	float mem = g_mem.getUsedMemPercentage();
 	//*(float *)p = mem ; p += sizeof(float); // 4 bytes
-	pi->m_percentMemUsed = mem;
+	newPingInfo.m_percentMemUsed = mem;
 
 	// our num recs, docsIndexed
-	pi->m_totalDocsIndexed = (int32_t)g_process.getTotalDocsIndexed();
+	newPingInfo.m_totalDocsIndexed = (int32_t)g_process.getTotalDocsIndexed();
 
 	// slow disk reads
-	pi->m_slowDiskReads = g_stats.m_slowDiskReads;
+	newPingInfo.m_slowDiskReads = g_stats.m_slowDiskReads;
 
 	// and hosts.conf crc
-	pi->m_hostsConfCRC = g_hostdb.getCRC();
+	newPingInfo.m_hostsConfCRC = g_hostdb.getCRC();
 
 	// ensure crc is legit
 	if ( g_hostdb.getCRC() == 0 ) { g_process.shutdownAbort(true); }
 
 	// disk usage (df -ka)
-	pi->m_diskUsage = g_process.m_diskUsage;
+	newPingInfo.m_diskUsage = g_process.m_diskUsage;
 
 	// flags indicating our state
 	int32_t flags = 0;
@@ -301,33 +303,37 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 
 	uint8_t rv8 = (uint8_t)g_recoveryLevel;
 	if ( g_recoveryLevel > 255 ) rv8 = 255;
-	pi->m_recoveryLevel = rv8;
+	newPingInfo.m_recoveryLevel = rv8;
 
 	//*(int32_t *)p = flags; p += 4; // 4 bytes
-	pi->m_flags = flags;
+	newPingInfo.m_flags = flags;
 
 	// the collection number we are daily merging (currently 2 bytes)
 	collnum_t cn = -1;
 	if ( g_dailyMerge.m_cr ) cn = g_dailyMerge.m_cr->m_collnum;
 	//*(collnum_t *)p = cn ; p += sizeof(collnum_t);
-	pi->m_dailyMergeCollnum = cn;
+	newPingInfo.m_dailyMergeCollnum = cn;
 
-	pi->m_hostId = me->m_hostId;
+	newPingInfo.m_hostId = me->m_hostId;
 
-	pi->m_localHostTimeMS = gettimeofdayInMillisecondsLocal();
+	newPingInfo.m_localHostTimeMS = gettimeofdayInMillisecondsLocal();
 
-	pi->m_udpSlotsInUseIncoming = g_udpServer.getNumUsedSlotsIncoming();
+	newPingInfo.m_udpSlotsInUseIncoming = g_udpServer.getNumUsedSlotsIncoming();
 
-	pi->m_tcpSocketsInUse = g_httpServer.m_tcp.m_numUsed;
+	newPingInfo.m_tcpSocketsInUse = g_httpServer.m_tcp.m_numUsed;
 
 	// from Loop.cpp
-	pi->m_cpuUsage = 0.0;
+	newPingInfo.m_cpuUsage = 0.0;
 
 	// store the gbVersionStrBuf now, just a date with a \0 included
 	char *v = getVersion();
 	int32_t vsize = getVersionSize(); // 21 bytes
 	if ( vsize != 21 ) { g_process.shutdownAbort(true); }
-	gbmemcpy ( pi->m_gbVersionStr , v , vsize );
+	gbmemcpy ( newPingInfo.m_gbVersionStr , v , vsize );
+
+	g_hostdb.updatePingInfo(g_hostdb.m_myHost,newPingInfo);
+	
+	//our pinginfo has been updated. Now send to the target host
 
 	// the proxy may be interfacing with the temporary cluster while
 	// we update the main cluster...
@@ -340,7 +346,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	    hostId = -1;
     }
 
-	if (g_udpServer.sendRequest((char *)pi, sizeof(PingInfo), msg_type_11, ip, port, hostId, NULL, (void *)h, gotReplyWrapperP, g_conf.m_deadHostTimeout, 0, NULL, 1000, 2000)) {
+	if (g_udpServer.sendRequest((char *)&g_hostdb.m_myHost->m_pingInfo, sizeof(PingInfo), msg_type_11, ip, port, hostId, NULL, (void *)h, gotReplyWrapperP, g_conf.m_deadHostTimeout, 0, NULL, 1000, 2000)) {
 		return;
 	}
 	// it had an error, so dec the count
