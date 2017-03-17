@@ -1907,8 +1907,12 @@ void UdpServer::timePollWrapper(int fd, void *state) {
 }
 
 void UdpServer::timePoll ( ) {
+	//no active slots -> nothing to do
+	{
+		ScopedLock sl(m_mtx);
+		if ( ! m_activeListHead ) return;
+	}
 
-	if ( ! m_activeListHead ) return;
 	// debug msg
 	//if ( g_conf.m_logDebugUdp ) log("enter timePoll");
 	// only repeat once
