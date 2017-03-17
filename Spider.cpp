@@ -1651,8 +1651,10 @@ public:
 };
 
 static void doneAddingSeedsWrapper(void *state) {
+	SafeBuf *sb = reinterpret_cast<SafeBuf*>(state);
 	// note it
 	log("basic: done adding seeds using msg4");
+	delete sb;
 }
 
 // . Collectiondb.cpp calls this when any parm flagged with
@@ -1756,7 +1758,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 	sc->m_siteListIsEmptyValid = true;
 
 	// use this so it will be free automatically when msg4 completes!
-	SafeBuf *spiderReqBuf = &sc->m_msg4x.m_tmpBuf;
+	SafeBuf *spiderReqBuf = new SafeBuf();
 
 	//char *siteList = cr->m_siteListBuf.getBufStart();
 
@@ -2014,7 +2016,12 @@ bool updateSiteListBuf ( collnum_t collnum ,
 
 	// use spidercoll to contain this msg4 but if in use it
 	// won't be able to be deleted until it comes back..
-	return sc->m_msg4x.addMetaList(spiderReqBuf, sc->m_collnum, sc, doneAddingSeedsWrapper, RDB_SPIDERDB);
+	if(!sc->m_msg4x.addMetaList(spiderReqBuf, sc->m_collnum, sc, doneAddingSeedsWrapper, RDB_SPIDERDB))
+		return false;
+	else {
+		delete spiderReqBuf;
+		return true;
+	}
 }
 
 // . Spider.cpp calls this to see if a url it wants to spider is
