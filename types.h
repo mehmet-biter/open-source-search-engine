@@ -10,6 +10,7 @@
 typedef int16_t collnum_t;
 
 #define MAX_KEY_BYTES 28
+#define MAX_KEYSTR_BYTES ((MAX_KEY_BYTES*2)+3)
 
 class u_int96_t {
 
