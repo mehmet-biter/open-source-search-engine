@@ -35,7 +35,6 @@ Multicast::Multicast()
     m_ownMsg(false),
     m_slot(NULL),
     m_inUse(false),
-    m_next(NULL),
     m_replyingHost(NULL),
     m_replyLaunchTime(0),
     m_hackFileId(0),

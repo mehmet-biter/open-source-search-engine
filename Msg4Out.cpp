@@ -47,10 +47,8 @@
 // we have up to this many outstanding Multicasts to send add requests to hosts
 #define MAX_MCASTS 128
 static Multicast  s_mcasts[MAX_MCASTS];
-static Multicast *s_mcastHead = NULL;
-static Multicast *s_mcastTail = NULL;
-static int32_t       s_mcastsOut = 0;
-static int32_t       s_mcastsIn  = 0;
+static bool s_multicastInUse[MAX_MCASTS];
+static int32_t s_multicastInUseCount = 0;
 
 // we have one buffer for each host in the cluster
 static char *s_hostBufs     [MAX_HOSTS];
@@ -86,13 +84,11 @@ bool Msg4::initializeOutHandling() {
 	for(int32_t i = 0; i < s_numHostBufs; i++)
 		s_hostBufs[i] = NULL;
 
-	// init the linked list of multicasts
-	s_mcastHead = &s_mcasts[0];
-	s_mcastTail = &s_mcasts[MAX_MCASTS-1];
+	// init the multicasts
 	for(int32_t i = 0; i < MAX_MCASTS - 1; i++)
-		s_mcasts[i].m_next = &s_mcasts[i+1];
+		s_multicastInUse[i] = false;
+	s_multicastInUseCount = 0;
 	// last guy has nobody after him
-	s_mcastTail->m_next = NULL;
 
 	// nobody is waiting in line
 	s_msg4Head = NULL;
@@ -165,7 +161,7 @@ bool hasAddsInQueue() {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
 	// if there is an outstanding multicast...
-	if ( s_mcastsOut > s_mcastsIn ) {
+	if ( s_multicastInUseCount>0 ) {
 		logTrace( g_conf.m_logTraceMsg4, "END - multicast waiting, returning true" );
 		return true;
 	}
@@ -595,37 +591,37 @@ static bool sendBuffer(int32_t hostId) {
 }
 
 static Multicast *getMulticast() {
-	// get head
-	Multicast *avail = s_mcastHead;
-	// return NULL if none available
-	if ( ! avail ) return NULL;
-	// if all are out then forget it!
-	if ( s_mcastsOut - s_mcastsIn >= MAX_MCASTS ) return NULL;
-	// remove from head of linked list
-	s_mcastHead = avail->m_next;
-	// if we were the tail, none now
-	if ( s_mcastTail == avail ) s_mcastTail = NULL;
-	// count it
-	s_mcastsOut++;
-	// sanity
-	if ( avail->m_inUse ) { g_process.shutdownAbort(true); }
-	// return that
-	return avail;
+	if(s_multicastInUseCount>=MAX_MCASTS)
+		return NULL;
+	for(int i=0; i<MAX_MCASTS; i++) {
+		if(!s_multicastInUse[i]) {
+			// sanity
+			if(s_mcasts[i].m_inUse)
+				g_process.shutdownAbort(true);
+			s_multicastInUse[i] = true;
+			s_multicastInUseCount++;
+			return s_mcasts+i;
+		
+		}
+	}
+	//inconsistency between s_multicastInUseCount and s_multicastInUse[]
+	g_process.shutdownAbort(true);
 }
 
 static void returnMulticast(Multicast *mcast) {
+	int i = mcast - s_mcasts;
+	//sanity checks
+	if(i<0 || i>=MAX_MCASTS)
+		g_process.shutdownAbort(true);
+	if(!s_multicastInUse[i])
+		g_process.shutdownAbort(true);
+	if(s_multicastInUseCount==0)
+		g_process.shutdownAbort(true);
+	
 	// return this multicast
 	mcast->reset();
-	// we are at the tail, nobody is after us
-	mcast->m_next = NULL;
-	// if no tail we are both head and tail
-	if ( ! s_mcastTail ) s_mcastHead         = mcast;
-	// put after the tail
-	else                 s_mcastTail->m_next = mcast;
-	// and we are the new tail
-	s_mcastTail = mcast;
-	// count it
-	s_mcastsIn++;
+	s_multicastInUse[i] = false;
+	s_multicastInUseCount--;
 }
 
 // just free the request
