@@ -41,8 +41,6 @@ class SpiderColl {
 
 	bool      load();
 
-	int64_t m_msg4Start;
-
 	int32_t getTotalOutstandingSpiders ( ) ;
 
 	void urlFiltersChanged();

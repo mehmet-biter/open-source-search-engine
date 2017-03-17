@@ -63,7 +63,6 @@ SpiderColl::SpiderColl () {
 
 
 	// PVS-Studio
-	m_msg4Start = 0;
 	m_useTree = false;
 	m_lastReplyValid = false;
 	memset(m_lastReplyBuf, 0, sizeof(m_lastReplyBuf));
@@ -3956,9 +3955,6 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// and the whole thing is no longer empty
 	//m_allDoledbPrioritiesEmpty = 0;//false;
 	//m_lastEmptyCheck = 0;
-
-
-	m_msg4Start = gettimeofdayInMilliseconds();
 
 	//RdbList *tmpList = &m_msg1.m_tmpList;
 
