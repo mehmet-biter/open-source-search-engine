@@ -74,12 +74,15 @@ fi
 TOOL_DIR=`find $TOOL_BASE -type d -name 'cov-analysis*'`
 export PATH=$TOOL_DIR/bin:$PATH
 
+# Configure
+echo -e "\033[33;1mRunning Coverity Scan Configure Tool...\033[0m"
+cov-configure --comptype g++ --compiler $CXX
+
 # Build
 echo -e "\033[33;1mRunning Coverity Scan Analysis Tool...\033[0m"
 COV_BUILD_OPTIONS=""
 #COV_BUILD_OPTIONS="--return-emit-failures 8 --parse-error-threshold 85"
 RESULTS_DIR="cov-int"
-cov-configure --comptype gcc --compiler $(which $CXX)
 eval "${COVERITY_SCAN_BUILD_COMMAND_PREPEND}"
 COVERITY_UNSUPPORTED=1 cov-build --dir $RESULTS_DIR $COV_BUILD_OPTIONS $COVERITY_SCAN_BUILD_COMMAND
 cov-import-scm --dir $RESULTS_DIR --scm git --log $RESULTS_DIR/scm_log.txt 2>&1
