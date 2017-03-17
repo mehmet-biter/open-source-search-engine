@@ -869,6 +869,14 @@ TEST(UrlTest, LongUrl) {
 	EXPECT_LT(url.getUrlLen(), MAX_URL_LEN);
 }
 
+TEST(UrlTest, LongUtf8Url) {
+	const char *bad_url = "http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=http%3A%2F%2Fcn.engadget.com%2F2017%2F03%2F15%2Fapple-hires-ios-security-expert-jonathan-zdziarski%2F&title=&pics=http://o.aolcdn.com/hss/storage/midas/fe8c3496c287c114986e34710ddf2222/205053180/stock-photo-adelaide-australia-september-entering-passcode-on-an-iphone-running-ios-ios-is-the-248570266.jpeg&summary=&desc=如果这些年里你一直在关注跟+iOS+安全有关的新闻，那多半会读到过+Jonathan+Zdziarski+这个名字。作为安全方面的专家，这位仁兄发现过不少苹果产品的漏洞（他还参与过早期的+jailbr...";
+
+	Url url;
+	url.set(bad_url);
+	EXPECT_LT(url.getUrlLen(), MAX_URL_LEN);
+}
+
 TEST(UrlTest, BaseUrlKfumspejderneDk) {
 	Url currentUrl;
 	currentUrl.set("http://www.kfumspejderne.dk/stoet-os/giv-en-gave/giv-et-barn-en-friplads/");
