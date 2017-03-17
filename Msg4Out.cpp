@@ -18,6 +18,7 @@
 #include "ScopedLock.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
+#include <algorithm>
 
 
 #ifdef _VALGRIND_
@@ -69,8 +70,25 @@ static void gotReplyWrapper4(void *state, void *state2);
 static bool sendBuffer(int32_t hostId);
 static Multicast *getMulticast();
 static void returnMulticast(Multicast *mcast);
-static bool prepareBuffer(int32_t hostId, int32_t totalRecSize);
+static bool prepareBuffer(int32_t hostId, int32_t needForBuf);
 static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *rec, int32_t recSize);
+
+
+
+static uint64_t s_lastZid = 0;
+static GbMutex mtx_lastZid;
+
+static uint64_t nextZid() {
+	uint64_t zid = gettimeofdayInMilliseconds();
+	ScopedLock sl(mtx_lastZid);
+	// keep it ascending
+	if(zid <= s_lastZid)
+		zid = s_lastZid + 1;
+	s_lastZid = zid;
+	// shift up 1 so Syncdb::makeKey() is easier
+	return zid <<= 1;
+}
+
 
 
 bool Msg4::initializeOutHandling() {
@@ -228,7 +246,7 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 		s_msg4Tail = this;
 		// debug log. seems to happen a lot if not using threads..
 		if ( g_jobScheduler.are_new_jobs_allowed() )
-			log("msg4: queueing body msg4=0x%" PTRFMT"",(PTRTYPE)this);
+			log(LOG_DEBUG, "msg4: queueing body msg4=0x%" PTRFMT"",(PTRTYPE)this);
 		// mark it
 		m_inUse = true;
 		// all done then, but return false so caller does not free
@@ -391,46 +409,26 @@ bool Msg4::addMetaList2 ( ) {
 	return true;
 }
 
-static bool prepareBuffer(int32_t hostId, int32_t totalRecSize) {
-	// how many bytes of the buffer are occupied or "in use"?
-	char *buf = s_hostBufs[hostId];
-	// if NULL, try to allocate one
-	if (!buf || s_hostBufSizes[hostId] < totalRecSize) {
-		// how big to make it
-		int32_t size = MINHOSTBUFSIZE;
 
-		// must accomodate rec at all costs
-		if (size < totalRecSize) {
-			size = totalRecSize;
-		}
-
-		// make them all the same size
-		buf = (char *)mmalloc(size, "Msg4a");
-		if (!buf) {
-			// if still no luck, we cannot send this msg
+static bool prepareBuffer(int32_t hostId, int32_t needForBuf) {
+	// expand host buffer if needed
+	if ( s_hostBufSizes[hostId] < needForBuf ) {
+		int32_t newSize = std::max(needForBuf,MINHOSTBUFSIZE);
+		char *newBuf = (char *)mrealloc(s_hostBufs[hostId], s_hostBufSizes[hostId], newSize, "Msg4a");
+		if(!newBuf) // OOM -> we cannot send this msg
 			return false;
+
+		if(s_hostBufSizes[hostId]==0) {
+			// if we are making a brand new buf, initialize the used size to itself(4) PLUS the zid (8 bytes)
+			*(int32_t*)newBuf = 4 + 8;
+			*(int64_t*)(newBuf+4) = 0; //clear zid. Not needed, but otherwise leads to uninitialized bytes in a write() syscall
 		}
-
-		if (s_hostBufs[hostId]) {
-			//if the old buf was too small, resize
-			gbmemcpy(buf, s_hostBufs[hostId], *(int32_t *)(s_hostBufs[hostId]));
-			mfree(s_hostBufs[hostId], s_hostBufSizes[hostId], "Msg4a");
-		} else {
-			// if we are making a brand new buf, init the used size to "4" bytes
-
-			// itself(4) PLUS the zid (8 bytes)
-			*(int32_t *)buf = 4 + 8;
-			//clear zid. Not needed, but otherwise leads to uninitialized btyes in a write() syscall
-			*(int64_t *)(buf + 4) = 0;
-		}
-
-		// add it
-		s_hostBufs[hostId] = buf;
-		s_hostBufSizes[hostId] = size;
+		s_hostBufs    [hostId] = newBuf;
+		s_hostBufSizes[hostId] = newSize;
 	}
-
 	return true;
 }
+
 
 // . modify each Msg4 request as follows
 // . collnum(2bytes)|rdbId(1bytes)|listSize&rawlistData|...
@@ -453,13 +451,10 @@ static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *
 	// 8 bytes for the zid
 	needForBuf += 8;
 
-	if (!prepareBuffer(hostId, needForBuf)) {
+	if(!prepareBuffer(hostId, needForBuf))
 		return false;
-	}
 
-	// how many bytes of the buffer are occupied or "in use"?
 	char *buf = s_hostBufs[hostId];
-
 	// . first int32_t is how much of "buf" is used
 	// . includes everything even itself
 #ifdef _VALGRIND_
@@ -543,16 +538,7 @@ static bool sendBuffer(int32_t hostId) {
 		log("msg4: msg4: warning sending out adds but clock not in "
 		    "sync with host #0");
 	}
-	// try to keep all zids unique, regardless of their group
-	static uint64_t s_lastZid = 0;
-	// select a "zid", a sync id
-	uint64_t zid = gettimeofdayInMilliseconds();
-	// keep it strictly increasing
-	if ( zid <= s_lastZid ) zid = s_lastZid + 1;
-	// update it
-	s_lastZid = zid;
-	// shift up 1 so Syncdb::makeKey() is easier
-	zid <<= 1;
+	uint64_t zid = nextZid();
 	// set some things up
 	char *p = buf + 4;
 	// . sneak it into the top of the buffer
@@ -578,6 +564,7 @@ static bool sendBuffer(int32_t hostId) {
 		// . let storeRec() do all the allocating...
 		// . only let the buffer go once multicast succeeds
 		s_hostBufs [ hostId ] = NULL;
+		s_hostBufSizes[hostId] = 0;
 		// success
 		return true;
 	}
