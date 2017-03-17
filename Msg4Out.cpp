@@ -73,6 +73,23 @@ static void returnMulticast(Multicast *mcast);
 static bool storeRec(collnum_t collnum, char rdbId, uint32_t gid, int32_t hostId, const char *rec, int32_t recSize);
 
 
+
+static uint64_t s_lastZid = 0;
+static GbMutex mtx_lastZid;
+
+static uint64_t nextZid() {
+	uint64_t zid = gettimeofdayInMilliseconds();
+	ScopedLock sl(mtx_lastZid);
+	// keep it ascending
+	if(zid <= s_lastZid)
+		zid = s_lastZid + 1;
+	s_lastZid = zid;
+	// shift up 1 so Syncdb::makeKey() is easier
+	return zid <<= 1;
+}
+
+
+
 bool Msg4::initializeOutHandling() {
 	// clear the host bufs
 	s_numHostBufs = g_hostdb.getNumShards();
@@ -517,16 +534,7 @@ static bool sendBuffer(int32_t hostId) {
 		log("msg4: msg4: warning sending out adds but clock not in "
 		    "sync with host #0");
 	}
-	// try to keep all zids unique, regardless of their group
-	static uint64_t s_lastZid = 0;
-	// select a "zid", a sync id
-	uint64_t zid = gettimeofdayInMilliseconds();
-	// keep it strictly increasing
-	if ( zid <= s_lastZid ) zid = s_lastZid + 1;
-	// update it
-	s_lastZid = zid;
-	// shift up 1 so Syncdb::makeKey() is easier
-	zid <<= 1;
+	uint64_t zid = nextZid();
 	// set some things up
 	char *p = buf + 4;
 	// . sneak it into the top of the buffer
