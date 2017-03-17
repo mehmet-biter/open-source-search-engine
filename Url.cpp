@@ -999,7 +999,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 				break;
 			}
 
-			if (newUrlLen >= MAX_URL_LEN) {
+			if (newUrlLen + 1 >= MAX_URL_LEN) {
 				break;
 			}
 
