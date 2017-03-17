@@ -18,6 +18,7 @@
 #include "ScopedLock.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
+#include <algorithm>
 
 
 #ifdef _VALGRIND_
@@ -416,37 +417,22 @@ static bool storeRec(collnum_t      collnum,
 	int32_t  needForBuf = 4 + needForRec;
 	// 8 bytes for the zid
 	needForBuf += 8;
-	// how many bytes of the buffer are occupied or "in use"?
-	char *buf = s_hostBufs[hostId];
-	// if NULL, try to allocate one
-	if ( ! buf  || s_hostBufSizes[hostId] < needForBuf ) {
-		// how big to make it
-		int32_t size = MINHOSTBUFSIZE;
-		// must accomodate rec at all costs
-		if ( size < needForBuf ) size = needForBuf;
-		// make them all the same size
-		buf = (char *)mmalloc ( size , "Msg4a" );
-		// if still no luck, we cannot send this msg
-		if ( ! buf ) return false;
-		
-		if(s_hostBufs[hostId]) {
-			//if the old buf was too small, resize
-			memcpy( buf, s_hostBufs[hostId],
-				*(int32_t*)(s_hostBufs[hostId])); 
-			mfree ( s_hostBufs[hostId], 
-				s_hostBufSizes[hostId] , "Msg4a" );
+	// expand host buffer if needed
+	if ( s_hostBufSizes[hostId] < needForBuf ) {
+		int32_t newSize = std::max(needForBuf,MINHOSTBUFSIZE);
+		char *newBuf = (char *)mrealloc(s_hostBufs[hostId], s_hostBufSizes[hostId], newSize, "Msg4a");
+		if(!newBuf) // OOM -> we cannot send this msg
+			return false;
+
+		if(s_hostBufSizes[hostId]==0) {
+			// if we are making a brand new buf, initialize the used size to itself(4) PLUS the zid (8 bytes)
+			*(int32_t*)newBuf = 4 + 8;
+			*(int64_t*)(newBuf+4) = 0; //clear zid. Not needed, but otherwise leads to uninitialized bytes in a write() syscall
 		}
-		// if we are making a brand new buf, init the used
-		// size to "4" bytes
-		else {
-			// itself(4) PLUS the zid (8 bytes)
-			*(int32_t *)buf = 4 + 8;
-			*(int64_t *)(buf+4) = 0; //clear zid. Not needed, but otherwise leads to uninitialized btyes in a write() syscall
-		}
-		// add it
-		s_hostBufs    [hostId] = buf;
-		s_hostBufSizes[hostId] = size;
+		s_hostBufs    [hostId] = newBuf;
+		s_hostBufSizes[hostId] = newSize;
 	}
+	char *buf = s_hostBufs[hostId];
 	// . first int32_t is how much of "buf" is used
 	// . includes everything even itself
 #ifdef _VALGRIND_
@@ -566,6 +552,7 @@ static bool sendBuffer(int32_t hostId) {
 		// . let storeRec() do all the allocating...
 		// . only let the buffer go once multicast succeeds
 		s_hostBufs [ hostId ] = NULL;
+		s_hostBufSizes[hostId] = 0;
 		// success
 		return true;
 	}
