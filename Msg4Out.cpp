@@ -19,6 +19,7 @@
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
 #include <algorithm>
+#include <deque>
 
 
 #ifdef _VALGRIND_
@@ -59,9 +60,9 @@ static int32_t  s_numHostBufs;
 // . buffer will be more than 32k if the record to add is larger than 32k
 #define MINHOSTBUFSIZE (32*1024)
 
-// the linked list of Msg4s waiting in line
-static Msg4 *s_msg4Head = NULL;
-static Msg4 *s_msg4Tail = NULL;
+//fifo queue of msg4s that haven't finished yet
+static std::deque<Msg4*> s_queuedMsg4s;
+static GbMutex s_mtxQueuedMsg4s;
 
 
 static void sleepCallback4(int bogusfd, void *state);
@@ -104,8 +105,7 @@ bool Msg4::initializeOutHandling() {
 	// last guy has nobody after him
 
 	// nobody is waiting in line
-	s_msg4Head = NULL;
-	s_msg4Tail = NULL;
+	s_queuedMsg4s.clear();
 
 	// . restore state from disk
 	// . false means repair is not active
@@ -157,7 +157,6 @@ Msg4::Msg4() : m_inUse(false) {
 	m_metaList = NULL;
 	m_metaListSize = 0;
 	m_currentPtr = NULL;
-	m_next = NULL;
 }
 
 // why wasn't this saved in addsinprogress.dat file?
@@ -174,17 +173,21 @@ bool hasAddsInQueue() {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
 	// if there is an outstanding multicast...
-	ScopedLock sl(s_mtxMcasts);
-	if ( s_multicastInUseCount>0 ) {
-		logTrace( g_conf.m_logTraceMsg4, "END - multicast waiting, returning true" );
-		return true;
+	{
+		ScopedLock sl(s_mtxMcasts);
+		if ( s_multicastInUseCount>0 ) {
+			logTrace( g_conf.m_logTraceMsg4, "END - multicast waiting, returning true" );
+			return true;
+		}
 	}
-	sl.unlock();
 	
 	// if we have a msg4 waiting in line...
-	if ( s_msg4Head ) {
-		logTrace( g_conf.m_logTraceMsg4, "END - msg4 waiting, returning true" );
-		return true;
+	{
+		ScopedLock sl(s_mtxQueuedMsg4s);
+		if(!s_queuedMsg4s.empty()) {
+			logTrace( g_conf.m_logTraceMsg4, "END - msg4 waiting, returning true" );
+			return true;
+		}
 	}
 		
 	// if we have a host buf that has something in it...
@@ -233,25 +236,25 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	m_state        = state;
 	m_callback     = callback;
 	m_rdbId        = rdbId;
-	m_next         = NULL;
 	m_shardOverride = shardOverride;
 
  retry:
 
 	// get in line if there's a line
-	if ( s_msg4Head ) {
-		// add ourselves to the line
-		s_msg4Tail->m_next = this;
-		// we are the new tail
-		s_msg4Tail = this;
-		// debug log. seems to happen a lot if not using threads..
-		if ( g_jobScheduler.are_new_jobs_allowed() )
-			log(LOG_DEBUG, "msg4: queueing body msg4=0x%" PTRFMT"",(PTRTYPE)this);
-		// mark it
-		m_inUse = true;
-		// all done then, but return false so caller does not free
-		// this msg4
-		return false;
+	{
+		ScopedLock sl(s_mtxQueuedMsg4s);
+		if(!s_queuedMsg4s.empty()) {
+			// add ourselves to the line
+			s_queuedMsg4s.push_back(this);
+			// debug log. seems to happen a lot if not using threads..
+			if ( g_jobScheduler.are_new_jobs_allowed() )
+				log(LOG_DEBUG, "msg4: queueing body msg4=0x%" PTRFMT"",(PTRTYPE)this);
+			// mark it
+			m_inUse = true;
+			// all done then, but return false so caller does not free
+			// this msg4
+			return false;
+		}
 	}
 
 	// then do it
@@ -269,9 +272,12 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	// . FURTHEMORE the multicast seems to always be called with
 	//   MAX_NICENESS so i'm not sure how niceness 0 will really help
 	//   with any of this stuff.
-	if ( s_msg4Head || s_msg4Tail ) {
-		log( LOG_WARN, "msg4: got unexpected head");
-		goto retry;
+	{
+		ScopedLock sl(s_mtxQueuedMsg4s);
+		if(!s_queuedMsg4s.empty()) {
+			log( LOG_WARN, "msg4: got unexpected head");
+			goto retry;
+		}
 	}
 
 	// . spider hang bug
@@ -289,8 +295,10 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	//   all recs in the list
 	// . we are the only one in line, otherwise, we would have exited
 	//   the start of this function
-	s_msg4Head = this;
-	s_msg4Tail = this;
+	{
+		ScopedLock sl(s_mtxQueuedMsg4s);
+		s_queuedMsg4s.push_back(this);
+	}
 	
 	// return false so caller blocks. we will call his callback
 	// when we are able to add his list to the hostBufs[] queue
@@ -299,7 +307,8 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 }
 
 bool Msg4::isInLinkedList(const Msg4 *msg4) {
-	for(Msg4 *m = s_msg4Head; m; m = m->m_next)
+	ScopedLock sl(s_mtxQueuedMsg4s);
+	for(auto m : s_queuedMsg4s)
 		if(m == msg4)
 			return true;
 	return false;
@@ -643,25 +652,20 @@ static void gotReplyWrapper4(void *state , void *state2) {
 void Msg4::storeLineWaiters ( ) {
 	// try to store all the msg4's lists that are waiting in line
 	for (;;) {
-		Msg4 *msg4 = s_msg4Head;
-
-		// now were we waiting on a multicast to return in order to send
-		// another request?  return if not.
-		if (!msg4) {
-			return;
+		Msg4 *msg4;
+		{
+			ScopedLock sl(s_mtxQueuedMsg4s);
+			if(s_queuedMsg4s.empty())
+				return;
+			msg4 = s_queuedMsg4s.front();
+			s_queuedMsg4s.pop_front();
 		}
 
 		// grab the first Msg4 in line. ret fls if blocked adding more of list.
 		if (!msg4->addMetaList2()) {
+			ScopedLock sl(s_mtxQueuedMsg4s);
+			s_queuedMsg4s.push_front(msg4);
 			return;
-		}
-
-		// hey, we were able to store that Msg4's list, remove him
-		s_msg4Head = msg4->m_next;
-
-		// empty? make tail NULL too then
-		if (!s_msg4Head) {
-			s_msg4Tail = NULL;
 		}
 
 		// . if his callback was NULL, then was loaded in loadAddsInProgress()
