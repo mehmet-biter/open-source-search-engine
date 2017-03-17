@@ -54,22 +54,8 @@ class SpiderColl {
 
 	bool m_useTree;
 
-	//bool m_lastDoledbReadEmpty;
-	//bool m_encounteredDoledbRecs;
-	//int64_t m_numRoundsDone;
-
-	//bool           m_bestRequestValid;
-	//char           m_bestRequestBuf[MAX_BEST_REQUEST_SIZE];
-	//SpiderRequest *m_bestRequest;
-	//uint64_t       m_bestSpiderTimeMS;
-	//int32_t           m_bestMaxSpidersPerIp;
-
 	bool           m_lastReplyValid;
 	char           m_lastReplyBuf[MAX_SP_REPLY_SIZE];
-
-	// doledbkey + dataSize + bestRequestRec
-	//char m_doleBuf[MAX_DOLEREC_SIZE];
-	//SafeBuf m_doleBuf;
 
 	bool m_isLoading;
 
@@ -144,10 +130,6 @@ class SpiderColl {
 
 	// save us scanning empty priorities
 	char m_isDoledbEmpty [MAX_SPIDER_PRIORITIES];
-
-	// are all priority slots empt?
-	//int32_t m_allDoledbPrioritiesEmpty;
-	//int32_t m_lastEmptyCheck; 
 
 	// maps priority to first ufn that uses that
 	// priority. map to -1 if no ufn uses it. that way when we scan
