@@ -66,11 +66,6 @@ static int32_t  s_numHostBufs;
 static Msg4 *s_msg4Head = NULL;
 static Msg4 *s_msg4Tail = NULL;
 
-// . TODO: use this instead of spiderrestore.dat
-// . call this once for every Msg14 so it can add all at once...
-// . make Msg14 add the links before anything else since that uses Msg10
-// . also, need to update spiderdb rec for the url in Msg14 using Msg4 too!
-// . need to add support for passing in array of lists for Msg14
 
 static void sleepCallback4(int bogusfd, void *state);
 static void flushLocal();
@@ -531,12 +526,8 @@ static bool sendBuffer(int32_t hostId) {
 		return false;
 	}
 
-	// get groupId
-	//uint32_t groupId = g_hostdb.getGroupIdFromHostId ( hostId );
 	Host *h = g_hostdb.getHost(hostId);
 	uint32_t shardNum = h->m_shardNum;
-	// get group #
-	//int32_t groupNum = g_hostdb.getGroupNum ( groupId );
 
 	// sanity check. our clock must be in sync with host #0's or with
 	// a host from his group, group #0
@@ -573,7 +564,6 @@ static bool sendBuffer(int32_t hostId) {
 	// . in that case we should restart from the top and we will add
 	//   the dead host ids to the top, and multicast will avoid sending
 	//   to hostids that are dead now
-	// key is useless for us
 	// timeout was 60 seconds, but if we saved the addsinprogress at the wrong time we might miss
 	// it when its between having timed out and having been resent by us!
 	if (mcast->send(request, requestSize, msg_type_4, false, shardNum, true, 0, (void *)(PTRTYPE)allocSize, (void *)mcast, gotReplyWrapper4, multicast_infinite_send_timeout, MAX_NICENESS, -1, true)) {
@@ -717,9 +707,6 @@ bool saveAddsInProgress(const char *prefix) {
 
 	if ( g_conf.m_readOnlyMode ) return true;
 
-	// this does not work so skip it for now
-	//return true;
-
 	// open the file
 	char filename[1024];
 
@@ -761,21 +748,6 @@ bool saveAddsInProgress(const char *prefix) {
 
 	// save in progress msg4 requests too!
 	g_udpServer.saveActiveSlots(fd, msg_type_4);
-
-	// MDW: if msg4 was stored in the linked list then caller 
-	// never got his callback called, so the spider will redo
-	// this url later...
-
-	// . serialize each Msg4 that is waiting in line
-	// . need to preserve their list ptrs so to avoid re-adds?
-	/*
-	Msg4 *msg4 = s_msg4Head;
-	while ( msg4 ) {
-		msg4->save ( fd );
-		// next msg4
-		msg4 = msg4->m_next;
-	}
-	*/
 
 	// all done
 	close ( fd );
