@@ -31,8 +31,6 @@ public:
 	static bool isInLinkedList(const Msg4 *msg4);
 	static void storeLineWaiters();
 
-	SafeBuf m_tmpBuf;
-
 private:
 	bool addMetaList2();
 

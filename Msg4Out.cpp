@@ -394,9 +394,6 @@ bool Msg4::addMetaList2 ( ) {
 		return false;
 	}
 
-	// in case this was being used to hold the data, free it
-	m_tmpBuf.purge();
-
 	logTrace( g_conf.m_logTraceMsg4, "END - OK, true" );
 	return true;
 }
