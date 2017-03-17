@@ -924,7 +924,7 @@ bool loadAddsInProgress(const char *prefix) {
 		// sanity check
 		if ( *(int32_t *)buf != used ) {
 			log(LOG_ERROR, "%s:%s: file %s is bad.",__FILE__,__func__,filename);
-			g_process.shutdownAbort(false);
+			return false;
 		}
 		// set the array
 		s_hostBufs     [i] = buf;
