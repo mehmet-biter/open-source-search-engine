@@ -15,6 +15,7 @@
 #include "types.h"
 #include "rdbid_t.h"
 #include "Sanity.h"
+#include "GbMutex.h"
 #include <atomic>
 
 /// @note ALC there used to be a sync host functionality that was removed
@@ -358,6 +359,8 @@ class Hostdb {
 	// returns best IP to use for "h" which is a host in hosts2.conf
 	int32_t getBestHosts2IP ( Host *h );
 
+	void updatePingInfo(Host *h, const PingInfo &pi);
+
 	// our host's info used by Udp* classes for internal communication
 	uint32_t  m_myIp;
 	uint32_t  m_myIpShotgun;
@@ -437,6 +440,9 @@ class Hostdb {
 	uint32_t getShardNumByTermId(const void *key) const;
 
 	uint32_t m_map[MAX_KSLOTS];
+
+private:
+	GbMutex m_mtxPinginfo; //protects the pinginfo in the hosts
 };
 
 extern class Hostdb g_hostdb;
