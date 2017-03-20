@@ -447,6 +447,7 @@ static bool storeRec(collnum_t      collnum,
 	int32_t  needForBuf = 4 + needForRec;
 	// 8 bytes for the zid
 	needForBuf += 8;
+	ScopedLock sl(s_mtxHostBuf[hostId]);
 	// expand host buffer if needed
 	if ( s_hostBufSizes[hostId] < needForBuf ) {
 		int32_t newSize = std::max(needForBuf,MINHOSTBUFSIZE);
@@ -462,7 +463,6 @@ static bool storeRec(collnum_t      collnum,
 		s_hostBufs    [hostId] = newBuf;
 		s_hostBufSizes[hostId] = newSize;
 	}
-	ScopedLock sl(s_mtxHostBuf[hostId]);
 
 	char *buf = s_hostBufs[hostId];
 	// . first int32_t is how much of "buf" is used
