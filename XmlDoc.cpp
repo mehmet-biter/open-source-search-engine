@@ -1264,12 +1264,20 @@ static void indexDocWrapper ( void *state ) {
 	// note it
 	THIS->setStatus ( "in index doc wrapper" );
 
+#if 0
+	//Running indexDoc()/indexDoc2()/IndexDoc3()/getMetaList() causes a bug in the
+	//masterloop/callback logic to manifest itself. It is tricky to track down so
+	//disable job submission for now until we have time to clean up the callback
+	//logic. The downside is that some large documents can temporarily stall the
+	//main thread.
+
 	//shovel this off to a thread
 	if(g_jobScheduler.submit(&indexDoc3,indexedDoc3,THIS,thread_type_spider_index,THIS->m_niceness)) {
 		//excellent
 		logTrace( g_conf.m_logTraceXmlDoc, "END, queued for thread" );
 		return;
 	}
+#endif
 	//threads not available (or oom or simmilar)
 	indexDoc3(THIS);
 	indexedDoc3(THIS, job_exit_normal);
