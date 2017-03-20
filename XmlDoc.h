@@ -439,7 +439,7 @@ public:
 	int32_t *getIndexCode ( ) ;
 	SafeBuf *getNewTagBuf ( ) ;
 
-	bool logIt ( class SafeBuf *bb = NULL ) ;
+	void logIt ( class SafeBuf *bb = NULL ) ;
 	bool m_doConsistencyTesting;
 	bool doConsistencyTest ( bool forceTest ) ;
 

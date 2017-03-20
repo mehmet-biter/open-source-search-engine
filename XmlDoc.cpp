@@ -2010,9 +2010,9 @@ bool XmlDoc::indexDoc2 ( ) {
 
 		// error with msg4? bail
 		if ( g_errno ) {
-			bool rc= logIt();
-			logTrace( g_conf.m_logTraceXmlDoc, "END, return %s. g_errno %" PRId32" after addMetaList", rc?"true":"false", g_errno);
-			return rc;
+			logIt();
+			logTrace( g_conf.m_logTraceXmlDoc, "END, return true. g_errno %" PRId32" after addMetaList", g_errno);
+			return true;
 		}
 
 	}
@@ -2029,10 +2029,10 @@ bool XmlDoc::indexDoc2 ( ) {
 	// flush it if we are injecting it in case the next thing we spider is dependent on this one
 	// remove in commit d23858c92d0d715d493a358ea69ecf77a5cc00fc
 
-	bool rc2 = logIt();
-	logTrace( g_conf.m_logTraceXmlDoc, "END, all done. Returning %s", rc2?"true":"false");
+	logIt();
+	logTrace( g_conf.m_logTraceXmlDoc, "END, all done. Returning true");
 
-	return rc2;
+	return true;
 }
 
 #if 0
@@ -11255,7 +11255,7 @@ int32_t *XmlDoc::getSpiderPriority ( ) {
 	return &m_priority;
 }
 
-bool XmlDoc::logIt (SafeBuf *bb ) {
+void XmlDoc::logIt (SafeBuf *bb ) {
 	// set errCode
 	int32_t errCode = m_indexCode;
 	if ( ! errCode && g_errno ) {
@@ -11280,7 +11280,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	Statistics::register_spider_time( isNew, errCode, m_httpStatus, took );
 
 	// do not log if we should not, saves some time
-	if ( ! g_conf.m_logSpideredUrls ) return true;
+	if ( ! g_conf.m_logSpideredUrls ) return;
 
 	const char *coll = "nuked";
 	CollectionRec *cr = getCollRec();
@@ -11749,7 +11749,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	sb->safePrintf(": %s",mstrerror(m_indexCode));
 
 	// if safebuf provided, do not log to log
-	if ( bb ) return true;
+	if ( bb ) return;
 
 	// log it out
 	logf ( LOG_INFO ,
@@ -11757,7 +11757,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	       //getFirstUrl()->getUrl(),
 	       sb->getBufStart() );
 
-	return true;
+	return;
 }
 
 

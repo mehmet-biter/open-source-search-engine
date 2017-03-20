@@ -464,9 +464,9 @@ static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *
 	// 8 bytes for the zid
 	needForBuf += 8;
 
+	ScopedLock sl(s_mtxHostBuf[hostId]);
 	if(!prepareBuffer(hostId, needForBuf))
 		return false;
-	ScopedLock sl(s_mtxHostBuf[hostId]);
 
 	char *buf = s_hostBufs[hostId];
 	// . first int32_t is how much of "buf" is used
