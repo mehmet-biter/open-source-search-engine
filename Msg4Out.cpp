@@ -73,6 +73,7 @@ static bool sendBuffer(int32_t hostId);
 static Multicast *getMulticast();
 static void returnMulticast(Multicast *mcast);
 static bool prepareBuffer(int32_t hostId, int32_t needForBuf);
+static bool checkBufferSize(int32_t hostId, int32_t needForBuf);
 static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *rec, int32_t recSize);
 
 
@@ -303,7 +304,7 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 		ScopedLock sl(s_mtxQueuedMsg4s);
 		s_queuedMsg4s.push_back(this);
 	}
-	
+
 	// return false so caller blocks. we will call his callback
 	// when we are able to add his list to the hostBufs[] queue
 	// and then he can re-use this Msg4 class for other things.
@@ -318,6 +319,20 @@ bool Msg4::isInLinkedList(const Msg4 *msg4) {
 	return false;
 }
 
+struct RdbItem {
+	RdbItem(rdbid_t rdbId, int32_t hostId, const char *key, int32_t recSize)
+		: m_rdbId(rdbId)
+		, m_hostId(hostId)
+		, m_key(key)
+		, m_recSize(recSize) {
+	}
+
+	rdbid_t m_rdbId;
+	int32_t m_hostId;
+	const char *m_key;
+	int32_t m_recSize;
+};
+
 /// @todo ALC check if m_currentPtr is still needed
 bool Msg4::addMetaList2 ( ) {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
@@ -330,7 +345,11 @@ bool Msg4::addMetaList2 ( ) {
 #endif
 	if ( m_collnum < 0 ) { gbshutdownAbort(true); }
 
-	// store each record in the list into the send buffers
+	std::vector<std::pair<int32_t, std::vector<RdbItem>>> destHosts(g_hostdb.getNumHosts());
+	std::for_each(destHosts.begin(), destHosts.end(),
+	              [](std::pair<int32_t, std::vector<RdbItem>> items) { items.second.reserve(10 * 1024); });
+
+	// check for space
 	for ( ; p < pend ; ) {
 		// first is rdbId
 		rdbid_t rdbId = m_rdbId;
@@ -376,69 +395,158 @@ bool Msg4::addMetaList2 ( ) {
 
 		// skip over the data, if any
 		p += dataSize;
-		
+
 		// breach us?
 		if ( p > pend ) { gbshutdownCorrupted(); }
- 		
+
 		// convert the gid to the hostid of the first host in this
 		// group. uses a quick hash table.
 		Host *hosts = g_hostdb.getShard ( shardNum );
 		int32_t hostId = hosts[0].m_hostId;
 
+#ifdef _VALGRIND_
+		VALGRIND_CHECK_MEM_IS_DEFINED(key,p-key);
+#endif
+
 		logTrace(g_conf.m_logTraceMsg4, "  rdb=%s key=%s keySize=%" PRId32" isDel=%d dataSize=%" PRId32" shardNum=%" PRId32" hostId=%" PRId32,
 		         getDbnameFromId(rdbId), KEYSTR(key, ks), ks, del, dataSize, shardNum, hostId);
 
-		// . add that rec to this groupId, gid, includes the key
-		// . these are NOT allowed to be compressed (half bit set)
-		//   and this point
-		// . this returns false and sets g_errno on failure
-#ifdef _VALGRIND_
-	VALGRIND_CHECK_MEM_IS_DEFINED(key,p-key);
-#endif
-		if ( storeRec ( m_collnum, rdbId, hostId, key, p - key )) {
-			// . point to next record
-			// . will point past records if no more left!
-			m_currentPtr = p;
+		int32_t recSize = p - key;
 
-			// get next rec
+		auto &destHost = destHosts[hostId];
+
+		// how many bytes do we need to store the record?
+		// collnum/rdbId(1)/recSize(4bytes)/recData
+		destHost.first += (sizeof(collnum_t) + 1 + 4 + recSize);
+		destHost.second.emplace_back(rdbId, hostId, key, recSize);
+	}
+
+	// reserve necessary space
+	for (size_t hostId = 0; hostId < destHosts.size(); ++hostId) {
+		auto destHost = destHosts[hostId];
+		if (destHost.first == 0) {
 			continue;
 		}
 
-		// g_errno is not set if the store rec could not send the
-		// buffer because no multicast was available
-		if ( g_errno ) {
-			logError("build: Msg4 storeRec had error: %s.", mstrerror(g_errno));
+		// +4 for USED; +8 for zid
+		int32_t neededSpaceForBuf = destHost.first + 4 + 8;
+
+		ScopedLock sl(s_mtxHostBuf[hostId]);
+
+		// check size/flush buffer
+		if (!checkBufferSize(hostId, destHost.first)) {
+			logTrace(g_conf.m_logTraceMsg4, "Unable to flush buffer");
+			return false;
 		}
 
-		// clear this just in case
-		g_errno = 0;
+		// prepare buffer
+		if (!prepareBuffer(hostId, neededSpaceForBuf)) {
+			logTrace(g_conf.m_logTraceMsg4, "Unable to prepare buffer");
+			return false;
+		}
 
-		// if g_errno was not set, this just means we do not have
-		// room for the data yet, and try again later
-		return false;
+		// add to buffer
+		for (auto const &rdbItem : destHost.second) {
+			// . add that rec to this groupId, gid, includes the key
+			// . these are NOT allowed to be compressed (half bit set)
+			//   and this point
+			// . this returns false and sets g_errno on failure
+			if (storeRec(m_collnum, rdbItem.m_rdbId, rdbItem.m_hostId, rdbItem.m_key, rdbItem.m_recSize)) {
+				// . point to next record
+				// . will point past records if no more left!
+				m_currentPtr = p;
+
+				// get next rec
+				continue;
+			}
+
+			// g_errno is not set if the store rec could not send the
+			// buffer because no multicast was available
+			if (g_errno) {
+				logError("build: Msg4 storeRec had error: %s.", mstrerror(g_errno));
+			}
+
+			// clear this just in case
+			g_errno = 0;
+
+			// if g_errno was not set, this just means we do not have
+			// room for the data yet, and try again later
+			return false;
+		}
 	}
 
 	logTrace( g_conf.m_logTraceMsg4, "END - OK, true" );
 	return true;
 }
 
+static bool checkBufferSize(int32_t hostId, int32_t needForBuf) {
+	char *buf = s_hostBufs[hostId];
+	if (!buf) {
+		// we don't need to flush buffer if there is no buffer
+		return true;
+	}
+
+	// . first int32_t is how much of "buf" is used
+	// . includes everything even itself
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(buf,4);
+#endif
+
+	int32_t *usedSizePtr = (int32_t *)buf;
+
+	// sanity chec. "used" must include the 4 bytes of itself
+	if (*usedSizePtr < 12) {
+		gbshutdownAbort(true);
+	}
+
+	// how much total buf space do we have, used or unused?
+	int32_t *maxSizePtr = &s_hostBufSizes[hostId];
+
+	// how many bytes are available in "buf"?
+	int32_t avail = *maxSizePtr - *usedSizePtr;
+
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(buf+4+8,*usedSizePtr-4-8);
+#endif
+
+	if (avail < needForBuf) {
+		// . send what is already in the buffer and clear it
+		// . will set s_hostBufs[hostId] to NULL
+		// . this will return false if no available Multicasts to
+		//   send the buffer, in which case we must tell the caller
+		//   to block and wait for us to call his callback, only then
+		//   will he be able to proceed. we will call his callback
+		//   as soon as we can copy... use this->m_msg1 to add the
+		//   list that was passed in...
+		if (!sendBuffer(hostId)) {
+			return false;
+		}
+	}
+
+	return true;
+}
 
 static bool prepareBuffer(int32_t hostId, int32_t needForBuf) {
+	logTrace(true, "BEGIN hostId=%" PRId32" needForBuf=%" PRId32, hostId, needForBuf);
+
 	// expand host buffer if needed
-	if ( s_hostBufSizes[hostId] < needForBuf ) {
+	if (s_hostBufSizes[hostId] < needForBuf) {
 		int32_t newSize = std::max(needForBuf,MINHOSTBUFSIZE);
 		char *newBuf = (char *)mrealloc(s_hostBufs[hostId], s_hostBufSizes[hostId], newSize, "Msg4a");
-		if(!newBuf) // OOM -> we cannot send this msg
+		if (!newBuf) { // OOM -> we cannot send this msg
 			return false;
+		}
 
-		if(s_hostBufSizes[hostId]==0) {
+		if (s_hostBufSizes[hostId] == 0) {
 			// if we are making a brand new buf, initialize the used size to itself(4) PLUS the zid (8 bytes)
 			*(int32_t*)newBuf = 4 + 8;
 			*(int64_t*)(newBuf+4) = 0; //clear zid. Not needed, but otherwise leads to uninitialized bytes in a write() syscall
 		}
-		s_hostBufs    [hostId] = newBuf;
+
+		s_hostBufs[hostId] = newBuf;
 		s_hostBufSizes[hostId] = newSize;
 	}
+
 	return true;
 }
 
@@ -453,51 +561,17 @@ static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *
 	VALGRIND_CHECK_MEM_IS_DEFINED(&recSize,sizeof(recSize));
 	VALGRIND_CHECK_MEM_IS_DEFINED(rec,recSize);
 #endif
-	// loop back up here if you have to flush the buffer
- retry:
-
-	// . how many bytes do we need to store the request?
-	// . USED(4 bytes)/collnum/rdbId(1)/recSize(4bytes)/recData
-	// . "USED" is only used for mallocing new slots really
-	int32_t  needForRec = sizeof(collnum_t) + 1 + 4 + recSize;
-	int32_t  needForBuf = 4 + needForRec;
-	// 8 bytes for the zid
-	needForBuf += 8;
-
-	ScopedLock sl(s_mtxHostBuf[hostId]);
-	if(!prepareBuffer(hostId, needForBuf))
-		return false;
 
 	char *buf = s_hostBufs[hostId];
+
 	// . first int32_t is how much of "buf" is used
 	// . includes everything even itself
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf,4);
 #endif
+
 	int32_t  used = *(int32_t *)buf;
-	// sanity chec. "used" must include the 4 bytes of itself
-	if ( used < 12 ) { gbshutdownAbort(true); }
-	// how much total buf space do we have, used or unused?
-	int32_t  maxSize = s_hostBufSizes[hostId];
-	// how many bytes are available in "buf"?
-	int32_t  avail   = maxSize - used;
-#ifdef _VALGRIND_
-	VALGRIND_CHECK_MEM_IS_DEFINED(buf+4+8,used-4-8);
-#endif
-	// if we can not fit list into buffer...
-	if ( avail < needForRec ) {
-		// . send what is already in the buffer and clear it
-		// . will set s_hostBufs[hostId] to NULL
-		// . this will return false if no available Multicasts to
-		//   send the buffer, in which case we must tell the caller
-		//   to block and wait for us to call his callback, only then
-		//   will he be able to proceed. we will call his callback
-		//   as soon as we can copy... use this->m_msg1 to add the
-		//   list that was passed in...
-		if ( ! sendBuffer ( hostId ) ) return false;
-		// now the buffer should be empty, try again
-		goto retry;
-	}
+
 	// point to where to store the list
 	char *start = buf + used;
 	char *p     = start;
@@ -506,12 +580,15 @@ static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *
 	*(char      *)p = rdbId  ; p += 1;
 	*(int32_t      *)p = recSize; p += 4;
 	memcpy( p , rec , recSize ); p += recSize;
+
 	// update buffer used
 	*(int32_t *)buf = used + (p - start);
+
 	// all done, did not "block"
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(start,p-start);
 #endif
+
 	return true;
 }
 
@@ -523,7 +600,10 @@ static bool sendBuffer(int32_t hostId) {
 	char *buf       = s_hostBufs    [hostId];
 	int32_t  allocSize = s_hostBufSizes[hostId];
 	// skip if empty
-	if ( ! buf ) return true;
+	if ( ! buf ) {
+		return true;
+	}
+
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf,4);
 #endif
@@ -531,7 +611,10 @@ static bool sendBuffer(int32_t hostId) {
 	// . includes everything, including itself!
 	int32_t used = *(int32_t *)buf;
 	// if empty, bail
-	if ( used <= 12 ) return true;
+	if ( used <= 12 ) {
+		return true;
+	}
+
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf+4+8,used-4-8);
 #endif
@@ -539,7 +622,6 @@ static bool sendBuffer(int32_t hostId) {
 	Multicast *mcast = getMulticast();
 	// if we could not get one, wait in line for one to become available
 	if ( ! mcast ) {
-		//logf(LOG_DEBUG,"build: no mcast available");
 		return false;
 	}
 
@@ -584,7 +666,7 @@ static bool sendBuffer(int32_t hostId) {
 	}
 
 	// g_errno should be set
-	log("net: Had error when sending request to add data to rdb shard "
+	logError("net: Had error when sending request to add data to rdb shard "
 	    "#%" PRIu32": %s.", shardNum,mstrerror(g_errno));
 
 	returnMulticast ( mcast );

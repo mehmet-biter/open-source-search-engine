@@ -287,10 +287,6 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 		int32_t recSize = *(int32_t *)p;
 		p += 4;
 
-		if(rdbId==RDB_POSDB && recSize==18)
-			logTrace(g_conf.m_logTraceMsg4, "msg4: addMetaList: key=%s",
-				 KEYSTR(p, 18));
-
 		// . get the rdb to which it belongs, use Msg0::getRdb()
 		// . do not call this for every rec if we do not have to
 		if (rdbId != lastRdbId || !rdb) {
