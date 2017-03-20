@@ -1122,7 +1122,8 @@ public:
 
 	bool m_freed;
 
-	bool m_indexedDoc; //indexDoc() perfomrned completely
+	bool m_indexDocJobOutstanding; //indexDoc job submitted
+	bool m_indexedDoc; //indexDoc() performed completely
 
 	bool m_msg4Waiting;
 	bool m_msg4Launched;
