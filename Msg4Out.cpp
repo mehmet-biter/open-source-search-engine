@@ -527,8 +527,6 @@ static bool checkBufferSize(int32_t hostId, int32_t needForBuf) {
 }
 
 static bool prepareBuffer(int32_t hostId, int32_t needForBuf) {
-	logTrace(true, "BEGIN hostId=%" PRId32" needForBuf=%" PRId32, hostId, needForBuf);
-
 	// expand host buffer if needed
 	if (s_hostBufSizes[hostId] < needForBuf) {
 		int32_t newSize = std::max(needForBuf,MINHOSTBUFSIZE);
