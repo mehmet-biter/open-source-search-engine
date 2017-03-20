@@ -87,6 +87,9 @@ eval "${COVERITY_SCAN_BUILD_COMMAND_PREPEND}"
 COVERITY_UNSUPPORTED=1 cov-build --dir $RESULTS_DIR $COV_BUILD_OPTIONS $COVERITY_SCAN_BUILD_COMMAND
 cov-import-scm --dir $RESULTS_DIR --scm git --log $RESULTS_DIR/scm_log.txt 2>&1
 
+# show log
+cat $RESULTS_DIR/scm_log.txt
+
 # Upload results
 echo -e "\033[33;1mTarring Coverity Scan Analysis results...\033[0m"
 RESULTS_ARCHIVE=analysis-results.tgz
