@@ -88,6 +88,10 @@ COVERITY_UNSUPPORTED=1 cov-build --dir $RESULTS_DIR $COV_BUILD_OPTIONS $COVERITY
 cov-import-scm --dir $RESULTS_DIR --scm git --log $RESULTS_DIR/scm_log.txt 2>&1
 
 # show log
+echo -e "\033[33;1mShow Coverity Scan build-log...\033[0m"
+cat $RESULTS_DIR/build-log.txt
+
+echo -e "\033[33;1mShow Coverity Scan scm_log...\033[0m"
 cat $RESULTS_DIR/scm_log.txt
 
 # Upload results
