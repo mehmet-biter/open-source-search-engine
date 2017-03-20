@@ -72,7 +72,8 @@ static void gotReplyWrapper4(void *state, void *state2);
 static bool sendBuffer(int32_t hostId);
 static Multicast *getMulticast();
 static void returnMulticast(Multicast *mcast);
-static bool storeRec(collnum_t collnum, char rdbId, uint32_t gid, int32_t hostId, const char *rec, int32_t recSize);
+static bool prepareBuffer(int32_t hostId, int32_t needForBuf);
+static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *rec, int32_t recSize);
 
 
 
@@ -317,6 +318,7 @@ bool Msg4::isInLinkedList(const Msg4 *msg4) {
 	return false;
 }
 
+/// @todo ALC check if m_currentPtr is still needed
 bool Msg4::addMetaList2 ( ) {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
@@ -384,7 +386,7 @@ bool Msg4::addMetaList2 ( ) {
 		int32_t hostId = hosts[0].m_hostId;
 
 		logTrace(g_conf.m_logTraceMsg4, "  rdb=%s key=%s keySize=%" PRId32" isDel=%d dataSize=%" PRId32" shardNum=%" PRId32" hostId=%" PRId32,
-		         getDbnameFromId(rdbId), KEYSTR(key, ks), ks, del, shardNum, dataSize, hostId);
+		         getDbnameFromId(rdbId), KEYSTR(key, ks), ks, del, dataSize, shardNum, hostId);
 
 		// . add that rec to this groupId, gid, includes the key
 		// . these are NOT allowed to be compressed (half bit set)
@@ -393,7 +395,7 @@ bool Msg4::addMetaList2 ( ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(key,p-key);
 #endif
-		if ( storeRec ( m_collnum, rdbId, shardNum, hostId, key, p - key )) {
+		if ( storeRec ( m_collnum, rdbId, hostId, key, p - key )) {
 			// . point to next record
 			// . will point past records if no more left!
 			m_currentPtr = p;
@@ -405,7 +407,7 @@ bool Msg4::addMetaList2 ( ) {
 		// g_errno is not set if the store rec could not send the
 		// buffer because no multicast was available
 		if ( g_errno ) {
-			log( LOG_ERROR, "%s:%s: build: Msg4 storeRec had error: %s.", __FILE__, __func__, mstrerror(g_errno) );
+			logError("build: Msg4 storeRec had error: %s.", mstrerror(g_errno));
 		}
 
 		// clear this just in case
@@ -421,33 +423,7 @@ bool Msg4::addMetaList2 ( ) {
 }
 
 
-// . modify each Msg4 request as follows
-// . collnum(2bytes)|rdbId(1bytes)|listSize&rawlistData|...
-// . store these requests in the buffer just like that
-static bool storeRec(collnum_t      collnum,
-		     char           rdbId,
-		     uint32_t       shardNum,
-		     int32_t        hostId,
-		     const char    *rec,
-		     int32_t        recSize ) {
-#ifdef _VALGRIND_
-	VALGRIND_CHECK_MEM_IS_DEFINED(&collnum,sizeof(collnum));
-	VALGRIND_CHECK_MEM_IS_DEFINED(&rdbId,sizeof(rdbId));
-	VALGRIND_CHECK_MEM_IS_DEFINED(&shardNum,sizeof(shardNum));
-	VALGRIND_CHECK_MEM_IS_DEFINED(&recSize,sizeof(recSize));
-	VALGRIND_CHECK_MEM_IS_DEFINED(rec,recSize);
-#endif
-	// loop back up here if you have to flush the buffer
- retry:
-
-	// . how many bytes do we need to store the request?
-	// . USED(4 bytes)/collnum/rdbId(1)/recSize(4bytes)/recData
-	// . "USED" is only used for mallocing new slots really
-	int32_t  needForRec = sizeof(collnum_t) + 1 + 4 + recSize;
-	int32_t  needForBuf = 4 + needForRec;
-	// 8 bytes for the zid
-	needForBuf += 8;
-	ScopedLock sl(s_mtxHostBuf[hostId]);
+static bool prepareBuffer(int32_t hostId, int32_t needForBuf) {
 	// expand host buffer if needed
 	if ( s_hostBufSizes[hostId] < needForBuf ) {
 		int32_t newSize = std::max(needForBuf,MINHOSTBUFSIZE);
@@ -463,6 +439,34 @@ static bool storeRec(collnum_t      collnum,
 		s_hostBufs    [hostId] = newBuf;
 		s_hostBufSizes[hostId] = newSize;
 	}
+	return true;
+}
+
+
+// . modify each Msg4 request as follows
+// . collnum(2bytes)|rdbId(1bytes)|listSize&rawlistData|...
+// . store these requests in the buffer just like that
+static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *rec, int32_t recSize) {
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(&collnum,sizeof(collnum));
+	VALGRIND_CHECK_MEM_IS_DEFINED(&rdbId,sizeof(rdbId));
+	VALGRIND_CHECK_MEM_IS_DEFINED(&recSize,sizeof(recSize));
+	VALGRIND_CHECK_MEM_IS_DEFINED(rec,recSize);
+#endif
+	// loop back up here if you have to flush the buffer
+ retry:
+
+	// . how many bytes do we need to store the request?
+	// . USED(4 bytes)/collnum/rdbId(1)/recSize(4bytes)/recData
+	// . "USED" is only used for mallocing new slots really
+	int32_t  needForRec = sizeof(collnum_t) + 1 + 4 + recSize;
+	int32_t  needForBuf = 4 + needForRec;
+	// 8 bytes for the zid
+	needForBuf += 8;
+
+	ScopedLock sl(s_mtxHostBuf[hostId]);
+	if(!prepareBuffer(hostId, needForBuf))
+		return false;
 
 	char *buf = s_hostBufs[hostId];
 	// . first int32_t is how much of "buf" is used
@@ -515,7 +519,6 @@ static bool storeRec(collnum_t      collnum,
 //   true otherwise
 // . returns false and sets g_errno on error
 static bool sendBuffer(int32_t hostId) {
-	//logf(LOG_DEBUG,"build: sending buf");
 	// how many bytes of the buffer are occupied or "in use"?
 	char *buf       = s_hostBufs    [hostId];
 	int32_t  allocSize = s_hostBufSizes[hostId];
