@@ -92,7 +92,6 @@ XmlDoc::XmlDoc() {
 	void *pend = &m_VALIDEND;
 	memset ( p , 0 , (char *)pend - (char *)p );//(int32_t)pend-(int32_t)p
 	m_msg22Request.m_inUse = 0;
-	m_indexDocJobOutstanding = false;
 	m_indexedDoc = false;
 	m_msg4Waiting = false;
 	m_msg4Launched = false;
@@ -151,7 +150,6 @@ void XmlDoc::reset ( ) {
 
 	m_loaded = false;
 
-	m_indexDocJobOutstanding = false;
 	m_indexedDoc = false;
 	m_msg4Launched = false;
 
@@ -1236,7 +1234,6 @@ void XmlDoc::setCallback ( void *state, bool (*callback) (void *state) ) {
 static void indexDoc3(void *state) {
 	XmlDoc *that = reinterpret_cast<XmlDoc*>(state);
 	logTrace( g_conf.m_logTraceXmlDoc, "Calling XmlDoc::indexDoc" );
-	that->m_indexDocJobOutstanding = false;
 	// return if it blocked
 	if (!that->indexDoc()) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, indexDoc blocked");
@@ -1265,12 +1262,6 @@ static void indexDocWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// make sure has not been freed from under us!
 	if ( THIS->m_freed ) { g_process.shutdownAbort(true);}
-	
-	if(THIS->m_indexDocJobOutstanding) {
-		log(LOG_DEBUG,"xmldoc: index-doc job already submitted");
-		return;
-	}
-	THIS->m_indexDocJobOutstanding = true;
 	// note it
 	THIS->setStatus ( "in index doc wrapper" );
 
@@ -1280,7 +1271,6 @@ static void indexDocWrapper ( void *state ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, queued for thread" );
 		return;
 	}
-	THIS->m_indexDocJobOutstanding = false;
 	//threads not available (or oom or simmilar)
 	indexDoc3(THIS);
 	indexedDoc3(THIS, job_exit_normal);
