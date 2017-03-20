@@ -1624,17 +1624,17 @@ int32_t RdbBase::getMinToMerge(const CollectionRec *cr, rdbid_t rdbId, int32_t m
 		log(LOG_INFO, "merge: Overriding min files to merge of %d with %d", m_minToMerge, minToMergeOverride);
 		return minToMergeOverride;
 	}
-	
-	// if m_minToMerge is -1 then we should let cr override, but if m_minToMerge
-	// is actually valid at this point, use it as is
-	if(m_minToMerge>0) {
-		log(LOG_INFO, "merge: Using already-set m_minToMerge of %d for %s", m_minToMerge, m_dbname);
-		return m_minToMerge;
-	}
-	
+
 	logTrace(g_conf.m_logTraceRdbBase, "m_minToMergeDefault: %d", m_minToMergeDefault);
 
-	int32_t result = m_minToMergeDefault;
+	// if m_minToMergeDefault is -1 then we should let cr override, but if m_minToMergeDefault
+	// is actually valid at this point, use it as is
+	if(m_minToMergeDefault>0) {
+		log(LOG_INFO, "merge: Using already-set m_minToMergeDefault of %d for %s", m_minToMergeDefault, m_dbname);
+		return m_minToMergeDefault;
+	}
+
+	int32_t result = -1;
 
 	// if the collection exist use its values
 	if (cr) {
