@@ -187,7 +187,6 @@ public:
 
 	int32_t  getNumNegativeKeys( collnum_t collnum ) const;
 	int32_t  getNumPositiveKeys( collnum_t collnum ) const;
-	int32_t  getNumTotalKeys(collnum_t collnum) const;
 
 	void setNumKeys ( class CollectionRec *cr ) ;
 
@@ -197,13 +196,6 @@ public:
 	// . includes the tree infrastructure as well as the data itself
 	int32_t getMemOccupied      ( ) const { return m_memOccupied; }
 	int32_t getMaxMem           ( ) const { return m_maxMem; }
-
-	// . like getMemOccupied() above but does not include left/right/parent
-	// . only includes occupied keys/sizes and the dataSizes themself
-	int32_t getMemOccupiedForList2 ( collnum_t collnum  ,
-				      const char     *startKey,
-				      const char     *endKey  ,
-				      int32_t      minRecSizes) const;
 
 	//  how much mem the tree would take if it were made into a list
 	int32_t getMemOccupiedForList() const;
@@ -228,19 +220,6 @@ public:
 		       int32_t    *numNegRecs ,   // = NULL 
 		       bool     useHalfKeys) const;
 
-	bool getList ( collnum_t collnum    ,
-		       const key96_t    &startKey    ,
-		       const key96_t    &endKey      ,
-		       int32_t     minRecSizes ,
-		       RdbList *list        ,
-		       int32_t    *numPosRecs  ,
-		       int32_t    *numNegRecs ,   // = NULL 
-		       bool     useHalfKeys ) const {
-		return getList(collnum,(const char *)&startKey,(const char *)&endKey,
-			       minRecSizes,list,numPosRecs,numNegRecs,
-			       useHalfKeys);
-	}
-
 	// estimate the size of the list defined by these keys
 	int32_t getListSize ( collnum_t collnum ,
 			   const char *startKey, const char *endKey,
@@ -261,6 +240,7 @@ public:
 			bool     useThread ,
 			void    *state     , 
 			void    (* callback)(void *state ) );
+
 	// this is called by a thread
 	bool fastSave_r() ;
 
@@ -268,7 +248,6 @@ public:
 
 	void verifyIntegrity() { } //todo
 	bool checkTree  ( bool printMsgs , bool doChainTest );
-	bool checkTree2 ( bool printMsgs , bool doChainTest );
 	bool fixTree    ( );
 
 	void disableWrites () { m_isWritable = false; }
@@ -286,6 +265,12 @@ public:
 	static void threadDoneWrapper(void *state, job_exit_t exit_type);
 
 private:
+	// . like getMemOccupied() above but does not include left/right/parent
+	// . only includes occupied keys/sizes and the dataSizes themself
+	int32_t getMemOccupiedForList2(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes) const;
+
+	bool checkTree2 ( bool printMsgs , bool doChainTest );
+
 	// used by fastSave() and fastLoad()
 	int32_t fastSaveBlock_r(int fd, int32_t start, int64_t offset);
 	int32_t fastLoadBlock(BigFile *f, int32_t start, int32_t totalNodes, RdbMem *stack, int64_t offset);

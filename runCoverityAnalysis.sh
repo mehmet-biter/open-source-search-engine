@@ -76,7 +76,7 @@ export PATH=$TOOL_DIR/bin:$PATH
 
 # Configure
 echo -e "\033[33;1mRunning Coverity Scan Configure Tool...\033[0m"
-cov-configure --comptype g++ --compiler $CXX
+cov-configure -co g++-5 -- -std=c++11 -march=core-avx-i -msse4.2
 
 # Build
 echo -e "\033[33;1mRunning Coverity Scan Analysis Tool...\033[0m"

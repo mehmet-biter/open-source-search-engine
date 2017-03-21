@@ -23,7 +23,6 @@ class StatPoint {
 
 #define MAX_POINTS 6000
 #define MAX_WIDTH  6
-//#define DY         1000              // pixels vertical
 #define DY         500              // pixels vertical
 #define DX         1000             // pixels across
 #define DT         (10*1000)        // time window, 10 seconds
@@ -54,11 +53,6 @@ class Stats {
 	StatPoint m_pts [ MAX_POINTS ];
 	int32_t      m_next;
 
-	// don't graph any points that start BEFORE this time because our
-	// sampling is not accurate because we had to throw points away
-	// due to the MAX_POINTS limit
-	//int64_t m_minWindowStartTime;
-
 	void addPoint ( StatPoint **points    ,
 			int32_t        *numPoints ,
 			StatPoint   *p         ) ;
@@ -84,8 +78,6 @@ class Stats {
 	int32_t      m_totalNumFails;
 	float     m_avgQueryTime;
 	float     m_successRate;
-	//int64_t m_readSignals;
-	//int64_t m_writeSignals;
 
 	// set in BigFile.cpp
 	int32_t      m_slowDiskReads;
@@ -95,25 +87,11 @@ class Stats {
 
 	time_t m_uptimeStart;
 
-	// Deduped stats
-	int32_t m_msg3aRecallCnt;
-	// when we have to re-requrest docid lists for each split, inc this one
-	int32_t m_msg3aSlowRecalls;
-	// when we just request more docids from the same tier
-	int32_t m_msg3aFastRecalls;
-	// how many resolutions did we get on each tier
-	//int32_t      m_tierHits [MAX_TIERS];
-	//int64_t m_tierTimes[MAX_TIERS];
-	// how many searches did not get enough results?
-	int32_t m_tier2Misses;
-
 	// one count for each CR_* defined in Msg51.h
 	int32_t m_filterStats[30];
 
 	int32_t m_msg3aRecalls[6];
 	SafeBuf m_keyCols;
-	//int32_t m_numTermsVsTier[14][MAX_TIERS];
-	//int32_t m_termsVsTierExp[14][MAX_TIERS][7];
 
 	// use m_start so we know what msg stats to clear with memset
 //	char      m_start;
@@ -150,13 +128,6 @@ class Stats {
 
 	int32_t m_totalOverflows;
 
-	// used by msg39
-	//int32_t m_recomputeCacheMissess;
-	// if the msg3a advances to the next tier, of course, it will be
-	// a cache miss, so don't count those, they are justified 
-	// recomputeCacheMisses
-	//int32_t m_icacheTierJumps;
-
 	int32_t m_compressedBytesIn;
 	int32_t m_uncompressedBytesIn;
 
@@ -191,8 +162,6 @@ class Stats {
 	int64_t m_compressBadCTypeBytesOut;
 
 	int64_t m_compressHasIframeDocs;
-	//int64_t m_compressHasIframeBytesIn;
-	//int64_t m_compressHasIframeBytesOut;
 
 	int64_t m_compressPlainLinkDocs;
 	int64_t m_compressPlainLinkBytesIn;
