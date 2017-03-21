@@ -31,72 +31,7 @@
 class BigFile;
 class RdbList;
 class RdbTree;
-class RdbBuckets;
-
-/**
- * Data is stored in m_keys
- *
- * when fixedDataSize == 0 (no data)
- * - recSize == keySize
- *
- * when fixedDataSize > 0 (fixed sized data)
- * - recSize == keySize + sizeof(char*)
- *
- * when fixedDataSize == -1 (variable sized data)
- * - recSize == keySize + sizeof(char*) + sizeof(int32_t)
- */
-class RdbBucket {
-public:
-	RdbBucket();
-	~RdbBucket();
-
-	bool set(RdbBuckets *parent, char *newbuf);
-	void reset();
-	void reBuf(char *newbuf);
-
-	const char *getFirstKey();
-	const char *getFirstKey() const { return const_cast<RdbBucket *>(this)->getFirstKey(); }
-
-	const char *getEndKey() const { return m_endKey; }
-
-	int32_t getNumKeys() const { return m_numKeys; }
-
-	const char *getKeys() const { return m_keys; }
-
-	collnum_t getCollnum() const { return m_collnum; }
-	void setCollnum(collnum_t c) { m_collnum = c; }
-
-	bool addKey(const char *key, const char *data, int32_t dataSize);
-
-	int32_t getNode(const char *key); //returns -1 if not found
-	int32_t getNumNegativeKeys() const;
-
-	bool getList(RdbList *list, const char *startKey, const char *endKey, int32_t minRecSizes,
-	             int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys);
-
-	bool deleteNode(int32_t i);
-
-	bool deleteList(RdbList *list);
-
-	//Save State
-	int64_t fastSave_r(int fd, int64_t offset);
-	int64_t fastLoad(BigFile *f, int64_t offset);
-	
-	//Debug
-	bool selfTest(const char *prevKey);
-	void printBucket(std::function<void(const char*, int32_t)> print_fn = nullptr);
-
-	bool sort();
-	RdbBucket *split(RdbBucket *newBucket);
-
-private:
-	char *m_endKey;
-	char *m_keys;
-	RdbBuckets *m_parent;
-	int32_t m_numKeys;
-	int32_t m_lastSorted;
-	collnum_t m_collnum;
-};
+class RdbBucket;
 
 class RdbBuckets {
 	friend class RdbBucket;
