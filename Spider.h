@@ -423,7 +423,7 @@ class Spiderdb {
 	// this rdb holds urls waiting to be spidered or being spidered
 	Rdb m_rdb;
 
-	static int64_t getUrlHash48( key128_t *k ) {
+	static int64_t getUrlHash48( const key128_t *k ) {
 		return (((k->n1)<<16) | k->n0>>(64-16)) & 0xffffffffffffLL;
 	}
 	
@@ -682,7 +682,7 @@ public:
 	static int32_t getNeededSize ( int32_t urlLen ) {
 		return sizeof(SpiderRequest) - (int32_t)MAX_URL_LEN + urlLen; }
 
-	int32_t getRecSize () { return m_dataSize + 4 + sizeof(key128_t); }
+	int32_t getRecSize () const { return m_dataSize + 4 + sizeof(key128_t); }
 
 	int32_t getUrlLen() {
 		return m_dataSize -
@@ -718,7 +718,7 @@ public:
 
 	void setDataSize ( );
 
-	int64_t  getUrlHash48() {
+	int64_t  getUrlHash48() const {
 		return Spiderdb::getUrlHash48( &m_key );
 	}
 

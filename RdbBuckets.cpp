@@ -1847,7 +1847,7 @@ bool RdbBuckets::delColl(collnum_t collnum) {
 int32_t RdbBuckets::addTree(RdbTree *rt) {
 	int32_t n = rt->getFirstNode();
 	int32_t count = 0;
-	char *data = NULL;
+	const char *data = NULL;
 
 	int32_t dataSize = m_fixedDataSize;
 

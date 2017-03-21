@@ -2517,7 +2517,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 		// skip empty nodes in tree
 		if ( m_tree.isEmpty(i) ) {marked++; continue; }
 		// get data ptr
-		char *data = m_tree.getData(i);
+		const char *data = m_tree.getData(i);
 		// and key ptr, if negative skip it
 		//char *key = m_tree.getKey(i);
 		//if ( (key[0] & 0x01) == 0x00 ) { occupied++; continue; }
@@ -2604,7 +2604,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 		// skip empty nodes in tree
 		if ( m_tree.isEmpty(i)) continue;
 		// update the data otherwise
-		char *data = m_tree.getData(i);
+		const char *data = m_tree.getData(i);
 		// sanity, ensure legit
 		if ( data < pstart ) { g_process.shutdownAbort(true); }
 		int32_t offset = data - pstart;

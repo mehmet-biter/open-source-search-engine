@@ -3488,8 +3488,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 	      node >= 0 ; 
 	      node = m_winnerTree.getNextNode ( node ) ) {
 		// get data for that
-		SpiderRequest *sreq2;
-		sreq2 = (SpiderRequest *)m_winnerTree.getData ( node );
+		const SpiderRequest *sreq2 = (const SpiderRequest *)m_winnerTree.getData ( node );
 		// sanity
 		if ( sreq2->m_firstIp != firstIp ) { g_process.shutdownAbort(true); }
 		//if ( sreq2->m_spiderTimeMS < 0 ) { g_process.shutdownAbort(true); }

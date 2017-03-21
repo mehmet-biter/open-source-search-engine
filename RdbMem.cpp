@@ -193,7 +193,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 			continue;
 		scanned++;
 		// get the ptr
-		char *data = tree->getData(i);
+		const char *data = tree->getData(i);
 		if(!data)
 			continue;
 		// how could it's data not be stored in here?
