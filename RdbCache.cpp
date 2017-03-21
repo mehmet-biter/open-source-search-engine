@@ -111,6 +111,17 @@ bool RdbCache::init ( int32_t  maxMem        ,
 		log(LOG_LOGIC,"db: cache for %s had negative maxRecs.",  dbname);
 		return false;
 	}
+
+	//temporary workaround for signed 32-bit overflow in addRecord()
+	//cache size is limited to 2^31 - BUFSIZE. Otherwise some of the internal calculations
+	//get overflow and we end up using negative indices to m_bufs[]
+	//The real solution would be to make the cache 64-bit clean (which it isn't today) and allow size> 2GB
+	static const int32_t maxMaxMem = 0x7FFFFFFF - BUFSIZE;
+	if(maxMem >= maxMaxMem) {
+		log(LOG_INFO,"db: cache size adjusted from %d to %d", maxMem, maxMaxMem);
+		maxMem = maxMaxMem;
+	}
+
 	// don't use more mem than this
 	m_maxMem     = maxMem;
 
