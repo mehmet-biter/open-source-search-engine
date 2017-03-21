@@ -3100,8 +3100,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			key192_t *oldwk = (key192_t *)m_winnerTable.getValueFromSlot ( winSlot );
 
 			// get the min hopcount  
-			SpiderRequest *wsreq ;
-			wsreq =(SpiderRequest *)m_winnerTree.getData(0,(char *)oldwk);
+			SpiderRequest *wsreq = (SpiderRequest *)m_winnerTree.getData(0,(char *)oldwk);
 			
 			if ( wsreq ) {
 				if ( sreq->m_hopCount < wsreq->m_hopCount )
@@ -3488,7 +3487,8 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 	      node >= 0 ; 
 	      node = m_winnerTree.getNextNode ( node ) ) {
 		// get data for that
-		const SpiderRequest *sreq2 = (const SpiderRequest *)m_winnerTree.getData ( node );
+		const SpiderRequest *sreq2 = reinterpret_cast<const SpiderRequest *>(m_winnerTree.getData(node));
+
 		// sanity
 		if ( sreq2->m_firstIp != firstIp ) { g_process.shutdownAbort(true); }
 		//if ( sreq2->m_spiderTimeMS < 0 ) { g_process.shutdownAbort(true); }
