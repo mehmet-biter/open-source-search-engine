@@ -6259,6 +6259,18 @@ void Parms::init ( ) {
 	m->m_group = 0;
 	m++;
 
+	m->m_title = "verify index";
+	m->m_desc  = "Ensure index being used for merging is valid."
+		"Helps to isolate corrupted global index. Used for debugging.";
+	m->m_cgi   = "vidx";
+	simple_m_set(Conf,m_verifyIndex);
+	m->m_def   = "0";
+	m->m_group = 0;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_group = 0;
+	m++;
+
 	m->m_title = "verify disk writes";
 	m->m_desc  = "Read what was written in a verification step. Decreases "
 		"performance, but may help fight disk corruption mostly on "

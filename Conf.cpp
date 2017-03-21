@@ -170,6 +170,7 @@ Conf::Conf ( ) {
 	m_useEtcHosts = false;
 	m_verifyTreeIntegrity = false;
 	m_verifyDumpedLists = false;
+	m_verifyIndex = false;
 	m_flushWrites = false;
 	m_verifyWrites = false;
 	m_corruptRetries = 0;
