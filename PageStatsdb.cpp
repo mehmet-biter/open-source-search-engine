@@ -169,12 +169,6 @@ static void genStatsGraphTable(SafeBuf *buf, StateStatsdb *st) {
 	g_statsdb.m_gw.purge();
 	g_statsdb.m_dupTable.reset();
 
-	//"<img src=\"/stats%" PRId32".gif\" height=%" PRId32" width=%" PRId32" "
-	//"border=\"0px\">"
-	//st->m_hostId,
-	//g_statsdb.getImgHeight(),
-	//g_statsdb.getImgWidth());
-
 	buf->safePrintf("</center>"
 		       //"class=\"statsdb_image\">"
 		       "</td></tr>\n");
