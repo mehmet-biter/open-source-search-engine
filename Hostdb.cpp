@@ -1286,7 +1286,7 @@ bool Hostdb::isDead ( int32_t hostId ) {
 	return isDead ( h );
 }
 
-bool Hostdb::isDead ( Host *h ) {
+bool Hostdb::isDead(const Host *h) {
 	if(h->m_retired)
 		return true; // retired means "don't use it", so it is essentially dead
 	if(g_hostdb.m_myHost == h)
@@ -1403,7 +1403,7 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 }
 
 // use the ip that is not dead, prefer eth0
-int32_t Hostdb::getBestIp ( Host *h ) {
+int32_t Hostdb::getBestIp(const Host *h) {
 	// if shotgun/eth1 ip is dead, returh eth0 ip
 	if ( h->m_pingShotgun >= g_conf.m_deadHostTimeout ) return h->m_ip;
 	// if eth0 dead, return shotgun ip
@@ -1415,12 +1415,12 @@ int32_t Hostdb::getBestIp ( Host *h ) {
 // . "h" is from g_hostdb2, the "external" cluster
 // . should we send to its primary or shotgun ip?
 // . this returns which ip we should send to
-int32_t Hostdb::getBestHosts2IP ( Host  *h ) {
+int32_t Hostdb::getBestHosts2IP(const Host *h) {
 	// sanity check
 	if ( this != &g_hostdb ) { g_process.shutdownAbort(true); }
 	// get external ips
-	unsigned char *a = (unsigned char *)&h->m_ipShotgun;
-	unsigned char *c = (unsigned char *)&h->m_ip;
+	const unsigned char *a = (const unsigned char *)&h->m_ipShotgun;
+	const unsigned char *c = (const unsigned char *)&h->m_ip;
 
 	bool isShotgunInternal = false;
 	bool isPrimaryInternal = false;
@@ -1431,10 +1431,8 @@ int32_t Hostdb::getBestHosts2IP ( Host  *h ) {
 	if ( c[0]==10  && c[1]==1   ) isPrimaryInternal = true;
 	if ( c[0]==127 && c[1]==0   ) isPrimaryInternal = true;
 
-	// get this host
-	Host *local = g_hostdb.getMyHost();
-	unsigned char *b = (unsigned char *)&local->m_ipShotgun;
-	unsigned char *d = (unsigned char *)&local->m_ip;
+	const unsigned char *b = (const unsigned char *)&g_hostdb.getMyHost()->m_ipShotgun;
+	const unsigned char *d = (const unsigned char *)&g_hostdb.getMyHost()->m_ip;
 
 	bool onSameNetwork = false;
 
