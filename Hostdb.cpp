@@ -1286,7 +1286,7 @@ bool Hostdb::isDead ( int32_t hostId ) {
 	return isDead ( h );
 }
 
-bool Hostdb::isDead ( Host *h ) {
+bool Hostdb::isDead(const Host *h) {
 	if(h->m_retired)
 		return true; // retired means "don't use it", so it is essentially dead
 	if(g_hostdb.m_myHost == h)
@@ -1403,7 +1403,7 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 }
 
 // use the ip that is not dead, prefer eth0
-int32_t Hostdb::getBestIp ( Host *h ) {
+int32_t Hostdb::getBestIp(const Host *h) {
 	// if shotgun/eth1 ip is dead, returh eth0 ip
 	if ( h->m_pingShotgun >= g_conf.m_deadHostTimeout ) return h->m_ip;
 	// if eth0 dead, return shotgun ip
@@ -1415,69 +1415,14 @@ int32_t Hostdb::getBestIp ( Host *h ) {
 // . "h" is from g_hostdb2, the "external" cluster
 // . should we send to its primary or shotgun ip?
 // . this returns which ip we should send to
-int32_t Hostdb::getBestHosts2IP ( Host  *h ) {
+int32_t Hostdb::getBestHosts2IP(const Host *h) {
 	// sanity check
 	if ( this != &g_hostdb ) { g_process.shutdownAbort(true); }
-	// get external ips
-	unsigned char *a = (unsigned char *)&h->m_ipShotgun;
-	unsigned char *c = (unsigned char *)&h->m_ip;
 
-	bool isShotgunInternal = false;
-	bool isPrimaryInternal = false;
-	if ( a[0]==192 && a[1]==168 ) isShotgunInternal = true;
-	if ( a[0]==10  && a[1]==1   ) isShotgunInternal = true;
-	if ( a[0]==127 && a[1]==0   ) isShotgunInternal = true;
-	if ( c[0]==192 && c[1]==168 ) isPrimaryInternal = true;
-	if ( c[0]==10  && c[1]==1   ) isPrimaryInternal = true;
-	if ( c[0]==127 && c[1]==0   ) isPrimaryInternal = true;
-
-	// get this host
-	Host *local = g_hostdb.getMyHost();
-	unsigned char *b = (unsigned char *)&local->m_ipShotgun;
-	unsigned char *d = (unsigned char *)&local->m_ip;
-
-	bool onSameNetwork = false;
-
-	// if ip "a" in hosts2.conf is NOT INTERNAL (192.168.*) then see
-	// if it matches any ip (top 2 bytes) in hosts.conf
-	if ( ! isShotgunInternal ) {
-		// it is PROBABLY on the same net if the top two bytes match!
-		if ( a[0] == b[0] && a[1] == b[1] ) onSameNetwork = true;
-		if ( a[0] == d[0] && a[1] == d[1] ) onSameNetwork = true;
-	}
-
-	// likewise, see if the shotgun ip in hosts2.conf matches the top two
-	// bytes of either of our IPs
-	if ( ! isPrimaryInternal ) {
-		// it is PROBABLY on the same net if the top two bytes match!
-		if ( c[0] == b[0] && c[1] == b[1] ) onSameNetwork = true;
-		if ( c[0] == d[0] && c[1] == d[1] ) onSameNetwork = true;
-	}
-
-	// use internal ip if available and on same network
-	if ( onSameNetwork && isPrimaryInternal ) return h->m_ip;        // c
-
-	if ( onSameNetwork && isShotgunInternal ) return h->m_ipShotgun; // a
-
-	// otherwise, if none are internal, just make it primary
-	if ( onSameNetwork ) return h->m_ip;
-
-	// ok, not on the same network, use external
-	if ( ! isPrimaryInternal ) return h->m_ip;
-
-	if ( ! isShotgunInternal ) return h->m_ipShotgun;
-
-	// otherwise, make a guess, both are internal!!
-	static time_t s_last = 0;
-	// log it every 10 seconds
-	time_t t = getTime();
-	if ( t - s_last > 10 ) {
-		log("db: All hosts2.conf IPs are internal! Please fix!");
-		s_last = t;
-	}
-
-	// just try the primary then
-	return h->m_ip;
+	if(ip_distance(h->m_ip) <= ip_distance(h->m_ipShotgun))
+		return h->m_ip;
+	else
+		return h->m_ipShotgun;
 }
 
 

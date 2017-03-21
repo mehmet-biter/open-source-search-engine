@@ -262,7 +262,7 @@ class Hostdb {
 	// after 10 seconds
 	bool  isDead ( int32_t hostId ) ;
 
-	bool  isDead ( Host *h ) ;
+	bool  isDead(const Host *h);
 
 	bool hasDeadHost ( );
 
@@ -349,7 +349,7 @@ class Hostdb {
 	// write a hosts.conf file
 	bool saveHostsConf ( );
 
-	int32_t getBestIp ( Host *h ) ;
+	int32_t getBestIp(const Host *h);
 	
 	Host *getBestSpiderCompressionProxy ( int32_t *key ) ;
 
@@ -357,7 +357,7 @@ class Hostdb {
 	void resetPortTables ();
 
 	// returns best IP to use for "h" which is a host in hosts2.conf
-	int32_t getBestHosts2IP ( Host *h );
+	int32_t getBestHosts2IP(const Host *h);
 
 	void updatePingInfo(Host *h, const PingInfo &pi);
 
