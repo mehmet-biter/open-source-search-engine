@@ -150,8 +150,6 @@ class Statsdb {
 	key96_t m_startKey;
 	key96_t m_endKey;
 
-	//FILE *m_fd;
-
 	Msg5 m_msg5;
 
 	// time window to graph
