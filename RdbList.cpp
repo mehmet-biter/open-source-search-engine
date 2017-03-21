@@ -2234,7 +2234,8 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 	char *pp = NULL;
 
 	// see Posdb.h for format of a 18/12/6-byte posdb key
-	RdbIndexQuery rdbIndexQuery(getRdbBase(rdbId, collNum));
+	RdbBase *base = getRdbBase(rdbId, collNum);
+	RdbIndexQuery rdbIndexQuery(base);
 	char *new_listPtr = m_listPtr;
 	int32_t listOffset = 0;
 
@@ -2282,7 +2283,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 		}
 
 		if (useIndexFile) {
-			int64_t docId;
+			uint64_t docId;
 
 			if (minPtrBase[0] & 0x04) {
 				// 6-byte pos key
@@ -2294,9 +2295,37 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 			int32_t filePos = rdbIndexQuery.getFilePos(docId);
 
+			if (g_conf.m_verifyIndex) {
+				// check tree index
+				if (filePos == base->getNumFiles()) {
+					auto docIds = base->getTreeIndex()->getDocIds();
+					auto it = std::lower_bound(docIds->cbegin(), docIds->cend(), docId << RdbIndex::s_docIdOffset);
+					if (it == docIds->cend() || ((*it >> RdbIndex::s_docIdOffset) != docId)) {
+						// not in tree index
+						gbshutdownCorrupted();
+					}
+				} else {
+					// check rdb index
+					for (auto i = base->getNumFiles() - 1; i >= filePos; --i) {
+						RdbIndex *index = base->getIndex(i);
+						if (index) {
+							auto docIds = index->getDocIds();
+							auto it = std::lower_bound(docIds->cbegin(), docIds->cend(), docId << RdbIndex::s_docIdOffset);
+							if (it != docIds->cend() && ((*it >> RdbIndex::s_docIdOffset) == docId)) {
+								if (i != filePos) {
+									// docId found in newer file
+									gbshutdownCorrupted();
+								}
+							}
+						}
+					}
+				}
+			}
+
 			if (filePos > (mini + listOffset) + startFileNum) {
 				// docId is present in newer file
-				logTrace(g_conf.m_logTraceRdbList, "docId in newer list. skip. filePos=%" PRId32" mini=%" PRId16, filePos, mini);
+				logTrace(g_conf.m_logTraceRdbList, "docId in newer list. skip. filePos=%" PRId32" mini=%" PRId16" listOffset=%" PRId32,
+				         filePos, mini, listOffset);
 				goto skip;
 			}
 		}

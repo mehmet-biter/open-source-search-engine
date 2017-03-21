@@ -294,6 +294,9 @@ class Conf {
 	// trying to isolate titlerec corruption
 	bool m_verifyDumpedLists;
 
+	// verify validity of index while merging
+	bool m_verifyIndex;
+
 	// calls fsync(fd) if true after each write
 	bool   m_flushWrites; 
 	bool   m_verifyWrites;
