@@ -197,13 +197,6 @@ public:
 	int32_t getMemOccupied      ( ) const { return m_memOccupied; }
 	int32_t getMaxMem           ( ) const { return m_maxMem; }
 
-	// . like getMemOccupied() above but does not include left/right/parent
-	// . only includes occupied keys/sizes and the dataSizes themself
-	int32_t getMemOccupiedForList2 ( collnum_t collnum  ,
-				      const char     *startKey,
-				      const char     *endKey  ,
-				      int32_t      minRecSizes) const;
-
 	//  how much mem the tree would take if it were made into a list
 	int32_t getMemOccupiedForList() const;
 
@@ -247,6 +240,7 @@ public:
 			bool     useThread ,
 			void    *state     , 
 			void    (* callback)(void *state ) );
+
 	// this is called by a thread
 	bool fastSave_r() ;
 
@@ -254,7 +248,6 @@ public:
 
 	void verifyIntegrity() { } //todo
 	bool checkTree  ( bool printMsgs , bool doChainTest );
-	bool checkTree2 ( bool printMsgs , bool doChainTest );
 	bool fixTree    ( );
 
 	void disableWrites () { m_isWritable = false; }
@@ -272,6 +265,12 @@ public:
 	static void threadDoneWrapper(void *state, job_exit_t exit_type);
 
 private:
+	// . like getMemOccupied() above but does not include left/right/parent
+	// . only includes occupied keys/sizes and the dataSizes themself
+	int32_t getMemOccupiedForList2(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes) const;
+
+	bool checkTree2 ( bool printMsgs , bool doChainTest );
+
 	// used by fastSave() and fastLoad()
 	int32_t fastSaveBlock_r(int fd, int32_t start, int64_t offset);
 	int32_t fastLoadBlock(BigFile *f, int32_t start, int32_t totalNodes, RdbMem *stack, int64_t offset);
