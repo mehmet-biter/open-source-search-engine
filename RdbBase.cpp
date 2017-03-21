@@ -1098,6 +1098,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	} else {
 		m_fileInfo[i].m_allowReads = false;//until we know for sure it is finished
 	}
+	m_fileInfo[i].m_pendingGenerateIndex = false;
 
 	// are we resuming a killed merge?
 	if ( g_conf.m_readOnlyMode && ((fileId & 0x01)==0) ) {
@@ -2609,9 +2610,13 @@ docids_ptr_t RdbBase::prepareGlobalIndexJob(bool markFileReadable, int32_t fileI
 docids_ptr_t RdbBase::prepareGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileIndex) {
 	docids_ptr_t tmpDocIdFileIndex(new docids_t);
 
+	if (markFileReadable) {
+		m_fileInfo[fileIndex].m_pendingGenerateIndex = true;
+	}
+
 	// global index does not include RdbIndex from tree/buckets
 	for (int32_t i = 0; i < m_numFiles; i++) {
-		if(m_fileInfo[i].m_allowReads || (markFileReadable && fileIndex == i)) {
+		if(m_fileInfo[i].m_allowReads || m_fileInfo[i].m_pendingGenerateIndex) {
 			auto docIds = m_fileInfo[i].m_index->getDocIds();
 			tmpDocIdFileIndex->reserve(tmpDocIdFileIndex->size() + docIds->size());
 			std::transform(docIds->begin(), docIds->end(), std::back_inserter(*tmpDocIdFileIndex),
@@ -2681,6 +2686,7 @@ void RdbBase::generateGlobalIndex(void *item) {
 
 	if (queueItem->m_markFileReadable) {
 		queueItem->m_base->m_fileInfo[queueItem->m_fileIndex].m_allowReads = true;
+		queueItem->m_base->m_fileInfo[queueItem->m_fileIndex].m_pendingGenerateIndex = false;
 	}
 
 	log(LOG_INFO, "db: Processed job %p to generate global index", item);
