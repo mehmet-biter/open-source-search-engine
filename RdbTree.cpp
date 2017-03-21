@@ -249,7 +249,7 @@ int32_t RdbTree::clear ( ) {
 
 // . used by cache 
 // . wrapper for getNode()
-int32_t RdbTree::getNode(collnum_t collnum, const char *key) {
+int32_t RdbTree::getNode(collnum_t collnum, const char *key) const {
 	int32_t i = m_headNode;
 
 	// get the node (about 4 cycles per loop, 80cycles for 1 million items)
@@ -321,19 +321,19 @@ int32_t RdbTree::getNextNode(collnum_t collnum, const char *key) const {
 	return getNextNode ( parent );
 }
 
-int32_t RdbTree::getFirstNode ( ) {
+int32_t RdbTree::getFirstNode() const {
 	const char *k = KEYMIN();
 	return getNextNode ( 0 , k );
 }
 
-int32_t RdbTree::getLastNode ( ) {
+int32_t RdbTree::getLastNode() const {
 	const char *k = KEYMAX();
 	return getPrevNode ( (collnum_t)0x7fff , k );
 }
 
 // . get the node whose key is <= "key"
 // . returns -1 if none
-int32_t RdbTree::getPrevNode ( collnum_t collnum, const char *key ) {
+int32_t RdbTree::getPrevNode(collnum_t collnum, const char *key) const {
 	// return -1 if no non-empty nodes in the tree
 	if ( m_headNode < 0  ) return -1;
 	// get the node (about 4 cycles per loop, 80cycles for 1 million items)
@@ -356,8 +356,9 @@ int32_t RdbTree::getPrevNode ( collnum_t collnum, const char *key ) {
 	return getPrevNode ( parent );
 }
 
-char *RdbTree::getData ( collnum_t collnum, const char *key ) {
-	int32_t n = getNode ( collnum , key ); if ( n < 0 ) return NULL;
+const char *RdbTree::getData(collnum_t collnum, const char *key) const {
+	int32_t n = getNode(collnum, key);
+	if (n < 0) return NULL;
 	return m_data[n];
 };
 
@@ -395,7 +396,7 @@ int32_t RdbTree::getNextNode(int32_t i) const {
 }
 
 // . "i" is the next node number
-int32_t RdbTree::getPrevNode ( int32_t i ) {
+int32_t RdbTree::getPrevNode(int32_t i) const {
 	// cruise the kids if we have a left one
 	if ( m_left[i] >= 0 ) {
 		// go to the left kid

@@ -100,16 +100,10 @@ public:
 	}
 
 	int32_t addNode(collnum_t collnum, const char *key, char *data, int32_t dataSize);
-	int32_t addNode(collnum_t collnum, const char *key) {
-		return addNode(collnum, key, NULL, 0);
-	}
-			
+
 	// . returns -1 if not found
 	// . otherwise return the node #
-	int32_t getNode ( collnum_t collnum, const char *key );
-
-	// . get the node's data directly
-	char *getData ( collnum_t collnum, const char *key );
+	int32_t getNode ( collnum_t collnum, const char *key ) const;
 
 	// . get the node whose key is >= key
 	// . much much slower than getNextNode() below
@@ -121,14 +115,14 @@ public:
 	// . returns -1 on end
 	int32_t getNextNode(int32_t node) const;
 
-	int32_t getFirstNode ( );
-	int32_t getLastNode  ( );
+	int32_t getFirstNode() const;
+	int32_t getLastNode() const;
 
 	// . get the node whose key is <= "key"
-	int32_t getPrevNode(collnum_t collnum, const char *key);
+	int32_t getPrevNode(collnum_t collnum, const char *key) const;
 
 	// . get the prev node # whose key is <= to key of node #i
-	int32_t getPrevNode ( int32_t i ) ;
+	int32_t getPrevNode(int32_t i) const;
 
 	// . returns true  iff was found and deleted
 	// . returns false iff not found 
@@ -155,8 +149,7 @@ public:
 
 	bool isLoading() const { return m_isLoading; }
 
-	// since our arrays aren't public
-	char       *getData(int32_t node)       { return m_data[node]; }
+	const char *getData(collnum_t collnum, const char *key) const;
 	const char *getData(int32_t node) const { return m_data[node]; }
 	void setData(int32_t node, char *data) {
 		m_data[node] = data;
