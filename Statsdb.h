@@ -24,15 +24,11 @@ class Statsdb {
 	// reset m_rdb
 	void reset() { m_rdb.reset(); }
 
-	class Label *getLabel ( int32_t graphHash );
 
 	// initialize m_rdb
 	bool init( );
 
 	void addDocsIndexed ( ) ;
-
-	int32_t getImgHeight() ;
-	int32_t getImgWidth() ;
 
 	void enable() { m_disabled = false; }
 	void disable() { m_disabled = true; }
@@ -60,65 +56,38 @@ class Statsdb {
 		       void (* callback) (void *state) ,
 		       int32_t userId32 = 0 ) ;
 
-	char *plotGraph ( char *pstart ,
-			  char *pend ,
-			  int32_t graphHash ,
-			  SafeBuf &gw,
-			  int32_t  zoff );
-
-	void drawLine3 ( SafeBuf &sb ,
-			 int32_t x1 , 
-			 int32_t x2 ,
-			 int32_t fy1 , 
-			 int32_t color ,
-			  int32_t width ) ;
-
-	void drawHR ( float z ,
-		      float ymin , 
-		      float ymax ,
-		      SafeBuf &gw,
-		      class Label *label ,
-		      float zoff ,
-		      int32_t color ) ;
-
-	bool gifLoop ( ) ;
-	bool processList ( ) ;
-	class StatState *getStatState ( int32_t us ) ;
-
-	bool addPointsFromList ( class Label *label );
-
-	bool addPoint ( class StatKey   *sk , 
-			class StatData  *sd ,
-			class StatState *ss , 
-			class Label *label ) ;
-
-	bool addPoint ( int32_t      x         ,
-			float     y         ,
-			//int32_t      colorRGB  ,
-			int32_t      graphHash ,
-			float     weight    ,
-			class StatState *ss ) ;
-
-	bool addEventPointsFromList ( );
-	bool addEventPoint ( int32_t  t1        ,
-			     int32_t  parmHash  ,
-			     float oldVal    ,
-			     float newVal    ,
-			     int32_t  thickness ) ;
-
-
 	Rdb *getRdb() { return &m_rdb; }
 
-	Rdb 	  m_rdb;
-	RdbList   m_list;
+	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
 
 	// the graphing window. now a bunch of absolute divs in html
 	SafeBuf m_gw;
 	HashTableX m_dupTable;
 
+private:
+	class Label *getLabel(int32_t graphHash);
+
+	char *plotGraph(char *pstart, char *pend, int32_t graphHash, SafeBuf &gw, int32_t zoff);
+	void drawHR(float z, float ymin, float ymax, SafeBuf &gw, class Label *label, float zoff, int32_t color);
+	void drawLine3(SafeBuf &sb, int32_t x1, int32_t x2, int32_t fy1, int32_t color, int32_t width);
+
+	class StatState *getStatState(int32_t us);
+
+	bool addPointsFromList(class Label *label);
+	bool addPoint(class StatKey *sk, class StatData *sd, class StatState *ss, class Label *label);
+	bool addPoint(int32_t x, float y, int32_t graphHash, float weight, class StatState *ss);
+	bool addEventPointsFromList();
+	bool addEventPoint(int32_t t1, int32_t parmHash, float oldVal, float newVal, int32_t thickness);
+
+	bool gifLoop();
+	bool processList();
+
 	// so Process.cpp can turn it off when saving so we do not record
 	// disk writes/reads
 	bool m_disabled;
+
+	Rdb 	  m_rdb;
+	RdbList   m_list;
 
 	SafeBuf m_sb0;
 	SafeBuf m_sb1;

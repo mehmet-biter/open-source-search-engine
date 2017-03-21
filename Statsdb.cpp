@@ -91,13 +91,6 @@ static Label s_labels[] = {
 
 };
 
-void drawLine3 ( SafeBuf &sb ,
-		 int32_t x1 , 
-		 int32_t x2 ,
-		 int32_t fy1 , 
-		 int32_t color ,
-		 int32_t width ) ;
-
 Label *Statsdb::getLabel ( int32_t labelHash ) {
 	Label **label = (Label **)m_labelTable.getValue ( &labelHash );
 	if ( ! label ) return NULL;
@@ -214,7 +207,7 @@ void flushStatsWrapper ( int fd , void *state ) {
 	g_statsdb.addDocsIndexed();
 
 	// force a statsdb tree dump if running out of room
-	Rdb     *rdb  = &g_statsdb.m_rdb;
+	Rdb     *rdb  = g_statsdb.getRdb();
 	RdbTree *tree = rdb->getTree();
 	if( tree ) {
 		// if we got 20% room left and 50k available mem, do not dump
@@ -540,14 +533,6 @@ bool Statsdb::makeGIF ( int32_t t1Arg ,
 #define DX2        1000             // pixels across
 #define MAX_LINES2  (DY2 / (MAX_WIDTH+1)) // leave free pixel above each line
 
-int32_t Statsdb::getImgHeight() {
-	return (int32_t)DY2 + m_by * 2;
-}
-
-int32_t Statsdb::getImgWidth() {
-	return (int32_t)DX2 + m_bx * 2;
-}
-
 // these are used for storing the "events"
 class EventPoint {
 public:
@@ -560,8 +545,6 @@ public:
 	//int32_t  m_colorRGB;
 	int32_t  m_thickness;
 };
-
-static void gotListWrapper ( void *state , RdbList *list, Msg5 *msg5 ) ;
 
 // returns false if blocked, true otherwise
 bool Statsdb::gifLoop ( ) {
@@ -577,7 +560,7 @@ bool Statsdb::gifLoop ( ) {
 				    0		, // max cache age
 				    0		, // start file number
 				    -1		, // number of files
-				    NULL	, // state
+				    this	, // state
 				    gotListWrapper, // callback
 				    m_niceness	, // niceness
 				    false	, // do error correction?
@@ -1039,20 +1022,25 @@ void Statsdb::drawHR ( float z ,
 	
 }
 
-void gotListWrapper ( void *state , RdbList *list, Msg5 *msg5 ) {
+void Statsdb::gotListWrapper ( void *state , RdbList */*list*/, Msg5 */*msg5*/ ) {
+	Statsdb *that = static_cast<Statsdb*>(state);
+
 	// add in some graph points
-	g_statsdb.processList();
+	that->processList();
+
 	// do more, return if blocked
-	if ( ! g_statsdb.gifLoop() ) return;
+	if (!that->gifLoop()) {
+		return;
+	}
+
 	// call callback
-	g_statsdb.m_callback ( g_statsdb.m_state );
+	that->m_callback(that->m_state);
 }
 
 bool Statsdb::processList ( ) {
 
 	if ( m_list.isEmpty() )
 		m_done = true;
-
 	else {
 		// update start key for next disk read
 		m_list.getLastKey ( (char *)&m_startKey );
