@@ -65,11 +65,6 @@ public:
 		return ( m_numUsedNodes/90 >= m_numNodes/100 );
 	}
 
-	bool isFull() const { return (m_numUsedNodes >= m_numNodes); }
-
-	bool hasRoomForKeys ( int32_t nk ) {
-		return (m_numUsedNodes + nk <= m_numNodes); }
-
 	// . a fixedDataSize of -1 means each node has data of a variable size
 	// . set maxMem to -1 for no max 
 	// . returns false & sets errno if fails to alloc "maxNumNodes" nodes
@@ -129,17 +124,11 @@ public:
 	int32_t getFirstNode ( );
 	int32_t getLastNode  ( );
 
-	int32_t getFirstNode2 ( collnum_t collnum );
-
 	// . get the node whose key is <= "key"
 	int32_t getPrevNode(collnum_t collnum, const char *key);
 
-
 	// . get the prev node # whose key is <= to key of node #i
 	int32_t getPrevNode ( int32_t i ) ;
-
-	// returns the node # with the lowest key, -1 if no nodes in tree
-	int32_t getLowestNode ( ) ;
 
 	// . returns true  iff was found and deleted
 	// . returns false iff not found 
@@ -155,11 +144,6 @@ public:
 	// . returns false if a key in list was not found
 	// . this happens if memory is corrupted!
 	bool deleteList(collnum_t collnum, RdbList *list);
-
-	// . if the list's keys are ordered from smallest to largest
-	//   this acts just like deleteList() above, but saves time by
-	//   using getNextNode() rather than lookup each key from root of tree
-	void deleteOrderedList(collnum_t collnum, RdbList *list);
 
 	bool isSaving() const { return m_isSaving; }
 	bool isWritable() const { return m_isWritable; }
@@ -181,7 +165,6 @@ public:
 	int32_t  getDataSize  ( int32_t node ) const { return m_sizes   [node]; }
 	char       *getKey(int32_t node)       { return &m_keys[node*m_ks]; }
 	const char *getKey(int32_t node) const { return &m_keys[node*m_ks]; }
-	int32_t  getParentNum ( int32_t node ) const { return m_parents [node]; }
 
 	collnum_t getCollnum ( int32_t node ) const { return m_collnums [node];}
 
@@ -288,9 +271,6 @@ public:
 	bool checkTree2 ( bool printMsgs , bool doChainTest );
 	bool fixTree    ( );
 
-	// all except the data: the keys,dataPtr,size,left,right,parents,depth
-	int32_t  getRecOverhead () { return m_overhead; }
-
 	void disableWrites () { m_isWritable = false; }
 	void enableWrites  () { m_isWritable = true ; }
 
@@ -377,9 +357,7 @@ private:
 	// total amount of m_memAllocated that is occupied
 	int32_t    m_memOccupied; 
 	// max limit of m_memAllocated
-	int32_t    m_maxMem;      
-	// mem allocated for overhead of tree structure
-	int32_t    m_baseMem;
+	int32_t    m_maxMem;
 	// -1 means any dataSize, otherwise, it's fixed to this
 	int32_t    m_fixedDataSize;
 	// node of the next available/empty node

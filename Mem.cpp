@@ -726,6 +726,9 @@ int32_t Mem::validate ( ) {
 
 
 int32_t Mem::getMemSlot ( void *mem ) {
+	if(!s_lock.working) return true;
+	ScopedLock sl(s_lock);
+
 	// hash into table
 	uint32_t u = (PTRTYPE)mem * (PTRTYPE)0x4bf60ade;
 	uint32_t h = u % (uint32_t)m_memtablesize;
