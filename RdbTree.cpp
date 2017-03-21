@@ -2774,10 +2774,6 @@ int32_t  RdbTree::getNumPositiveKeys( collnum_t collnum ) const {
 	return cr->m_numPosKeysInTree[(unsigned char)m_rdbId]; 
 }
 
-int32_t  RdbTree::getNumTotalKeys(collnum_t collnum) const {
-	return getNumPositiveKeys(collnum) + getNumNegativeKeys(collnum);
-}
-
 void RdbTree::setNumKeys ( CollectionRec *cr ) {
 
 	if ( ! cr ) return;

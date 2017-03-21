@@ -187,7 +187,6 @@ public:
 
 	int32_t  getNumNegativeKeys( collnum_t collnum ) const;
 	int32_t  getNumPositiveKeys( collnum_t collnum ) const;
-	int32_t  getNumTotalKeys(collnum_t collnum) const;
 
 	void setNumKeys ( class CollectionRec *cr ) ;
 
@@ -227,19 +226,6 @@ public:
 		       int32_t    *numPosRecs  ,
 		       int32_t    *numNegRecs ,   // = NULL 
 		       bool     useHalfKeys) const;
-
-	bool getList ( collnum_t collnum    ,
-		       const key96_t    &startKey    ,
-		       const key96_t    &endKey      ,
-		       int32_t     minRecSizes ,
-		       RdbList *list        ,
-		       int32_t    *numPosRecs  ,
-		       int32_t    *numNegRecs ,   // = NULL 
-		       bool     useHalfKeys ) const {
-		return getList(collnum,(const char *)&startKey,(const char *)&endKey,
-			       minRecSizes,list,numPosRecs,numNegRecs,
-			       useHalfKeys);
-	}
 
 	// estimate the size of the list defined by these keys
 	int32_t getListSize ( collnum_t collnum ,
