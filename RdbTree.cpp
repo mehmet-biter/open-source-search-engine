@@ -41,7 +41,6 @@ RdbTree::RdbTree () {
 	m_dataInPtrs = false;
 	m_overhead = 0;
 	m_maxMem = 0;
-	m_baseMem = 0;
 	m_allocName = NULL;
 	m_bytesWritten = 0;
 	m_bytesRead = 0;
@@ -327,11 +326,6 @@ int32_t RdbTree::getFirstNode ( ) {
 	return getNextNode ( 0 , k );
 }
 
-int32_t RdbTree::getFirstNode2 ( collnum_t collnum ) {
-	const char *k = KEYMIN();
-	return getNextNode ( collnum , k );
-}
-
 int32_t RdbTree::getLastNode ( ) {
 	const char *k = KEYMAX();
 	return getPrevNode ( (collnum_t)0x7fff , k );
@@ -425,13 +419,6 @@ int32_t RdbTree::getPrevNode ( int32_t i ) {
 		p = m_parents[p];
 	// p will be -1 if none are left
 	return p;
-}
-
-// . get the node with the lowest key
-int32_t RdbTree::getLowestNode ( ) {
-	int32_t i = m_headNode;
-	while ( m_left[i] != -1 ) i = m_left [ i ];
-	return i;
 }
 
 // . returns -1 if we coulnd't allocate the new space and sets g_errno to ENOMEM
@@ -975,62 +962,6 @@ bool RdbTree::deleteList(collnum_t collnum, RdbList *list) {
 	return allgood;
 }
 
-// TODO: speed up since keys are usually ordered (use getNextNode())
-void RdbTree::deleteOrderedList(collnum_t collnum, RdbList *list) {
-	// return if no non-empty nodes in the tree
-	if ( m_numUsedNodes <= 0 ) return ;
-	// reset before calling list->getCurrent*() functions
-	list->resetListPtr();
-	char key [ MAX_KEY_BYTES ];
-	// bail if list is empty now
-	if ( list->isEmpty() ) return;
-
-	list->getCurrentKey ( key );
-	// get the node whose keys is just <= key
-	int32_t node = getPrevNode ( collnum , key );
-
- top:
-	// bail if no nodes in tree left that have keys >= "key"
-	if ( node == -1 ) goto done;
- top2:
-	// . if key of node equals key, remove node and advance key and node
-	// . this condition is usually the case, so check it first for speed
-	//if ( m_keys [ node ] == key && m_collnums [ node ] == collnum ) {
-	if ( KEYCMP(m_keys,node,key,0,m_ks)==0 && m_collnums[node] == collnum){
-		// trim the node from the tree
-		deleteNode(node, true /*freeData?*/ );
-		// get next node in tree
-		node = getNextNode ( node ) ;
-		// . point to next key in list to delete
-		// . return if list exhausted
-		if ( ! list->skipCurrentRecord() ) goto done;
-		// reference that key
-		//key = list->getCurrentKey() ;
-		list->getCurrentKey ( key );
-		goto top;
-	}
-	// bust out if done
-	if ( m_collnums [ node ] > collnum ) goto done;
-	// if node's key is < "key" advance node
-	//if ( m_keys [ node ] < key ) {
-	if ( KEYCMP(m_keys,node,key,0,m_ks)<0 ) {
-		// get next node in tree
-		node = getNextNode ( node ) ;
-		goto top;
-	}
-	// . otherwise, we passed "key" so "key" must have not been in tree
-	// . point to next key in list to delete
-	// . return if list exhausted
-	if ( ! list->skipCurrentRecord() ) goto done;
-	// reference that key
-	//key = list->getCurrentKey() ;
-	list->getCurrentKey ( key ) ;
-	goto top2;
-
- done:
-	;
-}
-
 // . this fixes the tree
 // returns false if could not fix tree and sets g_errno, otherwise true
 bool RdbTree::fixTree ( ) {
@@ -1437,8 +1368,7 @@ bool RdbTree::growTree(int32_t nn) {
 		     m_dbname, m_memAllocated, m_maxMem );
 		return false;
 	}
-	// base mem is mem that cannot be freed
-	m_baseMem = m_overhead * nn ;
+
 	// and the new # of nodes we have
 	m_numNodes = nn;
 
