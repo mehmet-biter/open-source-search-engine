@@ -1423,8 +1423,6 @@ int main2 ( int argc , char *argv[] ) {
 	
 	//if ( ! g_hostdb.validateIps ( &g_conf ) ) {
 	//	log("db: Failed to validate ips." ); return 1;}
-	//if ( ! g_hostdb2.validateIps ( &g_conf ) ) {
-	//	log("db: Failed to validate ips." ); return 1;}
 
 	// put in read only mode
 	if ( useTmpCluster ) {
