@@ -44,8 +44,6 @@ public:
 
 	bool set(int32_t fixedDataSize, int32_t maxMem, const char *allocName, rdbid_t rdbId, const char *dbname, char keySize);
 
-	bool resizeTable(int32_t numNeeded);
-
 	int32_t addNode(collnum_t collnum, const char *key, const char *data, int32_t dataSize);
 
 	bool addList(collnum_t collnum, RdbList *list);
@@ -59,26 +57,12 @@ public:
 
 	int64_t getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const;
 
-	bool addBucket (RdbBucket *newBucket, int32_t i);
-	int32_t getBucketNum(collnum_t collnum, const char *key) const;
-	char bucketCmp(collnum_t acoll, const char *akey, RdbBucket* b) const;
-
 	bool collExists(collnum_t coll) const;
 
-	const char *getDbname() const { return m_dbname; }
-
-	uint8_t getKeySize() const { return m_ks; }
-	int32_t getFixedDataSize() const { return m_fixedDataSize; }
 	int32_t getRecSize() const { return m_recSize; }
-
-	void setSwapBuf(char *s) { m_swapBuf = s; }
-	char *getSwapBuf() { return m_swapBuf; }
 
 	bool needsSave() const { return m_needsSave; }
 	bool isSaving() const { return m_isSaving; }
-
-	char *getSortBuf() { return m_sortBuf; }
-	int32_t getSortBufSize() const { return m_sortBufSize; }
 
 	bool isWritable() const { return m_isWritable; }
 	void disableWrites() { m_isWritable = false; }
@@ -108,10 +92,8 @@ public:
 
 	//DEBUG
 	void verifyIntegrity();
-	bool selfTest(bool thorough, bool core);
 	int32_t addTree(RdbTree *rt);
 	void printBuckets(std::function<void(const char*, int32_t)> print_fn = nullptr);
-	bool repair();
 	bool testAndRepair();
 
 	//Save/Load/Dump
@@ -119,6 +101,25 @@ public:
 	bool loadBuckets(const char *dbname);
 
 private:
+	bool resizeTable(int32_t numNeeded);
+	bool selfTest(bool thorough, bool core);
+	bool repair();
+
+	bool addBucket (RdbBucket *newBucket, int32_t i);
+	int32_t getBucketNum(collnum_t collnum, const char *key) const;
+	char bucketCmp(collnum_t acoll, const char *akey, RdbBucket* b) const;
+
+	const char *getDbname() const { return m_dbname; }
+
+	uint8_t getKeySize() const { return m_ks; }
+	int32_t getFixedDataSize() const { return m_fixedDataSize; }
+
+	void setSwapBuf(char *s) { m_swapBuf = s; }
+	char *getSwapBuf() { return m_swapBuf; }
+
+	char *getSortBuf() { return m_sortBuf; }
+	int32_t getSortBufSize() const { return m_sortBufSize; }
+
 	//syntactic sugar
 	RdbBucket* bucketFactory();
 	void updateNumRecs(int32_t n, int32_t bytes, int32_t numNeg);
@@ -128,7 +129,6 @@ private:
 	bool fastLoad(BigFile *f, const char *dbname);
 	int64_t fastLoadColl(BigFile *f, const char *dbname);
 
-private:
 	RdbBucket **m_buckets;
 	RdbBucket *m_bucketsSpace;
 	char *m_masterPtr;
