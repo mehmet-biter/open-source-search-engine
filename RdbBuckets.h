@@ -65,9 +65,6 @@ public:
 
 	bool collExists(collnum_t coll) const;
 
-	const RdbBucket* getBucket(int i) const { return m_buckets[i]; }
-	int32_t getNumBuckets() const { return m_numBuckets; }
-
 	const char *getDbname() const { return m_dbname; }
 
 	uint8_t getKeySize() const { return m_ks; }
