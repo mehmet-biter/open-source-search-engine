@@ -2,9 +2,6 @@
 
 #include <errno.h>
 #include "Stats.h"
-//#define X_DISPLAY_MISSING 1
-//#include <plotter.h>
-#include <math.h>
 #include "Conf.h"
 #include "PingServer.h"
 #include "ip.h"
@@ -14,14 +11,10 @@
 class Stats g_stats;
 
 // just clear our points array when we're born
-Stats::Stats ( ) { 
-	//m_gotLock            = false;
+Stats::Stats ( ) {
 	m_next               = 0;
-	//m_minWindowStartTime = 0;
 	memset ( m_pts , 0 , sizeof(StatPoint)*MAX_POINTS );
 
-	//m_readSignals = 0;
-	//m_writeSignals = 0;
 	m_slowDiskReads = 0;
 	m_queryTimes = 0;
 	m_numQueries = 0;
@@ -38,16 +31,12 @@ Stats::Stats ( ) {
 	m_upTime = 0;
 	m_closedSockets = 0;
 
-	m_msg3aRecallCnt = 0;
 	memset(m_msg3aRecalls, 0, sizeof(m_msg3aRecalls));
 
 	clearMsgStats();
 	
 	// Coverity
 	m_uptimeStart = 0;
-	m_msg3aSlowRecalls = 0;
-	m_msg3aFastRecalls = 0;
-	m_tier2Misses = 0;
 	memset(m_filterStats, 0, sizeof(m_filterStats));
 };
 
@@ -137,12 +126,7 @@ void Stats::addStat_r ( int32_t        numBytes    ,
 
 	// lock up
 	//pthread_mutex_lock ( &s_lock );
-	// . is there a point in slot we're about to occupy?
-	// . we might have to advance the min time for the graph window
-	//   so we don't exclude any disk reads/writes in the beginning
-	//if ( m_pts [ m_next ].m_startTime > 0                    &&
-	//     m_pts [ m_next ].m_endTime   > m_minWindowStartTime   )
-	//		m_minWindowStartTime = m_pts[m_next].m_endTime;
+
 	// claim next before another thread does
 	int32_t n = m_next++;
 	// watch out if another thread just inc'ed n
@@ -166,10 +150,7 @@ void Stats::addStat_r ( int32_t        numBytes    ,
 				     "</td>"
 				     "", p->m_color,fname);
 	}
-	// we may be the first point
-	//if ( m_minWindowStartTime == 0 ) m_minWindowStartTime = startTime;
-	// this too
-	//if (startTime <m_minWindowStartTime ) m_minWindowStartTime=startTime;
+
 	// advance the next available slot ptr, wrap if necessary
 	if ( m_next >= MAX_POINTS ) m_next = 0;
 
@@ -240,12 +221,7 @@ void Stats::logAvgQueryTime(int64_t startTime) {
 	int64_t now = gettimeofdayInMilliseconds();
 	int64_t took = now - startTime;
 	static int32_t s_lastSendTime = 0;
-	// if just one query took an insanely int32_t time,
-	// do not sound the alarm. this is in seconds,
-	// so multiply by 1000.
-	//int64_t maxTook = 
-	//	(int64_t)(g_conf.m_maxQueryTime*1000.0) ;
-	//if ( took > maxTook ) took = maxTook;
+
 	m_queryTimes += took;
 	m_numQueries++;
 
@@ -332,16 +308,6 @@ void Stats::printGraphInHtml ( SafeBuf &sb ) {
 	char tmp[64];
 	sprintf ( tmp , "%" PRId32"x%" PRId32, (int32_t)DX+40 , (int32_t)DY+40 ); // "1040x440"
 
-	// 20 pixel borders
-	//int bx = 10;
-	//int by = 30;
-	// define the space with boundaries 100 unit wide boundaries
-	//plotter.space ( -bx , -by , DX + bx , DY + by );
-	// draw the x-axis
-	//plotter.line ( 0 , 0 , DX , 0  );
-	// draw the y-axis
-	//plotter.line ( 0 , 0 ,  0 , DY );
-
 	// find time ranges
 	int64_t t2 = 0;
 	for ( int32_t i = 0 ; i < MAX_POINTS ; i++ ) {
@@ -404,10 +370,6 @@ void Stats::printGraphInHtml ( SafeBuf &sb ) {
 			      , (int32_t)x-1
 			      );
 		// generate label
-		//char buf [ 32 ];
-		//sprintf ( buf , "%" PRId32 ,
-		//	  (int32_t)(DT * (int64_t)x / (int64_t)DX) );
-		// LABEL
 		sb.safePrintf("<div style=\"position:absolute;"
 			      "left:%" PRId32";"
 			      "bottom:20;"
@@ -420,10 +382,6 @@ void Stats::printGraphInHtml ( SafeBuf &sb ) {
 			      ,(float)(DT* (int64_t)x / (int64_t)DX)/1000.0
 			      );
 
-		// move cursor
-		//plotter.move ( x , -by / 2 - 9 );
-		// plot label
-		//plotter.alabel     ( 'c' , 'c' , buf );
 	}
 
 	// . each line consists of several points
@@ -470,43 +428,31 @@ void Stats::printGraphInHtml ( SafeBuf &sb ) {
 		// wrap back down if necessary
 		if ( y1 >= DY ) y1 = 21;
 		// plt all points in this row
-	for ( int32_t j = 0 ; j < numPoints[i] ; j++ ) {
-		// get the point
-		StatPoint *p =  points[MAX_POINTS * i + j];
-		// transform time to x coordinates
-		int x1 = (p->m_startTime - t1) * (int64_t)DX / DT;
-		int x2 = (p->m_endTime   - t1) * (int64_t)DX / DT;
-		// if x2 is negative, skip it
-		if ( x2 < 0 ) continue;
-		// if x1 is negative, boost it to -2
-		if ( x1 < 0 ) x1 = -2;
-		// . line thickness is function of read/write size
-		// . take logs
-		int w = (int)log(((double)p->m_numBytes)/8192.0) + 3;
-		//log("log of %" PRId32" is %i",m_pts[i].m_numBytes,w);
-		if ( w < 3         ) w = 3;
-		if ( w > MAX_WIDTH ) w = MAX_WIDTH;
-		//plotter.linewidth ( w );       
-		// use the color specified from addStat_r() for this line/pt
-		//plotter.pencolor ( ((p->m_color >> 16) & 0xff) << 8 ,
-		//		   ((p->m_color >>  8) & 0xff) << 8 ,
-		//		   ((p->m_color >>  0) & 0xff) << 8 );
-		// ensure at least 3 units wide for visibility
-		if ( x2 < x1 + 3 ) x2 = x1 + 3;
-		// . flip the y so we don't have to scroll the browser down
-		// . DY does not include the axis and tick marks
-		int32_t fy1 = DY - y1 + 20 ;
-		// plot it
-		//plotter.line ( x1 , fy1 , x2 , fy1 );
-		drawLine2 ( sb , x1 , x2 , fy1 , p->m_color , w );
-		// debug msg
-		//log("line (%i,%i, %i,%i) ", x1 , vert , x2 , vert );
-		//log("bytes = %" PRId32" width = %" PRId32" ", m_pts[i].m_numBytes,w);
-		//log("st=%i, end=%i color=%" PRIx32" " ,
-		//      (int)m_pts[i].m_startTime , 
-		//      (int)m_pts[i].m_endTime   , 
-		//      m_pts[i].m_color );
-	}
+		for ( int32_t j = 0 ; j < numPoints[i] ; j++ ) {
+			// get the point
+			StatPoint *p =  points[MAX_POINTS * i + j];
+			// transform time to x coordinates
+			int x1 = (p->m_startTime - t1) * (int64_t)DX / DT;
+			int x2 = (p->m_endTime   - t1) * (int64_t)DX / DT;
+			// if x2 is negative, skip it
+			if ( x2 < 0 ) continue;
+			// if x1 is negative, boost it to -2
+			if ( x1 < 0 ) x1 = -2;
+			// . line thickness is function of read/write size
+			// . take logs
+			int w = (int)log(((double)p->m_numBytes)/8192.0) + 3;
+			//log("log of %" PRId32" is %i",m_pts[i].m_numBytes,w);
+			if ( w < 3         ) w = 3;
+			if ( w > MAX_WIDTH ) w = MAX_WIDTH;
+
+			// ensure at least 3 units wide for visibility
+			if ( x2 < x1 + 3 ) x2 = x1 + 3;
+			// . flip the y so we don't have to scroll the browser down
+			// . DY does not include the axis and tick marks
+			int32_t fy1 = DY - y1 + 20 ;
+			// plot it
+			drawLine2 ( sb , x1 , x2 , fy1 , p->m_color , w );
+		}
 	}
 
 	sb.safePrintf("</div>\n");
