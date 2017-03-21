@@ -1070,38 +1070,6 @@ bool Rdb::dumpTree() {
 	// see what collnums are in the tree and just try those
 	//
 	////
-	CollectionRec *cr = NULL;
-	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs() ; i++ ) {
-		cr = g_collectiondb.getRec(i);
-		if ( ! cr ) continue;
-		// reset his tree count flag thing
-		cr->m_treeCount = 0;
-	}
-	if ( m_useTree ) {
-		// now scan the rdbtree and inc treecount where appropriate
-		for ( int32_t i = 0 ; i < m_tree.getMinUnusedNode() ; i++ ) {
-			// skip node if parents is -2 (unoccupied)
-			if ( m_tree.isEmpty() ) {
-				continue;
-			}
-
-			// get rec from tree collnum
-			cr = g_collectiondb.getRec(m_tree.getCollnum(i));
-			if ( cr ) {
-				cr->m_treeCount++;
-			}
-		}
-	} else {
-		for(int32_t i = 0; i < m_buckets.getNumBuckets(); i++) {
-			const RdbBucket *b = m_buckets.getBucket(i);
-			collnum_t cn = b->getCollnum();
-			int32_t nk = b->getNumKeys();
-			cr = g_collectiondb.getRec(cn);
-			if ( cr ) {
-				cr->m_treeCount += nk;
-			}
-		}
-	}
 
 	// loop through collections, dump each one
 	m_dumpCollnum = (collnum_t)-1;

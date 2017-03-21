@@ -1121,7 +1121,6 @@ CollectionRec::CollectionRec() {
 	m_dailyMergeStarted = 0;
 	m_dailyMergeTrigger = 0;
 	memset(m_dailyMergeDOWList, 0, sizeof(m_dailyMergeDOWList));
-	m_treeCount = 0;
 	m_spideringEnabled = true;
 	m_spiderDelayInMilliseconds = 0;
 	m_isActive = false;
