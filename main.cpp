@@ -2070,7 +2070,7 @@ int main2 ( int argc , char *argv[] ) {
 	//g_statsdb.flush();
 
 	// ok, now activate statsdb
-	g_statsdb.m_disabled = false;
+	g_statsdb.enable();
 
 	log("db: gb is now ready");
 

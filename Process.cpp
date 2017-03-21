@@ -709,7 +709,7 @@ bool Process::shutdown2() {
 	}
 
 	// turn off statsdb so it does not try to add records for these writes
-	g_statsdb.m_disabled = true;
+	g_statsdb.disable();
 
 	finalizeRealtimeUrlClassification(),
 

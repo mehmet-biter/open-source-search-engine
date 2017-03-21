@@ -34,9 +34,8 @@ class Statsdb {
 	int32_t getImgHeight() ;
 	int32_t getImgWidth() ;
 
-	// so Process.cpp can turn it off when saving so we do not record
-	// disk writes/reads
-	bool m_disabled;
+	void enable() { m_disabled = false; }
+	void disable() { m_disabled = true; }
 
 	// . returns false and sets g_errno on error, true otherwise
 	// . we only add the stat to our local statsdb rdb, but because
@@ -116,6 +115,10 @@ class Statsdb {
 	// the graphing window. now a bunch of absolute divs in html
 	SafeBuf m_gw;
 	HashTableX m_dupTable;
+
+	// so Process.cpp can turn it off when saving so we do not record
+	// disk writes/reads
+	bool m_disabled;
 
 	SafeBuf m_sb0;
 	SafeBuf m_sb1;
