@@ -2316,6 +2316,9 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 									// docId found in newer file
 									gbshutdownCorrupted();
 								}
+
+								// found docId & validated
+								break;
 							}
 						}
 					}

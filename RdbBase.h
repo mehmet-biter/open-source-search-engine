@@ -211,6 +211,7 @@ private:
 		RdbMap *m_map;
 		RdbIndex *m_index;
 		bool m_allowReads;
+		bool m_pendingGenerateIndex;
 	} m_fileInfo[MAX_RDB_FILES + 1];
 	int32_t m_numFiles;
 	GbMutex m_mtxFileInfo;  //protects modification of m_fileInfo/m_numFiles
