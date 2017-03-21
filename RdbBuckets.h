@@ -67,7 +67,6 @@ public:
 	void setCollnum(collnum_t c) { m_collnum = c; }
 
 	bool addKey(const char *key, const char *data, int32_t dataSize);
-	char *getKeyVal(const char *key, char **data, int32_t *dataSize);
 
 	int32_t getNode(const char *key); //returns -1 if not found
 	int32_t getNumNegativeKeys() const;
@@ -78,8 +77,6 @@ public:
 	bool deleteNode(int32_t i);
 
 	bool deleteList(RdbList *list);
-
-	int getListSizeExact(const char *startKey, const char *endKey);
 
 	//Save State
 	int64_t fastSave_r(int fd, int64_t offset);
@@ -118,8 +115,6 @@ public:
 
 	bool addList(collnum_t collnum, RdbList *list);
 
-	char *getKeyVal(collnum_t collnum, const char *key, char **data, int32_t *dataSize);
-
 	bool getList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes, RdbList *list,
 	             int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys) const;
 
@@ -128,9 +123,6 @@ public:
 	bool deleteList(collnum_t collnum, RdbList *list);
 
 	int64_t getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const;
-
-	int getListSizeExact(collnum_t collnum, const char *startKey, const char *endKey);
-
 
 	bool addBucket (RdbBucket *newBucket, int32_t i);
 	int32_t getBucketNum(collnum_t collnum, const char *key) const;
