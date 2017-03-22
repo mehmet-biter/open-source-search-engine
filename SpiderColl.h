@@ -41,16 +41,10 @@ class SpiderColl {
 
 	bool      load();
 
-	int32_t getTotalOutstandingSpiders ( ) ;
-
-	void urlFiltersChanged();
-
 	key128_t m_firstKey;
 	// spiderdb is now 128bit keys
 	key128_t m_nextKey;
 	key128_t m_endKey;
-
-	bool m_useTree;
 
 	bool           m_lastReplyValid;
 	char           m_lastReplyBuf[MAX_SP_REPLY_SIZE];
@@ -64,7 +58,6 @@ class SpiderColl {
 	bool m_didRead;
 
 	// corresponding to CollectionRec::m_siteListBuf
-	//char *m_siteListAsteriskLine;
 	bool  m_siteListHasNegatives;
 	bool  m_siteListIsEmpty;
 	bool  m_siteListIsEmptyValid;
@@ -85,21 +78,12 @@ class SpiderColl {
 	int32_t      m_tailHopCount;
 	int64_t m_minFutureTimeMS;
 
-	// these don't work because we only store one reply
-	// which overwrites any older reply. that's how the 
-	// key is. we can change the key to use the timestamp 
-	// and not parent docid in makeKey() for spider 
-	// replies later.
-	// int32_t m_numSuccessReplies;
-	// int32_t m_numFailedReplies;
-
 	// . do not re-send CrawlInfoLocal for a coll if not update
 	// . we store the flags in here as true if we should send our
 	//   CrawlInfoLocal for this coll to this hostId
 	char m_sendLocalCrawlInfoToHost[MAX_HOSTS];
 
 	Msg4 m_msg4x;
-	RdbList m_tmpList;
 
 	bool isInDupCache ( SpiderRequest *sreq , bool addToCache ) ;
 
@@ -182,14 +166,10 @@ class SpiderColl {
 	int64_t m_lastReqUh48a;
 	int64_t m_lastReqUh48b;
 	int64_t m_lastRepUh48;
-	// move to CollectionRec so it can load at startup and save it
-	//HashTableX m_pageCountTable;
 
 	bool makeDoleIPTable     ( );
 	bool makeWaitingTable    ( );
 	bool makeWaitingTree     ( );
-
-	int64_t getEarliestSpiderTimeFromWaitingTree ( int32_t firstIp ) ;
 
 	bool printWaitingTree ( ) ;
 
@@ -198,9 +178,6 @@ class SpiderColl {
 	int32_t getNextIpFromWaitingTree ( );
 	uint64_t getNextSpiderTimeFromWaitingTree ( ) ;
 	void populateDoledbFromWaitingTree ( );
-
-	//bool scanSpiderdb        ( bool needList );
-
 
 	// broke up scanSpiderdb into simpler functions:
 	bool evalIpLoop ( ) ;
@@ -231,9 +208,7 @@ class SpiderColl {
 	void setPriority(int32_t pri);
 
 	key96_t m_nextDoledbKey;
-	bool  m_didRound;
 	int32_t  m_pri2;
-	int32_t  m_lastUrlFiltersUpdate;
 
 	// for reading lists from spiderdb
 	Msg5 m_msg5;
