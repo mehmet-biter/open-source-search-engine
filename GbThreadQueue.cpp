@@ -41,8 +41,8 @@ GbThreadQueue::GbThreadQueue()
 	, m_queueCondNotEmpty(PTHREAD_COND_INITIALIZER)
 	, m_thread()
 	, m_func()
-	, m_stop(false) {
-
+	, m_stop(false)
+	, m_started(false) {
 }
 
 GbThreadQueue::~GbThreadQueue() {
