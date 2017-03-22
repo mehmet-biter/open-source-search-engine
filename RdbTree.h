@@ -68,11 +68,7 @@ public:
 	// . returns # of occupied nodes we liberated
 	int32_t clear();
 
-	// remove recs from tree that have invalid collnums. this is done
-	// at load time. i dunno why it happens. it should never!
-	void cleanTree();
 
-	void delColl(collnum_t collnum);
 
 	// . this will overwrite nodes with the same key
 	// . returns -1 if it couldn't grab the memory or grow the table
@@ -93,6 +89,20 @@ public:
 	// . much much slower than getNextNode() below
 	int32_t getNextNode(collnum_t collnum, const char *key) const;
 
+
+	const char *getKey(int32_t node) const { return &m_keys[node*m_ks]; }
+
+	const char *getData(collnum_t collnum, const char *key) const;
+	const char *getData(int32_t node) const { return m_data[node]; }
+	void setData(int32_t node, char *data) { m_data[node] = data; }
+
+	int32_t getDataSize(int32_t node) const {
+		if (m_fixedDataSize == -1) {
+			return m_sizes[node];
+		}
+		return m_fixedDataSize;
+	}
+
 	// . get the next node # AFTER "node" by key
 	// . used for dumping out the nodes ordered by their keys
 	// . returns -1 on end
@@ -107,11 +117,26 @@ public:
 	void deleteNode(int32_t node, bool freeData);
 	bool deleteNode(collnum_t collnum, const char *key, bool freeData);
 
+
+	// . throw all the records in this range into this list
+	// . used for dumping to an rdb file permanently
+	// . sets list->m_lastKey to last key inserted into the list
+	// . list->m_lastKey will not be valid if list is empty
+	// . returns false if outta memory
+	// . "antiNumRecs" is set to # of keys w/ low bit cleared (antiKeys)
+	//   that were added to "list"
+	bool getList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes, RdbList *list,
+	             int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys) const;
+
+	// estimate the size of the list defined by these keys
+	int32_t getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const;
+
 	// . delete all records in this list from the tree
 	// . call deleteNode()
 	// . returns false if a key in list was not found
 	// . this happens if memory is corrupted!
 	bool deleteList(collnum_t collnum, RdbList *list);
+
 
 	bool isSaving() const { return m_isSaving; }
 	bool isWritable() const { return m_isWritable; }
@@ -121,49 +146,34 @@ public:
 
 	bool isLoading() const { return m_isLoading; }
 
-	const char *getData(collnum_t collnum, const char *key) const;
-	const char *getData(int32_t node) const { return m_data[node]; }
-	void setData(int32_t node, char *data) { m_data[node] = data; }
+	collnum_t getCollnum(int32_t node) const { return m_collnums[node]; }
 
-	int32_t getDataSize(int32_t node) const {
-		if (m_fixedDataSize == -1) {
-			return m_sizes[node];
-		}
-		return m_fixedDataSize;
-	}
-
-	const char *getKey(int32_t node) const { return &m_keys[node*m_ks]; }
-
-	collnum_t getCollnum ( int32_t node ) const { return m_collnums [node];}
-
-	bool  isEmpty      ( int32_t node ) const { return (m_parents [ node ] == -2);}
+	bool isEmpty(int32_t node) const { return (m_parents[node] == -2); }
+	bool isEmpty() const { return (m_numUsedNodes == 0); }
 
 	// an upper bound on the # of used nodes
 	int32_t  getNumNodes() const { return m_minUnusedNode; }
-
 	int32_t  getNumUsedNodes() const { return m_numUsedNodes; }
 
-	bool  isEmpty() const { return (m_numUsedNodes == 0); }
-
 	int32_t  getNumAvailNodes() const { return m_numNodes - m_numUsedNodes; }
-
 	int32_t  getNumTotalNodes() const { return m_numNodes; }
 
 	// negative and postive counts
-	int32_t  getNumNegativeKeys() const { return m_numNegativeKeys; }
-	int32_t  getNumPositiveKeys() const { return m_numPositiveKeys; }
+	int32_t getNumNegativeKeys() const { return m_numNegativeKeys; }
+	int32_t getNumPositiveKeys() const { return m_numPositiveKeys; }
 
-	int32_t  getNumNegativeKeys( collnum_t collnum ) const;
-	int32_t  getNumPositiveKeys( collnum_t collnum ) const;
+	int32_t getNumNegativeKeys(collnum_t collnum) const;
+	int32_t getNumPositiveKeys(collnum_t collnum) const;
 
-	void setNumKeys ( class CollectionRec *cr ) ;
+	void setNumKeys(class CollectionRec *cr);
 
 	// how much mem, including data, is used by this class?
-	int32_t getMemAllocated() const { return m_memAllocated;  }
+	int32_t getMemAllocated() const { return m_memAllocated; }
+
 	// . how much of the alloc'd mem is actually in use holding data
 	// . includes the tree infrastructure as well as the data itself
-	int32_t getMemOccupied      ( ) const { return m_memOccupied; }
-	int32_t getMaxMem           ( ) const { return m_maxMem; }
+	int32_t getMemOccupied() const { return m_memOccupied; }
+	int32_t getMaxMem() const { return m_maxMem; }
 
 	//  how much mem the tree would take if it were made into a list
 	int32_t getMemOccupiedForList() const;
@@ -171,25 +181,6 @@ public:
 	// . how much mem does this tree use, not including stored data
 	// . this will be the same as getMemAllocated() if fixedDataSize is 0
 	int32_t getTreeOverhead() const { return m_overhead * m_numNodes; }
-
-	// . throw all the records in this range into this list
-	// . used for dumping to an rdb file permanently
-	// . sets list->m_lastKey to last key inserted into the list
-	// . list->m_lastKey will not be valid if list is empty
-	// . returns false if outta memory
-	// . "antiNumRecs" is set to # of keys w/ low bit cleared (antiKeys)
-	//   that were added to "list"
-	bool getList ( collnum_t collnum    ,
-		       const char *startKey    ,
-		       const char *endKey      ,
-		       int32_t     minRecSizes ,
-		       RdbList *list        ,
-		       int32_t    *numPosRecs  ,
-		       int32_t    *numNegRecs ,   // = NULL 
-		       bool     useHalfKeys) const;
-
-	// estimate the size of the list defined by these keys
-	int32_t getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const;
 
 	// . Rdb uses this to determine when to dump this tree to disk
 	// . look at % of memory occupied/allocated of max, as well as % of
@@ -229,6 +220,12 @@ public:
 	// . re-allocs the m_keys,m_data,m_sizes,m_leftNodes,m_rightNodes
 	// . used for growing AND shrinking the table
 	bool growTree(int32_t newNumNodes);
+
+	// remove recs from tree that have invalid collnums. this is done
+	// at load time. i dunno why it happens. it should never!
+	void cleanTree();
+
+	void delColl(collnum_t collnum);
 
 	static void saveWrapper(void *state);
 	static void threadDoneWrapper(void *state, job_exit_t exit_type);
