@@ -9,6 +9,7 @@
 #include "Rdb.h"
 #include "RdbList.h"
 #include "Msg1.h"
+#include "Msg5.h"
 #include "SafeBuf.h"
 #include "HashTableX.h"
 #include "fctypes.h"
