@@ -13,7 +13,7 @@
 
 static void deleteRdbFiles() {
 	// delete all rdb files
-	for (int rdbId = RDB_NONE; rdbId < RDB_END; ++rdbId) {
+	for (rdbid_t rdbId = RDB_NONE; rdbId < RDB_END; rdbId = (rdbid_t)((int)rdbId + 1)) {
 		Rdb *rdb = getRdbFromId(rdbId);
 		if (rdb) {
 			for (int32_t i = 0; i < rdb->getNumBases(); ++i ) {

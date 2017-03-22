@@ -79,8 +79,6 @@ void Rdb::reset ( ) {
 	m_tree.reset();
 	m_buckets.reset();
 	m_mem.reset();
-	//m_cache.reset();
-	m_lastWrite = 0LL;
 	m_isClosing = false;
 	m_isClosed  = false;
 	m_isSaving  = false;
@@ -660,8 +658,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	if ( m_isClosed ) return true;
 	// don't call more than once
 	if ( m_isSaving ) return true;
-	// update last write time so main.cpp doesn't keep calling us
-	m_lastWrite = gettimeofdayInMilliseconds();
+
 	// set the m_isClosing flag in case we're waiting for a dump.
 	// then, when the dump is done, it will come here again
 	m_closeState       = state;
@@ -1038,11 +1035,8 @@ bool Rdb::dumpTree() {
 	// debug msg
 	log(LOG_INFO,"db: Dumping %s to disk. nice=%" PRId32,m_dbname,m_niceness);
 
-	// record last dump time so main.cpp will not save us this period
-	m_lastWrite = gettimeofdayInMilliseconds();
-
 	// only try to fix once per dump session
-	int64_t start = m_lastWrite; //gettimeofdayInMilliseconds();
+	int64_t start = gettimeofdayInMilliseconds();
 
 	// do not do chain testing because that is too slow
 	if ( m_useTree && ! m_tree.checkTree ( false /* printMsgs?*/, false/*chain?*/) ) {
@@ -2095,10 +2089,6 @@ int64_t Rdb::estimateListSize(collnum_t collnum, const char *startKey, const cha
 	return getBase(collnum)->estimateListSize(startKey, endKey, max, oldTruncationLimit);
 }
 
-int64_t Rdb::getNumGlobalRecs() const {
-	return (getNumTotalRecs() * g_hostdb.m_numShards);
-}
-
 // . return number of positive records - negative records
 int64_t Rdb::getNumTotalRecs(bool useCache) const {
 
@@ -2302,7 +2292,7 @@ char getKeySizeFromRdbId(rdbid_t rdbId) {
 }
 
 // returns -1 if dataSize is variable
-int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
+int32_t getDataSizeFromRdbId ( rdbid_t rdbId ) {
 	static bool s_flag = true;
 	static int32_t s_table2[RDB_END];
 	if ( rdbId >= RDB_END )

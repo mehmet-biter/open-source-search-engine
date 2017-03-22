@@ -499,7 +499,7 @@ public:
 	UdpSlot   *m_slot;
 	int64_t  m_startTime;
 	int32_t       m_niceness;
-	char       m_rdbId;
+	rdbid_t    m_rdbId;
 	char       m_ks;
 	char       m_startKey[MAX_KEY_BYTES];
 	char       m_endKey[MAX_KEY_BYTES];
