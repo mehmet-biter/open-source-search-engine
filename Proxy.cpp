@@ -1,7 +1,6 @@
 #include "gb-include.h"
 
 #include "Proxy.h"
-#include "Statsdb.h"
 #include "Process.h"
 #include "Msg13.h"
 #include "Collectiondb.h"
@@ -17,6 +16,7 @@
 #include "ip.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Statistics.h"
 
 
 Proxy g_proxy;
@@ -629,12 +629,10 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 					    //"query",
 					    color ,
 					    STAT_QUERY );
-			// add to statsdb as well
-			g_statsdb.addStat ( "query" ,
-					    stC->m_startTime ,
-					    nowms            ,
-					    stC->m_numQueryTerms );
 			g_stats.m_numSuccess++;
+
+			/// @todo ALC use proper query language
+			Statistics::register_query_time(stC->m_numQueryTerms, langUnknown, (nowms - stC->m_startTime));
 		}
 
 		// let tcp server free it when done
@@ -667,12 +665,10 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 				    //"query",
 				    color ,
 				    STAT_QUERY );
-		// add to statsdb as well
-		g_statsdb.addStat ( "query" ,
-				    stC->m_startTime ,
-				    nowms            ,
-				    stC->m_numQueryTerms );
 		g_stats.m_numSuccess++;
+
+		/// @todo ALC use proper query language
+		Statistics::register_query_time(stC->m_numQueryTerms, langUnknown, (nowms - stC->m_startTime));
 	}
 	else if ( stC->m_isQuery && httpStatus != 200 )
 		g_stats.m_numFails++;

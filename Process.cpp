@@ -13,7 +13,6 @@
 #include "SpiderColl.h"
 #include "SpiderLoop.h"
 #include "Doledb.h"
-#include "Statsdb.h"
 #include "JobScheduler.h"
 #include "Statistics.h"
 #include "PingServer.h"
@@ -272,7 +271,6 @@ bool Process::init ( ) {
 	m_rdbs[m_numRdbs++] = g_spiderdb.getRdb    ();
 	m_rdbs[m_numRdbs++] = g_clusterdb.getRdb   (); 
 	m_rdbs[m_numRdbs++] = g_tagdb.getRdb      ();
-	m_rdbs[m_numRdbs++] = g_statsdb.getRdb     ();
 	m_rdbs[m_numRdbs++] = g_linkdb.getRdb      ();
 
 	// save what urls we have been doled
@@ -708,9 +706,6 @@ bool Process::shutdown2() {
 		m_urgent = true;
 	}
 
-	// turn off statsdb so it does not try to add records for these writes
-	g_statsdb.disable();
-
 	finalizeRealtimeUrlClassification(),
 
 	Statistics::finalize();
@@ -969,9 +964,6 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 		log("gb: trying to shutdown");
 	}
 
-	// turn off statsdb until everyone is done
-	//g_statsdb.m_disabled = true;
-
 	// loop over all Rdbs and save them
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
 		if ( m_calledSave ) {
@@ -1013,8 +1005,7 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 
 	// do not re-save the stuff we just did this round
 	m_calledSave = true;
-	// quickly re-enable if statsdb tree does not need save any more
-	//if ( ! g_statsdb.m_rdb.needsSave() ) g_statsdb.m_disabled = false;
+
 	// check if any need to finish saving
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
 		// do not return until all saved if we are shutting down

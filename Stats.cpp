@@ -6,7 +6,6 @@
 #include "PingServer.h"
 #include "ip.h"
 #include "Mem.h"
-//#include "Statsdb.h"
 
 class Stats g_stats;
 
@@ -153,9 +152,6 @@ void Stats::addStat_r ( int32_t        numBytes    ,
 
 	// advance the next available slot ptr, wrap if necessary
 	if ( m_next >= MAX_POINTS ) m_next = 0;
-
-	// add it to statsdb now too!
-	//g_statsdb.addStat ( label, startTime,endTime, numBytes );
 
 	// unlock
 	//pthread_mutex_unlock ( &s_lock );

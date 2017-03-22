@@ -24,12 +24,12 @@ OBJS_O0 =  \
 	Lang.o LanguageIdentifier.o Log.o \
 	Mem.o Msg0.o Msg1.o Msg4In.o Msg4Out.o MsgC.o Msg13.o Msg20.o Msg22.o Msg39.o Msg1f.o Msg3a.o Msg51.o Msge0.o Msge1.o Multicast.o \
 	Parms.o Pages.o PageAddColl.o PageAddUrl.o PageBasic.o PageCrawlBot.o PageGet.o PageHealthCheck.o PageHosts.o PageInject.o PageLogView.o \
-	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageStatsdb.o PageThreads.o PageTitledb.o \
+	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o \
 	Phrases.o PingServer.o Process.o Proxy.o Punycode.o \
 	Query.o \
 	RdbCache.o RdbDump.o RdbMem.o RdbMerge.o RdbScan.o RdbTree.o \
 	Rebalance.o Repair.o RobotRule.o Robots.o \
-	Sanity.o ScalingFunctions.o SearchInput.o SiteGetter.o Speller.o SpiderProxy.o Stats.o Statsdb.o SummaryCache.o Synonyms.o \
+	Sanity.o ScalingFunctions.o SearchInput.o SiteGetter.o Speller.o SpiderProxy.o Stats.o SummaryCache.o Synonyms.o \
 	Tagdb.o TcpServer.o Timezone.o Titledb.o \
 	Version.o \
 	Wiki.o Wiktionary.o \

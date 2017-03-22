@@ -168,11 +168,6 @@ static WebPage s_pages[] = {
 	  sendPageStats    , 0 ,NULL,NULL,
 	  PG_STATUS|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_GRAPH , "admin/graph"  , 0 , "Graph"  ,  0 , 0 ,
-	  "query stats graph",
-	  sendPageGraph  , 2  ,NULL,NULL,
-	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
-
 	{ PAGE_PERF      , "admin/perf"    , 0 , "Performance"     ,  0 , 0 ,
 	  "function performance graph",
 	  sendPagePerf     , 0 ,NULL,NULL,

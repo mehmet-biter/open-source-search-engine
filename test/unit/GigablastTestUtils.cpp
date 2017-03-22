@@ -2,7 +2,6 @@
 #include "GigablastTestUtils.h"
 #include "Loop.h"
 #include "Collectiondb.h"
-#include "Statsdb.h"
 #include "Posdb.h"
 #include "Titledb.h"
 #include "Tagdb.h"
@@ -49,7 +48,6 @@ void GbTest::initializeRdbs() {
 
 	ASSERT_TRUE(g_collectiondb.loadAllCollRecs());
 
-	ASSERT_TRUE(g_statsdb.init());
 	ASSERT_TRUE(g_posdb.init());
 	ASSERT_TRUE(g_titledb.init());
 	ASSERT_TRUE(g_tagdb.init());
@@ -73,7 +71,6 @@ void GbTest::resetRdbs() {
 	g_tagdb.reset();
 	g_titledb.reset();
 	g_posdb.reset();
-	g_statsdb.reset();
 
 	g_collectiondb.reset();
 

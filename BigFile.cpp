@@ -6,7 +6,6 @@
 #include "Conf.h"
 #include "JobScheduler.h"
 #include "Stats.h"
-#include "Statsdb.h"
 #include "Sanity.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"

@@ -2,7 +2,6 @@
 
 #include "Collectiondb.h"
 #include "Stats.h"
-#include "Statsdb.h"
 #include "Statistics.h"
 #include "Query.h"
 #include "Speller.h"
@@ -109,13 +108,8 @@ static bool sendReply(State0 *st, char *reply) {
 			    color ,
 			    STAT_QUERY );
 
-	// add to statsdb, use # of qterms as the value/qty
-	g_statsdb.addStat ( "query",
-			    st->m_startTime,
-			    nowms,
-			    si->m_q.m_numTerms);
-
 	Statistics::register_query_time(si->m_q.m_numWords, si->m_queryLangId, took);
+
 	// . log the time
 	// . do not do this if g_errno is set lest m_sbuf1 be bogus b/c
 	//   it failed to allocate its buf to hold terminating \0 in
