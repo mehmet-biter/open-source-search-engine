@@ -333,15 +333,12 @@ private:
 
 	std::atomic<int32_t> m_numMergesOut;
 
-	BigFile   m_saveFile; // for saving the tree
 	bool      m_isClosing; 
 	bool      m_isClosed;
 
 	// this callback called when close is complete
 	void     *m_closeState; 
 	void    (* m_closeCallback) (void *state );
-
-	int32_t      m_maxTreeMem ; // max mem tree can use, dump at 90% of this
 
 	int32_t      m_minToMerge;  // need at least this many files b4 merging
 
@@ -382,8 +379,6 @@ private:
 	// so only one save thread launches at a time
 	bool m_isSaving;
 
-	bool m_isTitledb;
-
 	int32_t  m_fn;
 	
 	char m_treeAllocName[64]; //for memory used m_tree/m_buckets
@@ -406,9 +401,6 @@ private:
 	int32_t m_pageSize;
 
 	bool m_initialized;
-
-	// used for deduping spiderdb tree
-	Msg5 m_msg5;
 };
 
 #endif // GB_RDB_H

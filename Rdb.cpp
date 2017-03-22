@@ -49,7 +49,6 @@ Rdb::Rdb ( ) {
 	m_useTree = false;
 	m_closeState = NULL;
 	m_closeCallback = NULL;
-	m_maxTreeMem = 0;
 	m_minToMerge = 0;
 	m_dumpErrno = 0;
 	m_useHalfKeys = false;
@@ -62,7 +61,6 @@ Rdb::Rdb ( ) {
 	m_ks = 0;
 	m_pageSize = 0;
 	// PVS-Studio
-	m_isTitledb = false;
 	memset(m_dbname, 0, sizeof(m_dbname));
 	memset(m_treeAllocName, 0, sizeof(m_treeAllocName));
 	memset(m_memAllocName, 0, sizeof(m_memAllocName));
@@ -152,7 +150,6 @@ bool Rdb::init(const char *dbname,
 
 	// store the other parameters for initializing each Rdb
 	m_fixedDataSize    = fixedDataSize;
-	m_maxTreeMem       = maxTreeMem;
 	m_useHalfKeys      = useHalfKeys;
 	m_ks               = keySize;
 	m_useIndexFile     = useIndexFile;
