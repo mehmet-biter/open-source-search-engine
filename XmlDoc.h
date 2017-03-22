@@ -981,6 +981,7 @@ public:
 	char m_isErrorPage;		// May be -1
 
 	// stuff
+	int64_t m_lastTimeStart;
 	const char *m_statusMsg;
 	Msg4  m_msg4;
 

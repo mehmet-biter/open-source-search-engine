@@ -34,6 +34,7 @@
 #include "UdpProtocol.h"
 #include "GbMutex.h"
 #include <inttypes.h>
+#include <atomic>
 
 
 static const int64_t udpserver_sendrequest_infinite_timeout = 999999999999;
@@ -345,19 +346,19 @@ private:
 
 public:
 	// stats
-	int64_t       m_eth0BytesIn;
-	int64_t       m_eth0BytesOut;
-	int64_t       m_eth0PacketsIn;
-	int64_t       m_eth0PacketsOut;
-	int64_t       m_eth1BytesIn;
-	int64_t       m_eth1BytesOut;
-	int64_t       m_eth1PacketsIn;
-	int64_t       m_eth1PacketsOut;
+	std::atomic<int64_t> m_eth0BytesIn;
+	std::atomic<int64_t> m_eth0BytesOut;
+	std::atomic<int64_t> m_eth0PacketsIn;
+	std::atomic<int64_t> m_eth0PacketsOut;
+	std::atomic<int64_t> m_eth1BytesIn;
+	std::atomic<int64_t> m_eth1BytesOut;
+	std::atomic<int64_t> m_eth1PacketsIn;
+	std::atomic<int64_t> m_eth1PacketsOut;
 
-	int64_t       m_outsiderPacketsIn;
-	int64_t       m_outsiderPacketsOut;
-	int64_t       m_outsiderBytesIn;
-	int64_t       m_outsiderBytesOut;
+	std::atomic<int64_t> m_outsiderPacketsIn;
+	std::atomic<int64_t> m_outsiderPacketsOut;
+	std::atomic<int64_t> m_outsiderBytesIn;
+	std::atomic<int64_t> m_outsiderBytesOut;
 };
 
 extern class UdpServer g_udpServer;

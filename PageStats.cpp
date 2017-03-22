@@ -1005,17 +1005,17 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      g_httpServer.m_uncompressedBytes,
 			      g_httpServer.getCompressionRatio(),
 
-			      g_udpServer.m_eth0BytesIn,
-			      g_udpServer.m_eth0PacketsIn,
+			      g_udpServer.m_eth0BytesIn.load(),
+			      g_udpServer.m_eth0PacketsIn.load(),
 
-			      g_udpServer.m_eth0BytesOut,
-			      g_udpServer.m_eth0PacketsOut,
+			      g_udpServer.m_eth0BytesOut.load(),
+			      g_udpServer.m_eth0PacketsOut.load(),
 
-			      g_udpServer.m_eth1BytesIn,
-			      g_udpServer.m_eth1PacketsIn,
+			      g_udpServer.m_eth1BytesIn.load(),
+			      g_udpServer.m_eth1PacketsIn.load(),
 
-			      g_udpServer.m_eth1BytesOut,
-			      g_udpServer.m_eth1PacketsOut ,
+			      g_udpServer.m_eth1BytesOut.load(),
+			      g_udpServer.m_eth1PacketsOut.load(),
 
 			      g_cancelAcksSent,
 			      g_cancelAcksRead,
@@ -1066,17 +1066,17 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      g_httpServer.getCompressionRatio(),
 
 
-			      g_udpServer.m_eth0BytesIn,
-			      g_udpServer.m_eth0PacketsIn,
+			      g_udpServer.m_eth0BytesIn.load(),
+			      g_udpServer.m_eth0PacketsIn.load(),
 
-			      g_udpServer.m_eth0BytesOut,
-			      g_udpServer.m_eth0PacketsOut,
+			      g_udpServer.m_eth0BytesOut.load(),
+			      g_udpServer.m_eth0PacketsOut.load(),
 
-			      g_udpServer.m_eth1BytesIn,
-			      g_udpServer.m_eth1PacketsIn,
+			      g_udpServer.m_eth1BytesIn.load(),
+			      g_udpServer.m_eth1PacketsIn.load(),
 
-			      g_udpServer.m_eth1BytesOut,
-			      g_udpServer.m_eth1PacketsOut ,
+			      g_udpServer.m_eth1BytesOut.load(),
+			      g_udpServer.m_eth1PacketsOut.load(),
 
 			      g_cancelAcksSent,
 			      g_cancelAcksRead,
@@ -1123,17 +1123,17 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      g_httpServer.getCompressionRatio(),
 
 
-			      g_udpServer.m_eth0BytesIn,
-			      g_udpServer.m_eth0PacketsIn,
+			      g_udpServer.m_eth0BytesIn.load(),
+			      g_udpServer.m_eth0PacketsIn.load(),
 
-			      g_udpServer.m_eth0BytesOut,
-			      g_udpServer.m_eth0PacketsOut,
+			      g_udpServer.m_eth0BytesOut.load(),
+			      g_udpServer.m_eth0PacketsOut.load(),
 
-			      g_udpServer.m_eth1BytesIn,
-			      g_udpServer.m_eth1PacketsIn,
+			      g_udpServer.m_eth1BytesIn.load(),
+			      g_udpServer.m_eth1PacketsIn.load(),
 
-			      g_udpServer.m_eth1BytesOut,
-			      g_udpServer.m_eth1PacketsOut ,
+			      g_udpServer.m_eth1BytesOut.load(),
+			      g_udpServer.m_eth1PacketsOut.load(),
 
 			      g_cancelAcksSent,
 			      g_cancelAcksRead,
