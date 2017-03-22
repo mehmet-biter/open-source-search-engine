@@ -38,11 +38,12 @@ int32_t RdbIndexQuery::getFilePos(uint64_t docId, bool *isDel) const {
 
 	// mismatch in idx & data files?
 
+	logError("Unable to find docId=%lu in global index", docId);
+
 	/// @todo ALC we should core dump here instead (tmp workaround until nomerge branch is merged down to master)
 	/// this happens when pending docIds are not merged into RdbTree index (which should not happen with nomerge branch)
 	return m_numFiles;
 
-//	logError("Unable to find docId=%lu in global index", docId);
 //	printIndex();
 //	gbshutdownLogicError();
 }
