@@ -1753,16 +1753,14 @@ bool RdbBuckets::delColl(collnum_t collnum) {
 int32_t RdbBuckets::addTree(RdbTree *rt) {
 	int32_t n = rt->getFirstNode();
 	int32_t count = 0;
-	const char *data = NULL;
 
-	int32_t dataSize = m_fixedDataSize;
+	const char *data = NULL;
+	int32_t dataSize = 0;
 
 	while (n >= 0) {
 		if (m_fixedDataSize != 0) {
 			data = rt->getData(n);
-			if (m_fixedDataSize == -1) {
-				dataSize = rt->getDataSize(n);
-			}
+			dataSize = rt->getDataSize(n);
 		}
 
 		if (addNode(rt->getCollnum(n), rt->getKey(n), data, dataSize) < 0) {

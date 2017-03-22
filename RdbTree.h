@@ -49,7 +49,6 @@ class RdbTree {
 	// . this RdbCache class caches scans f
 	// . it adds an m_endKeys,m_next,m_prev,m_time to each node
 	friend class RdbCache;
-	friend void RdbMem::freeDumpedMem(RdbTree *tree); /// @todo ALC remove friend when fixed
 
 public:
 
@@ -109,7 +108,6 @@ public:
 	// . much much slower than getNextNode() below
 	int32_t getNextNode(collnum_t collnum, const char *key) const;
 
-
 	// . get the next node # AFTER "node" by key
 	// . used for dumping out the nodes ordered by their keys
 	// . returns -1 on end
@@ -155,7 +153,13 @@ public:
 		m_data[node] = data;
 	}
 
-	int32_t  getDataSize  ( int32_t node ) const { return m_sizes   [node]; }
+	int32_t getDataSize(int32_t node) const {
+		if (m_fixedDataSize == -1) {
+			return m_sizes[node];
+		}
+		return m_fixedDataSize;
+	}
+
 	char       *getKey(int32_t node)       { return &m_keys[node*m_ks]; }
 	const char *getKey(int32_t node) const { return &m_keys[node*m_ks]; }
 

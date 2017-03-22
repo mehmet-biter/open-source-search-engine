@@ -223,12 +223,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 		// move it. m_inDumpLoop should still
 		// be true so we will get added to
 		// m_ptr2
-		int32_t size;
-		if ( tree->m_sizes )
-			size = tree->getDataSize(i);
-		else
-			size = tree->m_fixedDataSize;
-			
+		int32_t size = tree->getDataSize(i);
 		if(size<0) gbshutdownCorrupted();
 		if(size==0)
 			continue;
