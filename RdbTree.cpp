@@ -1753,9 +1753,7 @@ bool RdbTree::getList ( collnum_t collnum ,
 //   in [startKey, endKey] in this tree
 // . if the count is < 200 it returns an EXACT count
 // . right now it only works for dataless nodes (keys only)
-int32_t RdbTree::getListSize ( collnum_t collnum ,
-			    const char *startKey, const char *endKey,
-			    char *minKey   , char *maxKey ) {
+int32_t RdbTree::getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const {
 	// make these as benign as possible
 	//if ( minKey ) *minKey = endKey;
 	//if ( maxKey ) *maxKey = startKey;
@@ -1812,7 +1810,7 @@ int32_t RdbTree::getListSize ( collnum_t collnum ,
 // . *retKey is the key that has the returned order
 // . *retKey gets as close to "key" as it can
 // . returns # of NODES
-int32_t RdbTree::getOrderOfKey ( collnum_t collnum, const char *key, char *retKey ) {
+int32_t RdbTree::getOrderOfKey ( collnum_t collnum, const char *key, char *retKey ) const {
 	if ( m_numUsedNodes <= 0 ) return 0;
 	int32_t i     = m_headNode;
 	// estimate the depth of tree if not balanced
@@ -1845,7 +1843,7 @@ int32_t RdbTree::getOrderOfKey ( collnum_t collnum, const char *key, char *retKe
 	return (int32_t) normOrder;
 }
 
-int32_t RdbTree::getTreeDepth ( ) {
+int32_t RdbTree::getTreeDepth() const {
 	// no problem if we're balanced
 	if ( m_doBalancing ) return m_depth [ m_headNode ];
 	// . otherwise compute: take log2(m_numUsedNodes)

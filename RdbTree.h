@@ -198,9 +198,8 @@ public:
 		       bool     useHalfKeys) const;
 
 	// estimate the size of the list defined by these keys
-	int32_t getListSize ( collnum_t collnum ,
-			   const char *startKey, const char *endKey,
-			   char *minKey   , char *maxKey );
+	int32_t getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const;
+
 
 	// . load & save the tree quickly
 	// . returns false on error, true otherwise
@@ -268,9 +267,10 @@ private:
 	int32_t computeDepth(int32_t headNode) const;
 
 	// used by getListSize() to estiamte a list size
-	int32_t getOrderOfKey ( collnum_t collnum , const char *key , char *retKey );
+	int32_t getOrderOfKey(collnum_t collnum, const char *key, char *retKey) const;
+
 	// used by getrderOfKey() (have to estimate if tree not balanced)
-	int32_t getTreeDepth  ();
+	int32_t getTreeDepth() const;
 
 	// can we write to the tree?
 	bool    m_isWritable;
