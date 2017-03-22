@@ -1057,6 +1057,12 @@ bool RdbTree::fixTree ( ) {
 	return true;
 }
 
+void RdbTree::verifyIntegrity() {
+	if (!checkTree(false, true)) {
+		gbshutdownCorrupted();
+	}
+}
+
 // returns false if tree had problem, true otherwise
 bool RdbTree::checkTree ( bool printMsgs , bool doChainTest ) {
 	// no writing to tree while we are checking, since we
