@@ -3483,11 +3483,9 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 	SafeBuf doleBuf;
 	doleBuf.pushLong(4);
 	int32_t added = 0;
-	for ( int32_t node = m_winnerTree.getFirstNode() ; 
-	      node >= 0 ; 
-	      node = m_winnerTree.getNextNode ( node ) ) {
+	for (int32_t node = m_winnerTree.getFirstNode(); node >= 0; node = m_winnerTree.getNextNode(node)) {
 		// get data for that
-		const SpiderRequest *sreq2 = reinterpret_cast<const SpiderRequest *>(m_winnerTree.getData(node));
+		const SpiderRequest *sreq2 = reinterpret_cast<const SpiderRequest*>(m_winnerTree.getData(node));
 
 		// sanity
 		if ( sreq2->m_firstIp != firstIp ) { g_process.shutdownAbort(true); }
