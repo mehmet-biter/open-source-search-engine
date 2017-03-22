@@ -49,15 +49,6 @@ public:
 	RdbTree();
 	~RdbTree();
 
-	// . Rdb uses this to determine when to dump this tree to disk
-	// . look at % of memory occupied/allocated of max, as well as % of
-	//   nodes used
-	bool is90PercentFull() const {
-		// . m_memOccupied is amount of alloc'd mem that data occupies
-		// . now we /90 and /100 since multiplying overflowed
-		return ( m_numUsedNodes/90 >= m_numNodes/100 );
-	}
-
 	// . a fixedDataSize of -1 means each node has data of a variable size
 	// . set maxMem to -1 for no max 
 	// . returns false & sets errno if fails to alloc "maxNumNodes" nodes
@@ -200,31 +191,33 @@ public:
 	// estimate the size of the list defined by these keys
 	int32_t getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const;
 
+	// . Rdb uses this to determine when to dump this tree to disk
+	// . look at % of memory occupied/allocated of max, as well as % of
+	//   nodes used
+	bool is90PercentFull() const {
+		// . m_memOccupied is amount of alloc'd mem that data occupies
+		// . now we /90 and /100 since multiplying overflowed
+		return ( m_numUsedNodes/90 >= m_numNodes/100 );
+	}
+
+	int32_t getMinUnusedNode() const { return m_minUnusedNode; }
 
 	// . load & save the tree quickly
 	// . returns false on error, true otherwise
 	// . sometimes sets g_errno when it returns false
-	bool fastLoad ( BigFile *f , RdbMem *memStack ) ;
+	bool fastLoad(BigFile *f, RdbMem *memStack);
+
 	// . we now optionally save with a thread
 	// . when saving m_isSaving is set to true and nothing can be added
 	//   to the tree, g_errno will be set to ETRYAGAIN when addNode()
 	//   is called
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
-	bool fastSave ( const char *dir,
-			const char *dbname,
-			bool     useThread ,
-			void    *state     , 
-			void    (* callback)(void *state ) );
-
-	// this is called by a thread
-	bool fastSave_r() ;
-
-	int32_t getMinUnusedNode() const { return m_minUnusedNode; }
+	bool fastSave(const char *dir, const char *dbname, bool useThread, void *state, void (*callback)(void *state));
 
 	void verifyIntegrity();
-	bool checkTree  ( bool printMsgs , bool doChainTest );
-	bool fixTree    ( );
+	bool checkTree(bool printMsgs, bool doChainTest);
+	bool fixTree();
 
 	void disableWrites () { m_isWritable = false; }
 	void enableWrites  () { m_isWritable = true ; }
@@ -255,6 +248,9 @@ private:
 	int32_t getMemOccupiedForList2(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes) const;
 
 	bool checkTree2 ( bool printMsgs , bool doChainTest );
+
+	// this is called by a thread
+	bool fastSave_r() ;
 
 	// used by fastSave() and fastLoad()
 	int32_t fastSaveBlock_r(int fd, int32_t start, int64_t offset);
