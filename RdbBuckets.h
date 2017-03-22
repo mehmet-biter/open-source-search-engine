@@ -46,8 +46,6 @@ public:
 
 	int32_t addNode(collnum_t collnum, const char *key, const char *data, int32_t dataSize);
 
-	bool addList(collnum_t collnum, RdbList *list);
-
 	bool getList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes, RdbList *list,
 	             int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys) const;
 

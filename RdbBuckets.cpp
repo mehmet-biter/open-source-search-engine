@@ -1776,21 +1776,6 @@ int32_t RdbBuckets::addTree(RdbTree *rt) {
 	return count;
 }
 
-//this could be sped up a lot, but it is only called from repair at the moment.
-bool RdbBuckets::addList(collnum_t collnum, RdbList* list) {
-	char listKey[MAX_KEY_BYTES];
-
-	for (list->resetListPtr(); !list->isExhausted(); list->skipCurrentRecord()) {
-		list->getCurrentKey(listKey);
-
-		if (addNode(collnum, listKey, list->getCurrentData(), list->getCurrentDataSize()) < 0) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
 //return the total bytes of the list bookended by startKey and endKey
 int64_t RdbBuckets::getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const {
 	if (minKey) {
