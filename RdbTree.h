@@ -45,11 +45,6 @@ class RdbList;
 class BigFile;
 
 class RdbTree {
-
-	// . this RdbCache class caches scans f
-	// . it adds an m_endKeys,m_next,m_prev,m_time to each node
-	friend class RdbCache;
-
 public:
 
 	 RdbTree       ( );
