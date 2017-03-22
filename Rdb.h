@@ -52,7 +52,7 @@ public:
 	~Rdb ( );
 
 	bool addRdbBase1 ( const char *coll );
-	bool addRdbBase2 ( collnum_t collnum );
+
 	bool delColl ( const char *coll );
 
 	bool resetBase ( collnum_t collnum );
@@ -80,7 +80,7 @@ public:
 		     void (* callback)(void *state ) ,
 		     bool urgent ,
 		     bool exitAfterClosing );
-	//bool close ( ) { return close ( NULL , NULL ); }
+
 	// used by PageMaster.cpp to check to see if all rdb's are closed yet
 	bool isClosed() const { return m_isClosed; }
 	bool needsSave() const;
@@ -163,7 +163,6 @@ public:
 	RdbBase *getBase(collnum_t collnum );
 	const RdbBase *getBase(collnum_t collnum ) const { return const_cast<Rdb*>(this)->getBase(collnum); }
 	int32_t getNumBases() const;
-	void addBase ( collnum_t collnum , class RdbBase *base ) ;
 
 
 	// how much mem is allocated for our maps?
@@ -213,10 +212,9 @@ public:
 	const char* getDbname() const { return m_dbname; }
 
 	bool isCollectionless() const { return m_isCollectionLess; }
+
 	bool isInDumpLoop() const { return m_inDumpLoop; }
-	void setInDumpLoop(bool inDumpLoop) {
-		m_inDumpLoop = inDumpLoop;
-	}
+	void setInDumpLoop(bool inDumpLoop) { m_inDumpLoop = inDumpLoop; }
 
 	bool isUseIndexFile() const { return m_useIndexFile; }
 
@@ -258,6 +256,8 @@ public:
 	static void doneDumpingCollWrapper(void *state);
 
 private:
+	bool addRdbBase2 ( collnum_t collnum );
+	void addBase(collnum_t collnum, RdbBase *base);
 
 	// returns false if no room in tree or m_mem for a list to add
 	bool hasRoom(RdbList *list);
