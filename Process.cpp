@@ -418,7 +418,7 @@ int64_t Process::getTotalDocsIndexed() {
 
 void processSleepWrapper(int /*fd*/, void * /*state*/) {
 
-	if ( g_process.m_mode == Process::Process::EXIT_MODE ) {
+	if ( g_process.m_mode == Process::EXIT_MODE ) {
 		g_process.shutdown2();
 		return;
 	}
@@ -709,7 +709,7 @@ bool Process::shutdown2() {
 	}
 
 	// turn off statsdb so it does not try to add records for these writes
-	g_statsdb.m_disabled = true;
+	g_statsdb.disable();
 
 	finalizeRealtimeUrlClassification(),
 

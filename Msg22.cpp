@@ -7,6 +7,7 @@
 #include "Collectiondb.h"
 #include "Process.h"
 #include "Mem.h"
+#include "Msg5.h"
 
 static void handleRequest22 ( UdpSlot *slot , int32_t netnice ) ;
 

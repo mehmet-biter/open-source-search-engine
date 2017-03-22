@@ -249,7 +249,7 @@ int32_t RdbTree::clear ( ) {
 
 // . used by cache 
 // . wrapper for getNode()
-int32_t RdbTree::getNode(collnum_t collnum, const char *key) {
+int32_t RdbTree::getNode(collnum_t collnum, const char *key) const {
 	int32_t i = m_headNode;
 
 	// get the node (about 4 cycles per loop, 80cycles for 1 million items)
@@ -321,19 +321,19 @@ int32_t RdbTree::getNextNode(collnum_t collnum, const char *key) const {
 	return getNextNode ( parent );
 }
 
-int32_t RdbTree::getFirstNode ( ) {
+int32_t RdbTree::getFirstNode() const {
 	const char *k = KEYMIN();
 	return getNextNode ( 0 , k );
 }
 
-int32_t RdbTree::getLastNode ( ) {
+int32_t RdbTree::getLastNode() const {
 	const char *k = KEYMAX();
 	return getPrevNode ( (collnum_t)0x7fff , k );
 }
 
 // . get the node whose key is <= "key"
 // . returns -1 if none
-int32_t RdbTree::getPrevNode ( collnum_t collnum, const char *key ) {
+int32_t RdbTree::getPrevNode(collnum_t collnum, const char *key) const {
 	// return -1 if no non-empty nodes in the tree
 	if ( m_headNode < 0  ) return -1;
 	// get the node (about 4 cycles per loop, 80cycles for 1 million items)
@@ -356,8 +356,9 @@ int32_t RdbTree::getPrevNode ( collnum_t collnum, const char *key ) {
 	return getPrevNode ( parent );
 }
 
-char *RdbTree::getData ( collnum_t collnum, const char *key ) {
-	int32_t n = getNode ( collnum , key ); if ( n < 0 ) return NULL;
+const char *RdbTree::getData(collnum_t collnum, const char *key) const {
+	int32_t n = getNode(collnum, key);
+	if (n < 0) return NULL;
 	return m_data[n];
 };
 
@@ -395,7 +396,7 @@ int32_t RdbTree::getNextNode(int32_t i) const {
 }
 
 // . "i" is the next node number
-int32_t RdbTree::getPrevNode ( int32_t i ) {
+int32_t RdbTree::getPrevNode(int32_t i) const {
 	// cruise the kids if we have a left one
 	if ( m_left[i] >= 0 ) {
 		// go to the left kid
@@ -1054,6 +1055,12 @@ bool RdbTree::fixTree ( ) {
 	}
 	log("db: Fix tree succeeded for %s.",m_dbname);
 	return true;
+}
+
+void RdbTree::verifyIntegrity() {
+	if (!checkTree(false, true)) {
+		gbshutdownCorrupted();
+	}
 }
 
 // returns false if tree had problem, true otherwise
@@ -1740,80 +1747,13 @@ bool RdbTree::getList ( collnum_t collnum ,
 	return true;
 }
 
-// . return false on error (out of memory in list)
-// . don't order by keys, order by node #
-// . used for saving a tree to disk temporarily so it can be re-loaded
-//   w/o totally unbalancing the tree
-// . "*lastNode" is last node # in the list
-// . we set *lastNode to -1 if that's all folks
-/*
-bool RdbTree::getListUnordered ( int32_t startNode , int32_t minRecSizes ,
-				 RdbList *list  , int32_t *nextNode ) {
-	// assume no nodes from startNode onward in this tree
-	*nextNode = -1;
-	// reset the list
-	list->reset();
-	list->setFixedDataSize ( m_fixedDataSize );
-	// return true if no non-empty nodes in the tree
-	if ( m_numUsedNodes == 0 ) return true;
-	// . grow list to minRecSizes or size of tree, whichever is smallest
-	// . how much space would whole tree take if we stored it in a list?
-	// . this includes records that are deletes
-	int32_t growth = getMemOccupiedForList ( );
-	// don't grow more than we need to
-	if ( minRecSizes < growth ) growth = minRecSizes;
-	// grow the list now
-	if ( ! list->growList ( growth ) ) {
-		log("db: Failed to grow list to %" PRId32" bytes for storing "
-			   "records from tree: %s.",growth,mstrerror(g_errno));
-		return false;
-	}
-	// mdw fixed, this. it was node = 0 so we couldn't dump all of tree!!!
-	int32_t node = startNode ;
-
-	int32_t  dataSize;
-	char *data;
-
-	while ( node < m_minUnusedNode ) {
-		// continue if this node is empty
-		if ( m_parents [ node ] == -2 ) { node++; continue; }
-		// get the data/dataSize
-		if ( m_fixedDataSize == -1 ) dataSize = m_sizes[node];
-		else                         dataSize = m_fixedDataSize;
-		if ( m_fixedDataSize == 0  ) data = NULL;
-		else                         data = m_data[node];
-		// don't exceed the specified buf size
-		minRecSizes -= (m_ks + dataSize);
-		if ( m_fixedDataSize == -1 ) minRecSizes -= 4;
-		if ( minRecSizes < 0 ) break;
-		// . add to the list
-		// . return false on error
-		if ( ! list->addRecord ( m_keys[node], dataSize , data ) ) {
-			log(LOG_WARN, "db: Failed to add record "
-				   "to tree list for %s: %s.",
-				   m_dbname,mstrerror(g_errno));
-			return false;
-		}
-		// goto next node
-		node++;
-	}
-	// . record the next node to be added into the list 
-	// . iff there are more nodes available
-	// . otherwise, leave it set to -1 so the caller knows that's it
-	if ( node < m_minUnusedNode ) *nextNode = node;
-	return true;
-}
-*/
-
 // . this just estimates the size of the list 
 // . the more balanced the tree the better the accuracy
 // . this now returns total recSizes not # of NODES like it used to
 //   in [startKey, endKey] in this tree
 // . if the count is < 200 it returns an EXACT count
 // . right now it only works for dataless nodes (keys only)
-int32_t RdbTree::getListSize ( collnum_t collnum ,
-			    const char *startKey, const char *endKey,
-			    char *minKey   , char *maxKey ) {
+int32_t RdbTree::getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const {
 	// make these as benign as possible
 	//if ( minKey ) *minKey = endKey;
 	//if ( maxKey ) *maxKey = startKey;
@@ -1870,7 +1810,7 @@ int32_t RdbTree::getListSize ( collnum_t collnum ,
 // . *retKey is the key that has the returned order
 // . *retKey gets as close to "key" as it can
 // . returns # of NODES
-int32_t RdbTree::getOrderOfKey ( collnum_t collnum, const char *key, char *retKey ) {
+int32_t RdbTree::getOrderOfKey ( collnum_t collnum, const char *key, char *retKey ) const {
 	if ( m_numUsedNodes <= 0 ) return 0;
 	int32_t i     = m_headNode;
 	// estimate the depth of tree if not balanced
@@ -1903,7 +1843,7 @@ int32_t RdbTree::getOrderOfKey ( collnum_t collnum, const char *key, char *retKe
 	return (int32_t) normOrder;
 }
 
-int32_t RdbTree::getTreeDepth ( ) {
+int32_t RdbTree::getTreeDepth() const {
 	// no problem if we're balanced
 	if ( m_doBalancing ) return m_depth [ m_headNode ];
 	// . otherwise compute: take log2(m_numUsedNodes)
@@ -2144,7 +2084,6 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 	logf(LOG_INFO,"db: Saving %s%s-saved.dat",dir,dbname);
 
 	// save parms
-	//m_saveFile = f;
 	strncpy(m_dir, dir, sizeof(m_dir)-1);
 	m_dir[ sizeof(m_dir)-1 ] = '\0';
 

@@ -984,11 +984,11 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		// turn off statsdb so it does not try to add records for
 		// these writes because it is not initialized yet and will
 		// cause this write to fail!
-		g_statsdb.m_disabled = true;
+		g_statsdb.disable();
 
 		// true = alldone
 		bool status = m->writeMap( true );
-		g_statsdb.m_disabled = false;
+		g_statsdb.enable();
 		if ( ! status ) {
 			log( LOG_ERROR, "db: Save failed." );
 			return -1;
@@ -1039,10 +1039,10 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 			// turn off statsdb so it does not try to add records for
 			// these writes because it is not initialized yet and will
 			// cause this write to fail!
-			g_statsdb.m_disabled = true;
+			g_statsdb.disable();
 
 			bool status = in->writeIndex(true);
-			g_statsdb.m_disabled = false;
+			g_statsdb.enable();
 			if ( ! status ) {
 				log( LOG_ERROR, "db: Save failed." );
 				return -1;

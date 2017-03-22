@@ -95,13 +95,9 @@ SpiderLoop::SpiderLoop ( ) {
 	// Coverity
 	m_sreq = NULL;
 	m_collnum = 0;
-	m_content = NULL;
-	m_contentLen = 0;
-	m_contentHasMime = 0;
 	m_doledbKey = NULL;
 	m_state = NULL;
 	m_callback = NULL;
-	m_isRegistered = false;
 	m_numSpidersOut = 0;
 	m_launches = 0;
 	m_maxUsed = 0;
@@ -157,8 +153,7 @@ void SpiderLoop::startLoop ( ) {
 
 	// we aren't in the middle of waiting to get a list of SpiderRequests
 	m_gettingDoledbList = false;
-	// we haven't registered for sleeping yet
-	m_isRegistered = false;
+
 	// clear array of ptrs to Doc's
 	memset ( m_docs , 0 , sizeof(XmlDoc *) * MAX_SPIDERS );
 	// . m_maxUsed is the largest i such that m_docs[i] is in use

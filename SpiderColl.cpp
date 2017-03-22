@@ -63,7 +63,6 @@ SpiderColl::SpiderColl () {
 
 
 	// PVS-Studio
-	m_useTree = false;
 	m_lastReplyValid = false;
 	memset(m_lastReplyBuf, 0, sizeof(m_lastReplyBuf));
 	m_didRead = false;
@@ -96,9 +95,7 @@ SpiderColl::SpiderColl () {
 	m_lastScanningIp = 0;
 	m_totalBytesScanned = 0;
 	m_deleteMyself = false;
-	m_didRound = false;
 	m_pri2 = 0;
-	m_lastUrlFiltersUpdate = 0;
 	m_gettingList1 = false;
 	memset(m_outstandingSpiders, 0, sizeof(m_outstandingSpiders));
 	m_overflowList = NULL;
@@ -117,14 +114,6 @@ SpiderColl::SpiderColl () {
 	// be sure we are in sync
 	memset ( m_sendLocalCrawlInfoToHost , 1 , MAX_HOSTS );
 }
-
-int32_t SpiderColl::getTotalOutstandingSpiders ( ) {
-	int32_t sum = 0;
-	for ( int32_t i = 0 ; i < MAX_SPIDER_PRIORITIES ; i++ )
-		sum += m_outstandingSpiders[i];
-	return sum;
-}
-
 
 // load the tables that we set when m_doInitialScan is true
 bool SpiderColl::load ( ) {
@@ -444,38 +433,12 @@ bool SpiderColl::makeWaitingTree ( ) {
 	return true;
 }
 
-// for debugging query reindex i guess
-int64_t SpiderColl::getEarliestSpiderTimeFromWaitingTree ( int32_t firstIp ) {
-	// make the key. use 0 as the time...
-	key96_t wk = makeWaitingTreeKey ( 0, firstIp );
-	// set node from wait tree key. this way we can resume from a prev key
-	int32_t node = m_waitingTree.getNextNode ( 0, (char *)&wk );
-	// if empty, stop
-	if ( node < 0 ) return -1;
-	// get the key
-	key96_t *k = (key96_t *)m_waitingTree.getKey ( node );
-	// ok, we got one
-	int32_t storedFirstIp = (k->n0) & 0xffffffff;
-	// match? we call this with a firstIp of 0 below to indicate
-	// any IP, we just want to get the next spider time.
-	if ( firstIp != 0 && storedFirstIp != firstIp ) return -1;
-	// get the time
-	uint64_t spiderTimeMS = k->n1;
-	// shift upp
-	spiderTimeMS <<= 32;
-	// or in
-	spiderTimeMS |= (k->n0 >> 32);
-	// make into seconds
-	return spiderTimeMS;
-}
-
-
 bool SpiderColl::makeWaitingTable ( ) {
 	log(LOG_DEBUG,"spider: making waiting table for %s.",m_coll);
 	int32_t node = m_waitingTree.getFirstNode();
 	for ( ; node >= 0 ; node = m_waitingTree.getNextNode(node) ) {
 		// get key
-		key96_t *key = (key96_t *)m_waitingTree.getKey(node);
+		const key96_t *key = reinterpret_cast<const key96_t*>(m_waitingTree.getKey(node));
 		// get ip from that
 		int32_t ip = (key->n0) & 0xffffffff;
 		// spider time is up top
@@ -522,7 +485,6 @@ void SpiderColl::clearLocks ( ) {
 	// set this to -1 here, when we enter spiderDoledUrls() it will
 	// see that its -1 and set the m_msg5StartKey
 	m_pri2 = -1; // MAX_SPIDER_PRIORITIES - 1;
-	m_lastUrlFiltersUpdate = 0;
 
 	char *coll = "unknown";
 	if ( m_coll[0] ) coll = m_coll;
@@ -567,7 +529,6 @@ void SpiderColl::reset ( ) {
 	// set this to -1 here, when we enter spiderDoledUrls() it will
 	// see that its -1 and set the m_msg5StartKey
 	m_pri2 = -1; // MAX_SPIDER_PRIORITIES - 1;
-	m_lastUrlFiltersUpdate = 0;
 
 	m_isPopulatingDoledb = false;
 
@@ -1068,7 +1029,7 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 bool SpiderColl::printWaitingTree ( ) {
 	int32_t node = m_waitingTree.getFirstNode();
 	for ( ; node >= 0 ; node = m_waitingTree.getNextNode(node) ) {
-		key96_t *wk = (key96_t *)m_waitingTree.getKey (node);
+		const key96_t *wk = reinterpret_cast<const key96_t*>(m_waitingTree.getKey(node));
 		// spider time is up top
 		uint64_t spiderTimeMS = (wk->n1);
 		spiderTimeMS <<= 32;
@@ -1317,7 +1278,7 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 	if ( node < 0 ) return 0;
 
 	// get the key
-	key96_t *k = (key96_t *)m_waitingTree.getKey ( node );
+	const key96_t *k = reinterpret_cast<const key96_t*>(m_waitingTree.getKey(node));
 
 	// ok, we got one
 	firstIp = (k->n0) & 0xffffffff;
@@ -1400,7 +1361,7 @@ uint64_t SpiderColl::getNextSpiderTimeFromWaitingTree ( ) {
 	// if empty, stop
 	if ( node < 0 ) return 0LL;
 	// get the key
-	key96_t *wk = (key96_t *)m_waitingTree.getKey ( node );
+	const key96_t *wk = reinterpret_cast<const key96_t*>(m_waitingTree.getKey(node));
 	// time from that
 	uint64_t spiderTimeMS = (wk->n1);
 	spiderTimeMS <<= 32;
@@ -1962,9 +1923,6 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 		m_useTree = false;
 	}
 	*/
-
-	// turn this off until we figure out why it sux
-	m_useTree = false;
 
 	// so we know if we are the first read or not...
 	m_firstKey = m_nextKey;
@@ -3091,8 +3049,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			key192_t *oldwk = (key192_t *)m_winnerTable.getValueFromSlot ( winSlot );
 
 			// get the min hopcount  
-			SpiderRequest *wsreq ;
-			wsreq =(SpiderRequest *)m_winnerTree.getData(0,(char *)oldwk);
+			SpiderRequest *wsreq = (SpiderRequest *)m_winnerTree.getData(0,(char *)oldwk);
 			
 			if ( wsreq ) {
 				if ( sreq->m_hopCount < wsreq->m_hopCount )
@@ -3231,8 +3188,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			int32_t tailNode = m_winnerTree.getLastNode();
 			if ( tailNode < 0 ) { g_process.shutdownAbort(true); }
 			// set new tail parms
-			key192_t *tailKey;
-			tailKey = (key192_t *)m_winnerTree.getKey ( tailNode );
+			const key192_t *tailKey = reinterpret_cast<const key192_t*>(m_winnerTree.getKey(tailNode));
 			// convert to char first then to signed int32_t
 			parseWinnerTreeKey ( tailKey, &m_tailIp, &m_tailPriority, &m_tailHopCount, &m_tailTimeMS, &m_tailUh48 );
 
@@ -3475,12 +3431,10 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 	SafeBuf doleBuf;
 	doleBuf.pushLong(4);
 	int32_t added = 0;
-	for ( int32_t node = m_winnerTree.getFirstNode() ; 
-	      node >= 0 ; 
-	      node = m_winnerTree.getNextNode ( node ) ) {
+	for (int32_t node = m_winnerTree.getFirstNode(); node >= 0; node = m_winnerTree.getNextNode(node)) {
 		// get data for that
-		SpiderRequest *sreq2;
-		sreq2 = (SpiderRequest *)m_winnerTree.getData ( node );
+		const SpiderRequest *sreq2 = reinterpret_cast<const SpiderRequest*>(m_winnerTree.getData(node));
+
 		// sanity
 		if ( sreq2->m_firstIp != firstIp ) { g_process.shutdownAbort(true); }
 		//if ( sreq2->m_spiderTimeMS < 0 ) { g_process.shutdownAbort(true); }
@@ -3494,7 +3448,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 		int32_t winHopCount;
 		int64_t winSpiderTimeMS;
 		int64_t winUh48;
-		key192_t *winKey = (key192_t *)m_winnerTree.getKey ( node );
+		const key192_t *winKey = reinterpret_cast<const key192_t *>(m_winnerTree.getKey(node));
 		parseWinnerTreeKey ( winKey ,
 				     &winIp ,
 				     &winPriority,
@@ -3948,8 +3902,6 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// and the whole thing is no longer empty
 	//m_allDoledbPrioritiesEmpty = 0;//false;
 	//m_lastEmptyCheck = 0;
-
-	//RdbList *tmpList = &m_msg1.m_tmpList;
 
 	// keep it on stack now that doledb is tree-only
 	RdbList tmpList;

@@ -714,6 +714,19 @@ docidsconst_ptr_t RdbIndex::getDocIds() {
 	return m_docIds;
 }
 
+bool RdbIndex::exist(uint64_t docId) {
+	ScopedLock sl(m_pendingDocIdsMtx);
+
+	auto docIds = getDocIds();
+	auto it = std::lower_bound(docIds->cbegin(), docIds->cend(), docId << RdbIndex::s_docIdOffset);
+	if (it != docIds->cend() && ((*it >> RdbIndex::s_docIdOffset) == docId)) {
+		return true;
+	}
+
+	it = std::lower_bound(m_pendingDocIds->cbegin(), m_pendingDocIds->cend(), docId << RdbIndex::s_docIdOffset);
+	return (it != m_pendingDocIds->cend() && ((*it >> RdbIndex::s_docIdOffset) == docId));
+}
+
 void RdbIndex::swapDocIds(docidsconst_ptr_t docIds) {
 	ScopedLock sl(m_docIdsMtx);
 	m_docIds.swap(docIds);

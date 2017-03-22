@@ -2070,7 +2070,7 @@ int main2 ( int argc , char *argv[] ) {
 	//g_statsdb.flush();
 
 	// ok, now activate statsdb
-	g_statsdb.m_disabled = false;
+	g_statsdb.enable();
 
 	log("db: gb is now ready");
 
@@ -3047,7 +3047,7 @@ void dumpWaitingTree (const char *coll ) {
 	int32_t node = wt.getFirstNode();
 	for ( ; node >= 0 ; node = wt.getNextNode(node) ) {
 		// get key
-		key96_t *key = (key96_t *)wt.getKey(node);
+		const key96_t *key = reinterpret_cast<const key96_t*>(wt.getKey(node));
 		// get ip from that
 		int32_t firstIp = (key->n0) & 0xffffffff;
 		// get the time

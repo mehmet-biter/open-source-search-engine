@@ -65,19 +65,12 @@ class SpiderLoop {
 	// state memory for calling SpiderUrl2() (maybe also getLocks()!)
 	SpiderRequest *m_sreq;
 
-	//char      *m_coll;
 	collnum_t  m_collnum;
-	char      *m_content;
-	int32_t       m_contentLen;
-	char       m_contentHasMime;
 	key96_t     *m_doledbKey;
 	void      *m_state;
 	void     (*m_callback)(void *state);
 
 	bool indexedDoc ( class XmlDoc *doc );
-
-	// are we registered for sleep callbacks
-	bool m_isRegistered;
 
 	int32_t m_numSpidersOut;
 
@@ -104,11 +97,6 @@ class SpiderLoop {
 	RdbCache   m_lockCache;
 
 	RdbCache   m_winnerListCache;
-
-	//bool m_gettingLocks;
-
-	// for round robining in SpiderLoop::doleUrls(), etc.
-	//int32_t m_cri;
 
 	CollectionRec *getActiveList();
 	void buildActiveList ( ) ;

@@ -257,8 +257,6 @@ class CollectionRec {
 
 	char m_dailyMergeDOWList[48];
 
-	int32_t m_treeCount;
-
 	int64_t m_spiderCorruptCount;
 
 	// holds ips that have been detected as being throttled and we need

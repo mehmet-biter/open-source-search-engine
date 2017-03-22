@@ -45,25 +45,9 @@ class RdbList;
 class BigFile;
 
 class RdbTree {
-
-	// . this RdbCache class caches scans f
-	// . it adds an m_endKeys,m_next,m_prev,m_time to each node
-	friend class RdbCache;
-	friend void RdbMem::freeDumpedMem(RdbTree *tree); /// @todo ALC remove friend when fixed
-
 public:
-
-	 RdbTree       ( );
-	~RdbTree       ( );
-
-	// . Rdb uses this to determine when to dump this tree to disk
-	// . look at % of memory occupied/allocated of max, as well as % of
-	//   nodes used
-	bool is90PercentFull() const {
-		// . m_memOccupied is amount of alloc'd mem that data occupies
-		// . now we /90 and /100 since multiplying overflowed
-		return ( m_numUsedNodes/90 >= m_numNodes/100 );
-	}
+	RdbTree();
+	~RdbTree();
 
 	// . a fixedDataSize of -1 means each node has data of a variable size
 	// . set maxMem to -1 for no max 
@@ -77,58 +61,55 @@ public:
 
 	// . frees the used memory, etc.
 	// . override so derivatives can free up extra header arrays
-	void reset  ( );
+	void reset();
 
 	// . this just makes all the nodes available for occupation (liberates)
 	// . it does not free this tree's control structures
 	// . returns # of occupied nodes we liberated
-	int32_t clear ( );
+	int32_t clear();
 
-	// remove recs from tree that have invalid collnums. this is done
-	// at load time. i dunno why it happens. it should never!
-	void cleanTree ( ); // char **bases );
 
-	void delColl ( collnum_t collnum ) ;
 
 	// . this will overwrite nodes with the same key
 	// . returns -1 if it couldn't grab the memory or grow the table
 	// . returns the node # we added it to on success
 	// . don't free your data because we don't copy it!
 	// . sets errno if it returns -1
-	int32_t addKey  ( const void *key ) {
+	int32_t addKey(const void *key) {
 		return addNode ( 0,(const char *)key,NULL,0);
 	}
 
 	int32_t addNode(collnum_t collnum, const char *key, char *data, int32_t dataSize);
-	int32_t addNode(collnum_t collnum, const char *key) {
-		return addNode(collnum, key, NULL, 0);
-	}
-			
+
 	// . returns -1 if not found
 	// . otherwise return the node #
-	int32_t getNode ( collnum_t collnum, const char *key );
-
-	// . get the node's data directly
-	char *getData ( collnum_t collnum, const char *key );
+	int32_t getNode(collnum_t collnum, const char *key) const;
 
 	// . get the node whose key is >= key
 	// . much much slower than getNextNode() below
 	int32_t getNextNode(collnum_t collnum, const char *key) const;
 
 
+	const char *getKey(int32_t node) const { return &m_keys[node*m_ks]; }
+
+	const char *getData(collnum_t collnum, const char *key) const;
+	const char *getData(int32_t node) const { return m_data[node]; }
+	void setData(int32_t node, char *data) { m_data[node] = data; }
+
+	int32_t getDataSize(int32_t node) const {
+		if (m_fixedDataSize == -1) {
+			return m_sizes[node];
+		}
+		return m_fixedDataSize;
+	}
+
 	// . get the next node # AFTER "node" by key
 	// . used for dumping out the nodes ordered by their keys
 	// . returns -1 on end
 	int32_t getNextNode(int32_t node) const;
 
-	int32_t getFirstNode ( );
-	int32_t getLastNode  ( );
-
-	// . get the node whose key is <= "key"
-	int32_t getPrevNode(collnum_t collnum, const char *key);
-
-	// . get the prev node # whose key is <= to key of node #i
-	int32_t getPrevNode ( int32_t i ) ;
+	int32_t getFirstNode() const;
+	int32_t getLastNode() const;
 
 	// . returns true  iff was found and deleted
 	// . returns false iff not found 
@@ -136,73 +117,6 @@ public:
 	void deleteNode(int32_t node, bool freeData);
 	bool deleteNode(collnum_t collnum, const char *key, bool freeData);
 
-	// delete all nodes with keys in [startKey,endKey]
-	void deleteNodes(collnum_t collnum, const char *startKey, const char *endKey, bool freeData);
-
-	// . delete all records in this list from the tree
-	// . call deleteNode()
-	// . returns false if a key in list was not found
-	// . this happens if memory is corrupted!
-	bool deleteList(collnum_t collnum, RdbList *list);
-
-	bool isSaving() const { return m_isSaving; }
-	bool isWritable() const { return m_isWritable; }
-
-	bool needsSave() const { return m_needsSave; }
-	void setNeedsSave(bool needsSave) {
-		m_needsSave = needsSave;
-	}
-
-	bool isLoading() const { return m_isLoading; }
-
-	// since our arrays aren't public
-	char       *getData(int32_t node)       { return m_data[node]; }
-	const char *getData(int32_t node) const { return m_data[node]; }
-	void setData(int32_t node, char *data) {
-		m_data[node] = data;
-	}
-
-	int32_t  getDataSize  ( int32_t node ) const { return m_sizes   [node]; }
-	char       *getKey(int32_t node)       { return &m_keys[node*m_ks]; }
-	const char *getKey(int32_t node) const { return &m_keys[node*m_ks]; }
-
-	collnum_t getCollnum ( int32_t node ) const { return m_collnums [node];}
-
-	bool  isEmpty      ( int32_t node ) const { return (m_parents [ node ] == -2);}
-
-	// an upper bound on the # of used nodes
-	int32_t  getNumNodes() const { return m_minUnusedNode; }
-
-	int32_t  getNumUsedNodes() const { return m_numUsedNodes; }
-
-	bool  isEmpty() const { return (m_numUsedNodes == 0); }
-
-	int32_t  getNumAvailNodes() const { return m_numNodes - m_numUsedNodes; }
-
-	int32_t  getNumTotalNodes() const { return m_numNodes; }
-
-	// negative and postive counts
-	int32_t  getNumNegativeKeys() const { return m_numNegativeKeys; }
-	int32_t  getNumPositiveKeys() const { return m_numPositiveKeys; }
-
-	int32_t  getNumNegativeKeys( collnum_t collnum ) const;
-	int32_t  getNumPositiveKeys( collnum_t collnum ) const;
-
-	void setNumKeys ( class CollectionRec *cr ) ;
-
-	// how much mem, including data, is used by this class?
-	int32_t getMemAllocated() const { return m_memAllocated;  }
-	// . how much of the alloc'd mem is actually in use holding data
-	// . includes the tree infrastructure as well as the data itself
-	int32_t getMemOccupied      ( ) const { return m_memOccupied; }
-	int32_t getMaxMem           ( ) const { return m_maxMem; }
-
-	//  how much mem the tree would take if it were made into a list
-	int32_t getMemOccupiedForList() const;
-
-	// . how much mem does this tree use, not including stored data
-	// . this will be the same as getMemAllocated() if fixedDataSize is 0
-	int32_t getTreeOverhead() const { return m_overhead * m_numNodes; }
 
 	// . throw all the records in this range into this list
 	// . used for dumping to an rdb file permanently
@@ -211,44 +125,90 @@ public:
 	// . returns false if outta memory
 	// . "antiNumRecs" is set to # of keys w/ low bit cleared (antiKeys)
 	//   that were added to "list"
-	bool getList ( collnum_t collnum    ,
-		       const char *startKey    ,
-		       const char *endKey      ,
-		       int32_t     minRecSizes ,
-		       RdbList *list        ,
-		       int32_t    *numPosRecs  ,
-		       int32_t    *numNegRecs ,   // = NULL 
-		       bool     useHalfKeys) const;
+	bool getList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes, RdbList *list,
+	             int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys) const;
 
 	// estimate the size of the list defined by these keys
-	int32_t getListSize ( collnum_t collnum ,
-			   const char *startKey, const char *endKey,
-			   char *minKey   , char *maxKey );
+	int32_t getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const;
+
+	// . delete all records in this list from the tree
+	// . call deleteNode()
+	// . returns false if a key in list was not found
+	// . this happens if memory is corrupted!
+	bool deleteList(collnum_t collnum, RdbList *list);
+
+
+	bool isSaving() const { return m_isSaving; }
+	bool isWritable() const { return m_isWritable; }
+
+	bool needsSave() const { return m_needsSave; }
+	void setNeedsSave(bool needsSave) { m_needsSave = needsSave; }
+
+	bool isLoading() const { return m_isLoading; }
+
+	collnum_t getCollnum(int32_t node) const { return m_collnums[node]; }
+
+	bool isEmpty(int32_t node) const { return (m_parents[node] == -2); }
+	bool isEmpty() const { return (m_numUsedNodes == 0); }
+
+	// an upper bound on the # of used nodes
+	int32_t  getNumNodes() const { return m_minUnusedNode; }
+	int32_t  getNumUsedNodes() const { return m_numUsedNodes; }
+
+	int32_t  getNumAvailNodes() const { return m_numNodes - m_numUsedNodes; }
+	int32_t  getNumTotalNodes() const { return m_numNodes; }
+
+	// negative and postive counts
+	int32_t getNumNegativeKeys() const { return m_numNegativeKeys; }
+	int32_t getNumPositiveKeys() const { return m_numPositiveKeys; }
+
+	int32_t getNumNegativeKeys(collnum_t collnum) const;
+	int32_t getNumPositiveKeys(collnum_t collnum) const;
+
+	void setNumKeys(class CollectionRec *cr);
+
+	// how much mem, including data, is used by this class?
+	int32_t getMemAllocated() const { return m_memAllocated; }
+
+	// . how much of the alloc'd mem is actually in use holding data
+	// . includes the tree infrastructure as well as the data itself
+	int32_t getMemOccupied() const { return m_memOccupied; }
+	int32_t getMaxMem() const { return m_maxMem; }
+
+	//  how much mem the tree would take if it were made into a list
+	int32_t getMemOccupiedForList() const;
+
+	// . how much mem does this tree use, not including stored data
+	// . this will be the same as getMemAllocated() if fixedDataSize is 0
+	int32_t getTreeOverhead() const { return m_overhead * m_numNodes; }
+
+	// . Rdb uses this to determine when to dump this tree to disk
+	// . look at % of memory occupied/allocated of max, as well as % of
+	//   nodes used
+	bool is90PercentFull() const {
+		// . m_memOccupied is amount of alloc'd mem that data occupies
+		// . now we /90 and /100 since multiplying overflowed
+		return ( m_numUsedNodes/90 >= m_numNodes/100 );
+	}
+
+	int32_t getMinUnusedNode() const { return m_minUnusedNode; }
 
 	// . load & save the tree quickly
 	// . returns false on error, true otherwise
 	// . sometimes sets g_errno when it returns false
-	bool fastLoad ( BigFile *f , RdbMem *memStack ) ;
+	bool fastLoad(BigFile *f, RdbMem *memStack);
+
 	// . we now optionally save with a thread
 	// . when saving m_isSaving is set to true and nothing can be added
 	//   to the tree, g_errno will be set to ETRYAGAIN when addNode()
 	//   is called
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
-	bool fastSave ( const char *dir,
-			const char *dbname,
-			bool     useThread ,
-			void    *state     , 
-			void    (* callback)(void *state ) );
+	bool fastSave(const char *dir, const char *dbname, bool useThread, void *state, void (*callback)(void *state));
 
-	// this is called by a thread
-	bool fastSave_r() ;
-
-	int32_t getMinUnusedNode() const { return m_minUnusedNode; }
-
-	void verifyIntegrity() { } //todo
-	bool checkTree  ( bool printMsgs , bool doChainTest );
-	bool fixTree    ( );
+	void verifyIntegrity();
+	bool checkTree(bool printMsgs, bool doChainTest);
+	bool fixTree();
 
 	void disableWrites () { m_isWritable = false; }
 	void enableWrites  () { m_isWritable = true ; }
@@ -261,15 +221,33 @@ public:
 	// . used for growing AND shrinking the table
 	bool growTree(int32_t newNumNodes);
 
+	// remove recs from tree that have invalid collnums. this is done
+	// at load time. i dunno why it happens. it should never!
+	void cleanTree();
+
+	void delColl(collnum_t collnum);
+
 	static void saveWrapper(void *state);
 	static void threadDoneWrapper(void *state, job_exit_t exit_type);
 
 private:
+	// . get the node whose key is <= "key"
+	int32_t getPrevNode(collnum_t collnum, const char *key) const;
+
+	// . get the prev node # whose key is <= to key of node #i
+	int32_t getPrevNode(int32_t i) const;
+
+	// delete all nodes with keys in [startKey,endKey]
+	void deleteNodes(collnum_t collnum, const char *startKey, const char *endKey, bool freeData);
+
 	// . like getMemOccupied() above but does not include left/right/parent
 	// . only includes occupied keys/sizes and the dataSizes themself
 	int32_t getMemOccupiedForList2(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes) const;
 
 	bool checkTree2 ( bool printMsgs , bool doChainTest );
+
+	// this is called by a thread
+	bool fastSave_r() ;
 
 	// used by fastSave() and fastLoad()
 	int32_t fastSaveBlock_r(int fd, int32_t start, int64_t offset);
@@ -282,9 +260,10 @@ private:
 	int32_t computeDepth(int32_t headNode) const;
 
 	// used by getListSize() to estiamte a list size
-	int32_t getOrderOfKey ( collnum_t collnum , const char *key , char *retKey );
+	int32_t getOrderOfKey(collnum_t collnum, const char *key, char *retKey) const;
+
 	// used by getrderOfKey() (have to estimate if tree not balanced)
-	int32_t getTreeDepth  ();
+	int32_t getTreeDepth() const;
 
 	// can we write to the tree?
 	bool    m_isWritable;

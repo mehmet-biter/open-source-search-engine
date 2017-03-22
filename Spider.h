@@ -4,7 +4,6 @@
 #define GB_SPIDER_H
 
 #define MAX_SPIDER_PRIORITIES 128
-#define MAX_DAYS 365
 
 #include "Rdb.h"
 #include "Titledb.h" //DOCID_MASK
@@ -21,39 +20,15 @@ class SpiderColl;
 extern int32_t g_corruptCount;
 extern bool s_countsAreValid;
 
-
-// . this is in seconds
-// . had to make this 4 hours since one url was taking more than an hour
-//   to lookup over 80,000 places in placedb. after an hour it had only
-//   reached about 30,000
-//   http://pitchfork.com/news/tours/833-julianna-barwick-announces-european-and-north-american-dates/
-// . this problem with this now is that it will lock an entire IP until it
-//   expires if we have maxSpidersPerIp set to 1. so now we try to add
-//   a SpiderReply for local errors like when XmlDoc::indexDoc() sets g_errno,
-//   we try to add a SpiderReply at least.
-#define MAX_LOCK_AGE (3600*4)
-
 // . size of spiderecs to load in one call to readList
 // . i increased it to 1MB to speed everything up, seems like cache is 
 //   getting loaded up way too slow
 #define SR_READ_SIZE (512*1024)
 
-// seems like timecity.com as gigabytes of spiderdb data so up from 40 to 400
-//#define MAX_WINNER_NODES 400
-
 // up it to 2000 because shard #15 has slow disk reads and some collections
 // are taking forever to spider because the spiderdb scan is so slow.
 // we reduce this below if the spiderdb is smaller.
 #define MAX_WINNER_NODES 2000
-
-
-
-// for diffbot, this is for xmldoc.cpp to update CollectionRec::m_crawlInfo
-// which has m_pagesCrawled and m_pagesProcessed.
-//bool updateCrawlInfo ( CollectionRec *cr , 
-//		       void *state ,
-//		       void (* callback)(void *state) ,
-//		       bool useCache = true ) ;
 
 // . values for CollectionRec::m_spiderStatus
 // . reasons why crawl is not happening
@@ -423,7 +398,7 @@ class Spiderdb {
 	// this rdb holds urls waiting to be spidered or being spidered
 	Rdb m_rdb;
 
-	static int64_t getUrlHash48( key128_t *k ) {
+	static int64_t getUrlHash48( const key128_t *k ) {
 		return (((k->n1)<<16) | k->n0>>(64-16)) & 0xffffffffffffLL;
 	}
 	
@@ -682,7 +657,7 @@ public:
 	static int32_t getNeededSize ( int32_t urlLen ) {
 		return sizeof(SpiderRequest) - (int32_t)MAX_URL_LEN + urlLen; }
 
-	int32_t getRecSize () { return m_dataSize + 4 + sizeof(key128_t); }
+	int32_t getRecSize () const { return m_dataSize + 4 + sizeof(key128_t); }
 
 	int32_t getUrlLen() {
 		return m_dataSize -
@@ -718,7 +693,7 @@ public:
 
 	void setDataSize ( );
 
-	int64_t  getUrlHash48() {
+	int64_t  getUrlHash48() const {
 		return Spiderdb::getUrlHash48( &m_key );
 	}
 
@@ -730,10 +705,7 @@ public:
 
 	int32_t printToTable( SafeBuf *sb, const char *status, class XmlDoc *xd, int32_t row ) ;
 
-	// for diffbot...
-	int32_t printToTableSimple( SafeBuf *sb, const char *status, class XmlDoc *xd, int32_t row ) ;
 	static int32_t printTableHeader ( SafeBuf *sb, bool currentlSpidering ) ;
-	static int32_t printTableHeaderSimple ( SafeBuf *sb, bool currentlSpidering ) ;
 
 	// returns false and sets g_errno on error
 	bool setFromAddUrl(const char *url);
@@ -896,7 +868,6 @@ public:
 
 // was 1000 but breached, now equals SR_READ_SIZE/sizeof(SpiderReply)
 #define MAX_BEST_REQUEST_SIZE (MAX_URL_LEN+1+sizeof(SpiderRequest))
-#define MAX_DOLEREC_SIZE      (MAX_BEST_REQUEST_SIZE+sizeof(key96_t)+4)
 #define MAX_SP_REPLY_SIZE     (sizeof(SpiderReply))
 
 // are we responsible for this ip?
@@ -927,8 +898,6 @@ class SpiderCache {
 
 	bool needsSave ( ) ;
 	void doneSaving ( ) ;
-
-//	bool m_isSaving;
 };
 
 extern class SpiderCache g_spiderCache;
@@ -977,7 +946,7 @@ int32_t getUrlFilterNum ( class SpiderRequest *sreq ,
 			  HashTableX *quotaTable,
 			  int32_t langIdArg );
 
-void parseWinnerTreeKey ( key192_t  *k ,
+void parseWinnerTreeKey ( const key192_t  *k ,
 			  int32_t      *firstIp ,
 			  int32_t      *priority ,
 			  int32_t *hopCount,

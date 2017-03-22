@@ -355,86 +355,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	return sb->length();
 }
 
-
-int32_t SpiderRequest::printTableHeaderSimple ( SafeBuf *sb , 
-					     bool currentlySpidering) {
-
-	sb->safePrintf("<tr bgcolor=#%s>\n",DARK_BLUE);
-
-	// how long its been being spidered
-	if ( currentlySpidering ) {
-		sb->safePrintf(" <td><b>#</b></td>\n");
-		sb->safePrintf(" <td><b>elapsed</b></td>\n");
-		sb->safePrintf(" <td><b>coll</b></td>\n");
-	}
-
-	sb->safePrintf(" <td><b>url</b></td>\n");
-	sb->safePrintf(" <td><b>status</b></td>\n");
-	sb->safePrintf(" <td><b>first IP</b></td>\n");
-	sb->safePrintf(" <td><b>crawlDelay</b></td>\n");
-	sb->safePrintf(" <td><b>pri</b></td>\n");
-	sb->safePrintf(" <td><b>errCount</b></td>\n");
-	sb->safePrintf(" <td><b>hops</b></td>\n");
-	sb->safePrintf(" <td><b>addedTime</b></td>\n");
-	//sb->safePrintf(" <td><b>flags</b></td>\n");
-	sb->safePrintf("</tr>\n");
-
-	return sb->length();
-}
-
-int32_t SpiderRequest::printToTableSimple ( SafeBuf *sb , const char *status ,
-					 XmlDoc *xd , int32_t row ) {
-
-	sb->safePrintf("<tr bgcolor=#%s>\n",LIGHT_BLUE);
-
-	// show elapsed time
-	if ( xd ) {
-		int64_t now = gettimeofdayInMilliseconds();
-		int64_t elapsed = now - xd->m_startTime;
-		sb->safePrintf(" <td>%" PRId32"</td>\n",row);
-		sb->safePrintf(" <td>%" PRId64"ms</td>\n",elapsed);
-		// print collection
-		CollectionRec *cr = g_collectiondb.getRec ( xd->m_collnum );
-		const char *coll = "";
-		if ( cr ) coll = cr->m_coll;
-		sb->safePrintf("<td>%s</td>",coll);
-	}
-
-	sb->safePrintf(" <td><nobr>");
-	sb->safeTruncateEllipsis ( m_url , 64 );
-	sb->safePrintf("</nobr></td>\n");
-	sb->safePrintf(" <td><nobr>%s</nobr></td>\n",status );
-
-	sb->safePrintf(" <td>%s</td>\n",iptoa(m_firstIp));
-
-	if ( xd && xd->m_crawlDelayValid && xd->m_crawlDelay >= 0 )
-		sb->safePrintf(" <td>%" PRId32" ms</td>\n",xd->m_crawlDelay);
-	else
-		sb->safePrintf(" <td>--</td>\n");
-
-	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_priority);
-
-	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_errCount );
-
-	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_hopCount );
-
-	// print time format: 7/23/1971 10:45:32
-	struct tm *timeStruct ;
-	char time[256];
-
-	time_t ts4 = (time_t)m_addedTime;
-	struct tm tm_buf;
-	timeStruct = gmtime_r(&ts4,&tm_buf);
-	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
-	sb->safePrintf(" <td><nobr>%s(%" PRIu32")</nobr></td>\n",time,
-		       (uint32_t)m_addedTime);
-
-	sb->safePrintf("</tr>\n");
-
-	return sb->length();
-}
-
-
 int32_t SpiderRequest::printTableHeader ( SafeBuf *sb , bool currentlySpidering) {
 
 	sb->safePrintf("<tr bgcolor=#%s>\n",DARK_BLUE);
@@ -1019,7 +939,7 @@ key192_t makeWinnerTreeKey ( int32_t firstIp ,
 	return k;
 }
 
-void parseWinnerTreeKey ( key192_t  *k ,
+void parseWinnerTreeKey ( const key192_t  *k ,
 			  int32_t      *firstIp ,
 			  int32_t      *priority ,
 			  int32_t *hopCount,
@@ -1571,7 +1491,7 @@ static bool sendPage(State11 *st) {
 	//uint64_t nowMS = gettimeofdayInMillisecondsGlobal();
 	for ( ; node >= 0 ; node = sc->m_waitingTree.getNextNode(node) ) {
 		// get key
-		key96_t *key = (key96_t *)sc->m_waitingTree.getKey(node);
+		const key96_t *key = reinterpret_cast<const key96_t*>(sc->m_waitingTree.getKey(node));
 		// get ip from that
 		int32_t firstIp = (key->n0) & 0xffffffff;
 		// get the timedocs

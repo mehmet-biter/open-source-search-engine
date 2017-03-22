@@ -49,7 +49,6 @@ Rdb::Rdb ( ) {
 	m_useTree = false;
 	m_closeState = NULL;
 	m_closeCallback = NULL;
-	m_maxTreeMem = 0;
 	m_minToMerge = 0;
 	m_dumpErrno = 0;
 	m_useHalfKeys = false;
@@ -62,7 +61,6 @@ Rdb::Rdb ( ) {
 	m_ks = 0;
 	m_pageSize = 0;
 	// PVS-Studio
-	m_isTitledb = false;
 	memset(m_dbname, 0, sizeof(m_dbname));
 	memset(m_treeAllocName, 0, sizeof(m_treeAllocName));
 	memset(m_memAllocName, 0, sizeof(m_memAllocName));
@@ -81,8 +79,6 @@ void Rdb::reset ( ) {
 	m_tree.reset();
 	m_buckets.reset();
 	m_mem.reset();
-	//m_cache.reset();
-	m_lastWrite = 0LL;
 	m_isClosing = false;
 	m_isClosed  = false;
 	m_isSaving  = false;
@@ -152,7 +148,6 @@ bool Rdb::init(const char *dbname,
 
 	// store the other parameters for initializing each Rdb
 	m_fixedDataSize    = fixedDataSize;
-	m_maxTreeMem       = maxTreeMem;
 	m_useHalfKeys      = useHalfKeys;
 	m_ks               = keySize;
 	m_useIndexFile     = useIndexFile;
@@ -663,8 +658,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	if ( m_isClosed ) return true;
 	// don't call more than once
 	if ( m_isSaving ) return true;
-	// update last write time so main.cpp doesn't keep calling us
-	m_lastWrite = gettimeofdayInMilliseconds();
+
 	// set the m_isClosing flag in case we're waiting for a dump.
 	// then, when the dump is done, it will come here again
 	m_closeState       = state;
@@ -1041,11 +1035,8 @@ bool Rdb::dumpTree() {
 	// debug msg
 	log(LOG_INFO,"db: Dumping %s to disk. nice=%" PRId32,m_dbname,m_niceness);
 
-	// record last dump time so main.cpp will not save us this period
-	m_lastWrite = gettimeofdayInMilliseconds();
-
 	// only try to fix once per dump session
-	int64_t start = m_lastWrite; //gettimeofdayInMilliseconds();
+	int64_t start = gettimeofdayInMilliseconds();
 
 	// do not do chain testing because that is too slow
 	if ( m_useTree && ! m_tree.checkTree ( false /* printMsgs?*/, false/*chain?*/) ) {
@@ -1070,38 +1061,6 @@ bool Rdb::dumpTree() {
 	// see what collnums are in the tree and just try those
 	//
 	////
-	CollectionRec *cr = NULL;
-	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs() ; i++ ) {
-		cr = g_collectiondb.getRec(i);
-		if ( ! cr ) continue;
-		// reset his tree count flag thing
-		cr->m_treeCount = 0;
-	}
-	if ( m_useTree ) {
-		// now scan the rdbtree and inc treecount where appropriate
-		for ( int32_t i = 0 ; i < m_tree.getMinUnusedNode() ; i++ ) {
-			// skip node if parents is -2 (unoccupied)
-			if ( m_tree.isEmpty() ) {
-				continue;
-			}
-
-			// get rec from tree collnum
-			cr = g_collectiondb.getRec(m_tree.getCollnum(i));
-			if ( cr ) {
-				cr->m_treeCount++;
-			}
-		}
-	} else {
-		for(int32_t i = 0; i < m_buckets.getNumBuckets(); i++) {
-			const RdbBucket *b = m_buckets.getBucket(i);
-			collnum_t cn = b->getCollnum();
-			int32_t nk = b->getNumKeys();
-			cr = g_collectiondb.getRec(cn);
-			if ( cr ) {
-				cr->m_treeCount += nk;
-			}
-		}
-	}
 
 	// loop through collections, dump each one
 	m_dumpCollnum = (collnum_t)-1;
@@ -1653,7 +1612,7 @@ bool Rdb::needsDump ( ) const {
 	return ( m_tree.getNumNegativeKeys() > 50000 );
 }
 
-bool Rdb::hasRoom(int32_t totalRecs, int32_t totalDataSize) {
+bool Rdb::hasRoom(int32_t totalRecs, int32_t totalDataSize) const {
 	logTrace(g_conf.m_logTraceRdb, "BEGIN %s: numRecs=%" PRId32" dataSize=%" PRId32" availMem=%" PRId32,
 	         m_dbname, totalRecs, totalDataSize, m_mem.getAvailMem());
 
@@ -2134,10 +2093,6 @@ int64_t Rdb::estimateListSize(collnum_t collnum, const char *startKey, const cha
 	return getBase(collnum)->estimateListSize(startKey, endKey, max, oldTruncationLimit);
 }
 
-int64_t Rdb::getNumGlobalRecs() const {
-	return (getNumTotalRecs() * g_hostdb.m_numShards);
-}
-
 // . return number of positive records - negative records
 int64_t Rdb::getNumTotalRecs(bool useCache) const {
 
@@ -2341,7 +2296,7 @@ char getKeySizeFromRdbId(rdbid_t rdbId) {
 }
 
 // returns -1 if dataSize is variable
-int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
+int32_t getDataSizeFromRdbId ( rdbid_t rdbId ) {
 	static bool s_flag = true;
 	static int32_t s_table2[RDB_END];
 	if ( rdbId >= RDB_END )
@@ -2521,7 +2476,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 		// skip empty nodes in tree
 		if ( m_tree.isEmpty(i) ) {marked++; continue; }
 		// get data ptr
-		char *data = m_tree.getData(i);
+		const char *data = m_tree.getData(i);
 		// and key ptr, if negative skip it
 		//char *key = m_tree.getKey(i);
 		//if ( (key[0] & 0x01) == 0x00 ) { occupied++; continue; }
@@ -2608,7 +2563,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 		// skip empty nodes in tree
 		if ( m_tree.isEmpty(i)) continue;
 		// update the data otherwise
-		char *data = m_tree.getData(i);
+		const char *data = m_tree.getData(i);
 		// sanity, ensure legit
 		if ( data < pstart ) { g_process.shutdownAbort(true); }
 		int32_t offset = data - pstart;
