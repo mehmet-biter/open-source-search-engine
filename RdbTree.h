@@ -46,9 +46,8 @@ class BigFile;
 
 class RdbTree {
 public:
-
-	 RdbTree       ( );
-	~RdbTree       ( );
+	RdbTree();
+	~RdbTree();
 
 	// . Rdb uses this to determine when to dump this tree to disk
 	// . look at % of memory occupied/allocated of max, as well as % of
@@ -71,25 +70,25 @@ public:
 
 	// . frees the used memory, etc.
 	// . override so derivatives can free up extra header arrays
-	void reset  ( );
+	void reset();
 
 	// . this just makes all the nodes available for occupation (liberates)
 	// . it does not free this tree's control structures
 	// . returns # of occupied nodes we liberated
-	int32_t clear ( );
+	int32_t clear();
 
 	// remove recs from tree that have invalid collnums. this is done
 	// at load time. i dunno why it happens. it should never!
-	void cleanTree ( ); // char **bases );
+	void cleanTree();
 
-	void delColl ( collnum_t collnum ) ;
+	void delColl(collnum_t collnum);
 
 	// . this will overwrite nodes with the same key
 	// . returns -1 if it couldn't grab the memory or grow the table
 	// . returns the node # we added it to on success
 	// . don't free your data because we don't copy it!
 	// . sets errno if it returns -1
-	int32_t addKey  ( const void *key ) {
+	int32_t addKey(const void *key) {
 		return addNode ( 0,(const char *)key,NULL,0);
 	}
 
@@ -97,7 +96,7 @@ public:
 
 	// . returns -1 if not found
 	// . otherwise return the node #
-	int32_t getNode ( collnum_t collnum, const char *key ) const;
+	int32_t getNode(collnum_t collnum, const char *key) const;
 
 	// . get the node whose key is >= key
 	// . much much slower than getNextNode() below
@@ -127,17 +126,13 @@ public:
 	bool isWritable() const { return m_isWritable; }
 
 	bool needsSave() const { return m_needsSave; }
-	void setNeedsSave(bool needsSave) {
-		m_needsSave = needsSave;
-	}
+	void setNeedsSave(bool needsSave) { m_needsSave = needsSave; }
 
 	bool isLoading() const { return m_isLoading; }
 
 	const char *getData(collnum_t collnum, const char *key) const;
 	const char *getData(int32_t node) const { return m_data[node]; }
-	void setData(int32_t node, char *data) {
-		m_data[node] = data;
-	}
+	void setData(int32_t node, char *data) { m_data[node] = data; }
 
 	int32_t getDataSize(int32_t node) const {
 		if (m_fixedDataSize == -1) {
