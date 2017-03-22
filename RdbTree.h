@@ -141,7 +141,6 @@ public:
 		return m_fixedDataSize;
 	}
 
-	char       *getKey(int32_t node)       { return &m_keys[node*m_ks]; }
 	const char *getKey(int32_t node) const { return &m_keys[node*m_ks]; }
 
 	collnum_t getCollnum ( int32_t node ) const { return m_collnums [node];}

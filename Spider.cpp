@@ -1019,7 +1019,7 @@ key192_t makeWinnerTreeKey ( int32_t firstIp ,
 	return k;
 }
 
-void parseWinnerTreeKey ( key192_t  *k ,
+void parseWinnerTreeKey ( const key192_t  *k ,
 			  int32_t      *firstIp ,
 			  int32_t      *priority ,
 			  int32_t *hopCount,
@@ -1571,7 +1571,7 @@ static bool sendPage(State11 *st) {
 	//uint64_t nowMS = gettimeofdayInMillisecondsGlobal();
 	for ( ; node >= 0 ; node = sc->m_waitingTree.getNextNode(node) ) {
 		// get key
-		key96_t *key = (key96_t *)sc->m_waitingTree.getKey(node);
+		const key96_t *key = reinterpret_cast<const key96_t*>(sc->m_waitingTree.getKey(node));
 		// get ip from that
 		int32_t firstIp = (key->n0) & 0xffffffff;
 		// get the timedocs

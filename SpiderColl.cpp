@@ -453,7 +453,7 @@ int64_t SpiderColl::getEarliestSpiderTimeFromWaitingTree ( int32_t firstIp ) {
 	// if empty, stop
 	if ( node < 0 ) return -1;
 	// get the key
-	key96_t *k = (key96_t *)m_waitingTree.getKey ( node );
+	const key96_t *k = reinterpret_cast<const key96_t*>(m_waitingTree.getKey(node));
 	// ok, we got one
 	int32_t storedFirstIp = (k->n0) & 0xffffffff;
 	// match? we call this with a firstIp of 0 below to indicate
@@ -475,7 +475,7 @@ bool SpiderColl::makeWaitingTable ( ) {
 	int32_t node = m_waitingTree.getFirstNode();
 	for ( ; node >= 0 ; node = m_waitingTree.getNextNode(node) ) {
 		// get key
-		key96_t *key = (key96_t *)m_waitingTree.getKey(node);
+		const key96_t *key = reinterpret_cast<const key96_t*>(m_waitingTree.getKey(node));
 		// get ip from that
 		int32_t ip = (key->n0) & 0xffffffff;
 		// spider time is up top
@@ -1063,7 +1063,7 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 bool SpiderColl::printWaitingTree ( ) {
 	int32_t node = m_waitingTree.getFirstNode();
 	for ( ; node >= 0 ; node = m_waitingTree.getNextNode(node) ) {
-		key96_t *wk = (key96_t *)m_waitingTree.getKey (node);
+		const key96_t *wk = reinterpret_cast<const key96_t*>(m_waitingTree.getKey(node));
 		// spider time is up top
 		uint64_t spiderTimeMS = (wk->n1);
 		spiderTimeMS <<= 32;
@@ -1312,7 +1312,7 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 	if ( node < 0 ) return 0;
 
 	// get the key
-	key96_t *k = (key96_t *)m_waitingTree.getKey ( node );
+	const key96_t *k = reinterpret_cast<const key96_t*>(m_waitingTree.getKey(node));
 
 	// ok, we got one
 	firstIp = (k->n0) & 0xffffffff;
@@ -1395,7 +1395,7 @@ uint64_t SpiderColl::getNextSpiderTimeFromWaitingTree ( ) {
 	// if empty, stop
 	if ( node < 0 ) return 0LL;
 	// get the key
-	key96_t *wk = (key96_t *)m_waitingTree.getKey ( node );
+	const key96_t *wk = reinterpret_cast<const key96_t*>(m_waitingTree.getKey(node));
 	// time from that
 	uint64_t spiderTimeMS = (wk->n1);
 	spiderTimeMS <<= 32;
@@ -3239,8 +3239,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			int32_t tailNode = m_winnerTree.getLastNode();
 			if ( tailNode < 0 ) { g_process.shutdownAbort(true); }
 			// set new tail parms
-			key192_t *tailKey;
-			tailKey = (key192_t *)m_winnerTree.getKey ( tailNode );
+			const key192_t *tailKey = reinterpret_cast<const key192_t*>(m_winnerTree.getKey(tailNode));
 			// convert to char first then to signed int32_t
 			parseWinnerTreeKey ( tailKey, &m_tailIp, &m_tailPriority, &m_tailHopCount, &m_tailTimeMS, &m_tailUh48 );
 
@@ -3500,7 +3499,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 		int32_t winHopCount;
 		int64_t winSpiderTimeMS;
 		int64_t winUh48;
-		key192_t *winKey = (key192_t *)m_winnerTree.getKey ( node );
+		const key192_t *winKey = reinterpret_cast<const key192_t *>(m_winnerTree.getKey(node));
 		parseWinnerTreeKey ( winKey ,
 				     &winIp ,
 				     &winPriority,

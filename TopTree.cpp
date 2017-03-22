@@ -382,7 +382,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// sanity check
 		//if ( min < 0 ) gbshutdownLogicError();
 		// if we are lesser or dup of min, just don't add!
-		if ( k <= *((key96_t *)m_t2.getKey(min)) ) return false;
+		if ( k <= *(reinterpret_cast<const key96_t*>(m_t2.getKey(min))) ) return false;
 		// . add ourselves. use 0 for collnum.
 		// . dataPtr is not really a ptr, but the node
 		n = m_t2.addNode ( 0 , (const char *)&k , NULL , 4 );
@@ -420,7 +420,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		//	if ( (kp1->n1) >>24 != domHash ) gbshutdownLogicError();
 		//}
 		// are we the new min? if so, assign it
-		if ( min == -1 || k < *((key96_t *)m_t2.getKey(min)) )
+		if ( min == -1 || k < *(reinterpret_cast<const key96_t*>(m_t2.getKey(min))) )
 			m_domMinNode[domHash] = n;
 	}
 

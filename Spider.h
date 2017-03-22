@@ -977,7 +977,7 @@ int32_t getUrlFilterNum ( class SpiderRequest *sreq ,
 			  HashTableX *quotaTable,
 			  int32_t langIdArg );
 
-void parseWinnerTreeKey ( key192_t  *k ,
+void parseWinnerTreeKey ( const key192_t  *k ,
 			  int32_t      *firstIp ,
 			  int32_t      *priority ,
 			  int32_t *hopCount,
