@@ -120,9 +120,6 @@ XmlDoc::~XmlDoc() {
 	m_freed = true;
 }
 
-static int64_t s_lastTimeStart = 0LL;
-
-
 void XmlDoc::reset ( ) {
 	m_redirUrl.reset();
 
@@ -168,7 +165,7 @@ void XmlDoc::reset ( ) {
 	m_wordSpamBuf.purge();
 	m_fragBuf.purge();
 
-	s_lastTimeStart = 0LL;
+	m_lastTimeStart = 0LL;
 
 	m_req = NULL;
 
@@ -1185,8 +1182,8 @@ void XmlDoc::setStatus ( const char *s ) {
 	// log times to detect slowness
 	if ( timeIt  && m_statusMsgValid ) {
 		int64_t now = gettimeofdayInMillisecondsLocal();
-		if ( s_lastTimeStart == 0LL ) s_lastTimeStart = now;
-		int32_t took = now - s_lastTimeStart;
+		if ( m_lastTimeStart == 0LL ) m_lastTimeStart = now;
+		int32_t took = now - m_lastTimeStart;
 		//if ( took > 100 )
 			log("xmldoc: %s (xd=0x%" PTRFMT" "
 			    "u=%s) took %" PRId32"ms",
@@ -1194,7 +1191,7 @@ void XmlDoc::setStatus ( const char *s ) {
 			    (PTRTYPE)this,
 			    m_firstUrl.getUrl(),
 			    took);
-		s_lastTimeStart = now;
+		m_lastTimeStart = now;
 	}
 
 	m_statusMsg = s;
