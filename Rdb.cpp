@@ -1608,7 +1608,7 @@ bool Rdb::needsDump ( ) const {
 	return ( m_tree.getNumNegativeKeys() > 50000 );
 }
 
-bool Rdb::hasRoom(int32_t totalRecs, int32_t totalDataSize) {
+bool Rdb::hasRoom(int32_t totalRecs, int32_t totalDataSize) const {
 	logTrace(g_conf.m_logTraceRdb, "BEGIN %s: numRecs=%" PRId32" dataSize=%" PRId32" availMem=%" PRId32,
 	         m_dbname, totalRecs, totalDataSize, m_mem.getAvailMem());
 

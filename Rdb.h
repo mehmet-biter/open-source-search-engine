@@ -104,7 +104,7 @@ public:
 	bool addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize);
 
 	// returns false if no room in tree or m_mem for a list to add
-	bool hasRoom(int32_t numRecs, int32_t dataSize);
+	bool hasRoom(int32_t numRecs, int32_t dataSize) const;
 
 	bool canAdd() const;
 
