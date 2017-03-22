@@ -17,7 +17,20 @@
 
 typedef uint64_t BITVEC;
 
-char *getMatches2 ( Needle *needles          , 
+bool initializeNeedle(Needle *needles, int32_t numNeedles) {
+	// are we responsible for init'ing string lengths? this is much
+	// faster than having to specify lengths manually.
+	for ( int32_t i=0 ; i < numNeedles; i++ ) {
+		// set the string size in bytes if not provided
+		if ( needles[i].m_stringSize == 0 )
+			needles[i].m_stringSize = strlen(needles[i].m_string);
+	}
+
+	return true;
+}
+
+char *getMatches2 ( const Needle *needles          ,
+		    NeedleMatch *needlesMatch,
 		    int32_t    numNeedles       ,
 		    char   *haystack         , 
 		    int32_t    haystackSize     ,
@@ -34,26 +47,6 @@ char *getMatches2 ( Needle *needles          ,
 	// JAB: no needles? then no matches
 	if ( ! needles  || numNeedles   <= 0 ) return NULL;
 
-	//char tmp[8192];
-	//char *t    = tmp;
-	//char *tend = tmp + 8192;
-
-	// reset counts to 0
-	//if ( ! stopAtFirstMatch )
-	//	for ( int32_t i=0 ; i < numNeedles ; i++ ) 
-	//		needles[i].m_count = 0;
-
-	// are we responsible for init'ing string lengths? this is much
-	// faster than having to specify lengths manually.
-	for ( int32_t i=0 ; i < numNeedles; i++ ) {
-		// clear
-		needles[i].m_count      = 0;
-		needles[i].m_firstMatch = NULL;
-		// set the string size in bytes if not provided
-		if ( needles[i].m_stringSize == 0 )
-			needles[i].m_stringSize = strlen(needles[i].m_string);
-	}
-
 	// . set up the quick tables.
 	// . utf16 is not as effective here because half the bytes are zeroes!
 	// . TODO: use a static cache of like 4 of these tables where the key
@@ -67,43 +60,10 @@ char *getMatches2 ( Needle *needles          ,
 	BITVEC *s2;
 	BITVEC *s3;
 
-	/*
-	static bool s_quickTableInit = false;
-	static char s_qtbuf[128*(12+1)*2];
-
-	int32_t slot = -1;
-	if(saveQuickTables) {
-		if ( ! s_quickTableInit ) {
-			s_quickTableInit = true;
-			s_quickTables.set(8,4,128,s_qtbuf,256*13,false,0,"qx");
-		}
-		uint64_t key = (uint32_t)needles;
-		slot = s_quickTables.getSlot(&key);
-		if ( slot >= 0 ) {
-			buf = s_quickTables.getValueFromSlot(slot);
-			numNeedlesToInit = 0;
-		}
-	}
-	*/
-
 	if(!buf) {
 		buf = space;
 		memset ( buf , 0 , sizeof(BITVEC)*256*4);
 	}
-
-	/*
-	if( useQuickTables && slot == -1 ) {
-		//buf = (char*)mcalloc(sizeof(uint32_t)*256*5,
-		//		     "matches");
-		if(buf) s_quickTables.addKey(&key, &buf);
-		//sanity check, no reason why there needs to be a 
-		//limit, I just don't expect there to be this many
-		//static needles at this point.
-		if(s_quickTables.getNumSlotsUsed() > 32){
-			g_process.shutdownAbort(true);
-		}
-	}
-	*/
 
 	// try 64 bit bit vectors now since we doubled # of needles
 	int32_t offset = 0;
@@ -164,9 +124,7 @@ char *getMatches2 ( Needle *needles          ,
 
 	// return a ptr to the first match if we should, this is it
 	char *retVal = NULL;
-	// debug vars
-	//int32_t debugCount = 0;
-	//int32_t pp = 0;
+
 	// now find the first needle in the haystack
 	unsigned char *p    = (unsigned char *)haystack;
 	unsigned char *pend = (unsigned char *)haystack + haystackSize;
@@ -188,20 +146,7 @@ char *getMatches2 ( Needle *needles          ,
 		if ( ! mask ) continue;
 		mask &= s3[*(p+3)];
 		if ( ! mask ) continue;
-		//debugCount++;
-		/*
-		// display
-		char oo[148];
-		char *xx ;
-		xx = oo;
-		//gbmemcpy ( xx , p , 8 );
-		for ( int32_t k = 0 ; k < 5 ; k++ ) {
-			*xx++ = p[k];
-		}
-		gbmemcpy ( xx , "..." , 3 );
-		xx += 3;
-		*/
-		//
+
 		// XXX: do a hashtable lookup here so we have the candidate
 		//      matches in a chain... 
 		// XXX: for small needles which match frequently let's have
@@ -243,10 +188,7 @@ char *getMatches2 ( Needle *needles          ,
 				m += 4;
 			}
 			// loop over each char in "m"
-			//for ( ; *m ; m++ ) {
 			for ( ; m < mend ; m++ ) {
-				//while ( ! *d && d < dend ) d++;
-				//while ( ! *m && m < mend ) m++;
 				// if we are a non alnum, that will match
 				// any string of non-alnums, like a space
 				// for instance. the 0 byte does not count
@@ -280,8 +222,8 @@ char *getMatches2 ( Needle *needles          ,
 				continue;
 			}
 			// store ptr if NULL
-			if ( ! needles[j].m_firstMatch )
-				needles[j].m_firstMatch = (char *)p;
+			if ( ! needlesMatch[j].m_firstMatch )
+				needlesMatch[j].m_firstMatch = (char *)p;
 			// return ptr to needle in "haystack"
 			if ( stopAtFirstMatch ) {
 				// ok, we got a match
@@ -292,7 +234,7 @@ char *getMatches2 ( Needle *needles          ,
 				break;
 			}
 			// otherwise, just count it
-			needles[j].m_count++;
+			needlesMatch[j].m_count++;
 			// see if we match another needle, fixes bug
 			// of matching "anal" but not "analy[tics]"
 			continue;
@@ -327,20 +269,7 @@ char *getMatches2 ( Needle *needles          ,
 			mask &= s3[*(p+3)];
 			if ( ! mask ) continue;
 		}
-		//debugCount++;
-		/*
-		// display
-		char oo[148];
-		char *xx ;
-		xx = oo;
-		//gbmemcpy ( xx , p , 8 );
-		for ( int32_t k = 0 ; k < 5 ; k++ ) {
-			*xx++ = p[k];
-		}
-		gbmemcpy ( xx , "..." , 3 );
-		xx += 3;
-		*/
-		//
+
 		// XXX: do a hashtable lookup here so we have the candidate
 		//      matches in a chain... 
 		// XXX: for small needles which match frequently let's have
@@ -387,8 +316,6 @@ char *getMatches2 ( Needle *needles          ,
 			// loop over each char in "m"
 			//for ( ; *m ; m++ ) {
 			for ( ; m < mend ; m++ ) {
-				//while ( ! *d && d < dend ) d++;
-				//while ( ! *m && m < mend ) m++;
 				// if we are a non alnum, that will match
 				// any string of non-alnums, like a space
 				// for instance. the 0 byte does not count
@@ -422,8 +349,8 @@ char *getMatches2 ( Needle *needles          ,
 				continue;
 			}
 			// store ptr if NULL
-			if ( ! needles[j].m_firstMatch )
-				needles[j].m_firstMatch = (char *)p;
+			if ( ! needlesMatch[j].m_firstMatch )
+				needlesMatch[j].m_firstMatch = (char *)p;
 			// return ptr to needle in "haystack"
 			if ( stopAtFirstMatch ) {
 				// ok, we got a match
@@ -434,18 +361,12 @@ char *getMatches2 ( Needle *needles          ,
 				break;
 			}
 			// otherwise, just count it
-			needles[j].m_count++;
+			needlesMatch[j].m_count++;
 			// advance to next char in the haystack
 			break;
 		}
 		// ok, we did not match any needles, advance p and try again
 	}
-
-
-	//if ( debugCount > 0 ) pp = haystackSize / debugCount;
-	//log("build: debug count = %" PRId32" uc=%" PRId32" hsize=%" PRId32" "
-	//    "1 in %" PRId32" chars matches.",
-	//    debugCount,(int32_t)isHaystackUtf16,haystackSize,pp);
 
 	// before we exit, clean up
 	return retVal;

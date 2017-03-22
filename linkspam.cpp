@@ -23,234 +23,239 @@ static bool isLinkChain ( Xml *xml, const Url *linker, const Url *linkee, int32_
 //   Otherwise, if section is 0, if the match occurs anywhere on the
 //   page then all links on the page should be considered bad.
 static Needle s_needles1[] = {
-	{"open.thumbshots.org"          , 0 , 0 , 0 , 0 , NULL } ,
-	//{"google-ad"                    , 0 , 0 , 0 , 0 , NULL } ,
+	{"open.thumbshots.org"          , 0 , 0 , 0  } ,
+	//{"google-ad"                    , 0 , 0 , 0  } ,
 	// indicates search results page
 	// this often directly precedes the comment section
-	{"[trackback"                   , 0 , 1 , 1 , 0 , NULL } ,
-	{"class=\"comtext"              , 0 , 8 , 1 , 0 , NULL } ,
-	{"class=\"comment"              , 0 , 8 , 1 , 0 , NULL } ,
-	{"class=\"coment"               , 0 , 8 , 1 , 0 , NULL } ,
-	{"class=\"trackback"            , 0 , 8 , 1 , 0 , NULL } ,
-	{"class=\"ping"                 , 0 , 8 , 1 , 0 , NULL } ,
-	{"class=\"followup"             , 0 , 8 , 1 , 0 , NULL } ,
-	{"class=\"response"             , 0 , 8 , 1 , 0 , NULL } ,
+	{"[trackback"                   , 0 , 1 , 1  } ,
+	{"class=\"comtext"              , 0 , 8 , 1  } ,
+	{"class=\"comment"              , 0 , 8 , 1  } ,
+	{"class=\"coment"               , 0 , 8 , 1  } ,
+	{"class=\"trackback"            , 0 , 8 , 1  } ,
+	{"class=\"ping"                 , 0 , 8 , 1  } ,
+	{"class=\"followup"             , 0 , 8 , 1  } ,
+	{"class=\"response"             , 0 , 8 , 1  } ,
 	// this can signify a blog entry, not just a comment
-	//{"class=\"entry"              , 0 , 8 , 1 , 0 , NULL } ,
+	//{"class=\"entry"              , 0 , 8 , 1  } ,
 	// these seem to be more indicative of posted comments
-	{"class=\"posted"               , 0 , 8 , 1 , 0 , NULL },
-	{"id=\"posted"                  , 0 , 8 , 1 , 0 , NULL },
-	{"name=\"posted"                , 0 , 8 , 1 , 0 , NULL },
+	{"class=\"posted"               , 0 , 8 , 1  },
+	{"id=\"posted"                  , 0 , 8 , 1  },
+	{"name=\"posted"                , 0 , 8 , 1  },
 	// annoying little textbox thingy
-	{"class=\"shoutbox"             , 0 , 8 , 1 , 0 , NULL } ,
-	{"id=\"comment"                 , 0 , 8 , 1 , 0 , NULL } ,
-	{"id=\"coment"                  , 0 , 8 , 1 , 0 , NULL } ,
-	{"id=\"trackback"               , 0 , 8 , 1 , 0 , NULL } ,
-	{"id=\"ping"                    , 0 , 8 , 1 , 0 , NULL } ,
-	{"id=\"followup"                , 0 , 8 , 1 , 0 , NULL } ,
-	{"id=\"response"                , 0 , 8 , 1 , 0 , NULL } ,
-	{"name=\"comment"               , 0 , 8 , 1 , 0 , NULL } ,
-	{"name=\"coment"                , 0 , 8 , 1 , 0 , NULL } ,
-	{"name=\"trackback"             , 0 , 8 , 1 , 0 , NULL } ,
-	{"name=\"ping"                  , 0 , 8 , 1 , 0 , NULL } ,
-	{"name=\"followup"              , 0 , 8 , 1 , 0 , NULL } ,
-	{"name=\"response"              , 0 , 8 , 1 , 0 , NULL } ,
+	{"class=\"shoutbox"             , 0 , 8 , 1  } ,
+	{"id=\"comment"                 , 0 , 8 , 1  } ,
+	{"id=\"coment"                  , 0 , 8 , 1  } ,
+	{"id=\"trackback"               , 0 , 8 , 1  } ,
+	{"id=\"ping"                    , 0 , 8 , 1  } ,
+	{"id=\"followup"                , 0 , 8 , 1  } ,
+	{"id=\"response"                , 0 , 8 , 1  } ,
+	{"name=\"comment"               , 0 , 8 , 1  } ,
+	{"name=\"coment"                , 0 , 8 , 1  } ,
+	{"name=\"trackback"             , 0 , 8 , 1  } ,
+	{"name=\"ping"                  , 0 , 8 , 1  } ,
+	{"name=\"followup"              , 0 , 8 , 1  } ,
+	{"name=\"response"              , 0 , 8 , 1  } ,
 	// a lot of the comment boards can be identified because
 	// they have a bunch of mailto links, one before each comment
 	//{"href=\"mailto"                , 0 , 8 , 1 , 0 , NULL , 0 },
 	//{"href=mailto"                  , 0 , 8 , 1 , 0 , NULL , 0 },
 	// wikipedias
-	{"div class=\"editsection"      , 0 , 10, 1 , 0 , NULL } ,
-	{"action=edit"                  , 0 , 10, 1 , 0 , NULL } ,
+	{"div class=\"editsection"      , 0 , 10, 1  } ,
+	{"action=edit"                  , 0 , 10, 1  } ,
 	// message boards
-	{"anonymous user"               , 0 , 10, 1 , 0 , NULL } ,
-	{"anonymer user"                , 0 , 10, 1 , 0 , NULL } ,
-	{"date posted"                  , 0 , 10, 1 , 0 , NULL } ,
-	{"post your notice"             , 0 , 10, 1 , 0 , NULL } ,
-	{"edit this page"               , 0 , 10, 1 , 0 , NULL } ,
+	{"anonymous user"               , 0 , 10, 1  } ,
+	{"anonymer user"                , 0 , 10, 1  } ,
+	{"date posted"                  , 0 , 10, 1  } ,
+	{"post your notice"             , 0 , 10, 1  } ,
+	{"edit this page"               , 0 , 10, 1  } ,
 	// edit</a><br>
-	{"edit<a]br"                    , 0 , 10, 1 , 0 , NULL } ,
+	{"edit<a]br"                    , 0 , 10, 1  } ,
 	// link to edit a comment
-	{">edit</a"                     , 0 , 10, 1 , 0 , NULL } ,
+	{">edit</a"                     , 0 , 10, 1  } ,
 	// these often indicate blog entries, not just comments
 	//{"postedon"                     , 0 , 10, 1 , 0 , NULL , 0 },
 	//{"posted by "                   , 0 , 10, 1 , 0 , NULL , 0 },
 	//{"posted at "                   , 0 , 10, 1 , 0 , NULL , 0 },
-	{"reply with quote"             , 0 , 9 , 0 , 0 , NULL } ,
-	{">post a reply"                , 0 , 10, 0 , 0 , NULL } ,
-	{"post reply"                   , 0 , 10, 0 , 0 , NULL } ,
-	{"submit post"                  , 0 , 10, 0 , 0 , NULL } ,
-	{">post message"                , 0 , 10, 0 , 0 , NULL } ,
-	{">post a comment"              , 0 , 10, 0 , 0 , NULL } ,
-	{">leave a comment"             , 0 , 10, 0 , 0 , NULL } ,
-	{">post comments"               , 0 , 10, 0 , 0 , NULL } ,
+	{"reply with quote"             , 0 , 9 , 0  } ,
+	{">post a reply"                , 0 , 10, 0  } ,
+	{"post reply"                   , 0 , 10, 0  } ,
+	{"submit post"                  , 0 , 10, 0  } ,
+	{">post message"                , 0 , 10, 0  } ,
+	{">post a comment"              , 0 , 10, 0  } ,
+	{">leave a comment"             , 0 , 10, 0  } ,
+	{">post comments"               , 0 , 10, 0  } ,
 	// Comments</font> (0) after each posted entry...
-	//{">comments<"                 , 0 , 10, 1 , 0 , NULL } ,
-	{"comments: <"                  , 0 , 10, 1 , 0 , NULL } ,
-	{"comments:<"                   , 0 , 10, 1 , 0 , NULL } ,
-	//{"comment:"                   , 0 , 10, 1 , 0 , NULL } ,
-	{"reacties:"                    , 0 , 10, 1 , 0 , NULL } ,
-	{"comentarios:"                 , 0 , 10, 1 , 0 , NULL } ,
-	{"comentários:"                 , 0 , 10, 1 , 0 , NULL } ,
-	{">message:"                    , 0 , 10, 0 , 0 , NULL } ,
-	{">mensagem:"                   , 0 , 10, 0 , 0 , NULL } ,
-	{">faca seu comentario"         , 0 , 10, 0 , 0 , NULL } ,
-	{">faça seu comentário"         , 0 , 10, 0 , 0 , NULL } ,
+	//{">comments<"                 , 0 , 10, 1  } ,
+	{"comments: <"                  , 0 , 10, 1  } ,
+	{"comments:<"                   , 0 , 10, 1  } ,
+	//{"comment:"                   , 0 , 10, 1  } ,
+	{"reacties:"                    , 0 , 10, 1  } ,
+	{"comentarios:"                 , 0 , 10, 1  } ,
+	{"comentários:"                 , 0 , 10, 1  } ,
+	{">message:"                    , 0 , 10, 0  } ,
+	{">mensagem:"                   , 0 , 10, 0  } ,
+	{">faca seu comentario"         , 0 , 10, 0  } ,
+	{">faça seu comentário"         , 0 , 10, 0  } ,
 	// comment add in german
-	{">Kommentar hinzuf"            , 0 , 10, 0 , 0 , NULL } ,
-	{"rate this link"               , 0 , 10, 0 , 0 , NULL } ,
-	{"link submit"                  , 0 , 10, 0 , 0 , NULL } ,
-	{"links directory"              , 0 , 10, 0 , 0 , NULL } ,
-	{">add my comment"              , 0 , 10, 0 , 0 , NULL } ,
+	{">Kommentar hinzuf"            , 0 , 10, 0  } ,
+	{"rate this link"               , 0 , 10, 0  } ,
+	{"link submit"                  , 0 , 10, 0  } ,
+	{"links directory"              , 0 , 10, 0  } ,
+	{">add my comment"              , 0 , 10, 0  } ,
 	// title of the text area box
-	{">your comment"                , 0 , 10, 0 , 0 , NULL } ,
-	{"your comment<"                , 0 , 10, 0 , 0 , NULL } ,
-	{">comment by"                  , 0 , 10, 1 , 0 , NULL } ,
-	{">scrivi un commento"          , 0 , 10, 0 , 0 , NULL } ,
-	{">scrivi il tuo commento"      , 0 , 10, 0 , 0 , NULL } ,
-	{"add comment"                  , 0 , 10, 0 , 0 , NULL } ,
-	{"trackbacks for the art"       , 0 , 12, 1 , 0 , NULL } ,
-	{"these trackbacks have been re", 0 , 13, 1 , 0 , NULL } ,
-	{"trackback pings"              , 0 , 13, 1 , 0 , NULL } ,
-	{"read the rest of this com"    , 0 , 13, 1 , 0 , NULL } ,
+	{">your comment"                , 0 , 10, 0  } ,
+	{"your comment<"                , 0 , 10, 0  } ,
+	{">comment by"                  , 0 , 10, 1  } ,
+	{">scrivi un commento"          , 0 , 10, 0  } ,
+	{">scrivi il tuo commento"      , 0 , 10, 0  } ,
+	{"add comment"                  , 0 , 10, 0  } ,
+	{"trackbacks for the art"       , 0 , 12, 1  } ,
+	{"these trackbacks have been re", 0 , 13, 1  } ,
+	{"trackback pings"              , 0 , 13, 1  } ,
+	{"read the rest of this com"    , 0 , 13, 1  } ,
 	// that was the opinion of ...
-	{"das war die meinung von"      , 0 , 13, 1 , 0 , NULL } ,
-	{"resource partner"             , 0 , 49, 0 , 0 , NULL } ,
-	{"partner link"                 , 0 , 50, 0 , 0 , NULL } ,
-	{"partner site"                 , 0 , 51, 0 , 0 , NULL } ,
-	{"sign the guestbook"           , 0 , 43, 0 , 0 , NULL } ,
+	{"das war die meinung von"      , 0 , 13, 1  } ,
+	{"resource partner"             , 0 , 49, 0  } ,
+	{"partner link"                 , 0 , 50, 0  } ,
+	{"partner site"                 , 0 , 51, 0  } ,
+	{"sign the guestbook"           , 0 , 43, 0  } ,
 	//{"add new comment"              , 0 , 14, 0 , 0 , NULL , 0 },
 	//{"add message"                  , 0 , 14, 0 , 0 , NULL , 0 },
 	// tagboard software allows free submits. it has this in 
 	// an html comment tag...
-	{"2002 natali ardianto"         , 0 , 14, 0 , 0 , NULL } ,
+	{"2002 natali ardianto"         , 0 , 14, 0  } ,
 	// guestbooks
-	{"guestbook</title"             , 0 , 13, 0 , 0 , NULL } ,
-	{"gastenboek</title"            , 0 , 13, 0 , 0 , NULL } ,
+	{"guestbook</title"             , 0 , 13, 0  } ,
+	{"gastenboek</title"            , 0 , 13, 0  } ,
 	// link management software puts a search box on there
-	{"search our links"             , 0 , 14, 0 , 0 , NULL } ,
-	{"find all words option"        , 0 , 14, 0 , 0 , NULL } ,
+	{"search our links"             , 0 , 14, 0  } ,
+	{"find all words option"        , 0 , 14, 0  } ,
 	// link exchange indicators
-	{"link you want to share"       , 0 , 14, 0 , 0 , NULL } ,
-	{"link trader"                  , 0 , 14, 0 , 0 , NULL } ,
-	{"link exchange"                , 0 , 15, 0 , 0 , NULL } ,
-	{"link partner"                 , 0 , 16, 0 , 0 , NULL } ,
-	{"link xchange"                 , 0 , 17, 0 , 0 , NULL } ,
-	{"link swap"                    , 0 , 18, 0 , 0 , NULL } ,
-	{"links trader"                 , 0 , 19, 0 , 0 , NULL } ,
-	{"links exchange"               , 0 , 20, 0 , 0 , NULL } ,
-	{"links partner"                , 0 , 21, 0 , 0 , NULL } ,
-	{"links xchange"                , 0 , 22, 0 , 0 , NULL } ,
-	{"links swap"                   , 0 , 23, 0 , 0 , NULL } ,
-	{"list your site"               , 0 , 26, 0 , 0 , NULL } ,
-	{"add your web site"            , 0 , 24, 0 , 0 , NULL } ,
-	{"add your website"             , 0 , 25, 0 , 0 , NULL } ,
-	{"add your site"                , 0 , 26, 0 , 0 , NULL } ,
-	{"add your link"                , 0 , 27, 0 , 0 , NULL } ,
-	{"add your url"                 , 0 , 28, 0 , 0 , NULL } ,
-	{"add site"                     , 0 , 28, 0 , 0 , NULL } ,
+	{"link you want to share"       , 0 , 14, 0  } ,
+	{"link trader"                  , 0 , 14, 0  } ,
+	{"link exchange"                , 0 , 15, 0  } ,
+	{"link partner"                 , 0 , 16, 0  } ,
+	{"link xchange"                 , 0 , 17, 0  } ,
+	{"link swap"                    , 0 , 18, 0  } ,
+	{"links trader"                 , 0 , 19, 0  } ,
+	{"links exchange"               , 0 , 20, 0  } ,
+	{"links partner"                , 0 , 21, 0  } ,
+	{"links xchange"                , 0 , 22, 0  } ,
+	{"links swap"                   , 0 , 23, 0  } ,
+	{"list your site"               , 0 , 26, 0  } ,
+	{"add your web site"            , 0 , 24, 0  } ,
+	{"add your website"             , 0 , 25, 0  } ,
+	{"add your site"                , 0 , 26, 0  } ,
+	{"add your link"                , 0 , 27, 0  } ,
+	{"add your url"                 , 0 , 28, 0  } ,
+	{"add site"                     , 0 , 28, 0  } ,
 	// email the webmaster to have your link on this page
-	{"have your link"               , 0 , 28, 0 , 0 , NULL } ,
-	{"add a web site"               , 0 , 29, 0 , 0 , NULL } ,
-	{"add a website"                , 0 , 30, 0 , 0 , NULL } ,
-	{"add a site"                   , 0 , 31, 0 , 0 , NULL } ,
-	{"add a link"                   , 0 , 32, 0 , 0 , NULL } ,
-	{"add a url"                    , 0 , 33, 0 , 0 , NULL } ,
-	{"adding your web site"         , 0 , 34, 0 , 0 , NULL } ,
-	{"adding your website"          , 0 , 35, 0 , 0 , NULL } ,
-	{"adding your site"             , 0 , 36, 0 , 0 , NULL } ,
-	{"adding your link"             , 0 , 37, 0 , 0 , NULL } ,
-	{"adding your url"              , 0 , 38, 0 , 0 , NULL } ,
-	{"adding a web site"            , 0 , 39, 0 , 0 , NULL } ,
-	{"adding a website"             , 0 , 40, 0 , 0 , NULL } ,
-	{"adding a site"                , 0 , 41, 0 , 0 , NULL } ,
-	{"adding a link"                , 0 , 42, 0 , 0 , NULL } ,
-	{"adding a url"                 , 0 , 43, 0 , 0 , NULL } ,
-	{"add url"                      , 0 , 43, 0 , 0 , NULL } ,
-	{"add resource"                 , 0 , 43, 0 , 0 , NULL } ,
-	{"add link"                     , 0 , 43, 0 , 0 , NULL } ,
-	{"add free link"                , 0 , 43, 0 , 0 , NULL } ,
-	{"addlink"                      , 0 , 43, 0 , 0 , NULL } ,
-	{"suggest a site"               , 0 , 43, 0 , 0 , NULL } ,
-	{"swap links"                   , 0 , 43, 0 , 0 , NULL } ,
-	{"considered for addition"      , 0 , 43, 0 , 0 , NULL } ,
-	{"we are not affiliated"        , 0 , 43, 0 , 0 , NULL } ,
-	{"have a site to add"           , 0 , 43, 0 , 0 , NULL } ,
-	{"submit your web site"         , 0 , 34, 0 , 0 , NULL } ,
-	{"submit your website"          , 0 , 35, 0 , 0 , NULL } ,
-	{"submit your site"             , 0 , 36, 0 , 0 , NULL } ,
-	{"submit your link"             , 0 , 37, 0 , 0 , NULL } ,
-	{"submit your url"              , 0 , 38, 0 , 0 , NULL } ,
-	{"submit a web site"            , 0 , 39, 0 , 0 , NULL } ,
-	{"submit a website"             , 0 , 40, 0 , 0 , NULL } ,
-	{"submit a site"                , 0 , 41, 0 , 0 , NULL } ,
-	{"submit a link"                , 0 , 42, 0 , 0 , NULL } ,
-	{"submit link"                  , 0 , 42, 0 , 0 , NULL } ,
-	{"submit a url"                 , 0 , 43, 0 , 0 , NULL } ,
+	{"have your link"               , 0 , 28, 0  } ,
+	{"add a web site"               , 0 , 29, 0  } ,
+	{"add a website"                , 0 , 30, 0  } ,
+	{"add a site"                   , 0 , 31, 0  } ,
+	{"add a link"                   , 0 , 32, 0  } ,
+	{"add a url"                    , 0 , 33, 0  } ,
+	{"adding your web site"         , 0 , 34, 0  } ,
+	{"adding your website"          , 0 , 35, 0  } ,
+	{"adding your site"             , 0 , 36, 0  } ,
+	{"adding your link"             , 0 , 37, 0  } ,
+	{"adding your url"              , 0 , 38, 0  } ,
+	{"adding a web site"            , 0 , 39, 0  } ,
+	{"adding a website"             , 0 , 40, 0  } ,
+	{"adding a site"                , 0 , 41, 0  } ,
+	{"adding a link"                , 0 , 42, 0  } ,
+	{"adding a url"                 , 0 , 43, 0  } ,
+	{"add url"                      , 0 , 43, 0  } ,
+	{"add resource"                 , 0 , 43, 0  } ,
+	{"add link"                     , 0 , 43, 0  } ,
+	{"add free link"                , 0 , 43, 0  } ,
+	{"addlink"                      , 0 , 43, 0  } ,
+	{"suggest a site"               , 0 , 43, 0  } ,
+	{"swap links"                   , 0 , 43, 0  } ,
+	{"considered for addition"      , 0 , 43, 0  } ,
+	{"we are not affiliated"        , 0 , 43, 0  } ,
+	{"have a site to add"           , 0 , 43, 0  } ,
+	{"submit your web site"         , 0 , 34, 0  } ,
+	{"submit your website"          , 0 , 35, 0  } ,
+	{"submit your site"             , 0 , 36, 0  } ,
+	{"submit your link"             , 0 , 37, 0  } ,
+	{"submit your url"              , 0 , 38, 0  } ,
+	{"submit a web site"            , 0 , 39, 0  } ,
+	{"submit a website"             , 0 , 40, 0  } ,
+	{"submit a site"                , 0 , 41, 0  } ,
+	{"submit a link"                , 0 , 42, 0  } ,
+	{"submit link"                  , 0 , 42, 0  } ,
+	{"submit a url"                 , 0 , 43, 0  } ,
 	// . article spammers using article-emporium.com, etc.
 	// . these articles get circulated into regular websites
-	{"submit your article"          , 0 , 43, 0 , 0 , NULL } ,
-	{"submit articles"              , 0 , 43, 0 , 0 , NULL } ,
-	{"submit an article"            , 0 , 43, 0 , 0 , NULL } ,
-	{"for any feedback contact"     , 0 , 43, 0 , 0 , NULL } ,
-	{"for any feedback mail"        , 0 , 43, 0 , 0 , NULL } ,
-	{"for any feedback email"       , 0 , 43, 0 , 0 , NULL } ,
-	{"other articles that might"    , 0 , 43, 0 , 0 , NULL } ,
-	{"is a freelance"               , 0 , 43, 0 , 0 , NULL } ,
-	{"author is an amateur"         , 0 , 43, 0 , 0 , NULL } ,
-	{"article source"               , 0 , 43, 0 , 0 , NULL } ,
-	{"word count:"                  , 0 , 43, 0 , 0 , NULL } ,
-	{"for additional information on", 0 , 43, 1 , 0 , NULL } ,
-	{"for more information on"      , 0 , 43, 1 , 0 , NULL } ,
-	{"for further assistance visit" , 0 , 43, 1 , 0 , NULL } ,
-	{"article submitted on"         , 0 , 43, 0 , 0 , NULL } ,
-	{"please rate this"             , 0 , 43, 0 , 0 , NULL } ,
-	{"rate the article"             , 0 , 43, 0 , 0 , NULL } ,
-	//{"how would you rate"         , 0 , 43, 0 , 0 , NULL } ,
-	{"add rating"                   , 0 , 43, 0 , 0 , NULL } ,
-	{"trade text link"              , 0 , 44, 0 , 0 , NULL } ,
-	{"trade link"                   , 0 , 45, 0 , 0 , NULL } ,
-	{"exchange link"                , 0 , 46, 0 , 0 , NULL } ,
-	{"exchanging link"              , 0 , 47, 0 , 0 , NULL } ,
-	{"reciprocal link"              , 0 , 48, 0 , 0 , NULL } ,
+	{"submit your article"          , 0 , 43, 0  } ,
+	{"submit articles"              , 0 , 43, 0  } ,
+	{"submit an article"            , 0 , 43, 0  } ,
+	{"for any feedback contact"     , 0 , 43, 0  } ,
+	{"for any feedback mail"        , 0 , 43, 0  } ,
+	{"for any feedback email"       , 0 , 43, 0  } ,
+	{"other articles that might"    , 0 , 43, 0  } ,
+	{"is a freelance"               , 0 , 43, 0  } ,
+	{"author is an amateur"         , 0 , 43, 0  } ,
+	{"article source"               , 0 , 43, 0  } ,
+	{"word count:"                  , 0 , 43, 0  } ,
+	{"for additional information on", 0 , 43, 1  } ,
+	{"for more information on"      , 0 , 43, 1  } ,
+	{"for further assistance visit" , 0 , 43, 1  } ,
+	{"article submitted on"         , 0 , 43, 0  } ,
+	{"please rate this"             , 0 , 43, 0  } ,
+	{"rate the article"             , 0 , 43, 0  } ,
+	//{"how would you rate"         , 0 , 43, 0  } ,
+	{"add rating"                   , 0 , 43, 0  } ,
+	{"trade text link"              , 0 , 44, 0  } ,
+	{"trade link"                   , 0 , 45, 0  } ,
+	{"exchange link"                , 0 , 46, 0  } ,
+	{"exchanging link"              , 0 , 47, 0  } ,
+	{"reciprocal link"              , 0 , 48, 0  } ,
 
 	// new stuff
-	{">sponsors<"                   , 0 , 48, 0 , 0 , NULL } ,
-	{">sponsor<"                    , 0 , 48, 0 , 0 , NULL } ,
-	{">sponsored<"                  , 0 , 48, 0 , 0 , NULL } ,
-	{">submit site<"                , 0 , 48, 0 , 0 , NULL } ,
-	{": sponsor"                    , 0 , 48, 0 , 0 , NULL } ,
-	{"/sponsor/"                    , 0 , 48, 0 , 0 , NULL } ,
-	{"*sponsors*"                   , 0 , 48, 0 , 0 , NULL } ,
-	{">payperpost"                  , 0 , 48, 0 , 0 , NULL } ,
-	{"sponsored post"               , 0 , 48, 0 , 0 , NULL } ,
-	{"sponsored flag"               , 0 , 48, 0 , 0 , NULL } ,
-	{"sponsoredflag"                , 0 , 48, 0 , 0 , NULL } ,
-	{"sponsored listing"            , 0 , 48, 1 , 0 , NULL } ,
-	{"sponsored link"               , 0 , 48, 1 , 0 , NULL } ,
-	{"post is sponsor"              , 0 , 48, 0 , 0 , NULL } ,
-	{"paid post"                    , 0 , 48, 0 , 0 , NULL } ,
-	{"powered by"                   , 0 , 48, 0 , 0 , NULL } , // wordpress
-	{"suggest your website"         , 0 , 48, 0 , 0 , NULL } ,
-	{"advertisement:"               , 0 , 48, 1 , 0 , NULL } 
+	{">sponsors<"                   , 0 , 48, 0  } ,
+	{">sponsor<"                    , 0 , 48, 0  } ,
+	{">sponsored<"                  , 0 , 48, 0  } ,
+	{">submit site<"                , 0 , 48, 0  } ,
+	{": sponsor"                    , 0 , 48, 0  } ,
+	{"/sponsor/"                    , 0 , 48, 0  } ,
+	{"*sponsors*"                   , 0 , 48, 0  } ,
+	{">payperpost"                  , 0 , 48, 0  } ,
+	{"sponsored post"               , 0 , 48, 0  } ,
+	{"sponsored flag"               , 0 , 48, 0  } ,
+	{"sponsoredflag"                , 0 , 48, 0  } ,
+	{"sponsored listing"            , 0 , 48, 1  } ,
+	{"sponsored link"               , 0 , 48, 1  } ,
+	{"post is sponsor"              , 0 , 48, 0  } ,
+	{"paid post"                    , 0 , 48, 0  } ,
+	{"powered by"                   , 0 , 48, 0  } , // wordpress
+	{"suggest your website"         , 0 , 48, 0  } ,
+	{"advertisement:"               , 0 , 48, 1  } 
 };
+
+static constexpr int32_t numNeedles1 = sizeof(s_needles1)/sizeof(Needle);
+static bool initNeedles1 = initializeNeedle(s_needles1, numNeedles1);
 
 // now check outlinks on the page for these substrings
 static Needle s_needles2[] = {
-	{"cyber-robotics.com" , 0 , 0 , 0 , 0 , NULL } ,
-	{"cyberspacehq.com"   , 0 , 0 , 0 , 0 , NULL } ,
-	{"links4trade.com"    , 0 , 0 , 0 , 0 , NULL } ,
-	{"searchfeed.com"     , 0 , 0 , 0 , 0 , NULL } ,
-	{"marketnex.com"      , 0 , 0 , 0 , 0 , NULL } ,
-	{"partnersignup"      , 0 , 0 , 0 , 0 , NULL } ,
-	{"publisher-network"  , 0 , 0 , 0 , 0 , NULL } ,
-	//{"amazon.com"       , 0 , 0 , 0 , 0 , NULL } ,
-	//{"dmoz.org"         , 0 , 0 , 0 , 0 , NULL } ,
-	//{"dmoz.com"         , 0 , 0 , 0 , 0 , NULL } ,
-	{"linksmanager"       , 0 , 0 , 0 , 0 , NULL } ,
-	{"changinglinks"      , 0 , 0 , 0 , 0 , NULL } 
+	{"cyber-robotics.com" , 0 , 0 , 0  } ,
+	{"cyberspacehq.com"   , 0 , 0 , 0  } ,
+	{"links4trade.com"    , 0 , 0 , 0  } ,
+	{"searchfeed.com"     , 0 , 0 , 0  } ,
+	{"marketnex.com"      , 0 , 0 , 0  } ,
+	{"partnersignup"      , 0 , 0 , 0  } ,
+	{"publisher-network"  , 0 , 0 , 0  } ,
+	//{"amazon.com"       , 0 , 0 , 0  } ,
+	//{"dmoz.org"         , 0 , 0 , 0  } ,
+	//{"dmoz.com"         , 0 , 0 , 0  } ,
+	{"linksmanager"       , 0 , 0 , 0  } ,
+	{"changinglinks"      , 0 , 0 , 0  } 
 };
 
+static constexpr int32_t numNeedles2 = sizeof(s_needles2)/sizeof(Needle);
+static bool initNeedles2 = initializeNeedle(s_needles2, numNeedles2);
 
 //Check if a path is likely to contain uncontrolled links
 //Eg. guestbooks, blog comments, link-trade, etc. There is nothing from with them per see
@@ -444,9 +449,11 @@ bool setLinkSpam ( int32_t       ip                 ,
 	// comment section. our link's position therefore needs to be known,
 	// that is why we pass in linkPos. 
 	// "n" is the number it matches.
-	int32_t numNeedles1 = sizeof(s_needles1)/sizeof(Needle);
+	NeedleMatch needleMatches1[numNeedles1];
+
 	bool hadPreMatch;
 	getMatches2 ( s_needles1 ,
+	          needleMatches1,
 		      numNeedles1      ,
 		      haystack         ,
 		      haystackSize     ,
@@ -461,9 +468,9 @@ bool setLinkSpam ( int32_t       ip                 ,
 	note = NULL;
 	for ( int32_t i = 0 ; i < numNeedles1 ; i++ ) {
 		// open.thumbshots.org needs multiple counts
-		if ( i == 0 && s_needles1[i].m_count < 5 ) continue;
+		if ( i == 0 && needleMatches1[i].m_count < 5 ) continue;
 		// skip if no matches on this string
-		if ( s_needles1[i].m_count <= 0  ) continue;
+		if ( needleMatches1[i].m_count <= 0  ) continue;
 		// ok, if it had its section bit set to 0 that means the
 		// whole page is link spam!
 		if ( s_needles1[i].m_isSection == 0 ) {
@@ -471,7 +478,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 			return true;
 		}
 		// get the char ptr
-		char *ptr = s_needles1[i].m_firstMatch;
+		char *ptr = needleMatches1[i].m_firstMatch;
 		// set to the min
 		if ( ! minPtr || ptr < minPtr ) { 
 			note   = s_needles1[i].m_string; 
@@ -504,8 +511,9 @@ bool setLinkSpam ( int32_t       ip                 ,
 	// now check outlinks on the page for these substrings
 	haystack     = links->getLinkBuf();
 	haystackSize = links->getLinkBufLen();
-	int32_t numNeedles2 = sizeof(s_needles2)/sizeof(Needle);
+	NeedleMatch needleMatches2[numNeedles2];
 	getMatches2 ( s_needles2   , 
+	          needleMatches2,
 		      numNeedles2  , 
 		      haystack     , 
 		      haystackSize , 
@@ -518,7 +526,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 	// see if we got a hit
 	for ( int32_t i = 0 ; i < numNeedles2 ; i++ ) {
 		// skip if did not match
-		if ( s_needles2[i].m_count <= 0 ) continue;
+		if ( needleMatches2[i].m_count <= 0 ) continue;
 		// the whole doc is considered link spam
 		links->setAllSpamBits(s_needles2[i].m_string);
 		return true;
@@ -726,9 +734,10 @@ bool isLinkSpam ( const Url *linker,
 	// that is why we pass in linkPos. 
 	// "n" is the number it matches.
 	int32_t  n;
-	int32_t numNeedles1 = sizeof(s_needles1)/sizeof(Needle);
+	NeedleMatch needleMatches1[numNeedles1];
 	bool hadPreMatch;
 	getMatches2 ( s_needles1       ,
+	          needleMatches1,
 		      numNeedles1      ,
 		      haystack         ,
 		      haystackSize     ,
@@ -743,7 +752,7 @@ bool isLinkSpam ( const Url *linker,
 		int32_t need = 1;
 		// open.thumbshots.org needs multiple counts
 		if ( i == 0 ) need = 5;
-		if ( s_needles1[i].m_count < need ) continue;
+		if ( needleMatches1[i].m_count < need ) continue;
 		*note = s_needles1[i].m_string;
 		return true;
 	}
@@ -751,8 +760,9 @@ bool isLinkSpam ( const Url *linker,
 	// now check outlinks on the page for these substrings
 	haystack     = links->getLinkBuf();
 	haystackSize = links->getLinkBufLen();
-	int32_t numNeedles2 = sizeof(s_needles2)/sizeof(Needle);
+	NeedleMatch needleMatches2[numNeedles2];
 	getMatches2 ( s_needles2   , 
+	          needleMatches2,
 		      numNeedles2  , 
 		      haystack     , 
 		      haystackSize , 
@@ -767,7 +777,7 @@ bool isLinkSpam ( const Url *linker,
 		int32_t need = 1;
 		// open.thumbshots.org needs multiple counts
 		//if ( i == 9 ) need = 5;
-		if ( s_needles2[i].m_count < need ) continue;
+		if ( needleMatches2[i].m_count < need ) continue;
 		*note = s_needles2[i].m_string;
 		return true;
 	}
