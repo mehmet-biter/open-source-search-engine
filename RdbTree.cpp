@@ -2145,7 +2145,6 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 	logf(LOG_INFO,"db: Saving %s%s-saved.dat",dir,dbname);
 
 	// save parms
-	//m_saveFile = f;
 	strncpy(m_dir, dir, sizeof(m_dir)-1);
 	m_dir[ sizeof(m_dir)-1 ] = '\0';
 

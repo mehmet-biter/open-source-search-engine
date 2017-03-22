@@ -116,20 +116,11 @@ public:
 	int32_t getFirstNode() const;
 	int32_t getLastNode() const;
 
-	// . get the node whose key is <= "key"
-	int32_t getPrevNode(collnum_t collnum, const char *key) const;
-
-	// . get the prev node # whose key is <= to key of node #i
-	int32_t getPrevNode(int32_t i) const;
-
 	// . returns true  iff was found and deleted
 	// . returns false iff not found 
 	// . frees m_data[node] if freeIt is true
 	void deleteNode(int32_t node, bool freeData);
 	bool deleteNode(collnum_t collnum, const char *key, bool freeData);
-
-	// delete all nodes with keys in [startKey,endKey]
-	void deleteNodes(collnum_t collnum, const char *startKey, const char *endKey, bool freeData);
 
 	// . delete all records in this list from the tree
 	// . call deleteNode()
@@ -262,6 +253,15 @@ public:
 	static void threadDoneWrapper(void *state, job_exit_t exit_type);
 
 private:
+	// . get the node whose key is <= "key"
+	int32_t getPrevNode(collnum_t collnum, const char *key) const;
+
+	// . get the prev node # whose key is <= to key of node #i
+	int32_t getPrevNode(int32_t i) const;
+
+	// delete all nodes with keys in [startKey,endKey]
+	void deleteNodes(collnum_t collnum, const char *startKey, const char *endKey, bool freeData);
+
 	// . like getMemOccupied() above but does not include left/right/parent
 	// . only includes occupied keys/sizes and the dataSizes themself
 	int32_t getMemOccupiedForList2(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes) const;
