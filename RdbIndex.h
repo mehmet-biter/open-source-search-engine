@@ -73,6 +73,8 @@ public:
 	// dddddddd dddddddd dddddddd dddddd.Z  Z = delBit
 	docidsconst_ptr_t getDocIds();
 
+	bool exist(uint64_t docId);
+
 	void printIndex();
 
 	static const char s_docIdOffset = 2;

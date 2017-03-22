@@ -2298,9 +2298,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			if (g_conf.m_verifyIndex) {
 				// check tree index
 				if (filePos == base->getNumFiles()) {
-					auto docIds = base->getTreeIndex()->getDocIds();
-					auto it = std::lower_bound(docIds->cbegin(), docIds->cend(), docId << RdbIndex::s_docIdOffset);
-					if (it == docIds->cend() || ((*it >> RdbIndex::s_docIdOffset) != docId)) {
+					if (!base->getTreeIndex()->exist(docId)) {
 						// not in tree index
 						gbshutdownCorrupted();
 					}
@@ -2308,18 +2306,14 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 					// check rdb index
 					for (auto i = base->getNumFiles() - 1; i >= filePos; --i) {
 						RdbIndex *index = base->getIndex(i);
-						if (index) {
-							auto docIds = index->getDocIds();
-							auto it = std::lower_bound(docIds->cbegin(), docIds->cend(), docId << RdbIndex::s_docIdOffset);
-							if (it != docIds->cend() && ((*it >> RdbIndex::s_docIdOffset) == docId)) {
-								if (i != filePos) {
-									// docId found in newer file
-									gbshutdownCorrupted();
-								}
-
-								// found docId & validated
-								break;
+						if (index && index->exist(docId)) {
+							if (i != filePos) {
+								// docId found in newer file
+								gbshutdownCorrupted();
 							}
+
+							// found docId & validated
+							break;
 						}
 					}
 				}
