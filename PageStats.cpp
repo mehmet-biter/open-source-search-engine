@@ -6,7 +6,6 @@
 #include "Doledb.h"
 #include "Tagdb.h"
 #include "Clusterdb.h"
-#include "Statsdb.h"
 #include "Linkdb.h"
 #include "Posdb.h"
 #include "Dns.h"
@@ -1753,7 +1752,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 		g_tagdb.getRdb(),
 		g_clusterdb.getRdb(),
 		g_linkdb.getRdb(),
-		g_statsdb.getRdb(),
 	};
 	int32_t nr = sizeof(rdbs) / sizeof(Rdb *);
 

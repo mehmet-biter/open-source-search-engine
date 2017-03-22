@@ -161,8 +161,6 @@ bool Collectiondb::cleanTrees() {
 	return true;
 }
 
-#include "Statsdb.h"
-
 // same as addOldColl()
 bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 

@@ -18,7 +18,7 @@ enum rdbid_t {
 	// RDB_CATDB = 10,
 	// RDB_DATEDB = 11,
 	RDB_LINKDB = 12,
-	RDB_STATSDB = 13,
+	// RDB_STATSDB = 13,
 	// RDB_PLACEDB = 14,
 	// RDB_REVDB = 15,
 	RDB_POSDB = 16,

@@ -25,7 +25,6 @@
 #include "Clusterdb.h"
 #include "Collectiondb.h"
 #include "Sections.h"
-#include "Statsdb.h"
 #include "UdpServer.h"
 #include "PingServer.h"
 #include "Repair.h"
@@ -931,12 +930,6 @@ int main2 ( int argc , char *argv[] ) {
 
 		if (!g_proxy.initProxy (proxyId, udpPort, 0, &g_dp)) {
 			log( LOG_ERROR, "proxy: init failed" );
-			return 1;
-		}
-
-		// then statsdb
-		if ( ! g_statsdb.init() ) {
-			log( LOG_ERROR, "db: Statsdb init failed." );
 			return 1;
 		}
 
@@ -1846,12 +1839,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
-	// then statsdb
-	if ( ! g_statsdb.init() ) {
-		log( LOG_ERROR, "db: Statsdb init failed." );
-		return 1;
-	}
-
 	// allow adds to statsdb rdb tree
 	g_process.m_powerIsOn = true;
 
@@ -2065,12 +2052,6 @@ int main2 ( int argc , char *argv[] ) {
 
 	// allow saving of conf again
 	g_conf.m_save = true;
-
-	// flush stats
-	//g_statsdb.flush();
-
-	// ok, now activate statsdb
-	g_statsdb.enable();
 
 	log("db: gb is now ready");
 

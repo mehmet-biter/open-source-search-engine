@@ -2,7 +2,6 @@
 #include "Rdb.h"
 #include "RdbCache.h"
 #include "Collectiondb.h"
-#include "Statsdb.h"
 #include "Conf.h"
 #include "Mem.h"
 #include <fcntl.h>
@@ -326,20 +325,6 @@ bool RdbDump::dumpTree(bool recall) {
 	char maxEndKey[MAX_KEY_BYTES];
 	KEYMAX(maxEndKey,m_ks);
 
-	// if dumping statsdb, we can only dump records 30 seconds old or
-	// more because Statsdb.cpp can "back modify" such records in the tree
-	// because it may have a query that took 10 seconds come in then it
-	// needs to add a partial stat to the last 10 stats for those 10 secs.
-	// we use Global time at this juncture
-	if( m_rdb && m_rdb->getRdbId() == RDB_STATSDB) {
-		int32_t nowSecs = getTimeGlobal();
-		StatKey *sk = (StatKey *)maxEndKey;
-		sk->m_zero = 0x01;
-		sk->m_labelHash = 0xffffffff;
-		// leave last 60 seconds in there just to be safe
-		sk->m_time1 = nowSecs - 60;
-	}
-
 	// this list will hold the list of nodes/recs from m_tree
 	m_list = &m_ourList;
 
@@ -445,10 +430,6 @@ bool RdbDump::dumpTree(bool recall) {
 
 		// if list is empty, we're done!
 		if (m_list->isEmpty()) {
-			// consider that a rollover?
-			if( m_rdb && m_rdb->getRdbId() == RDB_STATSDB) {
-				m_rolledOver = true;
-			}
 			return true;
 		}
 

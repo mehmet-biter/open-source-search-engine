@@ -1,7 +1,6 @@
 #include "XmlDoc.h"
 #include "Collectiondb.h"
 #include "Titledb.h"
-#include "Statsdb.h"
 #include "Doledb.h"
 #include "CountryCode.h"
 #include "Log.h"
@@ -27,7 +26,6 @@ static void cleanup() {
 	g_tagdb.reset();
 	g_titledb.reset();
 	g_posdb.reset();
-	g_statsdb.reset();
 
 	g_collectiondb.reset();
 
@@ -69,7 +67,6 @@ int main(int argc, char **argv) {
 
 	g_collectiondb.loadAllCollRecs();
 
-	g_statsdb.init();
 	g_posdb.init();
 	g_titledb.init();
 	g_tagdb.init();

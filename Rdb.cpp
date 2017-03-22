@@ -11,7 +11,6 @@
 #include "Repair.h"
 #include "RdbMerge.h"
 #include "Process.h"
-#include "Statsdb.h"
 #include "Sections.h"
 #include "Spider.h"
 #include "SpiderColl.h"
@@ -191,11 +190,9 @@ bool Rdb::init(const char *dbname,
 		m_useTree = false;
 	}
 
-	if(m_useTree) { 
-		// statsdb is collectionless really so pass on to tree
-		int32_t rdbId = m_rdbId != RDB_STATSDB ? m_rdbId : -1;
+	if(m_useTree) {
 		sprintf(m_treeAllocName,"tree-%s",m_dbname);
-		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, false, m_dbname, m_ks, rdbId)) {
+		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, false, m_dbname, m_ks, m_rdbId)) {
 			log( LOG_ERROR, "db: Failed to set tree." );
 			return false;
 		}
@@ -2221,7 +2218,6 @@ Rdb *getRdbFromId ( rdbid_t rdbId ) {
 		case RDB_DOLEDB: return g_doledb.getRdb();
 		case RDB_CLUSTERDB: return g_clusterdb.getRdb();
 		case RDB_LINKDB: return g_linkdb.getRdb();
-		case RDB_STATSDB: return g_statsdb.getRdb();
 
 		case RDB2_POSDB2: return g_posdb2.getRdb();
 		case RDB2_TITLEDB2: return g_titledb2.getRdb();
@@ -2242,7 +2238,6 @@ rdbid_t getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_spiderdb.getRdb  () ) return RDB_SPIDERDB;
 	if ( rdb == g_doledb.getRdb    () ) return RDB_DOLEDB;
 	if ( rdb == g_clusterdb.getRdb () ) return RDB_CLUSTERDB;
-	if ( rdb == g_statsdb.getRdb   () ) return RDB_STATSDB;
 	if ( rdb == g_linkdb.getRdb    () ) return RDB_LINKDB;
 	if ( rdb == g_posdb2.getRdb   () ) return RDB2_POSDB2;
 	if ( rdb == g_tagdb2.getRdb     () ) return RDB2_TAGDB2;
@@ -2313,8 +2308,6 @@ int32_t getDataSizeFromRdbId ( rdbid_t rdbId ) {
 				  i == RDB_SPIDERDB ||
 				  i == RDB_DOLEDB )
 				ds = -1;
-			else if ( i == RDB_STATSDB )
-				ds = sizeof(StatData);
 			else if ( i == RDB2_POSDB2 ||
 				  i == RDB2_CLUSTERDB2 ||
 				  i == RDB2_LINKDB2 )

@@ -223,8 +223,6 @@ void Rebalance::scanLoop ( ) {
 			if ( rdb->isSecondaryRdb() ) continue;
 			// or if uninitialized
 			if ( ! rdb->isInitialized() ) continue;
-			// skip statsdb, do not rebalance that
-			if ( rdb->getRdbId() == RDB_STATSDB ) continue;
 			// log it as well
 			if ( m_lastRdb != rdb ) {
 				log("rebal: scanning %s (%" PRId32") [%s]",

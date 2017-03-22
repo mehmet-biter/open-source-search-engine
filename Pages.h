@@ -207,7 +207,6 @@ enum {
 	PAGE_REINDEX     ,	
 
 	PAGE_STATS       ,
-	PAGE_GRAPH       ,
 	PAGE_PERF        ,
 	PAGE_SOCKETS     ,
 

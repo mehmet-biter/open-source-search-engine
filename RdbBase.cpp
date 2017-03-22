@@ -9,7 +9,6 @@
 #include "Titledb.h"
 #include "Sections.h"
 #include "Spider.h"
-#include "Statsdb.h"
 #include "Linkdb.h"
 #include "Collectiondb.h"
 #include "RdbMerge.h"
@@ -981,14 +980,8 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		//   when main.cpp calls attemptMerge()
 		log("db: Saving generated map file to disk.");
 
-		// turn off statsdb so it does not try to add records for
-		// these writes because it is not initialized yet and will
-		// cause this write to fail!
-		g_statsdb.disable();
-
 		// true = alldone
 		bool status = m->writeMap( true );
-		g_statsdb.enable();
 		if ( ! status ) {
 			log( LOG_ERROR, "db: Save failed." );
 			return -1;
@@ -1036,13 +1029,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 			//   when main.cpp calls attemptMerge()
 			log("db: Saving generated index file to disk.");
 
-			// turn off statsdb so it does not try to add records for
-			// these writes because it is not initialized yet and will
-			// cause this write to fail!
-			g_statsdb.disable();
-
 			bool status = in->writeIndex(true);
-			g_statsdb.enable();
 			if ( ! status ) {
 				log( LOG_ERROR, "db: Save failed." );
 				return -1;
@@ -1655,10 +1642,6 @@ int32_t RdbBase::getMinToMerge(const CollectionRec *cr, rdbid_t rdbId, int32_t m
 			// case RDB_CLUSTERDB:
 			//	result = cr->m_clusterdbMinFilesToMerge;
 			//	logTrace(g_conf.m_logTraceRdbBase, "clusterdb. m_minToMerge: %d", m_minToMerge);
-			//	break;
-			// case RDB_STATSDB:
-			//	result = g_conf.m_statsdbMinFilesToMerge;
-			//	logTrace(g_conf.m_logTraceRdbBase, "statdb. m_minToMerge: %d", m_minToMerge);
 			//	break;
 			case RDB_LINKDB:
 				result = cr->m_linkdbMinFilesToMerge;

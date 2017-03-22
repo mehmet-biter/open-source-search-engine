@@ -15,7 +15,6 @@
 #include "Spider.h" // MAX_SPIDER_PRIORITIES
 #include "SpiderColl.h"
 #include "SpiderLoop.h"
-#include "Statsdb.h"
 #include "Sections.h"
 #include "Process.h"
 #include "Repair.h"
@@ -743,8 +742,6 @@ static bool CommandDiskDump(const char *rec) {
 	g_spiderdb.getRdb()->dumpTree();
 	g_posdb.getRdb()->dumpTree();
 	g_titledb.getRdb()->dumpTree();
-	// disable statsdb from dump to disk command to prevent 0 byte file from being created
-	//g_statsdb.getRdb()->dumpTree();
 	g_linkdb.getRdb()->dumpTree();
 	g_errno = 0;
 	return true;
@@ -2281,9 +2278,6 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 
 	if ( m->m_obj == OBJ_NONE ) return ;
 
-	float oldVal = 0;
-	float newVal = 0;
-
 	if ( ! s &&
 	     m->m_type != TYPE_CHARPTR &&
 	     m->m_type != TYPE_FILEUPLOADBUTTON &&
@@ -2318,11 +2312,7 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 			char *ptr = (char*)THIS + m->m_off + sizeof(char)*array_index;
 			if ( fromRequest && *(char*)ptr == atol(s))
 				return;
-			if ( fromRequest) {
-				oldVal = (float)*(char *)ptr;
-			}
 			*(char*)ptr = s ? atol(s) : 0;
-			newVal = (float)*(char*)ptr;
 			break;
 		}
 		case TYPE_CHARPTR: {
@@ -2345,11 +2335,7 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 				return;
 			}
 
-			if ( fromRequest ) {
-				oldVal = *(float*)ptr;
-			}
 			*(float*)ptr = s ? (float)atof ( s ) : 0;
-			newVal = *(float*)ptr;
 			break;
 		}
 		case TYPE_DOUBLE: {
@@ -2357,11 +2343,7 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 			if( fromRequest && almostEqualFloat(*(double*)ptr, ( s ? (double)atof(s) : 0)) ) {
 				return;
 			}
-			if ( fromRequest ) {
-				oldVal = *(double*)ptr;
-			}
 			*(double*)ptr = s ? (double)atof ( s ) : 0;
-			newVal = *(double*)ptr;
 			break;
 		}
 		case TYPE_IP: {
@@ -2379,9 +2361,7 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 			if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
 			if ( fromRequest && *(int32_t *)ptr == v )
 				return;
-			if ( fromRequest)oldVal=(float)*(int32_t *)ptr;
 			*(int32_t *)ptr = v;
-			newVal = (float)*(int32_t*)ptr;
 			break;
 		}
 		case TYPE_INT64: {
@@ -2461,18 +2441,6 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 
 	// note it in the log
 	log("admin: parm \"%s\" changed value",m->m_title);
-
-	int64_t nowms = gettimeofdayInMillisecondsLocal();
-
-	// . note it in statsdb
-	// . record what parm change and from/to what value
-	g_statsdb.addStat ( "parm_change" ,
-			    nowms,
-			    nowms,
-			    0         , // value
-			    m->m_hash , // parmHash
-			    oldVal,
-			    newVal);
 
 	// only send email alerts if we are host 0 since everyone syncs up
 	// with host #0 anyway

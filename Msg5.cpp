@@ -1414,12 +1414,6 @@ bool Msg5::getRemoteList ( ) {
 		//log("Msg5::gotRemoteList: no twins. data unpatchable.");
 		return true;
 	}
-	if ( m_rdbId == RDB_STATSDB ) {
-		g_errno = EBADENGINEER;
-		log("net: Cannot patch statsdb data from twin because it is "
-		    "not interchangable.");
-		return true;
-	}
 	// tell them about
 	log("net: Getting remote list from twin instead.");
 	// make a new Msg0 for getting remote list
