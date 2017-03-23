@@ -1999,10 +1999,10 @@ static bool s_inUse = false;
 // we initialize CollectionRec::m_updateRoundNum to 0 so make this 1
 static int32_t s_updateRoundNum = 1;
 
-// . just call this once per second for all collections
+// . just call this every 20 seconds for all collections
 // . figure out how to backoff on collections that don't need it so much
 // . ask every host for their crawl infos for each collection rec
-void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
+static void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
