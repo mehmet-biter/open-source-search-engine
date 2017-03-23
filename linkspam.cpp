@@ -452,16 +452,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 	NeedleMatch needleMatches1[numNeedles1];
 
 	bool hadPreMatch;
-	getMatches2 ( s_needles1 ,
-	          needleMatches1,
-		      numNeedles1      ,
-		      haystack         ,
-		      haystackSize     ,
-		      NULL             , // linkPos          ,
-		      NULL             , // &n               ,
-		      false            , // stopAtFirstMatch
-		      &hadPreMatch     ,
-		      true             ); // save quicktables
+	getMatches2(s_needles1, needleMatches1, numNeedles1, haystack, haystackSize, NULL, &hadPreMatch);
 
 	// see if we got a hit
 	char *minPtr = NULL;
@@ -512,16 +503,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 	haystack     = links->getLinkBuf();
 	haystackSize = links->getLinkBufLen();
 	NeedleMatch needleMatches2[numNeedles2];
-	getMatches2 ( s_needles2   , 
-	          needleMatches2,
-		      numNeedles2  , 
-		      haystack     , 
-		      haystackSize , 
-		      NULL         ,  // linkPos, 
-		      NULL         ,  // &n ,
-		      false        ,  // stopAtFirstMatch?
-		      NULL         ,
-		      true         );  // save quicktables
+	getMatches2(s_needles2, needleMatches2, numNeedles2, haystack, haystackSize, NULL, NULL);
 
 	// see if we got a hit
 	for ( int32_t i = 0 ; i < numNeedles2 ; i++ ) {
@@ -731,21 +713,10 @@ bool isLinkSpam ( const Url *linker,
 
 	// do not call them "bad links" if our link occurs before any
 	// comment section. our link's position therefore needs to be known,
-	// that is why we pass in linkPos. 
-	// "n" is the number it matches.
-	int32_t  n;
+	// that is why we pass in linkPos.
 	NeedleMatch needleMatches1[numNeedles1];
 	bool hadPreMatch;
-	getMatches2 ( s_needles1       ,
-	          needleMatches1,
-		      numNeedles1      ,
-		      haystack         ,
-		      haystackSize     ,
-		      linkPos          ,
-		      &n               ,
-		      false            , // stopAtFirstMatch
-		      &hadPreMatch     ,
-		      true             ); // save quicktables
+	getMatches2(s_needles1, needleMatches1, numNeedles1, haystack, haystackSize, linkPos, &hadPreMatch);
 
 	// see if we got a hit
 	for ( int32_t i = 0 ; i < numNeedles1 ; i++ ) {
@@ -761,16 +732,7 @@ bool isLinkSpam ( const Url *linker,
 	haystack     = links->getLinkBuf();
 	haystackSize = links->getLinkBufLen();
 	NeedleMatch needleMatches2[numNeedles2];
-	getMatches2 ( s_needles2   , 
-	          needleMatches2,
-		      numNeedles2  , 
-		      haystack     , 
-		      haystackSize , 
-		      NULL         ,  // linkPos, 
-		      NULL         ,  // &n ,
-		      false        ,  // stopAtFirstMatch?
-		      NULL         ,  // hadPreMatch?
-		      true         );  // save quicktables
+	getMatches2(s_needles2, needleMatches2, numNeedles2, haystack, haystackSize, NULL, NULL);
 
 	// see if we got a hit
 	for ( int32_t i = 0 ; i < numNeedles2 ; i++ ) {

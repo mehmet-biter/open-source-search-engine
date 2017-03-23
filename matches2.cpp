@@ -29,17 +29,8 @@ bool initializeNeedle(Needle *needles, int32_t numNeedles) {
 	return true;
 }
 
-char *getMatches2 ( const Needle *needles          ,
-		    NeedleMatch *needlesMatch,
-		    int32_t    numNeedles       ,
-		    char   *haystack         , 
-		    int32_t    haystackSize     ,
-		    char   *linkPos          ,
-		    int32_t   *needleNum        ,
-		    bool    stopAtFirstMatch ,
-		    bool   *hadPreMatch      ,
-		    bool    saveQuickTables  ) {
-
+char *getMatches2(const Needle *needles, NeedleMatch *needlesMatch, int32_t numNeedles,
+                  char *haystack, int32_t haystackSize, char *linkPos, bool *hadPreMatch) {
 	// assume not
 	if ( hadPreMatch ) *hadPreMatch = false;
 	// empty haystack? then no matches
@@ -224,15 +215,7 @@ char *getMatches2 ( const Needle *needles          ,
 			// store ptr if NULL
 			if ( ! needlesMatch[j].m_firstMatch )
 				needlesMatch[j].m_firstMatch = (char *)p;
-			// return ptr to needle in "haystack"
-			if ( stopAtFirstMatch ) {
-				// ok, we got a match
-				if ( needleNum ) *needleNum = j;
-				//return (char *)p;
-				retVal = (char *)p;
-				p = pend;
-				break;
-			}
+
 			// otherwise, just count it
 			needlesMatch[j].m_count++;
 			// see if we match another needle, fixes bug
@@ -351,15 +334,7 @@ char *getMatches2 ( const Needle *needles          ,
 			// store ptr if NULL
 			if ( ! needlesMatch[j].m_firstMatch )
 				needlesMatch[j].m_firstMatch = (char *)p;
-			// return ptr to needle in "haystack"
-			if ( stopAtFirstMatch ) {
-				// ok, we got a match
-				if ( needleNum ) *needleNum = j;
-				//return (char *)p;
-				retVal = (char *)p;
-				p = pend;
-				break;
-			}
+
 			// otherwise, just count it
 			needlesMatch[j].m_count++;
 			// advance to next char in the haystack
