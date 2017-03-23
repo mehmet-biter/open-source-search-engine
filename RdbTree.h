@@ -227,10 +227,10 @@ public:
 
 	void delColl(collnum_t collnum);
 
+private:
 	static void saveWrapper(void *state);
 	static void threadDoneWrapper(void *state, job_exit_t exit_type);
 
-private:
 	// . get the node whose key is <= "key"
 	int32_t getPrevNode(collnum_t collnum, const char *key) const;
 
