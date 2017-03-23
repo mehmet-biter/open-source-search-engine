@@ -78,9 +78,9 @@ void GbTest::resetRdbs() {
 	new(&g_loop) Loop(); // some variables are not Loop::reset. Call the constructor to re-initialize them
 }
 
-void GbTest::addPosdbKey(Rdb *rdb, int64_t termId, int64_t docId, int32_t wordPos, bool isDelKey) {
+void GbTest::addPosdbKey(Rdb *rdb, int64_t termId, int64_t docId, int32_t wordPos, bool isDelKey, bool isShardByTermId) {
 	char key[MAX_KEY_BYTES];
-	::Posdb::makeKey(&key, termId, docId, wordPos, 0, 0, 0, 0, 0, 0, 0, false, isDelKey, false);
+	::Posdb::makeKey(&key, termId, docId, wordPos, 0, 0, 0, 0, 0, 0, 0, false, isDelKey, isShardByTermId);
 	rdb->addRecord(0, key, NULL, 0);
 }
 

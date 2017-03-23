@@ -48,7 +48,7 @@ static bool  s_inBody           [HASHGROUP_END];
 
 static inline bool isTermValueInRange( const char *p, const QueryTerm *qt);
 static inline bool isTermValueInRange2 ( const char *recPtr, const char *subListEnd, const QueryTerm *qt);
-static inline const char *getWordPosList(int64_t docId, const char *list, int32_t listSize);
+static inline const char *getWordPosList(uint64_t docId, const char *list, int32_t listSize);
 static int docIdVoteBufKeyCompare_desc ( const void *h1, const void *h2 );
 static void initWeights();
 
@@ -5824,7 +5824,7 @@ static inline bool isTermValueInRange2 ( const char *recPtr, const char *subList
 
 // . b-step into list looking for docid "docId"
 // . assume p is start of list, excluding 6 byte of termid
-static inline const char *getWordPosList(int64_t docId, const char *list, int32_t listSize) {
+static inline const char *getWordPosList(uint64_t docId, const char *list, int32_t listSize) {
 	// make step divisible by 6 initially
 	int32_t step = (listSize / 12) * 6;
 	// shortcut
@@ -5846,7 +5846,7 @@ static inline const char *getWordPosList(int64_t docId, const char *list, int32_
 		p -= 6;
 
 		// ok, we got a 12-byte key then i guess
-		int64_t d = Posdb::getDocId ( p );
+		uint64_t d = Posdb::getDocId ( p );
 		// we got a match, but it might be a NEGATIVE key so
 		// we have to try to find the positive keys in that case
 		if ( d == docId ) {

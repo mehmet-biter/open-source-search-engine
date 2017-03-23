@@ -38,11 +38,12 @@
 #ifndef GB_RDBTREE_H
 #define GB_RDBTREE_H
 
-#include "RdbMem.h"
 #include "JobScheduler.h" //for job_exit_t
+#include "types.h"
 
 class RdbList;
 class BigFile;
+class RdbMem;
 
 class RdbTree {
 public:
@@ -227,10 +228,10 @@ public:
 
 	void delColl(collnum_t collnum);
 
+private:
 	static void saveWrapper(void *state);
 	static void threadDoneWrapper(void *state, job_exit_t exit_type);
 
-private:
 	// . get the node whose key is <= "key"
 	int32_t getPrevNode(collnum_t collnum, const char *key) const;
 

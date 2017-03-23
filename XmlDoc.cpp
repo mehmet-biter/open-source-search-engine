@@ -13498,7 +13498,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 				// add posdb doc key
 				*m_p++ = m_useSecondaryRdbs ? RDB2_POSDB2 : RDB_POSDB;
 
-				Posdb::makeKey(key, POSDB_DELETEDOC_TERMID, docId, 0, 0, 0, 0, 0, 0, 0, 0, 0, delKey, false);
+				Posdb::makeDeleteDocKey(key, docId, delKey);
 				memcpy(m_p, key, sizeof(posdbkey_t));
 				m_p += sizeof(posdbkey_t);
 			}

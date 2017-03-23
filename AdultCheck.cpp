@@ -506,16 +506,7 @@ int32_t getAdultPoints ( char *s, int32_t slen, const char *url ) {
 	// . then check each match to see if it is actually a legit word
 	// . actually match the dirty words, then match the clean words
 	//   then we can subtract counts.
-	getMatches2 ( s_dirtyWords ,
-	          dirtyWordsMatches,
-		      numDirty     ,
-		      s            ,
-		      slen         ,
-		      NULL         , // linkPos
-		      NULL         , // needleNum
-		      false        , // stopAtFirstMatch?
-		      NULL         , // hadPreMatch ptr
-		      true         ); // saveQuickTables?
+	getMatches2(s_dirtyWords, dirtyWordsMatches, numDirty, s, slen, NULL, NULL);
 
 	int32_t points = 0;
 	// each needle has an associated score

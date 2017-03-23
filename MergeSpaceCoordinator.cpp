@@ -174,6 +174,10 @@ bool MergeSpaceCoordinator::acquire(uint64_t how_much) {
 				continue;
 			}
 			
+
+			// lock is not needed but it shuts up thread sanitizer
+			ScopedLock sl(mtx);
+
 			//hurray!
 			held_lock_number = lock_number;
 			log(LOG_DEBUG,"MergeSpaceCoordinator::acquire: got lock #%d for %" PRIu64" bytes", held_lock_number, how_much);

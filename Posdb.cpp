@@ -28,7 +28,7 @@ bool Posdb::init ( ) {
 	// sanity check
 	key144_t k;
 	int64_t termId = 123456789LL;
-	int64_t docId = 34567292222LL;
+	uint64_t docId = 34567292222LL;
 	int32_t dist = MAXWORDPOS-1;//54415;
 	int32_t densityRank = 10;
 	int32_t diversityRank = MAXDIVERSITYRANK-1;//11;

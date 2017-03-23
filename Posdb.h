@@ -142,7 +142,7 @@ class Posdb {
 		// map score to bits
 		kp->n0 |= ((uint16_t)mbits) << 4;
 	}
-	
+
 	static void setDocIdBits ( void *vkp , uint64_t docId ) {
 		key144_t *kp = (key144_t *)vkp;
 		kp->n1 &= 0x000003ffffffffffLL;
@@ -229,6 +229,10 @@ class Posdb {
 				 true);// shard by termid?
 	}
 
+	static void makeDeleteDocKey(void *kp, uint64_t docId, bool isDelKey) {
+		return makeKey(kp, POSDB_DELETEDOC_TERMID, docId, 0, 0, 0, 0, 0, 0, 0, 0, 0, isDelKey, false);
+	}
+
 	// we got two compression bits!
 	static unsigned char getKeySize ( const void *key ) {
 		if ( (((const char *)key)[0])&0x04 ) return 6;
@@ -240,11 +244,11 @@ class Posdb {
 		return ((const key144_t *)key)->n2 >> 16;
 	}
 
-	static int64_t getDocId ( const void *key ) {
+	static uint64_t getDocId ( const void *key ) {
 		const char *k = (const char*)key;
 		uint64_t d = *(const uint64_t*)(k+4);
 		d >>= (64-38);
-		return (int64_t)d;
+		return d;
 	}
 
 	static unsigned char getSiteRank ( const void *key ) {
@@ -285,12 +289,10 @@ class Posdb {
 	}
 
 	static unsigned char getWordSpamRank ( const void *key ) {
-		//return (((const key144_t *)key)->n1 >> 6) & MAXWORDSPAMRANK;
 		return ((((const uint16_t *)key)[1]) >>6) & MAXWORDSPAMRANK;
 	}
 
 	static unsigned char getDiversityRank ( const void *key ) {
-		//return (((const key144_t *)key)->n1 >> 2) & MAXDIVERSITYRANK;
 		return ((((const unsigned char *)key)[2]) >>2) & MAXDIVERSITYRANK;
 	}
 
@@ -317,7 +319,7 @@ class Posdb {
 
 	static char isShardedByTermId ( const void *key ) {return ((const char *)key)[1] & 0x01; }
 
-	static void setShardedByTermIdBit ( void *key ) { 
+	static void setShardedByTermIdBit ( void *key ) {
 		char *k = (char *)key;
 		k[1] |= 0x01;
 	}

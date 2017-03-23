@@ -10,7 +10,7 @@ namespace GbTest {
 	void initializeRdbs();
 	void resetRdbs();
 
-	void addPosdbKey(Rdb *rdb, int64_t termId, int64_t docId, int32_t wordPos, bool isDelKey = false);
+	void addPosdbKey(Rdb *rdb, int64_t termId, int64_t docId, int32_t wordPos, bool isDelKey = false, bool isShardByTermId = false);
 	void addPosdbKey(RdbBuckets *buckets, int64_t termId, int64_t docId, int32_t wordPos, bool isDelKey = false);
 	void addPosdbKey(RdbIndex *index, int64_t termId, int64_t docId, int32_t wordPos, bool isDelKey = false);
 	void addPosdbKey(RdbList *list, int64_t termId, int64_t docId, int32_t wordPos, bool isDelKey = false);
