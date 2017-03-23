@@ -138,7 +138,7 @@ class Images {
 	char      m_statusBuf[128];
 	collnum_t m_collnum;
 
-	int64_t   m_docId;
+	uint64_t   m_docId;
 	RdbList   m_list;
 
 	int32_t m_latestIp;

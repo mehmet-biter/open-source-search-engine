@@ -1834,10 +1834,28 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 	KEYSET(oppKey, key, m_ks);
 	KEYXOR(oppKey, 0x01);
 
+	char newKey[MAX_KEY_BYTES];
+
 	if (m_useIndexFile) {
+		char specialOppKey[MAX_KEY_BYTES];
+
 		bool isSpecialKey;
+		bool isShardedByTermId;
+		bool isShardedByTermIdSameHost = false;
+
 		if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
 			isSpecialKey = (Posdb::getTermId(key) == POSDB_DELETEDOC_TERMID);
+			isShardedByTermId = Posdb::isShardedByTermId(key);
+
+			if (isShardedByTermId) {
+				isShardedByTermIdSameHost = (g_hostdb.getShard(g_hostdb.getShardNum(m_rdbId, key)) == g_hostdb.getShard(g_hostdb.getShardNumFromDocId(Posdb::getDocId(key))));
+
+				// if it's a positive key, we need to delete the existing delete doc key that could be present in tree/bucket
+				if (!isShardedByTermIdSameHost && !KEYNEG(key)) {
+					Posdb::makeDeleteDocKey(specialOppKey, Posdb::getDocId(key), false);
+					(void)(m_useTree ? m_tree.deleteNode(collnum, oppKey, true) : m_buckets.deleteNode(collnum, oppKey));
+				}
+			}
 		} else {
 			/// @todo ALC cater for other rdb types here
 			gbshutdownLogicError();
@@ -1850,7 +1868,9 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 		// we only need to delete opposing key when it's a negative key, or it's a special key (even if it's positive)
 		if (KEYNEG(key) || isSpecialKey) {
 			bool deleted = m_useTree ? m_tree.deleteNode(collnum, oppKey, true) : m_buckets.deleteNode(collnum, oppKey);
-			if (deleted) {
+
+			// only return if we don't need to add special deleteDoc key for shardByTermId
+			if (deleted && (!isShardedByTermId || (isShardedByTermId && isShardedByTermIdSameHost))) {
 				// assume that we don't need to delete from index even when we get positive special key
 				// since positive special key will only be inserted when a new document is added
 				// this means that other keys should overwrite the existing deleted docId
@@ -1866,6 +1886,16 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 			if (getBase(collnum)->getNumFiles() == 0) {
 				logTrace(g_conf.m_logTraceRdb, "END. %s: Negative key with all data in tree. Returning true", m_dbname);
 				return true;
+			}
+
+			// we need to change shard by termId delete key to a doc delete key
+			// this is to avoid dangling positive termId when docId is deleted
+			if (isShardedByTermId && !isShardedByTermIdSameHost) {
+				// we only make special key if termId do not belong to the same shard as docId
+				logTrace(g_conf.m_logTraceRdb, "%s: Shard by termId key found. Making special key.", m_dbname);
+				Posdb::makeDeleteDocKey(newKey, Posdb::getDocId(key), true);
+				key = newKey;
+				isSpecialKey = true;
 			}
 
 			// we should only store special delete keys (eg: posdb with termId 0)

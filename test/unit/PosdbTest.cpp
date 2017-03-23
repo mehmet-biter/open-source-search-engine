@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <Msg5.h>
 #include "Posdb.h"
 #include "GigablastTestUtils.h"
 #include "Conf.h"
@@ -7,10 +8,13 @@ static void saveAndReloadPosdbBucket() {
 	g_posdb.getRdb()->saveTree(false);
 	g_posdb.getRdb()->getBuckets()->clear();
 	g_posdb.getRdb()->loadTree();
+	g_posdb.getRdb()->getBase(0)->getTreeIndex()->writeIndex(false);
 }
 
 static void dumpPosdb() {
 	g_posdb.getRdb()->dumpTree();
+	g_posdb.getRdb()->getBase(0)->markNewFileReadable();
+	g_posdb.getRdb()->getBase(0)->generateGlobalIndex();
 }
 
 class PosdbTest : public ::testing::Test {
@@ -239,13 +243,15 @@ TEST_F(PosdbNoMergeTest, AddDeleteRecord) {
 	EXPECT_TRUE(list.isExhausted());
 }
 
-static void expectRecord(RdbList *list, int64_t termId, int64_t docId, bool isDel = false) {
+static void expectRecord(RdbList *list, int64_t termId, int64_t docId, bool isDel = false, bool isShardByTermId = false) {
 	ASSERT_FALSE(list->isExhausted());
 
 	const char *rec = list->getCurrentRec();
 	EXPECT_EQ(termId, Posdb::getTermId(rec));
 	EXPECT_EQ(docId, Posdb::getDocId(rec));
 	EXPECT_EQ(isDel, KEYNEG(rec));
+	EXPECT_EQ(isShardByTermId, Posdb::isShardedByTermId(rec));
+
 	list->skipCurrentRecord();
 }
 
@@ -387,4 +393,245 @@ TEST_F(PosdbNoMergeTest, AddRecordDeleteDocWithRdbFiles) {
 
 	// verify that data returned is the same as data inserted above
 	expectRecord(&list, 0, docId, true);
+}
+
+TEST_F(PosdbNoMergeTest, SingleDocSpiderSpider) {
+	static const int64_t docId = 1;
+
+	// first round
+	// doc contains 3 words (a, b, c)
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'z', docId, 0, false, true);
+
+	// second round
+	// doc contains 3 words (a, c, d)
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'd', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'z', docId, 0, true, true);
+	GbTest::addPosdbKey(m_rdb, 'y', docId, 0, false, true);
+	GbTest::addPosdbKey(m_rdb, POSDB_DELETEDOC_TERMID, docId, 0, false);
+	saveAndReloadPosdbBucket();
+
+	// use extremes
+	const char *startKey = KEYMIN();
+	const char *endKey = KEYMAX();
+
+	Msg5 msg5;
+	RdbList list;
+	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, 0, false, true));
+	list.resetListPtr();
+
+	// verify that data returned is the same as data inserted above
+	expectRecord(&list, 'a', docId);
+	expectRecord(&list, 'c', docId);
+	expectRecord(&list, 'd', docId);
+	expectRecord(&list, 'y', docId, false, true);
+
+	EXPECT_TRUE(list.isExhausted());
+}
+
+TEST_F(PosdbNoMergeTest, SingleDocSpiderDumpSpider) {
+	static const int64_t docId = 1;
+
+	// first round
+	// doc contains 3 words (a, b, c)
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'z', docId, 0, false, true);
+	dumpPosdb();
+
+	// second round
+	// doc contains 3 words (a, c, d)
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'd', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'z', docId, 0, true, true);
+	GbTest::addPosdbKey(m_rdb, 'y', docId, 0, false, true);
+	GbTest::addPosdbKey(m_rdb, POSDB_DELETEDOC_TERMID, docId, 0, false);
+	saveAndReloadPosdbBucket();
+
+	// use extremes
+	const char *startKey = KEYMIN();
+	const char *endKey = KEYMAX();
+
+	Msg5 msg5;
+	RdbList list;
+	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, 0, false, true));
+	list.resetListPtr();
+
+	// verify that data returned is the same as data inserted above
+	expectRecord(&list, 'a', docId);
+	expectRecord(&list, 'c', docId);
+	expectRecord(&list, 'd', docId);
+	expectRecord(&list, 'y', docId, false, true);
+
+	EXPECT_TRUE(list.isExhausted());
+}
+
+TEST_F(PosdbNoMergeTest, SingleDocSpiderDelete) {
+	static const int64_t docId = 1;
+
+	// first round
+	// doc contains 3 words (a, b, c)
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'z', docId, 0, false, true);
+
+	// second round
+	// doc deleted
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'z', docId, 0, true, true);
+	GbTest::addPosdbKey(m_rdb, POSDB_DELETEDOC_TERMID, docId, 0, true);
+
+	saveAndReloadPosdbBucket();
+
+	// use extremes
+	const char *startKey = KEYMIN();
+	const char *endKey = KEYMAX();
+
+	Msg5 msg5;
+	RdbList list;
+	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, 0, false, true));
+	list.resetListPtr();
+
+	// verify that data returned is the same as data inserted above
+	EXPECT_TRUE(list.isExhausted());
+}
+
+TEST_F(PosdbNoMergeTest, SingleDocSpiderDumpDelete) {
+	static const int64_t docId = 1;
+
+	// first round
+	// doc contains 3 words (a, b, c)
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'z', docId, 0, false, true);
+	dumpPosdb();
+
+	// second round
+	// doc deleted
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'z', docId, 0, true, true);
+	GbTest::addPosdbKey(m_rdb, POSDB_DELETEDOC_TERMID, docId, 0, true);
+
+	saveAndReloadPosdbBucket();
+
+	// use extremes
+	const char *startKey = KEYMIN();
+	const char *endKey = KEYMAX();
+
+	Msg5 msg5;
+	RdbList list;
+	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, 0, false, true));
+	list.resetListPtr();
+
+	// verify that data returned is the same as data inserted above
+	EXPECT_TRUE(list.isExhausted());
+}
+
+TEST_F(PosdbNoMergeTest, SingleDocSpiderDumpDeleteSpider) {
+	static const int64_t docId = 1;
+
+	// first round
+	// doc contains 3 words (a, b, c)
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'z', docId, 0, false, true);
+	dumpPosdb();
+
+	// second round
+	// doc deleted
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'z', docId, 0, true, true);
+	GbTest::addPosdbKey(m_rdb, POSDB_DELETEDOC_TERMID, docId, 0, true);
+
+	// third round
+	// doc contains 3 words (d, e, f)
+	GbTest::addPosdbKey(m_rdb, 'd', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'e', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'f', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'y', docId, 0, false, true);
+	GbTest::addPosdbKey(m_rdb, POSDB_DELETEDOC_TERMID, docId, 0, false);
+
+	saveAndReloadPosdbBucket();
+
+	// use extremes
+	const char *startKey = KEYMIN();
+	const char *endKey = KEYMAX();
+
+	Msg5 msg5;
+	RdbList list;
+	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, 0, false, true));
+	list.resetListPtr();
+
+	// verify that data returned is the same as data inserted above
+	expectRecord(&list, 'd', docId);
+	expectRecord(&list, 'e', docId);
+	expectRecord(&list, 'f', docId);
+	expectRecord(&list, 'y', docId, false, true);
+
+	EXPECT_TRUE(list.isExhausted());
+}
+
+TEST_F(PosdbNoMergeTest, SingleDocSpiderDumpDeleteDumpSpider) {
+	static const int64_t docId = 1;
+
+	// first round
+	// doc contains 3 words (a, b, c)
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'z', docId, 0, false, true);
+	dumpPosdb();
+
+	// second round
+	// doc deleted
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'z', docId, 0, true, true);
+	GbTest::addPosdbKey(m_rdb, POSDB_DELETEDOC_TERMID, docId, 0, true);
+	dumpPosdb();
+
+	// third round
+	// doc contains 3 words (d, e, f)
+	GbTest::addPosdbKey(m_rdb, 'd', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'e', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'f', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'y', docId, 0, false, true);
+	GbTest::addPosdbKey(m_rdb, POSDB_DELETEDOC_TERMID, docId, 0, false);
+
+	saveAndReloadPosdbBucket();
+
+	// use extremes
+	const char *startKey = KEYMIN();
+	const char *endKey = KEYMAX();
+
+	Msg5 msg5;
+	RdbList list;
+	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, 0, false, true));
+	list.resetListPtr();
+
+	// verify that data returned is the same as data inserted above
+	expectRecord(&list, 'd', docId);
+	expectRecord(&list, 'e', docId);
+	expectRecord(&list, 'f', docId);
+	expectRecord(&list, 'y', docId, false, true);
+
+	EXPECT_TRUE(list.isExhausted());
 }
