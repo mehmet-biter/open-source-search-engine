@@ -169,6 +169,7 @@ void XmlDoc::reset ( ) {
 	m_lastTimeStart = 0LL;
 
 	m_req = NULL;
+	m_abortMsg20Generation = false;
 
 	m_storeTermListInfo = false;
 
@@ -16154,6 +16155,13 @@ public:
 		int rc = pthread_cond_signal(&cond);
 		assert(rc==0);
 	}
+
+	void abort(bool *abort_flag) {
+		ScopedLock sl(mtx);
+		*abort_flag = true;
+		int rc = pthread_cond_signal(&cond);
+		assert(rc==0);
+	}
 };
 
 
@@ -16193,7 +16201,7 @@ Msg20Reply *XmlDoc::getMsg20Reply() {
 	}
 
 	//ok, ready to start piecing together a msg20reply
-	if(g_jobScheduler.submit(getMsg20ReplyThread, 0, this, thread_type_query_summary, 0)) {
+	if(g_jobScheduler.submit(getMsg20ReplyThread, msg20Done, this, thread_type_query_summary, 0)) {
 		return (Msg20Reply*)-1; //no result yet
 	} else {
 		//not expected to happen but we support it anyway
@@ -16223,6 +16231,19 @@ void XmlDoc::getMsg20ReplyThread() {
 	callCallback();
 }
 
+
+void XmlDoc::msg20Done(void *pv, job_exit_t exit_type) {
+	XmlDoc *that = static_cast<XmlDoc*>(pv);
+	that->msg20Done(exit_type);
+}
+
+void XmlDoc::msg20Done(job_exit_t exit_type) {
+	if(exit_type!=job_exit_normal) {
+		//abort job by telling loopUntilMsg20ReplyReady to give up
+		GetMsg20State *gm20s = static_cast<GetMsg20State*>(m_masterState);
+		gm20s->abort(&m_abortMsg20Generation);
+	}
+}
 
 //Repeat calling getMsg20ReplyStepwise() until a result is ready or and error has been encountered
 void XmlDoc::loopUntilMsg20ReplyReady(GetMsg20State *gm20s) {
@@ -16255,6 +16276,13 @@ static void checkPointerError(const void *ptr) {
 //Make progress toward getting a summary. Returns NULL on error, -1 if an async action is waiting,
 //and a pointer to the reply when done.
 Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
+	if(m_abortMsg20Generation) {
+		log(LOG_DEBUG,"msg20: aborted");
+		if(!m_errno)
+			m_errno = ECANCELED;
+		return NULL;
+	}
+
 	m_niceness = m_req->m_niceness;
 
 	m_collnum = m_req->m_collnum;//cr->m_collnum;
