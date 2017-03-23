@@ -10823,7 +10823,6 @@ void Parms::handleRequest3fLoop(void *weArg) {
 			log("parms: sending early parm update reply");
 			// wait for reply to be sent and ack'd
 			g_udpServer.sendReply(NULL, 0, NULL, 0, we->m_slot, we, handleRequest3fLoop2);
-			return;
 		}
 
 
