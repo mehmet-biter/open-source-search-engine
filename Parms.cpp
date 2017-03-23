@@ -6253,7 +6253,17 @@ void Parms::init ( ) {
 	m->m_group = true;
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
-	m->m_group = false;
+	m++;
+
+	m->m_title = "Crawlinfo update interval";
+	m->m_desc  = "How often to get updated crawling info from all spider hosts. This is used for doling out new work.";
+	m->m_cgi   = "crawlinfoupdateinterval";
+	simple_m_set(Conf,m_crawlInfoUpdateInterval);
+	m->m_def   = "20000";
+	m->m_units = "milliseconds";
+	m->m_group = true;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
 	m++;
 
 	m->m_title = "weights.cpp slider parm (tmp)";

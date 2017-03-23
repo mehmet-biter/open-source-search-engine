@@ -203,7 +203,7 @@ void SpiderLoop::startLoop ( ) {
 	// let's move back down to 1 second
 	// . make it 20 seconds because handlerequestc1 is always on
 	//   profiler when we have thousands of collections
-	if ( !g_loop.registerSleepCallback(20000, this, updateAllCrawlInfosSleepWrapper)) {
+	if ( !g_loop.registerSleepCallback(g_conf.m_crawlInfoUpdateInterval, this, updateAllCrawlInfosSleepWrapper)) {
 		log(LOG_ERROR, "build: failed to register updatecrawlinfowrapper");
 	}
 		
