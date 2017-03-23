@@ -6252,6 +6252,17 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	m->m_title = "msg20 fallback to all hosts";
+	m->m_desc  = "When getting summary or link text and the desired host(s) in the shard are dead may msg20 fall back to just asking all hosts in the shard?";
+	m->m_cgi   = "msgtwentyfallbackyoallhosts";
+	simple_m_set(Conf,m_msg20FallbackToAllHosts);
+	m->m_def   = "1";
+	m->m_group = true;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
 	m->m_title = "weights.cpp slider parm (tmp)";
 	m->m_desc  = "Percent of how much to use words to phrase ratio weights.";
 	m->m_cgi   = "wsp";

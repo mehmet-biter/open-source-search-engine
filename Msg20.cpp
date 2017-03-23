@@ -9,6 +9,7 @@
 #include <valgrind/memcheck.h>
 #endif
 #include "SummaryCache.h"
+#include "Conf.h"
 #include "Stats.h"
 
 
@@ -185,18 +186,17 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 		// add it if alive
 		cand[nc++] = hh;
 	}
-	// if none alive, make them all candidates then
-	bool allDead = (nc == 0);
-	for ( int32_t i = 0 ; allDead && i < allNumHosts ; i++ ) {
-		// NEVER add a noquery host to the candidate list, even
-		// if the query host is dead
-		if ( ! allHosts[i].m_queryEnabled ) continue;
-		cand[nc++] = &allHosts[i];
+	if(nc==0) {
+		log(LOG_DEBUG, "msg20: no live candidate hosts for shard %d", shardNum);
+		if(g_conf.m_msg20FallbackToAllHosts) {
+			log(LOG_DEBUG,"msg20: No live disired hosts in shard %d - falling back to all hosts in the shard", shardNum);
+			for(int32_t i = 0; i < allNumHosts; i++) {
+				cand[nc++] = &allHosts[i];
+			}
+		}
 	}
-
 	if ( nc == 0 ) {
-		log("msg20: error sending mcast: no queryable hosts "
-		    "availble to handle summary generation");
+		log(LOG_ERROR, "msg20: error sending mcast: no queryable hosts available to handle summary/linkinfo generation in shard %d", shardNum);
 		g_errno = EBADENGINEER;
 		m_gotReply = true;
 		return true;

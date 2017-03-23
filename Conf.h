@@ -304,6 +304,8 @@ class Conf {
 	bool   m_verifyWrites;
 	int32_t   m_corruptRetries;
 
+	bool m_msg20FallbackToAllHosts;
+
 	// log unfreed memory on exit
 	bool   m_detectMemLeaks;
 
