@@ -2031,6 +2031,8 @@ void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 	// send out the msg request
 	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		Host *h = g_hostdb.getHost(i);
+		if(!h->m_spiderEnabled)
+			continue;
 		// count it as launched
 		s_requests++;
 		// launch it
