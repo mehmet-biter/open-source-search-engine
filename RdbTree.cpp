@@ -2,6 +2,7 @@
 #include "Collectiondb.h"
 #include "JobScheduler.h"
 #include "Mem.h"
+#include "RdbMem.h"
 #include "BigFile.h"
 #include "RdbList.h"
 #include "Spider.h"

@@ -38,11 +38,12 @@
 #ifndef GB_RDBTREE_H
 #define GB_RDBTREE_H
 
-#include "RdbMem.h"
 #include "JobScheduler.h" //for job_exit_t
+#include "types.h"
 
 class RdbList;
 class BigFile;
+class RdbMem;
 
 class RdbTree {
 public:
