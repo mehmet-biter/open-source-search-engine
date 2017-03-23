@@ -952,7 +952,7 @@ int RdbList::printPosdbList() {
 
 	size_t key_size;
 	// 48bit 38bit 4bit 4bit 18bit
-	logf(LOG_DEBUG,"db:   ........term_id ......doc_id rank lang wordpos del ");
+	logf(LOG_DEBUG,"db:   ........term_id ......doc_id rank lang wordpos del shardByTerm");
 
 
 	while ( ! isExhausted() ) {
@@ -1010,20 +1010,23 @@ int RdbList::printPosdbList() {
 //        uint64_t	density_rank		= extract_bits(key,11,16);
 //        uint64_t	in_outlink_text		= extract_bits(key,10,11);
 //        uint64_t	alignment_bit1		= extract_bits(key, 9,10);
-//        uint64_t	nosplit				= extract_bits(key, 8, 9);
+        uint64_t	nosplit				= extract_bits(key, 8, 9);
 //        uint64_t	multiplier			= extract_bits(key, 4, 8);
         uint64_t	nodelete_marker		= extract_bits(key, 0, 1);
 
 		switch(key_size)
 		{
 			case 18:
-				logf(LOG_DEBUG,"db:   %15" PRId64" %12" PRId64" %4" PRId64" %4" PRId64" %7" PRId64" %3s", term_id, doc_id, site_rank, lang_id, word_pos, !nodelete_marker?"Y":"N");
+				logf(LOG_DEBUG,"db:   %15" PRId64" %12" PRId64" %4" PRId64" %4" PRId64" %7" PRId64" %3s %11s",
+				     term_id, doc_id, site_rank, lang_id, word_pos, !nodelete_marker?"Y":"N", nosplit?"Y":"N");
 				break;
 			case 12:
-				logf(LOG_DEBUG,"db:   %15s %12" PRId64" %4" PRId64" %4" PRId64" %7" PRId64" %3s", "-", doc_id, site_rank, lang_id, word_pos, !nodelete_marker?"Y":"N");
+				logf(LOG_DEBUG,"db:   %15s %12" PRId64" %4" PRId64" %4" PRId64" %7" PRId64" %3s %11s",
+				     "-", doc_id, site_rank, lang_id, word_pos, !nodelete_marker?"Y":"N", nosplit?"Y":"N");
 				break;
 			default:
-				logf(LOG_DEBUG,"db:   %15s %12s %4s %4s %7" PRId64" %3s", "-", "-", "-", "-", word_pos, !nodelete_marker?"Y":"N");
+				logf(LOG_DEBUG,"db:   %15s %12s %4s %4s %7" PRId64" %3s %11s",
+				     "-", "-", "-", "-", word_pos, !nodelete_marker?"Y":"N", nosplit?"Y":"N");
 				break;
 		}
 
@@ -2318,6 +2321,8 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 					}
 				}
 			}
+
+			logTrace(g_conf.m_logTraceRdbList, "Found docId=%" PRIu64" with filePos=%" PRId32, docId, filePos);
 
 			if (filePos > (mini + listOffset) + startFileNum) {
 				// docId is present in newer file
