@@ -203,7 +203,7 @@ void SpiderLoop::startLoop ( ) {
 	// let's move back down to 1 second
 	// . make it 20 seconds because handlerequestc1 is always on
 	//   profiler when we have thousands of collections
-	if ( !g_loop.registerSleepCallback(20000, this, updateAllCrawlInfosSleepWrapper)) {
+	if ( !g_loop.registerSleepCallback(g_conf.m_crawlInfoUpdateInterval, this, updateAllCrawlInfosSleepWrapper)) {
 		log(LOG_ERROR, "build: failed to register updatecrawlinfowrapper");
 	}
 		
@@ -1999,10 +1999,10 @@ static bool s_inUse = false;
 // we initialize CollectionRec::m_updateRoundNum to 0 so make this 1
 static int32_t s_updateRoundNum = 1;
 
-// . just call this once per second for all collections
+// . just call this every 20 seconds for all collections
 // . figure out how to backoff on collections that don't need it so much
 // . ask every host for their crawl infos for each collection rec
-void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
+static void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
@@ -2031,6 +2031,8 @@ void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 	// send out the msg request
 	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		Host *h = g_hostdb.getHost(i);
+		if(!h->m_spiderEnabled)
+			continue;
 		// count it as launched
 		s_requests++;
 		// launch it

@@ -6196,7 +6196,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "fw";
 	simple_m_set(Conf,m_flushWrites);
 	m->m_def   = "0";
-	m->m_group = false;
 	m->m_flags = PF_API;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_group = true;
@@ -6208,10 +6207,9 @@ void Parms::init ( ) {
 	m->m_cgi   = "verify_tree_integrity";
 	simple_m_set(Conf,m_verifyTreeIntegrity);
 	m->m_def   = "0";
-	m->m_group = 0;
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "verify dumped lists";
@@ -6221,10 +6219,9 @@ void Parms::init ( ) {
 	m->m_cgi   = "vwl";
 	simple_m_set(Conf,m_verifyDumpedLists);
 	m->m_def   = "1";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
-	m->m_group = 0;
 	m++;
 
 	m->m_title = "verify index";
@@ -6233,10 +6230,9 @@ void Parms::init ( ) {
 	m->m_cgi   = "vidx";
 	simple_m_set(Conf,m_verifyIndex);
 	m->m_def   = "0";
-	m->m_group = 0;
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "verify disk writes";
@@ -6246,7 +6242,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "vdw";
 	simple_m_set(Conf,m_verifyWrites);
 	m->m_def   = "0";
-	m->m_group = false;
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_group = false;
@@ -6260,7 +6255,17 @@ void Parms::init ( ) {
 	m->m_group = true;
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
-	m->m_group = false;
+	m++;
+
+	m->m_title = "Crawlinfo update interval";
+	m->m_desc  = "How often to get updated crawling info from all spider hosts. This is used for doling out new work.";
+	m->m_cgi   = "crawlinfoupdateinterval";
+	simple_m_set(Conf,m_crawlInfoUpdateInterval);
+	m->m_def   = "20000";
+	m->m_units = "milliseconds";
+	m->m_group = true;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
 	m++;
 
 	m->m_title = "weights.cpp slider parm (tmp)";
