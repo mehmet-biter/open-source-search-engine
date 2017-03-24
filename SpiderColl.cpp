@@ -66,7 +66,6 @@ SpiderColl::SpiderColl () {
 	m_lastReplyValid = false;
 	memset(m_lastReplyBuf, 0, sizeof(m_lastReplyBuf));
 	m_didRead = false;
-	m_siteListHasNegatives = false;
 	m_siteListIsEmpty = false;
 	m_tailIp = 0;
 	m_tailPriority = 0;

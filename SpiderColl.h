@@ -59,7 +59,6 @@ class SpiderColl {
 	bool m_didRead;
 
 	// corresponding to CollectionRec::m_siteListBuf
-	bool  m_siteListHasNegatives;
 	bool  m_siteListIsEmpty;
 	bool  m_siteListIsEmptyValid;
 	// data buckets in this table are of type 

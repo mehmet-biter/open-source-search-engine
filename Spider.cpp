@@ -1543,8 +1543,6 @@ bool updateSiteListBuf ( collnum_t collnum ,
 	//cr->m_siteListBuf.purge();
 
 	// reset flags
-	//sc->m_siteListAsteriskLine = NULL;
-	sc->m_siteListHasNegatives = false;
 	sc->m_siteListIsEmpty = true;
 
 	sc->m_siteListIsEmptyValid = true;
@@ -1649,7 +1647,6 @@ bool updateSiteListBuf ( collnum_t collnum ,
 		}
 
 		if ( *s == '-' ) {
-			sc->m_siteListHasNegatives = true;
 			isNeg = true;
 			s++;
 		}
