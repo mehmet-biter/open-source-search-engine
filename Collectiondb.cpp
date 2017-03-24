@@ -1257,8 +1257,6 @@ void CollectionRec::reset() {
 	}
 
 	SpiderColl *sc = m_spiderColl;
-	// debug hack thing
-	//if ( sc == (SpiderColl *)0x8888 ) return;
 	// if never made one, we are done
 	if ( ! sc ) return;
 
@@ -2644,30 +2642,7 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 		log(LOG_INFO, "coll: resetting doledb for %s (%li)",m_coll, (long)m_collnum);
 
 		// clear doledb recs from tree
-		//g_doledb.getRdb()->deleteAllRecs ( m_collnum );
 		nukeDoledb ( m_collnum );
-
-		// add it back
-		//if ( ! g_doledb.getRdb()->addRdbBase2 ( m_collnum ) )
-		//	log("coll: error re-adding doledb for %s",m_coll);
-
-		// just start this over...
-		// . MDW left off here
-		//tryToDelete ( sc );
-		// maybe this is good enough
-		//if ( sc ) sc->m_waitingTreeNeedsRebuild = true;
-
-		//CollectionRec *cr = sc->m_cr;
-
-		// . rebuild sitetable? in PageBasic.cpp.
-		// . re-adds seed spdierrequests using msg4
-		// . true = addSeeds
-		// . no, don't do this now because we call updateSiteList()
-		//   when we have &sitelist=xxxx in the request which will
-		//   handle updating those tables
-		//updateSiteListTables ( m_collnum ,
-		//		       true ,
-		//		       cr->m_siteListBuf.getBufStart() );
 	}
 
 	return true;
