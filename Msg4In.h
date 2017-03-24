@@ -7,4 +7,7 @@
 
 bool registerMsg4Handler();
 
+bool initializeMsg4IncomingThread();
+void finalizeMsg4IncomingThread();
+
 #endif // GB_MSG4IN_H
