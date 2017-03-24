@@ -46,7 +46,7 @@ SpiderColl::SpiderColl () {
 	m_deleteMyself = false;
 	m_isLoading = false;
 	m_gettingList1 = false;
-	m_gettingList2 = false;
+	m_gettingWaitingTreeList = false;
 	m_lastScanTime = 0;
 	m_isPopulatingDoledb = false;
 	m_numAdded = 0;
@@ -57,8 +57,8 @@ SpiderColl::SpiderColl () {
 	// re-set this to min and set m_needsWaitingTreeRebuild to true
 	// when the admin updates the url filters page
 	m_waitingTreeNeedsRebuild = false;
-	m_nextKey2.setMin();
-	m_endKey2.setMax();
+	m_waitingTreeNextKey.setMin();
+	m_waitingTreeEndKey.setMax();
 	m_spidersOut = 0;
 	m_coll[0] = '\0';// = NULL;
 
@@ -75,7 +75,7 @@ SpiderColl::SpiderColl () {
 	m_tailHopCount = 0;
 	m_minFutureTimeMS = 0;
 	memset(m_priorityToUfn, 0, sizeof(m_priorityToUfn));
-	m_gettingList2 = false;
+	m_gettingWaitingTreeList = false;
 	m_lastScanTime = 0;
 	m_waitingTreeNeedsRebuild = false;
 	m_numAdded = 0;
@@ -1013,7 +1013,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 		    "waiting tree, but return true anyway.",
 		    iptoa(firstIp) ,
 		    (int32_t)m_collnum);
-		// don't return true lest m_nextKey2 never gets updated
+		// don't return true lest m_waitingTreeNextKey never gets updated
 		// and we end up in an infinite loop doing 
 		// populateWaitingTreeFromSpiderdb()
 		return true;
@@ -1210,7 +1210,7 @@ void SpiderColl::gotSpiderdbWaitingTreeListWrapper(void *state, RdbList *list, M
 		return;
 	}
 
-	THIS->m_gettingList2 = false;
+	THIS->m_gettingWaitingTreeList = false;
 
 	THIS->populateWaitingTreeFromSpiderdb(true);
 }
@@ -1286,7 +1286,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		}
 		
 		// a double call? can happen if list read is slow...
-		if ( m_gettingList2 ) 
+		if ( m_gettingWaitingTreeList )
 		{
 			logTrace( g_conf.m_logTraceSpider, "END, double call" );
 			return;
@@ -1302,33 +1302,33 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// . do not include cache, those results are old and will mess
 		//   us up
 		log(LOG_DEBUG,"spider: populateWaitingTree: calling msg5: startKey=0x%" PRIx64",0x%" PRIx64" firstip=%s",
-		    m_nextKey2.n1, m_nextKey2.n0, iptoa(Spiderdb::getFirstIp(&m_nextKey2)));
+		    m_waitingTreeNextKey.n1, m_waitingTreeNextKey.n0, iptoa(Spiderdb::getFirstIp(&m_waitingTreeNextKey)));
 		    
 		// flag it
-		m_gettingList2 = true;
+		m_gettingWaitingTreeList = true;
 		// make state
 		//int32_t state2 = (int32_t)m_cr->m_collnum;
 		// read the list from local disk
-		if ( ! m_msg5b.getList ( RDB_SPIDERDB   ,
-					 m_cr->m_collnum,
-					 &m_list2       ,
-					 &m_nextKey2    ,
-					 &m_endKey2     ,
-					 SR_READ_SIZE   , // minRecSizes (512k)
-					 true           , // includeTree
-					 0              , // max cache age
-					 0              , // startFileNum
-					 -1             , // numFiles (all)
-					 this,//(void *)state2,//this//state
-					 gotSpiderdbWaitingTreeListWrapper ,
-					 MAX_NICENESS   , // niceness
-					 true           , // do error correct?
-					 NULL,            // cachekey
-					 0,               // retryNum
-					 -1,              // maxRetries
-					 -1,              // syncPoint
-					 false,           // isRealMerge
-					 true))           // allowPageCache
+		if ( !m_msg5b.getList(RDB_SPIDERDB,
+		                      m_cr->m_collnum,
+		                      &m_waitingTreeList,
+		                      &m_waitingTreeNextKey,
+		                      &m_waitingTreeEndKey,
+		                      SR_READ_SIZE, // minRecSizes (512k)
+		                      true, // includeTree
+		                      0, // max cache age
+		                      0, // startFileNum
+		                      -1, // numFiles (all)
+		                      this,//(void *)state2,//this//state
+		                      gotSpiderdbWaitingTreeListWrapper,
+		                      MAX_NICENESS, // niceness
+		                      true, // do error correct?
+		                      NULL,            // cachekey
+		                      0,               // retryNum
+		                      -1,              // maxRetries
+		                      -1,              // syncPoint
+		                      false,           // isRealMerge
+		                      true))           // allowPageCache
 		{
 			// return if blocked
 			logTrace( g_conf.m_logTraceSpider, "END, msg5b.getList blocked" );
@@ -1337,10 +1337,10 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	}
 
 	// show list stats
-	logDebug( g_conf.m_logDebugSpider, "spider: populateWaitingTree: got list of size %" PRId32, m_list2.getListSize() );
+	logDebug( g_conf.m_logDebugSpider, "spider: populateWaitingTree: got list of size %" PRId32, m_waitingTreeList.getListSize() );
 
 	// unflag it
-	m_gettingList2 = false;
+	m_gettingWaitingTreeList = false;
 
 	// if waitingtree is locked for writing because it is saving or
 	// writes were disabled then just bail and let the scan be re-called
@@ -1352,7 +1352,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	}
 
 	// ensure we point to the top of the list
-	m_list2.resetListPtr();
+	m_waitingTreeList.resetListPtr();
 	// bail on error
 	if ( g_errno ) {
 		log("spider: Had error getting list of urls from spiderdb2: %s.", mstrerror(g_errno));
@@ -1363,11 +1363,11 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 
 	int32_t lastOne = 0;
 	// loop over all serialized spiderdb records in the list
-	for ( ; ! m_list2.isExhausted() ; ) {
+	for ( ; ! m_waitingTreeList.isExhausted() ; ) {
 		// get spiderdb rec in its serialized form
-		char *rec = m_list2.getCurrentRec();
+		char *rec = m_waitingTreeList.getCurrentRec();
 		// skip to next guy
-		m_list2.skipCurrentRecord();
+		m_waitingTreeList.skipCurrentRecord();
 		// negative? wtf?
 		if ( (rec[0] & 0x01) == 0x00 ) {
 			//logf(LOG_DEBUG,"spider: got negative spider rec");
@@ -1461,9 +1461,9 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	}
 
 	// are we the final list in the scan?
-	bool shortRead = ( m_list2.getListSize() <= 0);//(int32_t)SR_READ_SIZE) ;
+	bool shortRead = ( m_waitingTreeList.getListSize() <= 0);//(int32_t)SR_READ_SIZE) ;
 
-	m_numBytesScanned += m_list2.getListSize();
+	m_numBytesScanned += m_waitingTreeList.getListSize();
 
 	// reset? still left over from our first scan?
 	if ( m_lastPrintCount > m_numBytesScanned )
@@ -1478,7 +1478,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	}
 
 	// debug info
-	log(LOG_DEBUG,"spider: Read2 %" PRId32" spiderdb bytes.",m_list2.getListSize());
+	log(LOG_DEBUG,"spider: Read2 %" PRId32" spiderdb bytes.",m_waitingTreeList.getListSize());
 	// reset any errno cuz we're just a cache
 	g_errno = 0;
 
@@ -1486,9 +1486,9 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	if ( ! shortRead ) {
 		// . inc it here
 		// . it can also be reset on a collection rec update
-		key128_t lastKey  = *(key128_t *)m_list2.getLastKey();
+		key128_t lastKey  = *(key128_t *)m_waitingTreeList.getLastKey();
 
-		if ( lastKey < m_nextKey2 ) {
+		if ( lastKey < m_waitingTreeNextKey ) {
 			log("spider: got corruption 9. spiderdb "
 			    "keys out of order for "
 			    "collnum=%" PRId32, (int32_t)m_collnum);
@@ -1496,15 +1496,15 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 			// this should result in an empty list read for
 			// our next scan of spiderdb. unfortunately we could
 			// miss a lot of spider requests then
-			m_nextKey2  = m_endKey2;
+			m_waitingTreeNextKey  = m_waitingTreeEndKey;
 		}
 		else {
-			m_nextKey2  = lastKey;
-			m_nextKey2++;
+			m_waitingTreeNextKey  = lastKey;
+			m_waitingTreeNextKey++;
 		}
 
 		// watch out for wrap around
-		if ( m_nextKey2 < lastKey ) shortRead = true;
+		if ( m_waitingTreeNextKey < lastKey ) shortRead = true;
 		// nah, advance the firstip, should be a lot faster when
 		// we are only a few firstips...
 		if ( lastOne && lastOne != -1 ) { // && ! gotCorruption ) {
@@ -1512,7 +1512,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 			// corruption still seems to happen, so only
 			// do this part if it increases the key to avoid
 			// putting us into an infinite loop.
-			if ( cand > m_nextKey2 ) m_nextKey2 = cand;
+			if ( cand > m_waitingTreeNextKey ) m_waitingTreeNextKey = cand;
 		}
 	}
 
@@ -1534,7 +1534,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		m_numAdded = 0 ;
 		m_numBytesScanned = 0;
 		// reset for next scan
-		m_nextKey2.setMin();
+		m_waitingTreeNextKey.setMin();
 		// no longer need rebuild
 		m_waitingTreeNeedsRebuild = false;
 		// and re-send the crawlinfo in handerequestc1 to each host
@@ -1546,8 +1546,8 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	}
 
 	// free list to save memory
-	m_list2.freeList();
-	// wait for sleepwrapper to call us again with our updated m_nextKey2
+	m_waitingTreeList.freeList();
+	// wait for sleepwrapper to call us again with our updated m_waitingTreeNextKey
 	logTrace( g_conf.m_logTraceSpider, "END, done" );
 	return;
 }

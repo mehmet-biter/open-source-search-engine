@@ -129,14 +129,6 @@ class SpiderColl {
 	// list for loading spiderdb recs during the spiderdb scan
 	RdbList        m_list;
 
-	// spiderdb scan for populating waiting tree
-	RdbList  m_list2;
-	Msg5     m_msg5b;
-	bool     m_gettingList2;
-	key128_t m_nextKey2;
-	key128_t m_endKey2;
-	time_t   m_lastScanTime;
-	bool     m_waitingTreeNeedsRebuild;
 	int32_t     m_numAdded;
 	int64_t m_numBytesScanned;
 	int64_t m_lastPrintCount;
@@ -168,13 +160,13 @@ class SpiderColl {
 	int64_t m_lastReqUh48b;
 	int64_t m_lastRepUh48;
 
+public:
 	bool makeDoleIPTable     ( );
 	bool makeWaitingTable    ( );
 
 	bool printWaitingTree ( ) ;
 
-	bool addToWaitingTree    ( uint64_t spiderTime , int32_t firstIp ,
-				   bool callForScan );
+	bool addToWaitingTree(uint64_t spiderTime, int32_t firstIp, bool callForScan);
 	int32_t getNextIpFromWaitingTree ( );
 	uint64_t getNextSpiderTimeFromWaitingTree ( ) ;
 	void populateDoledbFromWaitingTree ( );
@@ -185,14 +177,23 @@ class SpiderColl {
 	bool scanListForWinners ( ) ;
 	bool addWinnersIntoDoledb ( ) ;
 
-
 	void populateWaitingTreeFromSpiderdb ( bool reentry ) ;
 
+	bool     m_waitingTreeNeedsRebuild;
 	HashTableX m_waitingTable;
 	RdbTree    m_waitingTree;
 	RdbMem     m_waitingMem; // used by m_waitingTree
 	key96_t      m_waitingTreeKey;
 	bool       m_waitingTreeKeyValid;
+
+	// spiderdb scan for populating waiting tree
+	RdbList  m_waitingTreeList;
+	Msg5     m_msg5b;
+	bool     m_gettingWaitingTreeList;
+	key128_t m_waitingTreeNextKey;
+	key128_t m_waitingTreeEndKey;
+	time_t   m_lastScanTime;
+
 	int32_t       m_scanningIp;
 	int32_t       m_gotNewDataForScanningIp;
 	int32_t       m_lastListSize;

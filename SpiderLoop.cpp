@@ -288,7 +288,7 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 		// AND at process startup!!!
 		if ( ! sc->m_waitingTreeNeedsRebuild && now - sc->m_lastScanTime > 24*3600 ) {
 			// if a scan is ongoing, this will re-set it
-			sc->m_nextKey2.setMin();
+			sc->m_waitingTreeNextKey.setMin();
 			sc->m_waitingTreeNeedsRebuild = true;
 			log( LOG_INFO, "spider: hit spider queue rebuild timeout for %s (%" PRId32")",
 			     crp->m_coll, (int32_t)crp->m_collnum );
