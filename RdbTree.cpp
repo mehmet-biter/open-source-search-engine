@@ -1744,7 +1744,7 @@ bool RdbTree::getList ( collnum_t collnum ,
 //   in [startKey, endKey] in this tree
 // . if the count is < 200 it returns an EXACT count
 // . right now it only works for dataless nodes (keys only)
-int32_t RdbTree::getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const {
+int32_t RdbTree::estimateListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const {
 	// make these as benign as possible
 	//if ( minKey ) *minKey = endKey;
 	//if ( maxKey ) *maxKey = startKey;

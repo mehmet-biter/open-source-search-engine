@@ -127,7 +127,7 @@ public:
 	             int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys) const;
 
 	// estimate the size of the list defined by these keys
-	int32_t getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const;
+	int32_t estimateListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const;
 
 	// . delete all records in this list from the tree
 	// . call deleteNode()
