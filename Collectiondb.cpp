@@ -564,7 +564,7 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) {
 		sc->setCollectionRec ( NULL );
 		// this will put it on "death row" so it will be deleted
 		// once Msg5::m_waitingForList/Merge is NULL
-		tryToDeleteSpiderColl ( sc , "10" );
+		SpiderColl::tryToDeleteSpiderColl ( sc , "10" );
 
 		// don't let cr reference us anymore, sc is on deathrow
 		// and "cr" is delete below!
@@ -751,7 +751,7 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 
 		// this will put it on "death row" so it will be deleted
 		// once Msg5::m_waitingForList/Merge is NULL
-		tryToDeleteSpiderColl ( sc, "11" );
+		SpiderColl::tryToDeleteSpiderColl ( sc, "11" );
 
 		cr->m_spiderColl = NULL;
 	}
@@ -1264,7 +1264,7 @@ void CollectionRec::reset() {
 	sc->m_deleteMyself = true;
 
 	// if not currently being accessed nuke it now
-	tryToDeleteSpiderColl ( sc , "12" );
+	SpiderColl::tryToDeleteSpiderColl(sc, "12");
 }
 
 // . load this data from a conf file

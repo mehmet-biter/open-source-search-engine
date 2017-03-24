@@ -40,6 +40,7 @@ class SpiderColl {
 	void      reset();
 
 	bool      load();
+	static bool tryToDeleteSpiderColl(SpiderColl *sc, const char *msg);
 
 	key128_t m_firstKey;
 	// spiderdb is now 128bit keys
@@ -231,6 +232,9 @@ class SpiderColl {
 
  private:
 	class CollectionRec *m_cr;
+
+	static void gotSpiderdbListWrapper(void *state, RdbList *list, Msg5 *msg5);
+	static void gotSpiderdbWaitingTreeListWrapper(void *state, RdbList *list, Msg5 *msg5);
 };
 
 #endif // GB_SPIDERCOLL_H

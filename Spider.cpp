@@ -711,63 +711,6 @@ SpiderColl *SpiderCache::getSpiderCollIffNonNull ( collnum_t collnum ) {
 	return cr->m_spiderColl;
 }
 
-bool tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
-	// if not being deleted return false
-	if ( ! sc->m_deleteMyself ) return false;
-	// otherwise always return true
-	if ( sc->m_msg5b.isWaitingForList() ) {
-		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
-		    "waiting1",
-		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
-		return true;
-	}
-	// if ( sc->m_msg1.m_mcast.m_inUse ) {
-	// 	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
-	// 	    "waiting2",
-	// 	    (PTRTYPE)sc,(int32_t)sc->m_collnum);
-	// 	return true;
-	// }
-	if ( sc->m_isLoading ) {
-		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
-		    "waiting3",
-		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
-		return true;
-	}
-	// this means msg5 is out
-	if ( sc->m_msg5.isWaitingForList() ) {
-		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
-		    "waiting4",
-		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
-		return true;
-	}
-	// if ( sc->m_gettingList1 ) {
-	// 	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32"
-	//"waiting5",
-	// 	    (int32_t)sc,(int32_t)sc->m_collnum);
-	// 	return true;
-	// }
-	// if ( sc->m_gettingList2 ) {
-	// 	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32"
-	//"waiting6",
-	// 	    (int32_t)sc,(int32_t)sc->m_collnum);
-	// 	return true;
-	// }
-	// there's still a core of someone trying to write to someting
-	// in "sc" so we have to try to fix that. somewhere in xmldoc.cpp
-	// or spider.cpp. everyone should get sc from cr everytime i'd think
-	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" (msg=%s)",
-	    (PTRTYPE)sc,(int32_t)sc->m_collnum,msg);
-	// . make sure nobody has it
-	// . cr might be NULL because Collectiondb.cpp::deleteRec2() might
-	//   have nuked it
-	//CollectionRec *cr = sc->m_cr;
-	// use fake ptrs for easier debugging
-	//if ( cr ) cr->m_spiderColl = (SpiderColl *)0x987654;//NULL;
-	mdelete ( sc , sizeof(SpiderColl),"postdel1");
-	delete ( sc );
-	return true;
-}
-
 // . get SpiderColl for a collection
 // . if it is NULL for that collection then make a new one
 SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {

@@ -1193,21 +1193,21 @@ uint64_t SpiderColl::getNextSpiderTimeFromWaitingTree ( ) {
 	// stop if need to wait for this one
 	return spiderTimeMS;
 }
-	
 
 
-static void gotSpiderdbListWrapper2( void *state , RdbList *list,Msg5 *msg5) {
-
+void SpiderColl::gotSpiderdbWaitingTreeListWrapper(void *state, RdbList *list, Msg5 *msg5) {
 	SpiderColl *THIS = (SpiderColl *)state;
 
 	// did our collection rec get deleted? since we were doing a read
 	// the SpiderColl will have been preserved in that case but its
 	// m_deleteMyself flag will have been set.
-	if ( tryToDeleteSpiderColl ( THIS , "2" ) ) return;
+	if (tryToDeleteSpiderColl(THIS, "2")) {
+		return;
+	}
 
 	THIS->m_gettingList2 = false;
 
-	THIS->populateWaitingTreeFromSpiderdb ( true );
+	THIS->populateWaitingTreeFromSpiderdb(true);
 }
 
 
@@ -1315,7 +1315,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 					 0              , // startFileNum
 					 -1             , // numFiles (all)
 					 this,//(void *)state2,//this//state
-					 gotSpiderdbListWrapper2 ,
+					 gotSpiderdbWaitingTreeListWrapper ,
 					 MAX_NICENESS   , // niceness
 					 true           , // do error correct?
 					 NULL,            // cachekey
@@ -1817,20 +1817,28 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 }
 
 
-
-static void gotSpiderdbListWrapper ( void *state , RdbList *list , Msg5 *msg5){
+void SpiderColl::gotSpiderdbListWrapper(void *state, RdbList *list, Msg5 *msg5) {
 	SpiderColl *THIS = (SpiderColl *)state;
+
 	// prevent a core
 	THIS->m_gettingList1 = false;
+
 	// are we trying to exit? some firstip lists can be quite long, so
 	// terminate here so all threads can return and we can exit properly
-	if ( g_process.m_mode == Process::EXIT_MODE ) return;
+	if (g_process.m_mode == Process::EXIT_MODE) {
+		return;
+	}
+
 	// return if that blocked
-	if ( ! THIS->evalIpLoop() ) return;
+	if (!THIS->evalIpLoop()) {
+		return;
+	}
+
 	// we are done, re-entry popuatedoledb
 	THIS->m_isPopulatingDoledb = false;
+
 	// gotta set m_isPopulatingDoledb to false lest it won't work
-	THIS->populateDoledbFromWaitingTree ( );
+	THIS->populateDoledbFromWaitingTree();
 }
 
 
@@ -3657,5 +3665,63 @@ void SpiderColl::setPriority(int32_t pri) {
 
 
 bool SpiderColl::printStats ( SafeBuf &sb ) {
+	return true;
+}
+
+
+bool SpiderColl::tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
+	// if not being deleted return false
+	if ( ! sc->m_deleteMyself ) return false;
+	// otherwise always return true
+	if ( sc->m_msg5b.isWaitingForList() ) {
+		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
+			    "waiting1",
+		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
+		return true;
+	}
+	// if ( sc->m_msg1.m_mcast.m_inUse ) {
+	// 	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
+	// 	    "waiting2",
+	// 	    (PTRTYPE)sc,(int32_t)sc->m_collnum);
+	// 	return true;
+	// }
+	if ( sc->m_isLoading ) {
+		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
+			    "waiting3",
+		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
+		return true;
+	}
+	// this means msg5 is out
+	if ( sc->m_msg5.isWaitingForList() ) {
+		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
+			    "waiting4",
+		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
+		return true;
+	}
+	// if ( sc->m_gettingList1 ) {
+	// 	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32"
+	//"waiting5",
+	// 	    (int32_t)sc,(int32_t)sc->m_collnum);
+	// 	return true;
+	// }
+	// if ( sc->m_gettingWaitingTreeList ) {
+	// 	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32"
+	//"waiting6",
+	// 	    (int32_t)sc,(int32_t)sc->m_collnum);
+	// 	return true;
+	// }
+	// there's still a core of someone trying to write to someting
+	// in "sc" so we have to try to fix that. somewhere in xmldoc.cpp
+	// or spider.cpp. everyone should get sc from cr everytime i'd think
+	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" (msg=%s)",
+	    (PTRTYPE)sc,(int32_t)sc->m_collnum,msg);
+	// . make sure nobody has it
+	// . cr might be NULL because Collectiondb.cpp::deleteRec2() might
+	//   have nuked it
+	//CollectionRec *cr = sc->m_cr;
+	// use fake ptrs for easier debugging
+	//if ( cr ) cr->m_spiderColl = (SpiderColl *)0x987654;//NULL;
+	mdelete ( sc , sizeof(SpiderColl),"postdel1");
+	delete ( sc );
 	return true;
 }
