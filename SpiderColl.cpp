@@ -39,7 +39,7 @@ CollectionRec *SpiderColl::getCollectionRec ( ) {
 	return m_cr;
 }
 
-SpiderColl::SpiderColl () {
+SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_overflowList = NULL;
 	m_lastOverflowFirstIp = 0;
 	m_lastPrinted = 0;
@@ -105,13 +105,30 @@ SpiderColl::SpiderColl () {
 	m_lastCBlockIp = 0;
 	m_lastOverflowFirstIp = 0;
 
-
 	reset();
+
 	// reset this
 	memset ( m_outstandingSpiders , 0 , 4 * MAX_SPIDER_PRIORITIES );
 	// start off sending all colls local crawl info to all hosts to
 	// be sure we are in sync
 	memset ( m_sendLocalCrawlInfoToHost , 1 , MAX_HOSTS );
+
+	m_collnum = cr->m_collnum;
+	strcpy(m_coll, cr->m_coll);
+	m_cr = cr;
+
+	// set first doledb scan key
+	m_nextDoledbKey.setMin();
+
+	// mark it as loading so it can't be deleted while loading
+	m_isLoading = true;
+
+	// . load its tables from disk
+	// . crap i think this might call quickpoll and we get a parm
+	//   update to delete this spider coll!
+	load();
+
+	m_isLoading = false;
 }
 
 // load the tables that we set when m_doInitialScan is true

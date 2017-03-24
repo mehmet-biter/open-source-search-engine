@@ -27,7 +27,7 @@ class SpiderReply;
 // we have one SpiderColl for each collection record
 class SpiderColl {
 public:
-	SpiderColl();
+	SpiderColl(CollectionRec *cr);
 	~SpiderColl();
 
 	CollectionRec *getCollectionRec();

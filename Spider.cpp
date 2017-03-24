@@ -727,7 +727,7 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	if ( sc ) return sc;
 
 	// make it
-	try { sc = new(SpiderColl); }
+	try { sc = new SpiderColl(cr); }
 	catch ( ... ) {
 		log("spider: failed to make SpiderColl for collnum=%" PRId32,
 		    (int32_t)collnum);
@@ -740,28 +740,6 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	// note it
 	logf(LOG_DEBUG,"spider: made spidercoll=%" PTRFMT" for cr=%" PTRFMT"",
 	    (PTRTYPE)sc,(PTRTYPE)cr);
-	// update this
-	//if ( m_numSpiderColls < collnum + 1 )
-	//	m_numSpiderColls = collnum + 1;
-	// set this
-	sc->m_collnum = collnum;
-	// save this
-	strcpy ( sc->m_coll , cr->m_coll );
-	
-	// set this
-	sc->setCollectionRec ( cr ); // sc->m_cr = cr;
-
-	// set first doledb scan key
-	sc->m_nextDoledbKey.setMin();
-
-	// mark it as loading so it can't be deleted while loading
-	sc->m_isLoading = true;
-	// . load its tables from disk
-	// . crap i think this might call quickpoll and we get a parm
-	//   update to delete this spider coll!
-	sc->load();
-	// mark it as loading
-	sc->m_isLoading = false;
 
 	// note it!
 	log(LOG_DEBUG,"spider: adding new spider collection for %s", cr->m_coll);
