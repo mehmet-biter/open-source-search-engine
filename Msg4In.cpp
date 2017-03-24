@@ -27,12 +27,14 @@
 
 static bool addMetaList(const char *p, class UdpSlot *slot = NULL);
 static void handleRequest4(UdpSlot *slot, int32_t niceness);
+static void processMsg4(void *item);
 
+static GbThreadQueue s_msg4IncomingThreadQueue;
 
 // all these parameters should be preset
 bool registerMsg4Handler() {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
-	
+
 	// register ourselves with the udp server
 	if ( ! g_udpServer.registerHandler ( msg_type_4, handleRequest4 ) ) {
 		log(LOG_ERROR,"%s:%s: Could not register with UDP server!", __FILE__, __func__ );
@@ -44,6 +46,14 @@ bool registerMsg4Handler() {
 	return true;
 }
 
+bool initializeMsg4IncomingThread() {
+	return s_msg4IncomingThreadQueue.initialize(processMsg4, "process-msg4");
+}
+
+void finalizeMsg4IncomingThread() {
+	s_msg4IncomingThreadQueue.finalize();
+}
+
 // . destroys the slot if false is returned
 // . this is registered in Msg4::set() to handle add rdb record msgs
 // . seems like we should always send back a reply so we don't leave the
@@ -51,9 +61,30 @@ bool registerMsg4Handler() {
 // . TODO: need we send a reply back on success????
 // . NOTE: Must always call g_udpServer::sendReply or sendErrorReply() so
 //   read/send bufs can be freed
-static void handleRequest4(UdpSlot *slot, int32_t netnice) {
+static void processMsg4(void *item) {
+	UdpSlot *slot = static_cast<UdpSlot*>(item);
+
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
+	// extract what we read
+	char *readBuf     = slot->m_readBuf;
+
+	// this returns false with g_errno set on error
+	if (!addMetaList(readBuf, slot)) {
+		logError("calling sendErrorReply error='%s'", mstrerror(g_errno));
+		g_udpServer.sendErrorReply(slot,g_errno);
+
+		logTrace(g_conf.m_logTraceMsg4, "END - addMetaList returned false. g_errno=%d", g_errno);
+		return;
+	}
+
+	// good to go
+	g_udpServer.sendReply(NULL, 0, NULL, 0, slot);
+
+	logTrace(g_conf.m_logTraceMsg4, "END - OK");
+}
+
+static void handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
 	// if we just came up we need to make sure our hosts.conf is in
 	// sync with everyone else before accepting this! it might have
 	// been the case that the sender thinks our hosts.conf is the same
@@ -62,7 +93,7 @@ static void handleRequest4(UdpSlot *slot, int32_t netnice) {
 		g_errno = EBADHOSTSCONF;
 		logError("call sendErrorReply");
 		g_udpServer.sendErrorReply ( slot , g_errno );
-		
+
 		log(LOG_WARN,"%s:%s: END - hostsConfInDisagreement", __FILE__, __func__ );
 		return;
 	}
@@ -75,17 +106,17 @@ static void handleRequest4(UdpSlot *slot, int32_t netnice) {
 			g_errno = EWAITINGTOSYNCHOSTSCONF;
 			logError("call sendErrorReply");
 			g_udpServer.sendErrorReply ( slot , g_errno );
-			
+
 			log(LOG_WARN,"%s:%s: END - EWAITINGTOSYNCHOSTCONF", __FILE__, __func__ );
 			return;
 		}
-		
+
 		// compare our hosts.conf to sender's otherwise
 		if (slot->m_host->m_pingInfo.m_hostsConfCRC != g_hostdb.getCRC()) {
 			g_errno = EBADHOSTSCONF;
 			logError("call sendErrorReply");
 			g_udpServer.sendErrorReply ( slot , g_errno );
-			
+
 			log(LOG_WARN,"%s:%s: END - EBADHOSTSCONF", __FILE__, __func__ );
 			return;
 		}
@@ -94,17 +125,17 @@ static void handleRequest4(UdpSlot *slot, int32_t netnice) {
 	// extract what we read
 	char *readBuf     = slot->m_readBuf;
 	int32_t  readBufSize = slot->m_readBufSize;
-	
+
 	// must at least have an rdbId
 	if (readBufSize < 7) {
 		g_errno = EREQUESTTOOSHORT;
 		logError("call sendErrorReply");
 		g_udpServer.sendErrorReply ( slot , g_errno );
-		
+
 		log(LOG_ERROR,"%s:%s: END - EREQUESTTOOSHORT", __FILE__, __func__ );
 		return;
 	}
-	
+
 
 	// get total buf used
 	int32_t used = *(int32_t *)readBuf; //p += 4;
@@ -114,7 +145,7 @@ static void handleRequest4(UdpSlot *slot, int32_t netnice) {
 		// if we send back a g_errno then multicast retries forever
 		// so just absorb it!
 		logError("msg4: got corrupted request from hostid %" PRId32" used [%" PRId32"] != readBufSize [%" PRId32"]",
-		    slot->m_host->m_hostId, used, readBufSize);
+		         slot->m_host->m_hostId, used, readBufSize);
 
 		loghex(LOG_ERROR, readBuf, (readBufSize < 160 ? readBufSize : 160), "readBuf (first max. 160 bytes)");
 
@@ -138,24 +169,14 @@ static void handleRequest4(UdpSlot *slot, int32_t netnice) {
 		g_errno = ETRYAGAIN;
 		logError("call sendErrorReply");
 		g_udpServer.sendErrorReply(slot,g_errno);
-		
+
 		logTrace( g_conf.m_logTraceMsg4, "END - ETRYAGAIN. Waiting to sync with host #0" );
-		return; 
-	}
-
-	// this returns false with g_errno set on error
-	if (!addMetaList(readBuf, slot)) {
-		logError("calling sendErrorReply error='%s'", mstrerror(g_errno));
-		g_udpServer.sendErrorReply(slot,g_errno);
-
-		logTrace(g_conf.m_logTraceMsg4, "END - addMetaList returned false. g_errno=%d", g_errno);
 		return;
 	}
 
-	// good to go
-	g_udpServer.sendReply(NULL, 0, NULL, 0, slot);
-
-	logTrace(g_conf.m_logTraceMsg4, "END - OK");
+	/// @todo ALC enable threading when we have made dependency thread-safe
+	//s_msg4IncomingThreadQueue.addItem(slot);
+	processMsg4(slot);
 }
 
 

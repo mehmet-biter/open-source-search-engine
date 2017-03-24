@@ -43,7 +43,6 @@ extern bool s_countsAreValid;
 #define SP_ADMIN_PAUSED 8 // g_conf.m_spideringEnabled = false
 #define SP_COMPLETED    9 // crawl is done, and no repeatCrawl is scheduled
 
-bool tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) ;
 void spiderRoundIncremented ( class CollectionRec *cr ) ;
 
 bool getSpiderStatusMsg ( class CollectionRec *cx , 

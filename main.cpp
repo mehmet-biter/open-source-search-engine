@@ -1916,6 +1916,11 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
+	if (!initializeMsg4IncomingThread()) {
+		logError("Unable to initialize Msg4 incoming thread");
+		return 1;
+	}
+
 	// test all collection dirs for write permission
 	int32_t pcount = 0;
 	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {

@@ -564,7 +564,7 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) {
 		sc->setCollectionRec ( NULL );
 		// this will put it on "death row" so it will be deleted
 		// once Msg5::m_waitingForList/Merge is NULL
-		tryToDeleteSpiderColl ( sc , "10" );
+		SpiderColl::tryToDeleteSpiderColl ( sc , "10" );
 
 		// don't let cr reference us anymore, sc is on deathrow
 		// and "cr" is delete below!
@@ -751,7 +751,7 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 
 		// this will put it on "death row" so it will be deleted
 		// once Msg5::m_waitingForList/Merge is NULL
-		tryToDeleteSpiderColl ( sc, "11" );
+		SpiderColl::tryToDeleteSpiderColl ( sc, "11" );
 
 		cr->m_spiderColl = NULL;
 	}
@@ -1257,8 +1257,6 @@ void CollectionRec::reset() {
 	}
 
 	SpiderColl *sc = m_spiderColl;
-	// debug hack thing
-	//if ( sc == (SpiderColl *)0x8888 ) return;
 	// if never made one, we are done
 	if ( ! sc ) return;
 
@@ -1266,7 +1264,7 @@ void CollectionRec::reset() {
 	sc->m_deleteMyself = true;
 
 	// if not currently being accessed nuke it now
-	tryToDeleteSpiderColl ( sc , "12" );
+	SpiderColl::tryToDeleteSpiderColl(sc, "12");
 }
 
 // . load this data from a conf file
@@ -2644,30 +2642,7 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 		log(LOG_INFO, "coll: resetting doledb for %s (%li)",m_coll, (long)m_collnum);
 
 		// clear doledb recs from tree
-		//g_doledb.getRdb()->deleteAllRecs ( m_collnum );
 		nukeDoledb ( m_collnum );
-
-		// add it back
-		//if ( ! g_doledb.getRdb()->addRdbBase2 ( m_collnum ) )
-		//	log("coll: error re-adding doledb for %s",m_coll);
-
-		// just start this over...
-		// . MDW left off here
-		//tryToDelete ( sc );
-		// maybe this is good enough
-		//if ( sc ) sc->m_waitingTreeNeedsRebuild = true;
-
-		//CollectionRec *cr = sc->m_cr;
-
-		// . rebuild sitetable? in PageBasic.cpp.
-		// . re-adds seed spdierrequests using msg4
-		// . true = addSeeds
-		// . no, don't do this now because we call updateSiteList()
-		//   when we have &sitelist=xxxx in the request which will
-		//   handle updating those tables
-		//updateSiteListTables ( m_collnum ,
-		//		       true ,
-		//		       cr->m_siteListBuf.getBufStart() );
 	}
 
 	return true;

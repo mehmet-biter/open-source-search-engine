@@ -10906,12 +10906,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 		//   like if you just added the collection
 		if ( cx->m_spiderColl )
 			cx->m_spiderColl->m_waitingTreeNeedsRebuild = true;
-		// . assume we have urls ready to spider too
-		// . no, because if they change the filters and there are
-		//   still no urls to spider i don't want to get another
-		//   email alert!!
-		//cr->m_localCrawlInfo .m_hasUrlsReadyToSpider = true;
-		//cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = true;
+
 		// . reconstruct the url filters if we were a custom crawl
 		// . this is used to abstract away the complexity of url
 		//   filters in favor of simple regular expressions and

@@ -641,38 +641,6 @@ bool SpiderCache::init ( ) {
 	return true;
 }
 
-/*
-static void doneSavingWrapper ( void *state ) {
-	SpiderCache *THIS = (SpiderCache *)state;
-	log("spcache: done saving something");
-	//THIS->doneSaving();
-	// . call the callback if any
-	// . this let's PageMaster.cpp know when we're closed
-	//if (THIS->m_closeCallback) THIS->m_closeCallback(THIS->m_closeState);
-}
-void SpiderCache::doneSaving ( ) {
-	// bail if g_errno was set
-	if ( g_errno ) {
-		log("spider: Had error saving waitingtree.dat or doleiptable: "
-		    "%s.",
-		    mstrerror(g_errno));
-		g_errno = 0;
-	}
-	else {
-		// display any error, if any, otherwise prints "Success"
-		logf(LOG_INFO,"db: Successfully saved waitingtree and "
-		     "doleiptable");
-	}
-	// if still more need to save, not done yet
-	if ( needsSave  ( ) ) return;
-	// ok, call callback that initiaed the save
-	if ( m_callback ) m_callback ( THIS->m_state );
-	// ok, we are done!
-	//m_isSaving = false;
-}
-*/
-
-
 // return false if any tree save blocked
 void SpiderCache::save ( bool useThread ) {
 	// bail if already saving
@@ -699,39 +667,7 @@ void SpiderCache::save ( bool useThread ) {
 				 useThread ,
 				 NULL,//this ,
 				 NULL);//doneSavingWrapper );
-		// also the doleIpTable
-		/*
-		filename = "doleiptable.dat";
-		sc->m_doleIpTable.fastSave(useThread,
-					   dir,
-					   filename,
-					   NULL,
-					   0,
-					   NULL,//this,
-					   NULL);//doneSavingWrapper );
-		*/
-		// . crap, this is made at startup from waitintree!
-		/*
-		// waiting table
-		filename = "waitingtable.dat";
-		if ( sc->m_waitingTable.m_needsSave )
-			logf(LOG_INFO,"db: Saving %s/%s",dir,
-			     filename);
-		sc->m_waitingTable.fastSave(useThread,
-					    dir,
-					    filename,
-					    NULL,
-					    0,
-					    NULL,//this,
-					    NULL );//doneSavingWrapper );
-		*/
 	}
-	// if still needs save, not done yet, return false to indicate blocked
-	//if ( blocked ) return false;
-	// all done
-	//m_isSaving = false;
-	// did not block
-	//return true;
 }
 
 bool SpiderCache::needsSave ( ) {
@@ -775,72 +711,12 @@ SpiderColl *SpiderCache::getSpiderCollIffNonNull ( collnum_t collnum ) {
 	return cr->m_spiderColl;
 }
 
-bool tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
-	// if not being deleted return false
-	if ( ! sc->m_deleteMyself ) return false;
-	// otherwise always return true
-	if ( sc->m_msg5b.isWaitingForList() ) {
-		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
-		    "waiting1",
-		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
-		return true;
-	}
-	// if ( sc->m_msg1.m_mcast.m_inUse ) {
-	// 	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
-	// 	    "waiting2",
-	// 	    (PTRTYPE)sc,(int32_t)sc->m_collnum);
-	// 	return true;
-	// }
-	if ( sc->m_isLoading ) {
-		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
-		    "waiting3",
-		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
-		return true;
-	}
-	// this means msg5 is out
-	if ( sc->m_msg5.isWaitingForList() ) {
-		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
-		    "waiting4",
-		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
-		return true;
-	}
-	// if ( sc->m_gettingList1 ) {
-	// 	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32"
-	//"waiting5",
-	// 	    (int32_t)sc,(int32_t)sc->m_collnum);
-	// 	return true;
-	// }
-	// if ( sc->m_gettingList2 ) {
-	// 	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32"
-	//"waiting6",
-	// 	    (int32_t)sc,(int32_t)sc->m_collnum);
-	// 	return true;
-	// }
-	// there's still a core of someone trying to write to someting
-	// in "sc" so we have to try to fix that. somewhere in xmldoc.cpp
-	// or spider.cpp. everyone should get sc from cr everytime i'd think
-	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" (msg=%s)",
-	    (PTRTYPE)sc,(int32_t)sc->m_collnum,msg);
-	// . make sure nobody has it
-	// . cr might be NULL because Collectiondb.cpp::deleteRec2() might
-	//   have nuked it
-	//CollectionRec *cr = sc->m_cr;
-	// use fake ptrs for easier debugging
-	//if ( cr ) cr->m_spiderColl = (SpiderColl *)0x987654;//NULL;
-	mdelete ( sc , sizeof(SpiderColl),"postdel1");
-	delete ( sc );
-	return true;
-}
-
 // . get SpiderColl for a collection
 // . if it is NULL for that collection then make a new one
 SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	// "coll" must be invalid
 	if ( collnum < 0 ) return NULL;
-	// return it if non-NULL
-	//if ( m_spiderColls [ collnum ] ) return m_spiderColls [ collnum ];
-	// if spidering disabled, do not bother creating this!
-	//if ( ! g_conf.m_spideringEnabled ) return NULL;
+
 	// shortcut
 	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	// collection might have been reset in which case collnum changes
@@ -849,10 +725,7 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	// return it if non-NULL
 	SpiderColl *sc = cr->m_spiderColl;
 	if ( sc ) return sc;
-	// if spidering disabled, do not bother creating this!
-	//if ( ! cr->m_spideringEnabled ) return NULL;
-	// cast it
-	//SpiderColl *sc;
+
 	// make it
 	try { sc = new(SpiderColl); }
 	catch ( ... ) {
@@ -863,7 +736,6 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	// register it
 	mnew ( sc , sizeof(SpiderColl), "spcoll" );
 	// store it
-	//m_spiderColls [ collnum ] = sc;
 	cr->m_spiderColl = sc;
 	// note it
 	logf(LOG_DEBUG,"spider: made spidercoll=%" PTRFMT" for cr=%" PTRFMT"",
@@ -1953,10 +1825,6 @@ bool updateSiteListBuf ( collnum_t collnum ,
 static char *getMatchingUrlPattern(SpiderColl *sc, SpiderRequest *sreq, char *tagArg) { // tagArg can be NULL
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
-	// if it has * and no negatives, we are in!
-	//if ( sc->m_siteListAsteriskLine && ! sc->m_siteListHasNegatives )
-	//	return sc->m_siteListAsteriskLine;
-
 	// if it is just a bunch of comments or blank lines, it is empty
 	if ( sc->m_siteListIsEmptyValid && sc->m_siteListIsEmpty ) {
 		logTrace( g_conf.m_logTraceSpider, "END. Empty. Returning NULL" );
@@ -2122,10 +1990,6 @@ static char *getMatchingUrlPattern(SpiderColl *sc, SpiderRequest *sreq, char *ta
 		// skip it
 		pb += strlen(pb) + 1;
 	}
-
-
-	// is there an '*' in the patterns?
-	//if ( sc->m_siteListAsteriskLine ) return sc->m_siteListAsteriskLine;
 
 	return NULL;
 }

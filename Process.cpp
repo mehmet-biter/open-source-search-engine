@@ -40,6 +40,7 @@
 #include "UrlRealtimeClassification.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "Msg4In.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
 #include <fcntl.h>
@@ -710,8 +711,6 @@ bool Process::shutdown2() {
 
 	Statistics::finalize();
 
-	RdbBase::finalizeGlobalIndexThread();
-
 	log("gb: disabling threads");
 	// now disable threads so we don't exit while threads are
 	// outstanding
@@ -719,6 +718,9 @@ bool Process::shutdown2() {
 
 	// Stop merging
 	g_merge.haltMerge();
+
+	RdbBase::finalizeGlobalIndexThread();
+	finalizeMsg4IncomingThread();
 
 	static bool s_printed = false;
 
