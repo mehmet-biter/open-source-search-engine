@@ -50,13 +50,13 @@ int main(int argc, char **argv) {
 
 	RdbIndex index;
 	if (starts_with(filename, "posdb")) {
-		index.set(dir, indexFilename, Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+		index.set(dir, indexFilename, Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB, true);
 		if (!index.generateIndex(&bigFile)) {
 			fprintf(stdout, "Unable to generate index for %s\n", filename);
 			return 1;
 		}
 
-		if (!index.writeIndex()) {
+		if (!index.writeIndex(true)) {
 			fprintf(stdout, "Unable to save index for %s\n", filename);
 			return 1;
 		}
