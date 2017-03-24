@@ -801,18 +801,10 @@ void doneSending_ass ( void *state , UdpSlot *slot ) {
 	if ( st0->m_rdbId == RDB_TAGDB ) {
 	}
 	else if(slot->getNiceness() > 0) {
-		g_stats.addStat_r ( slot->m_sendBufSize , 
-				    st0->m_startTime ,
-				    now ,
-				    //"transmit_data_nice",
-				    0x00aa00aa);
+		g_stats.addStat_r(slot->m_sendBufSize, st0->m_startTime, now, 0x00aa00aa);
 	} 
 	else {
-		g_stats.addStat_r ( slot->m_sendBufSize , 
-				    st0->m_startTime ,
-				    now ,
-				    //"transmit_data",
-				    0x00ff00ff );
+		g_stats.addStat_r(slot->m_sendBufSize, st0->m_startTime, now, 0x00ff00ff);
 	}
 
 
