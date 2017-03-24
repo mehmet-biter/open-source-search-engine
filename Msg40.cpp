@@ -16,6 +16,8 @@
 #include "Process.h"
 #include "UrlRealtimeClassification.h"
 #include "Conf.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 #include "Mem.h"
 #include "ScopedLock.h"
 #include <new>
@@ -1955,6 +1957,8 @@ static const char * const s_variantLikeSubDomains[] = {
 };
 static HashTable  s_variantLikeSubDomainTable;
 static bool       s_variantLikeSubDomainInitialized = false;
+static GbMutex    s_variantLikeSubDomainMutex;
+
 static bool initVariantLikeSubDomainTable(HashTable *table, const char * const words[], int32_t size ){
 	// set up the hash table
 	if ( ! table->set ( size * 2 ) ) {
@@ -1978,11 +1982,13 @@ static bool initVariantLikeSubDomainTable(HashTable *table, const char * const w
 }
 
 static bool isVariantLikeSubDomain(const char *s , int32_t len) {
+	ScopedLock sl(s_variantLikeSubDomainMutex);
 	if ( ! s_variantLikeSubDomainInitialized ) {
 		s_variantLikeSubDomainInitialized = initVariantLikeSubDomainTable(&s_variantLikeSubDomainTable, s_variantLikeSubDomains, sizeof(s_variantLikeSubDomains));
 		if (!s_variantLikeSubDomainInitialized)
 			return false;
 	} 
+	sl.unlock();
 
 	// get from table
         int32_t h = hash32Lower_a(s, len);

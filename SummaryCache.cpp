@@ -1,7 +1,7 @@
 #include "SummaryCache.h"
 #include "Mem.h"
 #include "fctypes.h"
-
+#include "ScopedLock.h"
 
 SummaryCache g_stable_summary_cache;
 SummaryCache g_unstable_summary_cache;
@@ -16,7 +16,8 @@ SummaryCache::SummaryCache()
     purge_iter(m.begin()),
     max_age(1000), //1 second
     max_memory(1000000), //1 megabyte
-    memory_used(0)
+    memory_used(0),
+    mtx()
 {
 }
 
@@ -30,6 +31,7 @@ void SummaryCache::configure(int64_t max_age_, size_t max_memory_)
 
 void SummaryCache::clear()
 {
+	ScopedLock sl(mtx);
 	for(std::map<int64_t,Item>::iterator iter = m.begin();
 	    iter!=m.end();
 	    ++iter)
@@ -42,6 +44,8 @@ void SummaryCache::clear()
 
 void SummaryCache::insert(int64_t key, const void *data, size_t datalen)
 {
+	ScopedLock sl(mtx);
+	
 	purge_step();
 	
 	if(max_age==0 || max_memory==0)
@@ -83,6 +87,8 @@ void SummaryCache::insert(int64_t key, const void *data, size_t datalen)
 
 bool SummaryCache::lookup(int64_t key, const void **data, size_t *datalen)
 {
+	ScopedLock sl(mtx);
+	
 	purge_step();
 	std::map<int64_t,Item>::iterator iter = m.find(key);
 	if(iter!=m.end() && iter->second.timestamp+max_age>=gettimeofdayInMilliseconds()) {
