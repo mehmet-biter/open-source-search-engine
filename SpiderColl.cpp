@@ -259,7 +259,6 @@ bool SpiderColl::load ( ) {
 //   maybe m_urlHashTable too???
 //   this should block since we are at startup...
 bool SpiderColl::makeDoleIPTable ( ) {
-
 	log(LOG_DEBUG,"spider: making dole ip table for %s",m_coll);
 
 	key96_t startKey ; startKey.setMin();
@@ -269,68 +268,83 @@ bool SpiderColl::makeDoleIPTable ( ) {
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
 	RdbList list;
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_DOLEDB    ,
-			      m_collnum     ,
-			      &list         ,
-			      startKey      ,
-			      endKey        ,
-			      minRecSizes   ,
-			      true          , // includeTree?
-			      0             , // max cache age
-			      0             , // startFileNum  ,
-			      -1            , // numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0,//MAX_NICENESS  , // niceness
-			      false         , // err correction?
-			      NULL          , // cache key ptr
-			      0             , // retry num
-			      -1            , // maxRetries
-			      -1LL          , // sync point
-			      false,          // isRealMerge
-			      true))          // allowPageCache
-	{
-		log(LOG_LOGIC,"spider: getList did not block.");
-		return false;
-	}
-	// shortcut
-	int32_t minSize=(int32_t)(sizeof(SpiderRequest)+sizeof(key96_t)+4-MAX_URL_LEN);
-	// all done if empty
-	if ( list.isEmpty() ) goto done;
-	// loop over entries in list
-	for (list.resetListPtr();!list.isExhausted();list.skipCurrentRecord()){
-		// get rec
-		char *rec = list.getCurrentRec();
-		// get key
-		key96_t k = list.getCurrentKey();
-		// skip deletes -- how did this happen?
-		if ( (k.n0 & 0x01) == 0) continue;
-		// check this out
-		int32_t recSize = list.getCurrentRecSize();
-		// zero?
-		if ( recSize <= 0 ) { g_process.shutdownAbort(true); }
-		// 16 is bad too... wtf is this?
-		if ( recSize <= 16 ) continue;
-		// crazy?
-		if ( recSize<=minSize) {g_process.shutdownAbort(true);}
-		// . doledb key is 12 bytes, followed by a 4 byte datasize
-		// . so skip that key and dataSize to point to spider request
-		SpiderRequest *sreq = (SpiderRequest *)(rec+sizeof(key96_t)+4);
-		// add to dole tables
-		if ( ! addToDoleTable ( sreq ) )
-			// return false with g_errno set on error
+
+	for (;;) {
+		// use msg5 to get the list, should ALWAYS block since no threads
+		if (!msg5.getList(RDB_DOLEDB,
+		                  m_collnum,
+		                  &list,
+		                  startKey,
+		                  endKey,
+		                  minRecSizes,
+		                  true, // includeTree?
+		                  0, // max cache age
+		                  0, // startFileNum
+		                  -1, // numFiles
+		                  NULL, // state
+		                  NULL, // callback
+		                  0, // niceness
+		                  false, // err correction?
+		                  NULL, // cache key ptr
+		                  0, // retry num
+		                  -1, // maxRetries
+		                  -1LL, // sync point
+		                  false, // isRealMerge
+		                  true)) { // allowPageCache
+			log(LOG_LOGIC, "spider: getList did not block.");
 			return false;
+		}
+
+		// shortcut
+		int32_t minSize = (int32_t)(sizeof(SpiderRequest) + sizeof(key96_t) + 4 - MAX_URL_LEN);
+		// all done if empty
+		if (list.isEmpty()) {
+			log(LOG_DEBUG,"spider: making dole ip table done.");
+			return true;
+		}
+
+		// loop over entries in list
+		for (list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
+			// get rec
+			char *rec = list.getCurrentRec();
+			// get key
+			key96_t k = list.getCurrentKey();
+
+			// skip deletes -- how did this happen?
+			if ((k.n0 & 0x01) == 0) {
+				continue;
+			}
+
+			// check this out
+			int32_t recSize = list.getCurrentRecSize();
+			// zero?
+			if (recSize <= 0) { g_process.shutdownAbort(true); }
+
+			// 16 is bad too... wtf is this?
+			if (recSize <= 16) {
+				continue;
+			}
+
+			// crazy?
+			if (recSize <= minSize) { g_process.shutdownAbort(true); }
+			// . doledb key is 12 bytes, followed by a 4 byte datasize
+			// . so skip that key and dataSize to point to spider request
+			SpiderRequest *sreq = (SpiderRequest *)(rec + sizeof(key96_t) + 4);
+			// add to dole tables
+			if (!addToDoleTable(sreq)) {
+				// return false with g_errno set on error
+				return false;
+			}
+		}
+		startKey = *(key96_t *)list.getLastKey();
+		startKey++;
+
+		// watch out for wrap around
+		if (startKey < *(key96_t *)list.getLastKey()) {
+			log(LOG_DEBUG,"spider: making dole ip table done.");
+			return true;
+		}
 	}
-	startKey = *(key96_t *)list.getLastKey();
-	startKey++;
-	// watch out for wrap around
-	if ( startKey >= *(key96_t *)list.getLastKey() ) goto loop;
- done:
-	log(LOG_DEBUG,"spider: making dole ip table done.");
-	// we wrapped, all done
-	return true;
 }
 
 
