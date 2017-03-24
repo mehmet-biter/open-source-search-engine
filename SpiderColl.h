@@ -26,42 +26,40 @@ class SpiderReply;
 
 // we have one SpiderColl for each collection record
 class SpiderColl {
- public:
+public:
+	SpiderColl();
+	~SpiderColl();
 
-	~SpiderColl ( );
-	SpiderColl  ( ) ;
-
-	void setCollectionRec ( class CollectionRec *cr );
-	class CollectionRec *getCollectionRec ( );
+	CollectionRec *getCollectionRec();
+	void setCollectionRec(CollectionRec *cr);
 
 	void clearLocks();
 
 	// called by main.cpp on exit to free memory
-	void      reset();
+	void reset();
 
-	bool      load();
+	bool load();
+
 	static bool tryToDeleteSpiderColl(SpiderColl *sc, const char *msg);
 
 	key128_t m_firstKey;
-	// spiderdb is now 128bit keys
 	key128_t m_nextKey;
 	key128_t m_endKey;
 
-	bool           m_lastReplyValid;
-	char           m_lastReplyBuf[MAX_SP_REPLY_SIZE];
+	bool m_lastReplyValid;
+	char m_lastReplyBuf[MAX_SP_REPLY_SIZE];
 
 	bool m_isLoading;
 
 	// for scanning the wait tree...
 	bool m_isPopulatingDoledb;
-	// for reading from spiderdb
-	//bool m_isReadDone;
+
 	bool m_didRead;
 
 	// corresponding to CollectionRec::m_siteListBuf
 	bool  m_siteListIsEmpty;
 	bool  m_siteListIsEmptyValid;
-	// data buckets in this table are of type 
+	// data buckets in this table are of type
 	HashTableX m_siteListDomTable;
 	// substring matches like "contains:goodstuff" or
 	// later "regex:.*"
@@ -85,28 +83,20 @@ class SpiderColl {
 
 	Msg4 m_msg4x;
 
-	bool isInDupCache ( SpiderRequest *sreq , bool addToCache ) ;
+	bool isInDupCache(SpiderRequest *sreq, bool addToCache);
 
 	// Rdb.cpp calls this
-	bool  addSpiderReply   ( SpiderReply   *srep );
-	bool  addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS );
+	bool addSpiderReply(SpiderReply *srep);
+	bool addSpiderRequest(SpiderRequest *sreq, int64_t nowGlobalMS);
 
-	void removeFromDoledbTable ( int32_t firstIp );
+	void removeFromDoledbTable(int32_t firstIp);
+	bool addToDoleTable(SpiderRequest *sreq);
+	bool validateDoleBuf(SafeBuf *doleBuf);
+	bool addDoleBufIntoDoledb(SafeBuf *doleBuf, bool isFromCache);
 
-	bool  addToDoleTable   ( SpiderRequest *sreq ) ;
+	bool updateSiteNumInlinksTable(int32_t siteHash32, int32_t sni, time_t tstamp);
 
-	bool validateDoleBuf ( SafeBuf *doleBuf ) ;
-	bool addDoleBufIntoDoledb ( SafeBuf *doleBuf , bool isFromCache);
-	//,uint32_t cachedTimestamp);
-
-	bool updateSiteNumInlinksTable ( int32_t siteHash32,int32_t sni,
-					 time_t tstamp); // time_t
-
-	uint64_t getSpiderTimeMS ( SpiderRequest *sreq,
-				   int32_t ufn,
-				   SpiderReply *srep,
-				   uint64_t nowGlobalMS);
-
+	uint64_t getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep, uint64_t nowGlobalMS);
 	// doledb cursor keys for each priority to speed up performance
 	key96_t m_nextKeys[MAX_SPIDER_PRIORITIES];
 
@@ -139,7 +129,7 @@ class SpiderColl {
 	// . hash of collection name this arena represents
 	// . 0 for main collection
 	collnum_t m_collnum;
-	char  m_coll [ MAX_COLL_LEN + 1 ] ;
+	char m_coll[MAX_COLL_LEN + 1];
 	class CollectionRec *getCollRec();
 	const char *getCollName();
 
@@ -230,8 +220,8 @@ public:
 		
 	int32_t  m_lastOverflowFirstIp;
 
- private:
-	class CollectionRec *m_cr;
+private:
+	CollectionRec *m_cr;
 
 	static void gotSpiderdbListWrapper(void *state, RdbList *list, Msg5 *msg5);
 	static void gotSpiderdbWaitingTreeListWrapper(void *state, RdbList *list, Msg5 *msg5);

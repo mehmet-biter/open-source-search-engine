@@ -1524,16 +1524,9 @@ bool updateSiteListBuf ( collnum_t collnum ,
 	HashTableX *dt = &sc->m_siteListDomTable;
 
 	// reset it
-	if ( ! dt->set ( 4 ,
-	                 sizeof(PatternData),
-	                 1024 ,
-	                 NULL ,
-	                 0 ,
-	                 true , // allow dup keys?
-	                 "sldt" ) ) {
+	if (!dt->set(4, sizeof(PatternData), 1024, NULL, 0, true, "sldt")) {
 		return true;
 	}
-
 
 	// clear old shit
 	sc->m_posSubstringBuf.purge();
