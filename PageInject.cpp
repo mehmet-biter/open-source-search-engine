@@ -488,13 +488,6 @@ static void sendUdpReply7(void *state) {
 
 	UdpSlot *slot = xd->m_injectionSlot;
 
-    uint32_t statColor = 0xccffcc;
-    if(xd->m_indexCode) {
-        statColor = 0xaaddaa;//0x4e99e9;
-    }
-	g_stats.addStat_r ( xd->m_rawUtf8ContentSize, xd->m_injectStartTime, gettimeofdayInMilliseconds(), statColor );
-
-
 	// injecting a warc seems to not set m_indexCodeValid to true
 	// for the container doc... hmmm...
 	int32_t indexCode = -1;
