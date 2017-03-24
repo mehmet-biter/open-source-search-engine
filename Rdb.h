@@ -120,6 +120,8 @@ public:
 		return addList(collnum,list,false);
 	}
 
+	bool deleteTreeNode(collnum_t collnum, const char *key);
+
 	void verifyTreeIntegrity();
 
 	bool isSecondaryRdb() const {

@@ -1566,6 +1566,15 @@ bool Rdb::addList(collnum_t collnum, RdbList *list, bool checkForRoom) {
 }
 
 
+//delete node and data in tree. Currently only called by SpiderLoop
+bool Rdb::deleteTreeNode(collnum_t collnum, const char *key) {
+	if(!m_useTree)
+		gbshutdownLogicError();
+
+	return m_tree.deleteNode(collnum, key, true);
+}
+
+
 void Rdb::verifyTreeIntegrity() {
 	if(m_useTree)
 		m_tree.verifyIntegrity();
