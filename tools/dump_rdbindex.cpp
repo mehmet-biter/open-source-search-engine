@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 
 	RdbIndex index;
 	if (starts_with(filename, "posdb")) {
-		index.set(dir, filename, Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+		index.set(dir, filename, Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB, true);
 		if (!index.readIndex()) {
 			fprintf(stdout, "Unable to load index\n");
 			return 1;
