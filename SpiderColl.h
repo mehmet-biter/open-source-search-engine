@@ -169,7 +169,6 @@ class SpiderColl {
 
 	bool makeDoleIPTable     ( );
 	bool makeWaitingTable    ( );
-	bool makeWaitingTree     ( );
 
 	bool printWaitingTree ( ) ;
 
