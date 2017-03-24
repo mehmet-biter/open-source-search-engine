@@ -39,7 +39,6 @@ RdbTree::RdbTree () {
 	m_callback = NULL;
 	m_doBalancing = false;
 	m_ownData = false;
-	m_dataInPtrs = false;
 	m_overhead = 0;
 	m_maxMem = 0;
 	m_allocName = NULL;
@@ -61,14 +60,13 @@ RdbTree::~RdbTree ( ) {
 
 
 // "memMax" includes records plus the overhead
-bool RdbTree::set(int32_t fixedDataSize, int32_t maxNumNodes, int32_t memMax, bool ownData, const char *allocName, bool dataInPtrs, const char *dbname, char keySize, char rdbId) {
+bool RdbTree::set(int32_t fixedDataSize, int32_t maxNumNodes, int32_t memMax, bool ownData, const char *allocName, const char *dbname, char keySize, char rdbId) {
 	reset();
 	m_fixedDataSize   = fixedDataSize; 
 	m_doBalancing     = true;
 	m_maxMem          = memMax;
 	m_ownData         = ownData;
 	m_allocName       = allocName;
-	m_dataInPtrs      = dataInPtrs;
 	m_ks              = keySize;
 
 	m_needsSave       = false;
@@ -2309,9 +2307,6 @@ int32_t RdbTree::fastSaveBlock_r ( int fd , int32_t start , int64_t offset ) {
 	  br += pwrite ( fd , &m_depth[start] , n  , offset ); offset += n  ; }
 	if ( m_fixedDataSize == -1 ) {
 	  br += pwrite ( fd , &m_sizes[start] , n*4, offset ); offset += n*4; }
-	// if the data is actually stored in the data ptrs, just save those
-	if ( m_dataInPtrs ) {
-		br +=pwrite(fd,&m_data[start],n * 4 , offset ); offset +=n*4;}
 	// bitch on error
 	if ( br != offset - oldOffset ) {
 		log(LOG_WARN, "db: Failed to save tree3 for %s (%" PRId64"!=%" PRId64"): %s.",
@@ -2320,7 +2315,7 @@ int32_t RdbTree::fastSaveBlock_r ( int fd , int32_t start , int64_t offset ) {
 	}
 
 	// if no data to write then return bytes written this call
-	if ( m_fixedDataSize == 0 || m_dataInPtrs ) return offset - oldOffset ;
+	if ( m_fixedDataSize == 0 ) return offset - oldOffset ;
 
 	// debug count
 	//int32_t count = 0;
@@ -2541,9 +2536,6 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 		f->read ( &m_depth[start] , n , offset    ); offset += n ; }
 	if ( m_fixedDataSize == -1 ) {
 		f->read ( &m_sizes[start] , n * 4 , offset); offset += n * 4; }
-	// if the data is actually stored in the data ptrs, just save those
-	if ( m_dataInPtrs ) {
-		f->read ( &m_data[start] , n * 4 , offset); offset += n * 4; }
 	// return false on read error
 	if ( g_errno ) {
 		log( LOG_ERROR, "db: Failed to read %s: %s.", f->getFilename(), mstrerror(g_errno) );
@@ -2593,7 +2585,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 		}
 	}
 	// bail now if we can 
-	if ( m_fixedDataSize == 0 || m_dataInPtrs ) return offset - oldOffset ;
+	if ( m_fixedDataSize == 0 ) return offset - oldOffset ;
 	// how much should we read?
 	int32_t bufSize = 0;
 	if ( m_fixedDataSize == -1 ) {

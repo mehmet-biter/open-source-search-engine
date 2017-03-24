@@ -192,7 +192,7 @@ bool Rdb::init(const char *dbname,
 
 	if(m_useTree) {
 		sprintf(m_treeAllocName,"tree-%s",m_dbname);
-		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, false, m_dbname, m_ks, m_rdbId)) {
+		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, m_dbname, m_ks, m_rdbId)) {
 			log( LOG_ERROR, "db: Failed to set tree." );
 			return false;
 		}

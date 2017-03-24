@@ -56,7 +56,6 @@ public:
 	bool set(int32_t fixedDataSize, int32_t maxNumNodes,
 	         int32_t maxMem, bool ownData,
 	         const char *allocName,
-	         bool dataInPtrs = false,
 	         const char *dbname = NULL, char keySize = 12,
 	         char rdbId = -1);
 

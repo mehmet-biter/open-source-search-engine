@@ -195,7 +195,7 @@ bool TopTree::setNumNodes ( int32_t docsWanted , bool doSiteClustering ) {
 	// . "dataInPtrs" mean we have a 4 byte data that we store in the
 	//   "dataPtr". this is somewhat of a hack, but we need a place to
 	//   store the node number of this node in this top tree. see below.
-	if (!m_t2.set(4, m_numNodes, -1, false, "tree-toptree", true, NULL, 12)) {
+	if (!m_t2.set(4, m_numNodes, -1, false, "tree-toptree", NULL, 12)) {
 		return false;
 	}
 

@@ -3013,7 +3013,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 
 void dumpWaitingTree (const char *coll ) {
 	RdbTree wt;
-	if (!wt.set(0,-1,20000000,true,"waittree2", false,"waitingtree",sizeof(key96_t))) {
+	if (!wt.set(0,-1,20000000,true,"waittree2", "waitingtree",sizeof(key96_t))) {
 		return;
 	}
 
