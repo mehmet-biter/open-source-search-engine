@@ -619,9 +619,6 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 	// if we already have spiderrequests in doledb for this firstip
 	if ( added ) return true;
 
-	// spider some urls that were doled to us
-	g_spiderLoop.spiderDoledUrls( );
-
 	return true;
 }
 
