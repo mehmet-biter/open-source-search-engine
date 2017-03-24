@@ -8,7 +8,9 @@
 #include "Conf.h"
 #include "Collectiondb.h"
 #include "Mem.h"
+#include "ScopedLock.h"
 #include <fcntl.h>
+#include "Posdb.h"
 
 #define BUCKET_SIZE 8192
 #define INIT_SIZE 4096
@@ -42,6 +44,7 @@ public:
 	const char *getEndKey() const { return m_endKey; }
 
 	int32_t getNumKeys() const { return m_numKeys; }
+	int32_t getNumSortedKeys() const { return m_lastSorted; }
 
 	const char *getKeys() const { return m_keys; }
 
@@ -65,8 +68,9 @@ public:
 	int64_t fastLoad(BigFile *f, int64_t offset);
 
 	//Debug
-	bool selfTest(const char *prevKey);
-	void printBucket(std::function<void(const char*, int32_t)> print_fn = nullptr);
+	bool selfTest (int32_t bucketnum, const char* prevKey);
+	void printBucket(int32_t idx, std::function<void(const char*, int32_t)> print_fn = nullptr);
+	void printBucketStartEnd(int32_t idx);
 
 	bool sort();
 	RdbBucket *split(RdbBucket *newBucket);
@@ -189,7 +193,6 @@ bool RdbBuckets::hasRoom(int32_t numRecs) const {
 	}
 	delete[] sortbuf;
 	
-//	log(LOG_INFO,"@@@ RdbBuckets::hasRoom(%d): splits=%d m_numBuckets=%d spareBuckets=%d", numRecs, splits, m_numBuckets, spareBuckets);
 	if(splits < spareBuckets)
 		return true;
 	else
@@ -493,7 +496,8 @@ int32_t RdbBucket::getNode(const char *key) {
 	return -1;
 }
 
-bool RdbBucket::selfTest (const char* prevKey) {
+
+bool RdbBucket::selfTest (int32_t bucketnum, const char* prevKey) {
 	sort();
 
 	char* last = NULL;
@@ -504,29 +508,41 @@ bool RdbBucket::selfTest (const char* prevKey) {
 	//ensure our first key is > the last guy's end key
 	if (prevKey != NULL && m_numKeys > 0) {
 		if (KEYCMP(prevKey, m_keys, ks) > 0) {
-			log(LOG_WARN, "db: bucket's first key: %016" PRIx64"%08" PRIx32" "
-					    "is less than last bucket's end key: "
-					    "%016" PRIx64"%08" PRIx32"!!!!!",
-			    *(int64_t *)(m_keys + (sizeof(int32_t))),
-			    *(int32_t *)m_keys,
-			    *(int64_t *)(prevKey + (sizeof(int32_t))),
-			    *(int32_t *)prevKey);
-			//printBucket();
+			log(LOG_ERROR, "db: bucket's first key is less than last bucket's end key!!!!!");
+			log(LOG_ERROR, "db:  bucket......: %" PRId32 "", bucketnum);
+			log(LOG_ERROR, "db:  last key....: %s", KEYSTR(prevKey, ks));
+			log(LOG_ERROR, "db:  first key...: %s", KEYSTR(m_keys, ks));
+			log(LOG_ERROR, "db:  m_numKeys...: %" PRId32 "", m_numKeys);
+			log(LOG_ERROR, "db:  m_lastSorted: %" PRId32 "", m_lastSorted);
+			log(LOG_ERROR, "db:  m_keys......: %p", m_keys);
+
+			printBucket(-1);
 			return false;
 			//gbshutdownAbort(true);
 		}
 	}
 
 	for (int32_t i = 0; i < m_numKeys; i++) {
+		if (ks == 18) {
+			if (KEYNEG(kk) && Posdb::getTermId(kk) != 0) {
+				log(LOG_ERROR, "db: key is negative!!!");
+				log(LOG_ERROR, "db:  curr key....: %s", KEYSTR(kk, ks));
+				printBucket(-1);
+				return false;
+			}
+		}		
 	    if (i > 0 && KEYCMP(last, kk, ks) > 0) {
-			log(LOG_WARN, "db: bucket's last key was out "
-			    "of order!!!!!"
-			    "key was: %016" PRIx64"%08" PRIx32" vs prev: %016" PRIx64"%08" PRIx32
-			    " num keys: %" PRId32
-			    " ks=%" PRId32" bucketNum=%" PRId32,
-			    *(int64_t*)(kk+(sizeof(int32_t))), *(int32_t*)kk,
-			    *(int64_t*)(last+(sizeof(int32_t))), *(int32_t*)last,
+
+			log(LOG_ERROR, "db: bucket's last key was out of order!!!!! num keys: %" PRId32" ks=%" PRId32" key#=%" PRId32,
 			    m_numKeys, ks, i);
+			log(LOG_ERROR, "db:  bucket......: %" PRId32 "", bucketnum);
+			log(LOG_ERROR, "db:  last key....: %s", KEYSTR(last, ks));
+			log(LOG_ERROR, "db:  curr key....: %s", KEYSTR(kk, ks));
+			log(LOG_ERROR, "db:  m_numKeys...: %" PRId32 "", m_numKeys);
+			log(LOG_ERROR, "db:  m_lastSorted: %" PRId32 "", m_lastSorted);
+			log(LOG_ERROR, "db:  m_keys......: %p", m_keys);
+
+			printBucket(-1);
 			return false;
 			//gbshutdownAbort(true);
 		}
@@ -536,27 +552,60 @@ bool RdbBucket::selfTest (const char* prevKey) {
 	return true;
 }
 
+
 void RdbBuckets::printBuckets(std::function<void(const char*, int32_t)> print_fn) {
  	for(int32_t i = 0; i < m_numBuckets; i++) {
-		m_buckets[i]->printBucket(print_fn);
+		m_buckets[i]->printBucket(i, print_fn);
 	}
 }
 
-void RdbBucket::printBucket(std::function<void(const char*, int32_t)> print_fn) {
+void RdbBuckets::printBucketsStartEnd() {
+ 	for(int32_t i = 0; i < m_numBuckets; i++) {
+		m_buckets[i]->printBucketStartEnd(i);
+	}
+}
+
+
+
+void RdbBucket::printBucket(int32_t idx, std::function<void(const char*, int32_t)> print_fn) {
 	const char *kk = m_keys;
 	int32_t keySize = m_parent->getKeySize();
+
+	logTrace(g_conf.m_logTraceRdbBuckets,"Bucket dump. bucket=%" PRId32 ", m_numKeys=%" PRId32 ", m_lastSorted=%" PRId32 "", idx, m_numKeys, m_lastSorted);
 
 	for (int32_t i = 0; i < m_numKeys; i++) {
 		if (print_fn) {
 			print_fn(kk, keySize);
 		} else {
-			logf(LOG_TRACE, "db: k=%s keySize=%" PRId32, KEYSTR(kk, keySize), keySize);
+			logf(LOG_TRACE, "db: i=%04" PRId32 " k=%s keySize=%" PRId32 "", i, KEYSTR(kk, keySize), keySize);
 		}
 		kk += m_parent->getRecSize();
 	}
 }
 
-RdbBuckets::RdbBuckets() {
+
+void RdbBucket::printBucketStartEnd(int32_t idx) {
+	char e[MAX_KEY_BYTES*2+3];	// for hexdump
+	char f[MAX_KEY_BYTES*2+3];	// for hexdump
+
+	int32_t keySize = m_parent->getKeySize();
+
+	if( getNumKeys() ) {
+		KEYSTR(getFirstKey(), keySize, f);
+		KEYSTR(getEndKey(), keySize, e);
+	}
+	else {
+		memset(e, 0, sizeof(e));
+		memset(f, 0, sizeof(f));
+	}
+
+	log(LOG_INFO,"%s:%s:%d: bucket=%" PRId32 ", keys=%" PRId32 ", sorted=%" PRId32 ", first=%s, end=%s, m_keys=%p", __FILE__, __func__, __LINE__, idx, getNumKeys(), getNumSortedKeys(), f, e, m_keys);
+}
+
+
+RdbBuckets::RdbBuckets()
+  : m_mtx()
+{
 	m_numBuckets = 0; 
 	m_masterPtr = NULL;
 	m_buckets = NULL;
@@ -589,6 +638,7 @@ RdbBuckets::RdbBuckets() {
 	m_saveErrno = 0;
 	m_allocName = NULL;
 }
+
 
 bool RdbBuckets::set(int32_t fixedDataSize, int32_t maxMem, const char *allocName, rdbid_t rdbId,
                      const char *dbname, char keySize) {
@@ -802,6 +852,7 @@ bool RdbBuckets::resizeTable( int32_t numNeeded ) {
 }
 
 int32_t RdbBuckets::addNode(collnum_t collnum, const char *key, const char *data, int32_t dataSize) {
+	ScopedLock sl(m_mtx);
 	if (!m_isWritable || m_isSaving) {
 		g_errno = ETRYAGAIN;
 		return -1;
@@ -810,6 +861,11 @@ int32_t RdbBuckets::addNode(collnum_t collnum, const char *key, const char *data
 	m_needsSave = true;
 
 	int32_t i = getBucketNum(collnum, key);
+
+	int32_t orgi = i;
+
+	logTrace(g_conf.m_logTraceRdbBuckets,"Key %s -> bucket %" PRId32 "", KEYSTR(key, getRecSize()), i);
+
 	if (i == m_numBuckets || m_buckets[i]->getCollnum() != collnum) {
 		int32_t bucketsCutoff = (BUCKET_SIZE >> 1);
 		// when repairing the keys are added in order,
@@ -823,7 +879,9 @@ int32_t RdbBuckets::addNode(collnum_t collnum, const char *key, const char *data
 		    m_buckets[i - 1]->getCollnum() == collnum &&
 		    m_buckets[i - 1]->getNumKeys() < bucketsCutoff) {
 			i--;
-		} else if (i == m_numBuckets) {
+		} 
+		else 
+		if (i == m_numBuckets) {
 			m_buckets[i] = bucketFactory();
 			if (m_buckets[i] == NULL) {
 				g_errno = ENOMEM;
@@ -844,17 +902,22 @@ int32_t RdbBuckets::addNode(collnum_t collnum, const char *key, const char *data
 
 	// check if we are full
 	if (m_buckets[i]->getNumKeys() == BUCKET_SIZE) {
+		logTrace(g_conf.m_logTraceRdbBuckets, "Bucket %" PRId32 " full (%" PRId32 "), splitting", i, BUCKET_SIZE);
+
 		//split the bucket
 		int64_t t = gettimeofdayInMilliseconds();
 		m_buckets[i]->sort();
 		RdbBucket *newBucket = bucketFactory();
 		if (newBucket == NULL) {
+			log(LOG_WARN,"%s:%s:%d: Out of memory", __FILE__, __func__, __LINE__);
 			g_errno = ENOMEM;
 			return -1;
 		}
 		newBucket->setCollnum(collnum);
+		
 		m_buckets[i]->split(newBucket);
 		addBucket(newBucket, i + 1);
+
 		if (bucketCmp(collnum, key, m_buckets[i]) > 0) {
 			i++;
 		}
@@ -862,6 +925,48 @@ int32_t RdbBuckets::addNode(collnum_t collnum, const char *key, const char *data
 		int64_t took = gettimeofdayInMilliseconds() - t;
 		if (took > 10) {
 			log(LOG_WARN, "db: split bucket in %" PRId64" ms for %s", took, m_dbname);
+		}
+	}
+
+	if(g_conf.m_logTraceRdbBuckets) {
+		char e[MAX_KEY_BYTES*2+3];	// for hexdump
+		char f[MAX_KEY_BYTES*2+3];	// for hexdump
+
+		if( m_buckets[i]->getNumKeys() ) {
+			KEYSTR(m_buckets[i]->getFirstKey(), getRecSize(), f);
+			KEYSTR(m_buckets[i]->getEndKey(), getRecSize(), e);
+		}
+		else {
+			memset(e, 0, sizeof(e));
+			memset(f, 0, sizeof(f));
+		}
+
+		logTrace(g_conf.m_logTraceRdbBuckets, "Key %s -> bucket %" PRId32 " (org %" PRId32 ")", KEYSTR(key, getRecSize()), i, orgi);
+		logTrace(g_conf.m_logTraceRdbBuckets, "  bucket=%" PRId32 ". keys=%" PRId32 ", sorted=%" PRId32 ", first=%s, end=%s", i, m_buckets[i]->getNumKeys(), m_buckets[i]->getNumSortedKeys(), f, e);
+
+		if( i ) {
+			if( m_buckets[i-1]->getNumKeys() ) {
+				KEYSTR(m_buckets[i-1]->getFirstKey(), getRecSize(), f);
+				KEYSTR(m_buckets[i-1]->getEndKey(), getRecSize(), e);
+			}
+			else {
+				memset(e, 0, sizeof(e));
+				memset(f, 0, sizeof(f));
+			}
+			logTrace(g_conf.m_logTraceRdbBuckets, "  prev bucket. bucket=%" PRId32 ". keys=%" PRId32 ", sorted=%" PRId32 ", first=%s, end=%s", i-1, m_buckets[i-1]->getNumKeys(), m_buckets[i-1]->getNumSortedKeys(), f, e);
+		}
+
+		if( i+1 < m_numBuckets ) {
+			if( m_buckets[i+1]->getNumKeys() ) {
+				KEYSTR(m_buckets[i+1]->getFirstKey(), getRecSize(), f);
+				KEYSTR(m_buckets[i+1]->getEndKey(), getRecSize(), e);
+			}
+			else {
+				memset(e, 0, sizeof(e));
+				memset(f, 0, sizeof(f));
+			}
+
+			logTrace(g_conf.m_logTraceRdbBuckets, "  next bucket. bucket=%" PRId32 ". keys=%" PRId32 ", sorted=%" PRId32 ", first=%s, end=%s", i+1, m_buckets[i+1]->getNumKeys(), m_buckets[i+1]->getNumSortedKeys(), f, e);
 		}
 	}
 
@@ -882,6 +987,8 @@ bool RdbBuckets::addBucket (RdbBucket* newBucket, int32_t i) {
 
 bool RdbBuckets::getList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes,
                          RdbList *list, int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys) const {
+	//this method is logically const but mutex locks are not, so const-cast is needed.
+	 ScopedLock sl(const_cast<RdbBuckets*>(this)->m_mtx);
 
 	if (numNegRecs) {
 		*numNegRecs = 0;
@@ -937,7 +1044,7 @@ bool RdbBuckets::getList(collnum_t collnum, const char *startKey, const char *en
 	if (endBucket == m_numBuckets || m_buckets[endBucket]->getCollnum() != collnum) {
 		endBucket--;
 	}
-
+	
 	if (m_buckets[endBucket]->getCollnum() != collnum) {
 		gbshutdownAbort(true);
 	}
@@ -1068,6 +1175,7 @@ bool RdbBuckets::repair() {
 
 
 void RdbBuckets::verifyIntegrity() {
+	ScopedLock sl(m_mtx);
 	selfTest(true,true);
 }
 
@@ -1082,14 +1190,63 @@ bool RdbBuckets::selfTest(bool thorough, bool core) {
 	collnum_t lastcoll = -1;
 	int32_t numColls = 0;
 
+	char e[MAX_KEY_BYTES*2+3];	// for hexdump
+	char f[MAX_KEY_BYTES*2+3];	// for hexdump
+
+
 	for (int32_t i = 0; i < m_numBuckets; i++) {
 		RdbBucket *b = m_buckets[i];
+
 		if (lastcoll != b->getCollnum()) {
 			last = NULL;
 			numColls++;
 		}
+
 		if (thorough) {
-			if (!b->selfTest(last)) {
+			if (!b->selfTest(i, last)) {
+
+
+				if( m_buckets[i]->getNumKeys() ) {
+					KEYSTR(m_buckets[i]->getFirstKey(), getRecSize(), f);
+					KEYSTR(m_buckets[i]->getEndKey(), getRecSize(), e);
+				}
+				else {
+					memset(e, 0, sizeof(e));
+					memset(f, 0, sizeof(f));
+				}
+
+				log(LOG_ERROR, "  bucket=%" PRId32 ". keys=%" PRId32 ", sorted=%" PRId32 ", first=%s, end=%s", i, m_buckets[i]->getNumKeys(), m_buckets[i]->getNumSortedKeys(), f, e);
+
+				if( i ) {
+					if( m_buckets[i-1]->getNumKeys() ) {
+						KEYSTR(m_buckets[i-1]->getFirstKey(), getRecSize(), f);
+						KEYSTR(m_buckets[i-1]->getEndKey(), getRecSize(), e);
+					}
+					else {
+						memset(e, 0, sizeof(e));
+						memset(f, 0, sizeof(f));
+					}
+
+					log(LOG_ERROR, "  prev bucket. bucket=%" PRId32 ". keys=%" PRId32 ", sorted=%" PRId32 ", first=%s, end=%s", i-1, m_buckets[i-1]->getNumKeys(), m_buckets[i-1]->getNumSortedKeys(), f, e);
+					m_buckets[i-1]->printBucket(i-1);
+				}
+
+				if( i+1 < m_numBuckets ) {
+
+					if( m_buckets[i+1]->getNumKeys() ) {
+						KEYSTR(m_buckets[i+1]->getFirstKey(), getRecSize(), f);
+						KEYSTR(m_buckets[i+1]->getEndKey(), getRecSize(), e);
+					}
+					else {
+						memset(e, 0, sizeof(e));
+						memset(f, 0, sizeof(f));
+					}
+
+					log(LOG_ERROR, "  next bucket. bucket=%" PRId32 ". keys=%" PRId32 ", sorted=%" PRId32 ", first=%s, end=%s", i+1, m_buckets[i+1]->getNumKeys(), m_buckets[i+1]->getNumSortedKeys(), f, e);
+					m_buckets[i+1]->printBucket(i+1);
+				}
+
+				
 				if (!core) {
 					return false;
 				}
@@ -1104,6 +1261,44 @@ bool RdbBuckets::selfTest(bool thorough, bool core) {
 			    *(int64_t *)(kk + (sizeof(int32_t))),
 			    *(int32_t *)kk, b->getNumKeys());
 			log(LOG_WARN, "rdbbuckets last key was out of order!!!!!");
+
+
+			if( m_buckets[i]->getNumKeys() ) {
+				KEYSTR(m_buckets[i]->getFirstKey(), getRecSize(), f);
+				KEYSTR(m_buckets[i]->getEndKey(), getRecSize(), e);
+			}
+			else {
+				memset(e, 0, sizeof(e));
+				memset(f, 0, sizeof(f));
+			}
+			log(LOG_ERROR, "  bucket=%" PRId32 ". keys=%" PRId32 ", sorted=%" PRId32 ", first=%s, end=%s", i, m_buckets[i]->getNumKeys(), m_buckets[i]->getNumSortedKeys(), f, e);
+
+			if( i ) {
+				if( m_buckets[i-1]->getNumKeys() ) {
+					KEYSTR(m_buckets[i-1]->getFirstKey(), getRecSize(), f);
+					KEYSTR(m_buckets[i-1]->getEndKey(), getRecSize(), e);
+				}
+				else {
+					memset(e, 0, sizeof(e));
+					memset(f, 0, sizeof(f));
+				}
+
+				log(LOG_ERROR, "  prev bucket. bucket=%" PRId32 ". keys=%" PRId32 ", sorted=%" PRId32 ", first=%s, end=%s", i-1, m_buckets[i-1]->getNumKeys(), m_buckets[i-1]->getNumSortedKeys(), f, e);
+			}
+
+			if( i+1 < m_numBuckets ) {
+				if( m_buckets[i+1]->getNumKeys() ) {
+					KEYSTR(m_buckets[i+1]->getFirstKey(), getRecSize(), f);
+					KEYSTR(m_buckets[i+1]->getEndKey(), getRecSize(), e);
+				}
+				else {
+					memset(e, 0, sizeof(e));
+					memset(f, 0, sizeof(f));
+				}
+
+				log(LOG_ERROR, "  next bucket. bucket=%" PRId32 ". keys=%" PRId32 ", sorted=%" PRId32 ", first=%s, end=%s", i+1, m_buckets[i+1]->getNumKeys(), m_buckets[i+1]->getNumSortedKeys(), f, e);
+			}
+
 			if (!core) {
 				return false;
 			}
@@ -1386,7 +1581,7 @@ bool RdbBucket::getList(RdbList* list, const char* startKey, const char* endKey,
 				 *(int64_t*)(endKey+(sizeof(int32_t))),
 				*(int32_t*)endKey);
 
-			printBucket();
+			printBucket(-1);
 			gbshutdownAbort(true);
 		}
 		if(endKey &&   KEYCMP(currKey, endKey, ks) > 0) {
@@ -1406,7 +1601,7 @@ bool RdbBucket::getList(RdbList* list, const char* startKey, const char* endKey,
 				 *(int64_t*)(endKey+(sizeof(int32_t))),
 				*(int32_t*)endKey);
 
-			printBucket();
+			printBucket(-1);
 			gbshutdownAbort(true);
 		}
 #endif
@@ -1474,19 +1669,30 @@ bool RdbBucket::getList(RdbList* list, const char* startKey, const char* endKey,
 }
 
 bool RdbBuckets::deleteNode(collnum_t collnum, const char *key) {
+	ScopedLock sl(m_mtx);
+
 	int32_t i = getBucketNum(collnum, key);
+
+	logTrace(g_conf.m_logTraceRdbBuckets, "key=%s, bucket=%" PRId32 "", KEYSTR(key, getRecSize()), i);
+
 	if (i == m_numBuckets || m_buckets[i]->getCollnum() != collnum) {
+		logTrace(g_conf.m_logTraceRdbBuckets, "END, return false. out of bounds or wrong collnum");
 		return false;
 	}
 
 	int32_t node = m_buckets[i]->getNode(key);
+	logTrace(g_conf.m_logTraceRdbBuckets, "node=%" PRId32 "", node);
+
 	if (node == -1) {
+		logTrace(g_conf.m_logTraceRdbBuckets, "END, return false. Key not found in bucket");
 		return false;
 	}
 
 	m_needsSave = true;
 
 	if (!m_buckets[i]->deleteNode(node)) {
+		logTrace(g_conf.m_logTraceRdbBuckets, "bucket->deleteNode returned false. Moving up bucket");
+
 		m_buckets[i]->reset();
 		memmove(&m_buckets[i], &m_buckets[i + 1], (m_numBuckets - i - 1)*sizeof(RdbBuckets*));
 		--m_numBuckets;
@@ -1501,13 +1707,18 @@ bool RdbBuckets::deleteNode(collnum_t collnum, const char *key) {
 		m_firstOpenSlot = 0;
 	}
 
+	logTrace(g_conf.m_logTraceRdbBuckets, "END, returning true");
 	return true;
 }
+
+
 
 bool RdbBuckets::deleteList(collnum_t collnum, RdbList *list) {
 	if (list->getListSize() == 0) {
 		return true;
 	}
+
+	ScopedLock sl(m_mtx);
 
 	if (!m_isWritable || m_isSaving) {
 		g_errno = EAGAIN;
@@ -1566,6 +1777,8 @@ bool RdbBuckets::deleteList(collnum_t collnum, RdbList *list) {
 }
 
 bool RdbBucket::deleteNode(int32_t i) {
+	logTrace(g_conf.m_logTraceRdbBuckets, "i=%" PRId32 "", i);
+
 	int32_t recSize = m_parent->getRecSize();
 	char *rec = m_keys + (recSize * i);
 
@@ -1679,6 +1892,7 @@ bool RdbBucket::deleteList(RdbList *list) {
 		return false;
 	}
 }
+
 
 // remove keys from any non-existent collection
 void RdbBuckets::cleanBuckets() {

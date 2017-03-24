@@ -27,6 +27,7 @@
 #include <functional>
 #include "rdbid_t.h"
 #include "types.h"
+#include "GbMutex.h"
 
 class BigFile;
 class RdbList;
@@ -92,6 +93,8 @@ public:
 	void verifyIntegrity();
 	int32_t addTree(RdbTree *rt);
 	void printBuckets(std::function<void(const char*, int32_t)> print_fn = nullptr);
+	void printBucketsStartEnd();
+
 	bool testAndRepair();
 
 	//Save/Load/Dump
@@ -127,6 +130,8 @@ private:
 	bool fastLoad(BigFile *f, const char *dbname);
 	int64_t fastLoadColl(BigFile *f, const char *dbname);
 
+private:
+	GbMutex m_mtx;
 	RdbBucket **m_buckets;
 	RdbBucket *m_bucketsSpace;
 	char *m_masterPtr;
