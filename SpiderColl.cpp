@@ -13,8 +13,19 @@
 #include "Conf.h"
 #include "Mem.h"
 
-
-
+static key96_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp ) {
+	// sanity
+	if ( ((int64_t)spiderTimeMS) < 0 ) { g_process.shutdownAbort(true); }
+	// make the wait tree key
+	key96_t wk;
+	wk.n1 = (spiderTimeMS>>32);
+	wk.n0 = (spiderTimeMS&0xffffffff);
+	wk.n0 <<= 32;
+	wk.n0 |= (uint32_t)firstIp;
+	// sanity
+	if ( wk.n1 & 0x8000000000000000LL ) { g_process.shutdownAbort(true); }
+	return wk;
+}
 
 /////////////////////////
 /////////////////////////      SpiderColl
@@ -4201,23 +4212,3 @@ void SpiderColl::setPriority(int32_t pri) {
 bool SpiderColl::printStats ( SafeBuf &sb ) {
 	return true;
 }
-
-
-
-
-key96_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp ) {
-	// sanity
-	if ( ((int64_t)spiderTimeMS) < 0 ) { g_process.shutdownAbort(true); }
-	// make the wait tree key
-	key96_t wk;
-	wk.n1 = (spiderTimeMS>>32);
-	wk.n0 = (spiderTimeMS&0xffffffff);
-	wk.n0 <<= 32;
-	wk.n0 |= (uint32_t)firstIp;
-	// sanity
-	if ( wk.n1 & 0x8000000000000000LL ) { g_process.shutdownAbort(true); }
-	return wk;
-}
-
-
-
