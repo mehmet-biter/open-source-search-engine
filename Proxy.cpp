@@ -617,22 +617,10 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 		// add stat for stats graph
 		if ( stC->m_isQuery ) {
 			g_stats.logAvgQueryTime(stC->m_startTime);
-			// i dont check if query is raw or not
-			int32_t color = 0x00b58869;
-			if ( stC->m_raw ) color = 0x00753d30;
-			int64_t nowms = gettimeofdayInMilliseconds();
-			// . add the stat
-			// . use brown for the stat
-			g_stats.addStat_r ( 0               ,
-					    stC->m_startTime , 
-					    nowms ,
-					    //"query",
-					    color ,
-					    STAT_QUERY );
 			g_stats.m_numSuccess++;
 
 			/// @todo ALC use proper query language
-			Statistics::register_query_time(stC->m_numQueryTerms, langUnknown, (nowms - stC->m_startTime));
+			Statistics::register_query_time(stC->m_numQueryTerms, langUnknown, (gettimeofdayInMilliseconds() - stC->m_startTime));
 		}
 
 		// let tcp server free it when done
@@ -653,22 +641,10 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 
 	if ( stC->m_isQuery && httpStatus == 200 ){
 		g_stats.logAvgQueryTime(stC->m_startTime);
-		// i dont check if query is raw or not
-		int32_t color = 0x00b58869;
-		if ( stC->m_raw ) color = 0x00753d30;
-		int64_t nowms = gettimeofdayInMilliseconds();
-		// . add the stat
-		// . use brown for the stat
-		g_stats.addStat_r ( 0               ,
-				    stC->m_startTime , 
-				    nowms ,
-				    //"query",
-				    color ,
-				    STAT_QUERY );
 		g_stats.m_numSuccess++;
 
 		/// @todo ALC use proper query language
-		Statistics::register_query_time(stC->m_numQueryTerms, langUnknown, (nowms - stC->m_startTime));
+		Statistics::register_query_time(stC->m_numQueryTerms, langUnknown, (gettimeofdayInMilliseconds() - stC->m_startTime));
 	}
 	else if ( stC->m_isQuery && httpStatus != 200 )
 		g_stats.m_numFails++;
