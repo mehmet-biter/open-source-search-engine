@@ -1,9 +1,7 @@
 // Matt Wells,  Copyright, Apr 2001
 
 // . an UNbalanced b-tree for storing keys in memory
-// . whether the tree is balanced or not can be selected in the set() method
-//   call. If enabled the tree behanves like an AVL tree, otherwise as a
-//   plain simple binary tree.
+// . The tree behanves like an AVL tree.
 // . we store a -1 in the parent field for nodes that were deleted so if you
 //   were to dump the nodes out unordered you'd know where the deleted nodes
 //   were
@@ -56,7 +54,6 @@ public:
 	bool set(int32_t fixedDataSize, int32_t maxNumNodes,
 	         int32_t maxMem, bool ownData,
 	         const char *allocName,
-	         bool dataInPtrs = false,
 	         const char *dbname = NULL, char keySize = 12,
 	         char rdbId = -1);
 
@@ -165,8 +162,6 @@ public:
 
 	int32_t getNumNegativeKeys(collnum_t collnum) const;
 	int32_t getNumPositiveKeys(collnum_t collnum) const;
-
-	void setNumKeys(class CollectionRec *cr);
 
 	// how much mem, including data, is used by this class?
 	int32_t getMemAllocated() const { return m_memAllocated; }
@@ -287,9 +282,6 @@ private:
 	void    (* m_callback) (void *state );
 
 
-	// is this tree a balanced binary tree?
-	bool m_doBalancing;
-
 	// are we responsible for freeing nodes' data
 	bool    m_ownData;
 
@@ -304,7 +296,7 @@ private:
 	int32_t   *m_left;         // left  kid of this node in the tree
 	int32_t   *m_right;        // right kid of this node in the tree
 	int32_t   *m_parents;      // parent of this node - for getNextNode()
-	char   *m_depth;        // depth of this node (used iff m_doBalancing)
+	char   *m_depth;        // depth of this node
 	int32_t    m_numNodes;     // how many we have, empty or full
 	int32_t    m_numUsedNodes; // how many of those are used? (full)
 	// negative and postive key counts

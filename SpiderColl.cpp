@@ -178,7 +178,7 @@ bool SpiderColl::load ( ) {
 	//   test runs...
 	// . try going to 20M now since we hit it again...
 	// . start off at just 10 nodes since we grow dynamically now
-	if (!m_waitingTree.set(0, 10, -1, true, "waittree2", false, "waitingtree", sizeof(key96_t))) {
+	if (!m_waitingTree.set(0, 10, -1, true, "waittree2", "waitingtree", sizeof(key96_t))) {
 		return false;
 	}
 	m_waitingTreeKeyValid = false;
@@ -1766,7 +1766,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	int32_t maxWinners = (int32_t)MAX_WINNER_NODES;
 
 	if ( m_winnerTree.getNumNodes() == 0 &&
-	     !m_winnerTree.set(-1, maxWinners, maxWinners * MAX_BEST_REQUEST_SIZE, true, "wintree", false, NULL, sizeof(key192_t), -1)) {
+	     !m_winnerTree.set(-1, maxWinners, maxWinners * MAX_BEST_REQUEST_SIZE, true, "wintree", NULL, sizeof(key192_t), -1)) {
 		m_isPopulatingDoledb = false;
 		log("spider: winntree set: %s",mstrerror(g_errno));
 		logTrace( g_conf.m_logTraceSpider, "END, after winnerTree.set" );

@@ -192,7 +192,7 @@ bool Rdb::init(const char *dbname,
 
 	if(m_useTree) {
 		sprintf(m_treeAllocName,"tree-%s",m_dbname);
-		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, false, m_dbname, m_ks, m_rdbId)) {
+		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, m_dbname, m_ks, m_rdbId)) {
 			log( LOG_ERROR, "db: Failed to set tree." );
 			return false;
 		}
@@ -447,14 +447,6 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	base = newColl;
 	// add it to CollectionRec::m_bases[] base ptrs array
 	addBase ( collnum , newColl );
-
-	// . set CollectionRec::m_numPos/NegKeysInTree[rdbId]
-	// . these counts are now stored in the CollectionRec and not
-	//   in RdbTree since the # of collections can be huge!
-	if ( m_useTree ) {
-		m_tree.setNumKeys ( cr );
-	}
-
 
 	RdbTree    *tree = NULL;
 	RdbBuckets *buckets = NULL;
