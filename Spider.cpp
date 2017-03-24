@@ -690,7 +690,7 @@ void SpiderCache::reset ( ) {
 		SpiderColl *sc = cr->m_spiderColl;
 		if ( ! sc ) continue;
 		sc->reset();
-		mdelete ( sc , sizeof(SpiderColl) , "SpiderCache" );
+		mdelete ( sc , sizeof(SpiderColl) , "SpiderColl" );
 		delete ( sc );
 		//m_spiderColls[i] = NULL;
 		cr->m_spiderColl = NULL;
@@ -734,7 +734,7 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 		return NULL;
 	}
 	// register it
-	mnew ( sc , sizeof(SpiderColl), "spcoll" );
+	mnew ( sc , sizeof(SpiderColl), "SpiderColl" );
 	// store it
 	cr->m_spiderColl = sc;
 	// note it
