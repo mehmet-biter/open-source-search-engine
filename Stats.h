@@ -29,7 +29,6 @@ class StatPoint {
 #define MAX_LINES  (DY / (MAX_WIDTH+1)) // leave free pixel above each line
 
 #define STAT_GENERIC 0
-#define STAT_QUERY   1
 #define MAX_BUCKETS  16
 
 class Stats {

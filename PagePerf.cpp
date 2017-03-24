@@ -83,51 +83,18 @@ bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
 	//skip request path
 	while (!isspace(*rbufEnd)) rbufEnd++;
 	*rbufEnd = '\0';
-	//char* refresh = strstr(rbuf, "&rr=");
-
 
 	// print resource table
 	// columns are the dbs
-	p.safePrintf(
-		       //"<center>Disk Statistics<br><br>"
-		       "<center>"
-		       //"<br>"
-		       //"<img name=\"diskgraph\" 
-		       //src=/diskGraph%" PRId32".gif><br><br>",
-		       //g_hostdb.m_hostId );
-		     );
+	p.safePrintf("<center>");
 
 	// now try using absolute divs instead of a GIF
 	g_stats.printGraphInHtml ( p );
-
-	/*
-	if(autoRefresh > 0) {
-		if(refresh) *(refresh+4) = '0';
-		p.safePrintf(
-			     "<center><a href=\"%s\">Auto Refresh Off</a>"
-			     "</center>",
-			     rbuf + 4);  // skip over GET
-		p.safePrintf( "<input type=\"hidden\" "
-			      "name=\"dontlog\" value=\"1\">");
-		
-	}
-	else {
-		char* rr = "";
-		if(refresh) *(refresh+4) = '1';
-		else rr = "&rr=1";
-		p.safePrintf(
-			     "<center><a href=\"%s%s\">Auto Refresh</a>"
-			     "</center>",
-			     rbuf + 4, rr);  // skip over "GET "
-	}
-	*/
 
 	// print the key
 	p.safePrintf (
 		      "<br>"
 		       "<center>"
-		       //"<table %s>"
-		       //"<tr>%s</tr></table>"
 
 		       "<style>"
 		       ".poo { background-color:#%s;}\n"
@@ -155,17 +122,6 @@ bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
 		       "<td> Disk write. "
 		       "Thicker lines for bigger writes.</td>"
 
-		       // light brown
-		       "<td bgcolor=#b58869>&nbsp; &nbsp;</td>"
-		       "<td> Processing end user query. No raw= parm.</td>"
-		       "</tr>"
-
-
-		       // dark brown
-		       "<tr class=poo>"
-		       "<td bgcolor=#753d30>&nbsp; &nbsp;</td>"
-		       "<td> Processing raw query. Has raw= parm.</td>"
-
 		       // blue
 		       "<td bgcolor=#0000ff>&nbsp; &nbsp;</td>"
 		       "<td> Summary extraction for one document.</td>"
@@ -178,24 +134,11 @@ bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
 		       "<td> Send data over network. (low priority)"
 		       "Thicker lines for bigger sends.</td>"
 
-		       // yellow
-		       "<td bgcolor=#aaaa00>&nbsp; &nbsp;</td>"
-		       "<td> Read all termlists (msg2). (low priority)"
-		       "Thicker lines for bigger reads.</td>"
-		       "</tr>"
-
 		       // pinkish purple
-		       "<tr class=poo>"
 		       "<td bgcolor=#ff00ff>&nbsp; &nbsp;</td>"
 		       "<td> Send data over network.  (high priority)"
 		       "Thicker lines for bigger sends.</td>"
-
-		       // light yellow
-		       "<td bgcolor=#ffff00>&nbsp; &nbsp;</td>"
-		       "<td> Read all termlists (msg2). (high priority)"
-		       "Thicker lines for bigger reads.</td>"
 		       "</tr>"
-
 
 		       // dark purple
 		       "<tr class=poo>"
@@ -208,65 +151,24 @@ bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
 		       "Thicker lines for bigger merges.</td>"
 		       "</tr>"
 
-
 		       // white
 		       "<tr class=poo>"
 		       "<td bgcolor=#ffffff>&nbsp; &nbsp;</td>"
 		       "<td> Uncompress cached document.</td>"
 
-		       // orange
-		       "<td bgcolor=#fea915>&nbsp; &nbsp;</td>"
-		       "<td> Parse a document. Blocks CPU.</td>"
-		       "</tr>"
-
-
 		       // bright green
-		       "<tr class=poo>"
 		       "<td bgcolor=#00ff00>&nbsp; &nbsp;</td>"
-		       "<td> Compute search results. "
-		       "All terms required. rat=1.</td>"
-
-		       // dark green
-		       "<td bgcolor=#008000>&nbsp; &nbsp;</td>"
-		       "<td> Compute search results. "
-		       "Not all terms required. rat=0.</td>"
-		       "</tr>"
-
-		       // bright green
-		       "<tr class=poo>"
-		       "<td bgcolor=#ccffcc>&nbsp; &nbsp;</td>"
-		       "<td> Inject a document"
-		       "</td>"
-
-		       // dark green
-		       "<td bgcolor=#FFFACD>&nbsp; &nbsp;</td>"
-		       "<td> Compute related pages. "
-		       "</td>"
+		       "<td> Compute search results. </td>"
 		       "</tr>"
 
 		       "<tr class=poo>"
-
-		       "<td bgcolor=#d1e1ff>&nbsp; &nbsp;</td>"
-		       "<td> Compute Gigabits. "
-		       "</td>"
-
-		       "<td bgcolor=#009fe5>&nbsp; &nbsp;</td>"
-		       "<td> Quick Poll. "
-		       "</td>"
-
-		       "</tr>"
-
-
-		       "<tr class=poo>"
-
 		       "<td bgcolor=#0000b0>&nbsp; &nbsp;</td>"
 		       "<td> \"Summary\" extraction (low priority) "
 		       "</td>"
 
-		       "<td bgcolor=#ffffff>&nbsp; &nbsp;</td>"
+		       "<td>&nbsp; &nbsp;</td>"
 		       "<td> &nbsp; "
 		       "</td>"
-
 		       "</tr>"
 		       
 
@@ -274,9 +176,6 @@ bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
 		       "</center>"
 		       , LIGHT_BLUE 
 		       , TABLE_STYLE
-		       //,g_stats.m_keyCols.getBufStart() && 
-		       //g_conf.m_dynamicPerfGraph ? 
-		       //g_stats.m_keyCols.getBufStart() : ""
 		       );
 
 	if(autoRefresh > 0) p.safePrintf("</body>"); 

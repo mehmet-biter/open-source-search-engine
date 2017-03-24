@@ -970,10 +970,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	}
 	// . add the stat
 	// . use white for the stat
-	g_stats.addStat_r ( 0          ,
-			    startTime  ,
-			    gettimeofdayInMilliseconds(),
-			    0x00ffffff );
+	g_stats.addStat_r(0, startTime, gettimeofdayInMilliseconds(), 0x00ffffff);
 
 	// first 2 bytes in m_ubuf is the header size
 	int32_t headerSize = *(uint16_t *)m_ubuf;
@@ -3063,10 +3060,7 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 
 	// . add the stat
 	// . use white for the stat
-	g_stats.addStat_r ( 0               ,
-			    startTime ,
-			    gettimeofdayInMilliseconds(),
-			    0x00ffffff );
+	g_stats.addStat_r(0, startTime, gettimeofdayInMilliseconds(), 0x00ffffff);
 
 	char *cbuf = m_titleRecBuf.getBufStart();
 	m_titleRecKey = *(key96_t *)cbuf;

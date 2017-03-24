@@ -174,6 +174,8 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 				     base->useHalfKeys()))
 			return true;
 		structName = "buckets";
+		*memUsedByTree = buckets->getMemOccupied();
+		*numUsedNodes = buckets->getNumKeys();
 	}
 
 	int64_t now  = gettimeofdayInMilliseconds();
@@ -476,28 +478,16 @@ bool Msg5::readList ( ) {
 			// . use an avg. rec size for variable-length records
 			// . just use tree to estimate avg. rec size
 			if ( rs == -1) {
-				if(rdb->useTree()) {
-					// get avg record size
-					if ( numRecs > 0 ) rs = memUsedByTree / numRecs;
-					// add 10% for deviations
-					rs = (rs * 110) / 100;
-					// what is the minimal record size?
-					int32_t minrs     = sizeof(key96_t) + 4;
-					// ensure a minimal record size
-					if ( rs < minrs ) rs = minrs;
-				}
-				else {
-					RdbBuckets *buckets = rdb->getBuckets();
-					if( !buckets ) {
-						log(LOG_WARN,"%s:%s:%d: No buckets!", __FILE__, __func__, __LINE__);
-						return false;
-					}
-
-					rs = buckets->getNumKeys() / buckets->getMemOccupied();
-					int32_t minrs = buckets->getRecSize() + 4;
-					// ensure a minimal record size
-					if ( rs < minrs ) rs = minrs;
-				}
+				// what is the minimal record size?
+				int32_t minrs = rdb->getKeySize() + 4;
+				// get avg record size
+				if(numRecs > 0)
+					rs = memUsedByTree / numRecs;
+				// add 10% for deviations
+				rs = (rs * 110) / 100;
+				// ensure a minimal record size
+				if(rs < minrs)
+					rs = minrs;
 			}
 
 			// . TODO: get avg recSize in this rdb (avgRecSize*numNeg..)

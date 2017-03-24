@@ -93,22 +93,7 @@ static bool sendReply(State0 *st, char *reply) {
 	if ( reply ) rlen = strlen(reply);
 	logf(LOG_DEBUG,"gb: sending back %" PRId32" bytes",rlen);
 
-	// . use light brown if coming directly from an end user
-	// . use darker brown if xml feed
-	int32_t color = 0x00b58869;
-	if ( si->m_format != FORMAT_HTML ) {
-		color = 0x00753d30 ;
-	}
-
-	int64_t nowms = gettimeofdayInMilliseconds();
-	int64_t took  = nowms - st->m_startTime ;
-	g_stats.addStat_r ( took            ,
-			    st->m_startTime , 
-			    nowms,
-			    color ,
-			    STAT_QUERY );
-
-	Statistics::register_query_time(si->m_q.m_numWords, si->m_queryLangId, took);
+	Statistics::register_query_time(si->m_q.m_numWords, si->m_queryLangId, (gettimeofdayInMilliseconds() - st->m_startTime));
 
 	// . log the time
 	// . do not do this if g_errno is set lest m_sbuf1 be bogus b/c
