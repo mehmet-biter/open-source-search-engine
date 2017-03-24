@@ -202,6 +202,7 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 
 	// check if we have enough room for the whole request
 	std::map<rdbid_t, std::pair<int32_t, int32_t>> rdbRecSizes;
+	//note: we also use the above variable for keeping track of which rdbs we have touch and may need an integryty check
 
 	const char *pstart = p;
 	while (p < pend) {
@@ -355,6 +356,14 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 		}
 
 		// do the next record here if there is one
+	}
+
+	//verify integrity if wanted
+	if(g_conf.m_verifyTreeIntegrity) {
+		for (auto item : rdbRecSizes) {
+			Rdb *rdb = getRdbFromId(item.first);
+			rdb->verifyTreeIntegrity();
+		}
 	}
 
 	// no memory means to try again
