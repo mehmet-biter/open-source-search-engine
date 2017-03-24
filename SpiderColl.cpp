@@ -565,8 +565,12 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 	//   less than our sameIpWait
 	// . make m_lastDownloadTable an rdbcache ...
 	// . this is 0 for pagereindex docid-based replies
-	if ( srep->m_downloadEndTime )
-		m_lastDownloadCache.addLongLong ( m_collnum, srep->m_firstIp , srep->m_downloadEndTime );
+	if ( srep->m_downloadEndTime ) {
+		RdbCacheLock rcl(m_lastDownloadCache);
+		m_lastDownloadCache.addLongLong ( m_collnum,
+						  srep->m_firstIp ,
+						  srep->m_downloadEndTime );
+	}
 
 	logDebug(g_conf.m_logDebugSpider, "spider: adding spider reply, download end time %" PRId64" for "
 		    "ip=%s(%" PRIu32") uh48=%" PRIu64" indexcode=\"%s\" coll=%" PRId32" "
@@ -680,6 +684,7 @@ bool SpiderColl::isInDupCache ( SpiderRequest *sreq , bool addToCache ) {
 	// . maxage=86400,promoteRec=yes. returns -1 if not in there
 	// . dupKey64 is for hopcount 0, so if this url is in the dupcache
 	//   with a hopcount of zero, do not add it
+	RdbCacheLock rcl(m_dupCache);
 	if ( m_dupCache.getLong ( 0,dupKey64,86400,true ) != -1 ) {
 	dedup:
 		if ( g_conf.m_logDebugSpider )
@@ -1903,6 +1908,7 @@ bool SpiderColl::evalIpLoop ( ) {
 	// assume not from cache
 	if ( useCache ) {
 		//wc->verify();
+		RdbCacheLock rcl(*wc);
 		inCache = wc->getRecord ( m_collnum     ,
 					  (char *)&cacheKey ,
 					  &doleBuf,
@@ -1916,31 +1922,30 @@ bool SpiderColl::evalIpLoop ( ) {
 					  true ,// incCounts
 					  &cachedTimestamp , // rec timestamp
 					  true );  // promote rec?
-		//wc->verify();
-	}
+		if ( inCache ) {
+			int32_t crc = hash32 ( doleBuf + 4 , doleBufSize - 4 );
+	
+			logDebug( g_conf.m_logDebugSpider, "spider: GOT %" PRId32" bytes of SpiderRequests "
+				"from winnerlistcache for ip %s ptr=0x%" PTRFMT" crc=%" PRIu32,
+				doleBufSize,
+				iptoa( m_scanningIp ),
+				(PTRTYPE)doleBuf,
+				crc);
+	
+			// we no longer re-add to avoid churn. but do not free it
+			// so do not 'own' it.
+			SafeBuf sb;
+			sb.setBuf ( doleBuf, doleBufSize, doleBufSize, false );
 
-	// doleBuf could be NULL i guess...
-	if ( inCache ) {
-		int32_t crc = hash32 ( doleBuf + 4 , doleBufSize - 4 );
+			rcl.unlock();
 
-		logDebug( g_conf.m_logDebugSpider, "spider: GOT %" PRId32" bytes of SpiderRequests "
-		          "from winnerlistcache for ip %s ptr=0x%" PTRFMT" crc=%" PRIu32,
-		          doleBufSize,
-		          iptoa( m_scanningIp ),
-		          (PTRTYPE)doleBuf,
-		          crc);
-
-		// we no longer re-add to avoid churn. but do not free it
-		// so do not 'own' it.
-		SafeBuf sb;
-		sb.setBuf ( doleBuf, doleBufSize, doleBufSize, false );
-
-		// now add the first rec m_doleBuf into doledb's tree
-		// and re-add the rest back to the cache with the same key.
-		bool rc = addDoleBufIntoDoledb(&sb,true);//,cachedTimestamp)
-
-		logTrace( g_conf.m_logTraceSpider, "END, after addDoleBufIntoDoledb. returning %s", rc ? "true" : "false" );
-		return rc;
+			// now add the first rec m_doleBuf into doledb's tree
+			// and re-add the rest back to the cache with the same key.
+			bool rc = addDoleBufIntoDoledb(&sb,true);//,cachedTimestamp)
+	
+			logTrace( g_conf.m_logTraceSpider, "END, after addDoleBufIntoDoledb. returning %s", rc ? "true" : "false" );
+			return rc;
+		}
 	}
 
  top:
@@ -3375,6 +3380,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		cacheKey.n0 = firstIp;
 		cacheKey.n1 = 0;
 		//wc->verify();
+		RdbCacheLock rcl(*wc);
 		wc->addRecord ( m_collnum,
 				(char *)&cacheKey,
 				&byte ,
@@ -3417,6 +3423,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 			// if ( m_collnum == 18752 )
 			// 	log("spider: rdbcache: adding record a new "
 			// 	    "dbufsize=%i",(int)doleBuf->length());
+			RdbCacheLock rcl(*wc);
 			wc->addRecord ( m_collnum,
 					(char *)&cacheKey,
 					doleBuf->getBufStart(),//+ skipSize ,
@@ -3503,10 +3510,12 @@ uint64_t SpiderColl::getSpiderTimeMS ( SpiderRequest *sreq,
 	//log("spider: getting spider time %" PRId64, spiderTimeMS);
 	// to avoid hammering an ip, get last time we spidered it...
 	int64_t lastMS ;
+	RdbCacheLock rcl(m_lastDownloadCache);
 	lastMS = m_lastDownloadCache.getLongLong ( m_collnum       ,
 						   sreq->m_firstIp ,
 						   -1              , // maxAge
 						   true            );// promote
+	rcl.unlock();
 	// -1 means not found
 	if ( (int64_t)lastMS == -1 ) lastMS = 0;
 	// sanity

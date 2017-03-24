@@ -478,14 +478,15 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 	// the key is just the 64 bit hash of the url
 	key96_t k; k.n1 = 0; k.n0 = r->m_cacheKey;
 	// see if in there already
+	RdbCacheLock rcl(*c);
 	bool inCache = c->getRecord ( (collnum_t)0     , // share btwn colls
-				      k                , // cacheKey
-				      &rec             ,
-				      &recSize         ,
-				      true             , // copy?
-				      r->m_maxCacheAge , // 24*60*60 ,
-				      true             ); // stats?
-
+					k                , // cacheKey
+					&rec             ,
+					&recSize         ,
+					true             , // copy?
+					r->m_maxCacheAge , // 24*60*60 ,
+					true             ); // stats?
+	
 	// . an empty rec is a cached not found (no robot.txt file)
 	// . therefore it's allowed, so set *reply to 1 (true)
 	if (inCache) {
@@ -500,6 +501,7 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 		g_udpServer.sendReply(rec, recSize, rec, recSize, slot);
 		return;
 	}
+	rcl.unlock();
 
 	// log it so we can see if we are hammering
 	if ( g_conf.m_logDebugRobots || g_conf.m_logDebugDownloads ||
@@ -754,12 +756,14 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 	// . do NOT do this when downloading robots.txt etc. type files
 	//   which should have skipHammerCheck set to true
 	if ( r->m_crawlDelayFromEnd && ! r->m_skipHammerCheck ) {
+		RdbCacheLock rcl(s_hammerCache);
 		s_hammerCache.addLongLong(0,r->m_firstIp, 0LL);//nowms);
 		log("spider: delay from end for %s %s",iptoa(r->m_firstIp),
 		    r->ptr_url);
 	}
 	else if ( ! r->m_skipHammerCheck ) {
 		// get time now
+		RdbCacheLock rcl(s_hammerCache);
 		s_hammerCache.addLongLong(0,r->m_firstIp, nowms);
 		log(LOG_DEBUG,
 		    "spider: adding new time to hammercache for %s %s = %" PRId64,
@@ -1176,8 +1180,10 @@ void gotHttpReply2 ( void *state ,
 
 	// . now store the current time in the cache
 	// . do NOT do this for robots.txt etc. where we skip hammer check
-	if ( ! r->m_skipHammerCheck ) 
+	if ( ! r->m_skipHammerCheck ) {
+		RdbCacheLock rcl(s_hammerCache);
 		s_hammerCache.addLongLong(0,r->m_firstIp,timeToAdd);
+	}
 
 	// note it
 	if ( g_conf.m_logDebugSpider && ! r->m_skipHammerCheck )
@@ -1527,6 +1533,7 @@ void gotHttpReply2 ( void *state ,
 		// key is based on url hash
 		key96_t k; k.n1 = 0; k.n0 = r->m_cacheKey;
 		// add it, use a generic collection
+		RdbCacheLock rcl(*c);
 		c->addRecord ( (collnum_t) 0 , k , reply , replySize );
 		// ignore errors caching it
 		g_errno = 0;
@@ -2053,6 +2060,7 @@ static bool addToHammerQueue(Msg13Request *r) {
 		// still cores on some wierd stuff...
 	}
 	// store time now
+	//RdbCacheLock rcl(s_hammercache);
 	//s_hammerCache.addLongLong(0,r->m_firstIp,nowms);
 	// note it
 	//if ( g_conf.m_logDebugSpider )

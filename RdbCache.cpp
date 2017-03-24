@@ -45,10 +45,12 @@ RdbCache::RdbCache() : m_dbname(NULL) {
 	m_wrapped = 0;
 	m_cks = 0;
 	m_dks = 0;
+	pthread_mutex_init(&m_mtx,NULL);
 }
 
-RdbCache::~RdbCache ( ) { 
-	reset (); 
+RdbCache::~RdbCache ( ) {
+	reset ();
+	pthread_mutex_destroy(&m_mtx);
 }
 
 #define BUFSIZE (128*1024*1024)
@@ -1225,6 +1227,7 @@ bool RdbCache::save_r ( ) {
 		return false;
 	}
 
+	RdbCacheLock rcl(*this);
 	bool status = save2_r ( fd );
 	
 	close ( fd );
@@ -1604,4 +1607,24 @@ void RdbCache::verify(){
 	 if ( count != m_numPtrsUsed ) {
 		 gbshutdownLogicError();
 	 }
+}
+
+
+
+RdbCacheLock::RdbCacheLock(RdbCache &rdc_)
+  : rdc(rdc_),
+    locked(true)
+{
+	pthread_mutex_lock(&rdc.m_mtx);
+}
+
+RdbCacheLock::~RdbCacheLock() {
+	unlock();
+}
+
+void RdbCacheLock::unlock() {
+	if(locked) {
+		pthread_mutex_unlock(&rdc.m_mtx);
+		locked = false;
+	}
 }
