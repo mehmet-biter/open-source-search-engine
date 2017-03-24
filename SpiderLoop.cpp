@@ -1387,14 +1387,8 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 
 	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(m_doledbKey, sizeof(*m_doledbKey)));
 
-	RdbTree *tree = g_doledb.m_rdb.getTree();
-	if( !tree ) {
-		// Sanity
-		gbshutdownLogicError();
-	}
-
 	// now we just take it out of doledb instantly
-	bool deleted = tree->deleteNode(m_collnum, (char *)m_doledbKey, true);
+	bool deleted = g_doledb.m_rdb.deleteTreeNode(m_collnum, (const char *)m_doledbKey);
 
 	// if url filters rebuilt then doledb gets reset and i've seen us hit
 	// this node == -1 condition here... so maybe ignore it... just log
