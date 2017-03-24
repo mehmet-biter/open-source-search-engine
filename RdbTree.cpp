@@ -2686,32 +2686,3 @@ int32_t  RdbTree::getNumPositiveKeys( collnum_t collnum ) const {
 	//if ( ! m_countsInitialized ) { g_process.shutdownAbort(true); }
 	return cr->m_numPosKeysInTree[(unsigned char)m_rdbId]; 
 }
-
-void RdbTree::setNumKeys ( CollectionRec *cr ) {
-
-	if ( ! cr ) return;
-
-	//m_countsInitialized = true;
-
-	return;
-
-#if 0
-	if ( ((unsigned char)m_rdbId) >= RDB_END ) { g_process.shutdownAbort(true); }
-
-	collnum_t collnum = cr->m_collnum;
-	cr->m_numNegKeysInTree[(unsigned char)m_rdbId] = 0;
-	cr->m_numPosKeysInTree[(unsigned char)m_rdbId] = 0;
-
-
-	for ( int32_t i = 0 ; i < m_numNodes ; i++ ) {
-		// skip if empty
-		if ( m_parents[i] == -2 ) continue;
-		// or if we hit a different collection number
-		if ( m_collnums [ i ] != collnum ) continue;
-		if   ( KEYNEG(m_keys,i,m_ks) ) 
-			cr->m_numNegKeysInTree[(unsigned char)m_rdbId]++;
-		else
-			cr->m_numPosKeysInTree[(unsigned char)m_rdbId]++;
-	}
-#endif
-}	

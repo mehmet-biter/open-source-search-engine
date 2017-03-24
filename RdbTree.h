@@ -163,8 +163,6 @@ public:
 	int32_t getNumNegativeKeys(collnum_t collnum) const;
 	int32_t getNumPositiveKeys(collnum_t collnum) const;
 
-	void setNumKeys(class CollectionRec *cr);
-
 	// how much mem, including data, is used by this class?
 	int32_t getMemAllocated() const { return m_memAllocated; }
 

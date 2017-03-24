@@ -448,14 +448,6 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	// add it to CollectionRec::m_bases[] base ptrs array
 	addBase ( collnum , newColl );
 
-	// . set CollectionRec::m_numPos/NegKeysInTree[rdbId]
-	// . these counts are now stored in the CollectionRec and not
-	//   in RdbTree since the # of collections can be huge!
-	if ( m_useTree ) {
-		m_tree.setNumKeys ( cr );
-	}
-
-
 	RdbTree    *tree = NULL;
 	RdbBuckets *buckets = NULL;
 	if(m_useTree) tree    = &m_tree;
