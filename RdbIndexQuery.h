@@ -14,6 +14,8 @@ public:
 	int32_t getFilePos(uint64_t docId, bool *isDel = NULL) const;
 	bool documentIsInFile(uint64_t docId, int32_t filenum) const;
 
+	int32_t getNumFiles() const { return m_numFiles; }
+
 	void printIndex() const;
 
 private:
