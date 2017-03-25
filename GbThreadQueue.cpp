@@ -2,6 +2,7 @@
 #include "ScopedLock.h"
 #include <stdexcept>
 #include "Log.h"
+
 void* GbThreadQueue::thread_queue_function(void *args) {
 	GbThreadQueue *tq = static_cast<GbThreadQueue*>(args);
 

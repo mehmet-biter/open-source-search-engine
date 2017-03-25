@@ -178,6 +178,7 @@ bool RdbMerge::gotLock() {
 	if (base->hasPendingGlobalIndexJob()) {
 		// wait until no more pending global index job
 		g_loop.registerSleepCallback(1000, this, gotLockWrapper);
+		return true;
 	}
 
 	// . set up a a file to dump the records into
