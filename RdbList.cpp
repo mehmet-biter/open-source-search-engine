@@ -1770,7 +1770,7 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 // . CAUTION: you should call constrain() on all "lists" before calling this
 //   so we don't have to do boundary checks on the keys here
 void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-                      bool removeNegRecs, rdbid_t rdbId, collnum_t collNum, int32_t startFileNum) {
+                      bool removeNegRecs, rdbid_t rdbId, collnum_t collNum, int32_t startFileNum, bool isRealMerge) {
 	assert(this);
 	verify_signature();
 	// sanity
@@ -1845,7 +1845,7 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 
 	Rdb* rdb = getRdbFromId(rdbId);
 	if (rdbId == RDB_POSDB || rdbId == RDB2_POSDB2) {
-		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, rdbId, removeNegRecs, rdb->isUseIndexFile(), collNum, startFileNum);
+		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, rdbId, removeNegRecs, rdb->isUseIndexFile(), collNum, startFileNum, isRealMerge);
 		verify_signature();
 		return;
 	}
@@ -2186,7 +2186,7 @@ skip:
 ///////
 
 bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-                           rdbid_t rdbId, bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t startFileNum) {
+                           rdbid_t rdbId, bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t startFileNum, bool isRealMerge) {
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN");
 
 	// sanity
@@ -2368,7 +2368,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 			int32_t filePos = rdbIndexQuery.getFilePos(docId);
 
-			if (g_conf.m_verifyIndex) {
+			if (g_conf.m_verifyIndex && isRealMerge) {
 				// check tree index
 				if (filePos == rdbIndexQuery.getNumFiles()) {
 					if (!base->getTreeIndex()->exist(docId)) {
@@ -2398,6 +2398,8 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 						}
 					}
 				} else {
+					bool found = false;
+
 					// check rdb index
 					for (auto i = rdbIndexQuery.getNumFiles() - 1; i >= filePos; --i) {
 						RdbIndex *index = base->getIndex(i);
@@ -2413,8 +2415,13 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 							}
 
 							// found docId & validated
+							found = true;
 							break;
 						}
+					}
+
+					if (!found) {
+						gbshutdownCorrupted();
 					}
 				}
 			}
