@@ -973,7 +973,7 @@ bool Msg5::gotList2 ( ) {
 	}
 
 	if(m_callback) {
-		if ( g_jobScheduler.submit(mergeListsWrapper, mergeDoneWrapper, this, m_isRealMerge ? thread_type_file_merge : thread_type_query_merge, m_niceness) ) {
+		if (g_jobScheduler.submit(mergeListsWrapper, mergeDoneWrapper, this, m_isRealMerge ? thread_type_file_merge : thread_type_query_merge, m_niceness)) {
 			return false;
 		}
 
@@ -1164,7 +1164,7 @@ void Msg5::mergeLists() {
 	//   one of them was PROBABLY in the dump queue and we decided in
 	//   Rdb::addRecord() NOT to do the annihilation, therefore it's good
 	//   to do the merge to do the annihilation
-	m_list->merge_r(m_listPtrs, m_numListPtrs, m_startKey, m_minEndKey, m_minRecSizes, m_removeNegRecs, m_rdbId, m_collnum, m_startFileNum);
+	m_list->merge_r(m_listPtrs, m_numListPtrs, m_startKey, m_minEndKey, m_minRecSizes, m_removeNegRecs, m_rdbId, m_collnum, m_startFileNum, m_isRealMerge);
 
 	// maintain this info for truncation purposes
 	if ( m_list->isLastKeyValid() ) 
