@@ -723,6 +723,9 @@ bool RdbIndex::exist(uint64_t docId) {
 		return true;
 	}
 
+	// std::lower_bound works on sorted list
+	std::stable_sort(m_pendingDocIds->begin(), m_pendingDocIds->end(), cmplt_fn);
+
 	it = std::lower_bound(m_pendingDocIds->cbegin(), m_pendingDocIds->cend(), docId << RdbIndex::s_docIdOffset);
 	return (it != m_pendingDocIds->cend() && ((*it >> RdbIndex::s_docIdOffset) == docId));
 }
