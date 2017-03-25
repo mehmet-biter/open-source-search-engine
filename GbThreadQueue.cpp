@@ -22,11 +22,13 @@ void* GbThreadQueue::thread_queue_function(void *args) {
 		}
 
 		void *item = tq->m_queue.front();
-		tq->m_queue.pop();
 		sl.unlock();
 
 		// process item
 		tq->m_func(item);
+
+		ScopedLock sl2(tq->m_queueMtx);
+		tq->m_queue.pop();
 
 		/// @todo ALC configurable delay here?
 	}
