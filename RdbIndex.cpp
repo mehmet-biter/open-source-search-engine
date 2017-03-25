@@ -723,6 +723,10 @@ bool RdbIndex::exist(uint64_t docId) {
 		return true;
 	}
 
+	auto cmplt_fn = [](uint64_t a, uint64_t b) {
+		return (a & s_docIdMask) < (b & s_docIdMask);
+	};
+
 	// std::lower_bound works on sorted list
 	std::stable_sort(m_pendingDocIds->begin(), m_pendingDocIds->end(), cmplt_fn);
 
