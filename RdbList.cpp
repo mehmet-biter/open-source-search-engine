@@ -2372,9 +2372,18 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 				// check tree index
 				if (filePos == rdbIndexQuery.getNumFiles()) {
 					if (!base->getTreeIndex()->exist(docId)) {
+						// not in tree index
 						if (base->getNumFiles() == rdbIndexQuery.getNumFiles()) {
-							// not in tree index
-							gbshutdownCorrupted();
+							// we could be in a middle of a dump
+							RdbIndex *index = base->getIndex(rdbIndexQuery.getNumFiles() - 1);
+							if (!index) {
+								gbshutdownCorrupted();
+							}
+
+							if (!index->exist(docId)) {
+								// not in rdb index
+								gbshutdownCorrupted();
+							}
 						} else {
 							// num files changed (check specific index)
 							RdbIndex *index = base->getIndex(rdbIndexQuery.getNumFiles());
