@@ -2370,16 +2370,33 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 			if (g_conf.m_verifyIndex) {
 				// check tree index
-				if (filePos == base->getNumFiles()) {
+				if (filePos == rdbIndexQuery.getNumFiles()) {
 					if (!base->getTreeIndex()->exist(docId)) {
-						// not in tree index
-						gbshutdownCorrupted();
+						if (base->getNumFiles() == rdbIndexQuery.getNumFiles()) {
+							// not in tree index
+							gbshutdownCorrupted();
+						} else {
+							// num files changed (check specific index)
+							RdbIndex *index = base->getIndex(rdbIndexQuery.getNumFiles());
+							if (!index) {
+								gbshutdownCorrupted();
+							}
+
+							if (!index->exist(docId)) {
+								// not in rdb index
+								gbshutdownCorrupted();
+							}
+						}
 					}
 				} else {
 					// check rdb index
-					for (auto i = base->getNumFiles() - 1; i >= filePos; --i) {
+					for (auto i = rdbIndexQuery.getNumFiles() - 1; i >= filePos; --i) {
 						RdbIndex *index = base->getIndex(i);
-						if (index && index->exist(docId)) {
+						if (!index) {
+							gbshutdownCorrupted();
+						}
+
+						if (index->exist(docId)) {
 							if (i != filePos) {
 								// docId found in newer file
 								gbshutdownCorrupted();
