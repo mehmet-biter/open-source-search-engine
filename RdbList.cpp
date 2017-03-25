@@ -2407,8 +2407,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 							gbshutdownCorrupted();
 						}
 
-						// only check index if it's readable
-						if (base->isReadable(i) && index->exist(docId)) {
+						if (index->exist(docId)) {
 							if (i != filePos) {
 								// docId found in newer file
 								gbshutdownCorrupted();
