@@ -2025,8 +2025,13 @@ static void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 	// send out the msg request
 	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		Host *h = g_hostdb.getHost(i);
-		if(!h->m_spiderEnabled)
-			continue;
+
+		// Do not skip nospider hosts after all. If a nospider host dies, spidering
+		// will not be paused (greater risk of losing newly spidered data). Skip
+		// again when we have added spooling on the spidering twin.
+		//if(!h->m_spiderEnabled)
+		//	continue;
+
 		// count it as launched
 		s_requests++;
 		// launch it
