@@ -1960,8 +1960,6 @@ static bool addToHammerQueue(Msg13Request *r) {
 	bool canUseProxies = false;
 	if ( cr && cr->m_automaticallyUseProxies ) canUseProxies = true;
 	if ( r->m_forceUseFloaters               ) canUseProxies = true;
-	//if ( g_conf.m_useProxyIps          ) canUseProxies = true;
-	//if ( g_conf.m_automaticallyUseProxyIps ) canUseProxies = true;
 
 	// if no proxies listed, then it is pointless
 	if ( ! g_conf.m_proxyIps.hasDigits() ) canUseProxies = false;
@@ -2090,13 +2088,6 @@ static void scanHammerQueue(int fd, void *state) {
 	Msg13Request *prev = NULL;
 	int64_t waited = -1LL;
 	Msg13Request *nextLink = NULL;
-
-	//bool useProxies = true;
-	// user can turn off proxy use with this switch
-	//if ( ! g_conf.m_useProxyIps ) useProxies = false;
-	// we gotta have some proxy ips that we can use
-	//if ( ! g_conf.m_proxyIps.hasDigits() ) useProxies = false;
-
 
 	// scan down the linked list of queued of msg13 requests
 	for ( ; r ; prev = r , r = nextLink ) { 

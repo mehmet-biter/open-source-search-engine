@@ -46,15 +46,12 @@ Conf::Conf ( ) {
 	// Coverity.. a bit overkill, but wth...
 	m_runAsDaemon = false;
 	m_logToFile = false;
-	m_isLocal = false;
 	memset(m_defaultColl, 0, sizeof(m_defaultColl));
 	memset(m_clusterName, 0, sizeof(m_clusterName));
 	m_numDns = 0;
 	memset(m_dnsIps, 0, sizeof(m_dnsIps));
 	memset(m_dnsPorts, 0, sizeof(m_dnsPorts));
 	m_dnsMaxCacheMem = 0;
-	m_useProxyIps = false;
-	m_automaticallyUseProxyIps = false;
 	m_askRootNameservers = false;
 	m_numRns = 0;
 	memset(m_rnsIps, 0, sizeof(m_rnsIps));
@@ -157,9 +154,6 @@ Conf::Conf ( ) {
 	m_sendParmChangeAlertsToEmail2 = false;
 	m_sendParmChangeAlertsToEmail3 = false;
 	m_sendParmChangeAlertsToEmail4 = false;
-	m_avgQueryTimeThreshold = 0.0;
-	m_querySuccessThreshold = 0.0;
-	m_numQueryTimes = 0;
 	m_maxCorruptLists = 0;
 	m_defaultQueryResultsValidityTime = 0;
 	m_useCollectionPasswords = false;
@@ -172,11 +166,9 @@ Conf::Conf ( ) {
 	m_verifyWrites = false;
 	m_corruptRetries = 0;
 	m_detectMemLeaks = false;
-	m_doSpellChecking = false;
 	m_forceIt = false;
 	m_doIncrementalUpdating = false;
 	m_noInMemoryPosdbMerge = false;
-	m_useQuickpoll = false;
 	m_stableSummaryCacheSize = 0;
 	m_stableSummaryCacheMaxAge = 0;
 	m_unstableSummaryCacheSize = 0;
@@ -191,10 +183,6 @@ Conf::Conf ( ) {
 	m_autoSaveFrequency = 0;
 	m_docCountAdjustment = 0;
 	m_profilingEnabled = false;
-	m_dynamicPerfGraph = false;
-	m_minProfThreshold = 0;
-	m_sequentialProfiling = false;
-	m_realTimeProfilerMinQuickPollDelta = 0;
 	m_logHttpRequests = false;
 	m_logAutobannedQueries = false;
 	m_logQueryTimeThreshold = 0;
@@ -282,7 +270,6 @@ Conf::Conf ( ) {
 	m_logTimingSpcache = false;
 	m_logTimingRobots = false;
 	m_logReminders = false;
-	m_generateVectorAtQueryTime = false;
 	memset(m_redirect, 0, sizeof(m_redirect));
 	m_useCompressionProxy = false;
 	m_gzipDownloads = false;
@@ -448,8 +435,6 @@ bool Conf::init ( char *dir ) { // , int32_t hostId ) {
 	char fname[1024];
 	File f;
 
-	m_isLocal = false;
-
 	if ( dir ) sprintf ( fname , "%sgb.conf", dir );
 	else       sprintf ( fname , "./gb.conf" );
 
@@ -493,11 +478,6 @@ bool Conf::init ( char *dir ) { // , int32_t hostId ) {
 
 	// this could too! (need this)
 	g_conf.m_allowScale = true;//false;
-
-	// . until we fix spell checker
-	// . the hosts splitting count isn't right and it just sends to like
-	//   host #0 or something...
-	g_conf.m_doSpellChecking = false;
 
 	g_conf.m_forceIt = false;
 

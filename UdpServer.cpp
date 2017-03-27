@@ -1318,13 +1318,6 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 		addToCallbackLinkedList ( slot );
 	}
 
-
-	//	if(g_conf.m_sequentialProfiling) {
-	// 		if(slot->isDoneReading()) 
-	// 			log(LOG_TIMING, "admin: read last dgram: "
-	//                           "%" PRId32" %s", slot->getNiceness(),peek);
-	//	}
-
  discard:
 	// . update stats, just put them all in g_udpServer
 	// . do not count acks
@@ -1489,15 +1482,6 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 			//low niceness request.  we can always come 
 			//back.
 			//TODO: call sigqueue if we need to
-			//now we just tell loop to poll
-			//if(g_conf.m_sequentialProfiling) {
-			//	log(LOG_TIMING, "admin: UdpServer spent "
-			//	    "%" PRId64" ms doing"
-			//	    " %" PRId32" low priority callbacks."
-			//	    " last was:  %s", 
-			//	    elapsed, numCalled, 
-			//	    g_profiler.getFnName(cbAddr));
-			//}
 			m_needBottom = true;
 			// now we just finish out the list with a 
 			// lower niceness
