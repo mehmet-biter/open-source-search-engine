@@ -183,6 +183,14 @@ public:
 				 const char *startKey, const char *endKey, char *maxKey,
 				 int64_t oldTruncationLimit) const;
 
+	//Get list from tree or buckets. Returns true on success
+	bool getTreeList(RdbList *result,
+			 collnum_t collnum,
+	                 const void *startKey, const void *endKey,
+			 int32_t minRecSizes,
+			 int32_t *numPositiveRecs, int32_t *numNegativeRecs,
+			 int32_t *memUsedByTree, int32_t *numUsedNodes);
+
 	// positive minus negative
 	int64_t getNumTotalRecs(bool useCache = false) const;
 
