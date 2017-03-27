@@ -96,7 +96,8 @@ public:
 
 	bool updateSiteNumInlinksTable(int32_t siteHash32, int32_t sni, time_t tstamp);
 
-	uint64_t getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep, uint64_t nowGlobalMS);
+	uint64_t getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep);
+
 	// doledb cursor keys for each priority to speed up performance
 	key96_t m_nextKeys[MAX_SPIDER_PRIORITIES];
 
@@ -137,9 +138,11 @@ public:
 
 	// freshest m_siteNumInlinks per site stored in here
 	HashTableX m_sniTable;
+	GbMutex m_sniTableMtx;
 
 	// maps a domainHash32 to a crawl delay in milliseconds
 	HashTableX m_cdTable;
+	GbMutex m_cdTableMtx;
 
 	RdbCache m_lastDownloadCache;
 
@@ -155,7 +158,7 @@ public:
 
 	bool printWaitingTree ( ) ;
 
-	bool addToWaitingTree(uint64_t spiderTime, int32_t firstIp, bool callForScan);
+	bool addToWaitingTree(uint64_t spiderTime, int32_t firstIp);
 	int32_t getNextIpFromWaitingTree ( );
 	uint64_t getNextSpiderTimeFromWaitingTree ( ) ;
 	void populateDoledbFromWaitingTree ( );

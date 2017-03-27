@@ -12,6 +12,7 @@
 #include "ip.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "ScopedLock.h"
 
 static key96_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp ) {
 	// sanity
@@ -451,6 +452,9 @@ void SpiderColl::reset ( ) {
 bool SpiderColl::updateSiteNumInlinksTable(int32_t siteHash32, int32_t sni, time_t timestamp) {
 	// do not update if invalid
 	if ( sni == -1 ) return true;
+
+	ScopedLock sl(m_sniTableMtx);
+
 	// . get entry for siteNumInlinks table
 	// . use 32-bit key specialized lookup for speed
 	uint64_t *val = (uint64_t *)m_sniTable.getValue32(siteHash32);
@@ -541,29 +545,26 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 	// clear error for this
 	g_errno = 0;
 
-	bool update = false;
-	// use the domain hash for this guy! since its from robots.txt
-	int32_t *cdp = (int32_t *)m_cdTable.getValue32(srep->m_domHash32);
-	// update it only if better or empty
-	if ( ! cdp ) update = true;
+	{
+		ScopedLock sl(m_cdTableMtx);
 
-	// no update if injecting or from pagereindex (docid based spider request)
-	if ( srep->m_fromInjectionRequest )
-		update = false;
+		// use the domain hash for this guy! since its from robots.txt
+		int32_t *cdp = (int32_t *)m_cdTable.getValue32(srep->m_domHash32);
 
-	// update m_sniTable if we should
-	if ( update ) {
-		// . make new data for this key
-		// . lower 32 bits is the spideredTime
-		// . upper 32 bits is the crawldelay
-		int32_t nv = (int32_t)(srep->m_crawlDelayMS);
-		if ( ! m_cdTable.addKey(&srep->m_domHash32,&nv)){
-			// return false with g_errno set on error
-			//return false;
-			log("spider: failed to add crawl delay for "
-			    "firstip=%s",iptoa(srep->m_firstIp));
-			// just ignore
-			g_errno = 0;
+		// update it only if better or empty
+		// no update if injecting or from pagereindex (docid based spider request)
+		if (!cdp && !srep->m_fromInjectionRequest) {
+			// update m_sniTable if we should
+			// . make new data for this key
+			// . lower 32 bits is the spideredTime
+			// . upper 32 bits is the crawldelay
+			int32_t nv = (int32_t)(srep->m_crawlDelayMS);
+			if (!m_cdTable.addKey(&srep->m_domHash32, &nv)) {
+				log(LOG_WARN, "spider: failed to add crawl delay for firstip=%s", iptoa(srep->m_firstIp));
+
+				// just ignore
+				g_errno = 0;
+			}
 		}
 	}
 
@@ -609,7 +610,7 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 	//   scan spiderdb to get that
 	// . returns false if did not add to waiting tree
 	// . returns false sets g_errno on error
-	bool added = addToWaitingTree ( 0LL, srep->m_firstIp , true );
+	bool added = addToWaitingTree(0LL, srep->m_firstIp);
 
 	// ignore errors i guess
 	g_errno = 0;
@@ -829,7 +830,7 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 	// SpiderRequest for that firstIp, then we can add it to doledb
 	// as long as it can be spidered now
 	//bool status = addToWaitingTree ( spiderTimeMS,sreq->m_firstIp,true);
-	bool added = addToWaitingTree ( 0 , sreq->m_firstIp , true );
+	bool added = addToWaitingTree(0, sreq->m_firstIp);
 
 	// if already doled and we beat the priority/spidertime of what
 	// was doled then we should probably delete the old doledb key
@@ -915,7 +916,7 @@ bool SpiderColl::printWaitingTree ( ) {
 // . if one of these add fails consider increasing mem used by tree/table
 // . if we lose an ip that sux because it won't be gotten again unless
 //   we somehow add another request/reply to spiderdb in the future
-bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool callForScan ) {
+bool SpiderColl::addToWaitingTree(uint64_t spiderTimeMS, int32_t firstIp) {
 	logDebug( g_conf.m_logDebugSpider, "spider: addtowaitingtree ip=%s", iptoa( firstIp ) );
 
 	// we are currently reading spiderdb for this ip and trying to find
@@ -1066,8 +1067,8 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 	}
 
 	// note it
-	logDebug( g_conf.m_logDebugSpider, "spider: added time=%" PRId64" ip=%s to waiting tree scan=%" PRId32" node=%" PRId32,
-	          spiderTimeMS , iptoa( firstIp ), (int32_t)callForScan, wn );
+	logDebug( g_conf.m_logDebugSpider, "spider: added time=%" PRId64" ip=%s to waiting tree node=%" PRId32,
+	          spiderTimeMS , iptoa( firstIp ), wn );
 
 	// add to table now since its in the tree
 	if ( ! m_waitingTable.addKey ( &firstIp , &spiderTimeMS ) ) {
@@ -1076,15 +1077,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 		//log("spider: 5 del node %" PRId32" for %s",wn,iptoa(firstIp));
 		return false;
 	}
-	// . kick off a scan, i don't care if this blocks or not!
-	// . the populatedoledb loop might already have a scan in progress
-	//   but usually it won't, so rather than wait for its sleepwrapper
-	//   to be called we force it here for speed.
-	// . re-entry is false because we are entering for the first time
-	// . calling this everytime msg4 adds a spider request is super slow!!!
-	//   SO TAKE THIS OUT FOR NOW
-	// . no that was not it. mdw. put it back.
-	if ( callForScan ) populateDoledbFromWaitingTree ( );
+
 	// tell caller there was no error
 	return true;
 }
@@ -1453,7 +1446,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// otherwise, we want to add it with 0 time so the doledb
 		// scan will evaluate it properly
 		// this will return false if we are saving the tree i guess
-		if ( ! addToWaitingTree ( 0 , firstIp , false ) ) {
+		if ( ! addToWaitingTree ( 0 , firstIp ) ) {
 			log("spider: failed to add ip %s to waiting tree. "
 			    "ip will not get spidered then and our "
 			    "population of waiting tree will repeat until "
@@ -2586,15 +2579,18 @@ bool SpiderColl::scanListForWinners ( ) {
 
 		// update SpiderRequest::m_siteNumInlinks to most recent value
 		int32_t sni = sreq->m_siteNumInlinks;
-		// get the # of inlinks to the site from our table
-		uint64_t *val;
-		val = (uint64_t *)m_sniTable.getValue32(sreq->m_siteHash32);
-		// use the most recent sni from this table
-		if ( val ) 
-			sni = (int32_t)((*val)>>32);
-		// if SpiderRequest is forced then m_siteHash32 is 0!
-		else if ( srep && srep->m_spideredTime >= sreq->m_addedTime ) 
-			sni = srep->m_siteNumInlinks;
+		{
+			ScopedLock sl(m_sniTableMtx);
+
+			// get the # of inlinks to the site from our table
+			uint64_t *val = (uint64_t *)m_sniTable.getValue32(sreq->m_siteHash32);
+			// use the most recent sni from this table
+			if (val)
+				sni = (int32_t)((*val) >> 32);
+				// if SpiderRequest is forced then m_siteHash32 is 0!
+			else if (srep && srep->m_spideredTime >= sreq->m_addedTime)
+				sni = srep->m_siteNumInlinks;
+		}
 		// assign
 		sreq->m_siteNumInlinks = sni;
 		// store rror count in request so xmldoc knows what it is
@@ -2666,8 +2662,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			sreq->m_forceDelete = true;
 		}
 
-		int64_t spiderTimeMS;
-		spiderTimeMS = getSpiderTimeMS ( sreq,ufn,srep,nowGlobalMS );
+		int64_t spiderTimeMS = getSpiderTimeMS(sreq, ufn, srep);
 		// how many outstanding spiders on a single IP?
 		//int32_t maxSpidersPerIp = m_cr->m_spiderIpMaxSpiders[ufn];
 		// sanity
@@ -3505,16 +3500,11 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 }
 
 
-
-uint64_t SpiderColl::getSpiderTimeMS ( SpiderRequest *sreq,
-				       int32_t ufn,
-				       SpiderReply *srep,
-				       uint64_t nowGlobalMS ) {
+uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep) {
 	// . get the scheduled spiderTime for it
 	// . assume this SpiderRequest never been successfully spidered
 	int64_t spiderTimeMS = ((uint64_t)sreq->m_addedTime) * 1000LL;
-	// how can added time be in the future? did admin set clock back?
-	//if ( spiderTimeMS > nowGlobalMS ) spiderTimeMS = nowGlobalMS;
+
 	// if injecting for first time, use that!
 	if ( ! srep && sreq->m_isInjecting ) return spiderTimeMS;
 	if ( ! srep && sreq->m_isPageReindex ) return spiderTimeMS;
@@ -3546,12 +3536,14 @@ uint64_t SpiderColl::getSpiderTimeMS ( SpiderRequest *sreq,
 	// crawldelay table check!!!!
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
-	int32_t *cdp = (int32_t *)m_cdTable.getValue ( &sreq->m_domHash32 );
+
 	int64_t minSpiderTimeMS2 = 0;
-	// limit to 60 seconds crawl delay. 
-	// help fight SpiderReply corruption too
-	if ( cdp && *cdp > 60000 ) *cdp = 60000;
-	if ( cdp && *cdp >= 0 ) minSpiderTimeMS2 = lastMS + *cdp;
+
+	{
+		ScopedLock sl(m_cdTableMtx);
+		int32_t *cdp = (int32_t *)m_cdTable.getValue(&sreq->m_domHash32);
+		if (cdp && *cdp >= 0) minSpiderTimeMS2 = lastMS + *cdp;
+	}
 
 	//  ensure min
 	if ( spiderTimeMS < minSpiderTimeMS1 ) spiderTimeMS = minSpiderTimeMS1;

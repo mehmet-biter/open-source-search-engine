@@ -1420,11 +1420,10 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// . do not add to waiting tree if we have enough outstanding
 	//   spiders for this ip. we will add to waiting tree when
 	//   we receive a SpiderReply in addSpiderReply()
-	if ( //sc && //out < cq->m_maxSpidersOutPerIp &&
+	if (
 	     // this will just return true if we are not the 
 	     // responsible host for this firstip
-	     // DO NOT populate from this!!! say "false" here...
-	     ! m_sc->addToWaitingTree ( 0 , sreq->m_firstIp, false ) &&
+	     ! m_sc->addToWaitingTree ( 0 , sreq->m_firstIp ) &&
 	     // must be an error...
 	     g_errno ) {
 		const char *msg = "FAILED TO ADD TO WAITING TREE";
