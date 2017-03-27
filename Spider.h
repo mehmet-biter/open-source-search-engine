@@ -915,11 +915,11 @@ inline int64_t makeLockTableKey ( int64_t uh48 , int32_t firstIp ) {
 	return uh48 ^ (uint32_t)firstIp;
 }
 
-inline int64_t makeLockTableKey ( SpiderRequest *sreq ) {
+inline int64_t makeLockTableKey(const SpiderRequest *sreq) {
 	return makeLockTableKey(sreq->getUrlHash48(),sreq->m_firstIp);
 }
 
-inline int64_t makeLockTableKey ( SpiderReply *srep ) {
+inline int64_t makeLockTableKey(const SpiderReply *srep) {
 	return makeLockTableKey(srep->getUrlHash48(),srep->m_firstIp);
 }
 

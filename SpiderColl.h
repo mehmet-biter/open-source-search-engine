@@ -86,8 +86,8 @@ public:
 	bool isInDupCache(const SpiderRequest *sreq, bool addToCache);
 
 	// Rdb.cpp calls this
-	bool addSpiderReply(SpiderReply *srep);
-	bool addSpiderRequest(SpiderRequest *sreq, int64_t nowGlobalMS);
+	bool addSpiderReply(const SpiderReply *srep);
+	bool addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS);
 
 	void removeFromDoledbTable(int32_t firstIp);
 	bool addToDoleTable(SpiderRequest *sreq);
