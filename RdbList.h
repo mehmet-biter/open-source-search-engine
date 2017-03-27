@@ -159,7 +159,8 @@ public:
 
 	void getCurrentKey(void *key) const { getKey(m_listPtr, (char *)key); }
 
-	char *getCurrentData() { return getData(m_listPtr); }
+	char       *getCurrentData()       { return getData(m_listPtr); }
+	const char *getCurrentData() const { return getData(m_listPtr); }
 	int32_t getCurrentDataSize() const { return getDataSize(m_listPtr); }
 
 	// . skip over the current record and point to the next one
@@ -260,7 +261,10 @@ private:
 
 	void getKey(const char *rec, char *key) const;
 
-	char *getData(char *rec);
+	char       *getData(char *rec) const;
+	const char *getData(const char *rec) const {
+		return getData(const_cast<char*>(rec));
+	}
 	int32_t getDataSize(const char *rec) const;
 
 	bool posdbConstrain(const char *startKey, char *endKey, int32_t minRecSizes,

@@ -1521,7 +1521,7 @@ bool Rdb::addList(collnum_t collnum, RdbList *list, bool checkForRoom) {
 		char key[MAX_KEY_BYTES];
 		list->getCurrentKey(key);
 		int32_t  dataSize;
-		char *data;
+		const char *data;
 
 		// negative keys have no data
 		if ( ! KEYNEG(key) ) {
