@@ -378,12 +378,12 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked(bool finalWrite) {
 	return getDocIds();
 }
 
-void RdbIndex::addRecord(char *key) {
+void RdbIndex::addRecord(const char *key) {
 	ScopedLock sl(m_pendingDocIdsMtx);
 	addRecord_unlocked(key);
 }
 
-void RdbIndex::addRecord_unlocked(char *key) {
+void RdbIndex::addRecord_unlocked(const char *key) {
 	m_needToWrite = true;
 
 	if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
