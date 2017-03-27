@@ -6187,18 +6187,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
-	m->m_title = "sequential profiling.";
-	m->m_desc  = "Produce a LOG_TIMING log message for each "
-		"callback called, along with the time it took.  "
-		"Profiler must be enabled.";
-	m->m_cgi   = "ensp";
-	simple_m_set(Conf,m_sequentialProfiling);
-	m->m_def   = "0";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
 	//////
 	// END MASTER CONTROLS
 	//////
