@@ -161,6 +161,7 @@ void SpiderLoop::startLoop ( ) {
 	m_maxUsed = -1;
 	m_numSpidersOut = 0;
 	m_processed = 0;
+
 	// for locking. key size is 8 for easier debugging
 	m_lockTable.set ( 8,sizeof(UrlLock),0,NULL,0,false, "splocks", true ); // useKeyMagic? yes.
 
@@ -183,10 +184,12 @@ void SpiderLoop::startLoop ( ) {
 					false  ) )
 		log(LOG_WARN, "spider: failed to init winnerlist cache. slows down.");
 
-	// dole some out
-	//g_spiderLoop.doleUrls1();
-	// spider some urls that were doled to us
-	//g_spiderLoop.spiderDoledUrls( );
+	// don't register callbacks when we're not using it
+	if (!g_hostdb.getMyHost()->m_spiderEnabled) {
+		logTrace(g_conf.m_logTraceSpider, "END");
+		return;
+	}
+
 	// sleep for .1 seconds = 100ms
 	if (!g_loop.registerSleepCallback(50,this,doneSleepingWrapperSL))
 	{
