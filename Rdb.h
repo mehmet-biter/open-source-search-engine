@@ -138,11 +138,6 @@ public:
 
 	bool isTitledb() const { return m_rdbId==RDB_TITLEDB || m_rdbId==RDB2_TITLEDB2; }
 
-	RdbTree *getTree() {
-		if (!m_useTree) return NULL;
-		return &m_tree;
-	}
-
 	RdbBuckets* getBuckets() {
 		if (m_useTree) return NULL;
 		return &m_buckets;
