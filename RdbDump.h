@@ -46,9 +46,6 @@ public:
 
 	bool isDumping() const { return m_isDumping; }
 
-	const char *getFirstKeyInQueue() const { return m_firstKeyInQueue; }
-	const char *getLastKeyInQueue() const { return m_lastKeyInQueue; }
-
 	collnum_t getCollNum() const { return m_collnum; }
 
 	void setSuspended() { m_isSuspended = true; }
@@ -100,9 +97,6 @@ private:
 	int32_t m_verifyBufSize;
 	int32_t m_bytesToWrite;
 	int32_t m_bytesWritten;
-
-	char m_firstKeyInQueue[MAX_KEY_BYTES];
-	const char *m_lastKeyInQueue;
 
 	char m_prevLastKey[MAX_KEY_BYTES];
 

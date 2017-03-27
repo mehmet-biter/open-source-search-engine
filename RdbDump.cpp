@@ -27,8 +27,6 @@ RdbDump::RdbDump() {
 	m_verifyBufSize = 0;
 	m_bytesToWrite = 0;
 	m_bytesWritten = 0;
-	memset(m_firstKeyInQueue, 0, sizeof(m_firstKeyInQueue));
-	m_lastKeyInQueue = NULL;
 	memset(m_prevLastKey, 0, sizeof(m_prevLastKey));
 	m_nextNode = 0;
 	memset(m_nextKey, 0, sizeof(m_nextKey));
@@ -97,11 +95,6 @@ bool RdbDump::set(collnum_t collnum,
 	m_tried         = false;
 	m_isSuspended   = false;
 	m_ks            = keySize;
-
-	// reset this in case we run out of mem, it doesn't get set properly
-	// and needs to be NULL for RdbMem's call to getLastKeyinQueue()
-	m_lastKeyInQueue  = NULL;
-	KEYMIN(m_firstKeyInQueue,m_ks);
 
 	m_isDumping     = false;
 	m_buf           = NULL;
@@ -406,24 +399,9 @@ bool RdbDump::dumpTree(bool recall) {
 		// . ensures keys are ordered from lowest to highest as well
 		if (g_conf.m_verifyWrites || g_conf.m_verifyDumpedLists) {
 			const char *s = (m_rdb ? getDbnameFromId(m_rdb->getRdbId()) : "none");
-			const char *ks1 = "";
-			const char *ks2 = "";
-			char tmp1[MAX_KEY_BYTES*2+1];
-			char tmp2[MAX_KEY_BYTES*2+1];
-
-			strncpy(tmp1, KEYSTR(m_firstKeyInQueue, m_list->getKeySize()), sizeof(tmp1));
-			tmp1[ sizeof(tmp1)-1 ] = '\0';
-			ks1 = tmp1;
-
-			if (m_lastKeyInQueue) {
-				strncpy(tmp2, KEYSTR(m_lastKeyInQueue, m_list->getKeySize()), sizeof(tmp2));
-				tmp2[ sizeof(tmp2)-1 ] = '\0';
-				ks2 = tmp2;
-			}
 
 			if( m_rdb ) {
-				log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i k1=%s k2=%s)", s, (int)m_collnum, ks1,
-				    ks2);
+				log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i)", s, (int)m_collnum);
 				m_list->checkList_r(true, m_rdb->getRdbId());
 			}
 		}
@@ -448,16 +426,8 @@ bool RdbDump::dumpTree(bool recall) {
 			return true;
 		}
 
-		// . set m_firstKeyInQueue and m_lastKeyInQueue
-		// . this doesn't work if you're doing an unordered dump, but we should
-		//   not allow adds when closing
-		m_lastKeyInQueue = m_list->getLastKey();
-
 		// ensure we are getting the first key of the list
 		m_list->resetListPtr();
-
-		//m_firstKeyInQueue = m_list->getCurrentKey();
-		m_list->getCurrentKey(m_firstKeyInQueue);
 
 		// . write this list to disk
 		// . returns false if blocked, true otherwise
