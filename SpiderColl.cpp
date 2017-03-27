@@ -609,7 +609,7 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 	//   scan spiderdb to get that
 	// . returns false if did not add to waiting tree
 	// . returns false sets g_errno on error
-	bool added = addToWaitingTree ( 0LL, srep->m_firstIp , true );
+	bool added = addToWaitingTree(0LL, srep->m_firstIp);
 
 	// ignore errors i guess
 	g_errno = 0;
@@ -829,7 +829,7 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 	// SpiderRequest for that firstIp, then we can add it to doledb
 	// as long as it can be spidered now
 	//bool status = addToWaitingTree ( spiderTimeMS,sreq->m_firstIp,true);
-	bool added = addToWaitingTree ( 0 , sreq->m_firstIp , true );
+	bool added = addToWaitingTree(0, sreq->m_firstIp);
 
 	// if already doled and we beat the priority/spidertime of what
 	// was doled then we should probably delete the old doledb key
@@ -915,7 +915,7 @@ bool SpiderColl::printWaitingTree ( ) {
 // . if one of these add fails consider increasing mem used by tree/table
 // . if we lose an ip that sux because it won't be gotten again unless
 //   we somehow add another request/reply to spiderdb in the future
-bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool callForScan ) {
+bool SpiderColl::addToWaitingTree(uint64_t spiderTimeMS, int32_t firstIp) {
 	logDebug( g_conf.m_logDebugSpider, "spider: addtowaitingtree ip=%s", iptoa( firstIp ) );
 
 	// we are currently reading spiderdb for this ip and trying to find
@@ -1066,8 +1066,8 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 	}
 
 	// note it
-	logDebug( g_conf.m_logDebugSpider, "spider: added time=%" PRId64" ip=%s to waiting tree scan=%" PRId32" node=%" PRId32,
-	          spiderTimeMS , iptoa( firstIp ), (int32_t)callForScan, wn );
+	logDebug( g_conf.m_logDebugSpider, "spider: added time=%" PRId64" ip=%s to waiting tree node=%" PRId32,
+	          spiderTimeMS , iptoa( firstIp ), wn );
 
 	// add to table now since its in the tree
 	if ( ! m_waitingTable.addKey ( &firstIp , &spiderTimeMS ) ) {
@@ -1076,15 +1076,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 		//log("spider: 5 del node %" PRId32" for %s",wn,iptoa(firstIp));
 		return false;
 	}
-	// . kick off a scan, i don't care if this blocks or not!
-	// . the populatedoledb loop might already have a scan in progress
-	//   but usually it won't, so rather than wait for its sleepwrapper
-	//   to be called we force it here for speed.
-	// . re-entry is false because we are entering for the first time
-	// . calling this everytime msg4 adds a spider request is super slow!!!
-	//   SO TAKE THIS OUT FOR NOW
-	// . no that was not it. mdw. put it back.
-	if ( callForScan ) populateDoledbFromWaitingTree ( );
+
 	// tell caller there was no error
 	return true;
 }
@@ -1453,7 +1445,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// otherwise, we want to add it with 0 time so the doledb
 		// scan will evaluate it properly
 		// this will return false if we are saving the tree i guess
-		if ( ! addToWaitingTree ( 0 , firstIp , false ) ) {
+		if ( ! addToWaitingTree ( 0 , firstIp ) ) {
 			log("spider: failed to add ip %s to waiting tree. "
 			    "ip will not get spidered then and our "
 			    "population of waiting tree will repeat until "

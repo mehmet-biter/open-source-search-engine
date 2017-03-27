@@ -155,7 +155,7 @@ public:
 
 	bool printWaitingTree ( ) ;
 
-	bool addToWaitingTree(uint64_t spiderTime, int32_t firstIp, bool callForScan);
+	bool addToWaitingTree(uint64_t spiderTime, int32_t firstIp);
 	int32_t getNextIpFromWaitingTree ( );
 	uint64_t getNextSpiderTimeFromWaitingTree ( ) ;
 	void populateDoledbFromWaitingTree ( );
