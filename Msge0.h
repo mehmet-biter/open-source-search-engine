@@ -46,8 +46,6 @@ private:
 	const linkflags_t *m_urlFlags;
 	int32_t   m_numUrls;
 
-	bool   m_skipOldLinks;
-
 	// buffer to hold all the data we accumulate for all the urls in urlBuf
 	char *m_buf;
 	int32_t  m_bufSize;
