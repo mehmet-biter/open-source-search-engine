@@ -696,7 +696,7 @@ public:
 		return Spiderdb::getUrlHash48( &m_key );
 	}
 
-	int64_t getParentDocId() {
+	int64_t getParentDocId() const {
 		return Spiderdb::getParentDocId( &m_key );
 	}
 
@@ -710,7 +710,7 @@ public:
 	bool setFromAddUrl(const char *url);
 	bool setFromInject(const char *url);
 
-	bool isCorrupt ( );
+	bool isCorrupt() const;
 } __attribute__((packed, aligned(4)));
 
 // . XmlDoc adds this record to spiderdb after attempting to spider a url
@@ -847,7 +847,7 @@ public:
 	unsigned    m_wasIndexedValid         :1;
 
 	// how much buf will we need to serialize ourselves?
-	int32_t getRecSize () { return m_dataSize + 4 + sizeof(key128_t); }
+	int32_t getRecSize () const { return m_dataSize + 4 + sizeof(key128_t); }
 
 	// clear all
 	void reset() { memset ( this , 0 , sizeof(SpiderReply) ); }
@@ -856,11 +856,11 @@ public:
 
 	int32_t print ( class SafeBuf *sbarg );
 
-	int64_t  getUrlHash48  () {
+	int64_t getUrlHash48() const {
 		return Spiderdb::getUrlHash48(&m_key);
 	}
 
-	int64_t getParentDocId (){
+	int64_t getParentDocId() const {
 		return Spiderdb::getParentDocId(&m_key);
 	}
 } __attribute__((packed, aligned(4)));

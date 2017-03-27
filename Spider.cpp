@@ -3995,7 +3995,7 @@ bool SpiderRequest::setFromInject(const char *url) {
 
 
 
-bool SpiderRequest::isCorrupt ( ) {
+bool SpiderRequest::isCorrupt() const {
 
 	// more corruption detection
 	if ( m_hopCount < -1 ) {
@@ -4034,8 +4034,8 @@ bool SpiderRequest::isCorrupt ( ) {
 		log("spider: got corrupt 2 spiderRequest");
 		return true;
 	}
-	char *p    = m_url + 2;
-	char *pend = m_url + getUrlLen();
+	const char *p    = m_url + 2;
+	const char *pend = m_url + getUrlLen();
 	for ( ; p < pend && *p ; p++ ) {
 		// the whole url must be digits, a docid
 		if ( ! is_digit(*p) ) {
