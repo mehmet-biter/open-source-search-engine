@@ -101,7 +101,7 @@ public:
 	 *
 	 * the scenario where we want to eliminate a negative key is when we deleted a document, and then we respider successfully
 	 */
-	bool addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize);
+	bool addRecord(collnum_t collnum, const char *key, const char *data, int32_t dataSize);
 
 	// returns false if no room in tree or m_mem for a list to add
 	bool hasRoom(int32_t numRecs, int32_t dataSize) const;

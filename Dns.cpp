@@ -1875,7 +1875,6 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	if ( strncmp(ds->m_hostname,"gbmxrec-",8) == 0 ) 
 		getmx = true;
 
-	int16_t mailPreference = -1;
 	// scan ALL answer records for ips and select the minimum
 	uint32_t minIp = 0;
 	int32_t          minttl = 15;
@@ -1992,7 +1991,6 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 
 			// for mx records, i think we got a int16_t mx #
 			if ( rrtype == 15 ) {
-				mailPreference = ntohs(*(int16_t *)p);
 				p += 2;
 			}
 

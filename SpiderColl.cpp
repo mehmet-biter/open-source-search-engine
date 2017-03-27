@@ -478,7 +478,7 @@ bool SpiderColl::updateSiteNumInlinksTable(int32_t siteHash32, int32_t sni, time
 // . returns false and sets g_errno on error
 // . xmldoc.cpp adds reply AFTER the negative doledb rec since we decement
 //   the count in m_doleIpTable here
-bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
+bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 
 	////
 	//
@@ -666,7 +666,7 @@ void SpiderColl::removeFromDoledbTable ( int32_t firstIp ) {
 }
 
 
-bool SpiderColl::isInDupCache ( SpiderRequest *sreq , bool addToCache ) {
+bool SpiderColl::isInDupCache(const SpiderRequest *sreq, bool addToCache) {
 
 	// init dup cache?
 	if ( ! m_dupCache.isInitialized() )
@@ -736,7 +736,7 @@ bool SpiderColl::isInDupCache ( SpiderRequest *sreq , bool addToCache ) {
 //   not add this spider request to keep the cache trimmed!!! (MDW: TODO)
 // . BUT! if we have 150,000 urls that is going to take a int32_t time to
 //   spider, so it should have a high reload rate!
-bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) {
+bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS) {
 	// don't add negative keys or data less thangs
 	if ( sreq->m_dataSize <= 0 ) {
 		log( "spider: add spider request is dataless for uh48=%" PRIu64, sreq->getUrlHash48() );

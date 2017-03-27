@@ -285,9 +285,6 @@ private:
 	// are we responsible for freeing nodes' data
 	bool    m_ownData;
 
-	// true if the m_data[i] ptrs are not really ptrs
-	bool    m_dataInPtrs;
-
 	// each node/node in the tree has these datum:
 	collnum_t *m_collnums; // each key now has a collection number
 	char   *m_keys;         // X bytes each

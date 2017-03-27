@@ -78,18 +78,6 @@ static bool printUptime(SafeBuf &sb) {
 bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	// don't allow pages bigger than 128k in cache
 	StackBuf<64*1024> p;
-	//char *bufEnd = buf + 256*1024;
-	// a ptr into "buf"
-	//char *p    = buf;
-	//char *pend = buf + 64*1024;
-	// password, too
-	//int32_t pwdLen = 0;
-	//char *pwd = r->getString ( "pwd" , &pwdLen );
-	//if ( pwdLen > 31 ) pwdLen = 31;
-	//char pbuf [32];
-	//if ( pwdLen > 0 ) strncpy ( pbuf , pwd , pwdLen );
-	//pbuf[pwdLen]='\0';
-
 	char format = r->getReplyFormat();
 
 	// print standard header
@@ -220,31 +208,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	if ( format == FORMAT_HTML ) p.safePrintf ( "</table><br>" );
 
 	//Query performance stats
-	g_stats.calcQueryStats();
-	int32_t days;
-	int32_t hours;
-	int32_t minutes;
-	int32_t secs;
-	int32_t msecs;
-	getCalendarFromMs(g_stats.m_upTime,
-			  &days, 
-			  &hours, 
-			  &minutes, 
-			  &secs,
-			  &msecs);
-
-	// int64_t avgTier0Time = 0;
-	// int64_t avgTier1Time = 0;
-	// int64_t avgTier2Time = 0;
-	// if ( g_stats.m_tierHits[0] > 0 )
-	// 	avgTier0Time = g_stats.m_tierTimes[0] /
-	// 		(int64_t)g_stats.m_tierHits[0];
-	// if ( g_stats.m_tierHits[1] > 0 )
-	// 	avgTier1Time = g_stats.m_tierTimes[1] /
-	// 		(int64_t)g_stats.m_tierHits[1];
-	// if ( g_stats.m_tierHits[2] > 0 )
-	// 	avgTier2Time = g_stats.m_tierTimes[2] /
-	// 		(int64_t)g_stats.m_tierHits[2];
 
 	if ( format == FORMAT_HTML )
 		p.safePrintf ( 
@@ -252,189 +215,8 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      "<table %s>"
 			      "<tr class=hdrow>"
 			      "<td colspan=2>"
-			      "<center><b>Queries</b></td></tr>\n"
+			      "<center><b>Queries</b></td></tr>\n", TABLE_STYLE);
 
-			      "<tr class=poo><td><b>"
-			      "Average Query Latency for last %" PRId32" queries"
-			      ,TABLE_STYLE
-			      ,g_stats.m_numQueries
-			       );
-
-
-	if ( format == FORMAT_XML ) {
-		p.safePrintf("\t<queryStats>\n"
-			     "\t\t<sample>\n"
-			     "\t\t\t<size>last %" PRId32" queries</size>\n"
-			     ,g_stats.m_numQueries
-			     );
-
-		if ( g_stats.m_numQueries == 0 )
-		p.safePrintf("\t\t\t<averageLatency></averageLatency>\n"
-			     );
-		else
-		p.safePrintf("\t\t\t<averageLatency>%.1f ms</averageLatency>\n"
-			     ,g_stats.m_avgQueryTime
-			     );
-
-
-		p.safePrintf("\t\t\t<queriesPerSecond>%f"
-			     "</queriesPerSecond>\n"
-			     "\t\t</sample>\n"
-			     ,g_stats.m_avgQueriesPerSec
-			     );
-
-		p.safePrintf(
-			     "\t\t<total>\n"
-			     "\t\t\t<numQueries>%" PRId32"</numQueries>\n"
-			     "\t\t\t<numSuccesses>%" PRId32"</numSuccesses>\n"
-			     "\t\t\t<numFailures>%" PRId32"</numFailures>\n"
-			     // total
-			     , g_stats.m_totalNumQueries +
-			       g_stats.m_numSuccess + 
-			       g_stats.m_numFails
-			     // total successes
-			     ,g_stats.m_totalNumSuccess + g_stats.m_numSuccess
-			     // total failures
-			     ,g_stats.m_totalNumFails   + g_stats.m_numFails
-			     );
-
-		if ( g_stats.m_totalNumSuccess + g_stats.m_totalNumFails )
-			p.safePrintf("\t\t\t<successRate>%.01f%%"
-				     "</successRate>\n"
-				     // total success rate
-				     , (float)g_stats.m_totalNumSuccess / 
-				       (float)(g_stats.m_totalNumSuccess + 
-					     g_stats.m_totalNumFails)
-				     );
-		else
-			p.safePrintf("\t\t\t<successRate>"
-				     "</successRate>\n");
-
-		p.safePrintf("\t\t</total>\n"
-			     "\t</queryStats>\n"
-
-			     "\t<socketsClosedFromOverload>%" PRId32
-			     "</socketsClosedFromOverload>\n"
-
-			     //days, hours, minutes, secs,
-			     , g_stats.m_closedSockets );
-	}
-
-
-	if ( format == FORMAT_JSON ) {
-		p.safePrintf("\t\"queryStats\":{\n"
-			     "\t\t\"sample\":{\n"
-			     "\t\t\t\"size\":\"last %" PRId32" queries\",\n"
-			     ,g_stats.m_numQueries
-			     );
-
-		if ( g_stats.m_numQueries == 0 )
-		p.safePrintf("\t\t\t\"averageLatency\":\"\",\n"
-			     );
-		else
-		p.safePrintf("\t\t\t\"averageLatency\":\"%.1f ms\",\n"
-			     ,g_stats.m_avgQueryTime
-			     );
-
-
-		p.safePrintf("\t\t\t\"queriesPerSecond\":%f\n"
-			     "\t\t}\n," // sample
-			     ,g_stats.m_avgQueriesPerSec
-			     );
-
-		p.safePrintf(
-			     "\t\t\"total\":{\n"
-			     "\t\t\t\"numQueries\":%" PRId32",\n"
-			     "\t\t\t\"numSuccesses\":%" PRId32",\n"
-			     "\t\t\t\"numFailures\":%" PRId32",\n"
-			     // total
-			     , g_stats.m_totalNumQueries +
-			       g_stats.m_numSuccess + 
-			       g_stats.m_numFails
-			     // total successes
-			     ,g_stats.m_totalNumSuccess + g_stats.m_numSuccess
-			     // total failures
-			     ,g_stats.m_totalNumFails   + g_stats.m_numFails
-			     );
-
-		if ( g_stats.m_totalNumSuccess + g_stats.m_totalNumFails )
-			p.safePrintf("\t\t\t\"successRate\":\"%.01f%%\"\n"
-				     // total success rate
-				     , (float)g_stats.m_totalNumSuccess / 
-				       (float)(g_stats.m_totalNumSuccess + 
-					     g_stats.m_totalNumFails)
-				     );
-		else
-			p.safePrintf("\t\t\t\"successRate\":\"\"\n");
-
-		p.safePrintf("\t\t}\n" // total
-			     "\t},\n" // querystats
-
-			     "\t\"socketsClosedFromOverload\":%" PRId32",\n"
-			     //days, hours, minutes, secs,
-			     , g_stats.m_closedSockets );
-	}
-
-
-	if ( format == FORMAT_HTML ) {
-		if ( g_stats.m_numQueries == 0 )
-			p.safePrintf("</b></td><td></td></tr>\n");
-		else
-			p.safePrintf("</b></td><td>%f seconds</td></tr>\n"
-				     ,g_stats.m_avgQueryTime);
-
-		p.safePrintf(
-
-			     "<tr class=poo><td><b>Average queries/sec. for "
-			     "last %" PRId32" queries"
-			     "</b></td><td>%f queries/sec.</td></tr>\n"
-
-			     "<tr class=poo><td><b>Query Success Rate "
-			     "for last "
-			     "%" PRId32" queries"
-			     "</b></td><td>%f"
-
-			     "<tr class=poo><td><b>Total Queries "
-			     "Served</b></td>"
-			     "<td>%" PRId32
-			     "<tr class=poo><td><b>Total Successful "
-			     "Queries</b></td>"
-			     "<td>%" PRId32
-			     "<tr class=poo><td><b>Total Failed "
-			     "Queries</b></td>"
-			     "<td>%" PRId32
-			     "<tr class=poo><td><b>Total Query "
-			     "Success Rate</b></td>"
-			     "<td>%f"
-			     "</td></tr>"
-			     "<tr class=poo><td><b>Uptime"
-			     "</b></td><td>%" PRId32" days %" PRId32" "
-			     "hrs %" PRId32" min %" PRId32" sec"
-			     "</td></tr>"
-			     "<tr class=poo><td><b>"
-			     "Sockets Closed Because We Hit "
-			     "the Limit"
-			     "</b></td><td>%" PRId32
-			     "</td></tr>",
-
-			     //g_stats.m_avgQueryTime, 
-	
-			     g_stats.m_numQueries,
-			     g_stats.m_avgQueriesPerSec, 
-
-			     g_stats.m_numQueries,
-			     g_stats.m_successRate,
-			     g_stats.m_totalNumQueries + g_stats.m_numSuccess+ 
-			     g_stats.m_numFails,
-			     g_stats.m_totalNumSuccess + g_stats.m_numSuccess ,
-			     g_stats.m_totalNumFails   + g_stats.m_numFails   ,
-			     (float)g_stats.m_totalNumSuccess / 
-			     (float)(g_stats.m_totalNumSuccess + 
-				     g_stats.m_totalNumFails),
-			     days, hours, minutes, secs,
-			     g_stats.m_closedSockets );
-	}
-	
 	int64_t total = 0;
 	for ( int32_t i = 0 ; i <= CR_OK ; i++ )
 		total += g_stats.m_filterStats[i];
@@ -473,46 +255,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 				     "\t},\n"
 				     ,g_crStrings[i],g_stats.m_filterStats[i]);
 	}
-
-	// unless we bring indexdb back, don't need these
-	/*
-	p.safePrintf(
-		     "<tr class=poo><td><b>Tier 0 Hits</b></td><td>%" PRId32"</td></tr>"
-		     "<tr class=poo><td><b>Tier 1 Hits</b></td><td>%" PRId32"</td></tr>"
-		     "<tr class=poo><td><b>Tier 2 Hits</b></td><td>%" PRId32"</td></tr>"
-		     "<tr class=poo><td><b>Tier 2 Exhausted</b></td><td>%" PRId32"</td></tr>"
-		     "<tr class=poo><td><b>Avg Tier 0 Time</b></td><td>%" PRId64"ms</td></tr>"
-		     "<tr class=poo><td><b>Avg Tier 1 Time</b></td><td>%" PRId64"ms</td></tr>"
-		     "<tr class=poo><td><b>Avg Tier 2 Time</b></td><td>%" PRId64"ms</td></tr>",
-		     g_stats.m_tierHits[0], g_stats.m_tierHits[1],
-		     g_stats.m_tierHits[2], g_stats.m_tier2Misses,
-		     avgTier0Time, avgTier1Time, avgTier2Time,
-);
-	*/
-
-	/*
-	p.safePrintf(
-		     "<tr class=poo><td><b>Msg3a Slow Recalls</b></td><td>%" PRId32"</td></tr>"
-		     "<tr class=poo><td><b>Msg3a Quick Recalls</b></td><td>%" PRId32"</td></tr>"
-		     "<tr class=poo><td><b>Msg3a Msg40 Recalls</b></td><td>%" PRId32"</td></tr>"
-
-		     "<tr class=poo><td><b>Unjustified iCache Misses</b></td>"
-		     "<td>%" PRId32"</td></tr>"
-
-		     "<tr class=poo><td>&nbsp;&nbsp;&nbsp;2</td><td>%" PRId32"</td></tr>"
-		     "<tr class=poo><td>&nbsp;&nbsp;&nbsp;3</td><td>%" PRId32"</td></tr>"
-		     "<tr class=poo><td>&nbsp;&nbsp;&nbsp;4</td><td>%" PRId32"</td></tr>"
-		     "<tr class=poo><td>&nbsp;&nbsp;&nbsp;5+</td><td>%" PRId32"</td></tr>"
-		     g_stats.m_msg3aSlowRecalls,
-		     g_stats.m_msg3aFastRecalls,
-		     g_stats.m_msg3aRecallCnt,
-
-		     // unjustified icache misses
-		     g_stats.m_recomputeCacheMissess-g_stats.m_icacheTierJumps,
-
-		     g_stats.m_msg3aRecalls[2], g_stats.m_msg3aRecalls[3],
-		     g_stats.m_msg3aRecalls[4], g_stats.m_msg3aRecalls[5]);
-	*/
 
 	if ( format == FORMAT_HTML ) p.safePrintf("</table><br><br>\n");
 

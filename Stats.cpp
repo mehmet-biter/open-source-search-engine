@@ -15,19 +15,6 @@ Stats::Stats ( ) {
 	memset ( m_pts , 0 , sizeof(StatPoint)*MAX_POINTS );
 
 	m_slowDiskReads = 0;
-	m_queryTimes = 0;
-	m_numQueries = 0;
-	m_numSuccess = 0;
-	m_numFails   = 0;
-	m_avgQueryTime = 0;
-	m_successRate = 1.0;
-	m_totalNumQueries = 0;
-	m_totalNumSuccess = 0;
-	m_totalNumFails   = 0;
-	m_avgQueriesPerSec = 0;
-	m_lastQueryLogTime = gettimeofdayInMilliseconds();
-	m_startTime = m_lastQueryLogTime;
-	m_upTime = 0;
 	m_closedSockets = 0;
 
 	memset(m_msg3aRecalls, 0, sizeof(m_msg3aRecalls));
@@ -197,77 +184,6 @@ void Stats::addPoint (StatPoint **points    ,
 		numPoints[i]++;
 		return;
 	}
-}
-
-
-void Stats::calcQueryStats() {
-	int64_t now = gettimeofdayInMilliseconds();
-	m_upTime = now - m_startTime;
-	m_avgQueryTime  = (float)m_queryTimes /
-		((float)m_numQueries * 1000.0);
-	m_successRate = (float)m_numSuccess / 
-		(float)(m_numSuccess + m_numFails);
-	//(number of queries) / seconds that it took to get this many queries
-	m_avgQueriesPerSec = ((float)m_numQueries * 1000.0) / 
-		(float)(now - m_lastQueryLogTime);
-}
-
-
-void Stats::logAvgQueryTime(int64_t startTime) {
-	int64_t now = gettimeofdayInMilliseconds();
-	int64_t took = now - startTime;
-	static int32_t s_lastSendTime = 0;
-
-	m_queryTimes += took;
-	m_numQueries++;
-
-	if ( m_numQueries > g_conf.m_numQueryTimes )
-		goto reset;
-
-	if (m_numQueries != g_conf.m_numQueryTimes) return;
-	// otherwise, store this info
-	m_avgQueryTime  = (float)m_queryTimes /
-		((float)m_numQueries * 1000.0);
-	m_successRate = (float)m_numSuccess / 
-		(float)(m_numSuccess + m_numFails);
-	//(number of queries) / seconds that it took to get this many queries
-	m_avgQueriesPerSec = ((float)m_numQueries * 1000.0) / 
-		(float)(now - m_lastQueryLogTime);
-	m_lastQueryLogTime = now;
-
-	if(m_avgQueryTime > g_conf.m_avgQueryTimeThreshold ||
-	   m_successRate  < g_conf.m_querySuccessThreshold) {
-		char msgbuf[1024];
-		Host *h = g_hostdb.getHost ( 0 );
-		snprintf(msgbuf, 1024,
-			 "Average latency: %f sec. "
-			 "success rate: %f.  "
-			 "queries/sec: %f.  "
-			 "host: %s.",
-			 m_avgQueryTime, m_successRate, m_avgQueriesPerSec,
-			 iptoa(h->m_ip));
-		log(LOG_WARN, "query: %s",msgbuf);
-		// prevent machinegunning text msgs
-		int32_t now = getTimeLocal();
-		if ( now - s_lastSendTime > 300 ) {
-			s_lastSendTime = now;
-			g_pingServer.sendEmail(NULL, msgbuf);
-		}
-	}
-	else {
-		log(LOG_INFO, "query: Average latency is %f seconds, "
-		    "succeeding at a rate of %f, serving %f queries/sec.",
-		    m_avgQueryTime, m_successRate, m_avgQueriesPerSec);
-	}
- reset:
-	m_totalNumQueries += m_numSuccess + m_numFails;
-	m_totalNumSuccess += m_numSuccess;
-	m_totalNumFails   += m_numFails;
-	
-	m_numQueries = 0;
-	m_queryTimes = 0;
-	m_numSuccess = 0;
-	m_numFails = 0;
 }
 
 // draw a HORIZONTAL line in html

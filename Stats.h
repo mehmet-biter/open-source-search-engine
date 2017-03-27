@@ -56,27 +56,9 @@ class Stats {
 			int32_t        *numPoints ,
 			StatPoint   *p         ) ;
 
-
-
-	//queries
-	void logAvgQueryTime(int64_t startTime);
-	void calcQueryStats();
-
 	void clearMsgStats();
 
 	int64_t m_startTime;
-	int64_t m_upTime;
-	int64_t m_lastQueryLogTime;
-	int64_t m_queryTimes;
-	float     m_avgQueriesPerSec;
-	int32_t      m_numQueries;
-	int32_t      m_numSuccess;
-	int32_t      m_numFails;
-	int32_t      m_totalNumQueries;
-	int32_t      m_totalNumSuccess;
-	int32_t      m_totalNumFails;
-	float     m_avgQueryTime;
-	float     m_successRate;
 
 	// set in BigFile.cpp
 	int32_t      m_slowDiskReads;

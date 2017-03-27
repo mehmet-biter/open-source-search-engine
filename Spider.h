@@ -658,14 +658,14 @@ public:
 
 	int32_t getRecSize () const { return m_dataSize + 4 + sizeof(key128_t); }
 
-	int32_t getUrlLen() {
+	int32_t getUrlLen() const {
 		return m_dataSize -
 		       // subtract the \0
 		       ((char *)m_url-(char *)&m_firstIp) - 1;
 	}
 
-	char *getUrlPath() {
-		char *p = m_url;
+	const char *getUrlPath() const {
+		const char *p = m_url;
 		for ( ; *p ; p++ ) {
 			if ( *p != ':' ) continue;
 			p++; 
@@ -696,7 +696,7 @@ public:
 		return Spiderdb::getUrlHash48( &m_key );
 	}
 
-	int64_t getParentDocId() {
+	int64_t getParentDocId() const {
 		return Spiderdb::getParentDocId( &m_key );
 	}
 
@@ -710,7 +710,7 @@ public:
 	bool setFromAddUrl(const char *url);
 	bool setFromInject(const char *url);
 
-	bool isCorrupt ( );
+	bool isCorrupt() const;
 } __attribute__((packed, aligned(4)));
 
 // . XmlDoc adds this record to spiderdb after attempting to spider a url
@@ -847,7 +847,7 @@ public:
 	unsigned    m_wasIndexedValid         :1;
 
 	// how much buf will we need to serialize ourselves?
-	int32_t getRecSize () { return m_dataSize + 4 + sizeof(key128_t); }
+	int32_t getRecSize () const { return m_dataSize + 4 + sizeof(key128_t); }
 
 	// clear all
 	void reset() { memset ( this , 0 , sizeof(SpiderReply) ); }
@@ -856,11 +856,11 @@ public:
 
 	int32_t print ( class SafeBuf *sbarg );
 
-	int64_t  getUrlHash48  () {
+	int64_t getUrlHash48() const {
 		return Spiderdb::getUrlHash48(&m_key);
 	}
 
-	int64_t getParentDocId (){
+	int64_t getParentDocId() const {
 		return Spiderdb::getParentDocId(&m_key);
 	}
 } __attribute__((packed, aligned(4)));
@@ -915,11 +915,11 @@ inline int64_t makeLockTableKey ( int64_t uh48 , int32_t firstIp ) {
 	return uh48 ^ (uint32_t)firstIp;
 }
 
-inline int64_t makeLockTableKey ( SpiderRequest *sreq ) {
+inline int64_t makeLockTableKey(const SpiderRequest *sreq) {
 	return makeLockTableKey(sreq->getUrlHash48(),sreq->m_firstIp);
 }
 
-inline int64_t makeLockTableKey ( SpiderReply *srep ) {
+inline int64_t makeLockTableKey(const SpiderReply *srep) {
 	return makeLockTableKey(srep->getUrlHash48(),srep->m_firstIp);
 }
 
@@ -936,7 +936,7 @@ public:
 	collnum_t m_collnum;
 };
 
-int32_t getUrlFilterNum ( class SpiderRequest *sreq , 
+int32_t getUrlFilterNum(const class SpiderRequest *sreq,
 		       class SpiderReply *srep,
 		       int32_t nowGlobal,
 		       bool isForMsg20,

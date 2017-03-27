@@ -628,7 +628,7 @@ int32_t RdbList::getDataSize ( const char *rec ) const {
 	return *(int32_t  *)(rec+m_ks);
 }
 
-char *RdbList::getData ( char *rec ) {
+char *RdbList::getData ( char *rec ) const {
 	if ( m_fixedDataSize == 0 ) return NULL;
 	if ( m_fixedDataSize  > 0 ) return rec + m_ks;
 	// negative key? then no data
