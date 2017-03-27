@@ -60,7 +60,6 @@ bool Titledb::init ( ) {
 	                  maxTreeNodes,
 	                  getUseHalfKeys(),
 	                  getKeySize(),
-	                  false,          //isCollectionLess
 	                  false);         //useIndexFile
 
 	// validate
@@ -81,7 +80,6 @@ bool Titledb::init2 ( int32_t treeMem ) {
 	                  maxTreeNodes,
 	                  getUseHalfKeys(),
 	                  getKeySize(),
-	                  false,          //isCollectionLess
 	                  false);         //useIndexFile
 
 	// validate

@@ -477,7 +477,6 @@ bool Spiderdb::init ( ) {
 			    maxTreeNodes                ,
 			    false                       , // half keys?
 			    sizeof(key128_t),             //key size
-			    false,                        //isCollectionLess
 			    false);                       //useIndexFile
 }
 
@@ -497,7 +496,6 @@ bool Spiderdb::init2 ( int32_t treeMem ) {
 			    maxTreeNodes  ,
 			    false         , // half keys?
 			    sizeof(key128_t), // key size
-			    false,            //isCollectionLess
 			    false);           //useIndexFile
 }
 

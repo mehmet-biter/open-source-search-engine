@@ -29,7 +29,6 @@ bool Doledb::init ( ) {
 			    maxTreeNodes                ,
 			    false,                         // half keys?
 			    12,             // key size
-			    false,          //isCollectionLess
 			    false);         //useIndexFile
 }
 

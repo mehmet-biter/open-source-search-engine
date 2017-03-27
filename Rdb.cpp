@@ -132,13 +132,9 @@ bool Rdb::init(const char *dbname,
 		  int32_t           maxTreeNodes         ,
 		  bool           useHalfKeys          ,
 		  char           keySize              ,
-		 bool            isCollectionLess,
 		 bool			useIndexFile ) {
 	// reset all
 	reset();
-
-	// statsdb
-	m_isCollectionLess = isCollectionLess;
 
 	// save the dbname NULL terminated into m_dbname/m_dbnameLen
 	m_dbnameLen = strlen ( dbname );
