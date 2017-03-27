@@ -140,10 +140,6 @@ class Conf {
 	int32_t  m_linkdbMaxTreeMem;
 	int32_t  m_linkdbMinFilesToMerge;
 
-	// statdb
-	int32_t m_statsdbMaxTreeMem;
-	bool m_useStatsdb;
-
 	// are we doing a command line thing like 'gb 0 dump s ....' in
 	// which case we do not want to log certain things
 	bool m_doingCommandLine;

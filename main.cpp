@@ -108,9 +108,6 @@ static void dumpDoledb  ( const char *coll, int32_t sfn, int32_t numFiles, bool 
 
 static void dumpClusterdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 
-//void dumpStatsdb 	 ( int32_t startFileNum, int32_t numFiles, bool includeTree,
-//			   int test );
-			   
 static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, const char *url);
 
 static int copyFiles(const char *dstDir);
@@ -579,9 +576,6 @@ int main2 ( int argc , char *argv[] ) {
 			"\t<db> is x to dump doledb.\n"
 			"\t<db> is w to dump waiting tree.\n"
 			"\t<db> is l to dump clusterdb.\n"
-			"\t<db> is z to dump statsdb all keys.\n"
-			"\t<db> is Z to dump statsdb all keys and "
-			"data samples.\n"
 			"\t<db> is L to dump linkdb.\n"
 			);
 		SafeBuf sb2;
@@ -1555,10 +1549,6 @@ int main2 ( int argc , char *argv[] ) {
 			dumpTagdb( coll, startFileNum, numFiles, includeTree,   0, NULL );
 		} else if ( argv[cmdarg+1][0] == 'l' )
 			dumpClusterdb (coll,startFileNum,numFiles,includeTree);
-		//else if ( argv[cmdarg+1][0] == 'z' )
-		//	dumpStatsdb(startFileNum,numFiles,includeTree,2);
-		//else if ( argv[cmdarg+1][0] == 'Z' )
-		//	dumpStatsdb(startFileNum,numFiles,includeTree,4);
 		else if ( argv[cmdarg+1][0] == 'L' ) {
 			char *url = NULL;
 			if ( cmdarg+6 < argc ) url = argv[cmdarg+6];

@@ -6312,16 +6312,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
-	m->m_title = "use statsdb";
-	m->m_desc  = "Archive system statistics information in Statsdb.";
-	m->m_cgi   = "usdb";
-	simple_m_set(Conf,m_useStatsdb);
-	m->m_def   = "1";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
 	//////
 	// END MASTER CONTROLS
 	//////
@@ -7629,20 +7619,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_group = false;
-	m++;
-
-	////////////////////
-	// statdb settings
-	////////////////////
-
-	m->m_title = "statsdb max tree mem";
-	m->m_desc  = "";
-	m->m_cgi   = "mstmt";
-	simple_m_set(Conf,m_statsdbMaxTreeMem);
-	m->m_def   = "5000000";
-	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_RDB;
-	m->m_group = true;
 	m++;
 
 	////////////////////

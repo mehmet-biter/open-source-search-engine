@@ -79,8 +79,6 @@ Conf::Conf ( ) {
 	m_spiderdbMaxTreeMem = 0;
 	m_linkdbMaxTreeMem = 0;
 	m_linkdbMinFilesToMerge = 0;
-	m_statsdbMaxTreeMem = 0;
-	m_useStatsdb = false;
 	m_maxCpuThreads = 0;
 	m_maxIOThreads = 0;
 	m_maxExternalThreads = 0;
@@ -489,9 +487,6 @@ bool Conf::init ( char *dir ) { // , int32_t hostId ) {
 
 	// this off
 	g_conf.m_repairingEnabled = false;
-
-	// force on for now
-	g_conf.m_useStatsdb = true;
 
 	// hard-code disable this -- could be dangerous
 	g_conf.m_bypassValidation = true;
