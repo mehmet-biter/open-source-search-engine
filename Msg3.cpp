@@ -659,7 +659,6 @@ void Msg3::doneScanningWrapper(void *state) {
 // . but now that we may get a list remotely to fix data corruption,
 //   this may indeed block
 bool Msg3::doneScanning ( ) {
-	QUICKPOLL(m_niceness);
 	// . did we have any error on any scan?
 	// . if so, repeat ALL of the scans
 	g_errno = m_errno;
@@ -850,7 +849,6 @@ bool Msg3::doneScanning ( ) {
 	// . if we have only 1 list, it won't be merged into a final list,
 	//   that is, we'll just set m_list = &m_scan[i].m_list
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-		QUICKPOLL(m_niceness);
 		// count total bytes for logging
 		count += m_scan[i].m_list.getListSize();
 		if(!m_scan[i].m_inPageCache)
@@ -944,8 +942,6 @@ bool Msg3::doneScanning ( ) {
 					 m_scan[i].m_list.getListSize() ,
 					 0 ); // timestamp. 0 = now
 		}
-
-		QUICKPOLL(m_niceness);
 
 		if (!m_scan[i].m_list.constrain(m_startKey, m_constrainKey, mrs, m_scan[i].m_hintOffset, m_scan[i].m_hintKey, m_rdbId, filename)) {
 			log(LOG_WARN, "net: Had error while constraining list read from %s: %s/%s. vfd=%" PRId32" parts=%" PRId32". "
