@@ -2674,6 +2674,8 @@ void RdbBase::generateGlobalIndex(void *item) {
 	}
 
 	log(LOG_INFO, "db: Processed job %p to generate global index", item);
+
+	delete item;
 }
 
 /// @todo ALC we should free up m_fileInfo[i].m_index->m_docIds when we don't need it, and load it back when we do
