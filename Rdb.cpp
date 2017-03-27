@@ -1763,22 +1763,11 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 	// dump completes it calls deleteList() and removes the nodes from
 	// the tree, so if you were overriding a node currently being dumped
 	// we would lose it.
-	if ( m_dump.isDumping() &&
-		 // ensure the dump is dumping the collnum of this key
-		 m_dump.getCollNum() == collnum &&
-		 m_dump.getLastKeyInQueue() &&
-		 // the dump should not split positive/negative keys so
-		 // if our positive/negative twin should be in the dump with us
-		 // or not in the dump with us, so any positive/negative
-		 // annihilation below should be ok and we should be save
-		 // to call deleteNode() below
-		 KEYCMP(key,m_dump.getFirstKeyInQueue(),m_ks)>=0 &&
-		 //oppKey <= m_dump.getLastKeyInQueue ()   ) goto addIt;
-		 KEYCMP(key,m_dump.getLastKeyInQueue (),m_ks)<=0   )  {
-		    // tell caller to wait and try again later
-	    g_errno = ETRYAGAIN;
+	if ( m_dump.isDumping()) {
+		// tell caller to wait and try again later
+		g_errno = ETRYAGAIN;
 		logTrace(g_conf.m_logTraceRdb, "END. %s: Dumping. Returning false", m_dbname);
-	    return false;
+		return false;
 	}
 
 	// copy the data before adding if we don't already own it
