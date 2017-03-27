@@ -666,7 +666,7 @@ void SpiderColl::removeFromDoledbTable ( int32_t firstIp ) {
 }
 
 
-bool SpiderColl::isInDupCache ( SpiderRequest *sreq , bool addToCache ) {
+bool SpiderColl::isInDupCache(const SpiderRequest *sreq, bool addToCache) {
 
 	// init dup cache?
 	if ( ! m_dupCache.isInitialized() )

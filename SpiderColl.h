@@ -83,7 +83,7 @@ public:
 
 	Msg4 m_msg4x;
 
-	bool isInDupCache(SpiderRequest *sreq, bool addToCache);
+	bool isInDupCache(const SpiderRequest *sreq, bool addToCache);
 
 	// Rdb.cpp calls this
 	bool addSpiderReply(SpiderReply *srep);
