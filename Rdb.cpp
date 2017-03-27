@@ -1957,7 +1957,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 		}
 
 		/// @todo ALC we're making an assumption that data passed in is part of a SpiderRequest (fix this!)
-		const SpiderRequest *sreq = reinterpret_cast<const SpiderRequest *>(dataCopy - 4 - sizeof(key128_t));
+		const SpiderRequest *sreq = reinterpret_cast<const SpiderRequest *>(data - 4 - sizeof(key128_t));
 
 		// is it really a request and not a SpiderReply?
 		if (Spiderdb::isSpiderRequest(&(sreq->m_key))) {
@@ -2048,7 +2048,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 
 		/// @todo ALC we're making an assumption that data passed in is part of a SpiderRequest (fix this!)
 		// assume this is the rec (4 byte dataSize,spiderdb key is now 16 bytes)
-		const SpiderRequest *sreq = reinterpret_cast<const SpiderRequest *>(dataCopy - 4 - sizeof(key128_t));
+		const SpiderRequest *sreq = reinterpret_cast<const SpiderRequest *>(data - 4 - sizeof(key128_t));
 
 		// is it really a request and not a SpiderReply?
 		if (Spiderdb::isSpiderRequest(&sreq->m_key)) {
