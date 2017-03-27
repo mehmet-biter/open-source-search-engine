@@ -165,7 +165,6 @@ Conf::Conf ( ) {
 	m_maxCorruptLists = 0;
 	m_defaultQueryResultsValidityTime = 0;
 	m_useCollectionPasswords = false;
-	m_allowCloudUsers = false;
 	m_readOnlyMode = false;
 	m_useEtcHosts = false;
 	m_verifyTreeIntegrity = false;
