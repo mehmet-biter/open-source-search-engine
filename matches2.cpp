@@ -17,18 +17,6 @@
 
 typedef uint64_t BITVEC;
 
-bool initializeNeedle(Needle *needles, int32_t numNeedles) {
-	// are we responsible for init'ing string lengths? this is much
-	// faster than having to specify lengths manually.
-	for ( int32_t i=0 ; i < numNeedles; i++ ) {
-		// set the string size in bytes if not provided
-		if ( needles[i].m_stringSize == 0 )
-			needles[i].m_stringSize = strlen(needles[i].m_string);
-	}
-
-	return true;
-}
-
 char *getMatches2(const Needle *needles, NeedleMatch *needlesMatch, int32_t numNeedles,
                   char *haystack, int32_t haystackSize, char *linkPos, bool *hadPreMatch) {
 	// assume not
@@ -71,6 +59,7 @@ char *getMatches2(const Needle *needles, NeedleMatch *needlesMatch, int32_t numN
 	for ( int32_t i = 0 ; i < numNeedlesToInit ; i++ ) {
 		unsigned char *w    = (unsigned char *)needles[i].m_string;
 		unsigned char *wend = w + needles[i].m_stringSize;
+
 		// BITVEC is now 64 bits
 		BITVEC mask = ((BITVEC)1)<<(i&0x3f); // (1<<(i%64));
 		// if the needle is small, fill up the remaining letter tables
