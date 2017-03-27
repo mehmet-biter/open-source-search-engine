@@ -1704,7 +1704,7 @@ bool Rdb::canAdd() const {
 // . if RdbMem, m_mem, has no mem, sets g_errno to ETRYAGAIN and returns false
 //   because dump should complete soon and free up some mem
 // . this overwrites dups
-bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) {
+bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_t dataSize) {
 	logTrace(g_conf.m_logTraceRdb, "BEGIN %s: collnum=%" PRId32" key=%s dataSize=%" PRId32, m_dbname, collnum, KEYSTR(key, m_ks), dataSize);
 
 	if (!getBase(collnum)) {
@@ -1781,14 +1781,9 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 	    return false;
 	}
 
-	// save orig
-	char *orig = NULL;
-
 	// copy the data before adding if we don't already own it
+	char *dataCopy = NULL;
 	if (data) {
-		// save orig
-		orig = data;
-
 		// sanity check
 		if ( m_fixedDataSize == 0 && dataSize > 0 ) {
 			g_errno = EBADENGINEER;
@@ -1797,8 +1792,8 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 			return false;
 		}
 
-		data = (char *) m_mem.dupData(data, dataSize);
-		if ( ! data ) { 
+		dataCopy = (char *) m_mem.dupData(data, dataSize);
+		if ( ! dataCopy ) {
 			g_errno = ETRYAGAIN; 
 			log(LOG_WARN, "db: Could not allocate %" PRId32" bytes to add data to %s. Retrying.",dataSize,m_dbname);
 			logTrace(g_conf.m_logTraceRdb, "END. %s: Unable to allocate data. Returning false", m_dbname);
@@ -1825,7 +1820,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 		} else {
 			// do not overflow!
 			// log debug
-			SpiderRequest *sreq = (SpiderRequest *)data;
+			const SpiderRequest *sreq = reinterpret_cast<const SpiderRequest *>(dataCopy);
 			logf(LOG_DEBUG, "spider: added doledb key for pri=%" PRId32" time=%" PRIu32" uh48=%" PRIu64" u=%s",
 			     (int32_t)g_doledb.getPriority(&doleKey),
 			     (uint32_t)g_doledb.getSpiderTime(&doleKey),
@@ -1921,7 +1916,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 	} else {
 		if (m_useTree) {
 			// . TODO: save this tree-walking state for adding the node!!!
-			// . TODO: use somethin like getNode(key,&lastNode) then addNode (lastNode,key,data,dataSize)
+			// . TODO: use something like getNode(key,&lastNode) then addNode (lastNode,key,dataCopy,dataSize)
 			// . #1) if we're adding a positive key, replace negative counterpart
 			//       in the tree, because we'll override the positive rec it was
 			//       deleting
@@ -1962,7 +1957,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 		}
 
 		/// @todo ALC we're making an assumption that data passed in is part of a SpiderRequest (fix this!)
-		SpiderRequest *sreq = (SpiderRequest *)(orig - 4 - sizeof(key128_t));
+		const SpiderRequest *sreq = reinterpret_cast<const SpiderRequest *>(dataCopy - 4 - sizeof(key128_t));
 
 		// is it really a request and not a SpiderReply?
 		if (Spiderdb::isSpiderRequest(&(sreq->m_key))) {
@@ -1988,7 +1983,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 
 	int32_t tn;
 	if (m_useTree) {
-		tn = m_tree.addNode(collnum, key, data, dataSize);
+		tn = m_tree.addNode(collnum, key, dataCopy, dataSize);
 		if (tn < 0) {
 			// enhance the error message
 			const char *ss = m_tree.isSaving() ? " Tree is saving." : "";
@@ -1999,7 +1994,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 		// . TODO: add using "lastNode" as a start node for the insertion point
 		// . should set g_errno if failed
 		// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
-		tn = m_buckets.addNode(collnum, key, data, dataSize);
+		tn = m_buckets.addNode(collnum, key, dataCopy, dataSize);
 		if (tn < 0) {
 			// enhance the error message
 			const char *ss = m_buckets.isSaving() ? " Buckets are saving." : "";
@@ -2053,7 +2048,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 
 		/// @todo ALC we're making an assumption that data passed in is part of a SpiderRequest (fix this!)
 		// assume this is the rec (4 byte dataSize,spiderdb key is now 16 bytes)
-		SpiderRequest *sreq = (SpiderRequest *)(orig - 4 - sizeof(key128_t));
+		const SpiderRequest *sreq = reinterpret_cast<const SpiderRequest *>(dataCopy - 4 - sizeof(key128_t));
 
 		// is it really a request and not a SpiderReply?
 		if (Spiderdb::isSpiderRequest(&sreq->m_key)) {
@@ -2063,7 +2058,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 			logDebug(g_conf.m_logDebugSpider, "spider: rdb: added spider request to spiderdb rdb tree addnode=%" PRId32
 					" request for uh48=%" PRIu64" prntdocid=%" PRIu64" firstIp=%s spiderdbkey=%s",
 			         tn, sreq->getUrlHash48(), sreq->getParentDocId(), iptoa(sreq->m_firstIp),
-			         KEYSTR((char *)&sreq->m_key, sizeof(key128_t)));
+			         KEYSTR((const char *)&sreq->m_key, sizeof(key128_t)));
 
 			// false means to NOT call evaluateAllRequests()
 			// because we call it below. the reason we do this
