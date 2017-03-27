@@ -408,8 +408,8 @@ bool RdbDump::dumpTree(bool recall) {
 			const char *s = (m_rdb ? getDbnameFromId(m_rdb->getRdbId()) : "none");
 			const char *ks1 = "";
 			const char *ks2 = "";
-			char tmp1[32];
-			char tmp2[32];
+			char tmp1[MAX_KEY_BYTES*2+1];
+			char tmp2[MAX_KEY_BYTES*2+1];
 
 			strncpy(tmp1, KEYSTR(m_firstKeyInQueue, m_list->getKeySize()), sizeof(tmp1));
 			tmp1[ sizeof(tmp1)-1 ] = '\0';
@@ -543,10 +543,10 @@ bool RdbDump::dumpList2(bool recall) {
 		// . SANITY CHECK
 		// . ensure first key is >= last key added to the map map
 		if (m_offset > 0 && m_map) {
-			char k[MAX_KEY_BYTES];
+			char k[MAX_KEY_BYTES*2+1];
 			m_list->getCurrentKey(k);
 
-			char lastKey[MAX_KEY_BYTES];
+			char lastKey[MAX_KEY_BYTES*2+1];
 			m_map->getLastKey(lastKey);
 
 			if (KEYCMP(k, lastKey, m_ks) <= 0) {
