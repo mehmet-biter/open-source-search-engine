@@ -48,19 +48,6 @@ void TopTree::reset() {
 	m_t2.reset();
 }
 
-// deletes the nodes, but doesn't free memory
-// so basically just reset everything
-void TopTree::deleteNodes ( ) {
-	m_numUsedNodes = 0;
-	// make empty the last
-	m_emptyNode = 0;
-	// set it
-	m_headNode = -1;
-	// score info
-	m_lowNode  = -1;
-	m_highNode = -1;
-}	
-
 // . pre-allocate memory
 // . returns false and sets g_errno on error
 bool TopTree::setNumNodes ( int32_t docsWanted , bool doSiteClustering ) {
