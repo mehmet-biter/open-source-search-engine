@@ -545,29 +545,26 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 	// clear error for this
 	g_errno = 0;
 
-	bool update = false;
-	// use the domain hash for this guy! since its from robots.txt
-	int32_t *cdp = (int32_t *)m_cdTable.getValue32(srep->m_domHash32);
-	// update it only if better or empty
-	if ( ! cdp ) update = true;
+	{
+		ScopedLock sl(m_cdTableMtx);
 
-	// no update if injecting or from pagereindex (docid based spider request)
-	if ( srep->m_fromInjectionRequest )
-		update = false;
+		// use the domain hash for this guy! since its from robots.txt
+		int32_t *cdp = (int32_t *)m_cdTable.getValue32(srep->m_domHash32);
 
-	// update m_sniTable if we should
-	if ( update ) {
-		// . make new data for this key
-		// . lower 32 bits is the spideredTime
-		// . upper 32 bits is the crawldelay
-		int32_t nv = (int32_t)(srep->m_crawlDelayMS);
-		if ( ! m_cdTable.addKey(&srep->m_domHash32,&nv)){
-			// return false with g_errno set on error
-			//return false;
-			log("spider: failed to add crawl delay for "
-			    "firstip=%s",iptoa(srep->m_firstIp));
-			// just ignore
-			g_errno = 0;
+		// update it only if better or empty
+		// no update if injecting or from pagereindex (docid based spider request)
+		if (!cdp && !srep->m_fromInjectionRequest) {
+			// update m_sniTable if we should
+			// . make new data for this key
+			// . lower 32 bits is the spideredTime
+			// . upper 32 bits is the crawldelay
+			int32_t nv = (int32_t)(srep->m_crawlDelayMS);
+			if (!m_cdTable.addKey(&srep->m_domHash32, &nv)) {
+				log(LOG_WARN, "spider: failed to add crawl delay for firstip=%s", iptoa(srep->m_firstIp));
+
+				// just ignore
+				g_errno = 0;
+			}
 		}
 	}
 
@@ -2665,8 +2662,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			sreq->m_forceDelete = true;
 		}
 
-		int64_t spiderTimeMS;
-		spiderTimeMS = getSpiderTimeMS ( sreq,ufn,srep,nowGlobalMS );
+		int64_t spiderTimeMS = getSpiderTimeMS(sreq, ufn, srep);
 		// how many outstanding spiders on a single IP?
 		//int32_t maxSpidersPerIp = m_cr->m_spiderIpMaxSpiders[ufn];
 		// sanity
@@ -3504,16 +3500,11 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 }
 
 
-
-uint64_t SpiderColl::getSpiderTimeMS ( SpiderRequest *sreq,
-				       int32_t ufn,
-				       SpiderReply *srep,
-				       uint64_t nowGlobalMS ) {
+uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep) {
 	// . get the scheduled spiderTime for it
 	// . assume this SpiderRequest never been successfully spidered
 	int64_t spiderTimeMS = ((uint64_t)sreq->m_addedTime) * 1000LL;
-	// how can added time be in the future? did admin set clock back?
-	//if ( spiderTimeMS > nowGlobalMS ) spiderTimeMS = nowGlobalMS;
+
 	// if injecting for first time, use that!
 	if ( ! srep && sreq->m_isInjecting ) return spiderTimeMS;
 	if ( ! srep && sreq->m_isPageReindex ) return spiderTimeMS;
@@ -3545,12 +3536,14 @@ uint64_t SpiderColl::getSpiderTimeMS ( SpiderRequest *sreq,
 	// crawldelay table check!!!!
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
-	int32_t *cdp = (int32_t *)m_cdTable.getValue ( &sreq->m_domHash32 );
+
 	int64_t minSpiderTimeMS2 = 0;
-	// limit to 60 seconds crawl delay. 
-	// help fight SpiderReply corruption too
-	if ( cdp && *cdp > 60000 ) *cdp = 60000;
-	if ( cdp && *cdp >= 0 ) minSpiderTimeMS2 = lastMS + *cdp;
+
+	{
+		ScopedLock sl(m_cdTableMtx);
+		int32_t *cdp = (int32_t *)m_cdTable.getValue(&sreq->m_domHash32);
+		if (cdp && *cdp >= 0) minSpiderTimeMS2 = lastMS + *cdp;
+	}
 
 	//  ensure min
 	if ( spiderTimeMS < minSpiderTimeMS1 ) spiderTimeMS = minSpiderTimeMS1;
