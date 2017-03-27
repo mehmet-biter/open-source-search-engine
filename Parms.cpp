@@ -995,8 +995,7 @@ bool Parms::sendPageGeneric ( TcpSocket *s , HttpRequest *r ) {
 
 	bool isMasterAdmin = g_conf.isMasterAdmin ( s , r );
 	bool isCollAdmin = g_conf.isCollAdmin ( s , r );
-	if ( ! g_conf.m_allowCloudUsers &&
-	     ! isMasterAdmin &&
+	if ( ! isMasterAdmin &&
 	     ! isCollAdmin ) {
 		const char *msg = "NO PERMISSION";
 		return g_httpServer.sendDynamicPage (s, msg,strlen(msg));
@@ -4934,19 +4933,6 @@ void Parms::init ( ) {
 	m->m_def   = "0";
 	m->m_page  = PAGE_MASTER;
 	m++;
-
-#ifndef PRIVACORE_SAFE_VERSION
-	m->m_title = "allow cloud users";
-	m->m_desc  = "Can guest users create and administer "
-		"a collection? Limit: 1 "
-		"collection per IP address. This is mainly for doing "
-		"demos on the gigablast.com domain.";
-	m->m_cgi   = "acu";
-	simple_m_set(Conf,m_allowCloudUsers);
-	m->m_def   = "0";
-	m->m_page  = PAGE_MASTER;
-	m++;
-#endif
 
 	m->m_title = "auto save frequency";
 	m->m_desc  = "Save data in memory to disk after this many minutes "
@@ -10168,24 +10154,6 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 		     strcmp(m->m_cgi,"delcoll") == 0 ) {
 			// permission override for /admin/delcoll cmd & parm
 			hasPerm = g_conf.isCollAdminForColl (sock,hr,val);
-		}
-#endif
-
-#ifndef PRIVACORE_SAFE_VERSION
-		// if this IP c-block as already added a collection then do not
-		// allow it to add another.
-		if ( m->m_page == PAGE_ADDCOLL &&
-		     g_conf.m_allowCloudUsers &&
-		     ! isMasterAdmin &&
-		     strcmp(m->m_cgi,"addcoll")==0 ) {
-			// see if user's c block has already added a collection
-			int32_t numAdded = 0;
-			if ( numAdded >= 1 ) {
-				g_errno = ENOPERM;
-				log("parms: already added a collection from this cloud user's c-block.");
-				return false;
-			}
-			hasPerm = true;
 		}
 #endif
 

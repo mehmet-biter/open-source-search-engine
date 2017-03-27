@@ -369,8 +369,7 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 		return g_httpServer.sendErrorReply ( s , 505 , "Page not active");
 	}
 
-	if ( ! g_conf.m_allowCloudUsers &&
-	     ! publicPage &&
+	if ( ! publicPage &&
 	     ! isMasterAdmin &&
 	     ! g_conf.isCollAdmin ( s , r ) ) {
 		return sendPageLogin ( s , r );

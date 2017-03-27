@@ -397,23 +397,23 @@ class Spiderdb {
 	// this rdb holds urls waiting to be spidered or being spidered
 	Rdb m_rdb;
 
-	static int64_t getUrlHash48( const key128_t *k ) {
+	static int64_t getUrlHash48(const key128_t *k ) {
 		return (((k->n1)<<16) | k->n0>>(64-16)) & 0xffffffffffffLL;
 	}
 	
-	static bool isSpiderRequest( key128_t *k ) {
+	static bool isSpiderRequest(const key128_t *k) {
 		return (k->n0>>(64-17))&0x01;
 	}
 
-	static bool isSpiderReply( key128_t *k ) {
+	static bool isSpiderReply(const key128_t *k) {
 		return ((k->n0>>(64-17))&0x01)==0x00;
 	}
 
-	static int64_t getParentDocId( key128_t *k ) {
+	static int64_t getParentDocId(const key128_t *k) {
 		return (k->n0>>9)&DOCID_MASK;
 	}
 
-	static int32_t getFirstIp( key128_t *k ) {
+	static int32_t getFirstIp(const key128_t *k) {
 		return (k->n1>>32);
 	}
 

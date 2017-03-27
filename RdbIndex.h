@@ -66,7 +66,7 @@ public:
 
 	void addList(RdbList *list);
 
-	void addRecord(char *key);
+	void addRecord(const char *key);
 
 	// key format
 	// ........ ........ ........ dddddddd  d = docId
@@ -82,7 +82,7 @@ public:
 	static const uint64_t s_delBitMask = 0x01ULL;
 
 private:
-	void addRecord_unlocked(char *key);
+	void addRecord_unlocked(const char *key);
 
 	bool writeIndex2(bool finalWrite);
 	bool readIndex2();

@@ -15,16 +15,15 @@ public:
 	bool initialize(queue_func_t processFunc, const char *threadName);
 	void finalize();
 
+	// we are not responsible for cleaning up memory used by item
 	void addItem(void *item);
 
 	bool isEmpty();
-	bool waitUntilEmpty();
 private:
 	static void* thread_queue_function(void *args);
 
 	std::queue<void*> m_queue;
 	pthread_mutex_t m_queueMtx;
-	pthread_cond_t m_queueCondEmpty;
 	pthread_cond_t m_queueCondNotEmpty;
 
 	pthread_t m_thread;

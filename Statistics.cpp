@@ -7,6 +7,7 @@
 #include "RdbCache.h"
 #include "Rdb.h"
 #include "GbMutex.h"
+#include "Lang.h"
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
@@ -18,9 +19,6 @@
 static const time_t dump_interval = 60;
 static const char tmp_filename[] = "statistics.txt.new";
 static const char final_filename[] = "statistics.txt";
-
-static const size_t max_term_count = 10;
-
 
 static const unsigned timerange_lower_bound[] = {
 	0,
@@ -58,24 +56,20 @@ static unsigned ms_to_tr(unsigned ms) {
 //////////////////////////////////////////////////////////////////////////////
 // Query statistics
 
-static TimerangeStatistics query_timerange_statistics[timerange_count][max_term_count+1];
-static GbMutex mtx_query_timerange_statistics;
+typedef std::map<std::tuple<int, unsigned, unsigned>, TimerangeStatistics[timerange_count]> query_trs_t;
+static query_trs_t query_trs;
+static GbMutex mtx_query_trs;
 
+void Statistics::register_query_time(unsigned term_count, unsigned qlang, int error_code, unsigned ms) {
+	unsigned i = ms_to_tr(ms);
+	auto key = std::make_tuple(error_code, term_count, qlang);
 
-
-void Statistics::register_query_time(unsigned term_count, unsigned /*qlang*/, unsigned ms)
-{
-	if(term_count>max_term_count)
-		term_count = max_term_count;
-	
-	unsigned i=ms_to_tr(ms);
-	
-	ScopedLock sl(mtx_query_timerange_statistics);
-	TimerangeStatistics &ts = query_timerange_statistics[i][term_count];
-	if(ts.count!=0) {
-		if(ms<ts.min_time)
+	ScopedLock sl(mtx_query_trs);
+	TimerangeStatistics &ts = query_trs[key][i];
+	if (ts.count != 0) {
+		if (ms < ts.min_time)
 			ts.min_time = ms;
-		if(ms>ts.max_time)
+		if (ms > ts.max_time)
 			ts.max_time = ms;
 	} else {
 		ts.min_time = ms;
@@ -86,22 +80,32 @@ void Statistics::register_query_time(unsigned term_count, unsigned /*qlang*/, un
 }
 
 static void dump_query_statistics( FILE *fp ) {
-	TimerangeStatistics qcopy[timerange_count][max_term_count+1];
-	ScopedLock sl1(mtx_query_timerange_statistics);
-	memcpy(qcopy,query_timerange_statistics,sizeof(query_timerange_statistics));
-	memset(query_timerange_statistics,0,sizeof(query_timerange_statistics));
+	ScopedLock sl1(mtx_query_trs);
+	query_trs_t qcopy(query_trs);
+	query_trs.clear();
 	sl1.unlock();
 
-	for(unsigned i=0; i<timerange_count; i++) {
-		for(unsigned j=1; j<max_term_count+1; j++) {
-			const TimerangeStatistics &ts = qcopy[i][j];
-			if ( ts.count == 0 ) {
+	for (auto it = qcopy.begin(); it != qcopy.end(); ++it) {
+		for (unsigned i = 0; i < timerange_count; ++i) {
+			const TimerangeStatistics &ts = it->second[i];
+			if (ts.count == 0) {
 				continue;
 			}
 
-			fprintf(fp,"query:lower_bound=%u;terms=%u;min=%u;max=%u;count=%u;sum=%u\n",
+			std::string tmp_str;
+			const char *status = "SUCCESS";
+			if (std::get<0>(it->first)) {
+				status = merrname(std::get<0>(it->first));
+				if (status == NULL) {
+					tmp_str = std::to_string(std::get<0>(it->first));
+					status = tmp_str.c_str();
+				}
+			}
+			fprintf(fp, "query:lower_bound=%u;terms=%u;qlang=%s;status=%s;min=%u;max=%u;count=%u;sum=%u\n",
 			        timerange_lower_bound[i],
-			        j,
+			        std::get<1>(it->first),
+			        getLanguageAbbr(std::get<2>(it->first)),
+			        status,
 			        ts.min_time,
 			        ts.max_time,
 			        ts.count,
@@ -113,8 +117,9 @@ static void dump_query_statistics( FILE *fp ) {
 //////////////////////////////////////////////////////////////////////////////
 // Spidering statistics
 
-static std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> old_spider_trs;
-static std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> new_spider_trs;
+typedef std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> spider_trs_t;
+static spider_trs_t old_spider_trs;
+static spider_trs_t new_spider_trs;
 static GbMutex mtx_spider_trs;
 
 void Statistics::register_spider_time(bool is_new, int error_code, int http_status, unsigned ms) {
@@ -185,10 +190,10 @@ static void status_to_spider_statistics( std::vector<unsigned> *spiderdoc_counts
 
 static void dump_spider_statistics( FILE *fp ) {
 	ScopedLock sl1(mtx_spider_trs);
-	std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> soldcopy( old_spider_trs );
+	spider_trs_t soldcopy( old_spider_trs );
 	old_spider_trs.clear();
 
-	std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> snewcopy( new_spider_trs );
+	spider_trs_t snewcopy( new_spider_trs );
 	new_spider_trs.clear();
 
 	sl1.unlock();

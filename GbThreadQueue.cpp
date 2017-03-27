@@ -9,7 +9,6 @@ void* GbThreadQueue::thread_queue_function(void *args) {
 	while (!tq->m_stop) {
 		ScopedLock sl(tq->m_queueMtx);
 		if (tq->m_queue.empty()) {
-			pthread_cond_signal(&tq->m_queueCondEmpty);
 			pthread_cond_wait(&tq->m_queueCondNotEmpty, &tq->m_queueMtx);
 		}
 
@@ -40,7 +39,6 @@ void* GbThreadQueue::thread_queue_function(void *args) {
 GbThreadQueue::GbThreadQueue()
 	: m_queue()
 	, m_queueMtx(PTHREAD_MUTEX_INITIALIZER)
-	, m_queueCondEmpty(PTHREAD_COND_INITIALIZER)
 	, m_queueCondNotEmpty(PTHREAD_COND_INITIALIZER)
 	, m_thread()
 	, m_func()
@@ -88,18 +86,5 @@ void GbThreadQueue::addItem(void *item) {
 
 bool GbThreadQueue::isEmpty() {
 	ScopedLock sl(m_queueMtx);
-	return m_queue.empty();
-}
-
-bool GbThreadQueue::waitUntilEmpty() {
-	ScopedLock sl(m_queueMtx);
-	if (m_queue.empty()) {
-		return true;
-	}
-
-	while (!m_stop && !m_queue.empty()) {
-		pthread_cond_wait(&m_queueCondEmpty, &m_queueMtx);
-	}
-
 	return m_queue.empty();
 }

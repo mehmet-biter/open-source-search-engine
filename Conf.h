@@ -277,8 +277,6 @@ class Conf {
 	
 	bool   m_useCollectionPasswords;
 
-	bool   m_allowCloudUsers;
-
 	// if in read-only mode we do no spidering and load no saved trees
 	// so we can use all mem for caching index lists
 	bool   m_readOnlyMode;

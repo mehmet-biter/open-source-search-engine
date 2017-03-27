@@ -695,12 +695,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
 
-	//p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>max age</td>" );
-	//for ( int32_t i = 0 ; i < numCaches ; i++ ) {
-	//	int64_t a = caches[i]->getMaxMem();
-	//	p.safePrintf("<td>%" PRId64"</td>",a);
-	//}
-
 	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>save to disk</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->useDisk();
@@ -709,50 +703,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 	// end the table now
 	p.safePrintf ( "</tr>\n</table><br><br>" );
-
-
-
-	//
-	// Query Term Tiers Tables
-	//
-	/*
-	p.safePrintf ("<tr class=poo><td><b>Query Terms</b></td>" );
-	for ( int32_t i = 0; i < MAX_TIERS; i++ )
-		p.safePrintf ( "<td><b>Tier #%" PRId32"</b></td>",i );
-	p.safePrintf ( "</tr><tr class=poo>");
-	for ( int32_t i = 0; i < 14; i++ ){
-		p.safePrintf ( "<td>&nbsp;&nbsp;&nbsp;%" PRId32"</td>", i+1 );
-		for ( int32_t j = 0; j < MAX_TIERS; j++ )
-			p.safePrintf ( "<td>%" PRId32"</td>",
-				       g_stats.m_numTermsVsTier[i][j] );
-		p.safePrintf ( "</tr>" );
-	}
-	p.safePrintf("</table><br>\n");
-	
-	p.safePrintf ( "<br>"
-		       "<table cellpadding=4 width=100%% bgcolor=#%s border=1>"
-		       "<tr class=poo><td colspan=8 bgcolor=#%s>"
-		       "<center><b>Query Terms and Tier Vs Explicit "
-		       "Matches</b></td></tr>\n"
-		       "<tr class=poo><td width=\"40%%\"><b>Query Terms and Tier</b></td>"
-		       "<td><b> 0+</b></td><td><b> 8+</b></td>"
-		       "<td><b> 16+</b></td><td><b> 32+</b></td>"
-		       "<td><b> 64+</b></td><td><b> 128+</b></td>"
-		       "<td><b> 256+</b></td></tr>\n",
-		       LIGHT_BLUE , DARK_BLUE );
-	for ( int32_t i = 0; i < 14; i++ )
-		for ( int32_t j = 0; j < MAX_TIERS; j++ ){
-			p.safePrintf( "<tr class=poo><td>query terms=%" PRId32", tier=%" PRId32"</td>",
-				      i+1, j );
-			for ( int32_t k = 0; k < 7; k++ ){
-				int32_t n = g_stats.m_termsVsTierExp[i][j][k];
-				p.safePrintf( "<td>%" PRId32"</td>",n );
-			}
-			p.safePrintf( "</tr>" );
-		}
-	
-	p.safePrintf("</table><br><br>\n");
-	*/
 
  skip1:
 
