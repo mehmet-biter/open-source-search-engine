@@ -123,71 +123,8 @@ bool Msg5::getTreeList(RdbList *result, rdbid_t rdbId, collnum_t collnum, const 
 
 bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey, int32_t *numPositiveRecs, 
 	int32_t *numNegativeRecs, int32_t *memUsedByTree, int32_t *numUsedNodes) {
-	RdbBase *base = getRdbBase(m_rdbId, m_collnum);
-	if(!base) {
-		log(LOG_WARN,"%s:%s:%d: base %d/%d unknown", __FILE__, __func__, __LINE__, m_rdbId, m_collnum);
-		return false;
-	}
 	Rdb *rdb = getRdbFromId(m_rdbId);
-	// set start time
-	int64_t start = gettimeofdayInMilliseconds();
-	// . returns false on error and sets g_errno
-	// . endKey of m_treeList may be less than m_endKey
-	const char *structName;
-
-	if(rdb->useTree()) {
-		// get the mem tree for this rdb
-		RdbTree *tree = rdb->getTree();
-
-		if( !tree ) {
-			log(LOG_WARN,"%s:%s:%d: No tree!", __FILE__, __func__, __LINE__);
-			return false;
-		}
-
-		if(!tree->getList(base->getCollnum(),
-				  static_cast<const char*>(startKey),
-				  static_cast<const char*>(endKey),
-				  m_newMinRecSizes,
-				  result,
-				  numPositiveRecs,
-				  numNegativeRecs,
-				  base->useHalfKeys() ) )
-			return true;
-		structName = "tree";
-		*memUsedByTree = tree->getMemOccupiedForList();
-		*numUsedNodes = tree->getNumUsedNodes();
-	} else {
-		RdbBuckets *buckets = rdb->getBuckets();
-
-		if( !buckets ) {
-			log(LOG_WARN,"%s:%s:%d: No buckets!", __FILE__, __func__, __LINE__);
-			return false;
-		}
-
-		if(!buckets->getList(base->getCollnum(),
-				     static_cast<const char*>(startKey),
-				     static_cast<const char*>(endKey),
-				     m_newMinRecSizes,
-				     result,
-				     numPositiveRecs,
-				     numNegativeRecs,
-				     base->useHalfKeys()))
-			return true;
-		structName = "buckets";
-		*memUsedByTree = buckets->getMemOccupied();
-		*numUsedNodes = buckets->getNumKeys();
-	}
-
-	int64_t now  = gettimeofdayInMilliseconds();
-	int64_t took = now - start;
-	if(took > 9)
-		logf(LOG_INFO,"net: Got list from %s "
-		     "in %" PRIu64" ms. size=%" PRId32" db=%s "
-		     "niceness=%" PRId32".",
-		     structName, took,m_treeList.getListSize(),
-		     base->getDbName(),m_niceness);
-
-	return true;
+	return rdb->getTreeList(result, m_collnum, startKey, endKey, m_newMinRecSizes, numPositiveRecs, numNegativeRecs, memUsedByTree, numUsedNodes);
 }
 
 

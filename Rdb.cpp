@@ -2121,6 +2121,61 @@ int64_t Rdb::estimateListSize(collnum_t collnum, const char *startKey, const cha
 	return getBase(collnum)->estimateListSize(startKey, endKey, max, oldTruncationLimit);
 }
 
+
+bool Rdb::getTreeList(RdbList *result,
+		      collnum_t collnum,
+	              const void *startKey, const void *endKey,
+		      int32_t minRecSizes,
+		      int32_t *numPositiveRecs, int32_t *numNegativeRecs,
+		      int32_t *memUsedByTree, int32_t *numUsedNodes)
+{
+	int64_t start = gettimeofdayInMilliseconds();
+	
+	// . returns false on error and sets g_errno
+	// . endkey of *result may be less than endKey
+	const char *structName;
+
+	if(m_useTree) {
+		// get the mem tree for this rdb
+		if(!m_tree.getList(collnum,
+				   static_cast<const char*>(startKey),
+				   static_cast<const char*>(endKey),
+				   minRecSizes,
+				   result,
+				   numPositiveRecs,
+				   numNegativeRecs,
+				   useHalfKeys() ) )
+			return true;
+		structName = "tree";
+		*memUsedByTree = m_tree.getMemOccupiedForList();
+		*numUsedNodes = m_tree.getNumUsedNodes();
+	} else {
+		if(!m_buckets.getList(collnum,
+				      static_cast<const char*>(startKey),
+				      static_cast<const char*>(endKey),
+				      minRecSizes,
+				      result,
+				      numPositiveRecs,
+				      numNegativeRecs,
+				      useHalfKeys()))
+			return true;
+		structName = "buckets";
+		*memUsedByTree = m_buckets.getMemOccupied();
+		*numUsedNodes = m_buckets.getNumKeys();
+	}
+
+	int64_t now  = gettimeofdayInMilliseconds();
+	int64_t took = now - start;
+	if(took > 9)
+		logf(LOG_INFO,"net: Got list from %s in %" PRIu64" ms. size=%" PRId32" db=%s.",
+		     structName, took, result->getListSize(),
+		     m_dbname);
+
+	return true;
+	
+}
+
+
 // . return number of positive records - negative records
 int64_t Rdb::getNumTotalRecs(bool useCache) const {
 
