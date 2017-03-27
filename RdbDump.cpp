@@ -261,18 +261,6 @@ void RdbDump::doneDumping() {
 	log("DOING SANITY CHECK FOR MAP -- REMOVE ME");
 	if ( m_map && ! m_map->verifyMap ( m_file ) ) {
 		g_process.shutdownAbort(true); }
-	// now check the whole file for consistency
-	if ( m_ks == 18 ) { // map->m_rdbId == RDB_POSDB ) {
-		collnum_t collnum = g_collectiondb.getCollnum ( m_coll );
-		class RdbBase *base = m_rdb->m_bases[collnum];
-		int32_t startFileNum = base->getNumFiles()-1;
-		log("sanity: startfilenum=%" PRId32,startFileNum);
-		dumpPosdb(m_coll,
-			  startFileNum, // startFileNum
-			   1                    , // numFiles
-			   false                , // includeTree
-			   -1                   , // termId
-			   true                 );// justVerify?
 	}
 #endif
 }
