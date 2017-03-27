@@ -267,32 +267,12 @@ static void resetProxyStatWrapper(int fd, void *state) {
 
 // save the stats
 bool saveSpiderProxyStats ( ) {
-
-	// save hashtable
-	s_proxyBannedTable.save(g_hostdb.m_dir,"proxybantable.dat");
-
-	s_banCountTable.save(g_hostdb.m_dir,"proxybancounttable.dat");
-
-	// save hash table
-	return s_iptab.save(g_hostdb.m_dir,"spiderproxystats.dat");
+	return true;
 }
 
 static bool loadSpiderProxyStats() {
 
 	initProxyTables();
-
-	// take this out for now since i was seeing dups in s_iptab for
-	// some reason. was causing an infinite loop bug calling goto redo:
-	// all the time above.
-
-	// save hashtable
-	//s_proxyBannedTable.load(g_hostdb.m_dir,"proxybantable.dat");
-
-	//s_banCountTable.load(g_hostdb.m_dir,"proxybancounttable.dat");
-
-	// save hash table. this also returns false if does not exist.
-	//if ( ! s_iptab.load(g_hostdb.m_dir,"spiderproxystats.dat") ) 
-	//	return false;
 
 	// unset some flags
 	for ( int32_t i = 0 ; i < s_iptab.getNumSlots() ; i++ ) {
