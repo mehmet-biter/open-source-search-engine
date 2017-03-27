@@ -93,7 +93,7 @@ static bool sendReply(State0 *st, char *reply) {
 	if ( reply ) rlen = strlen(reply);
 	logf(LOG_DEBUG,"gb: sending back %" PRId32" bytes",rlen);
 
-	Statistics::register_query_time(si->m_q.m_numWords, si->m_queryLangId, (gettimeofdayInMilliseconds() - st->m_startTime));
+	Statistics::register_query_time(si->m_q.m_numWords, si->m_queryLangId, savedErr, (gettimeofdayInMilliseconds() - st->m_startTime));
 
 	// . log the time
 	// . do not do this if g_errno is set lest m_sbuf1 be bogus b/c
@@ -106,14 +106,7 @@ static bool sendReply(State0 *st, char *reply) {
 		     st->m_msg40.getNumResults());
 	}
 
-	//bool xml = si->m_xml;
-
-	g_stats.logAvgQueryTime(st->m_startTime);
-
-	//log("results: debug: in sendReply deleting st=%" PTRFMT,(PTRTYPE)st);
-
-	if ( ! savedErr ) { // g_errno ) {
-		g_stats.m_numSuccess++;
+	if ( ! savedErr ) {
 		// . one hour cache time... no 1000 hours, basically infinite
 		// . no because if we redo the query the results are cached
 		//int32_t cacheTime = 3600;//*1000;
@@ -144,9 +137,6 @@ static bool sendReply(State0 *st, char *reply) {
 		delete st;
 		return true;
 	}
-	// error otherwise
-	if ( savedErr != ENOPERM && savedErr != EQUERYINGDISABLED ) 
-		g_stats.m_numFails++;
 
 	mdelete(st, sizeof(State0), "PageResults2");
 	delete st;
@@ -236,10 +226,10 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 		st = new (State0);
 	} catch ( ... ) {
 		g_errno = ENOMEM;
-		log("query: Query failed. "
+		log(LOG_ERROR, "query: Query failed. "
 		    "Could not allocate %" PRId32" bytes for query. "
 		    "Returning HTTP status of 500.",(int32_t)sizeof(State0));
-		g_stats.m_numFails++;
+		Statistics::register_query_time(0, langUnknown, g_errno, 0);
 
 		return g_httpServer.sendQueryErrorReply
 			(s,500,mstrerror(g_errno),

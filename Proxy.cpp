@@ -616,11 +616,8 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 		printRequest(stC->m_s, &r, took, NULL,0);//content,contentLen);
 		// add stat for stats graph
 		if ( stC->m_isQuery ) {
-			g_stats.logAvgQueryTime(stC->m_startTime);
-			g_stats.m_numSuccess++;
-
 			/// @todo ALC use proper query language
-			Statistics::register_query_time(stC->m_numQueryTerms, langUnknown, (gettimeofdayInMilliseconds() - stC->m_startTime));
+			Statistics::register_query_time(stC->m_numQueryTerms, langUnknown, 0, (gettimeofdayInMilliseconds() - stC->m_startTime));
 		}
 
 		// let tcp server free it when done
@@ -630,8 +627,7 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 		freeStateControl(stC);
 		return;
 	}
-	//char *reply = s->m_readBuf;
-	//int32_t size = s->m_readOffset;
+
 	HttpMime mime;
 	// re-store original mime from uncompressed mime
 	mime.set ( reply, size, NULL);
@@ -640,14 +636,12 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 		g_msg = " (error: unknown.)";
 
 	if ( stC->m_isQuery && httpStatus == 200 ){
-		g_stats.logAvgQueryTime(stC->m_startTime);
-		g_stats.m_numSuccess++;
-
 		/// @todo ALC use proper query language
-		Statistics::register_query_time(stC->m_numQueryTerms, langUnknown, (gettimeofdayInMilliseconds() - stC->m_startTime));
+		Statistics::register_query_time(stC->m_numQueryTerms, langUnknown, 0, (gettimeofdayInMilliseconds() - stC->m_startTime));
+	} else if ( stC->m_isQuery && httpStatus != 200 ) {
+		/// @todo ALC use proper error code if possible
+		Statistics::register_query_time(stC->m_numQueryTerms, langUnknown, EINTERNALERROR, (gettimeofdayInMilliseconds() - stC->m_startTime));
 	}
-	else if ( stC->m_isQuery && httpStatus != 200 )
-		g_stats.m_numFails++;
 	
 	//now should be able to print
 	HttpRequest r;
@@ -688,9 +682,6 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 
 	tcp->sendMsg( stC->m_s, newReply, newReplySize, newReplySize, newReplySize, NULL, NULL );
 
-	// do not let udpslot free that we are sending it off
-	//slot->m_readBuf = NULL;
-	
 	freeStateControl(stC);
 }
 
