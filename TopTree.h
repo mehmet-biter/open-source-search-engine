@@ -83,18 +83,8 @@ class TopTree {
 	// . WARNING: only call after all nodes have been added!
 	int32_t getHighNode ( ) ;
 
-	float getMinScore ( ) {
-		if ( m_lowNode < 0 ) return -1.0;
-		return m_nodes[m_lowNode].m_score;
-	}
-
 	int32_t getPrev ( int32_t i );
 	int32_t getNext ( int32_t i );
-
-	bool checkTree ( bool printMsgs ) ;
-	int32_t computeDepth ( int32_t i ) ;
-
-	void deleteNodes ( );
 
 	bool hasDocId ( int64_t d );
 
@@ -104,11 +94,15 @@ class TopTree {
 	int32_t getNumUsedNodes() const { return m_numUsedNodes; }
 
 
-	bool  m_doSiteClustering;
 	bool  m_useIntScores;
 	int32_t  m_docsWanted;
 
 private:
+	bool checkTree ( bool printMsgs ) ;
+	int32_t computeDepth ( int32_t i ) ;
+
+	bool  m_doSiteClustering;
+
 	// ptr to the mem block
 	TopNode *m_nodes;
 	int32_t     m_allocSize;
