@@ -137,6 +137,7 @@ public:
 
 	// freshest m_siteNumInlinks per site stored in here
 	HashTableX m_sniTable;
+	GbMutex m_sniTableMtx;
 
 	// maps a domainHash32 to a crawl delay in milliseconds
 	HashTableX m_cdTable;

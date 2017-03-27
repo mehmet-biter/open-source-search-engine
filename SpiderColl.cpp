@@ -12,6 +12,7 @@
 #include "ip.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "ScopedLock.h"
 
 static key96_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp ) {
 	// sanity
@@ -451,6 +452,9 @@ void SpiderColl::reset ( ) {
 bool SpiderColl::updateSiteNumInlinksTable(int32_t siteHash32, int32_t sni, time_t timestamp) {
 	// do not update if invalid
 	if ( sni == -1 ) return true;
+
+	ScopedLock sl(m_sniTableMtx);
+
 	// . get entry for siteNumInlinks table
 	// . use 32-bit key specialized lookup for speed
 	uint64_t *val = (uint64_t *)m_sniTable.getValue32(siteHash32);
@@ -2578,15 +2582,18 @@ bool SpiderColl::scanListForWinners ( ) {
 
 		// update SpiderRequest::m_siteNumInlinks to most recent value
 		int32_t sni = sreq->m_siteNumInlinks;
-		// get the # of inlinks to the site from our table
-		uint64_t *val;
-		val = (uint64_t *)m_sniTable.getValue32(sreq->m_siteHash32);
-		// use the most recent sni from this table
-		if ( val ) 
-			sni = (int32_t)((*val)>>32);
-		// if SpiderRequest is forced then m_siteHash32 is 0!
-		else if ( srep && srep->m_spideredTime >= sreq->m_addedTime ) 
-			sni = srep->m_siteNumInlinks;
+		{
+			ScopedLock sl(m_sniTableMtx);
+
+			// get the # of inlinks to the site from our table
+			uint64_t *val = (uint64_t *)m_sniTable.getValue32(sreq->m_siteHash32);
+			// use the most recent sni from this table
+			if (val)
+				sni = (int32_t)((*val) >> 32);
+				// if SpiderRequest is forced then m_siteHash32 is 0!
+			else if (srep && srep->m_spideredTime >= sreq->m_addedTime)
+				sni = srep->m_siteNumInlinks;
+		}
 		// assign
 		sreq->m_siteNumInlinks = sni;
 		// store rror count in request so xmldoc knows what it is
