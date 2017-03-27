@@ -136,55 +136,7 @@ CPPFLAGS += $(CONFIG_CPPFLAGS)
 # export to sub-make
 export CONFIG_CPPFLAGS
 
-ifeq ($(findstring g++, $(CXX)),g++)
-# dependencies
-CPPFLAGS += -MMD -MP
-
-# versions
-GCC_VER_MIN_61 := $(shell echo `$(CXX) -dumpversion |cut -f1-2 -d.` \>= 6.1 |bc)
-GCC_VER_MIN_51 := $(shell echo `$(CXX) -dumpversion |cut -f1-2 -d.` \>= 5.1 |bc)
-
-# warnings
-CPPFLAGS += -Wall
-
-# enable more warnings
-#CPPFLAGS += -Wformat=2
-CPPFLAGS += -Wformat-security
-
-# version specific warnings
-ifeq ($(GCC_VER_MIN_61), 1)
-CPPFLAGS += -Wshift-negative-value -Wshift-overflow=2
-CPPFLAGS += -Wduplicated-cond
-#CPPFLAGS += -Wnull-dereference
-
-# other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
-CPPFLAGS += -Wno-nonnull-compare
-endif
-
-ifeq ($(GCC_VER_MIN_51), 1)
-CPPFLAGS += -Wodr
-CPPFLAGS += -Wswitch-bool
-CPPFLAGS += -Wlogical-not-parentheses
-CPPFLAGS += -Wsizeof-array-argument
-CPPFLAGS += -Wbool-compare
-#CPPFLAGS += -Wsuggest-final-types
-#CPPFLAGS += -Wsuggest-final-methods
-endif
-
-# disable offsetof warnings
-CPPFLAGS += -Wno-invalid-offsetof
-
-# gcc's semantics are sub-optimal
-CPPFLAGS += -Wno-unused-result
-
-# other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
-CPPFLAGS += -Wstrict-aliasing=0
-CPPFLAGS += -Wno-write-strings
-CPPFLAGS += -Wno-maybe-uninitialized
-CPPFLAGS += -Wno-unused-but-set-variable
-CPPFLAGS += -Wno-unused-parameter
-
-else ifeq ($(findstring clang++, $(CXX)),clang++)
+ifeq ($(findstring clang++, $(CXX)),clang++)
 # dependencies
 CPPFLAGS += -MMD -MP
 
@@ -221,6 +173,52 @@ CPPFLAGS += -Wno-missing-field-initializers
 CPPFLAGS += -Wno-covered-switch-default
 CPPFLAGS += -Wno-date-time
 CPPFLAGS += -Wno-format-nonliteral
+
+else ifeq ($(findstring g++, $(CXX)),g++)
+# dependencies
+CPPFLAGS += -MMD -MP
+
+# versions
+GCC_VER_MIN_61 := $(shell echo `$(CXX) -dumpversion |cut -f1-2 -d.` \>= 6.1 |bc)
+GCC_VER_MIN_51 := $(shell echo `$(CXX) -dumpversion |cut -f1-2 -d.` \>= 5.1 |bc)
+
+# warnings
+CPPFLAGS += -Wall
+
+# enable more warnings
+#CPPFLAGS += -Wformat=2
+CPPFLAGS += -Wformat-security
+
+# version specific warnings
+ifeq ($(GCC_VER_MIN_61), 1)
+CPPFLAGS += -Wshift-negative-value -Wshift-overflow=2
+CPPFLAGS += -Wduplicated-cond
+
+# other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
+endif
+
+ifeq ($(GCC_VER_MIN_51), 1)
+CPPFLAGS += -Wodr
+CPPFLAGS += -Wswitch-bool
+CPPFLAGS += -Wlogical-not-parentheses
+CPPFLAGS += -Wsizeof-array-argument
+CPPFLAGS += -Wbool-compare
+#CPPFLAGS += -Wsuggest-final-types
+#CPPFLAGS += -Wsuggest-final-methods
+endif
+
+# disable offsetof warnings
+CPPFLAGS += -Wno-invalid-offsetof
+
+# gcc's semantics are sub-optimal
+CPPFLAGS += -Wno-unused-result
+
+# other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
+CPPFLAGS += -Wstrict-aliasing=0
+CPPFLAGS += -Wno-write-strings
+CPPFLAGS += -Wno-maybe-uninitialized
+CPPFLAGS += -Wno-unused-but-set-variable
+CPPFLAGS += -Wno-unused-parameter
 
 endif
 
