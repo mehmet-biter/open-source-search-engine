@@ -197,6 +197,7 @@ CPPFLAGS += -Wshift-negative-value -Wshift-overflow=2
 CPPFLAGS += -Wduplicated-cond
 
 # other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
+CPPFLAGS += -Wno-nonnull-compare
 endif
 
 ifeq ($(GCC_VER_MIN_51), 1)
