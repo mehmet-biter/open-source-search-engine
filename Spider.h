@@ -658,14 +658,14 @@ public:
 
 	int32_t getRecSize () const { return m_dataSize + 4 + sizeof(key128_t); }
 
-	int32_t getUrlLen() {
+	int32_t getUrlLen() const {
 		return m_dataSize -
 		       // subtract the \0
 		       ((char *)m_url-(char *)&m_firstIp) - 1;
 	}
 
-	char *getUrlPath() {
-		char *p = m_url;
+	const char *getUrlPath() const {
+		const char *p = m_url;
 		for ( ; *p ; p++ ) {
 			if ( *p != ':' ) continue;
 			p++; 
@@ -936,7 +936,7 @@ public:
 	collnum_t m_collnum;
 };
 
-int32_t getUrlFilterNum ( class SpiderRequest *sreq , 
+int32_t getUrlFilterNum(const class SpiderRequest *sreq,
 		       class SpiderReply *srep,
 		       int32_t nowGlobal,
 		       bool isForMsg20,

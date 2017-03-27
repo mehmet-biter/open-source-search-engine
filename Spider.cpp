@@ -1790,7 +1790,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 // . the url patterns all contain a domain now, so this can use the domain
 //   hash to speed things up
 // . return ptr to the start of the line in case it has "tag:" i guess
-static char *getMatchingUrlPattern(SpiderColl *sc, SpiderRequest *sreq, char *tagArg) { // tagArg can be NULL
+static char *getMatchingUrlPattern(SpiderColl *sc, const SpiderRequest *sreq, char *tagArg) { // tagArg can be NULL
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
 	// if it is just a bunch of comments or blank lines, it is empty
@@ -1814,7 +1814,7 @@ static char *getMatchingUrlPattern(SpiderColl *sc, SpiderRequest *sreq, char *ta
 	}
 
 
-	char *myPath = NULL;
+	const char *myPath = NULL;
 
 	// check domain specific tables
 	HashTableX *dt = &sc->m_siteListDomTable;
@@ -1883,7 +1883,7 @@ static char *getMatchingUrlPattern(SpiderColl *sc, SpiderRequest *sreq, char *ta
 			// ok, we have to substring match exactly. like
 			// ^http://xyssds.com/foobar/
 			char *a = patternStr;
-			char *b = sreq->m_url;
+			const char *b = sreq->m_url;
 			for ( ; ; a++, b++ ) {
 				// stop matching when pattern is exhausted
 				if ( is_wspace_a(*a) || ! *a ) {
@@ -1966,14 +1966,14 @@ static char *getMatchingUrlPattern(SpiderColl *sc, SpiderRequest *sreq, char *ta
 // . we must skip certain rules in getUrlFilterNum() when doing to for Msg20
 //   because things like "parentIsRSS" can be both true or false since a url
 //   can have multiple spider recs associated with it!
-int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
-							SpiderReply		*srep,
-							int32_t			nowGlobal,
-							bool			isForMsg20,
-							CollectionRec	*cr,
-							bool			isOutlink,
-							HashTableX		*quotaTable,
-							int32_t			langIdArg ) {
+int32_t getUrlFilterNum(const SpiderRequest *sreq,
+			SpiderReply	*srep,
+			int32_t		nowGlobal,
+			bool		isForMsg20,
+			CollectionRec	*cr,
+			bool		isOutlink,
+			HashTableX	*quotaTable,
+			int32_t		langIdArg ) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 		
 	if ( ! sreq ) {
@@ -1997,7 +1997,7 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 	int32_t  tldLen;
 
 	int32_t  urlLen = sreq->getUrlLen();
-	char *url    = sreq->m_url;
+	const char *url = sreq->m_url;
 
 	char *row = NULL;
 	bool checkedRow = false;
@@ -2272,7 +2272,7 @@ checkNextRule:
 			// this is a docid only url, no actual url, so skip
 			if ( sreq->m_isPageReindex ) continue;
 			// a fast check
-			char *u = sreq->m_url;
+			const char *u = sreq->m_url;
 			// skip http
 			u += 4;
 			// then optional s for https
@@ -2522,7 +2522,7 @@ checkNextRule:
 			// skip "iswww"
 			p += 5;
 			// skip over http:// or https://
-			char *u = sreq->m_url;
+			const char *u = sreq->m_url;
 			if ( u[4] == ':' ) u += 7;
 			if ( u[5] == ':' ) u += 8;
 			// url MUST be a www url
@@ -3422,7 +3422,7 @@ checkNextRule:
 		char c = *p;
 		*p     = '\0';
 		// does url contain it? haystack=u needle=p
-		char *found = strstr ( url , pstart );
+		const char *found = strstr ( url , pstart );
 		// put char back
 		*p     = c;
 
