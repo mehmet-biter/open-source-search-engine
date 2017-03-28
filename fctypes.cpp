@@ -11,11 +11,9 @@
 #include "Mem.h"
 #include <fcntl.h>
 
-static bool g_clockInSync = false;
 
 bool isClockInSync() { 
-	if ( g_hostdb.m_initialized && g_hostdb.m_hostId == 0 ) return true;
-	return g_clockInSync; 
+	return true;
 }
 
 
@@ -838,146 +836,12 @@ int32_t urlDecodeNoZeroes ( char *dest , const char *s , int32_t slen ) {
 	return j;
 }
 
-static int64_t s_adjustment = 0;
-
 int64_t globalToLocalTimeMilliseconds ( int64_t global ) {
-	return global - s_adjustment;
+	return global;
 }
 
 int64_t localToGlobalTimeMilliseconds ( int64_t local ) {
-	return local + s_adjustment;
-}
-
-static char s_tafile[1024];
-static bool s_hasFileName = false;
-
-// returns false and sets g_errno on error
-bool setTimeAdjustmentFilename ( const char *dir, const char *filename ) {
-	s_hasFileName = true;
-	int32_t len1 = strlen(dir);
-	int32_t len2 = strlen(filename);
-	if ( len1 + len2 > 1000 ) { g_process.shutdownAbort(true); }
-	sprintf(s_tafile,"%s/%s",dir,filename);
-	return true;
-}
-
-// returns false and sets g_errno on error
-bool loadTimeAdjustment ( ) {
-	// bail if no filename to read
-	if ( ! s_hasFileName ) return true;
-	// read it in
-	// one line in text
-	int fd = open ( s_tafile , O_RDONLY );
-	if ( fd < 0 ) {
-		log("util: could not open %s for reading",s_tafile);
-		g_errno = errno;
-		return false;
-	}
-	char rbuf[1024+1];
-	// read in max bytes
-	ssize_t bytes_read = read ( fd , rbuf , sizeof(rbuf)-1 );
-	if ( bytes_read < 0 ) {
-		log(LOG_WARN, "util: reading %s had error: %s",s_tafile,
-		    mstrerror(errno));
-		close(fd);
-		g_errno = errno;
-		return false;
-	}
-	close(fd);
-	rbuf[(size_t)bytes_read] = '\0';
-	
-	// parse the text line
-	int64_t stampTime = 0LL;
-	int64_t clockAdj  = 0LL;
-	if(sscanf ( rbuf , "%" PRIu64" %" PRId64, &stampTime, &clockAdj ) != 2) {
-		log("util: Could not parse content of %s", s_tafile);
-		g_errno = errno;
-		return false;
-	}
-	// get stamp age
-	int64_t local = gettimeofdayInMillisecondsLocal();
-	int64_t stampAge = local - stampTime;
-	// if too old forget about it
-	if ( stampAge > 2*86400 ) return true;
-	// update adjustment
-	s_adjustment = clockAdj;
-	// if stamp in file is within 2 days old, assume its still good
-	// this will prevent having to rebuild a sortbydatetable
-	// and really slow down loadups
-	g_clockInSync = true;
-	// note it
-	log(LOG_DEBUG, "util: loaded %s and put clock in sync. age=%" PRIu64" adj=%" PRId64,
-	    s_tafile,stampAge,clockAdj);
-	return true;
-}
-
-// . returns false and sets g_errno on error
-// . saved by Process::saveBlockingFiles1()
-bool saveTimeAdjustment ( ) {
-	// fortget it if setTimeAdjustmentFilename never called
-	if ( ! s_hasFileName ) return true;
-	// must be in sync!
-	if ( ! g_clockInSync ) return true;
-	// store it
-	uint64_t local = gettimeofdayInMillisecondsLocal();
-	char wbuf[1024];
-	sprintf (wbuf,"%" PRIu64" %" PRId64"\n",local,s_adjustment);
-	// write it out
-	int fd = open ( s_tafile , O_CREAT|O_WRONLY|O_TRUNC , 0666 );
-	if ( fd < 0 ) {
-		log("util: could not open %s for writing",s_tafile);
-		g_errno = errno;
-		return false;
-	}
-	// how many bytes to write?
-	int32_t len = strlen(wbuf);
-	// read in max bytes
-	int nw = write ( fd , wbuf , len );
-	if ( nw != len ) {
-		log(LOG_WARN, "util: writing %s had error: %s",s_tafile,
-		    mstrerror(errno));
-		close(fd);
-		g_errno = errno;
-		return false;
-	}
-	close(fd);
-	// note it
-	log(LOG_DEBUG, "util: saved %s",s_tafile);
-	// it was written ok
-	return true;
-}
-
-// a "fake" settimeofdayInMilliseconds()
-void settimeofdayInMillisecondsGlobal ( int64_t newTime ) {
-	// this isn't async signal safe...
-	struct timeval tv;
-	gettimeofday ( &tv , NULL );
-	int64_t now=(int64_t)(tv.tv_usec/1000)+((int64_t)tv.tv_sec)*1000;
-	// bail if no change... UNLESS we need to sync clock!!
-	if ( s_adjustment == newTime - now && g_clockInSync ) return;
-	// log it, that way we know if there is another issue
-	// with flip-flopping (before we synced with host #0 and also
-	// with proxy #0)
-	int64_t delta = s_adjustment - (newTime - now) ;
-	if ( delta > 100 || delta < -100 )
-		logf(LOG_INFO,"gb: Updating clock adjustment from "
-		     "%" PRId64" ms to %" PRId64" ms", s_adjustment , newTime - now );
-	// set adjustment
-	s_adjustment = newTime - now;
-	// return?
-	if ( g_clockInSync ) return;
-	// we are now in sync
-	g_clockInSync = true;
-	// log it
-	if ( s_hasFileName )
-		logf(LOG_INFO,"gb: clock is now synced with host #0. "
-		     "saving to %s",s_tafile);
-	else
-		logf(LOG_INFO,"gb: clock is now synced with host #0.");
-	// save
-	saveTimeAdjustment();
-	// force timedb to load now!
-	//initAllSortByDateTables ( );
+	return local;
 }
 
 time_t getTimeGlobal() {
@@ -997,35 +861,16 @@ int64_t gettimeofdayInMillisecondsGlobal() {
 }
 
 int64_t gettimeofdayInMillisecondsSynced() {
-	// sanity check
-	if ( ! isClockInSync() ) { 
-		static int s_printed = 0;
-		if ( (s_printed % 100) == 0 ) {
-			log("xml: clock not in sync with host #0 yet!!!!!!");
-		}
-		s_printed++;
-	}
-
-	int64_t now;
-
 	struct timeval tv;
 	gettimeofday ( &tv , NULL );
-	now = (int64_t)(tv.tv_usec/1000)+((int64_t)tv.tv_sec)*1000;
-
-	// adjust from Msg0x11 time adjustments
-	now += s_adjustment;
+	int64_t now = (int64_t)(tv.tv_usec/1000)+((int64_t)tv.tv_sec)*1000;
 	return now;
 }
 
 int64_t gettimeofdayInMillisecondsGlobalNoCore() {
-	// this isn't async signal safe...
 	struct timeval tv;
 	gettimeofday ( &tv , NULL );
-
 	int64_t now=(int64_t)(tv.tv_usec/1000)+((int64_t)tv.tv_sec)*1000;
-
-	// adjust from Msg0x11 time adjustments
-	now += s_adjustment;
 	return now;
 }
 

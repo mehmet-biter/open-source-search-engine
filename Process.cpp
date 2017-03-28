@@ -1105,10 +1105,6 @@ bool Process::saveBlockingFiles1 ( ) {
 		saveAddsInProgress(NULL);
 	}
 
-	// in fctypes.cpp. save the clock offset from host #0's clock so
-	// our startup is fast again
-	saveTimeAdjustment();
-
 	return true;
 }
 

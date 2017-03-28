@@ -814,17 +814,6 @@ int main2 ( int argc , char *argv[] ) {
 
 	Host *h9 = g_hostdb.m_myHost;
 
-	// set clock file name so gettimeofdayInMmiilisecondsGlobal()
-	// see g_clockInSync to be true... unles clockadjust.dat is more
-	// than 2 days old in which case not!
-	if ( g_hostdb.m_myHost->m_hostId != 0 ) {
-		// host #0 does not need this, everyone syncs with him
-		setTimeAdjustmentFilename(g_hostdb.m_dir , "clockadjust.dat");
-
-		// might as well load it i guess
-		loadTimeAdjustment();
-	}
-
 	// init our table for doing zobrist hashing
 	if ( ! hashinit() ) {
 		log( LOG_ERROR, "db: Failed to init hashtable." );
