@@ -134,7 +134,6 @@ class Parm {
 	int32_t  m_smin;  // absolute min
 	int32_t  m_smax;  // absolute max
 	bool  m_sync;  // this parm should be synced
-	int32_t  m_hash;  // hash of "title"
 	int32_t  m_cgiHash; // hash of m_cgi
 
 	int32_t getNumInArray(collnum_t collnum) const;
@@ -143,8 +142,6 @@ class Parm {
 };
 
 #define MAX_PARMS 940
-
-#define MAX_XML_CONF (200*1024)
 
 #include "Xml.h"
 
@@ -192,8 +189,6 @@ class Parms {
 			 bool isCollAdmin ,
 			 class TcpSocket *sock );
 
-	class Parm *getParmFromParmHash ( int32_t parmHash );
-
 	bool setFromRequest ( HttpRequest *r , //int32_t user,
 			      TcpSocket* s,
 			      class CollectionRec *newcr ,
@@ -224,17 +219,11 @@ class Parms {
 				   class GigablastRequest *gr );
 
 	bool inSyncWithHost0() const { return m_inSyncWithHost0; }
-	// . make it so a collectionrec can be copied in Collectiondb.cpp
-	// . so the rec can be copied and the old one deleted without
-	//   freeing the safebufs now used by the new one.
-	void detachSafeBufs ( class CollectionRec *cr ) ;
 
 	void overlapTest ( char step ) ;
 
 	Parm *getParm(int32_t i) { return m_parms+i; }
 	int32_t getNumParms() const { return m_numParms; }
-	Parm *getSearchParm(int32_t i) { return m_searchParms[i]; }
-	int32_t getNumSearchParms() const { return m_numSearchParms; }
 
 private:
 	//
@@ -312,10 +301,6 @@ private:
 
 	Parm m_parms [ MAX_PARMS ];
 	int32_t m_numParms;
-
-	// just those Parms that have a m_sparm of 1
-	Parm *m_searchParms [ MAX_PARMS ];
-	int32_t m_numSearchParms;
 
 	// for parsing default.conf file for collection recs for OBJ_COLL
 	Xml m_xml2;

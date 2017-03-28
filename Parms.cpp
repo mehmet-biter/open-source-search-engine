@@ -94,7 +94,6 @@ Parm::Parm() {
 	m_smin = 0;
 	m_smax = 0;
 	m_sync = false;
-	m_hash = 0;
 	m_cgiHash = 0;
 }
 
@@ -844,8 +843,6 @@ Parms::Parms ( ) {
 
 	// Coverity
 	m_numParms = 0;
-	memset(m_searchParms, 0, sizeof(m_searchParms));
-	m_numSearchParms = 0;
 }
 
 
@@ -855,27 +852,6 @@ bool Parms::registerHandler3e() {
 
 bool Parms::registerHandler3f() {
 	return g_udpServer.registerHandler(msg_type_3f,handleRequest3f);
-}
-
-
-void Parms::detachSafeBufs ( CollectionRec *cr ) {
-	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
-		Parm *m = &m_parms[i];
-		if ( m->m_type != TYPE_SAFEBUF ) continue;
-		if ( m->m_obj != OBJ_COLL ) continue;
-		if ( m->m_off < 0 ) continue;
-		int32_t max = 1;
-		// this will be zero if not an array.
-		// othewise it is the # of elements in the array
-		if ( m->m_size > max ) max = m->m_size;
-		// an array of safebufs? m->m_size will be > 1 then.
-		for ( int32_t j = 0 ; j < max ; j++ ) {
-			// get it
-			SafeBuf *sb = (SafeBuf *)((char *)cr + m->m_off +
-						  j*sizeof(SafeBuf));
-			sb->detachBuf();
-		}
-	}
 }
 
 // from Pages.cpp
@@ -2472,16 +2448,6 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 	return;
 }
 
-Parm *Parms::getParmFromParmHash ( int32_t parmHash ) {
-	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
-		Parm *m = &m_parms[i];
-		if ( m->m_hash != parmHash ) continue;
-		return m;
-	}
-	return NULL;
-}
-
-
 void Parms::setToDefault(char *THIS, parameter_object_type_t objType, CollectionRec *argcr) {
 	// init if we should
 	init();
@@ -2555,10 +2521,9 @@ bool Parms::setFromFile ( void *THIS        ,
 	// . let the log know what we are doing
 	// . filename is NULL if a call from CollectionRec::setToDefaults()
 	Xml xml;
-	//char buf [ MAX_XML_CONF ];
 	SafeBuf sb;
 
-	if ( filename&&!setXmlFromFile(&xml,filename,&sb)){//buf,MAX_XML_CONF))
+	if ( filename&&!setXmlFromFile(&xml,filename,&sb)){
 		log("parms: error setting from file %s: %s",filename,
 		    mstrerror(g_errno));
 		return false;
@@ -3082,7 +3047,6 @@ void Parms::init ( ) {
 	// default all
 	for ( int32_t i = 0 ; i < MAX_PARMS ; i++ ) {
 		m_parms[i].m_parmNum= i;
-		m_parms[i].m_hash   = 0         ;
 		m_parms[i].m_title  = ""         ; // for detecting if not set
 		m_parms[i].m_desc   = ""         ; // for detecting if not set
 		m_parms[i].m_cgi    = NULL       ; // for detecting if not set
@@ -9131,13 +9095,6 @@ void Parms::init ( ) {
 	char *pend = s_tbuf + 18000;
 	int32_t  size;
 
-	// . set hashes of title
-	// . used by Statsdb.cpp for identifying a parm
-	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
-		if ( ! m_parms[i].m_title ) continue;
-		m_parms[i].m_hash = hash32n ( m_parms[i].m_title );
-	}
-
 	// cgi hashes
 	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
 		if ( ! m_parms[i].m_cgi ) continue;
@@ -9344,21 +9301,6 @@ void Parms::init ( ) {
 
 		*p++ = '\0';
 	}
-
-	// set m_searchParms
-	int32_t n = 0;
-	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
-		//if ( ! m_parms[i].m_sparm ) continue;
-		if ( m_parms[i].m_obj != OBJ_SI ) continue;
-		m_searchParms[n++] = &m_parms[i];
-		// sanity check
-		if ( m_parms[i].m_off == -1 ) {
-			log(LOG_LOGIC,"conf: SEARCH Parm #%" PRId32" \"%s\" has m_off < 0 (offset into SearchInput).",
-			    i,m_parms[i].m_title);
-			exit(-1);
-		}
-	}
-	m_numSearchParms = n;
 
 	//
 	// parm overlap detector
