@@ -440,7 +440,7 @@ void SpiderColl::reset ( ) {
 	// queue every time we scan it, which causes us to do upwards of
 	// 300 re-reads!
 	for ( int32_t i = 0 ; i < MAX_SPIDER_PRIORITIES ; i++ ) {
-		m_nextKeys[i] =	g_doledb.makeFirstKey2 ( i );
+		m_nextKeys[i] =	Doledb::makeFirstKey2 ( i );
 		m_isDoledbEmpty[i] = 0;
 	}
 
@@ -3129,7 +3129,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 		if ( winIp != firstIp ) { g_process.shutdownAbort(true);}
 		if ( winUh48 != sreq2->getUrlHash48() ) { g_process.shutdownAbort(true);}
 		// make the doledb key
-		key96_t doleKey = g_doledb.makeKey ( winPriority,
+		key96_t doleKey = Doledb::makeKey ( winPriority,
 						   // convert to secs from ms
 						   winSpiderTimeMS / 1000     ,
 						   winUh48 ,
@@ -3444,7 +3444,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 
 	// now that doledb is tree-only and never dumps to disk, just
 	// add it directly
-	g_doledb.m_rdb.addList(m_collnum, &tmpList);
+	g_doledb.getRdb()->addList(m_collnum, &tmpList);
 
 	if ( g_conf.m_logDebugSpider )
 		log("spider: adding doledb tree node size=%" PRId32,
@@ -3643,7 +3643,7 @@ bool SpiderColl::addToDoleTable ( SpiderRequest *sreq ) {
 	int32_t pri = sreq->m_priority;
 	m_isDoledbEmpty[pri] = 0;		
 	// reset scan for this priority in doledb
-	m_nextKeys     [pri] =g_doledb.makeFirstKey2 ( pri );
+	m_nextKeys     [pri] =Doledb::makeFirstKey2 ( pri );
 
 	return true;
 }

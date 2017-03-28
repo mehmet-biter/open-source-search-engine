@@ -1803,17 +1803,17 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 		if (KEYNEG(key)) {
 			// log debug
 			logf(LOG_DEBUG,"spider: removed doledb key for pri=%" PRId32" time=%" PRIu32" uh48=%" PRIu64,
-			     (int32_t)g_doledb.getPriority(&doleKey),
-			     (uint32_t)g_doledb.getSpiderTime(&doleKey),
-			     g_doledb.getUrlHash48(&doleKey));
+			     (int32_t)Doledb::getPriority(&doleKey),
+			     (uint32_t)Doledb::getSpiderTime(&doleKey),
+			     Doledb::getUrlHash48(&doleKey));
 		} else {
 			// do not overflow!
 			// log debug
 			const SpiderRequest *sreq = reinterpret_cast<const SpiderRequest *>(dataCopy);
 			logf(LOG_DEBUG, "spider: added doledb key for pri=%" PRId32" time=%" PRIu32" uh48=%" PRIu64" u=%s",
-			     (int32_t)g_doledb.getPriority(&doleKey),
-			     (uint32_t)g_doledb.getSpiderTime(&doleKey),
-			     g_doledb.getUrlHash48(&doleKey),
+			     (int32_t)Doledb::getPriority(&doleKey),
+			     (uint32_t)Doledb::getSpiderTime(&doleKey),
+			     Doledb::getUrlHash48(&doleKey),
 			     sreq->m_url);
 		}
 	}
@@ -2015,7 +2015,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 
 		// if doing doledb...
 		if (m_rdbId == RDB_DOLEDB) {
-			int32_t pri = g_doledb.getPriority((key96_t *)key);
+			int32_t pri = Doledb::getPriority((key96_t *)key);
 			// skip over corruption
 			if (pri < 0 || pri >= MAX_SPIDER_PRIORITIES) {
 				logTrace(g_conf.m_logTraceRdb, "END. %s: Done. Skip over corruption", m_dbname);

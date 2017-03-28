@@ -444,11 +444,11 @@ bool Spiderdb::init ( ) {
 	int64_t urlHash48  = 0x1234567887654321LL & 0x0000ffffffffffffLL;
 
 	// doledb key test
-	key96_t dk = g_doledb.makeKey(priority,spiderTime,urlHash48,false);
-	if(g_doledb.getPriority(&dk)!=priority){g_process.shutdownAbort(true);}
-	if(g_doledb.getSpiderTime(&dk)!=spiderTime){g_process.shutdownAbort(true);}
-	if(g_doledb.getUrlHash48(&dk)!=urlHash48){g_process.shutdownAbort(true);}
-	if(g_doledb.getIsDel(&dk)!= 0){g_process.shutdownAbort(true);}
+	key96_t dk = Doledb::makeKey(priority,spiderTime,urlHash48,false);
+	if(Doledb::getPriority(&dk)!=priority){g_process.shutdownAbort(true);}
+	if(Doledb::getSpiderTime(&dk)!=spiderTime){g_process.shutdownAbort(true);}
+	if(Doledb::getUrlHash48(&dk)!=urlHash48){g_process.shutdownAbort(true);}
+	if(Doledb::getIsDel(&dk)!= 0){g_process.shutdownAbort(true);}
 
 	// spiderdb key test
 	int64_t docId = 123456789;
@@ -974,8 +974,8 @@ bool sendPageSpiderdb ( TcpSocket *s , HttpRequest *r ) {
 	st->m_count = 0;
 	st->m_priority = MAX_SPIDER_PRIORITIES - 1;
 	// get startKeys/endKeys/minRecSizes
-	st->m_startKey    = g_doledb.makeFirstKey2 (st->m_priority);
-	st->m_endKey      = g_doledb.makeLastKey2  (st->m_priority);
+	st->m_startKey    = Doledb::makeFirstKey2 (st->m_priority);
+	st->m_endKey      = Doledb::makeLastKey2  (st->m_priority);
 	st->m_minRecSizes = 20000;
 	st->m_done        = false;
 	// returns false if blocked, true otherwise
@@ -1066,7 +1066,7 @@ static bool printList ( State11 *st ) {
 		// inc by one
 		st->m_startKey++;
 		// get spider time from that
-		int32_t spiderTime = g_doledb.getSpiderTime ( &dk );
+		int32_t spiderTime = Doledb::getSpiderTime ( &dk );
 		// skip if in future
 		if ( spiderTime > nowGlobal ) continue;
 		// point to the spider request *RECORD*
@@ -1099,8 +1099,8 @@ static bool printList ( State11 *st ) {
 		// . if below 0 we are done
 		if ( --st->m_priority < 0 ) st->m_done = true;
 		// get startKeys/endKeys/minRecSizes
-		st->m_startKey    = g_doledb.makeFirstKey2 (st->m_priority);
-		st->m_endKey      = g_doledb.makeLastKey2  (st->m_priority);
+		st->m_startKey    = Doledb::makeFirstKey2 (st->m_priority);
+		st->m_endKey      = Doledb::makeLastKey2  (st->m_priority);
 		// if we printed something, print a blank line after it
 		if ( st->m_count > 0 )
 			sbTable->safePrintf("<tr><td colspan=30>..."
