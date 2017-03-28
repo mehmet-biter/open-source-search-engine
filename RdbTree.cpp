@@ -927,35 +927,6 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 	// done:
 }
 
-// . TODO: speed up since keys are usually ordered (use getNextNode())
-// . returns false if a key in list was not found
-bool RdbTree::deleteList(collnum_t collnum, RdbList *list) {
-	// sanity check
-	if (list->getKeySize() != m_ks) {
-		g_process.shutdownAbort(true);
-	}
-
-	// return if no non-empty nodes in the tree
-	// bail if list is empty now
-	if (m_numUsedNodes <= 0 || list->isEmpty()) {
-		return true;
-	}
-
-	// a key not found?
-	bool allgood = true;
-
-	char key[MAX_KEY_BYTES];
-	for (list->resetListPtr(); !list->isExhausted(); list->skipCurrentRecord()) {
-		list->getCurrentKey(key);
-		if (!deleteNode(collnum, key, true)) {
-			allgood = false;
-		}
-	}
-
-	// return false if a key was not found
-	return allgood;
-}
-
 // . this fixes the tree
 // returns false if could not fix tree and sets g_errno, otherwise true
 bool RdbTree::fixTree ( ) {
