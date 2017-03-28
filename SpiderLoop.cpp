@@ -937,7 +937,6 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	// in milliseconds. ho wint32_t to wait between downloads from same IP.
 	// only for parnent urls, not including child docs like robots.txt
 	// iframe contents, etc.
-	int32_t sameIpWaitTime = 5000; // ms
 	int32_t maxSpidersOutPerIp = 1;
 	for ( int32_t i = 0 ; i < cr->m_numRegExs ; i++ ) {
 		if ( cr->m_spiderPriorities[i] != pri ) {
@@ -946,10 +945,6 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 		if ( cr->m_maxSpidersPerRule[i] > max ) {
 			max = cr->m_maxSpidersPerRule[i];
-		}
-
-		if ( cr->m_spiderIpWaits[i] < sameIpWaitTime ) {
-			sameIpWaitTime = cr->m_spiderIpWaits[i];
 		}
 
 		if ( cr->m_spiderIpMaxSpiders[i] > maxSpidersOutPerIp ) {
@@ -1063,9 +1058,7 @@ skipDoledbRec:
 		goto skipDoledbRec;
 	}
 
-	if ( g_conf.m_logDebugSpider ) {
-		log( LOG_DEBUG, "spider: %" PRId32" spiders out for %s for %s", ipOut, iptoa( sreq->m_firstIp ), sreq->m_url );
-	}
+	logDebug( g_conf.m_logDebugSpider, "spider: %" PRId32" spiders out for %s for %s", ipOut, iptoa( sreq->m_firstIp ), sreq->m_url );
 
 	// sometimes we have it locked, but is still in doledb i guess.
 	// seems like we might have give the lock to someone else and
@@ -1172,7 +1165,7 @@ skipDoledbRec:
 	// . this returns true right away if it failed to get the lock...
 	//   which means the url is already locked by someone else...
 	// . it might also return true if we are already spidering the url
-	bool status = spiderUrl9 ( sreq, doledbKey, collnum, sameIpWaitTime, maxSpidersOutPerIp ) ;
+	bool status = spiderUrl9(sreq, doledbKey, collnum);
 
 	// just increment then i guess
 	m_list.skipCurrentRecord();
@@ -1205,15 +1198,7 @@ skipDoledbRec:
 // . returns false if blocked on a spider launch, otherwise true.
 // . returns false if your callback will be called
 // . returns true and sets g_errno on error
-bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
-			      key96_t *doledbKey ,
-			      //char *coll ,
-			      collnum_t collnum ,
-			      int32_t sameIpWaitTime ,
-			      int32_t maxSpidersOutPerIp ) {
-	// sanity check
-	//if ( ! sreq->m_doled ) { g_process.shutdownAbort(true); }
-
+bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum) {
 	// sanity
 	if ( ! m_sc ) { g_process.shutdownAbort(true); }
 
@@ -1390,11 +1375,12 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 		//return;
 	}
 
+	logDebug(g_conf.m_logDebugSpider, "spider: adding lock uh48=%" PRId64" lockkey=%" PRId64,
+	         m_sreq->getUrlHash48(),lockKeyUh48);
 
 	// . add it to lock table to avoid respider, removing from doledb
 	//   is not enough because we re-add to doledb right away
 	// . return true on error here
-	HashTableX *ht = &g_spiderLoop.m_lockTable;
 	UrlLock tmp;
 	tmp.m_hostId = g_hostdb.m_myHost->m_hostId;
 	tmp.m_timestamp = 0;
@@ -1403,10 +1389,8 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	tmp.m_spiderOutstanding = 0;
 	tmp.m_confirmed = 1;
 	tmp.m_collnum = m_collnum;
-	if ( g_conf.m_logDebugSpider )
-		log("spider: adding lock uh48=%" PRId64" lockkey=%" PRId64,
-		    m_sreq->getUrlHash48(),lockKeyUh48);
-	if ( ! ht->addKey ( &lockKeyUh48 , &tmp ) )
+
+	if ( ! g_spiderLoop.m_lockTable.addKey ( &lockKeyUh48 , &tmp ) )
 		return true;
 
 	// now do it. this returns false if it would block, returns true if it

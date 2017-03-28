@@ -54,11 +54,7 @@ class SpiderLoop {
 	// . returns false if blocked and "callback" will be called, 
 	//   true otherwise
 	// . returns true and sets g_errno on error
-	bool spiderUrl9 ( class SpiderRequest *sreq ,
-			 key96_t *doledbKey       ,
-			  collnum_t collnum,//char  *coll            ,
-			  int32_t sameIpWaitTime , // in milliseconds
-			  int32_t maxSpidersOutPerIp );
+	bool spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum);
 
 	bool spiderUrl2 ( );
 
