@@ -1970,10 +1970,8 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 		}
 	}
 
-	int32_t tn;
 	if (m_useTree) {
-		tn = m_tree.addNode(collnum, key, dataCopy, dataSize);
-		if (tn < 0) {
+		if (m_tree.addNode(collnum, key, dataCopy, dataSize) < 0) {
 			// enhance the error message
 			const char *ss = m_tree.isSaving() ? " Tree is saving." : "";
 			log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
@@ -1983,8 +1981,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 		// . TODO: add using "lastNode" as a start node for the insertion point
 		// . should set g_errno if failed
 		// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
-		tn = m_buckets.addNode(collnum, key, dataCopy, dataSize);
-		if (tn < 0) {
+		if (m_buckets.addNode(collnum, key, dataCopy, dataSize) < 0) {
 			// enhance the error message
 			const char *ss = m_buckets.isSaving() ? " Buckets are saving." : "";
 			log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
@@ -2044,9 +2041,9 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 			// add the request
 
 			// log that. why isn't this undoling always
-			logDebug(g_conf.m_logDebugSpider, "spider: rdb: added spider request to spiderdb rdb tree addnode=%" PRId32
+			logDebug(g_conf.m_logDebugSpider, "spider: rdb: added spider request to spiderdb rdb tree"
 					" request for uh48=%" PRIu64" prntdocid=%" PRIu64" firstIp=%s spiderdbkey=%s",
-			         tn, sreq->getUrlHash48(), sreq->getParentDocId(), iptoa(sreq->m_firstIp),
+			         sreq->getUrlHash48(), sreq->getParentDocId(), iptoa(sreq->m_firstIp),
 			         KEYSTR((const char *)&sreq->m_key, sizeof(key128_t)));
 
 			// false means to NOT call evaluateAllRequests()
@@ -2082,7 +2079,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 			if (indexCode == EABANDONED) {
 				log(LOG_WARN, "rdb: not adding spiderreply to rdb because it was an internal error for uh48=%" PRIu64
 				              " errCode = %s", rr->getUrlHash48(), mstrerror(indexCode));
-				m_tree.deleteNode(tn, false);
+				m_tree.deleteNode(collnum, key, false);
 			}
 		}
 
