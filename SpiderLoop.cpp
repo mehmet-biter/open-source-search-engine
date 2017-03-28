@@ -907,18 +907,18 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	}
 
 	// get priority from doledb key
-	int32_t pri = g_doledb.getPriority ( doledbKey );
+	int32_t pri = Doledb::getPriority ( doledbKey );
 
 	// if the key went out of its priority because its priority had no
 	// spider requests then it will bleed over into another priority so
 	// in that case reset it to the top of its priority for next time
-	int32_t pri3 = g_doledb.getPriority ( &m_sc->m_nextDoledbKey );
+	int32_t pri3 = Doledb::getPriority ( &m_sc->m_nextDoledbKey );
 	if ( pri3 != m_sc->m_pri2 ) {
-		m_sc->m_nextDoledbKey = g_doledb.makeFirstKey2 ( m_sc->m_pri2);
+		m_sc->m_nextDoledbKey = Doledb::makeFirstKey2 ( m_sc->m_pri2);
 	}
 
 	if ( g_conf.m_logDebugSpider ) {
-		int32_t pri4 = g_doledb.getPriority ( &m_sc->m_nextDoledbKey );
+		int32_t pri4 = Doledb::getPriority ( &m_sc->m_nextDoledbKey );
 		log( LOG_DEBUG, "spider: setting pri2=%" PRId32" queue doledb nextkey to %s (pri=%" PRId32")",
 		     m_sc->m_pri2, KEYSTR(&m_sc->m_nextDoledbKey,12), pri4 );
 	}
@@ -1391,7 +1391,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(m_doledbKey, sizeof(*m_doledbKey)));
 
 	// now we just take it out of doledb instantly
-	bool deleted = g_doledb.m_rdb.deleteTreeNode(m_collnum, (const char *)m_doledbKey);
+	bool deleted = g_doledb.getRdb()->deleteTreeNode(m_collnum, (const char *)m_doledbKey);
 
 	// if url filters rebuilt then doledb gets reset and i've seen us hit
 	// this node == -1 condition here... so maybe ignore it... just log

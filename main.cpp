@@ -3094,9 +3094,9 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 				KEYSTR(&k,12),
 				k.n1,
 				k.n0,
-				(int32_t)g_doledb.getPriority(&k),
-				(uint32_t)g_doledb.getSpiderTime(&k),
-				g_doledb.getUrlHash48(&k));
+				(int32_t)Doledb::getPriority(&k),
+				(uint32_t)Doledb::getSpiderTime(&k),
+				Doledb::getUrlHash48(&k));
 			fprintf(stdout,"spiderkey=");
 			// print it
 			Spiderdb::print ( srec );

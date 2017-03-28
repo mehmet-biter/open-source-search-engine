@@ -22,19 +22,16 @@ void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) ;
 // . then each host calls SpiderLoop::spiderDoledUrls() to spider the
 //   urls doled to their group (shard) in doledb
 class Doledb {
-
-  public:
+public:
 
 	void reset();
 	
 	bool init ( );
 
-	bool addColl ( char *coll, bool doVerify = true );
-
 	// . see "overview of spidercache" below for key definition
 	// . these keys when hashed are clogging up the hash table
 	//   so i am making the 7 reserved bits part of the urlhash48...
-	key96_t makeKey ( int32_t priority, uint32_t spiderTime, int64_t urlHash48, bool isDelete ) {
+	static key96_t makeKey(int32_t priority, uint32_t spiderTime, int64_t urlHash48, bool isDelete) {
 		// sanity checks
 		if ( priority  & 0xffffff00           ) { gbshutdownAbort(true); }
 		if ( urlHash48 & 0xffff000000000000LL ) { gbshutdownAbort(true); }
@@ -57,17 +54,7 @@ class Doledb {
 		return k;
 	}
 
-	// . use this for a query reindex
-	// . a docid-based spider request
-	// . crap, might we have collisions between a uh48 and docid????
-	key96_t makeReindexKey ( int32_t priority ,
-			       uint32_t spiderTime,
-			       int64_t docId ,
-			       bool isDelete ) {
-		return makeKey ( priority,spiderTime,docId,isDelete); }
-
-
-	key96_t makeFirstKey2 ( int32_t priority ) {
+	static key96_t makeFirstKey2 ( int32_t priority ) {
 		key96_t k;
 		k.setMin();
 		// set priority
@@ -76,8 +63,7 @@ class Doledb {
 		return k;
 	}
 
-
-	key96_t makeLastKey2 ( int32_t priority ) {
+	static key96_t makeLastKey2 ( int32_t priority ) {
 		key96_t k;
 		k.setMax();
 		// set priority
@@ -87,26 +73,30 @@ class Doledb {
 		return k;
 	}
 
-	int32_t getPriority  ( key96_t *k ) {
-		return 255 - ((k->n1 >> 24) & 0xff); }
-	int32_t getSpiderTime ( key96_t *k ) {
+	static int32_t getPriority(key96_t *k) {
+		return 255 - ((k->n1 >> 24) & 0xff);
+	}
+
+	static int32_t getSpiderTime(key96_t *k) {
 		uint32_t spiderTime = (k->n1) & 0xffffff;
 		spiderTime <<= 8;
 		// upper 8 bits of k.n0 are lower 8 bits of spiderTime
 		spiderTime |= (uint32_t)((k->n0) >> (64-8));
 		return (int32_t)spiderTime;
 	}
-	int32_t getIsDel     ( key96_t *k ) {
-		if ( (k->n0 & 0x01) ) return 0;
-		return 1; }
-	int64_t getUrlHash48 ( key96_t *k ) {
-		return (k->n0>>8)&0x0000ffffffffffffLL; }
 
-	key96_t makeFirstKey ( ) { key96_t k; k.setMin(); return k;}
-	key96_t makeLastKey  ( ) { key96_t k; k.setMax(); return k;}
+	static int32_t getIsDel(key96_t *k) {
+		if ( (k->n0 & 0x01) ) return 0;
+		return 1;
+	}
+
+	static int64_t getUrlHash48 ( key96_t *k ) {
+		return (k->n0>>8)&0x0000ffffffffffffLL;
+	}
 
 	Rdb *getRdb() { return &m_rdb;}
 
+private:
 	Rdb m_rdb;
 };
 

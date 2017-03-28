@@ -12130,10 +12130,10 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 				       "spidertime=%" PRIu32" "
 				       "uh48=%" PRIx64" "
 				       "isdel=%" PRId32,
-				       g_doledb.getPriority(k2),
-				       (uint32_t)g_doledb.getSpiderTime(k2),
-				       g_doledb.getUrlHash48(k2),
-				       g_doledb.getIsDel(k2));
+			           Doledb::getPriority(k2),
+				       (uint32_t)Doledb::getSpiderTime(k2),
+				       Doledb::getUrlHash48(k2),
+				       Doledb::getIsDel(k2));
 			sb->safePrintf("</nobr></td>");
 		}
 		else if ( rdbId == RDB_TITLEDB ) {
