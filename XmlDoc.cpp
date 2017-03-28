@@ -1321,7 +1321,7 @@ bool XmlDoc::injectDoc ( const char *url ,
 	// remove >'s i guess and store in st1->m_url[] buffer
 	char cleanUrl[MAX_URL_LEN+1];
 	cleanInput ( cleanUrl,
-		     MAX_URL_LEN,
+		     sizeof(cleanUrl),
 		     uu.getUrl(),
 		     uu.getUrlLen() );
 
@@ -3513,7 +3513,7 @@ char XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
 	int32_t badFlags = SEC_SCRIPT|SEC_STYLE;//|SEC_SELECT;
 
 	int32_t counts [ MAX_LANGUAGES ];
-	memset ( counts , 0 , MAX_LANGUAGES * 4);
+	memset(counts, 0, sizeof(counts));
 
 
 
