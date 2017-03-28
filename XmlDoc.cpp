@@ -1323,7 +1323,7 @@ bool XmlDoc::injectDoc ( const char *url ,
 	// remove >'s i guess and store in st1->m_url[] buffer
 	char cleanUrl[MAX_URL_LEN+1];
 	cleanInput ( cleanUrl,
-		     MAX_URL_LEN,
+		     sizeof(cleanUrl),
 		     uu.getUrl(),
 		     uu.getUrlLen() );
 
@@ -3515,7 +3515,7 @@ char XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
 	int32_t badFlags = SEC_SCRIPT|SEC_STYLE;//|SEC_SELECT;
 
 	int32_t counts [ MAX_LANGUAGES ];
-	memset ( counts , 0 , MAX_LANGUAGES * 4);
+	memset(counts, 0, sizeof(counts));
 
 
 
@@ -20324,24 +20324,18 @@ char *XmlDoc::getWordSpamVec() {
 	// set up the size of the hash table (number of buckets)
 	int32_t  numBuckets = numWords * 3;
 
-	// . add a tmp buf as a scratch pad -- will be freed right after
-	// . allocate this second to avoid mem fragmentation more
-	// . * 2 for double the buckets
-	char tmpBuf[WTMPBUFSIZE];
-	char *tmp = tmpBuf;
+	StackBuf<WTMPBUFSIZE> tmpBuf;
 								// next, bucketHash, bucketWordPos, profile, commonWords
 	int32_t need = (numWords * (sizeof(int32_t) + sizeof(int64_t) + sizeof(int32_t) + sizeof(int32_t) + sizeof(char))) * 3 + numWords;
 
 	logTrace( g_conf.m_logTraceWordSpam, "numWords: %" PRId32 ", numBuckets: %" PRId32 ", need: %" PRId32 "", numWords, numBuckets, need);
 
-	if ( need > WTMPBUFSIZE ) {
-		tmp = (char *) mmalloc ( need , "Spam" );
-		if ( ! tmp ) {
-			log(LOG_WARN, "Failed to allocate %" PRId32" more bytes for spam detection:  %s.", need, mstrerror(g_errno));
-			logTrace( g_conf.m_logTraceWordSpam, "END - oom" );
-			return NULL;
-		}
+	if(!tmpBuf.reserve(need)) {
+		log(LOG_WARN, "Failed to allocate %" PRId32" more bytes for spam detection:  %s.", need, mstrerror(g_errno));
+		logTrace( g_conf.m_logTraceWordSpam, "END - oom" );
+		return NULL;
 	}
+	char *tmp = tmpBuf.getBufStart();
 
 	
 	//#
@@ -20651,11 +20645,6 @@ char *XmlDoc::getWordSpamVec() {
 	if ( ! m_wordSpamBuf.safeMemcpy ( (char *)spam , numWords ) ) {
 		logTrace( g_conf.m_logTraceWordSpam, "END - buffer copy failed" );
 		return NULL;
-	}
-
-	// free our temporary table stuff
-	if ( tmp != tmpBuf ) {
-		mfree ( tmp , need , "Spam" );
 	}
 
 	logTrace( g_conf.m_logTraceWordSpam, "END - done" );
@@ -21108,15 +21097,14 @@ char *XmlDoc::getFragVec ( ) {
 	int32_t       minBuckets = (int32_t)(nw * 1.5);
 	uint32_t  nb     = 2 * getHighestLitBitValue ( minBuckets ) ;
 	int32_t       need       = nb * (8+4+4);
-	char      *buf        = NULL;
-	char       tmpBuf[50000];
-	if ( need < 50000 ) buf = tmpBuf;
-	else                buf = (char *)mmalloc ( need , "WeightsSet3" );
+	StackBuf<50000> weightsBuf;
+	if(!weightsBuf.reserve(need))
+		return NULL;
+	char *buf = weightsBuf.getBufStart();
 	char      *ptr        = buf;
 	uint64_t *hashes = (uint64_t *)ptr; ptr += nb * 8;
 	int32_t      *vals       = (int32_t      *)ptr; ptr += nb * 4;
 	float     *ww         = (float     *)ptr; ptr += nb * 4;
-	if ( ! buf ) return NULL;
 
 	for ( int32_t i = 0 ; i < nw ; i++ ) ww[i] = 1.0;
 
@@ -21280,11 +21268,6 @@ char *XmlDoc::getFragVec ( ) {
 
 	// make space
 	if ( ! m_fragBuf.reserve ( nw ) ) {
-		// save it
-		int32_t saved = g_errno;
-		if ( buf != tmpBuf ) mfree ( buf , need , "WeightsSet3" );
-		// reinstate it
-		g_errno = saved;
 		return NULL;
 	}
 	// validate
@@ -21300,9 +21283,6 @@ char *XmlDoc::getFragVec ( ) {
 		if ( ww[i] <= 0.0 ) ff[i] = 0;
 		else                ff[i] = 1;
 	}
-
-	if ( buf != tmpBuf ) mfree ( buf , need , "WeightsSet3" );
-
 
 	return ff;
 }
