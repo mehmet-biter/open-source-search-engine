@@ -130,9 +130,6 @@ static inline const char *gb_strncasestr(const char *haystack, int32_t haystackS
 
 char *strnstr( const char *haystack, const char *needle, int32_t haystackLen);
 
-// updates our static var, s_adjustment to keep our clock in sync to hostId #0
-void settimeofdayInMillisecondsGlobal ( int64_t newTime ) ;
-
 // convert global to local time in milliseconds
 int64_t globalToLocalTimeMilliseconds ( int64_t global ) ;
 int64_t localToGlobalTimeMilliseconds ( int64_t local  ) ;
@@ -171,10 +168,6 @@ extern const char g_map_is_hex[256];
 extern const char g_map_is_tagname_char[256];
 
 bool isClockInSync();
-
-bool setTimeAdjustmentFilename ( const char *dir, const char *filename ) ;
-bool loadTimeAdjustment ( ) ;
-bool saveTimeAdjustment ( ) ;
 
 // . convert "c" to lower case
 #define is_lower_a(c)          g_map_is_lower[(unsigned char)c]

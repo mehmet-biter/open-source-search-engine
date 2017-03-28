@@ -1124,10 +1124,10 @@ CollectionRec::CollectionRec() {
 	m_isActive = false;
 	m_spiderRoundStartTime = 0;
 	m_spiderRoundNum = 0;
-	m_makeImageThumbnails = 0;
+	m_makeImageThumbnails = false;
 	m_thumbnailMaxWidthHeight = 0;
-	m_indexSpiderReplies = 0;
-	m_indexBody = 0;
+	m_indexSpiderReplies = false;
+	m_indexBody = false;
 	m_outlinksRecycleFrequencyDays = 0.0;
 	m_dedupingEnabled = false;
 	m_dupCheckWWW = false;
@@ -1160,7 +1160,7 @@ CollectionRec::CollectionRec() {
 	m_maxQueryTerms = 0;
 	m_sameLangWeight = 0.0;
 	memset(m_defaultSortLanguage2, 0, sizeof(m_defaultSortLanguage2));
-	m_importEnabled = 0;
+	m_importEnabled = false;
 	m_numImportInjects = 0;
 	m_posdbMinFilesToMerge = 0;
 	m_titledbMinFilesToMerge = 0;

@@ -717,10 +717,6 @@ void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 			     "nowmsLocal=%" PRId64"ms",
 			     (int32_t)g_pingServer.m_currentPing,drift,delta,
 			     s_deltaTime,nowmsLocal);
-			// what should the new time be? (local mobo time)
-			int64_t newTime = s_deltaTime + nowmsLocal;
-			// update clock
-			settimeofdayInMillisecondsGlobal ( newTime );
 			// time stamps
 			g_pingServer.m_bestPingDate = nowLocal;
 			// and the ping
