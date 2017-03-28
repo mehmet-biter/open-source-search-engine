@@ -270,7 +270,7 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 
 	bool hasRoom = true;
 	bool anyCantAdd = false;
-	for (auto item : rdbRecSizes) {
+	for (auto const &item : rdbRecSizes) {
 		Rdb *rdb = getRdbFromId(item.first);
 		if (!rdb->hasRoom(item.second.first, item.second.second)) {
 			rdb->dumpTree();
