@@ -204,9 +204,6 @@ bool SpiderColl::load ( ) {
 	// make dir
 	char dir[500];
 	sprintf(dir,"%scoll.%s.%" PRId32,g_hostdb.m_dir,coll,(int32_t)m_collnum);
-	// load up all the tables
-	if ( ! m_cdTable .load(dir,"crawldelay.dat"  ) ) err = g_errno;
-	if ( ! m_sniTable.load(dir,"siteinlinks.dat" ) ) err = g_errno;
 
 	// load in the waiting tree, IPs waiting to get into doledb
 	BigFile file;
