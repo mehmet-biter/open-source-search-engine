@@ -66,7 +66,6 @@ public:
 		    int32_t   maxTreeNodes    ,
 		    bool   useHalfKeys     ,
 		    char   keySize,
-		    bool   isCollectionLess,
 		    bool   useIndexFile);
 	// . frees up all the memory and closes all files
 	// . suspends any current merge (saves state to disk)

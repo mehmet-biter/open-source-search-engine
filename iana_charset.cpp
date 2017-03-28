@@ -855,9 +855,6 @@ int16_t get_iana_charset(const char *cs, int len)
 	}
 	// now add in all the charset entries
 	int32_t n = (int32_t)sizeof(s_charsets) / (int32_t)sizeof(IANACharset);
-	// turn off quickpolling
-	char saved = g_conf.m_useQuickpoll;
-	g_conf.m_useQuickpoll = false;
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 	    int64_t h = hash64Lower_a ( s_charsets[i].name, strlen(s_charsets[i].name) );
 	    // store the charset index in the hash table as score
@@ -866,7 +863,6 @@ int16_t get_iana_charset(const char *cs, int len)
 			return csUnknown;
 		}
 	}
-	g_conf.m_useQuickpoll = saved;
 	s_isInitialized = true;
     }
     sl.unlock();

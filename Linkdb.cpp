@@ -90,7 +90,6 @@ bool Linkdb::init ( ) {
 			    maxTreeNodes ,
 			    false, // true     , // use half keys
 			    sizeof(key224_t),    // key size
-			    false,          //isCollectionLess
 			    false);         //useIndexFile
 }
 
@@ -109,7 +108,6 @@ bool Linkdb::init2 ( int32_t treeMem ) {
 			    maxTreeNodes  ,
 			    false, // true          , // half keys?
 			    sizeof(key224_t),  // key size
-			    false,          //isCollectionLess
 			    false);         //useIndexFile
 }
 

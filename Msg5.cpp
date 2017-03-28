@@ -229,14 +229,6 @@ bool Msg5::getList ( rdbid_t     rdbId,
 	m_rdbId         = rdbId;
 	m_collnum          = collnum;
 
-	// why was this here? it was messing up the statsdb ("graph") link
-	// in the admin panel.
-	//CollectionRec *ttt = g_collectiondb.getRec ( m_collnum );
-	//if ( ! ttt ) {
-	//	g_errno = ENOCOLLREC;
-	//	return true;
-	//}
-
 	m_list          = list;
 	KEYSET(m_startKey,startKey,m_ks);
 	KEYSET(m_endKey,endKey,m_ks);

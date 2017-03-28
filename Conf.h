@@ -77,8 +77,6 @@ class Conf {
 	bool m_runAsDaemon;
 
 	bool m_logToFile;
-	
-	bool m_isLocal;
 
 	char m_defaultColl[MAX_COLL_LEN + 1];
 
@@ -93,8 +91,6 @@ class Conf {
 	int32_t  m_dnsMaxCacheMem;
 
 	SafeBuf m_proxyIps;
-	bool    m_useProxyIps;
-	bool    m_automaticallyUseProxyIps;
 	SafeBuf m_proxyAuth;
 
 	// built-in dns parameters using name servers
@@ -139,10 +135,6 @@ class Conf {
 	// linkdb for storing linking relations
 	int32_t  m_linkdbMaxTreeMem;
 	int32_t  m_linkdbMinFilesToMerge;
-
-	// statdb
-	int32_t m_statsdbMaxTreeMem;
-	bool m_useStatsdb;
 
 	// are we doing a command line thing like 'gb 0 dump s ....' in
 	// which case we do not want to log certain things
@@ -267,10 +259,6 @@ class Conf {
 	bool   m_sendParmChangeAlertsToEmail3;
 	bool   m_sendParmChangeAlertsToEmail4;
 
-	float m_avgQueryTimeThreshold;
-	//float m_maxQueryTime;
-	float m_querySuccessThreshold;
-	int32_t  m_numQueryTimes;
 	int32_t m_maxCorruptLists;
 
 	int32_t m_defaultQueryResultsValidityTime; //in seconds
@@ -284,11 +272,6 @@ class Conf {
 	// if this is true we use /etc/hosts for hostname lookup before dns
 	bool   m_useEtcHosts;
 
-	// should we bypass load balancing and always send titledb record
-	// lookup requests to a host to maxmize tfndb page cache hits?
-	//bool   m_useBiasedTfndb;
-
-  
 	//verify integrity of tree/buckets after modification operations
 	bool m_verifyTreeIntegrity;
 
@@ -309,9 +292,6 @@ class Conf {
 	// log unfreed memory on exit
 	bool   m_detectMemLeaks;
 
-	// . if false we will not keep spelling information in memory
-	bool   m_doSpellChecking;
-
 	bool   m_forceIt;
 
 	// if this is true we do not add indexdb keys that *should* already
@@ -319,8 +299,6 @@ class Conf {
 	// then you can set this to false to add all indexdb keys.
 	//bool   m_onlyAddUnchangedTermIds;
 	bool   m_doIncrementalUpdating;
-
-	bool   m_useQuickpoll;
 
 	int64_t m_stableSummaryCacheSize;
 	int64_t m_stableSummaryCacheMaxAge;
@@ -331,7 +309,6 @@ class Conf {
 	int64_t m_tagRecCacheSize;
 	int64_t m_tagRecCacheMaxAge;
 
-	//bool   m_quickpollCoreOnError;
 	bool   m_useShotgun;
 	bool   m_testMem;
 	bool   m_doConsistencyTesting;
@@ -346,10 +323,6 @@ class Conf {
 	int32_t m_docCountAdjustment;
 
 	bool m_profilingEnabled;
-	bool m_dynamicPerfGraph;
-	int32_t m_minProfThreshold;
-	bool m_sequentialProfiling;
-	int32_t m_realTimeProfilerMinQuickPollDelta;
 
 	//
 	// See Log.h for an explanation of the switches below
@@ -358,7 +331,7 @@ class Conf {
 	// GET and POST requests.
 	bool  m_logHttpRequests;
 	bool  m_logAutobannedQueries;
-	//bool  m_logQueryTimes;
+
 	// if query took this or more milliseconds, log its time
 	int32_t  m_logQueryTimeThreshold;
 	// if disk read took this or more milliseconds, log its time
@@ -463,11 +436,6 @@ class Conf {
 
 	// these are the new master ips
 	SafeBuf m_connectIps;
-
-	// should we generate similarity/content vector for titleRecs lacking?
-	// this takes a ~100+ ms, very expensive, so it is just meant for
-	// testing.
-	bool m_generateVectorAtQueryTime;
 
 	char m_redirect[MAX_URL_LEN];
 	bool m_useCompressionProxy;

@@ -1081,7 +1081,6 @@ bool Tagdb::init ( ) {
 			    // now we balance so Sync.cpp can ordered huge list
 			    false                      , // half keys?
 			    sizeof(key128_t),    // key size
-			    false,               //isCollectionLess
 			    false);              //useIndexFile
 }
 

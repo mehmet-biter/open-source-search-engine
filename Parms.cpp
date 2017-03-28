@@ -4287,43 +4287,6 @@ void Parms::init ( ) {
 	//
 	///////////////////////////////////////////
 
-	m->m_title = "always use spider proxies for all collections";
-	m->m_desc  = "ALWAYS Use the spider proxies listed below for "
-		"spidering. If none are "
-		"listed then gb will not use any. Applies to all collections. "
-		"If you want to regulate this on a per collection basis then "
-		"set this to <b>NO</b> here and adjust the "
-		"proxy controls on the "
-		"<b>spider controls</b> page. If the list of proxy IPs below "
-		"is empty, then of course, no proxies will be used.";
-	m->m_cgi   = "useproxyips";
-	m->m_xml   = "useSpiderProxies";
-	simple_m_set(Conf,m_useProxyIps);
-	m->m_def   = "0";
-	// hide this for now. just make it a per collection parm.
-	m->m_flags = PF_HIDDEN;
-	m->m_page  = PAGE_SPIDERPROXIES;
-	m++;
-
-	m->m_title = "automatically use spider proxies for all collections";
-	m->m_desc  = "AUTOMATICALLY use the spider proxies listed below for "
-		"spidering. If none are "
-		"listed then gb will not use any. Applies to all collections. "
-		"If you want to regulate this on a per collection basis then "
-		"set this to <b>NO</b> here and adjust the "
-		"proxy controls on the "
-		"<b>spider controls</b> page. If the list of proxy IPs below "
-		"is empty, then of course, no proxies will be used.";
-	m->m_cgi   = "autouseproxyips";
-	m->m_xml   = "automaticallyUseSpiderProxies";
-	simple_m_set(Conf,m_automaticallyUseProxyIps);
-	m->m_def   = "0";
-	// hide this for now. just make it a per collection parm.
-	m->m_flags = PF_HIDDEN;
-	m->m_page  = PAGE_SPIDERPROXIES;
-	m++;
-
-
 	m->m_title = "spider proxy ips";
 	m->m_desc  = "List of white space-separated spider proxy IPs. Put "
 		"in IP:port format. Example <i>192.0.2.1:80 198.51.100.2:99</i>. "
@@ -5319,37 +5282,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
-	m->m_title = "query success rate threshold";
-	m->m_desc  = "Send email alerts when query success rate goes below "
-		"this threshold. (percent rate between 0.0 and 1.0)";
-	m->m_cgi   = "qsrt";
-	simple_m_set(Conf,m_querySuccessThreshold);
-	m->m_def   = "0.850000";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "average query latency threshold";
-	m->m_desc  = "Send email alerts when average query latency goes above "
-		"this threshold. (in seconds)";
-	m->m_cgi   = "aqpst";
-	simple_m_set(Conf,m_avgQueryTimeThreshold);
-	// a titlerec fetch times out after 2 seconds and is re-routed
-	m->m_def   = "2.000000";
-	m->m_units = "seconds";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "number of query times in average";
-	m->m_desc  = "Record this number of query times before calculating "
-		"average query latency.";
-	m->m_cgi   = "nqt";
-	simple_m_set(Conf,m_numQueryTimes);
-	m->m_def   = "300";
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-
 	m->m_title = "max corrupt index lists";
 	m->m_desc  = "If we reach this many corrupt index lists, send "
 		"an admin email.  Set to -1 to disable.";
@@ -5664,17 +5596,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
-	m->m_title = "use quickpoll";
-	m->m_desc  = "If enabled, Gigablast will use quickpoll. Significantly "
-		"improves performance. Only turn this off for testing.";
-	m->m_cgi   = "uqp";
-	simple_m_set(Conf,m_useQuickpoll);
-	m->m_def   = "1";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-
 	m->m_title = "URL realtime classification server name";
 	m->m_desc  = "";
 	m->m_cgi   = "url_class_server_name";
@@ -5804,17 +5725,6 @@ void Parms::init ( ) {
 		     "cluster set in the hosts.conf.";
 	m->m_cgi   = "intmch";
 	simple_m_set(Conf,m_interfaceMachine);
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "generate vector at query time";
-	m->m_desc  = "At query time, should Gigablast generate content "
-		"vectors for title records lacking them? This is an "
-		"expensive operation, so is really just for testing purposes.";
-	m->m_cgi   = "gv";
-	simple_m_set(Conf,m_generateVectorAtQueryTime);
 	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
@@ -6274,57 +6184,12 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
-	m->m_title = "dynamic performance graph";
-	m->m_desc  = "Generates profiling data for callbacks on page "
-		"performance";
-	m->m_cgi   = "dpg";
-	simple_m_set(Conf,m_dynamicPerfGraph);
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
 	m->m_title = "enable profiling";
 	m->m_desc  = "Enable profiler to do accounting of time taken by "
 		"functions. ";
 	m->m_cgi   = "enp";
 	simple_m_set(Conf,m_profilingEnabled);
 	m->m_def   = "1";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "minimum profiling threshold";
-	m->m_desc  = "Profiler will not show functions which take less "
-		"than this many milliseconds "
-		"in the log or  on the perfomance graph.";
-	m->m_cgi   = "mpt";
-	simple_m_set(Conf,m_minProfThreshold);
-	m->m_def   = "10";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-
-	m->m_title = "sequential profiling.";
-	m->m_desc  = "Produce a LOG_TIMING log message for each "
-		"callback called, along with the time it took.  "
-		"Profiler must be enabled.";
-	m->m_cgi   = "ensp";
-	simple_m_set(Conf,m_sequentialProfiling);
-	m->m_def   = "0";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "use statsdb";
-	m->m_desc  = "Archive system statistics information in Statsdb.";
-	m->m_cgi   = "usdb";
-	simple_m_set(Conf,m_useStatsdb);
-	m->m_def   = "1";
-	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m++;
@@ -7636,20 +7501,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_group = false;
-	m++;
-
-	////////////////////
-	// statdb settings
-	////////////////////
-
-	m->m_title = "statsdb max tree mem";
-	m->m_desc  = "";
-	m->m_cgi   = "mstmt";
-	simple_m_set(Conf,m_statsdbMaxTreeMem);
-	m->m_def   = "5000000";
-	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_RDB;
-	m->m_group = true;
 	m++;
 
 	////////////////////

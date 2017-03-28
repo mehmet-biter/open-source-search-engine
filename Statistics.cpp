@@ -80,10 +80,10 @@ void Statistics::register_query_time(unsigned term_count, unsigned qlang, int er
 }
 
 static void dump_query_statistics( FILE *fp ) {
-	ScopedLock sl1(mtx_query_trs);
+	ScopedLock sl(mtx_query_trs);
 	query_trs_t qcopy(query_trs);
 	query_trs.clear();
-	sl1.unlock();
+	sl.unlock();
 
 	for (auto it = qcopy.begin(); it != qcopy.end(); ++it) {
 		for (unsigned i = 0; i < timerange_count; ++i) {
@@ -189,14 +189,14 @@ static void status_to_spider_statistics( std::vector<unsigned> *spiderdoc_counts
 }
 
 static void dump_spider_statistics( FILE *fp ) {
-	ScopedLock sl1(mtx_spider_trs);
+	ScopedLock sl(mtx_spider_trs);
 	spider_trs_t soldcopy( old_spider_trs );
 	old_spider_trs.clear();
 
 	spider_trs_t snewcopy( new_spider_trs );
 	new_spider_trs.clear();
 
-	sl1.unlock();
+	sl.unlock();
 
 	std::vector<unsigned> spiderdoc_counts( spider_doc_end );
 
@@ -267,6 +267,67 @@ static void dump_spider_statistics( FILE *fp ) {
 }
 
 //////////////////////////////////////////////////////////////////////////////
+// IO statistics
+
+typedef std::map<std::pair<bool, int>, TimerangeStatistics[timerange_count]> io_trs_t;
+static io_trs_t io_trs;
+static GbMutex mtx_io_trs;
+
+void Statistics::register_io_time( bool is_write, int error_code, unsigned long bytes, unsigned ms ) {
+	int i = ms_to_tr(ms);
+	auto key = std::make_pair(is_write, error_code);
+
+	ScopedLock sl(mtx_io_trs);
+	TimerangeStatistics &ts = io_trs[key][i];
+
+	if (ts.count != 0) {
+		if (ms < ts.min_time)
+			ts.min_time = ms;
+		if (ms > ts.max_time)
+			ts.max_time = ms;
+	} else {
+		ts.min_time = ms;
+		ts.max_time = ms;
+	}
+	ts.count += bytes;
+	ts.sum += ms;
+}
+
+static void dump_io_statistics( FILE *fp ) {
+	ScopedLock sl(mtx_io_trs);
+	io_trs_t iocopy( io_trs );
+	io_trs.clear();
+	sl.unlock();
+
+	for ( auto it = iocopy.begin(); it != iocopy.end(); ++it ) {
+		for ( unsigned i = 0; i < timerange_count; ++i ) {
+			const TimerangeStatistics &ts = it->second[ i ];
+			if ( ts.count == 0 ) {
+				continue;
+			}
+
+			std::string tmp_str;
+			const char *status = "SUCCESS";
+			if ( it->first.second ) {
+				status = merrname( it->first.second );
+				if ( status == NULL ) {
+					tmp_str = std::to_string( it->first.second );
+					status = tmp_str.c_str();
+				}
+			}
+			fprintf( fp, "io:lower_bound=%u;is_write=%d;status=%s;min=%u;max=%u;count=%u;sum=%u\n",
+			         timerange_lower_bound[ i ],
+			         it->first.first,
+			         status,
+			         ts.min_time,
+			         ts.max_time,
+			         ts.count,
+			         ts.sum );
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////////
 // RdbCache statistics
 
 // RdbCache keeps its own statistics so we just pull those out
@@ -316,6 +377,7 @@ static void dump_statistics(time_t now) {
 	// dump statistics
 	dump_query_statistics( fp );
 	dump_spider_statistics( fp );
+	dump_io_statistics( fp );
 	dump_rdb_cache_statistics( fp );
 	
 	if ( fflush(fp) != 0 ) {

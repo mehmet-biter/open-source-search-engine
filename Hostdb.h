@@ -58,7 +58,6 @@ public:
 	float m_percentMemUsed;
 	float m_cpuUsage;
 	int32_t m_totalDocsIndexed;
-	int32_t m_slowDiskReads;
 	int32_t m_hostsConfCRC;
 	float m_diskUsage;
 	int32_t m_flags;

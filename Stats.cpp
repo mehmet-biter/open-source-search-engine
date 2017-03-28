@@ -14,7 +14,6 @@ Stats::Stats ( ) {
 	m_next               = 0;
 	memset ( m_pts , 0 , sizeof(StatPoint)*MAX_POINTS );
 
-	m_slowDiskReads = 0;
 	m_closedSockets = 0;
 
 	memset(m_msg3aRecalls, 0, sizeof(m_msg3aRecalls));

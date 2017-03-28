@@ -130,15 +130,14 @@ bool Posdb::init ( ) {
 	// . we do not want posdb's bin tree to ever hit disk since we
 	//   dump it to rdb files when it is 90% full (90% of bins in use)
 	return m_rdb.init ( "posdb",
-			    getFixedDataSize(),
-			    // -1 means look in CollectionRec::m_posdbMinFilesToMerge
-			    -1,
-			    g_conf.m_posdbMaxTreeMem,
-			    maxTreeNodes                ,
-			    getUseHalfKeys(),
-			    getKeySize(),
-			    false,
-			    true); //useIndex
+	                    getFixedDataSize(),
+	                    // -1 means look in CollectionRec::m_posdbMinFilesToMerge
+	                    -1,
+	                    g_conf.m_posdbMaxTreeMem,
+	                    maxTreeNodes                ,
+	                    getUseHalfKeys(),
+			            getKeySize(),
+			            true);
 }
 
 // init the rebuild/secondary rdb, used by PageRepair.cpp
@@ -162,7 +161,6 @@ bool Posdb::init2 ( int32_t treeMem ) {
 	                  maxTreeNodes,
 	                  getUseHalfKeys(),
 	                  getKeySize(),
-	                  false,
 	                  true); //useIndex
 }
 
