@@ -721,11 +721,9 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 			return false;
 		}
 
-		// cleanup&skip if 0 bytes
-		if (st.st_size == 0) {
-			// this used to move it to trash. but we probably want to know if we have any 0 byte file.
-			// so force a core
-			logError("zero sized file found");
+		// zero-sized non-merge files are suspicions and typically indicate data loss. So crahs if they are found
+		if (st.st_size == 0 && (fileId&2)!=0) {
+			logError("zero sized file found: %s", filename);
 			gbshutdownCorrupted();
 		}
 
