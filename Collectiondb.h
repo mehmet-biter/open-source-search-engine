@@ -278,12 +278,12 @@ class CollectionRec {
 	// spidered and begin the next round
 	int32_t   m_spiderRoundNum;
 
-	char  m_makeImageThumbnails;
+	bool  m_makeImageThumbnails;
 
 	int32_t m_thumbnailMaxWidthHeight ;
 
-	char  m_indexSpiderReplies;
-	char  m_indexBody;
+	bool  m_indexSpiderReplies;
+	bool  m_indexBody;
 
 	// do not re-add outlinks to spiderdb if less than this many days
 	// have elapsed since the last time we added them to spiderdb
@@ -333,7 +333,7 @@ class CollectionRec {
 	int32_t m_updateRoundNum;
 
 	// IMPORT PARMS
-	char    m_importEnabled;
+	bool    m_importEnabled;
 	SafeBuf m_importDir;
 	int32_t    m_numImportInjects;
 	class ImportState *m_importState;
