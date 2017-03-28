@@ -1435,7 +1435,6 @@ void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
 	h->m_pingInfo.m_percentMemUsed = pi.m_percentMemUsed;
 	h->m_pingInfo.m_cpuUsage = pi.m_cpuUsage;
 	h->m_pingInfo.m_totalDocsIndexed = pi.m_totalDocsIndexed;
-	h->m_pingInfo.m_slowDiskReads = pi.m_slowDiskReads;
 	h->m_pingInfo.m_hostsConfCRC = pi.m_hostsConfCRC;
 	h->m_pingInfo.m_diskUsage = pi.m_diskUsage;
 	h->m_pingInfo.m_flags = pi.m_flags;

@@ -60,9 +60,6 @@ class Stats {
 
 	int64_t m_startTime;
 
-	// set in BigFile.cpp
-	int32_t      m_slowDiskReads;
-
 	// when we have to close a socket because too many are open.. count it
 	int32_t      m_closedSockets;
 

@@ -14,7 +14,6 @@ static int pingSort1      ( const void *i1, const void *i2 );
 static int pingSort2      ( const void *i1, const void *i2 );
 static int pingAgeSort    ( const void *i1, const void *i2 );
 static int pingMaxSort    ( const void *i1, const void *i2 );
-static int slowDiskSort   ( const void *i1, const void *i2 );
 static int splitTimeSort  ( const void *i1, const void *i2 );
 static int flagSort       ( const void *i1, const void *i2 );
 static int resendsSort    ( const void *i1, const void *i2 );
@@ -155,9 +154,6 @@ skipReplaceHost:
 			       "<td><a href=\"/admin/hosts?c=%s&sort=12\">"
 			       "<b>status</b></a></td>"
 
-			       "<td><a href=\"/admin/hosts?c=%s&sort=15\">"
-			       "<b>slow reads</b></a></td>"
-
 			       "<td><b>docs indexed</a></td>"
 
 			       "<td><a href=\"/admin/hosts?c=%s&sort=9\">"
@@ -197,7 +193,6 @@ skipReplaceHost:
 			       cs,
 			       cs,
 			       cs,
-			       cs,
 			       shotcol    );
 
 	// loop through each host we know and print it's stats
@@ -214,8 +209,6 @@ skipReplaceHost:
 			h->m_dgramsFrom   = 0;
 			h->m_splitTimes = 0;
 			h->m_splitsDone = 0;
-			h->m_pingInfo.m_slowDiskReads =0;
-			
 		}
 	}
 
@@ -238,7 +231,7 @@ skipReplaceHost:
 	case 12:gbsort ( hostSort, nh, sizeof(int32_t), flagSort       ); break;
 	case 13:gbsort ( hostSort, nh, sizeof(int32_t), splitTimeSort  ); break;
 	case 14:gbsort ( hostSort, nh, sizeof(int32_t), pingMaxSort    ); break;
-	case 15:gbsort ( hostSort, nh, sizeof(int32_t), slowDiskSort    ); break;
+	//case 15:
 	case 16:gbsort ( hostSort, nh, sizeof(int32_t), defaultSort    ); break;
 	case 17:gbsort ( hostSort, nh, sizeof(int32_t), diskUsageSort   ); break;
 
@@ -606,10 +599,6 @@ skipReplaceHost:
 			sb.safePrintf("\t\t<status><![CDATA[%s]]></status>\n",
 				      fb.getBufStart());
 
-			sb.safePrintf("\t\t<slowDiskReads>%" PRId32
-				      "</slowDiskReads>\n",
-				      h->m_pingInfo.m_slowDiskReads);
-
 			sb.safePrintf("\t\t<docsIndexed>%" PRId32
 				      "</docsIndexed>\n",
 				      h->m_pingInfo.m_totalDocsIndexed);
@@ -720,9 +709,6 @@ skipReplaceHost:
 			sb.safePrintf("\t\t\t\t\"status\":\"%s\",\n",
 				      fb.getBufStart());
 
-			sb.safePrintf("\t\t\t\t\"slowDiskReads\":%" PRId32",\n",
-				      h->m_pingInfo.m_slowDiskReads);
-
 			sb.safePrintf("\t\t\t\t\"docsIndexed\":%" PRId32",\n",
 				      h->m_pingInfo.m_totalDocsIndexed);
 
@@ -815,9 +801,6 @@ skipReplaceHost:
 			  // flags
 			  "<td>%s</td>"
 
-			  // slow disk reads
-			  "<td>%" PRId32"</td>"
-
 			  // docs indexed
 			  "<td>%" PRId32"</td>"
 
@@ -864,7 +847,6 @@ skipReplaceHost:
 
 			  fb.getBufStart(),//flagString,
 
-			  h->m_pingInfo.m_slowDiskReads,
 			  h->m_pingInfo.m_totalDocsIndexed,
 
 			  fontTagFront,
@@ -1281,16 +1263,6 @@ int pingMaxSort    ( const void *i1, const void *i2 ) {
 	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
 	if ( h1->m_pingMax > h2->m_pingMax ) return -1;
 	if ( h1->m_pingMax < h2->m_pingMax ) return  1;
-	return 0;
-}
-
-int slowDiskSort    ( const void *i1, const void *i2 ) {
-	Host *h1 = g_hostdb.getHost ( *(int32_t*)i1 );
-	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
-	PingInfo *p1 = &h1->m_pingInfo;
-	PingInfo *p2 = &h2->m_pingInfo;
-	if ( p1->m_slowDiskReads > p2->m_slowDiskReads ) return -1;
-	if ( p1->m_slowDiskReads < p2->m_slowDiskReads ) return  1;
 	return 0;
 }
 

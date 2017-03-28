@@ -103,25 +103,7 @@ bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
 
 		       "<table %s>"
 
-		       // black
 		       "<tr class=poo>"
-		       "<td bgcolor=#000000>&nbsp; &nbsp;</td>"
-		       "<td> High priority disk read. "
-		       "Thicker lines for bigger reads.</td>"
-
-		       // grey
-		       "<td bgcolor=#808080>&nbsp; &nbsp;</td>"
-		       "<td> Low priority disk read. "
-		       "Thicker lines for bigger reads.</td>"
-		       "</tr>"
-
-
-		       // red
-		       "<tr class=poo>"
-		       "<td bgcolor=#ff0000>&nbsp; &nbsp;</td>"
-		       "<td> Disk write. "
-		       "Thicker lines for bigger writes.</td>"
-
 		       // blue
 		       "<td bgcolor=#0000ff>&nbsp; &nbsp;</td>"
 		       "<td> Summary extraction for one document.</td>"

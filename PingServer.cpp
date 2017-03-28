@@ -272,9 +272,6 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	// our num recs, docsIndexed
 	newPingInfo.m_totalDocsIndexed = (int32_t)g_process.getTotalDocsIndexed();
 
-	// slow disk reads
-	newPingInfo.m_slowDiskReads = g_stats.m_slowDiskReads;
-
 	// and hosts.conf crc
 	newPingInfo.m_hostsConfCRC = g_hostdb.getCRC();
 
