@@ -2535,19 +2535,12 @@ bool CollectionRec::save ( ) {
 
 	//File f;
 	char tmp[1024];
-	//sprintf ( tmp , "%scollections/%" PRId32".%s/c.conf",
-	//	  g_hostdb.m_dir,m_id,m_coll);
-	// collection name HACK for backwards compatibility
-	//if ( m_collLen == 0 )
-	//	sprintf ( tmp , "%scoll.main/coll.conf", g_hostdb.m_dir);
-	//else
+
 	snprintf ( tmp , 1023, "%scoll.%s.%" PRId32"/coll.conf",
 		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
 	if ( ! g_parms.saveToXml ( (char *)this , tmp ,OBJ_COLL)) {
 		return false;
 	}
-	// log msg
-	//log (LOG_INFO,"db: Saved %s.",tmp);//f.getFilename());
 
 	//
 	// save the crawlinfo class in the collectionrec for diffbot
@@ -2555,10 +2548,10 @@ bool CollectionRec::save ( ) {
 	// SAVE LOCAL
 	snprintf ( tmp , 1023, "%scoll.%s.%" PRId32"/localcrawlinfo.dat",
 		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
-	//log("coll: saving %s",tmp);
+
 	// in case emergency save from malloc core, do not alloc
 	StackBuf<1024> sb;
-	//m_localCrawlInfo.print ( &sb );
+
 	// binary now
 	sb.safeMemcpy ( &m_localCrawlInfo , sizeof(CrawlInfo) );
 	if ( sb.safeSave ( tmp ) == -1 ) {
@@ -2566,12 +2559,13 @@ bool CollectionRec::save ( ) {
 		    tmp,mstrerror(g_errno));
 		g_errno = 0;
 	}
+
 	// SAVE GLOBAL
 	snprintf ( tmp , 1023, "%scoll.%s.%" PRId32"/globalcrawlinfo.dat",
 		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
-	//log("coll: saving %s",tmp);
+
 	sb.reset();
-	//m_globalCrawlInfo.print ( &sb );
+
 	// binary now
 	sb.safeMemcpy ( &m_globalCrawlInfo , sizeof(CrawlInfo) );
 	if ( sb.safeSave ( tmp ) == -1 ) {
