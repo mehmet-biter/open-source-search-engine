@@ -3632,19 +3632,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
-
-	m->m_title = "do spell checking";
-	m->m_desc  = "If enabled while using the XML feed, "
-		"when Gigablast finds a spelling recommendation it will be "
-		"included in the XML <spell> tag. Default is 0 if using an "
-		"XML feed, 1 otherwise. Will be availble again soon.";
-	m->m_cgi   = "spell";
-	simple_m_set(SearchInput,m_spellCheck);
-	m->m_page  = PAGE_RESULTS;
-	m->m_def   = "1";
-	m->m_flags = PF_API;
-	m++;
-
 	m->m_title = "stream search results";
 	m->m_desc  = "Stream search results back on socket as they arrive. "
 		"Useful when thousands/millions of search results are "
@@ -6890,19 +6877,6 @@ void Parms::init ( ) {
 	//
 	///////////////////
 
-
-	m->m_title = "do spell checking by default";
-	m->m_desc  = "If enabled while using the XML feed, "
-		"when Gigablast finds a spelling recommendation it will be "
-		"included in the XML <spell> tag. Default is 0 if using an "
-		"XML feed, 1 otherwise.";
-	m->m_cgi   = "spell";
-	simple_m_set(CollectionRec,m_spellCheck);
-	m->m_page  = PAGE_SEARCH;
-	m->m_def   = "1";
-	m->m_flags = PF_API | PF_NOSAVE | PF_CLONE;
-	m++;
-
 	m->m_title = "get scoring info by default";
 	m->m_desc  = "Get scoring information for each result so you "
 		"can see how each result is scored. You must explicitly "
@@ -8012,16 +7986,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-	m->m_title = "delete 404s";
-	m->m_desc  = "Should pages be removed from the index if they are no "
-		"longer accessible on the web?";
-	m->m_cgi   = "dnf";
-	simple_m_set(CollectionRec,m_delete404s);
-	m->m_def   = "1";
-	m->m_page  = PAGE_SPIDER;
-	m->m_flags = PF_HIDDEN;
-	m++;
-
 	m->m_title = "delete timed out docs";
 	m->m_desc  = "Should documents be deleted from the index "
 		"if they have been retried them enough times and the "
@@ -8075,45 +8039,6 @@ void Parms::init ( ) {
 	m->m_def   = "0";
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_CLONE;
-	m++;
-
-	m->m_title = "build similarity vector from content only";
-	m->m_desc  = "If this is true, the spider, when checking the page "
-		     "if it has changed enough to reindex or update the "
-		     "published date, it will build the vector only from "
-		     "the content located on that page.";
-	m->m_cgi   = "bvfc";
-	simple_m_set(CollectionRec,m_buildVecFromCont);
-	m->m_def   = "1";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m++;
-
-	m->m_title = "use content similarity to index publish date";
-	m->m_desc  = "This requires build similarity from content only to be "
-		     "on.  This indexes the publish date (only if the content "
-		     "has changed enough) to be between the last two spider "
-		     "dates.";
-	m->m_cgi   = "uspd";
-	simple_m_set(CollectionRec,m_useSimilarityPublishDate);
-	m->m_def   = "1";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m++;
-
-	m->m_title = "max percentage similar to update publish date";
-	m->m_desc  = "This requires build similarity from content only and "
-		     "use content similarity to index publish date to be "
-		     "on.  This percentage is the maximum similarity that can "
-		     "exist between an old document and new before the publish "
-		     "date will be updated.";
-	m->m_cgi   = "mpspd";
-	simple_m_set(CollectionRec,m_maxPercentSimilarPublishDate);
-	m->m_def   = "80";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
 	m++;
 
 	m->m_title = "do url sporn checking";
@@ -8213,33 +8138,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-	m->m_title = "index inlink neighborhoods";
-	m->m_desc  = "If this is true Gigablast will "
-		"index the plain text surrounding the hyper-link text. The "
-		"score will be x times that of the hyper-link text, where x "
-		"is the scalar below.";
-	m->m_cgi   = "iin";
-	simple_m_set(CollectionRec,m_indexInlinkNeighborhoods);
-	m->m_def   = "1";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m++;
-
-	m->m_title = "tagdb collection name";
-	m->m_desc  = "Sometimes you want the spiders to use the tagdb of "
-		"another collection, like the <i>main</i> collection. "
-		"If this is empty it defaults to the current collection.";
-	m->m_cgi   = "tdbc";
-	m->m_off   = offsetof(CollectionRec,m_tagdbColl);
-	m->m_type  = TYPE_STRING;
-	m->m_size  = sizeof(CollectionRec::m_tagdbColl);
-	m->m_def   = "";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "allow adult docs";
 	m->m_desc  = "If this is disabled the spider "
 		"will not allow any docs which contain adult content "
@@ -8258,16 +8156,6 @@ void Parms::init ( ) {
 		"all spidered URLs have an IP address of 1.2.3.4.";
 	m->m_cgi   = "dil";
 	simple_m_set(CollectionRec,m_doIpLookups);
-	m->m_def   = "1";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m++;
-
-	m->m_title = "remove banned pages";
-	m->m_desc  = "Remove banned pages from the index. Pages can be "
-		"banned using tagdb or the Url Filters table.";
-	m->m_cgi   = "rbp";
-	simple_m_set(CollectionRec,m_removeBannedPages);
 	m->m_def   = "1";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
@@ -8365,16 +8253,6 @@ void Parms::init ( ) {
 	m->m_def   = "1";
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_CLONE ;//| PF_HIDDEN;
-	m++;
-
-	m->m_title = "use current time";
-	m->m_desc  = "Use the current time as the spider end time?";
-	m->m_cgi   = "uct";
-	simple_m_set(CollectionRec,m_useCurrentTime);
-	m->m_def   = "1";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
 	m++;
 
 	////////////////

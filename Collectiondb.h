@@ -140,9 +140,6 @@ extern class Collectiondb g_collectiondb;
 
 // how many url filtering patterns?
 #define MAX_FILTERS    96  // up to 96 url regular expression patterns
-//#define MAX_PRIORITY_QUEUES MAX_SPIDER_PRIORITIES * 2//each can be old or new
-// max chars the executable path+name can be
-#define MAX_FILTER_LEN 64
 
 #define SUMMARYHIGHLIGHTTAGMAXSIZE 128
 
@@ -295,14 +292,9 @@ class CollectionRec {
 	bool  m_useSimplifiedRedirects  ;
 	bool  m_useIfModifiedSince      ;
 	bool  m_useTimeAxis             ;
-	bool  m_buildVecFromCont        ;
-	int32_t  m_maxPercentSimilarPublishDate;
-	bool  m_useSimilarityPublishDate;
 	bool  m_oneVotePerIpDom         ;
 	bool  m_doUrlSpamCheck          ; //filter urls w/ naughty hostnames
 	bool  m_doLinkSpamCheck         ; //filters dynamically generated pages
-	char  m_tagdbColl [MAX_COLL_LEN+1]; // coll to use for tagdb lookups
-	bool  m_delete404s              ;
 	bool  m_siteClusterByDefault    ;
 	bool  m_doIpLookups             ; // considered iff using proxy
 	bool  m_useRobotsTxt            ;
@@ -313,8 +305,6 @@ class CollectionRec {
 	bool  m_recycleContent          ;
 	bool  m_getLinkInfo             ; // turn off to save seeks
 	bool  m_computeSiteNumInlinks   ;
-	bool  m_indexInlinkNeighborhoods;
-	bool  m_removeBannedPages       ;
 
 	int32_t  m_percentSimilarSummary       ; // Dedup by summary similiarity
 	int32_t  m_summDedupNumLines           ;
@@ -357,9 +347,6 @@ class CollectionRec {
 	int32_t  m_maxNumSpiders             ; // per local spider host
 
 	int32_t m_lastResetCount;
-
-	// start another set of flags using the old m_spiderTimeShift
-	bool  m_useCurrentTime          ; // ... for m_spiderTime2
 
 	// controls for query-dependent summary/title generation
 	int32_t m_titleMaxLen;
@@ -443,9 +430,6 @@ class CollectionRec {
 	SafeBuf m_htmlRoot;
 	SafeBuf m_htmlHead;
 	SafeBuf m_htmlTail;
-
-	// SPELL CHECK
-	bool  m_spellCheck;
 
 	class SpiderColl *m_spiderColl;
 	GbMutex m_spiderCollMutex;

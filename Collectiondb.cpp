@@ -1135,14 +1135,9 @@ CollectionRec::CollectionRec() {
 	m_useSimplifiedRedirects = false;
 	m_useIfModifiedSince = false;
 	m_useTimeAxis = false;
-	m_buildVecFromCont = false;
-	m_maxPercentSimilarPublishDate = 0;
-	m_useSimilarityPublishDate = false;
 	m_oneVotePerIpDom = false;
 	m_doUrlSpamCheck = false;
 	m_doLinkSpamCheck = false;
-	memset(m_tagdbColl, 0, sizeof(m_tagdbColl));
-	m_delete404s = false;
 	m_siteClusterByDefault = false;
 	m_doIpLookups = true;
 	m_useRobotsTxt = true;
@@ -1153,8 +1148,6 @@ CollectionRec::CollectionRec() {
 	m_recycleContent = false;
 	m_getLinkInfo = true;
 	m_computeSiteNumInlinks = true;
-	m_indexInlinkNeighborhoods = true;
-	m_removeBannedPages = true;
 	m_percentSimilarSummary = 0;
 	m_summDedupNumLines = 0;
 	m_maxQueryTerms = 0;
@@ -1173,7 +1166,6 @@ CollectionRec::CollectionRec() {
 	m_allowAdultDocs = 0;
 	m_useCanonicalRedirects = true;
 	m_maxNumSpiders = 0;
-	m_useCurrentTime = true;
 	m_titleMaxLen = 0;
 	m_summaryMaxLen = 0;
 	m_summaryMaxNumLines = 0;
@@ -1185,7 +1177,6 @@ CollectionRec::CollectionRec() {
 	m_doQueryHighlighting = false;
 	memset(m_summaryFrontHighlightTag, 0, sizeof(m_summaryFrontHighlightTag));
 	memset(m_summaryBackHighlightTag, 0, sizeof(m_summaryBackHighlightTag));
-	m_spellCheck = false;
 	m_maxAddUrlsPerIpDomPerDay = 0;
 	m_maxTextDocLen = 0;
 	m_maxOtherDocLen = 0;
