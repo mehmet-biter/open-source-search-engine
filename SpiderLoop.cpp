@@ -349,11 +349,8 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 
 
 void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
-	// process the doledb list and try to launch a spider
+	// process the doledb list
 	g_spiderLoop.gotDoledbList2();
-	// regardless of whether that blocked or not try to launch another 
-	// and try to get the next SpiderRequest from doledb
-	g_spiderLoop.spiderDoledUrls();
 }
 
 //////////////////////////
@@ -1513,9 +1510,6 @@ void indexedDocWrapper ( void *state ) {
 	// . process the results
 	// . return if this blocks
 	if ( ! g_spiderLoop.indexedDoc ( (XmlDoc *)state ) ) return;
-
-	// spider some urls that were doled to us
-	g_spiderLoop.spiderDoledUrls( );
 }
 
 
