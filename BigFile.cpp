@@ -10,6 +10,7 @@
 #include "GbMutex.h"
 #include "ScopedLock.h"
 #include "Mem.h"
+#include "Statistics.h"
 #include <fcntl.h>
 #include <new>
 #include <vector>
@@ -749,30 +750,16 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_doneTime = gettimeofdayInMilliseconds();
 
 	// if it read less than 8MB/s bitch
-	int64_t now   = gettimeofdayInMilliseconds() ;
-	int64_t took  = now - fstate->m_startTime ;
+	int64_t took  = fstate->m_doneTime - fstate->m_startTime ;
 	int64_t      rate  = 100000;
 	if ( took  > 500 ) rate = fstate->m_bytesDone / took ;
 	if ( rate < 8000 && fstate->m_niceness <= 0 ) {
 		log(LOG_INFO,"disk: Read %" PRId64" bytes in %" PRId64" "
 		    "ms (%" PRId64"KB/s).",
 		    fstate->m_bytesDone,took,rate);
-		g_stats.m_slowDiskReads++;
 	}
 
-	// default graph color is black
-	int color = 0x00000000; 
-
-	if ( fstate->m_doWrite ) {
-		// use red for writes, though
-		color = 0x00ff0000;
-	} else if ( fstate->m_niceness > 0 ) {
-		// but gray for low priority reads
-		color = 0x00808080;
-	}
-
-	// add the stat
-	g_stats.addStat_r ( fstate->m_bytesDone, fstate->m_startTime, now, color );
+	Statistics::register_io_time(fstate->m_doWrite, g_errno, fstate->m_bytesDone, took);
 
 	// now log our stuff here
 	if ( g_errno && g_errno != EBADENGINEER ) {
@@ -843,26 +830,12 @@ void readwriteDoneWrapper(void *state, job_exit_t exit_type) {
 	if ( rate < 8000 ) slow = true;
 	if ( slow && fstate->m_niceness <= 0 ) {
 		log(LOG_INFO, "disk: Read %" PRId64" bytes in %" PRId64" ms (%" PRId32"KB/s).", fstate->m_bytesDone,took,rate);
-		g_stats.m_slowDiskReads++;
 	}
+
+	Statistics::register_io_time(fstate->m_doWrite, fstate->m_errno, fstate->m_bytesDone, took);
 
 	// recall g_errno from state's m_errno
 	g_errno = fstate->m_errno;
-
-	// add the stat
-	if ( ! g_errno ) {
-		// default graph color is black (disk read)
-		int color = 0x00000000;
-		if ( fstate->m_doWrite ) {
-			// use red for writes
-			color = 0x00ff0000;
-		} else if ( fstate->m_niceness > 0 ) {
-			// but gray for low priority reads
-			color = 0x00808080;
-		}
-		// add it
-		g_stats.addStat_r ( fstate->m_bytesDone, fstate->m_startTime, fstate->m_doneTime, color );
-	}
 
 	// now log our stuff here
 	int32_t tt = ( g_errno == EFILECLOSED ) ? LOG_INFO : LOG_WARN;
