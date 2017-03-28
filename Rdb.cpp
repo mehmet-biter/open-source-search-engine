@@ -1306,7 +1306,11 @@ void Rdb::doneDumping ( ) {
 
 	// free mem in the primary buffer
 	if ( ! m_dumpErrno ) {
-		m_mem.freeDumpedMem( &m_tree );
+		if(m_useTree)
+			m_tree.clear();
+		else
+			m_buckets.clear();
+		m_mem.clear();
 	}
 
 	// . tell RdbDump it is done

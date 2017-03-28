@@ -848,41 +848,6 @@ tryAgain:
 		return true;
 	}
 
-	// . delete these nodes from the tree now that they're on the disk
-	//   now that they can be read from list since addList() was called
-	// . however, while we were writing to disk a key that we were
-	//   writing could have been deleted from the tree. To prevent
-	//   problems we should only delete nodes that are present in tree...
-	// . actually i fixed that problem by not deleting any nodes that
-	//   might be in the middle of being dumped
-	// . i changed Rdb::addNode() and Rdb::deleteNode() to do this
-	int64_t t3 = gettimeofdayInMilliseconds();
-
-	// tree delete is slow due to checking for leaks, not balancing
-	bool s;
-	if (m_tree) {
-		s = m_tree->deleteList(m_collnum, m_list);
-	} else {
-		s = m_buckets->deleteList(m_collnum, m_list);
-	}
-
-	// problem?
-	if (!s && !m_tried) {
-		m_tried = true;
-
-		if (m_file) {
-			log(LOG_ERROR, "db: Corruption in tree detected when dumping to %s. Your memory had an error. "
-			               "Consider replacing it.", m_file->getFilename());
-		}
-
-		log(LOG_WARN, "db: was collection restarted/reset/deleted before we could delete list from tree? collnum=%hd", m_collnum);
-
-		// we're not fixing it. don't ignore error
-		gbshutdownCorrupted();
-	}
-
-	log(LOG_TIMING,"db: dump: deleteList: took %" PRId64,gettimeofdayInMilliseconds()-t3);
-
 	logTrace( g_conf.m_logTraceRdbDump, "END - OK, returning true" );
 	return true;
 }
