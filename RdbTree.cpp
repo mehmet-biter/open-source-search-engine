@@ -444,20 +444,6 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 	// for posdb
 	if ( m_ks == 18 &&(key[0] & 0x06) ) {g_process.shutdownAbort(true); }
 
-	// sanity check, break if 0 > titleRec > 100MB, it's probably corrupt
-	//if ( m_dbname && m_dbname[0]=='t' && dataSize >= 4 && 
-	//     (*((int32_t *)data) > 100000000 || *((int32_t *)data) < 0 ) ) {
-	//	g_process.shutdownAbort(true); }
-	// sanity check (MDW)
-	//if ( dataSize == 0 && (*key & 0x01) && m_dbname[0] != 'c' && 
-	//     (*key & 0x02) ) {
-	//	g_process.shutdownAbort(true); }
-	// commented out because is90PercentFull checks m_memOccupied and
-	// we can breech m_memAllocated w/o breeching 90% of m_memOccupied
-	// if ( m_memAllocated + dataSize > m_maxMem) {
-	// . if no more mem, error out
-	// . we now use RdbMem class so this isn't necessary
-	//if ( m_memOccupied + dataSize > m_maxMem){g_errno=ENOMEM; return -1;}
 	// set up vars
 	int32_t iparent ;
 	int32_t rightGuy;
