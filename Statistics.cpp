@@ -39,6 +39,13 @@ static const size_t timerange_count = sizeof(timerange_lower_bound)/sizeof(timer
 
 
 struct TimerangeStatistics {
+	TimerangeStatistics()
+		: min_time(0)
+		, max_time(0)
+		, count(0)
+		, sum(0) {
+	}
+
 	unsigned min_time;
 	unsigned max_time;
 	unsigned count;
@@ -269,61 +276,56 @@ static void dump_spider_statistics( FILE *fp ) {
 //////////////////////////////////////////////////////////////////////////////
 // IO statistics
 
-typedef std::map<std::pair<bool, int>, TimerangeStatistics[timerange_count]> io_trs_t;
-static io_trs_t io_trs;
-static GbMutex mtx_io_trs;
+struct IOStatistics {
+	IOStatistics()
+		: count(0)
+		, sum(0) {
+	}
 
-void Statistics::register_io_time( bool is_write, int error_code, unsigned long bytes, unsigned ms ) {
-	int i = ms_to_tr(ms);
+	unsigned count;
+	unsigned sum;
+};
+
+typedef std::map<std::pair<bool, int>, IOStatistics> ios_t;
+static ios_t io_stats;
+static GbMutex mtx_io_stats;
+
+void Statistics::register_io_time( bool is_write, int error_code, unsigned long bytes, unsigned /*ms*/ ) {
 	auto key = std::make_pair(is_write, error_code);
 
-	ScopedLock sl(mtx_io_trs);
-	TimerangeStatistics &ts = io_trs[key][i];
+	ScopedLock sl(mtx_io_stats);
+	IOStatistics &ios = io_stats[key];
 
-	if (ts.count != 0) {
-		if (ms < ts.min_time)
-			ts.min_time = ms;
-		if (ms > ts.max_time)
-			ts.max_time = ms;
-	} else {
-		ts.min_time = ms;
-		ts.max_time = ms;
-	}
-	ts.count += bytes;
-	ts.sum += ms;
+	ios.count++;
+	ios.sum += bytes;
 }
 
 static void dump_io_statistics( FILE *fp ) {
-	ScopedLock sl(mtx_io_trs);
-	io_trs_t iocopy( io_trs );
-	io_trs.clear();
+	ScopedLock sl(mtx_io_stats);
+	ios_t iocopy( io_stats );
+	io_stats.clear();
 	sl.unlock();
 
 	for ( auto it = iocopy.begin(); it != iocopy.end(); ++it ) {
-		for ( unsigned i = 0; i < timerange_count; ++i ) {
-			const TimerangeStatistics &ts = it->second[ i ];
-			if ( ts.count == 0 ) {
-				continue;
-			}
-
-			std::string tmp_str;
-			const char *status = "SUCCESS";
-			if ( it->first.second ) {
-				status = merrname( it->first.second );
-				if ( status == NULL ) {
-					tmp_str = std::to_string( it->first.second );
-					status = tmp_str.c_str();
-				}
-			}
-			fprintf( fp, "io:lower_bound=%u;is_write=%d;status=%s;min=%u;max=%u;count=%u;sum=%u\n",
-			         timerange_lower_bound[ i ],
-			         it->first.first,
-			         status,
-			         ts.min_time,
-			         ts.max_time,
-			         ts.count,
-			         ts.sum );
+		const IOStatistics &ios = it->second;
+		if (ios.count == 0) {
+			continue;
 		}
+
+		std::string tmp_str;
+		const char *status = "SUCCESS";
+		if ( it->first.second ) {
+			status = merrname( it->first.second );
+			if ( status == NULL ) {
+				tmp_str = std::to_string( it->first.second );
+				status = tmp_str.c_str();
+			}
+		}
+		fprintf( fp, "io:is_write=%d;status=%s;count=%u;sum=%u\n",
+		         it->first.first,
+		         status,
+		         ios.count,
+		         ios.sum );
 	}
 }
 
