@@ -321,8 +321,6 @@ private:
 	int32_t m_errno;
 	char m_ks;
 
-public:
-
 	int32_t m_corrupt;
 };
 
