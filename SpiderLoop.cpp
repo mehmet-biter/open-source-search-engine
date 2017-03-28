@@ -831,8 +831,6 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 		// what is m_list.m_ks ?
 		m_list.getLastKey((char *)&m_sc->m_msg5StartKey);
 		m_sc->m_msg5StartKey += 1;
-		// i guess we had something? wait for nothing to be there
-		//m_sc->m_encounteredDoledbRecs = true;
 	}
 
 	// log this now
@@ -1199,24 +1197,6 @@ skipDoledbRec:
 	// rejected, or rejected for some other reason, so try the next 
 	// doledb rec in this list
 	goto listLoop;
-
-	//
-	// otherwise, it blocked, trying to get the lock across the network.
-	// so reset the doledb scan assuming it will go through. if it does
-	// NOT get the lock, then it will be in the lock cache for quick
-	// "return true" from spiderUrl() above next time we try it.
-	//
-
-	// once we get a url from doledb to spider, reset our doledb scan.
-	// that way if a new url gets added to doledb that is high priority
-	// then we get it right away.  
-	//
-	// NO! because the lock request can block then fail!! and we end
-	// up resetting and in an infinite loop!
-	//
-	//m_sc->m_pri = -1;
-
-	//return false;
 }
 
 
@@ -1267,7 +1247,6 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 			// get it
 			XmlDoc *xd = m_docs[i];
 			if ( ! xd                      ) continue;
-			//if ( xd->m_sreq.m_isInjecting ) continue;
 			// let everyone know, TcpServer::cancel() uses this in
 			// destroySocket()
 			g_errno = ECANCELLED;
@@ -1284,8 +1263,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	}
 	// do not launch any new spiders if in repair mode
 	if ( g_repairMode ) { 
-		g_conf.m_spideringEnabled = false; 
-		//g_conf.m_injectionEnabled = false; 
+		g_conf.m_spideringEnabled = false;
 		return true; 
 	}
 	// do not launch another spider if less than 25MB of memory available.
@@ -1306,9 +1284,6 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 			s_lastTime = now;
 		}
 	}
-
-	// we store this in msg12 for making a fakedb key
-	//collnum_t collnum = g_collectiondb.getCollnum ( coll );
 
 	int64_t lockKeyUh48 = makeLockTableKey ( sreq );
 
@@ -1363,28 +1338,11 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// reset g_errno
 	g_errno = 0;
 
-	// get rid of this crap for now
-	//g_spiderCache.meterBandwidth();
-
 	// save these in case getLocks() blocks
 	m_sreq      = sreq;
 	m_doledbKey = doledbKey;
-	//m_coll      = coll;
 	m_collnum = collnum;
 
-
-
-	// if we already have the lock then forget it. this can happen
-	// if spidering was turned off then back on.
-	// MDW: TODO: we can't do this anymore since we no longer have
-	// the lockTable check above because we do not control our own
-	// lock now necessarily. it often is in another group's lockTable.
-	//if ( g_spiderLoop.m_lockTable.isInTable(&lockKey) ) {
-	//	log("spider: already have lock for lockKey=%" PRIu64,lockKey);
-	//	// proceed
-	//	return spiderUrl2();
-	//}
-	
 	// count it
 	m_processed++;
 
@@ -1461,9 +1419,6 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 bool SpiderLoop::spiderUrl2 ( ) {
 
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
-		
-	// sanity check
-	//if ( ! m_sreq->m_doled ) { g_process.shutdownAbort(true); }
 
 	// . find an available doc slot
 	// . we can have up to MAX_SPIDERS spiders (300)
@@ -1499,26 +1454,6 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	const char *coll = "collnumwasinvalid";
 	if ( cr ) coll = cr->m_coll;
 
-	//
-	// sanity checks
-	//
-	//int64_t uh48;
-	//int64_t pdocid;
-	//if ( g_conf.m_logDebugSpider ) {
-	//	// scan for it since we may have dup requests
-	//	uh48   = m_sreq->getUrlHash48();
-	//	pdocid = m_sreq->getParentDocId();
-	//	// get any request from our urlhash table
-	//	SpiderRequest *sreq2 = m_sc->getSpiderRequest2 (&uh48,pdocid);
-	//	// must be valid parent
-	//	if ( ! sreq2 && pdocid == 0LL ) { g_process.shutdownAbort(true); }
-	//	// for now core on this
-	//	if ( ! sreq2 ) {  g_process.shutdownAbort(true); }
-	//	// log it
-	//	logf(LOG_DEBUG,"spider: spidering uh48=%" PRIu64" pdocid=%" PRIu64,
-	//	     uh48,pdocid);
-	//}
-
 	if ( g_conf.m_logDebugSpider )
 		logf(LOG_DEBUG,"spider: spidering firstip9=%s(%" PRIu32") "
 		     "uh48=%" PRIu64" prntdocid=%" PRIu64" k.n1=%" PRIu64" k.n0=%" PRIu64,
@@ -1540,35 +1475,8 @@ bool SpiderLoop::spiderUrl2 ( ) {
 		return true;
 	}
 
-	// . launch count increment
-	// . this is only used locally on this host to set its
-	//   m_hasUrlsReadyToSpider to false.
-	//cr->m_localCrawlInfo.m_numUrlsLaunched++;
-
 	// call this after doc gets indexed
 	xd->setCallback ( xd  , indexedDocWrapper );
-
-	/*
-	// set it from provided parms if we are injecting via Msg7
-	if ( m_sreq->m_isInjecting ) {
-		// now fill these in if provided too!
-		if ( m_content ) {
-			if ( m_sreq->m_firstIp ) {
-				xd->m_ip      = m_sreq->m_firstIp;
-				xd->m_ipValid = true;
-			}
-			xd->m_isContentTruncated      = false;
-			xd->m_isContentTruncatedValid = true;
-			xd->m_httpReplyValid          = true;
-			xd->m_httpReply               = m_content;
-			xd->m_httpReplySize           = m_contentLen + 1;
-			if ( ! m_contentHasMime ) xd->m_useFakeMime = true;
-		}
-		// a special callback for injected docs
-		//xd->m_injectionCallback = m_callback;
-		//xd->m_injectionState    = m_state;
-	}
-	*/
 
 	// increase m_maxUsed if we have to
 	if ( i > m_maxUsed ) m_maxUsed = i;
@@ -1587,7 +1495,7 @@ bool SpiderLoop::spiderUrl2 ( ) {
 		m_sreq->m_priority = 0;
 		//g_process.shutdownAbort(true); 
 	}
-	//if (m_sreq->m_priority >= MAX_SPIDER_PRIORITIES){g_process.shutdownAbort(true);}
+
 	// update this
 	m_sc->m_outstandingSpiders[(unsigned char)m_sreq->m_priority]++;
 
@@ -1597,30 +1505,14 @@ bool SpiderLoop::spiderUrl2 ( ) {
 		    m_sc->m_waitingTree.getNumUsedNodes(),
 		    m_sreq->m_url);
 
-
-	// debug log
-	//log("XXX: incremented count to %" PRId32" for %s",
-	//    m_sc->m_spidersOut,m_sreq->m_url);
-	//if ( m_sc->m_spidersOut != m_numSpidersOut ) { g_process.shutdownAbort(true); }
-
 	// . return if this blocked
 	// . no, launch another spider!
 	logTrace( g_conf.m_logTraceSpider, "calling xd->indexDoc" );
 	bool status = xd->indexDoc();
 	logTrace( g_conf.m_logTraceSpider, "indexDoc status [%s]" , status?"true":"false");
 
-	// . reset the next doledbkey to start over!
-	// . when spiderDoledUrls() see this negative priority it will
-	//   reset the doledb scan to the top priority.
-	// . MDW, no, 2/25/2015. then the 'goto loop;' statement
-	//   basially thinks a round was completed and exits
-	//m_sc->m_pri2 = -1;	
-	// maybe then try setting to 127
-	//m_sc->setPriority ( MAX_SPIDER_PRIORITIES - 1 );
-
 	// if we were injecting and it blocked... return false
-	if ( ! status ) 
-	{
+	if ( ! status ) {
 		logTrace( g_conf.m_logTraceSpider, "END, indexDoc blocked" );
 		return false;
 	}
@@ -1633,27 +1525,11 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	return true;
 }
 
-
-
-// . the one that was just indexed
-// . Msg7.cpp uses this to see what docid the injected doc got so it
-//   can forward it to external program
-//static int64_t s_lastDocId = -1;
-//int64_t SpiderLoop::getLastDocId ( ) { return s_lastDocId; }
-
 void indexedDocWrapper ( void *state ) {
 	// . process the results
 	// . return if this blocks
 	if ( ! g_spiderLoop.indexedDoc ( (XmlDoc *)state ) ) return;
-	//a hack to fix injecting urls, because they can
-	//run at niceness 0 but most of the spider pipeline
-	//cannot.  we should really just make injection run at
-	//MAX_NICENESS. OK, done! mdw
-	// . continue gettings Spider recs to spider
-	// . if it's already waiting for a list it'll just return
-	// . mdw: keep your eye on this, it was commented out
-	// . this won't execute if we're already getting a list now
-	//g_spiderLoop.spiderUrl ( );
+
 	// spider some urls that were doled to us
 	g_spiderLoop.spiderDoledUrls( );
 }
@@ -1665,25 +1541,12 @@ void indexedDocWrapper ( void *state ) {
 // . sets g_errno on error
 bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
-	
-	// save the error in case a call changes it below
-	//int32_t saved = g_errno;
 
 	// get our doc #, i
-	//int32_t i = doc - m_docs[0];
 	int32_t i = 0;
 	for ( ; i < MAX_SPIDERS ; i++ ) if ( m_docs[i] == xd) break;
 	// sanity check
 	if ( i >= MAX_SPIDERS ) { g_process.shutdownAbort(true); }
-	// set to -1 to indicate inject
-	//if ( i < 0 || i >= MAX_SPIDERS ) i = -1;
-
-	//char injecting = false;
-	//if ( xd->m_sreq.m_isInjecting ) injecting = true;
-
-	// save it for Msg7.cpp to pass docid of injected doc back 
-	//s_lastDocId = xd->m_docId;
-
 
 	// . decrease m_maxUsed if we need to
 	// . we can decrease all the way to -1, which means no spiders going on
@@ -1695,7 +1558,7 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 	m_numSpidersOut--;
 
 	// get coll
-	collnum_t collnum = xd->m_collnum;//tiondb.getCollnum ( xd->m_coll );
+	collnum_t collnum = xd->m_collnum;
 	// if coll was deleted while spidering, sc will be NULL
 	SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
 	// decrement this
@@ -1705,85 +1568,30 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 	// update this. 
 	if ( sc ) sc->m_outstandingSpiders[(unsigned char)sreq->m_priority]--;
 
-	// debug log
-	//log("XXX: decremented count to %" PRId32" for %s",
-	//    sc->m_spidersOut,sreq->m_url);
-	//if ( sc->m_spidersOut != m_numSpidersOut ) { g_process.shutdownAbort(true); }
-
-	// are we a re-spider?
-	bool respider = false;
-	if ( xd->m_oldDocValid && xd->m_oldDoc ) respider = true;
-
-
 	// note it
 	// this should not happen any more since indexDoc() will take
 	// care of g_errno now by clearing it and adding an error spider
 	// reply to release the lock!!
 	if ( g_errno ) {
-		// log("spider: ----CRITICAL CRITICAL CRITICAL----");
-		// log("spider: ----CRITICAL CRITICAL CRITICAL----");
-		// log("spider: ------ *** LOCAL ERROR ***  ------");
-		// log("spider: ------ *** LOCAL ERROR ***  ------");
-		// log("spider: ------ *** LOCAL ERROR ***  ------");
 		log("spider: spidering %s has error: %s. uh48=%" PRId64". "
-		    //"Respidering "
-		    //"in %" PRId32" seconds. MAX_LOCK_AGE when lock expires. "
 		    "cn=%" PRId32,
 		    xd->m_firstUrl.getUrl(),
 		    mstrerror(g_errno),
 		    xd->getFirstUrlHash48(),
-		    //(int32_t)MAX_LOCK_AGE,
 		    (int32_t)collnum);
-		// log("spider: ------ *** LOCAL ERROR ***  ------");
-		// log("spider: ------ *** LOCAL ERROR ***  ------");
-		// log("spider: ------ *** LOCAL ERROR ***  ------");
-		// log("spider: ----CRITICAL CRITICAL CRITICAL----");
-		// log("spider: ----CRITICAL CRITICAL CRITICAL----");
 		// don't release the lock on it right now. just let the
 		// lock expire on it after MAX_LOCK_AGE seconds. then it will
 		// be retried. we need to debug gb so these things never
 		// hapeen...
 	}
-		
-	// . call the final callback used for injecting urls
-	// . this may send a reply back so the caller knows the url
-	//   was fully injected into the index
-	// . Msg7.cpp uses a callback that returns a void, so use m_callback1!
-	//if ( xd->m_injectionCallback && injecting ) {
-	//	g_errno = saved;
-	//	// use the index code as the error for PageInject.cpp
-	//	if ( ! g_errno && xd->m_indexCode ) g_errno = xd->m_indexCode;
-	//	xd->m_injectionCallback ( xd->m_injectionState );
-	//}
 
 	// we don't need this g_errno passed this point
 	g_errno = 0;
-
-	// did this doc get a chance to add its meta list to msg4 bufs?
-	//bool addedMetaList = m_docs[i]->m_listAdded;
-
-	// set this in case we need to call removeAllLocks
-	//m_uh48 = 0LL;
-	//if ( xd->m_sreqValid ) m_uh48 = xd->m_sreq.getUrlHash48();
 
 	// we are responsible for deleting doc now
 	mdelete ( m_docs[i] , sizeof(XmlDoc) , "Doc" );
 	delete (m_docs[i]);
 	m_docs[i] = NULL;
-
-	// we remove the spider lock from g_spiderLoop.m_lockTable in Rdb.cpp
-	// when it receives the negative doledb key. but if the this does not
-	// happen, we have a problem then!
-	//if ( addedMetaList ) return true;
-
-	// sanity
-	//if ( ! m_uh48 ) { g_process.shutdownAbort(true); }
-
-	// the lock we had in g_spiderLoop.m_lockTable for the doleKey
-	// is now remove in Rdb.cpp when it receives a negative dole key to
-	// add to doledb... assuming we added that meta list!!
-	// m_uh48 should be set from above
-	//if ( ! removeAllLocks () ) return false;
 
 	// we did not block, so return true
 	logTrace( g_conf.m_logTraceSpider, "END" );
@@ -1815,16 +1623,7 @@ int32_t SpiderLoop::getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum 
 		// skip if not yet expired
 		if ( lock->m_firstIp == firstIp ) count++;
 	}
-	/*
-	for ( int32_t i = 0 ; i <= m_maxUsed ; i++ ) {
-		// get it
-		XmlDoc *xd = m_docs[i];
-		// skip if empty
-		if ( ! xd ) continue;
-		// check it
-		if ( xd->m_firstIp == firstIp ) count++;
-	}
-	*/
+
 	return count;
 }
 
@@ -2068,12 +1867,6 @@ void spiderRoundIncremented ( CollectionRec *cr ) {
 	    cr->m_coll,cr->m_spiderRoundNum,
 	    (uint32_t)cr->m_spiderRoundStartTime);
 
-	// . need to send a notification for this round
-	// . we are only here because the round was incremented and
-	//   Parms.cpp just called us... and that only happens in 
-	//   doneSending... so do not send again!!!
-	//cr->m_localCrawlInfo.m_sentCrawlDoneAlert = 0;
-
 	// . if we set sentCrawlDoneALert to 0 it will immediately
 	//   trigger another round increment !! so we have to set these
 	//   to true to prevent that.
@@ -2098,7 +1891,6 @@ static void gotCrawlInfoReply(void *state, UdpSlot *slot) {
 	// loop over each LOCAL crawlinfo we received from this host
 	CrawlInfo *ptr   = (CrawlInfo *)(slot->m_readBuf);
 	CrawlInfo *end   = (CrawlInfo *)(slot->m_readBuf+ slot->m_readBufSize);
-	//int32_t       allocSize           = slot->m_readBufMaxSize;
 
 	// host sending us this reply
 	Host *h = slot->m_host;
@@ -2157,8 +1949,6 @@ static void gotCrawlInfoReply(void *state, UdpSlot *slot) {
 			    "not found",(int32_t)collnum);
 			continue;
 		}
-		
-		//CrawlInfo *stats = ptr;
 
 		// just copy into the stats buf
 		if ( ! cr->m_crawlInfoBuf.getBufStart() ) {
@@ -2261,11 +2051,7 @@ static void gotCrawlInfoReply(void *state, UdpSlot *slot) {
 			if ( ! stats->m_hasUrlsReadyToSpider ) continue;
 			// inc the count otherwise
 			gi->m_hasUrlsReadyToSpider++;
-			// . no longer initializing?
-			// . sometimes other shards get the spider 
-			//  requests and not us!!!
-			//if ( cr->m_spiderStatus == SP_INITIALIZING )
-			//	cr->m_spiderStatus = SP_INPROGRESS;
+
 			// i guess we are back in business even if
 			// m_spiderStatus was SP_ROUNDDONE...
 			cr->m_spiderStatus = SP_INPROGRESS;
@@ -2481,10 +2267,6 @@ void handleRequestc1(UdpSlot *slot, int32_t /*niceness*/) {
 
 		if ( ! sendIt ) continue;
 
-		// note it
-		// log("spider: sending ci for coll %s to host %" PRId32,
-		//     cr->m_coll,hostId);
-		
 		// save it
 		replyBuf.safeMemcpy ( ci , sizeof(CrawlInfo) );
 
