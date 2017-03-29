@@ -94,7 +94,6 @@ Parm::Parm() {
 	m_smin = 0;
 	m_smax = 0;
 	m_sync = false;
-	m_hash = 0;
 	m_cgiHash = 0;
 }
 
@@ -844,8 +843,6 @@ Parms::Parms ( ) {
 
 	// Coverity
 	m_numParms = 0;
-	memset(m_searchParms, 0, sizeof(m_searchParms));
-	m_numSearchParms = 0;
 }
 
 
@@ -855,27 +852,6 @@ bool Parms::registerHandler3e() {
 
 bool Parms::registerHandler3f() {
 	return g_udpServer.registerHandler(msg_type_3f,handleRequest3f);
-}
-
-
-void Parms::detachSafeBufs ( CollectionRec *cr ) {
-	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
-		Parm *m = &m_parms[i];
-		if ( m->m_type != TYPE_SAFEBUF ) continue;
-		if ( m->m_obj != OBJ_COLL ) continue;
-		if ( m->m_off < 0 ) continue;
-		int32_t max = 1;
-		// this will be zero if not an array.
-		// othewise it is the # of elements in the array
-		if ( m->m_size > max ) max = m->m_size;
-		// an array of safebufs? m->m_size will be > 1 then.
-		for ( int32_t j = 0 ; j < max ; j++ ) {
-			// get it
-			SafeBuf *sb = (SafeBuf *)((char *)cr + m->m_off +
-						  j*sizeof(SafeBuf));
-			sb->detachBuf();
-		}
-	}
 }
 
 // from Pages.cpp
@@ -2472,16 +2448,6 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 	return;
 }
 
-Parm *Parms::getParmFromParmHash ( int32_t parmHash ) {
-	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
-		Parm *m = &m_parms[i];
-		if ( m->m_hash != parmHash ) continue;
-		return m;
-	}
-	return NULL;
-}
-
-
 void Parms::setToDefault(char *THIS, parameter_object_type_t objType, CollectionRec *argcr) {
 	// init if we should
 	init();
@@ -2555,10 +2521,9 @@ bool Parms::setFromFile ( void *THIS        ,
 	// . let the log know what we are doing
 	// . filename is NULL if a call from CollectionRec::setToDefaults()
 	Xml xml;
-	//char buf [ MAX_XML_CONF ];
 	SafeBuf sb;
 
-	if ( filename&&!setXmlFromFile(&xml,filename,&sb)){//buf,MAX_XML_CONF))
+	if ( filename&&!setXmlFromFile(&xml,filename,&sb)){
 		log("parms: error setting from file %s: %s",filename,
 		    mstrerror(g_errno));
 		return false;
@@ -3082,7 +3047,6 @@ void Parms::init ( ) {
 	// default all
 	for ( int32_t i = 0 ; i < MAX_PARMS ; i++ ) {
 		m_parms[i].m_parmNum= i;
-		m_parms[i].m_hash   = 0         ;
 		m_parms[i].m_title  = ""         ; // for detecting if not set
 		m_parms[i].m_desc   = ""         ; // for detecting if not set
 		m_parms[i].m_cgi    = NULL       ; // for detecting if not set
@@ -3630,19 +3594,6 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
-	m++;
-
-
-	m->m_title = "do spell checking";
-	m->m_desc  = "If enabled while using the XML feed, "
-		"when Gigablast finds a spelling recommendation it will be "
-		"included in the XML <spell> tag. Default is 0 if using an "
-		"XML feed, 1 otherwise. Will be availble again soon.";
-	m->m_cgi   = "spell";
-	simple_m_set(SearchInput,m_spellCheck);
-	m->m_page  = PAGE_RESULTS;
-	m->m_def   = "1";
-	m->m_flags = PF_API;
 	m++;
 
 	m->m_title = "stream search results";
@@ -6897,19 +6848,6 @@ void Parms::init ( ) {
 	//
 	///////////////////
 
-
-	m->m_title = "do spell checking by default";
-	m->m_desc  = "If enabled while using the XML feed, "
-		"when Gigablast finds a spelling recommendation it will be "
-		"included in the XML <spell> tag. Default is 0 if using an "
-		"XML feed, 1 otherwise.";
-	m->m_cgi   = "spell";
-	simple_m_set(CollectionRec,m_spellCheck);
-	m->m_page  = PAGE_SEARCH;
-	m->m_def   = "1";
-	m->m_flags = PF_API | PF_NOSAVE | PF_CLONE;
-	m++;
-
 	m->m_title = "get scoring info by default";
 	m->m_desc  = "Get scoring information for each result so you "
 		"can see how each result is scored. You must explicitly "
@@ -8019,16 +7957,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-	m->m_title = "delete 404s";
-	m->m_desc  = "Should pages be removed from the index if they are no "
-		"longer accessible on the web?";
-	m->m_cgi   = "dnf";
-	simple_m_set(CollectionRec,m_delete404s);
-	m->m_def   = "1";
-	m->m_page  = PAGE_SPIDER;
-	m->m_flags = PF_HIDDEN;
-	m++;
-
 	m->m_title = "delete timed out docs";
 	m->m_desc  = "Should documents be deleted from the index "
 		"if they have been retried them enough times and the "
@@ -8082,45 +8010,6 @@ void Parms::init ( ) {
 	m->m_def   = "0";
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_CLONE;
-	m++;
-
-	m->m_title = "build similarity vector from content only";
-	m->m_desc  = "If this is true, the spider, when checking the page "
-		     "if it has changed enough to reindex or update the "
-		     "published date, it will build the vector only from "
-		     "the content located on that page.";
-	m->m_cgi   = "bvfc";
-	simple_m_set(CollectionRec,m_buildVecFromCont);
-	m->m_def   = "1";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m++;
-
-	m->m_title = "use content similarity to index publish date";
-	m->m_desc  = "This requires build similarity from content only to be "
-		     "on.  This indexes the publish date (only if the content "
-		     "has changed enough) to be between the last two spider "
-		     "dates.";
-	m->m_cgi   = "uspd";
-	simple_m_set(CollectionRec,m_useSimilarityPublishDate);
-	m->m_def   = "1";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m++;
-
-	m->m_title = "max percentage similar to update publish date";
-	m->m_desc  = "This requires build similarity from content only and "
-		     "use content similarity to index publish date to be "
-		     "on.  This percentage is the maximum similarity that can "
-		     "exist between an old document and new before the publish "
-		     "date will be updated.";
-	m->m_cgi   = "mpspd";
-	simple_m_set(CollectionRec,m_maxPercentSimilarPublishDate);
-	m->m_def   = "80";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
 	m++;
 
 	m->m_title = "do url sporn checking";
@@ -8220,33 +8109,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-	m->m_title = "index inlink neighborhoods";
-	m->m_desc  = "If this is true Gigablast will "
-		"index the plain text surrounding the hyper-link text. The "
-		"score will be x times that of the hyper-link text, where x "
-		"is the scalar below.";
-	m->m_cgi   = "iin";
-	simple_m_set(CollectionRec,m_indexInlinkNeighborhoods);
-	m->m_def   = "1";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m++;
-
-	m->m_title = "tagdb collection name";
-	m->m_desc  = "Sometimes you want the spiders to use the tagdb of "
-		"another collection, like the <i>main</i> collection. "
-		"If this is empty it defaults to the current collection.";
-	m->m_cgi   = "tdbc";
-	m->m_off   = offsetof(CollectionRec,m_tagdbColl);
-	m->m_type  = TYPE_STRING;
-	m->m_size  = sizeof(CollectionRec::m_tagdbColl);
-	m->m_def   = "";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "allow adult docs";
 	m->m_desc  = "If this is disabled the spider "
 		"will not allow any docs which contain adult content "
@@ -8265,16 +8127,6 @@ void Parms::init ( ) {
 		"all spidered URLs have an IP address of 1.2.3.4.";
 	m->m_cgi   = "dil";
 	simple_m_set(CollectionRec,m_doIpLookups);
-	m->m_def   = "1";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m++;
-
-	m->m_title = "remove banned pages";
-	m->m_desc  = "Remove banned pages from the index. Pages can be "
-		"banned using tagdb or the Url Filters table.";
-	m->m_cgi   = "rbp";
-	simple_m_set(CollectionRec,m_removeBannedPages);
 	m->m_def   = "1";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
@@ -8372,16 +8224,6 @@ void Parms::init ( ) {
 	m->m_def   = "1";
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_CLONE ;//| PF_HIDDEN;
-	m++;
-
-	m->m_title = "use current time";
-	m->m_desc  = "Use the current time as the spider end time?";
-	m->m_cgi   = "uct";
-	simple_m_set(CollectionRec,m_useCurrentTime);
-	m->m_def   = "1";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
 	m++;
 
 	////////////////
@@ -9275,13 +9117,6 @@ void Parms::init ( ) {
 	char *pend = s_tbuf + 18000;
 	int32_t  size;
 
-	// . set hashes of title
-	// . used by Statsdb.cpp for identifying a parm
-	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
-		if ( ! m_parms[i].m_title ) continue;
-		m_parms[i].m_hash = hash32n ( m_parms[i].m_title );
-	}
-
 	// cgi hashes
 	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
 		if ( ! m_parms[i].m_cgi ) continue;
@@ -9488,21 +9323,6 @@ void Parms::init ( ) {
 
 		*p++ = '\0';
 	}
-
-	// set m_searchParms
-	int32_t n = 0;
-	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
-		//if ( ! m_parms[i].m_sparm ) continue;
-		if ( m_parms[i].m_obj != OBJ_SI ) continue;
-		m_searchParms[n++] = &m_parms[i];
-		// sanity check
-		if ( m_parms[i].m_off == -1 ) {
-			log(LOG_LOGIC,"conf: SEARCH Parm #%" PRId32" \"%s\" has m_off < 0 (offset into SearchInput).",
-			    i,m_parms[i].m_title);
-			exit(-1);
-		}
-	}
-	m_numSearchParms = n;
 
 	//
 	// parm overlap detector

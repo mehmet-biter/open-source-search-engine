@@ -89,8 +89,7 @@ bool RdbTree::set(int32_t fixedDataSize, int32_t maxNumNodes, int32_t memMax, bo
 	// sanity
 	if ( rdbId < -1       ) { g_process.shutdownAbort(true); }
 	if ( rdbId >= RDB_END ) { g_process.shutdownAbort(true); }
-	// if its doledb, set it
-	//if ( dbname && strcmp(dbname,"doledb") == 0 ) m_rdbId = RDB_DOLEDB;
+
 	// adjust m_maxMem to virtual infinity if it was -1
 	if ( m_maxMem < 0 ) m_maxMem = 0x7fffffff;
 	// . compute each node's memory overhead
@@ -113,21 +112,6 @@ bool RdbTree::set(int32_t fixedDataSize, int32_t maxNumNodes, int32_t memMax, bo
 }
 
 void RdbTree::reset ( ) {
-	// . sanity check
-	// . SpiderCache.cpp uses a tree, but withou a dbname
-	if ( m_needsSave && m_dbname[0] && 
-	     strcmp(m_dbname,"accessdb") != 0 &&
-	     strcmp(m_dbname,"statsdb") != 0 ) {
-	     //strcmp(m_dbname,"doledb") ) {
-		log(LOG_WARN, "rdb: RESETTING UNSAVED TREE %s.",m_dbname);
-		log(LOG_WARN, "rdb: RESETTING UNSAVED TREE %s.",m_dbname);
-		log(LOG_WARN, "rdb: RESETTING UNSAVED TREE %s.",m_dbname);
-		// when DELETING a collection from pagecrawlbot.cpp
-		// it calls Collectiondb::deleteRec() which calls
-		// SpiderColl::reset() which calls m_waitingTree.reset()
-		// which was coring here! so take this out
-		//g_process.shutdownAbort(true);
-	}
 	// make sure string is NULL temrinated. this strlen() should 
 	if ( m_numNodes > 0 && 
 	     m_dbname[0] &&
@@ -174,8 +158,6 @@ void RdbTree::reset ( ) {
 	// clear counts
 	m_numNegativeKeys = 0;
 	m_numPositiveKeys = 0;
-	//memset ( m_numNegKeysPerColl , 0 , 4*MAX_COLLS );
-	//memset ( m_numPosKeysPerColl , 0 , 4*MAX_COLLS );
 	m_isSaving        = false;
 	m_isLoading       = false;
 	m_isWritable      = true;
@@ -292,20 +274,11 @@ int32_t RdbTree::getNextNode(collnum_t collnum, const char *key) const {
 	// get the node (about 4 cycles per loop, 80cycles for 1 million items)
 	int32_t parent;
 	int32_t i = m_headNode ;
-	// . set i tom_hint if it's < key
-	// . this helps out severly unbalanced trees made by spiderdb
-	// . it may hurt other guys a bit though
-	//if (m_hint >= 0 && 
-	//m_lastStartNode < m_numNodes &&
-	//m_parents [m_hint ] != -2 &&
-	//m_keys    [m_hint ] <= key ) 
-	//i =m_hint;
+
 	while ( i != -1 ) {
 		parent = i;
 		if ( collnum < m_collnums[i] ) { i = m_left [i]; continue;}
 		if ( collnum > m_collnums[i] ) { i = m_right[i]; continue;}
-		//if ( key <  m_keys[i] ) { i = m_left [i]; continue;}
-		//if ( key >  m_keys[i] ) { i = m_right[i]; continue;}
 		int cmp = KEYCMP(key,0,m_keys,i,m_ks);
 		if (cmp<0) { i = m_left [i]; continue;}
 		if (cmp>0) { i = m_right[i]; continue;}
@@ -340,8 +313,6 @@ int32_t RdbTree::getPrevNode(collnum_t collnum, const char *key) const {
 		parent = i;
 		if ( collnum < m_collnums[i] ) { i = m_left [i]; continue;}
 		if ( collnum > m_collnums[i] ) { i = m_right[i]; continue;}
-		//if ( key <  m_keys[i] ) { i = m_left [i]; continue;}
-		//if ( key >  m_keys[i] ) { i = m_right[i]; continue;}
 		int cmp = KEYCMP(key,0,m_keys,i,m_ks);
 		if ( cmp<0) {i=m_left [i];continue;}
 		if ( cmp>0) {i=m_right[i];continue;}
@@ -444,20 +415,6 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 	// for posdb
 	if ( m_ks == 18 &&(key[0] & 0x06) ) {g_process.shutdownAbort(true); }
 
-	// sanity check, break if 0 > titleRec > 100MB, it's probably corrupt
-	//if ( m_dbname && m_dbname[0]=='t' && dataSize >= 4 && 
-	//     (*((int32_t *)data) > 100000000 || *((int32_t *)data) < 0 ) ) {
-	//	g_process.shutdownAbort(true); }
-	// sanity check (MDW)
-	//if ( dataSize == 0 && (*key & 0x01) && m_dbname[0] != 'c' && 
-	//     (*key & 0x02) ) {
-	//	g_process.shutdownAbort(true); }
-	// commented out because is90PercentFull checks m_memOccupied and
-	// we can breech m_memAllocated w/o breeching 90% of m_memOccupied
-	// if ( m_memAllocated + dataSize > m_maxMem) {
-	// . if no more mem, error out
-	// . we now use RdbMem class so this isn't necessary
-	//if ( m_memOccupied + dataSize > m_maxMem){g_errno=ENOMEM; return -1;}
 	// set up vars
 	int32_t iparent ;
 	int32_t rightGuy;
@@ -925,35 +882,6 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 	// do a grow/shrink test and shrink if we need to
 	//	return growTable ( );
 	// done:
-}
-
-// . TODO: speed up since keys are usually ordered (use getNextNode())
-// . returns false if a key in list was not found
-bool RdbTree::deleteList(collnum_t collnum, RdbList *list) {
-	// sanity check
-	if (list->getKeySize() != m_ks) {
-		g_process.shutdownAbort(true);
-	}
-
-	// return if no non-empty nodes in the tree
-	// bail if list is empty now
-	if (m_numUsedNodes <= 0 || list->isEmpty()) {
-		return true;
-	}
-
-	// a key not found?
-	bool allgood = true;
-
-	char key[MAX_KEY_BYTES];
-	for (list->resetListPtr(); !list->isExhausted(); list->skipCurrentRecord()) {
-		list->getCurrentKey(key);
-		if (!deleteNode(collnum, key, true)) {
-			allgood = false;
-		}
-	}
-
-	// return false if a key was not found
-	return allgood;
 }
 
 // . this fixes the tree
@@ -1559,19 +1487,6 @@ bool RdbTree::getList ( collnum_t collnum ,
 	if ( m_fixedDataSize < 0 || minRecSizes >= 2*1024*1024 )
 		growth = getMemOccupiedForList2 ( collnum, startKey, endKey, minRecSizes );
 
-	// don't grow more than we need to
-	//if ( minRecSizes < growth ) {
-	//	growth = minRecSizes;
-	//	// add in a smidgen for exceeding minRecSizes by a bit
-	//	growth += 128;
-	//	// add lots more for titledb/spiderdb/clusterdb
-	//	if ( m_fixedDataSize == -1 ) growth += 10*1024;
-	//}
-	// debug msg
-	//if ( growth > 1000 )
-	//	log (LOG_DEBUG,"db: RdbTree::getList: growth=%" PRId32". "
-	//	     "minRecSizes=%" PRId32" db=%s.",growth,minRecSizes,m_dbname);
-
 	// grow the list now
 	if ( ! list->growList ( growth ) ) {
 		log(LOG_WARN, "db: Failed to grow list to %" PRId32" bytes for storing records from tree: %s.",
@@ -1594,14 +1509,6 @@ bool RdbTree::getList ( collnum_t collnum ,
 
 		// add record to our list
 		if ( m_fixedDataSize == 0 ) {
-
-			// node #1518 and #1565 are the key ones
-			//if ( m_ks == 18 ) {
-			//	log("tree: adding node %" PRId32" k=%s",node,
-			//	    KEYSTR((unsigned char *)&m_keys[node*m_ks],
-			//		   m_ks));
-			//}
-
 			if ( ! list->addRecord(&m_keys[node*m_ks],0,NULL)) {
 				log(LOG_WARN, "db: Failed to add record to tree list for %s: %s. Fix the growList algo.",
 				    m_dbname,mstrerror(g_errno));
@@ -1613,30 +1520,12 @@ bool RdbTree::getList ( collnum_t collnum ,
 			if ( m_fixedDataSize == -1 ) dataSize = m_sizes[node];
 			// otherwise, it's fixed
 			else dataSize = m_fixedDataSize;
-			// . spiderdb is special
-			// . RdbDump.cpp "deletes" nodes from the spiderdb
-			//   tree by NULLifying the data but leaving the
-			//   dataSize the way it was.
-			// . so when it "dedups" a spiderdb rec in the tree
-			//   it just sets it data ptr to NULL
-			// . MDW: does this still apply? probably not!!!
-			//if ( ! m_data[node] && dataSize ) continue;
-			// RdbDump sets m_data[x] to -1 to indicate that a node was deleted
-			// from the spiderdb tree because it was "deduped" because it was
-			// a dup or it was already in tfndb.
-			//if ( m_data[node] == (char *)-1 ) continue;
 			// point to key
 			char *key = &m_keys[node*m_ks];
 			// do not allow negative keys to have data, or
 			// at least ignore it! let's RdbList::addRecord()
 			// core dump on us!
 			if ( (key[0] & 0x01) == 0x00 ) dataSize = 0;
-			// sanity check, break if 0 > titleRec > 100MB, 
-			// it's probably corrupt
-			//if (m_dbname && m_dbname[0]=='t' && dataSize >= 4 && 
-			//     (*((int32_t *)m_data[node]) > 100000000 || 
-			//      *((int32_t *)m_data[node]) < 0 ) ) {
-			//	g_process.shutdownAbort(true); }
 			// add the key and data
 			if ( ! list->addRecord ( key,//&m_keys[node*m_ks] ,
 						 dataSize     ,
@@ -1645,37 +1534,13 @@ bool RdbTree::getList ( collnum_t collnum ,
 				    m_dbname,mstrerror(g_errno));
 				return false;
 			}
-			// debug msg for detecting tagdb corruption
-			/*
-			if ( m_dbname && 
-			     m_dbname[0]=='t' && 
-			     m_dbname[1] == 'a' && 
-			     dataSize >= 4 ) {
-				int32_t back = dataSize + m_ks + 4;
-				char *rec = list->m_list+list->m_listSize-back;
-				Tag *tag = (Tag *)rec;
-				logf(LOG_DEBUG,
-				     "tree: "
-				     "getting node #%" PRId32" with data ptr at %"U PRId32" "
-				     "and data size of %" PRId32" into a list.",
-				     node,(int32_t)m_data[node],dataSize);
-				// detect tagdb corruption
-				if ( tag->m_bufSize < 0 ||
-				     tag->m_bufSize > 3000 ) {
-					g_process.shutdownAbort(true); }
-			}
-			*/
 		}
-		// count negative and positive recs
-		//if ( ((m_keys[node].n0) & 0x01) == 0 ) numNeg++;
-		//else                                   numPos++;
+
 		// we are little endian
 		if ( KEYNEG(m_keys,node,m_ks) ) numNeg++;
 		else                            numPos++;
 		// save lastNode for setting *lastKey
 		lastNode = node;
-		// advance to next node
-		//node = getNextNode ( node );
 	}
 
 	// set counts to pass back
@@ -1687,11 +1552,7 @@ bool RdbTree::getList ( collnum_t collnum ,
 	// . constrain the endKey of the list to the key of "node" minus 1
 	// . "node" should be the next node we would have added to this list
 	// . if "node" is < 0 then we can keep endKey set high the way it is
-	//if ( node >= 0 ) {
-	//key96_t newEndKey = m_keys[node];
-	//newEndKey -= (uint32_t) 1 ;
-	//list->set ( startKey , newEndKey );
-	//}
+
 	// record the last key inserted into the list
 	if ( lastNode >= 0 ) 
 		list->setLastKey ( &m_keys[lastNode*m_ks] );
@@ -1709,12 +1570,9 @@ bool RdbTree::getList ( collnum_t collnum ,
 		// . if by some chance his positive counterpart is in the
 		//   tree, then it's ok because we'd annihilate him anyway,
 		//   so we might as well ignore him
-		//if (((newEndKey.n0) & 0x01) == 0x00 ) 
-		//	newEndKey += (uint32_t)1;
 		// we are little endian
 		if ( KEYNEG(newEndKey,0,m_ks) ) KEYINC(newEndKey,m_ks);
 		// if we're using half keys set his half key bit
-		//if ( useHalfKeys ) newEndKey.n0 |= 0x02;
 		if ( useHalfKeys ) KEYOR(newEndKey,0x02);
 		// tell list his new endKey now
 		list->set ( startKey , newEndKey );
@@ -1722,18 +1580,6 @@ bool RdbTree::getList ( collnum_t collnum ,
 	// reset list ptr to point to first record
 	list->resetListPtr();
 
-	//if ( m_ks == 24 ) {
-	//	//checkTree ( true , true );
-	//	list->checkList_r(false,true,RDB_LINKDB);//POSDB);
-	//}
-
-	// if list is using less than 90% of it's mem, shrink it
-	//if ( 100*list->getListSize() > list->getListMaxSize()*90 ) {
-	//	// shrink the list
-	//	list->growList ( list->getListSize() );
-	//	// clear g_errno if there was an error
-	//	g_errno = 0;
-	//}
 	// success
 	return true;
 }
@@ -1746,8 +1592,6 @@ bool RdbTree::getList ( collnum_t collnum ,
 // . right now it only works for dataless nodes (keys only)
 int32_t RdbTree::estimateListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const {
 	// make these as benign as possible
-	//if ( minKey ) *minKey = endKey;
-	//if ( maxKey ) *maxKey = startKey;
 	if ( minKey ) KEYSET ( minKey , endKey   , m_ks );
 	if ( maxKey ) KEYSET ( maxKey , startKey , m_ks );
 	// get order of a key as close to startKey as possible
@@ -1786,7 +1630,6 @@ int32_t RdbTree::estimateListSize(collnum_t collnum, const char *startKey, const
 	}
 
 	// loop until we run out of nodes or one breeches endKey
-	//while ( n > 0 && m_keys[n] <= endKey && m_collnums[n] == collnum ) {
 	while( n > 0 && KEYCMP(m_keys,n,endKey,0,m_ks) <= 0 && m_collnums[n]==collnum ) {
 		size++;
 		n = getNextNode(n);
@@ -2467,28 +2310,7 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 	//f->close();
 	// check it
 	if ( ! checkTree( false , true ) ) return fixTree ( );
-	// a temporary hack to remove all data less tree nodes from
-	// spiderdb and titledb
-	/*
-	if ( m_fixedDataSize == -1 ) {
-		log("REMOVING 0 SIZE NODES FROM SPIDERDB/SITEDB/TITLEDB");
-		int32_t count = 0;
-	again:
-		for ( int32_t i = 0 ; i < m_minUnusedNode ; i++ ) {
-			if ( m_parents[i] == -2 ) continue;
-			if ( m_sizes[i] != 0 ) continue;
-			if ( (m_keys[i].n0 & 0x01) == 0x00 ) continue;
-			count++;
-			log("got one");
-			// make it negative
-			m_keys[i].n0 &= 0xfffffffffffffffeLL;
-			//deleteNode ( i , true ); // freeData?
-			//goto again;
-		}
-		log("REMOVED %" PRId32,count);
-		if ( ! checkTree( false ) ) return fixTree ( );
-	}
-	*/
+
 	// no longer needs save
 	m_needsSave = false;
 	//printTree();
@@ -2550,17 +2372,11 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 		m_memOccupied += m_overhead;
 		if   ( KEYNEG(m_keys,i,m_ks) ) {
 			m_numNegativeKeys++;
-			//m_numNegKeysPerColl[c]++;
-			// this is only used for Rdb::m_trees
-			//if ( m_isRealTree )
 			if ( m_rdbId >= 0 )
 				g_collectiondb.getRec(c)->m_numNegKeysInTree[(unsigned char)m_rdbId]++;
 		}
 		else {
 			m_numPositiveKeys++;
-			//m_numPosKeysPerColl[c]++;
-			// this is only used for Rdb::m_trees
-			//if ( m_isRealTree )
 			if ( m_rdbId >= 0 )
 				g_collectiondb.getRec(c)->m_numPosKeysInTree[(unsigned char)m_rdbId]++;
 		}
@@ -2674,7 +2490,6 @@ int32_t  RdbTree::getNumNegativeKeys( collnum_t collnum ) const {
 	if ( m_rdbId < 0 ) return m_numNegativeKeys;
 	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return 0;
-	//if ( ! m_countsInitialized ) { g_process.shutdownAbort(true); }
 	return cr->m_numNegKeysInTree[(unsigned char)m_rdbId]; 
 }
 
@@ -2683,6 +2498,5 @@ int32_t  RdbTree::getNumPositiveKeys( collnum_t collnum ) const {
 	if ( m_rdbId < 0 ) return m_numPositiveKeys;
 	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return 0;
-	//if ( ! m_countsInitialized ) { g_process.shutdownAbort(true); }
 	return cr->m_numPosKeysInTree[(unsigned char)m_rdbId]; 
 }

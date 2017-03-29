@@ -217,8 +217,6 @@ public:
 	rdbid_t getRdbId() const { return m_rdbId; }
 	const char* getDbname() const { return m_dbname; }
 
-	bool isCollectionless() const { return m_isCollectionLess; }
-
 	bool isInDumpLoop() const { return m_inDumpLoop; }
 	void setInDumpLoop(bool inDumpLoop) { m_inDumpLoop = inDumpLoop; }
 
@@ -288,12 +286,7 @@ private:
 	char      m_dbname [32];
 	int32_t      m_dbnameLen;
 
-	bool      m_isCollectionLess;
 	bool		m_useIndexFile;
-	
-
-	// for g_statsdb, etc.
-	RdbBase *m_collectionlessBase;
 
 	// for storing records in memory
 	RdbTree    m_tree;  

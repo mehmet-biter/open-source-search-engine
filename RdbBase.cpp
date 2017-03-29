@@ -178,23 +178,6 @@ bool RdbBase::init(const char *dir,
 	log(LOG_DEBUG,"db: adding new base for dir=%s coll=%s collnum=%" PRId32" db=%s",
 	    dir,coll,(int32_t)collnum,dbname);
 
-	// make a special subdir to store the map and data files in if
-	// the db is not associated with a collection. /statsdb etc.
-	if ( rdb->isCollectionless() ) {
-		if ( collnum != (collnum_t) 0 ) {
-			log( LOG_ERROR, "db: collnum not zero for collectionless rdb.");
-			gbshutdownLogicError();
-		}
-
-		// make a special "cat" dir for it if we need to
-		sprintf(m_collectionDirName, "%s%s", dir, dbname);
-		int32_t status = ::mkdir ( m_collectionDirName , getDirCreationFlags() );
-		if ( status == -1 && errno != EEXIST && errno ) {
-			log( LOG_WARN, "db: Failed to make directory %s: %s.", m_collectionDirName, mstrerror( errno ) );
-			return false;
-		}
-	}
-
 	//make sure merge space directory exists
 	if(makePath(m_mergeDirName,getDirCreationFlags())!=0) {
 		g_errno = errno;
@@ -1715,7 +1698,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
 	// now see if collection rec is there to override us
 	//if ( ! cr ) {
-	if ( ! cr && ! m_rdb->isCollectionless() ) {
+	if ( ! cr ) {
 		g_errno = 0;
 		log("merge: Could not find coll rec for %s.",m_coll);
 	}
@@ -2467,8 +2450,6 @@ void RdbBase::saveIndexes() {
 }
 
 bool RdbBase::verifyFileSharding ( ) {
-	if ( m_rdb->isCollectionless() ) return true;
-
 	// if swapping in from CollectionRec::getBase() then do
 	// not re-verify file sharding! only do at startup
 	if ( g_loop.m_isDoingLoop ) return true;

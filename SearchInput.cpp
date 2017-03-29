@@ -30,7 +30,6 @@ SearchInput::SearchInput() {
 	m_rcache = false;
 	m_wcache = -1;		// default from Param.cc
 	m_debug = false;
-	m_spellCheck = false;
 	m_displayMetas = NULL;
 	m_queryCharset = NULL;
 	m_gbcountry = NULL;

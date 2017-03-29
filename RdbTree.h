@@ -129,13 +129,6 @@ public:
 	// estimate the size of the list defined by these keys
 	int32_t estimateListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const;
 
-	// . delete all records in this list from the tree
-	// . call deleteNode()
-	// . returns false if a key in list was not found
-	// . this happens if memory is corrupted!
-	bool deleteList(collnum_t collnum, RdbList *list);
-
-
 	bool isSaving() const { return m_isSaving; }
 	bool isWritable() const { return m_isWritable; }
 
@@ -327,8 +320,6 @@ private:
 
 	int32_t m_errno;
 	char m_ks;
-
-public:
 
 	int32_t m_corrupt;
 };

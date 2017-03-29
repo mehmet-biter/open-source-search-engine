@@ -100,8 +100,6 @@ public:
 
 	bool   m_debug;                      // msg40
 
-	bool   m_spellCheck;
-
 	char  *m_displayMetas;               // msg40
 
 	// do not include these in makeKey()
