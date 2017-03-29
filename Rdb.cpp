@@ -254,12 +254,6 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	// clear it in case it existed
 	g_errno = 0;
 
-	// if some things need to be saved, how did that happen?
-	// we saved everything before we entered repair mode and did not
-	// allow anything more to be added... and we do not allow any
-	// collections to be deleted via Collectiondb::deleteRec() when
-	// in repair mode... how could this happen?
-	//if ( m_needsSave ) { g_process.shutdownAbort(true); }
 	// delete old collection recs
 	CollectionRec *cr = g_collectiondb.getRec ( coll );
 	if ( ! cr ) {
@@ -740,7 +734,6 @@ void Rdb::doneSaving ( ) {
 	if ( g_errno ) {
 		log(LOG_WARN, "db: Had error saving %s-saved.dat: %s.", m_dbname,mstrerror(g_errno));
 		g_errno = 0;
-		//m_needsSave = true;
 		m_isSaving = false;
 		return;
 	}

@@ -1611,7 +1611,7 @@ bool XmlDoc::indexDoc ( ) {
 			cr->localCrawlInfoUpdate();
 		}
 		// need to save collection rec now during auto save
-		cr->m_needsSave = true;
+		cr->setNeedsSave();
 		// update this just in case we are the last url crawled
 		//int64_t now = gettimeofdayInMillisecondsGlobal();
 		//cr->m_diffbotCrawlEndTime = now;
@@ -8106,7 +8106,7 @@ char **XmlDoc::gotHttpReply ( ) {
 		cr->m_localCrawlInfo.m_pageDownloadSuccessesThisRound++;
 		cr->m_globalCrawlInfo.m_pageDownloadSuccessesThisRound++;
 		m_incrementedDownloadCount = true;
-		cr->m_needsSave = true;
+		cr->setNeedsSave();
 		// changing status, resend local crawl info to all
 		cr->localCrawlInfoUpdate();
 	}

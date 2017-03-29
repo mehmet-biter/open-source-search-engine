@@ -783,7 +783,7 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 	if ( cr ) {
 		cr->m_localCrawlInfo .m_urlsHarvested++;
 		cr->m_globalCrawlInfo.m_urlsHarvested++;
-		cr->m_needsSave = true;
+		cr->setNeedsSave();
 	}
 
 	// . we can't do this because we do not have the spiderReply!!!???
