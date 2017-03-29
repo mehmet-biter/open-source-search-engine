@@ -50,10 +50,6 @@ class RdbMem {
 	// used to determine when to dump
 	bool is90PercentFull() const { return m_is90PercentFull; }
 
-	// . when a dump completes we free the primary mem space and make
-	//   the secondary mem space the new primary mem space
-	void  freeDumpedMem(RdbTree *tree);
-
 private:
 	friend class Rdb;
 	// keep hold of this class
