@@ -1178,8 +1178,6 @@ void Process::resetAll ( ) {
 
 	// reset other caches
 	g_dns.reset();
-	g_spiderCache.reset();
-	g_spiderLoop.reset();
 	g_wiki.reset();
 	g_profiler.reset();
 	resetMsg13Caches();
