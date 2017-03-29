@@ -1147,7 +1147,7 @@ skipDoledbRec:
 	cr->m_spiderStatus = SP_INPROGRESS; // this is 7
 
 	// be sure to save state so we do not re-send emails
-	cr->m_needsSave = 1;
+	cr->setNeedsSave();
 
 	// sometimes the spider coll is reset/deleted while we are
 	// trying to get the lock in spiderUrl9() so let's use collnum
@@ -1861,7 +1861,7 @@ void spiderRoundIncremented ( CollectionRec *cr ) {
 
 	cr->localCrawlInfoUpdate();
 
-	cr->m_needsSave = true;
+	cr->setNeedsSave();
 }
 
 static void gotCrawlInfoReply(void *state, UdpSlot *slot) {
@@ -2057,7 +2057,7 @@ static void gotCrawlInfoReply(void *state, UdpSlot *slot) {
 		cr->m_globalCrawlInfo.m_lastUpdateTime = getTime();
 		
 		// make it save to disk i guess
-		cr->m_needsSave = true;
+		cr->setNeedsSave();
 
 		// if spidering disabled in master controls then send no
 		// notifications
@@ -2217,7 +2217,7 @@ void handleRequestc1(UdpSlot *slot, int32_t /*niceness*/) {
 			// if changing status, resend local crawl info to all
 			cr->localCrawlInfoUpdate();
 			// save that!
-			cr->m_needsSave = true;
+			cr->setNeedsSave();
 		}
 
 	doNotEnd:

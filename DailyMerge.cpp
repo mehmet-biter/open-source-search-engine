@@ -257,7 +257,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 		//   getting pushed back.
 		m_cr->m_dailyMergeStarted = m_savedStartTime; // nowSynced;
 		// tell it to save, otherwise this might not get saved
-		m_cr->m_needsSave = true;
+		m_cr->setNeedsSave();
 		// initiate dumps
 		g_spiderdb.getRdb ()->dumpTree();
 		g_linkdb.getRdb   ()->dumpTree();

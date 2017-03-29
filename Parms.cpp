@@ -11108,7 +11108,7 @@ bool Parms::updateParm(const char *rec, WaitEntry *we) {
 	    val1.getBufStart(),
 	    val2.getBufStart());
 
-	if ( cr ) cr->m_needsSave = true;
+	if ( cr ) cr->setNeedsSave();
 
 	// HACK #2
 	if ( base == cr && dst == (char *)&cr->m_importEnabled )

@@ -36,7 +36,6 @@ Collectiondb::Collectiondb ( ) {
 	m_numRecsUsed = 0;
 	m_numCollsSwappedOut = 0;
 	m_initializing = false;
-	m_needsSave = false;
 	m_recs = NULL;
 
 	// sanity
@@ -80,17 +79,14 @@ bool Collectiondb::save ( ) {
 	}
 
 	// which collection rec needs a save
-	for ( int32_t i = 0 ; i < m_numRecs ; i++ ) {
-		if ( ! m_recs[i]              ) continue;
-		// temp debug message
-		//logf(LOG_DEBUG,"admin: SAVING collection #%" PRId32" ANYWAY",i);
-		if ( ! m_recs[i]->m_needsSave ) {
+	for (int32_t i = 0; i < m_numRecs; i++) {
+		if (!m_recs[i]) {
 			continue;
 		}
 
-		//log(LOG_INFO,"admin: Saving collection #%" PRId32".",i);
-		m_recs[i]->save ( );
+		m_recs[i]->save();
 	}
+
 	// oh well
 	return true;
 }
@@ -207,14 +203,6 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 	}
 	mnew ( cr , sizeof(CollectionRec) , "CollectionRec" );
 
-	// set collnum right for g_parms.setToDefault() call just in case
-	// because before it was calling CollectionRec::reset() which
-	// was resetting the RdbBases for the m_collnum which was garbage
-	// and ended up resetting random collections' rdb. but now
-	// CollectionRec::CollectionRec() sets m_collnum to -1 so we should
-	// not need this!
-	//cr->m_collnum = oldCollnum;
-
 	// get the default.conf from working dir if there
 	g_parms.setToDefault( (char *)cr , OBJ_COLL , cr );
 
@@ -225,7 +213,6 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 	// point to this, so Rdb and RdbBase can reference it
 	coll = cr->m_coll;
 
-	cr->m_needsSave = false;
 	//log("admin: loaded old coll \"%s\"",coll);
 
 	// load coll.conf file
@@ -372,8 +359,6 @@ bool Collectiondb::addNewColl ( const char *coll,
 	// set some defaults. max spiders for all priorities in this
 	// collection. NO, default is in Parms.cpp.
 	//cr->m_maxNumSpiders = 10;
-
-	//cr->m_needsSave = 1;
 
 	// start the spiders!
 	cr->m_spideringEnabled = true;
@@ -524,9 +509,6 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) {
 	// note it
 	log(LOG_INFO,"db: deleting coll \"%s\" (%" PRId32")",coll,
 	    (int32_t)cr->m_collnum);
-
-	// we need a save
-	m_needsSave = true;
 
 	// CAUTION: tree might be in the middle of saving
 	// we deal with this in Process.cpp now
@@ -2498,12 +2480,19 @@ bool CollectionRec::save ( ) {
 		return true;
 	}
 
+	// only save if we need to
+	bool needsSave = m_needsSave.exchange(false);
+	if (!needsSave) {
+		return true;
+	}
+
 	//File f;
 	char tmp[1024];
 
-	snprintf ( tmp , 1023, "%scoll.%s.%" PRId32"/coll.conf",
-		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
-	if ( ! g_parms.saveToXml ( (char *)this , tmp ,OBJ_COLL)) {
+	snprintf(tmp, 1023, "%scoll.%s.%" PRId32"/coll.conf", g_hostdb.m_dir, m_coll, (int32_t)m_collnum);
+	if (!g_parms.saveToXml((char *)this, tmp, OBJ_COLL)) {
+		// we didn't save successfully
+		m_needsSave = true;
 		return false;
 	}
 
@@ -2511,43 +2500,32 @@ bool CollectionRec::save ( ) {
 	// save the crawlinfo class in the collectionrec for diffbot
 	//
 	// SAVE LOCAL
-	snprintf ( tmp , 1023, "%scoll.%s.%" PRId32"/localcrawlinfo.dat",
-		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
+	snprintf(tmp, 1023, "%scoll.%s.%" PRId32"/localcrawlinfo.dat", g_hostdb.m_dir, m_coll, (int32_t)m_collnum);
 
 	// in case emergency save from malloc core, do not alloc
 	StackBuf<1024> sb;
 
-	// binary now
-	sb.safeMemcpy ( &m_localCrawlInfo , sizeof(CrawlInfo) );
-	if ( sb.safeSave ( tmp ) == -1 ) {
-		log(LOG_WARN, "db: failed to save file %s : %s",
-		    tmp,mstrerror(g_errno));
+	sb.safeMemcpy(&m_localCrawlInfo, sizeof(CrawlInfo));
+	if (sb.safeSave(tmp) == -1) {
+		log(LOG_WARN, "db: failed to save file %s : %s", tmp,mstrerror(g_errno));
 		g_errno = 0;
 	}
 
 	// SAVE GLOBAL
-	snprintf ( tmp , 1023, "%scoll.%s.%" PRId32"/globalcrawlinfo.dat",
-		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
+	snprintf(tmp, 1023, "%scoll.%s.%" PRId32"/globalcrawlinfo.dat", g_hostdb.m_dir, m_coll, (int32_t)m_collnum);
 
 	sb.reset();
-
-	// binary now
 	sb.safeMemcpy ( &m_globalCrawlInfo , sizeof(CrawlInfo) );
-	if ( sb.safeSave ( tmp ) == -1 ) {
-		log(LOG_WARN, "db: failed to save file %s : %s",
-		    tmp,mstrerror(g_errno));
+	if (sb.safeSave(tmp) == -1) {
+		log(LOG_WARN, "db: failed to save file %s : %s", tmp,mstrerror(g_errno));
 		g_errno = 0;
 	}
 
 	// the list of ip addresses that we have detected as being throttled
 	// and therefore backoff and use proxies for
 	sb.reset();
-	sb.safePrintf("%scoll.%s.%" PRId32"/",
-		      g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
+	sb.safePrintf("%scoll.%s.%" PRId32"/", g_hostdb.m_dir, m_coll, (int32_t)m_collnum);
 	m_twitchyTable.save ( sb.getBufStart() , "ipstouseproxiesfor.dat" );
-
-	// do not need a save now
-	m_needsSave = false;
 
 	return true;
 }

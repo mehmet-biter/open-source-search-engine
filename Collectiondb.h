@@ -5,6 +5,7 @@
 #ifndef GB_COLLECTIONDB_H
 #define GB_COLLECTIONDB_H
 
+#include <atomic>
 #include "SafeBuf.h"
 #include "rdbid_t.h"
 #include "GbMutex.h"
@@ -90,8 +91,6 @@ private:
 
 	bool growRecPtrBuf(collnum_t collnum);
 	bool setRecPtr(collnum_t collnum, CollectionRec *cr);
-
-	bool m_needsSave;
 
 	class CollectionRec  **m_recs;
 
@@ -219,9 +218,13 @@ class CollectionRec {
 
 	// . stuff used by Collectiondb
 	// . do we need a save or not?
-	bool      save ();
-	bool      m_needsSave;
+	bool save();
+	void setNeedsSave() { m_needsSave = true; }
 
+private:
+	std::atomic<bool> m_needsSave;
+
+public:
 	bool      load ( const char *coll , int32_t collNum ) ;
 	void reset();
 
