@@ -108,25 +108,10 @@ bool RdbTree::set(int32_t fixedDataSize, int32_t maxNumNodes, int32_t memMax, bo
 		if(maxNumNodes > 10000000) maxNumNodes = 10000000;
 	}
 	// allocate the nodes
-	return growTree(maxNumNodes);
+	return growTree_unlocked(maxNumNodes);
 }
 
 void RdbTree::reset ( ) {
-	// . sanity check
-	// . SpiderCache.cpp uses a tree, but withou a dbname
-	if ( m_needsSave && m_dbname[0] && 
-	     strcmp(m_dbname,"accessdb") != 0 &&
-	     strcmp(m_dbname,"statsdb") != 0 ) {
-	     //strcmp(m_dbname,"doledb") ) {
-		log(LOG_WARN, "rdb: RESETTING UNSAVED TREE %s.",m_dbname);
-		log(LOG_WARN, "rdb: RESETTING UNSAVED TREE %s.",m_dbname);
-		log(LOG_WARN, "rdb: RESETTING UNSAVED TREE %s.",m_dbname);
-		// when DELETING a collection from pagecrawlbot.cpp
-		// it calls Collectiondb::deleteRec() which calls
-		// SpiderColl::reset() which calls m_waitingTree.reset()
-		// which was coring here! so take this out
-		//g_process.shutdownAbort(true);
-	}
 	// make sure string is NULL temrinated. this strlen() should 
 	if ( m_numNodes > 0 && 
 	     m_dbname[0] &&
