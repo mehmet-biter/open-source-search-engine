@@ -70,14 +70,8 @@ bool RdbDump::set(collnum_t collnum,
                   Rdb *rdb) {
 	m_collnum = collnum;
 
-	// use 0 for collectionless
-	if (rdb && rdb->isCollectionless()) {
-		m_collnum = 0;
-	}
-
-	// are we like statsdb etc.?
 	m_doCollCheck = true;
-	if ( rdb && rdb->isCollectionless() ) m_doCollCheck = false;
+
 	// RdbMerge also calls us but rdb is always set to NULL and it was
 	// causing a merge on collectionless rdb to screw up
 	if ( ! rdb ) m_doCollCheck = false;

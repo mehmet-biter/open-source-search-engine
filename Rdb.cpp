@@ -36,14 +36,12 @@ Rdb::Rdb ( ) {
 	m_cacheLastTotal = 0LL;
 
 	//m_numBases = 0;
-	m_collectionlessBase = NULL;
 	m_initialized = false;
 	m_numMergesOut = 0;
 
 	// Coverity
 	m_fixedDataSize = 0;
 	m_dbnameLen = 0;
-	m_isCollectionLess = false;
 	m_useIndexFile = false;
 	m_useTree = false;
 	m_closeState = NULL;
@@ -68,12 +66,6 @@ Rdb::Rdb ( ) {
 }
 
 void Rdb::reset ( ) {
-	if (m_collectionlessBase) {
-		RdbBase *base = m_collectionlessBase;
-		mdelete (base, sizeof(RdbBase), "Rdb Coll");
-		delete  (base);
-		m_collectionlessBase = NULL;
-	}
 	// reset tree and cache
 	m_tree.reset();
 	m_buckets.reset();
@@ -96,8 +88,6 @@ int32_t Rdb::getNumBases() const {
 }
 
 RdbBase *Rdb::getBase ( collnum_t collnum )  {
-	if ( m_isCollectionLess ) 
-		return m_collectionlessBase;
 	// RdbBase for statsdb, etc. resides in collrec #0 i guess
 	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return NULL;
@@ -107,11 +97,6 @@ RdbBase *Rdb::getBase ( collnum_t collnum )  {
 
 // used by Rdb::addBase1()
 void Rdb::addBase ( collnum_t collnum , RdbBase *base ) {
-	// if we are collectionless, like g_statsdb.m_rdb etc.. shared by all collections essentially.
-	if ( m_isCollectionLess ) {
-		m_collectionlessBase = base;
-		return;
-	}
 	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return;
 	//if ( cr->m_bases[(unsigned char)m_rdbId] ) { g_process.shutdownAbort(true); }
@@ -383,7 +368,6 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 }
 
 // . returns false and sets g_errno on error, returns true on success
-// . if this rdb is collectionless we set m_collectionlessBase in addBase()
 bool Rdb::addRdbBase1 ( const char *coll ) {
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	return addRdbBase2 ( collnum );
@@ -397,9 +381,6 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 		return false;
 	}
 
-	// statsdb
-	if ( m_isCollectionLess )
-		collnum = (collnum_t)0;
 	// ensure no max breech
 	if ( collnum < (collnum_t) 0 ) {
 		g_errno = ENOBUFS;
@@ -410,13 +391,9 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	}
 
 
-	CollectionRec *cr = NULL;
+	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	const char *coll = NULL;
-	if ( ! m_isCollectionLess ) cr = g_collectiondb.getRec(collnum);
 	if ( cr ) coll = cr->m_coll;
-
-	if ( m_isCollectionLess )
-		coll = "collectionless";
 
 	// . ensure no previous one exists
 	// . well it will be there but will be uninitialized, m_rdb will b NULL
@@ -1127,11 +1104,6 @@ bool Rdb::dumpCollLoop ( ) {
 		// don't bother getting the base for all collections because
 		// we end up swapping them in
 		for ( ; m_dumpCollnum < getNumBases() ; m_dumpCollnum++ ) {
-			// collection rdbs like statsdb are ok to process
-			if ( m_isCollectionLess ) {
-				break;
-			}
-
 			// otherwise get the coll rec now
 			if ( !g_collectiondb.getRec(m_dumpCollnum) ) {
 				// skip if empty
@@ -1148,8 +1120,6 @@ bool Rdb::dumpCollLoop ( ) {
 		}
 
 		// swap it in for dumping purposes if we have to
-		// "cr" is NULL potentially for collectionless rdbs, like statsdb,
-		// do we can't involve that...
 		RdbBase *base = getBase(m_dumpCollnum);
 
 		// hwo can this happen? error swappingin?
@@ -2159,12 +2129,6 @@ bool Rdb::getTreeList(RdbList *result,
 
 // . return number of positive records - negative records
 int64_t Rdb::getNumTotalRecs(bool useCache) const {
-
-	// are we statsdb? then we have no associated collections
-	// because we are used globally, by all collections
-	if (m_isCollectionLess)
-		return m_collectionlessBase->getNumTotalRecs();
-
 	// this gets slammed w/ too many collections so use a cache...
 	int32_t now = 0;
 	if ( useCache ) {
@@ -2419,11 +2383,7 @@ RdbBase *getRdbBase(rdbid_t rdbId, const char *coll) {
 		return NULL;
 	}
 	// statdb is a special case
-	collnum_t collnum ;
-	if ( rdb->isCollectionless() )
-		collnum = (collnum_t) 0;
-	else    
-		collnum = g_collectiondb.getCollnum ( coll );
+	collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	if(collnum == -1) {
 		g_errno = ENOCOLLREC;
 		return NULL;
@@ -2439,7 +2399,6 @@ RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum) {
 		log("db: Collection #%" PRId32" does not exist.",(int32_t)collnum);
 		return NULL;
 	}
-	if ( rdb->isCollectionless() ) collnum = (collnum_t) 0;
 	return rdb->getBase(collnum);
 }
 

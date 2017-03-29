@@ -81,7 +81,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	Rdb *rdb = getRdbFromId(rdbId);
 
 	m_rdbId           = rdbId;
-	m_collnum         = rdb->isCollectionless() ? 0 : collnum;
+	m_collnum         = collnum;
 	m_targetFile      = targetFile;
 	m_targetMap       = targetMap;
 	m_targetIndex     = targetIndex;

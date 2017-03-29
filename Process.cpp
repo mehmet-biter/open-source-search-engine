@@ -342,7 +342,6 @@ bool Process::init ( ) {
 bool Process::isAnyTreeSaving ( ) {
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
 		Rdb *rdb = m_rdbs[i];
-		if ( rdb->isCollectionless() ) continue;
 		if ( rdb->isSavingTree() ) return true;
 		// we also just disable writing below in Process.cpp
 		// while saving other files. so hafta check that as well
