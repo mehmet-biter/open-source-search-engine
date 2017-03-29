@@ -108,7 +108,7 @@ bool RdbTree::set(int32_t fixedDataSize, int32_t maxNumNodes, int32_t memMax, bo
 		if(maxNumNodes > 10000000) maxNumNodes = 10000000;
 	}
 	// allocate the nodes
-	return growTree_unlocked(maxNumNodes);
+	return growTree(maxNumNodes);
 }
 
 void RdbTree::reset ( ) {
