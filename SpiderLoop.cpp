@@ -128,7 +128,6 @@ void SpiderLoop::reset() {
 			delete (m_docs[i]);
 		}
 		m_docs[i] = NULL;
-		//m_lists[i].freeList();
 	}
 	m_list.freeList();
 	m_lockTable.reset();
@@ -1218,8 +1217,7 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	if ( ( (! g_conf.m_spideringEnabled ||
 		// or if trying to exit
 		g_process.m_mode == Process::EXIT_MODE
-		) && // ! g_conf.m_webSpideringEnabled ) &&
-	       ! sreq->m_isInjecting ) || 
+		) && ! sreq->m_isInjecting ) ||
 	     // repairing the collection's rdbs?
 	     g_repairMode ||
 	     // power went off?
