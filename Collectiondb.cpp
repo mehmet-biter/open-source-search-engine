@@ -1005,11 +1005,6 @@ collnum_t Collectiondb::getCollnum ( const char *coll , int32_t clen ) const {
 		clen = strlen(coll);
 	}
 
-	// not associated with any collection
-	if ( coll[0]=='s' && coll[1] =='t' &&
-	     strcmp ( "statsdb\0", coll ) == 0)
-		return 0;
-
 	// because diffbot may have thousands of crawls/collections
 	// let's improve the speed here. try hashing it...
 	int64_t h64 = hash64(coll,clen);

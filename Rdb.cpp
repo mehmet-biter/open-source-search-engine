@@ -88,7 +88,6 @@ int32_t Rdb::getNumBases() const {
 }
 
 RdbBase *Rdb::getBase ( collnum_t collnum )  {
-	// RdbBase for statsdb, etc. resides in collrec #0 i guess
 	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return NULL;
 	// this might load the rdbbase on demand now
