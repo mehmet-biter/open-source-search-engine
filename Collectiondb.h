@@ -79,8 +79,6 @@ class Collectiondb  {
 			  collnum_t newCollnum,
 			  bool purgeSeeds );
 
-	//used by main.cpp for injecting files
-	void hackCollectionForInjection(CollectionRec *cr);
 
 private:
 	// after main.cpp loads all rdb trees it calls this to remove
@@ -103,8 +101,6 @@ private:
 	int32_t            m_numRecsUsed;
 
 	int32_t m_wrapped;
-
-	int32_t m_numCollsSwappedOut;
 
 	bool m_initializing;
 };
@@ -162,15 +158,14 @@ class CrawlInfo {
 	// which is in the OLD format!
 	//
 
-	int64_t m_objectsDeleted;        // 1
-	int64_t m_objectsAdded;          // 2
-	int64_t m_urlsConsideredNOTUSED; // 3
-	int64_t m_pageDownloadAttempts;  // 4
-	int64_t m_pageDownloadSuccesses; // 5
-	int64_t m_pageProcessAttempts;   // 6
-	int64_t m_pageProcessSuccesses;  // 7
-	int64_t m_urlsHarvested;         // 8
-
+	int64_t m_reserved1;
+	int64_t m_reserved2;
+	int64_t m_reserved3;
+	int64_t m_pageDownloadAttempts;
+	int64_t m_pageDownloadSuccesses;
+	int64_t m_reserved4;
+	int64_t m_pageProcessSuccesses;
+	int64_t m_urlsHarvested;
 
 	int32_t m_lastUpdateTime;
 
@@ -184,18 +179,16 @@ class CrawlInfo {
 
 	int32_t m_collnum;
 
-	char m_reserved1;
-	int32_t m_reserved2;
+	char m_reserved5;
+	int32_t m_reserved6;
 
 	// keep separate because when we receive a crawlinfo struct from
 	// a host we only add these in if it matches our round #
 	int64_t m_pageDownloadSuccessesThisRound;
 	int64_t m_pageProcessSuccessesThisRound;
 
-
 	void reset() { memset ( this , 0 , sizeof(CrawlInfo) ); }
 } __attribute__((packed, aligned(4)));
-
 
 class CollectionRec {
 
@@ -369,6 +362,7 @@ public:
 
 	// our local crawling stats
 	CrawlInfo m_localCrawlInfo;
+
 	// total crawling stats summed up from all hosts in network
 	CrawlInfo m_globalCrawlInfo;
 

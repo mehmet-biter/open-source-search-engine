@@ -117,8 +117,6 @@ static const char *getAbsoluteGbDir(const char *argv0);
 
 static int32_t checkDirPerms(const char *dir);
 
-// benchmark RdbTree::addRecord() for indexdb
-static bool treetest();
 static bool hashtest();
 // how fast to parse the content of this docId?
 static bool parseTest(const char *coll, int64_t docId, const char *query);
@@ -629,12 +627,6 @@ int main2 ( int argc , char *argv[] ) {
 			g_mem.setMemTableSize(tmp * 10);
 	}
 
-	// these tests do not need a hosts.conf
-	if ( strcmp ( cmd , "treetest" ) == 0 ) {
-		if ( argc > cmdarg+1 ) goto printHelp;
-		treetest();
-		return 0;
-	}
 	// these tests do not need a hosts.conf
 	if ( strcmp ( cmd , "hashtest" ) == 0 ) {
 		if ( argc > cmdarg+1 ) goto printHelp;
@@ -3570,82 +3562,6 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 
 	return 0;
 }
-
-static int keycmp(const void *, const void *);
-int keycmp ( const void *p1 , const void *p2 ) {
-	// returns 0 if equal, -1 if p1 < p2, +1 if p1 > p2
-	if ( *(key96_t *)p1 < *(key96_t *)p2 ) return -1;
-	if ( *(key96_t *)p1 > *(key96_t *)p2 ) return  1;
-	return 0;
-}
-
-// time speed of inserts into RdbTree for indexdb
-static bool treetest() {
-	int32_t numKeys = 500000;
-	log("db: speedtest: generating %" PRId32" random keys.",numKeys);
-	// seed randomizer
-	srand ( (int32_t)gettimeofdayInMilliseconds() );
-	// make list of one million random keys
-	key96_t *k = (key96_t *)mmalloc ( sizeof(key96_t) * numKeys , "main" );
-	if ( ! k ) {
-		log(LOG_WARN, "speedtest: malloc failed");
-		return false;
-	}
-	int32_t *r = (int32_t *)(void*)k;
-	int32_t size = 0;
-	int32_t first = 0;
-	for ( int32_t i = 0 ; i < numKeys * 3 ; i++ ) {
-		if ( (i % 3) == 2 && first++ < 50000 ) {
-			r[i] = 1234567;
-			size++;
-		}
-		else
-			r[i] = rand();
-	}
-	// init the tree
-	RdbTree rt;
-	if (!rt.set(0, numKeys + 1000, numKeys * 28, false, "tree-test")) {
-		log(LOG_WARN, "speedTest: tree init failed.");
-		return false;
-	}
-	// add to regular tree
-	int64_t t = gettimeofdayInMilliseconds();
-	for ( int32_t i = 0 ; i < numKeys ; i++ ) {
-		//if ( k[i].n1 == 1234567 )
-		//	fprintf(stderr,"i=%" PRId32"\n",i);
-		if ( rt.addNode ( (collnum_t)0 , (const char*)&(k[i]) , NULL , 0 ) < 0 ) {
-			log(LOG_WARN, "speedTest: rdb tree addNode failed");
-			return false;
-		}
-	}
-	// print time it took
-	int64_t e = gettimeofdayInMilliseconds();
-	log("db: added %" PRId32" keys to rdb tree in %" PRId64" ms",numKeys,e - t);
-
-	// sort the list of keys
-	t = gettimeofdayInMilliseconds();
-	gbsort ( k , numKeys , sizeof(key96_t) , keycmp );
-	// print time it took
-	e = gettimeofdayInMilliseconds();
-	log("db: sorted %" PRId32" in %" PRId64" ms",numKeys,e - t);
-
-	// get the list
-	key96_t kk;
-	kk.n0 = 0LL;
-	kk.n1 = 1234567;
-	int32_t n = rt.getNextNode ( (collnum_t)0, (char *)&kk );
-	// loop it
-	t = gettimeofdayInMilliseconds();
-	int32_t count = 0;
-	while ( n >= 0 && --first >= 0 ) {
-		n = rt.getNextNode ( n );
-		count++;
-	}
-	e = gettimeofdayInMilliseconds();
-	log("db: getList for %" PRId32" nodes in %" PRId64" ms",count,e - t);
-	return true;
-}
-
 
 // time speed of inserts into RdbTree for indexdb
 static bool hashtest() {

@@ -34,7 +34,6 @@ Collectiondb::Collectiondb ( ) {
 	m_wrapped = 0;
 	m_numRecs = 0;
 	m_numRecsUsed = 0;
-	m_numCollsSwappedOut = 0;
 	m_initializing = false;
 	m_recs = NULL;
 
@@ -344,8 +343,8 @@ bool Collectiondb::addNewColl ( const char *coll,
 	cr->m_useRobotsTxt = true;
 
 	// reset crawler stats.they should be loaded from crawlinfo.txt
-	memset ( &cr->m_localCrawlInfo , 0 , sizeof(CrawlInfo) );
-	memset ( &cr->m_globalCrawlInfo , 0 , sizeof(CrawlInfo) );
+	cr->m_localCrawlInfo.reset();
+	cr->m_globalCrawlInfo.reset();
 
 	// note that
 	log("colldb: initial revival for %s",cr->m_coll);
@@ -355,10 +354,6 @@ bool Collectiondb::addNewColl ( const char *coll,
 	//   urls it spidered in that time these will get set to 0
 	cr->m_localCrawlInfo.m_hasUrlsReadyToSpider = 1;
 	cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = 1;
-
-	// set some defaults. max spiders for all priorities in this
-	// collection. NO, default is in Parms.cpp.
-	//cr->m_maxNumSpiders = 10;
 
 	// start the spiders!
 	cr->m_spideringEnabled = true;
@@ -379,7 +374,6 @@ bool Collectiondb::addNewColl ( const char *coll,
 	}
 
 	// save it into this dir... might fail!
-//	if ( saveIt && ! cr->save() ) {
 	if ( ! cr->save() ) {
 		mdelete ( cr , sizeof(CollectionRec) , "CollectionRec" );
 		delete ( cr );
@@ -829,29 +823,6 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 	return true;
 }
 
-// a hack function
-static bool addCollToTable(const char *coll, collnum_t collnum) {
-	// readd it to the hashtable that maps name to collnum too
-	int64_t h64 = hash64n(coll);
-	g_collTable.set(8,sizeof(collnum_t), 256,NULL,0, false,"nhshtbl");
-	return g_collTable.addKey ( &h64 , &collnum );
-}
-
-void Collectiondb::hackCollectionForInjection(CollectionRec *cr) {
-	m_recPtrBuf.reserve(4);
-	m_recs = (CollectionRec **)m_recPtrBuf.getBufStart();
-	m_recs[0] = cr;
-
-	// right now this is just for the main collection
-	const char coll[] = "main";
-	addCollToTable(coll, (collnum_t)0);
-
-	// force RdbTree.cpp not to bitch about corruption
-	// assume we are only getting out collnum 0 recs i guess
-	m_numRecs = 1;
-}
-
-
 // get coll rec specified in the HTTP request
 CollectionRec *Collectiondb::getRec ( HttpRequest *r , bool useDefaultRec ) {
 	const char *coll = r->getString ( "c" );
@@ -1271,25 +1242,25 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 		gbmemcpy ( &m_localCrawlInfo , sb.getBufStart(),sb.length() );
 
 	// if it had corrupted data from saving corrupted mem zero it out
-	CrawlInfo *stats = &m_localCrawlInfo;
 	// point to the stats for that host
-	int64_t *ss = (int64_t *)stats;
+	int64_t *ss = (int64_t *)&m_localCrawlInfo;
 	// are stats crazy?
 	bool crazy = false;
-	for ( int32_t j = 0 ; j < NUMCRAWLSTATS ; j++ ) {
+	for (int32_t j = 0; j < NUMCRAWLSTATS; j++) {
 		// crazy stat?
-		if ( *ss > 1000000000LL ||
-		     *ss < -1000000000LL ) {
+		if (*ss > 1000000000LL || *ss < -1000000000LL) {
 			crazy = true;
 			break;
 		}
 		ss++;
 	}
-	if ( m_localCrawlInfo.m_collnum != m_collnum )
+
+	if (m_localCrawlInfo.m_collnum != m_collnum) {
 		crazy = true;
+	}
+
 	if ( crazy ) {
-		log("coll: had crazy spider stats for coll %s. zeroing out.",
-		    m_coll);
+		log("coll: had crazy spider stats for coll %s. zeroing out.", m_coll);
 		m_localCrawlInfo.reset();
 	}
 
@@ -2507,7 +2478,7 @@ bool CollectionRec::save ( ) {
 
 	sb.safeMemcpy(&m_localCrawlInfo, sizeof(CrawlInfo));
 	if (sb.safeSave(tmp) == -1) {
-		log(LOG_WARN, "db: failed to save file %s : %s", tmp,mstrerror(g_errno));
+		log(LOG_WARN, "db: failed to save file %s : %s", tmp, mstrerror(g_errno));
 		g_errno = 0;
 	}
 
@@ -2517,7 +2488,7 @@ bool CollectionRec::save ( ) {
 	sb.reset();
 	sb.safeMemcpy ( &m_globalCrawlInfo , sizeof(CrawlInfo) );
 	if (sb.safeSave(tmp) == -1) {
-		log(LOG_WARN, "db: failed to save file %s : %s", tmp,mstrerror(g_errno));
+		log(LOG_WARN, "db: failed to save file %s : %s", tmp, mstrerror(g_errno));
 		g_errno = 0;
 	}
 
