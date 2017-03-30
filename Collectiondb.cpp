@@ -387,10 +387,7 @@ bool Collectiondb::addNewColl ( const char *coll,
 	//log("admin: adding coll \"%s\" (new=%" PRId32")",coll,(int32_t)isNew);
 
 	// MDW: create the new directory
- retry22:
 	if ( ::mkdir ( dname, getDirCreationFlags() ) ) {
-		// valgrind?
-		if ( errno == EINTR ) goto retry22;
 		g_errno = errno;
 		mdelete ( cr , sizeof(CollectionRec) , "CollectionRec" );
 		delete ( cr );
@@ -801,15 +798,13 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 		(int32_t)newCollnum);
 	DIR *dir = opendir ( dname );
 	if ( dir ) {
-	     closedir ( dir );
+		closedir ( dir );
 		//g_errno = EEXIST;
 		log(LOG_WARN, "admin: Trying to create collection %s but "
 		    "directory %s already exists on disk.",cr->m_coll,dname);
 	}
 	if ( ::mkdir ( dname ,
 		       getDirCreationFlags() ) ) {
-		// valgrind?
-		//if ( errno == EINTR ) goto retry22;
 		//g_errno = errno;
 		log(LOG_WARN, "admin: Creating directory %s had error: "
 		    "%s.", dname,mstrerror(g_errno));
