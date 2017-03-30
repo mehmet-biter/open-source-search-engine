@@ -1271,20 +1271,21 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 	int64_t *ss = (int64_t *)stats;
 	// are stats crazy?
 	bool crazy = false;
-	for ( int32_t j = 0 ; j < NUMCRAWLSTATS ; j++ ) {
+	for (int32_t j = 0; j < NUMCRAWLSTATS; j++) {
 		// crazy stat?
-		if ( *ss > 1000000000LL ||
-		     *ss < -1000000000LL ) {
+		if (*ss > 1000000000LL || *ss < -1000000000LL) {
 			crazy = true;
 			break;
 		}
 		ss++;
 	}
-	if ( m_localCrawlInfo.m_collnum != m_collnum )
+
+	if (m_localCrawlInfo.m_collnum != m_collnum) {
 		crazy = true;
+	}
+
 	if ( crazy ) {
-		log("coll: had crazy spider stats for coll %s. zeroing out.",
-		    m_coll);
+		log("coll: had crazy spider stats for coll %s. zeroing out.", m_coll);
 		m_localCrawlInfo.reset();
 	}
 
@@ -2502,7 +2503,7 @@ bool CollectionRec::save ( ) {
 
 	sb.safeMemcpy(&m_localCrawlInfo, sizeof(CrawlInfo));
 	if (sb.safeSave(tmp) == -1) {
-		log(LOG_WARN, "db: failed to save file %s : %s", tmp,mstrerror(g_errno));
+		log(LOG_WARN, "db: failed to save file %s : %s", tmp, mstrerror(g_errno));
 		g_errno = 0;
 	}
 
@@ -2512,7 +2513,7 @@ bool CollectionRec::save ( ) {
 	sb.reset();
 	sb.safeMemcpy ( &m_globalCrawlInfo , sizeof(CrawlInfo) );
 	if (sb.safeSave(tmp) == -1) {
-		log(LOG_WARN, "db: failed to save file %s : %s", tmp,mstrerror(g_errno));
+		log(LOG_WARN, "db: failed to save file %s : %s", tmp, mstrerror(g_errno));
 		g_errno = 0;
 	}
 
