@@ -9760,7 +9760,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 			// use the same round start time for all shards
 			sprintf(tmpVal,
 				"%" PRIu32",%" PRId32
-				,(uint32_t)getTimeGlobalNoCore()
+				,(uint32_t)getTimeGlobal()
 				,cr->m_spiderRoundNum+1
 				);
 			// . also add command to reset crawl/process counts

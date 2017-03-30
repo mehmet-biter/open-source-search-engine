@@ -1349,7 +1349,7 @@ void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 void PingServer::sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) {
 	// leave if we already sent and alert within 5 mins
 	//static int32_t s_lasttime = 0;
-	int32_t now = getTimeGlobalNoCore();
+	int32_t now = getTimeGlobal();
 	if ( now - *lastTimeStamp < 5*60 ) return;
 	// prepare msg to send
 	//Host *h0 = g_hostdb.getHost ( 0 );
