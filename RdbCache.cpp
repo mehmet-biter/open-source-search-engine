@@ -714,7 +714,6 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	// bail if cache empty. maybe m_maxMem is 0.
 	if ( m_totalBufSize <= 0 ) return true;
 
-	//int64_t startTime = gettimeofdayInMillisecondsLocal();
 	if ( collnum < (collnum_t)0) gbshutdownLogicError();
 	if ( (int64_t)collnum >= m_maxColls ) gbshutdownLogicError();
 	// full key not allowed because we use that in markDeletedRecord()
