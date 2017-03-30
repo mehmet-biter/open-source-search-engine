@@ -428,6 +428,7 @@ RdbBase *CollectionRec::getBasePtr(rdbid_t rdbId) {
 // . returns NULL w/ g_errno set on error.
 // . TODO: ensure not called from in thread, not thread safe
 RdbBase *CollectionRec::getBase(rdbid_t rdbId) {
+	if ( rdbId < 0 || rdbId >= RDB_END ) { g_process.shutdownAbort(true); }
 	return m_bases[(unsigned char)rdbId];
 }
 
