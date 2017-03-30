@@ -528,39 +528,7 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 		}
 	}
 	// we have one more used node
-	m_numUsedNodes++;
-	// update sign counts
-	if ( KEYNEG(key) ) {
-		m_numNegativeKeys++;
-		//m_numNegKeysPerColl[collnum]++;
-		// we only use these stats for Rdb::m_trees for a 
-		// PER COLLECTION count, since there can be multiple 
-		// collections using the same Rdb::m_tree!
-		// crap, when fixing a tree this will segfault because
-		// m_recs[collnum] is NULL.
-		if ( m_rdbId >= 0 && g_collectiondb.getRec(collnum) ) {
-			//if( ((unsigned char)m_rdbId)>=RDB_END){
-			//g_process.shutdownAbort(true); }
-			CollectionRec *cr ;
-			cr = g_collectiondb.getRec(collnum);
-			if(cr)cr->m_numNegKeysInTree[(unsigned char)m_rdbId]++;
-		}
-	}
-	else {
-		m_numPositiveKeys++;
-		//m_numPosKeysPerColl[collnum]++;
-		// crap, when fixing a tree this will segfault because
-		// m_recs[collnum] is NULL.
-		if ( m_rdbId >= 0 && g_collectiondb.getRec(collnum) ) {
-			//if( ((unsigned char)m_rdbId)>=RDB_END){
-			//g_process.shutdownAbort(true); }
-			CollectionRec *cr ;
-			cr = g_collectiondb.getRec(collnum);
-			if(cr)cr->m_numPosKeysInTree[(unsigned char)m_rdbId]++;
-		}
-	}
-	// debug2 msg
-	// fprintf(stderr,"+ #%" PRId32" %" PRId64" %" PRId32"\n",i,key.n0,iparent);
+	increaseNodeCount_unlocked(collnum, key);
 
 	// our depth is now 1 since we're a leaf node
 	// (we include ourself)
@@ -636,6 +604,120 @@ void RdbTree::deleteNodes(collnum_t collnum, const char *startKey, const char *e
 	}
 }
 
+void RdbTree::increaseNodeCount_unlocked(collnum_t collNum, const char *key) {
+	m_numUsedNodes++;
+
+	if (KEYNEG(key)) {
+		m_numNegativeKeys++;
+		if (m_rdbId >= 0) {
+			CollectionRec *cr = g_collectiondb.getRec(collNum);
+			if (cr) {
+				cr->m_numNegKeysInTree[(unsigned char)m_rdbId]++;
+			}
+		}
+	} else {
+		m_numPositiveKeys++;
+		if (m_rdbId >= 0) {
+			CollectionRec *cr = g_collectiondb.getRec(collNum);
+			if (cr) {
+				cr->m_numPosKeysInTree[(unsigned char)m_rdbId]++;
+			}
+		}
+	}
+}
+
+void RdbTree::decreaseNodeCount_unlocked(collnum_t collNum, const char *key) {
+	// we have one less used node
+	m_numUsedNodes--;
+
+	// update sign counts
+	if (KEYNEG(key)) {
+		m_numNegativeKeys--;
+		if (m_rdbId >= 0) {
+			CollectionRec *cr = g_collectiondb.getRec(collNum);
+			if (cr) {
+				cr->m_numNegKeysInTree[(unsigned char)m_rdbId]--;
+			}
+		}
+	} else {
+		m_numPositiveKeys--;
+		if (m_rdbId >= 0) {
+			CollectionRec *cr = g_collectiondb.getRec(collNum);
+			if (cr) {
+				cr->m_numPosKeysInTree[(unsigned char)m_rdbId]--;
+			}
+		}
+	}
+}
+
+// . now replace node #i with node #j
+// . i should not equal j at this point
+bool RdbTree::replaceNode_unlocked(int32_t i, int32_t j) {
+	// . j's parent should take j's one kid
+	// . that child should likewise point to j's parent
+	// . j should only have <= 1 kid now because of our algorithm above
+	// . if j's parent is i then j keeps his kid
+	int32_t jparent = m_parents[j];
+	if ( jparent != i ) {
+		// parent:    if j is my left  kid, then i take j's right kid
+		// otherwise, if j is my right kid, then i take j's left kid
+		if ( m_left [ jparent ] == j ) {
+			m_left  [ jparent ] = m_right [ j ];
+			if (m_right[j]>=0) m_parents [ m_right[j] ] = jparent;
+		}
+		else {
+			m_right [ jparent ] = m_left   [ j ];
+			if (m_left [j]>=0) m_parents [ m_left[j] ] = jparent;
+		}
+	}
+
+	// . j inherits i's children (providing i's child is not j)
+	// . those children's parent should likewise point to j
+	if ( m_left [i] != j ) {
+		m_left [j] = m_left [i];
+		if ( m_left[j] >= 0 ) m_parents[m_left [j]] = j;
+	}
+	if ( m_right[i] != j ) {
+		m_right[j] = m_right[i];
+		if ( m_right[j] >= 0 ) m_parents[m_right[j]] = j;
+	}
+	// j becomes the kid of i's parent, if any
+	int32_t iparent = m_parents[i];
+	if ( iparent >= 0 ) {
+		if   ( m_left[iparent] == i ) m_left [iparent] = j;
+		else                          m_right[iparent] = j;
+	}
+	// iparent may be -1
+	m_parents[j] = iparent;
+
+	// if i was the head node now j becomes the head node
+	if ( m_headNode == i ) m_headNode = j;
+
+	// . i joins the linked list of available used homes
+	// . put it at the head of the list
+	// . "m_nextNode" is the head node of the linked list
+	m_right[i]   = m_nextNode;
+	m_nextNode   = i;
+	// . i's parent should be -2 so we know it's unused in case we're
+	//   stepping through the nodes linearly for dumping in RdbDump
+	// . used in getListUnordered()
+	m_parents[i] = -2;
+	// we have one less used node
+	decreaseNodeCount_unlocked(m_collnums[i], getKey(i));
+
+	// our depth becomes that of the node we replaced, unless moving j
+	// up to i decreases the total depth, in which case setDepths() fixes
+	m_depth [ j ] = m_depth [ i ];
+	// . recalculate depths starting at old parent of j
+	// . stops at the first node to have the correct depth
+	// . will balance at pivot nodes that need it
+	if ( jparent != i ) setDepths(jparent);
+	else setDepths(j);
+	// TODO: register growTree with g_mem to free on demand
+
+	return true;
+}
+
 // . deletes node i from the tree
 // . i's parent should point to i's left or right kid
 // . if i has no parent then his left or right kid becomes the new top node
@@ -672,12 +754,6 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 		m_memOccupied -= dataSize;
 	}
 
-	//fprintf(stderr,"headNode=%i,numUsed=%i, before deleting node #%i\n",
-	//m_headNode,m_numUsedNodes,i);
-	//printTree();
-	// parent of i
-	int32_t iparent ;
-	int32_t jparent ;
 	// j will be the node that replace node #i
 	int32_t j = i;
 	// . now find a node to replace node #i
@@ -695,7 +771,8 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 		// now go left as much as we can
 		while ( m_left [ j ] >= 0 ) j = m_left [ j ];
 		// use node j (it's a leaf or has a right kid)
-		goto gotReplacement;
+		replaceNode_unlocked(i, j);
+		return;
 	}
 	// . now get the previous node if i has no right kid
 	// . this little routine is stolen from getPrevNode(i)
@@ -707,11 +784,14 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 		// now go right as much as we can
 		while ( m_right [ j ] >= 0 ) j = m_right [ j ];
 		// use node j (it's a leaf or has a left kid)
-		goto gotReplacement;
+		replaceNode_unlocked(i, j);
+		return;
 	}
+
 	// . come here if i did not have any kids (i's a leaf node)
 	// . get i's parent
-	iparent = m_parents[i];
+	int32_t iparent = m_parents[i];
+
 	// make i's parent, if any, disown him
 	if ( iparent >= 0 ) {
 		if   ( m_left[iparent] == i ) m_left [iparent] = -1;
@@ -727,151 +807,31 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 	// . if we were the head node then, since we didn't have any kids,
 	//   the tree must be empty
 	// . one less node in the tree
-	m_numUsedNodes--;
-	// update sign counts
-	if ( KEYNEG(m_keys,i,m_ks) ) {
-		m_numNegativeKeys--;
-		//m_numNegKeysPerColl[m_collnums[i]]--;
-		if ( m_rdbId >= 0 ) {
-			CollectionRec *cr;
-			cr = g_collectiondb.getRec(m_collnums[i]);
-			if(cr)cr->m_numNegKeysInTree[(unsigned char)m_rdbId]--;
-		}
-	}
-	else {
-		m_numPositiveKeys--;
-		//m_numPosKeysPerColl[m_collnums[i]]--;
-		if ( m_rdbId >= 0 ) {
-			CollectionRec *cr;
-			cr = g_collectiondb.getRec(m_collnums[i]);
-			if(cr)cr->m_numPosKeysInTree[(unsigned char)m_rdbId]--;
-		}
-	}
-	// debug step -- check chain from iparent down making sure that
-	//printTree();
-	// debug2 msg
-	//fprintf(stderr,"- #%" PRId32" %" PRId64" %" PRId32"\n",i,m_keys[i].n0,iparent);
+	decreaseNodeCount_unlocked(m_collnums[i], getKey(i));
+
 	// . reset the depths starting at iparent and going up until unchanged
 	// . will balance at pivot nodes that need it
-	setDepths ( iparent );
+	setDepths(iparent);
 
-	// return if there are still people
-	if ( m_numUsedNodes > 0 ) return;
-	// otherwise tree must be empty
-	m_headNode      = -1;
-	// this will nullify our linked list of vacated, used homes
-	m_nextNode      = 0;
-	m_minUnusedNode = 0;
-	// ensure these are right
-	m_numNegativeKeys = 0;
-	m_numPositiveKeys = 0;
-	//m_numNegKeysPerColl[m_collnums[i]] = 0;
-	//m_numPosKeysPerColl[m_collnums[i]] = 0;
-	if ( m_rdbId >= 0 ) {
-		//if ( ((unsigned char)m_rdbId)>=RDB_END){
-		//g_process.shutdownAbort(true); }
-		CollectionRec *cr ;
-		cr = g_collectiondb.getRec(m_collnums[i]);
-		if(cr){
-			cr->m_numNegKeysInTree[(unsigned char)m_rdbId] = 0;
-			cr->m_numPosKeysInTree[(unsigned char)m_rdbId] = 0;
-		}
-	}
-
-
-	return;
-	// . now replace node #i with node #j
-	// . i should not equal j at this point
- gotReplacement:
-
-
-	// . j's parent should take j's one kid
-	// . that child should likewise point to j's parent
-	// . j should only have <= 1 kid now because of our algorithm above
-	// . if j's parent is i then j keeps his kid
-	jparent = m_parents[j];
-	if ( jparent != i ) {
-		// parent:    if j is my left  kid, then i take j's right kid
-		// otherwise, if j is my right kid, then i take j's left kid
-		if ( m_left [ jparent ] == j ) {
-			m_left  [ jparent ] = m_right [ j ];
-			if (m_right[j]>=0) m_parents [ m_right[j] ] = jparent;
-		}
-		else {
-			m_right [ jparent ] = m_left   [ j ];
-			if (m_left [j]>=0) m_parents [ m_left[j] ] = jparent;
-		}
-	}
-
-	// . j inherits i's children (providing i's child is not j)
-	// . those children's parent should likewise point to j
-	if ( m_left [i] != j ) {
-		m_left [j] = m_left [i];
-		if ( m_left[j] >= 0 ) m_parents[m_left [j]] = j;
-	}
-	if ( m_right[i] != j ) {
-		m_right[j] = m_right[i];
-		if ( m_right[j] >= 0 ) m_parents[m_right[j]] = j;
-	}
-	// j becomes the kid of i's parent, if any
-	iparent = m_parents[i];
-	if ( iparent >= 0 ) {
-		if   ( m_left[iparent] == i ) m_left [iparent] = j;
-		else                          m_right[iparent] = j;
-	}
-	// iparent may be -1
-	m_parents[j] = iparent;
-
-	// if i was the head node now j becomes the head node
-	if ( m_headNode == i ) m_headNode = j;
-
-	// . i joins the linked list of available used homes
-	// . put it at the head of the list 
-	// . "m_nextNode" is the head node of the linked list
-	m_right[i]   = m_nextNode;
-	m_nextNode   = i;
-	// . i's parent should be -2 so we know it's unused in case we're
-	//   stepping through the nodes linearly for dumping in RdbDump
-	// . used in getListUnordered()
-	m_parents[i] = -2;
-	// we have one less used node
-	m_numUsedNodes--;
-	// update sign counts
-	if ( KEYNEG(m_keys,i,m_ks) ) {
-		m_numNegativeKeys--;
-		//m_numNegKeysPerColl[m_collnums[i]]--;
-		if ( m_rdbId >= 0 ) {
-			//if( ((unsigned char)m_rdbId)>=RDB_END){g_process.shutdownAbort(true); }
-			CollectionRec *cr ;
+	// tree must be empty
+	if (m_numUsedNodes <= 0) {
+		m_headNode = -1;
+		// this will nullify our linked list of vacated, used homes
+		m_nextNode = 0;
+		m_minUnusedNode = 0;
+		// ensure these are right
+		m_numNegativeKeys = 0;
+		m_numPositiveKeys = 0;
+		if (m_rdbId >= 0) {
+			CollectionRec *cr;
 			cr = g_collectiondb.getRec(m_collnums[i]);
-			if(cr)cr->m_numNegKeysInTree[(unsigned char)m_rdbId]--;
-		}
-	}
-	else {
-		m_numPositiveKeys--;
-		//m_numPosKeysPerColl[m_collnums[i]]--;
-		if ( m_rdbId >= 0 ) {
-			//if( ((unsigned char)m_rdbId)>=RDB_END){g_process.shutdownAbort(true); }
-			CollectionRec *cr ;
-			cr = g_collectiondb.getRec(m_collnums[i]);
-			if(cr)cr->m_numPosKeysInTree[(unsigned char)m_rdbId]--;
+			if (cr) {
+				cr->m_numNegKeysInTree[(unsigned char)m_rdbId] = 0;
+				cr->m_numPosKeysInTree[(unsigned char)m_rdbId] = 0;
+			}
 		}
 	}
 
-	// our depth becomes that of the node we replaced, unless moving j
-	// up to i decreases the total depth, in which case setDepths() fixes
-	m_depth [ j ] = m_depth [ i ];
-	// debug msg
-	//fprintf(stderr,"... replaced %" PRId32" it with %" PRId32" (-1 means none)\n",i,j);
-	// . recalculate depths starting at old parent of j
-	// . stops at the first node to have the correct depth
-	// . will balance at pivot nodes that need it
-	if ( jparent != i ) setDepths ( jparent );
-	else                setDepths ( j );
-	// TODO: register growTree with g_mem to free on demand
-	// do a grow/shrink test and shrink if we need to
-	//	return growTable ( );
-	// done:
 }
 
 // . this fixes the tree
@@ -2314,18 +2274,8 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 			continue;
 		}
 		// keep a tally on all this
-		m_numUsedNodes++;
 		m_memOccupied += m_overhead;
-		if   ( KEYNEG(m_keys,i,m_ks) ) {
-			m_numNegativeKeys++;
-			if ( m_rdbId >= 0 )
-				g_collectiondb.getRec(c)->m_numNegKeysInTree[(unsigned char)m_rdbId]++;
-		}
-		else {
-			m_numPositiveKeys++;
-			if ( m_rdbId >= 0 )
-				g_collectiondb.getRec(c)->m_numPosKeysInTree[(unsigned char)m_rdbId]++;
-		}
+		increaseNodeCount_unlocked(c, getKey(i));
 	}
 	// bail now if we can 
 	if ( m_fixedDataSize == 0 ) return offset - oldOffset ;
