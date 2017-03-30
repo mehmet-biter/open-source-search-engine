@@ -240,6 +240,11 @@ private:
 	int32_t fastSaveBlock_r(int fd, int32_t start, int64_t offset);
 	int32_t fastLoadBlock(BigFile *f, int32_t start, int32_t totalNodes, RdbMem *stack, int64_t offset);
 
+	void increaseNodeCount_unlocked(collnum_t collNum, const char *key);
+	void decreaseNodeCount_unlocked(collnum_t collNum, const char *key);
+
+	bool replaceNode_unlocked(int32_t i, int32_t j);
+
 	void setDepths    ( int32_t bottomNode );
 	int32_t rotateRight  ( int32_t pivotNode );
 	int32_t rotateLeft   ( int32_t pivotNode );
