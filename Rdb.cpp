@@ -99,7 +99,7 @@ void Rdb::addBase ( collnum_t collnum , RdbBase *base ) {
 	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return;
 	//if ( cr->m_bases[(unsigned char)m_rdbId] ) { g_process.shutdownAbort(true); }
-	RdbBase *oldBase = cr->getBasePtr ( m_rdbId );
+	RdbBase *oldBase = cr->getBase( m_rdbId );
 	if ( oldBase ) { g_process.shutdownAbort(true); }
 	cr->setBasePtr ( m_rdbId , base );
 	log ( LOG_DEBUG,"db: added base to collrec "
@@ -397,7 +397,7 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	// . ensure no previous one exists
 	// . well it will be there but will be uninitialized, m_rdb will b NULL
 	RdbBase *base = NULL;
-	if ( cr ) base = cr->getBasePtr ( m_rdbId );
+	if ( cr ) base = cr->getBase( m_rdbId );
 	if ( base ) { // m_bases [ collnum ] ) {
 		g_errno = EBADENGINEER;
 		log(LOG_WARN, "db: Rdb for db \"%s\" and collection \"%s\" (collnum %" PRId32") exists.",
@@ -456,7 +456,7 @@ bool Rdb::resetBase ( collnum_t collnum ) {
 	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return true;
 	// get the ptr, don't use CollectionRec::getBase() so we do not swapin
-	RdbBase *base = cr->getBasePtr (m_rdbId);
+	RdbBase *base = cr->getBase(m_rdbId);
 	if ( ! base ) return true;
 	base->reset();
 	return true;
@@ -803,7 +803,7 @@ bool Rdb::saveTreeIndex(bool /* useThread */) {
 		}
 
 		// if swapped out, this will be NULL, so skip it
-		RdbBase *base = cr->getBasePtr(m_rdbId);
+		RdbBase *base = cr->getBase(m_rdbId);
 		if (base) {
 			base->saveTreeIndex();
 		}
@@ -820,7 +820,7 @@ bool Rdb::saveIndexes() {
 		}
 
 		// if swapped out, this will be NULL, so skip it
-		RdbBase *base = cr->getBasePtr(m_rdbId);
+		RdbBase *base = cr->getBase(m_rdbId);
 		if (base) {
 			base->saveIndexes();
 		}
@@ -837,7 +837,7 @@ bool Rdb::saveMaps () {
 		}
 
 		// if swapped out, this will be NULL, so skip it
-		RdbBase *base = cr->getBasePtr(m_rdbId);
+		RdbBase *base = cr->getBase(m_rdbId);
 		if ( base ) {
 			base->saveMaps();
 		}
@@ -1070,7 +1070,7 @@ bool Rdb::dumpCollLoop ( ) {
 			if ( m_dumpCollnum >= 0 ) {
 				CollectionRec *cr = g_collectiondb.getRec(m_dumpCollnum);
 				if ( cr ) {
-					base = cr->getBasePtr( m_rdbId );
+					base = cr->getBase( m_rdbId );
 				}
 			}
 
@@ -1398,7 +1398,7 @@ void attemptMergeAll() {
 		RdbBase *base[numRdbs];
 		unsigned numRdbs2=0;
 		for(unsigned i=0; i<numRdbs; i++) {
-			base[numRdbs2] = cr->getBasePtr(rdbid[i]);
+			base[numRdbs2] = cr->getBase(rdbid[i]);
 			if(base[numRdbs2])
 				numRdbs2++;
 		}
@@ -2146,7 +2146,7 @@ int64_t Rdb::getNumTotalRecs(bool useCache) const {
 		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 		// if swapped out, this will be NULL, so skip it
-		RdbBase *base = cr->getBasePtr(m_rdbId);
+		RdbBase *base = cr->getBase(m_rdbId);
 		if ( ! base ) continue;
 		total += base->getNumTotalRecs();
 	}
@@ -2170,7 +2170,7 @@ int64_t Rdb::getCollNumTotalRecs(collnum_t collnum) const {
 	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return 0;
 	// if swapped out, this will be NULL, so skip it
-	RdbBase *base = cr->getBasePtr(m_rdbId);
+	RdbBase *base = cr->getBase(m_rdbId);
 	if ( ! base ) {
 		log("rdb: getcollnumtotalrecs: base swapped out");
 		return 0;
@@ -2188,7 +2188,7 @@ int64_t Rdb::getMapMemAllocated() const {
 		// skip null base if swapped out
 		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
-		RdbBase *base = cr->getBasePtr(m_rdbId);		
+		RdbBase *base = cr->getBase(m_rdbId);		
 		if ( ! base ) continue;
 		total += base->getMapMemAllocated();
 	}
@@ -2202,7 +2202,7 @@ int32_t Rdb::getNumSmallFiles() const {
 		// skip null base if swapped out
 		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
-		RdbBase *base = cr->getBasePtr(m_rdbId);		
+		RdbBase *base = cr->getBase(m_rdbId);		
 		if ( ! base ) continue;
 		total += base->getNumSmallFiles();
 	}
@@ -2216,7 +2216,7 @@ int32_t Rdb::getNumFiles() const {
 		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 		// if swapped out, this will be NULL, so skip it
-		RdbBase *base = cr->getBasePtr(m_rdbId);
+		RdbBase *base = cr->getBase(m_rdbId);
 		if ( ! base ) continue;
 		total += base->getNumFiles();
 	}
@@ -2229,7 +2229,7 @@ int64_t Rdb::getDiskSpaceUsed() const {
 		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 		// if swapped out, this will be NULL, so skip it
-		RdbBase *base = cr->getBasePtr(m_rdbId);
+		RdbBase *base = cr->getBase(m_rdbId);
 		if ( ! base ) continue;
 		total += base->getDiskSpaceUsed();
 	}
