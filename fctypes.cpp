@@ -902,28 +902,6 @@ time_t getTimeLocal () {
 	return (time_t)now;
 }
 
-void getCalendarFromMs(int64_t ms, 
-		       int32_t* days, 
-		       int32_t* hours, 
-		       int32_t* minutes, 
-		       int32_t* secs,
-		       int32_t* msecs) {
-	int32_t s =     1000;
-	int32_t m = s * 60;
-	int32_t h = m * 60;
-	int32_t d = h * 24;
-
-	*days = ms / d;
-	int64_t tmp = ms % d;
-	*hours = tmp / h;
-	tmp = tmp % h;
-	*minutes = tmp / m;
-	tmp = tmp % m;
-	*secs = tmp / s;
-	
-	*msecs = tmp % s;
-}
-
 uint32_t calculateChecksum(char *buf, int32_t bufLen){
 	uint32_t sum = 0;
 	for(int32_t i = 0; i < bufLen>>2;i++)

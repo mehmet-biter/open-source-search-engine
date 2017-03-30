@@ -723,16 +723,16 @@ bool RdbTree::replaceNode_unlocked(int32_t i, int32_t j) {
 // . if i has no parent then his left or right kid becomes the new top node
 void RdbTree::deleteNode(int32_t i, bool freeData) {
 	// sanity check
-	if ( ! m_isWritable ) {
-		log("db: Can not delete record from tree because "
-		    "not writable. name=%s",m_dbname);
+	if (!m_isWritable) {
+		log("db: Can not delete record from tree because not writable. name=%s",m_dbname);
 		return;
-		//g_process.shutdownAbort(true);
 	}
 
 	// no deleting if we're saving
-	if ( m_isSaving ) log("db: Can not delete record from tree because "
-			      "saving tree to disk now.");
+	if (m_isSaving) {
+		log("db: Can not delete record from tree because saving tree to disk now.");
+	}
+
 	// watch out for double deletes
 	if ( m_parents[i] == -2 ) {
 		log(LOG_LOGIC,"db: Caught double delete.");

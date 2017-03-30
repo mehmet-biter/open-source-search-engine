@@ -29,6 +29,8 @@ public:
 	// . frees all
 	void reset(bool isStatic);
 
+	void clear();
+
 	// set the filename, and if it's fixed data size or not
 	void set(const char *dir, const char *indexFilename, int32_t fixedDataSize, bool useHalfKeys, char keySize,
 	         rdbid_t rdbId, bool isStatic);

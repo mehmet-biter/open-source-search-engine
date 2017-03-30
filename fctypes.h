@@ -293,13 +293,6 @@ inline bool is_wspace_utf8 ( const char *src ) {
 	return ucIsWhiteSpace( x );
 }
 
-void getCalendarFromMs(int64_t ms, 
-		       int32_t* days, 
-		       int32_t* hours, 
-		       int32_t* minutes, 
-		       int32_t* secs,
-		       int32_t* msecs);
-
 uint32_t calculateChecksum(char *buf, int32_t bufLen);
 
 // use ucIsAlnum instead...
