@@ -1045,73 +1045,25 @@ bool Rdb::dumpTree() {
 bool Rdb::dumpCollLoop ( ) {
 	logTrace( g_conf.m_logTraceRdb, "BEGIN %s", m_dbname );
 
-	for(;;) {
-
-		// if no more, we're done...
-		if ( m_dumpCollnum >= getNumBases() ) {
-			logTrace( g_conf.m_logTraceRdb, "END. %s: No more. Returning true", m_dbname );
-			return true;
-		}
+	while(m_dumpCollnum < getNumBases()) {
 
 		// the only was g_errno can be set here is from a previous dump
 		// error?
-		if ( g_errno ) {
-		hadError:
-			// if swapped out, this will be NULL, so skip it
-			RdbBase *base = NULL;
-			if ( m_dumpCollnum >= 0 ) {
-				CollectionRec *cr = g_collectiondb.getRec(m_dumpCollnum);
-				if ( cr ) {
-					base = cr->getBase( m_rdbId );
-				}
+		if ( g_errno )
+			goto hadError;
+
+		// Find next collection to be dumped
+		while(++m_dumpCollnum < getNumBases()) {
+			if(g_collectiondb.getRec(m_dumpCollnum)) {
+				// ok, collection exists
+				break;
 			}
-
-			log( LOG_ERROR, "build: Error dumping collection: %s.",mstrerror(g_errno));
-			// . if we wrote nothing, remove the file
-			// . if coll was deleted under us, base will be NULL!
-			if ( base &&   (! base->getFile(m_fn)->doesExist() ||
-			      base->getFile(m_fn)->getFileSize() <= 0) ) {
-				log("build: File %s is zero bytes, removing from memory.",base->getFile(m_fn)->getFilename());
-				base->buryFiles ( m_fn , m_fn+1 );
-
-				// nothing is dumped. we still need to regenerate index
-				base->submitGlobalIndexJob(false, -1);
-			}
-
-			// game over, man
-			doneDumping();
-
-			// update this so we don't try too much and flood the log
-			// with error messages
-			s_lastTryTime = getTime();
-
-			logTrace( g_conf.m_logTraceRdb, "END. %s: Done dumping with g_errno=%s. Returning true",
-		        	  m_dbname, mstrerror( g_errno ) );
-			return true;
-		}
-
-		// advance for next round
-		m_dumpCollnum++;
-
-		// don't bother getting the base for all collections because
-		// we end up swapping them in
-		for ( ; m_dumpCollnum < getNumBases() ; m_dumpCollnum++ ) {
-			// otherwise get the coll rec now
-			if ( !g_collectiondb.getRec(m_dumpCollnum) ) {
-				// skip if empty
-				continue;
-			}
-
-			// ok, it's good to dump
-			break;
 		}
 
 		// if no more, we're done...
-		if ( m_dumpCollnum >= getNumBases() ) {
-			return true;
-		}
+		if(m_dumpCollnum >= getNumBases())
+			break;
 
-		// swap it in for dumping purposes if we have to
 		RdbBase *base = getBase(m_dumpCollnum);
 
 		// hwo can this happen? error swappingin?
@@ -1228,8 +1180,41 @@ bool Rdb::dumpCollLoop ( ) {
 			// and updates RdbMem! maybe set a permanent error then!
 			// and if that is there do not clear RdbMem!
 			m_dumpErrno = g_errno;
+			break;
 		}
 	}
+
+	logTrace( g_conf.m_logTraceRdb, "END. %s: No more. Returning true", m_dbname );
+	return true;
+
+hadError:
+	log( LOG_ERROR, "build: Error dumping collection: %s.",mstrerror(g_errno));
+	
+	// if swapped out, this will be NULL, so skip it
+	RdbBase *base = NULL;
+	if ( m_dumpCollnum >= 0 )
+		base = getBase(m_dumpCollnum);
+
+	// . if we wrote nothing, remove the file
+	// . if coll was deleted under us, base will be NULL!
+	if ( base &&   (! base->getFile(m_fn)->doesExist() ||
+	     base->getFile(m_fn)->getFileSize() <= 0) ) {
+		log("build: File %s is zero bytes, removing from memory.",base->getFile(m_fn)->getFilename());
+		base->buryFiles ( m_fn , m_fn+1 );
+
+		// nothing is dumped. we still need to regenerate index
+		base->submitGlobalIndexJob(false, -1);
+	}
+
+	// game over, man
+	doneDumping();
+	// update this so we don't try too much and flood the log
+	// with error messages
+	s_lastTryTime = getTime();
+
+	logTrace(g_conf.m_logTraceRdb, "END. %s: Done dumping with g_errno=%s. Returning true",
+	         m_dbname, mstrerror( g_errno ) );
+	return true;
 }
 
 void Rdb::doneDumpingCollWrapper ( void *state ) {
