@@ -317,9 +317,6 @@ bool Process::init ( ) {
 		return false;
 	}
 
-	// get first snapshot of load average...
-	//update_load_average(gettimeofdayInMillisecondsLocal());
-
 	// . continually call this once per second
 	// . once every half second now so that autosaves are closer together
 	//   in time between all hosts
@@ -515,17 +512,7 @@ void processSleepWrapper(int /*fd*/, void * /*state*/) {
 	
 	// if we already saved it for that time, bail
 	if ( g_process.m_lastSaveTime >= nextLastSaveTime ) return;
-	
-	//int64_t now = gettimeofdayInMillisecondsLocal();
-	// . get a snapshot of the load average...
-	// . MDW: disable for now. not really used...
-	//update_load_average(now);
-	// convert from minutes in milliseconds
-	//int64_t delta = (int64_t)g_conf.m_autoSaveFrequency * 60000LL;
-	// if power is off make this every 30 seconds temporarily!
-	//if ( ! g_process.m_powerIsOn ) delta = 30000;
-	// return if we have not waited int32_t enough
-	//if ( now - g_process.m_lastSaveTime < delta ) return;
+
 	// update
 	g_process.m_lastSaveTime = nextLastSaveTime;//now;
 	// save everything
@@ -674,9 +661,6 @@ bool Process::save2 ( ) {
 	enableTreeWrites( false );
 
 	log(LOG_INFO,"gb: Saved data to disk. Re-enabling Writes.");
-
-	// update
-	//m_lastSaveTime = gettimeofdayInMillisecondsLocal();
 
 	// unlock
 	m_mode = Process::NO_MODE;
