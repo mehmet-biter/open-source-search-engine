@@ -356,10 +356,6 @@ bool Collectiondb::addNewColl ( const char *coll,
 	cr->m_localCrawlInfo.m_hasUrlsReadyToSpider = 1;
 	cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = 1;
 
-	// set some defaults. max spiders for all priorities in this
-	// collection. NO, default is in Parms.cpp.
-	//cr->m_maxNumSpiders = 10;
-
 	// start the spiders!
 	cr->m_spideringEnabled = true;
 
@@ -379,7 +375,6 @@ bool Collectiondb::addNewColl ( const char *coll,
 	}
 
 	// save it into this dir... might fail!
-//	if ( saveIt && ! cr->save() ) {
 	if ( ! cr->save() ) {
 		mdelete ( cr , sizeof(CollectionRec) , "CollectionRec" );
 		delete ( cr );
