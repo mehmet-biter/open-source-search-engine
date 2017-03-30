@@ -135,8 +135,6 @@ public:
 	bool needsSave() const { return m_needsSave; }
 	void setNeedsSave(bool needsSave) { m_needsSave = needsSave; }
 
-	bool isLoading() const { return m_isLoading; }
-
 	collnum_t getCollnum(int32_t node) const { return m_collnums[node]; }
 
 	bool isEmpty(int32_t node) const { return (m_parents[node] == -2); }
@@ -259,9 +257,6 @@ private:
 	// . this stuff is accessed by thread an must be public
 	// . cannot add to tree when saving
 	bool    m_isSaving;
-
-	// loading?
-	bool    m_isLoading;
 
 	// true if tree was modified and needs to be saved
 	bool    m_needsSave;

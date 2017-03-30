@@ -159,7 +159,6 @@ void RdbTree::reset ( ) {
 	m_numNegativeKeys = 0;
 	m_numPositiveKeys = 0;
 	m_isSaving        = false;
-	m_isLoading       = false;
 	m_isWritable      = true;
 }
 
@@ -2154,9 +2153,6 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 		return false;
 	}
 
-	// note it
-	m_isLoading = true;
-
 	// get # of nodes in the tree
 	int32_t n , fixedDataSize , numUsedNodes ;
 	bool doBalancing , ownData ;
@@ -2175,7 +2171,6 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 	// return false on read error
 	if ( g_errno ) {
 		f->close();
-		m_isLoading = false;
 		log( LOG_ERROR, "db: read error: %s", mstrerror( g_errno ) );
 		return false;
 	}
@@ -2184,7 +2179,6 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 	     !doBalancing   ||
 	     m_ownData       != ownData        ) {
 		f->close();
-		m_isLoading = false;
 		log(LOG_LOGIC,"db: rdbtree: fastload: Bad parms. File "
 			   "may be corrupt or a key attribute was changed in "
 			   "the code and is not reflected in this file.");
@@ -2202,7 +2196,6 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 		log( LOG_ERROR, "db: File size of %s is %" PRId32", should be %" PRId32". File may be corrupted.",
 		     f->getFilename(),fsize,minFileSize);
 		f->close();
-		m_isLoading = false;
 		return false;
 	}
 	// does it fit?
@@ -2211,7 +2204,6 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 		log( LOG_ERROR, "db: File size of %s is %" PRId32", should >= %" PRId32". File may be corrupted.",
 		     f->getFilename(),fsize,minFileSize);
 		f->close();
-		m_isLoading = false;
 		return false;
 	}
 
@@ -2220,7 +2212,6 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 		log( LOG_INIT, "db: Growing tree to make room for %s", f->getFilename() );
 		if (!growTree(minUnusedNode)) {
 			f->close();
-			m_isLoading = false;
 			log( LOG_ERROR, "db: Failed to grow tree" );
 			return false;
 		}
@@ -2240,7 +2231,6 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 		if ( bytesRead < 0 ) {
 			f->close();
 			g_errno = errno;
-			m_isLoading = false;
 			return false;
 		}
 		// inc the start
@@ -2248,8 +2238,6 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 		// and the offset
 		offset += bytesRead;
 	}
-
-	m_isLoading = false;
 
 	// print corruption
 	if ( m_corrupt ) {
