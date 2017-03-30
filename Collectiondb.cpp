@@ -34,7 +34,6 @@ Collectiondb::Collectiondb ( ) {
 	m_wrapped = 0;
 	m_numRecs = 0;
 	m_numRecsUsed = 0;
-	m_numCollsSwappedOut = 0;
 	m_initializing = false;
 	m_recs = NULL;
 

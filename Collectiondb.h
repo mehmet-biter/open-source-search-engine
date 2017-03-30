@@ -102,8 +102,6 @@ private:
 
 	int32_t m_wrapped;
 
-	int32_t m_numCollsSwappedOut;
-
 	bool m_initializing;
 };
 
