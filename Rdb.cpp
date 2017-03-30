@@ -923,7 +923,6 @@ bool Rdb::dumpTree() {
 	}
 
 	// bail if already dumping
-	//if ( m_dump.isDumping() ) return true;
 	if ( m_inDumpLoop ) {
 		logTrace( g_conf.m_logTraceRdb, "END. %s: Already dumping. Returning true", m_dbname );
 		return true;
@@ -1081,6 +1080,7 @@ bool Rdb::dumpCollLoop ( ) {
 
 			// game over, man
 			doneDumping();
+
 			// update this so we don't try too much and flood the log
 			// with error messages
 			s_lastTryTime = getTime();
@@ -1221,16 +1221,13 @@ bool Rdb::dumpCollLoop ( ) {
 
 		// error?
 		if ( g_errno ) {
-			log("rdb: error dumping = %s . coll deleted from under us?",
-			    mstrerror(g_errno));
+			log(LOG_WARN, "rdb: error dumping = %s . coll deleted from under us?", mstrerror(g_errno));
 			// shit, what to do here? this is causing our RdbMem
 			// to get corrupted!
 			// because if we end up continuing it calls doneDumping()
 			// and updates RdbMem! maybe set a permanent error then!
 			// and if that is there do not clear RdbMem!
 			m_dumpErrno = g_errno;
-			// for now core out
-			//g_process.shutdownAbort(true);
 		}
 	}
 }

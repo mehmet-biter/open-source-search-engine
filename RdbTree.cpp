@@ -521,13 +521,11 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 		// otherwise point it to the next brand new house (TODO:REMOVE)
 		// this is an error, try to fix the tree
 		else {
-			log("db: Encountered corruption in tree while "
-			    "trying to add a record. You should "
-			    "replace your memory sticks.");
+			log(LOG_WARN, "db: Encountered corruption in tree while trying to add a record. "
+				"You should replace your memory sticks.");
 			if ( ! fixTree ( ) ) {
 				g_process.shutdownAbort(true);
 			}
-			//sleep(50000); // m_nextNode=m_minUnusedNode;
 		}
 	}
 	// we have one more used node
@@ -568,6 +566,7 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 	// our depth is now 1 since we're a leaf node
 	// (we include ourself)
 	m_depth [ i ] = 1;
+
 	// . reset depths starting at i's parent and ascending the tree
 	// . will balance if child depths differ by 2 or more
 	setDepths ( iparent );
@@ -649,8 +648,6 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 		return;
 		//g_process.shutdownAbort(true);
 	}
-	// must be saved from interrupts lest i be changed
-	//if(g_intOff <= 0 && g_globalNiceness == 0 ) { g_process.shutdownAbort(true); }
 
 	// no deleting if we're saving
 	if ( m_isSaving ) log("db: Can not delete record from tree because "
@@ -660,12 +657,10 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 		log(LOG_LOGIC,"db: Caught double delete.");
 		return;
 	}
+
 	// we need to be saved now
 	m_needsSave = true;
-	// debug step -- check chain from iparent down making sure that
-	// just debug2 after every 10 deletes for speed
-	//static int32_t ttt = 0;
-	//if ( ttt++ == 100 ) { printTree(); ttt = 0; }
+
 	// we have one less occupied node
 	m_memOccupied -= m_overhead;
 	// . free it now iff "freeIt" is true (default is true)
@@ -729,6 +724,7 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 	m_nextNode = i;
 	// his parent is -2 (god) cuz he's dead and available
 	m_parents[i] = -2;
+
 	// . if we were the head node then, since we didn't have any kids,
 	//   the tree must be empty
 	// . one less node in the tree
@@ -862,11 +858,6 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 			if(cr)cr->m_numPosKeysInTree[(unsigned char)m_rdbId]--;
 		}
 	}
-	// debug step -- check chain from iparent down making sure that
-	// all kids don't have -2 for their parent... seems to be a rare bug
-	//printTree();
-	// debug msg
-	//fprintf(stderr,"- #%" PRId32" %" PRId64" %" PRId32"\n",i,m_keys[i].n0,iparent);
 
 	// our depth becomes that of the node we replaced, unless moving j
 	// up to i decreases the total depth, in which case setDepths() fixes
@@ -888,12 +879,9 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 // returns false if could not fix tree and sets g_errno, otherwise true
 bool RdbTree::fixTree ( ) {
 	// on error, fix the linked list
-	//log("RdbTree::fixTree: tree was corrupted on disk?");
-	log("db: Trying to fix tree for %s.",m_dbname);
-	log("db: %" PRId32" occupied nodes and %" PRId32" empty "
-	    "of top %" PRId32" nodes.",
-	    m_numUsedNodes , m_minUnusedNode - m_numUsedNodes ,
-	    m_minUnusedNode );
+	log(LOG_WARN, "db: Trying to fix tree for %s.", m_dbname);
+	log(LOG_WARN, "db: %" PRId32" occupied nodes and %" PRId32" empty of top %" PRId32" nodes.",
+	    m_numUsedNodes, m_minUnusedNode - m_numUsedNodes, m_minUnusedNode);
 
 	// loop through our nodes
 	int32_t n = m_minUnusedNode;
@@ -1142,13 +1130,6 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 			return false;
 		}
 
-		// we do not want to delete these nodes from the tree yet
-		// in case the collection was accidentally removed.
-		//if ( ! recs[cn] ) {
-		// 	log("db: Got bad collnum tree. %" PRId32".",cn);
-		//  return false;
-		//}
-
 		int32_t P = m_parents [i];
 		if ( P == -2 ) continue; // deleted node
 
@@ -1192,10 +1173,6 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 			    i,m_left[i],m_right[i],m_parents[i],
 			    (int32_t)m_depth[i],(int32_t)m_collnums[i],
 			     KEYSTR(k,m_ks));
-			// assume linkdb
-			//key192_t *kp = (key192_t *)k;
-			//unsigned char hc = g_linkdb.getLinkerHopCount_uk(kp);
-			//if ( hc ) { g_process.shutdownAbort(true); }
 		}
 		//ensure depth
 		int32_t newDepth = computeDepth ( i );
@@ -1394,16 +1371,14 @@ int32_t RdbTree::getMemOccupiedForList() const {
 		return mem;
 	}
 	// get total mem used by occupied nodes
-	mem  = getMemOccupied() ;
+	mem  = m_memOccupied;
 	// remove left/right/parent for each used node (3 int32_ts)
 	mem -= m_overhead * m_numUsedNodes;
 	// but do include the key in the list, even though it's in the overhead
 	mem += m_ks * m_numUsedNodes;
 	// but don't include the dataSize in the overhead -- that's in list too
 	mem -= 4 * m_numUsedNodes;
-	// . remove m_sizes array if dataSize fixed
-	// . no! this is included in the list
-	//if ( m_fixedDataSize == -1 ) mem -= getNumUsedNodes() * 4;
+
 	return mem;
 }
 
@@ -1421,8 +1396,7 @@ bool RdbTree::getList ( collnum_t collnum ,
 	int32_t numPos = 0;
 	if ( numNegRecs ) *numNegRecs = 0;
 	if ( numPosRecs ) *numPosRecs = 0;
-	// set *lastKey in case we have no nodes in the list
-	//if ( lastKey ) *lastKey = endKey;
+
 	// . set the start and end keys of this list
 	// . set lists's m_ownData member to true
 	list->reset();
@@ -1446,7 +1420,6 @@ bool RdbTree::getList ( collnum_t collnum ,
 	int32_t node = getNextNode ( collnum , startKey );
 	if ( node < 0 ) return true;
 	// if it's already beyond endKey, give up
-	//if ( m_keys [ node ] > endKey ) return true;
 	if ( KEYCMP ( m_keys,node,endKey,0,m_ks) > 0 ) return true;
 	// or if we hit a different collection number
 	if ( m_collnums [ node ] > collnum ) return true;
@@ -1615,7 +1588,6 @@ int32_t RdbTree::estimateListSize(collnum_t collnum, const char *startKey, const
 	}
 
 	// skip to next node if this one is < startKey
-	//if ( m_keys[n] < startKey ) n = getNextNode ( n );
 	if( KEYCMP(m_keys, n, startKey, 0, m_ks) < 0 ) {
 		n = getNextNode(n);
 	}
@@ -1657,14 +1629,12 @@ int32_t RdbTree::getOrderOfKey ( collnum_t collnum, const char *key, char *retKe
 		if ( retKey ) KEYSET ( retKey , &m_keys[i*m_ks] , m_ks );
 		step /= 2;
 		if ( collnum < m_collnums[i] ||
-		     //(collnum == m_collnums[i] && key <  m_keys[i]) ) {
 		     (collnum==m_collnums[i] &&KEYCMP(key,0,m_keys,i,m_ks)<0)){
 			i = m_left [i]; 
 			if ( i >= 0 ) order -= step;
 			continue;
 		}
 		if ( collnum > m_collnums[i] ||
-		     //(collnum == m_collnums[i] && key >  m_keys[i]) ) {
 		     (collnum==m_collnums[i] &&KEYCMP(key,0,m_keys,i,m_ks)>0)){
 			i = m_right[i]; 
 			if ( i >= 0 ) order += step;
@@ -1789,9 +1759,7 @@ int32_t RdbTree::rotate ( int32_t i , int32_t *left , int32_t *right ) {
 	int32_t Xdepth = 0;
 	if ( W >= 0 ) Wdepth = m_depth[W];
 	if ( X >= 0 ) Xdepth = m_depth[X];
-	// debug msg
-	//fprintf(stderr,"A=%" PRId32" AP=%" PRId32" N=%" PRId32" W=%" PRId32" X=%" PRId32" Q=%" PRId32" T=%" PRId32" "
-	//"Wdepth=%" PRId32" Xdepth=%" PRId32"\n",A,AP,N,W,X,Q,T,Wdepth,Xdepth);
+
 	// goto Xdeeper if X is deeper
 	if ( Wdepth < Xdepth ) goto Xdeeper;
 	// N's parent becomes A's parent
@@ -1958,7 +1926,6 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 	return true;
 }
 
-// Use of ThreadEntry parameter is NOT thread safe
 void RdbTree::saveWrapper ( void *state ) {
 	logTrace(g_conf.m_logTraceRdbTree, "BEGIN");
 
@@ -1978,6 +1945,7 @@ void RdbTree::saveWrapper ( void *state ) {
 	logTrace(g_conf.m_logTraceRdbTree, "END");
 }
 
+/// @todo ALC cater for when exit_type != job_exit_normal
 // we come here after thread exits
 // Use of ThreadEntry parameter is NOT thread safe
 void RdbTree::threadDoneWrapper ( void *state, job_exit_t exit_type ) {
@@ -2021,9 +1989,8 @@ void RdbTree::threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 bool RdbTree::fastSave_r() {
 	if ( g_conf.m_readOnlyMode ) return true;
 
-	// cannot use the BigFile class, since we may be in a thread and it 
-	// messes with g_errno
-	//char *s = m_saveFile->getFilename();
+	/// @todo ALC we should probably use BigFile now. don't think g_errno being messed up is a good reason
+	// cannot use the BigFile class, since we may be in a thread and it messes with g_errno
 	char s[1024];
 	sprintf ( s , "%s/%s-saving.dat", m_dir , m_dbname );
 	int fd = ::open ( s , O_RDWR | O_CREAT | O_TRUNC , getFileCreationFlags() );
@@ -2101,8 +2068,6 @@ bool RdbTree::fastSave_r() {
 		logError("Error renaming file [%s] to [%s] (%d: %s)", s, s2, errno, mstrerror(errno));
 	}
 
-	// info
-	//log(0,"RdbTree::fastSave: saved %" PRId32" nodes", m_numUsedNodes );
 	return true;
 }
 
@@ -2116,9 +2081,7 @@ int32_t RdbTree::fastSaveBlock_r ( int fd , int32_t start , int64_t offset ) {
 	int32_t n = BLOCK_SIZE;
 	// don't over do it
 	if ( start + n > m_minUnusedNode ) n = m_minUnusedNode - start;
-	// debug msg
-	//log("writing block at %" PRId64", %" PRId32" nodes",
-	//     f->m_currentOffset, n);
+
 	errno = 0;
 	int64_t br = 0;
 	// write the block
@@ -2161,12 +2124,7 @@ int32_t RdbTree::fastSaveBlock_r ( int fd , int32_t start , int64_t offset ) {
 		pwrite (  fd , m_data[i] , m_fixedDataSize , offset );
 		offset += m_fixedDataSize;
 	}
-	// debug
-	//log("wrote %" PRId32" bytes of raw rec data", count);
-	// . don't close cuz needs to stay open for the rename
-	//   from *-saving.dat to *-saved.dat
-	// . close it
-	//f->close();
+
 	// return bytes written
 	return offset - oldOffset;
 }
@@ -2439,7 +2397,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 // . returns false and sets g_errno on error (sometimes g_errno not set)
 
 
-void RdbTree::cleanTree ( ) { // char **bases ) {
+void RdbTree::cleanTree() {
 
 	// some trees always use 0 for all node collnum_t's like
 	// statsdb, waiting tree etc.
