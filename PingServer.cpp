@@ -221,7 +221,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	if ( ip == h->m_ip && h->m_inProgress1 ) return;
 	if ( ip != h->m_ip && h->m_inProgress2 ) return;
 	// time now
-	int64_t nowmsLocal = gettimeofdayInMillisecondsLocal();
+	int64_t nowmsLocal = gettimeofdayInMilliseconds();
 	// stamp it
 	h->m_lastPing = nowmsLocal;
 	// count it
@@ -313,7 +313,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 
 	newPingInfo.m_hostId = me->m_hostId;
 
-	newPingInfo.m_localHostTimeMS = gettimeofdayInMillisecondsLocal();
+	newPingInfo.m_localHostTimeMS = gettimeofdayInMilliseconds();
 
 	newPingInfo.m_udpSlotsInUseIncoming = g_udpServer.getNumUsedSlotsIncoming();
 
@@ -381,7 +381,7 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	// don't let udp server free our send buf, we own it
 	slot->m_sendBufAlloc = NULL;
 	// update ping time
-	int64_t nowms    = gettimeofdayInMillisecondsLocal();
+	int64_t nowms    = gettimeofdayInMilliseconds();
 	int64_t tripTime = nowms - slot->getFirstSendTime() ;
 	// ensure not negative, clock might have been adjusted!
 	if ( tripTime < 0 ) tripTime = 0;
@@ -710,7 +710,7 @@ void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 		// only commit sender's time if from hostId #0
 		if ( setClock ) {
 			// what time is it now?
-			int64_t nowmsLocal=gettimeofdayInMillisecondsLocal();
+			int64_t nowmsLocal=gettimeofdayInMilliseconds();
 			// log it
 			log(LOG_DEBUG,"admin: Got ping of %" PRId32" ms. Updating "
 			     "clock. drift=%" PRId32" delta=%" PRId32" s_deltaTime=%" PRId64"ms "
@@ -732,7 +732,7 @@ void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 		// only record sender's time if from hostId #0
 		if ( h->m_hostId == 0 && !h->m_isProxy) {
 			// what time is it now?
-			int64_t nowmsLocal=gettimeofdayInMillisecondsLocal();
+			int64_t nowmsLocal=gettimeofdayInMilliseconds();
 			// . seems these servers drift by 1 ms every 5 secs
 			// . or that is about 17 seconds a day
 			// . we do NOT know how accurate host #0's supplied
@@ -1321,7 +1321,7 @@ void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 	if ( tripTime > h->m_pingMax &&
 	     // do not count shotgun ips!
 	     pingPtr == &h->m_ping &&
-	     gettimeofdayInMillisecondsLocal()-g_process.m_processStartTime>=
+		gettimeofdayInMilliseconds()-g_process.m_processStartTime>=
 	     60000 ) {
 		h->m_pingMax = tripTime;
 		const char *desc = "";

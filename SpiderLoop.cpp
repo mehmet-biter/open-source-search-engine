@@ -311,7 +311,7 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 	}
 
 	// if recently called, do not call again from the sleep wrapper
-	int64_t nowms = gettimeofdayInMillisecondsLocal();
+	int64_t nowms = gettimeofdayInMilliseconds();
 	if ( nowms - g_spiderLoop.m_lastCallTime < 50 )
 		return;
 
@@ -376,7 +376,7 @@ void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
 void SpiderLoop::spiderDoledUrls ( ) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN"  );
 
-	m_lastCallTime = gettimeofdayInMillisecondsLocal();
+	m_lastCallTime = gettimeofdayInMilliseconds();
 
 collLoop:
 
@@ -731,7 +731,7 @@ subloopNextPriority:
 
 	// log this now
 	if ( g_conf.m_logDebugSpider ) {
-		m_doleStart = gettimeofdayInMillisecondsLocal();
+		m_doleStart = gettimeofdayInMilliseconds();
 
 		if ( m_sc->m_msg5StartKey != m_sc->m_nextDoledbKey ) {
 			log( "spider: msg5startKey differs from nextdoledbkey" );
@@ -831,7 +831,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 	// log this now
 	if ( g_conf.m_logDebugSpider ) {
-		int64_t now = gettimeofdayInMillisecondsLocal();
+		int64_t now = gettimeofdayInMilliseconds();
 		int64_t took = now - m_doleStart;
 		if ( took > 2 )
 			logf(LOG_DEBUG,"spider: GOT list from doledb in "
@@ -2123,7 +2123,7 @@ void handleRequestc1(UdpSlot *slot, int32_t /*niceness*/) {
 
 	uint32_t now = (uint32_t)getTimeGlobalNoCore();
 
-	uint64_t nowMS = gettimeofdayInMillisecondsGlobalNoCore();
+	uint64_t nowMS = gettimeofdayInMilliseconds();
 
 	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
 		CollectionRec *cr = g_collectiondb.getRec(i);

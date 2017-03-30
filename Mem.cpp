@@ -931,7 +931,7 @@ void *Mem::gbmalloc ( size_t size , const char *note ) {
 		g_errno = errno;
 		static int64_t s_lastTime;
 		static int32_t s_missed = 0;
-		int64_t now = gettimeofdayInMillisecondsLocal();
+		int64_t now = gettimeofdayInMilliseconds();
 		int64_t avail = (int64_t)g_conf.m_maxMem - (int64_t)m_used;
 		if ( now - s_lastTime >= 1000LL ) {
 			log(LOG_WARN, "mem: system malloc(%zu,%s) availShouldBe=%" PRId64": "

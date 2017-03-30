@@ -448,7 +448,7 @@ bool UdpServer::sendRequest(char *msg,
 	         (int32_t)transId, (int32_t)niceness , slot );
 	
 	// . get time 
-	int64_t now = gettimeofdayInMillisecondsLocal();
+	int64_t now = gettimeofdayInMilliseconds();
 
 	// connect to the ip/port (udp-style: does not do much)
 	slot->connect(m_proto, ip, port, h, hostId, transId, timeout, now, niceness);
@@ -530,7 +530,7 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 	}
 
 	// record some statistics on how long these msg handlers are taking
-	int64_t now = gettimeofdayInMillisecondsLocal();
+	int64_t now = gettimeofdayInMilliseconds();
 	// m_queuedTime should have been set before m_handlers[] was called
 	int32_t delta = now - slot->m_queuedTime;
 	int32_t n = slot->getNiceness();
@@ -813,8 +813,8 @@ void UdpServer::process(int64_t now, int32_t maxNiceness) {
 	//log("process");
 
 	// if we call this while in the sighandler it crashes since
-	// gettimeofdayInMillisecondsLocal() is not async safe
-	int64_t startTimer = gettimeofdayInMillisecondsLocal();
+	// gettimeofdayInMilliseconds() is not async safe
+	int64_t startTimer = gettimeofdayInMilliseconds();
  bigloop:
 	bool needCallback = false;
  loop:
@@ -891,8 +891,8 @@ void UdpServer::process(int64_t now, int32_t maxNiceness) {
  callBottom:
 	if(maxNiceness < 1) return;
 	// if we call this while in the sighandler it crashes since
-	// gettimeofdayInMillisecondsLocal() is not async safe
-	int64_t elapsed = gettimeofdayInMillisecondsLocal() - startTimer;
+	// gettimeofdayInMilliseconds() is not async safe
+	int64_t elapsed = gettimeofdayInMilliseconds() - startTimer;
 	if(elapsed < 10) {
 		// we did not call any, so resort to nice callbacks
 		// . only go to bigloop if we called a callback
@@ -1373,7 +1373,7 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 	int32_t numCalled = 0;
 	if(niceness > 0) m_needBottom = false;
 
-	int64_t startTime = gettimeofdayInMillisecondsLocal();
+	int64_t startTime = gettimeofdayInMilliseconds();
 
 	ScopedLock sl(m_mtx);
 
@@ -1442,7 +1442,7 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 		int64_t start2 = 0;
 		bool logIt = false;
 		if ( slot->getNiceness() == 0 ) logIt = true;
-		if ( logIt ) start2 = gettimeofdayInMillisecondsLocal();
+		if ( logIt ) start2 = gettimeofdayInMilliseconds();
 
 		logDebug(g_conf.m_logDebugUdp,"udp: calling callback/handler for slot=%p pass=%" PRId32" nice=%" PRId32,
 		         slot, (int32_t)pass,(int32_t)slot->getNiceness());
@@ -1462,7 +1462,7 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 		// remove it from the callback list to avoid re-call
 		removeFromCallbackLinkedList(slot);
 
-		int64_t took = logIt ? (gettimeofdayInMillisecondsLocal()-start2) : 0;
+		int64_t took = logIt ? (gettimeofdayInMilliseconds()-start2) : 0;
 		if ( took > 1000 || (slot->getNiceness()==0 && took>100))
 			logf(LOG_DEBUG,"udp: took %" PRId64" ms to call "
 			     "callback/handler for "
@@ -1477,7 +1477,7 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 
 		// log how long callback took
 		if(niceness > 0 && 
-		   (gettimeofdayInMillisecondsLocal() - startTime) > 5 ) {
+		   (gettimeofdayInMilliseconds() - startTime) > 5 ) {
 			//bail if we're taking too long and we're a 
 			//low niceness request.  we can always come 
 			//back.
@@ -1540,7 +1540,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 
 	// debug timing
 	if ( g_conf.m_logDebugUdp )
-		start = gettimeofdayInMillisecondsLocal();
+		start = gettimeofdayInMilliseconds();
 
 	// callback is non-NULL if we initiated the transaction 
 	if ( slot->hasCallback() ) {
@@ -1561,7 +1561,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		
 		// debug msg
 		if ( g_conf.m_logDebugUdp ) {
-			int64_t now  = gettimeofdayInMillisecondsLocal();
+			int64_t now  = gettimeofdayInMilliseconds();
 			int64_t took = now - slot->getStartTime();
 			//if ( took > 10 )
 			int32_t Mbps = 0;
@@ -1589,7 +1589,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 			g_stats.m_errors[msgType][slot->getNiceness()]++;
 
 		if ( g_conf.m_maxCallbackDelay >= 0 )//&&slot->m_niceness==0) 
-			start = gettimeofdayInMillisecondsLocal();
+			start = gettimeofdayInMilliseconds();
 
 		// sanity check for double callbacks
 		if ( slot->hasCalledCallback() ) {
@@ -1626,7 +1626,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 			    "nice=%" PRId32,(int32_t)slot->getMsgType(),slot->getNiceness());
 
 		if ( g_conf.m_maxCallbackDelay >= 0 ) {
-			int64_t elapsed = gettimeofdayInMillisecondsLocal()-
+			int64_t elapsed = gettimeofdayInMilliseconds()-
 				start;
 			if ( slot->getNiceness() == 0 &&
 			     elapsed >= g_conf.m_maxCallbackDelay )
@@ -1639,7 +1639,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		// time it
 		if ( g_conf.m_logDebugUdp )
 			log(LOG_DEBUG,"udp: Reply callback took %" PRId64" ms.",
-			    gettimeofdayInMillisecondsLocal() - start );
+			    gettimeofdayInMilliseconds() - start );
 		// clear any g_errno that may have been set
 		g_errno = 0;
 		// . now lets destroy the slot, bufs and all
@@ -1691,7 +1691,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 			// debug msg
 			if ( g_conf.m_logDebugUdp ) {
 				int64_t now  = 
-					gettimeofdayInMillisecondsLocal();
+					gettimeofdayInMilliseconds();
 				int64_t took = now - start ;
 				//if ( took > 10 )
 					log(LOG_DEBUG,
@@ -1753,7 +1753,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 
 
 	// record some statistics on how long this was waiting to be called
-	now = gettimeofdayInMillisecondsLocal();
+	now = gettimeofdayInMilliseconds();
 	delta = now - slot->m_queuedTime;
 	// sanity check
 	if ( slot->m_queuedTime == -1 ) { g_process.shutdownAbort(true); }
@@ -1849,7 +1849,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 	slot->m_errno = 0;
 
 	if ( g_conf.m_maxCallbackDelay >= 0 ) {
-		int64_t elapsed = gettimeofdayInMillisecondsLocal() - start;
+		int64_t elapsed = gettimeofdayInMilliseconds() - start;
 		if ( elapsed >= g_conf.m_maxCallbackDelay &&
 		     slot->getNiceness() == 0 )
 			log("udp: Took %" PRId64" ms to call "
@@ -1865,7 +1865,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 	//	log(mt,"net: Handler transId=%" PRId32" slot=%" PRIu32" "
 	// this is kinda obsolete now that we have the stats above
 	if ( g_conf.m_logDebugNet ) {
-		int64_t took = gettimeofdayInMillisecondsLocal() - start;
+		int64_t took = gettimeofdayInMilliseconds() - start;
 		log(LOG_DEBUG,"net: Handler transId=%" PRId32" slot=%p "
 		    "msgType=0x%02x msgSize=%" PRId32" "
 		    "g_errno=%s callback=%p "
@@ -1901,14 +1901,14 @@ void UdpServer::timePoll ( ) {
 	// only repeat once
 	//bool first = true;
 	// get time now
-	int64_t now = gettimeofdayInMillisecondsLocal();
+	int64_t now = gettimeofdayInMilliseconds();
 	// before timing everyone out or starting resends, just to make
 	// sure we read everything. we have have just been blocking on a int32_t
 	// handler or callback or sequence of those things and have stuff
 	// waiting to be read.
 	process(now);
 	// get again if changed
-	now = gettimeofdayInMillisecondsLocal();
+	now = gettimeofdayInMilliseconds();
 	// loop:
 	// do read/send/callbacks
 	//	process(now);

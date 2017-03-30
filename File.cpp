@@ -583,7 +583,7 @@ int File::getfd () {
 		          m_fd,getFilename(),(PTRTYPE)this, (int)m_closeCount, (int)s_closeCounts[m_fd] );
 
 		// but update the timestamp to reduce chance it closes on us
-		s_timestamps [ m_fd ] = gettimeofdayInMillisecondsLocal();
+		s_timestamps [ m_fd ] = gettimeofdayInMilliseconds();
 		return m_fd;
 	}
 
@@ -699,7 +699,7 @@ int File::getfd () {
 	// reset
 	s_writing   [ fd ] = false;
 	s_unlinking [ fd ] = false;
-	s_timestamps[ fd ] = gettimeofdayInMillisecondsLocal();
+	s_timestamps[ fd ] = gettimeofdayInMilliseconds();
 	s_open      [ fd ] = true;
 	s_filePtrs  [ fd ] = this;
 
@@ -716,7 +716,7 @@ int File::getfd () {
 bool File::closeLeastUsed () {
 	int64_t min  ;
 	int    mini = -1;
-	int64_t now = gettimeofdayInMillisecondsLocal();
+	int64_t now = gettimeofdayInMilliseconds();
 
 
 	int32_t notopen = 0;

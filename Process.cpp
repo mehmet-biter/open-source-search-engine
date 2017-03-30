@@ -307,7 +307,7 @@ bool Process::init ( ) {
 	// reset this timestamp
 	m_firstShutdownTime = 0;
 	// set the start time, local time
-	m_processStartTime = gettimeofdayInMillisecondsLocal();
+	m_processStartTime = gettimeofdayInMilliseconds();
 	// reset this
 	m_lastHeartbeatApprox = 0;
 	m_calledSave = false;
@@ -780,7 +780,7 @@ bool Process::shutdown2() {
 		}
 	}
 
-	int64_t now = gettimeofdayInMillisecondsLocal();
+	int64_t now = gettimeofdayInMilliseconds();
 	if ( m_firstShutdownTime == 0 ) {
 		m_firstShutdownTime = now;
 	}

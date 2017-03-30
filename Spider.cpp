@@ -1310,7 +1310,7 @@ static bool sendPage(State11 *st) {
 			TABLE_STYLE,
 			st->m_coll );
 	// print time format: 7/23/1971 10:45:32
-	int64_t timems = gettimeofdayInMillisecondsGlobal();
+	int64_t timems = gettimeofdayInMilliseconds();
 	sb.safePrintf("</b> (current time = %" PRIu64")(totalcount=%" PRId32")"
 		      "(waittablecount=%" PRId32")",
 		      timems,

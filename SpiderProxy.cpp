@@ -713,7 +713,7 @@ static void handleRequest54(UdpSlot *udpSlot, int32_t /*niceness*/) {
 	// we must have a winner
 	if ( ! winnersp ) { g_process.shutdownAbort(true); }
 
-	int64_t nowms = gettimeofdayInMillisecondsLocal();
+	int64_t nowms = gettimeofdayInMilliseconds();
 
 	// add a new load bucket then!
 	LoadBucket bb;
@@ -840,8 +840,7 @@ void returnProxy ( Msg13Request *preq , UdpSlot *udpSlot ) {
 		if ( lb->m_proxyIp != preq->m_proxyIp ) continue;
 		if ( lb->m_proxyPort != preq->m_proxyPort ) continue;
 		// that's it. set the download end time
-		int64_t nowms = gettimeofdayInMillisecondsLocal();
-		lb->m_downloadEndTimeMS = nowms;
+		lb->m_downloadEndTimeMS = gettimeofdayInMilliseconds();
 		break;
 	}
 
