@@ -344,8 +344,8 @@ bool Collectiondb::addNewColl ( const char *coll,
 	cr->m_useRobotsTxt = true;
 
 	// reset crawler stats.they should be loaded from crawlinfo.txt
-	memset ( &cr->m_localCrawlInfo , 0 , sizeof(CrawlInfo) );
-	memset ( &cr->m_globalCrawlInfo , 0 , sizeof(CrawlInfo) );
+	cr->m_localCrawlInfo.reset();
+	cr->m_globalCrawlInfo.reset();
 
 	// note that
 	log("colldb: initial revival for %s",cr->m_coll);
