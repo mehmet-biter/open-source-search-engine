@@ -8,7 +8,9 @@ static void saveAndReloadPosdbBucket() {
 	g_posdb.getRdb()->saveTree(false);
 	g_posdb.getRdb()->getBuckets()->clear();
 	g_posdb.getRdb()->loadTree();
-	g_posdb.getRdb()->getBase(0)->getTreeIndex()->writeIndex(false);
+	if (g_posdb.getRdb()->isUseIndexFile()) {
+		g_posdb.getRdb()->getBase(0)->getTreeIndex()->writeIndex(false);
+	}
 }
 
 static void dumpPosdb() {
