@@ -1545,31 +1545,28 @@ void Rdb::verifyTreeIntegrity() {
 }
 
 
-bool Rdb::needsDump ( ) const {
-	if ( m_mem.is90PercentFull () ) {
+bool Rdb::needsDump() const {
+	if (m_mem.is90PercentFull()) {
 		return true;
 	}
 
-	if ( m_useTree ) {
-		if ( m_tree.is90PercentFull() ) {
+	if (m_useTree) {
+		if (m_tree.is90PercentFull()) {
 			return true;
 		}
 	} else {
-		if ( m_buckets.needsDump() ) {
+		if (m_buckets.needsDump()) {
 			return true;
 		}
 	}
 
-	// if adding to doledb and it has been > 1 day then force a dump
-	// so that all the negative keys in the tree annihilate with the
-	// keys on disk to make it easier to read a doledb list
-	if ( m_rdbId != RDB_DOLEDB ) {
+	if (m_rdbId != RDB_DOLEDB) {
 		return false;
 	}
 
-	// or dump doledb if a ton of negative recs...
+	// dump doledb if a ton of negative recs...
 	// otherwise, no need to dump doledb just yet
-	return ( m_tree.getNumNegativeKeys() > 50000 );
+	return (m_tree.getNumNegativeKeys() > 50000);
 }
 
 bool Rdb::hasRoom(int32_t totalRecs, int32_t totalDataSize) const {
@@ -2395,7 +2392,7 @@ RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum) {
 }
 
 int32_t Rdb::getNumUsedNodes ( ) const {
-	 if(m_useTree) return m_tree.getNumUsedNodes(); 
+	 if(m_useTree) return m_tree.getNumUsedNodes();
 	 return m_buckets.getNumKeys();
 }
 
@@ -2405,18 +2402,18 @@ int32_t Rdb::getMaxTreeMem() const {
 }
 
 int32_t Rdb::getNumNegativeKeys() const {
-	 if(m_useTree) return m_tree.getNumNegativeKeys(); 
+	 if(m_useTree) return m_tree.getNumNegativeKeys();
 	 return m_buckets.getNumNegativeKeys();
 }
 
 
 int32_t Rdb::getTreeMemOccupied() const {
-	 if(m_useTree) return m_tree.getMemOccupied(); 
+	 if(m_useTree) return m_tree.getMemOccupied();
 	 return m_buckets.getMemOccupied();
 }
 
 int32_t Rdb::getTreeMemAllocated () const {
-	 if(m_useTree) return m_tree.getMemAllocated(); 
+	 if(m_useTree) return m_tree.getMemAllocated();
 	 return m_buckets.getMemAllocated();
 }
 
@@ -2470,14 +2467,9 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 	int32_t occupied = 0;
 
 	HashTableX ht;
-	if (!ht.set ( 4, 
-		      4, 
-		      m_tree.getNumUsedNodes()*2,
-		      NULL , 0 , 
-		      false ,
-		      "trectbl",
-		      true )) // useMagic? yes..
+	if (!ht.set(4, 4, m_tree.getNumUsedNodes() * 2, NULL, 0, false, "trectbl", true)) {// useMagic? yes..
 		return -1;
+	}
 
 	int32_t dups = 0;
 
@@ -2488,23 +2480,23 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 		if ( m_tree.isEmpty(i) ) {marked++; continue; }
 		// get data ptr
 		const char *data = m_tree.getData(i);
-		// and key ptr, if negative skip it
-		//char *key = m_tree.getKey(i);
-		//if ( (key[0] & 0x01) == 0x00 ) { occupied++; continue; }
+
 		// sanity, ensure legit
 		if ( data < pstart ) { g_process.shutdownAbort(true); }
+
 		// offset
 		int32_t doff = (int32_t)(data - pstart);
+
 		// a dup? sanity check
 		if ( ht.isInTable ( &doff ) ) {
 			int32_t *vp = (int32_t *) ht.getValue ( &doff );
 			log("rdb: reclaim got dup oldi=0x%" PTRFMT" "
 			    "newi=%" PRId32" dataoff=%" PRId32"."
 			    ,(PTRTYPE)vp,i,doff);
-			//while ( 1 == 1 ) sleep(1);
 			dups++;
 			continue;
 		}
+
 		// indicate it is legit
 		int32_t val = i;
 		ht.addKey ( &doff , &val );
