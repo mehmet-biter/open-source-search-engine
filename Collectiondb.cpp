@@ -170,10 +170,9 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 	collnum_t oldCollnum = getCollnum(coll);
 	if ( oldCollnum >= 0 ) {
 		g_errno = EEXIST;
-		log("admin: Trying to create collection \"%s\" but "
-		    "already exists in memory. Do an ls on "
-		    "the working dir to see if there are two "
-		    "collection dirs with the same coll name",coll);
+		log("admin: Trying to create collection \"%s\" but already exists in memory. "
+		    "Do an ls on the working dir to see if there are two collection dirs with the same coll name",
+		    coll);
 		g_process.shutdownAbort(true);
 	}
 
@@ -181,9 +180,8 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 	CollectionRec *ocr = getRec ( i );
 	if ( ocr ) {
 		g_errno = EEXIST;
-		log(LOG_WARN, "admin: Collection id %i is in use already by "
-		    "%s, so we can not add %s. moving %s to trash."
-		    ,(int)i,ocr->m_coll,coll,coll);
+		log(LOG_WARN, "admin: Collection id %i is in use already by %s, so we can not add %s. moving %s to trash.",
+		    (int)i, ocr->m_coll,coll,coll);
 		SafeBuf cmd;
 		int64_t now = gettimeofdayInMilliseconds();
 		cmd.safePrintf ( "mv coll.%s.%i trash/coll.%s.%i.%" PRIu64
@@ -290,8 +288,8 @@ bool Collectiondb::addNewColl ( const char *coll,
 	// or if too big
 	if ( strlen(coll) > MAX_COLL_LEN ) {
 		g_errno = ENOBUFS;
-		log( LOG_WARN, "admin: Trying to create a new collection whose name '%s' of %zd chars is longer than the "
-		     "max of %" PRId32" chars.", coll, strlen(coll), (int32_t)MAX_COLL_LEN );
+		log(LOG_WARN, "admin: Trying to create a new collection whose name '%s' of %zd chars is longer than the max of %" PRId32" chars.",
+		    coll, strlen(coll), (int32_t)MAX_COLL_LEN );
 		return false;
 	}
 
@@ -387,10 +385,7 @@ bool Collectiondb::addNewColl ( const char *coll,
 	//log("admin: adding coll \"%s\" (new=%" PRId32")",coll,(int32_t)isNew);
 
 	// MDW: create the new directory
- retry22:
 	if ( ::mkdir ( dname, getDirCreationFlags() ) ) {
-		// valgrind?
-		if ( errno == EINTR ) goto retry22;
 		g_errno = errno;
 		mdelete ( cr , sizeof(CollectionRec) , "CollectionRec" );
 		delete ( cr );
@@ -510,8 +505,8 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) {
 	// bitch if not found
 	if ( collnum < 0 ) {
 		g_errno = ENOTFOUND;
-		log(LOG_LOGIC,"admin: Collection #%" PRId32" is bad, "
-		    "delete failed.",(int32_t)collnum);
+		log(LOG_LOGIC,"admin: Collection #%" PRId32" is bad, delete failed.",
+		    (int32_t)collnum);
 		return true;
 	}
 	CollectionRec *cr = m_recs [ collnum ];
@@ -801,18 +796,15 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 		(int32_t)newCollnum);
 	DIR *dir = opendir ( dname );
 	if ( dir ) {
-	     closedir ( dir );
+		closedir ( dir );
 		//g_errno = EEXIST;
-		log(LOG_WARN, "admin: Trying to create collection %s but "
-		    "directory %s already exists on disk.",cr->m_coll,dname);
+		log(LOG_WARN, "admin: Trying to create collection %s but directory %s already exists on disk.",
+		    cr->m_coll,dname);
 	}
-	if ( ::mkdir ( dname ,
-		       getDirCreationFlags() ) ) {
-		// valgrind?
-		//if ( errno == EINTR ) goto retry22;
+	if ( ::mkdir ( dname, getDirCreationFlags() ) ) {
 		//g_errno = errno;
-		log(LOG_WARN, "admin: Creating directory %s had error: "
-		    "%s.", dname,mstrerror(g_errno));
+		log(LOG_WARN, "admin: Creating directory %s had error: %s.",
+		    dname,mstrerror(g_errno));
 	}
 
 	// . unlink all the *.dat and *.map files for this coll in its subdir
@@ -1042,8 +1034,7 @@ collnum_t Collectiondb::reserveCollNum ( ) {
 		// start after this one next time
 		m_wrapped = i+1;
 		// note it
-		log("colldb: returning wrapped collnum "
-		    "of %" PRId32,(int32_t)i);
+		log("colldb: returning wrapped collnum of %d", i);
 		return (collnum_t)i;
 	}
 
@@ -1059,15 +1050,7 @@ collnum_t Collectiondb::reserveCollNum ( ) {
 //
 ///////////////
 
-#include "gb-include.h"
-
 //#include "CollectionRec.h"
-//#include "Collectiondb.h"
-#include "HttpServer.h"     // printColors2()
-#include "Msg5.h"
-#include "Spider.h"
-#include "Process.h"
-#include "Domains.h"
 
 
 CollectionRec::CollectionRec() {
@@ -1280,8 +1263,8 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 		strcpy ( m_coll , coll );
 
 	if ( ! g_conf.m_doingCommandLine )
-		log(LOG_INFO,"db: Loading conf for collection %s (%" PRId32")",coll,
-		    (int32_t)m_collnum);
+		log(LOG_INFO,"db: Loading conf for collection %s (%" PRId32")",
+		    coll, (int32_t)m_collnum);
 
 	// the default conf file
 	char tmp1[1024];
@@ -2580,8 +2563,8 @@ void nukeDoledb ( collnum_t collnum );
 bool CollectionRec::rebuildUrlFilters ( ) {
 
 	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.isInitializing() )
-		log(LOG_INFO, "coll: Rebuilding url filters for %s ufp=%s",m_coll,
-		    m_urlFiltersProfile.getBufStart());
+		log(LOG_INFO, "coll: Rebuilding url filters for %s ufp=%s",
+		    m_coll, m_urlFiltersProfile.getBufStart());
 
 	// set the url filters based on the url filter profile, if any
 	rebuildUrlFilters2();
