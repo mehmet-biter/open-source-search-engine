@@ -76,6 +76,19 @@ void RdbIndex::reset(bool isStatic) {
 	m_needToWrite = false;
 }
 
+void RdbIndex::clear() {
+	ScopedLock sl(m_pendingDocIdsMtx);
+
+	m_docIds.reset(new docids_t);
+	m_pendingDocIds.reset(new docids_t);
+	m_pendingDocIds->reserve(m_generatingIndex ? s_generateReserveSize : s_defaultReserveSize);
+
+	m_prevPendingDocId = MAX_DOCID + 1;
+	m_lastMergeTime = gettimeofdayInMilliseconds();
+
+	m_needToWrite = false;
+}
+
 void RdbIndex::timedMerge(int /*fd*/, void *state) {
 	RdbIndex *index = static_cast<RdbIndex*>(state);
 
