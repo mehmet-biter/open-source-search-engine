@@ -1156,7 +1156,6 @@ bool Rdb::dumpCollLoop ( ) {
 		                base->getFile(fn),
 	                	buckets,
 	                	tree,
-	                	base->getTreeIndex(),
 		                base->getMap(fn),
 		                base->getIndex(fn),
 	                	bufSize, // write buf size
