@@ -1050,15 +1050,7 @@ collnum_t Collectiondb::reserveCollNum ( ) {
 //
 ///////////////
 
-#include "gb-include.h"
-
 //#include "CollectionRec.h"
-//#include "Collectiondb.h"
-#include "HttpServer.h"     // printColors2()
-#include "Msg5.h"
-#include "Spider.h"
-#include "Process.h"
-#include "Domains.h"
 
 
 CollectionRec::CollectionRec() {
