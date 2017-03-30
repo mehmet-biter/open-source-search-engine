@@ -13,7 +13,6 @@ RdbDump::RdbDump() {
 	// Coverity
 	m_tree = NULL;
 	m_buckets = NULL;
-	m_treeIndex = NULL;
 	m_map = NULL;
 	m_index = NULL;
 	m_maxBufSize = 0;
@@ -56,7 +55,6 @@ bool RdbDump::set(collnum_t collnum,
                   BigFile *file,
                   RdbBuckets *buckets, // optional buckets to dump
                   RdbTree *tree, // optional tree to dump
-                  RdbIndex *treeIndex, // only present if buckets/tree is set
                   RdbMap *map,
                   RdbIndex *index,
                   int32_t maxBufSize,
@@ -79,7 +77,6 @@ bool RdbDump::set(collnum_t collnum,
 	m_file          = file;
 	m_buckets       = buckets;
 	m_tree          = tree;
-	m_treeIndex     = treeIndex;
 	m_map           = map;
 	m_index         = index;
 	m_state         = state;
@@ -236,15 +233,6 @@ void RdbDump::doneDumping() {
 	// save the map to disk. true = allDone
 	if (m_map) {
 		m_map->writeMap(true);
-	}
-
-	// regenerate treeIndex
-	if (m_treeIndex) {
-		bool result = m_tree ? m_treeIndex->generateIndex(m_collnum, m_tree) : m_treeIndex->generateIndex(m_collnum, m_buckets);
-		if (!result) {
-			logError("db: Index generation failed");
-			gbshutdownCorrupted();
-		}
 	}
 
 	if (m_index) {

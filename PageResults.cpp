@@ -862,18 +862,16 @@ bool printSearchResultsHeader ( State0 *st ) {
 			      "encoding=\"UTF-8\" ?>\n"
 			      "<response>\n" );
 
-	int64_t nowMS = gettimeofdayInMillisecondsLocal();
+	int64_t nowMS = gettimeofdayInMilliseconds();
 
 	// show current time
 	if ( si->m_format == FORMAT_XML ) {
-		int64_t globalNowMS = localToGlobalTimeMilliseconds(nowMS);
 		sb->safePrintf("\t<currentTimeUTC>%" PRIu32"</currentTimeUTC>\n",
-			      (uint32_t)(globalNowMS/1000));
+			      (uint32_t)(nowMS/1000));
 	} 
 	else if ( st->m_header && si->m_format == FORMAT_JSON ) {
-	    int64_t globalNowMS = localToGlobalTimeMilliseconds(nowMS);
 	    sb->safePrintf("\"currentTimeUTC\":%" PRIu32",\n",
-			   (uint32_t)(globalNowMS/1000));
+			   (uint32_t)(nowMS/1000));
 	}
 
 	// show result validity time
@@ -1735,7 +1733,7 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 	bool printedInlinkText = false;
 	bool firstTime = true;
 	int32_t inlinkId = 0;
-	int64_t  starttime = gettimeofdayInMillisecondsLocal();
+	int64_t  starttime = gettimeofdayInMilliseconds();
 
 	for ( int32_t i = 0 ; i < numLinks ; i++ ) {
 		Inlink *k = ptrs[i];
@@ -1851,7 +1849,7 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 		*numPrinted = *numPrinted + 1;
 	}
 
-	int64_t took = gettimeofdayInMillisecondsLocal() - starttime;
+	int64_t took = gettimeofdayInMilliseconds() - starttime;
         if ( took > 2 )
                 log("timing: took %" PRId64" ms to highlight %" PRId32" links."
                     ,took,numLinks);
@@ -2924,7 +2922,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		sb->safePrintf(" - <a style=color:blue; href=\"/addurl?"
 			       "urls=");
 		urlEncode(sb, url, strlen(url), false);
-		uint64_t rand64 = gettimeofdayInMillisecondsLocal();
+		uint64_t rand64 = gettimeofdayInMilliseconds();
 		sb->safePrintf("&c=%s&rand64=%" PRIu64"\">respider</a>\n",
 			       coll,rand64);
 

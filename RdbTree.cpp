@@ -854,11 +854,10 @@ bool RdbTree::fixTree ( ) {
 	m_minUnusedNode =  0; 
 	int32_t           max  = g_collectiondb.getNumRecs();
 	log("db: Valid collection numbers range from 0 to %" PRId32".",max);
-	
-	bool isTitledb = false;
-	if ( !strcmp(m_dbname,"titledb" ) ) isTitledb = true;
-	bool isSpiderdb = false;
-	if ( !strcmp(m_dbname,"spiderdb" ) ) isSpiderdb = true;
+
+	/// @todo ALC should we check repair RDB as well?
+	bool isTitledb = (m_rdbId == RDB_TITLEDB || m_rdbId == RDB2_TITLEDB2);
+	bool isSpiderdb = (m_rdbId == RDB_SPIDERDB || m_rdbId == RDB2_SPIDERDB2);
 
 	// now re-add the old nods to the tree, they should not be overwritten
 	// by addNode()
@@ -954,13 +953,13 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 	if ( !strcmp(m_dbname,"statsdb") ) doCollRecCheck = false;
 
 
-	if ( !strcmp(m_dbname,"indexdb") ) useHalfKeys = true;
-	if ( !strcmp(m_dbname,"linkdb" ) ) useHalfKeys = true;
+	if (m_rdbId == RDB_LINKDB || m_rdbId == RDB2_LINKDB2) {
+		useHalfKeys = true;
+	}
 
-	bool isTitledb = false;
-	if ( !strcmp(m_dbname,"titledb" ) ) isTitledb = true;
-	bool isSpiderdb = false;
-	if ( !strcmp(m_dbname,"spiderdb" ) ) isSpiderdb = true;
+	/// @todo ALC should we check repair RDB as well?
+	bool isTitledb = (m_rdbId == RDB_TITLEDB || m_rdbId == RDB2_TITLEDB2);
+	bool isSpiderdb = (m_rdbId == RDB_SPIDERDB || m_rdbId == RDB2_SPIDERDB2);
 
 	// now check parent kid correlations
 	for ( int32_t i = 0 ; i < m_minUnusedNode ; i++ ) {

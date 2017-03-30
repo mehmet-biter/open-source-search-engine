@@ -307,7 +307,7 @@ bool Process::init ( ) {
 	// reset this timestamp
 	m_firstShutdownTime = 0;
 	// set the start time, local time
-	m_processStartTime = gettimeofdayInMillisecondsLocal();
+	m_processStartTime = gettimeofdayInMilliseconds();
 	// reset this
 	m_lastHeartbeatApprox = 0;
 	m_calledSave = false;
@@ -316,9 +316,6 @@ bool Process::init ( ) {
 	if ( ! g_loop.registerSleepCallback(100,NULL,heartbeatWrapper,0)) {
 		return false;
 	}
-
-	// get first snapshot of load average...
-	//update_load_average(gettimeofdayInMillisecondsLocal());
 
 	// . continually call this once per second
 	// . once every half second now so that autosaves are closer together
@@ -515,17 +512,7 @@ void processSleepWrapper(int /*fd*/, void * /*state*/) {
 	
 	// if we already saved it for that time, bail
 	if ( g_process.m_lastSaveTime >= nextLastSaveTime ) return;
-	
-	//int64_t now = gettimeofdayInMillisecondsLocal();
-	// . get a snapshot of the load average...
-	// . MDW: disable for now. not really used...
-	//update_load_average(now);
-	// convert from minutes in milliseconds
-	//int64_t delta = (int64_t)g_conf.m_autoSaveFrequency * 60000LL;
-	// if power is off make this every 30 seconds temporarily!
-	//if ( ! g_process.m_powerIsOn ) delta = 30000;
-	// return if we have not waited int32_t enough
-	//if ( now - g_process.m_lastSaveTime < delta ) return;
+
 	// update
 	g_process.m_lastSaveTime = nextLastSaveTime;//now;
 	// save everything
@@ -675,9 +662,6 @@ bool Process::save2 ( ) {
 
 	log(LOG_INFO,"gb: Saved data to disk. Re-enabling Writes.");
 
-	// update
-	//m_lastSaveTime = gettimeofdayInMillisecondsLocal();
-
 	// unlock
 	m_mode = Process::NO_MODE;
 
@@ -780,7 +764,7 @@ bool Process::shutdown2() {
 		}
 	}
 
-	int64_t now = gettimeofdayInMillisecondsLocal();
+	int64_t now = gettimeofdayInMilliseconds();
 	if ( m_firstShutdownTime == 0 ) {
 		m_firstShutdownTime = now;
 	}

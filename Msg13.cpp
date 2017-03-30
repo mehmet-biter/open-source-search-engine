@@ -1802,7 +1802,7 @@ static bool getIframeExpandedContent(Msg13Request *r, TcpSocket *ts) {
 	xd->size_redirUrl   = 0;
 
 	xd->m_downloadEndTimeValid = true;
-	xd->m_downloadEndTime = gettimeofdayInMillisecondsLocal();
+	xd->m_downloadEndTime = gettimeofdayInMilliseconds();
 
 	// now get the expanded content
 	char **ec = xd->getExpandedUtf8Content();

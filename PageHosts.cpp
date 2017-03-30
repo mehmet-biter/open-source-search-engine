@@ -249,7 +249,7 @@ skipReplaceHost:
 		sb.safePrintf("\t\"statusMsg\":\"Success\",\n");
 	}
 
-	int64_t nowmsLocal = gettimeofdayInMillisecondsLocal();
+	int64_t nowmsLocal = gettimeofdayInMilliseconds();
 
 	// compute majority gb version so we can highlight bad out of sync
 	// gb versions in red below

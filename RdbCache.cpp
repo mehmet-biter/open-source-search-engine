@@ -438,7 +438,7 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	}
 	// time it -- debug
 	int64_t t = 0LL ;
-	if ( g_conf.m_logTimingDb ) t = gettimeofdayInMillisecondsLocal();
+	if ( g_conf.m_logTimingDb ) t = gettimeofdayInMilliseconds();
 	// reset this
 	if ( cachedTime ) *cachedTime = 0;
 	// look up in hash table
@@ -573,7 +573,7 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	if ( g_conf.m_logTimingDb )
 		log(LOG_TIMING,"db: cache: %s getRecord %" PRId32" bytes took %" PRId64" "
 		    "ms.",m_dbname,*recSize,
-		    gettimeofdayInMillisecondsLocal()-t);
+		    gettimeofdayInMilliseconds()-t);
 	// it was found, so return true
 	return true;
 }
@@ -714,7 +714,6 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	// bail if cache empty. maybe m_maxMem is 0.
 	if ( m_totalBufSize <= 0 ) return true;
 
-	//int64_t startTime = gettimeofdayInMillisecondsLocal();
 	if ( collnum < (collnum_t)0) gbshutdownLogicError();
 	if ( (int64_t)collnum >= m_maxColls ) gbshutdownLogicError();
 	// full key not allowed because we use that in markDeletedRecord()
@@ -722,7 +721,7 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 
 	// debug msg
 	int64_t t = 0LL ;
-	if ( g_conf.m_logTimingDb ) t = gettimeofdayInMillisecondsLocal();
+	if ( g_conf.m_logTimingDb ) t = gettimeofdayInMilliseconds();
 	// need space for record data
 	int32_t need = recSize1 + recSize2;
 
@@ -870,8 +869,8 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	// debug msg time
 	log(LOG_TIMING,"db: cache: %s addRecord %" PRId32" bytes took %" PRId64" "
 	    "ms this=0x%" PTRFMT" key.n1=%" PRIu32" n0=%" PRIu64,
-	    m_dbname, (int32_t)(p - start) , 
-	    gettimeofdayInMillisecondsLocal()-t,
+	    m_dbname, (int32_t)(p - start) ,
+	    gettimeofdayInMilliseconds()-t,
 	    (PTRTYPE)this,
 	    ((key96_t *)(&cacheKey))->n1 ,
 	    ((key96_t *)(&cacheKey))->n0 );

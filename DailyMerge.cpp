@@ -59,7 +59,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 	}
 
 	// get local time
-	int64_t nowLocalMS = gettimeofdayInMillisecondsLocal();
+	int64_t nowLocalMS = gettimeofdayInMilliseconds();
 	// get our hostid
 	int32_t hid = g_hostdb.m_myHost->m_hostId;
 	// if process only recently started (1 min ago or less)

@@ -331,7 +331,7 @@ bool Collectiondb::addNewColl ( const char *coll,
 
 	// . this will core if a host was dead and then when it came
 	//   back up host #0's parms.cpp told it to add a new coll
-	cr->m_diffbotCrawlStartTime = getTimeGlobalNoCore();
+	cr->m_diffbotCrawlStartTime = getTimeGlobal();
 	cr->m_diffbotCrawlEndTime   = 0;
 
 	// . just the basics on these for now
@@ -746,7 +746,7 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 	cr->m_collnum = newCollnum;
 
 	// update the timestamps since we are restarting/resetting
-	cr->m_diffbotCrawlStartTime = getTimeGlobalNoCore();
+	cr->m_diffbotCrawlStartTime = getTimeGlobal();
 	cr->m_diffbotCrawlEndTime   = 0;
 
 

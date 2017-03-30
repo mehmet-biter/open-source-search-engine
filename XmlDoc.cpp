@@ -661,7 +661,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		if ( spideredTime )
 			m_downloadEndTime = spideredTime;
 		else
-			m_downloadEndTime = gettimeofdayInMillisecondsGlobal();
+			m_downloadEndTime = gettimeofdayInMilliseconds();
 		// either way, validate it
 		m_downloadEndTimeValid = true;
 		// and need a legit mime
@@ -1180,7 +1180,7 @@ void XmlDoc::setStatus ( const char *s ) {
 
 	// log times to detect slowness
 	if ( timeIt  && m_statusMsgValid ) {
-		int64_t now = gettimeofdayInMillisecondsLocal();
+		int64_t now = gettimeofdayInMilliseconds();
 		if ( m_lastTimeStart == 0LL ) m_lastTimeStart = now;
 		int32_t took = now - m_lastTimeStart;
 		//if ( took > 100 )
@@ -6795,7 +6795,7 @@ int32_t *XmlDoc::getIp ( ) {
 	// update status msg
 	setStatus ( "getting ip" );
 
-	m_ipStartTime = gettimeofdayInMillisecondsGlobal();
+	m_ipStartTime = gettimeofdayInMilliseconds();
 
 	// assume valid! if reply handler gets g_errno set then m_masterLoop
 	// should see that and call the final callback
@@ -6820,7 +6820,7 @@ void gotIpWrapper ( void *state , int32_t ip ) {
 	// point to us
 	XmlDoc *THIS = (XmlDoc *)state;
 
-	THIS->m_ipEndTime = gettimeofdayInMillisecondsGlobal();
+	THIS->m_ipEndTime = gettimeofdayInMilliseconds();
 
 	logTrace( g_conf.m_logTraceXmlDoc, "Got IP [%s]. Took %" PRId64" msec", iptoa(ip), THIS->m_ipEndTime - THIS->m_ipStartTime);
 
@@ -8000,7 +8000,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	}
 
 	m_downloadStartTimeValid = true;
-	m_downloadStartTime = gettimeofdayInMillisecondsGlobal();
+	m_downloadStartTime = gettimeofdayInMilliseconds();
 
 	logTrace( g_conf.m_logTraceXmlDoc, "Calling msg13.getDoc" );
 
@@ -8087,7 +8087,7 @@ char **XmlDoc::gotHttpReply ( ) {
 	m_downloadStatusValid = true;
 
 	// update m_downloadEndTime if we should, used for sameIpWait
-	m_downloadEndTime      = gettimeofdayInMillisecondsGlobal();
+	m_downloadEndTime      = gettimeofdayInMilliseconds();
 	m_downloadEndTimeValid = true;
 
 	// make it so

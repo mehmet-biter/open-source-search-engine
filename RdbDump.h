@@ -31,7 +31,6 @@ public:
 	         BigFile *file,
 	         RdbBuckets *buckets, // optional buckets to dump
 	         RdbTree *tree, // optional tree to dump
-	         RdbIndex *treeIndex, // only present if buckets/tree is set
 	         RdbMap *map,
 	         RdbIndex *index,
 	         int32_t maxBufSize,
@@ -79,7 +78,6 @@ private:
 
 	RdbTree *m_tree;
 	RdbBuckets *m_buckets;
-	RdbIndex *m_treeIndex;
 	RdbMap *m_map;
 	RdbIndex *m_index;
 	int32_t m_maxBufSize;
