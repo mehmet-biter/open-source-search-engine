@@ -1266,9 +1266,8 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 		gbmemcpy ( &m_localCrawlInfo , sb.getBufStart(),sb.length() );
 
 	// if it had corrupted data from saving corrupted mem zero it out
-	CrawlInfo *stats = &m_localCrawlInfo;
 	// point to the stats for that host
-	int64_t *ss = (int64_t *)stats;
+	int64_t *ss = (int64_t *)&m_localCrawlInfo;
 	// are stats crazy?
 	bool crazy = false;
 	for (int32_t j = 0; j < NUMCRAWLSTATS; j++) {
