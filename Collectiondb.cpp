@@ -824,29 +824,6 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 	return true;
 }
 
-// a hack function
-static bool addCollToTable(const char *coll, collnum_t collnum) {
-	// readd it to the hashtable that maps name to collnum too
-	int64_t h64 = hash64n(coll);
-	g_collTable.set(8,sizeof(collnum_t), 256,NULL,0, false,"nhshtbl");
-	return g_collTable.addKey ( &h64 , &collnum );
-}
-
-void Collectiondb::hackCollectionForInjection(CollectionRec *cr) {
-	m_recPtrBuf.reserve(4);
-	m_recs = (CollectionRec **)m_recPtrBuf.getBufStart();
-	m_recs[0] = cr;
-
-	// right now this is just for the main collection
-	const char coll[] = "main";
-	addCollToTable(coll, (collnum_t)0);
-
-	// force RdbTree.cpp not to bitch about corruption
-	// assume we are only getting out collnum 0 recs i guess
-	m_numRecs = 1;
-}
-
-
 // get coll rec specified in the HTTP request
 CollectionRec *Collectiondb::getRec ( HttpRequest *r , bool useDefaultRec ) {
 	const char *coll = r->getString ( "c" );

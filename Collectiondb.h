@@ -79,8 +79,6 @@ class Collectiondb  {
 			  collnum_t newCollnum,
 			  bool purgeSeeds );
 
-	//used by main.cpp for injecting files
-	void hackCollectionForInjection(CollectionRec *cr);
 
 private:
 	// after main.cpp loads all rdb trees it calls this to remove
