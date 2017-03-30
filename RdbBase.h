@@ -97,6 +97,8 @@ class RdbBase {
 		return NULL;
 	}
 
+	void clearTreeIndex() { m_treeIndex.clear(); }
+
 	collnum_t  getCollnum() const { return m_collnum; }
 
 	const char *getDbName() const { return m_dbname; }
@@ -191,6 +193,10 @@ class RdbBase {
 	                           int32_t minToMerge);
 
 	void forceNextMerge() { m_nextMergeForced = true; }
+
+	
+	void setDumpingFileNumber(int n) { m_dumpingFileNumber = n; }
+	int getDumpingFileNumber() const { return m_dumpingFileNumber; }
 
 private:
 	bool parseFilename( const char* filename, int32_t *p_fileId, int32_t *p_fileId2,
@@ -350,6 +356,8 @@ private:
 
 	// we now determine when in merge mode
 	bool      m_isMerging;
+
+	int m_dumpingFileNumber;
 
 	// Record counts for files being merged. Calculated in attemptMerge() and then used
 	// for logging in incorporateMerge()

@@ -351,8 +351,6 @@ private:
 	// so only one save thread launches at a time
 	bool m_isSaving;
 
-	int32_t  m_fn;
-	
 	char m_treeAllocName[64]; //for memory used m_tree/m_buckets
 	char m_memAllocName[64]; //for memory used by m_mem
 

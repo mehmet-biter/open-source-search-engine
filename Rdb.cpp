@@ -51,7 +51,6 @@ Rdb::Rdb ( ) {
 	m_useHalfKeys = false;
 	m_urgent = false;
 	m_niceness = false;
-	m_fn = 0;
 	m_dumpCollnum = 0;
 	m_inDumpLoop = false;
 	m_rdbId = RDB_NONE;
@@ -1020,7 +1019,8 @@ bool Rdb::dumpTree() {
 	// clear this for dumpCollLoop()
 	g_errno = 0;
 	m_dumpErrno = 0;
-	m_fn = -1000;
+	for(int collnum=0; collnum<getNumBases(); collnum++)
+		getBase(collnum)->setDumpingFileNumber(-1000);
 
 	// this returns false if blocked, which means we're ok, so we ret true
 	if ( ! dumpCollLoop ( ) ) {
@@ -1101,15 +1101,16 @@ bool Rdb::dumpCollLoop ( ) {
 		}
 
 		// this file must not exist already, we are dumping the tree into it
-		m_fn = base->addNewFile();
-		if ( m_fn < 0 ) {
+		int fn = base->addNewFile();
+		if ( fn < 0 ) {
 			log( LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
 			return false;
 		}
+		base->setDumpingFileNumber(fn);
 
 		log(LOG_INFO,"build: Dumping to %s/%s for coll \"%s\".",
-		    base->getFile(m_fn)->getDir(),
-		    base->getFile(m_fn)->getFilename() ,
+		    base->getFile(fn)->getDir(),
+		    base->getFile(fn)->getFilename() ,
 		    g_collectiondb.getCollName ( m_dumpCollnum ) );
 
 		// what is the avg rec size?
@@ -1152,12 +1153,12 @@ bool Rdb::dumpCollLoop ( ) {
 		// . it returns false if blocked, true otherwise & sets g_errno on err
 		// . but we only return false on error here
 		if (!m_dump.set(base->getCollnum(),
-	                	base->getFile(m_fn),
+		                base->getFile(fn),
 	                	buckets,
 	                	tree,
 	                	base->getTreeIndex(),
-	                	base->getMap(m_fn),
-	                	base->getIndex(m_fn),
+		                base->getMap(fn),
+		                base->getIndex(fn),
 	                	bufSize, // write buf size
 	                	m_niceness, // niceness of 1 will NOT block
 	                	this, // state
@@ -1197,13 +1198,15 @@ hadError:
 
 	// . if we wrote nothing, remove the file
 	// . if coll was deleted under us, base will be NULL!
-	if ( base &&   (! base->getFile(m_fn)->doesExist() ||
-	     base->getFile(m_fn)->getFileSize() <= 0) ) {
-		log("build: File %s is zero bytes, removing from memory.",base->getFile(m_fn)->getFilename());
-		base->buryFiles ( m_fn , m_fn+1 );
+	if(base) {
+		int fn = base->getDumpingFileNumber();
+		if(!base->getFile(fn)->doesExist() || base->getFile(fn)->getFileSize() <= 0 ) {
+			log("build: File %s is zero bytes, removing from memory.",base->getFile(fn)->getFilename());
+			base->buryFiles ( fn , fn+1 );
 
-		// nothing is dumped. we still need to regenerate index
-		base->submitGlobalIndexJob(false, -1);
+			// nothing is dumped. we still need to regenerate index
+			base->submitGlobalIndexJob(false, -1);
+		}
 	}
 
 	// game over, man
@@ -1221,17 +1224,6 @@ void Rdb::doneDumpingCollWrapper ( void *state ) {
 	Rdb *THIS = (Rdb *)state;
 
 	logTrace( g_conf.m_logTraceRdb, "dbname=%s collnum=%d", THIS->m_dbname, THIS->m_dumpCollnum );
-
-	if (g_errno == 0) {
-		RdbBase *base = THIS->getBase(THIS->m_dumpCollnum);
-		if (base) {
-			if (THIS->isUseIndexFile()) {
-				base->submitGlobalIndexJob(true, THIS->m_fn);
-			} else {
-				base->markNewFileReadable();
-			}
-		}
-	}
 
 	// return if the loop blocked
 	if ( ! THIS->dumpCollLoop() ) {
@@ -1255,6 +1247,27 @@ void Rdb::doneDumping ( ) {
 		else
 			m_buckets.clear();
 		m_mem.clear();
+		
+		for(int collnum=0; collnum<getNumBases(); collnum++) {
+			RdbBase *base = getBase(collnum);
+			if (base) {
+				int fn = base->getDumpingFileNumber();
+				if (isUseIndexFile()) {
+					base->clearTreeIndex();
+					base->submitGlobalIndexJob(true, fn);
+				} else {
+					base->markNewFileReadable();
+				}
+			}
+		}
+	} else {
+		if(g_collectiondb.getNumRecsUsed()>1)
+			log(LOG_ERROR,"db: Error encountered while dumping %s tree to file: %s. "
+			    "You have multiple collections and this may lead to duplicated data until the error conditions has been cleared and GB restarted.",
+			    m_dbname, mstrerror(m_dumpErrno));
+		else
+			log(LOG_ERROR,"db: Error encountered while dumping %s tree to file: %s",
+			    m_dbname, mstrerror(m_dumpErrno));
 	}
 
 	// . tell RdbDump it is done
