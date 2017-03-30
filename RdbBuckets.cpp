@@ -523,15 +523,17 @@ bool RdbBucket::selfTest (int32_t bucketnum, const char* prevKey) {
 	}
 
 	for (int32_t i = 0; i < m_numKeys; i++) {
-		if (ks == 18) {
-			if (KEYNEG(kk) && Posdb::getTermId(kk) != 0) {
-				log(LOG_ERROR, "db: key is negative!!!");
-				log(LOG_ERROR, "db:  curr key....: %s", KEYSTR(kk, ks));
-				printBucket(-1);
-				return false;
+		if(g_conf.m_noInMemoryPosdbMerge) {
+			if (ks == 18) {
+				if (KEYNEG(kk) && Posdb::getTermId(kk) != 0) {
+					log(LOG_ERROR, "db: key is negative!!!");
+					log(LOG_ERROR, "db:  curr key....: %s", KEYSTR(kk, ks));
+					printBucket(-1);
+					return false;
+				}
 			}
-		}		
-	    if (i > 0 && KEYCMP(last, kk, ks) > 0) {
+		}
+		if (i > 0 && KEYCMP(last, kk, ks) > 0) {
 
 			log(LOG_ERROR, "db: bucket's last key was out of order!!!!! num keys: %" PRId32" ks=%" PRId32" key#=%" PRId32,
 			    m_numKeys, ks, i);

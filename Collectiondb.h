@@ -478,7 +478,6 @@ class CollectionRec {
 
 	// Rdb.cpp uses this after deleting an RdbBase and adding new one
 	void           setBasePtr(rdbid_t rdbId, class RdbBase *base);
-	class RdbBase *getBasePtr(rdbid_t rdbId);
 
  private:
 	// . now chuck this into CollectionRec instead of having a fixed
