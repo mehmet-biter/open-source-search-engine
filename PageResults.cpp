@@ -866,14 +866,12 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 	// show current time
 	if ( si->m_format == FORMAT_XML ) {
-		int64_t globalNowMS = localToGlobalTimeMilliseconds(nowMS);
 		sb->safePrintf("\t<currentTimeUTC>%" PRIu32"</currentTimeUTC>\n",
-			      (uint32_t)(globalNowMS/1000));
+			      (uint32_t)(nowMS/1000));
 	} 
 	else if ( st->m_header && si->m_format == FORMAT_JSON ) {
-	    int64_t globalNowMS = localToGlobalTimeMilliseconds(nowMS);
 	    sb->safePrintf("\"currentTimeUTC\":%" PRIu32",\n",
-			   (uint32_t)(globalNowMS/1000));
+			   (uint32_t)(nowMS/1000));
 	}
 
 	// show result validity time
