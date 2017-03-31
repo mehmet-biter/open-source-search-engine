@@ -660,11 +660,7 @@ void SpiderCache::save ( bool useThread ) {
 		// log it for now
 		log("spider: saving waiting tree for cn=%" PRId32,(int32_t)i);
 		// returns false if it blocked, callback will be called
-		tree->fastSave ( dir, // g_hostdb.m_dir ,
-				 filename ,
-				 useThread ,
-				 NULL,//this ,
-				 NULL);//doneSavingWrapper );
+		tree->fastSave_unlocked(dir, filename, useThread, NULL, NULL);
 	}
 }
 
@@ -673,8 +669,6 @@ bool SpiderCache::needsSave ( ) {
 		SpiderColl *sc = getSpiderCollIffNonNull(i);//m_spiderColls[i];
 		if ( ! sc ) continue;
 		if ( sc->m_waitingTree.needsSave() ) return true;
-		// also the doleIpTable
-		//if ( sc->m_doleIpTable.m_needsSave ) return true;
 	}
 	return false;
 }
@@ -690,10 +684,8 @@ void SpiderCache::reset ( ) {
 		sc->reset();
 		mdelete ( sc , sizeof(SpiderColl) , "SpiderColl" );
 		delete ( sc );
-		//m_spiderColls[i] = NULL;
 		cr->m_spiderColl = NULL;
 	}
-	//m_numSpiderColls = 0;
 }
 
 SpiderColl *SpiderCache::getSpiderCollIffNonNull ( collnum_t collnum ) {
@@ -1314,7 +1306,7 @@ static bool sendPage(State11 *st) {
 	sb.safePrintf("</b> (current time = %" PRIu64")(totalcount=%" PRId32")"
 		      "(waittablecount=%" PRId32")",
 		      timems,
-		      sc->m_waitingTree.getNumUsedNodes(),
+		          sc->m_waitingTree.getNumUsedNodes(),
 		      sc->m_waitingTable.getNumUsedSlots());
 
 	double a = (double)Spiderdb::getUrlHash48 ( &sc->m_firstKey );
@@ -1334,39 +1326,36 @@ static bool sendPage(State11 *st) {
 	sb.safePrintf("<td><b>firstip</b></td>\n");
 	sb.safePrintf("</tr>\n");
 	// the the waiting tree
-	int32_t node = sc->m_waitingTree.getFirstNode();
+
 	int32_t count = 0;
-	//uint64_t nowMS = gettimeofdayInMillisecondsGlobal();
-	for ( ; node >= 0 ; node = sc->m_waitingTree.getNextNode(node) ) {
-		// get key
-		const key96_t *key = reinterpret_cast<const key96_t*>(sc->m_waitingTree.getKey(node));
-		// get ip from that
-		int32_t firstIp = (key->n0) & 0xffffffff;
-		// get the timedocs
-		uint64_t spiderTimeMS = key->n1;
-		// shift upp
-		spiderTimeMS <<= 32;
-		// or in
-		spiderTimeMS |= (key->n0 >> 32);
-		const char *note = "";
-		// if a day more in the future -- complain
-		// no! we set the repeat crawl to 3000 days for crawl jobs that
-		// do not repeat...
-		// if ( spiderTimeMS > nowMS + 1000 * 86400 )
-		// 	note = " (<b><font color=red>This should not be "
-		// 		"this far into the future. Probably a corrupt "
-		// 		"SpiderRequest?</font></b>)";
-		// get the rest of the data
-		sb.safePrintf("<tr bgcolor=#%s>"
-			      "<td>%" PRId64"%s</td>"
-			      "<td>%s</td>"
-			      "</tr>\n",
-			      LIGHT_BLUE,
-			      (int64_t)spiderTimeMS,
-			      note,
-			      iptoa(firstIp));
-		// stop after 20
-		if ( ++count == 20 ) break;
+	{
+		ScopedLock sl(sc->m_waitingTree.getLock());
+		for (int32_t node = sc->m_waitingTree.getFirstNode_unlocked(); node >= 0;
+		     node = sc->m_waitingTree.getNextNode_unlocked(node)) {
+			// get key
+			const key96_t *key = reinterpret_cast<const key96_t *>(sc->m_waitingTree.getKey_unlocked(node));
+			// get ip from that
+			int32_t firstIp = (key->n0) & 0xffffffff;
+			// get the timedocs
+			uint64_t spiderTimeMS = key->n1;
+			// shift upp
+			spiderTimeMS <<= 32;
+			// or in
+			spiderTimeMS |= (key->n0 >> 32);
+			const char *note = "";
+
+			// get the rest of the data
+			sb.safePrintf("<tr bgcolor=#%s>"
+				              "<td>%" PRId64"%s</td>"
+				              "<td>%s</td>"
+				              "</tr>\n",
+			              LIGHT_BLUE,
+			              (int64_t)spiderTimeMS,
+			              note,
+			              iptoa(firstIp));
+			// stop after 20
+			if (++count == 20) break;
+		}
 	}
 	// ...
 	if ( count ) 

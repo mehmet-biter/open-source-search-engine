@@ -6,6 +6,7 @@
 #include "Titledb.h" // DOCID_MASK
 #include "Msg40.h" // MAXDOCIDSTOCOMPUTE
 #include "Sanity.h"
+#include "ScopedLock.h"
 
 
 TopTree::TopTree() { 
@@ -300,17 +301,19 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	int32_t n;
 	// delete this node
 	SPTRTYPE deleteMe = -1;
+
+	ScopedLock sl(m_t2.getLock());
 	// do not even try to add if ridiculous count for this domain
 	if ( m_domCount[domHash] >= m_ridiculousMax ) {
 		// sanity check
 		//if ( min < 0 ) gbshutdownLogicError();
 		// if we are lesser or dup of min, just don't add!
-		if ( k <= *(reinterpret_cast<const key96_t*>(m_t2.getKey(min))) ) return false;
+		if ( k <= *(reinterpret_cast<const key96_t*>(m_t2.getKey_unlocked(min))) ) return false;
 		// . add ourselves. use 0 for collnum.
 		// . dataPtr is not really a ptr, but the node
-		n = m_t2.addNode ( 0 , (const char *)&k , NULL , 4 );
+		n = m_t2.addNode_unlocked ( 0 , (const char *)&k , NULL , 4 );
 		// the next node before the current min will be the next min
-		int32_t next = m_t2.getNextNode(min);
+		int32_t next = m_t2.getNextNode_unlocked(min);
 		// sanity check
 		//if ( next < 0 ) gbshutdownLogicError();
 		// sanity check
@@ -323,31 +326,31 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// get his "node number" in the top tree, "nn" so we can
 		// delete him from the top tree as well as m_t2. it is 
 		// "hidden" in the dataPtr
-		deleteMe = (SPTRTYPE)m_t2.getData(min);
+		deleteMe = (SPTRTYPE)m_t2.getData_unlocked(min);
 		// delete him from the top tree now as well
-		//deleteNode ( nn , domHash );
+		//deleteNode_unlocked ( nn , domHash );
 		// then delete him from the m_t2 tree
-		m_t2.deleteNode(min, false);
+		m_t2.deleteNode_unlocked(min, false);
 		//logf(LOG_DEBUG,"deleting1 %" PRId32,min);
 	}
 	// if we have not violated the ridiculous max, just add ourselves
 	else if ( m_doSiteClustering ) {
-		n = m_t2.addNode ( 0 , (const char *)&k , NULL , 4 );
+		n = m_t2.addNode_unlocked ( 0 , (const char *)&k , NULL , 4 );
 		// sanity check
 		//if ( min > 0 ) {
 		//	key96_t *kp1 = (key96_t *)m_t2.getKey(min);
 		//	if ( (kp1->n1) >>24 != domHash ) gbshutdownLogicError();
 		//}
 		// are we the new min? if so, assign it
-		if ( min == -1 || k < *(reinterpret_cast<const key96_t*>(m_t2.getKey(min))) )
+		if ( min == -1 || k < *(reinterpret_cast<const key96_t*>(m_t2.getKey_unlocked(min))) )
 			m_domMinNode[domHash] = n;
 	}
 
 	if ( m_doSiteClustering ) {
 		// update the dataPtr so every node in m_t2 has a reference
 		// to the equivalent node in this top tree
-		if ( n < 0 || n > m_t2.getNumNodes() ) gbshutdownLogicError();
-		m_t2.setData(n, (char *)(PTRTYPE)tnn);
+		if ( n < 0 || n > m_t2.getNumNodes_unlocked() ) gbshutdownLogicError();
+		m_t2.setData_unlocked(n, (char *)(PTRTYPE)tnn);
 	}
 
 	//
@@ -423,16 +426,16 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		if ( ! m_doSiteClustering ) continue;
 
 		// get the node from t2
-		int32_t min = m_t2.getNode ( 0 , (char *)&k );
+		int32_t min = m_t2.getNode_unlocked(0, (char *)&k);
 		// sanity check. LEAVE THIS HERE!
 		if ( min < 0 ) { break; }
 		// sanity check
 		//key96_t *kp1 = (key96_t *)m_t2.getKey(min);
 		//if ( (kp1->n1) >>24 != domHash2 ) gbshutdownLogicError();
 		// get next node from t2
-		int32_t next = m_t2.getNextNode ( min );
+		int32_t next = m_t2.getNextNode_unlocked(min);
 		// delete from m_t2
-		m_t2.deleteNode(min, false);
+		m_t2.deleteNode_unlocked(min, false);
 		// skip if not th emin
 		if ( m_domMinNode[domHash2] != min ) continue;
 		// if we were the last, that's it
@@ -491,7 +494,7 @@ void TopTree::deleteNode ( int32_t i , uint8_t domHash ) {
 	// . get a node whose key is just to the right or left of i's key
 	// . get i's right kid
 	// . then get that kid's LEFT MOST leaf-node descendant
-	// . this little routine is stolen from getNextNode(i)
+	// . this little routine is stolen from getNextNode_unlocked(i)
 	// . try to pick a kid from the right the same % of time as from left
 	if ( ( m_pickRight     && RIGHT(j) >= 0 ) || 
 	     ( LEFT(j)   < 0 && RIGHT(j) >= 0 )  ) {
@@ -581,7 +584,7 @@ void TopTree::deleteNode ( int32_t i , uint8_t domHash ) {
 	PARENT(i) = -2;
 
 	// our depth becomes that of the node we replaced, unless moving j
-	// up to i decreases the total depth, in which case setDepths() fixes
+	// up to i decreases the total depth, in which case setDepths_unlocked() fixes
 	DEPTH ( j ) = DEPTH ( i );
 	// . recalculate depths starting at old parent of j
 	// . stops at the first node to have the correct depth
@@ -777,7 +780,7 @@ int32_t TopTree::rotateRight ( int32_t i ) {
 	LEFT  ( A ) = X;
 	// . compute A's depth from it's X and B kids
 	// . it should be one less if Xdepth smaller than Wdepth
-	// . might set DEPTH(A) to computeDepth(A) if we have problems
+	// . might set DEPTH(A) to computeDepth_unlocked(A) if we have problems
 	if ( Xdepth < Wdepth ) DEPTH ( A ) -= 2;
 	else                   DEPTH ( A ) -= 1;
 	// N gains a depth iff W and X were of equal depth
@@ -873,7 +876,7 @@ int32_t TopTree::rotateLeft ( int32_t i ) {
 	RIGHT  ( A ) = X;
 	// . compute A's depth from it's X and B kids
 	// . it should be one less if Xdepth smaller than Wdepth
-	// . might set DEPTH(A) to computeDepth(A) if we have problems
+	// . might set DEPTH(A) to computeDepth_unlocked(A) if we have problems
 	if ( Xdepth < Wdepth ) DEPTH ( A ) -= 2;
 	else                   DEPTH ( A ) -= 1;
 	// N gains a depth iff W and X were of equal depth

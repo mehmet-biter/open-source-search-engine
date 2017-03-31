@@ -171,7 +171,8 @@ bool Rdb::init(const char *dbname,
 
 	if(m_useTree) {
 		sprintf(m_treeAllocName,"tree-%s",m_dbname);
-		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, m_dbname, m_ks, m_rdbId)) {
+		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, m_dbname, m_ks,
+		                m_rdbId)) {
 			log( LOG_ERROR, "db: Failed to set tree." );
 			return false;
 		}
@@ -686,7 +687,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 	if (m_useTree) {
-		if (!m_tree.fastSave(getDir(), m_dbname, useThread, this, doneSavingWrapper)) {
+		if (!m_tree.fastSave_unlocked(getDir(), m_dbname, useThread, this, doneSavingWrapper)) {
 			return false;
 		}
 	} else {
@@ -773,7 +774,7 @@ bool Rdb::saveTree ( bool useThread ) {
 		if (m_tree.needsSave()) {
 			log( LOG_DEBUG, "db: saving tree %s", dbn );
 		}
-		return m_tree.fastSave ( getDir(), m_dbname, useThread, NULL, NULL );
+		return m_tree.fastSave_unlocked(getDir(), m_dbname, useThread, NULL, NULL);
 	} else {
 		if (m_buckets.needsSave()) {
 			log( LOG_DEBUG, "db: saving buckets %s", dbn );
@@ -853,7 +854,7 @@ bool Rdb::loadTree ( ) {
 	bool status = false ;
 	if ( treeExists ) {
 		// load the table with file named "THISDIR/saved"
-		status = m_tree.fastLoad ( &file , &m_mem ) ;
+		status = m_tree.fastLoad(&file, &m_mem) ;
 		// we close it now instead of him
 	}
 	
@@ -991,17 +992,20 @@ bool Rdb::dumpTree() {
 	int64_t start = gettimeofdayInMilliseconds();
 
 	// do not do chain testing because that is too slow
-	if ( m_useTree && ! m_tree.checkTree ( false /* printMsgs?*/, false/*chain?*/) ) {
-		log( LOG_ERROR, "db: %s tree was corrupted in memory. Trying to fix. Your memory is probably bad. "
-		     "Please replace it.", m_dbname);
+	if (m_useTree) {
+		ScopedLock sl(m_tree.getLock());
+		if (!m_tree.checkTree_unlocked(false, false)) {
+			log(LOG_ERROR, "db: %s tree was corrupted in memory. Trying to fix. Your memory is probably bad. "
+				"Please replace it.", m_dbname);
 
-		// if fix failed why even try to dump?
-		if ( ! m_tree.fixTree() ) {
-			// only try to dump every 3 seconds
-			s_lastTryTime = getTime();
-			log( LOG_ERROR, "db: Could not fix in memory data for %s. Abandoning dump.", m_dbname );
-			logTrace( g_conf.m_logTraceRdb, "END. %s: Unable to fix tree. Returning false", m_dbname );
-			return false;
+			// if fix failed why even try to dump?
+			if (!m_tree.fixTree_unlocked()) {
+				// only try to dump every 3 seconds
+				s_lastTryTime = getTime();
+				log(LOG_ERROR, "db: Could not fix in memory data for %s. Abandoning dump.", m_dbname);
+				logTrace(g_conf.m_logTraceRdb, "END. %s: Unable to fix tree. Returning false", m_dbname);
+				return false;
+			}
 		}
 	}
 
@@ -1074,11 +1078,13 @@ bool Rdb::dumpCollLoop ( ) {
 
 		// before we create the file, see if tree has anything for this coll
 		if(m_useTree) {
+			ScopedLock sl(m_tree.getLock());
+
 			const char *k = KEYMIN();
-			int32_t nn = m_tree.getNextNode ( m_dumpCollnum , k );
+			int32_t nn = m_tree.getNextNode_unlocked(m_dumpCollnum, k);
 			if ( nn < 0 )
 				continue;
-			if ( m_tree.getCollnum(nn) != m_dumpCollnum )
+			if (m_tree.getCollnum_unlocked(nn) != m_dumpCollnum )
 				continue;
 		} else {
 			if(!m_buckets.collExists(m_dumpCollnum))
@@ -1858,7 +1864,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 	} else {
 		if (m_useTree) {
 			// . TODO: save this tree-walking state for adding the node!!!
-			// . TODO: use something like getNode(key,&lastNode) then addNode (lastNode,key,dataCopy,dataSize)
+			// . TODO: use something like getNode_unlocked(key,&lastNode) then addNode (lastNode,key,dataCopy,dataSize)
 			// . #1) if we're adding a positive key, replace negative counterpart
 			//       in the tree, because we'll override the positive rec it was
 			//       deleting
@@ -1924,7 +1930,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 	}
 
 	if (m_useTree) {
-		if (m_tree.addNode(collnum, key, dataCopy, dataSize) < 0) {
+		if (!m_tree.addNode(collnum, key, dataCopy, dataSize)) {
 			// enhance the error message
 			const char *ss = m_tree.isSaving() ? " Tree is saving." : "";
 			log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
@@ -2439,6 +2445,7 @@ void Rdb::cleanTree() {
 // memory from deleted nodes. works by condensing the used memory.
 // returns how much we reclaimed.
 int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
+	ScopedLock sl(m_tree.getLock());
 
 	log("rdb: reclaiming tree mem for doledb");
 
@@ -2461,19 +2468,20 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 	int32_t occupied = 0;
 
 	HashTableX ht;
-	if (!ht.set(4, 4, m_tree.getNumUsedNodes() * 2, NULL, 0, false, "trectbl", true)) {// useMagic? yes..
+	if (!ht.set(4, 4, m_tree.getNumUsedNodes_unlocked() * 2, NULL, 0, false, "trectbl", true)) {// useMagic? yes..
 		return -1;
 	}
 
 	int32_t dups = 0;
 
 	// mark the data of unoccupied nodes somehow
-	int32_t nn = m_tree.getMinUnusedNode();
+	int32_t nn = m_tree.getMinUnusedNode_unlocked();
 	for ( int32_t i = 0 ; i < nn ; i++ ) {
 		// skip empty nodes in tree
-		if ( m_tree.isEmpty(i) ) {marked++; continue; }
+		if (m_tree.isEmpty_unlocked(i) ) {marked++; continue; }
+
 		// get data ptr
-		const char *data = m_tree.getData(i);
+		const char *data = m_tree.getData_unlocked(i);
 
 		// sanity, ensure legit
 		if ( data < pstart ) { g_process.shutdownAbort(true); }
@@ -2497,10 +2505,10 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 		occupied++;
 	}
 
-	if ( occupied + dups != m_tree.getNumUsedNodes() ) 
+	if ( occupied + dups != m_tree.getNumUsedNodes_unlocked() )
 		log("rdb: reclaim mismatch1");
 
-	if ( ht.getNumSlotsUsed() + dups != m_tree.getNumUsedNodes() )
+	if ( ht.getNumSlotsUsed() + dups != m_tree.getNumUsedNodes_unlocked() )
 		log("rdb: reclaim mismatch2");
 
 	int32_t skipped = 0;
@@ -2558,16 +2566,16 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 	// now update data ptrs in the tree, m_data[]
 	for ( int i = 0 ; i < nn ; i++ ) {
 		// skip empty nodes in tree
-		if ( m_tree.isEmpty(i)) continue;
+		if (m_tree.isEmpty_unlocked(i)) continue;
 		// update the data otherwise
-		const char *data = m_tree.getData(i);
+		const char *data = m_tree.getData_unlocked(i);
 		// sanity, ensure legit
 		if ( data < pstart ) { g_process.shutdownAbort(true); }
 		int32_t offset = data - pstart;
 		int32_t *newOffsetPtr = (int32_t *)ht.getValue ( &offset );
 		if ( ! newOffsetPtr ) { g_process.shutdownAbort(true); }
 		char *newData = pstart + *newOffsetPtr;
-		m_tree.setData(i, newData);
+		m_tree.setData_unlocked(i, newData);
 	}
 
 	log("rdb: reclaimed %" PRId32" bytes after scanning %" PRId32" "

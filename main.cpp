@@ -1759,7 +1759,7 @@ int main2 ( int argc , char *argv[] ) {
 		log("db: -- Read Only Mode Set. Can Not Add New Data. --");
 
 	// . collectiondb, does not use rdb, loads directly from disk
-	// . do this up here so RdbTree::fixTree() can fix RdbTree::m_collnums
+	// . do this up here so RdbTree::fixTree_unlocked() can fix RdbTree::m_collnums
 	// . this is a fake init, cuz we pass in "true"
 	if ( ! g_collectiondb.loadAllCollRecs() ) {
 		log( LOG_ERROR, "db: Collectiondb load failed." );
@@ -2940,7 +2940,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 
 void dumpWaitingTree (const char *coll ) {
 	RdbTree wt;
-	if (!wt.set(0,-1,20000000,true,"waittree2", "waitingtree",sizeof(key96_t))) {
+	if (!wt.set(0, -1, 20000000, true, "waittree2", "waitingtree", sizeof(key96_t))) {
 		return;
 	}
 
@@ -2955,12 +2955,11 @@ void dumpWaitingTree (const char *coll ) {
 	bool treeExists = file.doesExist() > 0;
 	// load the table with file named "THISDIR/saved"
 	RdbMem wm;
-	if ( treeExists && ! wt.fastLoad(&file,&wm) ) return;
+	if ( treeExists && !wt.fastLoad(&file, &wm) ) return;
 	// the the waiting tree
-	int32_t node = wt.getFirstNode();
-	for ( ; node >= 0 ; node = wt.getNextNode(node) ) {
+	for (int32_t node = wt.getFirstNode_unlocked(); node >= 0; node = wt.getNextNode_unlocked(node)) {
 		// get key
-		const key96_t *key = reinterpret_cast<const key96_t*>(wt.getKey(node));
+		const key96_t *key = reinterpret_cast<const key96_t*>(wt.getKey_unlocked(node));
 		// get ip from that
 		int32_t firstIp = (key->n0) & 0xffffffff;
 		// get the time
@@ -2970,9 +2969,7 @@ void dumpWaitingTree (const char *coll ) {
 		// or in
 		spiderTimeMS |= (key->n0 >> 32);
 		// get the rest of the data
-		fprintf(stdout,"time=%" PRIu64" firstip=%s\n",
-			spiderTimeMS,
-			iptoa(firstIp));
+		fprintf(stdout,"time=%" PRIu64" firstip=%s\n", spiderTimeMS, iptoa(firstIp));
 	}
 }
 
