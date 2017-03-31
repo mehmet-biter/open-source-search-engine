@@ -316,6 +316,7 @@ public:
 	bool are_new_jobs_allowed() const {
 		return new_jobs_allowed && !no_threads;
 	}
+	void cancel_all_jobs_for_shutdown();
 	
 	unsigned num_queued_jobs() const;
 	
@@ -530,6 +531,31 @@ bool JobScheduler_impl::is_reading_file(const BigFile *bf)
 }
 
 
+void JobScheduler_impl::cancel_all_jobs_for_shutdown() {
+	ScopedLock sl(mtx);
+	while(!cpu_job_queue.empty()) {
+		exit_set.push_back(std::make_pair(cpu_job_queue.back(),job_exit_program_exit));
+		cpu_job_queue.pop_back();
+	}
+	while(!io_job_queue.empty()) {
+		exit_set.push_back(std::make_pair(io_job_queue.back(),job_exit_program_exit));
+		io_job_queue.pop_back();
+	}
+	while(!external_job_queue.empty()) {
+		exit_set.push_back(std::make_pair(external_job_queue.back(),job_exit_program_exit));
+		external_job_queue.pop_back();
+	}
+	while(!file_meta_job_queue.empty()) {
+		exit_set.push_back(std::make_pair(file_meta_job_queue.back(),job_exit_program_exit));
+		file_meta_job_queue.pop_back();
+	}
+	while(!merge_job_queue.empty()) {
+		exit_set.push_back(std::make_pair(merge_job_queue.back(),job_exit_program_exit));
+		merge_job_queue.pop_back();
+	}
+}
+
+
 
 unsigned JobScheduler_impl::num_queued_jobs() const
 {
@@ -718,6 +744,12 @@ bool JobScheduler::are_new_jobs_allowed() const
 		return impl->are_new_jobs_allowed();
 	else
 		return false;
+}
+
+
+void JobScheduler::cancel_all_jobs_for_shutdown() {
+	if(impl)
+		impl->cancel_all_jobs_for_shutdown();
 }
 
 

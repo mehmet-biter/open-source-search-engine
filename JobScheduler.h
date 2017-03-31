@@ -111,6 +111,8 @@ public:
 	void disallow_new_jobs();
 	bool are_new_jobs_allowed() const;
 	
+	void cancel_all_jobs_for_shutdown();
+	
 	unsigned num_queued_jobs() const;
 	
 	void cleanup_finished_jobs();
