@@ -10,9 +10,7 @@
 #include "types.h"
 #include <inttypes.h>
 
-class RdbTree;
 class Rdb;
-
 
 class RdbMem {
 
