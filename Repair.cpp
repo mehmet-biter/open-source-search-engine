@@ -236,9 +236,7 @@ void Repair::repairWrapper(int fd, void *state) {
 	if ( g_repairMode == REPAIR_MODE_2 ) {
 		// we are still waiting on some guy if this is <= 1
 		if ( g_pingServer.getMinRepairMode() < REPAIR_MODE_2 ) return;
-		// wait for others to sync clocks, lest xmldoc cores when
-		// it calls getTimeGlobal() like in getNewTagBuf()
-		if ( ! isClockInSync() ) return;
+
 		// . this will return true if everything is saved to disk that
 		//   needs to be, otherwise false if waiting on an rdb to finish
 		//   saving

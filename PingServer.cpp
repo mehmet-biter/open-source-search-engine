@@ -296,7 +296,6 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	if ( g_dailyMerge.m_mergeMode    == 0 ) flags |= PFLAG_MERGEMODE0;
 	if ( g_dailyMerge.m_mergeMode ==0 || g_dailyMerge.m_mergeMode == 6 )
 		flags |= PFLAG_MERGEMODE0OR6;
-	if ( ! isClockInSync() ) flags |= PFLAG_OUTOFSYNC;
 
 	uint8_t rv8 = (uint8_t)g_recoveryLevel;
 	if ( g_recoveryLevel > 255 ) rv8 = 255;

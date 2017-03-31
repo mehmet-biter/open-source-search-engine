@@ -1424,13 +1424,6 @@ bool Rdb::addList(collnum_t collnum, RdbList *list, bool checkForRoom) {
 	}
 	// sanity check
 	if ( list->getKeySize() != m_ks ) { g_process.shutdownAbort(true); }
-	// we now call getTimeGlobal() so we need to be in sync with host #0
-	if ( ! isClockInSync () ) {
-		// log("rdb: can not add data because clock not in sync with "
-		//     "host #0. issuing try again reply.");
-		g_errno = ETRYAGAIN; 
-		return false;
-	}
 
 	// if we are well into repair mode, level 2, do not add anything
 	// to spiderdb or titledb... that can mess up our titledb scan.
@@ -1644,8 +1637,6 @@ bool Rdb::hasRoom(RdbList *list) {
 
 
 bool Rdb::canAdd() const {
-	if(!isClockInSync())
-		return false;
 	if(!g_process.m_powerIsOn)
 		return false;
 	if(!isWritable())

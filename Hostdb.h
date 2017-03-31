@@ -38,7 +38,6 @@ enum {
 #define PFLAG_REBALANCING    0x20
 #define PFLAG_FOREIGNRECS    0x40
 #define PFLAG_RECOVERYMODE   0x80
-#define PFLAG_OUTOFSYNC      0x100
 
 #define HT_GRUNT   0x01
 #define HT_SPARE   0x02

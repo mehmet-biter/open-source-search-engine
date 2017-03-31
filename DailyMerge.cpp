@@ -53,11 +53,6 @@ void DailyMerge::dailyMergeLoop ( ) {
 		return;
 	}
 
-	// wait for clock to be synced with host #0
-	if ( ! isClockInSync() ) {
-		return;
-	}
-
 	// get local time
 	int64_t nowLocalMS = gettimeofdayInMilliseconds();
 	// get our hostid

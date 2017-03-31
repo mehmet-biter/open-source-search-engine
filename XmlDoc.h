@@ -407,8 +407,6 @@ public:
 	int32_t *getDownloadStatus ( ) ;
 	int64_t *getDownloadEndTime ( ) ;
 	int16_t *getHttpStatus ( );
-	char waitForTimeSync ( ) ;
-	bool m_alreadyRegistered;
 	class HttpMime *getMime () ;
 	char **getContent ( ) ;
 	uint8_t *getContentType ( ) ;

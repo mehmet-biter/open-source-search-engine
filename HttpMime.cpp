@@ -1026,9 +1026,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 		enc[0] = '\0';
 	// get the time now
 	//time_t now = getTimeGlobal();
-	time_t now;
-	if ( isClockInSync() ) now = getTimeGlobal();
-	else                   now = getTimeLocal();
+	time_t now = getTime();
 	// get the greenwhich mean time (GMT)
 	char ns[128];
 	struct tm tm_buf;

@@ -227,17 +227,6 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 	// skip if udp table is full
 	if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) return;
 
-	// wait for clock to sync with host #0
-	if ( ! isClockInSync() ) { 
-		// let admin know why we are not spidering
-		static bool s_printed = false;
-		if ( ! s_printed ) {
-			logf(LOG_DEBUG,"spider: NOT SPIDERING until clock is in sync with host #0.");
-			s_printed = true;
-		}
-		return;
-	}
-
 	static int32_t s_count = -1;
 	// count these calls
 	s_count++;
@@ -1203,16 +1192,7 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	// SpiderCache.cpp. We don't want to freeze domain for a int32_t time
 	// because we think we have to wait until tomorrow before we can
 	// spider it.
-	if ( ! isClockInSync() ) { 
-		// let admin know why we are not spidering
-		static bool s_printed = false;
-		if ( ! s_printed ) {
-			logf(LOG_DEBUG,"spider: NOT SPIDERING until clock "
-			     "is in sync with host #0.");
-			s_printed = true;
-		}
-		return true;
-	}
+
 	// turned off?
 	if ( ( (! g_conf.m_spideringEnabled ||
 		// or if trying to exit

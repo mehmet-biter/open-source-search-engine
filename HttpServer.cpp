@@ -1239,9 +1239,8 @@ bool HttpServer::sendSuccessReply ( GigablastRequest *gr , const char *addMsg ) 
 
 bool HttpServer::sendSuccessReply ( TcpSocket *s , char format, const char *addMsg) {
 	// get time in secs since epoch
-	time_t now ;
-	if ( isClockInSync() ) now = getTimeGlobal();
-	else                   now = getTimeLocal();
+	time_t now = getTime();
+
 	// . buffer for the MIME request and brief html err msg
 	// . NOTE: ctime appends a \n to the time, so we don't need to
 	StackBuf<1524> sb;
@@ -1312,9 +1311,7 @@ bool HttpServer::sendErrorReply ( GigablastRequest *gr ) {
 	int32_t error = g_errno;
 	const char *errmsg = mstrerror(error);
 
-	time_t now ;//= getTimeGlobal();
-	if ( isClockInSync() ) now = getTimeGlobal();
-	else                   now = getTimeLocal();
+	time_t now = getTime();
 
 	int32_t format = gr->m_hr.getReplyFormat();
 	StackBuf<1524> sb;
@@ -1387,9 +1384,7 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 	if ( strncasecmp(errmsg,"Success",7)==0 ) {g_process.shutdownAbort(true);}
 
 	// get time in secs since epoch
-	time_t now ;//= getTimeGlobal();
-	if ( isClockInSync() ) now = getTimeGlobal();
-	else                   now = getTimeLocal();
+	time_t now = getTime();
 
 	// this kinda sucks that we have to do it twice...
 	HttpRequest hr;
@@ -1946,9 +1941,8 @@ void HttpServer::getKeys ( int32_t *key1, int32_t *key2, char *kname1, char *kna
 bool HttpServer::hasPermission ( int32_t ip , HttpRequest *r , 
 				 char *q , int32_t qlen , int32_t s , int32_t n ) {
 	// time in seconds since epoch
-	time_t now ;//= getTimeGlobal(); //time(NULL);
-	if ( isClockInSync() ) now = getTimeGlobal();
-	else                   now = getTimeLocal();
+	time_t now  = getTime();
+
 	// get the keys name/value pairs that are acceptable
 	int32_t key1 , key2 ;
 	char kname1[4], kname2[4];
@@ -2015,12 +2009,7 @@ bool HttpServer::sendDynamicPage ( TcpSocket *s, const char *page, int32_t pageL
 	// how big is the TOTAL page?
 	int32_t contentLen = pageLen; // headerLen + pageLen + tailLen;
 	// get the time for a mime
-	time_t now;
-	if ( isClockInSync() ) {
-		now = getTimeGlobal();
-	} else {
-		now = getTimeLocal();
-	}
+	time_t now = getTime();
 
 	// guess contentype
 	const char *ct = contentType;

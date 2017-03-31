@@ -1038,9 +1038,8 @@ static void gotListWrapper3 ( void *state , RdbList *list , Msg5 *msg5 ) {
 // . sets g_errno on error
 static bool printList ( State11 *st ) {
 	// useful
-	time_t nowGlobal ;
-	if ( isClockInSync() ) nowGlobal = getTimeGlobal();
-	else                   nowGlobal = getTimeLocal();
+	time_t nowGlobal = getTime();
+
 	// print the spider recs we got
 	SafeBuf *sbTable = &st->m_safeBuf;
 	// shorcuts

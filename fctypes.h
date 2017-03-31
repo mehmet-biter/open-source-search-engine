@@ -167,8 +167,6 @@ extern const char g_map_is_digit[256];
 extern const char g_map_is_hex[256];
 extern const char g_map_is_tagname_char[256];
 
-bool isClockInSync();
-
 // . convert "c" to lower case
 #define is_lower_a(c)          g_map_is_lower[(unsigned char)c]
 #define to_lower_a(c)          g_map_to_lower[(unsigned char)c]

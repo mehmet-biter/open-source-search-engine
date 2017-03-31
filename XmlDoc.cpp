@@ -353,7 +353,6 @@ void XmlDoc::reset ( ) {
 	m_calledMsg25              = false;
 	m_calledSections           = false;
 	m_calledThread             = false;
-	m_alreadyRegistered        = false;
 	m_loaded                   = false;
 
 	m_setTr                    = false;
@@ -1303,16 +1302,6 @@ bool XmlDoc::injectDoc ( const char *url ,
 			 ) {
 
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
-
-
-	// wait until we are synced with host #0
-	if ( ! isClockInSync() ) {
-		log("xmldocl: got injection request but clock not yet "
-		    "synced with host #0");
-		g_errno = ETRYAGAIN;//CLOCKNOTSYNCED;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, returning true" );
-		return true;
-	}
 
 	// normalize url
 	Url uu;
@@ -6438,12 +6427,6 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 		g_errno = EBADIP;
 		return NULL;
 	}
-
-	// wait for clock to sync before calling getTimeGlobal
-	int32_t wfts = waitForTimeSync();
-	// 0 means error, i guess g_errno should be set, -1 means blocked
-	if ( ! wfts ) return NULL;
-	if ( wfts == -1 ) return (int32_t *)-1;
 
 	setStatus ( "getting site num inlinks");
 	// check the tag first
@@ -13701,11 +13684,6 @@ skipNewAdd2:
 	//   to be in revdb.
 	//
 	setStatus("adding spiderdb keys");
-
-	// sanity check. cannot spider until in sync
-	if (!isClockInSync()) {
-		g_process.shutdownAbort(true);
-	}
 
 	// checkpoint
 	saved = m_p;
@@ -21358,42 +21336,6 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 	//   the phrase.  -- MDW
 	//*retpw = 1.0;
 	return;
-}
-
-// for registerSleepCallback
-static void clockSyncWaitWrapper ( int fd , void *state ) {
-	XmlDoc *THIS = (XmlDoc *)state;
-	THIS->m_masterLoop ( THIS->m_masterState );
-}
-
-// . a special call
-// . returns -1 if blocked, 1 otherwise, 0 on error
-char XmlDoc::waitForTimeSync ( ) {
-	// unregister?
-	if ( isClockInSync() && m_alreadyRegistered ) {
-		// note it
-		log("build: clock now synced for %s",m_firstUrl.getUrl());
-		g_loop.unregisterSleepCallback(m_masterState,
-					       clockSyncWaitWrapper);
-	}
-	// return 1 if synced!
-	if ( isClockInSync() ) return 1;
-	// already registered? wait another 1000ms
-	if ( m_alreadyRegistered ) return -1;
-	// flag it
-	m_alreadyRegistered = true;
-	// note it
-	log("build: waiting for clock to sync for %s",m_firstUrl.getUrl());
-	// this should mean it is re-called later
-	if ( g_loop.registerSleepCallback ( 1000 , // 1000 ms
-					    m_masterState ,
-					    clockSyncWaitWrapper ,
-					    m_niceness    ))
-		// wait for it, return -1 since we blocked
-		return -1;
-	// if was not able to register, ignore delay
-	log("doc: failed to register clock wait callback");
-	return 0;
 }
 
 bool XmlDoc::getIsInjecting ( ) {
