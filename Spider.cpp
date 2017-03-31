@@ -660,7 +660,7 @@ void SpiderCache::save ( bool useThread ) {
 		// log it for now
 		log("spider: saving waiting tree for cn=%" PRId32,(int32_t)i);
 		// returns false if it blocked, callback will be called
-		tree->fastSave_unlocked(dir, filename, useThread, NULL, NULL);
+		tree->fastSave(dir, filename, useThread, NULL, NULL);
 	}
 }
 

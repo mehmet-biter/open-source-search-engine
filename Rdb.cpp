@@ -687,7 +687,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 	if (m_useTree) {
-		if (!m_tree.fastSave_unlocked(getDir(), m_dbname, useThread, this, doneSavingWrapper)) {
+		if (!m_tree.fastSave(getDir(), m_dbname, useThread, this, doneSavingWrapper)) {
 			return false;
 		}
 	} else {
@@ -774,7 +774,7 @@ bool Rdb::saveTree ( bool useThread ) {
 		if (m_tree.needsSave()) {
 			log( LOG_DEBUG, "db: saving tree %s", dbn );
 		}
-		return m_tree.fastSave_unlocked(getDir(), m_dbname, useThread, NULL, NULL);
+		return m_tree.fastSave(getDir(), m_dbname, useThread, NULL, NULL);
 	} else {
 		if (m_buckets.needsSave()) {
 			log( LOG_DEBUG, "db: saving buckets %s", dbn );
@@ -1637,8 +1637,6 @@ bool Rdb::hasRoom(RdbList *list) {
 
 
 bool Rdb::canAdd() const {
-	if(!g_process.m_powerIsOn)
-		return false;
 	if(!isWritable())
 		return false;
 	if(m_isClosing)
@@ -1661,20 +1659,6 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"db: addRecord: collection #%i is gone.", collnum);
 		logTrace(g_conf.m_logTraceRdb, "END. %s: collection gone. Returning false", m_dbname);
-		return false;
-	}
-
-	// skip if tree not writable
-	if ( ! g_process.m_powerIsOn ) {
-		// log it every 3 seconds
-		static int32_t s_last = 0;
-		int32_t now = getTime();
-		if ( now - s_last > 3 ) {
-			s_last = now;
-			log("db: addRecord: power is off. try again.");
-		}
-		logTrace(g_conf.m_logTraceRdb, "END. %s: Power loss. Returning false", m_dbname);
-		g_errno = ETRYAGAIN; 
 		return false;
 	}
 

@@ -221,12 +221,6 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
 	// it is easier to debug because all log timestamps are in sync.
 	if ( now == 0 ) now = gettimeofdayInMilliseconds();
 
-	// . skip all logging if power out, we do not want to screw things up
-	// . allow logging for 10 seconds after power out though
-	if ( ! g_process.m_powerIsOn && now - g_process.m_powerOffTime >10000){
-		return false;
-	}
-
 	// chop off any spaces at the end of the msg.
 	while ( is_wspace_a ( msg [ msgLen - 1 ] ) && msgLen > 0 ) msgLen--;
 

@@ -1327,9 +1327,6 @@ int main2 ( int argc , char *argv[] ) {
 		return doCmd( replaceCmd, -1, "admin/hosts", true, true );
 	}
 
-	// HACK: enable logging for Conf.cpp, etc.
-	g_process.m_powerIsOn = true;
-
 	// . read in the conf file
 	// . this now initializes from a dir and hostId, they should all be
 	//   name gbHID.conf
@@ -1365,9 +1362,7 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	// the new way to save all rdbs and conf
-	// if g_process.m_powerIsOn is false, logging will not work, so init
-	// this up here. must call after Loop::init() so it can register
-	// its sleep callback
+	// must call after Loop::init() so it can register its sleep callback
 	g_process.init();
 
 	// set up the threads, might need g_conf
@@ -1765,9 +1760,6 @@ int main2 ( int argc , char *argv[] ) {
 		log( LOG_ERROR, "db: Collectiondb load failed." );
 		return 1;
 	}
-
-	// allow adds to statsdb rdb tree
-	g_process.m_powerIsOn = true;
 
 	if ( ! g_posdb.init()    ) {
 		log( LOG_ERROR, "db: Posdb init failed." );

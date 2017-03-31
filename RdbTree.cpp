@@ -1908,9 +1908,8 @@ bool RdbTree::is90PercentFull() const {
 // . we'll open it here
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool RdbTree::fastSave_unlocked(const char *dir, const char *dbname, bool useThread, void *state,
-                                void (*callback)(void *state)) {
-	/// @todo ALC do we need to lock here?
+bool RdbTree::fastSave(const char *dir, const char *dbname, bool useThread, void *state, void (*callback)(void *state)) {
+	ScopedLock sl(m_mtx);
 
 	logTrace(g_conf.m_logTraceRdbTree, "BEGIN. dir=%s", dir);
 
@@ -2017,7 +2016,7 @@ void RdbTree::saveDoneWrapper(void *state, job_exit_t exit_type) {
 	// we do not need to be saved now?
 	that->m_needsSave = false;
 
-	// g_errno should be preserved from the thread so if fastSave_unlocked()
+	// g_errno should be preserved from the thread so if fastSave()
 	// had an error it will be set
 	if ( g_errno ) {
 		log( LOG_ERROR, "db: Had error saving tree to disk for %s: %s.", that->m_dbname, mstrerror( g_errno ) );

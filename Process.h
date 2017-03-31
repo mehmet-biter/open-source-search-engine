@@ -83,8 +83,6 @@ class Process {
 
 	bool m_suspendAutoSave;
 
-	bool        m_powerIsOn;
-	int64_t   m_powerOffTime;
 	bool        m_exiting;
 	bool        m_calledSave;
 

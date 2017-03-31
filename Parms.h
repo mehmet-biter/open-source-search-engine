@@ -276,8 +276,6 @@ private:
 	static bool CommandCloneColl(const char *rec);
 	static bool CommandAddColl(const char *rec);
 #endif
-	static bool CommandPowerOnNotice(const char *rec);
-	static bool CommandPowerOffNotice(const char *rec);
 	static bool CommandInSync(const char *rec);
 	static void gotParmReplyWrapper(void *state, UdpSlot *slot);
 	static void handleRequest3e(UdpSlot *slot, int32_t /*niceness*/);
