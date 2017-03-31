@@ -49,8 +49,6 @@ static Msg1 *getMsg1() {
 	if ( s_head == -1 ) return NULL;
 	int32_t i = s_head;
 	s_head = s_next [ s_head ];
-	// debug msg
-	//log("got mcast=%" PRId32,(int32_t)(&s_msg1[i].m_mcast));
 	return &s_msg1[i];
 }
 
@@ -58,8 +56,6 @@ static void returnMsg1(void *state) {
 	Msg1 *msg1 = (Msg1 *)state;
 	// free this if we have to
 	msg1->m_ourList.freeList();
-	// debug msg
-	//log("return mcast=%" PRId32,(int32_t)(&msg1->m_mcast));
 
 	int32_t i = msg1 - s_msg1;
 	if ( i < 0 || i >= MAX_MSG1S ) {
@@ -83,43 +79,10 @@ static void init() {
 	for ( int32_t i = 0 ; i < MAX_MSG1S ; i++ ) {
 		if ( i == MAX_MSG1S - 1 ) s_next[i] = -1;
 		else                      s_next[i] = i + 1;
-		// these guys' constructor is not called, so do it?
-		//s_msg1[i].m_ourList.m_alloc = NULL;
 	}
 	s_head = 0;
 }
 
-bool Msg1::addRecord ( char *rec , 
-		       int32_t recSize , 
-		       rdbid_t       rdbId,
-		       collnum_t collnum ,
-		       void         *state             ,
-		       void (* callback)(void *state)  ,
-		       int32_t          niceness          ) {
-
-	key96_t sk;
-	key96_t ek;
-	sk.setMin();
-	ek.setMax();
-	//RdbList list;
-	m_tmpList.set ( rec , 
-		   recSize ,
-		   rec ,
-		   recSize ,
-		   (char *)&sk,
-		   (char *)&ek,
-		   -1 , // fixed data size
-		   false , // owndata?
-		   false , // use half keys?
-		   sizeof(key96_t));
-	return addList ( &m_tmpList ,
-			 rdbId ,
-			 collnum,//g_collectiondb.m_recs[collnum]->m_coll ,
-			 state ,
-			 callback ,
-			 false , // force local?
-			 niceness );
-}
 
 // . send an add command to all machines in the appropriate group
 // . returns false if blocked, true otherwise
@@ -258,9 +221,6 @@ bool Msg1::sendSomeOfList ( ) {
 	     m_list->getKeySize() != 16 &&
 	     m_list->getKeySize() != 24 ) {
 		g_process.shutdownAbort(true); }
-	// debug msg
-	//log("sendSomeOfList: mcast=%" PRIu32" exhausted=%" PRId32,
-	//    (int32_t)&m_mcast,(int32_t)m_list->isExhausted());
  loop:
 	// return true if list exhausted and nothing left to add
 	if ( m_list->isExhausted() ) return true;
@@ -346,105 +306,11 @@ bool Msg1::sendSomeOfList ( ) {
 // . return false if blocked, true otherwise
 // . sets g_errno on error
 bool Msg1::sendData ( uint32_t shardNum, char *listData , int32_t listSize) {
-	// debug msg
-	//log("sendData: mcast=%" PRIu32" listSize=%" PRId32,
-	//    (int32_t)&m_mcast,(int32_t)listSize);
-
 	// bail if this is an interface machine, don't write to the main
 	if ( g_conf.m_interfaceMachine ) return true;
 	// return true if no data
 	if ( listSize == 0 ) return true;
-	// how many hosts in this group
-	//int32_t numHosts = g_hostdb.getNumHostsPerShard();
-	// . NOTE: for now i'm removing this until I handle ETRYAGAIN errors
-	//         properly... by waiting and retrying...
-	// . if this is local data just for us just do an addList to OUR rdb
-	/*
-	if ( groupId == g_hostdb.m_groupId  && numHosts == 1 ) {
-		// this sets g_errno on error
-		Msg0 msg0;
-		Rdb *rdb = msg0.getRdb ( m_rdbId );
-		if ( ! rdb ) return true;
-		// make a list from this data
-		RdbList list;
-		list.set (listData,listSize,listSize,rdb->getFixedDataSize(),
-			  false) ; // ownData?
-		// this returns false and sets g_errno on error
-		rdb->addList ( &list );
-		// . if we got a ETRYAGAIN cuz the buffer we add to was full
-		//   then we should sleep and try again!
-		// . return false cuz this blocks for a period of time
-		//   before trying again
-		if ( g_errno == ETRYAGAIN ) {
-			// try adding again in 1 second
-			registerSleepCallback ( 1000, slot, tryAgainWrapper1 );
-			// return now
-			return false;
-		}
-		// . always return true cuz we did not block
-		// . g_errno may be set
-		return true;
-	}
-	*/
-	// if the data is being added to our group, don't send ourselves
-	// a msg1, if we can add it right now
-	// MDW: crap this is getting ETRYAGAIN and it isn't being tried again
-	// i guess and Spider.cpp fails to add to doledb but the doleiptable
-	// maintains a positive count, thereby hanging the spiders. let's
-	// just always go through multicast so it will auto-retry ETRYAGAIN
-	/*
-	bool sendToSelf = true;
-	if ( shardNum == getMyShardNum() &&
-	     ! g_conf.m_interfaceMachine ) {
-		// get the rdb to which it belongs, use Msg0::getRdb()
-		Rdb *rdb = getRdbFromId ( m_rdbId );
-		if ( ! rdb ) goto skip;
-		// key size
-		int32_t ks = getKeySizeFromRdbId ( m_rdbId );
-		// reset g_errno
-		g_errno = 0;
-		// . make a list from this data
-		// . skip over the first 4 bytes which is the rdbId
-		// . TODO: embed the rdbId in the msgtype or something...
-		RdbList list;
-		// set the list
-		list.set ( listData ,
-			   listSize ,
-			   listData ,
-			   listSize ,
-			   rdb->getFixedDataSize() ,
-			   false                   ,  // ownData?
-			   rdb->useHalfKeys()      ,
-			   ks                      ); 
-		// note that
-		//log("msg1: local addlist niceness=%" PRId32,m_niceness);
-		// this returns false and sets g_errno on error
-		rdb->addList ( m_coll , &list , m_niceness );
-		// if titledb, add tfndb recs to map the title recs
-		//if ( ! g_errno && rdb == g_titledb.getRdb() && m_injecting ) 
-		//	// this returns false and sets g_errno on error
-		//	updateTfndb ( m_coll , &list , true , m_niceness);
-		// if no error, no need to use a Msg1 UdpSlot for ourselves
-		if ( ! g_errno ) sendToSelf = false;
-		else {
-			log("rdb: msg1 coll=%s rdb=%s had error: %s",
-			    m_coll,rdb->m_dbname,mstrerror(g_errno));
-			// this is messing up generate catdb's huge rdblist add
-			// why did we put it in there??? from msg9b.cpp
-			//return true;
-		}
 
-		// if we're the only one in the group, bail, we're done
-		if ( ! sendToSelf &&
-		     g_hostdb.getNumHostsPerShard() == 1 ) return true;
-	}
-skip:
-	*/
-	// . make an add record request to multicast to a bunch of machines
-	// . this will alloc new space, returns NULL on failure
-	//char *request = makeRequest ( listData, listSize, groupId , 
-	//m_rdbId , &requestLen );
-	//int32_t collLen = strlen ( m_coll );
 	// . returns NULL and sets g_errno on error
 	// . calculate total size of the record
 	// . 1 byte for rdbId, 1 byte for flags,
@@ -495,34 +361,14 @@ static void gotReplyWrapper1(void *state, void *state2) {
 		    "to %s: %s",getDbnameFromId(THIS->m_rdbId),
 		    mstrerror(g_errno));
 
-	//int32_t address = (int32_t)THIS->m_callback;
-
 	// if our list to send is exhausted then we're done!
 	if ( THIS->m_list->isExhausted() ) {
-
-		//if(g_conf.m_profilingEnabled){
-		//	g_profiler.startTimer(address, __PRETTY_FUNCTION__);
-		//}
-		if ( THIS->m_callback ) THIS->m_callback ( THIS->m_state ); 
-		//if(g_conf.m_profilingEnabled){
-		//	if(!g_profiler.endTimer(address, __PRETTY_FUNCTION__))
-		//		log(LOG_WARN,"admin: Couldn't add the fn %" PRId32,
-		//		    (int32_t)address);
-		//}
-
+		if ( THIS->m_callback ) THIS->m_callback ( THIS->m_state );
 		return; 
 	}
 	// otherwise we got more to send to groups
 	if ( THIS->sendSomeOfList() ) {
-		//if(g_conf.m_profilingEnabled){
-		//	g_profiler.startTimer(address, __PRETTY_FUNCTION__);
-		//}
-		if ( THIS->m_callback ) THIS->m_callback ( THIS->m_state ); 
-		//if(g_conf.m_profilingEnabled){
-		//	if(!g_profiler.endTimer(address, __PRETTY_FUNCTION__))
-		//		log(LOG_WARN,"admin: Couldn't add the fn %" PRId32,
-		//		    (int32_t)address);
-		//}
+		if ( THIS->m_callback ) THIS->m_callback ( THIS->m_state );
 		return; 
 	}
 }
@@ -542,7 +388,6 @@ static void handleRequest1(UdpSlot *slot, int32_t netnice) {
 	// extract what we read
 	char *readBuf     = slot->m_readBuf;
 	int32_t  readBufSize = slot->m_readBufSize;
-	//int32_t niceness = slot->getNiceness();
 
 	// must at least have an rdbId
 	if ( readBufSize <= 4 ) {
