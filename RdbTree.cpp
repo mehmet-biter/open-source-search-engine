@@ -1345,11 +1345,12 @@ bool RdbTree::growTree_unlocked(int32_t nn) {
 		if ( ! x ) { g_process.shutdownAbort(true); }
 		m_sizes = x;
 	}
-	if ( tp ) {
-		s = (char *)mrealloc ( tp , nn   , on   , m_allocName );
-		if ( ! s ) { g_process.shutdownAbort(true); }
-		m_depth = s;
-	}
+	/// @note ALC the following code will be used if we add something else below the mrealloc of m_depth above
+	//if ( tp ) {
+	//	s = (char *)mrealloc ( tp , nn   , on   , m_allocName );
+	//	if ( ! s ) { g_process.shutdownAbort(true); }
+	//	m_depth = s;
+	//}
 
 	log( LOG_ERROR, "db: Failed to grow tree for %s from %" PRId32" to %" PRId32" bytes: %s.",
 	     m_dbname, on, nn, mstrerror(g_errno) );
