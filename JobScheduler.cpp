@@ -360,9 +360,9 @@ JobScheduler_impl::~JobScheduler_impl() {
 	//Then cancel all outstanding non-started jobs by moving them from the pending queues to the exit-set
 	{
 		ScopedLock sl(mtx);
-		while(!cpu_job_queue.empty()) {
-			exit_set.push_back(std::make_pair(cpu_job_queue.back(),job_exit_program_exit));
-			cpu_job_queue.pop_back();
+		while(!coordinator_job_queue.empty()) {
+			exit_set.push_back(std::make_pair(coordinator_job_queue.back(),job_exit_program_exit));
+			coordinator_job_queue.pop_back();
 		}
 		while(!cpu_job_queue.empty()) {
 			exit_set.push_back(std::make_pair(cpu_job_queue.back(),job_exit_cancelled));
@@ -375,10 +375,6 @@ JobScheduler_impl::~JobScheduler_impl() {
 		while(!io_job_queue.empty()) {
 			exit_set.push_back(std::make_pair(io_job_queue.back(),job_exit_program_exit));
 			io_job_queue.pop_back();
-		}
-		while(!coordinator_job_queue.empty()) {
-			exit_set.push_back(std::make_pair(coordinator_job_queue.back(),job_exit_program_exit));
-			coordinator_job_queue.pop_back();
 		}
 		while(!external_job_queue.empty()) {
 			exit_set.push_back(std::make_pair(external_job_queue.back(),job_exit_program_exit));
