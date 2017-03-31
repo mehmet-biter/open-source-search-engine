@@ -687,7 +687,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 	if (m_useTree) {
-		if (!m_tree.fastSave_unlocked(getDir(), m_dbname, useThread, this, doneSavingWrapper)) {
+		if (!m_tree.fastSave(getDir(), m_dbname, useThread, this, doneSavingWrapper)) {
 			return false;
 		}
 	} else {
@@ -774,7 +774,7 @@ bool Rdb::saveTree ( bool useThread ) {
 		if (m_tree.needsSave()) {
 			log( LOG_DEBUG, "db: saving tree %s", dbn );
 		}
-		return m_tree.fastSave_unlocked(getDir(), m_dbname, useThread, NULL, NULL);
+		return m_tree.fastSave(getDir(), m_dbname, useThread, NULL, NULL);
 	} else {
 		if (m_buckets.needsSave()) {
 			log( LOG_DEBUG, "db: saving buckets %s", dbn );
