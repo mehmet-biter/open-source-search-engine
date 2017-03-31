@@ -849,6 +849,22 @@ bool Process::shutdown2() {
 	// tell Mutlicast::reset() not to destroy all the slots! that cores!
 	m_exiting = true;
 
+	//resetAll() calls g_jobScheduler.finalize() which joins the worker threads. But the summary threads may never finish
+	//beause they are waiting for a msg22 response that will never come because the udp server has shut down. Yes, the udpslot
+	//callback should have been called in that scenario but it isn't and it is currently too risky to fix that bug (some parts
+	//of GB has infinite timeouts in multicast and udpslots, so cannot handle non-answers reliably. So we chose to use this
+	//hack for now:
+	
+	StackBuf<128> cleanFileName;
+	cleanFileName.safePrintf("%s/cleanexit",g_hostdb.m_dir);
+	SafeBuf nothing;
+	// returns # of bytes written, -1 if could not create file
+	if ( nothing.save ( cleanFileName.getBufStart() ) == -1 ) {
+		log( LOG_WARN, "gb: could not create %s", cleanFileName.getBufStart() );
+	}
+
+	_exit(0);
+#if 0
 	// let everyone free their mem
 	resetAll();
 
@@ -872,6 +888,7 @@ bool Process::shutdown2() {
 	// Eg. some globals can ahve a Msg5 which can have a Msg3 which may believe they have outstanding RdbScans
 	// and thus core dump in sanity checks.
 	_exit(0);
+#endif
 }
 
 
