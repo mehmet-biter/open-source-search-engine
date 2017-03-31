@@ -359,8 +359,8 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 	}
 
 	//verify integrity if wanted
-	if(g_conf.m_verifyTreeIntegrity) {
-		for (auto item : rdbRecSizes) {
+	if (g_conf.m_verifyTreeIntegrity) {
+		for (auto const &item : rdbRecSizes) {
 			Rdb *rdb = getRdbFromId(item.first);
 			rdb->verifyTreeIntegrity();
 		}
@@ -376,7 +376,7 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 	if ( g_errno ) return false;
 
 	//Initiate dumps for any Rdbs wanting it
-	for (auto item : rdbRecSizes) {
+	for (auto const &item : rdbRecSizes) {
 		Rdb *rdb = getRdbFromId(item.first);
 		if(!rdb->isDumping() && rdb->needsDump()) {
 			logDebug(g_conf.m_logDebugSpider, "Rdb %d needs dumping", item.first);
