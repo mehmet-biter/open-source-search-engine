@@ -230,7 +230,6 @@ static void reloadDocid2SiteFlags(int fd, void *state);
 Process::Process ( ) {
 	m_mode = Process::NO_MODE;
 	m_exiting = false;
-	m_powerIsOn = true;
 	m_totalDocsIndexed = -1LL;
 
 	// Coverity
@@ -248,7 +247,6 @@ Process::Process ( ) {
 	m_callback = NULL;
 	m_lastHeartbeatApprox = 0;
 	m_suspendAutoSave = false;
-	m_powerOffTime = 0;
 	m_calledSave = false;
 	m_diskUsage = 0.0;
 	m_diskAvail = 0;
@@ -260,7 +258,6 @@ bool Process::init ( ) {
 	// -1 means unknown
 	m_diskUsage = -1.0;
 	m_diskAvail = -1LL;
-	m_powerIsOn = true;
 	m_numRdbs = 0;
 	m_suspendAutoSave = false;
 	// . init the array of rdbs
@@ -442,9 +439,6 @@ void processSleepWrapper(int /*fd*/, void * /*state*/) {
 		Rdb *rdb = g_clusterdb.getRdb();
 		g_process.m_totalDocsIndexed = rdb->getNumTotalRecs();
 	}
-
-	// do not do autosave if no power
-	if ( ! g_process.m_powerIsOn ) return;
 
 	// . i guess try to autoscale the cluster in cast hosts.conf changed
 	// . if all pings came in and all hosts have the same hosts.conf
@@ -639,13 +633,9 @@ bool Process::save2 ( ) {
 	//   stuff above may block and we have to re-call this function      
 	if ( ! saveBlockingFiles1() ) return false;
 
-	// save addsInProgress.dat etc. if power goes off. this should be the
-	// one time we are called from power going off... since we do not
-	// do autosave when the power is off. this just blocks and never
+	// save addsInProgress.dat etc. this just blocks and never
 	// returns false, so call it with checking the return value.
-	if ( ! g_process.m_powerIsOn ) {
-		saveBlockingFiles2() ;
-	} else if ( g_jobScheduler.are_new_jobs_allowed() ) {
+	if ( g_jobScheduler.are_new_jobs_allowed() ) {
 		saveBlockingFiles2() ;
 	}
 

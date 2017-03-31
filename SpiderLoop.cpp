@@ -1199,9 +1199,7 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 		g_process.m_mode == Process::EXIT_MODE
 		) && ! sreq->m_isInjecting ) ||
 	     // repairing the collection's rdbs?
-	     g_repairMode ||
-	     // power went off?
-	     ! g_process.m_powerIsOn ) {
+	     g_repairMode ) {
 		// try to cancel outstanding spiders, ignore injects
 		for ( int32_t i = 0 ; i <= m_maxUsed ; i++ ) {
 			// get it

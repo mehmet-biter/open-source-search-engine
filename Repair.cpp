@@ -163,9 +163,6 @@ void Repair::repairWrapper(int fd, void *state) {
 	//   when dumped, would mess up our scan.
 	if ( ! g_conf.m_repairingEnabled ) return;
 
-	// if the power went off
-	if ( ! g_process.m_powerIsOn ) return;
-
 	// if it got turned back on after being suspended, start where
 	// we left off, this is how we re-enter Repair::loop()
 	if ( g_repair.m_isSuspended && g_repairMode == REPAIR_MODE_4 ) {
@@ -760,13 +757,6 @@ bool Repair::load ( ) {
 // . sets g_errno on error
 bool Repair::loop() {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
-	
-	// if the power went off
-	if ( ! g_process.m_powerIsOn ) {
-		// sleep 1 second and retry
-		m_isRetrying = true;
-		return true;
-	}
 
 	// was repairing turned off all of a sudden?
 	if ( ! g_conf.m_repairingEnabled ) {
@@ -1366,8 +1356,6 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 		status = "updating rdbs with new data";
 	if ( g_repairMode == REPAIR_MODE_8 )
 		status = "waiting for all hosts to complete update";
-	if ( ! g_process.m_powerIsOn && g_conf.m_repairingEnabled )
-		status = "waiting for power to return";
 
 	// the titledb scan stats (phase 1)
 	int64_t ns     = m_recsScanned ;

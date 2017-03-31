@@ -293,12 +293,6 @@ bool RdbMerge::getNextList() {
 		return false;
 	}
 
-	// if the power is off, suspend the merging
-	if (!g_process.m_powerIsOn) {
-		doSleep();
-		return false;
-	}
-
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *base = getRdbBase(m_rdbId, m_collnum);
 	if (!base) {
@@ -427,11 +421,6 @@ void RdbMerge::gotListWrapper(void *state, RdbList * /*list*/, Msg5 * /*msg5*/) 
 
 // called after sleeping for 1 sec because of ENOMEM
 void RdbMerge::tryAgainWrapper(int /*fd*/, void *state) {
-	// if power is still off, keep things suspended
-	if (!g_process.m_powerIsOn) {
-		return;
-	}
-
 	// get a ptr to ourselves
 	RdbMerge *THIS = (RdbMerge *)state;
 

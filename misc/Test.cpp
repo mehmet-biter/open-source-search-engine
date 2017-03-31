@@ -156,9 +156,6 @@ void Test::initTestRun ( ) {
 	if ( g_conf.m_testSpiderEnabled && g_conf.m_testParserEnabled ) {
 		char *xx=NULL;*xx=0; }
 
-	// if the power went off
-	if ( ! g_process.m_powerIsOn ) return;
-
 	// return if currently running
 	// no, admin can re-init even if running now
 	//if ( m_isRunning ) { char *xx=NULL;*xx=0; }//return;

@@ -760,68 +760,6 @@ static bool CommandSaveAndExit(const char *rec) {
 	return true;
 }
 
-static bool CommandPowerNotice ( int32_t hasPower ) {
-
-	log("powermo: received haspower=%" PRId32,hasPower);
-	if ( hasPower != 0 && hasPower != 1 ) return true;
-
-	// did power state change? if not just return true
-	if (   g_process.m_powerIsOn &&   hasPower ) return true;
-	if ( ! g_process.m_powerIsOn && ! hasPower ) return true;
-
-	if ( hasPower ) {
-		log("powermo: power is regained");
-		g_process.m_powerIsOn = true;
-		return true;
-	}
-
-	// if it was on and went off...
-	// now it is off
-	log("powermo: power was lost");
-	// . SpiderLoop.cpp will not launch any more spiders as
-	//   int32_t as the power is off
-	// . autosave should kick in every 30 seconds
-	g_process.m_powerIsOn = false;
-	// note the autosave
-	log("powermo: disabling spiders, suspending merges, disabling tree writes and saving.");
-	// . save everything now... this may block some when saving the
-	//   caches... then do not do ANY writes...
-	// . RdbMerge suspends all merging if power is off
-	// . Rdb.cpp does not allow any adds if power is off. it will
-	//   send back an ETRYAGAIN...
-	// . if a tree is being dumped, this will keep re-calling
-	//   Process.cpp::save2()
-	g_process.save();
-
-	// also send an email if we are host #0
-	if ( g_hostdb.m_myHost->m_hostId != 0 ) return true;
-	if ( g_proxy.isProxy() ) return true;
-
-	char tmp[128];
-	Host *h0 = g_hostdb.getHost ( 0 );
-	int32_t ip0 = 0;
-	if ( h0 ) ip0 = h0->m_ip;
-	sprintf(tmp,"%s: POWER IS OFF",iptoa(ip0));
-
-	g_pingServer.sendEmail ( NULL  , // Host ptr
-				 tmp   , // msg
-				 true  , // sendToAdmin
-				 false , // oom?
-				 true  , // parm change?
-				 // force it? even if disabled?
-				 false  );
-	return true;
-}
-
-
-bool Parms::CommandPowerOnNotice(const char *rec) {
-	return CommandPowerNotice ( 1 );
-}
-
-bool Parms::CommandPowerOffNotice(const char *rec) {
-	return CommandPowerNotice ( 0 );
-}
-
 bool Parms::CommandInSync(const char *rec) {
 	g_parms.m_inSyncWithHost0 = true;
 	return true;
@@ -4732,28 +4670,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "q";
 	m->m_off   = offsetof(GigablastRequest,m_query);
 	m->m_flags = PF_API;
-	m++;
-
-	// Process.cpp calls Msg28::massConfig with &haspower=[0|1] to
-	// indicate power loss or coming back on from a power loss
-	m->m_title = "power on status notificiation";
-	m->m_desc  = "Indicates power is back on.";
-	m->m_cgi   = "poweron";
-	m->m_type  = TYPE_CMD;
-	m->m_func  = CommandPowerOnNotice;
-	m->m_cast  = false;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "power off status notificiation";
-	m->m_desc  = "Indicates power is off.";
-	m->m_cgi   = "poweroff";
-	m->m_type  = TYPE_CMD;
-	m->m_func  = CommandPowerOffNotice;
-	m->m_cast  = false;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
 	m++;
 
 	//////////////
