@@ -705,6 +705,8 @@ bool Process::shutdown2() {
 	RdbBase::finalizeGlobalIndexThread();
 	finalizeMsg4IncomingThread();
 
+	g_jobScheduler.cancel_all_jobs_for_shutdown();
+
 	static bool s_printed = false;
 
 	// wait for all threads to return
