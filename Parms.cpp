@@ -5247,12 +5247,11 @@ void Parms::init ( ) {
 		"host. Each host pings all other hosts in the network.";
 	m->m_cgi   = "ps";
 	simple_m_set(Conf,m_pingSpacer);
-	m->m_min   = 50; // i've seen values of 0 hammer the cpu
-	m->m_max   = 1000;
+	m->m_smin  =   50; // i've seen values of 0 hammer the cpu
+	m->m_smax  = 1000;
 	m->m_def   = "100";
 	m->m_units = "milliseconds";
 	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m++;
 
