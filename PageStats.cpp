@@ -606,19 +606,12 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      (int32_t)now);
 	}
 
-
-
-	time_t nowg = 0;
-
 	// end table
-        if ( ! isClockInSync() ) {
-		sprintf(nowStr,"not in sync with host #0");
-	}
-	else {
-		nowg = getTimeGlobal();
+	time_t nowg = getTimeGlobal();
+	{
 		struct tm tm_buf;
 		char buf[64];
-		sprintf ( nowStr , "%s UTC", asctime_r(gmtime_r(&nowg,&tm_buf),buf) );
+		sprintf(nowStr, "%s UTC", asctime_r(gmtime_r(&nowg, &tm_buf), buf));
 	}
 
 	// replace \n in nowstr with space

@@ -262,18 +262,6 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 		log( LOG_WARN, "udp: Call to  setsockopt: %s.",mstrerror(g_errno));
 		return false;
 	}
-	// only do this if not dns!!! some dns servers require it and will
-	// just drop the packets if it doesn't match, because this will make
-	// it always 0
-	// NO! we really need this now that we use roadrunner wirless which
-	// has bad udp packet checksums all the time!
-	// options = 1;
-	//if ( ! m_isDns && setsockopt(m_sock, SOL_SOCKET, SO_NO_CHECK, &options,sizeof(options)) < 0 ) {
-	//	// copy errno to g_errno
-	//	g_errno = errno;
-	//	log("udp: Call to  setsockopt: %s.",mstrerror(g_errno));
-	//  return false;
-	//}
 
 	// the lower the RT signal we use, the higher our priority
 

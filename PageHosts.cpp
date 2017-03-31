@@ -378,11 +378,6 @@ skipReplaceHost:
 					      "<sup>%" PRId32"</sup>"
 					      "</b></font>"
 					      , n );
-			if ( flags & PFLAG_OUTOFSYNC )
-				fb.safePrintf("<font color=red><b>"
-					      "N"
-					      "</b></font>"
-					      );
 		}
 
 		// recovery mode? reocvered from coring?

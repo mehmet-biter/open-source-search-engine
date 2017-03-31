@@ -82,7 +82,8 @@ Conf::Conf ( ) {
 	m_maxJobCleanupTime = 0;
 	m_deadHostTimeout = 0;
 	m_sendEmailTimeout = 0;
-	m_pingSpacer = 0;
+	m_pingSpacer = 100;
+	m_maxOutstandingPings = 5;
 	m_maxDocsWanted = 0;
 	m_maxFirstResultNum = 0;
 	min_docid_splits = 0;

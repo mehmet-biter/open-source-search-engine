@@ -21,12 +21,6 @@
 /// @note ALC there used to be a sync host functionality that was removed
 /// in commit 08e8eeb2a53b41763b5d7f97a0b953bebb04517a because it wasn't working
 
-enum {
-	ME_IOERR = 1,
-	ME_100MBPS,
-	ME_UNKNWN
-};
-
 // for the Host::m_flags
 #define PFLAG_HASSPIDERS     0x01
 #define PFLAG_MERGING        0x02
@@ -38,7 +32,6 @@ enum {
 #define PFLAG_REBALANCING    0x20
 #define PFLAG_FOREIGNRECS    0x40
 #define PFLAG_RECOVERYMODE   0x80
-#define PFLAG_OUTOFSYNC      0x100
 
 #define HT_GRUNT   0x01
 #define HT_SPARE   0x02

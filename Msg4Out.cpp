@@ -131,9 +131,6 @@ bool Msg4::initializeOutHandling() {
 
 // scan all host bufs and try to send on them
 static void sleepCallback4(int bogusfd, void *state) {
-	// wait for clock to be in sync
-	if(!isClockInSync())
-		return;
 	// flush them buffers
 	flushLocal();
 }
@@ -626,12 +623,6 @@ static bool sendBuffer(int32_t hostId) {
 	Host *h = g_hostdb.getHost(hostId);
 	uint32_t shardNum = h->m_shardNum;
 
-	// sanity check. our clock must be in sync with host #0's or with
-	// a host from his group, group #0
-	if ( ! isClockInSync() ) { 
-		log("msg4: msg4: warning sending out adds but clock not in "
-		    "sync with host #0");
-	}
 	uint64_t zid = nextZid();
 	// set some things up
 	char *p = buf + 4;

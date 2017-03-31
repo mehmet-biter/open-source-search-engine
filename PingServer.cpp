@@ -1,14 +1,5 @@
 #include "gb-include.h"
 
-// apple mac os x does not support klogctl
-#if defined(__APPLE__)
-// use a stub
-int32_t klogctl( int, char *,int ) { return 0; }
-#else
-// otherwise, use the real one
-#include <sys/klog.h> // for klogctl
-#endif
-
 #include "PingServer.h"
 #include "UdpServer.h"
 #include "UdpSlot.h"
@@ -55,11 +46,6 @@ bool PingServer::registerHandler ( ) {
 	// . it calls our callback when it receives a msg of type 0x0A
 	if ( ! g_udpServer.registerHandler ( msg_type_11, handleRequest11 )) {
 		return false;
-	}
-
-	// limit this to 1000ms
-	if ( g_conf.m_pingSpacer > 1000 ) {
-		g_conf.m_pingSpacer = 1000;
 	}
 
 	// save this
@@ -137,7 +123,7 @@ void PingServer::sendPingsToAll ( ) {
 	// once we do a full round, drop out. use firsti to determine this
 	int32_t firsti = -1;
 
-	for ( ; m_i != firsti && s_outstandingPings < 5 ; ) {
+	for ( ; m_i != firsti && s_outstandingPings < g_conf.m_maxOutstandingPings ; ) {
 		// store it
 		if ( firsti == -1 ) firsti = m_i;
 		// get the next host in line
@@ -162,8 +148,6 @@ void PingServer::sendPingsToAll ( ) {
 	
 	// . check if pingSpacer was updated via master controls and fix our
 	//   sleep wrapper callback interval if so
-	// . limit this to 1000ms
-	if ( g_conf.m_pingSpacer > 1000 ) g_conf.m_pingSpacer = 1000;
 	// update pingSpacer callback tick if it changed since last time
 	if ( m_pingSpacer == g_conf.m_pingSpacer ) return;
 	// register new one
@@ -296,7 +280,6 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	if ( g_dailyMerge.m_mergeMode    == 0 ) flags |= PFLAG_MERGEMODE0;
 	if ( g_dailyMerge.m_mergeMode ==0 || g_dailyMerge.m_mergeMode == 6 )
 		flags |= PFLAG_MERGEMODE0OR6;
-	if ( ! isClockInSync() ) flags |= PFLAG_OUTOFSYNC;
 
 	uint8_t rv8 = (uint8_t)g_recoveryLevel;
 	if ( g_recoveryLevel > 255 ) rv8 = 255;

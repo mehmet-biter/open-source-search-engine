@@ -12,11 +12,6 @@
 #include <fcntl.h>
 
 
-bool isClockInSync() { 
-	return true;
-}
-
-
 // . put all the maps here now
 // . convert "c" to lower case
 const unsigned char g_map_to_lower[256] = {
