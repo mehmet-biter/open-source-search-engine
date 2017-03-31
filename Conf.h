@@ -151,6 +151,7 @@ class Conf {
 	int32_t  m_deadHostTimeout;
 	int32_t  m_sendEmailTimeout;
 	int32_t  m_pingSpacer;
+	int32_t  m_maxOutstandingPings;
 
 	int32_t m_maxDocsWanted;        //maximum number of results in one go. Puts a limit on SearchInput::m_docsWanted
 	int32_t m_maxFirstResultNum;    //maximum document offset / result-page. Puts a limit on SearchInput::m_firstResultNum

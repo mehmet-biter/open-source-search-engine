@@ -5246,6 +5246,17 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "max outstanding pings";
+	m->m_desc  = "Maximum number of ping requests in flight per instance";
+	m->m_cgi   = "maxoutstandingpings";
+	simple_m_set(Conf,m_maxOutstandingPings);
+	m->m_smin  =   1;
+	m->m_smax  =  100;
+	m->m_def   = "5";
+	m->m_units = "packets";
+	m->m_page  = PAGE_MASTER;
+	m++;
+
 	m->m_title = "send email timeout";
 	m->m_desc  = "Send an email after a host has not responded to "
 		"successive pings for this many milliseconds.";

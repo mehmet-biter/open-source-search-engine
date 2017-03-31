@@ -123,7 +123,7 @@ void PingServer::sendPingsToAll ( ) {
 	// once we do a full round, drop out. use firsti to determine this
 	int32_t firsti = -1;
 
-	for ( ; m_i != firsti && s_outstandingPings < 5 ; ) {
+	for ( ; m_i != firsti && s_outstandingPings < g_conf.m_maxOutstandingPings ; ) {
 		// store it
 		if ( firsti == -1 ) firsti = m_i;
 		// get the next host in line
