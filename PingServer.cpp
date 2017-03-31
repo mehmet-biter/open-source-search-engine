@@ -148,8 +148,6 @@ void PingServer::sendPingsToAll ( ) {
 	
 	// . check if pingSpacer was updated via master controls and fix our
 	//   sleep wrapper callback interval if so
-	// . limit this to 1000ms
-	if ( g_conf.m_pingSpacer > 1000 ) g_conf.m_pingSpacer = 1000;
 	// update pingSpacer callback tick if it changed since last time
 	if ( m_pingSpacer == g_conf.m_pingSpacer ) return;
 	// register new one
