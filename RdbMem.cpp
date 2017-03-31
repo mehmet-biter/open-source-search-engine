@@ -66,6 +66,8 @@ void RdbMem::clear() {
 	m_ptr1 = m_mem;
 	// secondary mem initially grow downward
 	m_ptr2 = m_mem + m_memSize;
+
+	m_is90PercentFull = false;
 }	
 
 
