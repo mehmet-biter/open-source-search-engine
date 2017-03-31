@@ -21,12 +21,6 @@
 /// @note ALC there used to be a sync host functionality that was removed
 /// in commit 08e8eeb2a53b41763b5d7f97a0b953bebb04517a because it wasn't working
 
-enum {
-	ME_IOERR = 1,
-	ME_100MBPS,
-	ME_UNKNWN
-};
-
 // for the Host::m_flags
 #define PFLAG_HASSPIDERS     0x01
 #define PFLAG_MERGING        0x02
