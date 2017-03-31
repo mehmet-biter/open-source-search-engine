@@ -5219,6 +5219,19 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "ping spacer";
+	m->m_desc  = "Wait this many milliseconds before pinging the next "
+		"host. Each host pings all other hosts in the network.";
+	m->m_cgi   = "ps";
+	simple_m_set(Conf,m_pingSpacer);
+	m->m_smin  =   50; // i've seen values of 0 hammer the cpu
+	m->m_smax  = 1000;
+	m->m_def   = "100";
+	m->m_units = "milliseconds";
+	m->m_group = true;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
 	m->m_title = "dead host timeout";
 	m->m_desc  = "Consider a host in the Gigablast network to be dead if "
 		"it does not respond to successive pings for this number of "
@@ -5226,9 +5239,10 @@ void Parms::init ( ) {
 		"Outstanding requests may be re-routed to a twin.";
 	m->m_cgi   = "dht";
 	simple_m_set(Conf,m_deadHostTimeout);
+	m->m_smin  =   350;
+	m->m_smax  = 20000;
 	m->m_def   = "4000";
 	m->m_units = "milliseconds";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m++;
 
@@ -5239,19 +5253,6 @@ void Parms::init ( ) {
 	simple_m_set(Conf,m_sendEmailTimeout);
 	m->m_def   = "62000";
 	m->m_units = "milliseconds";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "ping spacer";
-	m->m_desc  = "Wait this many milliseconds before pinging the next "
-		"host. Each host pings all other hosts in the network.";
-	m->m_cgi   = "ps";
-	simple_m_set(Conf,m_pingSpacer);
-	m->m_smin  =   50; // i've seen values of 0 hammer the cpu
-	m->m_smax  = 1000;
-	m->m_def   = "100";
-	m->m_units = "milliseconds";
-	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m++;
 
