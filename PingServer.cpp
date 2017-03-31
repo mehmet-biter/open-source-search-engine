@@ -1,14 +1,5 @@
 #include "gb-include.h"
 
-// apple mac os x does not support klogctl
-#if defined(__APPLE__)
-// use a stub
-int32_t klogctl( int, char *,int ) { return 0; }
-#else
-// otherwise, use the real one
-#include <sys/klog.h> // for klogctl
-#endif
-
 #include "PingServer.h"
 #include "UdpServer.h"
 #include "UdpSlot.h"
