@@ -1303,51 +1303,47 @@ bool RdbTree::growTree_unlocked(int32_t nn) {
 	return true;
 
  error:
-	char  *kk ;
-	int32_t  *x  ;
-	char  *s  ;
-	char **p  ;
-	collnum_t *ss;
+
 	// . realloc back down if we need to
 	// . downsizing should NEVER fail!
 	if ( cp ) {
-		ss = (collnum_t *)mrealloc ( cp , nn*cs , on*cs , m_allocName);
+		collnum_t *ss = (collnum_t *)mrealloc ( cp , nn*cs , on*cs , m_allocName);
 		if ( ! ss ) { g_process.shutdownAbort(true); }
 		m_collnums = ss;
 	}
 	if ( kp ) {
-		kk = (char *)mrealloc ( kp, nn*k, on*k, m_allocName );
+		char  *kk = (char *)mrealloc ( kp, nn*k, on*k, m_allocName );
 		if ( ! kk ) { g_process.shutdownAbort(true); }
 		m_keys = kk;
 	}
 	if ( lp ) {
-		x = (int32_t *)mrealloc ( lp , nn*4 , on*4 , m_allocName );
+		int32_t  *x = (int32_t *)mrealloc ( lp , nn*4 , on*4 , m_allocName );
 		if ( ! x ) { g_process.shutdownAbort(true); }
 		m_left = x;
 	}
 	if ( rp ) {
-		x = (int32_t *)mrealloc ( rp , nn*4 , on*4 , m_allocName );
+		int32_t  *x = (int32_t *)mrealloc ( rp , nn*4 , on*4 , m_allocName );
 		if ( ! x ) { g_process.shutdownAbort(true); }
 		m_right = x;
 	}
 	if ( pp ) {
-		x = (int32_t *)mrealloc ( pp , nn*4 , on*4 , m_allocName );
+		int32_t  *x = (int32_t *)mrealloc ( pp , nn*4 , on*4 , m_allocName );
 		if ( ! x ) { g_process.shutdownAbort(true); }
 		m_parents = x;
 	}
 	if ( dp && m_fixedDataSize != 0 ) {
-		p = (char **)mrealloc ( dp , nn*d , on*d , m_allocName );
+		char **p = (char **)mrealloc ( dp , nn*d , on*d , m_allocName );
 		if ( ! p ) { g_process.shutdownAbort(true); }
 		m_data = p;
 	}
 	if ( sp && m_fixedDataSize == -1 ) {
-		x = (int32_t *)mrealloc ( sp , nn*4 , on*4 , m_allocName );
+		int32_t  *x = (int32_t *)mrealloc ( sp , nn*4 , on*4 , m_allocName );
 		if ( ! x ) { g_process.shutdownAbort(true); }
 		m_sizes = x;
 	}
 	/// @note ALC the following code will be used if we add something else below the mrealloc of m_depth above
 	//if ( tp ) {
-	//	s = (char *)mrealloc ( tp , nn   , on   , m_allocName );
+	//	char *s = (char *)mrealloc ( tp , nn   , on   , m_allocName );
 	//	if ( ! s ) { g_process.shutdownAbort(true); }
 	//	m_depth = s;
 	//}
