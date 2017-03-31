@@ -89,37 +89,6 @@ static void init() {
 	s_head = 0;
 }
 
-bool Msg1::addRecord ( char *rec , 
-		       int32_t recSize , 
-		       rdbid_t       rdbId,
-		       collnum_t collnum ,
-		       void         *state             ,
-		       void (* callback)(void *state)  ,
-		       int32_t          niceness          ) {
-
-	key96_t sk;
-	key96_t ek;
-	sk.setMin();
-	ek.setMax();
-	//RdbList list;
-	m_tmpList.set ( rec , 
-		   recSize ,
-		   rec ,
-		   recSize ,
-		   (char *)&sk,
-		   (char *)&ek,
-		   -1 , // fixed data size
-		   false , // owndata?
-		   false , // use half keys?
-		   sizeof(key96_t));
-	return addList ( &m_tmpList ,
-			 rdbId ,
-			 collnum,//g_collectiondb.m_recs[collnum]->m_coll ,
-			 state ,
-			 callback ,
-			 false , // force local?
-			 niceness );
-}
 
 // . send an add command to all machines in the appropriate group
 // . returns false if blocked, true otherwise

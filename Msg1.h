@@ -54,14 +54,6 @@ class Msg1 {
 		       bool      waitForReply = true  ,
 		       bool     *inTransit    = NULL  );
 
-	bool addRecord ( char *rec , 
-			 int32_t recSize , 
-			 rdbid_t       rdbId,
-			 collnum_t collnum ,
-			 void         *state             ,
-			 void (* callback)(void *state)  ,
-			 int32_t          niceness          ) ;
-
 	// private:
 
 	// keep this public cuz it's called by a C wrapper in Msg1.cpp
@@ -75,9 +67,6 @@ class Msg1 {
 
 	// list to be added
 	RdbList    *m_list;
-
-	// for Msg1::addRecord:
-	RdbList m_tmpList;
 
 	// rdb id to add to ( see Msg0::getRdb(char rdbId) )
 	rdbid_t     m_rdbId;
