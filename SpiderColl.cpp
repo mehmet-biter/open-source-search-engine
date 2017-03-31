@@ -211,7 +211,7 @@ bool SpiderColl::load ( ) {
 	bool treeExists = file.doesExist();
 
 	// load the table with file named "THISDIR/saved"
-	if ( treeExists && ! m_waitingTree.fastLoad(&file,&m_waitingMem) ) 
+	if ( treeExists && !m_waitingTree.fastLoad(&file, &m_waitingMem) )
 		err = g_errno;
 
 	// init wait table. scan wait tree and add the ips into table.
@@ -357,11 +357,14 @@ const char *SpiderColl::getCollName() {
 }
 
 bool SpiderColl::makeWaitingTable ( ) {
+	ScopedLock sl(m_waitingTree.getLock());
+
 	log(LOG_DEBUG,"spider: making waiting table for %s.",m_coll);
-	int32_t node = m_waitingTree.getFirstNode();
-	for ( ; node >= 0 ; node = m_waitingTree.getNextNode(node) ) {
+
+	for (int32_t node = m_waitingTree.getFirstNode_unlocked(); node >= 0;
+	     node = m_waitingTree.getNextNode_unlocked(node)) {
 		// get key
-		const key96_t *key = reinterpret_cast<const key96_t*>(m_waitingTree.getKey(node));
+		const key96_t *key = reinterpret_cast<const key96_t*>(m_waitingTree.getKey_unlocked(node));
 		// get ip from that
 		int32_t ip = (key->n0) & 0xffffffff;
 		// spider time is up top
@@ -422,9 +425,9 @@ void SpiderColl::reset ( ) {
 	m_cdTable     .reset();
 	m_sniTable    .reset();
 	m_waitingTable.reset();
-	m_waitingTree .reset();
+	m_waitingTree.reset();
 	m_waitingMem  .reset();
-	m_winnerTree  .reset();
+	m_winnerTree.reset();
 	m_winnerTable .reset();
 	m_dupCache    .reset();
 
@@ -870,9 +873,10 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 }
 
 bool SpiderColl::printWaitingTree ( ) {
-	int32_t node = m_waitingTree.getFirstNode();
-	for ( ; node >= 0 ; node = m_waitingTree.getNextNode(node) ) {
-		const key96_t *wk = reinterpret_cast<const key96_t*>(m_waitingTree.getKey(node));
+
+	for (int32_t node = m_waitingTree.getFirstNode_unlocked(); node >= 0;
+	     node = m_waitingTree.getNextNode_unlocked(node)) {
+		const key96_t *wk = reinterpret_cast<const key96_t*>(m_waitingTree.getKey_unlocked(node));
 		// spider time is up top
 		uint64_t spiderTimeMS = (wk->n1);
 		spiderTimeMS <<= 32;
@@ -976,13 +980,6 @@ bool SpiderColl::addToWaitingTree(uint64_t spiderTimeMS, int32_t firstIp) {
 		// get timems from waiting table
 		int64_t sms = m_waitingTable.getScore64FromSlot(ws);
 
-		// make the key then
-		key96_t wk = makeWaitingTreeKey ( sms, firstIp );
-		// must be there
-		int32_t tn = m_waitingTree.getNode ( (collnum_t)0, (char *)&wk );
-		// sanity check. ensure waitingTable and waitingTree in sync
-		if ( tn < 0 ) { g_process.shutdownAbort(true); }
-
 		// not only must we be a sooner time, but we must be 5-seconds
 		// sooner than the time currently in there to avoid thrashing
 		// when we had a ton of outlinks with this first ip within an
@@ -995,14 +992,20 @@ bool SpiderColl::addToWaitingTree(uint64_t spiderTimeMS, int32_t firstIp) {
 			return false;
 		}
 
+		// make the key then
+		key96_t wk = makeWaitingTreeKey ( sms, firstIp );
+
+		// must be there
+		if (!m_waitingTree.deleteNode(0, (char*)&wk, false)) {
+			// sanity check. ensure waitingTable and waitingTree in sync
+			g_process.shutdownAbort(true);
+		}
+
 		// log the replacement
 		logDebug( g_conf.m_logDebugSpider, "spider: replacing waitingtree key oldtime=%" PRIu32" newtime=%" PRIu32" firstip=%s",
 		          (uint32_t)(sms/1000LL),
 		          (uint32_t)(spiderTimeMS/1000LL),
 		          iptoa( firstIp ) );
-
-		// remove from tree so we can add it below
-		m_waitingTree.deleteNode(tn, false);
 	} else {
 		// time of 0 means we got the reply for something we spidered
 		// in doledb so we will need to recompute the best spider
@@ -1015,11 +1018,9 @@ bool SpiderColl::addToWaitingTree(uint64_t spiderTimeMS, int32_t firstIp) {
 		          iptoa( firstIp ) );
 	}
 
-	// make the key
-	key96_t wk = makeWaitingTreeKey ( spiderTimeMS, firstIp );
 	// what is this?
 	if ( firstIp == 0 || firstIp == -1 ) {
-		log("spider: got ip of %s. cn=%" PRId32" "
+		log(LOG_WARN, "spider: got ip of %s. cn=%" PRId32" "
 		    "wtf? failed to add to "
 		    "waiting tree, but return true anyway.",
 		    iptoa(firstIp) ,
@@ -1030,49 +1031,52 @@ bool SpiderColl::addToWaitingTree(uint64_t spiderTimeMS, int32_t firstIp) {
 		return true;
 	}
 
-	// grow the tree if too small!
-	int32_t used = m_waitingTree.getNumUsedNodes();
-	int32_t max =  m_waitingTree.getNumTotalNodes();
-	
-	if ( used + 1 > max ) {
-		int32_t more = (((int64_t)used) * 15) / 10;
-		if ( more < 10 ) more = 10;
-		if ( more > 100000 ) more = 100000;
-		int32_t newNum = max + more;
-		log("spider: growing waiting tree to from %" PRId32" to %" PRId32" nodes "
-		    "for collnum %" PRId32,
-		    max , newNum , (int32_t)m_collnum );
-		if (!m_waitingTree.growTree(newNum)) {
-			log(LOG_WARN, "spider: failed to grow waiting tree to add firstip %s", iptoa(firstIp));
+	{
+		ScopedLock sl(m_waitingTree.getLock());
+
+		// grow the tree if too small!
+		int32_t used = m_waitingTree.getNumUsedNodes_unlocked();
+		int32_t max = m_waitingTree.getNumTotalNodes_unlocked();
+
+		if ( used + 1 > max ) {
+			int32_t more = (((int64_t)used) * 15) / 10;
+			if ( more < 10 ) more = 10;
+			if ( more > 100000 ) more = 100000;
+			int32_t newNum = max + more;
+			log("spider: growing waiting tree to from %" PRId32" to %" PRId32" nodes "
+			    "for collnum %" PRId32,
+			    max , newNum , (int32_t)m_collnum );
+			if (!m_waitingTree.growTree_unlocked(newNum)) {
+				log(LOG_WARN, "spider: failed to grow waiting tree to add firstip %s", iptoa(firstIp));
+				return false;
+			}
+			if ( ! m_waitingTable.setTableSize ( newNum , NULL , 0 ) ) {
+				log(LOG_WARN, "spider: failed to grow waiting table to add firstip %s", iptoa(firstIp));
+				return false;
+			}
+		}
+
+		key96_t wk = makeWaitingTreeKey(spiderTimeMS, firstIp);
+
+		// add that
+		int32_t wn;
+		if ((wn = m_waitingTree.addKey_unlocked(&wk)) < 0) {
+			log(LOG_WARN, "spider: waitingtree add failed ip=%s. increase max nodes lest we lose this IP forever. err=%s",
+			    iptoa(firstIp), mstrerror(g_errno));
+			//g_process.shutdownAbort(true);
 			return false;
 		}
-		if ( ! m_waitingTable.setTableSize ( newNum , NULL , 0 ) ) {
-			log(LOG_WARN, "spider: failed to grow waiting table to add firstip %s", iptoa(firstIp));
+
+		// note it
+		logDebug(g_conf.m_logDebugSpider, "spider: added time=%" PRId64" ip=%s to waiting tree node=%" PRId32,
+		         spiderTimeMS, iptoa(firstIp), wn);
+
+		// add to table now since its in the tree
+		if (!m_waitingTable.addKey(&firstIp, &spiderTimeMS)) {
+			// remove from tree then
+			m_waitingTree.deleteNode_unlocked(wn, false);
 			return false;
 		}
-	}
-
-
-	// add that
-	int32_t wn;
-	if ( ( wn = m_waitingTree.addKey ( &wk ) ) < 0 ) {
-		log("spider: waitingtree add failed ip=%s. increase max nodes "
-		    "lest we lose this IP forever. err=%s",
-		    iptoa(firstIp),mstrerror(g_errno));
-		//g_process.shutdownAbort(true);
-		return false;
-	}
-
-	// note it
-	logDebug( g_conf.m_logDebugSpider, "spider: added time=%" PRId64" ip=%s to waiting tree node=%" PRId32,
-	          spiderTimeMS , iptoa( firstIp ), wn );
-
-	// add to table now since its in the tree
-	if ( ! m_waitingTable.addKey ( &firstIp , &spiderTimeMS ) ) {
-		// remove from tree then
-		m_waitingTree.deleteNode(wn, false);
-		//log("spider: 5 del node %" PRId32" for %s",wn,iptoa(firstIp));
-		return false;
 	}
 
 	// tell caller there was no error
@@ -1093,107 +1097,105 @@ bool SpiderColl::addToWaitingTree(uint64_t spiderTimeMS, int32_t firstIp) {
 //   waitingtable
 // . returns false if blocked, true otherwise
 int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
-
-	// if nothing to scan, bail
-	if ( m_waitingTree.isEmpty() ) return 0;
 	// reset first key to get first rec in waiting tree
 	m_waitingTreeKey.setMin();
+
 	// current time on host #0
-	uint64_t nowMS = gettimeofdayInMillisecondsGlobal();
- top:
+	uint64_t nowMS = gettimeofdayInMilliseconds();
 
-	// we might have deleted the only node below...
-	if ( m_waitingTree.isEmpty() ) return 0;
+	for (;;) {
+		ScopedLock sl(m_waitingTree.getLock());
 
-	// assume none
-	int32_t firstIp = 0;
-	// set node from wait tree key. this way we can resume from a prev key
-	int32_t node = m_waitingTree.getNextNode ( 0, (char *)&m_waitingTreeKey );
-	// if empty, stop
-	if ( node < 0 ) return 0;
+		// we might have deleted the only node below...
+		if (m_waitingTree.isEmpty_unlocked()) {
+			return 0;
+		}
 
-	// get the key
-	const key96_t *k = reinterpret_cast<const key96_t*>(m_waitingTree.getKey(node));
+		// assume none
+		int32_t firstIp = 0;
+		// set node from wait tree key. this way we can resume from a prev key
+		int32_t node = m_waitingTree.getNextNode_unlocked(0, (char *)&m_waitingTreeKey);
+		// if empty, stop
+		if (node < 0) {
+			return 0;
+		}
 
-	// ok, we got one
-	firstIp = (k->n0) & 0xffffffff;
+		// get the key
+		const key96_t *k = reinterpret_cast<const key96_t *>(m_waitingTree.getKey_unlocked(node));
 
-	// sometimes we take over for a dead host, but if he's no longer
-	// dead then we can remove his keys. but first make sure we have had
-	// at least one ping from him so we do not remove at startup.
-	// if it is in doledb or in the middle of being added to doledb 
-	// via msg4, nuke it as well!
-	if ( ! isAssignedToUs (firstIp) || m_doleIpTable.isInTable(&firstIp)) {
-		// only delete if this host is alive and has sent us a ping
-		// before so we know he was up at one time. this way we do not
-		// remove all his keys just because we restarted and think he
-		// is alive even though we have gotten no ping from him.
-		//if ( hp->m_numPingRequests > 0 )
-	removeFromTree:
-		// these operations should fail if writes have been disabled
-		// and becase the trees/tables for spidercache are saving
-		// in Process.cpp's g_spiderCache::save() call
-		m_waitingTree.deleteNode(node, true);
-		//log("spdr: 8 del node node %" PRId32" for %s",node,iptoa(firstIp));
-		// note it
-		if ( g_conf.m_logDebugSpider )
-			log(LOG_DEBUG,"spider: removed1 ip=%s from waiting "
-			    "tree. nn=%" PRId32,
-			    iptoa(firstIp),m_waitingTree.getNumUsedNodes());
+		// ok, we got one
+		firstIp = (k->n0) & 0xffffffff;
 
-		// log it
-		if ( g_conf.m_logDebugSpcache )
-			log("spider: erasing waitingtree key firstip=%s",
-			    iptoa(firstIp) );
-		// remove from table too!
-		m_waitingTable.removeKey  ( &firstIp );
-		goto top;
+		// sometimes we take over for a dead host, but if he's no longer
+		// dead then we can remove his keys. but first make sure we have had
+		// at least one ping from him so we do not remove at startup.
+		// if it is in doledb or in the middle of being added to doledb
+		// via msg4, nuke it as well!
+		if (firstIp == 0 || firstIp == -1 || !isAssignedToUs(firstIp) || m_doleIpTable.isInTable(&firstIp)) {
+			if (firstIp == 0 || firstIp == -1) {
+				log(LOG_WARN, "spider: removing corrupt spiderreq firstip of %" PRId32"from waiting tree collnum=%i",
+				    firstIp, (int)m_collnum);
+			}
+
+			// these operations should fail if writes have been disabled
+			// and becase the trees/tables for spidercache are saving
+			// in Process.cpp's g_spiderCache::save() call
+			m_waitingTree.deleteNode_unlocked(node, true);
+
+			logDebug(g_conf.m_logDebugSpider, "spider: removed ip=%s from waiting tree. nn=%" PRId32,
+			         iptoa(firstIp), m_waitingTree.getNumUsedNodes_unlocked());
+
+			logDebug(g_conf.m_logDebugSpcache, "spider: erasing waitingtree key firstip=%s", iptoa(firstIp));
+
+			// remove from table too!
+			m_waitingTable.removeKey(&firstIp);
+			continue;
+		}
+
+		// spider time is up top
+		uint64_t spiderTimeMS = (k->n1);
+		spiderTimeMS <<= 32;
+		spiderTimeMS |= ((k->n0) >> 32);
+
+		// stop if need to wait for this one
+		if (spiderTimeMS > nowMS) {
+			return 0;
+		}
+
+		// sanity
+		if ((int64_t)spiderTimeMS < 0) { g_process.shutdownAbort(true); }
+
+		// save key for deleting when done
+		m_waitingTreeKey.n1 = k->n1;
+		m_waitingTreeKey.n0 = k->n0;
+		m_waitingTreeKeyValid = true;
+		m_scanningIp = firstIp;
+
+		// compute the best request from spiderdb list, not valid yet
+		m_lastReplyValid = false;
+
+		// start reading spiderdb here
+		m_nextKey = Spiderdb::makeFirstKey(firstIp);
+		m_endKey = Spiderdb::makeLastKey(firstIp);
+
+		// all done
+		return firstIp;
 	}
-
-	// spider time is up top
-	uint64_t spiderTimeMS = (k->n1);
-	spiderTimeMS <<= 32;
-	spiderTimeMS |= ((k->n0) >> 32);
-	// stop if need to wait for this one
-	if ( spiderTimeMS > nowMS ) return 0;
-	// sanity
-	if ( (int64_t)spiderTimeMS < 0 ) { g_process.shutdownAbort(true); }
-	// save key for deleting when done
-	m_waitingTreeKey.n1 = k->n1;
-	m_waitingTreeKey.n0 = k->n0;
-	m_waitingTreeKeyValid = true;
-	m_scanningIp = firstIp;
-	// sanity
-	if ( firstIp == 0 || firstIp == -1 ) { 
-		//g_process.shutdownAbort(true); }
-		log("spider: removing corrupt spiderreq firstip of %" PRId32
-		    " from waiting tree collnum=%i",
-		    firstIp,(int)m_collnum);
-		goto removeFromTree;
-	}
-	// avoid corruption
-
-	// compute the best request from spiderdb list, not valid yet
-	m_lastReplyValid   = false;
-
-	// start reading spiderdb here
-	m_nextKey = Spiderdb::makeFirstKey(firstIp);
-	m_endKey  = Spiderdb::makeLastKey (firstIp);
-	// all done
-	return firstIp;
 }
 
 uint64_t SpiderColl::getNextSpiderTimeFromWaitingTree ( ) {
+	ScopedLock sl(m_waitingTree.getLock());
+
 	// if nothing to scan, bail
-	if ( m_waitingTree.isEmpty() ) return 0LL;
+	if (m_waitingTree.isEmpty_unlocked() ) return 0LL;
 	// the key
 	key96_t mink; mink.setMin();
 	// set node from wait tree key. this way we can resume from a prev key
-	int32_t node = m_waitingTree.getNextNode (0,(char *)&mink );
+	int32_t node = m_waitingTree.getNextNode_unlocked(0, (char *)&mink);
 	// if empty, stop
 	if ( node < 0 ) return 0LL;
 	// get the key
-	const key96_t *wk = reinterpret_cast<const key96_t*>(m_waitingTree.getKey(node));
+	const key96_t *wk = reinterpret_cast<const key96_t*>(m_waitingTree.getKey_unlocked(node));
 	// time from that
 	uint64_t spiderTimeMS = (wk->n1);
 	spiderTimeMS <<= 32;
@@ -1630,8 +1632,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 
 	// if waiting tree is being saved, we can't write to it
 	// so in that case, bail and wait to be called another time
-	RdbTree *wt = &m_waitingTree;
-	if (wt->isSaving() || !wt->isWritable()) {
+	if (m_waitingTree.isSaving() || !m_waitingTree.isWritable()) {
 		m_isPopulatingDoledb = false;
 		logTrace( g_conf.m_logTraceSpider, "END, waitingTree not writable at the moment" );
 		return;
@@ -1689,7 +1690,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	}
 
 	logDebug( g_conf.m_logDebugSpider, "spider: evalIpLoop: waitingtree nextip=%s numUsedNodes=%" PRId32,
-	          iptoa(ip), m_waitingTree.getNumUsedNodes() );
+	          iptoa(ip), m_waitingTree.getNumUsedNodes_unlocked() );
 
 //@@@@@@ BR: THIS SHOULD BE DEBUGGED AND ENABLED
 
@@ -1731,7 +1732,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	key.n1 = ip;
 	key.n1 <<= 32;
 	key.n0 = 0LL;
-	int32_t node = s_ufnTree.getNextNode(0,(char *)&key);
+	int32_t node = s_ufnTree.getNextNode_unlocked(0,(char *)&key);
 	// cancel node if not from our ip
 	if ( node >= 0 ) {
 		key128_t *rk = (key128_t *)s_ufnTree.getKey ( node );
@@ -1768,8 +1769,9 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	// reset this
 	int32_t maxWinners = (int32_t)MAX_WINNER_NODES;
 
-	if ( m_winnerTree.getNumNodes() == 0 &&
-	     !m_winnerTree.set(-1, maxWinners, maxWinners * MAX_BEST_REQUEST_SIZE, true, "wintree", NULL, sizeof(key192_t), -1)) {
+	if (m_winnerTree.getNumNodes() == 0 &&
+	     !m_winnerTree.set(-1, maxWinners, maxWinners * MAX_BEST_REQUEST_SIZE, true, "wintree", NULL,
+	                       sizeof(key192_t), -1)) {
 		m_isPopulatingDoledb = false;
 		log("spider: winntree set: %s",mstrerror(g_errno));
 		logTrace( g_conf.m_logTraceSpider, "END, after winnerTree.set" );
@@ -2127,16 +2129,13 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	}
 	
 	// sanity check
-	int32_t wn = m_waitingTree.getNode(0,(char *)&m_waitingTreeKey);
-	// it gets removed because addSpiderReply() calls addToWaitingTree
-	// and replaces the node we are scanning with one that has a better
-	// time, an earlier time, even though that time may have come and
-	// we are scanning it now. perhaps addToWaitingTree() should ignore
-	// the ip if it equals m_scanningIp?
-	if ( wn < 0 ) { 
-		log("spider: waiting tree key removed while reading list "
-		    "for %s (%" PRId32")",
-		    cr->m_coll,(int32_t)m_collnum);
+	if (!m_waitingTree.getNode(0, (char *)&m_waitingTreeKey)) {
+		// it gets removed because addSpiderReply() calls addToWaitingTree
+		// and replaces the node we are scanning with one that has a better
+		// time, an earlier time, even though that time may have come and
+		// we are scanning it now. perhaps addToWaitingTree() should ignore
+		// the ip if it equals m_scanningIp?
+		log(LOG_WARN, "spider: waiting tree key removed while reading list for %s (%" PRId32")", cr->m_coll,(int32_t)m_collnum);
 		logTrace( g_conf.m_logTraceSpider, "END, waitingTree node was removed" );
 		return true;
 	}
@@ -2250,15 +2249,14 @@ bool SpiderColl::scanListForWinners ( ) {
 	// later
 	//
 	// MDW: move this up in evalIpLoop() i think
-	RdbTree *wt = &m_waitingTree;
-	if (wt->isSaving() || !wt->isWritable())
+	if (m_waitingTree.isSaving() || !m_waitingTree.isWritable())
 		return true;
 
 	// ensure we point to the top of the list
 	m_list.resetListPtr();
 
 	// get this
-	int64_t nowGlobalMS = gettimeofdayInMillisecondsGlobal();//Local();
+	int64_t nowGlobalMS = gettimeofdayInMilliseconds();//Local();
 	uint32_t nowGlobal   = nowGlobalMS / 1000;
 
 	SpiderReply   *srep        = NULL;
@@ -2801,54 +2799,48 @@ bool SpiderColl::scanListForWinners ( ) {
 		// sanity. make sure read is somewhat hefty for our maxWinners=1 thing
 		static_assert(SR_READ_SIZE >= 500000, "ensure read size is big enough");
 
-		// only compare to min winner in tree if tree is full
-		if ( m_winnerTree.getNumUsedNodes() >= maxWinners ) {
-			// get that key
-			int64_t tm1 = spiderTimeMS;
-			// get the spider time of lowest scoring req in tree
-			int64_t tm2 = m_tailTimeMS;
-			// if they are both overdue, make them the same
-			if ( tm1 < nowGlobalMS ) tm1 = 1;
-			if ( tm2 < nowGlobalMS ) tm2 = 1;
-			// skip spider request if its time is past winner's
-			if ( tm1 > tm2 )
+		{
+			ScopedLock sl(m_winnerTree.getLock());
+			// only compare to min winner in tree if tree is full
+			if (m_winnerTree.getNumUsedNodes_unlocked() >= maxWinners) {
+				// get that key
+				int64_t tm1 = spiderTimeMS;
+				// get the spider time of lowest scoring req in tree
+				int64_t tm2 = m_tailTimeMS;
+				// if they are both overdue, make them the same
+				if (tm1 < nowGlobalMS) tm1 = 1;
+				if (tm2 < nowGlobalMS) tm2 = 1;
+				// skip spider request if its time is past winner's
+				if (tm1 > tm2)
+					continue;
+				if (tm1 < tm2)
+					goto gotNewWinner;
+				// if tied, use priority
+				if (priority < m_tailPriority)
+					continue;
+				if (priority > m_tailPriority)
+					goto gotNewWinner;
+				// if tied use hop counts so we are breadth first
+				if (sreq->m_hopCount > m_tailHopCount)
+					continue;
+				if (sreq->m_hopCount < m_tailHopCount)
+					goto gotNewWinner;
+				// if tied, use actual times. assuming both<nowGlobalMS
+				if (spiderTimeMS > m_tailTimeMS)
+					continue;
+				if (spiderTimeMS < m_tailTimeMS)
+					goto gotNewWinner;
+				// all tied, keep it the same i guess
 				continue;
-			if ( tm1 < tm2 )
-				goto gotNewWinner;
-			// if tied, use priority
-			if ( priority < m_tailPriority )
-				continue;
-			if ( priority > m_tailPriority )
-				goto gotNewWinner;
-			// if tied use hop counts so we are breadth first
-			if ( sreq->m_hopCount > m_tailHopCount )
-				continue;
-			if ( sreq->m_hopCount < m_tailHopCount )
-				goto gotNewWinner;
-			// if hopcounts tied prefer the unindexed doc
-			// i don't think we need this b/c spidertimems
-			// for new docs should be less than old docs...
-			// TODO: verify that
-			//if ( sreq->m_isIndexed && ! m_tailIsIndexed )
-			//	continue;
-			//if ( ! sreq->m_isIndexed && m_tailIsIndexed )
-			//	goto gotNewWinner;
-			// if tied, use actual times. assuming both<nowGlobalMS
-			if ( spiderTimeMS > m_tailTimeMS )
-				continue;
-			if ( spiderTimeMS < m_tailTimeMS )
-				goto gotNewWinner;
-			// all tied, keep it the same i guess
-			continue;
-			// otherwise, add the new winner in and remove the old
-		gotNewWinner:
-			// get lowest scoring node in tree
-			int32_t tailNode = m_winnerTree.getLastNode();
-			// from table too
-			m_winnerTable.removeKey ( &m_tailUh48 );
-			// delete the tail so new spiderrequest can enter
-			m_winnerTree.deleteNode(tailNode, true);
-
+				// otherwise, add the new winner in and remove the old
+gotNewWinner:
+				// get lowest scoring node in tree
+				int32_t tailNode = m_winnerTree.getLastNode_unlocked();
+				// from table too
+				m_winnerTable.removeKey(&m_tailUh48);
+				// delete the tail so new spiderrequest can enter
+				m_winnerTree.deleteNode_unlocked(tailNode, true);
+			}
 		}
 
 		// somestimes the firstip in its key does not match the
@@ -2879,22 +2871,25 @@ bool SpiderColl::scanListForWinners ( ) {
 		char *newMem = (char *)mdup ( sreq , need , "sreqbuf" );
 		if ( ! newMem ) continue;
 
-		// add it to the tree of the top urls to spider
-		m_winnerTree.addNode( 0, (char *)&wk, (char *)newMem, need );
+		{
+			ScopedLock sl(m_winnerTree.getLock());
+			// add it to the tree of the top urls to spider
+			m_winnerTree.addNode_unlocked(0, (char *)&wk, (char *)newMem, need);
 
-		// set new tail priority and time for next compare
-		if ( m_winnerTree.getNumUsedNodes() >= maxWinners ) {
-			// for the worst node in the tree...
-			int32_t tailNode = m_winnerTree.getLastNode();
-			if ( tailNode < 0 ) { g_process.shutdownAbort(true); }
-			// set new tail parms
-			const key192_t *tailKey = reinterpret_cast<const key192_t*>(m_winnerTree.getKey(tailNode));
-			// convert to char first then to signed int32_t
-			parseWinnerTreeKey ( tailKey, &m_tailIp, &m_tailPriority, &m_tailHopCount, &m_tailTimeMS, &m_tailUh48 );
+			// set new tail priority and time for next compare
+			if (m_winnerTree.getNumUsedNodes_unlocked() >= maxWinners) {
+				// for the worst node in the tree...
+				int32_t tailNode = m_winnerTree.getLastNode_unlocked();
+				if (tailNode < 0) { g_process.shutdownAbort(true); }
+				// set new tail parms
+				const key192_t *tailKey = reinterpret_cast<const key192_t *>(m_winnerTree.getKey_unlocked(tailNode));
+				// convert to char first then to signed int32_t
+				parseWinnerTreeKey(tailKey, &m_tailIp, &m_tailPriority, &m_tailHopCount, &m_tailTimeMS, &m_tailUh48);
 
-			// sanity
-			if ( m_tailIp != firstIp ) {
-				g_process.shutdownAbort(true);
+				// sanity
+				if (m_tailIp != firstIp) {
+					g_process.shutdownAbort(true);
+				}
 			}
 		}
 	}
@@ -2912,7 +2907,7 @@ bool SpiderColl::scanListForWinners ( ) {
 	logDebug(g_conf.m_logDebugSpider, "spider: Checked list of %" PRId32" spiderdb bytes (%" PRId32" recs) "
 		    "for winners for firstip=%s. winnerTreeUsedNodes=%" PRId32" #newreqs=%" PRId64,
 	         m_list.getListSize(), recCount,
-	         iptoa( m_scanningIp ), m_winnerTree.getNumUsedNodes(), m_totalNewSpiderRequests );
+	         iptoa( m_scanningIp ), m_winnerTree.getNumUsedNodes_unlocked(), m_totalNewSpiderRequests );
 
 	// reset any errno cuz we're just a cache
 	g_errno = 0;
@@ -3024,8 +3019,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 
 	// gotta check this again since we might have done a QUICKPOLL() above
 	// to call g_process.shutdown() so now tree might be unwritable
-	RdbTree *wt = &m_waitingTree;
-	if (wt->isSaving() || !wt->isWritable())
+	if (m_waitingTree.isSaving() || !m_waitingTree.isWritable())
 		return true;
 
 	// ok, all done if nothing to add to doledb. i guess we were misled
@@ -3035,7 +3029,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 	// we will re-scan spiderdb. if we had something to spider but it was 
 	// in the future the m_minFutureTimeMS will be non-zero, and we deal
 	// with that below...
-	if ( m_winnerTree.isEmpty() && ! m_minFutureTimeMS ) {
+	if (m_winnerTree.isEmpty() && ! m_minFutureTimeMS ) {
 		// if we received new incoming requests while we were
 		// scanning, which is happening for some crawls, then do
 		// not nuke! just repeat later in populateDoledbFromWaitingTree
@@ -3061,7 +3055,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 			log(LOG_DEBUG,"spider: removed2 time=%" PRId64" ip=%s from "
 			    "waiting tree. nn=%" PRId32".",
 			    timestamp64, iptoa(firstIp),
-			    m_waitingTree.getNumUsedNodes());
+			    m_waitingTree.getNumUsedNodes_unlocked());
 
 		m_waitingTable.removeKey  ( &firstIp  );
 		// sanity check
@@ -3069,26 +3063,12 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 		return true;
 	}
 
-
 	// i've seen this happen, wtf?
-	if ( m_winnerTree.isEmpty() && m_minFutureTimeMS ) { 
+	if (m_winnerTree.isEmpty() && m_minFutureTimeMS ) {
 		// this will update the waiting tree key with minFutureTimeMS
 		addDoleBufIntoDoledb ( NULL , false );
 		return true;
 	}
-
-	// i am seeing dup uh48's in the m_winnerTree
-	int32_t firstIp = m_waitingTreeKey.n0 & 0xffffffff;
-	//char dbuf[147456];//3*MAX_WINNER_NODES*(8+1)];
-	HashTableX dedup;
-	int32_t ntn = m_winnerTree.getNumNodes();
-	dedup.set ( 8,
-		    0,
-		    (int32_t)2*ntn, // # slots to initialize to
-		    NULL,//dbuf,
-		    0,//147456,//(int32_t)(3*MAX_WINNER_NODES*(8+1)),
-		    false,
-		    "windt");
 
 	///////////
 	//
@@ -3100,70 +3080,78 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 	// churn. it is really inefficient.
 	SafeBuf doleBuf;
 	doleBuf.pushLong(4);
-	int32_t added = 0;
-	for (int32_t node = m_winnerTree.getFirstNode(); node >= 0; node = m_winnerTree.getNextNode(node)) {
-		// get data for that
-		const SpiderRequest *sreq2 = reinterpret_cast<const SpiderRequest*>(m_winnerTree.getData(node));
 
-		// sanity
-		if ( sreq2->m_firstIp != firstIp ) { g_process.shutdownAbort(true); }
-		//if ( sreq2->m_spiderTimeMS < 0 ) { g_process.shutdownAbort(true); }
-		if ( sreq2->m_ufn          < 0 ) { g_process.shutdownAbort(true); }
-		if ( sreq2->m_priority ==   -1 ) { g_process.shutdownAbort(true); }
-		// check for errors
-		bool hadError = false;
-		// parse it up
-		int32_t winIp;
-		int32_t winPriority;
-		int32_t winHopCount;
-		int64_t winSpiderTimeMS;
-		int64_t winUh48;
-		const key192_t *winKey = reinterpret_cast<const key192_t *>(m_winnerTree.getKey(node));
-		parseWinnerTreeKey ( winKey ,
-				     &winIp ,
-				     &winPriority,
-				     &winHopCount,
-				     &winSpiderTimeMS ,
-				     &winUh48 );
-		// sanity
-		if ( winIp != firstIp ) { g_process.shutdownAbort(true);}
-		if ( winUh48 != sreq2->getUrlHash48() ) { g_process.shutdownAbort(true);}
-		// make the doledb key
-		key96_t doleKey = Doledb::makeKey ( winPriority,
-						   // convert to secs from ms
-						   winSpiderTimeMS / 1000     ,
-						   winUh48 ,
-						   false                    );
-		// dedup. if we add dups the problem is is that they
-		// overwrite the key in doledb yet the doleiptable count
-		// remains undecremented and doledb is empty and never
-		// replenished because the firstip can not be added to
-		// waitingTree because doleiptable count is > 0. this was
-		// causing spiders to hang for collections. i am not sure
-		// why we should be getting dups in winnertree because they
-		// have the same uh48 and that is the key in the tree.
-		if ( dedup.isInTable ( &winUh48 ) ) {
-			log("spider: got dup uh48=%" PRIu64" dammit", winUh48);
-			continue;
-		}
-		// count it
-		added++;
-		// do not allow dups
-		dedup.addKey ( &winUh48 );
-		// store doledb key first
-		if ( ! doleBuf.safeMemcpy ( &doleKey, sizeof(key96_t) ) )
-			hadError = true;
-		// then size of spiderrequest
-		if ( ! doleBuf.pushLong ( sreq2->getRecSize() ) ) 
-			hadError = true;
-		// then the spiderrequest encapsulated
-		if ( ! doleBuf.safeMemcpy ( sreq2 , sreq2->getRecSize() )) 
-			hadError=true;
-		// note and error
-		if ( hadError ) {
-			log("spider: error making doledb list: %s",
-			    mstrerror(g_errno));
-			    return true;
+	// i am seeing dup uh48's in the m_winnerTree
+	int32_t firstIp = m_waitingTreeKey.n0 & 0xffffffff;
+
+	{
+		ScopedLock sl(m_winnerTree.getLock());
+
+		int32_t ntn = m_winnerTree.getNumNodes_unlocked();
+
+		HashTableX dedup;
+		dedup.set(8, 0, (int32_t)2 * ntn, NULL, 0, false, "windt");
+
+		int32_t added = 0;
+		for (int32_t node = m_winnerTree.getFirstNode_unlocked();
+		     node >= 0; node = m_winnerTree.getNextNode_unlocked(node)) {
+			// get data for that
+			const SpiderRequest *sreq2 = reinterpret_cast<const SpiderRequest *>(m_winnerTree.getData_unlocked(node));
+
+			// sanity
+			if (sreq2->m_firstIp != firstIp) { g_process.shutdownAbort(true); }
+			//if ( sreq2->m_spiderTimeMS < 0 ) { g_process.shutdownAbort(true); }
+			if (sreq2->m_ufn < 0) { g_process.shutdownAbort(true); }
+			if (sreq2->m_priority == -1) { g_process.shutdownAbort(true); }
+			// check for errors
+			bool hadError = false;
+			// parse it up
+			int32_t winIp;
+			int32_t winPriority;
+			int32_t winHopCount;
+			int64_t winSpiderTimeMS;
+			int64_t winUh48;
+			const key192_t *winKey = reinterpret_cast<const key192_t *>(m_winnerTree.getKey_unlocked(node));
+			parseWinnerTreeKey(winKey, &winIp, &winPriority, &winHopCount, &winSpiderTimeMS, &winUh48);
+
+			// sanity
+			if (winIp != firstIp) { g_process.shutdownAbort(true); }
+			if (winUh48 != sreq2->getUrlHash48()) { g_process.shutdownAbort(true); }
+
+			// make the doledb key
+			key96_t doleKey = Doledb::makeKey(winPriority, winSpiderTimeMS / 1000, winUh48, false);
+
+			// dedup. if we add dups the problem is is that they
+			// overwrite the key in doledb yet the doleiptable count
+			// remains undecremented and doledb is empty and never
+			// replenished because the firstip can not be added to
+			// waitingTree because doleiptable count is > 0. this was
+			// causing spiders to hang for collections. i am not sure
+			// why we should be getting dups in winnertree because they
+			// have the same uh48 and that is the key in the tree.
+			if (dedup.isInTable(&winUh48)) {
+				log("spider: got dup uh48=%" PRIu64" dammit", winUh48);
+				continue;
+			}
+			// count it
+			added++;
+			// do not allow dups
+			dedup.addKey(&winUh48);
+			// store doledb key first
+			if (!doleBuf.safeMemcpy(&doleKey, sizeof(key96_t)))
+				hadError = true;
+			// then size of spiderrequest
+			if (!doleBuf.pushLong(sreq2->getRecSize()))
+				hadError = true;
+			// then the spiderrequest encapsulated
+			if (!doleBuf.safeMemcpy(sreq2, sreq2->getRecSize()))
+				hadError = true;
+			// note and error
+			if (hadError) {
+				log("spider: error making doledb list: %s",
+				    mstrerror(g_errno));
+				return true;
+			}
 		}
 	}
 
@@ -3219,96 +3207,79 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 
 	int32_t firstIp = m_waitingTreeKey.n0 & 0xffffffff;
 
-	// sanity check. how did this happen? it messes up our crawl!
-	// maybe a doledb add went through? so we should add again?
-	int32_t wn = m_waitingTree.getNode(0,(char *)&m_waitingTreeKey);
-	if ( wn < 0 ) { 
-		log("spider: waiting tree key removed while reading list for "
-		    "%s (%" PRId32")",m_coll,(int32_t)m_collnum);
-		// play it safe and add it back for now...
-		// when i try to break here in gdb it never happens because
-		// of timing issues. heisenbug...
-		// false = callForScan
-		//if ( ! addToWaitingTree ( 0 , m_scanningIp , false ) )
-		//	log("spider: failed to add wk2 to waiting tree: %s"
-		//	    ,mstrerror(g_errno));
-		return true;
-	}
+	{
+		ScopedLock sl(m_waitingTree.getLock());
 
-	// if best request has a future spiderTime, at least update
-	// the wait tree with that since we will not be doling this request
-	// right now.
-	if ( m_winnerTree.isEmpty() && m_minFutureTimeMS && ! isFromCache ) {
+		/// @todo ALC could we avoid locking winnerTree?
+		ScopedLock sl2(m_winnerTree.getLock());
 
-		// save memory
-		m_winnerTree.reset();
-		m_winnerTable.reset();
-
-		// if in the process of being added to doledb or in doledb...
-		if ( m_doleIpTable.isInTable ( &firstIp ) ) {
-			// sanity i guess. remove this line if it hits this!
-			log("spider: wtf????");
-			//g_process.shutdownAbort(true);
+		// sanity check. how did this happen? it messes up our crawl!
+		// maybe a doledb add went through? so we should add again?
+		int32_t wn = m_waitingTree.getNode_unlocked(0, (char *)&m_waitingTreeKey);
+		if (wn < 0) {
+			log("spider: waiting tree key removed while reading list for "
+				    "%s (%" PRId32")", m_coll, (int32_t)m_collnum);
 			return true;
 		}
 
-		// before you set a time too far into the future, if we
-		// did receive new spider requests, entertain those
-		if ( m_gotNewDataForScanningIp &&
-		     // we had twitter.com with a future spider date
-		     // on the pe2 cluster but we kept hitting this, so
-		     // don't do this anymore if we scanned a ton of bytes
-		     // like we did for twitter.com because it uses all the
-		     // resources when we can like 150MB of spider requests
-		     // for a single firstip
-		     m_totalBytesScanned < 30000 ) {
-			if ( g_conf.m_logDebugSpider )
-				log("spider: received new requests, not "
-				    "updating waiting tree with future time");
+		// if best request has a future spiderTime, at least update
+		// the wait tree with that since we will not be doling this request
+		// right now.
+		if (m_winnerTree.isEmpty_unlocked() && m_minFutureTimeMS && !isFromCache) {
+			// save memory
+			m_winnerTree.reset_unlocked();
+			m_winnerTable.reset();
+
+			// if in the process of being added to doledb or in doledb...
+			if (m_doleIpTable.isInTable(&firstIp)) {
+				// sanity i guess. remove this line if it hits this!
+				log(LOG_ERROR, "spider: wtf????");
+				//g_process.shutdownAbort(true);
+				return true;
+			}
+
+			// before you set a time too far into the future, if we
+			// did receive new spider requests, entertain those
+			if (m_gotNewDataForScanningIp &&
+			    // we had twitter.com with a future spider date
+			    // on the pe2 cluster but we kept hitting this, so
+			    // don't do this anymore if we scanned a ton of bytes
+			    // like we did for twitter.com because it uses all the
+			    // resources when we can like 150MB of spider requests
+			    // for a single firstip
+			    m_totalBytesScanned < 30000) {
+				logDebug(g_conf.m_logDebugSpider, "spider: received new requests, not updating waiting tree with future time");
+				return true;
+			}
+
+			// get old time
+			uint64_t oldSpiderTimeMS = m_waitingTreeKey.n1;
+			oldSpiderTimeMS <<= 32;
+			oldSpiderTimeMS |= (m_waitingTreeKey.n0 >> 32);
+			// delete old node
+			if (wn >= 0) {
+				m_waitingTree.deleteNode_unlocked(wn, false);
+			}
+
+			// invalidate
+			m_waitingTreeKeyValid = false;
+			key96_t wk2 = makeWaitingTreeKey(m_minFutureTimeMS, firstIp);
+
+			logDebug(g_conf.m_logDebugSpider, "spider: scan replacing waitingtree key oldtime=%" PRIu32" newtime=%" PRIu32" firstip=%s",
+					(uint32_t)(oldSpiderTimeMS / 1000LL), (uint32_t)(m_minFutureTimeMS / 1000LL), iptoa(firstIp));
+
+			// this should never fail since we deleted one above
+			m_waitingTree.addKey_unlocked(&wk2);
+
+			logDebug(g_conf.m_logDebugSpider, "spider: RE-added time=%" PRId64" ip=%s to waiting tree node",
+			         m_minFutureTimeMS, iptoa(firstIp));
+
+			// keep the table in sync now with the time
+			m_waitingTable.addKey(&firstIp, &m_minFutureTimeMS);
+			// sanity check
+			if (!m_waitingTable.m_isWritable) { g_process.shutdownAbort(true); }
 			return true;
 		}
-
-		// get old time
-		uint64_t oldSpiderTimeMS = m_waitingTreeKey.n1;
-		oldSpiderTimeMS <<= 32;
-		oldSpiderTimeMS |= (m_waitingTreeKey.n0 >> 32);
-		// delete old node
-		//int32_t wn = m_waitingTree.getNode(0,(char *)&m_waitingTreeKey);
-		//if ( wn < 0 ) { g_process.shutdownAbort(true); }
-		if ( wn >= 0 ) {
-			m_waitingTree.deleteNode(wn, false);
-			//log("spdr: 2 del node %" PRId32" for %s",wn,iptoa(firstIp));
-		}
-
-		// invalidate
-		m_waitingTreeKeyValid = false;
-		//int32_t  fip = m_bestRequest->m_firstIp;
-		key96_t wk2 = makeWaitingTreeKey ( m_minFutureTimeMS , firstIp );
-		// log the replacement
-		if ( g_conf.m_logDebugSpider )
-			log("spider: scan replacing waitingtree key "
-			    "oldtime=%" PRIu32" newtime=%" PRIu32" firstip=%s",
-			    // bestpri=%" PRId32" "
-			    //"besturl=%s",
-			    (uint32_t)(oldSpiderTimeMS/1000LL),
-			    (uint32_t)(m_minFutureTimeMS/1000LL),
-			    iptoa(firstIp)
-			    //(int32_t)m_bestRequest->m_priority,
-			    //	    m_bestRequest->m_url);
-			    );
-		// this should never fail since we deleted one above
-		int32_t dn = m_waitingTree.addKey ( &wk2 );
-		// note it
-		if ( g_conf.m_logDebugSpider )
-			logf(LOG_DEBUG,"spider: RE-added time=%" PRId64" ip=%s to "
-			    "waiting tree node %" PRId32,
-			    m_minFutureTimeMS , iptoa(firstIp),dn);
-
-		// keep the table in sync now with the time
-		m_waitingTable.addKey( &firstIp, &m_minFutureTimeMS );
-		// sanity check
-		if ( ! m_waitingTable.m_isWritable ) { g_process.shutdownAbort(true);}
-		return true;
 	}
 
 	char *doleBufEnd = doleBuf->getBufPtr();
@@ -3317,10 +3288,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// immediately get another spider request from this same ip added
 	// to it while the msg4 is out. but if add failes we totally bail
 	// with g_errno set
-	//
-	// crap, i think this could be slowing us down when spidering
-	// a single ip address. maybe use msg1 here not msg4?
-	//if ( ! addToDoleTable ( m_bestRequest ) ) return true;
+
 	// . MDW: now we have a list of doledb records in a SafeBuf:
 	// . scan the requests in safebuf
 
@@ -3368,14 +3336,6 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// cached dolebuf to doledb then remove it from cache so it's not
 	// a cached empty dolebuf and we recompute it not using the cache.
 	if ( isFromCache && p >= doleBufEnd ) {
-		//if ( addToCache ) { g_process.shutdownAbort(true); }
-		// debug note
-		// if ( m_collnum == 18752 )
-		// 	log("spider: rdbcache: adding single byte. skipsize=%i"
-		// 	    ,doledbRecSize);
-		// let's get this working right...
-		//wc->removeKey ( collnum , k , start );
-		//wc->markDeletedRecord(start);
 		// i don't think we can remove keys from cache so add
 		// a rec with a byte size of 1 to indicate for us to ignore.
 		// set the timestamp to 12345 so the getRecord above will
@@ -3390,13 +3350,13 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 				(char *)&cacheKey,
 				&byte ,
 				1 ,
-		 		12345 );//cachedTimestamp );
+		 		12345 );
 		//wc->verify();
 	}
 
 	// if it wasn't in the cache and it was only one record we
 	// obviously do not want to add it to the cache.
-	else if ( p < doleBufEnd ) { // if ( addToCache ) {
+	else if ( p < doleBufEnd ) {
 		key96_t cacheKey;
 		cacheKey.n0 = firstIp;
 		cacheKey.n1 = 0;
@@ -3410,14 +3370,9 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		*(int32_t *)x = newJump;
 		if ( newJump >= doleBuf->length() ) { g_process.shutdownAbort(true);}
 		if ( newJump < 4 ) { g_process.shutdownAbort(true);}
-		if ( g_conf.m_logDebugSpider ) // || m_collnum == 18752 )
-			log("spider: rdbcache: updating "
-			    "%" PRId32" bytes of SpiderRequests "
-			    "to winnerlistcache for ip %s oldjump=%" PRId32
-			    " newJump=%" PRId32" ptr=0x%" PTRFMT,
-			    doleBuf->length(),iptoa(firstIp),oldJump,
-			    newJump,
-			    (PTRTYPE)x);
+		logDebug(g_conf.m_logDebugSpider, "spider: rdbcache: updating %" PRId32" bytes of SpiderRequests "
+			"to winnerlistcache for ip %s oldjump=%" PRId32" newJump=%" PRId32" ptr=0x%" PTRFMT,
+		         doleBuf->length(),iptoa(firstIp),oldJump, newJump, (PTRTYPE)x);
 		//validateDoleBuf ( doleBuf );
 		//wc->verify();
 		// inherit timestamp. if 0, RdbCache will set to current time
@@ -3425,9 +3380,6 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		// don't churn the cache.
 		// but do add it to cache if not already in there yet.
 		if ( ! isFromCache ) {
-			// if ( m_collnum == 18752 )
-			// 	log("spider: rdbcache: adding record a new "
-			// 	    "dbufsize=%i",(int)doleBuf->length());
 			RdbCacheLock rcl(*wc);
 			wc->addRecord ( m_collnum,
 					(char *)&cacheKey,
@@ -3439,16 +3391,13 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 
 	// keep it on stack now that doledb is tree-only
 	RdbList tmpList;
-
 	tmpList.setFromPtr ( doledbRec , doledbRecSize , RDB_DOLEDB );
 
 	// now that doledb is tree-only and never dumps to disk, just
 	// add it directly
 	g_doledb.getRdb()->addList(m_collnum, &tmpList);
 
-	if ( g_conf.m_logDebugSpider )
-		log("spider: adding doledb tree node size=%" PRId32,
-		    doledbRecSize);
+	logDebug(g_conf.m_logDebugSpider, "spider: adding doledb tree node size=%" PRId32, doledbRecSize);
 
 	int32_t storedFirstIp = (m_waitingTreeKey.n0) & 0xffffffff;
 
@@ -3459,12 +3408,8 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		spiderTimeMS |= (m_waitingTreeKey.n0 >> 32);
 		logf(LOG_DEBUG,"spider: removing doled waitingtree key"
 		     " spidertime=%" PRIu64" firstIp=%s "
-		     //"pri=%" PRId32" "
-		     //"url=%s"
 		     ,spiderTimeMS,
 		     iptoa(storedFirstIp)
-		     //(int32_t)m_bestRequest->m_priority,
-		     //m_bestRequest->m_url);
 		     );
 	}
 
