@@ -57,11 +57,6 @@ bool PingServer::registerHandler ( ) {
 		return false;
 	}
 
-	// limit this to 1000ms
-	if ( g_conf.m_pingSpacer > 1000 ) {
-		g_conf.m_pingSpacer = 1000;
-	}
-
 	// save this
 	m_pingSpacer = g_conf.m_pingSpacer;
 

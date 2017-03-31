@@ -5248,6 +5248,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "ps";
 	simple_m_set(Conf,m_pingSpacer);
 	m->m_min   = 50; // i've seen values of 0 hammer the cpu
+	m->m_max   = 1000;
 	m->m_def   = "100";
 	m->m_units = "milliseconds";
 	m->m_group = false;
