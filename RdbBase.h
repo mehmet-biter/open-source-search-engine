@@ -163,7 +163,6 @@ class RdbBase {
 
 	// these are used for computing load on a machine
 	bool isMerging() const { return m_isMerging; }
-	bool isDumping() const { return m_dump->isDumping(); }
 
 	//are files being unlinked or renamed?
 	bool isManipulatingFiles() const;
