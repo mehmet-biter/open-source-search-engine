@@ -348,7 +348,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 //   only needs one notification.
 static int32_t s_lastSentHostId = -1;
 
-void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
+static void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	// state is the host
 	Host *h = (Host *)state;
 	if( !h ) {
@@ -459,7 +459,7 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	g_errno = 0;
 }
 
-void gotReplyWrapperP3 ( void *state , UdpSlot *slot ) {
+static void gotReplyWrapperP3 ( void *state , UdpSlot *slot ) {
 	// do not free this!
 	slot->m_sendBufAlloc = NULL;
 	// un-count it
@@ -472,7 +472,7 @@ void gotReplyWrapperP3 ( void *state , UdpSlot *slot ) {
 static int64_t s_deltaTime = 0;
 
 // this may be called from a signal handler now...
-void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
+static void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 	// get request 
 	int32_t  requestSize = slot->m_readBufSize;
 	char *request     = slot->m_readBuf;
@@ -1066,7 +1066,7 @@ bool PingServer::sendEmail ( Host *h            ,
 #include "HttpServer.h"
 static void gotDocWrapper ( void *state , TcpSocket *ts ) ;
 
-bool sendAdminEmail ( Host  *h,
+static bool sendAdminEmail ( Host  *h,
 		      const char  *fromAddress,
 		      const char  *toAddress,
 		      char  *body , 
@@ -1234,7 +1234,7 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 	return false;
 }
 
-void gotReplyWrapperP2 ( void *state , UdpSlot *slot ) {
+static void gotReplyWrapperP2 ( void *state , UdpSlot *slot ) {
 	// count it
 	g_pingServer.m_numReplies++;
 	// don't let udp server free our send buf, we own it
@@ -1262,7 +1262,7 @@ void gotReplyWrapperP2 ( void *state , UdpSlot *slot ) {
 
 // if its status changes from dead to alive or vice versa, we have to
 // update g_hostdb.m_numHostsAlive. Dns.cpp and Msg17 will use this count
-void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
+static void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 
 	// sanity check
 	if ( pingPtr != &h->m_ping && pingPtr != &h->m_pingShotgun ) { 
