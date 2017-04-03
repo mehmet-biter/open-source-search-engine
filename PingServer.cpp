@@ -27,15 +27,10 @@ int32_t g_recoveryLevel = 0;
 PingServer g_pingServer;
 
 static void sleepWrapper ( int fd , void *state ) ;
-static void gotReplyWrapperP ( void *state , UdpSlot *slot ) ;
-static void handleRequest11 ( UdpSlot *slot , int32_t niceness ) ;
-static void gotReplyWrapperP2 ( void *state , UdpSlot *slot );
+
 static void gotReplyWrapperP3 ( void *state , UdpSlot *slot );
 static void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) ;
 
-static bool sendAdminEmail ( Host  *h, const char  *fromAddress,
-                             const char  *toAddress, char  *body ,
-			     const char  *emailServIp );
 
 bool PingServer::registerHandler ( ) {
 	// . we'll handle msgTypes of 0x11 for pings
@@ -345,7 +340,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 //   only needs one notification.
 static int32_t s_lastSentHostId = -1;
 
-static void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
+void PingServer::gotReplyWrapperP(void *state, UdpSlot *slot) {
 	// state is the host
 	Host *h = (Host *)state;
 	if( !h ) {
@@ -469,7 +464,7 @@ static void gotReplyWrapperP3 ( void *state , UdpSlot *slot ) {
 static int64_t s_deltaTime = 0;
 
 // this may be called from a signal handler now...
-static void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
+void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 	// get request 
 	int32_t  requestSize = slot->m_readBufSize;
 	char *request     = slot->m_readBuf;
@@ -1023,13 +1018,11 @@ bool PingServer::sendEmail ( Host *h            ,
 }
 
 
-static void sentEmailWrapper(void *state, TcpSocket *ts);
-
-static bool sendAdminEmail ( Host  *h,
-		      const char  *fromAddress,
-		      const char  *toAddress,
-		      char  *body , 
-		      const char  *emailServIp) {
+bool PingServer::sendAdminEmail(Host  *h,
+				const char  *fromAddress,
+				const char  *toAddress,
+				char  *body,
+				const char  *emailServIp) {
 	char hostname[ 256];
 	gethostname(hostname,sizeof(hostname));
 	// create a new buffer
@@ -1071,7 +1064,7 @@ static bool sendAdminEmail ( Host  *h,
 }
 
 
-void sentEmailWrapper( void *state, TcpSocket *s) {
+void PingServer::sentEmailWrapper( void *state, TcpSocket *s) {
 	// keep track of how many we got
 	g_pingServer.m_numReplies2++;
 	if ( g_pingServer.m_numReplies2 > g_pingServer.m_maxRequests2 ) {
@@ -1191,7 +1184,7 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 	return false;
 }
 
-static void gotReplyWrapperP2 ( void *state , UdpSlot *slot ) {
+void PingServer::gotReplyWrapperP2(void *state, UdpSlot *slot) {
 	// count it
 	g_pingServer.m_numReplies++;
 	// don't let udp server free our send buf, we own it

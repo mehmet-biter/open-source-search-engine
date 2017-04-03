@@ -8,6 +8,8 @@
 #include "SafeBuf.h"
 #include "repair_mode.h"
 
+class UdpSlot;
+class TcpSocket;
 
 class PingServer {
 
@@ -41,20 +43,11 @@ class PingServer {
 			 bool oom = false ,
 			 bool forceIt      = false);
 
-	int32_t m_i;
+	bool hostsConfInDisagreement() const { return m_hostsConfInDisagreement; }
+	int getNumHostsDead() const { return m_numHostsDead; }
 
-	// broadcast shutdown info
-	int32_t    m_numRequests ;
-	int32_t    m_numReplies ;
-	void   *m_broadcastState ;
-	void  (*m_broadcastCallback) ( void *state );
-
-	int32_t    m_numRequests2;
-	int32_t    m_numReplies2;
-	int32_t    m_maxRequests2;
-
-	int32_t    m_pingSpacer;
-	int32_t    m_callnum;
+	Host *getMinRepairModeHost() const { return m_minRepairModeHost; }
+	int getMinRepairMode() const { return m_minRepairMode; }
 
 	// . these functions used by Repair.cpp
 	// . we do not tally ourselves when computing m_minRepairMode
@@ -86,6 +79,32 @@ class PingServer {
 	void sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) ;
 
 	void    setMinRepairMode ( Host *h ) ;
+
+private:
+	static void gotReplyWrapperP(void *state, UdpSlot *slot);
+	static void gotReplyWrapperP2(void *state, UdpSlot *slot);
+	static void handleRequest11(UdpSlot *slot , int32_t niceness);
+	static void sentEmailWrapper(void *state, TcpSocket *ts);
+	static bool sendAdminEmail(Host  *h,
+			           const char  *fromAddress,
+                                   const char *toAddress,
+			           char  *body,
+			           const char  *emailServIp);
+	int32_t m_i;
+
+	// broadcast shutdown info
+	int32_t    m_numRequests ;
+	int32_t    m_numReplies ;
+	void   *m_broadcastState ;
+	void  (*m_broadcastCallback) ( void *state );
+
+	int32_t    m_numRequests2;
+	int32_t    m_numReplies2;
+	int32_t    m_maxRequests2;
+
+	int32_t    m_pingSpacer;
+	int32_t    m_callnum;
+
 	// set by setMinRepairMode() function
 	int32_t    m_minRepairMode;
 	int32_t    m_maxRepairMode;
