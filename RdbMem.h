@@ -10,8 +10,6 @@
 #include "types.h"
 #include <inttypes.h>
 
-class Rdb;
-
 class RdbMem {
 
  public:
@@ -20,8 +18,7 @@ class RdbMem {
 	~RdbMem();
 
 	// initialize us with the RdbDump class your rdb is using
-	bool init(const Rdb *rdb, int32_t memToAlloc,
-		  const char *allocName);
+	bool init(int32_t memToAlloc, const char *allocName);
 
 	void clear();
 
@@ -50,8 +47,6 @@ class RdbMem {
 
 private:
 	friend class Rdb;
-	// keep hold of this class
-	const Rdb *m_rdb;
 
 	// the primary mem
 	char *m_ptr1;

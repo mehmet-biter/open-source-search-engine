@@ -182,7 +182,7 @@ bool Rdb::init(const char *dbname,
 
 	sprintf(m_memAllocName,"mem-%s",m_dbname);
 
-	if ( fixedDataSize != 0 && ! m_mem.init ( this, dataMem, m_memAllocName ) ) {
+	if ( fixedDataSize != 0 && ! m_mem.init ( dataMem, m_memAllocName ) ) {
 		log( LOG_ERROR, "db: Failed to initialize memory: %s.", mstrerror( g_errno ) );
 		return false;
 	}

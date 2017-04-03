@@ -34,8 +34,7 @@
 
 
 RdbMem::RdbMem()
-  : m_rdb(NULL),
-    m_ptr1(NULL),
+  : m_ptr1(NULL),
     m_ptr2(NULL),
     m_mem(NULL),
     m_memSize(0),
@@ -72,8 +71,7 @@ void RdbMem::clear() {
 
 
 // initialize us with the RdbDump class your rdb is using
-bool RdbMem::init(const Rdb *rdb, int32_t memToAlloc, const char *allocName) {
-	m_rdb  = rdb;
+bool RdbMem::init(int32_t memToAlloc, const char *allocName) {
 	m_allocName = allocName;
 	// return true if no mem
 	if(memToAlloc<=0)
