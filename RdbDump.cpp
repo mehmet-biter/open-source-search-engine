@@ -42,7 +42,6 @@ RdbDump::RdbDump() {
 	m_numNegRecs = 0;
 	m_rdb = NULL;
 	m_collnum = 0;
-	m_doCollCheck = false;
 	m_isSuspended = false;
 	m_ks = 0;
 }
@@ -66,12 +65,6 @@ bool RdbDump::set(collnum_t collnum,
                   char keySize,
                   Rdb *rdb) {
 	m_collnum = collnum;
-
-	m_doCollCheck = true;
-
-	// RdbMerge also calls us but rdb is always set to NULL and it was
-	// causing a merge on collectionless rdb to screw up
-	if ( ! rdb ) m_doCollCheck = false;
 
 	m_file          = file;
 	m_buckets       = buckets;
@@ -691,11 +684,7 @@ bool RdbDump::doneReadingForVerify ( ) {
 
 	// if someone reset/deleted the collection we were dumping...
 	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
-
-	// . do not do this for statsdb which always use collnum of 0
-	// . RdbMerge also calls us but gives a NULL m_rdb so we can't
-	//   set m_isCollectionless to false
-	if (!cr && m_doCollCheck) {
+	if (!cr) {
 		g_errno = ENOCOLLREC;
 		logError("db: lost collection while dumping to disk. making map null so we can stop.");
 		m_map = NULL;
@@ -855,11 +844,7 @@ void RdbDump::doneWritingWrapper(void *state) {
 void RdbDump::continueDumping() {
 	// if someone reset/deleted the collection we were dumping...
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
-
-	// . do not do this for statsdb which always use collnum of 0
-	// . RdbMerge also calls us but gives a NULL m_rdb so we can't
-	//   set m_isCollectionless to false
-	if (!cr && m_doCollCheck) {
+	if (!cr) {
 		g_errno = ENOCOLLREC;
 		// m_file is invalid if collrec got nuked because so did the Rdbbase which has the files
 		// m_file is probably invalid too since it is stored in cr->m_bases[i]->m_files[j]

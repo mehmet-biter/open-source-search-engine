@@ -123,8 +123,6 @@ private:
 
 	collnum_t m_collnum;
 
-	bool m_doCollCheck;
-
 	bool m_isSuspended;
 
 	char m_ks;
