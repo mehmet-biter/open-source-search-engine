@@ -1113,7 +1113,8 @@ void Rdb::doneDumping ( ) {
 	// the rest from doing it
 	// don't attempt merge if we're niceness 0
 	if ( !m_niceness ) return;
-	attemptMergeAllCallback(0,NULL);
+
+	attemptMergeAll();
 }
 
 void forceMergeAll(rdbid_t rdbId) {
