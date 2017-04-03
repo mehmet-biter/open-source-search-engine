@@ -378,7 +378,7 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 	//Initiate dumps for any Rdbs wanting it
 	for (auto const &item : rdbRecSizes) {
 		Rdb *rdb = getRdbFromId(item.first);
-		if(!rdb->isInDumpLoop() && rdb->needsDump()) {
+		if (rdb->needsDump()) {
 			logDebug(g_conf.m_logDebugSpider, "Rdb %d needs dumping", item.first);
 			rdb->dumpTree();
 			//we ignore the return value because we have processed the list/msg4
