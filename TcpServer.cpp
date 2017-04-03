@@ -2196,6 +2196,11 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 	//::close ( 0 );
 	//fdatasync(sd);
 
+	if (s->m_hostname) {
+		mfree(s->m_hostname, s->m_hostnameSize, "TcpSocket");
+		s->m_hostname = NULL;
+		s->m_hostnameSize = 0;
+	}
 
 	// caller should call makeCallback, not us since we might not
 	// have blocked, in which case should not be calling the callback
