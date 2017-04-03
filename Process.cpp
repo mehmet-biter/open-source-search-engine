@@ -608,11 +608,9 @@ bool Process::save2 ( ) {
 	//   main process, not in a thread
 	disableTreeWrites( false );
 
-	bool useThreads = true;
-
 	// . tell all rdbs to save trees
 	// . will return true if no rdb tree needs a save
-	if (!saveRdbTrees(useThreads, false)) {
+	if (!saveRdbTrees(false)) {
 		return false;
 	}
 
@@ -720,7 +718,7 @@ bool Process::shutdown2() {
 
 	// . tell all rdbs to save trees
 	// . will return true if no rdb tree needs a save
-	if (!saveRdbTrees(false, true)) {
+	if (!saveRdbTrees(true)) {
 		if (!m_urgent) {
 			return false;
 		}
@@ -923,13 +921,14 @@ bool Process::isRdbMerging ( ) {
 
 // . returns false if blocked, true otherwise
 // . calls callback when done saving
-bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
+bool Process::saveRdbTrees(bool shuttingDown) {
 	// never if in read only mode
 	if ( g_conf.m_readOnlyMode ) return true;
 
 	// no thread if shutting down
-	if ( shuttingDown ) {
-		useThread = false;
+	bool useThread = (!shuttingDown);
+
+	if (shuttingDown) {
 		log("gb: trying to shutdown");
 	}
 
