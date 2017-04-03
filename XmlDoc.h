@@ -319,7 +319,6 @@ public:
 	bool indexDoc ( );
 	bool indexDoc2 ( );
 
-	key96_t *getTitleRecKey() ;
 	char *prepareToMakeTitleRec ( ) ;
 	// store TitleRec into "buf" so it can be added to metalist
 	bool setTitleRecBuf ( SafeBuf *buf , int64_t docId, int64_t uh48 );

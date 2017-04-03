@@ -2049,13 +2049,6 @@ static void getTitleRecBufWrapper ( void *state ) {
 	THIS->callCallback();
 }
 
-key96_t *XmlDoc::getTitleRecKey() {
-	if ( m_titleRecBufValid ) return &m_titleRecKey;
-	SafeBuf *tr = getTitleRecBuf();
-	if ( ! tr || tr == (void *)-1 ) return (key96_t *)tr;
-	return &m_titleRecKey;
-}
-
 // . return NULL and sets g_errno on error
 // . returns -1 if blocked
 int32_t *XmlDoc::getIndexCode ( ) {
