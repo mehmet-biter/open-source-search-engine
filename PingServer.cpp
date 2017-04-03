@@ -638,61 +638,7 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 	else 
 	if ( requestSize == 4 ) {
 		// get the ping time
-		int32_t ping = *(int32_t *)request;
-		// store it
-		g_pingServer.m_currentPing = ping;
-		// should we update the clock?
-		bool setClock = true;
-		// . add 1ms DRIFT for every hour since last update
-		// . use local clock time only
-		int32_t nowLocal = getTime();
-		// how many seconds since we last updated our clock?
-		int32_t delta    = nowLocal - g_pingServer.m_bestPingDate;
-		// drift it 1ms every 5 seconds, that seems somewhat typical
-		int32_t drift    = delta / 5;
-		// get best "drifted" ping, "dping"
-		int32_t dping = g_pingServer.m_bestPing + drift;
-		// no overflowing
-		if ( dping < g_pingServer.m_bestPing ) {
-			dping = 0x7fffffff;
-		}
-		// if this is our first time
-		if ( g_pingServer.m_bestPingDate == 0 ) {
-			dping = 0x7fffffff;
-		}
-		// . don't bother if not more accurate
-		// . update the clock on "ping" ties because our local clock
-		//   drifts a lot
-		if ( g_pingServer.m_currentPing > dping ) {
-			setClock = false;
-		}
-		// ping must be < 200 ms to update
-		if ( g_pingServer.m_currentPing > 200 ) {
-			setClock = false;
-		}
-		// only update if from host #0
-		if ( h->m_hostId != 0 ) {
-			setClock = false;
-		}
-		// proxy can be host #0, too! watch out...
-		if ( h->m_isProxy ) {
-			setClock = false;
-		}
-		// only commit sender's time if from hostId #0
-		if ( setClock ) {
-			// what time is it now?
-			int64_t nowmsLocal=gettimeofdayInMilliseconds();
-			// log it
-			log(LOG_DEBUG,"admin: Got ping of %" PRId32" ms. Updating "
-			     "clock. drift=%" PRId32" delta=%" PRId32" s_deltaTime=%" PRId64"ms "
-			     "nowmsLocal=%" PRId64"ms",
-			     (int32_t)g_pingServer.m_currentPing,drift,delta,
-			     s_deltaTime,nowmsLocal);
-			// time stamps
-			g_pingServer.m_bestPingDate = nowLocal;
-			// and the ping
-			g_pingServer.m_bestPing = g_pingServer.m_currentPing;
-		}
+		//int32_t ping = *(int32_t *)request;
 	}
 	// all pings now deliver a timestamp of the sending host
 	else 
