@@ -595,6 +595,12 @@ bool Rdb::isSavingTree() const {
 }
 
 bool Rdb::saveTree(bool useThread, void *state, void (*callback)(void *state)) {
+	// sanity check
+	if (isWritable()) {
+		// we need to make sure it's not writable before calling saveTree
+		gbshutdownLogicError();
+	}
+
 	bool result;
 
 	// . if RdbTree::m_needsSave is false this will return true
