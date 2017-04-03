@@ -576,7 +576,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		// update stats, just put them all in g_udpServer
 		g_udpServer.m_eth0PacketsOut += 1;
 		g_udpServer.m_eth0BytesOut   += dgramSize;
-	} else if ( m_host && m_host->m_hostdb == &g_hostdb ) {
+	} else if ( m_host ) {
 		// don't fuck with it if we are ping though, because that needs to specify the exact ip!
 		if ( m_msgType == msg_type_11 ) {
 			to.sin_addr.s_addr = ip;
@@ -677,7 +677,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		if ( ! m_host ) eth = 0;
 		//if ( m_host->m_ip == (uint32_t)ip ) eth = 0;
 		int32_t hid = -1;
-		if ( m_host && m_host->m_hostdb == &g_hostdb ) 
+		if ( m_host )
 			hid = m_host->m_hostId;
 
 		int32_t kk = 0; if ( m_callback ) kk = 1;
@@ -945,7 +945,7 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 		//#ifdef _UDPDEBUG_
 		int32_t kk = 0; if ( m_callback ) kk = 1;
 		int32_t hid = -1;
-		if ( m_host && m_host->m_hostdb == &g_hostdb ) 
+		if ( m_host )
 			hid = m_host->m_hostId;
 		logf(LOG_DEBUG,
 		    "udp: sent ACK   "
@@ -1066,7 +1066,7 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 	// log msg
 	if ( g_conf.m_logDebugUdp ) {
 		int32_t hid = -1;
-		if ( m_host && m_host->m_hostdb == &g_hostdb ) 
+		if ( m_host )
 			hid = m_host->m_hostId;
 		int32_t kk = 0; if ( m_callback ) kk = 1;
 		log(LOG_DEBUG,
@@ -1458,7 +1458,7 @@ void UdpSlot::readAck ( int32_t dgramNum, int64_t now ) {
 		//#ifdef _UDPDEBUG_
 		int32_t kk = 0; if ( m_callback ) kk = 1;
 		int32_t hid = -1;
-		if ( m_host && m_host->m_hostdb == &g_hostdb ) 
+		if ( m_host )
 			hid = m_host->m_hostId;
 		log(LOG_DEBUG,
 		    "udp: Read ACK   "
