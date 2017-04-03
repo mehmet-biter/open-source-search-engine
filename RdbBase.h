@@ -70,10 +70,7 @@ class RdbBase {
 		    Rdb           *rdb    ,
 		    bool           useIndexFile);
 
-	void closeMaps ( bool urgent );
 	void saveMaps  ();
-
-	void closeIndexes ( bool urgent );
 	void saveIndexes();
 
 	void saveTreeIndex();

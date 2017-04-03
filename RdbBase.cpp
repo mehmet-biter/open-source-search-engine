@@ -2353,39 +2353,6 @@ uint64_t RdbBase::getSpaceNeededForMerge(int startFileNum, int numFiles) const {
 	return total;
 }
 
-
-void RdbBase::closeMaps(bool urgent) {
-	logTrace(g_conf.m_logTraceRdbBase, "BEGIN");
-	for (int32_t i = 0; i < m_numFiles; i++) {
-		bool status = m_fileInfo[i].m_map->close(urgent);
-		if (!status) {
-			// unable to write, let's abort
-			gbshutdownResourceError();
-		}
-	}
-	logTrace(g_conf.m_logTraceRdbBase, "END");
-}
-
-void RdbBase::closeIndexes(bool urgent) {
-	logTrace(g_conf.m_logTraceRdbBase, "BEGIN");
-
-	if (!m_useIndexFile) {
-		logTrace(g_conf.m_logTraceRdbBase, "END. useIndexFile disabled");
-		return;
-	}
-
-	for (int32_t i = 0; i < m_numFiles; i++) {
-		if (m_fileInfo[i].m_index) {
-			bool status = m_fileInfo[i].m_index->close(urgent);
-			if (!status) {
-				// unable to write, let's abort
-				gbshutdownResourceError();
-			}
-		}
-	}
-	logTrace(g_conf.m_logTraceRdbBase, "END");
-}
-
 void RdbBase::saveMaps() {
 	logTrace(g_conf.m_logTraceRdbBase, "BEGIN");
 
