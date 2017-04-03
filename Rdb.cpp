@@ -1481,14 +1481,10 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 		return false;
 	}
 
-	// we can also use this logic to avoid adding to the waiting tree
-	// because Process.cpp locks all the trees up at once and unlocks
-	// them all at once as well. so since SpiderRequests are added to
-	// spiderdb and then alter the waiting tree, this statement should
-	// protect us.
-	if (!isWritable()) {
+	// don't continue if we're not allowed to add to Rdb
+	if (!canAdd()) {
 		g_errno = ETRYAGAIN;
-		logTrace(g_conf.m_logTraceRdb, "END. %s: Not writable. Returning false", m_dbname);
+		logTrace(g_conf.m_logTraceRdb, "END. %s: Unable to add. Returning false", m_dbname);
 		return false;
 	}
 
@@ -1503,17 +1499,6 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"db: addRecord: DataSize is %" PRId32" should be %" PRId32, dataSize,m_fixedDataSize );
 		g_process.shutdownAbort(true);
-	}
-
-	// do not add if range being dumped at all because when the
-	// dump completes it calls deleteList() and removes the nodes from
-	// the tree, so if you were overriding a node currently being dumped
-	// we would lose it.
-	if ( m_dump.isDumping()) {
-		// tell caller to wait and try again later
-		g_errno = ETRYAGAIN;
-		logTrace(g_conf.m_logTraceRdb, "END. %s: Dumping. Returning false", m_dbname);
-		return false;
 	}
 
 	// copy the data before adding if we don't already own it
