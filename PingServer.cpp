@@ -1031,7 +1031,7 @@ bool PingServer::sendEmail ( Host *h            ,
 }
 
 
-static void gotDocWrapper ( void *state , TcpSocket *ts ) ;
+static void sentEmailWrapper(void *state, TcpSocket *ts);
 
 static bool sendAdminEmail ( Host  *h,
 		      const char  *fromAddress,
@@ -1066,20 +1066,20 @@ static bool sendAdminEmail ( Host  *h,
 	TcpServer *ts = g_httpServer.getTcp();
 	log ( LOG_WARN, "PingServer: Sending email to sysadmin:\n %s", buf );
 	const char *ip = emailServIp;
-	if ( !ts->sendMsg( ip, strlen( ip ), 25, buf, PAGER_BUF_SIZE, buffLen, buffLen, h, gotDocWrapper,
+	if ( !ts->sendMsg( ip, strlen( ip ), 25, buf, PAGER_BUF_SIZE, buffLen, buffLen, h, sentEmailWrapper,
 	                   60 * 1000, 100 * 1024, 100 * 1024 ) ) {
 		return false;
 	}
 
 	// we did not block, so update h->m_emailCode
-	gotDocWrapper ( h , NULL );
+	sentEmailWrapper ( h , NULL );
 
 	// we did not block
 	return true;
 }
 
 
-void gotDocWrapper ( void *state , TcpSocket *s ) {
+void sentEmailWrapper( void *state, TcpSocket *s) {
 	// keep track of how many we got
 	g_pingServer.m_numReplies2++;
 	if ( g_pingServer.m_numReplies2 > g_pingServer.m_maxRequests2 ) {
