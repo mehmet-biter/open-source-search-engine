@@ -5125,15 +5125,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN ;
 	m++;
 
-	m->m_title = "send email alerts to sysadmin";
-	m->m_desc  = "Sends to sysadmin@example.com.";
-	m->m_cgi   = "seatsa";
-	simple_m_set(Conf,m_sendEmailAlertsToSysadmin);
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
 	m->m_title = "ping spacer";
 	m->m_desc  = "Wait this many milliseconds before pinging the next "
 		"host. Each host pings all other hosts in the network.";

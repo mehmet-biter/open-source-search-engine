@@ -936,17 +936,6 @@ bool PingServer::sendEmail ( Host *h            ,
 	m_numRequests2 = 0;
 	m_numReplies2  = 0;
 
-	// sysadmin
-	if ( g_conf.m_sendEmailAlertsToSysadmin ) {
-		m_numRequests2++;
-		if ( ! sendAdminEmail ( h,
-					"sysadmin@example.com",
-					"sysadmin@example.com",
-					errmsg ,
-					"mail.example.com" ) )
-			status = false;
-	}
-
 	// set the max for sanity checking in gotdoc
 	m_maxRequests2 = m_numRequests2;
 

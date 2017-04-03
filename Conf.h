@@ -231,7 +231,6 @@ class Conf {
 	bool   m_sendEmailAlerts;
 	//should we delay when only 1 host goes down out of twins till 9 30 am?
 	bool   m_delayNonCriticalEmailAlerts;
-	bool   m_sendEmailAlertsToSysadmin;
 
 	bool   m_sendEmailAlertsToEmail1;
 	char   m_email1MX[MAX_MX_LEN]; 
