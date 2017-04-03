@@ -41,6 +41,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "Msg4In.h"
+#include "SummaryCache.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
 #include <fcntl.h>
@@ -1147,6 +1148,8 @@ void Process::resetAll ( ) {
 	resetMsg13Caches();
 	resetStopWordTables();
 	resetTimezoneTables();
+	g_stable_summary_cache.clear();
+	g_unstable_summary_cache.clear();
 }
 
 #include "Msg3.h"
