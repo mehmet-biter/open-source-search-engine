@@ -103,11 +103,11 @@ endif
 endif
 
 # defines
-ifeq ($(config),debug)
+ifeq ($(config),$(filter $(config),debug debug-safe debug-test))
 DEFS += -D_VALGRIND_
+endif
 
-else ifeq ($(config),test)
-DEFS += -D_VALGRIND_
+ifeq ($(config),$(filter $(config),test debug-test))
 DEFS += -DPRIVACORE_TEST_VERSION
 
 else ifeq ($(config),coverage)
@@ -126,7 +126,7 @@ else ifeq ($(config),sanitize-leak)
 CONFIG_CPPFLAGS += -fsanitize=leak # liblsan
 endif
 
-else ifeq ($(config),release-safe)
+else ifeq ($(config),$(filter $(config),release-safe debug-safe))
 # if defined, UI options that can damage our production index will be disabled
 DEFS += -DPRIVACORE_SAFE_VERSION
 endif
@@ -378,11 +378,15 @@ cleandb:
 # shortcuts
 .PHONY: release-safe
 release-safe:
-	$(MAKE) config=release-safe
+	$(MAKE) config=$@
 
 .PHONY: debug
 debug:
-	$(MAKE) config=debug
+	$(MAKE) config=$@
+
+.PHONY: debug-safe
+debug-safe:
+	$(MAKE) config=$@
 
 .PHONY: sanitize-address
 sanitize-address:
