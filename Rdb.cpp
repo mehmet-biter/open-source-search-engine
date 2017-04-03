@@ -857,7 +857,7 @@ bool Rdb::dumpTree() {
 	// we have our own flag here since m_dump::m_isDumping gets
 	// set to true between collection dumps, RdbMem.cpp needs
 	// a flag that doesn't do that... see RdbDump.cpp.
-	setInDumpLoop(true);
+	m_inDumpLoop = true;
 
 	// this returns false if blocked, which means we're ok, so we ret true
 	if ( ! dumpCollLoop ( ) ) {
@@ -868,7 +868,7 @@ bool Rdb::dumpTree() {
 	// if it returns true with g_errno set, there was an error
 	if ( g_errno ) {
 		logTrace( g_conf.m_logTraceRdb, "END. %s: dumpCollLoop g_error=%s. Returning false", m_dbname, mstrerror( g_errno) );
-		setInDumpLoop(false);
+		m_inDumpLoop = false;
 		return false;
 	}
 
@@ -1113,7 +1113,7 @@ void Rdb::doneDumping ( ) {
 	// . we have to set this here otherwise RdbMem's memory ring buffer
 	//   will think the dumping is no longer going on and use the primary
 	//   memory for allocating new titleRecs and such and that is not good!
-	setInDumpLoop(false);
+	m_inDumpLoop = false;
 
 	// try merge for all, first one that needs it will do it, preventing
 	// the rest from doing it

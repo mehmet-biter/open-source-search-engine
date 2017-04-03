@@ -204,7 +204,6 @@ public:
 	const char* getDbname() const { return m_dbname; }
 
 	bool isInDumpLoop() const { return m_inDumpLoop; }
-	void setInDumpLoop(bool inDumpLoop) { m_inDumpLoop = inDumpLoop; }
 
 	bool isUseIndexFile() const { return m_useIndexFile; }
 
