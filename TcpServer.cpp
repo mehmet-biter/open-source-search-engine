@@ -907,8 +907,7 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 		g_stats.m_closedSockets++;
 		g_errno = EOUTOFSOCKETS; 
 		// send email alert
-		g_pingServer.sendEmailMsg ( &s_lastTime ,
-					    "out of sockets on https2");
+		g_pingServer.sendEmailMsg ( &s_lastTime , "out of sockets on https2");
 		// in case sendEmailMsg resets g_errno somehow
 		g_errno = EOUTOFSOCKETS; 
 		return NULL;
