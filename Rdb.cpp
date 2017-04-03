@@ -1372,13 +1372,7 @@ bool Rdb::needsDump() const {
 		}
 	}
 
-	if (m_rdbId != RDB_DOLEDB) {
-		return false;
-	}
-
-	// dump doledb if a ton of negative recs...
-	// otherwise, no need to dump doledb just yet
-	return (m_tree.getNumNegativeKeys() > 50000);
+	return false;
 }
 
 bool Rdb::hasRoom(int32_t totalRecs, int32_t totalDataSize) const {
