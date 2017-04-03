@@ -1109,13 +1109,6 @@ void Rdb::doneDumping ( ) {
 	//   memory for allocating new titleRecs and such and that is not good!
 	m_inDumpLoop = false;
 
-	// . on g_errno the dumped file will be removed from "sync" file and
-	//   from m_files and m_maps
-	// . TODO: move this logic into RdbDump.cpp
-	//for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
-	//	if ( m_bases[i] ) m_bases[i]->doneDumping();
-	//}
-
 	// try merge for all, first one that needs it will do it, preventing
 	// the rest from doing it
 	// don't attempt merge if we're niceness 0
