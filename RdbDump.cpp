@@ -799,12 +799,6 @@ tryAgain:
 		m_hacked12 = false;
 	}
 
-	// if we're NOT dumping a tree then return control to RdbMerge
-	if (!m_tree && !m_buckets) {
-		logTrace( g_conf.m_logTraceRdbDump, "END - !m_tree && !m_buckets, returning true" );
-		return true;
-	}
-
 	logTrace( g_conf.m_logTraceRdbDump, "END - OK, returning true" );
 	return true;
 }
