@@ -18,7 +18,6 @@
 #include "Sections.h"
 #include "Process.h"
 #include "Repair.h"
-#include "PingServer.h"
 #include "Proxy.h"
 #include "hash.h"
 #include "Rebalance.h"
@@ -2354,35 +2353,6 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 
 	// note it in the log
 	log("admin: parm \"%s\" changed value",m->m_title);
-
-	// only send email alerts if we are host 0 since everyone syncs up
-	// with host #0 anyway
-	if ( g_hostdb.m_hostId != 0 ) return;
-
-	// send an email alert notifying the admins that this parm was changed
-	// BUT ALWAYS send it if email alerts were just TURNED OFF
-	// ("sea" = Send Email Alerts)
-	if ( ! g_conf.m_sendEmailAlerts && strcmp(m->m_cgi,"sea") != 0 )
-		return;
-
-	// if spiders we turned on, do not send an email alert, cuz we
-	// turn them on when we restart the cluster
-	if ( strcmp(m->m_cgi,"se")==0 && g_conf.m_spideringEnabled )
-		return;
-
-
-	char tmp[1024];
-	Host *h0 = g_hostdb.getHost ( 0 );
-	int32_t ip0 = 0;
-	if ( h0 ) ip0 = h0->m_ip;
-	sprintf(tmp,"%s: parm \"%s\" changed value",iptoa(ip0),m->m_title);
-	g_pingServer.sendEmail ( NULL  , // Host ptr
-				 tmp   , // msg
-				 false , // oom?
-				 true  , // parm change?
-				 true  );// force it? even if disabled?
-
-	return;
 }
 
 void Parms::setToDefault(char *THIS, parameter_object_type_t objType, CollectionRec *argcr) {
