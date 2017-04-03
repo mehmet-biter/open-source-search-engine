@@ -239,7 +239,7 @@ void Repair::repairWrapper(int fd, void *state) {
 		//   saving
 		// . do this after all hosts are done writing, otherwise
 		//   they might add data to our rdbs!
-		if ( ! saveAllRdbs ( NULL , NULL ) ) return;
+		if ( !saveAllRdbs()) return;
 
 		//log("repair: Initializing the new Rdbs and scan parameters.");
 		// reset scan info BEFORE calling Repair::load()
@@ -334,7 +334,7 @@ void Repair::repairWrapper(int fd, void *state) {
 		// save to disk so it zeroes out indexdbRebuild-saved.dat
 		// which should have 0 records in it cuz we dumped it above
 		// in g_repair.dumpLoop()
-		if ( ! saveAllRdbs ( NULL , NULL ) ) return;
+		if ( !saveAllRdbs()) return;
 
 		// . this blocks and gets the job done
 		// . this will move the old *.dat and *-saved.dat files into
@@ -1684,13 +1684,9 @@ static bool   s_savingAll = false;
 // . return false if blocked, true otherwise
 // . will call the callback when all have been saved
 // . used by Repair.cpp to save all rdbs before doing repair work
-bool Repair::saveAllRdbs(void *state, void (*callback)(void *state)) {
+bool Repair::saveAllRdbs() {
 	// only call once
-	if ( s_savingAll ) {
-		//log("db: Already saving all.");
-		// let them know their callback will not be called even 
-		// though we returned false
-		if ( callback ) { g_process.shutdownAbort(true); }
+	if (s_savingAll) {
 		return false;
 	}
 	// set it

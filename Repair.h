@@ -141,7 +141,7 @@ private:
 	static void repairWrapper(int fd, void *state);
 	static void loopWrapper(void *state, RdbList *list, Msg5 *msg5);
 
-	static bool saveAllRdbs(void *state, void (*callback)(void *state));
+	static bool saveAllRdbs();
 	static bool anyRdbNeedsSave();
 	static void doneSavingRdb(void *state);
 	static void doneWithIndexDoc(XmlDoc *xd);
