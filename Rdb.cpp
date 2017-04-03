@@ -1504,10 +1504,8 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 	if (data) {
 		// sanity check
 		if ( m_fixedDataSize == 0 && dataSize > 0 ) {
-			g_errno = EBADENGINEER;
-			log(LOG_LOGIC,"db: addRecord: Data is present. Should not be");
-			logTrace(g_conf.m_logTraceRdb, "END. %s: Data is present. Returning false", m_dbname);
-			return false;
+			log(LOG_LOGIC, "db: addRecord: Data is present. Should not be");
+			gbshutdownLogicError();
 		}
 
 		dataCopy = (char *) m_mem.dupData(data, dataSize);
