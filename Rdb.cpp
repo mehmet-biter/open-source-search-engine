@@ -760,7 +760,7 @@ bool Rdb::isSavingTree() const {
 	return m_buckets.isSaving();
 }
 
-bool Rdb::saveTree ( bool useThread ) {
+bool Rdb::saveTree(bool useThread, void *state, void (*callback)(void *state)) {
 	bool result;
 
 	// . if RdbTree::m_needsSave is false this will return true
@@ -768,9 +768,9 @@ bool Rdb::saveTree ( bool useThread ) {
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 	if (m_useTree) {
-		result = m_tree.fastSave(getDir(), m_dbname, useThread, NULL, NULL);
+		result = m_tree.fastSave(getDir(), m_dbname, useThread, state, callback);
 	} else {
-		result = m_buckets.fastSave(getDir(), useThread, NULL, NULL);
+		result = m_buckets.fastSave(getDir(), useThread, state, callback);
 	}
 
 	if (m_useIndexFile) {

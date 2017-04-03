@@ -955,7 +955,7 @@ bool Process::saveRdbTrees(bool shuttingDown) {
 			log( "gb: calling save tree for rdbid %i", ( int ) rdb->getRdbId() );
 		}
 
-		rdb->saveTree(useThread);
+		rdb->saveTree(useThread, NULL, NULL);
 	}
 
 	// . save waitingtrees for each collection, blocks.

@@ -227,7 +227,7 @@ public:
 
 	bool isSavingTree() const;
 
-	bool saveTree(bool useThread);
+	bool saveTree(bool useThread, void *state, void (*callback)(void *state));
 	bool saveIndexes();
 	bool saveMaps();
 

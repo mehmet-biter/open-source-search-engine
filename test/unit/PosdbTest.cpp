@@ -5,7 +5,7 @@
 #include "Conf.h"
 
 static void saveAndReloadPosdbBucket() {
-	g_posdb.getRdb()->saveTree(false);
+	g_posdb.getRdb()->saveTree(false, NULL, NULL);
 	g_posdb.getRdb()->getBuckets()->clear();
 	g_posdb.getRdb()->loadTree();
 	if (g_posdb.getRdb()->isUseIndexFile()) {
