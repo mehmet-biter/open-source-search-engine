@@ -112,10 +112,6 @@ private:
 	Host   *m_maxRepairModeHost;
 	Host   *m_minRepairModeBesides0Host;
 
-	int32_t m_currentPing  ;
-	int32_t m_bestPing     ;
-	time_t  m_bestPingDate ;
-
 	// some cluster stats
 	int32_t m_numHostsWithForeignRecs;
 	int32_t m_numHostsDead;

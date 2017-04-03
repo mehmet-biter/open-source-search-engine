@@ -76,11 +76,6 @@ bool PingServer::init ( ) {
 	m_maxRepairModeHost         = NULL;
 	m_minRepairModeBesides0Host = NULL;
 
-	// invalid info init
-	m_currentPing  = -1;
-	m_bestPing     = -1;
-	m_bestPingDate =  0;
-
 	m_numHostsWithForeignRecs = 0;
 	m_numHostsDead = 0;
 	m_hostsConfInDisagreement = false;
@@ -426,8 +421,6 @@ void PingServer::gotReplyWrapperP(void *state, UdpSlot *slot) {
 	if ( *pingPtr > 200         ) return;
 	// count this one too
 	s_outstandingPings++;
-	// record this time
-	g_pingServer.m_currentPing = *pingPtr;
 
 	// . ok, his ping was under half a second so he should sync with us
 	// . he should recognize empty requests as a request to sync
