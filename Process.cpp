@@ -983,8 +983,6 @@ bool Process::saveRdbTrees(bool shuttingDown) {
 
 		Rdb *rdb = m_rdbs[i];
 
-		//if ( rdb->needsSave ( ) ) return false;
-
 		// we disable the tree while saving so we can't really add recs
 		// to one rdb tree while saving, but for crawlbot
 		// we might have added or deleted collections.
