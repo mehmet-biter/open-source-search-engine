@@ -39,7 +39,6 @@ class PingServer {
 	bool sendEmail ( Host *h , 
 			 char *errmsg = NULL , 
 			 bool oom = false ,
-			 bool parmChanged  = false ,
 			 bool forceIt      = false);
 
 	int32_t m_i;

@@ -413,7 +413,7 @@ static void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 		// from him, then send an email alert.
 		if ( h->m_pingInfo.m_percentMemUsed >= 99.0 &&
 		     nowms - h->m_firstOOMTime >= g_conf.m_sendEmailTimeout )
-			g_pingServer.sendEmail ( h , NULL , true , true );
+			g_pingServer.sendEmail ( h , NULL , true );
 	} else {
 		// . if his ping was dead, try to send an email alert to the admin
 		// . returns false if blocked, true otherwise
@@ -821,7 +821,6 @@ static void sleepWrapper ( int fd , void *state ) {
 bool PingServer::sendEmail ( Host *h            , 
 			     char *errmsg       , 
 			     bool  oom          ,
-			     bool  parmChanged  ,
 			     bool  forceIt) {
 	// clear this
 	g_errno = 0;
@@ -971,13 +970,6 @@ bool PingServer::sendEmail ( Host *h            ,
 	bool e2 = g_conf.m_sendEmailAlertsToEmail2;
 	bool e3 = g_conf.m_sendEmailAlertsToEmail3;
 	bool e4 = g_conf.m_sendEmailAlertsToEmail4;
-
-	// some people don't want parm change alerts
-	if ( parmChanged && ! g_conf.m_sendParmChangeAlertsToEmail1) e1=false; 
-	if ( parmChanged && ! g_conf.m_sendParmChangeAlertsToEmail2) e2=false; 
-	if ( parmChanged && ! g_conf.m_sendParmChangeAlertsToEmail3) e3=false; 
-	if ( parmChanged && ! g_conf.m_sendParmChangeAlertsToEmail4) e4=false; 
-
 
 	if ( e1 ) {
 		m_numRequests2++;
@@ -1286,7 +1278,6 @@ void PingServer::sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) {
 	g_pingServer.sendEmail ( NULL   , // Host *h
 				 msgbuf , // char *errmsg = NULL , 
 				 false  , // bool oom = false ,
-				 false  , // bool parmChanged  = false ,
 				 true   );// bool forceIt      = false );
 	*lastTimeStamp = now;
 	return;
