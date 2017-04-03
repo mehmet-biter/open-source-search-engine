@@ -37,7 +37,7 @@ RdbDump::RdbDump() {
 	m_hacked12 = false;
 	m_totalPosDumped = 0;
 	m_totalNegDumped = 0;
-	m_t1 = 0;
+	m_getListStartTimeMS = 0;
 	m_numPosRecs = 0;
 	m_numNegRecs = 0;
 	m_rdb = NULL;
@@ -308,7 +308,7 @@ bool RdbDump::dumpTree(bool recall) {
 		if (!recall) {
 			bool status = true;
 
-			m_t1 = gettimeofdayInMilliseconds();
+			m_getListStartTimeMS = gettimeofdayInMilliseconds();
 			if (m_tree) {
 				logTrace(g_conf.m_logTraceRdbDump, "m_tree");
 
@@ -357,7 +357,7 @@ bool RdbDump::dumpTree(bool recall) {
 		int64_t t2 = gettimeofdayInMilliseconds();
 
 		log(LOG_INFO, "db: Get list took %" PRId64" ms. %" PRId32" positive. %" PRId32" negative.",
-		    t2 - m_t1, m_numPosRecs, m_numNegRecs);
+		    t2 - m_getListStartTimeMS, m_numPosRecs, m_numNegRecs);
 
 		// keep a total count for reporting when done
 		m_totalPosDumped += m_numPosRecs;

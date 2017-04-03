@@ -114,7 +114,7 @@ private:
 	int32_t m_totalNegDumped;
 
 	// recall info
-	int64_t m_t1;
+	int64_t m_getListStartTimeMS;
 	int32_t m_numPosRecs;
 	int32_t m_numNegRecs;
 
