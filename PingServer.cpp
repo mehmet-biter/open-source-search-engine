@@ -26,7 +26,6 @@ PingServer g_pingServer;
 
 static void sleepWrapper ( int fd , void *state ) ;
 
-static void gotReplyWrapperP3 ( void *state , UdpSlot *slot );
 static void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) ;
 
 
@@ -323,8 +322,6 @@ void PingServer::gotReplyWrapperP(void *state, UdpSlot *slot) {
 		return;
 	}
 	
-	int32_t hid = h->m_hostId;
-
 	// un-count it
 	s_outstandingPings--;
 	// don't let udp server free our send buf, we own it
@@ -395,42 +392,7 @@ void PingServer::gotReplyWrapperP(void *state, UdpSlot *slot) {
 
 	// reset in case sendEmail() set it
 	g_errno = 0;
-
-	Host *myHost = g_hostdb.m_myHost;
-
-	if (myHost && myHost->m_isProxy) return;
-	if ( g_hostdb.m_hostId != 0 ) return;
-	if ( *pingPtr > 200         ) return;
-	// count this one too
-	s_outstandingPings++;
-
-	// . ok, his ping was under half a second so he should sync with us
-	// . he should recognize empty requests as a request to sync
-	// . send reply back to the same ip/port that sent to us
-	if ( h->m_isProxy ) hid = -1;
-
-	// send back what his ping was so he knows
-	*(int32_t *)h->m_tmpBuf = *pingPtr;
-
-	if (g_udpServer.sendRequest(h->m_tmpBuf, 4, msg_type_11, slot->getIp(), slot->getPort(), hid, NULL, (void *)(PTRTYPE)h->m_hostId, gotReplyWrapperP3, g_conf.m_deadHostTimeout, 0, NULL, 1000, 2000)) {
-		return;
-	}
-	// he came back right away
-	s_outstandingPings--;
-	// had an error
-	log("net: Got error sending time sync request: %s.", 
-	    mstrerror(g_errno) );
-	// reset it cuz it's not a showstopper
-	g_errno = 0;
 }
-
-static void gotReplyWrapperP3 ( void *state , UdpSlot *slot ) {
-	// do not free this!
-	slot->m_sendBufAlloc = NULL;
-	// un-count it
-	s_outstandingPings--;
-}
-
 
 
 // this may be called from a signal handler now...
@@ -604,13 +566,6 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 		// right now so we can re-route it...
 		g_udpServer.timeoutDeadHosts ( h );
 
-	}
-	// . if size is 4 then he wants us to sync with him
-	// . this was "0", but now we include what the ping was
-	else 
-	if ( requestSize == 4 ) {
-		// get the ping time
-		//int32_t ping = *(int32_t *)request;
 	}
 	// all pings now deliver a timestamp of the sending host
 	else 
