@@ -49,7 +49,7 @@ Rdb::Rdb ( ) {
 	m_useHalfKeys = false;
 	m_niceness = false;
 	m_dumpCollnum = 0;
-	m_inDumpLoop = false;
+	m_isDumping = false;
 	m_rdbId = RDB_NONE;
 	m_ks = 0;
 	m_pageSize = 0;
@@ -120,7 +120,7 @@ bool Rdb::init(const char *dbname,
 	m_useHalfKeys      = useHalfKeys;
 	m_ks               = keySize;
 	m_useIndexFile     = useIndexFile;
-	m_inDumpLoop       = false;
+	m_isDumping       = false;
 
 	// set our id
 	m_rdbId = getIdFromRdb(this);
@@ -750,7 +750,7 @@ bool Rdb::dumpTree() {
 	}
 
 	// bail if already dumping
-	if ( m_inDumpLoop ) {
+	if ( m_isDumping ) {
 		logTrace( g_conf.m_logTraceRdb, "END. %s: Already dumping. Returning true", m_dbname );
 		return true;
 	}
@@ -856,7 +856,7 @@ bool Rdb::dumpTree() {
 	// we have our own flag here since m_dump::m_isDumping gets
 	// set to true between collection dumps, RdbMem.cpp needs
 	// a flag that doesn't do that... see RdbDump.cpp.
-	m_inDumpLoop = true;
+	m_isDumping = true;
 
 	// this returns false if blocked, which means we're ok, so we ret true
 	if ( ! dumpCollLoop ( ) ) {
@@ -867,7 +867,7 @@ bool Rdb::dumpTree() {
 	// if it returns true with g_errno set, there was an error
 	if ( g_errno ) {
 		logTrace( g_conf.m_logTraceRdb, "END. %s: dumpCollLoop g_error=%s. Returning false", m_dbname, mstrerror( g_errno) );
-		m_inDumpLoop = false;
+		m_isDumping = false;
 		return false;
 	}
 
@@ -1112,7 +1112,7 @@ void Rdb::doneDumping ( ) {
 	// . we have to set this here otherwise RdbMem's memory ring buffer
 	//   will think the dumping is no longer going on and use the primary
 	//   memory for allocating new titleRecs and such and that is not good!
-	m_inDumpLoop = false;
+	m_isDumping = false;
 
 	// try merge for all, first one that needs it will do it, preventing
 	// the rest from doing it
@@ -1452,7 +1452,7 @@ bool Rdb::canAdd() const {
 	if (!isWritable()) {
 		return false;
 	}
-	if (isInDumpLoop()) {
+	if (isDumping()) {
 		return false;
 	}
 	return true;

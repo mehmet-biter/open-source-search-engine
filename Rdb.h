@@ -203,7 +203,7 @@ public:
 	rdbid_t getRdbId() const { return m_rdbId; }
 	const char* getDbname() const { return m_dbname; }
 
-	bool isInDumpLoop() const { return m_inDumpLoop; }
+	bool isDumping() const { return m_isDumping; }
 
 	bool isUseIndexFile() const { return m_useIndexFile; }
 
@@ -317,7 +317,7 @@ private:
 
 	// set to true when dumping tree so RdbMem does not use the memory
 	// being dumped to hold newly added records
-	bool m_inDumpLoop;
+	bool m_isDumping;
 
 	rdbid_t m_rdbId;
 
