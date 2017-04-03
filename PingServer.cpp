@@ -458,9 +458,6 @@ static void gotReplyWrapperP3 ( void *state , UdpSlot *slot ) {
 
 
 
-// record time in the ping request iff from hostId #0
-static int64_t s_deltaTime = 0;
-
 // this may be called from a signal handler now...
 void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 	// get request 
@@ -643,23 +640,6 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 	// all pings now deliver a timestamp of the sending host
 	else 
 	if ( requestSize == 8 ) {
-		//reply = g_pingServer.getReplyBuffer();
-		// only record sender's time if from hostId #0
-		if ( h->m_hostId == 0 && !h->m_isProxy) {
-			// what time is it now?
-			int64_t nowmsLocal=gettimeofdayInMilliseconds();
-			// . seems these servers drift by 1 ms every 5 secs
-			// . or that is about 17 seconds a day
-			// . we do NOT know how accurate host #0's supplied
-			//   time is because the request may have been delayed
-			log(LOG_DEBUG,"admin: host #0 time is %" PRId64" ms and "
-			    "our local time is %" PRId64" ms, delta=%" PRId64" ms",
-			    *(int64_t *)request,nowmsLocal ,
-			    *(int64_t *)request - nowmsLocal );
-			// update s_delta in case host #0 sends us a 
-			// request size of 4, telling us to sync up with this
-			s_deltaTime =*(int64_t *)request - nowmsLocal;
-		}
 		reply     = NULL;
 		replySize = 0;
 	}
