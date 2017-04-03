@@ -67,21 +67,7 @@ public:
 		    bool   useHalfKeys     ,
 		    char   keySize,
 		    bool   useIndexFile);
-	// . frees up all the memory and closes all files
-	// . suspends any current merge (saves state to disk)
-	// . calls reset() for each file
-	// . will cause any open map files to dump
-	// . will dump tables to backup or store 
-	// . calls close on each file
-	// . returns false if blocked, true otherwise
-	// . sets errno on error
-	bool close ( void *state , 
-		     void (* callback)(void *state ) ,
-		     bool urgent ,
-		     bool exitAfterClosing );
 
-	// used by PageMaster.cpp to check to see if all rdb's are closed yet
-	bool isClosed() const { return m_isClosed; }
 	bool needsSave() const;
 
 	// . returns false and sets g_errno on error
@@ -253,9 +239,6 @@ public:
 	// rebuilt files, pointed to by rdb2.
 	bool updateToRebuildFiles ( Rdb *rdb2 , char *coll ) ;
 
-	static void doneSavingWrapper(void *state);
-	static void closeSleepWrapper(int fd, void *state);
-
 	static void doneDumpingCollWrapper(void *state);
 
 private:
@@ -268,9 +251,6 @@ private:
 	bool addList(collnum_t collnum, RdbList *list, bool checkForRoom);
 	// get the directory name where this rdb stores its files
 	const char *getDir() const { return g_hostdb.m_dir; }
-
-	// . called when done saving a tree to disk (keys not ordered)
-	void doneSaving ( ) ;
 
 	bool dumpCollLoop ( ) ;
 
@@ -304,13 +284,6 @@ private:
 
 	std::atomic<int32_t> m_numMergesOut;
 
-	bool      m_isClosing; 
-	bool      m_isClosed;
-
-	// this callback called when close is complete
-	void     *m_closeState; 
-	void    (* m_closeCallback) (void *state );
-
 	int32_t      m_minToMerge;  // need at least this many files b4 merging
 
 	int32_t m_dumpErrno;
@@ -338,25 +311,12 @@ private:
 	// . currently exclusively used by indexdb
 	bool      m_useHalfKeys;
 
-	// are we saving the tree urgently? like we cored...
-	bool      m_urgent;
-
-	// after saving the tree in call to Rdb::close() should the tree
-	// remain closed to writes?
-	bool      m_isReallyClosing;
-
 	bool      m_niceness;
-
-	// so only one save thread launches at a time
-	bool m_isSaving;
 
 	char m_treeAllocName[64]; //for memory used m_tree/m_buckets
 	char m_memAllocName[64]; //for memory used by m_mem
 
 	collnum_t m_dumpCollnum;
-
-	bool m_registered;
-	int64_t m_lastTime;
 
 	// set to true when dumping tree so RdbMem does not use the memory
 	// being dumped to hold newly added records
