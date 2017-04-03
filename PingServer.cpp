@@ -5,13 +5,10 @@
 #include "UdpSlot.h"
 #include "Conf.h"
 #include "HttpServer.h"
-#include "HttpMime.h"
 #include "Proxy.h"
 #include "Repair.h" 
 #include "Process.h"
 #include "DailyMerge.h"
-#include "Spider.h"
-#include "SpiderColl.h"
 #include "SpiderLoop.h"
 #include "Collectiondb.h"
 #include "Rebalance.h"
@@ -1034,7 +1031,6 @@ bool PingServer::sendEmail ( Host *h            ,
 }
 
 
-#include "HttpServer.h"
 static void gotDocWrapper ( void *state , TcpSocket *ts ) ;
 
 static bool sendAdminEmail ( Host  *h,
