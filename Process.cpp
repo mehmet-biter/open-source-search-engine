@@ -360,7 +360,7 @@ static float getDiskUsage ( int64_t *diskAvail ) {
 
 void diskUsageWrapper(int /*fd*/, void * /*state*/) {
 	// skip if exiting
-	if ( g_process.m_mode == Process::Process::EXIT_MODE ) {
+	if ( g_process.m_mode == Process::EXIT_MODE ) {
 		return;
 	}
 
@@ -512,7 +512,7 @@ bool Process::save ( ) {
 	// never if in read only mode
 	if ( g_conf.m_readOnlyMode ) return true;
 	// bail if doing something already
-	if ( m_mode != NO_MODE ) return true;
+	if ( m_mode != Process::NO_MODE ) return true;
 	// log it
 	logf(LOG_INFO,"db: Entering lock mode for saving.");
 	m_mode   = Process::LOCK_MODE; // Process::SAVE_MODE;
@@ -546,9 +546,9 @@ void Process::shutdownAbort ( bool save_on_abort ) {
 
 bool Process::shutdown ( bool urgent, void  *state, void (*callback) (void *state )) {
 	// bail if doing something already
-	if ( m_mode != NO_MODE ) {
+	if ( m_mode != Process::NO_MODE ) {
 		// if already in exit mode, just return
-		if ( m_mode == Process::Process::EXIT_MODE ) {
+		if ( m_mode == Process::EXIT_MODE ) {
 			return true;
 		}
 
@@ -558,7 +558,7 @@ bool Process::shutdown ( bool urgent, void  *state, void (*callback) (void *stat
 		return true;
 	}
 
-	m_mode   = Process::Process::EXIT_MODE;
+	m_mode   = Process::EXIT_MODE;
 	m_urgent = urgent;
 
 	m_calledSave = false;
