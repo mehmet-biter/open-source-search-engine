@@ -228,7 +228,6 @@ public:
 	bool isSavingTree() const;
 
 	bool saveTree(bool useThread);
-	bool saveTreeIndex(bool useThread);
 	bool saveIndexes();
 	bool saveMaps();
 

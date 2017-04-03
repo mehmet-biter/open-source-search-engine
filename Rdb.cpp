@@ -761,47 +761,35 @@ bool Rdb::isSavingTree() const {
 }
 
 bool Rdb::saveTree ( bool useThread ) {
-	const char *dbn = m_dbname;
-	if ( ! dbn[0] ) {
-		dbn = "unknown";
-	}
+	bool result;
 
 	// . if RdbTree::m_needsSave is false this will return true
 	// . if RdbTree::m_isSaving  is true this will return false
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 	if (m_useTree) {
-		if (m_tree.needsSave()) {
-			log( LOG_DEBUG, "db: saving tree %s", dbn );
-		}
-		return m_tree.fastSave(getDir(), m_dbname, useThread, NULL, NULL);
+		result = m_tree.fastSave(getDir(), m_dbname, useThread, NULL, NULL);
 	} else {
-		if (m_buckets.needsSave()) {
-			log( LOG_DEBUG, "db: saving buckets %s", dbn );
-		}
-		return m_buckets.fastSave ( getDir(), useThread, NULL, NULL );
-	}
-}
-
-bool Rdb::saveTreeIndex(bool /* useThread */) {
-	if( !m_useIndexFile ) {
-		return true;
+		result = m_buckets.fastSave(getDir(), useThread, NULL, NULL);
 	}
 
-	// now loop over bases
-	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
-		CollectionRec *cr = g_collectiondb.getRec(i);
-		if ( ! cr ) {
-			continue;
-		}
+	if (m_useIndexFile) {
+		// now loop over bases
+		for (int32_t i = 0; i < getNumBases(); i++) {
+			CollectionRec *cr = g_collectiondb.getRec(i);
+			if (!cr) {
+				continue;
+			}
 
-		// if swapped out, this will be NULL, so skip it
-		RdbBase *base = cr->getBase(m_rdbId);
-		if (base) {
-			base->saveTreeIndex();
+			// if swapped out, this will be NULL, so skip it
+			RdbBase *base = cr->getBase(m_rdbId);
+			if (base) {
+				base->saveTreeIndex();
+			}
 		}
 	}
-	return true;
+
+	return result;
 }
 
 bool Rdb::saveIndexes() {
