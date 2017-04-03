@@ -1456,10 +1456,12 @@ bool Rdb::hasRoom(RdbList *list) {
 
 
 bool Rdb::canAdd() const {
-	if(!isWritable())
+	if (!isWritable()) {
 		return false;
-	if(m_dump.isDumping()) //this is more conservative than the actual check in addRecord()
+	}
+	if (isInDumpLoop()) {
 		return false;
+	}
 	return true;
 }
 
