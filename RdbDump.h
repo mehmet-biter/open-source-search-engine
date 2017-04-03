@@ -45,8 +45,6 @@ public:
 
 	bool isDumping() const { return m_isDumping; }
 
-	collnum_t getCollNum() const { return m_collnum; }
-
 	void setSuspended() { m_isSuspended = true; }
 
 	bool dumpList(RdbList *list) {
