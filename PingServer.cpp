@@ -90,22 +90,6 @@ void PingServer::sendPingsToAll ( ) {
 	if ( g_hostdb.m_myHost->m_type & HT_QCPROXY ) return;
 	if ( g_hostdb.m_myHost->m_type & HT_SCPROXY ) return;
 
-	// get host #0
-	Host *hz = g_hostdb.getHost ( 0 );
-	// sanity check
-	if ( hz->m_hostId != 0 ) { g_process.shutdownAbort(true); }
-
-	// do a quick send to host 0 out of band if we have never
-	// got a reply from him. we need him to sync our clock!
-	static int32_t s_lastTime = 0;
-	if ( ! hz->m_inProgress1 && hz->m_numPingReplies == 0 &&
-	     time(NULL) - s_lastTime > 2 ) {
-		// update clock to avoid oversending
-		s_lastTime = time(NULL);
-		// ping him
-		pingHost ( hz , hz->m_ip , hz->m_port );
-	}
-
 	// once we do a full round, drop out. use firsti to determine this
 	int32_t firsti = -1;
 
