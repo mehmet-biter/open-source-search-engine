@@ -1693,7 +1693,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	// if a dump is happening it will always be the last file, do not
 	// include it in the merge
 	int32_t numFiles = m_numFiles;
-	if ( numFiles > 0 && m_dump->isDumping() ) numFiles--;
+	if ( numFiles > 0 && m_rdb->isInDumpLoop() ) numFiles--;
 
 	// set m_minToMerge from coll rec if we're indexdb
 	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
