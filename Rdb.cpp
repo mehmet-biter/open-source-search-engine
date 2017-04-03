@@ -1491,14 +1491,12 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 	// sanity check
 	if (KEYNEG(key)) {
 		if ((dataSize > 0 && data)) {
-			log( LOG_WARN, "db: Got data for a negative key." );
-			g_process.shutdownAbort(true);
+			log(LOG_LOGIC, "db: Got data for a negative key.");
+			gbshutdownLogicError();
 		}
 	} else if ( m_fixedDataSize >= 0 && dataSize != m_fixedDataSize ) {
-		// sanity check
-		g_errno = EBADENGINEER;
-		log(LOG_LOGIC,"db: addRecord: DataSize is %" PRId32" should be %" PRId32, dataSize,m_fixedDataSize );
-		g_process.shutdownAbort(true);
+		log(LOG_LOGIC, "db: addRecord: DataSize is %" PRId32" should be %" PRId32, dataSize, m_fixedDataSize);
+		gbshutdownLogicError();
 	}
 
 	// copy the data before adding if we don't already own it
