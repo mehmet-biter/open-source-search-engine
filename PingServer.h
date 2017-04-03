@@ -3,9 +3,7 @@
 #ifndef GB_PINGSERVER_H
 #define GB_PINGSERVER_H
 
-#include "gb-include.h"
 #include "Hostdb.h"
-#include "SafeBuf.h"
 #include "repair_mode.h"
 
 class UdpSlot;

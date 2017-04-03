@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "PingServer.h"
 #include "UdpServer.h"
 #include "UdpSlot.h"
