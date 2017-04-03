@@ -6753,9 +6753,13 @@ int32_t *XmlDoc::getIp ( ) {
 		m_didDelay = true;
 		m_statusMsg = "delaying spider";
 		// random fuzz so we don't get everyone being unleashed at once
-		int32_t radius = (int32_t)(.20 * (double)delay);
+		int32_t radius = delay/5;
+		if(radius<=0)
+			radius = 1;
 		int32_t fuzz = (rand() % (radius * 2)) - radius;
 		delay += fuzz;
+		if(delay<=0)
+			delay = 1;
 		logTrace( g_conf.m_logTraceXmlDoc, "SLEEPING %" PRId32" msecs", delay);
 		// make a callback wrapper.
 		// this returns false and sets g_errno on error
