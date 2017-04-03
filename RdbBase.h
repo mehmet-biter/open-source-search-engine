@@ -174,16 +174,6 @@ class RdbBase {
 	// the primary rdb.
 	bool removeRebuildFromFilenames ( ) ;
 
-	void specialInjectFileInit(const char *dir,
-	                           const char *filename,
-	                           collnum_t collnum,
-	                           Rdb *rdb,
-	                           int32_t fixedDataSize,
-	                           bool useHalfKeys,
-	                           char ks,
-	                           int32_t pageSize,
-	                           int32_t minToMerge);
-
 	void forceNextMerge() { m_nextMergeForced = true; }
 
 	
