@@ -125,8 +125,6 @@ private:
 
 	bool m_doCollCheck;
 
-	bool m_tried;
-
 	bool m_isSuspended;
 
 	char m_ks;

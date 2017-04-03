@@ -43,7 +43,6 @@ RdbDump::RdbDump() {
 	m_rdb = NULL;
 	m_collnum = 0;
 	m_doCollCheck = false;
-	m_tried = false;
 	m_isSuspended = false;
 	m_ks = 0;
 }
@@ -83,7 +82,6 @@ bool RdbDump::set(collnum_t collnum,
 	m_callback      = callback;
 	m_list          = NULL;
 	m_niceness      = niceness;
-	m_tried         = false;
 	m_isSuspended   = false;
 	m_ks            = keySize;
 
