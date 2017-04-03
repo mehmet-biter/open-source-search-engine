@@ -113,8 +113,6 @@ public:
 	// last time g_hostdb.ping(i) was called for this host in milliseconds.
 	int64_t      m_lastPing;
 
-	char m_tmpBuf[4];
-
 	// . first time we sent an unanswered ping request to this host
 	// . used so we can determine when to send an email alert
 	int64_t      m_startTime;
