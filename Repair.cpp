@@ -950,7 +950,7 @@ bool Repair::dumpsCompleted ( ) {
 		// anything in tree/buckets?
 		if ( rdb->getNumUsedNodes() ) return false;
 		// still dumping?
-		if ( rdb->isDumping      () ) return false;
+		if (rdb->isInDumpLoop()) return false;
 	}
 	// no more dump activity
 	return true;

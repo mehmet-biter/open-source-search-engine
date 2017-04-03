@@ -905,7 +905,7 @@ bool Process::isRdbDumping ( ) {
 	// loop over all Rdbs and save them
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
 		Rdb *rdb = m_rdbs[i];
-		if ( rdb->isDumping() ) return true;
+		if ( rdb->isInDumpLoop() ) return true;
 	}
 	return false;
 }

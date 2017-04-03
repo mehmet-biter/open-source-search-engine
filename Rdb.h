@@ -232,8 +232,6 @@ public:
 	void incrementNumMerges() { ++m_numMergesOut; }
 	void decrementNumMerges() { --m_numMergesOut; }
 
-	bool isDumping() const { return m_dump.isDumping(); }
-
 	// PageRepair.cpp calls this when it is done rebuilding an rdb
 	// and wants to tell the primary rdb to reload itself using the newly
 	// rebuilt files, pointed to by rdb2.
