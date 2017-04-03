@@ -38,11 +38,9 @@ class PingServer {
 	//bool sendEmail ( Host *h );
 	bool sendEmail ( Host *h , 
 			 char *errmsg = NULL , 
-			 bool sendToAdmin = true ,
 			 bool oom = false ,
 			 bool parmChanged  = false ,
-			 bool forceIt      = false ,
-			 int32_t mxIP = 0 );
+			 bool forceIt      = false);
 
 	int32_t m_i;
 

@@ -134,7 +134,6 @@ Conf::Conf ( ) {
 	}
 	m_sendEmailAlerts = false;
 	m_delayNonCriticalEmailAlerts = false;
-	m_sendEmailAlertsToSysadmin = false;
 	m_sendEmailAlertsToEmail1 = false;
 	memset(m_email1MX, 0, sizeof(m_email1MX));
 	memset(m_email1Addr, 0, sizeof(m_email1Addr));

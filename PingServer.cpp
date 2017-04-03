@@ -5,13 +5,10 @@
 #include "UdpSlot.h"
 #include "Conf.h"
 #include "HttpServer.h"
-#include "HttpMime.h"
 #include "Proxy.h"
 #include "Repair.h" 
 #include "Process.h"
 #include "DailyMerge.h"
-#include "Spider.h"
-#include "SpiderColl.h"
 #include "SpiderLoop.h"
 #include "Collectiondb.h"
 #include "Rebalance.h"
@@ -291,7 +288,6 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	// the collection number we are daily merging (currently 2 bytes)
 	collnum_t cn = -1;
 	if ( g_dailyMerge.m_cr ) cn = g_dailyMerge.m_cr->m_collnum;
-	//*(collnum_t *)p = cn ; p += sizeof(collnum_t);
 	newPingInfo.m_dailyMergeCollnum = cn;
 
 	newPingInfo.m_hostId = me->m_hostId;
@@ -349,7 +345,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 //   only needs one notification.
 static int32_t s_lastSentHostId = -1;
 
-void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
+static void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	// state is the host
 	Host *h = (Host *)state;
 	if( !h ) {
@@ -460,7 +456,7 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	g_errno = 0;
 }
 
-void gotReplyWrapperP3 ( void *state , UdpSlot *slot ) {
+static void gotReplyWrapperP3 ( void *state , UdpSlot *slot ) {
 	// do not free this!
 	slot->m_sendBufAlloc = NULL;
 	// un-count it
@@ -473,9 +469,8 @@ void gotReplyWrapperP3 ( void *state , UdpSlot *slot ) {
 static int64_t s_deltaTime = 0;
 
 // this may be called from a signal handler now...
-void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
+static void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 	// get request 
-	//char *request     = slot->m_readBuf;
 	int32_t  requestSize = slot->m_readBufSize;
 	char *request     = slot->m_readBuf;
 	// get the ip/port of requester
@@ -704,8 +699,6 @@ void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 			g_pingServer.m_bestPingDate = nowLocal;
 			// and the ping
 			g_pingServer.m_bestPing = g_pingServer.m_currentPing;
-			// clear this
-			//s_deltaTime = 0;
 		}
 	}
 	// all pings now deliver a timestamp of the sending host
@@ -827,11 +820,9 @@ static void sleepWrapper ( int fd , void *state ) {
 // . sets g_errno on error
 bool PingServer::sendEmail ( Host *h            , 
 			     char *errmsg       , 
-			     bool  sendToAdmin  ,
 			     bool  oom          ,
 			     bool  parmChanged  ,
-			     bool  forceIt      ,
-			     int32_t  mxIP         ) { // 0 means none
+			     bool  forceIt) {
 	// clear this
 	g_errno = 0;
 	// not if we have outstanding requests
@@ -942,17 +933,6 @@ bool PingServer::sendEmail ( Host *h            ,
 	m_numRequests2 = 0;
 	m_numReplies2  = 0;
 
-	// sysadmin
-	if ( g_conf.m_sendEmailAlertsToSysadmin && sendToAdmin ) {
-		m_numRequests2++;
-		if ( ! sendAdminEmail ( h,
-					"sysadmin@example.com",
-					"sysadmin@example.com",
-					errmsg ,
-					"mail.example.com" ) )
-			status = false;
-	}
-
 	// set the max for sanity checking in gotdoc
 	m_maxRequests2 = m_numRequests2;
 
@@ -965,29 +945,24 @@ bool PingServer::sendEmail ( Host *h            ,
 	// between 10:00pm and 9:30am unless all the other twins of the 
 	// dead host are also dead. Instead, wait till after 9:30 am if 
 	// the host is still dead.
-	if ( delay && h && sendToAdmin ) {
+	if ( delay && h ) {
 
-		// always delay no matter the time now
-		bool delay = true;
-
-		if ( delay ) {
-			//check if the hosts twins are dead too
-			int32_t numTwins = 0;
-			Host *hosts = g_hostdb.getShard( h->m_shardNum, 
-							 &numTwins );
-			int32_t i = 0;
-			while ( i < numTwins ){
-				if ( !g_hostdb.isDead ( hosts[i].m_hostId ) )
-					break;
-				i++;
-			}
-
-			//if no twin is alive, emergency ! send email !
-			//if even one twin is alive, don't send now
-			if ( i == numTwins ) goto skipSleep;
-
-			return true;
+		//check if the hosts twins are dead too
+		int32_t numTwins = 0;
+		Host *hosts = g_hostdb.getShard( h->m_shardNum,
+						 &numTwins );
+		int32_t i = 0;
+		while ( i < numTwins ){
+			if ( !g_hostdb.isDead ( hosts[i].m_hostId ) )
+				break;
+			i++;
 		}
+
+		//if no twin is alive, emergency ! send email !
+		//if even one twin is alive, don't send now
+		if ( i == numTwins ) goto skipSleep;
+
+		return true;
 	}
 
  skipSleep:
@@ -1003,19 +978,11 @@ bool PingServer::sendEmail ( Host *h            ,
 	if ( parmChanged && ! g_conf.m_sendParmChangeAlertsToEmail3) e3=false; 
 	if ( parmChanged && ! g_conf.m_sendParmChangeAlertsToEmail4) e4=false; 
 
-	// point to provided IP as string
-	char *mxIPStr = NULL;
-	char  ipBuf[64];
-	if ( mxIP ) {
-		sprintf(ipBuf,"%s",iptoa(mxIP));
-		mxIPStr = ipBuf;
-	}
 
 	if ( e1 ) {
 		m_numRequests2++;
 		m_maxRequests2++;
 		char *mxHost = g_conf.m_email1MX;
-		if ( mxIP ) mxHost = mxIPStr;
 		if ( ! sendAdminEmail ( h,
 					g_conf.m_email1From,
 					g_conf.m_email1Addr,
@@ -1027,7 +994,6 @@ bool PingServer::sendEmail ( Host *h            ,
 		m_numRequests2++;
 		m_maxRequests2++;
 		char *mxHost = g_conf.m_email2MX;
-		if ( mxIP ) mxHost = mxIPStr;
 		if ( ! sendAdminEmail ( h,
 					g_conf.m_email2From,
 					g_conf.m_email2Addr,
@@ -1039,7 +1005,6 @@ bool PingServer::sendEmail ( Host *h            ,
 		m_numRequests2++;
 		m_maxRequests2++;
 		char *mxHost = g_conf.m_email3MX;
-		if ( mxIP ) mxHost = mxIPStr;
 		if ( ! sendAdminEmail ( h,
 					g_conf.m_email3From,
 					g_conf.m_email3Addr,
@@ -1051,7 +1016,6 @@ bool PingServer::sendEmail ( Host *h            ,
 		m_numRequests2++;
 		m_maxRequests2++;
 		char *mxHost = g_conf.m_email4MX;
-		if ( mxIP ) mxHost = mxIPStr;
 		if ( ! sendAdminEmail ( h,
 					g_conf.m_email4From,
 					g_conf.m_email4Addr,
@@ -1067,10 +1031,9 @@ bool PingServer::sendEmail ( Host *h            ,
 }
 
 
-#include "HttpServer.h"
 static void gotDocWrapper ( void *state , TcpSocket *ts ) ;
 
-bool sendAdminEmail ( Host  *h,
+static bool sendAdminEmail ( Host  *h,
 		      const char  *fromAddress,
 		      const char  *toAddress,
 		      char  *body , 
@@ -1102,16 +1065,7 @@ bool sendAdminEmail ( Host  *h,
 	// send the message
 	TcpServer *ts = g_httpServer.getTcp();
 	log ( LOG_WARN, "PingServer: Sending email to sysadmin:\n %s", buf );
-	//if ( !ts->sendMsg ( g_conf.m_smtpHost,
-	//		    strlen(g_conf.m_smtpHost),
-	//		    g_conf.m_smtpPort,
-	const char *ip = emailServIp; // gf39, mail server ip
-	// use backup if there
-	//char ipString[64];
-	//if ( g_emailServIPBackup ) {
-	//	iptoa(ipString,g_emailMX1IPBackup);
-	//	ip = ipString;
-	//}
+	const char *ip = emailServIp;
 	if ( !ts->sendMsg( ip, strlen( ip ), 25, buf, PAGER_BUF_SIZE, buffLen, buffLen, h, gotDocWrapper,
 	                   60 * 1000, 100 * 1024, 100 * 1024 ) ) {
 		return false;
@@ -1138,9 +1092,6 @@ void gotDocWrapper ( void *state , TcpSocket *s ) {
 	}
 	Host *h = (Host *)state;
 
-	//	if ( ! h ) { log("net: h is NULL in pingserver."); return; }
-	// don't let tcp server free the sendbuf, that's static
-	//s->m_sendBuf = NULL;
 	if ( g_errno ) { 
 		if(h) {
 			log("net: Had error sending email to mobile for dead "
@@ -1213,8 +1164,6 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 	for ( int32_t i = 0 ; i < np ; i++ ) {
 		// get host
 		Host *h = g_hostdb.getProxy(i);
-		// skip ourselves
-		//if ( h->m_hostId == g_hostdb.m_hostId ) continue;
 		// count as sent
 		m_numRequests++;
 		// send it right now
@@ -1237,10 +1186,6 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 		if ( h->m_hostId == g_hostdb.m_hostId ) continue;
 		// count as sent
 		m_numRequests++;
-		// request will be freed by UdpServer
-		//char *r = (char *) mmalloc ( 4 , "PingServer" );
-		//if ( ! r ) return true;
-		//gbmemcpy ( r , (char *)(&h->m_hostId) , 4 );
 		// send it right now
 		if (g_udpServer.sendRequest(s_buf, 5, msg_type_11, h->m_ip, h->m_port, h->m_hostId, NULL, NULL, gotReplyWrapperP2, 3000, 0)) {
 			continue;
@@ -1256,7 +1201,7 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 	return false;
 }
 
-void gotReplyWrapperP2 ( void *state , UdpSlot *slot ) {
+static void gotReplyWrapperP2 ( void *state , UdpSlot *slot ) {
 	// count it
 	g_pingServer.m_numReplies++;
 	// don't let udp server free our send buf, we own it
@@ -1284,7 +1229,7 @@ void gotReplyWrapperP2 ( void *state , UdpSlot *slot ) {
 
 // if its status changes from dead to alive or vice versa, we have to
 // update g_hostdb.m_numHostsAlive. Dns.cpp and Msg17 will use this count
-void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
+static void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 
 	// sanity check
 	if ( pingPtr != &h->m_ping && pingPtr != &h->m_pingShotgun ) { 
@@ -1331,11 +1276,9 @@ void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 
 void PingServer::sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) {
 	// leave if we already sent and alert within 5 mins
-	//static int32_t s_lasttime = 0;
 	int32_t now = getTimeGlobal();
 	if ( now - *lastTimeStamp < 5*60 ) return;
 	// prepare msg to send
-	//Host *h0 = g_hostdb.getHost ( 0 );
 	char msgbuf[1024];
 	snprintf(msgbuf, 1024,
 		 "cluster %s : proxy: %s",
@@ -1344,7 +1287,6 @@ void PingServer::sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) {
 	// send it, force it, so even if email alerts off, it sends it
 	g_pingServer.sendEmail ( NULL   , // Host *h
 				 msgbuf , // char *errmsg = NULL , 
-				 true   , // bool sendToAdmin = true ,
 				 false  , // bool oom = false ,
 				 false  , // bool parmChanged  = false ,
 				 true   );// bool forceIt      = false );

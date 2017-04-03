@@ -188,12 +188,6 @@ public:
 	int32_t           m_splitsDone;
 	int64_t      m_splitTimes;
 
-	// . the hostdb to which this host belongs!
-	// . getHost(ip,port) will return a Host ptr from either 
-	//   g_hostdb or g_hostdb2, so UdpServer.cpp needs to know which it
-	//   is from when making the UdpSlot key.
-	class Hostdb  *m_hostdb;
-
 	// . used by Parms.cpp for broadcasting parm change requests
 	// . each parm change request has an id
 	// . this let's us know which id is in progress and what the last

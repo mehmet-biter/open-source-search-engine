@@ -681,8 +681,6 @@ createFile:
 		m_hosts[i].m_lastPing = 0LL;
 		// and don't send emails on him until we got a good ping
 		m_hosts[i].m_emailCode = -2;
-		// so UdpServer.cpp knows if we are in g_hostdb or g_hostdb2
-		m_hosts[i].m_hostdb = this;
 		// reset these
 		m_hosts[i].m_pingInfo.m_flags    = 0;
 		m_hosts[i].m_pingInfo.m_cpuUsage = 0.0;
@@ -1352,7 +1350,6 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	oldHost->m_stripe      = spareHost->m_stripe;
 	oldHost->m_isProxy     = spareHost->m_isProxy;
 	oldHost->m_type        = HT_SPARE;
-	oldHost->m_hostdb      = spareHost->m_hostdb;
 	oldHost->m_inProgress1 = spareHost->m_inProgress1;
 	oldHost->m_inProgress2 = spareHost->m_inProgress2;
 

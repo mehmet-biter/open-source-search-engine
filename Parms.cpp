@@ -2378,7 +2378,6 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 	sprintf(tmp,"%s: parm \"%s\" changed value",iptoa(ip0),m->m_title);
 	g_pingServer.sendEmail ( NULL  , // Host ptr
 				 tmp   , // msg
-				 true  , // sendToAdmin
 				 false , // oom?
 				 true  , // parm change?
 				 true  );// force it? even if disabled?
@@ -5102,15 +5101,6 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_HIDDEN ;
-	m++;
-
-	m->m_title = "send email alerts to sysadmin";
-	m->m_desc  = "Sends to sysadmin@example.com.";
-	m->m_cgi   = "seatsa";
-	simple_m_set(Conf,m_sendEmailAlertsToSysadmin);
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
 	m++;
 
 	m->m_title = "ping spacer";

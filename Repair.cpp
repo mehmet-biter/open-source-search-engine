@@ -51,32 +51,6 @@ static Rdb **getSecondaryRdbs ( int32_t *nsr ) {
 	return s_rdbs;
 }
 
-static Rdb **getAllRdbs ( int32_t *nsr ) {
-	static Rdb *s_rdbs[50];
-	static int32_t s_nsr = 0;
-	static bool s_init = false;
-	if ( ! s_init ) {
-		s_init = true;
-		s_nsr = 0;
-		s_rdbs[s_nsr++] = g_titledb.getRdb    ();
-		s_rdbs[s_nsr++] = g_posdb.getRdb    ();
-		s_rdbs[s_nsr++] = g_spiderdb.getRdb   ();
-		s_rdbs[s_nsr++] = g_clusterdb.getRdb  ();
-		s_rdbs[s_nsr++] = g_linkdb.getRdb     ();
-		s_rdbs[s_nsr++] = g_tagdb.getRdb      ();
-
-		s_rdbs[s_nsr++] = g_titledb2.getRdb    ();
-		s_rdbs[s_nsr++] = g_posdb2.getRdb    ();
-		s_rdbs[s_nsr++] = g_spiderdb2.getRdb   ();
-		s_rdbs[s_nsr++] = g_clusterdb2.getRdb  ();
-		s_rdbs[s_nsr++] = g_linkdb2.getRdb     ();
-		s_rdbs[s_nsr++] = g_tagdb2.getRdb      ();
-	}
-	*nsr = s_nsr;
-	return s_rdbs;
-}
-
-
 Repair::Repair() {
 	// Coverity
 	m_docId = 0;
@@ -1689,46 +1663,58 @@ bool Repair::saveAllRdbs() {
 	if (s_savingAll) {
 		return false;
 	}
+
 	// set it
 	s_savingAll = true;
 
 	// TODO: why is this called like 100x per second when a merge is
 	// going on? why don't we sleep longer in between?
 
-	int32_t nsr;
-	Rdb **rdbs = getAllRdbs ( &nsr );
-	for ( int32_t i = 0 ; i < nsr ; i++ ) {
-		Rdb *rdb = rdbs[i];
-		// skip if not initialized
-		if ( ! rdb->isInitialized() ) continue;
+	for (int32_t i = 0; i < g_process.m_numRdbs; i++) {
+		Rdb *rdb = g_process.m_rdbs[i];
+		if (!rdb->isInitialized() || rdb->getRdbId() == RDB_DOLEDB) {
+			continue;
+		}
+
 		// save/close it
-		rdb->close(NULL,doneSavingRdb,false,false);
+		rdb->disableWrites();
+		rdb->saveTree(true, rdb, doneSavingRdb);
 	}
 
 	// return if still waiting on one to close
-	if ( anyRdbNeedsSave() ) return false;
+	if (anyRdbNeedsSave()) {
+		return false;
+	}
+
 	// all done
 	return true;
 }
 
 // return false if one or more is still not closed yet
 bool Repair::anyRdbNeedsSave() {
-	int32_t count = 0;
-	int32_t nsr;
-	Rdb **rdbs = getAllRdbs ( &nsr );
-	for ( int32_t i = 0 ; i < nsr ; i++ ) {
-		Rdb *rdb = rdbs[i];
-		if(rdb->needsSave())
-			count++;
+	for (int32_t i = 0; i < g_process.m_numRdbs; i++) {
+		Rdb *rdb = g_process.m_rdbs[i];
+		if (rdb->getRdbId() == RDB_DOLEDB) {
+			continue;
+		}
+		if (rdb->needsSave()) {
+			return true;
+		}
 	}
-	if ( count ) return true;
+
 	s_savingAll = false;
 	return false;
 }
 
 // returns false if waiting on some to save
 void Repair::doneSavingRdb(void *state) {
-	if ( ! anyRdbNeedsSave() ) return;
+	Rdb *rdb = static_cast<Rdb*>(state);
+	rdb->enableWrites();
+
+	if (!anyRdbNeedsSave()) {
+		return;
+	}
+
 	// all done
 	s_savingAll = false;
 }

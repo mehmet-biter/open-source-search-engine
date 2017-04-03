@@ -44,12 +44,9 @@ Rdb::Rdb ( ) {
 	m_dbnameLen = 0;
 	m_useIndexFile = false;
 	m_useTree = false;
-	m_closeState = NULL;
-	m_closeCallback = NULL;
 	m_minToMerge = 0;
 	m_dumpErrno = 0;
 	m_useHalfKeys = false;
-	m_urgent = false;
 	m_niceness = false;
 	m_dumpCollnum = 0;
 	m_inDumpLoop = false;
@@ -69,12 +66,6 @@ void Rdb::reset ( ) {
 	m_tree.reset();
 	m_buckets.reset();
 	m_mem.reset();
-	m_isClosing = false;
-	m_isClosed  = false;
-	m_isSaving  = false;
-	m_isReallyClosing = false;
-	m_registered      = false;
-	m_lastTime        = 0LL;
 }
 
 Rdb::~Rdb ( ) {
@@ -598,210 +589,47 @@ bool Rdb::delColl(const char *coll) {
 	return true;
 }
 
-// . returns false if blocked true otherwise
-// . sets g_errno on error
-// . CAUTION: only set urgent to true if we got a SIGSEGV or SIGPWR...
-bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , bool isReallyClosing ) {
-	// unregister in case already registered
-	if ( m_registered )
-		g_loop.unregisterSleepCallback (this,closeSleepWrapper);
-	// reset g_errno
-	g_errno = 0;
-	// return true if no RdbBases in m_bases[] to close
-	if ( getNumBases() <= 0 ) return true;
-	// return true if already closed
-	if ( m_isClosed ) return true;
-	// don't call more than once
-	if ( m_isSaving ) return true;
-
-	// set the m_isClosing flag in case we're waiting for a dump.
-	// then, when the dump is done, it will come here again
-	m_closeState       = state;
-	m_closeCallback    = callback;
-	m_urgent           = urgent;
-	m_isReallyClosing = isReallyClosing;
-	if ( m_isReallyClosing ) m_isClosing = true;
-	// . don't call more than once
-	// . really only for when isReallyClosing is false... just a quick save
-	m_isSaving = true;
-	// suspend any merge permanently (not just for this rdb), we're exiting
-	if ( m_isReallyClosing ) {
-		g_merge.haltMerge();
-	}
-	// . allow dumps to complete unless we're urgent
-	// . if we're urgent, we'll end up with a half dumped file, which
-	//   is ok now, since it should get its RdbMap auto-generated for it
-	//   when we come back up again
-	if ( ! m_urgent && m_inDumpLoop ) { // m_dump.isDumping() ) {
-		m_isSaving = false;
-		const char *tt = "save";
-		if ( m_isReallyClosing ) tt = "close";
-		log(LOG_INFO, "db: Cannot %s %s until dump finishes.", tt, m_dbname);
-		return false;
-	}
-
-
-	// if a write thread is outstanding, and we exit now, we can end up
-	// freeing the buffer it is writing and it will core... and things
-	// won't be in sync with the map when it is saved below...
-	if ( m_isReallyClosing &&
-	     // if we cored, we are urgent and need to make sure we save even
-	     // if we are merging this rdb...
-	     ! m_urgent &&
-	     g_merge.getRdbId() == m_rdbId &&
-	     g_merge.isMerging() ) {
-		// do not spam this message
-		int64_t now = gettimeofdayInMilliseconds();
-		if ( now - m_lastTime >= 500 ) {
-			log(LOG_INFO,"db: Waiting for merge to finish last "
-			    "write for %s.",m_dbname);
-			m_lastTime = now;
-		}
-		g_loop.registerSleepCallback (500,this,closeSleepWrapper);
-		m_registered = true;
-		// allow to be called again
-		m_isSaving = false;
-		return false;
-	}
-
-	// if we were merging to a file and are being closed urgently
-	// save the map! Also save the maps of the files we were merging
-	// in case the got their heads chopped (RdbMap::chopHead()) which
-	// we do to save disk space while merging.
-	// try to save the cache, may not save
-	if (m_isReallyClosing) {
-		// now loop over bases
-		for (int32_t i = 0; i < g_collectiondb.getNumRecs(); i++) {
-			// shut it down
-			RdbBase *base = getBase(i);
-			if (base) {
-				base->closeMaps(m_urgent);
-				base->closeIndexes(m_urgent);
-			}
-		}
-	}
-
-	// save it using a thread?
-	bool useThread = !(m_urgent || m_isReallyClosing);
-
-	// . returns false if blocked, true otherwise
-	// . sets g_errno on error
-	if (m_useTree) {
-		if (!m_tree.fastSave(getDir(), m_dbname, useThread, this, doneSavingWrapper)) {
-			return false;
-		}
-	} else {
-		if (!m_buckets.fastSave(getDir(), useThread, this, doneSavingWrapper)) {
-			return false;
-		}
-	}
-
-	// save index for tree as well
-	for (int32_t i = 0; i < g_collectiondb.getNumRecs(); i++) {
-		RdbBase *base = getBase(i);
-		if (base) {
-			base->saveTreeIndex();
-		}
-	}
-
-	// we saved it w/o blocking OR we had an g_errno
-	doneSaving();
-	return true;
-}
-
-void Rdb::closeSleepWrapper ( int fd , void *state ) {
-	Rdb *THIS = (Rdb *)state;
-	// sanity check
-	if ( ! THIS->m_isClosing ) { g_process.shutdownAbort(true); }
-	// continue closing, this returns false if blocked
-	if (!THIS->close(THIS->m_closeState, THIS->m_closeCallback, false, true)) {
-		return;
-	}
-	// otherwise, we call the callback
-	THIS->m_closeCallback ( THIS->m_closeState );
-}
-
-void Rdb::doneSavingWrapper ( void *state ) {
-	Rdb *THIS = (Rdb *)state;
-	THIS->doneSaving();
-	// . call the callback if any
-	// . this let's PageMaster.cpp know when we're closed
-	if (THIS->m_closeCallback) THIS->m_closeCallback(THIS->m_closeState);
-}
-
-void Rdb::doneSaving ( ) {
-	// bail if g_errno was set
-	if ( g_errno ) {
-		log(LOG_WARN, "db: Had error saving %s-saved.dat: %s.", m_dbname,mstrerror(g_errno));
-		g_errno = 0;
-		m_isSaving = false;
-		return;
-	}
-
-	// sanity
-	if ( m_dbname[0]=='\0' ) {
-		g_process.shutdownAbort(true);
-	}
-
-	// display any error, if any, otherwise prints "Success"
-	logf(LOG_INFO,"db: Successfully saved %s-saved.dat.", m_dbname);
-
-	// mdw ---> file doesn't save right, seems like it keeps the same length as the old file...
-	// . we're now closed
-	// . keep m_isClosing set to true so no one can add data
-	if ( m_isReallyClosing ) m_isClosed = true;
-
-	// call it again now
-	m_isSaving = false;
-}
-
 bool Rdb::isSavingTree() const {
 	if ( m_useTree ) return m_tree.isSaving();
 	return m_buckets.isSaving();
 }
 
-bool Rdb::saveTree ( bool useThread ) {
-	const char *dbn = m_dbname;
-	if ( ! dbn[0] ) {
-		dbn = "unknown";
+bool Rdb::saveTree(bool useThread, void *state, void (*callback)(void *state)) {
+	// sanity check
+	if (isWritable()) {
+		// we need to make sure it's not writable before calling saveTree
+		gbshutdownLogicError();
 	}
+
+	bool result;
 
 	// . if RdbTree::m_needsSave is false this will return true
 	// . if RdbTree::m_isSaving  is true this will return false
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 	if (m_useTree) {
-		if (m_tree.needsSave()) {
-			log( LOG_DEBUG, "db: saving tree %s", dbn );
-		}
-		return m_tree.fastSave(getDir(), m_dbname, useThread, NULL, NULL);
+		result = m_tree.fastSave(getDir(), m_dbname, useThread, state, callback);
 	} else {
-		if (m_buckets.needsSave()) {
-			log( LOG_DEBUG, "db: saving buckets %s", dbn );
-		}
-		return m_buckets.fastSave ( getDir(), useThread, NULL, NULL );
-	}
-}
-
-bool Rdb::saveTreeIndex(bool /* useThread */) {
-	if( !m_useIndexFile ) {
-		return true;
+		result = m_buckets.fastSave(getDir(), useThread, state, callback);
 	}
 
-	// now loop over bases
-	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
-		CollectionRec *cr = g_collectiondb.getRec(i);
-		if ( ! cr ) {
-			continue;
-		}
+	if (m_useIndexFile) {
+		// now loop over bases
+		for (int32_t i = 0; i < getNumBases(); i++) {
+			CollectionRec *cr = g_collectiondb.getRec(i);
+			if (!cr) {
+				continue;
+			}
 
-		// if swapped out, this will be NULL, so skip it
-		RdbBase *base = cr->getBase(m_rdbId);
-		if (base) {
-			base->saveTreeIndex();
+			// if swapped out, this will be NULL, so skip it
+			RdbBase *base = cr->getBase(m_rdbId);
+			if (base) {
+				base->saveTreeIndex();
+			}
 		}
 	}
-	return true;
+
+	return result;
 }
 
 bool Rdb::saveIndexes() {
@@ -1287,16 +1115,7 @@ void Rdb::doneDumping ( ) {
 	//for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 	//	if ( m_bases[i] ) m_bases[i]->doneDumping();
 	//}
-	// if we're closing shop then return
-	if ( m_isClosing ) { 
-		// continue closing, this returns false if blocked
-		if (!close(m_closeState, m_closeCallback, false, true)) {
-			return;
-		}
-		// otherwise, we call the callback
-		m_closeCallback ( m_closeState );
-		return; 
-	}
+
 	// try merge for all, first one that needs it will do it, preventing
 	// the rest from doing it
 	// don't attempt merge if we're niceness 0
@@ -1553,13 +1372,7 @@ bool Rdb::needsDump() const {
 		}
 	}
 
-	if (m_rdbId != RDB_DOLEDB) {
-		return false;
-	}
-
-	// dump doledb if a ton of negative recs...
-	// otherwise, no need to dump doledb just yet
-	return (m_tree.getNumNegativeKeys() > 50000);
+	return false;
 }
 
 bool Rdb::hasRoom(int32_t totalRecs, int32_t totalDataSize) const {
@@ -1637,12 +1450,12 @@ bool Rdb::hasRoom(RdbList *list) {
 
 
 bool Rdb::canAdd() const {
-	if(!isWritable())
+	if (!isWritable()) {
 		return false;
-	if(m_isClosing)
+	}
+	if (isInDumpLoop()) {
 		return false;
-	if(m_dump.isDumping()) //this is more conservative than the actual check in addRecord()
-		return false;
+	}
 	return true;
 }
 
@@ -1662,46 +1475,22 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 		return false;
 	}
 
-	// we can also use this logic to avoid adding to the waiting tree
-	// because Process.cpp locks all the trees up at once and unlocks
-	// them all at once as well. so since SpiderRequests are added to
-	// spiderdb and then alter the waiting tree, this statement should
-	// protect us.
-	if (!isWritable()) {
+	// don't continue if we're not allowed to add to Rdb
+	if (!canAdd()) {
 		g_errno = ETRYAGAIN;
-		logTrace(g_conf.m_logTraceRdb, "END. %s: Not writable. Returning false", m_dbname);
-		return false;
-	}
-
-	// bail if we're closing
-	if (m_isClosing) {
-		g_errno = ECLOSING;
-		logTrace(g_conf.m_logTraceRdb, "END. %s: Closing. Returning false", m_dbname);
+		logTrace(g_conf.m_logTraceRdb, "END. %s: Unable to add. Returning false", m_dbname);
 		return false;
 	}
 
 	// sanity check
 	if (KEYNEG(key)) {
 		if ((dataSize > 0 && data)) {
-			log( LOG_WARN, "db: Got data for a negative key." );
-			g_process.shutdownAbort(true);
+			log(LOG_LOGIC, "db: Got data for a negative key.");
+			gbshutdownLogicError();
 		}
 	} else if ( m_fixedDataSize >= 0 && dataSize != m_fixedDataSize ) {
-		// sanity check
-		g_errno = EBADENGINEER;
-		log(LOG_LOGIC,"db: addRecord: DataSize is %" PRId32" should be %" PRId32, dataSize,m_fixedDataSize );
-		g_process.shutdownAbort(true);
-	}
-
-	// do not add if range being dumped at all because when the
-	// dump completes it calls deleteList() and removes the nodes from
-	// the tree, so if you were overriding a node currently being dumped
-	// we would lose it.
-	if ( m_dump.isDumping()) {
-		// tell caller to wait and try again later
-		g_errno = ETRYAGAIN;
-		logTrace(g_conf.m_logTraceRdb, "END. %s: Dumping. Returning false", m_dbname);
-		return false;
+		log(LOG_LOGIC, "db: addRecord: DataSize is %" PRId32" should be %" PRId32, dataSize, m_fixedDataSize);
+		gbshutdownLogicError();
 	}
 
 	// copy the data before adding if we don't already own it
@@ -1709,10 +1498,8 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 	if (data) {
 		// sanity check
 		if ( m_fixedDataSize == 0 && dataSize > 0 ) {
-			g_errno = EBADENGINEER;
-			log(LOG_LOGIC,"db: addRecord: Data is present. Should not be");
-			logTrace(g_conf.m_logTraceRdb, "END. %s: Data is present. Returning false", m_dbname);
-			return false;
+			log(LOG_LOGIC, "db: addRecord: Data is present. Should not be");
+			gbshutdownLogicError();
 		}
 
 		dataCopy = (char *) m_mem.dupData(data, dataSize);
