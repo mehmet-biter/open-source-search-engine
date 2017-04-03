@@ -44,6 +44,7 @@ class PingServer {
 			 bool forceIt      = false);
 
 	bool hostsConfInDisagreement() const { return m_hostsConfInDisagreement; }
+	bool hostsConfInAgreement() const { return m_hostsConfInAgreement; }
 	int getNumHostsDead() const { return m_numHostsDead; }
 
 	Host *getMinRepairModeHost() const { return m_minRepairModeHost; }
