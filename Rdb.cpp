@@ -423,7 +423,6 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 					collnum         ,
 					tree            ,
 					buckets         ,
-					&m_dump         ,
 					this            ,
 					m_useIndexFile ) ) {
 		logf(LOG_INFO,"db: %s: Failed to initialize db for "

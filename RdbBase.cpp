@@ -110,7 +110,6 @@ RdbBase::RdbBase()
 	m_didRepair = false;
 	m_tree = NULL;
 	m_buckets = NULL;
-	m_dump = NULL;
 	m_minToMergeDefault = 0;
 	m_minToMerge = 0;
 	m_numFilesToMerge = 0;
@@ -160,7 +159,6 @@ bool RdbBase::init(const char *dir,
                    collnum_t collnum,
                    RdbTree *tree,
                    RdbBuckets *buckets,
-                   RdbDump *dump,
                    Rdb *rdb,
                    bool useIndexFile) {
 
@@ -194,7 +192,6 @@ bool RdbBase::init(const char *dir,
 	m_collnum = collnum;
 	m_tree    = tree;
 	m_buckets = buckets;
-	m_dump    = dump;
 	m_rdb     = rdb;
 
 	// save the dbname NULL terminated into m_dbname/m_dbnameLen
