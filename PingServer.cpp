@@ -291,7 +291,6 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	// the collection number we are daily merging (currently 2 bytes)
 	collnum_t cn = -1;
 	if ( g_dailyMerge.m_cr ) cn = g_dailyMerge.m_cr->m_collnum;
-	//*(collnum_t *)p = cn ; p += sizeof(collnum_t);
 	newPingInfo.m_dailyMergeCollnum = cn;
 
 	newPingInfo.m_hostId = me->m_hostId;
@@ -350,6 +349,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 static int32_t s_lastSentHostId = -1;
 
 void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
+log(LOG_INFO,"@@@ gotReplyWrapperP(stte=%p,slot=%p)",state,slot);
 	// state is the host
 	Host *h = (Host *)state;
 	if( !h ) {
@@ -475,7 +475,6 @@ static int64_t s_deltaTime = 0;
 // this may be called from a signal handler now...
 void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 	// get request 
-	//char *request     = slot->m_readBuf;
 	int32_t  requestSize = slot->m_readBufSize;
 	char *request     = slot->m_readBuf;
 	// get the ip/port of requester
@@ -704,8 +703,6 @@ void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 			g_pingServer.m_bestPingDate = nowLocal;
 			// and the ping
 			g_pingServer.m_bestPing = g_pingServer.m_currentPing;
-			// clear this
-			//s_deltaTime = 0;
 		}
 	}
 	// all pings now deliver a timestamp of the sending host
@@ -1102,16 +1099,7 @@ bool sendAdminEmail ( Host  *h,
 	// send the message
 	TcpServer *ts = g_httpServer.getTcp();
 	log ( LOG_WARN, "PingServer: Sending email to sysadmin:\n %s", buf );
-	//if ( !ts->sendMsg ( g_conf.m_smtpHost,
-	//		    strlen(g_conf.m_smtpHost),
-	//		    g_conf.m_smtpPort,
-	const char *ip = emailServIp; // gf39, mail server ip
-	// use backup if there
-	//char ipString[64];
-	//if ( g_emailServIPBackup ) {
-	//	iptoa(ipString,g_emailMX1IPBackup);
-	//	ip = ipString;
-	//}
+	const char *ip = emailServIp;
 	if ( !ts->sendMsg( ip, strlen( ip ), 25, buf, PAGER_BUF_SIZE, buffLen, buffLen, h, gotDocWrapper,
 	                   60 * 1000, 100 * 1024, 100 * 1024 ) ) {
 		return false;
@@ -1138,9 +1126,6 @@ void gotDocWrapper ( void *state , TcpSocket *s ) {
 	}
 	Host *h = (Host *)state;
 
-	//	if ( ! h ) { log("net: h is NULL in pingserver."); return; }
-	// don't let tcp server free the sendbuf, that's static
-	//s->m_sendBuf = NULL;
 	if ( g_errno ) { 
 		if(h) {
 			log("net: Had error sending email to mobile for dead "
@@ -1213,8 +1198,6 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 	for ( int32_t i = 0 ; i < np ; i++ ) {
 		// get host
 		Host *h = g_hostdb.getProxy(i);
-		// skip ourselves
-		//if ( h->m_hostId == g_hostdb.m_hostId ) continue;
 		// count as sent
 		m_numRequests++;
 		// send it right now
@@ -1237,10 +1220,6 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 		if ( h->m_hostId == g_hostdb.m_hostId ) continue;
 		// count as sent
 		m_numRequests++;
-		// request will be freed by UdpServer
-		//char *r = (char *) mmalloc ( 4 , "PingServer" );
-		//if ( ! r ) return true;
-		//gbmemcpy ( r , (char *)(&h->m_hostId) , 4 );
 		// send it right now
 		if (g_udpServer.sendRequest(s_buf, 5, msg_type_11, h->m_ip, h->m_port, h->m_hostId, NULL, NULL, gotReplyWrapperP2, 3000, 0)) {
 			continue;
@@ -1331,11 +1310,9 @@ void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 
 void PingServer::sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) {
 	// leave if we already sent and alert within 5 mins
-	//static int32_t s_lasttime = 0;
 	int32_t now = getTimeGlobal();
 	if ( now - *lastTimeStamp < 5*60 ) return;
 	// prepare msg to send
-	//Host *h0 = g_hostdb.getHost ( 0 );
 	char msgbuf[1024];
 	snprintf(msgbuf, 1024,
 		 "cluster %s : proxy: %s",
