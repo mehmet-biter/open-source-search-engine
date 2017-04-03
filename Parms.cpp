@@ -7777,17 +7777,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-	m->m_title = "do not re-add old outlinks more than this many days";
-	m->m_desc  = "If less than this many days have elapsed since the "
-		"last time we added the outlinks to spiderdb, do not re-add "
-		"them to spiderdb. Saves resources.";
-	m->m_cgi   = "slrf";
-	simple_m_set(CollectionRec,m_outlinksRecycleFrequencyDays);
-	m->m_def   = "30";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m++;
-
 	m->m_title = "deduping enabled";
 	m->m_desc  = "When enabled, the spider will "
 		"discard web pages which are identical to other web pages "
@@ -7817,30 +7806,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-	m->m_title = "detect custom error pages";
-	m->m_desc  = "Detect and do not index pages which have a 200 status"
-		" code, but are likely to be error pages.";
-	m->m_cgi   = "dcep";
-	simple_m_set(CollectionRec,m_detectCustomErrorPages);
-	m->m_def   = "1";
-	m->m_page  = PAGE_SPIDER;
-	m->m_flags = PF_CLONE;
-	m++;
-
-	m->m_title = "delete timed out docs";
-	m->m_desc  = "Should documents be deleted from the index "
-		"if they have been retried them enough times and the "
-		"last received error is a time out? "
-		"If your internet connection is flaky you may say "
-		"no here to ensure you do not lose important docs.";
-	m->m_cgi   = "dtod";
-	simple_m_set(CollectionRec,m_deleteTimeouts);
-	m->m_def   = "0";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m++;
-
 	m->m_title = "use simplified redirects";
 	m->m_desc  = "If this is true, the spider, when a url redirects "
 		"to a \"simpler\" url, will add that simpler url into "
@@ -7865,21 +7830,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_CLONE;
 	m->m_group = false;
-	m++;
-
-	m->m_title = "use ifModifiedSince";
-	m->m_desc  = "If this is true, the spider, when "
-		"updating a web page that is already in the index, will "
-		"not even download the whole page if it hasn't been "
-		"updated since the last time Gigablast spidered it. "
-		"This is primarily a bandwidth saving feature. It relies on "
-		"the remote webserver's returned Last-Modified-Since field "
-		"being accurate.";
-	m->m_cgi   = "uims";
-	simple_m_set(CollectionRec,m_useIfModifiedSince);
-	m->m_def   = "0";
-	m->m_page  = PAGE_SPIDER;
-	m->m_flags = PF_CLONE;
 	m++;
 
 	m->m_title = "do url sporn checking";
@@ -7977,29 +7927,6 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_CLONE;
-	m++;
-
-	m->m_title = "allow adult docs";
-	m->m_desc  = "If this is disabled the spider "
-		"will not allow any docs which contain adult content "
-		"into the index (overides tagdb).";
-	m->m_cgi   = "aprnd";
-	simple_m_set(CollectionRec,m_allowAdultDocs);
-	m->m_def   = "1";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m++;
-
-	m->m_title = "do IP lookup";
-	m->m_desc  = "If this is disabled and the proxy "
-		"IP below is not zero then Gigablast will assume "
-		"all spidered URLs have an IP address of 1.2.3.4.";
-	m->m_cgi   = "dil";
-	simple_m_set(CollectionRec,m_doIpLookups);
-	m->m_def   = "1";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
 	m++;
 
 	// m_maxOtherDocLen controls the maximum document to be stored in titledb. If it is larger than titledb-tree-mem then sillyness happens

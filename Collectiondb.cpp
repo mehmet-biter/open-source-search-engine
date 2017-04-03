@@ -1055,18 +1055,14 @@ CollectionRec::CollectionRec() {
 	m_thumbnailMaxWidthHeight = 0;
 	m_indexSpiderReplies = false;
 	m_indexBody = false;
-	m_outlinksRecycleFrequencyDays = 0.0;
 	m_dedupingEnabled = false;
 	m_dupCheckWWW = false;
-	m_detectCustomErrorPages = false;
 	m_useSimplifiedRedirects = false;
-	m_useIfModifiedSince = false;
 	m_useTimeAxis = false;
 	m_oneVotePerIpDom = false;
 	m_doUrlSpamCheck = false;
 	m_doLinkSpamCheck = false;
 	m_siteClusterByDefault = false;
-	m_doIpLookups = true;
 	m_useRobotsTxt = true;
 	m_obeyRelNoFollowLinks = true;
 	m_forceUseFloaters = false;
@@ -1089,8 +1085,6 @@ CollectionRec::CollectionRec() {
 	m_spiderdbMinFilesToMerge = 0;
 	m_dedupResultsByDefault = false;
 	m_doTagdbLookups = true;
-	m_deleteTimeouts = false;
-	m_allowAdultDocs = 0;
 	m_useCanonicalRedirects = true;
 	m_maxNumSpiders = 0;
 	m_titleMaxLen = 0;

@@ -278,21 +278,14 @@ public:
 	bool  m_indexSpiderReplies;
 	bool  m_indexBody;
 
-	// do not re-add outlinks to spiderdb if less than this many days
-	// have elapsed since the last time we added them to spiderdb
-	float m_outlinksRecycleFrequencyDays ;
-
 	bool  m_dedupingEnabled         ; // dedup content on same hostname
 	bool  m_dupCheckWWW             ;
-	bool  m_detectCustomErrorPages  ;
 	bool  m_useSimplifiedRedirects  ;
-	bool  m_useIfModifiedSince      ;
 	bool  m_useTimeAxis             ;
 	bool  m_oneVotePerIpDom         ;
 	bool  m_doUrlSpamCheck          ; //filter urls w/ naughty hostnames
 	bool  m_doLinkSpamCheck         ; //filters dynamically generated pages
 	bool  m_siteClusterByDefault    ;
-	bool  m_doIpLookups             ; // considered iff using proxy
 	bool  m_useRobotsTxt            ;
 	bool  m_obeyRelNoFollowLinks    ;
 	bool  m_forceUseFloaters        ;
@@ -336,8 +329,6 @@ public:
 
 	bool  m_dedupResultsByDefault   ;
 	bool  m_doTagdbLookups        ;
-	bool  m_deleteTimeouts          ; // can delete docs that time out?
-	bool  m_allowAdultDocs          ;
 	bool  m_useCanonicalRedirects   ;
 
 	int32_t  m_maxNumSpiders             ; // per local spider host
