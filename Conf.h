@@ -446,11 +446,6 @@ class Conf {
 	// the original cluster is updated
 	bool m_useTmpCluster;
 
-	// . for specifying if this is an interface machine
-	//   messages are rerouted from this machine to the main
-	//   cluster set in the hosts.conf.
-	bool m_interfaceMachine;
-
 	// allow scaling up of hosts by removing recs not in the correct
 	// group. otherwise a sanity check will happen.
 	bool  m_allowScale;

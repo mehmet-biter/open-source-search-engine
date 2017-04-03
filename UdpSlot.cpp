@@ -857,9 +857,6 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 	uint32_t ip = m_ip;
 	// . if this is a send to our ip use the loopback interface
 	// . MTU is very high here
-	//if ( !g_conf.m_interfaceMachine &&
-	//     m_ip == g_hostdb.getMyIp() )
-	//if ( !g_conf.m_interfaceMachine && g_hostdb.isMyIp(m_ip) )
 	if ( ip_distance(m_ip)==ip_distance_ourselves )
 		ip = g_hostdb.getLoopbackIp();
 
@@ -1560,13 +1557,9 @@ int32_t UdpSlot::getScore ( int64_t now ) const {
 
 	// . let's use a window now, give acks a chance to catch up somewhat
 	// . if send is local, use a larger ack window of ?64? dgrams
-	//if ( ( m_ip != g_hostdb.getMyIp() || g_conf.m_interfaceMachine ) &&
-	//if ( ( ! g_hostdb.isMyIp(m_ip)  || g_conf.m_interfaceMachine ) &&
 	if ( ip_distance(m_ip)!=ip_distance_ourselves &&
 	     m_sentBitsOn >= m_readAckBitsOn + ACK_WINDOW_SIZE    ) return -1;
 	// well, give a window size of 100 to loopbacks
-	//if ( ( m_ip == g_hostdb.getMyIp() && !g_conf.m_interfaceMachine ) &&
-	//if ( ( g_hostdb.isMyIp(m_ip) && !g_conf.m_interfaceMachine ) &&
 	if ( ip_distance(m_ip)==ip_distance_ourselves &&
 	     m_sentBitsOn >= m_readAckBitsOn + ACK_WINDOW_SIZE_LB ) return -1;
 

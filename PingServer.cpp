@@ -1141,8 +1141,6 @@ void sentEmailWrapper( void *state, TcpSocket *s) {
 bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 					  void   *state                   ,
 					  void  (* callback)(void *state) ) {
-	// don't broadcast on interface machines
-	if ( g_conf.m_interfaceMachine ) return true;
 	// only call once
 	if ( m_numRequests != m_numReplies ) return true;
 	// keep track

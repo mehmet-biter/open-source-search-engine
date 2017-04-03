@@ -277,8 +277,7 @@ bool Msg1::sendSomeOfList ( ) {
 	//   just enough to put it into a different groupId (but not out
 	//   of order) so we couldn't delete it cuz our delete keys would go
 	//   elsewhere
-	if ( m_forceLocal && shardNum != getMyShardNum() &&
-	     ! g_conf.m_interfaceMachine ) {
+	if ( m_forceLocal && shardNum != getMyShardNum() ) {
 		// make the groupId local, our group
 		//groupId = g_hostdb.m_groupId;
 		// bitch about this to log it
@@ -306,8 +305,6 @@ bool Msg1::sendSomeOfList ( ) {
 // . return false if blocked, true otherwise
 // . sets g_errno on error
 bool Msg1::sendData ( uint32_t shardNum, char *listData , int32_t listSize) {
-	// bail if this is an interface machine, don't write to the main
-	if ( g_conf.m_interfaceMachine ) return true;
 	// return true if no data
 	if ( listSize == 0 ) return true;
 

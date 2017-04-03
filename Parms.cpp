@@ -5611,17 +5611,6 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-	m->m_title = "interface machine";
-	m->m_desc  = "for specifying if this is an interface machine"
-		     "messages are rerouted from this machine to the main"
-		     "cluster set in the hosts.conf.";
-	m->m_cgi   = "intmch";
-	simple_m_set(Conf,m_interfaceMachine);
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
 	m->m_title = "redirect non-raw traffic";
 	m->m_desc = "If this is non empty, http traffic will be redirected "
 				"to the specified address.";

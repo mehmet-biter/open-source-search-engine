@@ -274,7 +274,6 @@ Conf::Conf ( ) {
 	m_useCompressionProxy = false;
 	m_gzipDownloads = false;
 	m_useTmpCluster = false;
-	m_interfaceMachine = false;
 	m_allowScale = true;
 	m_giveupOnDeadHosts = false;
 	m_bypassValidation = false;
