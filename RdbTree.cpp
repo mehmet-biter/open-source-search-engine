@@ -1964,6 +1964,8 @@ bool RdbTree::fastSave(const char *dir, const char *dbname, bool useThread, void
 		}
 	}
 
+	sl.unlock();
+
 	// no threads
 	saveWrapper(this);
 	saveDoneWrapper(this, job_exit_normal);
