@@ -2378,7 +2378,6 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 	sprintf(tmp,"%s: parm \"%s\" changed value",iptoa(ip0),m->m_title);
 	g_pingServer.sendEmail ( NULL  , // Host ptr
 				 tmp   , // msg
-				 true  , // sendToAdmin
 				 false , // oom?
 				 true  , // parm change?
 				 true  );// force it? even if disabled?

@@ -823,11 +823,9 @@ static void sleepWrapper ( int fd , void *state ) {
 // . sets g_errno on error
 bool PingServer::sendEmail ( Host *h            , 
 			     char *errmsg       , 
-			     bool  sendToAdmin  ,
 			     bool  oom          ,
 			     bool  parmChanged  ,
-			     bool  forceIt      ,
-			     int32_t  mxIP         ) { // 0 means none
+			     bool  forceIt) {
 	// clear this
 	g_errno = 0;
 	// not if we have outstanding requests
@@ -939,7 +937,7 @@ bool PingServer::sendEmail ( Host *h            ,
 	m_numReplies2  = 0;
 
 	// sysadmin
-	if ( g_conf.m_sendEmailAlertsToSysadmin && sendToAdmin ) {
+	if ( g_conf.m_sendEmailAlertsToSysadmin ) {
 		m_numRequests2++;
 		if ( ! sendAdminEmail ( h,
 					"sysadmin@example.com",
@@ -961,7 +959,7 @@ bool PingServer::sendEmail ( Host *h            ,
 	// between 10:00pm and 9:30am unless all the other twins of the 
 	// dead host are also dead. Instead, wait till after 9:30 am if 
 	// the host is still dead.
-	if ( delay && h && sendToAdmin ) {
+	if ( delay && h ) {
 
 		// always delay no matter the time now
 		bool delay = true;
@@ -999,19 +997,11 @@ bool PingServer::sendEmail ( Host *h            ,
 	if ( parmChanged && ! g_conf.m_sendParmChangeAlertsToEmail3) e3=false; 
 	if ( parmChanged && ! g_conf.m_sendParmChangeAlertsToEmail4) e4=false; 
 
-	// point to provided IP as string
-	char *mxIPStr = NULL;
-	char  ipBuf[64];
-	if ( mxIP ) {
-		sprintf(ipBuf,"%s",iptoa(mxIP));
-		mxIPStr = ipBuf;
-	}
 
 	if ( e1 ) {
 		m_numRequests2++;
 		m_maxRequests2++;
 		char *mxHost = g_conf.m_email1MX;
-		if ( mxIP ) mxHost = mxIPStr;
 		if ( ! sendAdminEmail ( h,
 					g_conf.m_email1From,
 					g_conf.m_email1Addr,
@@ -1023,7 +1013,6 @@ bool PingServer::sendEmail ( Host *h            ,
 		m_numRequests2++;
 		m_maxRequests2++;
 		char *mxHost = g_conf.m_email2MX;
-		if ( mxIP ) mxHost = mxIPStr;
 		if ( ! sendAdminEmail ( h,
 					g_conf.m_email2From,
 					g_conf.m_email2Addr,
@@ -1035,7 +1024,6 @@ bool PingServer::sendEmail ( Host *h            ,
 		m_numRequests2++;
 		m_maxRequests2++;
 		char *mxHost = g_conf.m_email3MX;
-		if ( mxIP ) mxHost = mxIPStr;
 		if ( ! sendAdminEmail ( h,
 					g_conf.m_email3From,
 					g_conf.m_email3Addr,
@@ -1047,7 +1035,6 @@ bool PingServer::sendEmail ( Host *h            ,
 		m_numRequests2++;
 		m_maxRequests2++;
 		char *mxHost = g_conf.m_email4MX;
-		if ( mxIP ) mxHost = mxIPStr;
 		if ( ! sendAdminEmail ( h,
 					g_conf.m_email4From,
 					g_conf.m_email4Addr,
@@ -1320,7 +1307,6 @@ void PingServer::sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) {
 	// send it, force it, so even if email alerts off, it sends it
 	g_pingServer.sendEmail ( NULL   , // Host *h
 				 msgbuf , // char *errmsg = NULL , 
-				 true   , // bool sendToAdmin = true ,
 				 false  , // bool oom = false ,
 				 false  , // bool parmChanged  = false ,
 				 true   );// bool forceIt      = false );
