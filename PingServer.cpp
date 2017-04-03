@@ -961,27 +961,22 @@ bool PingServer::sendEmail ( Host *h            ,
 	// the host is still dead.
 	if ( delay && h ) {
 
-		// always delay no matter the time now
-		bool delay = true;
-
-		if ( delay ) {
-			//check if the hosts twins are dead too
-			int32_t numTwins = 0;
-			Host *hosts = g_hostdb.getShard( h->m_shardNum, 
-							 &numTwins );
-			int32_t i = 0;
-			while ( i < numTwins ){
-				if ( !g_hostdb.isDead ( hosts[i].m_hostId ) )
-					break;
-				i++;
-			}
-
-			//if no twin is alive, emergency ! send email !
-			//if even one twin is alive, don't send now
-			if ( i == numTwins ) goto skipSleep;
-
-			return true;
+		//check if the hosts twins are dead too
+		int32_t numTwins = 0;
+		Host *hosts = g_hostdb.getShard( h->m_shardNum,
+						 &numTwins );
+		int32_t i = 0;
+		while ( i < numTwins ){
+			if ( !g_hostdb.isDead ( hosts[i].m_hostId ) )
+				break;
+			i++;
 		}
+
+		//if no twin is alive, emergency ! send email !
+		//if even one twin is alive, don't send now
+		if ( i == numTwins ) goto skipSleep;
+
+		return true;
 	}
 
  skipSleep:
