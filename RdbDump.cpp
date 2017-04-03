@@ -8,8 +8,6 @@
 
 
 RdbDump::RdbDump() {
-   	m_isDumping = false; 
-
 	// Coverity
 	m_tree = NULL;
 	m_buckets = NULL;
@@ -78,7 +76,6 @@ bool RdbDump::set(collnum_t collnum,
 	m_isSuspended   = false;
 	m_ks            = keySize;
 
-	m_isDumping     = false;
 	m_buf           = NULL;
 	m_verifyBuf     = NULL;
 	m_maxBufSize    = maxBufSize;
@@ -124,9 +121,6 @@ bool RdbDump::set(collnum_t collnum,
 		log(LOG_LOGIC, "db: dump: Bad fd of first file in BigFile.");
 		return true;
 	}
-
-	// we're now considered to be in dumping state
-	m_isDumping = true;
 
 	// . if no tree was provided to dump it must be RdbMerge calling us
 	// . he'll want to call dumpList() on his own
@@ -175,7 +169,6 @@ void RdbDump::reset ( ) {
 void RdbDump::doneDumping() {
 	int32_t saved = g_errno;
 
-	m_isDumping = false;
 	// print stats
 	log(LOG_INFO,
 	    "db: Dumped %" PRId32" positive and %" PRId32" negative recs. "
@@ -407,9 +400,6 @@ bool RdbDump::dumpList(RdbList *list, bool recall) {
 		// assume we don't hack the list
 		m_hacked = false;
 		m_hacked12 = false;
-
-		// we're now in dump mode again
-		m_isDumping = true;
 
 		if (g_conf.m_verifyDumpedLists) {
 			if(g_jobScheduler.submit(&checkList,&checkedList,this,thread_type_verify_data,m_niceness)) {
@@ -827,7 +817,6 @@ void RdbDump::continueDumping() {
 
 	// go back now if we were NOT dumping a tree
 	if (!(m_tree || m_buckets)) {
-		m_isDumping = false;
 		m_callback(m_state);
 		return;
 	}

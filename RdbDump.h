@@ -43,8 +43,6 @@ public:
 	         char keySize,
 	         rdbid_t rdbId);
 
-	bool isDumping() const { return m_isDumping; }
-
 	void setSuspended() { m_isSuspended = true; }
 
 	bool dumpList(RdbList *list) {
@@ -71,8 +69,6 @@ private:
 	// called when we've finished writing an RdbList to the file
 	bool doneDumpingList();
 	void continueDumping();
-
-	bool m_isDumping; // true if we're in the middle of dumping
 
 	RdbTree *m_tree;
 	RdbBuckets *m_buckets;
