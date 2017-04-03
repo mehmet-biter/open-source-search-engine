@@ -814,7 +814,7 @@ static void sleepWrapper ( int fd , void *state ) {
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool PingServer::sendEmail ( Host *h            , 
-			     char *errmsg       , 
+			     const char *errmsg,
 			     bool  oom          ,
 			     bool  forceIt) {
 	// clear this
@@ -1021,7 +1021,7 @@ bool PingServer::sendEmail ( Host *h            ,
 bool PingServer::sendAdminEmail(Host  *h,
 				const char  *fromAddress,
 				const char  *toAddress,
-				char  *body,
+				const char  *body,
 				const char  *emailServIp) {
 	char hostname[ 256];
 	gethostname(hostname,sizeof(hostname));

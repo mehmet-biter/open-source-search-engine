@@ -39,7 +39,7 @@ class PingServer {
 	// send an email warning that host "h" is dead
 	//bool sendEmail ( Host *h );
 	bool sendEmail ( Host *h , 
-			 char *errmsg = NULL , 
+			 const char *errmsg = NULL,
 			 bool oom = false ,
 			 bool forceIt      = false);
 
@@ -88,7 +88,7 @@ private:
 	static bool sendAdminEmail(Host  *h,
 			           const char  *fromAddress,
                                    const char *toAddress,
-			           char  *body,
+			           const char  *body,
 			           const char  *emailServIp);
 	int32_t m_i;
 
