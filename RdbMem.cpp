@@ -116,35 +116,6 @@ void *RdbMem::dupData(const char *data, int32_t dataSize) {
 
 
 void *RdbMem::allocData(int32_t dataSize) {
-	if ( m_rdb->isInDumpLoop() ) {
-		// if secondary mem is growing down...
-		if(m_ptr2>m_ptr1) {
-			// return NULL if it would breech,
-			// don't allow ptrs to equal each other because
-			// we know which way they're growing based on order
-			if(m_ptr2-dataSize<=m_ptr1)
-				return NULL;
-
-			// otherwise, grow downward
-			m_ptr2 -= dataSize;
-			return m_ptr2;
-		}
-		// . if it's growing up...
-		// . return NULL if it would breech
-		if(m_ptr2+dataSize>=m_ptr1)
-			return NULL;
-
-		// debug why recs added during dump aren't going into
-		// secondary mem
-		// log("rdbmem: allocating %i bytes for rec in %s (cn=%i) "
-		//     "ptr1=%" PTRFMT" ++ptr2=%" PTRFMT" mem=%" PTRFMT,
-		//     (int)dataSize,m_rdb->m_dbname,(int)collnum,
-		//     (PTRTYPE)m_ptr1,(PTRTYPE)m_ptr2,(PTRTYPE)m_mem);
-
-		// otherwise, grow downward
-		m_ptr2 += dataSize;
-		return m_ptr2 - dataSize;
-	}
 	// . otherwise, use the primary mem
 	// . if primary mem growing down...
 	if(m_ptr1>m_ptr2){
