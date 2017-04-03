@@ -40,8 +40,8 @@ RdbDump::RdbDump() {
 	m_getListStartTimeMS = 0;
 	m_numPosRecs = 0;
 	m_numNegRecs = 0;
-	m_rdb = NULL;
 	m_collnum = 0;
+	m_rdbId = RDB_NONE;
 	m_isSuspended = false;
 	m_ks = 0;
 }
@@ -63,7 +63,7 @@ bool RdbDump::set(collnum_t collnum,
                   int64_t startOffset,
                   const char *prevLastKey,
                   char keySize,
-                  Rdb *rdb) {
+                  rdbid_t rdbId) {
 	m_collnum = collnum;
 
 	m_file          = file;
@@ -90,8 +90,8 @@ bool RdbDump::set(collnum_t collnum,
 	m_useHalfKeys  = useHalfKeys;
 	//m_prevLastKey  = prevLastKey;
 	KEYSET(m_prevLastKey,prevLastKey,m_ks);
-	// for setting m_rdb->m_needsSave after deleting the dump list
-	m_rdb = rdb;
+
+	m_rdbId = rdbId;
 
 	// . don't dump to a pre-existing file
 	// . seems like Rdb.cpp makes a new BigFile before calling this
@@ -150,15 +150,6 @@ bool RdbDump::set(collnum_t collnum,
 	// keep a total count for reporting when done
 	m_totalPosDumped = 0;
 	m_totalNegDumped = 0;
-
-	// we have our own flag here since m_dump::m_isDumping gets
-	// set to true between collection dumps, RdbMem.cpp needs
-	// a flag that doesn't do that... see RdbDump.cpp.
-	// this was in Rdb.cpp but when threads were turned off it was
-	// NEVER getting set and resulted in corruption in RdbMem.cpp.
-	if( m_rdb ) {
-		m_rdb->setInDumpLoop(true);
-	}
 
 	// . start dumping the tree
 	// . return false if it blocked
@@ -269,10 +260,8 @@ bool RdbDump::dumpTree(bool recall) {
 	if (g_conf.m_logTraceRdbDump) {
 		logTrace(g_conf.m_logTraceRdbDump, "BEGIN");
 		logTrace(g_conf.m_logTraceRdbDump, "recall.: %s", recall ? "true" : "false");
-		if( m_rdb ) {
-			logTrace(g_conf.m_logTraceRdbDump, "m_rdbId: %02x", m_rdb->getRdbId());
-			logTrace(g_conf.m_logTraceRdbDump, "name...: [%s]", getDbnameFromId(m_rdb->getRdbId()) );
-		}
+		logTrace(g_conf.m_logTraceRdbDump, "m_rdbId: %02x", m_rdbId);
+		logTrace(g_conf.m_logTraceRdbDump, "name...: [%s]", getDbnameFromId(m_rdbId) );
 	}
 
 	// set up some vars
@@ -347,12 +336,8 @@ bool RdbDump::dumpTree(bool recall) {
 		// . check the list we got from the tree for problems
 		// . ensures keys are ordered from lowest to highest as well
 		if (g_conf.m_verifyWrites || g_conf.m_verifyDumpedLists) {
-			const char *s = (m_rdb ? getDbnameFromId(m_rdb->getRdbId()) : "none");
-
-			if( m_rdb ) {
-				log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i)", s, (int)m_collnum);
-				m_list->checkList_r(true, m_rdb->getRdbId());
-			}
+			log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i)", getDbnameFromId(m_rdbId), (int)m_collnum);
+			m_list->checkList_r(true, m_rdbId);
 		}
 
 		// if list is empty, we're done!
@@ -431,7 +416,7 @@ bool RdbDump::dumpList(RdbList *list, bool recall) {
 				logTrace(g_conf.m_logTraceRdbDump, "END. Submitted checkList job.");
 				return false;
 			}
-			m_list->checkList_r(true, m_rdb ? m_rdb->getRdbId() : RDB_NONE);
+			m_list->checkList_r(true, m_rdbId);
 		}
 	}
 	return dumpList2(recall);
@@ -442,7 +427,7 @@ void RdbDump::checkList(void *state) {
 	RdbDump *that = reinterpret_cast<RdbDump*>(state);
 
 	logTrace(g_conf.m_logTraceRdbDump, "BEGIN. list=%p", that->m_list);
-	that->m_list->checkList_r(true, that->m_rdb ? that->m_rdb->getRdbId() : RDB_NONE);
+	that->m_list->checkList_r(true, that->m_rdbId);
 	logTrace(g_conf.m_logTraceRdbDump, "END. list=%p", that->m_list);
 }
 

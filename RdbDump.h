@@ -41,7 +41,7 @@ public:
 	         int64_t startOffset,
 	         const char *prevLastKey,
 	         char keySize,
-	         Rdb *rdb);
+	         rdbid_t rdbId);
 
 	bool isDumping() const { return m_isDumping; }
 
@@ -118,8 +118,7 @@ private:
 	int32_t m_numPosRecs;
 	int32_t m_numNegRecs;
 
-	// for setting m_rdb->m_needsSave after deleting list from tree
-	Rdb *m_rdb;
+	rdbid_t m_rdbId;
 
 	collnum_t m_collnum;
 
