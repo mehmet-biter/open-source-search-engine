@@ -349,7 +349,6 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 static int32_t s_lastSentHostId = -1;
 
 void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
-log(LOG_INFO,"@@@ gotReplyWrapperP(stte=%p,slot=%p)",state,slot);
 	// state is the host
 	Host *h = (Host *)state;
 	if( !h ) {
