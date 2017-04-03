@@ -2500,27 +2500,6 @@ bool RdbBase::verifyFileSharding ( ) {
 	return true;//g_conf.m_bypassValidation;
 }
 
-float RdbBase::getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const {
-	// scan the maps
-	int64_t numPos = 0LL;
-	int64_t numNeg = 0LL;
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		numPos += m_fileInfo[i].m_map->getNumPositiveRecs();
-		numNeg += m_fileInfo[i].m_map->getNumNegativeRecs();
-	}
-	int64_t total = numPos + numNeg;
-	*totalArg = total;
-
-	float percent;
-	if( !total ) {
-		percent = 0.0;
-	}
-	else {
-		percent = (float)numNeg / (float)total;
-	}
-	return percent;
-}
-
 bool RdbBase::initializeGlobalIndexThread() {
 	return m_globalIndexThreadQueue.initialize(generateGlobalIndex, "generate-index");
 }

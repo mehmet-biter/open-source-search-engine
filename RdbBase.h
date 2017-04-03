@@ -101,9 +101,6 @@ class RdbBase {
 
 	docidsconst_ptr_t getGlobalIndex();
 
-
-	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const;
-
 	// how much mem is allocated for our maps?
 	int64_t getMapMemAllocated() const;
 
