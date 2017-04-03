@@ -1663,6 +1663,7 @@ bool Repair::saveAllRdbs() {
 	if (s_savingAll) {
 		return false;
 	}
+
 	// set it
 	s_savingAll = true;
 
@@ -1681,7 +1682,10 @@ bool Repair::saveAllRdbs() {
 	}
 
 	// return if still waiting on one to close
-	if ( anyRdbNeedsSave() ) return false;
+	if (anyRdbNeedsSave()) {
+		return false;
+	}
+
 	// all done
 	return true;
 }
