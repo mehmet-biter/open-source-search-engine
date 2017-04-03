@@ -102,7 +102,7 @@ private:
 	int32_t    m_maxRequests2;
 
 	int32_t    m_pingSpacer;
-	int32_t    m_callnum;
+	int32_t    m_sleepCallbackRegistrationSequencer; //for generating unique ids for sleep callback registration/deregistration
 
 	// set by setMinRepairMode() function
 	int32_t    m_minRepairMode;

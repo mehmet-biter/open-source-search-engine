@@ -43,8 +43,7 @@ bool PingServer::registerHandler ( ) {
 	// save this
 	m_pingSpacer = g_conf.m_pingSpacer;
 
-	// this starts off at zero
-	m_callnum = 0;
+	m_sleepCallbackRegistrationSequencer = 0;
 
 	// . this was 500ms but now when a host shuts downs it sends all other
 	//   hosts a msg saying so... PingServer::broadcastShutdownNotes() ...
@@ -53,7 +52,7 @@ bool PingServer::registerHandler ( ) {
 	//   every second to keep on top of things
 	// . so in a network of 128 hosts we'll cycle through in 12.8 seconds
 	//   and set a host to dead on avg will take about 13 seconds
-	if ( ! g_loop.registerSleepCallback ( g_conf.m_pingSpacer , (void *)(PTRTYPE)m_callnum, sleepWrapper , 0 ) ) {
+	if ( ! g_loop.registerSleepCallback ( g_conf.m_pingSpacer , (void *)(PTRTYPE)m_sleepCallbackRegistrationSequencer, sleepWrapper , 0 ) ) {
 		return false;
 	}
 
@@ -143,7 +142,7 @@ void PingServer::sendPingsToAll ( ) {
 	// update pingSpacer callback tick if it changed since last time
 	if ( m_pingSpacer == g_conf.m_pingSpacer ) return;
 	// register new one
-	if ( ! g_loop.registerSleepCallback ( m_pingSpacer , (void *)(PTRTYPE)(m_callnum+1) , sleepWrapper , 0 ) ) {
+	if ( ! g_loop.registerSleepCallback ( m_pingSpacer , (void *)(PTRTYPE)(m_sleepCallbackRegistrationSequencer+1) , sleepWrapper , 0 ) ) {
 		static char logged = 0;
 		if ( ! logged )
 			log("net: Could not update ping spacer.");
@@ -151,10 +150,9 @@ void PingServer::sendPingsToAll ( ) {
 		return;
 	}
 	// now it is safe to unregister last callback then
-	g_loop.unregisterSleepCallback((void *)(PTRTYPE)m_callnum,
-				       sleepWrapper);
-	// point to next one
-	m_callnum++;
+	g_loop.unregisterSleepCallback((void *)(PTRTYPE)m_sleepCallbackRegistrationSequencer, sleepWrapper);
+
+	m_sleepCallbackRegistrationSequencer++;
 }
 
 // ping host #i
