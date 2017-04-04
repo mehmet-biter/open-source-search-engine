@@ -3635,12 +3635,6 @@ bool SpiderColl::tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
 		return true;
 	}
-	// if ( sc->m_msg1.m_mcast.m_inUse ) {
-	// 	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
-	// 	    "waiting2",
-	// 	    (PTRTYPE)sc,(int32_t)sc->m_collnum);
-	// 	return true;
-	// }
 	if ( sc->m_isLoading ) {
 		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
 			    "waiting3",
