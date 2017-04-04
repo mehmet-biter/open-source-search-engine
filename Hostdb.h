@@ -201,7 +201,15 @@ public:
 
 	PingInfo m_pingInfo;//RequestBuf;
 
+	void updateLastResponseReceiveTimestamp(uint64_t t) { m_lastResponseReceiveTimestamp=t; }
+	void updateLastRequestSendTimestamp(uint64_t t) { m_lastRequestSendTimestamp=t; }
+	uint64_t getLastResponseReceiveTimestamp() const { return m_lastResponseReceiveTimestamp; }
+	uint64_t getLastRequestSendTimestamp() const { return m_lastRequestSendTimestamp; }
+
 private:
+	uint64_t m_lastResponseReceiveTimestamp;
+	uint64_t m_lastRequestSendTimestamp;
+
 	friend class Hostdb;
 	uint16_t m_httpPort ;      // http port
 	uint16_t m_httpsPort;

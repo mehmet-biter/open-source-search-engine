@@ -686,6 +686,9 @@ createFile:
 		m_hosts[i].m_pingInfo.m_cpuUsage = 0.0;
 		m_hosts[i].m_loadAvg  = 0.0;
 
+		m_hosts[i].m_lastResponseReceiveTimestamp = 0;
+		m_hosts[i].m_lastRequestSendTimestamp = 0;
+
 		// point to next one
 		i++;
 	}

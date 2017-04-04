@@ -14,6 +14,7 @@
 #include "BitOperations.h"
 #include "Msg0.h" //RDBIDOFFSET
 #include "Rdb.h" //RDB_...
+#include "GbUtil.h"
 #include "Mem.h"
 #include "max_niceness.h"
 #include "ScopedLock.h"
@@ -633,16 +634,24 @@ bool UdpServer::doSending(UdpSlot *slot, bool allowResends, int64_t now) {
 	}
 
 	for(;;) {
-		if ( slot->getScore(now) < 0 )
+		if ( slot->getScore(now) < 0 ) {
+			//enough or all sent
+			if(slot->m_callback && slot->m_host)
+				slot->m_host->updateLastRequestSendTimestamp(getCurrentTimeNanoseconds());
 			return true;
+		}
 		//if ( score < 0 ) return true;
 		// . returns -2 if nothing to send, -1 on error, 0 if blocked,
 		//   1 if sent something
 		// . it will send a dgram or an ACK
 		int32_t status = slot->sendDatagramOrAck ( m_sock , allowResends , now );
 		// return 1 if nothing to send
-		if ( status == -2 )
+		if ( status == -2 ) {
+			//all sent
+			if(slot->m_callback && slot->m_host)
+				slot->m_host->updateLastRequestSendTimestamp(getCurrentTimeNanoseconds());
 			return true;
+		}
 		// return -1 on error
 		if ( status == -1 ) {
 			log("udp: Had error sending dgram: %s.",mstrerror(g_errno));
@@ -1029,7 +1038,10 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 	}
 	// if we're shutting down do not accept new connections, discard
 	if ( m_isShuttingDown ) goto discard; 
-	if ( ! slot ) {
+	if(slot) {
+		h->updateLastResponseReceiveTimestamp(getCurrentTimeNanoseconds());
+	} else {
+		//no slot
 		// condition #3
 		if ( wasAck ) {
 			if ( g_conf.m_logDebugUdp )

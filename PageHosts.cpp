@@ -889,6 +889,12 @@ skipReplaceHost:
 	// end the table now
 	sb.safePrintf ( "</table><br>\n" );
 
+sb.safePrintf("<table>");
+for(int i=0; i<nh; i++) {
+	Host *h = g_hostdb.getHost(hostSort[i]);
+	sb.safePrintf("<tr><td>%lu</t><td>%lu</td></tr>", h->getLastRequestSendTimestamp(), h->getLastResponseReceiveTimestamp());
+}
+sb.safePrintf("</table>");
 	
 
 	if( g_hostdb.m_numSpareHosts ) {
