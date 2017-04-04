@@ -667,13 +667,6 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 	// the ST_SITE field anyway...
 	if ( ! ufu && ! us ) return true;
 
-	const CollectionRec *cr = g_collectiondb.getRec(r);
-	if(!cr) {
-		//uhm?
-		return true;
-	}
-	collnum_t collnum = cr->m_collnum;
-
 	// make it null terminated since we no longer do this automatically
 	fou.pushChar('\0');
 
@@ -741,10 +734,12 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 
 			// save buffer spot in case we have to rewind
 			int32_t saved = m_sbuf.length();
-			
+
+			Url url;
+			url.set(urlPtr);
+
 			SiteGetter sg;
-			sg.getSite(urlPtr, NULL, 0, collnum, 0);
-			
+			sg.getSite(url.getUrl(), NULL, 0, 0, 0);
 
 			// . add to tag rdb recs in safebuf
 			// . this pushes the rdbid as first byte
