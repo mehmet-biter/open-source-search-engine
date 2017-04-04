@@ -2126,23 +2126,6 @@ const char *getDbnameFromId(rdbid_t rdbId) {
 }
 
 // get the RdbBase class for an rdbId and collection name
-RdbBase *getRdbBase(rdbid_t rdbId, const char *coll) {
-	Rdb *rdb = getRdbFromId ( rdbId );
-	if ( ! rdb ) {
-		log("db: Collection \"%s\" does not exist.",coll);
-		return NULL;
-	}
-	// statdb is a special case
-	collnum_t collnum = g_collectiondb.getCollnum ( coll );
-	if(collnum == -1) {
-		g_errno = ENOCOLLREC;
-		return NULL;
-	}
-	return rdb->getBase(collnum);
-}
-
-
-// get the RdbBase class for an rdbId and collection name
 RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum) {
 	Rdb *rdb = getRdbFromId ( rdbId );
 	if ( ! rdb ) {

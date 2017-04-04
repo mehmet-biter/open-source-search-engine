@@ -18,7 +18,6 @@
 bool makeTrashDir() ;
 
 // get the RdbBase class for an rdbId and collection name
-class RdbBase *getRdbBase(rdbid_t rdbId, const char *coll);
 class RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum);
 
 // maps an rdbId to an Rdb
