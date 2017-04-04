@@ -885,6 +885,7 @@ bool TagRec::printToBufAsTagVector  ( SafeBuf *sb ) {
 // . also index "gbtagjapanese" if score != 0
 // . TODO: actually use this
 #define TDF_NOINDEX  0x04
+#define TDF_DEPRECATED 0x08
 
 class TagDesc {
 public:
@@ -907,8 +908,6 @@ static TagDesc s_tagDesc[] = {
 	{"roottitles"             ,TDF_STRING|TDF_NOINDEX,0},
 
 	{"manualban"            ,0x00,0},
-
-	{"deep"                 ,0x00,0},
 
 	// we now index this. really we need it for storing into title rec.
 	{"site"                 ,TDF_STRING|TDF_ARRAY,0},
@@ -941,35 +940,37 @@ static TagDesc s_tagDesc[] = {
 	//   doing the throttling, really messing things up
 	{"firstip"              ,0x00,0},
 
+	{"comment", TDF_STRING|TDF_NOINDEX, 0},
+
 	/// @todo ALC only need this until we cater for unknown tags for display (remember titlerec!)
     // As above, we can't remove the following definition unless if we're sure it's not set anymore
     // Anything below this point is unused.
-	{"rootlang"             ,TDF_STRING,0},
-	{"manualfilter", 0x00, 0},
-	{"dateformat", 0x00, 0}, // 1 = american, 2 = european
+	{"rootlang",TDF_STRING|TDF_DEPRECATED,0},
+	{"manualfilter", TDF_DEPRECATED, 0},
+	{"dateformat", TDF_DEPRECATED, 0},
 
-	{"venueaddress", TDF_STRING|TDF_ARRAY|TDF_NOINDEX, 0},
-	{"hascontactinfo", 0x00, 0},
-	{"contactaddress", TDF_ARRAY|TDF_NOINDEX, 0},
-	{"contactemails", TDF_ARRAY|TDF_NOINDEX, 0},
-	{"hascontactform", 0x00, 0},
+	{"venueaddress", TDF_STRING|TDF_ARRAY|TDF_NOINDEX|TDF_DEPRECATED, 0},
+	{"hascontactinfo", TDF_DEPRECATED, 0},
+	{"contactaddress", TDF_ARRAY|TDF_NOINDEX|TDF_DEPRECATED, 0},
+	{"contactemails", TDF_ARRAY|TDF_NOINDEX|TDF_DEPRECATED, 0},
+	{"hascontactform", TDF_DEPRECATED, 0},
 
-	{"ingoogle", 0x00, 0},
-	{"ingoogleblogs", 0x00, 0},
-	{"ingooglenews", 0x00, 0},
-	{"abyznewslinks.address", 0x00, 0},
+	{"ingoogle", TDF_DEPRECATED, 0},
+	{"ingoogleblogs", TDF_DEPRECATED, 0},
+	{"ingooglenews", TDF_DEPRECATED, 0},
+	{"abyznewslinks.address", TDF_DEPRECATED, 0},
 
-	{"sitenuminlinksuniqueip"  ,0x00,0},
-	{"sitenuminlinksuniquecblock"  ,0x00,0},
-	{"sitenuminlinkstotal"  ,0x00,0},
+	{"sitenuminlinksuniqueip", TDF_DEPRECATED, 0},
+	{"sitenuminlinksuniquecblock", TDF_DEPRECATED, 0},
+	{"sitenuminlinkstotal", TDF_DEPRECATED, 0},
 
-	{"comment", TDF_STRING|TDF_NOINDEX, 0},
+	{"sitepop", TDF_DEPRECATED, 0},
+	{"sitenuminlinksfresh", TDF_DEPRECATED, 0},
 
-	{"sitepop"  ,0x00,0},
-	{"sitenuminlinksfresh"  ,0x00,0},
+	{"pagerank", TDF_DEPRECATED, 0},
+	{"ruleset", TDF_DEPRECATED, 0},
 
-	{"pagerank"             ,0x00,0},
-	{"ruleset"              ,0x00,0}
+	{"deep", TDF_DEPRECATED, 0}
 };
 
 // . convert "domain_squatter" to ST_DOMAIN_SQUATTER
@@ -1010,6 +1011,20 @@ const char *getTagStrFromType ( int32_t tagType ) {
 
 	// return it
 	return (*ptd)->m_name;
+}
+
+std::set<int64_t> getDeprecatedTagTypes() {
+	int32_t n = (int32_t)sizeof(s_tagDesc)/(int32_t)sizeof(TagDesc);
+
+	std::set<int64_t> deprecatedTagTypes;
+
+	for (int32_t i = 0; i < n; ++i) {
+		if (s_tagDesc[i].m_flags & TDF_DEPRECATED) {
+			deprecatedTagTypes.emplace(s_tagDesc[i].m_type);
+		}
+	}
+
+	return deprecatedTagTypes;
 }
 
 // a global class extern'd in .h file
@@ -2082,17 +2097,24 @@ bool sendReply2 ( void *state ) {
 		// the options
 		for ( int32_t i = 0 ; ! ctag && i < n ; i++ ) {
 			TagDesc *td = &s_tagDesc[i];
+
+			// don't print if it's deprecated & not selected
+			if (((ctag && td->m_type != ctag->m_type) || !ctag) && (td->m_flags & TDF_DEPRECATED)) {
+				continue;
+			}
+
 			// get tag name
 			const char *tagName = td->m_name;
 
 			// select the item in the dropdown
 			const char *selected = "";
+
 			// was it selected?
-			if ( ctag && td->m_type == ctag->m_type ) 
+			if (ctag && td->m_type == ctag->m_type) {
 				selected = " selected";
+			}
 			// show it in the drop down list
-			sb.safePrintf("<option value=\"%s\"%s>%s",
-				      tagName,selected,tagName);
+			sb.safePrintf("<option value=\"%s\"%s>%s", tagName, selected, tagName);
 		}
 
 		// close up the drop down list

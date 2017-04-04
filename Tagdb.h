@@ -3,6 +3,7 @@
 #ifndef GB_TAGDB_H
 #define GB_TAGDB_H
 
+#include <set>
 #include "Rdb.h"
 #include "Xml.h"
 #include "Url.h"
@@ -84,6 +85,8 @@ int32_t  getTagTypeFromStr( const char *tagTypeName , int32_t tagnameLen = -1 );
 
 // . convert ST_DOMAIN_SQUATTER to "domain_squatter"
 const char *getTagStrFromType ( int32_t tagType ) ;
+
+std::set<int64_t> getDeprecatedTagTypes();
 
 // max "oustanding" msg0 requests sent by TagRec::lookup()
 #define MAX_TAGDB_REQUESTS 3
