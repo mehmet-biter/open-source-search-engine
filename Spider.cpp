@@ -24,7 +24,6 @@
 #include "HashTableX.h"
 #include "Msg5.h"      // local getList()
 #include "Msg4Out.h"
-#include "Msg1.h"
 #include "Doledb.h"
 #include "Msg5.h"
 #include "Collectiondb.h"

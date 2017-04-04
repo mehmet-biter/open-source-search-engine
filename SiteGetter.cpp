@@ -1,6 +1,5 @@
 #include "SiteGetter.h"
 #include "Url.h"
-#include "Msg1.h"
 #include "Rdb.h"
 #include "Posdb.h"
 #include "Conf.h"
@@ -407,7 +406,6 @@ bool SiteGetter::gotSiteList ( ) {
 // . return false if blocked, return true with g_errno set on error
 // . returns true if did not block
 bool SiteGetter::setSite ( ) {
-
 	// no more looping
 	m_allDone = true;
 
@@ -415,7 +413,6 @@ bool SiteGetter::setSite ( ) {
 	// . assume the hostname is the site
 	int32_t hostLen;
 	const char *host = ::getHost(m_url, &hostLen);
-
 	// truncated?
 	if ( hostLen + 6 > MAX_SITE_LEN ) {
 		m_site [ 0 ] = '\0';
@@ -428,7 +425,6 @@ bool SiteGetter::setSite ( ) {
 	// . assume the hostname is the site
 	int32_t schemeLen;
 	const char *scheme = ::getScheme ( m_url , &schemeLen );
-
 	if ( schemeLen < MAX_SCHEME_LEN ) {
 		gbmemcpy(m_scheme, scheme, schemeLen);
 		m_scheme[schemeLen] = '\0';

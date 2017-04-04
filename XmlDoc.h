@@ -49,7 +49,6 @@
 #include "Summary.h"
 #include "Spider.h" // SpiderRequest/SpiderReply definitions
 #include "HttpMime.h" // ET_DEFLAT
-#include "Msg1.h"
 #include "Json.h"
 #include "Posdb.h"
 

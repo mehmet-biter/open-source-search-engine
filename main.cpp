@@ -51,7 +51,6 @@
 
 // include all msgs that have request handlers, cuz we register them with g_udp
 #include "Msg0.h"
-#include "Msg1.h"
 #include "Msg4In.h"
 #include "Msg4Out.h"
 #include "Msg13.h"
@@ -2628,7 +2627,6 @@ static bool registerMsgHandlers1() {
 
 static bool registerMsgHandlers2() {
 	if ( ! Msg0::registerHandler()) return false;
-	if ( ! Msg1::registerHandler()) return false;
 
 	if ( ! Msg13::registerHandler() ) return false;
 
