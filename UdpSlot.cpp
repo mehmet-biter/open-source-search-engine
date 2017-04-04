@@ -1567,23 +1567,7 @@ int32_t UdpSlot::getScore ( int64_t now ) const {
 	int64_t score  = now - m_lastSendTime + 1000;
 	// watch out if someone changed the system clock on us
 	if ( score < 1000 ) score = 1000;
-	// . if we've resent before, wait enough time to send again!
-	// . m_resendCount resets when we read an ack (in readAck())
-	//if ( m_resendCount > 0 && now - m_lastReadTime < m_resendTime ) {
-	//log("now=%" PRId64"-lastRead=%" PRId64" <%" PRId32 , now,m_lastReadTime,m_resendTime);
-	//	return -1;
-	//}
-	// let's give smaller msgs more pts to reduce latency
-	//if ( m_sendBufSize <= 1  *1024 ) return score + 30 ;
-	//if ( m_sendBufSize <= 10 *1024 ) return score + 20;
-	//if ( m_sendBufSize <= 100*1024 ) return score + 10;
-	// . is it a resend?
-	// . get the time we sent the first unacked dgram
-	// m_firstUnackedDgram
-	// bool resend = ( score >= m_resendTime );
-	// if it's a resend set the hi bit to give it precedence
-	// if ( resend ) score |= 0x80000000;
-	// else          score &= 0x7fffffff;
+
 	return score;
 }
 
