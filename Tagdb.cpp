@@ -7,7 +7,6 @@
 #include "Collectiondb.h"
 #include "Unicode.h"
 #include "JobScheduler.h"
-#include "Msg1.h"
 #include "HttpServer.h"
 #include "Pages.h"
 #include "SiteGetter.h"
@@ -1630,7 +1629,7 @@ public:
 	Url          m_url;
 	const char  *m_urls;
 	int32_t         m_urlsLen;
-	Msg1         m_msg1;
+	Msg4         m_msg4;
 	RdbList      m_list;
 	int32_t         m_niceness;
 };
@@ -1752,10 +1751,20 @@ void sendReplyWrapper ( void *state ) {
 	sendReply ( state );
 }
 
-static void sendReplyWrapper2 ( void *state ) {
+static void sendReplyWrapper3(int fd, void *state) {
+	g_loop.unregisterSleepCallback(state, sendReplyWrapper3);
+
 	State12 *st = (State12 *)state;
 	// re-get the tags from msg8a since we changed them
 	getTagRec(st);
+}
+
+/// @warning ALC this is a hack because msg4 calls the callback before we get the response from receiving end
+/// and we want to get the updated data instead of the old data
+static void sendReplyWrapper2 ( void *state ) {
+	// delay for 1sec hoping that msg4 has been processed
+	g_loop.registerSleepCallback(1000, state, sendReplyWrapper3);
+	return;
 }
 
 bool sendReply ( void *state ) {
@@ -1805,21 +1814,13 @@ bool sendReply ( void *state ) {
 	// no longer adding
 	st->m_adding = false;
 
-	// . just use TagRec::m_msg1 now
-	// . no, can't use that because tags are added using SafeBuf::addTag()
-	//   which first pushes the rdbid, so we gotta use msg4
-	if ( ! st->m_msg1.addList ( list ,
-				    RDB_TAGDB ,
-				    st->m_collnum ,
-				    st ,
-				    sendReplyWrapper2 ,
-				    false ,
-				    st->m_niceness ) )
+	if (!st->m_msg4.addMetaList(sbuf, st->m_collnum, st, sendReplyWrapper2, RDB_TAGDB)) {
 		return false;
+	}
 
-	// . if addTagRecs() doesn't block then sendReply right away
-	// . this returns false if blocks, true otherwise
-	return getTagRec ( st );
+	// we always need to delay since msg4 may not be sent immediately even if it doesn't block
+	sendReplyWrapper2(st);
+	return false;
 }
 
 bool sendReply2 ( void *state ) {
