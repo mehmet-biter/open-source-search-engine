@@ -141,10 +141,10 @@ skipReplaceHost:
 
 			       "<td><b>GB version</b></td>"
 
-			       "<td><b>try agains recvd</b></td>"
-
 			       "<td><a href=\"/admin/hosts?c=%s&sort=3\">"
 			       "<b>dgrams resent</b></a></td>"
+
+			       "<td><b>try agains recvd</b></td>"
 
 			       "<td><a href=\"/admin/hosts?c=%s&sort=13\">"
 			       "<b>avg split time</b></a></td>"
