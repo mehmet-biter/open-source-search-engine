@@ -179,6 +179,29 @@ static void handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
 	processMsg4(slot);
 }
 
+struct RdbItem {
+	RdbItem(collnum_t collNum, const char *rec, int32_t recSize)
+		: m_collNum(collNum)
+		, m_rec(rec)
+		, m_recSize(recSize) {
+	}
+
+	collnum_t m_collNum;
+	const char *m_rec;
+	int32_t m_recSize;
+};
+
+struct RdbItems {
+	RdbItems()
+		: m_numRecs(0)
+		, m_dataSizes(0)
+		, m_items() {
+	}
+
+	int32_t m_numRecs;
+	int32_t m_dataSizes;
+	std::vector<RdbItem> m_items;
+};
 
 // . Syncdb.cpp will call this after it has received checkoff keys from
 //   all the alive hosts for this zid/sid
@@ -201,17 +224,20 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 	/// @note we can have multiple meta list here
 
 	// check if we have enough room for the whole request
-	std::map<rdbid_t, std::pair<int32_t, int32_t>> rdbRecSizes;
-	//note: we also use the above variable for keeping track of which rdbs we have touch and may need an integryty check
+	// note: we also use this variable for keeping track of which rdbs we have touch and may need an integrity check
+	std::map<rdbid_t, RdbItems> rdbItems;
 
-	const char *pstart = p;
 	while (p < pend) {
-		// extract rdbId, recSize
+		collnum_t collnum = *(collnum_t *)p;
 		p += sizeof(collnum_t);
+
 		rdbid_t rdbId = static_cast<rdbid_t>(*(char *)p);
 		p += 1;
+
 		int32_t recSize = *(int32_t *)p;
 		p += 4;
+
+		const char *rec = p;
 
 		// . get the rdb to which it belongs, use Msg0::getRdb()
 		// . do not call this for every rec if we do not have to
@@ -225,14 +251,13 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 				return false;
 			}
 
-			// an uninitialized secondary rdb? it will have a keysize
-			// of 0 if its never been intialized from the repair page.
+			// an uninitialized secondary rdb?
 			// don't core any more, we probably restarted this shard
 			// and it needs to wait for host #0 to syncs its
 			// g_conf.m_repairingEnabled to '1' so it can start its
 			// Repair.cpp repairWrapper() loop and init the secondary
 			// rdbs so "rdb" here won't be NULL any more.
-			if (rdb->getKeySize() <= 0) {
+			if (!rdb->isInitialized()) {
 				time_t currentTime = getTime();
 				static time_t s_lastTime = 0;
 				if (currentTime > s_lastTime + 10) {
@@ -251,15 +276,16 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 			return false;
 		}
 
-		auto &item = rdbRecSizes[rdbId];
-		item.first += 1;
+		auto &rdbItem = rdbItems[rdbId];
+		++rdbItem.m_numRecs;
 
 		int32_t dataSize = recSize - rdb->getKeySize();
 		if (rdb->getFixedDataSize() == -1) {
 			dataSize -= 4;
 		}
+		rdbItem.m_dataSizes += dataSize;
 
-		item.second += dataSize;
+		rdbItem.m_items.emplace_back(collnum, rec, recSize);
 
 		// reset g_errno
 		g_errno = 0;
@@ -270,118 +296,103 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 
 	bool hasRoom = true;
 	bool anyCantAdd = false;
-	for (auto const &item : rdbRecSizes) {
-		Rdb *rdb = getRdbFromId(item.first);
-		if (!rdb->hasRoom(item.second.first, item.second.second)) {
+	for (auto const &rdbItem : rdbItems) {
+		Rdb *rdb = getRdbFromId(rdbItem.first);
+		if (!rdb->hasRoom(rdbItem.second.m_numRecs, rdbItem.second.m_dataSizes)) {
 			rdb->dumpTree();
 			hasRoom = false;
 		}
-		if(!rdb->canAdd()) {
+		if (!rdb->canAdd()) {
 			anyCantAdd = true;
 		}
 	}
 
 	if (!hasRoom) {
-		logDebug(g_conf.m_logDebugSpider, "One or more target Rdbs  don't have room currently. Returning try-again for this Msg4");
+		logDebug(g_conf.m_logDebugSpider, "One or more target Rdbs don't have room currently. Returning try-again for this Msg4");
 		g_errno = ETRYAGAIN;
 		return false;
 	}
-	if(anyCantAdd) {
+
+	if (anyCantAdd) {
 		logDebug(g_conf.m_logDebugSpider, "One or more target Rdbs can't currently be added to. Returning try-again for this Msg4");
 		g_errno = ETRYAGAIN;
 		return false;
 	}
 
-	/// @todo ALC we can probably improve performance by preprocessing records in previous loop
 
-	// reset p to before 'check' loop
-	p = pstart;
+	for (auto const &rdbItem : rdbItems) {
+		Rdb *rdb = getRdbFromId(rdbItem.first);
 
-	// . this request consists of multiple recs, so add each one
-	// . collnum(2bytes)/rdbId(1byte)/recSize(4bytes)/recData/...
-	while (p < pend) {
-		// extract collnum, rdbId, recSize
-		collnum_t collnum = *(collnum_t *)p;
-		p += sizeof(collnum_t);
-		rdbid_t rdbId = static_cast<rdbid_t>(*(char *)p);
-		p += 1;
-		int32_t recSize = *(int32_t *)p;
-		p += 4;
-
-		// . get the rdb to which it belongs, use Msg0::getRdb()
-		// . do not call this for every rec if we do not have to
-		if (rdbId != lastRdbId || !rdb) {
-			rdb = getRdbFromId(rdbId);
-
-			if (!rdb) {
-				log(LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized from hostip=%s. dropping WHOLE request",
-				    (int32_t)rdbId, slot ? iptoa(slot->getIp()) : "unknown");
-				g_errno = ETRYAGAIN;
-				return false;
-			}
-		}
-
-		// reset g_errno
-		g_errno = 0;
-
-		// . make a list from this data
-		// . skip over the first 4 bytes which is the rdbId
-		// . TODO: embed the rdbId in the msgtype or something...
-		RdbList list;
-
-		// set the list
-		// todo: dodgy cast to char*. RdbList should be fixed
-		list.set((char *)p, recSize, (char *)p, recSize, rdb->getFixedDataSize(), false, rdb->useHalfKeys(), rdb->getKeySize());
-
-		// advance over the rec data to point to next entry
-		p += recSize;
-
-		// keep track of stats
-		rdb->readRequestAdd(recSize);
-
-		// this returns false and sets g_errno on error
-		bool status = rdb->addListNoSpaceCheck(collnum, &list);
-
-		// bad coll #? ignore it. common when deleting and resetting
-		// collections using crawlbot. but there are other recs in this
-		// list from different collections, so do not abandon the whole
-		// meta list!! otherwise we lose data!!
-		if (g_errno == ENOCOLLREC && !status) {
+		bool status = false;
+		for (auto const &item : rdbItem.second.m_items) {
+			// reset g_errno
 			g_errno = 0;
-			status = true;
+
+			// . make a list from this data
+			// . skip over the first 4 bytes which is the rdbId
+			// . TODO: embed the rdbId in the msgtype or something...
+			RdbList list;
+
+			// set the list
+			// todo: dodgy cast to char*. RdbList should be fixed
+			list.set((char *)item.m_rec, item.m_recSize, (char *)item.m_rec, item.m_recSize,
+			         rdb->getFixedDataSize(), false, rdb->useHalfKeys(), rdb->getKeySize());
+
+			// keep track of stats
+			rdb->readRequestAdd(item.m_recSize);
+
+			// this returns false and sets g_errno on error
+			status = rdb->addListNoSpaceCheck(item.m_collNum, &list);
+
+			// bad coll #? ignore it. common when deleting and resetting
+			// collections using crawlbot. but there are other recs in this
+			// list from different collections, so do not abandon the whole
+			// meta list!! otherwise we lose data!!
+			if (g_errno == ENOCOLLREC && !status) {
+				g_errno = 0;
+				status = true;
+			}
+
+			if (!status) {
+				break;
+			}
 		}
 
 		if (!status) {
 			break;
 		}
-
-		// do the next record here if there is one
 	}
 
-	//verify integrity if wanted
+	// verify integrity if wanted
 	if (g_conf.m_verifyTreeIntegrity) {
-		for (auto const &item : rdbRecSizes) {
-			Rdb *rdb = getRdbFromId(item.first);
+		for (auto const &rdbItem : rdbItems) {
+			Rdb *rdb = getRdbFromId(rdbItem.first);
 			rdb->verifyTreeIntegrity();
 		}
 	}
 
 	// no memory means to try again
-	if ( g_errno == ENOMEM ) g_errno = ETRYAGAIN;
-	// doing a full rebuid will add collections
-	if ( g_errno == ENOCOLLREC  && g_repairMode > 0       )
+	if (g_errno == ENOMEM) {
 		g_errno = ETRYAGAIN;
+	}
+
+	// doing a full rebuid will add collections
+	if (g_errno == ENOCOLLREC && g_repairMode > 0) {
+		g_errno = ETRYAGAIN;
+	}
 
 	// are we done
-	if ( g_errno ) return false;
+	if (g_errno) {
+		return false;
+	}
 
-	//Initiate dumps for any Rdbs wanting it
-	for (auto const &item : rdbRecSizes) {
-		Rdb *rdb = getRdbFromId(item.first);
+	// Initiate dumps for any Rdbs wanting it
+	for (auto const &rdbItem : rdbItems) {
+		Rdb *rdb = getRdbFromId(rdbItem.first);
 		if (rdb->needsDump()) {
-			logDebug(g_conf.m_logDebugSpider, "Rdb %d needs dumping", item.first);
+			logDebug(g_conf.m_logDebugSpider, "Rdb %s needs dumping", getDbnameFromId(rdbItem.first));
 			rdb->dumpTree();
-			//we ignore the return value because we have processed the list/msg4
+			// we ignore the return value because we have processed the list/msg4
 		}
 	}
 
