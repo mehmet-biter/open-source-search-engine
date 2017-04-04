@@ -633,13 +633,6 @@ bool UdpServer::doSending(UdpSlot *slot, bool allowResends, int64_t now) {
 	}
 
 	for(;;) {
-		// . don't do any sending until we leave the wait state
-
-		// . if the score of this slot is -1, don't send on it!
-		// . this now will allow one dgram to be resent even if we don't
-		//   have the token
-		//int32_t score = slot->getScore(now);
-		//log("score is %" PRId32, score);
 		if ( slot->getScore(now) < 0 )
 			return true;
 		//if ( score < 0 ) return true;
