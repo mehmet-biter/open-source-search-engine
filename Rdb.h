@@ -42,9 +42,6 @@ void attemptMergeAllCallback ( int fd , void *state ) ;
 void attemptMergeAll ( );
 
 class Rdb {
-	/// @todo ALC remove this when method is fixed (main.cpp)
-	friend int injectFile ( const char *filename , char *ips , const char *coll );
-
 public:
 
 	 Rdb ( );
