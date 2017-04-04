@@ -1563,8 +1563,6 @@ int32_t UdpSlot::getScore ( int64_t now ) const {
 	if ( ip_distance(m_ip)==ip_distance_ourselves &&
 	     m_sentBitsOn >= m_readAckBitsOn + ACK_WINDOW_SIZE_LB ) return -1;
 
-	// return 1 if now is 0
-	if ( now == 0LL ) return 1;
 	// sort regular sends by the last send time
 	int64_t score  = now - m_lastSendTime + 1000;
 	// watch out if someone changed the system clock on us
