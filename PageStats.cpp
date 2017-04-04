@@ -299,7 +299,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	caches[numCaches++] = g_dns.getCache();
 	caches[numCaches++] = g_dns.getCacheLocal();
 	caches[numCaches++] = &g_spiderLoop.m_winnerListCache;
-	caches[numCaches++] = Msg8a::getCache();
 
 	if ( format == FORMAT_HTML ) {
 		p.safePrintf (

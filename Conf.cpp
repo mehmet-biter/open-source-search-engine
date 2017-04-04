@@ -173,8 +173,6 @@ Conf::Conf ( ) {
 	m_stableSummaryCacheMaxAge = 0;
 	m_unstableSummaryCacheSize = 0;
 	m_unstableSummaryCacheMaxAge = 0;
-	m_tagRecCacheSize = 0;
-	m_tagRecCacheMaxAge = 0;
 	m_useShotgun = false;
 	m_testMem = false;
 	m_doConsistencyTesting = false;

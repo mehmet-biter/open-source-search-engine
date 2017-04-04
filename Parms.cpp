@@ -5554,33 +5554,6 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-	/// @todo ALC this is currently disabled for now (cache timeout doesn't work;
-	/// caching will be bad for numsiteinlinks(which is regenerated when it's stale).
-	/// this could cause us to regenerate numsiteinlinks unnecessarily causing load on the system
-	m->m_title = "TagRec (Msg8a) cache size";
-	m->m_desc  = "How much memory to use for caching TagRec";
-	m->m_cgi   = "tagreccachemem";
-	m->m_xml   = "TagRecCacheSize";
-	simple_m_set(Conf, m_tagRecCacheSize);
-	m->m_def   = "10000000";
-	m->m_units = "bytes";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_group = false;
-	m++;
-
-	m->m_title = "TagRec (Msg8a) cache max age";
-	m->m_desc  = "How long to cache TagRec.";
-	m->m_cgi   = "tagreccacheage";
-	m->m_xml   = "TagRecCacheAge";
-	simple_m_set(Conf, m_tagRecCacheMaxAge);
-	m->m_def   = "0";
-	m->m_units = "milliseconds";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_group = false;
-	m++;
-
 	m->m_title = "redirect non-raw traffic";
 	m->m_desc = "If this is non empty, http traffic will be redirected "
 				"to the specified address.";

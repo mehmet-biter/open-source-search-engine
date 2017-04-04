@@ -216,8 +216,6 @@ class Msg8a {
 	~Msg8a ();
 	void reset();
 
-	static const RdbCache* getCache();
-
 	// . get records from multiple subdomains of url
 	// . calls g_udpServer.sendRequest() on each subdomain of url
 	// . all matching records are merge into a final record
