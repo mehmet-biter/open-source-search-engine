@@ -1338,8 +1338,8 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	}
 
 	// use that
-	m_siteStartKey = g_tagdb.makeStartKey( site, siteLen );
-	m_siteEndKey = g_tagdb.makeEndKey( site, siteLen );
+	m_siteStartKey = Tagdb::makeStartKey( site, siteLen );
+	m_siteEndKey = Tagdb::makeEndKey( site, siteLen );
 
 	m_url = url;
 
@@ -1422,8 +1422,8 @@ bool Msg8a::launchGetRequests ( ) {
 		key128_t endKey;
 
 		if(getLoop==1) {
-			startKey = g_tagdb.makeDomainStartKey ( m_url );
-			endKey   = g_tagdb.makeDomainEndKey   ( m_url );
+			startKey = Tagdb::makeDomainStartKey ( m_url );
+			endKey   = Tagdb::makeDomainEndKey   ( m_url );
 			log( LOG_DEBUG, "tagdb: looking up domain tags for %.*s", m_url->getDomainLen(), m_url->getDomain() );
 		} else {
 			// usually the site is the hostname but sometimes it is like

@@ -16181,8 +16181,8 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// just recycle!
 	if ( m_req && ! m_checkedUrlFilters && ! m_tagRecDataValid ) {
 		char *site = getSite();
-		TAGDB_KEY tk1 = g_tagdb.makeStartKey ( site );
-		TAGDB_KEY tk2 = g_tagdb.makeDomainStartKey ( &m_firstUrl );
+		TAGDB_KEY tk1 = Tagdb::makeStartKey ( site );
+		TAGDB_KEY tk2 = Tagdb::makeDomainStartKey ( &m_firstUrl );
 		uint32_t shardNum1 = g_hostdb.getShardNum(RDB_TAGDB,&tk1);
 		uint32_t shardNum2 = g_hostdb.getShardNum(RDB_TAGDB,&tk2);
 		// shardnum1 and shardnum2 are often different!
