@@ -91,7 +91,7 @@ bool UrlBlockList::load() {
 				} else {
 					col3.clear();
 				}
-				tmpUrlBlockList->push_back(UrlBlock(std::shared_ptr<urlblockdomain_t>(new urlblockdomain_t(col2, col3))));
+				tmpUrlBlockList->emplace_back(std::shared_ptr<urlblockdomain_t>(new urlblockdomain_t(col2, col3)));
 				break;
 			case 'h':
 				// host
@@ -100,7 +100,7 @@ bool UrlBlockList::load() {
 					continue;
 				}
 
-				tmpUrlBlockList->push_back(UrlBlock(std::shared_ptr<urlblockhost_t>(new urlblockhost_t(col2, col3))));
+				tmpUrlBlockList->emplace_back(std::shared_ptr<urlblockhost_t>(new urlblockhost_t(col2, col3)));
 				break;
 			case 'p':
 				// path
@@ -109,7 +109,7 @@ bool UrlBlockList::load() {
 					continue;
 				}
 
-				tmpUrlBlockList->push_back(UrlBlock(std::shared_ptr<urlblockpath_t>(new urlblockpath_t(col2))));
+				tmpUrlBlockList->emplace_back(std::shared_ptr<urlblockpath_t>(new urlblockpath_t(col2)));
 				break;
 			case 'r':
 				// regex
@@ -128,7 +128,7 @@ bool UrlBlockList::load() {
 					col2.clear();
 				}
 
-				tmpUrlBlockList->push_back(UrlBlock(std::shared_ptr<urlblockregex_t>(new urlblockregex_t(col3, GbRegex(col3.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE), col2))));
+				tmpUrlBlockList->emplace_back(std::shared_ptr<urlblockregex_t>(new urlblockregex_t(col3, GbRegex(col3.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE), col2)));
 				break;
 			case 't':
 				if (memcmp(line.c_str(), "tld", firstColEnd) != 0) {
@@ -136,7 +136,7 @@ bool UrlBlockList::load() {
 					continue;
 				}
 
-				tmpUrlBlockList->push_back(UrlBlock(std::shared_ptr<urlblocktld_t>(new urlblocktld_t(col2))));
+				tmpUrlBlockList->emplace_back(std::shared_ptr<urlblocktld_t>(new urlblocktld_t(col2)));
 				break;
 			default:
 				continue;
