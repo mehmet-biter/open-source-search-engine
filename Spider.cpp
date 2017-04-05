@@ -1145,7 +1145,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 
 	// use spidercoll to contain this msg4 but if in use it
 	// won't be able to be deleted until it comes back..
-	if(!sc->m_msg4x.addMetaList(spiderReqBuf, sc->m_collnum, sc, doneAddingSeedsWrapper, RDB_SPIDERDB))
+	if(!sc->m_msg4x.addMetaList(spiderReqBuf, sc->m_collnum, spiderReqBuf, doneAddingSeedsWrapper, RDB_SPIDERDB))
 		return false;
 	else {
 		delete spiderReqBuf;
