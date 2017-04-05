@@ -607,7 +607,7 @@ bool Rdb::saveTree(bool useThread, void *state, void (*callback)(void *state)) {
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 	if (m_useTree) {
-		result = m_tree.fastSave(getDir(), m_dbname, useThread, state, callback);
+		result = m_tree.fastSave(getDir(), useThread, state, callback);
 	} else {
 		result = m_buckets.fastSave(getDir(), useThread, state, callback);
 	}

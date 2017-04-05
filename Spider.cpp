@@ -652,14 +652,13 @@ void SpiderCache::save ( bool useThread ) {
 		if ( ! tree->needsSave() ) continue;
 		// if already saving from a thread
 		if ( tree->isSaving() ) continue;
-		const char *filename = "waitingtree";
 		char dir[1024];
 		sprintf(dir,"%scoll.%s.%" PRId32,g_hostdb.m_dir,
 			sc->m_coll,(int32_t)sc->m_collnum);
 		// log it for now
 		log("spider: saving waiting tree for cn=%" PRId32,(int32_t)i);
 		// returns false if it blocked, callback will be called
-		tree->fastSave(dir, filename, useThread, NULL, NULL);
+		tree->fastSave(dir, useThread, NULL, NULL);
 	}
 }
 

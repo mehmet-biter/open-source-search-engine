@@ -192,7 +192,7 @@ public:
 	//   is called
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
-	bool fastSave(const char *dir, const char *dbname, bool useThread, void *state, void (*callback)(void *state));
+	bool fastSave(const char *dir, bool useThread, void *state, void (*callback)(void *));
 
 	void verifyIntegrity();
 
