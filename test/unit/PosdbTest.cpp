@@ -5,9 +5,13 @@
 #include "Conf.h"
 
 static void saveAndReloadPosdbBucket() {
-	g_posdb.getRdb()->saveTree(false, NULL, NULL);
-	g_posdb.getRdb()->getBuckets()->clear();
-	g_posdb.getRdb()->loadTree();
+	Rdb *rdb = g_posdb.getRdb();
+
+	rdb->disableWrites();
+	rdb->saveTree(false, NULL, NULL);
+	rdb->enableWrites();
+	rdb->getBuckets()->clear();
+	rdb->loadTree();
 	if (g_posdb.getRdb()->isUseIndexFile()) {
 		g_posdb.getRdb()->getBase(0)->getTreeIndex()->writeIndex(false);
 	}
