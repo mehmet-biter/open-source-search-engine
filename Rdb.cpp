@@ -162,8 +162,7 @@ bool Rdb::init(const char *dbname,
 
 	if(m_useTree) {
 		sprintf(m_treeAllocName,"tree-%s",m_dbname);
-		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, m_dbname, m_ks,
-		                m_rdbId)) {
+		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, m_dbname, m_ks, m_rdbId)) {
 			log( LOG_ERROR, "db: Failed to set tree." );
 			return false;
 		}
@@ -178,7 +177,7 @@ bool Rdb::init(const char *dbname,
 	// now get how much mem the tree is using (not including stored recs)
 	int32_t dataMem;
 	if (m_useTree) dataMem = maxTreeMem - m_tree.getTreeOverhead();
-	else          dataMem = maxTreeMem - m_buckets.getMemOccupied( );
+	else          dataMem = maxTreeMem - m_buckets.getMemOccupied();
 
 	sprintf(m_memAllocName,"mem-%s",m_dbname);
 
@@ -343,7 +342,7 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 
 	// clean out tree, newly rebuilt rdb does not have any data in tree
 	if ( m_useTree ) m_tree.delColl ( collnum );
-	else             m_buckets.delColl( collnum );
+	else m_buckets.delColl(collnum);
 	// reset our cache
 	//m_cache.clear ( collnum );
 
@@ -450,7 +449,7 @@ bool Rdb::deleteAllRecs ( collnum_t collnum ) {
 
 	// remove from tree
 	if(m_useTree) m_tree.delColl    ( collnum );
-	else          m_buckets.delColl ( collnum );
+	else m_buckets.delColl(collnum);
 
 	// only for doledb now, because we unlink we do not move the files
 	// into the trash subdir and doledb is easily regenerated. i don't
@@ -693,7 +692,7 @@ bool Rdb::loadTree ( ) {
 		}
 	}
 	else {
-		if ( !m_buckets.loadBuckets( m_dbname ) ) {
+		if ( !m_buckets.loadBuckets(m_dbname) ) {
 			log( LOG_ERROR, "db: Could not load saved buckets." );
 			return false;
 		}
@@ -709,8 +708,8 @@ bool Rdb::loadTree ( ) {
 		}
 
 		if(treeExists) {
-			m_buckets.addTree( &m_tree );
-			if ( m_buckets.getNumKeys() - numKeys > 0 ) {
+			m_buckets.addTree(&m_tree);
+			if (m_buckets.getNumKeys() - numKeys > 0 ) {
 				log( LOG_ERROR, "db: Imported %" PRId32" recs from %s's tree to buckets.",
 				     m_buckets.getNumKeys()-numKeys, m_dbname);
 			}
