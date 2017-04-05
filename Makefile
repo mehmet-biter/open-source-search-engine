@@ -24,7 +24,7 @@ OBJS_O0 =  \
 	Lang.o LanguageIdentifier.o Log.o \
 	Mem.o Msg0.o Msg4In.o Msg4Out.o MsgC.o Msg13.o Msg20.o Msg22.o Msg39.o Msg1f.o Msg3a.o Msg51.o Msge0.o Msge1.o Multicast.o \
 	Parms.o Pages.o PageAddColl.o PageAddUrl.o PageBasic.o PageCrawlBot.o PageGet.o PageHealthCheck.o PageHosts.o PageInject.o PageLogView.o \
-	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o \
+	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageSpider.o \
 	Phrases.o PingServer.o Process.o Proxy.o Punycode.o \
 	Query.o \
 	RdbCache.o RdbDump.o RdbMem.o RdbMerge.o RdbScan.o RdbTree.o \
@@ -48,7 +48,7 @@ OBJS_O2 = \
 	Matches.o matches2.o Msg2.o Msg3.o Msg5.o \
 	Pops.o Pos.o Posdb.o PosdbTable.o Profiler.o \
 	Rdb.o RdbBase.o \
-	Sections.o Spider.o SpiderColl.o SpiderLoop.o StopWords.o Summary.o \
+	Sections.o Spider.o SpiderCache.o SpiderColl.o SpiderLoop.o StopWords.o Summary.o \
 	Title.o \
 	UCPropTable.o UdpServer.o Unicode.o UnicodeProperties.o \
 	Words.o \

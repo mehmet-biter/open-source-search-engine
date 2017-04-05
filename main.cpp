@@ -21,6 +21,7 @@
 #include "Spider.h"
 #include "SpiderColl.h"
 #include "SpiderLoop.h"
+#include "SpiderCache.h"
 #include "Doledb.h"
 #include "Clusterdb.h"
 #include "Collectiondb.h"

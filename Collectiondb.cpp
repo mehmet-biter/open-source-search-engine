@@ -14,7 +14,7 @@
 #include "Spider.h"
 #include "Clusterdb.h"
 #include "Linkdb.h"
-#include "Spider.h"
+#include "SpiderCache.h"
 #include "Repair.h"
 #include "Parms.h"
 #include "Process.h"

@@ -1,4 +1,5 @@
 #include "Doledb.h"
+#include "SpiderCache.h"
 #include "SpiderLoop.h"
 #include "SpiderColl.h"
 
