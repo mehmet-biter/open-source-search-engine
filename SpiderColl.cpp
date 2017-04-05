@@ -1892,7 +1892,6 @@ bool SpiderColl::evalIpLoop ( ) {
 	int32_t doleBufSize;
 	RdbCache *wc = &g_spiderLoop.m_winnerListCache;
 	time_t cachedTimestamp = 0;
-	bool inCache = false;
 	bool useCache = true;
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 
@@ -1914,7 +1913,7 @@ bool SpiderColl::evalIpLoop ( ) {
 	if ( useCache ) {
 		//wc->verify();
 		RdbCacheLock rcl(*wc);
-		inCache = wc->getRecord ( m_collnum     ,
+		bool inCache = wc->getRecord ( m_collnum     ,
 					  (char *)&cacheKey ,
 					  &doleBuf,
 					  &doleBufSize  ,
