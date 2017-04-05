@@ -671,7 +671,7 @@ bool Process::shutdown2() {
 		m_urgent = true;
 	}
 
-	finalizeRealtimeUrlClassification(),
+	finalizeRealtimeUrlClassification();
 
 	Statistics::finalize();
 

@@ -260,7 +260,7 @@ bool Msg1c::reindexQuery ( char *query ,
 	// set our Msg39Request
 	m_msg3a.m_msg39req.m_collnum = m_collnum;
 	m_msg3a.m_msg39req.m_docsToGet                 = endNum;
-	m_msg3a.m_msg39req.m_niceness                  = 0,
+	m_msg3a.m_msg39req.m_niceness                  = 0;
 	m_msg3a.m_msg39req.m_getDocIdScoringInfo       = false;
 	m_msg3a.m_msg39req.m_doSiteClustering          = false;
 	m_msg3a.m_msg39req.m_doDupContentRemoval       = false;
