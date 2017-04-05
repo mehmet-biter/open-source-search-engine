@@ -1039,7 +1039,9 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 	// if we're shutting down do not accept new connections, discard
 	if ( m_isShuttingDown ) goto discard; 
 	if(slot) {
-		h->updateLastResponseReceiveTimestamp(getCurrentTimeNanoseconds());
+		if (h) {
+			h->updateLastResponseReceiveTimestamp(getCurrentTimeNanoseconds());
+		}
 	} else {
 		//no slot
 		// condition #3
