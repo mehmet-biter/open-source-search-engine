@@ -427,7 +427,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 		gbshutdownLogicError();
 	}
 
-	int64_t numBytes = buckets->getListSize(collnum, (const char*)&startKey, (const char*)&endKey, NULL, NULL);
+	int64_t numBytes = buckets->estimateListSize(collnum, (const char *)&startKey, (const char *)&endKey, NULL, NULL);
 
 	// convert from size in bytes to # of recs
 	maxRecs += numBytes / sizeof(posdbkey_t);

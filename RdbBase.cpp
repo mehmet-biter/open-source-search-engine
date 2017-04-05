@@ -2248,7 +2248,7 @@ int64_t RdbBase::estimateListSize(const char *startKey, const char *endKey, char
 	if(m_tree)
 		n = m_tree->estimateListSize(m_collnum, startKey, endKey, NULL, NULL);
 	else
-		n = m_buckets->getListSize(m_collnum, startKey, endKey, NULL, NULL);
+		n = m_buckets->estimateListSize(m_collnum, startKey, endKey, NULL, NULL);
 
 	totalBytes += n;
 	// ensure totalBytes >= 0
