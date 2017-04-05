@@ -110,16 +110,9 @@ private:
 	int32_t getBucketNum(collnum_t collnum, const char *key) const;
 	char bucketCmp(collnum_t acoll, const char *akey, RdbBucket* b) const;
 
-	const char *getDbname() const { return m_dbname; }
 
-	uint8_t getKeySize() const { return m_ks; }
-	int32_t getFixedDataSize() const { return m_fixedDataSize; }
 
-	void setSwapBuf(char *s) { m_swapBuf = s; }
-	char *getSwapBuf() { return m_swapBuf; }
 
-	char *getSortBuf() { return m_sortBuf; }
-	int32_t getSortBufSize() const { return m_sortBufSize; }
 
 	//syntactic sugar
 	RdbBucket* bucketFactory();
