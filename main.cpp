@@ -1971,7 +1971,7 @@ int main2 ( int argc , char *argv[] ) {
 
 	// . start the spiderloop
 	// . comment out when testing SpiderCache
-	g_spiderLoop.startLoop();
+	g_spiderLoop.init();
 
 	// allow saving of conf again
 	g_conf.m_save = true;

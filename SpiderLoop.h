@@ -40,7 +40,7 @@ public:
 	// . call this no matter what
 	// . if spidering is disabled this will sleep about 10 seconds or so
 	//   before checking to see if it's been enabled
-	void startLoop();
+	void init();
 
 	bool printLockTable ( );
 
