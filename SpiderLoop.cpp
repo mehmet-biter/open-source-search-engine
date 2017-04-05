@@ -141,8 +141,7 @@ static void updateAllCrawlInfosSleepWrapper(int fd, void *state);
 
 void SpiderLoop::init() {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
-	
-	//m_cri     = 0;
+
 	m_crx = NULL;
 	m_activeListValid = false;
 	m_activeListModified = false;
