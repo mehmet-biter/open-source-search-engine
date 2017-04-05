@@ -799,10 +799,7 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 	// get ufn/priority,because if filtered we do not want to add to doledb
 	int32_t ufn;
 	// HACK: set isOutlink to true here since we don't know if we have sre
-	ufn = ::getUrlFilterNum(sreq, NULL, nowGlobalMS, false, m_cr,
-				true,//isoutlink? HACK!
-				NULL,// quota table quotatable
-				-1 );  // langid not valid
+	ufn = ::getUrlFilterNum(sreq, NULL, nowGlobalMS, false, m_cr, true, NULL, -1);
 
 	// spiders disabled for this row in url filters?
 	if ( ufn >= 0 && m_cr->m_maxSpidersPerRule[ufn] == 0 ) {
@@ -2605,15 +2602,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		// . if this is slow see the TODO below in dedupSpiderdbList()
 		//   which can pre-store these values assuming url filters do
 		//   not change and siteNumInlinks is about the same.
-		int32_t ufn = ::getUrlFilterNum(sreq,
-					     srep,
-					     nowGlobal,
-					     false,
-					     m_cr,
-					     false, // isOutlink?
-					     // provide the page quota table
-						&m_localTable,
-						-1);
+		int32_t ufn = ::getUrlFilterNum(sreq, srep, nowGlobal, false, m_cr, false, &m_localTable, -1);
 		// sanity check
 		if ( ufn == -1 ) { 
 			log( LOG_WARN, "spider: failed to match url filter for url='%s' coll='%s'", sreq->m_url, m_cr->m_coll );

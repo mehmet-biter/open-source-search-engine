@@ -10930,13 +10930,7 @@ int32_t *XmlDoc::getUrlFilterNum ( ) {
 	// . look it up
 	// . use the old spidered date for "nowGlobal" so we can be consistent
 	//   for injecting into the "qatest123" coll
-	int32_t ufn = ::getUrlFilterNum ( oldsr,
-					  NULL,//&fakeReply,
-					  spideredTime,false,
-					  cr,
-					  false, // isOutlink?
-					  NULL,
-					  langIdArg);
+	int32_t ufn = ::getUrlFilterNum(oldsr, NULL, spideredTime, false, cr, false, NULL, langIdArg);
 
 	// put it back
 	//newsr->m_spideredTime = saved;
@@ -16230,11 +16224,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 		// get it
 		int32_t ufn;
-		ufn=::getUrlFilterNum(&sreq,&srep,spideredTime,true,
-				      cr,
-				      false, // isOutlink?
-				      NULL ,
-				      langIdArg);
+		ufn = ::getUrlFilterNum(&sreq, &srep, spideredTime, true, cr, false, NULL, langIdArg);
 
 
 		// get spider priority if ufn is valid
