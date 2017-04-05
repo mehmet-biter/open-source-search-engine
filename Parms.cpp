@@ -607,11 +607,10 @@ static bool CommandRestartColl(const char *rec, WaitEntry *we) {
 	// this can block if tree is saving, it has to wait
 	// for tree save to complete before removing old
 	// collnum recs from tree
-	if ( ! g_collectiondb.resetColl2 ( oldCollnum ,
-					   newCollnum ,
-					   false ) ) // purgeSeeds?
+	if (!g_collectiondb.resetColl2(oldCollnum, newCollnum)) {
 		// we blocked, we->m_callback will be called when done
 		return false;
+	}
 
 	// turn on spiders on new collrec. collname is same but collnum
 	// will be different.
@@ -664,11 +663,10 @@ static bool CommandResetColl(const char *rec, WaitEntry *we) {
 	// for tree save to complete before removing old
 	// collnum recs from tree. so return false in that case so caller
 	// will know to re-call later.
-	if ( ! g_collectiondb.resetColl2 ( oldCollnum ,
-					   newCollnum ,
-					   true ) ) // purgeSeeds?
+	if (!g_collectiondb.resetColl2(oldCollnum, newCollnum)) {
 		// we blocked, we->m_callback will be called when done
 		return false;
+	}
 
 	// turn on spiders on new collrec. collname is same but collnum
 	// will be different.

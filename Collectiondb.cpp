@@ -687,7 +687,7 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 
 // . returns false if we need a re-call, true if we completed
 // . returns true with g_errno set on error
-bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool purgeSeeds ) {
+bool Collectiondb::resetColl2(collnum_t oldCollnum, collnum_t newCollnum) {
 	// do not allow this if in repair mode
 	if ( g_repair.isRepairActive() && g_repair.isRepairingColl(oldCollnum) ) {
 		log(LOG_WARN, "admin: Can not delete collection while in repair mode.");

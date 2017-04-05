@@ -75,9 +75,7 @@ class Collectiondb  {
 	//void deleteSpiderColl ( class SpiderColl *sc );
 
 	// returns false if blocked, true otherwise.
-	bool resetColl2 ( collnum_t oldCollnum,
-			  collnum_t newCollnum,
-			  bool purgeSeeds );
+	bool resetColl2(collnum_t oldCollnum, collnum_t newCollnum);
 
 
 private:
