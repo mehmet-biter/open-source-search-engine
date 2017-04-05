@@ -27,7 +27,6 @@
 #include "Doledb.h"
 #include "Msg5.h"
 #include "Collectiondb.h"
-#include "XmlDoc.h"    // score8to32()
 #include "Stats.h"
 #include "SafeBuf.h"
 #include "Repair.h"

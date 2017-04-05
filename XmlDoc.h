@@ -102,9 +102,6 @@ int gbcompress(unsigned char *dest,
 	       const unsigned char *source,
 	       uint32_t  sourceLen);
 
-
-uint32_t score8to32 ( uint8_t score8 );
-
 // . for Msg13.cpp
 // . *pend must equal \0
 int32_t getContentHash32Fast ( unsigned char *p , int32_t plen ) ;
@@ -1184,8 +1181,5 @@ class TermDebugInfo {
 	char      m_synSrc;
 	int64_t  m_langBitVec64;
 };
-
-
-extern uint8_t score32to8 ( uint32_t score ) ;
 
 #endif // GB_XMLDOC_H
