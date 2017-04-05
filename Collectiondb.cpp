@@ -799,25 +799,8 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 	// . do after calls to deleteColl() above so it wont crash
 	setRecPtr ( oldCollnum , NULL );
 
-
 	// save coll.conf to new directory
 	cr->save();
-
-	// and clear the robots.txt cache in case we recently spidered a
-	// robots.txt, we don't want to use it, we want to use the one we
-	// have in the test-parser subdir so we are consistent
-	//RdbCache *robots = Msg13::getHttpCacheRobots();
-	//RdbCache *others = Msg13::getHttpCacheOthers();
-	// clear() was removed do to possible corruption
-	//robots->clear ( oldCollnum );
-	//others->clear ( oldCollnum );
-
-	//g_templateTable.reset();
-	//g_templateTable.save( g_hostdb.m_dir , "turkedtemplates.dat" );
-
-	// repopulate CollectionRec::m_sortByDateTable. should be empty
-	// since we are resetting here.
-	//initSortByDateTable ( coll );
 
 	// done
 	return true;
