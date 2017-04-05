@@ -276,6 +276,14 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 			return false;
 		}
 
+		// advance over the rec data to point to next entry
+		p += recSize;
+
+		// don't add to spiderdb when we're nospider host
+		if (!g_hostdb.getMyHost()->m_spiderEnabled && (rdbId == RDB_SPIDERDB || rdbId == RDB2_SPIDERDB2)) {
+			continue;
+		}
+
 		auto &rdbItem = rdbItems[rdbId];
 		++rdbItem.m_numRecs;
 
@@ -286,12 +294,6 @@ static bool addMetaList(const char *p, UdpSlot *slot) {
 		rdbItem.m_dataSizes += dataSize;
 
 		rdbItem.m_items.emplace_back(collnum, rec, recSize);
-
-		// reset g_errno
-		g_errno = 0;
-
-		// advance over the rec data to point to next entry
-		p += recSize;
 	}
 
 	bool hasRoom = true;
