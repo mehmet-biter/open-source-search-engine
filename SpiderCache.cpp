@@ -14,40 +14,20 @@
 /////////////////////////
 
 
-// . reload everything this many seconds
-// . this was originally done to as a lazy compensation for a bug but
-//   now i do not add too many of the same domain if the same domain wait
-//   is ample and we know we'll be refreshed in X seconds anyway
-//#define DEFAULT_SPIDER_RELOAD_RATE (3*60*60)
-
-
-// for caching in s_ufnTree
-//#define MAX_NODES (30)
-
 // a global class extern'd in .h file
 SpiderCache g_spiderCache;
 
 SpiderCache::SpiderCache ( ) {
-	//m_numSpiderColls   = 0;
-	//m_isSaving = false;
 }
 
 // returns false and set g_errno on error
 bool SpiderCache::init ( ) {
-
-	//for ( int32_t i = 0 ; i < MAX_COLL_RECS ; i++ )
-	//	m_spiderColls[i] = NULL;
-
 	// success
 	return true;
 }
 
 // return false if any tree save blocked
 void SpiderCache::save ( bool useThread ) {
-	// bail if already saving
-	//if ( m_isSaving ) return true;
-	// assume saving
-	//m_isSaving = true;
 	// loop over all SpiderColls and get the best
 	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
 		SpiderColl *sc = getSpiderCollIffNonNull(i);//m_spiderColls[i];
