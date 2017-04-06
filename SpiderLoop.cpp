@@ -274,15 +274,11 @@ void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 			     crp->m_coll, (int32_t)crp->m_collnum );
 		}
 
-//@@@@@@
-//@@@ BR: Why not check m_waitingTreeNeedsRebuild before calling??
-		// try this then. it just returns if
-		// sc->m_waitingTreeNeedsRebuild is false so it
-		// should be fast in those cases
-		// re-entry is false because we are entering for the first time
-		logTrace( g_conf.m_logTraceSpider, "Calling populateWaitingTreeFromSpiderdb" );
-		sc->populateWaitingTreeFromSpiderdb ( false );
-
+		if (sc->m_waitingTreeNeedsRebuild) {
+			// re-entry is false because we are entering for the first time
+			logTrace(g_conf.m_logTraceSpider, "Calling populateWaitingTreeFromSpiderdb");
+			sc->populateWaitingTreeFromSpiderdb(false);
+		}
 
 		logTrace( g_conf.m_logTraceSpider, "Calling populateDoledbFromWaitingTree" );
 		sc->populateDoledbFromWaitingTree ( );
