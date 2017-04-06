@@ -107,29 +107,3 @@ const char *Dir::getNextFilename ( const char *pattern ) {
 
 	return NULL;
 }
-
-
-
-DirIterator::DirIterator(const char *dirName)
-  : m_dir(),
-    opened(false),
-    exhausted(false)
-{
-	m_dir.set(dirName);
-}
-
-
-const char *DirIterator::getNextFilename(const char *pattern) {
-	if(!opened) {
-		if(!m_dir.open())
-			return NULL;
-	}
-	if(exhausted)
-		return NULL;
-	const char *s = m_dir.getNextFilename();
-	if(!s) {
-		exhausted = true;
-		m_dir.close();
-	}
-	return s;
-}
