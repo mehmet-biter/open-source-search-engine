@@ -7246,7 +7246,11 @@ void Parms::init ( ) {
 	m->m_desc  = "";
 	m->m_cgi   = "mlkmt";
 	simple_m_set(Conf,m_linkdbMaxTreeMem);
+#ifndef PRIVACORE_TEST_VERSION
 	m->m_def   = "40000000";
+#else
+	m->m_def   = "4000000";
+#endif
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_group = false;
