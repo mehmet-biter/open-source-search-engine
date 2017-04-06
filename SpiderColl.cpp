@@ -224,21 +224,10 @@ bool SpiderColl::load ( ) {
 		return false;
 	}
 
-	// if we hade doledb0001.dat files on disk then nuke doledb
-	// and waiting tree and rebuild now with a tree-only doledb.
-	RdbBase *base = getRdbBase ( RDB_DOLEDB , m_collnum );
-
 	// . do this now just to keep everything somewhat in sync
 	// . we lost dmoz.org and could not get it back in because it was
 	//   in the doleip table but NOT in doledb!!!
 	if ( ! makeDoleIPTable() ) return false;
-
-	// delete the files and doledb-saved.dat and the waitingtree
-	// and set the waitingtree into rebuild mode.
-	if ( base && base->getNumFiles() > 0 ) {
-		nukeDoledb ( m_collnum );
-		return true;
-	}
 
 	// otherwise true
 	return true;
