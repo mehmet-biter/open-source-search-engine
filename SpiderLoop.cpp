@@ -81,9 +81,6 @@ bool SpiderLoop::printLockTable ( ) {
 /////////////////////////      SPIDERLOOP
 /////////////////////////
 
-static void indexedDocWrapper ( void *state ) ;
-static void doneSleepingWrapperSL ( int fd , void *state ) ;
-
 // a global class extern'd in .h file
 SpiderLoop g_spiderLoop;
 
@@ -215,7 +212,7 @@ void SpiderLoop::init() {
 
 // call this every 50ms it seems to try to spider urls and populate doledb
 // from the waiting tree
-void doneSleepingWrapperSL ( int fd , void *state ) {
+void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 	// if spidering disabled then do not do this crap
 	if ( ! g_conf.m_spideringEnabled )  return;
 	if ( ! g_hostdb.getMyHost( )->m_spiderEnabled ) return;
@@ -1476,7 +1473,7 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	return true;
 }
 
-void indexedDocWrapper ( void *state ) {
+void SpiderLoop::indexedDocWrapper ( void *state ) {
 	// . process the results
 	// . return if this blocks
 	if ( ! g_spiderLoop.indexedDoc ( (XmlDoc *)state ) ) return;

@@ -108,6 +108,11 @@ public:
 	int64_t m_doleStart;
 
 	int32_t m_processed;
+
+private:
+	static void indexedDocWrapper ( void *state ) ;
+	static void doneSleepingWrapperSL ( int fd , void *state ) ;
+
 };
 
 extern class SpiderLoop g_spiderLoop;
