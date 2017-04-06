@@ -370,8 +370,7 @@ bool getSpiderStatusMsg ( class CollectionRec *cx ,
 // . once we've spidered a url it gets added with a negative spiderdb key
 //   in XmlDoc.cpp
 class Spiderdb {
-
-  public:
+public:
 
 	// reset rdb
 	void reset();
