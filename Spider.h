@@ -383,9 +383,6 @@ public:
 
 	Rdb *getRdb  ( ) { return &m_rdb; }
 
-	// this rdb holds urls waiting to be spidered or being spidered
-	Rdb m_rdb;
-
 	static int64_t getUrlHash48(const key128_t *k ) {
 		return (((k->n1)<<16) | k->n0>>(64-16)) & 0xffffffffffffLL;
 	}
@@ -419,6 +416,10 @@ public:
 	// print the spider rec
 	static int32_t print( char *srec , SafeBuf *sb = NULL );
 	static void printKey(const char *k);
+
+private:
+	// this rdb holds urls waiting to be spidered or being spidered
+	Rdb m_rdb;
 };
 
 void dedupSpiderdbList ( RdbList *list );
