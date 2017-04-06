@@ -351,13 +351,6 @@ bool getSpiderStatusMsg ( class CollectionRec *cx ,
 
 
 
-
-// . what groupId (shardId) should spider/index this spider request?
-// . CAUTION: NOT the same group (shard) that stores it in spiderdb!!!
-// . CAUTION: NOT the same group (shard) that doles it out to spider!!!
-//uint32_t getGroupIdToSpider ( char *spiderRec );
-
-
 // The 128-bit Spiderdb record key128_t for a rec in Spiderdb is as follows:
 //
 // <32 bit firstIp>             (firstIp of the url to spider)
