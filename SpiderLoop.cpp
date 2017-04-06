@@ -93,8 +93,6 @@ SpiderLoop::SpiderLoop ( ) {
 	m_sreq = NULL;
 	m_collnum = 0;
 	m_doledbKey = NULL;
-	m_state = NULL;
-	m_callback = NULL;
 	m_numSpidersOut = 0;
 	m_launches = 0;
 	m_maxUsed = 0;
@@ -327,7 +325,7 @@ void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 }
 
 
-void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
+void SpiderLoop::gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
 	// process the doledb list
 	g_spiderLoop.gotDoledbList2();
 }
