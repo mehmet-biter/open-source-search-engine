@@ -158,8 +158,6 @@ class Tagdb  {
 	// . TODO: have m_useSeals parameter???
 	bool init  ( );
 
-	bool verify ( const char *coll );
-
 	// used by ../rdb/Msg0 and ../rdb/Msg1
 	Rdb *getRdb ( ) { return &m_rdb; }
 
