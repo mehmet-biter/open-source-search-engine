@@ -980,11 +980,8 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 //            m_firstUnlitSentAckBit
 bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 				  int32_t     readSize,
-				  int64_t     now     ,
-				  bool       *discard) {
+				  int64_t     now) {
 	const char * const readBuffer = (const char*)readBuffer_;
-	// assume discard
-	*discard = true;
 	// get dgram Number
 	int32_t dgramNum = m_proto->getDgramNum ( readBuffer, readSize );
 	// protection from garbled dgrams
@@ -1266,9 +1263,6 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		return false;
 	}
 
-	// we're doing the call to recvfrom() for sure now
-	*discard = false;
-
 	// dgram #'s above 0 can be copied directly into m_readBuf
 	if ( dgramNum > 0 ) { 
 		// how much DATA can we read from this dgram?
@@ -1280,8 +1274,6 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		char *dest = m_readBuf + offset - headerSize;
 		// sanity check, watch out for bad headers...
 		if ( toRead < 0 ) {
-			// throw this dgram away
-			*discard = true;
 			//g_errno = ECORRUPTDATA;
 			// do not spam the logs
 			static int32_t s_badCount = 0;

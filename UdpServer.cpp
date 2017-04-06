@@ -948,7 +948,6 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 	int32_t dgramNum;
 	bool wasAck;
 	int32_t transId;
-	bool discard = true;
 	bool status;
 	msg_type_t msgType;
 	int32_t niceness;
@@ -979,8 +978,6 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 		wasAck = false;
 		// assume no shotgun
 		h      = NULL;
-		// discard it
-		discard = true;
 		// read it into the temporary discard buf
 		goto discard;
 	}
@@ -1018,7 +1015,6 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 	// everybody has a transId
 	transId  = m_proto->getTransId  ( readBuffer, readSize );
 	// other vars we'll use later
-	discard = true;
 	status  = true;
 	// if we don't already have a slot set up for it then it can be:
 	// #1) a new incoming request
@@ -1267,8 +1263,6 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 	}
 	// let caller know the slot associated with reading this dgram
 	*slotPtr = slot;
-	// . it returns false and sets g_errno on error
-	discard  = false;
 
 	// . HACK: kinda. 
 	// . change the ip we reply on to wherever the sender came from!
@@ -1290,7 +1284,7 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 	}
 
 	//if ( ! slot->m_host ) { g_process.shutdownAbort(true);}
-	status   = slot->readDatagramOrAck(readBuffer,readSize,now,&discard);
+	status   = slot->readDatagramOrAck(readBuffer,readSize,now);
 
 	// we we could not allocate a read buffer to hold the request/reply
 	// just send a cancel ack so the send will call its callback with
