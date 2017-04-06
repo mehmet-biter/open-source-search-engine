@@ -389,8 +389,6 @@ class Spiderdb {
 	// init the rebuild/secondary rdb, used by PageRepair.cpp
 	bool init2 ( int32_t treeMem );
 
-	bool verify ( char *coll );
-
 	Rdb *getRdb  ( ) { return &m_rdb; }
 
 	// this rdb holds urls waiting to be spidered or being spidered
