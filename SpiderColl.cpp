@@ -2462,13 +2462,10 @@ bool SpiderColl::scanListForWinners ( ) {
 				m_lastReqUh48a = uh48;
 				// sanity
 				if ( ! sreq->m_siteHash32){g_process.shutdownAbort(true);}
-				if ( ! sreq->m_domHash32){g_process.shutdownAbort(true);}
 				// do a little magic because we count
 				// seeds as "manual adds" as well as normal pg
 				int32_t h32;
 				h32 = sreq->m_siteHash32 ^ 0x123456;
-				m_localTable.addScore(h32);
-				h32 = sreq->m_domHash32 ^ 0x123456;
 				m_localTable.addScore(h32);
 			}
 			// unique votes per other for quota
@@ -2485,7 +2482,6 @@ bool SpiderColl::scanListForWinners ( ) {
 			// keep count per site and firstip
 			m_localTable.addScore(sreq->m_firstIp,1);
 			m_localTable.addScore(sreq->m_siteHash32,1);
-			m_localTable.addScore(sreq->m_domHash32,1);
 
 			int32_t *tmpNum = (int32_t *)m_localTable.getValue( &( sreq->m_siteHash32 ) );
 			logDebug( g_conf.m_logDebugSpider, "spider: sitequota: got %" PRId32" indexed docs for site from "

@@ -2273,18 +2273,15 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 	rebuildUrlFilters2();
 
 	// set this so we know whether we have to keep track of page counts
-	// per subdomain/site and per domain. if the url filters have
-	// 'sitepages' 'domainpages' 'domainadds' or 'siteadds' we have to keep
+	// per subdomain/site. if the url filters have
+	// 'sitepages' we have to keep
 	// the count table SpiderColl::m_pageCountTable.
 	m_urlFiltersHavePageCounts = false;
 	for ( int32_t i = 0 ; i < m_numRegExs ; i++ ) {
 		// get the ith rule
 		SafeBuf *sb = &m_regExs[i];
 		char *p = sb->getBufStart();
-		if ( strstr(p,"sitepages") ||
-		     strstr(p,"domainpages") ||
-		     strstr(p,"siteadds") ||
-		     strstr(p,"domainadds") ) {
+		if (strstr(p,"sitepages")) {
 			m_urlFiltersHavePageCounts = true;
 			break;
 		}
