@@ -49,6 +49,7 @@
 #include "Title.h"
 #include "Speller.h"
 #include "SummaryCache.h"
+#include "Dns.h"
 
 // include all msgs that have request handlers, cuz we register them with g_udp
 #include "Msg0.h"
@@ -68,7 +69,6 @@
 
 #include "Msg1f.h"
 #include "Profiler.h"
-#include "Blaster.h"
 #include "Proxy.h"
 
 #include "linkspam.h"
@@ -430,38 +430,6 @@ int main2 ( int argc , char *argv[] ) {
 
 			"proxy stop [proxyId]\n"
 			"\tStop a proxy that acts as a frontend to gb.\n\n"
-
-			"blasterdiff [-v] [-j] [-p] <file1> <file2> "
-			"<maxNumThreads> <wait>\n"
-			"\tcompare search results between urls in file1 and"
-			"file2 and output the search results in the url"
-			" from file1 not found in the url from file2 "
-			"maxNumThreads is the number of concurrent "
-			"comparisons "
-			"that should be done at one time and wait is the"
-			"time to wait between comparisons.  -v is for "
-			"verbose "
-			" and -j is to just display links not found and "
-			"not "
-			"search for them on server2. If you do not want to"
-			" use the proxy server "
-			"on gk10, use -p\n\n"
-			*/
-
-			/*
-			"blaster [-l|-u|-i] <file> <maxNumThreads> <wait>\n"
-			"\tget documents from the urls given in file. The "
-			"-l argument is to "
-			"automatically get documents "
-			"from the gigablast log file.\n"
-			"\t-u means to inject/index the url into gb.\n"
-			"\t-i means to inject/index the url into gb AND "
-			"add all of its outlinks to\n"
-			"\tspiderdb for spidering, "
-			"which also entails a DNS lookup on each outlink.\n"
-			"\tmaxNumThreads is the"
-			" number of concurrent threads at one time and wait "
-			" is the time to wait between threads.\n\n"
 			*/
 
 			/*
@@ -887,78 +855,6 @@ int main2 ( int argc , char *argv[] ) {
 		g_conf.m_save = true;
 
 		g_loop.runLoop();
-	}
-
-  	if ( strcmp ( cmd , "blaster" ) == 0 ) {
-		int32_t i=cmdarg+1;
-		bool isLogFile=false;
-		bool injectUrlWithLinks=false;
-		bool injectUrl=false;
-		int32_t wait = 0;
-		
-		if ( strcmp (argv[i],"-l") == 0 ){
-			isLogFile=true;
-			i++;
-		}
-		if ( strcmp (argv[i],"-i") == 0 ){
-			injectUrlWithLinks=true;
-			i++;
-		}
-		if ( strcmp (argv[i],"-u") == 0 ){
-			injectUrl=true;
-			i++;
-		}
-
-		char *filename = argv[i];
-		int32_t maxNumThreads=1;
-		if (argv[i+1])  maxNumThreads=atoi(argv[i+1]);
-		if (argv[i+2]) wait=atoi(argv[i+2]);
-		g_conf.m_maxMem = 2000000000;
-		//wait atleast 10 msec before you start again.
-		if (wait<1000) wait=10;
-		g_blaster.runBlaster (filename,NULL,
-					      maxNumThreads,wait,
-					      isLogFile,false,false,false,
-				      injectUrlWithLinks,
-				      injectUrl);
-		// disable any further logging so final log msg is clear
-		g_log.m_disabled = true;
-		return 0;
-	}
-
-	if ( strcmp ( cmd , "blasterdiff" ) == 0 ) {
-		int32_t i=cmdarg+1;
-		bool verbose=false;
-		bool justDisplay=false;
-		bool useProxy=true;
-		//cycle through the arguments to check for -v,-j,-p
-		while (argv[i] && argv[i][0]=='-'){
-			if ( strcmp (argv[i],"-v") == 0 ){
-				verbose=true;
-			}
-			else if ( strcmp (argv[i],"-j") == 0 ){
-				justDisplay=true;
-			}
-			else if ( strcmp (argv[i],"-p") == 0){
-				useProxy=false;
-			}
-			i++;
-		}
-
-		char *file1 = argv[i];
-		char *file2 = argv[i+1];
-		int32_t maxNumThreads=1;
-		if (argv[i+2])  maxNumThreads=atoi(argv[i+2]);
-		int32_t wait = 1000;
-		if (argv[i+3]) wait=atoi(argv[i+3]);
-		//wait atleast 1 sec before you start again.
-		if (wait<1000) wait=1000;
-		g_blaster.runBlaster(file1,file2,
-				     maxNumThreads,wait,false,
-				     verbose,justDisplay,useProxy);
-		// disable any further logging so final log msg is clear
-		g_log.m_disabled = true;
-		return 0;
 	}
 
 	// gb ping [hostId] [clientPort]

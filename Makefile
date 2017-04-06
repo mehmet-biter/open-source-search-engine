@@ -12,7 +12,7 @@ unexport CONFIG_CPPFLAGS
 
 OBJS_O0 =  \
 	Abbreviations.o AdultCheck.o \
-	BigFile.o Blaster.o \
+	BigFile.o \
 	Clusterdb.o Collectiondb.o Conf.o CountryCode.o \
 	DailyMerge.o Dir.o Dns.o Domains.o \
 	Errno.o Entities.o \
