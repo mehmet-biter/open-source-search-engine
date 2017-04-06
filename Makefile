@@ -30,7 +30,7 @@ OBJS_O0 =  \
 	RdbCache.o RdbDump.o RdbMem.o RdbMerge.o RdbScan.o RdbTree.o \
 	Rebalance.o Repair.o RobotRule.o Robots.o \
 	Sanity.o ScalingFunctions.o SearchInput.o SiteGetter.o Speller.o SpiderProxy.o Stats.o SummaryCache.o Synonyms.o \
-	Tagdb.o TcpServer.o Timezone.o Titledb.o \
+	Tagdb.o TcpServer.o Titledb.o \
 	Version.o \
 	Wiki.o Wiktionary.o \
 	UdpSlot.o Url.o \

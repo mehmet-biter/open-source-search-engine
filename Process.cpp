@@ -32,7 +32,6 @@
 #include "Rebalance.h"
 #include "SpiderProxy.h"
 #include "PageInject.h"
-#include "Timezone.h"
 #include "CountryCode.h"
 #include "File.h"
 #include "Docid2Siteflags.h"
@@ -1146,7 +1145,6 @@ void Process::resetAll ( ) {
 	g_profiler.reset();
 	resetMsg13Caches();
 	resetStopWordTables();
-	resetTimezoneTables();
 	g_stable_summary_cache.clear();
 	g_unstable_summary_cache.clear();
 }
