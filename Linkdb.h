@@ -94,8 +94,6 @@ public:
 	bool init();
 	bool init2(int32_t treeMem);
 
-	bool verify(const char *coll);
-
 	Rdb *getRdb() { return &m_rdb; }
 
 	// this makes a "url" key
