@@ -276,9 +276,9 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 
 		// always do a scan at startup & every 24 hrs
 		// AND at process startup!!!
-		if ( ! sc->m_waitingTreeNeedsRebuild && now - sc->m_lastScanTime > 24*3600 ) {
+		if ( ! sc->m_waitingTreeNeedsRebuild && now - sc->getLastScanTime() > 24*3600 ) {
 			// if a scan is ongoing, this will re-set it
-			sc->m_waitingTreeNextKey.setMin();
+			sc->resetWaitingTreeNextKey();
 			sc->m_waitingTreeNeedsRebuild = true;
 			log( LOG_INFO, "spider: hit spider queue rebuild timeout for %s (%" PRId32")",
 			     crp->m_coll, (int32_t)crp->m_collnum );
@@ -569,7 +569,7 @@ subloopNextPriority:
 	// tree using evalIpLoop() takes a LONG time because
 	// a niceness 0 thread is taking a LONG time! so do not
 	// set hasUrlsReadyToSpider to false because of that!!
-	if ( m_sc->m_gettingList1 )
+	if ( m_sc->gettingSpiderdbList() )
 		ci->m_lastSpiderCouldLaunch = nowGlobal;
 
 	// update this for the first time in case it is never updated.
@@ -847,11 +847,6 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 	// bail if list is empty
 	if ( m_list.getListSize() <= 0 ) {
-		// don't bother with this priority again until a key is
-		// added to it! addToDoleIpTable() will be called
-		// when that happens and it might unset this then.
-		m_sc->m_isDoledbEmpty [ m_sc->m_pri2 ] = 1;
-
 		return true;
 	}
 

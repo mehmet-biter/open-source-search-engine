@@ -444,7 +444,6 @@ void SpiderColl::reset ( ) {
 	// 300 re-reads!
 	for ( int32_t i = 0 ; i < MAX_SPIDER_PRIORITIES ; i++ ) {
 		m_nextKeys[i] =	Doledb::makeFirstKey2 ( i );
-		m_isDoledbEmpty[i] = 0;
 	}
 
 }
@@ -3574,7 +3573,6 @@ bool SpiderColl::addToDoleTable ( SpiderRequest *sreq ) {
 	// . unmark individual priority buckets
 	// . do not skip them when scanning for urls to spiderd
 	int32_t pri = sreq->m_priority;
-	m_isDoledbEmpty[pri] = 0;		
 	// reset scan for this priority in doledb
 	m_nextKeys     [pri] =Doledb::makeFirstKey2 ( pri );
 

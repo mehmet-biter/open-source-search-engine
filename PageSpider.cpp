@@ -428,7 +428,7 @@ static bool sendPage(State11 *st) {
 	if ( percent > 100.0 ) percent = 100.0;
 	if ( percent < 0.0 ) percent = 0.0;
 	sb.safePrintf("(spiderdb scan for ip %s is %.2f%% complete)",
-	              iptoa(sc->m_scanningIp),
+	              iptoa(sc->getScanningIp()),
 	              (float)percent );
 
 	sb.safePrintf("</td></tr>\n");

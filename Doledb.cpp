@@ -72,7 +72,7 @@ void nukeDoledb ( collnum_t collnum ) {
 		// activate a scan if not already activated
 		sc->m_waitingTreeNeedsRebuild = true;
 		// if a scan is ongoing, this will re-set it
-		sc->m_waitingTreeNextKey.setMin();
+		sc->resetWaitingTreeNextKey();
 		// clear it?
 		sc->m_waitingTree.clear();
 		sc->m_waitingTable.clear();
