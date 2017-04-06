@@ -148,7 +148,6 @@ bool SpiderColl::load ( ) {
 	}
 
 	// reset this once
-	//m_msg1Avail    = true;
 	m_isPopulatingDoledb = false;
 
 	// keep it kinda low if we got a ton of collections

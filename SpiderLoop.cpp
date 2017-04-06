@@ -216,8 +216,7 @@ void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 	// if spidering disabled then do not do this crap
 	if ( ! g_conf.m_spideringEnabled )  return;
 	if ( ! g_hostdb.getMyHost( )->m_spiderEnabled ) return;
-	
-	//if ( ! g_conf.m_webSpideringEnabled )  return;
+
 	// or if trying to exit
 	if ( g_process.m_mode == Process::EXIT_MODE ) return;	
 	// skip if udp table is full
