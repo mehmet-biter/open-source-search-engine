@@ -231,7 +231,6 @@ public:
 	bool rebuildLangRules( const char *lang , const char *tld );
 
 	bool rebuildPrivacoreRules();
-	bool rebuildShallowRules();
 
 	bool m_urlFiltersHavePageCounts;
 

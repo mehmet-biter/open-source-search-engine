@@ -6022,9 +6022,6 @@ void Parms::init ( ) {
 		"new sites. "
 		"Selecting <i>chinese</i> makes the spider prioritize the "
 		"spidering of chinese pages, etc. "
-		"Selecting <i>shallow</i> makes the spider go deep on "
-		"all sites unless they are tagged <i>shallow</i> in the "
-		"site list. "
 		"<br><b>Important: "
 		"If you select a profile other than <i>custom</i> "
 		"then your changes to the table will be lost.</b><br>";
