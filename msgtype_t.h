@@ -17,6 +17,7 @@ enum msg_type_t {
 	msg_type_3e = 0x3e,
 	msg_type_3f = 0x3f,
 	msg_type_54 = 0x54,
+	msg_type_56 = 0x56,
 	msg_type_c1 = 0xc1,
 	msg_type_fd = 0xfd,
 	msg_type_dns

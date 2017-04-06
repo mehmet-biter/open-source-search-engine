@@ -510,7 +510,7 @@ skipReplaceHost:
 		fb.nullTerm();
 
 		const char *bg = LIGHT_BLUE;
-		if ( h->m_ping >= g_conf.m_deadHostTimeout ) 
+		if ( g_hostdb.isDead(h) )
 			bg = "ffa6a6";
 
 
@@ -889,13 +889,6 @@ skipReplaceHost:
 	// end the table now
 	sb.safePrintf ( "</table><br>\n" );
 
-sb.safePrintf("<table>");
-for(int i=0; i<nh; i++) {
-	Host *h = g_hostdb.getHost(hostSort[i]);
-	sb.safePrintf("<tr><td>%lu</t><td>%lu</td></tr>", h->getLastRequestSendTimestamp(), h->getLastResponseReceiveTimestamp());
-}
-sb.safePrintf("</table>");
-	
 
 	if( g_hostdb.m_numSpareHosts ) {
 		// print spare hosts table
@@ -1211,7 +1204,7 @@ static int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
         sprintf ( buf , "%" PRId32"ms", ping );
         // ping time ptr
         // make it "DEAD" if > 6000
-        if ( ping >= g_conf.m_deadHostTimeout ) {
+        if ( g_hostdb.isDead(h) ) {
             sprintf(buf, "<font color=#ff0000><b>DEAD</b></font>");
         }
 

@@ -138,35 +138,6 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 
 	int32_t hostId = h->m_hostId;
 
-	// every time this is hostid 0, do a sanity check to make sure
-	// g_hostdb.m_numHostsAlive is accurate
-	if ( hostId == 0 ) {
-		int32_t numHosts = g_hostdb.getNumHosts();
-		if( h->m_isProxy )
-			numHosts = g_hostdb.getNumProxy();
-		// do not do more than once every 10 seconds
-		static int32_t lastTime = 0;
-		int32_t now = getTime();
-		if ( now - lastTime > 10 ) {
-			lastTime = now;
-			int32_t count = 0;
-			for ( int32_t i = 0 ; i < numHosts; i++ ) {
-				// count if not dead
-				Host *host;
-				if ( h->m_isProxy )
-					host = g_hostdb.getProxy(i);
-				else
-					host = g_hostdb.getHost(i);
-				if ( !g_hostdb.isDead(host))
-					count++;
-			}
-			// make sure count matches
-			if ( !h->m_isProxy && count != g_hostdb.getNumHostsAlive() ) {
-				g_process.shutdownAbort(true);
-			}
-		}
-	}
-
 	// don't ping again if already in progress
 	if ( ip == h->m_ip && h->m_inProgress1 ) return;
 	if ( ip != h->m_ip && h->m_inProgress2 ) return;

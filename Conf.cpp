@@ -84,6 +84,7 @@ Conf::Conf ( ) {
 	m_sendEmailTimeout = 0;
 	m_pingSpacer = 100;
 	m_maxOutstandingPings = 5;
+	m_watchdogInterval = 650;
 	m_maxDocsWanted = 0;
 	m_maxFirstResultNum = 0;
 	min_docid_splits = 0;
@@ -228,6 +229,7 @@ Conf::Conf ( ) {
 	m_logDebugTitle = false;
 	m_logDebugTopDocs = false;
 	m_logDebugUdp = false;
+	m_logDebugWatchdog = false;
 	m_logDebugUnicode = false;
 	m_logDebugRepair = false;
 	m_logDebugDate = false;

@@ -60,6 +60,7 @@
 #include "Msg25.h"
 #include "Msg39.h"
 #include "Msg40.h"    // g_resultsCache
+#include "Msg56.h"
 #include "Parms.h"
 #include "Pages.h"
 #include "PageInject.h"
@@ -1927,6 +1928,11 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! registerMsgHandlers() ) {
 		log("db: registerMsgHandlers failed" ); return 1; }
 
+	if(!initializeWatchdog()) {
+		log(LOG_ERROR,"db: Could not initialize watchdog");
+		return 1;
+	}
+
 	// gb spellcheck
 	if ( strcmp ( cmd , "spellcheck" ) == 0 ) {	
 		if ( argc != cmdarg + 2 ) goto printHelp; // take no other args
@@ -2642,6 +2648,8 @@ static bool registerMsgHandlers2() {
 
 	if ( ! g_udpServer.registerHandler(msg_type_25,handleRequest25)) return false;
 	if ( ! g_udpServer.registerHandler(msg_type_7,handleRequest7)) return false;
+
+	if(!registerMsg56Handler()) return false;
 
 	return true;
 }
