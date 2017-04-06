@@ -227,10 +227,7 @@ bool SpiderColl::load ( ) {
 	// . do this now just to keep everything somewhat in sync
 	// . we lost dmoz.org and could not get it back in because it was
 	//   in the doleip table but NOT in doledb!!!
-	if ( ! makeDoleIPTable() ) return false;
-
-	// otherwise true
-	return true;
+	return makeDoleIPTable();
 }
 
 // . scan all spiderRequests in doledb at startup and add them to our tables
