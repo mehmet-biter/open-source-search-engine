@@ -24,8 +24,6 @@ public:
 
 	void save ( bool useThread );
 
-	bool needsSave ( ) ;
-	void doneSaving ( ) ;
 };
 
 extern class SpiderCache g_spiderCache;

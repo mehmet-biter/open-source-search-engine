@@ -66,15 +66,6 @@ void SpiderCache::save ( bool useThread ) {
 	}
 }
 
-bool SpiderCache::needsSave ( ) {
-	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
-		SpiderColl *sc = getSpiderCollIffNonNull(i);//m_spiderColls[i];
-		if ( ! sc ) continue;
-		if ( sc->m_waitingTree.needsSave() ) return true;
-	}
-	return false;
-}
-
 void SpiderCache::reset ( ) {
 	log(LOG_DEBUG,"spider: resetting spidercache");
 	// loop over all SpiderColls and get the best
