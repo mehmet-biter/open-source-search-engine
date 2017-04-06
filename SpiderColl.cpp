@@ -594,7 +594,7 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 	//   scan spiderdb to get that
 	// . returns false if did not add to waiting tree
 	// . returns false sets g_errno on error
-	bool added = addToWaitingTree(0LL, srep->m_firstIp);
+	bool added = addToWaitingTree(srep->m_firstIp);
 
 	// ignore errors i guess
 	g_errno = 0;
@@ -810,8 +810,7 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 	// each firstIp in waiting tree in spiderdb to get the best
 	// SpiderRequest for that firstIp, then we can add it to doledb
 	// as long as it can be spidered now
-	//bool status = addToWaitingTree ( spiderTimeMS,sreq->m_firstIp,true);
-	bool added = addToWaitingTree(0, sreq->m_firstIp);
+	bool added = addToWaitingTree(sreq->m_firstIp);
 
 	// if already doled and we beat the priority/spidertime of what
 	// was doled then we should probably delete the old doledb key
@@ -898,7 +897,7 @@ bool SpiderColl::printWaitingTree ( ) {
 // . if one of these add fails consider increasing mem used by tree/table
 // . if we lose an ip that sux because it won't be gotten again unless
 //   we somehow add another request/reply to spiderdb in the future
-bool SpiderColl::addToWaitingTree(uint64_t spiderTimeMS, int32_t firstIp) {
+bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 	logDebug( g_conf.m_logDebugSpider, "spider: addtowaitingtree ip=%s", iptoa( firstIp ) );
 
 	// we are currently reading spiderdb for this ip and trying to find
@@ -922,7 +921,7 @@ bool SpiderColl::addToWaitingTree(uint64_t spiderTimeMS, int32_t firstIp) {
 	// . only evalIpLoop() will add a waiting tree key with a non-zero
 	//   value after it figures out the EARLIEST time that a 
 	//   SpiderRequest from this firstIp can be spidered.
-	if ( spiderTimeMS != 0 ) { g_process.shutdownAbort(true); }
+	uint64_t spiderTimeMS = 0;
 
 	// waiting tree might be saving!!!
 	if ( ! m_waitingTree.isWritable() ) {
@@ -1426,7 +1425,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// otherwise, we want to add it with 0 time so the doledb
 		// scan will evaluate it properly
 		// this will return false if we are saving the tree i guess
-		if ( ! addToWaitingTree ( 0 , firstIp ) ) {
+		if (!addToWaitingTree(firstIp)) {
 			log("spider: failed to add ip %s to waiting tree. "
 			    "ip will not get spidered then and our "
 			    "population of waiting tree will repeat until "

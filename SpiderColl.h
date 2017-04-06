@@ -103,7 +103,7 @@ public:
 
 	bool printWaitingTree ( ) ;
 
-	bool addToWaitingTree(uint64_t spiderTime, int32_t firstIp);
+	bool addToWaitingTree(int32_t firstIp);
 	uint64_t getNextSpiderTimeFromWaitingTree ( ) ;
 	void populateDoledbFromWaitingTree ( );
 

@@ -1313,7 +1313,7 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	if (
 	     // this will just return true if we are not the 
 	     // responsible host for this firstip
-	     ! m_sc->addToWaitingTree ( 0 , sreq->m_firstIp ) &&
+	     ! m_sc->addToWaitingTree(sreq->m_firstIp) &&
 	     // must be an error...
 	     g_errno ) {
 		const char *msg = "FAILED TO ADD TO WAITING TREE";
