@@ -114,27 +114,9 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 
 	sb->safePrintf("hopCount=%" PRId32" ",(int32_t)m_hopCount );
 
-	//timeStruct = gmtime_r( &m_spiderTime );
-	//time[0] = 0;
-	//if ( m_spiderTime ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
-	//sb->safePrintf("spiderTime=%s(%" PRIu32") ",time,m_spiderTime);
-
-	//timeStruct = gmtime_r( &m_pubDate );
-	//time[0] = 0;
-	//if ( m_pubDate ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
-	//sb->safePrintf("pubDate=%s(%" PRIu32") ",time,m_pubDate );
-
 	sb->safePrintf("ufn=%" PRId32" ", (int32_t)m_ufn);
 	// why was this unsigned?
 	sb->safePrintf("priority=%" PRId32" ", (int32_t)m_priority);
-
-	//sb->safePrintf("errCode=%s(%" PRIu32") ",mstrerror(m_errCode),m_errCode );
-	//sb->safePrintf("crawlDelay=%" PRId32"ms ",m_crawlDelay );
-	//sb->safePrintf("httpStatus=%" PRId32" ",(int32_t)m_httpStatus );
-	//sb->safePrintf("retryNum=%" PRId32" ",(int32_t)m_retryNum );
-	//sb->safePrintf("langId=%s(%" PRId32") ",
-	//	       getLanguageString(m_langId),(int32_t)m_langId );
-	//sb->safePrintf("percentChanged=%" PRId32"%% ",(int32_t)m_percentChanged );
 
 	if ( m_isAddUrl ) sb->safePrintf("ISADDURL ");
 	if ( m_isPageReindex ) sb->safePrintf("ISPAGEREINDEX ");
@@ -151,9 +133,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 
 	if ( m_isWWWSubdomain  ) sb->safePrintf("WWWSUBDOMAIN ");
 	if ( m_avoidSpiderLinks ) sb->safePrintf("AVOIDSPIDERLINKS ");
-
-	//if ( m_inOrderTree ) sb->safePrintf("INORDERTREE ");
-	//if ( m_doled ) sb->safePrintf("DOLED ");
 
 	int32_t shardNum = g_hostdb.getShardNum( RDB_SPIDERDB, this );
 	sb->safePrintf("shardnum=%" PRIu32" ",(uint32_t)shardNum);
@@ -179,8 +158,6 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 	SafeBuf tmp;
 	if ( ! sb ) sb = &tmp;
 
-	//sb->safePrintf("k.n1=0x%llx ",m_key.n1);
-	//sb->safePrintf("k.n0=0x%llx ",m_key.n0);
 	sb->safePrintf("k=%s ",KEYSTR(this,sizeof(spiderdbkey_t)));
 
 	// indicate it's a reply
@@ -220,7 +197,6 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 		strftime (time,256,"%b %e %T %Y UTC",timeStruct);
 	sb->safePrintf("pubDate=%s(%" PRId32") ",time,m_pubDate );
 
-	//sb->safePrintf("newRequests=%" PRId32" ",m_newRequests );
 	sb->safePrintf("ch32=%" PRIu32" ",(uint32_t)m_contentHash32);
 
 	sb->safePrintf("crawldelayms=%" PRId32"ms ",m_crawlDelayMS );
@@ -240,9 +216,6 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 	if ( m_isPingServer ) sb->safePrintf("ISPINGSERVER ");
 	//if ( m_deleted ) sb->safePrintf("DELETED ");
 	if ( ! m_isIndexedINValid && m_isIndexed ) sb->safePrintf("ISINDEXED ");
-
-
-	//sb->safePrintf("url=%s",m_url);
 
 	if ( ! sbarg ) 
 		printf("%s",sb->getBufStart() );
@@ -267,10 +240,7 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 		CollectionRec *cr = g_collectiondb.getRec(collnum);
 		const char *cs = "";
 		if ( cr ) cs = cr->m_coll;
-		// sb->safePrintf(" <td><a href=/crawlbot?c=%s>%" PRId32"</a></td>\n",
-		// 	       cs,(int32_t)collnum);
-		//sb->safePrintf(" <td><a href=/crawlbot?c=%s>%s</a></td>\n",
-		//	       cs,cs);
+
 		sb->safePrintf(" <td><a href=/search?c=%s&q=url%%3A%s>%s</a>"
 			       "</td>\n",cs,m_url,cs);
 	}
@@ -288,12 +258,7 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 
 	sb->safePrintf(" <td>%" PRIu64"</td>\n",getUrlHash48());
 
-	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_hostHash32 );
-	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_domHash32 );
-	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_siteHash32 );
-
 	sb->safePrintf(" <td>%" PRId32"</td>\n",m_siteNumInlinks );
-	//sb->safePrintf(" <td>%" PRId32"</td>\n",m_pageNumInlinks );
 	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_hopCount );
 
 	// print time format: 7/23/1971 10:45:32
@@ -307,21 +272,8 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	sb->safePrintf(" <td><nobr>%s(%" PRIu32")</nobr></td>\n",time,
 		       (uint32_t)m_addedTime);
 
-	//timeStruct = gmtime_r( &m_pubDate );
-	//time[0] = 0;
-	//if ( m_pubDate ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
-	//sb->safePrintf(" <td>%s(%" PRIu32")</td>\n",time,m_pubDate );
-
-	//sb->safePrintf(" <td>%s(%" PRIu32")</td>\n",mstrerror(m_errCode),m_errCode);
-	//sb->safePrintf(" <td>%" PRId32"ms</td>\n",m_crawlDelay );
 	sb->safePrintf(" <td>%i</td>\n",(int)m_pageNumInlinks);
 	sb->safePrintf(" <td>%" PRIu64"</td>\n",getParentDocId() );
-
-	//sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_httpStatus );
-	//sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_retryNum );
-	//sb->safePrintf(" <td>%s(%" PRId32")</td>\n",
-	//	       getLanguageString(m_langId),(int32_t)m_langId );
-	//sb->safePrintf(" <td>%" PRId32"%%</td>\n",(int32_t)m_percentChanged );
 
 	sb->safePrintf(" <td><nobr>");
 
@@ -335,14 +287,7 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
 	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
 
-	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
-
-
-	//if ( m_inOrderTree ) sb->safePrintf("INORDERTREE ");
-	//if ( m_doled ) sb->safePrintf("DOLED ");
-
-
 
 	sb->safePrintf("</nobr></td>\n");
 
@@ -371,26 +316,11 @@ int32_t SpiderRequest::printTableHeader ( SafeBuf *sb , bool currentlySpidering)
 	sb->safePrintf(" <td><b>firstIp</b></td>\n");
 	sb->safePrintf(" <td><b>errCount</b></td>\n");
 	sb->safePrintf(" <td><b>urlHash48</b></td>\n");
-	//sb->safePrintf(" <td><b>hostHash32</b></td>\n");
-	//sb->safePrintf(" <td><b>domHash32</b></td>\n");
-	//sb->safePrintf(" <td><b>siteHash32</b></td>\n");
 	sb->safePrintf(" <td><b>siteInlinks</b></td>\n");
-	//sb->safePrintf(" <td><b>pageNumInlinks</b></td>\n");
 	sb->safePrintf(" <td><b>hops</b></td>\n");
 	sb->safePrintf(" <td><b>addedTime</b></td>\n");
-	//sb->safePrintf(" <td><b>lastAttempt</b></td>\n");
-	//sb->safePrintf(" <td><b>pubDate</b></td>\n");
-	//sb->safePrintf(" <td><b>errCode</b></td>\n");
-	//sb->safePrintf(" <td><b>crawlDelay</b></td>\n");
 	sb->safePrintf(" <td><b>parentIp</b></td>\n");
 	sb->safePrintf(" <td><b>parentDocId</b></td>\n");
-	//sb->safePrintf(" <td><b>parentHostHash32</b></td>\n");
-	//sb->safePrintf(" <td><b>parentDomHash32</b></td>\n");
-	//sb->safePrintf(" <td><b>parentSiteHash32</b></td>\n");
-	//sb->safePrintf(" <td><b>httpStatus</b></td>\n");
-	//sb->safePrintf(" <td><b>retryNum</b></td>\n");
-	//sb->safePrintf(" <td><b>langId</b></td>\n");
-	//sb->safePrintf(" <td><b>percentChanged</b></td>\n");
 	sb->safePrintf(" <td><b>flags</b></td>\n");
 	sb->safePrintf("</tr>\n");
 
@@ -609,44 +539,14 @@ static void testWinnerTreeKey() {
 /////////////////////////      UTILITY FUNCTIONS
 /////////////////////////
 
-// . map a spiderdb rec to the shard # that should spider it
-// . "sr" can be a SpiderRequest or SpiderReply
-// . shouldn't this use Hostdb::getShardNum()?
-/*
-uint32_t getShardToSpider ( char *sr ) {
-	// use the url hash
-	int64_t uh48 = g_spiderdb.getUrlHash48 ( (key128_t *)sr );
-	// host to dole it based on ip
-	int32_t hostId = uh48 % g_hostdb.m_numHosts ;
-	// get it
-	Host *h = g_hostdb.getHost ( hostId ) ;
-	// and return groupid
-	return h->m_groupId;
-}
-*/
-
 // does this belong in our spider cache?
 bool isAssignedToUs ( int32_t firstIp ) {
-	// sanity check... must be in our group.. we assume this much
-	//if ( g_spiderdb.getGroupId(firstIp) != g_hostdb.m_myHost->m_groupId){
-	//	g_process.shutdownAbort(true); }
-	// . host to dole it based on ip
-	// . ignore lower 8 bits of ip since one guy often owns a whole block!
-	//int32_t hostId=(((uint32_t)firstIp) >> 8) % g_hostdb.getNumHosts();
-
 	if( !g_hostdb.getMyHost()->m_spiderEnabled ) return false;
 	
 	// get our group
-	//Host *group = g_hostdb.getMyGroup();
 	Host *shard = g_hostdb.getMyShard();
 	// pick a host in our group
 
-	// if not dead return it
-	//if ( ! g_hostdb.isDead(hostId) ) return hostId;
-	// get that host
-	//Host *h = g_hostdb.getHost(hostId);
-	// get the group
-	//Host *group = g_hostdb.getGroup ( h->m_groupId );
 	// and number of hosts in the group
 	int32_t hpg = g_hostdb.getNumHostsPerShard();
 	// let's mix it up since spider shard was selected using this
@@ -654,8 +554,7 @@ bool isAssignedToUs ( int32_t firstIp ) {
 	uint64_t h64 = firstIp;
 	unsigned char c = firstIp & 0xff;
 	h64 ^= g_hashtab[c][0];
-	// select the next host number to try
-	//int32_t next = (((uint32_t)firstIp) >> 16) % hpg ;
+
 	// hash to a host
 	int32_t i = ((uint32_t)h64) % hpg;
 	Host *h = &shard[i];
@@ -758,9 +657,6 @@ bool updateSiteListBuf ( collnum_t collnum ,
 		return true;
 	}
 
-	// when sitelist is update Parms.cpp should invalidate this flag!
-	//if ( sc->m_siteListTableValid ) return true;
-
 	// hash current sitelist entries, each line so we don't add
 	// dup requests into spiderdb i guess...
 	HashTableX dedup;
@@ -818,8 +714,6 @@ bool updateSiteListBuf ( collnum_t collnum ,
 	// use this so it will be free automatically when msg4 completes!
 	SafeBuf *spiderReqBuf = new SafeBuf();
 
-	//char *siteList = cr->m_siteListBuf.getBufStart();
-
 	// scan the list
 	const char *pn = siteListArg;
 
@@ -869,12 +763,6 @@ bool updateSiteListBuf ( collnum_t collnum ,
 		// empty line?
 		if ( *s == '\n' ) continue;
 
-		// all?
-		//if ( *s == '*' ) {
-		//	sc->m_siteListAsteriskLine = start;
-		//	continue;
-		//}
-
 		const char *tag = NULL;
 		int32_t tagLen = 0;
 
@@ -882,13 +770,6 @@ bool updateSiteListBuf ( collnum_t collnum ,
 
 		// skip spaces
 		for ( ; *s && *s == ' ' ; s++ );
-
-
-		// exact:?
-		//if ( strncmp(s,"exact:",6) == 0 ) {
-		//	s += 6;
-		//	goto innerLoop;
-		//}
 
 		// these will be manual adds and should pass url filters
 		// because they have the "ismanual" directive override
@@ -1298,7 +1179,6 @@ int32_t getUrlFilterNum(const SpiderRequest *sreq,
 
 	char *row = NULL;
 	bool checkedRow = false;
-	//SpiderColl *sc = cr->m_spiderColl;
 	SpiderColl *sc = g_spiderCache.getSpiderColl(cr->m_collnum);
 
 	if ( ! quotaTable ) quotaTable = &sc->m_localTable;
@@ -3104,12 +2984,6 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 				       "paused.");
 	}
 
-	// if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) {
-	// 	*status = SP_ADMIN_PAUSED;
-	// 	return msg->safePrintf("Too many UDP slots in use, "
-	// 			       "spidering paused.");
-	// }
-
 	if ( g_repairMode ) {
 		*status = SP_ADMIN_PAUSED;
 		return msg->safePrintf("In repair mode, spidering paused.");
@@ -3134,14 +3008,6 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 		*status = SP_PAUSED;
 		return msg->safePrintf("Spidering disabled in spider controls.");
 	}
-
-	// if spiderdb is empty for this coll, then no url
-	// has been added to spiderdb yet.. either seed or spot
-	//CrawlInfo *cg = &cx->m_globalCrawlInfo;
-	//if ( cg->m_pageDownloadAttempts == 0 ) {
-	//	*status = SP_NOURLS;
-	//	return msg->safePrintf("Crawl is waiting for urls.");
-	//}
 
 	if ( cx->m_spiderStatus == SP_INITIALIZING ) {
 		*status = SP_INITIALIZING;
