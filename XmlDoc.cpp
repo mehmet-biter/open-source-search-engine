@@ -12217,7 +12217,7 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 
 		// ensure spiderdb request recs have data/url in them
 		if ( (rdbId == RDB_SPIDERDB || rdbId == RDB2_SPIDERDB2) &&
-		     g_spiderdb.isSpiderRequest ( (SPIDERDBKEY *)rec ) &&
+		     g_spiderdb.isSpiderRequest ( (spiderdbkey_t *)rec ) &&
 		     ! forDelete &&
 		     ! del &&
 		     dataSize == 0 ) {

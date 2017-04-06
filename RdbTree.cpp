@@ -963,9 +963,9 @@ bool RdbTree::fixTree_unlocked() {
 		}
 
 		char *key = &m_keys[i*m_ks];
-		if (isSpiderdb && m_data[i] && Spiderdb::isSpiderRequest((SPIDERDBKEY *)key)) {
+		if (isSpiderdb && m_data[i] && Spiderdb::isSpiderRequest((spiderdbkey_t *)key)) {
 			char *data = m_data[i];
-			data -= sizeof(SPIDERDBKEY);
+			data -= sizeof(spiderdbkey_t);
 			data -= 4;
 			SpiderRequest *sreq ;
 			sreq =(SpiderRequest *)data;
@@ -1055,9 +1055,9 @@ bool RdbTree::checkTree_unlocked(bool printMsgs, bool doChainTest) const {
 
 		char *key = &m_keys[i*m_ks];
 		if ( isSpiderdb && m_data[i] &&
-				Spiderdb::isSpiderRequest ( (SPIDERDBKEY *)key ) ) {
+				Spiderdb::isSpiderRequest ( (spiderdbkey_t *)key ) ) {
 				char *data = m_data[i];
-				data -= sizeof(SPIDERDBKEY);
+				data -= sizeof(spiderdbkey_t);
 				data -= 4;
 				SpiderRequest *sreq ;
 				sreq =(SpiderRequest *)data;

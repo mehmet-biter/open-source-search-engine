@@ -862,7 +862,7 @@ public:
 // are we responsible for this ip?
 bool isAssignedToUs ( int32_t firstIp ) ;
 
-#define SPIDERDBKEY key128_t
+typedef key128_t spiderdbkey_t;
 
 /////////
 //

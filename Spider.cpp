@@ -181,7 +181,7 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 
 	//sb->safePrintf("k.n1=0x%llx ",m_key.n1);
 	//sb->safePrintf("k.n0=0x%llx ",m_key.n0);
-	sb->safePrintf("k=%s ",KEYSTR(this,sizeof(SPIDERDBKEY)));
+	sb->safePrintf("k=%s ",KEYSTR(this,sizeof(spiderdbkey_t)));
 
 	// indicate it's a reply
 	sb->safePrintf("REP ");
