@@ -222,10 +222,6 @@ void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 	// skip if udp table is full
 	if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) return;
 
-	static int32_t s_count = -1;
-	// count these calls
-	s_count++;
-
 	int32_t now = getTimeLocal();
 
 	// point to head of active linked list of collection recs
