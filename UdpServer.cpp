@@ -1429,7 +1429,7 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 		if ( h ) {
 			h->m_errorReplies++;
 			if ( g_errno == ETRYAGAIN ) 
-				h->m_pingInfo.m_etryagains++;
+				h->m_etryagains++;
 		}
 
 		// try to call the callback for this slot

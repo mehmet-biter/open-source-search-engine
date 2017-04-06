@@ -59,9 +59,6 @@ public:
 	int32_t m_numOutOfMems;
 	int32_t m_socketsClosedFromHittingLimit;
 
-	int32_t m_totalResends;
-	int32_t m_etryagains;
-
 	int32_t m_udpSlotsInUseIncoming;
 	int32_t m_tcpSocketsInUse;
 
@@ -179,6 +176,9 @@ public:
 
 	std::atomic<int64_t>     m_dgramsTo;
 	std::atomic<int64_t>     m_dgramsFrom;
+
+	std::atomic<int32_t>     m_totalResends; //how many UDP packets has been resent
+	std::atomic<int32_t>     m_etryagains;   //how many times a request got an ETRYAGAIN
 
 	char           m_repairMode;
 
