@@ -955,11 +955,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	// sanity check. check for http(s)://
 	// might be a docid from a pagereindex.cpp
 	if ( sreq->m_url[0] != 'h' && ! is_digit(sreq->m_url[0]) ) {
-		// note it
-		if ( (g_corruptCount % 1000) == 0 ) {
-			log( "spider: got corrupt doledb record. ignoring. pls fix!!!" );
-		}
-		g_corruptCount++;
+		log(LOG_WARN, "spider: got corrupt doledb record. ignoring. pls fix!!!" );
 
 		goto skipDoledbRec;
 	}		

@@ -1475,10 +1475,8 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		key128_t lastKey  = *(key128_t *)m_waitingTreeList.getLastKey();
 
 		if ( lastKey < m_waitingTreeNextKey ) {
-			log("spider: got corruption 9. spiderdb "
-			    "keys out of order for "
-			    "collnum=%" PRId32, (int32_t)m_collnum);
-			g_corruptCount++;
+			log(LOG_WARN, "spider: got corruption 9. spiderdb keys out of order for collnum=%" PRId32, (int32_t)m_collnum);
+
 			// this should result in an empty list read for
 			// our next scan of spiderdb. unfortunately we could
 			// miss a lot of spider requests then
@@ -2005,14 +2003,10 @@ bool SpiderColl::evalIpLoop ( ) {
 		//if ( endKey != finalKey ) { g_process.shutdownAbort(true); }
 		// crazy corruption?
 		if ( lastKey < m_nextKey ) {
-			log("spider: got corruption. spiderdb "
-			    "keys out of order for "
-			    "collnum=%" PRId32" for evaluation of "
-			    "firstip=%s so terminating evaluation of that "
-			    "firstip." ,
-			    (int32_t)m_collnum,
-			    iptoa(m_scanningIp));
-			g_corruptCount++;
+			log(LOG_WARN, "spider: got corruption. spiderdb keys out of order for "
+			    "collnum=%" PRId32" for evaluation of firstip=%s so terminating evaluation of that firstip." ,
+			    (int32_t)m_collnum, iptoa(m_scanningIp));
+
 			// this should result in an empty list read for
 			// m_scanningIp in spiderdb
 			m_nextKey  = m_endKey;

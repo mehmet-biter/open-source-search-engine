@@ -17,7 +17,6 @@ class SpiderColl;
 // lower from 1300 to 300
 #define MAXUDPSLOTS 300
 
-extern int32_t g_corruptCount;
 extern bool s_countsAreValid;
 
 // . size of spiderecs to load in one call to readList
