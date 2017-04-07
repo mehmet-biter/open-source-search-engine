@@ -995,7 +995,7 @@ skipDoledbRec:
 	}
 
 	// if there and confirmed, why still in doledb?
-	if ( lock && lock->m_confirmed ) {
+	if (lock) {
 		// fight log spam
 		static int32_t s_lastTime = 0;
 		if ( nowGlobal - s_lastTime >= 2 ) {
@@ -1291,7 +1291,6 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	tmp.m_hostId = g_hostdb.m_myHost->m_hostId;
 	tmp.m_firstIp = m_sreq->m_firstIp;
 	tmp.m_spiderOutstanding = 0;
-	tmp.m_confirmed = 1;
 	tmp.m_collnum = m_collnum;
 
 	if ( ! g_spiderLoop.m_lockTable.addKey ( &lockKeyUh48 , &tmp ) )
@@ -1501,8 +1500,6 @@ int32_t SpiderLoop::getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum 
 		// when the spiderReply returns, so that in case a lock
 		// request for the same url was in progress, it will be denied.
 		if ( ! lock->m_spiderOutstanding ) continue;
-		// must be confirmed too
-		if ( ! lock->m_confirmed ) continue;
 		// correct collnum?
 		if ( lock->m_collnum != collnum && collnum != -1 ) continue;
 		// skip if not yet expired

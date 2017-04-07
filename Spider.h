@@ -892,7 +892,6 @@ public:
 	int32_t m_hostId;
 	int32_t m_firstIp;
 	char m_spiderOutstanding;
-	char m_confirmed;
 	collnum_t m_collnum;
 };
 
