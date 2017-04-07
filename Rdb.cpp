@@ -2249,7 +2249,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 	if ( occupied + dups != m_tree.getNumUsedNodes_unlocked() )
 		log("rdb: reclaim mismatch1");
 
-	if ( ht.getNumSlotsUsed() + dups != m_tree.getNumUsedNodes_unlocked() )
+	if ( ht.getNumUsedSlots() + dups != m_tree.getNumUsedNodes_unlocked() )
 		log("rdb: reclaim mismatch2");
 
 	int32_t skipped = 0;

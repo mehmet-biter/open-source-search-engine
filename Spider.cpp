@@ -999,14 +999,14 @@ static char *getMatchingUrlPattern(SpiderColl *sc, const SpiderRequest *sreq, ch
 	CollectionRec *cr = sc->getCollectionRec();
 
 	// need to build dom table for pattern matching?
-	if ( dt->getNumSlotsUsed() == 0 && cr ) {
+	if ( dt->getNumUsedSlots() == 0 && cr ) {
 		// do not add seeds, just make siteListDomTable, etc.
 		updateSiteListBuf ( sc->m_collnum ,
 		                    false , // add seeds?
 		                    cr->m_siteListBuf.getBufStart() );
 	}
 
-	if ( dt->getNumSlotsUsed() == 0 ) {
+	if ( dt->getNumUsedSlots() == 0 ) {
 		// empty site list -- no matches
 		logTrace( g_conf.m_logTraceSpider, "END. No slots. Returning NULL" );
 		return NULL;

@@ -211,7 +211,7 @@ bool Wiktionary::load() {
 		if ( ! g_conf.m_isLive ) return true;
 
 		// the size
-		int64_t h1 = m_synTable.getNumSlotsUsed();
+		int64_t h1 = m_synTable.getNumUsedSlots();
 		int64_t h2 = m_synBuf  .length();
 		int64_t h = hash64 ( h1 , h2 );
 		char *tail1 = (char *)m_synTable.m_keys;

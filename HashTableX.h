@@ -260,7 +260,6 @@ class HashTableX {
 	void  clear  ( );
 
 	// how many are occupied?
-	int32_t getNumSlotsUsed ( ) const { return m_numSlotsUsed; }
 	int32_t getNumUsedSlots ( ) const { return m_numSlotsUsed; }
 
 	bool isEmpty() const { return (m_numSlotsUsed == 0); }

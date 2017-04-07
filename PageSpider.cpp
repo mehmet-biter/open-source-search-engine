@@ -360,7 +360,7 @@ static bool sendPage(State11 *st) {
 	/////
 
 	int32_t ns = 0;
-	if ( sc ) ns = sc->m_doleIpTable.getNumSlotsUsed();
+	if ( sc ) ns = sc->m_doleIpTable.getNumUsedSlots();
 
 	// begin the table
 	sb.safePrintf ( "<table %s>\n"

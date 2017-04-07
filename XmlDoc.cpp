@@ -15137,7 +15137,7 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 	// reserve space if we had a safebuf and point into it if there
 	if ( buf ) {
 		int32_t slotSize = (sizeof(key144_t)+2+sizeof(key128_t));
-		int32_t need = tt1->getNumSlotsUsed() * slotSize;
+		int32_t need = tt1->getNumUsedSlots() * slotSize;
 		if ( ! buf->reserve ( need ) ) return false;
 		// get cursor into buf, NOT START of buf
 		p = buf->getBufStart();
