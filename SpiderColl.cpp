@@ -482,24 +482,9 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 	//
 	//////
 	int64_t lockKey = makeLockTableKey ( srep );
-	
-	UrlLock *lock = (UrlLock *)g_spiderLoop.m_lockTable.getValue ( &lockKey );
-	time_t nowGlobal = getTimeGlobal();
 
 	logDebug(g_conf.m_logDebugSpider, "spider: removing lock uh48=%" PRId64" lockKey=%" PRIu64, srep->getUrlHash48(), lockKey);
 
-	// we do it this way rather than remove it ourselves
-	// because a lock request for this guy
-	// might be currently outstanding, and it will end up
-	// being granted the lock even though we have by now removed
-	// it from doledb, because it read doledb before we removed 
-	// it! so wait 5 seconds for the doledb negative key to 
-	// be absorbed to prevent a url we just spidered from being
-	// re-spidered right away because of this sync issue.
-	// . if we wait too long then the round end time, SPIDER_DONE_TIMER,
-	//   will kick in before us and end the round, then we end up
-	//   spidering a previously locked url right after and DOUBLE
-	//   increment the round!
 	/////
 	//
 	// but do note that its spider has returned for populating the
@@ -509,15 +494,6 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 	// is currently being spidered.
 	//
 	/////
-	if (lock) {
-		lock->m_expires = nowGlobal + 2;
-		lock->m_spiderOutstanding = 0;
-	} else {
-		// bitch if not in there
-		// when "rebuilding" (Rebuild.cpp) this msg gets triggered too much...
-		// so only show it when in debug mode.
-		logDebug(g_conf.m_logDebugSpider, "spider: rdb: lockKey=%" PRIu64" was not in lock table", lockKey);
-	}
 
 	// now just remove it since we only spider our own urls
 	// and doledb is in memory
