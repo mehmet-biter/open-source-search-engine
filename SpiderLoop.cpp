@@ -1289,7 +1289,6 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	// . return true on error here
 	UrlLock tmp;
 	tmp.m_hostId = g_hostdb.m_myHost->m_hostId;
-	tmp.m_timestamp = 0;
 	tmp.m_firstIp = m_sreq->m_firstIp;
 	tmp.m_spiderOutstanding = 0;
 	tmp.m_confirmed = 1;
