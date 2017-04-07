@@ -13229,10 +13229,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	}
 
 	// pre-grow table based on # outlinks
-	kt1.set(sizeof(key224_t), 0, nis, NULL, 0, false, "link-indx");
-
-	// use magic to make fast
-	kt1.m_useKeyMagic = true;
+	kt1.set(sizeof(key224_t), 0, nis, NULL, 0, false, "link-indx", true);
 
 	// linkdb keys will have the same lower 4 bytes, so make hashing fast.
 	// they are 28 byte keys. bytes 20-23 are the hash of the linkEE

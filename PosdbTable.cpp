@@ -4593,18 +4593,9 @@ bool PosdbTable::allocWhiteListTable ( ) {
 		// 5 bytes (which includes 1 siterank bit as the lowbit,
 		// but should be ok since it should be set the same in
 		// all termlists that have that docid)
-		if ( ! m_whiteListTable.set(5,0,numSlots,NULL,0,false, "wtall"))
+		if (!m_whiteListTable.set(5, 0, numSlots, NULL, 0, false, "wtall", true)) {
 			return false;
-		// try to speed up. wow, this slowed it down about 4x!!
-		//m_whiteListTable.m_maskKeyOffset = 1;
-		//
-		////////////
-		//
-		// this seems to make it like 20x faster... 1444ms vs 27000ms:
-		//
-		////////////
-		//
-		m_whiteListTable.m_useKeyMagic = true;
+		}
 	}
 	return true;
 }

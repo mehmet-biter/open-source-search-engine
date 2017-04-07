@@ -9742,9 +9742,8 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 
 	if ( ! s_init ) {
 		// init hashtable
-		s_pht.set ( 4,sizeof(char *),2048,s_phtBuf,26700, false,"phttab" );
-		// reduce hash collisions:
-		s_pht.m_useKeyMagic = true;
+		s_pht.set(4, sizeof(char *), 2048, s_phtBuf, 26700, false, "phttab", true);
+
 		// wtf?
 		if ( m_numParms <= 0 ) init();
 		if ( m_numParms <= 0 ) { g_process.shutdownAbort(true); }
