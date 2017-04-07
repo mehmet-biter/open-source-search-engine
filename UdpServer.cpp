@@ -2002,7 +2002,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// But not msg11 (ping) and msg56 (watchdog) because they actually want to send to
 		// dead hosts so they can detect when they are alive again.
 		if(slot->getMsgType()!=msg_type_11 && slot->getMsgType()!=msg_type_56) {
-			if(g_hostdb.isDead(slot->m_host)) {
+			if(slot->m_host && g_hostdb.isDead(slot->m_host)) {
 				slot->m_errno = EUDPTIMEDOUT;
 				addToCallbackLinkedList(slot);
 				something = true;
