@@ -15902,9 +15902,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		}
 
 		// get it
-		int32_t ufn;
-		ufn = ::getUrlFilterNum(&sreq, &srep, spideredTime, true, cr, false, NULL, langIdArg);
-
+		int32_t ufn = ::getUrlFilterNum(&sreq, &srep, spideredTime, true, cr, false, NULL, langIdArg);
 
 		// get spider priority if ufn is valid
 		int32_t pr = 0;
