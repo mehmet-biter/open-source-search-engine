@@ -1637,8 +1637,9 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 		m_lastReqUh48b = 0LL;
 		m_lastRepUh48  = 0LL;
 		// and setup the LOCAL counting table if not initialized
-		if ( m_localTable.m_ks == 0 ) 
-			m_localTable.set (4,4,0,NULL,0,false,"ltpct" );
+		if (!m_localTable.isInitialized()) {
+			m_localTable.set(4, 4, 0, NULL, 0, false, "ltpct");
+		}
 		// otherwise, just reset it so we can repopulate it
 		else m_localTable.reset();
 	}
