@@ -20,7 +20,8 @@ class HashTableX {
 		   int32_t  bufSize         , // = 0    ,
 		   bool  allowDups       , // = false ,
 		   const char *allocName  ,
-		   bool  useKeyMagic = false );
+		   bool  useKeyMagic = false,
+		   int32_t maskKeyOffset = 0);
 
 	// key size is 0 if UNinitialized
 	bool isInitialized ( ) const { return (m_ks != 0); }

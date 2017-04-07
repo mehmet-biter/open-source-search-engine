@@ -39,17 +39,18 @@ HashTableX::~HashTableX ( ) {
 }
 
 // returns false and sets errno on error
-bool HashTableX::set ( int32_t  ks              ,
-		       int32_t  ds              ,
-		       int32_t  initialNumTerms , 
-		       char *buf             , 
-		       int32_t  bufSize         ,
-		       bool  allowDups       ,
-		       const char *allocName ,
-		       // in general you want keymagic to ensure your
-		       // keys are "random" for good hashing. it doesn't
-		       // really slow things down either.
-		       bool  useKeyMagic     ) {
+bool HashTableX::set(int32_t ks,
+                     int32_t ds,
+                     int32_t initialNumTerms,
+                     char *buf,
+                     int32_t bufSize,
+                     bool allowDups,
+                     const char *allocName,
+	                 // in general you want keymagic to ensure your
+	                 // keys are "random" for good hashing. it doesn't
+	                 // really slow things down either.
+	                 bool useKeyMagic,
+	                 int32_t maskKeyOffset) {
 	reset();
 	m_ks = ks;
 	m_ds = ds;
@@ -73,6 +74,7 @@ bool HashTableX::set ( int32_t  ks              ,
 	m_allocName = allocName;
 
 	m_useKeyMagic = useKeyMagic;
+	m_maskKeyOffset = maskKeyOffset;
 
 	return setTableSize ( initialNumTerms , buf , bufSize );
 }

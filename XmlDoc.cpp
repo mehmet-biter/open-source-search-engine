@@ -13229,12 +13229,10 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	}
 
 	// pre-grow table based on # outlinks
-	kt1.set(sizeof(key224_t), 0, nis, NULL, 0, false, "link-indx", true);
-
 	// linkdb keys will have the same lower 4 bytes, so make hashing fast.
 	// they are 28 byte keys. bytes 20-23 are the hash of the linkEE
 	// so that will be the most random.
-	kt1.m_maskKeyOffset = 20;
+	kt1.set(sizeof(key224_t), 0, nis, NULL, 0, false, "link-indx", true, 20);
 
 	// . we already have a Links::hash into the Termtable for links: terms,
 	//   but this will have to be for adding to Linkdb. basically take a
