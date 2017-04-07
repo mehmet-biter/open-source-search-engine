@@ -1984,7 +1984,7 @@ bool HttpServer::hasPermission ( int32_t ip , HttpRequest *r ,
 	// . if table almost full clean out ALL slots
 	// . TODO: just clean out oldest slots
 	int32_t partial = (AT_SLOTS * 90) / 100 ;
-	if ( s_htable.getNumSlotsUsed() > partial ) s_htable.clear ();
+	if (s_htable.getNumUsedSlots() > partial ) s_htable.clear ();
 	// . how many times has this IP domain submitted?
 	// . allow 10 times per day
 	int32_t val = s_htable.getValue ( h );

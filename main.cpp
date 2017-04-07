@@ -3370,7 +3370,7 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 	}
 
 
-	int32_t uniqIps = ipDomCntTable.getNumSlotsUsed();
+	int32_t uniqIps = ipDomCntTable.getNumUsedSlots();
 
 	// print out all ips, and # of domains they have and list of their
 	// domains

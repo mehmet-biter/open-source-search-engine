@@ -1517,7 +1517,7 @@ void Dns::returnIp(DnsState *ds, int32_t ip) {
 		s_dnstable.removeKey ( key );
 		// debug msg
 		log(LOG_DEBUG,"dns: table now has %" PRId32" used slots.",
-		    (int32_t)s_dnstable.getNumSlotsUsed());
+		    (int32_t)s_dnstable.getNumUsedSlots());
 		// then call the callback
 		// CAREFUL: calling this callback can alter the hash
 		// table (if it is a dns wrapper callback) and move what
