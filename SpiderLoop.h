@@ -66,8 +66,6 @@ private:
 	static void doneSleepingWrapperSL ( int fd , void *state ) ;
 	static void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) ;
 
-	bool printLockTable ( );
-
 	void spiderDoledUrls ( ) ;
 	bool gotDoledbList2  ( ) ;
 

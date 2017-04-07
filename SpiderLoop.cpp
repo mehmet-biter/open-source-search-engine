@@ -36,45 +36,6 @@
 //#define SPIDER_DONE_TIMER 90
 #define SPIDER_DONE_TIMER 20
 
-
-
-bool SpiderLoop::printLockTable ( ) {
-	// count locks
-	HashTableX *ht = &g_spiderLoop.m_lockTable;
-	// scan the slots
-	int32_t ns = ht->m_numSlots;
-	for ( int32_t i = 0 ; i < ns ; i++ ) {
-		// skip if empty
-		if ( ! ht->m_flags[i] ) continue;
-		// cast lock
-		UrlLock *lock = (UrlLock *)ht->getValueFromSlot(i);
-		// get the key
-		int64_t lockKey = *(int64_t *)ht->getKeyFromSlot(i);
-		// show it
-		log("dump: lock. "
-		    "lockkey=%" PRId64" "
-		    "spiderout=%" PRId32" "
-		    "confirmed=%" PRId32" "
-		    "firstip=%s "
-		    "hostid=%" PRId32" "
-		    "timestamp=%" PRId32" "
-		    "sequence=%" PRId32" "
-		    "collnum=%" PRId32" "
-		    ,lockKey
-		    ,(int32_t)(lock->m_spiderOutstanding)
-		    ,(int32_t)(lock->m_confirmed)
-		    ,iptoa(lock->m_firstIp)
-		    ,lock->m_hostId
-		    ,lock->m_timestamp
-		    ,lock->m_lockSequence
-		    ,(int32_t)lock->m_collnum
-		    );
-	}
-	return true;
-}
-
-
-
 /////////////////////////
 /////////////////////////      SPIDERLOOP
 /////////////////////////
