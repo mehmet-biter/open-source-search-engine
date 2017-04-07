@@ -279,15 +279,16 @@ class HashTableX {
 	// for debugging
 	void print();
 
-	void disableWrites () { m_isWritable = false; }
-	void enableWrites  () { m_isWritable = true ; }
-	bool m_isWritable;
+	bool isWritable() const { return m_isWritable; }
+	void disableWrites() { m_isWritable = false; }
+	void enableWrites() { m_isWritable = true; }
 
- private:
-
+private:
 	int32_t getOccupiedSlotNum ( const void *key ) const;
 
- public:
+	bool m_isWritable;
+
+public:
 
 	// . the array of buckets in which we store the terms
 	// . scores are allowed to exceed 8 bits for weighting purposes

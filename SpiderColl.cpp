@@ -2996,7 +2996,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 
 		m_waitingTable.removeKey  ( &firstIp  );
 		// sanity check
-		if ( ! m_waitingTable.m_isWritable ) { g_process.shutdownAbort(true);}
+		if ( ! m_waitingTable.isWritable() ) { g_process.shutdownAbort(true);}
 		return true;
 	}
 
@@ -3214,7 +3214,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 			// keep the table in sync now with the time
 			m_waitingTable.addKey(&firstIp, &m_minFutureTimeMS);
 			// sanity check
-			if (!m_waitingTable.m_isWritable) { g_process.shutdownAbort(true); }
+			if (!m_waitingTable.isWritable()) { g_process.shutdownAbort(true); }
 			return true;
 		}
 	}
@@ -3360,7 +3360,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	m_waitingTreeKeyValid = false;
 
 	// sanity check
-	if ( ! m_waitingTable.m_isWritable ) { g_process.shutdownAbort(true);}
+	if ( ! m_waitingTable.isWritable() ) { g_process.shutdownAbort(true);}
 
 	// note that ip as being in dole table
 	if ( g_conf.m_logDebugSpider )
