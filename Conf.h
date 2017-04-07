@@ -448,11 +448,6 @@ class Conf {
 	// allow scaling up of hosts by removing recs not in the correct
 	// group. otherwise a sanity check will happen.
 	bool  m_allowScale;
-	// . timeout on dead hosts, only set when we know a host is dead and
-	//   will not come back online.  Messages will timeout on the dead
-	//   host, but not error, allowing outstanding spidering to finish
-	//   to the twin
-	bool  m_giveupOnDeadHosts;
 	bool  m_bypassValidation;
 
 	int32_t  m_maxCallbackDelay;

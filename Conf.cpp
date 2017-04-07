@@ -275,7 +275,6 @@ Conf::Conf ( ) {
 	m_gzipDownloads = false;
 	m_useTmpCluster = false;
 	m_allowScale = true;
-	m_giveupOnDeadHosts = false;
 	m_bypassValidation = false;
 	m_maxCallbackDelay = 0;
 	m_repairingEnabled = false;

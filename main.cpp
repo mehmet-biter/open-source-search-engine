@@ -1643,9 +1643,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
-	// force give up on dead hosts to false
-	g_conf.m_giveupOnDeadHosts = false;
-
 	// shout out if we're in read only mode
 	if ( g_conf.m_readOnlyMode )
 		log("db: -- Read Only Mode Set. Can Not Add New Data. --");

@@ -284,12 +284,6 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 		log(LOG_LOGIC,"net: multicast: Not our slot.");
 		return;
 	}
-	// clear a timeout error on dead hosts
-	if ( g_conf.m_giveupOnDeadHosts &&
-	     g_hostdb.isDead ( m_host[i].m_hostPtr ) ) {
-		log ( "net: GIVING UP ON DEAD HOST! This will not return an error." );
-		g_errno = 0;
-	}
 	// set m_errnos to g_errno, if any
 	m_host[i].m_errno = g_errno;
 	// if g_errno was not set we have a legit reply
