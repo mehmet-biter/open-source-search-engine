@@ -477,7 +477,7 @@ bool Msg4::addMetaList2 ( ) {
 }
 
 static bool checkBufferSize(int32_t hostId, int32_t needForBuf) {
-	char *buf = s_hostBufs[hostId];
+	const char *buf = s_hostBufs[hostId];
 	if (!buf) {
 		// we don't need to flush buffer if there is no buffer
 		return true;
