@@ -289,8 +289,6 @@ class HashTableX {
 
 	bool isAllowDups() const { return m_allowDups; }
 
-public:
-
 	// . the array of buckets in which we store the terms
 	// . scores are allowed to exceed 8 bits for weighting purposes
 	char  *m_keys;
