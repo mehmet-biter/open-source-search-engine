@@ -2002,6 +2002,18 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			continue;
 		}
 
+		// Time out the slot if the host has been detected as unresponsive.
+		// But not msg11 (ping) and msg56 (watchdog) because they actually want to send to
+		// dead hosts so they can detect when they are alive again.
+		if(slot->getMsgType()!=msg_type_11 && slot->getMsgType()!=msg_type_56) {
+			if(g_hostdb.isDead(slot->m_host)) {
+				slot->m_errno = EUDPTIMEDOUT;
+				addToCallbackLinkedList(slot);
+				something = true;
+				continue;
+			}
+		}
+
 		// how long since last send?
 		int64_t delta = now - slot->getLastSendTime();
 
@@ -2017,32 +2029,6 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			continue;
 		}
 
-		// . if this host went dead on us all of a sudden then force
-		//   a time out
-		// . only perform this check once every .5 seconds at most
-		//   to prevent performance degradation
-		// . REMOVED BECAUSE: this prevents msg 0x011 (pings) from 
-		//   getting through!
-		/*
-		if ( now - s_lastDeadCheck >= 500 ) {
-			// set for next time
-			s_lastDeadCheck = now;
-			// get Host entry
-			Host *host = NULL;
-			// if hostId provided use that
-			if ( slot->m_hostId >= 0 ) 
-				host=g_hostdb.getHost ( slot->m_hostId );
-			// get host entry from ip/port
-			else	host=g_hostdb.getHost(slot->m_ip,slot->m_port);
-			// check if dead
-			if ( host && g_hostdb.isDead ( host ) ) {
-				// if so, destroy this slot
-				g_errno = EHOSTDEAD;
-				makeCallback ( slot );
-				return;
-			}
-		}
-		*/
 		// if we don't have anything ready to send continue
 		if ( slot->getDatagramsToSend() <= 0 ) continue;
 		// if shutting down, rather than resending the reply, just
