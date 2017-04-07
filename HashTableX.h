@@ -289,11 +289,6 @@ class HashTableX {
 
 	bool isAllowDups() const { return m_allowDups; }
 
-private:
-	int32_t getOccupiedSlotNum ( const void *key ) const;
-
-	bool m_isWritable;
-
 public:
 
 	// . the array of buckets in which we store the terms
@@ -303,6 +298,10 @@ public:
 	char  *m_flags;
 
 private:
+	int32_t getOccupiedSlotNum ( const void *key ) const;
+
+	bool m_isWritable;
+
 	int32_t     m_numSlots;
 	int32_t     m_numSlotsUsed;
 	uint32_t m_mask;
