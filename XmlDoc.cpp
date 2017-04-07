@@ -15122,8 +15122,8 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 
 	// sanity check
 	if ( tt1->getNumSlots() ) {
-		if ( tt1->m_ks != sizeof(key144_t) ) {g_process.shutdownAbort(true);}
-		if ( tt1->m_ds != 4                ) {g_process.shutdownAbort(true);}
+		if ( tt1->getKeySize() != sizeof(key144_t) ) {g_process.shutdownAbort(true);}
+		if ( tt1->getDataSize() != 4                ) {g_process.shutdownAbort(true);}
 	}
 
 	// assume we are storing into m_p
@@ -15198,8 +15198,8 @@ bool XmlDoc::addTable224 ( HashTableX *tt1 ) {
 
 	// sanity check
 	if ( tt1->getNumSlots() ) {
-		if ( tt1->m_ks != sizeof(key224_t) ) {g_process.shutdownAbort(true);}
-		if ( tt1->m_ds != 0                ) {g_process.shutdownAbort(true);}
+		if ( tt1->getKeySize() != sizeof(key224_t) ) {g_process.shutdownAbort(true);}
+		if ( tt1->getDataSize() != 0                ) {g_process.shutdownAbort(true);}
 	}
 
 	rdbid_t rdbId = RDB_LINKDB;

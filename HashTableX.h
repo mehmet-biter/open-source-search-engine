@@ -284,6 +284,11 @@ class HashTableX {
 	void disableWrites() { m_isWritable = false; }
 	void enableWrites() { m_isWritable = true; }
 
+	int32_t getKeySize() const { return m_ks; }
+	int32_t getDataSize() const { return m_ds; }
+
+	bool isAllowDups() const { return m_allowDups; }
+
 private:
 	int32_t getOccupiedSlotNum ( const void *key ) const;
 
