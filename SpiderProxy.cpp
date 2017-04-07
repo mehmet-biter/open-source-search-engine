@@ -294,7 +294,7 @@ static int32_t getNumLoadPoints(SpiderProxy *sp, int32_t *current) {
 	*current = 0;
 	int32_t count = 0;
 	// scan all proxies that have this urlip outstanding
-	for ( int32_t i = 0 ; i < s_loadTable.m_numSlots ; i++ ) {
+	for ( int32_t i = 0 ; i < s_loadTable.getNumSlots() ; i++ ) {
 		// skip if empty
 		if ( ! s_loadTable.m_flags[i] ) continue;
 		// get the bucket

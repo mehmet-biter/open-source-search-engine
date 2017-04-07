@@ -375,7 +375,7 @@ void SpiderColl::clearLocks ( ) {
 	HashTableX *ht = &g_spiderLoop.m_lockTable;
  top:
 	// scan the slots
-	int32_t ns = ht->m_numSlots;
+	int32_t ns = ht->getNumSlots();
 	for ( int32_t i = 0 ; i < ns ; i++ ) {
 		// skip if empty
 		if ( ! ht->m_flags[i] ) continue;

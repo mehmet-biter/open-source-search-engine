@@ -12325,7 +12325,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 			HashTableX *wt = m_wts;
 
 			// now print the table we stored all we hashed into
-			for ( int32_t i = 0 ; i < wt->m_numSlots ; i++ ) {
+			for ( int32_t i = 0 ; i < wt->getNumSlots() ; i++ ) {
 				// skip if empty
 				if ( wt->m_flags[i] == 0 ) continue;
 				// get the TermInfo
@@ -13152,7 +13152,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			return NULL;
 		}
 
-		int32_t did = tt1.m_numSlots;
+		int32_t did = tt1.getNumSlots();
 		// . hash the document terms into "tt1"
 		// . this is a biggie!!!
 		// . only hash ourselves if m_indexCode is false
@@ -13173,7 +13173,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			return NULL;
 		}
 
-		int32_t done = tt1.m_numSlots;
+		int32_t done = tt1.getNumSlots();
 		if (done != did) {
 			log(LOG_WARN, "xmldoc: reallocated big table! bad. old=%" PRId32" new=%" PRId32" nw=%" PRId32, did, done, m_words.getNumWords());
 		}
@@ -13943,7 +13943,7 @@ skipNewAdd2:
 		}
 
 		// now scan dt8 and add their keys as del keys
-		for ( int32_t i = 0 ; i < dt8.m_numSlots ; i++ ) {
+		for ( int32_t i = 0 ; i < dt8.getNumSlots() ; i++ ) {
 			// skip if empty
 			if (!dt8.m_flags[i]) {
 				continue;
@@ -15126,7 +15126,7 @@ int32_t XmlDoc::getSiteRank ( ) {
 bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 
 	// sanity check
-	if ( tt1->m_numSlots ) {
+	if ( tt1->getNumSlots() ) {
 		if ( tt1->m_ks != sizeof(key144_t) ) {g_process.shutdownAbort(true);}
 		if ( tt1->m_ds != 4                ) {g_process.shutdownAbort(true);}
 	}
@@ -15151,7 +15151,7 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 	if ( m_useSecondaryRdbs ) rdbId = RDB2_POSDB2;
 
 	// store terms from "tt1" table
-	for ( int32_t i = 0 ; i < tt1->m_numSlots ; i++ ) {
+	for ( int32_t i = 0 ; i < tt1->getNumSlots() ; i++ ) {
 		// skip if empty
 		if ( tt1->m_flags[i] == 0 ) continue;
 		// get its key
@@ -15202,7 +15202,7 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 bool XmlDoc::addTable224 ( HashTableX *tt1 ) {
 
 	// sanity check
-	if ( tt1->m_numSlots ) {
+	if ( tt1->getNumSlots() ) {
 		if ( tt1->m_ks != sizeof(key224_t) ) {g_process.shutdownAbort(true);}
 		if ( tt1->m_ds != 0                ) {g_process.shutdownAbort(true);}
 	}
@@ -15211,7 +15211,7 @@ bool XmlDoc::addTable224 ( HashTableX *tt1 ) {
 	if ( m_useSecondaryRdbs ) rdbId = RDB2_LINKDB2;
 
 	// store terms from "tt1" table
-	for ( int32_t i = 0 ; i < tt1->m_numSlots ; i++ ) {
+	for ( int32_t i = 0 ; i < tt1->getNumSlots() ; i++ ) {
 		// skip if empty
 		if ( tt1->m_flags[i] == 0 ) continue;
 		// get its key
@@ -17781,7 +17781,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 	int32_t nwt = 0;
 	if ( wt ) {
-		nwt = wt->m_numSlots;
+		nwt = wt->getNumSlots();
 		tp = (TermDebugInfo **)wt->m_keys;
 	}
 
@@ -18572,7 +18572,7 @@ void XmlDoc::printTermList() const {
 
 	int32_t nwt = 0;
 	if ( wt ) {
-		nwt = wt->m_numSlots;
+		nwt = wt->getNumSlots();
 		tp = (TermDebugInfo **)wt->m_keys;
 	}
 
@@ -18731,7 +18731,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 
 	int32_t nwt = 0;
 	if ( wt ) {
-		nwt = wt->m_numSlots;
+		nwt = wt->getNumSlots();
 		tp = (TermDebugInfo **)wt->m_keys;
 	}
 

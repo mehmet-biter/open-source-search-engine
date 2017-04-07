@@ -1803,7 +1803,7 @@ bool Wiktionary::compile ( ) {
 	dedup.set ( 8,0,16777216,NULL,0,false,"cdtab");
 
 	// scan the m_tmp table
-	for ( int32_t i = 0 ; i < m_tmp.m_numSlots ; i++ ) {
+	for ( int32_t i = 0 ; i < m_tmp.getNumSlots() ; i++ ) {
 		// skip empty slots
 		if ( ! m_tmp.m_flags[i] ) continue;
 		// get this guys key
@@ -1826,7 +1826,7 @@ bool Wiktionary::compile ( ) {
 		int32_t stripCount = 0;
 		for ( int32_t j = i ; ; j++ ) {
 			// wrap around
-			if ( j >= m_tmp.m_numSlots ) j = 0;
+			if ( j >= m_tmp.getNumSlots() ) j = 0;
 			// chain stops when we hit empty slot
 			if ( ! m_tmp.m_flags[j] ) break;
 			// make sure matches
@@ -1888,7 +1888,7 @@ bool Wiktionary::compile ( ) {
 		// chain for all keys that are the same
 		for ( int32_t j = i ; ; j++ ) {
 			// wrap around
-			if ( j >= m_tmp.m_numSlots ) j = 0;
+			if ( j >= m_tmp.getNumSlots() ) j = 0;
 			// chain stops when we hit empty slot
 			if ( ! m_tmp.m_flags[j] ) break;
 			// . get key of jth slot

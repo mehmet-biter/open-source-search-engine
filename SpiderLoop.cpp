@@ -1489,7 +1489,7 @@ int32_t SpiderLoop::getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum 
 	// count locks
 	HashTableX *ht = &g_spiderLoop.m_lockTable;
 	// scan the slots
-	int32_t ns = ht->m_numSlots;
+	int32_t ns = ht->getNumSlots();
 	for ( int32_t i = 0 ; i < ns ; i++ ) {
 		// skip if empty
 		if ( ! ht->m_flags[i] ) continue;

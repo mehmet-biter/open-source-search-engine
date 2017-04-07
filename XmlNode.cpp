@@ -900,7 +900,7 @@ nodeid_t getTagId ( const char *s , NodeType **retp ) {
 		}
 
 		// sanity
-		if ( s_ht.m_numSlots != 1024 ) gbshutdownLogicError();
+		if ( s_ht.getNumSlots() != 1024 ) gbshutdownLogicError();
 
 		// sanity test
 		nodeid_t tt = getTagId ( "br" );

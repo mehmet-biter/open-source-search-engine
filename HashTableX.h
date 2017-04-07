@@ -263,12 +263,10 @@ class HashTableX {
 	int32_t getNumSlotsUsed ( ) const { return m_numSlotsUsed; }
 	int32_t getNumUsedSlots ( ) const { return m_numSlotsUsed; }
 
-	bool isEmpty() const { 
-		if ( m_numSlotsUsed == 0 ) return true;
-		return false; }
+	bool isEmpty() const { return (m_numSlotsUsed == 0); }
 
 	// how many are there total? used and unused.
-	int32_t getNumSlots ( ) const { return m_numSlots; }
+	int32_t getNumSlots() const { return m_numSlots; }
 
 	// both return false and set g_errno on error, true otherwise
 	bool load ( const char *dir, const char *filename , 

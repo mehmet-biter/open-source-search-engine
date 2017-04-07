@@ -607,7 +607,7 @@ bool Collectiondb::growRecPtrBuf ( collnum_t collnum ) {
 bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 
 	// first time init hashtable that maps coll to collnum
-	if ( g_collTable.m_numSlots == 0 &&
+	if ( !g_collTable.isInitialized() &&
 	     ! g_collTable.set(8,sizeof(collnum_t), 256,NULL,0, false,"nhshtbl")) {
 		return false;
 	}
