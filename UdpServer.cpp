@@ -1372,129 +1372,125 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 
 	// take care of certain handlers/callbacks before any others
 	// regardless of niceness levels because these handlers are so fast
-	int32_t pass = 0;
+	for(int pass=0; pass<2; pass++) {
 
- nextPass:
+		UdpSlot *nextSlot = NULL;
 
-	UdpSlot *nextSlot = NULL;
-
-	// only scan those slots that are ready
-	for ( UdpSlot *slot = m_callbackListHead ; slot ; slot = nextSlot ) {
-		// because makeCallback() can delete the slot, use this
-		nextSlot = slot->m_callbackListNext;
-		// call quick handlers in pass 0, they do not take any time
-		// and if they do not get called right away can cause this host
-		// to bottleneck many hosts
-		if ( pass == 0 ) {
-			// only call handlers in pass 0, not reply callbacks
-			if ( slot->hasCallback() ) continue;
-			// only call certain msg handlers...
-			if ( slot->getMsgType() != msg_type_11 &&  // ping
-			     slot->getMsgType() != msg_type_1 &&  // add  RdbList
-			     slot->getMsgType() != msg_type_0   ) // read RdbList
-				continue;
-			// BUT the Msg1 list to add has to be small! if it is
-			// big then it should wait until later.
-			if ( slot->getMsgType() == msg_type_1 &&
-			     slot->m_readBufSize > 150 ) continue;
-			// only allow niceness 0 msg 0x00 requests here since
-			// we call a msg8a from msg20.cpp summary generation
-			// which uses msg0 to read tagdb list from disk
-			if ( slot->getMsgType() == msg_type_0 && slot->getNiceness() ) {
-				// to keep udp slots from clogging up with 
-				// tagdb reads allow even niceness 1 tagdb 
-				// reads through. cache rate should be super
-				// higher and reads short.
-				char rdbId = 0;
-				if ( slot->m_readBuf &&
-				     slot->m_readBufSize > RDBIDOFFSET ) 
-					rdbId = slot->m_readBuf[RDBIDOFFSET];
-				if ( rdbId != RDB_TAGDB )
+		// only scan those slots that are ready
+		for ( UdpSlot *slot = m_callbackListHead ; slot ; slot = nextSlot ) {
+			// because makeCallback() can delete the slot, use this
+			nextSlot = slot->m_callbackListNext;
+			// call quick handlers in pass 0, they do not take any time
+			// and if they do not get called right away can cause this host
+			// to bottleneck many hosts
+			if ( pass == 0 ) {
+				// only call handlers in pass 0, not reply callbacks
+				if ( slot->hasCallback() ) continue;
+				// only call certain msg handlers...
+				if ( slot->getMsgType() != msg_type_11 &&  // ping
+				     slot->getMsgType() != msg_type_1 &&  // add  RdbList
+				     slot->getMsgType() != msg_type_0   ) // read RdbList
 					continue;
+				// BUT the Msg1 list to add has to be small! if it is
+				// big then it should wait until later.
+				if ( slot->getMsgType() == msg_type_1 &&
+				     slot->m_readBufSize > 150 ) continue;
+				// only allow niceness 0 msg 0x00 requests here since
+				// we call a msg8a from msg20.cpp summary generation
+				// which uses msg0 to read tagdb list from disk
+				if ( slot->getMsgType() == msg_type_0 && slot->getNiceness() ) {
+					// to keep udp slots from clogging up with 
+					// tagdb reads allow even niceness 1 tagdb 
+					// reads through. cache rate should be super
+					// higher and reads short.
+					char rdbId = 0;
+					if ( slot->m_readBuf &&
+					     slot->m_readBufSize > RDBIDOFFSET ) 
+						rdbId = slot->m_readBuf[RDBIDOFFSET];
+					if ( rdbId != RDB_TAGDB )
+						continue;
+				}
 			}
-		}
 
-		// skip if not level we want
-		if ( niceness <= 0 && slot->getNiceness() > 0 && pass>0) continue;
-		// set g_errno before calling
-		g_errno = slot->getErrno();
-		// if we got an error from him, set his stats
-		Host *h = NULL;
-		if ( g_errno && slot->getHostId() >= 0 )
-			h = g_hostdb.getHost ( slot->getHostId() );
-		if ( h ) {
-			h->m_errorReplies++;
-			if ( g_errno == ETRYAGAIN ) 
-				h->m_etryagains++;
-		}
+			// skip if not level we want
+			if ( niceness <= 0 && slot->getNiceness() > 0 && pass>0) continue;
+			// set g_errno before calling
+			g_errno = slot->getErrno();
+			// if we got an error from him, set his stats
+			Host *h = NULL;
+			if ( g_errno && slot->getHostId() >= 0 )
+				h = g_hostdb.getHost ( slot->getHostId() );
+			if ( h ) {
+				h->m_errorReplies++;
+				if ( g_errno == ETRYAGAIN ) 
+					h->m_etryagains++;
+			}
 
-		// try to call the callback for this slot
-		// time it now
-		int64_t start2 = 0;
-		bool logIt = false;
-		if ( slot->getNiceness() == 0 ) logIt = true;
-		if ( logIt ) start2 = gettimeofdayInMilliseconds();
+			// try to call the callback for this slot
+			// time it now
+			int64_t start2 = 0;
+			bool logIt = false;
+			if ( slot->getNiceness() == 0 ) logIt = true;
+			if ( logIt ) start2 = gettimeofdayInMilliseconds();
 
-		logDebug(g_conf.m_logDebugUdp,"udp: calling callback/handler for slot=%p pass=%" PRId32" nice=%" PRId32,
-		         slot, (int32_t)pass,(int32_t)slot->getNiceness());
+			logDebug(g_conf.m_logDebugUdp,"udp: calling callback/handler for slot=%p pass=%" PRId32" nice=%" PRId32,
+		        	 slot, (int32_t)pass,(int32_t)slot->getNiceness());
 
-		// . crap, this can alter the linked list we are scanning
-		//   if it deletes the slot! yes, but now we use "nextSlot"
-		// . return false on error and sets g_errno, true otherwise
-		// . return true if we called one
-		// . skip to next slot if did not call callback/handler
-		pthread_mutex_unlock(&m_mtx.mtx);
-		if (!makeCallback(slot)) {
+			// . crap, this can alter the linked list we are scanning
+			//   if it deletes the slot! yes, but now we use "nextSlot"
+			// . return false on error and sets g_errno, true otherwise
+			// . return true if we called one
+			// . skip to next slot if did not call callback/handler
+			pthread_mutex_unlock(&m_mtx.mtx);
+			if (!makeCallback(slot)) {
+				pthread_mutex_lock(&m_mtx.mtx);
+				continue;
+			}
 			pthread_mutex_lock(&m_mtx.mtx);
-			continue;
+
+			// remove it from the callback list to avoid re-call
+			removeFromCallbackLinkedList(slot);
+
+			int64_t took = logIt ? (gettimeofdayInMilliseconds()-start2) : 0;
+			if ( took > 1000 || (slot->getNiceness()==0 && took>100))
+				logf(LOG_DEBUG,"udp: took %" PRId64" ms to call "
+				     "callback/handler for "
+				     "msgtype=0x%" PRIx32" "
+				     "nice=%" PRId32" "
+				     "callback=%p",
+				     took,
+				     (int32_t)slot->getMsgType(),
+				     (int32_t)slot->getNiceness(),
+				     slot->m_callback);
+			numCalled++;
+
+			// log how long callback took
+			if(niceness > 0 && 
+			   (gettimeofdayInMilliseconds() - startTime) > 5 ) {
+				//bail if we're taking too long and we're a 
+				//low niceness request.  we can always come 
+				//back.
+				//TODO: call sigqueue if we need to
+				m_needBottom = true;
+				// now we just finish out the list with a 
+				// lower niceness
+				//niceness = 0;
+				return numCalled;
+			}
+
+			// CRAP, what happens is we are not in a quickpoll,
+			// we call some handler/callback, we enter a quickpoll,
+			// we convert him, send him, delete him, then return
+			// back to this function and the linked list is
+			// altered because we double entered this function
+			// from within a quickpoll. so if we are not in a 
+			// quickpoll, we have to reset the linked list scan after
+			// calling makeCallback(slot) below.
+			goto fullRestart;
 		}
-		pthread_mutex_lock(&m_mtx.mtx);
-
-		// remove it from the callback list to avoid re-call
-		removeFromCallbackLinkedList(slot);
-
-		int64_t took = logIt ? (gettimeofdayInMilliseconds()-start2) : 0;
-		if ( took > 1000 || (slot->getNiceness()==0 && took>100))
-			logf(LOG_DEBUG,"udp: took %" PRId64" ms to call "
-			     "callback/handler for "
-			     "msgtype=0x%" PRIx32" "
-			     "nice=%" PRId32" "
-			     "callback=%p",
-			     took,
-			     (int32_t)slot->getMsgType(),
-			     (int32_t)slot->getNiceness(),
-			     slot->m_callback);
-		numCalled++;
-
-		// log how long callback took
-		if(niceness > 0 && 
-		   (gettimeofdayInMilliseconds() - startTime) > 5 ) {
-			//bail if we're taking too long and we're a 
-			//low niceness request.  we can always come 
-			//back.
-			//TODO: call sigqueue if we need to
-			m_needBottom = true;
-			// now we just finish out the list with a 
-			// lower niceness
-			//niceness = 0;
-			return numCalled;
-		}
-
-		// CRAP, what happens is we are not in a quickpoll,
-		// we call some handler/callback, we enter a quickpoll,
-		// we convert him, send him, delete him, then return
-		// back to this function and the linked list is
-		// altered because we double entered this function
-		// from within a quickpoll. so if we are not in a 
-		// quickpoll, we have to reset the linked list scan after
-		// calling makeCallback(slot) below.
-		goto fullRestart;
+		// clear
+		g_errno = 0;
 	}
-	// clear
-	g_errno = 0;
-
-	// if we just did pass 0 now we do pass 1
-	if ( ++pass == 1 ) goto nextPass;	
 
 	return numCalled;
 }
