@@ -302,6 +302,7 @@ public:
 	char  *m_vals;
 	char  *m_flags;
 
+private:
 	int32_t     m_numSlots;
 	int32_t     m_numSlotsUsed;
 	uint32_t m_mask;
@@ -323,7 +324,7 @@ public:
 	int64_t  m_maxSlots;
 
 	const char *m_allocName;
-	
+
 	int32_t m_maskKeyOffset;
 
 	// the addon buf used by SOME hashtables. data that the ptrs
