@@ -2637,15 +2637,6 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 }
 
 
-void UdpServer::printState() {
-	log(LOG_TIMING, 
-	    "admin: UdpServer - ");
-
-	for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
-		slot->printState();
-	}	
-}
-
 int32_t UdpServer::getNumUsedSlots() const {
 	ScopedLock sl(const_cast<GbMutex&>(m_mtx));
 	return m_numUsedSlots;

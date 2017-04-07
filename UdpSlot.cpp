@@ -1562,17 +1562,3 @@ int32_t UdpSlot::getScore ( int64_t now ) const {
 
 	return score;
 }
-
-
-void UdpSlot::printState() {
-	//int64_t now = gettimeofdayInMilliseconds();
-	log(LOG_TIMING, 
-	    "admin: UdpSlot - type:Msg%2" PRIx32" nice:%" PRId32" "
-	    "queued:%" PRId32" "
-	    "handlerCalled:%" PRId32,
-	    (int32_t)m_msgType, 
-	    m_niceness, 
-	    (int32_t)m_isQueued, 
-	    (int32_t)m_calledHandler);
-	
-}

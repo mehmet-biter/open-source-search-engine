@@ -196,8 +196,6 @@ protected:
 	// . return < 0 if nothing to send
 	int32_t getScore ( int64_t now ) const;
 
-	void printState() ;
-
 	// call this callback on timout,error or transaction completion.
 	// pass it a ptr to ourselves. It returns true if WE should delete
 	// the UdpSlot. Otherwise, it must deleted later by a callback that
