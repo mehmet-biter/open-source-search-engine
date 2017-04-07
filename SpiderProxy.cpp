@@ -774,7 +774,7 @@ static void handleRequest54(UdpSlot *udpSlot, int32_t /*niceness*/) {
 	if ( elapsed > 120 && s_loadTable.getNumSlots() > 10000 ) {
 		log("sproxy: flushing %i entries from proxy loadtable that "
 		    "have accumulated since %i seconds ago",
-		    (int)s_loadTable.m_numSlotsUsed,(int)elapsed);
+		    (int)s_loadTable.getNumUsedSlots(),(int)elapsed);
 		s_loadTable.clear();
 		// only do this one per minute
 		s_lastTime = now;

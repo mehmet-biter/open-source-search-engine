@@ -13187,7 +13187,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 	/// @todo ALC verify that we actually need sizeof(key128_t)
 	// space for indexdb AND DATEDB! +2 for rdbids
-	int32_t needPosdb = tt1.m_numSlotsUsed * (sizeof(posdbkey_t) + 2 + sizeof(key128_t));
+	int32_t needPosdb = tt1.getNumUsedSlots() * (sizeof(posdbkey_t) + 2 + sizeof(key128_t));
 	if (!forDelete) {
 		// need 1 additional key for special key (with termid 0)
 		needPosdb += sizeof(posdbkey_t) + 1;
@@ -13246,7 +13246,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	}
 
 	// add up what we need. +1 for rdbId
-	int32_t needLinkdb = kt1.m_numSlotsUsed * (sizeof(key224_t)+1);
+	int32_t needLinkdb = kt1.getNumUsedSlots() * (sizeof(key224_t)+1);
 	need += needLinkdb;
 
 	// we add a negative key to doledb usually (include datasize now)
