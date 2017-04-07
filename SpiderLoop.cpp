@@ -56,7 +56,6 @@ bool SpiderLoop::printLockTable ( ) {
 		    "spiderout=%" PRId32" "
 		    "confirmed=%" PRId32" "
 		    "firstip=%s "
-		    "expires=%" PRId32" "
 		    "hostid=%" PRId32" "
 		    "timestamp=%" PRId32" "
 		    "sequence=%" PRId32" "
@@ -65,7 +64,6 @@ bool SpiderLoop::printLockTable ( ) {
 		    ,(int32_t)(lock->m_spiderOutstanding)
 		    ,(int32_t)(lock->m_confirmed)
 		    ,iptoa(lock->m_firstIp)
-		    ,lock->m_expires
 		    ,lock->m_hostId
 		    ,lock->m_timestamp
 		    ,lock->m_lockSequence
@@ -1331,7 +1329,6 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	UrlLock tmp;
 	tmp.m_hostId = g_hostdb.m_myHost->m_hostId;
 	tmp.m_timestamp = 0;
-	tmp.m_expires = 0;
 	tmp.m_firstIp = m_sreq->m_firstIp;
 	tmp.m_spiderOutstanding = 0;
 	tmp.m_confirmed = 1;
@@ -1653,66 +1650,6 @@ void SpiderLoop::buildActiveList ( ) {
 	logTrace( g_conf.m_logTraceSpider, "END" );
 }
 
-// hostId is the remote hostid sending us the lock request
-static void removeExpiredLocks(int32_t hostId) {
-	// when we last cleaned them out
-	static time_t s_lastTime = 0;
-
-	int32_t nowGlobal = getTimeGlobalNoCore();
-
-	// only do this once per second at the most
-	if ( nowGlobal <= s_lastTime ) return;
-
-	restart:
-
-	// scan the slots
-	int32_t ns = g_spiderLoop.m_lockTable.m_numSlots;
-	// . clean out expired locks...
-	// . if lock was there and m_expired is up, then nuke it!
-	// . when Rdb.cpp receives the "fake" title rec it removes the
-	//   lock, only it just sets the m_expired to a few seconds in the
-	//   future to give the negative doledb key time to be absorbed.
-	//   that way we don't repeat the same url we just got done spidering.
-	// . this happens when we launch our lock request on a url that we
-	//   or a twin is spidering or has just finished spidering, and
-	//   we get the lock, but we avoided the negative doledb key.
-	for ( int32_t i = 0 ; i < ns ; i++ ) {
-		// skip if empty
-		if ( ! g_spiderLoop.m_lockTable.m_flags[i] ) continue;
-		// cast lock
-		UrlLock *lock = (UrlLock *)g_spiderLoop.m_lockTable.getValueFromSlot(i);
-		int64_t lockKey = *(int64_t *)g_spiderLoop.m_lockTable.getKeyFromSlot(i);
-		// if collnum got deleted or reset
-		collnum_t collnum = lock->m_collnum;
-		if ( collnum >= g_collectiondb.getNumRecs() ||
-		     ! g_collectiondb.getRec(collnum)) {
-			log("spider: removing lock from missing collnum "
-					    "%" PRId32,(int32_t)collnum);
-			goto nuke;
-		}
-		// skip if not yet expired
-		if ( lock->m_expires == 0 ) continue;
-		if ( lock->m_expires >= nowGlobal ) continue;
-		// note it for now
-		if ( g_conf.m_logDebugSpider )
-			log("spider: removing lock after waiting. elapsed=%" PRId32"."
-					    " lockKey=%" PRIu64" hid=%" PRId32" expires=%" PRIu32" "
-					    "nowGlobal=%" PRIu32,
-			    (nowGlobal - lock->m_timestamp),
-			    lockKey,hostId,
-			    (uint32_t)lock->m_expires,
-			    (uint32_t)nowGlobal);
-		nuke:
-		// nuke the slot and possibly re-chain
-		g_spiderLoop.m_lockTable.removeSlot ( i );
-		// gotta restart from the top since table may have shrunk
-		goto restart;
-	}
-	// store it
-	s_lastTime = nowGlobal;
-}
-
-
 static void gotCrawlInfoReply(void *state, UdpSlot *slot);
 
 static int32_t s_requests = 0;
@@ -1728,13 +1665,6 @@ static int32_t s_updateRoundNum = 1;
 static void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
-
-	// i don't know why we have locks in the lock table that are not
-	// getting removed... so log when we remove an expired locks and see.
-	// piggyback on this sleep wrapper call i guess...
-	// perhaps the collection was deleted or reset before the spider
-	// reply could be generated. in that case we'd have a dangling lock.
-	removeExpiredLocks ( -1 );
 
 	if ( s_inUse ) return;
 
