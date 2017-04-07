@@ -1288,9 +1288,8 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 	// and therefore backoff and use proxies for
 	if ( ! g_conf.m_doingCommandLine ) {
 		sb.reset();
-		sb.safePrintf("%scoll.%s.%" PRId32"/",
-			      g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
-		m_twitchyTable.m_allocName = "twittbl";
+		sb.safePrintf("%scoll.%s.%" PRId32"/", g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
+		m_twitchyTable.set(4, 0, 0, NULL, 0, false, "twitchtbl", true);
 		m_twitchyTable.load ( sb.getBufStart() , "ipstouseproxiesfor.dat" );
 	}
 
