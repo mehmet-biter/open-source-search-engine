@@ -889,7 +889,6 @@ inline int64_t makeLockTableKey(const SpiderReply *srep) {
 
 class UrlLock {
 public:
-	int32_t m_hostId;
 	int32_t m_firstIp;
 	char m_spiderOutstanding;
 	collnum_t m_collnum;
