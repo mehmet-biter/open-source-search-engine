@@ -5620,7 +5620,7 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 
 	// . now our hash table is filled with all the docids
 	// . evaluate each bit vector
-	for ( int32_t i = 0 ; i < m_bt.m_numSlots ; i++ ) {
+	for ( int32_t i = 0 ; i < m_bt.getNumSlots() ; i++ ) {
 		// skip if empty
 		if ( ! m_bt.m_flags[i] ) {
 			continue;
