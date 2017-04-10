@@ -199,7 +199,7 @@ bool RdbMerge::gotLock() {
 	           startOffset,
 	           prevLastKey,
 	           m_ks,
-	           NULL);
+	           m_rdbId);
 	// what kind of error?
 	if ( g_errno ) {
 		log(LOG_WARN, "db: gotLock: merge.set: %s.", mstrerror(g_errno));

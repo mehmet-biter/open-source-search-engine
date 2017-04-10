@@ -93,6 +93,9 @@ UdpStatistic::UdpStatistic(const UdpSlot &slot)
 		case msg_type_54:
 			strcpy(m_description, "proxy spider");
 			break;
+		case msg_type_56:
+			strcpy(m_description, "watchdog");
+			break;
 		case msg_type_c1:
 			strcpy(m_description, "get crawl info");
 			break;

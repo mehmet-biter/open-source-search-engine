@@ -59,9 +59,6 @@ public:
 	int32_t m_numOutOfMems;
 	int32_t m_socketsClosedFromHittingLimit;
 
-	int32_t m_totalResends;
-	int32_t m_etryagains;
-
 	int32_t m_udpSlotsInUseIncoming;
 	int32_t m_tcpSocketsInUse;
 
@@ -112,8 +109,6 @@ public:
 
 	// last time g_hostdb.ping(i) was called for this host in milliseconds.
 	int64_t      m_lastPing;
-
-	char m_tmpBuf[4];
 
 	// . first time we sent an unanswered ping request to this host
 	// . used so we can determine when to send an email alert
@@ -182,6 +177,9 @@ public:
 	std::atomic<int64_t>     m_dgramsTo;
 	std::atomic<int64_t>     m_dgramsFrom;
 
+	std::atomic<int32_t>     m_totalResends; //how many UDP packets has been resent
+	std::atomic<int32_t>     m_etryagains;   //how many times a request got an ETRYAGAIN
+
 	char           m_repairMode;
 
 	// for timing how long the msg39 takes from this host
@@ -203,7 +201,15 @@ public:
 
 	PingInfo m_pingInfo;//RequestBuf;
 
+	void updateLastResponseReceiveTimestamp(uint64_t t) { m_lastResponseReceiveTimestamp=t; }
+	void updateLastRequestSendTimestamp(uint64_t t) { m_lastRequestSendTimestamp=t; }
+	uint64_t getLastResponseReceiveTimestamp() const { return m_lastResponseReceiveTimestamp; }
+	uint64_t getLastRequestSendTimestamp() const { return m_lastRequestSendTimestamp; }
+
 private:
+	uint64_t m_lastResponseReceiveTimestamp;
+	uint64_t m_lastRequestSendTimestamp;
+
 	friend class Hostdb;
 	uint16_t m_httpPort ;      // http port
 	uint16_t m_httpsPort;
@@ -304,6 +310,8 @@ class Hostdb {
 	int32_t  getNumProxyAlive ( ) { return m_numProxyAlive; }
 	int32_t  getNumShards () { return m_numShards; }
 	int32_t  getNumIndexSplits() { return m_indexSplits; }
+
+	int32_t getNumHostsDead();
 
 	// how many hosts in this group?
 	int32_t  getNumHostsPerShard ( ) { return m_numHostsPerShard; }

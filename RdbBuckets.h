@@ -43,37 +43,36 @@ public:
 	void clear();
 	void reset();
 
-	bool set(int32_t fixedDataSize, int32_t maxMem, const char *allocName, rdbid_t rdbId, const char *dbname, char keySize);
+	bool set(int32_t fixedDataSize, int32_t maxMem, const char *allocName, rdbid_t rdbId, const char *dbname,
+	         char keySize);
 
-	int32_t addNode(collnum_t collnum, const char *key, const char *data, int32_t dataSize);
+	bool addNode(collnum_t collnum, const char *key, const char *data, int32_t dataSize);
 
 	bool getList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes, RdbList *list,
 	             int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys) const;
 
 	bool deleteNode(collnum_t collnum, const char *key);
 
-	bool deleteList(collnum_t collnum, RdbList *list);
-
-	int64_t getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const;
+	int64_t estimateListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const;
 
 	bool collExists(collnum_t coll) const;
 
+	// don't need to lock. only set in RdbBuckets::set
 	int32_t getRecSize() const { return m_recSize; }
 
-	bool needsSave() const { return m_needsSave; }
+	/// @todo ALC verify saving/writable logic is okay with multithread
 	bool isSaving() const { return m_isSaving; }
+	bool needsSave() const { return m_needsSave; }
+	void setNeedsSave(bool s);
 
 	bool isWritable() const { return m_isWritable; }
 	void disableWrites() { m_isWritable = false; }
 	void enableWrites() { m_isWritable = true; }
 
+	// don't need to lock. only set in RdbBuckets::set
 	int32_t getMaxMem() const { return m_maxMem; }
 
-	void setNeedsSave(bool s);
-
 	int32_t getMemAllocated() const;
-	int32_t getMemAvailable() const;
-	bool is90PercentFull() const;
 	bool needsDump() const;
 	bool hasRoom(int32_t numRecs) const;
 
@@ -92,7 +91,7 @@ public:
 	//DEBUG
 	void verifyIntegrity();
 	int32_t addTree(RdbTree *rt);
-	void printBuckets(std::function<void(const char*, int32_t)> print_fn = nullptr);
+	void printBuckets(std::function<void(const char *, int32_t)> print_fn = nullptr);
 	void printBucketsStartEnd();
 
 	bool testAndRepair();
@@ -102,36 +101,36 @@ public:
 	bool loadBuckets(const char *dbname);
 
 private:
-	bool resizeTable(int32_t numNeeded);
-	bool selfTest(bool thorough, bool core);
-	bool repair();
+	void reset_unlocked();
 
-	bool addBucket (RdbBucket *newBucket, int32_t i);
-	int32_t getBucketNum(collnum_t collnum, const char *key) const;
-	char bucketCmp(collnum_t acoll, const char *akey, RdbBucket* b) const;
+	bool resizeTable_unlocked(int32_t numNeeded);
+	bool selfTest_unlocked(bool thorough, bool core);
+	bool repair_unlocked();
 
-	const char *getDbname() const { return m_dbname; }
+	bool addNode_unlocked(collnum_t collnum, const char *key, const char *data, int32_t dataSize);
 
-	uint8_t getKeySize() const { return m_ks; }
-	int32_t getFixedDataSize() const { return m_fixedDataSize; }
+	bool getList_unlocked(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes, RdbList *list,
+	                      int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys) const;
 
-	void setSwapBuf(char *s) { m_swapBuf = s; }
-	char *getSwapBuf() { return m_swapBuf; }
+	bool deleteList_unlocked(collnum_t collnum, RdbList *list);
 
-	char *getSortBuf() { return m_sortBuf; }
-	int32_t getSortBufSize() const { return m_sortBufSize; }
+	bool delColl_unlocked(collnum_t collnum);
+
+	void addBucket_unlocked(RdbBucket *newBucket, int32_t i);
+	int32_t getBucketNum_unlocked(collnum_t collnum, const char *key) const;
+	char bucketCmp_unlocked(collnum_t acoll, const char *akey, RdbBucket *b) const;
 
 	//syntactic sugar
-	RdbBucket* bucketFactory();
-	void updateNumRecs(int32_t n, int32_t bytes, int32_t numNeg);
+	RdbBucket* bucketFactory_unlocked();
+	void updateNumRecs_unlocked(int32_t n, int32_t bytes, int32_t numNeg);
+	int32_t getNumKeys_unlocked() const;
 
-	bool fastSave_r();
-	int64_t fastSaveColl_r(int fd);
-	bool fastLoad(BigFile *f, const char *dbname);
-	int64_t fastLoadColl(BigFile *f, const char *dbname);
+	bool fastSave_unlocked();
+	int64_t fastSaveColl_unlocked(int fd);
+	bool fastLoad_unlocked(BigFile *f, const char *dbname);
+	int64_t fastLoadColl_unlocked(BigFile *f, const char *dbname);
 
-private:
-	GbMutex m_mtx;
+	mutable GbMutex m_mtx;
 	RdbBucket **m_buckets;
 	RdbBucket *m_bucketsSpace;
 	char *m_masterPtr;

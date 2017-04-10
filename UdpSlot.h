@@ -147,7 +147,7 @@ protected:
 	// . tries to send ACK on "sock" if we read a dgram
 	// . tries to send a dgram if we read an ACK
 	// . sets *discard to true if caller should discard the dgram
-	bool readDatagramOrAck(const void *buf, int32_t numRead, int64_t now, bool *discard);
+	bool readDatagramOrAck(const void *buf, int32_t numRead, int64_t now);
 
 	// . will reset to send() will start sending at the first unacked dgram
 	// . if "reset" is true then will resend ALL dgrams
@@ -195,8 +195,6 @@ protected:
 	// . for sending purposes, the max scoring UdpSlot sends first
 	// . return < 0 if nothing to send
 	int32_t getScore ( int64_t now ) const;
-
-	void printState() ;
 
 	// call this callback on timout,error or transaction completion.
 	// pass it a ptr to ourselves. It returns true if WE should delete

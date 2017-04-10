@@ -8,8 +8,6 @@
 
 
 RdbDump::RdbDump() {
-   	m_isDumping = false; 
-
 	// Coverity
 	m_tree = NULL;
 	m_buckets = NULL;
@@ -37,13 +35,11 @@ RdbDump::RdbDump() {
 	m_hacked12 = false;
 	m_totalPosDumped = 0;
 	m_totalNegDumped = 0;
-	m_t1 = 0;
+	m_getListStartTimeMS = 0;
 	m_numPosRecs = 0;
 	m_numNegRecs = 0;
-	m_rdb = NULL;
 	m_collnum = 0;
-	m_doCollCheck = false;
-	m_tried = false;
+	m_rdbId = RDB_NONE;
 	m_isSuspended = false;
 	m_ks = 0;
 }
@@ -65,14 +61,8 @@ bool RdbDump::set(collnum_t collnum,
                   int64_t startOffset,
                   const char *prevLastKey,
                   char keySize,
-                  Rdb *rdb) {
+                  rdbid_t rdbId) {
 	m_collnum = collnum;
-
-	m_doCollCheck = true;
-
-	// RdbMerge also calls us but rdb is always set to NULL and it was
-	// causing a merge on collectionless rdb to screw up
-	if ( ! rdb ) m_doCollCheck = false;
 
 	m_file          = file;
 	m_buckets       = buckets;
@@ -83,11 +73,9 @@ bool RdbDump::set(collnum_t collnum,
 	m_callback      = callback;
 	m_list          = NULL;
 	m_niceness      = niceness;
-	m_tried         = false;
 	m_isSuspended   = false;
 	m_ks            = keySize;
 
-	m_isDumping     = false;
 	m_buf           = NULL;
 	m_verifyBuf     = NULL;
 	m_maxBufSize    = maxBufSize;
@@ -99,8 +87,8 @@ bool RdbDump::set(collnum_t collnum,
 	m_useHalfKeys  = useHalfKeys;
 	//m_prevLastKey  = prevLastKey;
 	KEYSET(m_prevLastKey,prevLastKey,m_ks);
-	// for setting m_rdb->m_needsSave after deleting the dump list
-	m_rdb = rdb;
+
+	m_rdbId = rdbId;
 
 	// . don't dump to a pre-existing file
 	// . seems like Rdb.cpp makes a new BigFile before calling this
@@ -134,9 +122,6 @@ bool RdbDump::set(collnum_t collnum,
 		return true;
 	}
 
-	// we're now considered to be in dumping state
-	m_isDumping = true;
-
 	// . if no tree was provided to dump it must be RdbMerge calling us
 	// . he'll want to call dumpList() on his own
 	if (!m_tree && !m_buckets) {
@@ -159,15 +144,6 @@ bool RdbDump::set(collnum_t collnum,
 	// keep a total count for reporting when done
 	m_totalPosDumped = 0;
 	m_totalNegDumped = 0;
-
-	// we have our own flag here since m_dump::m_isDumping gets
-	// set to true between collection dumps, RdbMem.cpp needs
-	// a flag that doesn't do that... see RdbDump.cpp.
-	// this was in Rdb.cpp but when threads were turned off it was
-	// NEVER getting set and resulted in corruption in RdbMem.cpp.
-	if( m_rdb ) {
-		m_rdb->setInDumpLoop(true);
-	}
 
 	// . start dumping the tree
 	// . return false if it blocked
@@ -193,7 +169,6 @@ void RdbDump::reset ( ) {
 void RdbDump::doneDumping() {
 	int32_t saved = g_errno;
 
-	m_isDumping = false;
 	// print stats
 	log(LOG_INFO,
 	    "db: Dumped %" PRId32" positive and %" PRId32" negative recs. "
@@ -278,10 +253,8 @@ bool RdbDump::dumpTree(bool recall) {
 	if (g_conf.m_logTraceRdbDump) {
 		logTrace(g_conf.m_logTraceRdbDump, "BEGIN");
 		logTrace(g_conf.m_logTraceRdbDump, "recall.: %s", recall ? "true" : "false");
-		if( m_rdb ) {
-			logTrace(g_conf.m_logTraceRdbDump, "m_rdbId: %02x", m_rdb->getRdbId());
-			logTrace(g_conf.m_logTraceRdbDump, "name...: [%s]", getDbnameFromId(m_rdb->getRdbId()) );
-		}
+		logTrace(g_conf.m_logTraceRdbDump, "m_rdbId: %02x", m_rdbId);
+		logTrace(g_conf.m_logTraceRdbDump, "name...: [%s]", getDbnameFromId(m_rdbId) );
 	}
 
 	// set up some vars
@@ -310,7 +283,7 @@ bool RdbDump::dumpTree(bool recall) {
 		if (!recall) {
 			bool status = true;
 
-			m_t1 = gettimeofdayInMilliseconds();
+			m_getListStartTimeMS = gettimeofdayInMilliseconds();
 			if (m_tree) {
 				logTrace(g_conf.m_logTraceRdbDump, "m_tree");
 
@@ -342,24 +315,12 @@ bool RdbDump::dumpTree(bool recall) {
 				// wait for sleep
 				return false;
 			}
-
-			// don't dump out any neg recs if it is our first time dumping
-			// to a file for this rdb/coll. TODO: implement this later.
-			//if ( removeNegRecs )
-			//	m_list.removeNegRecs();
-
-			// if(!m_list->checkList_r ( false , // removeNegRecs?
-			// 			 false , // sleep on problem?
-			// 			 m_rdb->m_rdbId )) {
-			// 	log("db: list to dump is not sane!");
-			// 	g_process.shutdownAbort(true);
-			// }
 		}
 
 		int64_t t2 = gettimeofdayInMilliseconds();
 
 		log(LOG_INFO, "db: Get list took %" PRId64" ms. %" PRId32" positive. %" PRId32" negative.",
-		    t2 - m_t1, m_numPosRecs, m_numNegRecs);
+		    t2 - m_getListStartTimeMS, m_numPosRecs, m_numNegRecs);
 
 		// keep a total count for reporting when done
 		m_totalPosDumped += m_numPosRecs;
@@ -368,12 +329,8 @@ bool RdbDump::dumpTree(bool recall) {
 		// . check the list we got from the tree for problems
 		// . ensures keys are ordered from lowest to highest as well
 		if (g_conf.m_verifyWrites || g_conf.m_verifyDumpedLists) {
-			const char *s = (m_rdb ? getDbnameFromId(m_rdb->getRdbId()) : "none");
-
-			if( m_rdb ) {
-				log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i)", s, (int)m_collnum);
-				m_list->checkList_r(true, m_rdb->getRdbId());
-			}
+			log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i)", getDbnameFromId(m_rdbId), (int)m_collnum);
+			m_list->checkList_r(true, m_rdbId);
 		}
 
 		// if list is empty, we're done!
@@ -444,15 +401,12 @@ bool RdbDump::dumpList(RdbList *list, bool recall) {
 		m_hacked = false;
 		m_hacked12 = false;
 
-		// we're now in dump mode again
-		m_isDumping = true;
-
 		if (g_conf.m_verifyDumpedLists) {
 			if(g_jobScheduler.submit(&checkList,&checkedList,this,thread_type_verify_data,m_niceness)) {
 				logTrace(g_conf.m_logTraceRdbDump, "END. Submitted checkList job.");
 				return false;
 			}
-			m_list->checkList_r(true, m_rdb ? m_rdb->getRdbId() : RDB_NONE);
+			m_list->checkList_r(true, m_rdbId);
 		}
 	}
 	return dumpList2(recall);
@@ -463,7 +417,7 @@ void RdbDump::checkList(void *state) {
 	RdbDump *that = reinterpret_cast<RdbDump*>(state);
 
 	logTrace(g_conf.m_logTraceRdbDump, "BEGIN. list=%p", that->m_list);
-	that->m_list->checkList_r(true, that->m_rdb ? that->m_rdb->getRdbId() : RDB_NONE);
+	that->m_list->checkList_r(true, that->m_rdbId);
 	logTrace(g_conf.m_logTraceRdbDump, "END. list=%p", that->m_list);
 }
 
@@ -693,11 +647,7 @@ bool RdbDump::doneReadingForVerify ( ) {
 
 	// if someone reset/deleted the collection we were dumping...
 	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
-
-	// . do not do this for statsdb which always use collnum of 0
-	// . RdbMerge also calls us but gives a NULL m_rdb so we can't
-	//   set m_isCollectionless to false
-	if (!cr && m_doCollCheck) {
+	if (!cr) {
 		g_errno = ENOCOLLREC;
 		logError("db: lost collection while dumping to disk. making map null so we can stop.");
 		m_map = NULL;
@@ -824,12 +774,6 @@ tryAgain:
 		m_hacked12 = false;
 	}
 
-	// if we're NOT dumping a tree then return control to RdbMerge
-	if (!m_tree && !m_buckets) {
-		logTrace( g_conf.m_logTraceRdbDump, "END - !m_tree && !m_buckets, returning true" );
-		return true;
-	}
-
 	logTrace( g_conf.m_logTraceRdbDump, "END - OK, returning true" );
 	return true;
 }
@@ -857,11 +801,7 @@ void RdbDump::doneWritingWrapper(void *state) {
 void RdbDump::continueDumping() {
 	// if someone reset/deleted the collection we were dumping...
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
-
-	// . do not do this for statsdb which always use collnum of 0
-	// . RdbMerge also calls us but gives a NULL m_rdb so we can't
-	//   set m_isCollectionless to false
-	if (!cr && m_doCollCheck) {
+	if (!cr) {
 		g_errno = ENOCOLLREC;
 		// m_file is invalid if collrec got nuked because so did the Rdbbase which has the files
 		// m_file is probably invalid too since it is stored in cr->m_bases[i]->m_files[j]
@@ -877,7 +817,6 @@ void RdbDump::continueDumping() {
 
 	// go back now if we were NOT dumping a tree
 	if (!(m_tree || m_buckets)) {
-		m_isDumping = false;
 		m_callback(m_state);
 		return;
 	}

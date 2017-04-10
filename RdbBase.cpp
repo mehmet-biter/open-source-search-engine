@@ -110,7 +110,6 @@ RdbBase::RdbBase()
 	m_didRepair = false;
 	m_tree = NULL;
 	m_buckets = NULL;
-	m_dump = NULL;
 	m_minToMergeDefault = 0;
 	m_minToMerge = 0;
 	m_numFilesToMerge = 0;
@@ -160,7 +159,6 @@ bool RdbBase::init(const char *dir,
                    collnum_t collnum,
                    RdbTree *tree,
                    RdbBuckets *buckets,
-                   RdbDump *dump,
                    Rdb *rdb,
                    bool useIndexFile) {
 
@@ -194,7 +192,6 @@ bool RdbBase::init(const char *dir,
 	m_collnum = collnum;
 	m_tree    = tree;
 	m_buckets = buckets;
-	m_dump    = dump;
 	m_rdb     = rdb;
 
 	// save the dbname NULL terminated into m_dbname/m_dbnameLen
@@ -269,33 +266,6 @@ bool RdbBase::init(const char *dir,
 	// now diskpagecache is much simpler, just basically rdbcache...
 	return true;
 }
-
-
-//special init function used by main.cpp injectFile. Not pretty
-void RdbBase::specialInjectFileInit(const char *dir,
-                                    const char *dbname,
-	                            collnum_t collnum,
-	                            Rdb *rdb,
-	                            int32_t fixedDataSize,
-	                            bool useHalfKeys,
-	                            char ks,
-	                            int32_t pageSize,
-	                            int32_t minToMerge)
-{
-	strcpy(m_collectionDirName, dir);
-	strcpy(m_dbname,dbname);
-	m_dbnameLen = strlen(dbname);
-	m_coll = "main";
-	m_collnum = collnum;
-	m_rdb = rdb;
-	m_fixedDataSize = fixedDataSize;
-	m_useHalfKeys = useHalfKeys;
-	m_isTitledb = rdb->isTitledb();
-	m_ks = ks;
-	m_pageSize = pageSize;
-	m_minToMerge = minToMerge;
-}
-
 
 // . move all files into trash subdir
 // . this is part of PageRepair's repair algorithm. all this stuff blocks.
@@ -1693,7 +1663,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	// if a dump is happening it will always be the last file, do not
 	// include it in the merge
 	int32_t numFiles = m_numFiles;
-	if ( numFiles > 0 && m_dump->isDumping() ) numFiles--;
+	if ( numFiles > 0 && m_rdb->isDumping() ) numFiles--;
 
 	// set m_minToMerge from coll rec if we're indexdb
 	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
@@ -2278,7 +2248,7 @@ int64_t RdbBase::estimateListSize(const char *startKey, const char *endKey, char
 	if(m_tree)
 		n = m_tree->estimateListSize(m_collnum, startKey, endKey, NULL, NULL);
 	else
-		n = m_buckets->getListSize(m_collnum, startKey, endKey, NULL, NULL);
+		n = m_buckets->estimateListSize(m_collnum, startKey, endKey, NULL, NULL);
 
 	totalBytes += n;
 	// ensure totalBytes >= 0
@@ -2354,39 +2324,6 @@ uint64_t RdbBase::getSpaceNeededForMerge(int startFileNum, int numFiles) const {
 	for(int i=0; i<startFileNum+numFiles && i<m_numFiles; i++)
 		total += m_fileInfo[i].m_file->getFileSize();
 	return total;
-}
-
-
-void RdbBase::closeMaps(bool urgent) {
-	logTrace(g_conf.m_logTraceRdbBase, "BEGIN");
-	for (int32_t i = 0; i < m_numFiles; i++) {
-		bool status = m_fileInfo[i].m_map->close(urgent);
-		if (!status) {
-			// unable to write, let's abort
-			gbshutdownResourceError();
-		}
-	}
-	logTrace(g_conf.m_logTraceRdbBase, "END");
-}
-
-void RdbBase::closeIndexes(bool urgent) {
-	logTrace(g_conf.m_logTraceRdbBase, "BEGIN");
-
-	if (!m_useIndexFile) {
-		logTrace(g_conf.m_logTraceRdbBase, "END. useIndexFile disabled");
-		return;
-	}
-
-	for (int32_t i = 0; i < m_numFiles; i++) {
-		if (m_fileInfo[i].m_index) {
-			bool status = m_fileInfo[i].m_index->close(urgent);
-			if (!status) {
-				// unable to write, let's abort
-				gbshutdownResourceError();
-			}
-		}
-	}
-	logTrace(g_conf.m_logTraceRdbBase, "END");
 }
 
 void RdbBase::saveMaps() {
@@ -2534,27 +2471,6 @@ bool RdbBase::verifyFileSharding ( ) {
 
 	//log ( "db: Exiting due to Posdb inconsistency." );
 	return true;//g_conf.m_bypassValidation;
-}
-
-float RdbBase::getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const {
-	// scan the maps
-	int64_t numPos = 0LL;
-	int64_t numNeg = 0LL;
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		numPos += m_fileInfo[i].m_map->getNumPositiveRecs();
-		numNeg += m_fileInfo[i].m_map->getNumNegativeRecs();
-	}
-	int64_t total = numPos + numNeg;
-	*totalArg = total;
-
-	float percent;
-	if( !total ) {
-		percent = 0.0;
-	}
-	else {
-		percent = (float)numNeg / (float)total;
-	}
-	return percent;
 }
 
 bool RdbBase::initializeGlobalIndexThread() {

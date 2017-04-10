@@ -868,8 +868,8 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f);
 		g_errno = EBADREQUEST;
-		logError("call sendErrorReply. request url path too big");
-		return sendErrorReply(s,500,"request url path too big");
+		logError("call sendErrorReply. 500 Request url path too big");
+		return sendErrorReply(s,500,"Request url path too big");
 	}
 	// set the filepath/name
 	char fullPath[512];
@@ -907,7 +907,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f);
 		
-		logError("call sendErrorReply. Not found");
+		logError("call sendErrorReply. 404 Not found");
 		return sendErrorReply ( s , 404 , "Not Found" );
 	}
 	// when was this file last modified
@@ -984,7 +984,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f); 
 		g_errno = EBADREQUEST;
-		logError("call sendErrorReply. Bad request");
+		logError("call sendErrorReply. 500 Bad request");
 		return sendErrorReply(s,500,mstrerror(g_errno));
 	}
 	// . move the reply to a send buffer
@@ -1000,7 +1000,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 			    (PTRTYPE)f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f); 
-		logError("call sendErrorReply. Could not alloc sendBuf (%" PRId32")", sendBufSize);
+		logError("call sendErrorReply. 500 Could not alloc sendBuf (%" PRId32")", sendBufSize);
 		return sendErrorReply(s,500,mstrerror(g_errno));
 	}
 	gbmemcpy ( sendBuf , m.getMime() , mimeLen );
@@ -1984,7 +1984,7 @@ bool HttpServer::hasPermission ( int32_t ip , HttpRequest *r ,
 	// . if table almost full clean out ALL slots
 	// . TODO: just clean out oldest slots
 	int32_t partial = (AT_SLOTS * 90) / 100 ;
-	if ( s_htable.getNumSlotsUsed() > partial ) s_htable.clear ();
+	if (s_htable.getNumUsedSlots() > partial ) s_htable.clear ();
 	// . how many times has this IP domain submitted?
 	// . allow 10 times per day
 	int32_t val = s_htable.getValue ( h );

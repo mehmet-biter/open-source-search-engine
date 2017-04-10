@@ -252,9 +252,10 @@ bool resetProxyStats ( ) {
 	// s_proxyBannedTable.reset();
 	// s_banCountTable.reset();
 	// s_iptab.reset();
-	s_iptab.set(8,sizeof(SpiderProxy),0,NULL,0,false,"siptab",true);
+
 	// skip port part of key magic, and get LSB of the IP as key magic
-	s_iptab.m_maskKeyOffset = 5;
+	s_iptab.set(8, sizeof(SpiderProxy), 0, NULL, 0, false, "siptab", true, 5);
+
 	s_proxyBannedTable.set(8,0,0,NULL,0,false,"proxban");
 	s_banCountTable.set(4,4,0,NULL,0,false,"bancnt");
 	return buildProxyTable();
@@ -294,7 +295,7 @@ static int32_t getNumLoadPoints(SpiderProxy *sp, int32_t *current) {
 	*current = 0;
 	int32_t count = 0;
 	// scan all proxies that have this urlip outstanding
-	for ( int32_t i = 0 ; i < s_loadTable.m_numSlots ; i++ ) {
+	for ( int32_t i = 0 ; i < s_loadTable.getNumSlots() ; i++ ) {
 		// skip if empty
 		if ( ! s_loadTable.m_flags[i] ) continue;
 		// get the bucket
@@ -774,7 +775,7 @@ static void handleRequest54(UdpSlot *udpSlot, int32_t /*niceness*/) {
 	if ( elapsed > 120 && s_loadTable.getNumSlots() > 10000 ) {
 		log("sproxy: flushing %i entries from proxy loadtable that "
 		    "have accumulated since %i seconds ago",
-		    (int)s_loadTable.m_numSlotsUsed,(int)elapsed);
+		    (int)s_loadTable.getNumUsedSlots(),(int)elapsed);
 		s_loadTable.clear();
 		// only do this one per minute
 		s_lastTime = now;
@@ -869,9 +870,8 @@ bool initSpiderProxyStuff() {
 		return false;
 
 	// key is ip/port
-	s_iptab.set(8,sizeof(SpiderProxy),0,NULL,0,false,"siptab",true);
 	// skip port part of key magic, and get LSB of the IP as key magic
-	s_iptab.m_maskKeyOffset = 5;
+	s_iptab.set(8, sizeof(SpiderProxy), 0, NULL, 0, false, "siptab", true, 5);
 
 	loadSpiderProxyStats();
 

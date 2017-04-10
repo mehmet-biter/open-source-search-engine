@@ -38,23 +38,11 @@ public:
 	// called by main.cpp on exit to free memory
 	void reset();
 
-	bool load();
-
 	static bool tryToDeleteSpiderColl(SpiderColl *sc, const char *msg);
 
 	key128_t m_firstKey;
 	key128_t m_nextKey;
 	key128_t m_endKey;
-
-	bool m_lastReplyValid;
-	char m_lastReplyBuf[MAX_SP_REPLY_SIZE];
-
-	bool m_isLoading;
-
-	// for scanning the wait tree...
-	bool m_isPopulatingDoledb;
-
-	bool m_didRead;
 
 	// corresponding to CollectionRec::m_siteListBuf
 	bool  m_siteListIsEmpty;
@@ -65,16 +53,6 @@ public:
 	// later "regex:.*"
 	SafeBuf m_negSubstringBuf;
 	SafeBuf m_posSubstringBuf;
-
-	RdbCache m_dupCache;
-	RdbTree m_winnerTree;
-	HashTableX m_winnerTable;
-	int32_t m_tailIp;
-	int32_t m_tailPriority;
-	int64_t m_tailTimeMS;
-	int64_t m_tailUh48;
-	int32_t      m_tailHopCount;
-	int64_t m_minFutureTimeMS;
 
 	// . do not re-send CrawlInfoLocal for a coll if not update
 	// . we store the flags in here as true if we should send our
@@ -90,19 +68,9 @@ public:
 	bool addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS);
 
 	void removeFromDoledbTable(int32_t firstIp);
-	bool addToDoleTable(SpiderRequest *sreq);
-	bool validateDoleBuf(SafeBuf *doleBuf);
-	bool addDoleBufIntoDoledb(SafeBuf *doleBuf, bool isFromCache);
-
-	bool updateSiteNumInlinksTable(int32_t siteHash32, int32_t sni, time_t tstamp);
-
-	uint64_t getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep);
 
 	// doledb cursor keys for each priority to speed up performance
 	key96_t m_nextKeys[MAX_SPIDER_PRIORITIES];
-
-	// save us scanning empty priorities
-	char m_isDoledbEmpty [MAX_SPIDER_PRIORITIES];
 
 	// maps priority to first ufn that uses that
 	// priority. map to -1 if no ufn uses it. that way when we scan
@@ -116,11 +84,6 @@ public:
 	// url filters table...
 	bool m_ufnMapValid;
 
-	// list for loading spiderdb recs during the spiderdb scan
-	RdbList        m_list;
-
-	int32_t     m_numAdded;
-	int64_t m_numBytesScanned;
 	int64_t m_lastPrintCount;
 	int64_t m_lastPrinted;
 
@@ -136,38 +99,13 @@ public:
 
 	HashTableX m_doleIpTable;
 
-	// freshest m_siteNumInlinks per site stored in here
-	HashTableX m_sniTable;
-	GbMutex m_sniTableMtx;
-
-	// maps a domainHash32 to a crawl delay in milliseconds
-	HashTableX m_cdTable;
-	GbMutex m_cdTableMtx;
-
-	RdbCache m_lastDownloadCache;
-
-	bool m_countingPagesIndexed;
 	HashTableX m_localTable;
-	int64_t m_lastReqUh48a;
-	int64_t m_lastReqUh48b;
-	int64_t m_lastRepUh48;
-
-public:
-	bool makeDoleIPTable     ( );
-	bool makeWaitingTable    ( );
 
 	bool printWaitingTree ( ) ;
 
-	bool addToWaitingTree(uint64_t spiderTime, int32_t firstIp);
-	int32_t getNextIpFromWaitingTree ( );
+	bool addToWaitingTree(int32_t firstIp);
 	uint64_t getNextSpiderTimeFromWaitingTree ( ) ;
 	void populateDoledbFromWaitingTree ( );
-
-	// broke up scanSpiderdb into simpler functions:
-	bool evalIpLoop ( ) ;
-	bool readListFromSpiderdb ( ) ;
-	bool scanListForWinners ( ) ;
-	bool addWinnersIntoDoledb ( ) ;
 
 	void populateWaitingTreeFromSpiderdb ( bool reentry ) ;
 
@@ -178,19 +116,10 @@ public:
 	key96_t      m_waitingTreeKey;
 	bool       m_waitingTreeKeyValid;
 
-	// spiderdb scan for populating waiting tree
-	RdbList  m_waitingTreeList;
-	Msg5     m_msg5b;
-	bool     m_gettingWaitingTreeList;
-	key128_t m_waitingTreeNextKey;
-	key128_t m_waitingTreeEndKey;
-	time_t   m_lastScanTime;
+	void resetWaitingTreeNextKey() { m_waitingTreeNextKey.setMin(); }
+	time_t getLastScanTime() const { return m_lastScanTime; }
 
-	int32_t       m_scanningIp;
-	int32_t       m_gotNewDataForScanningIp;
-	int32_t       m_lastListSize;
-	int32_t       m_lastScanningIp;
-	int64_t  m_totalBytesScanned;
+	int32_t getScanningIp() const {return m_scanningIp; }
 
 	bool m_deleteMyself;
 
@@ -203,9 +132,7 @@ public:
 	key96_t m_nextDoledbKey;
 	int32_t  m_pri2;
 
-	// for reading lists from spiderdb
-	Msg5 m_msg5;
-	bool m_gettingList1;
+	bool gettingSpiderdbList() const { return m_gettingList1; }
 
 	// how many outstanding spiders a priority has
 	int32_t m_outstandingSpiders[MAX_SPIDER_PRIORITIES];
@@ -213,6 +140,90 @@ public:
 	bool printStats ( SafeBuf &sb ) ;
 
 	bool isFirstIpInOverflowList ( int32_t firstIp ) ;
+
+private:
+	bool load();
+
+	bool addToDoleTable(SpiderRequest *sreq);
+	bool validateDoleBuf(SafeBuf *doleBuf);
+	bool addDoleBufIntoDoledb(SafeBuf *doleBuf, bool isFromCache);
+
+	bool updateSiteNumInlinksTable(int32_t siteHash32, int32_t sni, time_t tstamp);
+
+	uint64_t getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep);
+
+	bool makeDoleIPTable     ( );
+	bool makeWaitingTable    ( );
+
+	int32_t getNextIpFromWaitingTree ( );
+
+	// broke up scanSpiderdb into simpler functions:
+	bool evalIpLoop ( ) ;
+	bool readListFromSpiderdb ( ) ;
+	bool scanListForWinners ( ) ;
+	bool addWinnersIntoDoledb ( ) ;
+
+	bool m_lastReplyValid;
+	char m_lastReplyBuf[MAX_SP_REPLY_SIZE];
+
+	bool m_isLoading;
+
+	// for scanning the wait tree...
+	bool m_isPopulatingDoledb;
+
+	bool m_didRead;
+
+	RdbCache m_dupCache;
+
+	RdbTree m_winnerTree;
+	HashTableX m_winnerTable;
+	int32_t m_tailIp;
+	int32_t m_tailPriority;
+	int64_t m_tailTimeMS;
+	int64_t m_tailUh48;
+	int32_t      m_tailHopCount;
+	int64_t m_minFutureTimeMS;
+
+	// list for loading spiderdb recs during the spiderdb scan
+	RdbList        m_list;
+
+	int32_t     m_numAdded;
+	int64_t m_numBytesScanned;
+
+	// freshest m_siteNumInlinks per site stored in here
+	HashTableX m_sniTable;
+	GbMutex m_sniTableMtx;
+
+	// maps a domainHash32 to a crawl delay in milliseconds
+	HashTableX m_cdTable;
+	GbMutex m_cdTableMtx;
+
+	RdbCache m_lastDownloadCache;
+
+	bool m_countingPagesIndexed;
+
+	int64_t m_lastReqUh48a;
+	int64_t m_lastReqUh48b;
+	int64_t m_lastRepUh48;
+
+	// spiderdb scan for populating waiting tree
+	RdbList m_waitingTreeList;
+	Msg5 m_msg5b;
+	bool m_gettingWaitingTreeList;
+	key128_t m_waitingTreeNextKey;
+	key128_t m_waitingTreeEndKey;
+	time_t m_lastScanTime;
+
+	int32_t m_scanningIp;
+	int32_t m_gotNewDataForScanningIp;
+	int32_t m_lastListSize;
+	int32_t m_lastScanningIp;
+	int64_t m_totalBytesScanned;
+
+	// for reading lists from spiderdb
+	Msg5 m_msg5;
+	bool m_gettingList1;
+
 	int32_t *m_overflowList;
 	int64_t  m_totalNewSpiderRequests;
 	int64_t  m_lastSreqUh48;
@@ -223,7 +234,6 @@ public:
 		
 	int32_t  m_lastOverflowFirstIp;
 
-private:
 	CollectionRec *m_cr;
 
 	static void gotSpiderdbListWrapper(void *state, RdbList *list, Msg5 *msg5);

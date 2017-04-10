@@ -41,7 +41,7 @@ function send_core_alert() {
 		fi
 
 		if [ -f lastcore.log ]; then
-			tail -100 lastcore.log | ./slacktee.sh --config slacktee.conf -a -p -t "Log file" -s "host" $HOSTNAME -s "path" $working_dir >/dev/null
+			tail -50 lastcore.log | ./slacktee.sh --config slacktee.conf -a -p -t "Log file" -s "host" $HOSTNAME -s "path" $working_dir >/dev/null
 		fi
 	fi
 }

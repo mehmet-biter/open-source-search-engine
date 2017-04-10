@@ -7,7 +7,6 @@
 #include "Collectiondb.h"
 #include "Unicode.h"
 #include "JobScheduler.h"
-#include "Msg1.h"
 #include "HttpServer.h"
 #include "Pages.h"
 #include "SiteGetter.h"
@@ -667,13 +666,6 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 	// the ST_SITE field anyway...
 	if ( ! ufu && ! us ) return true;
 
-	const CollectionRec *cr = g_collectiondb.getRec(r);
-	if(!cr) {
-		//uhm?
-		return true;
-	}
-	collnum_t collnum = cr->m_collnum;
-
 	// make it null terminated since we no longer do this automatically
 	fou.pushChar('\0');
 
@@ -741,10 +733,12 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 
 			// save buffer spot in case we have to rewind
 			int32_t saved = m_sbuf.length();
-			
+
+			Url url;
+			url.set(urlPtr);
+
 			SiteGetter sg;
-			sg.getSite(urlPtr, NULL, 0, collnum, 0);
-			
+			sg.getSite(url.getUrl(), NULL, 0, 0, 0);
 
 			// . add to tag rdb recs in safebuf
 			// . this pushes the rdbid as first byte
@@ -885,6 +879,7 @@ bool TagRec::printToBufAsTagVector  ( SafeBuf *sb ) {
 // . also index "gbtagjapanese" if score != 0
 // . TODO: actually use this
 #define TDF_NOINDEX  0x04
+#define TDF_DEPRECATED 0x08
 
 class TagDesc {
 public:
@@ -907,8 +902,6 @@ static TagDesc s_tagDesc[] = {
 	{"roottitles"             ,TDF_STRING|TDF_NOINDEX,0},
 
 	{"manualban"            ,0x00,0},
-
-	{"deep"                 ,0x00,0},
 
 	// we now index this. really we need it for storing into title rec.
 	{"site"                 ,TDF_STRING|TDF_ARRAY,0},
@@ -941,35 +934,37 @@ static TagDesc s_tagDesc[] = {
 	//   doing the throttling, really messing things up
 	{"firstip"              ,0x00,0},
 
+	{"comment", TDF_STRING|TDF_NOINDEX, 0},
+
 	/// @todo ALC only need this until we cater for unknown tags for display (remember titlerec!)
     // As above, we can't remove the following definition unless if we're sure it's not set anymore
     // Anything below this point is unused.
-	{"rootlang"             ,TDF_STRING,0},
-	{"manualfilter", 0x00, 0},
-	{"dateformat", 0x00, 0}, // 1 = american, 2 = european
+	{"rootlang",TDF_STRING|TDF_DEPRECATED,0},
+	{"manualfilter", TDF_DEPRECATED, 0},
+	{"dateformat", TDF_DEPRECATED, 0},
 
-	{"venueaddress", TDF_STRING|TDF_ARRAY|TDF_NOINDEX, 0},
-	{"hascontactinfo", 0x00, 0},
-	{"contactaddress", TDF_ARRAY|TDF_NOINDEX, 0},
-	{"contactemails", TDF_ARRAY|TDF_NOINDEX, 0},
-	{"hascontactform", 0x00, 0},
+	{"venueaddress", TDF_STRING|TDF_ARRAY|TDF_NOINDEX|TDF_DEPRECATED, 0},
+	{"hascontactinfo", TDF_DEPRECATED, 0},
+	{"contactaddress", TDF_ARRAY|TDF_NOINDEX|TDF_DEPRECATED, 0},
+	{"contactemails", TDF_ARRAY|TDF_NOINDEX|TDF_DEPRECATED, 0},
+	{"hascontactform", TDF_DEPRECATED, 0},
 
-	{"ingoogle", 0x00, 0},
-	{"ingoogleblogs", 0x00, 0},
-	{"ingooglenews", 0x00, 0},
-	{"abyznewslinks.address", 0x00, 0},
+	{"ingoogle", TDF_DEPRECATED, 0},
+	{"ingoogleblogs", TDF_DEPRECATED, 0},
+	{"ingooglenews", TDF_DEPRECATED, 0},
+	{"abyznewslinks.address", TDF_DEPRECATED, 0},
 
-	{"sitenuminlinksuniqueip"  ,0x00,0},
-	{"sitenuminlinksuniquecblock"  ,0x00,0},
-	{"sitenuminlinkstotal"  ,0x00,0},
+	{"sitenuminlinksuniqueip", TDF_DEPRECATED, 0},
+	{"sitenuminlinksuniquecblock", TDF_DEPRECATED, 0},
+	{"sitenuminlinkstotal", TDF_DEPRECATED, 0},
 
-	{"comment", TDF_STRING|TDF_NOINDEX, 0},
+	{"sitepop", TDF_DEPRECATED, 0},
+	{"sitenuminlinksfresh", TDF_DEPRECATED, 0},
 
-	{"sitepop"  ,0x00,0},
-	{"sitenuminlinksfresh"  ,0x00,0},
+	{"pagerank", TDF_DEPRECATED, 0},
+	{"ruleset", TDF_DEPRECATED, 0},
 
-	{"pagerank"             ,0x00,0},
-	{"ruleset"              ,0x00,0}
+	{"deep", TDF_DEPRECATED, 0}
 };
 
 // . convert "domain_squatter" to ST_DOMAIN_SQUATTER
@@ -1010,6 +1005,20 @@ const char *getTagStrFromType ( int32_t tagType ) {
 
 	// return it
 	return (*ptd)->m_name;
+}
+
+std::set<int64_t> getDeprecatedTagTypes() {
+	int32_t n = (int32_t)sizeof(s_tagDesc)/(int32_t)sizeof(TagDesc);
+
+	std::set<int64_t> deprecatedTagTypes;
+
+	for (int32_t i = 0; i < n; ++i) {
+		if (s_tagDesc[i].m_flags & TDF_DEPRECATED) {
+			deprecatedTagTypes.emplace(s_tagDesc[i].m_type);
+		}
+	}
+
+	return deprecatedTagTypes;
 }
 
 // a global class extern'd in .h file
@@ -1084,79 +1093,6 @@ bool Tagdb::init ( ) {
 			    false);              //useIndexFile
 }
 
-bool Tagdb::verify ( const char *coll ) {
-	const char *rdbName = "Tagdb";
-	
-	log ( LOG_DEBUG, "db: Verifying %s for coll %s...", rdbName, coll );
-	
-	Msg5 msg5;
-	RdbList list;
-	key128_t startKey;
-	key128_t endKey;
-	startKey.setMin();
-	endKey.setMax();
-	CollectionRec *cr = g_collectiondb.getRec(coll);
-	
-	if ( ! msg5.getList ( RDB_TAGDB    ,
-			      cr->m_collnum          ,
-			      &list         ,
-			      (char *)&startKey      ,
-			      (char *)&endKey        ,
-			      64000         , // minRecSizes   ,
-			      true          , // includeTree   ,
-			      0             , // max cache age
-			      0             , // startFileNum  ,
-			      -1            , // numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         , // err correction?
-			      NULL          ,
-			      0             ,
-			      -1            ,
-			      -1LL          , // syncPoint
-			      true          , // isRealMerge
-			      true))          // allowPageCache
-	{
-		log(LOG_DEBUG, "tagdb: HEY! it did not block");
-		return false;
-	}
-
-	int32_t count  = 0;
-	int32_t got    = 0;
-	for ( list.resetListPtr(); ! list.isExhausted(); list.skipCurrentRecord() ) {
-		key128_t k;
-		list.getCurrentKey ( &k );
-		// skip negative keys
-		if ( (k.n0 & 0x01) == 0x00 ) continue;
-		count++;
-
-		uint32_t shardNum = getShardNum ( RDB_TAGDB , &k );
-		if ( shardNum == getMyShardNum() ) got++;
-	}
-
-	if ( got != count ) {
-		// tally it up
-		g_rebalance.m_numForeignRecs += count - got;
-		log (LOG_DEBUG, "tagdb: Out of first %" PRId32" records in %s, only %" PRId32" belong to our group.",
-		     count, rdbName, got);
-		// exit if NONE, we probably got the wrong data
-		if ( got == 0 ) {
-			log( "tagdb: Are you sure you have the right data in the right directory? Exiting." );
-		}
-		log ( "tagdb: Exiting due to %s inconsistency.", rdbName );
-		return g_conf.m_bypassValidation;
-	}
-
-	log ( LOG_DEBUG, "db: %s passed verification successfully for %" PRId32" recs.", rdbName, count );
-
-	// if no recs in tagdb, but sitedb exists, convert it
-	if ( count > 0 ) return true;
-
-	// DONE
-	return true;
-}
-
 // . ssssssss ssssssss ssssssss ssssssss  hash of site/url
 // . xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx  tagType OR hash of that+user+data
 // . xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
@@ -1217,10 +1153,9 @@ key128_t Tagdb::makeDomainEndKey ( Url *u ) {
 //
 ///////////////////////////////////////////////
 
-static bool s_cacheInitialized = false;
-static RdbCache s_cache;
-static GbMutex s_cacheInitializedMutex;
-
+/// @todo ALC Msg8a RdbCache is currently removed (cache timeout doesn't work;
+/// caching will be bad for numsiteinlinks(which is regenerated when it's stale).
+/// this could cause us to regenerate numsiteinlinks unnecessarily causing load on the system
 
 Msg8a::Msg8a()
   : m_url(NULL),
@@ -1255,10 +1190,6 @@ void Msg8a::reset() {
 	}
 	m_replies  = 0;
 	m_requests = 0;
-}
-
-const RdbCache* Msg8a::getCache() {
-	return &s_cache;
 }
 
 // . get records from multiple subdomains of url
@@ -1328,8 +1259,8 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	}
 
 	// use that
-	m_siteStartKey = g_tagdb.makeStartKey( site, siteLen );
-	m_siteEndKey = g_tagdb.makeEndKey( site, siteLen );
+	m_siteStartKey = Tagdb::makeStartKey( site, siteLen );
+	m_siteEndKey = Tagdb::makeEndKey( site, siteLen );
 
 	m_url = url;
 
@@ -1405,17 +1336,6 @@ bool Msg8a::launchGetRequests ( ) {
 	// clear it
 	g_errno = 0;
 
-	// initialize cache
-	ScopedLock sl_cache(s_cacheInitializedMutex);
-	if ( !s_cacheInitialized ) {
-		int64_t maxCacheSize = g_conf.m_tagRecCacheSize;
-		int64_t maxCacheNodes = ( maxCacheSize / 200 );
-
-		s_cacheInitialized = true;
-		s_cache.init( maxCacheSize, -1, true, maxCacheNodes, false, "tagreccache", false, 16, 16, -1 );
-	}
-	sl_cache.unlock();
-
 	//get tag for url and then domain
 	for(int getLoop = 0; getLoop<2; getLoop++) {
 
@@ -1423,8 +1343,8 @@ bool Msg8a::launchGetRequests ( ) {
 		key128_t endKey;
 
 		if(getLoop==1) {
-			startKey = g_tagdb.makeDomainStartKey ( m_url );
-			endKey   = g_tagdb.makeDomainEndKey   ( m_url );
+			startKey = Tagdb::makeDomainStartKey ( m_url );
+			endKey   = Tagdb::makeDomainEndKey   ( m_url );
 			log( LOG_DEBUG, "tagdb: looking up domain tags for %.*s", m_url->getDomainLen(), m_url->getDomain() );
 		} else {
 			// usually the site is the hostname but sometimes it is like
@@ -1441,79 +1361,65 @@ bool Msg8a::launchGetRequests ( ) {
 		// and the list
 		RdbList *listPtr = &m_tagRec->m_lists[m_requests];
 
-		// try to get from cache
-		RdbCacheLock rcl(s_cache);
-		if ( s_cache.getList( m_collnum, (char*)&startKey, (char*)&startKey, listPtr, true,
-				      g_conf.m_tagRecCacheMaxAge, true) ) {
-			// got from cache
-			log( LOG_DEBUG, "tagdb: got key=%s from cache", KEYSTR(&startKey, sizeof(startKey)) );
+		// bias based on the top 64 bits which is the hash of the "site" now
+		int32_t shardNum = getShardNum ( RDB_TAGDB , &startKey );
+		Host *firstHost ;
 
-			rcl.unlock();
-			ScopedLock sl(m_mtx);
-			m_requests++;
-			m_replies++;
-		} else {
-			rcl.unlock();
-			// bias based on the top 64 bits which is the hash of the "site" now
-			int32_t shardNum = getShardNum ( RDB_TAGDB , &startKey );
-			Host *firstHost ;
+		// if niceness 0 can't pick noquery host.
+		// if niceness 1 can't pick nospider host.
+		firstHost = g_hostdb.getLeastLoadedInShard ( shardNum , m_niceness );
+		int32_t firstHostId = firstHost->m_hostId;
 
-			// if niceness 0 can't pick noquery host.
-			// if niceness 1 can't pick nospider host.
-			firstHost = g_hostdb.getLeastLoadedInShard ( shardNum , m_niceness );
-			int32_t firstHostId = firstHost->m_hostId;
+		Msg8aState *state = NULL;
+		try {
+			state = new Msg8aState(this, startKey, endKey, m_requests);
+		} catch (...) {
+			g_errno = m_errno = ENOMEM;
+			log(LOG_WARN, "tagdb: unable to allocate memory for Msg8aState");
+			break;
+		}
+		mnew(state, sizeof(*state), "msg8astate");
 
-			Msg8aState *state = NULL;
-			try {
-				state = new Msg8aState(this, startKey, endKey, m_requests);
-			} catch (...) {
-				g_errno = m_errno = ENOMEM;
-				log(LOG_WARN, "tagdb: unable to allocate memory for Msg8aState");
+		// . launch this request, even if to ourselves
+		// . TODO: just use msg0!!
+		bool status = m->getList ( firstHostId     , // hostId
+					   0          , // maxCacheAge
+					   false      , // addToCache
+					   RDB_TAGDB  ,
+					   m_collnum     ,
+					   listPtr    ,
+					   (char *) &startKey  ,
+					   (char *) &endKey    ,
+					   10000000            , // minRecSizes
+					   state                , // state
+					   gotMsg0ReplyWrapper ,
+					   m_niceness          ,
+					   true                , // error correction?
+					   true                , // include tree?
+					   firstHostId         , // firstHostId
+					   0                   , // startFileNum
+					   -1                  , // numFiles
+					   msg0_getlist_infinite_timeout );// timeout
+		if (status) {
+			mdelete(state, sizeof(*state), "msg8astate");
+			delete state;
+
+			// error?
+			if (g_errno) {
+				// g_errno should be set, we had an error
+				m_errno = g_errno;
 				break;
 			}
-			mnew(state, sizeof(*state), "msg8astate");
+		}
 
-			// . launch this request, even if to ourselves
-			// . TODO: just use msg0!!
-			bool status = m->getList ( firstHostId     , // hostId
-						   0          , // maxCacheAge
-						   false      , // addToCache
-						   RDB_TAGDB  ,
-						   m_collnum     ,
-						   listPtr    ,
-						   (char *) &startKey  ,
-						   (char *) &endKey    ,
-						   10000000            , // minRecSizes
-						   state                , // state
-						   gotMsg0ReplyWrapper ,
-						   m_niceness          ,
-						   true                , // error correction?
-						   true                , // include tree?
-						   firstHostId         , // firstHostId
-						   0                   , // startFileNum
-						   -1                  , // numFiles
-						   msg0_getlist_infinite_timeout );// timeout
-			if (status) {
-				mdelete(state, sizeof(*state), "msg8astate");
-				delete state;
+		ScopedLock sl(m_mtx);
 
-				// error?
-				if (g_errno) {
-					// g_errno should be set, we had an error
-					m_errno = g_errno;
-					break;
-				}
-			}
+		// successfully launched
+		m_requests++;
 
-			ScopedLock sl(m_mtx);
-
-			// successfully launched
-			m_requests++;
-
-			// if we got a reply instantly
-			if ( status ) {
-				m_replies++;
-			}
+		// if we got a reply instantly
+		if ( status ) {
+			m_replies++;
 		}
 
 	}
@@ -1551,9 +1457,6 @@ void Msg8a::gotMsg0ReplyWrapper ( void *state ) {
 
 		/// @todo hack to get addList working (verify if there will be issue)
 		list->setLastKey((char*)&endKey);
-
-		RdbCacheLock rcl(s_cache);
-		s_cache.addList( msg8a->m_collnum, (char*)&startKey, list);
 	}
 
 	msg8a->m_replies++;
@@ -1653,7 +1556,7 @@ public:
 	Url          m_url;
 	const char  *m_urls;
 	int32_t         m_urlsLen;
-	Msg1         m_msg1;
+	Msg4         m_msg4;
 	RdbList      m_list;
 	int32_t         m_niceness;
 };
@@ -1775,10 +1678,20 @@ void sendReplyWrapper ( void *state ) {
 	sendReply ( state );
 }
 
-static void sendReplyWrapper2 ( void *state ) {
+static void sendReplyWrapper3(int fd, void *state) {
+	g_loop.unregisterSleepCallback(state, sendReplyWrapper3);
+
 	State12 *st = (State12 *)state;
 	// re-get the tags from msg8a since we changed them
 	getTagRec(st);
+}
+
+/// @warning ALC this is a hack because msg4 calls the callback before we get the response from receiving end
+/// and we want to get the updated data instead of the old data
+static void sendReplyWrapper2 ( void *state ) {
+	// delay for 1sec hoping that msg4 has been processed
+	g_loop.registerSleepCallback(1000, state, sendReplyWrapper3);
+	return;
 }
 
 bool sendReply ( void *state ) {
@@ -1828,21 +1741,13 @@ bool sendReply ( void *state ) {
 	// no longer adding
 	st->m_adding = false;
 
-	// . just use TagRec::m_msg1 now
-	// . no, can't use that because tags are added using SafeBuf::addTag()
-	//   which first pushes the rdbid, so we gotta use msg4
-	if ( ! st->m_msg1.addList ( list ,
-				    RDB_TAGDB ,
-				    st->m_collnum ,
-				    st ,
-				    sendReplyWrapper2 ,
-				    false ,
-				    st->m_niceness ) )
+	if (!st->m_msg4.addMetaList(sbuf, st->m_collnum, st, sendReplyWrapper2, RDB_TAGDB)) {
 		return false;
+	}
 
-	// . if addTagRecs() doesn't block then sendReply right away
-	// . this returns false if blocks, true otherwise
-	return getTagRec ( st );
+	// we always need to delay since msg4 may not be sent immediately even if it doesn't block
+	sendReplyWrapper2(st);
+	return false;
 }
 
 bool sendReply2 ( void *state ) {
@@ -2115,17 +2020,24 @@ bool sendReply2 ( void *state ) {
 		// the options
 		for ( int32_t i = 0 ; ! ctag && i < n ; i++ ) {
 			TagDesc *td = &s_tagDesc[i];
+
+			// don't print if it's deprecated & not selected
+			if (((ctag && td->m_type != ctag->m_type) || !ctag) && (td->m_flags & TDF_DEPRECATED)) {
+				continue;
+			}
+
 			// get tag name
 			const char *tagName = td->m_name;
 
 			// select the item in the dropdown
 			const char *selected = "";
+
 			// was it selected?
-			if ( ctag && td->m_type == ctag->m_type ) 
+			if (ctag && td->m_type == ctag->m_type) {
 				selected = " selected";
+			}
 			// show it in the drop down list
-			sb.safePrintf("<option value=\"%s\"%s>%s",
-				      tagName,selected,tagName);
+			sb.safePrintf("<option value=\"%s\"%s>%s", tagName, selected, tagName);
 		}
 
 		// close up the drop down list

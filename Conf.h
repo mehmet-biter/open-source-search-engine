@@ -155,6 +155,8 @@ class Conf {
 	int32_t  m_pingSpacer;
 	int32_t  m_maxOutstandingPings;
 
+	uint32_t m_watchdogInterval;
+	
 	int32_t m_maxDocsWanted;        //maximum number of results in one go. Puts a limit on SearchInput::m_docsWanted
 	int32_t m_maxFirstResultNum;    //maximum document offset / result-page. Puts a limit on SearchInput::m_firstResultNum
 
@@ -305,10 +307,6 @@ class Conf {
 	int64_t m_unstableSummaryCacheSize;
 	int64_t m_unstableSummaryCacheMaxAge;
 
-	// tagrec cache (for Msg8a)
-	int64_t m_tagRecCacheSize;
-	int64_t m_tagRecCacheMaxAge;
-
 	bool   m_useShotgun;
 	bool   m_testMem;
 	bool   m_doConsistencyTesting;
@@ -385,6 +383,7 @@ class Conf {
 	bool  m_logDebugTitle;
 	bool  m_logDebugTopDocs;
 	bool  m_logDebugUdp;
+	bool  m_logDebugWatchdog;
 	bool  m_logDebugUnicode;
 	bool  m_logDebugRepair;
 	bool  m_logDebugDate;
@@ -445,19 +444,9 @@ class Conf {
 	// the original cluster is updated
 	bool m_useTmpCluster;
 
-	// . for specifying if this is an interface machine
-	//   messages are rerouted from this machine to the main
-	//   cluster set in the hosts.conf.
-	bool m_interfaceMachine;
-
 	// allow scaling up of hosts by removing recs not in the correct
 	// group. otherwise a sanity check will happen.
 	bool  m_allowScale;
-	// . timeout on dead hosts, only set when we know a host is dead and
-	//   will not come back online.  Messages will timeout on the dead
-	//   host, but not error, allowing outstanding spidering to finish
-	//   to the twin
-	bool  m_giveupOnDeadHosts;
 	bool  m_bypassValidation;
 
 	int32_t  m_maxCallbackDelay;

@@ -1590,7 +1590,7 @@ static bool canSubmit ( uint32_t h , int32_t now , int32_t maxAddUrlsPerIpDomPer
 	}
 	// . if table almost full clean out ALL slots
 	// . TODO: just clean out oldest slots
-	if ( s_htable.getNumSlotsUsed() > 47000 ) s_htable.clear ();
+	if (s_htable.getNumUsedSlots() > 47000 ) s_htable.clear ();
 	// . how many times has this IP domain submitted?
 	// . allow 10 times per day
 	int32_t n = s_htable.getValue ( h );

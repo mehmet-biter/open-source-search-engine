@@ -20,7 +20,8 @@ class HashTableX {
 		   int32_t  bufSize         , // = 0    ,
 		   bool  allowDups       , // = false ,
 		   const char *allocName  ,
-		   bool  useKeyMagic = false );
+		   bool  useKeyMagic = false,
+		   int32_t maskKeyOffset = 0);
 
 	// key size is 0 if UNinitialized
 	bool isInitialized ( ) const { return (m_ks != 0); }
@@ -97,20 +98,6 @@ class HashTableX {
 
 
 	bool addTerm144 ( const key144_t *kp , int32_t score = 1 ) {
-
-		/*
-		// debug XmlDoc.cpp's hash table
-		int64_t termId = ((key144_t *)kp)->n2 >> 16;
-		uint64_t d = 0LL;
-		d = ((unsigned char *)kp)[11];
-		d <<= 32;
-		d |= *(uint32_t *)(((unsigned char *)kp)+7);
-		d >>= 2;
-		if ( d==110324895284 && termId == 39206941907955LL ) {
-			log("got it");
-			gbshutdownAbort(true);
-		}
-		*/
 		// grow it!
 		if ( (m_numSlots < 20 || 4 * m_numSlotsUsed >= m_numSlots) &&
 		     m_numSlots < m_maxSlots ) {
@@ -184,7 +171,6 @@ class HashTableX {
 		}
 		else {
 			// get lower 32 bits of key
-			//n = (uint32_t)key;
 			n =*(uint32_t *)(((char *)&key) +m_maskKeyOffset);
 			// use magic to "randomize" key a little
 			n^=g_hashtab[(unsigned char)((char *)&key)[m_maskKeyOffset]][0];
@@ -275,15 +261,12 @@ class HashTableX {
 	void  clear  ( );
 
 	// how many are occupied?
-	int32_t getNumSlotsUsed ( ) const { return m_numSlotsUsed; }
 	int32_t getNumUsedSlots ( ) const { return m_numSlotsUsed; }
 
-	bool isEmpty() const { 
-		if ( m_numSlotsUsed == 0 ) return true;
-		return false; }
+	bool isEmpty() const { return (m_numSlotsUsed == 0); }
 
 	// how many are there total? used and unused.
-	int32_t getNumSlots ( ) const { return m_numSlots; }
+	int32_t getNumSlots() const { return m_numSlots; }
 
 	// both return false and set g_errno on error, true otherwise
 	bool load ( const char *dir, const char *filename , 
@@ -297,15 +280,21 @@ class HashTableX {
 	// for debugging
 	void print();
 
-	void disableWrites () { m_isWritable = false; }
-	void enableWrites  () { m_isWritable = true ; }
-	bool m_isWritable;
+	bool isWritable() const { return m_isWritable; }
+	void disableWrites() { m_isWritable = false; }
+	void enableWrites() { m_isWritable = true; }
 
- private:
+	int32_t getKeySize() const { return m_ks; }
+	int32_t getDataSize() const { return m_ds; }
 
+	bool isAllowDups() const { return m_allowDups; }
+
+private:
 	int32_t getOccupiedSlotNum ( const void *key ) const;
 
- public:
+	bool m_isWritable;
+
+public:
 
 	// . the array of buckets in which we store the terms
 	// . scores are allowed to exceed 8 bits for weighting purposes
@@ -313,6 +302,7 @@ class HashTableX {
 	char  *m_vals;
 	char  *m_flags;
 
+private:
 	int32_t     m_numSlots;
 	int32_t     m_numSlotsUsed;
 	uint32_t m_mask;
@@ -334,7 +324,7 @@ class HashTableX {
 	int64_t  m_maxSlots;
 
 	const char *m_allocName;
-	
+
 	int32_t m_maskKeyOffset;
 
 	// the addon buf used by SOME hashtables. data that the ptrs

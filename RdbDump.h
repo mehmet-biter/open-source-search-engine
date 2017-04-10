@@ -41,11 +41,7 @@ public:
 	         int64_t startOffset,
 	         const char *prevLastKey,
 	         char keySize,
-	         Rdb *rdb);
-
-	bool isDumping() const { return m_isDumping; }
-
-	collnum_t getCollNum() const { return m_collnum; }
+	         rdbid_t rdbId);
 
 	void setSuspended() { m_isSuspended = true; }
 
@@ -73,8 +69,6 @@ private:
 	// called when we've finished writing an RdbList to the file
 	bool doneDumpingList();
 	void continueDumping();
-
-	bool m_isDumping; // true if we're in the middle of dumping
 
 	RdbTree *m_tree;
 	RdbBuckets *m_buckets;
@@ -116,18 +110,13 @@ private:
 	int32_t m_totalNegDumped;
 
 	// recall info
-	int64_t m_t1;
+	int64_t m_getListStartTimeMS;
 	int32_t m_numPosRecs;
 	int32_t m_numNegRecs;
 
-	// for setting m_rdb->m_needsSave after deleting list from tree
-	Rdb *m_rdb;
+	rdbid_t m_rdbId;
 
 	collnum_t m_collnum;
-
-	bool m_doCollCheck;
-
-	bool m_tried;
 
 	bool m_isSuspended;
 

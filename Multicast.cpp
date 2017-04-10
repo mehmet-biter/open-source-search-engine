@@ -222,9 +222,7 @@ void Multicast::sendToWholeGroup() {
 		// bring him out of retirement to try again later in time
 		m_host[i].m_retired = false;
 		// log the error
-		log("net: Got error sending add data request (0x%02x) "
-		    "to host #%" PRId32": %s. "
-		    "Sleeping one second and retrying.", 
+		log("net: Got error sending add data request (0x%02x) to host #%d: %s. Sleeping one second and retrying.",
 		    (int)m_msgType, h->m_hostId, mstrerror(g_errno));
 		// . clear it, we'll try again
 		// . if we don't clear Msg1::addList(), which returns
@@ -276,24 +274,19 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 	//	    "group send: %s.", mstrerror(g_errno) );
 	// set m_errnos for this slot
 	int32_t i;
-	for ( i = 0 ; i < m_numHosts ; i++ ) if ( m_host[i].m_slot == slot ) break;
-	// if it matched no slot that's wierd
+	for(i = 0; i < m_numHosts; i++)
+		if(m_host[i].m_slot == slot)
+			break;
 	if ( i == m_numHosts ) {
-		//log("not our slot: mcast=%" PRIu32,(int32_t)this);
+		// if it matched no slot that's wierd
 		log(LOG_LOGIC,"net: multicast: Not our slot.");
 		return;
-	}
-	// clear a timeout error on dead hosts
-	if ( g_conf.m_giveupOnDeadHosts &&
-	     g_hostdb.isDead ( m_host[i].m_hostPtr->m_hostId ) ) {
-		log ( "net: GIVING UP ON DEAD HOST! This will not "
-		      "return an error." );
-		g_errno = 0;
 	}
 	// set m_errnos to g_errno, if any
 	m_host[i].m_errno = g_errno;
 	// if g_errno was not set we have a legit reply
-	if ( ! g_errno ) m_numReplies++;
+	if ( ! g_errno )
+		m_numReplies++;
 	// reset g_errno in case we do more sending
 	g_errno = 0;
 	// . if we got all the legit replies we're done, call the callback
@@ -308,35 +301,36 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 		return;
 	}
 	// if this guy had no error then wait for more callbacks
-	if ( !m_host[i].m_errno ) return;
+	if(!m_host[i].m_errno)
+		return;
 	// bring this slot out of retirement so we can send to him again
 	m_host[i].m_retired = false;
 	// do indeed log the try again things, cuz we have gotten into a 
 	// nasty loop with them that took me a while to track down
 	bool logIt = false;
 	static int32_t s_elastTime = 0;
-	if      (m_host[i].m_errno != ETRYAGAIN ) logIt = true;
-	// log it every 10 seconds even if it was a try again
+	if(m_host[i].m_errno != ETRYAGAIN )
+		logIt = true;
 	else {
+		// log it every 10 seconds even if it was a try again
 		int32_t now = getTime();
-		if (now - s_elastTime > 10) {s_elastTime = now; logIt=true;}
+		if (now - s_elastTime > 10) {
+			s_elastTime = now;
+			logIt=true;
+		}
 	}
 	// don't log ETRYAGAIN, may come across as bad when it is normal
-	if (m_host[i].m_errno == ETRYAGAIN ) logIt = false;
-	//logIt = true;
+	if(m_host[i].m_errno == ETRYAGAIN)
+		logIt = false;
 	// log a failure msg
-	if ( logIt ) { //m_host[i].m_errno != ETRYAGAIN ) {
-		Host *h = g_hostdb.getUdpHost ( slot->getIp() ,slot->getPort() );
+	if ( logIt ) {
+		const Host *h = slot->m_host;
 		if ( h ) 
-			log("net: Got error sending request to hostId %" PRId32" "
-			    "(msgType=0x%02x transId=%" PRId32" net=%s): "
-			    "%s. Retrying.",
+			log("net: Got error sending request to hostId %d (msgType=0x%02x transId=%d net=%s): %s. Retrying.",
 			    h->m_hostId, (int)slot->getMsgType(), slot->getTransId(),
 			    g_hostdb.getNetName(),mstrerror(m_host[i].m_errno) );
 		else
-			log("net: Got error sending request to %s:%" PRId32" "
-			    "(msgType=0x%02x transId=%" PRId32" net=%s): "
-			    "%s. Retrying.",
+			log("net: Got error sending request to %s:%d (msgType=0x%02x transId=%d net=%s): %s. Retrying.",
 			    iptoa(slot->getIp()), (int32_t)slot->getPort(),
 			    (int)slot->getMsgType(), slot->getTransId(),
 			    g_hostdb.getNetName(),mstrerror(m_host[i].m_errno) );
@@ -345,7 +339,8 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 	// . the g_errno could be ETRYAGAIN which happens if we're trying to 
 	//   add data but the other host is temporarily full
 	// . continue if we're already registered for sleep callbacks
-	if ( m_registeredSleep ) return ;
+	if(m_registeredSleep)
+		return;
 	// . otherwise register for sleep callback to try again
 	// . sleepWrapper2() will call sendToWholeGroup() for us
 	g_loop.registerSleepCallback( 5000/*ms*/, this, sleepWrapper2, m_niceness );
@@ -433,8 +428,7 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 			if ( m_host[i].m_hostPtr->m_hostId == firstHostId ) break;
 		// if not found bitch
 		if ( i >= m_numHosts ) {
-			log(LOG_LOGIC,"net: multicast: HostId %" PRId32" not "
-			    "in group.", firstHostId );
+			log(LOG_LOGIC,"net: multicast: HostId %" PRId32" not in group.", firstHostId );
 			g_process.shutdownAbort(true);
 		}
 		// if we got a match and it's not dead, return it
@@ -517,8 +511,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	if ( i >= m_numHosts ) { g_process.shutdownAbort(true); }
 	// sanity check , bitch if retired
 	if ( m_host[i].m_retired ) {
-		log(LOG_LOGIC,"net: multicast: Host #%" PRId32" is retired. "
-		    "Bad engineer.",i);
+		log(LOG_LOGIC,"net: multicast: Host #%d is retired. Bad engineer.",i);
 		//g_process.shutdownAbort(true);
 		return true;
 	}
@@ -591,7 +584,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// . returns true on successful launch and calls callback on completion
 	ScopedLock sl(m_mtx);
 	if (!g_udpServer.sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_host[i].m_slot, this, gotReply1, timeRemaining, m_niceness, NULL, -1, -1, maxResends)) {
-		log(LOG_WARN, "net: Had error sending msgtype 0x%02x to host #%" PRId32": %s. Not retrying.",
+		log(LOG_WARN, "net: Had error sending msgtype 0x%02x to host #%d: %s. Not retrying.",
 		    (int)m_msgType, h->m_hostId, mstrerror(g_errno));
 		// i've seen ENOUDPSLOTS available msg here along with oom
 		// condition...
@@ -746,9 +739,9 @@ void Multicast::sleepCallback1() {
 			// transaction is not in progress ifm_host[i].m_errno is set
 			const char *ee = "";
 			if ( m_host[i].m_errno ) ee = mstrerror(m_host[i].m_errno);
-			log( LOG_DEBUG, "net: Multicast::sleepWrapper1: tried host "
-			    "%s:%" PRId32" %s" ,iptoa(m_host[i].m_slot->getIp()),
-			    (int32_t)m_host[i].m_slot->getPort() , ee );
+			log(LOG_DEBUG, "net: Multicast::sleepWrapper1: tried host %s:%d %s",
+			    iptoa(m_host[i].m_slot->getIp()),
+			    (int32_t)m_host[i].m_slot->getPort(), ee);
 		}
 	}
 
@@ -764,9 +757,7 @@ void Multicast::sleepCallback1() {
 		int32_t hid = -1;
 		if ( hd ) hid = hd->m_hostId;
 		log(LOG_WARN,
-		    "net: Multicast::sleepWrapper1: rerouted msgType=0x%02x "
-		    "from host #%" PRId32" "
-		    "to new host after waiting %" PRId32" ms",
+		    "net: Multicast::sleepWrapper1: rerouted msgType=0x%02x from host #%d to new host after waiting %d ms",
 		    (int)m_msgType, hid,elapsed);
 		// . mark it in the stats for PageStats.cpp
 		// . this is timeout based rerouting
@@ -858,18 +849,12 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 			// log the error
 			Host *h = g_hostdb.getUdpHost(slot->getIp(), slot->getPort());
 			if (h) {
-				log(LOG_WARN, "net: Multicast got error in reply from "
-						    "hostId %" PRId32
-						    " (msgType=0x%02x transId=%" PRId32" "
-						    "nice=%" PRId32" net=%s): "
-						    "%s.",
+				log(LOG_WARN, "net: Multicast got error in reply from hostId %d (msgType=0x%02x transId=%d nice=%d net=%s): %s.",
 				    h->m_hostId, (int)slot->getMsgType(), slot->getTransId(),
 				    m_niceness,
 				    g_hostdb.getNetName(), mstrerror(g_errno));
 			} else {
-				log(LOG_WARN, "net: Multicast got error in reply from %s:%" PRId32" "
-						    "(msgType=0x%02x transId=%" PRId32" nice =%" PRId32" net=%s): "
-						    "%s.",
+				log(LOG_WARN, "net: Multicast got error in reply from %s:%d (msgType=0x%02x transId=%d nice =%d net=%s): %s.",
 				    iptoa(slot->getIp()), (int32_t) slot->getPort(),
 				    (int)slot->getMsgType(), slot->getTransId(), m_niceness,
 				    g_hostdb.getNetName(), mstrerror(g_errno));

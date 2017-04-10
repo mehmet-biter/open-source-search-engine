@@ -2051,13 +2051,6 @@ static void getTitleRecBufWrapper ( void *state ) {
 	THIS->callCallback();
 }
 
-key96_t *XmlDoc::getTitleRecKey() {
-	if ( m_titleRecBufValid ) return &m_titleRecKey;
-	SafeBuf *tr = getTitleRecBuf();
-	if ( ! tr || tr == (void *)-1 ) return (key96_t *)tr;
-	return &m_titleRecKey;
-}
-
 // . return NULL and sets g_errno on error
 // . returns -1 if blocked
 int32_t *XmlDoc::getIndexCode ( ) {
@@ -6755,9 +6748,13 @@ int32_t *XmlDoc::getIp ( ) {
 		m_didDelay = true;
 		m_statusMsg = "delaying spider";
 		// random fuzz so we don't get everyone being unleashed at once
-		int32_t radius = (int32_t)(.20 * (double)delay);
+		int32_t radius = delay/5;
+		if(radius<=0)
+			radius = 1;
 		int32_t fuzz = (rand() % (radius * 2)) - radius;
 		delay += fuzz;
+		if(delay<=0)
+			delay = 1;
 		logTrace( g_conf.m_logTraceXmlDoc, "SLEEPING %" PRId32" msecs", delay);
 		// make a callback wrapper.
 		// this returns false and sets g_errno on error
@@ -10934,13 +10931,7 @@ int32_t *XmlDoc::getUrlFilterNum ( ) {
 	// . look it up
 	// . use the old spidered date for "nowGlobal" so we can be consistent
 	//   for injecting into the "qatest123" coll
-	int32_t ufn = ::getUrlFilterNum ( oldsr,
-					  NULL,//&fakeReply,
-					  spideredTime,false,
-					  cr,
-					  false, // isOutlink?
-					  NULL,
-					  langIdArg);
+	int32_t ufn = ::getUrlFilterNum(oldsr, NULL, spideredTime, false, cr, false, NULL, langIdArg);
 
 	// put it back
 	//newsr->m_spideredTime = saved;
@@ -12227,7 +12218,7 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 
 		// ensure spiderdb request recs have data/url in them
 		if ( (rdbId == RDB_SPIDERDB || rdbId == RDB2_SPIDERDB2) &&
-		     g_spiderdb.isSpiderRequest ( (SPIDERDBKEY *)rec ) &&
+		     g_spiderdb.isSpiderRequest ( (spiderdbkey_t *)rec ) &&
 		     ! forDelete &&
 		     ! del &&
 		     dataSize == 0 ) {
@@ -12335,7 +12326,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 			HashTableX *wt = m_wts;
 
 			// now print the table we stored all we hashed into
-			for ( int32_t i = 0 ; i < wt->m_numSlots ; i++ ) {
+			for ( int32_t i = 0 ; i < wt->getNumSlots() ; i++ ) {
 				// skip if empty
 				if ( wt->m_flags[i] == 0 ) continue;
 				// get the TermInfo
@@ -13162,7 +13153,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			return NULL;
 		}
 
-		int32_t did = tt1.m_numSlots;
+		int32_t did = tt1.getNumSlots();
 		// . hash the document terms into "tt1"
 		// . this is a biggie!!!
 		// . only hash ourselves if m_indexCode is false
@@ -13183,7 +13174,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			return NULL;
 		}
 
-		int32_t done = tt1.m_numSlots;
+		int32_t done = tt1.getNumSlots();
 		if (done != did) {
 			log(LOG_WARN, "xmldoc: reallocated big table! bad. old=%" PRId32" new=%" PRId32" nw=%" PRId32, did, done, m_words.getNumWords());
 		}
@@ -13197,7 +13188,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 	/// @todo ALC verify that we actually need sizeof(key128_t)
 	// space for indexdb AND DATEDB! +2 for rdbids
-	int32_t needPosdb = tt1.m_numSlotsUsed * (sizeof(posdbkey_t) + 2 + sizeof(key128_t));
+	int32_t needPosdb = tt1.getNumUsedSlots() * (sizeof(posdbkey_t) + 2 + sizeof(key128_t));
 	if (!forDelete) {
 		// need 1 additional key for special key (with termid 0)
 		needPosdb += sizeof(posdbkey_t) + 1;
@@ -13239,15 +13230,10 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	}
 
 	// pre-grow table based on # outlinks
-	kt1.set(sizeof(key224_t), 0, nis, NULL, 0, false, "link-indx");
-
-	// use magic to make fast
-	kt1.m_useKeyMagic = true;
-
 	// linkdb keys will have the same lower 4 bytes, so make hashing fast.
 	// they are 28 byte keys. bytes 20-23 are the hash of the linkEE
 	// so that will be the most random.
-	kt1.m_maskKeyOffset = 20;
+	kt1.set(sizeof(key224_t), 0, nis, NULL, 0, false, "link-indx", true, 20);
 
 	// . we already have a Links::hash into the Termtable for links: terms,
 	//   but this will have to be for adding to Linkdb. basically take a
@@ -13259,7 +13245,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	}
 
 	// add up what we need. +1 for rdbId
-	int32_t needLinkdb = kt1.m_numSlotsUsed * (sizeof(key224_t)+1);
+	int32_t needLinkdb = kt1.getNumUsedSlots() * (sizeof(key224_t)+1);
 	need += needLinkdb;
 
 	// we add a negative key to doledb usually (include datasize now)
@@ -13951,7 +13937,7 @@ skipNewAdd2:
 		}
 
 		// now scan dt8 and add their keys as del keys
-		for ( int32_t i = 0 ; i < dt8.m_numSlots ; i++ ) {
+		for ( int32_t i = 0 ; i < dt8.getNumSlots() ; i++ ) {
 			// skip if empty
 			if (!dt8.m_flags[i]) {
 				continue;
@@ -15134,9 +15120,9 @@ int32_t XmlDoc::getSiteRank ( ) {
 bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 
 	// sanity check
-	if ( tt1->m_numSlots ) {
-		if ( tt1->m_ks != sizeof(key144_t) ) {g_process.shutdownAbort(true);}
-		if ( tt1->m_ds != 4                ) {g_process.shutdownAbort(true);}
+	if ( tt1->getNumSlots() ) {
+		if ( tt1->getKeySize() != sizeof(key144_t) ) {g_process.shutdownAbort(true);}
+		if ( tt1->getDataSize() != 4                ) {g_process.shutdownAbort(true);}
 	}
 
 	// assume we are storing into m_p
@@ -15145,7 +15131,7 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 	// reserve space if we had a safebuf and point into it if there
 	if ( buf ) {
 		int32_t slotSize = (sizeof(key144_t)+2+sizeof(key128_t));
-		int32_t need = tt1->getNumSlotsUsed() * slotSize;
+		int32_t need = tt1->getNumUsedSlots() * slotSize;
 		if ( ! buf->reserve ( need ) ) return false;
 		// get cursor into buf, NOT START of buf
 		p = buf->getBufStart();
@@ -15159,7 +15145,7 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 	if ( m_useSecondaryRdbs ) rdbId = RDB2_POSDB2;
 
 	// store terms from "tt1" table
-	for ( int32_t i = 0 ; i < tt1->m_numSlots ; i++ ) {
+	for ( int32_t i = 0 ; i < tt1->getNumSlots() ; i++ ) {
 		// skip if empty
 		if ( tt1->m_flags[i] == 0 ) continue;
 		// get its key
@@ -15210,16 +15196,16 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 bool XmlDoc::addTable224 ( HashTableX *tt1 ) {
 
 	// sanity check
-	if ( tt1->m_numSlots ) {
-		if ( tt1->m_ks != sizeof(key224_t) ) {g_process.shutdownAbort(true);}
-		if ( tt1->m_ds != 0                ) {g_process.shutdownAbort(true);}
+	if ( tt1->getNumSlots() ) {
+		if ( tt1->getKeySize() != sizeof(key224_t) ) {g_process.shutdownAbort(true);}
+		if ( tt1->getDataSize() != 0                ) {g_process.shutdownAbort(true);}
 	}
 
 	rdbid_t rdbId = RDB_LINKDB;
 	if ( m_useSecondaryRdbs ) rdbId = RDB2_LINKDB2;
 
 	// store terms from "tt1" table
-	for ( int32_t i = 0 ; i < tt1->m_numSlots ; i++ ) {
+	for ( int32_t i = 0 ; i < tt1->getNumSlots() ; i++ ) {
 		// skip if empty
 		if ( tt1->m_flags[i] == 0 ) continue;
 		// get its key
@@ -15753,324 +15739,6 @@ Url *XmlDoc::getBaseUrl ( ) {
 	return &m_baseUrl;
 }
 
-
-
-//
-// STUFF IMPORTED FROM INDEXLIST.CPP
-//
-
-// we also assume all scores are above 256, too
-uint8_t score32to8 ( uint32_t score ) {
-	// ensure score is > 0... no! not any more
-	if ( score <= 0  ) return (unsigned char) 0;
-	// extremely large scores need an adjustment to avoid wrapping
-	if ( score < (uint32_t)0xffffffff - 128 )
-		score += 128;
-	// scores are multiplied by 256 to preserve fractions, so undo that
-	score /= 256;
-	// ensure score is > 0
-	if ( score <= 0  ) return (unsigned char) 1;
-	// if score < 128 return it now
-	if ( score < 128 ) return (unsigned char) score;
-	// now shrink it so it's now from 1 upwards
-	score -= 127;
-
-	// . take NATURAL log of score now
-	// . PROBLEM: for low scores logscore may increase by close to 1.0
-	//   for a score increase of 1.0. and since s_maxscore is about 22.0
-	//   we end up moving 1.0/22.0 of 128 total pts causing a jump of
-	//   2 or more score points!! oops!!! to fix, let's add 10 pts
-	//   to the score
-	score += 10;
-	double logscore = ::log ( (double)score );
-	// now the max it can be
-	//double maxscore = ::log ( (double)(0x00ffffff - 127));
-	static double s_maxscore = -1.0;
-	static double s_minscore = -1.0;
-	if ( almostEqualDouble(s_maxscore, -1.0) ) {
-		uint32_t max = ((0xffffffff +   0)/256) - 127 + 10;
-		uint32_t min = (  128                 ) - 127 + 10;
-		s_maxscore = ::log((double)max);
-		s_minscore = ::log((double)min);
-		// adjust
-		s_maxscore -= s_minscore;
-	}
-	// adjust it
-	logscore -= s_minscore;
-	// scale it into [126,0] (add .5 for rounding)
-	double scaled   = (logscore* 127.0) / s_maxscore  + .5;
-	// sanity check
-	if ( (unsigned char)scaled >= 128 ) { g_process.shutdownAbort(true); }
-	// . go into the 8 bit score now
-	// . set the hi bit so they know we took its log
-	unsigned char score8 = (unsigned char)scaled | 128;
-	return score8;
-}
-
-// for score8to32() below
-static const uint32_t s_scoreMap[] = {
-	0UL,
-	1UL,
-        385UL,
-        641UL,
-        897UL,
-        1153UL,
-        1409UL,
-        1665UL,
-        1921UL,
-        2177UL,
-        2433UL,
-        2689UL,
-        2945UL,
-        3201UL,
-        3457UL,
-        3713UL,
-        3969UL,
-        4225UL,
-        4481UL,
-        4737UL,
-        4993UL,
-        5249UL,
-        5505UL,
-        5761UL,
-        6017UL,
-        6273UL,
-        6529UL,
-        6785UL,
-        7041UL,
-        7297UL,
-        7553UL,
-        7809UL,
-        8065UL,
-        8321UL,
-        8577UL,
-        8833UL,
-        9089UL,
-        9345UL,
-        9601UL,
-        9857UL,
-        10113UL,
-        10369UL,
-        10625UL,
-        10881UL,
-        11137UL,
-        11393UL,
-        11649UL,
-        11905UL,
-        12161UL,
-        12417UL,
-        12673UL,
-        12929UL,
-        13185UL,
-        13441UL,
-        13697UL,
-        13953UL,
-        14209UL,
-        14465UL,
-        14721UL,
-        14977UL,
-        15233UL,
-        15489UL,
-        15745UL,
-        16001UL,
-        16257UL,
-        16513UL,
-        16769UL,
-        17025UL,
-        17281UL,
-        17537UL,
-        17793UL,
-        18049UL,
-        18305UL,
-        18561UL,
-        18817UL,
-        19073UL,
-        19329UL,
-        19585UL,
-        19841UL,
-        20097UL,
-        20353UL,
-        20609UL,
-        20865UL,
-        21121UL,
-        21377UL,
-        21633UL,
-        21889UL,
-        22145UL,
-        22401UL,
-        22657UL,
-        22913UL,
-        23169UL,
-        23425UL,
-        23681UL,
-        23937UL,
-        24193UL,
-        24449UL,
-        24705UL,
-        24961UL,
-        25217UL,
-        25473UL,
-        25729UL,
-        25985UL,
-        26241UL,
-        26497UL,
-        26753UL,
-        27009UL,
-        27265UL,
-        27521UL,
-        27777UL,
-        28033UL,
-        28289UL,
-        28545UL,
-        28801UL,
-        29057UL,
-        29313UL,
-        29569UL,
-        29825UL,
-        30081UL,
-        30337UL,
-        30593UL,
-        30849UL,
-        31105UL,
-        31361UL,
-        31617UL,
-        31873UL,
-        32129UL,
-        32385UL,
-        32641UL,
-        32897UL,
-        33488UL,
-        33842UL,
-        34230UL,
-        34901UL,
-        35415UL,
-        35979UL,
-        36598UL,
-        37278UL,
-        38025UL,
-        39319UL,
-        40312UL,
-        41404UL,
-        43296UL,
-        44747UL,
-        46343UL,
-        48098UL,
-        51138UL,
-        53471UL,
-        56037UL,
-        58859UL,
-        61962UL,
-        65374UL,
-        71287UL,
-        75825UL,
-        80816UL,
-        86305UL,
-        92342UL,
-        98982UL,
-        110492UL,
-        119326UL,
-        129042UL,
-        139728UL,
-        151481UL,
-        171856UL,
-        187496UL,
-        204699UL,
-        223622UL,
-        244437UL,
-        267333UL,
-        307029UL,
-        337502UL,
-        371022UL,
-        407893UL,
-        448450UL,
-        493062UL,
-        570408UL,
-        629783UL,
-        695095UL,
-        766938UL,
-        845965UL,
-        982981UL,
-        1088163UL,
-        1203862UL,
-        1331130UL,
-        1471124UL,
-        1625117UL,
-        1892110UL,
-        2097072UL,
-        2322530UL,
-        2570533UL,
-        2843335UL,
-        3143416UL,
-        3663697UL,
-        4063102UL,
-        4502447UL,
-        4985726UL,
-        5517332UL,
-        6439034UL,
-        7146599UL,
-        7924919UL,
-        8781070UL,
-        9722836UL,
-        10758778UL,
-        12554901UL,
-        13933735UL,
-        15450451UL,
-        17118838UL,
-        18954063UL,
-        20972809UL,
-        24472927UL,
-        27159874UL,
-        30115514UL,
-        33366717UL,
-        36943040UL,
-        43143702UL,
-        47903786UL,
-        53139877UL,
-        58899576UL,
-        65235244UL,
-        72204478UL,
-        84287801UL,
-        93563849UL,
-        103767501UL,
-        114991518UL,
-        127337936UL,
-        140918995UL,
-        164465962UL,
-        182542348UL,
-        202426372UL,
-        224298798UL,
-        248358466UL,
-        290073346UL,
-        322096762UL,
-        357322519UL,
-        396070851UL,
-        438694015UL,
-        485579494UL,
-        566869982UL,
-        629274552UL,
-        697919578UL,
-        773429105UL,
-        856489583UL,
-        947856107UL,
-        1106268254UL,
-        1227877095UL,
-        1361646819UL,
-        1508793514UL,
-        1670654878UL,
-        1951291651UL,
-        2166729124UL,
-        2403710344UL,
-        2664389686UL,
-        2951136962UL,
-        3266558965UL,
-        3813440635UL,
-        4233267317UL
-};
-
-uint32_t score8to32 ( uint8_t score8 ) {
-	return(s_scoreMap[score8]);
-}
-
 ////////////////////////////////////////////////////////////
 //
 // Summary/Title generation for Msg20
@@ -16305,8 +15973,8 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	// just recycle!
 	if ( m_req && ! m_checkedUrlFilters && ! m_tagRecDataValid ) {
 		char *site = getSite();
-		TAGDB_KEY tk1 = g_tagdb.makeStartKey ( site );
-		TAGDB_KEY tk2 = g_tagdb.makeDomainStartKey ( &m_firstUrl );
+		TAGDB_KEY tk1 = Tagdb::makeStartKey ( site );
+		TAGDB_KEY tk2 = Tagdb::makeDomainStartKey ( &m_firstUrl );
 		uint32_t shardNum1 = g_hostdb.getShardNum(RDB_TAGDB,&tk1);
 		uint32_t shardNum2 = g_hostdb.getShardNum(RDB_TAGDB,&tk2);
 		// shardnum1 and shardnum2 are often different!
@@ -16353,13 +16021,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 		}
 
 		// get it
-		int32_t ufn;
-		ufn=::getUrlFilterNum(&sreq,&srep,spideredTime,true,
-				      cr,
-				      false, // isOutlink?
-				      NULL ,
-				      langIdArg);
-
+		int32_t ufn = ::getUrlFilterNum(&sreq, &srep, spideredTime, true, cr, false, NULL, langIdArg);
 
 		// get spider priority if ufn is valid
 		int32_t pr = 0;
@@ -18249,7 +17911,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 	int32_t nwt = 0;
 	if ( wt ) {
-		nwt = wt->m_numSlots;
+		nwt = wt->getNumSlots();
 		tp = (TermDebugInfo **)wt->m_keys;
 	}
 
@@ -19040,7 +18702,7 @@ void XmlDoc::printTermList() const {
 
 	int32_t nwt = 0;
 	if ( wt ) {
-		nwt = wt->m_numSlots;
+		nwt = wt->getNumSlots();
 		tp = (TermDebugInfo **)wt->m_keys;
 	}
 
@@ -19199,7 +18861,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 
 	int32_t nwt = 0;
 	if ( wt ) {
-		nwt = wt->m_numSlots;
+		nwt = wt->getNumSlots();
 		tp = (TermDebugInfo **)wt->m_keys;
 	}
 

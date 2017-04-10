@@ -67,14 +67,10 @@ class RdbBase {
 		    collnum_t            collnum ,
 		    RdbTree             *tree    ,
 		    RdbBuckets          *buckets ,
-		    RdbDump             *dump    ,
 		    Rdb           *rdb    ,
 		    bool           useIndexFile);
 
-	void closeMaps ( bool urgent );
 	void saveMaps  ();
-
-	void closeIndexes ( bool urgent );
 	void saveIndexes();
 
 	void saveTreeIndex();
@@ -104,9 +100,6 @@ class RdbBase {
 	const char *getDbName() const { return m_dbname; }
 
 	docidsconst_ptr_t getGlobalIndex();
-
-
-	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const;
 
 	// how much mem is allocated for our maps?
 	int64_t getMapMemAllocated() const;
@@ -163,7 +156,6 @@ class RdbBase {
 
 	// these are used for computing load on a machine
 	bool isMerging() const { return m_isMerging; }
-	bool isDumping() const { return m_dump->isDumping(); }
 
 	//are files being unlinked or renamed?
 	bool isManipulatingFiles() const;
@@ -181,16 +173,6 @@ class RdbBase {
 	// the primary rdb. this is called after moveToTrash() is called for
 	// the primary rdb.
 	bool removeRebuildFromFilenames ( ) ;
-
-	void specialInjectFileInit(const char *dir,
-	                           const char *filename,
-	                           collnum_t collnum,
-	                           Rdb *rdb,
-	                           int32_t fixedDataSize,
-	                           bool useHalfKeys,
-	                           char ks,
-	                           int32_t pageSize,
-	                           int32_t minToMerge);
 
 	void forceNextMerge() { m_nextMergeForced = true; }
 
@@ -324,9 +306,6 @@ private:
 
 	// index for in memory records
 	RdbIndex m_treeIndex;
-
-	// for dumping a table to an rdb file
-	RdbDump    *m_dump;  
 
 	int32_t      m_minToMergeDefault; //from init() call
 	int32_t      m_minToMerge;  // need at least this many files b4 merging

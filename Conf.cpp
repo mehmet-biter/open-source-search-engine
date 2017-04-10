@@ -84,6 +84,7 @@ Conf::Conf ( ) {
 	m_sendEmailTimeout = 0;
 	m_pingSpacer = 100;
 	m_maxOutstandingPings = 5;
+	m_watchdogInterval = 650;
 	m_maxDocsWanted = 0;
 	m_maxFirstResultNum = 0;
 	min_docid_splits = 0;
@@ -172,8 +173,6 @@ Conf::Conf ( ) {
 	m_stableSummaryCacheMaxAge = 0;
 	m_unstableSummaryCacheSize = 0;
 	m_unstableSummaryCacheMaxAge = 0;
-	m_tagRecCacheSize = 0;
-	m_tagRecCacheMaxAge = 0;
 	m_useShotgun = false;
 	m_testMem = false;
 	m_doConsistencyTesting = false;
@@ -229,6 +228,7 @@ Conf::Conf ( ) {
 	m_logDebugTitle = false;
 	m_logDebugTopDocs = false;
 	m_logDebugUdp = false;
+	m_logDebugWatchdog = false;
 	m_logDebugUnicode = false;
 	m_logDebugRepair = false;
 	m_logDebugDate = false;
@@ -273,9 +273,7 @@ Conf::Conf ( ) {
 	m_useCompressionProxy = false;
 	m_gzipDownloads = false;
 	m_useTmpCluster = false;
-	m_interfaceMachine = false;
 	m_allowScale = true;
-	m_giveupOnDeadHosts = false;
 	m_bypassValidation = false;
 	m_maxCallbackDelay = 0;
 	m_repairingEnabled = false;

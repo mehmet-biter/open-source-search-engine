@@ -1,10 +1,10 @@
 #include "SpiderLoop.h"
 #include "Spider.h"
 #include "SpiderColl.h"
+#include "SpiderCache.h"
 #include "Doledb.h"
 #include "UdpSlot.h"
 #include "Collectiondb.h"
-#include "Stats.h"
 #include "SafeBuf.h"
 #include "Repair.h"
 #include "DailyMerge.h"
@@ -36,53 +36,9 @@
 //#define SPIDER_DONE_TIMER 90
 #define SPIDER_DONE_TIMER 20
 
-
-
-bool SpiderLoop::printLockTable ( ) {
-	// count locks
-	HashTableX *ht = &g_spiderLoop.m_lockTable;
-	// scan the slots
-	int32_t ns = ht->m_numSlots;
-	for ( int32_t i = 0 ; i < ns ; i++ ) {
-		// skip if empty
-		if ( ! ht->m_flags[i] ) continue;
-		// cast lock
-		UrlLock *lock = (UrlLock *)ht->getValueFromSlot(i);
-		// get the key
-		int64_t lockKey = *(int64_t *)ht->getKeyFromSlot(i);
-		// show it
-		log("dump: lock. "
-		    "lockkey=%" PRId64" "
-		    "spiderout=%" PRId32" "
-		    "confirmed=%" PRId32" "
-		    "firstip=%s "
-		    "expires=%" PRId32" "
-		    "hostid=%" PRId32" "
-		    "timestamp=%" PRId32" "
-		    "sequence=%" PRId32" "
-		    "collnum=%" PRId32" "
-		    ,lockKey
-		    ,(int32_t)(lock->m_spiderOutstanding)
-		    ,(int32_t)(lock->m_confirmed)
-		    ,iptoa(lock->m_firstIp)
-		    ,lock->m_expires
-		    ,lock->m_hostId
-		    ,lock->m_timestamp
-		    ,lock->m_lockSequence
-		    ,(int32_t)lock->m_collnum
-		    );
-	}
-	return true;
-}
-
-
-
 /////////////////////////
 /////////////////////////      SPIDERLOOP
 /////////////////////////
-
-static void indexedDocWrapper ( void *state ) ;
-static void doneSleepingWrapperSL ( int fd , void *state ) ;
 
 // a global class extern'd in .h file
 SpiderLoop g_spiderLoop;
@@ -96,8 +52,6 @@ SpiderLoop::SpiderLoop ( ) {
 	m_sreq = NULL;
 	m_collnum = 0;
 	m_doledbKey = NULL;
-	m_state = NULL;
-	m_callback = NULL;
 	m_numSpidersOut = 0;
 	m_launches = 0;
 	m_maxUsed = 0;
@@ -139,10 +93,9 @@ static void updateAllCrawlInfosSleepWrapper(int fd, void *state);
 
 
 
-void SpiderLoop::startLoop ( ) {
+void SpiderLoop::init() {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
-	
-	//m_cri     = 0;
+
 	m_crx = NULL;
 	m_activeListValid = false;
 	m_activeListModified = false;
@@ -216,20 +169,15 @@ void SpiderLoop::startLoop ( ) {
 
 // call this every 50ms it seems to try to spider urls and populate doledb
 // from the waiting tree
-void doneSleepingWrapperSL ( int fd , void *state ) {
+void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 	// if spidering disabled then do not do this crap
 	if ( ! g_conf.m_spideringEnabled )  return;
 	if ( ! g_hostdb.getMyHost( )->m_spiderEnabled ) return;
-	
-	//if ( ! g_conf.m_webSpideringEnabled )  return;
+
 	// or if trying to exit
 	if ( g_process.m_mode == Process::EXIT_MODE ) return;	
 	// skip if udp table is full
 	if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) return;
-
-	static int32_t s_count = -1;
-	// count these calls
-	s_count++;
 
 	int32_t now = getTimeLocal();
 
@@ -277,23 +225,19 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 
 		// always do a scan at startup & every 24 hrs
 		// AND at process startup!!!
-		if ( ! sc->m_waitingTreeNeedsRebuild && now - sc->m_lastScanTime > 24*3600 ) {
+		if ( ! sc->m_waitingTreeNeedsRebuild && now - sc->getLastScanTime() > 24*3600 ) {
 			// if a scan is ongoing, this will re-set it
-			sc->m_waitingTreeNextKey.setMin();
+			sc->resetWaitingTreeNextKey();
 			sc->m_waitingTreeNeedsRebuild = true;
 			log( LOG_INFO, "spider: hit spider queue rebuild timeout for %s (%" PRId32")",
 			     crp->m_coll, (int32_t)crp->m_collnum );
 		}
 
-//@@@@@@
-//@@@ BR: Why not check m_waitingTreeNeedsRebuild before calling??
-		// try this then. it just returns if
-		// sc->m_waitingTreeNeedsRebuild is false so it
-		// should be fast in those cases
-		// re-entry is false because we are entering for the first time
-		logTrace( g_conf.m_logTraceSpider, "Calling populateWaitingTreeFromSpiderdb" );
-		sc->populateWaitingTreeFromSpiderdb ( false );
-
+		if (sc->m_waitingTreeNeedsRebuild) {
+			// re-entry is false because we are entering for the first time
+			logTrace(g_conf.m_logTraceSpider, "Calling populateWaitingTreeFromSpiderdb");
+			sc->populateWaitingTreeFromSpiderdb(false);
+		}
 
 		logTrace( g_conf.m_logTraceSpider, "Calling populateDoledbFromWaitingTree" );
 		sc->populateDoledbFromWaitingTree ( );
@@ -336,7 +280,7 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 }
 
 
-void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
+void SpiderLoop::gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
 	// process the doledb list
 	g_spiderLoop.gotDoledbList2();
 }
@@ -467,7 +411,7 @@ subloop:
 	
 	// don't spider if not all hosts are up, or they do not all
 	// have the same hosts.conf.
-	if ( ! g_pingServer.m_hostsConfInAgreement ) {
+	if ( ! g_pingServer.hostsConfInAgreement() ) {
 		logTrace( g_conf.m_logTraceSpider, "END, host config disagreement"  );
 		return;
 	}
@@ -570,7 +514,7 @@ subloopNextPriority:
 	// tree using evalIpLoop() takes a LONG time because
 	// a niceness 0 thread is taking a LONG time! so do not
 	// set hasUrlsReadyToSpider to false because of that!!
-	if ( m_sc->m_gettingList1 )
+	if ( m_sc->gettingSpiderdbList() )
 		ci->m_lastSpiderCouldLaunch = nowGlobal;
 
 	// update this for the first time in case it is never updated.
@@ -848,11 +792,6 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 	// bail if list is empty
 	if ( m_list.getListSize() <= 0 ) {
-		// don't bother with this priority again until a key is
-		// added to it! addToDoleIpTable() will be called
-		// when that happens and it might unset this then.
-		m_sc->m_isDoledbEmpty [ m_sc->m_pri2 ] = 1;
-
 		return true;
 	}
 
@@ -971,11 +910,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	// sanity check. check for http(s)://
 	// might be a docid from a pagereindex.cpp
 	if ( sreq->m_url[0] != 'h' && ! is_digit(sreq->m_url[0]) ) {
-		// note it
-		if ( (g_corruptCount % 1000) == 0 ) {
-			log( "spider: got corrupt doledb record. ignoring. pls fix!!!" );
-		}
-		g_corruptCount++;
+		log(LOG_WARN, "spider: got corrupt doledb record. ignoring. pls fix!!!" );
 
 		goto skipDoledbRec;
 	}		
@@ -1021,9 +956,7 @@ skipDoledbRec:
 
 		// print a log msg if we corked things up even
 		// though we read 50k from doledb
-		static bool s_flag = true;
-		if ( m_list.getListSize() > 50000 && s_flag ) {
-			s_flag = true;
+		if ( m_list.getListSize() > 50000 ) {
 			log("spider: 50k not big enough");
 		}
 
@@ -1062,7 +995,7 @@ skipDoledbRec:
 	}
 
 	// if there and confirmed, why still in doledb?
-	if ( lock && lock->m_confirmed ) {
+	if (lock) {
 		// fight log spam
 		static int32_t s_lastTime = 0;
 		if ( nowGlobal - s_lastTime >= 2 ) {
@@ -1339,7 +1272,7 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	if (
 	     // this will just return true if we are not the 
 	     // responsible host for this firstip
-	     ! m_sc->addToWaitingTree ( 0 , sreq->m_firstIp ) &&
+	     ! m_sc->addToWaitingTree(sreq->m_firstIp) &&
 	     // must be an error...
 	     g_errno ) {
 		const char *msg = "FAILED TO ADD TO WAITING TREE";
@@ -1355,12 +1288,8 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	//   is not enough because we re-add to doledb right away
 	// . return true on error here
 	UrlLock tmp;
-	tmp.m_hostId = g_hostdb.m_myHost->m_hostId;
-	tmp.m_timestamp = 0;
-	tmp.m_expires = 0;
 	tmp.m_firstIp = m_sreq->m_firstIp;
 	tmp.m_spiderOutstanding = 0;
-	tmp.m_confirmed = 1;
 	tmp.m_collnum = m_collnum;
 
 	if ( ! g_spiderLoop.m_lockTable.addKey ( &lockKeyUh48 , &tmp ) )
@@ -1482,7 +1411,7 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	return true;
 }
 
-void indexedDocWrapper ( void *state ) {
+void SpiderLoop::indexedDocWrapper ( void *state ) {
 	// . process the results
 	// . return if this blocks
 	if ( ! g_spiderLoop.indexedDoc ( (XmlDoc *)state ) ) return;
@@ -1560,7 +1489,7 @@ int32_t SpiderLoop::getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum 
 	// count locks
 	HashTableX *ht = &g_spiderLoop.m_lockTable;
 	// scan the slots
-	int32_t ns = ht->m_numSlots;
+	int32_t ns = ht->getNumSlots();
 	for ( int32_t i = 0 ; i < ns ; i++ ) {
 		// skip if empty
 		if ( ! ht->m_flags[i] ) continue;
@@ -1570,8 +1499,6 @@ int32_t SpiderLoop::getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum 
 		// when the spiderReply returns, so that in case a lock
 		// request for the same url was in progress, it will be denied.
 		if ( ! lock->m_spiderOutstanding ) continue;
-		// must be confirmed too
-		if ( ! lock->m_confirmed ) continue;
 		// correct collnum?
 		if ( lock->m_collnum != collnum && collnum != -1 ) continue;
 		// skip if not yet expired
@@ -1679,66 +1606,6 @@ void SpiderLoop::buildActiveList ( ) {
 	logTrace( g_conf.m_logTraceSpider, "END" );
 }
 
-// hostId is the remote hostid sending us the lock request
-static void removeExpiredLocks(int32_t hostId) {
-	// when we last cleaned them out
-	static time_t s_lastTime = 0;
-
-	int32_t nowGlobal = getTimeGlobalNoCore();
-
-	// only do this once per second at the most
-	if ( nowGlobal <= s_lastTime ) return;
-
-	restart:
-
-	// scan the slots
-	int32_t ns = g_spiderLoop.m_lockTable.m_numSlots;
-	// . clean out expired locks...
-	// . if lock was there and m_expired is up, then nuke it!
-	// . when Rdb.cpp receives the "fake" title rec it removes the
-	//   lock, only it just sets the m_expired to a few seconds in the
-	//   future to give the negative doledb key time to be absorbed.
-	//   that way we don't repeat the same url we just got done spidering.
-	// . this happens when we launch our lock request on a url that we
-	//   or a twin is spidering or has just finished spidering, and
-	//   we get the lock, but we avoided the negative doledb key.
-	for ( int32_t i = 0 ; i < ns ; i++ ) {
-		// skip if empty
-		if ( ! g_spiderLoop.m_lockTable.m_flags[i] ) continue;
-		// cast lock
-		UrlLock *lock = (UrlLock *)g_spiderLoop.m_lockTable.getValueFromSlot(i);
-		int64_t lockKey = *(int64_t *)g_spiderLoop.m_lockTable.getKeyFromSlot(i);
-		// if collnum got deleted or reset
-		collnum_t collnum = lock->m_collnum;
-		if ( collnum >= g_collectiondb.getNumRecs() ||
-		     ! g_collectiondb.getRec(collnum)) {
-			log("spider: removing lock from missing collnum "
-					    "%" PRId32,(int32_t)collnum);
-			goto nuke;
-		}
-		// skip if not yet expired
-		if ( lock->m_expires == 0 ) continue;
-		if ( lock->m_expires >= nowGlobal ) continue;
-		// note it for now
-		if ( g_conf.m_logDebugSpider )
-			log("spider: removing lock after waiting. elapsed=%" PRId32"."
-					    " lockKey=%" PRIu64" hid=%" PRId32" expires=%" PRIu32" "
-					    "nowGlobal=%" PRIu32,
-			    (nowGlobal - lock->m_timestamp),
-			    lockKey,hostId,
-			    (uint32_t)lock->m_expires,
-			    (uint32_t)nowGlobal);
-		nuke:
-		// nuke the slot and possibly re-chain
-		g_spiderLoop.m_lockTable.removeSlot ( i );
-		// gotta restart from the top since table may have shrunk
-		goto restart;
-	}
-	// store it
-	s_lastTime = nowGlobal;
-}
-
-
 static void gotCrawlInfoReply(void *state, UdpSlot *slot);
 
 static int32_t s_requests = 0;
@@ -1754,13 +1621,6 @@ static int32_t s_updateRoundNum = 1;
 static void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
-
-	// i don't know why we have locks in the lock table that are not
-	// getting removed... so log when we remove an expired locks and see.
-	// piggyback on this sleep wrapper call i guess...
-	// perhaps the collection was deleted or reset before the spider
-	// reply could be generated. in that case we'd have a dangling lock.
-	removeExpiredLocks ( -1 );
 
 	if ( s_inUse ) return;
 

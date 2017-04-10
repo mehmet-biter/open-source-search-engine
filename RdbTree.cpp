@@ -963,9 +963,9 @@ bool RdbTree::fixTree_unlocked() {
 		}
 
 		char *key = &m_keys[i*m_ks];
-		if (isSpiderdb && m_data[i] && Spiderdb::isSpiderRequest((SPIDERDBKEY *)key)) {
+		if (isSpiderdb && m_data[i] && Spiderdb::isSpiderRequest((spiderdbkey_t *)key)) {
 			char *data = m_data[i];
-			data -= sizeof(SPIDERDBKEY);
+			data -= sizeof(spiderdbkey_t);
 			data -= 4;
 			SpiderRequest *sreq ;
 			sreq =(SpiderRequest *)data;
@@ -1055,9 +1055,9 @@ bool RdbTree::checkTree_unlocked(bool printMsgs, bool doChainTest) const {
 
 		char *key = &m_keys[i*m_ks];
 		if ( isSpiderdb && m_data[i] &&
-				Spiderdb::isSpiderRequest ( (SPIDERDBKEY *)key ) ) {
+				Spiderdb::isSpiderRequest ( (spiderdbkey_t *)key ) ) {
 				char *data = m_data[i];
-				data -= sizeof(SPIDERDBKEY);
+				data -= sizeof(spiderdbkey_t);
 				data -= 4;
 				SpiderRequest *sreq ;
 				sreq =(SpiderRequest *)data;
@@ -1908,7 +1908,7 @@ bool RdbTree::is90PercentFull() const {
 // . we'll open it here
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool RdbTree::fastSave(const char *dir, const char *dbname, bool useThread, void *state, void (*callback)(void *state)) {
+bool RdbTree::fastSave(const char *dir, bool useThread, void *state, void (*callback)(void *)) {
 	ScopedLock sl(m_mtx);
 
 	logTrace(g_conf.m_logTraceRdbTree, "BEGIN. dir=%s", dir);
@@ -1931,17 +1931,11 @@ bool RdbTree::fastSave(const char *dir, const char *dbname, bool useThread, void
 	}
 
 	// note it
-	logf(LOG_INFO,"db: Saving %s%s-saved.dat",dir,dbname);
+	logf(LOG_INFO, "db: Saving %s%s-saved.dat", dir, m_dbname);
 
 	// save parms
 	strncpy(m_dir, dir, sizeof(m_dir)-1);
 	m_dir[sizeof(m_dir) - 1] = '\0';
-
-	// sanity check
-	if (dbname && strcmp(dbname, m_dbname) != 0) {
-		log(LOG_ERROR, "db: tree dbname mismatch.");
-		g_process.shutdownAbort(true);
-	}
 
 	m_state    = state;
 	m_callback = callback;
@@ -1963,6 +1957,8 @@ bool RdbTree::fastSave(const char *dir, const char *dbname, bool useThread, void
 			log( LOG_WARN, "db: Thread creation failed. Blocking while saving tree. Hurts performance." );
 		}
 	}
+
+	sl.unlock();
 
 	// no threads
 	saveWrapper(this);

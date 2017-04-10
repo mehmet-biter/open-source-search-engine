@@ -6,13 +6,11 @@
 #include "Tagdb.h"
 #include "Posdb.h"
 #include "Titledb.h"
-#include "Spider.h"
-#include "Spider.h"
 #include "Repair.h"
 #include "RdbMerge.h"
 #include "Process.h"
 #include "Sections.h"
-#include "Spider.h"
+#include "SpiderCache.h"
 #include "SpiderColl.h"
 #include "Doledb.h"
 #include "Linkdb.h"
@@ -49,7 +47,7 @@ Rdb::Rdb ( ) {
 	m_useHalfKeys = false;
 	m_niceness = false;
 	m_dumpCollnum = 0;
-	m_inDumpLoop = false;
+	m_isDumping = false;
 	m_rdbId = RDB_NONE;
 	m_ks = 0;
 	m_pageSize = 0;
@@ -120,7 +118,7 @@ bool Rdb::init(const char *dbname,
 	m_useHalfKeys      = useHalfKeys;
 	m_ks               = keySize;
 	m_useIndexFile     = useIndexFile;
-	m_inDumpLoop       = false;
+	m_isDumping       = false;
 
 	// set our id
 	m_rdbId = getIdFromRdb(this);
@@ -162,8 +160,7 @@ bool Rdb::init(const char *dbname,
 
 	if(m_useTree) {
 		sprintf(m_treeAllocName,"tree-%s",m_dbname);
-		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, m_dbname, m_ks,
-		                m_rdbId)) {
+		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, m_dbname, m_ks, m_rdbId)) {
 			log( LOG_ERROR, "db: Failed to set tree." );
 			return false;
 		}
@@ -178,11 +175,11 @@ bool Rdb::init(const char *dbname,
 	// now get how much mem the tree is using (not including stored recs)
 	int32_t dataMem;
 	if (m_useTree) dataMem = maxTreeMem - m_tree.getTreeOverhead();
-	else          dataMem = maxTreeMem - m_buckets.getMemOccupied( );
+	else          dataMem = maxTreeMem - m_buckets.getMemOccupied();
 
 	sprintf(m_memAllocName,"mem-%s",m_dbname);
 
-	if ( fixedDataSize != 0 && ! m_mem.init ( this, dataMem, m_memAllocName ) ) {
+	if ( fixedDataSize != 0 && ! m_mem.init ( dataMem, m_memAllocName ) ) {
 		log( LOG_ERROR, "db: Failed to initialize memory: %s.", mstrerror( g_errno ) );
 		return false;
 	}
@@ -343,7 +340,7 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 
 	// clean out tree, newly rebuilt rdb does not have any data in tree
 	if ( m_useTree ) m_tree.delColl ( collnum );
-	else             m_buckets.delColl( collnum );
+	else m_buckets.delColl(collnum);
 	// reset our cache
 	//m_cache.clear ( collnum );
 
@@ -423,7 +420,6 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 					collnum         ,
 					tree            ,
 					buckets         ,
-					&m_dump         ,
 					this            ,
 					m_useIndexFile ) ) {
 		logf(LOG_INFO,"db: %s: Failed to initialize db for "
@@ -451,7 +447,7 @@ bool Rdb::deleteAllRecs ( collnum_t collnum ) {
 
 	// remove from tree
 	if(m_useTree) m_tree.delColl    ( collnum );
-	else          m_buckets.delColl ( collnum );
+	else m_buckets.delColl(collnum);
 
 	// only for doledb now, because we unlink we do not move the files
 	// into the trash subdir and doledb is easily regenerated. i don't
@@ -608,7 +604,7 @@ bool Rdb::saveTree(bool useThread, void *state, void (*callback)(void *state)) {
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 	if (m_useTree) {
-		result = m_tree.fastSave(getDir(), m_dbname, useThread, state, callback);
+		result = m_tree.fastSave(getDir(), useThread, state, callback);
 	} else {
 		result = m_buckets.fastSave(getDir(), useThread, state, callback);
 	}
@@ -694,7 +690,7 @@ bool Rdb::loadTree ( ) {
 		}
 	}
 	else {
-		if ( !m_buckets.loadBuckets( m_dbname ) ) {
+		if ( !m_buckets.loadBuckets(m_dbname) ) {
 			log( LOG_ERROR, "db: Could not load saved buckets." );
 			return false;
 		}
@@ -710,8 +706,8 @@ bool Rdb::loadTree ( ) {
 		}
 
 		if(treeExists) {
-			m_buckets.addTree( &m_tree );
-			if ( m_buckets.getNumKeys() - numKeys > 0 ) {
+			m_buckets.addTree(&m_tree);
+			if (m_buckets.getNumKeys() - numKeys > 0 ) {
 				log( LOG_ERROR, "db: Imported %" PRId32" recs from %s's tree to buckets.",
 				     m_buckets.getNumKeys()-numKeys, m_dbname);
 			}
@@ -751,7 +747,7 @@ bool Rdb::dumpTree() {
 	}
 
 	// bail if already dumping
-	if ( m_inDumpLoop ) {
+	if ( m_isDumping ) {
 		logTrace( g_conf.m_logTraceRdb, "END. %s: Already dumping. Returning true", m_dbname );
 		return true;
 	}
@@ -854,6 +850,11 @@ bool Rdb::dumpTree() {
 	for(int collnum=0; collnum<getNumBases(); collnum++)
 		getBase(collnum)->setDumpingFileNumber(-1000);
 
+	// we have our own flag here since m_dump::m_isDumping gets
+	// set to true between collection dumps, RdbMem.cpp needs
+	// a flag that doesn't do that... see RdbDump.cpp.
+	m_isDumping = true;
+
 	// this returns false if blocked, which means we're ok, so we ret true
 	if ( ! dumpCollLoop ( ) ) {
 		logTrace( g_conf.m_logTraceRdb, "END. %s: dumpCollLoop blocked. Returning true", m_dbname );
@@ -863,6 +864,7 @@ bool Rdb::dumpTree() {
 	// if it returns true with g_errno set, there was an error
 	if ( g_errno ) {
 		logTrace( g_conf.m_logTraceRdb, "END. %s: dumpCollLoop g_error=%s. Returning false", m_dbname, mstrerror( g_errno) );
+		m_isDumping = false;
 		return false;
 	}
 
@@ -988,19 +990,19 @@ bool Rdb::dumpCollLoop ( ) {
 		// . but we only return false on error here
 		if (!m_dump.set(base->getCollnum(),
 		                base->getFile(fn),
-	                	buckets,
-	                	tree,
+		                buckets,
+		                tree,
 		                base->getMap(fn),
 		                base->getIndex(fn),
-	                	bufSize, // write buf size
-	                	m_niceness, // niceness of 1 will NOT block
-	                	this, // state
-	                	doneDumpingCollWrapper,
-	                	m_useHalfKeys,
-	                	0LL,  // dst start offset
-	                	KEYMIN(),  // prev last key
-	                	m_ks,  // keySize
-	                	this)) {// for setting m_needsToSave
+		                bufSize, // write buf size
+		                m_niceness, // niceness of 1 will NOT block
+		                this, // state
+		                doneDumpingCollWrapper,
+		                m_useHalfKeys,
+		                0LL,  // dst start offset
+		                KEYMIN(),  // prev last key
+		                m_ks,  // keySize
+		                m_rdbId)) {
 			logTrace( g_conf.m_logTraceRdb, "END. %s: RdbDump blocked. Returning false", m_dbname );
 			return false;
 		}
@@ -1107,20 +1109,14 @@ void Rdb::doneDumping ( ) {
 	// . we have to set this here otherwise RdbMem's memory ring buffer
 	//   will think the dumping is no longer going on and use the primary
 	//   memory for allocating new titleRecs and such and that is not good!
-	m_inDumpLoop = false;
-
-	// . on g_errno the dumped file will be removed from "sync" file and
-	//   from m_files and m_maps
-	// . TODO: move this logic into RdbDump.cpp
-	//for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
-	//	if ( m_bases[i] ) m_bases[i]->doneDumping();
-	//}
+	m_isDumping = false;
 
 	// try merge for all, first one that needs it will do it, preventing
 	// the rest from doing it
 	// don't attempt merge if we're niceness 0
 	if ( !m_niceness ) return;
-	attemptMergeAllCallback(0,NULL);
+
+	attemptMergeAll();
 }
 
 void forceMergeAll(rdbid_t rdbId) {
@@ -1453,7 +1449,7 @@ bool Rdb::canAdd() const {
 	if (!isWritable()) {
 		return false;
 	}
-	if (isInDumpLoop()) {
+	if (isDumping()) {
 		return false;
 	}
 	return true;
@@ -1702,7 +1698,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 		// . TODO: add using "lastNode" as a start node for the insertion point
 		// . should set g_errno if failed
 		// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
-		if (m_buckets.addNode(collnum, key, dataCopy, dataSize) < 0) {
+		if (!m_buckets.addNode(collnum, key, dataCopy, dataSize)) {
 			// enhance the error message
 			const char *ss = m_buckets.isSaving() ? " Buckets are saving." : "";
 			log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
@@ -2127,23 +2123,6 @@ const char *getDbnameFromId(rdbid_t rdbId) {
 }
 
 // get the RdbBase class for an rdbId and collection name
-RdbBase *getRdbBase(rdbid_t rdbId, const char *coll) {
-	Rdb *rdb = getRdbFromId ( rdbId );
-	if ( ! rdb ) {
-		log("db: Collection \"%s\" does not exist.",coll);
-		return NULL;
-	}
-	// statdb is a special case
-	collnum_t collnum = g_collectiondb.getCollnum ( coll );
-	if(collnum == -1) {
-		g_errno = ENOCOLLREC;
-		return NULL;
-	}
-	return rdb->getBase(collnum);
-}
-
-
-// get the RdbBase class for an rdbId and collection name
 RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum) {
 	Rdb *rdb = getRdbFromId ( rdbId );
 	if ( ! rdb ) {
@@ -2270,7 +2249,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 	if ( occupied + dups != m_tree.getNumUsedNodes_unlocked() )
 		log("rdb: reclaim mismatch1");
 
-	if ( ht.getNumSlotsUsed() + dups != m_tree.getNumUsedNodes_unlocked() )
+	if ( ht.getNumUsedSlots() + dups != m_tree.getNumUsedNodes_unlocked() )
 		log("rdb: reclaim mismatch2");
 
 	int32_t skipped = 0;

@@ -392,7 +392,7 @@ void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
 	// update stats for this host for the PageHosts.cpp table
 	Host *h = m_host;
 	if ( ! h && m_hostId >= 0 ) h = g_hostdb.getHost ( m_hostId );
-	if ( h                    ) h->m_pingInfo.m_totalResends += cleared;
+	if ( h                    ) h->m_totalResends += cleared;
 	// . set the resend time based on m_resendCount and m_niceness
 	// . this typically doubles m_resendTime with each resendCount
 	setResendTime ();
@@ -857,9 +857,6 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 	uint32_t ip = m_ip;
 	// . if this is a send to our ip use the loopback interface
 	// . MTU is very high here
-	//if ( !g_conf.m_interfaceMachine &&
-	//     m_ip == g_hostdb.getMyIp() )
-	//if ( !g_conf.m_interfaceMachine && g_hostdb.isMyIp(m_ip) )
 	if ( ip_distance(m_ip)==ip_distance_ourselves )
 		ip = g_hostdb.getLoopbackIp();
 
@@ -983,11 +980,8 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 //            m_firstUnlitSentAckBit
 bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 				  int32_t     readSize,
-				  int64_t     now     ,
-				  bool       *discard) {
+				  int64_t     now) {
 	const char * const readBuffer = (const char*)readBuffer_;
-	// assume discard
-	*discard = true;
 	// get dgram Number
 	int32_t dgramNum = m_proto->getDgramNum ( readBuffer, readSize );
 	// protection from garbled dgrams
@@ -1269,9 +1263,6 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		return false;
 	}
 
-	// we're doing the call to recvfrom() for sure now
-	*discard = false;
-
 	// dgram #'s above 0 can be copied directly into m_readBuf
 	if ( dgramNum > 0 ) { 
 		// how much DATA can we read from this dgram?
@@ -1283,8 +1274,6 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		char *dest = m_readBuf + offset - headerSize;
 		// sanity check, watch out for bad headers...
 		if ( toRead < 0 ) {
-			// throw this dgram away
-			*discard = true;
 			//g_errno = ECORRUPTDATA;
 			// do not spam the logs
 			static int32_t s_badCount = 0;
@@ -1560,52 +1549,16 @@ int32_t UdpSlot::getScore ( int64_t now ) const {
 
 	// . let's use a window now, give acks a chance to catch up somewhat
 	// . if send is local, use a larger ack window of ?64? dgrams
-	//if ( ( m_ip != g_hostdb.getMyIp() || g_conf.m_interfaceMachine ) &&
-	//if ( ( ! g_hostdb.isMyIp(m_ip)  || g_conf.m_interfaceMachine ) &&
 	if ( ip_distance(m_ip)!=ip_distance_ourselves &&
 	     m_sentBitsOn >= m_readAckBitsOn + ACK_WINDOW_SIZE    ) return -1;
 	// well, give a window size of 100 to loopbacks
-	//if ( ( m_ip == g_hostdb.getMyIp() && !g_conf.m_interfaceMachine ) &&
-	//if ( ( g_hostdb.isMyIp(m_ip) && !g_conf.m_interfaceMachine ) &&
 	if ( ip_distance(m_ip)==ip_distance_ourselves &&
 	     m_sentBitsOn >= m_readAckBitsOn + ACK_WINDOW_SIZE_LB ) return -1;
 
-	// return 1 if now is 0
-	if ( now == 0LL ) return 1;
 	// sort regular sends by the last send time
 	int64_t score  = now - m_lastSendTime + 1000;
 	// watch out if someone changed the system clock on us
 	if ( score < 1000 ) score = 1000;
-	// . if we've resent before, wait enough time to send again!
-	// . m_resendCount resets when we read an ack (in readAck())
-	//if ( m_resendCount > 0 && now - m_lastReadTime < m_resendTime ) {
-	//log("now=%" PRId64"-lastRead=%" PRId64" <%" PRId32 , now,m_lastReadTime,m_resendTime);
-	//	return -1;
-	//}
-	// let's give smaller msgs more pts to reduce latency
-	//if ( m_sendBufSize <= 1  *1024 ) return score + 30 ;
-	//if ( m_sendBufSize <= 10 *1024 ) return score + 20;
-	//if ( m_sendBufSize <= 100*1024 ) return score + 10;
-	// . is it a resend?
-	// . get the time we sent the first unacked dgram
-	// m_firstUnackedDgram
-	// bool resend = ( score >= m_resendTime );
-	// if it's a resend set the hi bit to give it precedence
-	// if ( resend ) score |= 0x80000000;
-	// else          score &= 0x7fffffff;
+
 	return score;
-}
-
-
-void UdpSlot::printState() {
-	//int64_t now = gettimeofdayInMilliseconds();
-	log(LOG_TIMING, 
-	    "admin: UdpSlot - type:Msg%2" PRIx32" nice:%" PRId32" "
-	    "queued:%" PRId32" "
-	    "handlerCalled:%" PRId32,
-	    (int32_t)m_msgType, 
-	    m_niceness, 
-	    (int32_t)m_isQueued, 
-	    (int32_t)m_calledHandler);
-	
 }

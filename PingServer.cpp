@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "PingServer.h"
 #include "UdpServer.h"
 #include "UdpSlot.h"
@@ -27,15 +25,9 @@ int32_t g_recoveryLevel = 0;
 PingServer g_pingServer;
 
 static void sleepWrapper ( int fd , void *state ) ;
-static void gotReplyWrapperP ( void *state , UdpSlot *slot ) ;
-static void handleRequest11 ( UdpSlot *slot , int32_t niceness ) ;
-static void gotReplyWrapperP2 ( void *state , UdpSlot *slot );
-static void gotReplyWrapperP3 ( void *state , UdpSlot *slot );
+
 static void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) ;
 
-static bool sendAdminEmail ( Host  *h, const char  *fromAddress,
-                             const char  *toAddress, char  *body ,
-			     const char  *emailServIp );
 
 bool PingServer::registerHandler ( ) {
 	// . we'll handle msgTypes of 0x11 for pings
@@ -48,8 +40,7 @@ bool PingServer::registerHandler ( ) {
 	// save this
 	m_pingSpacer = g_conf.m_pingSpacer;
 
-	// this starts off at zero
-	m_callnum = 0;
+	m_sleepCallbackRegistrationSequencer = 0;
 
 	// . this was 500ms but now when a host shuts downs it sends all other
 	//   hosts a msg saying so... PingServer::broadcastShutdownNotes() ...
@@ -58,7 +49,7 @@ bool PingServer::registerHandler ( ) {
 	//   every second to keep on top of things
 	// . so in a network of 128 hosts we'll cycle through in 12.8 seconds
 	//   and set a host to dead on avg will take about 13 seconds
-	if ( ! g_loop.registerSleepCallback ( g_conf.m_pingSpacer , (void *)(PTRTYPE)m_callnum, sleepWrapper , 0 ) ) {
+	if ( ! g_loop.registerSleepCallback ( g_conf.m_pingSpacer , (void *)(PTRTYPE)m_sleepCallbackRegistrationSequencer, sleepWrapper , 0 ) ) {
 		return false;
 	}
 
@@ -82,13 +73,7 @@ bool PingServer::init ( ) {
 	m_maxRepairModeHost         = NULL;
 	m_minRepairModeBesides0Host = NULL;
 
-	// invalid info init
-	m_currentPing  = -1;
-	m_bestPing     = -1;
-	m_bestPingDate =  0;
-
 	m_numHostsWithForeignRecs = 0;
-	m_numHostsDead = 0;
 	m_hostsConfInDisagreement = false;
 	m_hostsConfInAgreement = false;
 
@@ -100,22 +85,6 @@ void PingServer::sendPingsToAll ( ) {
 	// if we are the query/spider compr. proxy then do not send out pings
 	if ( g_hostdb.m_myHost->m_type & HT_QCPROXY ) return;
 	if ( g_hostdb.m_myHost->m_type & HT_SCPROXY ) return;
-
-	// get host #0
-	Host *hz = g_hostdb.getHost ( 0 );
-	// sanity check
-	if ( hz->m_hostId != 0 ) { g_process.shutdownAbort(true); }
-
-	// do a quick send to host 0 out of band if we have never
-	// got a reply from him. we need him to sync our clock!
-	static int32_t s_lastTime = 0;
-	if ( ! hz->m_inProgress1 && hz->m_numPingReplies == 0 &&
-	     time(NULL) - s_lastTime > 2 ) {
-		// update clock to avoid oversending
-		s_lastTime = time(NULL);
-		// ping him
-		pingHost ( hz , hz->m_ip , hz->m_port );
-	}
 
 	// once we do a full round, drop out. use firsti to determine this
 	int32_t firsti = -1;
@@ -148,7 +117,7 @@ void PingServer::sendPingsToAll ( ) {
 	// update pingSpacer callback tick if it changed since last time
 	if ( m_pingSpacer == g_conf.m_pingSpacer ) return;
 	// register new one
-	if ( ! g_loop.registerSleepCallback ( m_pingSpacer , (void *)(PTRTYPE)(m_callnum+1) , sleepWrapper , 0 ) ) {
+	if ( ! g_loop.registerSleepCallback ( m_pingSpacer , (void *)(PTRTYPE)(m_sleepCallbackRegistrationSequencer+1) , sleepWrapper , 0 ) ) {
 		static char logged = 0;
 		if ( ! logged )
 			log("net: Could not update ping spacer.");
@@ -156,10 +125,9 @@ void PingServer::sendPingsToAll ( ) {
 		return;
 	}
 	// now it is safe to unregister last callback then
-	g_loop.unregisterSleepCallback((void *)(PTRTYPE)m_callnum,
-				       sleepWrapper);
-	// point to next one
-	m_callnum++;
+	g_loop.unregisterSleepCallback((void *)(PTRTYPE)m_sleepCallbackRegistrationSequencer, sleepWrapper);
+
+	m_sleepCallbackRegistrationSequencer++;
 }
 
 // ping host #i
@@ -168,35 +136,6 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	if ( ! h ) return;
 
 	int32_t hostId = h->m_hostId;
-
-	// every time this is hostid 0, do a sanity check to make sure
-	// g_hostdb.m_numHostsAlive is accurate
-	if ( hostId == 0 ) {
-		int32_t numHosts = g_hostdb.getNumHosts();
-		if( h->m_isProxy )
-			numHosts = g_hostdb.getNumProxy();
-		// do not do more than once every 10 seconds
-		static int32_t lastTime = 0;
-		int32_t now = getTime();
-		if ( now - lastTime > 10 ) {
-			lastTime = now;
-			int32_t count = 0;
-			for ( int32_t i = 0 ; i < numHosts; i++ ) {
-				// count if not dead
-				Host *host;
-				if ( h->m_isProxy )
-					host = g_hostdb.getProxy(i);
-				else
-					host = g_hostdb.getHost(i);
-				if ( !g_hostdb.isDead(host))
-					count++;
-			}
-			// make sure count matches
-			if ( !h->m_isProxy && count != g_hostdb.getNumHostsAlive() ) {
-				g_process.shutdownAbort(true);
-			}
-		}
-	}
 
 	// don't ping again if already in progress
 	if ( ip == h->m_ip && h->m_inProgress1 ) return;
@@ -345,7 +284,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 //   only needs one notification.
 static int32_t s_lastSentHostId = -1;
 
-static void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
+void PingServer::gotReplyWrapperP(void *state, UdpSlot *slot) {
 	// state is the host
 	Host *h = (Host *)state;
 	if( !h ) {
@@ -353,8 +292,6 @@ static void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 		return;
 	}
 	
-	int32_t hid = h->m_hostId;
-
 	// un-count it
 	s_outstandingPings--;
 	// don't let udp server free our send buf, we own it
@@ -413,7 +350,7 @@ static void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 		// from him, then send an email alert.
 		if ( h->m_pingInfo.m_percentMemUsed >= 99.0 &&
 		     nowms - h->m_firstOOMTime >= g_conf.m_sendEmailTimeout )
-			g_pingServer.sendEmail ( h , NULL , true , true );
+			g_pingServer.sendEmail ( h , NULL , true );
 	} else {
 		// . if his ping was dead, try to send an email alert to the admin
 		// . returns false if blocked, true otherwise
@@ -425,51 +362,11 @@ static void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 
 	// reset in case sendEmail() set it
 	g_errno = 0;
-
-	Host *myHost = g_hostdb.m_myHost;
-
-	if (myHost && myHost->m_isProxy) return;
-	if ( g_hostdb.m_hostId != 0 ) return;
-	if ( *pingPtr > 200         ) return;
-	// count this one too
-	s_outstandingPings++;
-	// record this time
-	g_pingServer.m_currentPing = *pingPtr;
-
-	// . ok, his ping was under half a second so he should sync with us
-	// . he should recognize empty requests as a request to sync
-	// . send reply back to the same ip/port that sent to us
-	if ( h->m_isProxy ) hid = -1;
-
-	// send back what his ping was so he knows
-	*(int32_t *)h->m_tmpBuf = *pingPtr;
-
-	if (g_udpServer.sendRequest(h->m_tmpBuf, 4, msg_type_11, slot->getIp(), slot->getPort(), hid, NULL, (void *)(PTRTYPE)h->m_hostId, gotReplyWrapperP3, g_conf.m_deadHostTimeout, 0, NULL, 1000, 2000)) {
-		return;
-	}
-	// he came back right away
-	s_outstandingPings--;
-	// had an error
-	log("net: Got error sending time sync request: %s.", 
-	    mstrerror(g_errno) );
-	// reset it cuz it's not a showstopper
-	g_errno = 0;
 }
 
-static void gotReplyWrapperP3 ( void *state , UdpSlot *slot ) {
-	// do not free this!
-	slot->m_sendBufAlloc = NULL;
-	// un-count it
-	s_outstandingPings--;
-}
-
-
-
-// record time in the ping request iff from hostId #0
-static int64_t s_deltaTime = 0;
 
 // this may be called from a signal handler now...
-static void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
+void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 	// get request 
 	int32_t  requestSize = slot->m_readBufSize;
 	char *request     = slot->m_readBuf;
@@ -569,7 +466,6 @@ static void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 
 	PingServer *ps = &g_pingServer;
 	ps->m_numHostsWithForeignRecs = 0;
-	ps->m_numHostsDead = 0;
 	ps->m_hostsConfInDisagreement = false;
 	ps->m_hostsConfInAgreement = false;
 
@@ -588,10 +484,6 @@ static void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 
 		if ( h2->m_pingInfo.m_flags & PFLAG_FOREIGNRECS ) {
 			ps->m_numHostsWithForeignRecs++;
-		}
-
-		if ( g_hostdb.isDead ( h2 ) ) {
-			ps->m_numHostsDead++;
 		}
 
 		// skip if not received yet
@@ -640,87 +532,9 @@ static void handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 		g_udpServer.timeoutDeadHosts ( h );
 
 	}
-	// . if size is 4 then he wants us to sync with him
-	// . this was "0", but now we include what the ping was
-	else 
-	if ( requestSize == 4 ) {
-		// get the ping time
-		int32_t ping = *(int32_t *)request;
-		// store it
-		g_pingServer.m_currentPing = ping;
-		// should we update the clock?
-		bool setClock = true;
-		// . add 1ms DRIFT for every hour since last update
-		// . use local clock time only
-		int32_t nowLocal = getTime();
-		// how many seconds since we last updated our clock?
-		int32_t delta    = nowLocal - g_pingServer.m_bestPingDate;
-		// drift it 1ms every 5 seconds, that seems somewhat typical
-		int32_t drift    = delta / 5;
-		// get best "drifted" ping, "dping"
-		int32_t dping = g_pingServer.m_bestPing + drift;
-		// no overflowing
-		if ( dping < g_pingServer.m_bestPing ) {
-			dping = 0x7fffffff;
-		}
-		// if this is our first time
-		if ( g_pingServer.m_bestPingDate == 0 ) {
-			dping = 0x7fffffff;
-		}
-		// . don't bother if not more accurate
-		// . update the clock on "ping" ties because our local clock
-		//   drifts a lot
-		if ( g_pingServer.m_currentPing > dping ) {
-			setClock = false;
-		}
-		// ping must be < 200 ms to update
-		if ( g_pingServer.m_currentPing > 200 ) {
-			setClock = false;
-		}
-		// only update if from host #0
-		if ( h->m_hostId != 0 ) {
-			setClock = false;
-		}
-		// proxy can be host #0, too! watch out...
-		if ( h->m_isProxy ) {
-			setClock = false;
-		}
-		// only commit sender's time if from hostId #0
-		if ( setClock ) {
-			// what time is it now?
-			int64_t nowmsLocal=gettimeofdayInMilliseconds();
-			// log it
-			log(LOG_DEBUG,"admin: Got ping of %" PRId32" ms. Updating "
-			     "clock. drift=%" PRId32" delta=%" PRId32" s_deltaTime=%" PRId64"ms "
-			     "nowmsLocal=%" PRId64"ms",
-			     (int32_t)g_pingServer.m_currentPing,drift,delta,
-			     s_deltaTime,nowmsLocal);
-			// time stamps
-			g_pingServer.m_bestPingDate = nowLocal;
-			// and the ping
-			g_pingServer.m_bestPing = g_pingServer.m_currentPing;
-		}
-	}
 	// all pings now deliver a timestamp of the sending host
 	else 
 	if ( requestSize == 8 ) {
-		//reply = g_pingServer.getReplyBuffer();
-		// only record sender's time if from hostId #0
-		if ( h->m_hostId == 0 && !h->m_isProxy) {
-			// what time is it now?
-			int64_t nowmsLocal=gettimeofdayInMilliseconds();
-			// . seems these servers drift by 1 ms every 5 secs
-			// . or that is about 17 seconds a day
-			// . we do NOT know how accurate host #0's supplied
-			//   time is because the request may have been delayed
-			log(LOG_DEBUG,"admin: host #0 time is %" PRId64" ms and "
-			    "our local time is %" PRId64" ms, delta=%" PRId64" ms",
-			    *(int64_t *)request,nowmsLocal ,
-			    *(int64_t *)request - nowmsLocal );
-			// update s_delta in case host #0 sends us a 
-			// request size of 4, telling us to sync up with this
-			s_deltaTime =*(int64_t *)request - nowmsLocal;
-		}
 		reply     = NULL;
 		replySize = 0;
 	}
@@ -819,9 +633,8 @@ static void sleepWrapper ( int fd , void *state ) {
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool PingServer::sendEmail ( Host *h            , 
-			     char *errmsg       , 
+			     const char *errmsg,
 			     bool  oom          ,
-			     bool  parmChanged  ,
 			     bool  forceIt) {
 	// clear this
 	g_errno = 0;
@@ -972,13 +785,6 @@ bool PingServer::sendEmail ( Host *h            ,
 	bool e3 = g_conf.m_sendEmailAlertsToEmail3;
 	bool e4 = g_conf.m_sendEmailAlertsToEmail4;
 
-	// some people don't want parm change alerts
-	if ( parmChanged && ! g_conf.m_sendParmChangeAlertsToEmail1) e1=false; 
-	if ( parmChanged && ! g_conf.m_sendParmChangeAlertsToEmail2) e2=false; 
-	if ( parmChanged && ! g_conf.m_sendParmChangeAlertsToEmail3) e3=false; 
-	if ( parmChanged && ! g_conf.m_sendParmChangeAlertsToEmail4) e4=false; 
-
-
 	if ( e1 ) {
 		m_numRequests2++;
 		m_maxRequests2++;
@@ -1031,13 +837,11 @@ bool PingServer::sendEmail ( Host *h            ,
 }
 
 
-static void gotDocWrapper ( void *state , TcpSocket *ts ) ;
-
-static bool sendAdminEmail ( Host  *h,
-		      const char  *fromAddress,
-		      const char  *toAddress,
-		      char  *body , 
-		      const char  *emailServIp) {
+bool PingServer::sendAdminEmail(Host  *h,
+				const char  *fromAddress,
+				const char  *toAddress,
+				const char  *body,
+				const char  *emailServIp) {
 	char hostname[ 256];
 	gethostname(hostname,sizeof(hostname));
 	// create a new buffer
@@ -1066,20 +870,20 @@ static bool sendAdminEmail ( Host  *h,
 	TcpServer *ts = g_httpServer.getTcp();
 	log ( LOG_WARN, "PingServer: Sending email to sysadmin:\n %s", buf );
 	const char *ip = emailServIp;
-	if ( !ts->sendMsg( ip, strlen( ip ), 25, buf, PAGER_BUF_SIZE, buffLen, buffLen, h, gotDocWrapper,
+	if ( !ts->sendMsg( ip, strlen( ip ), 25, buf, PAGER_BUF_SIZE, buffLen, buffLen, h, sentEmailWrapper,
 	                   60 * 1000, 100 * 1024, 100 * 1024 ) ) {
 		return false;
 	}
 
 	// we did not block, so update h->m_emailCode
-	gotDocWrapper ( h , NULL );
+	sentEmailWrapper ( h , NULL );
 
 	// we did not block
 	return true;
 }
 
 
-void gotDocWrapper ( void *state , TcpSocket *s ) {
+void PingServer::sentEmailWrapper( void *state, TcpSocket *s) {
 	// keep track of how many we got
 	g_pingServer.m_numReplies2++;
 	if ( g_pingServer.m_numReplies2 > g_pingServer.m_maxRequests2 ) {
@@ -1141,8 +945,6 @@ void gotDocWrapper ( void *state , TcpSocket *s ) {
 bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 					  void   *state                   ,
 					  void  (* callback)(void *state) ) {
-	// don't broadcast on interface machines
-	if ( g_conf.m_interfaceMachine ) return true;
 	// only call once
 	if ( m_numRequests != m_numReplies ) return true;
 	// keep track
@@ -1201,7 +1003,7 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 	return false;
 }
 
-static void gotReplyWrapperP2 ( void *state , UdpSlot *slot ) {
+void PingServer::gotReplyWrapperP2(void *state, UdpSlot *slot) {
 	// count it
 	g_pingServer.m_numReplies++;
 	// don't let udp server free our send buf, we own it
@@ -1288,7 +1090,6 @@ void PingServer::sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) {
 	g_pingServer.sendEmail ( NULL   , // Host *h
 				 msgbuf , // char *errmsg = NULL , 
 				 false  , // bool oom = false ,
-				 false  , // bool parmChanged  = false ,
 				 true   );// bool forceIt      = false );
 	*lastTimeStamp = now;
 	return;

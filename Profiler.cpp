@@ -457,7 +457,7 @@ Profiler::printRealTimeInfo(SafeBuf *sb, const char *coll) {
 
 	// now make a buffer of pointers to the pathbuckets in the table
 	SafeBuf sortBuf;
-	for ( int32_t i = 0 ; i < pathTable.m_numSlots ; i++ ) {
+	for ( int32_t i = 0 ; i < pathTable.getNumSlots() ; i++ ) {
 		// skip empty slots
 		if ( ! pathTable.m_flags[i] ) continue;
 		// get the bucket

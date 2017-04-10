@@ -108,10 +108,6 @@ class Posdb {
 	// init the rebuild/secondary rdb, used by PageRepair.cpp
 	bool init2 ( int32_t treeMem );
 
-	bool verify ( const char *coll );
-
-	bool addColl ( const char *coll, bool doVerify = true );
-
 	// . make a 16-byte key from all these components
 	// . since it is 16 bytes, the big bit will be set
 	static void makeKey ( void              *kp             ,

@@ -17,7 +17,6 @@ class SpiderColl;
 // lower from 1300 to 300
 #define MAXUDPSLOTS 300
 
-extern int32_t g_corruptCount;
 extern bool s_countsAreValid;
 
 // . size of spiderecs to load in one call to readList
@@ -352,13 +351,6 @@ bool getSpiderStatusMsg ( class CollectionRec *cx ,
 
 
 
-
-// . what groupId (shardId) should spider/index this spider request?
-// . CAUTION: NOT the same group (shard) that stores it in spiderdb!!!
-// . CAUTION: NOT the same group (shard) that doles it out to spider!!!
-//uint32_t getGroupIdToSpider ( char *spiderRec );
-
-
 // The 128-bit Spiderdb record key128_t for a rec in Spiderdb is as follows:
 //
 // <32 bit firstIp>             (firstIp of the url to spider)
@@ -378,8 +370,7 @@ bool getSpiderStatusMsg ( class CollectionRec *cx ,
 // . once we've spidered a url it gets added with a negative spiderdb key
 //   in XmlDoc.cpp
 class Spiderdb {
-
-  public:
+public:
 
 	// reset rdb
 	void reset();
@@ -390,12 +381,7 @@ class Spiderdb {
 	// init the rebuild/secondary rdb, used by PageRepair.cpp
 	bool init2 ( int32_t treeMem );
 
-	bool verify ( char *coll );
-
 	Rdb *getRdb  ( ) { return &m_rdb; }
-
-	// this rdb holds urls waiting to be spidered or being spidered
-	Rdb m_rdb;
 
 	static int64_t getUrlHash48(const key128_t *k ) {
 		return (((k->n1)<<16) | k->n0>>(64-16)) & 0xffffffffffffLL;
@@ -430,6 +416,10 @@ class Spiderdb {
 	// print the spider rec
 	static int32_t print( char *srec , SafeBuf *sb = NULL );
 	static void printKey(const char *k);
+
+private:
+	// this rdb holds urls waiting to be spidered or being spidered
+	Rdb m_rdb;
 };
 
 void dedupSpiderdbList ( RdbList *list );
@@ -872,34 +862,7 @@ public:
 // are we responsible for this ip?
 bool isAssignedToUs ( int32_t firstIp ) ;
 
-#define SPIDERDBKEY key128_t
-
-class SpiderColl;
-
-class SpiderCache {
-
- public:
-
-	// returns false and set g_errno on error
-	bool init ( ) ;
-
-	SpiderCache ( ) ;
-
-	// what SpiderColl does a SpiderRec with this key belong?
-	SpiderColl *getSpiderColl ( collnum_t collNum ) ;
-
-	SpiderColl *getSpiderCollIffNonNull ( collnum_t collNum ) ;
-
-	// called by main.cpp on exit to free memory
-	void reset();
-
-	void save ( bool useThread );
-
-	bool needsSave ( ) ;
-	void doneSaving ( ) ;
-};
-
-extern class SpiderCache g_spiderCache;
+typedef key128_t spiderdbkey_t;
 
 /////////
 //
@@ -926,13 +889,8 @@ inline int64_t makeLockTableKey(const SpiderReply *srep) {
 
 class UrlLock {
 public:
-	int32_t m_hostId;
-	int32_t m_lockSequence;
-	int32_t m_timestamp;
-	int32_t m_expires;
 	int32_t m_firstIp;
 	char m_spiderOutstanding;
-	char m_confirmed;
 	collnum_t m_collnum;
 };
 

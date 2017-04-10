@@ -13,6 +13,8 @@
 #include "Dns.h"
 #include "File.h"
 #include "IPAddressChecks.h"
+#include "Msg56.h"
+#include "GbUtil.h"
 #include "ip.h"
 #include "Mem.h"
 #include "ScopedLock.h"
@@ -686,6 +688,9 @@ createFile:
 		m_hosts[i].m_pingInfo.m_cpuUsage = 0.0;
 		m_hosts[i].m_loadAvg  = 0.0;
 
+		m_hosts[i].m_lastResponseReceiveTimestamp = 0;
+		m_hosts[i].m_lastRequestSendTimestamp = 0;
+
 		// point to next one
 		i++;
 	}
@@ -1071,7 +1076,7 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 	if ( udp ) t = &g_hostTableUdp;
 	else       t = &g_hostTableTcp;
 	// initialize the table?
-	if ( t->m_ks == 0 ) {
+	if ( !t->isInitialized() ) {
 		t->set ( 8 , sizeof(char *),16,NULL,0,false,"hostbl");
 	}
 	// get his key
@@ -1279,6 +1284,14 @@ bool Hostdb::hasDeadHost ( ) {
 	return false;
 }
 
+int32_t Hostdb::getNumHostsDead() {
+	int count = 0;
+	for(int32_t i = 0; i < m_numHosts; i++)
+		if(isDead(i))
+			count++;
+	return count;
+}
+
 bool Hostdb::isDead ( int32_t hostId ) {
 	Host *h = getHost ( hostId );
 	return isDead ( h );
@@ -1289,10 +1302,16 @@ bool Hostdb::isDead(const Host *h) {
 		return true; // retired means "don't use it", so it is essentially dead
 	if(g_hostdb.m_myHost == h)
 		return false; //we are not dead
-	if(h->m_ping < g_conf.m_deadHostTimeout)
-		return false; //has answered ping on normal interface recently
-	if(g_conf.m_useShotgun && h->m_pingShotgun < g_conf.m_deadHostTimeout)
-		return false; //has answered ping on shotgun interface recently
+	uint64_t now = getCurrentTimeNanoseconds();
+	//if we have received a response from the host within the last 100ms then it's alive
+	if(h->getLastResponseReceiveTimestamp() + 100000000 >= now)
+		return false;
+	//if we have sent a request to the host within the past 500ms and we have received a respone from it within the past 500ms (not necessarily on that request) then it's alive.
+	if(h->getLastRequestSendTimestamp() + 500000000 >= now && h->getLastResponseReceiveTimestamp() + 500000000 >= now)
+		return false;
+	//if we have received a response from the host within the last watchdog_interval*3 then it's alive
+	if(h->getLastResponseReceiveTimestamp() + getEffectiveWatchdogInterval(h)*3*UINT64_C(1000000) >= now)
+		return false;
 	return true;
 }
 
@@ -1371,12 +1390,12 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	oldHost->m_ping                = g_conf.m_deadHostTimeout;
 	oldHost->m_pingShotgun         = g_conf.m_deadHostTimeout;
 	oldHost->m_emailCode           = 0;
-	oldHost->m_pingInfo.m_etryagains          = 0;
 	oldHost->m_pingInfo.m_udpSlotsInUseIncoming = 0;
-	oldHost->m_pingInfo.m_totalResends        = 0;
 	oldHost->m_errorReplies        = 0;
 	oldHost->m_dgramsTo            = 0;
 	oldHost->m_dgramsFrom          = 0;
+	oldHost->m_totalResends        = 0;
+	oldHost->m_etryagains          = 0;
 	oldHost->m_repairMode          = 0;
 	oldHost->m_splitsDone          = 0;
 	oldHost->m_splitTimes          = 0;

@@ -39,17 +39,18 @@ HashTableX::~HashTableX ( ) {
 }
 
 // returns false and sets errno on error
-bool HashTableX::set ( int32_t  ks              ,
-		       int32_t  ds              ,
-		       int32_t  initialNumTerms , 
-		       char *buf             , 
-		       int32_t  bufSize         ,
-		       bool  allowDups       ,
-		       const char *allocName ,
-		       // in general you want keymagic to ensure your
-		       // keys are "random" for good hashing. it doesn't
-		       // really slow things down either.
-		       bool  useKeyMagic     ) {
+bool HashTableX::set(int32_t ks,
+                     int32_t ds,
+                     int32_t initialNumTerms,
+                     char *buf,
+                     int32_t bufSize,
+                     bool allowDups,
+                     const char *allocName,
+	                 // in general you want keymagic to ensure your
+	                 // keys are "random" for good hashing. it doesn't
+	                 // really slow things down either.
+	                 bool useKeyMagic,
+	                 int32_t maskKeyOffset) {
 	reset();
 	m_ks = ks;
 	m_ds = ds;
@@ -73,6 +74,7 @@ bool HashTableX::set ( int32_t  ks              ,
 	m_allocName = allocName;
 
 	m_useKeyMagic = useKeyMagic;
+	m_maskKeyOffset = maskKeyOffset;
 
 	return setTableSize ( initialNumTerms , buf , bufSize );
 }
@@ -196,20 +198,18 @@ bool HashTableX::addKey ( const void *key , const void *val , int32_t *slot ) {
 		if ( ! setTableSize ( (int32_t)growTo , NULL , 0 ) ) return false;
 	}
 
-        //int32_t n=(*(uint32_t *)(((char *)key)+m_maskKeyOffset)) & m_mask;
-
-        int32_t n = *(uint32_t *)(((char *)key)+m_maskKeyOffset);
+	int32_t n = *(uint32_t *)(((char *)key)+m_maskKeyOffset);
 
 	// use magic to "randomize" key a little
 	if ( m_useKeyMagic ) 
 		n^=g_hashtab[(unsigned char)((char *)key)[m_maskKeyOffset]][0];
 
 	// mask on the lower 32 bits i guess
-        n &= m_mask;
+	n &= m_mask;
 
-        int32_t count = 0;
+	int32_t count = 0;
 	m_needsSave = true;
-        while ( count++ < m_numSlots ) {
+	while ( count++ < m_numSlots ) {
 		// this is set to 0x00 if empty
 		if ( m_flags [ n ] == 0   ) break;
 		// use "n" if key matches
@@ -218,20 +218,13 @@ bool HashTableX::addKey ( const void *key , const void *val , int32_t *slot ) {
 		     (m_ks==4||memcmp (m_keys + m_ks * n, key, m_ks )==0) ) {
 			// if allow dups is true it must also match the data
 			if ( ! m_allowDups ) break;
-			// . this behaviour is expected by Events.cpp calling
-			//   g_places.addKey(h,&pd)
-			// . TODO: think about adding m_allowRepeatedData
-			//   and only doing this memcmp() if that is false
-			// . NO! computeSimilarity adds the same termid with
-			//   same score quite often
-			//if ( memcmp(m_vals+n*m_ds,val,m_ds) == 0 ) 
-			//	break;
+
 			// otherwise, yes, keys match, but values do not
 			// and we allow dups, so insert it somewhere else
-		}			
+		}
 		// advance otherwise
 		if ( ++n == m_numSlots ) n = 0;
-	}		     
+	}
 	// bail if not found
 	if ( count >= m_numSlots ) {
 		g_errno = ENOMEM;
@@ -291,7 +284,7 @@ bool HashTableX::removeSlot ( int32_t n ) {
 		// add it back
 		addKey ( kp , vp );
 		// chain to next bucket while it is occupied
-		if ( ++n >= m_numSlots ) n = 0;		
+		if ( ++n >= m_numSlots ) n = 0;
 	}
 	m_needsSave = true;
 	return true;
@@ -305,13 +298,10 @@ bool HashTableX::setTableSize ( int32_t oldn , char *buf , int32_t bufSize ) {
 	// don't change size if we do not need to
 	if ( oldn == m_numSlots ) return true;
 
-	//int64_t n = (int64_t)oldn;
 	// make it a power of 2 for speed if small
 	int64_t n = getHighestLitBitValueLL((uint64_t)oldn * 2LL -1);
 	// sanity check, must be less than 1B
 	if ( n > 1000000000 ) gbshutdownLogicError();
-	// limit...
-	//if ( n > m_maxSlots ) n = m_maxSlots;
 	// do not go negative on me
 	if ( oldn == 0 ) n = 0;
 	// sanity check
@@ -459,32 +449,32 @@ bool HashTableX::load ( const char *dir, const char *filename, char **tbuf, int3
 	// whether the slot is empty or not
 	if ( ! f.read ( m_flags       , numSlots        , off ) ) return false;
 	off += numSlots ;
-	
+
 	m_numSlotsUsed = numSlotsUsed;
 	// done if no text buf
-        if ( ! tbuf ) { f.close(); return true; }
-        // read in the tbuf size, next 4 bytes
-        if ( ! f.read (  tsize     , 4 , off ) ) return false;
-        off += 4;
+	if ( ! tbuf ) { f.close(); return true; }
+	// read in the tbuf size, next 4 bytes
+	if ( ! f.read (  tsize     , 4 , off ) ) return false;
+	off += 4;
 	// make a name for it
 	char ttt[64];
 	sprintf(ttt,"%s-httxt",m_allocName);
-        // alloc mem for reading in the contents of the text buf
-        *tbuf = (char *)mmalloc ( *tsize , ttt );//"HTtxtbufx" );
-        if ( ! *tbuf ) return false;
-        // read in the contents of the text buf
-        if ( ! f.read ( *tbuf     , *tsize , off ) ) return false;
-        off += *tsize;
+	// alloc mem for reading in the contents of the text buf
+	*tbuf = (char *)mmalloc ( *tsize , ttt );//"HTtxtbufx" );
+	if ( ! *tbuf ) return false;
+	// read in the contents of the text buf
+	if ( ! f.read ( *tbuf     , *tsize , off ) ) return false;
+	off += *tsize;
 	// we should free it in reset()
 	m_txtBuf = *tbuf;
 	m_txtBufSize = *tsize;
-        // close the file, we are done
-        f.close();
+	// close the file, we are done
+	f.close();
 	m_needsSave = false;
 	int32_t totalMem = *tsize+m_numSlots*(m_ks+m_ds);
 	log(LOG_INFO,"admin: Loaded hashtablex from %s%s %" PRId32" total mem",
 	    pdir,filename, totalMem);
-        return true;
+	return true;
 }
 
 
@@ -492,9 +482,6 @@ bool HashTableX::save ( const char *dir ,
 			const char *filename , 
 			const char *tbuf, 
 			int32_t tsize ) {
-
-	//if ( ! m_needsSave ) return true;
-	//if ( m_isSaving ) return true;
 
 	char s[1024];
 	sprintf ( s , "%s/%s", dir , filename );
@@ -529,7 +516,7 @@ bool HashTableX::save ( const char *dir ,
 		close ( fd );
 		return false;
 	}
-	
+
 	err = pwrite ( fd,  &m_ks         , 4 , off ) ; off += 4;
 	if ( err == -1 ) {
 		log(LOG_WARN, "htblx: write error");
@@ -570,7 +557,7 @@ bool HashTableX::save ( const char *dir ,
 		return false;
 	}
 
-    if ( tbuf ) {
+	if ( tbuf ) {
 		// save the text buf size
 		err = pwrite ( fd,  &tsize        , 4 , off ) ; off += 4;
 		if ( err == -1 ) {

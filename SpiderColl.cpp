@@ -148,7 +148,6 @@ bool SpiderColl::load ( ) {
 	}
 
 	// reset this once
-	//m_msg1Avail    = true;
 	m_isPopulatingDoledb = false;
 
 	// keep it kinda low if we got a ton of collections
@@ -225,24 +224,10 @@ bool SpiderColl::load ( ) {
 		return false;
 	}
 
-	// if we hade doledb0001.dat files on disk then nuke doledb
-	// and waiting tree and rebuild now with a tree-only doledb.
-	RdbBase *base = getRdbBase ( RDB_DOLEDB , m_collnum );
-
 	// . do this now just to keep everything somewhat in sync
 	// . we lost dmoz.org and could not get it back in because it was
 	//   in the doleip table but NOT in doledb!!!
-	if ( ! makeDoleIPTable() ) return false;
-
-	// delete the files and doledb-saved.dat and the waitingtree
-	// and set the waitingtree into rebuild mode.
-	if ( base && base->getNumFiles() > 0 ) {
-		nukeDoledb ( m_collnum );
-		return true;
-	}
-
-	// otherwise true
-	return true;
+	return makeDoleIPTable();
 }
 
 // . scan all spiderRequests in doledb at startup and add them to our tables
@@ -390,7 +375,7 @@ void SpiderColl::clearLocks ( ) {
 	HashTableX *ht = &g_spiderLoop.m_lockTable;
  top:
 	// scan the slots
-	int32_t ns = ht->m_numSlots;
+	int32_t ns = ht->getNumSlots();
 	for ( int32_t i = 0 ; i < ns ; i++ ) {
 		// skip if empty
 		if ( ! ht->m_flags[i] ) continue;
@@ -444,7 +429,6 @@ void SpiderColl::reset ( ) {
 	// 300 re-reads!
 	for ( int32_t i = 0 ; i < MAX_SPIDER_PRIORITIES ; i++ ) {
 		m_nextKeys[i] =	Doledb::makeFirstKey2 ( i );
-		m_isDoledbEmpty[i] = 0;
 	}
 
 }
@@ -498,24 +482,9 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 	//
 	//////
 	int64_t lockKey = makeLockTableKey ( srep );
-	
-	UrlLock *lock = (UrlLock *)g_spiderLoop.m_lockTable.getValue ( &lockKey );
-	time_t nowGlobal = getTimeGlobal();
 
 	logDebug(g_conf.m_logDebugSpider, "spider: removing lock uh48=%" PRId64" lockKey=%" PRIu64, srep->getUrlHash48(), lockKey);
 
-	// we do it this way rather than remove it ourselves
-	// because a lock request for this guy
-	// might be currently outstanding, and it will end up
-	// being granted the lock even though we have by now removed
-	// it from doledb, because it read doledb before we removed 
-	// it! so wait 5 seconds for the doledb negative key to 
-	// be absorbed to prevent a url we just spidered from being
-	// re-spidered right away because of this sync issue.
-	// . if we wait too long then the round end time, SPIDER_DONE_TIMER,
-	//   will kick in before us and end the round, then we end up
-	//   spidering a previously locked url right after and DOUBLE
-	//   increment the round!
 	/////
 	//
 	// but do note that its spider has returned for populating the
@@ -525,15 +494,6 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 	// is currently being spidered.
 	//
 	/////
-	if (lock) {
-		lock->m_expires = nowGlobal + 2;
-		lock->m_spiderOutstanding = 0;
-	} else {
-		// bitch if not in there
-		// when "rebuilding" (Rebuild.cpp) this msg gets triggered too much...
-		// so only show it when in debug mode.
-		logDebug(g_conf.m_logDebugSpider, "spider: rdb: lockKey=%" PRIu64" was not in lock table", lockKey);
-	}
 
 	// now just remove it since we only spider our own urls
 	// and doledb is in memory
@@ -610,7 +570,7 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 	//   scan spiderdb to get that
 	// . returns false if did not add to waiting tree
 	// . returns false sets g_errno on error
-	bool added = addToWaitingTree(0LL, srep->m_firstIp);
+	bool added = addToWaitingTree(srep->m_firstIp);
 
 	// ignore errors i guess
 	g_errno = 0;
@@ -799,10 +759,7 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 	// get ufn/priority,because if filtered we do not want to add to doledb
 	int32_t ufn;
 	// HACK: set isOutlink to true here since we don't know if we have sre
-	ufn = ::getUrlFilterNum(sreq, NULL, nowGlobalMS, false, m_cr,
-				true,//isoutlink? HACK!
-				NULL,// quota table quotatable
-				-1 );  // langid not valid
+	ufn = ::getUrlFilterNum(sreq, NULL, nowGlobalMS, false, m_cr, true, NULL, -1);
 
 	// spiders disabled for this row in url filters?
 	if ( ufn >= 0 && m_cr->m_maxSpidersPerRule[ufn] == 0 ) {
@@ -829,8 +786,7 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 	// each firstIp in waiting tree in spiderdb to get the best
 	// SpiderRequest for that firstIp, then we can add it to doledb
 	// as long as it can be spidered now
-	//bool status = addToWaitingTree ( spiderTimeMS,sreq->m_firstIp,true);
-	bool added = addToWaitingTree(0, sreq->m_firstIp);
+	bool added = addToWaitingTree(sreq->m_firstIp);
 
 	// if already doled and we beat the priority/spidertime of what
 	// was doled then we should probably delete the old doledb key
@@ -917,7 +873,7 @@ bool SpiderColl::printWaitingTree ( ) {
 // . if one of these add fails consider increasing mem used by tree/table
 // . if we lose an ip that sux because it won't be gotten again unless
 //   we somehow add another request/reply to spiderdb in the future
-bool SpiderColl::addToWaitingTree(uint64_t spiderTimeMS, int32_t firstIp) {
+bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 	logDebug( g_conf.m_logDebugSpider, "spider: addtowaitingtree ip=%s", iptoa( firstIp ) );
 
 	// we are currently reading spiderdb for this ip and trying to find
@@ -941,7 +897,7 @@ bool SpiderColl::addToWaitingTree(uint64_t spiderTimeMS, int32_t firstIp) {
 	// . only evalIpLoop() will add a waiting tree key with a non-zero
 	//   value after it figures out the EARLIEST time that a 
 	//   SpiderRequest from this firstIp can be spidered.
-	if ( spiderTimeMS != 0 ) { g_process.shutdownAbort(true); }
+	uint64_t spiderTimeMS = 0;
 
 	// waiting tree might be saving!!!
 	if ( ! m_waitingTree.isWritable() ) {
@@ -1445,7 +1401,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// otherwise, we want to add it with 0 time so the doledb
 		// scan will evaluate it properly
 		// this will return false if we are saving the tree i guess
-		if ( ! addToWaitingTree ( 0 , firstIp ) ) {
+		if (!addToWaitingTree(firstIp)) {
 			log("spider: failed to add ip %s to waiting tree. "
 			    "ip will not get spidered then and our "
 			    "population of waiting tree will repeat until "
@@ -1494,10 +1450,8 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		key128_t lastKey  = *(key128_t *)m_waitingTreeList.getLastKey();
 
 		if ( lastKey < m_waitingTreeNextKey ) {
-			log("spider: got corruption 9. spiderdb "
-			    "keys out of order for "
-			    "collnum=%" PRId32, (int32_t)m_collnum);
-			g_corruptCount++;
+			log(LOG_WARN, "spider: got corruption 9. spiderdb keys out of order for collnum=%" PRId32, (int32_t)m_collnum);
+
 			// this should result in an empty list read for
 			// our next scan of spiderdb. unfortunately we could
 			// miss a lot of spider requests then
@@ -1683,8 +1637,9 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 		m_lastReqUh48b = 0LL;
 		m_lastRepUh48  = 0LL;
 		// and setup the LOCAL counting table if not initialized
-		if ( m_localTable.m_ks == 0 ) 
-			m_localTable.set (4,4,0,NULL,0,false,"ltpct" );
+		if (!m_localTable.isInitialized()) {
+			m_localTable.set(4, 4, 0, NULL, 0, false, "ltpct");
+		}
 		// otherwise, just reset it so we can repopulate it
 		else m_localTable.reset();
 	}
@@ -1892,7 +1847,6 @@ bool SpiderColl::evalIpLoop ( ) {
 	int32_t doleBufSize;
 	RdbCache *wc = &g_spiderLoop.m_winnerListCache;
 	time_t cachedTimestamp = 0;
-	bool inCache = false;
 	bool useCache = true;
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 
@@ -1914,7 +1868,7 @@ bool SpiderColl::evalIpLoop ( ) {
 	if ( useCache ) {
 		//wc->verify();
 		RdbCacheLock rcl(*wc);
-		inCache = wc->getRecord ( m_collnum     ,
+		bool inCache = wc->getRecord ( m_collnum     ,
 					  (char *)&cacheKey ,
 					  &doleBuf,
 					  &doleBufSize  ,
@@ -2025,14 +1979,10 @@ bool SpiderColl::evalIpLoop ( ) {
 		//if ( endKey != finalKey ) { g_process.shutdownAbort(true); }
 		// crazy corruption?
 		if ( lastKey < m_nextKey ) {
-			log("spider: got corruption. spiderdb "
-			    "keys out of order for "
-			    "collnum=%" PRId32" for evaluation of "
-			    "firstip=%s so terminating evaluation of that "
-			    "firstip." ,
-			    (int32_t)m_collnum,
-			    iptoa(m_scanningIp));
-			g_corruptCount++;
+			log(LOG_WARN, "spider: got corruption. spiderdb keys out of order for "
+			    "collnum=%" PRId32" for evaluation of firstip=%s so terminating evaluation of that firstip." ,
+			    (int32_t)m_collnum, iptoa(m_scanningIp));
+
 			// this should result in an empty list read for
 			// m_scanningIp in spiderdb
 			m_nextKey  = m_endKey;
@@ -2489,13 +2439,10 @@ bool SpiderColl::scanListForWinners ( ) {
 				m_lastReqUh48a = uh48;
 				// sanity
 				if ( ! sreq->m_siteHash32){g_process.shutdownAbort(true);}
-				if ( ! sreq->m_domHash32){g_process.shutdownAbort(true);}
 				// do a little magic because we count
 				// seeds as "manual adds" as well as normal pg
 				int32_t h32;
 				h32 = sreq->m_siteHash32 ^ 0x123456;
-				m_localTable.addScore(h32);
-				h32 = sreq->m_domHash32 ^ 0x123456;
 				m_localTable.addScore(h32);
 			}
 			// unique votes per other for quota
@@ -2512,7 +2459,6 @@ bool SpiderColl::scanListForWinners ( ) {
 			// keep count per site and firstip
 			m_localTable.addScore(sreq->m_firstIp,1);
 			m_localTable.addScore(sreq->m_siteHash32,1);
-			m_localTable.addScore(sreq->m_domHash32,1);
 
 			int32_t *tmpNum = (int32_t *)m_localTable.getValue( &( sreq->m_siteHash32 ) );
 			logDebug( g_conf.m_logDebugSpider, "spider: sitequota: got %" PRId32" indexed docs for site from "
@@ -2606,15 +2552,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		// . if this is slow see the TODO below in dedupSpiderdbList()
 		//   which can pre-store these values assuming url filters do
 		//   not change and siteNumInlinks is about the same.
-		int32_t ufn = ::getUrlFilterNum(sreq,
-					     srep,
-					     nowGlobal,
-					     false,
-					     m_cr,
-					     false, // isOutlink?
-					     // provide the page quota table
-						&m_localTable,
-						-1);
+		int32_t ufn = ::getUrlFilterNum(sreq, srep, nowGlobal, false, m_cr, false, &m_localTable, -1);
 		// sanity check
 		if ( ufn == -1 ) { 
 			log( LOG_WARN, "spider: failed to match url filter for url='%s' coll='%s'", sreq->m_url, m_cr->m_coll );
@@ -3059,7 +2997,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 
 		m_waitingTable.removeKey  ( &firstIp  );
 		// sanity check
-		if ( ! m_waitingTable.m_isWritable ) { g_process.shutdownAbort(true);}
+		if ( ! m_waitingTable.isWritable() ) { g_process.shutdownAbort(true);}
 		return true;
 	}
 
@@ -3277,7 +3215,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 			// keep the table in sync now with the time
 			m_waitingTable.addKey(&firstIp, &m_minFutureTimeMS);
 			// sanity check
-			if (!m_waitingTable.m_isWritable) { g_process.shutdownAbort(true); }
+			if (!m_waitingTable.isWritable()) { g_process.shutdownAbort(true); }
 			return true;
 		}
 	}
@@ -3423,7 +3361,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	m_waitingTreeKeyValid = false;
 
 	// sanity check
-	if ( ! m_waitingTable.m_isWritable ) { g_process.shutdownAbort(true);}
+	if ( ! m_waitingTable.isWritable() ) { g_process.shutdownAbort(true);}
 
 	// note that ip as being in dole table
 	if ( g_conf.m_logDebugSpider )
@@ -3586,7 +3524,6 @@ bool SpiderColl::addToDoleTable ( SpiderRequest *sreq ) {
 	// . unmark individual priority buckets
 	// . do not skip them when scanning for urls to spiderd
 	int32_t pri = sreq->m_priority;
-	m_isDoledbEmpty[pri] = 0;		
 	// reset scan for this priority in doledb
 	m_nextKeys     [pri] =Doledb::makeFirstKey2 ( pri );
 
@@ -3635,12 +3572,6 @@ bool SpiderColl::tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
 		return true;
 	}
-	// if ( sc->m_msg1.m_mcast.m_inUse ) {
-	// 	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
-	// 	    "waiting2",
-	// 	    (PTRTYPE)sc,(int32_t)sc->m_collnum);
-	// 	return true;
-	// }
 	if ( sc->m_isLoading ) {
 		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
 			    "waiting3",

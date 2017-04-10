@@ -40,35 +40,11 @@ public:
 	// . call this no matter what
 	// . if spidering is disabled this will sleep about 10 seconds or so
 	//   before checking to see if it's been enabled
-	void startLoop();
-
-	bool printLockTable ( );
+	void init();
 
 	int32_t getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum ) ;
 
-	void spiderDoledUrls ( ) ;
-	bool gotDoledbList2  ( ) ;
-
-	// . returns false if blocked and "callback" will be called, 
-	//   true otherwise
-	// . returns true and sets g_errno on error
-	bool spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum);
-
-	bool spiderUrl2 ( );
-
-	// state memory for calling SpiderUrl2() (maybe also getLocks()!)
-	SpiderRequest *m_sreq;
-
-	collnum_t  m_collnum;
-	key96_t     *m_doledbKey;
-	void      *m_state;
-	void     (*m_callback)(void *state);
-
-	bool indexedDoc ( class XmlDoc *doc );
-
 	int32_t m_numSpidersOut;
-
-	int32_t m_launches;
 
 	// for spidering/parsing/indexing a url(s)
 	class XmlDoc *m_docs [ MAX_SPIDERS ];
@@ -77,28 +53,59 @@ public:
 	// . we use it to limit our scanning to the first "i" m_msg14's
 	int32_t m_maxUsed;
 
+	HashTableX m_lockTable;
+
+	RdbCache   m_winnerListCache;
+
+	bool m_activeListValid;
+	bool m_activeListModified;
+
+
+private:
+	static void indexedDocWrapper ( void *state ) ;
+	static void doneSleepingWrapperSL ( int fd , void *state ) ;
+	static void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) ;
+
+	void spiderDoledUrls ( ) ;
+	bool gotDoledbList2  ( ) ;
+
+	// . returns false if blocked and "callback" will be called,
+	//   true otherwise
+	// . returns true and sets g_errno on error
+	bool spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum);
+
+	bool spiderUrl2 ( );
+
+	bool indexedDoc ( class XmlDoc *doc );
+
+	CollectionRec *getActiveList();
+	void buildActiveList ( ) ;
+
+	// state memory for calling SpiderUrl2() (maybe also getLocks()!)
+	SpiderRequest *m_sreq;
+
+	collnum_t  m_collnum;
+	key96_t     *m_doledbKey;
+
+	int32_t m_launches;
+
 	// . list for getting next url(s) to spider
 	RdbList m_list;
 
 	// for getting RdbLists
 	Msg5 m_msg5;
 
-	class SpiderColl *m_sc;
+	SpiderColl *m_sc;
 
 	bool m_gettingDoledbList;
-	HashTableX m_lockTable;
+
 	// save on msg12 lookups! keep somewhat local...
 	RdbCache   m_lockCache;
 
-	RdbCache   m_winnerListCache;
-
-	CollectionRec *getActiveList();
-	void buildActiveList ( ) ;
-	class CollectionRec *m_crx;
-	class CollectionRec *m_activeList;
+	CollectionRec *m_crx;
+	CollectionRec *m_activeList;
 	CollectionRec *m_bookmark;
-	bool m_activeListValid;
-	bool m_activeListModified;
+
 	int32_t m_activeListCount;
 	uint32_t m_recalcTime;
 	bool m_recalcTimeValid;
@@ -112,7 +119,6 @@ public:
 
 extern class SpiderLoop g_spiderLoop;
 
-void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) ;
 void handleRequestc1 ( UdpSlot *slot , int32_t niceness );
 
 #endif // GB_SPIDERLOOP_H

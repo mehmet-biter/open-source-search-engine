@@ -157,8 +157,6 @@ public:
 	// replace ips and ports in outstanding slots
 	void replaceHost ( Host *oldHost, Host *newHost );
 
-	void printState();
-
 	int32_t getNumUsedSlots() const;
 
 	int32_t getNumUsedSlotsIncoming() const { return m_numUsedSlotsIncoming; }

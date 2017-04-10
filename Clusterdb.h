@@ -44,8 +44,6 @@ public:
 	// init the rebuild/secondary rdb, used by PageRepair.cpp
 	bool init2 ( int32_t treeMem );
 
-	bool verify ( const char *coll );
-
 	//bool addColl ( const char *coll, bool doVerify = true );
 
 	Rdb *      getRdb()       { return &m_rdb; }

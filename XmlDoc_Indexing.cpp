@@ -271,12 +271,12 @@ char *XmlDoc::hashAll(HashTableX *table) {
 	}
 
 	// sanity checks
-	if (table->m_ks != 18 || table->m_ds != 4) {
+	if (table->getKeySize() != 18 || table->getDataSize() != 4) {
 		g_process.shutdownAbort(true);
 	}
 
 	// ptr to term = 4 + score = 4 + ptr to sec = 4
-	if (m_wts && (m_wts->m_ks != 12 || m_wts->m_ds != sizeof(TermDebugInfo))) {
+	if (m_wts && (m_wts->getKeySize() != 12 || m_wts->getDataSize() != sizeof(TermDebugInfo))) {
 		g_process.shutdownAbort(true);
 	}
 
@@ -908,8 +908,8 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 
 	// sanity check
-	if ( dt->m_ks != sizeof(key224_t) ) { g_process.shutdownAbort(true); }
-	if ( dt->m_ds != 0                ) { g_process.shutdownAbort(true); }
+	if ( dt->getKeySize() != sizeof(key224_t) ) { g_process.shutdownAbort(true); }
+	if ( dt->getDataSize() != 0                ) { g_process.shutdownAbort(true); }
 
 	// this will be different with our new site definitions
 	uint32_t linkerSiteHash32 = *getSiteHash32();
@@ -1827,7 +1827,7 @@ bool XmlDoc::hashSingleTerm( const char *s, int32_t slen, HashInfo *hi ) {
 	// shortcut
 	HashTableX *dt = hi->m_tt;
 	// sanity check
-	if ( dt->m_ks != sizeof(key144_t) ) { g_process.shutdownAbort(true); }
+	if ( dt->getKeySize() != sizeof(key144_t) ) { g_process.shutdownAbort(true); }
 	// make the key like we do in hashWords()
 
 
@@ -1948,14 +1948,14 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 
 	// . sanity checks
 	// . posdb just uses the full keys with docid
-	if ( dt->m_ks != 18 ) { g_process.shutdownAbort(true); }
-	if ( dt->m_ds != 4  ) { g_process.shutdownAbort(true); }
+	if ( dt->getKeySize() != 18 ) { g_process.shutdownAbort(true); }
+	if ( dt->getDataSize() != 4  ) { g_process.shutdownAbort(true); }
 
 	// if provided...
 	if ( wts ) {
-		if ( wts->m_ks != 12               ) { g_process.shutdownAbort(true); }
-		if ( wts->m_ds != sizeof(TermDebugInfo)){g_process.shutdownAbort(true); }
-		if ( ! wts->m_allowDups ) { g_process.shutdownAbort(true); }
+		if ( wts->getKeySize() != 12               ) { g_process.shutdownAbort(true); }
+		if ( wts->getDataSize() != sizeof(TermDebugInfo)){g_process.shutdownAbort(true); }
+		if ( ! wts->isAllowDups() ) { g_process.shutdownAbort(true); }
 	}
 
 	// ensure caller set the hashGroup

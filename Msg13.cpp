@@ -413,14 +413,13 @@ bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSi
 static bool isIpInTwitchyTable(CollectionRec *cr, int32_t ip) {
 	if ( ! cr ) return false;
 	HashTableX *ht = &cr->m_twitchyTable;
-	if ( ht->m_numSlots == 0 ) return false;
 	return ( ht->getSlot ( &ip ) >= 0 );
 }
 
 static bool addIpToTwitchyTable(CollectionRec *cr, int32_t ip) {
 	if ( ! cr ) return true;
 	HashTableX *ht = &cr->m_twitchyTable;
-	if ( ht->m_numSlots == 0 )
+	if ( !ht->isInitialized() )
 		ht->set ( 4,0,16,NULL,0,false,"twitchtbl",true);
 	return ht->addKey ( &ip );
 }

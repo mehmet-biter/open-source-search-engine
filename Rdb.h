@@ -18,7 +18,6 @@
 bool makeTrashDir() ;
 
 // get the RdbBase class for an rdbId and collection name
-class RdbBase *getRdbBase(rdbid_t rdbId, const char *coll);
 class RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum);
 
 // maps an rdbId to an Rdb
@@ -43,9 +42,6 @@ void attemptMergeAllCallback ( int fd , void *state ) ;
 void attemptMergeAll ( );
 
 class Rdb {
-	/// @todo ALC remove this when method is fixed (main.cpp)
-	friend int injectFile ( const char *filename , char *ips , const char *coll );
-
 public:
 
 	 Rdb ( );
@@ -203,8 +199,7 @@ public:
 	rdbid_t getRdbId() const { return m_rdbId; }
 	const char* getDbname() const { return m_dbname; }
 
-	bool isInDumpLoop() const { return m_inDumpLoop; }
-	void setInDumpLoop(bool inDumpLoop) { m_inDumpLoop = inDumpLoop; }
+	bool isDumping() const { return m_isDumping; }
 
 	bool isUseIndexFile() const { return m_useIndexFile; }
 
@@ -231,8 +226,6 @@ public:
 	bool isMerging() const;
 	void incrementNumMerges() { ++m_numMergesOut; }
 	void decrementNumMerges() { --m_numMergesOut; }
-
-	bool isDumping() const { return m_dump.isDumping(); }
 
 	// PageRepair.cpp calls this when it is done rebuilding an rdb
 	// and wants to tell the primary rdb to reload itself using the newly
@@ -320,7 +313,7 @@ private:
 
 	// set to true when dumping tree so RdbMem does not use the memory
 	// being dumped to hold newly added records
-	bool m_inDumpLoop;
+	bool m_isDumping;
 
 	rdbid_t m_rdbId;
 

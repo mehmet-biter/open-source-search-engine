@@ -194,3 +194,10 @@ bool starts_with(const char *haystack, const char *needle) {
 
 	return (memcmp(haystack, needle, needleLen) == 0);
 }
+
+
+uint64_t getCurrentTimeNanoseconds() {
+	struct timespec ts_now;
+	clock_gettime(CLOCK_REALTIME,&ts_now);
+	return ts_now.tv_sec * 1000000000 + ts_now.tv_nsec;
+}

@@ -950,7 +950,7 @@ bool Repair::dumpsCompleted ( ) {
 		// anything in tree/buckets?
 		if ( rdb->getNumUsedNodes() ) return false;
 		// still dumping?
-		if ( rdb->isDumping      () ) return false;
+		if (rdb->isDumping()) return false;
 	}
 	// no more dump activity
 	return true;
@@ -1351,7 +1351,7 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 	const char *oldColl = " &nbsp; ";
 	if ( m_cr ) oldColl = m_cr->m_coll;
 
-	Host *mh = g_pingServer.m_minRepairModeHost;
+	Host *mh = g_pingServer.getMinRepairModeHost();
 	int32_t  minHostId = -1;
 	char  minIpBuf[64];
 	minIpBuf[0] = '\0';
@@ -1442,7 +1442,7 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 			 (int32_t)g_repairMode,
 
 			 LIGHT_BLUE ,
-			 (int32_t)g_pingServer.m_minRepairMode,
+			 (int32_t)g_pingServer.getMinRepairMode(),
 
 			 LIGHT_BLUE ,
 			 minIpBuf, // ip string

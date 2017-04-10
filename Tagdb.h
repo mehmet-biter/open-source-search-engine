@@ -3,6 +3,7 @@
 #ifndef GB_TAGDB_H
 #define GB_TAGDB_H
 
+#include <set>
 #include "Rdb.h"
 #include "Xml.h"
 #include "Url.h"
@@ -85,6 +86,8 @@ int32_t  getTagTypeFromStr( const char *tagTypeName , int32_t tagnameLen = -1 );
 // . convert ST_DOMAIN_SQUATTER to "domain_squatter"
 const char *getTagStrFromType ( int32_t tagType ) ;
 
+std::set<int64_t> getDeprecatedTagTypes();
+
 // max "oustanding" msg0 requests sent by TagRec::lookup()
 #define MAX_TAGDB_REQUESTS 3
 
@@ -155,18 +158,17 @@ class Tagdb  {
 	// . TODO: have m_useSeals parameter???
 	bool init  ( );
 
-	bool verify ( const char *coll );
-
 	// used by ../rdb/Msg0 and ../rdb/Msg1
 	Rdb *getRdb ( ) { return &m_rdb; }
 
-	key128_t makeStartKey ( const char *site );
-	key128_t makeStartKey ( const char *site, int32_t siteLen );
-	key128_t makeEndKey   ( const char *site );
-	key128_t makeEndKey   ( const char *site, int32_t siteLen);
+	static key128_t makeStartKey(const char *site);
+	static key128_t makeStartKey(const char *site, int32_t siteLen);
 
-	key128_t makeDomainStartKey ( Url *u ) ;
-	key128_t makeDomainEndKey   ( Url *u ) ;
+	static key128_t makeEndKey(const char *site);
+	static key128_t makeEndKey(const char *site, int32_t siteLen);
+
+	static key128_t makeDomainStartKey(Url *u);
+	static key128_t makeDomainEndKey(Url *u);
 
 	// private:
 
@@ -215,8 +217,6 @@ class Msg8a {
 	Msg8a ();
 	~Msg8a ();
 	void reset();
-
-	static const RdbCache* getCache();
 
 	// . get records from multiple subdomains of url
 	// . calls g_udpServer.sendRequest() on each subdomain of url

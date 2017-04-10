@@ -49,7 +49,6 @@
 #include "Summary.h"
 #include "Spider.h" // SpiderRequest/SpiderReply definitions
 #include "HttpMime.h" // ET_DEFLAT
-#include "Msg1.h"
 #include "Json.h"
 #include "Posdb.h"
 
@@ -104,9 +103,6 @@ int gbcompress(unsigned char *dest,
 	       uint32_t *destLen,
 	       const unsigned char *source,
 	       uint32_t  sourceLen);
-
-
-uint32_t score8to32 ( uint8_t score8 );
 
 // . for Msg13.cpp
 // . *pend must equal \0
@@ -321,7 +317,6 @@ public:
 	bool indexDoc ( );
 	bool indexDoc2 ( );
 
-	key96_t *getTitleRecKey() ;
 	char *prepareToMakeTitleRec ( ) ;
 	// store TitleRec into "buf" so it can be added to metalist
 	bool setTitleRecBuf ( SafeBuf *buf , int64_t docId, int64_t uh48 );
@@ -1195,8 +1190,5 @@ class TermDebugInfo {
 	char      m_synSrc;
 	int64_t  m_langBitVec64;
 };
-
-
-extern uint8_t score32to8 ( uint32_t score ) ;
 
 #endif // GB_XMLDOC_H

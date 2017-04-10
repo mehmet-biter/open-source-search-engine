@@ -52,7 +52,7 @@ class HashTable {
 	void  clear  ( );
 
 	// how many are occupied?
-	int32_t getNumSlotsUsed ( ) const { return m_numSlotsUsed; }
+	int32_t getNumUsedSlots() const { return m_numSlotsUsed; }
 
 	// how many are there total? used and unused.
 	int32_t getNumSlots ( ) const { return m_numSlots; }

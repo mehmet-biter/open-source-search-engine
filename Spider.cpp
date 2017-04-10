@@ -18,17 +18,15 @@
 #include "Spider.h"
 #include "SpiderLoop.h"
 #include "SpiderColl.h"
+#include "SpiderCache.h"
 #include "Hostdb.h"
 #include "RdbList.h"
-#include "RdbTree.h"
 #include "HashTableX.h"
 #include "Msg5.h"      // local getList()
 #include "Msg4Out.h"
-#include "Msg1.h"
 #include "Doledb.h"
 #include "Msg5.h"
 #include "Collectiondb.h"
-#include "XmlDoc.h"    // score8to32()
 #include "Stats.h"
 #include "SafeBuf.h"
 #include "Repair.h"
@@ -42,18 +40,14 @@
 #include "Pages.h"
 #include "Parms.h"
 #include "Rebalance.h"
-#include "PageInject.h" //getInjectHead()
 #include "PingServer.h"
 #include "ip.h"
-#include "ScopedLock.h"
 #include "Mem.h"
 #include "UrlBlockList.h"
 #include <list>
 
 
 static void testWinnerTreeKey();
-
-int32_t g_corruptCount = 0;
 
 bool s_countsAreValid = true;
 
@@ -118,27 +112,9 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 
 	sb->safePrintf("hopCount=%" PRId32" ",(int32_t)m_hopCount );
 
-	//timeStruct = gmtime_r( &m_spiderTime );
-	//time[0] = 0;
-	//if ( m_spiderTime ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
-	//sb->safePrintf("spiderTime=%s(%" PRIu32") ",time,m_spiderTime);
-
-	//timeStruct = gmtime_r( &m_pubDate );
-	//time[0] = 0;
-	//if ( m_pubDate ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
-	//sb->safePrintf("pubDate=%s(%" PRIu32") ",time,m_pubDate );
-
 	sb->safePrintf("ufn=%" PRId32" ", (int32_t)m_ufn);
 	// why was this unsigned?
 	sb->safePrintf("priority=%" PRId32" ", (int32_t)m_priority);
-
-	//sb->safePrintf("errCode=%s(%" PRIu32") ",mstrerror(m_errCode),m_errCode );
-	//sb->safePrintf("crawlDelay=%" PRId32"ms ",m_crawlDelay );
-	//sb->safePrintf("httpStatus=%" PRId32" ",(int32_t)m_httpStatus );
-	//sb->safePrintf("retryNum=%" PRId32" ",(int32_t)m_retryNum );
-	//sb->safePrintf("langId=%s(%" PRId32") ",
-	//	       getLanguageString(m_langId),(int32_t)m_langId );
-	//sb->safePrintf("percentChanged=%" PRId32"%% ",(int32_t)m_percentChanged );
 
 	if ( m_isAddUrl ) sb->safePrintf("ISADDURL ");
 	if ( m_isPageReindex ) sb->safePrintf("ISPAGEREINDEX ");
@@ -155,9 +131,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 
 	if ( m_isWWWSubdomain  ) sb->safePrintf("WWWSUBDOMAIN ");
 	if ( m_avoidSpiderLinks ) sb->safePrintf("AVOIDSPIDERLINKS ");
-
-	//if ( m_inOrderTree ) sb->safePrintf("INORDERTREE ");
-	//if ( m_doled ) sb->safePrintf("DOLED ");
 
 	int32_t shardNum = g_hostdb.getShardNum( RDB_SPIDERDB, this );
 	sb->safePrintf("shardnum=%" PRIu32" ",(uint32_t)shardNum);
@@ -183,9 +156,7 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 	SafeBuf tmp;
 	if ( ! sb ) sb = &tmp;
 
-	//sb->safePrintf("k.n1=0x%llx ",m_key.n1);
-	//sb->safePrintf("k.n0=0x%llx ",m_key.n0);
-	sb->safePrintf("k=%s ",KEYSTR(this,sizeof(SPIDERDBKEY)));
+	sb->safePrintf("k=%s ",KEYSTR(this,sizeof(spiderdbkey_t)));
 
 	// indicate it's a reply
 	sb->safePrintf("REP ");
@@ -224,7 +195,6 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 		strftime (time,256,"%b %e %T %Y UTC",timeStruct);
 	sb->safePrintf("pubDate=%s(%" PRId32") ",time,m_pubDate );
 
-	//sb->safePrintf("newRequests=%" PRId32" ",m_newRequests );
 	sb->safePrintf("ch32=%" PRIu32" ",(uint32_t)m_contentHash32);
 
 	sb->safePrintf("crawldelayms=%" PRId32"ms ",m_crawlDelayMS );
@@ -244,9 +214,6 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 	if ( m_isPingServer ) sb->safePrintf("ISPINGSERVER ");
 	//if ( m_deleted ) sb->safePrintf("DELETED ");
 	if ( ! m_isIndexedINValid && m_isIndexed ) sb->safePrintf("ISINDEXED ");
-
-
-	//sb->safePrintf("url=%s",m_url);
 
 	if ( ! sbarg ) 
 		printf("%s",sb->getBufStart() );
@@ -271,10 +238,7 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 		CollectionRec *cr = g_collectiondb.getRec(collnum);
 		const char *cs = "";
 		if ( cr ) cs = cr->m_coll;
-		// sb->safePrintf(" <td><a href=/crawlbot?c=%s>%" PRId32"</a></td>\n",
-		// 	       cs,(int32_t)collnum);
-		//sb->safePrintf(" <td><a href=/crawlbot?c=%s>%s</a></td>\n",
-		//	       cs,cs);
+
 		sb->safePrintf(" <td><a href=/search?c=%s&q=url%%3A%s>%s</a>"
 			       "</td>\n",cs,m_url,cs);
 	}
@@ -292,12 +256,7 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 
 	sb->safePrintf(" <td>%" PRIu64"</td>\n",getUrlHash48());
 
-	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_hostHash32 );
-	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_domHash32 );
-	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_siteHash32 );
-
 	sb->safePrintf(" <td>%" PRId32"</td>\n",m_siteNumInlinks );
-	//sb->safePrintf(" <td>%" PRId32"</td>\n",m_pageNumInlinks );
 	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_hopCount );
 
 	// print time format: 7/23/1971 10:45:32
@@ -311,21 +270,8 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	sb->safePrintf(" <td><nobr>%s(%" PRIu32")</nobr></td>\n",time,
 		       (uint32_t)m_addedTime);
 
-	//timeStruct = gmtime_r( &m_pubDate );
-	//time[0] = 0;
-	//if ( m_pubDate ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
-	//sb->safePrintf(" <td>%s(%" PRIu32")</td>\n",time,m_pubDate );
-
-	//sb->safePrintf(" <td>%s(%" PRIu32")</td>\n",mstrerror(m_errCode),m_errCode);
-	//sb->safePrintf(" <td>%" PRId32"ms</td>\n",m_crawlDelay );
 	sb->safePrintf(" <td>%i</td>\n",(int)m_pageNumInlinks);
 	sb->safePrintf(" <td>%" PRIu64"</td>\n",getParentDocId() );
-
-	//sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_httpStatus );
-	//sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_retryNum );
-	//sb->safePrintf(" <td>%s(%" PRId32")</td>\n",
-	//	       getLanguageString(m_langId),(int32_t)m_langId );
-	//sb->safePrintf(" <td>%" PRId32"%%</td>\n",(int32_t)m_percentChanged );
 
 	sb->safePrintf(" <td><nobr>");
 
@@ -339,14 +285,7 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
 	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
 
-	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
-
-
-	//if ( m_inOrderTree ) sb->safePrintf("INORDERTREE ");
-	//if ( m_doled ) sb->safePrintf("DOLED ");
-
-
 
 	sb->safePrintf("</nobr></td>\n");
 
@@ -375,26 +314,11 @@ int32_t SpiderRequest::printTableHeader ( SafeBuf *sb , bool currentlySpidering)
 	sb->safePrintf(" <td><b>firstIp</b></td>\n");
 	sb->safePrintf(" <td><b>errCount</b></td>\n");
 	sb->safePrintf(" <td><b>urlHash48</b></td>\n");
-	//sb->safePrintf(" <td><b>hostHash32</b></td>\n");
-	//sb->safePrintf(" <td><b>domHash32</b></td>\n");
-	//sb->safePrintf(" <td><b>siteHash32</b></td>\n");
 	sb->safePrintf(" <td><b>siteInlinks</b></td>\n");
-	//sb->safePrintf(" <td><b>pageNumInlinks</b></td>\n");
 	sb->safePrintf(" <td><b>hops</b></td>\n");
 	sb->safePrintf(" <td><b>addedTime</b></td>\n");
-	//sb->safePrintf(" <td><b>lastAttempt</b></td>\n");
-	//sb->safePrintf(" <td><b>pubDate</b></td>\n");
-	//sb->safePrintf(" <td><b>errCode</b></td>\n");
-	//sb->safePrintf(" <td><b>crawlDelay</b></td>\n");
 	sb->safePrintf(" <td><b>parentIp</b></td>\n");
 	sb->safePrintf(" <td><b>parentDocId</b></td>\n");
-	//sb->safePrintf(" <td><b>parentHostHash32</b></td>\n");
-	//sb->safePrintf(" <td><b>parentDomHash32</b></td>\n");
-	//sb->safePrintf(" <td><b>parentSiteHash32</b></td>\n");
-	//sb->safePrintf(" <td><b>httpStatus</b></td>\n");
-	//sb->safePrintf(" <td><b>retryNum</b></td>\n");
-	//sb->safePrintf(" <td><b>langId</b></td>\n");
-	//sb->safePrintf(" <td><b>percentChanged</b></td>\n");
 	sb->safePrintf(" <td><b>flags</b></td>\n");
 	sb->safePrintf("</tr>\n");
 
@@ -499,78 +423,6 @@ bool Spiderdb::init2 ( int32_t treeMem ) {
 			    false);           //useIndexFile
 }
 
-
-
-bool Spiderdb::verify ( char *coll ) {
-	//return true;
-	log ( LOG_DEBUG, "db: Verifying Spiderdb for coll %s...", coll );
-
-	Msg5 msg5;
-	RdbList list;
-	key128_t startKey;
-	key128_t endKey;
-	startKey.setMin();
-	endKey.setMax();
-	//int32_t minRecSizes = 64000;
-	CollectionRec *cr = g_collectiondb.getRec(coll);
-	
-	if ( ! msg5.getList ( RDB_SPIDERDB  ,
-			      cr->m_collnum  ,
-			      &list         ,
-			      (char *)&startKey      ,
-			      (char *)&endKey        ,
-			      64000         , // minRecSizes   ,
-			      true          , // includeTree   ,
-			      0             , // max cache age
-			      0             , // startFileNum  ,
-			      -1            , // numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         , // err correction?
-			      NULL          , // cache key
-			      0             , // retryNum
-			      -1            , // maxRetries
-			      -1LL          , // syncPoint
-			      true          , // isRealMerge
-			      true          )) { // allowPageCache
-		log(LOG_DEBUG, "db: HEY! it did not block");
-		return false;
-	}
-
-	int32_t count = 0;
-	int32_t got   = 0;
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
-		char *k = list.getCurrentRec();
-		count++;
-		// what group's spiderdb should hold this rec
-		//uint32_t groupId = g_hostdb.getGroupId ( RDB_SPIDERDB , k );
-		//if ( groupId == g_hostdb.m_groupId ) got++;
-		int32_t shardNum = g_hostdb.getShardNum(RDB_SPIDERDB,k);
-		if ( shardNum == g_hostdb.getMyShardNum() ) got++;
-	}
-	if ( got != count ) {
-		// tally it up
-		g_rebalance.m_numForeignRecs += count - got;
-		log ("db: Out of first %" PRId32" records in spiderdb, "
-		     "only %" PRId32" belong to our shard.",count,got);
-		// exit if NONE, we probably got the wrong data
-		if ( got == 0 ) log("db: Are you sure you have the "
-					   "right "
-					   "data in the right directory? "
-					   "Exiting.");
-		log ( "db: Exiting due to Spiderdb inconsistency." );
-		return g_conf.m_bypassValidation;
-	}
-	log (LOG_DEBUG,"db: Spiderdb passed verification successfully for %" PRId32" "
-	      "recs.", count );
-	// DONE
-	return true;
-}
-
-
-
 key128_t Spiderdb::makeKey ( int32_t      firstIp     ,
 			     int64_t urlHash48   , 
 			     bool      isRequest   ,
@@ -604,139 +456,6 @@ key128_t Spiderdb::makeKey ( int32_t      firstIp     ,
 	if ( ! isDel ) k.n0 |= 0x01;
 	return k;
 }
-
-
-/////////////////////////
-/////////////////////////      SpiderCache
-/////////////////////////
-
-
-// . reload everything this many seconds
-// . this was originally done to as a lazy compensation for a bug but
-//   now i do not add too many of the same domain if the same domain wait
-//   is ample and we know we'll be refreshed in X seconds anyway
-//#define DEFAULT_SPIDER_RELOAD_RATE (3*60*60)
-
-
-// for caching in s_ufnTree
-//#define MAX_NODES (30)
-
-// a global class extern'd in .h file
-SpiderCache g_spiderCache;
-
-SpiderCache::SpiderCache ( ) {
-	//m_numSpiderColls   = 0;
-	//m_isSaving = false;
-}
-
-// returns false and set g_errno on error
-bool SpiderCache::init ( ) {
-
-	//for ( int32_t i = 0 ; i < MAX_COLL_RECS ; i++ )
-	//	m_spiderColls[i] = NULL;
-
-	// success
-	return true;
-}
-
-// return false if any tree save blocked
-void SpiderCache::save ( bool useThread ) {
-	// bail if already saving
-	//if ( m_isSaving ) return true;
-	// assume saving
-	//m_isSaving = true;
-	// loop over all SpiderColls and get the best
-	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
-		SpiderColl *sc = getSpiderCollIffNonNull(i);//m_spiderColls[i];
-		if ( ! sc ) continue;
-		RdbTree *tree = &sc->m_waitingTree;
-		if ( ! tree->needsSave() ) continue;
-		// if already saving from a thread
-		if ( tree->isSaving() ) continue;
-		const char *filename = "waitingtree";
-		char dir[1024];
-		sprintf(dir,"%scoll.%s.%" PRId32,g_hostdb.m_dir,
-			sc->m_coll,(int32_t)sc->m_collnum);
-		// log it for now
-		log("spider: saving waiting tree for cn=%" PRId32,(int32_t)i);
-		// returns false if it blocked, callback will be called
-		tree->fastSave(dir, filename, useThread, NULL, NULL);
-	}
-}
-
-bool SpiderCache::needsSave ( ) {
-	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
-		SpiderColl *sc = getSpiderCollIffNonNull(i);//m_spiderColls[i];
-		if ( ! sc ) continue;
-		if ( sc->m_waitingTree.needsSave() ) return true;
-	}
-	return false;
-}
-
-void SpiderCache::reset ( ) {
-	log(LOG_DEBUG,"spider: resetting spidercache");
-	// loop over all SpiderColls and get the best
-	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
-		CollectionRec *cr = g_collectiondb.getRec(i);
-		ScopedLock sl(cr->m_spiderCollMutex);
-		SpiderColl *sc = cr->m_spiderColl;
-		if ( ! sc ) continue;
-		sc->reset();
-		mdelete ( sc , sizeof(SpiderColl) , "SpiderColl" );
-		delete ( sc );
-		cr->m_spiderColl = NULL;
-	}
-}
-
-SpiderColl *SpiderCache::getSpiderCollIffNonNull ( collnum_t collnum ) {
-	// "coll" must be invalid
-	if ( collnum < 0 ) return NULL;
-	if ( collnum >= g_collectiondb.getNumRecs()) return NULL;
-	// shortcut
-	CollectionRec *cr = g_collectiondb.getRec(collnum);
-	// empty?
-	if ( ! cr ) return NULL;
-	// return it if non-NULL
-	ScopedLock sl(cr->m_spiderCollMutex); //not really needed but shuts up helgrind+drd
-	return cr->m_spiderColl;
-}
-
-// . get SpiderColl for a collection
-// . if it is NULL for that collection then make a new one
-SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
-	// "coll" must be invalid
-	if ( collnum < 0 ) return NULL;
-
-	// shortcut
-	CollectionRec *cr = g_collectiondb.getRec(collnum);
-	// collection might have been reset in which case collnum changes
-	if ( ! cr ) return NULL;
-	ScopedLock sl(cr->m_spiderCollMutex);
-	// return it if non-NULL
-	SpiderColl *sc = cr->m_spiderColl;
-	if ( sc ) return sc;
-
-	// make it
-	try { sc = new SpiderColl(cr); }
-	catch ( ... ) {
-		log("spider: failed to make SpiderColl for collnum=%" PRId32,
-		    (int32_t)collnum);
-		return NULL;
-	}
-	// register it
-	mnew ( sc , sizeof(SpiderColl), "SpiderColl" );
-	// store it
-	cr->m_spiderColl = sc;
-	// note it
-	logf(LOG_DEBUG,"spider: made spidercoll=%" PTRFMT" for cr=%" PTRFMT"",
-	    (PTRTYPE)sc,(PTRTYPE)cr);
-
-	// note it!
-	log(LOG_DEBUG,"spider: adding new spider collection for %s", cr->m_coll);
-	// that was it
-	return sc;
-}
-
 
 
 ////////
@@ -818,44 +537,14 @@ static void testWinnerTreeKey() {
 /////////////////////////      UTILITY FUNCTIONS
 /////////////////////////
 
-// . map a spiderdb rec to the shard # that should spider it
-// . "sr" can be a SpiderRequest or SpiderReply
-// . shouldn't this use Hostdb::getShardNum()?
-/*
-uint32_t getShardToSpider ( char *sr ) {
-	// use the url hash
-	int64_t uh48 = g_spiderdb.getUrlHash48 ( (key128_t *)sr );
-	// host to dole it based on ip
-	int32_t hostId = uh48 % g_hostdb.m_numHosts ;
-	// get it
-	Host *h = g_hostdb.getHost ( hostId ) ;
-	// and return groupid
-	return h->m_groupId;
-}
-*/
-
 // does this belong in our spider cache?
 bool isAssignedToUs ( int32_t firstIp ) {
-	// sanity check... must be in our group.. we assume this much
-	//if ( g_spiderdb.getGroupId(firstIp) != g_hostdb.m_myHost->m_groupId){
-	//	g_process.shutdownAbort(true); }
-	// . host to dole it based on ip
-	// . ignore lower 8 bits of ip since one guy often owns a whole block!
-	//int32_t hostId=(((uint32_t)firstIp) >> 8) % g_hostdb.getNumHosts();
-
 	if( !g_hostdb.getMyHost()->m_spiderEnabled ) return false;
 	
 	// get our group
-	//Host *group = g_hostdb.getMyGroup();
 	Host *shard = g_hostdb.getMyShard();
 	// pick a host in our group
 
-	// if not dead return it
-	//if ( ! g_hostdb.isDead(hostId) ) return hostId;
-	// get that host
-	//Host *h = g_hostdb.getHost(hostId);
-	// get the group
-	//Host *group = g_hostdb.getGroup ( h->m_groupId );
 	// and number of hosts in the group
 	int32_t hpg = g_hostdb.getNumHostsPerShard();
 	// let's mix it up since spider shard was selected using this
@@ -863,8 +552,7 @@ bool isAssignedToUs ( int32_t firstIp ) {
 	uint64_t h64 = firstIp;
 	unsigned char c = firstIp & 0xff;
 	h64 ^= g_hashtab[c][0];
-	// select the next host number to try
-	//int32_t next = (((uint32_t)firstIp) >> 16) % hpg ;
+
 	// hash to a host
 	int32_t i = ((uint32_t)h64) % hpg;
 	Host *h = &shard[i];
@@ -896,486 +584,6 @@ bool isAssignedToUs ( int32_t firstIp ) {
 	// guaranteed to be alive... kinda
 	return (h->m_hostId == g_hostdb.m_hostId);
 }
-
-
-
-
-
-/////////////////////////
-/////////////////////////      PAGESPIDER
-/////////////////////////
-
-namespace {
-
-class State11 {
-public:
-	int32_t          m_numRecs;
-	Msg5          m_msg5;
-	RdbList       m_list;
-	TcpSocket    *m_socket;
-	HttpRequest   m_r;
-	collnum_t     m_collnum;
-	const char   *m_coll;
-	int32_t          m_count;
-	key96_t         m_startKey;
-	key96_t         m_endKey;
-	int32_t          m_minRecSizes;
-	bool          m_done;
-	SafeBuf       m_safeBuf;
-	int32_t          m_priority;
-};
-
-} //namespace
-
-static bool loadLoop ( class State11 *st ) ;
-
-// . returns false if blocked, true otherwise
-// . sets g_errno on error
-// . make a web page displaying the urls we got in doledb
-// . doledb is sorted by priority complement then spider time
-// . do not show urls in doledb whose spider time has not yet been reached,
-//   so only show the urls spiderable now
-// . call g_httpServer.sendDynamicPage() to send it
-bool sendPageSpiderdb ( TcpSocket *s , HttpRequest *r ) {
-	// set up a msg5 and RdbLists to get the urls from spider queue
-	State11 *st ;
-	try { st = new (State11); }
-	catch ( ... ) {
-		g_errno = ENOMEM;
-		log("PageSpiderdb: new(%i): %s", 
-		    (int)sizeof(State11),mstrerror(g_errno));
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-		return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));}
-	mnew ( st , sizeof(State11) , "PageSpiderdb" );
-	// get the priority/#ofRecs from the cgi vars
-	st->m_numRecs  = r->getLong ("n", 20  );
-	st->m_r.copy ( r );
-	// get collection name
-	const char *coll = st->m_r.getString ( "c" , NULL , NULL );
-	// get the collection record to see if they have permission
-	//CollectionRec *cr = g_collectiondb.getRec ( coll );
-
-	// the socket read buffer will remain until the socket is destroyed
-	// and "coll" points into that
-	st->m_coll = coll;
-	CollectionRec *cr = g_collectiondb.getRec(coll);
-	if ( cr ) st->m_collnum = cr->m_collnum;
-	else      st->m_collnum = -1;
-	// set socket for replying in case we block
-	st->m_socket = s;
-	st->m_count = 0;
-	st->m_priority = MAX_SPIDER_PRIORITIES - 1;
-	// get startKeys/endKeys/minRecSizes
-	st->m_startKey    = Doledb::makeFirstKey2 (st->m_priority);
-	st->m_endKey      = Doledb::makeLastKey2  (st->m_priority);
-	st->m_minRecSizes = 20000;
-	st->m_done        = false;
-	// returns false if blocked, true otherwise
-	return loadLoop ( st ) ;
-}
-
-static void gotListWrapper3 ( void *state , RdbList *list , Msg5 *msg5 ) ;
-static bool sendPage        ( State11 *st );
-static bool printList       ( State11 *st );
-
-static bool loadLoop ( State11 *st ) {
- loop:
-	// let's get the local list for THIS machine (use msg5)
-	if ( ! st->m_msg5.getList  ( RDB_DOLEDB          ,
-				     st->m_collnum       ,
-				     &st->m_list         ,
-				     st->m_startKey      ,
-				     st->m_endKey        ,
-				     st->m_minRecSizes   ,
-				     true                , // include tree
-				     0                   , // max age
-				     0                   , // start file #
-				     -1                  , // # files
-				     st                  , // callback state
-				     gotListWrapper3     ,
-				     0                   , // niceness
-				     true,                 // do err correction
-				     NULL,                 // cacheKeyPtr
-			             0,                    // retryNum
-			             -1,                   // maxRetries
-			             -1,                   // syncPoint
-			             false,                // isRealMerge
-			             true))                // allowPageCache
-		return false;
-	// print it. returns false on error
-	if ( ! printList ( st ) ) st->m_done = true;
-	// check if done
-	if ( st->m_done ) {
-		// send the page back
-		sendPage ( st );
-		// bail
-		return true;
-	}
-	// otherwise, load more
-	goto loop;
-}
-
-static void gotListWrapper3 ( void *state , RdbList *list , Msg5 *msg5 ) {
-	// cast it
-	State11 *st = (State11 *)state;
-	// print it. returns false on error
-	if ( ! printList ( st ) ) st->m_done = true;
-	// check if done
-	if ( st->m_done ) {
-		// send the page back
-		sendPage ( st );
-		// bail
-		return;
-	}
-	// otherwise, load more
-	loadLoop( (State11 *)state );
-}
-
-
-// . make a web page from results stored in msg40
-// . send it on TcpSocket "s" when done
-// . returns false if blocked, true otherwise
-// . sets g_errno on error
-static bool printList ( State11 *st ) {
-	// useful
-	time_t nowGlobal = getTime();
-
-	// print the spider recs we got
-	SafeBuf *sbTable = &st->m_safeBuf;
-	// shorcuts
-	RdbList *list = &st->m_list;
-	// row count
-	int32_t j = 0;
-	// put it in there
-	for ( ; ! list->isExhausted() ; list->skipCurrentRecord() ) {
-		// stop if we got enough
-		if ( st->m_count >= st->m_numRecs )  break;
-		// get the doledb key
-		key96_t dk = list->getCurrentKey();
-		// update to that
-		st->m_startKey = dk;
-		// inc by one
-		st->m_startKey++;
-		// get spider time from that
-		int32_t spiderTime = Doledb::getSpiderTime ( &dk );
-		// skip if in future
-		if ( spiderTime > nowGlobal ) continue;
-		// point to the spider request *RECORD*
-		char *rec = list->getCurrentData();
-		// skip negatives
-		if ( (dk.n0 & 0x01) == 0 ) continue;
-		// count it
-		st->m_count++;
-		// what is this?
-		if ( list->getCurrentRecSize() <= 16 ) { g_process.shutdownAbort(true);}
-		// sanity check. requests ONLY in doledb
-		if ( ! Spiderdb::isSpiderRequest ( (key128_t *)rec )) {
-			log("spider: not printing spiderreply");
-			continue;
-			//g_process.shutdownAbort(true);
-		}
-		// get the spider rec, encapsed in the data of the doledb rec
-		SpiderRequest *sreq = (SpiderRequest *)rec;
-		// print it into sbTable
-		if ( ! sreq->printToTable ( sbTable,"ready",NULL,j))
-			return false;
-		// count row
-		j++;
-	}
-	// need to load more?
-	if ( st->m_count >= st->m_numRecs ||
-	     // if list was a partial, this priority is short then
-	     list->getListSize() < st->m_minRecSizes ) {
-		// . try next priority
-		// . if below 0 we are done
-		if ( --st->m_priority < 0 ) st->m_done = true;
-		// get startKeys/endKeys/minRecSizes
-		st->m_startKey    = Doledb::makeFirstKey2 (st->m_priority);
-		st->m_endKey      = Doledb::makeLastKey2  (st->m_priority);
-		// if we printed something, print a blank line after it
-		if ( st->m_count > 0 )
-			sbTable->safePrintf("<tr><td colspan=30>..."
-					    "</td></tr>\n");
-		// reset for each priority
-		st->m_count = 0;
-	}
-
-
-	return true;
-}
-
-static bool sendPage(State11 *st) {
-	// generate a query string to pass to host bar
-	char qs[64]; sprintf ( qs , "&n=%" PRId32, st->m_numRecs );
-
-	// store the page in here!
-	SafeBuf sb;
-	if( !sb.reserve ( 64*1024 ) ) {
-		logError("Could not reserve needed mem, bailing!");
-		return false;
-	}
-
-	g_pages.printAdminTop ( &sb, st->m_socket , &st->m_r , qs );
-
-
-	// get spider coll
-	collnum_t collnum = g_collectiondb.getCollnum ( st->m_coll );
-	// and coll rec
-	CollectionRec *cr = g_collectiondb.getRec ( collnum );
-
-	if ( ! cr ) {
-		// get the socket
-		TcpSocket *s = st->m_socket;
-		// then we can nuke the state
-		mdelete ( st , sizeof(State11) , "PageSpiderdb" );
-		delete (st);
-		// erase g_errno for sending
-		g_errno = 0;
-		// now encapsulate it in html head/tail and send it off
-		return g_httpServer.sendDynamicPage (s, sb.getBufStart(),
-						     sb.length() );
-	}
-
-	// print reason why spiders are not active for this collection
-	int32_t tmp2;
-	SafeBuf mb;
-	if ( cr ) getSpiderStatusMsg ( cr , &mb , &tmp2 );
-	if ( mb.length() && tmp2 != SP_INITIALIZING )
-		sb.safePrintf(//"<center>"
-			      "<table cellpadding=5 "
-			      //"style=\""
-			      //"border:2px solid black;"
-			      "max-width:600px\" "
-			      "border=0"
-			      ">"
-			      "<tr>"
-			      //"<td bgcolor=#ff6666>"
-			      "<td>"
-			      "For collection <i>%s</i>: "
-			      "<b><font color=red>%s</font></b>"
-			      "</td>"
-			      "</tr>"
-			      "</table>\n"
-			      , cr->m_coll
-			      , mb.getBufStart() );
-
-
-	// begin the table
-	sb.safePrintf ( "<table %s>\n"
-			"<tr><td colspan=50>"
-			//"<center>"
-			"<b>Currently Spidering on This Host</b>"
-			" (%" PRId32" spiders)"
-			//" (%" PRId32" locks)"
-			//"</center>"
-			"</td></tr>\n"
-			, TABLE_STYLE
-			, (int32_t)g_spiderLoop.m_numSpidersOut
-			//, g_spiderLoop.m_lockTable.m_numSlotsUsed
-			);
-	// the table headers so SpiderRequest::printToTable() works
-	if ( ! SpiderRequest::printTableHeader ( &sb , true ) ) return false;
-	// count # of spiders out
-	int32_t j = 0;
-	// first print the spider recs we are spidering
-	for ( int32_t i = 0 ; i < (int32_t)MAX_SPIDERS ; i++ ) {
-		// get it
-		XmlDoc *xd = g_spiderLoop.m_docs[i];
-		// skip if empty
-		if ( ! xd ) continue;
-		// sanity check
-		if ( ! xd->m_sreqValid ) { g_process.shutdownAbort(true); }
-		// grab it
-		SpiderRequest *oldsr = &xd->m_sreq;
-		// get status
-		const char *status = xd->m_statusMsg;
-		// show that
-		if ( ! oldsr->printToTable ( &sb , status,xd,j) ) return false;
-		// inc count
-		j++;
-	}
-	// now print the injections as well!
-	XmlDoc *xd = getInjectHead ( ) ;
-	for ( ; xd ; xd = xd->m_nextInject ) {
-		// how does this happen?
-		if ( ! xd->m_sreqValid ) continue;
-		// grab it
-		SpiderRequest *oldsr = &xd->m_sreq;
-		// get status
-		SafeBuf xb;
-		xb.safePrintf("[<font color=red><b>injecting</b></font>] %s",
-			      xd->m_statusMsg);
-		char *status = xb.getBufStart();
-		// show that
-		if ( ! oldsr->printToTable ( &sb , status,xd,j) ) return false;
-		// inc count
-		j++;
-	}
-
-	// end the table
-	sb.safePrintf ( "</table>\n" );
-	sb.safePrintf ( "<br>\n" );
-
-	// then spider collection
-	SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
-
-
-	//
-	// spiderdb rec stats, from scanning spiderdb
-	//
-
-	// if not there, forget about it
-	if ( sc ) sc->printStats ( sb );
-
-	// done if no sc
-	if ( ! sc ) {
-		// get the socket
-		TcpSocket *s = st->m_socket;
-		// then we can nuke the state
-		mdelete ( st , sizeof(State11) , "PageSpiderdb" );
-		delete (st);
-		// erase g_errno for sending
-		g_errno = 0;
-		// now encapsulate it in html head/tail and send it off
-		return g_httpServer.sendDynamicPage (s, sb.getBufStart(),
-						     sb.length() );
-	}
-
-	/////
-	//
-	// READY TO SPIDER table
-	//
-	/////
-
-	int32_t ns = 0;
-	if ( sc ) ns = sc->m_doleIpTable.getNumSlotsUsed();
-
-	// begin the table
-	sb.safePrintf ( "<table %s>\n"
-			"<tr><td colspan=50>"
-			"<b>URLs Ready to Spider for collection "
-			"<font color=red><b>%s</b>"
-			"</font>"
-			" (%" PRId32" ips in doleiptable)"
-			,
-			TABLE_STYLE,
-			st->m_coll ,
-			ns );
-
-	// print time format: 7/23/1971 10:45:32
-	time_t nowUTC = getTimeGlobal();
-	struct tm *timeStruct ;
-	char time[256];
-	struct tm tm_buf;
-	timeStruct = gmtime_r(&nowUTC,&tm_buf);
-	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
-	sb.safePrintf("</b>" //  (current time = %s = %" PRIu32") "
-		      "</td></tr>\n" 
-		      //,time,nowUTC
-		      );
-
-	// the table headers so SpiderRequest::printToTable() works
-	if ( ! SpiderRequest::printTableHeader ( &sb ,false ) ) return false;
-	// the the doledb spider recs
-	char *bs = st->m_safeBuf.getBufStart();
-	if ( bs && ! sb.safePrintf("%s",bs) ) return false;
-	// end the table
-	sb.safePrintf ( "</table>\n" );
-	sb.safePrintf ( "<br>\n" );
-
-
-
-	/////////////////
-	//
-	// PRINT WAITING TREE
-	//
-	// each row is an ip. print the next url to spider for that ip.
-	//
-	/////////////////
-	sb.safePrintf ( "<table %s>\n"
-			"<tr><td colspan=50>"
-			"<b>IPs Waiting for Selection Scan for collection "
-			"<font color=red><b>%s</b>"
-			"</font>"
-			,
-			TABLE_STYLE,
-			st->m_coll );
-	// print time format: 7/23/1971 10:45:32
-	int64_t timems = gettimeofdayInMilliseconds();
-	sb.safePrintf("</b> (current time = %" PRIu64")(totalcount=%" PRId32")"
-		      "(waittablecount=%" PRId32")",
-		      timems,
-		          sc->m_waitingTree.getNumUsedNodes(),
-		      sc->m_waitingTable.getNumUsedSlots());
-
-	double a = (double)Spiderdb::getUrlHash48 ( &sc->m_firstKey );
-	double b = (double)Spiderdb::getUrlHash48 ( &sc->m_endKey );
-	double c = (double)Spiderdb::getUrlHash48 ( &sc->m_nextKey );
-	double percent = (100.0 * (c-a)) ;
-	if ( b-a > 0 ) percent /= (b-a);
-	if ( percent > 100.0 ) percent = 100.0;
-	if ( percent < 0.0 ) percent = 0.0;
-	sb.safePrintf("(spiderdb scan for ip %s is %.2f%% complete)",
-		      iptoa(sc->m_scanningIp),
-		      (float)percent );
-
-	sb.safePrintf("</td></tr>\n");
-	sb.safePrintf("<tr bgcolor=#%s>",DARK_BLUE);
-	sb.safePrintf("<td><b>spidertime (MS)</b></td>\n");
-	sb.safePrintf("<td><b>firstip</b></td>\n");
-	sb.safePrintf("</tr>\n");
-	// the the waiting tree
-
-	int32_t count = 0;
-	{
-		ScopedLock sl(sc->m_waitingTree.getLock());
-		for (int32_t node = sc->m_waitingTree.getFirstNode_unlocked(); node >= 0;
-		     node = sc->m_waitingTree.getNextNode_unlocked(node)) {
-			// get key
-			const key96_t *key = reinterpret_cast<const key96_t *>(sc->m_waitingTree.getKey_unlocked(node));
-			// get ip from that
-			int32_t firstIp = (key->n0) & 0xffffffff;
-			// get the timedocs
-			uint64_t spiderTimeMS = key->n1;
-			// shift upp
-			spiderTimeMS <<= 32;
-			// or in
-			spiderTimeMS |= (key->n0 >> 32);
-			const char *note = "";
-
-			// get the rest of the data
-			sb.safePrintf("<tr bgcolor=#%s>"
-				              "<td>%" PRId64"%s</td>"
-				              "<td>%s</td>"
-				              "</tr>\n",
-			              LIGHT_BLUE,
-			              (int64_t)spiderTimeMS,
-			              note,
-			              iptoa(firstIp));
-			// stop after 20
-			if (++count == 20) break;
-		}
-	}
-	// ...
-	if ( count ) 
-		sb.safePrintf("<tr bgcolor=#%s>"
-			      "<td colspan=10>...</td></tr>\n",
-			      LIGHT_BLUE);
-	// end the table
-	sb.safePrintf ( "</table>\n" );
-	sb.safePrintf ( "<br>\n" );
-
-	// get the socket
-	TcpSocket *s = st->m_socket;
-	// then we can nuke the state
-	mdelete ( st , sizeof(State11) , "PageSpiderdb" );
-	delete (st);
-	// erase g_errno for sending
-	g_errno = 0;
-	// now encapsulate it in html head/tail and send it off
-	return g_httpServer.sendDynamicPage (s, sb.getBufStart(),sb.length() );
-}
-
 
 
 ///////////////////////////////////
@@ -1447,9 +655,6 @@ bool updateSiteListBuf ( collnum_t collnum ,
 		return true;
 	}
 
-	// when sitelist is update Parms.cpp should invalidate this flag!
-	//if ( sc->m_siteListTableValid ) return true;
-
 	// hash current sitelist entries, each line so we don't add
 	// dup requests into spiderdb i guess...
 	HashTableX dedup;
@@ -1507,8 +712,6 @@ bool updateSiteListBuf ( collnum_t collnum ,
 	// use this so it will be free automatically when msg4 completes!
 	SafeBuf *spiderReqBuf = new SafeBuf();
 
-	//char *siteList = cr->m_siteListBuf.getBufStart();
-
 	// scan the list
 	const char *pn = siteListArg;
 
@@ -1558,12 +761,6 @@ bool updateSiteListBuf ( collnum_t collnum ,
 		// empty line?
 		if ( *s == '\n' ) continue;
 
-		// all?
-		//if ( *s == '*' ) {
-		//	sc->m_siteListAsteriskLine = start;
-		//	continue;
-		//}
-
 		const char *tag = NULL;
 		int32_t tagLen = 0;
 
@@ -1571,13 +768,6 @@ bool updateSiteListBuf ( collnum_t collnum ,
 
 		// skip spaces
 		for ( ; *s && *s == ' ' ; s++ );
-
-
-		// exact:?
-		//if ( strncmp(s,"exact:",6) == 0 ) {
-		//	s += 6;
-		//	goto innerLoop;
-		//}
 
 		// these will be manual adds and should pass url filters
 		// because they have the "ismanual" directive override
@@ -1762,7 +952,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 
 	// use spidercoll to contain this msg4 but if in use it
 	// won't be able to be deleted until it comes back..
-	if(!sc->m_msg4x.addMetaList(spiderReqBuf, sc->m_collnum, sc, doneAddingSeedsWrapper, RDB_SPIDERDB))
+	if(!sc->m_msg4x.addMetaList(spiderReqBuf, sc->m_collnum, spiderReqBuf, doneAddingSeedsWrapper, RDB_SPIDERDB))
 		return false;
 	else {
 		delete spiderReqBuf;
@@ -1809,14 +999,14 @@ static char *getMatchingUrlPattern(SpiderColl *sc, const SpiderRequest *sreq, ch
 	CollectionRec *cr = sc->getCollectionRec();
 
 	// need to build dom table for pattern matching?
-	if ( dt->getNumSlotsUsed() == 0 && cr ) {
+	if ( dt->getNumUsedSlots() == 0 && cr ) {
 		// do not add seeds, just make siteListDomTable, etc.
 		updateSiteListBuf ( sc->m_collnum ,
 		                    false , // add seeds?
 		                    cr->m_siteListBuf.getBufStart() );
 	}
 
-	if ( dt->getNumSlotsUsed() == 0 ) {
+	if ( dt->getNumUsedSlots() == 0 ) {
 		// empty site list -- no matches
 		logTrace( g_conf.m_logTraceSpider, "END. No slots. Returning NULL" );
 		return NULL;
@@ -1987,7 +1177,6 @@ int32_t getUrlFilterNum(const SpiderRequest *sreq,
 
 	char *row = NULL;
 	bool checkedRow = false;
-	//SpiderColl *sc = cr->m_spiderColl;
 	SpiderColl *sc = g_spiderCache.getSpiderColl(cr->m_collnum);
 
 	if ( ! quotaTable ) quotaTable = &sc->m_localTable;
@@ -2610,91 +1799,6 @@ checkNextRule:
 		// skip whitespace after the operator
 		while ( *s && is_wspace_a(*s) ) s++;
 
-		// seed counts. how many seeds this subdomain has. 'siteadds'
-		if ( *p == 's' &&
-		     p[1] == 'i' &&
-		     p[2] == 't' &&
-		     p[3] == 'e' &&
-		     p[4] == 'a' &&
-		     p[5] == 'd' &&
-		     p[6] == 'd' &&
-		     p[7] == 's' ) {
-			// need a quota table for this
-			if ( ! quotaTable ) continue;
-			// a special hack so it is seeds so we can use same tbl
-			int32_t h32 = sreq->m_siteHash32 ^ 0x123456;
-			int32_t *valPtr =(int32_t *)quotaTable->getValue(&h32);
-			int32_t a;
-			// if no count in table, that is strange, i guess
-			// skip for now???
-			// this happens if INJECTING a url from the
-			// "add url" function on homepage
-			if ( ! valPtr ) a=0;//continue;//{g_process.shutdownAbort(true);}
-			else a = *valPtr;
-			//log("siteadds=%" PRId32" for %s",a,sreq->m_url);
-			// what is the provided value in the url filter rule?
-			int32_t b = atoi(s);
-			// compare
-			if ( sign == SIGN_EQ && a != b ) continue;
-			if ( sign == SIGN_NE && a == b ) continue;
-			if ( sign == SIGN_GT && a <= b ) continue;
-			if ( sign == SIGN_LT && a >= b ) continue;
-			if ( sign == SIGN_GE && a <  b ) continue;
-			if ( sign == SIGN_LE && a >  b ) continue;
-			p = strstr(s, "&&");
-			//if nothing, else then it is a match
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			//skip the '&&' and go to next rule
-			p += 2;
-			goto checkNextRule;
-		}
-
-		// domain seeds. 'domainadds'
-		if ( *p == 'd' &&
-		     p[1] == 'o' &&
-		     p[2] == 'm' &&
-		     p[3] == 'a' &&
-		     p[4] == 'i' &&
-		     p[5] == 'n' &&
-		     p[6] == 'a' &&
-		     p[7] == 'd' &&
-		     p[8] == 'd' &&
-		     p[9] == 's' ) {
-			// need a quota table for this
-			if ( ! quotaTable ) continue;
-			// a special hack so it is seeds so we can use same tbl
-			int32_t h32 = sreq->m_domHash32 ^ 0x123456;
-			int32_t *valPtr ;
-			valPtr = (int32_t *)quotaTable->getValue(&h32);
-			// if no count in table, that is strange, i guess
-			// skip for now???
-			int32_t a;
-			if ( ! valPtr ) a = 0;//{ g_process.shutdownAbort(true); }
-			else a = *valPtr;
-			// what is the provided value in the url filter rule?
-			int32_t b = atoi(s);
-			// compare
-			if ( sign == SIGN_EQ && a != b ) continue;
-			if ( sign == SIGN_NE && a == b ) continue;
-			if ( sign == SIGN_GT && a <= b ) continue;
-			if ( sign == SIGN_LT && a >= b ) continue;
-			if ( sign == SIGN_GE && a <  b ) continue;
-			if ( sign == SIGN_LE && a >  b ) continue;
-			p = strstr(s, "&&");
-			//if nothing, else then it is a match
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			//skip the '&&' and go to next rule
-			p += 2;
-			goto checkNextRule;
-		}
-
-
 
 		// new quotas. 'sitepages' = pages from site.
 		// 'sitepages > 20 && seedcount <= 1 --> FILTERED'
@@ -2717,55 +1821,6 @@ checkNextRule:
 			if ( ! valPtr ) a = 0;//{ g_process.shutdownAbort(true); }
 			else a = *valPtr;
 			//log("sitepgs=%" PRId32" for %s",a,sreq->m_url);
-			// what is the provided value in the url filter rule?
-			int32_t b = atoi(s);
-			// compare
-			if ( sign == SIGN_EQ && a != b ) continue;
-			if ( sign == SIGN_NE && a == b ) continue;
-			if ( sign == SIGN_GT && a <= b ) continue;
-			if ( sign == SIGN_LT && a >= b ) continue;
-			if ( sign == SIGN_GE && a <  b ) continue;
-			if ( sign == SIGN_LE && a >  b ) continue;
-			p = strstr(s, "&&");
-			//if nothing, else then it is a match
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			//skip the '&&' and go to next rule
-			p += 2;
-			goto checkNextRule;
-		}
-
-		// domain quotas. 'domainpages > 10 && hopcount >= 1 --> FILTERED'
-		if ( *p == 'd' &&
-		     p[1] == 'o' &&
-		     p[2] == 'm' &&
-		     p[3] == 'a' &&
-		     p[4] == 'i' &&
-		     p[5] == 'n' &&
-		     p[6] == 'p' &&
-		     p[7] == 'a' &&
-		     p[8] == 'g' &&
-		     p[9] == 'e' &&
-		     p[10] == 's' ) {
-			// need a quota table for this. this only happens
-			// when trying to shortcut things to avoid adding
-			// urls to spiderdb... like XmlDoc.cpp calls
-			// getUrlFtilerNum() to see if doc is banned or
-			// if it should harvest links.
-			if ( ! quotaTable ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
-				return -1;
-			}
-
-			int32_t *valPtr;
-			valPtr=(int32_t*)quotaTable->getValue(&sreq->m_domHash32);
-			// if no count in table, that is strange, i guess
-			// skip for now???
-			int32_t a;
-			if ( ! valPtr ) a = 0;//{ g_process.shutdownAbort(true); }
-			else a = *valPtr;
 			// what is the provided value in the url filter rule?
 			int32_t b = atoi(s);
 			// compare
@@ -3793,12 +2848,6 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 				       "paused.");
 	}
 
-	// if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) {
-	// 	*status = SP_ADMIN_PAUSED;
-	// 	return msg->safePrintf("Too many UDP slots in use, "
-	// 			       "spidering paused.");
-	// }
-
 	if ( g_repairMode ) {
 		*status = SP_ADMIN_PAUSED;
 		return msg->safePrintf("In repair mode, spidering paused.");
@@ -3813,7 +2862,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 
 	// don't spider if not all hosts are up, or they do not all
 	// have the same hosts.conf.
-	if ( g_pingServer.m_hostsConfInDisagreement ) {
+	if ( g_pingServer.hostsConfInDisagreement() ) {
 		*status = SP_ADMIN_PAUSED;
 		return msg->safePrintf("Hosts.conf discrepancy, "
 				       "spidering paused.");
@@ -3823,14 +2872,6 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 		*status = SP_PAUSED;
 		return msg->safePrintf("Spidering disabled in spider controls.");
 	}
-
-	// if spiderdb is empty for this coll, then no url
-	// has been added to spiderdb yet.. either seed or spot
-	//CrawlInfo *cg = &cx->m_globalCrawlInfo;
-	//if ( cg->m_pageDownloadAttempts == 0 ) {
-	//	*status = SP_NOURLS;
-	//	return msg->safePrintf("Crawl is waiting for urls.");
-	//}
 
 	if ( cx->m_spiderStatus == SP_INITIALIZING ) {
 		*status = SP_INITIALIZING;

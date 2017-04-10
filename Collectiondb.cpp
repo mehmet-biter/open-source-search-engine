@@ -14,7 +14,7 @@
 #include "Spider.h"
 #include "Clusterdb.h"
 #include "Linkdb.h"
-#include "Spider.h"
+#include "SpiderCache.h"
 #include "Repair.h"
 #include "Parms.h"
 #include "Process.h"
@@ -607,7 +607,7 @@ bool Collectiondb::growRecPtrBuf ( collnum_t collnum ) {
 bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 
 	// first time init hashtable that maps coll to collnum
-	if ( g_collTable.m_numSlots == 0 &&
+	if ( !g_collTable.isInitialized() &&
 	     ! g_collTable.set(8,sizeof(collnum_t), 256,NULL,0, false,"nhshtbl")) {
 		return false;
 	}
@@ -687,7 +687,7 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 
 // . returns false if we need a re-call, true if we completed
 // . returns true with g_errno set on error
-bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool purgeSeeds ) {
+bool Collectiondb::resetColl2(collnum_t oldCollnum, collnum_t newCollnum) {
 	// do not allow this if in repair mode
 	if ( g_repair.isRepairActive() && g_repair.isRepairingColl(oldCollnum) ) {
 		log(LOG_WARN, "admin: Can not delete collection while in repair mode.");
@@ -799,25 +799,8 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 	// . do after calls to deleteColl() above so it wont crash
 	setRecPtr ( oldCollnum , NULL );
 
-
 	// save coll.conf to new directory
 	cr->save();
-
-	// and clear the robots.txt cache in case we recently spidered a
-	// robots.txt, we don't want to use it, we want to use the one we
-	// have in the test-parser subdir so we are consistent
-	//RdbCache *robots = Msg13::getHttpCacheRobots();
-	//RdbCache *others = Msg13::getHttpCacheOthers();
-	// clear() was removed do to possible corruption
-	//robots->clear ( oldCollnum );
-	//others->clear ( oldCollnum );
-
-	//g_templateTable.reset();
-	//g_templateTable.save( g_hostdb.m_dir , "turkedtemplates.dat" );
-
-	// repopulate CollectionRec::m_sortByDateTable. should be empty
-	// since we are resetting here.
-	//initSortByDateTable ( coll );
 
 	// done
 	return true;
@@ -1055,18 +1038,14 @@ CollectionRec::CollectionRec() {
 	m_thumbnailMaxWidthHeight = 0;
 	m_indexSpiderReplies = false;
 	m_indexBody = false;
-	m_outlinksRecycleFrequencyDays = 0.0;
 	m_dedupingEnabled = false;
 	m_dupCheckWWW = false;
-	m_detectCustomErrorPages = false;
 	m_useSimplifiedRedirects = false;
-	m_useIfModifiedSince = false;
 	m_useTimeAxis = false;
 	m_oneVotePerIpDom = false;
 	m_doUrlSpamCheck = false;
 	m_doLinkSpamCheck = false;
 	m_siteClusterByDefault = false;
-	m_doIpLookups = true;
 	m_useRobotsTxt = true;
 	m_obeyRelNoFollowLinks = true;
 	m_forceUseFloaters = false;
@@ -1089,8 +1068,6 @@ CollectionRec::CollectionRec() {
 	m_spiderdbMinFilesToMerge = 0;
 	m_dedupResultsByDefault = false;
 	m_doTagdbLookups = true;
-	m_deleteTimeouts = false;
-	m_allowAdultDocs = 0;
 	m_useCanonicalRedirects = true;
 	m_maxNumSpiders = 0;
 	m_titleMaxLen = 0;
@@ -1311,9 +1288,8 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 	// and therefore backoff and use proxies for
 	if ( ! g_conf.m_doingCommandLine ) {
 		sb.reset();
-		sb.safePrintf("%scoll.%s.%" PRId32"/",
-			      g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
-		m_twitchyTable.m_allocName = "twittbl";
+		sb.safePrintf("%scoll.%s.%" PRId32"/", g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
+		m_twitchyTable.set(4, 0, 0, NULL, 0, false, "twitchtbl", true);
 		m_twitchyTable.load ( sb.getBufStart() , "ipstouseproxiesfor.dat" );
 	}
 
@@ -1345,10 +1321,6 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 
 	if ( !strcmp(s,"privacore" ) ) {
 		return rebuildPrivacoreRules();
-	}
-
-	if ( !strcmp(s,"shallow" ) ) {
-		return rebuildShallowRules();
 	}
 
 	//if ( strcmp(s,"web") )
@@ -2230,221 +2202,6 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	return true;
 }
 
-bool CollectionRec::rebuildShallowRules ( ) {
-
-	// max spiders per ip
-	int32_t ipms = 7;
-
-	int32_t n = 0;
-
-	m_regExs[n].set("isreindex");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 0; // 30 days default
-	m_maxSpidersPerRule  [n] = 99; // max spiders
-	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 80;
-	n++;
-
-	// if not in the site list then nuke it
-	m_regExs[n].set("!ismanualadd && !insitelist");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 0; // 30 days default
-	m_maxSpidersPerRule  [n] = 99; // max spiders
-	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 100; // delete!
-	m_forceDelete        [n] = 1;
-	n++;
-
-	m_regExs[n].set("errorcount>=3 && hastmperror");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 1; // 30 days default
-	m_maxSpidersPerRule  [n] = 1; // max spiders
-	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 100;
-	m_forceDelete        [n] = 1;
-	n++;
-
-	m_regExs[n].set("errorcount>=1 && hastmperror");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 1; // 30 days default
-	m_maxSpidersPerRule  [n] = 1; // max spiders
-	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 45;
-	n++;
-
-	m_regExs[n].set("isaddurl");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 7; // 30 days default
-	m_maxSpidersPerRule  [n] = 99; // max spiders
-	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 85;
-	n++;
-
-
-
-
-	//
-	// stop if hopcount>=2 for things tagged shallow in sitelist
-	//
-	m_regExs[n].set("tag:shallow && hopcount>=2");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 40;
-	m_maxSpidersPerRule  [n] = 0; // max spiders
-	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 30;
-	n++;
-
-
-	// if # of pages in this site indexed is >= 10 then stop as well...
-	m_regExs[n].set("tag:shallow && sitepages>=10");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 40;
-	m_maxSpidersPerRule  [n] = 0; // max spiders
-	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 30;
-	n++;
-
-
-
-
-	m_regExs[n].set("hopcount==0 && iswww && isnew");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 7; // 30 days default
-	m_maxSpidersPerRule  [n] = 9; // max spiders
-	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 50;
-	n++;
-
-	m_regExs[n].set("hopcount==0 && iswww");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 7.0; // days b4 respider
-	m_maxSpidersPerRule  [n] = 9; // max spiders
-	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 48;
-	n++;
-
-
-
-
-	m_regExs[n].set("hopcount==0 && isnew");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 7.0;
-	m_maxSpidersPerRule  [n] = 9; // max spiders
-	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 49;
-	n++;
-
-
-
-
-	m_regExs[n].set("hopcount==0");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 10.0;
-	m_maxSpidersPerRule  [n] = 9; // max spiders
-	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 47;
-	n++;
-
-
-
-
-
-	m_regExs[n].set("hopcount==1 && isnew");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 20.0;
-	m_maxSpidersPerRule  [n] = 9; // max spiders
-	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 40;
-	n++;
-
-
-	m_regExs[n].set("hopcount==1");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 20.0;
-	m_maxSpidersPerRule  [n] = 9; // max spiders
-	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 39;
-	n++;
-
-
-
-
-	m_regExs[n].set("hopcount==2 && isnew");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 40;
-	m_maxSpidersPerRule  [n] = 9; // max spiders
-	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 30;
-	n++;
-
-	m_regExs[n].set("hopcount==2");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 40;
-	m_maxSpidersPerRule  [n] = 9; // max spiders
-	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 29;
-	n++;
-
-
-
-
-	m_regExs[n].set("hopcount>=3 && isnew");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 60;
-	m_maxSpidersPerRule  [n] = 9; // max spiders
-	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 22;
-	n++;
-
-	m_regExs[n].set("hopcount>=3");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 60;
-	m_maxSpidersPerRule  [n] = 9; // max spiders
-	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 21;
-	n++;
-
-
-
-	m_regExs[n].set("default");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 60;
-	m_maxSpidersPerRule  [n] = 9; // max spiders
-	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 1;
-	n++;
-
-	m_numRegExs				= n;
-	m_numSpiderFreqs		= n;
-	m_numSpiderPriorities	= n;
-	m_numMaxSpidersPerRule	= n;
-	m_numSpiderIpWaits		= n;
-	m_numSpiderIpMaxSpiders	= n;
-	m_numHarvestLinks		= n;
-	m_numForceDelete		= n;
-
-	// done rebuilding SHALLOW rules
-	return true;
-}
-
 // returns false on failure and sets g_errno, true otherwise
 bool CollectionRec::save ( ) {
 	if ( g_conf.m_readOnlyMode ) {
@@ -2515,18 +2272,15 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 	rebuildUrlFilters2();
 
 	// set this so we know whether we have to keep track of page counts
-	// per subdomain/site and per domain. if the url filters have
-	// 'sitepages' 'domainpages' 'domainadds' or 'siteadds' we have to keep
+	// per subdomain/site. if the url filters have
+	// 'sitepages' we have to keep
 	// the count table SpiderColl::m_pageCountTable.
 	m_urlFiltersHavePageCounts = false;
 	for ( int32_t i = 0 ; i < m_numRegExs ; i++ ) {
 		// get the ith rule
 		SafeBuf *sb = &m_regExs[i];
 		char *p = sb->getBufStart();
-		if ( strstr(p,"sitepages") ||
-		     strstr(p,"domainpages") ||
-		     strstr(p,"siteadds") ||
-		     strstr(p,"domainadds") ) {
+		if (strstr(p,"sitepages")) {
 			m_urlFiltersHavePageCounts = true;
 			break;
 		}

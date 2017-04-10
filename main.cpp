@@ -21,6 +21,7 @@
 #include "Spider.h"
 #include "SpiderColl.h"
 #include "SpiderLoop.h"
+#include "SpiderCache.h"
 #include "Doledb.h"
 #include "Clusterdb.h"
 #include "Collectiondb.h"
@@ -48,10 +49,10 @@
 #include "Title.h"
 #include "Speller.h"
 #include "SummaryCache.h"
+#include "Dns.h"
 
 // include all msgs that have request handlers, cuz we register them with g_udp
 #include "Msg0.h"
-#include "Msg1.h"
 #include "Msg4In.h"
 #include "Msg4Out.h"
 #include "Msg13.h"
@@ -60,6 +61,7 @@
 #include "Msg25.h"
 #include "Msg39.h"
 #include "Msg40.h"    // g_resultsCache
+#include "Msg56.h"
 #include "Parms.h"
 #include "Pages.h"
 #include "PageInject.h"
@@ -67,7 +69,6 @@
 
 #include "Msg1f.h"
 #include "Profiler.h"
-#include "Blaster.h"
 #include "Proxy.h"
 
 #include "linkspam.h"
@@ -429,38 +430,6 @@ int main2 ( int argc , char *argv[] ) {
 
 			"proxy stop [proxyId]\n"
 			"\tStop a proxy that acts as a frontend to gb.\n\n"
-
-			"blasterdiff [-v] [-j] [-p] <file1> <file2> "
-			"<maxNumThreads> <wait>\n"
-			"\tcompare search results between urls in file1 and"
-			"file2 and output the search results in the url"
-			" from file1 not found in the url from file2 "
-			"maxNumThreads is the number of concurrent "
-			"comparisons "
-			"that should be done at one time and wait is the"
-			"time to wait between comparisons.  -v is for "
-			"verbose "
-			" and -j is to just display links not found and "
-			"not "
-			"search for them on server2. If you do not want to"
-			" use the proxy server "
-			"on gk10, use -p\n\n"
-			*/
-
-			/*
-			"blaster [-l|-u|-i] <file> <maxNumThreads> <wait>\n"
-			"\tget documents from the urls given in file. The "
-			"-l argument is to "
-			"automatically get documents "
-			"from the gigablast log file.\n"
-			"\t-u means to inject/index the url into gb.\n"
-			"\t-i means to inject/index the url into gb AND "
-			"add all of its outlinks to\n"
-			"\tspiderdb for spidering, "
-			"which also entails a DNS lookup on each outlink.\n"
-			"\tmaxNumThreads is the"
-			" number of concurrent threads at one time and wait "
-			" is the time to wait between threads.\n\n"
 			*/
 
 			/*
@@ -886,78 +855,6 @@ int main2 ( int argc , char *argv[] ) {
 		g_conf.m_save = true;
 
 		g_loop.runLoop();
-	}
-
-  	if ( strcmp ( cmd , "blaster" ) == 0 ) {
-		int32_t i=cmdarg+1;
-		bool isLogFile=false;
-		bool injectUrlWithLinks=false;
-		bool injectUrl=false;
-		int32_t wait = 0;
-		
-		if ( strcmp (argv[i],"-l") == 0 ){
-			isLogFile=true;
-			i++;
-		}
-		if ( strcmp (argv[i],"-i") == 0 ){
-			injectUrlWithLinks=true;
-			i++;
-		}
-		if ( strcmp (argv[i],"-u") == 0 ){
-			injectUrl=true;
-			i++;
-		}
-
-		char *filename = argv[i];
-		int32_t maxNumThreads=1;
-		if (argv[i+1])  maxNumThreads=atoi(argv[i+1]);
-		if (argv[i+2]) wait=atoi(argv[i+2]);
-		g_conf.m_maxMem = 2000000000;
-		//wait atleast 10 msec before you start again.
-		if (wait<1000) wait=10;
-		g_blaster.runBlaster (filename,NULL,
-					      maxNumThreads,wait,
-					      isLogFile,false,false,false,
-				      injectUrlWithLinks,
-				      injectUrl);
-		// disable any further logging so final log msg is clear
-		g_log.m_disabled = true;
-		return 0;
-	}
-
-	if ( strcmp ( cmd , "blasterdiff" ) == 0 ) {
-		int32_t i=cmdarg+1;
-		bool verbose=false;
-		bool justDisplay=false;
-		bool useProxy=true;
-		//cycle through the arguments to check for -v,-j,-p
-		while (argv[i] && argv[i][0]=='-'){
-			if ( strcmp (argv[i],"-v") == 0 ){
-				verbose=true;
-			}
-			else if ( strcmp (argv[i],"-j") == 0 ){
-				justDisplay=true;
-			}
-			else if ( strcmp (argv[i],"-p") == 0){
-				useProxy=false;
-			}
-			i++;
-		}
-
-		char *file1 = argv[i];
-		char *file2 = argv[i+1];
-		int32_t maxNumThreads=1;
-		if (argv[i+2])  maxNumThreads=atoi(argv[i+2]);
-		int32_t wait = 1000;
-		if (argv[i+3]) wait=atoi(argv[i+3]);
-		//wait atleast 1 sec before you start again.
-		if (wait<1000) wait=1000;
-		g_blaster.runBlaster(file1,file2,
-				     maxNumThreads,wait,false,
-				     verbose,justDisplay,useProxy);
-		// disable any further logging so final log msg is clear
-		g_log.m_disabled = true;
-		return 0;
 	}
 
 	// gb ping [hostId] [clientPort]
@@ -1746,9 +1643,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
-	// force give up on dead hosts to false
-	g_conf.m_giveupOnDeadHosts = false;
-
 	// shout out if we're in read only mode
 	if ( g_conf.m_readOnlyMode )
 		log("db: -- Read Only Mode Set. Can Not Add New Data. --");
@@ -1927,6 +1821,11 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! registerMsgHandlers() ) {
 		log("db: registerMsgHandlers failed" ); return 1; }
 
+	if(!initializeWatchdog()) {
+		log(LOG_ERROR,"db: Could not initialize watchdog");
+		return 1;
+	}
+
 	// gb spellcheck
 	if ( strcmp ( cmd , "spellcheck" ) == 0 ) {	
 		if ( argc != cmdarg + 2 ) goto printHelp; // take no other args
@@ -1972,7 +1871,7 @@ int main2 ( int argc , char *argv[] ) {
 
 	// . start the spiderloop
 	// . comment out when testing SpiderCache
-	g_spiderLoop.startLoop();
+	g_spiderLoop.init();
 
 	// allow saving of conf again
 	g_conf.m_save = true;
@@ -2628,7 +2527,6 @@ static bool registerMsgHandlers1() {
 
 static bool registerMsgHandlers2() {
 	if ( ! Msg0::registerHandler()) return false;
-	if ( ! Msg1::registerHandler()) return false;
 
 	if ( ! Msg13::registerHandler() ) return false;
 
@@ -2643,6 +2541,8 @@ static bool registerMsgHandlers2() {
 
 	if ( ! g_udpServer.registerHandler(msg_type_25,handleRequest25)) return false;
 	if ( ! g_udpServer.registerHandler(msg_type_7,handleRequest7)) return false;
+
+	if(!registerMsg56Handler()) return false;
 
 	return true;
 }
@@ -3470,7 +3370,7 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 	}
 
 
-	int32_t uniqIps = ipDomCntTable.getNumSlotsUsed();
+	int32_t uniqIps = ipDomCntTable.getNumUsedSlots();
 
 	// print out all ips, and # of domains they have and list of their
 	// domains
@@ -3610,8 +3510,8 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 	startKey.setMin();
 	endKey.setMax();
 	if ( siteArg ) {
-		startKey = g_tagdb.makeStartKey ( siteArg );
-		endKey = g_tagdb.makeEndKey ( siteArg );
+		startKey = Tagdb::makeStartKey ( siteArg );
+		endKey = Tagdb::makeEndKey ( siteArg );
 		log("gb: using site %s for start key",siteArg );
 	}
 

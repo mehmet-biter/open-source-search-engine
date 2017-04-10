@@ -126,11 +126,12 @@ public:
 
 	/// @todo ALC verify saving/writable logic is okay with multithread
 	bool isSaving() const { return m_isSaving; }
-	bool isWritable() const { return m_isWritable; }
-
 	bool needsSave() const { return m_needsSave; }
 	void setNeedsSave(bool needsSave) { m_needsSave = needsSave; }
 
+	bool isWritable() const { return m_isWritable; }
+	void disableWrites () { m_isWritable = false; }
+	void enableWrites  () { m_isWritable = true ; }
 
 	collnum_t getCollnum_unlocked(int32_t node) const { m_mtx.verify_is_locked(); return m_collnums[node]; }
 
@@ -192,7 +193,7 @@ public:
 	//   is called
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
-	bool fastSave(const char *dir, const char *dbname, bool useThread, void *state, void (*callback)(void *state));
+	bool fastSave(const char *dir, bool useThread, void *state, void (*callback)(void *));
 
 	void verifyIntegrity();
 
@@ -200,9 +201,6 @@ public:
 
 	bool fixTree();
 	bool fixTree_unlocked();
-
-	void disableWrites () { m_isWritable = false; }
-	void enableWrites  () { m_isWritable = true ; }
 
 	// . returns true if tree doesn't need to grow/shrink
 	// . re-allocs the m_keys,m_data,m_sizes,m_leftNodes,m_rightNodes

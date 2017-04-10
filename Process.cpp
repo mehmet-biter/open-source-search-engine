@@ -12,6 +12,7 @@
 #include "Spider.h"
 #include "SpiderColl.h"
 #include "SpiderLoop.h"
+#include "SpiderCache.h"
 #include "Doledb.h"
 #include "JobScheduler.h"
 #include "Statistics.h"
@@ -20,20 +21,18 @@
 #include "Repair.h"
 #include "RdbCache.h"
 #include "RdbMerge.h"
-#include "Spider.h"
 #include "HttpServer.h"
 #include "Speller.h"
-#include "Spider.h"
 #include "Profiler.h"
 #include "Msg4Out.h"
 #include "Msg5.h"
+#include "Msg56.h"
 #include "Wiki.h"
 #include "Wiktionary.h"
 #include "Proxy.h"
 #include "Rebalance.h"
 #include "SpiderProxy.h"
 #include "PageInject.h"
-#include "Timezone.h"
 #include "CountryCode.h"
 #include "File.h"
 #include "Docid2Siteflags.h"
@@ -41,6 +40,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "Msg4In.h"
+#include "SummaryCache.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
 #include <fcntl.h>
@@ -670,7 +670,7 @@ bool Process::shutdown2() {
 		m_urgent = true;
 	}
 
-	finalizeRealtimeUrlClassification(),
+	finalizeRealtimeUrlClassification();
 
 	Statistics::finalize();
 
@@ -684,6 +684,7 @@ bool Process::shutdown2() {
 
 	RdbBase::finalizeGlobalIndexThread();
 	finalizeMsg4IncomingThread();
+	finalizeWatchdog();
 
 	g_jobScheduler.cancel_all_jobs_for_shutdown();
 
@@ -922,7 +923,7 @@ bool Process::isRdbDumping ( ) {
 	// loop over all Rdbs and save them
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
 		Rdb *rdb = m_rdbs[i];
-		if ( rdb->isDumping() ) return true;
+		if (rdb->isDumping()) return true;
 	}
 	return false;
 }
@@ -1163,7 +1164,8 @@ void Process::resetAll ( ) {
 	g_profiler.reset();
 	resetMsg13Caches();
 	resetStopWordTables();
-	resetTimezoneTables();
+	g_stable_summary_cache.clear();
+	g_unstable_summary_cache.clear();
 }
 
 #include "Msg3.h"

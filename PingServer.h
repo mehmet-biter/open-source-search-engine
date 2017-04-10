@@ -3,11 +3,11 @@
 #ifndef GB_PINGSERVER_H
 #define GB_PINGSERVER_H
 
-#include "gb-include.h"
 #include "Hostdb.h"
-#include "SafeBuf.h"
 #include "repair_mode.h"
 
+class UdpSlot;
+class TcpSocket;
 
 class PingServer {
 
@@ -37,11 +37,56 @@ class PingServer {
 	// send an email warning that host "h" is dead
 	//bool sendEmail ( Host *h );
 	bool sendEmail ( Host *h , 
-			 char *errmsg = NULL , 
+			 const char *errmsg = NULL,
 			 bool oom = false ,
-			 bool parmChanged  = false ,
 			 bool forceIt      = false);
 
+	bool hostsConfInDisagreement() const { return m_hostsConfInDisagreement; }
+	bool hostsConfInAgreement() const { return m_hostsConfInAgreement; }
+
+	Host *getMinRepairModeHost() const { return m_minRepairModeHost; }
+
+	// . these functions used by Repair.cpp
+	// . we do not tally ourselves when computing m_minRepairMode
+	int32_t getMinRepairMode() const {
+		// is it us?
+		if ( g_repairMode < m_minRepairMode ) return g_repairMode;
+		// m_minRepairMode could be -1 if uninitialized
+		if ( g_hostdb.getNumHosts() != 1    ) return m_minRepairMode;
+		return g_repairMode;
+	}
+	int32_t getMaxRepairMode() const {
+		// is it us?
+		if ( g_repairMode > m_maxRepairMode ) return g_repairMode;
+		// m_maxRepairMode could be -1 if uninitialized
+		if ( g_hostdb.getNumHosts() != 1    ) return m_maxRepairMode;
+		return g_repairMode;
+	}
+	// we do not tally ourselves when computing m_numHostsInRepairMode7
+	int32_t getMinRepairModeBesides0() const {
+		// is it us?
+		if ( g_repairMode < m_minRepairModeBesides0 && 
+		     g_repairMode != 0 ) return g_repairMode;
+		// m_minRepairMode could be -1 if uninitialized
+		if ( g_hostdb.getNumHosts() != 1    ) 
+			return m_minRepairModeBesides0;
+		return g_repairMode;
+	}
+
+	void sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) ;
+
+	void    setMinRepairMode ( Host *h ) ;
+
+private:
+	static void gotReplyWrapperP(void *state, UdpSlot *slot);
+	static void gotReplyWrapperP2(void *state, UdpSlot *slot);
+	static void handleRequest11(UdpSlot *slot , int32_t niceness);
+	static void sentEmailWrapper(void *state, TcpSocket *ts);
+	static bool sendAdminEmail(Host  *h,
+			           const char  *fromAddress,
+                                   const char *toAddress,
+			           const char  *body,
+			           const char  *emailServIp);
 	int32_t m_i;
 
 	// broadcast shutdown info
@@ -55,38 +100,8 @@ class PingServer {
 	int32_t    m_maxRequests2;
 
 	int32_t    m_pingSpacer;
-	int32_t    m_callnum;
+	int32_t    m_sleepCallbackRegistrationSequencer; //for generating unique ids for sleep callback registration/deregistration
 
-	// . these functions used by Repair.cpp
-	// . we do not tally ourselves when computing m_minRepairMode
-	int32_t    getMinRepairMode ( ) {
-		// is it us?
-		if ( g_repairMode < m_minRepairMode ) return g_repairMode;
-		// m_minRepairMode could be -1 if uninitialized
-		if ( g_hostdb.getNumHosts() != 1    ) return m_minRepairMode;
-		return g_repairMode;
-	}
-	int32_t    getMaxRepairMode ( ) {
-		// is it us?
-		if ( g_repairMode > m_maxRepairMode ) return g_repairMode;
-		// m_maxRepairMode could be -1 if uninitialized
-		if ( g_hostdb.getNumHosts() != 1    ) return m_maxRepairMode;
-		return g_repairMode;
-	}
-	// we do not tally ourselves when computing m_numHostsInRepairMode7
-	int32_t    getMinRepairModeBesides0 ( ) {
-		// is it us?
-		if ( g_repairMode < m_minRepairModeBesides0 && 
-		     g_repairMode != 0 ) return g_repairMode;
-		// m_minRepairMode could be -1 if uninitialized
-		if ( g_hostdb.getNumHosts() != 1    ) 
-			return m_minRepairModeBesides0;
-		return g_repairMode;
-	}
-
-	void sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) ;
-
-	void    setMinRepairMode ( Host *h ) ;
 	// set by setMinRepairMode() function
 	int32_t    m_minRepairMode;
 	int32_t    m_maxRepairMode;
@@ -95,13 +110,8 @@ class PingServer {
 	Host   *m_maxRepairModeHost;
 	Host   *m_minRepairModeBesides0Host;
 
-	int32_t m_currentPing  ;
-	int32_t m_bestPing     ;
-	time_t  m_bestPingDate ;
-
 	// some cluster stats
 	int32_t m_numHostsWithForeignRecs;
-	int32_t m_numHostsDead;
 	bool m_hostsConfInAgreement;
 	bool m_hostsConfInDisagreement;
 };

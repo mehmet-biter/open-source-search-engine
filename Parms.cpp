@@ -18,7 +18,6 @@
 #include "Sections.h"
 #include "Process.h"
 #include "Repair.h"
-#include "PingServer.h"
 #include "Proxy.h"
 #include "hash.h"
 #include "Rebalance.h"
@@ -608,11 +607,10 @@ static bool CommandRestartColl(const char *rec, WaitEntry *we) {
 	// this can block if tree is saving, it has to wait
 	// for tree save to complete before removing old
 	// collnum recs from tree
-	if ( ! g_collectiondb.resetColl2 ( oldCollnum ,
-					   newCollnum ,
-					   false ) ) // purgeSeeds?
+	if (!g_collectiondb.resetColl2(oldCollnum, newCollnum)) {
 		// we blocked, we->m_callback will be called when done
 		return false;
+	}
 
 	// turn on spiders on new collrec. collname is same but collnum
 	// will be different.
@@ -665,11 +663,10 @@ static bool CommandResetColl(const char *rec, WaitEntry *we) {
 	// for tree save to complete before removing old
 	// collnum recs from tree. so return false in that case so caller
 	// will know to re-call later.
-	if ( ! g_collectiondb.resetColl2 ( oldCollnum ,
-					   newCollnum ,
-					   true ) ) // purgeSeeds?
+	if (!g_collectiondb.resetColl2(oldCollnum, newCollnum)) {
 		// we blocked, we->m_callback will be called when done
 		return false;
+	}
 
 	// turn on spiders on new collrec. collname is same but collnum
 	// will be different.
@@ -2354,35 +2351,6 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 
 	// note it in the log
 	log("admin: parm \"%s\" changed value",m->m_title);
-
-	// only send email alerts if we are host 0 since everyone syncs up
-	// with host #0 anyway
-	if ( g_hostdb.m_hostId != 0 ) return;
-
-	// send an email alert notifying the admins that this parm was changed
-	// BUT ALWAYS send it if email alerts were just TURNED OFF
-	// ("sea" = Send Email Alerts)
-	if ( ! g_conf.m_sendEmailAlerts && strcmp(m->m_cgi,"sea") != 0 )
-		return;
-
-	// if spiders we turned on, do not send an email alert, cuz we
-	// turn them on when we restart the cluster
-	if ( strcmp(m->m_cgi,"se")==0 && g_conf.m_spideringEnabled )
-		return;
-
-
-	char tmp[1024];
-	Host *h0 = g_hostdb.getHost ( 0 );
-	int32_t ip0 = 0;
-	if ( h0 ) ip0 = h0->m_ip;
-	sprintf(tmp,"%s: parm \"%s\" changed value",iptoa(ip0),m->m_title);
-	g_pingServer.sendEmail ( NULL  , // Host ptr
-				 tmp   , // msg
-				 false , // oom?
-				 true  , // parm change?
-				 true  );// force it? even if disabled?
-
-	return;
 }
 
 void Parms::setToDefault(char *THIS, parameter_object_type_t objType, CollectionRec *argcr) {
@@ -5108,9 +5076,9 @@ void Parms::init ( ) {
 		"host. Each host pings all other hosts in the network.";
 	m->m_cgi   = "ps";
 	simple_m_set(Conf,m_pingSpacer);
-	m->m_smin  =   50; // i've seen values of 0 hammer the cpu
-	m->m_smax  = 1000;
-	m->m_def   = "100";
+	m->m_smin  =     50;
+	m->m_smax  =  60000;
+	m->m_def   = "10000";
 	m->m_units = "milliseconds";
 	m->m_group = true;
 	m->m_page  = PAGE_MASTER;
@@ -5138,6 +5106,18 @@ void Parms::init ( ) {
 	m->m_smax  =  100;
 	m->m_def   = "5";
 	m->m_units = "packets";
+	m->m_page  = PAGE_MASTER;
+	m++;
+
+	m->m_title = "watchdog interval";
+	m->m_desc  = "watchdog interval.";
+	m->m_cgi   = "watchdoginterval";
+	simple_m_set(Conf,m_watchdogInterval);
+	m->m_smin  =    50;
+	m->m_smax  = 30000;
+	m->m_def   =  "650";
+	m->m_units = "milliseconds";
+	m->m_group = true;
 	m->m_page  = PAGE_MASTER;
 	m++;
 
@@ -5559,44 +5539,6 @@ void Parms::init ( ) {
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_group = false;
-	m++;
-
-	/// @todo ALC this is currently disabled for now (cache timeout doesn't work;
-	/// caching will be bad for numsiteinlinks(which is regenerated when it's stale).
-	/// this could cause us to regenerate numsiteinlinks unnecessarily causing load on the system
-	m->m_title = "TagRec (Msg8a) cache size";
-	m->m_desc  = "How much memory to use for caching TagRec";
-	m->m_cgi   = "tagreccachemem";
-	m->m_xml   = "TagRecCacheSize";
-	simple_m_set(Conf, m_tagRecCacheSize);
-	m->m_def   = "10000000";
-	m->m_units = "bytes";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_group = false;
-	m++;
-
-	m->m_title = "TagRec (Msg8a) cache max age";
-	m->m_desc  = "How long to cache TagRec.";
-	m->m_cgi   = "tagreccacheage";
-	m->m_xml   = "TagRecCacheAge";
-	simple_m_set(Conf, m_tagRecCacheMaxAge);
-	m->m_def   = "0";
-	m->m_units = "milliseconds";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_group = false;
-	m++;
-
-	m->m_title = "interface machine";
-	m->m_desc  = "for specifying if this is an interface machine"
-		     "messages are rerouted from this machine to the main"
-		     "cluster set in the hosts.conf.";
-	m->m_cgi   = "intmch";
-	simple_m_set(Conf,m_interfaceMachine);
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
 	m++;
 
 	m->m_title = "redirect non-raw traffic";
@@ -6087,9 +6029,6 @@ void Parms::init ( ) {
 		"new sites. "
 		"Selecting <i>chinese</i> makes the spider prioritize the "
 		"spidering of chinese pages, etc. "
-		"Selecting <i>shallow</i> makes the spider go deep on "
-		"all sites unless they are tagged <i>shallow</i> in the "
-		"site list. "
 		"<br><b>Important: "
 		"If you select a profile other than <i>custom</i> "
 		"then your changes to the table will be lost.</b><br>";
@@ -7311,7 +7250,11 @@ void Parms::init ( ) {
 	m->m_desc  = "";
 	m->m_cgi   = "mlkmt";
 	simple_m_set(Conf,m_linkdbMaxTreeMem);
+#ifndef PRIVACORE_TEST_VERSION
 	m->m_def   = "40000000";
+#else
+	m->m_def   = "4000000";
+#endif
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_RDB;
 	m->m_group = false;
@@ -7825,17 +7768,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-	m->m_title = "do not re-add old outlinks more than this many days";
-	m->m_desc  = "If less than this many days have elapsed since the "
-		"last time we added the outlinks to spiderdb, do not re-add "
-		"them to spiderdb. Saves resources.";
-	m->m_cgi   = "slrf";
-	simple_m_set(CollectionRec,m_outlinksRecycleFrequencyDays);
-	m->m_def   = "30";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m++;
-
 	m->m_title = "deduping enabled";
 	m->m_desc  = "When enabled, the spider will "
 		"discard web pages which are identical to other web pages "
@@ -7865,30 +7797,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-	m->m_title = "detect custom error pages";
-	m->m_desc  = "Detect and do not index pages which have a 200 status"
-		" code, but are likely to be error pages.";
-	m->m_cgi   = "dcep";
-	simple_m_set(CollectionRec,m_detectCustomErrorPages);
-	m->m_def   = "1";
-	m->m_page  = PAGE_SPIDER;
-	m->m_flags = PF_CLONE;
-	m++;
-
-	m->m_title = "delete timed out docs";
-	m->m_desc  = "Should documents be deleted from the index "
-		"if they have been retried them enough times and the "
-		"last received error is a time out? "
-		"If your internet connection is flaky you may say "
-		"no here to ensure you do not lose important docs.";
-	m->m_cgi   = "dtod";
-	simple_m_set(CollectionRec,m_deleteTimeouts);
-	m->m_def   = "0";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m++;
-
 	m->m_title = "use simplified redirects";
 	m->m_desc  = "If this is true, the spider, when a url redirects "
 		"to a \"simpler\" url, will add that simpler url into "
@@ -7913,21 +7821,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_CLONE;
 	m->m_group = false;
-	m++;
-
-	m->m_title = "use ifModifiedSince";
-	m->m_desc  = "If this is true, the spider, when "
-		"updating a web page that is already in the index, will "
-		"not even download the whole page if it hasn't been "
-		"updated since the last time Gigablast spidered it. "
-		"This is primarily a bandwidth saving feature. It relies on "
-		"the remote webserver's returned Last-Modified-Since field "
-		"being accurate.";
-	m->m_cgi   = "uims";
-	simple_m_set(CollectionRec,m_useIfModifiedSince);
-	m->m_def   = "0";
-	m->m_page  = PAGE_SPIDER;
-	m->m_flags = PF_CLONE;
 	m++;
 
 	m->m_title = "do url sporn checking";
@@ -8025,29 +7918,6 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_CLONE;
-	m++;
-
-	m->m_title = "allow adult docs";
-	m->m_desc  = "If this is disabled the spider "
-		"will not allow any docs which contain adult content "
-		"into the index (overides tagdb).";
-	m->m_cgi   = "aprnd";
-	simple_m_set(CollectionRec,m_allowAdultDocs);
-	m->m_def   = "1";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m++;
-
-	m->m_title = "do IP lookup";
-	m->m_desc  = "If this is disabled and the proxy "
-		"IP below is not zero then Gigablast will assume "
-		"all spidered URLs have an IP address of 1.2.3.4.";
-	m->m_cgi   = "dil";
-	simple_m_set(CollectionRec,m_doIpLookups);
-	m->m_def   = "1";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
 	m++;
 
 	// m_maxOtherDocLen controls the maximum document to be stored in titledb. If it is larger than titledb-tree-mem then sillyness happens
@@ -8728,6 +8598,13 @@ void Parms::init ( ) {
 	m->m_title = "log debug udp messages";
 	m->m_cgi   = "ldu";
 	simple_m_set(Conf,m_logDebugUdp);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log debug watchdog messages";
+	m->m_cgi   = "ldwatchdog";
+	simple_m_set(Conf,m_logDebugWatchdog);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -9887,9 +9764,8 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 
 	if ( ! s_init ) {
 		// init hashtable
-		s_pht.set ( 4,sizeof(char *),2048,s_phtBuf,26700, false,"phttab" );
-		// reduce hash collisions:
-		s_pht.m_useKeyMagic = true;
+		s_pht.set(4, sizeof(char *), 2048, s_phtBuf, 26700, false, "phttab", true);
+
 		// wtf?
 		if ( m_numParms <= 0 ) init();
 		if ( m_numParms <= 0 ) { g_process.shutdownAbort(true); }
@@ -11157,42 +11033,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "for the subdomain of the URL. "
 			  "Used for doing quotas."
 			  "</td></tr>"
-
-
-			  // MDW: 7/11/2014 take this out until it works.
-			  // problem is that the quota table m_localTable
-			  // in Spider.cpp gets reset for each firstIp scan,
-			  // and we have a.walmart.com and b.walmart.com
-			  // with different first ips even though on same
-			  // domain. perhaps we should use the domain as the
-			  // key to getting the firstip for and subdomain.
-			  // but out whole selection algo in spider.cpp is
-			  // firstIp based, so it scans all the spiderrequests
-			  // from a single firstip to get the winner for that
-			  // firstip.
-
-
-			  // "<tr class=poo><td>domainpages</td>"
-			  // "<td>The number of pages that are currently indexed "
-			  // "for the domain of the URL. "
-			  // "Used for doing quotas."
-			  // "</td></tr>"
-
-			  "<tr class=poo><td>siteadds</td>"
-			  "<td>The number URLs manually added to the "
-			  "subdomain of the URL. Used to guage a subdomain's "
-			  "popularity."
-			  "</td></tr>"
-
-			  // taken out for the same reason as domainpages
-			  // above was taken out. see expanation up there.
-			  // "<tr class=poo><td>domainadds</td>"
-			  // "<td>The number URLs manually added to the "
-			  // "domain of the URL. Used to guage a domain's "
-			  // "popularity."
-			  // "</td></tr>"
-
-
 
 			  "<tr class=poo><td>isrss | !isrss</td>"
 			  "<td>Matches if document is an RSS feed. Will "

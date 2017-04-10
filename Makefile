@@ -12,7 +12,7 @@ unexport CONFIG_CPPFLAGS
 
 OBJS_O0 =  \
 	Abbreviations.o AdultCheck.o \
-	BigFile.o Blaster.o \
+	BigFile.o \
 	Clusterdb.o Collectiondb.o Conf.o CountryCode.o \
 	DailyMerge.o Dir.o Dns.o Domains.o \
 	Errno.o Entities.o \
@@ -22,15 +22,16 @@ OBJS_O0 =  \
 	iana_charset.o Images.o ip.o \
 	JobScheduler.o Json.o \
 	Lang.o LanguageIdentifier.o Log.o \
-	Mem.o Msg0.o Msg1.o Msg4In.o Msg4Out.o MsgC.o Msg13.o Msg20.o Msg22.o Msg39.o Msg1f.o Msg3a.o Msg51.o Msge0.o Msge1.o Multicast.o \
+	Mem.o Msg0.o Msg4In.o Msg4Out.o MsgC.o Msg13.o Msg20.o Msg22.o Msg39.o Msg1f.o Msg3a.o Msg51.o Msge0.o Msge1.o Multicast.o \
+	Msg56.o \
 	Parms.o Pages.o PageAddColl.o PageAddUrl.o PageBasic.o PageCrawlBot.o PageGet.o PageHealthCheck.o PageHosts.o PageInject.o PageLogView.o \
-	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o \
+	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageSpider.o \
 	Phrases.o PingServer.o Process.o Proxy.o Punycode.o \
 	Query.o \
 	RdbCache.o RdbDump.o RdbMem.o RdbMerge.o RdbScan.o RdbTree.o \
 	Rebalance.o Repair.o RobotRule.o Robots.o \
 	Sanity.o ScalingFunctions.o SearchInput.o SiteGetter.o Speller.o SpiderProxy.o Stats.o SummaryCache.o Synonyms.o \
-	Tagdb.o TcpServer.o Timezone.o Titledb.o \
+	Tagdb.o TcpServer.o Titledb.o \
 	Version.o \
 	Wiki.o Wiktionary.o \
 	UdpSlot.o Url.o \
@@ -48,7 +49,7 @@ OBJS_O2 = \
 	Matches.o matches2.o Msg2.o Msg3.o Msg5.o \
 	Pops.o Pos.o Posdb.o PosdbTable.o Profiler.o \
 	Rdb.o RdbBase.o \
-	Sections.o Spider.o SpiderColl.o SpiderLoop.o StopWords.o Summary.o \
+	Sections.o Spider.o SpiderCache.o SpiderColl.o SpiderLoop.o StopWords.o Summary.o \
 	Title.o \
 	UCPropTable.o UdpServer.o Unicode.o UnicodeProperties.o \
 	Words.o \
@@ -105,11 +106,11 @@ endif
 endif
 
 # defines
-ifeq ($(config),debug)
+ifeq ($(config),$(filter $(config),debug debug-safe debug-test))
 DEFS += -D_VALGRIND_
+endif
 
-else ifeq ($(config),test)
-DEFS += -D_VALGRIND_
+ifeq ($(config),$(filter $(config),test debug-test))
 DEFS += -DPRIVACORE_TEST_VERSION
 
 else ifeq ($(config),coverage)
@@ -128,7 +129,7 @@ else ifeq ($(config),sanitize-leak)
 CONFIG_CPPFLAGS += -fsanitize=leak # liblsan
 endif
 
-else ifeq ($(config),release-safe)
+else ifeq ($(config),$(filter $(config),release-safe debug-safe))
 # if defined, UI options that can damage our production index will be disabled
 DEFS += -DPRIVACORE_SAFE_VERSION
 endif
@@ -380,11 +381,15 @@ cleandb:
 # shortcuts
 .PHONY: release-safe
 release-safe:
-	$(MAKE) config=release-safe
+	$(MAKE) config=$@
 
 .PHONY: debug
 debug:
-	$(MAKE) config=debug
+	$(MAKE) config=$@
+
+.PHONY: debug-safe
+debug-safe:
+	$(MAKE) config=$@
 
 .PHONY: sanitize-address
 sanitize-address:

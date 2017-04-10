@@ -4,6 +4,7 @@
 //Kitchen sink
 
 #include <stddef.h>
+#include <inttypes.h>
 #include <time.h>
 #include <vector>
 #include <string>
@@ -28,5 +29,7 @@ bool printTimeAgo(SafeBuf *sb, time_t ago, time_t now, bool shorthand);
 
 std::vector<std::string> split(const std::string &str, char delimiter);
 bool starts_with(const char *haystack, const char *needle);
+
+uint64_t getCurrentTimeNanoseconds();
 
 #endif
