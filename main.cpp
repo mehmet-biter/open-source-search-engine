@@ -67,7 +67,6 @@
 #include "PageInject.h"
 #include "Unicode.h"
 
-#include "Msg1f.h"
 #include "Profiler.h"
 #include "Proxy.h"
 
@@ -1809,11 +1808,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! g_httpServer.init( h9->getInternalHttpPort(), h9->getInternalHttpsPort() ) ) {
 		log("db: HttpServer init failed. Another gb already running?" );
 		// this is dangerous!!! do not do the shutdown thing
-		return 1;
-	}
-
-	if(!Msg1f::init()) {
-		log("logviewer: init failed.");
 		return 1;
 	}
 

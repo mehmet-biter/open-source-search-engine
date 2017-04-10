@@ -178,11 +178,6 @@ static WebPage s_pages[] = {
 	  sendPageSockets  , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_LOGVIEW    , "admin/logview"   , 0 , "Log view" ,  0 , 0 ,
-	  "logview",
-	  sendPageLogView  , 0 ,NULL,NULL,
-	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
-
 	// deactivate until works on 64-bit... mdw 12/14/14
 	{ PAGE_PROFILER    , "admin/profiler"   , 0 , "Profiler" ,  0 ,M_POST,
 	  "profiler",
