@@ -61,7 +61,6 @@ bool sendPageReindex  ( TcpSocket *s , HttpRequest *r );
 bool sendPageInject   ( TcpSocket *s , HttpRequest *r );
 bool sendPageAddUrl2  ( TcpSocket *s , HttpRequest *r );
 bool sendPageGeneric  ( TcpSocket *s , HttpRequest *r ); // in Parms.cpp
-bool sendPageLogView    ( TcpSocket *s , HttpRequest *r );
 bool sendPageProfiler   ( TcpSocket *s , HttpRequest *r );
 bool sendPageThreads    ( TcpSocket *s , HttpRequest *r );
 bool sendPageAPI        ( TcpSocket *s , HttpRequest *r );
@@ -210,7 +209,6 @@ enum {
 	PAGE_PERF        ,
 	PAGE_SOCKETS     ,
 
-	PAGE_LOGVIEW     ,
 	PAGE_PROFILER    ,
 	PAGE_THREADS     ,
 

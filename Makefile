@@ -22,9 +22,9 @@ OBJS_O0 =  \
 	iana_charset.o Images.o ip.o \
 	JobScheduler.o Json.o \
 	Lang.o LanguageIdentifier.o Log.o \
-	Mem.o Msg0.o Msg4In.o Msg4Out.o MsgC.o Msg13.o Msg20.o Msg22.o Msg39.o Msg1f.o Msg3a.o Msg51.o Msge0.o Msge1.o Multicast.o \
+	Mem.o Msg0.o Msg4In.o Msg4Out.o MsgC.o Msg13.o Msg20.o Msg22.o Msg39.o Msg3a.o Msg51.o Msge0.o Msge1.o Multicast.o \
 	Msg56.o \
-	Parms.o Pages.o PageAddColl.o PageAddUrl.o PageBasic.o PageCrawlBot.o PageGet.o PageHealthCheck.o PageHosts.o PageInject.o PageLogView.o \
+	Parms.o Pages.o PageAddColl.o PageAddUrl.o PageBasic.o PageCrawlBot.o PageGet.o PageHealthCheck.o PageHosts.o PageInject.o \
 	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageSpider.o \
 	Phrases.o PingServer.o Process.o Proxy.o Punycode.o \
 	Query.o \

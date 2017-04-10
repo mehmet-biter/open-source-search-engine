@@ -69,9 +69,6 @@ UdpStatistic::UdpStatistic(const UdpSlot &slot)
 				snprintf(m_description, sizeof(m_description), "get %s", r->m_isRobotsTxt ? "web page" : "robot.txt");
 			}
 			break;
-		case msg_type_1f:
-			strcpy(m_description, "get remote log");
-			break;
 		case msg_type_20:
 			strcpy(m_description, "get summary");
 			break;
