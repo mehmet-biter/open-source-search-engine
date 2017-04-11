@@ -2549,6 +2549,7 @@ Host *Dns::getIPLookupHost(key96_t key) {
 	// NULL if none
 	if ( numAlive == 0 ) {
 		logTrace( g_conf.m_logTraceDns, "END. None alive. return NULL" );
+		g_errno = EHOSTDEAD;
 		return NULL;
 	}
 	
