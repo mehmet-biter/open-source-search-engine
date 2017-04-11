@@ -2564,8 +2564,6 @@ bool SpiderColl::scanListForWinners ( ) {
 		// now get rid of negative priorities since we added a
 		// separate force delete checkbox in the url filters
 		if ( priority < 0 ) priority = 0;
-		// sanity checks
-		//if ( priority == -1 ) { g_process.shutdownAbort(true); }
 		if ( priority >= MAX_SPIDER_PRIORITIES) {g_process.shutdownAbort(true);}
 
 		logDebug( g_conf.m_logDebugSpider, "spider: got ufn=%" PRId32" for %s (%" PRId64")",
@@ -2579,15 +2577,11 @@ bool SpiderColl::scanListForWinners ( ) {
 
 		// skip if banned (unless need to delete from index)
 		bool skip = false;
-		// if ( priority == SPIDER_PRIORITY_FILTERED ) skip = true;
-		// if ( priority == SPIDER_PRIORITY_BANNED   ) skip = true;
 		if ( m_cr->m_forceDelete[ufn] ) skip = true;
 		// but if it is currently indexed we have to delete it
 		if ( skip && srep && srep->m_isIndexed ) skip = false;
 		if ( skip ) continue;
 
-		// temp debug
-		//g_process.shutdownAbort(true);
 
 		if ( m_cr->m_forceDelete[ufn] ) {
 			logDebug( g_conf.m_logDebugSpider, "spider: force delete ufn=%" PRId32" url='%s'", ufn, sreq->m_url );
@@ -2596,8 +2590,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		}
 
 		int64_t spiderTimeMS = getSpiderTimeMS(sreq, ufn, srep);
-		// how many outstanding spiders on a single IP?
-		//int32_t maxSpidersPerIp = m_cr->m_spiderIpMaxSpiders[ufn];
+
 		// sanity
 		if ( (int64_t)spiderTimeMS < 0 ) { 
 			log( LOG_WARN, "spider: got corrupt 2 spiderRequest in "
@@ -2658,8 +2651,6 @@ bool SpiderColl::scanListForWinners ( ) {
 			          key, sreq->m_url );
 			continue;
 		}
-
-		//int64_t uh48 = sreq->getUrlHash48();
 
 		// make key
 		key192_t wk = makeWinnerTreeKey( firstIp ,
