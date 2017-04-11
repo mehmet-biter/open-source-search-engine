@@ -766,14 +766,6 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 		return true;
 	}
 
-	// set the priority (might be the same as old)
-	int32_t priority = ufn >= 0 ? m_cr->m_spiderPriorities[ufn] : -1;
-
-	// sanity checks
-	if ( priority >= MAX_SPIDER_PRIORITIES) {
-		g_process.shutdownAbort(true);
-	}
-
 	// do not add to doledb if bad
 	if ( ufn >= 0 && m_cr->m_forceDelete[ufn] ) {
 		logDebug( g_conf.m_logDebugSpider, "spider: request %s is filtered ufn=%" PRId32, sreq->m_url, ufn );
