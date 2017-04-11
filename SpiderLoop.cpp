@@ -1176,8 +1176,6 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 		}
 	}
 
-	int64_t lockKeyUh48 = makeLockTableKey ( sreq );
-
 	// . now that we have to use msg12 to see if the thing is locked
 	//   to avoid spidering it.. (see comment in above function)
 	//   we often try to spider something we are already spidering. that
@@ -1280,6 +1278,8 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 		//us->sendErrorReply ( udpSlot , g_errno );
 		//return;
 	}
+
+	int64_t lockKeyUh48 = makeLockTableKey ( sreq );
 
 	logDebug(g_conf.m_logDebugSpider, "spider: adding lock uh48=%" PRId64" lockkey=%" PRId64,
 	         m_sreq->getUrlHash48(),lockKeyUh48);
