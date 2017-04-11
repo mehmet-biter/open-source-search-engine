@@ -792,11 +792,9 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 	// and add the new one. hmm, the waitingtree scan code ...
 
 	// update the latest siteNumInlinks count for this "site"
-	if ( sreq->m_siteNumInlinksValid ) {
+	if (sreq->m_siteNumInlinksValid) {
 		// updates m_siteNumInlinksTable
-		updateSiteNumInlinksTable ( sreq->m_siteHash32 , 
-					    sreq->m_siteNumInlinks ,
-					    (time_t)sreq->m_addedTime );
+		updateSiteNumInlinksTable(sreq->m_siteHash32, sreq->m_siteNumInlinks, (time_t) sreq->m_addedTime);
 		// clear error for this if there was any
 		g_errno = 0;
 	}
