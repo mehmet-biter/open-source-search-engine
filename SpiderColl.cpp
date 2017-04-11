@@ -505,15 +505,15 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 	// clear error for this
 	g_errno = 0;
 
-	{
+	// no update if injecting or from pagereindex (docid based spider request)
+	if (!srep->m_fromInjectionRequest) {
 		ScopedLock sl(m_cdTableMtx);
 
 		// use the domain hash for this guy! since its from robots.txt
 		int32_t *cdp = (int32_t *)m_cdTable.getValue32(srep->m_domHash32);
 
 		// update it only if better or empty
-		// no update if injecting or from pagereindex (docid based spider request)
-		if (!cdp && !srep->m_fromInjectionRequest) {
+		if (!cdp) {
 			// update m_sniTable if we should
 			// . make new data for this key
 			// . lower 32 bits is the spideredTime
