@@ -2201,22 +2201,22 @@ void stripProxyAuthorization ( char *squidProxiedReqBuf ) {
 	// so the websites we download the url from do not see it in the
 	// http request mime
 	//
- loop:
-	// include space so it won't match anything in url
-	char *s = gb_strcasestr ( squidProxiedReqBuf , "Proxy-Authorization: " );
-	if ( ! s ) return;
-	// find next \r\n
-	const char *end = strstr ( s , "\r\n");
-	if ( ! end ) return;
-	// bury the \r\n as well
-	end += 2;
-	// bury that string
-	int32_t reqLen = strlen(squidProxiedReqBuf);
-	const char *reqEnd = squidProxiedReqBuf + reqLen;
-	// include \0, so add +1
-	memmove ( s ,end , reqEnd-end + 1);
-	// bury more of them
-	goto loop;
+
+	for(;;) {
+		// include space so it won't match anything in url
+		char *s = gb_strcasestr ( squidProxiedReqBuf , "Proxy-Authorization: " );
+		if ( ! s ) return;
+		// find next \r\n
+		const char *end = strstr ( s , "\r\n");
+		if ( ! end ) return;
+		// bury the \r\n as well
+		end += 2;
+		// bury that string
+		int32_t reqLen = strlen(squidProxiedReqBuf);
+		const char *reqEnd = squidProxiedReqBuf + reqLen;
+		// include \0, so add +1
+		memmove ( s ,end , reqEnd-end + 1);
+	}
 }
 
 
