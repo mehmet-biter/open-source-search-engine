@@ -695,7 +695,7 @@ bool SpiderColl::isInDupCache(const SpiderRequest *sreq, bool addToCache) {
 // . returns false and sets g_errno on error
 // . if the spiderTime appears to be AFTER m_nextReloadTime then we should
 //   not add this spider request to keep the cache trimmed!!! (MDW: TODO)
-// . BUT! if we have 150,000 urls that is going to take a int32_t time to
+// . BUT! if we have 150,000 urls that is going to take a long time to
 //   spider, so it should have a high reload rate!
 bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS) {
 	// don't add negative keys or data less thangs
@@ -2119,7 +2119,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 
 	// . read the list from local disk
 	// . if a niceness 0 intersect thread is taking a LONG time
-	//   then this will not complete in a int32_t time and we
+	//   then this will not complete in a long time and we
 	//   end up timing out the round. so try checking for
 	//   m_gettingList in spiderDoledUrls() and setting
 	//   m_lastSpiderCouldLaunch

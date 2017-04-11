@@ -2013,7 +2013,7 @@ static bool addToHammerQueue(Msg13Request *r) {
 	// ignore it if from iframe expansion etc.
 	if ( r->m_skipHammerCheck ) queueIt = false;
 
-	// . queue it up if we haven't waited int32_t enough
+	// . queue it up if we haven't waited long enough
 	// . then the functionr, scanHammerQueue(), will re-eval all
 	//   the download requests in this hammer queue every 10ms. 
 	// . it will just lookup the lastdownload time in the cache,
@@ -2110,7 +2110,7 @@ static void scanHammerQueue(int fd, void *state) {
 			// download finished? 
 			if ( last > 0 ) {
 				waited = nowms - last;
-				// but skip if haven't waited int32_t enough
+				// but skip if haven't waited long enough
 				if ( waited < crawlDelayMS ) continue;
 			}
 			// debug

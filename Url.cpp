@@ -1464,7 +1464,7 @@ bool Url::isHostWWW ( ) const {
 
 // . is the url a porn/adult url?
 // . i use /usr/share/dict/words to check for legit words
-// . if it's int32_t and has 4+ hyphens, consider it spam
+// . if it's long and has 4+ hyphens, consider it spam
 // . if you add a word here, add it to PageResults.cpp:isQueryDirty()
 bool Url::isAdult() const {
 	//certain TLDs are clearly adult-oriented

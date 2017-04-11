@@ -858,7 +858,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	// how many spiders can we have out?
 	int32_t max = 0;
 
-	// in milliseconds. ho wint32_t to wait between downloads from same IP.
+	// in milliseconds. how long to wait between downloads from same IP.
 	// only for parnent urls, not including child docs like robots.txt
 	// iframe contents, etc.
 	int32_t maxSpidersOutPerIp = 1;
@@ -1122,7 +1122,7 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 
 	// wait until our clock is synced with host #0 before spidering since
 	// we store time stamps in the domain and ip wait tables in 
-	// SpiderCache.cpp. We don't want to freeze domain for a int32_t time
+	// SpiderCache.cpp. We don't want to freeze domain for a long time
 	// because we think we have to wait until tomorrow before we can
 	// spider it.
 
