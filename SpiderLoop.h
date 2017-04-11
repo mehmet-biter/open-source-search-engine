@@ -43,8 +43,7 @@ public:
 	void init();
 
 	int32_t getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum ) ;
-
-	int32_t m_numSpidersOut;
+	int32_t getNumSpidersOut() const { return m_numSpidersOut; }
 
 	// for spidering/parsing/indexing a url(s)
 	class XmlDoc *m_docs [ MAX_SPIDERS ];
@@ -80,6 +79,8 @@ private:
 
 	CollectionRec *getActiveList();
 	void buildActiveList ( ) ;
+
+	int32_t m_numSpidersOut;
 
 	// state memory for calling SpiderUrl2() (maybe also getLocks()!)
 	SpiderRequest *m_sreq;
