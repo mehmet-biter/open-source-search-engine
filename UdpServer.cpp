@@ -1388,13 +1388,8 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 				if ( slot->hasCallback() ) continue;
 				// only call certain msg handlers...
 				if ( slot->getMsgType() != msg_type_11 &&  // ping
-				     slot->getMsgType() != msg_type_1 &&  // add  RdbList
 				     slot->getMsgType() != msg_type_0   ) // read RdbList
 					continue;
-				// BUT the Msg1 list to add has to be small! if it is
-				// big then it should wait until later.
-				if ( slot->getMsgType() == msg_type_1 &&
-				     slot->m_readBufSize > 150 ) continue;
 				// only allow niceness 0 msg 0x00 requests here since
 				// we call a msg8a from msg20.cpp summary generation
 				// which uses msg0 to read tagdb list from disk
