@@ -3227,6 +3227,7 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const char **miniMergedList, c
 //
 float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, DocIdScore *pdcs) {
 	float minSingleScore = 999999999.0;
+	bool scoredTerm = false;
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
 
@@ -3267,6 +3268,7 @@ float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedList, const ch
 		//
 		// pdcs is NULL if not currPassNum == INTERSECT_DEBUG_INFO
 		float sts = getBestScoreSumForSingleTerm(i, miniMergedList[i], miniMergedEnd[i], pdcs, &highestScoringNonBodyPos[i]);
+		scoredTerm = true;
 
 		// sanity check
 		if ( highestScoringNonBodyPos[i] && s_inBody[Posdb::getHashGroup(highestScoringNonBodyPos[i])] ) {
@@ -3277,6 +3279,10 @@ float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedList, const ch
 		if ( sts < minSingleScore ) {
 			minSingleScore = sts;
 		}
+	}
+
+	if( !scoredTerm ) {
+		minSingleScore = -1;
 	}
 
 	logTrace(g_conf.m_logTracePosdb, "END. minSingleScore=%f", minSingleScore);
@@ -3299,6 +3305,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 	const char *wpj;
 	float wikiWeight;
 	float minTermPairScoreInWindow = 999999999.0;
+	bool scoredTerms = false;
 
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
@@ -3373,6 +3380,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 
 			// this will be -1 if wpi or wpj is NULL
 			float max = getScoreForTermPair(wpi, wpj, 0);
+			scoredTerms = true;
 
 			// try sub-ing in the best title occurence or best
 			// inlink text occurence. cuz if the term is in the title
@@ -3455,7 +3463,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 	}
 
 	// Our best minimum score better than current best minimum score?
-	if ( minTermPairScoreInWindow <= m_bestMinTermPairWindowScore ) {
+	if ( minTermPairScoreInWindow <= m_bestMinTermPairWindowScore || !scoredTerms ) {
 		logTrace(g_conf.m_logTracePosdb, "END.");
 		return;
 	}

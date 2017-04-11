@@ -847,8 +847,12 @@ bool Rdb::dumpTree() {
 	// clear this for dumpCollLoop()
 	g_errno = 0;
 	m_dumpErrno = 0;
-	for(int collnum=0; collnum<getNumBases(); collnum++)
-		getBase(collnum)->setDumpingFileNumber(-1000);
+	for (int collnum = 0; collnum < getNumBases(); collnum++) {
+		RdbBase *base = getBase(collnum);
+		if (base) {
+			base->setDumpingFileNumber(-1000);
+		}
+	}
 
 	// we have our own flag here since m_dump::m_isDumping gets
 	// set to true between collection dumps, RdbMem.cpp needs
