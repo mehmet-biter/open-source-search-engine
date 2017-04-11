@@ -542,11 +542,9 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 	//   less than our sameIpWait
 	// . make m_lastDownloadTable an rdbcache ...
 	// . this is 0 for pagereindex docid-based replies
-	if ( srep->m_downloadEndTime ) {
+	if (srep->m_downloadEndTime) {
 		RdbCacheLock rcl(m_lastDownloadCache);
-		m_lastDownloadCache.addLongLong ( m_collnum,
-						  srep->m_firstIp ,
-						  srep->m_downloadEndTime );
+		m_lastDownloadCache.addLongLong(m_collnum, srep->m_firstIp, srep->m_downloadEndTime);
 	}
 
 	logDebug(g_conf.m_logDebugSpider, "spider: adding spider reply, download end time %" PRId64" for "
