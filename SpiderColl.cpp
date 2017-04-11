@@ -2576,12 +2576,13 @@ bool SpiderColl::scanListForWinners ( ) {
 		if ( m_cr->m_maxSpidersPerRule[ufn] <= 0 ) continue;
 
 		// skip if banned (unless need to delete from index)
-		bool skip = false;
-		if ( m_cr->m_forceDelete[ufn] ) skip = true;
-		// but if it is currently indexed we have to delete it
-		if ( skip && srep && srep->m_isIndexed ) skip = false;
-		if ( skip ) continue;
-
+		if (m_cr->m_forceDelete[ufn]) {
+			// but if it is currently indexed we have to delete it
+			if (!(srep && srep->m_isIndexed)) {
+				// so only skip if it's not indexed
+				continue;
+			}
+		}
 
 		if ( m_cr->m_forceDelete[ufn] ) {
 			logDebug( g_conf.m_logDebugSpider, "spider: force delete ufn=%" PRId32" url='%s'", ufn, sreq->m_url );
