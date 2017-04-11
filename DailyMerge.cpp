@@ -224,7 +224,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 	// wait for ALL spiders in network to clear
 	if ( m_mergeMode == 3 ) {
 		// return if we got spiders out!
-		if ( g_spiderLoop.m_numSpidersOut > 0 )
+		if ( g_spiderLoop.getNumSpidersOut() > 0 )
 			return;
 		// check the ping packet flags
 		for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {

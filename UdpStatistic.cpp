@@ -45,12 +45,6 @@ UdpStatistic::UdpStatistic(const UdpSlot &slot)
 				snprintf(m_description, sizeof(m_description), "get from %s", getDbnameFromId(rdbId));
 			}
 			break;
-		case msg_type_1:
-			if (buf) {
-				rdbid_t rdbId = static_cast<rdbid_t>(buf[0]);
-				snprintf(m_description, sizeof(m_description), "add to %s", getDbnameFromId(rdbId));
-			}
-			break;
 		case msg_type_4:
 			strcpy(m_description, "meta add");
 			break;

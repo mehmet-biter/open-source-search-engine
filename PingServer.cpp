@@ -175,7 +175,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	newPingInfo.m_numCorruptDiskReads = g_numCorrupt;
 	newPingInfo.m_numOutOfMems = g_mem.getOOMCount();
 	newPingInfo.m_socketsClosedFromHittingLimit = g_stats.m_closedSockets;
-	newPingInfo.m_currentSpiders = g_spiderLoop.m_numSpidersOut;
+	newPingInfo.m_currentSpiders = g_spiderLoop.getNumSpidersOut();
 
 	// let the receiver know our repair mode
 	newPingInfo.m_repairMode = g_repairMode;
@@ -207,7 +207,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	// our spiders. when host #0 indicates this state it will wait
 	// for all other hosts to enter the mergeMode. when other hosts
 	// receive this state from host #0, they will start their daily merge.
-	if ( g_spiderLoop.m_numSpidersOut > 0 ) flags |= PFLAG_HASSPIDERS;
+	if ( g_spiderLoop.getNumSpidersOut() > 0 ) flags |= PFLAG_HASSPIDERS;
 	if ( g_process.isRdbMerging()         ) flags |= PFLAG_MERGING;
 	if ( g_process.isRdbDumping()         ) flags |= PFLAG_DUMPING;
 	if ( g_rebalance.m_isScanning         ) flags |= PFLAG_REBALANCING;

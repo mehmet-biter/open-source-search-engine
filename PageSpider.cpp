@@ -282,7 +282,7 @@ static bool sendPage(State11 *st) {
 		//"</center>"
 		"</td></tr>\n"
 		, TABLE_STYLE
-		, (int32_t)g_spiderLoop.m_numSpidersOut
+		, g_spiderLoop.getNumSpidersOut()
 	//, g_spiderLoop.m_lockTable.m_numSlotsUsed
 	);
 	// the table headers so SpiderRequest::printToTable() works

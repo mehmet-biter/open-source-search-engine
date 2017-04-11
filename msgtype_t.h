@@ -3,7 +3,6 @@
 
 enum msg_type_t {
 	msg_type_0 = 0x00,	//getListFromRdb
-	msg_type_1 = 0x01,
 	msg_type_4 = 0x04,	//data replication
 	msg_type_7 = 0x07,	//inject web page
 	msg_type_c = 0x0c,	//get IP
