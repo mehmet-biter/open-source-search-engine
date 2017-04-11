@@ -428,6 +428,19 @@ bool UdpServer::sendRequest(char *msg,
 	UdpSlot *slot = getEmptyUdpSlot(key, false);
 	if ( ! slot ) {
 		log( LOG_WARN, "udp: All %" PRId32" slots are in use.",m_maxSlots);
+		static time_t lastLogTime = 0;
+		time_t now = time(0);
+		if(lastLogTime+10 < now) {
+			lastLogTime = now;
+			for(int i = 0; i < m_maxSlots; i++) {
+				log(LOG_WARN,"udp: slot[%4d]: peer=%s:%d type=%02x %s",
+				    i,
+				    iptoa(m_slots[i].getIp()),
+				    m_slots[i].getPort(),
+				    m_slots[i].getMsgType(),
+				    m_slots[i].isIncoming()?"in":"out");
+			}
+		}
 		return false;
 	}
 
