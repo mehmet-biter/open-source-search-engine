@@ -2079,90 +2079,86 @@ static void scanHammerQueue(int fd, void *state) {
 
 	int64_t nowms = gettimeofdayInMilliseconds();
 
- top:
+	while(Msg13Request *r = s_hammerQueueHead) {
+		Msg13Request *prev = NULL;
+		int64_t waited = -1LL;
+		Msg13Request *nextLink = NULL;
 
-	Msg13Request *r = s_hammerQueueHead;
-	if ( ! r ) return;
+		// scan down the linked list of queued of msg13 requests
+		for ( ; r ; prev = r , r = nextLink ) { 
 
-	Msg13Request *prev = NULL;
-	int64_t waited = -1LL;
-	Msg13Request *nextLink = NULL;
+			// downloadTheDocForReals() could free "r" so save this here
+			nextLink = r->m_nextLink;
 
-	// scan down the linked list of queued of msg13 requests
-	for ( ; r ; prev = r , r = nextLink ) { 
-
-		// downloadTheDocForReals() could free "r" so save this here
-		nextLink = r->m_nextLink;
-
-		int64_t last;
-		last = s_hammerCache.getLongLong(0,r->m_firstIp,30,true);
-		// is one from this ip outstanding?
-		if ( last == 0LL && r->m_crawlDelayFromEnd ) continue;
+			int64_t last;
+			last = s_hammerCache.getLongLong(0,r->m_firstIp,30,true);
+			// is one from this ip outstanding?
+			if ( last == 0LL && r->m_crawlDelayFromEnd ) continue;
 
 
-		int32_t crawlDelayMS = r->m_crawlDelayMS;
+			int32_t crawlDelayMS = r->m_crawlDelayMS;
 
-		// . if we got a proxybackoff base it on # of banned proxies 
-		// . try to be more sensitive for more sensitive website policy
-		// . we don't know why this proxy was banned, or if we were 
-		//   responsible, or who banned it, but be more sensitive
-		if ( //useProxies && 
-		     r->m_numBannedProxies &&
-		     r->m_hammerCallback == downloadTheDocForReals3b )
-			crawlDelayMS = r->m_numBannedProxies * DELAYPERBAN;
+			// . if we got a proxybackoff base it on # of banned proxies 
+			// . try to be more sensitive for more sensitive website policy
+			// . we don't know why this proxy was banned, or if we were 
+			//   responsible, or who banned it, but be more sensitive
+			if ( //useProxies && 
+			r->m_numBannedProxies &&
+			r->m_hammerCallback == downloadTheDocForReals3b )
+				crawlDelayMS = r->m_numBannedProxies * DELAYPERBAN;
 
-		// download finished? 
-		if ( last > 0 ) {
-		        waited = nowms - last;
-			// but skip if haven't waited int32_t enough
-			if ( waited < crawlDelayMS ) continue;
+			// download finished? 
+			if ( last > 0 ) {
+				waited = nowms - last;
+				// but skip if haven't waited int32_t enough
+				if ( waited < crawlDelayMS ) continue;
+			}
+			// debug
+			//log("spider: downloading %s from crawldelay queue "
+			//    "waited=%" PRId64"ms crawldelay=%" PRId32"ms", 
+			//    r->ptr_url,waited,r->m_crawlDelayMS);
+
+			// good to go
+			//downloadTheDocForReals ( r );
+
+			// sanity check
+			if ( ! r->m_hammerCallback ) { gbshutdownLogicError(); }
+
+			// callback can now be either downloadTheDocForReals(r)
+			// or downloadTheDocForReals3b(r) if it is waiting after 
+			// getting a ProxyReply that had a m_proxyBackoff set
+
+			if ( g_conf.m_logDebugSpider )
+				log(LOG_DEBUG,"spider: calling hammer callback for "
+				"%s (timestamp=%" PRId64",waited=%" PRId64",crawlDelayMS=%" PRId32")",
+				r->ptr_url,
+				last,
+				waited,
+				crawlDelayMS);
+
+			//
+			// it should also add the current time to the hammer cache
+			// for r->m_firstIp
+			r->m_hammerCallback ( r );
+
+			//
+			// remove from future scans
+			//
+			if ( prev ) 
+				prev->m_nextLink = nextLink;
+
+			if ( s_hammerQueueHead == r )
+				s_hammerQueueHead = nextLink;
+
+			if ( s_hammerQueueTail == r )
+				s_hammerQueueTail = prev;
+
+			// if "r" was freed by downloadTheDocForReals() then
+			// in the next iteration of this loop, "prev" will point
+			// to a freed memory area, so start from the top again
+			// by breaking out of this inner loop and trying the outer loop again
+			break;
 		}
-		// debug
-		//log("spider: downloading %s from crawldelay queue "
-		//    "waited=%" PRId64"ms crawldelay=%" PRId32"ms", 
-		//    r->ptr_url,waited,r->m_crawlDelayMS);
-
-		// good to go
-		//downloadTheDocForReals ( r );
-
-		// sanity check
-		if ( ! r->m_hammerCallback ) { gbshutdownLogicError(); }
-
-		// callback can now be either downloadTheDocForReals(r)
-		// or downloadTheDocForReals3b(r) if it is waiting after 
-		// getting a ProxyReply that had a m_proxyBackoff set
-
-		if ( g_conf.m_logDebugSpider )
-			log(LOG_DEBUG,"spider: calling hammer callback for "
-			    "%s (timestamp=%" PRId64",waited=%" PRId64",crawlDelayMS=%" PRId32")",
-			    r->ptr_url,
-			    last,
-			    waited,
-			    crawlDelayMS);
-
-		//
-		// it should also add the current time to the hammer cache
-		// for r->m_firstIp
-		r->m_hammerCallback ( r );
-
-		//
-		// remove from future scans
-		//
-		if ( prev ) 
-			prev->m_nextLink = nextLink;
-
-		if ( s_hammerQueueHead == r )
-			s_hammerQueueHead = nextLink;
-
-		if ( s_hammerQueueTail == r )
-			s_hammerQueueTail = prev;
-
-		// if "r" was freed by downloadTheDocForReals() then
-		// in the next iteration of this loop, "prev" will point
-		// to a freed memory area, so start from the top again
-		goto top;
-
-		// try to download some more i guess...
 	}
 }
 
