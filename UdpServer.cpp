@@ -1923,7 +1923,7 @@ void UdpServer::timePoll ( ) {
 	// get time now
 	int64_t now = gettimeofdayInMilliseconds();
 	// before timing everyone out or starting resends, just to make
-	// sure we read everything. we have have just been blocking on a int32_t
+	// sure we read everything. we have have just been blocking on a interrupt
 	// handler or callback or sequence of those things and have stuff
 	// waiting to be read.
 	process(now);
