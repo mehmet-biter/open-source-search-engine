@@ -568,15 +568,10 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 	//   scan spiderdb to get that
 	// . returns false if did not add to waiting tree
 	// . returns false sets g_errno on error
-	bool added = addToWaitingTree(srep->m_firstIp);
+	addToWaitingTree(srep->m_firstIp);
 
 	// ignore errors i guess
 	g_errno = 0;
-
-	// if added to waiting tree, bail now, needs to scan spiderdb
-	// in order to add to doledb, because it won't add to waiting tree
-	// if we already have spiderrequests in doledb for this firstip
-	if ( added ) return true;
 
 	return true;
 }
