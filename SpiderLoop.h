@@ -46,7 +46,7 @@ public:
 	int32_t getNumSpidersOut() const { return m_numSpidersOut; }
 
 	// for spidering/parsing/indexing a url(s)
-	class XmlDoc *m_docs [ MAX_SPIDERS ];
+	XmlDoc *m_docs [ MAX_SPIDERS ];
 
 	HashTableX m_lockTable;
 
@@ -70,7 +70,7 @@ private:
 	bool spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum);
 	bool spiderUrl2(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum);
 
-	bool indexedDoc ( class XmlDoc *doc );
+	bool indexedDoc ( XmlDoc *doc );
 
 	CollectionRec *getActiveList();
 	void buildActiveList ( ) ;
@@ -108,7 +108,7 @@ private:
 	int32_t m_processed;
 };
 
-extern class SpiderLoop g_spiderLoop;
+extern SpiderLoop g_spiderLoop;
 
 void handleRequestc1 ( UdpSlot *slot , int32_t niceness );
 
