@@ -1355,7 +1355,7 @@ bool SpiderLoop::spiderUrl2(collnum_t collnum) {
 	// count this
 	m_sc->m_spidersOut++;
 
-	g_spiderLoop.m_launches++;
+	m_launches++;
 
 	// sanity check
 	if (m_sreq->m_priority <= -1 ) { 
