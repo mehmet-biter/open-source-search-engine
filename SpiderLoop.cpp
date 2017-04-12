@@ -50,7 +50,6 @@ SpiderLoop::SpiderLoop ( ) {
 
 	// Coverity
 	m_sreq = NULL;
-	m_collnum = 0;
 	m_doledbKey = NULL;
 	m_numSpidersOut = 0;
 	m_launches = 0;
@@ -1219,7 +1218,6 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	// save these in case getLocks() blocks
 	m_sreq      = sreq;
 	m_doledbKey = doledbKey;
-	m_collnum = collnum;
 
 	// count it
 	m_processed++;
@@ -1227,7 +1225,7 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(m_doledbKey, sizeof(*m_doledbKey)));
 
 	// now we just take it out of doledb instantly
-	bool deleted = g_doledb.getRdb()->deleteTreeNode(m_collnum, (const char *)m_doledbKey);
+	bool deleted = g_doledb.getRdb()->deleteTreeNode(collnum, (const char *)m_doledbKey);
 
 	// if url filters rebuilt then doledb gets reset and i've seen us hit
 	// this node == -1 condition here... so maybe ignore it... just log
@@ -1279,20 +1277,17 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	UrlLock tmp;
 	tmp.m_firstIp = m_sreq->m_firstIp;
 	tmp.m_spiderOutstanding = 0;
-	tmp.m_collnum = m_collnum;
+	tmp.m_collnum = collnum;
 
 	if ( ! g_spiderLoop.m_lockTable.addKey ( &lockKeyUh48 , &tmp ) )
 		return true;
 
 	// now do it. this returns false if it would block, returns true if it
 	// would not block. sets g_errno on error. it spiders m_sreq.
-	return spiderUrl2 ( );
+	return spiderUrl2(collnum);
 }
 
-
-
-bool SpiderLoop::spiderUrl2 ( ) {
-
+bool SpiderLoop::spiderUrl2(collnum_t collnum) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
 	// . find an available doc slot
@@ -1325,7 +1320,7 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	// add to the array
 	m_docs [ i ] = xd;
 
-	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
+	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	const char *coll = "collnumwasinvalid";
 	if ( cr ) coll = cr->m_coll;
 

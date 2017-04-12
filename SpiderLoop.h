@@ -69,7 +69,7 @@ private:
 	// . returns true and sets g_errno on error
 	bool spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum);
 
-	bool spiderUrl2 ( );
+	bool spiderUrl2 (collnum_t collnum);
 
 	bool indexedDoc ( class XmlDoc *doc );
 
@@ -85,7 +85,6 @@ private:
 	// state memory for calling SpiderUrl2() (maybe also getLocks()!)
 	SpiderRequest *m_sreq;
 
-	collnum_t  m_collnum;
 	key96_t     *m_doledbKey;
 
 	int32_t m_launches;
