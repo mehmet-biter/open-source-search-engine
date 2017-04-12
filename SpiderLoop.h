@@ -100,9 +100,6 @@ private:
 
 	bool m_gettingDoledbList;
 
-	// save on msg12 lookups! keep somewhat local...
-	RdbCache   m_lockCache;
-
 	CollectionRec *m_crx;
 	CollectionRec *m_activeList;
 	CollectionRec *m_bookmark;

@@ -85,7 +85,6 @@ void SpiderLoop::reset() {
 	}
 	m_list.freeList();
 	m_lockTable.reset();
-	m_lockCache.reset();
 	m_winnerListCache.reset();
 }
 
@@ -116,16 +115,6 @@ void SpiderLoop::init() {
 
 	// for locking. key size is 8 for easier debugging
 	m_lockTable.set ( 8,sizeof(UrlLock),0,NULL,0,false, "splocks", true ); // useKeyMagic? yes.
-
-	if ( ! m_lockCache.init ( 20000 , // maxcachemem
-				  4     , // fixedatasize
-				  false , // supportlists?
-				  1000  , // maxcachenodes
-				  false , // use half keys
-				  "lockcache", // dbname
-				  false  ) )
-		log(LOG_WARN, "spider: failed to init lock cache. performance hit." );
-
 
 	if ( ! m_winnerListCache.init ( 20000000 , // maxcachemem, 20MB
 					-1     , // fixedatasize
