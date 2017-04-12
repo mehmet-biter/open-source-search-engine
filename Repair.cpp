@@ -180,8 +180,8 @@ void Repair::repairWrapper(int fd, void *state) {
 	if ( g_repairMode == REPAIR_MODE_1 ) {
 		// wait for all merging to stop just to be on the safe side
 		if ( g_merge.isMerging() ) return;
-		// this is >= 0 is correct, -1 means no outstanding spiders
-		if ( g_spiderLoop.m_maxUsed >= 0 ) return;
+		// wait until no spiders out
+		if ( g_spiderLoop.getNumSpidersOut() > 0 ) return;
 		// wait for ny outstanding unlinks or renames to finish
 		if ( BigFile::anyOngoingUnlinksOrRenames() ) return;
 		// . make sure all Msg4s are done and have completely added all

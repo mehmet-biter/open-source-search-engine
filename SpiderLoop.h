@@ -48,10 +48,6 @@ public:
 	// for spidering/parsing/indexing a url(s)
 	class XmlDoc *m_docs [ MAX_SPIDERS ];
 
-	// . this is "i" where m_msg14[i] is the highest m_msg14 in use
-	// . we use it to limit our scanning to the first "i" m_msg14's
-	int32_t m_maxUsed;
-
 	HashTableX m_lockTable;
 
 	RdbCache   m_winnerListCache;
@@ -81,6 +77,10 @@ private:
 	void buildActiveList ( ) ;
 
 	int32_t m_numSpidersOut;
+
+	// . this is "i" where m_msg14[i] is the highest m_msg14 in use
+	// . we use it to limit our scanning to the first "i" m_msg14's
+	int32_t m_maxUsed;
 
 	// state memory for calling SpiderUrl2() (maybe also getLocks()!)
 	SpiderRequest *m_sreq;
