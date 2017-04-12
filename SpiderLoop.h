@@ -101,8 +101,6 @@ private:
 	uint32_t m_recalcTime;
 	bool m_recalcTimeValid;
 
-	int64_t m_lastCallTime;
-
 	int64_t m_doleStart;
 };
 

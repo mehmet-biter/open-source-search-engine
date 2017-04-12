@@ -61,7 +61,6 @@ SpiderLoop::SpiderLoop ( ) {
 	m_activeListCount = 0;
 	m_recalcTime = 0;
 	m_recalcTimeValid = false;
-	m_lastCallTime = 0;
 	m_doleStart = 0;
 }
 
@@ -227,11 +226,6 @@ void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 		sc->populateDoledbFromWaitingTree ( );
 	}
 
-	// if recently called, do not call again from the sleep wrapper
-	int64_t nowms = gettimeofdayInMilliseconds();
-	if ( nowms - g_spiderLoop.m_lastCallTime < 50 )
-		return;
-
 	// if we have a ton of collections, reduce cpu load from calling
 	// spiderDoledUrls()
 	static uint64_t s_skipCount = 0;
@@ -292,8 +286,6 @@ void SpiderLoop::gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg
 // now check our RDB_DOLEDB for SpiderRequests to spider!
 void SpiderLoop::spiderDoledUrls ( ) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN"  );
-
-	m_lastCallTime = gettimeofdayInMilliseconds();
 
 collLoop:
 
