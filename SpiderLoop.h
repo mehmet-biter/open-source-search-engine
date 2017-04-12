@@ -52,7 +52,8 @@ public:
 
 	RdbCache   m_winnerListCache;
 
-	bool m_activeListValid;
+	void invalidateActiveList() { m_activeListValid = false; }
+
 	bool m_activeListModified;
 
 
@@ -97,7 +98,9 @@ private:
 	CollectionRec *m_activeList;
 	CollectionRec *m_bookmark;
 
+	bool m_activeListValid;
 	int32_t m_activeListCount;
+
 	uint32_t m_recalcTime;
 	bool m_recalcTimeValid;
 
