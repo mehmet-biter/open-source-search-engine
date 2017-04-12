@@ -545,6 +545,9 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 	if (srep->m_downloadEndTime) {
 		RdbCacheLock rcl(m_lastDownloadCache);
 		m_lastDownloadCache.addLongLong(m_collnum, srep->m_firstIp, srep->m_downloadEndTime);
+
+		// ignore errors from that, it's just a cache
+		g_errno = 0;
 	}
 
 	logDebug(g_conf.m_logDebugSpider, "spider: adding spider reply, download end time %" PRId64" for "
@@ -559,9 +562,6 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 		    (int32_t)m_collnum,
 		    srep->m_key.n1,
 		    srep->m_key.n0);
-	
-	// ignore errors from that, it's just a cache
-	g_errno = 0;
 
 	// . add to wait tree and let it populate doledb on its batch run
 	// . use a spiderTime of 0 which means unknown and that it needs to
