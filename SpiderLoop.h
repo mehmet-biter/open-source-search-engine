@@ -67,9 +67,8 @@ private:
 	// . returns false if blocked and "callback" will be called,
 	//   true otherwise
 	// . returns true and sets g_errno on error
-	bool spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum);
-
-	bool spiderUrl2 (collnum_t collnum);
+	bool spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum);
+	bool spiderUrl2(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum);
 
 	bool indexedDoc ( class XmlDoc *doc );
 
@@ -81,11 +80,6 @@ private:
 	// . this is "i" where m_msg14[i] is the highest m_msg14 in use
 	// . we use it to limit our scanning to the first "i" m_msg14's
 	int32_t m_maxUsed;
-
-	// state memory for calling SpiderUrl2() (maybe also getLocks()!)
-	SpiderRequest *m_sreq;
-
-	key96_t     *m_doledbKey;
 
 	int32_t m_launches;
 

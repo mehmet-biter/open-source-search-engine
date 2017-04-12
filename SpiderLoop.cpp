@@ -49,8 +49,6 @@ SpiderLoop::SpiderLoop ( ) {
 	memset ( m_docs , 0 , sizeof(XmlDoc *) * MAX_SPIDERS );
 
 	// Coverity
-	m_sreq = NULL;
-	m_doledbKey = NULL;
 	m_numSpidersOut = 0;
 	m_launches = 0;
 	m_maxUsed = 0;
@@ -1059,7 +1057,7 @@ skipDoledbRec:
 	cr->setNeedsSave();
 
 	// sometimes the spider coll is reset/deleted while we are
-	// trying to get the lock in spiderUrl9() so let's use collnum
+	// trying to get the lock in spiderUrl() so let's use collnum
 	collnum_t collnum = m_sc->getCollectionRec()->m_collnum;
 
 	// . spider that. we don't care wheter it blocks or not
@@ -1071,7 +1069,7 @@ skipDoledbRec:
 	// . this returns true right away if it failed to get the lock...
 	//   which means the url is already locked by someone else...
 	// . it might also return true if we are already spidering the url
-	bool status = spiderUrl9(sreq, doledbKey, collnum);
+	bool status = spiderUrl(sreq, doledbKey, collnum);
 
 	// just increment then i guess
 	m_list.skipCurrentRecord();
@@ -1104,7 +1102,7 @@ skipDoledbRec:
 // . returns false if blocked on a spider launch, otherwise true.
 // . returns false if your callback will be called
 // . returns true and sets g_errno on error
-bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum) {
+bool SpiderLoop::spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum) {
 	// sanity
 	if ( ! m_sc ) { g_process.shutdownAbort(true); }
 
@@ -1215,17 +1213,13 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	// reset g_errno
 	g_errno = 0;
 
-	// save these in case getLocks() blocks
-	m_sreq      = sreq;
-	m_doledbKey = doledbKey;
-
 	// count it
 	m_processed++;
 
-	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(m_doledbKey, sizeof(*m_doledbKey)));
+	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(doledbKey, sizeof(*doledbKey)));
 
 	// now we just take it out of doledb instantly
-	bool deleted = g_doledb.getRdb()->deleteTreeNode(collnum, (const char *)m_doledbKey);
+	bool deleted = g_doledb.getRdb()->deleteTreeNode(collnum, (const char *)doledbKey);
 
 	// if url filters rebuilt then doledb gets reset and i've seen us hit
 	// this node == -1 condition here... so maybe ignore it... just log
@@ -1269,13 +1263,13 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	int64_t lockKeyUh48 = makeLockTableKey ( sreq );
 
 	logDebug(g_conf.m_logDebugSpider, "spider: adding lock uh48=%" PRId64" lockkey=%" PRId64,
-	         m_sreq->getUrlHash48(),lockKeyUh48);
+	         sreq->getUrlHash48(),lockKeyUh48);
 
 	// . add it to lock table to avoid respider, removing from doledb
 	//   is not enough because we re-add to doledb right away
 	// . return true on error here
 	UrlLock tmp;
-	tmp.m_firstIp = m_sreq->m_firstIp;
+	tmp.m_firstIp = sreq->m_firstIp;
 	tmp.m_spiderOutstanding = 0;
 	tmp.m_collnum = collnum;
 
@@ -1284,10 +1278,10 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 
 	// now do it. this returns false if it would block, returns true if it
 	// would not block. sets g_errno on error. it spiders m_sreq.
-	return spiderUrl2(collnum);
+	return spiderUrl2(sreq, doledbKey, collnum);
 }
 
-bool SpiderLoop::spiderUrl2(collnum_t collnum) {
+bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
 	// . find an available doc slot
@@ -1310,7 +1304,7 @@ bool SpiderLoop::spiderUrl2(collnum_t collnum) {
 		g_errno = ENOMEM;
 		log("build: Could not allocate %" PRId32" bytes to spider "
 		    "the url %s. Will retry later.",
-		    (int32_t)sizeof(XmlDoc),  m_sreq->m_url );
+		    (int32_t)sizeof(XmlDoc),  sreq->m_url );
 		    
 		logTrace( g_conf.m_logTraceSpider, "END, new XmlDoc failed" );
 		return true;
@@ -1327,15 +1321,15 @@ bool SpiderLoop::spiderUrl2(collnum_t collnum) {
 	if ( g_conf.m_logDebugSpider )
 		logf(LOG_DEBUG,"spider: spidering firstip9=%s(%" PRIu32") "
 		     "uh48=%" PRIu64" prntdocid=%" PRIu64" k.n1=%" PRIu64" k.n0=%" PRIu64,
-		     iptoa(m_sreq->m_firstIp),
-		     (uint32_t)m_sreq->m_firstIp,
-		     m_sreq->getUrlHash48(),
-		     m_sreq->getParentDocId() ,
-		     m_sreq->m_key.n1,
-		     m_sreq->m_key.n0);
+		     iptoa(sreq->m_firstIp),
+		     (uint32_t)sreq->m_firstIp,
+		     sreq->getUrlHash48(),
+		     sreq->getParentDocId() ,
+		     sreq->m_key.n1,
+		     sreq->m_key.n0);
 
 	// this returns false and sets g_errno on error
-	if (!xd->set4(m_sreq, m_doledbKey, coll, NULL, MAX_NICENESS)) {
+	if (!xd->set4(sreq, doledbKey, coll, NULL, MAX_NICENESS)) {
 		// i guess m_coll is no longer valid?
 		mdelete ( m_docs[i] , sizeof(XmlDoc) , "Doc" );
 		delete (m_docs[i]);
@@ -1358,22 +1352,22 @@ bool SpiderLoop::spiderUrl2(collnum_t collnum) {
 	m_launches++;
 
 	// sanity check
-	if (m_sreq->m_priority <= -1 ) { 
+	if (sreq->m_priority <= -1 ) {
 		log("spider: fixing bogus spider req priority of %i for "
 		    "url %s",
-		    (int)m_sreq->m_priority,m_sreq->m_url);
-		m_sreq->m_priority = 0;
+		    (int)sreq->m_priority,sreq->m_url);
+		sreq->m_priority = 0;
 		//g_process.shutdownAbort(true); 
 	}
 
 	// update this
-	m_sc->m_outstandingSpiders[(unsigned char)m_sreq->m_priority]++;
+	m_sc->m_outstandingSpiders[(unsigned char)sreq->m_priority]++;
 
 	if ( g_conf.m_logDebugSpider )
 		log(LOG_DEBUG,"spider: sc_out=%" PRId32" waiting=%" PRId32" url=%s",
 		    m_sc->m_spidersOut,
 		    m_sc->m_waitingTree.getNumUsedNodes(),
-		    m_sreq->m_url);
+			sreq->m_url);
 
 	// . return if this blocked
 	// . no, launch another spider!
