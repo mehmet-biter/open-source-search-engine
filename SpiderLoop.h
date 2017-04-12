@@ -104,8 +104,6 @@ private:
 	int64_t m_lastCallTime;
 
 	int64_t m_doleStart;
-
-	int32_t m_processed;
 };
 
 extern SpiderLoop g_spiderLoop;

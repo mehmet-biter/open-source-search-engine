@@ -63,7 +63,6 @@ SpiderLoop::SpiderLoop ( ) {
 	m_recalcTimeValid = false;
 	m_lastCallTime = 0;
 	m_doleStart = 0;
-	m_processed = 0;
 }
 
 SpiderLoop::~SpiderLoop ( ) {
@@ -108,7 +107,6 @@ void SpiderLoop::init() {
 	// . -1 means there are no used m_docs's
 	m_maxUsed = -1;
 	m_numSpidersOut = 0;
-	m_processed = 0;
 
 	// for locking. key size is 8 for easier debugging
 	m_lockTable.set ( 8,sizeof(UrlLock),0,NULL,0,false, "splocks", true ); // useKeyMagic? yes.
@@ -1212,9 +1210,6 @@ bool SpiderLoop::spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t co
 
 	// reset g_errno
 	g_errno = 0;
-
-	// count it
-	m_processed++;
 
 	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(doledbKey, sizeof(*doledbKey)));
 
