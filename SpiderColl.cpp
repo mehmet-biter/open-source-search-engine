@@ -82,7 +82,6 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_numBytesScanned = 0;
 	m_lastPrintCount = 0;
 	m_lastPrinted = 0;
-	m_spidersOut = 0;
 	m_collnum = -1;
 	m_countingPagesIndexed = false;
 	m_lastReqUh48a = 0;
