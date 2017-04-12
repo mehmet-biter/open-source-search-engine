@@ -623,7 +623,6 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 
 	// tell spiders to re-upadted the active list
 	g_spiderLoop.invalidateActiveList();
-	g_spiderLoop.m_activeListModified = true;
 
 	// a delete?
 	if ( ! cr ) {

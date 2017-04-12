@@ -54,9 +54,6 @@ public:
 
 	void invalidateActiveList() { m_activeListValid = false; }
 
-	bool m_activeListModified;
-
-
 private:
 	static void indexedDocWrapper ( void *state ) ;
 	static void doneSleepingWrapperSL ( int fd , void *state ) ;

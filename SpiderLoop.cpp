@@ -57,7 +57,6 @@ SpiderLoop::SpiderLoop ( ) {
 	m_activeList = NULL;
 	m_bookmark = NULL;
 	m_activeListValid = false;
-	m_activeListModified = false;
 	m_activeListCount = 0;
 	m_recalcTime = 0;
 	m_recalcTimeValid = false;
@@ -92,7 +91,6 @@ void SpiderLoop::init() {
 
 	m_crx = NULL;
 	m_activeListValid = false;
-	m_activeListModified = false;
 	m_activeList = NULL;
 	m_recalcTime = 0;
 	m_recalcTimeValid = false;
@@ -1489,13 +1487,12 @@ CollectionRec *SpiderLoop::getActiveList() {
 	// versa. also when deleting a collection in Collectiondb.cpp. this
 	// keeps the below loop fast when we have thousands of collections
 	// and most are inactive or empty/deleted.
-	if ( ! m_activeListValid || m_activeListModified ) {
+	if (!m_activeListValid) {
 		buildActiveList();
 		//m_crx = m_activeList;
 		// recompute every 3 seconds, it seems kinda buggy!!
 		m_recalcTime = nowGlobal + 3;
 		m_recalcTimeValid = true;
-		m_activeListModified = false;
 	}
 
 	return m_activeList;
