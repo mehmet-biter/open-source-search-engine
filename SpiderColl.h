@@ -173,6 +173,7 @@ private:
 	// Data is the number of doled out SpiderRequests from that IP.
 	// we use m_doledbIpTable for keeping counts based on ip of what is doled out.
 	HashTableX m_doledbIpTable;
+	mutable GbMutex m_doledbIpTableMtx;
 
 	RdbTree m_winnerTree;
 	HashTableX m_winnerTable;

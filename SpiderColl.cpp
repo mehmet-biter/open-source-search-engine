@@ -3456,6 +3456,8 @@ bool SpiderColl::tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 //   Msg4 request to add it to doledb, that way we don't add a bunch from the
 //   same firstIP to doledb
 bool SpiderColl::addToDoledbIpTable(SpiderRequest *sreq) {
+	ScopedLock sl(m_doledbIpTableMtx);
+
 	// update how many per ip we got doled
 	int32_t *score = (int32_t *)m_doledbIpTable.getValue32 ( sreq->m_firstIp );
 	// debug point
@@ -3519,6 +3521,8 @@ bool SpiderColl::addToDoledbIpTable(SpiderRequest *sreq) {
 }
 
 void SpiderColl::removeFromDoledbIpTable(int32_t firstIp) {
+	ScopedLock sl(m_doledbIpTableMtx);
+
 	// . decrement doledb table ip count for firstIp
 	// . update how many per ip we got doled
 	int32_t *score = (int32_t *)m_doledbIpTable.getValue32 ( firstIp );
@@ -3560,21 +3564,26 @@ void SpiderColl::removeFromDoledbIpTable(int32_t firstIp) {
 }
 
 int32_t SpiderColl::getDoledbIpTableCount() const {
+	ScopedLock sl(m_doledbIpTableMtx);
 	return m_doledbIpTable.getNumUsedSlots();
 }
 
 bool SpiderColl::isInDoledbIpTable(int32_t firstIp) const {
+	ScopedLock sl(m_doledbIpTableMtx);
 	return m_doledbIpTable.isInTable(&firstIp);
 }
 
 bool SpiderColl::isDoledbIpTableEmpty() const {
+	ScopedLock sl(m_doledbIpTableMtx);
 	return m_doledbIpTable.isEmpty();
 }
 
 void SpiderColl::clearDoledbIpTable() {
+	ScopedLock sl(m_doledbIpTableMtx);
 	m_doledbIpTable.clear();
 }
 
 void SpiderColl::disableDoledbIpTableWrites() {
+	ScopedLock sl(m_doledbIpTableMtx);
 	m_doledbIpTable.disableWrites();
 }
