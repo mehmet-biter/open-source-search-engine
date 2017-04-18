@@ -420,16 +420,7 @@ static bool sendPage(State11 *st) {
 		sc->m_waitingTree.getNumUsedNodes(),
 		sc->getWaitingTableCount());
 
-	double a = (double)Spiderdb::getUrlHash48 ( &sc->m_firstKey );
-	double b = (double)Spiderdb::getUrlHash48 ( &sc->m_endKey );
-	double c = (double)Spiderdb::getUrlHash48 ( &sc->m_nextKey );
-	double percent = (100.0 * (c-a)) ;
-	if ( b-a > 0 ) percent /= (b-a);
-	if ( percent > 100.0 ) percent = 100.0;
-	if ( percent < 0.0 ) percent = 0.0;
-	sb.safePrintf("(spiderdb scan for ip %s is %.2f%% complete)",
-	              iptoa(sc->getScanningIp()),
-	              (float)percent );
+	sb.safePrintf("(spiderdb scanning ip %s)", iptoa(sc->getScanningIp()));
 
 	sb.safePrintf("</td></tr>\n");
 	sb.safePrintf("<tr bgcolor=#%s>",DARK_BLUE);
