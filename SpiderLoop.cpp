@@ -1258,8 +1258,9 @@ bool SpiderLoop::spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t co
 	tmp.m_spiderOutstanding = 0;
 	tmp.m_collnum = collnum;
 
-	if ( ! g_spiderLoop.m_lockTable.addKey ( &lockKeyUh48 , &tmp ) )
+	if (!m_lockTable.addKey(&lockKeyUh48, &tmp)) {
 		return true;
+	}
 
 	// now do it. this returns false if it would block, returns true if it
 	// would not block. sets g_errno on error. it spiders m_sreq.
