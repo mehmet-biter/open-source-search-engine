@@ -3575,10 +3575,13 @@ void SpiderColl::disableDoledbIpTableWrites() {
 }
 
 bool SpiderColl::addToWaitingTable(int32_t firstIp, int64_t timeMs) {
+	ScopedLock sl(m_waitingTableMtx);
 	return m_waitingTable.addKey(&firstIp, &timeMs);
 }
 
 bool SpiderColl::getFromWaitingTable(int32_t firstIp, int64_t *timeMs) {
+	ScopedLock sl(m_waitingTableMtx);
+
 	int32_t ws = m_waitingTable.getSlot(&firstIp);
 	if (ws < 0) {
 		return false;
@@ -3589,25 +3592,31 @@ bool SpiderColl::getFromWaitingTable(int32_t firstIp, int64_t *timeMs) {
 }
 
 void SpiderColl::removeFromWaitingTable(int32_t firstIp) {
+	ScopedLock sl(m_waitingTableMtx);
 	m_waitingTable.removeKey(&firstIp);
 }
 
 int32_t SpiderColl::getWaitingTableCount() const {
+	ScopedLock sl(m_waitingTableMtx);
 	return m_waitingTable.getNumUsedSlots();
 }
 
 bool SpiderColl::isInWaitingTable(int32_t firstIp) const {
+	ScopedLock sl(m_waitingTableMtx);
 	return m_waitingTable.isInTable(&firstIp);
 }
 
 bool SpiderColl::setWaitingTableSize(int32_t numSlots) {
+	ScopedLock sl(m_waitingTableMtx);
 	return m_waitingTable.setTableSize(numSlots, NULL, 0);
 }
 
 void SpiderColl::clearWaitingTable() {
+	ScopedLock sl(m_waitingTableMtx);
 	m_waitingTable.clear();
 }
 
 void SpiderColl::disableWaitingTableWrites() {
+	ScopedLock sl(m_waitingTableMtx);
 	m_waitingTable.disableWrites();
 }

@@ -176,6 +176,7 @@ private:
 	RdbCache m_dupCache;
 
 	HashTableX m_waitingTable;
+	mutable GbMutex m_waitingTableMtx;
 
 	// m_doledbIpTable (HashTableX, 96 bit keys, no data)
 	// Purpose: let's us know how many SpiderRequests have been doled out for a given firstIP
