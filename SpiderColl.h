@@ -99,8 +99,11 @@ public:
 
 	void populateWaitingTreeFromSpiderdb ( bool reentry ) ;
 
+	int32_t getWaitingTableCount() const;
+	void disableWaitingTableWrites();
+	void clearWaitingTable();
+
 	bool     m_waitingTreeNeedsRebuild;
-	HashTableX m_waitingTable;
 	RdbTree    m_waitingTree;
 	RdbMem     m_waitingMem; // used by m_waitingTree
 	key96_t      m_waitingTreeKey;
@@ -134,6 +137,7 @@ public:
 private:
 	bool load();
 
+	bool makeDoledbIPTable();
 	bool addToDoledbIpTable(SpiderRequest *sreq);
 	bool isInDoledbIpTable(int32_t firstIp) const;
 
@@ -144,8 +148,12 @@ private:
 
 	uint64_t getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep);
 
-	bool makeDoledbIPTable();
-	bool makeWaitingTable    ( );
+	bool makeWaitingTable();
+	bool addToWaitingTable(int32_t firstIp, int64_t timeMs);
+	bool getFromWaitingTable(int32_t firstIp, int64_t *timeMs);
+	void removeFromWaitingTable(int32_t firstIp);
+	bool isInWaitingTable(int32_t firstIp) const;
+	bool setWaitingTableSize(int32_t numSlots);
 
 	int32_t getNextIpFromWaitingTree ( );
 
@@ -166,6 +174,8 @@ private:
 	bool m_didRead;
 
 	RdbCache m_dupCache;
+
+	HashTableX m_waitingTable;
 
 	// m_doledbIpTable (HashTableX, 96 bit keys, no data)
 	// Purpose: let's us know how many SpiderRequests have been doled out for a given firstIP

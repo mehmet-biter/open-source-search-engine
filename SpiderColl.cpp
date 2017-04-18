@@ -355,7 +355,7 @@ bool SpiderColl::makeWaitingTable ( ) {
 		spiderTimeMS <<= 32;
 		spiderTimeMS |= ((key->n0) >> 32);
 		// store in waiting table
-		if ( ! m_waitingTable.addKey(&ip,&spiderTimeMS) ) return false;
+		if (!addToWaitingTable(ip, spiderTimeMS)) return false;
 	}
 	log(LOG_DEBUG,"spider: making waiting table done.");
 	return true;
@@ -841,18 +841,14 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 	if ( ! m_waitingTree.isWritable() ) { g_process.shutdownAbort(true); }
 
 	// see if in tree already, so we can delete it and replace it below
-	int32_t ws = m_waitingTable.getSlot ( &firstIp ) ;
-
-	// . this is >= 0 if already in tree
+	// . this is true if already in tree
 	// . if spiderTimeMS is a sooner time than what this firstIp already
 	//   has as its earliest time, then we will override it and have to
 	//   update both m_waitingTree and m_waitingTable, however
 	//   IF the spiderTimeMS is a later time, then we bail without doing
 	//   anything at this point.
-	if ( ws >= 0 ) {
-		// get timems from waiting table
-		int64_t sms = m_waitingTable.getScore64FromSlot(ws);
-
+	int64_t sms;
+	if (getFromWaitingTable(firstIp, &sms)) {
 		// not only must we be a sooner time, but we must be 5-seconds
 		// sooner than the time currently in there to avoid thrashing
 		// when we had a ton of outlinks with this first ip within an
@@ -923,7 +919,7 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 				log(LOG_WARN, "spider: failed to grow waiting tree to add firstip %s", iptoa(firstIp));
 				return false;
 			}
-			if ( ! m_waitingTable.setTableSize ( newNum , NULL , 0 ) ) {
+			if (!setWaitingTableSize(newNum)) {
 				log(LOG_WARN, "spider: failed to grow waiting table to add firstip %s", iptoa(firstIp));
 				return false;
 			}
@@ -945,7 +941,7 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 		         spiderTimeMS, iptoa(firstIp), wn);
 
 		// add to table now since its in the tree
-		if (!m_waitingTable.addKey(&firstIp, &spiderTimeMS)) {
+		if (!addToWaitingTable(firstIp, spiderTimeMS)) {
 			// remove from tree then
 			m_waitingTree.deleteNode_unlocked(wn, false);
 			return false;
@@ -1021,7 +1017,7 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 			logDebug(g_conf.m_logDebugSpcache, "spider: erasing waitingtree key firstip=%s", iptoa(firstIp));
 
 			// remove from table too!
-			m_waitingTable.removeKey(&firstIp);
+			removeFromWaitingTable(firstIp);
 			continue;
 		}
 
@@ -1276,8 +1272,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		//if ( firstIp == -815809331 )
 		//	log("got dmoz");
 		// if firstip already in waiting tree, skip it
-		if ( m_waitingTable.isInTable ( &firstIp ) ) 
-		{
+		if (isInWaitingTable(firstIp)) {
 			logTrace( g_conf.m_logTraceSpider, "Skipping, IP [%s] already in waiting tree" , iptoa(firstIp));
 			continue;
 		}
@@ -1988,8 +1983,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	if (isInDoledbIpTable(firstIp0)) { g_process.shutdownAbort(true); }
 		
 	// if it got zapped from the waiting tree by the time we read the list
-	if ( ! m_waitingTable.isInTable ( &m_scanningIp ) ) 
-	{
+	if (!isInWaitingTable(m_scanningIp)) {
 		logTrace( g_conf.m_logTraceSpider, "END, IP no longer in waitingTree" );
 		return true;
 	}
@@ -2903,9 +2897,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 			    timestamp64, iptoa(firstIp),
 			    m_waitingTree.getNumUsedNodes_unlocked());
 
-		m_waitingTable.removeKey  ( &firstIp  );
-		// sanity check
-		if ( ! m_waitingTable.isWritable() ) { g_process.shutdownAbort(true);}
+		removeFromWaitingTable(firstIp);
 		return true;
 	}
 
@@ -3121,9 +3113,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 			         m_minFutureTimeMS, iptoa(firstIp));
 
 			// keep the table in sync now with the time
-			m_waitingTable.addKey(&firstIp, &m_minFutureTimeMS);
-			// sanity check
-			if (!m_waitingTable.isWritable()) { g_process.shutdownAbort(true); }
+			addToWaitingTable(firstIp, m_minFutureTimeMS);
 			return true;
 		}
 	}
@@ -3262,14 +3252,10 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// before adding to doledb remove from waiting tree so we do not try
 	// to readd to doledb...
 	m_waitingTree.deleteNode ( 0, (char *)&m_waitingTreeKey , true);
-	m_waitingTable.removeKey  ( &storedFirstIp );
-	//log("spider: 3 del node for %s",iptoa(storedFirstIp));
-	
+	removeFromWaitingTable(storedFirstIp);
+
 	// invalidate
 	m_waitingTreeKeyValid = false;
-
-	// sanity check
-	if ( ! m_waitingTable.isWritable() ) { g_process.shutdownAbort(true);}
 
 	// note that ip as being in dole table
 	if ( g_conf.m_logDebugSpider )
@@ -3586,4 +3572,42 @@ void SpiderColl::clearDoledbIpTable() {
 void SpiderColl::disableDoledbIpTableWrites() {
 	ScopedLock sl(m_doledbIpTableMtx);
 	m_doledbIpTable.disableWrites();
+}
+
+bool SpiderColl::addToWaitingTable(int32_t firstIp, int64_t timeMs) {
+	return m_waitingTable.addKey(&firstIp, &timeMs);
+}
+
+bool SpiderColl::getFromWaitingTable(int32_t firstIp, int64_t *timeMs) {
+	int32_t ws = m_waitingTable.getSlot(&firstIp);
+	if (ws < 0) {
+		return false;
+	}
+
+	*timeMs = m_waitingTable.getScore64FromSlot(ws);
+	return true;
+}
+
+void SpiderColl::removeFromWaitingTable(int32_t firstIp) {
+	m_waitingTable.removeKey(&firstIp);
+}
+
+int32_t SpiderColl::getWaitingTableCount() const {
+	return m_waitingTable.getNumUsedSlots();
+}
+
+bool SpiderColl::isInWaitingTable(int32_t firstIp) const {
+	return m_waitingTable.isInTable(&firstIp);
+}
+
+bool SpiderColl::setWaitingTableSize(int32_t numSlots) {
+	return m_waitingTable.setTableSize(numSlots, NULL, 0);
+}
+
+void SpiderColl::clearWaitingTable() {
+	m_waitingTable.clear();
+}
+
+void SpiderColl::disableWaitingTableWrites() {
+	m_waitingTable.disableWrites();
 }

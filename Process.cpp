@@ -874,7 +874,7 @@ void Process::disableTreeWrites ( bool shuttingDown ) {
 			continue;
 		}
 		sc->m_waitingTree .disableWrites();
-		sc->m_waitingTable.disableWrites();
+		sc->disableWaitingTableWrites();
 		sc->disableDoledbIpTableWrites();
 	}
 	

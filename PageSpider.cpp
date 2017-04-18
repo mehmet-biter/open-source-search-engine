@@ -418,7 +418,7 @@ static bool sendPage(State11 *st) {
 		"(waittablecount=%" PRId32")",
 		timems,
 		sc->m_waitingTree.getNumUsedNodes(),
-		sc->m_waitingTable.getNumUsedSlots());
+		sc->getWaitingTableCount());
 
 	double a = (double)Spiderdb::getUrlHash48 ( &sc->m_firstKey );
 	double b = (double)Spiderdb::getUrlHash48 ( &sc->m_endKey );
