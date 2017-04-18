@@ -67,8 +67,6 @@ public:
 	bool addSpiderReply(const SpiderReply *srep);
 	bool addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS);
 
-	void removeFromDoledbTable(int32_t firstIp);
-
 	// doledb cursor keys for each priority to speed up performance
 	key96_t m_nextKeys[MAX_SPIDER_PRIORITIES];
 
@@ -85,7 +83,11 @@ public:
 	class CollectionRec *getCollRec();
 	const char *getCollName();
 
-	HashTableX m_doleIpTable;
+	void removeFromDoledbIpTable(int32_t firstIp);
+	int32_t getDoledbIpTableCount() const;
+	void disableDoledbIpTableWrites();
+	bool isDoledbIpTableEmpty() const;
+	void clearDoledbIpTable();
 
 	HashTableX m_localTable;
 
@@ -132,7 +134,9 @@ public:
 private:
 	bool load();
 
-	bool addToDoleTable(SpiderRequest *sreq);
+	bool addToDoledbIpTable(SpiderRequest *sreq);
+	bool isInDoledbIpTable(int32_t firstIp) const;
+
 	bool validateDoleBuf(SafeBuf *doleBuf);
 	bool addDoleBufIntoDoledb(SafeBuf *doleBuf, bool isFromCache);
 
@@ -140,7 +144,7 @@ private:
 
 	uint64_t getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep);
 
-	bool makeDoleIPTable     ( );
+	bool makeDoledbIPTable();
 	bool makeWaitingTable    ( );
 
 	int32_t getNextIpFromWaitingTree ( );
@@ -162,6 +166,14 @@ private:
 	bool m_didRead;
 
 	RdbCache m_dupCache;
+
+	// m_doledbIpTable (HashTableX, 96 bit keys, no data)
+	// Purpose: let's us know how many SpiderRequests have been doled out for a given firstIP
+	// Key is simply a 4-byte IP.
+	// Data is the number of doled out SpiderRequests from that IP.
+	// we use m_doledbIpTable for keeping counts based on ip of what is doled out.
+	HashTableX m_doledbIpTable;
+	mutable GbMutex m_doledbIpTableMtx;
 
 	RdbTree m_winnerTree;
 	HashTableX m_winnerTable;

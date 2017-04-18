@@ -180,7 +180,7 @@ bool SpiderColl::load ( ) {
 		return false;
 	// doledb seems to have like 32000 entries in it
 	int32_t numSlots = 0; // was 128000
-	if(!m_doleIpTable.set(4,4,numSlots,NULL,0,false,"doleip"))
+	if(!m_doledbIpTable.set(4,4,numSlots,NULL,0,false,"doleip"))
 		return false;
 	// this should grow dynamically...
 	if (!m_waitingTable.set (4,8,16,NULL,0,false,"waittbl"))
@@ -225,7 +225,7 @@ bool SpiderColl::load ( ) {
 	// . do this now just to keep everything somewhat in sync
 	// . we lost dmoz.org and could not get it back in because it was
 	//   in the doleip table but NOT in doledb!!!
-	return makeDoleIPTable();
+	return makeDoledbIPTable();
 }
 
 // . scan all spiderRequests in doledb at startup and add them to our tables
@@ -238,7 +238,7 @@ bool SpiderColl::load ( ) {
 //   MAKE SURE to put each spiderrequest into m_doleTable... and into
 //   maybe m_urlHashTable too???
 //   this should block since we are at startup...
-bool SpiderColl::makeDoleIPTable ( ) {
+bool SpiderColl::makeDoledbIPTable() {
 	log(LOG_DEBUG,"spider: making dole ip table for %s",m_coll);
 
 	key96_t startKey ; startKey.setMin();
@@ -311,7 +311,7 @@ bool SpiderColl::makeDoleIPTable ( ) {
 			// . so skip that key and dataSize to point to spider request
 			SpiderRequest *sreq = (SpiderRequest *)(rec + sizeof(key96_t) + 4);
 			// add to dole tables
-			if (!addToDoleTable(sreq)) {
+			if (!addToDoledbIpTable(sreq)) {
 				// return false with g_errno set on error
 				return false;
 			}
@@ -385,7 +385,7 @@ void SpiderColl::reset ( ) {
 	if ( m_coll[0] ) coll = m_coll;
 	log(LOG_DEBUG,"spider: resetting spider cache coll=%s",coll);
 
-	m_doleIpTable .reset();
+	m_doledbIpTable .reset();
 	m_cdTable     .reset();
 	m_sniTable    .reset();
 	m_waitingTable.reset();
@@ -444,7 +444,7 @@ bool SpiderColl::updateSiteNumInlinksTable(int32_t siteHash32, int32_t sni, time
 // . we call this when we receive a spider reply in Rdb.cpp
 // . returns false and sets g_errno on error
 // . xmldoc.cpp adds reply AFTER the negative doledb rec since we decement
-//   the count in m_doleIpTable here
+//   the count in m_doledbIpTable here
 bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 
 	////
@@ -554,50 +554,6 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 
 	return true;
 }
-
-
-void SpiderColl::removeFromDoledbTable ( int32_t firstIp ) {
-
-	// . decrement doledb table ip count for firstIp
-	// . update how many per ip we got doled
-	int32_t *score = (int32_t *)m_doleIpTable.getValue32 ( firstIp );
-
-	// wtf! how did this spider without being doled?
-	if ( ! score ) {
-		//if ( ! srep->m_fromInjectionRequest )
-		log("spider: corruption. received spider reply whose "
-		    "ip has no entry in dole ip table. firstip=%s",
-		    iptoa(firstIp));
-		return;
-	}
-
-	// reduce it
-	*score = *score - 1;
-
-	// now we log it too
-	if ( g_conf.m_logDebugSpider )
-		log(LOG_DEBUG,"spider: removed ip=%s from doleiptable "
-		    "(newcount=%" PRId32")", iptoa(firstIp),*score);
-
-
-	// remove if zero
-	if ( *score == 0 ) {
-		// this can file if writes are disabled on this hashtablex
-		// because it is saving
-		m_doleIpTable.removeKey ( &firstIp );
-		// sanity check
-		//if ( ! m_doleIpTable.m_isWritable ) { g_process.shutdownAbort(true); }
-	}
-	// wtf!
-	if ( *score < 0 ) { g_process.shutdownAbort(true); }
-	// all done?
-	if ( g_conf.m_logDebugSpider ) {
-		// log that too!
-		logf(LOG_DEBUG,"spider: discounting firstip=%s to %" PRId32,
-		     iptoa(firstIp),*score);
-	}
-}
-
 
 bool SpiderColl::isInDupCache(const SpiderRequest *sreq, bool addToCache) {
 
@@ -875,7 +831,7 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 	// . waiting tree is meant to be a signal that we need to add
 	//   a spiderrequest from that ip into doledb where it can be picked
 	//   up for immediate spidering
-	if ( m_doleIpTable.isInTable ( &firstIp ) ) {
+	if (isInDoledbIpTable(firstIp)) {
 		logDebug( g_conf.m_logDebugSpider, "spider: not adding to waiting tree, already in doleip table" );
 		return false;
 	}
@@ -1005,7 +961,7 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 // . otherwise it scan the entries in the tree
 // . each entry is a key with spiderTime/firstIp
 // . if spiderTime > now it stops the scan
-// . if the firstIp is already in doledb (m_doleIpTable) then it removes
+// . if the firstIp is already in doledb (m_doledbIpTable) then it removes
 //   it from the waitingtree and waitingtable. how did that happen?
 // . otherwise, it looks up that firstIp in spiderdb to get a list of all
 //   the spiderdb recs from that firstIp
@@ -1048,7 +1004,7 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 		// at least one ping from him so we do not remove at startup.
 		// if it is in doledb or in the middle of being added to doledb
 		// via msg4, nuke it as well!
-		if (firstIp == 0 || firstIp == -1 || !isAssignedToUs(firstIp) || m_doleIpTable.isInTable(&firstIp)) {
+		if (firstIp == 0 || firstIp == -1 || !isAssignedToUs(firstIp) || isInDoledbIpTable(firstIp)) {
 			if (firstIp == 0 || firstIp == -1) {
 				log(LOG_WARN, "spider: removing corrupt spiderreq firstip of %" PRId32"from waiting tree collnum=%i",
 				    firstIp, (int)m_collnum);
@@ -1335,8 +1291,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 
 		// skip if ip already represented in doledb i guess otherwise
 		// the populatedoledb scan will nuke it!!
-		if ( m_doleIpTable.isInTable ( &firstIp ) ) 
-		{
+		if (isInDoledbIpTable(firstIp)) {
 			logTrace( g_conf.m_logTraceSpider, "Skipping, IP [%s] already in doledb" , iptoa(firstIp));
 			continue;
 		}
@@ -2030,7 +1985,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	if ( m_scanningIp != firstIp0 ) { g_process.shutdownAbort(true); }
 	// sometimes we already have this ip in doledb/doleiptable
 	// already and somehow we try to scan spiderdb for it anyway
-	if ( m_doleIpTable.isInTable ( &firstIp0 ) ) { g_process.shutdownAbort(true);}
+	if (isInDoledbIpTable(firstIp0)) { g_process.shutdownAbort(true); }
 		
 	// if it got zapped from the waiting tree by the time we read the list
 	if ( ! m_waitingTable.isInTable ( &m_scanningIp ) ) 
@@ -3122,7 +3077,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 			m_winnerTable.reset();
 
 			// if in the process of being added to doledb or in doledb...
-			if (m_doleIpTable.isInTable(&firstIp)) {
+			if (isInDoledbIpTable(firstIp)) {
 				// sanity i guess. remove this line if it hits this!
 				log(LOG_ERROR, "spider: wtf????");
 				//g_process.shutdownAbort(true);
@@ -3210,8 +3165,8 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// for caching logic below, set this
 	int32_t doledbRecSize = sizeof(key96_t) + 4 + sreq3->getRecSize();
 	// process sreq3 my incrementing the firstip count in 
-	// m_doleIpTable
-	if ( ! addToDoleTable ( sreq3 ) ) return true;
+	// m_doledbIpTable
+	if ( !addToDoledbIpTable(sreq3) ) return true;
 
 	// now cache the REST of the spider requests to speed up scanning.
 	// better than adding 400 recs per firstip to doledb because
@@ -3411,80 +3366,6 @@ uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderRep
 	return spiderTimeMS;
 }
 
-
-
-// . returns false with g_errno set on error
-// . Rdb.cpp should call this when it receives a doledb key
-// . when trying to add a SpiderRequest to the waiting tree we first check
-//   the doledb table to see if doledb already has an sreq from this firstIp
-// . therefore, we should add the ip to the dole table before we launch the
-//   Msg4 request to add it to doledb, that way we don't add a bunch from the
-//   same firstIP to doledb
-bool SpiderColl::addToDoleTable ( SpiderRequest *sreq ) {
-	// update how many per ip we got doled
-	int32_t *score = (int32_t *)m_doleIpTable.getValue32 ( sreq->m_firstIp );
-	// debug point
-	if ( g_conf.m_logDebugSpider ){//&&1==2 ) { // disable for now, spammy
-		int64_t  uh48 = sreq->getUrlHash48();
-		int64_t pdocid = sreq->getParentDocId();
-		int32_t ss = 1;
-		if ( score ) ss = *score + 1;
-		// if for some reason this collides with another key
-		// already in doledb then our counts are off
-		log("spider: added to doletbl uh48=%" PRIu64" parentdocid=%" PRIu64" "
-		    "ipdolecount=%" PRId32" ufn=%" PRId32" priority=%" PRId32" firstip=%s",
-		    uh48,pdocid,ss,(int32_t)sreq->m_ufn,(int32_t)sreq->m_priority,
-		    iptoa(sreq->m_firstIp));
-	}
-	// we had a score there already, so inc it
-	if ( score ) {
-		// inc it
-		*score = *score + 1;
-		// sanity check
-		if ( *score <= 0 ) { g_process.shutdownAbort(true); }
-		// only one per ip!
-		// not any more! we allow MAX_WINNER_NODES per ip!
-		if ( *score > MAX_WINNER_NODES )
-			log("spider: crap. had %" PRId32" recs in doledb for %s "
-			    "from %s."
-			    "how did this happen?",
-			    (int32_t)*score,m_coll,iptoa(sreq->m_firstIp));
-		// now we log it too
-		if ( g_conf.m_logDebugSpider )
-			log(LOG_DEBUG,"spider: added ip=%s to doleiptable "
-			    "(score=%" PRId32")",
-			    iptoa(sreq->m_firstIp),*score);
-	}
-	else {
-		// ok, add new slot
-		int32_t val = 1;
-		if ( ! m_doleIpTable.addKey ( &sreq->m_firstIp , &val ) ) {
-			// log it, this is bad
-			log("spider: failed to add ip %s to dole ip tbl",
-			    iptoa(sreq->m_firstIp));
-			// return true with g_errno set on error
-			return false;
-		}
-		// now we log it too
-		if ( g_conf.m_logDebugSpider )
-			log(LOG_DEBUG,"spider: added ip=%s to doleiptable "
-			    "(score=1)",iptoa(sreq->m_firstIp));
-		// sanity check
-		//if ( ! m_doleIpTable.m_isWritable ) { g_process.shutdownAbort(true);}
-	}
-
-	// . these priority slots in doledb are not empty
-	// . unmark individual priority buckets
-	// . do not skip them when scanning for urls to spiderd
-	int32_t pri = sreq->m_priority;
-	// reset scan for this priority in doledb
-	m_nextKeys     [pri] =Doledb::makeFirstKey2 ( pri );
-
-	return true;
-}
-
-
-
 // . decrement priority
 // . will also set m_sc->m_nextDoledbKey
 // . will also set m_sc->m_msg5StartKey
@@ -3564,4 +3445,145 @@ bool SpiderColl::tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 	mdelete ( sc , sizeof(SpiderColl),"postdel1");
 	delete ( sc );
 	return true;
+}
+
+
+// . returns false with g_errno set on error
+// . Rdb.cpp should call this when it receives a doledb key
+// . when trying to add a SpiderRequest to the waiting tree we first check
+//   the doledb table to see if doledb already has an sreq from this firstIp
+// . therefore, we should add the ip to the dole table before we launch the
+//   Msg4 request to add it to doledb, that way we don't add a bunch from the
+//   same firstIP to doledb
+bool SpiderColl::addToDoledbIpTable(SpiderRequest *sreq) {
+	ScopedLock sl(m_doledbIpTableMtx);
+
+	// update how many per ip we got doled
+	int32_t *score = (int32_t *)m_doledbIpTable.getValue32 ( sreq->m_firstIp );
+	// debug point
+	if ( g_conf.m_logDebugSpider ){//&&1==2 ) { // disable for now, spammy
+		int64_t  uh48 = sreq->getUrlHash48();
+		int64_t pdocid = sreq->getParentDocId();
+		int32_t ss = 1;
+		if ( score ) ss = *score + 1;
+		// if for some reason this collides with another key
+		// already in doledb then our counts are off
+		log("spider: added to doletbl uh48=%" PRIu64" parentdocid=%" PRIu64" "
+			    "ipdolecount=%" PRId32" ufn=%" PRId32" priority=%" PRId32" firstip=%s",
+		    uh48,pdocid,ss,(int32_t)sreq->m_ufn,(int32_t)sreq->m_priority,
+		    iptoa(sreq->m_firstIp));
+	}
+	// we had a score there already, so inc it
+	if ( score ) {
+		// inc it
+		*score = *score + 1;
+		// sanity check
+		if ( *score <= 0 ) { g_process.shutdownAbort(true); }
+		// only one per ip!
+		// not any more! we allow MAX_WINNER_NODES per ip!
+		if ( *score > MAX_WINNER_NODES )
+			log("spider: crap. had %" PRId32" recs in doledb for %s "
+				    "from %s."
+				    "how did this happen?",
+			    (int32_t)*score,m_coll,iptoa(sreq->m_firstIp));
+		// now we log it too
+		if ( g_conf.m_logDebugSpider )
+			log(LOG_DEBUG,"spider: added ip=%s to doleiptable "
+				    "(score=%" PRId32")",
+			    iptoa(sreq->m_firstIp),*score);
+	}
+	else {
+		// ok, add new slot
+		int32_t val = 1;
+		if ( ! m_doledbIpTable.addKey ( &sreq->m_firstIp , &val ) ) {
+			// log it, this is bad
+			log("spider: failed to add ip %s to dole ip tbl",
+			    iptoa(sreq->m_firstIp));
+			// return true with g_errno set on error
+			return false;
+		}
+		// now we log it too
+		if ( g_conf.m_logDebugSpider )
+			log(LOG_DEBUG,"spider: added ip=%s to doleiptable "
+				"(score=1)",iptoa(sreq->m_firstIp));
+		// sanity check
+		//if ( ! m_doledbIpTable.m_isWritable ) { g_process.shutdownAbort(true);}
+	}
+
+	// . these priority slots in doledb are not empty
+	// . unmark individual priority buckets
+	// . do not skip them when scanning for urls to spiderd
+	int32_t pri = sreq->m_priority;
+	// reset scan for this priority in doledb
+	m_nextKeys     [pri] =Doledb::makeFirstKey2 ( pri );
+
+	return true;
+}
+
+void SpiderColl::removeFromDoledbIpTable(int32_t firstIp) {
+	ScopedLock sl(m_doledbIpTableMtx);
+
+	// . decrement doledb table ip count for firstIp
+	// . update how many per ip we got doled
+	int32_t *score = (int32_t *)m_doledbIpTable.getValue32 ( firstIp );
+
+	// wtf! how did this spider without being doled?
+	if ( ! score ) {
+		//if ( ! srep->m_fromInjectionRequest )
+		log("spider: corruption. received spider reply whose "
+			    "ip has no entry in dole ip table. firstip=%s",
+		    iptoa(firstIp));
+		return;
+	}
+
+	// reduce it
+	*score = *score - 1;
+
+	// now we log it too
+	if ( g_conf.m_logDebugSpider )
+		log(LOG_DEBUG,"spider: removed ip=%s from doleiptable "
+			"(newcount=%" PRId32")", iptoa(firstIp),*score);
+
+
+	// remove if zero
+	if ( *score == 0 ) {
+		// this can file if writes are disabled on this hashtablex
+		// because it is saving
+		m_doledbIpTable.removeKey ( &firstIp );
+		// sanity check
+		//if ( ! m_doledbIpTable.m_isWritable ) { g_process.shutdownAbort(true); }
+	}
+	// wtf!
+	if ( *score < 0 ) { g_process.shutdownAbort(true); }
+	// all done?
+	if ( g_conf.m_logDebugSpider ) {
+		// log that too!
+		logf(LOG_DEBUG,"spider: discounting firstip=%s to %" PRId32,
+		     iptoa(firstIp),*score);
+	}
+}
+
+int32_t SpiderColl::getDoledbIpTableCount() const {
+	ScopedLock sl(m_doledbIpTableMtx);
+	return m_doledbIpTable.getNumUsedSlots();
+}
+
+bool SpiderColl::isInDoledbIpTable(int32_t firstIp) const {
+	ScopedLock sl(m_doledbIpTableMtx);
+	return m_doledbIpTable.isInTable(&firstIp);
+}
+
+bool SpiderColl::isDoledbIpTableEmpty() const {
+	ScopedLock sl(m_doledbIpTableMtx);
+	return m_doledbIpTable.isEmpty();
+}
+
+void SpiderColl::clearDoledbIpTable() {
+	ScopedLock sl(m_doledbIpTableMtx);
+	m_doledbIpTable.clear();
+}
+
+void SpiderColl::disableDoledbIpTableWrites() {
+	ScopedLock sl(m_doledbIpTableMtx);
+	m_doledbIpTable.disableWrites();
 }

@@ -637,7 +637,7 @@ bool Process::save2 ( ) {
 	}
 
 	// reenable tree writes since saves were completed
-	enableTreeWrites( false );
+	enableTreeWrites();
 
 	log(LOG_INFO,"gb: Saved data to disk. Re-enabling Writes.");
 
@@ -892,27 +892,19 @@ void Process::disableTreeWrites ( bool shuttingDown ) {
 		}
 		sc->m_waitingTree .disableWrites();
 		sc->m_waitingTable.disableWrites();
-		sc->m_doleIpTable .disableWrites();
+		sc->disableDoledbIpTableWrites();
 	}
 	
 }
 
-void Process::enableTreeWrites ( bool shuttingDown ) {
+void Process::enableTreeWrites() {
 	// loop over all Rdbs
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
 		Rdb *rdb = m_rdbs[i];
 		rdb->enableWrites();
 	}
-	// don't save spider related trees if not shutting down
-	if ( ! shuttingDown ) return;
-	// enable all waiting trees
-	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
-		SpiderColl *sc = g_spiderCache.getSpiderCollIffNonNull(i);
-		if ( ! sc ) continue;
-		sc->m_waitingTree .enableWrites();
-		sc->m_waitingTable.enableWrites();
-		sc->m_doleIpTable .enableWrites();
-	}
+
+	return;
 }
 
 // . returns false if blocked, true otherwise
