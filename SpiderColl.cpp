@@ -74,7 +74,6 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_tailUh48 = 0;
 	m_tailHopCount = 0;
 	m_minFutureTimeMS = 0;
-	memset(m_priorityToUfn, 0, sizeof(m_priorityToUfn));
 	m_gettingWaitingTreeList = false;
 	m_lastScanTime = 0;
 	m_waitingTreeNeedsRebuild = false;
@@ -385,8 +384,6 @@ void SpiderColl::reset ( ) {
 	const char *coll = "unknown";
 	if ( m_coll[0] ) coll = m_coll;
 	log(LOG_DEBUG,"spider: resetting spider cache coll=%s",coll);
-
-	m_ufnMapValid = false;
 
 	m_doleIpTable .reset();
 	m_cdTable     .reset();

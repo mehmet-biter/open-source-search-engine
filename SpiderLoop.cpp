@@ -546,38 +546,6 @@ subloopNextPriority:
 	key96_t endKey;
 	endKey.setMax();
 
-	// init the m_priorityToUfn map array?
-	if ( ! m_sc->m_ufnMapValid ) {
-		// reset all priorities to map to a ufn of -1
-		for ( int32_t i = 0 ; i < MAX_SPIDER_PRIORITIES ; i++ ) {
-			m_sc->m_priorityToUfn[i] = -1;
-		}
-
-		// initialize the map that maps priority to first ufn that uses
-		// that priority. map to -1 if no ufn uses it.
-		for ( int32_t i = 0 ; i < cr->m_numRegExs ; i++ ) {
-			// get the ith rule priority
-			int32_t sp = cr->m_spiderPriorities[i];
-
-			// must not be filtered or banned
-			if ( sp < 0 ) continue;
-
-			// sanity
-			if ( sp >= MAX_SPIDER_PRIORITIES){
-				g_process.shutdownAbort(true);
-			}
-
-			// skip if already mapped
-			if ( m_sc->m_priorityToUfn[sp] != -1 ) continue;
-
-			// map that
-			m_sc->m_priorityToUfn[sp] = i;
-		}
-
-		// all done
-		m_sc->m_ufnMapValid = true;
-	}
-
 	for ( ; ; ) {
 		// shortcut
 		ci = &cr->m_localCrawlInfo;
