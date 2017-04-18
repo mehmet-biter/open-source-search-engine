@@ -118,7 +118,7 @@ bool getSpiderStatusMsg ( class CollectionRec *cx ,
 //
 // When a SpiderRequest is added to spiderdb in Rdb.cpp it calls
 // SpiderColl::addSpiderRequest(). If our host is responsible for doling
-// that firstIP, we check m_doleIPTable to see if that IP address is
+// that firstIP, we check m_doledbIpTable to see if that IP address is
 // already in doledb. if it is then we bail. Next we compute the url filter
 // number of the url in order to compute its spider time, then we add
 // it to the waiting tree. It will not get added to the waiting tree if
@@ -182,16 +182,6 @@ bool getSpiderStatusMsg ( class CollectionRec *cx ,
 // If it receives a rejection from one host it release the lock on all the 
 // other hosts. It is kind of random to get a lock, similar to ethernet 
 // collision detection.
-
-
-// Dole IP Table
-//
-// m_doleIpTable (HashTableX, 96 bit keys, no data)
-// Purpose: let's us know how many SpiderRequests have been doled out for
-// a given firstIP
-// Key is simply a 4-byte IP.
-// Data is the number of doled out SpiderRequests from that IP. 
-// we use m_doleIpTable for keeping counts based on ip of what is doled out. 
 
 
 //

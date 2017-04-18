@@ -62,8 +62,8 @@ void nukeDoledb ( collnum_t collnum ) {
 
 	SpiderColl *sc = g_spiderCache.getSpiderCollIffNonNull(collnum);
 	if ( sc ) {
-		// . make sure to nuke m_doleIpTable as well
-		sc->clearDoleIpTable();
+		// . make sure to nuke m_doledbIpTable as well
+		sc->clearDoledbIpTable();
 		// need to recompute this!
 		//sc->m_ufnMapValid = false;
 

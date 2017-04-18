@@ -534,7 +534,7 @@ subloopNextPriority:
 	// shortcut
 	SpiderColl *sc = cr->m_spiderColl;
 
-	if ( sc && sc->isDoleIpTableEmpty() ) {
+	if ( sc && sc->isDoledbIpTableEmpty() ) {
 		logTrace( g_conf.m_logTraceSpider, "Loop, doleIpTable is empty"  );
 		goto subloop;
 	}
@@ -1187,7 +1187,7 @@ bool SpiderLoop::spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t co
 
 
 	// now remove from doleiptable since we removed from doledb
-	m_sc->removeFromDoledbTable ( sreq->m_firstIp );
+	m_sc->removeFromDoledbIpTable(sreq->m_firstIp);
 
 	// DO NOT add back to waiting tree if max spiders
 	// out per ip was 1 OR there was a crawldelay. but better
@@ -1953,7 +1953,7 @@ void handleRequestc1(UdpSlot *slot, int32_t /*niceness*/) {
 			if ( printIt ) sc->m_lastPrinted = now + 5;
 
 			// doledb must be empty
-			if ( ! sc->isDoleIpTableEmpty() ) {
+			if ( !sc->isDoledbIpTableEmpty() ) {
 				if ( printIt )
 				log("spider: not ending crawl because "
 				    "doledb not empty for coll=%s",cr->m_coll);
