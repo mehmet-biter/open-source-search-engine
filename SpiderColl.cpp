@@ -369,24 +369,7 @@ SpiderColl::~SpiderColl () {
 
 // we call this now instead of reset when Collectiondb::resetColl() is used
 void SpiderColl::clearLocks ( ) {
-
-	// remove locks from locktable for all spiders out i guess
-	HashTableX *ht = &g_spiderLoop.m_lockTable;
- top:
-	// scan the slots
-	int32_t ns = ht->getNumSlots();
-	for ( int32_t i = 0 ; i < ns ; i++ ) {
-		// skip if empty
-		if ( ! ht->m_flags[i] ) continue;
-		// cast lock
-		UrlLock *lock = (UrlLock *)ht->getValueFromSlot(i);
-		// skip if not our collnum
-		if ( lock->m_collnum != m_collnum ) continue;
-		// nuke it!
-		ht->removeSlot(i);
-		// restart since cells may have shifted
-		goto top;
-	}
+	g_spiderLoop.clearLocks(m_collnum);
 }
 
 void SpiderColl::reset ( ) {

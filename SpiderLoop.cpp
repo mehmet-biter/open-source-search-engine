@@ -2056,5 +2056,33 @@ void handleRequestc1(UdpSlot *slot, int32_t /*niceness*/) {
 	replyBuf.detachBuf();
 }
 
+void SpiderLoop::clearLocks(collnum_t collnum) {
+	// remove locks from locktable for all spiders out
+	for (;;) {
+		bool restart = false;
 
+		// scan the slots
+		for (int32_t i = 0; i < m_lockTable.getNumSlots(); i++) {
+			// skip if empty
+			if (!m_lockTable.m_flags[i]) {
+				continue;
+			}
 
+			UrlLock *lock = (UrlLock *)m_lockTable.getValueFromSlot(i);
+			// skip if not our collnum
+			if (lock->m_collnum != collnum) {
+				continue;
+			}
+
+			// nuke it!
+			m_lockTable.removeSlot(i);
+
+			// restart since cells may have shifted
+			restart = true;
+		}
+
+		if (!restart) {
+			break;
+		}
+	}
+}

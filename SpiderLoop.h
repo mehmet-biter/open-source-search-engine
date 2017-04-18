@@ -45,6 +45,8 @@ public:
 	int32_t getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum ) ;
 	int32_t getNumSpidersOut() const { return m_numSpidersOut; }
 
+	void clearLocks(collnum_t collnum);
+
 	// for spidering/parsing/indexing a url(s)
 	XmlDoc *m_docs [ MAX_SPIDERS ];
 
