@@ -2,6 +2,7 @@
 #include "Process.h"
 #include "Tagdb.h"
 #include "ip.h"
+#include "UrlBlockList.h"
 #include "Conf.h"
 #include "Mem.h"
 #include "ScopedLock.h"
@@ -188,6 +189,20 @@ bool Msge1::launchRequests ( int32_t starti ) {
 			continue;
 		}
 
+		Url url;
+		url.set(p);
+		if(g_urlBlockList.isUrlBlocked(url)) {
+			// debug for now
+			if(g_conf.m_logDebugDns)
+				log("dns: skipping dns lookup of '%*.*s' because the URL is blocked", (int)url.getHostLen(), (int)url.getHostLen(), url.getHost());
+			// -1 means time out i guess
+			m_ipBuf[m_n] = -1;
+			m_numRequests++;
+			m_numReplies++;
+			m_n++;
+			continue;
+		}
+		
 		// . grab a slot
 		int32_t i;
 		for ( i = starti ; i < MAX_OUTSTANDING_MSGE1 ; i++ )
