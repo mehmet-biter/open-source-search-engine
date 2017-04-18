@@ -153,8 +153,6 @@ class Conf {
 	int32_t  m_pingSpacer;
 	int32_t  m_maxOutstandingPings;
 
-	uint32_t m_watchdogInterval;
-	
 	int32_t m_maxDocsWanted;        //maximum number of results in one go. Puts a limit on SearchInput::m_docsWanted
 	int32_t m_maxFirstResultNum;    //maximum document offset / result-page. Puts a limit on SearchInput::m_firstResultNum
 
@@ -384,7 +382,6 @@ class Conf {
 	bool  m_logDebugTitle;
 	bool  m_logDebugTopDocs;
 	bool  m_logDebugUdp;
-	bool  m_logDebugWatchdog;
 	bool  m_logDebugUnicode;
 	bool  m_logDebugRepair;
 	bool  m_logDebugDate;

@@ -311,8 +311,6 @@ class Hostdb {
 	int32_t  getNumShards () { return m_numShards; }
 	int32_t  getNumIndexSplits() { return m_indexSplits; }
 
-	int32_t getNumHostsDead();
-
 	// how many hosts in this group?
 	int32_t  getNumHostsPerShard ( ) { return m_numHostsPerShard; }
 

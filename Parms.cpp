@@ -5098,9 +5098,9 @@ void Parms::init ( ) {
 		"host. Each host pings all other hosts in the network.";
 	m->m_cgi   = "ps";
 	simple_m_set(Conf,m_pingSpacer);
-	m->m_smin  =     50;
-	m->m_smax  =  60000;
-	m->m_def   = "10000";
+	m->m_smin  =   50; // i've seen values of 0 hammer the cpu
+	m->m_smax  = 1000;
+	m->m_def   = "100";
 	m->m_units = "milliseconds";
 	m->m_group = true;
 	m->m_page  = PAGE_MASTER;
@@ -5128,18 +5128,6 @@ void Parms::init ( ) {
 	m->m_smax  =  100;
 	m->m_def   = "5";
 	m->m_units = "packets";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "watchdog interval";
-	m->m_desc  = "watchdog interval.";
-	m->m_cgi   = "watchdoginterval";
-	simple_m_set(Conf,m_watchdogInterval);
-	m->m_smin  =    50;
-	m->m_smax  = 30000;
-	m->m_def   =  "650";
-	m->m_units = "milliseconds";
-	m->m_group = true;
 	m->m_page  = PAGE_MASTER;
 	m++;
 
@@ -8576,13 +8564,6 @@ void Parms::init ( ) {
 	m->m_title = "log debug udp messages";
 	m->m_cgi   = "ldu";
 	simple_m_set(Conf,m_logDebugUdp);
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m++;
-
-	m->m_title = "log debug watchdog messages";
-	m->m_cgi   = "ldwatchdog";
-	simple_m_set(Conf,m_logDebugWatchdog);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;

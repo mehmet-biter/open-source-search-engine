@@ -74,6 +74,7 @@ bool PingServer::init ( ) {
 	m_minRepairModeBesides0Host = NULL;
 
 	m_numHostsWithForeignRecs = 0;
+	m_numHostsDead = 0;
 	m_hostsConfInDisagreement = false;
 	m_hostsConfInAgreement = false;
 
@@ -136,6 +137,35 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	if ( ! h ) return;
 
 	int32_t hostId = h->m_hostId;
+
+	// every time this is hostid 0, do a sanity check to make sure
+	// g_hostdb.m_numHostsAlive is accurate
+	if ( hostId == 0 ) {
+		int32_t numHosts = g_hostdb.getNumHosts();
+		if( h->m_isProxy )
+			numHosts = g_hostdb.getNumProxy();
+		// do not do more than once every 10 seconds
+		static int32_t lastTime = 0;
+		int32_t now = getTime();
+		if ( now - lastTime > 10 ) {
+			lastTime = now;
+			int32_t count = 0;
+			for ( int32_t i = 0 ; i < numHosts; i++ ) {
+				// count if not dead
+				Host *host;
+				if ( h->m_isProxy )
+					host = g_hostdb.getProxy(i);
+				else
+					host = g_hostdb.getHost(i);
+				if ( !g_hostdb.isDead(host))
+					count++;
+			}
+			// make sure count matches
+			if ( !h->m_isProxy && count != g_hostdb.getNumHostsAlive() ) {
+				g_process.shutdownAbort(true);
+			}
+		}
+	}
 
 	// don't ping again if already in progress
 	if ( ip == h->m_ip && h->m_inProgress1 ) return;
@@ -466,6 +496,7 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 
 	PingServer *ps = &g_pingServer;
 	ps->m_numHostsWithForeignRecs = 0;
+	ps->m_numHostsDead = 0;
 	ps->m_hostsConfInDisagreement = false;
 	ps->m_hostsConfInAgreement = false;
 
@@ -484,6 +515,10 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 
 		if ( h2->m_pingInfo.m_flags & PFLAG_FOREIGNRECS ) {
 			ps->m_numHostsWithForeignRecs++;
+		}
+
+		if ( g_hostdb.isDead ( h2 ) ) {
+			ps->m_numHostsDead++;
 		}
 
 		// skip if not received yet
