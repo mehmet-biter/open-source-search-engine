@@ -961,41 +961,40 @@ skipDoledbRec:
 
 	// get the lock... only avoid if confirmed!
 	int32_t slot = m_lockTable.getSlot(&lockKey);
-	UrlLock *lock = NULL;
 	if (slot >= 0) {
 		// get the corresponding lock then if there
-		lock = (UrlLock *)m_lockTable.getValueFromSlot(slot);
-	}
+		UrlLock *lock = (UrlLock *)m_lockTable.getValueFromSlot(slot);
 
-	// if there and confirmed, why still in doledb?
-	if (lock) {
-		// fight log spam
-		static int32_t s_lastTime = 0;
-		if ( nowGlobal - s_lastTime >= 2 ) {
-			// why is it not getting unlocked!?!?!
-			log( "spider: spider request locked but still in doledb. uh48=%" PRId64" firstip=%s %s",
-			     sreq->getUrlHash48(), iptoa(sreq->m_firstIp), sreq->m_url );
-			s_lastTime = nowGlobal;
+		// if there and confirmed, why still in doledb?
+		if (lock) {
+			// fight log spam
+			static int32_t s_lastTime = 0;
+			if ( nowGlobal - s_lastTime >= 2 ) {
+				// why is it not getting unlocked!?!?!
+				log( "spider: spider request locked but still in doledb. uh48=%" PRId64" firstip=%s %s",
+				     sreq->getUrlHash48(), iptoa(sreq->m_firstIp), sreq->m_url );
+				s_lastTime = nowGlobal;
+			}
+
+			// just increment then i guess
+			m_list.skipCurrentRecord();
+
+			// let's return false here to avoid an infinite loop
+			// since we are not advancing nextkey and m_pri is not
+			// being changed, that is what happens!
+			if ( m_list.isExhausted() ) {
+				// crap. but then we never make it to lower priorities.
+				// since we are returning false. so let's try the
+				// next priority in line.
+
+				// try returning true now that we skipped to
+				// the next priority level to avoid the infinite
+				// loop as described above.
+				return true;
+			}
+			// try the next record in this list
+			goto listLoop;
 		}
-
-		// just increment then i guess
-		m_list.skipCurrentRecord();
-
-		// let's return false here to avoid an infinite loop
-		// since we are not advancing nextkey and m_pri is not
-		// being changed, that is what happens!
-		if ( m_list.isExhausted() ) {
-			// crap. but then we never make it to lower priorities.
-			// since we are returning false. so let's try the
-			// next priority in line.
-
-			// try returning true now that we skipped to
-			// the next priority level to avoid the infinite
-			// loop as described above.
-			return true;
-		}
-		// try the next record in this list
-		goto listLoop;
 	}
 
 	// log this now
