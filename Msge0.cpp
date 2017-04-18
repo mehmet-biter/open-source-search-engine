@@ -2,6 +2,7 @@
 #include "Process.h"
 #include "Tagdb.h"
 #include "ip.h"
+#include "UrlBlockList.h"
 #include "Mem.h"
 #include "ScopedLock.h"
 #include <new>
@@ -146,8 +147,20 @@ bool Msge0::launchRequests() {
 		}
 
 		// . get the next url
-		// . if m_xd is set, create the url from the ad id
 		const char *p = m_urlPtrs[m_n];
+		
+		Url url;
+		url.set(p);
+		if(g_urlBlockList.isUrlBlocked(url)) {
+			//if(g_conf.m_logDebug...something...)
+			//	log("...something...: skipping tagrec lookup of '%*.*s' because the URL is blocked", (int)url.getHostLen(), (int)url.getHostLen(), url.getHost());
+			m_tagRecPtrs[m_n] = (TagRec *)m_baseTagRec;
+			m_numRequests++;
+			m_numReplies++;
+			m_n++;
+			continue;
+		}
+
 		// get the length
 		int32_t  plen = strlen(p);
 		// . grab a slot
