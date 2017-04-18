@@ -956,16 +956,15 @@ skipDoledbRec:
 	// seems like we might have give the lock to someone else and
 	// there confirmation has not come through yet, so it's still
 	// in doledb.
-	HashTableX *ht = &g_spiderLoop.m_lockTable;
 
-	int64_t lockKey = makeLockTableKey ( sreq );
+	int64_t lockKey = makeLockTableKey(sreq);
 
 	// get the lock... only avoid if confirmed!
-	int32_t slot = ht->getSlot ( &lockKey );
+	int32_t slot = m_lockTable.getSlot(&lockKey);
 	UrlLock *lock = NULL;
-	if ( slot >= 0 ) {
+	if (slot >= 0) {
 		// get the corresponding lock then if there
-		lock = (UrlLock *) ht->getValueFromSlot( slot );
+		lock = (UrlLock *)m_lockTable.getValueFromSlot(slot);
 	}
 
 	// if there and confirmed, why still in doledb?
@@ -1450,23 +1449,33 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 // use -1 for any collnum
 int32_t SpiderLoop::getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum ) {
 	int32_t count = 0;
-	// count locks
-	HashTableX *ht = &g_spiderLoop.m_lockTable;
+
 	// scan the slots
-	int32_t ns = ht->getNumSlots();
-	for ( int32_t i = 0 ; i < ns ; i++ ) {
+	for (int32_t i = 0; i < m_lockTable.getNumSlots(); i++) {
 		// skip if empty
-		if ( ! ht->m_flags[i] ) continue;
+		if (!m_lockTable.m_flags[i]) {
+			continue;
+		}
+
 		// cast lock
-		UrlLock *lock = (UrlLock *)ht->getValueFromSlot(i);
+		UrlLock *lock = (UrlLock *)m_lockTable.getValueFromSlot(i);
+
 		// skip if not outstanding, just a 5-second expiration wait
 		// when the spiderReply returns, so that in case a lock
 		// request for the same url was in progress, it will be denied.
-		if ( ! lock->m_spiderOutstanding ) continue;
+		if (!lock->m_spiderOutstanding) {
+			continue;
+		}
+
 		// correct collnum?
-		if ( lock->m_collnum != collnum && collnum != -1 ) continue;
+		if (lock->m_collnum != collnum && collnum != -1) {
+			continue;
+		}
+
 		// skip if not yet expired
-		if ( lock->m_firstIp == firstIp ) count++;
+		if (lock->m_firstIp == firstIp) {
+			count++;
+		}
 	}
 
 	return count;
