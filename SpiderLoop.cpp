@@ -2057,6 +2057,18 @@ void handleRequestc1(UdpSlot *slot, int32_t /*niceness*/) {
 	replyBuf.detachBuf();
 }
 
+bool SpiderLoop::isLocked(int64_t key) const {
+	return m_lockTable.isInTable(&key);
+}
+
+int32_t SpiderLoop::getLockCount() const {
+	return m_lockTable.getNumUsedSlots();
+}
+
+void SpiderLoop::removeLock(int64_t key) {
+	m_lockTable.removeKey(&key);
+}
+
 void SpiderLoop::clearLocks(collnum_t collnum) {
 	// remove locks from locktable for all spiders out
 	for (;;) {

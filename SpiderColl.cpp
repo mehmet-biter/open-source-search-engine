@@ -479,7 +479,7 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 
 	// now just remove it since we only spider our own urls
 	// and doledb is in memory
-	g_spiderLoop.m_lockTable.removeKey ( &lockKey );
+	g_spiderLoop.removeLock(lockKey);
 
 	// update the latest siteNumInlinks count for this "site" (repeatbelow)
 	updateSiteNumInlinksTable ( srep->m_siteHash32, srep->m_siteNumInlinks, srep->m_spideredTime );
@@ -2608,10 +2608,10 @@ bool SpiderColl::scanListForWinners ( ) {
 		int64_t key = makeLockTableKey ( sreq );
 
 		logDebug( g_conf.m_logDebugSpider, "spider: checking uh48=%" PRId64" lockkey=%" PRId64" used=%" PRId32,
-		          uh48, key, g_spiderLoop.m_lockTable.getNumUsedSlots() );
+		          uh48, key, g_spiderLoop.getLockCount() );
 
 		// MDW
-		if ( g_spiderLoop.m_lockTable.isInTable ( &key ) ) {
+		if (g_spiderLoop.isLocked(key)) {
 			logDebug( g_conf.m_logDebugSpider, "spider: skipping url lockkey=%" PRId64" in lock table sreq.url=%s",
 			          key, sreq->m_url );
 			continue;

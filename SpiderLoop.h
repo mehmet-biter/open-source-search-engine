@@ -45,12 +45,13 @@ public:
 	int32_t getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum ) ;
 	int32_t getNumSpidersOut() const { return m_numSpidersOut; }
 
+	bool isLocked(int64_t key) const;
+	int32_t getLockCount() const;
+	void removeLock(int64_t key);
 	void clearLocks(collnum_t collnum);
 
 	// for spidering/parsing/indexing a url(s)
 	XmlDoc *m_docs [ MAX_SPIDERS ];
-
-	HashTableX m_lockTable;
 
 	RdbCache   m_winnerListCache;
 
@@ -82,6 +83,8 @@ private:
 	int32_t m_maxUsed;
 
 	int32_t m_launches;
+
+	HashTableX m_lockTable;
 
 	// . list for getting next url(s) to spider
 	RdbList m_list;
