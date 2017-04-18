@@ -26,7 +26,6 @@
 #include "Profiler.h"
 #include "Msg4Out.h"
 #include "Msg5.h"
-#include "Msg56.h"
 #include "Wiki.h"
 #include "Wiktionary.h"
 #include "Proxy.h"
@@ -684,7 +683,6 @@ bool Process::shutdown2() {
 
 	RdbBase::finalizeGlobalIndexThread();
 	finalizeMsg4IncomingThread();
-	finalizeWatchdog();
 
 	g_jobScheduler.cancel_all_jobs_for_shutdown();
 

@@ -1212,8 +1212,6 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 		if ( m_numUsedSlots >= 2300 && ! isProxy ) getSlot = false;
 		// never drop ping packets! they do not send out requests
 		if ( msgType == msg_type_11 ) getSlot = true;
-		// never drop watchdog packets! they do not send out requests
-		if ( msgType == msg_type_56 ) getSlot = true;
 		// getting a titlerec does not send out a 2nd request. i really
 		// hate those title rec timeout msgs.
 		if ( msgType == msg_type_22 && niceness == 0 ) getSlot = true;
@@ -1259,8 +1257,8 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 				//   server, and we were using it as the slot's
 				//   but it should be correct now...
 				niceness ); // 0 // m_niceness );
-		// don't count ping or watchdogs towards this
-		if ( msgType != msg_type_11 && msgType != msg_type_56) {
+		// don't count ping towards this
+		if ( msgType != msg_type_11 ) {
 			// if we connected to a request slot, count it
 			m_requestsInWaiting++;
 			// special count
@@ -1598,7 +1596,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 
 		// now we got a reply or an g_errno so call the callback
 
-		if ( g_conf.m_logDebugLoop && slot->getMsgType() != msg_type_11 && slot->getMsgType()!=msg_type_56 )
+		if ( g_conf.m_logDebugLoop && slot->getMsgType() != msg_type_11 )
 			log(LOG_DEBUG,"loop: enter callback for 0x%" PRIx32" "
 			    "nice=%" PRId32,(int32_t)slot->getMsgType(),slot->getNiceness());
 
@@ -1619,7 +1617,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 
 		slot->m_callback(slot->m_state, slot);
 
-		if ( g_conf.m_logDebugLoop && slot->getMsgType() != msg_type_11 && slot->getMsgType()!=msg_type_56 )
+		if ( g_conf.m_logDebugLoop && slot->getMsgType() != msg_type_11 )
 			log(LOG_DEBUG,"loop: exit callback for 0x%" PRIx32" "
 			    "nice=%" PRId32,(int32_t)slot->getMsgType(),slot->getNiceness());
 
@@ -1796,7 +1794,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 	slot->m_queuedTime = now;
 
 	// log it now
-	if ( slot->getMsgType() != msg_type_11 && slot->getMsgType()!=msg_type_56 && g_conf.m_logDebugLoop )
+	if ( slot->getMsgType() != msg_type_11 && g_conf.m_logDebugLoop )
 		log(LOG_DEBUG,"loop: enter handler for 0x%" PRIx32" nice=%" PRId32,
 		    (int32_t)slot->getMsgType(),(int32_t)slot->getNiceness());
 
@@ -1809,7 +1807,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 	bool oom = g_mem.getUsedMemPercentage() >= 99.0;
 
 	// if we are out of mem basically, do not waste time fucking around
-	if ( slot->getMsgType() != msg_type_11 && slot->getMsgType()!=msg_type_56 && slot->getNiceness() == 0 && oom ) {
+	if ( slot->getMsgType() != msg_type_11 && slot->getNiceness() == 0 && oom ) {
 		// log it
 		static int32_t lcount = 0;
 		if ( lcount == 0 )
@@ -1849,7 +1847,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		m_handlers [ slot->getMsgType() ] ( slot , slot->getNiceness() ) ;
 	}
 
-	if ( slot->getMsgType() != msg_type_11 && slot->getMsgType()!=msg_type_56 && g_conf.m_logDebugLoop )
+	if ( slot->getMsgType() != msg_type_11 && g_conf.m_logDebugLoop )
 		log(LOG_DEBUG,"loop: exit handler for 0x%" PRIx32" nice=%" PRId32,
 		    (int32_t)slot->getMsgType(),(int32_t)slot->getNiceness());
 
@@ -2032,9 +2030,9 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		}
 
 		// Time out the slot if the host has been detected as unresponsive.
-		// But not msg11 (ping) and msg56 (watchdog) because they actually want to send to
+		// But not msg11 (ping) because they actually want to send to
 		// dead hosts so they can detect when they are alive again.
-		if(slot->getMsgType()!=msg_type_11 && slot->getMsgType()!=msg_type_56) {
+		if(slot->getMsgType()!=msg_type_11) {
 			if(slot->m_host && g_hostdb.isDead(slot->m_host)) {
 				slot->m_errno = EUDPTIMEDOUT;
 				addToCallbackLinkedList(slot);
