@@ -75,7 +75,7 @@ void nukeDoledb ( collnum_t collnum ) {
 		sc->resetWaitingTreeNextKey();
 		// clear it?
 		sc->m_waitingTree.clear();
-		sc->m_waitingTable.clear();
+		sc->clearWaitingTable();
 		// kick off the spiderdb scan to rep waiting tree and doledb
 		sc->populateWaitingTreeFromSpiderdb(false);
 	}
