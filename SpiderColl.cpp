@@ -731,19 +731,19 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 	// get ufn/priority,because if filtered we do not want to add to doledb
 	// HACK: set isOutlink to true here since we don't know if we have sre
 	int32_t ufn = ::getUrlFilterNum(sreq, NULL, nowGlobalMS, false, m_cr, true, NULL, -1);
+	if (ufn >= 0) {
+		// spiders disabled for this row in url filters?
+		if (m_cr->m_maxSpidersPerRule[ufn] == 0) {
+			logDebug(g_conf.m_logDebugSpider, "spider: request spidersoff ufn=%d url=%s", ufn, sreq->m_url);
+			return true;
+		}
 
-	// spiders disabled for this row in url filters?
-	if ( ufn >= 0 && m_cr->m_maxSpidersPerRule[ufn] == 0 ) {
-		logDebug( g_conf.m_logDebugSpider, "spider: request spidersoff ufn=%" PRId32" url=%s", ufn, sreq->m_url );
-		return true;
+		// do not add to doledb if bad
+		if (m_cr->m_forceDelete[ufn]) {
+			logDebug(g_conf.m_logDebugSpider, "spider: request %s is filtered ufn=%d", sreq->m_url, ufn);
+			return true;
+		}
 	}
-
-	// do not add to doledb if bad
-	if ( ufn >= 0 && m_cr->m_forceDelete[ufn] ) {
-		logDebug( g_conf.m_logDebugSpider, "spider: request %s is filtered ufn=%" PRId32, sreq->m_url, ufn );
-		return true;
-	}
-
 
 	// once in waiting tree, we will scan waiting tree and then lookup
 	// each firstIp in waiting tree in spiderdb to get the best
