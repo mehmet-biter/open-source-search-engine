@@ -643,7 +643,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 
 	// tell spiderloop to update the active list in case this
 	// collection suddenly becomes active
-	g_spiderLoop.m_activeListValid = false;
+	g_spiderLoop.invalidateActiveList();
 
 	// this might make a new spidercoll...
 	SpiderColl *sc = g_spiderCache.getSpiderColl ( cr->m_collnum );

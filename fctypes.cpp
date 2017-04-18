@@ -731,16 +731,12 @@ char *htmlEncode ( char *dst, char *dstend, const char *src, const char *srcend 
 // . used by HttPage2 (cached web page) to encode the query into a url
 // . used by PageRoot to do likewise
 // . returns bytes written into "d" not including terminating \0
-int32_t urlEncode ( char *d , int32_t dlen , const char *s , int32_t slen, bool requestPath ) {
+int32_t urlEncode ( char *d , int32_t dlen , const char *s , int32_t slen ) {
 	char *dstart = d;
 	// subtract 1 to make room for a terminating \0
 	char *dend = d + dlen - 1;
 	const char *send = s + slen;
 	for ( ; s < send && d < dend ; s++ ) {
-		if ( *s == '\0' && requestPath ) {
-			*d++ = *s;
-			continue;
-		}
 		// encode if not fit for display
 		if ( ! is_ascii ( *s ) ) goto encode;
 		switch ( *s ) {
@@ -754,8 +750,7 @@ int32_t urlEncode ( char *d , int32_t dlen , const char *s , int32_t slen, bool 
 		// html page than sending to an http server
 		case '>': goto encode;
 		case '<': goto encode;
-		case '?': if ( requestPath ) break;
-			  goto encode;
+		case '?': goto encode;
 		}
 		// otherwise, no need to encode
 		*d++ = *s;

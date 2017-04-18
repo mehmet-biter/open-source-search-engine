@@ -72,18 +72,6 @@ public:
 	// doledb cursor keys for each priority to speed up performance
 	key96_t m_nextKeys[MAX_SPIDER_PRIORITIES];
 
-	// maps priority to first ufn that uses that
-	// priority. map to -1 if no ufn uses it. that way when we scan
-	// priorities for spiderrequests to dole out we can start with
-	// priority 63 and see what the max spiders or same ip wait are
-	// because we need the ufn to get the maxSpiders from the url filters
-	// table.
-	int32_t m_priorityToUfn[MAX_SPIDER_PRIORITIES];
-	// init this to false, and also set to false on reset, then when
-	// it is false we re-stock m_ufns. re-stock if user changes the
-	// url filters table...
-	bool m_ufnMapValid;
-
 	int64_t m_lastPrintCount;
 	int64_t m_lastPrinted;
 

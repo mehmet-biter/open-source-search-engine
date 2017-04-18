@@ -46,8 +46,7 @@ int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial )
 // . convert " to %22 , & to %26, is that it?
 // . urlEncode() stores the encoded, NULL-terminated URL in "dest"
 // . requestPath leaves \0 and ? characters intact, for encoding requests
-int32_t urlEncode     ( char *dest , int32_t destLen , const char *src , int32_t srcLen ,
-		     bool  requestPath = false ) ;
+int32_t urlEncode     ( char *dest , int32_t destLen , const char *src , int32_t srcLen);
 // decode a url -- decode ALL %XX's
 int32_t urlDecode ( char *dest , const char *src , int32_t tlen ) ;
 int32_t urlDecodeNoZeroes ( char *dest , const char *src , int32_t tlen ) ;

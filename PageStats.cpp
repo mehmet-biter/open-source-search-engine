@@ -526,7 +526,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      g_stats.m_totalOverflows,
 			      (int32_t)g_hostdb.getNumShards(),//g_hostdb.m_indexSplits,
 			      (int32_t)g_hostdb.getNumHostsPerShard(),
-			      g_spiderLoop.m_lockTable.getNumUsedSlots(),
+			      g_spiderLoop.getLockCount(),
 			      //(int32_t)g_conf.m_fullSplit,
 			      //(int32_t)g_conf.m_tfndbExtBits,
 			      nowStr,
@@ -565,7 +565,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      g_stats.m_parsingInconsistencies ,
 			      (int32_t)g_hostdb.getNumShards(),
 			      (int32_t)g_hostdb.getNumHostsPerShard(),
-			      g_spiderLoop.m_lockTable.getNumUsedSlots(),
+			      g_spiderLoop.getLockCount(),
 			      nowStr,
 			      (int32_t)now);
 
@@ -600,7 +600,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      g_stats.m_parsingInconsistencies ,
 			      (int32_t)g_hostdb.getNumShards(),
 			      (int32_t)g_hostdb.getNumHostsPerShard(),
-			      g_spiderLoop.m_lockTable.getNumUsedSlots(),
+			      g_spiderLoop.getLockCount(),
 			      nowStr,
 			      (int32_t)now);
 	}

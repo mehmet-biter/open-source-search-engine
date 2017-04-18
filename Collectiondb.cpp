@@ -622,8 +622,7 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 	m_recs = (CollectionRec **)m_recPtrBuf.getBufStart();
 
 	// tell spiders to re-upadted the active list
-	g_spiderLoop.m_activeListValid = false;
-	g_spiderLoop.m_activeListModified = true;
+	g_spiderLoop.invalidateActiveList();
 
 	// a delete?
 	if ( ! cr ) {
@@ -1303,7 +1302,7 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 bool CollectionRec::rebuildUrlFilters2 ( ) {
 
 	// tell spider loop to update active list
-	g_spiderLoop.m_activeListValid = false;
+	g_spiderLoop.invalidateActiveList();
 
 	const char *s = m_urlFiltersProfile.getBufStart();
 

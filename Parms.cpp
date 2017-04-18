@@ -10348,7 +10348,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	}
 
 	if ( we->m_rebuildActiveList && cx )
-		g_spiderLoop.m_activeListValid = false;
+		g_spiderLoop.invalidateActiveList();
 
 	// if user changed the list of proxy ips rebuild the binary
 	// array representation of the proxy ips we have

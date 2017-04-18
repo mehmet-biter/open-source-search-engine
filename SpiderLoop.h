@@ -45,20 +45,17 @@ public:
 	int32_t getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum ) ;
 	int32_t getNumSpidersOut() const { return m_numSpidersOut; }
 
+	bool isLocked(int64_t key) const;
+	int32_t getLockCount() const;
+	void removeLock(int64_t key);
+	void clearLocks(collnum_t collnum);
+
 	// for spidering/parsing/indexing a url(s)
-	class XmlDoc *m_docs [ MAX_SPIDERS ];
-
-	// . this is "i" where m_msg14[i] is the highest m_msg14 in use
-	// . we use it to limit our scanning to the first "i" m_msg14's
-	int32_t m_maxUsed;
-
-	HashTableX m_lockTable;
+	XmlDoc *m_docs [ MAX_SPIDERS ];
 
 	RdbCache   m_winnerListCache;
 
-	bool m_activeListValid;
-	bool m_activeListModified;
-
+	void invalidateActiveList() { m_activeListValid = false; }
 
 private:
 	static void indexedDocWrapper ( void *state ) ;
@@ -71,24 +68,23 @@ private:
 	// . returns false if blocked and "callback" will be called,
 	//   true otherwise
 	// . returns true and sets g_errno on error
-	bool spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum);
+	bool spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum);
+	bool spiderUrl2(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum);
 
-	bool spiderUrl2 ( );
-
-	bool indexedDoc ( class XmlDoc *doc );
+	bool indexedDoc ( XmlDoc *doc );
 
 	CollectionRec *getActiveList();
 	void buildActiveList ( ) ;
 
 	int32_t m_numSpidersOut;
 
-	// state memory for calling SpiderUrl2() (maybe also getLocks()!)
-	SpiderRequest *m_sreq;
-
-	collnum_t  m_collnum;
-	key96_t     *m_doledbKey;
+	// . this is "i" where m_msg14[i] is the highest m_msg14 in use
+	// . we use it to limit our scanning to the first "i" m_msg14's
+	int32_t m_maxUsed;
 
 	int32_t m_launches;
+
+	HashTableX m_lockTable;
 
 	// . list for getting next url(s) to spider
 	RdbList m_list;
@@ -100,25 +96,20 @@ private:
 
 	bool m_gettingDoledbList;
 
-	// save on msg12 lookups! keep somewhat local...
-	RdbCache   m_lockCache;
-
 	CollectionRec *m_crx;
 	CollectionRec *m_activeList;
 	CollectionRec *m_bookmark;
 
+	bool m_activeListValid;
 	int32_t m_activeListCount;
+
 	uint32_t m_recalcTime;
 	bool m_recalcTimeValid;
 
-	int64_t m_lastCallTime;
-
 	int64_t m_doleStart;
-
-	int32_t m_processed;
 };
 
-extern class SpiderLoop g_spiderLoop;
+extern SpiderLoop g_spiderLoop;
 
 void handleRequestc1 ( UdpSlot *slot , int32_t niceness );
 

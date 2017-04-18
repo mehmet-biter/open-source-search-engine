@@ -49,9 +49,6 @@ SpiderLoop::SpiderLoop ( ) {
 	memset ( m_docs , 0 , sizeof(XmlDoc *) * MAX_SPIDERS );
 
 	// Coverity
-	m_sreq = NULL;
-	m_collnum = 0;
-	m_doledbKey = NULL;
 	m_numSpidersOut = 0;
 	m_launches = 0;
 	m_maxUsed = 0;
@@ -60,13 +57,10 @@ SpiderLoop::SpiderLoop ( ) {
 	m_activeList = NULL;
 	m_bookmark = NULL;
 	m_activeListValid = false;
-	m_activeListModified = false;
 	m_activeListCount = 0;
 	m_recalcTime = 0;
 	m_recalcTimeValid = false;
-	m_lastCallTime = 0;
 	m_doleStart = 0;
-	m_processed = 0;
 }
 
 SpiderLoop::~SpiderLoop ( ) {
@@ -85,7 +79,6 @@ void SpiderLoop::reset() {
 	}
 	m_list.freeList();
 	m_lockTable.reset();
-	m_lockCache.reset();
 	m_winnerListCache.reset();
 }
 
@@ -98,7 +91,6 @@ void SpiderLoop::init() {
 
 	m_crx = NULL;
 	m_activeListValid = false;
-	m_activeListModified = false;
 	m_activeList = NULL;
 	m_recalcTime = 0;
 	m_recalcTimeValid = false;
@@ -112,20 +104,9 @@ void SpiderLoop::init() {
 	// . -1 means there are no used m_docs's
 	m_maxUsed = -1;
 	m_numSpidersOut = 0;
-	m_processed = 0;
 
 	// for locking. key size is 8 for easier debugging
 	m_lockTable.set ( 8,sizeof(UrlLock),0,NULL,0,false, "splocks", true ); // useKeyMagic? yes.
-
-	if ( ! m_lockCache.init ( 20000 , // maxcachemem
-				  4     , // fixedatasize
-				  false , // supportlists?
-				  1000  , // maxcachenodes
-				  false , // use half keys
-				  "lockcache", // dbname
-				  false  ) )
-		log(LOG_WARN, "spider: failed to init lock cache. performance hit." );
-
 
 	if ( ! m_winnerListCache.init ( 20000000 , // maxcachemem, 20MB
 					-1     , // fixedatasize
@@ -243,11 +224,6 @@ void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 		sc->populateDoledbFromWaitingTree ( );
 	}
 
-	// if recently called, do not call again from the sleep wrapper
-	int64_t nowms = gettimeofdayInMilliseconds();
-	if ( nowms - g_spiderLoop.m_lastCallTime < 50 )
-		return;
-
 	// if we have a ton of collections, reduce cpu load from calling
 	// spiderDoledUrls()
 	static uint64_t s_skipCount = 0;
@@ -308,8 +284,6 @@ void SpiderLoop::gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg
 // now check our RDB_DOLEDB for SpiderRequests to spider!
 void SpiderLoop::spiderDoledUrls ( ) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN"  );
-
-	m_lastCallTime = gettimeofdayInMilliseconds();
 
 collLoop:
 
@@ -571,38 +545,6 @@ subloopNextPriority:
 	// need this for msg5 call
 	key96_t endKey;
 	endKey.setMax();
-
-	// init the m_priorityToUfn map array?
-	if ( ! m_sc->m_ufnMapValid ) {
-		// reset all priorities to map to a ufn of -1
-		for ( int32_t i = 0 ; i < MAX_SPIDER_PRIORITIES ; i++ ) {
-			m_sc->m_priorityToUfn[i] = -1;
-		}
-
-		// initialize the map that maps priority to first ufn that uses
-		// that priority. map to -1 if no ufn uses it.
-		for ( int32_t i = 0 ; i < cr->m_numRegExs ; i++ ) {
-			// get the ith rule priority
-			int32_t sp = cr->m_spiderPriorities[i];
-
-			// must not be filtered or banned
-			if ( sp < 0 ) continue;
-
-			// sanity
-			if ( sp >= MAX_SPIDER_PRIORITIES){
-				g_process.shutdownAbort(true);
-			}
-
-			// skip if already mapped
-			if ( m_sc->m_priorityToUfn[sp] != -1 ) continue;
-
-			// map that
-			m_sc->m_priorityToUfn[sp] = i;
-		}
-
-		// all done
-		m_sc->m_ufnMapValid = true;
-	}
 
 	for ( ; ; ) {
 		// shortcut
@@ -982,47 +924,45 @@ skipDoledbRec:
 	// seems like we might have give the lock to someone else and
 	// there confirmation has not come through yet, so it's still
 	// in doledb.
-	HashTableX *ht = &g_spiderLoop.m_lockTable;
 
-	int64_t lockKey = makeLockTableKey ( sreq );
+	int64_t lockKey = makeLockTableKey(sreq);
 
 	// get the lock... only avoid if confirmed!
-	int32_t slot = ht->getSlot ( &lockKey );
-	UrlLock *lock = NULL;
-	if ( slot >= 0 ) {
+	int32_t slot = m_lockTable.getSlot(&lockKey);
+	if (slot >= 0) {
 		// get the corresponding lock then if there
-		lock = (UrlLock *) ht->getValueFromSlot( slot );
-	}
+		UrlLock *lock = (UrlLock *)m_lockTable.getValueFromSlot(slot);
 
-	// if there and confirmed, why still in doledb?
-	if (lock) {
-		// fight log spam
-		static int32_t s_lastTime = 0;
-		if ( nowGlobal - s_lastTime >= 2 ) {
-			// why is it not getting unlocked!?!?!
-			log( "spider: spider request locked but still in doledb. uh48=%" PRId64" firstip=%s %s",
-			     sreq->getUrlHash48(), iptoa(sreq->m_firstIp), sreq->m_url );
-			s_lastTime = nowGlobal;
+		// if there and confirmed, why still in doledb?
+		if (lock) {
+			// fight log spam
+			static int32_t s_lastTime = 0;
+			if ( nowGlobal - s_lastTime >= 2 ) {
+				// why is it not getting unlocked!?!?!
+				log( "spider: spider request locked but still in doledb. uh48=%" PRId64" firstip=%s %s",
+				     sreq->getUrlHash48(), iptoa(sreq->m_firstIp), sreq->m_url );
+				s_lastTime = nowGlobal;
+			}
+
+			// just increment then i guess
+			m_list.skipCurrentRecord();
+
+			// let's return false here to avoid an infinite loop
+			// since we are not advancing nextkey and m_pri is not
+			// being changed, that is what happens!
+			if ( m_list.isExhausted() ) {
+				// crap. but then we never make it to lower priorities.
+				// since we are returning false. so let's try the
+				// next priority in line.
+
+				// try returning true now that we skipped to
+				// the next priority level to avoid the infinite
+				// loop as described above.
+				return true;
+			}
+			// try the next record in this list
+			goto listLoop;
 		}
-
-		// just increment then i guess
-		m_list.skipCurrentRecord();
-
-		// let's return false here to avoid an infinite loop
-		// since we are not advancing nextkey and m_pri is not
-		// being changed, that is what happens!
-		if ( m_list.isExhausted() ) {
-			// crap. but then we never make it to lower priorities.
-			// since we are returning false. so let's try the
-			// next priority in line.
-
-			// try returning true now that we skipped to
-			// the next priority level to avoid the infinite
-			// loop as described above.
-			return true;
-		}
-		// try the next record in this list
-		goto listLoop;
 	}
 
 	// log this now
@@ -1071,7 +1011,7 @@ skipDoledbRec:
 	cr->setNeedsSave();
 
 	// sometimes the spider coll is reset/deleted while we are
-	// trying to get the lock in spiderUrl9() so let's use collnum
+	// trying to get the lock in spiderUrl() so let's use collnum
 	collnum_t collnum = m_sc->getCollectionRec()->m_collnum;
 
 	// . spider that. we don't care wheter it blocks or not
@@ -1083,7 +1023,7 @@ skipDoledbRec:
 	// . this returns true right away if it failed to get the lock...
 	//   which means the url is already locked by someone else...
 	// . it might also return true if we are already spidering the url
-	bool status = spiderUrl9(sreq, doledbKey, collnum);
+	bool status = spiderUrl(sreq, doledbKey, collnum);
 
 	// just increment then i guess
 	m_list.skipCurrentRecord();
@@ -1116,7 +1056,7 @@ skipDoledbRec:
 // . returns false if blocked on a spider launch, otherwise true.
 // . returns false if your callback will be called
 // . returns true and sets g_errno on error
-bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum) {
+bool SpiderLoop::spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum) {
 	// sanity
 	if ( ! m_sc ) { g_process.shutdownAbort(true); }
 
@@ -1176,8 +1116,6 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 		}
 	}
 
-	int64_t lockKeyUh48 = makeLockTableKey ( sreq );
-
 	// . now that we have to use msg12 to see if the thing is locked
 	//   to avoid spidering it.. (see comment in above function)
 	//   we often try to spider something we are already spidering. that
@@ -1229,18 +1167,10 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	// reset g_errno
 	g_errno = 0;
 
-	// save these in case getLocks() blocks
-	m_sreq      = sreq;
-	m_doledbKey = doledbKey;
-	m_collnum = collnum;
-
-	// count it
-	m_processed++;
-
-	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(m_doledbKey, sizeof(*m_doledbKey)));
+	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(doledbKey, sizeof(*doledbKey)));
 
 	// now we just take it out of doledb instantly
-	bool deleted = g_doledb.getRdb()->deleteTreeNode(m_collnum, (const char *)m_doledbKey);
+	bool deleted = g_doledb.getRdb()->deleteTreeNode(collnum, (const char *)doledbKey);
 
 	// if url filters rebuilt then doledb gets reset and i've seen us hit
 	// this node == -1 condition here... so maybe ignore it... just log
@@ -1281,29 +1211,29 @@ bool SpiderLoop::spiderUrl9(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 		//return;
 	}
 
+	int64_t lockKeyUh48 = makeLockTableKey ( sreq );
+
 	logDebug(g_conf.m_logDebugSpider, "spider: adding lock uh48=%" PRId64" lockkey=%" PRId64,
-	         m_sreq->getUrlHash48(),lockKeyUh48);
+	         sreq->getUrlHash48(),lockKeyUh48);
 
 	// . add it to lock table to avoid respider, removing from doledb
 	//   is not enough because we re-add to doledb right away
 	// . return true on error here
 	UrlLock tmp;
-	tmp.m_firstIp = m_sreq->m_firstIp;
+	tmp.m_firstIp = sreq->m_firstIp;
 	tmp.m_spiderOutstanding = 0;
-	tmp.m_collnum = m_collnum;
+	tmp.m_collnum = collnum;
 
-	if ( ! g_spiderLoop.m_lockTable.addKey ( &lockKeyUh48 , &tmp ) )
+	if (!m_lockTable.addKey(&lockKeyUh48, &tmp)) {
 		return true;
+	}
 
 	// now do it. this returns false if it would block, returns true if it
 	// would not block. sets g_errno on error. it spiders m_sreq.
-	return spiderUrl2 ( );
+	return spiderUrl2(sreq, doledbKey, collnum);
 }
 
-
-
-bool SpiderLoop::spiderUrl2 ( ) {
-
+bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
 	// . find an available doc slot
@@ -1326,7 +1256,7 @@ bool SpiderLoop::spiderUrl2 ( ) {
 		g_errno = ENOMEM;
 		log("build: Could not allocate %" PRId32" bytes to spider "
 		    "the url %s. Will retry later.",
-		    (int32_t)sizeof(XmlDoc),  m_sreq->m_url );
+		    (int32_t)sizeof(XmlDoc),  sreq->m_url );
 		    
 		logTrace( g_conf.m_logTraceSpider, "END, new XmlDoc failed" );
 		return true;
@@ -1336,22 +1266,22 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	// add to the array
 	m_docs [ i ] = xd;
 
-	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
+	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	const char *coll = "collnumwasinvalid";
 	if ( cr ) coll = cr->m_coll;
 
 	if ( g_conf.m_logDebugSpider )
 		logf(LOG_DEBUG,"spider: spidering firstip9=%s(%" PRIu32") "
 		     "uh48=%" PRIu64" prntdocid=%" PRIu64" k.n1=%" PRIu64" k.n0=%" PRIu64,
-		     iptoa(m_sreq->m_firstIp),
-		     (uint32_t)m_sreq->m_firstIp,
-		     m_sreq->getUrlHash48(),
-		     m_sreq->getParentDocId() ,
-		     m_sreq->m_key.n1,
-		     m_sreq->m_key.n0);
+		     iptoa(sreq->m_firstIp),
+		     (uint32_t)sreq->m_firstIp,
+		     sreq->getUrlHash48(),
+		     sreq->getParentDocId() ,
+		     sreq->m_key.n1,
+		     sreq->m_key.n0);
 
 	// this returns false and sets g_errno on error
-	if (!xd->set4(m_sreq, m_doledbKey, coll, NULL, MAX_NICENESS)) {
+	if (!xd->set4(sreq, doledbKey, coll, NULL, MAX_NICENESS)) {
 		// i guess m_coll is no longer valid?
 		mdelete ( m_docs[i] , sizeof(XmlDoc) , "Doc" );
 		delete (m_docs[i]);
@@ -1371,25 +1301,25 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	// count this
 	m_sc->m_spidersOut++;
 
-	g_spiderLoop.m_launches++;
+	m_launches++;
 
 	// sanity check
-	if (m_sreq->m_priority <= -1 ) { 
+	if (sreq->m_priority <= -1 ) {
 		log("spider: fixing bogus spider req priority of %i for "
 		    "url %s",
-		    (int)m_sreq->m_priority,m_sreq->m_url);
-		m_sreq->m_priority = 0;
+		    (int)sreq->m_priority,sreq->m_url);
+		sreq->m_priority = 0;
 		//g_process.shutdownAbort(true); 
 	}
 
 	// update this
-	m_sc->m_outstandingSpiders[(unsigned char)m_sreq->m_priority]++;
+	m_sc->m_outstandingSpiders[(unsigned char)sreq->m_priority]++;
 
 	if ( g_conf.m_logDebugSpider )
 		log(LOG_DEBUG,"spider: sc_out=%" PRId32" waiting=%" PRId32" url=%s",
 		    m_sc->m_spidersOut,
 		    m_sc->m_waitingTree.getNumUsedNodes(),
-		    m_sreq->m_url);
+			sreq->m_url);
 
 	// . return if this blocked
 	// . no, launch another spider!
@@ -1486,23 +1416,33 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 // use -1 for any collnum
 int32_t SpiderLoop::getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum ) {
 	int32_t count = 0;
-	// count locks
-	HashTableX *ht = &g_spiderLoop.m_lockTable;
+
 	// scan the slots
-	int32_t ns = ht->getNumSlots();
-	for ( int32_t i = 0 ; i < ns ; i++ ) {
+	for (int32_t i = 0; i < m_lockTable.getNumSlots(); i++) {
 		// skip if empty
-		if ( ! ht->m_flags[i] ) continue;
+		if (!m_lockTable.m_flags[i]) {
+			continue;
+		}
+
 		// cast lock
-		UrlLock *lock = (UrlLock *)ht->getValueFromSlot(i);
+		UrlLock *lock = (UrlLock *)m_lockTable.getValueFromSlot(i);
+
 		// skip if not outstanding, just a 5-second expiration wait
 		// when the spiderReply returns, so that in case a lock
 		// request for the same url was in progress, it will be denied.
-		if ( ! lock->m_spiderOutstanding ) continue;
+		if (!lock->m_spiderOutstanding) {
+			continue;
+		}
+
 		// correct collnum?
-		if ( lock->m_collnum != collnum && collnum != -1 ) continue;
+		if (lock->m_collnum != collnum && collnum != -1) {
+			continue;
+		}
+
 		// skip if not yet expired
-		if ( lock->m_firstIp == firstIp ) count++;
+		if (lock->m_firstIp == firstIp) {
+			count++;
+		}
 	}
 
 	return count;
@@ -1524,13 +1464,12 @@ CollectionRec *SpiderLoop::getActiveList() {
 	// versa. also when deleting a collection in Collectiondb.cpp. this
 	// keeps the below loop fast when we have thousands of collections
 	// and most are inactive or empty/deleted.
-	if ( ! m_activeListValid || m_activeListModified ) {
+	if (!m_activeListValid) {
 		buildActiveList();
 		//m_crx = m_activeList;
 		// recompute every 3 seconds, it seems kinda buggy!!
 		m_recalcTime = nowGlobal + 3;
 		m_recalcTimeValid = true;
-		m_activeListModified = false;
 	}
 
 	return m_activeList;
@@ -2094,5 +2033,45 @@ void handleRequestc1(UdpSlot *slot, int32_t /*niceness*/) {
 	replyBuf.detachBuf();
 }
 
+bool SpiderLoop::isLocked(int64_t key) const {
+	return m_lockTable.isInTable(&key);
+}
 
+int32_t SpiderLoop::getLockCount() const {
+	return m_lockTable.getNumUsedSlots();
+}
 
+void SpiderLoop::removeLock(int64_t key) {
+	m_lockTable.removeKey(&key);
+}
+
+void SpiderLoop::clearLocks(collnum_t collnum) {
+	// remove locks from locktable for all spiders out
+	for (;;) {
+		bool restart = false;
+
+		// scan the slots
+		for (int32_t i = 0; i < m_lockTable.getNumSlots(); i++) {
+			// skip if empty
+			if (!m_lockTable.m_flags[i]) {
+				continue;
+			}
+
+			UrlLock *lock = (UrlLock *)m_lockTable.getValueFromSlot(i);
+			// skip if not our collnum
+			if (lock->m_collnum != collnum) {
+				continue;
+			}
+
+			// nuke it!
+			m_lockTable.removeSlot(i);
+
+			// restart since cells may have shifted
+			restart = true;
+		}
+
+		if (!restart) {
+			break;
+		}
+	}
+}
