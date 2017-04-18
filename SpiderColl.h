@@ -85,7 +85,12 @@ public:
 	class CollectionRec *getCollRec();
 	const char *getCollName();
 
-	HashTableX m_doleIpTable;
+	int32_t getDoleIpTableCount() const;
+	void disableDoleIpTableWrites();
+	bool isInDoleIpTable(int32_t firstIp) const;
+	bool isDoleIpTableEmpty() const;
+	void clearDoleIpTable();
+
 
 	HashTableX m_localTable;
 
@@ -162,6 +167,8 @@ private:
 	bool m_didRead;
 
 	RdbCache m_dupCache;
+
+	HashTableX m_doleIpTable;
 
 	RdbTree m_winnerTree;
 	HashTableX m_winnerTable;

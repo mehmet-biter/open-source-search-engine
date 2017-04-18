@@ -534,7 +534,7 @@ subloopNextPriority:
 	// shortcut
 	SpiderColl *sc = cr->m_spiderColl;
 
-	if ( sc && sc->m_doleIpTable.isEmpty() ) {
+	if ( sc && sc->isDoleIpTableEmpty() ) {
 		logTrace( g_conf.m_logTraceSpider, "Loop, doleIpTable is empty"  );
 		goto subloop;
 	}
@@ -1953,7 +1953,7 @@ void handleRequestc1(UdpSlot *slot, int32_t /*niceness*/) {
 			if ( printIt ) sc->m_lastPrinted = now + 5;
 
 			// doledb must be empty
-			if ( ! sc->m_doleIpTable.isEmpty() ) {
+			if ( ! sc->isDoleIpTableEmpty() ) {
 				if ( printIt )
 				log("spider: not ending crawl because "
 				    "doledb not empty for coll=%s",cr->m_coll);

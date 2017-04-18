@@ -875,7 +875,7 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 	// . waiting tree is meant to be a signal that we need to add
 	//   a spiderrequest from that ip into doledb where it can be picked
 	//   up for immediate spidering
-	if ( m_doleIpTable.isInTable ( &firstIp ) ) {
+	if (isInDoleIpTable(firstIp)) {
 		logDebug( g_conf.m_logDebugSpider, "spider: not adding to waiting tree, already in doleip table" );
 		return false;
 	}
@@ -1048,7 +1048,7 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 		// at least one ping from him so we do not remove at startup.
 		// if it is in doledb or in the middle of being added to doledb
 		// via msg4, nuke it as well!
-		if (firstIp == 0 || firstIp == -1 || !isAssignedToUs(firstIp) || m_doleIpTable.isInTable(&firstIp)) {
+		if (firstIp == 0 || firstIp == -1 || !isAssignedToUs(firstIp) || isInDoleIpTable(firstIp)) {
 			if (firstIp == 0 || firstIp == -1) {
 				log(LOG_WARN, "spider: removing corrupt spiderreq firstip of %" PRId32"from waiting tree collnum=%i",
 				    firstIp, (int)m_collnum);
@@ -1335,8 +1335,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 
 		// skip if ip already represented in doledb i guess otherwise
 		// the populatedoledb scan will nuke it!!
-		if ( m_doleIpTable.isInTable ( &firstIp ) ) 
-		{
+		if (isInDoleIpTable(firstIp)) {
 			logTrace( g_conf.m_logTraceSpider, "Skipping, IP [%s] already in doledb" , iptoa(firstIp));
 			continue;
 		}
@@ -2030,7 +2029,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	if ( m_scanningIp != firstIp0 ) { g_process.shutdownAbort(true); }
 	// sometimes we already have this ip in doledb/doleiptable
 	// already and somehow we try to scan spiderdb for it anyway
-	if ( m_doleIpTable.isInTable ( &firstIp0 ) ) { g_process.shutdownAbort(true);}
+	if (isInDoleIpTable(firstIp0)) { g_process.shutdownAbort(true); }
 		
 	// if it got zapped from the waiting tree by the time we read the list
 	if ( ! m_waitingTable.isInTable ( &m_scanningIp ) ) 
@@ -3122,7 +3121,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 			m_winnerTable.reset();
 
 			// if in the process of being added to doledb or in doledb...
-			if (m_doleIpTable.isInTable(&firstIp)) {
+			if (isInDoleIpTable(firstIp)) {
 				// sanity i guess. remove this line if it hits this!
 				log(LOG_ERROR, "spider: wtf????");
 				//g_process.shutdownAbort(true);
@@ -3564,4 +3563,24 @@ bool SpiderColl::tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 	mdelete ( sc , sizeof(SpiderColl),"postdel1");
 	delete ( sc );
 	return true;
+}
+
+int32_t SpiderColl::getDoleIpTableCount() const {
+	return m_doleIpTable.getNumUsedSlots();
+}
+
+bool SpiderColl::isInDoleIpTable(int32_t firstIp) const {
+	return m_doleIpTable.isInTable(&firstIp);
+}
+
+bool SpiderColl::isDoleIpTableEmpty() const {
+	return m_doleIpTable.isEmpty();
+}
+
+void SpiderColl::clearDoleIpTable() {
+	m_doleIpTable.clear();
+}
+
+void SpiderColl::disableDoleIpTableWrites() {
+	m_doleIpTable.disableWrites();
 }
