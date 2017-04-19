@@ -21,6 +21,7 @@
 #include <netinet/in.h>        // ntohl() ntohs()
 #include "ip.h"
 #include "Conf.h"
+#include <assert.h>
 
 // . any changes made to the slots should only be done without risk of
 //   interruption because makeCallbacks() reads from the slots to call
@@ -758,6 +759,7 @@ bool UdpServer::sendPoll(bool allowResends, int64_t now) {
 // . f(x) = a*(now - startTime) + b/msgSize
 // . verified that this is not interruptible
 UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
+	m_mtx.verify_is_locked();
 	// . we send msgs that are mostly "caught up" with their acks first
 	// . the slot with the lowest score gets sent
 	// . re-sends have priority over NONre-sends(ACK was not recvd in time)
@@ -1581,8 +1583,9 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		else if ( g_errno ) 
 			g_stats.m_errors[msgType][slot->getNiceness()]++;
 
-		if ( g_conf.m_maxCallbackDelay >= 0 )//&&slot->m_niceness==0) 
+		if ( g_conf.m_maxCallbackDelay >= 0 ) {
 			start = gettimeofdayInMilliseconds();
+		}
 
 		// sanity check for double callbacks
 		if ( slot->hasCalledCallback() ) {
@@ -1619,28 +1622,32 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 			    "nice=%" PRId32,(int32_t)slot->getMsgType(),slot->getNiceness());
 
 		if ( g_conf.m_maxCallbackDelay >= 0 ) {
-			int64_t elapsed = gettimeofdayInMilliseconds()-
-				start;
-			if ( slot->getNiceness() == 0 &&
-			     elapsed >= g_conf.m_maxCallbackDelay )
-				log("udp: Took %" PRId64" ms to call "
-				    "callback for msgType=0x%02x niceness=%" PRId32,
-				    elapsed, (int)slot->getMsgType(),
-				    (int32_t)slot->getNiceness());
+			int64_t elapsed = gettimeofdayInMilliseconds() - start;
+
+//			if ( slot->getNiceness() == 0 && elapsed >= g_conf.m_maxCallbackDelay ) {
+			if ( elapsed >= g_conf.m_maxCallbackDelay ) {
+				log(LOG_WARN, "UdpServer Took %" PRId64" ms to call callback for msgType=0x%02x niceness=%" PRId32,
+				    elapsed, (int)slot->getMsgType(), (int32_t)slot->getNiceness());
+			}
 		}
 
 		// time it
-		if ( g_conf.m_logDebugUdp )
+		if ( g_conf.m_logDebugUdp ) {
 			log(LOG_DEBUG,"udp: Reply callback took %" PRId64" ms.",
 			    gettimeofdayInMilliseconds() - start );
+		}
+
 		// clear any g_errno that may have been set
 		g_errno = 0;
+
 		// . now lets destroy the slot, bufs and all
 		// . if the caller wanted to hang on to request or reply then
 		//   it should NULLify slot->m_sendBuf and/or slot->m_readBuf
 		destroySlot ( slot );
 		return true;
 	}
+
+
 	// don't repeat call the handler if we already called it
 	if ( slot->hasCalledHandler() ) {
 		// . if transaction has not fully completed, keep sending
@@ -1674,6 +1681,10 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 				log(LOG_DEBUG,"loop: enter callback2 for "
 				    "0x%" PRIx32,(int32_t)slot->getMsgType());
 
+			if ( g_conf.m_maxCallbackDelay >= 0 ) {
+				start = gettimeofdayInMillisecondsLocal();
+			}
+
 			// call it
 			slot->m_callback2 ( slot->m_state , slot ); 
 
@@ -1681,10 +1692,21 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 				log(LOG_DEBUG,"loop: exit callback2 for 0x%" PRIx32,
 				    (int32_t)slot->getMsgType());
 
+
+			if ( g_conf.m_maxCallbackDelay >= 0 ) {
+				int64_t elapsed = gettimeofdayInMillisecondsLocal() - start;
+
+	//			if ( slot->getNiceness() == 0 && elapsed >= g_conf.m_maxCallbackDelay ) {
+				if ( elapsed >= g_conf.m_maxCallbackDelay ) {
+					log(LOG_WARN, "UdpServer Took %" PRId64" ms to call callback2 for msgType=0x%02x niceness=%" PRId32,
+					    elapsed, (int)slot->getMsgType(), (int32_t)slot->getNiceness());
+				}
+			}
+
+
 			// debug msg
 			if ( g_conf.m_logDebugUdp ) {
-				int64_t now  = 
-					gettimeofdayInMilliseconds();
+				int64_t now  = gettimeofdayInMilliseconds();
 				int64_t took = now - start ;
 				//if ( took > 10 )
 					log(LOG_DEBUG,
@@ -1706,6 +1728,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		// this kind of callback doesn't count
 		return false;
 	}
+
 	// . if we're not done reading the request, don't call the handler
 	// . we now destroy it if the request timed out
 	if ( ! slot->isDoneReading () ) {
@@ -1843,11 +1866,12 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 
 	if ( g_conf.m_maxCallbackDelay >= 0 ) {
 		int64_t elapsed = gettimeofdayInMilliseconds() - start;
-		if ( elapsed >= g_conf.m_maxCallbackDelay &&
-		     slot->getNiceness() == 0 )
-			log("udp: Took %" PRId64" ms to call "
+
+		if ( elapsed >= g_conf.m_maxCallbackDelay ) {
+			log(LOG_WARN, "UdpServer Took %" PRId64" ms to call "
 			    "HANDLER for msgType=0x%02x niceness=%" PRId32,
 			    elapsed, (int)slot->getMsgType(), (int32_t)slot->getNiceness());
+		}
 	}
 
 	// bitch if it blocked for too long
@@ -1870,6 +1894,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		    (int32_t)slot->getNiceness(),
 		    took );
 	}
+
 	// clear any g_errno that may have been set
 	g_errno = 0;
 	// calling a handler counts
@@ -2297,6 +2322,7 @@ bool UdpServer::timeoutDeadHosts ( Host *h ) {
 
 // verified that this is not interruptible
 UdpSlot *UdpServer::getEmptyUdpSlot(key96_t k, bool incoming) {
+	m_mtx.verify_is_locked();
 	UdpSlot *slot = removeFromAvailableLinkedList();
 
 	// return NULL if none left
@@ -2380,6 +2406,7 @@ UdpSlot* UdpServer::removeFromAvailableLinkedList() {
 }
 
 void UdpServer::addToCallbackLinkedList(UdpSlot *slot) {
+	m_mtx.verify_is_locked();
 	// debug log
 	if (g_conf.m_logDebugUdp) {
 		if (slot->getErrno()) {
@@ -2410,6 +2437,7 @@ void UdpServer::addToCallbackLinkedList(UdpSlot *slot) {
 }
 
 bool UdpServer::isInCallbackLinkedList(UdpSlot *slot) {
+	m_mtx.verify_is_locked();
 	// return if not in the linked list
 	if ( slot->m_callbackListPrev || slot->m_callbackListNext || m_callbackListHead == slot ) {
 		return true;
@@ -2418,6 +2446,7 @@ bool UdpServer::isInCallbackLinkedList(UdpSlot *slot) {
 }
 
 void UdpServer::removeFromCallbackLinkedList(UdpSlot *slot) {
+	m_mtx.verify_is_locked();
 	logDebug(g_conf.m_logDebugUdp, "udp: removing slot=%p from callback list", slot);
 
 	// return if not in the linked list
@@ -2446,6 +2475,7 @@ void UdpServer::removeFromCallbackLinkedList(UdpSlot *slot) {
 }
 
 void UdpServer::addToActiveLinkedList(UdpSlot *slot) {
+	m_mtx.verify_is_locked();
 	logDebug(g_conf.m_logDebugUdp, "udp: adding slot=%p to active list", slot);
 
 	// put the used slot at the tail so older slots are at the head and
@@ -2467,6 +2497,7 @@ void UdpServer::addToActiveLinkedList(UdpSlot *slot) {
 }
 
 void UdpServer::removeFromActiveLinkedList(UdpSlot *slot) {
+	m_mtx.verify_is_locked();
 	logDebug(g_conf.m_logDebugUdp, "udp: removing slot=%p from active list", slot);
 
 	// return if not in the linked list
@@ -2496,6 +2527,7 @@ void UdpServer::removeFromActiveLinkedList(UdpSlot *slot) {
 
 // verified that this is not interruptible
 void UdpServer::freeUdpSlot(UdpSlot *slot ) {
+	m_mtx.verify_is_locked();
 	logDebug(g_conf.m_logDebugUdp, "udp: free slot=%p", slot);
 
 	removeFromActiveLinkedList(slot);
