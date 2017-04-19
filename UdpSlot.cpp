@@ -1429,19 +1429,6 @@ void UdpSlot::readAck ( int32_t dgramNum, int64_t now ) {
 		m_queuedTime = now;
 	}
 
-	// to save memory in UdpSlot we only keep track of every 8th dgram time
-	//if ( (dgramNum & 0x07) == 0 ) {
-		// get when we sent this dgram
-		//int64_t start = getSendTime ( dgramNum >> 3 ) ;
-		// trip time
-		//int32_t   tripTime = now - start;
-		// debug msg
-		//log("tripTime = %" PRId32, tripTime );
-		// . update host time
-		// . we should also stamp the host each time we re-send, too
-		// . this is now handled by g_hostdb::pingHost()
-		//g_hostdb.stampHost( m_hostId , tripTime, false/*timedOut?*/);
-	//}
 	// log msg
 	if ( g_conf.m_logDebugUdp ) {
 		//#ifdef _UDPDEBUG_

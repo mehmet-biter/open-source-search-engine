@@ -107,6 +107,8 @@ class Conf {
 	int32_t  m_mergeBufSize;
 
 	// rdb settings
+	int32_t m_maxLostPositivesPercentage;
+
 	// posdb
 	int64_t m_posdbFileCacheSize;
 	int32_t  m_posdbMaxTreeMem;
