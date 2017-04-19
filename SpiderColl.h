@@ -40,10 +40,6 @@ public:
 
 	static bool tryToDeleteSpiderColl(SpiderColl *sc, const char *msg);
 
-	key128_t m_firstKey;
-	key128_t m_nextKey;
-	key128_t m_endKey;
-
 	// corresponding to CollectionRec::m_siteListBuf
 	bool  m_siteListIsEmpty;
 	bool  m_siteListIsEmptyValid;
@@ -162,6 +158,10 @@ private:
 	bool readListFromSpiderdb ( ) ;
 	bool scanListForWinners ( ) ;
 	bool addWinnersIntoDoledb ( ) ;
+
+	key128_t m_firstKey;
+	key128_t m_nextKey;
+	key128_t m_endKey;
 
 	bool m_lastReplyValid;
 	char m_lastReplyBuf[MAX_SP_REPLY_SIZE];
