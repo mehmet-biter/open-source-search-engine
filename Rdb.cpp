@@ -851,6 +851,7 @@ bool Rdb::dumpTree() {
 		RdbBase *base = getBase(collnum);
 		if (base) {
 			base->setDumpingFileNumber(-1000);
+			base->setDumpingFileId(-1000);
 		}
 	}
 
@@ -941,12 +942,15 @@ bool Rdb::dumpCollLoop ( ) {
 		}
 
 		// this file must not exist already, we are dumping the tree into it
-		int fn = base->addNewFile();
+		int32_t fileId = 0;
+		int fn = base->addNewFile(&fileId);
 		if ( fn < 0 ) {
 			log( LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
 			return false;
 		}
+
 		base->setDumpingFileNumber(fn);
+		base->setDumpingFileId(fileId);
 
 		log(LOG_INFO,"build: Dumping to %s/%s for coll \"%s\".",
 		    base->getFile(fn)->getDir(),
@@ -1090,10 +1094,9 @@ void Rdb::doneDumping ( ) {
 		for(int collnum=0; collnum<getNumBases(); collnum++) {
 			RdbBase *base = getBase(collnum);
 			if (base) {
-				int fn = base->getDumpingFileNumber();
 				if (isUseIndexFile()) {
 					base->clearTreeIndex();
-					base->submitGlobalIndexJob(true, fn);
+					base->submitGlobalIndexJob(true, base->getDumpingFileId());
 				} else {
 					base->markNewFileReadable();
 				}

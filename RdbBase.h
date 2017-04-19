@@ -151,7 +151,7 @@ class RdbBase {
 	// . add a (new) file to the m_files/m_maps/m_fileIds arrays
 	// . return array position we added it to
 	// . return -1 and set errno on error
-	int32_t addNewFile();
+	int32_t addNewFile(int32_t *fileIdPtr);
 	void markNewFileReadable();
 
 	// these are used for computing load on a machine
@@ -176,9 +176,12 @@ class RdbBase {
 
 	void forceNextMerge() { m_nextMergeForced = true; }
 
-	
+
 	void setDumpingFileNumber(int n) { m_dumpingFileNumber = n; }
 	int getDumpingFileNumber() const { return m_dumpingFileNumber; }
+
+	void setDumpingFileId(int n) { m_dumpingFileId = n; }
+	int getDumpingFileId() const { return m_dumpingFileId; }
 
 private:
 	bool parseFilename( const char* filename, int32_t *p_fileId, int32_t *p_fileId2,
@@ -218,21 +221,21 @@ public:
 	static void generateGlobalIndex(void *item);
 
 	struct ThreadQueueItem {
-		ThreadQueueItem(RdbBase *base, docids_ptr_t docIdFileIndex, bool markFileReadable, int32_t fileIndex)
+		ThreadQueueItem(RdbBase *base, docids_ptr_t docIdFileIndex, bool markFileReadable, int32_t fileId)
 			: m_base(base)
 			, m_docIdFileIndex(docIdFileIndex)
 			, m_markFileReadable(markFileReadable)
-			, m_fileIndex(fileIndex) {
+			, m_fileId(fileId) {
 		}
 
 		RdbBase *m_base;
 		docids_ptr_t m_docIdFileIndex;
 		bool m_markFileReadable;
-		int32_t m_fileIndex;
+		int32_t m_fileId;
 	};
 
-	void submitGlobalIndexJob(bool markFileReadable, int32_t fileIndex);
-	void submitGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileIndex);
+	void submitGlobalIndexJob(bool markFileReadable, int32_t fileId);
+	void submitGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileId);
 	bool hasPendingGlobalIndexJob();
 
 	void generateGlobalIndex();
@@ -246,8 +249,8 @@ public:
 	static const uint64_t s_docIdFileIndex_filePosMask  = 0x000000000000ffffULL;
 
 private:
-	docids_ptr_t prepareGlobalIndexJob(bool markFileReadable, int32_t fileIndex);
-	docids_ptr_t prepareGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileIndex);
+	docids_ptr_t prepareGlobalIndexJob(bool markFileReadable, int32_t fileId);
+	docids_ptr_t prepareGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileId);
 
 	void selectFilesToMerge(int32_t mergeNum, int32_t numFiles, int32_t *p_mini);
 
@@ -337,6 +340,7 @@ private:
 	bool      m_isMerging;
 
 	int m_dumpingFileNumber;
+	int m_dumpingFileId;
 
 	// Record counts for files being merged. Calculated in attemptMerge() and then used
 	// for logging in incorporateMerge()

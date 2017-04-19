@@ -90,6 +90,7 @@ RdbBase::RdbBase()
     m_docIdFileIndex(new docids_t),
     m_attemptOnlyMergeResumption(true),
     m_dumpingFileNumber(-1),
+    m_dumpingFileId(-1),
     m_submittingJobs(false),
     m_outstandingJobCount(0),
     m_mtxJobCount()
@@ -1059,7 +1060,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	return i;
 }
 
-int32_t RdbBase::addNewFile() {
+int32_t RdbBase::addNewFile(int32_t *fileIdPtr) {
 	//No clue about why titledb is different. it just is.
 	int32_t id2 = m_isTitledb ? 0 : -1;
 	
@@ -1091,9 +1092,9 @@ int32_t RdbBase::addNewFile() {
 	}
 
 	// . we like to keep even #'s for merge file names
-	int32_t fileId = maxFileId + ( ( ( maxFileId & 0x01 ) == 0 ) ? 1 : 2 );
+	*fileIdPtr = maxFileId + ( ( ( maxFileId & 0x01 ) == 0 ) ? 1 : 2 );
 
-	int32_t rc = addFile( true, fileId, id2, -1, -1, false );
+	int32_t rc = addFile( true, *fileIdPtr, id2, -1, -1, false );
 	if(rc>=0)
 		m_fileInfo[rc].m_allowReads = false; //until we know for sure. See markNewFileReadable()
 	return rc;
@@ -2052,11 +2053,13 @@ void RdbBase::selectFilesToMerge(int32_t mergeFileCount, int32_t numFiles, int32
 		//if any of the files in the range are makred unreadable then skip that range.
 		//This should only happen for the last range while a new file is being dumped
 		bool anyUnreadableFiles = false;
-		for(int32_t j = i; j < i + mergeFileCount; j++) {
-			if(!m_fileInfo[i].m_allowReads)
+		for (int32_t j = i; j < i + mergeFileCount; j++) {
+			if (!m_fileInfo[j].m_allowReads) {
 				anyUnreadableFiles = true;
+				break;
+			}
 		}
-		if(anyUnreadableFiles) {
+		if (anyUnreadableFiles) {
 			log(LOG_DEBUG,"merge: file range [%d..%d] contains unreadable files", i, i+mergeFileCount-1);
 			continue;
 		}
@@ -2488,26 +2491,26 @@ void RdbBase::finalizeGlobalIndexThread() {
 	m_globalIndexThreadQueue.finalize();
 }
 
-docids_ptr_t RdbBase::prepareGlobalIndexJob(bool markFileReadable, int32_t fileIndex) {
+docids_ptr_t RdbBase::prepareGlobalIndexJob(bool markFileReadable, int32_t fileId) {
 	ScopedLock sl(m_mtxFileInfo);
-	return prepareGlobalIndexJob_unlocked(markFileReadable, fileIndex);
+	return prepareGlobalIndexJob_unlocked(markFileReadable, fileId);
 }
 
-docids_ptr_t RdbBase::prepareGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileIndex) {
+docids_ptr_t RdbBase::prepareGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileId) {
 	docids_ptr_t tmpDocIdFileIndex(new docids_t);
-
-	if (markFileReadable) {
-		m_fileInfo[fileIndex].m_pendingGenerateIndex = true;
-	}
 
 	// global index does not include RdbIndex from tree/buckets
 	for (int32_t i = 0; i < m_numFiles; i++) {
+		if (markFileReadable && m_fileInfo[i].m_fileId == fileId) {
+			m_fileInfo[i].m_pendingGenerateIndex = true;
+		}
+
 		if(m_fileInfo[i].m_allowReads || m_fileInfo[i].m_pendingGenerateIndex) {
 			auto docIds = m_fileInfo[i].m_index->getDocIds();
 			tmpDocIdFileIndex->reserve(tmpDocIdFileIndex->size() + docIds->size());
 			std::transform(docIds->begin(), docIds->end(), std::back_inserter(*tmpDocIdFileIndex),
 			               [i](uint64_t docId) {
-				               return ((docId << s_docIdFileIndex_docIdOffset) | i); // docId has delete key
+			                   return ((docId << s_docIdFileIndex_docIdOffset) | i); // docId has delete key
 			               });
 		}
 	}
@@ -2515,23 +2518,23 @@ docids_ptr_t RdbBase::prepareGlobalIndexJob_unlocked(bool markFileReadable, int3
 	return tmpDocIdFileIndex;
 }
 
-void RdbBase::submitGlobalIndexJob(bool markFileReadable, int32_t fileIndex) {
+void RdbBase::submitGlobalIndexJob(bool markFileReadable, int32_t fileId) {
 	if (!m_useIndexFile) {
 		return;
 	}
 
-	ThreadQueueItem *item = new ThreadQueueItem(this, prepareGlobalIndexJob(markFileReadable, fileIndex), markFileReadable, fileIndex);
+	ThreadQueueItem *item = new ThreadQueueItem(this, prepareGlobalIndexJob(markFileReadable, fileId), markFileReadable, fileId);
 	m_globalIndexThreadQueue.addItem(item);
 
 	log(LOG_INFO, "db: Submitted job %p to generate global index for %s", item, m_rdb->getDbname());
 }
 
-void RdbBase::submitGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileIndex) {
+void RdbBase::submitGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileId) {
 	if (!m_useIndexFile) {
 		return;
 	}
 
-	ThreadQueueItem *item = new ThreadQueueItem(this, prepareGlobalIndexJob_unlocked(markFileReadable, fileIndex), markFileReadable, fileIndex);
+	ThreadQueueItem *item = new ThreadQueueItem(this, prepareGlobalIndexJob_unlocked(markFileReadable, fileId), markFileReadable, fileId);
 	m_globalIndexThreadQueue.addItem(item);
 
 	log(LOG_INFO, "db: Submitted job %p to generate global index for %s", item, m_rdb->getDbname());
@@ -2571,8 +2574,13 @@ void RdbBase::generateGlobalIndex(void *item) {
 	queueItem->m_base->m_docIdFileIndex.swap(queueItem->m_docIdFileIndex);
 
 	if (queueItem->m_markFileReadable) {
-		queueItem->m_base->m_fileInfo[queueItem->m_fileIndex].m_allowReads = true;
-		queueItem->m_base->m_fileInfo[queueItem->m_fileIndex].m_pendingGenerateIndex = false;
+		for (auto i = 0; i < queueItem->m_base->m_numFiles; ++i) {
+			if (queueItem->m_base->m_fileInfo[i].m_fileId == queueItem->m_fileId) {
+				queueItem->m_base->m_fileInfo[i].m_allowReads = true;
+				queueItem->m_base->m_fileInfo[i].m_pendingGenerateIndex = false;
+				break;
+			}
+		}
 	}
 
 	log(LOG_INFO, "db: Processed job %p to generate global index", item);
