@@ -1210,7 +1210,7 @@ bool RdbBase::incorporateMerge ( ) {
 
 	if ( postmergePositiveRecords < m_premergeNumPositiveRecords - m_premergeNumNegativeRecords ) {
 		int64_t lostPositive = m_premergeNumPositiveRecords - postmergePositiveRecords;
-		double lostPercentage = (lostPositive * 100) / m_premergeNumPositiveRecords;
+		double lostPercentage = (lostPositive * 100.00) / m_premergeNumPositiveRecords;
 
 		log(LOG_INFO,"merge: %s: lost %" PRId64" (%.2f%%) positives", m_dbname, lostPositive, lostPercentage);
 
