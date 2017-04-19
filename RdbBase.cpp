@@ -1208,7 +1208,14 @@ bool RdbBase::incorporateMerge ( ) {
 	}
 
 	if ( postmergePositiveRecords < m_premergeNumPositiveRecords - m_premergeNumNegativeRecords ) {
-		log(LOG_INFO,"merge: %s: lost %" PRId64" positives", m_dbname, m_premergeNumPositiveRecords - postmergePositiveRecords);
+		int64_t lostPositive = m_premergeNumPositiveRecords - postmergePositiveRecords;
+		double lostPercentage = (lostPositive * 100) / m_premergeNumPositiveRecords;
+
+		log(LOG_INFO,"merge: %s: lost %" PRId64" (%.2f%%) positives", m_dbname, lostPositive, lostPercentage);
+
+		if (lostPercentage > g_conf.m_maxLostPositivesPercentage) {
+			gbshutdownCorrupted();
+		}
 	}
 
 	if ( postmergeNegativeRecords > m_premergeNumNegativeRecords ) {

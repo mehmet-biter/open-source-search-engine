@@ -7172,6 +7172,20 @@ void Parms::init ( ) {
 	m++;
 
 	////////////////////
+	// generic rdb settings
+	////////////////////
+	m->m_title = "max percentage of lost positives after merge";
+	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow. Anything above that we'll abort the instance";
+	m->m_cgi   = "plpmerge";
+	simple_m_set(Conf,m_maxLostPositivesPercentage);
+	m->m_def   = "50";
+	m->m_units = "percent";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RDB;
+	m->m_group = true;
+	m++;
+
+	////////////////////
 	// clusterdb settings
 	////////////////////
 
