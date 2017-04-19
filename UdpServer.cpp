@@ -1521,17 +1521,10 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 	//   give back the bandwidth token (via Msg21) HACK!
 	// . undo this for now
 
-	// watch out for illegal msgTypes
-	//if ( msgType < 0 ) {
-	//	log(LOG_LOGIC,"udp: makeCallback: Illegal msgType.");
-	//	return false; 
-	//}
-
 	// for timing callbacks and handlers
 	int64_t start = 0;
 	int64_t now ;
 	int32_t delta , n , bucket;
-	//bool incInt;
 
 	// debug timing
 	if ( g_conf.m_logDebugUdp )
@@ -1600,16 +1593,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 			log(LOG_DEBUG,"loop: enter callback for 0x%" PRIx32" "
 			    "nice=%" PRId32,(int32_t)slot->getMsgType(),slot->getNiceness());
 
-
-		// . sanity check - if in a high niceness callback, we should
-		//   only be calling niceness 0 callbacks here
-		//   NOTE: calling UdpServer::cancel() is an exception
-		// . no, because Loop.cpp calls udpserver's callback on its
-		//   fd with niceness 0, and it in turn can call niceness 1
-		//   udp slots
-		//if(g_niceness==0 && slot->m_niceness && g_errno!=ECANCELLED){
-		//	g_process.shutdownAbort(true);}
-
 		// sanity check. has this slot been excised from linked list?
 		if (slot->m_activeListPrev && slot->m_activeListPrev->m_activeListNext != slot) {
 			g_process.shutdownAbort(true);
@@ -1624,7 +1607,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		if ( g_conf.m_maxCallbackDelay >= 0 ) {
 			int64_t elapsed = gettimeofdayInMilliseconds() - start;
 
-//			if ( slot->getNiceness() == 0 && elapsed >= g_conf.m_maxCallbackDelay ) {
 			if ( elapsed >= g_conf.m_maxCallbackDelay ) {
 				log(LOG_WARN, "UdpServer Took %" PRId64" ms to call callback for msgType=0x%02x niceness=%" PRId32,
 				    elapsed, (int)slot->getMsgType(), (int32_t)slot->getNiceness());
@@ -1696,7 +1678,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 			if ( g_conf.m_maxCallbackDelay >= 0 ) {
 				int64_t elapsed = gettimeofdayInMillisecondsLocal() - start;
 
-	//			if ( slot->getNiceness() == 0 && elapsed >= g_conf.m_maxCallbackDelay ) {
 				if ( elapsed >= g_conf.m_maxCallbackDelay ) {
 					log(LOG_WARN, "UdpServer Took %" PRId64" ms to call callback2 for msgType=0x%02x niceness=%" PRId32,
 					    elapsed, (int)slot->getMsgType(), (int32_t)slot->getNiceness());
@@ -1874,12 +1855,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		}
 	}
 
-	// bitch if it blocked for too long
-	//took = gettimeofdayInMilliseconds() - start;
-	//mt = LOG_INFO;
-	//if ( took <= 50 ) mt = LOG_TIMING;
-	//if ( took > 10 )
-	//	log(mt,"net: Handler transId=%" PRId32" slot=%" PRIu32" "
 	// this is kinda obsolete now that we have the stats above
 	if ( g_conf.m_logDebugNet ) {
 		int64_t took = gettimeofdayInMilliseconds() - start;
@@ -1914,10 +1889,6 @@ void UdpServer::timePoll ( ) {
 		if ( ! m_activeListHead ) return;
 	}
 
-	// debug msg
-	//if ( g_conf.m_logDebugUdp ) log("enter timePoll");
-	// only repeat once
-	//bool first = true;
 	// get time now
 	int64_t now = gettimeofdayInMilliseconds();
 	// before timing everyone out or starting resends, just to make
@@ -1934,11 +1905,7 @@ void UdpServer::timePoll ( ) {
 	if ( readTimeoutPoll ( now ) ) {
 		// if we timed something out or reset it then call the
 		// callbacks to do sending and loop back up
-		makeCallbacks(MAX_NICENESS); // -1
-		// try sending on slots even though we haven't read from them
-		//sendPoll ( true , now );
-		// repeat in case the send got reset
-		//		if ( first ) { first = false; goto loop; }
+		makeCallbacks(MAX_NICENESS);
 	}
 }
 
@@ -2653,9 +2620,7 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 
 		// replace the data in the slot
 		slot->m_port = newHost->m_port;
-		//if ( this == &g_udpServer ) slot->m_port = newHost->m_port;
-		//else			      slot->m_port = newHost->m_port2;
-		//slot->m_transId = getTransId();
+
 		// . now readd the slot to the hash table
 		key96_t key = m_proto->makeKey ( slot->getIp(),
 					       slot->getPort(),
