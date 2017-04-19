@@ -2052,11 +2052,13 @@ void RdbBase::selectFilesToMerge(int32_t mergeFileCount, int32_t numFiles, int32
 		//if any of the files in the range are makred unreadable then skip that range.
 		//This should only happen for the last range while a new file is being dumped
 		bool anyUnreadableFiles = false;
-		for(int32_t j = i; j < i + mergeFileCount; j++) {
-			if(!m_fileInfo[i].m_allowReads)
+		for (int32_t j = i; j < i + mergeFileCount; j++) {
+			if (!m_fileInfo[j].m_allowReads) {
 				anyUnreadableFiles = true;
+				break;
+			}
 		}
-		if(anyUnreadableFiles) {
+		if (anyUnreadableFiles) {
 			log(LOG_DEBUG,"merge: file range [%d..%d] contains unreadable files", i, i+mergeFileCount-1);
 			continue;
 		}
