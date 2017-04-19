@@ -208,7 +208,7 @@ public:
 
 private:
 	uint64_t m_lastResponseReceiveTimestamp;
-	uint64_t m_lastRequestSendTimestamp;
+	std::atomic<uint64_t> m_lastRequestSendTimestamp;
 
 	friend class Hostdb;
 	uint16_t m_httpPort ;      // http port
