@@ -414,12 +414,7 @@ void processSleepWrapper(int /*fd*/, void * /*state*/) {
 		return;
 	}
 
-	if ( g_process.m_mode == Process::SAVE_MODE ) {
-		g_process.save2();
-		return;
-	}
-
-	if ( g_process.m_mode == Process::LOCK_MODE ) {
+	if (g_process.m_mode == Process::SAVE_MODE || g_process.m_mode == Process::LOCK_MODE) {
 		g_process.save2();
 		return;
 	}
