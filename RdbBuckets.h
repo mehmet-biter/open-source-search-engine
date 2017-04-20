@@ -28,6 +28,7 @@
 #include "rdbid_t.h"
 #include "types.h"
 #include "GbMutex.h"
+#include "JobScheduler.h"
 
 class BigFile;
 class RdbList;
@@ -42,6 +43,8 @@ public:
 	~RdbBuckets( );
 	void clear();
 	void reset();
+
+	GbMutex& getLock() { return m_mtx; }
 
 	bool set(int32_t fixedDataSize, int32_t maxMem, const char *allocName, rdbid_t rdbId, const char *dbname,
 	         char keySize);
@@ -101,6 +104,9 @@ public:
 	bool loadBuckets(const char *dbname);
 
 private:
+	static void saveWrapper(void *state);
+	static void saveDoneWrapper(void *state, job_exit_t exit_type);
+
 	void reset_unlocked();
 
 	bool resizeTable_unlocked(int32_t numNeeded);
@@ -163,7 +169,9 @@ private:
 
 	void (*m_callback)(void *state);
 
-	int32_t m_saveErrno;
+	int64_t m_bytesWritten;
+
+	int32_t m_errno;
 	const char *m_allocName;
 };
 
