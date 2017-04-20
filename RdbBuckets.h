@@ -118,7 +118,7 @@ private:
 
 	void addBucket_unlocked(RdbBucket *newBucket, int32_t i);
 	int32_t getBucketNum_unlocked(collnum_t collnum, const char *key) const;
-	char bucketCmp_unlocked(collnum_t acoll, const char *akey, RdbBucket *b) const;
+	char bucketCmp_unlocked(collnum_t acoll, const char *akey, const RdbBucket *b) const;
 
 	//syntactic sugar
 	RdbBucket* bucketFactory_unlocked();
