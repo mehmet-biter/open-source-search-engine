@@ -263,7 +263,7 @@ bool RdbBucket::sort() {
 	char *p = mergeBuf;
 	char v;
 	char *lastKey = NULL;
-	int32_t br = 0; //bytesRemoved (abbreviated for column width)
+	int32_t bytesRemoved = 0;
 	int32_t dso = ks + sizeof(char*);//datasize offset
 	int32_t numNeg = 0;
 
@@ -275,9 +275,9 @@ bool RdbBucket::sort() {
 					//this is a dup, we are removing data
 					if (fixedDataSize != 0) {
 						if (fixedDataSize == -1) {
-							br += *(int32_t *)(lastKey + dso);
+							bytesRemoved += *(int32_t *)(lastKey + dso);
 						} else {
-							br += fixedDataSize;
+							bytesRemoved += fixedDataSize;
 						}
 					}
 					if (KEYNEG(lastKey)) {
@@ -323,9 +323,9 @@ bool RdbBucket::sort() {
 				//this is a dup, we are removing data
 				if (fixedDataSize != 0) {
 					if (fixedDataSize == -1) {
-						br += *(int32_t *)(lastKey + dso);
+						bytesRemoved += *(int32_t *)(lastKey + dso);
 					} else {
-						br += fixedDataSize;
+						bytesRemoved += fixedDataSize;
 					}
 				}
 				if (KEYNEG(lastKey)) {
@@ -342,9 +342,9 @@ bool RdbBucket::sort() {
 			if (lastKey && KEYCMPNEGEQ(list2, lastKey, ks) == 0) {
 				if (fixedDataSize != 0) {
 					if (fixedDataSize == -1) {
-						br += *(int32_t *)(lastKey + dso);
+						bytesRemoved += *(int32_t *)(lastKey + dso);
 					} else {
-						br += fixedDataSize;
+						bytesRemoved += fixedDataSize;
 					}
 				}
 				if (KEYNEG(lastKey)) {
@@ -364,7 +364,7 @@ bool RdbBucket::sort() {
 
 	//we compacted out the dups, so reflect that here
 	int32_t newNumKeys = (p - mergeBuf) / recSize;
-	m_parent->updateNumRecs_unlocked(newNumKeys - m_numKeys, -br, -numNeg);
+	m_parent->updateNumRecs_unlocked(newNumKeys - m_numKeys, -bytesRemoved, -numNeg);
 	m_numKeys = newNumKeys;
 
 	if (m_keys != mergeBuf) {
