@@ -1690,9 +1690,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 
 	if (m_useTree) {
 		if (!m_tree.addNode(collnum, key, dataCopy, dataSize)) {
-			// enhance the error message
-			const char *ss = m_tree.isSaving() ? " Tree is saving." : "";
-			log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
+			log(LOG_INFO, "db: Had error adding data to %s: %s", m_dbname, mstrerror(g_errno));
 			return false;
 		}
 	} else {
@@ -1700,9 +1698,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 		// . should set g_errno if failed
 		// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
 		if (!m_buckets.addNode(collnum, key, dataCopy, dataSize)) {
-			// enhance the error message
-			const char *ss = m_buckets.isSaving() ? " Buckets are saving." : "";
-			log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
+			log(LOG_INFO, "db: Had error adding data to %s: %s", m_dbname, mstrerror(g_errno));
 			return false;
 		}
 	}
