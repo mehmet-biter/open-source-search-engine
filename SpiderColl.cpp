@@ -1505,7 +1505,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 
 	// are we trying to exit? some firstip lists can be quite long, so
 	// terminate here so all threads can return and we can exit properly
-	if ( g_process.m_mode == Process::EXIT_MODE ) {
+	if (g_process.isShuttingDown()) {
 		m_isPopulatingDoledb = false; 
 		logTrace( g_conf.m_logTraceSpider, "END, shutting down" );
 		return;
@@ -1701,7 +1701,7 @@ void SpiderColl::gotSpiderdbListWrapper(void *state, RdbList *list, Msg5 *msg5) 
 
 	// are we trying to exit? some firstip lists can be quite long, so
 	// terminate here so all threads can return and we can exit properly
-	if (g_process.m_mode == Process::EXIT_MODE) {
+	if (g_process.isShuttingDown()) {
 		return;
 	}
 
@@ -1744,7 +1744,7 @@ bool SpiderColl::evalIpLoop ( ) {
 
 	// are we trying to exit? some firstip lists can be quite long, so
 	// terminate here so all threads can return and we can exit properly
-	if ( g_process.m_mode == Process::EXIT_MODE ) {
+	if (g_process.isShuttingDown()) {
 		logTrace( g_conf.m_logTraceSpider, "END, shutting down" );
 		return true;
 	}

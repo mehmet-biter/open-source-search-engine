@@ -348,7 +348,7 @@ bool Rebalance::scanRdb ( ) {
 		m_registered = false;
 	}
 
-	if ( g_process.m_mode == Process::EXIT_MODE ) return false;
+	if (g_process.isShuttingDown()) return false;
 
 	// . if this rdb is merging wait until merge is done
 	// . we will be dumping out a lot of negative recs and if we are
@@ -376,7 +376,7 @@ bool Rebalance::scanRdb ( ) {
 	}
 
 	for(;;) {
-		if ( g_process.m_mode == Process::EXIT_MODE ) return false;
+		if (g_process.isShuttingDown()) return false;
 
 		//log("rebal: loading list start = %s",KEYSTR(m_nextKey,rdb->m_ks));
 

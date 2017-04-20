@@ -756,8 +756,7 @@ bool Repair::loop() {
 
  loop1:
 
-	if ( g_process.m_mode == Process::EXIT_MODE )
-	{
+	if (g_process.isShuttingDown()) {
 		return true;
 	}
 
