@@ -792,7 +792,7 @@ bool Msg25::doReadLoop() {
 		    ms,m_site,m_url,m_docId,KEYSTR(&startKey,LDBKS));
 	}
 
-        if ( g_process.m_mode == Process::EXIT_MODE ) {
+	if (g_process.isShuttingDown()) {
 		log(LOG_DEBUG, "linkdb: shutting down. exiting link text loop.");
 		g_errno = ESHUTTINGDOWN;
 		return false;

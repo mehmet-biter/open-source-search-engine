@@ -330,10 +330,6 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 		return false;
 	}
 
-	// allow rdb2->reset() to succeed without dumping core
-	rdb2->m_tree.setNeedsSave(false);
-	rdb2->m_buckets.setNeedsSave(false);
-	
 	// . make rdb2, the secondary rdb used for rebuilding, give up its mem
 	// . if we do another rebuild its ::init() will be called by PageRepair
 	rdb2->reset();
@@ -913,13 +909,7 @@ bool Rdb::dumpCollLoop ( ) {
 
 		// before we create the file, see if tree has anything for this coll
 		if(m_useTree) {
-			ScopedLock sl(m_tree.getLock());
-
-			const char *k = KEYMIN();
-			int32_t nn = m_tree.getNextNode_unlocked(m_dumpCollnum, k);
-			if ( nn < 0 )
-				continue;
-			if (m_tree.getCollnum_unlocked(nn) != m_dumpCollnum )
+			if(!m_tree.collExists(m_dumpCollnum))
 				continue;
 		} else {
 			if(!m_buckets.collExists(m_dumpCollnum))
@@ -1696,9 +1686,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 
 	if (m_useTree) {
 		if (!m_tree.addNode(collnum, key, dataCopy, dataSize)) {
-			// enhance the error message
-			const char *ss = m_tree.isSaving() ? " Tree is saving." : "";
-			log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
+			log(LOG_INFO, "db: Had error adding data to %s: %s", m_dbname, mstrerror(g_errno));
 			return false;
 		}
 	} else {
@@ -1706,9 +1694,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 		// . should set g_errno if failed
 		// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
 		if (!m_buckets.addNode(collnum, key, dataCopy, dataSize)) {
-			// enhance the error message
-			const char *ss = m_buckets.isSaving() ? " Buckets are saving." : "";
-			log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
+			log(LOG_INFO, "db: Had error adding data to %s: %s", m_dbname, mstrerror(g_errno));
 			return false;
 		}
 	}

@@ -715,6 +715,9 @@ void RdbBuckets::reset_unlocked() {
 		mfree(m_masterPtr, m_masterSize, m_allocName );
 	}
 
+	// do not require saving after a reset
+	m_needsSave = false;
+
 	m_masterPtr = NULL;
 	m_buckets = NULL;
 	m_bucketsSpace = NULL;
@@ -1349,7 +1352,7 @@ bool RdbBuckets::selfTest_unlocked(bool thorough, bool core) {
 	return true;
 }
 
-char RdbBuckets::bucketCmp_unlocked(collnum_t acoll, const char *akey, RdbBucket *b) const {
+char RdbBuckets::bucketCmp_unlocked(collnum_t acoll, const char *akey, const RdbBucket *b) const {
 	m_mtx.verify_is_locked();
 
 	if (acoll == b->getCollnum()) {

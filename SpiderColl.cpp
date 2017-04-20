@@ -1505,7 +1505,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 
 	// are we trying to exit? some firstip lists can be quite long, so
 	// terminate here so all threads can return and we can exit properly
-	if ( g_process.m_mode == Process::EXIT_MODE ) {
+	if (g_process.isShuttingDown()) {
 		m_isPopulatingDoledb = false; 
 		logTrace( g_conf.m_logTraceSpider, "END, shutting down" );
 		return;
@@ -1701,7 +1701,7 @@ void SpiderColl::gotSpiderdbListWrapper(void *state, RdbList *list, Msg5 *msg5) 
 
 	// are we trying to exit? some firstip lists can be quite long, so
 	// terminate here so all threads can return and we can exit properly
-	if (g_process.m_mode == Process::EXIT_MODE) {
+	if (g_process.isShuttingDown()) {
 		return;
 	}
 
@@ -1744,7 +1744,7 @@ bool SpiderColl::evalIpLoop ( ) {
 
 	// are we trying to exit? some firstip lists can be quite long, so
 	// terminate here so all threads can return and we can exit properly
-	if ( g_process.m_mode == Process::EXIT_MODE ) {
+	if (g_process.isShuttingDown()) {
 		logTrace( g_conf.m_logTraceSpider, "END, shutting down" );
 		return true;
 	}
@@ -3492,8 +3492,6 @@ bool SpiderColl::addToDoledbIpTable(SpiderRequest *sreq) {
 		if ( g_conf.m_logDebugSpider )
 			log(LOG_DEBUG,"spider: added ip=%s to doleiptable "
 				"(score=1)",iptoa(sreq->m_firstIp));
-		// sanity check
-		//if ( ! m_doledbIpTable.m_isWritable ) { g_process.shutdownAbort(true);}
 	}
 
 	// . these priority slots in doledb are not empty
@@ -3536,8 +3534,6 @@ void SpiderColl::removeFromDoledbIpTable(int32_t firstIp) {
 		// this can file if writes are disabled on this hashtablex
 		// because it is saving
 		m_doledbIpTable.removeKey ( &firstIp );
-		// sanity check
-		//if ( ! m_doledbIpTable.m_isWritable ) { g_process.shutdownAbort(true); }
 	}
 	// wtf!
 	if ( *score < 0 ) { g_process.shutdownAbort(true); }

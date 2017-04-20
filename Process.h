@@ -42,6 +42,8 @@ class Process {
 	bool shutdown2          ( ) ;
 	void disableTreeWrites  ( bool shuttingDown ) ;
 	void enableTreeWrites();
+
+	bool isShuttingDown() const { return m_mode == EXIT_MODE; }
 	bool isRdbDumping       ( ) ;
 	bool isRdbMerging       ( ) ;
 	bool saveRdbTrees(bool shuttingDown);

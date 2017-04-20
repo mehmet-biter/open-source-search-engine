@@ -124,6 +124,8 @@ public:
 	// estimate the size of the list defined by these keys
 	int32_t estimateListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const;
 
+	bool collExists(collnum_t coll) const;
+
 	/// @todo ALC verify saving/writable logic is okay with multithread
 	bool isSaving() const { return m_isSaving; }
 	bool needsSave() const { return m_needsSave; }

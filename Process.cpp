@@ -359,7 +359,7 @@ static float getDiskUsage ( int64_t *diskAvail ) {
 
 void diskUsageWrapper(int /*fd*/, void * /*state*/) {
 	// skip if exiting
-	if ( g_process.m_mode == Process::EXIT_MODE ) {
+	if (g_process.isShuttingDown()) {
 		return;
 	}
 
@@ -409,17 +409,12 @@ int64_t Process::getTotalDocsIndexed() {
 
 void processSleepWrapper(int /*fd*/, void * /*state*/) {
 
-	if ( g_process.m_mode == Process::EXIT_MODE ) {
+	if (g_process.isShuttingDown()) {
 		g_process.shutdown2();
 		return;
 	}
 
-	if ( g_process.m_mode == Process::SAVE_MODE ) {
-		g_process.save2();
-		return;
-	}
-
-	if ( g_process.m_mode == Process::LOCK_MODE ) {
+	if (g_process.m_mode == Process::SAVE_MODE || g_process.m_mode == Process::LOCK_MODE) {
 		g_process.save2();
 		return;
 	}
@@ -547,7 +542,7 @@ bool Process::shutdown ( bool urgent, void  *state, void (*callback) (void *stat
 	// bail if doing something already
 	if ( m_mode != Process::NO_MODE ) {
 		// if already in exit mode, just return
-		if ( m_mode == Process::EXIT_MODE ) {
+		if (isShuttingDown()) {
 			return true;
 		}
 
