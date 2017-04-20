@@ -913,13 +913,7 @@ bool Rdb::dumpCollLoop ( ) {
 
 		// before we create the file, see if tree has anything for this coll
 		if(m_useTree) {
-			ScopedLock sl(m_tree.getLock());
-
-			const char *k = KEYMIN();
-			int32_t nn = m_tree.getNextNode_unlocked(m_dumpCollnum, k);
-			if ( nn < 0 )
-				continue;
-			if (m_tree.getCollnum_unlocked(nn) != m_dumpCollnum )
+			if(!m_tree.collExists(m_dumpCollnum))
 				continue;
 		} else {
 			if(!m_buckets.collExists(m_dumpCollnum))

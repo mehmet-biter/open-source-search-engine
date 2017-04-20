@@ -1641,6 +1641,17 @@ int32_t RdbTree::estimateListSize(collnum_t collnum, const char *startKey, const
 }
 
 
+bool RdbTree::collExists(collnum_t coll) const {
+	ScopedLock sl(m_mtx);
+	int32_t nn = getNextNode_unlocked(coll, KEYMIN());
+	if(nn < 0)
+		return false;
+	if(getCollnum_unlocked(nn) != coll)
+		return false;
+	return true;
+}
+
+
 // . returns a number from 0 to m_numUsedNodes-1
 // . represents the ordering of this key in that range
 // . *retKey is the key that has the returned order
