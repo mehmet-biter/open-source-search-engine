@@ -330,10 +330,6 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 		return false;
 	}
 
-	// allow rdb2->reset() to succeed without dumping core
-	rdb2->m_tree.setNeedsSave(false);
-	rdb2->m_buckets.setNeedsSave(false);
-	
 	// . make rdb2, the secondary rdb used for rebuilding, give up its mem
 	// . if we do another rebuild its ::init() will be called by PageRepair
 	rdb2->reset();

@@ -717,6 +717,9 @@ void RdbBuckets::reset_unlocked() {
 		mfree(m_masterPtr, m_masterSize, m_allocName );
 	}
 
+	// do not require saving after a reset
+	m_needsSave = false;
+
 	m_masterPtr = NULL;
 	m_buckets = NULL;
 	m_bucketsSpace = NULL;
