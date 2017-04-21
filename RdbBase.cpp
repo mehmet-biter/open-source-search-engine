@@ -2308,6 +2308,11 @@ int64_t RdbBase::getMapMemAllocated() const {
 	return allocated;
 }
 
+int32_t RdbBase::getNumFiles() const {
+	ScopedLock sl(m_mtxFileInfo);
+	return m_numFiles;
+}
+
 // sum of all parts of all big files
 int32_t RdbBase::getNumSmallFiles() const {
 	int32_t count = 0;

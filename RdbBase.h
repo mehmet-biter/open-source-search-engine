@@ -104,7 +104,7 @@ class RdbBase {
 	// how much mem is allocated for our maps?
 	int64_t getMapMemAllocated() const;
 
-	int32_t       getNumFiles() const { return m_numFiles; }
+	int32_t getNumFiles() const;
 
 	// sum of all parts of all big files
 	int32_t      getNumSmallFiles() const;
@@ -205,7 +205,7 @@ private:
 		bool m_pendingGenerateIndex;
 	} m_fileInfo[MAX_RDB_FILES + 1];
 	int32_t m_numFiles;
-	GbMutex m_mtxFileInfo;  //protects modification of m_fileInfo/m_numFiles
+	mutable GbMutex m_mtxFileInfo;  //protects modification of m_fileInfo/m_numFiles
 
 	// mapping of docId to file
 	// key format
