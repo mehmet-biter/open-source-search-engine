@@ -15,6 +15,10 @@ public:
 	void setFileNum(int32_t fileNum) {
 		this->fileNum = fileNum;
 	}
+
+	int32_t getFileNum() const {
+		return fileNum;
+	}
 	
 	bool exists(int64_t docId) const {
 		return documentIsInFile(docId,fileNum);
