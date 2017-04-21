@@ -8803,6 +8803,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for TopTree";
+	m->m_cgi   = "ltrc_toptree";
+	simple_m_set(Conf,m_logTraceTopTree);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log timing messages for build";
 	m->m_desc  = "Log various timing related messages.";
 	m->m_cgi   = "ltb";

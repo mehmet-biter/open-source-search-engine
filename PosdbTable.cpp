@@ -4328,7 +4328,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				// enough domains represented in the search results.
 				// See TopTree::addNode(). it will not add the "t" node if
 				// its score is not high enough when the top tree is full.
-				if ( m_topTree->getNumUsedNodes() > m_topTree->m_docsWanted ) {
+				if ( m_topTree->getNumUsedNodes() > m_topTree->getNumDocsWanted() ) {
 					// get the lowest scoring node
 					int32_t lowNode = m_topTree->getLowNode();
 					// and record its score in "minWinningScore"
