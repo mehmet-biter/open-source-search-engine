@@ -2308,17 +2308,20 @@ bool PosdbTable::findCandidateDocIds() {
 }
 
 
-bool PosdbTable::genDebugScoreInfo1(int32_t *numProcessed, int32_t *topCursor, QueryTermInfo *qtibuf) {
+bool PosdbTable::genDebugScoreInfo1(int32_t *numProcessed, int32_t *topCursor, bool *docInThisFile, QueryTermInfo *qtibuf) {
+	*docInThisFile = false;
+
 	// did we get enough score info?
 	if ( *numProcessed >= m_msg39req->m_docsToGet ) {
+		logTrace(g_conf.m_logTracePosdb, "Too many docs processed. m_docId=%" PRId64 ". Reached msg39 m_docsToGet: %" PRId32 ", SKIPPED", m_docId, *numProcessed);
 		return true;
 	}
 	
 	// loop back up here if the docid is from a previous range
 nextNode:
-	
 	// this mean top tree empty basically
 	if ( *topCursor == -1 ) {
+		logTrace(g_conf.m_logTracePosdb, "topCursor is -1, SKIPPED");
 		return true;
 	}
 	
@@ -2328,6 +2331,7 @@ nextNode:
 		// docids in the top tree! getHighNode() can't handle
 		// that so handle it here
 		if ( m_topTree->getNumUsedNodes() == 0 ) {
+			logTrace(g_conf.m_logTracePosdb, "Num used nodes is 0, SKIPPED");
 			return true;
 		}
 		
@@ -2339,8 +2343,7 @@ nextNode:
 	TopNode *tn = m_topTree->getNode ( *topCursor );
 	// advance
 	*topCursor = m_topTree->getPrev ( *topCursor );
-	// count how many so we do not exceed requested #
-	(*numProcessed)++;
+
 	// shortcut
 	m_docId = tn->m_docId;
 	
@@ -2352,9 +2355,20 @@ nextNode:
 	     m_msg39req->m_maxDocId != -1 &&
 	     ( m_docId < (uint64_t)m_msg39req->m_minDocId || 
 	       m_docId >= (uint64_t)m_msg39req->m_maxDocId ) ) {
+		logTrace(g_conf.m_logTracePosdb, "DocId %" PRIu64 " does not match docId range %" PRIu64 " - %" PRIu64 ", SKIPPED", m_docId, (uint64_t)m_msg39req->m_minDocId, (uint64_t)m_msg39req->m_maxDocId);
 		goto nextNode;
 	}
-		
+
+	*docInThisFile = m_documentIndexChecker->exists(m_docId);
+	if( !(*docInThisFile) ) {
+		logTrace(g_conf.m_logTracePosdb, "DocId %" PRId64 " is not in this file, SKIPPED", m_docId);
+		return false;
+	}
+
+	logTrace(g_conf.m_logTracePosdb, "DocId %" PRId64 " - setting up score buffer", m_docId);
+
+	(*numProcessed)++;
+
 	// set query termlists in all sublists
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// get it
@@ -2415,7 +2429,6 @@ bool PosdbTable::genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t 
 	int32_t singleOffset;
 	int32_t singleSize;
 
-
 	dcs->m_siteRank   = siteRank;
 	dcs->m_finalScore = score;
 	
@@ -2428,9 +2441,11 @@ bool PosdbTable::genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t 
 	dcs->m_docId      = m_docId;
 	dcs->m_numRequiredTerms = m_numQueryTermInfos;
 	dcs->m_docLang = docLang;
+	logTrace(g_conf.m_logTracePosdb, "m_docId=%" PRId64 ", *lastDocId=%" PRId64 "", m_docId, *lastDocId);
 	
 	// ensure enough room we can't allocate in a thread!
 	if ( m_scoreInfoBuf.getAvail()<(int32_t)sizeof(DocIdScore)+1) {
+		logTrace(g_conf.m_logTracePosdb, "END, NO ROOM");
 		return true;
 	}
 	
@@ -2488,6 +2503,7 @@ VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
 	// only kick out docids from the score buffer when there
 	// is no room left...
 	if ( m_scoreInfoBuf.getAvail() >= (int)sizeof(DocIdScore ) ) {
+		logTrace(g_conf.m_logTracePosdb, "END, OK. m_docId=%" PRId64 ", *lastDocId=%" PRId64 "", m_docId, *lastDocId);
 		return true;
 	}
 
@@ -2507,6 +2523,7 @@ VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
 	
 	// might not be full yet
 	if ( sx >= sxEnd ) {
+		logTrace(g_conf.m_logTracePosdb, "END, OK 2");
 		return true;
 	}
 	
@@ -2518,8 +2535,7 @@ VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
 	// note it because it is slow
 	// this is only used if getting score info, which is
 	// not default when getting an xml or json feed
-	//log("query: kicking out docid %" PRId64" from score buf",
-	//    si->m_docId);
+	logTrace(g_conf.m_logTracePosdb, "Kicking out docid %" PRId64" from score buf", si->m_docId);
 
 	// get his single and pair offsets
 	pairOffset   = si->m_pairsOffset;
@@ -2548,8 +2564,93 @@ VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
 	// adjust this too!
 	*lastLen -= sizeof(DocIdScore);
 
+	logTrace(g_conf.m_logTracePosdb, "Returning false");
 	return false;
 }
+
+
+void PosdbTable::logDebugScoreInfo(int32_t loglevel) {
+	DocIdScore *si;
+	char *sx;
+	char *sxEnd;
+
+	logTrace(g_conf.m_logTracePosdb, "BEGIN");
+
+	sx = m_scoreInfoBuf.getBufStart();
+	sxEnd = sx + m_scoreInfoBuf.length();
+
+	log(loglevel, "DocId scores in m_scoreInfoBuf:");
+	for ( ; sx < sxEnd ; sx += sizeof(DocIdScore) ) {
+		si = (DocIdScore *)sx;
+
+		log(loglevel, "  docId: %14" PRIu64 ", score: %f", si->m_docId, si->m_finalScore);
+
+		// if top tree no longer has this docid, we must
+		// remove its associated scoring info so we do not
+		// breach our scoring info bufs
+		if ( ! m_topTree->hasDocId( si->m_docId ) ) {
+			log(loglevel, "    ^ NOT in topTree anymore!");
+		}
+	}
+
+	logTrace(g_conf.m_logTracePosdb, "END");
+}
+
+
+void PosdbTable::removeScoreInfoForDeletedDocIds() {
+	DocIdScore *si;
+	char *sx;
+	char *sxEnd;
+	int32_t pairOffset;
+	int32_t pairSize;
+	int32_t singleOffset;
+	int32_t singleSize;
+
+	logTrace(g_conf.m_logTracePosdb, "BEGIN");
+
+	sx = m_scoreInfoBuf.getBufStart();
+	sxEnd = sx + m_scoreInfoBuf.length();
+
+	for ( ; sx < sxEnd ; sx += sizeof(DocIdScore) ) {
+		si = (DocIdScore *)sx;
+
+		// if top tree no longer has this docid, we must
+		// remove its associated scoring info so we do not
+		// breach our scoring info bufs
+		if ( m_topTree->hasDocId( si->m_docId ) ) {
+			continue;
+		}
+
+		logTrace(g_conf.m_logTracePosdb, "Removing old score info for docId %" PRId64 "", si->m_docId);
+		// get his single and pair offsets
+		pairOffset   = si->m_pairsOffset;
+		pairSize     = si->m_numPairs * sizeof(PairScore);
+		singleOffset = si->m_singlesOffset;
+		singleSize   = si->m_numSingles * sizeof(SingleScore);
+		// nuke him
+		m_scoreInfoBuf  .removeChunk1 ( sx, sizeof(DocIdScore) );
+		// and his related info
+		m_pairScoreBuf  .removeChunk2 ( pairOffset   , pairSize   );
+		m_singleScoreBuf.removeChunk2 ( singleOffset , singleSize );
+
+		// adjust offsets of remaining single scores
+		sx = m_scoreInfoBuf.getBufStart();
+		for ( ; sx < sxEnd ; sx += sizeof(DocIdScore) ) {
+			si = (DocIdScore *)sx;
+			if ( si->m_pairsOffset > pairOffset ) {
+				si->m_pairsOffset -= pairSize;
+			}
+
+			if ( si->m_singlesOffset > singleOffset ) {
+				si->m_singlesOffset -= singleSize;
+			}
+		}
+		sxEnd -= sizeof(DocIdScore);
+	}
+
+	logTrace(g_conf.m_logTracePosdb, "END");
+}
+
 
 
 // Pre-advance each termlist's cursor to skip to next docid.
@@ -3872,6 +3973,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				break;
 			case INTERSECT_DEBUG_INFO:
 				logTrace(g_conf.m_logTracePosdb, "Loop 1: Data for visual scoring info");
+				removeScoreInfoForDeletedDocIds();
 				break;
 			default:
 				log(LOG_LOGIC,"%s:%d: Illegal pass number %d", __FILE__, __LINE__, currPassNum);
@@ -3910,43 +4012,50 @@ void PosdbTable::intersectLists10_r ( ) {
 
 		bool allDone = false;
 		while( !allDone && docIdPtr < docIdEnd ) {
-			logTrace(g_conf.m_logTracePosdb, "Handling next docId");
+//			logTrace(g_conf.m_logTracePosdb, "Handling next docId");
 
 			bool skipToNextDocId = false;
 			siteRank				= 0;
 			docLang					= langUnknown;
 			highestInlinkSiteRank 	= -1;
+			bool docInThisFile;
 
-			m_docId = *(uint32_t *)(docIdPtr+1);
-			m_docId <<= 8;
-			m_docId |= (unsigned char)docIdPtr[0];
-			m_docId >>= 2;
-
-			if(!m_documentIndexChecker->exists(m_docId)) {
-				logTrace(g_conf.m_logTracePosdb, "Document %" PRId64 " doesn't exist (in this file)", m_docId);
-
-				// Only advance cursors in first pass
-				if( currPassNum == INTERSECT_SCORING ) {
-					if( !advanceTermListCursors(docIdPtr, qtibuf) ) {
-						logTrace(g_conf.m_logTracePosdb, "END. advanceTermListCursors failed");
-						return;
-					}
-				}
-				docIdPtr += 6;
-				continue;
+			if ( currPassNum == INTERSECT_SCORING ) {
+				m_docId = *(uint32_t *)(docIdPtr+1);
+				m_docId <<= 8;
+				m_docId |= (unsigned char)docIdPtr[0];
+				m_docId >>= 2;
+				docInThisFile = m_documentIndexChecker->exists(m_docId);
 			}
-			logTrace(g_conf.m_logTracePosdb, "Document %" PRId64 " exists (in this file)", m_docId);
+			else {
+				//
+				// second pass? for printing out transparency info.
+				// genDebugScoreInfo1 sets m_docId from the top scorer tree
+				//
+				if( genDebugScoreInfo1(&numProcessed, &topCursor, &docInThisFile, qtibuf) ) {
+					logTrace(g_conf.m_logTracePosdb, "Pass #%d for file %" PRId32 " done", currPassNum, m_documentIndexChecker->getFileNum());
 
-
-			// second pass? for printing out transparency info.
-			if ( currPassNum == INTERSECT_DEBUG_INFO ) {
-				if( genDebugScoreInfo1(&numProcessed, &topCursor, qtibuf) ) {
 					// returns true if no more docids to handle
 					allDone = true;
 					break;	// break out of docIdPtr < docIdEnd loop
 				}
 			}
 
+			//bool docInThisFile = m_documentIndexChecker->exists(m_docId);
+			logTrace(g_conf.m_logTracePosdb, "Handling next docId: %" PRId64 " - pass #%d - %sfound in this file (%" PRId32 ")", m_docId, currPassNum, docInThisFile?"":"SKIPPING, not ", m_documentIndexChecker->getFileNum());
+
+			if(!docInThisFile) {
+				// Only advance cursors in first pass
+				if( currPassNum == INTERSECT_SCORING ) {
+					if( !advanceTermListCursors(docIdPtr, qtibuf) ) {
+						logTrace(g_conf.m_logTracePosdb, "END. advanceTermListCursors failed");
+						return;
+					}
+					docIdPtr += 6;
+				}
+
+				continue;
+			}
 
 			//calculate complete score multiplier
 			float completeScoreMultiplier = 1.0;
@@ -4023,6 +4132,7 @@ void PosdbTable::intersectLists10_r ( ) {
 
 					if( skipToNextDocId ) {
 						// continue docIdPtr < docIdEnd loop
+						logTrace(g_conf.m_logTracePosdb, "Max possible score for docId %" PRId64 " too low, skipping to next", m_docId);
 						continue;
 					}
 
@@ -4039,14 +4149,12 @@ void PosdbTable::intersectLists10_r ( ) {
 
 					if( skipToNextDocId ) {
 						// Continue docIdPtr < docIdEnd loop
+						logTrace(g_conf.m_logTracePosdb, "Max possible score by distance for docId %" PRId64 " too low, skipping to next", m_docId);
 						continue;	
 					}
 					prefiltBestDistMaxPossScorePass++;
 				} // !m_q->m_isBoolean
-
 			}	// currPassNum == INTERSECT_SCORING
-
-
 
 			if ( m_q->m_isBoolean ) {
 				// add one point for each term matched in the bool query
@@ -4079,15 +4187,12 @@ void PosdbTable::intersectLists10_r ( ) {
 
 			mergeTermSubListsForDocId(qtibuf, miniMergeBuf, miniMergedList, miniMergedEnd, &highestInlinkSiteRank);
 
-
 			// clear the counts on this DocIdScore class for this new docid
 			pdcs = NULL;
 			if ( currPassNum == INTERSECT_DEBUG_INFO ) {
 				dcs.reset();
 				pdcs = &dcs;
 			}
-
-
 
 			//##
 			//## ACTUAL SCORING BEGINS
@@ -4113,7 +4218,6 @@ void PosdbTable::intersectLists10_r ( ) {
 				minSingleScore = getMinSingleTermScoreSum(miniMergedList, miniMergedEnd, highestScoringNonBodyPos, pdcs);
 				minSingleScore *= completeScoreMultiplier;
 
-
 				//#
 				//# DOCID / SITERANK DETECTION
 				//#
@@ -4134,7 +4238,6 @@ void PosdbTable::intersectLists10_r ( ) {
 				}
 				logTrace(g_conf.m_logTracePosdb, "Got siteRank %d and docLang %d", (int)siteRank, (int)docLang);
 
-
 				//#
 				//# SLIDING WINDOW SCORING ALGORITHM
 				//#
@@ -4145,7 +4248,6 @@ void PosdbTable::intersectLists10_r ( ) {
 				float minPairScore = getMinTermPairScoreSlidingWindow(miniMergedList, miniMergedEnd, highestScoringNonBodyPos, winnerStack, xpos, scoreMatrix, pdcs);
 				minPairScore *= completeScoreMultiplier;
 
-
 				//#
 				//# Find minimum score - either single term or term pair
 				//#
@@ -4154,6 +4256,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				if ( minPairScore < minScore && minPairScore >= 0.0 ) {
 					minScore = minPairScore;
 				}
+
 				// if we only had one query term
 				if ( minSingleScore < minScore ) {
 					minScore = minSingleScore;
@@ -4163,8 +4266,11 @@ void PosdbTable::intersectLists10_r ( ) {
 				
 				// No positive score? Then skip the doc
 				if ( minScore <= 0.0 ) {
-					// advance to next docid
-					docIdPtr += 6;
+
+					if( currPassNum == INTERSECT_SCORING ) {
+						// advance to next docid
+						docIdPtr += 6;
+					}
 
 					logTrace(g_conf.m_logTracePosdb, "Skipping docid %" PRIu64 " - no positive score", m_docId);
 					// Continue docid loop
@@ -4221,7 +4327,9 @@ void PosdbTable::intersectLists10_r ( ) {
 					// no term?
 					if ( ! miniMergedList[m_sortByTermInfoNum] ) {
 						// advance to next docid
-						docIdPtr += 6;
+						if( currPassNum == INTERSECT_SCORING ) {
+							docIdPtr += 6;
+						}
 						// Continue docIdPtr < docIdEnd loop
 						continue;
 					}
@@ -4233,7 +4341,9 @@ void PosdbTable::intersectLists10_r ( ) {
 					// no term?
 					if ( ! miniMergedList[m_sortByTermInfoNumInt] ) {
 						// advance to next docid
-						docIdPtr += 6;
+						if( currPassNum == INTERSECT_SCORING ) {
+							docIdPtr += 6;
+						}
 						// Continue docIdPtr < docIdEnd loop
 						continue;
 					}
@@ -4274,7 +4384,9 @@ void PosdbTable::intersectLists10_r ( ) {
 
 					if( skipToNext ) {				
 						// advance to next docid
-						docIdPtr += 6;
+						if( currPassNum == INTERSECT_SCORING ) {
+							docIdPtr += 6;
+						}
 						// Continue docIdPtr < docIdEnd loop
 						continue;
 					}
@@ -4294,7 +4406,9 @@ void PosdbTable::intersectLists10_r ( ) {
 			if ( currPassNum == INTERSECT_DEBUG_INFO ) {
 				if( genDebugScoreInfo2(&dcs, &lastLen, &lastDocId, siteRank, score, intScore, docLang) ) {
 					// advance to next docid
-					docIdPtr += 6;
+					if( currPassNum == INTERSECT_SCORING ) {
+						docIdPtr += 6;
+					}
 					// Continue docIdPtr < docIdEnd loop
 					continue;
 				}
@@ -4358,7 +4472,9 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 
 			// advance to next docid
-			docIdPtr += 6;
+			if( currPassNum == INTERSECT_SCORING ) {
+				docIdPtr += 6;
+			}
 		} // docIdPtr < docIdEnd loop
 
 
@@ -4378,6 +4494,11 @@ void PosdbTable::intersectLists10_r ( ) {
 		log(LOG_INFO, "posdb: # prefiltMaxPossScorePass........: %" PRId32" ", prefiltMaxPossScorePass );
 		log(LOG_INFO, "posdb: # prefiltBestDistMaxPossScoreFail: %" PRId32" ", prefiltBestDistMaxPossScoreFail );
 		log(LOG_INFO, "posdb: # prefiltBestDistMaxPossScorePass: %" PRId32" ", prefiltBestDistMaxPossScorePass );
+	}
+
+	if( g_conf.m_logTracePosdb ) {
+		m_topTree->logTreeData(LOG_TRACE);
+		logDebugScoreInfo(LOG_TRACE);
 	}
 
 	// get time now

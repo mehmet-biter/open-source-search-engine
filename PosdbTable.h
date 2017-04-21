@@ -4,7 +4,6 @@
 #include "RdbList.h"
 #include "HashTableX.h"
 
-
 float getDiversityWeight ( unsigned char diversityRank );
 float getDensityWeight   ( unsigned char densityRank );
 float getWordSpamWeight  ( unsigned char wordSpamRank );
@@ -116,8 +115,10 @@ class PosdbTable {
 	}
 
 	// functions used by intersectlist
-	bool genDebugScoreInfo1(int32_t *numProcessed, int32_t *topCursor, QueryTermInfo *qtibuf);
+	bool genDebugScoreInfo1(int32_t *numProcessed, int32_t *topCursor, bool *docInThisFile, QueryTermInfo *qtibuf);
 	bool genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t *lastDocId, char siteRank, float score, int32_t intScore, char docLang);
+	void logDebugScoreInfo(int32_t loglevel);
+	void removeScoreInfoForDeletedDocIds();
 	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
 	bool prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore);
 	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);
@@ -321,7 +322,6 @@ class SingleScore {
 };
 //above struct members are sorted on size as to minimize internal padding and final size
 
-
 // we add up the pair scores of this many of the top-scoring pairs
 // for inlink text only, so it is accumulative. but now we also
 // have a parm "m_realMaxTop" which is <= MAX_TOP and can be used to
@@ -372,7 +372,6 @@ class DocIdScore {
 	class PairScore   *m_pairScores;
 	class SingleScore *m_singleScores;
 };
-
 
 void reinitializeRankingSettings();
 
