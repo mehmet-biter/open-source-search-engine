@@ -73,6 +73,7 @@ TEST_P(RdbBasePosdbIndexSingleDocTest, PosdbGenerateIndexSingleDocId) {
 
 TEST_F(RdbBaseTest, PosdbUpdateIndex) {
 	const collnum_t collNum = 0;
+	int32_t fileId = 0;
 
 	RdbBase *base = g_posdb.getRdb()->getBase(collNum);
 
