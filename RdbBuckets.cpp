@@ -45,6 +45,7 @@ public:
 
 	int32_t getNumKeys() const { return m_numKeys; }
 	int32_t getNumSortedKeys() const { return m_lastSorted; }
+	bool isEmpty() const { return m_numKeys==0; }
 
 	const char *getKeys() const { return m_keys; }
 
@@ -1753,8 +1754,10 @@ bool RdbBuckets::deleteNode(collnum_t collnum, const char *key) {
 
 	m_needsSave = true;
 
-	if (!m_buckets[i]->deleteNode(node)) {
-		logTrace(g_conf.m_logTraceRdbBuckets, "bucket->deleteNode returned false. Moving up bucket");
+	m_buckets[i]->deleteNode(node);
+
+	if(m_buckets[i]->isEmpty()) {
+		logTrace(g_conf.m_logTraceRdbBuckets, "bucket was emptied. Moving up bucket");
 
 		m_buckets[i]->reset();
 		memmove(&m_buckets[i], &m_buckets[i + 1], (m_numBuckets - i - 1)*sizeof(RdbBuckets*));
