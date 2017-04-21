@@ -190,8 +190,8 @@ bool RdbIndex::writeIndex(bool finalWrite) {
 	bool status = writeIndex2(finalWrite);
 
 	// on success, we don't need to write it anymore
-	if (status) {
-		m_needToWrite = false;
+	if (!status) {
+		m_needToWrite = true;
 	}
 
 	logTrace(g_conf.m_logTraceRdbIndex, "END. filename [%s], returning %s", m_file.getFilename(), status ? "true" : "false");
@@ -208,7 +208,10 @@ bool RdbIndex::writeIndex2(bool finalWrite) {
 
 	// make sure we always write the newest tree
 	// remove const as m_file.write does not accept const buffer
-	docids_ptr_t tmpDocIds = std::const_pointer_cast<docids_t>(mergePendingDocIds(finalWrite));
+	ScopedLock sl(m_pendingDocIdsMtx);
+	docids_ptr_t tmpDocIds = std::const_pointer_cast<docids_t>(mergePendingDocIds_unlocked(finalWrite));
+	m_needToWrite = false;
+	sl.unlock();
 
 	// first 8 bytes is the index version
 	m_file.write(&m_version, sizeof(m_version), offset);
