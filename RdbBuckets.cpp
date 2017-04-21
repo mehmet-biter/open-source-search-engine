@@ -697,7 +697,17 @@ RdbBuckets::~RdbBuckets( ) {
 	reset_unlocked();
 }
 
+bool RdbBuckets::isSaving() const {
+	ScopedLock sl(m_mtx);
+	return m_isSaving;
+}
+bool RdbBuckets::needsSave() const {
+	ScopedLock sl(m_mtx);
+	return m_needsSave;
+}
+
 void RdbBuckets::setNeedsSave(bool s) {
+	ScopedLock sl(m_mtx);
 	m_needsSave = s;
 }
 

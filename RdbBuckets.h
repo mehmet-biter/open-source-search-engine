@@ -64,8 +64,8 @@ public:
 	int32_t getRecSize() const { return m_recSize; }
 
 	/// @todo ALC verify saving/writable logic is okay with multithread
-	bool isSaving() const { return m_isSaving; }
-	bool needsSave() const { return m_needsSave; }
+	bool isSaving() const;
+	bool needsSave() const;
 	void setNeedsSave(bool s);
 
 	bool isWritable() const { return m_isWritable; }

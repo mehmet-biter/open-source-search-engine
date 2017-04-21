@@ -127,8 +127,8 @@ public:
 	bool collExists(collnum_t coll) const;
 
 	/// @todo ALC verify saving/writable logic is okay with multithread
-	bool isSaving() const { return m_isSaving; }
-	bool needsSave() const { return m_needsSave; }
+	bool isSaving() const;
+	bool needsSave() const;
 	void setNeedsSave(bool needsSave) { m_needsSave = needsSave; }
 
 	bool isWritable() const { return m_isWritable; }

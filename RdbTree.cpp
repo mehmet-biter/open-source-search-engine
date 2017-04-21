@@ -1651,6 +1651,15 @@ bool RdbTree::collExists(collnum_t coll) const {
 	return true;
 }
 
+bool RdbTree::isSaving() const {
+	ScopedLock sl(m_mtx);
+	return m_isSaving;
+}
+
+bool RdbTree::needsSave() const {
+	ScopedLock sl(m_mtx);
+	return m_needsSave;
+}
 
 // . returns a number from 0 to m_numUsedNodes-1
 // . represents the ordering of this key in that range
