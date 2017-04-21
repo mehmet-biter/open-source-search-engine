@@ -1987,17 +1987,32 @@ void RdbTree::saveWrapper ( void *state ) {
 	// get this class
 	RdbTree *that = (RdbTree *)state;
 
+	ScopedLock sl(that->getLock());
+
 	// assume no error since we're at the start of thread call
 	that->m_errno = 0;
 
-	{
-		ScopedLock sl(that->getLock());
-		// this returns false and sets g_errno on error
-		that->fastSave_unlocked();
-	}
+	// this returns false and sets g_errno on error
+	that->fastSave_unlocked();
+
+	// . resume adding to the tree
+	// . this will also allow other threads to be queued
+	// . if we did this at the end of the thread we could end up with
+	//   an overflow of queued SAVETHREADs
+	that->m_isSaving = false;
+
+	// we do not need to be saved now?
+	that->m_needsSave = false;
 
 	if (g_errno && !that->m_errno) {
 		that->m_errno = g_errno;
+	}
+
+	if (that->m_errno) {
+		log(LOG_ERROR, "db: Had error saving tree to disk for %s: %s.", that->m_dbname, mstrerror(that->m_errno));
+	} else {
+		log(LOG_INFO, "db: Done saving %s with %" PRId32" keys (%" PRId64" bytes)",
+		    that->m_dbname, that->m_numUsedNodes, that->m_bytesWritten);
 	}
 
 	logTrace(g_conf.m_logTraceRdbTree, "END");
@@ -2013,25 +2028,6 @@ void RdbTree::saveDoneWrapper(void *state, job_exit_t exit_type) {
 
 	// store save error into g_errno
 	g_errno = that->m_errno;
-
-	// . resume adding to the tree
-	// . this will also allow other threads to be queued
-	// . if we did this at the end of the thread we could end up with
-	//   an overflow of queued SAVETHREADs
-	that->m_isSaving = false;
-
-	// we do not need to be saved now?
-	that->m_needsSave = false;
-
-	// g_errno should be preserved from the thread so if fastSave()
-	// had an error it will be set
-	if ( g_errno ) {
-		log( LOG_ERROR, "db: Had error saving tree to disk for %s: %s.", that->m_dbname, mstrerror( g_errno ) );
-	} else {
-		// log it
-		log( LOG_INFO, "db: Done saving %s%s-saved.dat (wrote %" PRId64" bytes)",
-		     that->m_dir, that->m_dbname, that->getBytesWritten_unlocked() );
-	}
 
 	// . call callback
 	if ( that->m_callback ) {
