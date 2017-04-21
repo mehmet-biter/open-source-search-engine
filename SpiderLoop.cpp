@@ -17,6 +17,7 @@
 #include "ip.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "ScopedLock.h"
 
 
 // . this was 10 but cpu is getting pegged, so i set to 45
@@ -925,43 +926,46 @@ skipDoledbRec:
 	// there confirmation has not come through yet, so it's still
 	// in doledb.
 
-	int64_t lockKey = makeLockTableKey(sreq);
+	{
+		ScopedLock sl(m_lockTableMtx);
 
-	// get the lock... only avoid if confirmed!
-	int32_t slot = m_lockTable.getSlot(&lockKey);
-	if (slot >= 0) {
-		// get the corresponding lock then if there
-		UrlLock *lock = (UrlLock *)m_lockTable.getValueFromSlot(slot);
+		// get the lock... only avoid if confirmed!
+		int64_t lockKey = makeLockTableKey(sreq);
+		int32_t slot = m_lockTable.getSlot(&lockKey);
+		if (slot >= 0) {
+			// get the corresponding lock then if there
+			UrlLock *lock = (UrlLock *)m_lockTable.getValueFromSlot(slot);
 
-		// if there and confirmed, why still in doledb?
-		if (lock) {
-			// fight log spam
-			static int32_t s_lastTime = 0;
-			if ( nowGlobal - s_lastTime >= 2 ) {
-				// why is it not getting unlocked!?!?!
-				log( "spider: spider request locked but still in doledb. uh48=%" PRId64" firstip=%s %s",
-				     sreq->getUrlHash48(), iptoa(sreq->m_firstIp), sreq->m_url );
-				s_lastTime = nowGlobal;
+			// if there and confirmed, why still in doledb?
+			if (lock) {
+				// fight log spam
+				static int32_t s_lastTime = 0;
+				if (nowGlobal - s_lastTime >= 2) {
+					// why is it not getting unlocked!?!?!
+					log("spider: spider request locked but still in doledb. uh48=%" PRId64" firstip=%s %s",
+					    sreq->getUrlHash48(), iptoa(sreq->m_firstIp), sreq->m_url);
+					s_lastTime = nowGlobal;
+				}
+
+				// just increment then i guess
+				m_list.skipCurrentRecord();
+
+				// let's return false here to avoid an infinite loop
+				// since we are not advancing nextkey and m_pri is not
+				// being changed, that is what happens!
+				if (m_list.isExhausted()) {
+					// crap. but then we never make it to lower priorities.
+					// since we are returning false. so let's try the
+					// next priority in line.
+
+					// try returning true now that we skipped to
+					// the next priority level to avoid the infinite
+					// loop as described above.
+					return true;
+				}
+				// try the next record in this list
+				goto listLoop;
 			}
-
-			// just increment then i guess
-			m_list.skipCurrentRecord();
-
-			// let's return false here to avoid an infinite loop
-			// since we are not advancing nextkey and m_pri is not
-			// being changed, that is what happens!
-			if ( m_list.isExhausted() ) {
-				// crap. but then we never make it to lower priorities.
-				// since we are returning false. so let's try the
-				// next priority in line.
-
-				// try returning true now that we skipped to
-				// the next priority level to avoid the infinite
-				// loop as described above.
-				return true;
-			}
-			// try the next record in this list
-			goto listLoop;
 		}
 	}
 
@@ -1224,7 +1228,7 @@ bool SpiderLoop::spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t co
 	tmp.m_spiderOutstanding = 0;
 	tmp.m_collnum = collnum;
 
-	if (!m_lockTable.addKey(&lockKeyUh48, &tmp)) {
+	if (!addLock(lockKeyUh48, &tmp)) {
 		return true;
 	}
 
@@ -1414,7 +1418,8 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 
 
 // use -1 for any collnum
-int32_t SpiderLoop::getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum ) {
+int32_t SpiderLoop::getNumSpidersOutPerIp(int32_t firstIp, collnum_t collnum) {
+	ScopedLock sl(m_lockTableMtx);
 	int32_t count = 0;
 
 	// scan the slots
@@ -2034,18 +2039,28 @@ void handleRequestc1(UdpSlot *slot, int32_t /*niceness*/) {
 }
 
 bool SpiderLoop::isLocked(int64_t key) const {
+	ScopedLock sl(m_lockTableMtx);
 	return m_lockTable.isInTable(&key);
 }
 
 int32_t SpiderLoop::getLockCount() const {
+	ScopedLock sl(m_lockTableMtx);
 	return m_lockTable.getNumUsedSlots();
 }
 
+bool SpiderLoop::addLock(int64_t key, const UrlLock *lock) {
+	ScopedLock sl(m_lockTableMtx);
+	return m_lockTable.addKey(&key, lock);
+}
+
 void SpiderLoop::removeLock(int64_t key) {
+	ScopedLock sl(m_lockTableMtx);
 	m_lockTable.removeKey(&key);
 }
 
 void SpiderLoop::clearLocks(collnum_t collnum) {
+	ScopedLock sl(m_lockTableMtx);
+
 	// remove locks from locktable for all spiders out
 	for (;;) {
 		bool restart = false;

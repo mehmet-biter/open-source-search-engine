@@ -120,7 +120,7 @@ private:
 	int64_t m_lastMergeTime;
 
 	// when close is called, must we write the index?
-	bool m_needToWrite;
+	std::atomic<bool> m_needToWrite;
 
 	bool m_registeredCallback;
 

@@ -27,7 +27,7 @@ class SpiderRequest;
 class SpiderColl;
 class CollectionRec;
 class XmlDoc;
-
+class UrlLock;
 
 class SpiderLoop {
 public:
@@ -47,6 +47,7 @@ public:
 
 	bool isLocked(int64_t key) const;
 	int32_t getLockCount() const;
+	bool addLock(int64_t key, const UrlLock *lock);
 	void removeLock(int64_t key);
 	void clearLocks(collnum_t collnum);
 
@@ -85,6 +86,7 @@ private:
 	int32_t m_launches;
 
 	HashTableX m_lockTable;
+	mutable GbMutex m_lockTableMtx;
 
 	// . list for getting next url(s) to spider
 	RdbList m_list;
