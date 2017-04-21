@@ -5,6 +5,7 @@
 
 #include <inttypes.h>
 #include <stddef.h>
+#include <atomic>
 
 
 class Process {
@@ -61,12 +62,14 @@ class Process {
 	class Rdb *m_rdbs[32];
 	int32_t       m_numRdbs;
 	bool       m_urgent;
-	enum {
+	enum ProcessMode {
 		NO_MODE   = 0,
 		EXIT_MODE = 1,
 		SAVE_MODE = 2,
 		LOCK_MODE = 3
-	} m_mode;
+	};
+
+	std::atomic<ProcessMode> m_mode;
 	int64_t  m_lastSaveTime;
 	int64_t  m_processStartTime;
 	bool       m_sentShutdownNote;
