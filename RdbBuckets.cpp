@@ -60,7 +60,7 @@ public:
 	bool getList(RdbList *list, const char *startKey, const char *endKey, int32_t minRecSizes,
 	             int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys);
 
-	bool deleteNode(int32_t i);
+	void deleteNode(int32_t i);
 
 	bool deleteList(RdbList *list);
 
@@ -1840,7 +1840,7 @@ bool RdbBuckets::deleteList_unlocked(collnum_t collnum, RdbList *list) {
 	return true;
 }
 
-bool RdbBucket::deleteNode(int32_t i) {
+void RdbBucket::deleteNode(int32_t i) {
 	logTrace(g_conf.m_logTraceRdbBuckets, "i=%" PRId32 "", i);
 
 	int32_t recSize = m_parent->m_recSize;
@@ -1870,10 +1870,7 @@ bool RdbBucket::deleteNode(int32_t i) {
 	if (m_numKeys) {
 		m_endKey = m_keys + ((m_numKeys - 1) * recSize);
 		m_lastSorted = m_numKeys;
-		return true;
 	}
-
-	return false;
 }
 
 bool RdbBucket::deleteList(RdbList *list) {
