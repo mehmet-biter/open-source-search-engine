@@ -1959,13 +1959,13 @@ bool RdbTree::fastSave(const char *dir, bool useThread, void *state, void (*call
 
 	if (useThread) {
 		// make this a thread now
-		if (g_jobScheduler.submit(saveWrapper, saveDoneWrapper, this, thread_type_unspecified_io, 1/*niceness*/) ) {
+		if (g_jobScheduler.submit(saveWrapper, saveDoneWrapper, this, thread_type_unspecified_io, 1/*niceness*/)) {
 			return false;
 		}
 
 		// if it failed
-		if ( g_jobScheduler.are_new_jobs_allowed() ) {
-			log( LOG_WARN, "db: Thread creation failed. Blocking while saving tree. Hurts performance." );
+		if (g_jobScheduler.are_new_jobs_allowed()) {
+			log(LOG_WARN, "db: Thread creation failed. Blocking while saving tree. Hurts performance.");
 		}
 	}
 
