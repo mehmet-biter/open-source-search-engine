@@ -60,6 +60,7 @@ bool PageTemperatureRegistry::load() {
 	slot = new_slot;
 	entries = new_entries;
 	hash_table_size = new_hash_table_size;
+	
 	min_temperature = new_min_temperature;
 	max_temperature = new_max_temperature;
 
@@ -70,8 +71,39 @@ bool PageTemperatureRegistry::load() {
 	//There is no obvious correct value.
 	default_temperature = (min_temperature+max_temperature)/2;
 
-	temperature_range_for_scaling = max_temperature-min_temperature;
+	//we have calculated min/max above. But if there is a .meta file then use the values from that
+	bool using_meta = false;
+	char meta_filename[1024];
+	sprintf(meta_filename,"%s.meta",filename);
+	FILE *fp_meta = fopen(meta_filename,"r");
+	if(fp_meta) {
+		unsigned tmp_min_temperature;
+		unsigned tmp_max_temperature;
+		unsigned tmp_default_temperature;
+		if(fscanf(fp_meta,"%u%u%u",&tmp_max_temperature,&tmp_max_temperature,&tmp_default_temperature)==3) {
+			if(tmp_min_temperature<tmp_max_temperature &&
+			   tmp_default_temperature>=tmp_min_temperature &&
+			   tmp_default_temperature<=tmp_max_temperature)
+			{
+				min_temperature = tmp_min_temperature;
+				max_temperature = tmp_max_temperature;
+				default_temperature = tmp_default_temperature;
+				using_meta = true;
+			} else
+				log(LOG_WARN,"Invalid values in %s", meta_filename);
+		}
+		fclose(fp_meta);
+	}
 
+	temperature_range_for_scaling = max_temperature-min_temperature;
+	
+	if(!using_meta)
+		log(LOG_WARN, "meta-file %s could not be loaded. Using default temperature of %u which can scew results for new pages", meta_filename, default_temperature);
+	
+	log(LOG_DEBUG, "pagetemp: min_temperature=%u",min_temperature);
+	log(LOG_DEBUG, "pagetemp: max_temperature=%u",max_temperature);
+	log(LOG_DEBUG, "pagetemp: default_temperature=%u",default_temperature);
+	
 	log(LOG_DEBUG, "%s loaded (%lu items)", filename, (unsigned long)new_entries);
 	return true;
 }

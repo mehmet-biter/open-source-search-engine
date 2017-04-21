@@ -804,8 +804,9 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 	// reply came in it was not setting m_gotNewDataForScanninIp and
 	// we ended up losing the IP from the waiting tree forever (or until
 	// the next timed rebuild). putting it here seems to fix that.
+	/// @todo ALC verify that we won't lose IP from waiting tree. Do we need to lock the whole evalIpLoop?
 	if ( firstIp == m_scanningIp ) {
-		m_gotNewDataForScanningIp = m_scanningIp;
+		m_gotNewDataForScanningIp = m_scanningIp.load();
 		//log("spider: got new data for %s",iptoa(firstIp));
 		//return true;
 	}
