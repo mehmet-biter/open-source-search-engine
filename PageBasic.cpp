@@ -844,13 +844,7 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 		int32_t crawlStatus = -1;
 		getSpiderStatusMsg ( cr , &tmp , &crawlStatus );
 
-		const char *hurts = "No";
-		if ( cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider )
-			hurts = "Yes";
-
-		sb.safePrintf(//"<TABLE border=0>"
-			      //"<TR><TD valign=top>"
-
+		sb.safePrintf(
 			      "<table id=stats border=0 cellpadding=5>"
 
 			      "<tr>"
@@ -862,70 +856,9 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 			      "<td><b>Crawl Status Msg:</td>"
 			      "<td>%s</td>"
 			      "</tr>"
-
-			      //"<tr>"
-			      //"<td><b>Rounds Completed:</td>"
-			      //"<td>%" PRId32"</td>"
-			      //"</tr>"
-
-			      "<tr>"
-			      "<td><b>Has Urls Ready to Spider:</td>"
-			      "<td>%s</td>"
-			      "</tr>"
-
-
-			      // this will  have to be in crawlinfo too!
-			      //"<tr>"
-			      //"<td><b>pages indexed</b>"
-			      //"<td>%" PRId64"</td>"
-			      //"</tr>"
-
-			      "<tr>"
-			      "<td><b><nobr>URLs Harvested</b> "
-			      "(may include dups)</nobr></td>"
-			      "<td>%" PRId64"</td>"
-     
-			      "</tr>"
-
-			      //"<tr>"
-			      //"<td><b>URLs Examined</b></td>"
-			      //"<td>%" PRId64"</td>"
-			      //"</tr>"
-
-			      "<tr>"
-			      "<td><b>Page Crawl Attempts</b></td>"
-			      "<td>%" PRId64"</td>"
-			      "</tr>"
-
-			      "<tr>"
-			      "<td><b>Page Crawl Successes</b></td>"
-			      "<td>%" PRId64"</td>"
-			      "</tr>"
 			      , crawlStatus
-			      , tmp.getBufStart()
-			      //, cr->m_spiderRoundNum
-			      //, cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider
-			      , hurts
+			      , tmp.getBufStart());
 
-			      , cr->m_globalCrawlInfo.m_urlsHarvested
-			      //, cr->m_globalCrawlInfo.m_urlsConsidered
-
-			      , cr->m_globalCrawlInfo.m_pageDownloadAttempts
-			      , cr->m_globalCrawlInfo.m_pageDownloadSuccesses
-			      );
-
-		char tmp3[64];
-		time_t tt = (time_t)cr->m_diffbotCrawlStartTime;
-		struct tm tm_buf;
-		struct tm *timeStruct = localtime_r(&tt,&tm_buf);
-		// Jan 01 1970 at 10:30:00
-		strftime ( tmp3,64 , "%b %d %Y at %H:%M:%S",timeStruct);
-		sb.safePrintf("<tr><td><b>Collection Created</b></td>"
-			      "<td>%s (local time)</td></tr>",tmp3);
-
-
-
-		
 		// print link to embed the code in their own site
 		SafeBuf embed;
 		embed.htmlEncode(sb.getBufStart()+savedLen1,

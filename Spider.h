@@ -17,8 +17,6 @@ class SpiderColl;
 // lower from 1300 to 300
 #define MAXUDPSLOTS 300
 
-extern bool s_countsAreValid;
-
 // . size of spiderecs to load in one call to readList
 // . i increased it to 1MB to speed everything up, seems like cache is 
 //   getting loaded up way too slow
@@ -41,8 +39,6 @@ extern bool s_countsAreValid;
 #define SP_INPROGRESS   7 // it is going on!
 #define SP_ADMIN_PAUSED 8 // g_conf.m_spideringEnabled = false
 #define SP_COMPLETED    9 // crawl is done, and no repeatCrawl is scheduled
-
-void spiderRoundIncremented ( class CollectionRec *cr ) ;
 
 bool getSpiderStatusMsg ( class CollectionRec *cx , 
 			  class SafeBuf *msg , 

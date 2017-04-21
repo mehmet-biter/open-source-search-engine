@@ -149,10 +149,6 @@ void XmlDoc::reset ( ) {
 	m_indexedDoc = false;
 	m_msg4Launched = false;
 
-	//m_downloadAttempted = false;
-	m_incrementedAttemptsCount = false;
-	m_incrementedDownloadCount = false;
-
 	m_doConsistencyTesting = g_conf.m_doConsistencyTesting;
 
 	m_computedMetaListCheckSum = false;
@@ -1575,36 +1571,6 @@ bool XmlDoc::indexDoc ( ) {
 		}
 	}
 
-	// . even if not using diffbot, keep track of these counts
-	// . even if we had something like EFAKEFIRSTIP, OOM, or whatever
-	//   it was an attempt we made to crawl this url
-	if ( ! m_incrementedAttemptsCount ) {
-		// do not repeat
-		m_incrementedAttemptsCount = true;
-		// log debug
-		//log("build: attempted %s count=%" PRId64,m_firstUrl.getUrl(),
-		//    cr->m_localCrawlInfo.m_pageDownloadAttempts);
-		// this is just how many urls we tried to index
-		//cr->m_localCrawlInfo.m_urlsConsidered++;
-		// avoid counting if it is a fake first ip
-		bool countIt = true;
-		// pagereindex.cpp sets this as does any add url (bulk job)
-		if ( m_sreqValid && m_sreq.m_fakeFirstIp )
-			countIt = false;
-		if ( countIt ) {
-			cr->m_localCrawlInfo.m_pageDownloadAttempts++;
-			cr->m_globalCrawlInfo.m_pageDownloadAttempts++;
-			// changing status, resend local crawl info to all
-			cr->localCrawlInfoUpdate();
-		}
-		// need to save collection rec now during auto save
-		cr->setNeedsSave();
-		// update this just in case we are the last url crawled
-		//int64_t now = gettimeofdayInMillisecondsGlobal();
-		//cr->m_diffbotCrawlEndTime = now;
-	}
-
-
 	bool status = true;
 
 	if ( ! g_errno ) status = indexDoc2 ( );
@@ -1775,9 +1741,6 @@ bool XmlDoc::indexDoc ( ) {
 			    "%s. Not adding new spider req. "
 			    "spiderstatusdocsize=%" PRId32, (int32_t)*fip,url,
 			    m_addedStatusDocSize);
-			// also count it as a crawl attempt
-			cr->m_localCrawlInfo.m_pageDownloadAttempts++;
-			cr->m_globalCrawlInfo.m_pageDownloadAttempts++;
 
 			if ( ! m_metaList2.safeMemcpy ( list , len ) )
 			{
@@ -8071,24 +8034,6 @@ char **XmlDoc::gotHttpReply ( ) {
 
 	// make it so
 	g_errno = saved;
-
-	bool doIncrement = true;
-	if ( m_isChildDoc ) doIncrement = false;
-	if ( m_incrementedDownloadCount ) doIncrement = false;
-
-
-	// . do not count bad http status in mime as failure i guess
-	// . do not inc this count for robots.txt and root page downloads, etc.
-	if ( doIncrement ) {
-		cr->m_localCrawlInfo.m_pageDownloadSuccesses++;
-		cr->m_globalCrawlInfo.m_pageDownloadSuccesses++;
-		cr->m_localCrawlInfo.m_pageDownloadSuccessesThisRound++;
-		cr->m_globalCrawlInfo.m_pageDownloadSuccessesThisRound++;
-		m_incrementedDownloadCount = true;
-		cr->setNeedsSave();
-		// changing status, resend local crawl info to all
-		cr->localCrawlInfoUpdate();
-	}
 
 	// this means the spider compression proxy's reply got corrupted
 	// over roadrunner's crappy wireless internet connection

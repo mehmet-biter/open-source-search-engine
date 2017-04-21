@@ -77,7 +77,6 @@ UdpServer::UdpServer ( ) {
 	m_needBottom = false;
 	m_requestsInWaiting = 0;
 	m_msg07sInWaiting = 0;
-	m_msgc1sInWaiting = 0;
 	m_msg25sInWaiting = 0;
 	m_msg39sInWaiting = 0;
 	m_msg20sInWaiting = 0;
@@ -226,7 +225,6 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	m_requestsInWaiting = 0;
 	// special count
 	m_msg07sInWaiting = 0;
-	m_msgc1sInWaiting = 0;
 	m_msg25sInWaiting = 0;
 	m_msg39sInWaiting = 0;
 	m_msg20sInWaiting = 0;
@@ -1139,10 +1137,6 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 		if ( msgType == msg_type_7 && m_msg07sInWaiting >= 100 )
 			getSlot = false;
 
-		// crawl update info from Spider.cpp
-		if ( msgType == msg_type_c1 && m_msgc1sInWaiting >= 100 )
-			getSlot = false;
-
 		// msg25 spawns an indexdb request lookup and unless we limit
 		// the msg25 requests we can jam ourslves if all the indexdb
 		// lookups hit ourselves... we won't have enough free slots
@@ -1263,7 +1257,6 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 			m_requestsInWaiting++;
 			// special count
 			if ( msgType == msg_type_7 ) m_msg07sInWaiting++;
-			if ( msgType == msg_type_c1 ) m_msgc1sInWaiting++;
 			if ( msgType == msg_type_25 ) m_msg25sInWaiting++;
 			if ( msgType == msg_type_39 ) m_msg39sInWaiting++;
 			if ( msgType == msg_type_20 ) m_msg20sInWaiting++;
@@ -2143,7 +2136,6 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 		m_requestsInWaiting--;
 		// special count
 		if ( slot->getMsgType() == msg_type_7 ) m_msg07sInWaiting--;
-		if ( slot->getMsgType() == msg_type_c1 ) m_msgc1sInWaiting--;
 		if ( slot->getMsgType() == msg_type_25 ) m_msg25sInWaiting--;
 		if ( slot->getMsgType() == msg_type_39 ) m_msg39sInWaiting--;
 		if ( slot->getMsgType() == msg_type_20 ) m_msg20sInWaiting--;

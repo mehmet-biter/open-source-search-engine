@@ -666,17 +666,6 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 		return true;
 	}
 
-	// update crawlinfo stats here and not in xmldoc so that we count
-	// seeds and bulk urls added from add url and can use that to
-	// determine if the collection is empty of urls or not for printing
-	// out the colored bullets in printCollectionNavBar() in Pages.cpp.
-	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
-	if ( cr ) {
-		cr->m_localCrawlInfo .m_urlsHarvested++;
-		cr->m_globalCrawlInfo.m_urlsHarvested++;
-		cr->setNeedsSave();
-	}
-
 	// . we can't do this because we do not have the spiderReply!!!???
 	// . MDW: no, we have to do it because tradesy.com has links to twitter
 	//   on every page and twitter is not allowed so we continually
