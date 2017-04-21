@@ -225,8 +225,8 @@ private:
 	key128_t m_waitingTreeEndKey;
 	time_t m_lastScanTime;
 
-	int32_t m_scanningIp;
-	int32_t m_gotNewDataForScanningIp;
+	std::atomic<int32_t> m_scanningIp;
+	std::atomic<int32_t> m_gotNewDataForScanningIp;
 	int32_t m_lastListSize;
 	int32_t m_lastScanningIp;
 	int64_t m_totalBytesScanned;
