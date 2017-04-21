@@ -80,7 +80,7 @@ bool PageTemperatureRegistry::load() {
 		unsigned tmp_min_temperature;
 		unsigned tmp_max_temperature;
 		unsigned tmp_default_temperature;
-		if(fscanf(fp_meta,"%u%u%u",&tmp_max_temperature,&tmp_max_temperature,&tmp_default_temperature)==3) {
+		if(fscanf(fp_meta,"%u%u%u",&tmp_max_temperature,&tmp_min_temperature,&tmp_default_temperature)==3) {
 			if(tmp_min_temperature<tmp_max_temperature &&
 			   tmp_default_temperature>=tmp_min_temperature &&
 			   tmp_default_temperature<=tmp_max_temperature)

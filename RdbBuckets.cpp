@@ -45,6 +45,7 @@ public:
 
 	int32_t getNumKeys() const { return m_numKeys; }
 	int32_t getNumSortedKeys() const { return m_lastSorted; }
+	bool isEmpty() const { return m_numKeys==0; }
 
 	const char *getKeys() const { return m_keys; }
 
@@ -59,7 +60,7 @@ public:
 	bool getList(RdbList *list, const char *startKey, const char *endKey, int32_t minRecSizes,
 	             int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys);
 
-	bool deleteNode(int32_t i);
+	void deleteNode(int32_t i);
 
 	bool deleteList(RdbList *list);
 
@@ -1751,8 +1752,10 @@ bool RdbBuckets::deleteNode(collnum_t collnum, const char *key) {
 
 	m_needsSave = true;
 
-	if (!m_buckets[i]->deleteNode(node)) {
-		logTrace(g_conf.m_logTraceRdbBuckets, "bucket->deleteNode returned false. Moving up bucket");
+	m_buckets[i]->deleteNode(node);
+
+	if(m_buckets[i]->isEmpty()) {
+		logTrace(g_conf.m_logTraceRdbBuckets, "bucket was emptied. Moving up bucket");
 
 		m_buckets[i]->reset();
 		memmove(&m_buckets[i], &m_buckets[i + 1], (m_numBuckets - i - 1)*sizeof(RdbBuckets*));
@@ -1835,7 +1838,7 @@ bool RdbBuckets::deleteList_unlocked(collnum_t collnum, RdbList *list) {
 	return true;
 }
 
-bool RdbBucket::deleteNode(int32_t i) {
+void RdbBucket::deleteNode(int32_t i) {
 	logTrace(g_conf.m_logTraceRdbBuckets, "i=%" PRId32 "", i);
 
 	int32_t recSize = m_parent->m_recSize;
@@ -1865,10 +1868,7 @@ bool RdbBucket::deleteNode(int32_t i) {
 	if (m_numKeys) {
 		m_endKey = m_keys + ((m_numKeys - 1) * recSize);
 		m_lastSorted = m_numKeys;
-		return true;
 	}
-
-	return false;
 }
 
 bool RdbBucket::deleteList(RdbList *list) {
