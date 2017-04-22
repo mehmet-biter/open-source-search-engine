@@ -1865,8 +1865,10 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 	return true;
 }
 
+
+
 // use this for xml as well as html
-bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
+bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 	SafeBuf *sb = &st->m_sb;
 
 	HttpRequest *hr = &st->m_hr;
@@ -1894,24 +1896,29 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	unsigned docFlags = msg40->getFlags(ix);
 
 	if ( si->m_docIdsOnly ) {
-		if ( si->m_format == FORMAT_XML )
+		if ( si->m_format == FORMAT_XML ) {
 			sb->safePrintf("\t<result>\n"
 				       "\t\t<docId>%" PRId64"</docId>\n"
 				       "\t</result>\n", 
 				       d );
-		else if ( si->m_format == FORMAT_JSON )
+		}
+		else
+		if ( si->m_format == FORMAT_JSON ) {
 			sb->safePrintf("\t{\n"
 				       "\t\t\"docId\":%" PRId64"\n"
 				       "\t},\n",
 				       d );
-		else
+		}
+		else {
 			sb->safePrintf("%" PRId64"<br/>\n", d );
+		}
+
 		// inc it
 		*numPrintedSoFar = *numPrintedSoFar + 1;
 		return true;
 	}
 
-	Msg20      *m20 ;
+	Msg20 *m20;
 	if ( si->m_streamResults )
 		m20 = msg40->getCompletedSummary(ix);
 	else
@@ -1925,96 +1932,10 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	// . i think this happens if all hosts in a shard are down or timeout
 	//   or something
 	if ( ! mr ) {
-		sb->safePrintf("<i>getting summary for docid %" PRId64" had "
-			       "error: %s</i><br><br>"
-			       ,d,mstrerror(m20->m_errno));
+		sb->safePrintf("<i>getting summary for docid %" PRId64" had error: %s</i><br><br>", d, mstrerror(m20->m_errno));
 		return true;
 	}
 
-	// just print cached web page?
-	if ( mr->ptr_content && 
-	     si->m_format == FORMAT_JSON &&
-	     strstr(mr->ptr_ubuf,"-diffbotxyz") ) {
-
-		// for json items separate with \n,\n
-		if ( si->m_format != FORMAT_HTML && *numPrintedSoFar > 0 )
-			sb->safePrintf(",\n");
-
-		// a dud? just print empty {}'s
-		if ( mr->size_content == 1 ) 
-			sb->safePrintf("{}");
-		// must have an ending } otherwise it was truncated json.
-		// i'm seeing this happen sometimes, i do not know if diffbot
-		// or gigablast is truncating the json
-		else if ( ! endsInCurly ( mr->ptr_content, mr->size_content )){
-			sb->safePrintf("{"
-				       "\"error\":"
-				       "\"Bad JSON. "
-				       "Diffbot reply was missing final "
-				       "curly bracket. Truncated JSON.\""
-				       "}");
-			// make a note of it
-			log("results: omitting diffbot reply missing curly "
-			    "for %s",mr->ptr_ubuf);
-		}
-		// if it's a diffbot object just print it out directly
-		// into the json. it is already json.
-		else
-			sb->safeStrcpy ( mr->ptr_content );
-			
-
-		// . let's hack the spidertime onto the end
-		// . so when we sort by that using gbsortby:spiderdate
-		//   we can ensure it is ordered correctly
-		// As of the update on 5/13/2014, the end of sb may have whitespace, so first move away from that
-		int distance; // distance from end to first non-whitespace char
-		const char *end;
-		for (distance = 1; distance < sb->length(); distance++) {
-		    end = sb->getBufPtr() - distance;
-		    if (!is_wspace_a(*end))
-		        break;
-		}
-		if ( si->m_format == FORMAT_JSON &&
-		     end > sb->getBufStart() &&
-		     *end == '}' ) {
-			// replace trailing } with spidertime}
-			sb->incrementLength(-distance);
-			// comma?
-			if ( mr->size_content>1 ) sb->pushChar(',');
-			sb->safePrintf("\"docId\":%" PRId64, mr->m_docId);
-			sb->safePrintf(",\"gburl\":\"");
-			sb->jsonEncode(mr->ptr_ubuf);
-			sb->safePrintf("\"");
-			// for deduping
-			//sb->safePrintf(",\"crc\":%" PRIu32,mr->m_contentHash32);
-			// crap, we lose resolution storing as a float
-			// so fix that shit here...
-			//float f = mr->m_lastSpidered;
-			//sb->safePrintf(",\"lastCrawlTimeUTC\":%.0f}",f);
-			// MDW: this is VERY convenient for debugging pls
-			// leave in. we can easily see if a result 
-			// should be there for a query like 
-			// gbmin:gbspiderdate:12345678
-			sb->safePrintf(",\"lastCrawlTimeUTC\":%" PRId32,
-				       mr->m_lastSpidered);
-			// also include a timestamp field with an RFC 1123 formatted date
-			char timestamp[50];
-			time_t lastSpidered = mr->m_lastSpidered;
-			struct tm tm_buf;
-			struct tm *ptm =gmtime_r(&lastSpidered,&tm_buf);
-			strftime(timestamp, 50, "%a, %d %b %Y %X %Z", ptm);
-			sb->safePrintf(",\"timestamp\":\"%s\"}\n", timestamp);
-		}
-
-		//mr->size_content );
-		if ( si->m_format == FORMAT_HTML )
-			sb->safePrintf("\n\n<br><br>\n\n");
-		// inc it
-		*numPrintedSoFar = *numPrintedSoFar + 1;
-		// just in case
-		sb->nullTerm();
-		return true;
-	}
 
 	int32_t cursor = -1;
 	if ( si->m_format == FORMAT_XML  ) cursor = sb->length();
@@ -2024,29 +1945,30 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		sb->safePrintf("\t<result>\n" );
 
 	if ( si->m_format == FORMAT_JSON ) {
-		if ( *numPrintedSoFar != 0 ) sb->safePrintf(",\n");
+		if ( *numPrintedSoFar != 0 ) {
+			sb->safePrintf(",\n");
+		}
 		sb->safePrintf("\t{\n" );
 	}
 
 
 	if ( mr->ptr_content && si->m_format == FORMAT_XML ) {
-		sb->safePrintf("\t\t<content><![CDATA[" );
+		sb->safePrintf("\t\t<content><![CDATA[");
 		cdataEncode(sb, mr->ptr_content);
 		sb->safePrintf("]]></content>\n");
 	}
 		
 	if ( mr->ptr_content && si->m_format == FORMAT_JSON ) {
-		sb->safePrintf("\t\t\"content\":\"" );
-		sb->jsonEncode ( mr->ptr_content );
+		sb->safePrintf("\t\t\"content\":\"");
+		sb->jsonEncode(mr->ptr_content);
 		sb->safePrintf("\",\n");
 	}
 
 	// print spider status pages special
-	if ( mr->ptr_content && 
-	     si->m_format == FORMAT_HTML &&
-	     mr->m_contentType == CT_STATUS ) {
+	if ( mr->ptr_content && si->m_format == FORMAT_HTML && mr->m_contentType == CT_STATUS ) {
 		if ( *numPrintedSoFar )
 			sb->safePrintf("<br><hr><br>\n");
+
 		// skip to gbssurl
 		const char *s = strstr ( mr->ptr_content,"\"gbssUrl\":");
 		if ( ! s ) {
@@ -2112,14 +2034,14 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		return true;
 	}
 
-	badformat:
+badformat:
 
 	Highlight hi;
 
 	// get the url
-	const char *url    = mr->ptr_ubuf      ;
-	int32_t  urlLen = mr->size_ubuf - 1 ;
-	int32_t  err    = mr->m_errno       ;
+	const char *url = mr->ptr_ubuf;
+	int32_t urlLen = mr->size_ubuf - 1;
+	int32_t err = mr->m_errno;
 
 	// . remove any session ids from the url
 	// . for speed reasons, only check if its a cgi url
@@ -2147,14 +2069,9 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// it's unprofessional to display this in browser
 		// so just let admin see it
 		if ( isAdmin && si->m_format == FORMAT_HTML ) {
-			sb->safePrintf("<i>docId %" PRId64" had error: "
-				      "%s</i><br><br>",
-				      mr->m_docId,//msg40->getDocId(i),
-				      mstrerror(err));
+			sb->safePrintf("<i>docId %" PRId64" had error: %s</i><br><br>", mr->m_docId, mstrerror(err));
 		}
-		// log it too!
-		log("query: docId %" PRId64" had error: %s.",
-		    mr->m_docId,mstrerror(err));
+		log("query: docId %" PRId64" had error: %s.", mr->m_docId,mstrerror(err));
 		// wrap it up if clustered
 		// DO NOT inc it otherwise puts a comma in there and
 		// screws up the json
@@ -2165,8 +2082,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	// if we have a thumbnail show it next to the search result,
 	// base64 encoded. do NOT do this for the WIDGET, only for search
 	// results in html/xml.
-	if ( (si->m_format == FORMAT_HTML || si->m_format == FORMAT_XML ) &&
-	     si->m_showImages && mr->ptr_imgData ) {
+	if ( (si->m_format == FORMAT_HTML || si->m_format == FORMAT_XML ) && si->m_showImages && mr->ptr_imgData ) {
 		ThumbnailArray *ta = (ThumbnailArray *)mr->ptr_imgData;
 		ThumbnailInfo *ti = ta->getThumbnailInfo(0);
 		if ( si->m_format == FORMAT_XML )
@@ -2381,8 +2297,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		strLen = 0;
 	}
 	
-	const char *frontTag =
-		"<font style=\"color:black;background-color:yellow\">" ;
+	const char *frontTag = "<font style=\"color:black;background-color:yellow\">" ;
 	const char *backTag = "</font>";
 	if ( si->m_format == FORMAT_XML ) {
 		frontTag = "<b>";
@@ -2417,7 +2332,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		strLen = strlen(str);
 	}
 
-	if ( str &&  strLen &&
+	if ( str && strLen &&
 	     ( si->m_format == FORMAT_HTML ||
 	       si->m_format == FORMAT_WIDGET_IFRAME ||
 	       si->m_format == FORMAT_WIDGET_APPEND ||
@@ -2497,21 +2412,13 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	const char *cs = g_contentTypeStrings[ctype];
 
 	if ( si->m_format == FORMAT_XML )
-		sb->safePrintf("\t\t<contentType>"
-			       "<![CDATA["
-			       "%s"
-			       "]]>"
-			       "</contentType>\n",
-			       cs);
+		sb->safePrintf("\t\t<contentType><![CDATA[%s]]></contentType>\n", cs);
 
 	if ( si->m_format == FORMAT_JSON )
 		sb->safePrintf("\t\t\"contentType\":\"%s\",\n",cs);
 
-	if ( si->m_format == FORMAT_HTML &&
-	     ctype != CT_HTML && 
-	     ctype != CT_UNKNOWN ){
-		sb->safePrintf(" <b><font style=color:white;"
-			       "background-color:maroon;>");
+	if ( si->m_format == FORMAT_HTML && ctype != CT_HTML && ctype != CT_UNKNOWN ) {
+		sb->safePrintf(" <b><font style=color:white;background-color:maroon;>");
 		const char *p = cs;
 		for ( ; *p ; p++ ) {
 			char c = to_upper_a(*p);
@@ -2528,7 +2435,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	////////////
 
 	// do the normal summary
-	str    = mr->ptr_displaySum;
+	str = mr->ptr_displaySum;
 
 	// sometimes the summary is longer than requested because for
 	// summary deduping purposes (see "pss" parm in Parms.cpp) we do not
@@ -2578,11 +2485,15 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// new line if not xml. even summary is empty we need it too like
 		// when showing xml docs - MDW 9/28/2014
 		sb->safePrintf( "<br>\n" );
-	} else if ( si->m_format == FORMAT_XML ) {
+	}
+	else
+	if ( si->m_format == FORMAT_XML ) {
 		sb->safePrintf( "\t\t<sum><![CDATA[" );
 		cdataEncode(sb, str);
 		sb->safePrintf( "]]></sum>\n" );
-	} else if ( si->m_format == FORMAT_JSON ) {
+	}
+	else
+	if ( si->m_format == FORMAT_JSON ) {
 		sb->safePrintf( "\t\t\"sum\":\"" );
 		sb->jsonEncode( str );
 		sb->safePrintf( "\",\n" );
@@ -2593,7 +2504,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	// meta tag values for &dt=keywords ...
 	//
 	/////////
-	if ( mr->ptr_dbuf && mr->size_dbuf>1 )
+	if ( mr->ptr_dbuf && mr->size_dbuf > 1 )
 		printMetaContent ( msg40 , ix,st,sb);
 
 	////////////
@@ -2609,6 +2520,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	// hack off the http:// if any for displaying it on screen
 	if ( displayUrlLen > 8 && strncmp ( displayUrl , "http://" , 7 )==0 ) {
 		displayUrl += 7; displayUrlLen -= 7; }
+
 	// . remove trailing /
 	// . only remove from root urls in case user cuts and 
 	//   pastes it for link: search
@@ -2621,6 +2533,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// so hack off the last slash
 		if ( j < 0 ) displayUrlLen--;
 	}
+
 	if ( si->m_format == FORMAT_HTML ) {
 		sb->safePrintf ("<font color=gray>" );
 		//sb->htmlEncode ( url , strlen(url) , false );
@@ -2665,12 +2578,13 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		sb->safePrintf("\",\n");
 	}
 
+
 	if ( si->m_format == FORMAT_XML )
 		sb->safePrintf("\t\t<hopCount>%" PRId32"</hopCount>\n",
 			       (int32_t)mr->m_hopcount);
-
 	if ( si->m_format == FORMAT_JSON )
 		sb->safePrintf("\t\t\"hopCount\":%" PRId32",\n",(int32_t)mr->m_hopcount);
+
 
 	// now the last spidered date of the document
 	time_t ts = mr->m_lastSpidered;
@@ -2688,15 +2602,14 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		printTimeAgo(sb, now-ts, now, false);
 	}
 
+
 	//
 	// more xml stuff
 	//
 	if ( si->m_format == FORMAT_XML ) {
 		// doc size in Kilobytes
-		sb->safePrintf ( "\t\t<size><![CDATA[%4.0fk]]></size>\n",
-				(float)mr->m_contentLen/1024.0);
-		sb->safePrintf ( "\t\t<sizeInBytes>%" PRId32"</sizeInBytes>\n",
-				 mr->m_contentLen);
+		sb->safePrintf ("\t\t<size><![CDATA[%4.0fk]]></size>\n", (float)mr->m_contentLen/1024.0);
+		sb->safePrintf ( "\t\t<sizeInBytes>%" PRId32"</sizeInBytes>\n", mr->m_contentLen);
 		// . docId for possible cached link
 		// . might have merged a bunch together
 		sb->safePrintf("\t\t<docId>%" PRId64"</docId>\n",mr->m_docId );
@@ -2723,34 +2636,26 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		//int32_t dh = uu.getDomainHash32 ();
 		//sb->safePrintf ("\t\t<domainHash32>%" PRIu32"</domainHash32>\n",dh);
 		// spider date
-		sb->safePrintf ( "\t\t<spidered>%" PRIu32"</spidered>\n",
-				 (uint32_t)mr->m_lastSpidered);
+		sb->safePrintf ( "\t\t<spidered>%" PRIu32"</spidered>\n", (uint32_t)mr->m_lastSpidered);
 		// backwards compatibility for buzz
-		sb->safePrintf ( "\t\t<firstIndexedDateUTC>%" PRIu32
-				"</firstIndexedDateUTC>\n",
-				 (uint32_t)mr->m_firstIndexedDate);
-		sb->safePrintf( "\t\t<contentHash32>%" PRIu32
-				"</contentHash32>\n",
-				(uint32_t)mr->m_contentHash32);
+		sb->safePrintf ( "\t\t<firstIndexedDateUTC>%" PRIu32 "</firstIndexedDateUTC>\n", (uint32_t)mr->m_firstIndexedDate);
+		sb->safePrintf( "\t\t<contentHash32>%" PRIu32 "</contentHash32>\n", (uint32_t)mr->m_contentHash32);
 		// pub date
 		int32_t datedbDate = mr->m_datedbDate;
 		// show the datedb date as "<pubDate>" for now
 		if ( datedbDate != -1 )
-			sb->safePrintf ( "\t\t<pubdate>%" PRIu32"</pubdate>\n",
-					 (uint32_t)datedbDate);
+			sb->safePrintf ( "\t\t<pubdate>%" PRIu32"</pubdate>\n", (uint32_t)datedbDate);
 	}
 
 	if ( si->m_format == FORMAT_JSON ) {
 		// doc size in Kilobytes
-		sb->safePrintf ( "\t\t\"size\":\"%4.0fk\",\n",
-				(float)mr->m_contentLen/1024.0);
-		sb->safePrintf ( "\t\t\"sizeInBytes\":%" PRId32",\n",
-				 mr->m_contentLen);
+		sb->safePrintf ( "\t\t\"size\":\"%4.0fk\",\n", (float)mr->m_contentLen/1024.0);
+		sb->safePrintf ( "\t\t\"sizeInBytes\":%" PRId32 ",\n", mr->m_contentLen);
 		// . docId for possible cached link
 		// . might have merged a bunch together
-		sb->safePrintf("\t\t\"docId\":%" PRId64",\n",mr->m_docId );
-		sb->safePrintf("\t\t\"docScore\":%f,\n",docScore);
-		sb->safePrintf("\t\t\"flags\":%u,\n",docFlags);
+		sb->safePrintf("\t\t\"docId\":%" PRId64",\n", mr->m_docId );
+		sb->safePrintf("\t\t\"docScore\":%f,\n", docScore);
+		sb->safePrintf("\t\t\"flags\":%u,\n", docFlags);
 		sb->safePrintf("\t\t\"cacheAvailable\":%s,\n", printCached?"true":"false");
 		sb->safePrintf("\t\t\"isAdult\":%s,\n", mr->m_isAdult?"true":"false");
 	}
@@ -2771,21 +2676,16 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		if ( site && siteLen > 0 ) sb->safeMemcpy ( site , siteLen );
 		sb->safePrintf("\",\n");
 		// spider date
-		sb->safePrintf ( "\t\t\"spidered\":%" PRIu32",\n",
-				 (uint32_t)mr->m_lastSpidered);
+		sb->safePrintf ( "\t\t\"spidered\":%" PRIu32 ",\n", (uint32_t)mr->m_lastSpidered);
 		// backwards compatibility for buzz
-		sb->safePrintf ( "\t\t\"firstIndexedDateUTC\":%" PRIu32",\n"
-				 , (uint32_t) mr->m_firstIndexedDate);
-		sb->safePrintf( "\t\t\"contentHash32\":%" PRIu32",\n"
-				, (uint32_t)mr->m_contentHash32);
+		sb->safePrintf ( "\t\t\"firstIndexedDateUTC\":%" PRIu32 ",\n", (uint32_t) mr->m_firstIndexedDate);
+		sb->safePrintf( "\t\t\"contentHash32\":%" PRIu32 ",\n", (uint32_t)mr->m_contentHash32);
 		// pub date
 		int32_t datedbDate = mr->m_datedbDate;
 		// show the datedb date as "<pubDate>" for now
 		if ( datedbDate != -1 )
-			sb->safePrintf ( "\t\t\"pubdate\":%" PRIu32",\n",
-					 (uint32_t)datedbDate);
+			sb->safePrintf ( "\t\t\"pubdate\":%" PRIu32 ",\n", (uint32_t)datedbDate);
 	}
-
 
 
 	// . we also store the outlinks in a linkInfo structure
@@ -2801,37 +2701,27 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	while ( outlinks &&
 		(k =outlinks->getNextInlink(k))) 
 		// print it out
-		sb->safePrintf("\t\t<outlink "
-			      "docId=\"%" PRId64"\" "
-			      "hostId=\"%" PRIu32"\" "
-			      "indexed=\"%" PRId32"\" "
-			      "pubdate=\"%" PRId32"\" ",
-			      k->m_docId ,
-			       (uint32_t)k->m_ip,//hostHash, but use ip for now
-			      (int32_t)k->m_firstIndexedDate ,
-			      (int32_t)k->m_datedbDate );
+		sb->safePrintf("\t\t<outlink docId=\"%" PRId64"\" hostId=\"%" PRIu32"\" indexed=\"%" PRId32"\" pubdate=\"%" PRId32"\" ",
+			k->m_docId ,
+			(uint32_t)k->m_ip,//hostHash, but use ip for now
+			(int32_t)k->m_firstIndexedDate ,
+			(int32_t)k->m_datedbDate );
 
 	if ( si->m_format == FORMAT_XML ) {
 		// result
-		sb->safePrintf("\t\t<language><![CDATA[%s]]>"
-			      "</language>\n", 
-			      getLanguageString(mr->m_language));
-		sb->safePrintf("\t\t<langAbbr>%s</langAbbr>\n", 
-			      getLanguageAbbr(mr->m_language));
+		sb->safePrintf("\t\t<language><![CDATA[%s]]></language>\n", getLanguageString(mr->m_language));
+		sb->safePrintf("\t\t<langAbbr>%s</langAbbr>\n", getLanguageAbbr(mr->m_language));
 	}
 
 	if ( si->m_format == FORMAT_JSON ) {
 		// result
-		sb->safePrintf("\t\t\"language\":\"%s\",\n",
-			      getLanguageString(mr->m_language));
-		sb->safePrintf("\t\t\"langAbbr\":\"%s\",\n",
-			      getLanguageAbbr(mr->m_language));
+		sb->safePrintf("\t\t\"language\":\"%s\",\n", getLanguageString(mr->m_language));
+		sb->safePrintf("\t\t\"langAbbr\":\"%s\",\n", getLanguageAbbr(mr->m_language));
 	}
 
 	//
 	// end more xml stuff
 	//
-
 
 	
 	if ( si->m_format == FORMAT_HTML ) {
@@ -2841,27 +2731,17 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		sb->safePrintf("<br>\n");
 	}
 
-	//char *coll = si->m_cr->m_coll;
-
-	// get collnum result is from
-	//collnum_t collnum = si->m_cr->m_collnum;
 	// if searching multiple collections  - federated search
 	CollectionRec *scr = g_collectiondb.getRec ( mr->m_collnum );
 	const char *coll = "UNKNOWN";
 	if ( scr ) coll = scr->m_coll;
 
-	if ( si->m_format == FORMAT_HTML  && printCached ) {
-		sb->safePrintf ( "<a href=\""
-				"/get?"
-				"q=%s&"
-				"qlang=%s&"
-				"c=%s&d=%" PRId64"&cnsp=0\">"
-				"cached</a>\n",
-				 st->m_qesb.getBufStart() ,
-				// "qlang" parm
-				si->m_defaultSortLang,
-				coll ,
-				mr->m_docId );
+	if ( si->m_format == FORMAT_HTML && printCached ) {
+		sb->safePrintf ( "<a href=\"/get?q=%s&qlang=%s&c=%s&d=%" PRId64 "&cnsp=0\">cached</a>\n",
+			st->m_qesb.getBufStart() ,
+			si->m_defaultSortLang,		// "qlang" parm
+			coll ,
+			mr->m_docId );
 	}
 
 	// unhide the divs on click
@@ -2871,7 +2751,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// place holder for backlink table link
 		placeHolder = sb->length();
 		sb->safePrintf (" - <a onclick="
-
 			       "\""
 			       "var e = document.getElementById('bl%" PRId32"');"
 			       "if ( e.style.display == 'none' ){"
@@ -2882,7 +2761,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       "}"
 			       "\""
 			       " "
-
 			       "style="
 			       "cursor:hand;"
 			       "cursor:pointer;"
@@ -2895,7 +2773,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 		// unhide the scoring table on click
 		sb->safePrintf (" - <a onclick="
-
 			       "\""
 			       "var e = document.getElementById('sc%" PRId32"');"
 			       "if ( e.style.display == 'none' ){"
@@ -2906,7 +2783,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       "}"
 			       "\""
 			       " "
-
 			       "style="
 			       "cursor:hand;"
 			       "cursor:pointer;"
@@ -2919,26 +2795,20 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	if ( si->m_format == FORMAT_HTML ) {
 		// reindex
-		sb->safePrintf(" - <a style=color:blue; href=\"/addurl?"
-			       "urls=");
+		sb->safePrintf(" - <a style=color:blue; href=\"/addurl?urls=");
 		urlEncode(sb, url, strlen(url), false);
 		uint64_t rand64 = gettimeofdayInMilliseconds();
-		sb->safePrintf("&c=%s&rand64=%" PRIu64"\">respider</a>\n",
-			       coll,rand64);
-
+		sb->safePrintf("&c=%s&rand64=%" PRIu64"\">respider</a>\n", coll,rand64);
 
 		sb->safePrintf (" - "
 				"<a style=color:blue; "
 				"href=\"/search?sb=1&c=%s&"
-				//"q=url2%%3A" 
 				"q=gbfieldmatch%%3AgbssUrl%%3A"
 				, coll 
 				);
 		// do not include ending \0
 		urlEncode(sb, mr->ptr_ubuf, mr->size_ubuf-1, false);
-		sb->safePrintf ( "\">"
-				 "spider info</a>\n"
-			       );
+		sb->safePrintf("\">spider info</a>\n");
 
 
 		//
@@ -2947,8 +2817,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 		sb->safePrintf ( " - <a style=color:blue; href=\""
 				 "/get?"
-				 // show rainbow sections
-				 "page=4&"
+				 "page=4&"	// show rainbow sections
 				 "q=%s&"
 				 "qlang=%s&"
 				 "c=%s&"
@@ -2956,16 +2825,13 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 				 "cnsp=0\">"
 				 "sections</a>\n", 
 				 st->m_qesb.getBufStart() , 
-				 // "qlang" parm
-				 si->m_defaultSortLang,
+				 si->m_defaultSortLang,	// "qlang" parm
 				 coll , 
 				 mr->m_docId ); 
 
-
 		sb->safePrintf ( " - <a style=color:blue; href=\""
 				 "/get?"
-				 // show rainbow sections
-				 "page=1&"
+				 "page=1&"	// show rainbow sections
 				 //"q=%s&"
 				 //"qlang=%s&"
 				 "c=%s&"
@@ -2978,11 +2844,9 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 				 coll , 
 				 mr->m_docId ); 
 
-
 		sb->safePrintf ( " - <a style=color:blue; href=\""
 				 "/get?"
-				 // show rainbow sections
-				 "page=5&"
+				 "page=5&"	// show rainbow sections
 				 //"q=%s&"
 				 //"qlang=%s&"
 				 "c=%s&"
@@ -2995,10 +2859,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 				 coll , 
 				 mr->m_docId ); 
 
-		// this stuff is secret just for local guys! not any more
-
-		// now the ip of url
-		//int32_t urlip = msg40->getIp(i);
 		// don't combine this with the sprintf above cuz
 		// iptoa uses a static local buffer like ctime()
 		sb->safePrintf(//"<br>"
@@ -3036,7 +2896,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       "q=site%%3A%s&sc=0&c=%s\">"
 			       "domain</a>\n" ,
 				dbuf ,
-				coll );//, dbuf );
+				coll );
 	}
 
 
@@ -3062,7 +2922,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       "more from this site</a></nobr>"
 				, newUrl.getBufStart()
 				);
-		//else sb->safePrintf ( "<br><br>\n");
 	}
 
 
@@ -3269,10 +3128,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// we need to set "ft" for xml stuff below
 		if ( si->m_format != FORMAT_HTML ) continue;
 
-		sb->safePrintf("<tr><td><b>%.04f</b></td>"
-			      "<td colspan=20>total of above scores</td>"
-			      "</tr>",
-			      totalPairScore);
+		sb->safePrintf("<tr><td><b>%.04f</b></td><td colspan=20>total of above scores</td></tr>", totalPairScore);
 		// close table from printScoresHeader
 		if ( ! firstTime ) sb->safePrintf("</table><br>");
 	}
@@ -3310,7 +3166,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 			// print it
 			printSingleScore ( sb , si , ss , mr );
-			if(si->m_format == FORMAT_JSON && j+1<dp->m_numSingles)
+			if(si->m_format == FORMAT_JSON && j+1 < dp->m_numSingles)
 				sb->safePrintf(",\n");
 			else
 				sb->safePrintf("\n");
@@ -3321,33 +3177,28 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		
 		if ( ft.length() ) ft.safePrintf(" , ");
 		ft.safePrintf("%f",totalSingleScore);
+
 		// min?
 		if ( minScore < 0.0 || totalSingleScore < minScore )
 			minScore = totalSingleScore;
+
 		// we need to set "ft" for xml stuff below
 		if ( si->m_format != FORMAT_HTML ) continue;
 
-		sb->safePrintf("<tr><td><b>%.04f</b></td>"
-			      "<td colspan=20>total of above scores</td>"
-			      "</tr>",
-			      totalSingleScore);
+		sb->safePrintf("<tr><td><b>%.04f</b></td><td colspan=20>total of above scores</td></tr>", totalSingleScore);
 		// close table from printScoresHeader
 		if ( ! firstTime ) sb->safePrintf("</table><br>");
 	}
 
-	
 
 	const char *ff = "";
 	const char *ff2 = "sum";
 
 	// final score!!!
 	if ( si->m_format == FORMAT_XML ) {
-		sb->safePrintf ("\t\t<siteRank>%" PRId32"</siteRank>\n",
-			       (int32_t)dp->m_siteRank );
+		sb->safePrintf ("\t\t<siteRank>%" PRId32"</siteRank>\n", (int32_t)dp->m_siteRank );
 
-		sb->safePrintf ("\t\t<numGoodSiteInlinks>%" PRId32
-			       "</numGoodSiteInlinks>\n",
-			       (int32_t)mr->m_siteNumInlinks );
+		sb->safePrintf ("\t\t<numGoodSiteInlinks>%" PRId32 "</numGoodSiteInlinks>\n", (int32_t)mr->m_siteNumInlinks );
 
 		struct tm *timeStruct3;
 		time_t pageInlinksLastUpdated = mr->m_pageInlinksLastUpdated;
@@ -3355,31 +3206,22 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		timeStruct3 = gmtime_r(&pageInlinksLastUpdated,&tm_buf);
 		char tmp3[64];
 		strftime ( tmp3 , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct3 );
+
 		// -1 means unknown
 		if ( mr->m_pageNumInlinks >= 0 )
 			// how many inlinks, external and internal, we have
 			// to this page not filtered in any way!!!
-			sb->safePrintf("\t\t<numTotalPageInlinks>%" PRId32
-				      "</numTotalPageInlinks>\n"
-				      ,mr->m_pageNumInlinks
-				      );
+			sb->safePrintf("\t\t<numTotalPageInlinks>%" PRId32 "</numTotalPageInlinks>\n", mr->m_pageNumInlinks);
 		// how many inlinking ips we got, including our own if
 		// we link to ourself
-		sb->safePrintf("\t\t<numUniqueIpsLinkingToPage>%" PRId32
-			      "</numUniqueIpsLinkingToPage>\n"
-			      ,mr->m_pageNumUniqueIps
-			      );
+		sb->safePrintf("\t\t<numUniqueIpsLinkingToPage>%" PRId32 "</numUniqueIpsLinkingToPage>\n", mr->m_pageNumUniqueIps);
 		// how many inlinking cblocks we got, including our own if
 		// we link to ourself
-		sb->safePrintf("\t\t<numUniqueCBlocksLinkingToPage>%" PRId32
-			      "</numUniqueCBlocksLinkingToPage>\n"
-			      ,mr->m_pageNumUniqueCBlocks
-			      );
+		sb->safePrintf("\t\t<numUniqueCBlocksLinkingToPage>%" PRId32 "</numUniqueCBlocksLinkingToPage>\n", mr->m_pageNumUniqueCBlocks);
 		
 		// how many "good" inlinks. i.e. inlinks whose linktext we
 		// count and index.
-		sb->safePrintf("\t\t<numGoodPageInlinks>%" PRId32
-			      "</numGoodPageInlinks>\n"
+		sb->safePrintf("\t\t<numGoodPageInlinks>%" PRId32 "</numGoodPageInlinks>\n"
 			      "\t\t<pageInlinksLastComputedUTC>%" PRIu32
 			      "</pageInlinksLastComputedUTC>\n"
 			      ,mr->m_pageNumGoodInlinks
