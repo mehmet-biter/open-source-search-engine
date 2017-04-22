@@ -3191,6 +3191,27 @@ badformat:
 	}
 
 
+
+	if ( si->m_format == FORMAT_HTML ) {
+		sb->safePrintf("<table border=1 cellpadding=3>");
+		sb->safePrintf("<tr><td colspan=10><b><center>Ranking bits</center></b></td></tr>");
+		sb->safePrintf("<tr><td>Bit</td><td>Score multiplier</td><td>Rank adjustment</td></tr>");
+
+		if(docFlags) {
+			for(int bit=0; bit < 26; bit++) {
+				if( (1<<bit) & docFlags ) {
+					sb->safePrintf("<tr><td>%d</td><td>%f</td><td>%d</td></tr>", bit, si->m_flagScoreMultiplier[bit], si->m_flagRankAdjustment[bit]);
+				}
+			}
+		}
+		else {
+			sb->safePrintf("<tr><td colspan=10>None set for document</td></tr>");
+		}
+		sb->safePrintf("</table><br>");
+	}
+
+
+
 	const char *ff = "";
 	const char *ff2 = "sum";
 
@@ -3203,15 +3224,16 @@ badformat:
 		struct tm *timeStruct3;
 		time_t pageInlinksLastUpdated = mr->m_pageInlinksLastUpdated;
 		struct tm tm_buf;
-		timeStruct3 = gmtime_r(&pageInlinksLastUpdated,&tm_buf);
+		timeStruct3 = gmtime_r(&pageInlinksLastUpdated, &tm_buf);
 		char tmp3[64];
-		strftime ( tmp3 , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct3 );
+		strftime(tmp3, 64, "%b-%d-%Y(%H:%M:%S)", timeStruct3);
 
 		// -1 means unknown
-		if ( mr->m_pageNumInlinks >= 0 )
+		if ( mr->m_pageNumInlinks >= 0 ) {
 			// how many inlinks, external and internal, we have
 			// to this page not filtered in any way!!!
 			sb->safePrintf("\t\t<numTotalPageInlinks>%" PRId32 "</numTotalPageInlinks>\n", mr->m_pageNumInlinks);
+		}
 		// how many inlinking ips we got, including our own if
 		// we link to ourself
 		sb->safePrintf("\t\t<numUniqueIpsLinkingToPage>%" PRId32 "</numUniqueIpsLinkingToPage>\n", mr->m_pageNumUniqueIps);
@@ -3221,16 +3243,11 @@ badformat:
 		
 		// how many "good" inlinks. i.e. inlinks whose linktext we
 		// count and index.
-		sb->safePrintf("\t\t<numGoodPageInlinks>%" PRId32 "</numGoodPageInlinks>\n"
-			      "\t\t<pageInlinksLastComputedUTC>%" PRIu32
-			      "</pageInlinksLastComputedUTC>\n"
-			      ,mr->m_pageNumGoodInlinks
-			       ,(uint32_t)mr->m_pageInlinksLastUpdated
-			      );
+		sb->safePrintf("\t\t<numGoodPageInlinks>%" PRId32 "</numGoodPageInlinks>\n", mr->m_pageNumGoodInlinks);
+		sb->safePrintf("\t\t<pageInlinksLastComputedUTC>%" PRIu32 "</pageInlinksLastComputedUTC>\n", (uint32_t)mr->m_pageInlinksLastUpdated);
 
-
-		float score    = msg40->getScore   (ix);
-		sb->safePrintf("\t\t<finalScore>%f</finalScore>\n", score );
+		float score = msg40->getScore(ix);
+		sb->safePrintf("\t\t<finalScore>%f</finalScore>\n", score);
 		sb->safePrintf ("\t\t<finalScoreEquationCanonical>"
 			       "<![CDATA["
 			       "Final Score = (siteRank/%.01f+1) * "
@@ -3238,31 +3255,22 @@ badformat:
 			       "(%s of above matrix scores)"
 			       "]]>"
 			       "</finalScoreEquationCanonical>\n"
-			       , SITERANKDIVISOR
-				, si->m_sameLangWeight //SAMELANGMULT
-			       , ff2 
-			       );
+			       , SITERANKDIVISOR, si->m_sameLangWeight, ff2);
+
 		sb->safePrintf ("\t\t<finalScoreEquation>"
 			       "<![CDATA["
-			       "<b>%.03f</b> = (%" PRId32"/%.01f+1) " // * %s("
-			       , dp->m_finalScore
-			       , (int32_t)dp->m_siteRank
-			       , SITERANKDIVISOR
-			       //, ff
-			       );
+			       "<b>%.03f</b> = (%" PRId32"/%.01f+1) " 
+			       , dp->m_finalScore, (int32_t)dp->m_siteRank, SITERANKDIVISOR);
+
 		// then language weight
-		if ( si->m_queryLangId == 0 || 
-		     mr->m_language    == 0 ||
-		     si->m_queryLangId == mr->m_language )
-			sb->safePrintf(" * %.01f",
-				       si->m_sameLangWeight);//SAMELANGMULT);
+		if ( si->m_queryLangId == 0 || mr->m_language    == 0 || si->m_queryLangId == mr->m_language )
+			sb->safePrintf(" * %.01f", si->m_sameLangWeight);
+
 		// the actual min then
 		sb->safePrintf(" * %.03f",minScore);
+
 		// no longer list all the scores
-		//sb->safeMemcpy ( &ft );
-		sb->safePrintf(//")"
-			      "]]>"
-			      "</finalScoreEquation>\n");
+		sb->safePrintf("]]></finalScoreEquation>\n");
 		sb->safePrintf ("\t</result>\n\n");
 		return true;
 	}
@@ -3272,71 +3280,36 @@ badformat:
 	const char *cc = getCountryCode ( mr->m_country );
 	if ( mr->m_country == 0 ) cc = "Unknown";
 
-	sb->safePrintf("<table border=1>"
-
-		      "<tr><td colspan=10><b><center>"
-		      "final score</center></b>"
-		      "</td></tr>"
-
-		      "<tr>"
-		      "<td>docId</td>"
-		      "<td>%" PRId64"</td>"
-		      "</tr>"
-
-		      "<tr>"
-		      "<td>site</td>"
-		      "<td>%s</td>"
-		      "</tr>"
-
-		      "<tr>"
-		      "<td>hopcount</td>"
-		      "<td>%" PRId32"</td>"
-		      "</tr>"
-
-		      "<tr>"
-		      "<td>language</td>"
-		      "<td><font color=green><b>%s</b></font></td>"
-		      "</tr>"
-
-		      "<tr>"
-		      "<td>country</td>"
-		      "<td>%s</td>"
-		      "</tr>"
-
-		      "<tr>"
-		      "<td>siteRank</td>"
-		      "<td><font color=blue>%" PRId32"</font></td>"
-		      "</tr>"
-
+	sb->safePrintf("<table border=1 cellpadding=3>"
+		      "<tr><td colspan=10><b><center>final score</center></b></td></tr>"
+		      "<tr><td>docId</td><td>%" PRId64"</td></tr>"
+		      "<tr><td>site</td><td>%s</td></tr>"
+		      "<tr><td>hopcount</td><td>%" PRId32 "</td></tr>"
+		      "<tr><td>language</td><td><font color=green><b>%s</b></font></td></tr>"
+		      "<tr><td>country</td><td>%s</td></tr>"
+		      "<tr><td>siteRank</td><td><font color=blue>%" PRId32 "</font></td></tr>"
 		      "<tr><td colspan=100>"
 		      , dp->m_docId
 		      , mr->ptr_site
 		      , (int32_t)mr->m_hopcount
-		      //, getLanguageString(mr->m_summaryLanguage)
 		      , getLanguageString(mr->m_language) // use page language
 		      , cc
 		      , (int32_t)dp->m_siteRank
 		      );
 
 	// list all final scores starting with pairs
-	sb->safePrintf("<b>%f</b> = "
-		      "(<font color=blue>%" PRId32"</font>/%.01f+1)"
+	sb->safePrintf("<b>%f</b> = (<font color=blue>%" PRId32"</font>/%.01f+1)"
 		      , dp->m_finalScore
 		      , (int32_t)dp->m_siteRank
 		      , SITERANKDIVISOR
 		      );
 
 	// if lang is different
-	if ( si->m_queryLangId == 0 || 
-	     mr->m_language    == 0 ||
-	     si->m_queryLangId == mr->m_language )
-		sb->safePrintf(" * <font color=green><b>%.01f</b></font>",
-			       si->m_sameLangWeight);//SAMELANGMULT);
+	if ( si->m_queryLangId == 0 || mr->m_language    == 0 || si->m_queryLangId == mr->m_language )
+		sb->safePrintf(" * <font color=green><b>%.01f</b></font>", si->m_sameLangWeight);
 
 	// list all final scores starting with pairs
-	sb->safePrintf(" * %s("
-		      , ff
-		      );
+	sb->safePrintf(" * %s(", ff);
 	sb->safeMemcpy ( &ft );
 	sb->safePrintf(")</td></tr></table><br>");
 
