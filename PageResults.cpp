@@ -3280,29 +3280,28 @@ badformat:
 	const char *cc = getCountryCode ( mr->m_country );
 	if ( mr->m_country == 0 ) cc = "Unknown";
 
-	sb->safePrintf("<table border=1 cellpadding=3>"
-		      "<tr><td colspan=10><b><center>final score</center></b></td></tr>"
-		      "<tr><td>docId</td><td>%" PRId64"</td></tr>"
-		      "<tr><td>site</td><td>%s</td></tr>"
-		      "<tr><td>hopcount</td><td>%" PRId32 "</td></tr>"
-		      "<tr><td>language</td><td><font color=green><b>%s</b></font></td></tr>"
-		      "<tr><td>country</td><td>%s</td></tr>"
-		      "<tr><td>siteRank</td><td><font color=blue>%" PRId32 "</font></td></tr>"
-		      "<tr><td colspan=100>"
-		      , dp->m_docId
-		      , mr->ptr_site
-		      , (int32_t)mr->m_hopcount
-		      , getLanguageString(mr->m_language) // use page language
-		      , cc
-		      , (int32_t)dp->m_siteRank
-		      );
+
+	sb->safePrintf("<table border=1 cellpadding=3>");
+	sb->safePrintf("<tr><td colspan=10><b><center>Final score</center></b></td></tr>");
+	sb->safePrintf("<tr><td>DocId</td><td>%" PRId64"</td></tr>", dp->m_docId);
+	sb->safePrintf("<tr><td>Site</td><td>%s</td></tr>", mr->ptr_site);
+	sb->safePrintf("<tr><td>Hopcount</td><td>%" PRId32 "</td></tr>", (int32_t)mr->m_hopcount);
+	sb->safePrintf("<tr><td>Language</td><td><font color=green><b>%s</b></font></td></tr>", getLanguageString(mr->m_language)); // use page language
+	sb->safePrintf("<tr><td>Country</td><td>%s</td></tr>", cc);
+	sb->safePrintf("<tr><td>Original SiteRank</td><td><font color=blue>%" PRId32 "</font></td></tr>", (int32_t)dp->m_siteRank);
+	sb->safePrintf("<tr><td>Adjusted SiteRank</td><td><font color=blue>%f</font></td></tr>", dp->m_adjustedSiteRank);
+	if( dp->m_usePageTemperature ) {
+		sb->safePrintf("<tr><td>Page temperature</td><td>%f</td></tr>", dp->m_pageTemperature);
+	}
+	else {
+		sb->safePrintf("<tr><td>Page temperature</td><td>Not used</td></tr>");
+	}
+
+
+	sb->safePrintf("<tr><td colspan=100>");
 
 	// list all final scores starting with pairs
-	sb->safePrintf("<b>%f</b> = (<font color=blue>%" PRId32"</font>/%.01f+1)"
-		      , dp->m_finalScore
-		      , (int32_t)dp->m_siteRank
-		      , SITERANKDIVISOR
-		      );
+	sb->safePrintf("<b>%f</b> = (<font color=blue>%" PRId32"</font>/%.01f+1)", dp->m_finalScore, (int32_t)dp->m_siteRank, SITERANKDIVISOR);
 
 	// if lang is different
 	if ( si->m_queryLangId == 0 || mr->m_language    == 0 || si->m_queryLangId == mr->m_language )
@@ -3311,8 +3310,10 @@ badformat:
 	// list all final scores starting with pairs
 	sb->safePrintf(" * %s(", ff);
 	sb->safeMemcpy ( &ft );
-	sb->safePrintf(")</td></tr></table><br>");
+	sb->safePrintf(")</td></tr>");
 
+
+	sb->safePrintf("</table><br>");
 	// put in a hidden div so you can unhide it
 	sb->safePrintf("</div>\n");
 

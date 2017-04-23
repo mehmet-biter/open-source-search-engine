@@ -4090,6 +4090,8 @@ void PosdbTable::intersectLists10_r ( ) {
 				//# SINGLE TERM SCORE LOOP
 				//#
 				minSingleScore = getMinSingleTermScoreSum(miniMergedList, miniMergedEnd, highestScoringNonBodyPos, pdcs);
+				logTrace(g_conf.m_logTracePosdb, "minSingleScore=%f before multiplication for docId %" PRIu64 "", minSingleScore, m_docId);
+
 				minSingleScore *= completeScoreMultiplier;
 
 
@@ -4122,6 +4124,8 @@ void PosdbTable::intersectLists10_r ( ) {
 				// pointers are used when determining the minimum term pair score returned
 				// by the function.
 				float minPairScore = getMinTermPairScoreSlidingWindow(miniMergedList, miniMergedEnd, highestScoringNonBodyPos, winnerStack, xpos, scoreMatrix, pdcs);
+				logTrace(g_conf.m_logTracePosdb, "minPairScore=%f before multiplication for docId %" PRIu64 "", minPairScore, m_docId);
+
 				minPairScore *= completeScoreMultiplier;
 
 
@@ -4155,14 +4159,14 @@ void PosdbTable::intersectLists10_r ( ) {
 			//#
 			//# Calculate score and give boost based on siterank and highest inlinking siterank
 			//#
-			float effectiveSiteRank = siteRank;
+			float adjustedSiteRank = siteRank;
 
 			if( highestInlinkSiteRank > siteRank ) {
 				//adjust effective siterank because a high-rank site linked to it. Don't adjust it too much though.
-				effectiveSiteRank = siteRank + (highestInlinkSiteRank-siteRank) / 3.0;
-				logTrace(g_conf.m_logTracePosdb, "Highest inlink siterank %d > siterank %d. Adjusting to %f for docId %" PRIu64 "", highestInlinkSiteRank, (int)siteRank, effectiveSiteRank, m_docId);
+				adjustedSiteRank = siteRank + (highestInlinkSiteRank-siteRank) / 3.0;
+				logTrace(g_conf.m_logTracePosdb, "Highest inlink siterank %d > siterank %d. Adjusting to %f for docId %" PRIu64 "", highestInlinkSiteRank, (int)siteRank, adjustedSiteRank, m_docId);
 			}
-			score = minScore * (effectiveSiteRank*m_siteRankMultiplier+1.0);
+			score = minScore * (adjustedSiteRank*m_siteRankMultiplier+1.0);
 			logTrace(g_conf.m_logTracePosdb, "Score %f for docId %" PRIu64 "", score, m_docId);
 
 
@@ -4175,13 +4179,18 @@ void PosdbTable::intersectLists10_r ( ) {
 				logTrace(g_conf.m_logTracePosdb, "Giving score a matching language boost of x%f: %f for docId %" PRIu64 "", m_msg39req->m_sameLangWeight, score, m_docId);
 			}
 
+			double page_temperature = 0;
+			bool use_page_temperature = false;
+			float score_before_page_temp = score;
 
 			if(m_msg39req->m_usePageTemperatureForRanking) {
-				double page_temperature = g_pageTemperatureRegistry.query_page_temperature(m_docId);
-				float pre_score = score;
+				use_page_temperature = true;
+				page_temperature = g_pageTemperatureRegistry.query_page_temperature(m_docId);
 				score *= page_temperature;
-				logTrace(g_conf.m_logTracePosdb, "Page temperature for docId %" PRIu64 " is %.4f, score %f->%f", m_docId, page_temperature, pre_score,score);
+				logTrace(g_conf.m_logTracePosdb, "Page temperature for docId %" PRIu64 " is %.4f, score %f->%f", m_docId, page_temperature, score_before_page_temp, score);
 			}
+
+
 
 			//#
 			//# Handle sortby int/float and minimum docid/score pairs
@@ -4266,14 +4275,17 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 
 
-			// . seoDebug hack so we can set "dcs"
-			// . we only come here if we actually made it into m_topTree
-			// if doing the second pass for printing out transparency info
-			// then do not mess with top tree
+			// We only come here if we actually made it into m_topTree - second round only loops through
+			// TopTree entries.
 			if ( currPassNum == INTERSECT_DEBUG_INFO ) {
+				// NEW 20170423
+				dcs.m_usePageTemperature = use_page_temperature;
+				dcs.m_pageTemperature = page_temperature;
+				dcs.m_adjustedSiteRank = adjustedSiteRank;
+
 				if( genDebugScoreInfo2(&dcs, &lastLen, &lastDocId, siteRank, score, intScore, docLang) ) {
 					// advance to next docid
-					docIdPtr += 6;
+//					docIdPtr += 6;
 					// Continue docIdPtr < docIdEnd loop
 					continue;
 				}
