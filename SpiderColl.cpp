@@ -806,9 +806,9 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 	//   SpiderRequest from this firstIp can be spidered.
 	uint64_t spiderTimeMS = 0;
 
-	// waiting tree might be saving!!!
-	if ( ! m_waitingTree.isWritable() ) {
-		log( LOG_WARN, "spider: addtowaitingtree: failed. is not writable. saving?" );
+	// don't write to tree if we're shutting down
+	if (g_process.isShuttingDown()) {
+		log(LOG_WARN, "spider: addtowaitingtree: failed. shutting down");
 		return false;
 	}
 
@@ -825,10 +825,6 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 		logDebug( g_conf.m_logDebugSpider, "spider: not adding to waiting tree, already in doleip table" );
 		return false;
 	}
-
-	// sanity check
-	// i think this trigged on gk209 during an auto-save!!! FIX!
-	if ( ! m_waitingTree.isWritable() ) { g_process.shutdownAbort(true); }
 
 	// see if in tree already, so we can delete it and replace it below
 	// . this is true if already in tree
@@ -1206,12 +1202,9 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	// unflag it
 	m_gettingWaitingTreeList = false;
 
-	// if waitingtree is locked for writing because it is saving or
-	// writes were disabled then just bail and let the scan be re-called
-	// later
-	RdbTree *wt = &m_waitingTree;
-	if (wt->isSaving() || !wt->isWritable()) {
-		logTrace( g_conf.m_logTraceSpider, "END, waitingTree not writable at the moment" );
+	// don't proceed if we're shutting down
+	if (g_process.isShuttingDown()) {
+		logTrace( g_conf.m_logTraceSpider, "END, process is shutting down" );
 		return;
 	}
 
@@ -1484,14 +1477,6 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	// set this flag so we are not re-entered
 	m_isPopulatingDoledb = true;
  loop:
-
-	// if waiting tree is being saved, we can't write to it
-	// so in that case, bail and wait to be called another time
-	if (m_waitingTree.isSaving() || !m_waitingTree.isWritable()) {
-		m_isPopulatingDoledb = false;
-		logTrace( g_conf.m_logTraceSpider, "END, waitingTree not writable at the moment" );
-		return;
-	}
 
 	// are we trying to exit? some firstip lists can be quite long, so
 	// terminate here so all threads can return and we can exit properly
@@ -2094,13 +2079,10 @@ bool SpiderColl::scanListForWinners ( ) {
 	// if list is empty why are we here?
 	if ( m_list.isEmpty() ) return true;
 
-	// if waitingtree is locked for writing because it is saving or
-	// writes were disabled then just bail and let the scan be re-called
-	// later
-	//
-	// MDW: move this up in evalIpLoop() i think
-	if (m_waitingTree.isSaving() || !m_waitingTree.isWritable())
+	// don't proceed if we're shutting down
+	if (g_process.isShuttingDown()) {
 		return true;
+	}
 
 	// ensure we point to the top of the list
 	m_list.resetListPtr();
@@ -2849,8 +2831,9 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 
 	// gotta check this again since we might have done a QUICKPOLL() above
 	// to call g_process.shutdown() so now tree might be unwritable
-	if (m_waitingTree.isSaving() || !m_waitingTree.isWritable())
+	if (g_process.isShuttingDown()) {
 		return true;
+	}
 
 	// ok, all done if nothing to add to doledb. i guess we were misled
 	// that firstIp had something ready for us. maybe the url filters
@@ -3555,11 +3538,6 @@ void SpiderColl::clearDoledbIpTable() {
 	m_doledbIpTable.clear();
 }
 
-void SpiderColl::disableDoledbIpTableWrites() {
-	ScopedLock sl(m_doledbIpTableMtx);
-	m_doledbIpTable.disableWrites();
-}
-
 bool SpiderColl::addToWaitingTable(int32_t firstIp, int64_t timeMs) {
 	ScopedLock sl(m_waitingTableMtx);
 	return m_waitingTable.addKey(&firstIp, &timeMs);
@@ -3600,9 +3578,4 @@ bool SpiderColl::setWaitingTableSize(int32_t numSlots) {
 void SpiderColl::clearWaitingTable() {
 	ScopedLock sl(m_waitingTableMtx);
 	m_waitingTable.clear();
-}
-
-void SpiderColl::disableWaitingTableWrites() {
-	ScopedLock sl(m_waitingTableMtx);
-	m_waitingTable.disableWrites();
 }

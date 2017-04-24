@@ -587,12 +587,6 @@ bool Rdb::isSavingTree() const {
 }
 
 bool Rdb::saveTree(bool useThread, void *state, void (*callback)(void *state)) {
-	// sanity check
-	if (isWritable()) {
-		// we need to make sure it's not writable before calling saveTree
-		gbshutdownLogicError();
-	}
-
 	bool result;
 
 	// . if RdbTree::m_needsSave is false this will return true
@@ -1443,9 +1437,6 @@ bool Rdb::hasRoom(RdbList *list) {
 
 
 bool Rdb::canAdd() const {
-	if (!isWritable()) {
-		return false;
-	}
 	if (isDumping()) {
 		return false;
 	}
@@ -2149,20 +2140,6 @@ int32_t Rdb::getTreeMemOccupied() const {
 int32_t Rdb::getTreeMemAllocated () const {
 	 if(m_useTree) return m_tree.getMemAllocated();
 	 return m_buckets.getMemAllocated();
-}
-
-void Rdb::disableWrites () {
-	if(m_useTree) m_tree.disableWrites();
-	else m_buckets.disableWrites();
-}
-void Rdb::enableWrites  () {
-	if(m_useTree) m_tree.enableWrites();
-	else m_buckets.enableWrites();
-}
-
-bool Rdb::isWritable ( ) const {
-	if(m_useTree) return m_tree.isWritable();
-	return m_buckets.isWritable();
 }
 
 bool Rdb::needsSave() const {
