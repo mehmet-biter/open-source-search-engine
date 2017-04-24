@@ -1132,7 +1132,33 @@ bool RdbBase::decrementOustandingJobs() {
 	return m_outstandingJobCount==0 && !m_submittingJobs;
 }
 
-
+static int32_t getMaxLostPositivesPercentage(rdbid_t rdbId) {
+	switch (rdbId) {
+		case RDB_POSDB:
+		case RDB2_POSDB2:
+			return g_conf.m_posdbMaxLostPositivesPercentage;
+		case RDB_TAGDB:
+		case RDB2_TAGDB2:
+			return g_conf.m_tagdbMaxLostPositivesPercentage;
+		case RDB_CLUSTERDB:
+		case RDB2_CLUSTERDB2:
+			return g_conf.m_clusterdbMaxLostPositivesPercentage;
+		case RDB_TITLEDB:
+		case RDB2_TITLEDB2:
+			return g_conf.m_titledbMaxLostPositivesPercentage;
+		case RDB_SPIDERDB:
+		case RDB2_SPIDERDB2:
+			return g_conf.m_spiderdbMaxLostPositivesPercentage;
+		case RDB_LINKDB:
+		case RDB2_LINKDB2:
+			return g_conf.m_linkdbMaxLostPositivesPercentage;
+		case RDB_NONE:
+		case RDB_END:
+		default:
+			logError("rdb: bad lookup rdbid of %i", (int)rdbId);
+			gbshutdownLogicError();
+	}
+}
 
 // . called after the merge has successfully completed
 // . the final merge file is always file #0 (i.e. "indexdb0000.dat/map")
@@ -1214,7 +1240,9 @@ bool RdbBase::incorporateMerge ( ) {
 
 		log(LOG_INFO,"merge: %s: lost %" PRId64" (%.2f%%) positives", m_dbname, lostPositive, lostPercentage);
 
-		if (lostPercentage > g_conf.m_maxLostPositivesPercentage) {
+		int32_t maxLostPercentage = getMaxLostPositivesPercentage(m_rdb->getRdbId());
+		if (lostPercentage > maxLostPercentage) {
+			log(LOG_ERROR, "merge: %s: lost more than %d of positive records. Aborting.", m_dbname, maxLostPercentage);
 			gbshutdownCorrupted();
 		}
 	}
@@ -1618,7 +1646,6 @@ int32_t RdbBase::getMinToMerge(const CollectionRec *cr, rdbid_t rdbId, int32_t m
 	log(LOG_INFO, "merge: Using min files to merge %d for %s", result, m_dbname);
 	return result;
 }
-
 
 // . the DailyMerge.cpp will set minToMergeOverride for titledb, and this
 //   overrides "forceMergeAll" which is the same as setting 
