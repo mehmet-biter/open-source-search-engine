@@ -2518,7 +2518,6 @@ static bool registerMsgHandlers2() {
 
 	if ( ! Msg13::registerHandler() ) return false;
 
-	if ( ! g_udpServer.registerHandler(msg_type_c1,handleRequestc1)) return false;
 	if ( ! Msg39::registerHandler()) return false;
 
 	if ( ! registerMsg4Handler() ) return false;

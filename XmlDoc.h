@@ -918,8 +918,6 @@ public:
 	SiteGetter m_siteGetter;
 	int32_t m_siteHash32;
 	char *m_httpReply;
-	bool m_incrementedAttemptsCount;
-	bool m_incrementedDownloadCount;
 	bool m_useRobotsTxt;
 	int32_t m_robotsTxtLen;
 	int32_t m_httpReplySize;

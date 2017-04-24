@@ -610,7 +610,6 @@ RdbBuckets::RdbBuckets()
 	m_buckets = NULL;
 	m_swapBuf = NULL;
 	m_sortBuf = NULL;
-	m_isWritable = true;
 	m_isSaving = false;
 	m_dataMemOccupied = 0;
 	m_needsSave = false;
@@ -883,11 +882,6 @@ bool RdbBuckets::addNode(collnum_t collnum, const char *key, const char *data, i
 
 bool RdbBuckets::addNode_unlocked(collnum_t collnum, const char *key, const char *data, int32_t dataSize) {
 	m_mtx.verify_is_locked();
-
-	if (!m_isWritable || m_isSaving) {
-		g_errno = ETRYAGAIN;
-		return false;
-	}
 
 	m_needsSave = true;
 
@@ -1780,11 +1774,6 @@ bool RdbBuckets::deleteList_unlocked(collnum_t collnum, RdbList *list) {
 
 	if (list->getListSize() == 0) {
 		return true;
-	}
-
-	if (!m_isWritable || m_isSaving) {
-		g_errno = EAGAIN;
-		return false;
 	}
 
 	// . set this right away because the head bucket needs to know if we

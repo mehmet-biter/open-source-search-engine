@@ -328,12 +328,6 @@ bool Collectiondb::addNewColl ( const char *coll,
 	// BEGIN NEW CODE
 	//
 
-
-	// . this will core if a host was dead and then when it came
-	//   back up host #0's parms.cpp told it to add a new coll
-	cr->m_diffbotCrawlStartTime = getTimeGlobal();
-	cr->m_diffbotCrawlEndTime   = 0;
-
 	// . just the basics on these for now
 	// . if certain parms are changed then the url filters
 	//   must be rebuilt, as well as possibly the waiting tree!!!
@@ -342,18 +336,8 @@ bool Collectiondb::addNewColl ( const char *coll,
 
 	cr->m_useRobotsTxt = true;
 
-	// reset crawler stats.they should be loaded from crawlinfo.txt
-	cr->m_localCrawlInfo.reset();
-	cr->m_globalCrawlInfo.reset();
-
 	// note that
 	log("colldb: initial revival for %s",cr->m_coll);
-
-	// . assume we got some urls ready to spider
-	// . Spider.cpp will wait SPIDER_DONE_TIME seconds and if it has no
-	//   urls it spidered in that time these will get set to 0
-	cr->m_localCrawlInfo.m_hasUrlsReadyToSpider = 1;
-	cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = 1;
 
 	// start the spiders!
 	cr->m_spideringEnabled = true;
@@ -705,10 +689,6 @@ bool Collectiondb::resetColl2(collnum_t oldCollnum, collnum_t newCollnum) {
 
 	CollectionRec *cr = m_recs [ oldCollnum ];
 
-	// let's reset crawlinfo crap
-	cr->m_globalCrawlInfo.reset();
-	cr->m_localCrawlInfo.reset();
-
 	// reset spider info
 	SpiderColl *sc = g_spiderCache.getSpiderCollIffNonNull(oldCollnum);
 	if ( sc ) {
@@ -721,10 +701,6 @@ bool Collectiondb::resetColl2(collnum_t oldCollnum, collnum_t newCollnum) {
 
 		cr->m_spiderColl = NULL;
 	}
-
-	// reset spider round
-	cr->m_spiderRoundNum = 0;
-	cr->m_spiderRoundStartTime = 0;
 
 	cr->m_spiderStatus = SP_INITIALIZING; // this is 0
 	//cr->m_spiderStatusMsg = NULL;
@@ -743,10 +719,6 @@ bool Collectiondb::resetColl2(collnum_t oldCollnum, collnum_t newCollnum) {
 	// make a new collnum so records in transit will not be added
 	// to any rdb...
 	cr->m_collnum = newCollnum;
-
-	// update the timestamps since we are restarting/resetting
-	cr->m_diffbotCrawlStartTime = getTimeGlobal();
-	cr->m_diffbotCrawlEndTime   = 0;
 
 
 	////////
@@ -988,7 +960,7 @@ CollectionRec::CollectionRec() {
 	m_spiderCorruptCount = 0;
 	m_collnum = -1;
 	m_coll[0] = '\0';
-	m_updateRoundNum = 0;
+
 	memset(m_bases, 0, sizeof(m_bases));
 	// how many keys in the tree of each rdb? we now store this stuff
 	// here and not in RdbTree.cpp because we no longer have a maximum
@@ -1031,8 +1003,6 @@ CollectionRec::CollectionRec() {
 	m_spideringEnabled = true;
 	m_spiderDelayInMilliseconds = 0;
 	m_isActive = false;
-	m_spiderRoundStartTime = 0;
-	m_spiderRoundNum = 0;
 	m_makeImageThumbnails = false;
 	m_thumbnailMaxWidthHeight = 0;
 	m_indexSpiderReplies = false;
@@ -1074,8 +1044,6 @@ CollectionRec::CollectionRec() {
 	m_summaryMaxNumLines = 0;
 	m_summaryMaxNumCharsPerLine = 0;
 	m_getDocIdScoringInfo = false;
-	m_diffbotCrawlStartTime = 0;
-	m_diffbotCrawlEndTime = 0;
 	m_numRegExs9 = 0;
 	m_doQueryHighlighting = false;
 	memset(m_summaryFrontHighlightTag, 0, sizeof(m_summaryFrontHighlightTag));
@@ -1121,22 +1089,6 @@ void CollectionRec::clearUrlFilters()
 
 
 void CollectionRec::reset() {
-
-	//log("coll: resetting collnum=%" PRId32,(int32_t)m_collnum);
-
-	// . grows dynamically
-	// . setting to 0 buckets should never have error
-	//m_pageCountTable.set ( 4,4,0,NULL,0,false,MAX_NICENESS,"pctbl" );
-
-	// make sure we do not leave spiders "hanging" waiting for their
-	// callback to be called... and it never gets called
-	//if ( m_callbackQueue.length() > 0 ) { g_process.shutdownAbort(true); }
-	//if ( m_doingCallbacks ) { g_process.shutdownAbort(true); }
-	//if ( m_replies != m_requests  ) { g_process.shutdownAbort(true); }
-	m_localCrawlInfo.reset();
-	m_globalCrawlInfo.reset();
-	//m_requests = 0;
-	//m_replies = 0;
 	// free all RdbBases in each rdb
 	for ( int32_t i = 0 ; i < g_process.m_numRdbs ; i++ ) {
 	     Rdb *rdb = g_process.m_rdbs[i];
@@ -1202,91 +1154,10 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 	// this only rebuild them if necessary
 	rebuildUrlFilters();//setUrlFiltersToDefaults();
 
-	//
-	// LOAD the crawlinfo class in the collectionrec for diffbot
-	//
-	// LOAD LOCAL
-	snprintf ( tmp1 , 1023, "%scoll.%s.%" PRId32"/localcrawlinfo.dat",
-		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
-	log(LOG_DEBUG,"db: Loading %s",tmp1);
-	m_localCrawlInfo.reset();
-	SafeBuf sb;
-	// fillfromfile returns 0 if does not exist, -1 on read error
-	if ( sb.fillFromFile ( tmp1 ) > 0 )
-		//m_localCrawlInfo.setFromSafeBuf(&sb);
-		// it is binary now
-		gbmemcpy ( &m_localCrawlInfo , sb.getBufStart(),sb.length() );
-
-	// if it had corrupted data from saving corrupted mem zero it out
-	// point to the stats for that host
-	int64_t *ss = (int64_t *)&m_localCrawlInfo;
-	// are stats crazy?
-	bool crazy = false;
-	for (int32_t j = 0; j < NUMCRAWLSTATS; j++) {
-		// crazy stat?
-		if (*ss > 1000000000LL || *ss < -1000000000LL) {
-			crazy = true;
-			break;
-		}
-		ss++;
-	}
-
-	if (m_localCrawlInfo.m_collnum != m_collnum) {
-		crazy = true;
-	}
-
-	if ( crazy ) {
-		log("coll: had crazy spider stats for coll %s. zeroing out.", m_coll);
-		m_localCrawlInfo.reset();
-	}
-
-
-	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.isInitializing() )
-		log(LOG_INFO, "coll: Loaded %s (%" PRId32") local hasurlsready=%" PRId32,
-		    m_coll,
-		    (int32_t)m_collnum,
-		    (int32_t)m_localCrawlInfo.m_hasUrlsReadyToSpider);
-
-
-	// we introduced the this round counts, so don't start them at 0!!
-	if ( m_spiderRoundNum == 0 &&
-	     m_localCrawlInfo.m_pageDownloadSuccessesThisRound <
-	     m_localCrawlInfo.m_pageDownloadSuccesses ) {
-		log(LOG_WARN, "coll: fixing process count this round for %s",m_coll);
-		m_localCrawlInfo.m_pageDownloadSuccessesThisRound =
-			m_localCrawlInfo.m_pageDownloadSuccesses;
-	}
-
-	// we introduced the this round counts, so don't start them at 0!!
-	if ( m_spiderRoundNum == 0 &&
-	     m_localCrawlInfo.m_pageProcessSuccessesThisRound <
-	     m_localCrawlInfo.m_pageProcessSuccesses ) {
-		log(LOG_WARN, "coll: fixing process count this round for %s",m_coll);
-		m_localCrawlInfo.m_pageProcessSuccessesThisRound =
-			m_localCrawlInfo.m_pageProcessSuccesses;
-	}
-
-	// LOAD GLOBAL
-	snprintf ( tmp1 , 1023, "%scoll.%s.%" PRId32"/globalcrawlinfo.dat",
-		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
-	log(LOG_DEBUG,"db: Loading %s",tmp1);
-	m_globalCrawlInfo.reset();
-	sb.reset();
-	if ( sb.fillFromFile ( tmp1 ) > 0 )
-		//m_globalCrawlInfo.setFromSafeBuf(&sb);
-		// it is binary now
-		gbmemcpy ( &m_globalCrawlInfo , sb.getBufStart(),sb.length() );
-
-	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.isInitializing() )
-		log(LOG_INFO, "coll: Loaded %s (%" PRId32") global hasurlsready=%" PRId32,
-		    m_coll,
-		    (int32_t)m_collnum,
-		    (int32_t)m_globalCrawlInfo.m_hasUrlsReadyToSpider);
-
 	// the list of ip addresses that we have detected as being throttled
 	// and therefore backoff and use proxies for
 	if ( ! g_conf.m_doingCommandLine ) {
-		sb.reset();
+		SafeBuf sb;
 		sb.safePrintf("%scoll.%s.%" PRId32"/", g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
 		m_twitchyTable.set(4, 0, 0, NULL, 0, false, "twitchtbl", true);
 		m_twitchyTable.load ( sb.getBufStart() , "ipstouseproxiesfor.dat" );
@@ -2223,34 +2094,10 @@ bool CollectionRec::save ( ) {
 		return false;
 	}
 
-	//
-	// save the crawlinfo class in the collectionrec for diffbot
-	//
-	// SAVE LOCAL
-	snprintf(tmp, 1023, "%scoll.%s.%" PRId32"/localcrawlinfo.dat", g_hostdb.m_dir, m_coll, (int32_t)m_collnum);
-
 	// in case emergency save from malloc core, do not alloc
 	StackBuf<1024> sb;
-
-	sb.safeMemcpy(&m_localCrawlInfo, sizeof(CrawlInfo));
-	if (sb.safeSave(tmp) == -1) {
-		log(LOG_WARN, "db: failed to save file %s : %s", tmp, mstrerror(g_errno));
-		g_errno = 0;
-	}
-
-	// SAVE GLOBAL
-	snprintf(tmp, 1023, "%scoll.%s.%" PRId32"/globalcrawlinfo.dat", g_hostdb.m_dir, m_coll, (int32_t)m_collnum);
-
-	sb.reset();
-	sb.safeMemcpy ( &m_globalCrawlInfo , sizeof(CrawlInfo) );
-	if (sb.safeSave(tmp) == -1) {
-		log(LOG_WARN, "db: failed to save file %s : %s", tmp, mstrerror(g_errno));
-		g_errno = 0;
-	}
-
 	// the list of ip addresses that we have detected as being throttled
 	// and therefore backoff and use proxies for
-	sb.reset();
 	sb.safePrintf("%scoll.%s.%" PRId32"/", g_hostdb.m_dir, m_coll, (int32_t)m_collnum);
 	m_twitchyTable.save ( sb.getBufStart() , "ipstouseproxiesfor.dat" );
 
@@ -2313,27 +2160,4 @@ int64_t CollectionRec::getNumDocsIndexed() {
 	RdbBase *base = getBase(RDB_TITLEDB);//m_bases[RDB_TITLEDB];
 	if ( ! base ) return 0LL;
 	return base->estimateNumGlobalRecs();
-}
-
-// messes with m_spiderColl->m_sendLocalCrawlInfoToHost[MAX_HOSTS]
-// so we do not have to keep sending this huge msg!
-bool CollectionRec::shouldSendLocalCrawlInfoToHost ( int32_t hostId ) {
-	if ( ! m_spiderColl ) return false;
-	if ( hostId < 0 ) { g_process.shutdownAbort(true); }
-	if ( hostId >= g_hostdb.getNumHosts() ) { g_process.shutdownAbort(true); }
-	// sanity
-	return m_spiderColl->m_sendLocalCrawlInfoToHost[hostId];
-}
-
-void CollectionRec::localCrawlInfoUpdate() {
-	if ( ! m_spiderColl ) return;
-	// turn on all the flags
-	memset(m_spiderColl->m_sendLocalCrawlInfoToHost,1,g_hostdb.getNumHosts());
-}
-
-// right after we send copy it for sending we set this so we do not send
-// again unless localCrawlInfoUpdate() is called
-void CollectionRec::sentLocalCrawlInfoToHost ( int32_t hostId ) {
-	if ( ! m_spiderColl ) return;
-	m_spiderColl->m_sendLocalCrawlInfoToHost[hostId] = 0;
 }

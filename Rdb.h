@@ -134,10 +134,6 @@ public:
 	int32_t       getTreeMemAllocated() const;
 	int32_t       getNumNegativeKeys() const;
 
-	void disableWrites();
-	void enableWrites();
-	bool isWritable() const;
-
 	void cleanTree();
 
 	RdbBase *getBase(collnum_t collnum );

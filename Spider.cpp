@@ -2006,46 +2006,6 @@ checkNextRule:
 			goto checkNextRule;
 		}
 
-		// the last time it was spidered
-		if ( *p=='l' && strncmp(p,"lastspidertime",14) == 0 ) {
-			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
-				return -1;
-			}
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// reply based
-			int32_t a = 0;
-			// if no spider reply we can't match this rule!
-			if ( ! srep ) continue;
-			// shortcut
-			if ( srep ) a = srep->m_spideredTime;
-			// make it point to the retry count
-			int32_t b ;
-			// now "s" can be "{roundstart}"
-			if ( s[0]=='{' && strncmp(s,"{roundstart}",12)==0)
-				b = cr->m_spiderRoundStartTime;//Num;
-			else
-				b = atoi(s);
-			// compare
-			if ( sign == SIGN_EQ && a != b ) continue;
-			if ( sign == SIGN_NE && a == b ) continue;
-			if ( sign == SIGN_GT && a <= b ) continue;
-			if ( sign == SIGN_LT && a >= b ) continue;
-			if ( sign == SIGN_GE && a <  b ) continue;
-			if ( sign == SIGN_LE && a >  b ) continue;
-			p = strstr(s, "&&");
-			//if nothing, else then it is a match
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			//skip the '&&' and go to next rule
-			p += 2;
-			goto checkNextRule;
-		}
-
 		// selector using the first time it was added to the Spiderdb
 		// added by Sam, May 5th 2015
 		if ( *p=='u' && strncmp(p,"urlage",6) == 0 ) {
@@ -2887,19 +2847,6 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 					 "existing urls to be respidered.");
 	}
 
-	// let's pass the qareindex() test in qa.cpp... it wasn't updating
-	// the status to done. it kept saying in progress.
-	if ( ! cx->m_globalCrawlInfo.m_hasUrlsReadyToSpider ) {
-		//*status = SP_COMPLETED;
-		*status = SP_INPROGRESS;
-		return msg->safePrintf ( "Nothing currently "
-					 "available to spider. "
-					 "Change your url filters, try "
-					 "adding new urls, or wait for "
-					 "existing urls to be respidered.");
-	}
-		
-
 	if ( cx->m_spiderStatus == SP_ROUNDDONE ) {
 		*status = SP_ROUNDDONE;
 		return msg->safePrintf ( "Job round completed.");
@@ -2916,7 +2863,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 	// out CollectionRec::m_globalCrawlInfo counts do not have a dead
 	// host's counts tallied into it, which could make a difference on
 	// whether we have exceed a maxtocrawl limit or some such, so wait...
-	if ( ! s_countsAreValid && g_hostdb.hasDeadHost() ) {
+	if (g_hostdb.hasDeadHost()) {
 		*status = SP_ADMIN_PAUSED;
 		return msg->safePrintf("All crawling temporarily paused "
 				       "because a shard is down.");

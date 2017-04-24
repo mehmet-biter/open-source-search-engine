@@ -635,7 +635,7 @@ void Msg40::adjustRankingBasedOnFlags() {
 		if(flags) {
 			for(int bit=0; bit<26; bit++)
 				if((1<<bit)&flags)
-					adjustment += g_conf.m_flagRankAdjustment[bit];
+					adjustment += m_si->m_flagRankAdjustment[bit];
 			rank[i] = i + adjustment;
 		} else
 			rank[i] = i;

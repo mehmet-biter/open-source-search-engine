@@ -113,6 +113,4 @@ private:
 
 extern SpiderLoop g_spiderLoop;
 
-void handleRequestc1 ( UdpSlot *slot , int32_t niceness );
-
 #endif // GB_SPIDERLOOP_H

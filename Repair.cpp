@@ -1676,8 +1676,7 @@ bool Repair::saveAllRdbs() {
 		}
 
 		// save/close it
-		rdb->disableWrites();
-		rdb->saveTree(true, rdb, doneSavingRdb);
+		rdb->saveTree(true, NULL, doneSavingRdb);
 	}
 
 	// return if still waiting on one to close
@@ -1707,9 +1706,6 @@ bool Repair::anyRdbNeedsSave() {
 
 // returns false if waiting on some to save
 void Repair::doneSavingRdb(void *state) {
-	Rdb *rdb = static_cast<Rdb*>(state);
-	rdb->enableWrites();
-
 	if (!anyRdbNeedsSave()) {
 		return;
 	}

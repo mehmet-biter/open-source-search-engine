@@ -346,11 +346,15 @@ class DocIdScore {
 	// for example. see Posdb.cpp "intScore".
 	double      m_finalScore;
 	char        m_siteRank;
-	char        m_reserved0;
+	char        m_usePageTemperature;
 	char        m_reserved1;
 	char        m_reserved2;
 	int32_t        m_docLang; // langId
 	int32_t        m_numRequiredTerms;
+	// NEW 20170423
+	float		m_adjustedSiteRank;
+	double		m_pageTemperature;
+
 
 	int32_t m_numPairs;
 	int32_t m_numSingles;
