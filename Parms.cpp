@@ -7047,22 +7047,20 @@ void Parms::init ( ) {
 	m++;
 
 	////////////////////
-	// generic rdb settings
+	// clusterdb settings
 	////////////////////
-	m->m_title = "max percentage of lost positives after merge";
-	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow. Anything above that we'll abort the instance";
-	m->m_cgi   = "plpmerge";
-	simple_m_set(Conf,m_maxLostPositivesPercentage);
+
+	m->m_title = "clusterdb max percentage of lost positives after merge";
+	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow for clusterdb. "
+	             "Anything above that we'll abort the instance";
+	m->m_cgi   = "plpclmerge";
+	simple_m_set(Conf,m_clusterdbMaxLostPositivesPercentage);
 	m->m_def   = "50";
 	m->m_units = "percent";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_group = true;
 	m++;
-
-	////////////////////
-	// clusterdb settings
-	////////////////////
 
 	m->m_title = "clusterdb disk cache size";
 	m->m_desc  = "Gigablast does a lookup in clusterdb for each search result at query time to "
@@ -7075,7 +7073,7 @@ void Parms::init ( ) {
 	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
-	m->m_group = true;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "clusterdb max tree mem";
@@ -7104,6 +7102,18 @@ void Parms::init ( ) {
 	// linkdb settings
 	////////////////////
 
+	m->m_title = "linkdb max percentage of lost positives after merge";
+	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow for linkdb. "
+	             "Anything above that we'll abort the instance";
+	m->m_cgi   = "plplkmerge";
+	simple_m_set(Conf,m_linkdbMaxLostPositivesPercentage);
+	m->m_def   = "50";
+	m->m_units = "percent";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RDB;
+	m->m_group = true;
+	m++;
+
 	m->m_title = "linkdb min files needed to trigger to merge";
 	m->m_desc  = "Merge is triggered when this many linkdb data files "
 	             "are on disk. Raise this when initially growing an index "
@@ -7113,7 +7123,7 @@ void Parms::init ( ) {
 	m->m_def   = "6";
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
-	m->m_group = true;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "linkdb max tree mem";
@@ -7134,6 +7144,18 @@ void Parms::init ( ) {
 	// posdb settings
 	////////////////////
 
+	m->m_title = "posdb max percentage of lost positives after merge";
+	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow for posdb. "
+	             "Anything above that we'll abort the instance";
+	m->m_cgi   = "plppmerge";
+	simple_m_set(Conf,m_posdbMaxLostPositivesPercentage);
+	m->m_def   = "50";
+	m->m_units = "percent";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RDB;
+	m->m_group = true;
+	m++;
+
 	m->m_title = "posdb disk cache size";
 	m->m_desc  = "Posdb is the index.";
 	m->m_cgi   = "dpcsp";
@@ -7142,7 +7164,7 @@ void Parms::init ( ) {
 	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
-	m->m_group = true;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "posdb min files needed to trigger to merge";
@@ -7175,6 +7197,17 @@ void Parms::init ( ) {
 	////////////////////
 	// spiderdb settings
 	////////////////////
+	m->m_title = "spiderdb max percentage of lost positives after merge";
+	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow for spiderdb. "
+	             "Anything above that we'll abort the instance";
+	m->m_cgi   = "plpspmerge";
+	simple_m_set(Conf,m_spiderdbMaxLostPositivesPercentage);
+	m->m_def   = "90";
+	m->m_units = "percent";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RDB;
+	m->m_group = true;
+	m++;
 
 	m->m_title = "spiderdb disk cache size";
 	m->m_desc  = "Titledb "
@@ -7187,7 +7220,7 @@ void Parms::init ( ) {
 	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
-	m->m_group = true;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "spiderdb min files needed to trigger to merge";
@@ -7218,6 +7251,18 @@ void Parms::init ( ) {
 	// tagdb settings
 	////////////////////
 
+	m->m_title = "tagdb max percentage of lost positives after merge";
+	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow for tagdb. "
+	             "Anything above that we'll abort the instance";
+	m->m_cgi   = "plptgmerge";
+	simple_m_set(Conf,m_tagdbMaxLostPositivesPercentage);
+	m->m_def   = "50";
+	m->m_units = "percent";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RDB;
+	m->m_group = true;
+	m++;
+
 	m->m_title = "tagdb disk cache size";
 	m->m_desc  = "Tagdb is "
 	             "consulted at spider time and query time to determine "
@@ -7228,7 +7273,7 @@ void Parms::init ( ) {
 	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
-	m->m_group = true;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "tagdb min files to merge";
@@ -7259,6 +7304,18 @@ void Parms::init ( ) {
 	// titledb settings
 	////////////////////
 
+	m->m_title = "titledb max percentage of lost positives after merge";
+	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow for titledb. "
+	             "Anything above that we'll abort the instance";
+	m->m_cgi   = "plpttmerge";
+	simple_m_set(Conf,m_titledbMaxLostPositivesPercentage);
+	m->m_def   = "50";
+	m->m_units = "percent";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RDB;
+	m->m_group = true;
+	m++;
+
 	m->m_title = "titledb disk cache size";
 	m->m_desc  = "Titledb "
 			"holds the cached web pages, compressed. Gigablast consults "
@@ -7270,7 +7327,7 @@ void Parms::init ( ) {
 	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
-	m->m_group = true;
+	m->m_group = false;
 	m++;
 
 	// this is overridden by collection
