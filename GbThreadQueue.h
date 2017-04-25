@@ -3,6 +3,7 @@
 
 #include <queue>
 #include <pthread.h>
+#include <atomic>
 
 
 typedef void (*queue_func_t)(void *item);
@@ -28,7 +29,7 @@ private:
 
 	pthread_t m_thread;
 	queue_func_t m_func;
-	bool m_stop;
+	std::atomic<bool> m_stop;
 	bool m_started;
 };
 
