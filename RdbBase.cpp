@@ -1242,7 +1242,7 @@ bool RdbBase::incorporateMerge ( ) {
 
 		int32_t maxLostPercentage = getMaxLostPositivesPercentage(m_rdb->getRdbId());
 		if (lostPercentage > maxLostPercentage) {
-			log(LOG_ERROR, "merge: %s: lost more than %d of positive records. Aborting.", m_dbname, maxLostPercentage);
+			log(LOG_ERROR, "merge: %s: lost more than %d%% of positive records. Aborting.", m_dbname, maxLostPercentage);
 			gbshutdownCorrupted();
 		}
 	}
