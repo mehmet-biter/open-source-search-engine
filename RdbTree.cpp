@@ -1503,7 +1503,10 @@ bool RdbTree::getList(collnum_t collnum, const char *startKey, const char *endKe
 			// do not allow negative keys to have data, or
 			// at least ignore it! let's RdbList::addRecord()
 			// core dump on us!
-			if ( (key[0] & 0x01) == 0x00 ) dataSize = 0;
+			if (KEYNEG(key)) {
+				dataSize = 0;
+			}
+
 			// add the key and data
 			if ( ! list->addRecord ( key,//&m_keys[node*m_ks] ,
 						 dataSize     ,
