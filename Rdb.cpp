@@ -742,20 +742,6 @@ bool Rdb::dumpTree() {
 		return true;
 	}
 
-	// . if tree is saving do not dump it, that removes things from tree
-	// . i think this caused a problem messing of RdbMem before when
-	//   both happened at once
-	if (isSavingTree()) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: Rdb tree/bucket is saving. Returning true", m_dbname );
-		return true;
-	}
-
-	// . if Process is saving, don't start a dump
-	if ( g_process.m_mode == Process::SAVE_MODE ) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: Process is in save mode. Returning true", m_dbname );
-		return true;
-	}
-
 	// if it has been less than 3 seconds since our last failed attempt
 	// do not try again to avoid flooding our log
 	if ( getTime() - s_lastTryTime < 3 ) {
