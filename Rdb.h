@@ -87,8 +87,6 @@ public:
 	// returns false if no room in tree or m_mem for a list to add
 	bool hasRoom(int32_t numRecs, int32_t dataSize) const;
 
-	bool canAdd() const;
-
 	// . returns false on error and sets errno
 	// . return true on success
 	// . if we can't handle all records in list we don't add any and

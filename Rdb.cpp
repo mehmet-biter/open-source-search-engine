@@ -1421,15 +1421,6 @@ bool Rdb::hasRoom(RdbList *list) {
 	return true;
 }
 
-
-bool Rdb::canAdd() const {
-	if (isDumping()) {
-		return false;
-	}
-	return true;
-}
-
-
 // . NOTE: low bit should be set , only antiKeys (deletes) have low bit clear
 // . returns false and sets g_errno on error, true otherwise
 // . if RdbMem, m_mem, has no mem, sets g_errno to ETRYAGAIN and returns false
@@ -1446,7 +1437,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 	}
 
 	// don't continue if we're not allowed to add to Rdb
-	if (!canAdd()) {
+	if (isDumping()) {
 		g_errno = ETRYAGAIN;
 		logTrace(g_conf.m_logTraceRdb, "END. %s: Unable to add. Returning false", m_dbname);
 		return false;

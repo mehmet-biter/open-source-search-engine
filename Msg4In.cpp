@@ -299,15 +299,14 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 	}
 
 	bool hasRoom = true;
-	bool anyCantAdd = false;
+	bool anyDumping = false;
 	for (auto const &rdbItem : rdbItems) {
 		Rdb *rdb = getRdbFromId(rdbItem.first);
-		if (!rdb->hasRoom(rdbItem.second.m_numRecs, rdbItem.second.m_dataSizes)) {
+		if (rdb->isDumping()) {
+			anyDumping = true;
+		} else if (!rdb->hasRoom(rdbItem.second.m_numRecs, rdbItem.second.m_dataSizes)) {
 			rdb->dumpTree();
 			hasRoom = false;
-		}
-		if (!rdb->canAdd()) {
-			anyCantAdd = true;
 		}
 	}
 
@@ -317,8 +316,8 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 		return false;
 	}
 
-	if (anyCantAdd) {
-		logDebug(g_conf.m_logDebugSpider, "One or more target Rdbs can't currently be added to. Returning try-again for this Msg4");
+	if (anyDumping) {
+		logDebug(g_conf.m_logDebugSpider, "One or more target Rdbs is dumping. Returning try-again for this Msg4");
 		g_errno = ETRYAGAIN;
 		return false;
 	}
