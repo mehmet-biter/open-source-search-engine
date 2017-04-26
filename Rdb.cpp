@@ -864,12 +864,8 @@ bool Rdb::dumpCollLoop ( ) {
 		}
 
 		// before we create the file, see if tree has anything for this coll
-		if(m_useTree) {
-			if(!m_tree.collExists(m_dumpCollnum))
-				continue;
-		} else {
-			if(!m_buckets.collExists(m_dumpCollnum))
-				continue;
+		if (!getTreeCollExist(m_dumpCollnum)) {
+			continue;
 		}
 
 		// . MDW ADDING A NEW FILE SHOULD BE IN RDBDUMP.CPP NOW... NO!
@@ -2098,6 +2094,10 @@ bool Rdb::needsSave() const {
 void Rdb::cleanTree() {
 	if(m_useTree) return m_tree.cleanTree();
 	else return m_buckets.cleanBuckets();
+}
+
+bool Rdb::getTreeCollExist(collnum_t collnum) const {
+	return (m_useTree ? m_tree.collExists(collnum) : m_buckets.collExists(collnum));
 }
 
 // if we are doledb, we are a tree-only rdb, so try to reclaim

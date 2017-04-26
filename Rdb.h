@@ -235,6 +235,8 @@ private:
 	// returns false if no room in tree or m_mem for a list to add
 	bool hasRoom(RdbList *list);
 
+	bool getTreeCollExist(collnum_t collnum) const;
+
 	bool addList(collnum_t collnum, RdbList *list, bool checkForRoom);
 	// get the directory name where this rdb stores its files
 	const char *getDir() const { return g_hostdb.m_dir; }
