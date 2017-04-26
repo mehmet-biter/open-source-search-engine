@@ -758,23 +758,6 @@ bool Rdb::dumpTree() {
 	// reset g_errno -- don't forget!
 	g_errno = 0;
 
-	// . wait for all unlinking and renaming activity to flush out
-	// . we do not want to dump to a filename in the middle of being
-	//   unlinked
-	for (collnum_t collnum = 0; collnum < getNumBases(); collnum++) {
-		RdbBase *base = getBase(collnum);
-		if (base && base->isManipulatingFiles()) {
-			// update this so we don't try too much and flood the log
-			// with error messages from RdbDump.cpp calling log() and
-			// quickly kicking the log file over 2G which seems to
-			// get the process killed
-			s_lastTryTime = getTime();
-			log(LOG_INFO, "db: Waiting for previous unlink/rename operations to finish before dumping %s.", m_dbname);
-			logTrace(g_conf.m_logTraceRdb, "END. %s: at least one collection is manipulating files. Returning false", m_dbname);
-			return false;
-		}
-	}
-
 	// remember niceness for calling setDump()
 	m_niceness = 1;
 
