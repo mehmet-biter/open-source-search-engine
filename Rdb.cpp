@@ -398,11 +398,6 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	// add it to CollectionRec::m_bases[] base ptrs array
 	addBase ( collnum , newColl );
 
-	RdbTree    *tree = NULL;
-	RdbBuckets *buckets = NULL;
-	if(m_useTree) tree    = &m_tree;
-	else          buckets = &m_buckets;
-
 	// . init it
 	// . g_hostdb.m_dir should end in /
 	if ( ! base->init ( g_hostdb.m_dir,
@@ -414,8 +409,8 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 					m_pageSize      ,
 					coll            ,
 					collnum         ,
-					tree            ,
-					buckets         ,
+					getTree()       ,
+					getBuckets()    ,
 					this            ,
 					m_useIndexFile ) ) {
 		logf(LOG_INFO,"db: %s: Failed to initialize db for "
@@ -921,22 +916,14 @@ bool Rdb::dumpCollLoop ( ) {
 			bufSize *= 4;
 		}
 
-		RdbBuckets *buckets = NULL;
-		RdbTree *tree = NULL;
-		if (m_useTree) {
-			tree = &m_tree;
-		} else {
-			buckets = &m_buckets;
-		}
-
 		// . RdbDump will set the filename of the map we pass to this
 		// . RdbMap should dump itself out CLOSE!
 		// . it returns false if blocked, true otherwise & sets g_errno on err
 		// . but we only return false on error here
 		if (!m_dump.set(base->getCollnum(),
 		                base->getFile(fn),
-		                buckets,
-		                tree,
+		                getBuckets(),
+		                getTree(),
 		                base->getMap(fn),
 		                base->getIndex(fn),
 		                bufSize, // write buf size

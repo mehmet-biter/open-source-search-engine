@@ -117,10 +117,8 @@ public:
 
 	bool isTitledb() const { return m_rdbId==RDB_TITLEDB || m_rdbId==RDB2_TITLEDB2; }
 
-	RdbBuckets* getBuckets() {
-		if (m_useTree) return NULL;
-		return &m_buckets;
-	}
+	RdbTree* getTree() { return (m_useTree ? &m_tree : NULL); }
+	RdbBuckets *getBuckets() { return (m_useTree ? NULL : &m_buckets); }
 
 	int32_t getAvailMem() const { return m_mem.getAvailMem(); }
 	int32_t getUsedMem() const { return m_mem.getUsedMem(); }
