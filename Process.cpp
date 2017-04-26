@@ -651,7 +651,7 @@ bool Process::shutdown2() {
 	g_merge.haltMerge();
 
 	RdbBase::finalizeGlobalIndexThread();
-	finalizeMsg4IncomingThread();
+	Msg4In::finalizeIncomingThread();
 
 	g_jobScheduler.cancel_all_jobs_for_shutdown();
 

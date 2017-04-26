@@ -5,9 +5,13 @@
 #ifndef GB_MSG4IN_H
 #define GB_MSG4IN_H
 
-bool registerMsg4Handler();
+namespace Msg4In {
 
-bool initializeMsg4IncomingThread();
-void finalizeMsg4IncomingThread();
+bool registerHandler();
+
+bool initializeIncomingThread();
+void finalizeIncomingThread();
+
+}
 
 #endif // GB_MSG4IN_H

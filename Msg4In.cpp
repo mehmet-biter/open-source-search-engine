@@ -25,14 +25,16 @@
 // . also, need to update spiderdb rec for the url in Msg14 using Msg4 too!
 // . need to add support for passing in array of lists for Msg14
 
+namespace Msg4In {
 static bool addMetaList(const char *p, class UdpSlot *slot = NULL);
 static void handleRequest4(UdpSlot *slot, int32_t niceness);
 static void processMsg4(void *item);
 
-static GbThreadQueue s_msg4IncomingThreadQueue;
+static GbThreadQueue s_incomingThreadQueue;
+}
 
 // all these parameters should be preset
-bool registerMsg4Handler() {
+bool Msg4In::registerHandler() {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
 	// register ourselves with the udp server
@@ -46,12 +48,12 @@ bool registerMsg4Handler() {
 	return true;
 }
 
-bool initializeMsg4IncomingThread() {
-	return s_msg4IncomingThreadQueue.initialize(processMsg4, "process-msg4");
+bool Msg4In::initializeIncomingThread() {
+	return s_incomingThreadQueue.initialize(processMsg4, "process-msg4");
 }
 
-void finalizeMsg4IncomingThread() {
-	s_msg4IncomingThreadQueue.finalize();
+void Msg4In::finalizeIncomingThread() {
+	s_incomingThreadQueue.finalize();
 }
 
 // . destroys the slot if false is returned
@@ -61,7 +63,7 @@ void finalizeMsg4IncomingThread() {
 // . TODO: need we send a reply back on success????
 // . NOTE: Must always call g_udpServer::sendReply or sendErrorReply() so
 //   read/send bufs can be freed
-static void processMsg4(void *item) {
+static void Msg4In::processMsg4(void *item) {
 	UdpSlot *slot = static_cast<UdpSlot*>(item);
 
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
@@ -84,7 +86,7 @@ static void processMsg4(void *item) {
 	logTrace(g_conf.m_logTraceMsg4, "END - OK");
 }
 
-static void handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
+static void Msg4In::handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
 	// if we just came up we need to make sure our hosts.conf is in
 	// sync with everyone else before accepting this! it might have
 	// been the case that the sender thinks our hosts.conf is the same
@@ -206,7 +208,7 @@ struct RdbItems {
 // . Syncdb.cpp will call this after it has received checkoff keys from
 //   all the alive hosts for this zid/sid
 // . returns false and sets g_errno on error, returns true otherwise
-static bool addMetaList(const char *p, UdpSlot *slot) {
+static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 	logDebug(g_conf.m_logDebugSpider, "syncdb: calling addMetalist zid=%" PRIu64, *(int64_t *) (p + 4));
 
 	// get total buf used
