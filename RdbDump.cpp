@@ -368,9 +368,7 @@ bool RdbDump::dumpTree(bool recall) {
 
 		// close up shop on a write/dumpList error
 		if (g_errno) {
-			logTrace(g_conf.m_logTraceRdbDump, "END - g_errno set [%"
-					PRId32
-					"], returning true", g_errno);
+			logTrace(g_conf.m_logTraceRdbDump, "END - g_errno set [%" PRId32"], returning true", g_errno);
 			return true;
 		}
 
