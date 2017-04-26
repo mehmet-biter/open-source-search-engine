@@ -876,8 +876,8 @@ bool Rdb::dumpCollLoop ( ) {
 		// this file must not exist already, we are dumping the tree into it
 		int32_t fileId = 0;
 		int fn = base->addNewFile(&fileId);
-		if ( fn < 0 ) {
-			log( LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
+		if (fn < 0) {
+			log(LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror(g_errno));
 			return false;
 		}
 
