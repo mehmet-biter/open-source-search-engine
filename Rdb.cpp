@@ -893,14 +893,9 @@ bool Rdb::dumpCollLoop ( ) {
 
 		// if we add to many files then we can not merge, because merge op
 		// needs to add a file too
-		static int32_t s_flag = 0;
-		if ( base->getNumFiles() + 1 >= MAX_RDB_FILES ) {
-			if ( s_flag < 10 )
-				log( LOG_WARN, "db: could not dump tree to disk for cn="
-				    "%i %s because it has %" PRId32" files on disk. "
-				    "Need to wait for merge operation.",
-				    (int)m_dumpCollnum,m_dbname,base->getNumFiles());
-			s_flag++;
+		if (base->getNumFiles() + 1 >= MAX_RDB_FILES) {
+			log(LOG_WARN, "db: could not dump tree to disk for cn=%i %s because it has %" PRId32" files on disk. "
+			              "Need to wait for merge operation.", (int)m_dumpCollnum, m_dbname, base->getNumFiles());
 			continue;
 		}
 
