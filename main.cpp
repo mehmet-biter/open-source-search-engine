@@ -1727,7 +1727,7 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
-	if (!initializeMsg4IncomingThread()) {
+	if (!Msg4In::initializeIncomingThread()) {
 		logError("Unable to initialize Msg4 incoming thread");
 		return 1;
 	}
@@ -2520,7 +2520,7 @@ static bool registerMsgHandlers2() {
 
 	if ( ! Msg39::registerHandler()) return false;
 
-	if ( ! registerMsg4Handler() ) return false;
+	if ( ! Msg4In::registerHandler() ) return false;
 	if ( ! Msg4::initializeOutHandling() ) return false;
 
 	if(! Parms::registerHandler3e()) return false;

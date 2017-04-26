@@ -182,7 +182,7 @@ static void gotMulticastReplyWrapper25(void *state, void *state2) {
 	req->m_linkInfoBuf->safeMemcpy ( reply , replySize );
 
 	// i guess we gotta free this
-	mfree ( reply , replySize , "rep25" );
+	mfree ( reply , replyMaxSize , "rep25" );
 
 	req->m_callback ( req->m_state );
 }

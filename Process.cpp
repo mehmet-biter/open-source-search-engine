@@ -575,20 +575,6 @@ bool Process::save2 ( ) {
 		return true;
 	}
 
-	// . wait for any dump to complete
-	// . when merging titldb, it sets Rdb::m_dump.m_isDumping to true
-	//   because it is dumping the results of the merge to a file.
-	//   occasionally it will initiate a dump of tfndb which will not be 
-	//   possible because Rdb/RdbDump checks g_process.m_mode == Process::SAVE_MODE,
-	//   and do not allow dumps to begin if that is true! so we end up in 
-	//   deadlock! the save can not complete 
-	if ( isRdbDumping() ) {
-		return false;
-	}
-
-	// ok, now nobody is dumping, etc. make it so no dumps can start.
-	// Rdb.cpp/RdbDump.cpp check for this and will not dump if it is 
-	// set to Process::SAVE_MODE
 	m_mode = Process::SAVE_MODE;
 
 	logf(LOG_INFO,"gb: Saving data to disk");
@@ -665,7 +651,7 @@ bool Process::shutdown2() {
 	g_merge.haltMerge();
 
 	RdbBase::finalizeGlobalIndexThread();
-	finalizeMsg4IncomingThread();
+	Msg4In::finalizeIncomingThread();
 
 	g_jobScheduler.cancel_all_jobs_for_shutdown();
 

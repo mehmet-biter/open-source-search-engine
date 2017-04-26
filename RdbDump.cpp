@@ -368,9 +368,7 @@ bool RdbDump::dumpTree(bool recall) {
 
 		// close up shop on a write/dumpList error
 		if (g_errno) {
-			logTrace(g_conf.m_logTraceRdbDump, "END - g_errno set [%"
-					PRId32
-					"], returning true", g_errno);
+			logTrace(g_conf.m_logTraceRdbDump, "END - g_errno set [%" PRId32"], returning true", g_errno);
 			return true;
 		}
 
@@ -402,13 +400,15 @@ bool RdbDump::dumpList(RdbList *list, bool recall) {
 		m_hacked12 = false;
 
 		if (g_conf.m_verifyDumpedLists) {
-			if(g_jobScheduler.submit(&checkList,&checkedList,this,thread_type_verify_data,m_niceness)) {
+			// only run in a thread if callback is set
+			if (m_callback && g_jobScheduler.submit(&checkList, &checkedList, this, thread_type_verify_data, m_niceness)) {
 				logTrace(g_conf.m_logTraceRdbDump, "END. Submitted checkList job.");
 				return false;
 			}
 			m_list->checkList_r(true, m_rdbId);
 		}
 	}
+
 	return dumpList2(recall);
 }
 
@@ -545,7 +545,8 @@ bool RdbDump::dumpList2(bool recall) {
 	// . otherwise, use doneWritingWrapper() which will call dumpTree()
 	// . BigFile::write() return 0 if blocked,-1 on error,>0 on completion
 	// . it also sets g_errno on error
-	bool isDone = m_file->write(m_buf, m_bytesToWrite, offset, &m_fstate, this, doneWritingWrapper, m_niceness);
+	bool isDone = m_file->write(m_buf, m_bytesToWrite, offset, &m_fstate, m_callback ? this : NULL,
+	                            m_callback ? &doneWritingWrapper : NULL, m_niceness);
 
 	// return false if it blocked
 	if (!isDone) {
@@ -614,8 +615,8 @@ bool RdbDump::doneDumpingList() {
 		}
 
 		// read what we wrote
-		bool isDone = m_file->read(m_verifyBuf, m_bytesToWrite, m_offset - m_bytesToWrite, &m_fstate, this,
-		                           doneReadingForVerifyWrapper, m_niceness);
+		bool isDone = m_file->read(m_verifyBuf, m_bytesToWrite, m_offset - m_bytesToWrite, &m_fstate, m_callback ? this : NULL,
+		                           m_callback ? &doneReadingForVerifyWrapper : NULL, m_niceness);
 
 		// return false if it blocked
 		if (!isDone) {
@@ -817,7 +818,9 @@ void RdbDump::continueDumping() {
 
 	// go back now if we were NOT dumping a tree
 	if (!(m_tree || m_buckets)) {
-		m_callback(m_state);
+		if (m_callback) {
+			m_callback(m_state);
+		}
 		return;
 	}
 
@@ -832,6 +835,7 @@ void RdbDump::continueDumping() {
 	// close it up
 	doneDumping();
 
-	// call the callback
-	m_callback(m_state);
+	if (m_callback) {
+		m_callback(m_state);
+	}
 }

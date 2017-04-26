@@ -398,11 +398,6 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	// add it to CollectionRec::m_bases[] base ptrs array
 	addBase ( collnum , newColl );
 
-	RdbTree    *tree = NULL;
-	RdbBuckets *buckets = NULL;
-	if(m_useTree) tree    = &m_tree;
-	else          buckets = &m_buckets;
-
 	// . init it
 	// . g_hostdb.m_dir should end in /
 	if ( ! base->init ( g_hostdb.m_dir,
@@ -414,8 +409,8 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 					m_pageSize      ,
 					coll            ,
 					collnum         ,
-					tree            ,
-					buckets         ,
+					getTree()       ,
+					getBuckets()    ,
 					this            ,
 					m_useIndexFile ) ) {
 		logf(LOG_INFO,"db: %s: Failed to initialize db for "
@@ -742,20 +737,6 @@ bool Rdb::dumpTree() {
 		return true;
 	}
 
-	// . if tree is saving do not dump it, that removes things from tree
-	// . i think this caused a problem messing of RdbMem before when
-	//   both happened at once
-	if (isSavingTree()) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: Rdb tree/bucket is saving. Returning true", m_dbname );
-		return true;
-	}
-
-	// . if Process is saving, don't start a dump
-	if ( g_process.m_mode == Process::SAVE_MODE ) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: Process is in save mode. Returning true", m_dbname );
-		return true;
-	}
-
 	// if it has been less than 3 seconds since our last failed attempt
 	// do not try again to avoid flooding our log
 	if ( getTime() - s_lastTryTime < 3 ) {
@@ -771,30 +752,6 @@ bool Rdb::dumpTree() {
 
 	// reset g_errno -- don't forget!
 	g_errno = 0;
-
-	// . wait for all unlinking and renaming activity to flush out
-	// . we do not want to dump to a filename in the middle of being
-	//   unlinked
-	bool anyCollectionManipulatingFiles = false;
-	for(collnum_t collnum = 0; collnum<getNumBases(); collnum++) {
-		RdbBase *base = getBase(collnum);
-		if(base && base->isManipulatingFiles()) {
-			anyCollectionManipulatingFiles = true;
-			break;
-		}
-	}
-	if(anyCollectionManipulatingFiles) {
-		// update this so we don't try too much and flood the log
-		// with error messages from RdbDump.cpp calling log() and
-		// quickly kicking the log file over 2G which seems to 
-		// get the process killed
-		s_lastTryTime = getTime();
-		log( LOG_INFO, "db: Waiting for previous unlink/rename operations to finish before dumping %s.", m_dbname );
-
-		logTrace( g_conf.m_logTraceRdb, "END. %s: at least one collection is manipulating files. Returning false",
-		          m_dbname );
-		return false;
-	}
 
 	// remember niceness for calling setDump()
 	m_niceness = 1;
@@ -902,34 +859,24 @@ bool Rdb::dumpCollLoop ( ) {
 		}
 
 		// before we create the file, see if tree has anything for this coll
-		if(m_useTree) {
-			if(!m_tree.collExists(m_dumpCollnum))
-				continue;
-		} else {
-			if(!m_buckets.collExists(m_dumpCollnum))
-				continue;
+		if (!getTreeCollExist(m_dumpCollnum)) {
+			continue;
 		}
 
 		// . MDW ADDING A NEW FILE SHOULD BE IN RDBDUMP.CPP NOW... NO!
 
-		// if we add to many files then we can not merge, because merge op
-		// needs to add a file too
-		static int32_t s_flag = 0;
-		if ( base->getNumFiles() + 1 >= MAX_RDB_FILES ) {
-			if ( s_flag < 10 )
-				log( LOG_WARN, "db: could not dump tree to disk for cn="
-				    "%i %s because it has %" PRId32" files on disk. "
-				    "Need to wait for merge operation.",
-				    (int)m_dumpCollnum,m_dbname,base->getNumFiles());
-			s_flag++;
+		// if we add to many files then we can not merge, because merge op needs to add a file too
+		if (base->getNumFiles() + 2 >= MAX_RDB_FILES) {
+			log(LOG_WARN, "db: could not dump tree to disk for cn=%i %s because it has %" PRId32" files on disk. "
+			              "Need to wait for merge operation.", (int)m_dumpCollnum, m_dbname, base->getNumFiles());
 			continue;
 		}
 
 		// this file must not exist already, we are dumping the tree into it
 		int32_t fileId = 0;
 		int fn = base->addNewFile(&fileId);
-		if ( fn < 0 ) {
-			log( LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
+		if (fn < 0) {
+			log(LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror(g_errno));
 			return false;
 		}
 
@@ -968,22 +915,14 @@ bool Rdb::dumpCollLoop ( ) {
 			bufSize *= 4;
 		}
 
-		RdbBuckets *buckets = NULL;
-		RdbTree *tree = NULL;
-		if (m_useTree) {
-			tree = &m_tree;
-		} else {
-			buckets = &m_buckets;
-		}
-
 		// . RdbDump will set the filename of the map we pass to this
 		// . RdbMap should dump itself out CLOSE!
 		// . it returns false if blocked, true otherwise & sets g_errno on err
 		// . but we only return false on error here
 		if (!m_dump.set(base->getCollnum(),
 		                base->getFile(fn),
-		                buckets,
-		                tree,
+		                getBuckets(),
+		                getTree(),
 		                base->getMap(fn),
 		                base->getIndex(fn),
 		                bufSize, // write buf size
@@ -1435,15 +1374,6 @@ bool Rdb::hasRoom(RdbList *list) {
 	return true;
 }
 
-
-bool Rdb::canAdd() const {
-	if (isDumping()) {
-		return false;
-	}
-	return true;
-}
-
-
 // . NOTE: low bit should be set , only antiKeys (deletes) have low bit clear
 // . returns false and sets g_errno on error, true otherwise
 // . if RdbMem, m_mem, has no mem, sets g_errno to ETRYAGAIN and returns false
@@ -1460,7 +1390,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 	}
 
 	// don't continue if we're not allowed to add to Rdb
-	if (!canAdd()) {
+	if (isDumping()) {
 		g_errno = ETRYAGAIN;
 		logTrace(g_conf.m_logTraceRdb, "END. %s: Unable to add. Returning false", m_dbname);
 		return false;
@@ -2150,6 +2080,10 @@ bool Rdb::needsSave() const {
 void Rdb::cleanTree() {
 	if(m_useTree) return m_tree.cleanTree();
 	else return m_buckets.cleanBuckets();
+}
+
+bool Rdb::getTreeCollExist(collnum_t collnum) const {
+	return (m_useTree ? m_tree.collExists(collnum) : m_buckets.collExists(collnum));
 }
 
 // if we are doledb, we are a tree-only rdb, so try to reclaim

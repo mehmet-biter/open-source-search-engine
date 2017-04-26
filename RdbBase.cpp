@@ -1079,6 +1079,10 @@ int32_t RdbBase::addNewFile(int32_t *fileIdPtr) {
 				int32_t mergeFileId2;
 				int32_t mergeNum;
 				int32_t endMergeFileId;
+
+				// we need to parse the filename to get the maxFileId to handle scenario where gb crashes while
+				// unlinking files. we don't want a newly dumped file to fall into the 'merge' range that have been
+				// unlinked because when we resume the killed merge, those files will be removed.
 				if ( parseFilename( filename, &mergeFileId, &mergeFileId2, &mergeNum, &endMergeFileId ) ) {
 					maxFileId = endMergeFileId;
 				} else {
@@ -1539,38 +1543,6 @@ void RdbBase::renamesDone() {
 	// try to merge more when we are done
 	attemptMergeAll();
 }
-
-void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 ) {
-	// make a fake file before us that we were merging
-	// since it got nuked on disk incorporateMerge();
-	char fbuf[256];
-
-	if(m_isTitledb) {
-		sprintf(fbuf, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, newFileId, newFileId2);
-	} else {
-		sprintf(fbuf, "%s%04" PRId32".dat", m_dbname, newFileId);
-	}
-
-	log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-	m_fileInfo[currentFileIdx].m_file->rename(fbuf,NULL);
-
-	m_fileInfo[currentFileIdx].m_fileId = newFileId;
-	m_fileInfo[currentFileIdx].m_fileId2 = newFileId2;
-
-	// we could potentially have a 'regenerated' map file that has already been moved.
-	// eg: merge dies after moving map file, but before moving data files.
-	//     next start up, map file will be regenerated. means we now have both even & odd map files
-	sprintf(fbuf, "%s%04" PRId32".map", m_dbname, newFileId);
-	log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-	m_fileInfo[currentFileIdx].m_map->rename(fbuf);
-
-	if (m_useIndexFile) {
-		sprintf(fbuf, "%s%04" PRId32".idx", m_dbname, newFileId);
-		log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-		m_fileInfo[currentFileIdx].m_index->rename(fbuf);
-	}
-}
-
 
 void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 	// on succes unlink the files we merged and free them
