@@ -1544,38 +1544,6 @@ void RdbBase::renamesDone() {
 	attemptMergeAll();
 }
 
-void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 ) {
-	// make a fake file before us that we were merging
-	// since it got nuked on disk incorporateMerge();
-	char fbuf[256];
-
-	if(m_isTitledb) {
-		sprintf(fbuf, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, newFileId, newFileId2);
-	} else {
-		sprintf(fbuf, "%s%04" PRId32".dat", m_dbname, newFileId);
-	}
-
-	log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-	m_fileInfo[currentFileIdx].m_file->rename(fbuf,NULL);
-
-	m_fileInfo[currentFileIdx].m_fileId = newFileId;
-	m_fileInfo[currentFileIdx].m_fileId2 = newFileId2;
-
-	// we could potentially have a 'regenerated' map file that has already been moved.
-	// eg: merge dies after moving map file, but before moving data files.
-	//     next start up, map file will be regenerated. means we now have both even & odd map files
-	sprintf(fbuf, "%s%04" PRId32".map", m_dbname, newFileId);
-	log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-	m_fileInfo[currentFileIdx].m_map->rename(fbuf);
-
-	if (m_useIndexFile) {
-		sprintf(fbuf, "%s%04" PRId32".idx", m_dbname, newFileId);
-		log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-		m_fileInfo[currentFileIdx].m_index->rename(fbuf);
-	}
-}
-
-
 void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 	// on succes unlink the files we merged and free them
 	for ( int32_t i = a ; i < b ; i++ ) {

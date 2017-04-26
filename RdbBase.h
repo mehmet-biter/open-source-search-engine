@@ -280,8 +280,6 @@ private:
 	void renamesDone();
 	bool removeRebuildFromFilename(BigFile *f);
 
-	void renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 );
-
 	// Add a (new) file to the m_files/m_maps/m_fileIds arrays
 	// Return return array position of new entry, or -1 on error
 	int32_t addFile(bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId, bool isInMergeDir);
