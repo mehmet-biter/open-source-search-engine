@@ -865,9 +865,8 @@ bool Rdb::dumpCollLoop ( ) {
 
 		// . MDW ADDING A NEW FILE SHOULD BE IN RDBDUMP.CPP NOW... NO!
 
-		// if we add to many files then we can not merge, because merge op
-		// needs to add a file too
-		if (base->getNumFiles() + 1 >= MAX_RDB_FILES) {
+		// if we add to many files then we can not merge, because merge op needs to add a file too
+		if (base->getNumFiles() + 2 >= MAX_RDB_FILES) {
 			log(LOG_WARN, "db: could not dump tree to disk for cn=%i %s because it has %" PRId32" files on disk. "
 			              "Need to wait for merge operation.", (int)m_dumpCollnum, m_dbname, base->getNumFiles());
 			continue;
