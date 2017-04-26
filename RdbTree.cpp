@@ -1471,8 +1471,6 @@ bool RdbTree::getList(collnum_t collnum, const char *startKey, const char *endKe
 		    growth, mstrerror(g_errno));
 		return false;
 	}
-	// similar to above algorithm but we have data along with the keys
-	int32_t dataSize;
 
 	// stop when we've hit or just exceed minRecSizes
 	// or we're out of nodes
@@ -1487,19 +1485,18 @@ bool RdbTree::getList(collnum_t collnum, const char *startKey, const char *endKe
 
 		// add record to our list
 		if ( m_fixedDataSize == 0 ) {
-			if ( ! list->addRecord(&m_keys[node*m_ks],0,NULL)) {
+			if (!list->addRecord(&m_keys[node * m_ks], 0, NULL)) {
 				log(LOG_WARN, "db: Failed to add record to tree list for %s: %s. Fix the growList algo.",
 				    m_dbname,mstrerror(g_errno));
 				return false;
 			}
 		}
 		else {
-			// get dataSize if not fixed
-			if ( m_fixedDataSize == -1 ) dataSize = m_sizes[node];
-			// otherwise, it's fixed
-			else dataSize = m_fixedDataSize;
+			int32_t dataSize = (m_fixedDataSize == -1) ? m_sizes[node] : m_fixedDataSize;
+
 			// point to key
 			char *key = &m_keys[node*m_ks];
+
 			// do not allow negative keys to have data, or
 			// at least ignore it! let's RdbList::addRecord()
 			// core dump on us!
@@ -1508,9 +1505,7 @@ bool RdbTree::getList(collnum_t collnum, const char *startKey, const char *endKe
 			}
 
 			// add the key and data
-			if ( ! list->addRecord ( key,//&m_keys[node*m_ks] ,
-						 dataSize     ,
-						 m_data[node] ) ) {
+			if (!list->addRecord(key, dataSize, m_data[node])) {
 				log(LOG_WARN, "db: Failed to add record to tree list for %s: %s. Fix the growList algo.",
 				    m_dbname,mstrerror(g_errno));
 				return false;
