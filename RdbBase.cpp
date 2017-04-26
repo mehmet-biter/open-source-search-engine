@@ -1079,6 +1079,10 @@ int32_t RdbBase::addNewFile(int32_t *fileIdPtr) {
 				int32_t mergeFileId2;
 				int32_t mergeNum;
 				int32_t endMergeFileId;
+
+				// we need to parse the filename to get the maxFileId to handle scenario where gb crashes while
+				// unlinking files. we don't want a newly dumped file to fall into the 'merge' range that have been
+				// unlinked because when we resume the killed merge, those files will be removed.
 				if ( parseFilename( filename, &mergeFileId, &mergeFileId2, &mergeNum, &endMergeFileId ) ) {
 					maxFileId = endMergeFileId;
 				} else {
