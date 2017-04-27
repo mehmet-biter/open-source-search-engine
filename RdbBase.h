@@ -80,12 +80,6 @@ class RdbBase {
 
 	bool useHalfKeys() const { return m_useHalfKeys; }
 
-	BigFile *getFile(int32_t n) { return m_fileInfo[n].m_file; }
-	int32_t isRootFile(int32_t n) { return n==0 || m_fileInfo[n].m_fileId==1; }
-	RdbMap *getMap(int32_t n) { return m_fileInfo[n].m_map; }
-	RdbIndex *getIndex(int32_t n) { return m_fileInfo[n].m_index; }
-	bool isReadable(int32_t n) { return m_fileInfo[n].m_allowReads; }
-
 	RdbIndex *getTreeIndex() {
 		if (m_useIndexFile) {
 			return &m_treeIndex;
@@ -154,11 +148,14 @@ class RdbBase {
 	int32_t addNewFile(int32_t *fileIdPtr);
 	void markNewFileReadable();
 
+	BigFile *getFile(int32_t n);
+	int32_t isRootFile(int32_t n) const;
+	RdbMap *getMap(int32_t n);
+	RdbIndex *getIndex(int32_t n);
+	bool isReadable(int32_t n) const;
+
 	// these are used for computing load on a machine
 	bool isMerging() const { return m_isMerging; }
-
-	//are files being unlinked or renamed?
-	bool isManipulatingFiles() const;
 	
 	// bury m_files[] in [a,b)
 	void buryFiles ( int32_t a , int32_t b );
