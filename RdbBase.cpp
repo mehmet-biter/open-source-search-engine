@@ -1115,6 +1115,27 @@ void RdbBase::markNewFileReadable() {
 	m_fileInfo[m_numFiles-1].m_allowReads = true;
 }
 
+BigFile* RdbBase::getFile(int32_t n) {
+	return m_fileInfo[n].m_file;
+}
+
+int32_t RdbBase::isRootFile(int32_t n) const {
+	ScopedLock sl(m_mtxFileInfo);
+	return n==0 || m_fileInfo[n].m_fileId==1;
+}
+
+RdbMap* RdbBase::getMap(int32_t n) {
+	return m_fileInfo[n].m_map;
+}
+
+RdbIndex* RdbBase::getIndex(int32_t n) {
+	return m_fileInfo[n].m_index;
+}
+
+bool RdbBase::isReadable(int32_t n) const {
+	ScopedLock sl(m_mtxFileInfo);
+	return m_fileInfo[n].m_allowReads;
+}
 
 bool RdbBase::isManipulatingFiles() const {
 	//note: incomplete check but not worse than the original
