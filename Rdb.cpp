@@ -747,7 +747,6 @@ bool Rdb::dumpTree() {
 	// don't dump if not 90% full
 	if ( ! needsDump() ) {
 		log(LOG_INFO, "db: %s tree not 90 percent full but dumping.",m_dbname);
-		//return true;
 	}
 
 	// reset g_errno -- don't forget!
