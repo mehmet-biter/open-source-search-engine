@@ -818,22 +818,9 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	f->set(dirName, name);
 
 	// if new ensure does not exist
-	if ( isNew && f->doesExist() ) {
-		log( LOG_WARN, "rdb: creating NEW file %s/%s which already exists!", f->getDir(), f->getFilename() );
-
-		if (f->getFileSize() == 0) {
-			// this used to move it to trash. but we probably want to know if we have any 0 byte file.
-			// so force a core
-			logError("zero sized file found");
-			gbshutdownCorrupted();
-		}
-
-		// nuke it either way
-		mdelete ( f , sizeof(BigFile),"RdbBFile");
-		delete (f); 
-
-		// we are done. i guess merges will stockpile, that sucks... things will slow down
-		return -1;
+	if (isNew && f->doesExist()) {
+		logError("rdb: trying to create NEW file %s/%s which already exists!", f->getDir(), f->getFilename());
+		gbshutdownCorrupted();
 	}
 
 	RdbMap  *m ;
