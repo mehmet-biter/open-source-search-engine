@@ -1137,13 +1137,6 @@ bool RdbBase::isReadable(int32_t n) const {
 	return m_fileInfo[n].m_allowReads;
 }
 
-bool RdbBase::isManipulatingFiles() const {
-	//note: incomplete check but not worse than the original
-	ScopedLock sl(const_cast<RdbBase*>(this)->m_mtxJobCount);
-	return m_submittingJobs || m_outstandingJobCount!=0;
-}
-
-
 void RdbBase::incrementOutstandingJobs() {
 	ScopedLock sl(m_mtxJobCount);
 	m_outstandingJobCount++;

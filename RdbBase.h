@@ -156,9 +156,6 @@ class RdbBase {
 
 	// these are used for computing load on a machine
 	bool isMerging() const { return m_isMerging; }
-
-	//are files being unlinked or renamed?
-	bool isManipulatingFiles() const;
 	
 	// bury m_files[] in [a,b)
 	void buryFiles ( int32_t a , int32_t b );
