@@ -87,8 +87,6 @@ public:
 	// returns false if no room in tree or m_mem for a list to add
 	bool hasRoom(int32_t numRecs, int32_t dataSize) const;
 
-	bool canAdd() const;
-
 	// . returns false on error and sets errno
 	// . return true on success
 	// . if we can't handle all records in list we don't add any and
@@ -119,10 +117,8 @@ public:
 
 	bool isTitledb() const { return m_rdbId==RDB_TITLEDB || m_rdbId==RDB2_TITLEDB2; }
 
-	RdbBuckets* getBuckets() {
-		if (m_useTree) return NULL;
-		return &m_buckets;
-	}
+	RdbTree* getTree() { return (m_useTree ? &m_tree : NULL); }
+	RdbBuckets *getBuckets() { return (m_useTree ? NULL : &m_buckets); }
 
 	int32_t getAvailMem() const { return m_mem.getAvailMem(); }
 	int32_t getUsedMem() const { return m_mem.getUsedMem(); }
@@ -133,10 +129,6 @@ public:
 	int32_t       getTreeMemOccupied() const;
 	int32_t       getTreeMemAllocated() const;
 	int32_t       getNumNegativeKeys() const;
-
-	void disableWrites();
-	void enableWrites();
-	bool isWritable() const;
 
 	void cleanTree();
 
@@ -240,6 +232,8 @@ private:
 
 	// returns false if no room in tree or m_mem for a list to add
 	bool hasRoom(RdbList *list);
+
+	bool getTreeCollExist(collnum_t collnum) const;
 
 	bool addList(collnum_t collnum, RdbList *list, bool checkForRoom);
 	// get the directory name where this rdb stores its files

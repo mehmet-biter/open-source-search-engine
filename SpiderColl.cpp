@@ -587,32 +587,44 @@ bool SpiderColl::isInDupCache(const SpiderRequest *sreq, bool addToCache) {
 	// . dupKey64 is for hopcount 0, so if this url is in the dupcache
 	//   with a hopcount of zero, do not add it
 	RdbCacheLock rcl(m_dupCache);
-	if ( m_dupCache.getLong ( 0,dupKey64,86400,true ) != -1 ) {
-	dedup:
-		if ( g_conf.m_logDebugSpider )
-			log("spider: skipping dup request url=%s uh48=%" PRIu64,
-			    sreq->m_url,sreq->getUrlHash48());
+
+	// limit hopcount to 3 for making cache key so we don't flood cache
+	int32_t hopCount = (sreq->m_hopCount >= 3 ? 3 : sreq->m_hopCount);
+
+	// don't insert same hopcount
+	if (m_dupCache.getLong(0, dupKey64 ^ hopCount, 86400, true) != -1) {
+		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request same hopcount exist. url=%s uh48=%" PRIu64,
+		         sreq->m_url, sreq->getUrlHash48());
 		return true;
 	}
+
+	if (m_dupCache.getLong(0, dupKey64, 86400, true) != -1) {
+		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 0 exist. url=%s uh48=%" PRIu64,
+		         sreq->m_url, sreq->getUrlHash48());
+		return true;
+	}
+
 	// if our hopcount is 2 and there is a hopcount 1 in there, do not add
-	if ( sreq->m_hopCount >= 2 &&
-	     m_dupCache.getLong ( 0,dupKey64 ^ 0x01 ,86400,true ) != -1 ) 
-		goto dedup;
+	if (hopCount >= 2 && m_dupCache.getLong(0, dupKey64 ^ 0x01, 86400, true) != -1) {
+		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 1 exist. url=%s uh48=%" PRIu64,
+		         sreq->m_url, sreq->getUrlHash48());
+		return true;
+	}
+
 	// likewise, if there's a hopcount 2 in there, do not add if we are 3+
-	if ( sreq->m_hopCount >= 3 &&
-	     m_dupCache.getLong ( 0,dupKey64 ^ 0x02 ,86400,true ) != -1 ) 
-		goto dedup;
+	if (hopCount >= 3 && m_dupCache.getLong(0, dupKey64 ^ 0x02, 86400, true) != -1) {
+		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 2 exist. url=%s uh48=%" PRIu64,
+		         sreq->m_url, sreq->getUrlHash48());
+		return true;
+	}
 
+	if (addToCache) {
+		// mangle the key with hopcount before adding it to the cache
+		dupKey64 ^= hopCount;
 
-	if ( ! addToCache ) return false;
-
-	int32_t hc = sreq->m_hopCount;
-	// limit hopcount to 3 for making cache key so we don't flood cache
-	if ( hc >= 3 ) hc = 3;
-	// mangle the key with hopcount before adding it to the cache
-	dupKey64 ^= hc;
-	// add it
-	m_dupCache.addLong(0,dupKey64 ,1);
+		// add it
+		m_dupCache.addLong(0, dupKey64, 1);
+	}
 
 	return false;
 }
@@ -664,17 +676,6 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 		    ulen,sreq->m_url,
 		    sreq->m_dataSize,sreq->m_firstIp,sreq->getUrlHash48());
 		return true;
-	}
-
-	// update crawlinfo stats here and not in xmldoc so that we count
-	// seeds and bulk urls added from add url and can use that to
-	// determine if the collection is empty of urls or not for printing
-	// out the colored bullets in printCollectionNavBar() in Pages.cpp.
-	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
-	if ( cr ) {
-		cr->m_localCrawlInfo .m_urlsHarvested++;
-		cr->m_globalCrawlInfo.m_urlsHarvested++;
-		cr->setNeedsSave();
 	}
 
 	// . we can't do this because we do not have the spiderReply!!!???
@@ -817,9 +818,9 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 	//   SpiderRequest from this firstIp can be spidered.
 	uint64_t spiderTimeMS = 0;
 
-	// waiting tree might be saving!!!
-	if ( ! m_waitingTree.isWritable() ) {
-		log( LOG_WARN, "spider: addtowaitingtree: failed. is not writable. saving?" );
+	// don't write to tree if we're shutting down
+	if (g_process.isShuttingDown()) {
+		log(LOG_WARN, "spider: addtowaitingtree: failed. shutting down");
 		return false;
 	}
 
@@ -836,10 +837,6 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 		logDebug( g_conf.m_logDebugSpider, "spider: not adding to waiting tree, already in doleip table" );
 		return false;
 	}
-
-	// sanity check
-	// i think this trigged on gk209 during an auto-save!!! FIX!
-	if ( ! m_waitingTree.isWritable() ) { g_process.shutdownAbort(true); }
 
 	// see if in tree already, so we can delete it and replace it below
 	// . this is true if already in tree
@@ -1217,12 +1214,9 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	// unflag it
 	m_gettingWaitingTreeList = false;
 
-	// if waitingtree is locked for writing because it is saving or
-	// writes were disabled then just bail and let the scan be re-called
-	// later
-	RdbTree *wt = &m_waitingTree;
-	if (wt->isSaving() || !wt->isWritable()) {
-		logTrace( g_conf.m_logTraceSpider, "END, waitingTree not writable at the moment" );
+	// don't proceed if we're shutting down
+	if (g_process.isShuttingDown()) {
+		logTrace( g_conf.m_logTraceSpider, "END, process is shutting down" );
 		return;
 	}
 
@@ -1495,14 +1489,6 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	// set this flag so we are not re-entered
 	m_isPopulatingDoledb = true;
  loop:
-
-	// if waiting tree is being saved, we can't write to it
-	// so in that case, bail and wait to be called another time
-	if (m_waitingTree.isSaving() || !m_waitingTree.isWritable()) {
-		m_isPopulatingDoledb = false;
-		logTrace( g_conf.m_logTraceSpider, "END, waitingTree not writable at the moment" );
-		return;
-	}
 
 	// are we trying to exit? some firstip lists can be quite long, so
 	// terminate here so all threads can return and we can exit properly
@@ -2105,13 +2091,10 @@ bool SpiderColl::scanListForWinners ( ) {
 	// if list is empty why are we here?
 	if ( m_list.isEmpty() ) return true;
 
-	// if waitingtree is locked for writing because it is saving or
-	// writes were disabled then just bail and let the scan be re-called
-	// later
-	//
-	// MDW: move this up in evalIpLoop() i think
-	if (m_waitingTree.isSaving() || !m_waitingTree.isWritable())
+	// don't proceed if we're shutting down
+	if (g_process.isShuttingDown()) {
 		return true;
+	}
 
 	// ensure we point to the top of the list
 	m_list.resetListPtr();
@@ -2860,8 +2843,9 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 
 	// gotta check this again since we might have done a QUICKPOLL() above
 	// to call g_process.shutdown() so now tree might be unwritable
-	if (m_waitingTree.isSaving() || !m_waitingTree.isWritable())
+	if (g_process.isShuttingDown()) {
 		return true;
+	}
 
 	// ok, all done if nothing to add to doledb. i guess we were misled
 	// that firstIp had something ready for us. maybe the url filters
@@ -3566,11 +3550,6 @@ void SpiderColl::clearDoledbIpTable() {
 	m_doledbIpTable.clear();
 }
 
-void SpiderColl::disableDoledbIpTableWrites() {
-	ScopedLock sl(m_doledbIpTableMtx);
-	m_doledbIpTable.disableWrites();
-}
-
 bool SpiderColl::addToWaitingTable(int32_t firstIp, int64_t timeMs) {
 	ScopedLock sl(m_waitingTableMtx);
 	return m_waitingTable.addKey(&firstIp, &timeMs);
@@ -3611,9 +3590,4 @@ bool SpiderColl::setWaitingTableSize(int32_t numSlots) {
 void SpiderColl::clearWaitingTable() {
 	ScopedLock sl(m_waitingTableMtx);
 	m_waitingTable.clear();
-}
-
-void SpiderColl::disableWaitingTableWrites() {
-	ScopedLock sl(m_waitingTableMtx);
-	m_waitingTable.disableWrites();
 }

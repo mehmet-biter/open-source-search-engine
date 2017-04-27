@@ -1,5 +1,6 @@
 #include "XmlDoc.h"
 #include "Collectiondb.h"
+#include "SpiderCache.h"
 #include "Titledb.h"
 #include "Doledb.h"
 #include "CountryCode.h"

@@ -107,13 +107,14 @@ class Conf {
 	int32_t  m_mergeBufSize;
 
 	// rdb settings
-	int32_t m_maxLostPositivesPercentage;
 
 	// posdb
+	int32_t m_posdbMaxLostPositivesPercentage;
 	int64_t m_posdbFileCacheSize;
 	int32_t  m_posdbMaxTreeMem;
 
 	// tagdb
+	int32_t m_tagdbMaxLostPositivesPercentage;
 	int64_t m_tagdbFileCacheSize;
 	int32_t  m_tagdbMaxTreeMem;
 
@@ -122,19 +123,23 @@ class Conf {
 	char m_mergespaceDirectory[1024];
 
 	// clusterdb for site clustering, each rec is 16 bytes
+	int32_t m_clusterdbMaxLostPositivesPercentage;
 	int64_t m_clusterdbFileCacheSize;
 	int32_t  m_clusterdbMaxTreeMem;
 	int32_t  m_clusterdbMinFilesToMerge;
 
 	// titledb
+	int32_t m_titledbMaxLostPositivesPercentage;
 	int64_t m_titledbFileCacheSize;
 	int32_t  m_titledbMaxTreeMem;
 
 	// spiderdb
+	int32_t m_spiderdbMaxLostPositivesPercentage;
 	int64_t m_spiderdbFileCacheSize;
 	int32_t  m_spiderdbMaxTreeMem;
 
 	// linkdb for storing linking relations
+	int32_t m_linkdbMaxLostPositivesPercentage;
 	int32_t  m_linkdbMaxTreeMem;
 	int32_t  m_linkdbMinFilesToMerge;
 
@@ -180,7 +185,7 @@ class Conf {
 
 	int32_t  m_maxTotalSpiders;
 
-	int32_t  m_crawlInfoUpdateInterval;
+	int32_t m_spiderDeadHostCheckInterval;
 
 	// indexdb has a max cached age for getting IndexLists (10 mins deflt)
 	int32_t  m_indexdbMaxIndexListAge;
@@ -417,6 +422,7 @@ class Conf {
 	bool m_logTraceUrlBlockList;
 	bool m_logTraceWordSpam;
 	bool m_logTraceUrlClassification;
+	bool m_logTraceTopTree;
 
 	// expensive timing messages
 	bool m_logTimingAddurl;

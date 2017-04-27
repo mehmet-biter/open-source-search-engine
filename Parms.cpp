@@ -47,7 +47,6 @@ public:
 	bool m_doRebuilds;
 	bool m_rebuildActiveList;
 	bool m_doProxyRebuild;
-	bool m_updatedRound;
 	collnum_t m_collnum;
 	int32_t m_errno;
 	bool m_sentReply;
@@ -534,56 +533,7 @@ static bool CommandDeleteColl2(const char *rec, WaitEntry *we) {
 	// delete is successful
 	return true;
 }
-#endif
 
-
-
-static bool CommandForceNextSpiderRound(const char *rec) {
-
-	// caller must specify collnum
-	collnum_t collnum = getCollnumFromParmRec ( rec );
-	// need this
-	CollectionRec *cr = g_collectiondb.getRec ( collnum );
-	if ( ! cr ) {
-		g_errno = ENOCOLLREC;
-		log("parms: bad collnum %" PRId32" for restart spider round",
-		    (int32_t)collnum);
-		return true;
-	}
-
-	// seems like parmlist is an rdblist, so we have a key96_t followed
-	// by 4 bytes of datasize then the data... which is an ascii string
-	// in our case...
-	const char *data = getDataFromParmRec ( rec );
-	uint32_t roundStartTime;
-	int32_t newRoundNum;
-	// see the HACK: in Parms::convertHttpRequestToParmList() where we
-	// construct this data in response to a "roundStart" cmd. we used
-	// sprintf() so it's natural to use sscanf() to parse it out.
-	sscanf ( data , "%" PRIu32",%" PRId32,
-		 &roundStartTime,
-		 &newRoundNum);
-
-	cr->m_spiderRoundStartTime = roundStartTime;
-	cr->m_spiderRoundNum = newRoundNum;
-
-	// if we don't have this is prints  out "skipping0 ... " for urls
-	// we try to spider in Spider.cpp.
-	cr->m_spiderStatus = SP_INPROGRESS;
-
-	// reset the round counts. this will log a msg. resetting the
-	// round counts will prevent maxToProcess/maxToCrawl from holding
-	// us back...
-	spiderRoundIncremented ( cr );
-
-	// yeah, if we don't nuke doledb then it doesn't work...
-	cr->rebuildUrlFilters();
-
-	return true;
-}
-
-
-#ifndef PRIVACORE_SAFE_VERSION
 // . returns true and sets g_errno on error
 // . returns false if would block
 static bool CommandRestartColl(const char *rec, WaitEntry *we) {
@@ -3202,31 +3152,6 @@ void Parms::init ( ) {
 
 	/////////////////////
 	//
-	// DIFFBOT CRAWLBOT PARMS
-	//
-	//////////////////////
-
-	m->m_cgi   = "createdtime";
-	m->m_xml   = "collectionCreatedTime";
-	m->m_desc  = "Time when this collection was created, or time of "
-		"the last reset or restart.";
-	simple_m_set(CollectionRec,m_diffbotCrawlStartTime);
-	m->m_page  = PAGE_NONE;
-	m->m_def   = "0";
-	m->m_flags = PF_NOAPI;
-	m++;
-
-	m->m_cgi   = "spiderendtime";
-	m->m_xml   = "crawlEndTime";
-	m->m_desc  = "If spider is done, when did it finish.";
-	simple_m_set(CollectionRec,m_diffbotCrawlEndTime);
-	m->m_page  = PAGE_NONE;
-	m->m_def   = "0";
-	m->m_flags = PF_NOAPI;
-	m++;
-
-	/////////////////////
-	//
 	// new cmd parms
 	//
 	/////////////////////
@@ -4720,6 +4645,17 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "spider dead host check interval";
+	m->m_desc  = "Number of seconds before rechecking Hostdb for dead host. This will impact how fast we stop spidering"
+	             "after dead host is detected.";
+	m->m_cgi   = "sdhci";
+	simple_m_set(Conf,m_spiderDeadHostCheckInterval);
+	m->m_def   = "5";
+	m->m_group = false;
+	m->m_units = "seconds";
+	m->m_page  = PAGE_MASTER;
+	m++;
+
 	m->m_title = "add url enabled";
 	m->m_desc  = "Can people use the add url interface to add urls "
 		"to the index?";
@@ -5034,63 +4970,6 @@ void Parms::init ( ) {
 	m->m_def   = "unspecified";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "spider round start time";
-	m->m_desc  = "When the next spider round starts. If you force this to "
-		"zero it sets it to the current time. That way you can "
-		"respider all the urls that were already spidered, and urls "
-		"that were not yet spidered in the round will still be "
-		"spidered.";
-	m->m_cgi   = "spiderRoundStart";
-	simple_m_set(CollectionRec,m_spiderRoundStartTime);
-	m->m_def   = "0";
-	m->m_group = false;
-	m->m_page  = PAGE_SPIDER;
-	m->m_flags = PF_HIDDEN | PF_REBUILDURLFILTERS ;
-	m++;
-
-	// DIFFBOT:
-	// this http parm actually ads the "forceround" parm to the parmlist
-	// below with the appropriate args.
-	m->m_title = "manually restart a spider round";
-	m->m_desc  = "Updates round number and resets local processed "
-		"and crawled counts to 0.";
-	m->m_cgi   = "roundStart";
-	m->m_type  = TYPE_CMD;
-	m->m_func  = NULL;
-	m->m_group = false;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m->m_flags = PF_HIDDEN;
-	m++;
-
-	// DIFFBOT:
-	// . this is sent to each shard by issuing a "&roundStart=1" cmd
-	// . similar to the "addcoll" cmd we add args to it and make it
-	//   the "forceround" cmd parm and add THAT to the parmlist.
-	//   so "roundStart=1" is really an alias for us.
-	m->m_title = "manually restart a spider round on shard";
-	m->m_desc  = "Updates round number and resets local processed "
-		"and crawled counts to 0.";
-	m->m_cgi   = "forceround";
-	//m->m_off   = offsetof(CollectionRec,m_spiderRoundStartTime);
-	m->m_type  = TYPE_CMD;
-	m->m_func  = CommandForceNextSpiderRound;
-	m->m_group = false;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m->m_flags = PF_HIDDEN | PF_REBUILDURLFILTERS ;
-	m++;
-
-	m->m_title = "spider round num";
-	m->m_desc  = "The spider round number.";
-	m->m_cgi   = "spiderRoundNum";
-	simple_m_set(CollectionRec,m_spiderRoundNum);
-	m->m_def   = "0";
-	m->m_group = false;
-	m->m_page  = PAGE_SPIDER;
-	m->m_flags = PF_HIDDEN ;
 	m++;
 
 	m->m_title = "ping spacer";
@@ -5940,17 +5819,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "msgtwentyfallbackyoallhosts";
 	simple_m_set(Conf,m_msg20FallbackToAllHosts);
 	m->m_def   = "1";
-	m->m_group = true;
-	m->m_flags = 0;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "Crawlinfo update interval";
-	m->m_desc  = "How often to get updated crawling info from all spider hosts. This is used for doling out new work.";
-	m->m_cgi   = "crawlinfoupdateinterval";
-	simple_m_set(Conf,m_crawlInfoUpdateInterval);
-	m->m_def   = "20000";
-	m->m_units = "milliseconds";
 	m->m_group = true;
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
@@ -7172,22 +7040,20 @@ void Parms::init ( ) {
 	m++;
 
 	////////////////////
-	// generic rdb settings
+	// clusterdb settings
 	////////////////////
-	m->m_title = "max percentage of lost positives after merge";
-	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow. Anything above that we'll abort the instance";
-	m->m_cgi   = "plpmerge";
-	simple_m_set(Conf,m_maxLostPositivesPercentage);
+
+	m->m_title = "clusterdb max percentage of lost positives after merge";
+	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow for clusterdb. "
+	             "Anything above that we'll abort the instance";
+	m->m_cgi   = "plpclmerge";
+	simple_m_set(Conf,m_clusterdbMaxLostPositivesPercentage);
 	m->m_def   = "50";
 	m->m_units = "percent";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_group = true;
 	m++;
-
-	////////////////////
-	// clusterdb settings
-	////////////////////
 
 	m->m_title = "clusterdb disk cache size";
 	m->m_desc  = "Gigablast does a lookup in clusterdb for each search result at query time to "
@@ -7200,7 +7066,7 @@ void Parms::init ( ) {
 	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
-	m->m_group = true;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "clusterdb max tree mem";
@@ -7229,6 +7095,18 @@ void Parms::init ( ) {
 	// linkdb settings
 	////////////////////
 
+	m->m_title = "linkdb max percentage of lost positives after merge";
+	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow for linkdb. "
+	             "Anything above that we'll abort the instance";
+	m->m_cgi   = "plplkmerge";
+	simple_m_set(Conf,m_linkdbMaxLostPositivesPercentage);
+	m->m_def   = "50";
+	m->m_units = "percent";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RDB;
+	m->m_group = true;
+	m++;
+
 	m->m_title = "linkdb min files needed to trigger to merge";
 	m->m_desc  = "Merge is triggered when this many linkdb data files "
 	             "are on disk. Raise this when initially growing an index "
@@ -7238,7 +7116,7 @@ void Parms::init ( ) {
 	m->m_def   = "6";
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
-	m->m_group = true;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "linkdb max tree mem";
@@ -7259,6 +7137,18 @@ void Parms::init ( ) {
 	// posdb settings
 	////////////////////
 
+	m->m_title = "posdb max percentage of lost positives after merge";
+	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow for posdb. "
+	             "Anything above that we'll abort the instance";
+	m->m_cgi   = "plppmerge";
+	simple_m_set(Conf,m_posdbMaxLostPositivesPercentage);
+	m->m_def   = "50";
+	m->m_units = "percent";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RDB;
+	m->m_group = true;
+	m++;
+
 	m->m_title = "posdb disk cache size";
 	m->m_desc  = "Posdb is the index.";
 	m->m_cgi   = "dpcsp";
@@ -7267,7 +7157,7 @@ void Parms::init ( ) {
 	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
-	m->m_group = true;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "posdb min files needed to trigger to merge";
@@ -7300,6 +7190,17 @@ void Parms::init ( ) {
 	////////////////////
 	// spiderdb settings
 	////////////////////
+	m->m_title = "spiderdb max percentage of lost positives after merge";
+	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow for spiderdb. "
+	             "Anything above that we'll abort the instance";
+	m->m_cgi   = "plpspmerge";
+	simple_m_set(Conf,m_spiderdbMaxLostPositivesPercentage);
+	m->m_def   = "90";
+	m->m_units = "percent";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RDB;
+	m->m_group = true;
+	m++;
 
 	m->m_title = "spiderdb disk cache size";
 	m->m_desc  = "Titledb "
@@ -7312,7 +7213,7 @@ void Parms::init ( ) {
 	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
-	m->m_group = true;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "spiderdb min files needed to trigger to merge";
@@ -7343,6 +7244,18 @@ void Parms::init ( ) {
 	// tagdb settings
 	////////////////////
 
+	m->m_title = "tagdb max percentage of lost positives after merge";
+	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow for tagdb. "
+	             "Anything above that we'll abort the instance";
+	m->m_cgi   = "plptgmerge";
+	simple_m_set(Conf,m_tagdbMaxLostPositivesPercentage);
+	m->m_def   = "50";
+	m->m_units = "percent";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RDB;
+	m->m_group = true;
+	m++;
+
 	m->m_title = "tagdb disk cache size";
 	m->m_desc  = "Tagdb is "
 	             "consulted at spider time and query time to determine "
@@ -7353,7 +7266,7 @@ void Parms::init ( ) {
 	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
-	m->m_group = true;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "tagdb min files to merge";
@@ -7384,6 +7297,18 @@ void Parms::init ( ) {
 	// titledb settings
 	////////////////////
 
+	m->m_title = "titledb max percentage of lost positives after merge";
+	m->m_desc  = "Maximum percentage of positive keys lost after merge that we'll allow for titledb. "
+	             "Anything above that we'll abort the instance";
+	m->m_cgi   = "plpttmerge";
+	simple_m_set(Conf,m_titledbMaxLostPositivesPercentage);
+	m->m_def   = "50";
+	m->m_units = "percent";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RDB;
+	m->m_group = true;
+	m++;
+
 	m->m_title = "titledb disk cache size";
 	m->m_desc  = "Titledb "
 			"holds the cached web pages, compressed. Gigablast consults "
@@ -7395,7 +7320,7 @@ void Parms::init ( ) {
 	m->m_units = "bytes";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
-	m->m_group = true;
+	m->m_group = false;
 	m++;
 
 	// this is overridden by collection
@@ -8803,6 +8728,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for TopTree";
+	m->m_cgi   = "ltrc_toptree";
+	simple_m_set(Conf,m_logTraceTopTree);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log timing messages for build";
 	m->m_desc  = "Log various timing related messages.";
 	m->m_cgi   = "ltb";
@@ -9535,38 +9467,6 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 			}
 		}
 
-		// . DIFFBOT HACK: so ppl can manually restart a spider round
-		// . val can be 0 or 1 or anything. i.e. roundStart=0 works.
-		// . map this parm to another parm with the round start
-		//   time (current time) and the new round # as the args.
-		// . this will call CommandForceNextSpiderRound() function
-		//   on every shard with these args, "tmpVal".
-		if ( cr && strcmp(m->m_cgi,"roundStart") == 0 ) {
-			// use the current time so anything spidered before
-			// this time (the round start time) will be respidered
-			//sprintf(tmp,"%" PRIu32,getTimeGlobalNoCore());
-			//val = tmp;
-			char tmpVal[64];
-			// use the same round start time for all shards
-			sprintf(tmpVal,
-				"%" PRIu32",%" PRId32
-				,(uint32_t)getTimeGlobal()
-				,cr->m_spiderRoundNum+1
-				);
-			// . also add command to reset crawl/process counts
-			//   so if you hit maxToProcess/maxToCrawl it will
-			//   not stop the round from restarting
-			// . CommandResetCrawlCounts()
-			if ( ! addNewParmToList1 ( parmList ,
-						   parmCollnum ,
-						   tmpVal, // a string
-						   0 , // occNum (for arrays)
-						   "forceround" ) )
-				return false;
-			// don't bother going below
-			continue;
-		}
-
 		// if a collection name was also provided, assume that is
 		// the target of the reset/delete/restart. we still
 		// need PageAddDelete.cpp to work...
@@ -10251,16 +10151,6 @@ void Parms::handleRequest3fLoop(void *weArg) {
 		if ( parm->m_type != TYPE_CMD )
 			we->m_collnum = getCollnumFromParmRec ( rec );
 
-		// see if our spider round changes
-		int32_t oldRound = -1;
-		if ( we->m_collnum >= 0 && ! cx ) {
-			cx = g_collectiondb.getRec ( we->m_collnum );
-			// i guess coll might gotten deleted! so check cx
-			if ( cx ) {
-				oldRound = cx->m_spiderRoundNum;
-			}
-		}
-
 		// . this returns false if blocked, returns true and sets
 		//   g_errno on error
 		// . it'll block if trying to delete a coll when the tree
@@ -10282,9 +10172,6 @@ void Parms::handleRequest3fLoop(void *weArg) {
 			return;
 		}
 
-		if ( cx && oldRound != cx->m_spiderRoundNum )
-			we->m_updatedRound = true;
-
 		// do the next parm
 		we->m_parmPtr = p;
 
@@ -10297,13 +10184,6 @@ void Parms::handleRequest3fLoop(void *weArg) {
 
 	// one last thing... kinda hacky. if we change certain spidering parms
 	// we have to do a couple rebuilds.
-
-	// reset page round counts
-	if ( we->m_updatedRound && cx ) {
-		// Spider.cpp will reset the *ThisRound page counts and
-		// the sent notification flag
-		spiderRoundIncremented ( cx );
-	}
 
 	// basically resetting the spider here...
 	if ( we->m_doRebuilds && cx ) {
@@ -10376,7 +10256,6 @@ void Parms::handleRequest3f(UdpSlot *slot, int32_t /*niceness*/) {
 	we->m_errno = 0;
 	we->m_doRebuilds = false;
 	we->m_rebuildActiveList = false;
-	we->m_updatedRound = false;
 	we->m_doProxyRebuild = false;
 	we->m_collnum = -1;
 	we->m_sentReply = 0;
@@ -10903,26 +10782,6 @@ bool Parms::updateParm(const char *rec, WaitEntry *we) {
 	if ( base == cr && dst == (char *)&cr->m_importEnabled )
 		resetImportLoopFlag();
 
-	//
-	// HACK
-	//
-	// special hack. if spidering re-enabled then reset last spider
-	// attempt time to 0 to avoid the "has no more urls to spider"
-	// msg followed by the reviving url msg.
-	if ( base == cr && dst == (char *)&cr->m_spideringEnabled )
-		cr->m_localCrawlInfo.m_lastSpiderAttempt = 0;
-	if ( base == &g_conf && dst == (char *)&g_conf.m_spideringEnabled ){
-		for(int32_t i = 0; i<g_collectiondb.getNumRecs(); i++){
-			CollectionRec *cr2 = g_collectiondb.getRec(i);
-			if ( ! cr2 ) continue;
-			cr2->m_localCrawlInfo.m_lastSpiderAttempt = 0;
-		}
-	}
-
-	//
-	// END HACK
-	//
-
 	// all done
 	return true;
 }
@@ -11060,20 +10919,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "error replies. So once a url has been attempted to "
 			  "be spidered then this will be false even if there "
 			  "was any kind of error."
-			  "</td></tr>"
-
-			  "<tr class=poo><td>lastspidertime >= "
-			  "<b>{roundstart}</b></td>"
-			  "<td>"
-			  "This is true if the url's last spidered time "
-			  "indicates it was spidered already for this "
-			  "current round of spidering. When no more urls "
-			  "are available for spidering, then gigablast "
-			  "automatically sets {roundstart} to the current "
-			  "time so all the urls can be spidered again. This "
-			  "is how you do round-based spidering. "
-			  "You have to use the respider frequency as well "
-			  "to adjust how often you want things respidered."
 			  "</td></tr>"
 
 			  "<tr class=poo><td>urlage</td>"

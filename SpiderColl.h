@@ -81,7 +81,6 @@ public:
 
 	void removeFromDoledbIpTable(int32_t firstIp);
 	int32_t getDoledbIpTableCount() const;
-	void disableDoledbIpTableWrites();
 	bool isDoledbIpTableEmpty() const;
 	void clearDoledbIpTable();
 
@@ -96,7 +95,6 @@ public:
 	void populateWaitingTreeFromSpiderdb ( bool reentry ) ;
 
 	int32_t getWaitingTableCount() const;
-	void disableWaitingTableWrites();
 	void clearWaitingTable();
 
 	bool     m_waitingTreeNeedsRebuild;

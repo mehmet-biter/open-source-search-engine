@@ -1079,6 +1079,10 @@ int32_t RdbBase::addNewFile(int32_t *fileIdPtr) {
 				int32_t mergeFileId2;
 				int32_t mergeNum;
 				int32_t endMergeFileId;
+
+				// we need to parse the filename to get the maxFileId to handle scenario where gb crashes while
+				// unlinking files. we don't want a newly dumped file to fall into the 'merge' range that have been
+				// unlinked because when we resume the killed merge, those files will be removed.
 				if ( parseFilename( filename, &mergeFileId, &mergeFileId2, &mergeNum, &endMergeFileId ) ) {
 					maxFileId = endMergeFileId;
 				} else {
@@ -1111,13 +1115,27 @@ void RdbBase::markNewFileReadable() {
 	m_fileInfo[m_numFiles-1].m_allowReads = true;
 }
 
-
-bool RdbBase::isManipulatingFiles() const {
-	//note: incomplete check but not worse than the original
-	ScopedLock sl(const_cast<RdbBase*>(this)->m_mtxJobCount);
-	return m_submittingJobs || m_outstandingJobCount!=0;
+BigFile* RdbBase::getFile(int32_t n) {
+	return m_fileInfo[n].m_file;
 }
 
+int32_t RdbBase::isRootFile(int32_t n) const {
+	ScopedLock sl(m_mtxFileInfo);
+	return n==0 || m_fileInfo[n].m_fileId==1;
+}
+
+RdbMap* RdbBase::getMap(int32_t n) {
+	return m_fileInfo[n].m_map;
+}
+
+RdbIndex* RdbBase::getIndex(int32_t n) {
+	return m_fileInfo[n].m_index;
+}
+
+bool RdbBase::isReadable(int32_t n) const {
+	ScopedLock sl(m_mtxFileInfo);
+	return m_fileInfo[n].m_allowReads;
+}
 
 void RdbBase::incrementOutstandingJobs() {
 	ScopedLock sl(m_mtxJobCount);
@@ -1132,7 +1150,33 @@ bool RdbBase::decrementOustandingJobs() {
 	return m_outstandingJobCount==0 && !m_submittingJobs;
 }
 
-
+static int32_t getMaxLostPositivesPercentage(rdbid_t rdbId) {
+	switch (rdbId) {
+		case RDB_POSDB:
+		case RDB2_POSDB2:
+			return g_conf.m_posdbMaxLostPositivesPercentage;
+		case RDB_TAGDB:
+		case RDB2_TAGDB2:
+			return g_conf.m_tagdbMaxLostPositivesPercentage;
+		case RDB_CLUSTERDB:
+		case RDB2_CLUSTERDB2:
+			return g_conf.m_clusterdbMaxLostPositivesPercentage;
+		case RDB_TITLEDB:
+		case RDB2_TITLEDB2:
+			return g_conf.m_titledbMaxLostPositivesPercentage;
+		case RDB_SPIDERDB:
+		case RDB2_SPIDERDB2:
+			return g_conf.m_spiderdbMaxLostPositivesPercentage;
+		case RDB_LINKDB:
+		case RDB2_LINKDB2:
+			return g_conf.m_linkdbMaxLostPositivesPercentage;
+		case RDB_NONE:
+		case RDB_END:
+		default:
+			logError("rdb: bad lookup rdbid of %i", (int)rdbId);
+			gbshutdownLogicError();
+	}
+}
 
 // . called after the merge has successfully completed
 // . the final merge file is always file #0 (i.e. "indexdb0000.dat/map")
@@ -1214,7 +1258,9 @@ bool RdbBase::incorporateMerge ( ) {
 
 		log(LOG_INFO,"merge: %s: lost %" PRId64" (%.2f%%) positives", m_dbname, lostPositive, lostPercentage);
 
-		if (lostPercentage > g_conf.m_maxLostPositivesPercentage) {
+		int32_t maxLostPercentage = getMaxLostPositivesPercentage(m_rdb->getRdbId());
+		if (lostPercentage > maxLostPercentage) {
+			log(LOG_ERROR, "merge: %s: lost more than %d%% of positive records. Aborting.", m_dbname, maxLostPercentage);
 			gbshutdownCorrupted();
 		}
 	}
@@ -1512,38 +1558,6 @@ void RdbBase::renamesDone() {
 	attemptMergeAll();
 }
 
-void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 ) {
-	// make a fake file before us that we were merging
-	// since it got nuked on disk incorporateMerge();
-	char fbuf[256];
-
-	if(m_isTitledb) {
-		sprintf(fbuf, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, newFileId, newFileId2);
-	} else {
-		sprintf(fbuf, "%s%04" PRId32".dat", m_dbname, newFileId);
-	}
-
-	log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-	m_fileInfo[currentFileIdx].m_file->rename(fbuf,NULL);
-
-	m_fileInfo[currentFileIdx].m_fileId = newFileId;
-	m_fileInfo[currentFileIdx].m_fileId2 = newFileId2;
-
-	// we could potentially have a 'regenerated' map file that has already been moved.
-	// eg: merge dies after moving map file, but before moving data files.
-	//     next start up, map file will be regenerated. means we now have both even & odd map files
-	sprintf(fbuf, "%s%04" PRId32".map", m_dbname, newFileId);
-	log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-	m_fileInfo[currentFileIdx].m_map->rename(fbuf);
-
-	if (m_useIndexFile) {
-		sprintf(fbuf, "%s%04" PRId32".idx", m_dbname, newFileId);
-		log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-		m_fileInfo[currentFileIdx].m_index->rename(fbuf);
-	}
-}
-
-
 void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 	// on succes unlink the files we merged and free them
 	for ( int32_t i = a ; i < b ; i++ ) {
@@ -1618,7 +1632,6 @@ int32_t RdbBase::getMinToMerge(const CollectionRec *cr, rdbid_t rdbId, int32_t m
 	log(LOG_INFO, "merge: Using min files to merge %d for %s", result, m_dbname);
 	return result;
 }
-
 
 // . the DailyMerge.cpp will set minToMergeOverride for titledb, and this
 //   overrides "forceMergeAll" which is the same as setting 

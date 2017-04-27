@@ -662,80 +662,7 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 	// collection navbar
 	status = status && printCollectionNavBar ( sb, page , coll, qs,s,r);
 
-	// count the statuses
-	int32_t emptyCount = 0;
-	int32_t doneCount = 0;
-	int32_t activeCount = 0;
-	int32_t pauseCount = 0;
-	int32_t betweenRoundsCount = 0;
-	uint32_t nowGlobal = (uint32_t)getTimeGlobal();
-	for (int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
-		CollectionRec *cc = g_collectiondb.getRec(i);
-		if ( ! cc ) continue;
-		CrawlInfo *ci = &cc->m_globalCrawlInfo;
-		if      ( cc->m_spideringEnabled &&
-			  nowGlobal < cc->m_spiderRoundStartTime )
-			betweenRoundsCount++;
-		else if ( cc->m_spideringEnabled && 
-			  ! ci->m_hasUrlsReadyToSpider &&
-			  ci->m_urlsHarvested )
-			emptyCount++;
-		else if ( ! ci->m_hasUrlsReadyToSpider )
-			doneCount++;
-		else if (!cc->m_spideringEnabled && ci->m_hasUrlsReadyToSpider)
-			pauseCount++;
-		else if (cc->m_spideringEnabled && ci->m_hasUrlsReadyToSpider )
-			activeCount++;
-	}
-
-
 	sb->safePrintf("</div>");
-
-	sb->safePrintf("<div style=padding-left:10px;>"
-		       "<br>"
-		       "<b>Key</b>"
-		       "<br>"
-		       "<br>"
-		       "\n"
-		       );
-	sb->safePrintf(
-		       "<font color=black>"
-		       "&#x25cf;</font> spider is done (%" PRId32")"
-		       "<br>"
-		       "\n"
-
-		       "<font color=orange>"
-		       "&#x25cf;</font> spider is paused (%" PRId32")"
-		       "<br>"
-		       "\n"
-
-		       "<font color=green>"
-		       "&#x25cf;</font> spider is active (%" PRId32")"
-		       "<br>"
-		       "\n"
-
-		       "<font color=gray>"
-		       "&#x25cf;</font> spider queue empty (%" PRId32")"
-		       "<br>"
-		       "\n"
-
-		       "<font color=blue>"
-		       "&#x25cf;</font> between rounds (%" PRId32")"
-		       "<br>"
-		       "\n"
-
-
-		       "</div>"
-
-		       ,doneCount
-		       ,pauseCount
-		       ,activeCount
-		       ,emptyCount
-		       ,betweenRoundsCount
-
-		       );
-
-
 	sb->safePrintf("</TD>");
 
 
@@ -1352,13 +1279,12 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 	int32_t showAll = hr->getLong("showall",0);
 
 	int32_t row = 0;
-	uint32_t nowGlobal = (uint32_t)getTimeGlobal();
 	int32_t numPrinted = 0;
 	bool printMsg = false;
 
 	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs() ; i++ ) {
-		CollectionRec *cc = g_collectiondb.getRec(i);
-		if ( ! cc ) continue;
+		CollectionRec *cr = g_collectiondb.getRec(i);
+		if ( ! cr ) continue;
 
 		if ( numPrinted >= 20 && ! showAll ) {
 			printMsg = true;
@@ -1368,7 +1294,7 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 		// count it
 		numPrinted++;
 
-		const char *cname = cc->m_coll;
+		const char *cname = cr->m_coll;
 
 		row++;
 
@@ -1379,37 +1305,9 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 		sb->safePrintf("<nobr>");
 
 		// print color bullet
-		// green = active
-		// yellow = paused
-		// black = done
-		// gray = empty
-		// red = going but has > 50% errors in last 100 sample.
-		//       like timeouts etc.
+		sb->safePrintf("<font color=%s>&#x25cf;</font> ", cr->m_spideringEnabled ? "green" : "orange");
 
-		CrawlInfo *ci = &cc->m_globalCrawlInfo;
-		const char *bcolor = "";
-		if ( ! cc->m_spideringEnabled && ci->m_hasUrlsReadyToSpider )
-			bcolor = "orange";// yellow is too hard to see
-		if (   cc->m_spideringEnabled && ci->m_hasUrlsReadyToSpider )
-			bcolor = "green";
-		if ( ! ci->m_hasUrlsReadyToSpider )
-			bcolor = "black";
-		// when we first add a url via addurl or inject it will
-		// set hasUrlsReadyToSpider on all hosts to true i think
-		// and Spider.cpp increments urlsharvested.
-		if (   cc->m_spideringEnabled && 
-		     ! ci->m_hasUrlsReadyToSpider &&
-		       ci->m_urlsHarvested )
-			bcolor = "gray";
-
-		if ( cc->m_spideringEnabled &&
-		     nowGlobal < cc->m_spiderRoundStartTime )
-			bcolor = "blue";
-
-
-		sb->safePrintf("<font color=%s>&#x25cf;</font> ",bcolor);
-
-		if ( i != collnum || ! highlight )// || ! coll || ! coll[0])
+		if ( i != collnum || ! highlight )
 			sb->safePrintf ( "<a title=\"%s\" "
 					 "class=x "
 					 "href=\"/%s?c=%s%s\">%s"
@@ -2450,10 +2348,11 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 
 	// are we just starting off? give them a little help.
 	CollectionRec *crm = g_collectiondb.getRec("main");
+
 	if ( g_collectiondb.getNumRecs() == 1 &&
 	     crm &&
-	     page == PAGE_ROOT && // isRootWebPage &&
-	     crm->m_globalCrawlInfo.m_pageDownloadAttempts == 0 ) {
+	     page == PAGE_ROOT &&
+	     crm->m_siteListBuf.length() == 0 ) {
 		if ( adds ) mb->safePrintf("<br>");
 		adds++;
 		mb->safePrintf("%s",box);

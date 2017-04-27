@@ -7,9 +7,7 @@
 static void saveAndReloadPosdbBucket() {
 	Rdb *rdb = g_posdb.getRdb();
 
-	rdb->disableWrites();
 	rdb->saveTree(false, NULL, NULL);
-	rdb->enableWrites();
 	rdb->getBuckets()->clear();
 	rdb->loadTree();
 	if (g_posdb.getRdb()->isUseIndexFile()) {

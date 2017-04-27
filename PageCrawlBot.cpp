@@ -34,77 +34,27 @@
 //////////////////////////////////////////
 
 bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
-
 	SafeBuf tmp;
 	int32_t crawlStatus = -1;
 	getSpiderStatusMsg ( cx , &tmp , &crawlStatus );
-
-	// don't print completed time if spidering is going on
-	uint32_t completed = cx->m_diffbotCrawlEndTime;
-	// if not yet done, make this zero
-	if ( crawlStatus == SP_INITIALIZING ) completed = 0;
-	if ( crawlStatus == SP_NOURLS ) completed = 0;
-	if ( crawlStatus == SP_INPROGRESS ) completed = 0;
 
 	if ( format == FORMAT_JSON ) {
 		sb->safePrintf("{"
 			       "\"response\":{\n"
 			       "\t\"statusCode\":%" PRId32",\n"
 			       "\t\"statusMsg\":\"%s\",\n"
-			       "\t\"jobCreationTimeUTC\":%" PRId32",\n"
-			       "\t\"jobCompletionTimeUTC\":%" PRId32",\n"
-			       "\t\"urlsHarvested\":%" PRId64",\n"
-			       "\t\"pageCrawlAttempts\":%" PRId64",\n"
-			       "\t\"pageCrawlSuccesses\":%" PRId64",\n"
-			       , crawlStatus
-			       , tmp.getBufStart()
-			       , cx->m_diffbotCrawlStartTime
-			       , completed
-			       , cx->m_globalCrawlInfo.m_urlsHarvested
-			       , cx->m_globalCrawlInfo.m_pageDownloadAttempts
-			       , cx->m_globalCrawlInfo.m_pageDownloadSuccesses
-			       );
-		sb->safePrintf("\t\"currentTime\":%" PRIu32",\n",
-			       (uint32_t)getTimeGlobal() );
-		sb->safePrintf("\t\"currentTimeUTC\":%" PRIu32"\n",
-			       (uint32_t)getTimeGlobal() );
+			       , crawlStatus, tmp.getBufStart());
+		sb->safePrintf("\t\"currentTime\":%" PRIu32",\n", (uint32_t)getTimeGlobal() );
+		sb->safePrintf("\t\"currentTimeUTC\":%" PRIu32"\n", (uint32_t)getTimeGlobal() );
 		sb->safePrintf("\t}\n");
 		sb->safePrintf("}\n");
 	}
 
 	if ( format == FORMAT_XML ) {
-		sb->safePrintf("<response>\n"
-			       "\t<statusCode>%" PRId32"</statusCode>\n"
-			       , crawlStatus
-			       );
-		sb->safePrintf(
-			       "\t<statusMsg><![CDATA[%s]]></statusMsg>\n"
-			       "\t<jobCreationTimeUTC>%" PRId32
-			       "</jobCreationTimeUTC>\n"
-			       , (char *)tmp.getBufStart()
-			       , (int32_t)cx->m_diffbotCrawlStartTime
-			       );
-		sb->safePrintf(
-			       "\t<jobCompletionTimeUTC>%" PRId32
-			       "</jobCompletionTimeUTC>\n"
-
-			       "\t<urlsHarvested>%" PRId64"</urlsHarvested>\n"
-
-			       "\t<pageCrawlAttempts>%" PRId64
-			       "</pageCrawlAttempts>\n"
-
-			       "\t<pageCrawlSuccesses>%" PRId64
-			       "</pageCrawlSuccesses>\n"
-
-			       , completed
-			       , cx->m_globalCrawlInfo.m_urlsHarvested
-			       , cx->m_globalCrawlInfo.m_pageDownloadAttempts
-			       , cx->m_globalCrawlInfo.m_pageDownloadSuccesses
-			       );
-		sb->safePrintf("\t<currentTime>%" PRIu32"</currentTime>\n",
-			       (uint32_t)getTimeGlobal() );
-		sb->safePrintf("\t<currentTimeUTC>%" PRIu32"</currentTimeUTC>\n",
-			       (uint32_t)getTimeGlobal() );
+		sb->safePrintf("<response>\n\t<statusCode>%" PRId32"</statusCode>\n", crawlStatus);
+		sb->safePrintf("\t<statusMsg><![CDATA[%s]]></statusMsg>\n", (char *)tmp.getBufStart());
+		sb->safePrintf("\t<currentTime>%" PRIu32"</currentTime>\n", (uint32_t)getTimeGlobal() );
+		sb->safePrintf("\t<currentTimeUTC>%" PRIu32"</currentTimeUTC>\n", (uint32_t)getTimeGlobal() );
 		sb->safePrintf("</response>\n");
 	}
 

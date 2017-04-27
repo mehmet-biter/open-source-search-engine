@@ -83,10 +83,6 @@ void SpiderLoop::reset() {
 	m_winnerListCache.reset();
 }
 
-static void updateAllCrawlInfosSleepWrapper(int fd, void *state);
-
-
-
 void SpiderLoop::init() {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
@@ -130,20 +126,6 @@ void SpiderLoop::init() {
 		log(LOG_ERROR, "build: Failed to register timer callback. Spidering is permanently disabled. Restart to fix.");
 	}
 
-	// crawlinfo updating
-	// save bandwidth for now make this every 4 seconds not 1 second
-	// then try not to send crawlinfo the host should already have.
-	// each collrec can have a checksum for each host of the last
-	// info we sent it. but we should resend all every 100 secs anyway
-	// in case host when dead.
-	// now that we only send the info on startup and if changed,
-	// let's move back down to 1 second
-	// . make it 20 seconds because handlerequestc1 is always on
-	//   profiler when we have thousands of collections
-	if ( !g_loop.registerSleepCallback(g_conf.m_crawlInfoUpdateInterval, this, updateAllCrawlInfosSleepWrapper)) {
-		log(LOG_ERROR, "build: failed to register updatecrawlinfowrapper");
-	}
-		
 	logTrace( g_conf.m_logTraceSpider, "END" );
 }
 
@@ -323,13 +305,21 @@ subloop:
 		return;	
 	}
 	
-	// if we don't have all the url counts from all hosts, then wait.
-	// one host is probably down and was never up to begin with
-	if ( ! s_countsAreValid ) {
-		logTrace( g_conf.m_logTraceSpider, "END, counts not valid"  );
+	// don't spider if we have dead host
+	time_t now = time(NULL);
+	static bool s_hasDeadHost = g_hostdb.hasDeadHost();
+	static time_t s_updatedTime = now;
+
+	if ((now - s_updatedTime) >= g_conf.m_spiderDeadHostCheckInterval) {
+		s_updatedTime = now;
+		s_hasDeadHost = g_hostdb.hasDeadHost();
+	}
+
+	if (s_hasDeadHost) {
+		logTrace(g_conf.m_logTraceSpider, "END, has dead host");
 		return;
 	}
-	
+
 	// if we do not overlap ourselves
 	if ( m_gettingDoledbList ) {
 		logTrace( g_conf.m_logTraceSpider, "END, already getting DoledbList"  );
@@ -470,61 +460,13 @@ subloopNextPriority:
 	// stop if not enabled
 	if ( ! cr->m_spideringEnabled ) goto subloop;
 
-	// shortcut
-	CrawlInfo *ci = &cr->m_localCrawlInfo;
-
 	// set current time, synced with host #0
 	nowGlobal = (uint32_t)getTimeGlobal();
-
-	// the last time we attempted to spider a url for this coll
-	//m_sc->m_lastSpiderAttempt = nowGlobal;
-	// now we save this so when we restart these two times
-	// are from where we left off so we do not end up setting
-	// hasUrlsReadyToSpider to true which in turn sets
-	// the sentEmailAlert flag to false, which makes us
-	// send ANOTHER email alert!!
-	ci->m_lastSpiderAttempt = nowGlobal;
-
-	// sometimes our read of spiderdb to populate the waiting
-	// tree using evalIpLoop() takes a LONG time because
-	// a niceness 0 thread is taking a LONG time! so do not
-	// set hasUrlsReadyToSpider to false because of that!!
-	if ( m_sc->gettingSpiderdbList() )
-		ci->m_lastSpiderCouldLaunch = nowGlobal;
-
-	// update this for the first time in case it is never updated.
-	// then after 60 seconds we assume the crawl is done and
-	// we send out notifications. see below.
-	if ( ci->m_lastSpiderCouldLaunch == 0 )
-		ci->m_lastSpiderCouldLaunch = nowGlobal;
-
-	//
-	// . if doing respider with roundstarttime....
-	if ( nowGlobal < cr->m_spiderRoundStartTime ) {
-		logTrace( g_conf.m_logTraceSpider, "Loop, Spider start time not reached" );
-		goto subloop;
-	}
-
-	// if populating this collection's waitingtree assume
-	// we would have found something to launch as well. it might
-	// mean the waitingtree-saved.dat file was deleted from disk
-	// so we need to rebuild it at startup.
-	if ( m_sc->m_waitingTreeNeedsRebuild ) {
-		ci->m_lastSpiderCouldLaunch = nowGlobal;
-	}
 
 	// get max spiders
 	int32_t maxSpiders = cr->m_maxNumSpiders;
 
 	logTrace( g_conf.m_logTraceSpider, "maxSpiders: %" PRId32 , maxSpiders );
-
-	// if some spiders are currently outstanding
-	if ( m_sc->m_spidersOut ) {
-		// do not end the crawl until empty of urls because
-		// that url might end up adding more links to spider
-		// when it finally completes
-		ci->m_lastSpiderCouldLaunch = nowGlobal;
-	}
 
 	// obey max spiders per collection too
 	if ( m_sc->m_spidersOut >= maxSpiders ) {
@@ -548,9 +490,6 @@ subloopNextPriority:
 	endKey.setMax();
 
 	for ( ; ; ) {
-		// shortcut
-		ci = &cr->m_localCrawlInfo;
-
 		// reset priority when it goes bogus
 		if ( m_sc->m_pri2 < 0 ) {
 			// reset for next coll
@@ -578,12 +517,6 @@ subloopNextPriority:
 			if ( cr->m_maxSpidersPerRule[ i ] > max ) {
 				max = cr->m_maxSpidersPerRule[ i ];
 			}
-		}
-
-		// if we have one out, do not end the round!
-		if ( out > 0 ) {
-			// assume we could have launched a spider
-			ci->m_lastSpiderCouldLaunch = nowGlobal;
 		}
 
 		// always allow at least 1, they can disable spidering otherwise
@@ -696,7 +629,6 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 	// shortcuts
 	CollectionRec *cr = m_sc->getCollectionRec();
-	CrawlInfo *ci = &cr->m_localCrawlInfo;
 
 	// update m_msg5StartKey for next read
 	if ( m_list.getListSize() > 0 ) {
@@ -727,8 +659,6 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	if ( m_numSpidersOut >= MAX_SPIDERS ) bail = true;
 
 	if ( bail ) {
-		// assume we could have launched a spider
-		ci->m_lastSpiderCouldLaunch = getTimeGlobal();
 		// return false to indicate to try another
 		return false;
 	}
@@ -821,11 +751,6 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 	// skip? and re-get another doledb list from next priority...
 	if ( out >= max ) {
-		// assume we could have launched a spider
-		if ( max > 0 ) {
-			ci->m_lastSpiderCouldLaunch = nowGlobal;
-		}
-
 		return true;
 	}
 
@@ -883,11 +808,6 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	// we now read 50k instead of 2k from doledb in order to fix
 	// one ip from bottle corking the whole priority!!
 	if ( ipOut >= maxSpidersOutPerIp ) {
-		// assume we could have launched a spider
-		if ( maxSpidersOutPerIp > 0 ) {
-			ci->m_lastSpiderCouldLaunch = nowGlobal;
-		}
-
 skipDoledbRec:
 		// skip
 		m_list.skipCurrentRecord();
@@ -912,10 +832,6 @@ skipDoledbRec:
 	// line of queued results just sitting there taking up mem and
 	// spider slots so the crawlbot hourly can't pass.
 	if ( globalOut >= maxSpidersOutPerIp && ipOut >= 1 ) {
-		// assume we could have launched a spider
-		if ( maxSpidersOutPerIp > 0 ) {
-			ci->m_lastSpiderCouldLaunch = nowGlobal;
-		}
 		goto skipDoledbRec;
 	}
 
@@ -972,40 +888,6 @@ skipDoledbRec:
 	// log this now
 	if ( g_conf.m_logDebugSpider ) {
 		logf( LOG_DEBUG, "spider: trying to spider url %s", sreq->m_url );
-	}
-
-	// assume we launch the spider below. really this timestamp indicates
-	// the last time we COULD HAVE LAUNCHED *OR* did actually launch
-	// a spider
-	ci->m_lastSpiderCouldLaunch = nowGlobal;
-
-	// if we thought we were done, note it if something comes back up
-	if ( ! ci->m_hasUrlsReadyToSpider ) {
-		log("spider: got a reviving url for coll %s (%" PRId32") to crawl %s",
-		    cr->m_coll,(int32_t)cr->m_collnum,sreq->m_url);
-
-		// if changing status, resend our local crawl info to all hosts?
-		cr->localCrawlInfoUpdate();
-	}
-
-	// there are urls ready to spider
-	ci->m_hasUrlsReadyToSpider = 1;
-
-	// newly created crawls usually have this set to false so set it
-	// to true so getSpiderStatus() does not return that "the job
-	// is completed and no repeat is scheduled"...
-	if ( cr->m_spiderStatus == SP_INITIALIZING ) {
-		// this is the GLOBAL crawl info, not the LOCAL, which
-		// is what "ci" represents...
-		// MDW: is this causing the bug?
-		// the other have already reported that there are no urls
-		// to spider, so they do not re-report. we already
-		// had 'hasurlsreadytospider' set to true so we didn't get
-		// the reviving log msg.
-		cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = 1;
-
-		// set this right i guess...?
-		ci->m_lastSpiderAttempt = nowGlobal;
 	}
 
 	// reset reason why crawl is not running, because we basically are now
@@ -1485,9 +1367,6 @@ CollectionRec *SpiderLoop::getActiveList() {
 void SpiderLoop::buildActiveList ( ) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
-	// set current time, synced with host #0
-	uint32_t nowGlobal = (uint32_t)getTimeGlobal();
-
 	// when do we need to rebuild the active list again?
 	m_recalcTimeValid = false;
 
@@ -1509,11 +1388,6 @@ void SpiderLoop::buildActiveList ( ) {
 		// stop if not enabled
 		bool active = true;
 		if ( ! cr->m_spideringEnabled ) active = false;
-
-		// . if doing respider with roundstarttime....
-		if ( nowGlobal < cr->m_spiderRoundStartTime ) {
-			active = false;
-		}
 
 		// we are at the tail of the linked list OR not in the list
 		cr->m_nextActive = NULL;
@@ -1548,494 +1422,6 @@ void SpiderLoop::buildActiveList ( ) {
 	}
 	
 	logTrace( g_conf.m_logTraceSpider, "END" );
-}
-
-static void gotCrawlInfoReply(void *state, UdpSlot *slot);
-
-static int32_t s_requests = 0;
-static int32_t s_replies  = 0;
-static int32_t s_validReplies  = 0;
-static bool s_inUse = false;
-// we initialize CollectionRec::m_updateRoundNum to 0 so make this 1
-static int32_t s_updateRoundNum = 1;
-
-// . just call this every 20 seconds for all collections
-// . figure out how to backoff on collections that don't need it so much
-// . ask every host for their crawl infos for each collection rec
-static void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
-
-	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
-
-	if ( s_inUse ) return;
-
-	// "i" means to get incremental updates since last round
-	// "f" means to get all stats
-	char *request = "i";
-	int32_t requestSize = 1;
-
-	static bool s_firstCall = true;
-	if ( s_firstCall ) {
-		s_firstCall = false;
-		request = "f";
-	}
-
-	s_inUse = true;
-
-	// send out the msg request
-	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
-		Host *h = g_hostdb.getHost(i);
-
-		// Do not skip nospider hosts after all. If a nospider host dies, spidering
-		// will not be paused (greater risk of losing newly spidered data). Skip
-		// again when we have added spooling on the spidering twin.
-		//if(!h->m_spiderEnabled)
-		//	continue;
-
-		// count it as launched
-		s_requests++;
-		// launch it
-		if (!g_udpServer.sendRequest(request, requestSize, msg_type_c1, h->m_ip, h->m_port, h->m_hostId, NULL, NULL, gotCrawlInfoReply)) {
-			log(LOG_WARN, "spider: error sending c1 request: %s", mstrerror(g_errno));
-			s_replies++;
-		}
-	}
-	
-	logTrace( g_conf.m_logTraceSpider, "Sent %" PRId32" requests, got %" PRId32" replies" , s_requests, s_replies);
-	// return false if we blocked awaiting replies
-	if ( s_replies < s_requests ) {
-		logTrace( g_conf.m_logTraceSpider, "END. requests/replies mismatch" );
-		return;
-	}
-
-	// how did this happen?
-	log("spider: got bogus crawl info replies!");
-	s_inUse = false;
-
-	logTrace( g_conf.m_logTraceSpider, "END" );
-	return;
-}
-
-
-
-// . Parms.cpp calls this when it receives our "spiderRoundNum" increment above
-// . all hosts should get it at *about* the same time
-void spiderRoundIncremented ( CollectionRec *cr ) {
-
-	log("spider: incrementing spider round for coll %s to %" PRId32" (%" PRIu32")",
-	    cr->m_coll,cr->m_spiderRoundNum,
-	    (uint32_t)cr->m_spiderRoundStartTime);
-
-	// . if we set sentCrawlDoneALert to 0 it will immediately
-	//   trigger another round increment !! so we have to set these
-	//   to true to prevent that.
-	// . if we learnt that there really are no more urls ready to spider
-	//   then we'll go to the next round. but that can take like
-	//   SPIDER_DONE_TIMER seconds of getting nothing.
-	cr->m_localCrawlInfo.m_hasUrlsReadyToSpider = 1;
-	cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = 1;
-
-	cr->m_localCrawlInfo.m_pageDownloadSuccessesThisRound = 0;
-	cr->m_localCrawlInfo.m_pageProcessSuccessesThisRound  = 0;
-	cr->m_globalCrawlInfo.m_pageDownloadSuccessesThisRound = 0;
-	cr->m_globalCrawlInfo.m_pageProcessSuccessesThisRound  = 0;
-
-	cr->localCrawlInfoUpdate();
-
-	cr->setNeedsSave();
-}
-
-static void gotCrawlInfoReply(void *state, UdpSlot *slot) {
-
-	// loop over each LOCAL crawlinfo we received from this host
-	CrawlInfo *ptr   = (CrawlInfo *)(slot->m_readBuf);
-	CrawlInfo *end   = (CrawlInfo *)(slot->m_readBuf+ slot->m_readBufSize);
-
-	// host sending us this reply
-	Host *h = slot->m_host;
-
-	// assume it is a valid reply, not an error, like a udptimedout
-	s_validReplies++;
-
-	// reply is error? then use the last known good reply we had from him
-	// assuming udp reply timed out. empty buf just means no update now!
-	if ( ! slot->m_readBuf && g_errno ) {
-		log( LOG_WARN, "spider: got crawlinfo reply error from host %" PRId32": %s. spidering will be paused.",
-		     h->m_hostId,mstrerror(g_errno));
-		// just clear it
-		g_errno = 0;
-		// if never had any reply... can't be valid then
-		if ( ! ptr ) s_validReplies--;
-	}
-
-	// inc it
-	s_replies++;
-
-	if ( s_replies > s_requests ) {
-		g_process.shutdownAbort(true);
-	}
-
-
-	// crap, if any host is dead and not reporting it's number then
-	// that seriously fucks us up because our global count will drop
-	// and something that had hit a max limit, like maxToCrawl, will
-	// now be under the limit and the crawl will resume.
-	// what's the best way to fix this?
-	//
-	// perhaps, let's just keep the dead host's counts the same
-	// as the last time we got them. or maybe the simplest way is to
-	// just not allow spidering if a host is dead 
-
-	// the sendbuf should never be freed! it points into collrec
-	// it is 'i' or 'f' right now
-	slot->m_sendBufAlloc = NULL;
-
-	/////
-	//  SCAN the list of CrawlInfos we received from this host, 
-	//  one for each non-null collection
-	/////
-
-	// . add the LOCAL stats we got from the remote into the GLOBAL stats
-	// . readBuf is null on an error, so check for that...
-	// . TODO: do not update on error???
-	for ( ; ptr < end ; ptr++ ) {
-		// get collnum
-		collnum_t collnum = (collnum_t)(ptr->m_collnum);
-
-		CollectionRec *cr = g_collectiondb.getRec ( collnum );
-		if ( ! cr ) {
-			log("spider: updatecrawlinfo collnum %" PRId32" "
-			    "not found",(int32_t)collnum);
-			continue;
-		}
-
-		// just copy into the stats buf
-		if ( ! cr->m_crawlInfoBuf.getBufStart() ) {
-			int32_t need = sizeof(CrawlInfo) * g_hostdb.getNumHosts();
-			cr->m_crawlInfoBuf.setLabel("cibuf");
-			if( !cr->m_crawlInfoBuf.reserve(need) ) {
-				logError("Could not reserve needed %" PRId32 " bytes, bailing!", need);
-				return;
-			}
-			// in case one was udp server timed out or something
-			cr->m_crawlInfoBuf.zeroOut();
-		}
-
-		CrawlInfo *cia = (CrawlInfo *)cr->m_crawlInfoBuf.getBufStart();
-
-		if ( cia )
-			gbmemcpy ( &cia[h->m_hostId] , ptr , sizeof(CrawlInfo));
-
-		// mark it for computation once we got all replies
-		cr->m_updateRoundNum = s_updateRoundNum;
-	}
-
-	// keep going until we get all replies
-	if ( s_replies < s_requests ) return;
-	
-	// if it's the last reply we are to receive, and 1 or more 
-	// hosts did not have a valid reply, and not even a
-	// "last known good reply" then then we can't do
-	// much, so do not spider then because our counts could be
-	// way off and cause us to start spidering again even though
-	// we hit a maxtocrawl limit!!!!!
-	if ( s_validReplies < s_replies ) {
-		// this will tell us to halt all spidering
-		// because a host is essentially down!
-		s_countsAreValid = false;
-	} else {
-		if ( ! s_countsAreValid )
-			log("spider: got all crawlinfo replies. all shards up. spidering back on.");
-		s_countsAreValid = true;
-	}
-
-	// loop over 
-	for ( int32_t x = 0 ; x < g_collectiondb.getNumRecs() ; x++ ) {
-		CollectionRec *cr = g_collectiondb.getRec(x);
-		if ( ! cr ) continue;
-
-		// must be in need of computation
-		if ( cr->m_updateRoundNum != s_updateRoundNum ) continue;
-
-		CrawlInfo *gi = &cr->m_globalCrawlInfo;
-		int32_t hadUrlsReady = gi->m_hasUrlsReadyToSpider;
-
-		// clear it out
-		gi->reset();
-
-		// retrieve stats for this collection and scan all hosts
-		CrawlInfo *cia = (CrawlInfo *)cr->m_crawlInfoBuf.getBufStart();
-
-		// if empty for all hosts, i guess no stats...
-		if ( ! cia ) continue;
-
-		bool crazy = false;
-		for ( int32_t k = 0 ; k < g_hostdb.getNumHosts(); k++ ) {
-			// get the CrawlInfo for the ith host
-			CrawlInfo *stats = &cia[k];
-			// point to the stats for that host
-			int64_t *ss = (int64_t *)stats;
-			int64_t *gs = (int64_t *)gi;
-			// are stats crazy?
-			for ( int32_t j = 0 ; j < NUMCRAWLSTATS ; j++ ) {
-				// crazy stat?
-				if ( *ss > 1000000000LL || *ss < -1000000000LL ) {
-					log( LOG_WARN, "spider: crazy stats %" PRId64" from host #%" PRId32" coll=%s. ignoring.",
-					     *ss, k, cr->m_coll );
-					crazy = true;
-					break;
-				}
-				ss++;
-			}
-
-			// reset ptr to accumulate
-			ss = (int64_t *)stats;
-			for ( int32_t j = 0 ; j < NUMCRAWLSTATS ; j++ ) {
-				// do not accumulate if corrupted.
-				// probably mem got corrupted and it saved to disk
-				if (crazy) {
-					break;
-				}
-				*gs = *gs + *ss;
-				gs++;
-				ss++;
-			}
-
-			// . special counts
-			gi->m_pageDownloadSuccessesThisRound +=
-				stats->m_pageDownloadSuccessesThisRound;
-			gi->m_pageProcessSuccessesThisRound +=
-				stats->m_pageProcessSuccessesThisRound;
-
-			if ( ! stats->m_hasUrlsReadyToSpider ) continue;
-			// inc the count otherwise
-			gi->m_hasUrlsReadyToSpider++;
-
-			// i guess we are back in business even if
-			// m_spiderStatus was SP_ROUNDDONE...
-			cr->m_spiderStatus = SP_INPROGRESS;
-
-			// revival?
-			if ( ! cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider )
-				log("spider: reviving crawl %s from host %" PRId32, cr->m_coll,k);
-		} // end loop over hosts
-
-		if ( hadUrlsReady &&
-		     // and it no longer does now...
-		     ! cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider ) {
-			log(LOG_INFO,
-			    "spider: all %" PRId32" hosts report "
-			    "%s (%" PRId32") has no "
-			    "more urls ready to spider",
-			    s_replies,cr->m_coll,(int32_t)cr->m_collnum);
-			// set crawl end time
-			cr->m_diffbotCrawlEndTime = getTimeGlobalNoCore();
-		}
-
-		// crawl notification: reset done alert flag here if cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider is true
-
-		// update cache time
-		cr->m_globalCrawlInfo.m_lastUpdateTime = getTime();
-		
-		// make it save to disk i guess
-		cr->setNeedsSave();
-
-		// if spidering disabled in master controls then send no
-		// notifications
-		// crap, but then we can not update the round start time
-		// because that is done in doneSendingNotification().
-		// but why does it say all 32 report done, but then
-		// it has urls ready to spider?
-		if ( ! g_conf.m_spideringEnabled )
-			continue;
-
-		// and we've examined at least one url. to prevent us from
-		// sending a notification if we haven't spidered anything
-		// because no seed urls have been added/injected.
-		//if ( cr->m_globalCrawlInfo.m_urlsConsidered == 0 ) return;
-		if ( cr->m_globalCrawlInfo.m_pageDownloadAttempts == 0 &&
-		     // if we don't have this here we may not get the
-		     // pageDownloadAttempts in time from the host that
-		     // did the spidering.
-		     ! hadUrlsReady ) 
-			continue;
-
-		// but of course if it has urls ready to spider, do not send 
-		// alert... or if this is -1, indicating "unknown".
-		if ( cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider ) 
-			continue;
-
-		// update status
-		if ( ! cr->m_spiderStatus || 
-		     cr->m_spiderStatus == SP_INPROGRESS ||
-		     cr->m_spiderStatus == SP_INITIALIZING )
-			cr->m_spiderStatus = SP_ROUNDDONE;
-
-		// only host #0 sends emails
-		if ( g_hostdb.m_myHost->m_hostId != 0 )
-			continue;
-
-		// crawl notification: send notification here if necessary
-
-		// deal with next collection rec
-	}
-
-	// initialize
-	s_replies  = 0;
-	s_requests = 0;
-	s_validReplies = 0;
-	s_inUse    = false;
-	s_updateRoundNum++;
-}
-
-void handleRequestc1(UdpSlot *slot, int32_t /*niceness*/) {
-	// just a single collnum
-	if ( slot->m_readBufSize != 1 ) { g_process.shutdownAbort(true); }
-
-	char *req = slot->m_readBuf;
-
-	if ( ! slot->m_host ) {
-		log(LOG_WARN, "handc1: no slot->m_host from ip=%s udpport=%i", iptoa(slot->getIp()),(int)slot->getPort());
-		g_errno = ENOHOSTS;
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__ );
-		g_udpServer.sendErrorReply ( slot , g_errno );
-		return;
-	}
-
-	SafeBuf replyBuf;
-
-	uint32_t now = (uint32_t)getTimeGlobalNoCore();
-
-	uint64_t nowMS = gettimeofdayInMilliseconds();
-
-	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
-		CollectionRec *cr = g_collectiondb.getRec(i);
-		if ( ! cr ) continue;
-
-		// shortcut
-		CrawlInfo *ci = &cr->m_localCrawlInfo;
-
-		// this is now needed for alignment by the receiver
-		ci->m_collnum = i;
-
-		SpiderColl *sc = cr->m_spiderColl;
-
-		/////////
-		//
-		// ARE WE DONE SPIDERING?????
-		//
-		/////////
-
-		uint32_t spiderDoneTimer = (uint32_t)SPIDER_DONE_TIMER;
-
-		// if we haven't spidered anything in 1 min assume the
-		// queue is basically empty...
-		if ( ci->m_lastSpiderAttempt &&
-		     ci->m_lastSpiderCouldLaunch &&
-		     ci->m_hasUrlsReadyToSpider &&
-		     // the next round we are waiting for, if any, must
-		     // have had some time to get urls! otherwise we
-		     // will increment the round # and wait just
-		     // SPIDER_DONE_TIMER seconds and end up setting
-		     // hasUrlsReadyToSpider to false!
-		     now > cr->m_spiderRoundStartTime + spiderDoneTimer &&
-		     // no spiders currently out. i've seen a couple out
-		     // waiting for a diffbot reply. wait for them to
-		     // return before ending the round...
-		     sc && sc->m_spidersOut == 0 &&
-		     // it must have launched at least one url! this should
-		     // prevent us from incrementing the round # at the gb
-		     // process startup
-		     //ci->m_numUrlsLaunched > 0 &&
-		     //cr->m_spideringEnabled &&
-		     //g_conf.m_spideringEnabled &&
-		     ci->m_lastSpiderAttempt - ci->m_lastSpiderCouldLaunch > 
-		     spiderDoneTimer ) {
-
-			// break it here for our collnum to see if
-			// doledb was just lagging or not.
-			bool printIt = true;
-			if ( now < sc->m_lastPrinted ) printIt = false;
-			if ( printIt ) sc->m_lastPrinted = now + 5;
-
-			// doledb must be empty
-			if ( !sc->isDoledbIpTableEmpty() ) {
-				if ( printIt )
-				log("spider: not ending crawl because "
-				    "doledb not empty for coll=%s",cr->m_coll);
-				goto doNotEnd;
-			}
-
-			uint64_t nextTimeMS ;
-			nextTimeMS = sc->getNextSpiderTimeFromWaitingTree ( );
-
-			// and no ips awaiting scans to get into doledb
-			// except for ips needing scans 60+ seconds from now
-			if ( nextTimeMS &&  nextTimeMS < nowMS + 60000 ) {
-				if ( printIt )
-				log("spider: not ending crawl because "
-				    "waiting tree key is ready for scan "
-				    "%" PRId64" ms from now for coll=%s",
-				    nextTimeMS - nowMS,cr->m_coll );
-				goto doNotEnd;
-			}
-
-			// maybe wait for waiting tree population to finish
-			if ( sc->m_waitingTreeNeedsRebuild ) {
-				if ( printIt )
-				log("spider: not ending crawl because "
-				    "waiting tree is building for coll=%s",
-				    cr->m_coll );
-				goto doNotEnd;
-			}
-
-			// this is the MOST IMPORTANT variable so note it
-			log(LOG_INFO,
-			    "spider: coll %s has no more urls to spider",
-			    cr->m_coll);
-			// assume our crawl on this host is completed i guess
-			ci->m_hasUrlsReadyToSpider = 0;
-			// if changing status, resend local crawl info to all
-			cr->localCrawlInfoUpdate();
-			// save that!
-			cr->setNeedsSave();
-		}
-
-	doNotEnd:
-
-		int32_t hostId = slot->m_host->m_hostId;
-
-		bool sendIt = false;
-
-		// . if not sent to host yet, send
-		// . this will be true when WE startup, not them...
-		// . but once we send it we set flag to false
-		// . and if we update anything we send we set flag to true
-		//   again for all hosts
-		if ( cr->shouldSendLocalCrawlInfoToHost(hostId) ) 
-			sendIt = true;
-
-		// they can override. if host crashed and came back up
-		// it might not have saved the global crawl info for a coll
-		// perhaps, at the very least it does not have
-		// the correct CollectionRec::m_crawlInfoBuf because we do
-		// not save the array of crawlinfos for each host for
-		// all collections.
-		if ( req && req[0] == 'f' )
-			sendIt = true;
-
-		if ( ! sendIt ) continue;
-
-		// save it
-		replyBuf.safeMemcpy ( ci , sizeof(CrawlInfo) );
-
-		// do not re-do it unless it gets update here or in XmlDoc.cpp
-		cr->sentLocalCrawlInfoToHost ( hostId );
-	}
-
-	g_udpServer.sendReply(replyBuf.getBufStart(), replyBuf.length(), replyBuf.getBufStart(), replyBuf.getCapacity(), slot);
-
-	// udp server will free this
-	replyBuf.detachBuf();
 }
 
 bool SpiderLoop::isLocked(int64_t key) const {

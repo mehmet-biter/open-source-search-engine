@@ -599,39 +599,36 @@ void RdbBucket::printBucketStartEnd(int32_t idx) {
 
 
 RdbBuckets::RdbBuckets()
-  : m_mtx()
-{
-	m_numBuckets = 0; 
-	m_masterPtr = NULL;
-	m_buckets = NULL;
-	m_swapBuf = NULL;
-	m_sortBuf = NULL;
-	m_isWritable = true;
-	m_isSaving = false;
-	m_dataMemOccupied = 0;
-	m_needsSave = false;
-	m_repairMode = false;
-
-	// Coverity
-	m_bucketsSpace = NULL;
-	m_masterSize = 0;
-	m_firstOpenSlot = 0;
-	m_maxBuckets = 0;
-	m_ks = 0;
-	m_fixedDataSize = 0;
-	m_recSize = 0;
-	m_numKeysApprox = 0;
-	m_numNegKeys = 0;
-	m_maxMem = 0;
-	m_maxBucketsCapacity = 0;
-	m_rdbId = RDB_NONE;
-	m_dbname = NULL;
-	m_sortBufSize = 0;
-	m_dir = NULL;
-	m_state = NULL;
-	m_callback = NULL;
-	m_errno = 0;
-	m_allocName = NULL;
+	: m_mtx()
+	, m_buckets(NULL)
+	, m_bucketsSpace(NULL)
+	, m_masterPtr(NULL)
+	, m_masterSize(0)
+	, m_firstOpenSlot(0)
+	, m_numBuckets(0)
+	, m_maxBuckets(0)
+	, m_ks(0)
+	, m_fixedDataSize(0)
+	, m_recSize(0)
+	, m_numKeysApprox(0)
+	, m_numNegKeys(0)
+	, m_maxMem(0)
+	, m_maxBucketsCapacity(0)
+	, m_dataMemOccupied(0)
+	, m_rdbId(RDB_NONE)
+	, m_dbname(NULL)
+	, m_swapBuf(NULL)
+	, m_sortBuf(NULL)
+	, m_sortBufSize(0)
+	, m_repairMode(false)
+	, m_isSaving(false)
+	, m_needsSave(false)
+	, m_dir(NULL)
+	, m_state(NULL)
+	, m_callback(NULL)
+	, m_bytesWritten(0)
+	, m_errno(0)
+	, m_allocName(NULL) {
 }
 
 
@@ -879,11 +876,6 @@ bool RdbBuckets::addNode(collnum_t collnum, const char *key, const char *data, i
 
 bool RdbBuckets::addNode_unlocked(collnum_t collnum, const char *key, const char *data, int32_t dataSize) {
 	m_mtx.verify_is_locked();
-
-	if (!m_isWritable || m_isSaving) {
-		g_errno = ETRYAGAIN;
-		return false;
-	}
 
 	m_needsSave = true;
 
@@ -1776,11 +1768,6 @@ bool RdbBuckets::deleteList_unlocked(collnum_t collnum, RdbList *list) {
 
 	if (list->getListSize() == 0) {
 		return true;
-	}
-
-	if (!m_isWritable || m_isSaving) {
-		g_errno = EAGAIN;
-		return false;
 	}
 
 	// . set this right away because the head bucket needs to know if we

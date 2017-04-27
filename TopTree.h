@@ -9,6 +9,7 @@
 
 #include "RdbTree.h"
 
+
 class TopNode {
  public:
 	//unsigned char  m_bscore ; // bit #6(0x40) is on if has all explicitly
@@ -87,17 +88,19 @@ class TopTree {
 	int32_t getNext ( int32_t i );
 
 	bool hasDocId ( int64_t d );
+	void logTreeData(int32_t loglevel);
 
 	TopNode *getNode ( int32_t i ) { return &m_nodes[i]; }
 	bool nodesIsNull() const { return m_nodes==NULL; }
 	int32_t getNumNodes() const { return m_numNodes; }
 	int32_t getNumUsedNodes() const { return m_numUsedNodes; }
+	int32_t getNumDocsWanted() const { return m_docsWanted; }
 
 
 	bool  m_useIntScores;
-	int32_t  m_docsWanted;
 
 private:
+	int32_t  m_docsWanted;
 	bool checkTree ( bool printMsgs ) ;
 	int32_t computeDepth ( int32_t i ) ;
 

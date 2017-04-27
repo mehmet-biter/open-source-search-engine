@@ -332,15 +332,12 @@ bool Process::init ( ) {
 	return true;
 }
 
-bool Process::isAnyTreeSaving ( ) {
-	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
+bool Process::isAnyTreeSaving() {
+	for (int32_t i = 0; i < m_numRdbs; i++) {
 		Rdb *rdb = m_rdbs[i];
-		if ( rdb->isSavingTree() ) return true;
-		// we also just disable writing below in Process.cpp
-		// while saving other files. so hafta check that as well
-		// since we use isAnyTreeSaving() to determine if we can
-		// write to the tree or not.
-		if ( ! rdb->isWritable() ) return true;
+		if (rdb->isSavingTree()) {
+			return true;
+		}
 	}
 	return false;
 }
@@ -578,29 +575,9 @@ bool Process::save2 ( ) {
 		return true;
 	}
 
-	// . wait for any dump to complete
-	// . when merging titldb, it sets Rdb::m_dump.m_isDumping to true
-	//   because it is dumping the results of the merge to a file.
-	//   occasionally it will initiate a dump of tfndb which will not be 
-	//   possible because Rdb/RdbDump checks g_process.m_mode == Process::SAVE_MODE,
-	//   and do not allow dumps to begin if that is true! so we end up in 
-	//   deadlock! the save can not complete 
-	if ( isRdbDumping() ) {
-		return false;
-	}
-
-	// ok, now nobody is dumping, etc. make it so no dumps can start.
-	// Rdb.cpp/RdbDump.cpp check for this and will not dump if it is 
-	// set to Process::SAVE_MODE
 	m_mode = Process::SAVE_MODE;
 
-	logf(LOG_INFO,"gb: Saving data to disk. Disabling writes.");
-
-	// . disable adds/deletes on all rdb trees
-	// . Msg1 requests will get ETRYAGAIN error replies
-	// . this is instantaneous because all tree mods happen in this
-	//   main process, not in a thread
-	disableTreeWrites( false );
+	logf(LOG_INFO,"gb: Saving data to disk");
 
 	// . tell all rdbs to save trees
 	// . will return true if no rdb tree needs a save
@@ -631,10 +608,7 @@ bool Process::save2 ( ) {
 		saveBlockingFiles2() ;
 	}
 
-	// reenable tree writes since saves were completed
-	enableTreeWrites();
-
-	log(LOG_INFO,"gb: Saved data to disk. Re-enabling Writes.");
+	log(LOG_INFO,"gb: Saved data to disk");
 
 	// unlock
 	m_mode = Process::NO_MODE;
@@ -677,7 +651,7 @@ bool Process::shutdown2() {
 	g_merge.haltMerge();
 
 	RdbBase::finalizeGlobalIndexThread();
-	finalizeMsg4IncomingThread();
+	Msg4In::finalizeIncomingThread();
 
 	g_jobScheduler.cancel_all_jobs_for_shutdown();
 
@@ -703,12 +677,6 @@ bool Process::shutdown2() {
 	//g_conf.m_spideringEnabled = false;
 
 	//g_conf.m_injectionEnabled = false;
-
-	// . disable adds/deletes on all rdb trees
-	// . Msg1 requests will get ECLOSING error msgs
-	// . this is instantaneous because all tree mods happen in this
-	//   main process, not in a thread
-	disableTreeWrites( true );
 
 	// . tell all rdbs to save trees
 	// . will return true if no rdb tree needs a save
@@ -848,43 +816,6 @@ bool Process::shutdown2() {
 	_exit(0);
 }
 
-
-void Process::disableTreeWrites ( bool shuttingDown ) {
-	// loop over all Rdbs
-	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
-		Rdb *rdb = m_rdbs[i];
-		// if we save doledb while spidering it screws us up
-		// because Spider.cpp can not directly write into the
-		// rdb tree and it expects that to always be available!
-		if ( ! shuttingDown && rdb->getRdbId() == RDB_DOLEDB )
-			continue;
-		rdb->disableWrites();
-	}
-	// don't save spider related trees if not shutting down
-	if ( ! shuttingDown ) return;
-	// disable all spider trees and tables
-	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
-		SpiderColl *sc = g_spiderCache.getSpiderCollIffNonNull(i);
-		if ( ! sc ) {
-			continue;
-		}
-		sc->m_waitingTree .disableWrites();
-		sc->disableWaitingTableWrites();
-		sc->disableDoledbIpTableWrites();
-	}
-	
-}
-
-void Process::enableTreeWrites() {
-	// loop over all Rdbs
-	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
-		Rdb *rdb = m_rdbs[i];
-		rdb->enableWrites();
-	}
-
-	return;
-}
-
 // . returns false if blocked, true otherwise
 // . calls callback when done saving
 bool Process::isRdbDumping ( ) {
@@ -918,30 +849,32 @@ bool Process::saveRdbTrees(bool shuttingDown) {
 		log("gb: trying to shutdown");
 	}
 
-	// loop over all Rdbs and save them
-	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
-		if ( m_calledSave ) {
-			log("gb: already saved trees, skipping.");
-			break;
+	if (m_calledSave) {
+		log("gb: already saved trees, skipping.");
+	} else {
+		// loop over all Rdbs and save them
+		for (int32_t i = 0; i < m_numRdbs; i++) {
+			Rdb *rdb = m_rdbs[i];
+
+			// if we save doledb while spidering it screws us up
+			// because Spider.cpp can not directly write into the
+			// rdb tree and it expects that to always be available!
+			if (!shuttingDown && rdb->getRdbId() == RDB_DOLEDB) {
+				continue;
+			}
+
+			// note it
+			if (rdb->getDbname()) {
+				log("gb: calling save tree for %s", rdb->getDbname());
+			} else {
+				log("gb: calling save tree for rdbid %i", (int)rdb->getRdbId());
+			}
+
+			rdb->saveTree(useThread, NULL, NULL);
 		}
 
-		Rdb *rdb = m_rdbs[i];
-
-		// if we save doledb while spidering it screws us up
-		// because Spider.cpp can not directly write into the
-		// rdb tree and it expects that to always be available!
-		if ( ! shuttingDown && rdb->getRdbId() == RDB_DOLEDB ) {
-			continue;
-		}
-
-		// note it
-		if ( rdb->getDbname() ) {
-			log( "gb: calling save tree for %s", rdb->getDbname() );
-		} else {
-			log( "gb: calling save tree for rdbid %i", ( int ) rdb->getRdbId() );
-		}
-
-		rdb->saveTree(useThread, NULL, NULL);
+		// do not re-save the stuff we just did this round
+		m_calledSave = true;
 	}
 
 	// . save waitingtrees for each collection, blocks.
@@ -956,30 +889,9 @@ bool Process::saveRdbTrees(bool shuttingDown) {
 	//   are all done.
 	if ( shuttingDown ) g_spiderCache.save ( useThread );
 
-	// do not re-save the stuff we just did this round
-	m_calledSave = true;
-
 	// check if any need to finish saving
-	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
-		// do not return until all saved if we are shutting down
-		if ( shuttingDown ) {
-			break;
-		}
-
-		Rdb *rdb = m_rdbs[i];
-
-		// we disable the tree while saving so we can't really add recs
-		// to one rdb tree while saving, but for crawlbot
-		// we might have added or deleted collections.
-		if ( rdb->isSavingTree ( ) ) {
-			return false;
-		}
-	}
-
-	// only save spiderdb based trees if shutting down so we can
-	// still write to them without writes being disabled
-	if ( ! shuttingDown ) {
-		return true;
+	if (isAnyTreeSaving()) {
+		return false;
 	}
 
 	// reset for next call

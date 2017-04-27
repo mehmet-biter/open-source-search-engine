@@ -7,7 +7,7 @@
 #include "Msg40.h" // MAXDOCIDSTOCOMPUTE
 #include "Sanity.h"
 #include "ScopedLock.h"
-
+#include "Conf.h"
 
 TopTree::TopTree() { 
 	m_nodes = NULL; 
@@ -185,84 +185,115 @@ int32_t TopTree::getHighNode ( ) {
 
 // returns true if added node. returns false if did not add node
 bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
+	logTrace(g_conf.m_logTraceTopTree, "BEGIN");
 
 	// respect the dom hashes
 	uint8_t domHash = Titledb::getDomHash8FromDocId(t->m_docId);
 
+	logTrace(g_conf.m_logTraceTopTree, "new node m_docId: %" PRId64", domHash: %" PRIu8 ", score: %f", t->m_docId, domHash, t->m_score);
+
 	// if vcount is satisfied, only add if better score than tail
-	if ( m_vcount >= m_docsWanted ) {
+	if ( m_vcount +0.5 >= m_docsWanted ) {
+		logTrace(g_conf.m_logTraceTopTree, "Reached vcount. m_vcount=%f, m_docsWanted=%" PRId32 "", m_vcount, m_docsWanted);
 		int32_t i = m_lowNode;
 
 		if ( m_useIntScores ) {
 			if ( t->m_intScore < m_nodes[i].m_intScore ) {
 				m_kickedOutDocIds = true;
+				logTrace(g_conf.m_logTraceTopTree, "END, int score %" PRId32 " < lowest int score %" PRId32 " - skipping", t->m_intScore, m_nodes[i].m_intScore);
 				return false;
 			}
 			if ( t->m_intScore > m_nodes[i].m_intScore) {
+				logTrace(g_conf.m_logTraceTopTree, "int score %" PRId32 " > lowest int score %" PRId32 " - adding", t->m_intScore, m_nodes[i].m_intScore);
 				goto addIt;
 			}
+			logTrace(g_conf.m_logTraceTopTree, "int score %" PRId32 " same as lowest int score %" PRId32 "", t->m_intScore, m_nodes[i].m_intScore);
 		}
-
 		else {
 			if ( t->m_score < m_nodes[i].m_score ) {
+				logTrace(g_conf.m_logTraceTopTree, "END, score %f < lowest score %f - skipping", t->m_score, m_nodes[i].m_score);
 				m_kickedOutDocIds = true;
 				return false;
 			}
 			if ( t->m_score > m_nodes[i].m_score ) {
+				logTrace(g_conf.m_logTraceTopTree, "score %f > lowest score %f - adding", t->m_score, m_nodes[i].m_score);
 				goto addIt;
 			}
+			logTrace(g_conf.m_logTraceTopTree, "score %f same as lowest score %f", t->m_score, m_nodes[i].m_score);
 		}
 
 		// . finally, compare docids, store lower ones first
 		// . docids should not tie...
 		if ( t->m_docId >= m_nodes[i].m_docId ) {
 			m_kickedOutDocIds = true;
+			logTrace(g_conf.m_logTraceTopTree, "tie. new docId %" PRId64 " > lowest scoring docId %" PRId64 " - skipping", t->m_docId, m_nodes[i].m_docId);
 			return false;
 		}
 		// we got a winner
+		logTrace(g_conf.m_logTraceTopTree, "tie. new docId %" PRId64 " < lowest scoring docId %" PRId64 " - adding", t->m_docId, m_nodes[i].m_docId);
 		goto addIt;
 	}
 
  addIt:
 
 	int32_t iparent = -1;
-	// this is -1 iff there are no nodes used in the tree
+	// this is -1 if there are no nodes used in the tree
 	int32_t i = m_headNode;
 	// JAB: gcc-3.4
 	char dir = 0;
+
 	// if we're the first node we become the head node and our parent is -1
 	if ( m_numUsedNodes == 0 ) {
 		m_headNode  =  0;
 		iparent     = -1;
 	}
-	// . find the parent of node i and call it "iparent"
-	// . if a node exists with our key then do NOT replace it
-	else while ( i >= 0 ) {
+	else
+	while ( i >= 0 ) {
+		// . find the parent of node i and call it "iparent"
+		// . if a node exists with our key then do NOT replace it
 		iparent = i;
 
 		// . compare to the ith node
 		if ( m_useIntScores ) {
 			if ( t->m_intScore < m_nodes[i].m_intScore ) {
-				i = LEFT(i); dir = 0; continue; }
+				i = LEFT(i);
+				dir = 0;
+				continue;
+			}
 			if ( t->m_intScore > m_nodes[i].m_intScore ) {
-				i = RIGHT(i); dir = 1; continue; }
-
+				i = RIGHT(i);
+				dir = 1;
+				continue;
+			}
 		}
 		else {
 			if ( t->m_score < m_nodes[i].m_score ) {
-				i = LEFT(i); dir = 0; continue; }
+				i = LEFT(i);
+				dir = 0;
+				continue;
+			}
 			if ( t->m_score > m_nodes[i].m_score ) {
-				i = RIGHT(i); dir = 1; continue; }
+				i = RIGHT(i);
+				dir = 1;
+				continue;
+			}
 		}
 
 
 		// . finally, compare docids, store lower ones first
 		// . docids should not tie...
 		if ( t->m_docId > m_nodes[i].m_docId ) {
-			i = LEFT (i); dir = 0; continue; }
+			i = LEFT (i);
+			dir = 0;
+			continue;
+		}
 		if ( t->m_docId < m_nodes[i].m_docId ) {
-			i = RIGHT(i); dir = 1; continue; }
+			i = RIGHT(i);
+			dir = 1;
+			continue;
+		}
 		// if equal do not replace
+		logTrace(g_conf.m_logTraceTopTree, "Odd. new docId %" PRId64 " same as head docId %" PRId64 " - skipping", t->m_docId, m_nodes[i].m_docId);
 		return false;
 	}
 
@@ -281,12 +312,15 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	// . WARNING: if t->m_score is fractional, the fraction will be
 	//   dropped and could result in the lower scoring of the two docids
 	//   being kept.
-	uint32_t cs ;
+	uint32_t cs;
 
-	if ( m_useIntScores )
+	if ( m_useIntScores ) {
 		cs = (uint32_t) t->m_intScore;
-	else
+	}
+	else {
 		cs = ((uint32_t)t->m_score);
+		logTrace(g_conf.m_logTraceTopTree, "docId %" PRId64 " score %f converted to %" PRIu32"", t->m_docId, t->m_score, cs);
+	}
 
 	key96_t k;
 	k.n1  =  domHash                 << 24; // 1 byte domHash
@@ -294,6 +328,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	k.n1 |=  cs                      >> 16; // 4 byte score
 	k.n0  =  ((int64_t)cs)         << (64-16);
 	k.n0 |=  t->m_docId; // getDocIdFromPtr ( t->m_docIdPtr );
+
 
 	// get min node now for this dom
 	int32_t min = m_domMinNode[domHash];
@@ -305,10 +340,15 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	ScopedLock sl(m_t2.getLock());
 	// do not even try to add if ridiculous count for this domain
 	if ( m_domCount[domHash] >= m_ridiculousMax ) {
-		// sanity check
-		//if ( min < 0 ) gbshutdownLogicError();
+		logTrace(g_conf.m_logTraceTopTree, "Reached m_ridiculousMax %" PRId64 " for domain hash", m_ridiculousMax);
+
 		// if we are lesser or dup of min, just don't add!
-		if ( k <= *(reinterpret_cast<const key96_t*>(m_t2.getKey_unlocked(min))) ) return false;
+		if ( k <= *(reinterpret_cast<const key96_t*>(m_t2.getKey_unlocked(min))) ) {
+			logTrace(g_conf.m_logTraceTopTree, "END, domain key lower than current lowest domain key - skipping");
+			return false;
+		}
+		logTrace(g_conf.m_logTraceTopTree, "Replacing current minimum key for domain hash");
+
 		// . add ourselves. use 0 for collnum.
 		// . dataPtr is not really a ptr, but the node
 		n = m_t2.addNode_unlocked ( 0 , (const char *)&k , NULL , 4 );
@@ -334,7 +374,8 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		//logf(LOG_DEBUG,"deleting1 %" PRId32,min);
 	}
 	// if we have not violated the ridiculous max, just add ourselves
-	else if ( m_doSiteClustering ) {
+	else
+	if ( m_doSiteClustering ) {
 		n = m_t2.addNode_unlocked ( 0 , (const char *)&k , NULL , 4 );
 		// sanity check
 		//if ( min > 0 ) {
@@ -349,7 +390,9 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	if ( m_doSiteClustering ) {
 		// update the dataPtr so every node in m_t2 has a reference
 		// to the equivalent node in this top tree
-		if ( n < 0 || n > m_t2.getNumNodes_unlocked() ) gbshutdownLogicError();
+		if ( n < 0 || n > m_t2.getNumNodes_unlocked() ) {
+			gbshutdownLogicError();
+		}
 		m_t2.setData_unlocked(n, (char *)(PTRTYPE)tnn);
 	}
 
@@ -361,20 +404,32 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	// increment count of domain hash of the docId added
 	m_domCount[domHash]++;
 	// do not count if over limit
-	if      ( m_domCount[domHash] <  m_cap ) m_vcount += 1.0;
-	// if equal, count partial
-	else if ( m_domCount[domHash] == m_cap ) m_vcount += m_partial;
+	if ( m_domCount[domHash] < m_cap ) {
+		m_vcount += 1.0;
+	}
+	else
+	if ( m_domCount[domHash] == m_cap ) {
+		// if equal, count partial
+		m_vcount += m_partial;
+	}
 
 	// . we were the empty node, get the next in line in the linked list
 	// . should be -1 if none left
 	m_emptyNode = t->m_right;
+
 	// stick ourselves in the next available node, "m_nextNode"
 	t->m_parent = iparent;
+
 	// make our parent, if any, point to us
 	if ( iparent >= 0 ) {
-		if ( dir == 0 ) LEFT(iparent)  = tnn; // 0
-		else            RIGHT(iparent) = tnn; // 1
+		if ( dir == 0 ) {
+			LEFT(iparent)  = tnn; // 0
+		}
+		else {
+			RIGHT(iparent) = tnn; // 1
+		}
 	}
+
 	// our kids are -1 means none
 	t->m_left  = -1;
 	t->m_right = -1;
@@ -383,15 +438,26 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	// . reset depths starting at i's parent and ascending the tree
 	// . will balance if child depths differ by 2 or more
 	setDepths ( iparent );
+
 	// are we the new low node? lower-scoring stuff is on the LEFT!
-	if ( iparent == m_lowNode && dir == 0 ) m_lowNode = tnn;
+	if ( iparent == m_lowNode && dir == 0 ) {
+		m_lowNode = tnn;
+	}
+
 	// count it
 	m_numUsedNodes++;
 
 	// we should delete this, it was delayed for the add...
-	if ( deleteMe >= 0 ) deleteNode ( deleteMe , domHash );
+	if ( deleteMe >= 0 ) {
+		logTrace(g_conf.m_logTraceTopTree, "deleting node %" PRId64 "", deleteMe);
+		deleteNode ( deleteMe , domHash );
+	}
+
 	// remove as many docids as we should
-	while ( m_vcount-1.0 >= m_docsWanted || m_numUsedNodes == m_numNodes) {
+	// BR 20170421: Added m_numUsedNodes > m_docsWanted check, otherwise it would exceed m_docsWanted, I guess due to rounding.
+	while ( m_vcount-1.0 >= m_docsWanted || m_numUsedNodes > m_docsWanted || m_numUsedNodes == m_numNodes) {
+		logTrace(g_conf.m_logTraceTopTree, "Do some cleanup. m_vcount-1.0 %f >= m_docsWanted %" PRId32 " || m_numUsedNodes %" PRId32 " == m_numNodes %" PRId32 "", m_vcount-1.0, m_docsWanted, m_numUsedNodes, m_numNodes);
+
 		// he becomes the new empty node
 		int32_t tn = m_lowNode;
 		// sanity check
@@ -457,6 +523,9 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// the new min is the "next" of the old min
 		m_domMinNode[domHash2] = next;
 	}
+	// logTrace(g_conf.m_logTraceTopTree, "Cleanup done. No longer true: m_vcount-1.0 %f >= m_docsWanted %" PRId32 " || m_numUsedNodes %" PRId32 " == m_numNodes %" PRId32 "", m_vcount-1.0, m_docsWanted, m_numUsedNodes, m_numNodes);
+
+	logTrace(g_conf.m_logTraceTopTree, "END. m_docsWanted: %" PRId32 ", m_numUsedNodes: %" PRId32 "", m_docsWanted, m_numUsedNodes);
 	return true;
 }
 
@@ -464,6 +533,8 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 // . remove this node from the tree
 // . used to remove the last node and replace it with a higher scorer
 void TopTree::deleteNode ( int32_t i , uint8_t domHash ) {
+	logTrace(g_conf.m_logTraceTopTree, "node %" PRId32", m_docId=%" PRId64", domHash %" PRIu8"", i, m_nodes[i].m_docId, domHash);
+
 	// sanity check
 	if ( PARENT(i) == -2 ) gbshutdownLogicError();
 
@@ -603,7 +674,9 @@ void TopTree::deleteNode ( int32_t i , uint8_t domHash ) {
 	m_numUsedNodes--;
 	// flag it
 	m_kickedOutDocIds = true;
+	logTrace(g_conf.m_logTraceTopTree, "END. m_docsWanted: %" PRId32 ", m_numUsedNodes: %" PRId32 "", m_docsWanted, m_numUsedNodes);
 }
+
 	
 int32_t TopTree::getPrev ( int32_t i ) { 
 	// cruise the kids if we have a left one
@@ -1018,3 +1091,19 @@ bool TopTree::hasDocId ( int64_t d ) {
 	}
 	return false;
 }
+
+void TopTree::logTreeData(int32_t loglevel) {
+	int32_t i = getLowNode();
+
+	log(loglevel, "TopTree Num Nodes..: %" PRId32 "", getNumNodes());
+	log(loglevel, "TopTree Used Nodes.: %" PRId32 "", getNumUsedNodes());
+	log(loglevel, "TopTree Docs Wanted: %" PRId32 "", m_docsWanted);
+
+	log(loglevel, "TopTree Documents:");
+	// scan the nodes
+	for ( ; i >= 0 ; i = getNext ( i ) ) {
+		log(loglevel,"  TopTree[%02" PRId32 "].m_docId: %14" PRId64 ", score: %f", i, m_nodes[i].m_docId, m_nodes[i].m_score);
+	}
+}
+
+

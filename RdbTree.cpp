@@ -168,7 +168,6 @@ void RdbTree::reset_unlocked() {
 	m_numNegativeKeys = 0;
 	m_numPositiveKeys = 0;
 	m_isSaving        = false;
-	m_isWritable      = true;
 }
 
 void RdbTree::delColl ( collnum_t collnum ) {
@@ -466,10 +465,6 @@ bool RdbTree::addNode(collnum_t collnum, const char *key, char *data, int32_t da
 int32_t RdbTree::addNode_unlocked ( collnum_t collnum , const char *key , char *data , int32_t dataSize ) {
 	m_mtx.verify_is_locked();
 
-	// cannot add if saving, tell them to try again later
-	if ( m_isSaving ) { g_errno = ETRYAGAIN; return -1; }
-	// nor if not writable
-	if ( ! m_isWritable ) { g_errno = ETRYAGAIN; return -1; }
 	// if there's no more available nodes, error out
 	if ( m_numUsedNodes >= m_numNodes) { g_errno = ENOMEM; return -1; }
 	// we need to be saved now
@@ -653,12 +648,6 @@ bool RdbTree::deleteNode(collnum_t collnum, const char *key, bool freeData) {
 void RdbTree::deleteNodes_unlocked(collnum_t collnum, const char *startKey, const char *endKey, bool freeData) {
 	m_mtx.verify_is_locked();
 
-	// sanity check
-	if (!m_isWritable) {
-		log("db: Can not delete record from tree because not writable 2. name=%s",m_dbname);
-		return;
-	}
-
 	int32_t node = getNextNode_unlocked(collnum, startKey);
 	while ( node >= 0 ) {
 		//int32_t next = getNextNode_unlocked ( node );
@@ -798,18 +787,6 @@ bool RdbTree::replaceNode_unlocked(int32_t i, int32_t j) {
 // . if i has no parent then his left or right kid becomes the new top node
 bool RdbTree::deleteNode_unlocked(int32_t i, bool freeData) {
 	m_mtx.verify_is_locked();
-
-	// sanity check
-	if (!m_isWritable) {
-		log("db: Can not delete record from tree because not writable. name=%s",m_dbname);
-		return false;
-	}
-
-	// no deleting if we're saving
-	if (m_isSaving) {
-		log("db: Can not delete record from tree because saving tree to disk now.");
-		return false;
-	}
 
 	// watch out for double deletes
 	if ( m_parents[i] == -2 ) {
@@ -1494,8 +1471,6 @@ bool RdbTree::getList(collnum_t collnum, const char *startKey, const char *endKe
 		    growth, mstrerror(g_errno));
 		return false;
 	}
-	// similar to above algorithm but we have data along with the keys
-	int32_t dataSize;
 
 	// stop when we've hit or just exceed minRecSizes
 	// or we're out of nodes
@@ -1510,27 +1485,27 @@ bool RdbTree::getList(collnum_t collnum, const char *startKey, const char *endKe
 
 		// add record to our list
 		if ( m_fixedDataSize == 0 ) {
-			if ( ! list->addRecord(&m_keys[node*m_ks],0,NULL)) {
+			if (!list->addRecord(&m_keys[node * m_ks], 0, NULL)) {
 				log(LOG_WARN, "db: Failed to add record to tree list for %s: %s. Fix the growList algo.",
 				    m_dbname,mstrerror(g_errno));
 				return false;
 			}
 		}
 		else {
-			// get dataSize if not fixed
-			if ( m_fixedDataSize == -1 ) dataSize = m_sizes[node];
-			// otherwise, it's fixed
-			else dataSize = m_fixedDataSize;
+			int32_t dataSize = (m_fixedDataSize == -1) ? m_sizes[node] : m_fixedDataSize;
+
 			// point to key
 			char *key = &m_keys[node*m_ks];
+
 			// do not allow negative keys to have data, or
 			// at least ignore it! let's RdbList::addRecord()
 			// core dump on us!
-			if ( (key[0] & 0x01) == 0x00 ) dataSize = 0;
+			if (KEYNEG(key)) {
+				dataSize = 0;
+			}
+
 			// add the key and data
-			if ( ! list->addRecord ( key,//&m_keys[node*m_ks] ,
-						 dataSize     ,
-						 m_data[node] ) ) {
+			if (!list->addRecord(key, dataSize, m_data[node])) {
 				log(LOG_WARN, "db: Failed to add record to tree list for %s: %s. Fix the growList algo.",
 				    m_dbname,mstrerror(g_errno));
 				return false;

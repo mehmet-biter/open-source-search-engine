@@ -129,11 +129,6 @@ public:
 	/// @todo ALC verify saving/writable logic is okay with multithread
 	bool isSaving() const;
 	bool needsSave() const;
-	void setNeedsSave(bool needsSave) { m_needsSave = needsSave; }
-
-	bool isWritable() const { return m_isWritable; }
-	void disableWrites () { m_isWritable = false; }
-	void enableWrites  () { m_isWritable = true ; }
 
 	collnum_t getCollnum_unlocked(int32_t node) const { m_mtx.verify_is_locked(); return m_collnums[node]; }
 
@@ -271,9 +266,6 @@ private:
 	int32_t clear_unlocked();
 
 	mutable GbMutex m_mtx;
-
-	// can we write to the tree?
-	std::atomic<bool> m_isWritable;
 
 	// . this stuff is accessed by thread an must be public
 	// . cannot add to tree when saving

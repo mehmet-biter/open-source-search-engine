@@ -68,10 +68,6 @@ public:
 	bool needsSave() const;
 	void setNeedsSave(bool s);
 
-	bool isWritable() const { return m_isWritable; }
-	void disableWrites() { m_isWritable = false; }
-	void enableWrites() { m_isWritable = true; }
-
 	// don't need to lock. only set in RdbBuckets::set
 	int32_t getMaxMem() const { return m_maxMem; }
 
@@ -160,7 +156,6 @@ private:
 	int32_t m_sortBufSize;
 
 	bool m_repairMode;
-	bool m_isWritable;
 	bool m_isSaving;
 	// true if buckets was modified and needs to be saved
 	bool m_needsSave;

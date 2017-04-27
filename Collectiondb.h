@@ -142,52 +142,6 @@ extern class Collectiondb g_collectiondb;
 // fake this for now
 #define RDB_END2 80
 
-
-// how many counts are in CrawlInfo below????
-#define NUMCRAWLSTATS 8
-
-// used by diffbot to control spidering per collection
-class CrawlInfo {
- public:
-
-	//
-	// WARNING!! Add NEW stats below the LAST member variable in
-	// this class so that it can still load the OLD file on disk
-	// which is in the OLD format!
-	//
-
-	int64_t m_reserved1;
-	int64_t m_reserved2;
-	int64_t m_reserved3;
-	int64_t m_pageDownloadAttempts;
-	int64_t m_pageDownloadSuccesses;
-	int64_t m_reserved4;
-	int64_t m_pageProcessSuccesses;
-	int64_t m_urlsHarvested;
-
-	int32_t m_lastUpdateTime;
-
-	// this is non-zero if urls are available to be spidered right now.
-	int32_t m_hasUrlsReadyToSpider;
-
-	// last time we launched a spider. 0 on startup.
-	uint32_t m_lastSpiderAttempt; // time_t
-	// time we had or might have had a url available for spidering
-	uint32_t m_lastSpiderCouldLaunch; // time_t
-
-	int32_t m_collnum;
-
-	char m_reserved5;
-	int32_t m_reserved6;
-
-	// keep separate because when we receive a crawlinfo struct from
-	// a host we only add these in if it matches our round #
-	int64_t m_pageDownloadSuccessesThisRound;
-	int64_t m_pageProcessSuccessesThisRound;
-
-	void reset() { memset ( this , 0 , sizeof(CrawlInfo) ); }
-} __attribute__((packed, aligned(4)));
-
 class CollectionRec {
 
  public:
@@ -200,12 +154,6 @@ class CollectionRec {
 	virtual ~CollectionRec();
 
 	int64_t getNumDocsIndexed();
-
-	// messes with m_spiderColl->m_sendLocalCrawlInfoToHost[MAX_HOSTS]
-	// so we do not have to keep sending this huge msg!
-	bool shouldSendLocalCrawlInfoToHost ( int32_t hostId );
-	void sentLocalCrawlInfoToHost ( int32_t hostId );
-	void localCrawlInfoUpdate();
 
 	// . stuff used by Collectiondb
 	// . do we need a save or not?
@@ -260,14 +208,6 @@ public:
 	// is in active list in spider.cpp?
 	bool m_isActive;
 
-	// . at what time did the spiders start?
-	// . this is incremented when all urls have been spidered and
-	//   the next round begins
-	uint32_t m_spiderRoundStartTime; // time_t
-	// this begins at 0, and increments when all the urls have been
-	// spidered and begin the next round
-	int32_t   m_spiderRoundNum;
-
 	bool  m_makeImageThumbnails;
 
 	int32_t m_thumbnailMaxWidthHeight ;
@@ -305,9 +245,6 @@ public:
 	// Language stuff
 	char 			m_defaultSortLanguage2[6];
 
-	// for Spider.cpp
-	int32_t m_updateRoundNum;
-
 	// IMPORT PARMS
 	bool    m_importEnabled;
 	SafeBuf m_importDir;
@@ -339,27 +276,6 @@ public:
 	int32_t m_summaryMaxNumCharsPerLine;
 
 	bool m_getDocIdScoringInfo;
-
-  /*****
-   * !! Start Diffbot paramamters !! *
-   *****/
-
-	// in seconds now
-	uint32_t m_diffbotCrawlStartTime;
-	uint32_t m_diffbotCrawlEndTime;
-
-	// our local crawling stats
-	CrawlInfo m_localCrawlInfo;
-
-	// total crawling stats summed up from all hosts in network
-	CrawlInfo m_globalCrawlInfo;
-
-	// holds the latest CrawlInfo for each host for this collrec
-	SafeBuf m_crawlInfoBuf;
-
-  /*****
-   * !! End of Diffbot paramamters !! *
-   *****/
 
 	// list of url patterns to be indexed.
 	SafeBuf m_siteListBuf;
