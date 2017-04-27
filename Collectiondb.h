@@ -53,7 +53,6 @@ class Collectiondb  {
 	//class CollectionRec *getDefaultRec ( ) ;
 
 	class CollectionRec *getFirstRec      ( ) ;
-	const char          *getFirstCollName() const;
 	collnum_t            getFirstCollnum() const ;
 
 	int32_t getNumRecs() const { return m_numRecs; }
