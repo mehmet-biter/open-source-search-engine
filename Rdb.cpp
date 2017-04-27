@@ -869,7 +869,8 @@ bool Rdb::dumpCollLoop ( ) {
 		if (base->getNumFiles() + 2 >= MAX_RDB_FILES) {
 			log(LOG_WARN, "db: could not dump tree to disk for cn=%i %s because it has %" PRId32" files on disk. "
 			              "Need to wait for merge operation.", (int)m_dumpCollnum, m_dbname, base->getNumFiles());
-			continue;
+			g_errno = ETOOMANYFILES;
+			return true;
 		}
 
 		// this file must not exist already, we are dumping the tree into it
@@ -877,7 +878,7 @@ bool Rdb::dumpCollLoop ( ) {
 		int fn = base->addNewFile(&fileId);
 		if (fn < 0) {
 			log(LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror(g_errno));
-			return false;
+			return true;
 		}
 
 		base->setDumpingFileNumber(fn);
