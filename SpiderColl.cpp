@@ -587,32 +587,44 @@ bool SpiderColl::isInDupCache(const SpiderRequest *sreq, bool addToCache) {
 	// . dupKey64 is for hopcount 0, so if this url is in the dupcache
 	//   with a hopcount of zero, do not add it
 	RdbCacheLock rcl(m_dupCache);
-	if ( m_dupCache.getLong ( 0,dupKey64,86400,true ) != -1 ) {
-	dedup:
-		if ( g_conf.m_logDebugSpider )
-			log("spider: skipping dup request url=%s uh48=%" PRIu64,
-			    sreq->m_url,sreq->getUrlHash48());
+
+	// limit hopcount to 3 for making cache key so we don't flood cache
+	int32_t hopCount = (sreq->m_hopCount >= 3 ? 3 : sreq->m_hopCount);
+
+	// don't insert same hopcount
+	if (m_dupCache.getLong(0, dupKey64 ^ hopCount, 86400, true) != -1) {
+		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request same hopcount exist. url=%s uh48=%" PRIu64,
+		         sreq->m_url, sreq->getUrlHash48());
 		return true;
 	}
+
+	if (m_dupCache.getLong(0, dupKey64, 86400, true) != -1) {
+		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 0 exist. url=%s uh48=%" PRIu64,
+		         sreq->m_url, sreq->getUrlHash48());
+		return true;
+	}
+
 	// if our hopcount is 2 and there is a hopcount 1 in there, do not add
-	if ( sreq->m_hopCount >= 2 &&
-	     m_dupCache.getLong ( 0,dupKey64 ^ 0x01 ,86400,true ) != -1 ) 
-		goto dedup;
+	if (hopCount >= 2 && m_dupCache.getLong(0, dupKey64 ^ 0x01, 86400, true) != -1) {
+		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 1 exist. url=%s uh48=%" PRIu64,
+		         sreq->m_url, sreq->getUrlHash48());
+		return true;
+	}
+
 	// likewise, if there's a hopcount 2 in there, do not add if we are 3+
-	if ( sreq->m_hopCount >= 3 &&
-	     m_dupCache.getLong ( 0,dupKey64 ^ 0x02 ,86400,true ) != -1 ) 
-		goto dedup;
+	if (hopCount >= 3 && m_dupCache.getLong(0, dupKey64 ^ 0x02, 86400, true) != -1) {
+		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 2 exist. url=%s uh48=%" PRIu64,
+		         sreq->m_url, sreq->getUrlHash48());
+		return true;
+	}
 
+	if (addToCache) {
+		// mangle the key with hopcount before adding it to the cache
+		dupKey64 ^= hopCount;
 
-	if ( ! addToCache ) return false;
-
-	int32_t hc = sreq->m_hopCount;
-	// limit hopcount to 3 for making cache key so we don't flood cache
-	if ( hc >= 3 ) hc = 3;
-	// mangle the key with hopcount before adding it to the cache
-	dupKey64 ^= hc;
-	// add it
-	m_dupCache.addLong(0,dupKey64 ,1);
+		// add it
+		m_dupCache.addLong(0, dupKey64, 1);
+	}
 
 	return false;
 }
