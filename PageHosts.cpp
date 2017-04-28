@@ -22,8 +22,6 @@ static int tryagainSort   ( const void *i1, const void *i2 );
 static int dgramsToSort   ( const void *i1, const void *i2 );
 static int dgramsFromSort ( const void *i1, const void *i2 );
 static int memUsedSort    ( const void *i1, const void *i2 );
-static int cpuUsageSort   ( const void *i1, const void *i2 );
-static int diskUsageSort  ( const void *i1, const void *i2 );
 
 static int32_t generatePingMsg( Host *h, int64_t nowms, char *buffer );
 
@@ -159,12 +157,6 @@ skipReplaceHost:
 			       "<td><a href=\"/admin/hosts?c=%s&sort=9\">"
 			       "<b>mem used</a></td>"
 
-			       "<td><a href=\"/admin/hosts?c=%s&sort=10\">"
-			       "<b>cpu used</b></a></td>"
-
-			       "<td><a href=\"/admin/hosts?c=%s&sort=17\">"
-			       "<b>disk used</b></a></td>"
-
 			       "<td><a href=\"/admin/hosts?c=%s&sort=14\">"
 			       "<b>max ping1</b></a></td>"
 
@@ -183,8 +175,6 @@ skipReplaceHost:
 			       cs, sort,
 			       DARK_BLUE  ,
 
-			       cs,
-			       cs,
 			       cs,
 			       cs,
 			       cs,
@@ -226,14 +216,12 @@ skipReplaceHost:
 	case 7: gbsort ( hostSort, nh, sizeof(int32_t), dgramsFromSort ); break;
 	//case 8:
 	case 9: gbsort ( hostSort, nh, sizeof(int32_t), memUsedSort    ); break;
-	case 10:gbsort ( hostSort, nh, sizeof(int32_t), cpuUsageSort   ); break;
 	case 11:gbsort ( hostSort, nh, sizeof(int32_t), pingAgeSort    ); break;
 	case 12:gbsort ( hostSort, nh, sizeof(int32_t), flagSort       ); break;
 	case 13:gbsort ( hostSort, nh, sizeof(int32_t), splitTimeSort  ); break;
 	case 14:gbsort ( hostSort, nh, sizeof(int32_t), pingMaxSort    ); break;
 	//case 15:
 	case 16:gbsort ( hostSort, nh, sizeof(int32_t), defaultSort    ); break;
-	case 17:gbsort ( hostSort, nh, sizeof(int32_t), diskUsageSort   ); break;
 
 	}
 
@@ -316,19 +304,6 @@ skipReplaceHost:
 			fontTagFront = "<font color=red>";
 			fontTagBack  = "</font>";
 		}
-
-		float cpu = h->m_pingInfo.m_cpuUsage;
-		if ( cpu > 100.0 ) cpu = 100.0;
-		if ( cpu < 0.0   ) cpu = -1.0;
-
-		char diskUsageMsg[64];
-		sprintf(diskUsageMsg,"%.1f%%",h->m_pingInfo.m_diskUsage);
-		if ( h->m_pingInfo.m_diskUsage < 0.0 )
-			sprintf(diskUsageMsg,"???");
-		if ( h->m_pingInfo.m_diskUsage>=98.0 && format == FORMAT_HTML )
-			sprintf(diskUsageMsg,"<font color=red><b>%.1f%%"
-				"</b></font>",h->m_pingInfo.m_diskUsage);
-
 
 		// split time, don't divide by zero!
 		int32_t splitTime = 0;
@@ -602,14 +577,6 @@ skipReplaceHost:
 				      "</percentMemUsed>",
 				      h->m_pingInfo.m_percentMemUsed); // float
 
-			sb.safePrintf("\t\t<cpuUsage>%.1f%%"
-				      "</cpuUsage>",
-				      cpu );
-
-			sb.safePrintf("\t\t<percentDiskUsed><![CDATA[%s]]>"
-				      "</percentDiskUsed>",
-				      diskUsageMsg);
-
 			sb.safePrintf("\t\t<maxPing1>%s</maxPing1>\n",
 				      pms );
 
@@ -710,11 +677,6 @@ skipReplaceHost:
 			sb.safePrintf("\t\t\t\t\"percentMemUsed\":\"%.1f%%\",\n",
 				      h->m_pingInfo.m_percentMemUsed); // float
 
-			sb.safePrintf("\t\t\t\t\"cpuUsage\":\"%.1f%%\",\n",cpu);
-
-			sb.safePrintf("\t\t\t\t\"percentDiskUsed\":\"%s\",\n",
-				      diskUsageMsg);
-
 			sb.safePrintf("\t\t\t\t\"maxPing1\":\"%s\",\n",pms);
 
 			sb.safePrintf("\t\t\t\t\"maxPingAge1\":\"%" PRId32"ms\",\n",
@@ -801,10 +763,6 @@ skipReplaceHost:
 
 			  // percent mem used
 			  "<td>%s%.1f%%%s</td>"
-			  // cpu usage
-			  "<td>%.1f%%</td>"
-			  // disk usage
-			  "<td>%s</td>"
 
 			  // ping max
 			  "<td>%s</td>"
@@ -847,8 +805,6 @@ skipReplaceHost:
 			  fontTagFront,
 			  h->m_pingInfo.m_percentMemUsed, // float
 			  fontTagBack,
-			  cpu, // float
-			  diskUsageMsg,
 
 			  // ping max
 			  pms,
@@ -1349,25 +1305,5 @@ int memUsedSort ( const void *i1, const void *i2 ) {
 	PingInfo *p2 = &h2->m_pingInfo;
 	if ( p1->m_percentMemUsed > p2->m_percentMemUsed ) return -1;
 	if ( p1->m_percentMemUsed < p2->m_percentMemUsed ) return  1;
-	return 0;
-}
-
-int cpuUsageSort ( const void *i1, const void *i2 ) {
-	Host *h1 = g_hostdb.getHost ( *(int32_t*)i1 );
-	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
-	PingInfo *p1 = &h1->m_pingInfo;
-	PingInfo *p2 = &h2->m_pingInfo;
-	if ( p1->m_cpuUsage > p2->m_cpuUsage ) return -1;
-	if ( p1->m_cpuUsage < p2->m_cpuUsage ) return  1;
-	return 0;
-}
-
-int diskUsageSort ( const void *i1, const void *i2 ) {
-	Host *h1 = g_hostdb.getHost ( *(int32_t*)i1 );
-	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
-	PingInfo *p1 = &h1->m_pingInfo;
-	PingInfo *p2 = &h2->m_pingInfo;
-	if ( p1->m_diskUsage > p2->m_diskUsage ) return -1;
-	if ( p1->m_diskUsage < p2->m_diskUsage ) return  1;
 	return 0;
 }
