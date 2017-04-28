@@ -70,9 +70,6 @@ void DailyMerge::dailyMergeLoop ( ) {
 	// how many MINUTES into the day are we? (in UTC)
 	int32_t elapsedMins = tt->tm_hour * 60 + tt->tm_min ;
 
-	// what collnum to merge?
-	collnum_t i ;
-
 	// . if we are not 0, just use host #0's collnum
 	// . an error here will screw up the whole daily merge process
 	if ( hid != 0 && m_mergeMode == 0 ) {
@@ -83,7 +80,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 		// hostid #0 must NOT be in mode 0
 		if ( h->m_pingInfo.m_flags & PFLAG_MERGEMODE0 ) return;
 		// get the collnum that host #0 is currently daily merging
-		i = g_hostdb.m_hosts[0].m_pingInfo.m_dailyMergeCollnum;
+		collnum_t i = g_hostdb.m_hosts[0].m_pingInfo.m_dailyMergeCollnum;
 		// this means host #0 is not daily merging a collnum now
 		if ( i < 0 ) return;
 		// if it is valid, the CollectionRec MUST be there
@@ -99,84 +96,86 @@ void DailyMerge::dailyMergeLoop ( ) {
 	}
 
 	// . only host #0 should do this loop!!!
-	// . loop through each collection to check the time
-	for (i=0; hid==0&&m_mergeMode==0 && i<g_collectiondb.getNumRecs(); i++) {
-		// get collection rec for collnum #i
-		CollectionRec *cr = g_collectiondb.getRec ( i );
-		// skip if empty, it was deleted at some point
-		if ( ! cr ) continue;
-		// skip if daily merge trigger is < 0 (do not do dailies)
-		if ( cr->m_dailyMergeTrigger < 0 ) continue;
-		// . skip if not time yet
-		// . !!!!!THIS IS IN MINUTES!!!!!!!!
-		if ( (int32_t)elapsedMins < (int32_t)cr->m_dailyMergeTrigger ) 
-			continue;
-		// do not start more than 15 mins after the trigger time,
-		// if we miss that cuz we are down, then too bad
-		if ( (int32_t)elapsedMins > (int32_t)cr->m_dailyMergeTrigger + 15 )
-			continue;
- 		// . how long has it been (in seconds)
-		// . !!!!!THIS IS IN SECONDS!!!!!!!!
-		int32_t diff = nowSynced - cr->m_dailyMergeStarted;
-		// crazy?
-		if ( diff < 0 ) continue;
-		// if less than 24 hours ago, we already did it
-		if ( diff < 24*3600 ) continue;
-		// . we must now match the day of week
-		// . use <= 0 to do it every day
-		// . 0 = sunday ... 6 = saturday
-		// . comma separated list is ok ("0,1, 6")
-		// . leave blank or at least no numbers to do every day
-		char *s = cr->m_dailyMergeDOWList;
-		char dowCounts[8];
-		memset(dowCounts,0,8);
-		for ( ; *s ; s++ ) {
-			if ( ! is_digit(*s) ) continue;
-			int32_t num = atoi(s);
-			if ( num < 0 ) continue;
-			if ( num > 6 ) continue;
-			dowCounts[num]++;
-		}
-		// get our dow
-		int32_t todayDOW = tt->tm_wday + 1;
-		// make sure 1 to 7
-		if ( todayDOW < 0 || todayDOW > 6 ) { 
-			log(LOG_WARN, "merge: bad today dow of %i for coll %s",
-			    (int)todayDOW,cr->m_coll);
-			return;
-		}
-		//if ( todayDOW > 6 ) { g_process.shutdownAbort(true); }
-		// skip if not a dayofweek to merge on
-		if ( dowCounts [ todayDOW ] == 0 ) continue;
+	if(hid==0) {
+		// . loop through each collection to check the time
+		for (collnum_t i=0; m_mergeMode==0 && i<g_collectiondb.getNumRecs(); i++) {
+			// get collection rec for collnum #i
+			CollectionRec *cr = g_collectiondb.getRec ( i );
+			// skip if empty, it was deleted at some point
+			if ( ! cr ) continue;
+			// skip if daily merge trigger is < 0 (do not do dailies)
+			if ( cr->m_dailyMergeTrigger < 0 ) continue;
+			// . skip if not time yet
+			// . !!!!!THIS IS IN MINUTES!!!!!!!!
+			if ( (int32_t)elapsedMins < (int32_t)cr->m_dailyMergeTrigger ) 
+				continue;
+			// do not start more than 15 mins after the trigger time,
+			// if we miss that cuz we are down, then too bad
+			if ( (int32_t)elapsedMins > (int32_t)cr->m_dailyMergeTrigger + 15 )
+				continue;
+ 			// . how long has it been (in seconds)
+			// . !!!!!THIS IS IN SECONDS!!!!!!!!
+			int32_t diff = nowSynced - cr->m_dailyMergeStarted;
+			// crazy?
+			if ( diff < 0 ) continue;
+			// if less than 24 hours ago, we already did it
+			if ( diff < 24*3600 ) continue;
+			// . we must now match the day of week
+			// . use <= 0 to do it every day
+			// . 0 = sunday ... 6 = saturday
+			// . comma separated list is ok ("0,1, 6")
+			// . leave blank or at least no numbers to do every day
+			char *s = cr->m_dailyMergeDOWList;
+			char dowCounts[8];
+			memset(dowCounts,0,8);
+			for ( ; *s ; s++ ) {
+				if ( ! is_digit(*s) ) continue;
+				int32_t num = atoi(s);
+				if ( num < 0 ) continue;
+				if ( num > 6 ) continue;
+				dowCounts[num]++;
+			}
+			// get our dow
+			int32_t todayDOW = tt->tm_wday + 1;
+			// make sure 1 to 7
+			if ( todayDOW < 0 || todayDOW > 6 ) { 
+				log(LOG_WARN, "merge: bad today dow of %i for coll %s",
+				    (int)todayDOW,cr->m_coll);
+				return;
+			}
+			//if ( todayDOW > 6 ) { g_process.shutdownAbort(true); }
+			// skip if not a dayofweek to merge on
+			if ( dowCounts [ todayDOW ] == 0 ) continue;
 
-		// set the start time here, but don't commit to m_cr just yet
-		m_savedStartTime = nowSynced;
-		// . wait for everyone to be in mode #0 in case they just
-		//   finished another daily merge. only host #0 does this loop.
-		// . PROBLEM: if host #0 crashes before everyone can get into 
-		//   mode 1+ and then host #0 is brought back up, then 
-		//   obviously, we will not be able to meet this condition,
-		//   therefore only check to see if this condition is 
-		//   satisfied our "second time around" (so we must complete
-		//   one daily merge before checking this again). that is why
-		//   i added "m_didDaily". -- MDW
-		for ( int32_t i = 0 ; m_didDaily && i<g_hostdb.getNumHosts() ; i++){
-			// skip ourselves, obviously we are in merge mode 2
-			if ( &g_hostdb.m_hosts[i] == g_hostdb.m_myHost )
-				continue;
-			// that's good if he is in mode 0
-			if ( g_hostdb.m_hosts[i].m_pingInfo.m_flags & 
-			     PFLAG_MERGEMODE0 )
-				continue;
-			// oops, someone is not mode 0
-			return;
+			// set the start time here, but don't commit to m_cr just yet
+			m_savedStartTime = nowSynced;
+			// . wait for everyone to be in mode #0 in case they just
+			//   finished another daily merge. only host #0 does this loop.
+			// . PROBLEM: if host #0 crashes before everyone can get into 
+			//   mode 1+ and then host #0 is brought back up, then 
+			//   obviously, we will not be able to meet this condition,
+			//   therefore only check to see if this condition is 
+			//   satisfied our "second time around" (so we must complete
+			//   one daily merge before checking this again). that is why
+			//   i added "m_didDaily". -- MDW
+			for ( int32_t i = 0 ; m_didDaily && i<g_hostdb.getNumHosts() ; i++){
+				// skip ourselves, obviously we are in merge mode 2
+				if ( &g_hostdb.m_hosts[i] == g_hostdb.m_myHost )
+					continue;
+				// that's good if he is in mode 0
+				if ( g_hostdb.m_hosts[i].m_pingInfo.m_flags & 
+				     PFLAG_MERGEMODE0 )
+					continue;
+				// oops, someone is not mode 0
+				return;
+			}
+			// got one, save it
+			m_cr = cr;
+			// if we were hostid 0, go into merge mode 1 now
+			m_mergeMode = 1;
+			// bust out of loop
+			break;
 		}
-		// got one, save it
-		m_cr = cr;
-		// if we were hostid 0, go into merge mode 1 now
-		m_mergeMode = 1;
-		// bust out of loop
-		break;
 	}
 
 	// can we advance to merge mode 1?
