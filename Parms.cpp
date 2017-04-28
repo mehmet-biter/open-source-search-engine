@@ -683,12 +683,12 @@ static bool CommandForceIt(const char *rec) {
 }
 
 static bool CommandDiskDump(const char *rec) {
-	g_clusterdb.getRdb()->dumpTree();
-	g_tagdb.getRdb()->dumpTree();
-	g_spiderdb.getRdb()->dumpTree();
-	g_posdb.getRdb()->dumpTree();
-	g_titledb.getRdb()->dumpTree();
-	g_linkdb.getRdb()->dumpTree();
+	g_clusterdb.getRdb()->submitRdbDumpJob(true);
+	g_tagdb.getRdb()->submitRdbDumpJob(true);
+	g_spiderdb.getRdb()->submitRdbDumpJob(true);
+	g_posdb.getRdb()->submitRdbDumpJob(true);
+	g_titledb.getRdb()->submitRdbDumpJob(true);
+	g_linkdb.getRdb()->submitRdbDumpJob(true);
 	g_errno = 0;
 	return true;
 }

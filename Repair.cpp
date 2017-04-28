@@ -933,7 +933,7 @@ bool Repair::dumpLoop ( ) {
 	Rdb **rdbs = getSecondaryRdbs ( &nsr );
 	for ( int32_t i = 0 ; i < nsr ; i++ ) {
 		Rdb *rdb = rdbs[i];
-		rdb->dumpTree();
+		rdb->submitRdbDumpJob(true);
 	}
 	g_errno = 0;
 	// . register sleep wrapper to check when dumping is done

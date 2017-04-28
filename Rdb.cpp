@@ -713,39 +713,77 @@ bool Rdb::loadTree ( ) {
 	return true;
 }
 
+/// @todo ALC consider if we need one per rdb
+static GbThreadQueue s_rdbDumpThreadQueue;
 static time_t s_lastTryTime = 0;
+
+void Rdb::submitRdbDumpJob(bool forceDump) {
+	logTrace(g_conf.m_logTraceRdb, "BEGIN %s", m_dbname);
+
+	if (getNumUsedNodes() <= 0) {
+		logTrace(g_conf.m_logTraceRdb, "END. %s: No used nodes/keys. Returning", m_dbname);
+		return;
+	}
+
+	// never dump doledb any more. it's rdbtree only.
+	if (m_rdbId == RDB_DOLEDB) {
+		logTrace(g_conf.m_logTraceRdb, "END. %s: Rdb is doledb. Returning", m_dbname);
+		return;
+	}
+
+	// if it has been less than 3 seconds since our last failed attempt
+	// do not try again to avoid flooding our log
+	if (getTime() - s_lastTryTime < 3) {
+		logTrace(g_conf.m_logTraceRdb, "END. %s: Less than 3 seconds since last attempt. Returning", m_dbname);
+		return;
+	}
+
+	// don't dump if not 90% full
+	if (!forceDump && !needsDump()) {
+		logTrace(g_conf.m_logTraceRdb, "END. %s: Tree not 90 percent full and not force dump. Returning", m_dbname);
+		return;
+	}
+
+	// bail if already dumping
+	{
+		ScopedLock sl(m_isDumpingMtx);
+		if (m_isDumping) {
+			logTrace(g_conf.m_logTraceRdb, "END. %s: Already dumping. Returning", m_dbname);
+			return;
+		}
+
+		m_isDumping = true;
+	}
+
+	/// @todo ALC enable threading when we have made dependency thread-safe
+	//s_rdbDumpThreadQueue.addItem(this);
+	dumpRdb(this);
+
+	log(LOG_INFO, "db: Submitted job %p to dump tree for %s", this, getDbname());
+}
+
+void Rdb::dumpRdb(void *item) {
+	Rdb *rdb = static_cast<Rdb*>(item);
+
+	log(LOG_INFO, "db: Processing job %p to dump tree", item);
+	rdb->dumpTree();
+	log(LOG_INFO, "db: Processed job %p to dump tree", item);
+}
+
+bool Rdb::initializeRdbDumpThread() {
+	return s_rdbDumpThreadQueue.initialize(dumpRdb, "dump-rdb");
+}
+
+void Rdb::finalizeRdbDumpThread() {
+	s_rdbDumpThreadQueue.finalize();
+}
 
 // . start dumping the tree
 // . returns false and sets g_errno on error
 bool Rdb::dumpTree() {
 	logTrace( g_conf.m_logTraceRdb, "BEGIN %s", m_dbname );
 
-	if (getNumUsedNodes() <= 0) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: No used nodes/keys. Returning true", m_dbname );
-		return true;
-	}
-
-	// never dump doledb any more. it's rdbtree only.
-	if ( m_rdbId == RDB_DOLEDB ) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: Rdb is doledb. Returning true", m_dbname );
-		return true;
-	}
-
-	// bail if already dumping
-	if ( m_isDumping ) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: Already dumping. Returning true", m_dbname );
-		return true;
-	}
-
-	// if it has been less than 3 seconds since our last failed attempt
-	// do not try again to avoid flooding our log
-	if ( getTime() - s_lastTryTime < 3 ) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: Less than 3 seconds since last attempt. Returning true", m_dbname );
-		return true;
-	}
-
-	// don't dump if not 90% full
-	if ( ! needsDump() ) {
+	if (!needsDump()) {
 		log(LOG_INFO, "db: %s tree not 90 percent full but dumping.",m_dbname);
 	}
 
@@ -793,6 +831,7 @@ bool Rdb::dumpTree() {
 	// clear this for dumpCollLoop()
 	g_errno = 0;
 	m_dumpErrno = 0;
+
 	for (int collnum = 0; collnum < getNumBases(); collnum++) {
 		RdbBase *base = getBase(collnum);
 		if (base) {
@@ -800,11 +839,6 @@ bool Rdb::dumpTree() {
 			base->setDumpingFileId(-1000);
 		}
 	}
-
-	// we have our own flag here since m_dump::m_isDumping gets
-	// set to true between collection dumps, RdbMem.cpp needs
-	// a flag that doesn't do that... see RdbDump.cpp.
-	m_isDumping = true;
 
 	// this returns false if blocked, which means we're ok, so we ret true
 	if ( ! dumpCollLoop ( ) ) {
@@ -814,6 +848,7 @@ bool Rdb::dumpTree() {
 
 	// if it returns true with g_errno set, there was an error
 	if ( g_errno ) {
+		ScopedLock sl(m_isDumpingMtx);
 		logTrace( g_conf.m_logTraceRdb, "END. %s: dumpCollLoop g_error=%s. Returning false", m_dbname, mstrerror( g_errno) );
 		m_isDumping = false;
 		return false;
@@ -1039,7 +1074,10 @@ void Rdb::doneDumping ( ) {
 	// . we have to set this here otherwise RdbMem's memory ring buffer
 	//   will think the dumping is no longer going on and use the primary
 	//   memory for allocating new titleRecs and such and that is not good!
-	m_isDumping = false;
+	{
+		ScopedLock sl(m_isDumpingMtx);
+		m_isDumping = false;
+	}
 
 	// try merge for all, first one that needs it will do it, preventing
 	// the rest from doing it
@@ -1208,7 +1246,7 @@ bool Rdb::addList(collnum_t collnum, RdbList *list, bool checkForRoom) {
 		}
 
 		logTrace( g_conf.m_logTraceRdb, "%s: Not enough room. Calling dumpTree", m_dbname );
-		dumpTree();
+		submitRdbDumpJob(true);
 
 		// set g_errno after intiating the dump!
 		g_errno = ETRYAGAIN;
@@ -1250,7 +1288,7 @@ bool Rdb::addList(collnum_t collnum, RdbList *list, bool checkForRoom) {
 			if ( g_errno == ENOMEM ) {
 				// start dumping the tree to disk so we have room 4 add
 				logTrace( g_conf.m_logTraceRdb, "%s: Not enough memory. Calling dumpTree", m_dbname );
-				dumpTree();
+				submitRdbDumpJob(true);
 				// tell caller to try again later (1 second or so)
 				g_errno = ETRYAGAIN;
 			}

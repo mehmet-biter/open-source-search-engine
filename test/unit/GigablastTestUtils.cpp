@@ -47,6 +47,8 @@ static void deleteRdbFiles() {
 void GbTest::initializeRdbs() {
 	ASSERT_TRUE(g_loop.init());
 
+	ASSERT_TRUE(Rdb::initializeRdbDumpThread());
+
 	ASSERT_TRUE(g_collectiondb.loadAllCollRecs());
 
 	ASSERT_TRUE(g_posdb.init());
@@ -74,6 +76,8 @@ void GbTest::resetRdbs() {
 	g_posdb.reset();
 
 	g_collectiondb.reset();
+
+	Rdb::finalizeRdbDumpThread();
 
 	g_loop.reset();
 	new(&g_loop) Loop(); // some variables are not Loop::reset. Call the constructor to re-initialize them

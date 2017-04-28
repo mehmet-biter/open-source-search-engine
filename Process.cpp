@@ -653,6 +653,8 @@ bool Process::shutdown2() {
 	RdbBase::finalizeGlobalIndexThread();
 	Msg4In::finalizeIncomingThread();
 
+	Rdb::finalizeRdbDumpThread();
+
 	g_jobScheduler.cancel_all_jobs_for_shutdown();
 
 	static bool s_printed = false;

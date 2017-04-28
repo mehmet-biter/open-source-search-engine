@@ -16,7 +16,7 @@ static void saveAndReloadPosdbBucket() {
 }
 
 static void dumpPosdb() {
-	g_posdb.getRdb()->dumpTree();
+	g_posdb.getRdb()->submitRdbDumpJob(true);
 	g_posdb.getRdb()->getBase(0)->markNewFileReadable();
 	g_posdb.getRdb()->getBase(0)->generateGlobalIndex();
 }

@@ -408,7 +408,7 @@ bool RdbListNoMergeTest::m_savedMergeConf = g_conf.m_noInMemoryPosdbMerge;
 static void addListToTree(rdbid_t rdbId, collnum_t collNum, RdbList *list) {
 	Rdb *rdb = getRdbFromId(rdbId);
 	rdb->addList(collNum, list);
-	rdb->dumpTree();
+	rdb->submitRdbDumpJob(true);
 	rdb->getBase(0)->markNewFileReadable();
 	rdb->getBase(0)->generateGlobalIndex();
 }

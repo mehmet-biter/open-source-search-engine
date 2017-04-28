@@ -1645,6 +1645,11 @@ int main2 ( int argc , char *argv[] ) {
 	if ( g_conf.m_readOnlyMode )
 		log("db: -- Read Only Mode Set. Can Not Add New Data. --");
 
+	if (!Rdb::initializeRdbDumpThread()) {
+		logError("Unable to initialize rdb dump thread");
+		return 1;
+	}
+
 	// . collectiondb, does not use rdb, loads directly from disk
 	// . do this up here so RdbTree::fixTree_unlocked() can fix RdbTree::m_collnums
 	// . this is a fake init, cuz we pass in "true"
