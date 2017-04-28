@@ -1,4 +1,5 @@
 #include "ScalingFunctions.h"
+#include <math.h>
 
 double scale_linear(double x, double min_x, double max_x, double min_y, double max_y)
 {
@@ -38,3 +39,18 @@ double scale_quadratic(double x, double min_x, double max_x, double min_y, doubl
 	return ((r+1)*(r+1)-1)/3*y_range+min_y;
 }
 
+
+double scale_logarithmically(double x, double min_x, double max_x, double min_y, double max_y)
+{
+	x = log(x);
+	min_x = log(min_x);
+	max_x = log(max_x);
+	if(x<min_x) x=min_x;
+	if(x>max_x) x=max_x;
+	double x_range = max_x-min_x;
+	if(x_range==0.0) return min_y; //don't divide by zero
+	double y_range = max_y-min_y;
+	double r = (x-min_x)/x_range;
+	double y = min_y + r*y_range;
+	return y;
+}
