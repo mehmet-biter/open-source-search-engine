@@ -1347,11 +1347,9 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 		return false;
 	}
 
-	// don't continue if we're not allowed to add to Rdb
+	// we must not get into this state (we must not insert while dumping; and vice versa)
 	if (isDumping()) {
-		g_errno = ETRYAGAIN;
-		logTrace(g_conf.m_logTraceRdb, "END. %s: Unable to add. Returning false", m_dbname);
-		return false;
+		gbshutdownLogicError();
 	}
 
 	// sanity check
