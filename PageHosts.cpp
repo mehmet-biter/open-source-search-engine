@@ -359,13 +359,6 @@ skipReplaceHost:
 		if ((flags & PFLAG_RECOVERYMODE)&& format == FORMAT_HTML ) {
 			fb.safePrintf("<b title=\"Recovered from core"
 				      "\">x</b>");
-			// this is only 8-bits at the moment so it's capped
-			// at 255. this level is 1 the first time we core
-			// and are restarted.
-			if ( h->m_pingInfo.m_recoveryLevel > 1 )
-			fb.safePrintf("<sup>%" PRId32"</sup>",
-				      (int32_t)
-				      h->m_pingInfo.m_recoveryLevel);
 		}
 
 		if ((flags & PFLAG_RECOVERYMODE)&& format != FORMAT_HTML )

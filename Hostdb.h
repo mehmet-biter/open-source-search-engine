@@ -65,7 +65,7 @@ public:
 
 	char m_gbVersionStr[21];
 	char m_repairMode;
-	uint8_t m_recoveryLevel;
+	uint8_t m_unused18;
 };
 
 class Host {

@@ -1451,7 +1451,7 @@ void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
 	h->m_pingInfo.m_dailyMergeCollnum = pi.m_dailyMergeCollnum;
 	memcpy(h->m_pingInfo.m_gbVersionStr,pi.m_gbVersionStr,sizeof(pi.m_gbVersionStr));
 	h->m_pingInfo.m_repairMode = pi.m_repairMode;
-	h->m_pingInfo.m_recoveryLevel = pi.m_recoveryLevel;
+	h->m_pingInfo.m_unused18 = 0;
 }
 
 
