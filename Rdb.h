@@ -225,7 +225,6 @@ public:
 	// rebuilt files, pointed to by rdb2.
 	bool updateToRebuildFiles ( Rdb *rdb2 , char *coll ) ;
 
-	static void doneDumpingCollWrapper(void *state);
 	GbMutex m_isDumpingMtx;
 
 private:
@@ -246,7 +245,7 @@ private:
 	// get the directory name where this rdb stores its files
 	const char *getDir() const { return g_hostdb.m_dir; }
 
-	bool dumpCollLoop ( ) ;
+	bool dumpColl(RdbBase *base);
 
 	// . called when we've dumped the tree to disk w/ keys ordered
 	void doneDumping ( );
@@ -309,8 +308,6 @@ private:
 
 	char m_treeAllocName[64]; //for memory used m_tree/m_buckets
 	char m_memAllocName[64]; //for memory used by m_mem
-
-	collnum_t m_dumpCollnum;
 
 	// set to true when dumping tree so RdbMem does not use the memory
 	// being dumped to hold newly added records

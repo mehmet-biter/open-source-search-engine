@@ -89,7 +89,6 @@ RdbBase::RdbBase()
     m_mtxFileInfo(),
     m_docIdFileIndex(new docids_t),
     m_attemptOnlyMergeResumption(true),
-    m_dumpingFileNumber(-1),
     m_dumpingFileId(-1),
     m_submittingJobs(false),
     m_outstandingJobCount(0),

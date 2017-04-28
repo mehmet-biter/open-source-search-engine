@@ -46,7 +46,6 @@ Rdb::Rdb ( ) {
 	m_dumpErrno = 0;
 	m_useHalfKeys = false;
 	m_niceness = false;
-	m_dumpCollnum = 0;
 	m_isDumping = false;
 	m_rdbId = RDB_NONE;
 	m_ks = 0;
@@ -755,9 +754,7 @@ void Rdb::submitRdbDumpJob(bool forceDump) {
 		m_isDumping = true;
 	}
 
-	/// @todo ALC enable threading when we have made dependency thread-safe
-	//s_rdbDumpThreadQueue.addItem(this);
-	dumpRdb(this);
+	s_rdbDumpThreadQueue.addItem(this);
 
 	log(LOG_INFO, "db: Submitted job %p to dump tree for %s", this, getDbname());
 }
@@ -827,212 +824,135 @@ bool Rdb::dumpTree() {
 	////
 
 	// loop through collections, dump each one
-	m_dumpCollnum = (collnum_t)-1;
+
 	// clear this for dumpCollLoop()
 	g_errno = 0;
 	m_dumpErrno = 0;
 
-	for (int collnum = 0; collnum < getNumBases(); collnum++) {
+	for (int collnum = 0; collnum < getNumBases(); ++collnum) {
 		RdbBase *base = getBase(collnum);
 		if (base) {
-			base->setDumpingFileNumber(-1000);
-			base->setDumpingFileId(-1000);
+			base->setDumpingFileId(-1);
 		}
 	}
 
-	// this returns false if blocked, which means we're ok, so we ret true
-	if ( ! dumpCollLoop ( ) ) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: dumpCollLoop blocked. Returning true", m_dbname );
-		return true;
+	for (int collnum = 0; collnum < getNumBases(); ++collnum) {
+		RdbBase *base = getBase(collnum);
+		if (base && !dumpColl(base)) {
+			break;
+		}
 	}
 
-	// if it returns true with g_errno set, there was an error
-	if ( g_errno ) {
-		ScopedLock sl(m_isDumpingMtx);
-		logTrace( g_conf.m_logTraceRdb, "END. %s: dumpCollLoop g_error=%s. Returning false", m_dbname, mstrerror( g_errno) );
-		m_isDumping = false;
-		return false;
-	}
-
-	// otherwise, it completed without blocking
 	doneDumping();
 
 	logTrace( g_conf.m_logTraceRdb, "END. %s: Done dumping. Returning true", m_dbname );
 	return true;
 }
 
-// returns false if blocked, true otherwise
-bool Rdb::dumpCollLoop ( ) {
-	logTrace( g_conf.m_logTraceRdb, "BEGIN %s", m_dbname );
-
-	while(m_dumpCollnum < getNumBases()) {
-
-		// the only was g_errno can be set here is from a previous dump
-		// error?
-		if ( g_errno )
-			goto hadError;
-
-		// Find next collection to be dumped
-		while(++m_dumpCollnum < getNumBases()) {
-			if(g_collectiondb.getRec(m_dumpCollnum)) {
-				// ok, collection exists
-				break;
-			}
-		}
-
-		// if no more, we're done...
-		if(m_dumpCollnum >= getNumBases())
-			break;
-
-		RdbBase *base = getBase(m_dumpCollnum);
-
-		// hwo can this happen? error swappingin?
-		if ( ! base ) { 
-			log( LOG_WARN, "rdb: dumpcollloop base was null for cn=%" PRId32, (int32_t)m_dumpCollnum);
-			goto hadError;
-		}
-
-		// before we create the file, see if tree has anything for this coll
-		if (!getTreeCollExist(m_dumpCollnum)) {
-			continue;
-		}
-
-		// . MDW ADDING A NEW FILE SHOULD BE IN RDBDUMP.CPP NOW... NO!
-
-		// if we add to many files then we can not merge, because merge op needs to add a file too
-		if (base->getNumFiles() + 2 >= MAX_RDB_FILES) {
-			log(LOG_WARN, "db: could not dump tree to disk for cn=%i %s because it has %" PRId32" files on disk. "
-			              "Need to wait for merge operation.", (int)m_dumpCollnum, m_dbname, base->getNumFiles());
-			g_errno = ETOOMANYFILES;
-			return true;
-		}
-
-		// this file must not exist already, we are dumping the tree into it
-		int32_t fileId = 0;
-		int fn = base->addNewFile(&fileId);
-		if (fn < 0) {
-			log(LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror(g_errno));
-			return true;
-		}
-
-		base->setDumpingFileNumber(fn);
-		base->setDumpingFileId(fileId);
-
-		log(LOG_INFO,"build: Dumping to %s/%s for coll \"%s\".",
-		    base->getFile(fn)->getDir(),
-		    base->getFile(fn)->getFilename() ,
-		    g_collectiondb.getCollName ( m_dumpCollnum ) );
-
-		// what is the avg rec size?
-		int32_t numRecs = getNumUsedNodes();
-		int32_t avgSize;
-
-		if(m_useTree) {
-			if ( numRecs <= 0 ) numRecs = 1;
-			avgSize = m_tree.getMemOccupiedForList() / numRecs;
-		} else {
-			avgSize = m_buckets.getRecSize();
-		}
-
-		// . don't get more than 3000 recs from the tree because it gets slow
-		// . we'd like to write as much out as possible to reduce possible
-		//   file interlacing when synchronous writes are enabled. RdbTree::
-		//   getList() should really be sped up by doing the neighbor node
-		//   thing. would help for adding lists, too, maybe.
-		int32_t bufSize = 300 * 1024;
-		int32_t bufSize2 = 3000 * avgSize;
-		if (bufSize2 < bufSize) {
-			bufSize = bufSize2;
-		}
-
-		if (!m_useTree) {
-			//buckets are much faster at getting lists
-			bufSize *= 4;
-		}
-
-		// . RdbDump will set the filename of the map we pass to this
-		// . RdbMap should dump itself out CLOSE!
-		// . it returns false if blocked, true otherwise & sets g_errno on err
-		// . but we only return false on error here
-		if (!m_dump.set(base->getCollnum(),
-		                base->getFile(fn),
-		                getBuckets(),
-		                getTree(),
-		                base->getMap(fn),
-		                base->getIndex(fn),
-		                bufSize, // write buf size
-		                m_niceness, // niceness of 1 will NOT block
-		                this, // state
-		                doneDumpingCollWrapper,
-		                m_useHalfKeys,
-		                0LL,  // dst start offset
-		                KEYMIN(),  // prev last key
-		                m_ks,  // keySize
-		                m_rdbId)) {
-			logTrace( g_conf.m_logTraceRdb, "END. %s: RdbDump blocked. Returning false", m_dbname );
-			return false;
-		}
-
-		// error?
-		if ( g_errno ) {
-			log(LOG_WARN, "rdb: error dumping = %s . coll deleted from under us?", mstrerror(g_errno));
-			// shit, what to do here? this is causing our RdbMem
-			// to get corrupted!
-			// because if we end up continuing it calls doneDumping()
-			// and updates RdbMem! maybe set a permanent error then!
-			// and if that is there do not clear RdbMem!
-			m_dumpErrno = g_errno;
-			break;
-		}
+bool Rdb::dumpColl(RdbBase *base) {
+	// before we create the file, see if tree has anything for this coll
+	if (!getTreeCollExist(base->getCollnum())) {
+		return true;
 	}
 
-	logTrace( g_conf.m_logTraceRdb, "END. %s: No more. Returning true", m_dbname );
+	// if we add to many files then we can not merge, because merge op needs to add a file too
+	if (base->getNumFiles() + 2 >= MAX_RDB_FILES) {
+		log(LOG_ERROR, "db: could not dump tree to disk for cn=%i %s because it has %" PRId32" files on disk. "
+			"Need to wait for merge operation.", (int)base->getCollnum(), m_dbname, base->getNumFiles());
+		m_dumpErrno = ETOOMANYFILES;
+		return false;
+	}
+
+	// this file must not exist already, we are dumping the tree into it
+	int32_t fileId = 0;
+	int fn = base->addNewFile(&fileId);
+	if (fn < 0) {
+		log(LOG_ERROR, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror(g_errno));
+		m_dumpErrno = g_errno;
+		return false;
+	}
+
+	base->setDumpingFileId(fileId);
+
+	log(LOG_INFO, "build: Dumping to %s/%s for coll \"%s\".",
+	    base->getFile(fn)->getDir(),
+	    base->getFile(fn)->getFilename(),
+	    g_collectiondb.getCollName(base->getCollnum()));
+
+	// what is the avg rec size?
+	int32_t numRecs = getNumUsedNodes();
+	int32_t avgSize;
+
+	if(m_useTree) {
+		if ( numRecs <= 0 ) numRecs = 1;
+		avgSize = m_tree.getMemOccupiedForList() / numRecs;
+	} else {
+		avgSize = m_buckets.getRecSize();
+	}
+
+	/// @todo ALC test speed of getting more than 3000 records
+	// . don't get more than 3000 recs from the tree because it gets slow
+	// . we'd like to write as much out as possible to reduce possible
+	//   file interlacing when synchronous writes are enabled. RdbTree::
+	//   getList() should really be sped up by doing the neighbor node
+	//   thing. would help for adding lists, too, maybe.
+	int32_t bufSize = 300 * 1024;
+	int32_t bufSize2 = 3000 * avgSize;
+	if (bufSize2 < bufSize) {
+		bufSize = bufSize2;
+	}
+
+	if (!m_useTree) {
+		//buckets are much faster at getting lists
+		bufSize *= 4;
+	}
+
+	// . RdbDump will set the filename of the map we pass to this
+	// . RdbMap should dump itself out CLOSE!
+	// . it returns false if blocked, true otherwise & sets g_errno on err
+	// . but we only return false on error here
+	if (!m_dump.set(base->getCollnum(),
+	                base->getFile(fn),
+	                getBuckets(),
+	                getTree(),
+	                base->getMap(fn),
+	                base->getIndex(fn),
+	                bufSize, // write buf size
+	                m_niceness, // niceness of 1 will NOT block
+	                NULL,
+	                NULL,
+	                m_useHalfKeys,
+	                0LL,  // dst start offset
+	                KEYMIN(),  // prev last key
+	                m_ks,  // keySize
+	                m_rdbId)) {
+		log(LOG_ERROR, "db: RdbDump blocked for %s", m_dbname);
+
+		// we must never block
+		gbshutdownLogicError();
+	}
+
+	// error?
+	if (g_errno) {
+		log(LOG_WARN, "rdb: error dumping = %s", mstrerror(g_errno));
+		// shit, what to do here? this is causing our RdbMem
+		// to get corrupted!
+		// because if we end up continuing it calls doneDumping()
+		// and updates RdbMem! maybe set a permanent error then!
+		// and if that is there do not clear RdbMem!
+		m_dumpErrno = g_errno;
+
+		s_lastTryTime = getTime();
+
+		/// @todo ALC do we want to delete the current dumping file?
+//		if(!base->getFile(fn)->doesExist() || base->getFile(fn)->getFileSize() <= 0 ) {
+//			log("build: File %s is zero bytes, removing from memory.",base->getFile(fn)->getFilename());
+//			base->buryFiles ( fn , fn+1 );
+//		}
+		return false;
+	}
+
 	return true;
-
-hadError:
-	log( LOG_ERROR, "build: Error dumping collection: %s.",mstrerror(g_errno));
-	
-	// if swapped out, this will be NULL, so skip it
-	RdbBase *base = NULL;
-	if ( m_dumpCollnum >= 0 )
-		base = getBase(m_dumpCollnum);
-
-	// . if we wrote nothing, remove the file
-	// . if coll was deleted under us, base will be NULL!
-	if(base) {
-		int fn = base->getDumpingFileNumber();
-		if(!base->getFile(fn)->doesExist() || base->getFile(fn)->getFileSize() <= 0 ) {
-			log("build: File %s is zero bytes, removing from memory.",base->getFile(fn)->getFilename());
-			base->buryFiles ( fn , fn+1 );
-
-			// nothing is dumped. we still need to regenerate index
-			base->submitGlobalIndexJob(false, -1);
-		}
-	}
-
-	// game over, man
-	doneDumping();
-	// update this so we don't try too much and flood the log
-	// with error messages
-	s_lastTryTime = getTime();
-
-	logTrace(g_conf.m_logTraceRdb, "END. %s: Done dumping with g_errno=%s. Returning true",
-	         m_dbname, mstrerror( g_errno ) );
-	return true;
-}
-
-void Rdb::doneDumpingCollWrapper ( void *state ) {
-	Rdb *THIS = (Rdb *)state;
-
-	logTrace( g_conf.m_logTraceRdb, "dbname=%s collnum=%d", THIS->m_dbname, THIS->m_dumpCollnum );
-
-	// return if the loop blocked
-	if ( ! THIS->dumpCollLoop() ) {
-		return;
-	}
-
-	// otherwise, call big wrapper
-	THIS->doneDumping();
 }
 
 // Moved a lot of the logic originally here in Rdb::doneDumping into 
