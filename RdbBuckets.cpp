@@ -469,23 +469,17 @@ int32_t RdbBucket::getNode(const char *key) {
 
 	uint8_t ks = m_parent->m_ks;
 	int32_t recSize = m_parent->m_recSize;
-	int32_t i = 0;
-	char v;
-	char *kk;
 	int32_t low = 0;
-	int32_t high = m_numKeys - 1;
+	int32_t high = m_numKeys;
 
-	while (low <= high) {
-		int32_t delta = high - low;
-		i = low + (delta >> 1);
-		kk = m_keys + (recSize * i);
-		v = KEYCMP(key, kk, ks);
+	while (low < high) {
+		int32_t i = (low + high)/2;
+		const char *kk = m_keys + (recSize * i);
+		char v = KEYCMP(key, kk, ks);
 		if (v < 0) {
-			high = i - 1;
-			continue;
+			high = i;
 		} else if (v > 0) {
 			low = i + 1;
-			continue;
 		} else {
 			return i;
 		}

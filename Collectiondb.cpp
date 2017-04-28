@@ -870,12 +870,6 @@ collnum_t Collectiondb::getFirstCollnum() const {
 	return (collnum_t)-1;
 }
 
-const char *Collectiondb::getFirstCollName() const {
-	for ( int32_t i = 0 ; i < m_numRecs ; i++ )
-		if ( m_recs[i] ) return m_recs[i]->m_coll;
-	return NULL;
-}
-
 const char *Collectiondb::getCollName(collnum_t collnum) const {
 	if ( collnum < 0 || collnum > m_numRecs ) return NULL;
 	if ( ! m_recs[(int32_t)collnum] ) return NULL;

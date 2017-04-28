@@ -818,22 +818,9 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	f->set(dirName, name);
 
 	// if new ensure does not exist
-	if ( isNew && f->doesExist() ) {
-		log( LOG_WARN, "rdb: creating NEW file %s/%s which already exists!", f->getDir(), f->getFilename() );
-
-		if (f->getFileSize() == 0) {
-			// this used to move it to trash. but we probably want to know if we have any 0 byte file.
-			// so force a core
-			logError("zero sized file found");
-			gbshutdownCorrupted();
-		}
-
-		// nuke it either way
-		mdelete ( f , sizeof(BigFile),"RdbBFile");
-		delete (f); 
-
-		// we are done. i guess merges will stockpile, that sucks... things will slow down
-		return -1;
+	if (isNew && f->doesExist()) {
+		logError("rdb: trying to create NEW file %s/%s which already exists!", f->getDir(), f->getFilename());
+		gbshutdownCorrupted();
 	}
 
 	RdbMap  *m ;
@@ -1240,8 +1227,8 @@ bool RdbBase::incorporateMerge ( ) {
 	log(LOG_INFO, "merge: Files had %" PRId64" positive and %" PRId64" negative recs.",
 	    m_premergeNumPositiveRecords, m_premergeNumNegativeRecords);
 
-	// there should never be a scenario where we get 0 positive recs
-	if (postmergePositiveRecords == 0) {
+	// there should never be a scenario where we get 0 positive recs when we have positive recs before merge
+	if (m_premergeNumPositiveRecords != 0 && postmergePositiveRecords == 0) {
 		logError("Merge ended with 0 positive records.");
 		gbshutdownCorrupted();
 	}
