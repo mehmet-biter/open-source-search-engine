@@ -2349,14 +2349,20 @@ uint64_t RdbBase::getSpaceNeededForMerge(int startFileNum, int numFiles) const {
 void RdbBase::saveMaps() {
 	logTrace(g_conf.m_logTraceRdbBase, "BEGIN");
 
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		if ( ! m_fileInfo[i].m_map ) {
+	ScopedLock sl(m_mtxFileInfo);
+	for (int32_t i = 0; i < m_numFiles; i++) {
+		if (!m_fileInfo[i].m_map) {
 			log("base: map for file #%i is null", i);
 			continue;
 		}
 
-		bool status = m_fileInfo[i].m_map->writeMap ( false );
-		if ( !status ) {
+		if ((m_fileInfo[i].m_fileId & 0x01) == 0 || !m_fileInfo[i].m_allowReads) {
+			// don't write map for files that are merging/dumping
+			continue;
+		}
+
+		bool status = m_fileInfo[i].m_map->writeMap(false);
+		if (!status) {
 			// unable to write, let's abort
 			gbshutdownResourceError();
 		}
@@ -2388,14 +2394,15 @@ void RdbBase::saveIndexes() {
 		return;
 	}
 
+	ScopedLock sl(m_mtxFileInfo);
 	for (int32_t i = 0; i < m_numFiles; i++) {
 		if (!m_fileInfo[i].m_index) {
 			log(LOG_WARN, "base: index for file #%i is null", i);
 			continue;
 		}
 
-		if ((m_fileInfo[i].m_fileId & 0x01) == 0) {
-			// don't write index for files that are merging
+		if ((m_fileInfo[i].m_fileId & 0x01) == 0 || !m_fileInfo[i].m_allowReads) {
+			// don't write index for files that are merging/dumping
 			continue;
 		}
 
