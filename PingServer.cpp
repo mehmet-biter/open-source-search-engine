@@ -261,7 +261,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 
 	newPingInfo.m_hostId = me->m_hostId;
 
-	newPingInfo.m_localHostTimeMS = gettimeofdayInMilliseconds();
+	newPingInfo.m_unused0 = 0;
 
 	newPingInfo.m_udpSlotsInUseIncoming = g_udpServer.getNumUsedSlotsIncoming();
 
