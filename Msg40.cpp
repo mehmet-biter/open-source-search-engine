@@ -345,6 +345,9 @@ bool Msg40::federatedLoop ( ) {
 				 m_si->m_hashGroupWeightInUrl,
 				 m_si->m_hashGroupWeightInMenu);
 	mr.m_synonymWeight             = m_si->m_synonymWeight;
+	mr.m_pageTemperatureWeightMin = m_si->m_pageTemperatureWeightMin;
+	mr.m_pageTemperatureWeightMax = m_si->m_pageTemperatureWeightMax;
+
 	mr.m_usePageTemperatureForRanking = m_si->m_usePageTemperatureForRanking;
 	memcpy(mr.m_flagScoreMultiplier, m_si->m_flagScoreMultiplier, sizeof(mr.m_flagScoreMultiplier));
 	memcpy(mr.m_flagRankAdjustment, m_si->m_flagRankAdjustment, sizeof(mr.m_flagRankAdjustment));

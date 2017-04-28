@@ -59,6 +59,8 @@ class Msg39Request {
 
 	ScoringWeights m_scoringWeights;
 	float   m_synonymWeight;
+	float	m_pageTemperatureWeightMin;
+	float	m_pageTemperatureWeightMax;
 	bool    m_usePageTemperatureForRanking;
 
 	float m_flagScoreMultiplier[26];
