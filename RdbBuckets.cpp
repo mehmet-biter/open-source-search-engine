@@ -473,7 +473,7 @@ int32_t RdbBucket::getNode(const char *key) {
 	int32_t high = m_numKeys;
 
 	while (low < high) {
-		int32_t i = (high - low)/2;
+		int32_t i = (low + high)/2;
 		const char *kk = m_keys + (recSize * i);
 		char v = KEYCMP(key, kk, ks);
 		if (v < 0) {

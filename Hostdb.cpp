@@ -1429,7 +1429,7 @@ int32_t Hostdb::getBestHosts2IP(const Host *h) {
 void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
 	ScopedLock sl(m_mtxPinginfo);
 
-	h->m_pingInfo.m_localHostTimeMS = pi.m_localHostTimeMS;
+	h->m_pingInfo.m_unused0 = 0;
 	h->m_pingInfo.m_hostId = pi.m_hostId;
 	h->m_pingInfo.m_loadAvg = pi.m_loadAvg;
 	h->m_pingInfo.m_percentMemUsed = pi.m_percentMemUsed;
