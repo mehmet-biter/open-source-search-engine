@@ -176,9 +176,7 @@ static void Msg4In::handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
 		return;
 	}
 
-	/// @todo ALC enable threading when we have made dependency thread-safe
-	//s_msg4IncomingThreadQueue.addItem(slot);
-	processMsg4(slot);
+	s_incomingThreadQueue.addItem(slot);
 }
 
 struct RdbItem {
