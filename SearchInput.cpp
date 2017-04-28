@@ -65,6 +65,8 @@ SearchInput::SearchInput() {
 	memset(m_queryId, 0, sizeof(m_queryId));
 	m_doMaxScoreAlgo = false;
 	m_synonymWeight = 0.9;
+	m_pageTemperatureWeightMin = 1.0;
+	m_pageTemperatureWeightMax = 20.0;
 	m_usePageTemperatureForRanking = true;
 	m_numFlagScoreMultipliers=26;
 	for(int i=0; i<26; i++)

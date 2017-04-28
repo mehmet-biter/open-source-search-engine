@@ -1239,16 +1239,22 @@ bool RdbBase::incorporateMerge ( ) {
 		//note: also seen when resuming an interrupted merge, inwhich case there is probably nothing wrong
 	}
 
-	if ( postmergePositiveRecords < m_premergeNumPositiveRecords - m_premergeNumNegativeRecords ) {
+	if ( postmergePositiveRecords < (m_premergeNumPositiveRecords - m_premergeNumNegativeRecords) ) {
 		int64_t lostPositive = m_premergeNumPositiveRecords - postmergePositiveRecords;
-		double lostPercentage = (lostPositive * 100.00) / m_premergeNumPositiveRecords;
 
-		log(LOG_INFO,"merge: %s: lost %" PRId64" (%.2f%%) positives", m_dbname, lostPositive, lostPercentage);
+		if (m_premergeNumPositiveRecords > 0) {
+			double lostPercentage = (lostPositive * 100.00) / m_premergeNumPositiveRecords;
 
-		int32_t maxLostPercentage = getMaxLostPositivesPercentage(m_rdb->getRdbId());
-		if (lostPercentage > maxLostPercentage) {
-			log(LOG_ERROR, "merge: %s: lost more than %d%% of positive records. Aborting.", m_dbname, maxLostPercentage);
-			gbshutdownCorrupted();
+			log(LOG_INFO,"merge: %s: lost %" PRId64" (%.2f%%) positives", m_dbname, lostPositive, lostPercentage);
+
+			int32_t maxLostPercentage = getMaxLostPositivesPercentage(m_rdb->getRdbId());
+			if (lostPercentage > maxLostPercentage) {
+				log(LOG_ERROR, "merge: %s: lost more than %d%% of positive records. Aborting.", m_dbname, maxLostPercentage);
+				gbshutdownCorrupted();
+			}
+		} else {
+			// this case is unlikely, but coverity complained about it
+			log(LOG_INFO,"merge: %s: lost %" PRId64" positives", m_dbname, lostPositive);
 		}
 	}
 

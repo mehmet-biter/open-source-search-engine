@@ -3665,6 +3665,26 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "Page temp weight min";
+	m->m_desc  = "Page temp is scaled to be between the min and max";
+	m->m_cgi   = "pagetempweightmin";
+	simple_m_set(SearchInput,m_pageTemperatureWeightMin);
+	m->m_defOff2 = offsetof(Conf,m_pageTemperatureWeightMin);
+	m->m_def   = "1.000000";
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "Page temp weight max";
+	m->m_desc  = "Page temp is scaled to be between the min and max";
+	m->m_cgi   = "pagetempweightmax";
+	simple_m_set(SearchInput,m_pageTemperatureWeightMax);
+	m->m_defOff2 = offsetof(Conf,m_pageTemperatureWeightMax);
+	m->m_def   = "20.000000";
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	m->m_title = "Use page temperature";
 	m->m_desc  = "Use page temperature (if available) for ranking";
 	m->m_cgi   = "use_page_temperature";
@@ -4017,6 +4037,26 @@ void Parms::init ( ) {
 	simple_m_set(Conf,m_synonymWeight);
 	m->m_def   = "0.900000";
 	m->m_group = true;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
+	m->m_page  = PAGE_RANKING;
+	m++;
+
+	m->m_title = "Page temp weight min";
+	m->m_desc  = "Page temp is scaled to be between the min and max";
+	m->m_cgi   = "pagetempweightmin";
+	simple_m_set(Conf,m_pageTemperatureWeightMin);
+	m->m_def   = "1.000000";
+	m->m_group = false;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
+	m->m_page  = PAGE_RANKING;
+	m++;
+
+	m->m_title = "Page temp weight max";
+	m->m_desc  = "Page temp is scaled to be between the min and max";
+	m->m_cgi   = "pagetempweightmax";
+	simple_m_set(Conf,m_pageTemperatureWeightMax);
+	m->m_def   = "20.000000";
+	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m++;

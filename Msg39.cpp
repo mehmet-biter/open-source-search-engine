@@ -105,7 +105,10 @@ void Msg39Request::reset() {
 	m_useQueryStopWords       = true;
 	m_doMaxScoreAlgo          = true;
 	m_synonymWeight           = 0.9;
+	m_pageTemperatureWeightMin = 1.0;
+	m_pageTemperatureWeightMax = 20.0;
 	m_usePageTemperatureForRanking = true;
+
 	for(int i=0; i<26; i++)
 		m_flagScoreMultiplier[i] = 1.0;
 	for(int i=0; i<26; i++)

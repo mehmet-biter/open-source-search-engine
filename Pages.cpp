@@ -2411,25 +2411,6 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		mb->safePrintf("%s",boxEnd);
 	}
 
-	// out of disk space?
-	int32_t out = 0;
-	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
-		Host *h = &g_hostdb.m_hosts[i];
-		if ( h->m_pingInfo.m_diskUsage < 98.0 ) continue;
-		out++;
-	}
-	if ( out > 0 ) {
-		if ( adds ) mb->safePrintf("<br>");
-		adds++;
-		const char *s = "s are";
-		if ( out == 1 ) s = " is";
-		mb->safePrintf("%s",box);
-		mb->safePrintf("%" PRId32" host%s over 98%% disk usage. "
-			       "See the <a href=/admin/hosts?c=%s>"
-			       "hosts</a> table.",out,s,coll);
-		mb->safePrintf("%s",boxEnd);
-	}
-
 	// injections disabled?
 	if ( ! g_conf.m_injectionsEnabled ) {
 		if ( adds ) mb->safePrintf("<br>");
@@ -2487,7 +2468,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		if ( adds ) mb->safePrintf("<br>");
 		adds++;
 		const char *s = "s are";
-		if ( out == 1 ) s = " is";
+		if ( jammedHosts == 1 ) s = " is";
 		mb->safePrintf("%s",box);
 		mb->safePrintf("%" PRId32" host%s jammed with "
 			       "over %" PRId32" unhandled "

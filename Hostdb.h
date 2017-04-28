@@ -43,16 +43,14 @@ int32_t *getLocalIps ( ) ;
 
 class PingInfo {
 public:
-	// this timestamp MUST be on top because we set requestSize to 8
-	// and treat it like an old 8-byte ping in PingServer.cpp
-	int64_t m_localHostTimeMS;
+	int64_t m_unused0; //used to be a timestamp for clock synchronization
 	int32_t m_hostId;
-	int32_t m_loadAvg;
+	int32_t m_unused2; //used for the m_loadAvg
 	float m_percentMemUsed;
-	float m_cpuUsage;
+	float m_unused4; //used to be m_cpuUsage
 	int32_t m_totalDocsIndexed;
 	int32_t m_hostsConfCRC;
-	float m_diskUsage;
+	float m_unused7; //used to be m_diskUsage
 	int32_t m_flags;
 	// some new stuff
 	int32_t m_numCorruptDiskReads;
@@ -67,7 +65,7 @@ public:
 
 	char m_gbVersionStr[21];
 	char m_repairMode;
-	uint8_t m_recoveryLevel;
+	uint8_t m_unused18;
 };
 
 class Host {

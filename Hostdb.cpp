@@ -683,7 +683,7 @@ createFile:
 		m_hosts[i].m_emailCode = -2;
 		// reset these
 		m_hosts[i].m_pingInfo.m_flags    = 0;
-		m_hosts[i].m_pingInfo.m_cpuUsage = 0.0;
+		m_hosts[i].m_pingInfo.m_unused4 = 0.0;
 		m_hosts[i].m_loadAvg  = 0.0;
 
 		m_hosts[i].m_lastResponseReceiveTimestamp = 0;
@@ -1429,14 +1429,14 @@ int32_t Hostdb::getBestHosts2IP(const Host *h) {
 void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
 	ScopedLock sl(m_mtxPinginfo);
 
-	h->m_pingInfo.m_localHostTimeMS = pi.m_localHostTimeMS;
+	h->m_pingInfo.m_unused0 = 0;
 	h->m_pingInfo.m_hostId = pi.m_hostId;
-	h->m_pingInfo.m_loadAvg = pi.m_loadAvg;
+	h->m_pingInfo.m_unused2 = 0;
 	h->m_pingInfo.m_percentMemUsed = pi.m_percentMemUsed;
-	h->m_pingInfo.m_cpuUsage = pi.m_cpuUsage;
+	h->m_pingInfo.m_unused4 = 0.0;
 	h->m_pingInfo.m_totalDocsIndexed = pi.m_totalDocsIndexed;
 	h->m_pingInfo.m_hostsConfCRC = pi.m_hostsConfCRC;
-	h->m_pingInfo.m_diskUsage = pi.m_diskUsage;
+	h->m_pingInfo.m_unused7 = 0.0;
 	h->m_pingInfo.m_flags = pi.m_flags;
 	h->m_pingInfo.m_numCorruptDiskReads = pi.m_numCorruptDiskReads;
 	h->m_pingInfo.m_numOutOfMems = pi.m_numOutOfMems;
@@ -1451,7 +1451,7 @@ void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
 	h->m_pingInfo.m_dailyMergeCollnum = pi.m_dailyMergeCollnum;
 	memcpy(h->m_pingInfo.m_gbVersionStr,pi.m_gbVersionStr,sizeof(pi.m_gbVersionStr));
 	h->m_pingInfo.m_repairMode = pi.m_repairMode;
-	h->m_pingInfo.m_recoveryLevel = pi.m_recoveryLevel;
+	h->m_pingInfo.m_unused18 = 0;
 }
 
 

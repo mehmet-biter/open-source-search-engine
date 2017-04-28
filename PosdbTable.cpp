@@ -4312,11 +4312,10 @@ void PosdbTable::intersectLists10_r ( ) {
 
 			if(m_msg39req->m_usePageTemperatureForRanking) {
 				use_page_temperature = true;
-				page_temperature = g_pageTemperatureRegistry.query_page_temperature(m_docId);
+				page_temperature = g_pageTemperatureRegistry.query_page_temperature(m_docId, m_msg39req->m_pageTemperatureWeightMin, m_msg39req->m_pageTemperatureWeightMax);
 				score *= page_temperature;
-				logTrace(g_conf.m_logTracePosdb, "Page temperature for docId %" PRIu64 " is %.4f, score %f->%f", m_docId, page_temperature, score_before_page_temp, score);
+				logTrace(g_conf.m_logTracePosdb, "Page temperature for docId %" PRIu64 " is %.14f, score %f -> %f", m_docId, page_temperature, score_before_page_temp, score);
 			}
-
 
 
 			//#

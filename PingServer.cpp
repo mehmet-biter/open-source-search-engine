@@ -210,9 +210,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	// let the receiver know our repair mode
 	newPingInfo.m_repairMode = g_repairMode;
 
-	int32_t l_loadavg = (int32_t) (g_process.getLoadAvg() * 100.0);
-	//gbmemcpy(p, &l_loadavg, sizeof(int32_t));	p += sizeof(int32_t);
-	newPingInfo.m_loadAvg = l_loadavg ;
+	newPingInfo.m_unused2 = 0;
 
 	// then our percent mem used
 	float mem = g_mem.getUsedMemPercentage();
@@ -229,7 +227,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	if ( g_hostdb.getCRC() == 0 ) { g_process.shutdownAbort(true); }
 
 	// disk usage (df -ka)
-	newPingInfo.m_diskUsage = g_process.m_diskUsage;
+	newPingInfo.m_unused7 = 0.0;
 
 	// flags indicating our state
 	int32_t flags = 0;
@@ -247,9 +245,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	if ( g_dailyMerge.m_mergeMode ==0 || g_dailyMerge.m_mergeMode == 6 )
 		flags |= PFLAG_MERGEMODE0OR6;
 
-	uint8_t rv8 = (uint8_t)g_recoveryLevel;
-	if ( g_recoveryLevel > 255 ) rv8 = 255;
-	newPingInfo.m_recoveryLevel = rv8;
+	newPingInfo.m_unused18 = 0;
 
 	//*(int32_t *)p = flags; p += 4; // 4 bytes
 	newPingInfo.m_flags = flags;
@@ -261,14 +257,13 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 
 	newPingInfo.m_hostId = me->m_hostId;
 
-	newPingInfo.m_localHostTimeMS = gettimeofdayInMilliseconds();
+	newPingInfo.m_unused0 = 0;
 
 	newPingInfo.m_udpSlotsInUseIncoming = g_udpServer.getNumUsedSlotsIncoming();
 
 	newPingInfo.m_tcpSocketsInUse = g_httpServer.m_tcp.m_numUsed;
 
-	// from Loop.cpp
-	newPingInfo.m_cpuUsage = 0.0;
+	newPingInfo.m_unused4 = 0.0;
 
 	// store the gbVersionStrBuf now, just a date with a \0 included
 	char *v = getVersion();
