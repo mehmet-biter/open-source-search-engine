@@ -4171,12 +4171,22 @@ void PosdbTable::intersectLists10_r ( ) {
 
 
 			//# 
-			//# Give score boost if query and doc language is the same.
+			//# Give score boost if query and doc language is the same, 
+			//# and optionally a different boost if the language of the
+			//# page is unknown.
+			//#
 			//# Use "qlang" parm to set the language. i.e. "&qlang=fr"
 			//#
-			if ( m_msg39req->m_language == 0 || docLang == 0 || m_msg39req->m_language == docLang) {
-				score *= (m_msg39req->m_sameLangWeight); //SAMELANGMULT;
-				logTrace(g_conf.m_logTracePosdb, "Giving score a matching language boost of x%f: %f for docId %" PRIu64 "", m_msg39req->m_sameLangWeight, score, m_docId);
+			if ( m_msg39req->m_language != 0 ) {
+				if( m_msg39req->m_language == docLang) {
+					score *= (m_msg39req->m_sameLangWeight);
+					logTrace(g_conf.m_logTracePosdb, "Giving score a matching language boost of x%f: %f for docId %" PRIu64 "", m_msg39req->m_sameLangWeight, score, m_docId);
+				}
+				else
+				if( docLang == 0 ) {
+					score *= (m_msg39req->m_unknownLangWeight); 
+					logTrace(g_conf.m_logTracePosdb, "Giving score an unknown language boost of x%f: %f for docId %" PRIu64 "", m_msg39req->m_unknownLangWeight, score, m_docId);
+				}
 			}
 
 			double page_temperature = 0;
@@ -4523,11 +4533,15 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	//score *= perfectWordSpamWeight * perfectWordSpamWeight;
 	score *= (((float)siteRank)*m_siteRankMultiplier+1.0);
 
-	// language boost if same language (or no lang specified)
-	if ( m_msg39req->m_language == docLang ||
-	     m_msg39req->m_language == 0 || 
-	     docLang == 0 ) {
-		score *= m_msg39req->m_sameLangWeight;//SAMELANGMULT;
+	// language boost if language specified and if page is same language, or unknown language
+	if ( m_msg39req->m_language != 0 ) {
+		if( m_msg39req->m_language == docLang) {
+			score *= (m_msg39req->m_sameLangWeight);
+		}
+		else
+		if( docLang == 0 ) {
+			score *= (m_msg39req->m_unknownLangWeight); 
+		}
 	}
 	
 	// assume the other term we pair with will be 1.0

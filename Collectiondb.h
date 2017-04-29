@@ -240,6 +240,7 @@ public:
 
 	//ranking settings
 	float m_sameLangWeight;
+	float m_unknownLangWeight;
 
 	// Language stuff
 	char 			m_defaultSortLanguage2[6];

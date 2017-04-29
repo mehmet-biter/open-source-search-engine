@@ -1021,6 +1021,7 @@ CollectionRec::CollectionRec() {
 	m_summDedupNumLines = 0;
 	m_maxQueryTerms = 0;
 	m_sameLangWeight = 0.0;
+	m_unknownLangWeight = 0.0;
 	memset(m_defaultSortLanguage2, 0, sizeof(m_defaultSortLanguage2));
 	m_importEnabled = false;
 	m_numImportInjects = 0;

@@ -48,6 +48,7 @@ SearchInput::SearchInput() {
 	m_maxSerpScore = 0.0;
 	m_minSerpDocId = 0;
 	m_sameLangWeight = 0.0;
+	m_unknownLangWeight = 0.0;
 	m_defaultSortLang = NULL;
 	m_dedupURL = 0;
 	m_percentSimilarSummary = 0;

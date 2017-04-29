@@ -64,6 +64,7 @@ void Msg39Request::reset() {
 	size_query                = 0;
 	size_whiteList            = 0;
 	m_sameLangWeight          = 20.0;
+	m_unknownLangWeight       = 10.0;
 
 	// -1 means to not to docid range restriction
 	m_minDocId = -1LL;

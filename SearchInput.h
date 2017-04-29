@@ -130,6 +130,7 @@ public:
 	int64_t m_minSerpDocId;
 
 	float m_sameLangWeight;
+	float m_unknownLangWeight;
 
 	// prefer what lang in the results. it gets a 20x boost. "en" "xx" "fr"
 	char 	      *m_defaultSortLang;

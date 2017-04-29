@@ -3761,6 +3761,18 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "unknown language weight";
+	m->m_desc  = "Use this to override the default uknown language weight "
+		"for this collection. We multiply a result's score by this value "
+		"if the user requested a specific language, but the language of the "
+		"indexed page could not be determined.";
+	simple_m_set(SearchInput,m_unknownLangWeight);
+	m->m_defOff= offsetof(CollectionRec,m_unknownLangWeight);
+	m->m_cgi  = "ulangw";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	m->m_title = "max query terms";
 	m->m_desc  = "Do not allow more than this many query terms. Helps "
 		"prevent big queries from resource hogging.";
@@ -3829,17 +3841,30 @@ void Parms::init ( ) {
 
 	m->m_title = "language weight";
 	m->m_desc  = "Default language weight if document matches query "
-		"language. Use this to give results that match the specified "
-		"the specified &qlang higher ranking, or docs whose language "
-		"is unknown. Can be overridden with "
+		"language. Use this to give results that match "
+		"the specified &qlang higher ranking. Can be overridden with "
 		"&langw in the query url.";
-	m->m_cgi   = "langweight";
+	m->m_cgi   = "langw";
 	simple_m_set(CollectionRec,m_sameLangWeight);
 	m->m_def   = "20.000000";
 	m->m_group = true;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m++;
+
+	m->m_title = "unknown language weight";
+	m->m_desc  = "Default language weight if query language is specified but document "
+		"language could not be determined. Use this to give docs with unknown language a "
+		"higher ranking when qlang is specified. Can be overridden with "
+		"&ulangw in the query url.";
+	m->m_cgi   = "ulangw";
+	simple_m_set(CollectionRec,m_unknownLangWeight);
+	m->m_def   = "10.000000";
+	m->m_group = true;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
+	m->m_page  = PAGE_RANKING;
+	m++;
+
 
 	m->m_title = "termfreq min";
 	m->m_desc  = "Term frequency estimate minimum";
