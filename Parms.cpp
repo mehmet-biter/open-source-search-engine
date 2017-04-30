@@ -827,8 +827,7 @@ bool Parms::setGigablastRequest ( TcpSocket *socket ,
 		//if ( (m->m_perms & user) == 0 ) continue;
 		// set it. now our TYPE_CHARPTR will just be set to it directly
 		// to save memory...
-		setParm ( (char *)THIS , m, 0, v, false,//not html enc
-			  false ); // true );
+		setParm ( (char *)THIS , m, 0, v);
 	}
 
 	return true;
@@ -2031,7 +2030,7 @@ bool Parms::setFromRequest ( HttpRequest *r ,
 		     m->m_type != TYPE_STRING &&
 		     m->m_type != TYPE_STRINGBOX) continue;
 		// set it
-		setParm(THIS, m, field_index, v, false, false);
+		setParm(THIS, m, field_index, v);
 	}
 
 	return true;
@@ -2078,7 +2077,7 @@ bool Parms::insertParm ( int32_t i , int32_t an ,  char *THIS ) {
 	*(int32_t *)(THIS + m->m_arrayCountOffset) = *(int32_t *)(THIS + m->m_arrayCountOffset)+1;
 
 	// put the defaults in the inserted line
-	setParm ( (char *)THIS , m, an , m->m_def , false ,false );
+	setParm ( (char *)THIS , m, an , m->m_def);
 	return true;
 }
 
@@ -2128,9 +2127,7 @@ bool Parms::removeParm ( int32_t i , int32_t an , char *THIS ) {
 
 
 
-void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, bool isHtmlEncoded, bool fromRequest) {
-
-	if ( fromRequest ) { g_process.shutdownAbort(true); }
+void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s) {
 
 	// . this is just for setting CollectionRecs, so skip if offset < 0
 	// . some parms are just for SearchInput (search parms)
@@ -2170,8 +2167,6 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		case TYPE_BOOL:
 		case TYPE_PRIORITY: {
 			char *ptr = (char*)THIS + m->m_off + sizeof(char)*array_index;
-			if ( fromRequest && *(char*)ptr == atol(s))
-				return;
 			*(char*)ptr = s ? atol(s) : 0;
 			break;
 		}
@@ -2191,25 +2186,16 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		}
 		case TYPE_FLOAT: {
 			char *ptr = (char*)THIS + m->m_off + sizeof(float)*array_index;
-			if( fromRequest && almostEqualFloat(*(float *)ptr, (s ? (float)atof(s) : 0)) ) {
-				return;
-			}
-
 			*(float*)ptr = s ? (float)atof ( s ) : 0;
 			break;
 		}
 		case TYPE_DOUBLE: {
 			char *ptr = (char*)THIS + m->m_off + sizeof(double)*array_index;
-			if( fromRequest && almostEqualFloat(*(double*)ptr, ( s ? (double)atof(s) : 0)) ) {
-				return;
-			}
 			*(double*)ptr = s ? (double)atof ( s ) : 0;
 			break;
 		}
 		case TYPE_IP: {
 			char *ptr = (char*)THIS + m->m_off + sizeof(int32_t)*array_index;
-			if ( fromRequest && *(int32_t*)ptr == (s ? (int32_t)atoip(s,strlen(s)) : 0) )
-				return;
 			*(int32_t*)ptr = s ? (int32_t)atoip(s,strlen(s)) : 0;
 			break;
 		}
@@ -2219,16 +2205,11 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 			int32_t v = s ? atol(s) : 0;
 			// min is considered valid if >= 0
 			if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
-			if ( fromRequest && *(int32_t *)ptr == v )
-				return;
 			*(int32_t *)ptr = v;
 			break;
 		}
 		case TYPE_INT64: {
 			char *ptr = (char*)THIS + m->m_off + sizeof(int64_t)*array_index;
-			if ( fromRequest && *(uint64_t*)ptr == ( s ? strtoull(s,NULL,10) : 0) ) {
-				return;
-			}
 			*(int64_t*)ptr = s ? strtoull(s,NULL,10) : 0;
 			break;
 		}
@@ -2240,18 +2221,9 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 			// SafeBufs "array_index" is the # in the array, starting at 0
 			char *ptr = (char*)THIS + m->m_off + sizeof(SafeBuf)*array_index;
 			SafeBuf *sb = (SafeBuf *)ptr;
-			int32_t oldLen = sb->length();
-			// why was this commented out??? we need it now that we
-			// send email alerts when parms change!
-			if ( fromRequest &&
-			     ! isHtmlEncoded && oldLen == len &&
-			     memcmp ( sb->getBufStart() , s , len ) == 0 )
-				return;
-			// nuke it
 			sb->purge();
 			// this means that we can not use string POINTERS as parms!!
-			if ( ! isHtmlEncoded ) sb->safeMemcpy ( s , len );
-			else                   len = sb->htmlDecode (s,len);
+			sb->safeMemcpy ( s , len );
 			// tag it
 			sb->setLabel ( "parm1" );
 			// ensure null terminated
@@ -2267,22 +2239,11 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 			int32_t len = strlen(s);
 			if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
 			char *dst = THIS + m->m_off + m->m_size*array_index;
-			// why was this commented out??? we need it now that we
-			// send email alerts when parms change!
-			if ( fromRequest &&
-			     ! isHtmlEncoded && (int32_t)strlen(dst) == len &&
-			     memcmp ( dst , s , len ) == 0 ) {
-				return;
-			}
 
 			// this means that we can not use string POINTERS as parms!!
-			if ( !isHtmlEncoded ) {
-				gbmemcpy( dst, s, len );
-			} else {
-				len = htmlDecode( dst, s, len, false );
-			}
-
+			gbmemcpy( dst, s, len );
 			dst[len] = '\0';
+
 			// . might have to set length
 			// . used for CollectionRec::m_htmlHeadLen and m_htmlTailLen
 			if ( m->m_plen >= 0 )
@@ -2295,13 +2256,8 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 			log(LOG_LOGIC,"admin: attempt to set parameter %s from cgi-request", m->m_title);
 			return;
 	}
-
-	// do not send if setting from startup
-	if ( ! fromRequest ) return;
-
-	// note it in the log
-	log("admin: parm \"%s\" changed value",m->m_title);
 }
+
 
 void Parms::setToDefault(char *THIS, parameter_object_type_t objType, CollectionRec *argcr) {
 	// init if we should
@@ -2344,7 +2300,7 @@ void Parms::setToDefault(char *THIS, parameter_object_type_t objType, Collection
 				char *dst = THIS + m->m_off;
 				memcpy(dst, raw_default, m->m_size);
 			} else
-				setParm(THIS , m, 0, m->m_def, false/*not enc.*/, false );
+				setParm(THIS , m, 0, m->m_def);
 		} else if(m->m_fixed<=0) {
 			//variable-sized array
 			//empty it
@@ -2357,7 +2313,7 @@ void Parms::setToDefault(char *THIS, parameter_object_type_t objType, Collection
 					memcpy(dst, raw_default, m->m_size);
 					raw_default = ((char*)raw_default) + m->m_size;
 				} else
-					setParm(THIS, m, k, m->m_def, false/*not enc.*/, false);
+					setParm(THIS, m, k, m->m_def);
 			}
 		}
 	}
@@ -2485,7 +2441,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		v[nb] = '\0';
 
 		// set our parm
-		setParm( (char *)THIS, m, j, v, false, false );
+		setParm( (char *)THIS, m, j, v);
 
 		// we were set from the explicit file
 		//((CollectionRec *)THIS)->m_orig[i] = 2;
@@ -2569,7 +2525,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		v[nb] = '\0';
 
 		// set our parm
-		setParm( (char *)THIS, m, j, v, false /*is html encoded?*/, false );
+		setParm( (char *)THIS, m, j, v);
 
 		// do not repeat same node
 		nn++;
@@ -4112,6 +4068,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
+
 	m->m_title = "Rank adjustment";
 	m->m_cgi   = "flag_rerank";
 	m->m_xml   = "RankAdjustment";
