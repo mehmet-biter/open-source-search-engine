@@ -17,17 +17,24 @@ void ScoringWeights::init(float diversityWeightMin, float diversityWeightMax,
 			  float hashGroupWeightInMenu)
 {
 	for(int i = 0; i <= MAXDIVERSITYRANK; i++)
-		m_diversityWeights[i] = scale_quadratic(i,0,MAXDIVERSITYRANK,diversityWeightMin,diversityWeightMax);
+		m_diversityWeights[i] = scale_quadratic(i, 0, MAXDIVERSITYRANK, diversityWeightMin, diversityWeightMax);
 	
 	for(int i = 0; i <= MAXDENSITYRANK; i++)
-		m_densityWeights[i] = scale_quadratic(i,0,MAXDENSITYRANK,densityWeightMin,densityWeightMax);
+		m_densityWeights[i] = scale_quadratic(i, 0, MAXDENSITYRANK, densityWeightMin, densityWeightMax);
 	
 	// make sure if word spam is 0 that the weight is not 0
 	for(int i = 0; i <= MAXWORDSPAMRANK; i++)
-		m_wordSpamWeights[i] = scale_linear(i, 0,MAXWORDSPAMRANK, 1.0/MAXWORDSPAMRANK, 1.0);
-	
-	for(int i = 0; i <= MAXWORDSPAMRANK; i++)
+		m_wordSpamWeights[i] = scale_linear(i, 0, MAXWORDSPAMRANK, 1.0/MAXWORDSPAMRANK, 1.0);
+
+	// site rank of inlinker
+	// to be on the same level as multiplying the final score
+	// by the siterank+1 we should make this a sqrt() type thing
+	// since we square it so that single term scores are on the same
+	// level as term pair scores
+	// @@@ BR: Right way to do it? Gives a weight between 1 and 4
+	for(int i = 0; i <= MAXWORDSPAMRANK; i++) {
 		m_linkerWeights[i] = sqrt(1.0 + i);
+	}
 	
 	for(int i=0; i<HASHGROUP_END; i++)
 		m_hashGroupWeights[i] = 1.0;

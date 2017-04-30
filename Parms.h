@@ -224,6 +224,7 @@ class Parms {
 
 	Parm *getParm(int32_t i) { return m_parms+i; }
 	int32_t getNumParms() const { return m_numParms; }
+	bool convertUIToInternal(const char *field_base_name, parameter_type_t type, const char *s, char *adjusted_value);
 
 private:
 	//

@@ -200,7 +200,8 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state,
 		     (PTRTYPE)this);
 	}
 
-	setTermFreqWeights(m_msg39req.m_collnum, m_q);
+	setTermFreqWeights(m_msg39req.m_collnum, m_q, m_msg39req.m_termFreqWeightFreqMin, m_msg39req.m_termFreqWeightFreqMax,
+		m_msg39req.m_termFreqWeightMin,	m_msg39req.m_termFreqWeightMax);
 
 	if ( m_debug ) {
 		for ( int32_t i = 0 ; i < m_q->m_numTerms ; i++ ) {
@@ -1005,15 +1006,15 @@ void Msg3a::printTerms ( ) {
 }
 
 
-static float getTermFreqWeight(int64_t termFreq, int64_t numDocsInColl) {
+static float getTermFreqWeight(int64_t termFreq, int64_t numDocsInColl, float termFreqWeightFreqMin, float termFreqWeightFreqMax, float termFreqWeightMin, float termFreqWeightMax) {
 	if(numDocsInColl>0)
-		return scale_linear(((float)termFreq)/numDocsInColl, g_conf.m_termFreqWeightFreqMin, g_conf.m_termFreqWeightFreqMax, g_conf.m_termFreqWeightMax, g_conf.m_termFreqWeightMin);
+		return scale_linear(((float)termFreq)/numDocsInColl, termFreqWeightFreqMin, termFreqWeightFreqMax, termFreqWeightMax, termFreqWeightMin);
 	else
 		return 1.0; //whatever...
 }
 
 
-void setTermFreqWeights ( collnum_t collnum , Query *q ) {
+void setTermFreqWeights ( collnum_t collnum , Query *q, float termFreqWeightFreqMin, float termFreqWeightFreqMax, float termFreqWeightMin, float termFreqWeightMax) {
 	int64_t numDocsInColl = 0;
 	RdbBase *base = getRdbBase ( RDB_CLUSTERDB, collnum );
 	if ( base ) numDocsInColl = base->estimateNumGlobalRecs();
@@ -1032,7 +1033,7 @@ void setTermFreqWeights ( collnum_t collnum , Query *q ) {
 		// GET THE TERMFREQ for setting weights
 		int64_t tf = g_posdb.getTermFreq ( collnum ,qt->m_termId);
 		qt->m_termFreq = tf;
-		float tfw = getTermFreqWeight(tf,numDocsInColl);
+		float tfw = getTermFreqWeight(tf,numDocsInColl, termFreqWeightFreqMin, termFreqWeightFreqMax, termFreqWeightMin, termFreqWeightMax);
 		qt->m_termFreqWeight = tfw;
 	}
 }

@@ -59,6 +59,10 @@ class Msg39Request {
 	bool    m_doMaxScoreAlgo;
 
 	ScoringWeights m_scoringWeights;
+	float m_termFreqWeightFreqMin;
+	float m_termFreqWeightFreqMax;
+	float m_termFreqWeightMin;
+	float m_termFreqWeightMax;
 	float   m_synonymWeight;
 	float	m_pageTemperatureWeightMin;
 	float	m_pageTemperatureWeightMax;

@@ -148,6 +148,11 @@ public:
 	bool   m_doDupContentRemoval;     // msg40
 	bool   m_getDocIdScoringInfo;
 
+	float m_termFreqWeightFreqMin;
+	float m_termFreqWeightFreqMax;
+	float m_termFreqWeightMin;
+	float m_termFreqWeightMax;
+
 	float m_diversityWeightMin;
 	float m_diversityWeightMax;
 	float m_densityWeightMin;

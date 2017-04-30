@@ -246,19 +246,16 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 			unsigned char div = Posdb::getDiversityRank ( wpi );
 			score *= m_msg39req->m_scoringWeights.m_diversityWeights[div];
 			score *= m_msg39req->m_scoringWeights.m_diversityWeights[div];
-
 			// hash group? title? body? heading? etc.
 			unsigned char hg = Posdb::getHashGroup ( wpi );
 			unsigned char mhg = hg;
 			if ( s_inBody[mhg] ) mhg = HASHGROUP_BODY;
 			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg];
 			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg];
-
 			// good density?
 			unsigned char dens = Posdb::getDensityRank ( wpi );
 			score *= m_msg39req->m_scoringWeights.m_densityWeights[dens];
 			score *= m_msg39req->m_scoringWeights.m_densityWeights[dens];
-
 			// to make more compatible with pair scores divide by distance of 2
 			//score /= 2.0;
 
@@ -452,6 +449,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 		sx->m_densityRank = Posdb::getDensityRank(maxp);
 
 		float score = bestScores[k];
+
 		//score *= ts;
 		score *= m_freqWeights[i];
 		score *= m_freqWeights[i];
@@ -3937,6 +3935,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				}
 			}
 
+
 			if( currPassNum == INTERSECT_SCORING ) {
 				//
 				// Pre-advance each termlist's cursor to skip to next docid.
@@ -4094,7 +4093,6 @@ void PosdbTable::intersectLists10_r ( ) {
 
 				minSingleScore *= completeScoreMultiplier;
 
-
 				//#
 				//# DOCID / SITERANK DETECTION
 				//#
@@ -4128,7 +4126,6 @@ void PosdbTable::intersectLists10_r ( ) {
 
 				minPairScore *= completeScoreMultiplier;
 
-
 				//#
 				//# Find minimum score - either single term or term pair
 				//#
@@ -4155,7 +4152,6 @@ void PosdbTable::intersectLists10_r ( ) {
 				}
 			} // !m_q->m_isBoolean
 
-
 			//#
 			//# Calculate score and give boost based on siterank and highest inlinking siterank
 			//#
@@ -4168,7 +4164,6 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 			score = minScore * (adjustedSiteRank*m_siteRankMultiplier+1.0);
 			logTrace(g_conf.m_logTracePosdb, "Score %f for docId %" PRIu64 "", score, m_docId);
-
 
 			//# 
 			//# Give score boost if query and doc language is the same, 

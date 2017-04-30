@@ -65,6 +65,12 @@ SearchInput::SearchInput() {
 	m_askOtherShards = false;
 	memset(m_queryId, 0, sizeof(m_queryId));
 	m_doMaxScoreAlgo = false;
+
+	m_termFreqWeightFreqMin = 0.0;
+	m_termFreqWeightFreqMax = 0.5;
+	m_termFreqWeightMin = 0.5;
+	m_termFreqWeightMax = 1.0;
+
 	m_synonymWeight = 0.9;
 	m_pageTemperatureWeightMin = 1.0;
 	m_pageTemperatureWeightMax = 20.0;

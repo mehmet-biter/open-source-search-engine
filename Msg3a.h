@@ -7,7 +7,7 @@
 class SearchInput;
 class Query;
 
-void setTermFreqWeights ( collnum_t collnum, class Query *q );
+void setTermFreqWeights ( collnum_t collnum , Query *q, float termFreqWeightFreqMin, float termFreqWeightFreqMax, float termFreqWeightMin, float termFreqWeightMax);
 
 #define MAX_SHARDS 1024
 

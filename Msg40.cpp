@@ -344,6 +344,12 @@ bool Msg40::federatedLoop ( ) {
 				 m_si->m_hashGroupWeightInternalLinkText,
 				 m_si->m_hashGroupWeightInUrl,
 				 m_si->m_hashGroupWeightInMenu);
+
+	mr.m_termFreqWeightFreqMin = m_si->m_termFreqWeightFreqMin;
+	mr.m_termFreqWeightFreqMax = m_si->m_termFreqWeightFreqMax;
+	mr.m_termFreqWeightMin = m_si->m_termFreqWeightMin;
+	mr.m_termFreqWeightMax = m_si->m_termFreqWeightMax;
+
 	mr.m_synonymWeight             = m_si->m_synonymWeight;
 	mr.m_pageTemperatureWeightMin = m_si->m_pageTemperatureWeightMin;
 	mr.m_pageTemperatureWeightMax = m_si->m_pageTemperatureWeightMax;
