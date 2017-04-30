@@ -344,6 +344,12 @@ bool Msg40::federatedLoop ( ) {
 				 m_si->m_hashGroupWeightInternalLinkText,
 				 m_si->m_hashGroupWeightInUrl,
 				 m_si->m_hashGroupWeightInMenu);
+
+	mr.m_termFreqWeightFreqMin = m_si->m_termFreqWeightFreqMin;
+	mr.m_termFreqWeightFreqMax = m_si->m_termFreqWeightFreqMax;
+	mr.m_termFreqWeightMin = m_si->m_termFreqWeightMin;
+	mr.m_termFreqWeightMax = m_si->m_termFreqWeightMax;
+
 	mr.m_synonymWeight             = m_si->m_synonymWeight;
 	mr.m_pageTemperatureWeightMin = m_si->m_pageTemperatureWeightMin;
 	mr.m_pageTemperatureWeightMax = m_si->m_pageTemperatureWeightMax;
@@ -367,6 +373,7 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_minSerpDocId              = m_si->m_minSerpDocId;
 	mr.m_maxSerpScore              = m_si->m_maxSerpScore;
 	mr.m_sameLangWeight            = m_si->m_sameLangWeight;
+	mr.m_unknownLangWeight = m_si->m_unknownLangWeight;
 	memcpy(mr.m_queryId, m_si->m_queryId, sizeof(m_si->m_queryId));
 
 	if ( mr.m_timeout < m_si->m_minMsg3aTimeout )

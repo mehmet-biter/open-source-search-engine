@@ -53,7 +53,39 @@ public:
 };
 
 
+//
+// User configured values for these parms need to be adjusted to internal ranges
+//
+const struct {
+	char *name;
+	float div_by;
+} static g_fxui_parms[] = {
+	{"diversityweightmin", 100.0},
+	{"diversityweightmax", 100.0},
+	{"densityweightmin", 100.0},
+	{"densityweightmax", 100.0},
+	{"hgw_body", 10.0},
+	{"hgw_title", 10.0},
+	{"hgw_heading", 10.0},
+	{"hgw_list", 10.0},
+	{"hgw_metatag", 10.0},
+	{"hgw_inlinktext", 10.0},
+	{"hgw_intag", 10.0},
+	{"hgw_neighborhood", 10.0},
+	{"hgw_inmenu", 10.0},
+	{"hgw_inintlinktext", 10.0},
+	{"hgw_inurl", 10.0},
+	{"synonym_weight", 10.0},
+	{"termfreqweightfreqmin", 100.0},
+	{"termfreqweightfreqmax", 100.0},
+	{"termfreqweightmin", 100.0},
+	{"termfreqweightmax", 100.0}
+};
+
+static const int g_num_fxui_parms = sizeof(g_fxui_parms) / sizeof(g_fxui_parms[0]);
+
 Parms g_parms;
+
 
 Parm::Parm() {
 	// Coverity
@@ -827,8 +859,7 @@ bool Parms::setGigablastRequest ( TcpSocket *socket ,
 		//if ( (m->m_perms & user) == 0 ) continue;
 		// set it. now our TYPE_CHARPTR will just be set to it directly
 		// to save memory...
-		setParm ( (char *)THIS , m, 0, v, false,//not html enc
-			  false ); // true );
+		setParm ( (char *)THIS , m, 0, v);
 	}
 
 	return true;
@@ -1962,12 +1993,63 @@ bool Parms::printParm( SafeBuf* sb,
 	return status;
 }
 
+
+//
+// Convert external weights presented in the frontend UI to internal values
+//
+bool Parms::convertUIToInternal(const char *field_base_name, parameter_type_t type, const char *s, char *adjusted_value) {
+	for(int fx=0; fx < g_num_fxui_parms; fx++) {
+		if( strcmp(g_fxui_parms[fx].name, field_base_name) == 0 ) {
+
+			switch(type) {
+				case TYPE_FLOAT: {
+						float f = s ? (float)atof(s) : 0;
+						if( f >= 1.0 && g_fxui_parms[fx].div_by > 1.0 ) {
+							f = f / g_fxui_parms[fx].div_by;
+						}
+						snprintf(adjusted_value, 128, "%f", f);
+					}
+					return true;
+
+				case TYPE_DOUBLE: {
+						double d = s ? (double)atof ( s ) : 0;
+						if( d >= 1.0 && g_fxui_parms[fx].div_by > 1.0 ) {
+							d = d / g_fxui_parms[fx].div_by;
+						}
+						snprintf(adjusted_value, 128, "%f", d);
+					}
+					return true;
+
+				case TYPE_INT32:
+				case TYPE_INT32_CONST: {
+						int32_t v = s ? atol(s) : 0;
+						if( v >= 1 && (int32_t)g_fxui_parms[fx].div_by > 1 ) {
+							v = v / (int32_t)g_fxui_parms[fx].div_by;
+						}
+						snprintf(adjusted_value, 128, "%" PRId32 "", v);
+					}
+					return true;
+
+				case TYPE_INT64: {
+						int64_t i64 = s ? strtoull(s,NULL,10) : 0;
+						if( i64 >= 1 && (int64_t)g_fxui_parms[fx].div_by > 1 ) {
+							i64 = i64 / (int64_t)g_fxui_parms[fx].div_by;
+						}
+						snprintf(adjusted_value, 128, "%" PRId64 "", i64);
+					}
+					return true;
+
+				default:
+					break;
+			}
+		}
+	}
+	return false;
+}
+
+
 // now we use this to set SearchInput and GigablastRequest
-bool Parms::setFromRequest ( HttpRequest *r ,
-			     TcpSocket* s,
-			     CollectionRec *newcr ,
-			     char *THIS ,
-			     parameter_object_type_t objType) {
+bool Parms::setFromRequest(HttpRequest *r, TcpSocket *s, CollectionRec *newcr, char *THIS, parameter_object_type_t objType) {
 
 	// use convertHttpRequestToParmList() for these because they
 	// are persistent records that are updated on every shard.
@@ -1985,31 +2067,47 @@ bool Parms::setFromRequest ( HttpRequest *r ,
 	for(int32_t i = 0; i < r->getNumFields(); i++) {
 		// get the value of cgi parm (null terminated)
 		const char *v = r->getValue(i);
-		if(!v)
+		if(!v) {
 			continue; //no value
+		}
 		// get cgi parm name
 		const char *full_field_name = r->getField(i);
 		size_t full_field_name_len = strlen(full_field_name);
-		if(full_field_name_len>=128)
+		if(full_field_name_len>=128) {
 			continue;
-		char field_base_name[128];
-		int field_index;
-		size_t nondigit_prefix_len = strcspn(full_field_name,"0123456789");
-		if(nondigit_prefix_len!=full_field_name_len) {
-			//field name contains digits. Split into base field name and index
-			memcpy(field_base_name,full_field_name,nondigit_prefix_len);
-			field_base_name[nondigit_prefix_len] = '\0';
-			char *endptr = NULL;
-			field_index = strtol(full_field_name+nondigit_prefix_len, &endptr, 10);
-			if(field_index<0)
-				continue; //hmm?
-			if(endptr && *endptr)
-				continue; //digits weren't the last part
-			
-		} else {
-			strcpy(field_base_name,full_field_name);
-			field_index = 0;
 		}
+
+		char field_base_name[128];
+		bool uiconvert = false;
+		int field_index=0;
+
+		//
+		// To make user configuration of ranking parameters simpler, we sometimes
+		// use other valid ranges in parameters than those used internally. Prefix
+		// the param name with 'fxui_' and add the name and divisor to the global
+		// table to automatically adjust external values to internal ones.
+		//
+		if( strncmp(full_field_name, "fxui_", 5) == 0 ) {
+			strcpy(field_base_name, full_field_name+5);
+			uiconvert=true;
+		}
+		else {
+			size_t nondigit_prefix_len = strcspn(full_field_name,"0123456789");
+			if(nondigit_prefix_len!=full_field_name_len) {
+				//field name contains digits. Split into base field name and index
+				memcpy(field_base_name,full_field_name,nondigit_prefix_len);
+				field_base_name[nondigit_prefix_len] = '\0';
+				char *endptr = NULL;
+				field_index = strtol(full_field_name+nondigit_prefix_len, &endptr, 10);
+				if(field_index<0)
+					continue; //hmm?
+				if(endptr && *endptr)
+					continue; //digits weren't the last part
+			} else {
+				strcpy(field_base_name,full_field_name);
+			}
+		}
+
 		// find in parms list
 		int32_t  j;
 		Parm *m;
@@ -2021,17 +2119,33 @@ bool Parms::setFromRequest ( HttpRequest *r ,
 			   strcmp(field_base_name,m->m_cgi) == 0)
 				break; //found it
 		}
-		if(j >= m_numParms)
+		if(j >= m_numParms) {
 			continue; //cgi parm name not found
-		if(field_index>0 && field_index>m->m_max)
+		}
+
+		if(field_index>0 && field_index>m->m_max) {
 			continue; //out-of-bounds
+		}
+
 		// . skip if no value was provided
 		// . unless it was a string! so we can make them empty.
 		if(v[0] == '\0' &&
 		     m->m_type != TYPE_STRING &&
-		     m->m_type != TYPE_STRINGBOX) continue;
+		     m->m_type != TYPE_STRINGBOX) {
+			continue;
+		}
+
+		char adjusted_value[128];
+		if( uiconvert ) {
+			if( !convertUIToInternal(field_base_name, m->m_type, v, adjusted_value) ) {
+				log(LOG_ERROR, "Could not convert value of '%s' for '%s'", field_base_name, v);
+				continue;
+			}
+			v = adjusted_value;
+		}
+
 		// set it
-		setParm(THIS, m, field_index, v, false, false);
+		setParm(THIS, m, field_index, v);
 	}
 
 	return true;
@@ -2078,7 +2192,7 @@ bool Parms::insertParm ( int32_t i , int32_t an ,  char *THIS ) {
 	*(int32_t *)(THIS + m->m_arrayCountOffset) = *(int32_t *)(THIS + m->m_arrayCountOffset)+1;
 
 	// put the defaults in the inserted line
-	setParm ( (char *)THIS , m, an , m->m_def , false ,false );
+	setParm ( (char *)THIS , m, an , m->m_def);
 	return true;
 }
 
@@ -2128,9 +2242,7 @@ bool Parms::removeParm ( int32_t i , int32_t an , char *THIS ) {
 
 
 
-void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, bool isHtmlEncoded, bool fromRequest) {
-
-	if ( fromRequest ) { g_process.shutdownAbort(true); }
+void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s) {
 
 	// . this is just for setting CollectionRecs, so skip if offset < 0
 	// . some parms are just for SearchInput (search parms)
@@ -2170,8 +2282,6 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		case TYPE_BOOL:
 		case TYPE_PRIORITY: {
 			char *ptr = (char*)THIS + m->m_off + sizeof(char)*array_index;
-			if ( fromRequest && *(char*)ptr == atol(s))
-				return;
 			*(char*)ptr = s ? atol(s) : 0;
 			break;
 		}
@@ -2191,25 +2301,16 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 		}
 		case TYPE_FLOAT: {
 			char *ptr = (char*)THIS + m->m_off + sizeof(float)*array_index;
-			if( fromRequest && almostEqualFloat(*(float *)ptr, (s ? (float)atof(s) : 0)) ) {
-				return;
-			}
-
 			*(float*)ptr = s ? (float)atof ( s ) : 0;
 			break;
 		}
 		case TYPE_DOUBLE: {
 			char *ptr = (char*)THIS + m->m_off + sizeof(double)*array_index;
-			if( fromRequest && almostEqualFloat(*(double*)ptr, ( s ? (double)atof(s) : 0)) ) {
-				return;
-			}
 			*(double*)ptr = s ? (double)atof ( s ) : 0;
 			break;
 		}
 		case TYPE_IP: {
 			char *ptr = (char*)THIS + m->m_off + sizeof(int32_t)*array_index;
-			if ( fromRequest && *(int32_t*)ptr == (s ? (int32_t)atoip(s,strlen(s)) : 0) )
-				return;
 			*(int32_t*)ptr = s ? (int32_t)atoip(s,strlen(s)) : 0;
 			break;
 		}
@@ -2219,16 +2320,11 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 			int32_t v = s ? atol(s) : 0;
 			// min is considered valid if >= 0
 			if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
-			if ( fromRequest && *(int32_t *)ptr == v )
-				return;
 			*(int32_t *)ptr = v;
 			break;
 		}
 		case TYPE_INT64: {
 			char *ptr = (char*)THIS + m->m_off + sizeof(int64_t)*array_index;
-			if ( fromRequest && *(uint64_t*)ptr == ( s ? strtoull(s,NULL,10) : 0) ) {
-				return;
-			}
 			*(int64_t*)ptr = s ? strtoull(s,NULL,10) : 0;
 			break;
 		}
@@ -2240,18 +2336,9 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 			// SafeBufs "array_index" is the # in the array, starting at 0
 			char *ptr = (char*)THIS + m->m_off + sizeof(SafeBuf)*array_index;
 			SafeBuf *sb = (SafeBuf *)ptr;
-			int32_t oldLen = sb->length();
-			// why was this commented out??? we need it now that we
-			// send email alerts when parms change!
-			if ( fromRequest &&
-			     ! isHtmlEncoded && oldLen == len &&
-			     memcmp ( sb->getBufStart() , s , len ) == 0 )
-				return;
-			// nuke it
 			sb->purge();
 			// this means that we can not use string POINTERS as parms!!
-			if ( ! isHtmlEncoded ) sb->safeMemcpy ( s , len );
-			else                   len = sb->htmlDecode (s,len);
+			sb->safeMemcpy ( s , len );
 			// tag it
 			sb->setLabel ( "parm1" );
 			// ensure null terminated
@@ -2267,22 +2354,11 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 			int32_t len = strlen(s);
 			if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
 			char *dst = THIS + m->m_off + m->m_size*array_index;
-			// why was this commented out??? we need it now that we
-			// send email alerts when parms change!
-			if ( fromRequest &&
-			     ! isHtmlEncoded && (int32_t)strlen(dst) == len &&
-			     memcmp ( dst , s , len ) == 0 ) {
-				return;
-			}
 
 			// this means that we can not use string POINTERS as parms!!
-			if ( !isHtmlEncoded ) {
-				gbmemcpy( dst, s, len );
-			} else {
-				len = htmlDecode( dst, s, len, false );
-			}
-
+			gbmemcpy( dst, s, len );
 			dst[len] = '\0';
+
 			// . might have to set length
 			// . used for CollectionRec::m_htmlHeadLen and m_htmlTailLen
 			if ( m->m_plen >= 0 )
@@ -2295,13 +2371,8 @@ void Parms::setParm(char *THIS, Parm *m, int32_t array_index, const char *s, boo
 			log(LOG_LOGIC,"admin: attempt to set parameter %s from cgi-request", m->m_title);
 			return;
 	}
-
-	// do not send if setting from startup
-	if ( ! fromRequest ) return;
-
-	// note it in the log
-	log("admin: parm \"%s\" changed value",m->m_title);
 }
+
 
 void Parms::setToDefault(char *THIS, parameter_object_type_t objType, CollectionRec *argcr) {
 	// init if we should
@@ -2344,7 +2415,7 @@ void Parms::setToDefault(char *THIS, parameter_object_type_t objType, Collection
 				char *dst = THIS + m->m_off;
 				memcpy(dst, raw_default, m->m_size);
 			} else
-				setParm(THIS , m, 0, m->m_def, false/*not enc.*/, false );
+				setParm(THIS , m, 0, m->m_def);
 		} else if(m->m_fixed<=0) {
 			//variable-sized array
 			//empty it
@@ -2357,7 +2428,7 @@ void Parms::setToDefault(char *THIS, parameter_object_type_t objType, Collection
 					memcpy(dst, raw_default, m->m_size);
 					raw_default = ((char*)raw_default) + m->m_size;
 				} else
-					setParm(THIS, m, k, m->m_def, false/*not enc.*/, false);
+					setParm(THIS, m, k, m->m_def);
 			}
 		}
 	}
@@ -2485,7 +2556,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		v[nb] = '\0';
 
 		// set our parm
-		setParm( (char *)THIS, m, j, v, false, false );
+		setParm( (char *)THIS, m, j, v);
 
 		// we were set from the explicit file
 		//((CollectionRec *)THIS)->m_orig[i] = 2;
@@ -2569,7 +2640,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		v[nb] = '\0';
 
 		// set our parm
-		setParm( (char *)THIS, m, j, v, false /*is html encoded?*/, false );
+		setParm( (char *)THIS, m, j, v);
 
 		// do not repeat same node
 		nn++;
@@ -3519,27 +3590,48 @@ void Parms::init ( ) {
 	m++;
 
 
-	m->m_title = "diversityWeightMin";
-	m->m_desc  = "diversityWeightMin";
-	m->m_cgi   = "diversity_weight_min";
-	simple_m_set(SearchInput,m_diversityWeightMin);
-	m->m_defOff2 = offsetof(Conf,m_diversityWeightMin);
+	m->m_title = "termfreq min";
+	m->m_desc  = "Term frequency estimate minimum";
+	m->m_cgi   = "termfreqweightfreqmin";
+	simple_m_set(Conf,m_termFreqWeightFreqMin);
+	simple_m_set(SearchInput,m_termFreqWeightFreqMin);
+	m->m_defOff2 = offsetof(Conf,m_termFreqWeightFreqMin);
+	m->m_def   = "0.000000";
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "termfreq max";
+	m->m_desc  = "Term frequency estimate maximum";
+	m->m_cgi   = "termfreqweightfreqmax";
+	simple_m_set(SearchInput,m_termFreqWeightFreqMax);
+	m->m_defOff2 = offsetof(Conf,m_termFreqWeightFreqMax);
+	m->m_def   = "0.500000";
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "termfreq weight min";
+	m->m_desc  = "Term frequency weight minimum";
+	m->m_cgi   = "termfreqweightmin";
+	simple_m_set(SearchInput,m_termFreqWeightMin);
+	m->m_defOff2 = offsetof(Conf,m_termFreqWeightMin);
+	m->m_def   = "0.500000";
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "termfreq weight max";
+	m->m_desc  = "Term frequency weight maximum";
+	m->m_cgi   = "termfreqweightmax";
+	simple_m_set(SearchInput,m_termFreqWeightMax);
+	m->m_defOff2 = offsetof(Conf,m_termFreqWeightMax);
 	m->m_def   = "1.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
-	m->m_title = "diversityWeightMax";
-	m->m_desc  = "diversityWeightMax";
-	m->m_cgi   = "diversity_weight_max";
-	simple_m_set(SearchInput,m_diversityWeightMax);
-	m->m_defOff2 = offsetof(Conf,m_diversityWeightMax);
-	m->m_def   = "1.000000";
-	m->m_page  = PAGE_RESULTS;
-	m++;
+
 
 	m->m_title = "densityWeightMin";
 	m->m_desc  = "densityWeightMin";
-	m->m_cgi   = "density_weight_min";
+	m->m_cgi   = "densityweightmin";
 	simple_m_set(SearchInput,m_densityWeightMin);
 	m->m_defOff2 = offsetof(Conf,m_densityWeightMin);
 	m->m_def   = "0.350000";
@@ -3548,16 +3640,34 @@ void Parms::init ( ) {
 
 	m->m_title = "densityWeightMax";
 	m->m_desc  = "densityWeightMax";
-	m->m_cgi   = "density_weight_max";
+	m->m_cgi   = "densityweightmax";
 	simple_m_set(SearchInput,m_densityWeightMax);
 	m->m_defOff2 = offsetof(Conf,m_densityWeightMax);
 	m->m_def   = "1.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "diversityWeightMin";
+	m->m_desc  = "diversityWeightMin";
+	m->m_cgi   = "diversityweightmin";
+	simple_m_set(SearchInput,m_diversityWeightMin);
+	m->m_defOff2 = offsetof(Conf,m_diversityWeightMin);
+	m->m_def   = "1.000000";
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "diversityWeightMax";
+	m->m_desc  = "diversityWeightMax";
+	m->m_cgi   = "diversityweightmax";
+	simple_m_set(SearchInput,m_diversityWeightMax);
+	m->m_defOff2 = offsetof(Conf,m_diversityWeightMax);
+	m->m_def   = "1.000000";
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	m->m_title = "hashGroupWeightBody";
 	m->m_desc  = "hashGroupWeightBody";
-	m->m_cgi   = "hash_group_weight_body";
+	m->m_cgi   = "hgw_body";
 	simple_m_set(SearchInput,m_hashGroupWeightBody);
 	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightBody);
 	m->m_def   = "1.000000";
@@ -3566,7 +3676,7 @@ void Parms::init ( ) {
 
 	m->m_title = "hashGroupWeightTitle";
 	m->m_desc  = "hashGroupWeightTitle";
-	m->m_cgi   = "hashGroupWeightTitle";
+	m->m_cgi   = "hgw_title";
 	simple_m_set(SearchInput,m_hashGroupWeightTitle);
 	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightTitle);
 	m->m_def   = "8.000000";
@@ -3575,7 +3685,7 @@ void Parms::init ( ) {
 
 	m->m_title = "hashGroupWeightHeading";
 	m->m_desc  = "hashGroupWeightHeading";
-	m->m_cgi   = "hash_group_weight_heading";
+	m->m_cgi   = "hgw_heading";
 	simple_m_set(SearchInput,m_hashGroupWeightHeading);
 	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightHeading);
 	m->m_def   = "1.500000";
@@ -3584,7 +3694,7 @@ void Parms::init ( ) {
 
 	m->m_title = "hashGroupWeightInlist";
 	m->m_desc  = "hashGroupWeightInlist";
-	m->m_cgi   = "hash_group_weight_inlist";
+	m->m_cgi   = "hgw_list";
 	simple_m_set(SearchInput,m_hashGroupWeightInlist);
 	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightInlist);
 	m->m_def   = "0.300000";
@@ -3593,7 +3703,7 @@ void Parms::init ( ) {
 
 	m->m_title = "hashGroupWeightInMetaTag";
 	m->m_desc  = "hashGroupWeightInMetaTag";
-	m->m_cgi   = "hash_group_weight_in_meta_tag";
+	m->m_cgi   = "hgw_metatag";
 	simple_m_set(SearchInput,m_hashGroupWeightInMetaTag);
 	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightInMetaTag);
 	m->m_def   = "0.100000";
@@ -3602,7 +3712,7 @@ void Parms::init ( ) {
 
 	m->m_title = "hashGroupWeightInLinkText";
 	m->m_desc  = "hashGroupWeightInLinkText";
-	m->m_cgi   = "hash_group_weight_in_link_text";
+	m->m_cgi   = "hgw_inlinktext";
 	simple_m_set(SearchInput,m_hashGroupWeightInLinkText);
 	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightInLinkText);
 	m->m_def   = "16.000000";
@@ -3611,7 +3721,7 @@ void Parms::init ( ) {
 
 	m->m_title = "hashGroupWeightInTag";
 	m->m_desc  = "hashGroupWeightInTag";
-	m->m_cgi   = "hash_group_weight_in_tag";
+	m->m_cgi   = "hgw_intag";
 	simple_m_set(SearchInput,m_hashGroupWeightInTag);
 	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightInTag);
 	m->m_def   = "1.000000";
@@ -3620,7 +3730,7 @@ void Parms::init ( ) {
 
 	m->m_title = "hashGroupWeightNeighborhood";
 	m->m_desc  = "hashGroupWeightNeighborhood";
-	m->m_cgi   = "hash_group_weight_neighborhood";
+	m->m_cgi   = "hgw_neighborhood";
 	simple_m_set(SearchInput,m_hashGroupWeightNeighborhood);
 	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightNeighborhood);
 	m->m_def   = "0.000000";
@@ -3629,7 +3739,7 @@ void Parms::init ( ) {
 
 	m->m_title = "hashGroupWeightInternalLinkText";
 	m->m_desc  = "hashGroupWeightInternalLinkText";
-	m->m_cgi   = "hash_group_weight_internal_link_text";
+	m->m_cgi   = "hgw_inintlinktext";
 	simple_m_set(SearchInput,m_hashGroupWeightInternalLinkText);
 	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightInternalLinkText);
 	m->m_def   = "4.000000";
@@ -3638,7 +3748,7 @@ void Parms::init ( ) {
 
 	m->m_title = "hashGroupWeightInUrl";
 	m->m_desc  = "hashGroupWeightInUrl";
-	m->m_cgi   = "hash_group_weight_in_url";
+	m->m_cgi   = "hgw_inurl";
 	simple_m_set(SearchInput,m_hashGroupWeightInUrl);
 	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightInUrl);
 	m->m_def   = "1.000000";
@@ -3647,7 +3757,7 @@ void Parms::init ( ) {
 
 	m->m_title = "hashGroupWeightInMenu";
 	m->m_desc  = "hashGroupWeightInMenu";
-	m->m_cgi   = "hash_group_weight_in_menu";
+	m->m_cgi   = "hgw_inmenu";
 	simple_m_set(SearchInput,m_hashGroupWeightInMenu);
 	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightInMenu);
 	m->m_def   = "0.200000";
@@ -3761,6 +3871,18 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "unknown language weight";
+	m->m_desc  = "Use this to override the default uknown language weight "
+		"for this collection. We multiply a result's score by this value "
+		"if the user requested a specific language, but the language of the "
+		"indexed page could not be determined.";
+	simple_m_set(SearchInput,m_unknownLangWeight);
+	m->m_defOff= offsetof(CollectionRec,m_unknownLangWeight);
+	m->m_cgi  = "ulangw";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	m->m_title = "max query terms";
 	m->m_desc  = "Do not allow more than this many query terms. Helps "
 		"prevent big queries from resource hogging.";
@@ -3829,17 +3951,31 @@ void Parms::init ( ) {
 
 	m->m_title = "language weight";
 	m->m_desc  = "Default language weight if document matches query "
-		"language. Use this to give results that match the specified "
-		"the specified &qlang higher ranking, or docs whose language "
-		"is unknown. Can be overridden with "
+		"language. Use this to give results that match "
+		"the specified &qlang higher ranking. Can be overridden with "
 		"&langw in the query url.";
-	m->m_cgi   = "langweight";
+	m->m_cgi   = "langw";
 	simple_m_set(CollectionRec,m_sameLangWeight);
 	m->m_def   = "20.000000";
 	m->m_group = true;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m++;
+
+	m->m_title = "unknown language weight";
+	m->m_desc  = "Default language weight if query language is specified but document "
+		"language could not be determined. Use this to give docs with unknown language a "
+		"higher ranking when qlang is specified. Can be overridden with "
+		"&ulangw in the query url.";
+	m->m_cgi   = "ulangw";
+	simple_m_set(CollectionRec,m_unknownLangWeight);
+	m->m_def   = "10.000000";
+	m->m_group = true;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
+	m->m_page  = PAGE_RANKING;
+	m++;
+
+
 
 	m->m_title = "termfreq min";
 	m->m_desc  = "Term frequency estimate minimum";
@@ -3921,6 +4057,8 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RANKING;
 	m++;
 
+
+
 	m->m_title = "Hashgroup weight - body";
 	m->m_desc  = "";
 	m->m_cgi   = "hgw_body";
@@ -3973,7 +4111,7 @@ void Parms::init ( ) {
 
 	m->m_title = "Hashgroup weight - in link text";
 	m->m_desc  = "";
-	m->m_cgi   = "hgw_innlinktext";
+	m->m_cgi   = "hgw_inlinktext";
 	simple_m_set(Conf,m_hashGroupWeightInLinkText);
 	m->m_def   = "16.000000";
 	m->m_group = false;
@@ -4087,6 +4225,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
+
 	m->m_title = "Rank adjustment";
 	m->m_cgi   = "flag_rerank";
 	m->m_xml   = "RankAdjustment";

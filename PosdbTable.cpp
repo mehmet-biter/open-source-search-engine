@@ -247,19 +247,16 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 			unsigned char div = Posdb::getDiversityRank ( wpi );
 			score *= m_msg39req->m_scoringWeights.m_diversityWeights[div];
 			score *= m_msg39req->m_scoringWeights.m_diversityWeights[div];
-
 			// hash group? title? body? heading? etc.
 			unsigned char hg = Posdb::getHashGroup ( wpi );
 			unsigned char mhg = hg;
 			if ( s_inBody[mhg] ) mhg = HASHGROUP_BODY;
 			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg];
 			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg];
-
 			// good density?
 			unsigned char dens = Posdb::getDensityRank ( wpi );
 			score *= m_msg39req->m_scoringWeights.m_densityWeights[dens];
 			score *= m_msg39req->m_scoringWeights.m_densityWeights[dens];
-
 			// to make more compatible with pair scores divide by distance of 2
 			//score /= 2.0;
 
@@ -453,6 +450,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 		sx->m_densityRank = Posdb::getDensityRank(maxp);
 
 		float score = bestScores[k];
+
 		//score *= ts;
 		score *= m_freqWeights[i];
 		score *= m_freqWeights[i];
@@ -4067,6 +4065,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				}
 			}
 
+
 			if( currPassNum == INTERSECT_SCORING ) {
 				//
 				// Pre-advance each termlist's cursor to skip to next docid.
@@ -4282,7 +4281,6 @@ void PosdbTable::intersectLists10_r ( ) {
 				}
 			} // !m_q->m_isBoolean
 
-
 			//#
 			//# Calculate score and give boost based on siterank and highest inlinking siterank
 			//#
@@ -4296,14 +4294,23 @@ void PosdbTable::intersectLists10_r ( ) {
 			score = minScore * (adjustedSiteRank*m_siteRankMultiplier+1.0);
 			logTrace(g_conf.m_logTracePosdb, "Score %f for docId %" PRIu64 "", score, m_docId);
 
-
 			//# 
-			//# Give score boost if query and doc language is the same.
+			//# Give score boost if query and doc language is the same, 
+			//# and optionally a different boost if the language of the
+			//# page is unknown.
+			//#
 			//# Use "qlang" parm to set the language. i.e. "&qlang=fr"
 			//#
-			if ( m_msg39req->m_language == 0 || docLang == 0 || m_msg39req->m_language == docLang) {
-				score *= (m_msg39req->m_sameLangWeight); //SAMELANGMULT;
-				logTrace(g_conf.m_logTracePosdb, "Giving score a matching language boost of x%f: %f for docId %" PRIu64 "", m_msg39req->m_sameLangWeight, score, m_docId);
+			if ( m_msg39req->m_language != 0 ) {
+				if( m_msg39req->m_language == docLang) {
+					score *= (m_msg39req->m_sameLangWeight);
+					logTrace(g_conf.m_logTracePosdb, "Giving score a matching language boost of x%f: %f for docId %" PRIu64 "", m_msg39req->m_sameLangWeight, score, m_docId);
+				}
+				else
+				if( docLang == 0 ) {
+					score *= (m_msg39req->m_unknownLangWeight); 
+					logTrace(g_conf.m_logTracePosdb, "Giving score an unknown language boost of x%f: %f for docId %" PRIu64 "", m_msg39req->m_unknownLangWeight, score, m_docId);
+				}
 			}
 
 			double page_temperature = 0;
@@ -4665,11 +4672,15 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	//score *= perfectWordSpamWeight * perfectWordSpamWeight;
 	score *= (((float)siteRank)*m_siteRankMultiplier+1.0);
 
-	// language boost if same language (or no lang specified)
-	if ( m_msg39req->m_language == docLang ||
-	     m_msg39req->m_language == 0 || 
-	     docLang == 0 ) {
-		score *= m_msg39req->m_sameLangWeight;//SAMELANGMULT;
+	// language boost if language specified and if page is same language, or unknown language
+	if ( m_msg39req->m_language != 0 ) {
+		if( m_msg39req->m_language == docLang) {
+			score *= (m_msg39req->m_sameLangWeight);
+		}
+		else
+		if( docLang == 0 ) {
+			score *= (m_msg39req->m_unknownLangWeight); 
+		}
 	}
 	
 	// assume the other term we pair with will be 1.0

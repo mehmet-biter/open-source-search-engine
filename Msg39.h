@@ -39,6 +39,7 @@ class Msg39Request {
 	int32_t    m_maxQueryTerms;
 	int32_t    m_numDocIdSplits;
 	float   m_sameLangWeight;
+	float	m_unknownLangWeight;
 
 	//int32_t    m_compoundListMaxSize;
 	uint8_t m_language;
@@ -60,6 +61,10 @@ class Msg39Request {
 	bool    m_doMaxScoreAlgo;
 
 	ScoringWeights m_scoringWeights;
+	float m_termFreqWeightFreqMin;
+	float m_termFreqWeightFreqMax;
+	float m_termFreqWeightMin;
+	float m_termFreqWeightMax;
 	float   m_synonymWeight;
 	float	m_pageTemperatureWeightMin;
 	float	m_pageTemperatureWeightMax;
