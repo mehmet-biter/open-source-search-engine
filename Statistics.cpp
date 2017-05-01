@@ -8,6 +8,7 @@
 #include "UdpServer.h"       //g_udpServer.getNumUsedSlotsIncoming()
 #include "HttpServer.h"      //g_httpServer.m_tcp.m_numUsed
 #include "Msg5.h"            //g_numCorrupt
+#include "SpiderLoop.h"
 #include "RdbCache.h"
 #include "Rdb.h"
 #include "GbMutex.h"
@@ -386,6 +387,7 @@ static void dump_assorted_statistics(FILE *fp) {
 	fprintf(fp,"socket:slots_incoming:%d\n",g_udpServer.getNumUsedSlotsIncoming());
 	fprintf(fp,"socket:tcp_in_use:%d\n",g_httpServer.m_tcp.m_numUsed);
 	fprintf(fp,"misc::corrupt_list_reads:%d\n",g_numCorrupt);
+	fprintf(fp,"spider:current_spiders:%d\n",g_spiderLoop.getNumSpidersOut());
 }
 
 

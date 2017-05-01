@@ -60,7 +60,7 @@ public:
 	int32_t m_unused12;
 	int32_t m_unused13;
 
-	int16_t m_currentSpiders;
+	int16_t m_unused14;
 	collnum_t m_dailyMergeCollnum;
 
 	char m_gbVersionStr[21];

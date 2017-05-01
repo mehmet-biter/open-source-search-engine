@@ -345,11 +345,7 @@ skipReplaceHost:
 
 		// if it has spiders going on say "S" with # as the superscript
 		if ((flags & PFLAG_HASSPIDERS) && format == FORMAT_HTML )
-			fb.safePrintf ( "<span title=\"Spidering\">S"
-					"<sup>%" PRId32"</sup>"
-					"</span>"
-					,h->m_pingInfo.m_currentSpiders
-					);
+			fb.safePrintf ( "<span title=\"Spidering\">S</span>");
 
 		if ((flags & PFLAG_HASSPIDERS) && format != FORMAT_HTML )
 			fb.safePrintf ( "Spidering");
@@ -444,11 +440,6 @@ skipReplaceHost:
 				      h->m_dgramsFrom);
 			*/
 
-			sb.safePrintf("\t\t<numOutstandingSpiders>%" PRId32
-				      "</numOutstandingSpiders>\n"
-				      ,h->m_pingInfo.m_currentSpiders );
-
-
 			sb.safePrintf("\t\t<splitTime>%" PRId32"</splitTime>\n",
 				      splitTime);
 			sb.safePrintf("\t\t<splitsDone>%" PRId32"</splitsDone>\n",
@@ -529,11 +520,6 @@ skipReplaceHost:
 			sb.safePrintf("\t\t\t\t\"dgramsFrom\":%" PRId64",\n",
 				      h->m_dgramsFrom);
 			*/
-
-
-			sb.safePrintf("\t\t\t\t\"numOutstandingSpiders\":%" PRId32
-				      ",\n"
-				      ,h->m_pingInfo.m_currentSpiders );
 
 
 			sb.safePrintf("\t\t\t\t\"splitTime\":%" PRId32",\n",
