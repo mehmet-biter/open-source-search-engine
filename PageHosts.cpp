@@ -325,13 +325,6 @@ skipReplaceHost:
 					      "<sup>%" PRId32"</sup>"
 					      "</b></font>"
 					      , n );
-			n = h->m_pingInfo.m_socketsClosedFromHittingLimit;
-			if ( n )
-				fb.safePrintf("<font color=red><b>"
-					      "K"
-					      "<sup>%" PRId32"</sup>"
-					      "</b></font>"
-					      , n );
 		}
 
 		// recovery mode? reocvered from coring?
@@ -521,10 +514,6 @@ skipReplaceHost:
 			sb.safePrintf("\t\t<numCorruptDiskReads>%" PRId32
 				      "</numCorruptDiskReads>\n"
 				      ,h->m_pingInfo.m_numCorruptDiskReads);
-			sb.safePrintf("\t\t<numClosedSockets>%" PRId32
-				      "</numClosedSockets>\n"
-				      ,h->m_pingInfo.
-				      m_socketsClosedFromHittingLimit);
 			sb.safePrintf("\t\t<numOutstandingSpiders>%" PRId32
 				      "</numOutstandingSpiders>\n"
 				      ,h->m_pingInfo.m_currentSpiders );
@@ -618,9 +607,6 @@ skipReplaceHost:
 
 			sb.safePrintf("\t\t\t\t\"numCorruptDiskReads\":%" PRId32",\n"
 				      ,h->m_pingInfo.m_numCorruptDiskReads);
-			sb.safePrintf("\t\t\t\t\"numClosedSockets\":%" PRId32",\n"
-				      ,h->m_pingInfo.
-				      m_socketsClosedFromHittingLimit);
 			sb.safePrintf("\t\t\t\t\"numOutstandingSpiders\":%" PRId32
 				      ",\n"
 				      ,h->m_pingInfo.m_currentSpiders );

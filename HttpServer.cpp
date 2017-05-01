@@ -7,6 +7,7 @@
 #include "Collectiondb.h"
 #include "HashTable.h"
 #include "Stats.h"
+#include "Statistics.h"
 #include "HttpMime.h"
 #include "Hostdb.h"
 #include "Loop.h"
@@ -521,7 +522,7 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 		sendErrorReply ( s , 500 , "Too many sockets open."); 
 		// count as a failed query so we send an email alert if too
 		// many of these happen
-		g_stats.m_closedSockets++;
+		Statistics::register_socket_limit_hit();
 		return; 
 	}
 

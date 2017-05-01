@@ -204,7 +204,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 
 	newPingInfo.m_numCorruptDiskReads = g_numCorrupt;
 	newPingInfo.m_unused3 = 0;
-	newPingInfo.m_socketsClosedFromHittingLimit = g_stats.m_closedSockets;
+	newPingInfo.m_unused11 = 0;
 	newPingInfo.m_currentSpiders = g_spiderLoop.getNumSpidersOut();
 
 	// let the receiver know our repair mode

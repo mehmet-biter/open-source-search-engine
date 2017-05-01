@@ -2,6 +2,7 @@
 
 #include "TcpServer.h"
 #include "Stats.h"
+#include "Statistics.h"
 #include "Profiler.h"
 #include "PingServer.h"
 #include "HttpServer.h" //g_httpServer.m_ssltcp.m_ctx
@@ -771,7 +772,7 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 				s_last = now;
 			}
 			// another stat
-			g_stats.m_closedSockets++;
+			Statistics::register_socket_limit_hit();
 			g_errno = EOUTOFSOCKETS; 
 			// send email alert
 			g_pingServer.sendEmailMsg ( &s_lastTime ,
@@ -888,7 +889,7 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 				s_last = now;
 			}
 			// another stat
-			g_stats.m_closedSockets++;
+			Statistics::register_socket_limit_hit();
 			g_errno = EOUTOFSOCKETS; 
 
 			// send email alert
@@ -904,7 +905,7 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 	if ( sd < 0 || sd >= MAX_TCP_SOCKS ) {
 		log(LOG_LOGIC,"tcp: Got bad sd of %" PRId32".",(int32_t)sd);
 		// another stat
-		g_stats.m_closedSockets++;
+		Statistics::register_socket_limit_hit();
 		g_errno = EOUTOFSOCKETS; 
 		// send email alert
 		g_pingServer.sendEmailMsg ( &s_lastTime , "out of sockets on https2");
@@ -919,7 +920,7 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 	// . this has happened a few times lately...
 	if ( s->m_startTime != 0 ) {
 		log(LOG_LOGIC,"tcp: sd of %" PRId32" is already in use.",(int32_t)sd);
-		g_stats.m_closedSockets++;
+		Statistics::register_socket_limit_hit();
 		g_errno = EOUTOFSOCKETS;
 		if ( sd == 0 ) log("tcp: closing2 sd of 0");
 		if ( ::close(sd) == -1 )

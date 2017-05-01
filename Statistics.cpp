@@ -369,10 +369,17 @@ static void dump_rdb_cache_statistics( FILE *fp ) {
 //////////////////////////////////////////////////////////////////////////////
 // Assorted statistics
 
+static std::atomic<unsigned long> socket_limit_hit_count(0);
+
+void Statistics::register_socket_limit_hit() {
+	socket_limit_hit_count++;
+}
+
 //Fetch various counters and levels. Some of them were previously exchanged in PingInfo
 static void dump_assorted_statistics(FILE *fp) {
 	fprintf(fp,"mem:pctused:%f\n",g_mem.getUsedMemPercentage());
 	fprintf(fp,"mem:oom_count:%d\n",g_mem.getOOMCount());
+	fprintf(fp,"socket:limit_hit:%lu\n",socket_limit_hit_count.load());
 }
 
 

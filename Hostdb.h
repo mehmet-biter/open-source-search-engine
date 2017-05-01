@@ -55,7 +55,7 @@ public:
 	// some new stuff
 	int32_t m_numCorruptDiskReads;
 	int32_t m_unused10;
-	int32_t m_socketsClosedFromHittingLimit;
+	int32_t m_unused11;
 
 	int32_t m_udpSlotsInUseIncoming;
 	int32_t m_tcpSocketsInUse;
