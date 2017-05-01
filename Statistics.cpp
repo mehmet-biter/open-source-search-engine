@@ -4,6 +4,7 @@
 #include "gb-include.h"
 #include "types.h"
 #include "Msg3.h"            //getDiskPageCache()
+#include "Mem.h"             //memory statistics
 #include "RdbCache.h"
 #include "Rdb.h"
 #include "GbMutex.h"
@@ -364,6 +365,17 @@ static void dump_rdb_cache_statistics( FILE *fp ) {
 	}
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+// Assorted statistics
+
+//Fetch various counters and levels. Some of them were previously exchanged in PingInfo
+static void dump_assorted_statistics(FILE *fp) {
+	fprintf(fp,"mem:pctused:%f\n",g_mem.getUsedMemPercentage());
+	fprintf(fp,"mem:oom_count:%d\n",g_mem.getOOMCount());
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 // statistics
 
@@ -381,6 +393,7 @@ static void dump_statistics(time_t now) {
 	dump_spider_statistics( fp );
 	dump_io_statistics( fp );
 	dump_rdb_cache_statistics( fp );
+	dump_assorted_statistics(fp);
 	
 	if ( fflush(fp) != 0 ) {
 		log( LOG_ERROR, "fflush(%s) failed with errno=%d (%s)", tmp_filename, errno, strerror( errno ) );

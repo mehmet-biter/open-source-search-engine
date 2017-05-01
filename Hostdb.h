@@ -46,7 +46,7 @@ public:
 	int64_t m_unused0; //used to be a timestamp for clock synchronization
 	int32_t m_hostId;
 	int32_t m_unused2; //used for the m_loadAvg
-	float m_percentMemUsed;
+	float m_unused3; //used to me m_percentMemUsed;
 	float m_unused4; //used to be m_cpuUsage
 	int32_t m_totalDocsIndexed;
 	int32_t m_hostsConfCRC;
@@ -54,7 +54,7 @@ public:
 	int32_t m_flags;
 	// some new stuff
 	int32_t m_numCorruptDiskReads;
-	int32_t m_numOutOfMems;
+	int32_t m_unused10;
 	int32_t m_socketsClosedFromHittingLimit;
 
 	int32_t m_udpSlotsInUseIncoming;

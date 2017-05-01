@@ -21,7 +21,6 @@ static int errorsSort     ( const void *i1, const void *i2 );
 static int tryagainSort   ( const void *i1, const void *i2 );
 static int dgramsToSort   ( const void *i1, const void *i2 );
 static int dgramsFromSort ( const void *i1, const void *i2 );
-static int memUsedSort    ( const void *i1, const void *i2 );
 
 static int32_t generatePingMsg( Host *h, int64_t nowms, char *buffer );
 
@@ -154,9 +153,6 @@ skipReplaceHost:
 
 			       "<td><b>docs indexed</a></td>"
 
-			       "<td><a href=\"/admin/hosts?c=%s&sort=9\">"
-			       "<b>mem used</a></td>"
-
 			       "<td><a href=\"/admin/hosts?c=%s&sort=14\">"
 			       "<b>max ping1</b></a></td>"
 
@@ -175,7 +171,6 @@ skipReplaceHost:
 			       cs, sort,
 			       DARK_BLUE  ,
 
-			       cs,
 			       cs,
 			       cs,
 			       cs,
@@ -215,7 +210,6 @@ skipReplaceHost:
 	case 6: gbsort ( hostSort, nh, sizeof(int32_t), dgramsToSort   ); break;
 	case 7: gbsort ( hostSort, nh, sizeof(int32_t), dgramsFromSort ); break;
 	//case 8:
-	case 9: gbsort ( hostSort, nh, sizeof(int32_t), memUsedSort    ); break;
 	case 11:gbsort ( hostSort, nh, sizeof(int32_t), pingAgeSort    ); break;
 	case 12:gbsort ( hostSort, nh, sizeof(int32_t), flagSort       ); break;
 	case 13:gbsort ( hostSort, nh, sizeof(int32_t), splitTimeSort  ); break;
@@ -297,14 +291,6 @@ skipReplaceHost:
 		char ipbuf3[64];
 		strcpy(ipbuf3,iptoa(eip));
 
-		const char *fontTagFront = "";
-		const char *fontTagBack  = "";
-		if ( h->m_pingInfo.m_percentMemUsed >= 98.0 && 
-		     format == FORMAT_HTML ) {
-			fontTagFront = "<font color=red>";
-			fontTagBack  = "</font>";
-		}
-
 		// split time, don't divide by zero!
 		int32_t splitTime = 0;
 		if ( h->m_splitsDone ) 
@@ -336,13 +322,6 @@ skipReplaceHost:
 			if ( n )
 				fb.safePrintf("<font color=red><b>"
 					      "C"
-					      "<sup>%" PRId32"</sup>"
-					      "</b></font>"
-					      , n );
-			n = h->m_pingInfo.m_numOutOfMems;
-			if ( n )
-				fb.safePrintf("<font color=red><b>"
-					      "O"
 					      "<sup>%" PRId32"</sup>"
 					      "</b></font>"
 					      , n );
@@ -542,9 +521,6 @@ skipReplaceHost:
 			sb.safePrintf("\t\t<numCorruptDiskReads>%" PRId32
 				      "</numCorruptDiskReads>\n"
 				      ,h->m_pingInfo.m_numCorruptDiskReads);
-			sb.safePrintf("\t\t<numOutOfMems>%" PRId32
-				      "</numOutOfMems>\n"
-				      ,h->m_pingInfo.m_numOutOfMems);
 			sb.safePrintf("\t\t<numClosedSockets>%" PRId32
 				      "</numClosedSockets>\n"
 				      ,h->m_pingInfo.
@@ -565,10 +541,6 @@ skipReplaceHost:
 			sb.safePrintf("\t\t<docsIndexed>%" PRId32
 				      "</docsIndexed>\n",
 				      h->m_pingInfo.m_totalDocsIndexed);
-
-			sb.safePrintf("\t\t<percentMemUsed>%.1f%%"
-				      "</percentMemUsed>",
-				      h->m_pingInfo.m_percentMemUsed); // float
 
 			sb.safePrintf("\t\t<maxPing1>%s</maxPing1>\n",
 				      pms );
@@ -646,8 +618,6 @@ skipReplaceHost:
 
 			sb.safePrintf("\t\t\t\t\"numCorruptDiskReads\":%" PRId32",\n"
 				      ,h->m_pingInfo.m_numCorruptDiskReads);
-			sb.safePrintf("\t\t\t\t\"numOutOfMems\":%" PRId32",\n"
-				      ,h->m_pingInfo.m_numOutOfMems);
 			sb.safePrintf("\t\t\t\t\"numClosedSockets\":%" PRId32",\n"
 				      ,h->m_pingInfo.
 				      m_socketsClosedFromHittingLimit);
@@ -666,9 +636,6 @@ skipReplaceHost:
 
 			sb.safePrintf("\t\t\t\t\"docsIndexed\":%" PRId32",\n",
 				      h->m_pingInfo.m_totalDocsIndexed);
-
-			sb.safePrintf("\t\t\t\t\"percentMemUsed\":\"%.1f%%\",\n",
-				      h->m_pingInfo.m_percentMemUsed); // float
 
 			sb.safePrintf("\t\t\t\t\"maxPing1\":\"%s\",\n",pms);
 
@@ -754,9 +721,6 @@ skipReplaceHost:
 			  // docs indexed
 			  "<td>%" PRId32"</td>"
 
-			  // percent mem used
-			  "<td>%s%.1f%%%s</td>"
-
 			  // ping max
 			  "<td>%s</td>"
 
@@ -794,10 +758,6 @@ skipReplaceHost:
 			  fb.getBufStart(),//flagString,
 
 			  h->m_pingInfo.m_totalDocsIndexed,
-
-			  fontTagFront,
-			  h->m_pingInfo.m_percentMemUsed, // float
-			  fontTagBack,
 
 			  // ping max
 			  pms,
@@ -1288,15 +1248,5 @@ int dgramsFromSort ( const void *i1, const void *i2 ) {
 	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
 	if ( h1->m_dgramsFrom > h2->m_dgramsFrom ) return -1;
 	if ( h1->m_dgramsFrom < h2->m_dgramsFrom ) return  1;
-	return 0;
-}
-
-int memUsedSort ( const void *i1, const void *i2 ) {
-	Host *h1 = g_hostdb.getHost ( *(int32_t*)i1 );
-	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
-	PingInfo *p1 = &h1->m_pingInfo;
-	PingInfo *p2 = &h2->m_pingInfo;
-	if ( p1->m_percentMemUsed > p2->m_percentMemUsed ) return -1;
-	if ( p1->m_percentMemUsed < p2->m_percentMemUsed ) return  1;
 	return 0;
 }

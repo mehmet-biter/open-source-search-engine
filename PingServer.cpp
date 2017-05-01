@@ -203,7 +203,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	PingInfo newPingInfo;
 
 	newPingInfo.m_numCorruptDiskReads = g_numCorrupt;
-	newPingInfo.m_numOutOfMems = g_mem.getOOMCount();
+	newPingInfo.m_unused3 = 0;
 	newPingInfo.m_socketsClosedFromHittingLimit = g_stats.m_closedSockets;
 	newPingInfo.m_currentSpiders = g_spiderLoop.getNumSpidersOut();
 
@@ -212,10 +212,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 
 	newPingInfo.m_unused2 = 0;
 
-	// then our percent mem used
-	float mem = g_mem.getUsedMemPercentage();
-	//*(float *)p = mem ; p += sizeof(float); // 4 bytes
-	newPingInfo.m_percentMemUsed = mem;
+	newPingInfo.m_unused3 = 0;
 
 	// our num recs, docsIndexed
 	newPingInfo.m_totalDocsIndexed = (int32_t)g_process.getTotalDocsIndexed();
@@ -364,18 +361,6 @@ void PingServer::gotReplyWrapperP(void *state, UdpSlot *slot) {
 		// he is back up then we are free to send another alert about
 		// any other host that goes down
 		if ( h->m_hostId == s_lastSentHostId ) s_lastSentHostId = -1;
-
-		if ( h->m_pingInfo.m_percentMemUsed >= 99.0 &&
-		     h->m_firstOOMTime == 0 )
-			h->m_firstOOMTime = nowms;
-		if ( h->m_pingInfo.m_percentMemUsed < 99.0 )
-			h->m_firstOOMTime = 0LL;
-		// if this host is alive and has been at 99% or more mem usage
-		// for the last X minutes, and we have got at least 10 ping replies
-		// from him, then send an email alert.
-		if ( h->m_pingInfo.m_percentMemUsed >= 99.0 &&
-		     nowms - h->m_firstOOMTime >= g_conf.m_sendEmailTimeout )
-			g_pingServer.sendEmail ( h , NULL , true );
 	} else {
 		// . if his ping was dead, try to send an email alert to the admin
 		// . returns false if blocked, true otherwise

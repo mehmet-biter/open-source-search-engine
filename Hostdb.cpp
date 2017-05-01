@@ -1432,14 +1432,14 @@ void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
 	h->m_pingInfo.m_unused0 = 0;
 	h->m_pingInfo.m_hostId = pi.m_hostId;
 	h->m_pingInfo.m_unused2 = 0;
-	h->m_pingInfo.m_percentMemUsed = pi.m_percentMemUsed;
+	h->m_pingInfo.m_unused3 = 0;
 	h->m_pingInfo.m_unused4 = 0.0;
 	h->m_pingInfo.m_totalDocsIndexed = pi.m_totalDocsIndexed;
 	h->m_pingInfo.m_hostsConfCRC = pi.m_hostsConfCRC;
 	h->m_pingInfo.m_unused7 = 0.0;
 	h->m_pingInfo.m_flags = pi.m_flags;
 	h->m_pingInfo.m_numCorruptDiskReads = pi.m_numCorruptDiskReads;
-	h->m_pingInfo.m_numOutOfMems = pi.m_numOutOfMems;
+	h->m_pingInfo.m_unused10 = 0;
 	h->m_pingInfo.m_socketsClosedFromHittingLimit = pi.m_socketsClosedFromHittingLimit;
 	//m_totalResends is updated direclty by UdpSlot
 	//h->m_pingInfo.m_totalResends = pi.m_totalResends;
