@@ -676,30 +676,6 @@ bool XmlDoc::hashDateNumbers ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	if ( ! hashNumberForSorting ( buf , buf , bufLen , &hi ) )
  		return false;
 
-	// do not index the rest if we are a "spider reply" document
-	// which is like a fake document for seeing spider statuses
-	//if ( isStatusDoc == CT_STATUS ) return true;
-	//if ( isStatusDoc ) return true;
-
-	// now for CT_STATUS spider status "documents" we also index
-	// gbspiderdate so index this so we can just do a
-	// gbsortby:gbdocspiderdate and only get real DOCUMENTS not the
-	// spider status "documents"
-/*
-  BR 20160108: Don't store these as we don't plan to use them
-	hi.m_desc      = "doc last spidered date";
-	hi.m_prefix    = "gbdocspiderdate";
-	bufLen = sprintf ( buf , "%" PRIu32, (uint32_t)m_spideredTime );
-	if ( ! hashNumberForSorting ( buf , buf , bufLen , &hi ) )
-		return false;
-
- 	hi.m_desc      = "doc last indexed date";
- 	hi.m_prefix    = "gbdocindexdate";
-	bufLen = sprintf ( buf , "%" PRIu32, (uint32_t)indexedTime );
- 	if ( ! hashNumberForSorting ( buf , buf , bufLen , &hi ) )
- 		return false;
-*/
-
 	// all done
 	return true;
 }
@@ -986,8 +962,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	Url uw;
 	uw.set( fu->getUrl(), fu->getUrlLen(), true, false );
 	hi.m_prefix    = "url";
-	// no longer, we just index json now
-	//if ( isStatusDoc ) hi.m_prefix = "url2";
+
 	if ( ! hashSingleTerm(uw.getUrl(),uw.getUrlLen(),&hi) )
 		return false;
 
@@ -1618,15 +1593,6 @@ bool XmlDoc::hashLanguage ( HashTableX *tt ) {
 
 	if ( ! hashString ( s, slen, &hi ) ) return false;
 
-/* 
-	BR 20160117: Duplicate
-	// try lang abbreviation
-	sprintf(s , "%s ", getLanguageAbbr(langId) );
-	// go back to broken way to try to fix parsing consistency bug
-	// by adding hashLanguageString() function below
-	//sprintf(s , "%s ", getLanguageAbbr(langId) );
-	if ( ! hashString ( s, slen, &hi ) ) return false;
-*/
 	return true;
 }
 
