@@ -1432,6 +1432,10 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 		// store the siterank of the linker in this and use that
 		// to set the multiplier M bits i guess
 		hi.m_linkerSiteRank = k->m_siteRank;
+		if(hi.m_linkerSiteRank>MAXSITERANK) {
+			log(LOG_INFO,"Inlink had siteRank>max (%d), probably from docid %ld", k->m_siteRank, k->m_docId);
+			hi.m_linkerSiteRank = MAXSITERANK;
+		}
 		// now record this so we can match the link text to
 		// a matched offsite inlink text term in the scoring info
 		k->m_wordPosStart = m_dist; // hi.m_startDist;
