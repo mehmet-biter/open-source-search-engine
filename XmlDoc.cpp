@@ -2912,9 +2912,15 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	// return on errors with g_errno set
 	if ( ! indexCode ) return NULL;
 	// force delete? EDOCFORCEDELETE
-	if ( *indexCode && (*indexCode != EDOCSIMPLIFIEDREDIR && *indexCode != EDOCNONCANONICAL)) {
-		m_titleRecBufValid = true;
-		return &m_titleRecBuf;
+	if (*indexCode) {
+		if (*indexCode == EDOCSIMPLIFIEDREDIR || *indexCode == EDOCNONCANONICAL) {
+			// make sure we store an empty document if it's a simplified redirect/non-canonical
+			ptr_utf8Content = NULL;
+			size_utf8Content = 0;
+		} else {
+			m_titleRecBufValid = true;
+			return &m_titleRecBuf;
+		}
 	}
 
 	// . internal callback
