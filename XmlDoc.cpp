@@ -18165,6 +18165,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			"<tr><td>is RSS feed?</td><td>%" PRId32"</td></tr>\n"
 			"<tr><td>ip</td><td><a href=\"/search?q=ip%%3A%s&c=%s&n=100\">"
 			"%s</td></tr>\n"
+			"<tr><td>http status</td><td>%d</td></tr>"
 			"<tr><td>content len</td><td>%" PRId32" bytes</td></tr>\n"
 			"<tr><td>content truncated</td><td>%" PRId32"</td></tr>\n"
 			"<tr><td>content type</td><td>%s</td></tr>\n"
@@ -18189,6 +18190,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			ipString,
 			cr->m_coll,
 			ipString,
+			m_httpStatus,
 			size_utf8Content - 1,
 			(int32_t)m_isContentTruncated,
 			g_contentTypeStrings[(int)m_contentType] ,
@@ -18225,6 +18227,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 		sb->safePrintf("\t<isPermalink>%" PRId32"</isPermalink>\n"
 			       "\t<isRSSFeed>%" PRId32"</isRSSFeed>\n"
 			       "\t<ipAddress><![CDATA[%s]]></ipAddress>\n"
+			       "\t<httpStatus>%d</httpStatus>"
 			       "\t<contentLenInBytes>%" PRId32
 			       "</contentLenInBytes>\n"
 			       "\t<isContentTruncated>%" PRId32
@@ -18235,6 +18238,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			       (int32_t)m_isPermalink,
 			       (int32_t)m_isRSS,
 			       ipString,
+			       m_httpStatus,
 			       size_utf8Content - 1,
 			       (int32_t)m_isContentTruncated,
 			       g_contentTypeStrings[(int)m_contentType] ,
