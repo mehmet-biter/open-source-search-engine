@@ -1380,7 +1380,12 @@ bool Rdb::hasRoom(RdbList *list) {
 //   because dump should complete soon and free up some mem
 // . this overwrites dups
 bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_t dataSize) {
-	logTrace(g_conf.m_logTraceRdb, "BEGIN %s: collnum=%" PRId32" key=%s dataSize=%" PRId32, m_dbname, collnum, KEYSTR(key, m_ks), dataSize);
+	if (g_conf.m_logTraceRdb) {
+		char keyStrBuf[MAX_KEYSTR_BYTES];
+		KEYSTR(key, m_ks, keyStrBuf);
+		logTrace(g_conf.m_logTraceRdb, "BEGIN %s: collnum=%" PRId32" key=%s dataSize=%" PRId32,
+		         m_dbname, collnum, keyStrBuf, dataSize);
+	}
 
 	if (!getBase(collnum)) {
 		g_errno = EBADENGINEER;
@@ -1652,7 +1657,12 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 			// if added positive key is before cursor, update curso
 			if (KEYCMP(key, (char *)&sc->m_nextKeys[pri], sizeof(key96_t)) < 0) {
 				KEYSET((char *)&sc->m_nextKeys[pri], key, sizeof(key96_t));
-				logDebug(g_conf.m_logDebugSpider, "spider: cursor reset pri=%" PRId32" to %s", pri, KEYSTR(key, 12));
+
+				if (g_conf.m_logDebugSpider) {
+					char keyStrBuf[MAX_KEYSTR_BYTES];
+					KEYSTR(key, 12, keyStrBuf);
+					logDebug(g_conf.m_logDebugSpider, "spider: cursor reset pri=%" PRId32" to %s", pri, keyStrBuf);
+				}
 			}
 
 			logTrace(g_conf.m_logTraceRdb, "END. %s: Done. For doledb. Returning true", m_dbname);
@@ -1671,11 +1681,15 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 		if (Spiderdb::isSpiderRequest(&sreq->m_key)) {
 			// add the request
 
-			// log that. why isn't this undoling always
-			logDebug(g_conf.m_logDebugSpider, "spider: rdb: added spider request to spiderdb rdb tree"
-					" request for uh48=%" PRIu64" prntdocid=%" PRIu64" firstIp=%s spiderdbkey=%s",
-			         sreq->getUrlHash48(), sreq->getParentDocId(), iptoa(sreq->m_firstIp),
-			         KEYSTR((const char *)&sreq->m_key, sizeof(key128_t)));
+			if (g_conf.m_logDebugSpider) {
+				// log that. why isn't this undoling always
+				char keyStrBuf[MAX_KEYSTR_BYTES];
+				KEYSTR((const char *)&sreq->m_key, sizeof(key128_t), keyStrBuf);
+
+				logDebug(g_conf.m_logDebugSpider, "spider: rdb: added spider request to spiderdb rdb tree"
+				         " request for uh48=%" PRIu64" prntdocid=%" PRIu64" firstIp=%s spiderdbkey=%s",
+				         sreq->getUrlHash48(), sreq->getParentDocId(), iptoa(sreq->m_firstIp), keyStrBuf);
+			}
 
 			// false means to NOT call evaluateAllRequests()
 			// because we call it below. the reason we do this
