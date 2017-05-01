@@ -1745,15 +1745,14 @@ int32_t *getLocalIps ( ) {
 		log("hostdb: getifaddrs: %s.",mstrerror(errno));
 		return NULL;
 	}
-	ifaddrs *p = ifap;
 	int32_t ni = 0;
 	// store loopback just in case
 	int32_t loopback = atoip("127.0.0.1");
 	s_localIps[ni++] = loopback;
-	for ( ; p && ni < 18 ; p = p->ifa_next ) {
-		// avoid possible core dump
+	for(ifaddrs *p = ifap; p && ni < 18 ; p = p->ifa_next) {
 		if ( ! p->ifa_addr ) continue;
-		//break; // mdw hack...
+		if(p->ifa_addr->sa_family != AF_INET)
+			continue;
 		struct sockaddr_in *xx = (sockaddr_in *)(void*)p->ifa_addr;
 		int32_t ip = xx->sin_addr.s_addr;
 		// skip if loopback we stored above
