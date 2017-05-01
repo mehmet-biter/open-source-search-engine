@@ -154,13 +154,6 @@ static bool storeTerm ( const char	*s        ,
 //   we know the termlist is small, or the termlist is being used for spidering
 //   or parsing purposes and is usually not sent across the network.
 bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
-	// this should be ready to go and not block!
-	int64_t *pch64 = getExactContentHash64();
-	if ( ! pch64 || pch64 == (void *)-1 ) { g_process.shutdownAbort(true); }
-
-	// shortcut
-	Url *fu = getFirstUrl();
-
 	// constructor should set to defaults automatically
 	HashInfo hi;
 	hi.m_hashGroup = HASHGROUP_INTAG;
@@ -168,18 +161,25 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	// usually we shard by docid, but these are terms we shard by termid!
 	hi.m_shardByTermId   = true;
 
+	if (m_contentLen > 0) {
+		// for exact content deduping
+		setStatus("hashing gbcontenthash (deduping) no-split keys");
 
-	// for exact content deduping
-	setStatus ( "hashing gbcontenthash (deduping) no-split keys" );
-	char cbuf[64];
-	int32_t clen = sprintf(cbuf,"%" PRIu64,(uint64_t)*pch64);
-	hi.m_prefix    = "gbcontenthash";
-	if ( ! hashString ( cbuf,clen,&hi ) ) return false;
+		// this should be ready to go and not block!
+		int64_t *pch64 = getExactContentHash64();
+		if (!pch64 || pch64 == (void *)-1) { g_process.shutdownAbort(true); }
 
-	char *host = fu->getHost    ();
+		char cbuf[64];
+		int32_t clen = sprintf(cbuf, "%" PRIu64, (uint64_t)*pch64);
+		hi.m_prefix = "gbcontenthash";
+		if (!hashString(cbuf, clen, &hi)) return false;
+	}
 
 	// now hash the site
 	setStatus ( "hashing no-split SiteGetter terms");
+
+	Url *fu = getFirstUrl();
+	char *host = fu->getHost    ();
 
 	//
 	// HASH terms for SiteGetter.cpp
