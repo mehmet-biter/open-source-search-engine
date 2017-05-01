@@ -508,6 +508,7 @@ Msg20Reply::Msg20Reply ( ) {
 	m_language = langUnknown;
 	m_country = 0;
 	m_isAdult = false;
+	m_httpStatus = 0;
 	m_contentLen = 0;
 	m_contentHash32 = 0;
 	m_pageNumInlinks = 0;
