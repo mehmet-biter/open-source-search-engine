@@ -123,4 +123,6 @@ extern class PingServer g_pingServer;
 extern bool g_recoveryMode;
 extern int32_t g_recoveryLevel;
 
+int getOurHostFlags();
+
 #endif // GB_PINGSERVER_H

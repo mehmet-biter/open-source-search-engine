@@ -160,6 +160,11 @@ class Conf {
 	int32_t  m_pingSpacer;
 	int32_t  m_maxOutstandingPings;
 
+	char    m_vagusClusterId[128];
+	int32_t m_vagusPort;
+	int32_t m_vagusKeepaliveSendInterval; //milliseconds
+	int32_t m_vagusKeepaliveLifetime; //milliseconds
+	
 	int32_t m_maxDocsWanted;        //maximum number of results in one go. Puts a limit on SearchInput::m_docsWanted
 	int32_t m_maxFirstResultNum;    //maximum document offset / result-page. Puts a limit on SearchInput::m_firstResultNum
 

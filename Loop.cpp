@@ -10,6 +10,7 @@
 #include "Conf.h"
 #include "ScopedLock.h"
 #include "Mem.h"
+#include "InstanceInfoExchange.h"
 
 #include "Stats.h"
 
@@ -436,7 +437,8 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now , int32_t 
 
 Loop::Loop()
   : m_callbacksNext(NULL),
-    m_slotMutex()
+    m_slotMutex(),
+    m_lastKeepaliveTimestamp(0)
 {
 	m_isDoingLoop      = false;
 
@@ -738,6 +740,11 @@ void Loop::doPoll ( ) {
 
 	if(g_udpServer.needBottom()) {
 		g_udpServer.makeCallbacks(1);
+	}
+
+	if(m_lastKeepaliveTimestamp + g_conf.m_vagusKeepaliveSendInterval <= gettimeofdayInMilliseconds()) {
+		m_lastKeepaliveTimestamp = gettimeofdayInMilliseconds() + g_conf.m_vagusKeepaliveSendInterval;
+		InstanceInfoExchange::weAreAlive(g_conf.m_vagusKeepaliveLifetime);
 	}
 
 	int32_t n;

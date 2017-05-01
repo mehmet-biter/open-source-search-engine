@@ -36,6 +36,7 @@
 #include "File.h"
 #include "Docid2Siteflags.h"
 #include "UrlRealtimeClassification.h"
+#include "InstanceInfoExchange.h"
 #include "Conf.h"
 #include "Mem.h"
 #include "Msg4In.h"
@@ -637,6 +638,8 @@ bool Process::shutdown2() {
 	if ( m_try >= 10 ) {
 		m_urgent = true;
 	}
+
+	InstanceInfoExchange::finalize();
 
 	finalizeRealtimeUrlClassification();
 

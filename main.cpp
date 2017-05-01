@@ -49,6 +49,7 @@
 #include "Title.h"
 #include "Speller.h"
 #include "SummaryCache.h"
+#include "InstanceInfoExchange.h"
 #include "Dns.h"
 
 // include all msgs that have request handlers, cuz we register them with g_udp
@@ -1848,6 +1849,9 @@ int main2 ( int argc , char *argv[] ) {
 
 	initializeRealtimeUrlClassification();
 	
+	if(!InstanceInfoExchange::initialize())
+		return 0;
+
 	if(g_recoveryMode) {
 		//now that everything is init-ed send the message.
 		char buf[256];
