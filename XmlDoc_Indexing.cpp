@@ -217,44 +217,6 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 		if ( ! hashSingleTerm ( host,end2-host,&hi) ) return false;
 	}
 
-	//Dates *dp = getDates ();
-	// hash the clocks into indexdb
-	//if ( ! dp->hash ( m_docId , tt , this ) ) return false;
-
-	// . hash special site/hopcount thing for permalinks
-	// . used by Images.cpp for doing thumbnails
-	// . this returns false and sets g_errno on error
-	// . let's try thumbnails for all...
-	//if ( ! *getIsPermalink() ) return true;
-
-/*
-	BR 20160117: No longer has image URLs
-	setStatus ( "hashing no-split gbimage keys" );
-
-	hi.m_prefix    = "gbimage";
-	// hash gbimage: for permalinks only for Images.cpp
-	for ( int32_t i = 0 ; i < m_images.m_numImages ; i++ ) {
-		// get the node number
-		//int32_t nn = m_images.m_imageNodes[i];
-		// get the url of the image
-		//XmlNode *xn = m_xml.getNodePtr(nn);
-		int32_t  srcLen;
-		char *src = m_images.getImageUrl(i,&srcLen);
-		// set it to the full url
-		Url iu;
-		// use "pageUrl" as the baseUrl
-		Url *cu = getCurrentUrl();
-		// we can addwww to normalize since this is for deduping kinda
-		iu.set ( cu , src , srcLen , true );  // addWWW? yes...
-		char *u    = iu.getUrl   ();
-		int32_t  ulen = iu.getUrlLen();
-		// hash each one
-		//if ( ! hashString ( u,ulen,&hi ) ) return false;
-		// hash a single entity
-		if ( ! hashSingleTerm ( u,ulen,&hi) ) return false;
-		//log("test: %s",u);
-	}
-*/
 	return true;
 }
 
@@ -1228,20 +1190,14 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	int32_t  elen = fu->getExtensionLen();
 	// update hash parms
 	hi.m_prefix    = "ext";
-	// no longer, we just index json now
-	//if ( isStatusDoc ) hi.m_prefix = "ext2";
 	if ( ! hashSingleTerm(ext,elen,&hi ) ) return false;
 
 
 	setStatus ( "hashing gbdocid" );
 	hi.m_prefix = "gbdocid";
-	// no longer, we just index json now
-	//if ( isStatusDoc ) hi.m_prefix = "gbdocid2";
 	char buf2[32];
 	sprintf(buf2,"%" PRIu64, (uint64_t)m_docId );
 	if ( ! hashSingleTerm(buf2,strlen(buf2),&hi) ) return false;
-
-	//if ( isStatusDoc ) return true;
 
 	setStatus ( "hashing SiteGetter terms");
 
@@ -1299,19 +1255,6 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	hi.m_prefix    = "urlhash";
 	if ( ! hashString(buf,blen,&hi) ) return false;
 
-/*
-	BR 20160106 removed.
-	blen = sprintf(buf,"%" PRIu32,h/10);
-	// update hashing parms
-	hi.m_prefix = "urlhashdiv10";
-	if ( ! hashString(buf,blen,&hi) ) return false;
-	blen = sprintf(buf,"%" PRIu32,h/100);
-	// update hashing parms
-	hi.m_prefix = "urlhashdiv100";
-	if ( ! hashString(buf,blen,&hi) ) return false;
-*/
-
-
 	setStatus ( "hashing url mid domain");
 
 	// update parms
@@ -1354,17 +1297,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 				    bool        hashAnomalies    ,
 				    bool        hashNonAnomalies ) {
 
-	// do not index ANY of the body if it is NOT a permalink and
-	// "menu elimination" technology is enabled.
-	//if ( ! *getIsPermalink() && m_eliminateMenus ) return true;
-
 	setStatus ( "hashing link text" );
-
-	// . now it must have an rss item to be indexed in all its glory
-	// . but if it tells us it has an rss feed, toss it and wait for
-	//   the feed.... BUT sometimes the rss feed outlink is 404!
-	// . NO, now we discard with ENORSS at Msg16.cpp
-	//if ( ! *getHasRSSItem() &&  m_eliminateMenus ) return true;
 
 	// sanity check
 	if ( hashAnomalies == hashNonAnomalies ) { g_process.shutdownAbort(true); }
@@ -1404,14 +1337,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 		bool internal=((m_ip&0x0000ffff)==(k->m_ip&0x0000ffff));
 		// count external inlinks we have for indexing gbmininlinks:
 		if ( ! internal ) ecount++;
-		// get score
-		//int64_t baseScore = k->m_baseScore;
-                // get the weight
-		//int64_t ww ;
-		//if ( internal ) ww = m_internalLinkTextWeight;
-		//else            ww = m_externalLinkTextWeight;
-		// modify the baseScore
-		//int64_t final = (baseScore * ww) / 100LL;
+
 		// get length of link text
 		int32_t tlen = k->size_linkText;
 		if ( tlen > 0 ) tlen--;
@@ -1423,10 +1349,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 			    k->getUrl(),m_firstUrl.getUrl());
 			continue;
 		}
-		// if it is anomalous, set this, we don't
-		//if ( k->m_isAnomaly )
-		//	hi.m_hashIffNotUnique = true;
-		//hi.m_baseScore = final;
+
 		if ( internal ) hi.m_hashGroup = HASHGROUP_INTERNALINLINKTEXT;
 		else            hi.m_hashGroup = HASHGROUP_INLINKTEXT;
 		// store the siterank of the linker in this and use that
@@ -1457,13 +1380,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 
 // . returns false and sets g_errno on error
 bool XmlDoc::hashNeighborhoods ( HashTableX *tt ) {
-
-	// seems like iffUnique is off, so do this
-	//if ( ! *getIsPermalink() && m_eliminateMenus ) return true;
-
 	setStatus ( "hashing neighborhoods" );
-
-	//g_tt = table;
 
 	// . now we also hash the neighborhood text of each inlink, that is,
 	//   the text surrounding the inlink text.
