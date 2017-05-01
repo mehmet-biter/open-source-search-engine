@@ -161,7 +161,7 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	// usually we shard by docid, but these are terms we shard by termid!
 	hi.m_shardByTermId   = true;
 
-	if (m_contentLen > 0) {
+	if ((size_utf8Content - 1) > 0) {
 		// for exact content deduping
 		setStatus("hashing gbcontenthash (deduping) no-split keys");
 
@@ -375,7 +375,7 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		return (char *)1;
 	}
 
-	if (m_contentLen == 0) {
+	if ((size_utf8Content - 1) <= 0) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, contentLen == 0");
 		return (char *)1;
 	}
