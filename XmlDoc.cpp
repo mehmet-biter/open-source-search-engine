@@ -12923,6 +12923,9 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			// we're adding titlerec to keep links between redirection intact
 			addTitleRec = true;
 
+			// since we're adding titlerec, add posrec as well
+			addPosRec = true;
+
 			// if we are adding a simplified redirect as a link to spiderdb
 			// likewise if the error was ENONCANONICAL treat it like that
 			spideringLinks = true;
@@ -16184,7 +16187,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	m_reply.m_ip               = m_ip;
 	m_reply.m_firstIp          = *fip;
 	m_reply.m_docId            = m_docId;
-	m_reply.m_contentLen       = size_utf8Content;
+	m_reply.m_contentLen       = size_utf8Content - 1;
 	m_reply.m_lastSpidered     = getSpideredTime();//m_spideredTime;
 	m_reply.m_datedbDate       = 0;
 	m_reply.m_firstIndexedDate = m_firstIndexedDate;

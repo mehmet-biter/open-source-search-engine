@@ -50,9 +50,8 @@ enum {
 	CR_ERROR_CLUSTERDB ,
 	// the url is a dup of a previous url (wiki pages capitalization)
 	CR_DUP_URL         ,
-	// . subset of the CR_OK (visible) results are "wasted" titlerec lookup
-	// . only used for stats by Msg40.cpp/Stats.cpp
-	CR_WASTED          ,
+	// the url doesn't have any content due to simplified redirection page/non-caconical page
+	CR_EMPTY_REDIRECTION_PAGE,
 	// the docid is ok to display!
 	CR_OK              ,
 	// from a blacklisted site hash
