@@ -256,7 +256,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 
 	newPingInfo.m_unused0 = 0;
 
-	newPingInfo.m_udpSlotsInUseIncoming = g_udpServer.getNumUsedSlotsIncoming();
+	newPingInfo.m_unused12 = 0;
 
 	newPingInfo.m_tcpSocketsInUse = g_httpServer.m_tcp.m_numUsed;
 

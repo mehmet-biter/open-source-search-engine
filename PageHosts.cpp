@@ -362,31 +362,6 @@ skipReplaceHost:
 					,h->m_pingInfo.m_currentSpiders
 					);
 
-		if ( format == FORMAT_HTML && 
-		     h->m_pingInfo.m_udpSlotsInUseIncoming ) {
-			const char *f1 = "";
-			const char *f2 = "";
-			// MAXUDPSLOTS in Spider.cpp is 300 right now
-			if ( h->m_pingInfo.m_udpSlotsInUseIncoming >= 300 ) {
-				f1 = "<b>";
-				f2 = "</b>";
-			}
-			if ( h->m_pingInfo.m_udpSlotsInUseIncoming >= 400 ) {
-				f1 = "<b><font color=red>";
-				f2 = "</font></b>";
-			}
-			fb.safePrintf("<span title=\"udpSlotsInUse\">"
-				      "%s"
-				      "U"
-				      "<sup>%" PRId32"</sup>"
-				      "%s"
-				      "</span>"
-				      ,f1
-				      ,h->m_pingInfo.m_udpSlotsInUseIncoming
-				      ,f2
-				      );
-		}
-
 		if ( format == FORMAT_HTML && h->m_pingInfo.m_tcpSocketsInUse){
 			const char *f1 = "";
 			const char *f2 = "";
@@ -496,10 +471,6 @@ skipReplaceHost:
 				      "</errorTryAgains>\n",
 				      h->m_etryagains.load());
 
-			sb.safePrintf("\t\t<udpSlotsInUse>%" PRId32
-				      "</udpSlotsInUse>\n",
-				      h->m_pingInfo.m_udpSlotsInUseIncoming);
-
 			sb.safePrintf("\t\t<tcpSocketsInUse>%" PRId32
 				      "</tcpSocketsInUse>\n",
 				      h->m_pingInfo.m_tcpSocketsInUse);
@@ -592,8 +563,6 @@ skipReplaceHost:
 			*/
 			sb.safePrintf("\t\t\t\t\"errorTryAgains\":%" PRId32",\n",
 				      h->m_etryagains.load());
-			sb.safePrintf("\t\t\t\t\"udpSlotsInUse\":%" PRId32",\n",
-				      h->m_pingInfo.m_udpSlotsInUseIncoming);
 			sb.safePrintf("\t\t\t\t\"tcpSocketsInUse\":%" PRId32",\n",
 				      h->m_pingInfo.m_tcpSocketsInUse);
 
