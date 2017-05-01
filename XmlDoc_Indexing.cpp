@@ -154,13 +154,6 @@ static bool storeTerm ( const char	*s        ,
 //   we know the termlist is small, or the termlist is being used for spidering
 //   or parsing purposes and is usually not sent across the network.
 bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
-	// this should be ready to go and not block!
-	int64_t *pch64 = getExactContentHash64();
-	if ( ! pch64 || pch64 == (void *)-1 ) { g_process.shutdownAbort(true); }
-
-	// shortcut
-	Url *fu = getFirstUrl();
-
 	// constructor should set to defaults automatically
 	HashInfo hi;
 	hi.m_hashGroup = HASHGROUP_INTAG;
@@ -168,18 +161,25 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	// usually we shard by docid, but these are terms we shard by termid!
 	hi.m_shardByTermId   = true;
 
+	if ((size_utf8Content - 1) > 0) {
+		// for exact content deduping
+		setStatus("hashing gbcontenthash (deduping) no-split keys");
 
-	// for exact content deduping
-	setStatus ( "hashing gbcontenthash (deduping) no-split keys" );
-	char cbuf[64];
-	int32_t clen = sprintf(cbuf,"%" PRIu64,(uint64_t)*pch64);
-	hi.m_prefix    = "gbcontenthash";
-	if ( ! hashString ( cbuf,clen,&hi ) ) return false;
+		// this should be ready to go and not block!
+		int64_t *pch64 = getExactContentHash64();
+		if (!pch64 || pch64 == (void *)-1) { g_process.shutdownAbort(true); }
 
-	char *host = fu->getHost    ();
+		char cbuf[64];
+		int32_t clen = sprintf(cbuf, "%" PRIu64, (uint64_t)*pch64);
+		hi.m_prefix = "gbcontenthash";
+		if (!hashString(cbuf, clen, &hi)) return false;
+	}
 
 	// now hash the site
 	setStatus ( "hashing no-split SiteGetter terms");
+
+	Url *fu = getFirstUrl();
+	char *host = fu->getHost    ();
 
 	//
 	// HASH terms for SiteGetter.cpp
@@ -217,44 +217,6 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 		if ( ! hashSingleTerm ( host,end2-host,&hi) ) return false;
 	}
 
-	//Dates *dp = getDates ();
-	// hash the clocks into indexdb
-	//if ( ! dp->hash ( m_docId , tt , this ) ) return false;
-
-	// . hash special site/hopcount thing for permalinks
-	// . used by Images.cpp for doing thumbnails
-	// . this returns false and sets g_errno on error
-	// . let's try thumbnails for all...
-	//if ( ! *getIsPermalink() ) return true;
-
-/*
-	BR 20160117: No longer has image URLs
-	setStatus ( "hashing no-split gbimage keys" );
-
-	hi.m_prefix    = "gbimage";
-	// hash gbimage: for permalinks only for Images.cpp
-	for ( int32_t i = 0 ; i < m_images.m_numImages ; i++ ) {
-		// get the node number
-		//int32_t nn = m_images.m_imageNodes[i];
-		// get the url of the image
-		//XmlNode *xn = m_xml.getNodePtr(nn);
-		int32_t  srcLen;
-		char *src = m_images.getImageUrl(i,&srcLen);
-		// set it to the full url
-		Url iu;
-		// use "pageUrl" as the baseUrl
-		Url *cu = getCurrentUrl();
-		// we can addwww to normalize since this is for deduping kinda
-		iu.set ( cu , src , srcLen , true );  // addWWW? yes...
-		char *u    = iu.getUrl   ();
-		int32_t  ulen = iu.getUrlLen();
-		// hash each one
-		//if ( ! hashString ( u,ulen,&hi ) ) return false;
-		// hash a single entity
-		if ( ! hashSingleTerm ( u,ulen,&hi) ) return false;
-		//log("test: %s",u);
-	}
-*/
 	return true;
 }
 
@@ -405,18 +367,17 @@ char *XmlDoc::hashAll(HashTableX *table) {
 	// global index now, so don't need this... 9/28/2014
 
 	// stop indexing xml docs
-	bool indexDoc = cr->m_indexBody;
-
 	// global index unless this is a json object in which case it is
 	// hashed above in the call to hashJSON(). this will decrease disk
 	// usage by about half, posdb* files are pretty big.
-	if (!indexDoc) {
+	if (!cr->m_indexBody) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, !indexDoc");
 		return (char *)1;
 	}
 
-	if ( *ct == CT_JSON || *ct == CT_XML ) {
-		goto skip;
+	if ((size_utf8Content - 1) <= 0) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, contentLen == 0");
+		return (char *)1;
 	}
 
 	// hash the body of the doc first so m_dist is 0 to match
@@ -449,7 +410,7 @@ char *XmlDoc::hashAll(HashTableX *table) {
 	// we index the single words in the neighborhoods next, and
 	// we had songfacts.com coming up for the 'street light facts'
 	// query because it had a bunch of anomalous inlink text.
-	if (!hashIncomingLinkText(table, false, true)) {
+	if (!hashIncomingLinkText(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashIncomingLinkText failed");
 		return NULL;
 	}
@@ -462,7 +423,6 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		return NULL;
 	}
 
-
 	// BR 20160220
 	// Store value of meta tag "geo.placename" to help aid searches for
 	// location specific sites, e.g. 'Restaurant in London'
@@ -470,8 +430,6 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashMetaGeoPlacename failed");
 		return NULL;
 	}
-
-skip:
 
 	// this will only increment the scores of terms already in the table
 	// because we neighborhoods are not techincally in the document
@@ -713,30 +671,6 @@ bool XmlDoc::hashDateNumbers ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	bufLen = sprintf ( buf , "%" PRIu32, (uint32_t)indexedTime );
 	if ( ! hashNumberForSorting ( buf , buf , bufLen , &hi ) )
  		return false;
-
-	// do not index the rest if we are a "spider reply" document
-	// which is like a fake document for seeing spider statuses
-	//if ( isStatusDoc == CT_STATUS ) return true;
-	//if ( isStatusDoc ) return true;
-
-	// now for CT_STATUS spider status "documents" we also index
-	// gbspiderdate so index this so we can just do a
-	// gbsortby:gbdocspiderdate and only get real DOCUMENTS not the
-	// spider status "documents"
-/*
-  BR 20160108: Don't store these as we don't plan to use them
-	hi.m_desc      = "doc last spidered date";
-	hi.m_prefix    = "gbdocspiderdate";
-	bufLen = sprintf ( buf , "%" PRIu32, (uint32_t)m_spideredTime );
-	if ( ! hashNumberForSorting ( buf , buf , bufLen , &hi ) )
-		return false;
-
- 	hi.m_desc      = "doc last indexed date";
- 	hi.m_prefix    = "gbdocindexdate";
-	bufLen = sprintf ( buf , "%" PRIu32, (uint32_t)indexedTime );
- 	if ( ! hashNumberForSorting ( buf , buf , bufLen , &hi ) )
- 		return false;
-*/
 
 	// all done
 	return true;
@@ -1024,8 +958,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	Url uw;
 	uw.set( fu->getUrl(), fu->getUrlLen(), true, false );
 	hi.m_prefix    = "url";
-	// no longer, we just index json now
-	//if ( isStatusDoc ) hi.m_prefix = "url2";
+
 	if ( ! hashSingleTerm(uw.getUrl(),uw.getUrlLen(),&hi) )
 		return false;
 
@@ -1228,20 +1161,14 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	int32_t  elen = fu->getExtensionLen();
 	// update hash parms
 	hi.m_prefix    = "ext";
-	// no longer, we just index json now
-	//if ( isStatusDoc ) hi.m_prefix = "ext2";
 	if ( ! hashSingleTerm(ext,elen,&hi ) ) return false;
 
 
 	setStatus ( "hashing gbdocid" );
 	hi.m_prefix = "gbdocid";
-	// no longer, we just index json now
-	//if ( isStatusDoc ) hi.m_prefix = "gbdocid2";
 	char buf2[32];
 	sprintf(buf2,"%" PRIu64, (uint64_t)m_docId );
 	if ( ! hashSingleTerm(buf2,strlen(buf2),&hi) ) return false;
-
-	//if ( isStatusDoc ) return true;
 
 	setStatus ( "hashing SiteGetter terms");
 
@@ -1299,75 +1226,49 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	hi.m_prefix    = "urlhash";
 	if ( ! hashString(buf,blen,&hi) ) return false;
 
-/*
-	BR 20160106 removed.
-	blen = sprintf(buf,"%" PRIu32,h/10);
-	// update hashing parms
-	hi.m_prefix = "urlhashdiv10";
-	if ( ! hashString(buf,blen,&hi) ) return false;
-	blen = sprintf(buf,"%" PRIu32,h/100);
-	// update hashing parms
-	hi.m_prefix = "urlhashdiv100";
-	if ( ! hashString(buf,blen,&hi) ) return false;
-*/
+	if (m_contentLen > 0) {
+		setStatus("hashing url mid domain");
 
+		// update parms
+		hi.m_prefix = NULL;
+		hi.m_desc = "middle domain";
+		hi.m_hashGroup = HASHGROUP_INURL;
+		hi.m_hashCommonWebWords = false;    // Skip www, com, http etc.
+		if (!hashString(host, hlen, &hi)) {
+			return false;
+		}
 
-	setStatus ( "hashing url mid domain");
+		hi.m_hashCommonWebWords = true;
+		if (!hashSingleTerm(fu->getDomain(), fu->getDomainLen(), &hi)) {
+			return false;
+		}
 
-	// update parms
-	hi.m_prefix    = NULL;
-	hi.m_desc      = "middle domain";
-	hi.m_hashGroup = HASHGROUP_INURL;
-	hi.m_hashCommonWebWords = false;	// Skip www, com, http etc.
-	if ( ! hashString ( host,hlen,&hi)) return false;
+		setStatus("hashing url path");
+		char *path = fu->getPath();
+		int32_t plen = fu->getPathLen();
 
-	hi.m_hashCommonWebWords = true;
-	if ( ! hashSingleTerm ( fu->getDomain(),fu->getDomainLen(),&hi)) return false;
+		// BR 20160113: Do not hash and combine the page filename extension with the page name (skip e.g. .com)
+		if (elen > 0) {
+			elen++;    // also skip the dot
+		}
+		plen -= elen;
 
-
-	setStatus ( "hashing url path");
-	char *path = fu->getPath();
-	int32_t  plen = fu->getPathLen();
-
-	// BR 20160113: Do not hash and combine the page filename extension with the page name (skip e.g. .com)
-	if( elen > 0 )
-	{
-		elen++;	// also skip the dot
-	}
-	plen -= elen;
-
-
-	// BR 20160113: Do not hash the most common page names
-	if( strncmp(path, "/index", plen) != 0 )
-	{
-		// hash the path
-		// BR 20160114: Exclude numbers in paths (usually dates)
-		hi.m_hashNumbers = false;
-		if ( ! hashString (path,plen,&hi) ) return false;
+		// BR 20160113: Do not hash the most common page names
+		if (strncmp(path, "/index", plen) != 0) {
+			// hash the path
+			// BR 20160114: Exclude numbers in paths (usually dates)
+			hi.m_hashNumbers = false;
+			if (!hashString(path, plen, &hi)) return false;
+		}
 	}
 
 	return true;
 }
 
 // . returns false and sets g_errno on error
-bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
-				    bool        hashAnomalies    ,
-				    bool        hashNonAnomalies ) {
-
-	// do not index ANY of the body if it is NOT a permalink and
-	// "menu elimination" technology is enabled.
-	//if ( ! *getIsPermalink() && m_eliminateMenus ) return true;
+bool XmlDoc::hashIncomingLinkText(HashTableX *tt) {
 
 	setStatus ( "hashing link text" );
-
-	// . now it must have an rss item to be indexed in all its glory
-	// . but if it tells us it has an rss feed, toss it and wait for
-	//   the feed.... BUT sometimes the rss feed outlink is 404!
-	// . NO, now we discard with ENORSS at Msg16.cpp
-	//if ( ! *getHasRSSItem() &&  m_eliminateMenus ) return true;
-
-	// sanity check
-	if ( hashAnomalies == hashNonAnomalies ) { g_process.shutdownAbort(true); }
 
 	// sanity
 	if ( ! m_linkInfo1Valid ) { g_process.shutdownAbort(true); }
@@ -1404,14 +1305,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 		bool internal=((m_ip&0x0000ffff)==(k->m_ip&0x0000ffff));
 		// count external inlinks we have for indexing gbmininlinks:
 		if ( ! internal ) ecount++;
-		// get score
-		//int64_t baseScore = k->m_baseScore;
-                // get the weight
-		//int64_t ww ;
-		//if ( internal ) ww = m_internalLinkTextWeight;
-		//else            ww = m_externalLinkTextWeight;
-		// modify the baseScore
-		//int64_t final = (baseScore * ww) / 100LL;
+
 		// get length of link text
 		int32_t tlen = k->size_linkText;
 		if ( tlen > 0 ) tlen--;
@@ -1423,10 +1317,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 			    k->getUrl(),m_firstUrl.getUrl());
 			continue;
 		}
-		// if it is anomalous, set this, we don't
-		//if ( k->m_isAnomaly )
-		//	hi.m_hashIffNotUnique = true;
-		//hi.m_baseScore = final;
+
 		if ( internal ) hi.m_hashGroup = HASHGROUP_INTERNALINLINKTEXT;
 		else            hi.m_hashGroup = HASHGROUP_INLINKTEXT;
 		// store the siterank of the linker in this and use that
@@ -1457,13 +1348,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 
 // . returns false and sets g_errno on error
 bool XmlDoc::hashNeighborhoods ( HashTableX *tt ) {
-
-	// seems like iffUnique is off, so do this
-	//if ( ! *getIsPermalink() && m_eliminateMenus ) return true;
-
 	setStatus ( "hashing neighborhoods" );
-
-	//g_tt = table;
 
 	// . now we also hash the neighborhood text of each inlink, that is,
 	//   the text surrounding the inlink text.
@@ -1706,15 +1591,6 @@ bool XmlDoc::hashLanguage ( HashTableX *tt ) {
 
 	if ( ! hashString ( s, slen, &hi ) ) return false;
 
-/* 
-	BR 20160117: Duplicate
-	// try lang abbreviation
-	sprintf(s , "%s ", getLanguageAbbr(langId) );
-	// go back to broken way to try to fix parsing consistency bug
-	// by adding hashLanguageString() function below
-	//sprintf(s , "%s ", getLanguageAbbr(langId) );
-	if ( ! hashString ( s, slen, &hi ) ) return false;
-*/
 	return true;
 }
 

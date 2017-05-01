@@ -1504,6 +1504,14 @@ bool Msg40::gotSummary ( ) {
 			continue;
 		}
 
+		// filter simplified redirection/non-caconical document
+		if (mr && mr->size_rubuf > 1 && mr->m_contentLen == 0) {
+			if (!m_si->m_showErrors) {
+				*level = CR_EMPTY_REDIRECTION_PAGE;
+				continue;
+			}
+		}
+
 		// filter empty title & summaries
 		if ( mr && mr->size_tbuf <= 1 && mr->size_displaySum <= 1 ) {
 			if ( ! m_si->m_showErrors ) {
