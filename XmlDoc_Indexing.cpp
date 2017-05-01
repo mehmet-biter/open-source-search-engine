@@ -247,9 +247,14 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getContentType failed");
 		return NULL;
 	}
-	
+
 	// BR 20160127: Never index JSON and XML content
 	if (*ct == CT_JSON || *ct == CT_XML) {
+		if (!hashContentType(table)) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, hashContentType failed");
+			return NULL;
+		}
+
 		// For XML (JSON should not get here as it should be filtered out during spidering)
 		// store the URL as the only thing in posdb so we are able to find it, and
 		// eventually ban it.
