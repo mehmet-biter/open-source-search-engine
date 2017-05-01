@@ -2458,25 +2458,6 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 	}
 
 	
-	int jammedHosts = 0;
-	for ( int32_t i = 1 ; i < g_hostdb.getNumHosts() ; i++ ) {
-		Host *h = &g_hostdb.m_hosts[i];
-		if ( g_hostdb.isDead( h ) ) continue;
-	}
-	if ( jammedHosts > 0 ) {
-		if ( adds ) mb->safePrintf("<br>");
-		adds++;
-		const char *s = "s are";
-		if ( jammedHosts == 1 ) s = " is";
-		mb->safePrintf("%s",box);
-		mb->safePrintf("%" PRId32" host%s jammed with "
-			       "over %" PRId32" unhandled "
-			       "incoming udp requests. "
-			       "See <a href=/admin/sockets?c=%s>sockets</a>"
-			       " table.",jammedHosts,s,400,coll);
-		mb->safePrintf("%s",boxEnd);
-	}
-
 	if ( g_profiler.m_realTimeProfilerRunning ) {
 		if ( adds ) mb->safePrintf("<br>");
 		adds++;

@@ -2737,7 +2737,7 @@ badformat:
 	if ( scr ) coll = scr->m_coll;
 
 	if ( si->m_format == FORMAT_HTML && printCached ) {
-		sb->safePrintf ( "<a href=\"/get?q=%s&qlang=%s&c=%s&d=%" PRId64 "&cnsp=0\">cached</a> - \n",
+		sb->safePrintf ( "<a href=\"/get?q=%s&qlang=%s&c=%s&d=%" PRId64 "&cnsp=0\">cached</a>\n",
 			st->m_qesb.getBufStart() ,
 			si->m_defaultSortLang,		// "qlang" parm
 			coll ,
@@ -2750,7 +2750,7 @@ badformat:
 	if ( si->m_format == FORMAT_HTML && si->m_getDocIdScoringInfo ) {
 		// place holder for backlink table link
 		placeHolder = sb->length();
-		sb->safePrintf ("<a onclick="
+		sb->safePrintf (" - <a onclick="
 			       "\""
 			       "var e = document.getElementById('bl%" PRId32"');"
 			       "if ( e.style.display == 'none' ){"
@@ -2772,7 +2772,7 @@ badformat:
 		placeHolderLen = sb->length() - placeHolder;
 
 		// unhide the scoring table on click
-		sb->safePrintf ("<a onclick="
+		sb->safePrintf (" - <a onclick="
 			       "\""
 			       "var e = document.getElementById('sc%" PRId32"');"
 			       "if ( e.style.display == 'none' ){"

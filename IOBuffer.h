@@ -104,7 +104,7 @@ public:
 };
 
 
-void swap(IOBuffer &a, IOBuffer &b) {
+inline void swap(IOBuffer &a, IOBuffer &b) {
 	a.swap(b);
 }
 
