@@ -483,7 +483,7 @@ public:
 	SafeBuf *getTimeAxisUrl ( );
 	bool hashUrl ( class HashTableX *table, bool urlOnly );
 	bool hashDateNumbers ( class HashTableX *tt );
-	bool hashIncomingLinkText( class HashTableX *table, bool hashAnomalies, bool hashNonAnomalies );
+	bool hashIncomingLinkText(HashTableX *table);
 	bool hashLinksForLinkdb ( class HashTableX *table ) ;
 	bool hashNeighborhoods ( class HashTableX *table ) ;
 	bool hashTitle ( class HashTableX *table );

@@ -411,7 +411,7 @@ char *XmlDoc::hashAll(HashTableX *table) {
 	// we index the single words in the neighborhoods next, and
 	// we had songfacts.com coming up for the 'street light facts'
 	// query because it had a bunch of anomalous inlink text.
-	if (!hashIncomingLinkText(table, false, true)) {
+	if (!hashIncomingLinkText(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashIncomingLinkText failed");
 		return NULL;
 	}
@@ -1293,14 +1293,10 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 }
 
 // . returns false and sets g_errno on error
-bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
-				    bool        hashAnomalies    ,
-				    bool        hashNonAnomalies ) {
+bool XmlDoc::hashIncomingLinkText(HashTableX *tt) {
 
 	setStatus ( "hashing link text" );
 
-	// sanity check
-	if ( hashAnomalies == hashNonAnomalies ) { g_process.shutdownAbort(true); }
 
 	// sanity
 	if ( ! m_linkInfo1Valid ) { g_process.shutdownAbort(true); }
