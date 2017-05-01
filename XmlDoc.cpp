@@ -12922,6 +12922,9 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			// we're adding titlerec to keep links between redirection intact
 			addTitleRec = true;
 
+			// since we're adding titlerec, add posrec as well
+			addPosRec = true;
+
 			// if we are adding a simplified redirect as a link to spiderdb
 			// likewise if the error was ENONCANONICAL treat it like that
 			spideringLinks = true;
