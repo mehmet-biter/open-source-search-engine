@@ -147,6 +147,8 @@ class Loop {
 	GbMutex m_slotMutex; //protects all slot linked list modification and traversal
 	
 	int m_pipeFd[2]; //used for waking up from select/poll
+	
+	int64_t m_lastKeepaliveTimestamp;
 };
 
 extern class Loop g_loop;

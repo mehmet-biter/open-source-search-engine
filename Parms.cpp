@@ -5189,6 +5189,52 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "Vagus cluster id";
+	m->m_desc  = "Which vcluster name to use in Vagus. The default empty string means to use 'gb-'$USER which works fine in most scenarios";
+	m->m_cgi   = "vagus_cluster_id";
+	m->m_off   = offsetof(Conf,m_vagusClusterId);
+	m->m_type  = TYPE_STRING;
+	m->m_size  = sizeof(Conf::m_vagusClusterId);
+	m->m_def   = "";
+	m->m_page  = PAGE_MASTER;
+	m->m_group = true;
+	m++;
+
+	m->m_title = "Vagus port";
+	m->m_desc  = "Which port Vagus is listening on";
+	m->m_cgi   = "vagus_port";
+	simple_m_set(Conf,m_vagusPort);
+	m->m_smin  =   1;
+	m->m_smax  =  65534;
+	m->m_def   = "8720";
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "Vagus keepalive interval";
+	m->m_desc  = "How often to send keepalives to Vagus";
+	m->m_cgi   = "vagus_keepalive_send_interval";
+	simple_m_set(Conf,m_vagusKeepaliveSendInterval);
+	m->m_smin  =   1;
+	m->m_smax  =  10000;
+	m->m_def   = "500";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "Vagus keepalive lifetime";
+	m->m_desc  = "How long is the keepalive valid for";
+	m->m_cgi   = "vagus_keepalive_lifetime";
+	simple_m_set(Conf,m_vagusKeepaliveLifetime);
+	m->m_smin  =   1;
+	m->m_smax  =  600000;
+	m->m_def   = "5000";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
 	m->m_title = "send email timeout";
 	m->m_desc  = "Send an email after a host has not responded to "
 		"successive pings for this many milliseconds.";

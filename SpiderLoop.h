@@ -9,6 +9,7 @@
 #include "hash.h"
 #include "RdbCache.h"
 #include <time.h>
+#include <atomic>
 
 // . the spider loop
 // . it gets urls to spider from the SpiderCache global class, g_spiderCache
@@ -77,7 +78,7 @@ private:
 	CollectionRec *getActiveList();
 	void buildActiveList ( ) ;
 
-	int32_t m_numSpidersOut;
+	std::atomic<int32_t> m_numSpidersOut;
 
 	// . this is "i" where m_msg14[i] is the highest m_msg14 in use
 	// . we use it to limit our scanning to the first "i" m_msg14's

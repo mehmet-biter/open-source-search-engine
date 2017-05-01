@@ -813,7 +813,7 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 		g_errno = errno;
 		log("tcp: Failed to create new socket: %s.",
 		    mstrerror(g_errno));
-		log("tcp: numopensocks = %" PRId32,m_numUsed);
+		log("tcp: numopensocks = %" PRId32,m_numUsed.load());
 		log("tcp: try editing /etc/security/limits.conf and "
 		    "restarting in fresh shell.");
 		log("tcp: try using multiple spider compression proxies on "

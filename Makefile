@@ -26,6 +26,7 @@ OBJS_O0 =  \
 	Parms.o Pages.o PageAddColl.o PageAddUrl.o PageBasic.o PageCrawlBot.o PageGet.o PageHealthCheck.o PageHosts.o PageInject.o \
 	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageSpider.o \
 	Phrases.o PingServer.o Process.o Proxy.o Punycode.o \
+	InstanceInfoExchange.o \
 	Query.o \
 	RdbCache.o RdbDump.o RdbMem.o RdbMerge.o RdbScan.o RdbTree.o \
 	Rebalance.o Repair.o RobotRule.o Robots.o \
