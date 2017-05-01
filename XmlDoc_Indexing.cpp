@@ -377,10 +377,6 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		return (char *)1;
 	}
 
-	if ( *ct == CT_JSON || *ct == CT_XML ) {
-		goto skip;
-	}
-
 	// hash the body of the doc first so m_dist is 0 to match
 	// the rainbow display of sections
 	if (!hashBody2(table)) {
@@ -424,7 +420,6 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		return NULL;
 	}
 
-
 	// BR 20160220
 	// Store value of meta tag "geo.placename" to help aid searches for
 	// location specific sites, e.g. 'Restaurant in London'
@@ -432,8 +427,6 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashMetaGeoPlacename failed");
 		return NULL;
 	}
-
-skip:
 
 	// this will only increment the scores of terms already in the table
 	// because we neighborhoods are not techincally in the document
