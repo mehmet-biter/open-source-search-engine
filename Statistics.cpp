@@ -385,7 +385,7 @@ static void dump_assorted_statistics(FILE *fp) {
 	fprintf(fp,"mem:oom_count:%d\n",g_mem.getOOMCount());
 	fprintf(fp,"socket:limit_hit:%lu\n",socket_limit_hit_count.load());
 	fprintf(fp,"socket:slots_incoming:%d\n",g_udpServer.getNumUsedSlotsIncoming());
-	fprintf(fp,"socket:tcp_in_use:%d\n",g_httpServer.m_tcp.m_numUsed);
+	fprintf(fp,"socket:tcp_in_use:%d\n",g_httpServer.m_tcp.m_numUsed.load());
 	fprintf(fp,"misc::corrupt_list_reads:%d\n",g_numCorrupt);
 	fprintf(fp,"spider:current_spiders:%d\n",g_spiderLoop.getNumSpidersOut());
 }

@@ -336,7 +336,7 @@ private:
 	UdpSlot *m_callbackListTail;
 
 	int32_t m_numUsedSlots;
-	int32_t m_numUsedSlotsIncoming;
+	std::atomic<int32_t> m_numUsedSlotsIncoming;
 
 
 	bool m_isDns;

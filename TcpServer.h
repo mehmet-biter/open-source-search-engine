@@ -21,6 +21,7 @@
 #include <openssl/ssl.h>          // for ssl stuff
 #include <openssl/crypto.h>
 #include <openssl/err.h>
+#include <atomic>
 #include "TcpSocket.h"            
 
 // raised from 5k to 15k in case we are a spider compression proxy
@@ -162,7 +163,7 @@ class TcpServer {
 	// ptrs to our TcpSockets 1-1 w/ real sockets
 	TcpSocket *m_tcpSockets [ MAX_TCP_SOCKS ];
 	int32_t       m_lastFilled;
-	int32_t       m_numUsed;
+	std::atomic<int32_t> m_numUsed;
 	// # used for incoming connections
 	int32_t       m_numIncomingUsed;
 	// let's have them all pre-allocated, it's only ~1.1MB...
