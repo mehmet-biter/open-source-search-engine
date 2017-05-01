@@ -362,29 +362,6 @@ skipReplaceHost:
 					,h->m_pingInfo.m_currentSpiders
 					);
 
-		if ( format == FORMAT_HTML && h->m_pingInfo.m_tcpSocketsInUse){
-			const char *f1 = "";
-			const char *f2 = "";
-			if ( h->m_pingInfo.m_tcpSocketsInUse >= 100 ) {
-				f1 = "<b>";
-				f2 = "</b>";
-			}
-			if ( h->m_pingInfo.m_tcpSocketsInUse >= 200 ) {
-				f1 = "<b><font color=red>";
-				f2 = "</font></b>";
-			}
-			fb.safePrintf("<span title=\"tcpSocketsInUse\">"
-				      "%s"
-				      "T"
-				      "<sup>%" PRId32"</sup>"
-				      "%s"
-				      "</span>"
-				      ,f1
-				      ,h->m_pingInfo.m_tcpSocketsInUse
-				      ,f2
-				      );
-		}
-
 		if ((flags & PFLAG_HASSPIDERS) && format != FORMAT_HTML )
 			fb.safePrintf ( "Spidering");
 
@@ -470,10 +447,6 @@ skipReplaceHost:
 			sb.safePrintf("\t\t<errorTryAgains>%" PRId32
 				      "</errorTryAgains>\n",
 				      h->m_etryagains.load());
-
-			sb.safePrintf("\t\t<tcpSocketsInUse>%" PRId32
-				      "</tcpSocketsInUse>\n",
-				      h->m_pingInfo.m_tcpSocketsInUse);
 
 			/*
 			sb.safePrintf("\t\t<dgramsTo>%" PRId64"</dgramsTo>\n",
@@ -563,8 +536,6 @@ skipReplaceHost:
 			*/
 			sb.safePrintf("\t\t\t\t\"errorTryAgains\":%" PRId32",\n",
 				      h->m_etryagains.load());
-			sb.safePrintf("\t\t\t\t\"tcpSocketsInUse\":%" PRId32",\n",
-				      h->m_pingInfo.m_tcpSocketsInUse);
 
 			/*
 			sb.safePrintf("\t\t\t\t\"dgramsTo\":%" PRId64",\n",

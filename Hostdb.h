@@ -58,7 +58,7 @@ public:
 	int32_t m_unused11;
 
 	int32_t m_unused12;
-	int32_t m_tcpSocketsInUse;
+	int32_t m_unused13;
 
 	int16_t m_currentSpiders;
 	collnum_t m_dailyMergeCollnum;

@@ -6,6 +6,7 @@
 #include "Msg3.h"            //getDiskPageCache()
 #include "Mem.h"             //memory statistics
 #include "UdpServer.h"       //g_udpServer.getNumUsedSlotsIncoming()
+#include "HttpServer.h"     //g_httpServer.m_tcp.m_numUsed
 #include "RdbCache.h"
 #include "Rdb.h"
 #include "GbMutex.h"
@@ -382,6 +383,7 @@ static void dump_assorted_statistics(FILE *fp) {
 	fprintf(fp,"mem:oom_count:%d\n",g_mem.getOOMCount());
 	fprintf(fp,"socket:limit_hit:%lu\n",socket_limit_hit_count.load());
 	fprintf(fp,"socket:slots_incoming:%d\n",g_udpServer.getNumUsedSlotsIncoming());
+	fprintf(fp,"socket:tcp_in_use:%d\n",g_httpServer.m_tcp.m_numUsed);
 }
 
 
