@@ -367,12 +367,10 @@ char *XmlDoc::hashAll(HashTableX *table) {
 	// global index now, so don't need this... 9/28/2014
 
 	// stop indexing xml docs
-	bool indexDoc = cr->m_indexBody;
-
 	// global index unless this is a json object in which case it is
 	// hashed above in the call to hashJSON(). this will decrease disk
 	// usage by about half, posdb* files are pretty big.
-	if (!indexDoc) {
+	if (!cr->m_indexBody) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, !indexDoc");
 		return (char *)1;
 	}
