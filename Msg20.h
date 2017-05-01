@@ -144,6 +144,7 @@ public:
 	uint16_t   m_country             ;
 	bool       m_isAdult             ;
 
+	int16_t m_httpStatus;
 	int32_t       m_contentLen          ; // was m_docLen
 	int32_t       m_contentHash32       ;  // for deduping diffbot json objects streaming
 	int32_t       m_pageNumInlinks      ;

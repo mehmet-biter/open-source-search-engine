@@ -2914,9 +2914,15 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	// return on errors with g_errno set
 	if ( ! indexCode ) return NULL;
 	// force delete? EDOCFORCEDELETE
-	if ( *indexCode && (*indexCode != EDOCSIMPLIFIEDREDIR && *indexCode != EDOCNONCANONICAL)) {
-		m_titleRecBufValid = true;
-		return &m_titleRecBuf;
+	if (*indexCode) {
+		if (*indexCode == EDOCSIMPLIFIEDREDIR || *indexCode == EDOCNONCANONICAL) {
+			// make sure we store an empty document if it's a simplified redirect/non-canonical
+			ptr_utf8Content = NULL;
+			size_utf8Content = 0;
+		} else {
+			m_titleRecBufValid = true;
+			return &m_titleRecBuf;
+		}
 	}
 
 	// . internal callback
@@ -16187,6 +16193,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	m_reply.m_ip               = m_ip;
 	m_reply.m_firstIp          = *fip;
 	m_reply.m_docId            = m_docId;
+	m_reply.m_httpStatus       = m_httpStatus;
 	m_reply.m_contentLen       = size_utf8Content - 1;
 	m_reply.m_lastSpidered     = getSpideredTime();//m_spideredTime;
 	m_reply.m_datedbDate       = 0;
@@ -18302,6 +18309,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			"<tr><td>is RSS feed?</td><td>%" PRId32"</td></tr>\n"
 			"<tr><td>ip</td><td><a href=\"/search?q=ip%%3A%s&c=%s&n=100\">"
 			"%s</td></tr>\n"
+			"<tr><td>http status</td><td>%d</td></tr>"
 			"<tr><td>content len</td><td>%" PRId32" bytes</td></tr>\n"
 			"<tr><td>content truncated</td><td>%" PRId32"</td></tr>\n"
 			"<tr><td>content type</td><td>%s</td></tr>\n"
@@ -18326,6 +18334,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			ipString,
 			cr->m_coll,
 			ipString,
+			m_httpStatus,
 			size_utf8Content - 1,
 			(int32_t)m_isContentTruncated,
 			g_contentTypeStrings[(int)m_contentType] ,
@@ -18362,6 +18371,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 		sb->safePrintf("\t<isPermalink>%" PRId32"</isPermalink>\n"
 			       "\t<isRSSFeed>%" PRId32"</isRSSFeed>\n"
 			       "\t<ipAddress><![CDATA[%s]]></ipAddress>\n"
+			       "\t<httpStatus>%d</httpStatus>"
 			       "\t<contentLenInBytes>%" PRId32
 			       "</contentLenInBytes>\n"
 			       "\t<isContentTruncated>%" PRId32
@@ -18372,6 +18382,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			       (int32_t)m_isPermalink,
 			       (int32_t)m_isRSS,
 			       ipString,
+			       m_httpStatus,
 			       size_utf8Content - 1,
 			       (int32_t)m_isContentTruncated,
 			       g_contentTypeStrings[(int)m_contentType] ,
