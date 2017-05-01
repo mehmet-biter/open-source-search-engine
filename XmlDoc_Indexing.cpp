@@ -375,6 +375,11 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		return (char *)1;
 	}
 
+	if (m_contentLen == 0) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, contentLen == 0");
+		return (char *)1;
+	}
+
 	// hash the body of the doc first so m_dist is 0 to match
 	// the rainbow display of sections
 	if (!hashBody2(table)) {
