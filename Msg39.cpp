@@ -49,8 +49,15 @@ void Msg39Request::reset() {
 	m_collnum                 = -1;
 	m_useQueryStopWords       = true;
 	m_doMaxScoreAlgo          = true;
+	m_termFreqWeightFreqMin = 0.0;
+	m_termFreqWeightFreqMax = 0.5;
+	m_termFreqWeightMin = 0.5;
+	m_termFreqWeightMax = 1.0;
 	m_synonymWeight           = 0.9;
+	m_pageTemperatureWeightMin = 1.0;
+	m_pageTemperatureWeightMax = 20.0;
 	m_usePageTemperatureForRanking = true;
+
 	for(int i=0; i<26; i++)
 		m_flagScoreMultiplier[i] = 1.0;
 	for(int i=0; i<26; i++)
@@ -61,6 +68,7 @@ void Msg39Request::reset() {
 	size_query                = 0;
 	size_whiteList            = 0;
 	m_sameLangWeight          = 20.0;
+	m_unknownLangWeight       = 10.0;
 
 	// -1 means to not to docid range restriction
 	m_minDocId = -1LL;

@@ -202,22 +202,17 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	//first we update our pinginfo
 	PingInfo newPingInfo;
 
-	newPingInfo.m_numCorruptDiskReads = g_numCorrupt;
-	newPingInfo.m_numOutOfMems = g_mem.getOOMCount();
-	newPingInfo.m_socketsClosedFromHittingLimit = g_stats.m_closedSockets;
-	newPingInfo.m_currentSpiders = g_spiderLoop.getNumSpidersOut();
+	newPingInfo.m_unused9 = 0;
+	newPingInfo.m_unused3 = 0;
+	newPingInfo.m_unused11 = 0;
+	newPingInfo.m_unused14 = 0;
 
 	// let the receiver know our repair mode
 	newPingInfo.m_repairMode = g_repairMode;
 
-	int32_t l_loadavg = (int32_t) (g_process.getLoadAvg() * 100.0);
-	//gbmemcpy(p, &l_loadavg, sizeof(int32_t));	p += sizeof(int32_t);
-	newPingInfo.m_loadAvg = l_loadavg ;
+	newPingInfo.m_unused2 = 0;
 
-	// then our percent mem used
-	float mem = g_mem.getUsedMemPercentage();
-	//*(float *)p = mem ; p += sizeof(float); // 4 bytes
-	newPingInfo.m_percentMemUsed = mem;
+	newPingInfo.m_unused3 = 0;
 
 	// our num recs, docsIndexed
 	newPingInfo.m_totalDocsIndexed = (int32_t)g_process.getTotalDocsIndexed();
@@ -229,7 +224,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	if ( g_hostdb.getCRC() == 0 ) { g_process.shutdownAbort(true); }
 
 	// disk usage (df -ka)
-	newPingInfo.m_diskUsage = g_process.m_diskUsage;
+	newPingInfo.m_unused7 = 0.0;
 
 	// flags indicating our state
 	int32_t flags = 0;
@@ -247,9 +242,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	if ( g_dailyMerge.m_mergeMode ==0 || g_dailyMerge.m_mergeMode == 6 )
 		flags |= PFLAG_MERGEMODE0OR6;
 
-	uint8_t rv8 = (uint8_t)g_recoveryLevel;
-	if ( g_recoveryLevel > 255 ) rv8 = 255;
-	newPingInfo.m_recoveryLevel = rv8;
+	newPingInfo.m_unused18 = 0;
 
 	//*(int32_t *)p = flags; p += 4; // 4 bytes
 	newPingInfo.m_flags = flags;
@@ -263,12 +256,11 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 
 	newPingInfo.m_unused0 = 0;
 
-	newPingInfo.m_udpSlotsInUseIncoming = g_udpServer.getNumUsedSlotsIncoming();
+	newPingInfo.m_unused12 = 0;
 
-	newPingInfo.m_tcpSocketsInUse = g_httpServer.m_tcp.m_numUsed;
+	newPingInfo.m_unused13 = 0;
 
-	// from Loop.cpp
-	newPingInfo.m_cpuUsage = 0.0;
+	newPingInfo.m_unused4 = 0.0;
 
 	// store the gbVersionStrBuf now, just a date with a \0 included
 	char *v = getVersion();
@@ -369,18 +361,6 @@ void PingServer::gotReplyWrapperP(void *state, UdpSlot *slot) {
 		// he is back up then we are free to send another alert about
 		// any other host that goes down
 		if ( h->m_hostId == s_lastSentHostId ) s_lastSentHostId = -1;
-
-		if ( h->m_pingInfo.m_percentMemUsed >= 99.0 &&
-		     h->m_firstOOMTime == 0 )
-			h->m_firstOOMTime = nowms;
-		if ( h->m_pingInfo.m_percentMemUsed < 99.0 )
-			h->m_firstOOMTime = 0LL;
-		// if this host is alive and has been at 99% or more mem usage
-		// for the last X minutes, and we have got at least 10 ping replies
-		// from him, then send an email alert.
-		if ( h->m_pingInfo.m_percentMemUsed >= 99.0 &&
-		     nowms - h->m_firstOOMTime >= g_conf.m_sendEmailTimeout )
-			g_pingServer.sendEmail ( h , NULL , true );
 	} else {
 		// . if his ping was dead, try to send an email alert to the admin
 		// . returns false if blocked, true otherwise

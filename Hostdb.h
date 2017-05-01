@@ -45,27 +45,27 @@ class PingInfo {
 public:
 	int64_t m_unused0; //used to be a timestamp for clock synchronization
 	int32_t m_hostId;
-	int32_t m_loadAvg;
-	float m_percentMemUsed;
-	float m_cpuUsage;
+	int32_t m_unused2; //used for the m_loadAvg
+	float m_unused3; //used to me m_percentMemUsed;
+	float m_unused4; //used to be m_cpuUsage
 	int32_t m_totalDocsIndexed;
 	int32_t m_hostsConfCRC;
-	float m_diskUsage;
+	float m_unused7; //used to be m_diskUsage
 	int32_t m_flags;
 	// some new stuff
-	int32_t m_numCorruptDiskReads;
-	int32_t m_numOutOfMems;
-	int32_t m_socketsClosedFromHittingLimit;
+	int32_t m_unused9;
+	int32_t m_unused10;
+	int32_t m_unused11;
 
-	int32_t m_udpSlotsInUseIncoming;
-	int32_t m_tcpSocketsInUse;
+	int32_t m_unused12;
+	int32_t m_unused13;
 
-	int16_t m_currentSpiders;
+	int16_t m_unused14;
 	collnum_t m_dailyMergeCollnum;
 
 	char m_gbVersionStr[21];
 	char m_repairMode;
-	uint8_t m_recoveryLevel;
+	uint8_t m_unused18;
 };
 
 class Host {

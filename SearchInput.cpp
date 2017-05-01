@@ -48,6 +48,7 @@ SearchInput::SearchInput() {
 	m_maxSerpScore = 0.0;
 	m_minSerpDocId = 0;
 	m_sameLangWeight = 0.0;
+	m_unknownLangWeight = 0.0;
 	m_defaultSortLang = NULL;
 	m_dedupURL = 0;
 	m_percentSimilarSummary = 0;
@@ -64,7 +65,15 @@ SearchInput::SearchInput() {
 	m_askOtherShards = false;
 	memset(m_queryId, 0, sizeof(m_queryId));
 	m_doMaxScoreAlgo = false;
+
+	m_termFreqWeightFreqMin = 0.0;
+	m_termFreqWeightFreqMax = 0.5;
+	m_termFreqWeightMin = 0.5;
+	m_termFreqWeightMax = 1.0;
+
 	m_synonymWeight = 0.9;
+	m_pageTemperatureWeightMin = 1.0;
+	m_pageTemperatureWeightMax = 20.0;
 	m_usePageTemperatureForRanking = true;
 	m_numFlagScoreMultipliers=26;
 	for(int i=0; i<26; i++)

@@ -280,7 +280,7 @@ bool Proxy::handleRequest (TcpSocket *s){
 			s_count = 0;
 			s_last = now;
 		}
-		g_stats.m_closedSockets++;; 
+		Statistics::register_socket_limit_hit();
 		return g_httpServer.sendErrorReply ( s , 500 , 
 						     "Too many sockets open.");
 	}

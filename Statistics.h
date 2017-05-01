@@ -12,6 +12,8 @@ void register_spider_time( bool is_new, int error_code, int http_status, unsigne
 
 void register_io_time( bool is_write, int error_code, unsigned long bytes, unsigned ms );
 
+void register_socket_limit_hit();
+
 } //namespace
 
 #endif

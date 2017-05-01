@@ -15,6 +15,12 @@ class PageTemperatureRegistry {
 	unsigned max_temperature;
 	unsigned temperature_range_for_scaling;
 	unsigned default_temperature;
+
+	double min_temperature_log;
+	double max_temperature_log;
+	double temperature_range_for_scaling_log;
+	double default_temperature_log;
+
 	unsigned query_page_temperature_internal(uint64_t docid) const;
 public:
 	PageTemperatureRegistry()
@@ -26,7 +32,7 @@ public:
 	bool load();
 	void unload();
 	
-	double query_page_temperature(uint64_t docid) const;
+	double query_page_temperature(uint64_t docid, double range_min, double range_max) const;
 	
 	bool empty() const { return entries==0; }
 };

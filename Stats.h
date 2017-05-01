@@ -60,9 +60,6 @@ class Stats {
 
 	int64_t m_startTime;
 
-	// when we have to close a socket because too many are open.. count it
-	int32_t      m_closedSockets;
-
 	time_t m_uptimeStart;
 
 	// one count for each CR_* defined in Msg51.h

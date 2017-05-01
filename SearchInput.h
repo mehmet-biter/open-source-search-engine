@@ -130,6 +130,7 @@ public:
 	int64_t m_minSerpDocId;
 
 	float m_sameLangWeight;
+	float m_unknownLangWeight;
 
 	// prefer what lang in the results. it gets a 20x boost. "en" "xx" "fr"
 	char 	      *m_defaultSortLang;
@@ -147,6 +148,11 @@ public:
 	bool   m_doDupContentRemoval;     // msg40
 	bool   m_getDocIdScoringInfo;
 
+	float m_termFreqWeightFreqMin;
+	float m_termFreqWeightFreqMax;
+	float m_termFreqWeightMin;
+	float m_termFreqWeightMax;
+
 	float m_diversityWeightMin;
 	float m_diversityWeightMax;
 	float m_densityWeightMin;
@@ -162,8 +168,9 @@ public:
 	float m_hashGroupWeightInternalLinkText;
 	float m_hashGroupWeightInUrl;
 	float m_hashGroupWeightInMenu;
-
 	float m_synonymWeight;
+	float m_pageTemperatureWeightMin;
+	float m_pageTemperatureWeightMax;
 	bool m_usePageTemperatureForRanking;
 
 	int32_t m_numFlagScoreMultipliers;

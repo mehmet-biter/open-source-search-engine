@@ -683,7 +683,7 @@ createFile:
 		m_hosts[i].m_emailCode = -2;
 		// reset these
 		m_hosts[i].m_pingInfo.m_flags    = 0;
-		m_hosts[i].m_pingInfo.m_cpuUsage = 0.0;
+		m_hosts[i].m_pingInfo.m_unused4 = 0.0;
 		m_hosts[i].m_loadAvg  = 0.0;
 
 		m_hosts[i].m_lastResponseReceiveTimestamp = 0;
@@ -1237,8 +1237,9 @@ Host *Hostdb::getHostWithSpideringEnabled ( uint32_t shardNum ) {
 
 // if niceness 0 can't pick noquery host/ must pick spider host.
 // if niceness 1 can't pick nospider host/ must pick query host.
+// Used to select based on PingInfo::m_udpSlotsInUseIncoming but that information is not exchanged often enough to
+// be even remotely accurate with any realistic number of shards.
 Host *Hostdb::getLeastLoadedInShard ( uint32_t shardNum , char niceness ) {
-	int32_t minOutstandingRequests = 0x7fffffff;
 	int32_t minOutstandingRequestsIndex = -1;
 	Host *shard = getShard ( shardNum );
 	Host *bestDead = NULL;
@@ -1251,13 +1252,7 @@ Host *Hostdb::getLeastLoadedInShard ( uint32_t shardNum , char niceness ) {
 		if ( niceness == 0 && ! hh->m_queryEnabled  ) continue;
 		if ( ! bestDead ) bestDead = hh;
 		if(isDead(hh)) continue;
-		// log("host %" PRId32 " numOutstanding is %" PRId32, hh->m_hostId, 
-		// 	hh->m_pingInfo.m_udpSlotsInUseIncoming);
-		if ( hh->m_pingInfo.m_udpSlotsInUseIncoming > 
-		     minOutstandingRequests )
-			continue;
 
-		minOutstandingRequests =hh->m_pingInfo.m_udpSlotsInUseIncoming;
 		minOutstandingRequestsIndex = i;
 	}
 	// we should never return a nospider/noquery host depending on
@@ -1374,7 +1369,7 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	oldHost->m_ping                = g_conf.m_deadHostTimeout;
 	oldHost->m_pingShotgun         = g_conf.m_deadHostTimeout;
 	oldHost->m_emailCode           = 0;
-	oldHost->m_pingInfo.m_udpSlotsInUseIncoming = 0;
+	oldHost->m_pingInfo.m_unused12 = 0;
 	oldHost->m_errorReplies        = 0;
 	oldHost->m_dgramsTo            = 0;
 	oldHost->m_dgramsFrom          = 0;
@@ -1431,27 +1426,27 @@ void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
 
 	h->m_pingInfo.m_unused0 = 0;
 	h->m_pingInfo.m_hostId = pi.m_hostId;
-	h->m_pingInfo.m_loadAvg = pi.m_loadAvg;
-	h->m_pingInfo.m_percentMemUsed = pi.m_percentMemUsed;
-	h->m_pingInfo.m_cpuUsage = pi.m_cpuUsage;
+	h->m_pingInfo.m_unused2 = 0;
+	h->m_pingInfo.m_unused3 = 0;
+	h->m_pingInfo.m_unused4 = 0.0;
 	h->m_pingInfo.m_totalDocsIndexed = pi.m_totalDocsIndexed;
 	h->m_pingInfo.m_hostsConfCRC = pi.m_hostsConfCRC;
-	h->m_pingInfo.m_diskUsage = pi.m_diskUsage;
+	h->m_pingInfo.m_unused7 = 0.0;
 	h->m_pingInfo.m_flags = pi.m_flags;
-	h->m_pingInfo.m_numCorruptDiskReads = pi.m_numCorruptDiskReads;
-	h->m_pingInfo.m_numOutOfMems = pi.m_numOutOfMems;
-	h->m_pingInfo.m_socketsClosedFromHittingLimit = pi.m_socketsClosedFromHittingLimit;
+	h->m_pingInfo.m_unused9 = 0;
+	h->m_pingInfo.m_unused10 = 0;
+	h->m_pingInfo.m_unused11 = 0;
 	//m_totalResends is updated direclty by UdpSlot
 	//h->m_pingInfo.m_totalResends = pi.m_totalResends;
 	//m_etryagains is updated directly by UdpServer
 	//h->m_pingInfo.m_etryagains = pi.m_etryagains;
-	h->m_pingInfo.m_udpSlotsInUseIncoming = pi.m_udpSlotsInUseIncoming;
-	h->m_pingInfo.m_tcpSocketsInUse = pi.m_tcpSocketsInUse;
-	h->m_pingInfo.m_currentSpiders = pi.m_currentSpiders;
+	h->m_pingInfo.m_unused12 = 0;
+	h->m_pingInfo.m_unused13 = 0;
+	h->m_pingInfo.m_unused14 = 0;
 	h->m_pingInfo.m_dailyMergeCollnum = pi.m_dailyMergeCollnum;
 	memcpy(h->m_pingInfo.m_gbVersionStr,pi.m_gbVersionStr,sizeof(pi.m_gbVersionStr));
 	h->m_pingInfo.m_repairMode = pi.m_repairMode;
-	h->m_pingInfo.m_recoveryLevel = pi.m_recoveryLevel;
+	h->m_pingInfo.m_unused18 = 0;
 }
 
 
@@ -1750,15 +1745,14 @@ int32_t *getLocalIps ( ) {
 		log("hostdb: getifaddrs: %s.",mstrerror(errno));
 		return NULL;
 	}
-	ifaddrs *p = ifap;
 	int32_t ni = 0;
 	// store loopback just in case
 	int32_t loopback = atoip("127.0.0.1");
 	s_localIps[ni++] = loopback;
-	for ( ; p && ni < 18 ; p = p->ifa_next ) {
-		// avoid possible core dump
+	for(ifaddrs *p = ifap; p && ni < 18 ; p = p->ifa_next) {
 		if ( ! p->ifa_addr ) continue;
-		//break; // mdw hack...
+		if(p->ifa_addr->sa_family != AF_INET)
+			continue;
 		struct sockaddr_in *xx = (sockaddr_in *)(void*)p->ifa_addr;
 		int32_t ip = xx->sin_addr.s_addr;
 		// skip if loopback we stored above

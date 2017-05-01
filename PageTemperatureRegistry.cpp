@@ -1,10 +1,11 @@
 #include "PageTemperatureRegistry.h"
+#include "ScalingFunctions.h"
 #include "Log.h"
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
-
+#include <math.h>
 
 PageTemperatureRegistry g_pageTemperatureRegistry;
 
@@ -97,13 +98,18 @@ bool PageTemperatureRegistry::load() {
 
 	temperature_range_for_scaling = max_temperature-min_temperature;
 	
+	min_temperature_log = log(min_temperature);
+	max_temperature_log = log(max_temperature);
+	temperature_range_for_scaling_log = log(temperature_range_for_scaling);
+	default_temperature_log = log(default_temperature);
+
 	if(!using_meta)
 		log(LOG_WARN, "meta-file %s could not be loaded. Using default temperature of %u which can scew results for new pages", meta_filename, default_temperature);
 	
 	log(LOG_DEBUG, "pagetemp: min_temperature=%u",min_temperature);
 	log(LOG_DEBUG, "pagetemp: max_temperature=%u",max_temperature);
 	log(LOG_DEBUG, "pagetemp: default_temperature=%u",default_temperature);
-	
+
 	log(LOG_DEBUG, "%s loaded (%lu items)", filename, (unsigned long)new_entries);
 	return true;
 }
@@ -129,11 +135,15 @@ unsigned PageTemperatureRegistry::query_page_temperature_internal(uint64_t docid
 }
 
 
-double PageTemperatureRegistry::query_page_temperature(uint64_t docid) const {
+double PageTemperatureRegistry::query_page_temperature(uint64_t docid, double range_min, double range_max) const {
 	if(hash_table_size==0)
-		return 1.0;
-	unsigned temperature_26bit = query_page_temperature_internal(docid);
+		return scale_linear(default_temperature_log, min_temperature_log, max_temperature_log, range_min, range_max);
+
+	double temperature_26bit_log = log((double)query_page_temperature_internal(docid));
 	//Then scale to a number in the rangte [0..1]
 	//It is a bit annoying to do this computation for each lookup but it saves memory
-	return ((double)(temperature_26bit - min_temperature)) / temperature_range_for_scaling;
+//	return ((double)(temperature_26bit - min_temperature)) / temperature_range_for_scaling;
+	return scale_linear(temperature_26bit_log, min_temperature_log, max_temperature_log, range_min, range_max);
 }
+
+
