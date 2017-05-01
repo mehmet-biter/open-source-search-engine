@@ -1258,35 +1258,35 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	setStatus ( "hashing url mid domain");
 
 	// update parms
-	hi.m_prefix    = NULL;
-	hi.m_desc      = "middle domain";
+	hi.m_prefix = NULL;
+	hi.m_desc = "middle domain";
 	hi.m_hashGroup = HASHGROUP_INURL;
-	hi.m_hashCommonWebWords = false;	// Skip www, com, http etc.
-	if ( ! hashString ( host,hlen,&hi)) return false;
+	hi.m_hashCommonWebWords = false;    // Skip www, com, http etc.
+	if (!hashString(host, hlen, &hi)) {
+		return false;
+	}
 
 	hi.m_hashCommonWebWords = true;
-	if ( ! hashSingleTerm ( fu->getDomain(),fu->getDomainLen(),&hi)) return false;
+	if (!hashSingleTerm(fu->getDomain(), fu->getDomainLen(), &hi)) {
+		return false;
+	}
 
-
-	setStatus ( "hashing url path");
+	setStatus("hashing url path");
 	char *path = fu->getPath();
-	int32_t  plen = fu->getPathLen();
+	int32_t plen = fu->getPathLen();
 
 	// BR 20160113: Do not hash and combine the page filename extension with the page name (skip e.g. .com)
-	if( elen > 0 )
-	{
-		elen++;	// also skip the dot
+	if (elen > 0) {
+		elen++;    // also skip the dot
 	}
 	plen -= elen;
 
-
 	// BR 20160113: Do not hash the most common page names
-	if( strncmp(path, "/index", plen) != 0 )
-	{
+	if (strncmp(path, "/index", plen) != 0) {
 		// hash the path
 		// BR 20160114: Exclude numbers in paths (usually dates)
 		hi.m_hashNumbers = false;
-		if ( ! hashString (path,plen,&hi) ) return false;
+		if (!hashString(path, plen, &hi)) return false;
 	}
 
 	return true;
@@ -1296,7 +1296,6 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 bool XmlDoc::hashIncomingLinkText(HashTableX *tt) {
 
 	setStatus ( "hashing link text" );
-
 
 	// sanity
 	if ( ! m_linkInfo1Valid ) { g_process.shutdownAbort(true); }
