@@ -1505,7 +1505,7 @@ bool Msg40::gotSummary ( ) {
 		}
 
 		// filter simplified redirection/non-caconical document
-		if (mr && mr->size_rubuf > 1 && mr->m_contentLen == 0) {
+		if (mr && mr->size_rubuf > 1 && mr->m_contentLen <= 0) {
 			if (!m_si->m_showErrors) {
 				*level = CR_EMPTY_REDIRECTION_PAGE;
 				continue;
