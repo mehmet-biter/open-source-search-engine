@@ -316,17 +316,6 @@ skipReplaceHost:
 		int32_t flags = h->m_pingInfo.m_flags;
 
 
-		if ( format == FORMAT_HTML ) {
-			// use these new ones for now
-			int n = h->m_pingInfo.m_numCorruptDiskReads;
-			if ( n )
-				fb.safePrintf("<font color=red><b>"
-					      "C"
-					      "<sup>%" PRId32"</sup>"
-					      "</b></font>"
-					      , n );
-		}
-
 		// recovery mode? reocvered from coring?
 		if ((flags & PFLAG_RECOVERYMODE)&& format == FORMAT_HTML ) {
 			fb.safePrintf("<b title=\"Recovered from core"
@@ -455,9 +444,6 @@ skipReplaceHost:
 				      h->m_dgramsFrom);
 			*/
 
-			sb.safePrintf("\t\t<numCorruptDiskReads>%" PRId32
-				      "</numCorruptDiskReads>\n"
-				      ,h->m_pingInfo.m_numCorruptDiskReads);
 			sb.safePrintf("\t\t<numOutstandingSpiders>%" PRId32
 				      "</numOutstandingSpiders>\n"
 				      ,h->m_pingInfo.m_currentSpiders );
@@ -545,8 +531,6 @@ skipReplaceHost:
 			*/
 
 
-			sb.safePrintf("\t\t\t\t\"numCorruptDiskReads\":%" PRId32",\n"
-				      ,h->m_pingInfo.m_numCorruptDiskReads);
 			sb.safePrintf("\t\t\t\t\"numOutstandingSpiders\":%" PRId32
 				      ",\n"
 				      ,h->m_pingInfo.m_currentSpiders );

@@ -53,7 +53,7 @@ public:
 	float m_unused7; //used to be m_diskUsage
 	int32_t m_flags;
 	// some new stuff
-	int32_t m_numCorruptDiskReads;
+	int32_t m_unused9;
 	int32_t m_unused10;
 	int32_t m_unused11;
 

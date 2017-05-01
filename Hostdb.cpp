@@ -1433,7 +1433,7 @@ void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
 	h->m_pingInfo.m_hostsConfCRC = pi.m_hostsConfCRC;
 	h->m_pingInfo.m_unused7 = 0.0;
 	h->m_pingInfo.m_flags = pi.m_flags;
-	h->m_pingInfo.m_numCorruptDiskReads = pi.m_numCorruptDiskReads;
+	h->m_pingInfo.m_unused9 = 0;
 	h->m_pingInfo.m_unused10 = 0;
 	h->m_pingInfo.m_unused11 = 0;
 	//m_totalResends is updated direclty by UdpSlot

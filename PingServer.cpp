@@ -202,7 +202,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	//first we update our pinginfo
 	PingInfo newPingInfo;
 
-	newPingInfo.m_numCorruptDiskReads = g_numCorrupt;
+	newPingInfo.m_unused9 = 0;
 	newPingInfo.m_unused3 = 0;
 	newPingInfo.m_unused11 = 0;
 	newPingInfo.m_currentSpiders = g_spiderLoop.getNumSpidersOut();
