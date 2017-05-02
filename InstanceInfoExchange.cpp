@@ -218,8 +218,8 @@ static void *poll_thread(void *) {
 		if(pfd[1].fd<0)
 			pfd[1].fd = connect_to_vagus(g_conf.m_vagusPort);
 		
+		next_poll_ms = getCurrentTimeNanoseconds()/1000000 + g_conf.m_vagusKeepaliveSendInterval;
 		if(pfd[1].fd>=0) {
-			next_poll_ms = getCurrentTimeNanoseconds()/1000000 + g_conf.m_vagusKeepaliveSendInterval;
 			if(!do_vagus_poll(pfd[1].fd)) {
 				(void)close(pfd[1].fd);
 				pfd[1].fd = -1;
