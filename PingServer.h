@@ -44,7 +44,7 @@ class PingServer {
 	bool hostsConfInDisagreement() const { return m_hostsConfInDisagreement; }
 	bool hostsConfInAgreement() const { return m_hostsConfInAgreement; }
 
-	Host *getMinRepairModeHost() const { return m_minRepairModeHost; }
+	const Host *getMinRepairModeHost() const { return m_minRepairModeHost; }
 
 	// . these functions used by Repair.cpp
 	// . we do not tally ourselves when computing m_minRepairMode
@@ -75,7 +75,7 @@ class PingServer {
 
 	void sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) ;
 
-	void    setMinRepairMode ( Host *h ) ;
+	void    setMinRepairMode(const Host *h);
 
 private:
 	static void gotReplyWrapperP(void *state, UdpSlot *slot);
@@ -106,9 +106,9 @@ private:
 	int32_t    m_minRepairMode;
 	int32_t    m_maxRepairMode;
 	int32_t    m_minRepairModeBesides0;
-	Host   *m_minRepairModeHost;
-	Host   *m_maxRepairModeHost;
-	Host   *m_minRepairModeBesides0Host;
+	const Host   *m_minRepairModeHost;
+	const Host   *m_maxRepairModeHost;
+	const Host   *m_minRepairModeBesides0Host;
 
 	// some cluster stats
 	bool m_hostsConfInAgreement;

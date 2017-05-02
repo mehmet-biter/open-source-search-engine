@@ -539,7 +539,7 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 
 // . sets m_minRepairMode
 // . only call this when host "h" changes repair mode
-void PingServer::setMinRepairMode ( Host *hhh ) {
+void PingServer::setMinRepairMode(const Host *hhh) {
 	// . this host is the holder of the min now, return if not a match
 	// . do not return if m_minRepairMode has not been set at all though
 	bool returnNow = true;
@@ -554,9 +554,9 @@ void PingServer::setMinRepairMode ( Host *hhh ) {
 	int32_t  min   = -1;
 	int32_t  max   = -1;
 	int32_t  min0  = -1;
-	Host *minh  = NULL;
-	Host *maxh  = NULL;
-	Host *minh0 = NULL;
+	const Host *minh  = NULL;
+	const Host *maxh  = NULL;
+	const Host *minh0 = NULL;
 	// scan to find new min
 	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		// count if not dead
