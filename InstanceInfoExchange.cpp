@@ -279,7 +279,7 @@ void InstanceInfoExchange::finalize() {
 }
 
 
-void InstanceInfoExchange::weAreAlive(int forHowLong) {
+void InstanceInfoExchange::weAreAlive() {
 	if(fd_keepalive<0)
 		fd_keepalive = connect_to_vagus(g_conf.m_vagusPort);
 	if(fd_keepalive<0)

@@ -8,7 +8,7 @@ void finalize();
 
 //Tell the exchange that this info is still alive and kicking.
 //  'forHowLong' is relative time in milliseconds
-void weAreAlive(int forHowLong);
+void weAreAlive();
 
 } //namespace
 

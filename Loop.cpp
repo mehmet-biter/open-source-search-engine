@@ -744,7 +744,7 @@ void Loop::doPoll ( ) {
 
 	if(m_lastKeepaliveTimestamp + g_conf.m_vagusKeepaliveSendInterval <= gettimeofdayInMilliseconds()) {
 		m_lastKeepaliveTimestamp = gettimeofdayInMilliseconds() + g_conf.m_vagusKeepaliveSendInterval;
-		InstanceInfoExchange::weAreAlive(g_conf.m_vagusKeepaliveLifetime);
+		InstanceInfoExchange::weAreAlive();
 	}
 
 	int32_t n;
