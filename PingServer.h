@@ -43,7 +43,6 @@ class PingServer {
 
 	bool hostsConfInDisagreement() const { return m_hostsConfInDisagreement; }
 	bool hostsConfInAgreement() const { return m_hostsConfInAgreement; }
-	int getNumHostsDead() const { return m_numHostsDead; }
 
 	Host *getMinRepairModeHost() const { return m_minRepairModeHost; }
 
@@ -112,8 +111,6 @@ private:
 	Host   *m_minRepairModeBesides0Host;
 
 	// some cluster stats
-	int32_t m_numHostsWithForeignRecs;
-	int32_t m_numHostsDead;
 	bool m_hostsConfInAgreement;
 	bool m_hostsConfInDisagreement;
 };

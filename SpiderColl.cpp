@@ -2731,7 +2731,7 @@ gotNewWinner:
 	logDebug(g_conf.m_logDebugSpider, "spider: Checked list of %" PRId32" spiderdb bytes (%" PRId32" recs) "
 		    "for winners for firstip=%s. winnerTreeUsedNodes=%" PRId32" #newreqs=%" PRId64,
 	         m_list.getListSize(), recCount,
-	         iptoa( m_scanningIp ), m_winnerTree.getNumUsedNodes_unlocked(), m_totalNewSpiderRequests );
+	         iptoa( m_scanningIp ), m_winnerTree.getNumUsedNodes(), m_totalNewSpiderRequests );
 
 	// reset any errno cuz we're just a cache
 	g_errno = 0;
