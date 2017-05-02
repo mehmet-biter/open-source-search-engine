@@ -178,7 +178,7 @@ while true; do
 
 	GB_START_TIME=$(date +%s)
 
-	${GB_PRE} ./gb -l $ADDARGS
+	${GB_PRE} ./gb -l $ADDARGS >> $logfile 2>&1
 	EXITSTATUS=$?
 
 	GB_END_TIME=$(date +%s)
@@ -209,5 +209,5 @@ while true; do
 
 	ADDARGS='-r'$INC
 	INC=$((INC+1))
-done >> $logfile 2>&1 &
+done > /dev/null 2>&1 &
 
