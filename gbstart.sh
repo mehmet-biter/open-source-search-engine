@@ -7,6 +7,12 @@ if [ $# -ge 1 ]; then
 	host_id=$1
 fi
 
+if [ -z ${host_id} ]; then
+	logfile="log000"
+else
+	logfile="log"$(printf "%03d" $host_id)
+fi
+
 function get_cpu_affinity() {
 	if [ -z ${host_id} ]; then
 		return
@@ -29,6 +35,9 @@ function send_alert() {
 	if [ -f "slacktee.sh" ] && [ -f "slacktee.conf" ]; then
 		# Send single-line alert to make sure it is received
 		echo -e "`hostname`:`pwd`: $1" | ./slacktee.sh --config slacktee.conf >/dev/null
+	else
+		# Log alert in logfile
+		echo -e "$(date --utc "+%Y%m%d-%H%M%S-%3N") $(printf '%04d %06d' $host_id $$) ERR $(basename $0): $1" >> $logfile
 	fi
 }
 
@@ -161,7 +170,7 @@ while true; do
 	fi
 
 	# Dump list of files before allowing gb to continue running
-	find . -not -path '*/\.*' -not -path '*/__*' -not -path './file_state*' -type f -exec ls -l --full-time {} \; 2>/dev/null |column -t|sort -k 9 > file_state.txt
+	find . -not -path '*/\.*' -not -path '*/__*' -not -path './*-bak*' -type f -exec ls -l --full-time {} \; 2>/dev/null |column -t|sort -k 9 > file_state.txt
 
 	GB_START_TIME=$(date +%s)
 
@@ -196,5 +205,5 @@ while true; do
 
 	ADDARGS='-r'$INC
 	INC=$((INC+1))
-done > /dev/null 2>&1 &
+done >> $logfile 2>&1 &
 
