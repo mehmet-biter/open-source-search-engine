@@ -1543,7 +1543,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	}
 
 	logDebug( g_conf.m_logDebugSpider, "spider: evalIpLoop: waitingtree nextip=%s numUsedNodes=%" PRId32,
-	          iptoa(ip), m_waitingTree.getNumUsedNodes_unlocked() );
+	          iptoa(ip), m_waitingTree.getNumUsedNodes() );
 
 //@@@@@@ BR: THIS SHOULD BE DEBUGGED AND ENABLED
 
