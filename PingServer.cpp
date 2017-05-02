@@ -74,7 +74,6 @@ bool PingServer::init ( ) {
 	m_minRepairModeBesides0Host = NULL;
 
 	m_numHostsWithForeignRecs = 0;
-	m_numHostsDead = 0;
 	m_hostsConfInDisagreement = false;
 	m_hostsConfInAgreement = false;
 
@@ -459,7 +458,6 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 
 	PingServer *ps = &g_pingServer;
 	ps->m_numHostsWithForeignRecs = 0;
-	ps->m_numHostsDead = 0;
 	ps->m_hostsConfInDisagreement = false;
 	ps->m_hostsConfInAgreement = false;
 
@@ -478,10 +476,6 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 
 		if ( h2->m_pingInfo.m_flags & PFLAG_FOREIGNRECS ) {
 			ps->m_numHostsWithForeignRecs++;
-		}
-
-		if ( g_hostdb.isDead ( h2 ) ) {
-			ps->m_numHostsDead++;
 		}
 
 		// skip if not received yet

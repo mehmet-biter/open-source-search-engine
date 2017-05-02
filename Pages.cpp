@@ -2321,8 +2321,6 @@ bool printRedBox2 ( SafeBuf *sb , TcpSocket *sock , HttpRequest *hr ) {
 // emergency message box
 bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 
-	PingServer *ps = &g_pingServer;
-
 	const char *box = 
 		"<table cellpadding=5 "
 		// full width of enclosing div
@@ -2536,16 +2534,13 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 	}
 
 
-	if ( ps->getNumHostsDead() ) {
+	if ( g_hostdb.hasDeadHost() ) {
 		if ( adds ) mb->safePrintf("<br>");
 		adds++;
-		const char *s = "hosts are";
-		if ( ps->getNumHostsDead() == 1 ) s = "host is";
 		mb->safePrintf("%s",box);
-		mb->safePrintf("%" PRId32" %s dead and not responding to "
-			      "pings. See the "
+		mb->safePrintf("%d hosts are dead and not responding to pings. See the "
 			       "<a href=/admin/hosts?c=%s>hosts table</a>.",
-			       ps->getNumHostsDead() ,s ,coll);
+			       g_hostdb.getNumHostsDead(), coll);
 		mb->safePrintf("%s",boxEnd);
 	}
 

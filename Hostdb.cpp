@@ -1274,6 +1274,14 @@ bool Hostdb::hasDeadHost ( ) {
 	return false;
 }
 
+int Hostdb::getNumHostsDead() {
+	int count=0;
+	for(int32_t i = 0; i < m_numHosts; i++)
+		if(isDead(i))
+			count++;
+	return count;
+}
+
 bool Hostdb::isDead ( int32_t hostId ) {
 	Host *h = getHost ( hostId );
 	return isDead ( h );
