@@ -684,7 +684,6 @@ createFile:
 		// reset these
 		m_hosts[i].m_pingInfo.m_flags    = 0;
 		m_hosts[i].m_pingInfo.m_unused4 = 0.0;
-		m_hosts[i].m_loadAvg  = 0.0;
 
 		m_hosts[i].m_lastResponseReceiveTimestamp = 0;
 		m_hosts[i].m_lastRequestSendTimestamp = 0;
@@ -825,7 +824,6 @@ createFile:
 		// assume everybody is dead, except us
 		m_hosts[i].m_ping        = deadHostTimeout;
 		m_hosts[i].m_pingShotgun = deadHostTimeout;
-		m_hosts[i].m_loadAvg     = 0.0;
 		// not in progress
 		m_hosts[i].m_inProgress1    = false;
 		m_hosts[i].m_inProgress2    = false;
@@ -864,7 +862,6 @@ createFile:
 	// set our ping to zero
 	host->m_ping        = 0;
 	host->m_pingShotgun = 0;
-	host->m_loadAvg     = g_process.getLoadAvg();
 
 	// THIS hostId
 	m_hostId = m_myHost->m_hostId;
@@ -1363,8 +1360,6 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	// reset these stats
 	oldHost->m_pingMax             = 0;
 	oldHost->m_gotPingReply        = false;
-	oldHost->m_loadAvg             = 0;
-	oldHost->m_firstOOMTime        = 0;
 	oldHost->m_pingInfo.m_totalDocsIndexed         = 0;
 	oldHost->m_ping                = g_conf.m_deadHostTimeout;
 	oldHost->m_pingShotgun         = g_conf.m_deadHostTimeout;

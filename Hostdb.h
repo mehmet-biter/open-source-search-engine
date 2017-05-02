@@ -101,9 +101,6 @@ public:
 	int32_t           m_pingMax;
 	// have we ever got a ping reply from him?
 	bool           m_gotPingReply;
-	double         m_loadAvg;
-	// the first time we went OOM (out of mem, i.e. >= 99% mem used)
-	int64_t      m_firstOOMTime;
 
 	// last time g_hostdb.ping(i) was called for this host in milliseconds.
 	int64_t      m_lastPing;
