@@ -111,7 +111,6 @@ private:
 	Host   *m_minRepairModeBesides0Host;
 
 	// some cluster stats
-	int32_t m_numHostsWithForeignRecs;
 	bool m_hostsConfInAgreement;
 	bool m_hostsConfInDisagreement;
 };
