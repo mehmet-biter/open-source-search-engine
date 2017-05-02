@@ -8992,10 +8992,6 @@ static uint16_t getCharsetFast(HttpMime *mime,
 	// so let's put in some quick string matching for this!
 	//
 
-	// . how big is one char? usually this is 1 unless we are in utf16...
-	// . if we are in utf16 natively then this code needs to know that and
-	//   set oneChar to 2! TODO!!
-	//char oneChar = 1;
 	// advance a bit, we are initially looking for the = sign
 	if ( p ) p += 10;
 	// begin the string matching loop
@@ -9153,18 +9149,6 @@ static uint16_t getCharsetFast(HttpMime *mime,
 			}
 		}
 	}
-
-	//char *csName = get_charset_str(charset);
-
-	// if we are not supported, set m_indexCode
-	//if ( csName && ! supportedCharset(charset) ) {
-	//	log("build: xml: Unsupported charset: %s", csName);
-	//	g_errno = EBADCHARSET;
-	//	return NULL;
-	//	//charset = csUnknown;
-	//	// i guess do not risk it
-	//	//m_indexCode = EBADCHARSET;
-	//}
 
 	// all done
 	return charset;
