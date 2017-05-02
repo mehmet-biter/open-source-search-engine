@@ -37,7 +37,7 @@ function send_alert() {
 		echo -e "`hostname`:`pwd`: $1" | ./slacktee.sh --config slacktee.conf >/dev/null
 	else
 		# Log alert in logfile
-		echo -e "$(date --utc "+%Y%m%d-%H%M%S-%3N") $(printf '%04d %06d' $host_id $$) ERR $(basename $0): $1" >> $logfile
+		echo -e "$(date -u "+%Y%m%d-%H%M%S-%3N") $(printf '%04d %06d' $host_id $$) ERR $(basename $0): $1" >> $logfile
 	fi
 }
 
@@ -167,6 +167,10 @@ while true; do
 	# rename if exist
 	if [ -f file_state.txt ]; then
 		mv file_state.txt file_state-bak$(date -u +%Y%m%d-%H%M%S).txt
+	fi
+
+	if [ -f $logfile ]; then
+		mv ${logfile} ${logfile}-bak$(date -u +%Y%m%d-%H%M%S)
 	fi
 
 	# Dump list of files before allowing gb to continue running
