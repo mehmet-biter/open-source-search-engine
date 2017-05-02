@@ -169,8 +169,8 @@ while true; do
 		mv file_state.txt file_state-bak$(date -u +%Y%m%d-%H%M%S).txt
 	fi
 
-	if [ -f $logfile ]; then
-		mv ${logfile} ${logfile}-bak$(date -u +%Y%m%d-%H%M%S)
+	if [ -f gb_output.txt ]; then
+		mv gb_output.txt gb_output-bak$(date -u +%Y%m%d-%H%M%S).txt
 	fi
 
 	# Dump list of files before allowing gb to continue running
@@ -178,7 +178,7 @@ while true; do
 
 	GB_START_TIME=$(date +%s)
 
-	${GB_PRE} ./gb -l $ADDARGS >> $logfile 2>&1
+	${GB_PRE} ./gb -l $ADDARGS > gb_output.txt 2>&1
 	EXITSTATUS=$?
 
 	GB_END_TIME=$(date +%s)
