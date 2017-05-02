@@ -1350,7 +1350,7 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 	const char *oldColl = " &nbsp; ";
 	if ( m_cr ) oldColl = m_cr->m_coll;
 
-	Host *mh = g_pingServer.getMinRepairModeHost();
+	const Host *mh = g_pingServer.getMinRepairModeHost();
 	int32_t  minHostId = -1;
 	char  minIpBuf[64];
 	minIpBuf[0] = '\0';

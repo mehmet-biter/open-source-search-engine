@@ -225,12 +225,10 @@ class Hostdb {
 	// . sets itself from g_conf (our configuration class)
 	// . returns false on fatal error
 	// . gets filename from Conf.h class
-	bool init(int32_t hostId, char *netname=NULL, bool proxyHost=false, bool useTempCluster=false, const char *cwd=NULL);
+	bool init(int32_t hostId, bool proxyHost=false, bool useTempCluster=false, const char *cwd=NULL);
 
 	// if config changes this *should* change
 	int32_t getCRC();
-
-	const char *getNetName ( );
 
 	Hostdb();
 	~Hostdb();
@@ -247,16 +245,16 @@ class Hostdb {
 
 	// we consider the host dead if we didn't get a ping reply back
 	// after 10 seconds
-	bool  isDead ( int32_t hostId ) ;
+	bool  isDead(int32_t hostId) const;
 
-	bool  isDead(const Host *h);
+	bool  isDead(const Host *h) const;
 
-	bool hasDeadHost ( );
-	int getNumHostsDead();
+	bool hasDeadHost() const;
+	int getNumHostsDead() const;
 
 	int64_t getNumGlobalRecs ( );
 
-	bool isShardDead ( int32_t shardNum ) ;
+	bool isShardDead(int32_t shardNum) const;
 
 	Host *getLeastLoadedInShard ( uint32_t shardNum , char niceness );
 	int32_t getHostIdWithSpideringEnabled ( uint32_t shardNum );
@@ -279,6 +277,9 @@ class Hostdb {
 		if ( numHosts ) *numHosts = m_numHostsPerShard;
 		return &m_hosts[shardNum * m_numHostsPerShard]; 
 	}
+	const Host *getShard( uint32_t shardNum , int32_t *numHosts = NULL) const {
+		return const_cast<Hostdb*>(this)->getShard(shardNum,numHosts);
+	}
 
 	// get the host that has this path/ip
 	Host *getHost2 ( const char *cwd , int32_t *localIps ) ;
@@ -289,29 +290,32 @@ class Hostdb {
 		if ( hostId < 0 ) { gbshutdownAbort(true); }
 		return m_hostPtrs[hostId]; 
 	}
-
+	const Host *getHost(int32_t hostId) const {
+		return const_cast<Hostdb*>(this)->getHost(hostId);
+	}
+	
 	Host *getSpare ( int32_t spareId ) {
 		return m_spareHosts[spareId]; }
 
 	Host *getProxy ( int32_t proxyId ) {
 		return m_proxyHosts[proxyId]; }
 
-	int32_t getNumHosts() { return m_numHosts; }
-	int32_t getNumProxy() { return m_numProxyHosts; }
-	int32_t getNumProxies() { return m_numProxyHosts; }
-	int32_t getNumGrunts() { return m_numHosts; }
+	int32_t getNumHosts() const { return m_numHosts; }
+	int32_t getNumProxy() const { return m_numProxyHosts; }
+	int32_t getNumProxies() const { return m_numProxyHosts; }
+	int32_t getNumGrunts() const { return m_numHosts; }
 
 	// how many of the hosts are non-dead?
-	int32_t  getNumHostsAlive ( ) { return m_numHostsAlive; }
-	int32_t  getNumProxyAlive ( ) { return m_numProxyAlive; }
-	int32_t  getNumShards () { return m_numShards; }
-	int32_t  getNumIndexSplits() { return m_indexSplits; }
+	int32_t  getNumHostsAlive() const { return m_numHostsAlive; }
+	int32_t  getNumProxyAlive() const { return m_numProxyAlive; }
+	int32_t  getNumShards() const { return m_numShards; }
+	int32_t  getNumIndexSplits() const { return m_indexSplits; }
 
 	// how many hosts in this group?
-	int32_t  getNumHostsPerShard ( ) { return m_numHostsPerShard; }
+	int32_t  getNumHostsPerShard() const { return m_numHostsPerShard; }
 
 	// goes with Host::m_stripe
-	int32_t  getNumStripes ( ) { 
+	int32_t  getNumStripes() const {
 		// BR 20160316: Make sure noquery hosts are not used when dividing
 		// docIds for querying (Msg39)
 		return m_numStripeHostsPerShard; 
@@ -396,8 +400,6 @@ class Hostdb {
 	char          m_logFilename[256];
 
 	int32_t          m_indexSplits; 
-
-	char          m_netName[32];
 
 	// spare hosts list
 	Host *m_spareHosts[MAX_SPARES];

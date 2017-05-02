@@ -723,7 +723,7 @@ int main2 ( int argc , char *argv[] ) {
 	// load up hosts.conf
 	// . it will determine our hostid based on the directory path of this
 	//   gb binary and the ip address of this server
-	if ( ! g_hostdb.init(-1, NULL, isProxy, useTmpCluster, workingDir)) {
+	if ( ! g_hostdb.init(-1, isProxy, useTmpCluster, workingDir)) {
 		log( LOG_ERROR, "db: hostdb init failed." );
 		return 1;
 	}

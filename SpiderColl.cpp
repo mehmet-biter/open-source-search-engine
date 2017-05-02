@@ -2880,7 +2880,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 			log(LOG_DEBUG,"spider: removed2 time=%" PRId64" ip=%s from "
 			    "waiting tree. nn=%" PRId32".",
 			    timestamp64, iptoa(firstIp),
-			    m_waitingTree.getNumUsedNodes_unlocked());
+			    m_waitingTree.getNumUsedNodes());
 
 		removeFromWaitingTable(firstIp);
 		return true;

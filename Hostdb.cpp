@@ -79,7 +79,6 @@ Hostdb::Hostdb ( ) {
 	memset(m_dir, 0, sizeof(m_dir));
 	memset(m_httpRootDir, 0, sizeof(m_httpRootDir));
 	memset(m_logFilename, 0, sizeof(m_logFilename));
-	memset(m_netName, 0, sizeof(m_netName));
 	memset(m_map, 0, sizeof(m_map));
 }
 
@@ -97,15 +96,10 @@ void Hostdb::reset ( ) {
 	m_numIps            = 0;
 }
 
-const char *Hostdb::getNetName ( ) {
-	if ( this == &g_hostdb ) return "default";
-	return m_netName;
-}
-
 // . gets filename that contains the hosts from the Conf file
 // . return false on errro
 // . g_errno may NOT be set
-bool Hostdb::init(int32_t hostIdArg, char *netName, bool proxyHost, bool useTmpCluster, const char *cwd) {
+bool Hostdb::init(int32_t hostIdArg, bool proxyHost, bool useTmpCluster, const char *cwd) {
 	// reset my ip and port
 	m_myIp             = 0;
 	m_myIpShotgun      = 0;
@@ -135,11 +129,6 @@ bool Hostdb::init(int32_t hostIdArg, char *netName, bool proxyHost, bool useTmpC
 	m_hostId = -1;
 
 retry:
-	// save the name of the network... we can have multiple networks now
-	// since we need to get title recs from separate networks for getting
-	// link text for gov.gigablast.com
-	m_netName[0] = '\0';
-	if ( netName ) strncpy ( m_netName , netName , 31 );
 	// . File::open() open old if it exists, otherwise,
 	File f;
 	f.set ( dir , filename );
@@ -1178,7 +1167,7 @@ static int cmp (const void *v1, const void *v2) {
 
 #include "Stats.h"
 
-bool Hostdb::isShardDead ( int32_t shardNum ) {
+bool Hostdb::isShardDead(int32_t shardNum) const {
 	// how many seconds since our main process was started?
 	// i guess all nodes initially appear dead, so
 	// compensate for that.
@@ -1186,7 +1175,7 @@ bool Hostdb::isShardDead ( int32_t shardNum ) {
 	long elapsed = (now - g_stats.m_startTime) ;/// 1000;
 	if ( elapsed < 60*1000 ) return false; // try 60 secs now
 
-	Host *shard = getShard ( shardNum );
+	const Host *shard = getShard(shardNum);
 	//Host *live = NULL;
 	for ( int32_t i = 0 ; i < m_numHostsPerShard ; i++ ) {
 		if(!isDead(shard[i].m_hostId))
@@ -1260,7 +1249,7 @@ Host *Hostdb::getLeastLoadedInShard ( uint32_t shardNum , char niceness ) {
 }
 
 // if all are dead just return host #0
-Host *Hostdb::getFirstAliveHost ( ) {
+Host *Hostdb::getFirstAliveHost() {
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ )
 		// if host #i is alive, return her
 		if ( ! isDead ( i ) ) return getHost(i);
@@ -1268,13 +1257,13 @@ Host *Hostdb::getFirstAliveHost ( ) {
 	return getHost(0);
 }
 
-bool Hostdb::hasDeadHost ( ) {
+bool Hostdb::hasDeadHost() const {
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ )
 		if ( isDead ( i ) ) return true;
 	return false;
 }
 
-int Hostdb::getNumHostsDead() {
+int Hostdb::getNumHostsDead() const {
 	int count=0;
 	for(int32_t i = 0; i < m_numHosts; i++)
 		if(isDead(i))
@@ -1282,12 +1271,12 @@ int Hostdb::getNumHostsDead() {
 	return count;
 }
 
-bool Hostdb::isDead ( int32_t hostId ) {
-	Host *h = getHost ( hostId );
+bool Hostdb::isDead(int32_t hostId) const {
+	const Host *h = getHost(hostId);
 	return isDead ( h );
 }
 
-bool Hostdb::isDead(const Host *h) {
+bool Hostdb::isDead(const Host *h) const {
 	if(h->m_retired)
 		return true; // retired means "don't use it", so it is essentially dead
 	if(g_hostdb.m_myHost == h)
