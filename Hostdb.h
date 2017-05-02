@@ -225,12 +225,10 @@ class Hostdb {
 	// . sets itself from g_conf (our configuration class)
 	// . returns false on fatal error
 	// . gets filename from Conf.h class
-	bool init(int32_t hostId, char *netname=NULL, bool proxyHost=false, bool useTempCluster=false, const char *cwd=NULL);
+	bool init(int32_t hostId, bool proxyHost=false, bool useTempCluster=false, const char *cwd=NULL);
 
 	// if config changes this *should* change
 	int32_t getCRC();
-
-	const char *getNetName ( );
 
 	Hostdb();
 	~Hostdb();
@@ -402,8 +400,6 @@ class Hostdb {
 	char          m_logFilename[256];
 
 	int32_t          m_indexSplits; 
-
-	char          m_netName[32];
 
 	// spare hosts list
 	Host *m_spareHosts[MAX_SPARES];

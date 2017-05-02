@@ -79,7 +79,6 @@ Hostdb::Hostdb ( ) {
 	memset(m_dir, 0, sizeof(m_dir));
 	memset(m_httpRootDir, 0, sizeof(m_httpRootDir));
 	memset(m_logFilename, 0, sizeof(m_logFilename));
-	memset(m_netName, 0, sizeof(m_netName));
 	memset(m_map, 0, sizeof(m_map));
 }
 
@@ -97,15 +96,10 @@ void Hostdb::reset ( ) {
 	m_numIps            = 0;
 }
 
-const char *Hostdb::getNetName ( ) {
-	if ( this == &g_hostdb ) return "default";
-	return m_netName;
-}
-
 // . gets filename that contains the hosts from the Conf file
 // . return false on errro
 // . g_errno may NOT be set
-bool Hostdb::init(int32_t hostIdArg, char *netName, bool proxyHost, bool useTmpCluster, const char *cwd) {
+bool Hostdb::init(int32_t hostIdArg, bool proxyHost, bool useTmpCluster, const char *cwd) {
 	// reset my ip and port
 	m_myIp             = 0;
 	m_myIpShotgun      = 0;
@@ -135,11 +129,6 @@ bool Hostdb::init(int32_t hostIdArg, char *netName, bool proxyHost, bool useTmpC
 	m_hostId = -1;
 
 retry:
-	// save the name of the network... we can have multiple networks now
-	// since we need to get title recs from separate networks for getting
-	// link text for gov.gigablast.com
-	m_netName[0] = '\0';
-	if ( netName ) strncpy ( m_netName , netName , 31 );
 	// . File::open() open old if it exists, otherwise,
 	File f;
 	f.set ( dir , filename );

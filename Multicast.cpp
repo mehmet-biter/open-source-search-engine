@@ -326,14 +326,14 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 	if ( logIt ) {
 		const Host *h = slot->m_host;
 		if ( h ) 
-			log("net: Got error sending request to hostId %d (msgType=0x%02x transId=%d net=%s): %s. Retrying.",
+			log("net: Got error sending request to hostId %d (msgType=0x%02x transId=%d): %s. Retrying.",
 			    h->m_hostId, (int)slot->getMsgType(), slot->getTransId(),
-			    g_hostdb.getNetName(),mstrerror(m_host[i].m_errno) );
+			    mstrerror(m_host[i].m_errno) );
 		else
-			log("net: Got error sending request to %s:%d (msgType=0x%02x transId=%d net=%s): %s. Retrying.",
+			log("net: Got error sending request to %s:%d (msgType=0x%02x transId=%d): %s. Retrying.",
 			    iptoa(slot->getIp()), (int32_t)slot->getPort(),
 			    (int)slot->getMsgType(), slot->getTransId(),
-			    g_hostdb.getNetName(),mstrerror(m_host[i].m_errno) );
+			    mstrerror(m_host[i].m_errno) );
 	}
 	// . let's sleep for a second before retrying the send
 	// . the g_errno could be ETRYAGAIN which happens if we're trying to 
@@ -849,15 +849,15 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 			// log the error
 			Host *h = g_hostdb.getUdpHost(slot->getIp(), slot->getPort());
 			if (h) {
-				log(LOG_WARN, "net: Multicast got error in reply from hostId %d (msgType=0x%02x transId=%d nice=%d net=%s): %s.",
+				log(LOG_WARN, "net: Multicast got error in reply from hostId %d (msgType=0x%02x transId=%d nice=%d): %s.",
 				    h->m_hostId, (int)slot->getMsgType(), slot->getTransId(),
 				    m_niceness,
-				    g_hostdb.getNetName(), mstrerror(g_errno));
+				    mstrerror(g_errno));
 			} else {
-				log(LOG_WARN, "net: Multicast got error in reply from %s:%d (msgType=0x%02x transId=%d nice =%d net=%s): %s.",
+				log(LOG_WARN, "net: Multicast got error in reply from %s:%d (msgType=0x%02x transId=%d nice =%d): %s.",
 				    iptoa(slot->getIp()), (int32_t) slot->getPort(),
 				    (int)slot->getMsgType(), slot->getTransId(), m_niceness,
-				    g_hostdb.getNetName(), mstrerror(g_errno));
+				    mstrerror(g_errno));
 			}
 		}
 
