@@ -744,14 +744,10 @@ void Rdb::submitRdbDumpJob(bool forceDump) {
 	}
 
 	// bail if already dumping
-	{
-		ScopedLock sl(m_isDumpingMtx);
-		if (m_isDumping) {
-			logTrace(g_conf.m_logTraceRdb, "END. %s: Already dumping. Returning", m_dbname);
-			return;
-		}
-
-		m_isDumping = true;
+	bool isDumping =m_isDumping.exchange(true);
+	if (isDumping) {
+		logTrace(g_conf.m_logTraceRdb, "END. %s: Already dumping. Returning", m_dbname);
+		return;
 	}
 
 	s_rdbDumpThreadQueue.addItem(this);
@@ -994,10 +990,7 @@ void Rdb::doneDumping ( ) {
 	// . we have to set this here otherwise RdbMem's memory ring buffer
 	//   will think the dumping is no longer going on and use the primary
 	//   memory for allocating new titleRecs and such and that is not good!
-	{
-		ScopedLock sl(m_isDumpingMtx);
-		m_isDumping = false;
-	}
+	m_isDumping = false;
 
 	// try merge for all, first one that needs it will do it, preventing
 	// the rest from doing it

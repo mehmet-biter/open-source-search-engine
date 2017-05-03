@@ -225,8 +225,6 @@ public:
 	// rebuilt files, pointed to by rdb2.
 	bool updateToRebuildFiles ( Rdb *rdb2 , char *coll ) ;
 
-	GbMutex m_isDumpingMtx;
-
 private:
 	bool addRdbBase2 ( collnum_t collnum );
 	void addBase(collnum_t collnum, RdbBase *base);
@@ -311,7 +309,7 @@ private:
 
 	// set to true when dumping tree so RdbMem does not use the memory
 	// being dumped to hold newly added records
-	bool m_isDumping;
+	std::atomic<bool> m_isDumping;
 
 	rdbid_t m_rdbId;
 
