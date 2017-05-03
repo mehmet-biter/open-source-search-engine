@@ -1102,6 +1102,7 @@ void RdbBase::markNewFileReadable() {
 }
 
 BigFile* RdbBase::getFile(int32_t n) {
+	ScopedLock sl(m_mtxFileInfo);
 	return m_fileInfo[n].m_file;
 }
 
@@ -1111,10 +1112,12 @@ int32_t RdbBase::isRootFile(int32_t n) const {
 }
 
 RdbMap* RdbBase::getMap(int32_t n) {
+	ScopedLock sl(m_mtxFileInfo);
 	return m_fileInfo[n].m_map;
 }
 
 RdbIndex* RdbBase::getIndex(int32_t n) {
+	ScopedLock sl(m_mtxFileInfo);
 	return m_fileInfo[n].m_index;
 }
 
