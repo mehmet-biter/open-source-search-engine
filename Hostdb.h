@@ -157,6 +157,8 @@ public:
 	bool isProxy() { return (m_type == HT_PROXY); }
 	bool isGrunt() { return (m_type == HT_GRUNT); }
 
+	bool hasSameHostsConfCRC() const;
+
 	// for m_type == HT_QCPROXY, we forward the query to the regular proxy
 	// at this Ip:Port. we should receive a compressed 0xfd reply and
 	// we uncompress it and return it to the browser.
@@ -453,6 +455,10 @@ inline int32_t getMyHostId() {
 
 inline uint32_t getShardNumFromDocId ( int64_t d ) {
 	return g_hostdb.getShardNumFromDocId ( d );
+}
+
+inline bool Host::hasSameHostsConfCRC() const {
+	return m_pingInfo.m_hostsConfCRC == g_hostdb.getCRC();
 }
 
 #endif // GB_HOSTDB_H

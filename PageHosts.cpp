@@ -306,13 +306,13 @@ skipReplaceHost:
 			// does its hosts.conf file disagree with ours?
 			if ( h->m_pingInfo.m_hostsConfCRC &&
 			format == FORMAT_HTML &&
-			h->m_pingInfo.m_hostsConfCRC != g_hostdb.getCRC() )
+			!h->hasSameHostsConfCRC() )
 				fb.safePrintf("<font color=red><b title=\"Hosts.conf "
 					"in disagreement with ours.\">H"
 					"</b></font>");
 			if ( h->m_pingInfo.m_hostsConfCRC &&
 			format != FORMAT_HTML &&
-			h->m_pingInfo.m_hostsConfCRC != g_hostdb.getCRC() )
+			!h->hasSameHostsConfCRC() )
 				fb.safePrintf("Hosts.conf in disagreement with ours");
 		}
 		

@@ -114,7 +114,7 @@ static void Msg4In::handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
 		}
 
 		// compare our hosts.conf to sender's otherwise
-		if (slot->m_host->m_pingInfo.m_hostsConfCRC != g_hostdb.getCRC()) {
+		if (!slot->m_host->hasSameHostsConfCRC()) {
 			g_errno = EBADHOSTSCONF;
 			logError("call sendErrorReply");
 			g_udpServer.sendErrorReply ( slot , g_errno );

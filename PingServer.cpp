@@ -435,7 +435,7 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 		}
 
 		// badness?
-		if ( h2->m_pingInfo.m_hostsConfCRC != g_hostdb.m_crc ) {
+		if ( !h2->hasSameHostsConfCRC() ) {
 			ps->m_hostsConfInDisagreement = true;
 			break;
 		}
