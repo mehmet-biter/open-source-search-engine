@@ -104,7 +104,7 @@ static void Msg4In::handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
 	if ( ! g_pingServer.hostsConfInAgreement() ) {
 		// . if we do not know the sender's hosts.conf crc, wait 4 it
 		// . this is 0 if not received yet
-		if (!slot->m_host->m_pingInfo.m_hostsConfCRC) {
+		if (!slot->m_host->isHostsConfCRCKnown()) {
 			g_errno = EWAITINGTOSYNCHOSTSCONF;
 			logError("call sendErrorReply");
 			g_udpServer.sendErrorReply ( slot , g_errno );

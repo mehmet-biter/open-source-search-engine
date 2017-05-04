@@ -157,6 +157,7 @@ public:
 	bool isProxy() { return (m_type == HT_PROXY); }
 	bool isGrunt() { return (m_type == HT_GRUNT); }
 
+	bool isHostsConfCRCKnown() const { return m_pingInfo.m_hostsConfCRC!=0; }
 	bool hasSameHostsConfCRC() const;
 
 	// for m_type == HT_QCPROXY, we forward the query to the regular proxy

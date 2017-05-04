@@ -304,16 +304,12 @@ skipReplaceHost:
 
 		if(h->m_gotPingReply) {
 			// does its hosts.conf file disagree with ours?
-			if ( h->m_pingInfo.m_hostsConfCRC &&
-			format == FORMAT_HTML &&
-			!h->hasSameHostsConfCRC() )
-				fb.safePrintf("<font color=red><b title=\"Hosts.conf "
-					"in disagreement with ours.\">H"
-					"</b></font>");
-			if ( h->m_pingInfo.m_hostsConfCRC &&
-			format != FORMAT_HTML &&
-			!h->hasSameHostsConfCRC() )
-				fb.safePrintf("Hosts.conf in disagreement with ours");
+			if ( h->isHostsConfCRCKnown() && !h->hasSameHostsConfCRC() ) {
+				if(format == FORMAT_HTML)
+					fb.safePrintf("<font color=red><b title=\"Hosts.conf in disagreement with ours.\">H</b></font>");
+				else
+					fb.safePrintf("Hosts.conf in disagreement with ours");
+			}
 		}
 		
 		if(h->m_flagsValid) {

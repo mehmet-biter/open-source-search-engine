@@ -430,7 +430,7 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 		Host *h2 = &g_hostdb.m_hosts[i];			
 
 		// skip if not received yet
-		if ( ! h2->m_pingInfo.m_hostsConfCRC ) {
+		if ( ! h2->isHostsConfCRCKnown() ) {
 			continue;
 		}
 
