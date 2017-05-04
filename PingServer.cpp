@@ -193,7 +193,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 
 	newPingInfo.m_unused18 = 0;
 
-	newPingInfo.m_flags = getOurHostFlags();
+	newPingInfo.m_unused8 = 0;
 
 	// the collection number we are daily merging (currently 2 bytes)
 	collnum_t cn = -1;

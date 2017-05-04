@@ -671,7 +671,7 @@ createFile:
 		// and don't send emails on him until we got a good ping
 		m_hosts[i].m_emailCode = -2;
 		// reset these
-		m_hosts[i].m_pingInfo.m_flags    = 0;
+		m_hosts[i].m_pingInfo.m_unused8    = 0;
 		m_hosts[i].m_pingInfo.m_unused4 = 0.0;
 
 		m_hosts[i].m_lastResponseReceiveTimestamp = 0;
@@ -1423,7 +1423,7 @@ void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
 	h->m_pingInfo.m_totalDocsIndexed = pi.m_totalDocsIndexed;
 	h->m_pingInfo.m_hostsConfCRC = pi.m_hostsConfCRC;
 	h->m_pingInfo.m_unused7 = 0.0;
-	h->m_pingInfo.m_flags = pi.m_flags;
+	h->m_pingInfo.m_unused8 = 0;
 	h->m_pingInfo.m_unused9 = 0;
 	h->m_pingInfo.m_unused10 = 0;
 	h->m_pingInfo.m_unused11 = 0;

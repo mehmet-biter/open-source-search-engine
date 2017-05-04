@@ -78,7 +78,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 		// must have got a ping reply from him
 		if ( ! h->m_gotPingReply ) return;
 		// hostid #0 must NOT be in mode 0
-		if ( h->m_pingInfo.m_flags & PFLAG_MERGEMODE0 ) return;
+		if ( h->m_flags & PFLAG_MERGEMODE0 ) return;
 		// get the collnum that host #0 is currently daily merging
 		collnum_t i = g_hostdb.m_hosts[0].m_pingInfo.m_dailyMergeCollnum;
 		// this means host #0 is not daily merging a collnum now
@@ -163,8 +163,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 				if ( &g_hostdb.m_hosts[i] == g_hostdb.m_myHost )
 					continue;
 				// that's good if he is in mode 0
-				if ( g_hostdb.m_hosts[i].m_pingInfo.m_flags & 
-				     PFLAG_MERGEMODE0 )
+				if ( g_hostdb.m_hosts[i].m_flags & PFLAG_MERGEMODE0 )
 					continue;
 				// oops, someone is not mode 0
 				return;
@@ -210,7 +209,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 			if ( g_hostdb.isDead(h) )
 				continue;
 			// return if a host still in merge mode 0. wait for it.
-			if ( h->m_pingInfo.m_flags & PFLAG_MERGEMODE0 )
+			if ( h->m_flags & PFLAG_MERGEMODE0 )
 				return;
 		}
 		// ok, everyone is out of mode 0 now
@@ -231,8 +230,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 			if ( &g_hostdb.m_hosts[i] == g_hostdb.m_myHost )
 				continue;
 			// if host still has spiders out, we can't go to mode 4
-			if ( g_hostdb.m_hosts[i].m_pingInfo.m_flags & 
-			     PFLAG_HASSPIDERS ) 
+			if ( g_hostdb.m_hosts[i].m_flags & PFLAG_HASSPIDERS )
 				return;
 		}
 		// ok, nobody has spiders now
@@ -305,8 +303,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 			if ( &g_hostdb.m_hosts[i] == g_hostdb.m_myHost )
 				continue;
 			// if host in mode 6 or 0, that's good
-			if ( g_hostdb.m_hosts[i].m_pingInfo.m_flags & 
-			     PFLAG_MERGEMODE0OR6)
+			if ( g_hostdb.m_hosts[i].m_flags & PFLAG_MERGEMODE0OR6)
 				continue;
 			// otherwise, wait for it to be in 6 or 0
 			return;

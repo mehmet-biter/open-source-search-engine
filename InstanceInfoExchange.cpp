@@ -128,7 +128,8 @@ static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
 		
 		strncpy(h->m_pingInfo.m_gbVersionStr, gb_version_str, sizeof(h->m_pingInfo.m_gbVersionStr));
 		h->m_pingInfo.m_hostsConfCRC = hosts_conf_crc;
-		//h->m_pingInfo.m_flags = host_flags;
+		h->m_flags = host_flags;
+		h->m_flagsValid = true;
 		//h->m_pingInfo.m_dailyMergeCollnum = daily_merge_collection_number;
 		//h->m_pingInfo.m_repairMode = repair_mode;
 		h->m_pingInfo.m_totalDocsIndexed = total_docs_indexed;

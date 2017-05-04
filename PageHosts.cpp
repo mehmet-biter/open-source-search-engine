@@ -311,8 +311,10 @@ skipReplaceHost:
 			format != FORMAT_HTML &&
 			h->m_pingInfo.m_hostsConfCRC != g_hostdb.getCRC() )
 				fb.safePrintf("Hosts.conf in disagreement with ours");
-
-			int32_t flags = h->m_pingInfo.m_flags;
+		}
+		
+		if(h->m_flagsValid) {
+			int32_t flags = h->m_flags;
 
 
 			// recovery mode? reocvered from coring?
@@ -381,9 +383,7 @@ skipReplaceHost:
 
 		fb.nullTerm();
 
-		const char *bg = LIGHT_BLUE;
-		if ( h->m_ping >= g_conf.m_deadHostTimeout ) 
-			bg = "ffa6a6";
+		const char *bg = g_hostdb.isDead(h) ? "ffa6a6" : LIGHT_BLUE;
 
 
 		//
@@ -1085,10 +1085,8 @@ int splitTimeSort    ( const void *i1, const void *i2 ) {
 int flagSort    ( const void *i1, const void *i2 ) {
 	Host *h1 = g_hostdb.getHost ( *(int32_t*)i1 );
 	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
-	PingInfo *p1 = &h1->m_pingInfo;
-	PingInfo *p2 = &h2->m_pingInfo;
-	if ( p1->m_flags > p2->m_flags ) return -1;
-	if ( p1->m_flags < p2->m_flags ) return  1;
+	if ( h1->m_flags > h2->m_flags ) return -1;
+	if ( h1->m_flags < h2->m_flags ) return  1;
 	return 0;
 }
 

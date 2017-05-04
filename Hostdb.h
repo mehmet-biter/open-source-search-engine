@@ -51,7 +51,7 @@ public:
 	int32_t m_totalDocsIndexed;
 	int32_t m_hostsConfCRC;
 	float m_unused7; //used to be m_diskUsage
-	int32_t m_flags;
+	int32_t m_unused8;
 	// some new stuff
 	int32_t m_unused9;
 	int32_t m_unused10;
@@ -97,6 +97,8 @@ public:
 	uint16_t m_port ;          // Mattster Protocol (MP) UDP port
 
 	bool m_isAlive;
+	bool     m_flagsValid;
+	uint32_t m_flags; //updated by InstanceInfoExchange and PingServer
 
 	int32_t           m_ping;
 	int32_t           m_pingShotgun;
