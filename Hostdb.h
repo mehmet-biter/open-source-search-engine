@@ -39,7 +39,7 @@ public:
 	int32_t m_totalDocsIndexed;
 	int32_t m_hostsConfCRC;
 	float m_unused7; //used to be m_diskUsage
-	int32_t m_unused8;
+	int32_t m_unused8; //used to be m_flags
 	// some new stuff
 	int32_t m_unused9;
 	int32_t m_unused10;
