@@ -839,37 +839,10 @@ skipReplaceHost:
 		  "</tr>\n"
 
 		  "<tr class=poo>"
-		  "<td>slow reads</td>"
-		  "<td>Number of slow disk reads the host has had. "
-		  "When this is big compared to other hosts it is a good "
-		  "indicator its drives are relatively slow."
-		  "</td>"
-		  "</tr>\n"
-
-		  "<tr class=poo>"
 		  "<td>docs indexed</td>"
 		  "<td>Number of documents this host has indexed over all "
 		  "collections. All hosts should have close to the same "
 		  "number in a well-sharded situation."
-		  "</td>"
-		  "</tr>\n"
-
-		  "<tr class=poo>"
-		  "<td>mem used</td>"
-		  "<td>Percentage of memory currently used."
-		  "</td>"
-		  "</tr>\n"
-
-		  "<tr class=poo>"
-		  "<td>cpu used</td>"
-		  "<td>Percentage of cpu resources in use by the gb process."
-		  "</td>"
-		  "</tr>\n"
-
-		  "<tr class=poo>"
-		  "<td>disk used</td>"
-		  "<td>Percentage of disk in use. When this gets close to "
-		  "100%% you need to do something."
 		  "</td>"
 		  "</tr>\n"
 
