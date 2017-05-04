@@ -964,38 +964,35 @@ skipReplaceHost:
 						  sb.length() );
 }
 
-static int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
-        int32_t ping = h->m_ping;
-        // show ping age first
-        int32_t pingAge = nowms- h->m_lastPing;
-        // if host is us, we don't ping ourselves
-        if ( h->m_hostId == g_hostdb.m_hostId && h == g_hostdb.m_myHost)
-                pingAge = 0;
-        // if last ping is still 0, we haven't pinged it yet
-        if ( h->m_lastPing == 0 ) pingAge = 0;
-        // ping to string
-        sprintf ( buf , "%" PRId32"ms", ping );
-        // ping time ptr
-        // make it "DEAD" if > 6000
-        if ( g_hostdb.isDead(h) ) {
-            sprintf(buf, "<font color=#ff0000><b>DEAD</b></font>");
-        }
 
-	if ( ! g_conf.m_useShotgun ) return pingAge;
+//return the ping age, and set 'buf' to the ping time (or pingtime1 and pingtime2 if shutgun is enabled)
+static int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
+	int32_t ping = h->m_ping;
+        int32_t pingAge = nowms - h->m_lastPing;
+        if(h == g_hostdb.m_myHost)
+                pingAge = 0; //we don't ping ourselves
+        if(pingAge<0)
+		pingAge=0;
+	if(h->m_lastPing!=0)
+		sprintf(buf, "%" PRId32"ms", ping);
+	else
+		sprintf(buf, "N/A");
+
+	if(!g_conf.m_useShotgun)
+		return pingAge;
 
 	char *p = buf + strlen(buf);
 
 	p += sprintf ( p , "</td><td>" );
 
-    // the second eth port, ip2, the shotgun port
-    int32_t pingB = h->m_pingShotgun;
-    sprintf ( p , "%" PRId32"ms", pingB );
-    if ( pingB >= g_conf.m_deadHostTimeout ) {
-        sprintf(p,"<font color=#ff0000><b>DEAD</b></font>");
-		return pingAge;
-    }
+	// the second eth port, ip2, the shotgun port
+	int32_t pingB = h->m_pingShotgun;
+	if(h->m_lastPing!=0)
+		sprintf ( p , "%" PRId32"ms", pingB );
+	else
+		sprintf(buf, "N/A");
 
-    return pingAge;
+	return pingAge;
 }
 
 int defaultSort   ( const void *i1, const void *i2 ) {
