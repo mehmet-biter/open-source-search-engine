@@ -298,87 +298,82 @@ skipReplaceHost:
 
 		//char flagString[32];
 		StackBuf<64> fb;
-		//char *fs = flagString;
-		//*fs = '\0';
 
-		// does its hosts.conf file disagree with ours?
-		if ( h->m_pingInfo.m_hostsConfCRC &&
-		     format == FORMAT_HTML &&
-		     h->m_pingInfo.m_hostsConfCRC != g_hostdb.getCRC() )
-			fb.safePrintf("<font color=red><b title=\"Hosts.conf "
-				      "in disagreement with ours.\">H"
-				      "</b></font>");
-		if ( h->m_pingInfo.m_hostsConfCRC &&
-		     format != FORMAT_HTML &&
-		     h->m_pingInfo.m_hostsConfCRC != g_hostdb.getCRC() )
-			fb.safePrintf("Hosts.conf in disagreement with ours");
+		if(h->m_gotPingReply) {
+			// does its hosts.conf file disagree with ours?
+			if ( h->m_pingInfo.m_hostsConfCRC &&
+			format == FORMAT_HTML &&
+			h->m_pingInfo.m_hostsConfCRC != g_hostdb.getCRC() )
+				fb.safePrintf("<font color=red><b title=\"Hosts.conf "
+					"in disagreement with ours.\">H"
+					"</b></font>");
+			if ( h->m_pingInfo.m_hostsConfCRC &&
+			format != FORMAT_HTML &&
+			h->m_pingInfo.m_hostsConfCRC != g_hostdb.getCRC() )
+				fb.safePrintf("Hosts.conf in disagreement with ours");
 
-		int32_t flags = h->m_pingInfo.m_flags;
-
-
-		// recovery mode? reocvered from coring?
-		if ((flags & PFLAG_RECOVERYMODE)&& format == FORMAT_HTML ) {
-			fb.safePrintf("<b title=\"Recovered from core"
-				      "\">x</b>");
-		}
-
-		if ((flags & PFLAG_RECOVERYMODE)&& format != FORMAT_HTML )
-			fb.safePrintf("Recovered from core");
-
-		// rebalancing?
-		if ( (flags & PFLAG_REBALANCING)&& format == FORMAT_HTML )
-			fb.safePrintf("<b title=\"Currently "
-				      "rebalancing\">R</b>");
-		if ( (flags & PFLAG_REBALANCING)&& format != FORMAT_HTML )
-			fb.safePrintf("Currently rebalancing");
-
-		// has recs that should be in another shard? indicates
-		// we need to rebalance or there is a bad hosts.conf
-		if ((flags & PFLAG_FOREIGNRECS) && format == FORMAT_HTML )
-			fb.safePrintf("<font color=red><b title=\"Foreign "
-				      "data "
-				      "detected. Needs rebalance.\">F"
-				      "</b></font>");
-		if ((flags & PFLAG_FOREIGNRECS) && format != FORMAT_HTML )
-			fb.safePrintf("Foreign data detected. "
-				      "Needs rebalance.");
-
-		// if it has spiders going on say "S" with # as the superscript
-		if ((flags & PFLAG_HASSPIDERS) && format == FORMAT_HTML )
-			fb.safePrintf ( "<span title=\"Spidering\">S</span>");
-
-		if ((flags & PFLAG_HASSPIDERS) && format != FORMAT_HTML )
-			fb.safePrintf ( "Spidering");
-
-		// say "M" if merging
-		if ( (flags & PFLAG_MERGING) && format == FORMAT_HTML )
-			fb.safePrintf ( "<span title=\"Merging\">M</span>");
-		if ( (flags & PFLAG_MERGING) && format != FORMAT_HTML )
-			fb.safePrintf ( "Merging");
-
-		// say "D" if dumping
-		if (   (flags & PFLAG_DUMPING) && format == FORMAT_HTML )
-			fb.safePrintf ( "<span title=\"Dumping\">D</span>");
-		if (   (flags & PFLAG_DUMPING) && format != FORMAT_HTML )
-			fb.safePrintf ( "Dumping");
+			int32_t flags = h->m_pingInfo.m_flags;
 
 
-		// say "y" if doing the daily merge
-		if (  !(flags & PFLAG_MERGEMODE0) )
-			fb.safePrintf ( "y");
+			// recovery mode? reocvered from coring?
+			if ((flags & PFLAG_RECOVERYMODE)&& format == FORMAT_HTML ) {
+				fb.safePrintf("<b title=\"Recovered from core"
+					"\">x</b>");
+			}
+
+			if ((flags & PFLAG_RECOVERYMODE)&& format != FORMAT_HTML )
+				fb.safePrintf("Recovered from core");
+
+			// rebalancing?
+			if ( (flags & PFLAG_REBALANCING)&& format == FORMAT_HTML )
+				fb.safePrintf("<b title=\"Currently "
+					"rebalancing\">R</b>");
+			if ( (flags & PFLAG_REBALANCING)&& format != FORMAT_HTML )
+				fb.safePrintf("Currently rebalancing");
+
+			// has recs that should be in another shard? indicates
+			// we need to rebalance or there is a bad hosts.conf
+			if ((flags & PFLAG_FOREIGNRECS) && format == FORMAT_HTML )
+				fb.safePrintf("<font color=red><b title=\"Foreign "
+					"data "
+					"detected. Needs rebalance.\">F"
+					"</b></font>");
+			if ((flags & PFLAG_FOREIGNRECS) && format != FORMAT_HTML )
+				fb.safePrintf("Foreign data detected. "
+					"Needs rebalance.");
+
+			// if it has spiders going on say "S" with # as the superscript
+			if ((flags & PFLAG_HASSPIDERS) && format == FORMAT_HTML )
+				fb.safePrintf ( "<span title=\"Spidering\">S</span>");
+
+			if ((flags & PFLAG_HASSPIDERS) && format != FORMAT_HTML )
+				fb.safePrintf ( "Spidering");
+
+			// say "M" if merging
+			if ( (flags & PFLAG_MERGING) && format == FORMAT_HTML )
+				fb.safePrintf ( "<span title=\"Merging\">M</span>");
+			if ( (flags & PFLAG_MERGING) && format != FORMAT_HTML )
+				fb.safePrintf ( "Merging");
+
+			// say "D" if dumping
+			if (   (flags & PFLAG_DUMPING) && format == FORMAT_HTML )
+				fb.safePrintf ( "<span title=\"Dumping\">D</span>");
+			if (   (flags & PFLAG_DUMPING) && format != FORMAT_HTML )
+				fb.safePrintf ( "Dumping");
 
 
-		if(format == FORMAT_HTML) {
-			if(!h->m_spiderEnabled)
-				fb.safePrintf("<span title=\"Spider Disabled\" style=\"text-decoration:line-through;\">S</span>");
-			if(!h->m_queryEnabled)
-				fb.safePrintf("<span title=\"Query Disabled\" style=\"text-decoration:line-through;\">Q</span>");
-		}
+			// say "y" if doing the daily merge
+			if (  !(flags & PFLAG_MERGEMODE0) )
+				fb.safePrintf ( "y");
 
 
-		// clear it if it is us, this is invalid
-		if ( ! h->m_gotPingReply ) {
-			fb.reset();
+			if(format == FORMAT_HTML) {
+				if(!h->m_spiderEnabled)
+					fb.safePrintf("<span title=\"Spider Disabled\" style=\"text-decoration:line-through;\">S</span>");
+				if(!h->m_queryEnabled)
+					fb.safePrintf("<span title=\"Query Disabled\" style=\"text-decoration:line-through;\">Q</span>");
+			}
+		} else {
 			fb.safePrintf("??");
 		}
 		if ( fb.length() == 0 && format == FORMAT_HTML )
