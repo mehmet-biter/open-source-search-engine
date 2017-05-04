@@ -2822,7 +2822,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 
 	// don't spider if not all hosts are up, or they do not all
 	// have the same hosts.conf.
-	if ( g_pingServer.hostsConfInDisagreement() ) {
+	if ( g_hostdb.hostsConfInDisagreement() ) {
 		*status = SP_ADMIN_PAUSED;
 		return msg->safePrintf("Hosts.conf discrepancy, "
 				       "spidering paused.");

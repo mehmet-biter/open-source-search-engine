@@ -37,7 +37,7 @@ public:
 	float m_unused3; //used to me m_percentMemUsed;
 	float m_unused4; //used to be m_cpuUsage
 	int32_t m_unused5; //use to be m_totalDocsIndexed
-	int32_t m_hostsConfCRC;
+	int32_t m_unused6;
 	float m_unused7; //used to be m_diskUsage
 	int32_t m_unused8; //used to be m_flags
 	// some new stuff
@@ -67,6 +67,8 @@ struct HostRuntimeInformation {
 	char      m_gbVersionStr[21];
 	
 	int32_t   m_totalDocsIndexed;
+	
+	int32_t   m_hostsConfCRC;
 };
 
 
@@ -168,7 +170,7 @@ public:
 	bool isProxy() { return (m_type == HT_PROXY); }
 	bool isGrunt() { return (m_type == HT_GRUNT); }
 
-	bool isHostsConfCRCKnown() const { return m_pingInfo.m_hostsConfCRC!=0; }
+	bool isHostsConfCRCKnown() const { return m_runtimeInformation.m_hostsConfCRC!=0; }
 	bool hasSameHostsConfCRC() const;
 
 	// for m_type == HT_QCPROXY, we forward the query to the regular proxy
@@ -443,9 +445,14 @@ class Hostdb {
 
 	uint32_t m_map[MAX_KSLOTS];
 
+	bool hostsConfInDisagreement() const { return m_hostsConfInDisagreement; }
+	bool hostsConfInAgreement() const { return m_hostsConfInAgreement; }
+
 private:
 	int32_t m_numHostsAlive;
 	GbMutex m_mtxPinginfo; //protects the pinginfo in the hosts
+	bool m_hostsConfInAgreement;
+	bool m_hostsConfInDisagreement;
 };
 
 extern class Hostdb g_hostdb;
@@ -472,7 +479,7 @@ inline uint32_t getShardNumFromDocId ( int64_t d ) {
 }
 
 inline bool Host::hasSameHostsConfCRC() const {
-	return m_pingInfo.m_hostsConfCRC == g_hostdb.getCRC();
+	return m_runtimeInformation.m_hostsConfCRC == g_hostdb.getCRC();
 }
 
 #endif // GB_HOSTDB_H

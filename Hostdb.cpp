@@ -82,6 +82,9 @@ Hostdb::Hostdb ( ) {
 	memset(m_httpRootDir, 0, sizeof(m_httpRootDir));
 	memset(m_logFilename, 0, sizeof(m_logFilename));
 	memset(m_map, 0, sizeof(m_map));
+	
+	m_hostsConfInDisagreement = false;
+	m_hostsConfInAgreement = false;
 }
 
 
@@ -1424,7 +1427,7 @@ void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
 	h->m_pingInfo.m_unused2 = 0;
 	h->m_pingInfo.m_unused3 = 0;
 	h->m_pingInfo.m_unused4 = 0.0;
-	h->m_pingInfo.m_hostsConfCRC = pi.m_hostsConfCRC;
+	h->m_pingInfo.m_unused5 = 0;
 	h->m_pingInfo.m_unused7 = 0.0;
 	h->m_pingInfo.m_unused8 = 0;
 	h->m_pingInfo.m_unused9 = 0;
@@ -1464,9 +1467,32 @@ void Hostdb::updateHostRuntimeInformation(int hostId, const HostRuntimeInformati
 	if(hostId<0)
 		gbshutdownLogicError();
 	if(hostId>=m_numHosts)
-		return; //outof-sync hosts.conf ?
+		return; //out-of-sync hosts.conf ?
 	ScopedLock sl(m_mtxPinginfo);
+	bool crc_changed = m_hostPtrs[hostId]->m_runtimeInformation.m_hostsConfCRC != hri.m_hostsConfCRC;
 	m_hostPtrs[hostId]->m_runtimeInformation = hri;
+	if(crc_changed) {
+		//recalculate m_hostsConfInAgreement and m_hostsConfInDisagreement
+		m_hostsConfInDisagreement = false;
+		m_hostsConfInAgreement = false;
+		// if we haven't received crc from all hosts then we will not set either flag.
+		int32_t agreeCount = 0;
+		for(int i = 0; i < getNumGrunts(); i++) {
+			// skip if not received yet
+			if(m_hosts[i].isHostsConfCRCKnown()) {
+				if(!m_hosts[i].hasSameHostsConfCRC()) {
+					m_hostsConfInDisagreement = true;
+					break;
+				}
+				agreeCount++;
+			}
+		}
+
+		// if all in agreement, set this flag
+		if(agreeCount == g_hostdb.getNumGrunts()) {
+			m_hostsConfInAgreement = true;
+		}
+	}
 }
 
 

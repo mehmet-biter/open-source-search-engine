@@ -41,9 +41,6 @@ class PingServer {
 			 bool oom = false ,
 			 bool forceIt      = false);
 
-	bool hostsConfInDisagreement() const { return m_hostsConfInDisagreement; }
-	bool hostsConfInAgreement() const { return m_hostsConfInAgreement; }
-
 	const Host *getMinRepairModeHost() const { return m_minRepairModeHost; }
 
 	// . these functions used by Repair.cpp
@@ -109,10 +106,6 @@ private:
 	const Host   *m_minRepairModeHost;
 	const Host   *m_maxRepairModeHost;
 	const Host   *m_minRepairModeBesides0Host;
-
-	// some cluster stats
-	bool m_hostsConfInAgreement;
-	bool m_hostsConfInDisagreement;
 };
 
 extern class PingServer g_pingServer;

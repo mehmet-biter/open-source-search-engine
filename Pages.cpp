@@ -2465,7 +2465,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		mb->safePrintf("%s",boxEnd);
 	}
 
-	if ( g_pingServer.hostsConfInDisagreement() ) {
+	if ( g_hostdb.hostsConfInDisagreement() ) {
 		if ( adds ) mb->safePrintf("<br>");
 		adds++;
 		mb->safePrintf("%s",box);

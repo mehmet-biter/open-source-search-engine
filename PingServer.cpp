@@ -73,9 +73,6 @@ bool PingServer::init ( ) {
 	m_maxRepairModeHost         = NULL;
 	m_minRepairModeBesides0Host = NULL;
 
-	m_hostsConfInDisagreement = false;
-	m_hostsConfInAgreement = false;
-
 	// we're done
 	return true;
 }
@@ -179,16 +176,10 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 
 	newPingInfo.m_unused3 = 0;
 
-	// our num recs, docsIndexed
 	newPingInfo.m_unused5 = 0;
 
-	// and hosts.conf crc
-	newPingInfo.m_hostsConfCRC = g_hostdb.getCRC();
+	newPingInfo.m_unused6 = 0;
 
-	// ensure crc is legit
-	if ( g_hostdb.getCRC() == 0 ) { g_process.shutdownAbort(true); }
-
-	// disk usage (df -ka)
 	newPingInfo.m_unused7 = 0.0;
 
 	newPingInfo.m_unused18 = 0;
@@ -410,42 +401,6 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 		}
 		// make it a normal ping now
 		requestSize = 8;
-	}
-
-	PingServer *ps = &g_pingServer;
-	ps->m_hostsConfInDisagreement = false;
-	ps->m_hostsConfInAgreement = false;
-
-
-	//
-	// do all hosts have the same hosts.conf????
-	//
-	// if some hosts are dead then we will not set either flag.
-	//
-	// scan all grunts for agreement. do this line once per sec?
-	//
-	int32_t agree = 0;
-	int32_t i; 
-	for ( i = 0 ; i < g_hostdb.getNumGrunts() ; i++ ) {
-		Host *h2 = &g_hostdb.m_hosts[i];			
-
-		// skip if not received yet
-		if ( ! h2->isHostsConfCRCKnown() ) {
-			continue;
-		}
-
-		// badness?
-		if ( !h2->hasSameHostsConfCRC() ) {
-			ps->m_hostsConfInDisagreement = true;
-			break;
-		}
-		// count towards agreement
-		agree++;
-	}
-
-	// if all in agreement, set this flag
-	if ( agree == g_hostdb.getNumGrunts() ) {
-		ps->m_hostsConfInAgreement = true;
 	}
 
 	// if request is 5 bytes, must be a host telling us he's shutting down

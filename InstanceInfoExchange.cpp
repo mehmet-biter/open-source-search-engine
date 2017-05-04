@@ -132,11 +132,11 @@ static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
 		hri.m_dailyMergeCollnum = daily_merge_collection_number;
 		strcpy(hri.m_gbVersionStr,gb_version_str);
 		hri.m_totalDocsIndexed = total_docs_indexed;
+		hri.m_hostsConfCRC = hosts_conf_crc;
 		g_hostdb.updateHostRuntimeInformation(hostid, hri);
 		
-		Host *h = g_hostdb.getHost(hostid);
+		//Host *h = g_hostdb.getHost(hostid);
 		
-		h->m_pingInfo.m_hostsConfCRC = hosts_conf_crc;
 		//h->m_pingInfo.m_repairMode = repair_mode;
 	}
 	g_hostdb.updateAliveHosts(&alive_hosts_ids.front(),alive_hosts_ids.size());

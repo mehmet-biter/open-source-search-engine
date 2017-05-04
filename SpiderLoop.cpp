@@ -376,7 +376,7 @@ subloop:
 	
 	// don't spider if not all hosts are up, or they do not all
 	// have the same hosts.conf.
-	if ( ! g_pingServer.hostsConfInAgreement() ) {
+	if ( ! g_hostdb.hostsConfInAgreement() ) {
 		logTrace( g_conf.m_logTraceSpider, "END, host config disagreement"  );
 		return;
 	}
