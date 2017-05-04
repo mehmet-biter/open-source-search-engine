@@ -255,6 +255,7 @@ skipReplaceHost:
 		sb.safePrintf("\t\"hosts\": [\n");
 	
 	g_hostdb.setOurFlags();
+	g_hostdb.setOurTotalDocsIndexed();
 	
 	//int32_t ng = g_hostdb.getNumGroups();
 	for ( int32_t si = 0 ; si < nh ; si++ ) {
@@ -444,7 +445,7 @@ skipReplaceHost:
 
 			sb.safePrintf("\t\t<docsIndexed>%" PRId32
 				      "</docsIndexed>\n",
-				      h->m_pingInfo.m_totalDocsIndexed);
+				      h->m_runtimeInformation.m_totalDocsIndexed);
 
 			sb.safePrintf("\t\t<maxPing1>%s</maxPing1>\n",
 				      pms );
@@ -525,7 +526,7 @@ skipReplaceHost:
 				      fb.getBufStart());
 
 			sb.safePrintf("\t\t\t\t\"docsIndexed\":%" PRId32",\n",
-				      h->m_pingInfo.m_totalDocsIndexed);
+				      h->m_runtimeInformation.m_totalDocsIndexed);
 
 			sb.safePrintf("\t\t\t\t\"maxPing1\":\"%s\",\n",pms);
 
@@ -647,7 +648,7 @@ skipReplaceHost:
 
 			  fb.getBufStart(),//flagString,
 
-			  h->m_pingInfo.m_totalDocsIndexed,
+			  h->m_runtimeInformation.m_totalDocsIndexed,
 
 			  // ping max
 			  pms,

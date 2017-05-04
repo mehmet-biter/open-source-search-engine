@@ -36,7 +36,7 @@ public:
 	int32_t m_unused2; //used for the m_loadAvg
 	float m_unused3; //used to me m_percentMemUsed;
 	float m_unused4; //used to be m_cpuUsage
-	int32_t m_totalDocsIndexed;
+	int32_t m_unused5; //use to be m_totalDocsIndexed
 	int32_t m_hostsConfCRC;
 	float m_unused7; //used to be m_diskUsage
 	int32_t m_unused8; //used to be m_flags
@@ -65,6 +65,8 @@ struct HostRuntimeInformation {
 	collnum_t m_dailyMergeCollnum;
 	
 	char      m_gbVersionStr[21];
+	
+	int32_t   m_totalDocsIndexed;
 };
 
 
@@ -362,6 +364,7 @@ class Hostdb {
 	void updateHostRuntimeInformation(int hostId, const HostRuntimeInformation &hri);
 
 	void setOurFlags();
+	void setOurTotalDocsIndexed();
 	
 	// our host's info used by Udp* classes for internal communication
 	uint32_t  m_myIp;

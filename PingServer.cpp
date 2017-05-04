@@ -180,7 +180,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	newPingInfo.m_unused3 = 0;
 
 	// our num recs, docsIndexed
-	newPingInfo.m_totalDocsIndexed = (int32_t)g_process.getTotalDocsIndexed();
+	newPingInfo.m_unused5 = 0;
 
 	// and hosts.conf crc
 	newPingInfo.m_hostsConfCRC = g_hostdb.getCRC();

@@ -1294,7 +1294,7 @@ bool Hostdb::isDead(const Host *h) const {
 int64_t Hostdb::getNumGlobalRecs ( ) {
 	int64_t n = 0;
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ )
-		n += getHost ( i )->m_pingInfo.m_totalDocsIndexed;
+		n += getHost ( i )->m_runtimeInformation.m_totalDocsIndexed;
 	return n / m_numHostsPerShard;
 }
 
@@ -1360,7 +1360,7 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	// reset these stats
 	oldHost->m_pingMax             = 0;
 	oldHost->m_gotPingReply        = false;
-	oldHost->m_pingInfo.m_totalDocsIndexed         = 0;
+	oldHost->m_runtimeInformation.m_totalDocsIndexed         = 0;
 	oldHost->m_ping                = g_conf.m_deadHostTimeout;
 	oldHost->m_pingShotgun         = g_conf.m_deadHostTimeout;
 	oldHost->m_emailCode           = 0;
@@ -1424,7 +1424,6 @@ void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
 	h->m_pingInfo.m_unused2 = 0;
 	h->m_pingInfo.m_unused3 = 0;
 	h->m_pingInfo.m_unused4 = 0.0;
-	h->m_pingInfo.m_totalDocsIndexed = pi.m_totalDocsIndexed;
 	h->m_pingInfo.m_hostsConfCRC = pi.m_hostsConfCRC;
 	h->m_pingInfo.m_unused7 = 0.0;
 	h->m_pingInfo.m_unused8 = 0;
@@ -1452,7 +1451,7 @@ void Hostdb::updateAliveHosts(const int32_t alive_hosts_ids[], size_t n) {
 	for(size_t i=0; i<n; i++) {
 		int32_t hostid = alive_hosts_ids[i];
 		if(hostid>=0 && hostid<m_numHosts)
-			m_hosts[hostid].m_isAlive = true;
+			m_hostPtrs[hostid]->m_isAlive = true;
 	}
 	//update m_numHostsAlive
 	m_numHostsAlive = 0;
@@ -1467,7 +1466,7 @@ void Hostdb::updateHostRuntimeInformation(int hostId, const HostRuntimeInformati
 	if(hostId>=m_numHosts)
 		return; //outof-sync hosts.conf ?
 	ScopedLock sl(m_mtxPinginfo);
-	m_hosts[hostId].m_runtimeInformation = hri;
+	m_hostPtrs[hostId]->m_runtimeInformation = hri;
 }
 
 
@@ -1476,6 +1475,10 @@ void Hostdb::setOurFlags() {
 	m_myHost->m_runtimeInformation.m_flagsValid = true;
 }
 
+void Hostdb::setOurTotalDocsIndexed() {
+	m_myHost->m_runtimeInformation.m_totalDocsIndexed = g_process.getTotalDocsIndexed();
+	
+}
 
 // assume to be from posdb here
 uint32_t Hostdb::getShardNumByTermId(const void *k) const {
