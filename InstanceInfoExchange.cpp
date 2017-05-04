@@ -10,7 +10,7 @@
 #include "Collectiondb.h"
 #include "Version.h"
 #include "repair_mode.h"
-#include "PingServer.h"
+#include "HostFlags.h"
 #include "Process.h"
 #include "IOBuffer.h"
 #include <pthread.h>

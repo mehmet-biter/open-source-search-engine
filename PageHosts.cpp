@@ -4,6 +4,7 @@
 #include "HttpServer.h"
 #include "Pages.h"
 #include "Hostdb.h"
+#include "HostFlags.h"
 #include "sort.h"
 #include "Conf.h"
 #include "ip.h"
@@ -252,6 +253,8 @@ skipReplaceHost:
 
 	if(format==FORMAT_JSON)
 		sb.safePrintf("\t\"hosts\": [\n");
+	
+	g_hostdb.setOurFlags();
 	
 	//int32_t ng = g_hostdb.getNumGroups();
 	for ( int32_t si = 0 ; si < nh ; si++ ) {
@@ -1004,7 +1007,7 @@ static int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
         sprintf ( buf , "%" PRId32"ms", ping );
         // ping time ptr
         // make it "DEAD" if > 6000
-        if ( ping >= g_conf.m_deadHostTimeout ) {
+        if ( g_hostdb.isDead(h) ) {
             sprintf(buf, "<font color=#ff0000><b>DEAD</b></font>");
         }
 

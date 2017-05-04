@@ -21,18 +21,6 @@
 /// @note ALC there used to be a sync host functionality that was removed
 /// in commit 08e8eeb2a53b41763b5d7f97a0b953bebb04517a because it wasn't working
 
-// for the Host::m_flags
-#define PFLAG_HASSPIDERS     0x01
-#define PFLAG_MERGING        0x02
-#define PFLAG_DUMPING        0x04
-// these two flags are used by DailyMerge.cpp to sync the daily merge
-// between all the hosts in the cluster
-#define PFLAG_MERGEMODE0     0x08
-#define PFLAG_MERGEMODE0OR6  0x10
-#define PFLAG_REBALANCING    0x20
-#define PFLAG_FOREIGNRECS    0x40
-#define PFLAG_RECOVERYMODE   0x80
-
 #define HT_GRUNT   0x01
 #define HT_SPARE   0x02
 #define HT_PROXY   0x04
@@ -358,6 +346,8 @@ class Hostdb {
 	void updatePingInfo(Host *h, const PingInfo &pi);
 	void updateAliveHosts(const int32_t alive_hosts_ids[], size_t n);
 
+	void setOurFlags();
+	
 	// our host's info used by Udp* classes for internal communication
 	uint32_t  m_myIp;
 	uint32_t  m_myIpShotgun;

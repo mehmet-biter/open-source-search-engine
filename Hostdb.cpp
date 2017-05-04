@@ -10,6 +10,7 @@
 #include "Titledb.h"
 #include "Spider.h"
 #include "Clusterdb.h"
+#include "HostFlags.h"
 #include "Dns.h"
 #include "File.h"
 #include "IPAddressChecks.h"
@@ -1456,6 +1457,11 @@ void Hostdb::updateAliveHosts(const int32_t alive_hosts_ids[], size_t n) {
 	for(int32_t i=0; i<m_numHosts; i++)
 		if(m_hosts[i].m_isAlive)
 			m_numHostsAlive++;
+}
+
+void Hostdb::setOurFlags() {
+	m_myHost->m_flags = getOurHostFlags();
+	m_myHost->m_flagsValid = true;
 }
 
 

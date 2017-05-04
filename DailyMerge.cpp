@@ -1,6 +1,7 @@
 // Copyright 2008, Gigablast Inc.
 #include "DailyMerge.h"
 #include "Hostdb.h"
+#include "HostFlags.h"
 #include "Repair.h"
 #include "Rdb.h"
 #include "Process.h" // g_process.m_processStartTime
