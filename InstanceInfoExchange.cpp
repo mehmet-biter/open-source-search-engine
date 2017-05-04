@@ -47,6 +47,7 @@
 //thread isn't calling weAreAlive() often enough then the ( other) instance
 //information will be out-of-date.
 
+static bool enabled = false;
 static int fd_keepalive = -1;
 static int fd_pipe[2] = {-1,-1};
 static bool please_shut_down=true;
@@ -233,6 +234,12 @@ static void *poll_thread(void *) {
 
 
 bool InstanceInfoExchange::initialize() {
+	enabled = g_hostdb.getNumHosts()>1;
+	if(!enabled) {
+		log(LOG_INFO,"vagus: only 1 host configured. No need for vagus communication");
+		return true;
+	}
+	
 	please_shut_down = false;
 	
 	//set vagus_cluster_name
@@ -280,6 +287,9 @@ void InstanceInfoExchange::finalize() {
 
 
 void InstanceInfoExchange::weAreAlive() {
+	if(!enabled)
+		return;
+	
 	if(fd_keepalive<0)
 		fd_keepalive = connect_to_vagus(g_conf.m_vagusPort);
 	if(fd_keepalive<0)
