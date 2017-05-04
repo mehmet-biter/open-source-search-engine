@@ -852,6 +852,9 @@ createFile:
 	host->m_ping        = 0;
 	host->m_pingShotgun = 0;
 
+	//we are alive, obviously
+	m_myHost->m_isAlive = true;
+
 	// THIS hostId
 	m_hostId = m_myHost->m_hostId;
 	// set hosts per shard (mirror group)
@@ -1281,11 +1284,7 @@ bool Hostdb::isDead(const Host *h) const {
 		return true; // retired means "don't use it", so it is essentially dead
 	if(g_hostdb.m_myHost == h)
 		return false; //we are not dead
-	if(h->m_ping < g_conf.m_deadHostTimeout)
-		return false; //has answered ping on normal interface recently
-	if(g_conf.m_useShotgun && h->m_pingShotgun < g_conf.m_deadHostTimeout)
-		return false; //has answered ping on shotgun interface recently
-	return true;
+	return !h->m_isAlive;
 }
 
 int64_t Hostdb::getNumGlobalRecs ( ) {
@@ -1439,6 +1438,24 @@ void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
 	memcpy(h->m_pingInfo.m_gbVersionStr,pi.m_gbVersionStr,sizeof(pi.m_gbVersionStr));
 	h->m_pingInfo.m_repairMode = pi.m_repairMode;
 	h->m_pingInfo.m_unused18 = 0;
+}
+
+
+void Hostdb::updateAliveHosts(const int32_t alive_hosts_ids[], size_t n) {
+	ScopedLock sl(m_mtxPinginfo);
+	for(int32_t i=0; i<m_numHosts; i++)
+		m_hosts[i].m_isAlive = false;
+	m_myHost->m_isAlive = true;
+	for(size_t i=0; i<n; i++) {
+		int32_t hostid = alive_hosts_ids[i];
+		if(hostid>=0 && hostid<m_numHosts)
+			m_hosts[hostid].m_isAlive = true;
+	}
+	//update m_numHostsAlive
+	m_numHostsAlive = 0;
+	for(int32_t i=0; i<m_numHosts; i++)
+		if(m_hosts[i].m_isAlive)
+			m_numHostsAlive++;
 }
 
 

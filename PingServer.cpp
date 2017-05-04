@@ -136,35 +136,6 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 
 	int32_t hostId = h->m_hostId;
 
-	// every time this is hostid 0, do a sanity check to make sure
-	// g_hostdb.m_numHostsAlive is accurate
-	if ( hostId == 0 ) {
-		int32_t numHosts = g_hostdb.getNumHosts();
-		if( h->m_isProxy )
-			numHosts = g_hostdb.getNumProxy();
-		// do not do more than once every 10 seconds
-		static int32_t lastTime = 0;
-		int32_t now = getTime();
-		if ( now - lastTime > 10 ) {
-			lastTime = now;
-			int32_t count = 0;
-			for ( int32_t i = 0 ; i < numHosts; i++ ) {
-				// count if not dead
-				Host *host;
-				if ( h->m_isProxy )
-					host = g_hostdb.getProxy(i);
-				else
-					host = g_hostdb.getHost(i);
-				if ( !g_hostdb.isDead(host))
-					count++;
-			}
-			// make sure count matches
-			if ( !h->m_isProxy && count != g_hostdb.getNumHostsAlive() ) {
-				g_process.shutdownAbort(true);
-			}
-		}
-	}
-
 	// don't ping again if already in progress
 	if ( ip == h->m_ip && h->m_inProgress1 ) return;
 	if ( ip != h->m_ip && h->m_inProgress2 ) return;
@@ -1015,17 +986,11 @@ void PingServer::gotReplyWrapperP2(void *state, UdpSlot *slot) {
 // the files were created. this if for doing incremental synchronization.
 // all "sync points" are from host #0's clock.
 
-// if its status changes from dead to alive or vice versa, we have to
-// update g_hostdb.m_numHostsAlive. Dns.cpp and Msg17 will use this count
 static void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 
 	// sanity check
 	if ( pingPtr != &h->m_ping && pingPtr != &h->m_pingShotgun ) { 
 		g_process.shutdownAbort(true); }
-
-	// . was it dead before this?
-	// . both ips must be dead for it to be dead
-	bool wasDead = g_hostdb.isDead ( h );
 
 	// do the actual update
 	*pingPtr = tripTime;
@@ -1045,20 +1010,6 @@ static void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 		if ( tripTime > 50 )
 			log("gb: got new max ping time of %" PRId32" for "
 			    "host #%" PRId32"%s ",tripTime,h->m_hostId,desc);
-	}
-
-	// is it dead now?
-	bool isDead = g_hostdb.isDead ( h );
-
-	if( ! h->m_isProxy ) {
-		// maintain m_numHostsAlive if there was a change in state
-		if ( wasDead && ! isDead ) g_hostdb.m_numHostsAlive++;
-		if ( ! wasDead && isDead ) g_hostdb.m_numHostsAlive--;
-
-		// sanity check, this should be at least 1 since we are alive
-		if ( g_hostdb.m_numHostsAlive < 0 ||
-		     g_hostdb.m_numHostsAlive > g_hostdb.getNumHosts() ) {
-			g_process.shutdownAbort(true); }
 	}
 }
 

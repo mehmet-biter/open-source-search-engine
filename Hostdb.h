@@ -96,6 +96,8 @@ public:
 
 	uint16_t m_port ;          // Mattster Protocol (MP) UDP port
 
+	bool m_isAlive;
+
 	int32_t           m_ping;
 	int32_t           m_pingShotgun;
 	int32_t           m_pingMax;
@@ -352,6 +354,7 @@ class Hostdb {
 	int32_t getBestHosts2IP(const Host *h);
 
 	void updatePingInfo(Host *h, const PingInfo &pi);
+	void updateAliveHosts(const int32_t alive_hosts_ids[], size_t n);
 
 	// our host's info used by Udp* classes for internal communication
 	uint32_t  m_myIp;
@@ -367,7 +370,6 @@ class Hostdb {
 	// . m_hosts[i] is the ith Host entry
 	Host  *m_hosts;
 	int32_t   m_numHosts;
-	int32_t   m_numHostsAlive;
 
 	int32_t   m_allocSize;
 
@@ -432,6 +434,7 @@ class Hostdb {
 	uint32_t m_map[MAX_KSLOTS];
 
 private:
+	int32_t m_numHostsAlive;
 	GbMutex m_mtxPinginfo; //protects the pinginfo in the hosts
 };
 
