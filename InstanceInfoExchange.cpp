@@ -71,7 +71,7 @@ static int connect_to_vagus(int port) {
 	sin.sin_port = htons(port);
 	if(connect(fd,(sockaddr*)(void*)&sin,sizeof(sin))!=0) {
 		log(LOG_ERROR,"vagus: connect() failed with errno=%d  (%s)", errno, strerror(errno));
-		close(fd);
+		close(fd);		
 		return -1;
 	}
 	
@@ -130,7 +130,7 @@ static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
 		h->m_pingInfo.m_hostsConfCRC = hosts_conf_crc;
 		h->m_flags = host_flags;
 		h->m_flagsValid = true;
-		//h->m_pingInfo.m_dailyMergeCollnum = daily_merge_collection_number;
+		h->m_dailyMergeCollnum = daily_merge_collection_number;
 		//h->m_pingInfo.m_repairMode = repair_mode;
 		h->m_pingInfo.m_totalDocsIndexed = total_docs_indexed;
 	}

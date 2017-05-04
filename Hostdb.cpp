@@ -678,6 +678,8 @@ createFile:
 		m_hosts[i].m_lastResponseReceiveTimestamp = 0;
 		m_hosts[i].m_lastRequestSendTimestamp = 0;
 
+		m_hosts[i].m_dailyMergeCollnum = -1;
+
 		// point to next one
 		i++;
 	}
@@ -1435,7 +1437,7 @@ void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
 	h->m_pingInfo.m_unused12 = 0;
 	h->m_pingInfo.m_unused13 = 0;
 	h->m_pingInfo.m_unused14 = 0;
-	h->m_pingInfo.m_dailyMergeCollnum = pi.m_dailyMergeCollnum;
+	h->m_pingInfo.m_unused15 = 0;
 	memcpy(h->m_pingInfo.m_gbVersionStr,pi.m_gbVersionStr,sizeof(pi.m_gbVersionStr));
 	h->m_pingInfo.m_repairMode = pi.m_repairMode;
 	h->m_pingInfo.m_unused18 = 0;

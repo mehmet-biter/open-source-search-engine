@@ -195,10 +195,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 
 	newPingInfo.m_unused8 = 0;
 
-	// the collection number we are daily merging (currently 2 bytes)
-	collnum_t cn = -1;
-	if ( g_dailyMerge.m_cr ) cn = g_dailyMerge.m_cr->m_collnum;
-	newPingInfo.m_dailyMergeCollnum = cn;
+	newPingInfo.m_unused15 = 0;
 
 	newPingInfo.m_hostId = me->m_hostId;
 

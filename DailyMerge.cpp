@@ -81,7 +81,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 		// hostid #0 must NOT be in mode 0
 		if ( h->m_flags & PFLAG_MERGEMODE0 ) return;
 		// get the collnum that host #0 is currently daily merging
-		collnum_t i = g_hostdb.m_hosts[0].m_pingInfo.m_dailyMergeCollnum;
+		collnum_t i = g_hostdb.m_hosts[0].m_dailyMergeCollnum;
 		// this means host #0 is not daily merging a collnum now
 		if ( i < 0 ) return;
 		// if it is valid, the CollectionRec MUST be there
