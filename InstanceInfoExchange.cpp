@@ -126,7 +126,7 @@ static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
 
 		Host *h = g_hostdb.getHost(hostid);
 		
-		strncpy(h->m_pingInfo.m_gbVersionStr, gb_version_str, sizeof(h->m_pingInfo.m_gbVersionStr));
+		strncpy(h->m_gbVersionStr, gb_version_str, sizeof(h->m_gbVersionStr));
 		h->m_pingInfo.m_hostsConfCRC = hosts_conf_crc;
 		h->m_flags = host_flags;
 		h->m_flagsValid = true;

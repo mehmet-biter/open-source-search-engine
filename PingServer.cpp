@@ -207,11 +207,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 
 	newPingInfo.m_unused4 = 0.0;
 
-	// store the gbVersionStrBuf now, just a date with a \0 included
-	char *v = getVersion();
-	int32_t vsize = getVersionSize(); // 21 bytes
-	if ( vsize != 21 ) { g_process.shutdownAbort(true); }
-	gbmemcpy ( newPingInfo.m_gbVersionStr , v , vsize );
+	memset(newPingInfo.m_unused16, 0, sizeof(newPingInfo.m_unused16));
 
 	g_hostdb.updatePingInfo(g_hostdb.m_myHost,newPingInfo);
 	

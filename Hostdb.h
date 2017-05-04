@@ -51,7 +51,7 @@ public:
 	int16_t m_unused14;
 	collnum_t m_unused15;
 
-	char m_gbVersionStr[21];
+	char m_unused16[21]; //used to be m_gbVersionStr
 	char m_repairMode;
 	uint8_t m_unused18;
 };
@@ -88,6 +88,7 @@ public:
 	bool     m_flagsValid;
 	uint32_t m_flags; //updated by InstanceInfoExchange and PingServer
 	collnum_t m_dailyMergeCollnum;
+	char m_gbVersionStr[21];
 
 	int32_t           m_ping;
 	int32_t           m_pingShotgun;

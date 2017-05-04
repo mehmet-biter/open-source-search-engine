@@ -243,7 +243,7 @@ skipReplaceHost:
 		int32_t i = hostSort[si];
 		// get the ith host (hostId)
 		Host *h = g_hostdb.getHost ( i );
-		char *vbuf = h->m_pingInfo.m_gbVersionStr;//gbVersionStrBuf;
+		const char *vbuf = h->m_gbVersionStr;
 		int32_t vhash32 = hash32n ( vbuf );
 		if ( vhash32 == majorityHash32 ) lastCount++;
 		else lastCount--;
@@ -274,7 +274,7 @@ skipReplaceHost:
 		strcpy(ipbuf1,iptoa(h->m_ip));
 		strcpy(ipbuf2,iptoa(h->m_ipShotgun));
 
-		char *vbuf = h->m_pingInfo.m_gbVersionStr;//m_gbVersionStrBuf;
+		const char *vbuf = h->m_gbVersionStr;
 		// get hash
 		int32_t vhash32 = hash32n ( vbuf );
 		const char *vbuf1 = "";
