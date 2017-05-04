@@ -243,7 +243,7 @@ skipReplaceHost:
 		int32_t i = hostSort[si];
 		// get the ith host (hostId)
 		Host *h = g_hostdb.getHost ( i );
-		const char *vbuf = h->m_gbVersionStr;
+		const char *vbuf = h->m_runtimeInformation.m_gbVersionStr;
 		int32_t vhash32 = hash32n ( vbuf );
 		if ( vhash32 == majorityHash32 ) lastCount++;
 		else lastCount--;
@@ -274,7 +274,7 @@ skipReplaceHost:
 		strcpy(ipbuf1,iptoa(h->m_ip));
 		strcpy(ipbuf2,iptoa(h->m_ipShotgun));
 
-		const char *vbuf = h->m_gbVersionStr;
+		const char *vbuf = h->m_runtimeInformation.m_gbVersionStr;
 		// get hash
 		int32_t vhash32 = hash32n ( vbuf );
 		const char *vbuf1 = "";
@@ -312,8 +312,8 @@ skipReplaceHost:
 			}
 		}
 		
-		if(h->m_flagsValid) {
-			int32_t flags = h->m_flags;
+		if(h->m_runtimeInformation.m_flagsValid) {
+			int32_t flags = h->m_runtimeInformation.m_flags;
 
 
 			// recovery mode? reocvered from coring?
@@ -1057,8 +1057,8 @@ int splitTimeSort    ( const void *i1, const void *i2 ) {
 int flagSort    ( const void *i1, const void *i2 ) {
 	Host *h1 = g_hostdb.getHost ( *(int32_t*)i1 );
 	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
-	if ( h1->m_flags > h2->m_flags ) return -1;
-	if ( h1->m_flags < h2->m_flags ) return  1;
+	if ( h1->m_runtimeInformation.m_flags > h2->m_runtimeInformation.m_flags ) return -1;
+	if ( h1->m_runtimeInformation.m_flags < h2->m_runtimeInformation.m_flags ) return  1;
 	return 0;
 }
 

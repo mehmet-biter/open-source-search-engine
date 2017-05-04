@@ -56,6 +56,18 @@ public:
 	uint8_t m_unused18;
 };
 
+
+//information about a running host/instance
+struct HostRuntimeInformation {
+	bool      m_flagsValid;
+	uint32_t  m_flags; //updated by InstanceInfoExchange and PingServer
+	
+	collnum_t m_dailyMergeCollnum;
+	
+	char      m_gbVersionStr[21];
+};
+
+
 class Host {
 public:
 	int32_t getInternalHttpPort()  const { return m_httpPort; }
@@ -85,10 +97,7 @@ public:
 	uint16_t m_port ;          // Mattster Protocol (MP) UDP port
 
 	bool m_isAlive;
-	bool     m_flagsValid;
-	uint32_t m_flags; //updated by InstanceInfoExchange and PingServer
-	collnum_t m_dailyMergeCollnum;
-	char m_gbVersionStr[21];
+	HostRuntimeInformation m_runtimeInformation;
 
 	int32_t           m_ping;
 	int32_t           m_pingShotgun;
@@ -350,6 +359,7 @@ class Hostdb {
 
 	void updatePingInfo(Host *h, const PingInfo &pi);
 	void updateAliveHosts(const int32_t alive_hosts_ids[], size_t n);
+	void updateHostRuntimeInformation(int hostId, const HostRuntimeInformation &hri);
 
 	void setOurFlags();
 	

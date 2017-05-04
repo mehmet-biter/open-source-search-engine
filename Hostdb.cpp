@@ -4,6 +4,7 @@
 #include "JobScheduler.h"
 #include "max_niceness.h"
 #include "Process.h"
+#include "Sanity.h"
 #include "sort.h"
 #include "Rdb.h"
 #include "Posdb.h"
@@ -678,7 +679,7 @@ createFile:
 		m_hosts[i].m_lastResponseReceiveTimestamp = 0;
 		m_hosts[i].m_lastRequestSendTimestamp = 0;
 
-		m_hosts[i].m_dailyMergeCollnum = -1;
+		m_hosts[i].m_runtimeInformation.m_dailyMergeCollnum = -1;
 
 		// point to next one
 		i++;
@@ -1460,9 +1461,19 @@ void Hostdb::updateAliveHosts(const int32_t alive_hosts_ids[], size_t n) {
 			m_numHostsAlive++;
 }
 
+void Hostdb::updateHostRuntimeInformation(int hostId, const HostRuntimeInformation &hri) {
+	if(hostId<0)
+		gbshutdownLogicError();
+	if(hostId>=m_numHosts)
+		return; //outof-sync hosts.conf ?
+	ScopedLock sl(m_mtxPinginfo);
+	m_hosts[hostId].m_runtimeInformation = hri;
+}
+
+
 void Hostdb::setOurFlags() {
-	m_myHost->m_flags = getOurHostFlags();
-	m_myHost->m_flagsValid = true;
+	m_myHost->m_runtimeInformation.m_flags = getOurHostFlags();
+	m_myHost->m_runtimeInformation.m_flagsValid = true;
 }
 
 

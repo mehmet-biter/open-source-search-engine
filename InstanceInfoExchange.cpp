@@ -104,6 +104,8 @@ static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
 		const char *total_docs_indexed_str = strtok_r(NULL,";",&ss);
 		if(!gb_version_str || gb_version_str[0]=='\0')
 			continue;
+		if(strlen(gb_version_str)>=sizeof(HostRuntimeInformation::m_gbVersionStr))
+			continue;
 		char *endptr;
 		int hosts_conf_crc = (int)strtol(hosts_conf_crc_str,&endptr,0);
 		if(endptr && *endptr)
@@ -124,13 +126,16 @@ static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
 		//phase 1: update host fields that seem safe
 		//when we get rid of PingServer entirely then this will take over
 
+		HostRuntimeInformation hri;
+		hri.m_flagsValid = true;
+		hri.m_flags = host_flags;
+		hri.m_dailyMergeCollnum = daily_merge_collection_number;
+		strcpy(hri.m_gbVersionStr,gb_version_str);
+		g_hostdb.updateHostRuntimeInformation(hostid, hri);
+		
 		Host *h = g_hostdb.getHost(hostid);
 		
-		strncpy(h->m_gbVersionStr, gb_version_str, sizeof(h->m_gbVersionStr));
 		h->m_pingInfo.m_hostsConfCRC = hosts_conf_crc;
-		h->m_flags = host_flags;
-		h->m_flagsValid = true;
-		h->m_dailyMergeCollnum = daily_merge_collection_number;
 		//h->m_pingInfo.m_repairMode = repair_mode;
 		h->m_pingInfo.m_totalDocsIndexed = total_docs_indexed;
 	}
