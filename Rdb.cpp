@@ -1040,13 +1040,6 @@ void Rdb::doneDumping ( ) {
 	//   will think the dumping is no longer going on and use the primary
 	//   memory for allocating new titleRecs and such and that is not good!
 	m_isDumping = false;
-
-	// try merge for all, first one that needs it will do it, preventing
-	// the rest from doing it
-	// don't attempt merge if we're niceness 0
-	if ( !m_niceness ) return;
-
-	attemptMergeAll();
 }
 
 void forceMergeAll(rdbid_t rdbId) {
