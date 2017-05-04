@@ -85,19 +85,18 @@ void PingServer::sendPingsToAll ( ) {
 	if ( g_hostdb.m_myHost->m_type & HT_QCPROXY ) return;
 	if ( g_hostdb.m_myHost->m_type & HT_SCPROXY ) return;
 
-	// once we do a full round, drop out. use firsti to determine this
-	int32_t firsti = -1;
-
-	for ( ; m_i != firsti && s_outstandingPings < g_conf.m_maxOutstandingPings ; ) {
-		// store it
-		if ( firsti == -1 ) firsti = m_i;
+	if(g_listNumTotal<=0)
+		return; //uhm, are we being called before hostdb has been initialized?
+	
+	for(int loop_iterations=0; loop_iterations<g_listNumTotal  && s_outstandingPings < g_conf.m_maxOutstandingPings; loop_iterations++) {
 		// get the next host in line
 		Host     *h    = g_listHosts [ m_i ];
 		uint32_t  ip   = g_listIps   [ m_i ];
 		uint16_t  port = g_listPorts [ m_i ];
 		// point to next ip/port, and wrap if we should
-		if ( ++m_i >= g_listNumTotal ) m_i = 0;
-		// skip if not udp port. might be http, dns or https.
+		m_i = (m_i+1)%g_listNumTotal;
+		
+		// skip if no udp port. might be http, dns or https.
 		if ( port != h->m_port ) continue;
 		// if he is in progress, skip as well. check for shotgun ip.
 		if ( ip == h->m_ip && h->m_inProgress1 ) continue;
@@ -108,7 +107,6 @@ void PingServer::sendPingsToAll ( ) {
 		// try to launch the request
 		pingHost ( h , ip , port ) ;
 	}
-
 
 	
 	// . check if pingSpacer was updated via master controls and fix our
@@ -129,10 +127,8 @@ void PingServer::sendPingsToAll ( ) {
 	m_sleepCallbackRegistrationSequencer++;
 }
 
-// ping host #i
+
 void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
-	// return if NULL
-	if ( ! h ) return;
 
 	int32_t hostId = h->m_hostId;
 
@@ -379,19 +375,16 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 	char *reply     = NULL;
 	int32_t  replySize = 0;
 
-	// . a request size of 10 means to set g_repairMode to 1
-	// . it can only be advanced to 2 when we receive ping replies from
-	//   everyone that they are not spidering or merging titledb...
-	if ( requestSize == sizeof(PingInfo)){
+	if(requestSize == sizeof(PingInfo)) {
 		// sanity
-		PingInfo *pi2 = (PingInfo *)request;
+		const PingInfo *pi2 = (PingInfo *)request;
 		if ( pi2->m_hostId != h->m_hostId ) { 
 			g_process.shutdownAbort(true); 
 		}
 
 		if( h != g_hostdb.getMyHost() ) {
 			// only copy statistics if it is not from ourselves
-			memcpy(&h->m_pingInfo, request, requestSize);
+			h->m_pingInfo = *pi2;
 		}
 
 		// we finally got a ping reply from him
@@ -916,24 +909,23 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 	// followed by sendEmailAlert
 	s_buf[4] = (char)sendEmailAlert;
 
-	int32_t np = g_hostdb.getNumProxy();
-	// do not send to proxies if we are a proxy
-	if ( g_hostdb.m_myHost->m_isProxy ) np = 0;
-	// sent to proxy hosts too so they don't send to us
-	for ( int32_t i = 0 ; i < np ; i++ ) {
-		// get host
-		Host *h = g_hostdb.getProxy(i);
-		// count as sent
-		m_numRequests++;
-		// send it right now
-		// we are sending to a proxy!
-		if (g_udpServer.sendRequest(s_buf, 5, msg_type_11, h->m_ip, h->m_port, -1, NULL, NULL, gotReplyWrapperP2, 3000, 0)) {
-			continue;
+	if(!g_hostdb.m_myHost->m_isProxy) {
+		// send to proxy hosts too so they don't send to us
+		for ( int32_t i = 0 ; i < g_hostdb.getNumProxy() ; i++ ) {
+			// get host
+			Host *h = g_hostdb.getProxy(i);
+			// count as sent
+			m_numRequests++;
+			// send it right now
+			// we are sending to a proxy!
+			if (g_udpServer.sendRequest(s_buf, 5, msg_type_11, h->m_ip, h->m_port, -1, NULL, NULL, gotReplyWrapperP2, 3000, 0)) {
+				continue;
+			}
+			// otherwise, had an error
+			m_numReplies++;
+			// reset g_errno
+			g_errno = 0;
 		}
-		// otherwise, had an error
-		m_numReplies++;
-		// reset g_errno
-		g_errno = 0;
 	}
 
 
@@ -1002,8 +994,7 @@ static void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 	if ( tripTime > h->m_pingMax &&
 	     // do not count shotgun ips!
 	     pingPtr == &h->m_ping &&
-		gettimeofdayInMilliseconds()-g_process.m_processStartTime>=
-	     60000 ) {
+	     gettimeofdayInMilliseconds()-g_process.m_processStartTime >= 60000 ) {
 		h->m_pingMax = tripTime;
 		const char *desc = "";
 		if ( pingPtr == &h->m_pingShotgun ) desc = " (shotgun)";
