@@ -8955,6 +8955,11 @@ static uint16_t getCharsetFast(HttpMime *mime,
 			       const char *s,
 			       int32_t slen) {
 
+	int16_t httpHeaderCharset = csUnknown;
+	int16_t unicodeBOMCharset = csUnknown;
+	int16_t metaCharset = csUnknown;
+	bool invalidUtf8Encoding = false;
+
 	int16_t charset = csUnknown;
 
 	if ( slen < 0 ) slen = 0;
@@ -8967,14 +8972,20 @@ static uint16_t getCharsetFast(HttpMime *mime,
 	if ( cslen > 31 ) cslen = 31;
 	if ( cs && cslen > 0 ) {
 		charset = get_iana_charset ( cs , cslen );
+		httpHeaderCharset = charset;
 	}
 
 	// look for Unicode BOM first though
 	cs = ucDetectBOM ( pstart , pend - pstart );
-	if ( cs && charset == csUnknown ) {
-		log(LOG_DEBUG, "build: Unicode BOM signature detected: %s",cs);
-		int32_t len = strlen(cs);	if ( len > 31 ) len = 31;
-		charset = get_iana_charset ( cs , len );
+	if (cs) {
+		log(LOG_DEBUG, "build: Unicode BOM signature detected: %s", cs);
+		int32_t len = strlen(cs);
+		if (len > 31) len = 31;
+		unicodeBOMCharset = get_iana_charset(cs, len);
+
+		if (charset == csUnknown) {
+			charset = unicodeBOMCharset;
+		}
 	}
 
 	// prepare to scan doc
@@ -8995,6 +9006,7 @@ static uint16_t getCharsetFast(HttpMime *mime,
 				    "seem to be for url %s",url);
 				// reset it back to unknown then
 				charset = csUnknown;
+				invalidUtf8Encoding = true;
 				break;
 			}
 		}
@@ -9103,11 +9115,12 @@ static uint16_t getCharsetFast(HttpMime *mime,
 			p += 1;//oneChar;
 		size_t csStringLen = (size_t)(p-csString);
 		// get the character set
-		int16_t metaCs = get_iana_charset(csString, csStringLen);
+		metaCharset = get_iana_charset(csString, csStringLen);
 		// update "charset" to "metaCs" if known, it overrides all
-		if (metaCs != csUnknown ) charset = metaCs;
-		// all done, only if we got a known char set though!
-		if ( charset != csUnknown ) break;
+		if (metaCharset != csUnknown ) {
+			charset = metaCharset;
+			break;
+		}
 	}
 
         // alias these charsets so iconv understands
@@ -9161,10 +9174,15 @@ static uint16_t getCharsetFast(HttpMime *mime,
 				// sunsetpromotions.com and washingtonia
 				// if we do not have this here
 				charset = csISOLatin1;
+				invalidUtf8Encoding = true;
 				break;
 			}
 		}
 	}
+
+	log(LOG_INFO, "encoding: charset='%s' header='%s' bom='%s' meta='%s' invalid=%d url='%s'",
+	    get_charset_str(charset), get_charset_str(httpHeaderCharset), get_charset_str(unicodeBOMCharset),
+	    get_charset_str(metaCharset), invalidUtf8Encoding, url);
 
 	// all done
 	return charset;
