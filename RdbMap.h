@@ -12,6 +12,7 @@
 #ifndef GB_RDBMAP_H
 #define GB_RDBMAP_H
 
+#include <atomic>
 #include "BigFile.h"
 #include "RdbList.h"
 #include "Sanity.h"
@@ -330,8 +331,8 @@ class RdbMap {
 
 	// we keep global tallies on the number of non-deleted records
 	// and deleted records
-	int64_t m_numPositiveRecs;
-	int64_t m_numNegativeRecs;
+	std::atomic<int64_t> m_numPositiveRecs;
+	std::atomic<int64_t> m_numNegativeRecs;
 	// . the last key in the file itself
 	// . getKey(pageNum) returns this when pageNum == m_numPages
 	// . used by Msg3::getSmallestEndKey()

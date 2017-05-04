@@ -182,8 +182,8 @@ bool RdbMap::writeMap2 ( ) {
 	if( g_conf.m_logTraceRdbMap ) {
 		log(LOG_DEBUG, " m_offset.........: %" PRId64, m_offset);
 		log(LOG_DEBUG, " m_fileStartOffset: %" PRId64, m_fileStartOffset);
-		log(LOG_DEBUG, " m_numPositiveRecs: %" PRId64, m_numPositiveRecs);
-		log(LOG_DEBUG, " m_numNegativeRecs: %" PRId64, m_numNegativeRecs);
+		log(LOG_DEBUG, " m_numPositiveRecs: %" PRId64, m_numPositiveRecs.load());
+		log(LOG_DEBUG, " m_numNegativeRecs: %" PRId64, m_numNegativeRecs.load());
 		loghex(LOG_DEBUG, m_lastKey, m_ks, " m_lastKey........: (hexdump)");
 	}
 	
