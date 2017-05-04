@@ -3448,7 +3448,23 @@ uint8_t *XmlDoc::getLangId ( ) {
 	setLangVec ( &mdw,&langBuf,NULL);
 	tmpLangVec = langBuf.getBufStart();
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
-	logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaKeywords", getLanguageAbbr(m_langId) );
+	if (m_langId != langUnknown) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaKeywords", getLanguageAbbr(m_langId));
+		m_langIdValid = true;
+		return &m_langId;
+	}
+
+	// try charset
+	if (m_charsetValid && m_charset != csUnknown) {
+		m_langId = getLangIdFromCharset(m_charset);
+		if (m_langId != langUnknown) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from charset", getLanguageAbbr(m_langId));
+			m_langIdValid = true;
+			return &m_langId;
+		}
+	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s", getLanguageAbbr(m_langId));
 	m_langIdValid = true;
 	return &m_langId;
 }

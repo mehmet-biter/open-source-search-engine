@@ -1,6 +1,6 @@
-#include "gb-include.h"
-
 #include "Lang.h"
+#include "iana_charset.h"
+#include <cstring>
 
 void languageToString ( unsigned char langId , char *buf ) {
 	const char *p = getLanguageString ( langId );
@@ -150,6 +150,33 @@ uint8_t getLangIdFromAbbr ( const char *abbr ) {
 	}
 
 	return langUnknown;
+}
+
+uint8_t getLangIdFromCharset(uint16_t charset) {
+	switch (charset) {
+		case csISO58GB231280:
+		case csGBK:
+		case csGB18030:
+		case csGB2312:
+			return langChineseSimp;
+		case csBig5:
+			return langChineseTrad;
+		case csHalfWidthKatakana:
+		case csJISEncoding:
+		case csxsjis:
+		case csEUCJP:
+		case csEUCFixWidJapanese:
+		case csISO2022JP:
+		case csISO2022JP2:
+		case csISO13JISC6220jp:
+			return langJapanese;
+		case csKSC56011987:
+		case csISO2022KR:
+		case csEUCKR:
+			return langKorean;
+		default:
+			return langUnknown;
+	}
 }
 
 const char* getLanguageAbbr ( unsigned char langId ) {
