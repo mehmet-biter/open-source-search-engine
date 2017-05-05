@@ -121,7 +121,7 @@ skipReplaceHost:
 			       "<b>Hosts "
 			       "(<a href=\"/admin/hosts?c=%s&sort=%" PRId32"&resetstats=1\">"
 			       "reset)</a></b>"
-			       "</td></tr>" 
+			       "</td></tr>"
 			       "<tr bgcolor=#%s>"
 			       "<td></td>"
 			       "<td><a href=\"/admin/hosts?c=%s&sort=0\">"
@@ -234,7 +234,6 @@ skipReplaceHost:
 	g_hostdb.setOurFlags();
 	g_hostdb.setOurTotalDocsIndexed();
 	
-	//int32_t ng = g_hostdb.getNumGroups();
 	for ( int32_t si = 0 ; si < nh ; si++ ) {
 		int32_t i = hostSort[si];
 		// get the ith host (hostId)
@@ -381,12 +380,6 @@ skipReplaceHost:
 			sb.safePrintf("\t\t<resends>%" PRId32"</resends>\n",
 				      h->m_totalResends.load());
 
-			/*
-			  MDW: take out for new stuff
-			sb.safePrintf("\t\t<errorReplies>%" PRId32"</errorReplies>\n",
-				      h->m_errorReplies);
-			*/
-
 			sb.safePrintf("\t\t<errorTryAgains>%" PRId32
 				      "</errorTryAgains>\n",
 				      h->m_etryagains.load());
@@ -507,7 +500,7 @@ skipReplaceHost:
 		sb.safePrintf (
 			  "<tr bgcolor=#%s>"
 			  "<td>%s</td>"
-			  "<td><a href=\"http://%s:%hi/admin/hosts?"
+			  "<td><a href=\"http://%s:%d/admin/hosts?"
 			  ""
 			  "c=%s"
 			  "&sort=%" PRId32"\">%" PRId32"</a></td>"
@@ -516,37 +509,17 @@ skipReplaceHost:
 
 			  "<td>%" PRId32"</td>" // group
 			  "<td>%" PRId32"</td>" // stripe
-			  //"<td>0x%08" PRIx32"</td>" // group mask
 
-			  //"<td>%s</td>" // ip1
-			  //"<td>%s</td>" // ip2
-			  //"<td>%hi</td>" // port
-			  //"<td>%hi</td>" // client port
-			  "<td>%hi</td>" // http port
-			  //"<td>%" PRId32"</td>" // token group num
-			  //"<td>%" PRId32"</td>" // switch group
-			  //"<td>%s</td>" // tmpN
+			  "<td>%d</td>" // http port
 
-			  // hd temps
-			  // no, this is gb version now
+			  // gb version
 			  "<td><nobr>%s%s%s</nobr></td>"
 
 			  // resends
 			  "<td>%" PRId32"</td>"
 
-			  // error replies
-			  //"<td>%" PRId32"</td>"
-
 			  // etryagains
 			  "<td>%" PRId32"</td>"
-
-			  // # dgrams sent to
-			  //"<td>%" PRId64"</td>"
-			  // # dgrams recvd from
-			  //"<td>%" PRId64"</td>"
-
-			  // loadavg
-			  //"<td>%.2f</td>"
 
 			  // split time
 			  "<td>%" PRId32"</td>"
@@ -561,33 +534,27 @@ skipReplaceHost:
 
 			  //note
 			  "<td nowrap=1>%s</td>"
-			  "</tr>" , 
-			  bg,//LIGHT_BLUE ,
+			  "</tr>",
+			  bg,
 		          (h==g_hostdb.getMyHost() ? "&Rightarrow;" : "&nbsp;"),
 			  ipbuf3, h->getInternalHttpPort(),
 			  cs, sort,
-			  i , 
+			  i,
 			  h->m_hostname,
-			  (int32_t)h->m_shardNum,//group,
+			  (int32_t)h->m_shardNum,
 			  h->m_stripe,
 			  h->getInternalHttpPort(),
 			  vbuf1,
-			  vbuf,//hdbuf,
+			  vbuf,
 			  vbuf2,
 
 			  h->m_totalResends.load(),
-
-
-			  // h->m_errorReplies,
 			  h->m_etryagains.load(),
-			  // h->m_dgramsTo,
-			  // h->m_dgramsFrom,
 
-			  //h->m_loadAvg, // double
 			  splitTime,
 			  h->m_splitsDone,
 
-			  fb.getBufStart(),//flagString,
+			  fb.getBufStart(),
 
 			  h->m_runtimeInformation.m_totalDocsIndexed,
 
@@ -623,30 +590,19 @@ skipReplaceHost:
 
 	if( g_hostdb.m_numSpareHosts ) {
 		// print spare hosts table
-		sb.safePrintf ( 
-					   "<table %s>"
-					   "<tr class=hdrow><td colspan=10><center>"
-					   //"<font size=+1>"
-					   "<b>Spares</b>"
-					   //"</font>"
-					   "</td></tr>" 
-					   "<tr bgcolor=#%s>"
-					   "<td><b>spareId</td>"
-					   "<td><b>host name</td>"
-					   "<td><b>ip1</td>"
-					   "<td><b>ip2</td>"
-					   //"<td><b>udp port</td>"
-					   //"<td><b>priority udp port</td>"
-					   //"<td><b>dns client port</td>"
-					   "<td><b>http port</td>"
-					   //"<td><b>switch id</td>"
-
-					   // this is now fairly obsolete
-					   //"<td><b>ide channel</td>"
-
-					   "<td><b>note</td>",
-					   TABLE_STYLE,
-					   DARK_BLUE  );
+		sb.safePrintf("<table %s>"
+			      "<tr class=hdrow><td colspan=10><center>"
+			      "<b>Spares</b>"
+			      "</td></tr>"
+			      "<tr bgcolor=#%s>"
+			      "<td><b>spareId</td>"
+			      "<td><b>host name</td>"
+			      "<td><b>ip1</td>"
+			      "<td><b>ip2</td>"
+			      "<td><b>http port</td>"
+			      "<td><b>note</td>",
+			      TABLE_STYLE,
+			      DARK_BLUE);
 
 		for ( int32_t i = 0; i < g_hostdb.m_numSpareHosts; i++ ) {
 			// get the ith host (hostId)
@@ -658,30 +614,21 @@ skipReplaceHost:
 			strcpy(ipbuf2,iptoa(h->m_ipShotgun));
 
 			// print it
-			sb.safePrintf (
-						   "<tr bgcolor=#%s>"
-						   "<td>%" PRId32"</td>"
-						   "<td>%s</td>"
-						   "<td>%s</td>"
-						   "<td>%s</td>"
-						   //"<td>%hi</td>"
-						   //"<td>%hi</td>" // priority udp port
-						   //"<td>%hi</td>"
-						   "<td>%hi</td>"
-						   //"<td>%i</td>" // switch id
-						   "<td>%s</td>"
-						   "</tr>" , 
-						   LIGHT_BLUE,
-						   i , 
-						   h->m_hostname,
-						   ipbuf1,
-						   ipbuf2,
-						   //h->m_port , 
-						   //h->m_port2 , 
-						   //h->m_dnsClientPort ,
-						   h->getInternalHttpPort(),
-						   //h->m_switchId,
-						   h->m_note );
+			sb.safePrintf("<tr bgcolor=#%s>"
+				      "<td>%" PRId32"</td>"
+				      "<td>%s</td>"
+				      "<td>%s</td>"
+				      "<td>%s</td>"
+				      "<td>%d</td>"
+				      "<td>%s</td>"
+				      "</tr>",
+				      LIGHT_BLUE,
+				      i,
+				      h->m_hostname,
+				      ipbuf1,
+				      ipbuf2,
+				      h->getInternalHttpPort(),
+				      h->m_note);
 		}
 		sb.safePrintf ( "</table><br>" );
 	}
@@ -697,10 +644,8 @@ skipReplaceHost:
 	sb.safePrintf ( 
 		  "<table %s>"
 		  "<tr class=hdrow><td colspan=10><center>"
-		  //"<font size=+1>"
 		  "<b>Key</b>"
-		  //"</font>"
-		  "</td></tr>" 
+		  "</td></tr>"
 
 		  "<tr class=poo>"
 		  "<td>host ip</td>"
