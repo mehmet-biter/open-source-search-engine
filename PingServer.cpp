@@ -365,9 +365,6 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 			h->m_pingInfo = *pi2;
 		}
 
-		// we finally got a ping reply from him
-		h->m_gotPingReply = true;
-
 		// make it a normal ping now
 		requestSize = 8;
 	}

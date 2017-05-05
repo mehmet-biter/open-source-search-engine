@@ -109,8 +109,6 @@ public:
 	int32_t           m_ping;
 	int32_t           m_pingShotgun;
 	int32_t           m_pingMax;
-	// have we ever got a ping reply from him?
-	bool           m_gotPingReply;
 
 	// last time g_hostdb.ping(i) was called for this host in milliseconds.
 	int64_t      m_lastPing;
