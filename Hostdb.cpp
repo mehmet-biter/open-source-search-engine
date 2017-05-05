@@ -862,6 +862,11 @@ createFile:
 	//we are alive, obviously
 	m_myHost->m_isAlive = true;
 
+	if(m_numHosts==1) {
+		m_hostsConfInDisagreement = true;
+		m_hostsConfInAgreement = true;
+	}
+
 	// THIS hostId
 	m_hostId = m_myHost->m_hostId;
 	// set hosts per shard (mirror group)
