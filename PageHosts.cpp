@@ -303,7 +303,7 @@ skipReplaceHost:
 		//char flagString[32];
 		StackBuf<64> fb;
 
-		if(h->m_gotPingReply) {
+		if(h->m_runtimeInformation.m_valid) {
 			// does its hosts.conf file disagree with ours?
 			if ( h->isHostsConfCRCKnown() && !h->hasSameHostsConfCRC() ) {
 				if(format == FORMAT_HTML)
@@ -311,9 +311,7 @@ skipReplaceHost:
 				else
 					fb.safePrintf("Hosts.conf in disagreement with ours");
 			}
-		}
 		
-		if(h->m_runtimeInformation.m_valid) {
 			int32_t flags = h->m_runtimeInformation.m_flags;
 
 
