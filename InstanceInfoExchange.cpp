@@ -127,7 +127,7 @@ static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
 		//when we get rid of PingServer entirely then this will take over
 
 		HostRuntimeInformation hri;
-		hri.m_flagsValid = true;
+		hri.m_valid = true;
 		hri.m_flags = host_flags;
 		hri.m_dailyMergeCollnum = daily_merge_collection_number;
 		strcpy(hri.m_gbVersionStr,gb_version_str);

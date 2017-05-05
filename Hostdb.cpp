@@ -1485,6 +1485,7 @@ void Hostdb::updateHostRuntimeInformation(int hostId, const HostRuntimeInformati
 	bool crc_changed = m_hostPtrs[hostId]->m_runtimeInformation.m_hostsConfCRC != hri.m_hostsConfCRC;
 	bool repairmode_changed = m_hostPtrs[hostId]->m_runtimeInformation.m_repairMode != hri.m_repairMode;
 	m_hostPtrs[hostId]->m_runtimeInformation = hri;
+	m_hostPtrs[hostId]->m_runtimeInformation.m_valid = true;
 	if(crc_changed) {
 		//recalculate m_hostsConfInAgreement and m_hostsConfInDisagreement
 		m_hostsConfInDisagreement = false;
@@ -1529,7 +1530,7 @@ void Hostdb::updateHostRuntimeInformation(int hostId, const HostRuntimeInformati
 
 void Hostdb::setOurFlags() {
 	m_myHost->m_runtimeInformation.m_flags = getOurHostFlags();
-	m_myHost->m_runtimeInformation.m_flagsValid = true;
+	m_myHost->m_runtimeInformation.m_valid = true;
 }
 
 void Hostdb::setOurTotalDocsIndexed() {

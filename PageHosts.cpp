@@ -313,7 +313,7 @@ skipReplaceHost:
 			}
 		}
 		
-		if(h->m_runtimeInformation.m_flagsValid) {
+		if(h->m_runtimeInformation.m_valid) {
 			int32_t flags = h->m_runtimeInformation.m_flags;
 
 

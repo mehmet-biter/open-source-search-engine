@@ -59,7 +59,8 @@ public:
 
 //information about a running host/instance
 struct HostRuntimeInformation {
-	bool      m_flagsValid;
+	bool      m_valid; //is this information valid, i.e. have we received it or is it fake?
+	
 	uint32_t  m_flags; //updated by InstanceInfoExchange and PingServer
 	
 	collnum_t m_dailyMergeCollnum;
