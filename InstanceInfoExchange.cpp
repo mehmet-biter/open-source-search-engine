@@ -287,6 +287,9 @@ bool InstanceInfoExchange::initialize() {
 
 
 void InstanceInfoExchange::finalize() {
+	if(!enabled)
+		return;
+
 	please_shut_down = true;
 	char dummy='d';
 	(void)write(fd_pipe[1],&dummy,1);
