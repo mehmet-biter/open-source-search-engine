@@ -863,7 +863,7 @@ createFile:
 	m_myHost->m_isAlive = true;
 
 	if(m_numHosts==1) {
-		m_hostsConfInDisagreement = true;
+		m_hostsConfInDisagreement = false;
 		m_hostsConfInAgreement = true;
 	}
 
