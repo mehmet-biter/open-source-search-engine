@@ -5190,8 +5190,9 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "Vagus cluster id";
-	m->m_desc  = "Which vcluster name to use in Vagus. The default empty string means to use 'gb-'$USER which works fine in most scenarios";
+	m->m_desc  = "Which cluster name to use in Vagus. The default empty string means to use 'gb-'$USER which works fine in most scenarios";
 	m->m_cgi   = "vagus_cluster_id";
+	m->m_obj   = OBJ_CONF;
 	m->m_off   = offsetof(Conf,m_vagusClusterId);
 	m->m_type  = TYPE_STRING;
 	m->m_size  = sizeof(Conf::m_vagusClusterId);
