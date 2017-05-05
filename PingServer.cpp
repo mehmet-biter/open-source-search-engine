@@ -66,12 +66,6 @@ bool PingServer::init ( ) {
 	m_i             =  0;
 	m_numRequests2  =  0;
 	m_numReplies2   =  0;
-	m_minRepairMode             = -1;
-	m_maxRepairMode             = -1;
-	m_minRepairModeBesides0     = -1;
-	m_minRepairModeHost         = NULL;
-	m_maxRepairModeHost         = NULL;
-	m_minRepairModeBesides0Host = NULL;
 
 	// we're done
 	return true;
@@ -170,7 +164,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	newPingInfo.m_unused14 = 0;
 
 	// let the receiver know our repair mode
-	newPingInfo.m_repairMode = g_repairMode;
+	newPingInfo.m_unused17 = 0;
 
 	newPingInfo.m_unused2 = 0;
 
@@ -374,31 +368,6 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 		// we finally got a ping reply from him
 		h->m_gotPingReply = true;
 
-		// . what repair mode is the requester in?
-		// . 0 means not in repair mode
-		// . 1 means in repair mode waiting for a local spider or 
-		//   titledb merge to stop
-		// . 2 means in repair mode and local spiders and local titledb
-		//   merging have stopped and are will not start up again
-		// . 3 means all hosts have entered mode 2 so we can start
-		//   repairing
-		// . 4 means done repairing and ready to exit repair mode,
-		//   but waiting for other hosts to be mode 4 or 0 before
-		//   it can exit, too, and go back to mode 0
-		char mode = h->m_pingInfo.m_repairMode;
-
-		// if his mode is 2 he is ready to start repairing
-		// because he has stopped all spiders and titledb
-		// merges from happening. if he just entered mode
-		// 2 now, check to see if all hosts are in mode 2 now.
-		char oldMode = h->m_repairMode;
-		// update his repair mode
-		h->m_repairMode = mode;
-		// . get the MIN repair mode of all hosts
-		// . expensive, so only do if a host changes modes
-		if ( oldMode != mode || g_pingServer.m_minRepairMode == -1 ) {
-			g_pingServer.setMinRepairMode ( h );
-		}
 		// make it a normal ping now
 		requestSize = 8;
 	}
@@ -448,69 +417,6 @@ void PingServer::handleRequest11(UdpSlot *slot , int32_t /*niceness*/) {
 }
 
 
-
-// . sets m_minRepairMode
-// . only call this when host "h" changes repair mode
-void PingServer::setMinRepairMode(const Host *hhh) {
-	// . this host is the holder of the min now, return if not a match
-	// . do not return if m_minRepairMode has not been set at all though
-	bool returnNow = true;
-	if ( m_minRepairModeHost         == hhh ) returnNow = false;
-	if ( m_maxRepairModeHost         == hhh ) returnNow = false;
-	if ( m_minRepairModeBesides0Host == hhh ) returnNow = false;
-	if ( m_minRepairMode             ==  -1 ) returnNow = false;
-	if ( m_maxRepairMode             ==  -1 ) returnNow = false;
-	if ( m_minRepairModeBesides0     ==  -1 ) returnNow = false;
-	if ( returnNow ) return;
-	// count the mins
-	int32_t  min   = -1;
-	int32_t  max   = -1;
-	int32_t  min0  = -1;
-	const Host *minh  = NULL;
-	const Host *maxh  = NULL;
-	const Host *minh0 = NULL;
-	// scan to find new min
-	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
-		// count if not dead
-		Host *h = &g_hostdb.m_hosts[i];
-		// . if it is us, the repairMode is not updated because we
-		//   do not ping ourselves.
-		// . we check ourselves in the the getMinRepairMode() and
-		//   getNumHostsInRepairMode7() functions defined in 
-		//   PingServer.h
-		if ( h == g_hostdb.m_myHost ) continue;
-		// get repair mode
-		int32_t repairMode = h->m_repairMode;
-		// is it a min?
-		if ( repairMode < min || min == -1 ) {
-			// we got a new minner
-			min  = repairMode;
-			minh = h;
-		}
-		// is it a max?
-		if ( repairMode > max || max == -1 ) {
-			// we got a new minner
-			max  = repairMode;
-			maxh = h;
-		}
-		// . min0 is the lowest repair mode that is not 0
-		// . if they are all 0, then it will be 0
-		if ( repairMode == 0 ) continue;
-		if ( repairMode < min0 || min0 == -1 ) {
-			min0  = repairMode;
-			minh0 = h;
-		}
-	}
-	// set these guys to the min
-	m_minRepairMode         = min;
-	m_minRepairModeHost     = minh;
-	// and these to max
-	m_maxRepairMode         = max;
-	m_maxRepairModeHost     = maxh;
-	// if they are all 0 then this will be 0
-	m_minRepairModeBesides0     = min0;
-	m_minRepairModeBesides0Host = minh0;
-}
 
 //
 // This code is used to cyclically ping all hosts in the network

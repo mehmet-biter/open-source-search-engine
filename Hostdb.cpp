@@ -85,6 +85,10 @@ Hostdb::Hostdb ( ) {
 	
 	m_hostsConfInDisagreement = false;
 	m_hostsConfInAgreement = false;
+	
+	m_minRepairMode = -1;
+	m_minRepairModeBesides0 = -1;
+	m_minRepairModeHost = NULL;
 }
 
 
@@ -862,10 +866,14 @@ createFile:
 	//we are alive, obviously
 	m_myHost->m_isAlive = true;
 
+	//in single-instance setups the hosts.conf CRC is always OK
 	if(m_numHosts==1) {
 		m_hostsConfInDisagreement = false;
 		m_hostsConfInAgreement = true;
 	}
+	
+	//we are the lowest repair mode host until we know better
+	m_minRepairModeHost = m_myHost;
 
 	// THIS hostId
 	m_hostId = m_myHost->m_hostId;
@@ -1446,7 +1454,7 @@ void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
 	h->m_pingInfo.m_unused13 = 0;
 	h->m_pingInfo.m_unused14 = 0;
 	h->m_pingInfo.m_unused15 = 0;
-	h->m_pingInfo.m_repairMode = pi.m_repairMode;
+	h->m_pingInfo.m_unused17= 0;
 	h->m_pingInfo.m_unused18 = 0;
 }
 
@@ -1475,6 +1483,7 @@ void Hostdb::updateHostRuntimeInformation(int hostId, const HostRuntimeInformati
 		return; //out-of-sync hosts.conf ?
 	ScopedLock sl(m_mtxPinginfo);
 	bool crc_changed = m_hostPtrs[hostId]->m_runtimeInformation.m_hostsConfCRC != hri.m_hostsConfCRC;
+	bool repairmode_changed = m_hostPtrs[hostId]->m_runtimeInformation.m_repairMode != hri.m_repairMode;
 	m_hostPtrs[hostId]->m_runtimeInformation = hri;
 	if(crc_changed) {
 		//recalculate m_hostsConfInAgreement and m_hostsConfInDisagreement
@@ -1497,6 +1506,23 @@ void Hostdb::updateHostRuntimeInformation(int hostId, const HostRuntimeInformati
 		if(agreeCount == g_hostdb.getNumGrunts()) {
 			m_hostsConfInAgreement = true;
 		}
+	}
+	if(repairmode_changed) {
+		//recalculate m_minRepairMode/m_minRepairModeBesides0/m_minRepairModeHost
+		const Host *newMinHost = NULL;
+		char newMin = -1;
+		char newMin0 = -1;
+		for(int i=0; i<m_numHosts; i++) {
+			if(newMin==-1 || m_hosts[i].m_runtimeInformation.m_repairMode < newMin) {
+				newMinHost = &(m_hosts[i]);
+				newMin = m_hosts[i].m_runtimeInformation.m_repairMode;
+			}
+			if(newMin0==-1 || (m_hosts[i].m_runtimeInformation.m_repairMode!=0 && m_hosts[i].m_runtimeInformation.m_repairMode<newMin0))
+				newMin0 = m_hosts[i].m_runtimeInformation.m_repairMode;
+		}
+		m_minRepairMode = newMin;
+		m_minRepairModeBesides0 = newMin0;
+		m_minRepairModeHost = newMinHost;
 	}
 }
 

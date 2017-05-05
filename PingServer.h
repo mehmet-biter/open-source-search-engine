@@ -41,31 +41,7 @@ class PingServer {
 			 bool oom = false ,
 			 bool forceIt      = false);
 
-	const Host *getMinRepairModeHost() const { return m_minRepairModeHost; }
-
-	// . these functions used by Repair.cpp
-	// . we do not tally ourselves when computing m_minRepairMode
-	int32_t getMinRepairMode() const {
-		// is it us?
-		if ( g_repairMode < m_minRepairMode ) return g_repairMode;
-		// m_minRepairMode could be -1 if uninitialized
-		if ( g_hostdb.getNumHosts() != 1    ) return m_minRepairMode;
-		return g_repairMode;
-	}
-	// we do not tally ourselves when computing m_numHostsInRepairMode7
-	int32_t getMinRepairModeBesides0() const {
-		// is it us?
-		if ( g_repairMode < m_minRepairModeBesides0 && 
-		     g_repairMode != 0 ) return g_repairMode;
-		// m_minRepairMode could be -1 if uninitialized
-		if ( g_hostdb.getNumHosts() != 1    ) 
-			return m_minRepairModeBesides0;
-		return g_repairMode;
-	}
-
 	void sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) ;
-
-	void    setMinRepairMode(const Host *h);
 
 private:
 	static void gotReplyWrapperP(void *state, UdpSlot *slot);
@@ -91,14 +67,6 @@ private:
 
 	int32_t    m_pingSpacer;
 	int32_t    m_sleepCallbackRegistrationSequencer; //for generating unique ids for sleep callback registration/deregistration
-
-	// set by setMinRepairMode() function
-	int32_t    m_minRepairMode;
-	int32_t    m_maxRepairMode;
-	int32_t    m_minRepairModeBesides0;
-	const Host   *m_minRepairModeHost;
-	const Host   *m_maxRepairModeHost;
-	const Host   *m_minRepairModeBesides0Host;
 };
 
 extern class PingServer g_pingServer;

@@ -52,7 +52,7 @@ public:
 	collnum_t m_unused15;
 
 	char m_unused16[21]; //used to be m_gbVersionStr
-	char m_repairMode;
+	char m_unused17;
 	uint8_t m_unused18;
 };
 
@@ -69,6 +69,8 @@ struct HostRuntimeInformation {
 	int32_t   m_totalDocsIndexed;
 	
 	int32_t   m_hostsConfCRC;
+	
+	int8_t    m_repairMode;
 };
 
 
@@ -368,6 +370,10 @@ class Hostdb {
 	void setOurFlags();
 	void setOurTotalDocsIndexed();
 	
+	const Host *getMinRepairModeHost() const { return m_minRepairModeHost; }
+	int32_t getMinRepairMode() const { return m_minRepairMode; }
+	int32_t getMinRepairModeBesides0() const { return m_minRepairModeBesides0; }
+	
 	// our host's info used by Udp* classes for internal communication
 	uint32_t  m_myIp;
 	uint32_t  m_myIpShotgun;
@@ -410,6 +416,7 @@ class Hostdb {
 	int32_t          m_hostId;      // our hostId
 	int32_t          m_numShards;
 	char          m_dir[256];
+
 	char          m_httpRootDir[256];
 	char          m_logFilename[256];
 
@@ -453,6 +460,10 @@ private:
 	GbMutex m_mtxPinginfo; //protects the pinginfo in the hosts
 	bool m_hostsConfInAgreement;
 	bool m_hostsConfInDisagreement;
+	
+	int32_t     m_minRepairMode;
+	int32_t     m_minRepairModeBesides0;
+	const Host *m_minRepairModeHost;
 };
 
 extern class Hostdb g_hostdb;
