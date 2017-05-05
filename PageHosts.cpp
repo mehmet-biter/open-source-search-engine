@@ -123,6 +123,7 @@ skipReplaceHost:
 			       "reset)</a></b>"
 			       "</td></tr>" 
 			       "<tr bgcolor=#%s>"
+			       "<td></td>"
 			       "<td><a href=\"/admin/hosts?c=%s&sort=0\">"
 
 			       "<b>hostId</b></a></td>"
@@ -505,6 +506,7 @@ skipReplaceHost:
 
 		sb.safePrintf (
 			  "<tr bgcolor=#%s>"
+			  "<td>%s</td>"
 			  "<td><a href=\"http://%s:%hi/admin/hosts?"
 			  ""
 			  "c=%s"
@@ -561,6 +563,7 @@ skipReplaceHost:
 			  "<td nowrap=1>%s</td>"
 			  "</tr>" , 
 			  bg,//LIGHT_BLUE ,
+		          (h==g_hostdb.getMyHost() ? "&Rightarrow;" : "&nbsp;"),
 			  ipbuf3, h->getInternalHttpPort(),
 			  cs, sort,
 			  i , 
