@@ -52,13 +52,6 @@ class PingServer {
 		if ( g_hostdb.getNumHosts() != 1    ) return m_minRepairMode;
 		return g_repairMode;
 	}
-	int32_t getMaxRepairMode() const {
-		// is it us?
-		if ( g_repairMode > m_maxRepairMode ) return g_repairMode;
-		// m_maxRepairMode could be -1 if uninitialized
-		if ( g_hostdb.getNumHosts() != 1    ) return m_maxRepairMode;
-		return g_repairMode;
-	}
 	// we do not tally ourselves when computing m_numHostsInRepairMode7
 	int32_t getMinRepairModeBesides0() const {
 		// is it us?
