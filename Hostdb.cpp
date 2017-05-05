@@ -363,7 +363,6 @@ createFile:
 		int32_t  wdirlen;
 
 		// reset this
-		h->m_pingMax = -1;
 		h->m_retired = false;
 
 		// skip numeric hostid or "proxy" keyword
@@ -675,13 +674,8 @@ createFile:
 		memcpy(m_hosts[i].m_mergeLockDir, ldir, ldirlen);
 		m_hosts[i].m_mergeLockDir[ldirlen] = '\0';
 		
-		// reset this
-		m_hosts[i].m_lastPing = 0LL;
 		// and don't send emails on him until we got a good ping
 		m_hosts[i].m_emailCode = -2;
-		// reset these
-		m_hosts[i].m_pingInfo.m_unused8    = 0;
-		m_hosts[i].m_pingInfo.m_unused4 = 0.0;
 
 		m_hosts[i].m_lastResponseReceiveTimestamp = 0;
 		m_hosts[i].m_lastRequestSendTimestamp = 0;
@@ -821,13 +815,6 @@ createFile:
 	if ( deadHostTimeout == 0 ) deadHostTimeout = 0x7fffffff;
 	// reset ping/stdDev times
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
-		// assume everybody is dead, except us
-		m_hosts[i].m_ping        = deadHostTimeout;
-		m_hosts[i].m_pingShotgun = deadHostTimeout;
-		// not in progress
-		m_hosts[i].m_inProgress1    = false;
-		m_hosts[i].m_inProgress2    = false;
-		m_hosts[i].m_numPingReplies = 0;
 		m_hosts[i].m_preferEth      = 0;
 	}
 
@@ -858,10 +845,6 @@ createFile:
 	m_myIpShotgun  = host->m_ipShotgun;
 	m_myPort       = host->m_port;  // low priority udp port
 	m_myHost       = host;
-
-	// set our ping to zero
-	host->m_ping        = 0;
-	host->m_pingShotgun = 0;
 
 	//we are alive, obviously
 	m_myHost->m_isAlive = true;
@@ -1361,25 +1344,13 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	oldHost->m_stripe      = spareHost->m_stripe;
 	oldHost->m_isProxy     = spareHost->m_isProxy;
 	oldHost->m_type        = HT_SPARE;
-	oldHost->m_inProgress1 = spareHost->m_inProgress1;
-	oldHost->m_inProgress2 = spareHost->m_inProgress2;
-
-	// last ping timestamp
-	//oldHost->m_pingInfo.m_lastPing    = spareHost->m_pingInfo.m_lastPing; 
-	oldHost->m_lastPing    = spareHost->m_lastPing; 
 
 	// and the new spare gets a new hostid too
 	spareHost->m_hostId = spareHostId;
 
-	memset ( &oldHost->m_pingInfo , 0 , sizeof(PingInfo) );
-
 	// reset these stats
-	oldHost->m_pingMax             = 0;
 	oldHost->m_runtimeInformation.m_totalDocsIndexed         = 0;
-	oldHost->m_ping                = g_conf.m_deadHostTimeout;
-	oldHost->m_pingShotgun         = g_conf.m_deadHostTimeout;
 	oldHost->m_emailCode           = 0;
-	oldHost->m_pingInfo.m_unused12 = 0;
 	oldHost->m_errorReplies        = 0;
 	oldHost->m_dgramsTo            = 0;
 	oldHost->m_dgramsFrom          = 0;
@@ -1409,11 +1380,7 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 
 // use the ip that is not dead, prefer eth0
 int32_t Hostdb::getBestIp(const Host *h) {
-	// if shotgun/eth1 ip is dead, returh eth0 ip
-	if ( h->m_pingShotgun >= g_conf.m_deadHostTimeout ) return h->m_ip;
-	// if eth0 dead, return shotgun ip
-	if ( h->m_ping >= g_conf.m_deadHostTimeout ) return h->m_ipShotgun;
-	// default to eth0 if both dead
+	//used to examin ping times and chose between normal Ip and "shotgun" ip
 	return h->m_ip;
 }
 
@@ -1428,33 +1395,6 @@ int32_t Hostdb::getBestHosts2IP(const Host *h) {
 		return h->m_ip;
 	else
 		return h->m_ipShotgun;
-}
-
-
-void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
-	ScopedLock sl(m_mtxPinginfo);
-
-	h->m_pingInfo.m_unused0 = 0;
-	h->m_pingInfo.m_hostId = pi.m_hostId;
-	h->m_pingInfo.m_unused2 = 0;
-	h->m_pingInfo.m_unused3 = 0;
-	h->m_pingInfo.m_unused4 = 0.0;
-	h->m_pingInfo.m_unused5 = 0;
-	h->m_pingInfo.m_unused7 = 0.0;
-	h->m_pingInfo.m_unused8 = 0;
-	h->m_pingInfo.m_unused9 = 0;
-	h->m_pingInfo.m_unused10 = 0;
-	h->m_pingInfo.m_unused11 = 0;
-	//m_totalResends is updated direclty by UdpSlot
-	//h->m_pingInfo.m_totalResends = pi.m_totalResends;
-	//m_etryagains is updated directly by UdpServer
-	//h->m_pingInfo.m_etryagains = pi.m_etryagains;
-	h->m_pingInfo.m_unused12 = 0;
-	h->m_pingInfo.m_unused13 = 0;
-	h->m_pingInfo.m_unused14 = 0;
-	h->m_pingInfo.m_unused15 = 0;
-	h->m_pingInfo.m_unused17= 0;
-	h->m_pingInfo.m_unused18 = 0;
 }
 
 

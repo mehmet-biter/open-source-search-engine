@@ -13,7 +13,6 @@
 #include "HttpServer.h"
 #include "Pages.h"
 #include "Parms.h"
-#include "PingServer.h"
 #include "ip.h"
 #include "Conf.h"
 #include "Mem.h"

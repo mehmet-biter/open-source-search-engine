@@ -4,7 +4,9 @@
 #include "Rebalance.h"
 #include "Repair.h"
 #include "DailyMerge.h"
-#include "PingServer.h" //g_recoveryMode
+
+
+extern bool g_recoveryMode; //over in main.cpp
 
 
 int getOurHostFlags() {

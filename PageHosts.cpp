@@ -11,10 +11,6 @@
 #include "GbUtil.h"
 
 static int defaultSort    ( const void *i1, const void *i2 );
-static int pingSort1      ( const void *i1, const void *i2 );
-static int pingSort2      ( const void *i1, const void *i2 );
-static int pingAgeSort    ( const void *i1, const void *i2 );
-static int pingMaxSort    ( const void *i1, const void *i2 );
 static int splitTimeSort  ( const void *i1, const void *i2 );
 static int flagSort       ( const void *i1, const void *i2 );
 static int resendsSort    ( const void *i1, const void *i2 );
@@ -23,7 +19,6 @@ static int tryagainSort   ( const void *i1, const void *i2 );
 static int dgramsToSort   ( const void *i1, const void *i2 );
 static int dgramsFromSort ( const void *i1, const void *i2 );
 
-static int32_t generatePingMsg( Host *h, int64_t nowms, char *buffer );
 
 // . returns false if blocked, true otherwise
 // . sets errno on error
@@ -154,16 +149,6 @@ skipReplaceHost:
 
 			       "<td><b>docs indexed</a></td>"
 
-			       "<td><a href=\"/admin/hosts?c=%s&sort=14\">"
-			       "<b>max ping1</b></a></td>"
-
-			       "<td><a href=\"/admin/hosts?c=%s&sort=11\">"
-			       "<b>ping1 age</b></a></td>"
-
-			       //"<td><b>ip1</td>"
-			       "<td><a href=\"/admin/hosts?c=%s&sort=1\">"
-			       "<b>ping1</b></a></td>"
-
 			       "%s"
 			       "<td><b>note</b></td>",
 			       TABLE_STYLE ,
@@ -172,9 +157,6 @@ skipReplaceHost:
 			       cs, sort,
 			       DARK_BLUE  ,
 
-			       cs,
-			       cs,
-			       cs,
 			       cs,
 			       cs,
 			       cs,
@@ -203,18 +185,14 @@ skipReplaceHost:
 	for ( int32_t i = 0 ; i < nh ; i++ )
 		hostSort [ i ] = i;
 	switch ( sort ) {
-	case 1: gbsort ( hostSort, nh, sizeof(int32_t), pingSort1      ); break;
-	case 2: gbsort ( hostSort, nh, sizeof(int32_t), pingSort2      ); break;
 	case 3: gbsort ( hostSort, nh, sizeof(int32_t), resendsSort    ); break;
 	case 4: gbsort ( hostSort, nh, sizeof(int32_t), errorsSort     ); break;
 	case 5: gbsort ( hostSort, nh, sizeof(int32_t), tryagainSort   ); break;
 	case 6: gbsort ( hostSort, nh, sizeof(int32_t), dgramsToSort   ); break;
 	case 7: gbsort ( hostSort, nh, sizeof(int32_t), dgramsFromSort ); break;
 	//case 8:
-	case 11:gbsort ( hostSort, nh, sizeof(int32_t), pingAgeSort    ); break;
 	case 12:gbsort ( hostSort, nh, sizeof(int32_t), flagSort       ); break;
 	case 13:gbsort ( hostSort, nh, sizeof(int32_t), splitTimeSort  ); break;
-	case 14:gbsort ( hostSort, nh, sizeof(int32_t), pingMaxSort    ); break;
 	//case 15:
 	case 16:gbsort ( hostSort, nh, sizeof(int32_t), defaultSort    ); break;
 
@@ -231,8 +209,6 @@ skipReplaceHost:
 		sb.safePrintf("\t\"statusCode\":0,\n");
 		sb.safePrintf("\t\"statusMsg\":\"Success\",\n");
 	}
-
-	int64_t nowmsLocal = gettimeofdayInMilliseconds();
 
 	// compute majority gb version so we can highlight bad out of sync
 	// gb versions in red below
@@ -262,18 +238,6 @@ skipReplaceHost:
 		int32_t i = hostSort[si];
 		// get the ith host (hostId)
 		Host *h = g_hostdb.getHost ( i );
-		// get avg/stdDev msg roundtrip times in ms for ith host
-		//int32_t avg , stdDev;
-		//g_hostdb.getTimes ( i , &avg , &stdDev );
-                char ptr[256];
-                int32_t pingAge = generatePingMsg(h, nowmsLocal, ptr);
-		char pms[64];
-		if ( h->m_pingMax < 0 ) sprintf(pms,"???");
-		else                    sprintf(pms,"%" PRId32"ms",h->m_pingMax);
-		char ipbuf1[64];
-		char ipbuf2[64];
-		strcpy(ipbuf1,iptoa(h->m_ip));
-		strcpy(ipbuf2,iptoa(h->m_ipShotgun));
 
 		const char *vbuf = h->m_runtimeInformation.m_gbVersionStr;
 		// get hash
@@ -445,15 +409,6 @@ skipReplaceHost:
 				      "</docsIndexed>\n",
 				      h->m_runtimeInformation.m_totalDocsIndexed);
 
-			sb.safePrintf("\t\t<maxPing1>%s</maxPing1>\n",
-				      pms );
-
-			sb.safePrintf("\t\t<maxPingAge1>%" PRId32"ms</maxPingAge1>\n",
-				      pingAge );
-
-			sb.safePrintf("\t\t<ping1>%s</ping1>\n",
-				      ptr );
-
 			sb.safePrintf("\t\t<note>%s</note>\n",
 				      h->m_note );
 
@@ -525,14 +480,6 @@ skipReplaceHost:
 
 			sb.safePrintf("\t\t\t\t\"docsIndexed\":%" PRId32",\n",
 				      h->m_runtimeInformation.m_totalDocsIndexed);
-
-			sb.safePrintf("\t\t\t\t\"maxPing1\":\"%s\",\n",pms);
-
-			sb.safePrintf("\t\t\t\t\"maxPingAge1\":\"%" PRId32"ms\",\n",
-				      pingAge );
-
-			sb.safePrintf("\t\t\t\t\"ping1\":\"%s\",\n",
-				      ptr );
 
 			sb.safePrintf("\t\t\t\t\"note\":\"%s\",\n",
 				      h->m_note );
@@ -610,14 +557,7 @@ skipReplaceHost:
 			  // docs indexed
 			  "<td>%" PRId32"</td>"
 
-			  // ping max
-			  "<td>%s</td>"
-
-			  // ping age
-			  "<td>%" PRId32"ms</td>"
-
-			  // ping
-			  "<td>%s</td>"
+			  //note
 			  "<td nowrap=1>%s</td>"
 			  "</tr>" , 
 			  bg,//LIGHT_BLUE ,
@@ -648,16 +588,6 @@ skipReplaceHost:
 
 			  h->m_runtimeInformation.m_totalDocsIndexed,
 
-			  // ping max
-			  pms,
-			  // ping age
-			  pingAge,
-
-			  //avg , 
-			  //stdDev,
-			  //ping,
-			  ptr ,
-			  //ptr2 ,
 			  h->m_note );
 	}
 
@@ -842,25 +772,6 @@ skipReplaceHost:
 		  "</tr>\n"
 
 		  "<tr class=poo>"
-		  "<td>max ping1</td>"
-		  "<td>The worst ping latency from host to host."
-		  "</td>"
-		  "</tr>\n"
-
-		  "<tr class=poo>"
-		  "<td>ping1 age</td>"
-		  "<td>How long ago the last ping request was sent to "
-		  "this host. Let's us know how fresh the ping time is."
-		  "</td>"
-		  "</tr>\n"
-
-		  "<tr class=poo>"
-		  "<td>ping1</td>"
-		  "<td>Ping time to this host on the primary network."
-		  "</td>"
-		  "</tr>\n"
-
-		  "<tr class=poo>"
 		  "<td>M (status flag)</td>"
 		  "<td>Indicates host is merging files on disk."
 		  "</td>"
@@ -963,36 +874,6 @@ skipReplaceHost:
 }
 
 
-//return the ping age, and set 'buf' to the ping time (or pingtime1 and pingtime2 if shutgun is enabled)
-static int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
-	int32_t ping = h->m_ping;
-        int32_t pingAge = nowms - h->m_lastPing;
-        if(h == g_hostdb.m_myHost)
-                pingAge = 0; //we don't ping ourselves
-        if(pingAge<0)
-		pingAge=0;
-	if(h->m_lastPing!=0)
-		sprintf(buf, "%" PRId32"ms", ping);
-	else
-		sprintf(buf, "N/A");
-
-	if(!g_conf.m_useShotgun)
-		return pingAge;
-
-	char *p = buf + strlen(buf);
-
-	p += sprintf ( p , "</td><td>" );
-
-	// the second eth port, ip2, the shotgun port
-	int32_t pingB = h->m_pingShotgun;
-	if(h->m_lastPing!=0)
-		sprintf ( p , "%" PRId32"ms", pingB );
-	else
-		sprintf(buf, "N/A");
-
-	return pingAge;
-}
-
 int defaultSort   ( const void *i1, const void *i2 ) {
 	Host *h1 = g_hostdb.getHost ( *(int32_t*)i1 );
 	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
@@ -1002,40 +883,6 @@ int defaultSort   ( const void *i1, const void *i2 ) {
 
 	if ( h1->m_hostId < h2->m_hostId ) return -1;
 	return 1;
-}
-
-int pingSort1    ( const void *i1, const void *i2 ) {
-	Host *h1 = g_hostdb.getHost ( *(int32_t*)i1 );
-	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
-	if ( h1->m_ping > h2->m_ping ) return -1;
-	if ( h1->m_ping < h2->m_ping ) return  1;
-	return 0;
-}
-
-int pingSort2    ( const void *i1, const void *i2 ) {
-	Host *h1 = g_hostdb.getHost ( *(int32_t*)i1 );
-	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
-	if ( h1->m_pingShotgun > h2->m_pingShotgun ) return -1;
-	if ( h1->m_pingShotgun < h2->m_pingShotgun ) return  1;
-	return 0;
-}
-
-int pingMaxSort    ( const void *i1, const void *i2 ) {
-	Host *h1 = g_hostdb.getHost ( *(int32_t*)i1 );
-	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
-	if ( h1->m_pingMax > h2->m_pingMax ) return -1;
-	if ( h1->m_pingMax < h2->m_pingMax ) return  1;
-	return 0;
-}
-
-int pingAgeSort    ( const void *i1, const void *i2 ) {
-	Host *h1 = g_hostdb.getHost ( *(int32_t*)i1 );
-	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
-	//PingInfo *p1 = &h1->m_pingInfo;
-	//PingInfo *p2 = &h2->m_pingInfo;
-	if ( h1->m_lastPing > h2->m_lastPing ) return -1;
-	if ( h1->m_lastPing < h2->m_lastPing ) return  1;
-	return 0;
 }
 
 int splitTimeSort    ( const void *i1, const void *i2 ) {

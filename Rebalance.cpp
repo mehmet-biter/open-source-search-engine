@@ -13,7 +13,6 @@
 #include "Spider.h"
 #include "Collectiondb.h"
 #include "Pages.h"
-#include "PingServer.h"
 #include "Spider.h"
 #include "Process.h"
 #include "Parms.h"

@@ -8,7 +8,6 @@
 #include "Rdb.h"
 #include "Repair.h"
 #include "JobScheduler.h"
-#include "PingServer.h"
 #include "ip.h"
 #include "Mem.h"
 #include <sys/stat.h> //stat()

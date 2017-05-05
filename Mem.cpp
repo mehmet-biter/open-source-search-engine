@@ -5,7 +5,6 @@
 
 #include "SafeBuf.h"
 #include "Pages.h"
-#include "PingServer.h"
 #include "ScopedLock.h"
 #include "GbMutex.h"
 #include "Conf.h"

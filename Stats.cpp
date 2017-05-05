@@ -3,7 +3,6 @@
 #include <errno.h>
 #include "Stats.h"
 #include "Conf.h"
-#include "PingServer.h"
 #include "ip.h"
 #include "Mem.h"
 

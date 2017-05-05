@@ -12,7 +12,6 @@
 #include "Pages.h"
 #include "HttpRequest.h"
 #include "Stats.h"
-#include "PingServer.h"
 #include "ip.h"
 #include "Conf.h"
 #include "Mem.h"
@@ -123,14 +122,6 @@ bool Proxy::initProxy ( int32_t proxyId, uint16_t udpPort,
 	strcpy ( g_conf.m_email1Addr , "search-engine@example.com");
 	strcpy ( g_conf.m_email1From , "sysadmin@example.com");
 	strcpy ( g_conf.m_email1MX   , "");
-
-	// start pinging right away, udpServer has already been init'ed
-	if ( ! g_pingServer.init() ) {
-		log("db: PingServer init failed." ); return false; 
-	}
-
-	if ( ! g_pingServer.registerHandler() ) 
-		return false;
 
 	//Also have to init pages because we need to know which requests to
 	//forward. html/gif's, etc can be taken care here itself.

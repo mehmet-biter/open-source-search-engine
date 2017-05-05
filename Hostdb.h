@@ -29,33 +29,6 @@
 
 int32_t *getLocalIps ( ) ;
 
-class PingInfo {
-public:
-	int64_t m_unused0; //used to be a timestamp for clock synchronization
-	int32_t m_hostId;
-	int32_t m_unused2; //used for the m_loadAvg
-	float m_unused3; //used to me m_percentMemUsed;
-	float m_unused4; //used to be m_cpuUsage
-	int32_t m_unused5; //use to be m_totalDocsIndexed
-	int32_t m_unused6;
-	float m_unused7; //used to be m_diskUsage
-	int32_t m_unused8; //used to be m_flags
-	// some new stuff
-	int32_t m_unused9;
-	int32_t m_unused10;
-	int32_t m_unused11;
-
-	int32_t m_unused12;
-	int32_t m_unused13;
-
-	int16_t m_unused14;
-	collnum_t m_unused15;
-
-	char m_unused16[21]; //used to be m_gbVersionStr
-	char m_unused17;
-	uint8_t m_unused18;
-};
-
 
 //information about a running host/instance
 struct HostRuntimeInformation {
@@ -105,22 +78,6 @@ public:
 
 	bool m_isAlive;
 	HostRuntimeInformation m_runtimeInformation;
-
-	int32_t           m_ping;
-	int32_t           m_pingShotgun;
-	int32_t           m_pingMax;
-
-	// last time g_hostdb.ping(i) was called for this host in milliseconds.
-	int64_t      m_lastPing;
-
-	// . first time we sent an unanswered ping request to this host
-	// . used so we can determine when to send an email alert
-	int64_t      m_startTime;
-	// is a ping in progress for this host?
-	bool           m_inProgress1;
-	// shotgun
-	bool           m_inProgress2;
-	int64_t      m_numPingReplies;
 
 	// send to eth 0 or 1 when sending to this host?
 	char           m_preferEth;
@@ -204,8 +161,6 @@ public:
 
 	bool m_spiderEnabled;
 	bool m_queryEnabled;
-
-	PingInfo m_pingInfo;//RequestBuf;
 
 	void updateLastResponseReceiveTimestamp(uint64_t t) { m_lastResponseReceiveTimestamp=t; }
 	void updateLastRequestSendTimestamp(uint64_t t) { m_lastRequestSendTimestamp=t; }
@@ -362,7 +317,6 @@ class Hostdb {
 	// returns best IP to use for "h" which is a host in hosts2.conf
 	int32_t getBestHosts2IP(const Host *h);
 
-	void updatePingInfo(Host *h, const PingInfo &pi);
 	void updateAliveHosts(const int32_t alive_hosts_ids[], size_t n);
 	void updateHostRuntimeInformation(int hostId, const HostRuntimeInformation &hri);
 

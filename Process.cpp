@@ -16,7 +16,6 @@
 #include "Doledb.h"
 #include "JobScheduler.h"
 #include "Statistics.h"
-#include "PingServer.h"
 #include "Dns.h"
 #include "Repair.h"
 #include "RdbCache.h"
@@ -729,20 +728,6 @@ bool Process::shutdown2() {
 
 	if ( ! g_dns.getUdpServer().shutdown ( udpUrgent ) )
 		if ( ! udpUrgent ) return false;
-
-	// . send notes to all the hosts in the network telling them we're
-	//   shutting down
-	// . this returns false if it blocks
-	// . we don't care if it blocks or not
-	// . don't bother asking the hosts to send an email alert for us
-	//   since we're going down gracefully by letting everyone know
-	// . don't send this unless we are very sure we can shutdown NOW
-	// . i.e. no blocking after this call!
-	if ( ! m_sentShutdownNote && ! m_urgent ) {
-		log(LOG_INFO,"gb: Broadcasting shutdown notice.");
-		m_sentShutdownNote = true;
-		g_pingServer.broadcastShutdownNotes ( false, NULL, NULL );
-	}
 
 	//broadcastShutdownNotes uses g_udpServer so we do this last.
 	if ( ! g_udpServer.shutdown ( udpUrgent ) ) {

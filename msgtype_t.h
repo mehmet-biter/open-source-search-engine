@@ -6,7 +6,6 @@ enum msg_type_t {
 	msg_type_4 = 0x04,	//data replication
 	msg_type_7 = 0x07,	//inject web page
 	msg_type_c = 0x0c,	//get IP
-	msg_type_11 = 0x11,	//pinginfo
 	msg_type_13 = 0x13,	//download a url
 	msg_type_20 = 0x20,	//summary+inlinks
 	msg_type_22 = 0x22,	//get titlerec

@@ -54,9 +54,6 @@ UdpStatistic::UdpStatistic(const UdpSlot &slot)
 		case msg_type_c:
 			strcpy(m_description, "getting ip");
 			break;
-		case msg_type_11:
-			strcpy(m_description, "ping");
-			break;
 		case msg_type_13:
 			if (buf && static_cast<size_t>(bufSize) >= sizeof(Msg13Request)) {
 				Msg13Request *r = reinterpret_cast<Msg13Request*>(buf);

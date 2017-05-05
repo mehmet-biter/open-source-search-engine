@@ -27,7 +27,6 @@
 #include "Collectiondb.h"
 #include "Sections.h"
 #include "UdpServer.h"
-#include "PingServer.h"
 #include "Repair.h"
 #include "DailyMerge.h"
 #include "MsgC.h"
@@ -122,7 +121,6 @@ static bool hashtest();
 static bool parseTest(const char *coll, int64_t docId, const char *query);
 static bool summaryTest1(char *rec, int32_t listSize, const char *coll, int64_t docId, const char *query );
 
-static bool pingTest(int32_t hid , uint16_t clientPort);
 static bool cacheTest();
 static void countdomains(const char* coll, int32_t numRecs, int32_t verb, int32_t output);
 
@@ -173,6 +171,9 @@ extern void resetEntities      ( );
 extern void resetQuery         ( );
 extern void resetUnicode       ( );
 
+
+bool g_recoveryMode = false;
+static int s_recoveryLevel = 0;
 
 static int argc_copy;
 static char **argv_copy;
@@ -447,13 +448,6 @@ int main2 ( int argc , char *argv[] ) {
 			*/
 
 			/*
-
-			"ping <hostId> [clientport]\n"
-			"\tperforms pings to <hostId>. [clientport] defaults "
-			"to 2050.\n\n"
-			*/
-
-			/*
 			"spellcheck <file>\n"
 			"\tspellchecks the the queries in <file>.\n\n"
 
@@ -571,12 +565,12 @@ int main2 ( int argc , char *argv[] ) {
 	}
 	if ( cc ) {
 		g_recoveryMode = true;
-		g_recoveryLevel = 1;
+		s_recoveryLevel = 1;
 		if ( strlen(cc) > 2 ) {
-			g_recoveryLevel = atoi(cc+2);
+			s_recoveryLevel = atoi(cc+2);
 		}
-		if ( g_recoveryLevel < 0 ) {
-			g_recoveryLevel = 0;
+		if ( s_recoveryLevel < 0 ) {
+			s_recoveryLevel = 0;
 		}
 	}
 
@@ -781,7 +775,7 @@ int main2 ( int argc , char *argv[] ) {
 		Host *h = g_hostdb.getProxy( proxyId );
 		uint16_t httpPort = h->getInternalHttpPort();
 		uint16_t httpsPort = h->getInternalHttpsPort();
-		//we need udpserver for addurl and udpserver2 for pingserver
+		//we need udpserver for addurl
 		uint16_t udpPort  = h->m_port;
 
 		if ( ! g_conf.init ( h->m_dir ) ) { // , h->m_hostId ) ) {
@@ -854,23 +848,6 @@ int main2 ( int argc , char *argv[] ) {
 		g_conf.m_save = true;
 
 		g_loop.runLoop();
-	}
-
-	// gb ping [hostId] [clientPort]
-	if ( strcmp ( cmd , "ping" ) == 0 ) {
-		int32_t hostId = 0;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-		}
-
-		uint16_t port = 2050;
-		if ( cmdarg + 2 < argc ) {
-			port = (uint16_t)atoi ( argv[cmdarg+2] );
-		}
-
-		pingTest ( hostId , port );
-
-		return 0;
 	}
 
 	// gb dsh
@@ -1782,10 +1759,6 @@ int main2 ( int argc , char *argv[] ) {
 				 false    )){ // is dns?
 		log("db: UdpServer init failed." ); return 1; }
 
-	// start pinging right away
-	if ( ! g_pingServer.init() ) {
-		log("db: PingServer init failed." ); return 1; }
-
 	// start up repair loop
 	if ( ! g_repair.init() ) {
 		log("db: Repair init failed." ); return 1; }
@@ -1851,15 +1824,6 @@ int main2 ( int argc , char *argv[] ) {
 	
 	if(!InstanceInfoExchange::initialize())
 		return 0;
-
-	if(g_recoveryMode) {
-		//now that everything is init-ed send the message.
-		char buf[256];
-		log("admin: Sending emails.");
-		sprintf(buf, "Host %" PRId32" respawning after crash.(%s)",
-			h9->m_hostId, iptoa(g_hostdb.getMyIp()));
-		g_pingServer.sendEmail(NULL, buf);
-	}
 
 	// . start the spiderloop
 	// . comment out when testing SpiderCache
@@ -2501,7 +2465,6 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 static bool registerMsgHandlers() {
 	if (! registerMsgHandlers1()) return false;
 	if (! registerMsgHandlers2()) return false;
-	if ( ! g_pingServer.registerHandler() ) return false;
 
 	// in SpiderProxy.cpp...
 	initSpiderProxyStuff();
@@ -4395,145 +4358,6 @@ static void dumpLinkdb(const char *coll,
 	}
 }
 
-
-static bool pingTest(int32_t hid, uint16_t clientPort) {
-	Host *h = g_hostdb.getHost ( hid );
-	if ( ! h ) {
-		log(LOG_WARN, "net: pingtest: hostId %" PRId32" is invalid.",hid);
-		return false;
-	}
-	// set up our socket
-	int sock  = socket ( AF_INET, SOCK_DGRAM , 0 );
-	if ( sock < 0 ) {
-		log(LOG_WARN, "net: pingtest: socket: %s.", strerror(errno));
-		return false;
-	}
-
-	// sockaddr_in provides interface to sockaddr
-	struct sockaddr_in name;
-	// reset it all just to be safe
-	memset((char *)&name, 0,sizeof(name));
-	name.sin_family      = AF_INET;
-	name.sin_addr.s_addr = INADDR_ANY;
-	name.sin_port        = htons(clientPort);
-	// we want to re-use port it if we need to restart
-	int options = 1;
-	if ( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR , &options,sizeof(options)) < 0 ) {
-		close( sock );
-		log(LOG_WARN, "net: pingtest: setsockopt: %s.", strerror(errno));
-		return false;
-	}
-	// bind this name to the socket
-	if ( bind ( sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
-		close ( sock );
-		log(LOG_WARN, "net: pingtest: Bind on port %hu: %s.", clientPort,strerror(errno));
-		return false;
-	}
-
-	int fd = sock;
-	int flags = fcntl ( fd , F_GETFL ) ;
-	if ( flags < 0 ) {
-		close ( sock );
-		log(LOG_WARN, "net: pingtest: fcntl(F_GETFL): %s.", strerror(errno));
-		return false;
-	}
-
-	char dgram[DGRAM_SIZE];
-	int n;
-	struct sockaddr_in to;
-	sockaddr_in from;
-	socklen_t fromLen;
-
-	// make the dgram
-	UdpProtocol *up = &g_dp; // udpServer2.getProtocol();
-	int32_t transId = 500000000 - 1 ;
-	int32_t dnum    = 0; // dgramNum
-
-	int32_t sends     = 0;
-	int32_t lost      = 0;
-	int32_t recovered = 0;
-	int32_t acks      = 0;
-	int32_t replies   = 0;
-
-	memset(&to,0,sizeof(to));
-	to.sin_family      = AF_INET;
-	to.sin_addr.s_addr = h->m_ip;
-	to.sin_port        = ntohs(h->m_port);
-	log("net: pingtest: Testing hostId #%" PRId32" at %s:%hu from client "
-	    "port %hu", hid,iptoa(h->m_ip),h->m_port,clientPort);
-	// if this is higher than number of avail slots UdpServer.cpp
-	// will not be able to free the slots and this will end up sticking,
-	// because the slots can only be freed in destroySlot() which
-	// is not async safe!
-	//int32_t count = 40000; // number of loops
-	int32_t count = 1000; // number of loops
-	int32_t avg = 0;
- sendLoop:
-	if ( count-- <= 0 ) {
-		log("net: pingtest: Got %" PRId32" replies out of %" PRId32" sent (%" PRId32" lost)"
-		    "(%" PRId32" recovered)", replies,sends,lost,recovered);
-		log("net: pingtest: Average reply time of %.03f ms.",
-		    (double)avg/(double)replies);
-		return true;
-	}
-	transId++;
-	int32_t msgSize = 3; // indicates a debug ping packet to PingServer.cpp
-	up->setHeader ( dgram, msgSize, msg_type_11, dnum, transId, true, false , 0 );
-	int32_t size = up->getHeaderSize(0) + msgSize;
-	int64_t start = gettimeofdayInMilliseconds();
-	n = sendto(sock,dgram,size,0,(struct sockaddr *)(void*)&to,sizeof(to));
-	if ( n != size ) {
-		close ( sock );
-		log(LOG_WARN, "net: pingtest: sendto returned %i (should have returned %" PRId32")",n,size);
-		return false;
-	}
-	sends++;
- readLoop2:
-	// loop until we read something
-	fromLen=sizeof(from);
-	n = recvfrom (sock,dgram,DGRAM_SIZE,0,(sockaddr *)(void*)&from, &fromLen);
-	if (gettimeofdayInMilliseconds() - start>2000) {lost++; goto sendLoop;}
-	if ( n <= 0 ) goto readLoop2; // { sched_yield(); goto readLoop2; }
-	// for what transId?
-	int32_t tid = up->getTransId ( dgram , n );
-	// -1 is error
-	if ( tid < 0 ) {
-		close ( sock );
-		log(LOG_WARN, "net: pingtest: Bad transId.");
-		return false;
-	}
-	// if no match, it was recovered, keep reading
-	if ( tid != transId ) { 
-		log("net: pingTest: Recovered tid=%" PRId32", current tid=%" PRId32". "
-		    "Resend?",tid,transId); 
-		recovered++; 
-		goto readLoop2; 
-	}
-	// an ack?
-	if ( up->isAck ( dgram , n ) ) { 
-		acks++; 
-		goto readLoop2;
-	}
-	// mark the time
-	int64_t took = gettimeofdayInMilliseconds()-start;
-	if ( took > 1 ) log("net: pingtest: got reply #%" PRId32" (tid=%" PRId32") "
-			    "in %" PRId64" ms",replies,transId,took);
-	// make average
-	avg += took;
-	// the reply?
-	replies++;
-	// send back an ack
-	size = up->makeAck ( dgram, dnum, transId , true/*weinit?*/ , false );
-	n = sendto(sock,dgram,size,0,(struct sockaddr *)(void*)&to,sizeof(to));
-
-	if ( n != size ) {
-		close ( sock );
-		log(LOG_WARN, "net: pingtest: sendto returned %i (should have returned %" PRId32")",n,size);
-		return false;
-	}
-
-	goto sendLoop;
-}
 
 static bool cacheTest() {
 

@@ -26,7 +26,6 @@
 #include "Posdb.h"
 #include "Highlight.h"
 #include "Wiktionary.h"
-#include "PingServer.h"
 #include "Parms.h"
 #include "Domains.h"
 #include "AdultCheck.h"

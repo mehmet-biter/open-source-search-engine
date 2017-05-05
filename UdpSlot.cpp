@@ -272,10 +272,6 @@ bool UdpSlot::sendSetup(char *msg, int32_t msgSize, char *alloc, int32_t allocSi
 		m_extraInfo[0] = '\0';
 	}
 
-	// send to particular ip, but not for pings
-	if ( m_msgType == msg_type_11 ) {
-		return true;
-	}
 	if ( ! m_host          ) {
 		return true;
 	}
@@ -322,12 +318,10 @@ void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
 	     // need to be sending to a host in the network
 	     m_host &&
 	     // shotgun ip (eth1) must be different than eth0 ip
-	     m_host->m_ip != m_host->m_ipShotgun &&
-	     // pingserver.cpp sends to the exact ips it needs to
-	     m_msgType != msg_type_11 ) {
+	     m_host->m_ip != m_host->m_ipShotgun ) {
 		// . were we using the eth0 ip? if so, switch to eth1
 		// . do not switch though if the ping is really bad for eth1
-		if ( m_preferEth == 0 &&  m_host->m_pingShotgun<3000 ){
+		if ( m_preferEth == 0 ) {
 			// set m_ip to ip of eth1
 			m_ip = m_host->m_ipShotgun;
 			// this is now only used when sendSetup() is called
@@ -340,7 +334,7 @@ void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
 		}
 		// . otherwise, we were using the eth1 (shotgun) ip
 		// . do not switch though if the ping is really bad for eth0
-		else if ( m_preferEth == 1 && m_host->m_ping < 3000 ) {
+		else if ( m_preferEth == 1 ) {
 			// set m_ip to ip of eth0
 			m_ip = m_host->m_ip;
 			// this is now only used when sendSetup() is called
@@ -577,10 +571,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		g_udpServer.m_eth0PacketsOut += 1;
 		g_udpServer.m_eth0BytesOut   += dgramSize;
 	} else if ( m_host ) {
-		// don't fuck with it if we are ping though, because that needs to specify the exact ip!
-		if ( m_msgType == msg_type_11 ) {
-			to.sin_addr.s_addr = ip;
-		} else if ( m_preferEth == 1 ) {
+		if ( m_preferEth == 1 ) {
 			// we now pick ip based on this. if we fail to get a timely ACK
 			// then we set switch eth preferences. helps when a switch crashes.
 			to.sin_addr.s_addr = m_host->m_ipShotgun;
