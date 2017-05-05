@@ -11219,7 +11219,8 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 	}
 
 	// keep track of stats
-	Statistics::register_spider_time( isNew, errCode, m_httpStatus, took );
+	Statistics::register_spider_time(isNew, errCode, m_httpStatus, took);
+	Statistics::register_document_encoding(errCode, m_charset, m_langId, m_countryId);
 
 	// do not log if we should not, saves some time
 	if ( ! g_conf.m_logSpideredUrls ) return;

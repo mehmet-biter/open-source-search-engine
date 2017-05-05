@@ -13,6 +13,7 @@
 #include "Rdb.h"
 #include "GbMutex.h"
 #include "Lang.h"
+#include "CountryCode.h"
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
@@ -335,6 +336,49 @@ static void dump_io_statistics( FILE *fp ) {
 }
 
 //////////////////////////////////////////////////////////////////////////////
+// Language/Charset statistics
+
+typedef std::map<std::tuple<int, int16_t, uint8_t, uint8_t>, unsigned> encs_t;
+static encs_t encoding_stats;
+static GbMutex mtx_encoding_stats;
+
+void Statistics::register_document_encoding(int error_code, int16_t charsetId, uint8_t langId, uint16_t countryId) {
+	auto key = std::make_tuple(error_code, charsetId, langId, countryId);
+
+	ScopedLock sl(mtx_encoding_stats);
+	++(encoding_stats[key]);
+}
+
+static void dump_encoding_statistics(FILE *fp) {
+	ScopedLock sl(mtx_encoding_stats);
+	encs_t enccopy(encoding_stats);
+	encoding_stats.clear();
+	sl.unlock();
+
+	for (auto it = enccopy.begin(); it != enccopy.end(); ++it) {
+		std::string tmp_str;
+		const char *status = "SUCCESS";
+		if (std::get<0>(it->first)) {
+			status = merrname(std::get<0>(it->first));
+			if (status == NULL) {
+				tmp_str = std::to_string(std::get<0>(it->first));
+				status = tmp_str.c_str();
+			}
+		}
+
+		int16_t charsetId = std::get<1>(it->first);
+		uint8_t langId = std::get<2>(it->first);
+		uint8_t countryId = std::get<3>(it->first);
+
+		fprintf(fp, "enc:status=%s;charset=%s;lang=%s;country=%s;count=%u\n",
+		        status, charsetId == csUnknown ? "unknown" : get_charset_str(charsetId),
+		        langId == langUnknown ? "zz" : getLanguageAbbr(langId),
+		        countryId == 0 ? "zz" : getCountryCode(countryId),
+		        it->second);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////////
 // RdbCache statistics
 
 // RdbCache keeps its own statistics so we just pull those out
@@ -368,7 +412,6 @@ static void dump_rdb_cache_statistics( FILE *fp ) {
 		fprintf(fp,"rdbcache:%s;hits=%" PRId64 ";misses=%" PRId64 "\n", rdb_cache_history[i].name,delta_hits,delta_misses);
 	}
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 // Assorted statistics
@@ -404,10 +447,11 @@ static void dump_statistics(time_t now) {
 	fprintf( fp, "%ld\n", ( long ) now );
 
 	// dump statistics
-	dump_query_statistics( fp );
-	dump_spider_statistics( fp );
-	dump_io_statistics( fp );
-	dump_rdb_cache_statistics( fp );
+	dump_query_statistics(fp);
+	dump_spider_statistics(fp);
+	dump_io_statistics(fp);
+	dump_encoding_statistics(fp);
+	dump_rdb_cache_statistics(fp);
 	dump_assorted_statistics(fp);
 	
 	if ( fflush(fp) != 0 ) {
