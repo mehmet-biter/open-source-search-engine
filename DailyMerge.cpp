@@ -76,8 +76,8 @@ void DailyMerge::dailyMergeLoop ( ) {
 	if ( hid != 0 && m_mergeMode == 0 ) {
 		// get host #0
 		Host *h = &g_hostdb.m_hosts[0];
-		// must have got a ping reply from him
-		if ( ! h->m_gotPingReply ) return;
+		// must have gotten an update from him
+		if ( ! h->m_runtimeInformation.m_valid ) return;
 		// hostid #0 must NOT be in mode 0
 		if ( h->m_runtimeInformation.m_flags & PFLAG_MERGEMODE0 ) return;
 		// get the collnum that host #0 is currently daily merging
