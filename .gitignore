@@ -21,6 +21,7 @@ statistics.txt
 # log files
 log000*
 file_state*.txt
+gb_output*.txt
 # slacktee
 slacktee.sh
 slacktee.conf
