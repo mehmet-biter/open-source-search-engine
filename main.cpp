@@ -150,8 +150,6 @@ typedef enum {
 static int install_file(const char *file);
 static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir = NULL,
                      int32_t hostId2 = -1, char *cmd = NULL );
-static int scale(const char *newhostsconf, bool useShotgunIp);
-static int collinject(const char *newhostsconf);
 
 bool doCmd ( const char *cmd , int32_t hostId , const char *filename , bool sendToHosts,
 	     bool sendToProxies, int32_t hostId2=-1 );
@@ -429,14 +427,6 @@ int main2 ( int argc , char *argv[] ) {
 
 			"proxy stop [proxyId]\n"
 			"\tStop a proxy that acts as a frontend to gb.\n\n"
-			*/
-
-			/*
-			"scale <newHosts.conf>\n"
-			"\tGenerate a script to be called to migrate the "
-			"data to the new places. Remaining hosts will "
-			"keep the data they have, but it will be "
-			"filtered during the next merge operations.\n\n"
 			*/
 
 			/*
@@ -999,18 +989,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "backuprestore" ) == 0 ) {	
 		if ( cmdarg + 1 >= argc ) goto printHelp;
 		return install( ifk_backuprestore, -1 , argv[cmdarg+1] );
-	}
-
-	// gb scale <hosts.conf>
-	if ( strcmp ( cmd , "scale" ) == 0 ) {	
-		if ( cmdarg + 1 >= argc ) goto printHelp;
-		return scale( argv[cmdarg+1] , true );
-	}
-
-	// gb collinject
-	if ( strcmp ( cmd , "collinject" ) == 0 ) {	
-		if ( cmdarg + 1 >= argc ) goto printHelp;
-		return collinject( argv[cmdarg+1] );
 	}
 
 	// gb stop [hostId]
@@ -1949,161 +1927,6 @@ void doCmdAll ( int fd, void *state ) {
 	// wait for it
 	log("cmd: sent command");
 }
-
-// generate the copies that need to be done to scale from oldhosts.conf
-// to newhosts.conf topology.
-static int scale(const char *newHostsConf, bool useShotgunIp) {
-
-	g_hostdb.resetPortTables();
-
-	Hostdb hdb;
-	//if ( ! hdb.init(newHostsConf, 0/*assume we're zero*/) ) {
-	if ( ! hdb.init( 0/*assume we're zero*/) ) {
-		log("Scale failed. Could not init hostdb with %s",
-		    newHostsConf);
-		return -1;
-	}
-
-	// ptrs to the two hostdb's
-	Hostdb *hdb1 = &g_hostdb;
-	Hostdb *hdb2 = &hdb;
-
-	// this function was made to scale UP, but if scaling down
-	// then swap them!
-	if ( hdb1->getNumHosts() > hdb2->getNumHosts() ) {
-		Hostdb *tmp = hdb1;
-		hdb1 = hdb2;
-		hdb2 = tmp;
-	}
-
-	// . ensure old hosts in g_hostdb are in a derivate groupId in
-	//   newHostsConf
-	// . old hosts may not even be present! consider them the same host,
-	//   though, if have same ip and working dir, because that would
-	//   interfere with a file copy.
-	for ( int32_t i = 0 ; i < hdb1->getNumHosts() ; i++ ) {
-		Host *h = &hdb1->m_hosts[i];
-		// look in new guy
-		for ( int32_t j = 0 ; j < hdb2->getNumHosts() ; j++ ) {
-			Host *h2 = &hdb2->m_hosts[j];
-			// if a match, ensure same group
-			if ( h2->m_ip != h->m_ip ) continue;
-			if ( strcmp ( h2->m_dir , h->m_dir ) != 0 ) continue;
-		}
-	}
-
-	// . ensure that:
-	//   (h2->m_groupId & (hdb1->m_numGroups -1)) == h->m_groupId 
-	//   where h2 is in a derivative group of h.
-	// . do a quick monte carlo test to make sure that a key in old
-	//   group #0 maps to groups 0,8,16,24 for all keys and all dbs
-	for ( int32_t i = 0 ; i < 1000 ; i++ ) {
-		//key96_t k;
-		//k.n1 = rand(); k.n0 = rand(); k.n0 <<= 32; k.n0 |= rand();
-		//key128_t k16;
-		//k16.n0 = k.n0;
-		//k16.n1 = rand(); k16.n1 <<= 32; k16.n1 |= k.n1;
-		char k[MAX_KEY_BYTES];
-		for ( int32_t ki = 0 ; ki < MAX_KEY_BYTES ; ki++ )
-			k[ki] = rand() & 0xff;
-	}
-
-	// . now copy all titleRecs in old hosts to all derivatives
-	// . going from 8 (3bits) hosts to 32 (5bits), for instance, old 
-	//   group id #0 would copy to group ids 0,8,16 and 24.
-	// . 000 --> 00000(#0), 01000(#8), 10000(#16), 11000(#24)
-	// . titledb determine groupId by mod'ding the docid
-	//   contained in their most significant key bits with the number
-	//   of groups.  see Titledb.h::getGroupId(docid)
-	// . indexdb and tagdb mask the hi bits of the key with 
-	//   hdb1->m_groupMask, which is like a reverse mod'ding:
-	//   000 --> 00000, 00001, 00010, 00011
-	char done [ 8196 ];
-	memset ( done , 0 , 8196 );
-	for ( int32_t i = 0 ; i < hdb1->getNumHosts() ; i++ ) {
-		Host *h = &hdb1->m_hosts[i];
-		char flag = 0;
-		// look in new guy
-		for ( int32_t j = 0 ; j < hdb2->getNumHosts() ; j++ ) {
-			Host *h2 = &hdb2->m_hosts[j];
-			// do not copy to oneself
-			if ( h2->m_ip == h->m_ip &&
-			     strcmp ( h2->m_dir , h->m_dir ) == 0 ) continue;
-			// skip if not derivative groupId for titledb
-			//if ( (h2->m_groupId & hdb1->m_groupMask) !=
-			//     h->m_groupId ) continue;
-			// continue if already copying to here
-			if ( done[j] ) continue;
-			// mark as done
-			done[j] = 1;
-
-			// skip local copies for now!!
-			//if ( h->m_ip == h2->m_ip ) continue;
-
-			// use ; separator
-			if ( flag ) fprintf(stderr,"; ");
-			//else        fprintf(stderr,"ssh %s \"",iptoa(h->m_ip));
-			else        fprintf(stderr,"ssh %s \"",h->m_hostname);
-			// flag
-			flag = 1;
-			// print the copy
-			//fprintf(stderr,"rcp %s:%s*db*.dat* ",
-			//	iptoa( h->m_ip), h->m_dir  );
-			// if same ip then do a 'cp' not rcp
-			const char *cmd = "rcp -r";
-			if ( h->m_ip == h2->m_ip ) cmd = "cp -pr";
-
-			fprintf(stderr,"%s %s*db*.dat* ", cmd, h->m_dir  );
-
-			if ( h->m_ip == h2->m_ip )
-				fprintf(stderr,"%s ;", h2->m_dir );
-			else {
-				//int32_t ip = h2->m_ip;
-				//if ( useShotgunIp ) ip = h2->m_ipShotgun;
-				//fprintf(stderr,"%s:%s ;",iptoa(ip), h2->m_dir );
-				char *hn = h2->m_hostname;
-				if ( useShotgunIp ) hn = h2->m_hostname;//2
-				fprintf(stderr,"%s:%s ;",hn, h2->m_dir );
-
-			}
-
-			//fprintf(stderr," rcp -p %s*.map* ", h->m_dir );
-			fprintf(stderr," %s %scoll.* ", cmd, h->m_dir );
-
-			if ( h->m_ip == h2->m_ip )
-				fprintf(stderr,"%s " , h2->m_dir );
-			else {
-				//int32_t ip = h2->m_ip;
-				//if ( useShotgunIp ) ip = h2->m_ipShotgun;
-				//fprintf(stderr,"%s:%s " ,iptoa(ip), h2->m_dir );
-				char *hn = h2->m_hostname;
-				if ( useShotgunIp ) hn = h2->m_hostname;//2;
-				fprintf(stderr,"%s:%s " ,hn, h2->m_dir );
-			}
-
-			/*
-			fprintf(stderr,"scp %s:%s/titledb* %s:%s\n",
-				iptoa( h->m_ip), h->m_dir  ,
-				iptoa(h2->m_ip), h2->m_dir );
-			fprintf(stderr,"scp %s:%s/indexdb* %s:%s\n",
-				iptoa( h->m_ip), h->m_dir  ,
-				iptoa(h2->m_ip), h2->m_dir );
-			fprintf(stderr,"scp %s:%s/spiderdb* %s:%s\n",
-				iptoa( h->m_ip), h->m_dir  ,
-				iptoa(h2->m_ip), h2->m_dir );
-			fprintf(stderr,"scp %s:%s/clusterdb* %s:%s\n",
-				iptoa( h->m_ip), h->m_dir  ,
-				iptoa(h2->m_ip), h2->m_dir );
-			fprintf(stderr,"scp %s:%s/tagdb* %s:%s\n",
-				iptoa( h->m_ip), h->m_dir  ,
-				iptoa(h2->m_ip), h2->m_dir );
-			*/
-		}
-		if ( flag ) fprintf(stderr,"\" &\n");
-	}
-	return 1;
-}
-
 
 static int install_file(const char *dst_host, const char *src_file, const char *dst_file)
 {
@@ -5186,54 +5009,6 @@ int dom_lcmp (const void *p1, const void *p2) {
 
 	return di2->lnkCnt-di1->lnkCnt;
 }
-
-// generate the copies that need to be done to scale from oldhosts.conf
-// to newhosts.conf topology.
-static int collinject(const char *newHostsConf) {
-
-	g_hostdb.resetPortTables();
-
-	Hostdb hdb;
-	//if ( ! hdb.init(newHostsConf, 0/*assume we're zero*/) ) {
-	if ( ! hdb.init( 0/*assume we're zero*/) ) {
-		log("collinject failed. Could not init hostdb with %s",
-		    newHostsConf);
-		return -1;
-	}
-
-	// ptrs to the two hostdb's
-	Hostdb *hdb1 = &g_hostdb;
-	Hostdb *hdb2 = &hdb;
-
-	if ( hdb1->getNumHosts() != hdb2->getNumHosts() ) {
-		log("collinject: num hosts differ!");
-		return -1;
-	}
-
-	// . ensure old hosts in g_hostdb are in a derivate groupId in
-	//   newHostsConf
-	// . old hosts may not even be present! consider them the same host,
-	//   though, if have same ip and working dir, because that would
-	//   interfere with a file copy.
-	for ( int32_t i = 0 ; i < hdb1->m_numShards ; i++ ) {
-		//Host *h1 = &hdb1->getHost(i);//m_hosts[i];
-		//int32_t gid = hdb1->getGroupId ( i ); // groupNum
-		uint32_t shardNum = (uint32_t)i;
-
-		Host *h1 = hdb1->getShard ( shardNum );
-		Host *h2 = hdb2->getShard ( shardNum );
-		
-		printf("ssh %s 'nohup /w/gbi -w /w/ inject titledb "
-		       "%s:%" PRId32" >& /w/ilog' &\n"
-		       , h1->m_hostname
-		       , iptoa(h2->m_ip)
-		       //, h2->m_hostname
-		       , (int32_t)h2->getInternalHttpPort()
-		       );
-	}
-	return 1;
-}
-
 
 static const char *getAbsoluteGbDir(const char *argv0) {
 	static char s_buf[1024];
