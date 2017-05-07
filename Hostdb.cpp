@@ -1049,8 +1049,7 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 	}
 
 	// . keep a list of the udp ips for pinging
-	// . do not ping hostdb2 hosts though!
-	if ( udp && port != 0 && this == &g_hostdb ) {
+	if ( udp && port != 0 ) {
 		// add the ip port for pinging purposes
 		g_listHosts [g_listNumTotal] = h;
 		g_listIps   [g_listNumTotal] = ip;
@@ -1188,8 +1187,8 @@ bool Hostdb::isShardDead(int32_t shardNum) const {
 
 
 int32_t Hostdb::getHostIdWithSpideringEnabled ( uint32_t shardNum ) {
-	Host *hosts = g_hostdb.getShard ( shardNum);
-	int32_t numHosts = g_hostdb.getNumHostsPerShard();
+	Host *hosts = getShard ( shardNum);
+	int32_t numHosts = getNumHostsPerShard();
 
 	int32_t hostNum = 0;
 	int32_t numTried = 0;
@@ -1206,8 +1205,8 @@ int32_t Hostdb::getHostIdWithSpideringEnabled ( uint32_t shardNum ) {
 
 
 Host *Hostdb::getHostWithSpideringEnabled ( uint32_t shardNum ) {
-	Host *hosts = g_hostdb.getShard ( shardNum);
-	int32_t numHosts = g_hostdb.getNumHostsPerShard();
+	Host *hosts = getShard ( shardNum);
+	int32_t numHosts = getNumHostsPerShard();
 
 	int32_t hostNum = 0;
 	int32_t numTried = 0;
@@ -1281,7 +1280,7 @@ bool Hostdb::isDead(int32_t hostId) const {
 bool Hostdb::isDead(const Host *h) const {
 	if(h->m_retired)
 		return true; // retired means "don't use it", so it is essentially dead
-	if(g_hostdb.m_myHost == h)
+	if(m_myHost == h)
 		return false; //we are not dead
 	return !h->m_isAlive;
 }
@@ -1367,7 +1366,7 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	// reset pingserver's list too!
 	g_listNumTotal = 0;
 	// now restock everything
-	g_hostdb.hashHosts();
+	hashHosts();
 
 	// replace ips in udp server
 	g_udpServer.replaceHost ( spareHost, oldHost );
@@ -1384,9 +1383,6 @@ int32_t Hostdb::getBestIp(const Host *h) {
 // . should we send to its primary or shotgun ip?
 // . this returns which ip we should send to
 int32_t Hostdb::getBestHosts2IP(const Host *h) {
-	// sanity check
-	if ( this != &g_hostdb ) { g_process.shutdownAbort(true); }
-
 	if(ip_distance(h->m_ip) <= ip_distance(h->m_ipShotgun))
 		return h->m_ip;
 	else
@@ -1439,7 +1435,7 @@ void Hostdb::updateHostRuntimeInformation(int hostId, const HostRuntimeInformati
 		}
 
 		// if all in agreement, set this flag
-		if(agreeCount == g_hostdb.getNumGrunts()) {
+		if(agreeCount == getNumGrunts()) {
 			m_hostsConfInAgreement = true;
 		}
 	}
@@ -1531,8 +1527,8 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) const {
 
 		case RDB_DOLEDB:
 			// HACK:!!!!!!  this is a trick!!! it is us!!!
-			//return g_hostdb.m_myHost->m_groupId;
-			return g_hostdb.m_myHost->m_shardNum;
+			//return m_myHost->m_groupId;
+			return m_myHost->m_shardNum;
 
 		default:
 			// core -- must be provided
@@ -1563,7 +1559,7 @@ Host *Hostdb::getBestSpiderCompressionProxy ( int32_t *key ) {
 			// count towards total even if not alive
 			s_numTotal++;
 			// now must be alive
-			if ( g_hostdb.isDead (h) ) continue;
+			if ( isDead(h) ) continue;
 			// stop to avoid breach
 			if ( s_numAlive >= 64 ) { g_process.shutdownAbort(true); }
 			// add it otherwise
@@ -1582,7 +1578,7 @@ Host *Hostdb::getBestSpiderCompressionProxy ( int32_t *key ) {
 	// get it
 	Host *h = s_alive[ni];
 	// if dead, recompute alive[] table and try again!
-	if ( g_hostdb.isDead(h) ) goto redo;
+	if ( isDead(h) ) goto redo;
 	// got a live one
 	return h;
 }
