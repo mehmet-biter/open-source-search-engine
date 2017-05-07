@@ -152,7 +152,6 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
                      int32_t hostId2 = -1, char *cmd = NULL );
 static int scale(const char *newhostsconf, bool useShotgunIp);
 static int collinject(const char *newhostsconf);
-static int collcopy(const char *newHostsConf, const char *coll, int32_t collnum);
 
 bool doCmd ( const char *cmd , int32_t hostId , const char *filename , bool sendToHosts,
 	     bool sendToProxies, int32_t hostId2=-1 );
@@ -438,13 +437,6 @@ int main2 ( int argc , char *argv[] ) {
 			"data to the new places. Remaining hosts will "
 			"keep the data they have, but it will be "
 			"filtered during the next merge operations.\n\n"
-
-			"collcopy <newHosts.conf> <coll> <collnum>\n"
-			"\tGenerate a script to copy the collection data on "
-			"the cluster defined by newHosts.conf to the "
-			"current cluster. Remote network must have "
-			"called \"gb ddump\" twice in a row just before to "
-			"ensure all of its data is on disk.\n\n"
 			*/
 
 			/*
@@ -1019,15 +1011,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "collinject" ) == 0 ) {	
 		if ( cmdarg + 1 >= argc ) goto printHelp;
 		return collinject( argv[cmdarg+1] );
-	}
-
-	// gb collcopy <hosts.conf> <coll> <collnum>>
-	if ( strcmp ( cmd , "collcopy" ) == 0 ) {	
-		if ( cmdarg + 4 != argc ) goto printHelp;
-		char *hostsconf = argv[cmdarg+1];
-		char *coll      = argv[cmdarg+2];
-		int32_t  collnum   = atoi(argv[cmdarg+3]);
-		return collcopy ( hostsconf , coll , collnum );
 	}
 
 	// gb stop [hostId]
@@ -1965,51 +1948,6 @@ void doCmdAll ( int fd, void *state ) {
 	}
 	// wait for it
 	log("cmd: sent command");
-}
-
-// copy a collection from one network to another (defined by 2 hosts.conf's)
-static int collcopy(const char *newHostsConf, const char *coll, int32_t collnum) {
-	Hostdb hdb;
-	//if ( ! hdb.init(newHostsConf, 0/*assume we're zero*/) ) {
-	if ( ! hdb.init( 0/*assume we're zero*/) ) {
-		log("clusterCopy failed. Could not init hostdb with %s",
-		    newHostsConf);
-		return -1;
-	}
-	// sanity check
-	if ( hdb.getNumShards() != g_hostdb.getNumShards() ) {
-		log("Hosts.conf files do not have same number of groups.");
-		return -1;
-	}
-	if ( hdb.getNumHosts() != g_hostdb.getNumHosts() ) {
-		log("Hosts.conf files do not have same number of hosts.");
-		return -1;
-	}
-	// host checks
-	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
-		Host *h = &g_hostdb.m_hosts[i];
-		fprintf(stderr,"ssh %s '",iptoa(h->m_ip));
-		fprintf(stderr,"du -skc %scoll.%s.%" PRId32" | tail -1 '\n",
-			h->m_dir,coll,collnum);
-	}
-	// loop over dst hosts
-	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
-		Host *h = &g_hostdb.m_hosts[i];
-		// get the src host from the provided hosts.conf
-		Host *h2 = &hdb.m_hosts[i];
-		// print the copy
-		//fprintf(stderr,"rcp %s:%s*db*.dat* ",
-		//	iptoa( h->m_ip), h->m_dir  );
-		fprintf(stderr,"nohup ssh %s '",iptoa(h->m_ip));
-		fprintf(stderr,"rcp -r ");
-		fprintf(stderr,"%s:%scoll.%s.%" PRId32" ",
-			iptoa(h2->m_ip), h2->m_dir , coll, collnum );
-		fprintf(stderr,"%s' &\n", h->m_dir  );
-		//fprintf(stderr," rcp -p %s*.map* ", h->m_dir );
-		//fprintf(stderr," rcp -r %scoll.* ", h->m_dir );
-		//fprintf(stderr,"%s:%s " ,iptoa(h2->m_ip), h2->m_dir );
-	}
-	return 1;
 }
 
 // generate the copies that need to be done to scale from oldhosts.conf
