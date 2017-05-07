@@ -115,14 +115,6 @@ bool Proxy::initProxy ( int32_t proxyId, uint16_t udpPort,
 	g_conf.m_autoSaveFrequency = 5;
 
 
-	// no, now proxies do too! for out of socket conditions in tcpserver
-	g_conf.m_sendEmailAlerts = true;
-
-	g_conf.m_sendEmailAlertsToEmail1 = true;
-	strcpy ( g_conf.m_email1Addr , "search-engine@example.com");
-	strcpy ( g_conf.m_email1From , "sysadmin@example.com");
-	strcpy ( g_conf.m_email1MX   , "");
-
 	//Also have to init pages because we need to know which requests to
 	//forward. html/gif's, etc can be taken care here itself.
 	g_pages.init ( );

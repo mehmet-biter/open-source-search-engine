@@ -21,8 +21,6 @@
 
 #define MAX_DNSIPS            16
 #define MAX_RNSIPS            13
-#define MAX_MX_LEN            128
-#define MAX_EMAIL_LEN         64
 
 //Publicly accessible and generallyy HA / reachable DNS servers. Use Google's servers - works reasonably well
 #define PUBLICLY_AVAILABLE_DNS1 "8.8.8.8"
@@ -79,8 +77,6 @@ class Conf {
 	bool m_logToFile;
 
 	char m_defaultColl[MAX_COLL_LEN + 1];
-
-	char m_clusterName[32];
 
 	// . dns parameters
 	// . dnsDir should hold our saved cached (TODO: save the dns cache)
@@ -235,36 +231,6 @@ class Conf {
 	int32_t m_numFlagRankAdjustments;
 	int m_flagRankAdjustment[26];
 	
-	// send emails when a host goes down?
-	bool   m_sendEmailAlerts;
-	//should we delay when only 1 host goes down out of twins till 9 30 am?
-	bool   m_delayNonCriticalEmailAlerts;
-
-	bool   m_sendEmailAlertsToEmail1;
-	char   m_email1MX[MAX_MX_LEN]; 
-	char   m_email1Addr[MAX_EMAIL_LEN];
-	char   m_email1From[MAX_EMAIL_LEN];
-
-	bool   m_sendEmailAlertsToEmail2;
-	char   m_email2MX[MAX_MX_LEN];
-	char   m_email2Addr[MAX_EMAIL_LEN];
-	char   m_email2From[MAX_EMAIL_LEN];
-
-	bool   m_sendEmailAlertsToEmail3;
-	char   m_email3MX[MAX_MX_LEN];
-	char   m_email3Addr[MAX_EMAIL_LEN];
-	char   m_email3From[MAX_EMAIL_LEN];
-
-	bool   m_sendEmailAlertsToEmail4;
-	char   m_email4MX[MAX_MX_LEN];
-	char   m_email4Addr[MAX_EMAIL_LEN];
-	char   m_email4From[MAX_EMAIL_LEN];
-
-	bool   m_sendParmChangeAlertsToEmail1;
-	bool   m_sendParmChangeAlertsToEmail2;
-	bool   m_sendParmChangeAlertsToEmail3;
-	bool   m_sendParmChangeAlertsToEmail4;
-
 	int32_t m_maxCorruptLists;
 
 	int32_t m_defaultQueryResultsValidityTime; //in seconds

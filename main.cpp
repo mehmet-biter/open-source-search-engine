@@ -1221,7 +1221,6 @@ int main2 ( int argc , char *argv[] ) {
 	// put in read only mode
 	if ( useTmpCluster ) {
 		g_conf.m_readOnlyMode = true;
-		g_conf.m_sendEmailAlerts = false;
 	}
 
 	// log how much mem we can use

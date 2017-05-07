@@ -47,7 +47,6 @@ Conf::Conf ( ) {
 	m_runAsDaemon = false;
 	m_logToFile = false;
 	memset(m_defaultColl, 0, sizeof(m_defaultColl));
-	memset(m_clusterName, 0, sizeof(m_clusterName));
 	m_numDns = 0;
 	memset(m_dnsIps, 0, sizeof(m_dnsIps));
 	memset(m_dnsPorts, 0, sizeof(m_dnsPorts));
@@ -140,28 +139,6 @@ Conf::Conf ( ) {
 		m_flagScoreMultiplier[i] = 1.0;
 		m_flagRankAdjustment[i] = 0;
 	}
-	m_sendEmailAlerts = false;
-	m_delayNonCriticalEmailAlerts = false;
-	m_sendEmailAlertsToEmail1 = false;
-	memset(m_email1MX, 0, sizeof(m_email1MX));
-	memset(m_email1Addr, 0, sizeof(m_email1Addr));
-	memset(m_email1From, 0, sizeof(m_email1From));
-	m_sendEmailAlertsToEmail2 = false;
-	memset(m_email2MX, 0, sizeof(m_email2MX));
-	memset(m_email2Addr, 0, sizeof(m_email2Addr));
-	memset(m_email2From, 0, sizeof(m_email2From));
-	m_sendEmailAlertsToEmail3 = false;
-	memset(m_email3MX, 0, sizeof(m_email3MX));
-	memset(m_email3Addr, 0, sizeof(m_email3Addr));
-	memset(m_email3From, 0, sizeof(m_email3From));
-	m_sendEmailAlertsToEmail4 = false;
-	memset(m_email4MX, 0, sizeof(m_email4MX));
-	memset(m_email4Addr, 0, sizeof(m_email4Addr));
-	memset(m_email4From, 0, sizeof(m_email4From));
-	m_sendParmChangeAlertsToEmail1 = false;
-	m_sendParmChangeAlertsToEmail2 = false;
-	m_sendParmChangeAlertsToEmail3 = false;
-	m_sendParmChangeAlertsToEmail4 = false;
 	m_maxCorruptLists = 0;
 	m_defaultQueryResultsValidityTime = 0;
 	m_useCollectionPasswords = false;
