@@ -809,10 +809,6 @@ createFile:
 	} else {
 		m_numHostsAlive = 1;
 	}
-	// sometimes g_conf is not loaded, so fake it
-	int32_t deadHostTimeout = g_conf.m_deadHostTimeout;
-	// make sure it is bigger than anything
-	if ( deadHostTimeout == 0 ) deadHostTimeout = 0x7fffffff;
 	// reset ping/stdDev times
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
 		m_hosts[i].m_preferEth      = 0;

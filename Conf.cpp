@@ -86,10 +86,6 @@ Conf::Conf ( ) {
 	m_maxIOThreads = 0;
 	m_maxExternalThreads = 0;
 	m_maxJobCleanupTime = 0;
-	m_deadHostTimeout = 0;
-	m_sendEmailTimeout = 0;
-	m_pingSpacer = 100;
-	m_maxOutstandingPings = 5;
 	m_vagusClusterId[0] = '\0';
 	m_vagusPort = 8720;
 	m_vagusKeepaliveSendInterval = 500;

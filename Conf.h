@@ -155,11 +155,6 @@ class Conf {
 
 	int32_t  m_maxJobCleanupTime;
 
-	int32_t  m_deadHostTimeout;
-	int32_t  m_sendEmailTimeout;
-	int32_t  m_pingSpacer;
-	int32_t  m_maxOutstandingPings;
-
 	char    m_vagusClusterId[128];
 	int32_t m_vagusPort;
 	int32_t m_vagusKeepaliveSendInterval; //milliseconds
