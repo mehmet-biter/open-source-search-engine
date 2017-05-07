@@ -115,7 +115,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	// . TODO: redirect client to a better http server to save bandwidth
 	State2 *st ;
 	try { st = new (State2); }
-	catch (... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log("PageGet: new(%i): %s", 
 		    (int)sizeof(State2),mstrerror(g_errno));

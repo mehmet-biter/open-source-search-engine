@@ -287,7 +287,7 @@ bool sendPageInject ( TcpSocket *sock , HttpRequest *hr ) {
 	// make a new state
 	Msg7 *msg7;
 	try { msg7= new (Msg7); }
-	catch ( ... ) { 
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log(LOG_WARN, "PageInject: new(%i): %s", (int)sizeof(Msg7),mstrerror(g_errno));
 		return g_httpServer.sendErrorReply(sock,500,mstrerror(g_errno));
@@ -545,7 +545,7 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 
 	XmlDoc *xd;
 	try { xd = new (XmlDoc); }
-	catch ( ... ) { 
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log(LOG_WARN, "PageInject: import failed: new(%i): %s", (int)sizeof(XmlDoc),mstrerror(g_errno));
 		g_udpServer.sendErrorReply(slot,g_errno);
@@ -767,7 +767,7 @@ bool resumeImports ( ) {
 		// injections
 		ImportState *is;
 		try { is = new (ImportState); }
-		catch ( ... ) { 
+		catch(std::bad_alloc&) {
 			g_errno = ENOMEM;
 			log(LOG_WARN, "PageInject: new(%" PRId32"): %s", (int32_t)sizeof(ImportState),mstrerror(g_errno));
 			return false;

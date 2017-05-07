@@ -411,7 +411,7 @@ static void handleRequest20(UdpSlot *slot, int32_t netnice) {
 	Msg20State *state;
 	try {
 		state = new Msg20State(slot,req);
-	} catch(...) {
+	} catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log("query: msg20 new(%" PRId32"): %s", (int32_t)sizeof(XmlDoc),
 		    mstrerror(g_errno));

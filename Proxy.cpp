@@ -286,7 +286,7 @@ bool Proxy::handleRequest (TcpSocket *s){
 	StateControl *stC;
 	try { stC = new (StateControl) ; }
 	// return true and set g_errno if couldn't make a new File class
-	catch ( ... ) { 
+	catch(std::bad_alloc&) {
 	  goto hadError2;
 	}
 	mnew ( stC, sizeof(StateControl), "Proxy");

@@ -5566,7 +5566,7 @@ XmlDoc **XmlDoc::getOldXmlDoc ( ) {
 	// . make a new one
 	// . this will uncompress it and set ourselves!
 	try { m_oldDoc = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		return NULL;
 	}
@@ -5676,7 +5676,7 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 	// . make a new one
 	// . this will uncompress it and set ourselves!
 	try { m_extraDoc = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		logTrace( g_conf.m_logTraceXmlDoc, "END - out of memory" );
 		return NULL;
@@ -5844,7 +5844,7 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	// . make a new one
 	// . this will uncompress it and set ourselves!
 	try { m_rootDoc = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		return NULL;
 	}
@@ -11746,7 +11746,7 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 	// . do not keep on stack since so huge!
 	XmlDoc *doc ;
 	try { doc = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		return false;
 	}

@@ -2309,7 +2309,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 	// make this
 	XmlDoc *xd;
 	try { xd = new (XmlDoc); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		fprintf(stdout,"could not alloc for xmldoc\n");
 		exit(-1);
 	}

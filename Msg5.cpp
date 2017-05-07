@@ -1322,7 +1322,7 @@ bool Msg5::getRemoteList ( ) {
 	// make a new Msg0 for getting remote list
 	try { m_msg0 = new ( Msg0 ); }
 	// g_errno should be set if this is NULL
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log("net: Could not allocate memory to get from twin.");
 		return true;

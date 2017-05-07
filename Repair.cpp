@@ -1190,7 +1190,7 @@ bool Repair::injectTitleRec ( ) {
 
 	XmlDoc *xd = NULL;
 	try { xd = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
                 g_errno = ENOMEM;
 		m_recsetErrors++;
 		m_stage = STAGE_TITLEDB_0; // 0

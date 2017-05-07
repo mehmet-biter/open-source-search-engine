@@ -385,7 +385,7 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	// make a new one
 	RdbBase *newColl = NULL;
 	try {newColl= new(RdbBase);}
-	catch(...){
+	catch(std::bad_alloc&){
 		g_errno = ENOMEM;
 		log(LOG_WARN, "db: %s: Failed to allocate %" PRId32" bytes for collection \"%s\".",
 		    m_dbname,(int32_t)sizeof(Rdb),coll);

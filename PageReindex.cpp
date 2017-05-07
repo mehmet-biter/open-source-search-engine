@@ -34,7 +34,7 @@ bool sendPageReindex ( TcpSocket *s , HttpRequest *r ) {
 	// make a state
 	State13 *st ;
 	try { st = new (State13); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log("PageTagdb: new(%i): %s", 
 		    (int)sizeof(State13),mstrerror(g_errno));

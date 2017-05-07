@@ -350,7 +350,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	// make the state now
 	State22 *st ;
 	try { st = new (State22); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log(LOG_WARN, "query: Msg22: new(%" PRId32"): %s", (int32_t)sizeof(State22),
 		mstrerror(g_errno));

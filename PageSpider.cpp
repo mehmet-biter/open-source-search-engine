@@ -52,7 +52,7 @@ bool sendPageSpiderdb ( TcpSocket *s , HttpRequest *r ) {
 	// set up a msg5 and RdbLists to get the urls from spider queue
 	State11 *st ;
 	try { st = new (State11); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log("PageSpiderdb: new(%i): %s",
 		    (int)sizeof(State11),mstrerror(g_errno));

@@ -1266,7 +1266,7 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	// make a new state
 	State1i *st1 ;
 	try { st1 = new (State1i); }
-	catch ( ... ) { 
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log("PageAddUrl: new(%i): %s", 
 		    (int)sizeof(State1i),mstrerror(g_errno));

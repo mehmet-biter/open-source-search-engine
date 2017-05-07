@@ -426,7 +426,7 @@ bool Msg40::federatedLoop ( ) {
 		// stop if only searching one collection
 		if ( ! mp ) {
 			try { mp = new ( Msg3a); }
-			catch ( ... ) {
+			catch(std::bad_alloc&) {
 				g_errno = ENOMEM;
 				return true;
 			}
