@@ -133,11 +133,11 @@ bool Posdb::init ( ) {
 	                    getFixedDataSize(),
 	                    // -1 means look in CollectionRec::m_posdbMinFilesToMerge
 	                    -1,
-	                    g_conf.m_posdbMaxTreeMem, // g_conf.m_posdbMaxTreeMem  ,
+	                    g_conf.m_posdbMaxTreeMem,
 	                    maxTreeNodes                ,
 	                    getUseHalfKeys(),
 			            getKeySize(),
-			            g_conf.m_noInMemoryPosdbMerge);
+			            true);
 }
 
 // init the rebuild/secondary rdb, used by PageRepair.cpp
@@ -161,7 +161,7 @@ bool Posdb::init2 ( int32_t treeMem ) {
 	                  maxTreeNodes,
 	                  getUseHalfKeys(),
 	                  getKeySize(),
-	                  g_conf.m_noInMemoryPosdbMerge);
+	                  true); //useIndex
 }
 
 // . see Posdb.h for format of the 12 byte key
@@ -284,6 +284,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 
 	// . check cache for super speed
 	// . colnum is 0 for now
+	RdbCacheLock rcl(g_termFreqCache); //todo: we should really release the lock while scanning the posdb-freq
 	int64_t val = g_termFreqCache.getLongLong2 ( collnum ,
 						       termId  , // key
 						       500   , // maxage secs

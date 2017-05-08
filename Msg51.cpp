@@ -10,6 +10,7 @@
 #include "HashTableT.h"
 #include "HashTableX.h"
 #include "RdbCache.h"
+#include "ScopedLock.h"
 #include "Sanity.h"
 #include "Titledb.h"
 #include "Collectiondb.h"
@@ -18,6 +19,7 @@
 // how many Msg0 requests can we launch at the same time?
 #define MSG51_MAX_REQUESTS 60
 
+static const int signature_init = 0xe1d3c5b7;
 
 // . these must be 1-1 with the enums above
 // . used for titling the counts of g_stats.m_filterStats[]
@@ -49,11 +51,16 @@ static bool     s_cacheInit = false;
 
 Msg51::Msg51() : m_slot(NULL), m_numSlots(0)
 {
+	m_clusterRecs     = NULL;
+	m_clusterLevels   = NULL;
+	pthread_mutex_init(&m_mtx,NULL);
+	set_signature();
 	reset();
 }
 
 Msg51::~Msg51 ( ) {
 	reset();
+	clear_signature();
 }
 
 void Msg51::reset ( ) {
@@ -71,7 +78,6 @@ void Msg51::reset ( ) {
 	m_callback = NULL;
 	m_state = NULL;
 	m_nexti = 0;
-	m_firsti = 0;
 	m_numRequests = 0;
 	m_numReplies = 0;
 	m_errno = 0;
@@ -96,7 +102,9 @@ bool Msg51::getClusterRecs ( const int64_t     *docIds,
 			     void        (* callback)( void *state ) ,
 			     int32_t           niceness                 ,
 			     // output
-			     bool           isDebug                  ) {
+			     bool           isDebug                  )
+{
+	verify_signature();
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: NULL collection. msg51.");
 
@@ -151,24 +159,32 @@ bool Msg51::getClusterRecs ( const int64_t     *docIds,
 	return sendRequests ( -1 );
 }
 
+
+bool Msg51::sendRequests(int32_t k) {
+	verify_signature();
+	ScopedLock sl(m_mtx);
+	return sendRequests_unlocked(k);
+}
+
 // . returns false if blocked, true otherwise
 // . sets g_errno on error (and m_errno)
 // . k is a hint of which msg0 to use
 // . if k is -1 we do a complete scan to find available m_msg0[x]
-bool Msg51::sendRequests ( int32_t k ) {
+bool Msg51::sendRequests_unlocked(int32_t k) {
+	verify_signature();
 
+	bool anyAsyncRequests = false;
  sendLoop:
 
-	// bail if none left, return false if still waiting
+	// bail if no slots available
 	if ( m_numRequests - m_numReplies >= m_numSlots ) return false;
 
-	bool isDone = false;
-	if ( m_nexti >= m_numDocIds ) isDone = true;
-
 	// any requests left to send?
-	if ( isDone ) {
-		// we are still waiting on replies, so we blocked...
-		if ( m_numRequests > m_numReplies ) return false;
+	if ( m_nexti >= m_numDocIds ) {
+		if ( anyAsyncRequests ) //we started an async request
+			return false;
+		if ( m_numRequests > m_numReplies ) //still waiting for replies
+			return false;
 		// we are done!
 		return true;
 	}
@@ -194,9 +210,9 @@ bool Msg51::sendRequests ( int32_t k ) {
 	int32_t      crecSize;
 	char     *crecPtr = NULL;
 	key96_t     ckey = (key96_t)m_docIds[m_nexti];
-	bool found = false;
-	if ( c )
-		found = c->getRecord ( m_collnum    ,
+	if ( c ) {
+		RdbCacheLock rcl(*c);
+		bool found = c->getRecord ( m_collnum    ,
 				       ckey      , // cache key
 				       &crecPtr  , // pointer to it
 				       &crecSize ,
@@ -204,17 +220,18 @@ bool Msg51::sendRequests ( int32_t k ) {
 				       3600      , // max age in secs
 				       true      , // inc counts?
 				       NULL      );// cachedTime
-	if ( found ) {
-		// sanity check
-		if ( crecSize != sizeof(key96_t) ) gbshutdownLogicError();
-		m_clusterRecs[m_nexti] = *(key96_t *)crecPtr;
-		// it is no longer CR_UNINIT, we got the rec now
-		m_clusterLevels[m_nexti] = CR_GOT_REC;
-		// debug msg
-		//logf(LOG_DEBUG,"query: msg51 getRec k.n0=%" PRIu64" rec.n0=%" PRIu64,
-		//     ckey.n0,m_clusterRecs[m_nexti].n0);
-		m_nexti++;
-		goto sendLoop;
+		if ( found ) {
+			// sanity check
+			if ( crecSize != sizeof(key96_t) ) gbshutdownLogicError();
+			m_clusterRecs[m_nexti] = *(key96_t *)crecPtr;
+			// it is no longer CR_UNINIT, we got the rec now
+			m_clusterLevels[m_nexti] = CR_GOT_REC;
+			// debug msg
+			//logf(LOG_DEBUG,"query: msg51 getRec k.n0=%" PRIu64" rec.n0=%" PRIu64,
+			//     ckey.n0,m_clusterRecs[m_nexti].n0);
+			m_nexti++;
+			goto sendLoop;
+		}
 	}
 
 	// . do not hog all the udpserver's slots!
@@ -244,7 +261,8 @@ bool Msg51::sendRequests ( int32_t k ) {
 	if ( slot >= m_numSlots ) gbshutdownLogicError();
 
 	// send it, returns false if blocked, true otherwise
-	sendRequest ( slot );
+	if( !sendRequest(slot) )
+		anyAsyncRequests = true;
 
 	// update any hint to make our loop more efficient
 	if ( k >= 0 ) k++;
@@ -337,13 +355,17 @@ bool Msg51::sendRequest ( int32_t    i ) {
 void Msg51::gotClusterRecWrapper51(void *state) {
 	Slot *slot = static_cast<Slot*>(state);
 	Msg51 *THIS = slot->m_msg51;
-	// process it
-	THIS->gotClusterRec(slot);
-	// get slot number for re-send on this slot
-	int32_t    k = (int32_t)(slot-THIS->m_slot);
-	// . if not all done, launch the next one
-	// . this returns false if blocks, true otherwise
-	if ( ! THIS->sendRequests ( k ) ) return;
+	verify_signature_at(THIS->signature);
+	{
+		ScopedLock sl(THIS->m_mtx);
+		// process it
+		THIS->gotClusterRec(slot);
+		// get slot number for re-send on this slot
+		int32_t    k = (int32_t)(slot-THIS->m_slot);
+		// . if not all done, launch the next one
+		// . this returns false if blocks, true otherwise
+		if ( ! THIS->sendRequests_unlocked(k) ) return;
+	}
 	// we don't need to go on if we're not doing deduping
 	THIS->m_callback ( THIS->m_state );
 	return;
@@ -351,6 +373,7 @@ void Msg51::gotClusterRecWrapper51(void *state) {
 
 // . sets m_errno to g_errno if not already set
 void Msg51::gotClusterRec(Slot *slot) {
+	verify_signature();
 
 	// count it
 	m_numReplies++;
@@ -408,28 +431,23 @@ void Msg51::gotClusterRec(Slot *slot) {
 	// it is legit, set to CR_OK
 	m_clusterLevels[ci] = CR_OK;
 
+	RdbCacheLock rcl(s_clusterdbQuickCache);
 	// . init the quick cache
-	// . use 100k
-	if ( ! s_cacheInit && 
-	     s_clusterdbQuickCache.init(200*1024      ,  // maxMem
-					sizeof(key96_t) ,  // fixedDataSize (clusterdb rec)
-					false         ,  // support lists
-					10000         ,  // max recs
-					false         ,  // use half keys?
-					"clusterdbQuickCache" ,
-					false         ,  // load from disk?
-					sizeof(key96_t) ,  // cache key size
-					sizeof(key96_t) )) // cache key size
+	if(!s_cacheInit &&
+		s_clusterdbQuickCache.init(200*1024,         // maxMem
+					   sizeof(key96_t),  // fixedDataSize (clusterdb rec)
+					   false,            // support lists
+					   10000,            // max recs
+					   false,            // use half keys?
+					   "clusterdbQuickCache" ,
+					   false,            // load from disk?
+					   sizeof(key96_t),  // cache key size
+					   sizeof(key96_t))) // cache data size
 		// only init once if successful
 		s_cacheInit = true;
-
-	// debug msg
-	//logf(LOG_DEBUG,"query: msg51 addRec k.n0=%" PRIu64" rec.n0=%" PRIu64,docId,
-	//     rec->n0);
-
 	// . add the record to our quick cache as a int64_t
 	// . ignore any error
-	if ( s_cacheInit )
+	if(s_cacheInit)
 		s_clusterdbQuickCache.addRecord(m_collnum,
 						(key96_t)docId, // docid is key
 						(char *)rec,

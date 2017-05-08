@@ -12,7 +12,7 @@
 #include "Mem.h"
 #include <new>
 
-
+static const int signature_init = 0x1f2b3a4c;
 int32_t g_numIOErrors = 0;
 
 
@@ -29,8 +29,14 @@ Msg3::Scan::Scan()
 
 
 
-Msg3::Msg3() : m_scan(NULL), m_numScansStarted(0), m_numScansCompleted(0)
+Msg3::Msg3()
+  : m_scan(NULL),
+    m_numScansStarted(0),
+    m_numScansCompleted(0),
+    m_scansBeingSubmitted(false)
 {
+//	log(LOG_TRACE,"Msg3(%p)::Msg3()",this);
+	set_signature();
 	memset(m_constrainKey, 0, sizeof(m_constrainKey));
 	memset(m_startKey, 0, sizeof(m_startKey));
 	memset(m_endKey, 0, sizeof(m_endKey));
@@ -41,11 +47,16 @@ Msg3::Msg3() : m_scan(NULL), m_numScansStarted(0), m_numScansCompleted(0)
 
 
 Msg3::~Msg3() {
+	verify_signature();
+//	log(LOG_TRACE,"Msg3(%p)::~Msg3()",this);
 	reset();
+	clear_signature();
 }
 
 
 void Msg3::reset() {
+	verify_signature();
+//	log(LOG_TRACE,"Msg3(%p)::reset()",this);
 	if ( !areAllScansCompleted() ) { 
 		g_process.shutdownAbort(true); 
 	}
@@ -82,7 +93,28 @@ void Msg3::reset() {
 	m_hadCorruption = false;
 	m_state = NULL;
 	m_callback = NULL;
+	verify_signature();
 }
+
+
+void Msg3::incrementScansStarted() {
+	ScopedLock sl(m_mtxScanCounters);
+	m_numScansStarted++;
+	if(m_numScansCompleted>=m_numScansStarted) gbshutdownLogicError();
+}
+
+bool Msg3::incrementScansCompleted() {
+	ScopedLock sl(m_mtxScanCounters);
+	m_numScansCompleted++;
+	if(m_numScansCompleted>m_numScansStarted) gbshutdownLogicError();
+	return m_numScansCompleted==m_numScansStarted && !m_scansBeingSubmitted;
+}
+
+bool Msg3::areAllScansCompleted() const {
+	ScopedLock sl(const_cast<GbMutex&>(m_mtxScanCounters));
+	return (!m_scansBeingSubmitted) && (m_numScansCompleted==m_numScansStarted);
+}
+
 
 static key192_t makeCacheKey(int64_t vfd,
 			     int64_t offset,
@@ -103,39 +135,40 @@ class RdbCache *getDiskPageCache ( rdbid_t rdbId ) {
 	int64_t maxMem;
 	int64_t maxRecs;
 	const char *dbname;
-	if ( rdbId == RDB_POSDB ) {
-		rpc = &g_rdbCaches[0];
-		maxMem = g_conf.m_posdbFileCacheSize;
-		maxRecs = maxMem / 5000;
-		dbname = "posdbcache";
+	switch(rdbId) {
+		case RDB_POSDB:
+			rpc = &g_rdbCaches[0];
+			maxMem = g_conf.m_posdbFileCacheSize;
+			maxRecs = maxMem / 5000;
+			dbname = "posdbcache";
+			break;
+		case RDB_TAGDB:
+			rpc = &g_rdbCaches[1];
+			maxMem = g_conf.m_tagdbFileCacheSize;
+			maxRecs = maxMem / 200;
+			dbname = "tagdbcache";
+			break;
+		case RDB_CLUSTERDB:
+			rpc = &g_rdbCaches[2];
+			maxMem = g_conf.m_clusterdbFileCacheSize;
+			maxRecs = maxMem / 32;
+			dbname = "clustcache";
+			break;
+		case RDB_TITLEDB:
+			rpc = &g_rdbCaches[3];
+			maxMem = g_conf.m_titledbFileCacheSize;
+			maxRecs = maxMem / 3000;
+			dbname = "titdbcache";
+			break;
+		case RDB_SPIDERDB:
+			rpc = &g_rdbCaches[4];
+			maxMem = g_conf.m_spiderdbFileCacheSize;
+			maxRecs = maxMem / 3000;
+			dbname = "spdbcache";
+			break;
+		default:
+			return NULL;
 	}
-	if ( rdbId == RDB_TAGDB ) {
-		rpc = &g_rdbCaches[1];
-		maxMem = g_conf.m_tagdbFileCacheSize;
-		maxRecs = maxMem / 200;
-		dbname = "tagdbcache";
-	}
-	if ( rdbId == RDB_CLUSTERDB ) {
-		rpc = &g_rdbCaches[2];
-		maxMem = g_conf.m_clusterdbFileCacheSize;
-		maxRecs = maxMem / 32;
-		dbname = "clustcache";
-	}
-	if ( rdbId == RDB_TITLEDB ) {
-		rpc = &g_rdbCaches[3];
-		maxMem = g_conf.m_titledbFileCacheSize;
-		maxRecs = maxMem / 3000;
-		dbname = "titdbcache";
-	}
-	if ( rdbId == RDB_SPIDERDB ) {
-		rpc = &g_rdbCaches[4];
-		maxMem = g_conf.m_spiderdbFileCacheSize;
-		maxRecs = maxMem / 3000;
-		dbname = "spdbcache";
-	}
-
-	if ( ! rpc )
-		return NULL;
 
 	if ( maxMem < 0 ) maxMem = 0;
 
@@ -196,6 +229,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		       int32_t           retryNum      ,
 		       int32_t           maxRetries    ,
 		       bool           justGetEndKey) {
+	verify_signature();
 
 	// reset m_alloc and data in all lists in case we are a re-call
 	reset();
@@ -328,6 +362,8 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	// . but not if only reading one list, cuz it won't get merged and
 	//   it will be too big to send back
 	if ( m_numFileNums > 1 ) compensateForNegativeRecs ( base );
+	verify_signature();
+
 	// . often endKey is too big for an efficient read of minRecSizes bytes
 	//   because we end up reading too much from all the files
 	// . this will set m_startpg[i], m_endpg[i] for each RdbScan/RdbFile
@@ -351,6 +387,10 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	if ( justGetEndKey ) return true;
 
 	Rdb *rdb = getRdbFromId(m_rdbId);
+	{
+		ScopedLock sl(m_mtxScanCounters);
+		m_scansBeingSubmitted = true;
+	}
 
 	// debug msg
 	//log("msg3 getting list (msg5=%" PRIu32")",m_state);
@@ -408,8 +448,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		//if ( minRecSizes == 2000000 ) 
 		//log("Msg3:: reading %" PRId32" bytes from file #%" PRId32,bytesToRead,i);
 		//#endif
-		// inc our m_numScans
-		m_numScansStarted++;
+		incrementScansStarted();
 		// . keep stats on our disk accesses
 		// . count disk seeks (assuming no fragmentation)
 		// . count disk bytes read
@@ -517,7 +556,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 				     base->getDbName(),fn,
 				     (int32_t)m_minRecSizes,
 				     (int32_t)ccount);
-				m_numScansCompleted++;
+				incrementScansCompleted();
 				m_errno = ECORRUPTDATA;
 				m_hadCorruption = true;
 				//m_maxRetries = 0;
@@ -530,41 +569,45 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// try to get from PAGE CACHE
 		//
 		////////
+		m_scan[i].m_inPageCache = false;
 		BigFile *ff = base->getFile(m_scan[i].m_fileNum);
 		RdbCache *rpc = getDiskPageCache ( m_rdbId );
-		// . vfd is unique 64 bit file id
-		// . if file is opened vfd is -1, only set in call to open()
-		int64_t vfd = ff->getVfd();
-		key192_t ck = makeCacheKey ( vfd , offset, bytesToRead);
-		char *rec; int32_t recSize;
-		bool inCache = false;
-		if ( rpc && vfd != -1 && ! m_validateCache ) 
-			inCache = rpc->getRecord ( (collnum_t)0 , // collnum
-						   (char *)&ck , 
-						   &rec , 
-						   &recSize ,
-						   true , // copy?
-						   -1 , // maxAge, none 
-						   true ); // inccounts?
-		m_scan[i].m_inPageCache = false;
-		if ( inCache ) {
-			m_scan[i].m_inPageCache = true;
-			m_numScansCompleted++;
-			// now we have to store this value, 6 or 12 so
-			// we can modify the hint appropriately
-			m_scan[i].m_shiftCount = *rec;
-			m_scan[i].m_list.set ( rec +1,
-					 recSize-1 ,
-					 rec , // alloc
-					 recSize , // allocSize
-					 startKey2 ,
-					 endKey2 ,
-					 base->getFixedDataSize() ,
-					 true , // owndata
-					 base->useHalfKeys() ,
-					 getKeySizeFromRdbId ( m_rdbId ) );
-			continue;
+		if(rpc) {
+			// . vfd is unique 64 bit file id
+			// . if file is opened vfd is -1, only set in call to open()
+			int64_t vfd = ff->getVfd();
+			key192_t ck = makeCacheKey ( vfd , offset, bytesToRead);
+			char *rec; int32_t recSize;
+			bool inCache = false;
+			RdbCacheLock rcl(*rpc);
+			if ( vfd != -1 && ! m_validateCache ) 
+				inCache = rpc->getRecord ( (collnum_t)0 , // collnum
+							(char *)&ck , 
+							&rec , 
+							&recSize ,
+							true , // copy?
+							-1 , // maxAge, none 
+							true ); // inccounts?
+			if ( inCache ) {
+				m_scan[i].m_inPageCache = true;
+				incrementScansCompleted();
+				// now we have to store this value, 6 or 12 so
+				// we can modify the hint appropriately
+				m_scan[i].m_shiftCount = *rec;
+				m_scan[i].m_list.set ( rec +1,
+						recSize-1 ,
+						rec , // alloc
+						recSize , // allocSize
+						startKey2 ,
+						endKey2 ,
+						base->getFixedDataSize() ,
+						true , // owndata
+						base->useHalfKeys() ,
+						getKeySizeFromRdbId ( m_rdbId ) );
+				continue;
+			}
 		}
+		
 
 		// . do the scan/read of file #i
 		// . this returns false if blocked, true otherwise
@@ -572,10 +615,10 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		bool done = m_scan[i].m_scan.setRead( base->getFile(m_scan[i].m_fileNum), base->getFixedDataSize(), offset, bytesToRead,
 		                                      startKey2, endKey2, m_ks, &m_scan[i].m_list,
 		                                      callback ? this : NULL,
-		                                      callback ? &doneScanningWrapper : NULL,
+		                                      callback ? &doneScanningWrapper0 : NULL,
 		                                      base->useHalfKeys(), m_rdbId, m_niceness, true);
 
-		// debug msg
+						// debug msg
 		//fprintf(stderr,"Msg3:: reading %" PRId32" bytes from file #%" PRId32","
 		//	"done=%" PRId32",offset=%" PRId64",g_errno=%s,"
 		//	"startKey=n1=%" PRIu32",n0=%" PRIu64",  "
@@ -585,9 +628,8 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		//if ( bytesToRead == 0 )
 		//	fprintf(stderr,"shit\n");
 		// if it did not block then it completed, so count it
-		if ( done ) {
-			m_numScansCompleted++;
-		}
+		if ( done )
+			incrementScansCompleted();
 
 		// break on an error, and remember g_errno in case we block
 		if ( g_errno ) {
@@ -602,24 +644,37 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	// debug test
 	//if ( rand() % 100 <= 10 ) m_errno = EIO;
 
-	// if we blocked, return false
-	if ( !areAllScansCompleted() ) return false;
+	{
+		ScopedLock sl(m_mtxScanCounters);
+		m_scansBeingSubmitted = false;
+		
+		if(m_numScansStarted!=m_numScansCompleted)
+			return false; //not completed yet
+	}
+
 	// . if all scans completed without blocking then wrap it up & ret true
 	// . doneScanning may now block if it finds data corruption and must
 	//   get the list remotely
+	verify_signature();
 	return doneScanning();
 }
 
-void Msg3::doneScanningWrapper(void *state) {
-	Msg3 *THIS = (Msg3 *) state;
 
-	// inc the scan count
-	THIS->m_numScansCompleted++;
+void Msg3::doneScanningWrapper0(void *state) {
+	Msg3 *THIS = (Msg3 *) state;
+	THIS->doneScanningWrapper();
+}
+
+void Msg3::doneScanningWrapper() {
+	verify_signature();
+//	log(LOG_TRACE,"Msg3(%p)::doneScqanningWrapper()",THIS);
+
+	bool done = incrementScansCompleted();
 
 	// if we had an error, remember it
 	if ( g_errno ) {
 		// get base, returns NULL and sets g_errno to ENOCOLLREC on err
-		RdbBase *base = getRdbBase( THIS->m_rdbId, THIS->m_collnum );
+		RdbBase *base = getRdbBase( m_rdbId, m_collnum );
 		const char *dbname = "NOT FOUND";
 		if ( base ) {
 			dbname = base->getDbName();
@@ -630,35 +685,37 @@ void Msg3::doneScanningWrapper(void *state) {
 			tt = LOG_INFO;
 		}
 		log(tt,"net: Reading %s had error: %s.", dbname,mstrerror(g_errno));
-		THIS->m_errno = g_errno; 
+		m_errno = g_errno;
 		g_errno = 0; 
 	}
 
 	// return now if we're awaiting more scan completions
-	if ( !THIS->areAllScansCompleted() ) {
+	if ( !done ) {
 		return;
 	}
 
 	// . give control to doneScanning
 	// . return if it blocks
-	if ( ! THIS->doneScanning() ) {
+	if ( !doneScanning() ) {
 		return;
 	}
 
 	// if one of our lists was *huge* and could not alloc mem, it was
 	// due to corruption
-	if ( THIS->m_hadCorruption ) {
+	if ( m_hadCorruption ) {
 		g_errno = ECORRUPTDATA;
 	}
 
 	// if it doesn't block call the callback, g_errno may be set
-	THIS->m_callback ( THIS->m_state );
+	verify_signature();
+	m_callback ( m_state );
 }
 
 
 // . but now that we may get a list remotely to fix data corruption,
 //   this may indeed block
 bool Msg3::doneScanning ( ) {
+	verify_signature();
 	// . did we have any error on any scan?
 	// . if so, repeat ALL of the scans
 	g_errno = m_errno;
@@ -700,6 +757,7 @@ bool Msg3::doneScanning ( ) {
 		max = 0;
 	}
 
+	verify_signature();
 	// convert m_errno to ECORRUPTDATA if it is EBUFTOOSMALL and the
 	// max of the bytesToRead are over 500MB.
 	// if bytesToRead was ludicrous, then assume that the data file
@@ -761,6 +819,7 @@ bool Msg3::doneScanning ( ) {
 	}
 #endif
 
+	verify_signature();
 	// try to fix this error i've seen
 	if ( g_errno == EBADENGINEER && max == -1 )
 		max = 100;
@@ -827,6 +886,7 @@ bool Msg3::doneScanning ( ) {
 		return true;
 	}
 
+	verify_signature();
 	// if we got an error and should not retry any more then give up
 	if ( g_errno ) {
 		log(LOG_ERROR,
@@ -901,6 +961,7 @@ bool Msg3::doneScanning ( ) {
 		if ( m_validateCache && ff && rpc && vfd != -1 ) {
 			bool inCache;
 			char *rec; int32_t recSize;
+			RdbCacheLock rcl(*rpc);
 			inCache = rpc->getRecord ( (collnum_t)0 , // collnum
 						   (char *)&ck , 
 						   &rec , 
@@ -931,6 +992,7 @@ bool Msg3::doneScanning ( ) {
 		if ( m_retryNum<=0 && ff && rpc && vfd != -1 &&
 		     ! m_scan[i].m_inPageCache )
 		{
+			RdbCacheLock rcl(*rpc);
 			char tmpShiftCount = m_scan[i].m_scan.shiftCount();
 			rpc->addRecord ( (collnum_t)0 , // collnum
 					 (char *)&ck , 
@@ -960,19 +1022,25 @@ bool Msg3::doneScanning ( ) {
 		     " from %s (niceness=%" PRId32").",
 		     took,m_numFileNums,count,base->getDbName(),m_niceness);
 	}
-
+	verify_signature();
 	return true;
 }
 
 void Msg3::doneSleepingWrapper3 ( int fd , void *state ) {
 	Msg3 *THIS = (Msg3 *)state;
+	THIS->doneSleepingWrapper3();
+}
+
+void Msg3::doneSleepingWrapper3() {
+	verify_signature();
 	// now try reading again
-	if ( ! THIS->doneSleeping ( ) ) return;
+	if ( ! doneSleeping ( ) ) return;
 	// if it doesn't block call the callback, g_errno may be set
-	THIS->m_callback ( THIS->m_state );
+	m_callback ( m_state );
 }
 
 bool Msg3::doneSleeping ( ) {
+	verify_signature();
 	// unregister
 	g_loop.unregisterSleepCallback(this,doneSleepingWrapper3);
 	// read again
@@ -997,6 +1065,7 @@ bool Msg3::doneSleeping ( ) {
 // . this is the most confusing subroutine in the project
 // . this now OVERWRITES endKey with the new one
 void Msg3::setPageRanges(RdbBase *base) {
+	verify_signature();
 	// sanity check
 	//if ( m_ks != 12 && m_ks != 16 ) { g_process.shutdownAbort(true); }
 	// . initialize the startpg/endpg for each file
@@ -1119,6 +1188,7 @@ void Msg3::setPageRanges(RdbBase *base) {
 // . we now boost m_minRecSizes to account for negative recs in certain files
 // . TODO: use floats for averages, not ints
 void Msg3::compensateForNegativeRecs ( RdbBase *base ) {
+	verify_signature();
 	// add up counts from each map
 	int64_t totalNegatives = 0;
 	int64_t totalPositives = 0;

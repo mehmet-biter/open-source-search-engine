@@ -28,6 +28,9 @@ class RdbCache *getDiskPageCache ( rdbid_t rdbId ) ;
 
 #include "RdbList.h"
 #include "RdbScan.h"
+#include "GbSignature.h"
+#include "GbMutex.h"
+
 
 class Msg3 {
 
@@ -66,7 +69,7 @@ class Msg3 {
 	RdbList        *getList ( int32_t i )       { return &m_scan[i].m_list; }
 	const RdbList  *getList ( int32_t i ) const { return &m_scan[i].m_list; }
 	int32_t         getNumLists() const { return m_numScansCompleted; }
-	bool            areAllScansCompleted() const { return m_numScansCompleted==m_numScansStarted; }
+	bool            areAllScansCompleted() const;
 
 	bool isListChecked() const { return m_listsChecked; }
 	bool listHadCorruption() const { return m_hadCorruption; }
@@ -89,8 +92,12 @@ private:
 	// . sets page ranges for RdbScan (m_startpg[i], m_endpg[i])
 	void  setPageRanges(RdbBase *base);
 
-	static void doneScanningWrapper(void *state);
+	static void doneScanningWrapper0(void *state);
+	void doneScanningWrapper();
 	static void doneSleepingWrapper3(int fd, void *state);
+	void doneSleepingWrapper3();
+
+	declare_signature
 
 	// the rdb we're scanning for
 	rdbid_t  m_rdbId;
@@ -128,6 +135,10 @@ private:
 
 	int32_t      m_numScansStarted;
 	int32_t      m_numScansCompleted;
+	GbMutex      m_mtxScanCounters;
+	bool         m_scansBeingSubmitted;
+	void incrementScansStarted();
+	bool incrementScansCompleted();
 
 	
 	// key range to read

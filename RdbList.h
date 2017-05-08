@@ -5,6 +5,7 @@
 
 #include "Sanity.h"
 #include "types.h"
+#include "GbSignature.h"
 #include "rdbid_t.h"
 #include <stdint.h>
 
@@ -45,6 +46,7 @@
  */
 
 class RdbList {
+	declare_signature
 public:
 	RdbList();
 
@@ -76,6 +78,8 @@ public:
 	void set(const char *startKey, const char *endKey);
 
 	void setFromPtr(char *p, int32_t psize, rdbid_t rdbId);
+
+	void stealFromOtherList(RdbList *other_list);
 
 	// these operate on the whole list
 	char *getList() { return m_list; }

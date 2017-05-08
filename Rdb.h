@@ -208,9 +208,10 @@ public:
 	//   tree is not balanced
 	bool loadTree ( ) ;
 
-	// . write out tree to a file with keys in order
-	// . only shift.cpp/reindex.cpp programs set niceness to 0
-	bool dumpTree();
+	static bool initializeRdbDumpThread();
+	static void finalizeRdbDumpThread();
+
+	void submitRdbDumpJob(bool forceDump);
 
 	bool needsDump() const;
 
@@ -224,8 +225,6 @@ public:
 	// rebuilt files, pointed to by rdb2.
 	bool updateToRebuildFiles ( Rdb *rdb2 , char *coll ) ;
 
-	static void doneDumpingCollWrapper(void *state);
-
 private:
 	bool addRdbBase2 ( collnum_t collnum );
 	void addBase(collnum_t collnum, RdbBase *base);
@@ -233,13 +232,18 @@ private:
 	// returns false if no room in tree or m_mem for a list to add
 	bool hasRoom(RdbList *list);
 
+	static void dumpRdb(void *item);
+
 	bool getTreeCollExist(collnum_t collnum) const;
+
+	// . write out tree to a file with keys in order
+	bool dumpTree();
 
 	bool addList(collnum_t collnum, RdbList *list, bool checkForRoom);
 	// get the directory name where this rdb stores its files
 	const char *getDir() const { return g_hostdb.m_dir; }
 
-	bool dumpCollLoop ( ) ;
+	bool dumpColl(RdbBase *base);
 
 	// . called when we've dumped the tree to disk w/ keys ordered
 	void doneDumping ( );
@@ -303,11 +307,9 @@ private:
 	char m_treeAllocName[64]; //for memory used m_tree/m_buckets
 	char m_memAllocName[64]; //for memory used by m_mem
 
-	collnum_t m_dumpCollnum;
-
 	// set to true when dumping tree so RdbMem does not use the memory
 	// being dumped to hold newly added records
-	bool m_isDumping;
+	std::atomic<bool> m_isDumping;
 
 	rdbid_t m_rdbId;
 

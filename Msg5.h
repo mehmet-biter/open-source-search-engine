@@ -9,6 +9,7 @@
 #include "RdbList.h"
 #include "JobScheduler.h" //job_exit_t
 #include "rdbid_t.h"
+#include "GbSignature.h"
 
 
 extern int32_t g_numCorrupt;
@@ -100,6 +101,19 @@ class Msg5 {
 				 isRealMerge   ,
 				 allowPageCache ); }
 
+
+	bool getSingleUnmergedList(rdbid_t       rdbId,
+				   collnum_t     collnum,
+				   RdbList      *list,
+				   const void   *startKey,
+				   const void   *endKey,
+				   int32_t       recSizes, // requested scan size(-1 all)
+				   int32_t       maxCacheAge, // in secs for cache lookup
+				   int32_t       fileNum, // file to scan
+				   void         *state, // for callback
+				   void        (*callback)(void *state, RdbList *list, Msg5 *msg5),
+				   int32_t       niceness);
+
 	bool getTreeList(RdbList *result, rdbid_t rdbId, collnum_t collnum, const void *startKey, const void *endKey);
 	bool getTreeList(RdbList *result, const void *startKey, const void *endKey, int32_t *numPositiveRecs, 
 		int32_t *numNegativeRecs, int32_t *memUsedByTree, int32_t *numUsedNodes);
@@ -110,6 +124,8 @@ class Msg5 {
 	bool isWaitingForList() const { return m_waitingForList; }
 
 	int32_t minRecSizes() const { return m_minRecSizes; }
+
+	declare_signature
 
 	// we add our m_finalList(s) to this, the user's list
 	RdbList  *m_list;
@@ -205,6 +221,8 @@ private:
 	collnum_t m_collnum;
 
 	int32_t m_errno;
+
+	bool m_isSingleUnmergedListGet;
 
 	static void gotListWrapper0(void *state);
 	void gotListWrapper();

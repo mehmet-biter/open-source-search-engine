@@ -951,7 +951,7 @@ bool Repair::dumpLoop ( ) {
 	Rdb **rdbs = getSecondaryRdbs ( &nsr );
 	for ( int32_t i = 0 ; i < nsr ; i++ ) {
 		Rdb *rdb = rdbs[i];
-		rdb->dumpTree();
+		rdb->submitRdbDumpJob(true);
 	}
 	g_errno = 0;
 	// . register sleep wrapper to check when dumping is done
@@ -1190,7 +1190,7 @@ bool Repair::injectTitleRec ( ) {
 
 	XmlDoc *xd = NULL;
 	try { xd = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
                 g_errno = ENOMEM;
 		m_recsetErrors++;
 		m_stage = STAGE_TITLEDB_0; // 0

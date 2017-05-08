@@ -41,7 +41,7 @@ bool sendPageTitledb ( TcpSocket *s , HttpRequest *r ) {
 	// set up a msg22 to get the next titleRec
 	State4 *st ;
 	try { st = new (State4); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log("PageTitledb: new(%i): %s", 
 		    (int)sizeof(State4),mstrerror(g_errno));

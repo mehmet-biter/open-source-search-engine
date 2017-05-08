@@ -12,17 +12,20 @@
 #include "Conf.h"
 #include "Mem.h"
 
-
 //#define GBSANITYCHECK
 
 
+static const int signature_init = 0x2c3a4f5d;
 int32_t g_numCorrupt = 0;
 
-Msg5::Msg5() {
+Msg5::Msg5()
+  : m_rdbId(RDB_NONE),
+    m_isSingleUnmergedListGet(false)
+{
 	m_waitingForList = false;
 	//m_waitingForMerge = false;
 	m_numListPtrs = 0;
-
+	set_signature();
 	// Coverity
 	m_list = NULL;
 	memset(m_startKey, 0, sizeof(m_startKey));
@@ -61,14 +64,15 @@ Msg5::Msg5() {
 	reset();
 }
 
-
-
 Msg5::~Msg5() {
+	verify_signature();
 	reset();
+	clear_signature();
 }
 
 // frees m_treeList
 void Msg5::reset() {
+	verify_signature();
 	if ( m_waitingForList ) { // || m_waitingForMerge ) {
 		log("disk: Trying to reset a class waiting for a reply.");
 		// might being doing an urgent exit (mainShutdown(1)) or
@@ -80,7 +84,32 @@ void Msg5::reset() {
 	m_numListPtrs = 0;
 	// and the tree list
 	m_treeList.freeList();
+	verify_signature();
 }
+
+
+bool Msg5::getSingleUnmergedList(rdbid_t       rdbId,
+				 collnum_t     collnum,
+				 RdbList      *list,
+				 const void   *startKey,
+				 const void   *endKey,
+				 int32_t       recSizes, // requested scan size(-1 all)
+				 int32_t       maxCacheAge, // in secs for cache lookup
+				 int32_t       fileNum, // file to scan
+				 void         *state, // for callback
+				 void        (*callback)(void *state, RdbList *list, Msg5 *msg5),
+				 int32_t       niceness)
+{
+	m_isSingleUnmergedListGet = true;
+	return getList(rdbId,collnum, list,
+	               startKey, endKey,
+		       recSizes, true, maxCacheAge,
+		       fileNum, 1, //startFileNum, numFiles
+		       state, callback,
+		       niceness,
+		       false,NULL,0,-1,-1,false,true);
+}
+
 
 
 bool Msg5::getTreeList(RdbList *result, rdbid_t rdbId, collnum_t collnum, const void *startKey, const void *endKey) {
@@ -96,7 +125,6 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 	Rdb *rdb = getRdbFromId(m_rdbId);
 	return rdb->getTreeList(result, m_collnum, startKey, endKey, m_newMinRecSizes, numPositiveRecs, numNegativeRecs, memUsedByTree, numUsedNodes);
 }
-
 
 
 // . return false if blocked, true otherwise
@@ -133,6 +161,8 @@ bool Msg5::getList ( rdbid_t     rdbId,
 		     int64_t syncPoint ,
 		     bool        isRealMerge ,
 		     bool        allowPageCache ) {
+	verify_signature();
+
 	const char *startKey = static_cast<const char*>(startKey_);
 	const char *endKey = static_cast<const char*>(endKey_);
 
@@ -247,15 +277,16 @@ bool Msg5::getList ( rdbid_t     rdbId,
 	// same if minRecSizes is 0
 	if ( m_minRecSizes == 0    ) return true;
 
+	// tell Spider.cpp not to nuke us until we get back!!!
+	m_waitingForList = true;
+
 	// timing debug
 	//log("Msg5:getting list startKey.n1=%" PRIu32,m_startKey.n1);
 	// start the read loop - hopefully, will only loop once
 	if ( readList ( ) ) {
+		m_waitingForList = false;
 		return true;
 	}
-
-	// tell Spider.cpp not to nuke us until we get back!!!
-	m_waitingForList = true;
 
 	// we blocked!!! must call m_callback
 	return false;
@@ -267,6 +298,7 @@ bool Msg5::getList ( rdbid_t     rdbId,
 // . calls gotList() to do the merge if we need to
 // . loops until m_minRecSizes is satisfied OR m_endKey is reached
 bool Msg5::readList ( ) {
+	verify_signature();
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	Rdb *rdb = getRdbFromId(m_rdbId);
 	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
@@ -461,9 +493,6 @@ bool Msg5::readList ( ) {
 		// sanity check
 		if ( m_treeList.getKeySize() != m_ks ) { g_process.shutdownAbort(true); }
 
-		// we are waiting for the list
-		//m_waitingForList = true;
-
 		// clear just in case
 		g_errno = 0;
 
@@ -493,14 +522,14 @@ bool Msg5::readList ( ) {
 		if ( g_errno ) return true;
 
 		// we may need to re-call getList
+		verify_signature();
 	} while(needsRecall());
 	// we did not block
 	return true;
 }
 
-
-
 bool Msg5::needsRecall() {
+	verify_signature();
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	Rdb *rdb = getRdbFromId(m_rdbId);
 	RdbBase *base = getRdbBase ( m_rdbId , m_collnum );
@@ -594,17 +623,22 @@ void Msg5::gotListWrapper0(void *state) {
 }
 
 void Msg5::gotListWrapper() {
+	verify_signature();
+	if(m_calledCallback) gbshutdownLogicError();
+	if(!m_msg3.areAllScansCompleted()) gbshutdownLogicError();
 	// . this sets g_errno on error
 	// . this will merge cache/tree and disk lists into m_list
 	// . it will update m_newMinRecSizes
 	// . it will also update m_fileStartKey to the endKey of m_list + 1
 	// . returns false if it blocks
 	if ( ! gotList ( ) ) return;
+
+	if(!m_msg3.areAllScansCompleted()) gbshutdownLogicError();
 	// . throw it back into the loop if necessary
 	// . only returns true if COMPLETELY done
 	if ( needsRecall() && ! readList() ) return;
 	// sanity check
-	if ( m_calledCallback ) { g_process.shutdownAbort(true); }
+	if ( m_calledCallback ) abort();
 	// set it now
 	m_calledCallback = 1;
 	// we are no longer waiting for the list
@@ -619,9 +653,8 @@ void Msg5::gotListWrapper() {
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool Msg5::gotList ( ) {
-
-	// we are no longer waiting for the list
-	//m_waitingForList = false;
+	verify_signature();
+	if(!m_msg3.areAllScansCompleted()) gbshutdownLogicError();
 
 	// return if g_errno is set
 	if ( g_errno && g_errno != ECORRUPTDATA ) return true;
@@ -634,6 +667,7 @@ bool Msg5::gotList ( ) {
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool Msg5::gotList2 ( ) {
+	verify_signature();
 	// reset this
 	m_startTime = 0LL;
 	// return if g_errno is set
@@ -892,12 +926,17 @@ bool Msg5::gotList2 ( ) {
 	// . older list goes first so newer list can override
 	// . remove all negative-keyed recs since Msg5 is a high level msg call
 
-	// . prepare for the merge, grows the buffer
-	// . this returns false and sets g_errno on error
-	// . should not affect the current list in m_list, only build on top
-	if ( ! m_list->prepareForMerge ( m_listPtrs, m_numListPtrs, m_minRecSizes ) ) {
-		log( LOG_WARN, "net: Had error preparing to merge lists from %s: %s", base->getDbName(),mstrerror(g_errno));
-		return true;
+	
+	if(!m_isSingleUnmergedListGet) {
+		// . prepare for the merge, grows the buffer
+		// . this returns false and sets g_errno on error
+		// . should not affect the current list in m_list, only build on top
+		if ( ! m_list->prepareForMerge ( m_listPtrs, m_numListPtrs, m_minRecSizes ) ) {
+			log( LOG_WARN, "net: Had error preparing to merge lists from %s: %s", base->getDbName(),mstrerror(g_errno));
+			return true;
+		}
+	} else {
+		//no need to prepare for merge. We'll just steal the one-and-only list in mergeLists()
 	}
 
 	if(m_callback) {
@@ -934,6 +973,7 @@ bool Msg5::gotList2 ( ) {
 void Msg5::mergeListsWrapper(void *state) {
 	// we're in a thread now!
 	Msg5 *that = static_cast<Msg5*>(state);
+	verify_signature_at(that->signature);
 
 	// assume no error since we're at the start of thread call
 	that->m_errno = 0;
@@ -941,9 +981,11 @@ void Msg5::mergeListsWrapper(void *state) {
 	// repair any corruption
 	that->repairLists();
 
+	verify_signature_at(that->signature);
 	// do the merge
 	that->mergeLists();
 
+	verify_signature_at(that->signature);
 	if (g_errno && !that->m_errno) {
 		that->m_errno = g_errno;
 	}
@@ -955,12 +997,17 @@ void Msg5::mergeListsWrapper(void *state) {
 // Use of ThreadEntry parameter is NOT thread safe
 void Msg5::mergeDoneWrapper(void *state, job_exit_t exit_type) {
 	Msg5 *that = static_cast<Msg5 *>(state);
+	verify_signature_at(that->signature);
 
 	g_errno = that->m_errno;
 	that->mergeDone(exit_type);
 }
 
 void Msg5::mergeDone(job_exit_t /*exit_type*/) {
+	verify_signature();
+
+	if(m_calledCallback) gbshutdownCorrupted();
+	
 	// we MAY be in a thread now
 
 	// debug msg
@@ -973,12 +1020,17 @@ void Msg5::mergeDone(job_exit_t /*exit_type*/) {
 	// . it will handle calling callback if that happens
 	if ( ! doneMerging() ) return;
 
+	if(m_calledCallback) gbshutdownCorrupted();
 	// . throw it back into the loop if necessary
 	// . only returns true if COMPLETELY done
-	if ( needsRecall() && ! readList() ) return;
+	if ( needsRecall() ) {
+	if(m_calledCallback) gbshutdownCorrupted();
+		if ( ! readList() ) return;
+		if(m_calledCallback) gbshutdownCorrupted();
+	}
 
 	// sanity check
-	if ( m_calledCallback ) { g_process.shutdownAbort(true); }
+	if(m_calledCallback) gbshutdownCorrupted();
 
 	// we are no longer waiting for the list
 	m_waitingForList = false;
@@ -986,12 +1038,14 @@ void Msg5::mergeDone(job_exit_t /*exit_type*/) {
 	// set it now
 	m_calledCallback = 3;
 
+	verify_signature();
 	// when completely done call the callback
 	m_callback ( m_state, m_list, this );
 }
 
 // check lists in the thread
 void Msg5::repairLists() {
+	verify_signature();
 	// assume none
 	m_hadCorruption = false;
 	// return if no need to
@@ -1062,10 +1116,25 @@ void Msg5::repairLists() {
 }
 
 void Msg5::mergeLists() {
+	verify_signature();
+
 	// . don't do any merge if this is true
 	// . if our fetch of remote list fails, then we'll be called
 	//   again with this set to false
 	if ( m_hadCorruption ) return;
+
+	if ( m_isSingleUnmergedListGet ) {
+		if(m_numFiles>1) gbshutdownLogicError();
+		if(m_numFiles<0) gbshutdownLogicError();
+		if(!m_listPtrs[0]) gbshutdownLogicError();
+		//just move move the m_msg3.list[0] over to the resulting list
+		m_list->stealFromOtherList(m_listPtrs[0]);
+		return;
+
+	}
+
+	// start the timer
+	//int64_t startTime = gettimeofdayInMilliseconds();
 
 	// . if the key of the last key of the previous list we read from
 	//   is not below startKey, reset the truncation count to avoid errors
@@ -1121,6 +1190,7 @@ void Msg5::mergeLists() {
 // . all recs in tree are negative and annihilate the 1000 recs from disk
 // . we are left with an empty list
 bool Msg5::doneMerging ( ) {
+	verify_signature();
 
 	//m_waitingForMerge = false;
 
@@ -1216,8 +1286,10 @@ bool Msg5::doneMerging ( ) {
 	// . free all lists we used
 	// . some of these may be from Msg3, some from cache, some from tree
 	for ( int32_t i = 0 ; i < m_numListPtrs ; i++ ) {
-		m_listPtrs[i]->freeList();
-		m_listPtrs[i] = NULL;
+		if(m_listPtrs[i]) {
+			m_listPtrs[i]->freeList();
+			m_listPtrs[i] = NULL;
+		}
 	}
 	// and the tree list
 	m_treeList.freeList();
@@ -1293,6 +1365,7 @@ bool g_isDumpingRdbFromMain = 0;
 // . if we discover one of the lists we read from a file is corrupt we go here
 // . uses Msg5 to try to get list remotely
 bool Msg5::getRemoteList ( ) {
+	verify_signature();
 
 	// skip this part if doing a cmd line 'gb dump p main 0 -1 1' cmd or
 	// similar to dump out a local rdb.
@@ -1322,7 +1395,7 @@ bool Msg5::getRemoteList ( ) {
 	// make a new Msg0 for getting remote list
 	try { m_msg0 = new ( Msg0 ); }
 	// g_errno should be set if this is NULL
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log("net: Could not allocate memory to get from twin.");
 		return true;
@@ -1349,6 +1422,7 @@ bool Msg5::getRemoteList ( ) {
 	// . wait forever for this host to reply... well, at least a day that
 	//   way if he's dead we'll wait for him to come back up to save our
 	//   data
+	verify_signature();
 	if ( ! m_msg0->getList ( h->m_hostId          ,
 				 0                    , // max cached age
 				 false                , // add to cache?
@@ -1381,6 +1455,7 @@ bool Msg5::getRemoteList ( ) {
 	log("msg5: call to msg0 did not block");
 	// . if we did not block then call this directly
 	// . return false if it blocks
+	verify_signature();
 	return gotRemoteList ( ) ;
 }
 
@@ -1400,6 +1475,7 @@ void Msg5::gotRemoteListWrapper( void *state ) {
 
 // returns false if it blocks
 bool Msg5::gotRemoteList ( ) {
+	verify_signature();
 	// free the Msg0
 	mdelete ( m_msg0 , sizeof(Msg0) , "Msg5" );
 	delete ( m_msg0 );

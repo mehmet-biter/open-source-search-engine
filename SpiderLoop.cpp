@@ -1137,7 +1137,7 @@ bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	// otherwise, make a new one if we have to
 	try { xd = new (XmlDoc); }
 	// bail on failure, sleep and try again
-	catch ( ... ) { 
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log("build: Could not allocate %" PRId32" bytes to spider "
 		    "the url %s. Will retry later.",

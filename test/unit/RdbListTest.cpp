@@ -384,14 +384,6 @@ TEST_F(RdbListTest, MergeTestTitledbDoubleDelEndKey) {
 
 class RdbListNoMergeTest : public ::testing::Test {
 public:
-	static void SetUpTestCase() {
-		g_conf.m_noInMemoryPosdbMerge = true;
-	}
-
-	static void TearDownTestCase() {
-		g_conf.m_noInMemoryPosdbMerge = m_savedMergeConf;
-	}
-
 	void SetUp() {
 		GbTest::initializeRdbs();
 	}
@@ -399,16 +391,12 @@ public:
 	void TearDown() {
 		GbTest::resetRdbs();
 	}
-
-	static bool m_savedMergeConf;
 };
-
-bool RdbListNoMergeTest::m_savedMergeConf = g_conf.m_noInMemoryPosdbMerge;
 
 static void addListToTree(rdbid_t rdbId, collnum_t collNum, RdbList *list) {
 	Rdb *rdb = getRdbFromId(rdbId);
 	rdb->addList(collNum, list);
-	rdb->dumpTree();
+	rdb->submitRdbDumpJob(true);
 	rdb->getBase(0)->markNewFileReadable();
 	rdb->getBase(0)->generateGlobalIndex();
 }

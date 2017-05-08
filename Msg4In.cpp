@@ -175,9 +175,7 @@ static void Msg4In::handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
 		return;
 	}
 
-	/// @todo ALC enable threading when we have made dependency thread-safe
-	//s_msg4IncomingThreadQueue.addItem(slot);
-	processMsg4(slot);
+	s_incomingThreadQueue.addItem(slot);
 }
 
 struct RdbItem {
@@ -304,7 +302,7 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 		if (rdb->isDumping()) {
 			anyDumping = true;
 		} else if (!rdb->hasRoom(rdbItem.second.m_numRecs, rdbItem.second.m_dataSizes)) {
-			rdb->dumpTree();
+			rdb->submitRdbDumpJob(true);
 			hasRoom = false;
 		}
 	}
@@ -391,11 +389,7 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 	// Initiate dumps for any Rdbs wanting it
 	for (auto const &rdbItem : rdbItems) {
 		Rdb *rdb = getRdbFromId(rdbItem.first);
-		if (rdb->needsDump()) {
-			logDebug(g_conf.m_logDebugSpider, "Rdb %s needs dumping", getDbnameFromId(rdbItem.first));
-			rdb->dumpTree();
-			// we ignore the return value because we have processed the list/msg4
-		}
+		rdb->submitRdbDumpJob(false);
 	}
 
 	// success

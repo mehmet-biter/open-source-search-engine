@@ -715,12 +715,12 @@ static bool CommandForceIt(const char *rec) {
 }
 
 static bool CommandDiskDump(const char *rec) {
-	g_clusterdb.getRdb()->dumpTree();
-	g_tagdb.getRdb()->dumpTree();
-	g_spiderdb.getRdb()->dumpTree();
-	g_posdb.getRdb()->dumpTree();
-	g_titledb.getRdb()->dumpTree();
-	g_linkdb.getRdb()->dumpTree();
+	g_clusterdb.getRdb()->submitRdbDumpJob(true);
+	g_tagdb.getRdb()->submitRdbDumpJob(true);
+	g_spiderdb.getRdb()->submitRdbDumpJob(true);
+	g_posdb.getRdb()->submitRdbDumpJob(true);
+	g_titledb.getRdb()->submitRdbDumpJob(true);
+	g_linkdb.getRdb()->submitRdbDumpJob(true);
 	g_errno = 0;
 	return true;
 }
@@ -4760,15 +4760,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
-	m->m_title = "Use new no-in-memory-merge feature";
-	m->m_desc  = "Posdb will no longer contain delete keys, and the entire document is indexed every time a change is found. "
-	             "(Changes requires restart)";
-	m->m_cgi   = "noinmemmerge";
-	simple_m_set(Conf,m_noInMemoryPosdbMerge);
-	m->m_def   = "0";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
 
 
 	m->m_title = "injections enabled";
@@ -5120,75 +5111,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
-	m->m_title = "send email alerts";
-	m->m_desc  = "Sends emails to admin if a host goes down.";
-	m->m_cgi   = "sea";
-	simple_m_set(Conf,m_sendEmailAlerts);
-	m->m_def   = "0";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "delay non critical email alerts";
-	m->m_desc  = "Do not send email alerts about dead hosts to "
-		"anyone except sysadmin@example.com between the times "
-		"given below unless all the twins of the dead host are "
-		"also dead. Instead, wait till after if the host "
-		"is still dead. ";
-	m->m_cgi   = "dnca";
-	simple_m_set(Conf,m_delayNonCriticalEmailAlerts);
-	m->m_def   = "0";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "cluster name";
-	m->m_desc  = "Email alerts will include the cluster name";
-	m->m_cgi   = "cn";
-	m->m_off   = offsetof(Conf,m_clusterName);
-	m->m_type  = TYPE_STRING;
-	m->m_size  = sizeof(Conf::m_clusterName);
-	m->m_def   = "unspecified";
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "ping spacer";
-	m->m_desc  = "Wait this many milliseconds before pinging the next "
-		"host. Each host pings all other hosts in the network.";
-	m->m_cgi   = "ps";
-	simple_m_set(Conf,m_pingSpacer);
-	m->m_smin  =   50; // i've seen values of 0 hammer the cpu
-	m->m_smax  = 1000;
-	m->m_def   = "100";
-	m->m_units = "milliseconds";
-	m->m_group = true;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "dead host timeout";
-	m->m_desc  = "Consider a host in the Gigablast network to be dead if "
-		"it does not respond to successive pings for this number of "
-		"seconds. Gigablast does not send requests to dead hosts. "
-		"Outstanding requests may be re-routed to a twin.";
-	m->m_cgi   = "dht";
-	simple_m_set(Conf,m_deadHostTimeout);
-	m->m_smin  =   350;
-	m->m_smax  = 20000;
-	m->m_def   = "4000";
-	m->m_units = "milliseconds";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "max outstanding pings";
-	m->m_desc  = "Maximum number of ping requests in flight per instance";
-	m->m_cgi   = "maxoutstandingpings";
-	simple_m_set(Conf,m_maxOutstandingPings);
-	m->m_smin  =   1;
-	m->m_smax  =  100;
-	m->m_def   = "5";
-	m->m_units = "packets";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
 	m->m_title = "Vagus cluster id";
 	m->m_desc  = "Which cluster name to use in Vagus. The default empty string means to use 'gb-'$USER which works fine in most scenarios";
 	m->m_cgi   = "vagus_cluster_id";
@@ -5236,16 +5158,6 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-	m->m_title = "send email timeout";
-	m->m_desc  = "Send an email after a host has not responded to "
-		"successive pings for this many milliseconds.";
-	m->m_cgi   = "set";
-	simple_m_set(Conf,m_sendEmailTimeout);
-	m->m_def   = "62000";
-	m->m_units = "milliseconds";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
 	m->m_title = "max corrupt index lists";
 	m->m_desc  = "If we reach this many corrupt index lists, send "
 		"an admin email.  Set to -1 to disable.";
@@ -5255,235 +5167,6 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m->m_flags = PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "send email alerts to email 1";
-	m->m_desc  = "Sends to email address 1 through email server 1.";
-	m->m_cgi   = "seatone";
-	simple_m_set(Conf,m_sendEmailAlertsToEmail1);
-	m->m_def   = "0";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "send parm change email alerts to email 1";
-	m->m_desc  = "Sends to email address 1 through email server 1 if "
-		"any parm is changed.";
-	m->m_cgi   = "seatonep";
-	simple_m_set(Conf,m_sendParmChangeAlertsToEmail1);
-	m->m_def   = "0";
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "email server 1";
-	m->m_desc  = "Connects to this IP or hostname "
-		"directly when sending email 1. "
-		"Use <i>apt-get install sendmail</i> to install sendmail "
-		"on that IP or hostname. Add <i>From:10.5 RELAY</i> to "
-		"/etc/mail/access to allow sendmail to forward email it "
-		"receives from gigablast if gigablast hosts are on the "
-		"10.5.*.* IPs. Then run <i>/etc/init.d/sendmail restart</i> "
-		"as root to pick up those changes so sendmail will forward "
-		"Gigablast's email to the email address you give below.";
-	m->m_cgi   = "esrvone";
-	m->m_off   = offsetof(Conf,m_email1MX);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "127.0.0.1";
-	m->m_size  = sizeof(Conf::m_email1MX);
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "email address 1";
-	m->m_desc  = "Sends to this address when sending email 1 ";
-	m->m_cgi   = "eaddrone";
-	m->m_off   = offsetof(Conf,m_email1Addr);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "";
-	m->m_size  = sizeof(Conf::m_email1Addr);
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "from email address 1";
-	m->m_desc  = "The from field when sending email 1 ";
-	m->m_cgi   = "efaddrone";
-	m->m_off   = offsetof(Conf,m_email1From);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "sysadmin@example.com";
-	m->m_size  = sizeof(Conf::m_email1From);
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "send email alerts to email 2";
-	m->m_desc  = "Sends to email address 2 through email server 2.";
-	m->m_cgi   = "seattwo";
-	simple_m_set(Conf,m_sendEmailAlertsToEmail2);
-	m->m_def   = "0";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "send parm change email alerts to email 2";
-	m->m_desc  = "Sends to email address 2 through email server 2 if "
-		"any parm is changed.";
-	m->m_cgi   = "seattwop";
-	simple_m_set(Conf,m_sendParmChangeAlertsToEmail2);
-	m->m_def   = "0";
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "email server 2";
-	m->m_desc  = "Connects to this server directly when sending email 2 ";
-	m->m_cgi   = "esrvtwo";
-	m->m_off   = offsetof(Conf,m_email2MX);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "mail.example.com";
-	m->m_size  = sizeof(Conf::m_email2MX);
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "email address 2";
-	m->m_desc  = "Sends to this address when sending email 2 ";
-	m->m_cgi   = "eaddrtwo";
-	m->m_off   = offsetof(Conf,m_email2Addr);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "";
-	m->m_size  = sizeof(Conf::m_email2Addr);
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "from email address 2";
-	m->m_desc  = "The from field when sending email 2 ";
-	m->m_cgi   = "efaddrtwo";
-	m->m_off   = offsetof(Conf,m_email2From);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "sysadmin@example.com";
-	m->m_size  = sizeof(Conf::m_email2From);
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "send email alerts to email 3";
-	m->m_desc  = "Sends to email address 3 through email server 3.";
-	m->m_cgi   = "seatthree";
-	simple_m_set(Conf,m_sendEmailAlertsToEmail3);
-	m->m_def   = "0";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "send parm change email alerts to email 3";
-	m->m_desc  = "Sends to email address 3 through email server 3 if "
-		"any parm is changed.";
-	m->m_cgi   = "seatthreep";
-	simple_m_set(Conf,m_sendParmChangeAlertsToEmail3);
-	m->m_def   = "0";
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "email server 3";
-	m->m_desc  = "Connects to this server directly when sending email 3 ";
-	m->m_cgi   = "esrvthree";
-	m->m_off   = offsetof(Conf,m_email3MX);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "mail.example.com";
-	m->m_size  = sizeof(Conf::m_email3MX);
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "email address 3";
-	m->m_desc  = "Sends to this address when sending email 3 ";
-	m->m_cgi   = "eaddrthree";
-	m->m_off   = offsetof(Conf,m_email3Addr);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "";
-	m->m_size  = sizeof(Conf::m_email3Addr);
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "from email address 3";
-	m->m_desc  = "The from field when sending email 3 ";
-	m->m_cgi   = "efaddrthree";
-	m->m_off   = offsetof(Conf,m_email3From);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "sysadmin@example.com";
-	m->m_size  = sizeof(Conf::m_email3From);
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "send email alerts to email 4";
-	m->m_desc  = "Sends to email address 4 through email server 4.";
-	m->m_cgi   = "seatfour";
-	simple_m_set(Conf,m_sendEmailAlertsToEmail4);
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "send parm change email alerts to email 4";
-	m->m_desc  = "Sends to email address 4 through email server 4 if "
-		"any parm is changed.";
-	m->m_cgi   = "seatfourp";
-	simple_m_set(Conf,m_sendParmChangeAlertsToEmail4);
-	m->m_def   = "0";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m++;
-
-	m->m_title = "email server 4";
-	m->m_desc  = "Connects to this server directly when sending email 4 ";
-	m->m_cgi   = "esrvfour";
-	m->m_off   = offsetof(Conf,m_email4MX);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "mail.example.com";
-	m->m_size  = sizeof(Conf::m_email4MX);
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "email address 4";
-	m->m_desc  = "Sends to this address when sending email 4 ";
-	m->m_cgi   = "eaddrfour";
-	m->m_off   = offsetof(Conf,m_email4Addr);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "";
-	m->m_size  = sizeof(Conf::m_email4Addr);
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "from email address 4";
-	m->m_desc  = "The from field when sending email 4 ";
-	m->m_cgi   = "efaddrfour";
-	m->m_off   = offsetof(Conf,m_email4From);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "sysadmin@example.com";
-	m->m_size  = sizeof(Conf::m_email4From);
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
 	m++;
 
 	// this is ifdef'd out in Msg3.cpp for performance reasons,
@@ -5626,7 +5309,6 @@ void Parms::init ( ) {
 	m->m_xml   = "StableSummaryCacheAge";
 	simple_m_set(Conf,m_stableSummaryCacheMaxAge);
 	m->m_def   = "86400000";
-	m->m_units = "milliseconds";
 	m->m_units = "milliseconds";
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
@@ -5904,6 +5586,21 @@ void Parms::init ( ) {
 	m++;
 
 
+	m->m_title = "max coordinator threads";
+	m->m_desc  = "Maximum number of threads to use per Gigablast process "
+		"for coordinating a query.";
+	m->m_cgi   = "mcct";
+	m->m_off   = offsetof(Conf,m_maxCoordinatorThreads);
+	m->m_type  = TYPE_INT32;
+	m->m_def   = "2";
+	m->m_units = "threads";
+	m->m_min   = 0;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
+	m++;
+
 	m->m_title = "max cpu threads";
 	m->m_desc  = "Maximum number of threads to use per Gigablast process "
 		"for merging and intersecting.";
@@ -5915,6 +5612,21 @@ void Parms::init ( ) {
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_group = true;
+	m++;
+
+	m->m_title = "max summary threads";
+	m->m_desc  = "Maximum number of threads to use per Gigablast process "
+		"for summary generation.";
+	m->m_cgi   = "mst";
+	m->m_off   = offsetof(Conf,m_maxSummaryThreads);
+	m->m_type  = TYPE_INT32;
+	m->m_def   = "2";
+	m->m_units = "threads";
+	m->m_min   = 0;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "max IO threads";
@@ -7719,7 +7431,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mns";
 	simple_m_set(CollectionRec,m_maxNumSpiders);
 	// make it the hard max so control is really in the master controls
-	m->m_def   = "300";
+	m->m_def   = "1";
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_CLONE;
 	m++;
@@ -8395,6 +8107,40 @@ void Parms::init ( ) {
 	// LOG CONTROLS
 	///////////////////////////////////////////
 
+	m->m_title = "max delay before logging a callback or handler";
+	m->m_desc  = "If a call to a message callback or message handler "
+		"in the udp server takes more than this many milliseconds, "
+		"then log it. "
+		"Logs 'udp: Took %" PRId64" ms to call callback for msgType="
+		"0x%hhx niceness=%" PRId32"'. "
+		"Use -1 or less to disable the logging.";
+	m->m_cgi   = "mdch";
+	simple_m_set(Conf,m_maxCallbackDelay);
+	m->m_def   = "-1";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log query time threshold";
+	m->m_desc  = "If a query took this many millliseconds or longer, then log the "
+		"query and the time it took to process.";
+	m->m_cgi   = "lqtt";
+	simple_m_set(Conf,m_logQueryTimeThreshold);
+	m->m_def   = "5000";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log disk read time threshold";
+	m->m_desc  = "If a disk read took this many millliseconds or longer, then log the "
+		"bytes read and the time it took to process.";
+	m->m_cgi   = "ldrtt";
+	simple_m_set(Conf,m_logDiskReadTimeThreshold);
+	m->m_def   = "50";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log http requests";
 	m->m_desc  = "Log GET and POST requests received from the "
 		"http server?";
@@ -8412,25 +8158,6 @@ void Parms::init ( ) {
 	m->m_def   = "1";
 	m->m_page  = PAGE_LOG;
 	m++;
-
-	m->m_title = "log query time threshold";
-	m->m_desc  = "If a query took this many millliseconds or longer, then log the "
-		"query and the time it took to process.";
-	m->m_cgi   = "lqtt";
-	simple_m_set(Conf,m_logQueryTimeThreshold);
-	m->m_def   = "5000";
-	m->m_page  = PAGE_LOG;
-	m++;
-
-	m->m_title = "log disk read time threshold";
-	m->m_desc  = "If a disk read took this many millliseconds or longer, then log the "
-		"bytes read and the time it took to process.";
-	m->m_cgi   = "ldrtt";
-	simple_m_set(Conf,m_logDiskReadTimeThreshold);
-	m->m_def   = "50";
-	m->m_page  = PAGE_LOG;
-	m++;
-
 
 	m->m_title = "log query reply";
 	m->m_desc  = "Log query reply in proxy, but only for those queries "

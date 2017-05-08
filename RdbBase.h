@@ -173,10 +173,6 @@ class RdbBase {
 
 	void forceNextMerge() { m_nextMergeForced = true; }
 
-
-	void setDumpingFileNumber(int n) { m_dumpingFileNumber = n; }
-	int getDumpingFileNumber() const { return m_dumpingFileNumber; }
-
 	void setDumpingFileId(int n) { m_dumpingFileId = n; }
 	int getDumpingFileId() const { return m_dumpingFileId; }
 
@@ -334,7 +330,6 @@ private:
 	// we now determine when in merge mode
 	bool      m_isMerging;
 
-	int m_dumpingFileNumber;
 	int m_dumpingFileId;
 
 	// Record counts for files being merged. Calculated in attemptMerge() and then used

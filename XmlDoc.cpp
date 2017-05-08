@@ -40,6 +40,7 @@
 #include "Statistics.h"
 #include "GbCompress.h"
 #include "GbUtil.h"
+#include "ScopedLock.h"
 #include "Mem.h"
 #include "UrlBlockList.h"
 #include <fcntl.h>
@@ -163,6 +164,7 @@ void XmlDoc::reset ( ) {
 	m_lastTimeStart = 0LL;
 
 	m_req = NULL;
+	m_abortMsg20Generation = false;
 
 	m_storeTermListInfo = false;
 
@@ -5566,7 +5568,7 @@ XmlDoc **XmlDoc::getOldXmlDoc ( ) {
 	// . make a new one
 	// . this will uncompress it and set ourselves!
 	try { m_oldDoc = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		return NULL;
 	}
@@ -5676,7 +5678,7 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 	// . make a new one
 	// . this will uncompress it and set ourselves!
 	try { m_extraDoc = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		logTrace( g_conf.m_logTraceXmlDoc, "END - out of memory" );
 		return NULL;
@@ -5844,7 +5846,7 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	// . make a new one
 	// . this will uncompress it and set ourselves!
 	try { m_rootDoc = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		return NULL;
 	}
@@ -7239,7 +7241,6 @@ static LinkInfo s_dummy2;
 // . returns NULL and sets g_errno on error
 // . returns -1 if blocked, will re-call m_callback
 LinkInfo *XmlDoc::getLinkInfo1 ( ) {
-
 	if ( m_linkInfo1Valid && ptr_linkInfo1 )
 		return ptr_linkInfo1;
 
@@ -11746,7 +11747,7 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 	// . do not keep on stack since so huge!
 	XmlDoc *doc ;
 	try { doc = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		return false;
 	}
@@ -13414,29 +13415,27 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		// we need to add delete key per document when it's deleted (with term 0)
 		// we also need to add positive key per document when it's new
 		// in case there is already a delete key in the tree/bucket (this will not be persisted and will be removed in Rdb::addRecord)
-		if (g_conf.m_noInMemoryPosdbMerge) {
-			// we don't need to do this if getMetaList is called to get negative keys
-			if (!forDelete) {
-				if ((m_isInIndex && !m_wasInIndex) || (!m_isInIndex && m_wasInIndex)) {
-					char key[MAX_KEY_BYTES];
+		// we don't need to do this if getMetaList is called to get negative keys
+		if (!forDelete) {
+			if ((m_isInIndex && !m_wasInIndex) || (!m_isInIndex && m_wasInIndex)) {
+				char key[MAX_KEY_BYTES];
 
-					int64_t docId;
-					bool delKey = (!m_isInIndex);
-					if (!m_isInIndex) {
-						// deleted doc
-						docId = *od->getDocId();
-					} else {
-						// new doc
-						docId = *getDocId();
-					}
-
-					// add posdb doc key
-					*m_p++ = m_useSecondaryRdbs ? RDB2_POSDB2 : RDB_POSDB;
-
-					Posdb::makeDeleteDocKey(key, docId, delKey);
-					memcpy(m_p, key, sizeof(posdbkey_t));
-					m_p += sizeof(posdbkey_t);
+				int64_t docId;
+				bool delKey = (!m_isInIndex);
+				if (!m_isInIndex) {
+					// deleted doc
+					docId = *od->getDocId();
+				} else {
+					// new doc
+					docId = *getDocId();
 				}
+
+				// add posdb doc key
+				*m_p++ = m_useSecondaryRdbs ? RDB2_POSDB2 : RDB_POSDB;
+
+				Posdb::makeDeleteDocKey(key, docId, delKey);
+				memcpy(m_p, key, sizeof(posdbkey_t));
+				m_p += sizeof(posdbkey_t);
 			}
 		}
 	}
@@ -15741,29 +15740,62 @@ void XmlDoc::setMsg20Request(Msg20Request *req) {
 }
 
 
-static void getMsg20ReplyWrapper ( void *state ) {
-	XmlDoc *THIS = (XmlDoc *)state;
-	// make sure has not been freed from under us!
-	if ( THIS->m_freed ) { g_process.shutdownAbort(true);}
-	// return if it blocked
-	if ( THIS->getMsg20Reply ( ) == (void *)-1 ) return;
-	// otherwise, all done, call the caller callback
-	THIS->callCallback();
+class GetMsg20State {
+public:
+	bool something_ready;
+	pthread_mutex_t mtx;
+	pthread_cond_t cond;	
+	GetMsg20State()
+	  : something_ready(false)
+	{
+		pthread_mutex_init(&mtx,NULL);
+		pthread_cond_init(&cond,NULL);
+	}
+	~GetMsg20State() {
+		pthread_mutex_destroy(&mtx);
+		pthread_cond_destroy(&cond);
+	}
+	void wait_for_something() {
+		ScopedLock sl(mtx);
+		while(!something_ready)
+			pthread_cond_wait(&cond,&mtx);
+		something_ready = false;
+	}
+	void notify_something_is_ready() {
+		ScopedLock sl(mtx);
+		something_ready = true;
+		int rc = pthread_cond_signal(&cond);
+		assert(rc==0);
+	}
+
+	void abort(bool *abort_flag) {
+		ScopedLock sl(mtx);
+		*abort_flag = true;
+		int rc = pthread_cond_signal(&cond);
+		assert(rc==0);
+	}
+};
+
+
+//Just notify the msg20 generation thread that a step has finished and it should call getMsg20ReplyStepwise() again
+static void wakeupMsg20Thread(void *pv) {
+	GetMsg20State *gm20s = static_cast<GetMsg20State*>(pv);
+	gm20s->notify_something_is_ready();
 }
 
+
 // . returns NULL with g_errno set on error
-// . returns -1 if blocked
-Msg20Reply *XmlDoc::getMsg20Reply ( ) {
+Msg20Reply *XmlDoc::getMsg20Reply() {
 	// return it right away if valid
 	if ( m_replyValid ) return &m_reply;
 
-	// . internal callback
-	// . so if any of the functions we end up calling directly or
-	//   indirectly block, this callback will be called
-	if ( ! m_masterLoop ) {
-		m_masterLoop  = getMsg20ReplyWrapper;
-		m_masterState = this;
+	if(m_errno!=0) {
+		g_errno = m_errno;
+		return NULL;
 	}
+
+	// caller shouldhave the callback set
+	if ( ! m_callback1 && ! m_callback2 ) { g_process.shutdownAbort(true); }
 
 	// used by Msg20.cpp to time this XmlDoc::getMsg20Reply() function
 	if ( ! m_startTimeValid ) {
@@ -15771,8 +15803,97 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		m_startTimeValid = true;
 	}
 
-	// caller shouldhave the callback set
-	if ( ! m_callback1 && ! m_callback2 ) { g_process.shutdownAbort(true); }
+	GetMsg20State *gm20s = new GetMsg20State();
+	// . internal callback
+	// . so if any of the functions we end up calling directly or
+	//   indirectly block, this callback will be called
+	if ( ! m_masterLoop ) {
+		m_masterLoop  = wakeupMsg20Thread;
+		m_masterState = gm20s;
+	}
+
+	//ok, ready to start piecing together a msg20reply
+	if(g_jobScheduler.submit(getMsg20ReplyThread, msg20Done, this, thread_type_query_summary, 0)) {
+		return (Msg20Reply*)-1; //no result yet
+	} else {
+		//not expected to happen but we support it anyway
+		m_errno = 0;
+		loopUntilMsg20ReplyReady(gm20s);
+		delete gm20s;
+		if(m_errno!=0) {
+			g_errno = m_errno;
+			return NULL;
+		}
+		return &m_reply;
+	}
+}
+
+
+//just a trampoline
+void XmlDoc::getMsg20ReplyThread(void *pv) {
+	XmlDoc *that = static_cast<XmlDoc*>(pv);
+	that->getMsg20ReplyThread();
+}
+
+
+void XmlDoc::getMsg20ReplyThread() {
+	GetMsg20State *gm20s = static_cast<GetMsg20State*>(m_masterState);
+	loopUntilMsg20ReplyReady(gm20s);
+	delete gm20s;
+	callCallback();
+}
+
+
+void XmlDoc::msg20Done(void *pv, job_exit_t exit_type) {
+	XmlDoc *that = static_cast<XmlDoc*>(pv);
+	that->msg20Done(exit_type);
+}
+
+void XmlDoc::msg20Done(job_exit_t exit_type) {
+	if(exit_type!=job_exit_normal) {
+		//abort job by telling loopUntilMsg20ReplyReady to give up
+		GetMsg20State *gm20s = static_cast<GetMsg20State*>(m_masterState);
+		gm20s->abort(&m_abortMsg20Generation);
+	}
+}
+
+//Repeat calling getMsg20ReplyStepwise() until a result is ready or and error has been encountered
+void XmlDoc::loopUntilMsg20ReplyReady(GetMsg20State *gm20s) {
+//	while(getMsg20ReplyStepwise() == (Msg20Reply*)-1)
+//		gm20s->wait_for_something();
+	for(;;) {
+		Msg20Reply *r = getMsg20ReplyStepwise();
+		if(r==(Msg20Reply*)-1)
+			gm20s->wait_for_something();
+		else {
+			if(r==NULL) {
+				if(g_errno)
+					m_errno = g_errno;
+				else
+					g_process.shutdownAbort(true);
+			}
+			break;
+		}
+	}
+}
+
+
+//verify that a pointer return from getXxxx() methods is consistent. If NULL returns it means that an error occurred but then g_errno must be set
+static void checkPointerError(const void *ptr) {
+	if(ptr==NULL && g_errno==0)
+		gbshutdownLogicError();
+}
+
+
+//Make progress toward getting a summary. Returns NULL on error, -1 if an async action is waiting,
+//and a pointer to the reply when done.
+Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
+	if(m_abortMsg20Generation) {
+		log(LOG_DEBUG,"msg20: aborted");
+		if(!m_errno)
+			m_errno = ECANCELED;
+		return NULL;
+	}
 
 	m_niceness = m_req->m_niceness;
 
@@ -15786,7 +15907,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// . cache it for one hour
 	// . this will set our ptr_ and size_ member vars
 	char **otr = getOldTitleRec ( );
-	if ( ! otr || otr == (void *)-1 ) return (Msg20Reply *)otr;
+	if ( ! otr || otr == (void *)-1 ) { checkPointerError(otr); return (Msg20Reply *)otr; }
 
 	// must have a title rec in titledb
 	if ( ! *otr ) { g_errno = ENOTFOUND; return NULL; }
@@ -15849,7 +15970,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	TagRec *gr = NULL;
 	if ( cr && cr->m_doTagdbLookups ) {
 		gr = getTagRec();
-		if ( ! gr || gr == (void *)-1 ) return (Msg20Reply *)gr;
+		if ( ! gr || gr == (void *)-1 ) { checkPointerError(gr); return (Msg20Reply *)gr; }
 	}
 
 	// this should be valid, it is stored in title rec
@@ -15924,7 +16045,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	Links *links = NULL;
 	if ( m_req->m_ourHostHash32 || m_req->m_ourDomHash32 ) {
 		links = getLinks();
-		if ( ! links || links==(Links *)-1) return (Msg20Reply *)links;
+		if ( ! links || links==(Links *)-1) { checkPointerError(links); return (Msg20Reply *)links; }
 	}
 
 	// do they want a summary?
@@ -15932,6 +16053,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		char *hsum = getHighlightedSummary( &(m_reply.m_isDisplaySumSetFromTags) );
 
 		if ( ! hsum || hsum == (void *)-1 ) {
+			checkPointerError(hsum);
 			return (Msg20Reply *)hsum;
 		}
 
@@ -15988,7 +16110,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	if ( getThatTitle ) {
 		Title *ti = getTitle();
-		if ( ! ti || ti == (Title *)-1 ) return (Msg20Reply *)ti;
+		if ( ! ti || ti == (Title *)-1 ) { checkPointerError(ti); return (Msg20Reply *)ti; }
 		char *tit = ti->getTitle();
 		int32_t  titLen = ti->getTitleLen();
 		m_reply.ptr_tbuf = tit;
@@ -16004,7 +16126,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// this is not documented because i don't think it will be popular
 	if ( m_req->m_getHeaderTag ) {
 		SafeBuf *htb = getHeaderTagBuf();
-		if ( ! htb || htb == (SafeBuf *)-1 ) return (Msg20Reply *)htb;
+		if ( ! htb || htb == (SafeBuf *)-1 ) { checkPointerError(htb); return (Msg20Reply *)htb; }
 		// . it should be null terminated
 		// . actually now it is a \0 separated list of the first
 		//   few h1 tags
@@ -16022,7 +16144,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// are we noarchive? only check this if not getting link text
 	if ( ! m_req->m_getLinkText ) {
 		char *na = getIsNoArchive();
-		if ( ! na || na == (char *)-1 ) return (Msg20Reply *)na;
+		if ( ! na || na == (char *)-1 ) { checkPointerError(na); return (Msg20Reply *)na; }
 		m_reply.m_noArchive = *na;
 	}
 
@@ -16033,7 +16155,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	     cr->m_percentSimilarSummary >   0 &&
 	     cr->m_percentSimilarSummary < 100   ) {
 		int32_t *sv = getSummaryVector ( );
-		if ( ! sv || sv == (void *)-1 ) return (Msg20Reply *)sv;
+		if ( ! sv || sv == (void *)-1 ) { checkPointerError(sv); return (Msg20Reply *)sv; }
 		m_reply.ptr_vbuf = (char *)m_summaryVec;
 		m_reply.size_vbuf = m_summaryVecSize;
 	}
@@ -16042,7 +16164,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	if ( ! m_reply.ptr_dbuf && m_req->size_displayMetas > 1 ) {
 		int32_t dsize;  char *d;
 		d = getDescriptionBuf(m_req->ptr_displayMetas,&dsize);
-		if ( ! d || d == (char *)-1 ) return (Msg20Reply *)d;
+		if ( ! d || d == (char *)-1 ) { checkPointerError(d); return (Msg20Reply *)d; }
 		m_reply.ptr_dbuf  = d;
 		m_reply.size_dbuf = dsize; // includes \0
 	}
@@ -16055,7 +16177,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	// get firstip
 	int32_t *fip = getFirstIp();
-	if ( ! fip || fip == (void *)-1 ) return (Msg20Reply *)fip;
+	if ( ! fip || fip == (void *)-1 ) { checkPointerError(fip); return (Msg20Reply *)fip; }
 
 	char *ru = ptr_redirUrl;
 	int32_t  rulen = 0;
@@ -16161,13 +16283,13 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	// if not set from above, set it here
 	if ( ! links ) links = getLinks ( true ); // do quick set?
-	if ( ! links || links == (Links *)-1 ) return (Msg20Reply *)links;
+	if ( ! links || links == (Links *)-1 ) {checkPointerError(links); return (Msg20Reply *)links; }
 	Pos *pos = getPos();
-	if ( ! pos || pos == (Pos *)-1 ) return (Msg20Reply *)pos;
+	if ( ! pos || pos == (Pos *)-1 ) { checkPointerError(pos); return (Msg20Reply *)pos; }
 	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) return (Msg20Reply *)ww;
+	if ( ! ww || ww == (Words *)-1 ) { checkPointerError(ww); return (Msg20Reply *)ww; }
 	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (Msg20Reply *)xml;
+	if ( ! xml || xml == (Xml *)-1 ) { checkPointerError(xml); return (Msg20Reply *)xml; }
 
 	// get a ptr to the link in the content. will point to the
 	// stuff in the href field of the anchor tag. used for seeing if
@@ -16208,7 +16330,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 					 &rssItemLen         ,
 					 &linkNode           ,
 					 &linkNum            );
-
 
 	// . BUT this skips the news topic stuff too. bad?
 	// . THIS HAPPENED before because we were truncating the xml(see above)
@@ -16445,7 +16566,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	     // is slow...
 	     getThatTitle ) {
 		Title *ti = getTitle();
-		if ( ! ti || ti == (Title *)-1 ) return (Msg20Reply *)ti;
+		if ( ! ti || ti == (Title *)-1 ) { checkPointerError(ti); return (Msg20Reply *)ti; }
 		char *tit = ti->getTitle();
 		int32_t  titLen = ti->getTitleLen();
 		m_reply. ptr_tbuf = tit;
@@ -16739,6 +16860,7 @@ Summary *XmlDoc::getSummary () {
 
 	uint8_t *ct = getContentType();
 	if ( ! ct || ct == (void *)-1 ) {
+		checkPointerError(ct);
 		return (Summary *)ct;
 	}
 	// xml and json docs have empty summaries
@@ -16749,11 +16871,13 @@ Summary *XmlDoc::getSummary () {
 
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) {
+		checkPointerError(xml);
 		return (Summary *)xml;
 	}
 
 	Title *ti = getTitle();
 	if ( ! ti || ti == (Title *)-1 ) {
+		checkPointerError(ti);
 		return (Summary *)ti;
 	}
 
@@ -16767,41 +16891,49 @@ Summary *XmlDoc::getSummary () {
 
 	Words *ww = getWords();
 	if ( ! ww || ww == (Words *)-1 ) {
+		checkPointerError(ww);
 		return (Summary *)ww;
 	}
 
 	Sections *sections = getSections();
 	if ( ! sections ||sections==(Sections *)-1) {
+		checkPointerError(sections);
 		return (Summary *)sections;
 	}
 
 	Pos *pos = getPos();
 	if ( ! pos || pos == (Pos *)-1 ) {
+		checkPointerError(pos);
 		return (Summary *)pos;
 	}
 
 	char *site = getSite();
 	if ( ! site || site == (char *)-1 ) {
+		checkPointerError(site);
 		return (Summary *)site;
 	}
 
 	int64_t *d = getDocId();
 	if ( ! d || d == (int64_t *)-1 ) {
+		checkPointerError(d);
 		return (Summary *)d;
 	}
 
 	Matches *mm = getMatches();
 	if ( ! mm || mm == (Matches *)-1 ) {
+		checkPointerError(mm);
 		return (Summary *)mm;
 	}
 
 	Query *q = getQuery();
 	if ( ! q ) {
+		checkPointerError(q);
 		return (Summary *)q;
 	}
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) {
+		abort(); //bad abort for now
 		return NULL;
 	}
 
@@ -16827,6 +16959,7 @@ Summary *XmlDoc::getSummary () {
 
 	// error, g_errno should be set!
 	if ( ! status ) {
+		checkPointerError(NULL);
 		return NULL;
 	}
 
@@ -16842,16 +16975,20 @@ char *XmlDoc::getHighlightedSummary ( bool *isSetFromTagsPtr ) {
 			*isSetFromTagsPtr = m_isFinalSummarySetFromTags;
 		}
 
+		if(m_finalSummaryBuf.getBufStart()==NULL)
+			gbshutdownLogicError();
 		return m_finalSummaryBuf.getBufStart();
 	}
 
 	Summary *s = getSummary();
 	if ( ! s || s == (void *)-1 ) {
+		checkPointerError(s);
 		return (char *)s;
 	}
 
 	Query *q = getQuery();
 	if ( ! q ) {
+		checkPointerError(q);
 		return (char *)q;
 	}
 
@@ -16862,8 +16999,8 @@ char *XmlDoc::getHighlightedSummary ( bool *isSetFromTagsPtr ) {
 
 	// assume no highlighting?
 	if ( ! m_req->m_highlightQueryTerms || sumLen == 0 ) {
-		m_finalSummaryBuf.safeMemcpy ( sum , sumLen );
-		m_finalSummaryBuf.nullTerm();
+		if(!m_finalSummaryBuf.safeMemcpy(sum,sumLen) || !m_finalSummaryBuf.nullTerm())
+			return NULL;
 		m_finalSummaryBufValid = true;
 
 		if ( isSetFromTagsPtr ) {
@@ -16893,9 +17030,9 @@ char *XmlDoc::getHighlightedSummary ( bool *isSetFromTagsPtr ) {
 	}
 
 	// store into our safebuf then
-	m_finalSummaryBuf.safeMemcpy ( &hb );
+	if(!m_finalSummaryBuf.safeMemcpy(&hb) || !m_finalSummaryBuf.nullTerm())
+		return NULL;
 	m_finalSummaryBufValid = true;
-	m_finalSummaryBuf.nullTerm();
 
 	if ( isSetFromTagsPtr ) {
 		*isSetFromTagsPtr = m_isFinalSummarySetFromTags;

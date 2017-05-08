@@ -458,7 +458,7 @@ void handleRequest25(UdpSlot *slot, int32_t netnice) {
 	// make a new Msg25
 	Msg25 *m25;
 	try { m25 = new Msg25; }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log(LOG_WARN, "build: msg25: new(%" PRId32"): %s",
 		    (int32_t)sizeof(Msg25),mstrerror(g_errno));

@@ -4,7 +4,6 @@
 #include "RdbList.h"
 #include "HashTableX.h"
 
-
 float getDiversityWeight ( unsigned char diversityRank );
 float getDensityWeight   ( unsigned char densityRank );
 float getWordSpamWeight  ( unsigned char wordSpamRank );
@@ -25,6 +24,7 @@ void printTermList ( int32_t i, const char *list, int32_t listSize ) ;
 
 
 //forward declarations
+class DocumentIndexChecker;
 class TopTree;
 class Msg2;
 class Msg39Request;
@@ -80,7 +80,7 @@ class PosdbTable {
 	// . returns false on error and sets errno
 	// . "termFreqs" are 1-1 with q->m_qterms[]
 	// . sets m_q to point to q
-	void init(Query *q, bool debug, void *logstate, TopTree *topTree, Msg2 *msg2, Msg39Request *r);
+	void init(Query *q, bool debug, void *logstate, TopTree *topTree, const DocumentIndexChecker &documentIndexChecker, Msg2 *msg2, Msg39Request *r);
 
 	// pre-allocate m_whiteListTable
 	bool allocWhiteListTable ( ) ;
@@ -115,8 +115,10 @@ class PosdbTable {
 	}
 
 	// functions used by intersectlist
-	bool genDebugScoreInfo1(int32_t *numProcessed, int32_t *topCursor, QueryTermInfo *qtibuf);
+	bool genDebugScoreInfo1(int32_t *numProcessed, int32_t *topCursor, bool *docInThisFile, QueryTermInfo *qtibuf);
 	bool genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t *lastDocId, char siteRank, float score, int32_t intScore, char docLang);
+	void logDebugScoreInfo(int32_t loglevel);
+	void removeScoreInfoForDeletedDocIds();
 	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
 	bool prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore);
 	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);
@@ -162,6 +164,8 @@ class PosdbTable {
 	int64_t m_docsInColl;
 
 	Msg2 *m_msg2;
+
+	const DocumentIndexChecker *m_documentIndexChecker;
 
 	// if getting more than MAX_RESULTS results, use this top tree to hold
 	// them rather than the m_top*[] arrays above
@@ -318,7 +322,6 @@ class SingleScore {
 };
 //above struct members are sorted on size as to minimize internal padding and final size
 
-
 // we add up the pair scores of this many of the top-scoring pairs
 // for inlink text only, so it is accumulative. but now we also
 // have a parm "m_realMaxTop" which is <= MAX_TOP and can be used to
@@ -373,7 +376,6 @@ class DocIdScore {
 	class PairScore   *m_pairScores;
 	class SingleScore *m_singleScores;
 };
-
 
 void reinitializeRankingSettings();
 

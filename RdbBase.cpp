@@ -89,7 +89,6 @@ RdbBase::RdbBase()
     m_mtxFileInfo(),
     m_docIdFileIndex(new docids_t),
     m_attemptOnlyMergeResumption(true),
-    m_dumpingFileNumber(-1),
     m_dumpingFileId(-1),
     m_submittingJobs(false),
     m_outstandingJobCount(0),
@@ -808,7 +807,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 	try {
 		f = new (BigFile);
-	} catch ( ... ) {
+	} catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log( LOG_WARN, "RdbBase: new(%i): %s", ( int ) sizeof( BigFile ), mstrerror( g_errno ) );
 		return -1;
@@ -826,7 +825,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	RdbMap  *m ;
 	try {
 		m = new (RdbMap);
-	} catch ( ... ) {
+	} catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log( LOG_WARN, "RdbBase: new(%i): %s", (int)sizeof(RdbMap), mstrerror(g_errno) );
 		mdelete ( f , sizeof(BigFile),"RdbBFile");
@@ -840,7 +839,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	if( m_useIndexFile ) {
 		try {
 			in = new (RdbIndex);
-		} catch ( ... ) {
+		} catch(std::bad_alloc&) {
 			g_errno = ENOMEM;
 			log( LOG_WARN, "RdbBase: new(%i): %s", (int)sizeof(RdbIndex), mstrerror(g_errno) );
 			mdelete ( f , sizeof(BigFile),"RdbBFile");
@@ -2353,14 +2352,20 @@ uint64_t RdbBase::getSpaceNeededForMerge(int startFileNum, int numFiles) const {
 void RdbBase::saveMaps() {
 	logTrace(g_conf.m_logTraceRdbBase, "BEGIN");
 
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		if ( ! m_fileInfo[i].m_map ) {
+	ScopedLock sl(m_mtxFileInfo);
+	for (int32_t i = 0; i < m_numFiles; i++) {
+		if (!m_fileInfo[i].m_map) {
 			log("base: map for file #%i is null", i);
 			continue;
 		}
 
-		bool status = m_fileInfo[i].m_map->writeMap ( false );
-		if ( !status ) {
+		if ((m_fileInfo[i].m_fileId & 0x01) == 0 || !m_fileInfo[i].m_allowReads) {
+			// don't write map for files that are merging/dumping
+			continue;
+		}
+
+		bool status = m_fileInfo[i].m_map->writeMap(false);
+		if (!status) {
 			// unable to write, let's abort
 			gbshutdownResourceError();
 		}
@@ -2392,14 +2397,15 @@ void RdbBase::saveIndexes() {
 		return;
 	}
 
+	ScopedLock sl(m_mtxFileInfo);
 	for (int32_t i = 0; i < m_numFiles; i++) {
 		if (!m_fileInfo[i].m_index) {
 			log(LOG_WARN, "base: index for file #%i is null", i);
 			continue;
 		}
 
-		if ((m_fileInfo[i].m_fileId & 0x01) == 0) {
-			// don't write index for files that are merging
+		if ((m_fileInfo[i].m_fileId & 0x01) == 0 || !m_fileInfo[i].m_allowReads) {
+			// don't write index for files that are merging/dumping
 			continue;
 		}
 

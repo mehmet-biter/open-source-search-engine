@@ -309,7 +309,7 @@ bool BigFile::addPart ( int32_t n ) {
 
 	try {
 		f = new (File); 
-	} catch ( ... ) {
+	} catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 
 		//### BR 20151217: Fix. Previously returned the return code from log(...)
@@ -933,7 +933,7 @@ static void readwriteWrapper_r ( void *state ) {
 	// . do the readwrite_r() since we're a thread now
 	// . this SHOULD NOT set g_errno, we're a thread!
 	// . it does have it's own errno however
-
+	
 	bool status = readwrite_r ( fstate );
 
 	// set errno
@@ -1439,7 +1439,7 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 		UnlinkRenameState *job_state;
 		try {
 			job_state = new UnlinkRenameState(this, f, i);
-		} catch (...) {
+		} catch(std::bad_alloc&) {
 			g_errno = ENOMEM;
 			log(LOG_WARN, "disk: Failed to allocate memory for unlink/rename for %s.", f->getFilename());
 			return false;
@@ -1549,7 +1549,7 @@ bool BigFile::rename(const char *newBaseFilename,
 		UnlinkRenameState *job_state;
 		try {
 			job_state = new UnlinkRenameState(this, f, i);
-		} catch (...) {
+		} catch(std::bad_alloc&) {
 			g_errno = ENOMEM;
 			log(LOG_WARN, "disk: Failed to allocate memory for unlink/rename for %s.", f->getFilename());
 			return false;
@@ -1684,7 +1684,7 @@ void BigFile::doneP1RenameWrapper(File *f) {
 			UnlinkRenameState *job_state;
 			try {
 				job_state = new UnlinkRenameState(this, f, i);
-			} catch (...) {
+			} catch(std::bad_alloc&) {
 				g_errno = ENOMEM;
 				log(LOG_WARN, "disk: Failed to allocate memory for unlink/rename for %s.", f->getFilename());
 				//todo: roll back. perhaps a clean process exit is the safest thing to do?

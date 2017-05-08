@@ -384,7 +384,7 @@ bool TcpServer::sendMsg( const char *hostname, int32_t hostnameLen, int16_t port
 	TcpState *tst;
 	try {
 		tst = new ( TcpState );
-	} catch ( ... ) {
+	} catch(std::bad_alloc&) {
 		// bail on failure
 		mfree( sendBuf, sendBufSize, "TcpServer" );
 		return true;
