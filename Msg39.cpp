@@ -396,10 +396,6 @@ void Msg39::getDocIds2() {
 // 3. increment docid ranges and keep going
 // 4. when done return the top docids
 void Msg39::controlLoop ( ) {
-//	log(LOG_DEBUG,"query: Msg39(%p)::controlLoop(): m_msg39req->m_numDocIdSplits=%d m_msg39req->m_timeout=%" PRId64, this, m_msg39req->m_numDocIdSplits, m_msg39req->m_timeout);
-//log("@@@ Msg39::controlLoop: m_startTimeQuery=%" PRId64, m_startTimeQuery);
-	//log("@@@ Msg39::controlLoop: now             =%" PRId64, gettimeofdayInMilliseconds());
-
 	RdbBase *base = getRdbBase(RDB_POSDB,m_msg39req->m_collnum);
 	if(base==NULL) {
 		log(LOG_ERROR,"query: Collection %d disappeared", m_msg39req->m_collnum);
@@ -408,12 +404,9 @@ void Msg39::controlLoop ( ) {
 
 	DocumentIndexChecker documentIndexChecker(base);
 	const int numFiles = base->getNumFiles(); //todo: this can vary if a merge finishes during the query
-//	log(LOG_DEBUG,"controlLoop(): numFiles=%d",numFiles);
-	
+
 	//todo: choose docid splits based on expected largest rdblist / most common term
 	int numDocIdSplits = 1;
-//	log(LOG_DEBUG,"controlLoop(): numDocIdSplits=%d",numDocIdSplits);
-	
 	const int totalChunks = (numFiles+1)*numDocIdSplits;
 	int chunksSearched = 0;
 	
@@ -421,11 +414,6 @@ void Msg39::controlLoop ( ) {
 		goto hadError;
 
 	for(int fileNum = 0; fileNum<numFiles+1; fileNum++) {
-//		if(fileNum!=numFiles)
-//			log(LOG_DEBUG,"controlLoop(): fileNum=%d (of %d)", fileNum, numFiles);
-//		else
-//			log(LOG_DEBUG,"controlLoop(): fileNum=tree");
-		
 		if(fileNum<numFiles && !base->isReadable(fileNum)) {
 			log(LOG_DEBUG,"posdb file #%d is not currently readable. Skipping", fileNum);
 			continue;
@@ -435,8 +423,6 @@ void Msg39::controlLoop ( ) {
 		const int64_t docidRangeDelta = MAX_DOCID / (int64_t)numDocIdSplits;
 		
 		for(int docIdSplitNumber = 0; docIdSplitNumber < numDocIdSplits; docIdSplitNumber++) {
-//			log(LOG_DEBUG,"controlLoop(): splitNumber=%d (of %d)", docIdSplitNumber, numDocIdSplits);
-			
 			if(docIdSplitNumber!=0) {
 				//Estimate if we can do this and next ranges within the deadline
 				int64_t now = gettimeofdayInMilliseconds();
@@ -469,8 +455,7 @@ void Msg39::controlLoop ( ) {
 			else if(docidRangeStart + 20 > MAX_DOCID)
 				docidRangeStart = MAX_DOCID;
 			int64_t d1 = docidRangeStart;
-			
-//			log(LOG_DEBUG,"docid range: [%" PRId64"..%" PRIu64")", d0,d1);
+
 			if(fileNum!=numFiles)
 				getLists(fileNum,d0,d1);
 			else
@@ -502,14 +487,9 @@ void Msg39::controlLoop ( ) {
 			
 			chunksSearched++;
 		}
-//		log(LOG_DEBUG,"controlLoop(): End of docid-split loop");
 	}
 skipRest:
-//	log(LOG_DEBUG,"controlLoop(): End of file loop");
-	
 
-//	log(LOG_DEBUG, "query: msg39(this=%p): All chunks done. Now getting cluster records",this);
-	
 	// ok, we are done, get cluster recs of the winning docids
 	// . this loads them using msg51 from clusterdb
 	// . if m_msg39req->m_doSiteClustering is false it just returns true
@@ -588,11 +568,7 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 	for ( int32_t i = 0 ; i < m_query.getNumTerms() ; i++ ) {
 		// get the term id
 		int64_t tid = m_query.getTermId(i);
-		// if only 1 stripe
-		//if ( g_hostdb.getNumStripes() == 1 ) {
-		//	docIdStart = 0;
-		//	docIdEnd   = MAX_DOCID;
-		//}
+
 		// debug
 		if ( m_debug )
 			log("query: setting sk/ek for docids %" PRId64
