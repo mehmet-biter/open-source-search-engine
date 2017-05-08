@@ -416,11 +416,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// . sanity check?
 		// . no, we must get again since we turn on endKey's last bit
 		int32_t p1 , p2;
-		map->getPageRange(m_fileStartKey,
-				  m_endKey,
-				  &p1,
-				  &p2,
-				  NULL);
+		map->getPageRange(m_fileStartKey, m_endKey, &p1, &p2, NULL);
 		// now get some read info
 		int64_t offset      = map->getAbsoluteOffset ( p1 );
 		int64_t      bytesToRead = map->getRecSizes ( p1, p2, false);
