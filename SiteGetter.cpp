@@ -315,7 +315,6 @@ bool SiteGetter::getSiteList ( ) {
 				         msg0_getlist_infinite_timeout,  // timeout
 				         NULL,  // msg5
 				         false,  // isrealmerge?
-				         false,  // forceLocalIndexdb?
 				         false,  // doIndexdbSplit? nosplit
 				         shardNum ))//split ))
 			return false;

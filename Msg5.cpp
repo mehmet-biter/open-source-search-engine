@@ -1429,7 +1429,6 @@ bool Msg5::getRemoteList ( ) {
 				 60*60*24*1000            , // timeout
 				 NULL                 , // msg5
 				 m_isRealMerge        , // merging files?
-				 false                , // force local Indexdb
 				 false                , // doIndexdbSplit
 				 // "forceParitySplit" is a group # 
 				 // (the groupId is a mask)

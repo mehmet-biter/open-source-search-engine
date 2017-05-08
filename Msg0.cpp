@@ -113,7 +113,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     int64_t      timeout       ,
 		     Msg5     *msg5             ,
 		     bool      isRealMerge      ,
-		     bool      forceLocalIndexdb ,
 		     bool      noSplit ,
 		     int32_t      forceParitySplit  ) {
 	logTrace( g_conf.m_logTraceMsg0, "BEGIN. hostId: %" PRId64", rdbId: %d", hostId, (int)rdbId );
@@ -177,9 +176,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// us that ...
 	if ( noSplit && m_rdbId == RDB_POSDB )
 		m_shardNum = g_hostdb.getShardNumByTermId ( startKey );
-
-	// how is this used?
-	if ( forceLocalIndexdb ) m_shardNum = getMyShardNum();
 
 	// . store these parameters
 	// . get a handle to the rdb in case we can satisfy locally

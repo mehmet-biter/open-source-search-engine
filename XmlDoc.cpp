@@ -4837,8 +4837,8 @@ RdbList *XmlDoc::getDupList ( ) {
 				msg0_getlist_infinite_timeout , // timeout
 				NULL, // msg5
 				false , // isRealMerge
-				false , // forcelocalindexdb
-				true ) ) // shardByTermId? THIS IS DIFFERENT!!!
+				true, // shardByTermId? THIS IS DIFFERENT!!!
+				-1  ) ) // forceParitySplit
 	{
 		// return -1 if this blocks
 		logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. msg0.getList blocked." );

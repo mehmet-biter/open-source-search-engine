@@ -1397,7 +1397,11 @@ bool Msg8a::launchGetRequests ( ) {
 					   firstHostId         , // firstHostId
 					   0                   , // startFileNum
 					   -1                  , // numFiles
-					   msg0_getlist_infinite_timeout );// timeout
+					   msg0_getlist_infinite_timeout, // timeout
+					   NULL, // msg5
+					   false, // isRealMerge
+					   false, // nosplit
+					   -1); // forceParitySplit
 		if (status) {
 			mdelete(state, sizeof(*state), "msg8astate");
 			delete state;

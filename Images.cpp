@@ -369,7 +369,6 @@ bool Images::getThumbnail ( const char *pageSite,
 				30000 , // timeout
 				NULL  , // msg5
 				false , // isRealMerge?
-				false , // focelocalindexdb
 				false , // doIndexdbSplit?
 				shardNum ))// force paritysplit
 		return false;
@@ -450,7 +449,6 @@ bool Images::launchRequests ( ) {
 					30000 , // timeout
 					NULL  , // msg5
 					false , // isRealMerge?
-					false , // focelocalindexdb
 					false , // doIndexdbSplit?
 					shardNum ))// force paritysplit
 			return false;

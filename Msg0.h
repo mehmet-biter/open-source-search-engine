@@ -58,11 +58,10 @@ class Msg0 {
 		       int32_t      startFileNum        ,
 		       int32_t      numFiles            ,
 		       int64_t      timeout             ,
-		       class Msg5 *msg5            = NULL ,
-		       bool        isRealMerge     = false , // file merge?
-		       bool        forceLocalIndexdb = false,
-		       bool        noSplit           = false , // MDW ????
-		       int32_t        forceParitySplit = -1    );
+		       class Msg5 *msg5            ,
+		       bool        isRealMerge     , // file merge?
+		       bool        noSplit           , // MDW ????
+		       int32_t        forceParitySplit     );
 
 	// . YOU NEED NOT CALL routines below here
 	// . private:
