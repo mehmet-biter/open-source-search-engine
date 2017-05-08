@@ -8,7 +8,6 @@
 #include "Rdb.h"
 #include "Repair.h"
 #include "JobScheduler.h"
-#include "PingServer.h"
 #include "ip.h"
 #include "Mem.h"
 #include <sys/stat.h> //stat()
@@ -91,7 +90,7 @@ static void Msg4In::handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
 	// sync with everyone else before accepting this! it might have
 	// been the case that the sender thinks our hosts.conf is the same
 	// since last time we were up, so it is up to us to check this
-	if ( g_pingServer.hostsConfInDisagreement() ) {
+	if ( g_hostdb.hostsConfInDisagreement() ) {
 		g_errno = EBADHOSTSCONF;
 		logError("call sendErrorReply");
 		g_udpServer.sendErrorReply ( slot , g_errno );
@@ -101,10 +100,10 @@ static void Msg4In::handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
 	}
 
 	// need to be in sync first
-	if ( ! g_pingServer.hostsConfInAgreement() ) {
+	if ( ! g_hostdb.hostsConfInAgreement() ) {
 		// . if we do not know the sender's hosts.conf crc, wait 4 it
 		// . this is 0 if not received yet
-		if (!slot->m_host->m_pingInfo.m_hostsConfCRC) {
+		if (!slot->m_host->isHostsConfCRCKnown()) {
 			g_errno = EWAITINGTOSYNCHOSTSCONF;
 			logError("call sendErrorReply");
 			g_udpServer.sendErrorReply ( slot , g_errno );
@@ -114,7 +113,7 @@ static void Msg4In::handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
 		}
 
 		// compare our hosts.conf to sender's otherwise
-		if (slot->m_host->m_pingInfo.m_hostsConfCRC != g_hostdb.getCRC()) {
+		if (!slot->m_host->hasSameHostsConfCRC()) {
 			g_errno = EBADHOSTSCONF;
 			logError("call sendErrorReply");
 			g_udpServer.sendErrorReply ( slot , g_errno );

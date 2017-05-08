@@ -6,7 +6,6 @@
 #include "Stats.h"
 #include "JobScheduler.h"
 #include "Msg0.h"
-#include "PingServer.h"
 #include "Process.h"
 #include "ip.h"
 #include "Sanity.h"
@@ -1152,22 +1151,7 @@ bool Msg5::doneMerging ( ) {
 		
 		m_hadCorruption = false;
 
-// 		if(g_numCorrupt++ >= g_conf.m_maxCorruptLists &&
-// 		   g_conf.m_maxCorruptLists > 0) {
 		g_numCorrupt++;
-		if(g_conf.m_maxCorruptLists > 0 &&
-		   (g_numCorrupt % g_conf.m_maxCorruptLists) == 0) {
-			char msgbuf[1024];
-			Host *h = g_hostdb.getHost ( 0 );
-			snprintf(msgbuf, 1024,
-				 "%" PRId32" corrupt lists. "
-				 "cluster=%s "
-				 "host=%" PRId32,
-				 g_numCorrupt,
-				 iptoa(h->m_ip),
-				 g_hostdb.m_hostId);
-			g_pingServer.sendEmail(NULL, msgbuf);
-		}
 
 		if(m_callback) {
 			// try to get the list from remote host
@@ -1338,7 +1322,7 @@ bool Msg5::getRemoteList ( ) {
 	// make a new Msg0 for getting remote list
 	try { m_msg0 = new ( Msg0 ); }
 	// g_errno should be set if this is NULL
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log("net: Could not allocate memory to get from twin.");
 		return true;

@@ -26,7 +26,6 @@
 #include "Posdb.h"
 #include "Highlight.h"
 #include "Wiktionary.h"
-#include "PingServer.h"
 #include "Parms.h"
 #include "Domains.h"
 #include "AdultCheck.h"
@@ -3448,7 +3447,23 @@ uint8_t *XmlDoc::getLangId ( ) {
 	setLangVec ( &mdw,&langBuf,NULL);
 	tmpLangVec = langBuf.getBufStart();
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
-	logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaKeywords", getLanguageAbbr(m_langId) );
+	if (m_langId != langUnknown) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaKeywords", getLanguageAbbr(m_langId));
+		m_langIdValid = true;
+		return &m_langId;
+	}
+
+	// try charset
+	if (m_charsetValid && m_charset != csUnknown) {
+		m_langId = getLangIdFromCharset(m_charset);
+		if (m_langId != langUnknown) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from charset", getLanguageAbbr(m_langId));
+			m_langIdValid = true;
+			return &m_langId;
+		}
+	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s", getLanguageAbbr(m_langId));
 	m_langIdValid = true;
 	return &m_langId;
 }
@@ -5551,7 +5566,7 @@ XmlDoc **XmlDoc::getOldXmlDoc ( ) {
 	// . make a new one
 	// . this will uncompress it and set ourselves!
 	try { m_oldDoc = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		return NULL;
 	}
@@ -5661,7 +5676,7 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 	// . make a new one
 	// . this will uncompress it and set ourselves!
 	try { m_extraDoc = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		logTrace( g_conf.m_logTraceXmlDoc, "END - out of memory" );
 		return NULL;
@@ -5829,7 +5844,7 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	// . make a new one
 	// . this will uncompress it and set ourselves!
 	try { m_rootDoc = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		return NULL;
 	}
@@ -8939,6 +8954,11 @@ static uint16_t getCharsetFast(HttpMime *mime,
 			       const char *s,
 			       int32_t slen) {
 
+	int16_t httpHeaderCharset = csUnknown;
+	int16_t unicodeBOMCharset = csUnknown;
+	int16_t metaCharset = csUnknown;
+	bool invalidUtf8Encoding = false;
+
 	int16_t charset = csUnknown;
 
 	if ( slen < 0 ) slen = 0;
@@ -8951,14 +8971,20 @@ static uint16_t getCharsetFast(HttpMime *mime,
 	if ( cslen > 31 ) cslen = 31;
 	if ( cs && cslen > 0 ) {
 		charset = get_iana_charset ( cs , cslen );
+		httpHeaderCharset = charset;
 	}
 
 	// look for Unicode BOM first though
 	cs = ucDetectBOM ( pstart , pend - pstart );
-	if ( cs && charset == csUnknown ) {
-		log(LOG_DEBUG, "build: Unicode BOM signature detected: %s",cs);
-		int32_t len = strlen(cs);	if ( len > 31 ) len = 31;
-		charset = get_iana_charset ( cs , len );
+	if (cs) {
+		log(LOG_DEBUG, "build: Unicode BOM signature detected: %s", cs);
+		int32_t len = strlen(cs);
+		if (len > 31) len = 31;
+		unicodeBOMCharset = get_iana_charset(cs, len);
+
+		if (charset == csUnknown) {
+			charset = unicodeBOMCharset;
+		}
 	}
 
 	// prepare to scan doc
@@ -8979,6 +9005,7 @@ static uint16_t getCharsetFast(HttpMime *mime,
 				    "seem to be for url %s",url);
 				// reset it back to unknown then
 				charset = csUnknown;
+				invalidUtf8Encoding = true;
 				break;
 			}
 		}
@@ -9087,11 +9114,12 @@ static uint16_t getCharsetFast(HttpMime *mime,
 			p += 1;//oneChar;
 		size_t csStringLen = (size_t)(p-csString);
 		// get the character set
-		int16_t metaCs = get_iana_charset(csString, csStringLen);
+		metaCharset = get_iana_charset(csString, csStringLen);
 		// update "charset" to "metaCs" if known, it overrides all
-		if (metaCs != csUnknown ) charset = metaCs;
-		// all done, only if we got a known char set though!
-		if ( charset != csUnknown ) break;
+		if (metaCharset != csUnknown ) {
+			charset = metaCharset;
+			break;
+		}
 	}
 
         // alias these charsets so iconv understands
@@ -9145,10 +9173,15 @@ static uint16_t getCharsetFast(HttpMime *mime,
 				// sunsetpromotions.com and washingtonia
 				// if we do not have this here
 				charset = csISOLatin1;
+				invalidUtf8Encoding = true;
 				break;
 			}
 		}
 	}
+
+	log(LOG_INFO, "encoding: charset='%s' header='%s' bom='%s' meta='%s' invalid=%d url='%s'",
+	    get_charset_str(charset), get_charset_str(httpHeaderCharset), get_charset_str(unicodeBOMCharset),
+	    get_charset_str(metaCharset), invalidUtf8Encoding, url);
 
 	// all done
 	return charset;
@@ -11185,7 +11218,8 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 	}
 
 	// keep track of stats
-	Statistics::register_spider_time( isNew, errCode, m_httpStatus, took );
+	Statistics::register_spider_time(isNew, errCode, m_httpStatus, took);
+	Statistics::register_document_encoding(errCode, m_charset, m_langId, m_countryId);
 
 	// do not log if we should not, saves some time
 	if ( ! g_conf.m_logSpideredUrls ) return;
@@ -11712,7 +11746,7 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 	// . do not keep on stack since so huge!
 	XmlDoc *doc ;
 	try { doc = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		return false;
 	}

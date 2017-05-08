@@ -13,7 +13,6 @@
 #include "HttpServer.h"
 #include "Pages.h"
 #include "Parms.h"
-#include "PingServer.h"
 #include "ip.h"
 #include "Conf.h"
 #include "Mem.h"
@@ -376,7 +375,7 @@ subloop:
 	
 	// don't spider if not all hosts are up, or they do not all
 	// have the same hosts.conf.
-	if ( ! g_pingServer.hostsConfInAgreement() ) {
+	if ( ! g_hostdb.hostsConfInAgreement() ) {
 		logTrace( g_conf.m_logTraceSpider, "END, host config disagreement"  );
 		return;
 	}
@@ -1138,7 +1137,7 @@ bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	// otherwise, make a new one if we have to
 	try { xd = new (XmlDoc); }
 	// bail on failure, sleep and try again
-	catch ( ... ) { 
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log("build: Could not allocate %" PRId32" bytes to spider "
 		    "the url %s. Will retry later.",

@@ -384,7 +384,7 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	// make a new one
 	RdbBase *newColl = NULL;
 	try {newColl= new(RdbBase);}
-	catch(...){
+	catch(std::bad_alloc&){
 		g_errno = ENOMEM;
 		log(LOG_WARN, "db: %s: Failed to allocate %" PRId32" bytes for collection \"%s\".",
 		    m_dbname,(int32_t)sizeof(Rdb),coll);
@@ -991,13 +991,6 @@ void Rdb::doneDumping ( ) {
 	//   will think the dumping is no longer going on and use the primary
 	//   memory for allocating new titleRecs and such and that is not good!
 	m_isDumping = false;
-
-	// try merge for all, first one that needs it will do it, preventing
-	// the rest from doing it
-	// don't attempt merge if we're niceness 0
-	if ( !m_niceness ) return;
-
-	attemptMergeAll();
 }
 
 void forceMergeAll(rdbid_t rdbId) {

@@ -4,7 +4,6 @@
 #include "Stats.h"
 #include "Statistics.h"
 #include "Profiler.h"
-#include "PingServer.h"
 #include "HttpServer.h" //g_httpServer.m_ssltcp.m_ctx
 #include "Hostdb.h"
 #include "Dns.h"
@@ -385,7 +384,7 @@ bool TcpServer::sendMsg( const char *hostname, int32_t hostnameLen, int16_t port
 	TcpState *tst;
 	try {
 		tst = new ( TcpState );
-	} catch ( ... ) {
+	} catch(std::bad_alloc&) {
 		// bail on failure
 		mfree( sendBuf, sendBufSize, "TcpServer" );
 		return true;
@@ -747,7 +746,6 @@ TcpSocket *TcpServer::getAvailableSocket ( int32_t ip, int16_t port ) {
 	return NULL;
 }
 
-static int32_t s_lastTime = 0;
 
 // . gets a new TcpSocket
 // . returns NULL and set g_errno on error
@@ -773,11 +771,6 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 			}
 			// another stat
 			Statistics::register_socket_limit_hit();
-			g_errno = EOUTOFSOCKETS; 
-			// send email alert
-			g_pingServer.sendEmailMsg ( &s_lastTime ,
-						    "out of sockets on https");
-			// in case sendEmailMsg resets g_errno somehow
 			g_errno = EOUTOFSOCKETS; 
 			return NULL;
 		}
@@ -891,12 +884,6 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 			// another stat
 			Statistics::register_socket_limit_hit();
 			g_errno = EOUTOFSOCKETS; 
-
-			// send email alert
-			g_pingServer.sendEmailMsg( &s_lastTime, "out of sockets on https" );
-
-			// in case sendEmailMsg resets g_errno somehow
-			g_errno = EOUTOFSOCKETS; 
 			return NULL;
 		}
 	}
@@ -906,10 +893,6 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 		log(LOG_LOGIC,"tcp: Got bad sd of %" PRId32".",(int32_t)sd);
 		// another stat
 		Statistics::register_socket_limit_hit();
-		g_errno = EOUTOFSOCKETS; 
-		// send email alert
-		g_pingServer.sendEmailMsg ( &s_lastTime , "out of sockets on https2");
-		// in case sendEmailMsg resets g_errno somehow
 		g_errno = EOUTOFSOCKETS; 
 		return NULL;
 	}
@@ -921,7 +904,6 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 	if ( s->m_startTime != 0 ) {
 		log(LOG_LOGIC,"tcp: sd of %" PRId32" is already in use.",(int32_t)sd);
 		Statistics::register_socket_limit_hit();
-		g_errno = EOUTOFSOCKETS;
 		if ( sd == 0 ) log("tcp: closing2 sd of 0");
 		if ( ::close(sd) == -1 )
 			log("tcp: close3(%" PRId32") = %s",(int32_t)sd,mstrerror(errno));
@@ -930,10 +912,6 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 			// log("tcp: closing sock %i (%" PRId32")",sd, m_numOpen-m_numClosed);
 		}
 
-		// send email alert
-		g_pingServer.sendEmailMsg ( &s_lastTime , "out of sockets on https3");
-
-		// in case sendEmailMsg resets g_errno somehow
 		g_errno = EOUTOFSOCKETS; 
 		return NULL;
 	}

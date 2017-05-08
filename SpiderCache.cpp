@@ -91,7 +91,7 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 
 	// make it
 	try { sc = new SpiderColl(cr); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		log("spider: failed to make SpiderColl for collnum=%" PRId32,
 			(int32_t)collnum);
 		return NULL;

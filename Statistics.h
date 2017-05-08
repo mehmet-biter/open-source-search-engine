@@ -1,6 +1,8 @@
 #ifndef GB_STATISTICS_H
 #define GB_STATISTICS_H
 
+#include <cstdint>
+
 namespace Statistics {
 
 bool initialize();
@@ -11,6 +13,8 @@ void register_query_time(unsigned term_count, unsigned qlang, int error_code, un
 void register_spider_time( bool is_new, int error_code, int http_status, unsigned ms );
 
 void register_io_time( bool is_write, int error_code, unsigned long bytes, unsigned ms );
+
+void register_document_encoding(int error_code, int16_t charsetId, uint8_t langId, uint16_t countryId);
 
 void register_socket_limit_hit();
 

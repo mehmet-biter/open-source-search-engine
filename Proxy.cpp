@@ -12,7 +12,6 @@
 #include "Pages.h"
 #include "HttpRequest.h"
 #include "Stats.h"
-#include "PingServer.h"
 #include "ip.h"
 #include "Conf.h"
 #include "Mem.h"
@@ -115,22 +114,6 @@ bool Proxy::initProxy ( int32_t proxyId, uint16_t udpPort,
 	// info regularly for billing feed access. save every 5 minutes.
 	g_conf.m_autoSaveFrequency = 5;
 
-
-	// no, now proxies do too! for out of socket conditions in tcpserver
-	g_conf.m_sendEmailAlerts = true;
-
-	g_conf.m_sendEmailAlertsToEmail1 = true;
-	strcpy ( g_conf.m_email1Addr , "search-engine@example.com");
-	strcpy ( g_conf.m_email1From , "sysadmin@example.com");
-	strcpy ( g_conf.m_email1MX   , "");
-
-	// start pinging right away, udpServer has already been init'ed
-	if ( ! g_pingServer.init() ) {
-		log("db: PingServer init failed." ); return false; 
-	}
-
-	if ( ! g_pingServer.registerHandler() ) 
-		return false;
 
 	//Also have to init pages because we need to know which requests to
 	//forward. html/gif's, etc can be taken care here itself.
@@ -303,7 +286,7 @@ bool Proxy::handleRequest (TcpSocket *s){
 	StateControl *stC;
 	try { stC = new (StateControl) ; }
 	// return true and set g_errno if couldn't make a new File class
-	catch ( ... ) { 
+	catch(std::bad_alloc&) {
 	  goto hadError2;
 	}
 	mnew ( stC, sizeof(StateControl), "Proxy");

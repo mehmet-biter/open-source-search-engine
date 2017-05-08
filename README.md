@@ -48,7 +48,12 @@ Primary:
 Secondary:
 
 *    OpenSuSE 13.2, GCC 4.8.3
+*    OpenSuSE 42.2, GCC 6.2.1
 *    Fedora 24, GCC 6.2.1
+
+DEPENDENCIES
+------------
+Multi-instance installations require Vagus (https://github.com/privacore/vagus) for keeping track of which instances are dead and alive.
 
 RUNNING GIGABLAST
 -----------------

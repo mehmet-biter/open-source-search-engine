@@ -27,7 +27,6 @@
 #include "Collectiondb.h"
 #include "Sections.h"
 #include "UdpServer.h"
-#include "PingServer.h"
 #include "Repair.h"
 #include "DailyMerge.h"
 #include "MsgC.h"
@@ -122,7 +121,6 @@ static bool hashtest();
 static bool parseTest(const char *coll, int64_t docId, const char *query);
 static bool summaryTest1(char *rec, int32_t listSize, const char *coll, int64_t docId, const char *query );
 
-static bool pingTest(int32_t hid , uint16_t clientPort);
 static bool cacheTest();
 static void countdomains(const char* coll, int32_t numRecs, int32_t verb, int32_t output);
 
@@ -152,9 +150,6 @@ typedef enum {
 static int install_file(const char *file);
 static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir = NULL,
                      int32_t hostId2 = -1, char *cmd = NULL );
-static int scale(const char *newhostsconf, bool useShotgunIp);
-static int collinject(const char *newhostsconf);
-static int collcopy(const char *newHostsConf, const char *coll, int32_t collnum);
 
 bool doCmd ( const char *cmd , int32_t hostId , const char *filename , bool sendToHosts,
 	     bool sendToProxies, int32_t hostId2=-1 );
@@ -173,6 +168,9 @@ extern void resetEntities      ( );
 extern void resetQuery         ( );
 extern void resetUnicode       ( );
 
+
+bool g_recoveryMode = false;
+static int s_recoveryLevel = 0;
 
 static int argc_copy;
 static char **argv_copy;
@@ -432,28 +430,6 @@ int main2 ( int argc , char *argv[] ) {
 			*/
 
 			/*
-			"scale <newHosts.conf>\n"
-			"\tGenerate a script to be called to migrate the "
-			"data to the new places. Remaining hosts will "
-			"keep the data they have, but it will be "
-			"filtered during the next merge operations.\n\n"
-
-			"collcopy <newHosts.conf> <coll> <collnum>\n"
-			"\tGenerate a script to copy the collection data on "
-			"the cluster defined by newHosts.conf to the "
-			"current cluster. Remote network must have "
-			"called \"gb ddump\" twice in a row just before to "
-			"ensure all of its data is on disk.\n\n"
-			*/
-
-			/*
-
-			"ping <hostId> [clientport]\n"
-			"\tperforms pings to <hostId>. [clientport] defaults "
-			"to 2050.\n\n"
-			*/
-
-			/*
 			"spellcheck <file>\n"
 			"\tspellchecks the the queries in <file>.\n\n"
 
@@ -571,12 +547,12 @@ int main2 ( int argc , char *argv[] ) {
 	}
 	if ( cc ) {
 		g_recoveryMode = true;
-		g_recoveryLevel = 1;
+		s_recoveryLevel = 1;
 		if ( strlen(cc) > 2 ) {
-			g_recoveryLevel = atoi(cc+2);
+			s_recoveryLevel = atoi(cc+2);
 		}
-		if ( g_recoveryLevel < 0 ) {
-			g_recoveryLevel = 0;
+		if ( s_recoveryLevel < 0 ) {
+			s_recoveryLevel = 0;
 		}
 	}
 
@@ -781,7 +757,7 @@ int main2 ( int argc , char *argv[] ) {
 		Host *h = g_hostdb.getProxy( proxyId );
 		uint16_t httpPort = h->getInternalHttpPort();
 		uint16_t httpsPort = h->getInternalHttpsPort();
-		//we need udpserver for addurl and udpserver2 for pingserver
+		//we need udpserver for addurl
 		uint16_t udpPort  = h->m_port;
 
 		if ( ! g_conf.init ( h->m_dir ) ) { // , h->m_hostId ) ) {
@@ -854,23 +830,6 @@ int main2 ( int argc , char *argv[] ) {
 		g_conf.m_save = true;
 
 		g_loop.runLoop();
-	}
-
-	// gb ping [hostId] [clientPort]
-	if ( strcmp ( cmd , "ping" ) == 0 ) {
-		int32_t hostId = 0;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-		}
-
-		uint16_t port = 2050;
-		if ( cmdarg + 2 < argc ) {
-			port = (uint16_t)atoi ( argv[cmdarg+2] );
-		}
-
-		pingTest ( hostId , port );
-
-		return 0;
 	}
 
 	// gb dsh
@@ -1030,27 +989,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "backuprestore" ) == 0 ) {	
 		if ( cmdarg + 1 >= argc ) goto printHelp;
 		return install( ifk_backuprestore, -1 , argv[cmdarg+1] );
-	}
-
-	// gb scale <hosts.conf>
-	if ( strcmp ( cmd , "scale" ) == 0 ) {	
-		if ( cmdarg + 1 >= argc ) goto printHelp;
-		return scale( argv[cmdarg+1] , true );
-	}
-
-	// gb collinject
-	if ( strcmp ( cmd , "collinject" ) == 0 ) {	
-		if ( cmdarg + 1 >= argc ) goto printHelp;
-		return collinject( argv[cmdarg+1] );
-	}
-
-	// gb collcopy <hosts.conf> <coll> <collnum>>
-	if ( strcmp ( cmd , "collcopy" ) == 0 ) {	
-		if ( cmdarg + 4 != argc ) goto printHelp;
-		char *hostsconf = argv[cmdarg+1];
-		char *coll      = argv[cmdarg+2];
-		int32_t  collnum   = atoi(argv[cmdarg+3]);
-		return collcopy ( hostsconf , coll , collnum );
 	}
 
 	// gb stop [hostId]
@@ -1244,7 +1182,6 @@ int main2 ( int argc , char *argv[] ) {
 	// put in read only mode
 	if ( useTmpCluster ) {
 		g_conf.m_readOnlyMode = true;
-		g_conf.m_sendEmailAlerts = false;
 	}
 
 	// log how much mem we can use
@@ -1787,10 +1724,6 @@ int main2 ( int argc , char *argv[] ) {
 				 false    )){ // is dns?
 		log("db: UdpServer init failed." ); return 1; }
 
-	// start pinging right away
-	if ( ! g_pingServer.init() ) {
-		log("db: PingServer init failed." ); return 1; }
-
 	// start up repair loop
 	if ( ! g_repair.init() ) {
 		log("db: Repair init failed." ); return 1; }
@@ -1856,15 +1789,6 @@ int main2 ( int argc , char *argv[] ) {
 	
 	if(!InstanceInfoExchange::initialize())
 		return 0;
-
-	if(g_recoveryMode) {
-		//now that everything is init-ed send the message.
-		char buf[256];
-		log("admin: Sending emails.");
-		sprintf(buf, "Host %" PRId32" respawning after crash.(%s)",
-			h9->m_hostId, iptoa(g_hostdb.getMyIp()));
-		g_pingServer.sendEmail(NULL, buf);
-	}
 
 	// . start the spiderloop
 	// . comment out when testing SpiderCache
@@ -2008,206 +1932,6 @@ void doCmdAll ( int fd, void *state ) {
 	// wait for it
 	log("cmd: sent command");
 }
-
-// copy a collection from one network to another (defined by 2 hosts.conf's)
-static int collcopy(const char *newHostsConf, const char *coll, int32_t collnum) {
-	Hostdb hdb;
-	//if ( ! hdb.init(newHostsConf, 0/*assume we're zero*/) ) {
-	if ( ! hdb.init( 0/*assume we're zero*/) ) {
-		log("clusterCopy failed. Could not init hostdb with %s",
-		    newHostsConf);
-		return -1;
-	}
-	// sanity check
-	if ( hdb.getNumShards() != g_hostdb.getNumShards() ) {
-		log("Hosts.conf files do not have same number of groups.");
-		return -1;
-	}
-	if ( hdb.getNumHosts() != g_hostdb.getNumHosts() ) {
-		log("Hosts.conf files do not have same number of hosts.");
-		return -1;
-	}
-	// host checks
-	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
-		Host *h = &g_hostdb.m_hosts[i];
-		fprintf(stderr,"ssh %s '",iptoa(h->m_ip));
-		fprintf(stderr,"du -skc %scoll.%s.%" PRId32" | tail -1 '\n",
-			h->m_dir,coll,collnum);
-	}
-	// loop over dst hosts
-	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
-		Host *h = &g_hostdb.m_hosts[i];
-		// get the src host from the provided hosts.conf
-		Host *h2 = &hdb.m_hosts[i];
-		// print the copy
-		//fprintf(stderr,"rcp %s:%s*db*.dat* ",
-		//	iptoa( h->m_ip), h->m_dir  );
-		fprintf(stderr,"nohup ssh %s '",iptoa(h->m_ip));
-		fprintf(stderr,"rcp -r ");
-		fprintf(stderr,"%s:%scoll.%s.%" PRId32" ",
-			iptoa(h2->m_ip), h2->m_dir , coll, collnum );
-		fprintf(stderr,"%s' &\n", h->m_dir  );
-		//fprintf(stderr," rcp -p %s*.map* ", h->m_dir );
-		//fprintf(stderr," rcp -r %scoll.* ", h->m_dir );
-		//fprintf(stderr,"%s:%s " ,iptoa(h2->m_ip), h2->m_dir );
-	}
-	return 1;
-}
-
-// generate the copies that need to be done to scale from oldhosts.conf
-// to newhosts.conf topology.
-static int scale(const char *newHostsConf, bool useShotgunIp) {
-
-	g_hostdb.resetPortTables();
-
-	Hostdb hdb;
-	//if ( ! hdb.init(newHostsConf, 0/*assume we're zero*/) ) {
-	if ( ! hdb.init( 0/*assume we're zero*/) ) {
-		log("Scale failed. Could not init hostdb with %s",
-		    newHostsConf);
-		return -1;
-	}
-
-	// ptrs to the two hostdb's
-	Hostdb *hdb1 = &g_hostdb;
-	Hostdb *hdb2 = &hdb;
-
-	// this function was made to scale UP, but if scaling down
-	// then swap them!
-	if ( hdb1->getNumHosts() > hdb2->getNumHosts() ) {
-		Hostdb *tmp = hdb1;
-		hdb1 = hdb2;
-		hdb2 = tmp;
-	}
-
-	// . ensure old hosts in g_hostdb are in a derivate groupId in
-	//   newHostsConf
-	// . old hosts may not even be present! consider them the same host,
-	//   though, if have same ip and working dir, because that would
-	//   interfere with a file copy.
-	for ( int32_t i = 0 ; i < hdb1->getNumHosts() ; i++ ) {
-		Host *h = &hdb1->m_hosts[i];
-		// look in new guy
-		for ( int32_t j = 0 ; j < hdb2->getNumHosts() ; j++ ) {
-			Host *h2 = &hdb2->m_hosts[j];
-			// if a match, ensure same group
-			if ( h2->m_ip != h->m_ip ) continue;
-			if ( strcmp ( h2->m_dir , h->m_dir ) != 0 ) continue;
-		}
-	}
-
-	// . ensure that:
-	//   (h2->m_groupId & (hdb1->m_numGroups -1)) == h->m_groupId 
-	//   where h2 is in a derivative group of h.
-	// . do a quick monte carlo test to make sure that a key in old
-	//   group #0 maps to groups 0,8,16,24 for all keys and all dbs
-	for ( int32_t i = 0 ; i < 1000 ; i++ ) {
-		//key96_t k;
-		//k.n1 = rand(); k.n0 = rand(); k.n0 <<= 32; k.n0 |= rand();
-		//key128_t k16;
-		//k16.n0 = k.n0;
-		//k16.n1 = rand(); k16.n1 <<= 32; k16.n1 |= k.n1;
-		char k[MAX_KEY_BYTES];
-		for ( int32_t ki = 0 ; ki < MAX_KEY_BYTES ; ki++ )
-			k[ki] = rand() & 0xff;
-	}
-
-	// . now copy all titleRecs in old hosts to all derivatives
-	// . going from 8 (3bits) hosts to 32 (5bits), for instance, old 
-	//   group id #0 would copy to group ids 0,8,16 and 24.
-	// . 000 --> 00000(#0), 01000(#8), 10000(#16), 11000(#24)
-	// . titledb determine groupId by mod'ding the docid
-	//   contained in their most significant key bits with the number
-	//   of groups.  see Titledb.h::getGroupId(docid)
-	// . indexdb and tagdb mask the hi bits of the key with 
-	//   hdb1->m_groupMask, which is like a reverse mod'ding:
-	//   000 --> 00000, 00001, 00010, 00011
-	char done [ 8196 ];
-	memset ( done , 0 , 8196 );
-	for ( int32_t i = 0 ; i < hdb1->getNumHosts() ; i++ ) {
-		Host *h = &hdb1->m_hosts[i];
-		char flag = 0;
-		// look in new guy
-		for ( int32_t j = 0 ; j < hdb2->getNumHosts() ; j++ ) {
-			Host *h2 = &hdb2->m_hosts[j];
-			// do not copy to oneself
-			if ( h2->m_ip == h->m_ip &&
-			     strcmp ( h2->m_dir , h->m_dir ) == 0 ) continue;
-			// skip if not derivative groupId for titledb
-			//if ( (h2->m_groupId & hdb1->m_groupMask) !=
-			//     h->m_groupId ) continue;
-			// continue if already copying to here
-			if ( done[j] ) continue;
-			// mark as done
-			done[j] = 1;
-
-			// skip local copies for now!!
-			//if ( h->m_ip == h2->m_ip ) continue;
-
-			// use ; separator
-			if ( flag ) fprintf(stderr,"; ");
-			//else        fprintf(stderr,"ssh %s \"",iptoa(h->m_ip));
-			else        fprintf(stderr,"ssh %s \"",h->m_hostname);
-			// flag
-			flag = 1;
-			// print the copy
-			//fprintf(stderr,"rcp %s:%s*db*.dat* ",
-			//	iptoa( h->m_ip), h->m_dir  );
-			// if same ip then do a 'cp' not rcp
-			const char *cmd = "rcp -r";
-			if ( h->m_ip == h2->m_ip ) cmd = "cp -pr";
-
-			fprintf(stderr,"%s %s*db*.dat* ", cmd, h->m_dir  );
-
-			if ( h->m_ip == h2->m_ip )
-				fprintf(stderr,"%s ;", h2->m_dir );
-			else {
-				//int32_t ip = h2->m_ip;
-				//if ( useShotgunIp ) ip = h2->m_ipShotgun;
-				//fprintf(stderr,"%s:%s ;",iptoa(ip), h2->m_dir );
-				char *hn = h2->m_hostname;
-				if ( useShotgunIp ) hn = h2->m_hostname;//2
-				fprintf(stderr,"%s:%s ;",hn, h2->m_dir );
-
-			}
-
-			//fprintf(stderr," rcp -p %s*.map* ", h->m_dir );
-			fprintf(stderr," %s %scoll.* ", cmd, h->m_dir );
-
-			if ( h->m_ip == h2->m_ip )
-				fprintf(stderr,"%s " , h2->m_dir );
-			else {
-				//int32_t ip = h2->m_ip;
-				//if ( useShotgunIp ) ip = h2->m_ipShotgun;
-				//fprintf(stderr,"%s:%s " ,iptoa(ip), h2->m_dir );
-				char *hn = h2->m_hostname;
-				if ( useShotgunIp ) hn = h2->m_hostname;//2;
-				fprintf(stderr,"%s:%s " ,hn, h2->m_dir );
-			}
-
-			/*
-			fprintf(stderr,"scp %s:%s/titledb* %s:%s\n",
-				iptoa( h->m_ip), h->m_dir  ,
-				iptoa(h2->m_ip), h2->m_dir );
-			fprintf(stderr,"scp %s:%s/indexdb* %s:%s\n",
-				iptoa( h->m_ip), h->m_dir  ,
-				iptoa(h2->m_ip), h2->m_dir );
-			fprintf(stderr,"scp %s:%s/spiderdb* %s:%s\n",
-				iptoa( h->m_ip), h->m_dir  ,
-				iptoa(h2->m_ip), h2->m_dir );
-			fprintf(stderr,"scp %s:%s/clusterdb* %s:%s\n",
-				iptoa( h->m_ip), h->m_dir  ,
-				iptoa(h2->m_ip), h2->m_dir );
-			fprintf(stderr,"scp %s:%s/tagdb* %s:%s\n",
-				iptoa( h->m_ip), h->m_dir  ,
-				iptoa(h2->m_ip), h2->m_dir );
-			*/
-		}
-		if ( flag ) fprintf(stderr,"\" &\n");
-	}
-	return 1;
-}
-
 
 static int install_file(const char *dst_host, const char *src_file, const char *dst_file)
 {
@@ -2506,7 +2230,6 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 static bool registerMsgHandlers() {
 	if (! registerMsgHandlers1()) return false;
 	if (! registerMsgHandlers2()) return false;
-	if ( ! g_pingServer.registerHandler() ) return false;
 
 	// in SpiderProxy.cpp...
 	initSpiderProxyStuff();
@@ -2591,7 +2314,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 	// make this
 	XmlDoc *xd;
 	try { xd = new (XmlDoc); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		fprintf(stdout,"could not alloc for xmldoc\n");
 		exit(-1);
 	}
@@ -4401,145 +4124,6 @@ static void dumpLinkdb(const char *coll,
 }
 
 
-static bool pingTest(int32_t hid, uint16_t clientPort) {
-	Host *h = g_hostdb.getHost ( hid );
-	if ( ! h ) {
-		log(LOG_WARN, "net: pingtest: hostId %" PRId32" is invalid.",hid);
-		return false;
-	}
-	// set up our socket
-	int sock  = socket ( AF_INET, SOCK_DGRAM , 0 );
-	if ( sock < 0 ) {
-		log(LOG_WARN, "net: pingtest: socket: %s.", strerror(errno));
-		return false;
-	}
-
-	// sockaddr_in provides interface to sockaddr
-	struct sockaddr_in name;
-	// reset it all just to be safe
-	memset((char *)&name, 0,sizeof(name));
-	name.sin_family      = AF_INET;
-	name.sin_addr.s_addr = INADDR_ANY;
-	name.sin_port        = htons(clientPort);
-	// we want to re-use port it if we need to restart
-	int options = 1;
-	if ( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR , &options,sizeof(options)) < 0 ) {
-		close( sock );
-		log(LOG_WARN, "net: pingtest: setsockopt: %s.", strerror(errno));
-		return false;
-	}
-	// bind this name to the socket
-	if ( bind ( sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
-		close ( sock );
-		log(LOG_WARN, "net: pingtest: Bind on port %hu: %s.", clientPort,strerror(errno));
-		return false;
-	}
-
-	int fd = sock;
-	int flags = fcntl ( fd , F_GETFL ) ;
-	if ( flags < 0 ) {
-		close ( sock );
-		log(LOG_WARN, "net: pingtest: fcntl(F_GETFL): %s.", strerror(errno));
-		return false;
-	}
-
-	char dgram[DGRAM_SIZE];
-	int n;
-	struct sockaddr_in to;
-	sockaddr_in from;
-	socklen_t fromLen;
-
-	// make the dgram
-	UdpProtocol *up = &g_dp; // udpServer2.getProtocol();
-	int32_t transId = 500000000 - 1 ;
-	int32_t dnum    = 0; // dgramNum
-
-	int32_t sends     = 0;
-	int32_t lost      = 0;
-	int32_t recovered = 0;
-	int32_t acks      = 0;
-	int32_t replies   = 0;
-
-	memset(&to,0,sizeof(to));
-	to.sin_family      = AF_INET;
-	to.sin_addr.s_addr = h->m_ip;
-	to.sin_port        = ntohs(h->m_port);
-	log("net: pingtest: Testing hostId #%" PRId32" at %s:%hu from client "
-	    "port %hu", hid,iptoa(h->m_ip),h->m_port,clientPort);
-	// if this is higher than number of avail slots UdpServer.cpp
-	// will not be able to free the slots and this will end up sticking,
-	// because the slots can only be freed in destroySlot() which
-	// is not async safe!
-	//int32_t count = 40000; // number of loops
-	int32_t count = 1000; // number of loops
-	int32_t avg = 0;
- sendLoop:
-	if ( count-- <= 0 ) {
-		log("net: pingtest: Got %" PRId32" replies out of %" PRId32" sent (%" PRId32" lost)"
-		    "(%" PRId32" recovered)", replies,sends,lost,recovered);
-		log("net: pingtest: Average reply time of %.03f ms.",
-		    (double)avg/(double)replies);
-		return true;
-	}
-	transId++;
-	int32_t msgSize = 3; // indicates a debug ping packet to PingServer.cpp
-	up->setHeader ( dgram, msgSize, msg_type_11, dnum, transId, true, false , 0 );
-	int32_t size = up->getHeaderSize(0) + msgSize;
-	int64_t start = gettimeofdayInMilliseconds();
-	n = sendto(sock,dgram,size,0,(struct sockaddr *)(void*)&to,sizeof(to));
-	if ( n != size ) {
-		close ( sock );
-		log(LOG_WARN, "net: pingtest: sendto returned %i (should have returned %" PRId32")",n,size);
-		return false;
-	}
-	sends++;
- readLoop2:
-	// loop until we read something
-	fromLen=sizeof(from);
-	n = recvfrom (sock,dgram,DGRAM_SIZE,0,(sockaddr *)(void*)&from, &fromLen);
-	if (gettimeofdayInMilliseconds() - start>2000) {lost++; goto sendLoop;}
-	if ( n <= 0 ) goto readLoop2; // { sched_yield(); goto readLoop2; }
-	// for what transId?
-	int32_t tid = up->getTransId ( dgram , n );
-	// -1 is error
-	if ( tid < 0 ) {
-		close ( sock );
-		log(LOG_WARN, "net: pingtest: Bad transId.");
-		return false;
-	}
-	// if no match, it was recovered, keep reading
-	if ( tid != transId ) { 
-		log("net: pingTest: Recovered tid=%" PRId32", current tid=%" PRId32". "
-		    "Resend?",tid,transId); 
-		recovered++; 
-		goto readLoop2; 
-	}
-	// an ack?
-	if ( up->isAck ( dgram , n ) ) { 
-		acks++; 
-		goto readLoop2;
-	}
-	// mark the time
-	int64_t took = gettimeofdayInMilliseconds()-start;
-	if ( took > 1 ) log("net: pingtest: got reply #%" PRId32" (tid=%" PRId32") "
-			    "in %" PRId64" ms",replies,transId,took);
-	// make average
-	avg += took;
-	// the reply?
-	replies++;
-	// send back an ack
-	size = up->makeAck ( dgram, dnum, transId , true/*weinit?*/ , false );
-	n = sendto(sock,dgram,size,0,(struct sockaddr *)(void*)&to,sizeof(to));
-
-	if ( n != size ) {
-		close ( sock );
-		log(LOG_WARN, "net: pingtest: sendto returned %i (should have returned %" PRId32")",n,size);
-		return false;
-	}
-
-	goto sendLoop;
-}
-
 static bool cacheTest() {
 
 	g_conf.m_maxMem = 2000000000LL; // 2G
@@ -5430,54 +5014,6 @@ int dom_lcmp (const void *p1, const void *p2) {
 
 	return di2->lnkCnt-di1->lnkCnt;
 }
-
-// generate the copies that need to be done to scale from oldhosts.conf
-// to newhosts.conf topology.
-static int collinject(const char *newHostsConf) {
-
-	g_hostdb.resetPortTables();
-
-	Hostdb hdb;
-	//if ( ! hdb.init(newHostsConf, 0/*assume we're zero*/) ) {
-	if ( ! hdb.init( 0/*assume we're zero*/) ) {
-		log("collinject failed. Could not init hostdb with %s",
-		    newHostsConf);
-		return -1;
-	}
-
-	// ptrs to the two hostdb's
-	Hostdb *hdb1 = &g_hostdb;
-	Hostdb *hdb2 = &hdb;
-
-	if ( hdb1->getNumHosts() != hdb2->getNumHosts() ) {
-		log("collinject: num hosts differ!");
-		return -1;
-	}
-
-	// . ensure old hosts in g_hostdb are in a derivate groupId in
-	//   newHostsConf
-	// . old hosts may not even be present! consider them the same host,
-	//   though, if have same ip and working dir, because that would
-	//   interfere with a file copy.
-	for ( int32_t i = 0 ; i < hdb1->m_numShards ; i++ ) {
-		//Host *h1 = &hdb1->getHost(i);//m_hosts[i];
-		//int32_t gid = hdb1->getGroupId ( i ); // groupNum
-		uint32_t shardNum = (uint32_t)i;
-
-		Host *h1 = hdb1->getShard ( shardNum );
-		Host *h2 = hdb2->getShard ( shardNum );
-		
-		printf("ssh %s 'nohup /w/gbi -w /w/ inject titledb "
-		       "%s:%" PRId32" >& /w/ilog' &\n"
-		       , h1->m_hostname
-		       , iptoa(h2->m_ip)
-		       //, h2->m_hostname
-		       , (int32_t)h2->getInternalHttpPort()
-		       );
-	}
-	return 1;
-}
-
 
 static const char *getAbsoluteGbDir(const char *argv0) {
 	static char s_buf[1024];

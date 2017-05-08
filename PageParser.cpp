@@ -150,7 +150,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	if (   st ) st->m_freeIt = false;
 	if ( ! st ) {
 		try { st = new (State8); }
-		catch ( ... ) {
+		catch(std::bad_alloc&) {
 			g_errno = ENOMEM;
 			log("PageParser: new(%i): %s", 
 			    (int)sizeof(State8),mstrerror(g_errno));
@@ -684,7 +684,7 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	// make a state
 	State8 *st;
 	try { st = new (State8); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log("PageParser: new(%i): %s", 
 		    (int)sizeof(State8),mstrerror(g_errno));

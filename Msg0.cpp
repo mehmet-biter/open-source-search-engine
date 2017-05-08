@@ -239,7 +239,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		}
 		else {
 			try { m_msg5 = new ( Msg5 ); } 
-			catch ( ... ) {
+			catch(std::bad_alloc&) {
 				g_errno = ENOMEM;
 				log(LOG_WARN, "net: Local alloc for disk read failed "
 				    "while tring to read data for %s. "
@@ -580,7 +580,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	// . create a msg5 to get the list
 	State00 *st0 ;
 	try { st0 = new (State00); }
-	catch ( ... ) { 
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log(LOG_WARN, "Msg0: new(%" PRId32"): %s",
 		    (int32_t)sizeof(State00),mstrerror(g_errno));

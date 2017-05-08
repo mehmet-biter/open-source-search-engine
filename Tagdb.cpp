@@ -1373,7 +1373,7 @@ bool Msg8a::launchGetRequests ( ) {
 		Msg8aState *state = NULL;
 		try {
 			state = new Msg8aState(this, startKey, endKey, m_requests);
-		} catch (...) {
+		} catch(std::bad_alloc&) {
 			g_errno = m_errno = ENOMEM;
 			log(LOG_WARN, "tagdb: unable to allocate memory for Msg8aState");
 			break;
@@ -1584,7 +1584,7 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 	// make a state
 	State12 *st ;
 	try { st = new (State12); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log("PageTagdb: new(%" PRId32"): %s",
 		    (int32_t)sizeof(State12),mstrerror(g_errno));

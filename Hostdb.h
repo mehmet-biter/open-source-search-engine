@@ -21,18 +21,6 @@
 /// @note ALC there used to be a sync host functionality that was removed
 /// in commit 08e8eeb2a53b41763b5d7f97a0b953bebb04517a because it wasn't working
 
-// for the Host::m_flags
-#define PFLAG_HASSPIDERS     0x01
-#define PFLAG_MERGING        0x02
-#define PFLAG_DUMPING        0x04
-// these two flags are used by DailyMerge.cpp to sync the daily merge
-// between all the hosts in the cluster
-#define PFLAG_MERGEMODE0     0x08
-#define PFLAG_MERGEMODE0OR6  0x10
-#define PFLAG_REBALANCING    0x20
-#define PFLAG_FOREIGNRECS    0x40
-#define PFLAG_RECOVERYMODE   0x80
-
 #define HT_GRUNT   0x01
 #define HT_SPARE   0x02
 #define HT_PROXY   0x04
@@ -41,32 +29,24 @@
 
 int32_t *getLocalIps ( ) ;
 
-class PingInfo {
-public:
-	int64_t m_unused0; //used to be a timestamp for clock synchronization
-	int32_t m_hostId;
-	int32_t m_unused2; //used for the m_loadAvg
-	float m_unused3; //used to me m_percentMemUsed;
-	float m_unused4; //used to be m_cpuUsage
-	int32_t m_totalDocsIndexed;
-	int32_t m_hostsConfCRC;
-	float m_unused7; //used to be m_diskUsage
-	int32_t m_flags;
-	// some new stuff
-	int32_t m_unused9;
-	int32_t m_unused10;
-	int32_t m_unused11;
 
-	int32_t m_unused12;
-	int32_t m_unused13;
-
-	int16_t m_unused14;
+//information about a running host/instance
+struct HostRuntimeInformation {
+	bool      m_valid; //is this information valid, i.e. have we received it or is it fake?
+	
+	uint32_t  m_flags; //updated by InstanceInfoExchange and PingServer
+	
 	collnum_t m_dailyMergeCollnum;
-
-	char m_gbVersionStr[21];
-	char m_repairMode;
-	uint8_t m_unused18;
+	
+	char      m_gbVersionStr[21];
+	
+	int32_t   m_totalDocsIndexed;
+	
+	int32_t   m_hostsConfCRC;
+	
+	int8_t    m_repairMode;
 };
+
 
 class Host {
 public:
@@ -96,23 +76,8 @@ public:
 
 	uint16_t m_port ;          // Mattster Protocol (MP) UDP port
 
-	int32_t           m_ping;
-	int32_t           m_pingShotgun;
-	int32_t           m_pingMax;
-	// have we ever got a ping reply from him?
-	bool           m_gotPingReply;
-
-	// last time g_hostdb.ping(i) was called for this host in milliseconds.
-	int64_t      m_lastPing;
-
-	// . first time we sent an unanswered ping request to this host
-	// . used so we can determine when to send an email alert
-	int64_t      m_startTime;
-	// is a ping in progress for this host?
-	bool           m_inProgress1;
-	// shotgun
-	bool           m_inProgress2;
-	int64_t      m_numPingReplies;
+	bool m_isAlive;
+	HostRuntimeInformation m_runtimeInformation;
 
 	// send to eth 0 or 1 when sending to this host?
 	char           m_preferEth;
@@ -163,6 +128,9 @@ public:
 	bool isProxy() { return (m_type == HT_PROXY); }
 	bool isGrunt() { return (m_type == HT_GRUNT); }
 
+	bool isHostsConfCRCKnown() const { return m_runtimeInformation.m_hostsConfCRC!=0; }
+	bool hasSameHostsConfCRC() const;
+
 	// for m_type == HT_QCPROXY, we forward the query to the regular proxy
 	// at this Ip:Port. we should receive a compressed 0xfd reply and
 	// we uncompress it and return it to the browser.
@@ -193,8 +161,6 @@ public:
 
 	bool m_spiderEnabled;
 	bool m_queryEnabled;
-
-	PingInfo m_pingInfo;//RequestBuf;
 
 	void updateLastResponseReceiveTimestamp(uint64_t t) { m_lastResponseReceiveTimestamp=t; }
 	void updateLastRequestSendTimestamp(uint64_t t) { m_lastRequestSendTimestamp=t; }
@@ -351,8 +317,16 @@ class Hostdb {
 	// returns best IP to use for "h" which is a host in hosts2.conf
 	int32_t getBestHosts2IP(const Host *h);
 
-	void updatePingInfo(Host *h, const PingInfo &pi);
+	void updateAliveHosts(const int32_t alive_hosts_ids[], size_t n);
+	void updateHostRuntimeInformation(int hostId, const HostRuntimeInformation &hri);
 
+	void setOurFlags();
+	void setOurTotalDocsIndexed();
+	
+	const Host *getMinRepairModeHost() const { return m_minRepairModeHost; }
+	int32_t getMinRepairMode() const { return m_minRepairMode; }
+	int32_t getMinRepairModeBesides0() const { return m_minRepairModeBesides0; }
+	
 	// our host's info used by Udp* classes for internal communication
 	uint32_t  m_myIp;
 	uint32_t  m_myIpShotgun;
@@ -367,7 +341,6 @@ class Hostdb {
 	// . m_hosts[i] is the ith Host entry
 	Host  *m_hosts;
 	int32_t   m_numHosts;
-	int32_t   m_numHostsAlive;
 
 	int32_t   m_allocSize;
 
@@ -396,6 +369,7 @@ class Hostdb {
 	int32_t          m_hostId;      // our hostId
 	int32_t          m_numShards;
 	char          m_dir[256];
+
 	char          m_httpRootDir[256];
 	char          m_logFilename[256];
 
@@ -431,8 +405,18 @@ class Hostdb {
 
 	uint32_t m_map[MAX_KSLOTS];
 
+	bool hostsConfInDisagreement() const { return m_hostsConfInDisagreement; }
+	bool hostsConfInAgreement() const { return m_hostsConfInAgreement; }
+
 private:
+	int32_t m_numHostsAlive;
 	GbMutex m_mtxPinginfo; //protects the pinginfo in the hosts
+	bool m_hostsConfInAgreement;
+	bool m_hostsConfInDisagreement;
+	
+	int32_t     m_minRepairMode;
+	int32_t     m_minRepairModeBesides0;
+	const Host *m_minRepairModeHost;
 };
 
 extern class Hostdb g_hostdb;
@@ -456,6 +440,10 @@ inline int32_t getMyHostId() {
 
 inline uint32_t getShardNumFromDocId ( int64_t d ) {
 	return g_hostdb.getShardNumFromDocId ( d );
+}
+
+inline bool Host::hasSameHostsConfCRC() const {
+	return m_runtimeInformation.m_hostsConfCRC == g_hostdb.getCRC();
 }
 
 #endif // GB_HOSTDB_H

@@ -852,7 +852,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	File *f ;
 	try { f = new (File) ; }
 	// return true and set g_errno if couldn't make a new File class
-	catch ( ... ) { 
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		logError("call sendErrorReply. new(%" PRId32": %s", (int32_t)sizeof(File),mstrerror(g_errno));
 		return sendErrorReply(s,500,mstrerror(g_errno)); 
@@ -2302,7 +2302,7 @@ bool HttpServer::processSquidProxyRequest ( TcpSocket *sock, HttpRequest *hr) {
 	SquidState *sqs;
 	try { sqs = new (SquidState) ; }
 	// return true and set g_errno if couldn't make a new File class
-	catch ( ... ) { 
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log(LOG_WARN, "squid: new(%" PRId32"): %s",
 		    (int32_t)sizeof(SquidState),mstrerror(g_errno));

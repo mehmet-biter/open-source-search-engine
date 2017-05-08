@@ -1204,8 +1204,6 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 		//   msgtypes are being dropped exactly in PageStats.cpp we
 		//   will know if this is hurting us.
 		if ( m_numUsedSlots >= 2300 && ! isProxy ) getSlot = false;
-		// never drop ping packets! they do not send out requests
-		if ( msgType == msg_type_11 ) getSlot = true;
 		// getting a titlerec does not send out a 2nd request. i really
 		// hate those title rec timeout msgs.
 		if ( msgType == msg_type_22 && niceness == 0 ) getSlot = true;
@@ -1251,23 +1249,19 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 				//   server, and we were using it as the slot's
 				//   but it should be correct now...
 				niceness ); // 0 // m_niceness );
-		// don't count ping towards this
-		if ( msgType != msg_type_11 ) {
-			// if we connected to a request slot, count it
-			m_requestsInWaiting++;
-			// special count
-			if ( msgType == msg_type_7 ) m_msg07sInWaiting++;
-			if ( msgType == msg_type_25 ) m_msg25sInWaiting++;
-			if ( msgType == msg_type_39 ) m_msg39sInWaiting++;
-			if ( msgType == msg_type_20 ) m_msg20sInWaiting++;
-			if ( msgType == msg_type_c ) m_msg0csInWaiting++;
-			if ( msgType == msg_type_0 ) m_msg0sInWaiting++;
-			// debug msg
-			//log("in waiting up to %" PRId32,m_requestsInWaiting );
-			//log("in waiting up to %" PRId32" (0x%02x) ",
-			//     m_requestsInWaiting, slot->m_msgType );
-		}
-
+		// if we connected to a request slot, count it
+		m_requestsInWaiting++;
+		// special count
+		if ( msgType == msg_type_7 ) m_msg07sInWaiting++;
+		if ( msgType == msg_type_25 ) m_msg25sInWaiting++;
+		if ( msgType == msg_type_39 ) m_msg39sInWaiting++;
+		if ( msgType == msg_type_20 ) m_msg20sInWaiting++;
+		if ( msgType == msg_type_c ) m_msg0csInWaiting++;
+		if ( msgType == msg_type_0 ) m_msg0sInWaiting++;
+		// debug msg
+		//log("in waiting up to %" PRId32,m_requestsInWaiting );
+		//log("in waiting up to %" PRId32" (0x%02x) ",
+		//     m_requestsInWaiting, slot->m_msgType );
 	}
 	// let caller know the slot associated with reading this dgram
 	*slotPtr = slot;
@@ -1284,7 +1278,7 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 	// . pings should never switch ips though... this was causing
 	//   Host::m_inProgress1 to be unset instead of m_inProgress2 and
 	//   we were never able to regain a dead host on eth1 in PingServer.cpp
-	if ( ip != slot->getIp() && slot->getMsgType() != msg_type_11 ) {
+	if ( ip != slot->getIp() ) {
 		if ( g_conf.m_logDebugUdp )
 			log(LOG_DEBUG,"udp: changing ip to %s for acking",
 			    iptoa(ip));
@@ -1393,8 +1387,7 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 				// only call handlers in pass 0, not reply callbacks
 				if ( slot->hasCallback() ) continue;
 				// only call certain msg handlers...
-				if ( slot->getMsgType() != msg_type_11 &&  // ping
-				     slot->getMsgType() != msg_type_0   ) // read RdbList
+				if ( slot->getMsgType() != msg_type_0   ) // read RdbList
 					continue;
 				// only allow niceness 0 msg 0x00 requests here since
 				// we call a msg8a from msg20.cpp summary generation
@@ -1582,7 +1575,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 
 		// now we got a reply or an g_errno so call the callback
 
-		if ( g_conf.m_logDebugLoop && slot->getMsgType() != msg_type_11 )
+		if ( g_conf.m_logDebugLoop )
 			log(LOG_DEBUG,"loop: enter callback for 0x%" PRIx32" "
 			    "nice=%" PRId32,(int32_t)slot->getMsgType(),slot->getNiceness());
 
@@ -1593,7 +1586,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 
 		slot->m_callback(slot->m_state, slot);
 
-		if ( g_conf.m_logDebugLoop && slot->getMsgType() != msg_type_11 )
+		if ( g_conf.m_logDebugLoop )
 			log(LOG_DEBUG,"loop: exit callback for 0x%" PRIx32" "
 			    "nice=%" PRId32,(int32_t)slot->getMsgType(),slot->getNiceness());
 
@@ -1768,7 +1761,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 	slot->m_queuedTime = now;
 
 	// log it now
-	if ( slot->getMsgType() != msg_type_11 && g_conf.m_logDebugLoop )
+	if ( g_conf.m_logDebugLoop )
 		log(LOG_DEBUG,"loop: enter handler for 0x%" PRIx32" nice=%" PRId32,
 		    (int32_t)slot->getMsgType(),(int32_t)slot->getNiceness());
 
@@ -1781,7 +1774,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 	bool oom = g_mem.getUsedMemPercentage() >= 99.0;
 
 	// if we are out of mem basically, do not waste time fucking around
-	if ( slot->getMsgType() != msg_type_11 && slot->getNiceness() == 0 && oom ) {
+	if ( slot->getNiceness() == 0 && oom ) {
 		// log it
 		static int32_t lcount = 0;
 		if ( lcount == 0 )
@@ -1821,7 +1814,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		m_handlers [ slot->getMsgType() ] ( slot , slot->getNiceness() ) ;
 	}
 
-	if ( slot->getMsgType() != msg_type_11 && g_conf.m_logDebugLoop )
+	if ( g_conf.m_logDebugLoop )
 		log(LOG_DEBUG,"loop: exit handler for 0x%" PRIx32" nice=%" PRId32,
 		    (int32_t)slot->getMsgType(),(int32_t)slot->getNiceness());
 
@@ -1990,15 +1983,11 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		}
 
 		// Time out the slot if the host has been detected as unresponsive.
-		// But not msg11 (ping) because they actually want to send to
-		// dead hosts so they can detect when they are alive again.
-		if(slot->getMsgType()!=msg_type_11) {
-			if(slot->m_host && g_hostdb.isDead(slot->m_host)) {
-				slot->m_errno = EUDPTIMEDOUT;
-				addToCallbackLinkedList(slot);
-				something = true;
-				continue;
-			}
+		if(slot->m_host && g_hostdb.isDead(slot->m_host)) {
+			slot->m_errno = EUDPTIMEDOUT;
+			addToCallbackLinkedList(slot);
+			something = true;
+			continue;
 		}
 
 		// how long since last send?
@@ -2131,7 +2120,7 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 
 	// if we're deleting a slot that was an incoming request then
 	// decrement m_requestsInWaiting (exclude pings)
-	if ( ! slot->hasCallback() && slot->getMsgType() != msg_type_11 ) {
+	if ( ! slot->hasCallback() ) {
 		// one less request in waiting
 		m_requestsInWaiting--;
 		// special count
@@ -2206,8 +2195,6 @@ bool UdpServer::shutdown ( bool urgent ) {
 		for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 			// if we initiated, then don't count it
 			if ( slot->hasCallback() ) continue;
-			// don't bother with pings or other hosts shutdown 
-			if ( slot->getMsgType() == msg_type_11 ) continue;
 			// set all timeouts to 3 secs
 			if ( slot->getTimeout() > 3000 ) {
 				slot->m_timeout = 3000;
@@ -2270,8 +2257,6 @@ bool UdpServer::timeoutDeadHosts ( Host *h ) {
 		if ( slot->getHostId() != h->m_hostId ) continue;
 		// if we didn't initiate, then don't count it
 		if ( ! slot->hasCallback() ) continue;
-		// don't bother with pings or other hosts shutdown broadcasts
-		if ( slot->getMsgType() == msg_type_11 ) continue;
 		// set all timeouts to 5 secs
 		//if ( slot->m_timeout > 1 ) slot->m_timeout = 1;
 		slot->m_timeout = 0;

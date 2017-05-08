@@ -4,7 +4,7 @@
 #include "Rdb.h"
 #include "Spider.h"
 #include "Pages.h"
-#include "PingServer.h"
+#include "Hostdb.h"
 #include "ip.h"
 #include "Spider.h"
 #include "SpiderLoop.h"
@@ -31,6 +31,24 @@ Repair g_repair;
 static void formRepairdatFilename(char dst[1024]) {
 	sprintf(dst, "%s/repair.dat", g_hostdb.m_dir);
 }
+
+
+static int32_t getMinRepairMode() {
+	if(g_repairMode < g_hostdb.getMinRepairMode())
+		return g_repairMode;
+	if(g_hostdb.getNumHosts() == 1)
+		return g_repairMode;
+	return g_hostdb.getMinRepairMode();
+}
+
+static int32_t getMinRepairModeBesides0() {
+	if(g_repairMode != 0 && g_repairMode < g_hostdb.getMinRepairModeBesides0())
+		return g_repairMode;
+	if(g_hostdb.getNumHosts() == 1)
+		return g_repairMode;
+	return g_hostdb.getMinRepairModeBesides0();
+}
+
 
 static Rdb **getSecondaryRdbs ( int32_t *nsr ) {
 	static Rdb *s_rdbs[50];
@@ -206,7 +224,7 @@ void Repair::repairWrapper(int fd, void *state) {
 	// we can only enter mode 3 once all hosts are in 2 or higher
 	if ( g_repairMode == REPAIR_MODE_2 ) {
 		// we are still waiting on some guy if this is <= 1
-		if ( g_pingServer.getMinRepairMode() < REPAIR_MODE_2 ) return;
+		if ( getMinRepairMode() < REPAIR_MODE_2 ) return;
 
 		// . this will return true if everything is saved to disk that
 		//   needs to be, otherwise false if waiting on an rdb to finish
@@ -235,7 +253,7 @@ void Repair::repairWrapper(int fd, void *state) {
 
 	if ( g_repairMode == REPAIR_MODE_3 ) {
 		// wait for others to save everything
-		if ( g_pingServer.getMinRepairMode() < REPAIR_MODE_3 ) return;
+		if ( getMinRepairMode() < REPAIR_MODE_3 ) return;
 		// start the loop
 		log("repair: All hosts saved.");
 		log("repair: Loading repair-addsinprogress.dat");
@@ -279,7 +297,7 @@ void Repair::repairWrapper(int fd, void *state) {
 		// wait for everyone to get to mode 6 before we dump, otherwise
 		// data might arrive in the middle of the dumping and it stays
 		// in the in-memory RdbTree!
-		if ( g_pingServer.getMinRepairMode() < REPAIR_MODE_6 ) return;
+		if ( getMinRepairMode() < REPAIR_MODE_6 ) return;
 
 		// we might have to dump again
 		g_repair.dumpLoop();
@@ -355,7 +373,7 @@ void Repair::repairWrapper(int fd, void *state) {
 	// go back to mode 0 once all hosts have reached mode 8
 	if ( g_repairMode == REPAIR_MODE_8 ) {
 		// nobody can be in <8 (they might be 0!)
-		if ( g_pingServer.getMinRepairModeBesides0() != REPAIR_MODE_8 ) return;
+		if ( getMinRepairModeBesides0() != REPAIR_MODE_8 ) return;
 
 		log("repair: Exiting repair mode.  took %" PRId64" ms", 
 		    gettimeofdayInMilliseconds() - g_repair.m_startTime);
@@ -1172,7 +1190,7 @@ bool Repair::injectTitleRec ( ) {
 
 	XmlDoc *xd = NULL;
 	try { xd = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
                 g_errno = ENOMEM;
 		m_recsetErrors++;
 		m_stage = STAGE_TITLEDB_0; // 0
@@ -1350,7 +1368,7 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 	const char *oldColl = " &nbsp; ";
 	if ( m_cr ) oldColl = m_cr->m_coll;
 
-	const Host *mh = g_pingServer.getMinRepairModeHost();
+	const Host *mh = g_hostdb.getMinRepairModeHost();
 	int32_t  minHostId = -1;
 	char  minIpBuf[64];
 	minIpBuf[0] = '\0';
@@ -1441,7 +1459,7 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 			 (int32_t)g_repairMode,
 
 			 LIGHT_BLUE ,
-			 (int32_t)g_pingServer.getMinRepairMode(),
+			 (int32_t)g_hostdb.getMinRepairMode(),
 
 			 LIGHT_BLUE ,
 			 minIpBuf, // ip string

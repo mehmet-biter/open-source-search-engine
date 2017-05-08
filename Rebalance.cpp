@@ -13,7 +13,6 @@
 #include "Spider.h"
 #include "Collectiondb.h"
 #include "Pages.h"
-#include "PingServer.h"
 #include "Spider.h"
 #include "Process.h"
 #include "Parms.h"
@@ -57,7 +56,7 @@ const char *Rebalance::getNeedsRebalance ( ) {
 	if ( ! g_parms.inSyncWithHost0() ) return NULL;
 
 	// wait for all hosts to agree
-	if ( ! g_pingServer.hostsConfInAgreement() ) return NULL;
+	if ( ! g_hostdb.hostsConfInAgreement() ) return NULL;
 
 	// for simplicty,  only gb shards on stripe 0 should run this i guess
 	if ( g_hostdb.m_myHost->m_stripe != 0 ) {

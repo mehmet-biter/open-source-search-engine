@@ -807,7 +807,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 	try {
 		f = new (BigFile);
-	} catch ( ... ) {
+	} catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log( LOG_WARN, "RdbBase: new(%i): %s", ( int ) sizeof( BigFile ), mstrerror( g_errno ) );
 		return -1;
@@ -825,7 +825,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	RdbMap  *m ;
 	try {
 		m = new (RdbMap);
-	} catch ( ... ) {
+	} catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log( LOG_WARN, "RdbBase: new(%i): %s", (int)sizeof(RdbMap), mstrerror(g_errno) );
 		mdelete ( f , sizeof(BigFile),"RdbBFile");
@@ -839,7 +839,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	if( m_useIndexFile ) {
 		try {
 			in = new (RdbIndex);
-		} catch ( ... ) {
+		} catch(std::bad_alloc&) {
 			g_errno = ENOMEM;
 			log( LOG_WARN, "RdbBase: new(%i): %s", (int)sizeof(RdbIndex), mstrerror(g_errno) );
 			mdelete ( f , sizeof(BigFile),"RdbBFile");

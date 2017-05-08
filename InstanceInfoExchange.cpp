@@ -10,7 +10,7 @@
 #include "Collectiondb.h"
 #include "Version.h"
 #include "repair_mode.h"
-#include "PingServer.h"
+#include "HostFlags.h"
 #include "Process.h"
 #include "IOBuffer.h"
 #include <pthread.h>
@@ -23,6 +23,7 @@
 #include <poll.h>
 #include <map>
 #include <string>
+#include <vector>
 #include <pwd.h>
 
 
@@ -47,6 +48,7 @@
 //thread isn't calling weAreAlive() often enough then the ( other) instance
 //information will be out-of-date.
 
+static bool enabled = false;
 static int fd_keepalive = -1;
 static int fd_pipe[2] = {-1,-1};
 static bool please_shut_down=true;
@@ -69,7 +71,7 @@ static int connect_to_vagus(int port) {
 	sin.sin_port = htons(port);
 	if(connect(fd,(sockaddr*)(void*)&sin,sizeof(sin))!=0) {
 		log(LOG_ERROR,"vagus: connect() failed with errno=%d  (%s)", errno, strerror(errno));
-		close(fd);
+		close(fd);		
 		return -1;
 	}
 	
@@ -82,10 +84,13 @@ static int connect_to_vagus(int port) {
 static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
 	//log(LOG_DEBUG,"vagus: got %zu alive hosts form vagus. hosts.conf says there should be %d",
 	//    alive_hosts.size(), g_hostdb.getNumHosts());
+	std::vector<int> alive_hosts_ids;
+	alive_hosts_ids.reserve(alive_hosts.size());
 	for(auto iter : alive_hosts) {
 		int hostid = iter.first;
 		if(hostid<0 || hostid>=g_hostdb.getNumHosts())
 			continue;
+		alive_hosts_ids.push_back(hostid);
 		char extra_information[256];
 		if(iter.second.length()>=sizeof(extra_information))
 			continue;
@@ -98,6 +103,8 @@ static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
 		const char *repair_mode_str = strtok_r(NULL,";",&ss);
 		const char *total_docs_indexed_str = strtok_r(NULL,";",&ss);
 		if(!gb_version_str || gb_version_str[0]=='\0')
+			continue;
+		if(strlen(gb_version_str)>=sizeof(HostRuntimeInformation::m_gbVersionStr))
 			continue;
 		char *endptr;
 		int hosts_conf_crc = (int)strtol(hosts_conf_crc_str,&endptr,0);
@@ -119,15 +126,21 @@ static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
 		//phase 1: update host fields that seem safe
 		//when we get rid of PingServer entirely then this will take over
 
-		Host *h = g_hostdb.getHost(hostid);
+		HostRuntimeInformation hri;
+		hri.m_valid = true;
+		hri.m_flags = host_flags;
+		hri.m_dailyMergeCollnum = daily_merge_collection_number;
+		strcpy(hri.m_gbVersionStr,gb_version_str);
+		hri.m_totalDocsIndexed = total_docs_indexed;
+		hri.m_hostsConfCRC = hosts_conf_crc;
+		hri.m_repairMode = repair_mode;
+		g_hostdb.updateHostRuntimeInformation(hostid, hri);
 		
-		strncpy(h->m_pingInfo.m_gbVersionStr, gb_version_str, sizeof(h->m_pingInfo.m_gbVersionStr));
-		h->m_pingInfo.m_hostsConfCRC = hosts_conf_crc;
-		//h->m_pingInfo.m_flags = host_flags;
-		//h->m_pingInfo.m_dailyMergeCollnum = daily_merge_collection_number;
+		//Host *h = g_hostdb.getHost(hostid);
+		
 		//h->m_pingInfo.m_repairMode = repair_mode;
-		h->m_pingInfo.m_totalDocsIndexed = total_docs_indexed;
 	}
+	g_hostdb.updateAliveHosts(&alive_hosts_ids.front(),alive_hosts_ids.size());
 }
 
 
@@ -233,6 +246,12 @@ static void *poll_thread(void *) {
 
 
 bool InstanceInfoExchange::initialize() {
+	enabled = g_hostdb.getNumHosts()>1;
+	if(!enabled) {
+		log(LOG_INFO,"vagus: only 1 host configured. No need for vagus communication");
+		return true;
+	}
+	
 	please_shut_down = false;
 	
 	//set vagus_cluster_name
@@ -269,6 +288,9 @@ bool InstanceInfoExchange::initialize() {
 
 
 void InstanceInfoExchange::finalize() {
+	if(!enabled)
+		return;
+
 	please_shut_down = true;
 	char dummy='d';
 	(void)write(fd_pipe[1],&dummy,1);
@@ -280,6 +302,9 @@ void InstanceInfoExchange::finalize() {
 
 
 void InstanceInfoExchange::weAreAlive() {
+	if(!enabled)
+		return;
+	
 	if(fd_keepalive<0)
 		fd_keepalive = connect_to_vagus(g_conf.m_vagusPort);
 	if(fd_keepalive<0)

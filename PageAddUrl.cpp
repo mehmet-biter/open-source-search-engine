@@ -64,7 +64,7 @@ bool sendPageAddUrl2 ( TcpSocket *sock , HttpRequest *hr ) {
 	// make a new state
 	GigablastRequest *gr;
 	try { gr = new (GigablastRequest); }
-	catch ( ... ) { 
+	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log( LOG_WARN, "PageAddUrl: new(%i): %s", (int)sizeof(GigablastRequest),mstrerror(g_errno) );
 		return g_httpServer.sendErrorReply(sock, 500, mstrerror(g_errno));

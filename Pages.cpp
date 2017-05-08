@@ -10,7 +10,6 @@
 #include "Profiler.h"
 #include "PageRoot.h"
 #include "Process.h"
-#include "PingServer.h"
 #include "ip.h"
 #include "Conf.h"
 #include "GbUtil.h"
@@ -2439,8 +2438,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		// count if not dead
 		Host *h1 = &g_hostdb.m_hosts[i-1];
 		Host *h2 = &g_hostdb.m_hosts[i];
-		if (!strcmp(h1->m_pingInfo.m_gbVersionStr,
-			    h2->m_pingInfo.m_gbVersionStr))
+		if(strcmp(h1->m_runtimeInformation.m_gbVersionStr,h2->m_runtimeInformation.m_gbVersionStr)==0)
 			continue;
 		sameVersions = false;
 		break;
@@ -2466,7 +2464,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		mb->safePrintf("%s",boxEnd);
 	}
 
-	if ( g_pingServer.hostsConfInDisagreement() ) {
+	if ( g_hostdb.hostsConfInDisagreement() ) {
 		if ( adds ) mb->safePrintf("<br>");
 		adds++;
 		mb->safePrintf("%s",box);

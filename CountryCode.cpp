@@ -271,7 +271,7 @@ static const char * s_countryCode[] = {
 };
 
 // map a country id to the two letter country abbr
-const char *getCountryCode ( uint8_t crid ) {
+const char *getCountryCode ( uint16_t crid ) {
 	return s_countryCode[crid];
 }
 

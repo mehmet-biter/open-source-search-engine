@@ -224,7 +224,7 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	State0 *st;
 	try {
 		st = new (State0);
-	} catch ( ... ) {
+	} catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
 		log(LOG_ERROR, "query: Query failed. "
 		    "Could not allocate %" PRId32" bytes for query. "

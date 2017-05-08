@@ -1707,7 +1707,7 @@ static bool getIframeExpandedContent(Msg13Request *r, TcpSocket *ts) {
 	// need a new state for it, use XmlDoc itself
 	XmlDoc *xd;
 	try { xd = new ( XmlDoc ); }
-	catch ( ... ) {
+	catch(std::bad_alloc&) {
 		mfree ( copy , copySize , "ifrmcpy" );
 		g_errno = ENOMEM;
 		return true;

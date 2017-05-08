@@ -4,12 +4,14 @@
 #include "JobScheduler.h"
 #include "max_niceness.h"
 #include "Process.h"
+#include "Sanity.h"
 #include "sort.h"
 #include "Rdb.h"
 #include "Posdb.h"
 #include "Titledb.h"
 #include "Spider.h"
 #include "Clusterdb.h"
+#include "HostFlags.h"
 #include "Dns.h"
 #include "File.h"
 #include "IPAddressChecks.h"
@@ -80,6 +82,13 @@ Hostdb::Hostdb ( ) {
 	memset(m_httpRootDir, 0, sizeof(m_httpRootDir));
 	memset(m_logFilename, 0, sizeof(m_logFilename));
 	memset(m_map, 0, sizeof(m_map));
+	
+	m_hostsConfInDisagreement = false;
+	m_hostsConfInAgreement = false;
+	
+	m_minRepairMode = -1;
+	m_minRepairModeBesides0 = -1;
+	m_minRepairModeHost = NULL;
 }
 
 
@@ -354,7 +363,6 @@ createFile:
 		int32_t  wdirlen;
 
 		// reset this
-		h->m_pingMax = -1;
 		h->m_retired = false;
 
 		// skip numeric hostid or "proxy" keyword
@@ -666,16 +674,13 @@ createFile:
 		memcpy(m_hosts[i].m_mergeLockDir, ldir, ldirlen);
 		m_hosts[i].m_mergeLockDir[ldirlen] = '\0';
 		
-		// reset this
-		m_hosts[i].m_lastPing = 0LL;
 		// and don't send emails on him until we got a good ping
 		m_hosts[i].m_emailCode = -2;
-		// reset these
-		m_hosts[i].m_pingInfo.m_flags    = 0;
-		m_hosts[i].m_pingInfo.m_unused4 = 0.0;
 
 		m_hosts[i].m_lastResponseReceiveTimestamp = 0;
 		m_hosts[i].m_lastRequestSendTimestamp = 0;
+
+		m_hosts[i].m_runtimeInformation.m_dailyMergeCollnum = -1;
 
 		// point to next one
 		i++;
@@ -804,19 +809,8 @@ createFile:
 	} else {
 		m_numHostsAlive = 1;
 	}
-	// sometimes g_conf is not loaded, so fake it
-	int32_t deadHostTimeout = g_conf.m_deadHostTimeout;
-	// make sure it is bigger than anything
-	if ( deadHostTimeout == 0 ) deadHostTimeout = 0x7fffffff;
 	// reset ping/stdDev times
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
-		// assume everybody is dead, except us
-		m_hosts[i].m_ping        = deadHostTimeout;
-		m_hosts[i].m_pingShotgun = deadHostTimeout;
-		// not in progress
-		m_hosts[i].m_inProgress1    = false;
-		m_hosts[i].m_inProgress2    = false;
-		m_hosts[i].m_numPingReplies = 0;
 		m_hosts[i].m_preferEth      = 0;
 	}
 
@@ -848,9 +842,17 @@ createFile:
 	m_myPort       = host->m_port;  // low priority udp port
 	m_myHost       = host;
 
-	// set our ping to zero
-	host->m_ping        = 0;
-	host->m_pingShotgun = 0;
+	//we are alive, obviously
+	m_myHost->m_isAlive = true;
+
+	//in single-instance setups the hosts.conf CRC is always OK
+	if(m_numHosts==1) {
+		m_hostsConfInDisagreement = false;
+		m_hostsConfInAgreement = true;
+	}
+	
+	//we are the lowest repair mode host until we know better
+	m_minRepairModeHost = m_myHost;
 
 	// THIS hostId
 	m_hostId = m_myHost->m_hostId;
@@ -1047,8 +1049,7 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 	}
 
 	// . keep a list of the udp ips for pinging
-	// . do not ping hostdb2 hosts though!
-	if ( udp && port != 0 && this == &g_hostdb ) {
+	if ( udp && port != 0 ) {
 		// add the ip port for pinging purposes
 		g_listHosts [g_listNumTotal] = h;
 		g_listIps   [g_listNumTotal] = ip;
@@ -1186,8 +1187,8 @@ bool Hostdb::isShardDead(int32_t shardNum) const {
 
 
 int32_t Hostdb::getHostIdWithSpideringEnabled ( uint32_t shardNum ) {
-	Host *hosts = g_hostdb.getShard ( shardNum);
-	int32_t numHosts = g_hostdb.getNumHostsPerShard();
+	Host *hosts = getShard ( shardNum);
+	int32_t numHosts = getNumHostsPerShard();
 
 	int32_t hostNum = 0;
 	int32_t numTried = 0;
@@ -1204,8 +1205,8 @@ int32_t Hostdb::getHostIdWithSpideringEnabled ( uint32_t shardNum ) {
 
 
 Host *Hostdb::getHostWithSpideringEnabled ( uint32_t shardNum ) {
-	Host *hosts = g_hostdb.getShard ( shardNum);
-	int32_t numHosts = g_hostdb.getNumHostsPerShard();
+	Host *hosts = getShard ( shardNum);
+	int32_t numHosts = getNumHostsPerShard();
 
 	int32_t hostNum = 0;
 	int32_t numTried = 0;
@@ -1279,19 +1280,15 @@ bool Hostdb::isDead(int32_t hostId) const {
 bool Hostdb::isDead(const Host *h) const {
 	if(h->m_retired)
 		return true; // retired means "don't use it", so it is essentially dead
-	if(g_hostdb.m_myHost == h)
+	if(m_myHost == h)
 		return false; //we are not dead
-	if(h->m_ping < g_conf.m_deadHostTimeout)
-		return false; //has answered ping on normal interface recently
-	if(g_conf.m_useShotgun && h->m_pingShotgun < g_conf.m_deadHostTimeout)
-		return false; //has answered ping on shotgun interface recently
-	return true;
+	return !h->m_isAlive;
 }
 
 int64_t Hostdb::getNumGlobalRecs ( ) {
 	int64_t n = 0;
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ )
-		n += getHost ( i )->m_pingInfo.m_totalDocsIndexed;
+		n += getHost ( i )->m_runtimeInformation.m_totalDocsIndexed;
 	return n / m_numHostsPerShard;
 }
 
@@ -1342,26 +1339,13 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	oldHost->m_stripe      = spareHost->m_stripe;
 	oldHost->m_isProxy     = spareHost->m_isProxy;
 	oldHost->m_type        = HT_SPARE;
-	oldHost->m_inProgress1 = spareHost->m_inProgress1;
-	oldHost->m_inProgress2 = spareHost->m_inProgress2;
-
-	// last ping timestamp
-	//oldHost->m_pingInfo.m_lastPing    = spareHost->m_pingInfo.m_lastPing; 
-	oldHost->m_lastPing    = spareHost->m_lastPing; 
 
 	// and the new spare gets a new hostid too
 	spareHost->m_hostId = spareHostId;
 
-	memset ( &oldHost->m_pingInfo , 0 , sizeof(PingInfo) );
-
 	// reset these stats
-	oldHost->m_pingMax             = 0;
-	oldHost->m_gotPingReply        = false;
-	oldHost->m_pingInfo.m_totalDocsIndexed         = 0;
-	oldHost->m_ping                = g_conf.m_deadHostTimeout;
-	oldHost->m_pingShotgun         = g_conf.m_deadHostTimeout;
+	oldHost->m_runtimeInformation.m_totalDocsIndexed         = 0;
 	oldHost->m_emailCode           = 0;
-	oldHost->m_pingInfo.m_unused12 = 0;
 	oldHost->m_errorReplies        = 0;
 	oldHost->m_dgramsTo            = 0;
 	oldHost->m_dgramsFrom          = 0;
@@ -1382,7 +1366,7 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	// reset pingserver's list too!
 	g_listNumTotal = 0;
 	// now restock everything
-	g_hostdb.hashHosts();
+	hashHosts();
 
 	// replace ips in udp server
 	g_udpServer.replaceHost ( spareHost, oldHost );
@@ -1391,11 +1375,7 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 
 // use the ip that is not dead, prefer eth0
 int32_t Hostdb::getBestIp(const Host *h) {
-	// if shotgun/eth1 ip is dead, returh eth0 ip
-	if ( h->m_pingShotgun >= g_conf.m_deadHostTimeout ) return h->m_ip;
-	// if eth0 dead, return shotgun ip
-	if ( h->m_ping >= g_conf.m_deadHostTimeout ) return h->m_ipShotgun;
-	// default to eth0 if both dead
+	//used to examin ping times and chose between normal Ip and "shotgun" ip
 	return h->m_ip;
 }
 
@@ -1403,9 +1383,6 @@ int32_t Hostdb::getBestIp(const Host *h) {
 // . should we send to its primary or shotgun ip?
 // . this returns which ip we should send to
 int32_t Hostdb::getBestHosts2IP(const Host *h) {
-	// sanity check
-	if ( this != &g_hostdb ) { g_process.shutdownAbort(true); }
-
 	if(ip_distance(h->m_ip) <= ip_distance(h->m_ipShotgun))
 		return h->m_ip;
 	else
@@ -1413,34 +1390,84 @@ int32_t Hostdb::getBestHosts2IP(const Host *h) {
 }
 
 
-void Hostdb::updatePingInfo(Host *h, const PingInfo &pi) {
+void Hostdb::updateAliveHosts(const int32_t alive_hosts_ids[], size_t n) {
 	ScopedLock sl(m_mtxPinginfo);
-
-	h->m_pingInfo.m_unused0 = 0;
-	h->m_pingInfo.m_hostId = pi.m_hostId;
-	h->m_pingInfo.m_unused2 = 0;
-	h->m_pingInfo.m_unused3 = 0;
-	h->m_pingInfo.m_unused4 = 0.0;
-	h->m_pingInfo.m_totalDocsIndexed = pi.m_totalDocsIndexed;
-	h->m_pingInfo.m_hostsConfCRC = pi.m_hostsConfCRC;
-	h->m_pingInfo.m_unused7 = 0.0;
-	h->m_pingInfo.m_flags = pi.m_flags;
-	h->m_pingInfo.m_unused9 = 0;
-	h->m_pingInfo.m_unused10 = 0;
-	h->m_pingInfo.m_unused11 = 0;
-	//m_totalResends is updated direclty by UdpSlot
-	//h->m_pingInfo.m_totalResends = pi.m_totalResends;
-	//m_etryagains is updated directly by UdpServer
-	//h->m_pingInfo.m_etryagains = pi.m_etryagains;
-	h->m_pingInfo.m_unused12 = 0;
-	h->m_pingInfo.m_unused13 = 0;
-	h->m_pingInfo.m_unused14 = 0;
-	h->m_pingInfo.m_dailyMergeCollnum = pi.m_dailyMergeCollnum;
-	memcpy(h->m_pingInfo.m_gbVersionStr,pi.m_gbVersionStr,sizeof(pi.m_gbVersionStr));
-	h->m_pingInfo.m_repairMode = pi.m_repairMode;
-	h->m_pingInfo.m_unused18 = 0;
+	for(int32_t i=0; i<m_numHosts; i++)
+		m_hosts[i].m_isAlive = false;
+	m_myHost->m_isAlive = true;
+	for(size_t i=0; i<n; i++) {
+		int32_t hostid = alive_hosts_ids[i];
+		if(hostid>=0 && hostid<m_numHosts)
+			m_hostPtrs[hostid]->m_isAlive = true;
+	}
+	//update m_numHostsAlive
+	m_numHostsAlive = 0;
+	for(int32_t i=0; i<m_numHosts; i++)
+		if(m_hosts[i].m_isAlive)
+			m_numHostsAlive++;
 }
 
+void Hostdb::updateHostRuntimeInformation(int hostId, const HostRuntimeInformation &hri) {
+	if(hostId<0)
+		gbshutdownLogicError();
+	if(hostId>=m_numHosts)
+		return; //out-of-sync hosts.conf ?
+	ScopedLock sl(m_mtxPinginfo);
+	bool crc_changed = m_hostPtrs[hostId]->m_runtimeInformation.m_hostsConfCRC != hri.m_hostsConfCRC;
+	bool repairmode_changed = m_hostPtrs[hostId]->m_runtimeInformation.m_repairMode != hri.m_repairMode;
+	m_hostPtrs[hostId]->m_runtimeInformation = hri;
+	m_hostPtrs[hostId]->m_runtimeInformation.m_valid = true;
+	if(crc_changed) {
+		//recalculate m_hostsConfInAgreement and m_hostsConfInDisagreement
+		m_hostsConfInDisagreement = false;
+		m_hostsConfInAgreement = false;
+		// if we haven't received crc from all hosts then we will not set either flag.
+		int32_t agreeCount = 0;
+		for(int i = 0; i < getNumGrunts(); i++) {
+			// skip if not received yet
+			if(m_hosts[i].isHostsConfCRCKnown()) {
+				if(!m_hosts[i].hasSameHostsConfCRC()) {
+					m_hostsConfInDisagreement = true;
+					break;
+				}
+				agreeCount++;
+			}
+		}
+
+		// if all in agreement, set this flag
+		if(agreeCount == getNumGrunts()) {
+			m_hostsConfInAgreement = true;
+		}
+	}
+	if(repairmode_changed) {
+		//recalculate m_minRepairMode/m_minRepairModeBesides0/m_minRepairModeHost
+		const Host *newMinHost = NULL;
+		char newMin = -1;
+		char newMin0 = -1;
+		for(int i=0; i<m_numHosts; i++) {
+			if(newMin==-1 || m_hosts[i].m_runtimeInformation.m_repairMode < newMin) {
+				newMinHost = &(m_hosts[i]);
+				newMin = m_hosts[i].m_runtimeInformation.m_repairMode;
+			}
+			if(newMin0==-1 || (m_hosts[i].m_runtimeInformation.m_repairMode!=0 && m_hosts[i].m_runtimeInformation.m_repairMode<newMin0))
+				newMin0 = m_hosts[i].m_runtimeInformation.m_repairMode;
+		}
+		m_minRepairMode = newMin;
+		m_minRepairModeBesides0 = newMin0;
+		m_minRepairModeHost = newMinHost;
+	}
+}
+
+
+void Hostdb::setOurFlags() {
+	m_myHost->m_runtimeInformation.m_flags = getOurHostFlags();
+	m_myHost->m_runtimeInformation.m_valid = true;
+}
+
+void Hostdb::setOurTotalDocsIndexed() {
+	m_myHost->m_runtimeInformation.m_totalDocsIndexed = g_process.getTotalDocsIndexed();
+	
+}
 
 // assume to be from posdb here
 uint32_t Hostdb::getShardNumByTermId(const void *k) const {
@@ -1500,8 +1527,8 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) const {
 
 		case RDB_DOLEDB:
 			// HACK:!!!!!!  this is a trick!!! it is us!!!
-			//return g_hostdb.m_myHost->m_groupId;
-			return g_hostdb.m_myHost->m_shardNum;
+			//return m_myHost->m_groupId;
+			return m_myHost->m_shardNum;
 
 		default:
 			// core -- must be provided
@@ -1532,7 +1559,7 @@ Host *Hostdb::getBestSpiderCompressionProxy ( int32_t *key ) {
 			// count towards total even if not alive
 			s_numTotal++;
 			// now must be alive
-			if ( g_hostdb.isDead (h) ) continue;
+			if ( isDead(h) ) continue;
 			// stop to avoid breach
 			if ( s_numAlive >= 64 ) { g_process.shutdownAbort(true); }
 			// add it otherwise
@@ -1551,7 +1578,7 @@ Host *Hostdb::getBestSpiderCompressionProxy ( int32_t *key ) {
 	// get it
 	Host *h = s_alive[ni];
 	// if dead, recompute alive[] table and try again!
-	if ( g_hostdb.isDead(h) ) goto redo;
+	if ( isDead(h) ) goto redo;
 	// got a live one
 	return h;
 }
