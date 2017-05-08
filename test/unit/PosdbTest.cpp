@@ -17,6 +17,9 @@ static void saveAndReloadPosdbBucket() {
 
 static void dumpPosdb() {
 	g_posdb.getRdb()->submitRdbDumpJob(true);
+	while (g_posdb.getRdb()->hasPendingRdbDumpJob()) {
+		usleep(100000); //sleep 100ms
+	}
 	g_posdb.getRdb()->getBase(0)->markNewFileReadable();
 	g_posdb.getRdb()->getBase(0)->generateGlobalIndex();
 }

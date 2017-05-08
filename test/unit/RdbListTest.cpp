@@ -397,6 +397,10 @@ static void addListToTree(rdbid_t rdbId, collnum_t collNum, RdbList *list) {
 	Rdb *rdb = getRdbFromId(rdbId);
 	rdb->addList(collNum, list);
 	rdb->submitRdbDumpJob(true);
+	while (rdb->hasPendingRdbDumpJob()) {
+		usleep(100000); //sleep 100ms
+	}
+
 	rdb->getBase(0)->markNewFileReadable();
 	rdb->getBase(0)->generateGlobalIndex();
 }

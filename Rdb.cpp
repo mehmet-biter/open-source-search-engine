@@ -771,6 +771,10 @@ void Rdb::finalizeRdbDumpThread() {
 	s_rdbDumpThreadQueue.finalize();
 }
 
+bool Rdb::hasPendingRdbDumpJob() {
+	return !s_rdbDumpThreadQueue.isEmpty();
+}
+
 // . start dumping the tree
 // . returns false and sets g_errno on error
 bool Rdb::dumpTree() {

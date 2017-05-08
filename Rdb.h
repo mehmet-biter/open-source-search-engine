@@ -210,6 +210,7 @@ public:
 
 	static bool initializeRdbDumpThread();
 	static void finalizeRdbDumpThread();
+	static bool hasPendingRdbDumpJob();
 
 	void submitRdbDumpJob(bool forceDump);
 

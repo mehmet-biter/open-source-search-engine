@@ -53,18 +53,22 @@ GbThreadQueue::~GbThreadQueue() {
 bool GbThreadQueue::initialize(queue_func_t processFunc, const char *threadName) {
 	m_func = processFunc;
 
-	if (pthread_create(&m_thread, NULL, thread_queue_function, this) != 0) {
-		return false;
-	}
+	if (!m_started) {
+		m_stop = false;
 
-	char threadNameBuf[16]; //hard limit
-	snprintf(threadNameBuf,sizeof(threadNameBuf),"%s", threadName);
-	if (pthread_setname_np(m_thread, threadNameBuf) != 0) {
-		finalize();
-		return false;
-	}
+		if (pthread_create(&m_thread, NULL, thread_queue_function, this) != 0) {
+			return false;
+		}
 
-	m_started = true;
+		char threadNameBuf[16]; //hard limit
+		snprintf(threadNameBuf, sizeof(threadNameBuf), "%s", threadName);
+		if (pthread_setname_np(m_thread, threadNameBuf) != 0) {
+			finalize();
+			return false;
+		}
+
+		m_started = true;
+	}
 
 	return true;
 }

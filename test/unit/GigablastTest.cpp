@@ -10,6 +10,8 @@
 #include <libgen.h>
 #include <limits.h>
 
+bool g_recoveryMode = false;
+
 int main(int argc, char **argv) {
 	// initialize library
 	g_mem.init();
