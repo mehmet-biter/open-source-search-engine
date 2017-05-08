@@ -235,7 +235,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	reset();
 
 	// set this to true to validate
-	m_validateCache = false;//true;
+	m_validateCache = false;
 
 	// clear, this MUST be done so if we return true g_errno is correct
 	g_errno = 0;
@@ -329,9 +329,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		g_errno = ENOMEM;
 		return true;
 	}
-	//Mem.cpp has bad logic concerning arrays
-	//mnew(m_scan,sizeof(*m_scan)*m_numChunks,"Msg3:scan");
-	
+
 	// store the file numbers in the scan array, these are the files we read
 	m_numFileNums = 0;
 	for(int32_t i=startFileNum; i < startFileNum+m_numChunks; i++) {
@@ -392,13 +390,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		m_scansBeingSubmitted = true;
 	}
 
-	// debug msg
-	//log("msg3 getting list (msg5=%" PRIu32")",m_state);
-	// . MDW removed this -- go ahead an end on a delete key
-	// . RdbMerge might not pick it up this round, but oh well
-	// . so we can have both positive and negative co-existing in same file
-	// make sure the last bit is set so we don't end on a delete key
-	//m_endKey.n0 |= 0x01LL;
 	// . now start reading/scanning the files
 	// . our m_scans array starts at 0
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
@@ -430,24 +421,10 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 				  &p1,
 				  &p2,
 				  NULL);
-		// sanity check, each endpg's key should be > endKey
-		//if ( p2 < maps[fn]->getNumPages() && 
-		//     maps[fn]->getKey ( p2 ) <= m_endKey ) {
-		//	fprintf(stderr,"Msg3::bad page range 2\n");
-		//	sleep(50000);
-		//}
-		//#endif
-		//int32_t p1 , p2; 
-		//maps[fn]->getPageRange (startKey,endKey,minRecSizes,&p1,&p2);
 		// now get some read info
 		int64_t offset      = map->getAbsoluteOffset ( p1 );
 		int64_t      bytesToRead = map->getRecSizes ( p1, p2, false);
-		// max out the endkey for this list
-		// debug msg
-		//#ifdef _DEBUG_		
-		//if ( minRecSizes == 2000000 ) 
-		//log("Msg3:: reading %" PRId32" bytes from file #%" PRId32,bytesToRead,i);
-		//#endif
+
 		incrementScansStarted();
 		// . keep stats on our disk accesses
 		// . count disk seeks (assuming no fragmentation)
@@ -618,15 +595,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		                                      callback ? &doneScanningWrapper0 : NULL,
 		                                      base->useHalfKeys(), m_rdbId, m_niceness, true);
 
-						// debug msg
-		//fprintf(stderr,"Msg3:: reading %" PRId32" bytes from file #%" PRId32","
-		//	"done=%" PRId32",offset=%" PRId64",g_errno=%s,"
-		//	"startKey=n1=%" PRIu32",n0=%" PRIu64",  "
-		//	"endKey=n1=%" PRIu32",n0=%" PRIu64"\n",
-		//	bytesToRead,i,(int32_t)done,offset,mstrerror(g_errno),
-		//	m_startKey,m_endKey);
-		//if ( bytesToRead == 0 )
-		//	fprintf(stderr,"shit\n");
 		// if it did not block then it completed, so count it
 		if ( done )
 			incrementScansCompleted();
@@ -641,8 +609,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 			break; 
 		}
 	}
-	// debug test
-	//if ( rand() % 100 <= 10 ) m_errno = EIO;
 
 	{
 		ScopedLock sl(m_mtxScanCounters);
