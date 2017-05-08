@@ -57,48 +57,6 @@ class Msg5 {
 		       bool          isRealMerge,
 		       bool          allowPageCache);
 
-	bool getList ( rdbid_t       rdbId,
-		       collnum_t collnum ,
-		       RdbList   *list          ,
-		       key96_t      startKey      ,
-		       key96_t      endKey        ,
-		       int32_t       recSizes      , // requestd scan size(-1 all)
-		       bool       includeTree   ,
-		       int32_t       maxCacheAge   , // in secs for cache lookup
-		       int32_t       startFileNum  , // first file to scan
-		       int32_t       numFiles      , // rel.to startFileNum,-1 all
-		       void      *state         , // for callback
-		       void     (* callback ) ( void    *state ,
-						RdbList *list  ,
-						Msg5    *msg5  ) ,
-		       int32_t       niceness      ,
-		       bool       doErrorCorrection  ,
-		       key96_t        *cacheKeyPtr,
-		       int32_t       retryNum,
-		       int32_t       maxRetries,
-		       bool          isRealMerge,
-		       bool          allowPageCache) {
-		return getList ( rdbId,
-				 collnum       ,
-				 list          ,
-				 (const void *)&startKey      ,
-				 (const void *)&endKey        ,
-				 recSizes      , 
-				 includeTree   ,
-				 maxCacheAge   , 
-				 startFileNum  , 
-				 numFiles      , 
-				 state         , 
-				 callback      ,
-				 niceness      ,
-				 doErrorCorrection  ,
-				 (char *)cacheKeyPtr   ,
-				 retryNum      ,
-				 maxRetries    ,
-				 isRealMerge   ,
-				 allowPageCache ); }
-
-
 	bool getSingleUnmergedList(rdbid_t       rdbId,
 				   collnum_t     collnum,
 				   RdbList      *list,

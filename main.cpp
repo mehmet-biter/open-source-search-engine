@@ -2329,8 +2329,8 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 		if ( ! msg5.getList ( RDB_TITLEDB   ,
 				      cr->m_collnum          ,
 				      &list         ,
-				      startKey      ,
-				      endKey        ,
+				      &startKey      ,
+				      &endKey        ,
 				      minRecSizes   ,
 				      includeTree   ,
 				      0             , // max cache age
@@ -2601,8 +2601,8 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 		if ( ! msg5.getList ( RDB_DOLEDB    ,
 				      cr->m_collnum          ,
 				      &list         ,
-				      startKey      ,
-				      endKey        ,
+				      &startKey      ,
+				      &endKey        ,
 				      minRecSizes   ,
 				      includeTree   ,
 				      0             , // max cache age
@@ -3424,8 +3424,8 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	if ( ! msg5.getList ( RDB_TITLEDB    ,
 			      cr->m_collnum        ,
 			      &tlist         ,
-			      startKey       ,
-			      endKey         , // should be maxed!
+			      (char *)&startKey       ,
+			      (char *)&endKey         , // should be maxed!
 			      9999999        , // min rec sizes
 			      true           , // include tree?
 			      0              , // maxCacheAge
@@ -3944,8 +3944,8 @@ static void dumpClusterdb(const char *coll,
 		if ( ! msg5.getList ( RDB_CLUSTERDB ,
 				      cr->m_collnum          ,
 				      &list         ,
-				      startKey      ,
-				      endKey        ,
+				      &startKey      ,
+				      &endKey        ,
 				      minRecSizes   ,
 				      includeTree   ,
 				      0             , // max cache age
@@ -4375,8 +4375,8 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 	if ( ! msg5.getList ( RDB_TITLEDB   ,
 			      cr->m_collnum       ,
 			      &list         ,
-			      startKey      ,
-			      endKey        ,
+			      &startKey      ,
+			      &endKey        ,
 			      minRecSizes   ,
 			      true         , // Do we need to include tree?
 			      0             , // max cache age

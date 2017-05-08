@@ -1000,8 +1000,8 @@ bool Repair::scanRecs ( ) {
 	if ( m_msg5.getList ( RDB_TITLEDB        ,
 			      m_collnum           ,
 			      &m_titleRecList      ,
-			      m_nextTitledbKey   ,
-			      m_endKey         , // should be maxed!
+			      &m_nextTitledbKey,
+			      &m_endKey        , // should be maxed!
 			      1024             , // min rec sizes
 			      true             , // include tree?
 			      0                , // max cache age

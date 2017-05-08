@@ -555,8 +555,8 @@ subloopNextPriority:
 	if ( ! m_msg5.getList ( RDB_DOLEDB      ,
 				cr->m_collnum, // coll            ,
 				&m_list         ,
-				m_sc->m_msg5StartKey,//m_sc->m_nextDoledbKey,
-				endKey          ,
+				&m_sc->m_msg5StartKey,//m_sc->m_nextDoledbKey,
+				&endKey         ,
 				// need to make this big because we don't
 				// want to end up getting just a negative key
 				//1             , // minRecSizes (~ 7000)

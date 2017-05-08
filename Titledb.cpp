@@ -113,8 +113,8 @@ bool Titledb::verify(const char *coll) {
 	if ( ! msg5.getList ( RDB_TITLEDB   ,
 			      cr->m_collnum       ,
 			      &list         ,
-			      startKey      ,
-			      endKey        ,
+			      &startKey     ,
+			      &endKey       ,
 			      1024*1024     , // minRecSizes   ,
 			      true          , // includeTree   ,
 			      0             , // max cache age

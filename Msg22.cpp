@@ -436,8 +436,8 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	if ( ! st->m_msg5.getList ( RDB_TITLEDB       ,
 				    r->m_collnum ,
 				    &st->m_tlist      ,
-				    startKey          , // startKey
-				    endKey            , // endKey
+				    &startKey         , // startKey
+				    &endKey           , // endKey
 				    500000000         , // minRecSizes
 				    true              , // includeTree
 				    0,//r->m_maxCacheAge  , // max cache age
@@ -447,7 +447,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 				    gotTitleList      ,
 				    r->m_niceness     ,
 				    true              , // do error correct?
-				    &cacheKey         ,
+				    (char *)&cacheKey ,
 				    0                 , // retry num
 				    -1                , // maxRetries
 				    false,              // isRealMerge

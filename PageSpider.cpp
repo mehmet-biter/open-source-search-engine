@@ -96,8 +96,8 @@ loop:
 	if ( ! st->m_msg5.getList  ( RDB_DOLEDB          ,
 	                             st->m_collnum       ,
 	                             &st->m_list         ,
-	                             st->m_startKey      ,
-	                             st->m_endKey        ,
+	                             &st->m_startKey      ,
+	                             &st->m_endKey        ,
 	                             st->m_minRecSizes   ,
 	                             true                , // include tree
 	                             0                   , // max age

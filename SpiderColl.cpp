@@ -254,8 +254,8 @@ bool SpiderColl::makeDoledbIPTable() {
 		if (!msg5.getList(RDB_DOLEDB,
 		                  m_collnum,
 		                  &list,
-		                  startKey,
-		                  endKey,
+		                  &startKey,
+		                  &endKey,
 		                  minRecSizes,
 		                  true, // includeTree?
 		                  0, // max cache age
