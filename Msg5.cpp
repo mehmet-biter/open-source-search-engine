@@ -257,10 +257,6 @@ bool Msg5::getList ( rdbid_t     rdbId,
 	log("msg5: ek=%s", KEYSTR(m_endKey,m_ks));
 #endif
 
-	// hack it down
-	if ( numFiles > base->getNumFiles() ) 
-		numFiles = base->getNumFiles();
-
 	// . make sure we set base above so Msg0.cpp:268 doesn't freak out
 	// . if startKey is > endKey list is empty
 	if ( KEYCMP(m_startKey,m_endKey,m_ks)>0 ) return true;
