@@ -169,7 +169,7 @@ extern void resetQuery         ( );
 extern void resetUnicode       ( );
 
 
-bool g_recoveryMode = false;
+extern bool g_recoveryMode; // HostFlags.cpp
 static int s_recoveryLevel = 0;
 
 static int argc_copy;

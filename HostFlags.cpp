@@ -6,7 +6,7 @@
 #include "DailyMerge.h"
 
 
-extern bool g_recoveryMode; //over in main.cpp
+bool g_recoveryMode = false;
 
 
 int getOurHostFlags() {
