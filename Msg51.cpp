@@ -288,16 +288,6 @@ bool Msg51::sendRequest ( int32_t    i ) {
 	// lookup in clusterdb, need a start and endkey
 	key96_t startKey = Clusterdb::makeFirstClusterRecKey ( d );
 	key96_t endKey   = Clusterdb::makeLastClusterRecKey  ( d );
-	
-	// bias clusterdb lookups (from Msg22.cpp)
-//	int32_t           numTwins     = g_hostdb.getNumHostsPerShard();
-//	int64_t      sectionWidth = (DOCID_MASK/(int64_t)numTwins) + 1;
-//	int32_t           hostNum      = (d & DOCID_MASK) / sectionWidth;
-//	int32_t           numHosts     = g_hostdb.getNumHostsPerShard();
-//	uint32_t  shardNum     = getShardNum(RDB_CLUSTERDB,&startKey);
-//	Host          *hosts        = g_hostdb.getShard ( shardNum );
-//	if ( hostNum >= numHosts ) gbshutdownLogicError();
-//	int32_t firstHostId = hosts [ hostNum ].m_hostId ;
 
 	// if we are doing a full split, keep it local, going across the net
 	// is too slow!

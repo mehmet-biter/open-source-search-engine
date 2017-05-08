@@ -337,19 +337,6 @@ bool Images::getThumbnail ( const char *pageSite,
 
 	logDebug(g_conf.m_logDebugImage, "image: image checking %s list on shard %" PRId32,buf,shardNum);
 
-	// if ( ! m_msg36.getTermFreq ( m_collnum               ,
-	// 			     0                  , // maxAge
-	// 			     termId             ,
-	// 			     this               ,
-	// 			     gotTermFreqWrapper ,
-	// 			     MAX_NICENESS       ,
-	// 			     true               ,  // exact count?
-	// 			     false              ,  // inc count?
-	// 			     false              ,  // dec count?
-	// 			     false              )) // is split?
-	// 	return false;
-
-
 	// just use msg0 and limit to like 1k or something
 	if ( ! m_msg0.getList ( -1    , // hostid
 				RDB_POSDB ,
@@ -377,14 +364,6 @@ bool Images::getThumbnail ( const char *pageSite,
 	// did not block
 	return gotTermFreq();
 }
-
-// void gotTermFreqWrapper ( void *state ) {
-// 	Images *THIS = (Images *)state;
-// 	// process/store the reply
-// 	if ( ! THIS->gotTermFreq() ) return;
-// 	// all done
-// 	THIS->m_callback ( THIS->m_state );
-// }
 
 // returns false if blocked, true otherwise
 bool Images::gotTermFreq ( ) {
