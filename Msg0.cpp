@@ -59,7 +59,6 @@ void Msg0::constructor ( ) {
 	m_startTime = 0;
 	m_niceness = 0;
 	m_ks = 0;
-	m_allowPageCache = false;
 }
 
 Msg0::~Msg0 ( ) {
@@ -114,7 +113,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     int64_t      timeout       ,
 		     Msg5     *msg5             ,
 		     bool      isRealMerge      ,
-		     bool      allowPageCache    ,
 		     bool      forceLocalIndexdb ,
 		     bool      noSplit ,
 		     int32_t      forceParitySplit  ) {
@@ -156,7 +154,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	m_rdbId         = rdbId;
 	m_collnum = collnum;//          = coll;
 	m_isRealMerge   = isRealMerge;
-	m_allowPageCache = allowPageCache;
 
 	// . group to ask is based on the first key 
 	// . we only do 1 group per call right now
@@ -241,8 +238,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 					 niceness          ,
 					 doErrorCorrection ,
 					 -1   , // maxRetries
-					 m_isRealMerge ,
-					 m_allowPageCache ) ) {
+					 m_isRealMerge ) ) {
 			logTrace( g_conf.m_logTraceMsg0, "END, return false" );
 			return false;
 		}
@@ -270,7 +266,7 @@ skip:
 	//   Multicast.cpp::sleepWrapper1 too!!!!!!!!!!!!
 	//   no, not anymore, we commented out that request peeking code
 	char *p = m_request;
-	*(int64_t *) p = -1        ; p += 8;
+	*(int64_t *) p = -1        ; p += 8; // unused (syncPoint)
 	*(int32_t      *) p = m_minRecSizes    ; p += 4;
 	*(int32_t      *) p = startFileNum     ; p += 4;
 	*(int32_t      *) p = numFiles         ; p += 4;
@@ -281,7 +277,7 @@ skip:
 	*p               = doErrorCorrection; p++;
 	*p               = includeTree      ; p++;
 	*p               = (char)niceness   ; p++;
-	*p               = (char)m_allowPageCache; p++;
+	*p               = true; p++; // unused (allowPageCache)
 	KEYSET(p,m_startKey,m_ks);          ; p+=m_ks;
 	KEYSET(p,m_endKey,m_ks);            ; p+=m_ks;
 	*(collnum_t *)p = m_collnum; p += sizeof(collnum_t);
@@ -463,7 +459,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 
 	// parse the request
 	char *p                  = request;
-	p += 8; //syncPoint
+	p += 8; // syncPoint
 	int32_t      minRecSizes        = *(int32_t      *)p ; p += 4;
 	int32_t      startFileNum       = *(int32_t      *)p ; p += 4;
 	int32_t      numFiles           = *(int32_t      *)p ; p += 4;
@@ -476,7 +472,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	int32_t      niceness           = slot->getNiceness();
 	// still need to skip it though!
 	p++;
-	bool      allowPageCache     = (bool)(*p++);
+	p++; // allowPageCache
 	char ks = getKeySizeFromRdbId ( rdbId );
 	char     *startKey           = p; p+=ks;
 	char     *endKey             = p; p+=ks;
@@ -560,8 +556,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 				     niceness          ,
 				     doErrorCorrection ,
 				     2    , // maxRetries
-				     false,
-				     allowPageCache ) ) {
+				     false ) ) {
 		logTrace( g_conf.m_logTraceMsg0, "END. m_msg5.getList returned false" );
 		return;
 	}

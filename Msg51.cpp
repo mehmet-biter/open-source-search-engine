@@ -325,7 +325,6 @@ bool Msg51::sendRequest ( int32_t    i ) {
 				     30000       , // timeout
 				     &m_slot[i].m_msg5, // use for local reads
 				     false       , // isRealMerge?
-				     true        , // allow page cache?
 				     false       , // force local indexdb?
 				     false       , // noSplit?
 				     -1          );// forceParitySplit

@@ -580,8 +580,7 @@ subloopNextPriority:
 				MAX_NICENESS    , // niceness
 				true,             // do err correction
 			        -1,               // maxRetries
-			        false,            // isRealMerge
-			        true))            // allowPageCache
+			        false))            // isRealMerge
 	{
 		// return if it blocked
 		logTrace( g_conf.m_logTraceSpider, "END, getList blocked" );

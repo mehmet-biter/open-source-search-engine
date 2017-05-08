@@ -832,8 +832,7 @@ bool Msg25::doReadLoop() {
 				m_niceness      ,
 				true            , // error correct?
 				-1,               //maxRetries
-				false,            //isRealMerge
-				true))            //allowPageCache
+				false))            //isRealMerge
 	{
 		//log("debug: msg0 blocked this=%" PRIx32,(int32_t)this);
 		return false;

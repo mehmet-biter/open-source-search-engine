@@ -2453,8 +2453,7 @@ bool RdbBase::verifyFileSharding ( ) {
 			      0             , // niceness
 			      false         , // err correction?
 			      -1            , // maxRetries
-			      true          , // isRealMerge
-			      true)) {        // allowPageCache
+			      true)) {        // isRealMerge
 		log( LOG_DEBUG, "db: HEY! it did not block");
 		return false;
 	}

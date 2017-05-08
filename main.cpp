@@ -2340,8 +2340,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 				      0             , // niceness
 				      false         , // err correction?
 				      -1            , // maxRetries
-				      false,          // isRealMerge
-				      true))          // allowPageCache
+				      false))          // isRealMerge
 		{
 			log(LOG_LOGIC,"db: getList did not block.");
 			return;
@@ -2609,8 +2608,7 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 				      0             , // niceness
 				      false         , // err correction?
 				      -1,             // maxRetries
-				      false,          // isRealMerge
-				      true))          // allowPageCache
+				      false))          // isRealMerge
 		{
 			log(LOG_LOGIC,"db: getList did not block.");
 			return;
@@ -2855,8 +2853,7 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 			      0             , // niceness
 			      false         , // err correction?
 			      -1,             // maxRetries
-			      false,          // isRealMerge
-			      true))          // allowPageCache
+			      false))          // isRealMerge
 	{
 		log(LOG_LOGIC,"db: getList did not block.");
 		return -1;
@@ -3251,8 +3248,7 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 				      0             , // niceness
 				      false         , // err correction?
 				      -1,             // maxRetries
-				      false,          // isRealMerge
-				      true))          // allowPageCache
+				      false))          // isRealMerge
 		{
 			log(LOG_LOGIC,"db: getList did not block.");
 			return;
@@ -3423,8 +3419,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 			      0              , // niceness
 			      false          , // do error correction?
 			      -1             , // maxRetries
-			      false,           // isRealMerge
-			      true))         { // allowPageCache
+			      false))         { // isRealMerge
 		log(LOG_LOGIC, "build: getList did not block.");
 		return false;
 	}
@@ -3793,8 +3788,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		                  0, // niceness
 		                  true,           // to debug RdbList::removeBadData_r()
 		                  -1,             // maxRetries
-		                  false,          // isRealMerge
-		                  true))          // allowPageCache
+		                  false))          // isRealMerge
 		{
 			log(LOG_LOGIC, "db: getList did not block.");
 			return;
@@ -3937,8 +3931,7 @@ static void dumpClusterdb(const char *coll,
 				      0             , // niceness
 				      false         , // err correction?
 				      -1,             // maxRetries
-				      false,          // isRealMerge
-				      true))          // allowPageCache
+				      false))          // isRealMerge
 		{
 			log(LOG_LOGIC,"db: getList did not block.");
 			return;
@@ -4038,8 +4031,7 @@ static void dumpLinkdb(const char *coll,
 				      0             , // niceness
 				      false         , // err correction?
 				      -1,             // maxRetries
-				      false,          // isRealMerge
-				      true))          // allowPageCache
+				      false))          // isRealMerge
 		{
 			log(LOG_LOGIC,"db: getList did not block.");
 			return;
@@ -4362,8 +4354,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 			      0             , // niceness
 			      false         , // err correction?
 			      -1            , // maxRetries
-			      false,          // isRealMerge
-			      true))          // allowPageCache
+			      false))          // isRealMerge
 	{
 		log(LOG_LOGIC,"db: getList did not block.");
 		return;

@@ -393,8 +393,7 @@ bool Rebalance::scanRdb ( ) {
 					MAX_NICENESS     , // niceness
 					true             , // do error correction?
 					-1               , // maxRetries
-					false,             // isRealMerge
-					true))             // allowPageCache
+					false))             // isRealMerge
 			return false;
 
 		//

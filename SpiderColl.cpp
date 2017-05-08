@@ -265,8 +265,7 @@ bool SpiderColl::makeDoledbIPTable() {
 		                  0, // niceness
 		                  false, // err correction?
 		                  -1, // maxRetries
-		                  false, // isRealMerge
-		                  true)) { // allowPageCache
+		                  false)) { // isRealMerge
 			log(LOG_LOGIC, "spider: getList did not block.");
 			return false;
 		}
@@ -1191,8 +1190,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		                      MAX_NICENESS, // niceness
 		                      true, // do error correct?
 		                      -1,              // maxRetries
-		                      false,           // isRealMerge
-		                      true))           // allowPageCache
+		                      false))           // isRealMerge
 		{
 			// return if blocked
 			logTrace( g_conf.m_logTraceSpider, "END, msg5b.getList blocked" );
@@ -2026,8 +2024,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 				MAX_NICENESS   , // niceness
 				true,            // do error correct?
 				-1,              // maxRetries
-				false,           // isRealMerge
-				true ))          // allowPageCache
+				false))          // isRealMerge
 	{
 		// return false if blocked
 		logTrace( g_conf.m_logTraceSpider, "END, msg5.getList blocked" );

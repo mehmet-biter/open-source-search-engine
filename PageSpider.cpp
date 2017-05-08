@@ -107,8 +107,7 @@ loop:
 	                             0                   , // niceness
 	                             true,                 // do err correction
 	                             -1,                   // maxRetries
-	                             false,                // isRealMerge
-	                             true))                // allowPageCache
+	                             false))                // isRealMerge
 		return false;
 	// print it. returns false on error
 	if ( ! printList ( st ) ) st->m_done = true;

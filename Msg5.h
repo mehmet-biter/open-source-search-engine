@@ -51,8 +51,7 @@ class Msg5 {
 		       int32_t       niceness      ,
 		       bool       doErrorCorrection  ,
 		       int32_t       maxRetries,
-		       bool          isRealMerge,
-		       bool          allowPageCache);
+		       bool          isRealMerge);
 
 	bool getSingleUnmergedList(rdbid_t       rdbId,
 				   collnum_t     collnum,
@@ -163,9 +162,6 @@ private:
 	bool        m_isRealMerge;
 
 	char m_ks;
-
-	// for allowing the page cache
-	bool  m_allowPageCache;
 
 	bool m_waitingForList;
 	collnum_t m_collnum;

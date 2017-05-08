@@ -124,8 +124,7 @@ bool Titledb::verify(const char *coll) {
 			      0             , // niceness
 			      false         , // err correction?
 			      -1            , // maxRetries
-			      false         , // isRealMerge
-			      true))          // allowPageCache
+			      false))          // isRealMerge
 	{
 		log(LOG_DEBUG, "db: HEY! it did not block");
 		return false;

@@ -360,8 +360,7 @@ bool RdbMerge::getAnotherList() {
 				 m_niceness,      // niceness
 				 true,            // do error correction?
 				 nn + 75,         // max retries (mk it high)
-				 true,            // isRealMerge? absolutely!
-				 false);
+				 true);            // isRealMerge? absolutely!
 	if(rc)
 		m_getListOutstanding = false;
 	return rc;

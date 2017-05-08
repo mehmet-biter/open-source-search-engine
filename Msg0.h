@@ -60,7 +60,6 @@ class Msg0 {
 		       int64_t      timeout             ,
 		       class Msg5 *msg5            = NULL ,
 		       bool        isRealMerge     = false , // file merge?
-		       bool        allowPageCache  = true ,
 		       bool        forceLocalIndexdb = false,
 		       bool        noSplit           = false , // MDW ????
 		       int32_t        forceParitySplit = -1    );
@@ -122,9 +121,6 @@ class Msg0 {
 	int32_t m_niceness;
 
 	char m_ks;
-
-	// for allowing the page cache
-	bool m_allowPageCache;
 };
 
 #endif // GB_MSG0_H

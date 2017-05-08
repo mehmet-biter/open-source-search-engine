@@ -4837,7 +4837,6 @@ RdbList *XmlDoc::getDupList ( ) {
 				msg0_getlist_infinite_timeout , // timeout
 				NULL, // msg5
 				false , // isRealMerge
-				true , // allow page cache
 				false , // forcelocalindexdb
 				true ) ) // shardByTermId? THIS IS DIFFERENT!!!
 	{

@@ -1011,8 +1011,7 @@ bool Repair::scanRecs ( ) {
 			      MAX_NICENESS     , // niceness
 			      fixErrors        , // do error correction?
 			      -1               , // maxRetries
-			      false,             // isRealMerge
-			      true))             // allowPageCache
+			      false))             // isRealMerge
 		return true;
 	m_msg5InUse = true;
 	return false;

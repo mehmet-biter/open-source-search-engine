@@ -53,7 +53,6 @@ Msg5::Msg5()
 	m_maxRetries = 0;
 	m_isRealMerge = false;
 	m_ks = 0;
-	m_allowPageCache = false;
 	m_collnum = 0;
 	m_errno = 0;
 	// PVS-Studio
@@ -105,7 +104,7 @@ bool Msg5::getSingleUnmergedList(rdbid_t       rdbId,
 		       fileNum, 1, //startFileNum, numFiles
 		       state, callback,
 		       niceness,
-		       false,-1,-false,true);
+		       false,-1,-false);
 }
 
 
@@ -153,8 +152,7 @@ bool Msg5::getList ( rdbid_t     rdbId,
 		     int32_t     niceness      ,
 		     bool     doErrorCorrection ,
 		     int32_t     maxRetries    ,
-		     bool        isRealMerge ,
-		     bool        allowPageCache ) {
+		     bool        isRealMerge) {
 	verify_signature();
 
 	const char *startKey = static_cast<const char*>(startKey_);
@@ -236,7 +234,6 @@ bool Msg5::getList ( rdbid_t     rdbId,
 	m_maxRetries    = maxRetries;
 	m_oldListSize   = 0;
 	m_isRealMerge        = isRealMerge;
-	m_allowPageCache     = allowPageCache;
 
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
@@ -1432,7 +1429,6 @@ bool Msg5::getRemoteList ( ) {
 				 60*60*24*1000            , // timeout
 				 NULL                 , // msg5
 				 m_isRealMerge        , // merging files?
-				 m_allowPageCache     , // allow page cache?
 				 false                , // force local Indexdb
 				 false                , // doIndexdbSplit
 				 // "forceParitySplit" is a group # 
