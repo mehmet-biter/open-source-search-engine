@@ -585,7 +585,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 		// send back the available docid
 		*(int64_t *)p = st->m_availDocId;
 		// send it
-		g_udpServer.sendReply (p, 8, p, 8, st->m_slot);
+		g_udpServer.sendReply (p, 8, NULL, 0, st->m_slot);
 		// don't forget to free state
 		mdelete ( st , sizeof(State22) , "Msg22" );
 		delete ( st );
