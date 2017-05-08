@@ -952,8 +952,6 @@ void Msg39::getClusterRecs ( ) {
 					m_clusterRecs         ,
 					m_numClusterDocIds    ,
 					m_msg39req->m_collnum,
-					0                     , // maxAge
-					false                 , // addToCache
 					&jobState,              //state
 					&JobFinishedCallback,   //callback
 					m_msg39req->m_niceness,

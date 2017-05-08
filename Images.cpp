@@ -352,8 +352,6 @@ bool Images::getThumbnail ( const char *pageSite,
 
 	// just use msg0 and limit to like 1k or something
 	if ( ! m_msg0.getList ( -1    , // hostid
-				0     , // maxAge
-				false , // addToCache?
 				RDB_POSDB ,
 				m_collnum      ,
 				&m_list     , // RdbList ptr
@@ -436,8 +434,6 @@ bool Images::launchRequests ( ) {
 
 		// get the termlist
 		if ( ! m_msg0.getList ( -1    , // hostid
-					0     , // maxAge
-					false , // addToCache?
 					RDB_POSDB,
 					m_collnum      ,
 					&m_list     , // RdbList ptr

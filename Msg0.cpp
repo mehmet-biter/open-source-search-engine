@@ -50,7 +50,6 @@ void Msg0::constructor ( ) {
 	m_list = NULL;
 	m_fixedDataSize = 0;
 	m_useHalfKeys = false;
-	m_addToCache = false;
 	memset(m_startKey, 0, sizeof(m_startKey));
 	memset(m_endKey, 0, sizeof(m_endKey));
 	m_minRecSizes = 0;
@@ -99,8 +98,6 @@ bool Msg0::registerHandler ( ) {
 //   the list updates it on disk it can't flush our cache... so use a small
 //   maxCacheAge of like , 30 seconds or so...
 bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
-		     int32_t      maxCacheAge , // max cached age in seconds
-		     bool      addToCache  , // add net recv'd list to cache?
 		     rdbid_t   rdbId       , // specifies the rdb
 		     collnum_t collnum ,
 		     RdbList  *list        ,
@@ -160,7 +157,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	m_list          = list;
 	m_hostId        = hostId;
 	m_niceness      = niceness;
-	m_addToCache    = addToCache;
 	// . these define our request 100%
 	KEYSET(m_startKey,startKey,m_ks);
 	KEYSET(m_endKey,endKey,m_ks);
@@ -208,13 +204,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// we need the fixedDataSize
 	m_fixedDataSize = rdb->getFixedDataSize();
 	m_useHalfKeys   = rdb->useHalfKeys();
-	// . debug msg
-	// . Msg2 does this when checking for a cached compound list.
-	//   compound lists do not actually exist, they are merges of smaller
-	//   UOR'd lists.
-	if ( maxCacheAge != 0 && ! addToCache && (numFiles > 0 || includeTree)) {
-		log( LOG_LOGIC, "net: msg0: Weird. check but don't add... rdbid=%" PRId32".", ( int32_t ) m_rdbId );
-	}
 
 	// set this here since we may not call msg5 if list not local
 	//m_list->setFixedDataSize ( m_fixedDataSize );
@@ -297,10 +286,10 @@ skip:
 	*(int32_t      *) p = m_minRecSizes    ; p += 4;
 	*(int32_t      *) p = startFileNum     ; p += 4;
 	*(int32_t      *) p = numFiles         ; p += 4;
-	*(int32_t      *) p = maxCacheAge      ; p += 4;
+	*(int32_t      *) p = 0      ; p += 4; // unused (maxCacheAge)
 	if ( p - m_request != RDBIDOFFSET ) { g_process.shutdownAbort(true); }
 	*p               = m_rdbId          ; p++;
-	*p               = addToCache       ; p++;
+	*p               = false       ; p++; // unused (addToCache)
 	*p               = doErrorCorrection; p++;
 	*p               = includeTree      ; p++;
 	*p               = (char)niceness   ; p++;
@@ -522,9 +511,9 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	int32_t      minRecSizes        = *(int32_t      *)p ; p += 4;
 	int32_t      startFileNum       = *(int32_t      *)p ; p += 4;
 	int32_t      numFiles           = *(int32_t      *)p ; p += 4;
-	int32_t      maxCacheAge        = *(int32_t      *)p ; p += 4;
+	p += 4; // maxCacheAge
 	rdbid_t   rdbId              = ((rdbid_t)*p++);
-	char      addToCache         = *p++;
+	p++; // addToCache
 	char      doErrorCorrection  = *p++;
 	char      includeTree        = *p++;
 	// this was messing up our niceness conversion logic
@@ -596,11 +585,6 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	st0->m_ks = ks;
 	memcpy(st0->m_startKey,startKey,ks);
 	memcpy(st0->m_endKey,endKey,ks);
-
-	// debug msg
-	if ( maxCacheAge != 0 && ! addToCache ) {
-		log( LOG_LOGIC, "net: msg0: check but don't add... rdbid=%" PRId32".", ( int32_t ) rdbId );
-	}
 
 	// . if this request came over on the high priority udp server
 	//   make sure the priority gets passed along

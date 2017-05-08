@@ -83,8 +83,6 @@ void Msg51::reset ( ) {
 	m_errno = 0;
 	m_niceness = 0;
 	m_collnum = 0;
-	m_maxCacheAge = 0;
-	m_addToCache = false;
 	m_isDebug = false;
 }
 
@@ -96,8 +94,6 @@ bool Msg51::getClusterRecs ( const int64_t     *docIds,
 			     key96_t         *clusterRecs              ,
 			     int32_t           numDocIds                ,
 			     collnum_t collnum ,
-			     int32_t           maxCacheAge              ,
-			     bool           addToCache               ,
 			     void          *state                    ,
 			     void        (* callback)( void *state ) ,
 			     int32_t           niceness                 ,
@@ -120,8 +116,6 @@ bool Msg51::getClusterRecs ( const int64_t     *docIds,
 		gbshutdownLogicError();
 	}
 	// keep a pointer for the caller
-	m_maxCacheAge   = maxCacheAge;
-	m_addToCache    = addToCache;
 	m_state         = state;
 	m_callback      = callback;
 	m_collnum = collnum;
@@ -314,8 +308,6 @@ bool Msg51::sendRequest ( int32_t    i ) {
 	// . returns false and sets g_errno on error
 	// . otherwise, it blocks and returns true
 	bool s = m_slot[i].m_msg0.getList( -1            , // hostid
-				     m_maxCacheAge ,
-				     m_addToCache  ,
 				     RDB_CLUSTERDB ,
 				     m_collnum        ,
 				     &m_slot[i].m_list,

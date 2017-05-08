@@ -4818,8 +4818,6 @@ RdbList *XmlDoc::getDupList ( ) {
 	m_dupListValid = true;
 	// this is a no-split lookup by default now
 	if ( ! m_msg0.getList ( -1    , // hostId
-				0     , // maxCacheAge
-				false , // add to cache?
 				RDB_POSDB, // INDEXDB ,
 				cr->m_collnum,
 				&m_dupList  ,

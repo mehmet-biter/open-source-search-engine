@@ -43,8 +43,6 @@ class Msg0 {
 	//   out of sync with the data
 	// . a maxCacheAge of 0 (or negative) means not to check the cache
 	bool getList ( int64_t hostId      , // -1 if unspecified
-		       int32_t      maxCacheAge , // max cached age in seconds
-		       bool      addToCache  , // add net recv'd list to cache?
 		       rdbid_t   rdbId       , // specifies the rdb
 		       collnum_t collnum ,
 		       class RdbList  *list  ,
@@ -104,9 +102,6 @@ class Msg0 {
 	//class Rdb      *m_rdb;
 	int32_t      m_fixedDataSize;
 	bool      m_useHalfKeys;
-
-	// should we add an received lists from across network to our cache?
-	bool  m_addToCache;
 
 	// . parameters that define the RdbList we want
 	// . we use precisely this block to define a network request 

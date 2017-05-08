@@ -297,8 +297,6 @@ bool SiteGetter::getSiteList ( ) {
 
 		// get the list. returns false if blocked.
 		if (!m_msg0.getList( -1, // hostId
-		                 0, // maxCacheAge
-		                 false, // addToCache
 		                 RDB_POSDB,
 		                 m_collnum,
 		                 &m_list,

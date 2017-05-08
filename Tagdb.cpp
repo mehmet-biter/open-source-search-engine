@@ -1383,8 +1383,6 @@ bool Msg8a::launchGetRequests ( ) {
 		// . launch this request, even if to ourselves
 		// . TODO: just use msg0!!
 		bool status = m->getList ( firstHostId     , // hostId
-					   0          , // maxCacheAge
-					   false      , // addToCache
 					   RDB_TAGDB  ,
 					   m_collnum     ,
 					   listPtr    ,

@@ -1415,8 +1415,6 @@ bool Msg5::getRemoteList ( ) {
 	//   data
 	verify_signature();
 	if ( ! m_msg0->getList ( h->m_hostId          ,
-				 0                    , // max cached age
-				 false                , // add to cache?
 				 m_rdbId              , // rdbId
 				 m_collnum            ,
 				 m_list               ,

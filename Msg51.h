@@ -93,8 +93,6 @@ class Msg51 {
 			      key96_t         *clusterRecs              ,
 			      int32_t           numDocIds                ,
 			      collnum_t collnum ,
-			      int32_t           maxCacheAge              ,
-			      bool           addToCache               ,
 			      void          *state                    ,
 			      void        (* callback)( void *state ) ,
 			      int32_t           niceness                 ,
@@ -143,10 +141,6 @@ private:
 	int32_t       m_niceness;
 
 	collnum_t m_collnum;
-	
-	// cache info
-	int32_t       m_maxCacheAge;
-	bool       m_addToCache;
 
 	bool       m_isDebug;
 
