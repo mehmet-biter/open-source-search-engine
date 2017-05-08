@@ -73,6 +73,7 @@ OBJS_O3 = \
 	GbCopyFile.o \
 	GbMakePath.o \
 	GbUtil.o \
+	GbSignature.o \
 	GbCompress.o \
 	GbRegex.o \
 	GbThreadQueue.o \
@@ -87,6 +88,7 @@ OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
 # common flags
 DEFS = -D_REENTRANT_ -I.
+DEFS += -DDEBUG_MUTEXES
 CPPFLAGS = -g -fno-stack-protector -DPTHREADS
 CPPFLAGS += -std=c++11
 

@@ -1171,7 +1171,7 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
-	if ( ! g_jobScheduler.initialize(g_conf.m_maxCpuThreads, g_conf.m_maxIOThreads, g_conf.m_maxExternalThreads, g_conf.m_maxFileMetaThreads, g_conf.m_maxMergeThreads, wakeupPollLoop)) {
+	if ( ! g_jobScheduler.initialize(g_conf.m_maxCoordinatorThreads, g_conf.m_maxCpuThreads, g_conf.m_maxSummaryThreads, g_conf.m_maxIOThreads, g_conf.m_maxExternalThreads, g_conf.m_maxFileMetaThreads, g_conf.m_maxMergeThreads, wakeupPollLoop)) {
 		log( LOG_ERROR, "db: JobScheduler init failed." );
 		return 1;
 	}

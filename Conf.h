@@ -143,7 +143,9 @@ class Conf {
 	// which case we do not want to log certain things
 	bool m_doingCommandLine;
 
+	int32_t  m_maxCoordinatorThreads;
 	int32_t  m_maxCpuThreads;
+	int32_t  m_maxSummaryThreads;
 	int32_t  m_maxIOThreads;
 	int32_t  m_maxExternalThreads;
 	int32_t  m_maxFileMetaThreads;
@@ -271,9 +273,6 @@ class Conf {
 	// then you can set this to false to add all indexdb keys.
 	//bool   m_onlyAddUnchangedTermIds;
 	bool   m_doIncrementalUpdating;
-
-	// Temporary (?) setting for new Posdb no-in-memory-merge feature
-	bool   m_noInMemoryPosdbMerge;
 
 	int64_t m_stableSummaryCacheSize;
 	int64_t m_stableSummaryCacheMaxAge;

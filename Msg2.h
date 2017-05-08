@@ -6,6 +6,8 @@
 #include "Msg5.h"
 #include "RdbList.h"
 #include "max_niceness.h"
+#include "GbMutex.h"
+#include "GbSignature.h"
 
 // support the &sites=xyz.com+abc.com+... to restrict search results to provided sites.
 #define MAX_WHITELISTS 500
@@ -43,7 +45,7 @@ public:
 	 *  sets "errno" on error.
 	 *  "termIds/termFreqs" should NOT be on the stack in case we block
 	 */
-	bool getLists(collnum_t collnum,			//char    *coll        ,
+	bool getLists(collnum_t collnum,
 			bool addToCache,
 			const QueryTerm *qterms,
 			int32_t numQterms,
@@ -52,6 +54,7 @@ public:
 			const char *whiteList,
 			// for intersecting ranges of docids separately
 			// to prevent OOM errors
+			int fileNum,
 			int64_t docIdStart,
 			int64_t docIdEnd,
 			RdbList *lists,
@@ -78,10 +81,9 @@ public:
 	RdbList *getWhiteList(int32_t i) { return &(m_whiteLists[i]); }
 
 private:
-	// helper (handles index of list)
-	int32_t m_i;
-
+	declare_signature
 	// list of sites to restrict search results to. space separated
+	int m_fileNum;
 	const char *m_whiteList;
 	int64_t m_docIdStart;
 	int64_t m_docIdEnd;
@@ -101,6 +103,7 @@ private:
 	// we can get up to MAX_QUERY_TERMS term frequencies at the same time
 	Msg5 *m_msg5;
 	bool *m_avail; // which msg5s are available?
+	GbMutex m_mtxMsg5;
 
 	int32_t m_errno;
 
@@ -116,6 +119,11 @@ private:
 
 	int32_t m_numReplies;
 	int32_t m_numRequests;
+	bool m_requestsBeingSubmitted;
+	GbMutex m_mtxCounters; //protects the two counters and flag above
+	void incrementRequestCount();
+	bool incrementReplyCount();
+	bool allRequestsReplied();
 
 	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
 	void gotListWrapper(Msg5 *msg5);

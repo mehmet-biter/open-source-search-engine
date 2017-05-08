@@ -52,6 +52,8 @@
 #include "Json.h"
 #include "Posdb.h"
 
+class GetMsg20State;
+
 #define MAXFRAGWORDS 80000
 
 #define MAX_TAG_PAIR_HASHES 100
@@ -501,6 +503,12 @@ public:
 
 	void setMsg20Request(Msg20Request *req);
 	class Msg20Reply *getMsg20Reply ( ) ;
+	class Msg20Reply *getMsg20ReplyStepwise();
+	void loopUntilMsg20ReplyReady(GetMsg20State *);
+	static void getMsg20ReplyThread(void *pv);
+	void getMsg20ReplyThread();
+	static void msg20Done(void *pv, job_exit_t exit_type);
+	void msg20Done(job_exit_t exit_type);
 	Query *getQuery() ;
 	Matches *getMatches () ;
 	char *getDescriptionBuf ( char *displayMetas , int32_t *dlen ) ;
@@ -949,6 +957,7 @@ public:
 	Url m_baseUrl;
 	Msg20Reply m_reply;
 	Msg20Request *m_req;
+	bool m_abortMsg20Generation;
 	char  m_linkTextBuf[MAX_LINK_TEXT_LEN];
 	char m_surroundingTextBuf[MAX_SURROUNDING_TEXT_WIDTH];
 	char m_rssItemBuf[MAX_RSSITEM_SIZE];

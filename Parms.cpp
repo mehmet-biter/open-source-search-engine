@@ -4760,15 +4760,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
-	m->m_title = "Use new no-in-memory-merge feature";
-	m->m_desc  = "Posdb will no longer contain delete keys, and the entire document is indexed every time a change is found. "
-	             "(Changes requires restart)";
-	m->m_cgi   = "noinmemmerge";
-	simple_m_set(Conf,m_noInMemoryPosdbMerge);
-	m->m_def   = "0";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
 
 
 	m->m_title = "injections enabled";
@@ -5319,7 +5310,6 @@ void Parms::init ( ) {
 	simple_m_set(Conf,m_stableSummaryCacheMaxAge);
 	m->m_def   = "86400000";
 	m->m_units = "milliseconds";
-	m->m_units = "milliseconds";
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_group = false;
@@ -5596,6 +5586,21 @@ void Parms::init ( ) {
 	m++;
 
 
+	m->m_title = "max coordinator threads";
+	m->m_desc  = "Maximum number of threads to use per Gigablast process "
+		"for coordinating a query.";
+	m->m_cgi   = "mcct";
+	m->m_off   = offsetof(Conf,m_maxCoordinatorThreads);
+	m->m_type  = TYPE_INT32;
+	m->m_def   = "2";
+	m->m_units = "threads";
+	m->m_min   = 0;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
+	m++;
+
 	m->m_title = "max cpu threads";
 	m->m_desc  = "Maximum number of threads to use per Gigablast process "
 		"for merging and intersecting.";
@@ -5607,6 +5612,21 @@ void Parms::init ( ) {
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_group = true;
+	m++;
+
+	m->m_title = "max summary threads";
+	m->m_desc  = "Maximum number of threads to use per Gigablast process "
+		"for summary generation.";
+	m->m_cgi   = "mst";
+	m->m_off   = offsetof(Conf,m_maxSummaryThreads);
+	m->m_type  = TYPE_INT32;
+	m->m_def   = "2";
+	m->m_units = "threads";
+	m->m_min   = 0;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "max IO threads";
@@ -7411,7 +7431,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "mns";
 	simple_m_set(CollectionRec,m_maxNumSpiders);
 	// make it the hard max so control is really in the master controls
-	m->m_def   = "300";
+	m->m_def   = "1";
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_CLONE;
 	m++;
@@ -8087,6 +8107,40 @@ void Parms::init ( ) {
 	// LOG CONTROLS
 	///////////////////////////////////////////
 
+	m->m_title = "max delay before logging a callback or handler";
+	m->m_desc  = "If a call to a message callback or message handler "
+		"in the udp server takes more than this many milliseconds, "
+		"then log it. "
+		"Logs 'udp: Took %" PRId64" ms to call callback for msgType="
+		"0x%hhx niceness=%" PRId32"'. "
+		"Use -1 or less to disable the logging.";
+	m->m_cgi   = "mdch";
+	simple_m_set(Conf,m_maxCallbackDelay);
+	m->m_def   = "-1";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log query time threshold";
+	m->m_desc  = "If a query took this many millliseconds or longer, then log the "
+		"query and the time it took to process.";
+	m->m_cgi   = "lqtt";
+	simple_m_set(Conf,m_logQueryTimeThreshold);
+	m->m_def   = "5000";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log disk read time threshold";
+	m->m_desc  = "If a disk read took this many millliseconds or longer, then log the "
+		"bytes read and the time it took to process.";
+	m->m_cgi   = "ldrtt";
+	simple_m_set(Conf,m_logDiskReadTimeThreshold);
+	m->m_def   = "50";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log http requests";
 	m->m_desc  = "Log GET and POST requests received from the "
 		"http server?";
@@ -8104,25 +8158,6 @@ void Parms::init ( ) {
 	m->m_def   = "1";
 	m->m_page  = PAGE_LOG;
 	m++;
-
-	m->m_title = "log query time threshold";
-	m->m_desc  = "If a query took this many millliseconds or longer, then log the "
-		"query and the time it took to process.";
-	m->m_cgi   = "lqtt";
-	simple_m_set(Conf,m_logQueryTimeThreshold);
-	m->m_def   = "5000";
-	m->m_page  = PAGE_LOG;
-	m++;
-
-	m->m_title = "log disk read time threshold";
-	m->m_desc  = "If a disk read took this many millliseconds or longer, then log the "
-		"bytes read and the time it took to process.";
-	m->m_cgi   = "ldrtt";
-	simple_m_set(Conf,m_logDiskReadTimeThreshold);
-	m->m_def   = "50";
-	m->m_page  = PAGE_LOG;
-	m++;
-
 
 	m->m_title = "log query reply";
 	m->m_desc  = "Log query reply in proxy, but only for those queries "

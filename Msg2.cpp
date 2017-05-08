@@ -9,7 +9,15 @@
 #include "HighFrequencyTermShortcuts.h"
 #include "Sanity.h"
 #include "Conf.h"
+#include "ScopedLock.h"
 #include "Mem.h"
+
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
+
+
+static const int signature_init = 0x7e8a32f9;
 
 // 90MB for 32 nodes we got now with about 1.3B docs
 #define DEFAULT_POSDB_READSIZE 90000000
@@ -32,43 +40,54 @@ static int countWhitelistItems(const char *whitelist) {
 
 
 
-Msg2::Msg2() {
-	m_i = 0;
-	m_whiteList = NULL;
-	m_docIdStart = 0;
-	m_docIdEnd = 0;
-	m_p = NULL;
-	m_w = 0;
-	m_whiteLists = NULL;
-	m_numWhitelists = 0;
-	m_msg5 = 0;
-	m_avail = 0;
-	m_numLists = 0;
-	m_errno = 0;
-	m_lists = NULL;
-	m_qterms = NULL;
-	m_getComponents = false;
-	m_addToCache = false;
-	m_collnum = 0;
-	m_allowHighFrequencyTermCache = false;
-	m_numReplies = 0;
-	m_numRequests = 0;
-	m_state = NULL;
-	m_callback = NULL;
-	m_niceness = 0;
-	m_isDebug = false;
-	m_startTime = 0;
+Msg2::Msg2()
+  : m_whiteList(NULL),
+    m_docIdStart(0),
+    m_docIdEnd(0),
+    m_p(NULL),
+    m_w(0),
+    m_whiteLists(NULL),
+    m_numWhitelists(0),
+    m_msg5(0),
+    m_avail(0),
+    m_errno(0),
+    m_lists(NULL),
+    m_qterms(NULL),
+    m_numLists(0),
+    m_getComponents(false),
+    m_addToCache(false),
+    m_collnum(0),
+    m_allowHighFrequencyTermCache(false),
+    m_numReplies(0),
+    m_numRequests(0),
+    m_requestsBeingSubmitted(false),
+    m_state(NULL),
+    m_callback(NULL),
+    m_niceness(0),
+    m_isDebug(false),
+    m_startTime(0)
+{
+	set_signature();
 }
 
 Msg2::~Msg2() {
 	reset();
+	clear_signature();
 }
 
 void Msg2::reset ( ) {
+	verify_signature();
+	if(!allRequestsReplied())
+		gbshutdownLogicError();
 	m_numLists = 0;
 	m_whiteList = 0;
 	m_p = 0;
 	delete[] m_msg5;
+//if(m_msg5) {
+//	for(int i=0; i<m_numLists+m_numWhitelists; i++)
+//		(m_msg5+i)->~Msg5();
+//	memset(m_msg5,-4,sizeof(*m_msg5)*(m_numLists+m_numWhitelists));
+//}
 	m_msg5 = 0;
 	delete[] m_avail;
 	m_avail = 0;
@@ -77,6 +96,26 @@ void Msg2::reset ( ) {
 	m_whiteLists = NULL;
 	m_numWhitelists = 0;
 }
+
+
+void Msg2::incrementRequestCount() {
+	ScopedLock sl(m_mtxCounters);
+	m_numRequests++;
+}
+
+bool Msg2::incrementReplyCount() {
+	ScopedLock sl(m_mtxCounters);
+	if(m_numReplies>=m_numRequests)
+		gbshutdownCorrupted();
+	m_numReplies++;
+	return m_numReplies==m_numRequests && !m_requestsBeingSubmitted;
+}
+
+bool Msg2::allRequestsReplied()	{
+	ScopedLock sl(m_mtxCounters);
+	return (!m_requestsBeingSubmitted) && (m_numReplies==m_numRequests);
+}
+
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
@@ -92,6 +131,7 @@ bool Msg2::getLists ( collnum_t collnum , // char    *coll        ,
 		      // put list of sites to restrict to in here
 		      // or perhaps make it collections for federated search?
 		      const char *whiteList ,
+		      int fileNum,
 		      int64_t docIdStart,
 		      int64_t docIdEnd,
 		      // make max MAX_MSG39_LISTS
@@ -101,6 +141,10 @@ bool Msg2::getLists ( collnum_t collnum , // char    *coll        ,
 		      bool allowHighFrequencyTermCache,
 		      int32_t     niceness    ,
 		      bool     isDebug ) {
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_ADDRESSABLE(qterms,numQterms*sizeof(*qterms));
+#endif
+	verify_signature();
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg2.");
 	// save callback and state
@@ -114,6 +158,7 @@ bool Msg2::getLists ( collnum_t collnum , // char    *coll        ,
 	m_w = 0;
 	m_p = whiteList;
 
+	m_fileNum    = fileNum;
 	m_docIdStart = docIdStart;
 	m_docIdEnd   = docIdEnd;
 	m_allowHighFrequencyTermCache = allowHighFrequencyTermCache;
@@ -142,16 +187,26 @@ bool Msg2::getLists ( collnum_t collnum , // char    *coll        ,
 	}
 	// reset error
 	m_errno = 0;
-	// reset list counter
-	m_i = 0;
 	// fetch what we need
 	return getLists ( );
 }
 
 bool Msg2::getLists ( ) {
+	//log(LOG_TRACE,"Msg2(%p)::getLists()",this);
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_ADDRESSABLE(m_qterms,m_numLists*sizeof(*m_qterms));
+#endif
+	{
+		ScopedLock sl(m_mtxCounters);
+		m_requestsBeingSubmitted = true;
+	}
+
 	// . send out a bunch of msg5 requests
 	// . make slots for all
-	for (  ; m_i < m_numLists ; m_i++ ) {
+	for(int m_i=0; m_i < m_numLists; m_i++) {
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_ADDRESSABLE(m_qterms,m_numLists*sizeof(*m_qterms));
+#endif
 		// sanity for Msg39's sake. do no breach m_lists[].
 		if ( m_i >= ABS_MAX_QUERY_TERMS ) gbshutdownLogicError();
 		// if any had error, forget the rest. do not launch any more
@@ -186,6 +241,7 @@ bool Msg2::getLists ( ) {
 		}
 		
 		int32_t minRecSize = DEFAULT_POSDB_READSIZE;
+
 
 
 		const char *sk2 = NULL;
@@ -238,35 +294,36 @@ bool Msg2::getLists ( ) {
 		//   really needs to do it and he doesn't call Msg2
 		// . this is really only used to get IndexLists
 		// . we now always compress the list for 2x faster transmits
-		if ( ! msg5->getList ( 
-					   RDB_POSDB,
-					   m_collnum      ,
-					   &m_lists[m_i], // listPtr
-					   sk2,
-					   ek2,
-					   minRecSize  ,
-					   true, // include tree?
-					   0, // maxcacheage
-					   0              , // start file num
-					   -1,              // num files
-					   this,
-					   gotListWrapper ,
-					   m_niceness     ,
-					   false          , // error correction
-					   NULL , // cachekeyptr
-					   0, // retrynum
-					   -1, // maxretries
-					   -1, // syncpoint
-					   false, // isrealmerge?
-					   true) ) { // allow disk page cache?
-			m_numRequests++;
-			continue;
-		}
+		if(m_fileNum>=0) {
+			incrementRequestCount();
+			if ( ! msg5->getSingleUnmergedList ( RDB_POSDB,
+							m_collnum,
+							&m_lists[m_i],  // listPtr
+							sk2,
+							ek2,
+							minRecSize,
+							0,              // maxcacheage
+							m_fileNum,      // file num
+							this,
+							gotListWrapper,
+							m_niceness) )
+			{
+				continue;
+			}
+			incrementReplyCount();
+		} else if(m_fileNum==-1) {
+			//get the tree
+			if(!msg5->getTreeList(&m_lists[m_i],RDB_POSDB,m_collnum,sk2,ek2)) {
+				log("query: Msg5::getTreeList() failed");
+				goto skip;
+			}
+		} else
+			gbshutdownLogicError();
 
+		//log(LOG_TRACE,"Msg2::getLists(): msg5::getList() returned immediately");
 		// we didn't block, so do this
-		m_numReplies++; 
-		m_numRequests++; 
 		// return the msg5 now
+		msg5->reset();
 		returnMsg5 ( msg5 );
 		// note it
 		
@@ -341,33 +398,34 @@ bool Msg2::getLists ( ) {
 
 		// start up the read. thread will wait in thread queue to 
 		// launch if too many threads are out.
-		if ( ! msg5->getList ( 	   RDB_POSDB,
-					   m_collnum        ,
-					   &m_whiteLists[m_w], // listPtr
-					   sk3,
-					   ek3,
-					   minRecSizes,
-					   true, // include tree?
-					   0, // maxcacheage
-					   0              , // start file num
-					   -1,              // num files
-					   this,
-					   gotListWrapper ,
-					   m_niceness     ,
-					   false          , // error correction
-					   NULL , // cachekeyptr
-					   0, // retrynum
-					   -1, // maxretries
-					   -1, // syncpoint
-					   false, // isrealmerge?
-					   true ) ) { // allow disk page cache?
-			m_numRequests++;
-			continue;
-		}
-		// return it!
-		m_numReplies++; 
-		m_numRequests++; 
+		if(m_fileNum>=0) {
+			incrementRequestCount();
+			if ( ! msg5->getSingleUnmergedList ( RDB_POSDB,
+							     m_collnum,
+							     &m_whiteLists[m_w], // listPtr
+							     sk3,
+							     ek3,
+							     minRecSizes,
+							     0,                 // maxcacheage
+							     m_fileNum,         // file num
+							     this,
+							     gotListWrapper,
+							     m_niceness ) )
+			{
+				continue;
+			}
+
+			incrementReplyCount();
+		} else if(m_fileNum==-1) {
+			//get the tree
+			if(!msg5->getTreeList(&m_whiteLists[m_w],RDB_POSDB,m_collnum,sk3,ek3)) {
+				log("query: Msg5::getTreeList() failed");
+				goto skip;
+			}
+		} else
+			gbshutdownLogicError();
 		// . return the msg5 now
+		msg5->reset();
 		returnMsg5 ( msg5 );
 		
 		// break out on error and wait for replies if we blocked
@@ -381,9 +439,16 @@ bool Msg2::getLists ( ) {
 		
  skip:
 
-	// . did anyone block? if so, return false for now
-	if ( m_numRequests > m_numReplies ) return false;
-	// . otherwise, we got everyone, so go right to the merge routine
+	{
+		ScopedLock sl(m_mtxCounters);
+		m_requestsBeingSubmitted = false;
+		
+		//if we have outstanding requests then return false (a callback will be called)
+		if(m_numReplies!=m_numRequests)
+			return false;
+	}
+
+// 	// . otherwise, we got everyone, so go right to the merge routine
 	// . returns false if not all replies have been received 
 	// . returns true if done
 	// . sets g_errno on error
@@ -391,24 +456,30 @@ bool Msg2::getLists ( ) {
 }
 
 Msg5 *Msg2::getAvailMsg5 ( ) {
+	verify_signature();
+	ScopedLock sl(m_mtxMsg5);
 	for ( int32_t i = 0; i < m_numLists+m_numWhitelists; i++ ) {
-		if ( ! m_avail[i] ) continue;
-		m_avail[i] = false;
-		return &m_msg5[i];
+		if(m_avail[i]) {
+			m_avail[i] = false;
+			return &m_msg5[i];
+		}
 	}
 	return NULL;
 }
 
 void Msg2::returnMsg5 ( Msg5 *msg5 ) {
-	int32_t i;
-	for ( i = 0 ; i < m_numLists+m_numWhitelists ; i++ )
-		if ( &m_msg5[i] == msg5 ) break;
-	// wtf?
-	if ( i >= m_numLists+m_numWhitelists ) gbshutdownLogicError();
-	// make it available
-	m_avail[i] = true;
-	// reset it
+	verify_signature();
+	ScopedLock sl(m_mtxMsg5);
+	if(msg5 < m_msg5)
+		gbshutdownLogicError();
+	if(msg5 >= m_msg5+m_numLists+m_numWhitelists)
+		gbshutdownLogicError();
+	int32_t i = (int32_t)(msg5-m_msg5);
+	if(m_avail[i])
+		gbshutdownLogicError();
 	msg5->reset();
+//	m_avail[i] = true;
+	verify_signature();
 }
 
 
@@ -419,6 +490,7 @@ void Msg2::gotListWrapper(void *state, RdbList *rdblist, Msg5 *msg5) {
 
 
 void Msg2::gotListWrapper( Msg5 *msg5 ) {
+	verify_signature();
 	RdbList *list = msg5->m_list;
 	// note it
 	if ( g_errno ) {
@@ -428,8 +500,8 @@ void Msg2::gotListWrapper( Msg5 *msg5 ) {
 	}
 	// identify the msg0 slot we use
 	int32_t i  = list - m_lists;
+	msg5->reset();
 	returnMsg5 ( msg5 );
-	m_numReplies++;
 	// note it
 	if ( m_isDebug ) {
 		if ( ! list )
@@ -439,7 +511,8 @@ void Msg2::gotListWrapper( Msg5 *msg5 ) {
 			     i,list->getListSize() );
 	}
 	
-	if ( m_numRequests > m_numReplies )
+	bool done = incrementReplyCount();
+	if(!done)
 		return; //still more to go
 	// set g_errno if any one list read had error
 	if ( m_errno ) g_errno = m_errno;
@@ -453,9 +526,11 @@ void Msg2::gotListWrapper( Msg5 *msg5 ) {
 // . sets g_errno on error
 // . "list" is NULL if we got all lists w/o blocking and called this
 bool Msg2::gotList() {
+	verify_signature();
 
 	// wait until we got all the replies before we attempt to merge
-	if ( m_numReplies < m_numRequests ) return false;
+	if(!allRequestsReplied())
+		return false;
 
 	// . return true on error
 	// . no, wait to get all the replies because we destroy ourselves

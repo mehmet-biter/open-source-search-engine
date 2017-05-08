@@ -5,16 +5,23 @@
 #include "UdpServer.h"
 #include "RdbList.h"
 #include "Collectiondb.h"
+#include "DocumentIndexChecker.h"
 #include "Sanity.h"
 #include "Posdb.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "GbSignature.h"
 #include <new>
+#include "ScopedLock.h"
+#include <pthread.h>
+#include <assert.h>
 
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
+
+static const int signature_init = 0x2c9a3f0e;
 
 
 // called to send back the reply
@@ -24,6 +31,54 @@ static void  sendReply         ( UdpSlot *slot         ,
 				 int32_t     replySize    ,
 				 int32_t     replyMaxSize ,
 				 bool     hadError     );
+
+
+
+namespace {
+
+//a structure for keeping while some sub-task is handled by a different thread/job
+class JobState {
+public:
+	declare_signature
+	Msg39 *msg39;
+	bool result_ready;
+	pthread_mutex_t mtx;
+	pthread_cond_t cond;	
+	JobState(Msg39 *msg39_)
+	  : msg39(msg39_),
+	    result_ready(false)
+	{
+		pthread_mutex_init(&mtx,NULL);
+		pthread_cond_init(&cond,NULL);
+		set_signature();
+	}
+	~JobState() {
+		verify_signature();
+		pthread_mutex_destroy(&mtx);
+		pthread_cond_destroy(&cond);
+		clear_signature();
+	}
+	void wait_for_finish() {
+		verify_signature();
+		ScopedLock sl(mtx);
+		while(!result_ready)
+			pthread_cond_wait(&cond,&mtx);
+		verify_signature();
+	}
+};
+
+//a simple function just signals that the job has been finished
+static void JobFinishedCallback(void *state) {
+	JobState *js = static_cast<JobState*>(state);
+	verify_signature_at(js->signature);
+	ScopedLock sl(js->mtx);
+	assert(!js->result_ready); //can only be called once
+	js->result_ready = true;
+	int rc = pthread_cond_signal(&js->cond);
+	assert(rc==0);
+}
+
+} //anonymous namespace
 
 
 
@@ -117,7 +172,6 @@ void Msg39::reset() {
 	m_query.reset();
 	m_numTotalHits = 0;
 	m_gotClusterRecs = 0;
-	m_docIdSplitNumber = 0;
 	reset2();
 	if(m_clusterBuf) {
 		mfree ( m_clusterBuf, m_clusterBufSize, "Msg39cluster");
@@ -127,8 +181,6 @@ void Msg39::reset() {
 	// Coverity
 	m_slot = NULL;
 	m_msg39req = NULL;
-	m_ddd = 0;
-	m_dddEnd = 0;
 	m_startTime = 0;
 	m_startTimeQuery = 0;
 	m_errno = 0;
@@ -138,7 +190,6 @@ void Msg39::reset() {
 	m_clusterRecs = NULL;
 	m_numClusterDocIds = 0;
 	m_numVisible = 0;
-	m_phase = 0;
 	m_debug = false;
 }
 
@@ -203,6 +254,9 @@ static void sendReply ( UdpSlot *slot , Msg39 *msg39 , char *reply , int32_t rep
 	if ( msg39 ) {
 		mdelete ( msg39 , sizeof(Msg39) , "Msg39" );
 		delete (msg39);
+//msg39->~Msg39();
+//memset(msg39,-3,sizeof(*msg39));
+//::operator delete((void*)msg39);
 	}
 }
 
@@ -243,8 +297,28 @@ void Msg39::getDocIds ( UdpSlot *slot ) {
 		return;
 	}
 
-	getDocIds2();
+	log(LOG_DEBUG,"query: msg39: processing query '%*.*s', this=%p", (int)m_msg39req->size_query, (int)m_msg39req->size_query, m_msg39req->ptr_query, this);
+	// OK, we have deserialized and checked the msg39request and we can now process
+	// it by shoveling into the jobe queue. that means that the main thread (or whoever
+	// called us) is freed up and can do other stuff.
+	if(!g_jobScheduler.submit(&coordinatorThreadFunc,
+				  NULL,                          //finish-callback. We don't care
+				  this,
+				  thread_type_query_coordinator,
+				  m_msg39req->m_niceness))
+	{
+		log(LOG_ERROR,"Could not add query-coordinator job. Doing it in foreground");
+		getDocIds2();
+	}
 }
+
+
+void Msg39::coordinatorThreadFunc(void *state) {
+	Msg39 *that = static_cast<Msg39*>(state);
+	log(LOG_DEBUG, "query: msg39: in coordinatorThreadFunc: this=%p", that);
+	that->getDocIds2();
+}
+
 
 // . the main function to get the docids for the provided query in "req"
 // . it always blocks i guess
@@ -312,31 +386,7 @@ void Msg39::getDocIds2() {
 	// reset this
 	m_toptree.reset();
 
-	m_ddd    = 0;
-	m_dddEnd = MAX_DOCID;
-
-	m_phase = 0;
-
-	// . it will send a reply when done
-	if ( ! controlLoop() ) return;
-
-	// it might not have blocked! if all lists in tree and used no thread
-	// it will come here after sending the reply and destroying "this"
-	return;
-}
-
-
-void Msg39::intersectionFinishedCallback(void *state, job_exit_t exit_type) {
-	Msg39 *that = static_cast<Msg39*>(state);
-	g_errno = that->m_errno;
-
-	that->controlLoop();
-}
-
-
-void Msg39::controlLoopWrapper(void *state) {
-	Msg39 *that = static_cast<Msg39*>(state);
-	that->controlLoop();
+	controlLoop();
 }
 
 
@@ -345,126 +395,149 @@ void Msg39::controlLoopWrapper(void *state) {
 // 2. intersect termlists to get the intersecting docids
 // 3. increment docid ranges and keep going
 // 4. when done return the top docids
-bool Msg39::controlLoop ( ) {
-	log(LOG_DEBUG,"query: Msg39::controlLoop(): m_msg39req->m_numDocIdSplits=%d m_msg39req->m_timeout=%" PRId64, m_msg39req->m_numDocIdSplits, m_msg39req->m_timeout);
-	//log("@@@ Msg39::controlLoop: m_startTimeQuery=%" PRId64, m_startTimeQuery);
+void Msg39::controlLoop ( ) {
+//	log(LOG_DEBUG,"query: Msg39(%p)::controlLoop(): m_msg39req->m_numDocIdSplits=%d m_msg39req->m_timeout=%" PRId64, this, m_msg39req->m_numDocIdSplits, m_msg39req->m_timeout);
+//log("@@@ Msg39::controlLoop: m_startTimeQuery=%" PRId64, m_startTimeQuery);
 	//log("@@@ Msg39::controlLoop: now             =%" PRId64, gettimeofdayInMilliseconds());
-	//log("@@@ Msg39::controlLoop: m_phase=%d", m_phase);
 
- loop:
+	RdbBase *base = getRdbBase(RDB_POSDB,m_msg39req->m_collnum);
+	if(base==NULL) {
+		log(LOG_ERROR,"query: Collection %d disappeared", m_msg39req->m_collnum);
+		g_errno = ENOCOLLREC;
+	}
+
+	DocumentIndexChecker documentIndexChecker(base);
+	const int numFiles = base->getNumFiles(); //todo: this can vary if a merge finishes during the query
+//	log(LOG_DEBUG,"controlLoop(): numFiles=%d",numFiles);
 	
-	if(m_docIdSplitNumber!=0 && m_phase==0) {
-		//Estimate if we can do this and next ranges within the deadline
-		int64_t now = gettimeofdayInMilliseconds();
-		int64_t time_spent_so_far = now - m_startTimeQuery;
-		int64_t time_per_range = time_spent_so_far / m_docIdSplitNumber;
-		int64_t estimated_this_range_finish_time = now + time_per_range;
-		int64_t deadline = m_startTimeQuery + m_msg39req->m_timeout;
-		log(LOG_DEBUG,"query: Msg39::controlLoop(): now=%" PRId64" time_spent_so_far=%" PRId64" time_per_range=%" PRId64" estimated_this_range_finish_time=%" PRId64" deadline=%" PRId64,
-		    now, time_spent_so_far, time_per_range, estimated_this_range_finish_time, deadline);
-		if(estimated_this_range_finish_time > deadline) {
-			//estimated completion time crosses the deadline.
-			log(LOG_INFO,"Msg39::controlLoop(): range %d/%d would cross deadline. Skipping", m_docIdSplitNumber, m_msg39req->m_numDocIdSplits);
-			m_ddd = m_dddEnd;
-			m_phase = 3;
+	//todo: choose docid splits based on expected largest rdblist / most common term
+	int numDocIdSplits = 1;
+//	log(LOG_DEBUG,"controlLoop(): numDocIdSplits=%d",numDocIdSplits);
+	
+	const int totalChunks = (numFiles+1)*numDocIdSplits;
+	int chunksSearched = 0;
+	
+	if(g_errno) //ugly logic due to C++ prohibited jump over local variable initialization
+		goto hadError;
+
+	for(int fileNum = 0; fileNum<numFiles+1; fileNum++) {
+//		if(fileNum!=numFiles)
+//			log(LOG_DEBUG,"controlLoop(): fileNum=%d (of %d)", fileNum, numFiles);
+//		else
+//			log(LOG_DEBUG,"controlLoop(): fileNum=tree");
+		
+		if(fileNum<numFiles && !base->isReadable(fileNum)) {
+			log(LOG_DEBUG,"posdb file #%d is not currently readable. Skipping", fileNum);
+			continue;
 		}
+
+		int64_t docidRangeStart = 0;
+		const int64_t docidRangeDelta = MAX_DOCID / (int64_t)numDocIdSplits;
+		
+		for(int docIdSplitNumber = 0; docIdSplitNumber < numDocIdSplits; docIdSplitNumber++) {
+//			log(LOG_DEBUG,"controlLoop(): splitNumber=%d (of %d)", docIdSplitNumber, numDocIdSplits);
+			
+			if(docIdSplitNumber!=0) {
+				//Estimate if we can do this and next ranges within the deadline
+				int64_t now = gettimeofdayInMilliseconds();
+				int64_t time_spent_so_far = now - m_startTimeQuery;
+				int64_t time_per_range = time_spent_so_far / docIdSplitNumber;
+				int64_t estimated_this_range_finish_time = now + time_per_range;
+				int64_t deadline = m_startTimeQuery + m_msg39req->m_timeout;
+				log(LOG_DEBUG,"query: Msg39::controlLoop(): now=%" PRId64" time_spent_so_far=%" PRId64" time_per_range=%" PRId64" estimated_this_range_finish_time=%" PRId64" deadline=%" PRId64,
+				    now, time_spent_so_far, time_per_range, estimated_this_range_finish_time, deadline);
+				if(estimated_this_range_finish_time > deadline) {
+					//estimated completion time crosses the deadline.
+					log(LOG_INFO,"Msg39::controlLoop(): range %d/%d would cross deadline. Skipping", docIdSplitNumber, m_msg39req->m_numDocIdSplits);
+					goto skipRest;
+				}
+			}
+			
+			if(fileNum<numFiles && !base->isReadable(fileNum)) {
+				log(LOG_DEBUG,"posdb file #%d is not currently readable. Skipping", fileNum);
+				//todo: if a file suddenly becomes unreadable then it means that a merge has started or finihsed and we should really redo the whole query
+				break;
+			}
+			// Reset ourselves, partially, anyway, not m_query etc.
+			reset2();
+			
+			// Calculate docid range and fetch lists
+			int64_t d0 = docidRangeStart;
+			docidRangeStart += docidRangeDelta;
+			if(docIdSplitNumber+1 == numDocIdSplits)
+				docidRangeStart = MAX_DOCID;
+			else if(docidRangeStart + 20 > MAX_DOCID)
+				docidRangeStart = MAX_DOCID;
+			int64_t d1 = docidRangeStart;
+			
+//			log(LOG_DEBUG,"docid range: [%" PRId64"..%" PRIu64")", d0,d1);
+			if(fileNum!=numFiles)
+				getLists(fileNum,d0,d1);
+			else
+				getLists(-1,d0,d1);
+			if ( g_errno ) {
+				log(LOG_ERROR,"Msg39::controlLoop: got error %d after getLists()", g_errno);
+				goto hadError;
+			}
+
+			// Intersect the lists we loaded (using a thread)
+			documentIndexChecker.setFileNum(fileNum);
+			intersectLists(documentIndexChecker);
+			if ( g_errno ) {
+				log(LOG_ERROR,"Msg39::controlLoop: got error %d after intersectLists()", g_errno);
+				goto hadError;
+			}
+			
+			// Sum up stats
+			if ( m_posdbTable.m_t1 ) {
+				// . measure time to add the lists in bright green
+				// . use darker green if rat is false (default OR)
+				g_stats.addStat_r ( 0, m_posdbTable.m_t1, m_posdbTable.m_t2, 0x0000ff00 );
+			}
+			// accumulate total hits count over each docid split
+			m_numTotalHits += m_posdbTable.getTotalHits();
+			// minus the shit we filtered out because of gbminint/gbmaxint/
+			// gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
+			m_numTotalHits -= m_posdbTable.m_filtered;
+			
+			chunksSearched++;
+		}
+//		log(LOG_DEBUG,"controlLoop(): End of docid-split loop");
 	}
+skipRest:
+//	log(LOG_DEBUG,"controlLoop(): End of file loop");
+	
 
-	// error?
-	if ( g_errno ) goto hadError;
-
-	if ( m_phase == 0 ) {
-		// next phase
-		m_phase++;
-		// the starting docid...
-		int64_t d0 = m_ddd;
-		int64_t delta = MAX_DOCID / (int64_t)m_msg39req->m_numDocIdSplits;
-		// advance to point to the exclusive endpoint
-		m_ddd += delta;
-		m_docIdSplitNumber++;
-		// ensure this is exclusive of ddd since it will be
-		// inclusive in the following iteration.
-		int64_t d1 = m_ddd;
-		// fix rounding errors
-		if ( d1 + 20LL > MAX_DOCID ) {
-			d1    = MAX_DOCID;
-			m_ddd = MAX_DOCID;
-		}
-		// fix it
-		m_msg39req->m_minDocId = d0;
-		m_msg39req->m_maxDocId = d1; // -1; // exclude d1
-
-		// reset ourselves, partially, anyway, not tmpq etc.
-		reset2();
-
-		// debug log
-		if ( m_debug ) {
-			log("msg39: docid split %d/%d range %" PRId64"-%" PRId64, m_docIdSplitNumber-1, m_msg39req->m_numDocIdSplits, d0,d1);
-		}
-
-		// load termlists for these docid ranges using msg2 from posdb
-		if ( ! getLists() ) 
-		{
-			return false;
-		}
-	}
-
-
-	if ( m_phase == 1 ) {
-		m_phase++;
-		// intersect the lists we loaded using a thread
-		if ( ! intersectLists() ) return false;
-		// error?
-		if ( g_errno ) goto hadError;
-	}
-
-	// sum up some stats
-	if ( m_phase == 2 ) {
-		m_phase++;
-		if ( m_posdbTable.m_t1 ) {
-			// . measure time to add the lists in bright green
-			// . use darker green if rat is false (default OR)
-			g_stats.addStat_r ( 0, m_posdbTable.m_t1, m_posdbTable.m_t2, 0x0000ff00 );
-		}
-		// accumulate total hits count over each docid split
-		m_numTotalHits += m_posdbTable.getTotalHits();
-		// minus the shit we filtered out because of gbminint/gbmaxint/
-		// gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
-		m_numTotalHits -= m_posdbTable.m_filtered;
-		// if we have more docid ranges remaining do more
-		if ( m_ddd < m_dddEnd ) {
-			m_phase = 0;
-			goto loop;
-		}
-	}
-
+//	log(LOG_DEBUG, "query: msg39(this=%p): All chunks done. Now getting cluster records",this);
+	
 	// ok, we are done, get cluster recs of the winning docids
-	if ( m_phase == 3 ) {
-		m_phase++;
-		// . this loads them using msg51 from clusterdb
-		// . if m_msg39req->m_doSiteClustering is false it just returns true
-		// . this sets m_gotClusterRecs to true if we get them
-		if ( ! getClusterRecs ( ) ) return false;
-		// error setting clusterrecs?
-		if ( g_errno ) goto hadError;
+	// . this loads them using msg51 from clusterdb
+	// . if m_msg39req->m_doSiteClustering is false it just returns true
+	// . this sets m_gotClusterRecs to true if we get them
+	getClusterRecs();
+	// error setting clusterrecs?
+	if ( g_errno ) {
+		log(LOG_ERROR,"Msg39::controlLoop: got error %d after getClusterRecs()", g_errno);
+		goto hadError;
 	}
 
 	// process the cluster recs if we got them
-	if ( m_gotClusterRecs && ! gotClusterRecs() )
+	if ( m_gotClusterRecs && ! gotClusterRecs() ) {
+		log(LOG_ERROR,"Msg39::controlLoop: got error after gotClusterRecs()");
 		goto hadError;
+	}
 
 	// . all done! set stats and send back reply
 	// . only sends back the cluster recs if m_gotClusterRecs is true
-	estimateHitsAndSendReply();
+	estimateHitsAndSendReply(chunksSearched/(double)totalChunks);
 
-	return true;
+	return;
 
 hadError:
-	log(LOG_LOGIC,"query: msg39: controlLoop: %s.",
-	    mstrerror(g_errno) );
+	log(LOG_LOGIC,"query: msg39: controlLoop: got error: %s.", mstrerror(g_errno) );
 	sendReply ( m_slot, this, NULL, 0, 0, true );
-	return true;
 }
+
 
 
 // . returns false if blocked, true otherwise
@@ -472,20 +545,13 @@ hadError:
 // . called either from 
 //   1) doDocIdSplitLoop
 //   2) or getDocIds2() if only 1 docidsplit
-bool Msg39::getLists () {
+void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
+	log(LOG_DEBUG, "query: msg39(this=%p)::getLists()",this);
 
 	if ( m_debug ) m_startTime = gettimeofdayInMilliseconds();
 	// . ask Indexdb for the IndexLists we need for these termIds
 	// . each rec in an IndexList is a termId/score/docId tuple
 
-	//
-	// restrict to docid range?
-	//
-	// . get the docid start and end
-	// . do docid paritioning so we can send to all hosts
-	//   in the network, not just one stripe
-	int64_t docIdStart = 0;
-	int64_t docIdEnd = MAX_DOCID;
 	// . restrict to this docid?
 	// . will really make gbdocid:| searches much faster!
 	int64_t dr = m_query.m_docIdRestriction;
@@ -493,12 +559,6 @@ bool Msg39::getLists () {
 		docIdStart = dr;
 		docIdEnd   = dr + 1;
 	}
-	// . override
-	// . this is set from Msg39::doDocIdSplitLoop() to compute 
-	//   search results in stages, so that we do not load massive
-	//   termlists into memory and got OOM (out of memory)
-	if ( m_msg39req->m_minDocId != -1 ) docIdStart = m_msg39req->m_minDocId;
-	if ( m_msg39req->m_maxDocId != -1 ) docIdEnd   = m_msg39req->m_maxDocId+1;
 	
 	// if we have twins, then make sure the twins read different
 	// pieces of the same docid range to make things 2x faster
@@ -659,9 +719,11 @@ bool Msg39::getLists () {
 	} catch(std::bad_alloc) {
 		log(LOG_ERROR,"new[%d] RdbList failed", nqt);
 		g_errno = ENOMEM;
-		return true;
+		return;
 	}
 
+	JobState jobState(this);
+	
 	// call msg2
 	if ( ! m_msg2.getLists ( m_msg39req->m_collnum,
 				 m_msg39req->m_addToCache,
@@ -671,36 +733,30 @@ bool Msg39::getLists () {
 				 // we need to restrict docid range for
 				 // whitelist as well! this is from
 				 // doDocIdSplitLoop()
+				 fileNum,
 				 docIdStart,
 				 docIdEnd,
 				 //m_query.getNumTerms(),
 				 // 1-1 with query terms
 				 m_lists                    ,
-				 this                       ,
-				 &controlLoopWrapper,
+				 &jobState,                                 //state
+				 &JobFinishedCallback,                      //callback
 				 m_msg39req->m_allowHighFrequencyTermCache,
 				 m_msg39req->m_niceness,
 				 m_debug                      )) {
-		return false;
-	}
-
-	return true;
+		log(LOG_DEBUG,"m_msg2.getLists returned false - waiting for job to finish");
+		jobState.wait_for_finish();
+	} else
+		log(LOG_DEBUG,"m_msg2.getLists returned true. Must be done");
 }
+
 
 
 // . now come here when we got the necessary index lists
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
-	// bail on error
-	if ( g_errno ) { 
-	hadError:
-		log("msg39: Had error getting termlists: %s.",
-		    mstrerror(g_errno));
-		if ( ! g_errno ) gbshutdownLogicError();
-		//sendReply (m_slot,this,NULL,0,0,true);
-		return true; 
-	}
+void Msg39::intersectLists(const DocumentIndexChecker &documentIndexChecker) {
+	log(LOG_DEBUG, "query: msg39(this=%p)::intersectLists()",this);
 	// timestamp log
 	if ( m_debug ) {
 		log(LOG_DEBUG,"query: msg39: [%" PTRFMT"] "
@@ -711,10 +767,11 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	}
 
 	// ensure collection not deleted from under us
-	CollectionRec *cr = g_collectiondb.getRec ( m_msg39req->m_collnum );
-	if ( ! cr ) {
+	if ( ! g_collectiondb.getRec ( m_msg39req->m_collnum ) ) {
 		g_errno = ENOCOLLREC;
-		goto hadError;
+		log("msg39: Had error getting termlists: %s.",
+		    mstrerror(g_errno));
+		return;
 	}
 
 	// . set the IndexTable so it can set it's score weights from the
@@ -726,7 +783,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	// . this will actually calculate the top
 	// . this might also change m_query.m_termSigns
 	// . this won't do anything if it was already called
-	m_posdbTable.init ( &m_query, m_debug, this, &m_toptree, &m_msg2, m_msg39req);
+	m_posdbTable.init ( &m_query, m_debug, this, &m_toptree, documentIndexChecker, &m_msg2, m_msg39req);
 
 	// . we have to do this here now too
 	// . but if we are getting weights, we don't need m_toptree!
@@ -737,13 +794,13 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 			gbshutdownLogicError();
 		}
 		//sendReply ( m_slot , this , NULL , 0 , 0 , true);
-		return true;
+		return;
 	}
 
 	// if msg2 had ALL empty lists we can cut it short
 	if ( m_posdbTable.m_topTree->getNumNodes() == 0 ) { //isj: shouldn't this call getNumUsedNodes() ?
 		//estimateHitsAndSendReply ( );
-		return true;
+		return;
 	}
 
 	// we have to allocate this with each call because each call can
@@ -754,7 +811,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 			gbshutdownLogicError();
 		}
 		//sendReply (m_slot,this,NULL,0,0,true);
-		return true; 
+		return;
 	}
 
 	// do not re do it if doing docid range splitting
@@ -764,7 +821,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	// . we have to re-set the QueryTermInfos with each docid range split
 	//   since it will set the list ptrs from the msg2 lists
 	if ( ! m_posdbTable.setQueryTermInfo () ) {
-		return true;
+		return;
 	}
 
 	// print query term bit numbers here
@@ -791,45 +848,41 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 		m_startTime = gettimeofdayInMilliseconds();
 	}
 
+	JobState jobState(this);
+	
 	// time it
 	int64_t start = gettimeofdayInMilliseconds();
-	int64_t diff;
 
-	// . NOW! let's do this in a thread so we can continue to service
-	//   incoming requests
-	// . don't launch more than 1 thread at a time for this
-	// . set callback when thread done
-
-	// . create the thread
-	// . only one of these type of threads should be launched at a time
-	if ( g_jobScheduler.submit(&intersectListsThreadFunction, &intersectionFinishedCallback, this,
-	                           thread_type_query_intersect, m_msg39req->m_niceness) ) {
-		return false;
-	}
-
-	// if it failed
-	log(LOG_WARN, "Intersect thread creation failed. Doing blocking. Hurts performance.");
 	// check tree
 	if ( m_toptree.nodesIsNull() ) { //isj: what is it trying to test here? and why aren't there a similar test in PosdbTable::intersect() ?
 		log(LOG_LOGIC,"query: msg39: Badness."); 
 		gbshutdownLogicError();
 	}
 
-	m_posdbTable.intersectLists10_r ( );
+	// . create the thread
+	// . only one of these type of threads should be launched at a time
+	if ( g_jobScheduler.submit(&intersectListsThreadFunction,
+	                           0, //no finish callback
+				   &jobState,
+				   thread_type_query_intersect,
+				   m_msg39req->m_niceness) ) {
+		jobState.wait_for_finish();
+	} else
+		m_posdbTable.intersectLists10_r();
+	
 
 	// time it
-	diff = gettimeofdayInMilliseconds() - start;
-	if ( diff > 10 ) log("query: Took %" PRId64" ms for intersection",diff);
-
-	// returns false if blocked, true otherwise
-	return true;
+	int64_t diff = gettimeofdayInMilliseconds() - start;
+	if ( diff > 10 ) log("query: Intersection job took %" PRId64" ms",diff);
+	log(LOG_DEBUG, "query: msg39(this=%p)::intersectLists() finished",this);
 }
+
 
 
 // Use of ThreadEntry parameter is NOT thread safe
 void Msg39::intersectListsThreadFunction ( void *state ) {
-	// we're in a thread now!
-	Msg39 *that = static_cast<Msg39*>(state);
+	JobState *js = static_cast<JobState*>(state);
+	Msg39 *that = js->msg39;
 
 	// assume no error since we're at the start of thread call
 	that->m_errno = 0;
@@ -848,15 +901,19 @@ void Msg39::intersectListsThreadFunction ( void *state ) {
 	if (g_errno && !that->m_errno) {
 		that->m_errno = g_errno;
 	}
+
+	//signal completion directly instead of goiign via the jobscheduler+main thread
+	JobFinishedCallback(state);
 }
 
 
 // . set the clusterdb recs in the top tree
 // . returns false if blocked, true otherwise
 // . returns true and sets g_errno on error
-bool Msg39::getClusterRecs ( ) {
+void Msg39::getClusterRecs ( ) {
 
-	if ( ! m_msg39req->m_doSiteClustering ) return true;
+	if ( ! m_msg39req->m_doSiteClustering )
+		return; //nothing to do
 
 	// make buf for arrays of the docids, cluster levels and cluster recs
 	int32_t nodeSize  = 8 + 1 + 12;
@@ -867,7 +924,7 @@ bool Msg39::getClusterRecs ( ) {
 	if ( m_clusterBufSize>0 && ! m_clusterBuf ) {
 		log("query: msg39: Failed to alloc buf for clustering.");
 		sendReply(m_slot,this,NULL,0,0,true);
-		return true; 
+		return;
 	}
 
 	// assume we got them
@@ -906,6 +963,8 @@ bool Msg39::getClusterRecs ( ) {
 	// sanity check
 	if ( nd != m_toptree.getNumUsedNodes() ) gbshutdownLogicError();
 
+	JobState jobState(this);
+	
 	// . ask msg51 to get us the cluster recs
 	// . it should read it all from the local drives
 	// . "maxAge" of 0 means to not get from cache (does not include disk)
@@ -916,14 +975,13 @@ bool Msg39::getClusterRecs ( ) {
 					m_msg39req->m_collnum,
 					0                     , // maxAge
 					false                 , // addToCache
-					this                  ,
-					&controlLoopWrapper,
+					&jobState,              //state
+					&JobFinishedCallback,   //callback
 					m_msg39req->m_niceness,
 					m_debug             ) )
-		// did we block? if so, return
-		return false;
-
-	return true;
+	{
+		jobState.wait_for_finish();
+	}
 }
 
 
@@ -975,7 +1033,8 @@ bool Msg39::gotClusterRecs() {
 }
 
 
-void Msg39::estimateHitsAndSendReply() {
+void Msg39::estimateHitsAndSendReply(double pctSearched) {
+
 	// no longer in use
 	m_inUse = false;
 
@@ -999,7 +1058,7 @@ void Msg39::estimateHitsAndSendReply() {
 	mr.m_numDocIds = numDocIds;
 	// . total estimated hits
 	mr.m_estimatedHits = m_numTotalHits;  //this is now an EXACT count
-	mr.m_pctSearched = m_docIdSplitNumber * 100.0 / m_msg39req->m_numDocIdSplits;
+	mr.m_pctSearched = pctSearched;
 	// sanity check
 	mr.m_nqt = nqt;
 	// the m_errno if any

@@ -9,6 +9,10 @@
 #include "Conf.h"
 #include "Mem.h"
 #include <set>
+#include <assert.h>
+
+static const int signature_init = 0x07b39a1b;
+
 
 // . compares to keys split into 6 byte ptrs
 // . returns -1, 0 , 1 if a < b , a == b , a > b
@@ -50,6 +54,7 @@ static bool cmp_6bytes_equal(const void *p1, const void *p2) {
 
 
 void RdbList::constructor () {
+	verify_signature();
 	m_list        = NULL;
 	m_alloc       = NULL;
 	m_allocSize   = 0;
@@ -59,6 +64,8 @@ void RdbList::constructor () {
 }
 
 RdbList::RdbList () {
+//	log(LOG_TRACE,"RdbList(%p)::RdbList()",this);
+	set_signature();
 	m_list        = NULL;
 	m_alloc       = NULL;
 	m_allocSize   = 0;
@@ -76,14 +83,20 @@ RdbList::RdbList () {
 
 // free m_list on destruction
 RdbList::~RdbList () {
+	verify_signature();
+//	log(LOG_TRACE,"RdbList(%p)::~RdbList()",this);
 	freeList();
+	clear_signature();
 }
 
 void RdbList::destructor() {
+	assert(this);
+	verify_signature();
 	freeList();
 }
 
 void RdbList::freeList () {
+	verify_signature();
 	if ( m_ownData && m_alloc ) mfree ( m_alloc , m_allocSize ,"RdbList");
 	m_list      = NULL;
 	m_alloc     = NULL;
@@ -92,6 +105,7 @@ void RdbList::freeList () {
 }
 
 void RdbList::resetListPtr () {
+	verify_signature();
 	m_listPtr = m_list;
 	m_listPtrHi = NULL;
 	m_listPtrLo = NULL;
@@ -105,6 +119,7 @@ void RdbList::resetListPtr () {
 // . this now just resets the size to 0, does not do any freeing
 // . free will only happen on list destruction
 void RdbList::reset ( ) {
+	verify_signature();
 	// . if we don't own our data then, NULLify it
 	// . if we do own the data, don't free it
 	if ( ! m_ownData ) { 
@@ -129,6 +144,8 @@ void RdbList::reset ( ) {
 // . all keys of records in list must be in [startKey,endKey]
 void RdbList::set(char *list, int32_t listSize, char *alloc, int32_t allocSize, const char *startKey, const char *endKey,
                   int32_t fixedDataSize, bool ownData, bool useHalfKeys, char keySize) {
+	assert(this);
+	verify_signature();
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN. list=%p listSize=%" PRId32" alloc=%p allocSize=%" PRId32,
 	         list, listSize, alloc, allocSize);
 	char logbuf1[MAX_KEYSTR_BYTES],logbuf2[MAX_KEYSTR_BYTES];
@@ -180,16 +197,50 @@ void RdbList::set(char *list, int32_t listSize, char *alloc, int32_t allocSize, 
 // like above but uses 0/maxKey for startKey/endKey
 void RdbList::set(char *list, int32_t listSize, char *alloc, int32_t allocSize,
                   int32_t fixedDataSize, bool ownData, bool useHalfKeys, char keySize) {
+	verify_signature();
 	set(list, listSize, alloc, allocSize, KEYMIN(), KEYMAX(), fixedDataSize, ownData, useHalfKeys, keySize);
 }
 
+
+void RdbList::stealFromOtherList(RdbList *other_list)
+{
+	if(other_list==this) gbshutdownLogicError();
+	if(!other_list->m_ownData) gbshutdownLogicError();
+	
+	freeList();
+	
+	m_list             = other_list->m_list;
+	m_listSize         = other_list->m_listSize;
+	m_alloc            = other_list->m_alloc;
+	m_allocSize        = other_list->m_allocSize;
+	m_listEnd          = other_list->m_listEnd;
+	KEYSET(m_startKey,   other_list->m_startKey,other_list->m_ks);
+	KEYSET(m_endKey,     other_list->m_endKey,  other_list->m_ks);
+	m_fixedDataSize    = other_list->m_fixedDataSize;
+	m_ownData          = other_list->m_ownData;
+	m_useHalfKeys      = other_list->m_useHalfKeys;
+	KEYSET(m_lastKey,    other_list->m_lastKey,  other_list->m_ks);
+	m_lastKeyIsValid   = other_list->m_lastKeyIsValid;
+	m_mergeMinListSize = other_list->m_mergeMinListSize;
+	m_ks               = other_list->m_ks;
+	resetListPtr();
+	
+	other_list->m_list      = NULL;
+	other_list->m_alloc     = NULL;
+	other_list->m_allocSize = 0;
+	other_list->reset();
+}
+
+
 // just set the start and end keys
 void RdbList::set ( const char *startKey, const char *endKey ) {
+	verify_signature();
 	KEYSET ( m_startKey , startKey , m_ks );
 	KEYSET ( m_endKey   , endKey   , m_ks );
 }
 
 const char *RdbList::getLastKey() const {
+	verify_signature();
 	if (!m_lastKeyIsValid) {
 		log(LOG_ERROR, "db: rdblist: getLastKey: m_lastKey not valid.");
 		gbshutdownAbort(true);
@@ -199,6 +250,7 @@ const char *RdbList::getLastKey() const {
 }
 
 void RdbList::setLastKey  ( const char *k ) {
+	verify_signature();
 	//m_lastKey = k;
 	KEYSET ( m_lastKey , k , m_ks );
 	m_lastKeyIsValid = true;
@@ -207,6 +259,7 @@ void RdbList::setLastKey  ( const char *k ) {
 // this has to scan through each record for variable sized records and
 // if m_useHalfKeys is true
 int32_t RdbList::getNumRecs ( ) {
+	verify_signature();
 	// we only keep this count for lists of variable sized records
 	if ( m_fixedDataSize == 0 && ! m_useHalfKeys )
 		return m_listSize / ( m_ks + m_fixedDataSize );
@@ -234,6 +287,7 @@ int32_t RdbList::getNumRecs ( ) {
 // . used by RdbTree to construct an RdbList from branches of records
 // . NOTE: does not set m_endKey/m_startKey/ etc..
 bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data, bool bitch ) {
+	verify_signature();
 	if ( m_ks == 18 ) {
 		// sanity
 		if ( key[0] & 0x06 ) {
@@ -361,6 +415,7 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data, b
 // . allocates on top of m_listSize
 // . returns false and sets g_errno on error, true on success
 bool RdbList::prepareForMerge(RdbList **lists, int32_t numLists, int32_t minRecSizes) {
+	verify_signature();
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN. numLists=%" PRId32" minRecSizes=%" PRId32, numLists, minRecSizes);
 
 	// return false if we don't own the data
@@ -471,6 +526,8 @@ bool RdbList::prepareForMerge(RdbList **lists, int32_t numLists, int32_t minRecS
 // . get the current records key
 // . this needs to be fast!!
 void RdbList::getKey ( const char *rec , char *key ) const {
+	assert(this);
+	verify_signature();
 
 	// posdb?
 	if ( m_ks == 18 ) {
@@ -582,6 +639,8 @@ char *RdbList::getData ( char *rec ) const {
 
 // returns false on error and set g_errno
 bool RdbList::growList(int32_t newSize) {
+	assert(this);
+	verify_signature();
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN. newSize=%" PRId32, newSize);
 
 	// return false if we don't own the data
@@ -634,6 +693,8 @@ bool RdbList::growList(int32_t newSize) {
 //   i couldn't delete it because the del key would go to the foreign group!
 // . as a temp patch i added a msg1 force local group option
 bool RdbList::checkList_r(bool abortOnProblem, rdbid_t rdbId) {
+	assert(this);
+	verify_signature();
 	// bail if empty
 	if ( m_listSize <= 0 || ! m_list ) return true;
 
@@ -800,6 +861,7 @@ bool RdbList::removeBadData_r ( ) {
 	int32_t  orderCount = 0;
 	int32_t  rangeCount = 0;
 	int32_t  loopCount  = 0;
+	assert(this);
 	log("rdblist: trying to remove bad data from list");
  top:
 	if ( ++loopCount >= 2000 ) {
@@ -1102,6 +1164,9 @@ int RdbList::printList() {
 // . it's a really good idea to keep it as -1 otherwise
 bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
                         int32_t hintOffset, const char *hintKey, rdbid_t rdbId, const char *filename) {
+//	log(LOG_TRACE,"RdbList(%p)::constrain()",this);
+	assert(this);
+	verify_signature();
 	// return false if we don't own the data
 	if ( ! m_ownData ) {
 		g_errno = EBADLIST;
@@ -1418,6 +1483,8 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	// and the keys can be tightened
 	KEYSET(m_startKey,startKey,m_ks);
 	KEYSET(m_endKey,endKey,m_ks);
+	verify_signature();
+//	log(LOG_TRACE,"RdbList(%p)::constrain(): finished",this);
 	return true;
 }
 
@@ -1704,6 +1771,8 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 //   so we don't have to do boundary checks on the keys here
 void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
                       bool removeNegRecs, rdbid_t rdbId, collnum_t collNum, int32_t startFileNum, bool isRealMerge) {
+	assert(this);
+	verify_signature();
 	// sanity
 	if (!m_ownData) {
 		log(LOG_ERROR, "list: merge_r data not owned");
@@ -1777,6 +1846,7 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	Rdb* rdb = getRdbFromId(rdbId);
 	if (rdbId == RDB_POSDB || rdbId == RDB2_POSDB2) {
 		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, rdbId, removeNegRecs, rdb->isUseIndexFile(), collNum, startFileNum, isRealMerge);
+		verify_signature();
 		return;
 	}
 

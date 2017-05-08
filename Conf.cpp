@@ -153,7 +153,6 @@ Conf::Conf ( ) {
 	m_detectMemLeaks = false;
 	m_forceIt = false;
 	m_doIncrementalUpdating = false;
-	m_noInMemoryPosdbMerge = false;
 	m_stableSummaryCacheSize = 0;
 	m_stableSummaryCacheMaxAge = 0;
 	m_unstableSummaryCacheSize = 0;
