@@ -302,7 +302,6 @@ bool Msg2::getLists ( ) {
 							sk2,
 							ek2,
 							minRecSize,
-							0,              // maxcacheage
 							m_fileNum,      // file num
 							this,
 							gotListWrapper,
@@ -406,7 +405,6 @@ bool Msg2::getLists ( ) {
 							     sk3,
 							     ek3,
 							     minRecSizes,
-							     0,                 // maxcacheage
 							     m_fileNum,         // file num
 							     this,
 							     gotListWrapper,

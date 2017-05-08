@@ -34,7 +34,6 @@ Msg5::Msg5()
 	m_state = NULL;
 	m_calledCallback = 0;
 	m_includeTree = false;
-	m_maxCacheAge = 0;
 	m_numFiles = 0;
 	m_startFileNum = 0;
 	m_minRecSizes = 0;
@@ -94,7 +93,6 @@ bool Msg5::getSingleUnmergedList(rdbid_t       rdbId,
 				 const void   *startKey,
 				 const void   *endKey,
 				 int32_t       recSizes, // requested scan size(-1 all)
-				 int32_t       maxCacheAge, // in secs for cache lookup
 				 int32_t       fileNum, // file to scan
 				 void         *state, // for callback
 				 void        (*callback)(void *state, RdbList *list, Msg5 *msg5),
@@ -103,7 +101,7 @@ bool Msg5::getSingleUnmergedList(rdbid_t       rdbId,
 	m_isSingleUnmergedListGet = true;
 	return getList(rdbId,collnum, list,
 	               startKey, endKey,
-		       recSizes, true, maxCacheAge,
+		       recSizes, true,
 		       fileNum, 1, //startFileNum, numFiles
 		       state, callback,
 		       niceness,
@@ -146,7 +144,6 @@ bool Msg5::getList ( rdbid_t     rdbId,
 		     const void    *endKey_        ,
 		     int32_t     minRecSizes   , // requested scan size(-1 none)
 		     bool     includeTree   ,
-		     int32_t     maxCacheAge   , // in secs for cache lookup
 		     int32_t     startFileNum  , // first file to scan
 		     int32_t     numFiles      , // rel. to startFileNum,-1 all
 		     void    *state         , // for callback
@@ -230,7 +227,6 @@ bool Msg5::getList ( rdbid_t     rdbId,
 	KEYSET(m_endKey,endKey,m_ks);
 	m_minRecSizes   = minRecSizes;
 	m_includeTree   = includeTree;
-	m_maxCacheAge   = maxCacheAge;
 	m_startFileNum  = startFileNum;
 	m_numFiles      = numFiles;
 	m_state         = state;

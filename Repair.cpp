@@ -1004,7 +1004,6 @@ bool Repair::scanRecs ( ) {
 			      &m_endKey        , // should be maxed!
 			      1024             , // min rec sizes
 			      true             , // include tree?
-			      0                , // max cache age
 			      0                , // startFileNum
 			      -1               , // m_numFiles   
 			      this             , // state 

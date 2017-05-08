@@ -386,7 +386,6 @@ bool Rebalance::scanRdb ( ) {
 					m_endKey         , // should be maxed!
 					100024             , // min rec sizes
 					true             , // include tree?
-					0                , // maxCacheAge
 					0                , // startFileNum
 					-1               , // m_numFiles   
 					this             , // state 

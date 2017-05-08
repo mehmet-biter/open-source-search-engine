@@ -573,7 +573,6 @@ subloopNextPriority:
 				// doledb it would cork us up too!
 				50000            , // minRecSizes
 				true            , // includeTree
-				0               , // max cache age
 				0               , // startFileNum
 				-1              , // numFiles (all)
 				this            , // state 

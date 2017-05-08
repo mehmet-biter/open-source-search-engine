@@ -117,7 +117,6 @@ bool Titledb::verify(const char *coll) {
 			      &endKey       ,
 			      1024*1024     , // minRecSizes   ,
 			      true          , // includeTree   ,
-			      0             , // max cache age
 			      0             , // startFileNum  ,
 			      -1            , // numFiles      ,
 			      NULL          , // state

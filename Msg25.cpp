@@ -825,7 +825,6 @@ bool Msg25::doReadLoop() {
 				(char*)&endKey  ,
 				m_minRecSizes   ,
 				includeTree     ,
-				0 , // maxcacheage
 				0               , // startFileNum
 				numFiles        ,
 				this            ,

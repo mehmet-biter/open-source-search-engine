@@ -100,7 +100,6 @@ loop:
 	                             &st->m_endKey        ,
 	                             st->m_minRecSizes   ,
 	                             true                , // include tree
-	                             0                   , // max age
 	                             0                   , // start file #
 	                             -1                  , // # files
 	                             st                  , // callback state

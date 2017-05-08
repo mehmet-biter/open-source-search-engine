@@ -44,7 +44,6 @@ class Msg5 {
 		       const void      *endKey        ,
 		       int32_t       recSizes      , // requestd scan size(-1 all)
 		       bool       includeTree   ,
-		       int32_t       maxCacheAge   , // in secs for cache lookup
 		       int32_t       startFileNum  , // first file to scan
 		       int32_t       numFiles      , // rel.to startFileNum,-1 all
 		       void      *state         , // for callback
@@ -61,7 +60,6 @@ class Msg5 {
 				   const void   *startKey,
 				   const void   *endKey,
 				   int32_t       recSizes, // requested scan size(-1 all)
-				   int32_t       maxCacheAge, // in secs for cache lookup
 				   int32_t       fileNum, // file to scan
 				   void         *state, // for callback
 				   void        (*callback)(void *state, RdbList *list, Msg5 *msg5),
@@ -124,7 +122,6 @@ private:
 	RdbList   m_dummy;
 
 	bool      m_includeTree;
-	int32_t      m_maxCacheAge;
 
 	int32_t      m_numFiles;
 	int32_t      m_startFileNum;

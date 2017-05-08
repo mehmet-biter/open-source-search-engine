@@ -2446,7 +2446,6 @@ bool RdbBase::verifyFileSharding ( ) {
 			      KEYMAX()      ,
 			      minRecSizes   ,
 			      true          , // includeTree   ,
-			      0             , // max cache age
 			      0             , // startFileNum  ,
 			      -1            , // numFiles      ,
 			      NULL          , // state

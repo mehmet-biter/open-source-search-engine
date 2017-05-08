@@ -257,8 +257,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 					 m_endKey   ,
 					 m_minRecSizes ,
 					 includeTree   , // include Tree?
-					 maxCacheAge   ,
-					 startFileNum  , 
+					 startFileNum  ,
 					 numFiles      ,
 					 this ,
 					 gotListWrapper2   ,
@@ -614,8 +613,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 				     endKey            ,
 				     minRecSizes       ,
 				     includeTree       , // include tree?
-				     maxCacheAge       ,
-				     startFileNum      , 
+				     startFileNum      ,
 				     numFiles          ,
 				     st0               ,
 				     gotListWrapper    ,

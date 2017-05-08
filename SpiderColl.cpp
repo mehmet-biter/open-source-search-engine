@@ -258,7 +258,6 @@ bool SpiderColl::makeDoledbIPTable() {
 		                  &endKey,
 		                  minRecSizes,
 		                  true, // includeTree?
-		                  0, // max cache age
 		                  0, // startFileNum
 		                  -1, // numFiles
 		                  NULL, // state
@@ -1185,7 +1184,6 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		                      &m_waitingTreeEndKey,
 		                      SR_READ_SIZE, // minRecSizes (512k)
 		                      true, // includeTree
-		                      0, // max cache age
 		                      0, // startFileNum
 		                      -1, // numFiles (all)
 		                      this,//(void *)state2,//this//state
@@ -2021,7 +2019,6 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 				&m_endKey       ,
 				SR_READ_SIZE   , // minRecSizes (512k)
 				true           , // includeTree
-				0              , // max cache age
 				0              , // startFileNum
 				-1             , // numFiles (all)
 				this,//(void *)state2,//this,//state 

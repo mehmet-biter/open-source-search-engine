@@ -353,7 +353,6 @@ bool RdbMerge::getAnotherList() {
 				 KEYMAX(),        // usually is maxed!
 				 bufSize,
 				 false,           // includeTree?
-				 0,               // max cache age for lookup
 				 m_startFileNum,  // startFileNum
 				 m_numFiles,
 				 this,            // state
