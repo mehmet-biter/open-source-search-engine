@@ -400,6 +400,9 @@ void Msg39::controlLoop ( ) {
 	if(base==NULL) {
 		log(LOG_ERROR,"query: Collection %d disappeared", m_msg39req->m_collnum);
 		g_errno = ENOCOLLREC;
+		//cant goto hadErrror label due to local variable initialization
+		sendReply ( m_slot, this, NULL, 0, 0, true );
+		return;
 	}
 
 	DocumentIndexChecker documentIndexChecker(base);
