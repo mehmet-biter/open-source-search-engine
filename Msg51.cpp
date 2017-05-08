@@ -268,14 +268,9 @@ bool Msg51::sendRequests_unlocked(int32_t k) {
 bool Msg51::sendRequest ( int32_t    i ) {
 	// what is the docid?
 	int64_t  d;
-	// point to where we want the last 64 bits of the cluster rec
-	// to be store, "dataPtr"
-	void    *dataPtr = NULL;
 
 	// save it
 	int32_t ci = m_nexti;
-	// store where the cluster rec will go
-	dataPtr = (void *)(PTRTYPE)ci;
 	// what's the docid?
 	d = m_docIds[m_nexti];
 	// advance so we do not do this docid again 
