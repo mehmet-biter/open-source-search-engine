@@ -60,7 +60,6 @@ class Msg0 {
 		       int32_t      startFileNum      =  0   ,
 		       int32_t      numFiles          = -1   ,
 		       int64_t      timeout           = 30000   ,
-		       int64_t syncPoint         = -1   ,
 		       class Msg5 *msg5            = NULL ,
 		       bool        isRealMerge     = false , // file merge?
 		       bool        allowPageCache  = true ,

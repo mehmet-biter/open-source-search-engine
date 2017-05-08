@@ -369,7 +369,6 @@ bool Images::getThumbnail ( const char *pageSite,
 				0     , // start filenum
 				-1    , // numFiles
 				30000 , // timeout
-				-1    , // syncpoint
 				NULL  , // msg5
 				false , // isRealMerge?
 				true  , // allow pg cache
@@ -454,7 +453,6 @@ bool Images::launchRequests ( ) {
 					0     , // start filenum
 					-1    , // numFiles
 					30000 , // timeout
-					-1    , // syncpoint
 					NULL  , // msg5
 					false , // isRealMerge?
 					true  , // allow pg cache

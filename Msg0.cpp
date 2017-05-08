@@ -116,7 +116,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     int32_t      startFileNum  ,
 		     int32_t      numFiles      ,
 		     int64_t      timeout       ,
-		     int64_t syncPoint     ,
 		     Msg5     *msg5             ,
 		     bool      isRealMerge      ,
 		     bool      allowPageCache    ,
@@ -268,7 +267,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 					 NULL , // cacheKeyPtr
 					 0    , // retryNum
 					 -1   , // maxRetries
-					 syncPoint ,
+					 -1 ,
 					 m_isRealMerge ,
 					 m_allowPageCache ) ) {
 			logTrace( g_conf.m_logTraceMsg0, "END, return false" );
@@ -298,7 +297,7 @@ skip:
 	//   Multicast.cpp::sleepWrapper1 too!!!!!!!!!!!!
 	//   no, not anymore, we commented out that request peeking code
 	char *p = m_request;
-	*(int64_t *) p = syncPoint        ; p += 8;
+	*(int64_t *) p = -1        ; p += 8;
 	*(int32_t      *) p = m_minRecSizes    ; p += 4;
 	*(int32_t      *) p = startFileNum     ; p += 4;
 	*(int32_t      *) p = numFiles         ; p += 4;
@@ -523,7 +522,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	//}
 	// parse the request
 	char *p                  = request;
-	int64_t syncPoint          = *(int64_t *)p ; p += 8;
+	p += 8; //syncPoint
 	int32_t      minRecSizes        = *(int32_t      *)p ; p += 4;
 	int32_t      startFileNum       = *(int32_t      *)p ; p += 4;
 	int32_t      numFiles           = *(int32_t      *)p ; p += 4;
@@ -628,7 +627,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 				     NULL , // cacheKeyPtr
 				     0    , // retryNum
 				     2    , // maxRetries
-				     syncPoint ,
+				     -1 ,
 				     false,
 				     allowPageCache ) ) {
 		logTrace( g_conf.m_logTraceMsg0, "END. m_msg5.getList returned false" );
