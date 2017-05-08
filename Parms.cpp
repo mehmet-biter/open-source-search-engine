@@ -771,9 +771,6 @@ bool Parms::registerHandler3f() {
 	return g_udpServer.registerHandler(msg_type_3f,handleRequest3f);
 }
 
-// from Pages.cpp
-bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) ;
-
 // returns false and sets g_errno on error
 bool Parms::setGigablastRequest ( TcpSocket *socket ,
 				  HttpRequest *hrArg ,
