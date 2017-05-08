@@ -292,7 +292,9 @@ void gotMsgCIpWrapper( void *state, int32_t ip){
 	// don't put it on the stack because sendReply does not copy!
 	char *reply = slot->m_tmpBuf;
 	int32_t replySize=12;
-	if ( TMPBUFSIZE < replySize ) { g_process.shutdownAbort(true); }
+#if TMPBUFSIZE < 12
+#error Slot::m_tmpBuf must be at least 12 bytes
+#endif
 	//	reply=(char*) mmalloc(replySize,"MsgC");
 	char *p = reply;
 	*(int32_t *)p = ip; p += 4;
