@@ -34,7 +34,6 @@ void Msg0::constructor ( ) {
 	m_mcast.constructor();
 	m_numRequests = 0;
 	m_numReplies  = 0;
-	//m_numSplit    = 1;
 	m_errno       = 0;
 	// reply buf
 	m_replyBuf     = NULL;
@@ -128,13 +127,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	list->reset();
 	// get keySize of rdb
 	m_ks = getKeySizeFromRdbId ( rdbId );
-	
-//	if( g_conf.m_logTraceMsg0 ) 
-//	{
-//		log("%s:%s:%d: rdbId. [%d]", __FILE__,__func__,__LINE__, (int)rdbId);
-//		log("%s:%s:%d: m_ks.. [%d]", __FILE__,__func__,__LINE__, (int)m_ks);
-//		log("%s:%s:%d: hostId [%" PRId64"]", __FILE__,__func__,__LINE__, hostId);
-//	}
 
 	// if startKey > endKey, don't read anything
 	//if ( startKey > endKey ) return true;
@@ -191,10 +183,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 
 	// how is this used?
 	if ( forceLocalIndexdb ) m_shardNum = getMyShardNum();
-
-
-//	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: shardNum [%" PRId32"]", __FILE__,__func__, __LINE__, m_shardNum);
-
 
 	// . store these parameters
 	// . get a handle to the rdb in case we can satisfy locally
@@ -445,32 +433,6 @@ void Msg0::gotReply ( char *reply , int32_t replySize , int32_t replyMaxSize ) {
 		      m_useHalfKeys        ,
 		      m_ks                 );
 
-	// return now if we don't add to cache
-	//if ( ! m_addToCache ) return;
-	//
-	// add posdb list to termlist cache
-	//
-	//if ( m_rdbId != RDB_POSDB ) return;
-	// add to LOCAL termlist cache
-	//addToTermListCache(m_coll,m_startKey,m_endKey,m_list);
-	// ignore any error adding to cache
-	//g_errno = 0;
-
-	// . NO! no more network caching, we got gigabit... save space
-	//   for our disk, no replication, man, mem is expensive
-
-	// . throw the just the list into the net cache
-	// . addToNetCache() will copy it for it's own
-	// . our current copy should be freed by the user's callback somewhere
-	// . grab our corresponding rdb's local cache
-	// . we'll use it to store this list since there's no collision chance
-	//RdbCache *cache = m_rdb->getCache ();
-	// . add the list to this cache
-	// . returns false and sets g_errno on error
-	// . will not be added if cannot copy the data
-	//cache->addList ( m_startKey , m_list ) ;
-	// reset g_errno -- we don't care if cache coulnd't add it
-	//g_errno = 0;
 	logTrace( g_conf.m_logTraceMsg0, "END" );
 }
 
@@ -498,13 +460,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	// get the request
 	char *request     = slot->m_readBuf;
 	int32_t  requestSize = slot->m_readBufSize;
-	// collection is now stored in the request, so i commented this out
-	//if ( requestSize != MSG0_REQ_SIZE ) {
-	//	log("net: Received bad data request size of %" PRId32" bytes. "
-	//	    "Should be %" PRId32".", requestSize ,(int32_t)MSG0_REQ_SIZE);
-	//	g_udpServer.sendErrorReply ( slot , EBADREQUESTSIZE );
-	//	return;
-	//}
+
 	// parse the request
 	char *p                  = request;
 	p += 8; //syncPoint
