@@ -393,7 +393,6 @@ bool Rebalance::scanRdb ( ) {
 					gotListWrapper   , // callback
 					MAX_NICENESS     , // niceness
 					true             , // do error correction?
-					NULL             , // cache key ptr
 					0                , // retry num
 					-1               , // maxRetries
 					false,             // isRealMerge

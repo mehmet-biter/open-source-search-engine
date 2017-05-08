@@ -423,9 +423,6 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	   st->m_uh48   = hash64b ( r->m_url ) & 0x0000ffffffffffffLL;
 	}
 
-	// make the cacheKey ourself, since Msg5 would make the key wrong
-	// since it would base it on startFileNum and numFiles
-	key96_t cacheKey ; cacheKey.n1 = 0; cacheKey.n0 = r->m_docId;
 	// make titledb keys
 	key96_t startKey = Titledb::makeFirstKey ( st->m_docId1 );
 	key96_t endKey   = Titledb::makeLastKey  ( st->m_docId2 );
@@ -447,7 +444,6 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 				    gotTitleList      ,
 				    r->m_niceness     ,
 				    true              , // do error correct?
-				    (char *)&cacheKey ,
 				    0                 , // retry num
 				    -1                , // maxRetries
 				    false,              // isRealMerge

@@ -51,7 +51,6 @@ class Msg5 {
 		       void (* callback ) ( void *state, RdbList *list, Msg5 *msg5 ),
 		       int32_t       niceness      ,
 		       bool       doErrorCorrection  ,
-		       char         *cacheKeyPtr,
 		       int32_t       retryNum,
 		       int32_t       maxRetries,
 		       bool          isRealMerge,

@@ -1011,7 +1011,6 @@ bool Repair::scanRecs ( ) {
 			      loopWrapper      , // callback
 			      MAX_NICENESS     , // niceness
 			      fixErrors        , // do error correction?
-			      NULL             , // cache key ptr
 			      0                , // retry num
 			      -1               , // maxRetries
 			      false,             // isRealMerge

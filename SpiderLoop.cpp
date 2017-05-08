@@ -580,7 +580,6 @@ subloopNextPriority:
 				gotDoledbListWrapper2 ,
 				MAX_NICENESS    , // niceness
 				true,             // do err correction
-				NULL,             // cacheKeyPtr
 			        0,                // retryNum
 			        -1,               // maxRetries
 			        false,            // isRealMerge

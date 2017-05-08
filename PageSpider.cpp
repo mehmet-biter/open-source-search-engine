@@ -107,7 +107,6 @@ loop:
 	                             gotListWrapper3     ,
 	                             0                   , // niceness
 	                             true,                 // do err correction
-	                             NULL,                 // cacheKeyPtr
 	                             0,                    // retryNum
 	                             -1,                   // maxRetries
 	                             false,                // isRealMerge
