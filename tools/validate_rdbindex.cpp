@@ -144,9 +144,8 @@ int main(int argc, char **argv) {
 	g_mem.init();
 	hashinit();
 
-	g_hostdb.init(-1, NULL, false, false, basePath);
+	g_hostdb.init(-1, false, false, basePath);
 	g_conf.init(NULL);
-	g_conf.m_noInMemoryPosdbMerge = true;
 
 	g_collectiondb.loadAllCollRecs();
 
