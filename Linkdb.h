@@ -266,9 +266,6 @@ extern class Linkdb g_linkdb2;
 
 class Xml;
 
-// how big can the rss item we store in the Inlink::ptr_rssItem be?
-#define MAX_RSSITEM_SIZE 30000
-
 class LinkInfo {
 
  public:

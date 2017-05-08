@@ -3263,11 +3263,11 @@ bool LinkInfo::print(SafeBuf *sb, const char *coll) {
 		if ( ! c || clen <= 0 ) c = "";
 
 		// encode the rss item further
-		char buf3b[MAX_RSSITEM_SIZE*2];
-		buf3b[0] = 0;
+		StackBuf<128> buf3b;
 		if ( rlen > 0 ) {
-			htmlEncode( buf3b, buf3b + MAX_RSSITEM_SIZE * 2, r, r + rlen );
+			buf3b.htmlEncode(r, rlen, true);
 		}
+		buf3b.nullTerm();
 
 		// . print link text and score into table
 		// . there is a ton more info in Inlink class to print if
@@ -3308,7 +3308,7 @@ bool LinkInfo::print(SafeBuf *sb, const char *coll) {
 			       k->getUrl(),//ptr_urlBuf, // the linker url
 			       s, // buf,
 			       d, // buf2,
-			       buf3b,
+			       buf3b.getBufStart(),
 			       g, // buf4,
 			       c
 			       );
