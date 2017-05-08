@@ -268,7 +268,6 @@ bool SpiderColl::makeDoledbIPTable() {
 		                  NULL, // cache key ptr
 		                  0, // retry num
 		                  -1, // maxRetries
-		                  -1LL, // sync point
 		                  false, // isRealMerge
 		                  true)) { // allowPageCache
 			log(LOG_LOGIC, "spider: getList did not block.");
@@ -1198,7 +1197,6 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		                      NULL,            // cachekey
 		                      0,               // retryNum
 		                      -1,              // maxRetries
-		                      -1,              // syncPoint
 		                      false,           // isRealMerge
 		                      true))           // allowPageCache
 		{
@@ -2037,7 +2035,6 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 				NULL,            // cachekey
 				0,               // retryNum
 				-1,              // maxRetries
-				-1,              // syncPoint
 				false,           // isRealMerge
 				true ))          // allowPageCache
 	{

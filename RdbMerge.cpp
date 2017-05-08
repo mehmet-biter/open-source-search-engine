@@ -363,7 +363,6 @@ bool RdbMerge::getAnotherList() {
 				 NULL,            // cache key ptr
 				 0,               // retry #
 				 nn + 75,         // max retries (mk it high)
-				 -1LL,            // sync point
 				 true,            // isRealMerge? absolutely!
 				 false);
 	if(rc)

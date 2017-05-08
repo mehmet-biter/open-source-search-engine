@@ -450,7 +450,6 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 				    &cacheKey         ,
 				    0                 , // retry num
 				    -1                , // maxRetries
-				    -1LL,               // sync point
 				    false,              // isRealMerge
 				    true))              // allowPageCache
 		return ;

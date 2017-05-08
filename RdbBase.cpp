@@ -2456,7 +2456,6 @@ bool RdbBase::verifyFileSharding ( ) {
 			      NULL          , // cachekey
 			      0             , // retryNum
 			      -1            , // maxRetries
-			      -1LL          , // syncPint
 			      true          , // isRealMerge
 			      true)) {        // allowPageCache
 		log( LOG_DEBUG, "db: HEY! it did not block");

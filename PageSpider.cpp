@@ -110,7 +110,6 @@ loop:
 	                             NULL,                 // cacheKeyPtr
 	                             0,                    // retryNum
 	                             -1,                   // maxRetries
-	                             -1,                   // syncPoint
 	                             false,                // isRealMerge
 	                             true))                // allowPageCache
 		return false;

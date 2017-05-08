@@ -107,7 +107,7 @@ bool Msg5::getSingleUnmergedList(rdbid_t       rdbId,
 		       fileNum, 1, //startFileNum, numFiles
 		       state, callback,
 		       niceness,
-		       false,NULL,0,-1,-1,false,true);
+		       false,NULL,0,-1,-false,true);
 }
 
 
@@ -158,7 +158,6 @@ bool Msg5::getList ( rdbid_t     rdbId,
 		     char    *cacheKeyPtr   , // NULL if none
 		     int32_t     retryNum      ,
 		     int32_t     maxRetries    ,
-		     int64_t syncPoint ,
 		     bool        isRealMerge ,
 		     bool        allowPageCache ) {
 	verify_signature();

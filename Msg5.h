@@ -54,7 +54,6 @@ class Msg5 {
 		       char         *cacheKeyPtr,
 		       int32_t       retryNum,
 		       int32_t       maxRetries,
-		       int64_t       syncPoint,
 		       bool          isRealMerge,
 		       bool          allowPageCache);
 
@@ -77,7 +76,6 @@ class Msg5 {
 		       key96_t        *cacheKeyPtr,
 		       int32_t       retryNum,
 		       int32_t       maxRetries,
-		       int64_t       syncPoint,
 		       bool          isRealMerge,
 		       bool          allowPageCache) {
 		return getList ( rdbId,
@@ -97,7 +95,6 @@ class Msg5 {
 				 (char *)cacheKeyPtr   ,
 				 retryNum      ,
 				 maxRetries    ,
-				 syncPoint     ,
 				 isRealMerge   ,
 				 allowPageCache ); }
 

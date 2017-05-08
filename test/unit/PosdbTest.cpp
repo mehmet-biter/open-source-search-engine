@@ -269,7 +269,7 @@ TEST_F(PosdbNoMergeTest, SingleDocSpiderSpider) {
 
 	Msg5 msg5;
 	RdbList list;
-	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, 0, false, true));
+	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, false, true));
 	list.resetListPtr();
 
 	// verify that data returned is the same as data inserted above
@@ -309,7 +309,7 @@ TEST_F(PosdbNoMergeTest, SingleDocSpiderDumpSpider) {
 
 	Msg5 msg5;
 	RdbList list;
-	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, 0, false, true));
+	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, false, true));
 	list.resetListPtr();
 
 	// verify that data returned is the same as data inserted above
@@ -347,7 +347,7 @@ TEST_F(PosdbNoMergeTest, SingleDocSpiderDelete) {
 
 	Msg5 msg5;
 	RdbList list;
-	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, 0, false, true));
+	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, false, true));
 	list.resetListPtr();
 
 	// verify that data returned is the same as data inserted above
@@ -381,7 +381,7 @@ TEST_F(PosdbNoMergeTest, SingleDocSpiderDumpDelete) {
 
 	Msg5 msg5;
 	RdbList list;
-	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, 0, false, true));
+	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, false, true));
 	list.resetListPtr();
 
 	// verify that data returned is the same as data inserted above
@@ -423,7 +423,7 @@ TEST_F(PosdbNoMergeTest, SingleDocSpiderDumpDeleteSpider) {
 
 	Msg5 msg5;
 	RdbList list;
-	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, 0, false, true));
+	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, false, true));
 	list.resetListPtr();
 
 	// verify that data returned is the same as data inserted above
@@ -471,7 +471,7 @@ TEST_F(PosdbNoMergeTest, SingleDocSpiderDumpDeleteDumpSpider) {
 
 	Msg5 msg5;
 	RdbList list;
-	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, 0, false, true));
+	ASSERT_TRUE(msg5.getList(RDB_POSDB, 0, &list, startKey, endKey, -1, true, 0, 0, -1, NULL, NULL, 0, false, NULL, 0, 0, false, true));
 	list.resetListPtr();
 
 	// verify that data returned is the same as data inserted above
