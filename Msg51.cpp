@@ -289,11 +289,6 @@ bool Msg51::sendRequest ( int32_t    i ) {
 	key96_t startKey = Clusterdb::makeFirstClusterRecKey ( d );
 	key96_t endKey   = Clusterdb::makeLastClusterRecKey  ( d );
 
-	// if we are doing a full split, keep it local, going across the net
-	// is too slow!
-	//if ( g_conf.m_fullSplit ) firstHostId = -1;
-	int32_t firstHostId = -1;
-	
 	// . send the request for the cluster rec, use Msg0
 	// . returns false and sets g_errno on error
 	// . otherwise, it blocks and returns true
@@ -309,7 +304,7 @@ bool Msg51::sendRequest ( int32_t    i ) {
 				     m_niceness    ,
 				     true        , // doErrorCorrection
 				     true        , // includeTree
-				     firstHostId ,
+				     -1 , // firstHostId
 				     0           , // startFileNum
 				     -1          , // numFiles
 				     30000       , // timeout
