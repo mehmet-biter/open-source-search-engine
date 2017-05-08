@@ -222,7 +222,6 @@ bool Process::checkFiles ( const char *dir ) {
 
 static void heartbeatWrapper(int fd, void *state);
 static void processSleepWrapper(int fd, void *state);
-static void diskUsageWrapper(int fd, void *state);
 static void reloadDocid2SiteFlags(int fd, void *state);
 
 
@@ -247,16 +246,11 @@ Process::Process ( ) {
 	m_lastHeartbeatApprox = 0;
 	m_suspendAutoSave = false;
 	m_calledSave = false;
-	m_diskUsage = 0.0;
-	m_diskAvail = 0;
 }
 
 bool Process::init ( ) {
 	g_inAutoSave = false;
 	s_mainThreadTid = pthread_self();
-	// -1 means unknown
-	m_diskUsage = -1.0;
-	m_diskAvail = -1LL;
 	m_numRdbs = 0;
 	m_suspendAutoSave = false;
 	// . init the array of rdbs
@@ -320,10 +314,6 @@ bool Process::init ( ) {
 		return false;
 	}
 
-	if (!g_loop.registerSleepCallback(10000, NULL, diskUsageWrapper, 0)) {
-		return false;
-	}
-
 	if (!g_loop.registerSleepCallback(60000, NULL, reloadDocid2SiteFlags, 0)) {
 		return false;
 	}
@@ -340,27 +330,6 @@ bool Process::isAnyTreeSaving() {
 		}
 	}
 	return false;
-}
-
-// set Process::m_diskUsage
-static float getDiskUsage ( int64_t *diskAvail ) {
-	struct statvfs s;
-	if(statvfs(g_hostdb.m_dir,&s)!=0) {
-		log(LOG_WARN, "build: statvfs(%s) failed: %s.", g_hostdb.m_dir, mstrerror(errno));
-		return -1;
-	}
-	
-	*diskAvail = s.f_bavail * s.f_frsize;
-	return (s.f_blocks-s.f_bavail)*100.0/s.f_blocks;
-}
-
-void diskUsageWrapper(int /*fd*/, void * /*state*/) {
-	// skip if exiting
-	if (g_process.isShuttingDown()) {
-		return;
-	}
-
-	g_process.m_diskUsage = getDiskUsage( &g_process.m_diskAvail );
 }
 
 void Process::callHeartbeat () {

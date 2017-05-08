@@ -88,9 +88,6 @@ class Process {
 
 	bool        m_exiting;
 	bool        m_calledSave;
-
-	float m_diskUsage;
-	int64_t m_diskAvail;
 };
 
 extern bool g_inAutoSave;
