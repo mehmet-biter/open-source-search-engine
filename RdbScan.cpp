@@ -32,16 +32,8 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	m_rdbId = rdbId;
 	m_hitDisk        = hitDisk;
 	// set list now
-	m_rdblist->set ( NULL          , 
-		      0             ,
-		      NULL          ,
-		      0             ,
-		      startKey      ,
-		      endKey        ,
-		      fixedDataSize ,
-		      true          , // ownData?
-		      useHalfKeys   ,
-		      keySize       );
+	m_rdblist->set(NULL, 0, NULL, 0, startKey, endKey, fixedDataSize, true, useHalfKeys, keySize);
+
 	// . don't do anything if startKey exceeds endKey
 	// . often Msg3 will call us with this true because it's page range
 	//   is empty because the map knows without having to hit disk. 
