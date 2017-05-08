@@ -421,10 +421,6 @@ private:
 
 extern class Hostdb g_hostdb;
 
-extern Host     *g_listHosts [ MAX_HOSTS * 4 ];
-extern uint32_t  g_listIps   [ MAX_HOSTS * 4 ];
-extern uint16_t  g_listPorts [ MAX_HOSTS * 4 ];
-extern int32_t      g_listNumTotal;
 
 static inline uint32_t getShardNum(rdbid_t rdbId, const void *key) {
 	return g_hostdb.getShardNum ( rdbId , key );

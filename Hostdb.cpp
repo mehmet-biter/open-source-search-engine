@@ -29,11 +29,6 @@ Hostdb g_hostdb;
 static HashTableX g_hostTableUdp;
 static HashTableX g_hostTableTcp;
 
-Host     *g_listHosts [ MAX_HOSTS * 4 ];
-uint32_t  g_listIps   [ MAX_HOSTS * 4 ];
-uint16_t  g_listPorts [ MAX_HOSTS * 4 ];
-int32_t      g_listNumTotal = 0;
-
 
 void Hostdb::resetPortTables () {
 	g_hostTableUdp.reset();
@@ -1048,15 +1043,6 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 		return false;//g_process.shutdownAbort(true);
 	}
 
-	// . keep a list of the udp ips for pinging
-	if ( udp && port != 0 ) {
-		// add the ip port for pinging purposes
-		g_listHosts [g_listNumTotal] = h;
-		g_listIps   [g_listNumTotal] = ip;
-		g_listPorts [g_listNumTotal] = port;
-		g_listNumTotal++;
-	}
-
 	HashTableX *t;
 	if ( udp ) t = &g_hostTableUdp;
 	else       t = &g_hostTableTcp;
@@ -1363,8 +1349,6 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	// 
 	g_hostTableUdp.clear();
 	g_hostTableTcp.clear();
-	// reset pingserver's list too!
-	g_listNumTotal = 0;
 	// now restock everything
 	hashHosts();
 
