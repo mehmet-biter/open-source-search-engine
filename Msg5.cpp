@@ -1106,8 +1106,6 @@ void Msg5::repairLists() {
 		// . TODO: support non-fixed data sizes
 		//if ( m_listPtrs[i]->getFixedDataSize() >= 0 )
 		m_listPtrs[i]->removeBadData_r();
-		//else
-		//m_listPtrs[i]->reset();
 
 		// otherwise we have a patchable error
 		m_hadCorruption = true;
