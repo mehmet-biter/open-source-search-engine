@@ -1137,24 +1137,22 @@ bool printDropDown ( int32_t n , SafeBuf* sb, char *name, int32_t select ) {	// 
 class DropLangs {
 public:
 	const char *m_title;
-	const char *m_lang;
-	const char *m_tld;
 };
 
 static DropLangs g_drops[] = {
 #ifndef PRIVACORE_SAFE_VERSION
-	{"custom",NULL,NULL},
-	{"web",NULL,NULL},
-	{"news",NULL,NULL},
-	{"english","en","com,us.gov,org"},
-	{"german","de","de"},
-	{"french","fr","fr"},
-	{"norwegian","nl","nl"},
-	{"spanish","es","es"},
-	{"italian","it","it"},
-	{"romantic","en,de,fr,nl,es,it","com,us.gov,org,de,fr,nl,es,it"},
+	{"custom"},
+	{"web"},
+	{"news"},
+	{"english"},
+	{"german"},
+	{"french"},
+	{"norwegian"},
+	{"spanish"},
+	{"italian"},
+	{"romantic"},
 #endif
-	{"privacore",NULL,NULL}
+	{"privacore"}
 };
 
 // "url filters profile" values. used to set default crawl rules
