@@ -107,7 +107,6 @@ loop:
 	                             gotListWrapper3     ,
 	                             0                   , // niceness
 	                             true,                 // do err correction
-	                             0,                    // retryNum
 	                             -1,                   // maxRetries
 	                             false,                // isRealMerge
 	                             true))                // allowPageCache

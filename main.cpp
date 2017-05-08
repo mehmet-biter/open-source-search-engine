@@ -2340,7 +2340,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 				      NULL          , // callback
 				      0             , // niceness
 				      false         , // err correction?
-				      0             , // retry num
 				      -1            , // maxRetries
 				      false,          // isRealMerge
 				      true))          // allowPageCache
@@ -2611,7 +2610,6 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 				      NULL          , // callback
 				      0             , // niceness
 				      false         , // err correction?
-				      0,              // retryNum
 				      -1,             // maxRetries
 				      false,          // isRealMerge
 				      true))          // allowPageCache
@@ -2859,7 +2857,6 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 			      NULL          , // callback
 			      0             , // niceness
 			      false         , // err correction?
-			      0,              // retryNum
 			      -1,             // maxRetries
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -3257,7 +3254,6 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 				      NULL          , // callback
 				      0             , // niceness
 				      false         , // err correction?
-				      0,              // retryNum
 				      -1,             // maxRetries
 				      false,          // isRealMerge
 				      true))          // allowPageCache
@@ -3431,7 +3427,6 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 			      NULL           , // callback
 			      0              , // niceness
 			      false          , // do error correction?
-			      0              , // retry num
 			      -1             , // maxRetries
 			      false,           // isRealMerge
 			      true))         { // allowPageCache
@@ -3803,7 +3798,6 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		                  NULL, // callback
 		                  0, // niceness
 		                  true,           // to debug RdbList::removeBadData_r()
-		                  0,              // retryNum
 		                  -1,             // maxRetries
 		                  false,          // isRealMerge
 		                  true))          // allowPageCache
@@ -3949,7 +3943,6 @@ static void dumpClusterdb(const char *coll,
 				      NULL          , // callback
 				      0             , // niceness
 				      false         , // err correction?
-				      0,              // retryNum
 				      -1,             // maxRetries
 				      false,          // isRealMerge
 				      true))          // allowPageCache
@@ -4052,7 +4045,6 @@ static void dumpLinkdb(const char *coll,
 				      NULL          , // callback
 				      0             , // niceness
 				      false         , // err correction?
-				      0,              // retryNum
 				      -1,             // maxRetries
 				      false,          // isRealMerge
 				      true))          // allowPageCache
@@ -4378,7 +4370,6 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 			      NULL          , // callback
 			      0             , // niceness
 			      false         , // err correction?
-			      0             , // retry num
 			      -1            , // maxRetries
 			      false,          // isRealMerge
 			      true))          // allowPageCache

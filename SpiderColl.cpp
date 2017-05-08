@@ -265,7 +265,6 @@ bool SpiderColl::makeDoledbIPTable() {
 		                  NULL, // callback
 		                  0, // niceness
 		                  false, // err correction?
-		                  0, // retry num
 		                  -1, // maxRetries
 		                  false, // isRealMerge
 		                  true)) { // allowPageCache
@@ -1193,7 +1192,6 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		                      gotSpiderdbWaitingTreeListWrapper,
 		                      MAX_NICENESS, // niceness
 		                      true, // do error correct?
-		                      0,               // retryNum
 		                      -1,              // maxRetries
 		                      false,           // isRealMerge
 		                      true))           // allowPageCache
@@ -2030,7 +2028,6 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 				gotSpiderdbListWrapper ,
 				MAX_NICENESS   , // niceness
 				true,            // do error correct?
-				0,               // retryNum
 				-1,              // maxRetries
 				false,           // isRealMerge
 				true ))          // allowPageCache

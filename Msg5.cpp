@@ -107,7 +107,7 @@ bool Msg5::getSingleUnmergedList(rdbid_t       rdbId,
 		       fileNum, 1, //startFileNum, numFiles
 		       state, callback,
 		       niceness,
-		       false,0,-1,-false,true);
+		       false,-1,-false,true);
 }
 
 
@@ -155,7 +155,6 @@ bool Msg5::getList ( rdbid_t     rdbId,
 					    Msg5    *msg5  ) ,
 		     int32_t     niceness      ,
 		     bool     doErrorCorrection ,
-		     int32_t     retryNum      ,
 		     int32_t     maxRetries    ,
 		     bool        isRealMerge ,
 		     bool        allowPageCache ) {

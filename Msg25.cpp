@@ -832,7 +832,6 @@ bool Msg25::doReadLoop() {
 				gotListWrapper  ,
 				m_niceness      ,
 				true            , // error correct?
-				0,                //retryNum
 				-1,               //maxRetries
 				false,            //isRealMerge
 				true))            //allowPageCache

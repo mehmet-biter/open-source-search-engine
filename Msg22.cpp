@@ -444,7 +444,6 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 				    gotTitleList      ,
 				    r->m_niceness     ,
 				    true              , // do error correct?
-				    0                 , // retry num
 				    -1                , // maxRetries
 				    false,              // isRealMerge
 				    true))              // allowPageCache

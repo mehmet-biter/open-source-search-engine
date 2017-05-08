@@ -124,7 +124,6 @@ bool Titledb::verify(const char *coll) {
 			      NULL          , // callback
 			      0             , // niceness
 			      false         , // err correction?
-			      0             , // retry num
 			      -1            , // maxRetries
 			      false         , // isRealMerge
 			      true))          // allowPageCache

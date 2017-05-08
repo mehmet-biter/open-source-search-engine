@@ -360,7 +360,6 @@ bool RdbMerge::getAnotherList() {
 				 gotListWrapper,  // callback
 				 m_niceness,      // niceness
 				 true,            // do error correction?
-				 0,               // retry #
 				 nn + 75,         // max retries (mk it high)
 				 true,            // isRealMerge? absolutely!
 				 false);

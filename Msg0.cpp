@@ -264,7 +264,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 					 gotListWrapper2   ,
 					 niceness          ,
 					 doErrorCorrection ,
-					 0    , // retryNum
 					 -1   , // maxRetries
 					 m_isRealMerge ,
 					 m_allowPageCache ) ) {
@@ -622,7 +621,6 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 				     gotListWrapper    ,
 				     niceness          ,
 				     doErrorCorrection ,
-				     0    , // retryNum
 				     2    , // maxRetries
 				     false,
 				     allowPageCache ) ) {

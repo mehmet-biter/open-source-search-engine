@@ -2453,7 +2453,6 @@ bool RdbBase::verifyFileSharding ( ) {
 			      NULL          , // callback
 			      0             , // niceness
 			      false         , // err correction?
-			      0             , // retryNum
 			      -1            , // maxRetries
 			      true          , // isRealMerge
 			      true)) {        // allowPageCache
