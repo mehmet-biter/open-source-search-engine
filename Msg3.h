@@ -63,7 +63,7 @@ class Msg3 {
 			 int32_t           niceness      , // = MAX_NICENESS ,
 			 int32_t           retryNum      , // = 0             ,
 			 int32_t           maxRetries    , // = -1
-			 bool           justGetEndKey = false);
+			 bool           justGetEndKey);
 
 	// for retrieving unmerged lists
 	RdbList        *getList ( int32_t i )       { return &m_scan[i].m_list; }
