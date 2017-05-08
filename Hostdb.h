@@ -129,7 +129,7 @@ public:
 	bool isGrunt() { return (m_type == HT_GRUNT); }
 
 	bool isHostsConfCRCKnown() const { return m_runtimeInformation.m_hostsConfCRC!=0; }
-	bool hasSameHostsConfCRC() const;
+	inline bool hasSameHostsConfCRC() const;
 
 	// for m_type == HT_QCPROXY, we forward the query to the regular proxy
 	// at this Ip:Port. we should receive a compressed 0xfd reply and
