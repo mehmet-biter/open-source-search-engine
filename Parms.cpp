@@ -5098,19 +5098,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
-	m->m_title = "max delay before logging a callback or handler";
-	m->m_desc  = "If a call to a message callback or message handler "
-		"in the udp server takes more than this many milliseconds, "
-		"then log it. "
-		"Logs 'udp: Took %" PRId64" ms to call callback for msgType="
-		"0x%hhx niceness=%" PRId32"'. "
-		"Use -1 or less to disable the logging.";
-	m->m_cgi   = "mdch";
-	simple_m_set(Conf,m_maxCallbackDelay);
-	m->m_def   = "-1";
-	m->m_page  = PAGE_MASTER;
-	m++;
-
 	m->m_title = "Vagus cluster id";
 	m->m_desc  = "Which cluster name to use in Vagus. The default empty string means to use 'gb-'$USER which works fine in most scenarios";
 	m->m_cgi   = "vagus_cluster_id";
