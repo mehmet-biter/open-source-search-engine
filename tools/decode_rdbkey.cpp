@@ -5,6 +5,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "GbUtil.h"
+#include "types.h"
 #include <libgen.h>
 
 static void print_usage(const char *argv0) {
@@ -31,35 +32,44 @@ int main(int argc, char **argv) {
 
 	g_conf.init(NULL);
 
-	// parse key
-	const char *input = argv[2];
-	size_t inputLen = strlen(input);
-	if (starts_with(input, "0x")) {
-		input += 2;
-		inputLen -= 2;
-	}
+	const char *keyPtr = NULL;
+	char keyBytes[MAX_KEY_BYTES] = {0};
+	key96_t key96;
+	if (argc == 3) {
+		// parse key
+		const char *input = argv[2];
+		size_t inputLen = strlen(input);
+		if (starts_with(input, "0x")) {
+			input += 2;
+			inputLen -= 2;
+		}
 
-	char key[MAX_KEY_BYTES] = {0};
-	const char *p = input + inputLen - 1;
-	char *pKey = key;
-	for ( ; p >= input ; ) {
-		auto first = htob(*p--);
-		auto second = htob(*p--);
-		*pKey  = second;
-		*pKey <<= 4;
-		*pKey |= first;
-		pKey++;
+		const char *p = input + inputLen - 1;
+		char *pKey = keyBytes;
+		for ( ; p >= input ; ) {
+			auto first = htob(*p--);
+			auto second = htob(*p--);
+			*pKey  = second;
+			*pKey <<= 4;
+			*pKey |= first;
+			pKey++;
+		}
+		keyPtr = keyBytes;
+	} else if (argc == 4) {
+		key96.n0 = strtol(argv[2], NULL, 0);
+		key96.n1 = strtol(argv[3], NULL, 0);
+		keyPtr = (char*)&key96;
 	}
 
 	const char *rdb = argv[1];
 	if (strcmp(rdb, "linkdb") == 0) {
-		Linkdb::printKey(key);
+		Linkdb::printKey(keyPtr);
 	} else if (strcmp(rdb, "posdb") == 0) {
-		Posdb::printKey(key);
+		Posdb::printKey(keyPtr);
 	} else if (strcmp(rdb, "spiderdb") == 0) {
-		Spiderdb::printKey(key);
+		Spiderdb::printKey(keyPtr);
 	} else if (strcmp(rdb, "titledb") == 0) {
-		Titledb::printKey(key);
+		Titledb::printKey(keyPtr);
 	} else {
 		fprintf(stdout, "Unsupported RDB %s\n", rdb);
 		return 1;
