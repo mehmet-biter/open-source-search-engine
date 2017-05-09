@@ -2686,7 +2686,7 @@ public:
 
 static HashTableX g_ut;
 
-void addUStat1 ( SpiderRequest *sreq, bool hadReply , int32_t now ) {
+static void addUStat1(SpiderRequest *sreq, bool hadReply , int32_t now) {
 	int32_t firstIp = sreq->m_firstIp;
 	// lookup
 	int32_t n = g_ut.getSlot ( &firstIp );
@@ -2735,7 +2735,7 @@ void addUStat1 ( SpiderRequest *sreq, bool hadReply , int32_t now ) {
 	}
 }
 
-void addUStat2 ( SpiderReply *srep , int32_t now ) {
+static void addUStat2(SpiderReply *srep , int32_t now) {
 	int32_t firstIp = srep->m_firstIp;
 	// lookup
 	int32_t n = g_ut.getSlot ( &firstIp );
