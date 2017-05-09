@@ -48,8 +48,6 @@
 
 static void testWinnerTreeKey();
 
-bool s_countsAreValid = true;
-
 static int32_t getFakeIpForUrl2(Url *url2);
 
 /////////////////////////
