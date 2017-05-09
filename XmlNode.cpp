@@ -15,7 +15,7 @@
 // . a filterKeep of 1 means keep the tag and text between it and its back tag.
 // . a filterKeep of 2 means remove tag BUT keep the text between
 //   it and its back tag. 
-NodeType g_nodes[] = {
+const NodeType g_nodes[] = {
     // NAME hasBackTag brk? isVisible? filterKeep1? filterKeep2 type/m_nodeId[i] isXml?
     // --------------------------
     //  -- text node    ---  0
@@ -893,7 +893,7 @@ nodeid_t getTagId ( const char *s , NodeType **retp ) {
 			const char *name = g_nodes[i].m_nodeName;
 			int32_t  nlen = strlen(name);
 			int64_t h = hash64Upper_a ( name,nlen,0LL );
-			NodeType *nt = &g_nodes[i];
+			const NodeType *nt = &g_nodes[i];
 			if ( ! s_ht.addKey(&h,&nt) ) {
 				gbshutdownLogicError();
 			}
