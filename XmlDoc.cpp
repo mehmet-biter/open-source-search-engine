@@ -872,17 +872,19 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_titleRecKey =  *(key96_t *) p ;
 	//m_titleRecKeyValid = true;
 	p += sizeof(key96_t);
-	// bail on error
-	if ( (m_titleRecKey.n0 & 0x01) == 0x00 ) {
-		g_errno = EBADTITLEREC;
-		log("db: Titledb record is a negative key.");
-		g_process.shutdownAbort(true);
-	}
 
 	// set m_docId from key
 	m_docId = Titledb::getDocIdFromKey ( &m_titleRecKey );
 	// validate that
 	m_docIdValid = true;
+
+	// bail on error
+	if ( (m_titleRecKey.n0 & 0x01) == 0x00 ) {
+		g_errno = EBADTITLEREC;
+		log(LOG_WARN, "db: Titledb record is a negative key for docId=%" PRId64".", m_docId);
+		return false;
+	}
+
 	// then the size of the data that follows this
 	int32_t dataSize =  *(int32_t *) p ;
 	p += 4;
@@ -890,7 +892,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	if ( dataSize < 4 ) {
 		g_errno = EBADTITLEREC;
 		log(LOG_WARN, "db: Titledb record has size of %" PRId32" which is less then 4. Probable disk corruption in a "
-			"titledb file.", dataSize);
+			"titledb file for docId=%" PRId64".", dataSize, m_docId);
 		return false;
 	}
 	// what is the size of cbuf/titleRec in bytes?
