@@ -122,7 +122,7 @@ struct QueryField {
 	char  m_flag;
 };
 
-extern struct QueryField g_fields[];
+extern const struct QueryField g_fields[];
 	
 // reasons why we ignore a particular QueryWord's word or phrase
 enum ignore_reason_t {

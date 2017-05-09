@@ -1812,7 +1812,7 @@ bool sendPageHelp ( TcpSocket *sock , HttpRequest *hr ) {
 	int32_t n = getNumFieldCodes();
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		// get field #i
-		QueryField *f = &g_fields[i];
+		const QueryField *f = &g_fields[i];
 
 		if ( g_fields[i].m_flag & QTF_HIDE ) continue;
 		

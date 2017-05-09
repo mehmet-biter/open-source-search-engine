@@ -2609,7 +2609,7 @@ static bool       s_isInitialized = false;
 static GbMutex    s_tableMutex;
 
 // 3rd field = m_hasColon
-struct QueryField g_fields[] = {
+const struct QueryField g_fields[] = {
 	{"url",
 	 FIELD_URL, 
 	 true,
