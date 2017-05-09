@@ -892,7 +892,7 @@ bool ImportState::setCurrentTitleFileAndOffset ( ) {
 	return true;//&m_bf;
 }
 
-void gotMulticastReplyWrapper(void *state, void *state2);
+static void gotMulticastReplyWrapper(void *state, void *state2);
 
 
 //
@@ -1123,7 +1123,7 @@ bool ImportState::importLoop ( ) {
 	return true;
 }
 
-void gotMulticastReplyWrapper ( void *state , void *state2 ) {
+static void gotMulticastReplyWrapper ( void *state , void *state2 ) {
 
 	Multicast *mcast = (Multicast *)state;
 	//msg7->gotMsg7Reply();
