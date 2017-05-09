@@ -91,35 +91,35 @@ static bool sendPage        ( State11 *st );
 static bool printList       ( State11 *st );
 
 static bool loadLoop ( State11 *st ) {
-loop:
-	// let's get the local list for THIS machine (use msg5)
-	if ( ! st->m_msg5.getList  ( RDB_DOLEDB          ,
-	                             st->m_collnum       ,
-	                             &st->m_list         ,
-	                             &st->m_startKey      ,
-	                             &st->m_endKey        ,
-	                             st->m_minRecSizes   ,
-	                             true                , // include tree
-	                             0                   , // start file #
-	                             -1                  , // # files
-	                             st                  , // callback state
-	                             gotListWrapper3     ,
-	                             0                   , // niceness
-	                             true,                 // do err correction
-	                             -1,                   // maxRetries
-	                             false))                // isRealMerge
-		return false;
-	// print it. returns false on error
-	if ( ! printList ( st ) ) st->m_done = true;
-	// check if done
-	if ( st->m_done ) {
-		// send the page back
-		sendPage ( st );
-		// bail
-		return true;
+	for(;;) {
+		// let's get the local list for THIS machine (use msg5)
+		if(! st->m_msg5.getList(RDB_DOLEDB,
+					st->m_collnum,
+					&st->m_list,
+					&st->m_startKey,
+					&st->m_endKey,
+					st->m_minRecSizes,
+					true                , // include tree
+					0                   , // start file #
+					-1                  , // # files
+					st                  , // callback state
+					gotListWrapper3,
+					0                   , // niceness
+					true,                 // do err correction
+					-1,                   // maxRetries
+					false))                // isRealMerge
+			return false;
+		// print it. returns false on error
+		if(!printList(st))
+			st->m_done = true;
+		// check if done
+		if(st->m_done) {
+			// send the page back
+			sendPage(st);
+			// bail
+			return true;
+		}
 	}
-	// otherwise, load more
-	goto loop;
 }
 
 static void gotListWrapper3 ( void *state , RdbList *list , Msg5 *msg5 ) {

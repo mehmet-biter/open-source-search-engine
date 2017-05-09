@@ -151,6 +151,4 @@ class Loop {
 
 extern class Loop g_loop;
 
-#define QUICKPOLL(a)
-
 #endif // GB_LOOP_H
