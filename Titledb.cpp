@@ -85,19 +85,7 @@ bool Titledb::init2 ( int32_t treeMem ) {
 	// validate
 	//return verify ( );
 }
-/*
-bool Titledb::addColl ( char *coll, bool doVerify ) {
-	if ( ! m_rdb.addColl ( coll ) ) return false;
-	if ( ! doVerify ) return true;
-	// verify
-	if ( verify(coll) ) return true;
-	// if not allowing scale, return false
-	if ( ! g_conf.m_allowScale ) return false;
-	// otherwise let it go
-	log ( "db: Verify failed, but scaling is allowed, passing." );
-	return true;
-}
-*/
+
 bool Titledb::verify(const char *coll) {
 	log ( LOG_DEBUG, "db: Verifying Titledb for coll %s...", coll );
 
@@ -159,14 +147,11 @@ bool Titledb::verify(const char *coll) {
 		for ( list.resetListPtr() ; ! list.isExhausted() ;
 		      list.skipCurrentRecord() ) {
 			key96_t k = list.getCurrentKey();
-			//uint32_t groupId = getGroupId ( RDB_TITLEDB,&k);
-			//int32_t groupNum = g_hostdb.getGroupNum(groupId);
 			int32_t shardNum = getShardNum ( RDB_TITLEDB, &k );
 			log("db: docid=%" PRId64" shard=%" PRId32,
 			    getDocId(&k),shardNum);
 		}
-		//if ( g_conf.m_bypassValidation ) return true;
-		//if ( g_conf.m_allowScale ) return true;
+
 		// don't exit any more, allow it, but do not delete
 		// recs that belong to different shards when we merge now!
 		log ( "db: db shards unbalanced. "
@@ -180,35 +165,6 @@ bool Titledb::verify(const char *coll) {
 	// DONE
 	return true;
 }
-
-// . get a 38 bit docid
-// . lower 38 bits are set
-// . we put a domain hash in the docId to ease site clustering
-// . returns false and sets errno on error
-/*
-uint64_t Titledb::getProbableDocId ( char *url ) {
-	// just hash the whole collection/url
-	int64_t docId ;
-	docId = 0; // hash64  ( coll , collLen );
-	docId = hash64b ( url , docId );
-	// now hash the HOSTNAME of the url as lower middle bits in docId
-	//unsigned char h = hash8 ( url->getDomain() , url->getDomainLen() );
-	// . now we store h in the middle 8 bits of the docId
-	// . if we stored in top 8 bits all titleRecs from the same hostname
-	//   would be clumped together
-	// . if we stored in lower 8 bits the chaining might change our
-	//   lower 8 bits making the docid seems like from a different site
-	// . 00000000 00000000 00000000 00dddddd
-	// . dddddddd dddddddd hhhhhhhh dddddddd
-	//int64_t h2 = (h << 8);
-	// . clear all but lower 38 bits, then clear 8 bits for h2
-	docId &= DOCID_MASK; 
-	//docId |= h2;
-	// or in the hostname hash as the low 8 bits
-	//	*docId |= h;
-	return docId;
-}
-*/
 
 bool Titledb::isLocal ( int64_t docId ) {
 	// shift it up (64 minus 38) bits so we can mask it
