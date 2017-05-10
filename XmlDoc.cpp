@@ -875,14 +875,22 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	// bail on error
 	if ( (m_titleRecKey.n0 & 0x01) == 0x00 ) {
 		g_errno = EBADTITLEREC;
-		log("db: Titledb record is a negative key.");
+		log(LOG_ERROR, "db: Titledb record is a negative key.");
 		g_process.shutdownAbort(true);
 	}
 
-	// set m_docId from key
-	m_docId = Titledb::getDocIdFromKey ( &m_titleRecKey );
-	// validate that
-	m_docIdValid = true;
+	int64_t docId = Titledb::getDocIdFromKey(&m_titleRecKey);
+	if (m_docIdValid) {
+		// validate docId if already set
+		if (m_docId != docId) {
+			log(LOG_ERROR, "db: Mismatched in docid. Requested docId=%" PRId64 " but got docId=%" PRId64, m_docId, docId);
+			gbshutdownLogicError();
+		}
+	} else {
+		m_docId = docId;
+		m_docIdValid = true;
+	}
+
 	// then the size of the data that follows this
 	int32_t dataSize =  *(int32_t *) p ;
 	p += 4;
