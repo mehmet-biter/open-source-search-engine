@@ -1592,7 +1592,7 @@ int32_t Hostdb::getCRC ( ) {
 
 	m_crcValid = true;
 
-	log(LOG_INFO,"conf: hosts.conf CRC caclucated as %d based on %d grunts", m_crc, num_grunts);
+	log(LOG_INFO,"conf: hosts.conf CRC calculated as %d based on %d grunts", m_crc, num_grunts);
 	return m_crc;
 }
 
