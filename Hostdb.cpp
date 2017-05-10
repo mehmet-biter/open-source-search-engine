@@ -1570,8 +1570,9 @@ Host *Hostdb::getBestSpiderCompressionProxy ( int32_t *key ) {
 int32_t Hostdb::getCRC ( ) {
 	if ( m_crcValid ) return m_crc;
 	// hash up all host entries, just the grunts really.
+	const int num_grunts = getNumGrunts();
 	SafeBuf str;
-	for ( int32_t i = 0 ; i < getNumGrunts() ; i++ ) {
+	for ( int32_t i = 0 ; i < num_grunts ; i++ ) {
 		Host *h = &m_hosts[i];
 		// dns client port not so important
 		str.safePrintf("%" PRId32",", i);
@@ -1591,7 +1592,7 @@ int32_t Hostdb::getCRC ( ) {
 
 	m_crcValid = true;
 
-	log(LOG_INFO,"conf: hosts.conf CRC caclucated as %d", m_crc);
+	log(LOG_INFO,"conf: hosts.conf CRC caclucated as %d based on %d grunts", m_crc, num_grunts);
 	return m_crc;
 }
 
