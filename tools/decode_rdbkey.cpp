@@ -56,8 +56,8 @@ int main(int argc, char **argv) {
 		}
 		keyPtr = keyBytes;
 	} else if (argc == 4) {
-		key96.n0 = strtol(argv[2], NULL, 0);
-		key96.n1 = strtol(argv[3], NULL, 0);
+		key96.n0 = strtoull(argv[2], NULL, 0);
+		key96.n1 = strtoul(argv[3], NULL, 0);
 		keyPtr = (char*)&key96;
 	}
 
