@@ -148,10 +148,18 @@ class RdbBase {
 	int32_t addNewFile(int32_t *fileIdPtr);
 	void markNewFileReadable();
 
-	BigFile *getFile(int32_t n);
+	int32_t getFileId(int32_t n);
+
+	BigFile* getFile(int32_t n);
+	BigFile* getFileById(int32_t fileId);
+
 	int32_t isRootFile(int32_t n) const;
-	RdbMap *getMap(int32_t n);
+
+	RdbMap* getMap(int32_t n);
+	RdbMap* getMapById(int32_t fileId);
+
 	RdbIndex *getIndex(int32_t n);
+
 	bool isReadable(int32_t n) const;
 
 	// these are used for computing load on a machine

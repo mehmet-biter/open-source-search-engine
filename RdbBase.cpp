@@ -1101,9 +1101,24 @@ void RdbBase::markNewFileReadable() {
 	m_fileInfo[m_numFiles-1].m_allowReads = true;
 }
 
+int32_t RdbBase::getFileId(int32_t n) {
+	ScopedLock sl(m_mtxFileInfo);
+	return m_fileInfo[n].m_fileId;
+}
+
 BigFile* RdbBase::getFile(int32_t n) {
 	ScopedLock sl(m_mtxFileInfo);
 	return m_fileInfo[n].m_file;
+}
+
+BigFile* RdbBase::getFileById(int32_t fileId) {
+	ScopedLock sl(m_mtxFileInfo);
+	for (auto i = 0; i < m_numFiles; ++i) {
+		if (m_fileInfo[i].m_fileId == fileId) {
+			return m_fileInfo[i].m_file;
+		}
+	}
+	return NULL;
 }
 
 int32_t RdbBase::isRootFile(int32_t n) const {
@@ -1114,6 +1129,16 @@ int32_t RdbBase::isRootFile(int32_t n) const {
 RdbMap* RdbBase::getMap(int32_t n) {
 	ScopedLock sl(m_mtxFileInfo);
 	return m_fileInfo[n].m_map;
+}
+
+RdbMap* RdbBase::getMapById(int32_t fileId) {
+	ScopedLock sl(m_mtxFileInfo);
+	for (auto i = 0; i < m_numFiles; ++i) {
+		if (m_fileInfo[i].m_fileId == fileId) {
+			return m_fileInfo[i].m_map;
+		}
+	}
+	return NULL;
 }
 
 RdbIndex* RdbBase::getIndex(int32_t n) {
