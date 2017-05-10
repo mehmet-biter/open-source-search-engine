@@ -1082,7 +1082,7 @@ void Msg5::repairLists() {
 		// TODO: fix this. can't call Collectiondb::getBase from within a thread!
 		RdbBase *base = getRdbBase ( m_rdbId , m_collnum );
 		if ( i < nn && base ) {
-			BigFile *bf = base->getFile ( m_msg3.getFileNum(i) );
+			BigFile *bf = base->getFileById(m_msg3.getFileId(i));
 			log( LOG_WARN, "db: Corrupt filename is %s in collnum %" PRId32".", bf->getFilename(), (int32_t)m_collnum );
 			log( LOG_WARN, "db: startKey=%s endKey=%s",
 			     KEYSTR( m_listPtrs[i]->getStartKey(), m_ks ),

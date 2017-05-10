@@ -74,7 +74,7 @@ class Msg3 {
 	bool isListChecked() const { return m_listsChecked; }
 	bool listHadCorruption() const { return m_hadCorruption; }
 	int32_t getFileNums() const { return m_numFileNums; }
-	int32_t getFileNum(int32_t i) const { return m_scan[i].m_fileNum; }
+	int32_t getFileId(int32_t i) const { return m_scan[i].m_fileId; }
 
 	// end key to use when calling constrain_r()
 	char      m_constrainKey[MAX_KEY_BYTES];
@@ -115,7 +115,7 @@ private:
 		char       m_hintKey[MAX_KEY_BYTES];
 		int32_t    m_hintOffset;
 
-		int32_t    m_fileNum;
+		int32_t    m_fileId;
 
 		bool m_inPageCache;
 		char m_shiftCount;

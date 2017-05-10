@@ -19,7 +19,7 @@ int32_t g_numIOErrors = 0;
 Msg3::Scan::Scan()
   : m_scan(),
     m_startpg(0), m_endpg(0),
-    m_hintOffset(0), m_fileNum(0),
+    m_hintOffset(0), m_fileId(0),
     m_inPageCache(false),
     m_shiftCount(0),
     m_list()
@@ -332,9 +332,10 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 
 	// store the file numbers in the scan array, these are the files we read
 	m_numFileNums = 0;
-	for(int32_t i=startFileNum; i < startFileNum+m_numChunks; i++) {
-		if(base->isReadable(i))
-			m_scan[m_numFileNums++].m_fileNum = i;
+	for (int32_t i = startFileNum; i < startFileNum + m_numChunks; i++) {
+		if (base->isReadable(i)) {
+			m_scan[m_numFileNums++].m_fileId = base->getFileId(i);
+		}
 	}
 	
 	// remember the file range we should scan
@@ -394,25 +395,21 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	// . our m_scans array starts at 0
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 		// get the page range
-		//int32_t p1 = m_scan[i].m_startpg;
-		//int32_t p2 = m_endpg   [ i ];
-		//#ifdef GBSANITYCHECK
-		int32_t fn = m_scan[i].m_fileNum;
-		// this can happen somehow!
-		if ( fn < 0 ) {
-			log(LOG_LOGIC,"net: msg3: fn=%" PRId32". Bad engineer.",fn);
-			continue;
-		}
+
 		// sanity check
-		if ( i > 0 && m_scan[i-1].m_fileNum >= fn ) {
-			log(LOG_LOGIC,
-			    "net: msg3: files must be read in order "
-			    "from oldest to newest so RdbList::indexMerge_r "
-			    "works properly. Otherwise, corruption will "
-			    "result. ");
+		if (i > 0 && m_scan[i - 1].m_fileId >= m_scan[i].m_fileId) {
+			log(LOG_LOGIC, "net: msg3: files must be read in order from oldest to newest so RdbList::indexMerge_r "
+			    "works properly. Otherwise, corruption will result.");
 			g_process.shutdownAbort(true);
 		}
-		RdbMap *map = base->getMap(fn);
+
+		RdbMap *map = base->getMapById(m_scan[i].m_fileId);
+		// this can happen somehow!
+		if (!map) {
+			logError("net: msg3: getMapById with fileId=%" PRId32" returns NULL. Bad engineer.", m_scan[i].m_fileId);
+			continue;
+		}
+
 		// . sanity check?
 		// . no, we must get again since we turn on endKey's last bit
 		int32_t p1 , p2;
@@ -519,14 +516,14 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 				memcpy(lastTmpKey,tmpKey,sizeof(tmpKey));
 			}
 			if(ccount > 10) {
-				logf(LOG_INFO,"disk: Reading %" PRId32" bytes from %s file #"
+				logf(LOG_INFO,"disk: Reading %" PRId32" bytes from %s fileId="
 				     "%" PRId32" when min "
 				     "required is %" PRId32". Map is corrupt and has %" PRId32" "
 				     "identical consecutive page keys because the "
 				     "map was \"repaired\" because out of order keys "
 				     "in the index.",
 				     (int32_t)bytesToRead,
-				     base->getDbName(),fn,
+				     base->getDbName(), m_scan[i].m_fileId,
 				     (int32_t)m_minRecSizes,
 				     (int32_t)ccount);
 				incrementScansCompleted();
@@ -543,7 +540,12 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		//
 		////////
 		m_scan[i].m_inPageCache = false;
-		BigFile *ff = base->getFile(m_scan[i].m_fileNum);
+		BigFile *ff = base->getFileById(m_scan[i].m_fileId);
+		if (!ff) {
+			logError("net: msg3: getFileById with fileId=%" PRId32" returns NULL. Bad engineer.", m_scan[i].m_fileId);
+			continue;
+		}
+
 		RdbCache *rpc = getDiskPageCache ( m_rdbId );
 		if(rpc) {
 			// . vfd is unique 64 bit file id
@@ -585,15 +587,16 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// . do the scan/read of file #i
 		// . this returns false if blocked, true otherwise
 		// . this will set g_errno on error
-		bool done = m_scan[i].m_scan.setRead( base->getFile(m_scan[i].m_fileNum), base->getFixedDataSize(), offset, bytesToRead,
-		                                      startKey2, endKey2, m_ks, &m_scan[i].m_list,
-		                                      callback ? this : NULL,
-		                                      callback ? &doneScanningWrapper0 : NULL,
-		                                      base->useHalfKeys(), m_rdbId, m_niceness, true);
+		bool done = m_scan[i].m_scan.setRead(ff, base->getFixedDataSize(), offset, bytesToRead,
+		                                     startKey2, endKey2, m_ks, &m_scan[i].m_list,
+		                                     callback ? this : NULL,
+		                                     callback ? &doneScanningWrapper0 : NULL,
+		                                     base->useHalfKeys(), m_rdbId, m_niceness, true);
 
 		// if it did not block then it completed, so count it
-		if ( done )
+		if (done) {
 			incrementScansCompleted();
+		}
 
 		// break on an error, and remember g_errno in case we block
 		if ( g_errno ) {
@@ -905,7 +908,7 @@ bool Msg3::doneScanning ( ) {
 		else                      mrs = -1;
 		// . this returns false and sets g_errno on error
 		// . like if data is corrupt
-		BigFile *ff = base->getFile(m_scan[i].m_fileNum);
+		BigFile *ff = base->getFileById(m_scan[i].m_fileId);
 		// if we did a merge really quick and delete one of the 
 		// files we were reading, i've seen 'ff' be NULL
 		const char *filename = "lostfilename";
@@ -1034,11 +1037,15 @@ void Msg3::setPageRanges(RdbBase *base) {
 	// . we read from the first offset on m_startpg to offset on m_endpg
 	// . since we set them equal that means an empty range for each file
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-		int32_t fn = m_scan[i].m_fileNum;
-		if ( fn < 0 ) { g_process.shutdownAbort(true); }
-		m_scan[i].m_startpg = base->getMap(fn)->getPage( m_fileStartKey );
+		RdbMap *map = base->getMapById(m_scan[i].m_fileId);
+		if (!map) {
+			gbshutdownLogicError();
+		}
+
+		m_scan[i].m_startpg = map->getPage(m_fileStartKey);
 		m_scan[i].m_endpg = m_scan[i].m_startpg;
 	}
+
 	// just return if minRecSizes 0 (no reading needed)
 	if ( m_minRecSizes <= 0 ) return;
 	// calculate minKey minus one
@@ -1049,26 +1056,39 @@ void Msg3::setPageRanges(RdbBase *base) {
 		// find the map whose next page has the lowest key
 		int32_t  minpg   = -1;
 		char minKey[MAX_KEY_BYTES];
-		for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-			int32_t fn = m_scan[i].m_fileNum;
-			RdbMap *map = base->getMap(fn);
+		for (int32_t i = 0; i < m_numFileNums; i++) {
+			RdbMap *map = base->getMapById(m_scan[i].m_fileId);
+			if (!map) {
+				gbshutdownLogicError();
+			}
+
 			// this guy is out of race if his end key > "endKey" already
-			if(KEYCMP(map->getKeyPtr(m_scan[i].m_endpg),m_endKey,m_ks)>0)
+			if (KEYCMP(map->getKeyPtr(m_scan[i].m_endpg), m_endKey, m_ks) > 0) {
 				continue;
+			}
+
 			// get the next page after m_scan[i].m_endpg
 			int32_t nextpg = m_scan[i].m_endpg + 1;
+
 			// if endpg[i]+1 == m_numPages then we maxed out this range
-			if ( nextpg > map->getNumPages() ) continue;
+			if (nextpg > map->getNumPages()) {
+				continue;
+			}
+
 			// . but this may have an offset of -1
 			// . which means the page has no key starting on it and
 			//   it's occupied by a rec which starts on a previous page
-			while ( nextpg < map->getNumPages() &&
-				map->getOffset ( nextpg ) == -1 ) nextpg++;
+			while (nextpg < map->getNumPages() && map->getOffset(nextpg) == -1) {
+				nextpg++;
+			}
+
 			// . continue if his next page doesn't have the minimum key
 			// . if nextpg == getNumPages() then it returns the LAST KEY
 			//   contained in the corresponding RdbFile
-			if (minpg != -1 && 
-			    KEYCMP(map->getKeyPtr(nextpg),minKey,m_ks)>0)continue;
+			if (minpg != -1 && KEYCMP(map->getKeyPtr(nextpg), minKey, m_ks) > 0) {
+				continue;
+			}
+
 			// . we got a winner, his next page has the current min key
 			// . if m_scan[i].m_endpg+1 == getNumPages() then getKey() returns the
 			//   last key in the mapped file
@@ -1076,47 +1096,59 @@ void Msg3::setPageRanges(RdbBase *base) {
 			//   it's on page #m_numPages
 			KEYSET(minKey,map->getKeyPtr(nextpg),m_ks);
 			minpg  = i;
+
 			// if minKey is same as the current key on this endpg, inc it
 			// so we cause some advancement, otherwise, we'll loop forever
-			if ( KEYCMP(minKey,map->getKeyPtr(m_scan[i].m_endpg),m_ks)!=0)
+			if (KEYCMP(minKey, map->getKeyPtr(m_scan[i].m_endpg), m_ks) != 0) {
 				continue;
-			//minKey += (uint32_t) 1;
+			}
+
 			KEYINC(minKey,m_ks);
 		}
+
 		// . we're done if we hit the end of all maps in the race
-		// . return the max end key
-		// key96_t maxEndKey; maxEndKey.setMax(); return maxEndKey; }
-		// . no, just the endKey
-		if ( minpg  == -1 ) return;
+		if ( minpg  == -1 ) {
+			return;
+		}
+
 		// sanity check
-		if ( lastMinKeyIsValid && KEYCMP(minKey,lastMinKey,m_ks)<=0 ) {
+		if (lastMinKeyIsValid && KEYCMP(minKey, lastMinKey, m_ks) <= 0) {
 			g_errno = ECORRUPTDATA;
 			log(LOG_ERROR, "db: Got corrupted map in memory for %s. This is almost "
-			    "always because of bad memory. Please replace your RAM.",
-			    base->getDbName());
+			    "always because of bad memory. Please replace your RAM.", base->getDbName());
 			gbshutdownCorrupted();
 		}
+
 		// don't let minKey exceed endKey, however
-		if ( KEYCMP(minKey,m_endKey,m_ks)>0 ) {
-			KEYSET(minKey,m_endKey,m_ks);
-			KEYINC(minKey,m_ks);
-			KEYSET(lastMinKey,m_endKey,m_ks);
+		if (KEYCMP(minKey, m_endKey, m_ks) > 0) {
+			KEYSET(minKey, m_endKey, m_ks);
+			KEYINC(minKey, m_ks);
+			KEYSET(lastMinKey, m_endKey, m_ks);
+		} else {
+			KEYSET(lastMinKey, minKey, m_ks);
+			KEYDEC(lastMinKey, m_ks);
 		}
-		else {
-			KEYSET(lastMinKey,minKey,m_ks);
-			KEYDEC(lastMinKey,m_ks);
-		}
+
 		// it is now valid
 		lastMinKeyIsValid = true;
+
 		// . advance m_scan[i].m_endpg so that next page < minKey
 		// . we want to read UP TO the first key on m_scan[i].m_endpg
 		for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-			int32_t fn = m_scan[i].m_fileNum;
-			m_scan[i].m_endpg = base->getMap(fn)->getEndPage ( m_scan[i].m_endpg, lastMinKey );
+			RdbMap *map = base->getMapById(m_scan[i].m_fileId);
+			if (!map) {
+				gbshutdownLogicError();
+			}
+
+			m_scan[i].m_endpg = map->getEndPage(m_scan[i].m_endpg, lastMinKey);
 		}
+
 		// . if the minKey is BIGGER than the provided endKey we're done
 		// . we don't necessarily include records whose key is "minKey"
-		if ( KEYCMP(minKey,m_endKey,m_ks)>0) return;
+		if (KEYCMP(minKey, m_endKey, m_ks) > 0) {
+			return;
+		}
+
 		// . calculate recSizes per page within [startKey,minKey-1]
 		// . compute bytes of records in [startKey,minKey-1] for each map
 		// . this includes negative records so we may have annihilations
@@ -1125,13 +1157,14 @@ void Msg3::setPageRanges(RdbBase *base) {
 		//   again if he wants more
 		int32_t recSizes = 0;
 		for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-			int32_t fn = m_scan[i].m_fileNum;
-			recSizes += base->getMap(fn)->getMinRecSizes(m_scan[i].m_startpg,
-								     m_scan[i].m_endpg,
-								     m_fileStartKey,
-								     lastMinKey   ,
-								     false        );
+			RdbMap *map = base->getMapById(m_scan[i].m_fileId);
+			if (!map) {
+				gbshutdownLogicError();
+			}
+
+			recSizes += map->getMinRecSizes(m_scan[i].m_startpg, m_scan[i].m_endpg, m_fileStartKey, lastMinKey, false);
 		}
+
 		// if we hit it then return minKey -1 so we only read UP TO "minKey"
 		// not including "minKey"
 		if ( recSizes >= m_minRecSizes ) {
@@ -1156,15 +1189,14 @@ void Msg3::compensateForNegativeRecs ( RdbBase *base ) {
 	int64_t totalPositives = 0;
 	int64_t totalFileSize  = 0;
 	for (int32_t i = 0 ; i < m_numFileNums ; i++) {
-		int32_t fn = m_scan[i].m_fileNum;
-		// . this cored on me before when fn was -1, how'd that happen?
-		// . it happened right after startup before a merge should
-		//   have been attempted
-		if ( fn < 0 ) {
-			log(LOG_LOGIC,"net: msg3: fn=%" PRId32". bad engineer.",fn);
+		int32_t fileId = m_scan[i].m_fileId;
+
+		RdbMap *map = base->getMapById(fileId);
+		if (!map) {
+			log(LOG_LOGIC,"net: msg3: getMapById with fileId=%" PRId32" returns NULL. bad engineer.", fileId);
 			continue;
 		}
-		RdbMap *map = base->getMap(fn);
+
 		totalNegatives += map->getNumNegativeRecs();
 		totalPositives += map->getNumPositiveRecs();
 		totalFileSize  += map->getFileSize();
