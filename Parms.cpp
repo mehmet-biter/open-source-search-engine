@@ -209,7 +209,8 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 		}
 		case TYPE_IP: {
 			// may print 0.0.0.0
-			return sb->safePrintf("%s",iptoa(*(int32_t *)val) );
+			char ipbuf[16];
+			return sb->safePrintf("%s",iptoa(*(int32_t *)val,ipbuf) );
 		}
 		case TYPE_NONE:
 		case TYPE_COMMENT:
@@ -1684,10 +1685,11 @@ bool Parms::printParm( SafeBuf* sb,
 				       m->m_page == PAGE_COLLPASSWORDS ) &&
 				     sock &&
 				     m->m_title &&
-				     strstr(m->m_title,"IP") )
-					sb->safePrintf(" <b>Your current IP "
-						       "is %s.</b>",
-						       iptoa(sock->m_ip));
+				     strstr(m->m_title,"IP") ) {
+					char ipbuf[16];
+					sb->safePrintf(" <b>Your current IP is %s.</b>",
+						       iptoa(sock->m_ip,ipbuf));
+				}
 			}
 
 			// and default value if it exists
@@ -1816,9 +1818,11 @@ bool Parms::printParm( SafeBuf* sb,
 		if ( m->m_max > 0 && j == jend )
 			sb->safePrintf ("<input type=text name=%s value=\"\" "
 					"size=15>",cgi);
-		else
-			sb->safePrintf ("<input type=text name=%s value=\"%s\" "
-					"size=15>",cgi,iptoa(*(int32_t *)s));
+		else {
+			char ipbuf[16];
+			sb->safePrintf ("<input type=text name=%s value=\"%s\" size=15>",
+					cgi,iptoa(*(int32_t *)s,ipbuf));
+		}
 	}
 	else if ( t == TYPE_INT32 ) {
 		int width = calculateFieldWidth(m->m_smin,m->m_smax);
@@ -2891,9 +2895,10 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
 		sb->safePrintf("%" PRId32,(int8_t)*s);
 	else if ( m->m_type == TYPE_FLOAT )
 		sb->safePrintf("%f",*(float *)s);
-	else if ( m->m_type == TYPE_IP )
-		sb->safePrintf("%s",iptoa(*(int32_t *)s));
-	else if ( m->m_type == TYPE_INT32 || m->m_type == TYPE_INT32_CONST )
+	else if ( m->m_type == TYPE_IP ) {
+		char ipbuf[16];
+		sb->safePrintf("%s",iptoa(*(int32_t *)s,ipbuf));
+	} else if ( m->m_type == TYPE_INT32 || m->m_type == TYPE_INT32_CONST )
 		sb->safePrintf("%" PRId32,*(int32_t *)s);
 	else if ( m->m_type == TYPE_INT64 )
 		sb->safePrintf("%" PRId64,*(int64_t *)s);

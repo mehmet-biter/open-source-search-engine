@@ -141,6 +141,7 @@ void printTcpTable ( SafeBuf* p, const char *title, TcpServer *server ) {
 		// times
 		int32_t elapsed1 = now - s->m_startTime      ;
 		int32_t elapsed2 = now - s->m_lastActionTime ;
+		char ipbuf[16];
 		p->safePrintf ("<tr bgcolor=#%s>"
 			       "<td>%" PRId32"</td>" // i
 			       "<td>%i</td>" // fd
@@ -157,7 +158,7 @@ void printTcpTable ( SafeBuf* p, const char *title, TcpServer *server ) {
 			       elapsed1,
 			       elapsed2,
 			       //s->m_timeout ,
-			       iptoa(s->m_ip) ,
+			       iptoa(s->m_ip,ipbuf),
 			       s->m_port ,
 			       st );
 
@@ -316,6 +317,7 @@ static void printUdpTable(SafeBuf *p, const char *title, const UdpServer *server
 		// bgcolor is lighter for incoming requests
 		const char *bg = it->hasCallback() ? LIGHT_BLUE : LIGHTER_BLUE;
 		Host *h = g_hostdb.getUdpHost(it->getIp(), it->getPort());
+		char ipbuf[16];
 		const char *eip = "??";
 		uint16_t eport = 0;
 		const char *ehostId = "-1";
@@ -323,14 +325,14 @@ static void printUdpTable(SafeBuf *p, const char *title, const UdpServer *server
 		if ( h ) {
 			// host can have 2 ip addresses, get the one most
 			// similar to that of the requester
-			eip = iptoa(g_hostdb.getBestIp(h));
+			eip = iptoa(g_hostdb.getBestIp(h),ipbuf);
 			eport = h->getExternalHttpPort();
 			sprintf(tmpHostId, "%s%" PRId32, h->m_isProxy ? "proxy" : "", h->m_hostId);
 			ehostId = tmpHostId;
 		} else {
 			// if no corresponding host, it could be a request from an external
 			// cluster, so just show the ip
-			sprintf(tmpHostId, "%s", iptoa(it->getIp()));
+			sprintf(tmpHostId, "%s", iptoa(it->getIp(),ipbuf));
 			ehostId = tmpHostId;
 			eip = tmpHostId;
 		}
@@ -349,8 +351,9 @@ static void printUdpTable(SafeBuf *p, const char *title, const UdpServer *server
 				it->getTimeout() );
 
 		// now use the ip for dns and hosts
+		char ipbuf2[16];
 		p->safePrintf("<td>%s:%" PRIu32"</td>",
-			      iptoa(it->getIp()),(uint32_t)it->getPort());
+			      iptoa(it->getIp(),ipbuf2),(uint32_t)it->getPort());
 
 		const char *cf1 = "";
 		const char *cf2 = "";

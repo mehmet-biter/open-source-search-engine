@@ -151,8 +151,9 @@ bool MsgC::getIp(const char *hostname, int32_t hostnameLen, int32_t *ip, void *s
 	if ( g_conf.m_logDebugDns ) {
 		int32_t fip = 0;
 		if ( host ) fip = host->m_ip;
+		char ipbuf[16];
 		log(LOG_DEBUG,"dns: msgc: multicasting for ip for %s to %s.",
-		    hostname,iptoa(fip));
+		    hostname, iptoa(fip,ipbuf));
 	}
 
 	// it should have set g_errno to EDEADHOST if this happens
@@ -188,9 +189,10 @@ void gotReplyWrapper ( void *state , void *state2 ) {
 	int32_t ip = THIS->gotReply();
 	// debug
 	if ( g_conf.m_logDebugDns ) {
+		char ipbuf[16];
 		logf(LOG_DEBUG,"dns: msgc: got reply of %s for %s. "
 		     "state=0x%" PTRFMT" mcast=0x%" PTRFMT"",
-		     iptoa(*THIS->m_ipPtr),THIS->m_u.getUrl(),(PTRTYPE)state2,
+		     iptoa(*THIS->m_ipPtr,ipbuf), THIS->m_u.getUrl(), (PTRTYPE)state2,
 		     (PTRTYPE)&THIS->m_mcast);
 	}
 	THIS->m_callback(state2,ip);
@@ -217,8 +219,9 @@ int32_t MsgC::gotReply(){
 		//int32_t crc = *(int32_t *)(reply + 8);
 	}
 	// debug
+	char ipbuf[16];
 	log(LOG_DEBUG,"dns: msgc: got reply of %s for %s.",
-	    iptoa(*m_ipPtr),m_u.getUrl());
+	    iptoa(*m_ipPtr,ipbuf), m_u.getUrl());
 	// test checkusm
 	if ( *m_ipPtr != ip2 ) {
 		log("dns: ip checksum is incorrect. %" PRIu32" != %" PRIu32". "

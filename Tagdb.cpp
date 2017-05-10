@@ -42,7 +42,8 @@ bool Tag::printToBuf ( SafeBuf *sb ) {
 	sb->safePrintf("%s(%" PRIu32"),",tmp,m_timestamp);
 
 	// print the ip added from
-	sb->safePrintf("%s,",iptoa(m_ip));
+	char ipbuf[16];
+	sb->safePrintf("%s,",iptoa(m_ip,ipbuf));
 
 	sb->safePrintf("\"");
 	if ( ! printDataToBuf ( sb ) ) {
@@ -330,7 +331,8 @@ bool Tag::printToBufAsXml ( SafeBuf *sb ) {
 	sb->safePrintf("</user>\n\t\t\t<timestamp>%" PRId32"</timestamp>\n", m_timestamp);
 
 	// print the ip added from
-	sb->safePrintf("\t\t\t<ip>%s</ip>\n",iptoa(m_ip));
+	char ipbuf[16];
+	sb->safePrintf("\t\t\t<ip>%s</ip>\n",iptoa(m_ip,ipbuf));
 
 	// the "score"
 	sb->safePrintf("\t\t\t<score>");
@@ -367,7 +369,8 @@ bool Tag::printToBufAsHtml ( SafeBuf *sb , const char *prefix ) {
 	sb->safePrintf("%s(%" PRIu32")",tmp,m_timestamp);
 
 	// print the ip added from
-	sb->safePrintf(" ip=%s",iptoa(m_ip));
+	char ipbuf[16];
+	sb->safePrintf(" ip=%s",iptoa(m_ip,ipbuf));
 	sb->safePrintf("</td></tr>\n");
 
 	return true;
@@ -2093,9 +2096,10 @@ bool sendReply2 ( void *state ) {
 		int32_t timestamp = ctag->m_timestamp;
 		int32_t  ip  = 0;
 		const char *ips = "&nbsp;";
+		char ipbuf[16];
 		if ( ctag->m_ip ) {
 			ip=ctag->m_ip;
-			ips=iptoa(ctag->m_ip);
+			ips=iptoa(ctag->m_ip,ipbuf);
 		}
 
 		// convert timestamp to string

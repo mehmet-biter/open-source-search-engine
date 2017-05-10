@@ -1000,7 +1000,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	if ( ! m_ipValid ) { g_process.shutdownAbort(true); }
 	// copy it to save it
 	char ipbuf[64];
-	int32_t iplen = sprintf(ipbuf,"%s",iptoa(m_ip));
+	int32_t iplen = strlen(iptoa(m_ip,ipbuf));
 	hi.m_prefix = "ip";
 	if ( ! hashSingleTerm(ipbuf,iplen,&hi) ) return false;
 

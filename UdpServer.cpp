@@ -432,9 +432,10 @@ bool UdpServer::sendRequest(char *msg,
 		if(lastLogTime+10 < now) {
 			lastLogTime = now;
 			for(int i = 0; i < m_maxSlots; i++) {
+				char ipbuf[16];
 				log(LOG_WARN,"udp: slot[%4d]: peer=%s:%d type=%02x %s",
 				    i,
-				    iptoa(m_slots[i].getIp()),
+				    iptoa(m_slots[i].getIp(),ipbuf),
 				    m_slots[i].getPort(),
 				    m_slots[i].getMsgType(),
 				    m_slots[i].isIncoming()?"in":"out");
@@ -443,9 +444,10 @@ bool UdpServer::sendRequest(char *msg,
 		return false;
 	}
 
+	char ipbuf[16];
 	logDebug(g_conf.m_logDebugUdp, "udp: sendrequest: ip2=%s port=%" PRId32" msgType=0x%02x msgSize=%" PRId32" "
 			 "transId=%" PRId32" (niceness=%" PRId32") slot=%p.",
-	         iptoa(ip2),(int32_t)port, (unsigned char)msgType, (int32_t)msgSize,
+	         iptoa(ip2,ipbuf),(int32_t)port, (unsigned char)msgType, (int32_t)msgSize,
 	         (int32_t)transId, (int32_t)niceness , slot );
 	
 	// . get time 
@@ -983,7 +985,8 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 		s_count++;
 		if ( getTime() - s_lastTime > 5 ) {
 			s_lastTime = getTime();
-			log(LOG_WARN, "udp: Received unauthorized udp packet from %s. Count=%" PRId64".",iptoa(ip),s_count);
+			char ipbuf[16];
+			log(LOG_WARN, "udp: Received unauthorized udp packet from %s. Count=%" PRId64".",iptoa(ip,ipbuf),s_count);
 		}
 		// make it return 1 cuz we did read something
 		status = true;
@@ -1055,7 +1058,9 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 		//no slot
 		// condition #3
 		if ( wasAck ) {
-			if ( g_conf.m_logDebugUdp )
+			if ( g_conf.m_logDebugUdp ) {
+				char ipbuf1[16];
+				char ipbuf2[16];
 				log(LOG_DEBUG,
 				    "udp: Read stray ACK, transId=%" PRId32", "
 				    "ip2=%s "
@@ -1064,12 +1069,13 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 				    "dst=%s:%hu "
 				    "k.n1=%" PRIu32" n0=%" PRIu64".",
 				    transId,
-				    iptoa(ip2),
+				    iptoa(ip2,ipbuf1),
 				    (int32_t)ntohs(from.sin_port) ,
 				    dgramNum,
-				    iptoa(ip)+6,
+				    iptoa(ip,ipbuf2),
 				    (uint16_t)ntohs(from.sin_port),
 				    key.n1,key.n0);
+			}
 			// tmp debug
 			//g_process.shutdownAbort(true);
 			//return 1;
@@ -1102,14 +1108,16 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 			//   the same request, take the first reply it gets
 			//   and dump the rest, this is probably why we get 
 			//   this often
-			if ( g_conf.m_logDebugUdp )
+			if ( g_conf.m_logDebugUdp ) {
+				char ipbuf[16];
 				log(LOG_DEBUG,
 				    "udp: got dgram we acked, but we closed, "
 				    "transId=%" PRId32" dgram=%" PRId32" dgramSize=%i "
 				    "fromIp=%s fromPort=%i msgType=0x%02x",
 				    transId, dgramNum , readSize,
-				    iptoa((int32_t)from.sin_addr.s_addr) , 
+				    iptoa((int32_t)from.sin_addr.s_addr,ipbuf) , 
 				    ntohs(from.sin_port), (int)msgType);
+			}
 		cancelTrans:
 			// temporary slot for sending back bogus ack
 			UdpSlot tmp;
@@ -1279,9 +1287,11 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 	//   Host::m_inProgress1 to be unset instead of m_inProgress2 and
 	//   we were never able to regain a dead host on eth1 in PingServer.cpp
 	if ( ip != slot->getIp() ) {
-		if ( g_conf.m_logDebugUdp )
+		if ( g_conf.m_logDebugUdp ) {
+			char ipbuf[16];
 			log(LOG_DEBUG,"udp: changing ip to %s for acking",
-			    iptoa(ip));
+			    iptoa(ip,ipbuf));
+		}
 		slot->m_ip = ip;
 	}
 
@@ -1911,6 +1921,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		g_errno = 0;
 		// debug msg
 		if ( g_conf.m_logDebugUdp ) {
+			char ipbuf[16];
 			log(LOG_DEBUG,
 			    "udp: resend TRY tid=%" PRId32" "
 			    "dst=%s:%hu "
@@ -1925,7 +1936,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    "sentBitsOn=%" PRId32" "
 			    "readAckBitsOn=%" PRId32" ",
 			    slot->getTransId(),
-			    iptoa(slot->getIp()),
+			    iptoa(slot->getIp(),ipbuf),
 			    (uint16_t) slot->getPort(),
 			    (int32_t) slot->isDoneReading(),
 			    slot->getDatagramsToSend(),
@@ -2499,8 +2510,9 @@ void UdpServer::freeUdpSlot(UdpSlot *slot ) {
 		g_process.shutdownAbort(true);
 	}
 
+	char ipbuf[16];
 	logDebug(g_conf.m_logDebugUdp, "udp: freeUdpSlot: Freeing slot tid=%" PRId32" dst=%s:%" PRIu32" slot=%p",
-	         slot->getTransId(), iptoa(slot->getIp()), (uint32_t)slot->getPort(), slot);
+	         slot->getTransId(), iptoa(slot->getIp(),ipbuf), (uint32_t)slot->getPort(), slot);
 
 	// remove the bucket
 	m_ptrs [ i ] = NULL;
@@ -2571,8 +2583,9 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 			g_process.shutdownAbort(true);
 		}
 
+		char ipbuf[16];
 		logDebug(g_conf.m_logDebugUdp, "udp: replaceHost: Rehashing slot tid=%" PRId32" dst=%s:%" PRIu32" slot=%p",
-		         slot->getTransId(), iptoa(slot->getIp()), (uint32_t)slot->getPort(), slot);
+		         slot->getTransId(), iptoa(slot->getIp(),ipbuf), (uint32_t)slot->getPort(), slot);
 
 		// remove the bucket
 		m_ptrs [ i ] = NULL;

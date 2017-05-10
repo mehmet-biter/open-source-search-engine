@@ -257,7 +257,7 @@ skipReplaceHost:
 		// similar to that of the requester
 		int32_t eip = g_hostdb.getBestIp ( h );
 		char ipbuf3[64];
-		strcpy(ipbuf3,iptoa(eip));
+		iptoa(eip,ipbuf3);
 
 		// split time, don't divide by zero!
 		int32_t splitTime = 0;
@@ -363,10 +363,11 @@ skipReplaceHost:
 			sb.safePrintf("\t\t<mirror>%" PRId32"</mirror>\n",
 				      h->m_stripe);
 
+			char ipbuf[16];
 			sb.safePrintf("\t\t<ip1>%s</ip1>\n",
-				      iptoa(h->m_ip));
+				      iptoa(h->m_ip,ipbuf));
 			sb.safePrintf("\t\t<ip2>%s</ip2>\n",
-				      iptoa(h->m_ipShotgun));
+				      iptoa(h->m_ipShotgun,ipbuf));
 
 			sb.safePrintf("\t\t<httpPort>%" PRId32"</httpPort>\n",
 				      (int32_t)h->getInternalHttpPort());
@@ -433,9 +434,9 @@ skipReplaceHost:
 				      (int32_t)h->m_shardNum);
 			sb.safePrintf("\t\t\t\t\"mirror\":%" PRId32",\n", h->m_stripe);
 
-			sb.safePrintf("\t\t\t\t\"ip1\":\"%s\",\n",iptoa(h->m_ip));
-			sb.safePrintf("\t\t\t\t\"ip2\":\"%s\",\n",
-				      iptoa(h->m_ipShotgun));
+			char ipbuf[16];
+			sb.safePrintf("\t\t\t\t\"ip1\":\"%s\",\n",iptoa(h->m_ip,ipbuf));
+			sb.safePrintf("\t\t\t\t\"ip2\":\"%s\",\n",iptoa(h->m_ipShotgun,ipbuf));
 
 			sb.safePrintf("\t\t\t\t\"httpPort\":%" PRId32",\n",
 				      (int32_t)h->getInternalHttpPort());
@@ -610,8 +611,8 @@ skipReplaceHost:
 
 			char ipbuf1[64];
 			char ipbuf2[64];
-			strcpy(ipbuf1,iptoa(h->m_ip));
-			strcpy(ipbuf2,iptoa(h->m_ipShotgun));
+			iptoa(h->m_ip,ipbuf1);
+			iptoa(h->m_ipShotgun,ipbuf2);
 
 			// print it
 			sb.safePrintf("<tr bgcolor=#%s>"

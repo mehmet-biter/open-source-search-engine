@@ -325,7 +325,8 @@ bool Conf::isCollAdmin2 ( TcpSocket *sock, HttpRequest *hr, CollectionRec *cr ) 
 		return true;
 
 	// a good ip?
-	const char *p   = iptoa(sock->m_ip);
+	char ipbuf[16];
+	const char *p   = iptoa(sock->m_ip,ipbuf);
 	char *buf = cr->m_collectionIps.getBufStart();
 	if ( isInWhiteSpaceList ( p , buf ) ) return true;
 
@@ -392,7 +393,8 @@ bool Conf::hasMasterPwd ( HttpRequest *hr ) {
 bool Conf::isMasterIp ( uint32_t ip ) {
 	if ( m_connectIps.length() <= 0 ) return false;
 
-	char *p = iptoa(ip);
+	char ipbuf[16];
+	const char *p = iptoa(ip,ipbuf);
 	char *buf = m_connectIps.getBufStart();
 
 	return isInWhiteSpaceList ( p , buf );

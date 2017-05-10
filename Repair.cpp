@@ -1371,7 +1371,7 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 	if ( mh ) {
 		minHostId = mh->m_hostId;
 		int32_t minHostIp = g_hostdb.getBestIp ( mh );
-		strcpy(minIpBuf,iptoa(minHostIp));
+		iptoa(minHostIp,minIpBuf);
 		minPort = mh->getInternalHttpPort();
 	}
 

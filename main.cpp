@@ -1477,8 +1477,10 @@ int main2 ( int argc , char *argv[] ) {
 
 	// from Hostdb.cpp
 	ips = getLocalIps();
-	for ( ; ips && *ips ; ips++ )
-		log("host: Detected local ip %s",iptoa(*ips));
+	for ( ; ips && *ips ; ips++ ) {
+		char ipbuf[16];
+		log("host: Detected local ip %s",iptoa(*ips,ipbuf));
+	}
 
 	// show it
 	log("host: Running as host id #%" PRId32,g_hostdb.m_hostId );
@@ -1954,7 +1956,8 @@ static int install_file(const char *file)
 			continue; //skip ourselves
 		char full_dst_file[1024];
 		sprintf(full_dst_file, "%s%s",h2->m_dir,file);
-		install_file(iptoa(h2->m_ip),
+		char ipbuf[16];
+		install_file(iptoa(h2->m_ip,ipbuf),
 		             file,
 	                     full_dst_file);
 	}
@@ -1982,6 +1985,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 			// . assume conf file name gbHID.conf
 			// . assume working dir ends in a '/'
 			//to test add: ulimit -t 10; to the ssh cmd
+			char ipbuf[16];
 			sprintf(tmp,
 				"ssh %s \"cd %s ; "
 				"export MALLOC_CHECK_=0;"
@@ -1998,7 +2002,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 				"ADDARGS='-r' ; "
 				"} " 
  				"done >& /dev/null & \" & ",
-				iptoa(h2->m_ip),
+				iptoa(h2->m_ip,ipbuf),
 				h2->m_dir      ,
 				h2->m_hostId   );
 			// log it
@@ -2029,6 +2033,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 	// go through each host
 	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		Host *h2 = g_hostdb.getHost(i);
+		char ipbuf[16];
 
 		const char *amp = " ";
 
@@ -2052,7 +2057,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 				"mkdir %s ; "
 				"cp -ai *.dat* *.map gb.conf "
 				"hosts.conf %s\" &",
-				iptoa(h2->m_ip), h2->m_dir , dir , dir );
+				iptoa(h2->m_ip,ipbuf), h2->m_dir , dir , dir );
 			// log it
 			log ( "%s", tmp);
 			// execute it
@@ -2066,7 +2071,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 				"mkdir %s ; "
 				"mv -i *.dat* *.map "
 				"%s\" &",
-				iptoa(h2->m_ip), h2->m_dir , dir , dir );
+				iptoa(h2->m_ip,ipbuf), h2->m_dir , dir , dir );
 			// log it
 			log ( "%s", tmp);
 			// execute it
@@ -2079,7 +2084,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 				"ssh %s \"cd %s ; cd %s ; "
 				"mv -i *.dat* *.map gb.conf "
 				"hosts.conf %s\" &",
-				iptoa(h2->m_ip), h2->m_dir , dir , h2->m_dir );
+				iptoa(h2->m_ip,ipbuf), h2->m_dir , dir , h2->m_dir );
 			// log it
 			log ( "%s", tmp);
 			// execute it
@@ -2097,7 +2102,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 			fileListBuf.safePrintf(" %shosts.conf",srcDir);
 			fileListBuf.safePrintf(" %sgb.conf",srcDir);
 
-			char *ipStr = iptoa(h2->m_ip);
+			iptoa(h2->m_ip,ipbuf);
 
 			SafeBuf tmpBuf;
 			tmpBuf.safePrintf(
@@ -2105,11 +2110,11 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 					  // not then make it
 					  "ssh %s 'mkdir %s' ; "
 					  "scp -p -r %s %s:%s"
-					  , ipStr
+					  , ipbuf
 					  , h2->m_dir
 
 					  , fileListBuf.getBufStart()
-					  , iptoa(h2->m_ip)
+					  , ipbuf
 					  , h2->m_dir
 					  );
 			char *tmp = tmpBuf.getBufStart();
@@ -2128,7 +2133,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 				"%s:%s/gb.installed%s",
 				dir,
 				target,
-				iptoa(h2->m_ip),
+				iptoa(h2->m_ip,ipbuf),
 				h2->m_dir,
 				amp);
 			log(LOG_INIT,"admin: %s", tmp);
@@ -2140,7 +2145,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 				"%sgb.new "
 				"%s:%s/tmpgb.installed &",
 				dir,
-				iptoa(h2->m_ip),
+				iptoa(h2->m_ip,ipbuf),
 				h2->m_dir);
 			log(LOG_INIT,"admin: %s", tmp);
 			system ( tmp );
@@ -2151,7 +2156,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 				dir ,
 				dir ,
 				//h->m_hostId ,
-				iptoa(h2->m_ip),
+				iptoa(h2->m_ip,ipbuf),
 				h2->m_dir,
 				//h2->m_hostId);
 				amp);
@@ -2169,7 +2174,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 				"mv -f tmpgb.installed tmpgb ; "
 				"%s/tmpgb tmpstarthost "
 				"%" PRId32" >& ./tmplog%03" PRId32" &\" &",
-				iptoa(h2->m_ip),
+				iptoa(h2->m_ip,ipbuf),
 				h2->m_dir      ,
 				h2->m_dir      ,
 				h2->m_hostId   ,
@@ -2180,7 +2185,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 			system ( tmp );
 		}
 		else if ( installFlag == ifk_start ) {
-			sprintf( tmp, "ssh %s '%sgbstart.sh %" PRId32"' %s", iptoa(h2->m_ip), h2->m_dir, h2->m_hostId, amp );
+			sprintf( tmp, "ssh %s '%sgbstart.sh %" PRId32"' %s", iptoa(h2->m_ip,ipbuf), h2->m_dir, h2->m_hostId, amp );
 
 			// log it
 			fprintf(stdout,"admin: %s\n", tmp);
@@ -2192,7 +2197,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 		else if ( installFlag == ifk_dsh ) {
 			sprintf(tmp,
 				"ssh %s 'cd %s ; %s' %s",
-				iptoa(h2->m_ip),
+				iptoa(h2->m_ip,ipbuf),
 				h2->m_dir,
 				cmd ,
 				amp );
@@ -2203,7 +2208,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 		else if ( installFlag == ifk_dsh2 ) {
 			sprintf(tmp,
 				"ssh %s 'cd %s ; %s'",
-				iptoa(h2->m_ip),
+				iptoa(h2->m_ip,ipbuf),
 				h2->m_dir,
 				cmd );
 			log(LOG_INIT,"admin: %s", tmp);
@@ -2217,7 +2222,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 				dir ,
 				dir ,
 				dir ,
-				iptoa(h2->m_ipShotgun),
+				iptoa(h2->m_ipShotgun,ipbuf),
 				h2->m_dir);
 			log(LOG_INIT,"admin: %s", tmp);
 			system ( tmp );
@@ -2385,7 +2390,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 
 			// get ip
 			char ipbuf [ 32 ];
-			strcpy ( ipbuf , iptoa(u->getIp() ) );
+			iptoa(u->getIp(),ipbuf);
 			// pad with spaces
 			int32_t blen = strlen(ipbuf);
 			while ( blen < 15 ) ipbuf[blen++]=' ';
@@ -2414,6 +2419,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 						(int32_t)xd->m_siteNumInlinks);
 					const char *ru = xd->ptr_redirUrl;
 					if ( ! ru ) ru = "";
+					char ipbuf2[16];
 					sprintf(ttt,
 						"n1=%08" PRIx32" n0=%016" PRIx64" docId=%012" PRId64" "
 						//hh=%07" PRIx32" ch=%08" PRIx32" "
@@ -2451,7 +2457,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 						xd->m_useTimeAxis,
 						//nc,
 						ppp, 
-						iptoa(xd->m_ip),//ipbuf , 
+						iptoa(xd->m_ip,ipbuf2),
 						info->getNumGoodInlinks(),
 						foo,
 						(int32_t)xd->m_version,
@@ -2492,6 +2498,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 			const char *ru = xd->ptr_redirUrl;
 			if ( ! ru ) ru = "";
 
+			char ipbuf2[16];
 			fprintf(stdout,
 				"n1=%08" PRIx32" n0=%016" PRIx64" docId=%012" PRId64" "
 				"size=%07" PRId32" "
@@ -2523,7 +2530,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 				(int32_t)xd->m_siteNumInlinks,//tr.getDocQuality(),
 				xd->m_useTimeAxis,
 				ppp,
-				iptoa(xd->m_ip),//ipbuf , 
+				iptoa(xd->m_ip,ipbuf2),
 				info->getNumGoodInlinks(),
 				foo,
 				(int32_t)xd->m_version,
@@ -2573,7 +2580,8 @@ void dumpWaitingTree (const char *coll ) {
 		// or in
 		spiderTimeMS |= (key->n0 >> 32);
 		// get the rest of the data
-		fprintf(stdout,"time=%" PRIu64" firstip=%s\n", spiderTimeMS, iptoa(firstIp));
+		char ipbuf[16];
+		fprintf(stdout,"time=%" PRIu64" firstip=%s\n", spiderTimeMS, iptoa(firstIp,ipbuf));
 	}
 }
 
@@ -3040,8 +3048,9 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 			if ( g_ut.m_flags[i] == 0 ) continue;
 			UStat *us = (UStat *)g_ut.getValueFromSlot(i);
 			int32_t firstIp = *(int32_t *)g_ut.getKeyFromSlot(i);
+			char ipbuf[16];
 			fprintf(stdout,"%s ",
-				iptoa(firstIp));
+				iptoa(firstIp,ipbuf));
 			fprintf(stdout,"requests=%" PRId32" ",
 				us->m_numRequests);
 			fprintf(stdout,"wwwroots=%" PRId32" ",
@@ -3100,13 +3109,12 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 		// log the count
 		int32_t useip = ip;
 		if ( ip == 1 ) useip = 0;
-		fprintf(stderr,"%s has %" PRId32" domains.\n",iptoa(useip),domCount);
+		char ipbuf[16];
+		fprintf(stderr,"%s has %" PRId32" domains.\n",iptoa(useip,ipbuf),domCount);
 		// . how many domains on that ip, print em out
 		// . use j for the inner loop
 		int32_t j = i;
-		// buf for printing ip
-		char ipbuf[64];
-		sprintf (ipbuf,"%s",iptoa(useip) );
+		iptoa(useip,ipbuf);
 	jloop:
 		int32_t ip2 = *(int32_t *)ipDomTable.getKeyFromSlot ( j ) ;
 		if ( ip2 == ip ) {
@@ -4048,6 +4056,7 @@ static void dumpLinkdb(const char *coll,
 			if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
 			uint64_t docId = (uint64_t)Linkdb::getLinkerDocId_uk(&k);
 			int32_t shardNum = getShardNum(RDB_LINKDB,&k);
+			char ipbuf[16];
 			printf("k=%s "
 			       "linkeesitehash32=0x%08" PRIx32" "
 			       "linkeeurlhash=0x%012" PRIx64" "
@@ -4067,7 +4076,7 @@ static void dumpLinkdb(const char *coll,
 			       (int32_t)Linkdb::isLinkSpam_uk(&k),
 			       (int32_t)Linkdb::getLinkerSiteRank_uk(&k),
 			       //hc,//Linkdb::getLinkerHopCount_uk(&k),
-			       iptoa((int32_t)Linkdb::getLinkerIp_uk(&k)),
+			       iptoa((int32_t)Linkdb::getLinkerIp_uk(&k),ipbuf),
 			       docId,
 			       (uint32_t)Linkdb::getDiscoveryDate_uk(&k),
 			       (uint32_t)Linkdb::getLostDate_uk(&k),
@@ -4593,7 +4602,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 			for( int32_t j = 0; j < tmpdomi->numIp; j++ ) {
 				if( !tmpdomi->ip_list[j] ) continue;
 				tmpipi = (struct ip_info *)tmpdomi->ip_list[j];
-				strcpy ( buf , iptoa( tmpipi->ip ) );
+				iptoa( tmpipi->ip,buf);
 				fprintf(fhndl,"\t\t<ip>%s</ip>\n",buf);
 			}
 			fprintf(fhndl,
@@ -4604,7 +4613,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 		for( int32_t i = 0; i < countIp; i++ ) {
 			if( !ip_table[i] ) continue;
 			tmpipi = (struct ip_info *)ip_table[i];
-			strcpy ( buf , iptoa( tmpipi->ip ) );
+			iptoa( tmpipi->ip,buf);
 			fprintf(fhndl,
 				"<rec2>\n\t<ip>%s</ip>\n"
 				"\t<pages>%" PRId32"</pages>\n"
@@ -4741,7 +4750,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 				 ((tmpdomi->pages*total)/countDocs) );
 			for( int32_t j = 0; j < tmpdomi->numIp; j++ ) {
 				tmpipi = (struct ip_info *)tmpdomi->ip_list[j];
-				strcpy ( buf , iptoa(tmpipi->ip) );
+				iptoa(tmpipi->ip,buf);
 				fprintf( fhndl, "<a href=\"%s%s\""
 					 "target=\"_blank\">%s</a>\n", 
 					 link_ip, buf, buf );
@@ -4774,7 +4783,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 			char buf[128];
 			if( !ip_table[i] ) continue;
 			tmpipi = (struct ip_info *)ip_table[i];
-			strcpy ( buf , iptoa(tmpipi->ip) );
+			iptoa(tmpipi->ip,buf);
 			if( i%2 ) color = clr2;
 			else color = clr1;
 			int32_t linked = 0;

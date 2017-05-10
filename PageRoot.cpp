@@ -1467,14 +1467,16 @@ static void doneInjectingWrapper3 ( void *st ) {
 			pm = "<font color=#ff0000>"
 				"Sorry, this feature is temporarily disabled. "
 				"Please try again later.</font>";
-			if ( url )
+			if ( url ) {
+				char ipbuf[16];
 				log("addurls: failed for user at %s: "
 				    "add url is disabled. "
 				    "Enable add url on the "
 				    "Master Controls page and "
 				    "on the Spider Controls page for "
 				    "this collection.", 
-				    iptoa(sock->m_ip));
+				    iptoa(sock->m_ip,ipbuf));
+			}
 
 			sb.safePrintf("%s",pm);
 			//rb.safePrintf("Sorry, this feature is temporarily "

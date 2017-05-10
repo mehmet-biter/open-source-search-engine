@@ -415,7 +415,8 @@ static bool sendPage(State11 *st) {
 		sc->m_waitingTree.getNumUsedNodes(),
 		sc->getWaitingTableCount());
 
-	sb.safePrintf("(spiderdb scanning ip %s)", iptoa(sc->getScanningIp()));
+	char ipbuf[16];
+	sb.safePrintf("(spiderdb scanning ip %s)", iptoa(sc->getScanningIp(),ipbuf));
 
 	sb.safePrintf("</td></tr>\n");
 	sb.safePrintf("<tr bgcolor=#%s>",DARK_BLUE);
@@ -449,7 +450,7 @@ static bool sendPage(State11 *st) {
 				LIGHT_BLUE,
 				(int64_t)spiderTimeMS,
 				note,
-				iptoa(firstIp));
+				iptoa(firstIp,ipbuf));
 			// stop after 20
 			if (++count == 20) break;
 		}

@@ -244,8 +244,9 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 			rdb = getRdbFromId(rdbId);
 
 			if (!rdb) {
+				char ipbuf[16];
 				log(LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized from hostip=%s. dropping WHOLE request",
-				    (int32_t)rdbId, slot ? iptoa(slot->getIp()) : "unknown");
+				    (int32_t)rdbId, slot ? iptoa(slot->getIp(),ipbuf) : "unknown");
 				g_errno = ETRYAGAIN;
 				return false;
 			}

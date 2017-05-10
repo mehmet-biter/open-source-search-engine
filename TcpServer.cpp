@@ -466,7 +466,8 @@ void gotTcpServerIpWrapper ( void *state , int32_t ip ) {
 // . sets g_errno on error
 bool TcpServer::gotTcpServerIp ( TcpState *tst , int32_t ip ) {
 	// debug
-	log( LOG_DEBUG, "tcp: Got ip of %s for %s err=%s.", iptoa( ip ), tst->m_hostname, mstrerror( g_errno ) );
+	char ipbuf[16];
+	log( LOG_DEBUG, "tcp: Got ip of %s for %s err=%s.", iptoa(ip,ipbuf), tst->m_hostname, mstrerror( g_errno ) );
 
 	// set g_errno if unable to get ip for this hostname
 	if ( ip == 0 ) {
@@ -515,7 +516,8 @@ bool TcpServer::sendMsg( const char *hostname, int32_t hostnameLen, int32_t ip, 
 			 void ( *callback )( void *state, TcpSocket *s ), int32_t timeout,
 			 int32_t maxTextDocLen, int32_t maxOtherDocLen, bool useHttpTunnel ) {
 	// debug
-	log(LOG_DEBUG,"tcp: Getting doc for ip=%s.", iptoa(ip));
+	char ipbuf[16];
+	log(LOG_DEBUG,"tcp: Getting doc for ip=%s.", iptoa(ip,ipbuf));
 
 	// . get an unused socket that's pre-connected to this ip/port
 	// . returns NULL if it can't
@@ -1026,9 +1028,10 @@ bool TcpServer::closeLeastUsed ( int32_t maxIdleTime ) {
 			// keep chugging if socket is <= the max
 			if ( nowms - s->m_lastActionTime <= maxms ) continue;
 			// log it
+			char ipbuf[16];
 			log(LOG_INFO,"tcp: closing socket. ip=%s. "
 			    "idle time was %" PRId64" ms > %" PRId64" ms",
-			    iptoa(s->m_ip),nowms-s->m_lastActionTime,maxms);
+			    iptoa(s->m_ip,ipbuf),nowms-s->m_lastActionTime,maxms);
 			// set g_errno? i guess to zero
 			g_errno = 0;
 			// otherwise destroy the socket
@@ -1593,9 +1596,11 @@ void writeSocketWrapper ( int sd , void *state ) {
 	if ( g_errno == ESOCKETCLOSED ) { 
 		// note the ip now too
 		int64_t nowms = gettimeofdayInMilliseconds();
-		if ( g_conf.m_logDebugTcp )
+		if ( g_conf.m_logDebugTcp ) {
+			char ipbuf[16];
 		     log(LOG_INFO,"tcp: sock closed. ip=%s. idle for %" PRId64" ms.",
-			 iptoa(s->m_ip),nowms-s->m_lastActionTime);
+			 iptoa(s->m_ip,ipbuf),nowms-s->m_lastActionTime);
+		}
 		// . some http servers close socket as end of transmission
 		// . so it's not really an g_errno
 		if ( ! s->m_streamingMode ) 
@@ -1819,9 +1824,11 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 		return 0; 
 	}
 	// debug msg
-	if ( g_conf.m_logDebugTcp )
+	if ( g_conf.m_logDebugTcp ) {
+		char ipbuf[16];
 		log("........... TcpServer wrote %i bytes on %i (%s:%u)",
-		    n, s->m_sd, iptoa(s->m_ip), (unsigned)(uint16_t)s->m_port);
+		    n, s->m_sd, iptoa(s->m_ip,ipbuf), (unsigned)(uint16_t)s->m_port);
+	}
 
 	// if we did not write all the bytes we wanted we have to register
 	// a write callback
@@ -1937,16 +1944,20 @@ int32_t TcpServer::connectSocket ( TcpSocket *s ) {
 	// our ip's are always in network order, but ports are in host order
 	to.sin_addr.s_addr =  s->m_ip;
 	to.sin_port        = htons ((uint16_t)( s->m_port));
-	if(g_conf.m_logDebugTcp)
+	if(g_conf.m_logDebugTcp) {
+		char ipbuf[16];
 		log("........... TcpServer connecting sd=%i to %s:%u",
-		    s->m_sd, iptoa(s->m_ip), (unsigned)(uint16_t)s->m_port);
+		    s->m_sd, iptoa(s->m_ip,ipbuf), (unsigned)(uint16_t)s->m_port);
+	}
 
 	// connect to the socket. This should be non-blocking!
 	if(::connect ( s->m_sd, (sockaddr *)(void*)&to, sizeof(to)) == 0) {
 		//immediate connect. Rare on non-blocking sockets, but not impossible
-		if(g_conf.m_logDebugTcp)
+		if(g_conf.m_logDebugTcp) {
+			char ipbuf[16];
 			log("........... TcpServer connected sd=%i to %s:%u",
-			    s->m_sd, iptoa(s->m_ip), (unsigned)(uint16_t)s->m_port );
+			    s->m_sd, iptoa(s->m_ip,ipbuf), (unsigned)(uint16_t)s->m_port );
+		}
 
 		// don't listen for writing any more
 		if ( s->m_writeRegistered ) {
@@ -2010,9 +2021,11 @@ int32_t TcpServer::connectSocket ( TcpSocket *s ) {
 		return 0;
 	}
 	// return -1 on real error
-	if ( g_conf.m_logDebugTcp )
+	if ( g_conf.m_logDebugTcp ) {
+		char ipbuf[16];
 		log(LOG_INFO,"tcp: Failed to connect socket: %s, %s:%u",
-		    mstrerror(g_errno), iptoa(s->m_ip), (unsigned)(uint16_t)s->m_port);
+		    mstrerror(g_errno), iptoa(s->m_ip,ipbuf), (unsigned)(uint16_t)s->m_port);
+	}
 	return -1;
 }
 
@@ -2069,9 +2082,11 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 	// the socket descriptor
 	int sd = s->m_sd;
 	// debug msg
-	if ( g_conf.m_logDebugTcp )
+	if ( g_conf.m_logDebugTcp ) {
+		char ipbuf[16];
 		logf(LOG_DEBUG,"tcp: ...... TcpServer closing sock %i (%s:%u)",
-		     s->m_sd, iptoa(s->m_ip), (unsigned)(uint16_t)s->m_port);
+		     s->m_sd, iptoa(s->m_ip,ipbuf), (unsigned)(uint16_t)s->m_port);
+	}
 	// make it blocking for the close for testing
 	//int flags = fcntl ( sd , F_GETFL );
 	//flags &= ~O_NONBLOCK;
@@ -2331,8 +2346,9 @@ void TcpServer::readTimeoutPoll ( ) {
 			// timeout if too low
 			if ( Bps < 20.0 ) {
 				timeOut = true;
-				log("tcp: Read rate too low. Timing out. "
-				    "Bps=%" PRId32" ip=%s", (int32_t)Bps,iptoa(s->m_ip));
+				char ipbuf[16];
+				log("tcp: Read rate too low. Timing out. Bps=%" PRId32" ip=%s",
+				    (int32_t)Bps, iptoa(s->m_ip,ipbuf));
 			}
 		}				
 
@@ -2683,9 +2699,11 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 
 	// if the connection happened return r, should be 1
 	if ( r > 0 ) {
-		if ( g_conf.m_logDebugTcp )
+		if ( g_conf.m_logDebugTcp ) {
+			char ipbuf[16];
 			log("tcp: ssl handshake done. entering writing mode sd=%i (%s:%u)",
-			s->m_sd, iptoa(s->m_ip), (unsigned)(uint16_t)s->m_port);
+			    s->m_sd, iptoa(s->m_ip,ipbuf), (unsigned)(uint16_t)s->m_port);
+		}
 		// ok, it completed, go into writing mode
 		s->m_sockState = ST_WRITING;
 		return r;
@@ -2696,8 +2714,9 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 	const char *sslMsg = getSSLError(s->m_ssl, r);
 
 	if ( sslError != SSL_ERROR_WANT_READ && sslError != SSL_ERROR_WANT_WRITE && sslError != SSL_ERROR_NONE ) {
+		char ipbuf[16];
 		log( "tcp: ssl: Error on Connect (%" PRId32 "). r=%i ip=%s msg=%s", (int32_t)sslError, r,
-			 iptoa( s->m_ip ), sslMsg );
+			 iptoa(s->m_ip,ipbuf), sslMsg );
 
 		g_errno = ESSLERROR;
 		// note in log
@@ -2714,8 +2733,9 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 	}
 
 	if ( g_conf.m_logDebugTcp ) {
-		log( "tcp: ssl: sslConnect (%" PRId32 "). r=%i ip=%s msg=%s", (int32_t)sslError, r, iptoa( s->m_ip ),
-			 sslMsg );
+		char ipbuf[16];
+		log( "tcp: ssl: sslConnect (%" PRId32 "). r=%i ip=%s msg=%s",
+		     (int32_t)sslError, r, iptoa(s->m_ip,ipbuf), sslMsg);
 	}
 
 	if ( sslError <= 0 ) { g_process.shutdownAbort(true); }

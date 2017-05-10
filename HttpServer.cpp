@@ -323,8 +323,9 @@ bool HttpServer::getDoc ( char   *url      ,
 	callbacks[n] = callback;
 	s_numOutgoingSockets++;
 	// debug
+	char ipbuf[16];
 	log(LOG_DEBUG,"http: Getting doc with ip=%s state=%" PTRFMT" url=%s.",
-	    iptoa(ip),(PTRTYPE)state,url);
+	    iptoa(ip,ipbuf),(PTRTYPE)state,url);
 
 	// . send it away
 	// . callback will be called on completion of transaction
@@ -512,9 +513,10 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 		if ( now - s_last < 5 ) 
 			s_count++;
 		else {
+			char ipbuf[16];
 			log(LOG_WARN, "query: Too many sockets open. Sending 500 "
 			    "http status code to %s. (msgslogged=%" PRId32")",
-			    iptoa(s->m_ip),s_count);
+			    iptoa(s->m_ip,ipbuf),s_count);
 			s_count = 0;
 			s_last = now;
 		}
@@ -536,8 +538,9 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 	// if the HttpRequest was bogus come here
 	if ( ! status ) {
 		// log a bad request
+		char ipbuf[16];
 		log(LOG_INFO, "http: Got bad request from %s: %s",
-		    iptoa(s->m_ip),mstrerror(g_errno));
+		    iptoa(s->m_ip,ipbuf),mstrerror(g_errno));
 		// cancel the g_errno, we'll send a BAD REQUEST reply to them
 		g_errno = 0;
 		// . this returns false if blocked, true otherwise
@@ -627,9 +630,10 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 		// . electric fence (efence) seg faults here on iptoa() for
 		//   some strange reason
 		else if ( g_conf.m_logHttpRequests ) {
+			char ipbuf[16];
 			if(truncatedRequestSize==completeRequestSize)
 				logf (LOG_INFO,"http: request: %s %s %s %s",
-				      iptoa(ip),
+				      iptoa(ip,ipbuf),
 				      // can't use s->m_readBuf[] here because
 				      // might have called TcpServer::sendMsg() which
 				      // might have freed it if doing udp forwarding.
@@ -640,7 +644,7 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 				      g_msg);
 			else
 				logf (LOG_INFO,"http: request: %s First %zd bytes of %zd: %s %s %s",
-				      iptoa(ip),
+				      iptoa(ip,ipbuf),
 				      truncatedRequestSize, completeRequestSize,
 				      // can't use s->m_readBuf[] here because
 				      // might have called TcpServer::sendMsg() which
@@ -2276,8 +2280,9 @@ static void gotSquidProxiedUrlIp ( void *state , int32_t ip );
 bool HttpServer::processSquidProxyRequest ( TcpSocket *sock, HttpRequest *hr) {
 
 	// debug note
+	char ipbuf[16];
 	log("http: got squid proxy request from client at %s",
-	    iptoa(sock->m_ip));
+	    iptoa(sock->m_ip,ipbuf));
 
 	// we need the actual ip of the requested url so we know
 	// which host to send the msg13 request to. that way it can ensure

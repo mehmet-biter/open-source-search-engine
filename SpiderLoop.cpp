@@ -829,7 +829,8 @@ skipDoledbRec:
 		goto skipDoledbRec;
 	}
 
-	logDebug( g_conf.m_logDebugSpider, "spider: %" PRId32" spiders out for %s for %s", ipOut, iptoa( sreq->m_firstIp ), sreq->m_url );
+	char ipbuf[16];
+	logDebug( g_conf.m_logDebugSpider, "spider: %" PRId32" spiders out for %s for %s", ipOut, iptoa(sreq->m_firstIp,ipbuf), sreq->m_url );
 
 	// sometimes we have it locked, but is still in doledb i guess.
 	// seems like we might have give the lock to someone else and
@@ -853,7 +854,7 @@ skipDoledbRec:
 				if (nowGlobal - s_lastTime >= 2) {
 					// why is it not getting unlocked!?!?!
 					log("spider: spider request locked but still in doledb. uh48=%" PRId64" firstip=%s %s",
-					    sreq->getUrlHash48(), iptoa(sreq->m_firstIp), sreq->m_url);
+					    sreq->getUrlHash48(), iptoa(sreq->m_firstIp,ipbuf), sreq->m_url);
 					s_lastTime = nowGlobal;
 				}
 
@@ -1150,15 +1151,17 @@ bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, key96_t *doledbKey, collnum_t c
 	const char *coll = "collnumwasinvalid";
 	if ( cr ) coll = cr->m_coll;
 
-	if ( g_conf.m_logDebugSpider )
+	if ( g_conf.m_logDebugSpider ) {
+		char ipbuf[16];
 		logf(LOG_DEBUG,"spider: spidering firstip9=%s(%" PRIu32") "
 		     "uh48=%" PRIu64" prntdocid=%" PRIu64" k.n1=%" PRIu64" k.n0=%" PRIu64,
-		     iptoa(sreq->m_firstIp),
+		     iptoa(sreq->m_firstIp,ipbuf),
 		     (uint32_t)sreq->m_firstIp,
 		     sreq->getUrlHash48(),
 		     sreq->getParentDocId() ,
 		     sreq->m_key.n1,
 		     sreq->m_key.n0);
+	}
 
 	// this returns false and sets g_errno on error
 	if (!xd->set4(sreq, doledbKey, coll, NULL, MAX_NICENESS)) {

@@ -1903,6 +1903,7 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 
 	int32_t siteRank = ::getSiteRank ( info->m_numGoodInlinks );
 
+	char ipbuf[16];
 	if ( m_printInXml ) {
 
 		m_pbuf->safePrintf("\t<desc>inlinks to %s</desc>\n",ss);
@@ -1942,7 +1943,7 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 				   "\t<numUniqueIpsLinkingToPage>%" PRId32
 				   "</numUniqueIpsLinkingToPage>\n"
 
-				   , iptoa(m_ip)
+				   , iptoa(m_ip,ipbuf)
 				   // the total # of inlinkers. we may not have
 				   // read all of them from disk though.
 				   , m_numDocIds
@@ -2003,7 +2004,7 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 				      ss,
 				      m_url,
 				      buf, //m_lastUpdateTime,
-				      iptoa(m_ip),
+				      iptoa(m_ip,ipbuf),
 				      // the total # of inlinkers. we may not
 				      // have read all of them from disk though
 				      m_numDocIds ,
@@ -2244,7 +2245,7 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 				     "<td># words in link text</td>"
 				     "<td>link text bytes</td>"
 				     "<td>link text</td>",
-				     tt,m_url,iptoa(m_ip));
+				     tt,m_url,iptoa(m_ip,ipbuf));
 		if ( m_mode == MODE_SITELINKINFO )
 			m_pbuf->safePrintf("<td>link url</td>");
 		m_pbuf->safePrintf("<td>neighborhood</td>"
@@ -2345,12 +2346,12 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 			m_pbuf->safePrintf("\t\t<ipAddress>"
 					   "<![CDATA[%s]]>"
 					   "</ipAddress>\n"
-					   ,iptoa(r->m_ip) );
+					   ,iptoa(r->m_ip,ipbuf) );
 
 			m_pbuf->safePrintf("\t\t<firstIpAddress>"
 					   "<![CDATA[%s]]>"
 					   "</firstIpAddress>\n"
-					   ,iptoa(r->m_firstIp) );
+					   ,iptoa(r->m_firstIp,ipbuf) );
 
 			m_pbuf->safePrintf(
 
@@ -2408,12 +2409,12 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 				     title);
 		m_pbuf->safePrintf("<td><a href=\"/search?q=ip%%3A"
 				   "%s&c=%s&n=200\">%s</a></td>"  // ip
-				   , iptoa(r->m_ip)
+				   , iptoa(r->m_ip,ipbuf)
 				   , coll
-				   , iptoa(r->m_ip)
+				   , iptoa(r->m_ip,ipbuf)
 				   );
 		m_pbuf->safePrintf("<td>%s</td>"
-				   , iptoa(r->m_firstIp)
+				   , iptoa(r->m_firstIp,ipbuf)
 				   );
 		m_pbuf->safePrintf(  //"<td>%s</td>"   // external
 				     "<td>%s</td>"   // language
@@ -3272,6 +3273,7 @@ bool LinkInfo::print(SafeBuf *sb, const char *coll) {
 		// . print link text and score into table
 		// . there is a ton more info in Inlink class to print if
 		//   you want to throw it in here...
+		char ipbuf[16];
 		sb->safePrintf(
 			       "<tr><td colspan=2>link #%04" PRId32" "
 			       "("
@@ -3302,7 +3304,7 @@ bool LinkInfo::print(SafeBuf *sb, const char *coll) {
 			       (int32_t)k->m_siteRank,
 			       (int32_t)k->m_hopcount,
 			       (int32_t)k->m_numOutlinks ,
-			       iptoa(k->m_ip),
+			       iptoa(k->m_ip,ipbuf),
 			       (int32_t)k->m_siteNumInlinks,
 			       //(int32_t)k->m_isAnomaly,
 			       k->getUrl(),//ptr_urlBuf, // the linker url

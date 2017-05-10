@@ -166,8 +166,9 @@ bool Proxy::handleRequest (TcpSocket *s){
 	bool status = hr.set ( s->m_readBuf , s->m_readOffset , s ) ;
 	if ( ! status ) {
 		// log a bad request
+		char ipbuf[16];
 		log("http: Got bad request from %s: %s",
-		    iptoa(s->m_ip),mstrerror(g_errno));
+		    iptoa(s->m_ip,ipbuf), mstrerror(g_errno));
 		// cancel the g_errno, we'll send a BAD REQUEST reply to them
 		g_errno = 0;
 		// . this returns false if blocked, true otherwise
@@ -257,9 +258,10 @@ bool Proxy::handleRequest (TcpSocket *s){
 		if ( now - s_last < 5 ) 
 			s_count++;
 		else {
+			char ipbuf[16];
 			log("query: Too many sockets open. Sending 500 "
 			    "http status code to %s. (msgslogged=%" PRId32")[2]",
-			    iptoa(s->m_ip),s_count);
+			    iptoa(s->m_ip,ipbuf),s_count);
 			s_count = 0;
 			s_last = now;
 		}
@@ -810,8 +812,9 @@ void Proxy::printRequest(TcpSocket *s, HttpRequest *r,
 	char *req = s->m_readBuf;
 	//int32_t  reqLen = s->m_readOffset;
 
+	char ipbuf[16];
 	logf (LOG_INFO,"http: %s %s %s %s",
-	      bufTime,iptoa(s->m_ip),req,//r->getRequest(),
+	      bufTime, iptoa(s->m_ip,ipbuf), req,//r->getRequest(),
 	      g_msg);
 
 

@@ -422,8 +422,9 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 		if ( strncasecmp ( ref , "http://" , 7 ) == 0 ) ref += 7;
 		// save ip in case "s" gets destroyed
 		int32_t ip = s->m_ip;
+		char ipbuf[16];
 		logf (LOG_INFO,"http: %s %s %s %s",
-		      iptoa(ip),r->getRequest(),ref,
+		      iptoa(ip,ipbuf),r->getRequest(),ref,
 		      r->getUserAgent());
 	}
 
@@ -1063,10 +1064,11 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 			bt = "</font></b>";
 		}
 		// print the link to it
+		char ipbuf[16];
 		sb->safePrintf("%s<a href=\"http://%s:%hu/%s?"
 			       "c=%s%s\">"
 			       "%" PRId32"</a>%s ",
-			       ft,iptoa(ip),port,path,
+			       ft,iptoa(ip,ipbuf),port,path,
 			       coll,qs,i,bt);
 	}		
 
@@ -1083,10 +1085,11 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 		// use the ip that is not dead, prefer eth0
 		uint32_t ip = g_hostdb.getBestIp ( h );
 		const char *path = s_pages[page].m_filename;
+		char ipbuf[16];
 		sb->safePrintf("%s<a href=\"http://%s:%hu/%s?"
 			       "c=%s%s\">"
 			       "proxy%" PRId32"</a>%s ",
-			       ft,iptoa(ip),port,path,
+			       ft,iptoa(ip,ipbuf),port,path,
 			       coll,qs,i,bt);
 	}
 

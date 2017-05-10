@@ -205,8 +205,9 @@ bool Dns::init ( uint16_t clientPort ) {
 
 	for ( int32_t i = 0 ; i < g_conf.m_numDns ; i++ ) {
 		if ( !g_conf.m_dnsIps[i] ) continue;
+		char ipbuf[16];
 		log ( LOG_INIT, "dns: Using nameserver %s:%i.",
-		      iptoa(g_conf.m_dnsIps[i]) , g_conf.m_dnsPorts[i] );
+		      iptoa(g_conf.m_dnsIps[i],ipbuf) , g_conf.m_dnsPorts[i] );
 	}
 
 	// . only init the timedout cache once
@@ -325,8 +326,9 @@ static const TLDIPEntry* getTLDIP(DnsState* ds) {
 static void dumpTLDIP(	const char*	tld,
 			TLDIPEntry*	tldip) {
 	for (int32_t i = 0; i < tldip->numTLDIPs; i++) {
+		char ipbuf[16];
 		log(LOG_DEBUG, "dns: .%s TLD IP %s",
-			tld, iptoa(tldip->TLDIP[i]));
+			tld, iptoa(tldip->TLDIP[i],ipbuf));
 	}
 }
 
@@ -441,8 +443,9 @@ bool Dns::getIp ( const char *hostname,
 		//char *dd = "distributed";
 		//if ( this == &g_dnsLocal ) dd = "local";
 		// debug msg
+		char ipbuf[16];
 		log(LOG_DEBUG,"dns: got ip of %s for %s in distributed cache.",
-		    iptoa(*ip),tmp);
+		    iptoa(*ip,ipbuf),tmp);
 		return true;
 	}
 
@@ -868,16 +871,17 @@ bool Dns::getIpOfDNS ( DnsState *ds ) {
 	// . add it to the array of ips
 	if ( ip != 0 && ds->m_numDnsIps[depth] + 1 < MAX_DNS_IPS) {
 		if (isTimedOut(ip)) {
-			log(LOG_DEBUG,
-			    "dns: Not adding [1] ip %s - timed out",
-			    iptoa(ip));
+			char ipbuf[16];
+			log(LOG_DEBUG, "dns: Not adding [1] ip %s - timed out",
+			    iptoa(ip,ipbuf));
 		}
 		else {
 			int32_t depth = ds->m_depth;
+			char ipbuf[16];
 			log(LOG_DEBUG,
 				"dns: Added ip [1-%" PRId32"] %s to depth %" PRId32" for %s.",
 		    		ds->m_numDnsIps[depth],
-		    		iptoa(ip),(int32_t)depth,ds->m_hostname);
+				iptoa(ip,ipbuf),(int32_t)depth,ds->m_hostname);
 			ds->m_dnsIps[depth][ds->m_numDnsIps[depth]++] = ip ;
 		}
 	}
@@ -889,8 +893,9 @@ void Dns::gotIpOfDNSWrapper(void *state, int32_t ip) {
 	DnsState *ds = (DnsState *)state;
 	// log debug msg
 	//DnsState *ds2 = (DnsState *)ds->m_buf;
+	char ipbuf[16];
 	log(LOG_DEBUG,"dns: Got ip of dns %s for %s.",
-	    iptoa(ip),ds->m_hostname);
+	    iptoa(ip,ipbuf),ds->m_hostname);
 	// sanity check
 	if ( ds->m_numDnsIps[ds->m_depth] + 1 >= MAX_DNS_IPS ) {
 		log("dns: Wierd. Not enough buffer.");
@@ -901,17 +906,18 @@ void Dns::gotIpOfDNSWrapper(void *state, int32_t ip) {
 	if ( ! g_errno && ip != 0 &&
 	     ds->m_numDnsIps[ds->m_depth] + 1 < MAX_DNS_IPS) {
 		if (isTimedOut(ip)) {
-			log(LOG_DEBUG,
-			    "dns: Not adding [2] ip %s - timed out",
-			    iptoa(ip));
+			char ipbuf[16];
+			log(LOG_DEBUG, "dns: Not adding [2] ip %s - timed out",
+			    iptoa(ip,ipbuf));
 		}
 		else {
 			int32_t depth = ds->m_depth;
 			ds->m_dnsIps[depth][ds->m_numDnsIps[depth]++] = ip ;
+			char ipbuf[16];
 			log(LOG_DEBUG,
 				"dns: Added ip [2-%" PRId32"] %s to depth %" PRId32" for %s.",
 				ds->m_numDnsIps[depth],
-		    		iptoa(ip),(int32_t)depth,ds->m_hostname);
+				iptoa(ip,ipbuf),(int32_t)depth,ds->m_hostname);
 		}
 	}
 	// disregard any g_errnos cuz we will try again
@@ -993,9 +999,9 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 			if (!isTimedOut(ips[n]))
 				break;
 			// note it
-			log(LOG_DEBUG,
-		    		"dns: skipping ip %s - timed out",
-		    		iptoa(ips[n]));
+			char ipbuf[16];
+			log(LOG_DEBUG, "dns: skipping ip %s - timed out",
+				iptoa(ips[n],ipbuf));
 			// advance
 			if ( ++n >= num )
 				n = 0;
@@ -1249,10 +1255,11 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 	// if ( ! copy ) return true;
 
 	// debug msg
+	char ipbuf[16];
 	log(LOG_DEBUG,
 		"dns: Asking %s (depth=%" PRId32",%" PRId32") att %" PRId32" "
 		"for ip of %s (tid=%" PRId32")",
-		iptoa(ds->m_dnsIps[depth][n]), (int32_t)depth,(int32_t)n,
+		iptoa(ds->m_dnsIps[depth][n],ipbuf), (int32_t)depth,(int32_t)n,
 		(int32_t) ds->m_numTried, ds->m_hostname , (int32_t)transId);
 
 	// . queue a send
@@ -1309,21 +1316,24 @@ void Dns::gotIpWrapper(void *state, UdpSlot *slot) {
 	if ( g_errno == EUDPTIMEDOUT || ip == -1 ) {
 		// log it so we know which dns server had the problem
 		if ( g_errno ) {
+			char ipbuf[16];
 			log(LOG_DEBUG,"dns: dns server at %s timed out.",
-			    iptoa(slot->getIp()));
+			    iptoa(slot->getIp(),ipbuf));
 			g_errno = EDNSTIMEDOUT;
 		}
 		else {
+			char ipbuf[16];
 			log(LOG_DEBUG,"dns: dns server at %s failed.",
-			    iptoa(slot->getIp()));
+			    iptoa(slot->getIp(),ipbuf));
 		}
 		// try again? yes, if we timed out on router1's bind9
 		if ( ds->m_dnsIps[0][0] != atoip(PUBLICLY_AVAILABLE_DNS1) ) {
 			g_errno = ETRYAGAIN;
 			//ds->m_depth++;
 			// note it
+			char ipbuf[16];
 			log(LOG_DEBUG, "dns: trying backup-dns %s (old=%s)",
-			    PUBLICLY_AVAILABLE_DNS1,iptoa(ds->m_dnsIps[0][0]));
+			    PUBLICLY_AVAILABLE_DNS1,iptoa(ds->m_dnsIps[0][0],ipbuf));
 			// try google's public dns
 			ds->m_dnsIps[0][0] = atoip(PUBLICLY_AVAILABLE_DNS1);
 		}
@@ -1362,9 +1372,9 @@ void Dns::gotIpWrapper(void *state, UdpSlot *slot) {
 			k.n0 = 0LL;
 			k.n1 = slot->getIp();
 			static const char s_data[] = "1111";
-			log(LOG_DEBUG,
-			    "dns: adding ip %s to timedout cache: %s",
-			    iptoa(slot->getIp()),mstrerror(g_errno));
+			char ipbuf[16];
+			log(LOG_DEBUG, "dns: adding ip %s to timedout cache: %s",
+			    iptoa(slot->getIp(),ipbuf),mstrerror(g_errno));
 			RdbCacheLock rcl(g_timedoutCache);
 			g_timedoutCache.addRecord((collnum_t)0,
 						  k           , // key
@@ -1412,11 +1422,12 @@ void Dns::returnIp(DnsState *ds, int32_t ip) {
 	if ( ip == 0 ) pre = " [NXDOMAIN]";
 	if ( ip == -1 ) pre = " [DNSTIMEDOUT|SERVFAIL]";
 	if ( g_conf.m_logDebugDns ) {
-		char ipbuf[128];
-		sprintf(ipbuf,"%s",iptoa(ds->m_dnsIps[0][0]));
+		char ipbuf1[16];
+		iptoa(ds->m_dnsIps[0][0],ipbuf1);
+		char ipbuf2[16];
 		log(LOG_DEBUG,"dns: Got FINAL ANSWER of %s for %s %s(%s) "
 		    "from dns %s.",
-		    iptoa(ip),ds->m_hostname,pre,mstrerror(g_errno),ipbuf);
+		    iptoa(ip,ipbuf2),ds->m_hostname,pre,mstrerror(g_errno),ipbuf1);
 	}
 	// not thread safe
 	//if ( g_threads.amThread() ) { g_process.shutdownAbort(true); }
@@ -1639,6 +1650,7 @@ static const char *getRRName ( const char *rr, const char *dgram, const char *en
 // . TODO: update timestamp for this dns server
 int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	log(LOG_DEBUG, "dns: gotIp called for '%s'", ds->m_hostname);
+	char ipbuf[16];
 	//log(LOG_DEBUG, "dns: gotIp depth %d", ds->m_depth);
 	// get the hostname from the request's query record
 	char  *dgram  = (char *) slot->m_sendBuf;
@@ -1659,8 +1671,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	// return -1 and set g_errno if no read buf
 	if ( ! dgram ) { 
 		g_errno = EBADREPLY; 
-		log("dns: Nameserver (%s) returned empty."
-		    "reply", iptoa(slot->getIp()));
+		log("dns: Nameserver (%s) returned empty reply", iptoa(slot->getIp(),ipbuf));
 		return -1; 
 	}
 	// get the size of the read buf
@@ -1669,7 +1680,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	if ( dgramSize < 12 ) { 
 		log(LOG_INFO,"dns: Nameserver (%s) returned bad "
 		    "reply size of %" PRId32" bytes which is less than 12 bytes.",
-		    iptoa(slot->getIp()),dgramSize);
+		    iptoa(slot->getIp(),ipbuf),dgramSize);
 		g_errno = EBADREPLY; 
 		return -1; 
 	}
@@ -1679,8 +1690,8 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	// . set g_errno as well
 	switch ( rcode ) {
 	case 0: break; // valid
-	case 1: log(LOG_DEBUG,"dns: Nameserver (%s) returned request "
-		    "format error.", iptoa(slot->getIp()));
+	case 1: log(LOG_DEBUG,"dns: Nameserver (%s) returned request format error.",
+		    iptoa(slot->getIp(),ipbuf));
 		g_errno = EBADREQUEST;
 		return -1;
 	case 2: //log("dns::gotIp: dns server failure"              ); 
@@ -1690,7 +1701,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		//	"/etc/bind/named.conf?");
 		// we have to try another dns if we get this message!
 		log(LOG_DEBUG,"dns: Nameserver (%s) returned SERVFAIL.",
-		    iptoa(slot->getIp()));
+		    iptoa(slot->getIp(),ipbuf));
 		//g_errno = ETRYAGAIN;
 		//break;
 		return -1;
@@ -1702,11 +1713,11 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		addToCache ( ds->m_hostnameKey , 0 );
 		return 0;
 	case 4: log(LOG_DEBUG,"dns: Nameserver (%s) does not support query.",
-		    iptoa(slot->getIp()));
+		    iptoa(slot->getIp(),ipbuf));
 		g_errno = EBADREQUEST;
 		return -1;
 	case 5: log(LOG_DEBUG,"dns: Nameserver (%s) refused request.",
-		    iptoa(slot->getIp()));
+		    iptoa(slot->getIp(),ipbuf));
 		// www.fsis.usda.gov will error here if recursion bit is set
 		// so restart from the beginning with it turned off
 		if ( ds->m_recursionDesired ) {
@@ -1722,7 +1733,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		return -1;
 	default: log(LOG_INFO,"dns: Nameserver (%s) returned unknown "
 		    "return code = %" PRId32".",
-		    iptoa(slot->getIp()), rcode );
+		    iptoa(slot->getIp(),ipbuf), rcode );
 		g_errno = EBADREPLY;
 		return -1;
 	}
@@ -1732,8 +1743,9 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	// recursion is available flag, that's bad
 	if ( ! supportRecursion && rcode == 3 ) {
 		g_errno = EDNSBAD;
+		char ipbuf[16];
 		log(LOG_INFO,"dns: Nameserver (%s) will not not recurse.",
-		    iptoa(slot->getIp()));
+		    iptoa(slot->getIp(),ipbuf));
 		return -1;
 	}
 	// otherwise if rcode is 3 then the name really does not exist so ret 0
@@ -1744,8 +1756,9 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	// . return -1 on error
 	if ( qdcount != 1 ) { 
 		g_errno = EBADREPLY; 
-		log (LOG_INFO,"dns: Nameserver (%s) returned query count "
-		     "of %" PRId32" (not 1).", iptoa(slot->getIp()),(int32_t)qdcount);
+		char ipbuf[16];
+		log (LOG_INFO,"dns: Nameserver (%s) returned query count of %" PRId32" (not 1).",
+		     iptoa(slot->getIp(),ipbuf), (int32_t)qdcount);
 		return -1; 
 	}
 	// . now we should have our answer here
@@ -1759,8 +1772,9 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
         int16_t arcount = ntohs (*(int16_t *)(dgram + 10 )); // additional
  	if ( ancount < 0 ) { 
 		g_errno = EBADREPLY; 
-		log (LOG_WARN, "dns: Nameserver (%s) returned a negative answer count "
-		     "of %" PRId32".", iptoa(slot->getIp()),(int32_t)ancount);
+		char ipbuf[16];
+		log (LOG_WARN, "dns: Nameserver (%s) returned a negative answer count of %" PRId32".",
+		     iptoa(slot->getIp(),ipbuf), (int32_t)ancount);
 		return -1; 
 	}
 
@@ -1829,9 +1843,9 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	if ( rr >= end ) {
 		addToCache ( ds->m_hostnameKey , -1 );
 		g_errno = EBADREPLY;
-		log(LOG_INFO,"dns: Nameserver (%s) returned a "
-		    "corrupt reply [0] for %s.",
-		    iptoa(slot->getIp()),ds->m_hostname);
+		char ipbuf[16];
+		log(LOG_INFO,"dns: Nameserver (%s) returned a corrupt reply [0] for %s.",
+		    iptoa(slot->getIp(),ipbuf),ds->m_hostname);
 		return -1;
 	}
 	// jump over each label
@@ -1852,9 +1866,9 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	if ( rr >= end ) {
 		addToCache ( ds->m_hostnameKey , -1 );
 		g_errno = EBADREPLY;
-		log(LOG_INFO,"dns: Nameserver (%s) returned a "
-		    "corrupt reply [1] for %s.",
-		    iptoa(slot->getIp()),ds->m_hostname);
+		char ipbuf[16];
+		log(LOG_INFO,"dns: Nameserver (%s) returned a corrupt reply [1] for %s.",
+		    iptoa(slot->getIp(),ipbuf),ds->m_hostname);
 		return -1;
 	}
 	// . store the ips of the nameservers we have to ask into "ips"
@@ -1921,9 +1935,9 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		if ( rr + 10 >= end ) {
 			addToCache ( ds->m_hostnameKey , -1 );
 			g_errno = EBADREPLY;
-			log(LOG_INFO,"dns: Nameserver (%s) returned a "
-			    "corrupt reply [2] for %s.", 
-			    iptoa(slot->getIp()),ds->m_hostname);
+			char ipbuf[16];
+			log(LOG_INFO,"dns: Nameserver (%s) returned a corrupt reply [2] for %s.",
+			    iptoa(slot->getIp(),ipbuf),ds->m_hostname);
 			return -1;
 		}
 		// the type (A=1,CNAME=5,...)
@@ -1954,8 +1968,8 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		// watch our for negative rlens
 		if ( rlen < 0 ) {
 			g_errno = EBADREPLY;
-			log(LOG_INFO,"dns: Nameserver (%s) returned "
-			    "a negative resource len.", iptoa(slot->getIp()) );
+			char ipbuf[16];
+			log(LOG_INFO,"dns: Nameserver (%s) returned a negative resource len.", iptoa(slot->getIp(),ipbuf) );
 			return -1;
 			
 		}
@@ -2010,10 +2024,11 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 				if ( dst + *p + 1 > ds->m_nameBufEnd ) {
 					addToCache ( ds->m_hostnameKey , -1);
 					g_errno = EBADREPLY;
+					char ipbuf[16];
 					log(LOG_INFO,
 						"dns: Nameserver (%s) returned"
 						" a corrupt reply [3] for %s.",
-						iptoa(slot->getIp()),
+						iptoa(slot->getIp(),ipbuf),
 						ds->m_hostname);
 					return -1;
 				}
@@ -2021,10 +2036,11 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 				if ( *p < 0 ) {
 					addToCache ( ds->m_hostnameKey , -1);
 					g_errno = EBADREPLY;
+					char ipbuf[16];
 					log(LOG_INFO,
 						"dns: Nameserver (%s) returned"
 						" a corrupt reply [4] for %s.",
-						iptoa(slot->getIp()),
+						iptoa(slot->getIp(),ipbuf),
 						ds->m_hostname);
 					return -1;
 				}
@@ -2168,16 +2184,17 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		// . must not be in the answer section (i>=ancount)
 		if ( ips && numIps + 1 < MAX_DNS_IPS ) {
 			if (isTimedOut(ip)) {
-				log(LOG_DEBUG,
-			    	"dns: Not adding [0] ip %s - timed out",
-			    	iptoa(ip));
+				char ipbuf[16];
+				log(LOG_DEBUG, "dns: Not adding [0] ip %s - timed out",
+				    iptoa(ip,ipbuf));
 			}
 			else {
 				ips[numIps] = ip;
+				char ipbuf[16];
 				log(LOG_DEBUG,
 					"dns: Added ip [0-%" PRId32"] %s to depth %" PRId32" "
 					"for %s.",
-					numIps, iptoa(ip),(int32_t)ds->m_depth+1,
+					numIps, iptoa(ip,ipbuf),(int32_t)ds->m_depth+1,
 					ds->m_hostname);
 				numIps++;
 			}
@@ -2205,8 +2222,9 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	//fprintf(stderr,".... using minip=%s for %s\n",iptoa(minIp),hostname);
 	// if we did have an answer section, assume minIp is the answer
 	if ( ancount > 0 && gotIp ) {
+		char ipbuf[16];
 		log(LOG_DEBUG, "dns: got ip %s for '%s'",
-			iptoa(minIp), ds->m_hostname);
+			iptoa(minIp,ipbuf), ds->m_hostname);
 		// . get the key of the hostname
 		addToCache ( ds->m_hostnameKey , minIp , minttl );
 		// return the minimum ip
@@ -2302,8 +2320,9 @@ bool Dns::isInCache ( key96_t key , int32_t *ip ) {
 // ttl is in seconds
 void Dns::addToCache ( key96_t hostnameKey , int32_t ip , int32_t ttl ) {
 	// debug msg
+	char ipbuf[16];
 	log(LOG_DEBUG, "dns: addToCache added key %" PRIu64" ip %s ttl %" PRId32" to cache",
-		hostnameKey.n0, iptoa(ip), ttl);
+		hostnameKey.n0, iptoa(ip,ipbuf), ttl);
         // set timestamp to be maxTime (24 hours = 8640 sec) - ttl
         int32_t timestamp;
 	// watch out for crazy ttls, bigger than 2 days

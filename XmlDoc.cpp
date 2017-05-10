@@ -6669,7 +6669,8 @@ int32_t *XmlDoc::getIp ( ) {
 	// return if we got it
 	if ( m_ipValid )
 	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid [%s]", iptoa(m_ip));
+		char ipbuf[16];
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid [%s]", iptoa(m_ip,ipbuf));
 		return &m_ip;
 	}
 
@@ -6697,7 +6698,8 @@ int32_t *XmlDoc::getIp ( ) {
 			m_ip      = od->m_ip;
 			m_ipValid = true;
 
-			logTrace( g_conf.m_logTraceXmlDoc, "END, got it from old XmlDoc [%s]", iptoa(m_ip));
+			char ipbuf[16];
+			logTrace( g_conf.m_logTraceXmlDoc, "END, got it from old XmlDoc [%s]", iptoa(m_ip,ipbuf));
 			return &m_ip;
 		}
 	}
@@ -6778,7 +6780,8 @@ int32_t *XmlDoc::getIp ( ) {
 
 	// wrap it up
 	int32_t *rval2 = gotIp ( true );
-	logTrace( g_conf.m_logTraceXmlDoc, "END, return [%s]", rval2 ? iptoa(*rval2) : "NULL");
+	char ipbuf[16];
+	logTrace( g_conf.m_logTraceXmlDoc, "END, return [%s]", rval2 ? iptoa(*rval2,ipbuf) : "NULL");
 	return rval2;
 }
 
@@ -6790,7 +6793,8 @@ void gotIpWrapper ( void *state , int32_t ip ) {
 
 	THIS->m_ipEndTime = gettimeofdayInMilliseconds();
 
-	logTrace( g_conf.m_logTraceXmlDoc, "Got IP [%s]. Took %" PRId64" msec", iptoa(ip), THIS->m_ipEndTime - THIS->m_ipStartTime);
+	char ipbuf[16];
+	logTrace( g_conf.m_logTraceXmlDoc, "Got IP [%s]. Took %" PRId64" msec", iptoa(ip,ipbuf), THIS->m_ipEndTime - THIS->m_ipStartTime);
 
 	// wrap it up
 	THIS->gotIp ( true );
@@ -6956,11 +6960,12 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// if ip does not exist on the dns, do not try to download robots.txt
 	// it is pointless... this can happen in the dir coll and we basically
 	// have "m_siteInCatdb" set to true
-	logTrace( g_conf.m_logTraceSpider, "IP=%s", iptoa(*ip));
+	char ipbuf[16];
+	logTrace( g_conf.m_logTraceSpider, "IP=%s", iptoa(*ip,ipbuf));
 
 	if ( *ip == 1 || *ip == 0 || *ip == -1 ) {
 		// note this
-		log("build: robots.txt ip is %s for url=%s. allowing for now.", iptoa(*ip), fu->getUrl());
+		log("build: robots.txt ip is %s for url=%s. allowing for now.", iptoa(*ip,ipbuf), fu->getUrl());
 		// just core for now
 		//g_process.shutdownAbort(true);
 
@@ -11249,11 +11254,15 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 	//
 	// print ip
 	//
-	if ( m_ipValid )
-		sb->safePrintf("ip=%s ",iptoa(m_ip) );
+	if ( m_ipValid ) {
+		char ipbuf[16];
+		sb->safePrintf("ip=%s ",iptoa(m_ip,ipbuf) );
+	}
 
-	if ( m_firstIpValid )
-		sb->safePrintf("firstip=%s ",iptoa(m_firstIp) );
+	if ( m_firstIpValid ) {
+		char ipbuf[16];
+		sb->safePrintf("firstip=%s ",iptoa(m_firstIp,ipbuf) );
+	}
 
 	// . first ip from spider req if it is fake
 	// . we end up spidering the same url twice because it will have
@@ -11268,8 +11277,10 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 		VALGRIND_CHECK_MEM_IS_DEFINED(&m_firstIp,sizeof(m_firstIp));
 #endif
 
-	if ( m_sreqValid && m_firstIpValid && m_sreq.m_firstIp != m_firstIp )
-		sb->safePrintf("fakesreqfirstip=%s ",iptoa(m_sreq.m_firstIp) );
+	if ( m_sreqValid && m_firstIpValid && m_sreq.m_firstIp != m_firstIp ) {
+		char ipbuf[16];
+		sb->safePrintf("fakesreqfirstip=%s ",iptoa(m_sreq.m_firstIp,ipbuf) );
+	}
 
 	//
 	// print when this spider request was added
@@ -12014,6 +12025,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 			int64_t docId = Linkdb::getLinkerDocId_uk      (k2);
 			// sanity check
 			if(dataSize!=0){g_process.shutdownAbort(true);}
+			char ipbuf[16];
 			sb->safePrintf("<td>"
 				       "<nobr>"
 				       "linkeeSiteHash32=0x%08" PRIx32" "
@@ -12031,7 +12043,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 				       (int32_t)linkSpam,
 				       siteRank,
 				       linkerSiteHash,
-				       iptoa(ip32),
+				       iptoa(ip32,ipbuf),
 				       docId);
 
 		}
@@ -15505,9 +15517,10 @@ SafeBuf *XmlDoc::getSpiderStatusDocMetaList2 ( SpiderReply *reply1 ) {
 		jd.safePrintf("\"gbssConsecutiveErrors\":%" PRId32",\n",0);
 
 
-	if ( m_ipValid )
-		jd.safePrintf("\"gbssIp\":\"%s\",\n",iptoa(m_ip));
-	else
+	if ( m_ipValid ) {
+		char ipbuf[16];
+		jd.safePrintf("\"gbssIp\":\"%s\",\n",iptoa(m_ip,ipbuf));
+	} else
 		jd.safePrintf("\"gbssIp\":\"0.0.0.0\",\n");
 
 	if ( m_ipEndTime ) {
@@ -17727,7 +17740,8 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 	LinkInfo *info1 = ptr_linkInfo1;
 
-	char *ipString = iptoa(m_ip);
+	char ipString[16];
+	iptoa(m_ip,ipString);
 	const char *estimated = "";
 
 	//char *ls = getIsLinkSpam();
@@ -18312,7 +18326,8 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	//SafeBuf tb;
 	int32_t sni  = m_siteNumInlinks;
 
-	char *ipString = iptoa(m_ip);
+	char ipString[16];
+	iptoa(m_ip,ipString);
 
 	//int32_t sni = info1->getNumGoodInlinks();
 
@@ -19697,8 +19712,8 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	if ( oldfip ) ip3 = atoip(oldfip);
 	// if not there or if bogus, add it!! should override bogus firstips
 	if ( ! ip3 || ip3 == -1 ) {
-		char *ipstr = iptoa(m_ip);
-		Tagdb::addTag3(tbuf,mysite,"firstip",now,"xmldoc",*ip,ipstr,
+		char ipbuf[16];
+		Tagdb::addTag3(tbuf,mysite,"firstip",now,"xmldoc",*ip,iptoa(m_ip,ipbuf),
 			       rdbId);
 	}
 
@@ -19821,8 +19836,8 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 		// . this was in Msge1.cpp but now we do it here
 		if ( ! ips && linkIp && linkIp != -1 ) {
 			// make it
-			char *ips = iptoa(linkIp);
-			if (!Tagdb::addTag3(tbuf,site,"firstip",now,"xmldoc",*ip,ips,
+			char ipbuf[16];
+			if (!Tagdb::addTag3(tbuf,site,"firstip",now,"xmldoc",*ip,iptoa(linkIp,ipbuf),
 					    rdbId))
 				return NULL;
 		}

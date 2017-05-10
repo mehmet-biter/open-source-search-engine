@@ -582,6 +582,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 		//log("Msg0:hndled request %" PRIu64,gettimeofdayInMilliseconds());
 		int32_t size = -1;
 		if ( list ) size     = list->getListSize();
+		char ipbuf[16];
 		log(LOG_TIMING|LOG_DEBUG,
 		    "net: msg0: Handled request for data. "
 		    "Now sending data termId=%" PRIu64" size=%" PRId32
@@ -589,7 +590,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 		    "(niceness=%" PRId32").",
 		    Posdb::getTermId(st0->m_startKey),
 		    size,slot->getTransId(),
-		    iptoa(slot->getIp()),slot->getPort(),
+		    iptoa(slot->getIp(),ipbuf), slot->getPort(),
 		    gettimeofdayInMilliseconds() - st0->m_startTime ,
 		    st0->m_niceness );
 	}

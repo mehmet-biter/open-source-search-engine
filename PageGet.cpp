@@ -478,8 +478,9 @@ bool processLoop ( void *state ) {
 
 	// . we no longer put the port in here
 	// . but still need http:// since we use <base href=>
-	if (port == 80) sprintf(x,"http://%s/get?q=",iptoa(ip));
-	else            sprintf(x,"http://%s:%hu/get?q=",iptoa(ip),port);
+	char ipbuf[16];
+	if (port == 80) sprintf(x,"http://%s/get?q=",iptoa(ip,ipbuf));
+	else            sprintf(x,"http://%s:%hu/get?q=",iptoa(ip,ipbuf),port);
 	x += strlen ( x );
 	// the query url encoded
 	int32_t elen = urlEncode ( x , thisUrlEnd - x , q , qlen );

@@ -37,12 +37,6 @@ int32_t atoip ( const char *s ) {
 	return 0; 
 }
 
-char *iptoa ( int32_t ip ) {
-	static char s_buf [ 32 ];
-	iptoa(ip,s_buf);
-	return s_buf;
-}
-
 const char *iptoa(int32_t ip, char *buf) {
 	sprintf(buf , "%u.%u.%u.%u",
 		((ip >>  0)&0xff),

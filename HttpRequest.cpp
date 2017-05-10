@@ -909,9 +909,10 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 	 //	m_isMasterAdmin = true; m_isLocal = true; }
 	 //if(strncmp(iptoa(sock->m_ip),"192.168.1.",10) == 0) m_isLocal = true;
 	 //if(strncmp(iptoa(sock->m_ip),"192.168.0.",10) == 0) m_isLocal = true;
-	 if ( sock && strncmp(iptoa(sock->m_ip),"192.168.",8) == 0) 
+	 char ipbuf[16];
+	 if ( sock && strncmp(iptoa(sock->m_ip,ipbuf),"192.168.",8) == 0)
 		 m_isLocal = true;
-	 if ( sock && strncmp(iptoa(sock->m_ip),"10.",3) == 0) 
+	 if ( sock && strncmp(iptoa(sock->m_ip,ipbuf),"10.",3) == 0)
 		 m_isLocal = true;
 
 	 // gotta scan all ips in hosts.conf as well...

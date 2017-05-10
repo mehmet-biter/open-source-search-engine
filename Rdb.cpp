@@ -1632,9 +1632,10 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 				char keyStrBuf[MAX_KEYSTR_BYTES];
 				KEYSTR((const char *)&sreq->m_key, sizeof(key128_t), keyStrBuf);
 
+				char ipbuf[16];
 				logDebug(g_conf.m_logDebugSpider, "spider: rdb: added spider request to spiderdb rdb tree"
 				         " request for uh48=%" PRIu64" prntdocid=%" PRIu64" firstIp=%s spiderdbkey=%s",
-				         sreq->getUrlHash48(), sreq->getParentDocId(), iptoa(sreq->m_firstIp), keyStrBuf);
+				         sreq->getUrlHash48(), sreq->getParentDocId(), iptoa(sreq->m_firstIp,ipbuf), keyStrBuf);
 			}
 
 			// false means to NOT call evaluateAllRequests()

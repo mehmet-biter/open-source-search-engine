@@ -9,7 +9,7 @@
 
 int32_t  atoip ( const char *s , int32_t slen );
 int32_t  atoip ( const char *s );
-char *iptoa ( int32_t ip );
+//char *iptoa ( int32_t ip );
 const char *iptoa(int32_t ip, char *buf);
 
 // . get domain of ip address

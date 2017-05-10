@@ -241,13 +241,15 @@ bool Msg13::forwardRequest ( ) {
 		h = g_hostdb.m_myHost;
 
 	// log it
-	if ( g_conf.m_logDebugSpider )
+	if ( g_conf.m_logDebugSpider ) {
+		char ipbuf[16];
 		logf ( LOG_DEBUG, 
 		       "spider: sending download request of %s firstIp=%s "
 		       "uh48=%" PRIu64" to "
-		       "host %" PRId32" (child=%" PRId32")", m_request->ptr_url, iptoa(m_request->m_firstIp),
+		       "host %" PRId32" (child=%" PRId32")", m_request->ptr_url, iptoa(m_request->m_firstIp,ipbuf),
 		       m_request->m_urlHash48, hostId,
 		       m_request->m_skipHammerCheck);
+	}
 
 	// fill up the request
 	int32_t requestBufSize = m_request->getSize();
@@ -318,9 +320,11 @@ bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSi
 	m_replyBuf     = NULL;
 	m_replyBufSize = 0;
 
-	if ( g_conf.m_logDebugRobots || g_conf.m_logDebugDownloads )
+	if ( g_conf.m_logDebugRobots || g_conf.m_logDebugDownloads ) {
+		char ipbuf[16];
 		logf(LOG_DEBUG,"spider: FINALIZED %s firstIp=%s",
-		     m_request->ptr_url,iptoa(m_request->m_firstIp));
+		     m_request->ptr_url,iptoa(m_request->m_firstIp,ipbuf));
+	}
 
 
 	// . if timed out probably the host is now dead so try another one!
@@ -504,9 +508,11 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 
 	// log it so we can see if we are hammering
 	if ( g_conf.m_logDebugRobots || g_conf.m_logDebugDownloads ||
-	     g_conf.m_logDebugMsg13 )
+	     g_conf.m_logDebugMsg13 ) {
+		char ipbuf[16];
 		logf(LOG_DEBUG,"spider: DOWNLOADING %s firstIp=%s",
-		     r->ptr_url,iptoa(r->m_firstIp));
+		     r->ptr_url,iptoa(r->m_firstIp,ipbuf));
+	}
 
 	// temporary hack
 	if ( r->m_parent ) { gbshutdownAbort(true); }
@@ -534,9 +540,11 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 		int32_t key = ((uint32_t)r->m_firstIp >> 8);
 		// send to host "h"
 		Host *h = g_hostdb.getBestSpiderCompressionProxy(&key);
-		if ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 )
-			log(LOG_DEBUG,"spider: sending to compression proxy "
-			    "%s:%" PRIu32,iptoa(h->m_ip),(uint32_t)h->m_port);
+		if ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 ) {
+			char ipbuf[16];
+			log(LOG_DEBUG,"spider: sending to compression proxy %s:%" PRIu32,
+			    iptoa(h->m_ip,ipbuf), (uint32_t)h->m_port);
+		}
 
 		// . otherwise, send the request to the key host
 		// . returns false and sets g_errno on error
@@ -757,39 +765,45 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 	if ( r->m_crawlDelayFromEnd && ! r->m_skipHammerCheck ) {
 		RdbCacheLock rcl(s_hammerCache);
 		s_hammerCache.addLongLong(0,r->m_firstIp, 0LL);//nowms);
-		log("spider: delay from end for %s %s",iptoa(r->m_firstIp),
-		    r->ptr_url);
+		char ipbuf[16];
+		log("spider: delay from end for %s %s", iptoa(r->m_firstIp,ipbuf), r->ptr_url);
 	}
 	else if ( ! r->m_skipHammerCheck ) {
 		// get time now
 		RdbCacheLock rcl(s_hammerCache);
 		s_hammerCache.addLongLong(0,r->m_firstIp, nowms);
+		char ipbuf[16];
 		log(LOG_DEBUG,
 		    "spider: adding new time to hammercache for %s %s = %" PRId64,
-		    iptoa(r->m_firstIp),r->ptr_url,nowms);
+		    iptoa(r->m_firstIp,ipbuf), r->ptr_url,nowms);
 	}
 	else {
+		char ipbuf[16];
 		log(LOG_DEBUG,
 		    "spider: not adding new time to hammer cache for %s %s",
-		    iptoa(r->m_firstIp),r->ptr_url);
+		    iptoa(r->m_firstIp,ipbuf), r->ptr_url);
 	}
 
 	// note it
-	if ( g_conf.m_logDebugSpider )
+	if ( g_conf.m_logDebugSpider ) {
+		char ipbuf[16];
 		log("spider: adding special \"in-progress\" time "
 		    "of %" PRId32" for "
 		    "firstIp=%s "
 		    "url=%s "
 		    "to msg13::hammerCache",
 		    0,//-1,
-		    iptoa(r->m_firstIp),
+		    iptoa(r->m_firstIp,ipbuf),
 		    r->ptr_url);
+	}
 
 	// note it here
-	if ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 )
+	if ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 ) {
+		char ipbuf[16];
 		log("spider: downloading %s (%s) (skiphammercheck=%" PRId32")",
-		    r->ptr_url,iptoa(r->m_urlIp) ,
+		    r->ptr_url,iptoa(r->m_urlIp,ipbuf),
 		    (int32_t)r->m_skipHammerCheck);
+	}
 
 	char *agent = g_conf.m_spiderUserAgent;
 
@@ -806,16 +820,16 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 
 	// debug note
 	if ( r->m_proxyIp ) {
-		char tmpIp[64];
-		sprintf(tmpIp,"%s",iptoa(r->m_urlIp));
+		char ipbuf1[16];
+		char ipbuf2[16];
 		log(LOG_INFO,
 		    "sproxy: got proxy %s:%" PRIu32" "
 		    "and agent=\"%s\" to spider "
 		    "%s %s (numBannedProxies=%" PRId32")",
-		    iptoa(r->m_proxyIp),
+		    iptoa(r->m_proxyIp,ipbuf1),
 		    (uint32_t)(uint16_t)r->m_proxyPort,
 		    agent,
-		    tmpIp,
+		    iptoa(r->m_urlIp,ipbuf2),
 		    r->ptr_url,
 		    r->m_numBannedProxies);
 	}
@@ -1013,16 +1027,16 @@ void gotHttpReply9 ( void *state , TcpSocket *ts ) {
 	if ( banned ) {
 		const char *msg = "No more proxies to try. Using reply as is.";
 		if ( r->m_hasMoreProxiesToTry )  msg = "Trying another proxy.";
-		char tmpIp[64];
-		sprintf(tmpIp,"%s",iptoa(r->m_urlIp));
+		char ipbuf1[16];
+		char ipbuf2[16];
 		log("msg13: detected that proxy %s is banned "
 		    "(banmsg=%s) "
 		    "(tries=%" PRId32") by "
 		    "url %s %s. %s"
-		    , iptoa(r->m_proxyIp) // r->m_banProxyIp
+		    , iptoa(r->m_proxyIp,ipbuf1) // r->m_banProxyIp
 		    , banMsg
 		    , r->m_proxyTries
-		    , tmpIp
+		    , iptoa(r->m_urlIp,ipbuf2)
 		    , r->ptr_url 
 		    , msg );
 	}
@@ -1104,10 +1118,11 @@ void gotHttpReply2 ( void *state ,
 	CollectionRec *cr = g_collectiondb.getRec ( r->m_collnum );
 
 	// error?
-	if ( g_errno && ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 ) )
-		log("spider: http reply (msg13) had error = %s "
-		    "for %s at ip %s",
-		    mstrerror(savedErr),r->ptr_url,iptoa(r->m_urlIp));
+	if ( g_errno && ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 ) ) {
+		char ipbuf[16];
+		log("spider: http reply (msg13) had error = %s for %s at ip %s",
+		    mstrerror(savedErr),r->ptr_url,iptoa(r->m_urlIp,ipbuf));
+	}
 
 	bool inTable = false;
 	bool checkIfBanned = false;
@@ -1123,14 +1138,16 @@ void gotHttpReply2 ( void *state ,
 	bool banned = false;
 	if ( checkIfBanned )
 		banned = ipWasBanned ( ts , &banMsg , r );
-	if (  banned )
+	if (  banned ) {
 		// should we turn proxies on for this IP address only?
+		char ipbuf[16];
 		log("msg13: url %s detected as banned (%s), "
 		    "for ip %s"
 		    , r->ptr_url
 		    , banMsg
-		    , iptoa(r->m_urlIp) 
+		    , iptoa(r->m_urlIp,ipbuf)
 		    );
+	}
 
 	// . add to the table if not in there yet
 	// . store in our table of ips we should use proxies for
@@ -1185,17 +1202,21 @@ void gotHttpReply2 ( void *state ,
 	}
 
 	// note it
-	if ( g_conf.m_logDebugSpider && ! r->m_skipHammerCheck )
+	if ( g_conf.m_logDebugSpider && ! r->m_skipHammerCheck ) {
+		char ipbuf[16];
 		log(LOG_DEBUG,"spider: adding last download time "
 		    "of %" PRId64" for firstIp=%s url=%s "
 		    "to msg13::hammerCache",
-		    timeToAdd,iptoa(r->m_firstIp),r->ptr_url);
+		    timeToAdd,iptoa(r->m_firstIp,ipbuf),r->ptr_url);
+	}
 
 
-	if ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 )
+	if ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 ) {
+		char ipbuf[16];
 		log(LOG_DEBUG,"spider: got http reply for firstip=%s url=%s "
 		    "err=%s",
-		    iptoa(r->m_firstIp),r->ptr_url,mstrerror(savedErr));
+		    iptoa(r->m_firstIp,ipbuf),r->ptr_url,mstrerror(savedErr));
+	}
 	
 
 	// sanity. this was happening from iframe download
@@ -1604,12 +1625,14 @@ void gotHttpReply2 ( void *state ,
 		// send back error?  maybe...
 		if ( err ) {
 			if ( g_conf.m_logDebugSpider ||
-			     g_conf.m_logDebugMsg13 )
+			     g_conf.m_logDebugMsg13 ) {
+				char ipbuf[16];
 				log("proxy: msg13: sending back error: %s "
 				    "for url %s with ip %s",
 				    mstrerror(err),
 				    r2->ptr_url,
-				    iptoa(r2->m_urlIp));
+				    iptoa(r2->m_urlIp,ipbuf));
+			}
 				    
 			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(err));
 			g_udpServer.sendErrorReply(slot, err);
@@ -1995,14 +2018,16 @@ static bool addToHammerQueue(Msg13Request *r) {
 	// set the crawldelay we actually used when downloading this
 	//r->m_usedCrawlDelay = crawlDelayMS;
 
-	if ( g_conf.m_logDebugSpider )
+	if ( g_conf.m_logDebugSpider ) {
+		char ipbuf[16];
 		log(LOG_DEBUG,"spider: got timestamp of %" PRId64" from "
 		    "hammercache (waited=%" PRId64" crawlDelayMS=%" PRId32") "
 		    "for %s"
 		    ,last
 		    ,waited
 		    ,crawlDelayMS
-		    ,iptoa(r->m_firstIp));
+		    ,iptoa(r->m_firstIp,ipbuf));
+	}
 
 	bool queueIt = false;
 	if ( last > 0 && waited < crawlDelayMS ) queueIt = true;
@@ -2020,10 +2045,11 @@ static bool addToHammerQueue(Msg13Request *r) {
 	//   which will store maybe a -1 if currently downloading...
 	if ( queueIt ) {
 		// debug
+		char ipbuf[16];
 		log(LOG_INFO,
 		    "spider: adding %s to crawldelayqueue cd=%" PRId32"ms "
 		    "ip=%s",
-		    r->ptr_url,crawlDelayMS,iptoa(r->m_urlIp));
+		    r->ptr_url,crawlDelayMS,iptoa(r->m_urlIp,ipbuf));
 		// save this
 		//r->m_udpSlot = slot; // this is already saved!
 		r->m_nextLink = NULL;
@@ -2046,9 +2072,10 @@ static bool addToHammerQueue(Msg13Request *r) {
 			
 	// if we had it in cache check the wait time
 	if ( last > 0 && waited < crawlDelayMS ) {
+		char ipbuf[16];
 		log("spider: hammering firstIp=%s url=%s "
 		    "only waited %" PRId64" ms of %" PRId32" ms",
-		    iptoa(r->m_firstIp),r->ptr_url,waited,
+		    iptoa(r->m_firstIp,ipbuf),r->ptr_url,waited,
 		    crawlDelayMS);
 		// this guy has too many redirects and it fails us...
 		// BUT do not core if running live, only if for test
@@ -2386,6 +2413,7 @@ bool printHammerQueueTable ( SafeBuf *sb ) {
 
 	for(Msg13Request *r = s_hammerQueueHead; r; r = r->m_nextLink) {
 		// print row
+		char ipbuf[16];
 		sb->safePrintf( "<tr bgcolor=#%s>"
 			       "<td>%i</td>" // #
 			       "<td>%ims</td>" // age in hammer queue
@@ -2393,11 +2421,11 @@ bool printHammerQueueTable ( SafeBuf *sb ) {
 				,LIGHT_BLUE
 			       ,(int)count
 			       ,(int)(nowms - r->m_stored)
-			       ,iptoa(r->m_firstIp)
+			       ,iptoa(r->m_firstIp,ipbuf)
 			       );
 
 		sb->safePrintf("<td>%s</td>" // actual ip
-			       , iptoa(r->m_urlIp));
+			       , iptoa(r->m_urlIp,ipbuf));
 
 		// print crawl delay as link to robots.txt
 		sb->safePrintf( "<td><a href=\"");

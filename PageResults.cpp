@@ -1838,10 +1838,11 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 		sb->safePrintf("</td><td>");
 		if ( host ) sb->safeMemcpy(host,hostLen);
 		sb->safePrintf("</td><td>");
+		char ipbuf[16];
 		sb->safePrintf("<a href=/search?c=%s&q=ip%%3A%s"
 			       "+gbsortbyint%%3Agbsitenuminlinks&n=100>"
-			       ,si->m_cr->m_coll,iptoa(k->m_ip));
-		sb->safePrintf("%s</a>",iptoa(k->m_ip));
+			       ,si->m_cr->m_coll,iptoa(k->m_ip,ipbuf));
+		sb->safePrintf("%s</a>",iptoa(k->m_ip,ipbuf));
 		sb->safePrintf("</td><td>%" PRId32"</td></tr>"
 			       ,(int32_t)k->m_siteRank);
 		//sb->safePrintf("<br>");
@@ -2859,13 +2860,13 @@ badformat:
 				 coll , 
 				 mr->m_docId ); 
 
-		// don't combine this with the sprintf above cuz
-		// iptoa uses a static local buffer like ctime()
+		char ipbuf1[16];
+		char ipbuf2[16];
 		sb->safePrintf(//"<br>"
 			      " - <a style=color:blue; href=\"/search?"
 			      "c=%s&sc=1&dr=0&q=ip:%s&"
 			      "n=100&usecache=0\">%s</a>\n",
-			      coll,iptoa(mr->m_ip), iptoa(mr->m_ip) );
+			      coll,iptoa(mr->m_ip,ipbuf1), iptoa(mr->m_ip,ipbuf2) );
 		// ip domain link
 		unsigned char *us = (unsigned char *)&mr->m_ip;//urlip;
 		sb->safePrintf (" - <a style=color:blue; "

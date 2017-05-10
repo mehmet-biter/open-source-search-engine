@@ -357,11 +357,12 @@ void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
 	m_resendCount++; 
 	// debug msg
 	if ( g_conf.m_logDebugUdp || (g_conf.m_logDebugDns && !m_proto->useAcks()) ) {
+		char ipbuf[16];
 		logf(LOG_DEBUG, "udp: resending slot all=%" PRId32" tid=%" PRId32" dst=%s:%hu count=%" PRId32" host=0x%" PTRFMT
 		     " cleared=%" PRId32,
 		     (int32_t) resendAll,
 		     m_transId,
-		     iptoa(m_ip),//+9,
+		     iptoa(m_ip,ipbuf),
 		     (uint16_t) m_port,
 		     (int32_t) m_resendCount,
 		     (PTRTYPE) m_host,
@@ -672,6 +673,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 			hid = m_host->m_hostId;
 
 		int32_t kk = 0; if ( m_callback ) kk = 1;
+		char ipbuf[16];
 		log(LOG_DEBUG,
 		    "udp: sent dgram "
 		    "dgram=%" PRId32" "
@@ -696,8 +698,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		    (int32_t)m_dgramsToSend,
 		    (int16_t)m_msgType,
 		    m_transId,
-		    //iptoa(m_ip),//+9,
-		    iptoa(to.sin_addr.s_addr),
+		    iptoa(to.sin_addr.s_addr,ipbuf),
 		    (uint16_t)m_port,
 		    eth,//shotgun,
 		    (int32_t)kk ,
@@ -935,6 +936,7 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 		int32_t hid = -1;
 		if ( m_host )
 			hid = m_host->m_hostId;
+		char ipbuf[16];
 		logf(LOG_DEBUG,
 		    "udp: sent ACK   "
 		    "dgram=%" PRId32" "
@@ -950,7 +952,7 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 		    (int32_t)dgramNum, 
 		    (int16_t)m_msgType , 
 		    m_transId,
-		     iptoa(m_ip),//+9 , 
+		     iptoa(m_ip,ipbuf),
 		    (uint16_t)m_port, 
 		    (int32_t)kk , 
 		    (int32_t)(gettimeofdayInMilliseconds() - m_startTime) , 
@@ -986,13 +988,14 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 	if ( m_proto->isCancelTrans ( readBuffer, readSize ) ) {
 		//if ( g_conf.m_logDebugUdp ) 
 		//logf(LOG_INFO,//LOG_DEBUG,
+		char ipbuf[16];
 		log(LOG_DEBUG,
 		     "udp: Read cancel ack hdrlen=%" PRId32" tid=%" PRId32" "
 		     "src=%s:%hu msgType=0x%02x weInitiated=%" PTRFMT" "
 		    "sent=%" PRId32" "
 		    "sendbufalloc=%" PTRFMT" sendbufsize=%" PRIu32,
 		     readSize , m_proto->getTransId ( readBuffer,readSize ),
-		     iptoa(m_ip),m_port,
+		     iptoa(m_ip,ipbuf), m_port,
 		     m_proto->getMsgType(readBuffer,readSize),
 		    (PTRTYPE)m_callback,
 		    m_sentBitsOn,
@@ -1054,6 +1057,7 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		if ( m_host )
 			hid = m_host->m_hostId;
 		int32_t kk = 0; if ( m_callback ) kk = 1;
+		char ipbuf[16];
 		log(LOG_DEBUG,
 		    "udp: Read dgram "
 		    "dgram=%" PRId32" "
@@ -1071,7 +1075,7 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		    (int32_t)dgramNum,
 		    (int16_t)m_proto->getMsgType(readBuffer,readSize),
 		    (int32_t)m_proto->getTransId(readBuffer,readSize),
-		    iptoa(m_ip), 
+		    iptoa(m_ip,ipbuf), 
 		    (uint16_t)m_port,
 		    (int32_t)kk,
 		    (int32_t)(gettimeofdayInMilliseconds() - m_startTime) ,
@@ -1113,13 +1117,15 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		for ( int32_t i = 0 ; i < m_dgramsToSend ; i++ ) 
 			setBit ( i , m_readAckBits2 );
 		m_readAckBitsOn = m_dgramsToSend;
-		if ( g_conf.m_logDebugUdp ) 
+		if ( g_conf.m_logDebugUdp )  {
+			char ipbuf[16];
 			log(LOG_DEBUG,"udp: Cramming ACKs "
 			    "tid=%" PRId32" "
 			    "dst=%s:%hu" ,
 			    m_transId ,
-			    iptoa(m_ip),
+			    iptoa(m_ip,ipbuf),
 			    (uint16_t)m_port);
+		}	
 	}
 
 	// . if it's our first, mark this for g_stats UDP_*_IN_BPS
@@ -1427,6 +1433,7 @@ void UdpSlot::readAck ( int32_t dgramNum, int64_t now ) {
 		int32_t hid = -1;
 		if ( m_host )
 			hid = m_host->m_hostId;
+		char ipbuf[16];
 		log(LOG_DEBUG,
 		    "udp: Read ACK   "
 		    "dgram=%" PRId32" "
@@ -1441,7 +1448,7 @@ void UdpSlot::readAck ( int32_t dgramNum, int64_t now ) {
 		    (int32_t)dgramNum, 
 		    (int16_t)m_msgType , 
 		    m_transId,
-		    iptoa(m_ip) , 
+		    iptoa(m_ip,ipbuf) , 
 		    (uint16_t)m_port, 
 		    (int32_t)kk , 
 		    now - m_startTime, 

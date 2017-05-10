@@ -89,7 +89,8 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	sb->safePrintf("recsize=%" PRId32" ",getRecSize());
 	sb->safePrintf("parentDocId=%" PRIu64" ",getParentDocId());
 
-	sb->safePrintf("firstip=%s ",iptoa(m_firstIp) );
+	char ipbuf[16];
+	sb->safePrintf("firstip=%s ",iptoa(m_firstIp,ipbuf) );
 	sb->safePrintf("hostHash32=0x%" PRIx32" ",m_hostHash32 );
 	sb->safePrintf("domHash32=0x%" PRIx32" ",m_domHash32 );
 	sb->safePrintf("siteHash32=0x%" PRIx32" ",m_siteHash32 );
@@ -169,7 +170,8 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 		return sb->length();
 	}
 
-	sb->safePrintf("firstip=%s ",iptoa(m_firstIp) );
+	char ipbuf[16];
+	sb->safePrintf("firstip=%s ",iptoa(m_firstIp,ipbuf) );
 	sb->safePrintf("percentChangedPerDay=%.02f%% ",m_percentChangedPerDay);
 
 	// print time format: 7/23/1971 10:45:32
@@ -248,7 +250,8 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_priority);
 	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_ufn);
 
-	sb->safePrintf(" <td>%s</td>\n",iptoa(m_firstIp) );
+	char ipbuf[16];
+	sb->safePrintf(" <td>%s</td>\n",iptoa(m_firstIp,ipbuf) );
 	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_errCount );
 
 	sb->safePrintf(" <td>%" PRIu64"</td>\n",getUrlHash48());
@@ -570,7 +573,8 @@ bool isAssignedToUs ( int32_t firstIp ) {
 	}
 	// if none, that is bad! return the first one that we wanted to
 	if ( upc == 0 ) {
-		log("spider: no hosts can handle spider request for ip=%s", iptoa(firstIp));
+		char ipbuf[16];
+		log("spider: no hosts can handle spider request for ip=%s", iptoa(firstIp,ipbuf));
 		return false;
 		//return (h->m_hostId == g_hostdb.m_hostId);
 	}

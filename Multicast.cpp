@@ -329,11 +329,13 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 			log("net: Got error sending request to hostId %d (msgType=0x%02x transId=%d): %s. Retrying.",
 			    h->m_hostId, (int)slot->getMsgType(), slot->getTransId(),
 			    mstrerror(m_host[i].m_errno) );
-		else
+		else {
+			char ipbuf[16];
 			log("net: Got error sending request to %s:%d (msgType=0x%02x transId=%d): %s. Retrying.",
-			    iptoa(slot->getIp()), (int32_t)slot->getPort(),
+			    iptoa(slot->getIp(),ipbuf), (int32_t)slot->getPort(),
 			    (int)slot->getMsgType(), slot->getTransId(),
 			    mstrerror(m_host[i].m_errno) );
+		}
 	}
 	// . let's sleep for a second before retrying the send
 	// . the g_errno could be ETRYAGAIN which happens if we're trying to 
@@ -739,8 +741,9 @@ void Multicast::sleepCallback1() {
 			// transaction is not in progress ifm_host[i].m_errno is set
 			const char *ee = "";
 			if ( m_host[i].m_errno ) ee = mstrerror(m_host[i].m_errno);
+			char ipbuf[16];
 			log(LOG_DEBUG, "net: Multicast::sleepWrapper1: tried host %s:%d %s",
-			    iptoa(m_host[i].m_slot->getIp()),
+			    iptoa(m_host[i].m_slot->getIp(),ipbuf),
 			    (int32_t)m_host[i].m_slot->getPort(), ee);
 		}
 	}
@@ -854,8 +857,9 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 				    m_niceness,
 				    mstrerror(g_errno));
 			} else {
+				char ipbuf[16];
 				log(LOG_WARN, "net: Multicast got error in reply from %s:%d (msgType=0x%02x transId=%d nice =%d): %s.",
-				    iptoa(slot->getIp()), (int32_t) slot->getPort(),
+				    iptoa(slot->getIp(),ipbuf), (int32_t) slot->getPort(),
 				    (int)slot->getMsgType(), slot->getTransId(), m_niceness,
 				    mstrerror(g_errno));
 			}

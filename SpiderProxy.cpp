@@ -321,12 +321,13 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 	// only host #0 will have the stats ... so print that link
 	if ( g_hostdb.m_myHost->m_hostId != 0 ) {
 		Host *h = g_hostdb.getHost(0);
+		char ipbuf[16];
 		sb->safePrintf("<br>"
 			       "<b>See table on <a href=http://%s:%" PRId32"/"
 			       "admin/proxies>"
 			       "host #0</a></b>"
 			       "<br>"
-			       , iptoa(h->m_ip)
+			       , iptoa(h->m_ip,ipbuf)
 			       , (int32_t)(h->getInternalHttpPort())
 			       );
 		//return true;
@@ -394,12 +395,13 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 			bg = "ffa6a6";
 
 		// print it
+		char ipbuf[16];
 		sb->safePrintf (
 			       "<tr bgcolor=#%s>"
 			       "<td>%s</td>" // proxy ip
 			       "<td>%" PRIu32"</td>" // port
 			       , bg
-			       , iptoa(sp->m_ip)
+			       , iptoa(sp->m_ip,ipbuf)
 			       , (uint32_t)(uint16_t)sp->m_port
 			       );
 
