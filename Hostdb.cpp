@@ -477,10 +477,11 @@ createFile:
 			key96_t k = hash96 ( h->m_hostname2 , hlen2 );
 			// get eth1 ip of hostname in /etc/hosts
 			if ( ! g_dns.isInFile ( k , &ip2 ) ) {
+				char ipbuf[16];
 				log(LOG_WARN, "admin: secondary host %s in hosts.conf "
 				    "not in /etc/hosts. Using secondary "
 				    "ethernet (eth1) ip "
-				    "of %s",hostname2,iptoa(ip));
+				    "of %s",hostname2,iptoa(ip,ipbuf));
 			}
 		}
 
@@ -1017,8 +1018,9 @@ bool Hostdb::hashHosts ( ) {
 		Host *h2 ;
 		h2 = getTcpHost ( h->m_ip , h->m_httpPort );
 		if ( h != h2 ) {
+			char ipbuf[16];
 			log( LOG_WARN, "db: Host lookup3 failed for hostId %" PRId32". ip=%s port=%hu",
-			     h->m_hostId, iptoa( h->m_ip ), h->m_httpPort );
+			     h->m_hostId, iptoa(h->m_ip,ipbuf), h->m_httpPort );
 			return false;
 		}
 		h2 = getTcpHost ( h->m_ip , h->m_httpsPort );
@@ -1036,10 +1038,11 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 	if ( udp ) hh = getUdpHost ( ip , port );
 
 	if ( hh && port ) { 
+		char ipbuf[16];
 		log(LOG_WARN, "db: Must hash hosts.conf first, then hosts2.conf.");
 		log(LOG_WARN, "db: or there is a repeated ip/port in hosts.conf.");
 		log(LOG_WARN, "db: repeated host ip=%s port=%" PRId32" "
-		    "name=%s",iptoa(ip),(int32_t)port,h->m_hostname);
+		    "name=%s",iptoa(ip,ipbuf),(int32_t)port,h->m_hostname);
 		return false;//g_process.shutdownAbort(true);
 	}
 
@@ -1574,10 +1577,11 @@ int32_t Hostdb::getCRC ( ) {
 	SafeBuf str;
 	for ( int32_t i = 0 ; i < num_grunts ; i++ ) {
 		Host *h = &m_hosts[i];
+		char ipbuf[16];
 		// dns client port not so important
 		str.safePrintf("%" PRId32",", i);
-		str.safePrintf("%s," , iptoa(h->m_ip));
-		str.safePrintf("%s," , iptoa(h->m_ipShotgun));
+		str.safePrintf("%s," , iptoa(h->m_ip,ipbuf));
+		str.safePrintf("%s," , iptoa(h->m_ipShotgun,ipbuf));
 		str.safePrintf("%" PRId32",", (int32_t)h->m_httpPort);
 		str.safePrintf("%" PRId32",", (int32_t)h->m_httpsPort);
 		str.safePrintf("%" PRId32",", (int32_t)h->m_port);

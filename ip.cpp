@@ -39,15 +39,17 @@ int32_t atoip ( const char *s ) {
 
 char *iptoa ( int32_t ip ) {
 	static char s_buf [ 32 ];
-	sprintf ( s_buf , "%hhu.%hhu.%hhu.%hhu",
-		  (unsigned char)((ip >>  0)&0xff),
-		  (unsigned char)((ip >>  8)&0xff),
-		  (unsigned char)((ip >> 16)&0xff),
-		  (unsigned char)((ip >> 24)&0xff));
+	iptoa(ip,s_buf);
 	return s_buf;
-	//struct in_addr in;
-	//in.s_addr = ip;
-	//return inet_ntoa ( in );
+}
+
+const char *iptoa(int32_t ip, char *buf) {
+	sprintf(buf , "%u.%u.%u.%u",
+		((ip >>  0)&0xff),
+		((ip >>  8)&0xff),
+		((ip >> 16)&0xff),
+		((ip >> 24)&0xff));
+	return buf;
 }
 
 // . get domain of ip address
