@@ -391,6 +391,10 @@ debug:
 debug-safe:
 	$(MAKE) config=$@
 
+.PHONY: debug-test
+debug-test:
+	$(MAKE) config=$@
+
 .PHONY: sanitize-address
 sanitize-address:
 	$(MAKE) config=$@
