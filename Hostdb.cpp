@@ -1590,6 +1590,8 @@ int32_t Hostdb::getCRC ( ) {
 	if ( m_crc == 0 ) m_crc = 1;
 
 	m_crcValid = true;
+
+	log(LOG_INFO,"conf: hosts.conf CRC caclucated as %d", m_crc);
 	return m_crc;
 }
 
