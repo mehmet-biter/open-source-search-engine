@@ -919,6 +919,9 @@ createFile:
 	// set our group
 	m_myShard = getShard ( m_myHost->m_shardNum );
 
+	//calculate CRC once and ofr all
+	getCRC();
+
 	// has the hosts
 	return hashHosts();
 }
