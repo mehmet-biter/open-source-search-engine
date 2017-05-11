@@ -399,15 +399,6 @@ TagRec::TagRec() {
 	memset(m_listPtrs, 0, sizeof(m_listPtrs));
 }
 
-void TagRec::constructor ( ) {
-	m_numListPtrs = 0;
-
-	// run a constructor on the lists
-	for ( int32_t i = 0 ; i < MAX_TAGDB_REQUESTS ; ++i ) {
-		m_lists[i].constructor();
-	}
-}
-
 TagRec::~TagRec ( ) {
 	reset();
 }

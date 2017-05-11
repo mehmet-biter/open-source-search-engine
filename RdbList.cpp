@@ -52,17 +52,6 @@ static bool cmp_6bytes_equal(const void *p1, const void *p2) {
 	return u16_1==u16_2;
 }
 
-
-void RdbList::constructor () {
-	verify_signature();
-	m_list        = NULL;
-	m_alloc       = NULL;
-	m_allocSize   = 0;
-	m_useHalfKeys = false;
-	m_ownData     = false;
-	reset();
-}
-
 RdbList::RdbList () {
 //	log(LOG_TRACE,"RdbList(%p)::RdbList()",this);
 	set_signature();

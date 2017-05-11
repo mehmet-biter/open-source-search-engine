@@ -96,7 +96,6 @@ public:
 	TagRec();
 	~TagRec();
 	void reset();
-	void constructor ();
 
 	int32_t getNumTags ( );
 

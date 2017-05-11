@@ -52,8 +52,6 @@ public:
 
 	~RdbList();
 
-	void constructor();
-
 	void destructor();
 
 	// sets m_listSize to 0, keeps any allocated buffer (m_alloc), however
