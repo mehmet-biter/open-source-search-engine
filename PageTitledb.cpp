@@ -22,8 +22,6 @@ class State4 {
 public:
 	TcpSocket   *m_socket;
 	XmlDoc       m_xd;
-	bool         m_isMasterAdmin;
-	bool         m_isLocal;
 	int64_t    m_docId;
 	const char  *m_pwd;
 	const char  *m_coll;
@@ -51,9 +49,6 @@ bool sendPageTitledb ( TcpSocket *s , HttpRequest *r ) {
 	st->m_socket = s;
 	// copy it
 	st->m_r.copy ( r );
-	// remember if http request is internal/local or not
-	st->m_isMasterAdmin = g_conf.isCollAdmin ( s , r );
-	st->m_isLocal = r->isLocal();
 	st->m_docId   = docId;
 	// password, too
 	st->m_pwd = r->getString ( "pwd" );
