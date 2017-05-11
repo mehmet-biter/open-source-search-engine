@@ -24,7 +24,6 @@ public:
 	//int32_t  m_sfn;
 	//int32_t  m_urlLen;
 	TcpSocket  *m_s;
-	bool       m_isLocal;
 	char  m_pwd[32];
 	HttpRequest m_r;
 	int32_t m_old;
@@ -234,8 +233,6 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	
 	// should we use the old title rec?
 	st->m_old    = old;
-	// are we coming from a local machine?
-	st->m_isLocal = r->isLocal();
  	//no more setting the default root quality to 30, instead if we do not
  	// know it setting it to -1
  	st->m_rootQuality=-1;
@@ -771,8 +768,6 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	
 	// should we use the old title rec?
 	st->m_old    = old;
-	// are we coming from a local machine?
-	st->m_isLocal = r->isLocal();
  	//no more setting the default root quality to 30, instead if we do not
  	// know it setting it to -1
  	st->m_rootQuality=-1;
