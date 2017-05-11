@@ -169,7 +169,7 @@ while true; do
 		mv file_state.txt file_state-bak$(date -u +%Y%m%d-%H%M%S).txt
 	fi
 
-	if [ -f gb_output.txt ]; then
+	if [ -s gb_output.txt ]; then
 		mv gb_output.txt gb_output-bak$(date -u +%Y%m%d-%H%M%S).txt
 	fi
 
