@@ -558,7 +558,7 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 	}
 
 	// log the request iff filename does not end in .gif .jpg .
-	char *f     = r.getFilename();
+	const char *f     = r.getFilename();
 	int32_t  flen  = r.getFilenameLen();
 	bool  isGif = ( f && flen >= 4 && strncmp(&f[flen-4],".gif",4) == 0 );
 	bool  isJpg = ( f && flen >= 4 && strncmp(&f[flen-4],".jpg",4) == 0 );
@@ -675,14 +675,14 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	TcpServer *tcp = s->m_this;
 	// if there is a redir=http:// blah in the request then redirect
 	int32_t redirLen = r->getRedirLen() ;
-	char *redir   = NULL;
+	const char *redir   = NULL;
 
 	// . we may be serving multiple hostnames
 	// . www.gigablast.com, gigablast.com, www.inifinte.info,
 	//   infinite.info, www.microdemocracy.com
 	// . get the host: field from the MIME
 	// . should be NULL terminated
-	char *h  = r->getHost();
+	const char *h  = r->getHost();
 
 	if(redirLen > 0) redir = r->getRedir();
 	else if (!isAdmin && 
@@ -712,10 +712,10 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// . get info about the file requested
 	// . use a "size" of -1 for the WHOLE file
 	// . a non GET request should use a "size" of 0 (like HEAD)
-	char *path    = r->getFilename();
+	const char *path    = r->getFilename();
 	int32_t  pathLen = r->getFilenameLen();
 	// paths with ..'s are from hackers!
-	for ( char *p = path ; *p ; p++ ) {
+	for(const char *p = path; *p; p++) {
 		if ( *p == '.' && *( p + 1 ) == '.' ) {
 			log( LOG_ERROR, "%s:%s:%d: call sendErrorReply. Bad request", __FILE__, __func__, __LINE__ );
 			return sendErrorReply( s, 404, "bad request" );

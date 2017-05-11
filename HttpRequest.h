@@ -52,14 +52,13 @@ class HttpRequest {
 	bool    m_reqBufValid;
 
 	// get the request length
-	int32_t getRequestLen() { return m_reqBuf.length(); }//m_bufLen; }
+	int32_t getRequestLen() const { return m_reqBuf.length(); }
 
 	// . get the outgoing request we made by calling set() above
 	// . OR get the first line of an incoming request
-	char *getRequest  () { 
+	const char *getRequest() const { 
 		if ( m_reqBufValid ) return m_reqBuf.getBufStart();
 		else return NULL;
-		//return m_buf;
 	}
 
 	// FORMAT_HTML FORMAT_JSON FORMAT_XML
@@ -95,29 +94,25 @@ class HttpRequest {
 	int32_t m_squidProxiedUrlLen;
 
 	// is it this type of request?
-	bool isGETRequest  () { return (m_requestType == 0); }
-	bool isHEADRequest () { return (m_requestType == 1); }
-	bool isPOSTRequest () { return (m_requestType == 2); }
+	bool isGETRequest  () const { return (m_requestType == 0); }
+	bool isHEADRequest () const { return (m_requestType == 1); }
+	bool isPOSTRequest () const { return (m_requestType == 2); }
 
-	char *getFilename    () { return m_filename; }
-	int32_t  getFilenameLen () { return m_filenameLen; }
-	int32_t  getFileOffset  () { return m_fileOffset; }
-	int32_t  getFileSize    () { return m_fileSize; }
+	const char *getFilename () const { return m_filename; }
+	int32_t  getFilenameLen () const { return m_filenameLen; }
+	int32_t  getFileOffset  () const { return m_fileOffset; }
+	int32_t  getFileSize    () const { return m_fileSize; }
 
-	char *getHost        () { return m_host;    }
-	int32_t  getHostLen     () { return m_hostLen; }
-	//bool  isLocal        () { return m_isLocal; }
-	//bool  isAdmin        () { return m_isMasterAdmin; }
-	bool  isLocal        () { return m_isLocal; }
+	const char *getHost     () const { return m_host;    }
+	int32_t  getHostLen     () const { return m_hostLen; }
+	bool  isLocal        () const { return m_isLocal; }
 
-	// is this the admin of a collection?
-	//bool isCollAdmin () { return m_isCollAdmin; }
 
 	// . the &ucontent= cgi var does not get its value decoded
 	//   because it's already decoded
 	// . this is so Mark doesn't have to url encode his injected content
-	char *getUnencodedContent    ( ) { return m_ucontent; }
-	int32_t  getUnencodedContentLen ( ) { return m_ucontentLen; }
+	const char *getUnencodedContent() const { return m_ucontent; }
+	int32_t  getUnencodedContentLen() const { return m_ucontentLen; }
 	
 	// . for parsing the terms in a cgi url
 	// . the returned string is NOT NULL terminated
@@ -129,28 +124,28 @@ class HttpRequest {
 	float      getFloat    ( const char *field, double defaultFloat ) const;
 	double     getDouble   ( const char *field, double defaultDouble ) const;
 
-	float      getFloatFromCookie    ( const char *field, float def );
-	int32_t       getLongFromCookie    ( const char *field, int32_t def );
-	int64_t  getLongLongFromCookie( const char *field, int64_t def );
-	bool       getBoolFromCookie    ( const char *field, bool def );
-	const char *getStringFromCookie ( const char *field, int32_t *len = NULL,
+	float       getFloatFromCookie   ( const char *field, float def ) const;
+	int32_t     getLongFromCookie    ( const char *field, int32_t def ) const;
+	int64_t     getLongLongFromCookie( const char *field, int64_t def ) const;
+	bool        getBoolFromCookie    ( const char *field, bool def ) const;
+	const char *getStringFromCookie  ( const char *field, int32_t *len = NULL,
 					  const char *defaultString = NULL ,
-					  int32_t *next=NULL);
+					  int32_t *next=NULL) const;
 	
 
 	bool hasField ( const char *field ) const;
 
 	// are we a redir? if so return non-NULL
-	char      *getRedir    ( ) { return m_redir;    }
-	int32_t       getRedirLen ( ) { return m_redirLen; }
+	const char *getRedir() const { return m_redir;    }
+	int32_t     getRedirLen() const { return m_redirLen; }
 
 	HttpRequest();
 	HttpRequest( const HttpRequest &a );
 	~HttpRequest();
 	void reset();
 
-	char *getPath    ( ) { return m_path; }
-	int32_t  getPathLen ( ) { return m_plen; }
+	const char *getPath() const { return m_path; }
+	int32_t  getPathLen() const { return m_plen; }
 
 	// private:
 

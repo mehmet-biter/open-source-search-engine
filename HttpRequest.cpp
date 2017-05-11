@@ -1088,7 +1088,7 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 	 return true;
  }
 
-float HttpRequest::getFloatFromCookie    ( const char *field, float def ) {
+float HttpRequest::getFloatFromCookie(const char *field, float def) const {
 	int32_t flen;
 	const char *cs = getStringFromCookie ( field , &flen , NULL );
 	if ( ! cs ) return def;
@@ -1096,7 +1096,7 @@ float HttpRequest::getFloatFromCookie    ( const char *field, float def ) {
 	return cv;
 }
 
-int32_t HttpRequest::getLongFromCookie    ( const char *field, int32_t def ) {
+int32_t HttpRequest::getLongFromCookie(const char *field, int32_t def) const {
 	int32_t flen;
 	const char *cs = getStringFromCookie ( field , &flen , NULL );
 	if ( ! cs ) return def;
@@ -1105,7 +1105,7 @@ int32_t HttpRequest::getLongFromCookie    ( const char *field, int32_t def ) {
 	return (int32_t)cv;
 }
 
-int64_t HttpRequest::getLongLongFromCookie ( const char *field, int64_t def ) {
+int64_t HttpRequest::getLongLongFromCookie(const char *field, int64_t def) const {
 	int32_t flen;
 	const char *cs = getStringFromCookie ( field , &flen , NULL );
 	if ( ! cs ) return def;
@@ -1113,7 +1113,7 @@ int64_t HttpRequest::getLongLongFromCookie ( const char *field, int64_t def ) {
 	return cv;
 }
 
-bool HttpRequest::getBoolFromCookie    ( const char *field, bool def ) {
+bool HttpRequest::getBoolFromCookie(const char *field, bool def) const {
 	int32_t flen;
 	const char *cs = getStringFromCookie ( field , &flen , NULL );
 	if ( ! cs ) return def;
@@ -1127,7 +1127,7 @@ bool HttpRequest::getBoolFromCookie    ( const char *field, bool def ) {
 const char *HttpRequest::getStringFromCookie ( const char *field      ,
                                                int32_t *len        ,
                                                const char *defaultStr ,
-                                               int32_t *next       ) {
+                                               int32_t *next) const {
 	// get field len
 	int32_t flen = strlen(field);
 	// assume none
@@ -1575,13 +1575,13 @@ bool HttpRequest::getCurrentUrlPath ( SafeBuf &cup ) {
 }
 
 int getVersionFromRequest ( HttpRequest *r ) {
-    char *path    = r->getFilename();
+    const char *path    = r->getFilename();
     int32_t  pathLen = r->getFilenameLen();
     bool requestHasVersion = pathLen > 2 && strncmp( path, "/v", 2 ) == 0;
     if (!requestHasVersion)
         return HTTP_REQUEST_DEFAULT_REQUEST_VERSION;
-    char *rest = path + 2;
-    char *end = strstr(rest, "/");
+    const char *rest = path + 2;
+    const char *end = strstr(rest, "/");
     if (!end)
         return HTTP_REQUEST_DEFAULT_REQUEST_VERSION;
     char version[3];

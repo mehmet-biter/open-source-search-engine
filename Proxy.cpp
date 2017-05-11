@@ -181,7 +181,7 @@ bool Proxy::handleRequest (TcpSocket *s){
 	bool isAdmin = g_conf.isMasterAdmin(s,&hr);
 
 	int32_t redirLen = hr.getRedirLen() ;
-	char *redir = NULL;
+	const char *redir = NULL;
 	if(redirLen > 0) redir = hr.getRedir();
 
 	// redirect everyone away if we should
@@ -203,7 +203,7 @@ bool Proxy::handleRequest (TcpSocket *s){
 	// . just requesting a static file, like rants.html or logo.gif?
 	// . if so just handle that as a normal html/image file
 	int32_t n = g_pages.getDynamicPageNumber ( &hr );
-	char *path = hr.getPath();
+	const char *path = hr.getPath();
 	
 	// . i guess right now the proxy is handling admin pages itself
 	// . i am changing this so that if &forward=<hostid> is in the url then
