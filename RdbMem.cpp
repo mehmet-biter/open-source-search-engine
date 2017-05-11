@@ -2,6 +2,7 @@
 #include "Errno.h"
 #include "Mem.h"
 #include "Log.h"
+#include "ScopedLock.h"
 
 // RdbMem allocates a fixed chunk of memory and initially sets m_ptr1 to point at the start and m_ptr2 at the end
 //    |--------------------------------------------------|
@@ -53,6 +54,8 @@ RdbMem::~RdbMem() {
 
 
 void RdbMem::reset() {
+	ScopedLock sl(m_mtx);
+
 	if(m_mem)
 		mfree(m_mem, m_memSize, m_allocName);
 	m_ptr1 = m_ptr2 = m_mem = NULL;
@@ -61,6 +64,8 @@ void RdbMem::reset() {
 
 
 void RdbMem::clear() {
+	ScopedLock sl(m_mtx);
+
 	// set up primary/secondary mem ptrs
 	m_ptr1 = m_mem;
 	// secondary mem initially grow downward
@@ -114,6 +119,8 @@ void *RdbMem::dupData(const char *data, int32_t dataSize) {
 
 
 void *RdbMem::allocData(int32_t dataSize) {
+	ScopedLock sl(m_mtx);
+
 	// . otherwise, use the primary mem
 	// . if primary mem growing down...
 	if(m_ptr1>m_ptr2){
@@ -136,8 +143,21 @@ void *RdbMem::allocData(int32_t dataSize) {
 	// are we at the 90% limit?
 	if(m_ptr1>m_90up)
 		m_is90PercentFull = true;
-	// note it
-	//log("rdbmem: ptr1b=%" PRIu32" size=%" PRId32,(int32_t)m_ptr1-dataSize,dataSize);
+
 	// return the ptr
 	return m_ptr1 - dataSize;
+}
+
+int32_t RdbMem::getAvailMem() const {
+	ScopedLock sl(m_mtx);
+
+	// don't allow ptrs to equal each other...
+	if ( m_ptr1 == m_ptr2 ) return 0;
+	if ( m_ptr1 <  m_ptr2 ) return m_ptr2 - m_ptr1 - 1;
+	return m_ptr1 - m_ptr2 - 1;
+}
+
+bool RdbMem::is90PercentFull() const {
+	ScopedLock sl(m_mtx);
+	return m_is90PercentFull;
 }

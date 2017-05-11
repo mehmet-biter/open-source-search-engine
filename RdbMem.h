@@ -8,6 +8,7 @@
 #define GB_RDBMEM_H
 
 #include "types.h"
+#include "GbMutex.h"
 #include <inttypes.h>
 
 class RdbMem {
@@ -24,6 +25,8 @@ class RdbMem {
 
 	void reset();
 
+	GbMutex& getLock() { return m_mtx; }
+
 	// . if a dump is not going on this uses the primary mem space
 	void *dupData(const char *data, int32_t dataSize);
 
@@ -31,22 +34,19 @@ class RdbMem {
 	void *allocData(int32_t dataSize);
 
 	// how much mem is available?
-	int32_t getAvailMem() const {
-		// don't allow ptrs to equal each other...
-		if ( m_ptr1 == m_ptr2 ) return 0;
-		if ( m_ptr1 <  m_ptr2 ) return m_ptr2 - m_ptr1 - 1;
-		return m_ptr1 - m_ptr2 - 1;
-	}
+	int32_t getAvailMem() const;
 
 	int32_t getTotalMem() const { return m_memSize; }
 
 	int32_t getUsedMem() const { return m_memSize - getAvailMem(); }
 
 	// used to determine when to dump
-	bool is90PercentFull() const { return m_is90PercentFull; }
+	bool is90PercentFull() const;
 
 private:
 	friend class Rdb;
+
+	mutable GbMutex m_mtx;
 
 	// the primary mem
 	char *m_ptr1;

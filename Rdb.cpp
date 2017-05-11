@@ -2058,6 +2058,8 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 	// this only works for non-dumped RdbMem right now, i.e. doledb only
 	if ( m_rdbId != RDB_DOLEDB ) { g_process.shutdownAbort(true); }
 
+	ScopedLock sl2(m_mem.getLock());
+
 	// start scanning the mem pool
 	char *p    = m_mem.m_mem;
 	char *pend = m_mem.m_ptr1;
