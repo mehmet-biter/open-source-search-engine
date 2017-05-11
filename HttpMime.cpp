@@ -67,6 +67,8 @@ void HttpMime::reset ( ) {
 	m_charsetLen = 0;
 	m_locationField = NULL;
 	m_locationFieldLen = 0;
+	m_contentLanguage = NULL;
+	m_contentLanguageLen = 0;
 	m_contentEncodingPos = NULL;
 	m_contentLengthPos = NULL;
 	m_contentTypePos = NULL;
@@ -681,6 +683,27 @@ bool HttpMime::parseContentEncoding(const char *field, size_t fieldLen) {
 	return false;
 }
 
+// Content-Language
+// https://tools.ietf.org/html/rfc2616#section-14.12
+bool HttpMime::parseContentLanguage(const char *field, size_t fieldLen) {
+	static const char s_contentLanguage[] = "content-language";
+	static const size_t s_contentLanguageLen = strlen(s_contentLanguage);
+
+	if (fieldLen == s_contentLanguageLen && strncasecmp(field, s_contentLanguage, fieldLen) == 0) {
+		const char *value = NULL;
+		size_t valueLen = 0;
+
+		if (getValue(&value, &valueLen)) {
+			m_contentLanguage = value;
+			m_contentLanguageLen = valueLen;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 // https://tools.ietf.org/html/rfc2616#section-2.2
 // HTTP/1.1 header field values can be folded onto multiple lines if the continuation line begins with a space or
 // horizontal tab. All linear white space, including folding, has the same semantics as SP.
@@ -758,6 +781,10 @@ bool HttpMime::parse(const char *mime, int32_t mimeLen, Url *url) {
 
 		if (getField(&field, &fieldLen)) {
 			if (parseContentEncoding(field, fieldLen)) {
+				continue;
+			}
+
+			if (parseContentLanguage(field, fieldLen)) {
 				continue;
 			}
 

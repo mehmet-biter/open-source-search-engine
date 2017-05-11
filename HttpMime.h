@@ -117,6 +117,9 @@ public:
 	const char *getCharset() { return m_charset; }
 	int32_t getCharsetLen() const { return m_charsetLen; }
 
+	const char *getContentLanguage() { return m_contentLanguage; }
+	int32_t getContentLanguageLen() const { return m_contentLanguageLen; }
+
 	int32_t getContentEncoding() const { return m_contentEncoding; }
 	const char *getContentEncodingPos() { return m_contentEncodingPos; }
 	const char *getContentLengthPos() { return m_contentLengthPos; }
@@ -182,6 +185,7 @@ private:
 	bool parseContentType(const char *field, size_t fieldLen);
 	bool parseContentLength(const char *field, size_t fieldLen);
 	bool parseContentEncoding(const char *field, size_t fieldLen);
+	bool parseContentLanguage(const char *field, size_t fieldLen);
 
 	// converts a string contentType like "text/html" to a int32_t
 	int32_t getContentTypePrivate(const char *s, size_t slen);
@@ -208,6 +212,9 @@ private:
 	int32_t m_contentLen;
 	int32_t m_contentType;
 	Url m_locUrl;
+
+	const char *m_contentLanguage;
+	int32_t m_contentLanguageLen;
 
 	const char *m_locationField;
 	int32_t m_locationFieldLen;
