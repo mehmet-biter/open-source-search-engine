@@ -46,6 +46,22 @@ bool sendPageReindex ( TcpSocket *s , HttpRequest *r ) {
 	// this will fill in GigablastRequest so all the parms we need are set
 	g_parms.setGigablastRequest ( s , r , gr );
 
+#ifdef PRIVACORE_SAFE_VERSION
+	if(gr->m_forceDel) {
+		//In the safe version we only allow queries using site:
+		if(strstr(gr->m_query,"site:")==0) {
+			g_errno = EPERMDENIED;
+			log("PageReindex: No 'site:' in query");
+			return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));
+		}
+		//and we don't allow spaces
+		if(strchr(gr->m_query,' ')!=0) {
+			g_errno = EPERMDENIED;
+			log("PageReindex: Space in query");
+			return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));
+		}
+	}
+#endif
 	TcpSocket *sock = gr->m_socket;
 
 	// get collection rec
