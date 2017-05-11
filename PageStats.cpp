@@ -678,10 +678,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      "</td><td>%" PRId32"</td></tr>\n"
 			      "<tr class=poo><td><b>dropped dgrams</b>"
 			      "</td><td>%" PRId32"</td></tr>\n"
-			      "<tr class=poo><td><b>corrupt dns reply "
-			      "dgrams</b>"
-			      "</td><td>%" PRId32"</td></tr>\n"
-
 			      ,
 			      TABLE_STYLE,
 
@@ -703,8 +699,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 			      g_cancelAcksSent,
 			      g_cancelAcksRead,
-			      g_dropped,
-			      g_corruptPackets
+			      g_dropped
 			       );
 
 
@@ -739,8 +734,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 			      "\t\t<droppedDgrams>%" PRId32"</droppedDgrams>\n"
 
-			      "\t\t<corruptDnsReplyDgrams>%" PRId32
-			      "</corruptDnsReplyDgrams>\n"
 			      "\t</networkStats>\n"
 
 			      ,
@@ -764,8 +757,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 			      g_cancelAcksSent,
 			      g_cancelAcksRead,
-			      g_dropped,
-			      g_corruptPackets
+			      g_dropped
 			       );
 
 	if ( format == FORMAT_JSON )
@@ -796,8 +788,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 			      "\t\t\"droppedDgrams\":%" PRId32",\n"
 
-			      "\t\t\"corruptDnsReplyDgrams\":%" PRId32"\n"
-
 			      "\t},\n"
 
 			      ,
@@ -821,8 +811,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 			      g_cancelAcksSent,
 			      g_cancelAcksRead,
-			      g_dropped,
-			      g_corruptPackets
+			      g_dropped
 			       );
 
 	if ( format == FORMAT_HTML ) 

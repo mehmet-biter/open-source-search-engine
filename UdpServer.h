@@ -361,6 +361,5 @@ public:
 extern class UdpServer g_udpServer;
 
 extern int32_t g_dropped;
-extern int32_t g_corruptPackets;
 
 #endif // GB_UDPSERVER_H
