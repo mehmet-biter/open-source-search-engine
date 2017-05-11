@@ -1472,8 +1472,8 @@ bool printSearchResultsTail ( State0 *st ) {
 		// show banned results
 		replaceParm2 ("sb=1",
 			      &newUrl,
-			      hr->m_origUrlRequest,
-			      hr->m_origUrlRequestLen );
+			      hr->getOrigUrlRequest(),
+			      hr->getOrigUrlRequestLen() );
 		// no deduping by summary or content hash etc.
 		StackBuf<> newUrl2;
 		replaceParm2("dr=0",&newUrl2,newUrl.getBufStart(),
@@ -4916,8 +4916,8 @@ static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 
 	MenuItem *first = NULL;
 
-	char *src    = hr->m_origUrlRequest;
-	int32_t  srcLen = hr->m_origUrlRequestLen;
+	const char *src    = hr->getOrigUrlRequest();
+	int32_t  srcLen = hr->getOrigUrlRequestLen();
 
 	const char *frontTag = "";
 	const char *backTag = "";
@@ -5107,8 +5107,8 @@ static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 static bool replaceParm ( const char *cgi , SafeBuf *newUrl , HttpRequest *hr ) { 
 	if ( ! cgi[0] ) return true;
 	// get original request url. this is not \0 terminated
-	char *src    = hr->m_origUrlRequest;
-	int32_t  srcLen = hr->m_origUrlRequestLen;
+	const char *src    = hr->getOrigUrlRequest();
+	int32_t  srcLen = hr->getOrigUrlRequestLen();
 	return replaceParm2 ( cgi ,newUrl, src, srcLen );
 }
 

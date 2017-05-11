@@ -103,6 +103,9 @@ class HttpRequest {
 	int32_t  getFileOffset  () const { return m_fileOffset; }
 	int32_t  getFileSize    () const { return m_fileSize; }
 
+	const char *getOrigUrlRequest() const { return m_origUrlRequest; }
+	int32_t getOrigUrlRequestLen() const { return m_origUrlRequestLen; }
+
 	const char *getHost     () const { return m_host;    }
 	int32_t  getHostLen     () const { return m_hostLen; }
 	bool  isLocal        () const { return m_isLocal; }
@@ -167,6 +170,7 @@ class HttpRequest {
 		return m_fieldLens[i];
 	}
 
+private:
 	// . s is a cgi string
 	// . either the stuff after the '?' in a url
 	// . or the content in a POST operation
@@ -204,7 +208,7 @@ class HttpRequest {
 
 	// are we coming from a local machine? 
 	bool  m_isLocal;
-
+	
 	// does the connecting machine have admin privledges?
 	//bool  m_isMasterAdmin;
 
