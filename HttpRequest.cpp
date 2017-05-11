@@ -127,7 +127,6 @@ void HttpRequest::reset() {
 	memset(m_ref, 0, sizeof(m_ref));
 	m_refLen = 0;
 	memset(m_userAgent, 0, sizeof(m_userAgent));
-	m_metaCookie = NULL;
 }
 
 
@@ -155,7 +154,6 @@ bool HttpRequest::copy(const HttpRequest *r) {
 			m_fieldValues[i] = dbuf + (r->m_fieldValues[i] - sbuf);
 	}
 	m_cookiePtr  = dbuf + (r->m_cookiePtr  - sbuf );
-	m_metaCookie = dbuf + (r->m_metaCookie - sbuf );
 	m_ucontent   = dbuf + (r->m_ucontent   - sbuf );
 	m_path       = dbuf + (r->m_path       - sbuf );
 	m_cgiBuf     = dbuf + (r->m_cgiBuf     - sbuf );
@@ -1019,10 +1017,6 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 			 // which uses &'s to separate its subcookies
 			 // this is a hack for msie's limit of 50 cookies
 			 if ( p[i] == '&' ) p[i] = '\0';
-			 // set m_metaCookie to start of meta cookie
-			 if ( p[i] == 'm' && p[i+1] == 'e' &&
-			      strncmp(p,"metacookie",10) == 0 )
-				 m_metaCookie = p;
 		 }
 		 int32_t len = urlDecode ( m_cookiePtr , 
 					m_cookiePtr,
@@ -1149,7 +1143,6 @@ const char *HttpRequest::getStringFromCookie ( const char *field      ,
 	// crazy?
 	if ( p >= pend ) return defaultStr;
 
-	char *savedVal = NULL;
 	// so we do not skip the first cookie, jump right in!
 	// otherwise we lose the calendar cookie for msie
 	goto entryPoint;
@@ -1202,21 +1195,8 @@ const char *HttpRequest::getStringFromCookie ( const char *field      ,
 		// so it should be ok to NULL terminate now. we already
 		// call urlDecode() now above... and make the &'s into \0's
 		*e = '\0';
-		// if we were in the meta cookie, return that...
-		// otherwise if you visited this site before metacookies
-		// were used you might have the cookie outside the meta
-		// cookie AND inside the metacookie, and only the value
-		// inside the metacookie is legit...
-		if ( val > m_metaCookie ) return val;
-		// otherwise, save it and try to get from meta cookie
-		savedVal = val;
-		// length
-		//if ( len ) *len = strlen(val);
-		// this is the value!
-		//return val;
+		return val;
 	}
-	// did we save something?
-	if ( savedVal ) return savedVal;
 	// no match
 	return defaultStr;
 }

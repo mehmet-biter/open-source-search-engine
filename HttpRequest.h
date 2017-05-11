@@ -263,8 +263,6 @@ class HttpRequest {
 	char *m_cookiePtr;
 	int32_t  m_cookieLen;
 
-	char *m_metaCookie;
-
 	// buffer for adding extra parms
 	char *m_cgiBuf2;
 	int32_t  m_cgiBuf2Size;
