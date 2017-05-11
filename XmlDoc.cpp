@@ -7425,12 +7425,10 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 		if ( g_errno ) return NULL;
 		// panic! what the fuck? why did it return true and then
 		// call our callback???
-		//if ( g_conf.m_logDebugBuild ) {
-		log("build: xmldoc call to msg25 did not block");
+		log(LOG_ERROR, "build: xmldoc call to msg25 did not block");
 		// must now block since it uses multicast now to
 		// send the request onto the network
-		g_process.shutdownAbort(true);
-		//}
+		gbshutdownLogicError();
 	}
 
 	// at this point assume its valid
@@ -7443,14 +7441,19 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	size_linkInfo1 = m_myPageLinkInfoBuf.length();
 	// we should free it
 	m_freeLinkInfo1 = true;
+
 	// this can not be NULL!
 	if ( ! ptr_linkInfo1 || size_linkInfo1 <= 0 ) {
-		log("build: error getting linkinfo1: %s",mstrerror(g_errno));
-		g_process.shutdownAbort(true);
-		return NULL;
+		log(LOG_ERROR, "build: error getting linkinfo1: %s",mstrerror(g_errno));
+		gbshutdownLogicError();
 	}
-	// take it from msg25 permanently
-	//m_msg25.m_linkInfo = NULL;
+
+	// validate linkinfo
+	if (ptr_linkInfo1->m_version != 0 || ptr_linkInfo1->m_lisize < 0 ||
+		ptr_linkInfo1->m_numStoredInlinks < 0 || ptr_linkInfo1->m_numGoodInlinks < 0) {
+		gbshutdownCorrupted();
+	}
+
 	// set flag
 	m_linkInfo1Valid = true;
 	// . validate the hop count thing too
