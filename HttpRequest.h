@@ -150,8 +150,6 @@ class HttpRequest {
 	const char *getPath() const { return m_path; }
 	int32_t  getPathLen() const { return m_plen; }
 
-	// private:
-
 	// . get value of cgi "field" term in the requested filename
 	// . you know GET /myfile.html?q=123&name=nathaniel
 	const char *getValue ( const char *field , int32_t *len=NULL, int32_t *next=NULL) const;
@@ -191,16 +189,11 @@ private:
 	char  m_filename[MAX_HTTP_FILENAME_LEN];
 	int32_t  m_filenameLen;  // excludes ?cgistuff
 
-	// the TcpSocket::m_readBuf basically
-	//char *m_origReq;
-	//int32_t  m_origReqLen;
-
 	// if request is like "GET /poo?foo=bar"
 	// then origUrlRequest is "/poo?foo=bar"
 	// references into TcpSocket::m_readBuf
 	char *m_origUrlRequest;
 	int32_t  m_origUrlRequestLen;
-
 
 	// virtual host in the Host: field of the mime
 	char  m_host[256];
@@ -209,9 +202,6 @@ private:
 	// are we coming from a local machine? 
 	bool  m_isLocal;
 	
-	// does the connecting machine have admin privledges?
-	//bool  m_isMasterAdmin;
-
 	// . decoded cgi data stored here 
 	// . this just points into TcpSocket::m_readBuf
 	// . now it points into m_reqBuf.m_buf[]
@@ -223,21 +213,12 @@ private:
 	int32_t  m_fileOffset;
 	int32_t  m_fileSize;
 
-	// we use this buf to make requests from a url and to hold incoming
-	// requests
-	//char  m_buf[MAX_REQ_LEN];
-	//int32_t  m_bufLen;
-
 	// . cgi field term info stored in here
 	// . set by parseFields()
 	char *m_fields      [ MAX_CGI_PARMS ];
 	int32_t  m_fieldLens   [ MAX_CGI_PARMS ];
 	char *m_fieldValues [ MAX_CGI_PARMS ];
 	int32_t  m_numFields;
-	//int32_t  getNumCgiParms ( ) { return m_numFields; }
-	//char *getCgiParm     ( int32_t i , int32_t *len ) { 
-	//	*len = m_fieldLens[i]; return m_fields[i]; }
-	//char *getCgiValue    ( int32_t i ) { return m_fieldValues[i]; }
 
 	int32_t m_userIP;
 	bool m_isSSL;
@@ -261,9 +242,6 @@ private:
 	char *m_ucontent;
 	int32_t  m_ucontentLen;
 
-	// buffer for the cookie
-	//char  m_cookieBuf[1024];
-	//int32_t  m_cookieBufLen;
 	char *m_cookiePtr;
 	int32_t  m_cookieLen;
 
