@@ -37,7 +37,6 @@ public:
 	char m_coll[MAX_COLL_LEN+2];
 	//CollectionRec *m_cr;
 	bool       m_isMasterAdmin;
-	bool       m_isLocal;
 	//bool       m_seq;
 	bool       m_rtq;
 	//char       m_q[MAX_QUERY_LEN+1];
@@ -124,7 +123,6 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	// save the socket and if Host: is local in the Http request Mime
 	st->m_socket   = s;
 	st->m_isMasterAdmin  = g_conf.isCollAdmin ( s , r );
-	st->m_isLocal  = r->isLocal();
 	st->m_docId    = docId;
 	st->m_printed  = false;
 	// include header ... "this page cached by Gigablast on..."
