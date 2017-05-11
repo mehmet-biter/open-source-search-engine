@@ -119,11 +119,6 @@ class Multicast {
 	// when the request was launched to the m_replyingHost
 	int64_t  m_replyLaunchTime;
 
-	// more hack stuff used by PageInject.cpp
-	int32_t m_hackFileId;
-	int64_t m_hackFileOff;
-	class ImportState *m_importState;
-
 private:
 	GbMutex m_mtx;
 

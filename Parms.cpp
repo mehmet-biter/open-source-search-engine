@@ -5981,46 +5981,6 @@ void Parms::init ( ) {
 	///////////////////////////////////////////
 
 
-	/////
-	//
-	// OLDER SEARCH INPUTS
-	//
-	////
-
-	// IMPORT PARMS
-	m->m_title = "enable document importation";
-	m->m_desc  = "Import documents into this collection.";
-	m->m_cgi   = "import";
-	m->m_page  = PAGE_IMPORT;
-	simple_m_set(CollectionRec,m_importEnabled);
-	m->m_def   = "0";
-	m->m_flags = PF_API;
-	m++;
-
-	m->m_title = "directory containing titledb files";
-	m->m_desc  = "Import documents contained in titledb files in this "
-		"directory. This is an ABSOLUTE directory path.";
-	m->m_cgi   = "importdir";
-	m->m_xml   = "importDir";
-	m->m_page  = PAGE_IMPORT;
-	simple_m_set(CollectionRec,m_importDir);
-	m->m_def   = "";
-	m->m_flags = PF_API;
-	m++;
-
-	m->m_title = "number of simultaneous injections";
-	m->m_desc  = "Typically try one or two injections per host in "
-		"your cluster.";
-	m->m_cgi   = "numimportinjects";
-	m->m_xml   = "numImportInjects";
-	m->m_page  = PAGE_IMPORT;
-	simple_m_set(CollectionRec,m_numImportInjects);
-	m->m_def   = "2";
-	m->m_flags = PF_API;
-	m++;
-
-
-
 	///////////
 	//
 	// ADD URL PARMS
@@ -10717,10 +10677,6 @@ bool Parms::updateParm(const char *rec, WaitEntry *we) {
 	    val2.getBufStart());
 
 	if ( cr ) cr->setNeedsSave();
-
-	// HACK #2
-	if ( base == cr && dst == (char *)&cr->m_importEnabled )
-		resetImportLoopFlag();
 
 	// all done
 	return true;

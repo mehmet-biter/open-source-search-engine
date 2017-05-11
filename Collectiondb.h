@@ -245,11 +245,6 @@ public:
 	// Language stuff
 	char 			m_defaultSortLanguage2[6];
 
-	// IMPORT PARMS
-	bool    m_importEnabled;
-	SafeBuf m_importDir;
-	int32_t    m_numImportInjects;
-	class ImportState *m_importState;
 
 	SafeBuf m_collectionPasswords;
 	SafeBuf m_collectionIps;

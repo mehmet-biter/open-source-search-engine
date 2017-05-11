@@ -188,11 +188,6 @@ static WebPage s_pages[] = {
 	  sendPageThreads  , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_IMPORT , "admin/import"         , 0 , "import" , 0 , 0 ,
-	  "import documents from another cluster", 
-	  sendPageGeneric , 0 ,NULL,NULL,
-	  PG_NOAPI|PG_MASTERADMIN},
-
 	{ PAGE_API , "admin/api"         , 0 , "api" , 0 , 0 ,
 	  "api",  
 	  sendPageAPI , 0 ,NULL,NULL,
@@ -1129,7 +1124,6 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 		if ( i == PAGE_API ) continue;
 		if ( i == PAGE_SEARCHBOX ) continue;
 		if ( i == PAGE_TITLEDB ) continue;
-		if ( i == PAGE_IMPORT ) continue;
 		if ( i == PAGE_HEALTHCHECK ) continue;
 		
 

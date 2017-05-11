@@ -969,7 +969,6 @@ CollectionRec::CollectionRec() {
 	m_spiderStatus = SP_INITIALIZING; // this is 0
 	// inits for sortbydatetable
 	m_msg5       = NULL;
-	m_importState = NULL;
 	// JAB - track which regex parsers have been initialized
 	//log(LOG_DEBUG,"regex: %p initalizing empty parsers", m_pRegExParser);
 
@@ -1023,8 +1022,6 @@ CollectionRec::CollectionRec() {
 	m_sameLangWeight = 0.0;
 	m_unknownLangWeight = 0.0;
 	memset(m_defaultSortLanguage2, 0, sizeof(m_defaultSortLanguage2));
-	m_importEnabled = false;
-	m_numImportInjects = 0;
 	m_posdbMinFilesToMerge = 0;
 	m_titledbMinFilesToMerge = 0;
 	m_linkdbMinFilesToMerge = 0;

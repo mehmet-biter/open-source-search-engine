@@ -9,11 +9,6 @@ void  handleRequest7 ( class UdpSlot *slot , int32_t netnice ) ;
 
 bool sendPageInject ( class TcpSocket *s, class HttpRequest *hr );
 
-bool resumeImports ( ) ;
-
-// called by Process.cpp
-void saveImportStates ( ) ;
-
 #include "XmlDoc.h"
 #include "Parms.h"
 
