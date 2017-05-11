@@ -85,7 +85,7 @@ static inline char *strncasestr( const char *haystack, const char *needle, int32
 	return strncasestr(const_cast<char*>(haystack),needle,haystackSize,needleSize);
 }
 
-static inline bool endsWith(char *haystack, int haystackLen, const char *needle, int needleLen) {
+static inline bool endsWith(const char *haystack, int haystackLen, const char *needle, int needleLen) {
 	return haystackLen >= needleLen && !strncmp(haystack + haystackLen - needleLen, needle, needleLen);
 }
 
