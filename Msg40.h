@@ -140,9 +140,6 @@ public:
 
 	bool m_didSummarySkip;
 
-	// a multicast class to send the request
-	Multicast  m_mcast;
-
 	// for timing how long to get all summaries
 	int64_t  m_startTime;
 
