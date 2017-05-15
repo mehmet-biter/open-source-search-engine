@@ -441,8 +441,7 @@ void handleRequest25(UdpSlot *slot, int32_t netnice) {
 	}
 
 	if ( slotNum >= 0 ) {
-		Msg25Request *head ;
-		head = *(Msg25Request **)g_lineTable.getValueFromSlot(slotNum);
+		Msg25Request *head = *(Msg25Request **)g_lineTable.getValueFromSlot(slotNum);
 		if ( head->m_next ) 
 			req->m_next = head->m_next;
 		head->m_next = req;
