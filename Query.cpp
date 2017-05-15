@@ -17,6 +17,7 @@
 #include "Wiki.h"
 #include "RdbList.h"
 #include "Process.h"
+#include "Conf.h"
 #include "termid_mask.h"
 
 #include "GbMutex.h"
@@ -365,7 +366,11 @@ bool Query::set2 ( const char *query        ,
 
 // returns false and sets g_errno on error
 bool Query::setQTerms ( const Words &words ) {
-
+	if(g_conf.m_logTraceQuery) {
+		logTrace(g_conf.m_logTraceQuery, "Query::setQTerms(words:%d)", words.getNumWords());
+		for(int i=0; i<words.getNumWords(); i++)
+			logTrace(g_conf.m_logTraceQuery, "  word #%d: '%*.*s'", i, words.getWordLen(i), words.getWordLen(i), words.getWord(i));
+	}
 	// . set m_qptrs/m_qtermIds/m_qbits
 	// . use one bit position for each phraseId and wordId
 	// . first set phrases
@@ -448,6 +453,7 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 
 	m_numTermsUntruncated = nqt;
+	logTrace(g_conf.m_logTraceQuery, "m_numTermsUntruncated=%d",m_numTermsUntruncated);
 
 	if ( nqt > m_maxQueryTerms ) nqt = m_maxQueryTerms;
 
@@ -767,6 +773,12 @@ bool Query::setQTerms ( const Words &words ) {
 			}
 			break;
 		}
+	}
+
+	if(g_conf.m_logTraceQuery) {
+		logTrace(g_conf.m_logTraceQuery, "query-terms before expansion:");
+		for(int i=0; i<n; i++)
+			logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s'", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term);
 	}
 
 	////////////
@@ -1232,6 +1244,12 @@ bool Query::setQTerms ( const Words &words ) {
 		qt->m_isWikiHalfStopBigram = true;
 	}
 	
+	if(g_conf.m_logTraceQuery) {
+		logTrace(g_conf.m_logTraceQuery, "final query-terms:");
+		for(int i=0; i<m_numTerms; i++)
+			logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s'", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term);
+	}
+
 	return true;
 }
 

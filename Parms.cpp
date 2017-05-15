@@ -8488,6 +8488,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for Query";
+	m->m_cgi   = "ltrc_query";
+	simple_m_set(Conf,m_logTraceQuery);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for Rdb";
 	m->m_cgi   = "ltrc_rdb";
 	simple_m_set(Conf,m_logTraceRdb);

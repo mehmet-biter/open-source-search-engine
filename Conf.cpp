@@ -223,6 +223,7 @@ Conf::Conf ( ) {
 	m_logTraceMsg4 = false;
 	m_logTracePos = false;
 	m_logTracePosdb = false;
+	m_logTraceQuery = false;
 	m_logTraceRdb = false;
 	m_logTraceRdbBase = false;
 	m_logTraceRdbBuckets = false;
