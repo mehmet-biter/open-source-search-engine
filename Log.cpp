@@ -174,8 +174,6 @@ bool Log::shouldLog ( int32_t type , const char *msg ) {
 	if (msg[0]=='n'&&msg[1]=='e' ) return g_conf.m_logDebugNet    ;
 	if (msg[0]=='q'&&msg[1]=='u'&&msg[2]=='e' ) 
 		return g_conf.m_logDebugQuery  ;
-	if (msg[0]=='q'&&msg[1]=='u'&&msg[2]=='o' ) 
-		return g_conf.m_logDebugQuota  ;
 	if (msg[0]=='r'&&msg[1]=='o' ) return g_conf.m_logDebugRobots ;
 	if (msg[0]=='s'&&msg[1]=='e' ) return g_conf.m_logDebugSEO;
 	if (msg[0]=='s'&&msg[2]=='e' ) return g_conf.m_logDebugSpeller;

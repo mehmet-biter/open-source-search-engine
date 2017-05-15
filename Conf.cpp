@@ -194,7 +194,6 @@ Conf::Conf ( ) {
 	m_logDebugNet = false;
 	m_logDebugProxies = false;
 	m_logDebugQuery = false;
-	m_logDebugQuota = false;
 	m_logDebugRobots = false;
 	m_logDebugSpcache = false;
 	m_logDebugSpeller = false;

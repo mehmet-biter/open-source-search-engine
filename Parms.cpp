@@ -8267,13 +8267,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log debug quota messages";
-	m->m_cgi   = "ldqta";
-	simple_m_set(Conf,m_logDebugQuota);
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m++;
-
 	m->m_title = "log debug robots messages";
 	m->m_cgi   = "ldr";
 	simple_m_set(Conf,m_logDebugRobots);

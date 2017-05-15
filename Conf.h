@@ -337,7 +337,6 @@ class Conf {
 	bool  m_logDebugNet;
 	bool  m_logDebugProxies;
 	bool  m_logDebugQuery;
-	bool  m_logDebugQuota;
 	bool  m_logDebugRobots	;
 	bool  m_logDebugSpcache; // SpiderCache.cpp debug
 	bool  m_logDebugSpeller;
