@@ -143,18 +143,11 @@ static void Msg4In::handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
 
 	// sanity check
 	if ( used != readBufSize ) {
-		// if we send back a g_errno then multicast retries forever
-		// so just absorb it!
 		logError("msg4: got corrupted request from hostid %" PRId32" used [%" PRId32"] != readBufSize [%" PRId32"]",
 		         slot->m_host->m_hostId, used, readBufSize);
-
 		loghex(LOG_ERROR, readBuf, (readBufSize < 160 ? readBufSize : 160), "readBuf (first max. 160 bytes)");
 
-		g_udpServer.sendReply(NULL, 0, NULL, 0, slot);
-		//g_udpServer.sendErrorReply(slot,ECORRUPTDATA);return;}
-
-		logError("END");
-		return;
+		gbshutdownAbort(true);
 	}
 
 	// if we did not sync our parms up yet with host 0, wait...
