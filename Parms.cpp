@@ -8372,13 +8372,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log debug thread messages";
-	m->m_cgi   = "ldth";
-	simple_m_set(Conf,m_logDebugThread);
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m++;
-
 	m->m_title = "log debug title messages";
 	m->m_cgi   = "ldti";
 	simple_m_set(Conf,m_logDebugTitle);

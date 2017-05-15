@@ -182,7 +182,6 @@ bool Log::shouldLog ( int32_t type , const char *msg ) {
 	if (msg[0]=='s'&&msg[2]=='i' ) return g_conf.m_logDebugSpider ;
 	if (msg[0]=='t'&&msg[1]=='a' ) return g_conf.m_logDebugTagdb  ;
 	if (msg[0]=='t'&&msg[1]=='c' ) return g_conf.m_logDebugTcp    ;
-	if (msg[0]=='t'&&msg[1]=='h' ) return g_conf.m_logDebugThread ;
 	if (msg[0]=='t'&&msg[1]=='i' ) return g_conf.m_logDebugTitle  ;
 	if (msg[0]=='r'&&msg[1]=='e' ) return g_conf.m_logDebugRepair ;
 	if (msg[0]=='u'&&msg[1]=='d' ) return g_conf.m_logDebugUdp    ;

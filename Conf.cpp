@@ -207,7 +207,6 @@ Conf::Conf ( ) {
 	m_logDebugUrlAttempts = false;
 	m_logDebugTcp = false;
 	m_logDebugTcpBuf = false;
-	m_logDebugThread = false;
 	m_logDebugTitle = false;
 	m_logDebugTopDocs = false;
 	m_logDebugUdp = false;

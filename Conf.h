@@ -350,7 +350,6 @@ class Conf {
 	bool  m_logDebugUrlAttempts;
 	bool  m_logDebugTcp;
 	bool  m_logDebugTcpBuf;
-	bool  m_logDebugThread;
 	bool  m_logDebugTitle;
 	bool  m_logDebugTopDocs;
 	bool  m_logDebugUdp;
