@@ -353,8 +353,6 @@ bool UdpServer::sendRequest(char *msg,
                             int64_t timeout, // in milliseconds
                             int32_t niceness,
                             const char *extraInfo,
-                            int16_t backoff,
-                            int16_t maxWait,
                             int32_t maxResends) {
 
 	// sanity check
@@ -462,7 +460,7 @@ bool UdpServer::sendRequest(char *msg,
 	}
 
 	// set up for a send
-	if (!slot->sendSetup(msg, msgSize, msg, msgSize, msgType, now, state, callback, niceness, backoff, maxWait, extraInfo)) {
+	if (!slot->sendSetup(msg, msgSize, msg, msgSize, msgType, now, state, callback, niceness, extraInfo)) {
 		freeUdpSlot(slot);
 		log( LOG_WARN, "udp: Failed to initialize udp socket for sending req: %s",mstrerror(g_errno));
 		return false;
@@ -516,7 +514,7 @@ void UdpServer::sendErrorReply(UdpSlot *slot, int32_t errnum) {
 // . destroys slot on error or completion (frees m_readBuf,m_sendBuf)
 // . use a backoff of -1 for the default
 void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, UdpSlot *slot, void *state,
-                          void (*callback2)(void *state, UdpSlot *slot), int16_t backoff, int16_t maxWait) {
+                          void (*callback2)(void *state, UdpSlot *slot)) {
 	logDebug(g_conf.m_logDebugUdp, "udp: sendReply slot=%p", slot);
 
 	// the callback should be NULL
@@ -569,7 +567,7 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 
 	// . use a NULL callback since we're sending a reply
 	// . set up for a send
-	if (!slot->sendSetup(msg, msgSize, alloc, allocSize, slot->getMsgType(), now, NULL, NULL, slot->getNiceness(), backoff, maxWait)) {
+	if (!slot->sendSetup(msg, msgSize, alloc, allocSize, slot->getMsgType(), now, NULL, NULL, slot->getNiceness())) {
 		log( LOG_WARN, "udp: Failed to initialize udp socket for sending reply: %s", mstrerror(g_errno));
 		mfree ( alloc , allocSize , "UdpServer");
 		// was EBADENGINEER

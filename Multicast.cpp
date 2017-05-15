@@ -582,7 +582,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// . return false and sets g_errno on error
 	// . returns true on successful launch and calls callback on completion
 	ScopedLock sl(m_mtx);
-	if (!g_udpServer.sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_host[i].m_slot, this, gotReply1, timeRemaining, m_niceness, NULL, -1, -1, maxResends)) {
+	if (!g_udpServer.sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_host[i].m_slot, this, gotReply1, timeRemaining, m_niceness, NULL, maxResends)) {
 		log(LOG_WARN, "net: Had error sending msgtype 0x%02x to host #%d: %s. Not retrying.",
 		    (int)m_msgType, h->m_hostId, mstrerror(g_errno));
 		// i've seen ENOUDPSLOTS available msg here along with oom

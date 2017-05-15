@@ -104,8 +104,6 @@ public:
 	                 int64_t timeout = 60000, // milliseconds
 	                 int32_t niceness = 1,
 	                 const char *extraInfo = NULL,
-	                 int16_t backoff = -1,
-	                 int16_t maxWait = -1, // ms
 	                 int32_t maxResends = -1);
 
 	// . send a reply to the host specified in "slot"
@@ -115,7 +113,7 @@ public:
 	// . we double backoff each time we wait w/o getting any ACK
 	// . don't wait longer than maxWait for a resend
 	void sendReply(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, UdpSlot *slot, void *state = NULL,
-	               void (*callback2)(void *state, UdpSlot *slot) = NULL, int16_t backoff = -1, int16_t maxWait = -1);
+	               void (*callback2)(void *state, UdpSlot *slot) = NULL);
 
 	// . propagate an errno to the requesting machine
 	// . his callback will be called with errno set to "errnum"

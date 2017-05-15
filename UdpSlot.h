@@ -135,8 +135,7 @@ protected:
 	// . returns false and sets errno on error
 	// . use a backoff of -1 for the default
 	bool sendSetup(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, msg_type_t msgType, int64_t now,
-	               void *state, void (*callback)(void *state, class UdpSlot *), int32_t niceness, int16_t backoff,
-	               int16_t maxWait, const char* extraInfo = NULL);
+	               void *state, void (*callback)(void *state, class UdpSlot *), int32_t niceness, const char* extraInfo = NULL);
 
 	// . send a datagram from this slot on "sock" (call after sendSetup())
 	// . returns -2 if nothing to send, -1 on error, 0 if blocked, 
