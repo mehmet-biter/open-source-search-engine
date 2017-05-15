@@ -271,14 +271,6 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 		return false;
 	}
 
-	// . also register for writing to the socket, when it's ready
-	// . use the original niceness for this, too
-	// . what does this really mean? shouldn't we only use it
-	//   when we try to write but the write buf is full so we have
-	//   to try again later when it becomes unfull?
-	// if ( ! g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper, 0 ))
-	// 		return false;
-
 	// . also register for 30 ms tix (was 15ms)
 	//   but we aren't using tokens any more so I raised it
 	// . it's low so we can claim any unclaimed tokens!
@@ -296,7 +288,6 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	// . do these cmds on the cmd line as root for gigabit ethernet
 	// . echo 262144 > /proc/sys/net/core/rmem_max
 	// . echo 262144 > /proc/sys/net/core/wmem_max
-	//if ( niceness == 0 ) opt = 2*1024*1024 ;
 	// print the size of the buffers
 	enlargeUdpSocketBufffer(m_sock, "Receive", SO_RCVBUF, readBufSize);
 	enlargeUdpSocketBufffer(m_sock, "Send", SO_SNDBUF, writeBufSize);
