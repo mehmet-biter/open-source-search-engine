@@ -269,10 +269,10 @@ void Msg39::getDocIds ( UdpSlot *slot ) {
 	// reset this
 	m_errno = 0;
 	// get the request
-        m_msg39req  = reinterpret_cast<Msg39Request*>(m_slot->m_readBuf);
-        int32_t requestSize = m_slot->m_readBufSize;
-        // ensure it's size is ok
-        if ( (unsigned)requestSize < sizeof(Msg39Request) ) {
+	m_msg39req  = reinterpret_cast<Msg39Request*>(m_slot->m_readBuf);
+	int32_t requestSize = m_slot->m_readBufSize;
+	// ensure it's size is ok
+	if ( (unsigned)requestSize < sizeof(Msg39Request) ) {
 		g_errno = EBADREQUESTSIZE;
 		log(LOG_ERROR,"query: msg39: getDocIds: msg39request is too small (%d bytes): %s.",
 		    requestSize, mstrerror(g_errno) );
