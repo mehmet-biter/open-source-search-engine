@@ -377,9 +377,6 @@ private:
 	int32_t m_dgramsToSend;
 	int32_t m_dgramsToRead; // closely related to m_bytesToRead.
 
-	// has a sig been queued to call our callback
-	bool m_isQueued;
-
 	// . birth time of the udpslot
 	// . m_sendTimes are relative to this
 	int64_t m_startTime;
