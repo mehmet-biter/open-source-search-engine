@@ -551,13 +551,6 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 	// send the reply now
 	slot->m_queuedTime = now;
 
-
-	// . get hostid from slot so we can shotgun the reply back
-	// . but if sending a ping reply back for PingServer, he wants us
-	//   to use the shotgun port iff he did, and not if he did not.
-	//   so just make sure slot->m_host is NULL so we send back to the same
-	//   ip/port that sent to us.
-	//if ( g_conf.m_useShotgun && ! useSameSwitch )
 	// now we always set m_host, we use s_shotgun to toggle
 	slot->m_host = g_hostdb.getUdpHost ( slot->getIp() , slot->getPort() );
 	//else slot->m_host = NULL;
@@ -574,9 +567,6 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 		slot->m_convertedNiceness = 2;
 		m_outstandingConverts--;
 	}
-
-	// if msgMaxSize is -1 use msgSize
-	//if ( msgMaxSize == -1 ) msgMaxSize = msgSize;
 
 	// . use a NULL callback since we're sending a reply
 	// . set up for a send
@@ -611,13 +601,6 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 		sl.unlock();
 		destroySlot ( slot );
 	}
-	// status is 0 if this blocked
-	//if ( status == 0 ) return;
-	// destroy slot on completion of send or on error
-	// mdw destroySlot ( slot );
-	// return if send completed
-	//if ( status != -1) return;
-	// make a log note on send failure
 }
 
 // . this wrapper is called when m_sock is ready for writing
@@ -902,13 +885,6 @@ void UdpServer::process(int64_t now, int32_t maxNiceness) {
 		// . only go to bigloop if we called a callback
 		if ( makeCallbacks(/*niceness level*/1) )
 			goto bigloop;
-		// no longer need to be called
-		// if we did anything loop back up
-		// . but only if we haven't been looping forever,
-		// . if so we need to relinquish control to loop.
-		// 		log(LOG_WARN, "udp: give back control. after %" PRId64,
-		// 		    elapsed);
-		//goto bigloop;	
 	}
 	else {
 		m_needBottom = true;
@@ -1001,13 +977,7 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 	ip2 = ip;
 	// i modified Hostdb::hashHosts() to hash the loopback ip now!
 	h   = g_hostdb.getUdpHost ( ip , ntohs(from.sin_port) );
-	// . just use ip for hosts from hosts2.conf
-	// . because sendReques() usually gets a hostId of -1 when sending
-	//   to a host in hosts2.conf and therefore makeKey() initially uses
-	//   the ip address of the hosts2.conf host
-	//if ( h && h->m_hostdb != &g_hostdb ) h = NULL;
-	// probably a reply from a dns server?
-	//if ( ! h ) { g_process.shutdownAbort(true); }
+
 	// always use the primary ip for making the key, 
 	// do not use the shotgun ip. because we can be getting packets
 	// from either ip for the same transaction. h can be NULL if the packet
@@ -1084,19 +1054,8 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 		if ( m_proto->isReply ( readBuffer, readSize ) ) {
 			// if we don't use ACK then do nothing!
 			if ( ! m_proto->useAcks () ) {
-				// print out the domain in the packet
-				/*
-				char tmp[512];
-				g_dnsDistributed.extractHostname(header,dgram+12,tmp);
-				// iptoa not async sig safe
-				log("udp: dns reply too late "
-				     "or reply from a resend "
-				     "(host=%s,dnsip=%s)",
-				     tmp, iptoa(ip)); 
-				*/
 				log(LOG_REMIND,"dns: Dns reply too late "
 				     "or reply from a resend.");
-				//return 1; 
 				goto discard;
 			}
 			// . if they didn't get our ACK they might resend to us
@@ -1308,11 +1267,7 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 	// so insert into the callback linked list, m_callbackListHead.
 	// we have to put slots with NULL callbacks in here since they
 	// are incoming requests to handle.
-	if ( //slot->m_callback && 
-	     // if we got an error reading the reply (or sending req?) then
-	     // consider it completed too?
-	     // ( slot->isTransactionComplete() || slot->m_errno ) &&
-	    ( slot->isDoneReading() || slot->getErrno() ) ) {
+	if ((slot->isDoneReading() || slot->getErrno())) {
 		// prepare to call the callback by adding it to this
 		// special linked list
 		addToCallbackLinkedList ( slot );
@@ -1769,12 +1724,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		log(LOG_DEBUG,"loop: enter handler for 0x%" PRIx32" nice=%" PRId32,
 		    (int32_t)slot->getMsgType(),(int32_t)slot->getNiceness());
 
-	// . sanity check - if in a high niceness callback, we should
-	//   only be calling niceness 0 callbacks here.
-	// . no, because udpserver uses niceness 0 on its fd, and that will
-	//   call niceness 1 slots here
-	//if ( g_niceness==0 && slot->m_niceness ) { g_process.shutdownAbort(true);}
-
 	bool oom = g_mem.getUsedMemPercentage() >= 99.0;
 
 	// if we are out of mem basically, do not waste time fucking around
@@ -2103,9 +2052,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// return if we had an error sending, like EBADF we get
 		// when we've shut down the servers...
 		if ( g_errno == EBADF ) return something;
-		//slot->sendDatagramOrAck(m_sock,true/*resends?*/,m_niceness);
-		// always call this after every send/read
-		//makeCallback(slot);
+
 		something = true;
 	}
 	// return true if we did something
@@ -2134,9 +2081,6 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 		if ( slot->getMsgType() == msg_type_20 ) m_msg20sInWaiting--;
 		if ( slot->getMsgType() == msg_type_c ) m_msg0csInWaiting--;
 		if ( slot->getMsgType() == msg_type_0 ) m_msg0sInWaiting--;
-		// debug msg, good for msg routing distribution, too
-		//log("in waiting down to %" PRId32" (0x%02x) ",
-		//     m_requestsInWaiting, slot->getMsgType() );
 	}
 
 	// save buf ptrs so we can free them
