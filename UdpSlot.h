@@ -100,7 +100,9 @@ public:
 	bool hasCalledHandler() const { return m_calledHandler; }
 	bool hasCalledCallback() const { return m_calledCallback; }
 
-	bool isIncoming() const { return m_incoming; }
+	bool isIncoming() const { return (m_slotStatus == slot_status_incoming); }
+	bool isOutgoing() const { return (m_slotStatus == slot_status_outgoing); }
+
 	const char* getExtraInfo() const { return m_extraInfo; }
 
 	// a ptr to the Host class for shotgun info
@@ -419,7 +421,11 @@ protected:
 
 	char m_maxResends;
 
-	bool m_incoming;
+	enum SlotStatus {
+		slot_status_unused,
+		slot_status_incoming,
+		slot_status_outgoing
+	} m_slotStatus;
 
 public:
 	// . for the hot udp server, we cannot call malloc in the sig handler

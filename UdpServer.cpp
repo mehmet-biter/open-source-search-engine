@@ -508,11 +508,10 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
                           void (*callback2)(void *state, UdpSlot *slot)) {
 	logDebug(g_conf.m_logDebugUdp, "udp: sendReply slot=%p", slot);
 
-	// the callback should be NULL
-	if ( slot->hasCallback() ) {
-		g_errno = EBADENGINEER;
-		log(LOG_LOGIC,"udp: sendReply: Callback is non-NULL.");
-		return;
+	// we can only sendReply if it's an incoming slot
+	if (!slot->isIncoming() || slot->hasCallback()) {
+		logError("udp: sendReply: Not incoming slot/has callback");
+		gbshutdownLogicError();
 	}
 
 	if ( ! msg && msgSize > 0 ) {
@@ -1469,6 +1468,9 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 
 	// callback is non-NULL if we initiated the transaction 
 	if ( slot->hasCallback() ) {
+		if (!slot->isOutgoing()) {
+			gbshutdownLogicError();
+		}
 
 		// assume the slot's error when making callback
 		// like EUDPTIMEDOUT
@@ -1564,6 +1566,10 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		return true;
 	}
 
+	// we can only reach here if it's incoming
+	if (!slot->isIncoming()) {
+		gbshutdownLogicError();
+	}
 
 	// don't repeat call the handler if we already called it
 	if ( slot->hasCalledHandler() ) {
@@ -2191,7 +2197,7 @@ UdpSlot *UdpServer::getEmptyUdpSlot(key96_t k, bool incoming) {
 		m_numUsedSlotsIncoming++;
 	}
 
-	slot->m_incoming = incoming;
+	slot->m_slotStatus = incoming ? UdpSlot::slot_status_incoming : UdpSlot::slot_status_outgoing;
 
 	// now store ptr in hash table
 	slot->m_key = k;
@@ -2386,7 +2392,10 @@ void UdpServer::freeUdpSlot(UdpSlot *slot ) {
 	// discount it
 	m_numUsedSlots--;
 
-	if ( slot->m_incoming ) m_numUsedSlotsIncoming--;
+	if (slot->m_slotStatus == UdpSlot::slot_status_incoming) {
+		m_numUsedSlotsIncoming--;
+	}
+	slot->m_slotStatus = UdpSlot::slot_status_unused;
 
 	// add to linked list of available slots
 	addToAvailableLinkedList(slot);
