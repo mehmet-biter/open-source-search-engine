@@ -184,10 +184,6 @@ private:
 	static void timePollWrapper(int fd, void *state);
 	static void sendPollWrapper(int fd, void *state);
 
-	// . take a slot that we made from sendRequest() above and reset it
-	// . you request will be sent again w/ the original parameters
-	// void resendSlot ( UdpSlot *slot );
-
 	// these *Poll() routines must be public so wrappers can call them
 
 	// . this is called by main/Loop.cpp when m_sock is ready for writing
