@@ -111,8 +111,8 @@ bool Query::set2 ( const char *query        ,
 		   bool     queryExpansion ,
 		   bool     useQueryStopWords ,
 		   int32_t  maxQueryTerms  ) {
-	log(LOG_DEBUG,"query: set2(query='%s', queryExpansion=%s, useQueryStopWords=%s maxQueryTerms=%d)",
-	    query, queryExpansion?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
+	log(LOG_DEBUG,"query: set2(query='%s', langId=%d, queryExpansion=%s, useQueryStopWords=%s maxQueryTerms=%d)",
+	    query, langId, queryExpansion?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
 
 	reset();
 
