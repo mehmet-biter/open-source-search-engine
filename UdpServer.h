@@ -167,9 +167,6 @@ public:
 
 	bool hasHandler(int i) const { return (m_handlers[i]); }
 
-	// changes timeout to very low on dead hosts
-	bool timeoutDeadHosts ( class Host *h );
-
 	void saveActiveSlots(int fd, msg_type_t msg_type);
 
 	// . we need a transaction id for every transaction so we can match

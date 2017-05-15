@@ -2251,29 +2251,6 @@ bool UdpServer::shutdown ( bool urgent ) {
 	return true;
 }
 
-bool UdpServer::timeoutDeadHosts ( Host *h ) {
-	// we never have a request out to a proxy, and if we
-	// do take the proxy down i don't want us timing out gk0
-	// or gk1! which have hostIds 0 and 1, like the proxy0
-	// and proxy1 do...
-	if ( h->m_isProxy ) return true;
-
-	// find sockets out to dead hosts and change the timeout
-	ScopedLock sl(m_mtx);
-	for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
-		// only change requests to dead hosts
-		if ( slot->getHostId() < 0 ) continue;
-		//! g_hostdb.isDead(slot->m_hostId) ) continue;
-		if ( slot->getHostId() != h->m_hostId ) continue;
-		// if we didn't initiate, then don't count it
-		if ( ! slot->hasCallback() ) continue;
-		// set all timeouts to 5 secs
-		//if ( slot->m_timeout > 1 ) slot->m_timeout = 1;
-		slot->m_timeout = 0;
-	}
-	return true;
-}
-
 // verified that this is not interruptible
 UdpSlot *UdpServer::getEmptyUdpSlot(key96_t k, bool incoming) {
 	m_mtx.verify_is_locked();
