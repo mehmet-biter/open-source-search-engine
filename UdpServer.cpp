@@ -1758,11 +1758,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 	// we called the handler, don't call it again
 	slot->m_calledHandler = true;
 
-	// i've seen a bunch of msg20 handlers called in a row take over 
-	// 10 seconds and the heartbeat gets starved and dumps core
-	if ( slot->getMsgType() == msg_type_20 )
-		g_process.callHeartbeat();
-
 	// g_errno was set from m_errno before calling the handler, but to
 	// make sure the slot doesn't get destroyed now, reset this to 0. see
 	// comment about Msg20 above.
