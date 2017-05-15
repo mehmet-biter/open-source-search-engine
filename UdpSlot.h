@@ -209,9 +209,6 @@ protected:
 	// been sent (it's kinda a hack)
 	void (*m_callback2 )(void *state, class UdpSlot *slot);
 
-	// if callback2 can be called from a signal handler then make this true
-	bool m_isCallback2Hot;
-
 	// . save a POINTER to caller's state;
 	// . caller must ensure it's not on the stack
 	void *m_state;

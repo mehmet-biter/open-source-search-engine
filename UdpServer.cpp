@@ -516,8 +516,7 @@ void UdpServer::sendErrorReply(UdpSlot *slot, int32_t errnum) {
 // . destroys slot on error or completion (frees m_readBuf,m_sendBuf)
 // . use a backoff of -1 for the default
 void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, UdpSlot *slot, void *state,
-                          void (*callback2)(void *state, UdpSlot *slot), int16_t backoff, int16_t maxWait,
-                          bool isCallback2Hot) {
+                          void (*callback2)(void *state, UdpSlot *slot), int16_t backoff, int16_t maxWait) {
 	logDebug(g_conf.m_logDebugUdp, "udp: sendReply slot=%p", slot);
 
 	// the callback should be NULL
@@ -583,7 +582,6 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 	// OR we need to call Msg21::freeBandwidth() after sending
 	slot->m_state          = state;
 	slot->m_callback2      = callback2;
-	slot->m_isCallback2Hot = isCallback2Hot;
 	// set this
 	slot->m_maxResends = -1;
 
@@ -1598,15 +1596,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		//   more than once, but we also call m_callback2 later, too,
 		//   since we cannot call destroySlot() in a hot sig handler
 		if ( slot->m_callback2 ) {
-			// . since we can be re-entered by the sig handler
-			//   make sure he doesn't call this callback while
-			//   we are in the middle of it
-			// . but if we're in a sig handler now, this will
-			//   have to be called again to destroy the slot, so
-			//   this only prevents an extra callback from a 
-			//   sig handler really
-			slot->m_isCallback2Hot = false;
-
 			if ( g_conf.m_logDebugLoop )
 				log(LOG_DEBUG,"loop: enter callback2 for "
 				    "0x%" PRIx32,(int32_t)slot->getMsgType());

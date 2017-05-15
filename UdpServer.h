@@ -115,8 +115,7 @@ public:
 	// . we double backoff each time we wait w/o getting any ACK
 	// . don't wait longer than maxWait for a resend
 	void sendReply(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, UdpSlot *slot, void *state = NULL,
-	               void (*callback2)(void *state, UdpSlot *slot) = NULL, int16_t backoff = -1, int16_t maxWait = -1,
-	               bool isCallback2Hot = false);
+	               void (*callback2)(void *state, UdpSlot *slot) = NULL, int16_t backoff = -1, int16_t maxWait = -1);
 
 	// . propagate an errno to the requesting machine
 	// . his callback will be called with errno set to "errnum"
