@@ -368,8 +368,11 @@ bool Query::set2 ( const char *query        ,
 bool Query::setQTerms ( const Words &words ) {
 	if(g_conf.m_logTraceQuery) {
 		logTrace(g_conf.m_logTraceQuery, "Query::setQTerms(words:%d)", words.getNumWords());
-		for(int i=0; i<words.getNumWords(); i++)
+		for(int i=0; i<words.getNumWords(); i++) {
 			logTrace(g_conf.m_logTraceQuery, "  word #%d: '%*.*s'", i, words.getWordLen(i), words.getWordLen(i), words.getWord(i));
+			logTrace(g_conf.m_logTraceQuery, "            m_phraseId=%" PRId64", m_ignorePhrase=%d", m_qwords[i].m_phraseId, m_qwords[i].m_ignorePhrase);
+			logTrace(g_conf.m_logTraceQuery, "            m_ignoreWord=%d, m_quoteStart=%d, m_quoteEnd=%d", m_qwords[i].m_ignoreWord, m_qwords[i].m_quoteStart, m_qwords[i].m_quoteEnd);
+		}
 	}
 	// . set m_qptrs/m_qtermIds/m_qbits
 	// . use one bit position for each phraseId and wordId
