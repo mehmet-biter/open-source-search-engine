@@ -909,7 +909,7 @@ static void readwriteWrapper_r ( void *state ) {
 			fstate->m_allocBuf  = p;
 			fstate->m_allocSize = need;
 		} else {
-			log( LOG_WARN, "thread: read buf alloc failed for %" PRId32" bytes.", need );
+			log(LOG_WARN, "readwriteWrapper_r: read buf alloc failed for %" PRId32" bytes.", need);
 		}
 	}
 	fstate->m_fd1 = fstate->m_bigfile->getfd (fstate->m_filenum1,!fstate->m_doWrite);
