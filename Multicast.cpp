@@ -594,9 +594,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	m_host[i].m_inProgress = true;
 	// set our last launch date
 	m_lastLaunch = nowms ; // gettimeofdayInMilliseconds();
-	// timing debug
-	//log("Multicast sent to hostId %" PRId32", this=%" PRId32", transId=%" PRId32,
-	//    h->m_hostId, (int32_t)this , m_host[i].m_slot->m_transId );
+
 	// . let's sleep so we have a chance to launch to another host in
 	//   the same group in case this guy takes too long
 	// . don't re-register if we already did
@@ -986,9 +984,7 @@ void Multicast::destroySlotsInProgress ( UdpSlot *slot ) {
 		if (   m_host[i].m_slot == slot ) continue;
 		// must be in progress
 		if ( ! m_host[i].m_inProgress ) continue;
-		// sometimes the slot is recycled from under us because
-		// we already got a reply from it
-		//if ( m_host[i].m_slot->m_state != this ) continue;
+
 		// don't free his sendBuf, readBuf is ok to free, however
 		m_host[i].m_slot->m_sendBufAlloc = NULL;
 
