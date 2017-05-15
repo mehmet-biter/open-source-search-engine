@@ -2121,9 +2121,8 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 //   so we know to set the key.n0 hi bit
 // . may be called twice on same slot by Multicast::destroySlotsInProgress()
 void UdpServer::destroySlot ( UdpSlot *slot ) {
-	// return if no slot
-	if ( ! slot ) {
-		return;
+	if (!slot) {
+		gbshutdownLogicError();
 	}
 
 	logDebug(g_conf.m_logDebugUdp, "udp: destroy slot=%p", slot);

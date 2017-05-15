@@ -723,12 +723,6 @@ void Multicast::sleepCallback1() {
 		return;
 	}
 
-	// cancel any outstanding transactions iff we have a m_replyBuf
-	// that we must read the reply into because we cannot share!!
-	if ( m_readBuf ) {
-		destroySlotsInProgress ( NULL );
-	}
-
 	// . do a loop over all hosts in the group
 	// . if a whole group of twins is down this will loop forever here
 	//   every Xms, based the sleepWrapper timer for the msgType
