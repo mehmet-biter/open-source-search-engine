@@ -247,8 +247,7 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 				char ipbuf[16];
 				log(LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized from hostip=%s. dropping WHOLE request",
 				    (int32_t)rdbId, slot ? iptoa(slot->getIp(),ipbuf) : "unknown");
-				g_errno = ETRYAGAIN;
-				return false;
+				gbshutdownAbort(true);
 			}
 
 			// an uninitialized secondary rdb?
@@ -270,10 +269,14 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 			}
 		}
 
-		// sanity check
+		// recSize can't go over pend
 		if (p + recSize > pend) {
-			g_errno = ECORRUPTDATA;
-			return false;
+			gbshutdownAbort(true);
+		}
+
+		// if we don't have data, recSize must be the same with keySize
+		if (rdb->getFixedDataSize() == 0 && recSize != rdb->getKeySize()) {
+			gbshutdownAbort(true);
 		}
 
 		// advance over the rec data to point to next entry
@@ -291,6 +294,7 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 		if (rdb->getFixedDataSize() == -1) {
 			dataSize -= 4;
 		}
+
 		rdbItem.m_dataSizes += dataSize;
 
 		rdbItem.m_items.emplace_back(collnum, rec, recSize);
