@@ -831,9 +831,6 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 			    "Fixing. Do not panic.",
 			    dgramNum , m_dgramsToRead );
 			fixSlot();
-			//g_process.shutdownAbort(true);
-			//sleep(50000);
-			//return -1;
 			return -1;
 		}
 	}
@@ -985,8 +982,6 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 	}
 	// was it a cancel signal?
 	if ( m_proto->isCancelTrans ( readBuffer, readSize ) ) {
-		//if ( g_conf.m_logDebugUdp ) 
-		//logf(LOG_INFO,//LOG_DEBUG,
 		char ipbuf[16];
 		log(LOG_DEBUG,
 		     "udp: Read cancel ack hdrlen=%" PRId32" tid=%" PRId32" "
@@ -1067,7 +1062,6 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		    "age=%" PRId32" "
 		    "dread=%" PRId32" "
 		    "asent=%" PRId32" "
-		    //"len=%" PRId32" "
 		    "msgSz=%" PRId32" "
 		    "error=%" PRId32" "
 		    "hid=%" PRId32,
@@ -1079,8 +1073,7 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		    (int32_t)kk,
 		    (int32_t)(gettimeofdayInMilliseconds() - m_startTime) ,
 		    (int32_t)m_readBitsOn , 
-		    (int32_t)m_sentAckBitsOn , 
-		    //(int32_t)readSize ,
+		    (int32_t)m_sentAckBitsOn ,
 		    (int32_t)m_proto->getMsgSize(readBuffer,readSize) ,
 		    (int32_t)(m_proto->hadError(readBuffer,readSize)),
 		    hid);
@@ -1154,31 +1147,6 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 	// . "maxDataSize" is max bytes of msg data per dgram (w/o hdr)
 	int32_t maxDataSize = m_maxDgramSize - headerSize;
 	int32_t offset      = dgramNum       * maxDataSize;
-	/*
-	// . this checks for undersends (dgrams with not enough data)
-	// . we set "size" to the space available in readBuf for dgram's data
-	// . we then truncate to maxDataSize in case it's too big
-	// . "size" should equal the msg (w/o hdr) in the dgram
-	// . return true on error
-	// NO: added the "dgramsToRead > 0" to allow underSends on 1 dgram msgs
-	int size   = m_readBufSize - offset;
-	if ( size > maxDataSize ) size = maxDataSize;
-        if ( size != dgramSize - headerSize ) {
-		g_errno = EBADENGINEER;
-		// remove dgram from queue
-		discardDgram();
-		log("UdpSlot::readDgram: read undersend") ;
-	    return false;
-	}
-	// this checks for oversends, dgrams that fall outside our readBuf
-	if ( offset + dgramSize - headerSize > m_readBufSize ) {
-		g_errno = EBADENGINEER;
-		// remove dgram from queue
-		discardDgram();
-		log("UdpSlot::readDgram: read buf overflow") ;
-	    return false;
-	}
-	*/
 
 	// we'll read it ourselves, so tell caller not to read it
 
@@ -1218,16 +1186,6 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 	// makeReadBuf if we're hot...
 	//
 
-	// just use m_tmpBuf if our sendBuf is NULL and we are reading a
-	// small request. But Msg17 thinks this is allocated and tells Msg40
-	// to free it.
-	// i'm commenting this out to find the rdbtree corruption bug
-	//if ( ! m_sendBuf && ! m_readBuf &&
-	//     msgSize < TMPBUFSIZE && m_msgType != msg_type_17 ) {
-	//	m_readBuf        = m_tmpBuf;
-	//	m_readBufMaxSize = TMPBUFSIZE;
-	//}
-
 	// . this dgram should let us know how big the entire msg is
 	// . so allocate space for m_readBuf
 	// . we may already have a read buf if caller passed one in
@@ -1237,10 +1195,6 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 			log(LOG_WARN, "udp: Failed to allocate %" PRId32" bytes to read request or reply for udp socket.", msgSize);
 			return false;
 		}
-		// track down the mem leak.
-		// someone is not freeing their read buf!!
-		//logf(LOG_DEBUG,"udpslot alloc %" PRId32" at 0x%" PRIx32" msgType=%02x",
-		//     msgSize,m_readBuf,m_msgType);
 	}
 	
 	// if we don't have enough room alloc a read buffer

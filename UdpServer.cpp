@@ -540,7 +540,6 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 
 	// now we always set m_host, we use s_shotgun to toggle
 	slot->m_host = g_hostdb.getUdpHost ( slot->getIp() , slot->getPort() );
-	//else slot->m_host = NULL;
 
 	ScopedLock sl(m_mtx);
 
@@ -622,7 +621,7 @@ bool UdpServer::doSending(UdpSlot *slot, bool allowResends, int64_t now) {
 				slot->m_host->updateLastRequestSendTimestamp(getCurrentTimeNanoseconds());
 			return true;
 		}
-		//if ( score < 0 ) return true;
+
 		// . returns -2 if nothing to send, -1 on error, 0 if blocked,
 		//   1 if sent something
 		// . it will send a dgram or an ACK
@@ -698,17 +697,7 @@ bool UdpServer::sendPoll(bool allowResends, int64_t now) {
 		}
 		// otherwise, we can send something
 		something = true;
-		// . if this slot timed out because we haven't written a reply yet
-		//   then DO NOT call the callback again, just wait for the handler
-		//   to timeout and send a reply
-		// . otherwise, you'll just keep looping the same request to the
-		//   same handler and cause problems (mdw)
-		// if timed out then nuke it
-		//if ( g_errno == ETIMEDOUT ) goto slotDone;
-		// . tell slot to send a datagram OR ACK for us
-		// . returns -2 if nothing to send, -1 on error, 0 if blocked, 
-		//   1 if sent something
-		//if(slot->sendDatagramOrAck (m_sock, true, m_niceness) == 0 ) return ;
+
 		// . send all we can from this slot
 		// . when shutting down during a dump we can get EBADF during a send
 		//   so do not loop forever
@@ -832,9 +821,7 @@ void UdpServer::process(int64_t now, int32_t maxNiceness) {
 		doSending(slot, false, now);
 	}
 	// if we read something, try for more
-	if ( something ) { 
-		//if ( slot->m_errno || slot->isTransactionComplete())
-		//log("got something");
+	if ( something ) {
 		needCallback = true; 
 		goto loop; 
 	}
@@ -1031,9 +1018,6 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 				    (uint16_t)ntohs(from.sin_port),
 				    key.n1,key.n0);
 			}
-			// tmp debug
-			//g_process.shutdownAbort(true);
-			//return 1;
 			goto discard;
 		}
 		// condition #2
@@ -1210,10 +1194,6 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 		if ( msgType == msg_type_20 ) m_msg20sInWaiting++;
 		if ( msgType == msg_type_c ) m_msg0csInWaiting++;
 		if ( msgType == msg_type_0 ) m_msg0sInWaiting++;
-		// debug msg
-		//log("in waiting up to %" PRId32,m_requestsInWaiting );
-		//log("in waiting up to %" PRId32" (0x%02x) ",
-		//     m_requestsInWaiting, slot->m_msgType );
 	}
 	// let caller know the slot associated with reading this dgram
 	*slotPtr = slot;
@@ -1637,7 +1617,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		}
 		// nuke the slot, we gave them a reply...
 		destroySlot ( slot );
-		//log("udp: why double calling handler?");
 		// this kind of callback doesn't count
 		return false;
 	}
