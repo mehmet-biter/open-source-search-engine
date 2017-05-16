@@ -1250,7 +1250,7 @@ bool Query::setQTerms ( const Words &words ) {
 	if(g_conf.m_logTraceQuery) {
 		logTrace(g_conf.m_logTraceQuery, "final query-terms:");
 		for(int i=0; i<m_numTerms; i++)
-			logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s'", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term);
+			logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s', weight=%f", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term, m_qterms[i].m_userWeight);
 	}
 
 	return true;
