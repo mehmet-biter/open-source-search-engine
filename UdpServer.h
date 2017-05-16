@@ -221,13 +221,7 @@ private:
 	// . if server is restarted this will go back to 0 though 
 	// . the key of a UdpSlot is based on this, the endpoint ip/port and
 	//   whether it's a request/reply by/from us
-	int32_t getTransId ( ) { 
-		int32_t tid = m_nextTransId++;
-		if ( m_nextTransId >= UDP_MAX_TRANSID ) {
-			m_nextTransId = 0;
-		}
-		return tid;
-	}
+	int32_t getTransId_unlocked();
 
 	// . send as many dgrams as you can from slot's m_sendBuf
 	// . returns false and sets errno on error, true otherwise

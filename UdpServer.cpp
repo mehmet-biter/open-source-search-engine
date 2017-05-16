@@ -404,7 +404,7 @@ bool UdpServer::sendRequest(char *msg,
 	ScopedLock sl(m_mtx);
 
 	// get a new transId
-	int32_t transId = getTransId();
+	int32_t transId = getTransId_unlocked();
 
 	// make a key for this new slot
 	key96_t key = m_proto->makeKey (ip2,port,transId,true/*weInitiated?*/);
@@ -2147,6 +2147,16 @@ bool UdpServer::shutdown ( bool urgent ) {
 
 	// all done
 	return true;
+}
+
+int32_t UdpServer::getTransId_unlocked() {
+	m_mtx.verify_is_locked();
+
+	int32_t tid = m_nextTransId++;
+	if ( m_nextTransId >= UDP_MAX_TRANSID ) {
+		m_nextTransId = 0;
+	}
+	return tid;
 }
 
 // verified that this is not interruptible
