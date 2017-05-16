@@ -295,7 +295,6 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	if ( bind ( m_sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
 		// copy errno to g_errno
 		g_errno = errno;
-		//if ( g_errno == EINVAL ) { port++; goto again; }
 		close ( m_sock );
 		log( LOG_WARN, "udp: Failed to bind to port %hu: %s.", port,strerror(g_errno));
 		return false;
@@ -318,12 +317,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	m_outsiderPacketsOut = 0LL;
 	m_outsiderBytesOut   = 0LL;
 
-	// log an innocent msg
-	//log ( 0, "udp: listening on port %hu with sd=%" PRId32" and "
-	//      , m_port, m_sock );
 	log ( LOG_INIT, "udp: Listening on UDP port %hu with fd=%i.", m_port, m_sock );
-	// print dgram sizes
-	//log("udp:  using max dgram size of %" PRId32" bytes", DGRAM_SIZE );
 	return true;
 }
 
