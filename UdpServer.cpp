@@ -2519,6 +2519,11 @@ int32_t UdpServer::getNumUsedSlots() const {
 	return m_numUsedSlots;
 }
 
+int32_t UdpServer::getNumUsedSlotsIncoming() const {
+	ScopedLock sl(m_mtx);
+	return m_numUsedSlotsIncoming;
+}
+
 void UdpServer::saveActiveSlots(int fd, msg_type_t msg_type) {
 	ScopedLock sl(m_mtx);
 

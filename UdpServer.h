@@ -155,8 +155,7 @@ public:
 	void replaceHost ( Host *oldHost, Host *newHost );
 
 	int32_t getNumUsedSlots() const;
-
-	int32_t getNumUsedSlotsIncoming() const { return m_numUsedSlotsIncoming; }
+	int32_t getNumUsedSlotsIncoming() const;
 
 	bool needBottom() const { return m_needBottom; }
 
