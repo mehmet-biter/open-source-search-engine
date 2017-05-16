@@ -659,14 +659,16 @@ bool UdpServer::doSending_unlocked(UdpSlot *slot, bool allowResends, int64_t now
 // . MDW: THIS IS NOW called by Loop.cpp when our udp socket is ready for
 //   sending on, and a previous sendto() would have blocked.
 bool UdpServer::sendPoll(bool allowResends, int64_t now) {
+	ScopedLock sl(m_mtx);
+
 	// just so caller knows we don't need to send again yet
 	m_needToSend = false;
+
 	// if we don'thave anything to send, or we're waiting on ACKS, then
 	// just return false, we didn't do anything.
 	// assume we didn't process anything
 	bool something = false;
-	
-	ScopedLock sl(m_mtx);
+
 	for(;;) {
 		// . don't do any sending until we leave the wait state
 		// or if is shutting down
