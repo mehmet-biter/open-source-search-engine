@@ -4,7 +4,6 @@
 #include "Titledb.h"
 #include "Spider.h"
 #include "Tagdb.h"
-#include "Dns.h"
 #include "Collectiondb.h"
 #include "Clusterdb.h"    // for getting # of docs indexed
 #include "Pages.h"

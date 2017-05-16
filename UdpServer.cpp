@@ -4,7 +4,6 @@
 #include "UdpProtocol.h"
 #include "UdpSlot.h"
 #include "Hostdb.h"
-#include "Dns.h"      // g_dnsDistributed.extractHostname()
 #include "Profiler.h"
 #include "Stats.h"
 #include "Proxy.h"

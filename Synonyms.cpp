@@ -2,7 +2,6 @@
 
 #include "Synonyms.h"
 #include "HttpServer.h"
-#include "Dns.h"
 #include "StopWords.h"
 #include "Speller.h"
 #include "Words.h"
