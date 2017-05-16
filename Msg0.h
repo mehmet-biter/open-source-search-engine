@@ -6,7 +6,6 @@
 #ifndef GB_MSG0_H
 #define GB_MSG0_H
 
-#include "UdpServer.h"
 #include "Multicast.h"
 #include "Hostdb.h"
 #include "RdbList.h"

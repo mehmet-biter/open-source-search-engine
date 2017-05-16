@@ -4,6 +4,7 @@
 #include "SpiderCache.h"
 #include "Doledb.h"
 #include "UdpSlot.h"
+#include "UdpServer.h"
 #include "Collectiondb.h"
 #include "SafeBuf.h"
 #include "Repair.h"

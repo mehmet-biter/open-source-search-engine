@@ -2,6 +2,7 @@
 #include "XmlDoc.h"
 #include "Hostdb.h"
 #include "UdpSlot.h"
+#include "UdpServer.h"
 #include "ip.h"
 #include "Process.h"
 #include "Mem.h"

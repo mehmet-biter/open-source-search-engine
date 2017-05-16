@@ -8,6 +8,7 @@
 #include "Repair.h"
 #include "HttpRequest.h"
 #include "UdpSlot.h"
+#include "UdpServer.h"
 #include "Stats.h"
 #include "Collectiondb.h"
 #include "Process.h"

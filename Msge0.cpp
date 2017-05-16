@@ -3,6 +3,7 @@
 #include "Tagdb.h"
 #include "ip.h"
 #include "UrlBlockList.h"
+#include "UdpServer.h"
 #include "Mem.h"
 #include "ScopedLock.h"
 #include <new>

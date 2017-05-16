@@ -8,7 +8,6 @@
 #define SAMPLE_VECTOR_SIZE (32*4)
 
 #include "SearchInput.h"
-#include "UdpServer.h"  // UdpSlot type
 #include "Multicast.h"  // multicast send
 #include "Query.h"      // Query::set()
 #include "Msg39.h"      // getTermFreqs()

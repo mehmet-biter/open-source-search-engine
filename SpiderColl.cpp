@@ -3,6 +3,7 @@
 #include "SpiderLoop.h"
 #include "Doledb.h"
 #include "Collectiondb.h"
+#include "UdpServer.h"
 #include "Stats.h"
 #include "SafeBuf.h"
 #include "Repair.h" //g_repairMode

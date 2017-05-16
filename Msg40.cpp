@@ -15,6 +15,7 @@
 #include "AdultCheck.h"
 #include "Process.h"
 #include "UrlRealtimeClassification.h"
+#include "UdpServer.h"
 #include "Conf.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
