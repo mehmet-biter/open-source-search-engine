@@ -245,6 +245,11 @@ private:
 	// . called by readPoll()
 	int32_t readSock(UdpSlot **slot, int64_t now);
 
+	void sendReply_unlocked(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, UdpSlot *slot, void *state = NULL,
+	                        void (*callback2)(void *state, UdpSlot *slot) = NULL);
+
+	void sendErrorReply_unlocked(UdpSlot *slot, int32_t errnum);
+
 	// . we have up to 1 handler routine for each msg type
 	// . call these handlers for the corresponding msgType
 	// . msgTypes go from 0 to 64 i think (see UdpProtocol.h dgram header)

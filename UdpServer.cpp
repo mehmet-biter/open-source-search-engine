@@ -472,8 +472,15 @@ bool UdpServer::sendRequest(char *msg,
 	return true;
 }
 
-// returns false and sets g_errno on error, true otherwise
 void UdpServer::sendErrorReply(UdpSlot *slot, int32_t errnum) {
+	ScopedLock sl(m_mtx);
+	sendErrorReply_unlocked(slot, errnum);
+}
+
+// returns false and sets g_errno on error, true otherwise
+void UdpServer::sendErrorReply_unlocked(UdpSlot *slot, int32_t errnum) {
+	m_mtx.verify_is_locked();
+
 	logDebug(g_conf.m_logDebugUdp, "udp: sendErrorReply slot=%p errnum=%" PRId32, slot, errnum);
 
 	// bitch if it is 0
@@ -492,13 +499,21 @@ void UdpServer::sendErrorReply(UdpSlot *slot, int32_t errnum) {
 	// set the m_localErrno in "slot" so it will set the dgrams error bit
 	slot->m_localErrno = errnum;
 
-	sendReply(msg, 4, msg, 4, slot);
+	sendReply_unlocked(msg, 4, msg, 4, slot);
+}
+
+void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, UdpSlot *slot, void *state,
+                          void (*callback2)(void *state, UdpSlot *slot)) {
+	ScopedLock sl(m_mtx);
+	sendReply_unlocked(msg, msgSize, alloc, allocSize, slot, state, callback2);
 }
 
 // . destroys slot on error or completion (frees m_readBuf,m_sendBuf)
 // . use a backoff of -1 for the default
-void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, UdpSlot *slot, void *state,
-                          void (*callback2)(void *state, UdpSlot *slot)) {
+void UdpServer::sendReply_unlocked(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, UdpSlot *slot, void *state,
+                                   void (*callback2)(void *state, UdpSlot *slot)) {
+	m_mtx.verify_is_locked();
+
 	logDebug(g_conf.m_logDebugUdp, "udp: sendReply slot=%p", slot);
 
 	// we can only sendReply if it's an incoming slot
@@ -534,8 +549,6 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 	// now we always set m_host, we use s_shotgun to toggle
 	slot->m_host = g_hostdb.getUdpHost ( slot->getIp() , slot->getPort() );
 
-	ScopedLock sl(m_mtx);
-
 	// discount this
 	if ( slot->m_convertedNiceness == 1 && slot->getNiceness() == 0 ) {
 		logDebug(g_conf.m_logDebugUdp, "udp: unconverting slot=%p", slot);
@@ -554,8 +567,7 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 		mfree ( alloc , allocSize , "UdpServer");
 		// was EBADENGINEER
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-		sl.unlock();
-		sendErrorReply ( slot , g_errno);
+		sendErrorReply_unlocked(slot, g_errno);
 		return ;
 	}
 	// set the callback2 , it might not be NULL if we're recording stats
