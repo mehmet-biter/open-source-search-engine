@@ -205,17 +205,17 @@ private:
 	bool readTimeoutPoll ( int64_t now ) ;
 
 	// available linked list functions (m_availableListHead)
-	void addToAvailableLinkedList(UdpSlot *slot);
-	UdpSlot* removeFromAvailableLinkedList();
+	void addToAvailableLinkedList_unlocked(UdpSlot *slot);
+	UdpSlot* removeFromAvailableLinkedList_unlocked();
 
 	// callback linked list functions (m_callbackListHead)
-	void addToCallbackLinkedList(UdpSlot *slot);
-	bool isInCallbackLinkedList(UdpSlot *slot);
-	void removeFromCallbackLinkedList(UdpSlot *slot);
+	void addToCallbackLinkedList_unlocked(UdpSlot *slot);
+	bool isInCallbackLinkedList_unlocked(UdpSlot *slot);
+	void removeFromCallbackLinkedList_unlocked(UdpSlot *slot);
 
 	// active linkedlist functions (m_activeListHead)
-	void addToActiveLinkedList(UdpSlot *slot);
-	void removeFromActiveLinkedList(UdpSlot *slot);
+	void addToActiveLinkedList_unlocked(UdpSlot *slot);
+	void removeFromActiveLinkedList_unlocked(UdpSlot *slot);
 
 	// . we maintain a sequential list of transaction ids to guarantee
 	//   uniquness to a point
@@ -255,7 +255,7 @@ private:
 	// . msgTypes go from 0 to 64 i think (see UdpProtocol.h dgram header)
 	void (* m_handlers[MAX_MSG_TYPES])(UdpSlot *slot, int32_t niceness);
 
-	GbMutex m_mtx; //mutex protecting this instance.
+	mutable GbMutex m_mtx; //mutex protecting this instance.
 
 	// when a call to sendto() blocks we set this to true so Loop.cpp
 	// will know to manually call sendPoll() rather than counting
@@ -297,14 +297,14 @@ private:
 	int32_t m_maxSlots;
 
 	// routines
-	UdpSlot *getEmptyUdpSlot(key96_t k, bool incoming);
-	void freeUdpSlot(UdpSlot *slot);
+	UdpSlot *getEmptyUdpSlot_unlocked(key96_t k, bool incoming);
+	void freeUdpSlot_unlocked(UdpSlot *slot);
 
-	void addKey(key96_t key , UdpSlot *ptr);
+	void addKey_unlocked(key96_t key, UdpSlot *ptr);
 
 	// verified these are only called from within _ass routines that
 	// turn them interrupts off before calling this
-	UdpSlot *getUdpSlot(key96_t k);
+	UdpSlot *getUdpSlot_unlocked(key96_t k);
 
 	// . hash table for converting keys to slots
 	// . if m_ptrs[i] is NULL, ith bucket is empty
