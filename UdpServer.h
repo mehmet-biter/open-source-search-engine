@@ -231,7 +231,7 @@ private:
 
 	// . send as many dgrams as you can from slot's m_sendBuf
 	// . returns false and sets errno on error, true otherwise
-	bool doSending(UdpSlot *slot, bool allowResends, int64_t now);
+	bool doSending_unlocked(UdpSlot *slot, bool allowResends, int64_t now);
 
 	// . calls a m_handler request handler if slot->m_callback is NULL
 	//   which means it was an incoming request

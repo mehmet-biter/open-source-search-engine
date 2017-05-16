@@ -465,7 +465,7 @@ bool UdpServer::sendRequest(char *msg,
 	slot->m_maxResends = maxResends;
 
 	// keep sending dgrams until we have no more or hit ACK_WINDOW limit
-	if ( ! doSending(slot, true /*allow resends?*/, now) ) {
+	if ( !doSending_unlocked(slot, true /*allow resends?*/, now) ) {
 		freeUdpSlot_unlocked(slot);
 		log(LOG_WARN, "udp: Failed to send dgrams for udp socket.");
 		return false;
@@ -575,7 +575,7 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 	logDebug(g_conf.m_logDebugUdp, "udp: Sending reply tid=%" PRId32" msgType=0x%02x (niceness=%" PRId32").",
 	         slot->getTransId(), (int)slot->getMsgType(), (int32_t)slot->getNiceness());
 	// keep sending dgrams until we have no more or hit ACK_WINDOW limit
-	if ( ! doSending(slot, true /*allow resends?*/, now) ) {
+	if ( !doSending_unlocked(slot, true /*allow resends?*/, now) ) {
 		// . on error deal with that
 		// . errors from doSending() are from 
 		//   UdpSlot::sendDatagramOrAck()
@@ -604,7 +604,8 @@ void UdpServer::sendPollWrapper(int fd, void *state) {
 // . that means we can be calling doSending() on a slot made in
 //   sendRequest() and then be interrupted by sendPollWrapper()
 // . Fortunately, we have a lock around it in sendRequest()!
-bool UdpServer::doSending(UdpSlot *slot, bool allowResends, int64_t now) {
+bool UdpServer::doSending_unlocked(UdpSlot *slot, bool allowResends, int64_t now) {
+	m_mtx.verify_is_locked();
 
 	// if UdpServer::cancel() was called and this slot's callback was
 	// called, make sure to hault sending if we are in a quickpoll
@@ -702,7 +703,7 @@ bool UdpServer::sendPoll(bool allowResends, int64_t now) {
 		// . when shutting down during a dump we can get EBADF during a send
 		//   so do not loop forever
 		// . this returns false on error, i haven't seen it happen though
-		if ( ! doSending(slot, allowResends, now) )
+		if ( !doSending_unlocked(slot, allowResends, now) )
 			return true;
 	}
 }
@@ -813,8 +814,11 @@ void UdpServer::process(int64_t now, int32_t maxNiceness) {
 		}
 		// we read something
 		something = true;
-		// try sending an ACK on the slot we read something from
-		doSending(slot, false, now);
+		{
+			ScopedLock sl(m_mtx);
+			// try sending an ACK on the slot we read something from
+			doSending_unlocked(slot, false, now);
+		}
 	}
 	// if we read something, try for more
 	if ( something ) {
@@ -2004,7 +2008,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		slot->prepareForResend ( now , resendAll );
 		// . we resend our first unACKed dgram if some time has passed
 		// . send as much as we can on this slot
-		doSending(slot, true /*allow resends?*/, now);
+		doSending_unlocked(slot, true /*allow resends?*/, now);
 		// return if we had an error sending, like EBADF we get
 		// when we've shut down the servers...
 		if ( g_errno == EBADF ) return something;
