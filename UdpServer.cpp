@@ -684,7 +684,7 @@ bool UdpServer::sendPoll(bool allowResends, int64_t now) {
 		// . it sets "isResend" to true if it's a resend
 		// . this sets g_errno to ETIMEOUT if the slot it returns has timed out
 		// . in that case we'll destroy that slot
-		UdpSlot *slot = getBestSlotToSend ( now );
+		UdpSlot *slot = getBestSlotToSend_unlocked(now);
 		// . slot is NULL if no more slots need sending
 		// . return true if we processed something
 		if ( ! slot ) {
@@ -716,8 +716,9 @@ bool UdpServer::sendPoll(bool allowResends, int64_t now) {
 // . let's send the shortest first, but weight by how long it's been waiting!
 // . f(x) = a*(now - startTime) + b/msgSize
 // . verified that this is not interruptible
-UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
+UdpSlot *UdpServer::getBestSlotToSend_unlocked(int64_t now) {
 	m_mtx.verify_is_locked();
+
 	// . we send msgs that are mostly "caught up" with their acks first
 	// . the slot with the lowest score gets sent
 	// . re-sends have priority over NONre-sends(ACK was not recvd in time)

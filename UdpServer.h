@@ -242,7 +242,7 @@ private:
 	// . picks the slot that is most caught up to it's ACKs
 	// . picks resends first, however
 	// . then we send a dgram from that slot
-	UdpSlot *getBestSlotToSend ( int64_t now );
+	UdpSlot *getBestSlotToSend_unlocked(int64_t now);
 
 	// . reads a pending dgram on the udp stack
 	// . returns -1 on error, 0 if blocked, 1 if completed reading dgram
