@@ -223,6 +223,8 @@ private:
 	//   whether it's a request/reply by/from us
 	int32_t getTransId_unlocked();
 
+	void destroySlot_unlocked(UdpSlot *slot);
+
 	// . send as many dgrams as you can from slot's m_sendBuf
 	// . returns false and sets errno on error, true otherwise
 	bool doSending_unlocked(UdpSlot *slot, bool allowResends, int64_t now);

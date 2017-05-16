@@ -582,8 +582,7 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 		// . TODO: we may have to destroy this slot ourselves now...
 		log(LOG_WARN, "udp: Got error sending dgrams.");
 		// destroy it i guess
-		sl.unlock();
-		destroySlot ( slot );
+		destroySlot_unlocked(slot);
 	}
 }
 
@@ -1932,7 +1931,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			slot->m_sendBufAlloc = NULL;
 			// just nuke the slot... this will leave the memory
 			// leaked... (memleak, memory leak, memoryleak)
-			destroySlot ( slot );
+			destroySlot_unlocked(slot);
 			continue;
 		}
 		// should we resend all dgrams?
@@ -2019,10 +2018,15 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 	return something;
 }
 
+void UdpServer::destroySlot(UdpSlot *slot) {
+	ScopedLock sl(m_mtx);
+	destroySlot_unlocked(slot);
+}
+
 // . IMPORTANT: only called for transactions that we initiated!!!
 //   so we know to set the key.n0 hi bit
 // . may be called twice on same slot by Multicast::destroySlotsInProgress()
-void UdpServer::destroySlot ( UdpSlot *slot ) {
+void UdpServer::destroySlot_unlocked( UdpSlot *slot ) {
 	if (!slot) {
 		gbshutdownLogicError();
 	}
@@ -2062,8 +2066,8 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 	//   since we turned interrupts off
 	// . free this slot available right away so sig handler won't
 	//   write into m_readBuf or use m_sendBuf, but it may claim it!
-	ScopedLock sl(m_mtx);
 	freeUdpSlot_unlocked(slot);
+
 	// free the send/read buffers
 	if ( rbuf ) mfree ( rbuf , rbufSize , "UdpServer");
 	if ( sbuf ) mfree ( sbuf , sbufSize , "UdpServer");
