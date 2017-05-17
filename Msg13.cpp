@@ -304,7 +304,11 @@ bool Msg13::gotForwardedReply ( UdpSlot *slot ) {
 	if ( reply == (void *)-1 ) { gbshutdownAbort(true); }
 
 	// we are responsible for freeing reply now
-	if ( ! g_errno ) slot->m_readBuf = NULL;
+	if ( ! g_errno ) {
+		slot->m_readBuf = NULL;
+		slot->m_readBufSize = 0;
+		slot->m_readBufMaxSize = 0;
+	}
 
 	return gotFinalReply ( reply , replySize , replyAllocSize );
 }
@@ -1684,6 +1688,8 @@ void passOnReply ( void *state , UdpSlot *slot ) {
 	// as the send buf for "udpSlot"
 	slot->m_readBuf     = NULL;
 	slot->m_readBufSize = 0;
+	slot->m_readBufMaxSize = 0;
+
 	// prevent udpserver from trying to free g_fakeReply
 	if ( reply == g_fakeReply ) replyAllocSize = 0;
 

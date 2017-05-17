@@ -370,6 +370,8 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	st->m_slotAllocSize = slot->m_readBufMaxSize;
 	st->m_slotReadBuf   = slot->m_readBuf;
 	slot->m_readBuf = NULL;
+	slot->m_readBufSize = 0;
+	slot->m_readBufMaxSize = 0;
 
 	// . if docId was explicitly specified...
 	// . we may get multiple tfndb recs

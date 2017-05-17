@@ -427,6 +427,8 @@ static void handleRequestfd(UdpSlot *slot, int32_t /*niceness*/) {
 	//   so we have to be careful not to let UdpServer free it in the
 	//   udpSlot because it will have been reallocated by PageDirectory.cpp
 	slot->m_readBuf = NULL;
+	slot->m_readBufSize = 0;
+	slot->m_readBufMaxSize = 0;
 
 	// HACK: this is used as a unique identifier for registering callbacks
 	// so let's set the high bit here to avoid conflicting with normal

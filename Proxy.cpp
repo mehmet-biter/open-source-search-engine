@@ -520,12 +520,13 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 	// do not allow regular proxy to uncompress it though!
 	if ( ! (g_hostdb.m_myHost->m_type & HT_QCPROXY ) ) doUncompress=false;
 
+	// sanity check
+	if ( slot->m_readBufSize < 0 ) { g_process.shutdownAbort(true); }
+
 	// don't let udp server free the reply, we forward this to end user
 	slot->m_readBuf = NULL;
-
-	// sanity check
-	//if ( s->m_readOffset < 0 ) { g_process.shutdownAbort(true); }
-	if ( slot->m_readBufSize < 0 ) { g_process.shutdownAbort(true); }
+	slot->m_readBufSize = 0;
+	slot->m_readBufMaxSize = 0;
 
 	int64_t nowms = gettimeofdayInMilliseconds();
 

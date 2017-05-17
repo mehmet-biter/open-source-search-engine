@@ -374,6 +374,8 @@ void gotSingleReplyWrapper ( void *state , UdpSlot *slot ) {
 		THIS->gotReply( reply , replySize , replyMaxSize );
 		// don't let UdpServer free this since we own it now
 		slot->m_readBuf = NULL;
+		slot->m_readBufSize = 0;
+		slot->m_readBufMaxSize = 0;
 	}
 	// never let m_request (sendBuf) be freed
 	slot->m_sendBufAlloc = NULL;

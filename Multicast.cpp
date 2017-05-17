@@ -950,6 +950,8 @@ void Multicast::closeUpShop ( UdpSlot *slot ) {
 		}
 		// don't let UdpServer free the readBuf now that we point to it
 		slot->m_readBuf = NULL;
+		slot->m_readBufSize = 0;
+		slot->m_readBufMaxSize = 0;
 
 		// save slot so msg4 knows what slot replied in udpserver
 		// for doing its flush callback logic
