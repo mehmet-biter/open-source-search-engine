@@ -87,7 +87,6 @@ bool HttpServer::init ( int16_t port,
 			   getMsgSize                  ,
 			   getMsgPiece                 ,
 			   port                        ,
-			   //&g_conf.m_httpMaxSockets     ) ) return false;
 			   &g_conf.m_httpMaxSockets  ) ) return false;
 	// set our secure TcpServer class
 	if ( ! m_ssltcp.init ( handlerWrapper,
