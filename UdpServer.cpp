@@ -2069,13 +2069,8 @@ void UdpServer::destroySlot_unlocked( UdpSlot *slot ) {
 
 	// NULLify here now just in case
 	slot->m_readBuf = NULL;
-	slot->m_readBufSize = 0;
-	slot->m_readBufMaxSize = 0;
-
 	slot->m_sendBuf = NULL;
-	slot->m_sendBufSize = 0;
 	slot->m_sendBufAlloc = NULL;
-	slot->m_sendBufAllocSize = 0;
 
 	// . sig handler may allocate new read buf here!!!!... but not now
 	//   since we turned interrupts off
@@ -2415,6 +2410,20 @@ void UdpServer::freeUdpSlot_unlocked(UdpSlot *slot) {
 		m_numUsedSlotsIncoming--;
 	}
 	slot->m_slotStatus = UdpSlot::slot_status_unused;
+
+	// reset some size variable (we may get our buffer stolen, but size has not been reset)
+	if (!slot->m_readBuf) {
+		slot->m_readBufMaxSize = 0;
+		slot->m_readBufSize = 0;
+	}
+
+	if (!slot->m_sendBuf) {
+		slot->m_sendBufSize = 0;
+	}
+
+	if (!slot->m_sendBufAlloc) {
+		slot->m_sendBufAllocSize = 0;
+	}
 
 	// add to linked list of available slots
 	addToAvailableLinkedList_unlocked(slot);
