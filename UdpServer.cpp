@@ -2066,10 +2066,17 @@ void UdpServer::destroySlot_unlocked( UdpSlot *slot ) {
 	if ( sbuf == slot->m_tmpBuf ) sbuf = NULL;
 	// nothing allocated. used by Msg13.cpp g_fakeBuf
 	if ( sbufSize == 0 ) sbuf = NULL;
+
 	// NULLify here now just in case
-	slot->m_readBuf      = NULL;
-	slot->m_sendBuf      = NULL;
+	slot->m_readBuf = NULL;
+	slot->m_readBufSize = 0;
+	slot->m_readBufMaxSize = 0;
+
+	slot->m_sendBuf = NULL;
+	slot->m_sendBufSize = 0;
 	slot->m_sendBufAlloc = NULL;
+	slot->m_sendBufAllocSize = 0;
+
 	// . sig handler may allocate new read buf here!!!!... but not now
 	//   since we turned interrupts off
 	// . free this slot available right away so sig handler won't
