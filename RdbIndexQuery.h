@@ -11,7 +11,7 @@ public:
 	RdbIndexQuery(RdbBase *base);
 	~RdbIndexQuery();
 
-	int32_t getFilePos(uint64_t docId, bool *isDel = NULL) const;
+	int32_t getFilePos(uint64_t docId, bool isMerging) const;
 	bool documentIsInFile(uint64_t docId, int32_t filenum) const;
 
 	int32_t getNumFiles() const { return m_numFiles; }

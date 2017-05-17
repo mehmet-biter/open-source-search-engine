@@ -17,35 +17,28 @@ RdbIndexQuery::RdbIndexQuery(docidsconst_ptr_t globalIndexData, docidsconst_ptr_
 RdbIndexQuery::~RdbIndexQuery() {
 }
 
-int32_t RdbIndexQuery::getFilePos(uint64_t docId, bool *isDel) const {
+int32_t RdbIndexQuery::getFilePos(uint64_t docId, bool isMerging) const {
 	if (m_treeIndexData.get()) {
 		auto it = std::lower_bound(m_treeIndexData->cbegin(), m_treeIndexData->cend(), docId << RdbIndex::s_docIdOffset);
 		if (it != m_treeIndexData->cend() && ((*it >> RdbIndex::s_docIdOffset) == docId)) {
-			if (isDel) {
-				*isDel = ((*it & RdbIndex::s_delBitMask) == 0);
-			}
 			return m_numFiles;
 		}
 	}
 
 	auto it = std::lower_bound(m_globalIndexData->cbegin(), m_globalIndexData->cend(), docId << RdbBase::s_docIdFileIndex_docIdDelKeyOffset);
 	if (it != m_globalIndexData->cend() && ((*it >> RdbBase::s_docIdFileIndex_docIdDelKeyOffset) == docId)) {
-		if (isDel) {
-			*isDel = ((*it & RdbBase::s_docIdFileIndex_delBitMask) == 0);
-		}
 		return static_cast<int32_t>(*it & RdbBase::s_docIdFileIndex_filePosMask);
 	}
 
-	// mismatch in idx & data files?
+	// if we're merging, docId should always be present in global index
+	if (isMerging) {
+		// mismatch in idx & data files?
+		logError("Unable to find docId=%lu in global index", docId);
+		gbshutdownLogicError();
+	}
 
-	logError("Unable to find docId=%lu in global index", docId);
-
-	/// @todo ALC we should core dump here instead (tmp workaround until nomerge branch is merged down to master)
-	/// this happens when pending docIds are not merged into RdbTree index (which should not happen with nomerge branch)
+	/// this happens when pending docIds are not merged into RdbTree index
 	return m_numFiles;
-
-//	printIndex();
-//	gbshutdownLogicError();
 }
 
 bool RdbIndexQuery::documentIsInFile(uint64_t docId, int32_t fileNum) const {

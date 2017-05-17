@@ -2332,7 +2332,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 				docId = extract_bits(minPtrBase, 58, 96);
 			}
 
-			int32_t filePos = rdbIndexQuery.getFilePos(docId);
+			int32_t filePos = rdbIndexQuery.getFilePos(docId, isRealMerge);
 
 			if (g_conf.m_verifyIndex && isRealMerge) {
 				// check tree index
