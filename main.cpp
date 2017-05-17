@@ -796,7 +796,7 @@ int main2 ( int argc , char *argv[] ) {
 					 20000000 ,   // readBufSIze
 					 20000000 ,   // writeBufSize
 					 20       ,   // pollTime in ms
-					 3500     , // max udp slots
+					 g_conf.m_udpMaxSockets     , // max udp slots
 					 false    )){ // is dns?
 			log( LOG_ERROR, "db: UdpServer init failed." );
 			return 1;
@@ -1722,7 +1722,7 @@ int main2 ( int argc , char *argv[] ) {
 				 40000000 ,   // readBufSIze
 				 20000000 ,   // writeBufSize
 				 20       ,   // pollTime in ms
-				 3500     ,   // max udp slots
+				 g_conf.m_udpMaxSockets     ,   // max udp slots
 				 false    )){ // is dns?
 		log("db: UdpServer init failed." ); return 1; }
 
@@ -1894,7 +1894,7 @@ void doCmdAll ( int fd, void *state ) {
 				 20000000 ,   // readBufSIze
 				 20000000 ,   // writeBufSize
 				 20       ,   // pollTime in ms
-				 3500     ,   // max udp slots
+				 g_conf.m_udpMaxSockets     ,   // max udp slots
 				 false    )){ // is dns?
 		log("db: UdpServer init  on port 18123 failed: %s" ,
 		    mstrerror(g_errno)); 

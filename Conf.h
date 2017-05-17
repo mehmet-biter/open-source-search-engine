@@ -188,6 +188,8 @@ class Conf {
 	// indexdb has a max cached age for getting IndexLists (10 mins deflt)
 	int32_t  m_indexdbMaxIndexListAge;
 
+	int32_t m_udpMaxSockets;
+
 	// TODO: parse these out!!!!
 	int32_t  m_httpMaxSockets;
 	int32_t  m_httpsMaxSockets;

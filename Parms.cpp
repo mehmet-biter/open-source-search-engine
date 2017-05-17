@@ -4862,6 +4862,14 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "max udp sockets";
+	m->m_desc  = "Sockets available for incoming/outgoing UDP request. (Changes requires restart)";
+	m->m_cgi   = "mus";
+	simple_m_set(Conf,m_udpMaxSockets);
+	m->m_def   = "3500";
+	m->m_page  = PAGE_MASTER;
+	m++;
+
 	m->m_title = "max http sockets";
 	m->m_desc  = "Maximum sockets available to serve incoming HTTP "
 		"requests. Too many outstanding requests will increase "

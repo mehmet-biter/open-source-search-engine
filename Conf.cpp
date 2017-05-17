@@ -105,6 +105,7 @@ Conf::Conf ( ) {
 	m_isLive = false;
 	m_maxTotalSpiders = 0;
 	m_indexdbMaxIndexListAge = 0;
+	m_udpMaxSockets = 0;
 	m_httpMaxSockets = 0;
 	m_httpsMaxSockets = 0;
 	m_httpMaxSendBufSize = 0;
