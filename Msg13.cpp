@@ -78,8 +78,13 @@ Msg13::~Msg13() {
 }
 
 void Msg13::reset() {
-	if (m_replyBuf) mfree(m_replyBuf,m_replyBufAllocSize,"msg13rb");
+	if (m_replyBuf) {
+		mfree(m_replyBuf,m_replyBufAllocSize,"msg13rb");
+	}
+
 	m_replyBuf = NULL;
+	m_replyBufSize = 0;
+	m_replyBufAllocSize = 0;
 }
 
 
@@ -323,6 +328,7 @@ bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSi
 	// assume none
 	m_replyBuf     = NULL;
 	m_replyBufSize = 0;
+	m_replyBufAllocSize = 0;
 
 	if ( g_conf.m_logDebugRobots || g_conf.m_logDebugDownloads ) {
 		char ipbuf[16];

@@ -2496,6 +2496,8 @@ void gotSquidProxiedContent ( void *state ) {
 
 	// don't let Msg13::reset() free it
 	sqs->m_msg13.m_replyBuf = NULL;
+	sqs->m_msg13.m_replyBufSize = 0;
+	sqs->m_msg13.m_replyBufAllocSize = 0;
 
 	// sanity, this should be exact... since TcpServer.cpp needs that
 	//if ( replySize != replyAllocSize ) { g_process.shutdownAbort(true); }

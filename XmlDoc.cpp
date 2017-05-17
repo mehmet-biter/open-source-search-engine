@@ -8028,6 +8028,8 @@ char **XmlDoc::gotHttpReply ( ) {
 	//   recycled/closed
 	// . we own it now and are responsible for freeing it
 	m_msg13.m_replyBuf = NULL;
+	m_msg13.m_replyBufSize = 0;
+	m_msg13.m_replyBufAllocSize = 0;
 
 	// relabel mem so we know where it came from
 	relabel( m_httpReply, m_httpReplyAllocSize, "XmlDocHR" );
