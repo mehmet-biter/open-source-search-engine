@@ -5,3 +5,4 @@ generate_rdbindex
 get_titlerec
 print_urlinfo
 validate_rdbindex
+verify_titledb
