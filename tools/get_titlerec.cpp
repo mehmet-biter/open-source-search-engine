@@ -82,6 +82,11 @@ int main(int argc, char **argv) {
 	g_log.m_disabled = false;
 	g_log.m_logPrefix = false;
 
+	CollectionRec *cr = g_collectiondb.getRec("main");
+	if (!cr) {
+		logf(LOG_TRACE, "No main collection found");
+	}
+
 	uint64_t docId = strtoul(argv[2], NULL, 10);
 	logf(LOG_TRACE, "Getting titlerec for docId=%" PRIu64, docId);
 
@@ -91,8 +96,7 @@ int main(int argc, char **argv) {
 	key96_t startKey = Titledb::makeFirstKey(docId);
 	key96_t endKey = Titledb::makeLastKey(docId);
 
-
-	if (!msg5.getList(RDB_TITLEDB, 0, &list, &startKey, &endKey, 500000000, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
+	if (!msg5.getList(RDB_TITLEDB, cr->m_collnum, &list, &startKey, &endKey, 500000000, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
 		logf(LOG_TRACE, "msg5.getlist didn't block");
 		cleanup();
 		exit(1);
