@@ -1476,23 +1476,23 @@ bool Query::setQWords ( char boolFlag ,
 					userType   = 'r';
 					ignorei = i + 2;
 				}
-				continue;
+			} else {
+				// get the number
+				float fval = atof2 (s, slen);
+				// s2 MUST point to the a,r,ap,rp string
+				const char *s2 = words.getWord(i+4);
+				// is it a phrase?
+				if ( s2[1] == 'p' ) {
+					userWeightPhrase = fval;
+					userTypePhrase   = s2[0]; // a or r
+				}
+				else {
+					userWeight = fval;
+					userType   = s2[0]; // a or r
+				}
+				// ignore all following words up and inc. i+6
+				ignorei = i + 6;
 			}
-			// get the number
-			float fval = atof2 (s, slen);
-			// s2 MUST point to the a,r,ap,rp string
-			const char *s2 = words.getWord(i+4);
-			// is it a phrase?
-			if ( s2[1] == 'p' ) {
-				userWeightPhrase = fval;
-				userTypePhrase   = s2[0]; // a or r
-			}
-			else {
-				userWeight = fval;
-				userType   = s2[0]; // a or r
-			}
-			// ignore all following words up and inc. i+6
-			ignorei = i + 6;
 			continue;
 		}
 					
