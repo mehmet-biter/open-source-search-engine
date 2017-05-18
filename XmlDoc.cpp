@@ -7439,6 +7439,7 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	//size_linkInfo1 = m_msg25.m_linkInfo->getSize();
 	ptr_linkInfo1  = (LinkInfo *)m_myPageLinkInfoBuf.getBufStart();
 	size_linkInfo1 = m_myPageLinkInfoBuf.length();
+
 	// we should free it
 	m_freeLinkInfo1 = true;
 
@@ -7449,7 +7450,8 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	}
 
 	// validate linkinfo
-	if (ptr_linkInfo1->m_version != 0 || ptr_linkInfo1->m_lisize < 0 ||
+	if (ptr_linkInfo1->m_version != 0 ||
+		ptr_linkInfo1->m_lisize < 0 || ptr_linkInfo1->m_lisize != size_linkInfo1 ||
 		ptr_linkInfo1->m_numStoredInlinks < 0 || ptr_linkInfo1->m_numGoodInlinks < 0) {
 		gbshutdownCorrupted();
 	}
@@ -14068,6 +14070,12 @@ void XmlDoc::copyFromOldDoc ( XmlDoc *od ) {
 	// we need the link info too!
 	ptr_linkInfo1  = od->ptr_linkInfo1;
 	size_linkInfo1 = od->size_linkInfo1;
+
+	// validate linkinfo
+	if (ptr_linkInfo1 && ptr_linkInfo1->m_lisize != size_linkInfo1) {
+		gbshutdownAbort(true);
+	}
+
 	if ( ptr_linkInfo1 && size_linkInfo1 ) m_linkInfo1Valid = true;
 	else m_linkInfo1Valid = false;
 }

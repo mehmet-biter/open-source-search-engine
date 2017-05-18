@@ -614,6 +614,11 @@ bool Msg20Reply::sendReply(Msg20State *state) {
 	int32_t used = serialize ( buf , need );
 
 	// sanity
+	if (ptr_linkInfo && ((LinkInfo *)ptr_linkInfo)->m_lisize != size_linkInfo) {
+		gbshutdownAbort(true);
+	}
+
+	// sanity
 	if ( used != need ) { g_process.shutdownAbort(true); }
 
 	// use blue for our color
