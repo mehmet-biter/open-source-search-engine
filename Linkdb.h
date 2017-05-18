@@ -265,6 +265,7 @@ extern class Linkdb g_linkdb2;
 // . THINK OF THIS CLASS as a Msg25 reply ("Msg25Reply") class
 
 class Xml;
+class Inlink;
 
 class LinkInfo {
 
@@ -277,14 +278,17 @@ class LinkInfo {
 	int32_t   getNumLinkTexts() const { return m_numStoredInlinks; }
 	int32_t   getNumGoodInlinks() const { return m_numGoodInlinks; }
 
-	class Inlink *getNextInlink ( class Inlink *k ) ;
+	Inlink       *getNextInlink(Inlink *k);
+	const Inlink *getNextInlink(const Inlink *k) const {
+		return const_cast<LinkInfo*>(this)->getNextInlink(k);
+	}
 
 	bool getItemXml ( Xml *xml ) ;
 
-	bool hasLinkText ( );
+	bool hasLinkText() const;
 
 	// for PageTitledb
-	bool print(class SafeBuf *sb, const char *coll );
+	bool print(class SafeBuf *sb, const char *coll) const;
 
 	bool hasRSSItem();
 
@@ -424,7 +428,7 @@ class Inlink {
 	char       m_hopcount            ;  // 66
 	char       m_linkTextScoreWeight ; // 0-100% (was m_inlinkWeight) //67
 
-	char *getUrl ( ) { 
+	const char *getUrl() const {
 		if ( size_urlBuf == 0 ) return NULL;
 		return m_buf ;//+ off_urlBuf; 
 	}
@@ -434,6 +438,7 @@ class Inlink {
 		return m_buf + 
 			size_urlBuf;
 	}
+	const char *getLinkText() const { return const_cast<Inlink*>(this)->getLinkText(); }
 	char *getSurroundingText ( ) { 
 		if ( size_surroundingText == 0 ) return NULL;
 		//return m_buf + off_surroundingText; 
@@ -441,6 +446,7 @@ class Inlink {
 			size_urlBuf +
 			size_linkText;
 	}
+	const char *getSurroundingText() const { return const_cast<Inlink*>(this)->getSurroundingText(); }
 	char *getRSSItem ( ) { 
 		if ( size_rssItem == 0 ) return NULL;
 		//return m_buf + off_rssItem; 
@@ -449,7 +455,8 @@ class Inlink {
 			size_linkText + 
 			size_surroundingText;
 	}
-	const char *getCategories ( ) {
+	const char *getRSSItem() const { return const_cast<Inlink*>(this)->getRSSItem(); }
+	const char *getCategories() const {
 		if ( size_categories == 0 ) return NULL;
 		//return m_buf + off_categories; 
 		return m_buf + 
@@ -468,6 +475,7 @@ class Inlink {
 			size_rssItem +
 			size_categories;
 	}
+	const char *getGigabitQuery() const { return const_cast<Inlink*>(this)->getGigabitQuery(); }
 	char *getTemplateVector ( ) { 
 		if ( size_templateVector == 0 ) return NULL;
 		//return m_buf + off_templateVector; 

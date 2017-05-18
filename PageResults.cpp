@@ -1745,7 +1745,7 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 		if ( ! si->m_doQueryHighlighting && 
 		     si->m_format == FORMAT_HTML ) 
 			continue;
-		char *str   = k->getLinkText();//ptr_linkText;
+		const char *str   = k->getLinkText();//ptr_linkText;
 		int32_t strLen = k->size_linkText;
 
 		const char *frontTag =

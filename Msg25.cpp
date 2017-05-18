@@ -3002,9 +3002,9 @@ bool Inlink::setXmlFromRSS(Xml *xml) {
 }
 
 
-bool LinkInfo::hasLinkText() {
+bool LinkInfo::hasLinkText() const {
 	// loop through the Inlinks
-	for ( Inlink *k = NULL; (k = getNextInlink(k)) ; ) 
+	for(const Inlink *k = NULL; (k = getNextInlink(k)) ; )
 		if ( k->size_linkText > 1 ) return true;
 	return false;
 }
@@ -3160,7 +3160,7 @@ void Inlink::setMsg20Reply(Msg20Reply *r) {
 	r->m_hopcount            = m_hopcount;
 	r->m_isAdult             = false;       //appears to be irrelevant when dealing with links
 	
-	r->ptr_ubuf              = getUrl();//ptr_urlBuf;
+	r->ptr_ubuf              = const_cast<char*>(getUrl());
 	r->ptr_linkText          = getLinkText();//ptr_linkText;
 	r->ptr_surroundingText   = getSurroundingText();//ptr_surroundingText;
 	r->ptr_rssItem           = getRSSItem();//ptr_rssItem;
@@ -3240,11 +3240,11 @@ char *Inlink::serialize(int32_t *retSize     ,
 
 
 // used by PageTitledb.cpp
-bool LinkInfo::print(SafeBuf *sb, const char *coll) {
+bool LinkInfo::print(SafeBuf *sb, const char *coll) const {
 	int32_t count = 1;
 
 	// loop through the link texts
-	for ( Inlink *k = NULL; (k = getNextInlink(k)) ; count++ ) {
+	for(const Inlink *k = NULL; (k = getNextInlink(k)); count++) {
 		const char *s    = k->getLinkText();//ptr_linkText;
 		int32_t  slen = k->size_linkText - 1;
 		const char *d    = k->getSurroundingText();//ptr_surroundingText;
