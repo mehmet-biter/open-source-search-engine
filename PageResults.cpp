@@ -1710,8 +1710,12 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 	// . "&inlinks=1" is slow and fresh, "&inlinks=2" is fast
 	//   and stale. Both are really only for BuzzLogic.
 	LinkInfo *info = (LinkInfo *)mr->ptr_linkInfo;//inlinks;
-	// sanity
-	if ( info && mr->size_linkInfo!=info->m_lisize ){g_process.shutdownAbort(true); }
+	// Corrupted linkinfo has been seen. In that case just log an error and do not try to print any link texts
+	if(info && mr->size_linkInfo!=info->m_lisize) {
+		log(LOG_ERROR, "results: mr->size_linkInfo(%d) != info->m_lisize (%d)", mr->size_linkInfo, info->m_lisize);
+		return false;
+	}
+
 	// NULLify if empty
 	if ( mr->size_linkInfo <= 0 ) info = NULL;
 	// do not both if none
