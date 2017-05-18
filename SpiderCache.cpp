@@ -51,6 +51,7 @@ void SpiderCache::reset ( ) {
 	// loop over all SpiderColls and get the best
 	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
 		CollectionRec *cr = g_collectiondb.getRec(i);
+		if ( ! cr ) continue;
 		ScopedLock sl(cr->m_spiderCollMutex);
 		SpiderColl *sc = cr->m_spiderColl;
 		if ( ! sc ) continue;
