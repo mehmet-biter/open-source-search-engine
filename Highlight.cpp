@@ -40,10 +40,11 @@ static const char s_styleSheet[] =
 // . content must be NULL terminated
 // . if "useAnchors" is true we do click and scroll
 // . if "isQueryTerms" is true, we do typical anchors in a special way
-int32_t Highlight::set( SafeBuf *sb, char *content, int32_t contentLen, Query *q, const char *frontTag,
-						const char *backTag ) {
+int32_t Highlight::set( SafeBuf *sb, const char *content, int32_t contentLen, Query *q, const char *frontTag,
+			const char *backTag ) {
 	Words words;
-	if ( ! words.set ( content, contentLen, true ) ) {
+	//todo: get Words clas fixed for constness so we can avoaid the const_cast here
+	if ( ! words.set ( const_cast<char*>(content), contentLen, true ) ) {
 		return -1;
 	}
 

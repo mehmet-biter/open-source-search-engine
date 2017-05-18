@@ -21,7 +21,7 @@ public:
 	// . we highlight Query "q" in "xml" as best as we can
 	// . store highlighted text into "buf"
 	// . return length stored into "buf"
-	int32_t set( SafeBuf *sb, char *content, int32_t contentLen, Query *q, const char *frontTag,
+	int32_t set( SafeBuf *sb, const char *content, int32_t contentLen, Query *q, const char *frontTag,
 				  const char *backTag );
 
 	int32_t set( SafeBuf *sb, const Words *words, const Matches *matches, const char *frontTag = NULL,
