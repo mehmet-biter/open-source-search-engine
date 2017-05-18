@@ -1894,7 +1894,7 @@ void doCmdAll ( int fd, void *state ) {
 				 20000000 ,   // readBufSIze
 				 20000000 ,   // writeBufSize
 				 20       ,   // pollTime in ms
-				 g_conf.m_udpMaxSockets     ,   // max udp slots
+				 3500     ,   // max udp slots
 				 false    )){ // is dns?
 		log("db: UdpServer init  on port 18123 failed: %s" ,
 		    mstrerror(g_errno)); 
