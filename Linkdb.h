@@ -280,7 +280,7 @@ class LinkInfo {
 
 	Inlink       *getNextInlink(Inlink *k);
 	const Inlink *getNextInlink(const Inlink *k) const {
-		return const_cast<LinkInfo*>(this)->getNextInlink(k);
+		return const_cast<LinkInfo*>(this)->getNextInlink(const_cast<Inlink*>(k));
 	}
 
 	bool getItemXml ( Xml *xml ) ;
