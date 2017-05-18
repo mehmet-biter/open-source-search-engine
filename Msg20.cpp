@@ -825,11 +825,8 @@ int32_t Msg20Reply::deserialize ( ) {
 		return bytesParsed;
 	
 	// sanity
-	if ( ptr_linkInfo && ((LinkInfo *)ptr_linkInfo)->m_lisize !=
-		    size_linkInfo ) { 
-		log("xmldoc: deserialize msg20 reply corruption error");
-		log("xmldoc: DO YOU NEED TO NUKE CACHEDB.DAT?????");
-		return -1;
+	if (ptr_linkInfo && ((LinkInfo *)ptr_linkInfo)->m_lisize != size_linkInfo) {
+		gbshutdownAbort(true);
 	}
 
 	// return how many bytes we used
