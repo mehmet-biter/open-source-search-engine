@@ -2,6 +2,7 @@
 #include "SpiderCache.h"
 #include "SpiderLoop.h"
 #include "SpiderColl.h"
+#include "ScopedLock.h"
 
 
 Doledb g_doledb;
@@ -67,15 +68,19 @@ void nukeDoledb ( collnum_t collnum ) {
 		// need to recompute this!
 		//sc->m_ufnMapValid = false;
 
-		// log it
-		log("spider: rebuilding %s from doledb nuke", sc->getCollName());
-		// activate a scan if not already activated
-		sc->m_waitingTreeNeedsRebuild = true;
-		// if a scan is ongoing, this will re-set it
-		sc->resetWaitingTreeNextKey();
-		// clear it?
-		sc->m_waitingTree.clear();
-		sc->clearWaitingTable();
+		{
+			ScopedLock sl(sc->m_waitingTree.getLock());
+
+			// log it
+			log("spider: rebuilding %s from doledb nuke", sc->getCollName());
+			// activate a scan if not already activated
+			sc->m_waitingTreeNeedsRebuild = true;
+			// if a scan is ongoing, this will re-set it
+			sc->resetWaitingTreeNextKey();
+			// clear it?
+			sc->m_waitingTree.clear_unlocked();
+			sc->clearWaitingTable();
+		}
 		// kick off the spiderdb scan to rep waiting tree and doledb
 		sc->populateWaitingTreeFromSpiderdb(false);
 	}

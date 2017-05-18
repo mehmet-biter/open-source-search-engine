@@ -65,6 +65,7 @@ public:
 	// . it does not free this tree's control structures
 	// . returns # of occupied nodes we liberated
 	int32_t clear();
+	int32_t clear_unlocked();
 
 	GbMutex& getLock() { return m_mtx; }
 
@@ -108,6 +109,7 @@ public:
 	// . returns false iff not found 
 	// . frees m_data[node] if freeIt is true
 	bool deleteNode_unlocked(int32_t node, bool freeData);
+	bool deleteNode_unlocked(collnum_t collnum, const char *key, bool freeData);
 	bool deleteNode(collnum_t collnum, const char *key, bool freeData);
 
 
@@ -259,11 +261,6 @@ private:
 
 	// used by getrderOfKey() (have to estimate if tree not balanced)
 	int32_t getTreeDepth_unlocked() const;
-
-	// . this just makes all the nodes available for occupation (liberates)
-	// . it does not free this tree's control structures
-	// . returns # of occupied nodes we liberated
-	int32_t clear_unlocked();
 
 	mutable GbMutex m_mtx;
 

@@ -839,6 +839,8 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 		return false;
 	}
 
+	ScopedLock sl(m_waitingTree.getLock());
+
 	// see if in tree already, so we can delete it and replace it below
 	// . this is true if already in tree
 	// . if spiderTimeMS is a sooner time than what this firstIp already
@@ -864,7 +866,7 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 		key96_t wk = makeWaitingTreeKey ( sms, firstIp );
 
 		// must be there
-		if (!m_waitingTree.deleteNode(0, (char*)&wk, false)) {
+		if (!m_waitingTree.deleteNode_unlocked(0, (char*)&wk, false)) {
 			// sanity check. ensure waitingTable and waitingTree in sync
 			g_process.shutdownAbort(true);
 		}
@@ -899,52 +901,48 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 		return true;
 	}
 
-	{
-		ScopedLock sl(m_waitingTree.getLock());
+	// grow the tree if too small!
+	int32_t used = m_waitingTree.getNumUsedNodes_unlocked();
+	int32_t max = m_waitingTree.getNumTotalNodes_unlocked();
 
-		// grow the tree if too small!
-		int32_t used = m_waitingTree.getNumUsedNodes_unlocked();
-		int32_t max = m_waitingTree.getNumTotalNodes_unlocked();
-
-		if ( used + 1 > max ) {
-			int32_t more = (((int64_t)used) * 15) / 10;
-			if ( more < 10 ) more = 10;
-			if ( more > 100000 ) more = 100000;
-			int32_t newNum = max + more;
-			log("spider: growing waiting tree to from %" PRId32" to %" PRId32" nodes "
-			    "for collnum %" PRId32,
-			    max , newNum , (int32_t)m_collnum );
-			if (!m_waitingTree.growTree_unlocked(newNum)) {
-				log(LOG_WARN, "spider: failed to grow waiting tree to add firstip %s", iptoa(firstIp,ipbuf));
-				return false;
-			}
-			if (!setWaitingTableSize(newNum)) {
-				log(LOG_WARN, "spider: failed to grow waiting table to add firstip %s", iptoa(firstIp,ipbuf));
-				return false;
-			}
-		}
-
-		key96_t wk = makeWaitingTreeKey(spiderTimeMS, firstIp);
-
-		// add that
-		int32_t wn;
-		if ((wn = m_waitingTree.addKey_unlocked(&wk)) < 0) {
-			log(LOG_WARN, "spider: waitingtree add failed ip=%s. increase max nodes lest we lose this IP forever. err=%s",
-			    iptoa(firstIp,ipbuf), mstrerror(g_errno));
-			//g_process.shutdownAbort(true);
+	if ( used + 1 > max ) {
+		int32_t more = (((int64_t)used) * 15) / 10;
+		if ( more < 10 ) more = 10;
+		if ( more > 100000 ) more = 100000;
+		int32_t newNum = max + more;
+		log("spider: growing waiting tree to from %" PRId32" to %" PRId32" nodes "
+		    "for collnum %" PRId32,
+		    max , newNum , (int32_t)m_collnum );
+		if (!m_waitingTree.growTree_unlocked(newNum)) {
+			log(LOG_WARN, "spider: failed to grow waiting tree to add firstip %s", iptoa(firstIp,ipbuf));
 			return false;
 		}
-
-		// note it
-		logDebug(g_conf.m_logDebugSpider, "spider: added time=%" PRId64" ip=%s to waiting tree node=%" PRId32,
-		         spiderTimeMS, iptoa(firstIp,ipbuf), wn);
-
-		// add to table now since its in the tree
-		if (!addToWaitingTable(firstIp, spiderTimeMS)) {
-			// remove from tree then
-			m_waitingTree.deleteNode_unlocked(wn, false);
+		if (!setWaitingTableSize(newNum)) {
+			log(LOG_WARN, "spider: failed to grow waiting table to add firstip %s", iptoa(firstIp,ipbuf));
 			return false;
 		}
+	}
+
+	key96_t wk = makeWaitingTreeKey(spiderTimeMS, firstIp);
+
+	// add that
+	int32_t wn;
+	if ((wn = m_waitingTree.addKey_unlocked(&wk)) < 0) {
+		log(LOG_WARN, "spider: waitingtree add failed ip=%s. increase max nodes lest we lose this IP forever. err=%s",
+		    iptoa(firstIp,ipbuf), mstrerror(g_errno));
+		//g_process.shutdownAbort(true);
+		return false;
+	}
+
+	// note it
+	logDebug(g_conf.m_logDebugSpider, "spider: added time=%" PRId64" ip=%s to waiting tree node=%" PRId32,
+	         spiderTimeMS, iptoa(firstIp,ipbuf), wn);
+
+	// add to table now since its in the tree
+	if (!addToWaitingTable(firstIp, spiderTimeMS)) {
+		// remove from tree then
+		m_waitingTree.deleteNode_unlocked(wn, false);
+		return false;
 	}
 
 	// tell caller there was no error
@@ -2875,9 +2873,12 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 		if ( g_conf.m_logDebugSpider )
 			log("spider: nuking misleading waitingtree key "
 			    "firstIp=%s", iptoa(m_scanningIp,ipbuf));
-		m_waitingTree.deleteNode ( 0,(char *)&m_waitingTreeKey,true);
-		//log("spider: 7 del node for %s",iptoa(m_scanningIp));
+
+		ScopedLock sl(m_waitingTree.getLock());
+
+		m_waitingTree.deleteNode_unlocked(0, (char *)&m_waitingTreeKey, true);
 		m_waitingTreeKeyValid = false;
+
 		// note it
 		uint64_t timestamp64 = m_waitingTreeKey.n1;
 		timestamp64 <<= 32;
@@ -3242,10 +3243,14 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		     );
 	}
 
-	// before adding to doledb remove from waiting tree so we do not try
-	// to readd to doledb...
-	m_waitingTree.deleteNode ( 0, (char *)&m_waitingTreeKey , true);
-	removeFromWaitingTable(storedFirstIp);
+	{
+		ScopedLock sl(m_waitingTree.getLock());
+
+		// before adding to doledb remove from waiting tree so we do not try
+		// to readd to doledb...
+		m_waitingTree.deleteNode_unlocked(0, (char *)&m_waitingTreeKey, true);
+		removeFromWaitingTable(storedFirstIp);
+	}
 
 	// invalidate
 	m_waitingTreeKeyValid = false;

@@ -635,7 +635,10 @@ int32_t RdbTree::addNode_unlocked ( collnum_t collnum , const char *key , char *
 
 bool RdbTree::deleteNode(collnum_t collnum, const char *key, bool freeData) {
 	ScopedLock sl(m_mtx);
+	return deleteNode_unlocked(collnum, key, freeData);
+}
 
+bool RdbTree::deleteNode_unlocked(collnum_t collnum, const char *key, bool freeData) {
 	int32_t node = getNode_unlocked(collnum, key);
 	if (node == -1) {
 		return false;
