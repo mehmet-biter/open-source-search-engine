@@ -389,7 +389,7 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( ! qw->m_phraseId ) continue;
 		if (   qw->m_ignorePhrase ) continue; // could be a repeat
 		// none if weight is absolute zero
-		if ( almostEqualFloat(qw->m_userWeightPhrase, 0) )
+		if ( almostEqualFloat(qw->m_userWeightForPhrase, 0) )
 			continue;
 		nqt++;
 	}
@@ -408,7 +408,7 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( qw->m_quoteStart >= 0 && qw->m_quoteStart != i )
 			continue;
 		// ignore if weight is absolute zero
-		if ( qw->m_userWeight == 0 )
+		if ( qw->m_userWeightForWord == 0 )
 			continue;
 		nqt++;
 	}
@@ -485,7 +485,7 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( ! qw->m_phraseId ) continue;
 		if (   qw->m_ignorePhrase ) continue; // could be a repeat
 		// none if weight is absolute zero
-		if ( almostEqualFloat(qw->m_userWeightPhrase, 0) )
+		if ( almostEqualFloat(qw->m_userWeightForPhrase, 0) )
 			continue;
 
 		// stop breach
@@ -550,7 +550,7 @@ bool Query::setQTerms ( const Words &words ) {
 		// doh! gotta reset to 0
 		qt->m_implicitBits = 0;
 		// assign score weight, we're a phrase here
-		qt->m_userWeight = qw->m_userWeightPhrase ;
+		qt->m_userWeight = qw->m_userWeightForPhrase ;
 		qt->m_fieldCode  = qw->m_fieldCode  ;
 		// stuff before a pipe always has a weight of 1
 		if ( qt->m_piped ) {
@@ -578,7 +578,7 @@ bool Query::setQTerms ( const Words &words ) {
 			continue;
 
 		// ignore if weight is absolute zero
-		if ( qw->m_userWeight == 0 )
+		if ( qw->m_userWeightForWord == 0 )
 			continue;
 
 		// stop breach
@@ -698,7 +698,7 @@ bool Query::setQTerms ( const Words &words ) {
 		qt->m_implicitBits = 0;
 
 		// assign score weight, we're a phrase here
-		qt->m_userWeight = qw->m_userWeight ;
+		qt->m_userWeight = qw->m_userWeightForWord;
 		qt->m_fieldCode  = qw->m_fieldCode  ;
 		// stuff before a pipe always has a weight of 1
 		if ( qt->m_piped ) {
@@ -948,7 +948,7 @@ bool Query::setQTerms ( const Words &words ) {
 				// reset our implicit bits to 0
 				qt->m_implicitBits = 0;
 				// assign score weight, we're a phrase here
-				qt->m_userWeight = qw->m_userWeight ;
+				qt->m_userWeight = qw->m_userWeightForWord; //todo: use dedicated user weight for synonyms
 				qt->m_fieldCode  = qw->m_fieldCode  ;
 				// stuff before a pipe always has a weight of 1
 				if ( qt->m_piped ) {
@@ -1375,8 +1375,8 @@ bool Query::setQWords ( char boolFlag ,
 		return false;
 	}
 
-	int32_t userWeight       = 1;
-	int32_t userWeightPhrase = 1;
+	int32_t userWeightForWord   = 1;
+	int32_t userWeightForPhrase = 1;
 	int32_t ignorei          = -1;
 
 	// assume we contain no pipe operator
@@ -1457,11 +1457,11 @@ bool Query::setQWords ( char boolFlag ,
 			if ( ! is_digit(s[0]) ) {
 				if(s[0] == 'w') {
 					// word weight reset
-					userWeight = 1;
+					userWeightForWord = 1;
 					ignorei = i + 4;
 				} else if(s[0] == 'p') {
 					// phrase weight reset
-					userWeightPhrase = 1;
+					userWeightForPhrase = 1;
 				}
 				ignorei = i + 4;
 			} else {
@@ -1471,9 +1471,9 @@ bool Query::setQWords ( char boolFlag ,
 				const char *s2 = words.getWord(i+4);
 				// is it a phrase?
 				if(s2[0] == 'w') {
-					userWeight = fval;
+					userWeightForWord = fval;
 				} else if(s2[0] == 'p') {
-					userWeightPhrase = fval;
+					userWeightForPhrase = fval;
 				}
 				// ignore all following words up and inc. i+6
 				ignorei = i + 6;
@@ -1482,8 +1482,8 @@ bool Query::setQWords ( char boolFlag ,
 		}
 					
 		// assign score weight, if any for this guy
-		qw->m_userWeight       = userWeight       ;
-		qw->m_userWeightPhrase = userWeightPhrase ;
+		qw->m_userWeightForWord       = userWeightForWord;
+		qw->m_userWeightForPhrase = userWeightForPhrase;
 		qw->m_queryOp          = false;
 		// does word #i have a space in it? that will cancel fieldCode
 		// if we were in a field

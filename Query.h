@@ -234,8 +234,8 @@ class QueryWord {
 	class QueryTerm *m_queryWordTerm;
 
 	// user defined weights
-	int32_t m_userWeight;
-	float m_userWeightPhrase;
+	int32_t m_userWeightForWord;
+	float m_userWeightForPhrase;
 
 	bool m_queryOp;
 	// is it after a NOT operator? i.e. NOT ( x UOR y UOR ... )
