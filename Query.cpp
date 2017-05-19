@@ -205,35 +205,32 @@ bool Query::set2 ( const char *query        ,
 			m_filteredQuery.safeMemcpy ( " PiiPE " , 7 );
 			continue;
 		}
-		// translate [#a] [#r] [#ap] [#rp] [] [p] to operators
-		if ( query[i] == '[' && is_digit(query[i+1])) {
-			int32_t j = i+2;
-			int32_t val = atol ( &query[i+1] );
-			while ( is_digit(query[j]) ) j++;
-			char c = query[j];
-			if ( (c == 'a' || c == 'r') && query[j+1]==']' ) {
-				m_filteredQuery.safePrintf(" LeFtB %" PRId32" %c RiGhB ",
-					  val,c);
-				i = j + 1;
+
+		if(query[i] == '[') {
+			// translate [#w] [#p] [w] [p] to operators
+			if(is_digit(query[i+1])) {
+				int32_t j = i+2;
+				int32_t val = atol ( &query[i+1] );
+				while(is_digit(query[j]))
+					j++;
+				if(query[j]=='w' && query[j+1]==']') {
+					m_filteredQuery.safePrintf(" LeFtB %" PRId32" w RiGhB ", val);
+					i = j + 1;
+					continue;
+				} else if(query[j]=='p' && query[j+1]==']') {
+					m_filteredQuery.safePrintf(" LeFtB %" PRId32" p RiGhB ", val);
+					i = j + 1;
+					continue;
+				}
+			} else if(query[i+1] == 'w' && query[i+2]==']') {
+				m_filteredQuery.safePrintf(" LeFtB w RiGhB ");
+				i = i + 2;
+				continue;
+			} else if(query[i+1] == 'p' && query[i+2]==']') {
+				m_filteredQuery.safePrintf(" LeFtB p RiGhB ");
+				i = i + 2;
 				continue;
 			}
-			else if ( (c == 'a' || c == 'r') && 
-				  query[j+1]=='p' && query[j+2]==']') {
-				m_filteredQuery.safePrintf(" LeFtB %" PRId32" %cp RiGhB ",
-				val,c);
-				i = j + 2;
-				continue;
-			}
-		}
-		if ( query[i] == '[' && query[i+1] == ']' ) {
-			m_filteredQuery.safePrintf ( " LeFtB RiGhB ");
-			i = i + 1;
-			continue;
-		}
-		if ( query[i] == '[' && query[i+1] == 'p' && query[i+2]==']') {
-			m_filteredQuery.safePrintf ( " LeFtB RiGhB ");
-			i = i + 2;
-			continue;
 		}
  
 		// TODO: copy altavista's operators here? & | !
@@ -392,8 +389,8 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( ! qw->m_phraseId ) continue;
 		if (   qw->m_ignorePhrase ) continue; // could be a repeat
 		// none if weight is absolute zero
-		if ( almostEqualFloat(qw->m_userWeightPhrase, 0) && 
-		     qw->m_userTypePhrase   == 'a'  ) continue;
+		if ( almostEqualFloat(qw->m_userWeightPhrase, 0) )
+			continue;
 		nqt++;
 	}
 	// count single terms
@@ -411,8 +408,8 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( qw->m_quoteStart >= 0 && qw->m_quoteStart != i )
 			continue;
 		// ignore if weight is absolute zero
-		if ( qw->m_userWeight == 0   && 
-		     qw->m_userType   == 'a'  ) continue;
+		if ( qw->m_userWeight == 0 )
+			continue;
 		nqt++;
 	}
 	// thirdly, count synonyms
@@ -488,8 +485,8 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( ! qw->m_phraseId ) continue;
 		if (   qw->m_ignorePhrase ) continue; // could be a repeat
 		// none if weight is absolute zero
-		if ( almostEqualFloat(qw->m_userWeightPhrase, 0) && 
-		     qw->m_userTypePhrase   == 'a'  ) continue;
+		if ( almostEqualFloat(qw->m_userWeightPhrase, 0) )
+			continue;
 
 		// stop breach
 		if ( n >= ABS_MAX_QUERY_TERMS ) {
@@ -554,12 +551,10 @@ bool Query::setQTerms ( const Words &words ) {
 		qt->m_implicitBits = 0;
 		// assign score weight, we're a phrase here
 		qt->m_userWeight = qw->m_userWeightPhrase ;
-		qt->m_userType   = qw->m_userTypePhrase   ;
 		qt->m_fieldCode  = qw->m_fieldCode  ;
 		// stuff before a pipe always has a weight of 1
 		if ( qt->m_piped ) {
 			qt->m_userWeight = 1;
-			qt->m_userType   = 'a';
 		}
 		n++;
 	}
@@ -583,8 +578,8 @@ bool Query::setQTerms ( const Words &words ) {
 			continue;
 
 		// ignore if weight is absolute zero
-		if ( qw->m_userWeight == 0   && 
-		     qw->m_userType   == 'a'  ) continue;
+		if ( qw->m_userWeight == 0 )
+			continue;
 
 		// stop breach
 		if ( n >= ABS_MAX_QUERY_TERMS ) {
@@ -704,12 +699,10 @@ bool Query::setQTerms ( const Words &words ) {
 
 		// assign score weight, we're a phrase here
 		qt->m_userWeight = qw->m_userWeight ;
-		qt->m_userType   = qw->m_userType   ;
 		qt->m_fieldCode  = qw->m_fieldCode  ;
 		// stuff before a pipe always has a weight of 1
 		if ( qt->m_piped ) {
 			qt->m_userWeight = 1;
-			qt->m_userType   = 'a';
 		}
 		n++;
 	}
@@ -956,12 +949,10 @@ bool Query::setQTerms ( const Words &words ) {
 				qt->m_implicitBits = 0;
 				// assign score weight, we're a phrase here
 				qt->m_userWeight = qw->m_userWeight ;
-				qt->m_userType   = qw->m_userType   ;
 				qt->m_fieldCode  = qw->m_fieldCode  ;
 				// stuff before a pipe always has a weight of 1
 				if ( qt->m_piped ) {
 					qt->m_userWeight = 1;
-					qt->m_userType   = 'a';
 				}
 				// otherwise, add it
 				n++;
@@ -1252,7 +1243,7 @@ bool Query::setQTerms ( const Words &words ) {
 	if(g_conf.m_logTraceQuery) {
 		logTrace(g_conf.m_logTraceQuery, "final query-terms:");
 		for(int i=0; i<m_numTerms; i++)
-			logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s', weight=%f", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term, m_qterms[i].m_userWeight);
+			logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s', weight=%f %s", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term, m_qterms[i].m_userWeight, m_qterms[i].m_ignored?"ignored":"");
 	}
 
 	return true;
@@ -1385,9 +1376,7 @@ bool Query::setQWords ( char boolFlag ,
 	}
 
 	int32_t userWeight       = 1;
-	char userType         = 'r';
 	int32_t userWeightPhrase = 1;
-	char userTypePhrase   = 'r';
 	int32_t ignorei          = -1;
 
 	// assume we contain no pipe operator
@@ -1464,33 +1453,27 @@ bool Query::setQWords ( char boolFlag ,
 			const char *s = words.getWord(i+2);
 			int32_t slen = words.getWordLen(i+2);
 			// if no number, it must be
-			// " leFtB RiGhB " or " leFtB p RiGhB "
+			// " leFtB w RiGhB " or " leFtB p RiGhB "
 			if ( ! is_digit(s[0]) ) {
-				// phrase weight reset
-				if ( s[0] == 'p' ) {
-					userWeightPhrase = 1;
-					userTypePhrase   = 'r';
-					ignorei = i + 4;
-				}
-				// word reset
-				else {
+				if(s[0] == 'w') {
+					// word weight reset
 					userWeight = 1;
-					userType   = 'r';
-					ignorei = i + 2;
+					ignorei = i + 4;
+				} else if(s[0] == 'p') {
+					// phrase weight reset
+					userWeightPhrase = 1;
 				}
+				ignorei = i + 4;
 			} else {
 				// get the number
 				float fval = atof2 (s, slen);
 				// s2 MUST point to the a,r,ap,rp string
 				const char *s2 = words.getWord(i+4);
 				// is it a phrase?
-				if ( s2[1] == 'p' ) {
-					userWeightPhrase = fval;
-					userTypePhrase   = s2[0]; // a or r
-				}
-				else {
+				if(s2[0] == 'w') {
 					userWeight = fval;
-					userType   = s2[0]; // a or r
+				} else if(s2[0] == 'p') {
+					userWeightPhrase = fval;
 				}
 				// ignore all following words up and inc. i+6
 				ignorei = i + 6;
@@ -1500,9 +1483,7 @@ bool Query::setQWords ( char boolFlag ,
 					
 		// assign score weight, if any for this guy
 		qw->m_userWeight       = userWeight       ;
-		qw->m_userType         = userType         ;
 		qw->m_userWeightPhrase = userWeightPhrase ;
-		qw->m_userTypePhrase   = userTypePhrase   ;
 		qw->m_queryOp          = false;
 		// does word #i have a space in it? that will cancel fieldCode
 		// if we were in a field
@@ -3481,7 +3462,6 @@ void QueryTerm::constructor ( ) {
 	m_isQueryStopWord = false;
 	m_inQuotes = false;
 	m_userWeight = 0;
-	m_userType = 0; //?
 	m_piped = false;
 	m_ignored = false;
 	m_isUORed = false;

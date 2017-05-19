@@ -235,10 +235,8 @@ class QueryWord {
 
 	// user defined weights
 	int32_t m_userWeight;
-	char m_userType;
 	float m_userWeightPhrase;
 
-	char m_userTypePhrase;
 	bool m_queryOp;
 	// is it after a NOT operator? i.e. NOT ( x UOR y UOR ... )
 	bool m_underNOT;
@@ -335,7 +333,6 @@ class QueryTerm {
 
 	// user defined weight for this term, be it phrase or word
 	float m_userWeight;
-	char m_userType;
 
 	// . is this query term before a | (pipe) operator?
 	// . if so we must read the whole termlist, like m_underNOT above
