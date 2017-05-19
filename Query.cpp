@@ -459,7 +459,7 @@ bool Query::setQTerms ( const Words &words ) {
 
 	if ( nqt > m_maxQueryTerms ) nqt = m_maxQueryTerms;
 
-	// allocate the stack buf
+	// allocate the term buffer
 	if ( nqt ) {
 		int32_t need = nqt * sizeof(QueryTerm) ;
 		if ( ! m_queryTermBuf.reserve ( need ) )
@@ -478,7 +478,7 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 
 
-	// count phrase terms
+	// do phrase terms
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 		QueryWord *qw  = &m_qwords[i];
 		// skip if ignored... mdw...
