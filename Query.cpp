@@ -242,6 +242,8 @@ bool Query::set2 ( const char *query        ,
 	}
 	// NULL terminate
 	m_filteredQuery.nullTerm();
+	if(m_filteredQuery.length() != queryLen || memcmp(m_filteredQuery.getBufStart(),query,queryLen)!=0)
+		log(LOG_INFO,"query: m_filteredQuery=%*.*s", m_filteredQuery.length(),m_filteredQuery.length(),m_filteredQuery.getBufStart());
 
 	Words words;
 	Phrases phrases;
