@@ -18191,11 +18191,14 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 
 	if ( ! isXml ) printMenu ( sb );
 
-	//int32_t groupId = g_hostdb.getGroupIdFromDocId(m_docId);
-	//Host *group = g_hostdb.getGroup(groupId);
 	int32_t shardNum = getShardNumFromDocId ( m_docId );
 	Host *hosts = g_hostdb.getShard ( shardNum );
 	Host *h = &hosts[0];
+
+	key128_t spiderKey = Spiderdb::makeFirstKey(m_firstIp);
+	int32_t spiderShardNum = getShardNum(RDB_SPIDERDB, &spiderKey);
+	Host *shosts = g_hostdb.getShard(spiderShardNum);
+	int32_t spiderHostId = shosts[0].m_hostId;
 
 	if ( ! isXml )
 		sb->safePrintf (
@@ -18208,6 +18211,11 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 
 				"<tr>"
 				"<td width=\"25%%\">on host #</td>"
+				"<td>%" PRId32"</td>"
+				"</tr>\n"
+
+				"<tr>"
+				"<td width=\"25%%\">spidered on host #</td>"
 				"<td>%" PRId32"</td>"
 				"</tr>\n"
 
@@ -18234,7 +18242,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 				m_docId ,
 
 				h->m_hostId,
-
+				spiderHostId,
 				es,
 				allowed,
 
