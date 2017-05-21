@@ -692,7 +692,8 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		    "error=%" PRId32" "
 		    "k.n1=%" PRIu32" n0=%" PRIu64" "
 		    "maxdgramsz=%" PRId32" "
-		    "hid=%" PRId32,
+		    "hid=%" PRId32 " "
+		    "bytesSent=%d",
 		    (int32_t)dgramNum, 
 		    (int32_t)m_dgramsToSend,
 		    (int16_t)m_msgType,
@@ -711,7 +712,8 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		    (int32_t)m_localErrno ,
 		    m_key.n1,m_key.n0 ,
 		    m_maxDgramSize ,
-		    hid );
+		    hid,
+		    bytesSent);
 	}
 
 	// return 1 cuz we didn't block
