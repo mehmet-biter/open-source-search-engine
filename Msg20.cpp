@@ -615,7 +615,10 @@ bool Msg20Reply::sendReply(Msg20State *state) {
 
 	// sanity
 	if (ptr_linkInfo && ((LinkInfo *)ptr_linkInfo)->m_lisize != size_linkInfo) {
-		gbshutdownAbort(true);
+		log(LOG_ERROR,"!!! CORRUPTED LINKINFO detected for docId %" PRId64 " - resetting linkinfo", state->m_xmldoc.m_docId);
+		size_linkInfo = 0;
+		ptr_linkInfo = NULL;
+		// gbshutdownAbort(true);
 	}
 
 	// sanity
@@ -826,7 +829,10 @@ int32_t Msg20Reply::deserialize ( ) {
 	
 	// sanity
 	if (ptr_linkInfo && ((LinkInfo *)ptr_linkInfo)->m_lisize != size_linkInfo) {
-		gbshutdownAbort(true);
+		log(LOG_ERROR,"!!! CORRUPTED LINKINFO detected for docId %" PRId64 " - resetting linkinfo", m_docId);
+		size_linkInfo = 0;
+		ptr_linkInfo = NULL;
+		// gbshutdownAbort(true);
 	}
 
 	// return how many bytes we used

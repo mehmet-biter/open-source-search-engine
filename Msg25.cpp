@@ -225,6 +225,12 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 	if ( oldLinkInfo )
 		oldLinkSize = oldLinkInfo->getSize();
 
+	if( oldLinkSize < 0 ) {
+		log(LOG_ERROR,"!!! CORRUPTED LINKINFO detected for docId %" PRId64 " - resetting linkinfo", docId);
+		oldLinkSize = 0;
+		oldLinkInfo = NULL;
+	}
+
 	int32_t need = sizeof(Msg25Request) + siteLen+1 + urlLen+1 + oldLinkSize;
 
 	// keep it in a safebuf so caller can just add "SafeBuf m_msg25Req;"
@@ -2873,6 +2879,7 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 	info->m_numStoredInlinks       = count;
 	// the gross total of inlinks we got, both internal and external
 	info->m_totalInlinkingDocIds   = msg25->m_numDocIds;
+
 	// . only valid if titlerec version >= 119
 	// . how many unique c blocks link to us?
 	// . includes your own internal c block
@@ -2897,6 +2904,7 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 	// count the ones we store that are internal
 	int32_t  icount3 = 0;
 	// now set each inlink
+
 	for ( int32_t i = 0 ; i < numReplies ; i++ ) {
 		// get the reply
 		Msg20Reply *r = replies[i];
@@ -2932,6 +2940,7 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 		// advance
 		p += wrote;
 	}
+
 	// . sanity check, should have used up all the buf exactly
 	// . so we can free the buf with k->getStoredSize() being the allocSize
 	if ( p != pend ) { g_process.shutdownAbort(true); }
