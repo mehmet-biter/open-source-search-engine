@@ -16,11 +16,11 @@
 #include "Mem.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
+#include "Titledb.h"	// for Titledb::validateSerializedRecord
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
 #include <algorithm>
 #include <deque>
-
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -575,6 +575,11 @@ static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *
 	*(char      *)p = rdbId  ; p += 1;
 	*(int32_t      *)p = recSize; p += 4;
 	memcpy( p , rec , recSize ); p += recSize;
+
+	// Sanity. Shut down if data sizes are wrong.
+	if( rdbId == RDB_TITLEDB ) {
+		Titledb::validateSerializedRecord( rec, recSize );
+	}
 
 	// update buffer used
 	*(int32_t *)buf = used + (p - start);

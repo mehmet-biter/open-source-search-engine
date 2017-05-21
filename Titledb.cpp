@@ -209,6 +209,39 @@ void Titledb::printKey(const char *k) {
 	     KEYNEG(k));
 }
 
+void Titledb::validateSerializedRecord(const char *rec, int32_t recSize) {
+	char *debugp = (char*)rec;
+	key96_t debug_titleRecKey =  *(key96_t *)debugp;
+	bool debug_keyneg = (debug_titleRecKey.n0 & 0x01) == 0x00;
+	int64_t debug_docId = Titledb::getDocIdFromKey(&debug_titleRecKey);
+	
+	if ( debug_keyneg ) {
+		log(LOG_DEBUG, "TitleDB rec verified. Delete key for DocId=%" PRId64 "", debug_docId);
+	}
+	else {
+		debugp += sizeof(key96_t);
+
+		// the size of the data that follows
+		int32_t debug_dataSize =  *(int32_t *) debugp;
+		if( debug_dataSize < 4 ) {
+			log(LOG_ERROR, "TITLEDB CORRUPTION. Record shows size of %" PRId32" which is too small. DocId=%" PRId64 "", debug_dataSize, debug_docId);
+			gbshutdownLogicError();
+		}
+		debugp += 4;
+
+		// what's the size of the uncompressed compressed stuff below here?
+		int32_t debug_ubufSize = *(int32_t  *) debugp; 
+		if( debug_ubufSize <= 0 ) {
+			log(LOG_ERROR, "TITLEDB CORRUPTION. Record shows uncompressed size of %" PRId32". DocId=%" PRId64 "", debug_ubufSize, debug_docId);
+			gbshutdownLogicError();
+		}
+		log(LOG_DEBUG, "TitleDB rec verified. recSize %" PRId32 ", uncompressed %" PRId32". DocId=%" PRId64 "", recSize, debug_ubufSize, debug_docId);
+	}
+
+}
+
+
+
 void filterTitledbList(RdbList *list) {
 	char *newList = list->getList();
 	char *dst = newList;

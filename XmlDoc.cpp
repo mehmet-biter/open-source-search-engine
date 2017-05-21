@@ -834,12 +834,14 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	// . should we free m_cbuf on our reset/destruction?
 	// . no because doCOnsistencyCheck calls XmlDoc::set2 with a titleRec
 	//   that should not be freed, besides the alloc size is not known!
-	m_titleRecBuf.setBuf ( titleRec ,
-			       titleRecSize , // bufmax
-			       titleRecSize ,  // bytes in use
-			       false); // ownData?
+	if( !m_titleRecBuf.setBuf(	titleRec,
+								titleRecSize,	// bufmax
+								titleRecSize,	// bytes in use
+								false) ) {		// ownData?
+		log(LOG_ERROR, "m_titleRecBuf.setBuf of size %" PRId32 " failed", titleRecSize);
+		gbshutdownLogicError();
+	}
 	m_titleRecBufValid = true;
-
 
 	//m_coll               = coll;
 	m_pbuf               = pbuf;
@@ -865,13 +867,15 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	//m_titleRecAllocSize = maxSize;
 
 	// get a parse ptr
-	char *p = titleRec ;
+	char *p = titleRec;
+
 	// . this is just like a serialized RdbList key/dataSize/data of 1 rec
 	// . first thing is the key
 	// . key should have docId embedded in it
 	m_titleRecKey =  *(key96_t *) p ;
 	//m_titleRecKeyValid = true;
 	p += sizeof(key96_t);
+
 	// bail on error
 	if ( (m_titleRecKey.n0 & 0x01) == 0x00 ) {
 		g_errno = EBADTITLEREC;
@@ -897,43 +901,58 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	// bail on error
 	if ( dataSize < 4 ) {
 		g_errno = EBADTITLEREC;
-		log(LOG_WARN, "db: Titledb record has size of %" PRId32" which is less then 4. Probable disk corruption in a "
-			"titledb file.", dataSize);
-		return false;
+		log(LOG_ERROR, "TITLEDB CORRUPTION. Record has size of %" PRId32" which is too small. Probable disk corruption in a titledb file. DocId=%" PRId64 "", dataSize, m_docId);
+		gbshutdownLogicError();
+		// return false;
 	}
+
+
 	// what is the size of cbuf/titleRec in bytes?
 	int32_t cbufSize = dataSize + 4 + sizeof(key96_t);
 	// . the actual data follows "dataSize"
 	// . what's the size of the uncompressed compressed stuff below here?
 	m_ubufSize = *(int32_t  *) p ; p += 4;
+
 	// . because of disk/network data corruption this may be wrong!
 	// . we can now have absolutely huge titlerecs...
-	if ( m_ubufSize <= 0 ) { //m_ubufSize > 2*1024*1024 || m_ubufSize < 0 )
+	if ( m_ubufSize == 0 ) { //m_ubufSize > 2*1024*1024 || m_ubufSize < 0 )
 		g_errno = EBADTITLEREC;
-		log(LOG_WARN, "db: TitleRec::set: uncompress uncompressed size=%" PRId32".",m_ubufSize );
+		log(LOG_ERROR, "POSSIBLE TITLEDB CORRUPTION. Uncompressed size=%" PRId32", docId=%" PRId64 ", dataSize=%" PRId32 ", cbufSize=%" PRId32 "", m_ubufSize, m_docId, dataSize, cbufSize);
+		loghex(LOG_ERROR, titleRec, (cbufSize < 400 ? cbufSize : 400), "titleRec (first max. 400 bytes)");
 		return false;
+		//gbshutdownLogicError();
+		//return false;
 	}
+
+
+	if ( m_ubufSize < 0 ) { //m_ubufSize > 2*1024*1024 || m_ubufSize < 0 )
+		g_errno = EBADTITLEREC;
+		log(LOG_ERROR, "TITLEDB CORRUPTION. Uncompressed size=%" PRId32", docId=%" PRId64 ", dataSize=%" PRId32 ", cbufSize=%" PRId32 "", m_ubufSize, m_docId, dataSize, cbufSize);
+		loghex(LOG_ERROR, titleRec, (cbufSize < 400 ? cbufSize : 400), "titleRec (first max. 400 bytes)");
+
+		gbshutdownLogicError();
+		//return false;
+	}
+
 	// trying to uncompress corrupt titlerecs sometimes results in
 	// a seg fault... watch out
 	if ( m_ubufSize > 100*1024*1024 ) {
 		g_errno = EBADTITLEREC;
-		log(LOG_WARN, "db: TitleRec::set: uncompress uncompressed size=%" PRId32" > 100MB. unacceptable, probable "
-			"corruption.", m_ubufSize);
-		return false;
+		log(LOG_ERROR, "TITLEDB CORRUPTION. Uncompressed size=%" PRId32" > 100MB. unacceptable, probable corruption. docId=%" PRId64 "", m_ubufSize, m_docId);
+		loghex(LOG_ERROR, titleRec, (cbufSize < 400 ? cbufSize : 400), "titleRec (first max. 400 bytes)");
+		gbshutdownLogicError();
+		//return false;
 	}
+
 	// make buf space for holding the uncompressed stuff
 	m_ubufAlloc = m_ubufSize;
 	m_ubuf = (char *) mmalloc ( m_ubufAlloc ,"TitleRecu1");
-	// log("xmldoc: m_ubuf=%" PTRFMT" this=%" PTRFMT
-	//     , (PTRTYPE) m_ubuf
-	//     , (PTRTYPE) this
-	//     );
+
 	if ( ! m_ubuf ) {
 		// we had bad ubufsizes on gb6, like > 1GB print out key
 		// so we can manually make a titledb.dat file to delete these
 		// bad keys
-		log("build: alloc failed ubufsize=%" PRId32" key.n1=%" PRIu32" "
-		    "n0=%" PRIu64,
+		log("build: alloc failed ubufsize=%" PRId32" key.n1=%" PRIu32" n0=%" PRIu64,
 		    m_ubufAlloc,m_titleRecKey.n1,m_titleRecKey.n0);
 		return false;
 	}
@@ -953,23 +972,26 @@ bool XmlDoc::set2 ( char    *titleRec ,
 				 (uint32_t  ) (dataSize - 4) );
 	// hmmmm...
 	if ( err == Z_BUF_ERROR ) {
-		log(LOG_WARN, "db: Buffer is too small to hold uncompressed document. Probable disk corruption in a titledb file.");
+		log(LOG_ERROR, "!!! Buffer is too small to hold uncompressed document. Probable disk corruption in a titledb file.");
 		g_errno = EUNCOMPRESSERROR;
 		return false;
 	}
 	// set g_errno and return false on error
 	if ( err != Z_OK ) {
 		g_errno = EUNCOMPRESSERROR;
-		log(LOG_WARN, "db: Uncompress of document failed. ZG_ERRNO=%i. cbufSize=%" PRId32" ubufsize=%" PRId32" realSize=%" PRId32,
+		log(LOG_ERROR, "!!! Uncompress of document failed. ZG_ERRNO=%i. cbufSize=%" PRId32" ubufsize=%" PRId32" realSize=%" PRId32,
 		    err , cbufSize , m_ubufSize , realSize );
 		return false;
 	}
+
 	if ( realSize != m_ubufSize ) {
-		g_errno = EBADENGINEER;
-		log(LOG_WARN, "db: Uncompressed document size is not what we recorded it to be. Probable disk corruption in "
-			   "a titledb file.");
-		return false;
+		log(LOG_ERROR,"CORRUPTED TITLEREC detected for docId %" PRId64 "", m_docId);
+		gbshutdownLogicError();
+		//g_errno = EBADENGINEER;
+		//log(LOG_WARN, "db: Uncompressed document size is not what we recorded it to be. Probable disk corruption in a titledb file.");
+		//return false;
 	}
+
 	// . add the stat
 	// . use white for the stat
 	g_stats.addStat_r(0, startTime, gettimeofdayInMilliseconds(), 0x00ffffff);
@@ -980,9 +1002,10 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	int32_t shouldbe = (char *)&ptr_firstUrl - (char *)&m_headerSize;
 
 	if ( headerSize != shouldbe ) {
-		g_errno = ECORRUPTDATA;
-		log(LOG_WARN, "doc: bad header size in title rec");
-		return false;
+		log(LOG_ERROR,"CORRUPTED TITLEREC detected for docId %" PRId64 "", m_docId);
+		gbshutdownLogicError();
+		//g_errno = ECORRUPTDATA;
+		//return false;
 	}
 
 	// set our easy stuff
@@ -990,7 +1013,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 
 	// NOW set the XmlDoc::ptr_* and XmlDoc::size_* members
 	// like in Msg.cpp and Msg20Reply.cpp
-
 	if ( m_pbuf ) {
 		int32_t crc = hash32(m_ubuf,headerSize);
 		m_pbuf->safePrintf("crchdr=0x%" PRIx32" sizehdr=%" PRId32", ",
@@ -1021,21 +1043,37 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		// make the mask
 		uint32_t mask = 1 << i ;
 		// do we have this member? skip if not.
-		if ( ! (m_internalFlags1 & mask) ) continue;
+		if ( ! (m_internalFlags1 & mask) ) {
+			continue;
+		}
+
 		// watch out for corruption
 		if ( up > upend ) {
-			g_errno = ECORRUPTDATA;
-			log(LOG_WARN, "doc: corrupt titlerec.");
-			return false;
+			log(LOG_ERROR,"CORRUPTED TITLEREC detected for docId %" PRId64 "", m_docId);
+			gbshutdownLogicError();
+			//g_errno = ECORRUPTDATA;
+			//return false;
 		}
+
 		// get the size
 		*ps = *(int32_t *)up;
 		// this should never be 0, otherwise, why was its flag set?
-		if ( *ps <= 0 ) { g_process.shutdownAbort(true); }
+		if ( *ps <= 0 ) {
+			log(LOG_ERROR,"CORRUPTED TITLEREC detected for docId %" PRId64 "", m_docId);
+			gbshutdownLogicError();
+		}
 		// skip over to point to data
 		up += 4;
+
 		// point to the data. could be 64-bit ptr.
 		*pd = up;//(int32_t)up;
+
+		// Sanity - bail if size set, but no data
+		if( *ps && !pd ) {
+			log(LOG_ERROR,"CORRUPTED TITLEREC detected for docId %" PRId64 "", m_docId);
+			gbshutdownLogicError();
+		}
+
 		// debug
 		if ( m_pbuf ) {
 			int32_t crc = hash32(up,*ps);
@@ -1044,11 +1082,13 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		}
 		// skip over data
 		up += *ps;
+
 		// watch out for corruption
 		if ( up > upend ) {
-			g_errno = ECORRUPTDATA;
-			log(LOG_WARN, "doc: corrupt titlerec.");
-			return false;
+			log(LOG_ERROR,"CORRUPTED TITLEREC detected for docId %" PRId64 "", m_docId);
+			gbshutdownLogicError();
+			//g_errno = ECORRUPTDATA;
+			//return false;
 		}
 	}
 	// cap it
@@ -2728,6 +2768,7 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 	return (char *)1;
 }
 
+
 // . create and store the titlerec into "buf".
 // . it is basically the header part of all the member vars in this XmlDoc.
 // . it has a key,dataSize,compressedData so it can be a record in an Rdb
@@ -2796,6 +2837,12 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 		// or empty string ptr
 		if ( ! *pd ) continue;
 
+		// Sanity
+		if( *ps < 0 ) {
+			log(LOG_ERROR,"DATA CORRUPTION AVOIDED in setTitleRec. Variable length data item %" PRId32 " has negative length: %" PRId32 "", i, *ps);
+			gbshutdownLogicError();
+		}
+
 		// store size first
 		*(int32_t *)p = *ps;
 		p += 4;
@@ -2852,7 +2899,7 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 	if ( err == Z_OK && size > (need2 - hdrSize ) ) {
 		tbuf->purge();
 		g_errno = ECOMPRESSFAILED;
-		log("db: Failed to compress document of %" PRId32" bytes. "
+		log(LOG_ERROR, "!!! Failed to compress document of %" PRId32" bytes. "
 		    "Provided buffer of %" PRId32" bytes.",
 		    size, (need2 - hdrSize ) );
 		return false;
@@ -2862,7 +2909,7 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 	if ( err != Z_OK ) {
 		tbuf->purge();
 		g_errno = ECOMPRESSFAILED;
-		log("db: Failed to compress document.");
+		log(LOG_ERROR,"!!! Failed to compress document.");
 		return false;
 	}
 
@@ -2882,13 +2929,18 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 	p += 4;
 
 	// store uncompressed size in header
-	*(int32_t  *) p = need1 ; p += 4;
+	*(int32_t  *) p = need1;
+	p += 4;
 
 	// sanity check
-	if ( p != cbuf + hdrSize ) { g_process.shutdownAbort(true); }
+	if ( p != cbuf + hdrSize ) {
+		g_process.shutdownAbort(true);
+	}
 
 	// sanity check
-	if ( need1 <= 0 ) { g_process.shutdownAbort(true); }
+	if ( need1 <= 0 ) {
+		g_process.shutdownAbort(true);
+	}
 
 	// advance over data
 	p += size;
@@ -2896,8 +2948,10 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 	// update safebuf::m_length so it is correct
 	tbuf->setLength ( p - cbuf );
 
+	logTrace( g_conf.m_logTraceXmlDoc, "dataSize=%" PRId32 ", uncompressed=%" PRId32 ", docId=%" PRId64 "", dataSize, need1, docId);
 	return true;
 }
+
 
 // . return NULL and sets g_errno on error
 // . returns -1 if blocked
@@ -5952,9 +6006,12 @@ SafeBuf *XmlDoc::getTimeAxisUrl ( ) {
 // . the twin brother of XmlDoc::getTitleRecBuf() which makes the title rec
 //   from scratch. this loads it from titledb.
 // . NULL is a valid value (EDOCNOTFOUND) so return a char **
-char **XmlDoc::getOldTitleRec ( ) {
+char **XmlDoc::getOldTitleRec() {
 	// if valid return that
-	if ( m_oldTitleRecValid ) return &m_oldTitleRec;
+	if ( m_oldTitleRecValid ) {
+		return &m_oldTitleRec;
+	}
+
 	// update status msg
 	setStatus ( "getting old title rec");
 	// if we are set from a title rec, we are the old doc
@@ -6001,7 +6058,9 @@ char **XmlDoc::getOldTitleRec ( ) {
 		return NULL;
 	}
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) {
+		return NULL;
+	}
 
 	// if using time axis then append the timestamp to the end of
 	// the url. this way Msg22::getAvailDocId() will return a docid
@@ -6026,9 +6085,11 @@ char **XmlDoc::getOldTitleRec ( ) {
 				      m_masterState        ,
 				      m_masterLoop         ,
 				      m_niceness           , // niceness
-				      999999               )) // timeout seconds
+				      999999               )) {// timeout seconds
 		// return -1 if we blocked
 		return (char **)-1;
+	}
+
 	// not really an error
 	if ( g_errno == ENOTFOUND ) {
 		g_errno = 0;
@@ -6038,9 +6099,11 @@ char **XmlDoc::getOldTitleRec ( ) {
 	if ( g_errno ) {
 		return NULL;
 	}
+
 	// got it
 	return &m_oldTitleRec;
 }
+
 
 // . look up TitleRec using Msg22 if we need to
 // . set our m_titleRec member from titledb
@@ -13407,6 +13470,14 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		int32_t tsize = (forDelete) ? sizeof(key96_t) : m_titleRecBuf.length();
 		gbmemcpy ( m_p , m_titleRecBuf.getBufStart() , tsize );
 
+		// Sanity. Shut down if data sizes are wrong.
+		if( !forDelete) {
+			Titledb::validateSerializedRecord( m_p, tsize );
+		}
+		else {
+			logTrace(g_conf.m_logTraceXmlDoc, "Storing delete key for DocId=%" PRId64 "", m_docId);
+		}
+
 		m_p += tsize;
 	}
 
@@ -15936,14 +16007,22 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 
 	// . cache it for one hour
 	// . this will set our ptr_ and size_ member vars
-	char **otr = getOldTitleRec ( );
-	if ( ! otr || otr == (void *)-1 ) { checkPointerError(otr); return (Msg20Reply *)otr; }
+	char **otr = getOldTitleRec();
+	if ( ! otr || otr == (void *)-1 ) {
+		checkPointerError(otr);
+		return (Msg20Reply *)otr;
+	}
 
 	// must have a title rec in titledb
-	if ( ! *otr ) { g_errno = ENOTFOUND; return NULL; }
+	if ( ! *otr ) {
+		g_errno = ENOTFOUND;
+		return NULL;
+	}
 
 	// sanity
-	if ( *otr != m_oldTitleRec ) { g_process.shutdownAbort(true); }
+	if ( *otr != m_oldTitleRec ) {
+		g_process.shutdownAbort(true);
+	}
 
 	// . set our ptr_ and size_ member vars from it after uncompressing
 	// . returns false and sets g_errno on error
@@ -15953,10 +16032,14 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 		bool status = set2( *otr, 0, cr->m_coll, NULL, m_niceness);
 
 		// sanity check
-		if ( ! status && ! g_errno ) { g_process.shutdownAbort(true); }
+		if ( ! status && ! g_errno ) {
+			g_process.shutdownAbort(true);
+		}
 
 		// if there was an error, g_errno should be set.
-		if ( ! status ) return NULL;
+		if ( ! status ) {
+			return NULL;
+		}
 
 		m_setTr = true;
 	}

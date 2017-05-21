@@ -10,9 +10,9 @@
 #include "JobScheduler.h"
 #include "ip.h"
 #include "Mem.h"
+#include "Titledb.h"	// for Titledb::validateSerializedRecord
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
-
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -143,8 +143,8 @@ static void Msg4In::handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
 
 	// sanity check
 	if ( used != readBufSize ) {
-		logError("msg4: got corrupted request from hostid %" PRId32" used [%" PRId32"] != readBufSize [%" PRId32"]",
-		         slot->m_host->m_hostId, used, readBufSize);
+		logError("msg4: got corrupted request from hostid %" PRId32" used [%" PRId32"] != readBufSize [%" PRId32"]. tid=%" PRId32 "",
+		         slot->m_host->m_hostId, used, readBufSize, slot->getTransId());
 		loghex(LOG_ERROR, readBuf, (readBufSize < 160 ? readBufSize : 160), "readBuf (first max. 160 bytes)");
 
 		gbshutdownAbort(true);
@@ -230,6 +230,11 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 		p += 4;
 
 		const char *rec = p;
+
+		// Sanity. Shut down if data sizes are wrong.
+		if( rdbId == RDB_TITLEDB ) {
+			Titledb::validateSerializedRecord( rec, recSize );
+		}
 
 		// . get the rdb to which it belongs, use Msg0::getRdb()
 		// . do not call this for every rec if we do not have to

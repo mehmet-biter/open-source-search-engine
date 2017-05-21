@@ -128,6 +128,7 @@ public:
 	}
 
 	static void printKey(const char *key);
+	static void validateSerializedRecord(const char *rec, int32_t recSize);
 
 	// Rdb init variables
 	static inline int32_t getFixedDataSize() { return -1; }
