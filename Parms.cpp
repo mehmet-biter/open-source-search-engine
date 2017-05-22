@@ -8184,6 +8184,20 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log debug pub date extraction messages";
+	m->m_cgi   = "ldpd";
+	simple_m_set(Conf,m_logDebugDate);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log very detailed debug information";
+	m->m_cgi   = "lvdd";
+	simple_m_set(Conf,m_logDebugDetailed);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log debug database messages";
 	m->m_cgi   = "ldd";
 	simple_m_set(Conf,m_logDebugDb);
@@ -8227,13 +8241,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log debug loop messages";
-	m->m_cgi   = "ldl";
-	simple_m_set(Conf,m_logDebugLoop);
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m++;
-
 	m->m_title = "log debug language detection messages";
 	m->m_cgi   = "ldg";
 	simple_m_set(Conf,m_logDebugLang);
@@ -8244,6 +8251,13 @@ void Parms::init ( ) {
 	m->m_title = "log debug link info";
 	m->m_cgi   = "ldli";
 	simple_m_set(Conf,m_logDebugLinkInfo);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log debug loop messages";
+	m->m_cgi   = "ldl";
+	simple_m_set(Conf,m_logDebugLoop);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -8262,6 +8276,20 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log debug msg13 messages";
+	m->m_cgi   = "ldspmth";
+	simple_m_set(Conf,m_logDebugMsg13);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log debug multicast";
+	m->m_cgi   = "ldmc";
+	simple_m_set(Conf,m_logDebugMulticast);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log debug net messages";
 	m->m_cgi   = "ldn";
 	simple_m_set(Conf,m_logDebugNet);
@@ -8276,9 +8304,23 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log debug repair messages";
+	m->m_cgi   = "ldre";
+	simple_m_set(Conf,m_logDebugRepair);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log debug robots messages";
 	m->m_cgi   = "ldr";
 	simple_m_set(Conf,m_logDebugRobots);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log debug sections messages";
+	m->m_cgi   = "ldscc";
+	simple_m_set(Conf,m_logDebugSections);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -8297,9 +8339,9 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log debug sections messages";
-	m->m_cgi   = "ldscc";
-	simple_m_set(Conf,m_logDebugSections);
+	m->m_title = "log debug spider messages";
+	m->m_cgi   = "ldspid";
+	simple_m_set(Conf,m_logDebugSpider);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -8325,30 +8367,9 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log debug spider messages";
-	m->m_cgi   = "ldspid";
-	simple_m_set(Conf,m_logDebugSpider);
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m++;
-
-	m->m_title = "log debug msg13 messages";
-	m->m_cgi   = "ldspmth";
-	simple_m_set(Conf,m_logDebugMsg13);
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m++;
-
 	m->m_title = "log debug spider proxies";
 	m->m_cgi   = "ldspr";
 	simple_m_set(Conf,m_logDebugProxies);
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m++;
-
-	m->m_title = "log debug url attempts";
-	m->m_cgi   = "ldspua";
-	simple_m_set(Conf,m_logDebugUrlAttempts);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -8409,30 +8430,9 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log debug repair messages";
-	m->m_cgi   = "ldre";
-	simple_m_set(Conf,m_logDebugRepair);
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m++;
-
-	m->m_title = "log debug pub date extraction messages";
-	m->m_cgi   = "ldpd";
-	simple_m_set(Conf,m_logDebugDate);
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m++;
-
-	m->m_title = "log very detailed debug information";
-	m->m_cgi   = "lvdd";
-	simple_m_set(Conf,m_logDebugDetailed);
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m++;
-
-	m->m_title = "log debug multicast";
-	m->m_cgi   = "ldmc";
-	simple_m_set(Conf,m_logDebugMulticast);
+	m->m_title = "log debug url attempts";
+	m->m_cgi   = "ldspua";
+	simple_m_set(Conf,m_logDebugUrlAttempts);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;

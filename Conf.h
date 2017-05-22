@@ -318,48 +318,49 @@ class Conf {
 	bool  m_logNetCongestion;
 	// doc quota limits, url truncation limits
 	bool  m_logLimits;
+
 	// log debug switches
 	bool  m_logDebugAddurl;
 	bool  m_logDebugAdmin;
 	bool  m_logDebugBuild;
 	bool  m_logDebugBuildTime;
+	bool  m_logDebugDate;
 	bool  m_logDebugDb;
+	bool  m_logDebugDetailed;
 	bool  m_logDebugDirty;
 	bool  m_logDebugDisk;
 	bool  m_logDebugDns;
 	bool  m_logDebugDownloads;
 	bool  m_logDebugHttp;
 	bool  m_logDebugImage;
-	bool  m_logDebugLoop;
 	bool  m_logDebugLang;
 	bool  m_logDebugLinkInfo;
+	bool  m_logDebugLoop;
 	bool  m_logDebugMem;
 	bool  m_logDebugMemUsage;
 	bool  m_logDebugMerge;
+	bool  m_logDebugMsg13;
+	bool  m_logDebugMulticast;
 	bool  m_logDebugNet;
 	bool  m_logDebugProxies;
 	bool  m_logDebugQuery;
-	bool  m_logDebugRobots	;
+	bool  m_logDebugRepair;
+	bool  m_logDebugRobots;
+	bool  m_logDebugSections;
 	bool  m_logDebugSpcache; // SpiderCache.cpp debug
 	bool  m_logDebugSpeller;
-	bool  m_logDebugTagdb;
-	bool  m_logDebugSections;
+	bool  m_logDebugSpider;
 	bool  m_logDebugSEO;
 	bool  m_logDebugStats;
 	bool  m_logDebugSummary;
-	bool  m_logDebugSpider;
-	bool  m_logDebugMsg13;
-	bool  m_logDebugUrlAttempts;
+	bool  m_logDebugTagdb;
 	bool  m_logDebugTcp;
 	bool  m_logDebugTcpBuf;
 	bool  m_logDebugTitle;
 	bool  m_logDebugTopDocs;
 	bool  m_logDebugUdp;
 	bool  m_logDebugUnicode;
-	bool  m_logDebugRepair;
-	bool  m_logDebugDate;
-	bool  m_logDebugDetailed;
-	bool  m_logDebugMulticast;
+	bool  m_logDebugUrlAttempts;
 
 	bool m_logTraceBigFile;
 	bool m_logTraceDns;
