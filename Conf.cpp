@@ -215,6 +215,7 @@ Conf::Conf ( ) {
 	m_logDebugRepair = false;
 	m_logDebugDate = false;
 	m_logDebugDetailed = false;
+	m_logDebugMulticast = false;
 	m_logTraceBigFile = false;
 	m_logTraceDns = false;
 	m_logTraceFile = false;

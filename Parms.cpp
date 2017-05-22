@@ -8430,6 +8430,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log debug multicast";
+	m->m_cgi   = "ldmc";
+	simple_m_set(Conf,m_logDebugMulticast);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	////////////////////
 	// log trace
 	////////////////////
