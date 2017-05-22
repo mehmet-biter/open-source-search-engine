@@ -348,7 +348,7 @@ class QueryTerm {
 
 	// . if synonymOf is not NULL, then m_term points into m_synBuf, not
 	//   m_buf
-	QueryTerm *m_synonymOf;
+	const QueryTerm *m_synonymOf;
 	int64_t m_synWids0;
 	int64_t m_synWids1;
 	int32_t      m_numAlnumWordsInSynonym;
@@ -370,8 +370,8 @@ class QueryTerm {
 	int32_t  m_rightPhraseTermNum;
 
 	// same as above basically
-	class QueryTerm *m_leftPhraseTerm;
-	class QueryTerm *m_rightPhraseTerm;
+	const QueryTerm *m_leftPhraseTerm;
+	const QueryTerm *m_rightPhraseTerm;
 
 	char m_startKey[MAX_KEY_BYTES];
 	char m_endKey  [MAX_KEY_BYTES];

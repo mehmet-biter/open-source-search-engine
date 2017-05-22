@@ -1602,8 +1602,8 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		int32_t left  = qt->m_leftPhraseTermNum;
 		int32_t right = qt->m_rightPhraseTermNum;
 		// terms
-		QueryTerm *leftTerm  = qt->m_leftPhraseTerm;
-		QueryTerm *rightTerm = qt->m_rightPhraseTerm;
+		const QueryTerm *leftTerm  = qt->m_leftPhraseTerm;
+		const QueryTerm *rightTerm = qt->m_rightPhraseTerm;
 		bool leftAlreadyAdded = false;
 		bool rightAlreadyAdded = false;
 		//int64_t totalTermFreq = 0;
@@ -1882,7 +1882,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		//for ( int32_t k = 0 ; k < m_msg2->getNumLists() ; k++ ) {
 		for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 			QueryTerm *qt2 = &m_q->m_qterms[k];
-			QueryTerm *st = qt2->m_synonymOf;
+			const QueryTerm *st = qt2->m_synonymOf;
 			// skip if not a synonym of this term
 			if ( st != qt ) {
 				continue;

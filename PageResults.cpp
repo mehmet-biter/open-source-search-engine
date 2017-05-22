@@ -1018,7 +1018,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 		for ( int i = 0 ; i < q->m_numTerms ; i++ ) {
 			sb->safePrintf("\t\t<term>\n");
-			QueryTerm *qt = &q->m_qterms[i];
+			const QueryTerm *qt = &q->m_qterms[i];
 			sb->safePrintf("\t\t\t<termNum>%i</termNum>\n",i);
 			const char *term = qt->m_term;
 			sb->safePrintf("\t\t\t<termStr><![CDATA[");
@@ -1028,7 +1028,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 			sb->safePrintf("]]>"
 				       "</termStr>\n");
 			// syn?
-			QueryTerm *sq = qt->m_synonymOf;
+			const QueryTerm *sq = qt->m_synonymOf;
 			// what language did synonym come from?
 			if ( sq ) {
 				// language map from wiktionary
@@ -1102,13 +1102,13 @@ bool printSearchResultsHeader ( State0 *st ) {
 		sb->safePrintf("\t\"terms\":[\n");
 		for ( int i = 0 ; i < q->m_numTerms ; i++ ) {
 			sb->safePrintf("\t\t{\n");
-			QueryTerm *qt = &q->m_qterms[i];
+			const QueryTerm *qt = &q->m_qterms[i];
 			sb->safePrintf("\t\t\"termNum\":%i,\n",i);
 			sb->safePrintf("\t\t\"termStr\":\"");
 			sb->jsonEncode (qt->m_term,qt->m_termLen);
 			sb->safePrintf("\",\n");
 			// syn?
-			QueryTerm *sq = qt->m_synonymOf;
+			const QueryTerm *sq = qt->m_synonymOf;
 			// what language did synonym come from?
 			if ( sq ) {
 				// language map from wiktionary

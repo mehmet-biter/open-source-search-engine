@@ -1178,8 +1178,8 @@ bool Query::setQTerms ( const Words &words ) {
 		// skip if not bigram
 		if ( ! qt->m_isPhrase ) continue;
 		// get sides
-		QueryTerm *t1 = qt->m_leftPhraseTerm;
-		QueryTerm *t2 = qt->m_rightPhraseTerm;
+		const QueryTerm *t1 = qt->m_leftPhraseTerm;
+		const QueryTerm *t2 = qt->m_rightPhraseTerm;
 		if ( ! t1 || ! t2 ) continue;
 		qt->m_implicitBits |= t1->m_explicitBit;
 		qt->m_implicitBits |= t2->m_explicitBit;
