@@ -5273,7 +5273,7 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 	// range terms tend to disappear if the docid's value falls outside
 	// of the specified range... gbmin:offerprice:190
 	bool isRangeTerm = false;
-	QueryTerm *qt = qti->m_qt;
+	const QueryTerm *qt = qti->m_qt;
 	if ( qt->m_fieldCode == FIELD_GBNUMBERMIN ) 
 		isRangeTerm = true;
 	if ( qt->m_fieldCode == FIELD_GBNUMBERMAX ) 
@@ -5461,7 +5461,7 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 	char *minRecPtr;
 	char *lastMinRecPtr = NULL;
 	int32_t mini = -1;
-	QueryTerm *qt = qti->m_qt;
+	const QueryTerm *qt = qti->m_qt;
 	
 	// get the next min from all the termlists
 	for(;;) {
