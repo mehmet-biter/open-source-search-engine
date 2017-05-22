@@ -409,6 +409,8 @@ class Hostdb {
 	bool hostsConfInAgreement() const { return m_hostsConfInAgreement; }
 
 private:
+	bool  isDead_unlocked(const Host *h) const;
+
 	int32_t m_numHostsAlive;
 	mutable GbMutex m_mtxPinginfo; //protects the pinginfo in the hosts
 	bool m_hostsConfInAgreement;

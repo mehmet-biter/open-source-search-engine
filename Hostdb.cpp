@@ -1230,7 +1230,7 @@ Host *Hostdb::getLeastLoadedInShard ( uint32_t shardNum , char niceness ) {
 		// don't pick a 'no query' host if niceness is 0
 		if ( niceness == 0 && ! hh->m_queryEnabled  ) continue;
 		if ( ! bestDead ) bestDead = hh;
-		if(isDead(hh)) continue;
+		if(isDead_unlocked(hh)) continue;
 
 		minOutstandingRequestsIndex = i;
 	}
@@ -1270,6 +1270,11 @@ bool Hostdb::isDead(int32_t hostId) const {
 }
 
 bool Hostdb::isDead(const Host *h) const {
+	ScopedLock sl(m_mtxPinginfo);
+	return isDead_unlocked(h);
+}
+
+bool Hostdb::isDead_unlocked(const Host *h) const {
 	if(h->m_retired)
 		return true; // retired means "don't use it", so it is essentially dead
 	if(m_myHost == h)
