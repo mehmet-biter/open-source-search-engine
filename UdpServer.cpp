@@ -213,7 +213,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	m_isShuttingDown = false;
 	// . TODO: IMPORTANT: FIX this to read and save from disk!!!!
 	// . NOTE: only need to fix if doing incremental sync/storage??
-	m_nextTransId = 0;
+	m_nextTransId = g_hostdb.getMyHostId() << 19;
 	// clear handlers
 	memset ( m_handlers, 0 , sizeof(void(* )(UdpSlot *slot,int32_t)) * 128);
 
