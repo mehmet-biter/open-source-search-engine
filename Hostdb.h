@@ -410,7 +410,7 @@ class Hostdb {
 
 private:
 	int32_t m_numHostsAlive;
-	GbMutex m_mtxPinginfo; //protects the pinginfo in the hosts
+	mutable GbMutex m_mtxPinginfo; //protects the pinginfo in the hosts
 	bool m_hostsConfInAgreement;
 	bool m_hostsConfInDisagreement;
 	
