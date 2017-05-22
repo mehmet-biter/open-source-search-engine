@@ -566,43 +566,38 @@ bool Msg3a::gotAllShardReplies ( ) {
 			log(LOG_LOGIC,"query: msg3a: Steal failed.");
 			g_process.shutdownAbort(true);
 		}
-		if(rbuf) {
-			// in case of mem leak, re-label from "mcast" to this so we
-			// can determine where it came from, "Msg3a-GBR"
-			relabel( rbuf, replyMaxSize , "Msg3a-GBR" );
-		}
 		// bad reply?
-		if ( ! rbuf || replySize < 29 ) {
+		if(rbuf==NULL) {
 			m_skippedShards++;
-			log(LOG_LOGIC,"query: msg3a: Bad reply (size=%i) from "
-			    "host #%" PRId32". Dead? Timeout? OOM?"
-			    ,(int)replySize
-			    ,i);
+			log(LOG_LOGIC,"query: msg3a: Bad reply (null) from host #%d. Dead? Timeout? OOM?", i);
 			m_reply       [i] = NULL;
 			m_replyMaxSize[i] = 0;
 
-			// it might have been timd out, just ignore it!!
+			// it might have been timed out, just ignore it!!
 			continue;
 		}
+		if((size_t)replySize < sizeof(Msg39Reply)) {
+			m_skippedShards++;
+			log(LOG_LOGIC,"query: msg3a: Too short reply (size=%d) from host #%d", replySize, i);
+			m_reply       [i] = NULL;
+			m_replyMaxSize[i] = 0;
+			mfree(rbuf, replyMaxSize, "Multicast");
+			// it might have been timed out, just ignore it!!
+			continue;
+		}
+
+		// in case of mem leak, re-label from "mcast" to this so we
+		// can determine where it came from, "Msg3a-GBR"
+		relabel( rbuf, replyMaxSize , "Msg3a-GBR" );
+
 		// cast it
 		Msg39Reply *mr = (Msg39Reply *)rbuf;
-		// how did this happen?
-		// if ( replySize < 29 && ! mr->m_errno ) {
-		// 	// if size is 0 it can be Msg39 giving us an error!
-		// 	g_errno = EBADREPLYSIZE;
-		// 	m_errno = EBADREPLYSIZE;
-		// 	log(LOG_LOGIC,"query: msg3a: Bad reply size "
-		// 	    "of %" PRId32".",
-		// 	    replySize);
-		// 	// all reply buffers should be freed on reset()
-		// 	return true;
-		// }
 
 		// can this be non-null? we shouldn't be overwriting one
 		// without freeing it...
 		if ( m_reply[i] )
 			// note the mem leak now
-			log("query: mem leaking a 0x39 reply");
+			log(LOG_WARN,"query: mem leaking a 0x39 reply");
 
 		// cast it and set it
 		m_reply       [i] = mr;
