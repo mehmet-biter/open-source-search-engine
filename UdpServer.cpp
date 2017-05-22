@@ -1891,6 +1891,8 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// . 4. they take too long to ACK our request
 		// . only flag it if we haven't already...
 		if ( elapsed >= slot->getTimeout() && slot->getErrno() != EUDPTIMEDOUT ) {
+			logDebug(g_conf.m_logDebugUdp, "udp: timeout reached for tid=%" PRId32" slot=%p ", slot->m_transId, slot);
+
 			// . set slot's m_errno field
 			// . makeCallbacks() should call its callback
 			slot->m_errno = EUDPTIMEDOUT;
@@ -1905,6 +1907,9 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 
 		// Time out the slot if the host has been detected as unresponsive.
 		if(slot->m_host && g_hostdb.isDead(slot->m_host)) {
+			logDebug(g_conf.m_logDebugUdp, "udp: host #%" PRId32" is dead for tid=%" PRId32" slot=%p ",
+			         slot->m_host->m_hostId, slot->m_transId, slot);
+
 			slot->m_errno = EUDPTIMEDOUT;
 			addToCallbackLinkedList_unlocked(slot);
 			something = true;
