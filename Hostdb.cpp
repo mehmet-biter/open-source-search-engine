@@ -1270,6 +1270,7 @@ bool Hostdb::isDead(int32_t hostId) const {
 }
 
 bool Hostdb::isDead(const Host *h) const {
+	ScopedLock sl(m_mtxPinginfo);
 	if(h->m_retired)
 		return true; // retired means "don't use it", so it is essentially dead
 	if(m_myHost == h)
