@@ -62,7 +62,6 @@ UdpServer::UdpServer ( ) {
 	m_slots = NULL;
 	m_maxSlots = 0;
 	m_buf = NULL;
-	m_outstandingConverts = 0;
 	m_writeRegistered = false;
 
 	// Coverity
@@ -557,7 +556,6 @@ void UdpServer::sendReply_unlocked(char *msg, int32_t msgSize, char *alloc, int3
 		// the callback will be called with niceness 0!!
 		//slot->m_niceness = 1;
 		slot->m_convertedNiceness = 2;
-		m_outstandingConverts--;
 	}
 
 	// . use a NULL callback since we're sending a reply

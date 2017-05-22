@@ -290,8 +290,6 @@ private:
 	int32_t m_msg0csInWaiting;
 	int32_t m_msg0sInWaiting;
 
-	int32_t m_outstandingConverts;
-
 	// but alloc MAX_UDP_SLOTS of these in init so we don't blow the stack
 	UdpSlot *m_slots;
 	int32_t m_maxSlots;
