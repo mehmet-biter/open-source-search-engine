@@ -620,16 +620,15 @@ bool Msg3a::gotAllShardReplies ( ) {
 			return true;
 		}
 		// deserialize it (just sets the ptr_ and size_ member vars)
-		//mr->deserialize ( );
-		if ( ! deserializeMsg ( sizeof(Msg39Reply) ,
-					&mr->size_docIds,
-					&mr->size_clusterRecs,
-					&mr->ptr_docIds,
-					((char*)mr) + sizeof(*mr) ) ) {
+		int deserializedBytes = deserializeMsg(sizeof(Msg39Reply),
+						       &mr->size_docIds,
+						       &mr->size_clusterRecs,
+						       &mr->ptr_docIds,
+						       ((char*)mr) + sizeof(*mr));
+		if(deserializedBytes != replySize) {
 			g_errno = ECORRUPTDATA;
 			m_errno = ECORRUPTDATA;
-			log("query: msg3a: Shard had error: %s",
-			    mstrerror(g_errno));
+			log(LOG_WARN, "query: msg3a: Shard had error: %s", mstrerror(g_errno));
 			return true;
 
 		}
