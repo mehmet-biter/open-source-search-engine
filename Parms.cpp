@@ -8602,6 +8602,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for Titledb";
+	m->m_cgi   = "ltrc_titdb";
+	simple_m_set(Conf,m_logTraceTitledb);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for XmlDoc";
 	m->m_cgi   = "ltrc_xmldoc";
 	simple_m_set(Conf,m_logTraceXmlDoc);
