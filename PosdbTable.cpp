@@ -2155,7 +2155,7 @@ bool PosdbTable::findCandidateDocIds() {
 	m_allInSameWikiPhrase = true;
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// get it
-		QueryTermInfo *qti = &qtibuf[i];
+		const QueryTermInfo *qti = &qtibuf[i];
 
 		// skip if negative query term
 		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
@@ -2223,7 +2223,7 @@ bool PosdbTable::findCandidateDocIds() {
 			}
 			
 			// get it
-			QueryTermInfo *qti = &qtibuf[i];
+			const QueryTermInfo *qti = &qtibuf[i];
 			// do not consider for adding if negative ('my house -home')
 			if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
 				continue;
@@ -2254,7 +2254,7 @@ bool PosdbTable::findCandidateDocIds() {
 			}
 			
 			// get it
-			QueryTermInfo *qti = &qtibuf[i];
+			const QueryTermInfo *qti = &qtibuf[i];
 			
 			// do not consider for adding if negative ('my house -home')
 			if ( ! (qti->m_bigramFlags[0] & BF_NEGATIVE) ) {
@@ -2749,14 +2749,13 @@ bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qti
 //	false - docid does not meet minimum score requirement
 //	true - docid can potentially be a top scoring docid
 //
-bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore) {
+bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore) {
 	unsigned char ringBuf[RINGBUFSIZE+10];
 
 	// reset ring buf. make all slots 0xff. should be 1000 cycles or so.
 	memset ( ringBuf, 0xff, sizeof(ringBuf) );
 
 	unsigned char qt;
-	QueryTermInfo *qtx;
 	uint32_t wx;
 	int32_t ourFirstPos = -1;
 	int32_t qdist;
@@ -2775,7 +2774,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, cons
 	// query term # plus 1.
 
 	logTrace(g_conf.m_logTracePosdb, "Ring buffer generation");
-	qtx = &qtibuf[m_minTermListIdx];
+	const QueryTermInfo *qtx = &qtibuf[m_minTermListIdx];
 	// populate ring buf just for this query term
 	for ( int32_t k = 0 ; k < qtx->m_numMatchingSubLists ; k++ ) {
 		// scan that sublist and add word positions
@@ -2819,7 +2818,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, cons
 		}
 		
 		// get the query term info
-		QueryTermInfo *qti = &qtibuf[i];
+		const QueryTermInfo *qti = &qtibuf[i];
 
 		// if we have a negative term, skip it
 		if ( qti->m_bigramFlags[0] & (BF_NEGATIVE) ) {
