@@ -2002,6 +2002,16 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	// set this for caller to use to loop over the queryterminfos
 	m_numQueryTermInfos = nrg;
 
+	if(g_conf.m_logTracePosdb) {
+		logTrace(g_conf.m_logTracePosdb, "m_numQueryTermInfos=%d", m_numQueryTermInfos);
+		for(int i=0; i<m_numQueryTermInfos; i++) {
+			const QueryTermInfo *qti = qtibuf + i;
+			logTrace(g_conf.m_logTracePosdb, "  qti[%d]: m_numSubLists=%d m_qtermNum=%d m_qpos=%d", i, qti->m_numSubLists, qti->m_qtermNum, qti->m_qpos);
+			for(int j=0; j<qti->m_numSubLists; j++)
+				logTrace(g_conf.m_logTracePosdb, "    sublist %d = %p", j, qti->m_subLists[j]);
+		}
+	}
+
 	// . m_minTermListSize is set in setQueryTermInfo()
 	// . how many docids do we have at most in the intersection?
 	// . all keys are of same termid, so they are 12 or 6 bytes compressed
