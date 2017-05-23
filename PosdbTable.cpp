@@ -1639,7 +1639,9 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			//qti->m_qtermList[nn] = &m_q->m_qterms[left];
 			m_q->m_qterms[left].m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->getListSize() ) nn++;
+			if ( list && list->getListSize() ) {
+				nn++;
+			}
 
 			// add bigram synonyms! like "new jersey" bigram
 			// has the synonym "nj"
@@ -1653,12 +1655,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				//list = m_msg2->getList(k);
 				list = m_q->m_qterms[k].m_posdbListPtr;
 				qti->m_subLists[nn] = list;
-				qti->m_bigramFlags[nn] = BF_HALFSTOPWIKIBIGRAM;
+				qti->m_bigramFlags[nn] = 0;
+				qti->m_bigramFlags[nn] |= BF_HALFSTOPWIKIBIGRAM;
 				qti->m_bigramFlags[nn] |= BF_SYNONYM;
 				if (qt->m_piped) {
 					qti->m_bigramFlags[nn]|=BF_PIPED;
 				}
-				
 				// add list of member terms as well
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
@@ -1666,7 +1668,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 					nn++;
 				}
 			}
-
 		}
 		//
 		// then the right bigram if also in a wiki half stop bigram
@@ -1705,12 +1706,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				//list = m_msg2->getList(k);
 				list = m_q->m_qterms[k].m_posdbListPtr;
 				qti->m_subLists[nn] = list;
-				qti->m_bigramFlags[nn] = BF_HALFSTOPWIKIBIGRAM;
+				qti->m_bigramFlags[nn] = 0;
+				qti->m_bigramFlags[nn] |= BF_HALFSTOPWIKIBIGRAM;
 				qti->m_bigramFlags[nn] |= BF_SYNONYM;
 				if (qt->m_piped) {
 					qti->m_bigramFlags[nn]|=BF_PIPED;
 				}
-				
 				// add list of member terms as well
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
@@ -1788,12 +1789,10 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// left bigram is #2
 			//bigramSet[nrg][nn] = 2;
 			// special flags
-			qti->m_bigramFlags[nn] = 0;
+			qti->m_bigramFlags[nn] = BF_BIGRAM;
 			// before a pipe operator?
 			if ( qt->m_piped ) qti->m_bigramFlags[nn] |= BF_PIPED;
-			// call it a synonym i guess
-			qti->m_bigramFlags[nn] |= BF_BIGRAM;
-			// add list of member terms
+			// add list of member terms as well
 			//qti->m_qtermList[nn] = &m_q->m_qterms[left];
 			m_q->m_qterms[left].m_bitNum = nrg;
 			// only really add if useful
@@ -1813,17 +1812,18 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				//list = m_msg2->getList(k);
 				list = m_q->m_qterms[k].m_posdbListPtr;
 				qti->m_subLists[nn] = list;
-				qti->m_bigramFlags[nn] = BF_SYNONYM;
-				if (qt->m_piped)
+				qti->m_bigramFlags[nn] = 0;
+				qti->m_bigramFlags[nn] |= BF_SYNONYM;
+				if (qt->m_piped) {
 					qti->m_bigramFlags[nn]|=BF_PIPED;
-				// add list of member terms
+				}
+				// add list of member terms as well
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
 				if ( list && list->getListSize() ) {
 					nn++;
 				}
 			}
-
 		}
 		
 		// 
@@ -1838,12 +1838,10 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// right bigram is #3
 			//bigramSet[nrg][nn] = 3;
 			// special flags
-			qti->m_bigramFlags[nn] = 0;
-			// call it a synonym i guess
-			qti->m_bigramFlags[nn] |= BF_BIGRAM;
+			qti->m_bigramFlags[nn] = BF_BIGRAM;
 			// before a pipe operator?
 			if ( qt->m_piped ) qti->m_bigramFlags[nn] |= BF_PIPED;
-			// add list of query terms too that are in this group
+			// add list of member terms as well
 			//qti->m_qtermList[nn] = &m_q->m_qterms[right];
 			m_q->m_qterms[right].m_bitNum = nrg;
 			// only really add if useful
@@ -1863,17 +1861,18 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				//list = m_msg2->getList(k);
 				list = m_q->m_qterms[k].m_posdbListPtr;
 				qti->m_subLists[nn] = list;
-				qti->m_bigramFlags[nn] = BF_SYNONYM;
-				if (qt->m_piped)
+				qti->m_bigramFlags[nn] = 0;
+				qti->m_bigramFlags[nn] |= BF_SYNONYM;
+				if (qt->m_piped) {
 					qti->m_bigramFlags[nn]|=BF_PIPED;
-				// add list of member terms
+				}
+				// add list of member terms as well
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
 				if ( list && list->getListSize() ) {
 					nn++;
 				}
 			}
-
 		}
 
 		//
