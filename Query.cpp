@@ -1206,7 +1206,7 @@ bool Query::setQTerms ( const Words &words ) {
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
 		QueryTerm *qt = &m_qterms[i];
 		// assume not!
-		qt->m_isWikiHalfStopBigram = 0;
+		qt->m_isWikiHalfStopBigram = false;
 		// don't require if negative
 		if ( qt->m_termSign == '-' ) continue;
 		// only check bigrams here
@@ -3472,7 +3472,7 @@ void QueryTerm::constructor ( ) {
 	m_numAlnumWordsInSynonym = 1;
 	m_fieldCode = 0;
 	m_isRequired = false;
-	m_isWikiHalfStopBigram = 0;
+	m_isWikiHalfStopBigram = false;
 	m_leftPhraseTermNum = 0;
 	m_rightPhraseTermNum = 0;
 	m_leftPhraseTerm = NULL;

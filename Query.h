@@ -362,7 +362,7 @@ class QueryTerm {
 	bool isSplit() const;
 	bool m_isRequired;
 
-	unsigned char  m_isWikiHalfStopBigram:1;
+	bool m_isWikiHalfStopBigram;
 
 	// if a single word term, what are the term #'s of the 2 phrases
 	// we can be in? uses -1 to indicate none.
