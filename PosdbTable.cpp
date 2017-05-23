@@ -2954,14 +2954,6 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 // term. 
 //
 void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank) {
-	char *mptr;
-	char *mptrEnd;
-	char *lastMptr = NULL;
-	const char *nwp[MAX_SUBLISTS];
-	const char *nwpEnd[MAX_SUBLISTS];
-	char  nwpFlags[MAX_SUBLISTS];
-
-
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// we got a docid that has all the query terms, so merge
@@ -2969,8 +2961,9 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 	//
 	// all posdb keys for this docid should fit in here, the 
 	// mini merge buf:
-	mptr 	= miniMergeBuf;
-	mptrEnd = miniMergeBuf + 299000;
+	char *mptr 	= miniMergeBuf;
+	char *mptrEnd = miniMergeBuf + 299000;
+	char *lastMptr = NULL;
 
 	// Merge each set of sublists, like we merge a term's list with 
 	// its two associated bigram lists, if there, the left bigram and 
@@ -2999,6 +2992,9 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 		miniMergedList[j] = mptr;
 		bool isFirstKey = true;
 
+		const char *nwp[MAX_SUBLISTS];
+		const char *nwpEnd[MAX_SUBLISTS];
+		char  nwpFlags[MAX_SUBLISTS];
 		// populate the nwp[] arrays for merging
 		int32_t nsub = 0;
 		for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
