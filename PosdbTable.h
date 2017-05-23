@@ -14,8 +14,6 @@ float getHashGroupWeight ( unsigned char hg );
 #define SITERANKDIVISOR 3.0
 #define SITERANKMULTIPLIER 0.33333333
 
-void printTermList ( int32_t i, const char *list, int32_t listSize ) ;
-
 // if query is 'the tigers' we weight bigram "the tigers" x 1.20 because
 // its in wikipedia.
 // up this to 1.40 for 'the time machine' query

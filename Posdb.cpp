@@ -350,35 +350,6 @@ const char *getHashGroupString ( unsigned char hg ) {
 	return "unknown!";
 }
 
-
-
-void printTermList ( int32_t i, const char *list, int32_t listSize ) {
-	// first key is 12 bytes
-	bool firstKey = true;
-	const char *px = list;//->m_list;
-	const char *pxend = px + listSize;//list->m_listSize;
-	for ( ; px < pxend ; ) {
-		int32_t wp = Posdb::getWordPos(px);
-		int32_t dr = Posdb::getDensityRank(px);
-		int32_t hg = Posdb::getHashGroup(px);
-		int32_t syn = Posdb::getIsSynonym(px);
-		log("seo: qterm#%" PRId32" pos=%" PRId32" dr=%" PRId32" hg=%s syn=%" PRId32
-		    , i
-		    , wp
-		    , dr
-		    , getHashGroupString(hg)
-		    , syn
-		    );
-		if ( firstKey && Posdb::getKeySize(px)!=12)
-			gbshutdownLogicError();
-		else if ( ! firstKey&& Posdb::getKeySize(px)!=6)
-			gbshutdownLogicError();
-		if ( firstKey ) px += 12;
-		else            px += 6;
-		firstKey = false;
-	}
-}
-
 void Posdb::printKey(const char *k) {
 	logf(LOG_TRACE, "k=%s "
 			     "tid=%015" PRIu64" "

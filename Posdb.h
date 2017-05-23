@@ -91,10 +91,6 @@ const char *getHashGroupString ( unsigned char hg );
 
 typedef key144_t posdbkey_t;
 
-
-void printTermList ( int32_t i, const char *list, int32_t listSize ) ;
-
-
 class Posdb {
 
  public:
