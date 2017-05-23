@@ -1629,8 +1629,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			RdbList *list = m_q->m_qterms[left].m_posdbListPtr;
 			// add list ptr into our required group
 			qti->m_subLists[nn] = list;
-			// left bigram is #2
-			//bigramSet[nrg][nn] = 2;
 			// special flags
 			qti->m_bigramFlags[nn] = BF_HALFSTOPWIKIBIGRAM;
 			// before a pipe operator?
@@ -1680,8 +1678,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			RdbList *list = m_q->m_qterms[right].m_posdbListPtr;
 			// add list ptr into our required group
 			qti->m_subLists[nn] = list;
-			// right bigram is #3
-			//bigramSet[nrg][nn] = 3;
 			// special flags
 			qti->m_bigramFlags[nn] = BF_HALFSTOPWIKIBIGRAM;
 			// before a pipe operator?
@@ -1786,8 +1782,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			list = m_q->m_qterms[left].m_posdbListPtr;
 			// add list ptr into our required group
 			qti->m_subLists[nn] = list;
-			// left bigram is #2
-			//bigramSet[nrg][nn] = 2;
 			// special flags
 			qti->m_bigramFlags[nn] = BF_BIGRAM;
 			// before a pipe operator?
@@ -1835,8 +1829,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			list = m_q->m_qterms[right].m_posdbListPtr;
 			// add list ptr into our required group
 			qti->m_subLists[nn] = list;
-			// right bigram is #3
-			//bigramSet[nrg][nn] = 3;
 			// special flags
 			qti->m_bigramFlags[nn] = BF_BIGRAM;
 			// before a pipe operator?
