@@ -1246,6 +1246,8 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		return false;
 	}
 
+	log(LOG_DEBUG, "udp: tid=%d dgram=%d avail=%d offset=%d", m_transId, dgramNum, avail, offset);
+
 	memcpy(dest, readBuffer + headerSize, avail);
 
 	// keep stats
