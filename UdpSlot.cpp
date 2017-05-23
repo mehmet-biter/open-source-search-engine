@@ -1223,14 +1223,6 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		m_readBufSize = avail;
 	}
 
-	if (dgramNum > 0) {
-		int32_t validate = m_readBufMaxSize - offset;
-		if (validate > maxDataSize) validate = maxDataSize;
-		if (validate != avail) {
-			gbshutdownLogicError();
-		}
-	}
-
 	// where to put it?
 	char *dest = m_readBuf + offset;
 
