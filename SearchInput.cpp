@@ -9,8 +9,8 @@
 #include "Collectiondb.h"
 #include "Conf.h"
 
-#include <third-party/cld2/public/compact_lang_det.h>
-#include <third-party/cld2/public/encodings.h>
+#include "third-party/cld2/public/compact_lang_det.h"
+#include "third-party/cld2/public/encodings.h"
 
 SearchInput::SearchInput() {
 	// Coverity
@@ -299,7 +299,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 		//   Primary-tag = 1*8ALPHA
 		//   Subtag = 1*8ALPHA
 		char content_language_hint[64] = {}; // HTTP header Content-Language: field
-		const char* tld_hint = NULL; // hostname of a URL
+		const char *tld_hint = NULL; // hostname of a URL
 
 		bool valid_qlang = false;
 		{
@@ -325,16 +325,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 			}
 
 			// use fx_fetld if available; if not, try with fx_country
-			const char* fe_domain = r->getString("fx_fetld");
-			if (fe_domain) {
-				const char *pos = strrchr(fe_domain, '.');
-				if (pos) {
-					if (((fe_domain + strlen(fe_domain)) - pos) == 3) {
-						tld_hint = pos + 1;
-					}
-				}
-			}
-
+			tld_hint = r->getString("fx_fetld");
 			if (!tld_hint) {
 				tld_hint = r->getString("fx_country");
 			}
