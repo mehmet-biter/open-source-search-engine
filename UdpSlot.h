@@ -298,11 +298,11 @@ private:
 	// . set a window bit
 	void setBit(int32_t dgramNum, unsigned char *bits) {
 		// lazy initialize,since initializing all bits is too expensive
-		if (dgramNum >= m_numBitsInitialized) {
-			m_sentBits2[dgramNum >> 3] = 0;
-			m_readBits2[dgramNum >> 3] = 0;
-			m_sentAckBits2[dgramNum >> 3] = 0;
-			m_readAckBits2[dgramNum >> 3] = 0;
+		while (dgramNum >= m_numBitsInitialized) {
+			m_sentBits2[m_numBitsInitialized >> 3] = 0;
+			m_readBits2[m_numBitsInitialized >> 3] = 0;
+			m_sentAckBits2[m_numBitsInitialized >> 3] = 0;
+			m_readAckBits2[m_numBitsInitialized >> 3] = 0;
 			m_numBitsInitialized += 8;
 		}
 		bits[dgramNum >> 3] |= (1 << (dgramNum & 0x07));
@@ -311,11 +311,11 @@ private:
 	// clear a window bit
 	void clrBit(int32_t dgramNum, unsigned char *bits) {
 		// lazy initialize,since initializing all bits is too expensive
-		if (dgramNum >= m_numBitsInitialized) {
-			m_sentBits2[dgramNum >> 3] = 0;
-			m_readBits2[dgramNum >> 3] = 0;
-			m_sentAckBits2[dgramNum >> 3] = 0;
-			m_readAckBits2[dgramNum >> 3] = 0;
+		while (dgramNum >= m_numBitsInitialized) {
+			m_sentBits2[m_numBitsInitialized >> 3] = 0;
+			m_readBits2[m_numBitsInitialized >> 3] = 0;
+			m_sentAckBits2[m_numBitsInitialized >> 3] = 0;
+			m_readAckBits2[m_numBitsInitialized >> 3] = 0;
 			m_numBitsInitialized += 8;
 		}
 		bits[dgramNum >> 3] &= ~(1 << (dgramNum & 0x07));
@@ -324,11 +324,11 @@ private:
 	// get value of a window bit
 	bool isOn(int32_t dgramNum, unsigned char *bits) {
 		// lazy initialize,since initializing all bits is too expensive
-		if (dgramNum >= m_numBitsInitialized) {
-			m_sentBits2[dgramNum >> 3] = 0;
-			m_readBits2[dgramNum >> 3] = 0;
-			m_sentAckBits2[dgramNum >> 3] = 0;
-			m_readAckBits2[dgramNum >> 3] = 0;
+		while (dgramNum >= m_numBitsInitialized) {
+			m_sentBits2[m_numBitsInitialized >> 3] = 0;
+			m_readBits2[m_numBitsInitialized >> 3] = 0;
+			m_sentAckBits2[m_numBitsInitialized >> 3] = 0;
+			m_readAckBits2[m_numBitsInitialized >> 3] = 0;
 			m_numBitsInitialized += 8;
 		}
 		return bits[dgramNum >> 3] & (1 << (dgramNum & 0x07));
