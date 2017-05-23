@@ -216,7 +216,7 @@ void Titledb::validateSerializedRecord(const char *rec, int32_t recSize) {
 	int64_t debug_docId = Titledb::getDocIdFromKey(&debug_titleRecKey);
 	
 	if ( debug_keyneg ) {
-		log(LOG_DEBUG, "TitleDB rec verified. Delete key for DocId=%" PRId64 "", debug_docId);
+		logTrace(g_conf.m_logTraceXmlDoc, "TitleDB rec verified. Delete key for DocId=%" PRId64 "", debug_docId);
 	}
 	else {
 		debugp += sizeof(key96_t);
@@ -235,7 +235,7 @@ void Titledb::validateSerializedRecord(const char *rec, int32_t recSize) {
 			log(LOG_ERROR, "TITLEDB CORRUPTION. Record shows uncompressed size of %" PRId32". DocId=%" PRId64 "", debug_ubufSize, debug_docId);
 			gbshutdownLogicError();
 		}
-		log(LOG_DEBUG, "TitleDB rec verified. recSize %" PRId32 ", uncompressed %" PRId32". DocId=%" PRId64 "", recSize, debug_ubufSize, debug_docId);
+		logTrace(g_conf.m_logTraceXmlDoc, "TitleDB rec verified. recSize %" PRId32 ", uncompressed %" PRId32". DocId=%" PRId64 "", recSize, debug_ubufSize, debug_docId);
 	}
 
 }
