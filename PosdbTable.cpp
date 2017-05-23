@@ -1637,7 +1637,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			//qti->m_qtermList[nn] = &m_q->m_qterms[left];
 			m_q->m_qterms[left].m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->getListSize() ) {
+			if ( list && !list->isEmpty() ) {
 				nn++;
 			}
 
@@ -1662,7 +1662,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				// add list of member terms as well
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
-				if ( list && list->getListSize() ) {
+				if ( list && !list->isEmpty() ) {
 					nn++;
 				}
 			}
@@ -1686,7 +1686,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			//qti->m_qtermList[nn] = &m_q->m_qterms[right];
 			m_q->m_qterms[right].m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->getListSize() ) {
+			if ( list && !list->isEmpty() ) {
 				nn++;
 			}
 
@@ -1711,7 +1711,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				// add list of member terms as well
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
-				if ( list && list->getListSize() ) {
+				if ( list && !list->isEmpty() ) {
 					nn++;
 				}
 			}
@@ -1769,7 +1769,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// no, because when inserting NEW (related) terms that are
 		// not currently in the document, this list may initially
 		// be empty.
-		if ( list && list->getListSize() ) {
+		if ( list && !list->isEmpty() ) {
 			nn++;
 		}
 			
@@ -1790,7 +1790,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			//qti->m_qtermList[nn] = &m_q->m_qterms[left];
 			m_q->m_qterms[left].m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->getListSize() ) {
+			if ( list && !list->isEmpty() ) {
 				nn++;
 			}
 
@@ -1814,7 +1814,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				// add list of member terms as well
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
-				if ( list && list->getListSize() ) {
+				if ( list && !list->isEmpty() ) {
 					nn++;
 				}
 			}
@@ -1837,7 +1837,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			//qti->m_qtermList[nn] = &m_q->m_qterms[right];
 			m_q->m_qterms[right].m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->getListSize() ) {
+			if ( list && !list->isEmpty() ) {
 				nn++;
 			}
 
@@ -1861,7 +1861,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				// add list of member terms as well
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
-				if ( list && list->getListSize() ) {
+				if ( list && !list->isEmpty() ) {
 					nn++;
 				}
 			}
@@ -1893,7 +1893,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// set bitnum here i guess
 			qt2->m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->getListSize() ) {
+			if ( list && !list->isEmpty() ) {
 				nn++;
 			}
 		}
