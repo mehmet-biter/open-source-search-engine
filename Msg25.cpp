@@ -412,12 +412,14 @@ static void sendReplyWrapper(void *state) {
 	// just dup the reply for each one
 	char *reply2 = (char *)mdup(reply1,replySize,"m25repd");
 
-	// validate linkinfo
-	LinkInfo *linkInfo = (LinkInfo *)reply2;
-	if (linkInfo->m_version != 0 ||
-	    linkInfo->m_lisize < 0 || linkInfo->m_lisize != m25->m_linkInfoBuf->length() ||
-	    linkInfo->m_numStoredInlinks < 0 || linkInfo->m_numGoodInlinks < 0) {
-		gbshutdownCorrupted();
+	if (reply2) {
+		// validate linkinfo
+		LinkInfo *linkInfo = (LinkInfo *)reply2;
+		if (linkInfo->m_version != 0 ||
+		    linkInfo->m_lisize < 0 || linkInfo->m_lisize != m25->m_linkInfoBuf->length() ||
+		    linkInfo->m_numStoredInlinks < 0 || linkInfo->m_numGoodInlinks < 0) {
+			gbshutdownCorrupted();
+		}
 	}
 
 	// error?
