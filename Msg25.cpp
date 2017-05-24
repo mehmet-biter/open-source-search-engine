@@ -352,6 +352,17 @@ static void sendReplyWrapper(void *state) {
 	Msg25Request *mr = m25->m_req25;
 	// get udp slot for sending back reply
 	UdpSlot *slot2 = mr->m_udpSlot;
+
+	if (m25->m_linkInfoBuf->length() > 0) {
+		// validate linkinfo
+		LinkInfo *linkInfo = (LinkInfo *)m25->m_linkInfoBuf->getBufStart();
+		if (linkInfo->m_version != 0 ||
+		    linkInfo->m_lisize < 0 || linkInfo->m_lisize != m25->m_linkInfoBuf->length() ||
+		    linkInfo->m_numStoredInlinks < 0 || linkInfo->m_numGoodInlinks < 0) {
+			gbshutdownCorrupted();
+		}
+	}
+
 	// shortcut
 	SafeBuf *info = m25->m_linkInfoBuf;
 	// steal this buffer
