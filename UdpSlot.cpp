@@ -1429,6 +1429,9 @@ bool UdpSlot::makeReadBuf ( int32_t msgSize , int32_t numDgrams ) {
 			log(LOG_WARN, "udp: Failed to allocate %" PRId32" bytes to read request or reply on udp socket.", msgSize);
 			return false;
 		}
+
+		// initialize readBuf to track down corruption
+		memset(m_readBuf, 0xfe, msgSize);
 	}
 	m_readBufMaxSize = msgSize;
 	// let the caller know we're good
