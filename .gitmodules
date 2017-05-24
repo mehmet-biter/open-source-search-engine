@@ -10,3 +10,7 @@
 	path = third-party/slacktee
 	url = https://github.com/course-hero/slacktee.git
 	ignore = dirty
+[submodule "third-party/cld3"]
+	path = third-party/cld3
+	url = https://github.com/google/cld3.git
+	ignore = dirty
