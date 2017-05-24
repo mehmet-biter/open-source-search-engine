@@ -45,6 +45,8 @@
 #include "UrlBlockList.h"
 #include <fcntl.h>
 
+#include "third-party/cld2/public/compact_lang_det.h"
+#include "third-party/cld2/public/encodings.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -3422,6 +3424,62 @@ uint8_t *XmlDoc::getLangVector ( ) {
 	return v;
 }
 
+const char* XmlDoc::getLangIdCLD2() {
+	// detect language hints
+
+	// language tag format:
+	//   Language-Tag = Primary-tag *( "-" Subtag )
+	//   Primary-tag = 1*8ALPHA
+	//   Subtag = 1*8ALPHA
+	// HTTP header Content-Language: field
+	std::string content_language_hint(m_mime.getContentLanguage(), m_mime.getContentLanguageLen());
+	std::string tld_hint(m_currentUrl.getTLD(), m_currentUrl.getTLDLen());
+	int encoding_hint = CLD2::UNKNOWN_ENCODING; // encoding detector applied to the input document
+	CLD2::Language language_hint = CLD2::UNKNOWN_LANGUAGE; // any other context
+
+	log(LOG_INFO, "lang: cld2: using content_language_hint='%s' tld_hint='%s'", content_language_hint.c_str(), tld_hint.c_str());
+
+	CLD2::CLDHints cldhints = {content_language_hint.c_str(), tld_hint.c_str(), encoding_hint, language_hint};
+
+	int flags = 0;
+	flags |= CLD2::kCLDFlagBestEffort;
+
+	// this is initialized by CLD2 library
+	CLD2::Language language3[3];
+	int percent3[3];
+	double normalized_score3[3];
+
+	CLD2::ResultChunkVector *resultchunkvector = NULL;
+
+	int text_bytes = 0;
+	bool is_reliable = false;
+	int valid_prefix_bytes = 0;
+
+	const char *content = *getRawUtf8Content();
+	int32_t contentLen = size_utf8Content > 0 ? (size_utf8Content - 1) : 0;
+
+	CLD2::Language language = CLD2::ExtDetectLanguageSummaryCheckUTF8(content,
+	                                                                  contentLen,
+	                                                                  true,
+	                                                                  &cldhints,
+	                                                                  flags,
+	                                                                  language3,
+	                                                                  percent3,
+	                                                                  normalized_score3,
+	                                                                  resultchunkvector,
+	                                                                  &text_bytes,
+	                                                                  &is_reliable,
+	                                                                  &valid_prefix_bytes);
+
+	if (!is_reliable) {
+		log(LOG_INFO, "lang: cld2: lang0: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[0]), percent3[0], normalized_score3[0]);
+		log(LOG_INFO, "lang: cld2: lang1: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[1]), percent3[1], normalized_score3[1]);
+		log(LOG_INFO, "lang: cld2: lang2: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[2]), percent3[2], normalized_score3[2]);
+	}
+
+	return CLD2::LanguageCode(language);
+}
+
 // returns -1 and sets g_errno on error
 uint8_t *XmlDoc::getLangId ( ) {
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
@@ -3430,6 +3488,15 @@ uint8_t *XmlDoc::getLangId ( ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );
 		return &m_langId;
 	}
+
+	int32_t contentLen = size_utf8Content > 0 ? (size_utf8Content - 1) : 0;
+	if (contentLen == 0) {
+		m_langId = langUnknown;
+		m_langIdValid = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, no content" );
+		return &m_langId;
+	}
+
 	setStatus ( "getting lang id");
 
 	// get the stuff we need
@@ -3481,6 +3548,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	m_langId = computeLangId ( sections , words, (char *)lv );
 	if ( m_langId != langUnknown ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from langVector", getLanguageAbbr(m_langId) );
+		log(LOG_INFO, "lang: vector lang=%s langCLD2=%s url=%s", getLanguageAbbr(m_langId), getLangIdCLD2(), m_firstUrl.getUrl());
 		m_langIdValid = true;
 		return &m_langId;
 	}
@@ -3499,6 +3567,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
 	if ( m_langId != langUnknown ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaDescription", getLanguageAbbr(m_langId) );
+		log(LOG_INFO, "lang: meta description lang=%s langCLD2=%s url=%s", getLanguageAbbr(m_langId), getLangIdCLD2(), m_firstUrl.getUrl());
 		m_langIdValid = true;
 		return &m_langId;
 	}
@@ -3513,6 +3582,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
 	if (m_langId != langUnknown) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaKeywords", getLanguageAbbr(m_langId));
+		log(LOG_INFO, "lang: meta keyword lang=%s langCLD2=%s url=%s", getLanguageAbbr(m_langId), getLangIdCLD2(), m_firstUrl.getUrl());
 		m_langIdValid = true;
 		return &m_langId;
 	}
@@ -3522,12 +3592,15 @@ uint8_t *XmlDoc::getLangId ( ) {
 		m_langId = getLangIdFromCharset(m_charset);
 		if (m_langId != langUnknown) {
 			logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from charset", getLanguageAbbr(m_langId));
+			log(LOG_INFO, "lang: charset lang=%s langCLD2=%s url=%s", getLanguageAbbr(m_langId), getLangIdCLD2(), m_firstUrl.getUrl());
 			m_langIdValid = true;
 			return &m_langId;
 		}
 	}
 
 	logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s", getLanguageAbbr(m_langId));
+	log(LOG_INFO, "lang: end lang=%s langCLD2=%s url=%s", getLanguageAbbr(m_langId), getLangIdCLD2(), m_firstUrl.getUrl());
+
 	m_langIdValid = true;
 	return &m_langId;
 }
@@ -14122,7 +14195,6 @@ void XmlDoc::copyFromOldDoc ( XmlDoc *od ) {
 	m_crawlDelayValid    = true;
 
 	m_langId        = od->m_langId;
-
 	m_langIdValid       = true;
 
 	// so get sitenuminlinks doesn't crash when called by getNewSpiderReply
