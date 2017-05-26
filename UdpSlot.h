@@ -121,7 +121,7 @@ public:
 	int32_t m_readBufSize;  // w/o the dgram headers.
 	int32_t m_readBufMaxSize;
 
-protected:
+protected: //actually private but UdpServer references it.
 	// set the UdpSlot's protocol, endpoint info, transId, timeout
 	void connect(UdpProtocol *proto, sockaddr_in *endPoint, Host *host, int32_t hostId, int32_t transId,
 	             int64_t timeout, int64_t now, int32_t niceness);
