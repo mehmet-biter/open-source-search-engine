@@ -10288,7 +10288,7 @@ bool Parms::syncParmsWithHost0 ( ) {
 void Parms::handleRequest3e(UdpSlot *slot, int32_t /*niceness*/) {
 	// right now we must be host #0
 	if ( g_hostdb.m_hostId != 0 ) {
-hadError:
+		log(LOG_WARN,"parms: got request 0x3f but we are not host #0");
 		g_errno = EBADENGINEER;
 		g_udpServer.sendErrorReply( slot, g_errno );
 		return;
@@ -10341,8 +10341,11 @@ hadError:
 							 c,
 							 NULL,
 							 -1,
-							 "delete"))
-				goto hadError;
+							 "delete")) {
+				g_errno = EBADENGINEER;
+				g_udpServer.sendErrorReply( slot, g_errno );
+				return;
+			}
 			// ok, get next collection hash
 			continue;
 		}
@@ -10350,7 +10353,11 @@ hadError:
 		// get our parmlist for that collnum
 		tmp.reset();
 		// c is -1 for g_conf
-		if ( ! g_parms.addAllParmsToList ( &tmp, c ) ) goto hadError;
+		if ( ! g_parms.addAllParmsToList ( &tmp, c ) ) {
+			g_errno = EBADENGINEER;
+			g_udpServer.sendErrorReply( slot, g_errno );
+			return;
+		}
 		// get checksum of that
 		int64_t m64 = hash64 ( tmp.getBufStart(),tmp.length() );
 		// if match, keep chugging, that's in sync
@@ -10358,7 +10365,12 @@ hadError:
 		// note in log
 		logf(LOG_INFO,"sync: sending all parms for collnum %" PRId32" to host #%" PRId32, (int32_t)c, hostId);
 		// otherwise, send him the list
-		if ( ! replyBuf.safeMemcpy ( &tmp ) ) goto hadError;
+		if ( ! replyBuf.safeMemcpy ( &tmp ) ) {
+			log(LOG_WARN,"parms: Could not build reply buffer");
+			g_errno = EBADENGINEER;
+			g_udpServer.sendErrorReply( slot, g_errno );
+			return;
+		}
 	}
 
 	//
@@ -10380,17 +10392,27 @@ hadError:
 						   (collnum_t)i,
 						   cr->m_coll, // parm val
 						   -1,
-						   cmdStr ) )
-			goto hadError;
+						   cmdStr ) ) {
+			g_errno = EBADENGINEER;
+			g_udpServer.sendErrorReply( slot, g_errno );
+			return;
+		}
 		// and the parmlist for it
-		if (!g_parms.addAllParmsToList (&replyBuf, i ) ) goto hadError;
+		if (!g_parms.addAllParmsToList (&replyBuf, i ) ) {
+			g_errno = EBADENGINEER;
+			g_udpServer.sendErrorReply( slot, g_errno );
+			return;
+		}
 	}
 
 	// . final parm is the in sync stamp of approval which will set
 	//   g_parms.m_inSyncWithHost0 to true. CommandInSync()
 	// .  use -1 for collnum for this cmd
-	if ( ! g_parms.addNewParmToList1 ( &replyBuf,-1,NULL,-1,"insync"))
-		goto hadError;
+	if ( ! g_parms.addNewParmToList1 ( &replyBuf,-1,NULL,-1,"insync")) {
+		g_errno = EBADENGINEER;
+		g_udpServer.sendErrorReply( slot, g_errno );
+		return;
+	}
 
 	// this should at least have the in sync command
 	log("parms: sending %" PRId32" bytes of parms to sync to host #%" PRId32,
