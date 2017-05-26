@@ -82,8 +82,8 @@ static int connect_to_vagus(int port) {
 
 
 static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
-	//log(LOG_DEBUG,"vagus: got %zu alive hosts form vagus. hosts.conf says there should be %d",
-	//    alive_hosts.size(), g_hostdb.getNumHosts());
+	if(alive_hosts.size() != (unsigned)g_hostdb.getNumHosts())
+		log(LOG_WARN,"vagus: got %zu alive hosts form vagus. hosts.conf says there should be %d", alive_hosts.size(), g_hostdb.getNumHosts());
 	std::vector<int> alive_hosts_ids;
 	alive_hosts_ids.reserve(alive_hosts.size());
 	for(auto iter : alive_hosts) {
