@@ -879,6 +879,8 @@ bool Process::saveRdbIndexes() {
 		return true;
 	}
 
+	log(LOG_INFO, "db: Saving rdb indexes");
+
 	// loop over all Rdbs and save them
 	for (int32_t i = 0; i < m_numRdbs; i++) {
 		Rdb *rdb = m_rdbs[i];
@@ -897,6 +899,8 @@ bool Process::saveRdbMaps() {
 		return true;
 	}
 
+	log(LOG_INFO, "db: Saving rdb maps");
+
 	// loop over all Rdbs and save them
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
 		Rdb *rdb = m_rdbs[i];
@@ -913,9 +917,11 @@ bool Process::saveBlockingFiles1 ( ) {
 
 	// save the gb.conf file now
 	g_conf.save();
+
 	// save the conf files
 	// if autosave and we have over 20 colls, just make host #0 do it
-        g_collectiondb.save();
+	g_collectiondb.save();
+
 	// . save repair state
 	// . this is repeated above too
 	// . keep it here for auto-save

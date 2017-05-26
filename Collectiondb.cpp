@@ -2078,8 +2078,9 @@ bool CollectionRec::save ( ) {
 
 	//File f;
 	char tmp[1024];
-
 	snprintf(tmp, 1023, "%scoll.%s.%" PRId32"/coll.conf", g_hostdb.m_dir, m_coll, (int32_t)m_collnum);
+
+	log(LOG_INFO, "coll: Saving %s", tmp);
 	if (!g_parms.saveToXml((char *)this, tmp, OBJ_COLL)) {
 		// we didn't save successfully
 		m_needsSave = true;

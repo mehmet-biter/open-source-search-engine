@@ -145,6 +145,8 @@ bool RdbMap::writeMap ( bool allDone ) {
 		return true;
 	}
 
+	log(LOG_INFO, "db: Saving %s", m_file.getFilename());
+
 	// open a new file
 	if ( ! m_file.open ( O_RDWR | O_CREAT | O_TRUNC ) ) {
 		log(LOG_ERROR, "%s:%s: END. Could not open %s for writing: %s. Returning false.",
