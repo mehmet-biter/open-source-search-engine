@@ -205,6 +205,7 @@ static bool do_vagus_poll(int fd) {
 
 
 static void *poll_thread(void *) {
+	pthread_setname_np(pthread_self(),"vaguspoll");
 	struct pollfd pfd[2];
 	memset(pfd,0,sizeof(pfd));
 	pfd[0].fd = fd_pipe[0];
