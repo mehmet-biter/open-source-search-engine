@@ -476,7 +476,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 	//log("sendDatagramOrAck");
 	// if acks we've sent isn't caught up to what we read, send an ack
 	if ( m_sentAckBitsOn < m_readBitsOn && m_proto->useAcks() ) 
-		return sendAck ( sock , now );
+		return sendPlainAck ( sock , now );
 	// we may have received an ack for an implied resend (from ack gap)
 	// so we clear some bits, but then got an ACK back later
 	while ( m_nextToSend < m_dgramsToSend &&

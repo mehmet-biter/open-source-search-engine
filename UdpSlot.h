@@ -257,7 +257,13 @@ private:
 	// . returns -2 if nothing to send, -1 on error, 0 if blocked,
 	//   1 if sent something
 	// . should only be called by sendDatagramOrAck() above
-	int32_t sendAck(int sock, int64_t now, int32_t dgramNum = -1, int32_t weInitiated = -2, bool cancelTrans = false);
+	int32_t sendPlainAck(int sock, int64_t now) {
+		return sendAck(sock, now, -1, -2, false);
+	}
+	int32_t sendCancelAck(int sock, int64_t now, int32_t dgramNum) {
+		return sendAck(sock, now, dgramNum, 1, true);
+	}
+	int32_t sendAck(int sock, int64_t now, int32_t dgramNum, int32_t weInitiated, bool cancelTrans);
 
 	// . or by readDataGramOrAck() to read a faked ack for protocols that
 	//   don't use ACKs

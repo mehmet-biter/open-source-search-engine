@@ -1064,7 +1064,7 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 			// . if this blocks, that sucks, we'll probably get
 			//   another untethered read... oh well...
 			// . ack from 0 to infinite to prevent more from coming
-			tmp.sendAck(m_sock,now,dgramNum, 1/*weInit'ed?*/, true/*cancelTrans?*/);
+			tmp.sendCancelAck(m_sock, now, dgramNum);
 			//return 1;
 			goto discard;
 		}
