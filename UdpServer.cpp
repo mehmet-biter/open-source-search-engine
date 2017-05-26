@@ -492,7 +492,7 @@ void UdpServer::sendErrorReply_unlocked(UdpSlot *slot, int32_t errnum) {
 	g_errno = 0;
 
 	// make a little msg
-	char *msg = slot->m_tmpBuf;
+	char *msg = slot->m_shortSendBuffer;
 	*(int32_t *)msg = htonl(errnum) ;
 
 	// set the m_localErrno in "slot" so it will set the dgrams error bit
@@ -2064,9 +2064,9 @@ void UdpServer::destroySlot_unlocked( UdpSlot *slot ) {
 	char *sbuf     = slot->m_sendBufAlloc;
 	int32_t  sbufSize = slot->m_sendBufAllocSize;
 	// don't free our static buffer
-	if ( rbuf == slot->m_tmpBuf ) rbuf = NULL;
-	// sometimes handlers will use our slots m_tmpBuf to store the reply
-	if ( sbuf == slot->m_tmpBuf ) sbuf = NULL;
+	if ( rbuf == slot->m_shortSendBuffer ) rbuf = NULL;
+	// sometimes handlers will use our slots m_shortSendBuffer to store the reply
+	if ( sbuf == slot->m_shortSendBuffer ) sbuf = NULL;
 	// nothing allocated. used by Msg13.cpp g_fakeBuf
 	if ( sbufSize == 0 ) sbuf = NULL;
 

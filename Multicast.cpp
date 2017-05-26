@@ -925,7 +925,7 @@ void Multicast::closeUpShop ( UdpSlot *slot ) {
 		// . this happens if the udp server is hot (async signal based) and
 		//   m_replyBuf is NULL because he cannot malloc a buf to read into
 		//   because malloc is not async signal safe
-		if (slot->m_tmpBuf == slot->m_readBuf) {
+		if (slot->m_shortSendBuffer == slot->m_readBuf) {
 			m_freeReadBuf = false;
 		}
 		// don't let UdpServer free the readBuf now that we point to it

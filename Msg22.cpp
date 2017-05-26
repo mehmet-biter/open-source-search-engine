@@ -583,7 +583,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 	// . ok, return an available docid
 	if ( r->m_url[0] || r->m_justCheckTfndb || r->m_getAvailDocIdOnly ) {
 		// store docid in reply
-		char *p = st->m_slot->m_tmpBuf;
+		char *p = st->m_slot->m_shortSendBuffer;
 		// send back the available docid
 		*(int64_t *)p = st->m_availDocId;
 		// send it

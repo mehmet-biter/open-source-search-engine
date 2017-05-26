@@ -54,7 +54,7 @@
 // . the max size of an incoming request for a hot udp server
 // . we cannot call malloc so it must fit in here
 // . now we need tens of thousands of udp slots, so keep this small
-#define TMPBUFSIZE (250)
+#define SHORTSENDBUFFERSIZE (250)
 
 class Host;
 
@@ -434,11 +434,9 @@ protected:
 	} m_slotStatus;
 
 public:
-	// . for the hot udp server, we cannot call malloc in the sig handler
-	//   so we set m_readBuf to this to read in int16_t requests
-	// . caller should pre-allocated m_readBuf when calling sendRequest() if he expects a large reply
-	// . incoming requests simply cannot be bigger than this for the hot udp server
-	char m_tmpBuf[TMPBUFSIZE];
+	// In some places allocating a buffer for sendign is inconvenient, especially for realyl short replies.
+	// Those places can use this buffer
+	char m_shortSendBuffer[SHORTSENDBUFFERSIZE];
 };
 
 extern int32_t g_cancelAcksSent;
