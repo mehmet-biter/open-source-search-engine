@@ -2064,7 +2064,6 @@ void UdpServer::destroySlot_unlocked( UdpSlot *slot ) {
 	char *sbuf     = slot->m_sendBufAlloc;
 	int32_t  sbufSize = slot->m_sendBufAllocSize;
 	// don't free our static buffer
-	if ( rbuf == slot->m_shortSendBuffer ) rbuf = NULL;
 	// sometimes handlers will use our slots m_shortSendBuffer to store the reply
 	if ( sbuf == slot->m_shortSendBuffer ) sbuf = NULL;
 	// nothing allocated. used by Msg13.cpp g_fakeBuf
