@@ -5033,8 +5033,8 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists(QueryTermInfo *qti) {
 		char *subListPtr = qti->m_subLists[i]->getList();
 		char *subListEnd = qti->m_subLists[i]->getListEnd();
 		// reset docid list ptrs
-		char *dp    =      m_docIdVoteBuf.getBufStart();
-		char *dpEnd = dp + m_docIdVoteBuf.length();
+		const char *dp    =      m_docIdVoteBuf.getBufStart();
+		const char *dpEnd = dp + m_docIdVoteBuf.length();
 
 		// re-copy into the same buffer!
 		char *dst = subListPtr;
