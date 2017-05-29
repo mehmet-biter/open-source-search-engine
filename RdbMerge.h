@@ -106,9 +106,11 @@ private:
 	int32_t m_startFileNum;
 	int32_t m_numFiles;
 	int32_t m_fixedDataSize;
+
 	BigFile *m_targetFile;
 	RdbMap *m_targetMap;
 	RdbIndex *m_targetIndex;
+	bool m_doneRegenateFiles;
 
 	char m_startKey[MAX_KEY_BYTES];
 
