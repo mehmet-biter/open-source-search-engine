@@ -179,12 +179,13 @@ bool RdbMerge::gotLock() {
 	if (!m_doneRegenateFiles &&
 		m_targetFile->getFileSize() > 0 &&
 		((m_targetIndex && m_targetIndex->getFileSize() == 0) || m_targetMap->getFileSize() == 0)) {
-		log(LOG_INIT,"db: Regenerating map/index from a killed merge.");
+		log(LOG_INIT, "db: merge: Regenerating map/index from a killed merge.");
 
 		if (g_jobScheduler.submit(regenerateFilesWrapper, regenerateFilesDoneWrapper, this, thread_type_file_merge, 0)) {
 			return true;
 		}
 
+		log(LOG_WARN, "db: merge: Unable to submit regenerate files job. Running on main thread!");
 		regenerateFilesWrapper(this);
 	}
 
