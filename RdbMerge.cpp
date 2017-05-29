@@ -96,15 +96,6 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	// . just get from the files, not tree (not cache?)
 	KEYMIN(m_startKey,m_ks);
 
-	// if we're resuming a killed merge, set m_startKey to last
-	// key the map knows about.
-	// the dump will start dumping at the end of the targetMap's data file.
-	if ( m_targetMap->getNumRecs() > 0 ) {
-		log(LOG_INIT,"db: Resuming a killed merge.");
-		m_targetMap->getLastKey(m_startKey);
-		KEYINC(m_startKey,m_ks);
-	}
-
 	//calculate how much space we need for resulting merged file
 	m_spaceNeededForMerge = base->getSpaceNeededForMerge(m_startFileNum,m_numFiles);
 	
@@ -144,9 +135,63 @@ void RdbMerge::gotLockWrapper(int /*fd*/, void *state) {
 	that->gotLock();
 }
 
+void RdbMerge::regenerateFilesWrapper(void *state) {
+	RdbMerge *that = static_cast<RdbMerge*>(state);
+	if (that->m_targetMap->getFileSize() == 0) {
+		log( LOG_INFO, "db: merge: Attempting to generate map file for data file %s* of %" PRId64" bytes. May take a while.",
+		     that->m_targetFile->getFilename(), that->m_targetFile->getFileSize() );
+
+		// this returns false and sets g_errno on error
+		if (!that->m_targetMap->generateMap(that->m_targetFile)) {
+			log(LOG_ERROR, "db: merge: Map generation failed.");
+			gbshutdownCorrupted();
+		}
+
+		log( LOG_INFO, "db: merge: Map generation succeeded." );
+	}
+
+	if (that->m_targetIndex->getFileSize() == 0) {
+		log(LOG_INFO, "db: merge: Attempting to generate index file for data file %s* of %" PRId64" bytes. May take a while.",
+		    that->m_targetFile->getFilename(), that->m_targetFile->getFileSize() );
+
+		// this returns false and sets g_errno on error
+		if (!that->m_targetIndex->generateIndex(that->m_targetFile)) {
+			logError("db: merge: Index generation failed for %s.", that->m_targetFile->getFilename());
+			gbshutdownCorrupted();
+		}
+
+		log(LOG_INFO, "db: merge: Index generation succeeded.");
+	}
+}
+
+void RdbMerge::regenerateFilesDoneWrapper(void *state, job_exit_t exit_type) {
+	RdbMerge *that = static_cast<RdbMerge*>(state);
+	that->gotLock();
+}
+
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool RdbMerge::gotLock() {
+	// regenerate map/index if needed
+	if (m_targetFile->getFileSize() > 0 && (m_targetIndex->getFileSize() == 0 || m_targetMap->getFileSize() == 0)) {
+		log(LOG_INIT,"db: Regenerating map/index from a killed merge.");
+
+		if (g_jobScheduler.submit(regenerateFilesWrapper, regenerateFilesDoneWrapper, this, thread_type_file_merge, 0)) {
+			return true;
+		}
+
+		regenerateFilesWrapper(this);
+	}
+
+	// if we're resuming a killed merge, set m_startKey to last
+	// key the map knows about.
+	// the dump will start dumping at the end of the targetMap's data file.
+	if (m_targetMap->getNumRecs() > 0) {
+		log(LOG_INIT,"db: Resuming a killed merge.");
+		m_targetMap->getLastKey(m_startKey);
+		KEYINC(m_startKey,m_ks);
+	}
+
 	// . get last mapped offset
 	// . this may actually be smaller than the file's actual size
 	//   but the excess is not in the map, so we need to do it again

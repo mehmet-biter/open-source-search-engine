@@ -65,6 +65,9 @@ public:
 
 private:
 	static void getLockWrapper(int /*fd*/, void *state);
+	static void regenerateFilesWrapper(void *state);
+	static void regenerateFilesDoneWrapper(void *state, job_exit_t exit_type);
+
 	void getLock();
 	static void filterListWrapper(void *state);
 	static void filterDoneWrapper(void *state, job_exit_t exit_type);

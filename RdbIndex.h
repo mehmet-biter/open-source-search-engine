@@ -44,6 +44,7 @@ public:
 	}
 
 	const char *getFilename() const { return m_file.getFilename(); }
+	int64_t getFileSize() const { return m_file.getFileSize(); }
 
 	BigFile *getFile  ( ) { return &m_file; }
 
