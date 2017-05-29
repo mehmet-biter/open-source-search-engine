@@ -638,15 +638,14 @@ bool Query::setQTerms ( const Words &words ) {
 		int32_t fieldStart=-1;
 		int32_t fieldLen=0;
 
-		if ( pw == 0 && m_qwords[pw].m_ignoreWord==IGNORE_FIELDNAME)
+		if(pw == 0 && m_qwords[pw].m_ignoreWord==IGNORE_FIELDNAME)
 			fieldStart = pw;
 
-  		if ( pw > 0&& m_qwords[pw-1].m_ignoreWord==IGNORE_FIELDNAME ){
+		if(pw > 0 && m_qwords[pw-1].m_ignoreWord==IGNORE_FIELDNAME) {
   			pw -= 1;
  			fieldStart = pw;
  		}
- 		while (pw>0 && 
- 		       ((m_qwords[pw].m_ignoreWord == IGNORE_FIELDNAME))) {
+		while(pw > 0 && m_qwords[pw].m_ignoreWord == IGNORE_FIELDNAME) {
 			pw--;
 			fieldStart = pw;
 		}
@@ -666,8 +665,8 @@ bool Query::setQTerms ( const Words &words ) {
 				pw++;
 
 			fieldLen = m_qwords[pw-1].m_word + 
-				m_qwords[pw-1].m_wordLen -
-				m_qwords[fieldStart].m_word;
+				   m_qwords[pw-1].m_wordLen -
+				   m_qwords[fieldStart].m_word;
 		}
 		// do not use an explicit bit up if we have a hard count
 		qt->m_hardCount = qw->m_hardCount;
@@ -723,13 +722,12 @@ bool Query::setQTerms ( const Words &words ) {
 
 	// . set implicit bits, m_implicitBits
 	// . set m_inPhrase
-	for (int32_t i = 0; i < m_numWords ; i++ ){
+	for (int32_t i = 0; i < m_numWords ; i++ ) {
 		const QueryWord *qw = &m_qwords[i];
 		QueryTerm *qt = qw->m_queryWordTerm;
 		if (!qt) continue;
  		if ( qw->m_queryPhraseTerm )
- 			qw->m_queryPhraseTerm->m_implicitBits |=
-				qt->m_explicitBit;
+			qw->m_queryPhraseTerm->m_implicitBits |= qt->m_explicitBit;
 		// set flag if in a a phrase, and set phrase term num
 		if ( qw->m_queryPhraseTerm  ) {
 			QueryTerm *pt = qw->m_queryPhraseTerm;
@@ -977,7 +975,7 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( m_hasUOR ) continue;
 		for ( int32_t j = 0 ; j < i ; j++ ) {
 			// skip if not a termid match
-			if(m_qterms[i].m_termId!=m_qterms[j].m_termId)continue;
+			if(m_qterms[i].m_termId!=m_qterms[j].m_termId) continue;
 			m_qterms[i].m_explicitBit = m_qterms[j].m_explicitBit;
 			// if doing phrases, ignore the unrequired phrase
 			if ( m_qterms[i].m_isPhrase ) {
@@ -1155,7 +1153,7 @@ bool Query::setQTerms ( const Words &words ) {
 	//
 	int32_t shift = 0;
 	m_requiredBits = 0;
-	for ( int32_t i = 0; i < n ; i++ ){
+	for ( int32_t i = 0; i < n ; i++ ) {
 		QueryTerm *qt = &m_qterms[i];
 		qt->m_explicitBit = 0;
 		if ( ! qt->m_isRequired ) continue;
@@ -1167,7 +1165,7 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( shift >= (int32_t)(sizeof(qvec_t)*8) ) break;
 	}
 	// now implicit bits
-	for ( int32_t i = 0; i < n ; i++ ){
+	for ( int32_t i = 0; i < n ; i++ ) {
 		QueryTerm *qt = &m_qterms[i];
 		// make it explicit bit at least
 		qt->m_implicitBits = qt->m_explicitBit;
