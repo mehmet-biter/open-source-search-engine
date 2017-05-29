@@ -287,12 +287,17 @@ bool UdpSlot::sendSetup(char *msg, int32_t msgSize, char *alloc, int32_t allocSi
 void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
 	// clear all if resend is true
 	if (resendAll) {
-		// we should clear receive buf as well since the response we get may be different
-		for (int32_t i = 0; i < m_dgramsToSend; i++) {
+		for (int32_t i = 0; i < m_dgramsToSend; ++i) {
 			clrBit(i, m_readAckBits2);
+		}
+
+		// we should clear previously receive dgrams as it could be different
+		for (int32_t i = 0; i < m_dgramsToRead; ++i) {
 			clrBit(i, m_readBits2);
 			clrBit(i, m_sentAckBits2);
 		}
+
+		m_dgramsToRead = 0;
 		m_readBitsOn = 0;
 		m_sentAckBitsOn = 0;
 		m_readAckBitsOn = 0;
