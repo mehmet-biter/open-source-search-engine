@@ -467,8 +467,6 @@ bool Query::setQTerms ( const Words &words ) {
 		m_queryTermBuf.setLabel("stkbuf3");
 		const char *pp = m_queryTermBuf.getBufStart();
 		m_qterms = (QueryTerm *)pp;
-		pp += sizeof(QueryTerm);
-		if ( pp > m_queryTermBuf.getBufEnd() ) { g_process.shutdownAbort(true); }
 	}
 
 	// call constructor on each one here
