@@ -1988,9 +1988,6 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		     slot->getResendCount() >= slot->m_maxResends &&
 		     // did not get all acks
 		     slot->m_sentBitsOn > slot->m_readAckBitsOn &&
-		     // fix too many timing out slot msgs when a host is
-		     // hogging the cpu on a niceness 0 thing...
-		     //elapsed > 5000 &&
 		     // respect slot's timeout too!
 		     elapsed > timeout &&
 		     // only do this when sending a request
@@ -2011,7 +2008,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    slot->getHostId(),elapsed);
 			// keep going
 			continue;
-		}			
+		}
 		// . this should clear the sentBits of all unacked dgrams
 		//   so they can be resent
 		// . this doubles m_resendTime and updates m_resendCount
