@@ -152,7 +152,7 @@ void RdbMerge::regenerateFilesWrapper(void *state) {
 		log( LOG_INFO, "db: merge: Map generation succeeded." );
 	}
 
-	if (that->m_targetIndex->getFileSize() == 0) {
+	if (that->m_targetIndex && that->m_targetIndex->getFileSize() == 0) {
 		log(LOG_INFO, "db: merge: Attempting to generate index file for data file %s* of %" PRId64" bytes. May take a while.",
 		    that->m_targetFile->getFilename(), that->m_targetFile->getFileSize() );
 
@@ -177,7 +177,8 @@ void RdbMerge::regenerateFilesDoneWrapper(void *state, job_exit_t exit_type) {
 bool RdbMerge::gotLock() {
 	// regenerate map/index if needed
 	if (!m_doneRegenateFiles &&
-		m_targetFile->getFileSize() > 0 && (m_targetIndex->getFileSize() == 0 || m_targetMap->getFileSize() == 0)) {
+		m_targetFile->getFileSize() > 0 &&
+		((m_targetIndex && m_targetIndex->getFileSize() == 0) || m_targetMap->getFileSize() == 0)) {
 		log(LOG_INIT,"db: Regenerating map/index from a killed merge.");
 
 		if (g_jobScheduler.submit(regenerateFilesWrapper, regenerateFilesDoneWrapper, this, thread_type_file_merge, 0)) {
