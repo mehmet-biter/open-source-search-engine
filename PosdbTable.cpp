@@ -5127,17 +5127,16 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists(QueryTermInfo *qti) {
 
 	doneWithSubList:
 
-		// Now set "shortcut" info for the reduced sublist so
-		// we end up with an array of matching sublists that 
-		// only contain the matching docids
-		int32_t x = qti->m_numMatchingSubLists;
-		qti->m_matchingSubListSize  		[x] = dst - savedDst;
-		qti->m_matchingSubListStart 		[x] = savedDst;
-		qti->m_matchingSubListEnd			[x] = dst;
-		qti->m_matchingSubListCursor		[x] = savedDst;
-		qti->m_matchingSubListSavedCursor	[x] = savedDst;
-		
-		if ( qti->m_matchingSubListSize[x] ) {
+		if(dst != savedDst) {
+			// Now set "shortcut" info for the reduced sublist so
+			// we end up with an array of matching sublists that
+			// only contain the matching docids
+			int32_t x = qti->m_numMatchingSubLists;
+			qti->m_matchingSubListSize  	  [x] = dst - savedDst;
+			qti->m_matchingSubListStart 	  [x] = savedDst;
+			qti->m_matchingSubListEnd	  [x] = dst;
+			qti->m_matchingSubListCursor	  [x] = savedDst;
+			qti->m_matchingSubListSavedCursor [x] = savedDst;
 			qti->m_numMatchingSubLists++;
 		}
 	}
