@@ -5042,81 +5042,79 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists(QueryTermInfo *qti) {
 		char *savedDst = dst;
 
 
-	handleNextRecord:
-		// scan the docid list for the current docid in this termlist
-		for ( ; dp < dpEnd; dp += 6 ) {
-			// if current docid in docid list is >= the docid
-			// in the sublist, stop. docid in list is 6 bytes and
-			// subListPtr must be pointing to a 12 byte posdb rec.
-			if ( *(uint32_t *)(dp+1) > *(uint32_t *)(subListPtr+8) ) {
-				break;
-			}
-			
-			// try to catch up docid if it is behind
-			if ( *(uint32_t *)(dp+1) < *(uint32_t *)(subListPtr+8) ) {
-				continue;
-			}
-
-			// check lower byte if equal
-			if ( *(unsigned char *)(dp) > (*(unsigned char *)(subListPtr+7) & 0xfc ) ) {
-				break;
-			}
-
-			if ( *(unsigned char *)(dp) < (*(unsigned char *)(subListPtr+7) & 0xfc ) ) {
-				continue;
-			}
-
-			// copy over the 12 byte key
-			*(int64_t *)dst = *(int64_t *)subListPtr;
-			*(int32_t *)(dst+8) = *(int32_t *)(subListPtr+8);
-			
-			// skip that 
-			dst    += 12;
-			subListPtr += 12;
-
-			// copy over any 6 bytes keys following
-			for ( ; ; ) {
-				if ( subListPtr >= subListEnd ) {
-					// give up on this exhausted term list!
-					goto doneWithSubList;
-				}
-				
-				// next docid willbe next 12 bytekey
-				if ( ! ( subListPtr[0] & 0x04 ) ) {
+		for(;;) {
+			// scan the docid list for the current docid in this termlist
+			for ( ; dp < dpEnd; dp += 6 ) {
+				// if current docid in docid list is >= the docid
+				// in the sublist, stop. docid in list is 6 bytes and
+				// subListPtr must be pointing to a 12 byte posdb rec.
+				if ( *(uint32_t *)(dp+1) > *(uint32_t *)(subListPtr+8) ) {
 					break;
 				}
 				
-				// otherwise it's 6 bytes
-				*(int32_t *)dst = *(int32_t *)subListPtr;
-				*(int16_t *)(dst+4) = *(int16_t *)(subListPtr+4);
-				dst += 6;
+				// try to catch up docid if it is behind
+				if ( *(uint32_t *)(dp+1) < *(uint32_t *)(subListPtr+8) ) {
+					continue;
+				}
+
+				// check lower byte if equal
+				if ( *(unsigned char *)(dp) > (*(unsigned char *)(subListPtr+7) & 0xfc ) ) {
+					break;
+				}
+
+				if ( *(unsigned char *)(dp) < (*(unsigned char *)(subListPtr+7) & 0xfc ) ) {
+					continue;
+				}
+
+				// copy over the 12 byte key
+				*(int64_t *)dst = *(int64_t *)subListPtr;
+				*(int32_t *)(dst+8) = *(int32_t *)(subListPtr+8);
+
+				// skip that
+				dst    += 12;
+				subListPtr += 12;
+
+				// copy over any 6 bytes keys following
+				for ( ; ; ) {
+					if ( subListPtr >= subListEnd ) {
+						// give up on this exhausted term list!
+						goto doneWithSubList;
+					}
+
+					// next docid willbe next 12 bytekey
+					if ( ! ( subListPtr[0] & 0x04 ) ) {
+						break;
+					}
+
+					// otherwise it's 6 bytes
+					*(int32_t *)dst = *(int32_t *)subListPtr;
+					*(int16_t *)(dst+4) = *(int16_t *)(subListPtr+4);
+					dst += 6;
+					subListPtr += 6;
+				}
+			}
+
+			// skip that docid record in our termlist. it MUST have been
+			// 12 bytes, a docid heading record.
+			subListPtr += 12;
+
+			// skip any following keys that are 6 bytes, that means they
+			// share the same docid
+			for ( ; ;  ) {
+				// list exhausted?
+				if ( subListPtr >= subListEnd ) {
+					goto doneWithSubList;
+				}
+				
+				// stop if next key is 12 bytes, that is a new docid
+				if ( ! (subListPtr[0] & 0x04) ) {
+					break;
+				}
+				
+				// skip it
 				subListPtr += 6;
 			}
 		}
-
-		// skip that docid record in our termlist. it MUST have been
-		// 12 bytes, a docid heading record.
-		subListPtr += 12;
-
-		// skip any following keys that are 6 bytes, that means they
-		// share the same docid
-		for ( ; ;  ) {
-			// list exhausted?
-			if ( subListPtr >= subListEnd ) {
-				goto doneWithSubList;
-			}
-			
-			// stop if next key is 12 bytes, that is a new docid
-			if ( ! (subListPtr[0] & 0x04) ) {
-				break;
-			}
-			
-			// skip it
-			subListPtr += 6;
-		}
-
-		// process the next rec ptr now
-		goto handleNextRecord;
 
 	doneWithSubList:
 
