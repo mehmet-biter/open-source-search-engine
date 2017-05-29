@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <atomic>
 #include "rdbid_t.h"
 #include "types.h"
 #include "GbMutex.h"
@@ -156,9 +157,11 @@ private:
 	int32_t m_sortBufSize;
 
 	bool m_repairMode;
-	bool m_isSaving;
+
+	std::atomic<bool> m_isSaving;
 	// true if buckets was modified and needs to be saved
 	bool m_needsSave;
+
 	const char *m_dir;
 	void *m_state;
 
