@@ -5044,12 +5044,7 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists(QueryTermInfo *qti) {
 
 	handleNextRecord:
 		// scan the docid list for the current docid in this termlist
-		for ( ; ; dp += 6 ) {
-			// no docids in list? no need to skip any more subListPtrs!
-			if ( dp >= dpEnd ) {
-				goto doneWithSubList;
-			}
-				
+		for ( ; dp < dpEnd; dp += 6 ) {
 			// if current docid in docid list is >= the docid
 			// in the sublist, stop. docid in list is 6 bytes and
 			// subListPtr must be pointing to a 12 byte posdb rec.
