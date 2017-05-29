@@ -5097,8 +5097,6 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists(QueryTermInfo *qti) {
 				dst += 6;
 				subListPtr += 6;
 			}
-			// continue the docid loop for this new subListPtr
-			continue;
 		}
 
 		// skip that docid record in our termlist. it MUST have been
