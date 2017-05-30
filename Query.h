@@ -498,7 +498,6 @@ public:
 	bool m_hasIpField;
 	bool m_hasUrlField;
 	bool m_hasSubUrlField;
-	bool m_hasQuotaField;
 
 	// . we set this to true if it is a boolean query
 	// . when calling Query::set() above you can tell it explicitly

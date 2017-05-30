@@ -91,7 +91,6 @@ void Query::reset ( ) {
 	m_hasIpField           = false;
 	m_hasUrlField          = false;
 	m_hasSubUrlField       = false;
-	m_hasQuotaField        = false;
 	m_truncated            = false;
 }
 

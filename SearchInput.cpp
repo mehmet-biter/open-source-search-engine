@@ -431,11 +431,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 		m_doSiteClustering    = false;
 	}
 
-	if ( m_q.m_hasQuotaField ) {
-		m_doSiteClustering    = false;
-		m_doDupContentRemoval = false;
-	}
-
 	if ( ! m_doSiteClustering )
 		m_hideAllClustered = false;
 
