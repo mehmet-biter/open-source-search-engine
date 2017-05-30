@@ -77,9 +77,6 @@ bool Matches::isMatchableTerm(const QueryTerm *qt) const {
 	// if query is too long, a query word can be truncated!
 	// this happens for some words if they are ignored, too!
 	if ( ! qw->m_queryWordTerm && ! qw->m_queryPhraseTerm ) return false;
-	// after a NOT operator?
-	if ( qw->m_underNOT ) 
-		return false;
 	return true;
 }
 
