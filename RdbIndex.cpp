@@ -92,12 +92,12 @@ void RdbIndex::clear() {
 void RdbIndex::timedMerge(int /*fd*/, void *state) {
 	RdbIndex *index = static_cast<RdbIndex*>(state);
 
-	ScopedLock sl(index->m_pendingDocIdsMtx);
-
 	// make sure there is only a single merge job at one time
 	if (index->m_pendingMerge) {
 		return;
 	}
+
+	ScopedLock sl(index->m_pendingDocIdsMtx);
 
 	// don't need to merge if it's empty
 	if (index->m_pendingDocIds->empty()) {

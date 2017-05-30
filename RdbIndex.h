@@ -113,7 +113,7 @@ private:
 	// newest record pending merge into m_docIds
 	GbMutex m_pendingDocIdsMtx;
 	pthread_cond_t m_pendingMergeCond;
-	bool m_pendingMerge;
+	std::atomic<bool> m_pendingMerge;
 
 	docids_ptr_t m_pendingDocIds;
 	uint64_t m_prevPendingDocId;
