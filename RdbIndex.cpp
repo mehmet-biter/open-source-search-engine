@@ -93,7 +93,7 @@ void RdbIndex::timedMerge(int /*fd*/, void *state) {
 	RdbIndex *index = static_cast<RdbIndex*>(state);
 
 	// make sure there is only a single merge job at one time
-	if (index->m_pendingMerge) {
+	if (index->m_pendingMerge || index->m_generatingIndex) {
 		return;
 	}
 
