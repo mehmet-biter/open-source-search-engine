@@ -1510,7 +1510,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// alloc space. assume max
-	//int32_t qneed = sizeof(QueryTermInfo) * m_msg2->getNumLists();
 	int32_t qneed = sizeof(QueryTermInfo) * m_q->m_numTerms;
 	if ( ! m_qiBuf.reserve(qneed,"qibuf") ) {
 		return false; // label it too!
@@ -1538,7 +1537,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		m_hasMaxSerpScore = true;
 	}
 
-	//for ( int32_t i = 0 ; i < m_msg2->getNumLists() ; i++ ) {
 	for ( int32_t i = 0 ; i < m_q->m_numTerms ; i++ ) {
 		QueryTerm *qt = &m_q->m_qterms[i];
 
@@ -1550,7 +1548,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		
 		// set this stff
 		const QueryWord     *qw =   qt->m_qword;
-		//int32_t wordNum = qw - &m_q->m_qwords[0];
 		// get one
 		QueryTermInfo *qti = &qtibuf[nrg];
 		// and set it
@@ -1606,8 +1603,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		const QueryTerm *rightTerm = qt->m_rightPhraseTerm;
 		bool leftAlreadyAdded = false;
 		bool rightAlreadyAdded = false;
-		//int64_t totalTermFreq = 0;
-		//int64_t *tfreqs = (int64_t *)m_msg39req->ptr_termFreqs;
 		//
 		// add the non-bigram list AFTER the
 		// bigrams, which we like to do when we PREFER the bigram
@@ -1625,7 +1620,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// assume added
 			leftAlreadyAdded = true;
 			// get list
-			//list = m_msg2->getList(left);
 			RdbList *list = m_q->m_qterms[left].m_posdbListPtr;
 			// add list ptr into our required group
 			qti->m_subLists[nn] = list;
@@ -1634,7 +1628,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// before a pipe operator?
 			if ( qt->m_piped ) qti->m_bigramFlags[nn] |= BF_PIPED;
 			// add list of member terms as well
-			//qti->m_qtermList[nn] = &m_q->m_qterms[left];
 			m_q->m_qterms[left].m_bitNum = nrg;
 			// only really add if useful
 			if ( list && !list->isEmpty() ) {
@@ -1643,14 +1636,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 
 			// add bigram synonyms! like "new jersey" bigram
 			// has the synonym "nj"
-			//for ( int32_t k = 0 ; k < m_msg2->getNumLists() ; k++) {
 			for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 				QueryTerm *bt = &m_q->m_qterms[k];
 				if ( bt->m_synonymOf != leftTerm ) {
 					continue;
 				}
 				
-				//list = m_msg2->getList(k);
 				list = m_q->m_qterms[k].m_posdbListPtr;
 				qti->m_subLists[nn] = list;
 				qti->m_bigramFlags[nn] = 0;
@@ -1660,7 +1651,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 					qti->m_bigramFlags[nn]|=BF_PIPED;
 				}
 				// add list of member terms as well
-				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
 				if ( list && !list->isEmpty() ) {
 					nn++;
@@ -1674,7 +1664,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// assume added
 			rightAlreadyAdded = true;
 			// get list
-			//list = m_msg2->getList(right);
 			RdbList *list = m_q->m_qterms[right].m_posdbListPtr;
 			// add list ptr into our required group
 			qti->m_subLists[nn] = list;
@@ -1683,7 +1672,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// before a pipe operator?
 			if ( qt->m_piped ) qti->m_bigramFlags[nn] |= BF_PIPED;
 			// add list of member terms as well
-			//qti->m_qtermList[nn] = &m_q->m_qterms[right];
 			m_q->m_qterms[right].m_bitNum = nrg;
 			// only really add if useful
 			if ( list && !list->isEmpty() ) {
@@ -1692,14 +1680,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 
 			// add bigram synonyms! like "new jersey" bigram
 			// has the synonym "nj"
-			//for (int32_t k = 0 ; k < m_msg2->getNumLists() ; k++ ) {
 			for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 				QueryTerm *bt = &m_q->m_qterms[k];
 				if ( bt->m_synonymOf != rightTerm ) {
 					continue;
 				}
 				
-				//list = m_msg2->getList(k);
 				list = m_q->m_qterms[k].m_posdbListPtr;
 				qti->m_subLists[nn] = list;
 				qti->m_bigramFlags[nn] = 0;
@@ -1709,7 +1695,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 					qti->m_bigramFlags[nn]|=BF_PIPED;
 				}
 				// add list of member terms as well
-				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
 				if ( list && !list->isEmpty() ) {
 					nn++;
@@ -1722,14 +1707,9 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		//
 		// add to it. add backwards since we give precedence to
 		// the first list and we want that to be the NEWEST list!
-		//list = m_msg2->getList(i);
 		RdbList *list = m_q->m_qterms[i].m_posdbListPtr;
 		// add list ptr into our required group
 		qti->m_subLists[nn] = list;
-		// how many in there?
-		//int32_t count = m_msg2->getNumListsInGroup(left);
-		// base term is #1
-		//bigramSet[nrg][nn] = 1;
 		// special flags
 		qti->m_bigramFlags[nn] = 0;
 		// before a pipe operator?
@@ -1762,7 +1742,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			qti->m_bigramFlags[nn]|=BF_NUMBER;
 
 		// add list of member terms
-		//qti->m_qtermList[nn] = qt;
 		qt->m_bitNum = nrg;
 
 		// only really add if useful
@@ -1778,7 +1757,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		//
 		if ( left >= 0 && ! leftAlreadyAdded ) {
 			// get list
-			//list = m_msg2->getList(left);
 			list = m_q->m_qterms[left].m_posdbListPtr;
 			// add list ptr into our required group
 			qti->m_subLists[nn] = list;
@@ -1787,7 +1765,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// before a pipe operator?
 			if ( qt->m_piped ) qti->m_bigramFlags[nn] |= BF_PIPED;
 			// add list of member terms as well
-			//qti->m_qtermList[nn] = &m_q->m_qterms[left];
 			m_q->m_qterms[left].m_bitNum = nrg;
 			// only really add if useful
 			if ( list && !list->isEmpty() ) {
@@ -1796,14 +1773,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 
 			// add bigram synonyms! like "new jersey" bigram
 			// has the synonym "nj"
-			//for( int32_t k = 0 ; k < m_msg2->getNumLists() ; k++ ) {
 			for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 				QueryTerm *bt = &m_q->m_qterms[k];
 				if ( bt->m_synonymOf != leftTerm ) {
 					continue;
 				}
 				
-				//list = m_msg2->getList(k);
 				list = m_q->m_qterms[k].m_posdbListPtr;
 				qti->m_subLists[nn] = list;
 				qti->m_bigramFlags[nn] = 0;
@@ -1812,7 +1787,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 					qti->m_bigramFlags[nn]|=BF_PIPED;
 				}
 				// add list of member terms as well
-				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
 				if ( list && !list->isEmpty() ) {
 					nn++;
@@ -1825,7 +1799,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		//
 		if ( right >= 0 && ! rightAlreadyAdded ) {
 			// get list
-			//list = m_msg2->getList(right);
 			list = m_q->m_qterms[right].m_posdbListPtr;
 			// add list ptr into our required group
 			qti->m_subLists[nn] = list;
@@ -1834,7 +1807,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// before a pipe operator?
 			if ( qt->m_piped ) qti->m_bigramFlags[nn] |= BF_PIPED;
 			// add list of member terms as well
-			//qti->m_qtermList[nn] = &m_q->m_qterms[right];
 			m_q->m_qterms[right].m_bitNum = nrg;
 			// only really add if useful
 			if ( list && !list->isEmpty() ) {
@@ -1843,14 +1815,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 
 			// add bigram synonyms! like "new jersey" bigram
 			// has the synonym "nj"
-			//for (int32_t k = 0 ; k < m_msg2->getNumLists() ; k++ ) {
 			for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 				QueryTerm *bt = &m_q->m_qterms[k];
 				if ( bt->m_synonymOf != rightTerm ) {
 					continue;
 				}
 				
-				//list = m_msg2->getList(k);
 				list = m_q->m_qterms[k].m_posdbListPtr;
 				qti->m_subLists[nn] = list;
 				qti->m_bigramFlags[nn] = 0;
@@ -1870,7 +1840,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		//
 		// ADD SYNONYM TERMS
 		//
-		//for ( int32_t k = 0 ; k < m_msg2->getNumLists() ; k++ ) {
 		for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 			QueryTerm *qt2 = &m_q->m_qterms[k];
 			const QueryTerm *st = qt2->m_synonymOf;
@@ -1880,7 +1849,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			}
 			
 			// its a synonym, add it!
-			//list = m_msg2->getList(k);
 			list = m_q->m_qterms[k].m_posdbListPtr;
 			// add list ptr into our required group
 			qti->m_subLists[nn] = list;
@@ -1888,8 +1856,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			qti->m_bigramFlags[nn] = BF_SYNONYM;
 			// before a pipe operator?
 			if ( qt->m_piped ) qti->m_bigramFlags[nn] |= BF_PIPED;
-			// add list of member terms as well
-			//qti->m_qtermList[nn] = qt2;
 			// set bitnum here i guess
 			qt2->m_bitNum = nrg;
 			// only really add if useful
@@ -1898,12 +1864,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			}
 		}
 
-
-		// empty implies no results!!!
-		//if ( nn == 0 && qt->m_termSign != '-' ) {
-		//	//log("query: MISSING REQUIRED TERM IN QUERY!");
-		//	return;
-		//}
 
 		// store # lists in required group. nn might be zero!
 		qti->m_numSubLists = nn;
@@ -1922,8 +1882,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		for ( int32_t q = 0 ; q < qti->m_numSubLists ; q++ ) {
 			// add list ptr into our required group
 			RdbList *l = qti->m_subLists[q];
-			// set end ptr
-			//qti->m_subListEnds[q]=list->m_list +list->m_listSize;
 			// get it
 			int64_t listSize = l->getListSize();
 			// add it up
@@ -1933,28 +1891,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// count # required groups
 		nrg++;
 	}
-
-	//
-	// now set QueryTerm::m_bitNum for use by Expression::isTruth()
-	// in Query.cpp for boolean queries, so we can get the bit vector
-	// of a docid that is 1-1 with the queryterminfos and see which
-	// query words in the boolean expression it contains.
-	// used by matchesBoolQuery() which we call below.
-	//
-	/*
-	for ( int32_t i = 0 ; i < nrg ; i++ ) {
-		// get one
-		QueryTermInfo *qti = &qtibuf[i];
-		// how many query terms are in this group?
-		for ( int32_t j = 0 ; j < qti->m_numSubLists ; j++ ) {
-			// get the query term
-			QueryTerm *qt = qti->m_qtermList[j];
-			// set the bit num member
-			qt->m_bitNum = i;
-		}
-	}
-	*/
-
 
 	//
 	// get the query term with the least data in posdb including syns
