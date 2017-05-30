@@ -525,8 +525,6 @@ public:
 	bool m_queryExpansion;
 
 	bool m_truncated;
-
-	bool m_hasUOR;
 };
 
 #endif // GB_QUERY_H

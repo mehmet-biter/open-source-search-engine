@@ -86,7 +86,6 @@ void Query::reset ( ) {
 	m_queryWordBuf.purge();
 	m_qwords               = NULL;
 	m_numExpressions       = 0;
-	m_hasUOR               = false;
 	// the site: and ip: query terms will disable site clustering & caching
 	m_hasPositiveSiteField         = false;
 	m_hasIpField           = false;
@@ -955,10 +954,6 @@ bool Query::setQTerms ( const Words &words ) {
 	//   repeated terms in setWords()
 	// . we need to support: "trains AND (perl OR python) NOT python"
 	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// that didn't seem to fix it right, for dup terms that
-		// are the FIRST term in a UOR sequence... they don't seem
-		// to have m_isUORed set
-		if ( m_hasUOR ) continue;
 		for ( int32_t j = 0 ; j < i ; j++ ) {
 			// skip if not a termid match
 			if(m_qterms[i].m_termId!=m_qterms[j].m_termId) continue;
@@ -1908,16 +1903,6 @@ bool Query::setQWords ( char boolFlag ,
 		// if query is all in upper case and we're doing boolean 
 		// DETECT, then assume not boolean
 		if ( allUpper && boolFlag == 2 ) boolFlag = 0;
-		// . having the UOR opcode does not mean we are boolean because
-		//   we want to keep it fast.
-		// . we need to set this opcode so the UOR logic in setQTerms()
-		//   works, because it checks the m_opcode value. otherwise
-		//   Msg20 won't think we are a boolean query and set boolFlag
-		//   to 0 when setting the query for summary generation and
-		//   will not recognize the UOR word as being an operator
-		if ( wlen==3 && w[0]=='U' && w[1]=='O' && w[2]=='R' &&
-		     ! firstWord ) {
-			opcode = OP_UOR; m_hasUOR = true; goto skipin; }
 		// . is this word a boolean operator?
 		// . cannot be in quotes or field
 		if ( boolFlag >= 1 && ! inQuotes && ! fieldCode ) {
@@ -1937,7 +1922,6 @@ bool Query::setQWords ( char boolFlag ,
 			else if ( wlen==5 && w[0]=='R' && w[1]=='i' &&
 				  w[2]=='G' && w[3]=='h' && w[4]=='P' )
 				opcode = OP_RIGHTPAREN;
-		skipin:
 			// no pair across or even include any boolean op phrs
 			if ( opcode ) {
 				bits.m_bits[i] &= ~D_CAN_PAIR_ACROSS;
