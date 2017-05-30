@@ -342,10 +342,6 @@ class QueryTerm {
 	// . now this is used to ignore low tf synonym terms only
 	bool m_ignored ;
 
-	// is it part of a UOR chain?
-	bool m_isUORed;
-	QueryTerm *m_UORedTerm;
-
 	// . if synonymOf is not NULL, then m_term points into m_synBuf, not
 	//   m_buf
 	const QueryTerm *m_synonymOf;

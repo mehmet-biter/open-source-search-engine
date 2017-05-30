@@ -505,8 +505,6 @@ bool Query::setQTerms ( const Words &words ) {
 		qt->m_qword     = qw ;
 		qt->m_piped     = qw->m_piped;
 		qt->m_isPhrase  = true ;
-		qt->m_isUORed   = false;
-		qt->m_UORedTerm   = NULL;
 		qt->m_synonymOf = NULL;
 		qt->m_ignored   = false;
 		qt->m_term      = NULL;
@@ -598,8 +596,6 @@ bool Query::setQTerms ( const Words &words ) {
 		qt->m_qword     = qw ;
 		qt->m_piped     = qw->m_piped;
 		qt->m_isPhrase  = false ;
-		qt->m_isUORed   = false;
-		qt->m_UORedTerm   = NULL;
 		qt->m_synonymOf = NULL;
 		// ignore some synonym terms if tf is too low
 		qt->m_ignored = qw->m_ignoreWord;
@@ -712,10 +708,6 @@ bool Query::setQTerms ( const Words &words ) {
 		qt->m_leftPhraseTermNum  = -1;
 		qt->m_rightPhraseTerm    = NULL;
 		qt->m_leftPhraseTerm     = NULL;
-		QueryTerm *qt2 = qt->m_UORedTerm;
-		if (!qt2) continue;
-		// chase down first term in UOR chain
-		while (qt2->m_UORedTerm) qt2 = qt2->m_UORedTerm;
 	}
 
 	// . set implicit bits, m_implicitBits
@@ -852,8 +844,6 @@ bool Query::setQTerms ( const Words &words ) {
 				qt->m_qword     = qw; // NULL;
 				qt->m_piped     = qw->m_piped;
 				qt->m_isPhrase  = false ;
-				qt->m_isUORed   = false;
-				qt->m_UORedTerm = NULL;
 				qt->m_langIdBits = 0;
 				// synonym of this term...
 				qt->m_synonymOf = origTerm;
@@ -965,8 +955,6 @@ bool Query::setQTerms ( const Words &words ) {
 	//   repeated terms in setWords()
 	// . we need to support: "trains AND (perl OR python) NOT python"
 	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// BUT NOT IF in a UOR'd list!!!
-		if ( m_qterms[i].m_isUORed ) continue;
 		// that didn't seem to fix it right, for dup terms that
 		// are the FIRST term in a UOR sequence... they don't seem
 		// to have m_isUORed set
@@ -3460,8 +3448,6 @@ void QueryTerm::constructor ( ) {
 	m_userWeight = 0;
 	m_piped = false;
 	m_ignored = false;
-	m_isUORed = false;
-	m_UORedTerm = NULL;
 	m_synonymOf = NULL;
 	m_synWids0 = 0;
 	m_synWids1 = 0;
