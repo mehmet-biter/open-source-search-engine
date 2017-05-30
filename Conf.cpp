@@ -168,7 +168,7 @@ Conf::Conf ( ) {
 	m_profilingEnabled = false;
 	m_logHttpRequests = false;
 	m_logAutobannedQueries = false;
-	m_logLoopTimeThreshold = 0;
+	m_logLoopTimeThreshold = 500;
 	m_logQueryTimeThreshold = 0;
 	m_logDiskReadTimeThreshold = 0;
 	m_logQueryReply = false;
@@ -261,7 +261,7 @@ Conf::Conf ( ) {
 	m_useTmpCluster = false;
 	m_allowScale = true;
 	m_bypassValidation = false;
-	m_maxCallbackDelay = 0;
+	m_maxCallbackDelay = -1;
 	m_repairingEnabled = false;
 	m_maxRepairinjections = 0;
 	m_repairMem = 0;
