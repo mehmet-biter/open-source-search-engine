@@ -589,36 +589,42 @@ bool Process::shutdown2() {
 	}
 
 	if ( m_urgent ) {
-		log(LOG_INFO,"gb: Shutting down urgently. Timed try #%" PRId32".", m_try++);
+		log(LOG_INFO,"gb: Shutting down urgently. Timed try #%" PRId32".", m_try);
 	} else {
-		log(LOG_INFO,"gb: Shutting down. Timed try #%" PRId32".", m_try++);
+		log(LOG_INFO,"gb: Shutting down. Timed try #%" PRId32".", m_try);
 	}
+
+	// we should only finalize these once
+	if (m_try == 0) {
+		InstanceInfoExchange::finalize();
+
+		finalizeRealtimeUrlClassification();
+
+		Statistics::finalize();
+
+		log("gb: disabling threads");
+
+		// always disable threads at this point so g_jobScheduler.submit() will
+		// always return false and we do not queue any new jobs for spawning
+		g_jobScheduler.disallow_new_jobs();
+
+		// Stop merging
+		g_merge.haltMerge();
+
+		RdbBase::finalizeGlobalIndexThread();
+		Msg4In::finalizeIncomingThread();
+
+		Rdb::finalizeRdbDumpThread();
+
+		g_jobScheduler.cancel_all_jobs_for_shutdown();
+	}
+
+	m_try++;
 
 	// switch to urgent if having problems
 	if ( m_try >= 10 ) {
 		m_urgent = true;
 	}
-
-	InstanceInfoExchange::finalize();
-
-	finalizeRealtimeUrlClassification();
-
-	Statistics::finalize();
-
-	log("gb: disabling threads");
-	// now disable threads so we don't exit while threads are
-	// outstanding
-	g_jobScheduler.disallow_new_jobs();
-
-	// Stop merging
-	g_merge.haltMerge();
-
-	RdbBase::finalizeGlobalIndexThread();
-	Msg4In::finalizeIncomingThread();
-
-	Rdb::finalizeRdbDumpThread();
-
-	g_jobScheduler.cancel_all_jobs_for_shutdown();
 
 	static bool s_printed = false;
 
@@ -711,10 +717,6 @@ bool Process::shutdown2() {
 		saveBlockingFiles1() ;
 		saveBlockingFiles2() ;
 	}
-
-	// always disable threads at this point so g_jobScheduler.submit() will
-	// always return false and we do not queue any new jobs for spawning
-	g_jobScheduler.disallow_new_jobs();
 
 	// urgent means we need to dump core, SEGV or something
 	if ( m_urgent ) {
