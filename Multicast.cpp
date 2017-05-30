@@ -229,7 +229,7 @@ void Multicast::sendToWholeGroup() {
 		// continue if we're already registered for sleep callbacks
 		if ( m_registeredSleep ) continue;
 		// otherwise register for sleep callback to try again
-		g_loop.registerSleepCallback( 5000/*ms*/, this, sleepWrapper2, m_niceness );
+		g_loop.registerSleepCallback(5000, this, sleepWrapper2, "Multicast::sleepWrapper2", m_niceness);
 		m_registeredSleep = true;
 	}
 	// if we had an error then we'll be called again in a second
@@ -324,7 +324,7 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 		return;
 	// . otherwise register for sleep callback to try again
 	// . sleepWrapper2() will call sendToWholeGroup() for us
-	g_loop.registerSleepCallback( 5000/*ms*/, this, sleepWrapper2, m_niceness );
+	g_loop.registerSleepCallback(5000/*ms*/, this, sleepWrapper2, "Multicast::sleepWrapper2", m_niceness);
 	m_registeredSleep = true;
 }
 
@@ -585,7 +585,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 		if(wait>=0) {
 			// . otherwise register for sleep callback to try again
 			// . sleepCallback1Wrapper() will call sendToHostLoop() for us
-			g_loop.registerSleepCallback(wait/*ms*/, this, sleepCallback1Wrapper, m_niceness );
+			g_loop.registerSleepCallback(wait, this, sleepCallback1Wrapper, "Multicast::sleepCallback1Wrapper", m_niceness);
 			m_registeredSleep = true;
 		}
 	}

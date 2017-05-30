@@ -265,7 +265,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	//   we have a handler registered with the Loop class
 	// . this makes m_sock non-blocking, too
 	// . use the original niceness for this
-	if ( ! g_loop.registerReadCallback ( m_sock, this, readPollWrapper, 0 )) {
+	if (!g_loop.registerReadCallback(m_sock, this, readPollWrapper, "UdpServer::readPollWrapper", 0)) {
 		return false;
 	}
 
@@ -274,7 +274,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	// . it's low so we can claim any unclaimed tokens!
 	// . now resends are at 20ms... i'd go lower, but sigtimedqueue() only
 	//   has a timer resolution of 20ms, probably due to kernel time slicin
-	if ( ! g_loop.registerSleepCallback ( pollTime, this, timePollWrapper, 0 )) {
+	if (!g_loop.registerSleepCallback(pollTime, this, timePollWrapper, "UdpServer::timePollWrapper", 0)) {
 		return false;
 	}
 
@@ -648,7 +648,8 @@ bool UdpServer::doSending_unlocked(UdpSlot *slot, bool allowResends, int64_t now
 			m_needToSend = true;
 			// ok, now it should
 			if ( ! m_writeRegistered ) {
-				if( !g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper, 0 ) ) {
+				if (!g_loop.registerWriteCallback(m_sock, this, sendPollWrapper,
+				                                  "UdpServer::sendPollWrapper", 0)) {
 					logError("registerWriteCallback failed");
 					return false;
 				}

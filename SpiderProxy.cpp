@@ -881,7 +881,7 @@ bool initSpiderProxyStuff() {
 	buildProxyTable ();
 
 	// reset spider proxy stats every hour to alleviate false positives (moved from Process.cpp)
-	if (!g_loop.registerSleepCallback(3600000, NULL, resetProxyStatWrapper, 0)) {
+	if (!g_loop.registerSleepCallback(3600000, NULL, resetProxyStatWrapper, "SpiderProxy::resetProxyStatWrapper", 0)) {
 		gbshutdownResourceError();
 	}
 

@@ -8077,6 +8077,16 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log loop callback time threshold";
+	m->m_desc  = "If a loop callback took this many millliseconds or longer, then log the "
+	             "description and the time it took to process.";
+	m->m_cgi   = "lltt";
+	simple_m_set(Conf,m_logLoopTimeThreshold);
+	m->m_def   = "500";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log query time threshold";
 	m->m_desc  = "If a query took this many millliseconds or longer, then log the "
 		"query and the time it took to process.";
@@ -9897,7 +9907,7 @@ bool Parms::doParmSendingLoop ( ) {
 
 	s_inLoop = true;
 
-	if ( !s_registeredSleep && !g_loop.registerSleepCallback( 2000, NULL, parmLoop, 0 ) ) {
+	if (!s_registeredSleep && !g_loop.registerSleepCallback(2000, NULL, parmLoop, "Parms::parmLoop", 0)) {
 		log( LOG_WARN, "parms: failed to reg parm loop" );
 	}
 
@@ -10079,7 +10089,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 			// . try again in 100ms
 			//
 			////////////
-			if( !g_loop.registerSleepCallback( 100, we, handleRequest3fLoop3, 0 ) ){
+			if (!g_loop.registerSleepCallback(100, we, handleRequest3fLoop3, "Parms::handleRequest3fLoop3", 0)) {
 				log( LOG_WARN, "parms: failed to reg sleeper");
 				return;
 			}

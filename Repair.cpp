@@ -129,7 +129,7 @@ bool Repair::init ( ) {
 	m_isSuspended     = false;
 	m_saveRepairState = false;
 	m_isRetrying      = false;
-	if( ! g_loop.registerSleepCallback( 1 , NULL , repairWrapper ) ) {
+	if (!g_loop.registerSleepCallback(1, NULL, repairWrapper, "Repair::repairWrapper")) {
 		log(LOG_WARN, "repair: Failed register callback.");
 		return false;
 	}

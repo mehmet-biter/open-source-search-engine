@@ -82,8 +82,6 @@ class Process {
 	// a timestamp for the sig alarm handler in Loop.cpp
 	int64_t m_lastHeartbeatApprox;
 
-	void callHeartbeat ();
-
 	bool m_suspendAutoSave;
 
 	bool        m_exiting;

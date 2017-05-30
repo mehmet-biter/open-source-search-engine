@@ -303,18 +303,18 @@ bool Process::init ( ) {
 	m_calledSave = false;
 
 	// heartbeat check
-	if ( ! g_loop.registerSleepCallback(100,NULL,heartbeatWrapper,0)) {
+	if (!g_loop.registerSleepCallback(100, NULL, heartbeatWrapper, "Process::heartbeatWrapper", 0)) {
 		return false;
 	}
 
 	// . continually call this once per second
 	// . once every half second now so that autosaves are closer together
 	//   in time between all hosts
-	if ( ! g_loop.registerSleepCallback(500,NULL,processSleepWrapper)) {
+	if (!g_loop.registerSleepCallback(500, NULL, processSleepWrapper, "Process::processSleepWrapper")) {
 		return false;
 	}
 
-	if (!g_loop.registerSleepCallback(60000, NULL, reloadDocid2SiteFlags, 0)) {
+	if (!g_loop.registerSleepCallback(60000, NULL, reloadDocid2SiteFlags, "Process::reloadDocid2SiteFlags", 0)) {
 		return false;
 	}
 
@@ -330,10 +330,6 @@ bool Process::isAnyTreeSaving() {
 		}
 	}
 	return false;
-}
-
-void Process::callHeartbeat () {
-	heartbeatWrapper ( 0 , NULL );
 }
 
 void heartbeatWrapper(int /*fd*/, void * /*state*/) {

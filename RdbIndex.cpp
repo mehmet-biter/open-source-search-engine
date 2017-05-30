@@ -140,7 +140,7 @@ void RdbIndex::set(const char *dir, const char *indexFilename, int32_t fixedData
 
 	if (!isStatic) {
 		/// if we're not merging/adding record we don't need to merge
-		m_registeredCallback = g_loop.registerSleepCallback(1000, this, &timedMerge);
+		m_registeredCallback = g_loop.registerSleepCallback(1000, this, &timedMerge, "RdbIndex::timedMerge");
 	}
 }
 

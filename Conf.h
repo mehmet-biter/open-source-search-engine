@@ -304,6 +304,8 @@ class Conf {
 	bool  m_logHttpRequests;
 	bool  m_logAutobannedQueries;
 
+	int32_t m_logLoopTimeThreshold;
+
 	// if query took this or more milliseconds, log its time
 	int32_t  m_logQueryTimeThreshold;
 	// if disk read took this or more milliseconds, log its time

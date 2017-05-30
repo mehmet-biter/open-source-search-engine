@@ -1543,7 +1543,7 @@ void RdbBase::renamesDone() {
 	}
 	if ( wait ) {
 		log("db: waiting for read thread to exit on unlinked file");
-		if ( !g_loop.registerSleepCallback( 100, this, checkThreadsAgainWrapper ) ) {
+		if (!g_loop.registerSleepCallback(100, this, checkThreadsAgainWrapper, "RdbBase::checkThreadsAgainWrapper")) {
 			gbshutdownResourceError();
 		}
 		return;

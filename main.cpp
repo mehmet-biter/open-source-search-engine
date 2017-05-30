@@ -1774,12 +1774,12 @@ int main2 ( int argc , char *argv[] ) {
 	// . put this in here instead of Rdb.cpp because we don't want generator commands merging on us
 	// . niceness is 1
 	// BR: Upped from 2 sec to 60. No need to check for merge every 2 seconds.
-	if ( !g_loop.registerSleepCallback( 60000, NULL, attemptMergeAllCallback, 1, true ) ) {
+	if (!g_loop.registerSleepCallback(60000, NULL, attemptMergeAllCallback, "Rdb::attemptMergeAllCallback", 1, true)) {
 		log( LOG_WARN, "db: Failed to init merge sleep callback." );
 	}
 
 	// try to sync parms (and collection recs) with host 0
-	if ( !g_loop.registerSleepCallback(1000, NULL, Parms::tryToSyncWrapper, 0 ) ) {
+	if (!g_loop.registerSleepCallback(1000, NULL, Parms::tryToSyncWrapper, "Parms::tryToSyncWrapper", 0)) {
 		return 0;
 	}
 
@@ -1856,7 +1856,7 @@ bool doCmd ( const char *cmd , int32_t hostId , const char *filename ,
 
 
 	// register sleep callback to get started
-	if ( ! g_loop.registerSleepCallback(1, NULL, doCmdAll , 0 ) ) {
+	if (!g_loop.registerSleepCallback(1, NULL, doCmdAll, "doCmdAll", 0)) {
 		log(LOG_WARN, "admin: Loop init failed.");
 		return false;
 	}

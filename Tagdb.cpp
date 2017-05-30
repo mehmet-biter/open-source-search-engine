@@ -1686,7 +1686,7 @@ static void sendReplyWrapper3(int fd, void *state) {
 /// and we want to get the updated data instead of the old data
 static void sendReplyWrapper2 ( void *state ) {
 	// delay for 1sec hoping that msg4 has been processed
-	g_loop.registerSleepCallback(1000, state, sendReplyWrapper3);
+	g_loop.registerSleepCallback(1000, state, sendReplyWrapper3, "Tagdb::sendReplyWrapper3");
 	return;
 }
 

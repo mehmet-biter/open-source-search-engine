@@ -101,7 +101,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	//calculate how much space we need for resulting merged file
 	m_spaceNeededForMerge = base->getSpaceNeededForMerge(m_startFileNum,m_numFiles);
 	
-	if(!g_loop.registerSleepCallback(5000, this, getLockWrapper, 0, true))
+	if(!g_loop.registerSleepCallback(5000, this, getLockWrapper, "RdbMerge::getLockWrapper", 0, true))
 		return true;
 
 	// we're now merging since we accepted to try
@@ -228,7 +228,7 @@ bool RdbMerge::gotLock() {
 	/// global index jobs. means this mechanism will have to be changed.
 	if (base->hasPendingGlobalIndexJob()) {
 		// wait until no more pending global index job
-		g_loop.registerSleepCallback(1000, this, gotLockWrapper);
+		g_loop.registerSleepCallback(1000, this, gotLockWrapper, "RdbMerge::gotLockWrapper");
 		return true;
 	}
 
@@ -281,7 +281,7 @@ void RdbMerge::haltMerge() {
 void RdbMerge::doSleep() {
 	log(LOG_WARN, "db: Merge had error: %s. Sleeping and retrying.", mstrerror(g_errno));
 	g_errno = 0;
-	g_loop.registerSleepCallback(1000, this, tryAgainWrapper);
+	g_loop.registerSleepCallback(1000, this, tryAgainWrapper, "RdbMerge::tryAgainWrapper");
 }
 
 // . return false if blocked, otherwise true

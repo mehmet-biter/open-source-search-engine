@@ -359,7 +359,7 @@ bool Rebalance::scanRdb ( ) {
 	if ( base && base->isMerging() ) {
 		log("rebal: waiting for merge on %s for coll #%" PRId32" to complete",
 		    rdb->getDbname(),(int32_t)m_collnum);
-		g_loop.registerSleepCallback ( 1000,NULL,sleepWrapper,1);
+		g_loop.registerSleepCallback(1000, NULL, sleepWrapper, "Rebalance::sleepWrapper", 1);
 		m_registered = true;
 		// we blocked, return false
 		return false;
@@ -368,7 +368,7 @@ bool Rebalance::scanRdb ( ) {
 	if ( rdb->isMerging() ) {
 		log("rebal: waiting for merge on %s for coll ??? to complete",
 		    rdb->getDbname());
-		g_loop.registerSleepCallback ( 1000,NULL,sleepWrapper,1);
+		g_loop.registerSleepCallback(1000, NULL, sleepWrapper, "Rebalance::sleepWrapper", 1);
 		m_registered = true;
 		// we blocked, return false
 		return false;

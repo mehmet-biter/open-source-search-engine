@@ -50,12 +50,18 @@ class Slot {
 	void  (* m_callback)(int fd, void *state);
 	// the next Slot thats registerd on this fd
 	Slot   *m_next;
+
 	// save niceness level for doPoll() to segregate
 	int32_t    m_niceness;
+
 	// this callback should be called every X milliseconds
 	int32_t      m_tick;
+
 	// when we were last called in ms time (only valid for sleep callbacks)
 	int64_t m_lastCall;
+
+	const char *m_description;
+
 	// linked list of available slots
 	Slot     *m_nextAvail;
 };
@@ -180,9 +186,10 @@ void Loop::unregisterCallback(Slot **slots, int fd, void *state, void (* callbac
 	return;
 }
 
-bool Loop::registerReadCallback  ( int fd, void *state, void (* callback)(int fd,void *state ) , int32_t  niceness ) {
+bool Loop::registerReadCallback(int fd, void *state, void (*callback)(int fd, void *state),
+                                const char *description, int32_t niceness) {
 	// the "true" answers the question "for reading?"
-	if ( addSlot ( true, fd, state, callback, niceness ) ) {
+	if (addSlot(true, fd, state, callback, niceness, description)) {
 		return true;
 	}
 
@@ -191,9 +198,10 @@ bool Loop::registerReadCallback  ( int fd, void *state, void (* callback)(int fd
 }
 
 
-bool Loop::registerWriteCallback ( int fd, void *state, void (* callback)(int fd, void *state ) , int32_t  niceness ) {
+bool Loop::registerWriteCallback(int fd, void *state, void (*callback)(int fd, void *state),
+                                 const char *description, int32_t niceness) {
 	// the "false" answers the question "for reading?"
-	if ( addSlot ( false, fd, state, callback, niceness ) ) {
+	if (addSlot(false, fd, state, callback, niceness, description)) {
 		return true;
 	}
 
@@ -202,9 +210,9 @@ bool Loop::registerWriteCallback ( int fd, void *state, void (* callback)(int fd
 }
 
 // tick is in milliseconds
-bool Loop::registerSleepCallback ( int32_t tick, void *state, void (* callback)(int fd,void *state ),
-                                   int32_t niceness, bool immediate ) {
-	if ( ! addSlot ( true, MAX_NUM_FDS, state, callback, niceness, tick, immediate ) ) {
+bool Loop::registerSleepCallback(int32_t tick, void *state, void (*callback)(int fd, void *state),
+                                 const char *description, int32_t niceness, bool immediate) {
+	if (!addSlot(true, MAX_NUM_FDS, state, callback, niceness, description, tick, immediate)) {
 		log( LOG_WARN, "loop: Unable to register sleep callback" );
 		return false;
 	}
@@ -218,8 +226,8 @@ bool Loop::registerSleepCallback ( int32_t tick, void *state, void (* callback)(
 }
 
 // . returns false and sets g_errno on error
-bool Loop::addSlot ( bool forReading , int fd, void *state, void (* callback)(int fd, void *state),
-                     int32_t niceness , int32_t tick, bool immediate ) {
+bool Loop::addSlot(bool forReading, int fd, void *state, void (*callback)(int fd, void *state),
+                   int32_t niceness, const char *description, int32_t tick, bool immediate) {
 	// ensure fd is >= 0
 	if ( fd < 0 ) {
 		g_errno = EBADENGINEER;
@@ -277,11 +285,6 @@ bool Loop::addSlot ( bool forReading , int fd, void *state, void (* callback)(in
 			s_readFds[s_numReadFds++] = fd;
 			FD_SET ( fd,&s_selectMaskRead  );
 		}
-		// fd == MAX_NUM_FDS if it's a sleep callback
-		//if ( fd < MAX_NUM_FDS ) {
-		//FD_SET ( fd , &m_readfds   );
-		//FD_SET ( fd , &m_exceptfds );
-		//}
 	}
 	else {
 	 	next = m_writeSlots [ fd ];
@@ -301,6 +304,7 @@ bool Loop::addSlot ( bool forReading , int fd, void *state, void (* callback)(in
 	// set our callback and state
 	s->m_callback  = callback;
 	s->m_state     = state;
+	s->m_description = description;
 
 	// point to the guy that was registered for fd before us
 	s->m_next      = next;
@@ -313,9 +317,6 @@ bool Loop::addSlot ( bool forReading , int fd, void *state, void (* callback)(in
 
 	// the last called time
 	s->m_lastCall = immediate ? 0 : gettimeofdayInMilliseconds();
-
-	// debug msg
-	//log("Loop::registered fd=%i state=%" PRIu32,fd,state);
 
 	// if fd == MAX_NUM_FDS if it's a sleep callback
 	if ( fd == MAX_NUM_FDS ) {
@@ -409,19 +410,30 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now , int32_t 
 		// NOTE: callback can unregister fd for Slot s, so get next
 		m_callbacksNext = s->m_next;
 
-		logDebug( g_conf.m_logDebugLoop, "loop: enter fd callback fd=%d nice=%" PRId32, fd, s->m_niceness );
+		logDebug(g_conf.m_logDebugLoop, "loop: enter fd callback '%s' fd=%d nice=%" PRId32,
+		         s->m_description, fd, s->m_niceness);
 
 		// sanity check. -1 no longer supported
-		if ( s->m_niceness < 0 ) {
+		if (s->m_niceness < 0) {
 			g_process.shutdownAbort(true);
 		}
 
+		int64_t took = 0;
+
 		m_slotMutex.unlock();
-		s->m_callback ( fd , s->m_state );
+		{
+			int64_t start = gettimeofdayInMilliseconds();
+			s->m_callback(fd, s->m_state);
+			took = gettimeofdayInMilliseconds() - start;
+		}
 		m_slotMutex.lock();
 
-		logDebug( g_conf.m_logDebugLoop, "loop: exit fd callback fd=%" PRId32" nice=%" PRId32,
-		          (int32_t)fd,(int32_t)s->m_niceness );
+		if (took > g_conf.m_logLoopTimeThreshold) {
+			log(LOG_WARN, "loop: %s took %" PRId64"ms", s->m_description, took);
+		}
+
+		logDebug(g_conf.m_logDebugLoop, "loop: exit fd callback '%s' fd=%d nice=%" PRId32,
+		         s->m_description, fd, s->m_niceness);
 
 		// inc the flag
 		numCalled++;

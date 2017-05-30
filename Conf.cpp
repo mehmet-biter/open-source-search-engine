@@ -168,6 +168,7 @@ Conf::Conf ( ) {
 	m_profilingEnabled = false;
 	m_logHttpRequests = false;
 	m_logAutobannedQueries = false;
+	m_logLoopTimeThreshold = 0;
 	m_logQueryTimeThreshold = 0;
 	m_logDiskReadTimeThreshold = 0;
 	m_logQueryReply = false;
