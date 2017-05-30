@@ -1713,9 +1713,11 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// special flags
 		qti->m_bigramFlags[nn] = 0;
 		// before a pipe operator?
-		if ( qt->m_piped ) qti->m_bigramFlags[nn] |= BF_PIPED;
+		if ( qt->m_piped )
+			qti->m_bigramFlags[nn] |= BF_PIPED;
 		// is it a negative term?
-		if ( qt->m_termSign=='-')qti->m_bigramFlags[nn]|=BF_NEGATIVE; 
+		if ( qt->m_termSign=='-')
+			qti->m_bigramFlags[nn] |= BF_NEGATIVE;
 
 		// numeric posdb termlist flags. instead of word position
 		// they have a float stored there for sorting etc.
