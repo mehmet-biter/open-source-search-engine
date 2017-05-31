@@ -222,15 +222,15 @@ public:
 	static void generateGlobalIndex(void *item);
 
 	struct ThreadQueueItem {
-		ThreadQueueItem(RdbBase *base, docids_ptr_t docIdFileIndex, bool markFileReadable, int32_t fileId)
+		ThreadQueueItem(RdbBase *base, std::vector<std::pair<int32_t, docidsconst_ptr_t>> docIdFileIndexes, bool markFileReadable, int32_t fileId)
 			: m_base(base)
-			, m_docIdFileIndex(docIdFileIndex)
+			, m_docIdFileIndexes(docIdFileIndexes)
 			, m_markFileReadable(markFileReadable)
 			, m_fileId(fileId) {
 		}
 
 		RdbBase *m_base;
-		docids_ptr_t m_docIdFileIndex;
+		std::vector<std::pair<int32_t, docidsconst_ptr_t>> m_docIdFileIndexes;
 		bool m_markFileReadable;
 		int32_t m_fileId;
 	};
@@ -250,8 +250,8 @@ public:
 	static const uint64_t s_docIdFileIndex_filePosMask  = 0x000000000000ffffULL;
 
 private:
-	docids_ptr_t prepareGlobalIndexJob(bool markFileReadable, int32_t fileId);
-	docids_ptr_t prepareGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileId);
+	std::vector<std::pair<int32_t, docidsconst_ptr_t>> prepareGlobalIndexJob(bool markFileReadable, int32_t fileId);
+	std::vector<std::pair<int32_t, docidsconst_ptr_t>> prepareGlobalIndexJob_unlocked(bool markFileReadable, int32_t fileId);
 
 	void selectFilesToMerge(int32_t mergeNum, int32_t numFiles, int32_t *p_mini);
 
