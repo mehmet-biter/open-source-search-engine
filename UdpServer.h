@@ -175,6 +175,8 @@ public:
 
 	std::vector<UdpStatistic> getStatistics() const;
 
+	GbMutex& getLock() { return m_mtx; }
+
 private:
 	static void readPollWrapper(int fd, void *state);
 	static void timePollWrapper(int fd, void *state);

@@ -1211,7 +1211,6 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 	// . this dgram should let us know how big the entire msg is
 	// . so allocate space for m_readBuf
 	// . we may already have a read buf if caller passed one in
- retry:
 	if ( ! m_readBuf ) {
 		if ( ! makeReadBuf ( msgSize , m_dgramsToRead ) ) {
 			log(LOG_WARN, "udp: Failed to allocate %" PRId32" bytes to read request or reply for udp socket.", msgSize);
@@ -1219,11 +1218,10 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		}
 	}
 	
-	// if we don't have enough room alloc a read buffer
-	if ( msgSize > m_readBufMaxSize ) {
-		// now we must alloc a buffer
-		m_readBuf = NULL;
-		goto retry;
+	// message size shouldn't change
+	if (msgSize > m_readBufMaxSize) {
+		g_udpServer.getLock().unlock();
+		gbshutdownLogicError();
 	}
 
 	// return false if we have no room for the entire reply
