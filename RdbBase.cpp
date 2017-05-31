@@ -1864,9 +1864,13 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		}
 
 		int32_t endMergeFileNum = mergeFileNum;
-		for(int32_t j = mergeFileNum+1; j < mergeFileNum+mergeFileCount && j<m_numFiles; j++) {
-			if(m_fileInfo[j].m_fileId <= endMergeFileId) {
+		for (int32_t j = mergeFileNum+1; j<m_numFiles; j++) {
+			if (m_fileInfo[j].m_fileId <= endMergeFileId) {
 				endMergeFileNum = j;
+
+				if (m_fileInfo[j].m_fileId == endMergeFileId) {
+					break;
+				}
 			}
 		}
 
@@ -1876,7 +1880,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		if(currentFilesToMerge<0)
 			gbshutdownLogicError();
 
-		if(currentFilesToMerge <= mergeFileCount) {
+		if(currentFilesToMerge < mergeFileCount) {
 			log(LOG_INFO, "merge: Only merging %" PRId32" instead of the original %" PRId32" files.", currentFilesToMerge, mergeFileCount);
 		} else if(currentFilesToMerge == mergeFileCount) {
 			//excellent
