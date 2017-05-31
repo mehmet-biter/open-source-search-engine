@@ -2228,8 +2228,6 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 	// set the ptrs that are non-empty
 	int32_t n = 0;
 
-	int32_t endFileIndex = startFileIndex + numLists;
-
 	// convenience ptr
 	for (int32_t i = 0; i < numLists; i++) {
 		logTrace(g_conf.m_logTraceRdbList, "===== dumping list #%" PRId32" =====", i);
@@ -2369,14 +2367,15 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 					bool found = false;
 
 					// check rdb index
-					for (auto i = endFileIndex - 1; i >= filePos; --i) {
+					for (auto i = rdbIndexQuery.getNumFiles() - 1; i >= filePos; --i) {
 						RdbIndex *index = base->getIndex(i);
 						if (!index) {
 							gbshutdownCorrupted();
 						}
 
 						if (index->exist(docId)) {
-							if (i != filePos) {
+							// cater for newly dumped file that are not in global index
+							if (i != filePos && !rdbIndexQuery.hasPendingGlobalIndexJob() && i != (rdbIndexQuery.getNumFiles() - 1)) {
 								// docId found in newer file
 								gbshutdownCorrupted();
 							}

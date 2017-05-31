@@ -5,13 +5,15 @@
 RdbIndexQuery::RdbIndexQuery(RdbBase *base)
 	: RdbIndexQuery(base ? (base->getGlobalIndex() ? base->getGlobalIndex() : docidsconst_ptr_t()) : docidsconst_ptr_t(),
 	                base ? (base->getTreeIndex() ? base->getTreeIndex()->getDocIds() : docidsconst_ptr_t()) : docidsconst_ptr_t(),
-	                base ? base->getNumFiles() : 0) {
+	                base ? base->getNumFiles() : 0,
+	                base ? base->hasPendingGlobalIndexJob() : false) {
 }
 
-RdbIndexQuery::RdbIndexQuery(docidsconst_ptr_t globalIndexData, docidsconst_ptr_t treeIndexData, int32_t numFiles)
+RdbIndexQuery::RdbIndexQuery(docidsconst_ptr_t globalIndexData, docidsconst_ptr_t treeIndexData, int32_t numFiles, bool hasPendingGlobalIndexJob)
 	: m_globalIndexData(globalIndexData)
 	, m_treeIndexData(treeIndexData)
-	, m_numFiles(numFiles) {
+	, m_numFiles(numFiles)
+	, m_hasPendingGlobalIndexJob(hasPendingGlobalIndexJob) {
 }
 
 RdbIndexQuery::~RdbIndexQuery() {
