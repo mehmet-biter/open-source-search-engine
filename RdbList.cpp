@@ -2152,7 +2152,7 @@ skip:
 ///////
 
 bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-                           rdbid_t rdbId, bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t startFileNum, bool isRealMerge) {
+                           rdbid_t rdbId, bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t startFileIndex, bool isRealMerge) {
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN");
 
 	// sanity
@@ -2227,6 +2227,8 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 	char       loKeys[ MAX_RDB_FILES + 1 ][6];
 	// set the ptrs that are non-empty
 	int32_t n = 0;
+
+	int32_t endFileIndex = startFileIndex + numLists;
 
 	// convenience ptr
 	for (int32_t i = 0; i < numLists; i++) {
@@ -2367,7 +2369,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 					bool found = false;
 
 					// check rdb index
-					for (auto i = rdbIndexQuery.getNumFiles() - 1; i >= filePos; --i) {
+					for (auto i = endFileIndex - 1; i >= filePos; --i) {
 						RdbIndex *index = base->getIndex(i);
 						if (!index) {
 							gbshutdownCorrupted();
@@ -2393,7 +2395,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 			logTrace(g_conf.m_logTraceRdbList, "Found docId=%" PRIu64" with filePos=%" PRId32, docId, filePos);
 
-			if (filePos > (mini + listOffset) + startFileNum) {
+			if (filePos > (mini + listOffset) + startFileIndex) {
 				// docId is present in newer file
 				logTrace(g_conf.m_logTraceRdbList, "docId in newer list. skip. filePos=%" PRId32" mini=%" PRId16" listOffset=%" PRId32,
 				         filePos, mini, listOffset);
