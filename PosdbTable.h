@@ -90,7 +90,7 @@ class PosdbTable {
 
 	float getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wpj, const char *endi, const char *endj, int32_t qdist);
 	float getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const char *endi, DocIdScore *pdcs, const char **highestScoringNonBodyPos);
-	float getScoreForTermPair(const char *wpi, const char *wpj, int32_t fixedDistance);
+	float getScoreForTermPair(const char *wpi, const char *wpj, int32_t fixedDistance, int32_t qdist);
 	void findMinTermPairScoreInWindow(const char **ptrs, const char **highestScoringNonBodyPos, float *scoreMatrix);
 
 	float getTermPairScoreForAny   ( int32_t i, int32_t j,
@@ -148,7 +148,6 @@ class PosdbTable {
 	int32_t *m_qpos;
 	int32_t *m_wikiPhraseIds;
 	int32_t *m_quotedStartIds;
-	int32_t  m_qdist;
 	float *m_freqWeights;
 	char  *m_bflags;
 	int32_t  *m_qtermNums;

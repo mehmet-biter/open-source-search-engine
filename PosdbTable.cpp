@@ -101,7 +101,6 @@ void PosdbTable::reset() {
 	m_qpos = NULL;
 	m_wikiPhraseIds = NULL;
 	m_quotedStartIds = NULL;
-	m_qdist = 0;
 	m_freqWeights = NULL;
 	m_bflags = NULL;
 	m_qtermNums = NULL;
@@ -724,7 +723,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 
 
 
-float PosdbTable::getScoreForTermPair( const char *wpi, const char *wpj, int32_t fixedDistance ) {
+float PosdbTable::getScoreForTermPair(const char *wpi, const char *wpj, int32_t fixedDistance, int32_t qdist) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	if ( ! wpi ) {
@@ -772,7 +771,7 @@ float PosdbTable::getScoreForTermPair( const char *wpi, const char *wpj, int32_t
 		// are exactly the same!
 		if ( dist < 2 ) dist = 2;
 		// subtract from the dist the terms are apart in the query
-		if ( dist >= m_qdist ) dist =  dist - m_qdist;
+		if ( dist >= qdist ) dist =  dist - qdist;
 		// out of order? penalize by 1 unit
 		if ( p2 < p1 ) dist += 1;
 	}
@@ -3330,6 +3329,7 @@ float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedList, const ch
 //   m_bestMinTermPairWindowPtrs : Pointers to query term positions giving the best minimum score
 //
 void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **highestScoringNonBodyPos, float *scoreMatrix) {
+	int32_t qdist = 0;
 	float minTermPairScoreInWindow = 999999999.0;
 	bool scoredTerms = false;
 
@@ -3384,14 +3384,14 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 			     // zero means not in a phrase
 			     m_wikiPhraseIds[j] ) {
 				// try to get dist that matches qdist exactly
-				m_qdist = m_qpos[j] - m_qpos[i];
+				qdist = m_qpos[j] - m_qpos[i];
 				// wiki weight
 				wikiWeight = WIKI_WEIGHT; // .50;
 			}
 			else {
 				// basically try to get query words as close
 				// together as possible
-				m_qdist = 2;
+				qdist = 2;
 				// fix 'what is an unsecured loan' to get the
 				// exact phrase with higher score
 				//m_qdist = m_qpos[j] - m_qpos[i];
@@ -3400,26 +3400,26 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 			}
 
 			// this will be -1 if wpi or wpj is NULL
-			float max = getScoreForTermPair(wpi, wpj, 0);
+			float max = getScoreForTermPair(wpi, wpj, 0, qdist);
 			scoredTerms = true;
 
 			// try sub-ing in the best title occurence or best
 			// inlink text occurence. cuz if the term is in the title
 			// but these two terms are really far apart, we should
 			// get a better score
-			float score = getScoreForTermPair ( highestScoringNonBodyPos[i], wpj, FIXED_DISTANCE );
+			float score = getScoreForTermPair(highestScoringNonBodyPos[i], wpj, FIXED_DISTANCE, qdist);
 			if ( score > max ) {
 				max   = score;
 			}
 
 			// a double pair sub should be covered in the
 			// getMaxScoreForNonBodyTermPair() function
-			score = getScoreForTermPair ( highestScoringNonBodyPos[i], highestScoringNonBodyPos[j], FIXED_DISTANCE );
+			score = getScoreForTermPair(highestScoringNonBodyPos[i], highestScoringNonBodyPos[j], FIXED_DISTANCE, qdist);
 			if ( score > max ) {
 				max = score;
 			}
 
-			score = getScoreForTermPair ( wpi, highestScoringNonBodyPos[j], FIXED_DISTANCE );
+			score = getScoreForTermPair(wpi, highestScoringNonBodyPos[j], FIXED_DISTANCE, qdist);
 			if ( score > max ) {
 				max = score;
 			}
