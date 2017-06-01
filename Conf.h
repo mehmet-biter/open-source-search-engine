@@ -363,6 +363,7 @@ class Conf {
 	bool  m_logDebugUdp;
 	bool  m_logDebugUnicode;
 	bool  m_logDebugUrlAttempts;
+	bool  m_logDebugVagus;
 
 	bool m_logTraceBigFile;
 	bool m_logTraceDns;

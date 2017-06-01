@@ -8447,6 +8447,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log debug vagus messages";
+	m->m_cgi   = "ldv";
+	simple_m_set(Conf,m_logDebugVagus);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	////////////////////
 	// log trace
 	////////////////////

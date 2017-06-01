@@ -217,6 +217,7 @@ Conf::Conf ( ) {
 	m_logDebugUdp = false;
 	m_logDebugUnicode = false;
 	m_logDebugUrlAttempts = false;
+	m_logDebugVagus = false;
 	m_logTraceBigFile = false;
 	m_logTraceDns = false;
 	m_logTraceFile = false;
