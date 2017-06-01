@@ -58,11 +58,11 @@ bool RdbMerge::merge(rdbid_t rdbId,
                      int32_t niceness)
 {
 	if(m_isHalted) {
-		logTrace(g_conf.m_logTraceRdbBase, "END, merging is halted");
+		logTrace(g_conf.m_logTraceRdbMerge, "END, merging is halted");
 		return true;
 	}
 	if(m_isMerging) {
-		logTrace(g_conf.m_logTraceRdbBase, "END, already merging");
+		logTrace(g_conf.m_logTraceRdbMerge, "END, already merging");
 		return true;
 	}
 
@@ -100,7 +100,8 @@ bool RdbMerge::merge(rdbid_t rdbId,
 
 	//calculate how much space we need for resulting merged file
 	m_spaceNeededForMerge = base->getSpaceNeededForMerge(m_startFileNum,m_numFiles);
-	
+
+
 	if(!g_loop.registerSleepCallback(5000, this, getLockWrapper, "RdbMerge::getLockWrapper", 0, true))
 		return true;
 
@@ -112,25 +113,28 @@ bool RdbMerge::merge(rdbid_t rdbId,
 
 
 void RdbMerge::getLockWrapper(int /*fd*/, void *state) {
-	log(LOG_TRACE,"RdbMerge::getLockWrapper(%p)",state);
+	logTrace(g_conf.m_logTraceRdbMerge, "RdbMerge::getLockWrapper(%p)", state);
 	RdbMerge *that = static_cast<RdbMerge*>(state);
 	that->getLock();
 }
 
 
 void RdbMerge::getLock() {
-	log(LOG_DEBUG,"Rdbmerge(%p)::getLock(), m_rdbId=%d",this,(int)m_rdbId);
+	logDebug(g_conf.m_logDebugMerge, "Rdbmerge(%p)::getLock(), m_rdbId=%d",this,(int)m_rdbId);
 	if(m_mergeSpaceCoordinator->acquire(m_spaceNeededForMerge)) {
-		log(LOG_INFO,"Rdbmerge(%p)::getLock(), m_rdbId=%d: got lock for %" PRIu64 " bytes", this, (int)m_rdbId, m_spaceNeededForMerge);
+		log(LOG_INFO,"Rdbmerge(%p)::getLock(), m_rdbId=%d: got lock for %" PRIu64 " bytes",
+		    this, (int)m_rdbId, m_spaceNeededForMerge);
 		g_loop.unregisterSleepCallback(this,getLockWrapper);
 
 		gotLock();
-	} else
-		log(LOG_INFO,"Rdbmerge(%p)::getLock(), m_rdbId=%d: Didn't get lock for %" PRIu64 " bytes; retrying in a bit...", this, (int)m_rdbId, m_spaceNeededForMerge);
+	} else {
+		log(LOG_INFO, "Rdbmerge(%p)::getLock(), m_rdbId=%d: Didn't get lock for %" PRIu64 " bytes; retrying in a bit...",
+		    this, (int)m_rdbId, m_spaceNeededForMerge);
+	}
 }
 
 void RdbMerge::gotLockWrapper(int /*fd*/, void *state) {
-	log(LOG_TRACE,"RdbMerge::gotLockWrapper(%p)", state);
+	logTrace(g_conf.m_logTraceRdbMerge, "RdbMerge::gotLockWrapper(%p)", state);
 	RdbMerge *that = static_cast<RdbMerge*>(state);
 	g_loop.unregisterSleepCallback(state, gotLockWrapper);
 
@@ -149,7 +153,7 @@ void RdbMerge::regenerateFilesWrapper(void *state) {
 			gbshutdownCorrupted();
 		}
 
-		log( LOG_INFO, "db: merge: Map generation succeeded." );
+		log(LOG_INFO, "db: merge: Map generation succeeded.");
 	}
 
 	if (that->m_targetIndex && that->m_targetIndex->getFileSize() == 0) {
@@ -179,7 +183,7 @@ bool RdbMerge::gotLock() {
 	if (!m_doneRegenateFiles &&
 		m_targetFile->getFileSize() > 0 &&
 		((m_targetIndex && m_targetIndex->getFileSize() == 0) || m_targetMap->getFileSize() == 0)) {
-		log(LOG_INIT, "db: merge: Regenerating map/index from a killed merge.");
+		log(LOG_WARN, "db: merge: Regenerating map/index from a killed merge.");
 
 		if (g_jobScheduler.submit(regenerateFilesWrapper, regenerateFilesDoneWrapper, this, thread_type_file_merge, 0)) {
 			return true;
@@ -229,6 +233,7 @@ bool RdbMerge::gotLock() {
 	if (base->hasPendingGlobalIndexJob()) {
 		// wait until no more pending global index job
 		g_loop.registerSleepCallback(1000, this, gotLockWrapper, "RdbMerge::gotLockWrapper");
+		log(LOG_INFO, "db: merge: Waiting for global index job to complete");
 		return true;
 	}
 
@@ -359,7 +364,7 @@ bool RdbMerge::getNextList() {
 }
 
 bool RdbMerge::getAnotherList() {
-	log(LOG_DEBUG,"db: Getting another list for merge.");
+	logDebug(g_conf.m_logDebugMerge, "db: Getting another list for merge.");
 
 	// clear it up in case it was already set
 	g_errno = 0;
@@ -595,7 +600,7 @@ bool RdbMerge::filterList() {
 // similar to gotListWrapper but we call getNextList() before dumpList()
 void RdbMerge::dumpListWrapper(void *state) {
 	// debug msg
-	log(LOG_DEBUG,"db: Dump of list completed: %s.",mstrerror(g_errno));
+	logDebug(g_conf.m_logDebugMerge, "db: Dump of list completed: %s.",mstrerror(g_errno));
 
 	// get a ptr to ourselves
 	RdbMerge *THIS = (RdbMerge *)state;
@@ -663,7 +668,7 @@ bool RdbMerge::dumpList() {
 		m_doneMerging = true;
 	}
 
-	log(LOG_DEBUG,"db: Dumping list.");
+	logDebug(g_conf.m_logDebugMerge, "db: Dumping list.");
 
 	logTrace(g_conf.m_logTraceRdbMerge, "list=%p startKey=%s",
 	         &m_list, KEYSTR(m_startKey, m_ks));
