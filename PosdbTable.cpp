@@ -3006,6 +3006,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 				// second check means it occurred as two separate terms
 				// or could be like bob and occurred as "bob's".
 				// see XmlDoc::hashWords3().
+				// nwp[mink][2] & 0x03 is the posdb entry original/synonym/hyponym/.. flags
 				if ( ! ((nwpFlags[mink] & BF_BIGRAM) && (nwp[mink][2] & 0x03)) ) {
 
 					// if the first key in our merged list store the docid crap
