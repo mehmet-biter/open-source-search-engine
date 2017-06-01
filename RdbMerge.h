@@ -56,8 +56,6 @@ public:
 
 	bool isMerging() const { return m_isMerging; }
 
-	rdbid_t getRdbId() const { return m_rdbId; }
-
 	// stop further actions
 	void haltMerge();
 
