@@ -83,15 +83,15 @@ static int connect_to_vagus(int port) {
 
 static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
 	if(alive_hosts.size() != (unsigned)g_hostdb.getNumHosts()) {
+		log(LOG_WARN, "vagus: got %zu alive hosts instead of %d", alive_hosts.size(), g_hostdb.getNumHosts());
+
 		char hosts[g_hostdb.getNumHosts()];
 		memset(hosts, '.', sizeof(hosts));
 
 		for (const auto &iter : alive_hosts) {
 			hosts[iter.first] = '+';
 		}
-
-		log(LOG_WARN, "vagus: got %zu alive hosts instead of %d. stat=%.*s",
-		    alive_hosts.size(), g_hostdb.getNumHosts(), g_hostdb.getNumHosts(), hosts);
+		log(LOG_WARN, "vagus: %.*s", g_hostdb.getNumHosts(), hosts);
 	}
 
 	std::vector<int> alive_hosts_ids;
