@@ -224,7 +224,7 @@ class PosdbTable {
 
 	// sets stuff used by intersect10_r()
 	bool setQueryTermInfo ( );
-	void delNonMatchingDocIdsFromSubLists( QueryTermInfo *qti );
+	void delNonMatchingDocIdsFromSubLists();
 
 	// for intersecting docids
 	void addDocIdVotes( const QueryTermInfo *qti , int32_t listGroupNum );

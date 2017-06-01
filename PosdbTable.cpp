@@ -19,6 +19,7 @@
 #include "GbMutex.h"
 #include "ScopedLock.h"
 #include <math.h>
+#include <valarray>
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -2219,21 +2220,16 @@ bool PosdbTable::findCandidateDocIds() {
 	// that doing a filter on 200MB of termlists wouldn't be more than
 	// 50-100ms since we can read 4GB/s from main memory.
 	//
-	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-		// get it
-		QueryTermInfo *qti = &qtibuf[i];
-		
-		// do not consider for adding if negative ('my house -home')
-		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
-			continue;
-		}
-		
-		// remove docids from each termlist that are not in
-		// m_docIdVoteBuf (the intersection)
-		delNonMatchingDocIdsFromSubLists( qti );
-	}
+	delNonMatchingDocIdsFromSubLists();
 	logTrace(g_conf.m_logTracePosdb, "Shrunk SubLists");
-
+	if(g_conf.m_logTracePosdb) {
+		log(LOG_TRACE,"Shrunk sublists, m_numQueryTermInfos=%d", m_numQueryTermInfos);
+		for(int i=0; i<m_numQueryTermInfos; i++) {
+			log(LOG_TRACE,"  qti #%d: m_numSubLists=%d m_numMatchingSubLists=%d", i, qtibuf[i].m_numSubLists, qtibuf[i].m_numMatchingSubLists);
+			for(int j=0; j<qtibuf[i].m_numMatchingSubLists; j++)
+				log(LOG_TRACE,"           matchlist #%d: %d bytes %p - %p", j, qtibuf[i].m_matchingSubListSize[j], qtibuf[i].m_matchingSubListStart[j], qtibuf[i].m_matchingSubListEnd[j]);
+		}
+	}
 
 	if ( m_debug ) {
 		now = gettimeofdayInMilliseconds();
@@ -4957,29 +4953,29 @@ bool PosdbTable::allocTopScoringDocIdsData() {
 // Run through each term sublist and remove all docids not
 // found in the docid vote buffer
 //
-void PosdbTable::delNonMatchingDocIdsFromSubLists(QueryTermInfo *qti) {
+void PosdbTable::delNonMatchingDocIdsFromSubLists() {
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
-	// reset count of new sublists
-	qti->m_numMatchingSubLists = 0;
-
-	// scan each sublist vs. the docid list
-	for ( int32_t i = 0 ; i < qti->m_numSubLists ; i++ ) {
-
+	//phase 1: shrink the rdblists for all queryterms (except those with a minus sign)
+	std::valarray<char *> newEndPtr(m_q->m_numTerms);
+	for(int i=0; i<m_q->m_numTerms; i++) {
+		newEndPtr[i] = NULL;
+		if(m_q->m_qterms[i].m_termSign=='-')
+			continue;
+		RdbList *list = m_q->m_qterms[i].m_posdbListPtr;
+		if(!list || list->isEmpty())
+			continue;
+		
 		// get that sublist
-		char *subListPtr = qti->m_subLists[i]->getList();
-		char *subListEnd = qti->m_subLists[i]->getListEnd();
+		char *subListPtr = list->getList();
+		char *subListEnd = list->getListEnd();
+		char *dst = subListPtr;
 		// reset docid list ptrs
 		const char *dp    =      m_docIdVoteBuf.getBufStart();
 		const char *dpEnd = dp + m_docIdVoteBuf.length();
-
-		// re-copy into the same buffer!
-		char *dst = subListPtr;
-		// save it
-		char *savedDst = dst;
-
-
+		//log(LOG_INFO,"@@@@ i#%d subListPtr=%p subListEnd=%p", i, subListPtr, subListEnd);
+		
 		for(;;) {
 			// scan the docid list for the current docid in this termlist
 			for ( ; dp < dpEnd; dp += 6 ) {
@@ -5055,18 +5051,30 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists(QueryTermInfo *qti) {
 		}
 
 	doneWithSubList:
-
-		if(dst != savedDst) {
-			// Now set "shortcut" info for the reduced sublist so
-			// we end up with an array of matching sublists that
-			// only contain the matching docids
-			int32_t x = qti->m_numMatchingSubLists;
-			qti->m_matchingSubListSize  	  [x] = dst - savedDst;
-			qti->m_matchingSubListStart 	  [x] = savedDst;
-			qti->m_matchingSubListEnd	  [x] = dst;
-			qti->m_matchingSubListCursor	  [x] = savedDst;
-			qti->m_matchingSubListSavedCursor [x] = savedDst;
-			qti->m_numMatchingSubLists++;
+		//log(LOG_INFO,"@@@ shrunk #%d to %ld (%p-%p)", i, dst - list->getList(), list->getList(), dst);
+		newEndPtr[i] = dst;
+	}
+	
+	//phase 2: set the matchingsublist pointers in qti
+	for(int i=0; i<m_numQueryTermInfos; i++) {
+		QueryTermInfo *qti = ((QueryTermInfo*)m_qiBuf.getBufStart()) + i;
+		if(qti->m_bigramFlags[0]&BF_NEGATIVE)
+			continue; //don't modify sublist for negative terms
+		qti->m_numMatchingSubLists = 0;
+		for(int j=0; j<qti->m_numSubLists; j++) {
+			for(int k=0; k<m_q->m_numTerms; k++) {
+				if(qti->m_subLists[j] == m_q->m_qterms[k].m_posdbListPtr) {
+					char *newStartPtr = m_q->m_qterms[k].m_posdbListPtr->getList(); //same as always
+					int32_t x = qti->m_numMatchingSubLists;
+					qti->m_matchingSubListSize  	  [x] = newEndPtr[k] - newStartPtr;
+					qti->m_matchingSubListStart 	  [x] = newStartPtr;
+					qti->m_matchingSubListEnd	  [x] = newEndPtr[k];
+					qti->m_matchingSubListCursor	  [x] = newStartPtr;
+					qti->m_matchingSubListSavedCursor [x] = newStartPtr;
+					qti->m_numMatchingSubLists++;
+					break;
+				}
+			}
 		}
 	}
 	
