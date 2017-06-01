@@ -105,15 +105,12 @@ void RdbIndex::mergePendingDocIds(void *state) {
 
 	ScopedLock sl(index->m_pendingDocIdsMtx);
 
-	// don't need to merge if it's empty
-	if (index->m_pendingDocIds->empty()) {
-		return;
-	}
-
-	// we check criteria again to avoid running merge when it's not needed
-	if ((index->m_pendingDocIds->size() >= (index->m_generatingIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize)) ||
-	    (gettimeofdayInMilliseconds() - index->m_lastMergeTime >= s_defaultMaxPendingTimeMs)) {
-		(void)index->mergePendingDocIds_unlocked();
+	// don't merge if it's empty
+	if (!index->m_pendingDocIds->empty()) {
+		if ((index->m_pendingDocIds->size() >= (index->m_generatingIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize)) ||
+		    (gettimeofdayInMilliseconds() - index->m_lastMergeTime >= s_defaultMaxPendingTimeMs)) {
+			(void)index->mergePendingDocIds_unlocked();
+		}
 	}
 
 	index->m_pendingMerge = false;
