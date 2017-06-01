@@ -11,6 +11,7 @@ RdbMerge g_merge;
 
 RdbMerge::RdbMerge()
   : m_mergeSpaceCoordinator(NULL),
+	m_isLockAquired(false),
     m_doneMerging(false),
     m_getListOutstanding(false),
     m_startFileNum(0),
@@ -111,6 +112,30 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	return false;
 }
 
+void RdbMerge::acquireLockWrapper(void *state) {
+	RdbMerge *that = static_cast<RdbMerge*>(state);
+
+	if(that->m_mergeSpaceCoordinator->acquire(that->m_spaceNeededForMerge)) {
+		log(LOG_INFO,"Rdbmerge(%p)::getLock(), m_rdbId=%d: got lock for %" PRIu64 " bytes",
+		    that, (int)that->m_rdbId, that->m_spaceNeededForMerge);
+		g_loop.unregisterSleepCallback(that, getLockWrapper);
+		that->m_isLockAquired = true;
+	} else {
+		log(LOG_INFO, "Rdbmerge(%p)::getLock(), m_rdbId=%d: Didn't get lock for %" PRIu64 " bytes; retrying in a bit...",
+		    that, (int)that->m_rdbId, that->m_spaceNeededForMerge);
+	}
+}
+
+void RdbMerge::acquireLockDoneWrapper(void *state, job_exit_t exit_type) {
+	if (exit_type != job_exit_normal) {
+		return;
+	}
+
+	RdbMerge *that = static_cast<RdbMerge*>(state);
+	if (that->m_isLockAquired) {
+		that->gotLock();
+	}
+}
 
 void RdbMerge::getLockWrapper(int /*fd*/, void *state) {
 	logTrace(g_conf.m_logTraceRdbMerge, "RdbMerge::getLockWrapper(%p)", state);
@@ -118,19 +143,15 @@ void RdbMerge::getLockWrapper(int /*fd*/, void *state) {
 	that->getLock();
 }
 
-
 void RdbMerge::getLock() {
 	logDebug(g_conf.m_logDebugMerge, "Rdbmerge(%p)::getLock(), m_rdbId=%d",this,(int)m_rdbId);
-	if(m_mergeSpaceCoordinator->acquire(m_spaceNeededForMerge)) {
-		log(LOG_INFO,"Rdbmerge(%p)::getLock(), m_rdbId=%d: got lock for %" PRIu64 " bytes",
-		    this, (int)m_rdbId, m_spaceNeededForMerge);
-		g_loop.unregisterSleepCallback(this,getLockWrapper);
-
-		gotLock();
-	} else {
-		log(LOG_INFO, "Rdbmerge(%p)::getLock(), m_rdbId=%d: Didn't get lock for %" PRIu64 " bytes; retrying in a bit...",
-		    this, (int)m_rdbId, m_spaceNeededForMerge);
+	if (g_jobScheduler.submit(acquireLockWrapper, acquireLockDoneWrapper, this, thread_type_file_merge, 0)) {
+		return;
 	}
+
+	log(LOG_WARN, "db: merge: Unable to submit acquire lock job. Running on main thread!");
+	acquireLockWrapper(this);
+	acquireLockDoneWrapper(this, job_exit_normal);
 }
 
 void RdbMerge::gotLockWrapper(int /*fd*/, void *state) {
@@ -729,8 +750,10 @@ void RdbMerge::doneMerging() {
 
 
 void RdbMerge::relinquishMergespaceLock() {
-	if(m_mergeSpaceCoordinator)
+	if(m_mergeSpaceCoordinator) {
 		m_mergeSpaceCoordinator->relinquish();
+		m_isLockAquired = false;
+	}
 }
 
 

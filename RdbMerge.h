@@ -62,7 +62,11 @@ public:
 	void mergeIncorporated(const RdbBase *);
 
 private:
+	static void acquireLockWrapper(void *state);
+	static void acquireLockDoneWrapper(void *state, job_exit_t exit_type);
+
 	static void getLockWrapper(int /*fd*/, void *state);
+
 	static void regenerateFilesWrapper(void *state);
 	static void regenerateFilesDoneWrapper(void *state, job_exit_t exit_type);
 
@@ -93,6 +97,8 @@ private:
 	void relinquishMergespaceLock();
 
 	MergeSpaceCoordinator *m_mergeSpaceCoordinator;
+
+	bool m_isLockAquired;
 
 	// set to true when m_startKey wraps back to 0
 	bool m_doneMerging;
