@@ -3330,12 +3330,8 @@ float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedList, const ch
 //   m_bestMinTermPairWindowPtrs : Pointers to query term positions giving the best minimum score
 //
 void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **highestScoringNonBodyPos, float *scoreMatrix) {
-	const char *wpi;
-	const char *wpj;
-	float wikiWeight;
 	float minTermPairScoreInWindow = 999999999.0;
 	bool scoredTerms = false;
-
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
@@ -3359,15 +3355,10 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 		// from the title/linktext/etc.
 		//else           wpi = highestScoringNonBodyPos[i];
 
-		wpi = ptrs[i];
-
-		// only evaluate pairs that have the advanced term in them
-		// to save time.
-		int32_t j = i + 1;
-		int32_t maxj = m_numQueryTermInfos;
+		const char *wpi = ptrs[i];
 
 		// loop over other terms
-		for ( ; j < maxj ; j++ ) {
+		for(int32_t j = i + 1; j < m_numQueryTermInfos; j++) {
 
 			// skip if to the left of a pipe operator
 			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
@@ -3385,7 +3376,8 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 			// from the title/linktext/etc.
 			//else wpj = highestScoringNonBodyPos[j];
 
-			wpj = ptrs[j];
+			const char *wpj = ptrs[j];
+			float wikiWeight;
 
 			// in same wikipedia phrase?
 			if ( m_wikiPhraseIds[j] == m_wikiPhraseIds[i] &&
