@@ -97,23 +97,18 @@ void RdbIndex::timedMerge(int /*fd*/, void *state) {
 		return;
 	}
 
-	ScopedLock sl(index->m_pendingDocIdsMtx);
-
-	// don't need to merge if it's empty
-	if (index->m_pendingDocIds->empty()) {
-		return;
-	}
-
-	if ((index->m_pendingDocIds->size() >= (index->m_generatingIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize)) ||
-		(gettimeofdayInMilliseconds() - index->m_lastMergeTime >= s_defaultMaxPendingTimeMs)) {
-		index->m_pendingMerge = g_jobScheduler.submit(mergePendingDocIds, NULL, state, thread_type_index_merge, 0);
-	}
+	index->m_pendingMerge = g_jobScheduler.submit(mergePendingDocIds, NULL, state, thread_type_index_merge, 0);
 }
 
 void RdbIndex::mergePendingDocIds(void *state) {
 	RdbIndex *index = static_cast<RdbIndex*>(state);
 
 	ScopedLock sl(index->m_pendingDocIdsMtx);
+
+	// don't need to merge if it's empty
+	if (index->m_pendingDocIds->empty()) {
+		return;
+	}
 
 	// we check criteria again to avoid running merge when it's not needed
 	if ((index->m_pendingDocIds->size() >= (index->m_generatingIndex ? s_generateMaxPendingSize : s_defaultMaxPendingSize)) ||
