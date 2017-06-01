@@ -229,13 +229,12 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 	// assume no terms!
 	*highestScoringNonBodyPos = NULL;
 
-    // Sanity check
-    if( wpi >= endi ) {
-    	logTrace(g_conf.m_logTracePosdb, "END, wpi %p >= %p", wpi, endi);
-		return -1.0;
-    }
-
 	if ( wpi ) {
+		// Sanity check
+		if( wpi >= endi ) {
+			logTrace(g_conf.m_logTracePosdb, "END, wpi %p >= %p", wpi, endi);
+			return -1.0;
+		}
 #ifdef _VALGRIND_
 		VALGRIND_CHECK_MEM_IS_DEFINED(wpi,endi-wpi);
 #endif
