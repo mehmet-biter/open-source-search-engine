@@ -45,8 +45,6 @@ public:
 	void clear();
 	void reset();
 
-	GbMutex& getLock() { return m_mtx; }
-
 	bool set(int32_t fixedDataSize, int32_t maxMem, const char *allocName, rdbid_t rdbId, const char *dbname,
 	         char keySize);
 
@@ -101,6 +99,8 @@ public:
 	bool loadBuckets(const char *dbname);
 
 private:
+	GbMutex& getLock() { return m_mtx; }
+
 	static void saveWrapper(void *state);
 	static void saveDoneWrapper(void *state, job_exit_t exit_type);
 
