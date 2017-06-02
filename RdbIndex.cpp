@@ -36,9 +36,10 @@ RdbIndex::RdbIndex()
 	, m_version(s_rdbIndexCurrentVersion)
 	, m_docIds(new docids_t)
 	, m_docIdsMtx()
-	, m_pendingDocIdsMtx()
+	, m_pendingMergeMtx()
 	, m_pendingMergeCond(PTHREAD_COND_INITIALIZER)
 	, m_pendingMerge(false)
+	, m_pendingDocIdsMtx()
 	, m_pendingDocIds(new docids_t)
 	, m_prevPendingDocId(MAX_DOCID + 1)
 	, m_lastMergeTime(gettimeofdayInMilliseconds())
@@ -53,9 +54,9 @@ RdbIndex::~RdbIndex() {
 		g_loop.unregisterSleepCallback(this, &timedMerge);
 	}
 
-	ScopedLock sl(m_pendingDocIdsMtx);
+	ScopedLock sl(m_pendingMergeMtx);
 	while (m_pendingMerge) { // spurious wakeup
-		pthread_cond_wait(&m_pendingMergeCond, &(m_pendingDocIdsMtx.mtx));
+		pthread_cond_wait(&m_pendingMergeCond, &(m_pendingMergeMtx.mtx));
 	}
 }
 
@@ -92,6 +93,8 @@ void RdbIndex::clear() {
 void RdbIndex::timedMerge(int /*fd*/, void *state) {
 	RdbIndex *index = static_cast<RdbIndex*>(state);
 
+	ScopedLock sl(index->m_pendingMergeMtx);
+
 	// make sure there is only a single merge job at one time
 	if (index->m_pendingMerge || index->m_generatingIndex) {
 		return;
@@ -113,6 +116,7 @@ void RdbIndex::mergePendingDocIds(void *state) {
 		}
 	}
 
+	ScopedLock sl2(index->m_pendingMergeMtx);
 	index->m_pendingMerge = false;
 	pthread_cond_signal(&(index->m_pendingMergeCond));
 }
