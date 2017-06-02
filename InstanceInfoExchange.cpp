@@ -94,12 +94,25 @@ static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
 		log(LOG_WARN, "vagus: %.*s", g_hostdb.getNumHosts(), hosts);
 	}
 
+	time_t now = time(NULL);
+	static time_t s_ownLastAliveTime = now;
+
+	if ((now - s_ownLastAliveTime) > (g_conf.m_vagusMaxDeadTime * 60)) {
+		log(LOG_ERROR, "vagus: We have not seen ourself alive for the past %d minutes. Aborting", g_conf.m_vagusMaxDeadTime);
+		gbshutdownResourceError();
+	}
+
 	std::vector<int> alive_hosts_ids;
 	alive_hosts_ids.reserve(alive_hosts.size());
 	for(auto iter : alive_hosts) {
 		int hostid = iter.first;
 		if(hostid<0 || hostid>=g_hostdb.getNumHosts())
 			continue;
+
+		if (hostid == g_hostdb.getMyHostId()) {
+			s_ownLastAliveTime = now;
+		}
+
 		alive_hosts_ids.push_back(hostid);
 		char extra_information[256];
 		if(iter.second.length()>=sizeof(extra_information))

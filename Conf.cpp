@@ -89,6 +89,7 @@ Conf::Conf ( ) {
 	m_vagusPort = 8720;
 	m_vagusKeepaliveSendInterval = 500;
 	m_vagusKeepaliveLifetime = 5000;
+	m_vagusMaxDeadTime = 5;
 	m_maxDocsWanted = 0;
 	m_maxFirstResultNum = 0;
 	min_docid_splits = 0;

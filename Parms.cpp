@@ -5154,6 +5154,18 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	m->m_title = "Vagus dead detection";
+	m->m_desc  = "How long before we abort due to main thread hanging";
+	m->m_cgi   = "vagus_max_dead_time";
+	simple_m_set(Conf,m_vagusMaxDeadTime);
+	m->m_smin  =   1;
+	m->m_smax  =  60;
+	m->m_def   = "5";
+	m->m_units = "minutes";
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
 	m->m_title = "max corrupt index lists";
 	m->m_desc  = "If we reach this many corrupt index lists, send "
 		"an admin email.  Set to -1 to disable.";
