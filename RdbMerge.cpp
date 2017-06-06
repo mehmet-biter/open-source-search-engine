@@ -11,8 +11,8 @@ RdbMerge g_merge;
 
 RdbMerge::RdbMerge()
   : m_mergeSpaceCoordinator(NULL),
-	m_isLockAquired(false),
 	m_isAcquireLockJobSubmited(false),
+	m_isLockAquired(false),
     m_doneMerging(false),
     m_getListOutstanding(false),
     m_startFileNum(0),
