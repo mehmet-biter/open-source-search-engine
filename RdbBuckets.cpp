@@ -8,9 +8,11 @@
 #include "Conf.h"
 #include "Collectiondb.h"
 #include "Mem.h"
-#include "ScopedLock.h"
+#include "ScopedReadLock.h"
+#include "ScopedWriteLock.h"
 #include <fcntl.h>
 #include "Posdb.h"
+#include "ScopedLock.h"
 
 #define BUCKET_SIZE 8192
 #define INIT_SIZE 4096
@@ -126,13 +128,13 @@ void RdbBucket::reset() {
 }
 
 int32_t RdbBuckets::getMemAllocated() const {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
 	return (sizeof(RdbBuckets) + m_masterSize + m_dataMemOccupied);
 }
 
 //includes data in the data ptrs
 int32_t RdbBuckets::getMemOccupied() const {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
 	return (m_numKeysApprox * m_recSize) + m_dataMemOccupied + sizeof(RdbBuckets) + m_sortBufSize + BUCKET_SIZE * m_recSize;
 }
 
@@ -154,7 +156,7 @@ static int cmp_int(const void *pv1, const void *pv2) {
 //and we can't then we'll get a partial list added and we will
 //add the whole list again.
 bool RdbBuckets::hasRoom(int32_t numRecs) const {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
 
 	//Whether we have room or not depends on how many bucket splits will occur. We don't
 	//know that until we see the keys, so we must be a conservative. If we answer yes but
@@ -232,7 +234,7 @@ bool RdbBucket::sort() {
 
 	if (m_numKeys < 2) {
 		m_lastSorted = m_numKeys;
-		return true;		
+		return true;
 	}
 
 	uint8_t ks = m_parent->m_ks;
@@ -545,14 +547,14 @@ bool RdbBucket::selfTest (int32_t bucketnum, const char* prevKey) {
 
 
 void RdbBuckets::printBuckets(std::function<void(const char *, int32_t)> print_fn) {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
  	for(int32_t i = 0; i < m_numBuckets; i++) {
 		m_buckets[i]->printBucket(i, print_fn);
 	}
 }
 
 void RdbBuckets::printBucketsStartEnd() {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
  	for(int32_t i = 0; i < m_numBuckets; i++) {
 		m_buckets[i]->printBucketStartEnd(i);
 	}
@@ -597,7 +599,7 @@ void RdbBucket::printBucketStartEnd(int32_t idx) {
 
 
 RdbBuckets::RdbBuckets()
-	: m_mtx()
+	: m_rwlock()
 	, m_buckets(NULL)
 	, m_bucketsSpace(NULL)
 	, m_masterPtr(NULL)
@@ -632,7 +634,7 @@ RdbBuckets::RdbBuckets()
 
 bool RdbBuckets::set(int32_t fixedDataSize, int32_t maxMem, const char *allocName, rdbid_t rdbId,
                      const char *dbname, char keySize) {
-	ScopedLock sl(m_mtx);
+	ScopedWriteLock sl(m_rwlock);
 
 	m_numBuckets = 0;
 	m_ks = keySize;
@@ -695,17 +697,17 @@ bool RdbBuckets::isSaving() const {
 }
 
 bool RdbBuckets::needsSave() const {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
 	return m_needsSave;
 }
 
 void RdbBuckets::setNeedsSave(bool s) {
-	ScopedLock sl(m_mtx);
+	ScopedWriteLock sl(m_rwlock);
 	m_needsSave = s;
 }
 
 void RdbBuckets::reset() {
-	ScopedLock sl(m_mtx);
+	ScopedWriteLock sl(m_rwlock);
 	reset_unlocked();
 }
 
@@ -735,7 +737,7 @@ void RdbBuckets::reset_unlocked() {
 }
 
 void RdbBuckets::clear() {
-	ScopedLock sl(m_mtx);
+	ScopedWriteLock sl(m_rwlock);
 
 	for (int32_t j = 0; j < m_numBuckets; j++) {
 		m_buckets[j]->reset();
@@ -750,7 +752,7 @@ void RdbBuckets::clear() {
 }
 
 RdbBucket* RdbBuckets::bucketFactory_unlocked() {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_write_locked();
 
 	if (m_numBuckets == m_maxBuckets - 1) {
 		if (!resizeTable_unlocked(m_maxBuckets * 2)) {
@@ -776,7 +778,7 @@ RdbBucket* RdbBuckets::bucketFactory_unlocked() {
 }
 
 bool RdbBuckets::resizeTable_unlocked(int32_t numNeeded) {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_write_locked();
 
 	logTrace(g_conf.m_logTraceRdbBuckets, "BEGIN. numNeeded=%" PRId32, numNeeded);
 
@@ -869,12 +871,12 @@ bool RdbBuckets::resizeTable_unlocked(int32_t numNeeded) {
 }
 
 bool RdbBuckets::addNode(collnum_t collnum, const char *key, const char *data, int32_t dataSize) {
-	ScopedLock sl(m_mtx);
+	ScopedWriteLock sl(m_rwlock);
 	return addNode_unlocked(collnum, key, data, dataSize);
 }
 
 bool RdbBuckets::addNode_unlocked(collnum_t collnum, const char *key, const char *data, int32_t dataSize) {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_write_locked();
 
 	m_needsSave = true;
 
@@ -994,7 +996,7 @@ bool RdbBuckets::addNode_unlocked(collnum_t collnum, const char *key, const char
 }
 
 void RdbBuckets::addBucket_unlocked(RdbBucket *newBucket, int32_t i) {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_write_locked();
 
 	m_numBuckets++;
 	int32_t moveSize = (m_numBuckets - i)*sizeof(RdbBuckets*);
@@ -1006,13 +1008,13 @@ void RdbBuckets::addBucket_unlocked(RdbBucket *newBucket, int32_t i) {
 
 bool RdbBuckets::getList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes,
                          RdbList *list, int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys) const {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
 	return getList_unlocked(collnum, startKey, endKey, minRecSizes, list, numPosRecs, numNegRecs, useHalfKeys);
 }
 
 bool RdbBuckets::getList_unlocked(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes,
                                   RdbList *list, int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys) const {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_locked();
 
 	if (numNegRecs) {
 		*numNegRecs = 0;
@@ -1130,7 +1132,7 @@ bool RdbBuckets::getList_unlocked(collnum_t collnum, const char *startKey, const
 }
 
 bool RdbBuckets::testAndRepair() {
-	ScopedLock sl(m_mtx);
+	ScopedWriteLock sl(m_rwlock);
 
 	if (!selfTest_unlocked(true, false)) {
 		if (!repair_unlocked()) {
@@ -1144,7 +1146,7 @@ bool RdbBuckets::testAndRepair() {
 }
 
 bool RdbBuckets::repair_unlocked() {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_write_locked();
 
 	if (m_numBuckets == 0 && (m_numKeysApprox != 0 || m_numNegKeys != 0)) {
 		m_numKeysApprox = 0;
@@ -1203,13 +1205,13 @@ bool RdbBuckets::repair_unlocked() {
 
 
 void RdbBuckets::verifyIntegrity() {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
 	selfTest_unlocked(true, true);
 }
 
 
 bool RdbBuckets::selfTest_unlocked(bool thorough, bool core) {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_locked();
 
 	if (m_numBuckets == 0 && m_numKeysApprox != 0) {
 		return false;
@@ -1351,7 +1353,7 @@ bool RdbBuckets::selfTest_unlocked(bool thorough, bool core) {
 }
 
 char RdbBuckets::bucketCmp_unlocked(collnum_t acoll, const char *akey, const RdbBucket *b) const {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_locked();
 
 	if (acoll == b->getCollnum()) {
 		return KEYCMPNEGEQ(akey, b->getEndKey(), m_ks);
@@ -1365,7 +1367,7 @@ char RdbBuckets::bucketCmp_unlocked(collnum_t acoll, const char *akey, const Rdb
 }
 
 int32_t RdbBuckets::getBucketNum_unlocked(collnum_t collnum, const char *key) const {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_locked();
 
 	if (m_numBuckets < 10) {
 		int32_t i = 0;
@@ -1410,7 +1412,7 @@ int32_t RdbBuckets::getBucketNum_unlocked(collnum_t collnum, const char *key) co
 }
 
 bool RdbBuckets::collExists(collnum_t collnum) const {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
 
 	for (int32_t i = 0; i < m_numBuckets; i++) {
 		if (m_buckets[i]->getCollnum() == collnum) {
@@ -1426,7 +1428,7 @@ bool RdbBuckets::collExists(collnum_t collnum) const {
 }
 
 int32_t RdbBuckets::getNumKeys(collnum_t collnum) const {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
 
 	int32_t numKeys = 0;
 	for (int32_t i = 0; i < m_numBuckets; i++) {
@@ -1443,28 +1445,28 @@ int32_t RdbBuckets::getNumKeys(collnum_t collnum) const {
 }
 
 int32_t RdbBuckets::getNumKeys() const {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
 	return m_numKeysApprox;
 }
 
 int32_t RdbBuckets::getNumKeys_unlocked() const {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_locked();
 
 	return m_numKeysApprox;
 }
 
 int32_t RdbBuckets::getNumNegativeKeys() const {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
 	return m_numNegKeys;
 }
 
 int32_t RdbBuckets::getNumPositiveKeys() const {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
 	return m_numKeysApprox - m_numNegKeys;
 }
 
 void RdbBuckets::updateNumRecs_unlocked(int32_t n, int32_t bytes, int32_t numNeg) {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_write_locked();
 
 	m_numKeysApprox += n;
 	m_dataMemOccupied += bytes;
@@ -1718,7 +1720,7 @@ bool RdbBucket::getList(RdbList* list, const char* startKey, const char* endKey,
 }
 
 bool RdbBuckets::deleteNode(collnum_t collnum, const char *key) {
-	ScopedLock sl(m_mtx);
+	ScopedWriteLock sl(m_rwlock);
 
 	int32_t i = getBucketNum_unlocked(collnum, key);
 
@@ -1763,7 +1765,7 @@ bool RdbBuckets::deleteNode(collnum_t collnum, const char *key) {
 }
 
 bool RdbBuckets::deleteList_unlocked(collnum_t collnum, RdbList *list) {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_write_locked();
 
 	if (list->getListSize() == 0) {
 		return true;
@@ -1937,7 +1939,7 @@ bool RdbBucket::deleteList(RdbList *list) {
 
 // remove keys from any non-existent collection
 void RdbBuckets::cleanBuckets() {
-	ScopedLock sl(m_mtx);
+	ScopedWriteLock sl(m_rwlock);
 
 	// the liberation count
 	int32_t count = 0;
@@ -1977,12 +1979,12 @@ void RdbBuckets::cleanBuckets() {
 }
 
 bool RdbBuckets::delColl(collnum_t collnum) {
-	ScopedLock sl(m_mtx);
+	ScopedWriteLock sl(m_rwlock);
 	return delColl_unlocked(collnum);
 }
 
 bool RdbBuckets::delColl_unlocked(collnum_t collnum) {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_write_locked();
 
 	m_needsSave = true;
 
@@ -2014,7 +2016,7 @@ bool RdbBuckets::delColl_unlocked(collnum_t collnum) {
 }
 
 int32_t RdbBuckets::addTree(RdbTree *rt) {
-	ScopedLock sl(m_mtx);
+	ScopedWriteLock sl(m_rwlock);
 	ScopedLock sl2(rt->getLock());
 
 	int32_t n = rt->getFirstNode_unlocked();
@@ -2042,7 +2044,7 @@ int32_t RdbBuckets::addTree(RdbTree *rt) {
 
 //return the total bytes of the list bookended by startKey and endKey
 int64_t RdbBuckets::estimateListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
 
 	if (minKey) {
 		KEYSET(minKey, endKey, m_ks);
@@ -2080,7 +2082,7 @@ int64_t RdbBuckets::estimateListSize(collnum_t collnum, const char *startKey, co
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool RdbBuckets::fastSave(const char *dir, bool useThread, void *state, void (*callback)(void *state)) {
-	ScopedLock sl(m_mtx);
+	ScopedReadLock sl(m_rwlock);
 
 	logTrace(g_conf.m_logTraceRdbBuckets, "BEGIN. dir=%s", dir);
 
@@ -2143,7 +2145,7 @@ void RdbBuckets::saveWrapper(void *state) {
 	// get this class
 	RdbBuckets *that = (RdbBuckets *)state;
 
-	ScopedLock sl(that->getLock());
+	ScopedReadLock sl(that->m_rwlock);
 
 	// assume no error since we're at the start of thread call
 	that->m_errno = 0;
@@ -2196,7 +2198,7 @@ void RdbBuckets::saveDoneWrapper(void *state, job_exit_t exit_type) {
 // . returns false and sets g_errno on error
 // . NO USING g_errno IN A DAMN THREAD!!!!!!!!!!!!!!!!!!!!!!!!!
 bool RdbBuckets::fastSave_unlocked() {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_locked();
 
 	if (g_conf.m_readOnlyMode) {
 		return true;
@@ -2234,7 +2236,7 @@ bool RdbBuckets::fastSave_unlocked() {
 }
 
 int64_t RdbBuckets::fastSaveColl_unlocked(int fd) {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_locked();
 
 	int64_t offset = 0;
 
@@ -2303,7 +2305,7 @@ int64_t RdbBuckets::fastSaveColl_unlocked(int fd) {
 }
 
 bool RdbBuckets::loadBuckets(const char *dbname) {
-	ScopedLock sl(m_mtx);
+	ScopedWriteLock sl(m_rwlock);
 
 	char filename[256];
 	sprintf(filename, "%s-buckets-saved.dat", dbname);
@@ -2325,7 +2327,7 @@ bool RdbBuckets::loadBuckets(const char *dbname) {
 }
 
 bool RdbBuckets::fastLoad_unlocked(BigFile *f, const char *dbname) {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_write_locked();
 
 	log(LOG_INIT, "db: Loading %s.", f->getFilename());
 
@@ -2350,7 +2352,7 @@ bool RdbBuckets::fastLoad_unlocked(BigFile *f, const char *dbname) {
 }
 
 int64_t RdbBuckets::fastLoadColl_unlocked(BigFile *f, const char *dbname) {
-	m_mtx.verify_is_locked();
+	m_rwlock.verify_is_write_locked();
 
 	int32_t maxBuckets;
 	int32_t numBuckets;

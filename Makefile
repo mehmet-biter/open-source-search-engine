@@ -17,7 +17,6 @@ OBJS_O0 =  \
 	DailyMerge.o Dir.o Dns.o Domains.o \
 	Errno.o Entities.o \
 	File.o \
-	GbMutex.o \
 	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o Docid2Siteflags.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
 	iana_charset.o Images.o ip.o \
 	JobScheduler.o Json.o \
@@ -77,6 +76,7 @@ OBJS_O3 = \
 	GbCompress.o \
 	GbRegex.o \
 	GbThreadQueue.o \
+	GbMutex.o GbRWLock.o \
 
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)

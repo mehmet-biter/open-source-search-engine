@@ -28,8 +28,8 @@
 #include <atomic>
 #include "rdbid_t.h"
 #include "types.h"
-#include "GbMutex.h"
 #include "JobScheduler.h"
+#include "GbRWLock.h"
 
 class BigFile;
 class RdbList;
@@ -99,8 +99,6 @@ public:
 	bool loadBuckets(const char *dbname);
 
 private:
-	GbMutex& getLock() { return m_mtx; }
-
 	static void saveWrapper(void *state);
 	static void saveDoneWrapper(void *state, job_exit_t exit_type);
 
@@ -133,7 +131,7 @@ private:
 	bool fastLoad_unlocked(BigFile *f, const char *dbname);
 	int64_t fastLoadColl_unlocked(BigFile *f, const char *dbname);
 
-	mutable GbMutex m_mtx;
+	mutable GbRWLock m_rwlock;
 	RdbBucket **m_buckets;
 	RdbBucket *m_bucketsSpace;
 	char *m_masterPtr;
