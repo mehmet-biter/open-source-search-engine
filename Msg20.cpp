@@ -190,7 +190,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	if(nc==0) {
 		log(LOG_DEBUG, "msg20: no live candidate hosts for shard %d", shardNum);
 		if(g_conf.m_msg20FallbackToAllHosts) {
-			log(LOG_DEBUG,"msg20: No live disired hosts in shard %d - falling back to all hosts in the shard", shardNum);
+			log(LOG_DEBUG,"msg20: No alive desired hosts in shard %d - falling back to all hosts in the shard", shardNum);
 			for(int32_t i = 0; i < allNumHosts; i++) {
 				cand[nc++] = &allHosts[i];
 			}
