@@ -1470,7 +1470,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	const char *langWhitelistStr = "xx,en,bg,sr,ca,cs,da,et,fi,fr,de,el,hu,is,ga,it,la,lv,lt,lb,nl,pl,pt,ro,es,sv,no,vv";
 
 	// max spiders per ip
-	int32_t ipms = 7;
+	int32_t ipms = 1;
 
 	int32_t n = 0;
 
