@@ -98,6 +98,7 @@ private:
 
 	MergeSpaceCoordinator *m_mergeSpaceCoordinator;
 
+	std::atomic<bool> m_isAcquireLockJobSubmited;
 	bool m_isLockAquired;
 
 	// set to true when m_startKey wraps back to 0

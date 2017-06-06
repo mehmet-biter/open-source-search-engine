@@ -12,6 +12,7 @@ RdbMerge g_merge;
 RdbMerge::RdbMerge()
   : m_mergeSpaceCoordinator(NULL),
 	m_isLockAquired(false),
+	m_isAcquireLockJobSubmited(false),
     m_doneMerging(false),
     m_getListOutstanding(false),
     m_startFileNum(0),
@@ -127,11 +128,14 @@ void RdbMerge::acquireLockWrapper(void *state) {
 }
 
 void RdbMerge::acquireLockDoneWrapper(void *state, job_exit_t exit_type) {
+	RdbMerge *that = static_cast<RdbMerge*>(state);
+
+	that->m_isAcquireLockJobSubmited = false;
+
 	if (exit_type != job_exit_normal) {
 		return;
 	}
 
-	RdbMerge *that = static_cast<RdbMerge*>(state);
 	if (that->m_isLockAquired) {
 		that->gotLock();
 	}
@@ -145,11 +149,17 @@ void RdbMerge::getLockWrapper(int /*fd*/, void *state) {
 
 void RdbMerge::getLock() {
 	logDebug(g_conf.m_logDebugMerge, "Rdbmerge(%p)::getLock(), m_rdbId=%d",this,(int)m_rdbId);
+	bool isAcquireLockJobSubmited = m_isAcquireLockJobSubmited.exchange(true);
+	if (isAcquireLockJobSubmited) {
+		return;
+	}
+
 	if (g_jobScheduler.submit(acquireLockWrapper, acquireLockDoneWrapper, this, thread_type_file_merge, 0)) {
 		return;
 	}
 
 	log(LOG_WARN, "db: merge: Unable to submit acquire lock job. Running on main thread!");
+	m_isAcquireLockJobSubmited = false;
 	acquireLockWrapper(this);
 	acquireLockDoneWrapper(this, job_exit_normal);
 }
