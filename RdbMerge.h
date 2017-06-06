@@ -115,7 +115,7 @@ private:
 	BigFile *m_targetFile;
 	RdbMap *m_targetMap;
 	RdbIndex *m_targetIndex;
-	bool m_doneRegenateFiles;
+	bool m_doneRegenerateFiles;
 
 	char m_startKey[MAX_KEY_BYTES];
 

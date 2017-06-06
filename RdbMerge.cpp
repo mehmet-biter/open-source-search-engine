@@ -21,7 +21,7 @@ RdbMerge::RdbMerge()
     m_targetFile(NULL),
     m_targetMap(NULL),
     m_targetIndex(NULL),
-	m_doneRegenateFiles(false),
+	m_doneRegenerateFiles(false),
     m_isMerging(false),
     m_isHalted(false),
     m_dump(),
@@ -92,7 +92,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	m_numFiles        = numFiles;
 	m_fixedDataSize   = base->getFixedDataSize();
 	m_niceness        = niceness;
-	m_doneRegenateFiles = false;
+	m_doneRegenerateFiles = false;
 	m_doneMerging     = false;
 	m_ks              = rdb->getKeySize();
 
@@ -203,7 +203,7 @@ void RdbMerge::regenerateFilesWrapper(void *state) {
 
 void RdbMerge::regenerateFilesDoneWrapper(void *state, job_exit_t exit_type) {
 	RdbMerge *that = static_cast<RdbMerge*>(state);
-	that->m_doneRegenateFiles = true;
+	that->m_doneRegenerateFiles = true;
 	that->gotLock();
 }
 
@@ -211,7 +211,7 @@ void RdbMerge::regenerateFilesDoneWrapper(void *state, job_exit_t exit_type) {
 // . sets g_errno on error
 bool RdbMerge::gotLock() {
 	// regenerate map/index if needed
-	if (!m_doneRegenateFiles &&
+	if (!m_doneRegenerateFiles &&
 		m_targetFile->getFileSize() > 0 &&
 		((m_targetIndex && m_targetIndex->getFileSize() == 0) || m_targetMap->getFileSize() == 0)) {
 		log(LOG_WARN, "db: merge: Regenerating map/index from a killed merge.");
