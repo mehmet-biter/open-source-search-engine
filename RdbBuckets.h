@@ -124,7 +124,6 @@ private:
 	//syntactic sugar
 	RdbBucket* bucketFactory_unlocked();
 	void updateNumRecs_unlocked(int32_t n, int32_t bytes, int32_t numNeg);
-	int32_t getNumKeys_unlocked() const;
 
 	bool fastSave_unlocked();
 	int64_t fastSaveColl_unlocked(int fd);

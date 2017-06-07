@@ -1449,12 +1449,6 @@ int32_t RdbBuckets::getNumKeys() const {
 	return m_numKeysApprox;
 }
 
-int32_t RdbBuckets::getNumKeys_unlocked() const {
-	m_rwlock.verify_is_locked();
-
-	return m_numKeysApprox;
-}
-
 int32_t RdbBuckets::getNumNegativeKeys() const {
 	ScopedReadLock sl(m_rwlock);
 	return m_numNegKeys;
