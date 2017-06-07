@@ -217,9 +217,6 @@ private:
 	static void saveWrapper(void *state);
 	static void saveDoneWrapper(void *state, job_exit_t exit_type);
 
-	int64_t getBytesWritten_unlocked() const { return m_bytesWritten; }
-	int64_t getBytesRead_unlocked() const { return m_bytesRead; }
-
 	// . get the node whose key is <= "key"
 	int32_t getPrevNode_unlocked(collnum_t collnum, const char *key) const;
 
