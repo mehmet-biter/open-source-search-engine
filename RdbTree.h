@@ -40,6 +40,7 @@
 #include "JobScheduler.h" //for job_exit_t
 #include "types.h"
 #include "GbMutex.h"
+#include "GbRWLock.h"
 
 class RdbList;
 class BigFile;
@@ -67,7 +68,7 @@ public:
 	int32_t clear();
 	int32_t clear_unlocked();
 
-	GbMutex& getLock() { return m_mtx; }
+	GbRWLock& getLock() { return m_rwlock; }
 
 	// . this will overwrite nodes with the same key
 	// . returns -1 if it couldn't grab the memory or grow the table
@@ -132,9 +133,9 @@ public:
 	bool isSaving() const;
 	bool needsSave() const;
 
-	collnum_t getCollnum_unlocked(int32_t node) const { m_mtx.verify_is_locked(); return m_collnums[node]; }
+	collnum_t getCollnum_unlocked(int32_t node) const { m_rwlock.verify_is_locked(); return m_collnums[node]; }
 
-	bool isEmpty_unlocked(int32_t node) const { m_mtx.verify_is_locked(); return (m_parents[node] == -2); }
+	bool isEmpty_unlocked(int32_t node) const { m_rwlock.verify_is_locked(); return (m_parents[node] == -2); }
 
 	bool isEmpty() const;
 	bool isEmpty_unlocked() const;
@@ -148,7 +149,7 @@ public:
 
 	int32_t getNumAvailNodes() const;
 
-	int32_t getNumTotalNodes_unlocked() const { m_mtx.verify_is_locked(); return m_numNodes; }
+	int32_t getNumTotalNodes_unlocked() const { m_rwlock.verify_is_locked(); return m_numNodes; }
 
 	// negative and postive counts
 	int32_t getNumNegativeKeys() const;
@@ -179,7 +180,7 @@ public:
 	//   nodes used
 	bool is90PercentFull() const;
 
-	int32_t getMinUnusedNode_unlocked() const { m_mtx.verify_is_locked(); return m_minUnusedNode; }
+	int32_t getMinUnusedNode_unlocked() const { m_rwlock.verify_is_locked(); return m_minUnusedNode; }
 
 	// . load & save the tree quickly
 	// . returns false on error, true otherwise
@@ -194,7 +195,7 @@ public:
 	// . sets g_errno on error
 	bool fastSave(const char *dir, bool useThread, void *state, void (*callback)(void *));
 
-	void verifyIntegrity();
+	void verifyIntegrity() const;
 
 	bool checkTree_unlocked(bool printMsgs, bool doChainTest) const;
 
@@ -262,7 +263,7 @@ private:
 	// used by getrderOfKey() (have to estimate if tree not balanced)
 	int32_t getTreeDepth_unlocked() const;
 
-	mutable GbMutex m_mtx;
+	mutable GbRWLock m_rwlock;
 
 	// . this stuff is accessed by thread an must be public
 	// . cannot add to tree when saving

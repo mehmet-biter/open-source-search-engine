@@ -2,7 +2,7 @@
 #include "SpiderCache.h"
 #include "SpiderLoop.h"
 #include "SpiderColl.h"
-#include "ScopedLock.h"
+#include "ScopedWriteLock.h"
 
 
 Doledb g_doledb;
@@ -69,7 +69,7 @@ void nukeDoledb ( collnum_t collnum ) {
 		//sc->m_ufnMapValid = false;
 
 		{
-			ScopedLock sl(sc->m_waitingTree.getLock());
+			ScopedWriteLock sl(sc->m_waitingTree.getLock());
 
 			// log it
 			log("spider: rebuilding %s from doledb nuke", sc->getCollName());

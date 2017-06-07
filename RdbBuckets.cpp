@@ -2017,7 +2017,7 @@ bool RdbBuckets::delColl_unlocked(collnum_t collnum) {
 
 int32_t RdbBuckets::addTree(RdbTree *rt) {
 	ScopedWriteLock sl(m_rwlock);
-	ScopedLock sl2(rt->getLock());
+	ScopedReadLock sl2(rt->getLock());
 
 	int32_t n = rt->getFirstNode_unlocked();
 	int32_t count = 0;

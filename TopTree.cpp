@@ -6,8 +6,8 @@
 #include "Titledb.h" // DOCID_MASK
 #include "Msg40.h" // MAXDOCIDSTOCOMPUTE
 #include "Sanity.h"
-#include "ScopedLock.h"
 #include "Conf.h"
+#include "ScopedWriteLock.h"
 
 TopTree::TopTree() { 
 	m_nodes = NULL; 
@@ -337,7 +337,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	// delete this node
 	SPTRTYPE deleteMe = -1;
 
-	ScopedLock sl(m_t2.getLock());
+	ScopedWriteLock sl(m_t2.getLock());
 	// do not even try to add if ridiculous count for this domain
 	if ( m_domCount[domHash] >= m_ridiculousMax ) {
 		logTrace(g_conf.m_logTraceTopTree, "Reached m_ridiculousMax %" PRId64 " for domain hash", m_ridiculousMax);

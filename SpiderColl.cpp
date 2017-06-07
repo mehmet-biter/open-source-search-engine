@@ -14,6 +14,8 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "ScopedLock.h"
+#include "ScopedWriteLock.h"
+#include "ScopedReadLock.h"
 
 static key96_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp ) {
 	// sanity
@@ -336,7 +338,7 @@ const char *SpiderColl::getCollName() {
 }
 
 bool SpiderColl::makeWaitingTable ( ) {
-	ScopedLock sl(m_waitingTree.getLock());
+	ScopedReadLock sl(m_waitingTree.getLock());
 
 	log(LOG_DEBUG,"spider: making waiting table for %s.",m_coll);
 
@@ -839,7 +841,7 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 		return false;
 	}
 
-	ScopedLock sl(m_waitingTree.getLock());
+	ScopedWriteLock sl(m_waitingTree.getLock());
 
 	// see if in tree already, so we can delete it and replace it below
 	// . this is true if already in tree
@@ -970,7 +972,7 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 	uint64_t nowMS = gettimeofdayInMilliseconds();
 
 	for (;;) {
-		ScopedLock sl(m_waitingTree.getLock());
+		ScopedWriteLock sl(m_waitingTree.getLock());
 
 		// we might have deleted the only node below...
 		if (m_waitingTree.isEmpty_unlocked()) {
@@ -1051,7 +1053,7 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 }
 
 uint64_t SpiderColl::getNextSpiderTimeFromWaitingTree ( ) {
-	ScopedLock sl(m_waitingTree.getLock());
+	ScopedReadLock sl(m_waitingTree.getLock());
 
 	// if nothing to scan, bail
 	if (m_waitingTree.isEmpty_unlocked() ) return 0LL;
@@ -2628,7 +2630,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		static_assert(SR_READ_SIZE >= 500000, "ensure read size is big enough");
 
 		{
-			ScopedLock sl(m_winnerTree.getLock());
+			ScopedWriteLock sl(m_winnerTree.getLock());
 			// only compare to min winner in tree if tree is full
 			if (m_winnerTree.getNumUsedNodes_unlocked() >= maxWinners) {
 				// get that key
@@ -2700,7 +2702,7 @@ gotNewWinner:
 		if ( ! newMem ) continue;
 
 		{
-			ScopedLock sl(m_winnerTree.getLock());
+			ScopedWriteLock sl(m_winnerTree.getLock());
 			// add it to the tree of the top urls to spider
 			m_winnerTree.addNode_unlocked(0, (char *)&wk, (char *)newMem, need);
 
@@ -2874,7 +2876,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 			log("spider: nuking misleading waitingtree key "
 			    "firstIp=%s", iptoa(m_scanningIp,ipbuf));
 
-		ScopedLock sl(m_waitingTree.getLock());
+		ScopedWriteLock sl(m_waitingTree.getLock());
 
 		m_waitingTree.deleteNode_unlocked(0, (char *)&m_waitingTreeKey, true);
 		m_waitingTreeKeyValid = false;
@@ -2916,7 +2918,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 	int32_t firstIp = m_waitingTreeKey.n0 & 0xffffffff;
 
 	{
-		ScopedLock sl(m_winnerTree.getLock());
+		ScopedReadLock sl(m_winnerTree.getLock());
 
 		int32_t ntn = m_winnerTree.getNumNodes_unlocked();
 
@@ -3040,10 +3042,10 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 
 	char ipbuf[16]; //for various log purposes
 	{
-		ScopedLock sl(m_waitingTree.getLock());
+		ScopedWriteLock sl(m_waitingTree.getLock());
 
 		/// @todo ALC could we avoid locking winnerTree?
-		ScopedLock sl2(m_winnerTree.getLock());
+		ScopedWriteLock sl2(m_winnerTree.getLock());
 
 		// sanity check. how did this happen? it messes up our crawl!
 		// maybe a doledb add went through? so we should add again?
@@ -3244,7 +3246,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	}
 
 	{
-		ScopedLock sl(m_waitingTree.getLock());
+		ScopedWriteLock sl(m_waitingTree.getLock());
 
 		// before adding to doledb remove from waiting tree so we do not try
 		// to readd to doledb...

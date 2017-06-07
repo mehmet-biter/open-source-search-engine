@@ -23,6 +23,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "ScopedLock.h"
+#include "ScopedWriteLock.h"
 #include <sys/stat.h> //mdir()
 
 
@@ -794,7 +795,7 @@ bool Rdb::dumpTree() {
 
 	// do not do chain testing because that is too slow
 	if (m_useTree) {
-		ScopedLock sl(m_tree.getLock());
+		ScopedWriteLock sl(m_tree.getLock());
 		if (!m_tree.checkTree_unlocked(false, false)) {
 			log(LOG_ERROR, "db: %s tree was corrupted in memory. Trying to fix. Your memory is probably bad. "
 				"Please replace it.", m_dbname);
@@ -2047,7 +2048,7 @@ bool Rdb::getTreeCollExist(collnum_t collnum) const {
 // memory from deleted nodes. works by condensing the used memory.
 // returns how much we reclaimed.
 int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
-	ScopedLock sl(m_tree.getLock());
+	ScopedWriteLock sl(m_tree.getLock());
 
 	log("rdb: reclaiming tree mem for doledb");
 

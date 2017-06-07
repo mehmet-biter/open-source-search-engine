@@ -12,10 +12,10 @@
 #include "XmlDoc.h"
 #include "Pages.h"
 #include "PageInject.h"
-#include "ScopedLock.h"
 #include "Process.h"
 #include "ip.h"
 #include "Mem.h"
+#include "ScopedReadLock.h"
 
 namespace {
 
@@ -427,7 +427,7 @@ static bool sendPage(State11 *st) {
 
 	int32_t count = 0;
 	{
-		ScopedLock sl(sc->m_waitingTree.getLock());
+		ScopedReadLock sl(sc->m_waitingTree.getLock());
 		for (int32_t node = sc->m_waitingTree.getFirstNode_unlocked(); node >= 0;
 		     node = sc->m_waitingTree.getNextNode_unlocked(node)) {
 			// get key

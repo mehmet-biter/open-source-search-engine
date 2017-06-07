@@ -2,7 +2,7 @@
 #include <fctypes.h>
 #include <Mem.h>
 #include <sort.h>
-#include <ScopedLock.h>
+#include <ScopedWriteLock.h>
 #include "RdbTree.h"
 #include "Log.h"
 
@@ -40,7 +40,7 @@ TEST(RdbTreeTest, HashTest) {
 	RdbTree rt;
 	ASSERT_TRUE(rt.set(0, numKeys + 1000, numKeys * 28, false, "tree-test"));
 
-	ScopedLock sl(rt.getLock());
+	ScopedWriteLock sl(rt.getLock());
 
 	// add to regular tree
 	int64_t t = gettimeofdayInMilliseconds();
