@@ -295,12 +295,12 @@ Version.o: FORCE
 FORCE:
 
 
-gb: $(OBJS) main.o $(LIBFILES)
+gb: $(LIBFILES) $(OBJS) main.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ main.o $(OBJS) $(LIBS)
 
 
 .PHONY: static
-static: $(OBJS) main.o $(LIBFILES)
+static: $(LIBFILES) $(OBJS) main.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -static -o gb main.o $(OBJS) $(LIBS)
 
 
