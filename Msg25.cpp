@@ -860,8 +860,7 @@ bool Msg25::doReadLoop() {
 	//   Now we hang indefinitely. We also fixed UdpServer to resend
 	//   requests after 30 seconds even though it was fully acked in case
 	//   the receiving host went down and is now back up.
-	if ( ! m_msg5.getList ( 
-				RDB_LINKDB      ,
+	if ( ! m_msg5.getList (RDB_LINKDB      ,
 				cr->m_collnum          ,
 				&m_list         ,
 				(char*)&startKey,

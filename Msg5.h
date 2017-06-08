@@ -21,11 +21,9 @@ class Msg2;
 
 
 class Msg5 { 
-
- public:
+public:
 
 	Msg5();
-
 	~Msg5();
 
 	// . set "list" with the asked for records
