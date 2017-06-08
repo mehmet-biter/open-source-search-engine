@@ -276,7 +276,7 @@ libcld2_full.so:
 
 CLD3_SRC_DIR=third-party/cld3/src
 libcld3.so:
-	mkdir -p $(CLD3_SRC_DIR)/cld_3/protos && protoc $(CLD3_SRC_DIR)/*.proto --cpp_out=$(CLD3_SRC_DIR)/cld_3/protos/
+	mkdir -p $(CLD3_SRC_DIR)/cld_3/protos && protoc --proto_path=$(CLD3_SRC_DIR)/ --cpp_out=$(CLD3_SRC_DIR)/cld_3/protos/ $(CLD3_SRC_DIR)/*.proto
 	cd $(CLD3_SRC_DIR) && g++ -std=c++11 -shared -fPIC \
 	base.cc embedding_feature_extractor.cc embedding_network.cc feature_extractor.cc feature_types.cc fml_parser.cc \
 	language_identifier_features.cc lang_id_nn_params.cc nnet_language_identifier.cc registry.cc relevant_script_feature.cc \
