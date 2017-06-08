@@ -337,6 +337,7 @@ public:
 	uint8_t *getLangVector ( ) ;	
 	uint8_t *getLangId ( ) ;
 	const char* getLangIdCLD2();
+	std::string getLangIdCLD3();
 	char computeLangId ( Sections *sections ,Words *words , char *lv ) ;
 	class Words *getWords ( ) ;
 	class Bits *getBits ( ) ;

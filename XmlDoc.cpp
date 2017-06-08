@@ -48,6 +48,8 @@
 #include "third-party/cld2/public/compact_lang_det.h"
 #include "third-party/cld2/public/encodings.h"
 
+#include "third-party/cld3/src/nnet_language_identifier.h"
+
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -3475,9 +3477,24 @@ const char* XmlDoc::getLangIdCLD2() {
 		log(LOG_INFO, "lang: cld2: lang0: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[0]), percent3[0], normalized_score3[0]);
 		log(LOG_INFO, "lang: cld2: lang1: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[1]), percent3[1], normalized_score3[1]);
 		log(LOG_INFO, "lang: cld2: lang2: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[2]), percent3[2], normalized_score3[2]);
+		return "xx";
 	}
 
 	return CLD2::LanguageCode(language);
+}
+
+std::string XmlDoc::getLangIdCLD3() {
+	const char *content = *getRawUtf8Content();
+
+	chrome_lang_id::NNetLanguageIdentifier lang_id;
+	auto result = lang_id.FindLanguage(content);
+	if (!result.is_reliable) {
+		log(LOG_INFO, "lang: cld3: lang: %s(%f %f) is_reliable=%d",
+		    result.language.c_str(), result.probability, result.proportion, result.is_reliable);
+		return std::string("xx");
+	}
+
+	return result.language;
 }
 
 // returns -1 and sets g_errno on error
@@ -3548,7 +3565,8 @@ uint8_t *XmlDoc::getLangId ( ) {
 	m_langId = computeLangId ( sections , words, (char *)lv );
 	if ( m_langId != langUnknown ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from langVector", getLanguageAbbr(m_langId) );
-		log(LOG_INFO, "lang: vector lang=%s langCLD2=%s url=%s", getLanguageAbbr(m_langId), getLangIdCLD2(), m_firstUrl.getUrl());
+		log(LOG_INFO, "lang: vector lang=%s langCLD2=%s langCLD3=%s url=%s",
+		    getLanguageAbbr(m_langId), getLangIdCLD2(), getLangIdCLD3().c_str(), m_firstUrl.getUrl());
 		m_langIdValid = true;
 		return &m_langId;
 	}
@@ -3567,7 +3585,8 @@ uint8_t *XmlDoc::getLangId ( ) {
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
 	if ( m_langId != langUnknown ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaDescription", getLanguageAbbr(m_langId) );
-		log(LOG_INFO, "lang: meta description lang=%s langCLD2=%s url=%s", getLanguageAbbr(m_langId), getLangIdCLD2(), m_firstUrl.getUrl());
+		log(LOG_INFO, "lang: meta description lang=%s langCLD2=%s langCLD3=%s url=%s",
+		    getLanguageAbbr(m_langId), getLangIdCLD2(), getLangIdCLD3().c_str(), m_firstUrl.getUrl());
 		m_langIdValid = true;
 		return &m_langId;
 	}
@@ -3582,7 +3601,8 @@ uint8_t *XmlDoc::getLangId ( ) {
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
 	if (m_langId != langUnknown) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaKeywords", getLanguageAbbr(m_langId));
-		log(LOG_INFO, "lang: meta keyword lang=%s langCLD2=%s url=%s", getLanguageAbbr(m_langId), getLangIdCLD2(), m_firstUrl.getUrl());
+		log(LOG_INFO, "lang: meta keyword lang=%s langCLD2=%s langCLD3=%s url=%s",
+		    getLanguageAbbr(m_langId), getLangIdCLD2(), getLangIdCLD3().c_str(), m_firstUrl.getUrl());
 		m_langIdValid = true;
 		return &m_langId;
 	}
@@ -3592,14 +3612,16 @@ uint8_t *XmlDoc::getLangId ( ) {
 		m_langId = getLangIdFromCharset(m_charset);
 		if (m_langId != langUnknown) {
 			logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from charset", getLanguageAbbr(m_langId));
-			log(LOG_INFO, "lang: charset lang=%s langCLD2=%s url=%s", getLanguageAbbr(m_langId), getLangIdCLD2(), m_firstUrl.getUrl());
+			log(LOG_INFO, "lang: charset lang=%s langCLD2=%s langCLD3=%s url=%s",
+			    getLanguageAbbr(m_langId), getLangIdCLD2(), getLangIdCLD3().c_str(), m_firstUrl.getUrl());
 			m_langIdValid = true;
 			return &m_langId;
 		}
 	}
 
 	logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s", getLanguageAbbr(m_langId));
-	log(LOG_INFO, "lang: end lang=%s langCLD2=%s url=%s", getLanguageAbbr(m_langId), getLangIdCLD2(), m_firstUrl.getUrl());
+	log(LOG_INFO, "lang: end lang=%s langCLD2=%s langCLD3=%s url=%s",
+	    getLanguageAbbr(m_langId), getLangIdCLD2(), getLangIdCLD3().c_str(), m_firstUrl.getUrl());
 
 	m_langIdValid = true;
 	return &m_langId;
