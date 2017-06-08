@@ -40,6 +40,7 @@ public:
 	void reset();
 	void reBuf(char *newbuf);
 
+	// only used for trace logging/verification
 	const char *getFirstKey();
 	const char *getFirstKey() const { return const_cast<RdbBucket *>(this)->getFirstKey(); }
 
@@ -465,6 +466,8 @@ bool RdbBucket::addKey(const char *key, const char *data, int32_t dataSize) {
 	return true;
 }
 
+/// @todo ALC could we getNode without sorting?
+/// search sorted section first, then search unsorted section (beware of duplicated in unsorted section)
 int32_t RdbBucket::getNode(const char *key) {
 	sort();
 
@@ -2414,6 +2417,8 @@ int64_t RdbBuckets::fastLoadColl_unlocked(BigFile *f, const char *dbname) {
 #define BTMP_SIZE (BUCKET_SIZE*18+1000)
 
 int64_t RdbBucket::fastSave_r(int fd, int64_t offset) {
+	/// @todo ALC would using pwritev be a better option instead of copying to tmp buffer?
+
 	// first copy to a buf before saving so we can unlock!
 	char tmp[BTMP_SIZE];
 	char *p = tmp;
