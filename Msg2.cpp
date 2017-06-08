@@ -489,7 +489,7 @@ void Msg2::gotListWrapper(void *state, RdbList *rdblist, Msg5 *msg5) {
 
 void Msg2::gotListWrapper( Msg5 *msg5 ) {
 	verify_signature();
-	RdbList *list = msg5->m_list;
+	RdbList *list = msg5->getList();
 	// note it
 	if ( g_errno ) {
 		log ("msg2: error reading list: %s",mstrerror(g_errno));

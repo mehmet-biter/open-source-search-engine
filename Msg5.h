@@ -65,8 +65,6 @@ class Msg5 {
 				   int32_t       niceness);
 
 	bool getTreeList(RdbList *result, rdbid_t rdbId, collnum_t collnum, const void *startKey, const void *endKey);
-	bool getTreeList(RdbList *result, const void *startKey, const void *endKey, int32_t *numPositiveRecs, 
-		int32_t *numNegativeRecs, int32_t *memUsedByTree, int32_t *numUsedNodes);
 
 	// frees m_treeList, m_diskList (can be quite a lot of mem 2+ megs)
 	void reset();
@@ -75,20 +73,13 @@ class Msg5 {
 
 	int32_t minRecSizes() const { return m_minRecSizes; }
 
-	declare_signature
+	RdbList* getList() { return m_list; }
 
-	// we add our m_finalList(s) to this, the user's list
-	RdbList  *m_list;
-
-	// private:
-
-	// holds all RdbLists from disk
-	Msg3      m_msg3;
+	bool areAllMsg3ScansCompleted() const { return m_msg3.areAllScansCompleted(); }
 
 private:
-	// holds list parms
-	char      m_startKey[MAX_KEY_BYTES];
-	char      m_endKey[MAX_KEY_BYTES];
+	bool getTreeList(RdbList *result, const void *startKey, const void *endKey, int32_t *numPositiveRecs,
+	                 int32_t *numNegativeRecs, int32_t *memUsedByTree, int32_t *numUsedNodes);
 
 	// called to read lists from disk using Msg3
 	bool readList();
@@ -109,6 +100,18 @@ private:
 	//   recs we already have from the remote list
 	bool getRemoteList  ( );
 	bool gotRemoteList  ( );
+
+	declare_signature
+
+	// we add our m_finalList(s) to this, the user's list
+	RdbList  *m_list;
+
+	// holds all RdbLists from disk
+	Msg3      m_msg3;
+
+	// holds list parms
+	char      m_startKey[MAX_KEY_BYTES];
+	char      m_endKey[MAX_KEY_BYTES];
 
 	// hold the caller of getList()'s callback here
 	void    (* m_callback )( void *state , RdbList *list , Msg5 *msg );
