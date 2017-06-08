@@ -2885,7 +2885,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 // is merged into a single list, so we end up with one list per query 
 // term. 
 //
-void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank) {
+void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, char *miniMergeBufEnd, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// we got a docid that has all the query terms, so merge
@@ -2894,7 +2894,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 	// all posdb keys for this docid should fit in here, the 
 	// mini merge buf:
 	char *mptr 	= miniMergeBuf;
-	char *mptrEnd = miniMergeBuf + 299000;
+	miniMergeBufEnd -= 1000; //fragile hack but no worse than the original code
 	char *lastMptr = NULL;
 
 	// Merge each set of sublists, like we merge a term's list with 
@@ -3107,15 +3107,15 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 				}
 			} // mink != -1
 			//log("skipping ks=%" PRId32,(int32_t)ks);
-		} while( !currTermDone && mptr < mptrEnd );	// merge more ...
+		} while( !currTermDone && mptr < miniMergeBufEnd );	// merge more ...
 
 		// wrap it up here since done merging
 		miniMergedEnd[j] = mptr;		
-		//log(LOG_ERROR,"%s:%d: j=%" PRId32 ": miniMergedList[%" PRId32 "]=%p, miniMergedEnd[%" PRId32 "]=%p, mptr=%p, mptrEnd=%p, term=[%.*s] - TERM DONE", __func__, __LINE__, j, j, miniMergedList[j], j, miniMergedEnd[j], mptr, mptrEnd, qti->m_qt->m_termLen, qti->m_qt->m_term);
+		//log(LOG_ERROR,"%s:%d: j=%" PRId32 ": miniMergedList[%" PRId32 "]=%p, miniMergedEnd[%" PRId32 "]=%p, mptr=%p, miniMergeBufEnd=%p, term=[%.*s] - TERM DONE", __func__, __LINE__, j, j, miniMergedList[j], j, miniMergedEnd[j], mptr, miniMergeBufEnd, qti->m_qt->m_termLen, qti->m_qt->m_term);
 	}
 
 	// breach?
-	if ( mptr > miniMergeBuf + 300000 ) {
+	if ( mptr > miniMergeBufEnd ) {
 		gbshutdownAbort(true);
 	}
 
@@ -4106,7 +4106,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			//## the miniMerged* pointers point into..
 			//##
 
-			mergeTermSubListsForDocId(qtibuf, miniMergeBuf, miniMergedList, miniMergedEnd, &highestInlinkSiteRank);
+			mergeTermSubListsForDocId(qtibuf, miniMergeBuf, miniMergeBuf+sizeof(miniMergeBuf), miniMergedList, miniMergedEnd, &highestInlinkSiteRank);
 
 			// clear the counts on this DocIdScore class for this new docid
 			pdcs = NULL;

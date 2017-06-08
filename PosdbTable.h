@@ -119,7 +119,7 @@ class PosdbTable {
 	void removeScoreInfoForDeletedDocIds();
 	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
 	bool prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore);
-	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);
+	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, char *miniMergeBufEnd, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);
 
 	void createNonBodyTermPairScoreMatrix(const char **miniMergedList, const char **miniMergedEnd, float *scoreMatrix);
 	float getMinSingleTermScoreSum(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, DocIdScore *pdcs);
