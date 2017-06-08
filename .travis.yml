@@ -26,3 +26,4 @@ addons:
     - g++-5
     - libssl-dev
     - protobuf-compiler
+    - libprotobuf-dev
