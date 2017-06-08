@@ -725,7 +725,15 @@ tryAgain:
 	}
 
 	int64_t t2 = gettimeofdayInMilliseconds();
-	log(LOG_TIMING, "db: adding to map took %" PRIu64" ms", t2 - t1);
+
+	{
+		int64_t took = t2 - t1;
+		if (took > g_conf.m_logRdbMapAddListTimeThreshold) {
+			log(LOG_WARN, "db: adding to map took %" PRIu64" ms", took);
+		} else {
+			log(LOG_TIMING, "db: adding to map took %" PRIu64" ms", took);
+		}
+	}
 
 	if (m_index) {
 		// restore hi/lo ptr which was reset after generating map
@@ -733,7 +741,13 @@ tryAgain:
 		m_list->setListPtrLo(savedListPtrLo);
 
 		m_index->addList(m_list);
-		log(LOG_TIMING, "db: adding to index took %" PRIu64" ms", gettimeofdayInMilliseconds() - t2);
+
+		int64_t took = gettimeofdayInMilliseconds() - t2;
+		if (took > g_conf.m_logRdbIndexAddListTimeThreshold) {
+			log(LOG_WARN, "db: adding to index took %" PRIu64" ms", took);
+		} else {
+			log(LOG_TIMING, "db: adding to index took %" PRIu64" ms", took);
+		}
 	}
 
 	// . HACK: fix hacked lists before deleting from tree

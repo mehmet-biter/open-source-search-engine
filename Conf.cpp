@@ -170,6 +170,8 @@ Conf::Conf ( ) {
 	m_logHttpRequests = false;
 	m_logAutobannedQueries = false;
 	m_logLoopTimeThreshold = 500;
+	m_logRdbIndexAddListTimeThreshold = 50;
+	m_logRdbMapAddListTimeThreshold = 50;
 	m_logQueryTimeThreshold = 0;
 	m_logDiskReadTimeThreshold = 0;
 	m_logQueryReply = false;

@@ -306,6 +306,8 @@ class Conf {
 	bool  m_logAutobannedQueries;
 
 	int32_t m_logLoopTimeThreshold;
+	int32_t m_logRdbIndexAddListTimeThreshold;
+	int32_t m_logRdbMapAddListTimeThreshold;
 
 	// if query took this or more milliseconds, log its time
 	int32_t  m_logQueryTimeThreshold;
