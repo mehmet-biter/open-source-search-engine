@@ -57,7 +57,6 @@ public:
 	bool addKey(const char *key, const char *data, int32_t dataSize);
 
 	int32_t getNode(const char *key); //returns -1 if not found
-	int32_t getNumNegativeKeys() const;
 
 	bool getList(RdbList *list, const char *startKey, const char *endKey, int32_t minRecSizes,
 	             int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys);
@@ -1470,22 +1469,6 @@ void RdbBuckets::updateNumRecs_unlocked(int32_t n, int32_t bytes, int32_t numNeg
 const char *RdbBucket::getFirstKey() {
 	sort();
 	return m_keys;
-}
-
-int32_t RdbBucket::getNumNegativeKeys ( ) const {
-	int32_t numNeg = 0;
-	int32_t recSize = m_parent->m_recSize;
-	char *currKey = m_keys;
-	char *lastKey = m_keys + (m_numKeys * recSize);
-
-	while (currKey < lastKey) {
-		if (KEYNEG(currKey)) {
-			numNeg++;
-		}
-		currKey += recSize;
-	}
-
-	return numNeg;
 }
 
 bool RdbBucket::getList(RdbList* list, const char* startKey, const char* endKey, int32_t minRecSizes,
