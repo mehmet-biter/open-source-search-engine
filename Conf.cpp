@@ -89,6 +89,7 @@ Conf::Conf ( ) {
 	m_vagusPort = 8720;
 	m_vagusKeepaliveSendInterval = 500;
 	m_vagusKeepaliveLifetime = 5000;
+	m_vagusMaxDeadTime = 5;
 	m_maxDocsWanted = 0;
 	m_maxFirstResultNum = 0;
 	min_docid_splits = 0;
@@ -168,6 +169,7 @@ Conf::Conf ( ) {
 	m_profilingEnabled = false;
 	m_logHttpRequests = false;
 	m_logAutobannedQueries = false;
+	m_logLoopTimeThreshold = 500;
 	m_logQueryTimeThreshold = 0;
 	m_logDiskReadTimeThreshold = 0;
 	m_logQueryReply = false;
@@ -216,6 +218,7 @@ Conf::Conf ( ) {
 	m_logDebugUdp = false;
 	m_logDebugUnicode = false;
 	m_logDebugUrlAttempts = false;
+	m_logDebugVagus = false;
 	m_logTraceBigFile = false;
 	m_logTraceDns = false;
 	m_logTraceFile = false;
@@ -260,7 +263,7 @@ Conf::Conf ( ) {
 	m_useTmpCluster = false;
 	m_allowScale = true;
 	m_bypassValidation = false;
-	m_maxCallbackDelay = 0;
+	m_maxCallbackDelay = -1;
 	m_repairingEnabled = false;
 	m_maxRepairinjections = 0;
 	m_repairMem = 0;
@@ -509,6 +512,8 @@ bool Conf::save ( ) {
 	// fix so if we core in malloc/free we can still save conf
 	StackBuf<1024> fn;
 	fn.safePrintf("%sgb.conf",g_hostdb.m_dir);
+	log(LOG_INFO, "db: Saving %s", fn.getBufStart());
+
 	bool status = g_parms.saveToXml ( (char *)this , fn.getBufStart(), OBJ_CONF );
 
 	return status;

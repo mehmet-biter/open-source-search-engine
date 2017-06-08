@@ -505,7 +505,7 @@ static void sendUdpReply7(void *state) {
 	}
 	// just send back the 4 byte indexcode, which is 0 on success,
 	// otherwise it is the errno
-	char *tmp = slot->m_tmpBuf;
+	char *tmp = slot->m_shortSendBuffer;
 	char *p = tmp;
 	memcpy ( p , (char *)&indexCode , 4 );
 	p += 4;

@@ -60,23 +60,19 @@ class Loop {
 	// . register this "fd" with "callback"
 	// . "callback" will be called when fd is ready for reading
 	// . "timeout" is -1 if this never timesout
-	bool registerReadCallback  ( int   fd    ,
-				     void *state , 
-				     void (* callback)(int fd,void *state ) ,
-				     int32_t  niceness );//= MAX_NICENESS ) ;
+	bool registerReadCallback(int fd, void *state, void (*callback)(int fd, void *state),
+	                          const char *description, int32_t niceness);
 
 	// . register this "fd" with "callback"
 	// . "callback" will be called when fd is ready for reading
 	// . "callback" will be called when there is an error on fd
-	bool registerWriteCallback ( int   fd    ,
-				     void *state ,
-				     void (* callback)(int fd, void *state ) , 
-	 			     int32_t   niceness ); 
+	bool registerWriteCallback(int fd, void *state, void (*callback)(int fd, void *state),
+	                           const char *description, int32_t niceness);
 
 	// . register this callback to be called every second
 	// . TODO: implement "seconds" parameter
-	bool registerSleepCallback ( int32_t milliseconds, void *state, void (* callback)(int fd,void *state ),
-	                             int32_t niceness = 1, bool immediate = false );
+	bool registerSleepCallback(int32_t milliseconds, void *state, void (*callback)(int fd, void *state),
+	                           const char *description, int32_t niceness = 1, bool immediate = false);
 
 	// unregister call back for reading, writing or sleeping
 	void unregisterReadCallback  ( int fd, void *state , void (* callback)(int fd,void *state) );
@@ -110,11 +106,8 @@ class Loop {
 				  void (* callback)(int fd,void *state) ,
 				  bool forReading );
 
-	bool addSlot ( bool forReading , int fd , void *state , void (* callback)(int fd , void *state ),
-	               int32_t niceness , int32_t tick = 0x7fffffff, bool immediate = false ) ;
-
-	// set how long to pause waiting for singals (in milliseconds)
-	void setSigWaitTime ( int32_t ms ) ;
+	bool addSlot(bool forReading, int fd, void *state, void (*callback)(int fd, void *state),
+	             int32_t niceness, const char *description, int32_t tick = 0x7fffffff, bool immediate = false);
 
 	// now we use a linked list of pre-allocated slots to avoid a malloc
 	// failure which can cause the merge to dump with "URGENT MERGE FAILED"

@@ -229,7 +229,7 @@ void Multicast::sendToWholeGroup() {
 		// continue if we're already registered for sleep callbacks
 		if ( m_registeredSleep ) continue;
 		// otherwise register for sleep callback to try again
-		g_loop.registerSleepCallback( 5000/*ms*/, this, sleepWrapper2, m_niceness );
+		g_loop.registerSleepCallback(5000, this, sleepWrapper2, "Multicast::sleepWrapper2", m_niceness);
 		m_registeredSleep = true;
 	}
 	// if we had an error then we'll be called again in a second
@@ -324,7 +324,7 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 		return;
 	// . otherwise register for sleep callback to try again
 	// . sleepWrapper2() will call sendToWholeGroup() for us
-	g_loop.registerSleepCallback( 5000/*ms*/, this, sleepWrapper2, m_niceness );
+	g_loop.registerSleepCallback(5000/*ms*/, this, sleepWrapper2, "Multicast::sleepWrapper2", m_niceness);
 	m_registeredSleep = true;
 }
 
@@ -585,7 +585,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 		if(wait>=0) {
 			// . otherwise register for sleep callback to try again
 			// . sleepCallback1Wrapper() will call sendToHostLoop() for us
-			g_loop.registerSleepCallback(wait/*ms*/, this, sleepCallback1Wrapper, m_niceness );
+			g_loop.registerSleepCallback(wait, this, sleepCallback1Wrapper, "Multicast::sleepCallback1Wrapper", m_niceness);
 			m_registeredSleep = true;
 		}
 	}
@@ -921,13 +921,6 @@ void Multicast::closeUpShop ( UdpSlot *slot ) {
 			g_errno = slot->getErrno();
 		}
 
-		// . sometimes UdpServer will read the reply into a temporary buffer
-		// . this happens if the udp server is hot (async signal based) and
-		//   m_replyBuf is NULL because he cannot malloc a buf to read into
-		//   because malloc is not async signal safe
-		if (slot->m_tmpBuf == slot->m_readBuf) {
-			m_freeReadBuf = false;
-		}
 		// don't let UdpServer free the readBuf now that we point to it
 		slot->m_readBuf = NULL;
 		slot->m_readBufSize = 0;

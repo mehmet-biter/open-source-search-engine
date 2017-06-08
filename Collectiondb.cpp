@@ -1470,7 +1470,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	const char *langWhitelistStr = "xx,en,bg,sr,ca,cs,da,et,fi,fr,de,el,hu,is,ga,it,la,lv,lt,lb,nl,pl,pt,ro,es,sv,no,vv";
 
 	// max spiders per ip
-	int32_t ipms = 7;
+	int32_t ipms = 1;
 
 	int32_t n = 0;
 
@@ -2078,8 +2078,9 @@ bool CollectionRec::save ( ) {
 
 	//File f;
 	char tmp[1024];
-
 	snprintf(tmp, 1023, "%scoll.%s.%" PRId32"/coll.conf", g_hostdb.m_dir, m_coll, (int32_t)m_collnum);
+
+	log(LOG_INFO, "coll: Saving %s", tmp);
 	if (!g_parms.saveToXml((char *)this, tmp, OBJ_COLL)) {
 		// we didn't save successfully
 		m_needsSave = true;

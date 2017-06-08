@@ -56,15 +56,20 @@ public:
 
 	bool isMerging() const { return m_isMerging; }
 
-	rdbid_t getRdbId() const { return m_rdbId; }
-
 	// stop further actions
 	void haltMerge();
 
 	void mergeIncorporated(const RdbBase *);
 
 private:
+	static void acquireLockWrapper(void *state);
+	static void acquireLockDoneWrapper(void *state, job_exit_t exit_type);
+
 	static void getLockWrapper(int /*fd*/, void *state);
+
+	static void regenerateFilesWrapper(void *state);
+	static void regenerateFilesDoneWrapper(void *state, job_exit_t exit_type);
+
 	void getLock();
 	static void filterListWrapper(void *state);
 	static void filterDoneWrapper(void *state, job_exit_t exit_type);
@@ -93,6 +98,9 @@ private:
 
 	MergeSpaceCoordinator *m_mergeSpaceCoordinator;
 
+	std::atomic<bool> m_isAcquireLockJobSubmited;
+	bool m_isLockAquired;
+
 	// set to true when m_startKey wraps back to 0
 	bool m_doneMerging;
 
@@ -103,9 +111,11 @@ private:
 	int32_t m_startFileNum;
 	int32_t m_numFiles;
 	int32_t m_fixedDataSize;
+
 	BigFile *m_targetFile;
 	RdbMap *m_targetMap;
 	RdbIndex *m_targetIndex;
+	bool m_doneRegenerateFiles;
 
 	char m_startKey[MAX_KEY_BYTES];
 

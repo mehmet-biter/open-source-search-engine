@@ -739,11 +739,11 @@ static void handleRequest54(UdpSlot *udpSlot, int32_t /*niceness*/) {
 	winnersp->m_timesUsed++;
 
 	// sanity
-	if ( (int32_t)sizeof(ProxyReply) > TMPBUFSIZE ){g_process.shutdownAbort(true);}
+	if ( (int32_t)sizeof(ProxyReply) > SHORTSENDBUFFERSIZE ) { g_process.shutdownAbort(true); }
 
 	// and give proxy ip/port back to the requester so they can
 	// use that to download their url
-	ProxyReply *prep = (ProxyReply *)udpSlot->m_tmpBuf;
+	ProxyReply *prep = (ProxyReply *)udpSlot->m_shortSendBuffer;
 	prep->m_proxyIp = winnersp->m_ip;
 	prep->m_proxyPort = winnersp->m_port;
 
@@ -761,7 +761,7 @@ static void handleRequest54(UdpSlot *udpSlot, int32_t /*niceness*/) {
 	// sensitive to the spider policy.
 	prep->m_numBannedProxies = numBannedProxies;
 
-	//char *p = udpSlot->m_tmpBuf;
+	//char *p = udpSlot->m_shortSendBuffer;
 	//*(int32_t  *)p = winnersp->m_ip  ; p += 4;
 	//*(int16_t *)p = winnersp->m_port; p += 2;
 	// and the loadbucket id
@@ -814,7 +814,7 @@ static void handleRequest54(UdpSlot *udpSlot, int32_t /*niceness*/) {
 	}
 
 	// send the proxy ip/port/LBid back to user
-	g_udpServer.sendReply(udpSlot->m_tmpBuf, sizeof(ProxyReply), udpSlot->m_tmpBuf, sizeof(ProxyReply), udpSlot);
+	g_udpServer.sendReply(udpSlot->m_shortSendBuffer, sizeof(ProxyReply), udpSlot->m_shortSendBuffer, sizeof(ProxyReply), udpSlot);
 }
 	
 // . use msg 0x55 to say you are done using the proxy
@@ -881,7 +881,7 @@ bool initSpiderProxyStuff() {
 	buildProxyTable ();
 
 	// reset spider proxy stats every hour to alleviate false positives (moved from Process.cpp)
-	if (!g_loop.registerSleepCallback(3600000, NULL, resetProxyStatWrapper, 0)) {
+	if (!g_loop.registerSleepCallback(3600000, NULL, resetProxyStatWrapper, "SpiderProxy::resetProxyStatWrapper", 0)) {
 		gbshutdownResourceError();
 	}
 

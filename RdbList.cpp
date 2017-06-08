@@ -2152,7 +2152,7 @@ skip:
 ///////
 
 bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-                           rdbid_t rdbId, bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t startFileNum, bool isRealMerge) {
+                           rdbid_t rdbId, bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t startFileIndex, bool isRealMerge) {
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN");
 
 	// sanity
@@ -2374,7 +2374,8 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 						}
 
 						if (index->exist(docId)) {
-							if (i != filePos) {
+							// cater for newly dumped file that are not in global index
+							if (i != filePos && !rdbIndexQuery.hasPendingGlobalIndexJob() && i != (rdbIndexQuery.getNumFiles() - 1)) {
 								// docId found in newer file
 								gbshutdownCorrupted();
 							}
@@ -2393,7 +2394,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 			logTrace(g_conf.m_logTraceRdbList, "Found docId=%" PRIu64" with filePos=%" PRId32, docId, filePos);
 
-			if (filePos > (mini + listOffset) + startFileNum) {
+			if (filePos > (mini + listOffset) + startFileIndex) {
 				// docId is present in newer file
 				logTrace(g_conf.m_logTraceRdbList, "docId in newer list. skip. filePos=%" PRId32" mini=%" PRId16" listOffset=%" PRId32,
 				         filePos, mini, listOffset);

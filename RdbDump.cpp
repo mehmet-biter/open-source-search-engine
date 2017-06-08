@@ -303,7 +303,7 @@ bool RdbDump::dumpTree(bool recall) {
 				logError("db: Had error getting data for dump: %s. Retrying.", mstrerror(g_errno));
 
 				// retry for the remaining two types of errors
-				if (!g_loop.registerSleepCallback(1000, this, tryAgainWrapper2)) {
+				if (!g_loop.registerSleepCallback(1000, this, tryAgainWrapper2, "RdbDump::tryAgainWrapper2")) {
 					log(LOG_WARN, "db: Retry failed. Could not register callback.");
 
 					logTrace(g_conf.m_logTraceRdbDump, "END - retry failed, returning true");

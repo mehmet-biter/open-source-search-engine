@@ -1600,17 +1600,13 @@ static int32_t getMsgPiece ( TcpSocket *s ) {
 	// . this means we block, and cleanUp should be called to unregister it
 	// . this also makes f non-blocking
 	if (tcp->m_useSSL) {
-		if ( g_loop.registerReadCallback ( f->getfd(), 
-						   (void *)(PTRTYPE)(s->m_sd),
-						   getSSLMsgPieceWrapper ,
-						   s->m_niceness ) )
+		if (g_loop.registerReadCallback(f->getfd(), (void *)(PTRTYPE)(s->m_sd), getSSLMsgPieceWrapper,
+		                                "HttpServer::getSSLMsgPieceWrapper", s->m_niceness))
 			return n;
 	}
 	else {
-		if ( g_loop.registerReadCallback ( f->getfd(), 
-						   (void *)(PTRTYPE)(s->m_sd),
-						   getMsgPieceWrapper ,
-						   s->m_niceness ) )
+		if (g_loop.registerReadCallback(f->getfd(), (void *)(PTRTYPE)(s->m_sd), getMsgPieceWrapper,
+		                                "HttpServer::getMsgPieceWrapper", s->m_niceness))
 			return n;
 	}
 	// . TODO: deal with this better

@@ -44,6 +44,7 @@ public:
 	}
 
 	const char *getFilename() const { return m_file.getFilename(); }
+	int64_t getFileSize() const { return m_file.getFileSize(); }
 
 	BigFile *getFile  ( ) { return &m_file; }
 
@@ -109,11 +110,12 @@ private:
 	docidsconst_ptr_t m_docIds;
 	GbMutex m_docIdsMtx;
 
-	// newest record pending merge into m_docIds
-	GbMutex m_pendingDocIdsMtx;
+	GbMutex m_pendingMergeMtx;
 	pthread_cond_t m_pendingMergeCond;
 	bool m_pendingMerge;
 
+	// newest record pending merge into m_docIds
+	GbMutex m_pendingDocIdsMtx;
 	docids_ptr_t m_pendingDocIds;
 	uint64_t m_prevPendingDocId;
 

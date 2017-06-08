@@ -54,7 +54,7 @@
 // . the max size of an incoming request for a hot udp server
 // . we cannot call malloc so it must fit in here
 // . now we need tens of thousands of udp slots, so keep this small
-#define TMPBUFSIZE (250)
+#define SHORTSENDBUFFERSIZE (250)
 
 class Host;
 
@@ -121,7 +121,7 @@ public:
 	int32_t m_readBufSize;  // w/o the dgram headers.
 	int32_t m_readBufMaxSize;
 
-protected:
+protected: //actually private but UdpServer references it.
 	// set the UdpSlot's protocol, endpoint info, transId, timeout
 	void connect(UdpProtocol *proto, sockaddr_in *endPoint, Host *host, int32_t hostId, int32_t transId,
 	             int64_t timeout, int64_t now, int32_t niceness);
@@ -257,7 +257,13 @@ private:
 	// . returns -2 if nothing to send, -1 on error, 0 if blocked,
 	//   1 if sent something
 	// . should only be called by sendDatagramOrAck() above
-	int32_t sendAck(int sock, int64_t now, int32_t dgramNum = -1, int32_t weInitiated = -2, bool cancelTrans = false);
+	int32_t sendPlainAck(int sock, int64_t now) {
+		return sendAck(sock, now, -1, -2, false);
+	}
+	int32_t sendCancelAck(int sock, int64_t now, int32_t dgramNum) {
+		return sendAck(sock, now, dgramNum, 1, true);
+	}
+	int32_t sendAck(int sock, int64_t now, int32_t dgramNum, int32_t weInitiated, bool cancelTrans);
 
 	// . or by readDataGramOrAck() to read a faked ack for protocols that
 	//   don't use ACKs
@@ -428,11 +434,9 @@ protected:
 	} m_slotStatus;
 
 public:
-	// . for the hot udp server, we cannot call malloc in the sig handler
-	//   so we set m_readBuf to this to read in int16_t requests
-	// . caller should pre-allocated m_readBuf when calling sendRequest() if he expects a large reply
-	// . incoming requests simply cannot be bigger than this for the hot udp server
-	char m_tmpBuf[TMPBUFSIZE];
+	// In some places allocating a buffer for sendign is inconvenient, especially for realyl short replies.
+	// Those places can use this buffer
+	char m_shortSendBuffer[SHORTSENDBUFFERSIZE];
 };
 
 extern int32_t g_cancelAcksSent;

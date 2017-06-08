@@ -303,18 +303,18 @@ bool Process::init ( ) {
 	m_calledSave = false;
 
 	// heartbeat check
-	if ( ! g_loop.registerSleepCallback(100,NULL,heartbeatWrapper,0)) {
+	if (!g_loop.registerSleepCallback(100, NULL, heartbeatWrapper, "Process::heartbeatWrapper", 0)) {
 		return false;
 	}
 
 	// . continually call this once per second
 	// . once every half second now so that autosaves are closer together
 	//   in time between all hosts
-	if ( ! g_loop.registerSleepCallback(500,NULL,processSleepWrapper)) {
+	if (!g_loop.registerSleepCallback(500, NULL, processSleepWrapper, "Process::processSleepWrapper")) {
 		return false;
 	}
 
-	if (!g_loop.registerSleepCallback(60000, NULL, reloadDocid2SiteFlags, 0)) {
+	if (!g_loop.registerSleepCallback(60000, NULL, reloadDocid2SiteFlags, "Process::reloadDocid2SiteFlags", 0)) {
 		return false;
 	}
 
@@ -330,10 +330,6 @@ bool Process::isAnyTreeSaving() {
 		}
 	}
 	return false;
-}
-
-void Process::callHeartbeat () {
-	heartbeatWrapper ( 0 , NULL );
 }
 
 void heartbeatWrapper(int /*fd*/, void * /*state*/) {
@@ -593,36 +589,42 @@ bool Process::shutdown2() {
 	}
 
 	if ( m_urgent ) {
-		log(LOG_INFO,"gb: Shutting down urgently. Timed try #%" PRId32".", m_try++);
+		log(LOG_INFO,"gb: Shutting down urgently. Timed try #%" PRId32".", m_try);
 	} else {
-		log(LOG_INFO,"gb: Shutting down. Timed try #%" PRId32".", m_try++);
+		log(LOG_INFO,"gb: Shutting down. Timed try #%" PRId32".", m_try);
 	}
+
+	// we should only finalize these once
+	if (m_try == 0) {
+		InstanceInfoExchange::finalize();
+
+		finalizeRealtimeUrlClassification();
+
+		Statistics::finalize();
+
+		log("gb: disabling threads");
+
+		// always disable threads at this point so g_jobScheduler.submit() will
+		// always return false and we do not queue any new jobs for spawning
+		g_jobScheduler.disallow_new_jobs();
+
+		// Stop merging
+		g_merge.haltMerge();
+
+		RdbBase::finalizeGlobalIndexThread();
+		Msg4In::finalizeIncomingThread();
+
+		Rdb::finalizeRdbDumpThread();
+
+		g_jobScheduler.cancel_all_jobs_for_shutdown();
+	}
+
+	m_try++;
 
 	// switch to urgent if having problems
 	if ( m_try >= 10 ) {
 		m_urgent = true;
 	}
-
-	InstanceInfoExchange::finalize();
-
-	finalizeRealtimeUrlClassification();
-
-	Statistics::finalize();
-
-	log("gb: disabling threads");
-	// now disable threads so we don't exit while threads are
-	// outstanding
-	g_jobScheduler.disallow_new_jobs();
-
-	// Stop merging
-	g_merge.haltMerge();
-
-	RdbBase::finalizeGlobalIndexThread();
-	Msg4In::finalizeIncomingThread();
-
-	Rdb::finalizeRdbDumpThread();
-
-	g_jobScheduler.cancel_all_jobs_for_shutdown();
 
 	static bool s_printed = false;
 
@@ -715,10 +717,6 @@ bool Process::shutdown2() {
 		saveBlockingFiles1() ;
 		saveBlockingFiles2() ;
 	}
-
-	// always disable threads at this point so g_jobScheduler.submit() will
-	// always return false and we do not queue any new jobs for spawning
-	g_jobScheduler.disallow_new_jobs();
 
 	// urgent means we need to dump core, SEGV or something
 	if ( m_urgent ) {
@@ -879,6 +877,8 @@ bool Process::saveRdbIndexes() {
 		return true;
 	}
 
+	log(LOG_INFO, "db: Saving rdb indexes");
+
 	// loop over all Rdbs and save them
 	for (int32_t i = 0; i < m_numRdbs; i++) {
 		Rdb *rdb = m_rdbs[i];
@@ -897,6 +897,8 @@ bool Process::saveRdbMaps() {
 		return true;
 	}
 
+	log(LOG_INFO, "db: Saving rdb maps");
+
 	// loop over all Rdbs and save them
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
 		Rdb *rdb = m_rdbs[i];
@@ -913,9 +915,11 @@ bool Process::saveBlockingFiles1 ( ) {
 
 	// save the gb.conf file now
 	g_conf.save();
+
 	// save the conf files
 	// if autosave and we have over 20 colls, just make host #0 do it
-        g_collectiondb.save();
+	g_collectiondb.save();
+
 	// . save repair state
 	// . this is repeated above too
 	// . keep it here for auto-save

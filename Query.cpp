@@ -86,13 +86,11 @@ void Query::reset ( ) {
 	m_queryWordBuf.purge();
 	m_qwords               = NULL;
 	m_numExpressions       = 0;
-	m_hasUOR               = false;
 	// the site: and ip: query terms will disable site clustering & caching
 	m_hasPositiveSiteField         = false;
 	m_hasIpField           = false;
 	m_hasUrlField          = false;
 	m_hasSubUrlField       = false;
-	m_hasQuotaField        = false;
 	m_truncated            = false;
 }
 
@@ -467,8 +465,6 @@ bool Query::setQTerms ( const Words &words ) {
 		m_queryTermBuf.setLabel("stkbuf3");
 		const char *pp = m_queryTermBuf.getBufStart();
 		m_qterms = (QueryTerm *)pp;
-		pp += sizeof(QueryTerm);
-		if ( pp > m_queryTermBuf.getBufEnd() ) { g_process.shutdownAbort(true); }
 	}
 
 	// call constructor on each one here
@@ -507,8 +503,6 @@ bool Query::setQTerms ( const Words &words ) {
 		qt->m_qword     = qw ;
 		qt->m_piped     = qw->m_piped;
 		qt->m_isPhrase  = true ;
-		qt->m_isUORed   = false;
-		qt->m_UORedTerm   = NULL;
 		qt->m_synonymOf = NULL;
 		qt->m_ignored   = false;
 		qt->m_term      = NULL;
@@ -600,8 +594,6 @@ bool Query::setQTerms ( const Words &words ) {
 		qt->m_qword     = qw ;
 		qt->m_piped     = qw->m_piped;
 		qt->m_isPhrase  = false ;
-		qt->m_isUORed   = false;
-		qt->m_UORedTerm   = NULL;
 		qt->m_synonymOf = NULL;
 		// ignore some synonym terms if tf is too low
 		qt->m_ignored = qw->m_ignoreWord;
@@ -638,15 +630,14 @@ bool Query::setQTerms ( const Words &words ) {
 		int32_t fieldStart=-1;
 		int32_t fieldLen=0;
 
-		if ( pw == 0 && m_qwords[pw].m_ignoreWord==IGNORE_FIELDNAME)
+		if(pw == 0 && m_qwords[pw].m_ignoreWord==IGNORE_FIELDNAME)
 			fieldStart = pw;
 
-  		if ( pw > 0&& m_qwords[pw-1].m_ignoreWord==IGNORE_FIELDNAME ){
+		if(pw > 0 && m_qwords[pw-1].m_ignoreWord==IGNORE_FIELDNAME) {
   			pw -= 1;
  			fieldStart = pw;
  		}
- 		while (pw>0 && 
- 		       ((m_qwords[pw].m_ignoreWord == IGNORE_FIELDNAME))) {
+		while(pw > 0 && m_qwords[pw].m_ignoreWord == IGNORE_FIELDNAME) {
 			pw--;
 			fieldStart = pw;
 		}
@@ -666,8 +657,8 @@ bool Query::setQTerms ( const Words &words ) {
 				pw++;
 
 			fieldLen = m_qwords[pw-1].m_word + 
-				m_qwords[pw-1].m_wordLen -
-				m_qwords[fieldStart].m_word;
+				   m_qwords[pw-1].m_wordLen -
+				   m_qwords[fieldStart].m_word;
 		}
 		// do not use an explicit bit up if we have a hard count
 		qt->m_hardCount = qw->m_hardCount;
@@ -715,21 +706,16 @@ bool Query::setQTerms ( const Words &words ) {
 		qt->m_leftPhraseTermNum  = -1;
 		qt->m_rightPhraseTerm    = NULL;
 		qt->m_leftPhraseTerm     = NULL;
-		QueryTerm *qt2 = qt->m_UORedTerm;
-		if (!qt2) continue;
-		// chase down first term in UOR chain
-		while (qt2->m_UORedTerm) qt2 = qt2->m_UORedTerm;
 	}
 
 	// . set implicit bits, m_implicitBits
 	// . set m_inPhrase
-	for (int32_t i = 0; i < m_numWords ; i++ ){
+	for (int32_t i = 0; i < m_numWords ; i++ ) {
 		const QueryWord *qw = &m_qwords[i];
 		QueryTerm *qt = qw->m_queryWordTerm;
 		if (!qt) continue;
  		if ( qw->m_queryPhraseTerm )
- 			qw->m_queryPhraseTerm->m_implicitBits |=
-				qt->m_explicitBit;
+			qw->m_queryPhraseTerm->m_implicitBits |= qt->m_explicitBit;
 		// set flag if in a a phrase, and set phrase term num
 		if ( qw->m_queryPhraseTerm  ) {
 			QueryTerm *pt = qw->m_queryPhraseTerm;
@@ -856,8 +842,6 @@ bool Query::setQTerms ( const Words &words ) {
 				qt->m_qword     = qw; // NULL;
 				qt->m_piped     = qw->m_piped;
 				qt->m_isPhrase  = false ;
-				qt->m_isUORed   = false;
-				qt->m_UORedTerm = NULL;
 				qt->m_langIdBits = 0;
 				// synonym of this term...
 				qt->m_synonymOf = origTerm;
@@ -969,15 +953,9 @@ bool Query::setQTerms ( const Words &words ) {
 	//   repeated terms in setWords()
 	// . we need to support: "trains AND (perl OR python) NOT python"
 	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// BUT NOT IF in a UOR'd list!!!
-		if ( m_qterms[i].m_isUORed ) continue;
-		// that didn't seem to fix it right, for dup terms that
-		// are the FIRST term in a UOR sequence... they don't seem
-		// to have m_isUORed set
-		if ( m_hasUOR ) continue;
 		for ( int32_t j = 0 ; j < i ; j++ ) {
 			// skip if not a termid match
-			if(m_qterms[i].m_termId!=m_qterms[j].m_termId)continue;
+			if(m_qterms[i].m_termId!=m_qterms[j].m_termId) continue;
 			m_qterms[i].m_explicitBit = m_qterms[j].m_explicitBit;
 			// if doing phrases, ignore the unrequired phrase
 			if ( m_qterms[i].m_isPhrase ) {
@@ -1155,7 +1133,7 @@ bool Query::setQTerms ( const Words &words ) {
 	//
 	int32_t shift = 0;
 	m_requiredBits = 0;
-	for ( int32_t i = 0; i < n ; i++ ){
+	for ( int32_t i = 0; i < n ; i++ ) {
 		QueryTerm *qt = &m_qterms[i];
 		qt->m_explicitBit = 0;
 		if ( ! qt->m_isRequired ) continue;
@@ -1167,7 +1145,7 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( shift >= (int32_t)(sizeof(qvec_t)*8) ) break;
 	}
 	// now implicit bits
-	for ( int32_t i = 0; i < n ; i++ ){
+	for ( int32_t i = 0; i < n ; i++ ) {
 		QueryTerm *qt = &m_qterms[i];
 		// make it explicit bit at least
 		qt->m_implicitBits = qt->m_explicitBit;
@@ -1924,16 +1902,6 @@ bool Query::setQWords ( char boolFlag ,
 		// if query is all in upper case and we're doing boolean 
 		// DETECT, then assume not boolean
 		if ( allUpper && boolFlag == 2 ) boolFlag = 0;
-		// . having the UOR opcode does not mean we are boolean because
-		//   we want to keep it fast.
-		// . we need to set this opcode so the UOR logic in setQTerms()
-		//   works, because it checks the m_opcode value. otherwise
-		//   Msg20 won't think we are a boolean query and set boolFlag
-		//   to 0 when setting the query for summary generation and
-		//   will not recognize the UOR word as being an operator
-		if ( wlen==3 && w[0]=='U' && w[1]=='O' && w[2]=='R' &&
-		     ! firstWord ) {
-			opcode = OP_UOR; m_hasUOR = true; goto skipin; }
 		// . is this word a boolean operator?
 		// . cannot be in quotes or field
 		if ( boolFlag >= 1 && ! inQuotes && ! fieldCode ) {
@@ -1953,7 +1921,6 @@ bool Query::setQWords ( char boolFlag ,
 			else if ( wlen==5 && w[0]=='R' && w[1]=='i' &&
 				  w[2]=='G' && w[3]=='h' && w[4]=='P' )
 				opcode = OP_RIGHTPAREN;
-		skipin:
 			// no pair across or even include any boolean op phrs
 			if ( opcode ) {
 				bits.m_bits[i] &= ~D_CAN_PAIR_ACROSS;
@@ -3464,8 +3431,6 @@ void QueryTerm::constructor ( ) {
 	m_userWeight = 0;
 	m_piped = false;
 	m_ignored = false;
-	m_isUORed = false;
-	m_UORedTerm = NULL;
 	m_synonymOf = NULL;
 	m_synWids0 = 0;
 	m_synWids1 = 0;

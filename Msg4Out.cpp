@@ -121,7 +121,7 @@ bool Msg4::initializeOutHandling() {
 	//   to speed up spidering so it would harvest outlinks
 	//   faster and be able to spider them right away.
 	// . returns false on failure
-	bool rc = g_loop.registerSleepCallback( MSG4_WAIT, NULL, sleepCallback4 );
+	bool rc = g_loop.registerSleepCallback(MSG4_WAIT, NULL, sleepCallback4, "Msg4Out::sleepCallback4");
 
 	logTrace( g_conf.m_logTraceMsg4, "END - returning %s", rc?"true":"false");
 

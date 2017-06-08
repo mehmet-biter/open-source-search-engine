@@ -157,6 +157,7 @@ class Conf {
 	int32_t m_vagusPort;
 	int32_t m_vagusKeepaliveSendInterval; //milliseconds
 	int32_t m_vagusKeepaliveLifetime; //milliseconds
+	int32_t m_vagusMaxDeadTime; //minutes
 	
 	int32_t m_maxDocsWanted;        //maximum number of results in one go. Puts a limit on SearchInput::m_docsWanted
 	int32_t m_maxFirstResultNum;    //maximum document offset / result-page. Puts a limit on SearchInput::m_firstResultNum
@@ -304,6 +305,8 @@ class Conf {
 	bool  m_logHttpRequests;
 	bool  m_logAutobannedQueries;
 
+	int32_t m_logLoopTimeThreshold;
+
 	// if query took this or more milliseconds, log its time
 	int32_t  m_logQueryTimeThreshold;
 	// if disk read took this or more milliseconds, log its time
@@ -361,6 +364,7 @@ class Conf {
 	bool  m_logDebugUdp;
 	bool  m_logDebugUnicode;
 	bool  m_logDebugUrlAttempts;
+	bool  m_logDebugVagus;
 
 	bool m_logTraceBigFile;
 	bool m_logTraceDns;

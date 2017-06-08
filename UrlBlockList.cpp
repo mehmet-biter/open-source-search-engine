@@ -21,7 +21,7 @@ UrlBlockList::UrlBlockList()
 bool UrlBlockList::init() {
 	log(LOG_INFO, "Initializing UrlBlockList with %s", m_filename);
 
-	if (!g_loop.registerSleepCallback(60000, this, &reload, 0, true)) {
+	if (!g_loop.registerSleepCallback(60000, this, &reload, "UrlBlockList::reload", 0, true)) {
 		log(LOG_WARN, "UrlBlockList: Failed register callback.");
 		return false;
 	}

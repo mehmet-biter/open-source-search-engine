@@ -121,8 +121,7 @@ void SpiderLoop::init() {
 	}
 
 	// sleep for .1 seconds = 100ms
-	if (!g_loop.registerSleepCallback(50,this,doneSleepingWrapperSL))
-	{
+	if (!g_loop.registerSleepCallback(50, this, doneSleepingWrapperSL, "SpiderLoop::doneSleepingWrapperSL")) {
 		log(LOG_ERROR, "build: Failed to register timer callback. Spidering is permanently disabled. Restart to fix.");
 	}
 

@@ -5154,6 +5154,18 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	m->m_title = "Vagus dead detection";
+	m->m_desc  = "How long before we abort due to main thread hanging";
+	m->m_cgi   = "vagus_max_dead_time";
+	simple_m_set(Conf,m_vagusMaxDeadTime);
+	m->m_smin  =   1;
+	m->m_smax  =  60;
+	m->m_def   = "5";
+	m->m_units = "minutes";
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
 	m->m_title = "max corrupt index lists";
 	m->m_desc  = "If we reach this many corrupt index lists, send "
 		"an admin email.  Set to -1 to disable.";
@@ -8077,6 +8089,16 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log loop callback time threshold";
+	m->m_desc  = "If a loop callback took this many millliseconds or longer, then log the "
+	             "description and the time it took to process.";
+	m->m_cgi   = "lltt";
+	simple_m_set(Conf,m_logLoopTimeThreshold);
+	m->m_def   = "500";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log query time threshold";
 	m->m_desc  = "If a query took this many millliseconds or longer, then log the "
 		"query and the time it took to process.";
@@ -8433,6 +8455,13 @@ void Parms::init ( ) {
 	m->m_title = "log debug url attempts";
 	m->m_cgi   = "ldspua";
 	simple_m_set(Conf,m_logDebugUrlAttempts);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log debug vagus messages";
+	m->m_cgi   = "ldv";
+	simple_m_set(Conf,m_logDebugVagus);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -9897,7 +9926,7 @@ bool Parms::doParmSendingLoop ( ) {
 
 	s_inLoop = true;
 
-	if ( !s_registeredSleep && !g_loop.registerSleepCallback( 2000, NULL, parmLoop, 0 ) ) {
+	if (!s_registeredSleep && !g_loop.registerSleepCallback(2000, NULL, parmLoop, "Parms::parmLoop", 0)) {
 		log( LOG_WARN, "parms: failed to reg parm loop" );
 	}
 
@@ -10079,7 +10108,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 			// . try again in 100ms
 			//
 			////////////
-			if( !g_loop.registerSleepCallback( 100, we, handleRequest3fLoop3, 0 ) ){
+			if (!g_loop.registerSleepCallback(100, we, handleRequest3fLoop3, "Parms::handleRequest3fLoop3", 0)) {
 				log( LOG_WARN, "parms: failed to reg sleeper");
 				return;
 			}
@@ -10288,7 +10317,7 @@ bool Parms::syncParmsWithHost0 ( ) {
 void Parms::handleRequest3e(UdpSlot *slot, int32_t /*niceness*/) {
 	// right now we must be host #0
 	if ( g_hostdb.m_hostId != 0 ) {
-hadError:
+		log(LOG_WARN,"parms: got request 0x3f but we are not host #0");
 		g_errno = EBADENGINEER;
 		g_udpServer.sendErrorReply( slot, g_errno );
 		return;
@@ -10341,8 +10370,11 @@ hadError:
 							 c,
 							 NULL,
 							 -1,
-							 "delete"))
-				goto hadError;
+							 "delete")) {
+				g_errno = EBADENGINEER;
+				g_udpServer.sendErrorReply( slot, g_errno );
+				return;
+			}
 			// ok, get next collection hash
 			continue;
 		}
@@ -10350,7 +10382,11 @@ hadError:
 		// get our parmlist for that collnum
 		tmp.reset();
 		// c is -1 for g_conf
-		if ( ! g_parms.addAllParmsToList ( &tmp, c ) ) goto hadError;
+		if ( ! g_parms.addAllParmsToList ( &tmp, c ) ) {
+			g_errno = EBADENGINEER;
+			g_udpServer.sendErrorReply( slot, g_errno );
+			return;
+		}
 		// get checksum of that
 		int64_t m64 = hash64 ( tmp.getBufStart(),tmp.length() );
 		// if match, keep chugging, that's in sync
@@ -10358,7 +10394,12 @@ hadError:
 		// note in log
 		logf(LOG_INFO,"sync: sending all parms for collnum %" PRId32" to host #%" PRId32, (int32_t)c, hostId);
 		// otherwise, send him the list
-		if ( ! replyBuf.safeMemcpy ( &tmp ) ) goto hadError;
+		if ( ! replyBuf.safeMemcpy ( &tmp ) ) {
+			log(LOG_WARN,"parms: Could not build reply buffer");
+			g_errno = EBADENGINEER;
+			g_udpServer.sendErrorReply( slot, g_errno );
+			return;
+		}
 	}
 
 	//
@@ -10380,17 +10421,27 @@ hadError:
 						   (collnum_t)i,
 						   cr->m_coll, // parm val
 						   -1,
-						   cmdStr ) )
-			goto hadError;
+						   cmdStr ) ) {
+			g_errno = EBADENGINEER;
+			g_udpServer.sendErrorReply( slot, g_errno );
+			return;
+		}
 		// and the parmlist for it
-		if (!g_parms.addAllParmsToList (&replyBuf, i ) ) goto hadError;
+		if (!g_parms.addAllParmsToList (&replyBuf, i ) ) {
+			g_errno = EBADENGINEER;
+			g_udpServer.sendErrorReply( slot, g_errno );
+			return;
+		}
 	}
 
 	// . final parm is the in sync stamp of approval which will set
 	//   g_parms.m_inSyncWithHost0 to true. CommandInSync()
 	// .  use -1 for collnum for this cmd
-	if ( ! g_parms.addNewParmToList1 ( &replyBuf,-1,NULL,-1,"insync"))
-		goto hadError;
+	if ( ! g_parms.addNewParmToList1 ( &replyBuf,-1,NULL,-1,"insync")) {
+		g_errno = EBADENGINEER;
+		g_udpServer.sendErrorReply( slot, g_errno );
+		return;
+	}
 
 	// this should at least have the in sync command
 	log("parms: sending %" PRId32" bytes of parms to sync to host #%" PRId32,

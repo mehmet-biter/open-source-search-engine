@@ -269,7 +269,7 @@ private:
 	std::atomic<bool> m_isSaving;
 
 	// true if tree was modified and needs to be saved
-	std::atomic<bool> m_needsSave;
+	bool m_needsSave;
 
 	char  m_rdbId;
 	char  m_dir[128];

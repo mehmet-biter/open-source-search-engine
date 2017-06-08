@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <atomic>
 #include "rdbid_t.h"
 #include "types.h"
 #include "GbMutex.h"
@@ -43,8 +44,6 @@ public:
 	~RdbBuckets( );
 	void clear();
 	void reset();
-
-	GbMutex& getLock() { return m_mtx; }
 
 	bool set(int32_t fixedDataSize, int32_t maxMem, const char *allocName, rdbid_t rdbId, const char *dbname,
 	         char keySize);
@@ -100,6 +99,8 @@ public:
 	bool loadBuckets(const char *dbname);
 
 private:
+	GbMutex& getLock() { return m_mtx; }
+
 	static void saveWrapper(void *state);
 	static void saveDoneWrapper(void *state, job_exit_t exit_type);
 
@@ -156,9 +157,11 @@ private:
 	int32_t m_sortBufSize;
 
 	bool m_repairMode;
-	bool m_isSaving;
+
+	std::atomic<bool> m_isSaving;
 	// true if buckets was modified and needs to be saved
 	bool m_needsSave;
+
 	const char *m_dir;
 	void *m_state;
 

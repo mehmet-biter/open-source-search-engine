@@ -176,10 +176,28 @@ static void gotMulticastReplyWrapper25(void *state, void *state2) {
 	int32_t  replyMaxSize;
 	bool  freeit;
 	char *reply = mcast->getBestReply (&replySize,&replyMaxSize,&freeit);
+	{
+		// validate linkinfo
+		LinkInfo *linkInfo = (LinkInfo *)reply;
+		if (linkInfo->m_version != 0 ||
+		    linkInfo->m_lisize < 0 || linkInfo->m_lisize != replySize ||
+		    linkInfo->m_numStoredInlinks < 0 || linkInfo->m_numGoodInlinks < 0) {
+			gbshutdownCorrupted();
+		}
+	}
 
 	// . store reply in caller's linkInfoBuf i guess
 	// . mcast should free the reply
 	req->m_linkInfoBuf->safeMemcpy ( reply , replySize );
+	{
+		// validate linkinfo
+		LinkInfo *linkInfo = (LinkInfo *)req->m_linkInfoBuf->getBufStart();
+		if (linkInfo->m_version != 0 ||
+		    linkInfo->m_lisize < 0 || linkInfo->m_lisize != req->m_linkInfoBuf->length() ||
+		    linkInfo->m_numStoredInlinks < 0 || linkInfo->m_numGoodInlinks < 0) {
+			gbshutdownCorrupted();
+		}
+	}
 
 	// i guess we gotta free this
 	mfree ( reply , replyMaxSize , "rep25" );
@@ -352,6 +370,17 @@ static void sendReplyWrapper(void *state) {
 	Msg25Request *mr = m25->m_req25;
 	// get udp slot for sending back reply
 	UdpSlot *slot2 = mr->m_udpSlot;
+
+	if (m25->m_linkInfoBuf->length() > 0) {
+		// validate linkinfo
+		LinkInfo *linkInfo = (LinkInfo *)m25->m_linkInfoBuf->getBufStart();
+		if (linkInfo->m_version != 0 ||
+		    linkInfo->m_lisize < 0 || linkInfo->m_lisize != m25->m_linkInfoBuf->length() ||
+		    linkInfo->m_numStoredInlinks < 0 || linkInfo->m_numGoodInlinks < 0) {
+			gbshutdownCorrupted();
+		}
+	}
+
 	// shortcut
 	SafeBuf *info = m25->m_linkInfoBuf;
 	// steal this buffer
@@ -382,6 +411,16 @@ static void sendReplyWrapper(void *state) {
 
 	// just dup the reply for each one
 	char *reply2 = (char *)mdup(reply1,replySize,"m25repd");
+
+	if (reply2) {
+		// validate linkinfo
+		LinkInfo *linkInfo = (LinkInfo *)reply2;
+		if (linkInfo->m_version != 0 ||
+		    linkInfo->m_lisize < 0 || linkInfo->m_lisize != m25->m_linkInfoBuf->length() ||
+		    linkInfo->m_numStoredInlinks < 0 || linkInfo->m_numGoodInlinks < 0) {
+			gbshutdownCorrupted();
+		}
+	}
 
 	// error?
 	if ( saved || ! reply2 ) {

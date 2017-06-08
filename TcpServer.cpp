@@ -247,16 +247,16 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 		// . accept/connects generate both POLLIN and POLLOUT bands @ same time
 		// . use a niceness of 0 so traffic from our server to a browser takes
 		//   precedence over spider traffic
-		if ( ! g_loop.registerReadCallback (m_sock,this,acceptSocketWrapper,0))
+		if (!g_loop.registerReadCallback(m_sock, this, acceptSocketWrapper, "TcpServer::acceptSocketWrapper", 0))
 			return false;
 	}
 
 	// . register to receives wake up calls every 500ms so we can
 	//   check for TcpSockets that have timed out
 	// . check every 500ms now since we have timeout of 1000ms for ads
-	if ( ! g_loop.registerSleepCallback (500,this,readTimeoutPollWrapper,0))
+	if (!g_loop.registerSleepCallback(500, this, readTimeoutPollWrapper, "TcpServer::readTimeoutPollWrapper", 0))
 		return false;
-	if ( ! g_loop.registerSleepCallback (30*1000,this,timePollWrapper,0))
+	if (!g_loop.registerSleepCallback(30 * 1000, this, timePollWrapper, "TcpServer::timePollWrapper", 0))
 		return false;
 	// return true on success
 	m_ready = true;
@@ -971,7 +971,7 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 	// . TODO: we'd have to set timestamps in Loop to check for timeou
 	// . use niceness levels of 0 so this server-to-browser traffic takes
 	//   precedence over spider traffic
-	if (g_loop.registerReadCallback (sd,this,readSocketWrapper,niceness)) {
+	if (g_loop.registerReadCallback(sd, this, readSocketWrapper, "TcpServer::readSocketWrapper", niceness)) {
 		return s;
 	}
 
@@ -1810,10 +1810,8 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 		// need to listen for writability now since our write
 		// failed to write everythin gout
 		if ( ! s->m_writeRegistered &&
-		     ! g_loop.registerWriteCallback(s->m_sd,
-						    this,
-						    writeSocketWrapper,
-						    s->m_niceness)){
+			!g_loop.registerWriteCallback(s->m_sd, this, writeSocketWrapper,
+			                              "TcpServer::writeSocketWrapper", s->m_niceness)) {
 				log("tcp: failed to reg write callback1 for "
 				    "sd=%i", s->m_sd);
 				return -1;
@@ -1840,12 +1838,9 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 		// need to listen for writability now since our write
 		// failed to write everythin gout
 		if ( ! s->m_writeRegistered &&
-		     ! g_loop.registerWriteCallback(s->m_sd,
-						    this,
-						    writeSocketWrapper,
-						    s->m_niceness)){
-				log("tcp: failed to reg write callback1 for "
-				    "sd=%i", s->m_sd);
+			!g_loop.registerWriteCallback(s->m_sd, this, writeSocketWrapper,
+			                              "TcpServer::writeSocketWrapper", s->m_niceness)) {
+				log(LOG_WARN, "tcp: failed to reg write callback1 for sd=%i", s->m_sd);
 				return -1;
 		}
 		// do not keep doing it otherwise select() goes crazy
@@ -2012,7 +2007,8 @@ int32_t TcpServer::connectSocket ( TcpSocket *s ) {
 			return 0;
 
 		// make select() listen on this fd for when it can write
-		if(!g_loop.registerWriteCallback( s->m_sd, this, writeSocketWrapper, s->m_niceness)) {
+		if (!g_loop.registerWriteCallback(s->m_sd, this, writeSocketWrapper,
+		                                  "TcpServer::writeSocketWrapper", s->m_niceness)) {
 			log("tcp: failed to reg write callback2 for sd=%i", s->m_sd);
 			return -1;
 		}
@@ -2761,10 +2757,8 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 	// read for all file descriptors at all times. it is only
 	// writes we have to turn on and off.
 	if ( ! s->m_writeRegistered &&
-	     ! g_loop.registerWriteCallback(s->m_sd,
-					    this,
-					    writeSocketWrapper,
-					    s->m_niceness)){
+		!g_loop.registerWriteCallback(s->m_sd, this, writeSocketWrapper,
+		                              "TcpServer::writeSocketWrapper", s->m_niceness)) {
 		log("tcp: failed to reg write callback3 for "
 		    "sd=%i", s->m_sd);
 		return -1;

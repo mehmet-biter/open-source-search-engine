@@ -238,8 +238,6 @@ class QueryWord {
 	float m_userWeightForPhrase;
 
 	bool m_queryOp;
-	// is it after a NOT operator? i.e. NOT ( x UOR y UOR ... )
-	bool m_underNOT;
 	// is this query word before a | (pipe) operator?
 	bool m_piped;
 
@@ -335,16 +333,12 @@ class QueryTerm {
 	float m_userWeight;
 
 	// . is this query term before a | (pipe) operator?
-	// . if so we must read the whole termlist, like m_underNOT above
+	// . if so we must read the whole termlist
 	bool m_piped;
 
 	// . we ignore component terms unless their compound term is not cached
 	// . now this is used to ignore low tf synonym terms only
 	bool m_ignored ;
-
-	// is it part of a UOR chain?
-	bool m_isUORed;
-	QueryTerm *m_UORedTerm;
 
 	// . if synonymOf is not NULL, then m_term points into m_synBuf, not
 	//   m_buf
@@ -502,7 +496,6 @@ public:
 	bool m_hasIpField;
 	bool m_hasUrlField;
 	bool m_hasSubUrlField;
-	bool m_hasQuotaField;
 
 	// . we set this to true if it is a boolean query
 	// . when calling Query::set() above you can tell it explicitly
@@ -529,8 +522,6 @@ public:
 	bool m_queryExpansion;
 
 	bool m_truncated;
-
-	bool m_hasUOR;
 };
 
 #endif // GB_QUERY_H

@@ -265,7 +265,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	//   we have a handler registered with the Loop class
 	// . this makes m_sock non-blocking, too
 	// . use the original niceness for this
-	if ( ! g_loop.registerReadCallback ( m_sock, this, readPollWrapper, 0 )) {
+	if (!g_loop.registerReadCallback(m_sock, this, readPollWrapper, "UdpServer::readPollWrapper", 0)) {
 		return false;
 	}
 
@@ -274,7 +274,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	// . it's low so we can claim any unclaimed tokens!
 	// . now resends are at 20ms... i'd go lower, but sigtimedqueue() only
 	//   has a timer resolution of 20ms, probably due to kernel time slicin
-	if ( ! g_loop.registerSleepCallback ( pollTime, this, timePollWrapper, 0 )) {
+	if (!g_loop.registerSleepCallback(pollTime, this, timePollWrapper, "UdpServer::timePollWrapper", 0)) {
 		return false;
 	}
 
@@ -492,7 +492,7 @@ void UdpServer::sendErrorReply_unlocked(UdpSlot *slot, int32_t errnum) {
 	g_errno = 0;
 
 	// make a little msg
-	char *msg = slot->m_tmpBuf;
+	char *msg = slot->m_shortSendBuffer;
 	*(int32_t *)msg = htonl(errnum) ;
 
 	// set the m_localErrno in "slot" so it will set the dgrams error bit
@@ -648,7 +648,8 @@ bool UdpServer::doSending_unlocked(UdpSlot *slot, bool allowResends, int64_t now
 			m_needToSend = true;
 			// ok, now it should
 			if ( ! m_writeRegistered ) {
-				if( !g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper, 0 ) ) {
+				if (!g_loop.registerWriteCallback(m_sock, this, sendPollWrapper,
+				                                  "UdpServer::sendPollWrapper", 0)) {
 					logError("registerWriteCallback failed");
 					return false;
 				}
@@ -1064,7 +1065,7 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 			// . if this blocks, that sucks, we'll probably get
 			//   another untethered read... oh well...
 			// . ack from 0 to infinite to prevent more from coming
-			tmp.sendAck(m_sock,now,dgramNum, 1/*weInit'ed?*/, true/*cancelTrans?*/);
+			tmp.sendCancelAck(m_sock, now, dgramNum);
 			//return 1;
 			goto discard;
 		}
@@ -1988,9 +1989,6 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		     slot->getResendCount() >= slot->m_maxResends &&
 		     // did not get all acks
 		     slot->m_sentBitsOn > slot->m_readAckBitsOn &&
-		     // fix too many timing out slot msgs when a host is
-		     // hogging the cpu on a niceness 0 thing...
-		     //elapsed > 5000 &&
 		     // respect slot's timeout too!
 		     elapsed > timeout &&
 		     // only do this when sending a request
@@ -2011,7 +2009,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    slot->getHostId(),elapsed);
 			// keep going
 			continue;
-		}			
+		}
 		// . this should clear the sentBits of all unacked dgrams
 		//   so they can be resent
 		// . this doubles m_resendTime and updates m_resendCount
@@ -2064,9 +2062,8 @@ void UdpServer::destroySlot_unlocked( UdpSlot *slot ) {
 	char *sbuf     = slot->m_sendBufAlloc;
 	int32_t  sbufSize = slot->m_sendBufAllocSize;
 	// don't free our static buffer
-	if ( rbuf == slot->m_tmpBuf ) rbuf = NULL;
-	// sometimes handlers will use our slots m_tmpBuf to store the reply
-	if ( sbuf == slot->m_tmpBuf ) sbuf = NULL;
+	// sometimes handlers will use our slots m_shortSendBuffer to store the reply
+	if ( sbuf == slot->m_shortSendBuffer ) sbuf = NULL;
 	// nothing allocated. used by Msg13.cpp g_fakeBuf
 	if ( sbufSize == 0 ) sbuf = NULL;
 

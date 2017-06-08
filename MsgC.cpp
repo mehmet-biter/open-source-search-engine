@@ -293,10 +293,10 @@ void gotMsgCIpWrapper( void *state, int32_t ip){
 	//to fit the ip address
 	//char reply[12];
 	// don't put it on the stack because sendReply does not copy!
-	char *reply = slot->m_tmpBuf;
+	char *reply = slot->m_shortSendBuffer;
 	int32_t replySize=12;
-#if TMPBUFSIZE < 12
-#error Slot::m_tmpBuf must be at least 12 bytes
+#if SHORTSENDBUFFERSIZE < 12
+#error Slot::m_shortSendBuffer must be at least 12 bytes
 #endif
 	//	reply=(char*) mmalloc(replySize,"MsgC");
 	char *p = reply;

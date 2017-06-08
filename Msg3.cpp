@@ -837,7 +837,7 @@ bool Msg3::doneScanning ( ) {
 		}
 
 		// wait
-		if ( g_loop.registerSleepCallback ( wait, this, doneSleepingWrapper3, m_niceness ) ) {
+		if (g_loop.registerSleepCallback(wait, this, doneSleepingWrapper3, "Msg3::doneSleepingWrapper3", m_niceness)) {
 			return false;
 		}
 

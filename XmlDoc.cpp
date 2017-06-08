@@ -6906,14 +6906,11 @@ int32_t *XmlDoc::getIp ( ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "SLEEPING %" PRId32" msecs", delay);
 		// make a callback wrapper.
 		// this returns false and sets g_errno on error
-		if ( g_loop.registerSleepCallback ( delay         ,
-						    m_masterState ,
-						    delayWrapper,//m_masterLoop
-						    m_niceness    ))
+		if (g_loop.registerSleepCallback(delay, m_masterState, delayWrapper, "XmlDoc::delayWrapper", m_niceness))
 			// wait for it, return -1 since we blocked
-                        return (int32_t *)-1;
-                // if was not able to register, ignore delay
-        }
+			return (int32_t *)-1;
+		// if was not able to register, ignore delay
+	}
 
 	if ( m_didDelay && ! m_didDelayUnregister ) {
 		g_loop.unregisterSleepCallback(m_masterState,delayWrapper);

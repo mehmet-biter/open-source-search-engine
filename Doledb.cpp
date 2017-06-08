@@ -54,7 +54,7 @@ void nukeDoledb ( collnum_t collnum ) {
 	// . it will unlink the files and maps for doledb for this collnum
 	// . it will remove all recs of this collnum from its tree too
 	if (g_doledb.getRdb()->isSavingTree()) {
-		g_loop.registerSleepCallback(100, &collnum, nukeDoledbWrapper);
+		g_loop.registerSleepCallback(100, &collnum, nukeDoledbWrapper, "Doledb::nukeDoledbWrapper");
 		return;
 	}
 

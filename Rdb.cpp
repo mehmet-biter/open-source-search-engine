@@ -672,18 +672,14 @@ bool Rdb::loadTree ( ) {
 			log( LOG_ERROR, "db: Could not load saved tree." );
 			return false;
 		}
-	}
-	else {
+	} else {
 		if ( !m_buckets.loadBuckets(m_dbname) ) {
 			log( LOG_ERROR, "db: Could not load saved buckets." );
 			return false;
 		}
 
 		int32_t numKeys = m_buckets.getNumKeys();
-		
-		// log("db: Loaded %" PRId32" recs from %s's buckets on disk.",
-		//     numKeys, m_dbname);
-		
+
 		if(!m_buckets.testAndRepair()) {
 			log( LOG_ERROR, "db: unrepairable buckets, remove and restart." );
 			g_process.shutdownAbort(true);

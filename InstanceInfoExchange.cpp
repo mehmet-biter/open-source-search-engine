@@ -71,25 +71,48 @@ static int connect_to_vagus(int port) {
 	sin.sin_port = htons(port);
 	if(connect(fd,(sockaddr*)(void*)&sin,sizeof(sin))!=0) {
 		log(LOG_ERROR,"vagus: connect() failed with errno=%d  (%s)", errno, strerror(errno));
-		close(fd);		
+		close(fd);
 		return -1;
 	}
 	
-	log(LOG_DEBUG,"vagus: Connected to Vagus on fd %d", fd);
+	log(LOG_INFO, "vagus: Connected to Vagus on fd %d", fd);
 	return fd;
 }
 
 
 
 static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
-	//log(LOG_DEBUG,"vagus: got %zu alive hosts form vagus. hosts.conf says there should be %d",
-	//    alive_hosts.size(), g_hostdb.getNumHosts());
+	if(alive_hosts.size() != (unsigned)g_hostdb.getNumHosts()) {
+		log(LOG_WARN, "vagus: got %zu alive hosts instead of %d", alive_hosts.size(), g_hostdb.getNumHosts());
+
+		char hosts[g_hostdb.getNumHosts()];
+		memset(hosts, '.', sizeof(hosts));
+
+		for (const auto &iter : alive_hosts) {
+			hosts[iter.first] = '+';
+		}
+		log(LOG_WARN, "vagus: %.*s", g_hostdb.getNumHosts(), hosts);
+	}
+
+	time_t now = time(NULL);
+	static time_t s_ownLastAliveTime = now;
+
+	if ((now - s_ownLastAliveTime) > (g_conf.m_vagusMaxDeadTime * 60)) {
+		log(LOG_ERROR, "vagus: We have not seen ourself alive for the past %d minutes. Aborting", g_conf.m_vagusMaxDeadTime);
+		gbshutdownResourceError();
+	}
+
 	std::vector<int> alive_hosts_ids;
 	alive_hosts_ids.reserve(alive_hosts.size());
 	for(auto iter : alive_hosts) {
 		int hostid = iter.first;
 		if(hostid<0 || hostid>=g_hostdb.getNumHosts())
 			continue;
+
+		if (hostid == g_hostdb.getMyHostId()) {
+			s_ownLastAliveTime = now;
+		}
+
 		alive_hosts_ids.push_back(hostid);
 		char extra_information[256];
 		if(iter.second.length()>=sizeof(extra_information))
@@ -205,6 +228,7 @@ static bool do_vagus_poll(int fd) {
 
 
 static void *poll_thread(void *) {
+	pthread_setname_np(pthread_self(),"vaguspoll");
 	struct pollfd pfd[2];
 	memset(pfd,0,sizeof(pfd));
 	pfd[0].fd = fd_pipe[0];
@@ -225,7 +249,7 @@ static void *poll_thread(void *) {
 			//unexpected input or lost connection.
 			(void)::close(pfd[1].fd);
 			pfd[1].fd = -1;
-			log(LOG_DEBUG,"vagus: lost connection to Vagus");
+			log(LOG_INFO,"vagus: lost connection to Vagus");
 		}
 		
 		if(pfd[1].fd<0)
@@ -263,7 +287,7 @@ bool InstanceInfoExchange::initialize() {
 		struct passwd pwd, *pwdptr;
 		if(getpwuid_r(geteuid(), &pwd,buf,sizeof(buf),&pwdptr)==0) {
 			sprintf(vagus_cluster_name, "gb-%s", pwd.pw_name);
-			log(LOG_DEBUG,"Using vagus cluster id '%s'",vagus_cluster_name);
+			log(LOG_INFO,"Using vagus cluster id '%s'",vagus_cluster_name);
 		} else {
 			log(LOG_ERROR,"getpwuid(geteuid()...) failed with errno=%d (%s)", errno,strerror(errno));
 			return false;
@@ -329,8 +353,8 @@ void InstanceInfoExchange::weAreAlive() {
 		g_hostdb.getMyHostId(),
 		g_conf.m_vagusKeepaliveLifetime,
 		extra_information);
-	
-	//log(LOG_DEBUG,"vagus: command='%s'",command);
+
+	//logDebug(g_conf.m_logDebugVagus, "vagus: command='%s'",command);
 	size_t bytes_to_write = strlen(command);
 	ssize_t bytes_written = ::write(fd_keepalive, command, bytes_to_write);
 	if((size_t)bytes_written != bytes_to_write) {
@@ -338,7 +362,7 @@ void InstanceInfoExchange::weAreAlive() {
 		::close(fd_keepalive); fd_keepalive = -1;
 		return;
 	}
-	//log(LOG_TRACE,"vagus: sent keepalive to Vagus");
+	logDebug(g_conf.m_logDebugVagus, "vagus: sent keepalive to Vagus");
 	
 	char ignored_response[10];
 	(void)read(fd_keepalive,ignored_response,sizeof(ignored_response));

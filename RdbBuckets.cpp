@@ -689,10 +689,11 @@ RdbBuckets::~RdbBuckets( ) {
 	reset_unlocked();
 }
 
+// we don't lock because variable is already atomic
 bool RdbBuckets::isSaving() const {
-	ScopedLock sl(m_mtx);
 	return m_isSaving;
 }
+
 bool RdbBuckets::needsSave() const {
 	ScopedLock sl(m_mtx);
 	return m_needsSave;
@@ -2095,7 +2096,8 @@ bool RdbBuckets::fastSave(const char *dir, bool useThread, void *state, void (*c
 	}
 
 	// return true if already in the middle of saving
-	if (m_isSaving) {
+	bool isSaving = m_isSaving.exchange(true);
+	if (isSaving) {
 		logTrace(g_conf.m_logTraceRdbBuckets, "END. Is already saving. Returning false.");
 		return false;
 	}
@@ -2109,8 +2111,6 @@ bool RdbBuckets::fastSave(const char *dir, bool useThread, void *state, void (*c
 	m_callback = callback;
 	// assume no error
 	m_errno = 0;
-	// no adding to the tree now
-	m_isSaving = true;
 
 	if (useThread) {
 		// make this a thread now
@@ -2151,15 +2151,6 @@ void RdbBuckets::saveWrapper(void *state) {
 	// this returns false and sets g_errno on error
 	that->fastSave_unlocked();
 
-	// . resume adding to the tree
-	// . this will also allow other threads to be queued
-	// . if we did this at the end of the thread we could end up with
-	//   an overflow of queued SAVETHREADs
-	that->m_isSaving = false;
-
-	// we do not need to be saved now?
-	that->m_needsSave = false;
-
 	if (g_errno && !that->m_errno) {
 		that->m_errno = g_errno;
 	}
@@ -2170,6 +2161,15 @@ void RdbBuckets::saveWrapper(void *state) {
 		log(LOG_INFO, "db: Done saving %s with %" PRId32" keys (%" PRId64" bytes)",
 		    that->m_dbname, that->m_numKeysApprox, that->m_bytesWritten);
 	}
+
+	// . resume adding to the tree
+	// . this will also allow other threads to be queued
+	// . if we did this at the end of the thread we could end up with
+	//   an overflow of queued SAVETHREADs
+	that->m_isSaving = false;
+
+	// we do not need to be saved now?
+	that->m_needsSave = false;
 
 	logTrace(g_conf.m_logTraceRdbBuckets, "END");
 }
