@@ -25,3 +25,4 @@ addons:
     packages:
     - g++-5
     - libssl-dev
+    - protobuf-compiler
