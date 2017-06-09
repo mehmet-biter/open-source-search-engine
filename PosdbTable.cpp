@@ -3776,8 +3776,27 @@ void PosdbTable::intersectLists10_r ( ) {
 	//
 	// MUST MATCH allocation in allocTopScoringDocIdsData
 	//
-	char     *pp  = m_topScoringDocIdsBuf.getBufStart();
 	int32_t   nqt = m_q->m_numTerms;
+	int32_t need  = 0;
+	need += 4 * nqt;				// wikiPhraseIds
+	need += 4 * nqt;				// quotedStartIds
+	need += 4 * nqt;				// qpos
+	need += 4 * nqt;				// qtermNums
+	need += sizeof(float ) * nqt;			// freqWeights
+	need += sizeof(char *) * nqt;			// miniMergedListStart
+	need += sizeof(char *) * nqt;			// miniMergedListEnd
+	need += sizeof(char *) * nqt;			// highestScoringNonBodyPos
+	need += sizeof(char *) * nqt;			// winnerStack
+	need += sizeof(char *) * nqt;			// xpos
+	need += sizeof(char  ) * nqt;			// bflags
+	need += sizeof(float ) * nqt * nqt; 	// scoreMatrix
+	SmallBuf<1024> workingStorageBuf("stkbuf1");
+	if(!workingStorageBuf.reserve(need)) {
+		g_errno = ENOMEM;
+		return;
+	}
+
+	char     *pp  = workingStorageBuf.getBufStart();
 	int32_t  *wikiPhraseIds  = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
 	int32_t  *quotedStartIds = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
 	int32_t  *qpos           = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
@@ -3790,7 +3809,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	const char **xpos	    = (const char **)pp; pp += sizeof(const char *) * nqt;
 	char     *bflags         = (char    *)pp; pp += sizeof(char) * nqt;
 	float    *scoreMatrix    = (float   *)pp; pp += sizeof(float) *nqt*nqt;
-	if ( pp > m_topScoringDocIdsBuf.getBufEnd() )
+	if ( pp > workingStorageBuf.getBufEnd() )
 		gbshutdownAbort(true);
 
 	int64_t lastTime = gettimeofdayInMilliseconds();
@@ -4897,26 +4916,6 @@ bool PosdbTable::allocTopScoringDocIdsData() {
 		if ( !m_singleScoreBuf.reserve(numSingles*sizeof(SingleScore))) {
 			return false;
 		}
-	}
-
-	// m_topScoringDocIdsBuf. MUST MATCH use in intersectLists10_r !
-	int32_t   nqt = m_q->m_numTerms;
-	int32_t need  = 0;
-	need += 4 * nqt;						// wikiPhraseIds
-	need += 4 * nqt;						// quotedStartIds
-	need += 4 * nqt;						// qpos
-	need += 4 * nqt;						// qtermNums
-	need += sizeof(float ) * nqt;			// freqWeights
-	need += sizeof(char *) * nqt;			// miniMergedListStart
-	need += sizeof(char *) * nqt;			// miniMergedListEnd
-	need += sizeof(char *) * nqt;			// highestScoringNonBodyPos
-	need += sizeof(char *) * nqt;			// winnerStack
-	need += sizeof(char *) * nqt;			// xpos
-	need += sizeof(char  ) * nqt;			// bflags
-	need += sizeof(float ) * nqt * nqt; 	// scoreMatrix
-	m_topScoringDocIdsBuf.setLabel("stkbuf1");
-	if ( ! m_topScoringDocIdsBuf.reserve( need ) ) {
-		return false;
 	}
 
 	return true;

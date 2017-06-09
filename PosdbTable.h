@@ -160,8 +160,6 @@ private:
 
 	const DocumentIndexChecker *m_documentIndexChecker;
 
-	SafeBuf m_topScoringDocIdsBuf;	// Buffer containing pointers to scoring info
-
 	// a reference to the query
 	Query          *m_q;
 	int32_t m_nqt;
