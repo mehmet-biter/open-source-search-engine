@@ -669,59 +669,59 @@ bool RdbDump::doneReadingForVerify ( ) {
 		return rc;
 	}
 
-	// time dump to disk (and tfndb bins)
-	int64_t t1 = gettimeofdayInMilliseconds();
-
 	// sanity check
 	if (m_list->getKeySize() != m_ks) {
 		logError("Sanity check failed. m_list->m_ks [%02x]!= m_ks [%02x]", m_list->getKeySize(), m_ks);
 		gbshutdownCorrupted();
 	}
 
-	bool triedToFix = false;
-
 	// we're using the list multiple times. if hi/lo are 'hacked', then we need to save it when using it the second time.
 	const char *savedListPtrHi = m_list->getListPtrHi();
 	const char *savedListPtrLo = m_list->getListPtrLo();
 
-tryAgain:
+	int64_t t1 = gettimeofdayInMilliseconds();
+
 	// . register this with the map now
 	// . only register AFTER it's ALL on disk so we don't get partial
 	//   record reads and we don't read stuff on disk that's also in tree
 	// . add the list to the rdb map if we have one
 	// . we don't have maps when we do unordered dumps
 	// . careful, map is NULL if we're doing unordered dump
-	if (m_map && !m_map->addList(m_list)) {
-		// keys  out of order in list from tree?
-		if (g_errno == ECORRUPTDATA) {
-			logError("m_map->addList resulted in ECORRUPTDATA");
+	if (m_map) {
+		bool triedToFix = false;
 
-			if (m_tree) {
-				logError("trying to fix tree");
-				m_tree->fixTree();
+		while (!m_map->addList(m_list)) {
+			// keys  out of order in list from tree?
+			if (g_errno == ECORRUPTDATA) {
+				logError("m_map->addList resulted in ECORRUPTDATA");
+
+				if (m_tree) {
+					logError("trying to fix tree");
+					m_tree->fixTree();
+				}
+
+				if (m_buckets) {
+					logError("Contains buckets, cannot fix this yet");
+					m_list->printList();	//@@@@@@ EXCESSIVE
+					gbshutdownCorrupted();
+				}
+
+
+				if (triedToFix) {
+					logError("already tried to fix, exiting hard");
+					gbshutdownCorrupted();
+				}
+
+				triedToFix = true;
+				continue;
 			}
 
-			if (m_buckets) {
-				logError("Contains buckets, cannot fix this yet");
-				m_list->printList();	//@@@@@@ EXCESSIVE
-				gbshutdownCorrupted();
-			}
+			g_errno = ENOMEM;
 
-
-			if (triedToFix) {
-				logError("already tried to fix, exiting hard");
-				gbshutdownCorrupted();
-			}
-
-			triedToFix = true;
-			goto tryAgain;
+			// this should never happen now since we call prealloc() above
+			logError("Failed to add data to map, exiting hard");
+			gbshutdownCorrupted();
 		}
-
-		g_errno = ENOMEM;
-
-		// this should never happen now since we call prealloc() above
-		logError("Failed to add data to map, exiting hard");
-		gbshutdownCorrupted();
 	}
 
 	int64_t t2 = gettimeofdayInMilliseconds();
