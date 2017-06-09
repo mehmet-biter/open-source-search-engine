@@ -166,9 +166,6 @@ private:
 	// Position pointers of best minimum score
 	const char **m_bestMinTermPairWindowPtrs;
 
-	// how many docs in the collection?
-	int64_t m_docsInColl;
-
 	Msg2 *m_msg2;
 
 	const DocumentIndexChecker *m_documentIndexChecker;

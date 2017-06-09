@@ -106,7 +106,6 @@ void PosdbTable::reset() {
 	m_qtermNums = NULL;
 	m_bestMinTermPairWindowScore = 0.0;
 	m_bestMinTermPairWindowPtrs = NULL;
-	m_docsInColl = 0;
 	m_msg2 = NULL;
 	m_topTree = NULL;
 	m_nqt = 0;
