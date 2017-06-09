@@ -94,7 +94,6 @@ void PosdbTable::reset() {
 	m_siteRankMultiplier = 0.0;
 	m_addListsTime = 0;
 	m_t2 = 0;
-	m_collnum = 0;
 	m_qpos = NULL;
 	m_wikiPhraseIds = NULL;
 	m_quotedStartIds = NULL;
@@ -163,8 +162,6 @@ void PosdbTable::init(Query *q, bool debug, TopTree *topTree, const DocumentInde
 	if ( ! msg2 ) return;
 
 	m_msg2 = msg2;
-	// save this
-	m_collnum = r->m_collnum;
 	// save the request
 	m_msg39req = r;
 
