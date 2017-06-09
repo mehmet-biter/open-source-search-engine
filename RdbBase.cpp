@@ -1192,22 +1192,69 @@ static int32_t getMaxLostPositivesPercentage(rdbid_t rdbId) {
 	}
 }
 
+void RdbBase::saveRdbIndexRdbMap(void *state) {
+	RdbBase *that = static_cast<RdbBase*>(state);
+
+	int32_t x = that->m_mergeStartFileNum - 1; // file #x is the merged file
+
+	// note
+	log(LOG_INFO, "db: Writing map %s.", that->m_fileInfo[x].m_map->getFilename());
+
+	// . ensure we can save the map before deleting other files
+	// . sets g_errno and return false on error
+	// . allDone = true
+	bool status = that->m_fileInfo[x].m_map->writeMap(true);
+	if (!status) {
+		// unable to write, let's abort
+		gbshutdownResourceError();
+	}
+
+	if (that->m_useIndexFile) {
+		status = that->m_fileInfo[x].m_index->writeIndex(true);
+		if (!status) {
+			// unable to write, let's abort
+			log(LOG_ERROR, "db: Could not write index for %s, Exiting.", that->m_dbname);
+			gbshutdownAbort(true);
+		}
+	}
+}
+
+void RdbBase::savedRdbIndexRdbMap(void *state, job_exit_t job_state) {
+	RdbBase *that = static_cast<RdbBase*>(state);
+
+	if (job_state == job_exit_program_exit) {
+		// we want to make sure we save before exiting
+		saveRdbIndexRdbMap(that);
+	}
+
+	that->incorporateMerge2();
+}
+
 // . called after the merge has successfully completed
 // . the final merge file is always file #0 (i.e. "indexdb0000.dat/map")
-bool RdbBase::incorporateMerge ( ) {
+void RdbBase::incorporateMerge() {
+	// . we can't just unlink the merge file on error anymore
+	// . it may have some data that was deleted from the original file
+	if (g_errno) {
+		log(LOG_ERROR, "db: Merge failed for %s, Exiting.", m_dbname);
+
+		// we don't have a recovery system in place, so save state and dump core
+		gbshutdownAbort(true);
+	}
+
 	// merge source range [a..b), merge target x
 	int32_t a = m_mergeStartFileNum;
 	int32_t b = std::min(m_mergeStartFileNum + m_numFilesToMerge, m_numFiles);
-	int32_t x = a - 1; // file #x is the merged file
 
+	/// @todo ALC verify if this ever happens
 	// shouldn't be called if no files merged
-	if ( a >= b ) {
+	if (a >= b) {
 		// unless resuming after a merge completed and we exited
 		// but forgot to finish renaming the final file!!!!
 		log("merge: renaming final file");
 
 		// decrement this count
-		if ( m_isMerging ) {
+		if (m_isMerging) {
 			m_rdb->decrementNumMerges();
 		}
 
@@ -1215,36 +1262,20 @@ bool RdbBase::incorporateMerge ( ) {
 		m_isMerging = false;
 	}
 
-
-	// . we can't just unlink the merge file on error anymore
-	// . it may have some data that was deleted from the original file
-	if ( g_errno ) {
-		log( LOG_ERROR, "db: Merge failed for %s, Exiting.", m_dbname);
-
-		// we don't have a recovery system in place, so save state and dump core
-		gbshutdownAbort(true);
+	if (g_jobScheduler.submit(saveRdbIndexRdbMap, savedRdbIndexRdbMap, this, thread_type_file_merge, 0)) {
+		return;
 	}
 
-	// note
-	log(LOG_INFO,"db: Writing map %s.", m_fileInfo[x].m_map->getFilename());
+	// unable to submit job
+	saveRdbIndexRdbMap(this);
+	savedRdbIndexRdbMap(this, job_exit_normal);
+}
 
-	// . ensure we can save the map before deleting other files
-	// . sets g_errno and return false on error
-	// . allDone = true
-	bool status = m_fileInfo[x].m_map->writeMap( true );
-	if ( !status ) {
-		// unable to write, let's abort
-		gbshutdownResourceError();
-	}
-
-	if( m_useIndexFile ) {
-		status = m_fileInfo[x].m_index->writeIndex(true);
-		if ( !status ) {
-			// unable to write, let's abort
-			log( LOG_ERROR, "db: Could not write index for %s, Exiting.", m_dbname);
-			gbshutdownAbort(true);
-		}
-	}
+void RdbBase::incorporateMerge2() {
+	// merge source range [a..b), merge target x
+	int32_t a = m_mergeStartFileNum;
+	int32_t b = std::min(m_mergeStartFileNum + m_numFilesToMerge, m_numFiles);
+	int32_t x = m_mergeStartFileNum - 1; // file #x is the merged file
 
 	// print out info of newly merged file
 	int64_t postmergePositiveRecords = m_fileInfo[x].m_map->getNumPositiveRecs();
@@ -1397,11 +1428,10 @@ bool RdbBase::incorporateMerge ( ) {
 		ScopedLock sl(m_mtxJobCount);
 		m_submittingJobs = false;
 		if(m_outstandingJobCount!=0)
-			return true;
+			return;
 	}
 
 	unlinksDone();
-	return true;
 }
 
 

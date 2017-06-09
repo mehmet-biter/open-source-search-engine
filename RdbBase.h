@@ -132,7 +132,7 @@ class RdbBase {
 			    int32_t minToMergeOverride = -1 );
 
 	// called after merge completed
-	bool incorporateMerge ( );
+	void incorporateMerge ( );
 
 	// . you'll lose your data in this class if you call this
 	void reset();
@@ -280,6 +280,10 @@ private:
 	void renameDone();
 	void renamesDone();
 	bool removeRebuildFromFilename(BigFile *f);
+
+	void incorporateMerge2( );
+	static void saveRdbIndexRdbMap(void *state);
+	static void savedRdbIndexRdbMap(void *state, job_exit_t job_state);
 
 	// Add a (new) file to the m_files/m_maps/m_fileIds arrays
 	// Return return array position of new entry, or -1 on error
