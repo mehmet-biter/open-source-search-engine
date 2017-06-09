@@ -94,7 +94,6 @@ void PosdbTable::reset() {
 	m_siteRankMultiplier = 0.0;
 	m_addListsTime = 0;
 	m_t2 = 0;
-	m_maxScores = 0;
 	m_collnum = 0;
 	m_qpos = NULL;
 	m_wikiPhraseIds = NULL;
@@ -4854,7 +4853,6 @@ bool PosdbTable::allocTopScoringDocIdsData() {
 	xx = gbmax(xx,32);
 	
 	//if ( m_msg39req->m_doSiteClustering ) xx *= 4;
-	m_maxScores = xx;
 	// for seeing if a docid is in toptree. niceness=0.
 	//if ( ! m_docIdTable.set(8,0,xx*4,NULL,0,false,0,"dotb") )
 	//	return false;

@@ -137,8 +137,6 @@ class PosdbTable {
 	int64_t       m_t1 ;
 	int64_t       m_t2 ;
 
-	int32_t            m_maxScores;
-
 	collnum_t       m_collnum;
 
 	// if getting more than MAX_RESULTS results, use this top tree to hold
