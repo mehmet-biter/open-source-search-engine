@@ -94,7 +94,6 @@ void PosdbTable::reset() {
 	m_siteRankMultiplier = 0.0;
 	m_addListsTime = 0;
 	m_t2 = 0;
-	m_numSlots = 0;
 	m_maxScores = 0;
 	m_collnum = 0;
 	m_qpos = NULL;
