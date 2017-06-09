@@ -777,7 +777,7 @@ void Msg39::intersectLists(const DocumentIndexChecker &documentIndexChecker) {
 	}
 
 	// if msg2 had ALL empty lists we can cut it short
-	if ( m_posdbTable.m_topTree->getNumNodes() == 0 ) { //isj: shouldn't this call getNumUsedNodes() ?
+	if ( m_toptree.getNumNodes() == 0 ) { //isj: shouldn't this call getNumUsedNodes() ?
 		//estimateHitsAndSendReply ( );
 		return;
 	}

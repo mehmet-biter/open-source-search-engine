@@ -131,15 +131,13 @@ class PosdbTable {
 	int64_t       m_t1 ;
 	int64_t       m_t2 ;
 
-	// if getting more than MAX_RESULTS results, use this top tree to hold
-	// them rather than the m_top*[] arrays above
-	TopTree *m_topTree;
-
 	SafeBuf m_scoreInfoBuf;
 	SafeBuf m_pairScoreBuf;
 	SafeBuf m_singleScoreBuf;
 
 private:
+	TopTree *m_topTree;
+
 	int32_t *m_qpos;
 	int32_t *m_wikiPhraseIds;
 	int32_t *m_quotedStartIds;
