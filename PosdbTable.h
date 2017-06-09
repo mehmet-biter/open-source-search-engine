@@ -145,6 +145,15 @@ class PosdbTable {
 
 	collnum_t       m_collnum;
 
+	// if getting more than MAX_RESULTS results, use this top tree to hold
+	// them rather than the m_top*[] arrays above
+	TopTree *m_topTree;
+
+	SafeBuf m_scoreInfoBuf;
+	SafeBuf m_pairScoreBuf;
+	SafeBuf m_singleScoreBuf;
+
+private:
 	int32_t *m_qpos;
 	int32_t *m_wikiPhraseIds;
 	int32_t *m_quotedStartIds;
@@ -163,14 +172,6 @@ class PosdbTable {
 	Msg2 *m_msg2;
 
 	const DocumentIndexChecker *m_documentIndexChecker;
-
-	// if getting more than MAX_RESULTS results, use this top tree to hold
-	// them rather than the m_top*[] arrays above
-	TopTree *m_topTree;
-
-	SafeBuf m_scoreInfoBuf;
-	SafeBuf m_pairScoreBuf;
-	SafeBuf m_singleScoreBuf;
 
 	SafeBuf m_topScoringDocIdsBuf;	// Buffer containing pointers to scoring info
 
@@ -214,12 +215,13 @@ class PosdbTable {
 	int32_t m_maxScoreValInt;
 
 
-	// the new intersection/scoring algo
-	void intersectLists10_r ( );	
-
 	HashTableX m_whiteListTable;
 	bool m_useWhiteTable;
 	bool m_addedSites;
+
+public:
+	// the new intersection/scoring algo
+	void intersectLists10_r ( );	
 
 	// sets stuff used by intersect10_r()
 	bool setQueryTermInfo ( );
