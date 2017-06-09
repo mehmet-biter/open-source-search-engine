@@ -137,8 +137,6 @@ class PosdbTable {
 	int64_t       m_t1 ;
 	int64_t       m_t2 ;
 
-	int64_t       m_estimatedTotalHits;
-
 	int32_t            m_numSlots;
 
 	int32_t            m_maxScores;

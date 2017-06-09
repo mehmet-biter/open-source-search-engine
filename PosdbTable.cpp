@@ -78,7 +78,6 @@ PosdbTable::~PosdbTable() {
 void PosdbTable::reset() {
 	// has init() been called?
 	m_initialized          = false;
-	m_estimatedTotalHits   = -1;
 	//freeMem(); // not implemented
 	// does not free the mem of this safebuf, only resets length
 	m_docIdVoteBuf.reset();
