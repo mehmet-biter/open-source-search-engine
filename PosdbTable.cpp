@@ -1865,6 +1865,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			log("query: too many sublists. %" PRId32" >= %" PRId32,
 			    nn,(int32_t)MAX_SUBLISTS);
 			logTrace(g_conf.m_logTracePosdb, "END.");
+			g_errno = EQUERYTOOBIG;
 			return false;
 		}
 		
@@ -3746,8 +3747,28 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const char **miniMergedListSt
 void PosdbTable::intersectLists10_r ( ) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN. numTerms: %" PRId32, m_q->m_numTerms);
 
+	if(!allocateTopTree()) {
+		logTrace(g_conf.m_logTracePosdb, "END. could not allocate toptree");
+		g_errno = ENOMEM;
+		return;
+	}
 
+	if(!allocateScoringInfo()) {
+		logTrace(g_conf.m_logTracePosdb, "END. could not allocate scoring info");
+		g_errno = ENOMEM;
+		return;
+	}
+
+	if(!allocWhiteListTable()) {
+		logTrace(g_conf.m_logTracePosdb, "END. could not allocate whitelist table");
+		return;
+	}
 	prepareWhiteListTable();
+
+	if(!setQueryTermInfo()) {
+		logTrace(g_conf.m_logTracePosdb, "END. could not allocate query term info");
+		return;
+	}
 
 	initWeights();
 	// assume no-op
@@ -4749,44 +4770,33 @@ void PosdbTable::prepareWhiteListTable()
 
 
 
-bool PosdbTable::allocTopScoringDocIdsData() {
+bool PosdbTable::allocateTopTree() {
 	int64_t nn1 = m_msg39req->m_docsToGet;
 	int64_t nn2 = 0;
 
 	// just add all up in case doing boolean OR or something
-	for ( int32_t k = 0 ; k < m_msg2->getNumLists(); k++) {
-		// count
+	for(int k = 0; k < m_msg2->getNumLists(); k++) {
 		RdbList *list = m_msg2->getList(k);
 		
-		// skip if null
-		if ( ! list ) {
-			continue;
-		}
+		if(list && !list->isEmpty()) {
+			if(m_debug) {
+				log(LOG_INFO, "toptree: adding listsize %" PRId32" to nn2", list->getListSize());
 		
-		// skip if list is empty, too
-		if ( list->isEmpty() ) {
-			continue;
+				// each new docid in this termlist will compress
+				// the 6 byte termid out, so reduce by 6.
+				nn2 += list->getListSize() / (sizeof(posdbkey_t)-6);
+			}
 		}
-		
-		// show if debug
-		if ( m_debug ) {
-			log(LOG_INFO, "toptree: adding listsize %" PRId32" to nn2", list->getListSize());
-		}
-		
-		// tally. each new docid in this termlist will compress
-		// the 6 byte termid out, so reduce by 6.
-		nn2 += list->getListSize() / ( sizeof(posdbkey_t) -6 );
 	}
 
 	// if doing docid range phases where we compute the winning docids
 	// for a range of docids to save memory, then we need to amp this up
-	if ( m_msg39req->m_numDocIdSplits > 1 ) {
+	if(m_msg39req->m_numDocIdSplits > 1) {
 		// if 1 split has only 1 docid the other splits
 		// might have 10 then this doesn't work, so make it
 		// a min of 100.
-		if ( nn2 < 100 ) {
+		if(nn2 < 100)
 			nn2 = 100;
-		}
 		
 		// how many docid range splits are we doing?
 		nn2 *= m_msg39req->m_numDocIdSplits;
@@ -4795,9 +4805,8 @@ bool PosdbTable::allocTopScoringDocIdsData() {
 		nn2 *= 2;
 
 		// boost this guy too since we compare it to nn2
-		if ( nn1 < 100 ) {
+		if(nn1 < 100)
 			nn1 = 100;
-		}
 		
 		nn1 *= m_msg39req->m_numDocIdSplits;
 		nn1 *= 2;
@@ -4816,9 +4825,8 @@ bool PosdbTable::allocTopScoringDocIdsData() {
 	//   if ( m_posdbTable.m_topTree->m_numNodes == 0 )
 	//   to see if it should
 	//   advance to the next docid range or not.
-	if ( nn == 0 ) {
+	if(nn == 0)
 		return true;
-	}
 
 	// always at least 100 i guess. why? it messes up the
 	// m_scoreInfoBuf capacity and it cores
@@ -4827,19 +4835,16 @@ bool PosdbTable::allocTopScoringDocIdsData() {
 	nn = gbmax(nn,30);
 
 
-	if ( m_msg39req->m_doSiteClustering ) {
+	if(m_msg39req->m_doSiteClustering)
 		nn *= 2;
-	}
-
 
 	// limit to 2B docids i guess
 	nn = gbmin(nn,2000000000);
 
-	if ( m_debug ) {
+	if(m_debug)
 		log(LOG_INFO, "toptree: toptree: initializing %" PRId64" nodes",nn);
-	}
 
-	if ( nn < m_msg39req->m_docsToGet ) {
+	if(nn < m_msg39req->m_docsToGet) {
 		log("query: warning only getting up to %" PRId64" docids "
 		    "even though %" PRId32" requested because termlist "
 		    "sizes are so small!! splits=%" PRId32
@@ -4850,20 +4855,25 @@ bool PosdbTable::allocTopScoringDocIdsData() {
 	}
 
 	// keep it sane
-	if ( nn > (int64_t)m_msg39req->m_docsToGet * 2 && nn > 60 ) {
+	if(nn > (int64_t)m_msg39req->m_docsToGet * 2 && nn > 60) {
 		nn = (int64_t)m_msg39req->m_docsToGet * 2;
 	}
 
 	// this actually sets the # of nodes to MORE than nn!!!
-	if ( ! m_topTree->setNumNodes(nn,m_msg39req->m_doSiteClustering)) {
+	if(!m_topTree->setNumNodes(nn,m_msg39req->m_doSiteClustering)) {
 		log("toptree: toptree: error allocating nodes: %s",
 		    mstrerror(g_errno));
 		return false;
 	}
 	
+	return true;
+}
+
+
+bool PosdbTable::allocateScoringInfo() {
 	// let's use nn*4 to try to get as many score as possible, although
 	// it may still not work!
-	int32_t xx = nn;//m_msg39req->m_docsToGet ;
+	int32_t xx = m_topTree->getNumDocsWanted();
 	
 	// try to fix a core of growing this table in a thread when xx == 1
 	xx = gbmax(xx,32);

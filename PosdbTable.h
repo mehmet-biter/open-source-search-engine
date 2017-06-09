@@ -85,9 +85,6 @@ class PosdbTable {
 
 	void prepareWhiteListTable();
 
-	// pre-allocate memory since intersection runs in a thread
-	bool allocTopScoringDocIdsData();
-
 	float getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wpj, const char *endi, const char *endj, int32_t qdist);
 	float getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const char *endi, DocIdScore *pdcs, const char **highestScoringNonBodyPos);
 	float getScoreForTermPair(const char *wpi, const char *wpj, int32_t fixedDistance, int32_t qdist);
@@ -200,12 +197,14 @@ private:
 	bool m_useWhiteTable;
 	bool m_addedSites;
 
+	bool allocateTopTree();
+	bool allocateScoringInfo();
+	bool setQueryTermInfo();
+
 public:
 	// the new intersection/scoring algo
 	void intersectLists10_r ( );	
 
-	// sets stuff used by intersect10_r()
-	bool setQueryTermInfo ( );
 	void delNonMatchingDocIdsFromSubLists();
 
 	// for intersecting docids
