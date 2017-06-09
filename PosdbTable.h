@@ -126,12 +126,6 @@ class PosdbTable {
 	float getMinTermPairScoreSlidingWindow(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs);
 
 
-	uint64_t m_docId;
-
-	bool m_hasMaxSerpScore;
-
-	float m_siteRankMultiplier;
-
 	// how long to add the last batch of lists
 	int64_t       m_addListsTime;
 	int64_t       m_t1 ;
@@ -157,6 +151,12 @@ private:
 	float m_bestMinTermPairWindowScore;
 	// Position pointers of best minimum score
 	const char **m_bestMinTermPairWindowPtrs;
+
+	bool m_hasMaxSerpScore;
+
+	float m_siteRankMultiplier;
+
+	uint64_t m_docId; //the current docid intersection is working on
 
 	Msg2 *m_msg2;
 
