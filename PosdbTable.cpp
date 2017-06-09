@@ -111,7 +111,6 @@ void PosdbTable::reset() {
 	m_topTree = NULL;
 	m_nqt = 0;
 	m_debug = false;
-	m_logstate = NULL;
 	m_sortByTermNum = -1;
 	m_sortByTermNumInt = -1;
 	m_sortByTermInfoNum = 0;
@@ -149,7 +148,7 @@ void PosdbTable::freeMem ( ) {
 //         quickly using Msg36!
 // . we now support multiple plus signs before the query term
 // . lists[] and termFreqs[] must be 1-1 with q->m_qterms[]
-void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, const DocumentIndexChecker &documentIndexChecker, Msg2 *msg2, Msg39Request *r) {
+void PosdbTable::init(Query *q, bool debug, TopTree *topTree, const DocumentIndexChecker &documentIndexChecker, Msg2 *msg2, Msg39Request *r) {
 	// sanity check -- watch out for double calls
 	if ( m_initialized )
 		gbshutdownAbort(true);
@@ -188,8 +187,6 @@ void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, co
 	// remember the query class, it has all the info about the termIds
 	m_q = q;
 	m_nqt = q->getNumTerms();
-	// for debug msgs
-	m_logstate = logstate;
 
 	m_realMaxTop = r->m_realMaxTop;
 	if ( m_realMaxTop > MAX_TOP ) m_realMaxTop = MAX_TOP;

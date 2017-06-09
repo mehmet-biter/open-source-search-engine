@@ -762,7 +762,7 @@ void Msg39::intersectLists(const DocumentIndexChecker &documentIndexChecker) {
 	// . this will actually calculate the top
 	// . this might also change m_query.m_termSigns
 	// . this won't do anything if it was already called
-	m_posdbTable.init ( &m_query, m_debug, this, &m_toptree, documentIndexChecker, &m_msg2, m_msg39req);
+	m_posdbTable.init ( &m_query, m_debug, &m_toptree, documentIndexChecker, &m_msg2, m_msg39req);
 
 	// . we have to do this here now too
 	// . but if we are getting weights, we don't need m_toptree!

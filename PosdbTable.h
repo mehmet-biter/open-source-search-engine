@@ -78,7 +78,7 @@ class PosdbTable {
 	// . returns false on error and sets errno
 	// . "termFreqs" are 1-1 with q->m_qterms[]
 	// . sets m_q to point to q
-	void init(Query *q, bool debug, void *logstate, TopTree *topTree, const DocumentIndexChecker &documentIndexChecker, Msg2 *msg2, Msg39Request *r);
+	void init(Query *q, bool debug, TopTree *topTree, const DocumentIndexChecker &documentIndexChecker, Msg2 *msg2, Msg39Request *r);
 
 	// pre-allocate m_whiteListTable
 	bool allocWhiteListTable ( ) ;
@@ -184,9 +184,6 @@ private:
 
 	// are we in debug mode?
 	bool m_debug;
-
-	// for debug msgs
-	void *m_logstate;
 
 	Msg39Request *m_msg39req;
 
