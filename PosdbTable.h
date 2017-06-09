@@ -138,17 +138,16 @@ class PosdbTable {
 private:
 	TopTree *m_topTree;
 
-	int32_t *m_qpos;
+	//used during intersection, part of working area
 	int32_t *m_wikiPhraseIds;
 	int32_t *m_quotedStartIds;
+	int32_t *m_qpos;
+	int32_t  *m_qtermNums;
 	float *m_freqWeights;
 	char  *m_bflags;
-	int32_t  *m_qtermNums;
-
-	// Best minimum score in a "sliding window"
-	float m_bestMinTermPairWindowScore;
-	// Position pointers of best minimum score
-	const char **m_bestMinTermPairWindowPtrs;
+	//used during intersection, simple variables
+	float m_bestMinTermPairWindowScore;             //Best minimum score in a "sliding window"
+	const char **m_bestMinTermPairWindowPtrs;       //Position pointers of best minimum score
 
 	bool m_hasMaxSerpScore;
 
