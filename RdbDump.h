@@ -66,6 +66,9 @@ private:
 	void doneDumping();
 	bool doneReadingForVerify();
 
+	static void addListToRdbMapRdbIndex(void *state);
+	static void addedListToRdbMapRdbIndex(void *state, job_exit_t /*exit_type*/);
+
 	// called when we've finished writing an RdbList to the file
 	bool doneDumpingList();
 	void continueDumping();
