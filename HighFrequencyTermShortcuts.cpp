@@ -140,7 +140,7 @@ bool HighFrequencyTermShortcuts::load()
 	buffer = new_buffer;
 	
 	//All the entries are full 18-byte entries in all their glory
-	//But PosdbTable::intersectLists10_r() doesn't like that and fails in
+	//But PosdbTable::intersectLists() doesn't like that and fails in
 	//a "sanity check" due to unhealthy knowledge of not only the
 	//posdb format but also the workings and algorithms.
 	//So we have to compress the non-entries to 12 byte.

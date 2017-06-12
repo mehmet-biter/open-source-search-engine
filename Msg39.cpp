@@ -810,7 +810,7 @@ void Msg39::intersectLists(const DocumentIndexChecker &documentIndexChecker) {
 				   m_msg39req->m_niceness) ) {
 		jobState.wait_for_finish();
 	} else
-		m_posdbTable.intersectLists10_r();
+		m_posdbTable.intersectLists();
 	
 
 	// time it
@@ -835,7 +835,7 @@ void Msg39::intersectListsThreadFunction ( void *state ) {
 	// . this returns false and sets g_errno on error
 	// . Msg2 always compresses the lists so be aware that the termId
 	//   has been discarded
-	that->m_posdbTable.intersectLists10_r ( );
+	that->m_posdbTable.intersectLists();
 
 	// . exit the thread
 	// . threadDoneWrapper will be called by g_loop when he gets the 

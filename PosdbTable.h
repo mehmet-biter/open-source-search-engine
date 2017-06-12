@@ -3,6 +3,7 @@
 
 #include "RdbList.h"
 #include "HashTableX.h"
+#include <vector>
 
 float getDiversityWeight ( unsigned char diversityRank );
 float getDensityWeight   ( unsigned char densityRank );
@@ -115,7 +116,7 @@ class PosdbTable {
 	void logDebugScoreInfo(int32_t loglevel);
 	void removeScoreInfoForDeletedDocIds();
 	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
-	bool prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore);
+	bool prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf, float minWinningScore);
 	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, char *miniMergeBufEnd, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);
 
 	void createNonBodyTermPairScoreMatrix(const char **miniMergedList, const char **miniMergedEnd, float *scoreMatrix);
@@ -136,12 +137,12 @@ private:
 	TopTree *m_topTree;
 
 	//used during intersection, part of working area
-	int32_t *m_wikiPhraseIds;
-	int32_t *m_quotedStartIds;
-	int32_t *m_qpos;
-	int32_t  *m_qtermNums;
-	float *m_freqWeights;
-	char  *m_bflags;
+	std::vector<int32_t> m_wikiPhraseIds;
+	std::vector<int32_t> m_quotedStartIds;
+	std::vector<int32_t> m_qpos;
+	std::vector<int32_t> m_qtermNums;
+	std::vector<float> m_freqWeights;
+	std::vector<char> m_bflags;
 	//used during intersection, simple variables
 	float m_bestMinTermPairWindowScore;             //Best minimum score in a "sliding window"
 	const char **m_bestMinTermPairWindowPtrs;       //Position pointers of best minimum score
@@ -201,9 +202,10 @@ private:
 	bool allocateScoringInfo();
 	bool setQueryTermInfo();
 
+	void intersectLists_real();
 public:
 	// the new intersection/scoring algo
-	void intersectLists10_r ( );	
+	void intersectLists();
 
 	void delNonMatchingDocIdsFromSubLists();
 
