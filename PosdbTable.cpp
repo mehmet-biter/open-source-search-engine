@@ -4781,11 +4781,10 @@ bool PosdbTable::allocateTopTree() {
 		if(list && !list->isEmpty()) {
 			if(m_debug) {
 				log(LOG_INFO, "toptree: adding listsize %" PRId32" to nn2", list->getListSize());
-		
-				// each new docid in this termlist will compress
-				// the 6 byte termid out, so reduce by 6.
-				nn2 += list->getListSize() / (sizeof(posdbkey_t)-6);
 			}
+			// each new docid in this termlist will compress
+			// the 6 byte termid out, so reduce by 6.
+			nn2 += list->getListSize() / (sizeof(posdbkey_t)-6);
 		}
 	}
 
