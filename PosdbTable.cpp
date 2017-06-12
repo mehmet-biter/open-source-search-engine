@@ -3752,6 +3752,10 @@ void PosdbTable::intersectLists10_r ( ) {
 		g_errno = ENOMEM;
 		return;
 	}
+	if(m_topTree->getNumNodes()==0) {
+		logTrace(g_conf.m_logTracePosdb, "END. toptree has zero size");
+		return;
+	}
 
 	if(!allocateScoringInfo()) {
 		logTrace(g_conf.m_logTracePosdb, "END. could not allocate scoring info");
