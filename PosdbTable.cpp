@@ -2885,7 +2885,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 	// all posdb keys for this docid should fit in here, the 
 	// mini merge buf:
 	char *mptr 	= miniMergeBuf;
-	miniMergeBufEnd -= 1000; //fragile hack but no worse than the original code
+	char *miniMergeBufSafeEnd = miniMergeBufEnd - 1000; //fragile hack but no worse than the original code
 	char *lastMptr = NULL;
 
 	// Merge each set of sublists, like we merge a term's list with 
@@ -3098,7 +3098,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 				}
 			} // mink != -1
 			//log("skipping ks=%" PRId32,(int32_t)ks);
-		} while( !currTermDone && mptr < miniMergeBufEnd );	// merge more ...
+		} while( !currTermDone && mptr < miniMergeBufSafeEnd );	// merge more ...
 
 		// wrap it up here since done merging
 		miniMergedListEnd[j] = mptr;		
@@ -3107,6 +3107,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 
 	// breach?
 	if ( mptr > miniMergeBufEnd ) {
+		log(LOG_ERROR,"%s:%s:%d: miniMergeBuf=%p miniMergeBufEnd=%p mptr=%p", __FILE__, __func__, __LINE__, miniMergeBuf, miniMergeBufEnd, mptr);
 		gbshutdownAbort(true);
 	}
 
