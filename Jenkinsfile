@@ -28,5 +28,11 @@ pipeline {
 				sh "make -j4 dist"
 			}
 		}
+
+		stage('Test') {
+			steps {
+				sh "make unittest"
+			}
+		}
 	}
 }
