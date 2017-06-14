@@ -49,8 +49,8 @@ pipeline {
 	}
 
 	post {
-		changed {
-		}
+		//changed {
+		//}
 
 		failure {
 			slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
