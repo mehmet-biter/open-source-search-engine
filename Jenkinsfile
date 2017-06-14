@@ -12,6 +12,7 @@ pipeline {
 		WEBSERVER_DIR = 'pywebserver'
 		GTEST_OUTPUT = 'xml'
 	}
+
 	stages {
 		stage('Checkout') {
 			steps {
@@ -27,7 +28,7 @@ pipeline {
 					              reference: '',
 					              trackingSubmodules: false]] +
 					            [[$class: 'RelativeTargetDirectory', 
-					              relativeTargetDir: ${env.GB_DIR}]] +
+					              relativeTargetDir: "${env.GB_DIR}"]] +
 					            [[$class: 'CleanBeforeCheckout']],
 					userRemoteConfigs: scm.userRemoteConfigs
 				])
