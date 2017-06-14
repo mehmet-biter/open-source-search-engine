@@ -7,6 +7,11 @@ pipeline {
 		skipDefaultCheckout()
 	}
 
+	environment {
+		GB_DIR = 'open-source-search-engine'
+		WEBSERVER_DIR = 'pywebserver'
+		GTEST_OUTPUT = 'xml'
+	}
 	stages {
 		stage('Checkout') {
 			steps {
@@ -21,6 +26,8 @@ pipeline {
 					              recursiveSubmodules: true,
 					              reference: '',
 					              trackingSubmodules: false]] +
+					            [[$class: 'RelativeTargetDirectory', 
+					              relativeTargetDir: ${env.GB_DIR}]] +
 					            [[$class: 'CleanBeforeCheckout']],
 					userRemoteConfigs: scm.userRemoteConfigs
 				])
@@ -29,13 +36,13 @@ pipeline {
 
 		stage('Build') {
 			steps {
-				sh "make -j4 dist"
+				sh "cd ${env.GB_DIR} && make -j4 dist"
 			}
 		}
 
 		stage('Test') {
 			steps {
-				sh "GTEST_OUTPUT='xml' make unittest"
+				sh "cd ${env.GB_DIR} && make unittest"
 			}
 			post {
 				always {
