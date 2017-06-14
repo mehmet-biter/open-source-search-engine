@@ -47,4 +47,21 @@ pipeline {
 			}
 		}
 	}
+
+	post {
+		changed {
+		}
+
+		failure {
+			slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
+		}
+
+		success {
+			slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Success (<${env.BUILD_URL}|Open>)"
+		}
+
+		unstable {
+			slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Unstable (<${env.BUILD_URL}|Open>)"
+		}
+	}
 }
