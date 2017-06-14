@@ -25,11 +25,6 @@ static const char* makeTitledbData(const char *data) {
 	return mdata;
 }
 
-class TestRdb : public Rdb {
-public:
-	using Rdb::disableUseIndexFile;
-};
-
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 // RdbList test                                                               //
@@ -45,9 +40,6 @@ protected:
 
 	void SetUp() {
 		GbTest::initializeRdbs();
-
-		// yes, this is a hack. but we know that TestRdb is the same as Rdb but exposing protected function
-		static_cast<TestRdb*>(g_posdb.getRdb())->disableUseIndexFile();
 	}
 
 	void TearDown() {
