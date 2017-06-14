@@ -48,7 +48,7 @@ pipeline {
 			post {
 				always {
 					step([$class: 'XUnitPublisher',
-					      thresholds: [[$class: 'FailedThreshold', failureThreshold: '0']],
+					      thresholds: [[$class: 'FailedThreshold', unstableThreshold: '0']],
 					      tools: [[$class: 'GoogleTestType', pattern: '**/test_detail.xml']]])
 					
 				}
