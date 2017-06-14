@@ -10,3 +10,7 @@
 	path = third-party/slacktee
 	url = https://github.com/course-hero/slacktee.git
 	ignore = dirty
+[submodule "third-party/compact_enc_det"]
+	path = third-party/compact_enc_det
+	url = https://github.com/google/compact_enc_det.git
+	ignore = dirty
