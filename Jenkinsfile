@@ -35,7 +35,15 @@ pipeline {
 
 		stage('Test') {
 			steps {
-				sh "make unittest"
+				sh "GTEST_OUTPUT='xml' make unittest"
+			}
+			post {
+				always {
+					step([$class: 'XUnitPublisher',
+					      thresholds: [[$class: 'FailedThreshold', failureThreshold: '0']],
+					      tools: [[$lass: 'GoogleTestType', pattern: '**/test_detail.xml']]])
+					
+				}
 			}
 		}
 	}
