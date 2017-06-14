@@ -226,6 +226,10 @@ public:
 	// rebuilt files, pointed to by rdb2.
 	bool updateToRebuildFiles ( Rdb *rdb2 , char *coll ) ;
 
+protected:
+	// for unit test only
+	void disableUseIndexFile() { m_useIndexFile = false; }
+
 private:
 	bool addRdbBase2 ( collnum_t collnum );
 	void addBase(collnum_t collnum, RdbBase *base);
