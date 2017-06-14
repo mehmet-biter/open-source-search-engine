@@ -17,7 +17,7 @@
 #ifndef GB_FILE_H
 #define GB_FILE_H
 
-#define MAX_FILENAME_LEN 128
+#define MAX_FILENAME_LEN 256
 
 #include <pthread.h>
 
