@@ -3235,7 +3235,7 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const char **miniMergedListSta
 
 			// store in matrix for "sub out" algo below
 			// when doing sliding window
-			scoreMatrix[i*m_nqt+j] = wts;
+			scoreMatrix[i*m_numQueryTermInfos+j] = wts;
 		}
 	}
 	logTrace(g_conf.m_logTracePosdb, "END");
@@ -3426,8 +3426,8 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 			max *= m_freqWeights[i] * m_freqWeights[j];
 
 			// use score from scoreMatrix if bigger
-			if ( scoreMatrix[m_nqt*i+j] > max ) {
-				max = scoreMatrix[m_nqt*i+j];
+			if ( scoreMatrix[i*m_numQueryTermInfos+j] > max ) {
+				max = scoreMatrix[i*m_numQueryTermInfos+j];
 			}
 
 
