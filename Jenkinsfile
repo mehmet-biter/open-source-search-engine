@@ -17,7 +17,7 @@ pipeline {
 		stage('Checkout') {
 			steps {
 				parallel (
-					'gigablast': {
+					'open-source-search-engine': {
 						checkout([
 							$class: 'GitSCM',
 							branches: scm.branches,
@@ -35,7 +35,7 @@ pipeline {
 							userRemoteConfigs: scm.userRemoteConfigs
 						])
 					},
-					'webserver': {
+					'pywebserver': {
 						checkout([
 							$class: 'GitSCM',
 							branches: [[name: '*/master']],
@@ -52,13 +52,13 @@ pipeline {
 
 		stage('Build') {
 			steps {
-				sh "cd ${env.GB_DIR} && make -j4 dist"
+				sh "cd ${env.GB_DIR} && make -j8"
 			}
 		}
 
 		stage('Test') {
 			steps {
-				sh "cd ${env.GB_DIR} && make unittest"
+				sh "cd ${env.GB_DIR} && make -j8 unittest"
 			}
 			post {
 				always {
@@ -73,15 +73,15 @@ pipeline {
 
 	post {
 		changed {
-			slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Changed (<${env.BUILD_URL}|Open>)"
+			script {
+				if (currentBuild.result == "SUCCESS") {
+					slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
+				}
+			}
 		}
 
 		failure {
 			slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
-		}
-
-		success {
-			slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Success (<${env.BUILD_URL}|Open>)"
 		}
 
 		unstable {
