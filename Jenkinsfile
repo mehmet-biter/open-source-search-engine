@@ -58,7 +58,14 @@ pipeline {
 
 		stage('Test') {
 			steps {
-				sh "cd ${env.GB_DIR} && make -j8 unittest"
+				parallel(
+					'unit test': {
+						sh "cd ${env.GB_DIR} && make -j8 unittest"
+					},
+					'system test': {
+						sh "echo 'run system test here'"
+					}
+				)
 			}
 			post {
 				always {
