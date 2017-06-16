@@ -2216,7 +2216,7 @@ bool PosdbTable::findCandidateDocIds() {
 		for(int i=0; i<m_numQueryTermInfos; i++) {
 			log(LOG_TRACE,"  qti #%d: m_numSubLists=%d m_numMatchingSubLists=%d", i, qtibuf[i].m_numSubLists, qtibuf[i].m_numMatchingSubLists);
 			for(int j=0; j<qtibuf[i].m_numMatchingSubLists; j++)
-				log(LOG_TRACE,"           matchlist #%d: %d bytes %p - %p", j, qtibuf[i].m_matchingSubListSize[j], qtibuf[i].m_matchingSubListStart[j], qtibuf[i].m_matchingSubListEnd[j]);
+				log(LOG_TRACE,"           matchlist #%d: %d bytes %p - %p", j, qtibuf[i].m_matchingSublist[j].m_size, qtibuf[i].m_matchingSublist[j].m_start, qtibuf[i].m_matchingSublist[j].m_end);
 		}
 	}
 
@@ -2303,16 +2303,16 @@ nextNode:
 		// do each sublist
 		for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
 			// get termlist for that docid
-			const char *xlist    = qti->m_matchingSubListStart[j];
-			const char *xlistEnd = qti->m_matchingSubListEnd[j];
+			const char *xlist    = qti->m_matchingSublist[j].m_start;
+			const char *xlistEnd = qti->m_matchingSublist[j].m_end;
 			const char *xp = getWordPosList ( m_docId, xlist, xlistEnd - xlist);
 
 			// not there? xlist will be NULL
-			qti->m_matchingSubListSavedCursor[j] = xp;
+			qti->m_matchingSublist[j].m_savedCursor = xp;
 
 			// if not there make cursor NULL as well
 			if ( ! xp ) {
-				qti->m_matchingSubListCursor[j] = NULL;
+				qti->m_matchingSublist[j].m_cursor = NULL;
 				continue;
 			}
 
@@ -2335,7 +2335,7 @@ nextNode:
 			}
 
 			// point to docid sublist end
-			qti->m_matchingSubListCursor[j] = xp;
+			qti->m_matchingSublist[j].m_cursor = xp;
 		}
 	}
 
@@ -2601,8 +2601,8 @@ bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qti
 		//
 		for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
 			// shortcuts
-			const char *xc    = qti->m_matchingSubListCursor[j];
-			const char *xcEnd = qti->m_matchingSubListEnd[j];
+			const char *xc    = qti->m_matchingSublist[j].m_cursor;
+			const char *xcEnd = qti->m_matchingSublist[j].m_end;
 
 			// exhausted? (we can't make cursor NULL because
 			// getMaxPossibleScore() needs the last ptr)
@@ -2611,13 +2611,13 @@ bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qti
 			     *(int32_t *)(xc+8) != *(int32_t *)(docIdPtr+1) ||
 			     (*(char *)(xc+7)&0xfc) != (*(char *)(docIdPtr)&0xfc) ) {
 				// flag it as not having the docid
-				qti->m_matchingSubListSavedCursor[j] = NULL;
+				qti->m_matchingSublist[j].m_savedCursor = NULL;
 				// skip this sublist if does not have our docid
 				continue;
 			}
 
 			// save it
-			qti->m_matchingSubListSavedCursor[j] = xc;
+			qti->m_matchingSublist[j].m_savedCursor = xc;
 			// get new docid
 			//log("new docid %" PRId64,Posdb::getDocId(xc) );
 			// advance the cursors. skip our 12
@@ -2652,7 +2652,7 @@ bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qti
 				}
 			}
 			// assign to next docid word position list
-			qti->m_matchingSubListCursor[j] = xc;
+			qti->m_matchingSublist[j].m_cursor = xc;
 		}
 	}
 
@@ -2701,13 +2701,13 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 	// populate ring buf just for this query term
 	for ( int32_t k = 0 ; k < qtx->m_numMatchingSubLists ; k++ ) {
 		// scan that sublist and add word positions
-		const char *sub = qtx->m_matchingSubListSavedCursor[k];
+		const char *sub = qtx->m_matchingSublist[k].m_savedCursor;
 		// skip sublist if it's cursor is exhausted
 		if ( ! sub ) {
 			continue;
 		}
 
-		const char *end = qtx->m_matchingSubListCursor[k];
+		const char *end = qtx->m_matchingSublist[k].m_cursor;
 		// add first key
 		//int32_t wx = Posdb::getWordPos(sub);
 		wx = (*((uint32_t *)(sub+3))) >> 6;
@@ -2751,13 +2751,13 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 		// store all his word positions into ring buffer AS WELL
 		for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
 			// scan that sublist and add word positions
-			const char *sub = qti->m_matchingSubListSavedCursor[k];
+			const char *sub = qti->m_matchingSublist[k].m_savedCursor;
 			// skip sublist if it's cursor is exhausted
 			if ( ! sub ) {
 				continue;
 			}
 			
-			const char *end = qti->m_matchingSubListCursor[k];
+			const char *end = qti->m_matchingSublist[k].m_cursor;
 			// add first key
 			//int32_t wx = Posdb::getWordPos(sub);
 			wx = (*((uint32_t *)(sub+3))) >> 6;
@@ -2922,14 +2922,14 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 		int32_t nsub = 0;
 		for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
 			// NULL means does not have that docid
-			if ( ! qti->m_matchingSubListSavedCursor[k] ) {
+			if ( ! qti->m_matchingSublist[k].m_savedCursor ) {
 				continue;
 			}
 
 			// getMaxPossibleScore() incremented m_matchingSubListCursor to
 			// the next docid so use m_matchingSubListSavedCursor.
-			nwp[nsub] 		= qti->m_matchingSubListSavedCursor[k];
-			nwpEnd[nsub]	= qti->m_matchingSubListCursor[k];
+			nwp[nsub] 	= qti->m_matchingSublist[k].m_savedCursor;
+			nwpEnd[nsub]	= qti->m_matchingSublist[k].m_cursor;
 			nwpFlags[nsub]	= qti->m_bigramFlags[k];
 			nsub++;
 		}
@@ -3949,8 +3949,8 @@ void PosdbTable::intersectLists_real() {
 				
 				// do each sublist
 				for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
-					qti->m_matchingSubListCursor      [j] = qti->m_matchingSubListStart[j];
-					qti->m_matchingSubListSavedCursor [j] = qti->m_matchingSubListStart[j];
+					qti->m_matchingSublist[j].m_cursor      = qti->m_matchingSublist[j].m_start;
+					qti->m_matchingSublist[j].m_savedCursor = qti->m_matchingSublist[j].m_start;
 				}
 			}
 		}
@@ -4510,7 +4510,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	// max possible score of each one
 	for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
 		// scan backwards up to this
-		const char *start = qti->m_matchingSubListSavedCursor[j];
+		const char *start = qti->m_matchingSublist[j].m_savedCursor;
 		
 		// skip if does not have our docid
 		if ( ! start ) {
@@ -4523,7 +4523,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 		}
 		
 		// skip if entire sublist/termlist is exhausted
-		if ( start >= qti->m_matchingSubListEnd[j] ) {
+		if ( start >= qti->m_matchingSublist[j].m_end ) {
 			continue;
 		}
 			
@@ -4538,7 +4538,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 		// 6 byte keys. we deal with it below.
 		start += 12;
 		// get cursor. this is actually pointing to the next docid
-		const char *dc = qti->m_matchingSubListCursor[j];
+		const char *dc = qti->m_matchingSublist[j].m_cursor;
 		// back up into our list
 		dc -= 6;
 		// reset this
@@ -4595,7 +4595,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 		// handle the beginning 12 byte key
 		if ( ! retried ) {
 			retried = true;
-			dc = qti->m_matchingSubListSavedCursor[j];
+			dc = qti->m_matchingSublist[j].m_savedCursor;
 			goto retry;
 		}
 
@@ -5062,11 +5062,11 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists() {
 				if(qti->m_subLists[j] == m_q->m_qterms[k].m_posdbListPtr) {
 					char *newStartPtr = m_q->m_qterms[k].m_posdbListPtr->getList(); //same as always
 					int32_t x = qti->m_numMatchingSubLists;
-					qti->m_matchingSubListSize  	  [x] = newEndPtr[k] - newStartPtr;
-					qti->m_matchingSubListStart 	  [x] = newStartPtr;
-					qti->m_matchingSubListEnd	  [x] = newEndPtr[k];
-					qti->m_matchingSubListCursor	  [x] = newStartPtr;
-					qti->m_matchingSubListSavedCursor [x] = newStartPtr;
+					qti->m_matchingSublist[x].m_size  	    = newEndPtr[k] - newStartPtr;
+					qti->m_matchingSublist[x].m_start 	    = newStartPtr;
+					qti->m_matchingSublist[x].m_end	    = newEndPtr[k];
+					qti->m_matchingSublist[x].m_cursor	    = newStartPtr;
+					qti->m_matchingSublist[x].m_savedCursor = newStartPtr;
 					qti->m_numMatchingSubLists++;
 					break;
 				}
