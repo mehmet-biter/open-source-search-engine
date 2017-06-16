@@ -2016,41 +2016,34 @@ bool PosdbTable::findCandidateDocIds() {
 		int64_t total = 0LL;
 		// get the list
 		RdbList *list = m_q->m_qterms[k].m_posdbListPtr;
-		// skip if null
-		if ( ! list ) {
-			continue;
-		}
-		
-		// skip if list is empty, too
-		if ( list->isEmpty() ) {
-			continue;
-		}
-		
-		// tally
-		total += list->getListSize();
-		// point to start
-		char *p = list->getList();
-		
-		// remember to swap back when done!!
-		char ttt[12];
-		memcpy ( ttt   , p       , 12 );
-		memcpy ( p     , p + 12  ,  6 );
-		memcpy ( p + 6 , ttt     , 12 );
+		// skip if null or empty
+		if(list && !list->isEmpty()) {
+			// tally
+			total += list->getListSize();
+			// point to start
+			char *p = list->getList();
+			
+			// remember to swap back when done!!
+			char ttt[12];
+			memcpy ( ttt   , p       , 12 );
+			memcpy ( p     , p + 12  ,  6 );
+			memcpy ( p + 6 , ttt     , 12 );
 
-		// point to the low "hks" bytes now, skipping the termid
-		p += 6;
-		
-		// turn half bit on. first key is now 12 bytes!!
-		*p |= 0x02;
-		// MANGLE the list
-		list->setListSize(list->getListSize() - 6);
-		list->setList(p);
+			// point to the low "hks" bytes now, skipping the termid
+			p += 6;
+			
+			// turn half bit on. first key is now 12 bytes!!
+			*p |= 0x02;
+			// MANGLE the list
+			list->setListSize(list->getListSize() - 6);
+			list->setList(p);
 
-		logTrace(g_conf.m_logTracePosdb, "termList #%" PRId32" totalSize=%" PRId64, k, total);
+			logTrace(g_conf.m_logTracePosdb, "termList #%" PRId32" totalSize=%" PRId64, k, total);
 
-		// print total list sizes
-		if ( m_debug ) {
-			log(LOG_INFO, "query: termlist #%" PRId32" totalSize=%" PRId64, k, total);
+			// print total list sizes
+			if ( m_debug ) {
+				log(LOG_INFO, "query: termlist #%" PRId32" totalSize=%" PRId64, k, total);
+			}
 		}
 	}
 
@@ -4710,10 +4703,11 @@ bool PosdbTable::allocWhiteListTable ( ) {
 	int32_t sum = 0;
 	for ( int32_t i = 0 ; i < m_msg2->getNumWhiteLists() ; i++ ) {
 		RdbList *list = m_msg2->getWhiteList(i);
-		if ( list->isEmpty() ) continue;
-		// assume 12 bytes for all keys but first which is 18
-		int32_t size = list->getListSize();
-		sum += size / 12 + 1;
+		if(!list->isEmpty()) {
+			// assume 12 bytes for all keys but first which is 18
+			int32_t size = list->getListSize();
+			sum += size / 12 + 1;
+		}
 	}
 	if ( sum ) {
 		// making this sum * 3 does not show a speedup... hmmm...
@@ -4746,25 +4740,26 @@ void PosdbTable::prepareWhiteListTable()
 
 	for ( int32_t i = 0 ; i < m_msg2->getNumWhiteLists() ; i++ ) {
 		RdbList *list = m_msg2->getWhiteList(i);
-		if ( list->isEmpty() ) continue;
-		// sanity test
-		int64_t d1 = Posdb::getDocId(list->getList());
-		if ( d1 > m_msg2->docIdEnd() ) {
-			log("posdb: d1=%" PRId64" > %" PRId64,
-			    d1,m_msg2->docIdEnd());
-			//gbshutdownAbort(true);
-		}
-		if ( d1 < m_msg2->docIdStart() ) {
-			log("posdb: d1=%" PRId64" < %" PRId64,
-			    d1,m_msg2->docIdStart());
-			//gbshutdownAbort(true);
-		}
-		// first key is always 18 bytes cuz it has the termid
-		// scan recs in the list
-		for ( ; ! list->isExhausted() ; list->skipCurrentRecord() ) {
-			char *rec = list->getCurrentRec();
-			// point to the 5 bytes of docid
-			m_whiteListTable.addKey ( rec + 7 );
+		if(!list->isEmpty()) {
+			// sanity test
+			int64_t d1 = Posdb::getDocId(list->getList());
+			if ( d1 > m_msg2->docIdEnd() ) {
+				log("posdb: d1=%" PRId64" > %" PRId64,
+				    d1,m_msg2->docIdEnd());
+				//gbshutdownAbort(true);
+			}
+			if ( d1 < m_msg2->docIdStart() ) {
+				log("posdb: d1=%" PRId64" < %" PRId64,
+				    d1,m_msg2->docIdStart());
+				//gbshutdownAbort(true);
+			}
+			// first key is always 18 bytes cuz it has the termid
+			// scan recs in the list
+			for ( ; ! list->isExhausted() ; list->skipCurrentRecord() ) {
+				char *rec = list->getCurrentRec();
+				// point to the 5 bytes of docid
+				m_whiteListTable.addKey ( rec + 7 );
+			}
 		}
 	}
 
@@ -5343,14 +5338,12 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 	for ( ; voteBufPtr < voteBufEnd ; voteBufPtr += 6 ) {
 		// skip if it has enough votes to be in search 
 		// results so far
-		if ( voteBufPtr[5] != listGroupNum ) {
-			continue;
+		if(voteBufPtr[5] == listGroupNum) {
+			// copy it over. might be the same address!
+			*(int32_t  *) dst   = *(int32_t *) voteBufPtr;
+			*(int16_t *)(dst+4) = *(int16_t *)(voteBufPtr+4);
+			dst += 6;
 		}
-			
-		// copy it over. might be the same address!
-		*(int32_t  *) dst	= *(int32_t *) voteBufPtr;
-		*(int16_t *)(dst+4) = *(int16_t *)(voteBufPtr+4);
-		dst += 6;
 	}
 
 	// shrink the buffer size
