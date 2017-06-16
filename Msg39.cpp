@@ -486,7 +486,7 @@ void Msg39::controlLoop ( ) {
 			m_numTotalHits += m_posdbTable.getTotalHits();
 			// minus the shit we filtered out because of gbminint/gbmaxint/
 			// gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
-			m_numTotalHits -= m_posdbTable.m_filtered;
+			m_numTotalHits -= m_posdbTable.getFilteredCount();
 			
 			chunksSearched++;
 		}

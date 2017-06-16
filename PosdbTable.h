@@ -224,7 +224,9 @@ public:
 				    const QueryTermInfo *qtm ) ;
 
 	int64_t getTotalHits() const { return m_docIdVoteBuf.length() / 6; }
+	int32_t getFilteredCount() const { return m_filtered; }
 
+private:
 	// stuff set in setQueryTermInf() function:
 	SafeBuf              m_qiBuf;
 	int32_t                 m_numQueryTermInfos;
