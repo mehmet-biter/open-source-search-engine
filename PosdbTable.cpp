@@ -5082,16 +5082,14 @@ void PosdbTable::delDocIdVotes ( const QueryTermInfo *qti ) {
 	char *bufStart = m_docIdVoteBuf.getBufStart();
 	char *voteBufPtr = NULL;
 	char *voteBufEnd;
-	char *subListPtr;
-	char *subListEnd;
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// just scan each sublist vs. the docid list
 	for ( int32_t i = 0 ; i < qti->m_numSubLists  ; i++ ) {
 		// get that sublist
-		subListPtr = qti->m_subLists[i]->getList();
-		subListEnd = qti->m_subLists[i]->getListEnd();
+		char *subListPtr = qti->m_subLists[i]->getList();
+		char *subListEnd = qti->m_subLists[i]->getListEnd();
 		// reset docid list ptrs
 		voteBufPtr = m_docIdVoteBuf.getBufStart();
 		voteBufEnd = voteBufPtr + m_docIdVoteBuf.length();
@@ -5233,8 +5231,6 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 	char *bufStart = m_docIdVoteBuf.getBufStart();
 	char *voteBufPtr = NULL;
 	char *voteBufEnd;
-	char *subListPtr;
-	char *subListEnd;
 
 	// 
 	// For each sublist (term variation) loop through all sublist records
@@ -5249,8 +5245,8 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 	//
 	for ( int32_t i = 0 ; i < qti->m_numSubLists; i++) {
 		// get that sublist
-		subListPtr	= qti->m_subLists[i]->getList();
-		subListEnd	= qti->m_subLists[i]->getListEnd();
+		char *subListPtr	= qti->m_subLists[i]->getList();
+		char *subListEnd	= qti->m_subLists[i]->getListEnd();
 		// reset docid list ptrs
 		voteBufPtr	= m_docIdVoteBuf.getBufStart();
 		voteBufEnd	= voteBufPtr + m_docIdVoteBuf.length();
@@ -5376,19 +5372,16 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 		cursorEnd [i] = qti->m_subLists[i]->getListEnd();
 	}
 
-	char *bufStart = m_docIdVoteBuf.getBufStart();
+	char * const bufStart = m_docIdVoteBuf.getBufStart();
 	char *voteBufPtr = m_docIdVoteBuf.getBufStart();
-	char *recPtr;
-	char *minRecPtr;
 	char *lastMinRecPtr = NULL;
 	int32_t mini = -1;
-	const QueryTerm *qt = qti->m_qt;
+	const QueryTerm * const qt = qti->m_qt;
 	
 	// get the next min from all the termlists
 	for(;;) {
 
-		// reset this
-		minRecPtr = NULL;
+		char *minRecPtr = NULL;
 
 		// just scan each sublist vs. the docid list
 		for ( int32_t i = 0 ; i < qti->m_numSubLists ; i++ ) {
@@ -5398,7 +5391,7 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 			}
 
 			// shortcut
-			recPtr = cursor[i];
+			char *recPtr = cursor[i];
 
 			// get the min docid
 			if ( ! minRecPtr ) {
