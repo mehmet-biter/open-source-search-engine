@@ -221,10 +221,7 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 }
 
 
-
-int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
-				   XmlDoc *xd , int32_t row ) {
-
+int32_t SpiderRequest::printToTable(SafeBuf *sb, const char *status, XmlDoc *xd, int32_t row) {
 	sb->safePrintf("<tr bgcolor=#%s>\n",LIGHT_BLUE);
 
 	// show elapsed time
@@ -2838,21 +2835,6 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 		*status = SP_INITIALIZING;
 		return msg->safePrintf("Job is initializing.");
 	}
-
-	if ( cx->m_spiderStatus == SP_ROUNDDONE ) {
-		*status = SP_ROUNDDONE;
-		return msg->safePrintf ( "Nothing currently "
-					 "available to spider. "
-					 "Change your url filters, try "
-					 "adding new urls, or wait for "
-					 "existing urls to be respidered.");
-	}
-
-	if ( cx->m_spiderStatus == SP_ROUNDDONE ) {
-		*status = SP_ROUNDDONE;
-		return msg->safePrintf ( "Job round completed.");
-	}
-
 
 	if ( ! g_conf.m_spideringEnabled ) {
 		*status = SP_ADMIN_PAUSED;
