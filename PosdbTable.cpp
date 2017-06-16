@@ -5154,20 +5154,17 @@ void PosdbTable::delDocIdVotes ( const QueryTermInfo *qti ) {
 	char *dst   = voteBufPtr;
 	for ( ; voteBufPtr < voteBufEnd ; voteBufPtr += 6 ) {
 		// do not re-copy it if it was in this negative termlist
-		if ( voteBufPtr[5] == -1 ) {
-			continue;
+		if(voteBufPtr[5] != -1) {
+			// copy it over. might be the same address!
+			*(int32_t *) dst    = *(int32_t *) voteBufPtr;
+			*(int16_t *)(dst+4) = *(int16_t *)(voteBufPtr+4);
+			dst += 6;
 		}
-		
-		// copy it over. might be the same address!
-		*(int32_t *) dst    = *(int32_t *) voteBufPtr;
-		*(int16_t *)(dst+4) = *(int16_t *)(voteBufPtr+4);
-		dst += 6;
 	}
 	// shrink the buffer size now
 	m_docIdVoteBuf.setLength ( dst - bufStart );
 	
 	logTrace(g_conf.m_logTracePosdb, "END.");
-	return;
 }
 
 
