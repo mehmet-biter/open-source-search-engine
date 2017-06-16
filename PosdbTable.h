@@ -47,11 +47,13 @@ public:
 	// delNonMatchingDocIdsFromSubLists() set these. They
 	// point to m_subLists that have been reduced in size 
 	// to only contain the docids matching all required term ids
-	int32_t   m_matchingSubListSize		    [MAX_SUBLISTS];
-	const char *m_matchingSubListStart	[MAX_SUBLISTS];
-	const char *m_matchingSubListEnd	[MAX_SUBLISTS];
-	const char *m_matchingSubListCursor	[MAX_SUBLISTS];
-	const char *m_matchingSubListSavedCursor[MAX_SUBLISTS];
+	struct {
+		int32_t     m_size;
+		const char *m_start;
+		const char *m_end;
+		const char *m_cursor;
+		const char *m_savedCursor;
+	} m_matchingSublist[MAX_SUBLISTS];
 	int32_t   m_numMatchingSubLists;
 	
 	
