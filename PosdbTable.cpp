@@ -3248,6 +3248,9 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const char **miniMergedListSta
 //
 float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedListStart, const char **miniMergedListEnd, const char **highestScoringNonBodyPos, DocIdScore *pdcs) {
 	float minSingleScore = 999999999.0;
+	bool mergedListFound = false;
+	bool allSpecialTerms = true;
+	bool scoredTerm = false;
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
 
@@ -3259,15 +3262,20 @@ float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedListStart, con
 	//
 	// This should be highly negative if singles[i] has a '-' 
 	// termsign...
+
+
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		if ( ! miniMergedListStart[i] ) {
 			continue;
 		}
+		mergedListFound = true;
 
 		// skip if to the left of a pipe operator
 		if( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 			continue;
 		}
+
+		allSpecialTerms = false;
 
 		// sometimes there is no wordpos subtermlist for this docid
 		// because it just has the bigram, like "streetlight" and not
@@ -3288,6 +3296,7 @@ float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedListStart, con
 		//
 		// pdcs is NULL if not currPassNum == INTERSECT_DEBUG_INFO
 		float sts = getBestScoreSumForSingleTerm(i, miniMergedListStart[i], miniMergedListEnd[i], pdcs, &highestScoringNonBodyPos[i]);
+		scoredTerm = true;
 
 		// sanity check
 		if ( highestScoringNonBodyPos[i] && s_inBody[Posdb::getHashGroup(highestScoringNonBodyPos[i])] ) {
@@ -3298,6 +3307,15 @@ float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedListStart, con
 		if ( sts < minSingleScore ) {
 			minSingleScore = sts;
 		}
+	}
+
+	if( !mergedListFound || (!scoredTerm && !allSpecialTerms) ) {
+		// Fix default value if no single terms were scored, and all terms are not special (e.g. numbers).
+		// This returns -1 for documents matching bigrams only, and not single terms. Can happen when searching
+		// for "bridget jones" and a document has the text "bridgetjon es" as the only match (bigram).
+		//
+		// If terms are numbers, do NOT return -1, otherwise gbsortbyint queries do not work.
+		minSingleScore = -1;
 	}
 
 	logTrace(g_conf.m_logTracePosdb, "END. minSingleScore=%f", minSingleScore);
@@ -3318,6 +3336,9 @@ float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedListStart, con
 void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **highestScoringNonBodyPos, float *scoreMatrix) {
 	int32_t qdist = 0;
 	float minTermPairScoreInWindow = 999999999.0;
+	bool mergedListFound = false;
+	bool allSpecialTerms = true;
+	bool scoredTerms = false;
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
@@ -3325,16 +3346,17 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 	// is the term whose position got advanced in the sliding window.
 
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos; i++ ) {
-
 		// skip if to the left of a pipe operator
-		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
+		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 			continue;
+		}
+		allSpecialTerms = false;
 
 		// skip empty list
 		if( !ptrs[i] ) {
 			continue;
 		}
-		
+		mergedListFound = true;
 
 		//if ( ptrs[i] ) wpi = ptrs[i];
 		// if term does not occur in body, sub-in the best term
@@ -3345,10 +3367,10 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 
 		// loop over other terms
 		for(int32_t j = i + 1; j < m_numQueryTermInfos; j++) {
-
 			// skip if to the left of a pipe operator
-			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
+			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 				continue;
+			}
 
 			// skip empty list
 			if( !ptrs[j] ) {
@@ -3387,6 +3409,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 
 			// this will be -1 if wpi or wpj is NULL
 			float max = getScoreForTermPair(wpi, wpj, 0, qdist);
+			scoredTerms = true;
 
 			// try sub-ing in the best title occurence or best
 			// inlink text occurence. cuz if the term is in the title
@@ -3466,6 +3489,11 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 				minTermPairScoreInWindow = max;
 			}
 		}
+	}
+
+	if( !mergedListFound || (!scoredTerms && !allSpecialTerms) ) {
+		// Similar fix as in getMinSingleTermScoreSum, but should not happen in this function ...
+		minTermPairScoreInWindow = -1;
 	}
 
 	// Our best minimum score better than current best minimum score?
@@ -3568,6 +3596,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const char **miniMergedListSt
 	// if no terms in body, no need to do sliding window
 	bool doneSliding = allNull ? true : false;
 
+	logTrace(g_conf.m_logTracePosdb, "Run sliding window algo? %s", !doneSliding?"yes":"no, no matches found in body");
 
 	while( !doneSliding ) {
 		//
@@ -3701,7 +3730,6 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const char **miniMergedListSt
 			if ( ! miniMergedListStart[j] ) {
 				continue;
 			}
-
 			// . this limits its scoring to the winning sliding window
 			//   as far as the in-body terms are concerned
 			// . it will do sub-outs using the score matrix
