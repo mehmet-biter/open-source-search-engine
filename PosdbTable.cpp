@@ -2679,8 +2679,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 
 		const char *end = qtx->m_matchingSublist[k].m_cursor;
 		// add first key
-		//int32_t wx = Posdb::getWordPos(sub);
-		uint32_t wx = (*((uint32_t *)(sub+3))) >> 6;
+		int32_t wx = Posdb::getWordPos(sub);
 		// mod with 4096
 		wx &= (RINGBUFSIZE-1);
 		// store it. 0 is legit.
@@ -2692,8 +2691,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 		// then 6 byte keys
 		for ( ; sub < end ; sub += 6 ) {
 			// get word position
-			//wx = Posdb::getWordPos(sub);
-			wx = (*((uint32_t *)(sub+3))) >> 6;
+			wx = Posdb::getWordPos(sub);
 			// mod with 4096
 			wx &= (RINGBUFSIZE-1);
 			// store it. 0 is legit.
@@ -2729,8 +2727,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 			
 			const char *end = qti->m_matchingSublist[k].m_cursor;
 			// add first key
-			//int32_t wx = Posdb::getWordPos(sub);
-			uint32_t wx = (*((uint32_t *)(sub+3))) >> 6;
+			int32_t wx = Posdb::getWordPos(sub);
 			// mod with 4096
 			wx &= (RINGBUFSIZE-1);
 			// store it. 0 is legit.
@@ -2740,8 +2737,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 			// then 6 byte keys
 			for ( ; sub < end ; sub += 6 ) {
 				// get word position
-				//wx = Posdb::getWordPos(sub);
-				wx = (*((uint32_t *)(sub+3))) >> 6;
+				wx = Posdb::getWordPos(sub);
 				// mod with 4096
 				wx &= (RINGBUFSIZE-1);
 				// store it. 0 is legit.
