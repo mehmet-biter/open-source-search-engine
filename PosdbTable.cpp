@@ -2654,7 +2654,8 @@ static int32_t setRingbufFromQTI(const QueryTermInfo *qti, int32_t listIdx, unsi
 		wx &= (RINGBUFSIZE-1);
 		// store it. 0 is legit.
 		ringBuf[wx] = listIdx;
-		firstPos = wx;
+		if(firstPos<0 || wx<firstPos)
+			firstPos = wx;
 		// skip first key
 		sub += 12;
 		// then 6 byte keys
