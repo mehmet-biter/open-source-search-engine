@@ -1997,8 +1997,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 
 bool PosdbTable::findCandidateDocIds() {
 	int64_t lastTime = gettimeofdayInMilliseconds();
-	int64_t now;
-	int64_t took;
 
 
 	//
@@ -2189,8 +2187,8 @@ bool PosdbTable::findCandidateDocIds() {
 	}
 
 	if ( m_debug ) {
-		now = gettimeofdayInMilliseconds();
-		took = now - lastTime;
+		int64_t now = gettimeofdayInMilliseconds();
+		int64_t took = now - lastTime;
 		log(LOG_INFO, "posdb: new algo phase (find matching docids) took %" PRId64" ms", took);
 		lastTime = now;
 	}
@@ -2214,8 +2212,8 @@ bool PosdbTable::findCandidateDocIds() {
 	}
 
 	if ( m_debug ) {
-		now = gettimeofdayInMilliseconds();
-		took = now - lastTime;
+		int64_t now = gettimeofdayInMilliseconds();
+		int64_t took = now - lastTime;
 		log(LOG_INFO, "posdb: new algo phase (shrink sublists) took %" PRId64" ms", took);
 	}
 
@@ -2337,12 +2335,6 @@ nextNode:
 
 
 bool PosdbTable::genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t *lastDocId, char siteRank, float score, int32_t intScore, char docLang) {
-	char *sx;
-	char *sxEnd;
-	int32_t pairOffset;
-	int32_t pairSize;
-	int32_t singleOffset;
-	int32_t singleSize;
 
 	dcs->m_siteRank   = siteRank;
 	dcs->m_finalScore = score;
@@ -2422,8 +2414,8 @@ VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
 		return true;
 	}
 
-	sx = m_scoreInfoBuf.getBufStart();
-	sxEnd = sx + m_scoreInfoBuf.length();
+	char *sx = m_scoreInfoBuf.getBufStart();
+	char *sxEnd = sx + m_scoreInfoBuf.length();
 	
 	// if we have not supplanted anyone yet, be on our way
 	for ( ; sx < sxEnd ; sx += sizeof(DocIdScore) ) {
@@ -2453,10 +2445,10 @@ VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
 	logTrace(g_conf.m_logTracePosdb, "Kicking out docid %" PRId64" from score buf", si->m_docId);
 
 	// get his single and pair offsets
-	pairOffset   = si->m_pairsOffset;
-	pairSize     = si->m_numPairs * sizeof(PairScore);
-	singleOffset = si->m_singlesOffset;
-	singleSize   = si->m_numSingles * sizeof(SingleScore);
+	int32_t pairOffset   = si->m_pairsOffset;
+	int32_t pairSize     = si->m_numPairs * sizeof(PairScore);
+	int32_t singleOffset = si->m_singlesOffset;
+	int32_t singleSize   = si->m_numSingles * sizeof(SingleScore);
 	// nuke him
 	m_scoreInfoBuf  .removeChunk1 ( sx, sizeof(DocIdScore) );
 	// and his related info
@@ -2485,18 +2477,14 @@ VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
 
 
 void PosdbTable::logDebugScoreInfo(int32_t loglevel) {
-	DocIdScore *si;
-	char *sx;
-	char *sxEnd;
-
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
 
-	sx = m_scoreInfoBuf.getBufStart();
-	sxEnd = sx + m_scoreInfoBuf.length();
+	char *sx = m_scoreInfoBuf.getBufStart();
+	char *sxEnd = sx + m_scoreInfoBuf.length();
 
 	log(loglevel, "DocId scores in m_scoreInfoBuf:");
 	for ( ; sx < sxEnd ; sx += sizeof(DocIdScore) ) {
-		si = (DocIdScore *)sx;
+		DocIdScore *si = (DocIdScore *)sx;
 
 		log(loglevel, "  docId: %14" PRIu64 ", score: %f", si->m_docId, si->m_finalScore);
 
@@ -2513,21 +2501,13 @@ void PosdbTable::logDebugScoreInfo(int32_t loglevel) {
 
 
 void PosdbTable::removeScoreInfoForDeletedDocIds() {
-	DocIdScore *si;
-	char *sx;
-	char *sxEnd;
-	int32_t pairOffset;
-	int32_t pairSize;
-	int32_t singleOffset;
-	int32_t singleSize;
-
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
 
-	sx = m_scoreInfoBuf.getBufStart();
-	sxEnd = sx + m_scoreInfoBuf.length();
+	char *sx = m_scoreInfoBuf.getBufStart();
+	char *sxEnd = sx + m_scoreInfoBuf.length();
 
 	for ( ; sx < sxEnd ; sx += sizeof(DocIdScore) ) {
-		si = (DocIdScore *)sx;
+		DocIdScore *si = (DocIdScore *)sx;
 
 		// if top tree no longer has this docid, we must
 		// remove its associated scoring info so we do not
@@ -2538,10 +2518,10 @@ void PosdbTable::removeScoreInfoForDeletedDocIds() {
 
 		logTrace(g_conf.m_logTracePosdb, "Removing old score info for docId %" PRId64 "", si->m_docId);
 		// get his single and pair offsets
-		pairOffset   = si->m_pairsOffset;
-		pairSize     = si->m_numPairs * sizeof(PairScore);
-		singleOffset = si->m_singlesOffset;
-		singleSize   = si->m_numSingles * sizeof(SingleScore);
+		int32_t pairOffset   = si->m_pairsOffset;
+		int32_t pairSize     = si->m_numPairs * sizeof(PairScore);
+		int32_t singleOffset = si->m_singlesOffset;
+		int32_t singleSize   = si->m_numSingles * sizeof(SingleScore);
 		// nuke him
 		m_scoreInfoBuf  .removeChunk1 ( sx, sizeof(DocIdScore) );
 		// and his related info
@@ -2671,10 +2651,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 	// reset ring buf. make all slots 0xff. should be 1000 cycles or so.
 	memset ( ringBuf, 0xff, sizeof(ringBuf) );
 
-	unsigned char qt;
-	uint32_t wx;
 	int32_t ourFirstPos = -1;
-	int32_t qdist;
 	
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
 
@@ -2703,7 +2680,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 		const char *end = qtx->m_matchingSublist[k].m_cursor;
 		// add first key
 		//int32_t wx = Posdb::getWordPos(sub);
-		wx = (*((uint32_t *)(sub+3))) >> 6;
+		uint32_t wx = (*((uint32_t *)(sub+3))) >> 6;
 		// mod with 4096
 		wx &= (RINGBUFSIZE-1);
 		// store it. 0 is legit.
@@ -2753,7 +2730,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 			const char *end = qti->m_matchingSublist[k].m_cursor;
 			// add first key
 			//int32_t wx = Posdb::getWordPos(sub);
-			wx = (*((uint32_t *)(sub+3))) >> 6;
+			uint32_t wx = (*((uint32_t *)(sub+3))) >> 6;
 			// mod with 4096
 			wx &= (RINGBUFSIZE-1);
 			// store it. 0 is legit.
@@ -2791,7 +2768,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 			}
 
 			// get query term #
-			qt = ringBuf[x];
+			unsigned char qt = ringBuf[x];
 
 			// if it's the man
 			if ( qt == m_minTermListIdx ) {
@@ -2836,7 +2813,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 		}
 
 		// query distance
-		qdist = m_qpos[m_minTermListIdx] - m_qpos[i];
+		int32_t qdist = m_qpos[m_minTermListIdx] - m_qpos[i];
 		// compute it
 		float maxScore2 = getMaxPossibleScore(&qtibuf[i],
 						      bestDist,
@@ -3153,8 +3130,6 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 // algorithm can use them from there to do sub-outs
 //
 void PosdbTable::createNonBodyTermPairScoreMatrix(const char **miniMergedListStart, const char **miniMergedListEnd, float *scoreMatrix) {
-	int32_t qdist;
-
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
 
 	// scan over each query term (its synonyms are part of the
@@ -3176,6 +3151,7 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const char **miniMergedListSta
 			// then try to keep their positions as in the query.
 			// so for 'time enough for love' ideally we want
 			// 'time' to be 6 units apart from 'love'
+			int32_t qdist;
 			float wts;
 			// zero means not in a phrase
 			if ( m_wikiPhraseIds[j] == m_wikiPhraseIds[i] && m_wikiPhraseIds[j] ) {
@@ -3323,7 +3299,6 @@ float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedListStart, con
 //   m_bestMinTermPairWindowPtrs : Pointers to query term positions giving the best minimum score
 //
 void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **highestScoringNonBodyPos, float *scoreMatrix) {
-	int32_t qdist = 0;
 	float minTermPairScoreInWindow = 999999999.0;
 	bool mergedListFound = false;
 	bool allSpecialTerms = true;
@@ -3374,6 +3349,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 			//else wpj = highestScoringNonBodyPos[j];
 
 			const char *wpj = ptrs[j];
+			int32_t qdist;
 			float wikiWeight;
 
 			// in same wikipedia phrase?
@@ -3505,10 +3481,6 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 
 
 float PosdbTable::getMinTermPairScoreSlidingWindow(const char **miniMergedListStart, const char **miniMergedListEnd, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs) {
-	bool allNull;
-	int32_t minPos = 0;
-
-
 	logTrace(g_conf.m_logTracePosdb, "Sliding Window algorithm begins");
 	m_bestMinTermPairWindowPtrs = winnerStack;
 
@@ -3544,7 +3516,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const char **miniMergedListSt
 	// init each list ptr to the first wordpos rec in the body
 	// for THIS DOCID and if no such rec, make it NULL
 	//
-	allNull = true;
+	bool allNull = true;
 	for(int32_t i = 0; i < m_numQueryTermInfos; i++) {
 		// skip if to the left of a pipe operator
 		if( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
@@ -3615,6 +3587,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const char **miniMergedListSt
 			// minPosTermIdx will contain the term index, minPos the position.
 			//
 			int32_t minPosTermIdx = -1;
+			int32_t minPos = 0;
 			for ( int32_t x = 0 ; x < m_numQueryTermInfos ; x++ ) {
 				// skip if to the left of a pipe operator
 				// and numeric posdb termlists do not have word positions,
