@@ -9,7 +9,7 @@ pipeline {
 
 	environment {
 		GB_DIR = 'open-source-search-engine'
-		WEBSERVER_DIR = 'pywebserver'
+		PYWEBTEST_DIR = 'pywebtest'
 		GTEST_OUTPUT = 'xml'
 	}
 
@@ -35,13 +35,13 @@ pipeline {
 							userRemoteConfigs: scm.userRemoteConfigs
 						])
 					},
-					'pywebserver': {
+					'pywebtest': {
 						checkout([
 							$class: 'GitSCM',
 							branches: [[name: '*/master']],
 							doGenerateSubmoduleConfigurations: false,
 							extensions: [[$class: 'RelativeTargetDirectory',
-							              relativeTargetDir: "${env.WEBSERVER_DIR}"]] +
+							              relativeTargetDir: "${env.PYWEBTEST_DIR}"]] +
 							            [[$class: 'CleanBeforeCheckout']],
 							userRemoteConfigs: [[url: 'https://github.com/privacore/pywebtest.git']]
 						])
