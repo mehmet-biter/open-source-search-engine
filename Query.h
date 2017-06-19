@@ -30,76 +30,79 @@ typedef uint64_t qvec_t;
 #define MAX_OVEC_SIZE 256
 
 // field codes
-#define FIELD_URL      1
-#define FIELD_LINK     2
-#define FIELD_SITE     3
-#define FIELD_IP       4
-#define FIELD_SUBURL   5
-#define FIELD_TITLE    6
-#define FIELD_TYPE     7
-#define FIELD_EXT      21
-//#define FIELD_COLL     22
-#define FIELD_ILINK    23
-#define FIELD_LINKS    24
-#define FIELD_SITELINK 25
-// non-standard field codes
-#define FIELD_ZIP      8
-//#define FIELD_UNUSED     9
-//#define FIELD_UNUSED   10
-//#define FIELD_UNUSED   11
-//#define FIELD_UNUSED     12
-//#define FIELD_UNUSED    13
-//#define FIELD_UNUSED  14
-//#define FIELD_UNUSED      15
-//#define FIELD_UNUSED    16
-//#define FIELD_UNUSED     17
-#define FIELD_GENERIC  18
-#define FIELD_ISCLEAN  19  // we hash field="isclean:" val="1" if doc clean
-//#define FIELD_UNUSED 20
-#define FIELD_CHARSET  30
-#define FIELD_GBRSS    31
-//#define FIELD_UNUSED       32
-//#define FIELD_UNUSED      33
-//#define FIELD_UNUSED      34
-//#define FIELD_UNUSED     35
-#define FIELD_GBLANG        36
-//#define FIELD_UNUSED     37
-//#define FIELD_UNUSED    38
-//#define FIELD_UNUSED   39
-//#define FIELD_UNUSED       40
-//#define FIELD_UNUSED            41
-//#define FIELD_UNUSED      42
-//#define FIELD_UNUSED         43
-//#define FIELD_UNUSED   44
-//#define FIELD_UNUSED          45
-#define FIELD_GBCOUNTRY        46
-//#define FIELD_UNUSED             47
-//#define FIELD_UNUSED      48
-#define FIELD_GBPERMALINK      49
-//#define FIELD_UNUSED         50
-#define FIELD_GBTERMID         50
-//#define FIELD_UNUSED    51
-#define FIELD_GBDOCID          52
-#define FIELD_GBCONTENTHASH    53 // for deduping at spider time
-#define FIELD_GBSORTBYFLOAT    54 // i.e. sortby:price -> numeric termlist
-#define FIELD_GBREVSORTBYFLOAT 55 // i.e. sortby:price -> low to high
-#define FIELD_GBNUMBERMIN      56
-#define FIELD_GBNUMBERMAX      57
-#define FIELD_GBPARENTURL      58
-#define FIELD_GBSORTBYINT      59
-#define FIELD_GBREVSORTBYINT   60
-#define FIELD_GBNUMBERMININT   61
-#define FIELD_GBNUMBERMAXINT   62
-//#define FIELD_UNUSED         63
-//#define FIELD_UNUSED         64
-//#define FIELD_UNUSED         65
-#define FIELD_GBNUMBEREQUALINT 66
-#define FIELD_GBNUMBEREQUALFLOAT 67
-#define FIELD_SUBURL2            68
-#define FIELD_GBFIELDMATCH       69
+enum field_code_t {
+        FIELD_UNSET             =  0,
+	FIELD_URL               =  1,
+	FIELD_LINK              =  2,
+	FIELD_SITE              =  3,
+	FIELD_IP                =  4,
+	FIELD_SUBURL            =  5,
+	FIELD_TITLE             =  6,
+	FIELD_TYPE              =  7,
+	FIELD_EXT               = 21,
+	//FIELD_COLL            = 22,
+	FIELD_ILINK             = 23,
+	FIELD_LINKS             = 24,
+	FIELD_SITELINK          = 25,
+	// non-standard field codes
+	FIELD_ZIP               =  8,
+	//FIELD_UNUSED          =  9,
+	//FIELD_UNUSED          = 10,
+	//FIELD_UNUSED          = 11,
+	//FIELD_UNUSED          = 12,
+	//FIELD_UNUSED          = 13,
+	//FIELD_UNUSED          = 14,
+	//FIELD_UNUSED          = 15,
+	//FIELD_UNUSED          = 16,
+	//FIELD_UNUSED          = 17,
+	FIELD_GENERIC           = 18,
+	FIELD_ISCLEAN           = 19,  // we hash field="isclean:" val="1" if doc clean
+	//FIELD_UNUSED          = 20,
+	FIELD_CHARSET           = 30,
+	FIELD_GBRSS             = 31,
+	//FIELD_UNUSED          = 32,
+	//FIELD_UNUSED          = 33,
+	//FIELD_UNUSED          = 34,
+	//FIELD_UNUSED          = 35,
+	FIELD_GBLANG            = 36,
+	//FIELD_UNUSED          = 37,
+	//FIELD_UNUSED          = 38,
+	//FIELD_UNUSED          = 39,
+	//FIELD_UNUSED          = 40,
+	//FIELD_UNUSED          = 41,
+	//FIELD_UNUSED          = 42,
+	//FIELD_UNUSED          = 43,
+	//FIELD_UNUSED          = 44,
+	//FIELD_UNUSED          = 45,
+	FIELD_GBCOUNTRY         = 46,
+	//FIELD_UNUSED          = 47,
+	//FIELD_UNUSED          = 48,
+	FIELD_GBPERMALINK       = 49,
+	//FIELD_UNUSED          = 50,
+	FIELD_GBTERMID          = 50,
+	//FIELD_UNUSED          = 51,
+	FIELD_GBDOCID           = 52,
+	FIELD_GBCONTENTHASH     = 53, // for deduping at spider time
+	FIELD_GBSORTBYFLOAT     = 54, // i.e. sortby:price -> numeric termlist
+	FIELD_GBREVSORTBYFLOAT  = 55, // i.e. sortby:price -> low to high
+	FIELD_GBNUMBERMIN       = 56,
+	FIELD_GBNUMBERMAX       = 57,
+	FIELD_GBPARENTURL       = 58,
+	FIELD_GBSORTBYINT       = 59,
+	FIELD_GBREVSORTBYINT    = 60,
+	FIELD_GBNUMBERMININT    = 61,
+	FIELD_GBNUMBERMAXINT    = 62,
+	//FIELD_UNUSED          = 63,
+	//FIELD_UNUSED          = 64,
+	//FIELD_UNUSED          = 65,
+	FIELD_GBNUMBEREQUALINT  = 66,
+	FIELD_GBNUMBEREQUALFLOAT= 67,
+	FIELD_SUBURL2           = 68,
+	FIELD_GBFIELDMATCH      = 69,
+};
 
 // returns a FIELD_* code above, or FIELD_GENERIC if not in the list
-char getFieldCode  ( const char *s , int32_t len , bool *hasColon = NULL ) ;
+field_code_t getFieldCode(const char *s, int32_t len, bool *hasColon = NULL);
 
 int32_t getNumFieldCodes ( );
 
@@ -114,7 +117,7 @@ class Query;
 
 struct QueryField {
 	const char *text;
-	char field;
+	field_code_t field;
 	bool hasColon;
 	const char *example;
 	const char *desc;
@@ -180,7 +183,7 @@ class QueryWord {
 	int64_t   m_rawPhraseId ;
 
 	// the field as a convenient numeric code
-	char        m_fieldCode ;
+	field_code_t m_fieldCode;
 	// . '-' means to exclude from search results
 	// . '+' means to include in all search results
 	// . if we're a phrase term, signs distribute across quotes
@@ -352,7 +355,7 @@ class QueryTerm {
 	int32_t      m_numAlnumWordsInBase;
 
 	// copied from derived QueryWord
-	char m_fieldCode  ;
+	field_code_t m_fieldCode;
 	bool isSplit() const;
 	bool m_isRequired;
 

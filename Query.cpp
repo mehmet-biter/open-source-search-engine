@@ -1274,7 +1274,7 @@ bool Query::setQWords ( char boolFlag ,
 	// . we need to redo the bits cuz they may have been messed with below
 	// redo:
 	// field code we are in
-	char  fieldCode = 0;
+	field_code_t  fieldCode = FIELD_UNSET;
 	char  fieldSign = 0;
 	const char *field     = NULL;
 	int32_t  fieldLen  = 0;
@@ -1483,7 +1483,7 @@ bool Query::setQWords ( char boolFlag ,
 		// cancel the field if we hit a space (not in quotes)
 		if ( endField ) {
 			// cancel the field
-			fieldCode = 0;
+			fieldCode = FIELD_UNSET;
 			fieldLen  = 0;
 			field     = NULL;
 			// we no longer have to ignore for link: et al
@@ -1546,7 +1546,7 @@ bool Query::setQWords ( char boolFlag ,
 		}
 		if ( cancelField ) {
 			// cancel the field
-			fieldCode = 0;
+			fieldCode = FIELD_UNSET;
 			fieldLen  = 0;
 			field     = NULL;
 			// we no longer have to ignore for link: et al
@@ -3114,7 +3114,7 @@ static bool initFieldTable(){
 }
 
 
-char getFieldCode ( const char *s , int32_t len , bool *hasColon ) {
+field_code_t getFieldCode(const char *s, int32_t len, bool *hasColon) {
 	// default
 	if ( hasColon ) {
 		*hasColon = false;
@@ -3435,7 +3435,7 @@ void QueryTerm::constructor ( ) {
 	m_synWids0 = 0;
 	m_synWids1 = 0;
 	m_numAlnumWordsInSynonym = 1;
-	m_fieldCode = 0;
+	m_fieldCode = FIELD_UNSET;
 	m_isRequired = false;
 	m_isWikiHalfStopBigram = false;
 	m_leftPhraseTermNum = 0;
