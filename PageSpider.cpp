@@ -324,15 +324,7 @@ static bool sendPage(State11 *st) {
 	sb.safePrintf ( "<br>\n" );
 
 	// then spider collection
-	SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
-
-
-	//
-	// spiderdb rec stats, from scanning spiderdb
-	//
-
-	// if not there, forget about it
-	if ( sc ) sc->printStats ( sb );
+	SpiderColl *sc = g_spiderCache.getSpiderColl(cr->m_collnum);
 
 	// done if no sc
 	if ( ! sc ) {
