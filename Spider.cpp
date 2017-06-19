@@ -220,12 +220,76 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 	return sb->length();
 }
 
+/*
+ * {
+ *     "elapsedMS" : 0,
+ *     "url": "http://example.com/",
+ *     "status": "getting web page",
+ *     "priority": 15,
+ *     "ufn": 3,
+ *     "firstIp": "127.0.0.1",
+ *     "errCount": 0,
+ *     "urlHash48": 123456789
+ *     "siteInLinks": 0,
+ *     "hops": 0,
+ *     "addedTime: 14000000,
+ *     "pageNumInLinks: 1,
+ *     "parentDocId": 123456789,
+ * }
+ */
+int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, XmlDoc *xd, int32_t row) {
+	if (row != 0) {
+		sb->safePrintf("\t\t,\n");
+	}
+
+	sb->safePrintf("\t\t{\n");
+
+	int64_t elapsedMS = 0;
+	if (xd) {
+		elapsedMS = gettimeofdayInMilliseconds() - xd->m_startTime;
+	}
+
+	sb->safePrintf("\t\t\t\"elapsedMS\": %" PRId64",\n", elapsedMS);
+	sb->safePrintf("\t\t\t\"url\": \"%s\",\n", m_url);
+	sb->safePrintf("\t\t\t\"status\": \"%s\",\n", status);
+	sb->safePrintf("\t\t\t\"priority\": %hhd,\n", m_priority);
+	sb->safePrintf("\t\t\t\"ufn\": %" PRId16",\n", m_ufn);
+
+	char ipbuf[16];
+	sb->safePrintf("\t\t\t\"firstIp\": \"%s\",\n", iptoa(m_firstIp,ipbuf));
+
+	sb->safePrintf("\t\t\t\"errCount\": %hhd,\n", m_errCount);
+
+	sb->safePrintf("\t\t\t\"urlHash48\": %" PRId64",\n", getUrlHash48());
+
+	sb->safePrintf("\t\t\t\"siteInLinks\": %" PRId32",\n", m_siteNumInlinks);
+	sb->safePrintf("\t\t\t\"hops\": %" PRId16",\n", m_hopCount);
+
+	sb->safePrintf("\t\t\t\"addedTime\": %" PRIu32",\n", m_addedTime);
+
+	sb->safePrintf("\t\t\t\"pageNumInLinks\": %" PRIu8",\n", m_pageNumInlinks);
+	sb->safePrintf("\t\t\t\"parentDocId\": %" PRId64"\n", getParentDocId());
+
+	/// @todo ALC add flags to json response
+//	if ( m_isAddUrl ) sb->safePrintf("ISADDURL ");
+//	if ( m_isPageReindex ) sb->safePrintf("ISPAGEREINDEX ");
+//	if ( m_isPageParser ) sb->safePrintf("ISPAGEPARSER ");
+//	if ( m_urlIsDocId ) sb->safePrintf("URLISDOCID ");
+//	if ( m_isRSSExt ) sb->safePrintf("ISRSSEXT ");
+//	if ( m_isUrlPermalinkFormat ) sb->safePrintf("ISURLPERMALINKFORMAT ");
+//	if ( m_isPingServer ) sb->safePrintf("ISPINGSERVER ");
+//	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
+//	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
+//	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
+
+	sb->safePrintf("\t\t}\n");
+
+	return sb->length();
+}
 
 int32_t SpiderRequest::printToTable(SafeBuf *sb, const char *status, XmlDoc *xd, int32_t row) {
-	sb->safePrintf("<tr bgcolor=#%s>\n",LIGHT_BLUE);
-
 	// show elapsed time
-	if ( xd ) {
+	if (xd) {
 		int64_t now = gettimeofdayInMilliseconds();
 		int64_t elapsed = now - xd->m_startTime;
 		sb->safePrintf(" <td>%" PRId32"</td>\n",row);
@@ -314,7 +378,7 @@ int32_t SpiderRequest::printTableHeader ( SafeBuf *sb , bool currentlySpidering)
 	sb->safePrintf(" <td><b>siteInlinks</b></td>\n");
 	sb->safePrintf(" <td><b>hops</b></td>\n");
 	sb->safePrintf(" <td><b>addedTime</b></td>\n");
-	sb->safePrintf(" <td><b>parentIp</b></td>\n");
+	sb->safePrintf(" <td><b>pageNumInLinks</b></td>\n");
 	sb->safePrintf(" <td><b>parentDocId</b></td>\n");
 	sb->safePrintf(" <td><b>flags</b></td>\n");
 	sb->safePrintf("</tr>\n");

@@ -679,6 +679,7 @@ public:
 	int32_t print( class SafeBuf *sb );
 
 	int32_t printToTable( SafeBuf *sb, const char *status, class XmlDoc *xd, int32_t row ) ;
+	int32_t printToJSON( SafeBuf *sb, const char *status, class XmlDoc *xd, int32_t row ) ;
 
 	static int32_t printTableHeader ( SafeBuf *sb, bool currentlSpidering ) ;
 
