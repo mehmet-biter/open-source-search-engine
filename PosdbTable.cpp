@@ -2637,6 +2637,38 @@ bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qti
 
 #define RINGBUFSIZE 4096
 
+//Go through the word positions of the queryterminfo posdb lists and set the corresponding ringBuf[] elements to the qti-index.
+//Also find the first position and return that.
+static int32_t setRingbufFromQTI(const QueryTermInfo *qti, int32_t listIdx, unsigned char ringBuf[]) {
+	int32_t firstPos = -1;
+	for(int32_t i = 0 ; i < qti->m_numMatchingSubLists; i++) {
+		// scan that sublist and add word positions
+		const char *sub = qti->m_matchingSublist[i].m_savedCursor;
+		// skip sublist if it's cursor is exhausted
+		if(!sub)
+			continue;
+
+		const char *end = qti->m_matchingSublist[i].m_cursor;
+		// add first key
+		int32_t wx = Posdb::getWordPos(sub);
+		wx &= (RINGBUFSIZE-1);
+		// store it. 0 is legit.
+		ringBuf[wx] = listIdx;
+		firstPos = wx;
+		// skip first key
+		sub += 12;
+		// then 6 byte keys
+		for( ; sub < end; sub += 6) {
+			// get word position
+			wx = Posdb::getWordPos(sub);
+			wx &= (RINGBUFSIZE-1);
+			// store it. 0 is legit.
+			ringBuf[wx] = listIdx;
+		}
+	}
+	return firstPos;
+}
+
 //
 // TODO: consider skipping this pre-filter if it sucks, as it does
 // for 'search engine'. it might save time!
@@ -2651,8 +2683,6 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 	// reset ring buf. make all slots 0xff. should be 1000 cycles or so.
 	memset ( ringBuf, 0xff, sizeof(ringBuf) );
 
-	int32_t ourFirstPos = -1;
-	
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
 
 
@@ -2664,40 +2694,11 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 	// each of the other query terms. then score each of those pairs.
 	// so quickly record the word positions of each query term into
 	// a ring buffer of 4096 slots where each slot contains the
-	// query term # plus 1.
+	// query term info #.
 
 	logTrace(g_conf.m_logTracePosdb, "Ring buffer generation");
-	const QueryTermInfo *qtx = &qtibuf[m_minTermListIdx];
-	// populate ring buf just for this query term
-	for ( int32_t k = 0 ; k < qtx->m_numMatchingSubLists ; k++ ) {
-		// scan that sublist and add word positions
-		const char *sub = qtx->m_matchingSublist[k].m_savedCursor;
-		// skip sublist if it's cursor is exhausted
-		if ( ! sub ) {
-			continue;
-		}
-
-		const char *end = qtx->m_matchingSublist[k].m_cursor;
-		// add first key
-		int32_t wx = Posdb::getWordPos(sub);
-		// mod with 4096
-		wx &= (RINGBUFSIZE-1);
-		// store it. 0 is legit.
-		ringBuf[wx] = m_minTermListIdx;
-		// set this
-		ourFirstPos = wx;
-		// skip first key
-		sub += 12;
-		// then 6 byte keys
-		for ( ; sub < end ; sub += 6 ) {
-			// get word position
-			wx = Posdb::getWordPos(sub);
-			// mod with 4096
-			wx &= (RINGBUFSIZE-1);
-			// store it. 0 is legit.
-			ringBuf[wx] = m_minTermListIdx;
-		}
-	}
+	
+	int32_t ourFirstPos = setRingbufFromQTI(&qtibuf[m_minTermListIdx], m_minTermListIdx, ringBuf);
 	
 	// now get query term closest to query term # m_minTermListIdx which
 	// is the query term # with the shortest termlist
@@ -2717,33 +2718,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 		}
 
 		// store all his word positions into ring buffer AS WELL
-		for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
-			// scan that sublist and add word positions
-			const char *sub = qti->m_matchingSublist[k].m_savedCursor;
-			// skip sublist if it's cursor is exhausted
-			if ( ! sub ) {
-				continue;
-			}
-			
-			const char *end = qti->m_matchingSublist[k].m_cursor;
-			// add first key
-			int32_t wx = Posdb::getWordPos(sub);
-			// mod with 4096
-			wx &= (RINGBUFSIZE-1);
-			// store it. 0 is legit.
-			ringBuf[wx] = i;
-			// skip first key
-			sub += 12;
-			// then 6 byte keys
-			for ( ; sub < end ; sub += 6 ) {
-				// get word position
-				wx = Posdb::getWordPos(sub);
-				// mod with 4096
-				wx &= (RINGBUFSIZE-1);
-				// store it. 0 is legit.
-				ringBuf[wx] = i;
-			}
-		}
+		setRingbufFromQTI(qti, i, ringBuf);
 
 		// reset
 		int32_t ourLastPos = -1;
