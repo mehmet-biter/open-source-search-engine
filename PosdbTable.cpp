@@ -2212,9 +2212,12 @@ bool PosdbTable::findCandidateDocIds() {
 	if(g_conf.m_logTracePosdb) {
 		log(LOG_TRACE,"Shrunk sublists, m_numQueryTermInfos=%d", m_numQueryTermInfos);
 		for(int i=0; i<m_numQueryTermInfos; i++) {
-			log(LOG_TRACE,"  qti #%d: m_numSubLists=%d m_numMatchingSubLists=%d", i, qtibuf[i].m_numSubLists, qtibuf[i].m_numMatchingSubLists);
+			log(LOG_TRACE,"  qti #%d: m_numSubLists=%d", i, qtibuf[i].m_numSubLists);
+			for(int j=0; j<qtibuf[i].m_numSubLists; j++)
+				log(LOG_TRACE,"             list #%d: m_qt=%p (%*.*s) m_list=%p m_bigramFlag=%02x", j, qtibuf[i].m_subList[j].m_qt, qtibuf[i].m_subList[j].m_qt->m_termLen, qtibuf[i].m_subList[j].m_qt->m_termLen, qtibuf[i].m_subList[j].m_qt->m_term, qtibuf[i].m_subList[j].m_list, qtibuf[i].m_subList[j].m_bigramFlag);
+			log(LOG_TRACE,"          m_numMatchingSubLists=%d", qtibuf[i].m_numMatchingSubLists);
 			for(int j=0; j<qtibuf[i].m_numMatchingSubLists; j++)
-				log(LOG_TRACE,"           matchlist #%d: %d bytes %p - %p", j, qtibuf[i].m_matchingSublist[j].m_size, qtibuf[i].m_matchingSublist[j].m_start, qtibuf[i].m_matchingSublist[j].m_end);
+				log(LOG_TRACE,"             matchlist #%d: %d bytes %p - %p baseidx=%d", j, qtibuf[i].m_matchingSublist[j].m_size, qtibuf[i].m_matchingSublist[j].m_start, qtibuf[i].m_matchingSublist[j].m_end, qtibuf[i].m_matchingSublist[j].m_baseSubListIndex);
 		}
 	}
 
