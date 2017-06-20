@@ -5020,6 +5020,7 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists() {
 					qti->m_matchingSublist[x].m_end	    = newEndPtr[k];
 					qti->m_matchingSublist[x].m_cursor	    = newStartPtr;
 					qti->m_matchingSublist[x].m_savedCursor = newStartPtr;
+					qti->m_matchingSublist[x].m_baseSubListIndex    = j;
 					qti->m_numMatchingSubLists++;
 					break;
 				}

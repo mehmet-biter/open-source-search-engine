@@ -56,6 +56,7 @@ public:
 		const char *m_end;
 		const char *m_cursor;
 		const char *m_savedCursor;
+		int         m_baseSubListIndex;               //which of m_subList[] entries it is based on
 	} m_matchingSublist[MAX_SUBLISTS];
 	int32_t   m_numMatchingSubLists;
 	
