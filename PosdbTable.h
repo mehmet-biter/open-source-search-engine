@@ -60,8 +60,6 @@ public:
 	int32_t   m_numMatchingSubLists;
 	
 	
-	// size of all m_subLists in bytes
-	int64_t m_totalSubListsSize;
 	// the term freq weight for this term
 	float     m_termFreqWeight;
 	// what query term # do we correspond to in Query.h

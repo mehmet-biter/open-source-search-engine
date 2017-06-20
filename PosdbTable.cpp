@@ -1878,17 +1878,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			return false;
 		}
 		
-		// compute m_totalSubListsSize
-		qti->m_totalSubListsSize = 0LL;
-		for ( int32_t q = 0 ; q < qti->m_numSubLists ; q++ ) {
-			// add list ptr into our required group
-			const RdbList *l = qti->m_subList[q].m_list;
-			// get it
-			int64_t listSize = l->getListSize();
-			// add it up
-			qti->m_totalSubListsSize += listSize;
-		}
-		
 		// count # required groups
 		nrg++;
 	}
@@ -1902,22 +1891,24 @@ bool PosdbTable::setQueryTermInfo ( ) {
 
 	for ( int32_t i = 0 ; i < nrg ; i++ ) {
 		// compute total sizes
-		int64_t total = 0LL;
-		// get it
 		QueryTermInfo *qti = &qtibuf[i];
 		// do not consider for first termlist if negative
 		if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 			continue;
 		}
 		
-		// add to it
-		total = qti->m_totalSubListsSize;
+		int64_t totalSubListsSize = 0;
+		for(int32_t q = 0; q < qti->m_numSubLists; q++) {
+			const RdbList *l = qti->m_subList[q].m_list;
+			totalSubListsSize += l->getListSize();
+		}
+		
 		// add up this now
-		grand += total;
+		grand += totalSubListsSize;
 
 		// get min
-		if ( total < m_minTermListSize || m_minTermListIdx == -1 ) {
-			m_minTermListSize	= total;
+		if ( totalSubListsSize < m_minTermListSize || m_minTermListIdx == -1 ) {
+			m_minTermListSize	= totalSubListsSize;
 			m_minTermListIdx	= i;
 		}
 	}
