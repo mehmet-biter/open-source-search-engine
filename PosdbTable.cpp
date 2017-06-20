@@ -1987,6 +1987,15 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		return false;
 	}
 
+#ifdef _VALGRIND_
+	//various arrays are over-allocated. tell valgrind what is not defined content
+	VALGRIND_MAKE_MEM_UNDEFINED(qtibuf+m_numQueryTermInfos, sizeof(qtibuf[0])*(m_q->m_numTerms-m_numQueryTermInfos));
+	for(int i=0; i<m_numQueryTermInfos; i++) {
+		QueryTermInfo &qti = qtibuf[i];
+		VALGRIND_MAKE_MEM_UNDEFINED(qti.m_subList+qtibuf[i].m_numSubLists, sizeof(qti.m_subList[0])*(MAX_SUBLISTS-qti.m_numSubLists));
+	}
+#endif
+
 	logTrace(g_conf.m_logTracePosdb, "END.");
 	return true;
 }
@@ -3047,6 +3056,9 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 		gbshutdownAbort(true);
 	}
 
+#ifdef _VALGRIND_
+	VALGRIND_MAKE_MEM_UNDEFINED(mptr, miniMergeBufEnd-mptr);
+#endif
 
 
 	// Make sure miniMergeList[x] is NULL if it contains no values
@@ -4995,6 +5007,9 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists() {
 		if(qti->m_subList[0].m_bigramFlag & BF_NEGATIVE)
 			continue; //don't modify sublist for negative terms
 		qti->m_numMatchingSubLists = 0;
+#ifdef _VALGRIND_
+		VALGRIND_MAKE_MEM_UNDEFINED(qti->m_matchingSublist, sizeof(qti->m_matchingSublist));
+#endif
 		for(int j=0; j<qti->m_numSubLists; j++) {
 			for(int k=0; k<m_q->m_numTerms; k++) {
 				if(qti->m_subList[j].m_list == m_q->m_qterms[k].m_posdbListPtr) {
