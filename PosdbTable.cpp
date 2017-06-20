@@ -1549,37 +1549,39 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		qti->m_qpos          = qw->m_posNum;
 		qti->m_wikiPhraseId  = qw->m_wikiPhraseId;
 		qti->m_quotedStartId = qw->m_quoteStart;
-		// is it gbsortby:?
-		if ( qt->m_fieldCode == FIELD_GBSORTBYFLOAT ||
-		     qt->m_fieldCode == FIELD_GBREVSORTBYFLOAT ) {
-			m_sortByTermNum = i;
-			m_sortByTermInfoNum = nrg;
-		}
-
-		if ( qt->m_fieldCode == FIELD_GBSORTBYINT ||
-		     qt->m_fieldCode == FIELD_GBREVSORTBYINT ) {
-			m_sortByTermNumInt = i;
-			m_sortByTermInfoNumInt = nrg;
-			// tell topTree to use int scores
-			m_topTree->m_useIntScores = true;
-		}
-
-		// is it gbmin:price:1.99?
-		if ( qt->m_fieldCode == FIELD_GBNUMBERMIN ) {
-			m_minScoreTermNum = i;
-			m_minScoreVal = qt->m_qword->m_float;
-		}
-		if ( qt->m_fieldCode == FIELD_GBNUMBERMAX ) {
-			m_maxScoreTermNum = i;
-			m_maxScoreVal = qt->m_qword->m_float;
-		}
-		if ( qt->m_fieldCode == FIELD_GBNUMBERMININT ) {
-			m_minScoreTermNumInt = i;
-			m_minScoreValInt = qt->m_qword->m_int;
-		}
-		if ( qt->m_fieldCode == FIELD_GBNUMBERMAXINT ) {
-			m_maxScoreTermNumInt = i;
-			m_maxScoreValInt = qt->m_qword->m_int;
+		switch(qt->m_fieldCode) {
+			// is it gbsortby:?
+			case FIELD_GBSORTBYFLOAT:
+			case FIELD_GBREVSORTBYFLOAT:
+				m_sortByTermNum = i;
+				m_sortByTermInfoNum = nrg;
+				break;
+			case FIELD_GBSORTBYINT:
+			case FIELD_GBREVSORTBYINT:
+				m_sortByTermNumInt = i;
+				m_sortByTermInfoNumInt = nrg;
+				// tell topTree to use int scores
+				m_topTree->m_useIntScores = true;
+				break;
+			// is it gbmin:price:1.99?
+			case FIELD_GBNUMBERMIN:
+				m_minScoreTermNum = i;
+				m_minScoreVal = qt->m_qword->m_float;
+				break;
+			case FIELD_GBNUMBERMAX:
+				m_maxScoreTermNum = i;
+				m_maxScoreVal = qt->m_qword->m_float;
+				break;
+			case FIELD_GBNUMBERMININT:
+				m_minScoreTermNumInt = i;
+				m_minScoreValInt = qt->m_qword->m_int;
+				break;
+			case FIELD_GBNUMBERMAXINT:
+				m_maxScoreTermNumInt = i;
+				m_maxScoreValInt = qt->m_qword->m_int;
+				break;
+			default:
+				; //not numeric condition
 		}
 		// count
 		int32_t nn = 0;
@@ -1714,27 +1716,23 @@ bool PosdbTable::setQueryTermInfo ( ) {
 
 		// numeric posdb termlist flags. instead of word position
 		// they have a float stored there for sorting etc.
-		if (qt->m_fieldCode == FIELD_GBSORTBYFLOAT )
-			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
-		if (qt->m_fieldCode == FIELD_GBREVSORTBYFLOAT )
-			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
-		if (qt->m_fieldCode == FIELD_GBNUMBERMIN )
-			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
-		if (qt->m_fieldCode == FIELD_GBNUMBERMAX )
-			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
-		if (qt->m_fieldCode == FIELD_GBNUMBEREQUALFLOAT )
-			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
+		switch(qt->m_fieldCode) {
+			case FIELD_GBSORTBYFLOAT:
+			case FIELD_GBREVSORTBYFLOAT:
+			case FIELD_GBNUMBERMIN:
+			case FIELD_GBNUMBERMAX:
+			case FIELD_GBNUMBEREQUALFLOAT:
 
-		if (qt->m_fieldCode == FIELD_GBSORTBYINT )
-			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
-		if (qt->m_fieldCode == FIELD_GBREVSORTBYINT )
-			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
-		if (qt->m_fieldCode == FIELD_GBNUMBERMININT )
-			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
-		if (qt->m_fieldCode == FIELD_GBNUMBERMAXINT )
-			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
-		if (qt->m_fieldCode == FIELD_GBNUMBEREQUALINT )
-			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
+			case FIELD_GBSORTBYINT:
+			case FIELD_GBREVSORTBYINT:
+			case FIELD_GBNUMBERMININT:
+			case FIELD_GBNUMBERMAXINT:
+			case FIELD_GBNUMBEREQUALINT:
+				qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
+				break;
+			default:
+				;
+		}
 
 		// add list of member terms
 		qt->m_bitNum = nrg;
@@ -5135,22 +5133,21 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 
 	// range terms tend to disappear if the docid's value falls outside
 	// of the specified range... gbmin:offerprice:190
-	bool isRangeTerm = false;
+	bool isRangeTerm;
 	const QueryTerm *qt = qti->m_subList[0].m_qt;
-	if ( qt->m_fieldCode == FIELD_GBNUMBERMIN ) 
-		isRangeTerm = true;
-	if ( qt->m_fieldCode == FIELD_GBNUMBERMAX ) 
-		isRangeTerm = true;
-	if ( qt->m_fieldCode == FIELD_GBNUMBEREQUALFLOAT )
-		isRangeTerm = true;
-	if ( qt->m_fieldCode == FIELD_GBNUMBERMININT ) 
-		isRangeTerm = true;
-	if ( qt->m_fieldCode == FIELD_GBNUMBERMAXINT ) 
-		isRangeTerm = true;
-	if ( qt->m_fieldCode == FIELD_GBNUMBEREQUALINT ) 
-		isRangeTerm = true;
-	// if ( qt->m_fieldCode == FIELD_GBFIELDMATCH )
-	// 	isRangeTerm = true;
+	switch(qt->m_fieldCode) {
+		case FIELD_GBNUMBERMIN:
+		case FIELD_GBNUMBERMAX:
+		case FIELD_GBNUMBEREQUALFLOAT:
+		case FIELD_GBNUMBERMININT:
+		case FIELD_GBNUMBERMAXINT:
+		case FIELD_GBNUMBEREQUALINT:
+		//case FIELD_GBFIELDMATCH:
+			isRangeTerm = true;
+			break;
+		default:
+			isRangeTerm = false;
+	}
 
 
 	//
@@ -5514,21 +5511,20 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 		// if this query term # is a gbmin:offprice:190 type
 		// of thing, then we may end up ignoring it based on the
 		// score contained within!
-		bool isRangeTerm = false;
-		if ( qt->m_fieldCode == FIELD_GBNUMBERMIN ) 
-			isRangeTerm = true;
-		if ( qt->m_fieldCode == FIELD_GBNUMBERMAX ) 
-			isRangeTerm = true;
-		if ( qt->m_fieldCode == FIELD_GBNUMBEREQUALFLOAT ) 
-			isRangeTerm = true;
-		if ( qt->m_fieldCode == FIELD_GBNUMBERMININT ) 
-			isRangeTerm = true;
-		if ( qt->m_fieldCode == FIELD_GBNUMBERMAXINT ) 
-			isRangeTerm = true;
-		if ( qt->m_fieldCode == FIELD_GBNUMBEREQUALINT ) 
-			isRangeTerm = true;
-		// if ( qt->m_fieldCode == FIELD_GBFIELDMATCH )
-		// 	isRangeTerm = true;
+		bool isRangeTerm;
+		switch(qt->m_fieldCode) {
+			case FIELD_GBNUMBERMIN:
+			case FIELD_GBNUMBERMAX:
+			case FIELD_GBNUMBEREQUALFLOAT:
+			case FIELD_GBNUMBERMININT:
+			case FIELD_GBNUMBERMAXINT:
+			case FIELD_GBNUMBEREQUALINT:
+			//case FIELD_GBFIELDMATCH:
+				isRangeTerm = true;
+				break;
+			default:
+				isRangeTerm = false;
+		}
 
 		// . make it consistent with Query::isTruth()
 		// . m_bitNum is set above to the QueryTermInfo #
@@ -5760,45 +5756,40 @@ static int docIdVoteBufKeyCompare_desc ( const void *h1, const void *h2 ) {
 
 // for boolean queries containing terms like gbmin:offerprice:190
 static inline bool isTermValueInRange( const char *p, const QueryTerm *qt ) {
-
 	// return false if outside of range
-	if ( qt->m_fieldCode == FIELD_GBNUMBERMIN ) {
-		float score2 = Posdb::getFloat ( p );
-		return ( score2 >= qt->m_qword->m_float );
+	switch(qt->m_fieldCode) {
+		case FIELD_GBNUMBERMIN: {
+			float score2 = Posdb::getFloat(p);
+			return score2 >= qt->m_qword->m_float;
+		}
+		case FIELD_GBNUMBERMAX: {
+			float score2 = Posdb::getFloat(p);
+			return score2 <= qt->m_qword->m_float;
+		}
+		case FIELD_GBNUMBEREQUALFLOAT: {
+			float score2 = Posdb::getFloat(p);
+			return almostEqualFloat(score2, qt->m_qword->m_float);
+		}
+		case FIELD_GBNUMBERMININT: {
+			int32_t score2 = Posdb::getInt(p);
+			return score2 >= qt->m_qword->m_int;
+		}
+		case FIELD_GBNUMBERMAXINT: {
+			int32_t score2 = Posdb::getInt(p);
+			return score2 <= qt->m_qword->m_int;
+		}
+		case FIELD_GBNUMBEREQUALINT: {
+			int32_t score2 = Posdb::getInt(p);
+			return score2 == qt->m_qword->m_int;
+		}
+		// case FIELD_GBFIELDMATCH: {
+		// 	int32_t score2 = Posdb::getInt(p);
+		// 	return score2 == qt->m_qword->m_int;
+		// }
+		default:
+			// how did this happen?
+			gbshutdownAbort(true);
 	}
-
-	if ( qt->m_fieldCode == FIELD_GBNUMBERMAX ) {
-		float score2 = Posdb::getFloat ( p );
-		return ( score2 <= qt->m_qword->m_float );
-	}
-
-	if ( qt->m_fieldCode == FIELD_GBNUMBEREQUALFLOAT ) {
-		float score2 = Posdb::getFloat ( p );
-		return ( almostEqualFloat(score2, qt->m_qword->m_float) );
-	}
-
-	if ( qt->m_fieldCode == FIELD_GBNUMBERMININT ) {
-		int32_t score2 = Posdb::getInt ( p );
-		return ( score2 >= qt->m_qword->m_int );
-	}
-
-	if ( qt->m_fieldCode == FIELD_GBNUMBERMAXINT ) {
-		int32_t score2 = Posdb::getInt ( p );
-		return ( score2 <= qt->m_qword->m_int );
-	}
-
-	if ( qt->m_fieldCode == FIELD_GBNUMBEREQUALINT ) {
-		int32_t score2 = Posdb::getInt ( p );
-		return ( score2 == qt->m_qword->m_int );
-	}
-
-	// if ( qt->m_fieldCode == FIELD_GBFIELDMATCH ) {
-	// 	int32_t score2 = Posdb::getInt ( p );
-	// 	return ( score2 == qt->m_qword->m_int );
-	// }
-
-	// how did this happen?
-	gbshutdownAbort(true);
 }
 
 
