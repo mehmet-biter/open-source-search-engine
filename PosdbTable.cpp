@@ -1540,7 +1540,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// get one
 		QueryTermInfo *qti = &qtibuf[nrg];
 		// and set it
-		qti->m_qt            = qt;
 		qti->m_qtermNum      = i;
 
 		// this is not good enough, we need to count 
@@ -1611,11 +1610,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// get list
 			RdbList *list = m_q->m_qterms[left].m_posdbListPtr;
 			// add list ptr into our required group
-			qti->m_subLists[nn] = list;
+			qti->m_subList[nn].m_qt = &m_q->m_qterms[left];
+			qti->m_subList[nn].m_list = list;
 			// special flags
-			qti->m_bigramFlags[nn] = BF_HALFSTOPWIKIBIGRAM;
+			qti->m_subList[nn].m_bigramFlag = BF_HALFSTOPWIKIBIGRAM;
 			// before a pipe operator?
-			if ( qt->m_piped ) qti->m_bigramFlags[nn] |= BF_PIPED;
+			if ( qt->m_piped ) qti->m_subList[nn].m_bigramFlag |= BF_PIPED;
 			// add list of member terms as well
 			m_q->m_qterms[left].m_bitNum = nrg;
 			// only really add if useful
@@ -1632,12 +1632,13 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				}
 				
 				list = m_q->m_qterms[k].m_posdbListPtr;
-				qti->m_subLists[nn] = list;
-				qti->m_bigramFlags[nn] = 0;
-				qti->m_bigramFlags[nn] |= BF_HALFSTOPWIKIBIGRAM;
-				qti->m_bigramFlags[nn] |= BF_SYNONYM;
+				qti->m_subList[nn].m_qt = bt;
+				qti->m_subList[nn].m_list = list;
+				qti->m_subList[nn].m_bigramFlag = 0;
+				qti->m_subList[nn].m_bigramFlag |= BF_HALFSTOPWIKIBIGRAM;
+				qti->m_subList[nn].m_bigramFlag |= BF_SYNONYM;
 				if (qt->m_piped) {
-					qti->m_bigramFlags[nn]|=BF_PIPED;
+					qti->m_subList[nn].m_bigramFlag |= BF_PIPED;
 				}
 				// add list of member terms as well
 				bt->m_bitNum = nrg;
@@ -1655,11 +1656,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// get list
 			RdbList *list = m_q->m_qterms[right].m_posdbListPtr;
 			// add list ptr into our required group
-			qti->m_subLists[nn] = list;
+			qti->m_subList[nn].m_qt = &m_q->m_qterms[right];
+			qti->m_subList[nn].m_list = list;
 			// special flags
-			qti->m_bigramFlags[nn] = BF_HALFSTOPWIKIBIGRAM;
+			qti->m_subList[nn].m_bigramFlag = BF_HALFSTOPWIKIBIGRAM;
 			// before a pipe operator?
-			if ( qt->m_piped ) qti->m_bigramFlags[nn] |= BF_PIPED;
+			if ( qt->m_piped ) qti->m_subList[nn].m_bigramFlag |= BF_PIPED;
 			// add list of member terms as well
 			m_q->m_qterms[right].m_bitNum = nrg;
 			// only really add if useful
@@ -1676,12 +1678,13 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				}
 				
 				list = m_q->m_qterms[k].m_posdbListPtr;
-				qti->m_subLists[nn] = list;
-				qti->m_bigramFlags[nn] = 0;
-				qti->m_bigramFlags[nn] |= BF_HALFSTOPWIKIBIGRAM;
-				qti->m_bigramFlags[nn] |= BF_SYNONYM;
+				qti->m_subList[nn].m_qt = bt;
+				qti->m_subList[nn].m_list = list;
+				qti->m_subList[nn].m_bigramFlag = 0;
+				qti->m_subList[nn].m_bigramFlag |= BF_HALFSTOPWIKIBIGRAM;
+				qti->m_subList[nn].m_bigramFlag |= BF_SYNONYM;
 				if (qt->m_piped) {
-					qti->m_bigramFlags[nn]|=BF_PIPED;
+					qti->m_subList[nn].m_bigramFlag |= BF_PIPED;
 				}
 				// add list of member terms as well
 				bt->m_bitNum = nrg;
@@ -1698,39 +1701,40 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// the first list and we want that to be the NEWEST list!
 		RdbList *list = m_q->m_qterms[i].m_posdbListPtr;
 		// add list ptr into our required group
-		qti->m_subLists[nn] = list;
+		qti->m_subList[nn].m_qt         = qt;
+		qti->m_subList[nn].m_list       = list;
 		// special flags
-		qti->m_bigramFlags[nn] = 0;
+		qti->m_subList[nn].m_bigramFlag = 0;
 		// before a pipe operator?
 		if ( qt->m_piped )
-			qti->m_bigramFlags[nn] |= BF_PIPED;
+			qti->m_subList[nn].m_bigramFlag |= BF_PIPED;
 		// is it a negative term?
 		if ( qt->m_termSign=='-')
-			qti->m_bigramFlags[nn] |= BF_NEGATIVE;
+			qti->m_subList[nn].m_bigramFlag |= BF_NEGATIVE;
 
 		// numeric posdb termlist flags. instead of word position
 		// they have a float stored there for sorting etc.
 		if (qt->m_fieldCode == FIELD_GBSORTBYFLOAT )
-			qti->m_bigramFlags[nn]|=BF_NUMBER;
+			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
 		if (qt->m_fieldCode == FIELD_GBREVSORTBYFLOAT )
-			qti->m_bigramFlags[nn]|=BF_NUMBER;
+			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
 		if (qt->m_fieldCode == FIELD_GBNUMBERMIN )
-			qti->m_bigramFlags[nn]|=BF_NUMBER;
+			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
 		if (qt->m_fieldCode == FIELD_GBNUMBERMAX )
-			qti->m_bigramFlags[nn]|=BF_NUMBER;
+			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
 		if (qt->m_fieldCode == FIELD_GBNUMBEREQUALFLOAT )
-			qti->m_bigramFlags[nn]|=BF_NUMBER;
+			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
 
 		if (qt->m_fieldCode == FIELD_GBSORTBYINT )
-			qti->m_bigramFlags[nn]|=BF_NUMBER;
+			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
 		if (qt->m_fieldCode == FIELD_GBREVSORTBYINT )
-			qti->m_bigramFlags[nn]|=BF_NUMBER;
+			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
 		if (qt->m_fieldCode == FIELD_GBNUMBERMININT )
-			qti->m_bigramFlags[nn]|=BF_NUMBER;
+			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
 		if (qt->m_fieldCode == FIELD_GBNUMBERMAXINT )
-			qti->m_bigramFlags[nn]|=BF_NUMBER;
+			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
 		if (qt->m_fieldCode == FIELD_GBNUMBEREQUALINT )
-			qti->m_bigramFlags[nn]|=BF_NUMBER;
+			qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
 
 		// add list of member terms
 		qt->m_bitNum = nrg;
@@ -1750,11 +1754,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// get list
 			list = m_q->m_qterms[left].m_posdbListPtr;
 			// add list ptr into our required group
-			qti->m_subLists[nn] = list;
+			qti->m_subList[nn].m_qt = &m_q->m_qterms[left];
+			qti->m_subList[nn].m_list = list;
 			// special flags
-			qti->m_bigramFlags[nn] = BF_BIGRAM;
+			qti->m_subList[nn].m_bigramFlag = BF_BIGRAM;
 			// before a pipe operator?
-			if ( qt->m_piped ) qti->m_bigramFlags[nn] |= BF_PIPED;
+			if ( qt->m_piped ) qti->m_subList[nn].m_bigramFlag |= BF_PIPED;
 			// add list of member terms as well
 			m_q->m_qterms[left].m_bitNum = nrg;
 			// only really add if useful
@@ -1771,11 +1776,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				}
 				
 				list = m_q->m_qterms[k].m_posdbListPtr;
-				qti->m_subLists[nn] = list;
-				qti->m_bigramFlags[nn] = 0;
-				qti->m_bigramFlags[nn] |= BF_SYNONYM;
+				qti->m_subList[nn].m_qt = bt;
+				qti->m_subList[nn].m_list = list;
+				qti->m_subList[nn].m_bigramFlag = 0;
+				qti->m_subList[nn].m_bigramFlag |= BF_SYNONYM;
 				if (qt->m_piped) {
-					qti->m_bigramFlags[nn]|=BF_PIPED;
+					qti->m_subList[nn].m_bigramFlag |= BF_PIPED;
 				}
 				// add list of member terms as well
 				bt->m_bitNum = nrg;
@@ -1792,11 +1798,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// get list
 			list = m_q->m_qterms[right].m_posdbListPtr;
 			// add list ptr into our required group
-			qti->m_subLists[nn] = list;
+			qti->m_subList[nn].m_qt = &m_q->m_qterms[right];
+			qti->m_subList[nn].m_list = list;
 			// special flags
-			qti->m_bigramFlags[nn] = BF_BIGRAM;
+			qti->m_subList[nn].m_bigramFlag = BF_BIGRAM;
 			// before a pipe operator?
-			if ( qt->m_piped ) qti->m_bigramFlags[nn] |= BF_PIPED;
+			if ( qt->m_piped ) qti->m_subList[nn].m_bigramFlag |= BF_PIPED;
 			// add list of member terms as well
 			m_q->m_qterms[right].m_bitNum = nrg;
 			// only really add if useful
@@ -1813,11 +1820,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				}
 				
 				list = m_q->m_qterms[k].m_posdbListPtr;
-				qti->m_subLists[nn] = list;
-				qti->m_bigramFlags[nn] = 0;
-				qti->m_bigramFlags[nn] |= BF_SYNONYM;
+				qti->m_subList[nn].m_qt = bt;
+				qti->m_subList[nn].m_list = list;
+				qti->m_subList[nn].m_bigramFlag = 0;
+				qti->m_subList[nn].m_bigramFlag |= BF_SYNONYM;
 				if (qt->m_piped) {
-					qti->m_bigramFlags[nn]|=BF_PIPED;
+					qti->m_subList[nn].m_bigramFlag |= BF_PIPED;
 				}
 				// add list of member terms as well
 				//qti->m_qtermList[nn] = bt;
@@ -1842,11 +1850,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// its a synonym, add it!
 			list = m_q->m_qterms[k].m_posdbListPtr;
 			// add list ptr into our required group
-			qti->m_subLists[nn] = list;
+			qti->m_subList[nn].m_qt = qt2;
+			qti->m_subList[nn].m_list = list;
 			// special flags
-			qti->m_bigramFlags[nn] = BF_SYNONYM;
+			qti->m_subList[nn].m_bigramFlag = BF_SYNONYM;
 			// before a pipe operator?
-			if ( qt->m_piped ) qti->m_bigramFlags[nn] |= BF_PIPED;
+			if ( qt->m_piped ) qti->m_subList[nn].m_bigramFlag |= BF_PIPED;
 			// set bitnum here i guess
 			qt2->m_bitNum = nrg;
 			// only really add if useful
@@ -1873,7 +1882,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		qti->m_totalSubListsSize = 0LL;
 		for ( int32_t q = 0 ; q < qti->m_numSubLists ; q++ ) {
 			// add list ptr into our required group
-			RdbList *l = qti->m_subLists[q];
+			RdbList *l = qti->m_subList[q].m_list;
 			// get it
 			int64_t listSize = l->getListSize();
 			// add it up
@@ -1897,7 +1906,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// get it
 		QueryTermInfo *qti = &qtibuf[i];
 		// do not consider for first termlist if negative
-		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+		if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 			continue;
 		}
 		
@@ -1927,7 +1936,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			const QueryTermInfo *qti = qtibuf + i;
 			logTrace(g_conf.m_logTracePosdb, "  qti[%d]: m_numSubLists=%d m_qtermNum=%d m_qpos=%d", i, qti->m_numSubLists, qti->m_qtermNum, qti->m_qpos);
 			for(int j=0; j<qti->m_numSubLists; j++)
-				logTrace(g_conf.m_logTracePosdb, "    sublist %d = %p", j, qti->m_subLists[j]);
+				logTrace(g_conf.m_logTracePosdb, "    sublist %d = %p", j, qti->m_subList[j].m_list);
 		}
 	}
 
@@ -2077,12 +2086,12 @@ bool PosdbTable::findCandidateDocIds() {
 		const QueryTermInfo *qti = &qtibuf[i];
 
 		// skip if negative query term
-		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+		if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 			continue;
 		}
 		
 		// skip if numeric field like gbsortby:price gbmin:price:1.23
-		if ( qti->m_bigramFlags[0] & BF_NUMBER ) {
+		if ( qti->m_subList[0].m_bigramFlag & BF_NUMBER ) {
 			continue;
 		}
 		
@@ -2144,7 +2153,7 @@ bool PosdbTable::findCandidateDocIds() {
 			// get it
 			const QueryTermInfo *qti = &qtibuf[i];
 			// do not consider for adding if negative ('my house -home')
-			if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+			if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 				continue;
 			}
 
@@ -2176,7 +2185,7 @@ bool PosdbTable::findCandidateDocIds() {
 			const QueryTermInfo *qti = &qtibuf[i];
 			
 			// do not consider for adding if negative ('my house -home')
-			if ( ! (qti->m_bigramFlags[0] & BF_NEGATIVE) ) {
+			if ( ! (qti->m_subList[0].m_bigramFlag & BF_NEGATIVE) ) {
 				continue;
 			}
 			
@@ -2287,7 +2296,7 @@ nextNode:
 		// get it
 		QueryTermInfo *qti = &qtibuf[i];
 		// do not advance negative termlist cursor
-		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+		if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 			continue;
 		}
 		
@@ -2564,7 +2573,7 @@ bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qti
 		// get it
 		QueryTermInfo *qti = &qtibuf[i];
 		// do not advance negative termlist cursor
-		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+		if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 			continue;
 		}
 
@@ -2714,7 +2723,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 		const QueryTermInfo *qti = &qtibuf[i];
 
 		// if we have a negative term, skip it
-		if ( qti->m_bigramFlags[0] & (BF_NEGATIVE) ) {
+		if ( qti->m_subList[0].m_bigramFlag & (BF_NEGATIVE) ) {
 			continue;
 		}
 
@@ -2844,9 +2853,9 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 		// NO! this loses the wikihalfstopbigram bit! so we gotta
 		// add that in for the key i guess the same way we add in
 		// the syn bits below!!!!!
-		m_bflags [j] = qti->m_bigramFlags[0];
+		m_bflags [j] = qti->m_subList[0].m_bigramFlag;
 		// if we have a negative term, skip it
-		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+		if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 			// need to make this NULL for getSiteRank() call below
 			miniMergedListStart[j] = NULL;
 			// if its empty, that's good!
@@ -2872,7 +2881,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 			// the next docid so use m_matchingSubListSavedCursor.
 			nwp[nsub] 	= qti->m_matchingSublist[k].m_savedCursor;
 			nwpEnd[nsub]	= qti->m_matchingSublist[k].m_cursor;
-			nwpFlags[nsub]	= qti->m_bigramFlags[k];
+			nwpFlags[nsub]	= qti->m_subList[k].m_bigramFlag;
 			nsub++;
 		}
 
@@ -3881,7 +3890,7 @@ void PosdbTable::intersectLists_real() {
 				// get it
 				QueryTermInfo *qti = &qtibuf[i];
 				// skip negative termlists
-				if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+				if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 					continue;
 				}
 				
@@ -3994,7 +4003,7 @@ void PosdbTable::intersectLists_real() {
 						// This computes an upper bound for each query term
 						for ( int32_t i = 0 ; i < numQueryTermsToHandle ; i++ ) {
 							// skip negative termlists.
-							if ( qtibuf[i].m_bigramFlags[0] & (BF_NEGATIVE) ) {
+							if ( qtibuf[i].m_subList[0].m_bigramFlag & (BF_NEGATIVE) ) {
 								continue;
 							}
 
@@ -4117,7 +4126,7 @@ void PosdbTable::intersectLists_real() {
 					
 					// siterank/langid is always 0 in numeric
 					// termlists so they sort by their number correctly
-					if ( qtibuf[k].m_bigramFlags[0] & (BF_NUMBER) ) {
+					if ( qtibuf[k].m_subList[0].m_bigramFlag & (BF_NUMBER) ) {
 						continue;
 					}
 					
@@ -4456,7 +4465,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 		}
 		
 		// note it if any is a wiki bigram
-		if ( qti->m_bigramFlags[0] & BF_HALFSTOPWIKIBIGRAM ) {
+		if ( qti->m_subList[0].m_bigramFlag & BF_HALFSTOPWIKIBIGRAM ) {
 			hadHalfStopWikiBigram = true;
 		}
 		
@@ -4994,12 +5003,12 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists() {
 	//phase 2: set the matchingsublist pointers in qti
 	for(int i=0; i<m_numQueryTermInfos; i++) {
 		QueryTermInfo *qti = ((QueryTermInfo*)m_qiBuf.getBufStart()) + i;
-		if(qti->m_bigramFlags[0]&BF_NEGATIVE)
+		if(qti->m_subList[0].m_bigramFlag & BF_NEGATIVE)
 			continue; //don't modify sublist for negative terms
 		qti->m_numMatchingSubLists = 0;
 		for(int j=0; j<qti->m_numSubLists; j++) {
 			for(int k=0; k<m_q->m_numTerms; k++) {
-				if(qti->m_subLists[j] == m_q->m_qterms[k].m_posdbListPtr) {
+				if(qti->m_subList[j].m_list == m_q->m_qterms[k].m_posdbListPtr) {
 					char *newStartPtr = m_q->m_qterms[k].m_posdbListPtr->getList(); //same as always
 					int32_t x = qti->m_numMatchingSubLists;
 					qti->m_matchingSublist[x].m_size  	    = newEndPtr[k] - newStartPtr;
@@ -5033,8 +5042,8 @@ void PosdbTable::delDocIdVotes ( const QueryTermInfo *qti ) {
 	// just scan each sublist vs. the docid list
 	for ( int32_t i = 0 ; i < qti->m_numSubLists  ; i++ ) {
 		// get that sublist
-		char *subListPtr = qti->m_subLists[i]->getList();
-		char *subListEnd = qti->m_subLists[i]->getListEnd();
+		char *subListPtr = qti->m_subList[i].m_list->getList();
+		char *subListEnd = qti->m_subList[i].m_list->getListEnd();
 		// reset docid list ptrs
 		voteBufPtr = m_docIdVoteBuf.getBufStart();
 		voteBufEnd = voteBufPtr + m_docIdVoteBuf.length();
@@ -5136,7 +5145,7 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 	// range terms tend to disappear if the docid's value falls outside
 	// of the specified range... gbmin:offerprice:190
 	bool isRangeTerm = false;
-	const QueryTerm *qt = qti->m_qt;
+	const QueryTerm *qt = qti->m_subList[0].m_qt;
 	if ( qt->m_fieldCode == FIELD_GBNUMBERMIN ) 
 		isRangeTerm = true;
 	if ( qt->m_fieldCode == FIELD_GBNUMBERMAX ) 
@@ -5187,8 +5196,8 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 	//
 	for ( int32_t i = 0 ; i < qti->m_numSubLists; i++) {
 		// get that sublist
-		char *subListPtr	= qti->m_subLists[i]->getList();
-		char *subListEnd	= qti->m_subLists[i]->getListEnd();
+		char *subListPtr	= qti->m_subList[i].m_list->getList();
+		char *subListEnd	= qti->m_subList[i].m_list->getListEnd();
 		// reset docid list ptrs
 		voteBufPtr	= m_docIdVoteBuf.getBufStart();
 		voteBufEnd	= voteBufPtr + m_docIdVoteBuf.length();
@@ -5306,19 +5315,19 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 	char *cursor[MAX_SUBLISTS];
 	char *cursorEnd[MAX_SUBLISTS];
 
-	logTrace(g_conf.m_logTracePosdb, "term id [%" PRId64 "] [%.*s]", qti->m_qt->m_termId, qti->m_qt->m_termLen, qti->m_qt->m_term);
+	logTrace(g_conf.m_logTracePosdb, "term id [%" PRId64 "] [%.*s]", qti->m_subList[0].m_qt->m_termId, qti->m_subList[0].m_qt->m_termLen, qti->m_subList[0].m_qt->m_term);
 
 	for ( int32_t i = 0 ; i < qti->m_numSubLists ; i++ ) {
 		// get that sublist
-		cursor    [i] = qti->m_subLists[i]->getList();
-		cursorEnd [i] = qti->m_subLists[i]->getListEnd();
+		cursor    [i] = qti->m_subList[i].m_list->getList();
+		cursorEnd [i] = qti->m_subList[i].m_list->getListEnd();
 	}
 
 	char * const bufStart = m_docIdVoteBuf.getBufStart();
 	char *voteBufPtr = m_docIdVoteBuf.getBufStart();
 	char *lastMinRecPtr = NULL;
 	int32_t mini = -1;
-	const QueryTerm * const qt = qti->m_qt;
+	const QueryTerm * const qt = qti->m_subList[0].m_qt;
 	
 	// get the next min from all the termlists
 	for(;;) {
@@ -5550,8 +5559,8 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 		for ( int32_t j = 0 ; j < qti->m_numSubLists ; j++ ) {
 
 			// scan all docids in this list
-			char *p = qti->m_subLists[j]->getList();
-			char *pend = qti->m_subLists[j]->getListEnd();
+			char *p =    qti->m_subList[j].m_list->getList();
+			char *pend = qti->m_subList[j].m_list->getListEnd();
 
 			//int64_t lastDocId = 0LL;
 

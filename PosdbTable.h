@@ -38,11 +38,14 @@ class QueryTerm;
 // . these should be 1-1 with query terms, Query::m_qterms[]
 class QueryTermInfo {
 public:
-	const class QueryTerm *m_qt;
-	// the required lists for this query term, synonym lists, etc.
-	RdbList  *m_subLists        [MAX_SUBLISTS];
-	// flags to indicate if bigram list should be scored higher
-	char      m_bigramFlags     [MAX_SUBLISTS];
+	struct {
+		const QueryTerm *m_qt;
+		// the required lists for this query term, synonym lists, etc.
+		RdbList  *m_list;
+		// flags to indicate if bigram list should be scored higher
+		char      m_bigramFlag;
+	} m_subList[MAX_SUBLISTS];
+	int32_t      m_numSubLists;
 	
 	// delNonMatchingDocIdsFromSubLists() set these. They
 	// point to m_subLists that have been reduced in size 
@@ -57,8 +60,6 @@ public:
 	int32_t   m_numMatchingSubLists;
 	
 	
-	// how many are valid?
-	int32_t      m_numSubLists;
 	// size of all m_subLists in bytes
 	int64_t m_totalSubListsSize;
 	// the term freq weight for this term
