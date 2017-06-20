@@ -1882,7 +1882,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		qti->m_totalSubListsSize = 0LL;
 		for ( int32_t q = 0 ; q < qti->m_numSubLists ; q++ ) {
 			// add list ptr into our required group
-			RdbList *l = qti->m_subList[q].m_list;
+			const RdbList *l = qti->m_subList[q].m_list;
 			// get it
 			int64_t listSize = l->getListSize();
 			// add it up
@@ -2488,12 +2488,12 @@ VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
 void PosdbTable::logDebugScoreInfo(int32_t loglevel) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
 
-	char *sx = m_scoreInfoBuf.getBufStart();
-	char *sxEnd = sx + m_scoreInfoBuf.length();
+	const char *sx = m_scoreInfoBuf.getBufStart();
+	const char *sxEnd = sx + m_scoreInfoBuf.length();
 
 	log(loglevel, "DocId scores in m_scoreInfoBuf:");
 	for ( ; sx < sxEnd ; sx += sizeof(DocIdScore) ) {
-		DocIdScore *si = (DocIdScore *)sx;
+		const DocIdScore *si = (const DocIdScore *)sx;
 
 		log(loglevel, "  docId: %14" PRIu64 ", score: %f", si->m_docId, si->m_finalScore);
 
@@ -4656,7 +4656,7 @@ bool PosdbTable::allocWhiteListTable ( ) {
 	else 		                m_useWhiteTable = true;
 	int32_t sum = 0;
 	for ( int32_t i = 0 ; i < m_msg2->getNumWhiteLists() ; i++ ) {
-		RdbList *list = m_msg2->getWhiteList(i);
+		const RdbList *list = m_msg2->getWhiteList(i);
 		if(!list->isEmpty()) {
 			// assume 12 bytes for all keys but first which is 18
 			int32_t size = list->getListSize();
@@ -4726,7 +4726,7 @@ bool PosdbTable::allocateTopTree() {
 	//If all Msg2 rdblists are empty then don't do anything (there is nothing to rank or score)
 	bool allEmpty = true;
 	for(int i = 0; i < m_msg2->getNumLists(); i++) {
-		RdbList *list = m_msg2->getList(i);
+		const RdbList *list = m_msg2->getList(i);
 		
 		if(list && !list->isEmpty() && list->getListSize()>=18) {
 			allEmpty = false;
@@ -5196,8 +5196,8 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 	//
 	for ( int32_t i = 0 ; i < qti->m_numSubLists; i++) {
 		// get that sublist
-		char *subListPtr	= qti->m_subList[i].m_list->getList();
-		char *subListEnd	= qti->m_subList[i].m_list->getListEnd();
+		const char *subListPtr = qti->m_subList[i].m_list->getList();
+		const char *subListEnd = qti->m_subList[i].m_list->getListEnd();
 		// reset docid list ptrs
 		voteBufPtr	= m_docIdVoteBuf.getBufStart();
 		voteBufEnd	= voteBufPtr + m_docIdVoteBuf.length();
@@ -5559,8 +5559,8 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 		for ( int32_t j = 0 ; j < qti->m_numSubLists ; j++ ) {
 
 			// scan all docids in this list
-			char *p =    qti->m_subList[j].m_list->getList();
-			char *pend = qti->m_subList[j].m_list->getListEnd();
+			const char *p =    qti->m_subList[j].m_list->getList();
+			const char *pend = qti->m_subList[j].m_list->getListEnd();
 
 			//int64_t lastDocId = 0LL;
 
@@ -5664,7 +5664,7 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 		}
 			
 		// get the bit vector
-		unsigned char *vec = (unsigned char *)m_bt.getValueFromSlot(i);
+		const unsigned char *vec = (unsigned char *)m_bt.getValueFromSlot(i);
 		
 		// hash the vector
 		int64_t h64 = 0LL;
