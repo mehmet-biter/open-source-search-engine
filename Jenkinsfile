@@ -63,7 +63,7 @@ pipeline {
 						sh "cd ${env.GB_DIR} && make -j8 unittest"
 					},
 					'system test': {
-						sh "echo 'run system test here'"
+						sh "cd ${env.PYWEBTEST_DIR} && ./run_all_testcases.py"
 					}
 				)
 			}
