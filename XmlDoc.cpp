@@ -3428,7 +3428,7 @@ uint8_t *XmlDoc::getLangVector ( ) {
 	return v;
 }
 
-const char* XmlDoc::getLangIdCLD2() {
+const char* XmlDoc::getLangIdCLD2(const char *content) {
 	// detect language hints
 
 	// language tag format:
@@ -3459,7 +3459,6 @@ const char* XmlDoc::getLangIdCLD2() {
 	bool is_reliable = false;
 	int valid_prefix_bytes = 0;
 
-	const char *content = *getRawUtf8Content();
 	int32_t contentLen = size_utf8Content > 0 ? (size_utf8Content - 1) : 0;
 
 	CLD2::Language language = CLD2::ExtDetectLanguageSummaryCheckUTF8(content,
@@ -3485,9 +3484,7 @@ const char* XmlDoc::getLangIdCLD2() {
 	return CLD2::LanguageCode(language);
 }
 
-std::string XmlDoc::getLangIdCLD3() {
-	const char *content = *getRawUtf8Content();
-
+std::string XmlDoc::getLangIdCLD3(const char *content) {
 	chrome_lang_id::NNetLanguageIdentifier lang_id;
 	auto result = lang_id.FindLanguage(content);
 	if (!result.is_reliable) {
@@ -3497,6 +3494,44 @@ std::string XmlDoc::getLangIdCLD3() {
 	}
 
 	return result.language;
+}
+
+const char* XmlDoc::getLangIdSummaryCLD2() {
+	Xml *xml = getXml();
+	if (!xml || xml == (Xml *)-1) {
+		return "xx";
+	}
+
+	Title title;
+	if (!title.setTitleFromTags(xml, 80, m_contentType)) {
+		return "xx";
+	}
+
+	Summary summary;
+	if (!summary.setSummaryFromTags(xml, 180, title.getTitle(), title.getTitleLen())) {
+		return "xx";
+	}
+
+	return getLangIdCLD2(summary.getSummary());
+}
+
+std::string XmlDoc::getLangIdSummaryCLD3() {
+	Xml *xml = getXml();
+	if (!xml || xml == (Xml *)-1) {
+		return "xx";
+	}
+
+	Title title;
+	if (!title.setTitleFromTags(xml, 80, m_contentType)) {
+		return "xx";
+	}
+
+	Summary summary;
+	if (!summary.setSummaryFromTags(xml, 180, title.getTitle(), title.getTitleLen())) {
+		return "xx";
+	}
+
+	return getLangIdCLD3(summary.getSummary());
 }
 
 // returns -1 and sets g_errno on error
@@ -3563,12 +3598,19 @@ uint8_t *XmlDoc::getLangId ( ) {
 
 	setStatus ( "getting lang id");
 
+	const char *content = *getRawUtf8Content();
+
+	const char *langCLD2 = getLangIdCLD2(content);
+	std::string langCLD3 = getLangIdCLD3(content);
+	const char *langSummaryCLD2 = getLangIdSummaryCLD2();
+	std::string langSummaryCLD3 = getLangIdSummaryCLD3();
+
 	// compute langid from vector
 	m_langId = computeLangId ( sections , words, (char *)lv );
 	if ( m_langId != langUnknown ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from langVector", getLanguageAbbr(m_langId) );
-		log(LOG_INFO, "lang: vector lang=%s langCLD2=%s langCLD3=%s url=%s",
-		    getLanguageAbbr(m_langId), getLangIdCLD2(), getLangIdCLD3().c_str(), m_firstUrl.getUrl());
+		log(LOG_INFO, "lang: vector lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s langSummaryCLD3=%s url=%s",
+		    getLanguageAbbr(m_langId), langCLD2, langCLD3.c_str(), langSummaryCLD2, langSummaryCLD3.c_str(), m_firstUrl.getUrl());
 		m_langIdValid = true;
 		return &m_langId;
 	}
@@ -3587,8 +3629,8 @@ uint8_t *XmlDoc::getLangId ( ) {
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
 	if ( m_langId != langUnknown ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaDescription", getLanguageAbbr(m_langId) );
-		log(LOG_INFO, "lang: meta description lang=%s langCLD2=%s langCLD3=%s url=%s",
-		    getLanguageAbbr(m_langId), getLangIdCLD2(), getLangIdCLD3().c_str(), m_firstUrl.getUrl());
+		log(LOG_INFO, "lang: meta description lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s langSummaryCLD3=%s url=%s",
+		    getLanguageAbbr(m_langId), langCLD2, langCLD3.c_str(), langSummaryCLD2, langSummaryCLD3.c_str(), m_firstUrl.getUrl());
 		m_langIdValid = true;
 		return &m_langId;
 	}
@@ -3603,8 +3645,8 @@ uint8_t *XmlDoc::getLangId ( ) {
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
 	if (m_langId != langUnknown) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaKeywords", getLanguageAbbr(m_langId));
-		log(LOG_INFO, "lang: meta keyword lang=%s langCLD2=%s langCLD3=%s url=%s",
-		    getLanguageAbbr(m_langId), getLangIdCLD2(), getLangIdCLD3().c_str(), m_firstUrl.getUrl());
+		log(LOG_INFO, "lang: meta keyword lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s langSummaryCLD3=%s url=%s",
+		    getLanguageAbbr(m_langId), langCLD2, langCLD3.c_str(), langSummaryCLD2, langSummaryCLD3.c_str(), m_firstUrl.getUrl());
 		m_langIdValid = true;
 		return &m_langId;
 	}
@@ -3614,16 +3656,16 @@ uint8_t *XmlDoc::getLangId ( ) {
 		m_langId = getLangIdFromCharset(m_charset);
 		if (m_langId != langUnknown) {
 			logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from charset", getLanguageAbbr(m_langId));
-			log(LOG_INFO, "lang: charset lang=%s langCLD2=%s langCLD3=%s url=%s",
-			    getLanguageAbbr(m_langId), getLangIdCLD2(), getLangIdCLD3().c_str(), m_firstUrl.getUrl());
+			log(LOG_INFO, "lang: charset lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s langSummaryCLD3=%s url=%s",
+			    getLanguageAbbr(m_langId), langCLD2, langCLD3.c_str(), langSummaryCLD2, langSummaryCLD3.c_str(), m_firstUrl.getUrl());
 			m_langIdValid = true;
 			return &m_langId;
 		}
 	}
 
 	logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s", getLanguageAbbr(m_langId));
-	log(LOG_INFO, "lang: end lang=%s langCLD2=%s langCLD3=%s url=%s",
-	    getLanguageAbbr(m_langId), getLangIdCLD2(), getLangIdCLD3().c_str(), m_firstUrl.getUrl());
+	log(LOG_INFO, "lang: end lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s langSummaryCLD3=%s url=%s",
+	    getLanguageAbbr(m_langId), langCLD2, langCLD3.c_str(), langSummaryCLD2, langSummaryCLD3.c_str(), m_firstUrl.getUrl());
 
 	m_langIdValid = true;
 	return &m_langId;
