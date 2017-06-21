@@ -84,7 +84,7 @@ pipeline {
 	post {
 		changed {
 			script {
-				if (currentBuild.result == "SUCCESS") {
+				if (currentBuild.result == "SUCCESS" && ${env.BUILD_NUMBER} != 1) {
 					slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
 				}
 			}
