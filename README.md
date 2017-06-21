@@ -1,12 +1,10 @@
-Gigablast - an open source search engine
-========================================
+# Gigablast - an open source search engine
 
 An open source web and enterprise search engine and spider/crawler.
 
 This is a fork of the original Gigablast project available at https://github.com/gigablast/open-source-search-engine/. This version is heavily modified by Privacore, and tailored for our use. It is *not* a drop-in replacement for the original Gigablast.
 
-Modifications by Privacore
---------------------------
+## Modifications by Privacore
 
 Our aim is *not* to maintain backwards compatibility with the original Gigablast data files. 
 
@@ -25,8 +23,7 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 | Ranking | Ranking weights made configurable. |
 |...|and much more...|
 
-Migrating Gigablast to our fork
--------------------------------
+## Migrating Gigablast to our fork
 
 | Step  | Description |
 | ------------- | ------------- |
@@ -39,36 +36,43 @@ Migrating Gigablast to our fork
 | Rebuild | Rebuild the posdb data files through the web UI. This is needed because we store less data in posdb than the original version, and GB cannot clean this 'junk' data up when re-indexing pages.|
 
 
-SUPPORTED PLATFORMS
--------------------
-Primary:
-
+## SUPPORTED PLATFORMS
+### Primary:
 *    Ubuntu 16.04, g++ 5.4.0, Python 2.7.6
 
-Secondary:
-
+### Secondary:
 *    OpenSuSE 13.2, GCC 4.8.3
 *    OpenSuSE 42.2, GCC 6.2.1
 *    Fedora 24, GCC 6.2.1
 
-DEPENDENCIES
-------------
-Multi-instance installations require Vagus (https://github.com/privacore/vagus) for keeping track of which instances are dead and alive.
+## DEPENDENCIES
+### Compilation
+#### Ubuntu
+*    g++
+*    make
+*    cmake
+*    python
+*    libpcre3-dev
+*    libssl-dev
 
-RUNNING GIGABLAST
------------------
+### Runtime
+*    Multi-instance installations require [Vagus](https://github.com/privacore/vagus) for keeping track of which instances are dead and alive.
+
+#### Ubuntu
+*    libssl1.0.0
+*    libpcre3
+
+## RUNNING GIGABLAST
 See <a href=html/faq.html>html/faq.html</a> for all administrative documentation including the quick start instructions.
 
 Alternatively, visit http://www.gigablast.com/faq.html
 
-CODE ARCHITECTURE
------------------
+## CODE ARCHITECTURE
 See <a href=html/developer.html>html/developer.html</a> for all code documentation.
 
 Alternatively, visit http://www.gigablast.com/developer.html
 
-SUPPORT
--------
+## SUPPORT
 Privacore does not provide paid support for Gigablast. We refer you to the original project at https://github.com/gigablast/open-source-search-engine/ and the owner Matt Wells. He has a Pro version you can buy which include support options.
 
 We provide limited support for our fork, primarily for active contributors.
