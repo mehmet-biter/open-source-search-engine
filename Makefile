@@ -87,7 +87,7 @@ OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
 
 # common flags
-DEFS = -D_REENTRANT_ -I.
+DEFS = -D_REENTRANT_ -I. -Ithird-party/compact_enc_det
 DEFS += -DDEBUG_MUTEXES
 CPPFLAGS = -g -fno-stack-protector -DPTHREADS
 CPPFLAGS += -std=c++11
@@ -266,14 +266,17 @@ all: gb
 
 
 # third party libraries
-LIBFILES = libcld2_full.so slacktee.sh
-LIBS += -Wl,-rpath=. -L. -lcld2_full
+LIBFILES = libcld2_full.so libced.so slacktee.sh
+LIBS += -Wl,-rpath=. -L. -lcld2_full -lced
 
 
 libcld2_full.so:
 	cd third-party/cld2/internal && CPPFLAGS="-ggdb -std=c++98" ./compile_libs.sh
 	ln -s third-party/cld2/internal/libcld2_full.so libcld2_full.so
 
+libced.so:
+	cd third-party/compact_enc_det && cmake -DBUILD_SHARED_LIBS=ON . && make ced
+	ln -s third-party/compact_enc_det/lib/libced.so libced.so
 
 slacktee.sh:
 	ln -sf third-party/slacktee/slacktee.sh slacktee.sh 2>/dev/null
