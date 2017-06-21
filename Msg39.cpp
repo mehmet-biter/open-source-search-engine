@@ -486,7 +486,7 @@ void Msg39::controlLoop ( ) {
 			m_numTotalHits += m_posdbTable.getTotalHits();
 			// minus the shit we filtered out because of gbminint/gbmaxint/
 			// gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
-			m_numTotalHits -= m_posdbTable.m_filtered;
+			m_numTotalHits -= m_posdbTable.getFilteredCount();
 			
 			chunksSearched++;
 		}
@@ -762,46 +762,14 @@ void Msg39::intersectLists(const DocumentIndexChecker &documentIndexChecker) {
 	// . this will actually calculate the top
 	// . this might also change m_query.m_termSigns
 	// . this won't do anything if it was already called
-	m_posdbTable.init ( &m_query, m_debug, this, &m_toptree, documentIndexChecker, &m_msg2, m_msg39req);
-
-	// . we have to do this here now too
-	// . but if we are getting weights, we don't need m_toptree!
-	// . actually we were using it before for rat=0/bool queries but
-	//   i got rid of NO_RAT_SLOTS
-	if ( ! m_allocatedTree && ! m_posdbTable.allocTopScoringDocIdsData() ) {
-		if ( ! g_errno ) {
-			gbshutdownLogicError();
-		}
-		//sendReply ( m_slot , this , NULL , 0 , 0 , true);
-		return;
-	}
+	m_posdbTable.init ( &m_query, m_debug, &m_toptree, documentIndexChecker, &m_msg2, m_msg39req);
 
 	// if msg2 had ALL empty lists we can cut it short
-	if ( m_posdbTable.m_topTree->getNumNodes() == 0 ) { //isj: shouldn't this call getNumUsedNodes() ?
+	//todo: check if msg2 lists are all null or empty. If so then bail out
 		//estimateHitsAndSendReply ( );
-		return;
-	}
-
-	// we have to allocate this with each call because each call can
-	// be a different docid range from doDocIdSplitLoop.
-	if ( ! m_posdbTable.allocWhiteListTable() ) {
-		log(LOG_WARN,"msg39: Had error allocating white list table: %s.", mstrerror(g_errno));
-		if ( ! g_errno ) {
-			gbshutdownLogicError();
-		}
-		//sendReply (m_slot,this,NULL,0,0,true);
-		return;
-	}
 
 	// do not re do it if doing docid range splitting
 	m_allocatedTree = true;
-
-	// . now we must call this separately here, not in allocTopScoringDocIdsData()
-	// . we have to re-set the QueryTermInfos with each docid range split
-	//   since it will set the list ptrs from the msg2 lists
-	if ( ! m_posdbTable.setQueryTermInfo () ) {
-		return;
-	}
 
 	// print query term bit numbers here
 	for ( int32_t i = 0 ; m_debug && i < m_query.getNumTerms() ; i++ ) {
@@ -832,12 +800,6 @@ void Msg39::intersectLists(const DocumentIndexChecker &documentIndexChecker) {
 	// time it
 	int64_t start = gettimeofdayInMilliseconds();
 
-	// check tree
-	if ( m_toptree.nodesIsNull() ) { //isj: what is it trying to test here? and why aren't there a similar test in PosdbTable::intersect() ?
-		log(LOG_LOGIC,"query: msg39: Badness."); 
-		gbshutdownLogicError();
-	}
-
 	// . create the thread
 	// . only one of these type of threads should be launched at a time
 	if ( g_jobScheduler.submit(&intersectListsThreadFunction,
@@ -847,7 +809,7 @@ void Msg39::intersectLists(const DocumentIndexChecker &documentIndexChecker) {
 				   m_msg39req->m_niceness) ) {
 		jobState.wait_for_finish();
 	} else
-		m_posdbTable.intersectLists10_r();
+		m_posdbTable.intersectLists();
 	
 
 	// time it
@@ -872,7 +834,7 @@ void Msg39::intersectListsThreadFunction ( void *state ) {
 	// . this returns false and sets g_errno on error
 	// . Msg2 always compresses the lists so be aware that the termId
 	//   has been discarded
-	that->m_posdbTable.intersectLists10_r ( );
+	that->m_posdbTable.intersectLists();
 
 	// . exit the thread
 	// . threadDoneWrapper will be called by g_loop when he gets the 

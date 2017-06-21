@@ -44,7 +44,6 @@ CollectionRec *SpiderColl::getCollectionRec ( ) {
 SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_overflowList = NULL;
 	m_lastOverflowFirstIp = 0;
-	m_lastPrinted = 0;
 	m_deleteMyself = false;
 	m_isLoading = false;
 	m_gettingList1 = false;
@@ -81,7 +80,6 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_numAdded = 0;
 	m_numBytesScanned = 0;
 	m_lastPrintCount = 0;
-	m_lastPrinted = 0;
 	m_collnum = -1;
 	m_countingPagesIndexed = false;
 	m_lastReqUh48a = 0;
@@ -1049,28 +1047,6 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 		return firstIp;
 	}
 }
-
-uint64_t SpiderColl::getNextSpiderTimeFromWaitingTree ( ) {
-	ScopedLock sl(m_waitingTree.getLock());
-
-	// if nothing to scan, bail
-	if (m_waitingTree.isEmpty_unlocked() ) return 0LL;
-	// the key
-	key96_t mink; mink.setMin();
-	// set node from wait tree key. this way we can resume from a prev key
-	int32_t node = m_waitingTree.getNextNode_unlocked(0, (char *)&mink);
-	// if empty, stop
-	if ( node < 0 ) return 0LL;
-	// get the key
-	const key96_t *wk = reinterpret_cast<const key96_t*>(m_waitingTree.getKey_unlocked(node));
-	// time from that
-	uint64_t spiderTimeMS = (wk->n1);
-	spiderTimeMS <<= 32;
-	spiderTimeMS |= ((wk->n0) >> 32);
-	// stop if need to wait for this one
-	return spiderTimeMS;
-}
-
 
 void SpiderColl::gotSpiderdbWaitingTreeListWrapper(void *state, RdbList *list, Msg5 *msg5) {
 	SpiderColl *THIS = (SpiderColl *)state;
@@ -2888,7 +2864,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 			log(LOG_DEBUG,"spider: removed2 time=%" PRId64" ip=%s from "
 			    "waiting tree. nn=%" PRId32".",
 			    timestamp64, iptoa(firstIp,ipbuf),
-			    m_waitingTree.getNumUsedNodes());
+			    m_waitingTree.getNumUsedNodes_unlocked());
 
 		removeFromWaitingTable(firstIp);
 		return true;
@@ -3373,12 +3349,6 @@ void SpiderColl::setPriority(int32_t pri) {
 	m_nextDoledbKey = m_nextKeys [ m_pri2 ];
 	m_msg5StartKey = m_nextDoledbKey;
 }
-
-
-bool SpiderColl::printStats ( SafeBuf &sb ) {
-	return true;
-}
-
 
 bool SpiderColl::tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 	// if not being deleted return false

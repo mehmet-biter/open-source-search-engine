@@ -997,3 +997,8 @@ TEST(UrlTest, HashBang) {
 	url.set("http://www.example.com/ajax.html#key=value");
 	EXPECT_STREQ("http://www.example.com/ajax.html", url.getUrl());
 }
+
+TEST(UrlTest, SegFault1) {
+	Url url;
+	url.set("https://www.buetschwil-ganterschwil.ch/services/404-error.html/14/language/de/CFID/42375675/domainID/1/userLG/de/events/edit3%2Ecfm/languageID/1/file/modul/internet/de/config/E3B845C1%2DBF47%2D59FE%2D85D19326E441CAF8/oulogin/0/shortcut/xml%5F1/CFTOKEN/96d963b768c0e47%2DC9DC4B32%2D5056%2D8273%2DD0EC06729009B619%2C26f6de451ccff637%2DAE92007E%2D5056%2D8273%2DD0F119E3A1FD5E9B", 374, false, true);
+}

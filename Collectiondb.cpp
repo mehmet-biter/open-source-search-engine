@@ -324,6 +324,8 @@ bool Collectiondb::addNewColl ( const char *coll,
 	// point to this, so Rdb and RdbBase can reference it
 	coll = cr->m_coll;
 
+	cr->setNeedsSave();
+
 	//
 	// BEGIN NEW CODE
 	//
@@ -487,6 +489,8 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) {
 	// note it
 	log(LOG_INFO,"db: deleting coll \"%s\" (%" PRId32")",coll,
 	    (int32_t)cr->m_collnum);
+
+	cr->setNeedsSave();
 
 	// CAUTION: tree might be in the middle of saving
 	// we deal with this in Process.cpp now

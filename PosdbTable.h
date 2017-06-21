@@ -3,6 +3,7 @@
 
 #include "RdbList.h"
 #include "HashTableX.h"
+#include <vector>
 
 float getDiversityWeight ( unsigned char diversityRank );
 float getDensityWeight   ( unsigned char densityRank );
@@ -78,15 +79,12 @@ class PosdbTable {
 	// . returns false on error and sets errno
 	// . "termFreqs" are 1-1 with q->m_qterms[]
 	// . sets m_q to point to q
-	void init(Query *q, bool debug, void *logstate, TopTree *topTree, const DocumentIndexChecker &documentIndexChecker, Msg2 *msg2, Msg39Request *r);
+	void init(Query *q, bool debug, TopTree *topTree, const DocumentIndexChecker &documentIndexChecker, Msg2 *msg2, Msg39Request *r);
 
 	// pre-allocate m_whiteListTable
 	bool allocWhiteListTable ( ) ;
 
 	void prepareWhiteListTable();
-
-	// pre-allocate memory since intersection runs in a thread
-	bool allocTopScoringDocIdsData();
 
 	float getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wpj, const char *endi, const char *endj, int32_t qdist);
 	float getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const char *endi, DocIdScore *pdcs, const char **highestScoringNonBodyPos);
@@ -118,61 +116,46 @@ class PosdbTable {
 	void logDebugScoreInfo(int32_t loglevel);
 	void removeScoreInfoForDeletedDocIds();
 	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
-	bool prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore);
-	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);
+	bool prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf, float minWinningScore);
+	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, char *miniMergeBufEnd, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);
 
 	void createNonBodyTermPairScoreMatrix(const char **miniMergedList, const char **miniMergedEnd, float *scoreMatrix);
 	float getMinSingleTermScoreSum(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, DocIdScore *pdcs);
 	float getMinTermPairScoreSlidingWindow(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs);
 
 
-	uint64_t m_docId;
-
-	bool m_hasMaxSerpScore;
-
-	float m_siteRankMultiplier;
-
 	// how long to add the last batch of lists
 	int64_t       m_addListsTime;
 	int64_t       m_t1 ;
 	int64_t       m_t2 ;
 
-	int64_t       m_estimatedTotalHits;
-
-	int32_t            m_numSlots;
-
-	int32_t            m_maxScores;
-
-	collnum_t       m_collnum;
-
-	int32_t *m_qpos;
-	int32_t *m_wikiPhraseIds;
-	int32_t *m_quotedStartIds;
-	float *m_freqWeights;
-	char  *m_bflags;
-	int32_t  *m_qtermNums;
-
-	// Best minimum score in a "sliding window"
-	float m_bestMinTermPairWindowScore;
-	// Position pointers of best minimum score
-	const char **m_bestMinTermPairWindowPtrs;
-
-	// how many docs in the collection?
-	int64_t m_docsInColl;
-
-	Msg2 *m_msg2;
-
-	const DocumentIndexChecker *m_documentIndexChecker;
-
-	// if getting more than MAX_RESULTS results, use this top tree to hold
-	// them rather than the m_top*[] arrays above
-	TopTree *m_topTree;
-
 	SafeBuf m_scoreInfoBuf;
 	SafeBuf m_pairScoreBuf;
 	SafeBuf m_singleScoreBuf;
 
-	SafeBuf m_topScoringDocIdsBuf;	// Buffer containing pointers to scoring info
+private:
+	TopTree *m_topTree;
+
+	//used during intersection, part of working area
+	std::vector<int32_t> m_wikiPhraseIds;
+	std::vector<int32_t> m_quotedStartIds;
+	std::vector<int32_t> m_qpos;
+	std::vector<int32_t> m_qtermNums;
+	std::vector<float> m_freqWeights;
+	std::vector<char> m_bflags;
+	//used during intersection, simple variables
+	float m_bestMinTermPairWindowScore;             //Best minimum score in a "sliding window"
+	const char **m_bestMinTermPairWindowPtrs;       //Position pointers of best minimum score
+
+	bool m_hasMaxSerpScore;
+
+	float m_siteRankMultiplier;
+
+	uint64_t m_docId; //the current docid intersection is working on
+
+	Msg2 *m_msg2;
+
+	const DocumentIndexChecker *m_documentIndexChecker;
 
 	// a reference to the query
 	Query          *m_q;
@@ -183,9 +166,6 @@ class PosdbTable {
 
 	// are we in debug mode?
 	bool m_debug;
-
-	// for debug msgs
-	void *m_logstate;
 
 	Msg39Request *m_msg39req;
 
@@ -214,15 +194,19 @@ class PosdbTable {
 	int32_t m_maxScoreValInt;
 
 
-	// the new intersection/scoring algo
-	void intersectLists10_r ( );	
-
 	HashTableX m_whiteListTable;
 	bool m_useWhiteTable;
 	bool m_addedSites;
 
-	// sets stuff used by intersect10_r()
-	bool setQueryTermInfo ( );
+	bool allocateTopTree();
+	bool allocateScoringInfo();
+	bool setQueryTermInfo();
+
+	void intersectLists_real();
+public:
+	// the new intersection/scoring algo
+	void intersectLists();
+
 	void delNonMatchingDocIdsFromSubLists();
 
 	// for intersecting docids
@@ -240,7 +224,9 @@ class PosdbTable {
 				    const QueryTermInfo *qtm ) ;
 
 	int64_t getTotalHits() const { return m_docIdVoteBuf.length() / 6; }
+	int32_t getFilteredCount() const { return m_filtered; }
 
+private:
 	// stuff set in setQueryTermInf() function:
 	SafeBuf              m_qiBuf;
 	int32_t                 m_numQueryTermInfos;

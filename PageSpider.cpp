@@ -153,6 +153,9 @@ static bool printList ( State11 *st ) {
 	RdbList *list = &st->m_list;
 	// row count
 	int32_t j = 0;
+
+	char format = st->m_r.getReplyFormat();
+
 	// put it in there
 	for ( ; ! list->isExhausted() ; list->skipCurrentRecord() ) {
 		// stop if we got enough
@@ -183,9 +186,17 @@ static bool printList ( State11 *st ) {
 		}
 		// get the spider rec, encapsed in the data of the doledb rec
 		SpiderRequest *sreq = (SpiderRequest *)rec;
-		// print it into sbTable
-		if ( ! sreq->printToTable ( sbTable,"ready",NULL,j))
-			return false;
+
+		if (format == FORMAT_JSON) {
+			if (!sreq->printToJSON(sbTable, "ready", NULL, j)) {
+				return false;
+			}
+		} else {
+			// print it into sbTable
+			if (!sreq->printToTable(sbTable, "ready", NULL, j)) {
+				return false;
+			}
+		}
 		// count row
 		j++;
 	}
@@ -200,9 +211,9 @@ static bool printList ( State11 *st ) {
 		st->m_startKey    = Doledb::makeFirstKey2 (st->m_priority);
 		st->m_endKey      = Doledb::makeLastKey2  (st->m_priority);
 		// if we printed something, print a blank line after it
-		if ( st->m_count > 0 )
-			sbTable->safePrintf("<tr><td colspan=30>..."
-				                    "</td></tr>\n");
+		if ( st->m_count > 0 && format == FORMAT_HTML) {
+			sbTable->safePrintf("<tr><td colspan=30>...</td></tr>\n");
+		}
 		// reset for each priority
 		st->m_count = 0;
 	}
@@ -211,141 +222,83 @@ static bool printList ( State11 *st ) {
 	return true;
 }
 
-static bool sendPage(State11 *st) {
-	// generate a query string to pass to host bar
-	char qs[64]; sprintf ( qs , "&n=%" PRId32, st->m_numRecs );
-
-	// store the page in here!
-	SafeBuf sb;
-	if( !sb.reserve ( 64*1024 ) ) {
-		logError("Could not reserve needed mem, bailing!");
-		return false;
-	}
-
-	g_pages.printAdminTop ( &sb, st->m_socket , &st->m_r , qs );
-
-
-	// get spider coll
-	collnum_t collnum = g_collectiondb.getCollnum ( st->m_coll );
-	// and coll rec
-	CollectionRec *cr = g_collectiondb.getRec ( collnum );
-
-	if ( ! cr ) {
-		// get the socket
-		TcpSocket *s = st->m_socket;
-		// then we can nuke the state
-		mdelete ( st , sizeof(State11) , "PageSpiderdb" );
-		delete (st);
-		// erase g_errno for sending
-		g_errno = 0;
-		// now encapsulate it in html head/tail and send it off
-		return g_httpServer.sendDynamicPage (s, sb.getBufStart(),
-		                                     sb.length() );
-	}
-
+static bool generatePageHTML(CollectionRec *cr, SafeBuf *sb, const SafeBuf *doledbbuf) {
 	// print reason why spiders are not active for this collection
 	int32_t tmp2;
 	SafeBuf mb;
-	if ( cr ) getSpiderStatusMsg ( cr , &mb , &tmp2 );
+	getSpiderStatusMsg ( cr , &mb , &tmp2 );
 	if ( mb.length() && tmp2 != SP_INITIALIZING )
-		sb.safePrintf(//"<center>"
-			"<table cellpadding=5 "
-				//"style=\""
-				//"border:2px solid black;"
-				"max-width:600px\" "
-				"border=0"
-				">"
-				"<tr>"
-				//"<td bgcolor=#ff6666>"
-				"<td>"
-				"For collection <i>%s</i>: "
-				"<b><font color=red>%s</font></b>"
-				"</td>"
-				"</tr>"
-				"</table>\n"
-			, cr->m_coll
-			, mb.getBufStart() );
-
+		sb->safePrintf("<table cellpadding=5 style=\"max-width:600px\" border=0>"
+		               "<tr>"
+		               "<td>"
+		               "For collection <i>%s</i>: "
+		               "<b><font color=red>%s</font></b>"
+		               "</td>"
+		               "</tr>"
+		               "</table>\n"
+		               , cr->m_coll
+		               , mb.getBufStart() );
 
 	// begin the table
-	sb.safePrintf ( "<table %s>\n"
-		                "<tr><td colspan=50>"
-		                //"<center>"
-		                "<b>Currently Spidering on This Host</b>"
-		                " (%" PRId32" spiders)"
-		//" (%" PRId32" locks)"
-		//"</center>"
-		"</td></tr>\n"
-		, TABLE_STYLE
-		, g_spiderLoop.getNumSpidersOut()
-	//, g_spiderLoop.m_lockTable.m_numSlotsUsed
+	sb->safePrintf("<table %s>\n"
+		           "<tr><td colspan=50>"
+		           "<b>Currently Spidering on This Host</b>(%" PRId32" spiders)"
+		           "</td></tr>\n"
+		           , TABLE_STYLE
+		           , g_spiderLoop.getNumSpidersOut()
 	);
+
 	// the table headers so SpiderRequest::printToTable() works
-	if ( ! SpiderRequest::printTableHeader ( &sb , true ) ) return false;
+	if (!SpiderRequest::printTableHeader(sb, true)) {
+		return false;
+	}
+
 	// count # of spiders out
 	int32_t j = 0;
 	// first print the spider recs we are spidering
-	for ( int32_t i = 0 ; i < (int32_t)MAX_SPIDERS ; i++ ) {
+	for (int32_t i = 0; i < (int32_t)MAX_SPIDERS; i++) {
 		// get it
 		XmlDoc *xd = g_spiderLoop.m_docs[i];
 		// skip if empty
-		if ( ! xd ) continue;
+		if (!xd) continue;
 		// sanity check
-		if ( ! xd->m_sreqValid ) { g_process.shutdownAbort(true); }
+		if (!xd->m_sreqValid) { g_process.shutdownAbort(true); }
 		// grab it
 		SpiderRequest *oldsr = &xd->m_sreq;
 		// get status
 		const char *status = xd->m_statusMsg;
 		// show that
-		if ( ! oldsr->printToTable ( &sb , status,xd,j) ) return false;
+		if (!oldsr->printToTable(sb, status, xd, j)) return false;
 		// inc count
 		j++;
 	}
 	// now print the injections as well!
-	XmlDoc *xd = getInjectHead ( ) ;
-	for ( ; xd ; xd = xd->m_nextInject ) {
+	XmlDoc *xd = getInjectHead();
+	for (; xd; xd = xd->m_nextInject) {
 		// how does this happen?
-		if ( ! xd->m_sreqValid ) continue;
+		if (!xd->m_sreqValid) continue;
 		// grab it
 		SpiderRequest *oldsr = &xd->m_sreq;
 		// get status
 		SafeBuf xb;
-		xb.safePrintf("[<font color=red><b>injecting</b></font>] %s",
-		              xd->m_statusMsg);
+		xb.safePrintf("[<font color=red><b>injecting</b></font>] %s", xd->m_statusMsg);
 		char *status = xb.getBufStart();
 		// show that
-		if ( ! oldsr->printToTable ( &sb , status,xd,j) ) return false;
+		if (!oldsr->printToTable(sb, status, xd, j)) return false;
 		// inc count
 		j++;
 	}
 
 	// end the table
-	sb.safePrintf ( "</table>\n" );
-	sb.safePrintf ( "<br>\n" );
+	sb->safePrintf("</table>\n");
+	sb->safePrintf("<br>\n");
 
 	// then spider collection
-	SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
-
-
-	//
-	// spiderdb rec stats, from scanning spiderdb
-	//
-
-	// if not there, forget about it
-	if ( sc ) sc->printStats ( sb );
+	SpiderColl *sc = g_spiderCache.getSpiderColl(cr->m_collnum);
 
 	// done if no sc
 	if ( ! sc ) {
-		// get the socket
-		TcpSocket *s = st->m_socket;
-		// then we can nuke the state
-		mdelete ( st , sizeof(State11) , "PageSpiderdb" );
-		delete (st);
-		// erase g_errno for sending
-		g_errno = 0;
-		// now encapsulate it in html head/tail and send it off
-		return g_httpServer.sendDynamicPage (s, sb.getBufStart(),
-		                                     sb.length() );
+		return true;
 	}
 
 	/////
@@ -354,20 +307,18 @@ static bool sendPage(State11 *st) {
 	//
 	/////
 
-	int32_t ns = 0;
-	if ( sc ) ns = sc->getDoledbIpTableCount();
+	int32_t ns = sc->getDoledbIpTableCount();
 
 	// begin the table
-	sb.safePrintf ( "<table %s>\n"
-		                "<tr><td colspan=50>"
-		                "<b>URLs Ready to Spider for collection "
-		                "<font color=red><b>%s</b>"
-		                "</font>"
-		                " (%" PRId32" ips in doleiptable)"
-		,
-		TABLE_STYLE,
-		st->m_coll ,
-		ns );
+	sb->safePrintf ( "<table %s>\n"
+	                "<tr><td colspan=50>"
+	                "<b>URLs Ready to Spider for collection "
+	                "<font color=red><b>%s</b>"
+	                "</font>"
+	                " (%" PRId32" ips in doleiptable)",
+	                TABLE_STYLE,
+	                cr->m_coll ,
+	                ns );
 
 	// print time format: 7/23/1971 10:45:32
 	time_t nowUTC = getTimeGlobal();
@@ -376,19 +327,16 @@ static bool sendPage(State11 *st) {
 	struct tm tm_buf;
 	timeStruct = gmtime_r(&nowUTC,&tm_buf);
 	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
-	sb.safePrintf("</b>" //  (current time = %s = %" PRIu32") "
-		              "</td></tr>\n"
-		//,time,nowUTC
-	);
+	sb->safePrintf("</b></td></tr>\n");
 
 	// the table headers so SpiderRequest::printToTable() works
-	if ( ! SpiderRequest::printTableHeader ( &sb ,false ) ) return false;
+	if (!SpiderRequest::printTableHeader(sb, false)) return false;
 	// the the doledb spider recs
-	char *bs = st->m_safeBuf.getBufStart();
-	if ( bs && ! sb.safePrintf("%s",bs) ) return false;
+	const char *bs = doledbbuf->getBufStart();
+	if (bs && !sb->safePrintf("%s", bs)) return false;
 	// end the table
-	sb.safePrintf ( "</table>\n" );
-	sb.safePrintf ( "<br>\n" );
+	sb->safePrintf ( "</table>\n" );
+	sb->safePrintf ( "<br>\n" );
 
 
 
@@ -399,30 +347,26 @@ static bool sendPage(State11 *st) {
 	// each row is an ip. print the next url to spider for that ip.
 	//
 	/////////////////
-	sb.safePrintf ( "<table %s>\n"
-		                "<tr><td colspan=50>"
-		                "<b>IPs Waiting for Selection Scan for collection "
-		                "<font color=red><b>%s</b>"
-		                "</font>"
-		,
-		            TABLE_STYLE,
-		            st->m_coll );
+	sb->safePrintf ( "<table %s>\n"
+	                "<tr><td colspan=50>"
+	                "<b>IPs Waiting for Selection Scan for collection "
+	                "<font color=red><b>%s</b>"
+	                "</font>",
+	                TABLE_STYLE,
+	                cr->m_coll );
 	// print time format: 7/23/1971 10:45:32
 	int64_t timems = gettimeofdayInMilliseconds();
-	sb.safePrintf("</b> (current time = %" PRIu64")(totalcount=%" PRId32")"
-		"(waittablecount=%" PRId32")",
-		timems,
-		sc->m_waitingTree.getNumUsedNodes(),
-		sc->getWaitingTableCount());
+	sb->safePrintf("</b> (current time = %" PRIu64")(totalcount=%" PRId32")(waittablecount=%" PRId32")",
+	              timems, sc->m_waitingTree.getNumUsedNodes(), sc->getWaitingTableCount());
 
 	char ipbuf[16];
-	sb.safePrintf("(spiderdb scanning ip %s)", iptoa(sc->getScanningIp(),ipbuf));
+	sb->safePrintf("(spiderdb scanning ip %s)", iptoa(sc->getScanningIp(),ipbuf));
 
-	sb.safePrintf("</td></tr>\n");
-	sb.safePrintf("<tr bgcolor=#%s>",DARK_BLUE);
-	sb.safePrintf("<td><b>spidertime (MS)</b></td>\n");
-	sb.safePrintf("<td><b>firstip</b></td>\n");
-	sb.safePrintf("</tr>\n");
+	sb->safePrintf("</td></tr>\n");
+	sb->safePrintf("<tr bgcolor=#%s>",DARK_BLUE);
+	sb->safePrintf("<td><b>spidertime (MS)</b></td>\n");
+	sb->safePrintf("<td><b>firstip</b></td>\n");
+	sb->safePrintf("</tr>\n");
 	// the the waiting tree
 
 	int32_t count = 0;
@@ -443,34 +387,241 @@ static bool sendPage(State11 *st) {
 			const char *note = "";
 
 			// get the rest of the data
-			sb.safePrintf("<tr bgcolor=#%s>"
-				              "<td>%" PRId64"%s</td>"
-				"<td>%s</td>"
-				"</tr>\n",
-				LIGHT_BLUE,
-				(int64_t)spiderTimeMS,
-				note,
-				iptoa(firstIp,ipbuf));
+			sb->safePrintf("<tr bgcolor=#%s>"
+			              "<td>%" PRId64"%s</td>"
+			              "<td>%s</td>"
+			              "</tr>\n",
+			              LIGHT_BLUE,
+			              (int64_t)spiderTimeMS,
+			              note,
+			              iptoa(firstIp,ipbuf));
 			// stop after 20
 			if (++count == 20) break;
 		}
 	}
 	// ...
 	if ( count )
-		sb.safePrintf("<tr bgcolor=#%s>"
+		sb->safePrintf("<tr bgcolor=#%s>"
 			              "<td colspan=10>...</td></tr>\n",
 		              LIGHT_BLUE);
 	// end the table
-	sb.safePrintf ( "</table>\n" );
-	sb.safePrintf ( "<br>\n" );
+	sb->safePrintf ( "</table>\n" );
+	sb->safePrintf ( "<br>\n" );
 
-	// get the socket
-	TcpSocket *s = st->m_socket;
-	// then we can nuke the state
-	mdelete ( st , sizeof(State11) , "PageSpiderdb" );
-	delete (st);
-	// erase g_errno for sending
-	g_errno = 0;
-	// now encapsulate it in html head/tail and send it off
-	return g_httpServer.sendDynamicPage (s, sb.getBufStart(),sb.length() );
+	return true;
+}
+
+/*
+ * {
+ * "response": {
+ *     "statusCode": 0,
+ *     "statusMsg": "Job is initializing.",
+ *     "currentSpiders": 0,
+ *
+ * }
+ * }
+ */
+static bool generatePageJSON(CollectionRec *cr, SafeBuf *sb, const SafeBuf *doledbbuf) {
+	sb->safePrintf("{\n\"response\": {\n");
+
+	int32_t crawlStatus;
+	SafeBuf crawlMsg;
+	getSpiderStatusMsg ( cr , &crawlMsg , &crawlStatus );
+
+	sb->safePrintf("\t\"statusCode\": %d,\n", crawlStatus);
+	sb->safePrintf("\t\"statusMsg\": \"%s\",\n", crawlMsg.getBufStart());
+	sb->safePrintf("\t\"spiderCount\": %d,\n", g_spiderLoop.getNumSpidersOut());
+
+	sb->safePrintf("\t\"spiders\": [\n");
+
+	// count # of spiders out
+	int32_t j = 0;
+	// first print the spider recs we are spidering
+	for (int32_t i = 0; i < (int32_t)MAX_SPIDERS; i++) {
+		XmlDoc *xd = g_spiderLoop.m_docs[i];
+		if (!xd) {
+			continue;
+		}
+
+		// sanity check
+		if (!xd->m_sreqValid) {
+			g_process.shutdownAbort(true);
+		}
+
+		// grab it
+		SpiderRequest *oldsr = &xd->m_sreq;
+		if (!oldsr->printToJSON(sb, xd->m_statusMsg, xd, j)) {
+			return false;
+		}
+
+		j++;
+	}
+	// now print the injections as well!
+	XmlDoc *xd = getInjectHead();
+	for (; xd; xd = xd->m_nextInject) {
+		// how does this happen?
+		if (!xd->m_sreqValid) {
+			continue;
+		}
+
+		SpiderRequest *oldsr = &xd->m_sreq;
+
+		// get status
+		SafeBuf xb;
+		xb.safePrintf("injecting - %s", xd->m_statusMsg);
+
+		// show that
+		if (!oldsr->printToJSON(sb, xb.getBufStart(), xd, j)) {
+			return false;
+		}
+
+		// inc count
+		j++;
+	}
+
+	// end the table
+	sb->safePrintf("\t]\n");
+
+	// then spider collection
+	SpiderColl *sc = g_spiderCache.getSpiderColl(cr->m_collnum);
+
+	// done if no sc
+	if (!sc) {
+		sb->safePrintf("}\n}\n");
+		return true;
+	}
+
+	sb->safePrintf("\t,\n");
+
+	/////
+	//
+	// READY TO SPIDER table
+	//
+	/////
+
+	sb->safePrintf("\t\"doleIPCount\": %d,\n", sc->getDoledbIpTableCount());
+
+	sb->safePrintf("\t\"doleIPs\": [\n");
+
+	// the the doledb spider recs
+	const char *bs = doledbbuf->getBufStart();
+	if (bs && !sb->safePrintf("%s", bs)) {
+		return false;
+	}
+
+	sb->safePrintf("\t],\n");
+
+	/////////////////
+	//
+	// PRINT WAITING TREE
+	//
+	// each row is an ip. print the next url to spider for that ip.
+	//
+	/////////////////
+
+	sb->safePrintf("\t\"waitingTreeCount\": %d,\n", sc->m_waitingTree.getNumUsedNodes());
+
+	sb->safePrintf("\t\"waitingTrees\": [\n");
+
+	// the the waiting tree
+	char ipbuf[16];
+	int32_t count = 0;
+	{
+		ScopedLock sl(sc->m_waitingTree.getLock());
+		for (int32_t node = sc->m_waitingTree.getFirstNode_unlocked(); node >= 0; node = sc->m_waitingTree.getNextNode_unlocked(node)) {
+			// get key
+			const key96_t *key = reinterpret_cast<const key96_t *>(sc->m_waitingTree.getKey_unlocked(node));
+
+			// get ip from that
+			int32_t firstIp = (key->n0) & 0xffffffff;
+
+			// get the timedocs
+			uint64_t spiderTimeMS = key->n1;
+			// shift upp
+			spiderTimeMS <<= 32;
+			// or in
+			spiderTimeMS |= (key->n0 >> 32);
+
+			if (count != 0) {
+				sb->safePrintf("\t\t,\n");
+			}
+
+			sb->safePrintf("\t\t{\n");
+
+			sb->safePrintf("\t\t\t\"spiderTime\": %" PRIu64",\n", spiderTimeMS);
+			sb->safePrintf("\t\t\t\"firstIp\": \"%s\"\n", iptoa(firstIp,ipbuf));
+
+			sb->safePrintf("\t\t}\n");
+
+			// stop after 20
+			if (++count == 20) break;
+		}
+	}
+	sb->safePrintf("\t]\n");
+
+	sb->safePrintf("}\n}\n");
+
+	return true;
+}
+
+static bool sendPage(State11 *st) {
+	// generate a query string to pass to host bar
+	char qs[64]; sprintf ( qs , "&n=%" PRId32, st->m_numRecs );
+
+	// store the page in here!
+	SafeBuf sb;
+	if( !sb.reserve ( 64*1024 ) ) {
+		logError("Could not reserve needed mem, bailing!");
+		return false;
+	}
+
+	char format = st->m_r.getReplyFormat();
+
+	if (format == FORMAT_HTML) {
+		g_pages.printAdminTop(&sb, st->m_socket, &st->m_r, qs);
+	}
+
+	// get spider coll
+	collnum_t collnum = g_collectiondb.getCollnum ( st->m_coll );
+	// and coll rec
+	CollectionRec *cr = g_collectiondb.getRec ( collnum );
+	if ( ! cr ) {
+		// get the socket
+		TcpSocket *s = st->m_socket;
+		// then we can nuke the state
+		mdelete ( st , sizeof(State11) , "PageSpiderdb" );
+		delete (st);
+		// erase g_errno for sending
+		g_errno = 0;
+		// now encapsulate it in html head/tail and send it off
+		return g_httpServer.sendDynamicPage(s, sb.getBufStart(), sb.length());
+	}
+
+	bool result;
+	const char *contentType;
+	switch (format) {
+		case FORMAT_JSON:
+			result = generatePageJSON(cr, &sb, &st->m_safeBuf);
+			contentType = "application/json";
+			break;
+		case FORMAT_HTML:
+		default:
+			result = generatePageHTML(cr, &sb, &st->m_safeBuf);
+			contentType = NULL;
+			break;
+	}
+
+	if (result) {
+		// get the socket
+		TcpSocket *s = st->m_socket;
+		// then we can nuke the state
+		mdelete ( st , sizeof(State11) , "PageSpiderdb" );
+		delete (st);
+		// erase g_errno for sending
+		g_errno = 0;
+		// now encapsulate it in html head/tail and send it off
+		return g_httpServer.sendDynamicPage(s, sb.getBufStart(), sb.length(), -1, false, contentType);
+	}
+
+	return false;
 }

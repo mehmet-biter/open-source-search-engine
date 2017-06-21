@@ -45,10 +45,10 @@ UrlComponent::UrlComponent( UrlComponent::Type type, const char *pos, size_t len
 	: m_type ( type )
 	, m_componentStr( pos, len )
 	, m_separator( separator )
-	, m_keyLen( len )
 	, m_deleted( false) {
 	// normalize string
 	normalize( &m_componentStr );
+	m_keyLen = m_componentStr.size();
 
 	size_t separatorPos = m_componentStr.find( '=' );
 	if ( separatorPos == std::string::npos ) {

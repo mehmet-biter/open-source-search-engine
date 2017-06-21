@@ -8099,6 +8099,26 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log rdb index add list time threshold";
+	m->m_desc  = "If a rdb index add list took this many millliseconds or longer, then log the "
+		"time it took to process.";
+	m->m_cgi   = "rdbiltt";
+	simple_m_set(Conf,m_logRdbIndexAddListTimeThreshold);
+	m->m_def   = "100";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log rdb map add list threshold";
+	m->m_desc  = "If a rdb map add list took this many millliseconds or longer, then log the "
+		"time it took to process.";
+	m->m_cgi   = "rdbmltt";
+	simple_m_set(Conf,m_logRdbMapAddListTimeThreshold);
+	m->m_def   = "100";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log query time threshold";
 	m->m_desc  = "If a query took this many millliseconds or longer, then log the "
 		"query and the time it took to process.";
