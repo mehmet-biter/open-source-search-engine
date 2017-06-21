@@ -128,6 +128,8 @@ static const char * const g_files[] = {
 	"libtiff.so.4",
 
 	"libcld2_full.so",
+	"libcld3.so",
+	"libced.so",
 
 	"LICENSE",
 	"pngtopnm",
