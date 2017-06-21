@@ -45,6 +45,7 @@
 #include "UrlBlockList.h"
 #include <fcntl.h>
 
+#include "third-party/compact_enc_det/compact_enc_det/compact_enc_det.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -9034,6 +9035,7 @@ static uint16_t getCharsetFast(HttpMime *mime,
 	int16_t httpHeaderCharset = csUnknown;
 	int16_t unicodeBOMCharset = csUnknown;
 	int16_t metaCharset = csUnknown;
+	int16_t cedCharset = csUnknown;
 	bool invalidUtf8Encoding = false;
 
 	int16_t charset = csUnknown;
@@ -9066,30 +9068,6 @@ static uint16_t getCharsetFast(HttpMime *mime,
 
 	// prepare to scan doc
 	const char *p = pstart;
-
-	// if the doc claims it is utf-8 let's double check because
-	// newmexicomusic.org says its utf-8 in the mime header and it says
-	// it is another charset in a meta content tag, and it is NOT in
-	// utf-8, so don't trust that!
-	if ( charset == csUTF8 ) {
-		// loop over every char
-		for ( const char *s = pstart ; s < pend ; s += getUtf8CharSize(s) ) {
-			// sanity check
-			if ( ! isFirstUtf8Char ( s ) ) {
-				// note it
-				log(LOG_DEBUG,
-				    "build: mime says UTF8 but does not "
-				    "seem to be for url %s",url);
-				// reset it back to unknown then
-				charset = csUnknown;
-				invalidUtf8Encoding = true;
-				break;
-			}
-		}
-	}
-
-	// do not scan the doc if we already got it set
-	if ( charset != csUnknown ) p = pend;
 
 	//
 	// it is inefficient to set xml just to get the charset.
@@ -9199,24 +9177,8 @@ static uint16_t getCharsetFast(HttpMime *mime,
 		}
 	}
 
-        // alias these charsets so iconv understands
-	if ( charset == csISO58GB231280 ||
-	     charset == csHZGB2312      ||
-	     charset == csGB2312         )
-		charset = csGB18030;
-
-	if ( charset == csEUCKR )
-		charset = csKSC56011987; //x-windows-949
-
-	// use utf8 if still unknown
-	if ( charset == csUnknown ) {
-		if ( g_conf.m_logDebugSpider )
-			logf(LOG_DEBUG,"doc: forcing utf8 charset");
-		charset = csUTF8;
-	}
-
 	// once again, if the doc is claiming utf8 let's double check it!
-	if ( charset == csUTF8 ) {
+	if (charset == csUTF8) {
 		// use this for iterating
 		char size;
 		// loop over every char
@@ -9224,41 +9186,246 @@ static uint16_t getCharsetFast(HttpMime *mime,
 			// set
 			size = getUtf8CharSize(s);
 			// sanity check
-			if ( ! isFirstUtf8Char ( s ) ) {
-				// but let 0x80 slide? it is for the
-				// 0x80 0x99 apostrophe i've seen for
-				// eventvibe.com. it did have a first byte,
-				// 0xe2 that led that sequece but it was
-				// converted into &acirc; by something that
-				// thought it was a latin1 byte.
-				if ( s[0] == (char)0x80 &&
-				     s[1] == (char)0x99 ) {
-					s += 2;
-					size = 0;
-					continue;
-				}
+			if (!isFirstUtf8Char(s)) {
 				// note it
-				log(LOG_DEBUG,
-				    "build: says UTF8 (2) but does not "
-				    "seem to be for url %s"
-				    " Resetting to ISOLatin1.",url);
-				// reset it to ISO then! that's pretty common
-				// no! was causing problems for
-				// eventvibe.com/...Yacht because it had
-				// some messed up utf8 in it but it really
-				// was utf8. CRAP, but really messes up
-				// sunsetpromotions.com and washingtonia
-				// if we do not have this here
-				charset = csISOLatin1;
+				log(LOG_DEBUG, "build: says UTF8 but does not seem to be for url %s", url);
+				charset = csUnknown;
 				invalidUtf8Encoding = true;
 				break;
 			}
 		}
 	}
 
-	log(LOG_INFO, "encoding: charset='%s' header='%s' bom='%s' meta='%s' invalid=%d url='%s'",
+	const char *cedCharsetStr = NULL;
+	bool is_reliable = false;
+	if (charset == csUnknown) {
+		int bytes_consumed;
+		Encoding encoding = CompactEncDet::DetectEncoding(s, slen,
+		                                                  //url, get_charset_str(httpHeaderCharset), get_charset_str(metaCharset),
+		                                                  nullptr, nullptr, nullptr,
+		                                                  UNKNOWN_ENCODING, UNKNOWN_LANGUAGE,
+		                                                  CompactEncDet::WEB_CORPUS, false,
+		                                                  &bytes_consumed, &is_reliable);
+
+		switch (encoding) {
+			case ISO_8859_1:
+				cedCharset = csISOLatin1;
+				break;
+			case ISO_8859_2:
+				cedCharset = csISOLatin2;
+				break;
+			case ISO_8859_3:
+				cedCharset = csISOLatin3;
+				break;
+			case ISO_8859_4:
+				cedCharset = csISOLatin4;
+				break;
+			case ISO_8859_5:
+				cedCharset = csISOLatinCyrillic;
+				break;
+			case ISO_8859_6:
+				cedCharset = csISOLatinArabic;
+				break;
+			case ISO_8859_7:
+				cedCharset = csISOLatinGreek;
+				break;
+			case ISO_8859_8:
+				cedCharset = csISOLatinHebrew;
+				break;
+			case ISO_8859_9:
+				cedCharset = csISOLatin5;
+				break;
+			case ISO_8859_10:
+				cedCharset = cslatin6;
+				break;
+			case JAPANESE_EUC_JP:
+				cedCharset = csEUCJP;
+				break;
+			case JAPANESE_SHIFT_JIS:
+				cedCharset = csxsjis;
+				break;
+			case JAPANESE_JIS:
+				cedCharset = csJISEncoding;
+				break;
+			case CHINESE_BIG5:
+				cedCharset = csBig5;
+				break;
+			case CHINESE_GB:
+				cedCharset = csISO58GB231280;
+				break;
+
+//			case CHINESE_EUC_CN:       = 15,  // Misnamed. Should be EUC_TW
+
+			case KOREAN_EUC_KR:
+				cedCharset = csEUCKR;
+				break;
+			case UNICODE:
+				cedCharset = csUnicode;
+				break;
+
+//			case CHINESE_EUC_DEC:      = 18,  // Misnamed. Should be EUC_TW
+//			case CHINESE_CNS:          = 19,  // Misnamed. Should be EUC_TW
+//			case CHINESE_BIG5_CP950:   = 20,  // Teragram BIG5_CP950
+//			case JAPANESE_CP932:       = 21,  // Teragram CP932
+
+			case UTF8:
+				cedCharset = csUTF8;
+				break;
+			case UNKNOWN_ENCODING:
+				cedCharset = csUnknown;
+				break;
+			case ASCII_7BIT:
+				cedCharset = csASCII;
+				break;
+			case RUSSIAN_KOI8_R:
+				cedCharset = csKOI8R;
+				break;
+			case RUSSIAN_CP1251:
+				cedCharset = cswindows1251;
+				break;
+			case MSFT_CP1252:
+				cedCharset = cswindows1252;
+				break;
+			case RUSSIAN_KOI8_RU:
+				cedCharset = csKOI8U;
+				break;
+			case MSFT_CP1250:
+				cedCharset = cswindows1250;
+				break;
+			case ISO_8859_15:
+				cedCharset = csISO885915;
+				break;
+			case MSFT_CP1254:
+				cedCharset = cswindows1254;
+				break;
+			case MSFT_CP1257:
+				cedCharset = cswindows1257;
+				break;
+			case ISO_8859_11:
+			case MSFT_CP874:
+				cedCharset = csTIS620;
+				break;
+			case MSFT_CP1256:
+				cedCharset = cswindows1256;
+				break;
+			case MSFT_CP1255:
+				cedCharset = cswindows1255;
+				break;
+			case ISO_8859_8_I:
+				cedCharset = csISO88598I;
+				break;
+			case HEBREW_VISUAL:
+				cedCharset = csISOLatinHebrew;
+				break;
+			case CZECH_CP852:
+				cedCharset = csPCp852;
+				break;
+			case CZECH_CSN_369103:
+				cedCharset = csISO139CSN369103;
+				break;
+			case MSFT_CP1253:
+				cedCharset = cswindows1253;
+				break;
+			case RUSSIAN_CP866:
+				cedCharset = csIBM866;
+				break;
+			case ISO_8859_13:
+				cedCharset = csISO885913;
+				break;
+			case ISO_2022_KR:
+				cedCharset = csISO2022KR;
+				break;
+			case GBK:
+				cedCharset = csGBK;
+				break;
+			case GB18030:
+				cedCharset = csGB18030;
+				break;
+			case BIG5_HKSCS:
+				cedCharset = csBig5HKSCS;
+				break;
+			case ISO_2022_CN:
+				cedCharset = csISO2022CN;
+				break;
+
+//			case TSCII                = 49,
+//			case TAMIL_MONO           = 50,
+//			case TAMIL_BI             = 51,
+//			case JAGRAN               = 52,
+
+			case MACINTOSH_ROMAN:
+				cedCharset = csMacintosh;
+				break;
+			case UTF7:
+				cedCharset = csUTF7;
+				break;
+
+//			case BHASKAR              = 55,  // Indic encoding - Devanagari
+//			case HTCHANAKYA           = 56,  // 56 Indic encoding - Devanagari
+
+			case UTF16BE:
+				cedCharset = csUTF16BE;
+				break;
+			case UTF16LE:
+				cedCharset = csUTF16LE;
+				break;
+			case UTF32BE:
+				cedCharset = csUTF32BE;
+				break;
+			case UTF32LE:
+				cedCharset = csUTF32LE;
+				break;
+
+//			case BINARYENC            = 61,
+
+			case HZ_GB_2312:
+				cedCharset = csHZGB2312;
+				break;
+
+//			case UTF8UTF8             = 63,
+//			case TAM_ELANGO           = 64,  // Elango - Tamil
+//			case TAM_LTTMBARANI       = 65,  // Barani - Tamil
+//			case TAM_SHREE            = 66,  // Shree - Tamil
+//			case TAM_TBOOMIS          = 67,  // TBoomis - Tamil
+//			case TAM_TMNEWS           = 68,  // TMNews - Tamil
+//			case TAM_WEBTAMIL         = 69,  // Webtamil - Tamil
+//			case KDDI_SHIFT_JIS       = 70,
+//			case DOCOMO_SHIFT_JIS     = 71,
+//			case SOFTBANK_SHIFT_JIS   = 72,
+//			case KDDI_ISO_2022_JP     = 73,
+//			case SOFTBANK_ISO_2022_JP = 74,
+
+			default:
+				cedCharset = csUnknown;
+				break;
+		}
+
+		cedCharsetStr = EncodingName(encoding);
+
+		if (cedCharset != csUnknown) {
+			charset = cedCharset;
+		}
+	}
+
+	// alias these charsets so iconv understands
+	if (charset == csISO58GB231280 || charset == csHZGB2312 || charset == csGB2312) {
+		charset = csGB18030;
+	}
+
+	if (charset == csEUCKR) {
+		charset = csKSC56011987; //x-windows-949
+	}
+
+	// if we're still unknown at this point, default to original behaviour
+	bool defaultLatin1 = false;
+	if (charset == csUnknown) {
+		charset = csISOLatin1;
+		defaultLatin1 = true;
+	}
+
+	log(LOG_INFO, "encoding: charset='%s' header='%s' bom='%s' meta='%s' ced='%s' cedOri='%s' is_reliable=%d invalid=%d defaultLatin1=%d url='%s'",
 	    get_charset_str(charset), get_charset_str(httpHeaderCharset), get_charset_str(unicodeBOMCharset),
-	    get_charset_str(metaCharset), invalidUtf8Encoding, url);
+	    get_charset_str(metaCharset), get_charset_str(cedCharset), cedCharsetStr, is_reliable, invalidUtf8Encoding, defaultLatin1, url);
 
 	// all done
 	return charset;
@@ -10227,6 +10394,7 @@ char **XmlDoc::getUtf8Content ( ) {
 	char size;
 	for ( ; *x ; x += size ) {
 		size = getUtf8CharSize(x);
+		/// @todo ALC we should use U+FFFD (replacement character) instead
 		// ok, make it a space i guess if it is a bad utf8 char
 		if ( ! isValidUtf8Char(x) ) {
 			*x = ' ';
