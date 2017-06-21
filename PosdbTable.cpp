@@ -94,12 +94,12 @@ void PosdbTable::reset() {
 	m_siteRankMultiplier = 0.0;
 	m_addListsTime = 0;
 	m_t2 = 0;
-	m_qpos = NULL;
-	m_wikiPhraseIds = NULL;
-	m_quotedStartIds = NULL;
-	m_freqWeights = NULL;
-	m_bflags = NULL;
-	m_qtermNums = NULL;
+	m_qpos.clear();
+	m_wikiPhraseIds.clear();
+	m_quotedStartIds.clear();
+	m_freqWeights.clear();
+	m_bflags.clear();
+	m_qtermNums.clear();
 	m_bestMinTermPairWindowScore = 0.0;
 	m_bestMinTermPairWindowPtrs = NULL;
 	m_msg2 = NULL;
@@ -2672,7 +2672,7 @@ bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qti
 //	false - docid does not meet minimum score requirement
 //	true - docid can potentially be a top scoring docid
 //
-bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore) {
+bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf, float minWinningScore) {
 	unsigned char ringBuf[RINGBUFSIZE+10];
 
 	// reset ring buf. make all slots 0xff. should be 1000 cycles or so.
@@ -2843,7 +2843,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 		}
 
 		// query distance
-		qdist = qpos[m_minTermListIdx] - qpos[i];
+		qdist = m_qpos[m_minTermListIdx] - m_qpos[i];
 		// compute it
 		float maxScore2 = getMaxPossibleScore(&qtibuf[i],
 						      bestDist,
@@ -2885,7 +2885,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 	// all posdb keys for this docid should fit in here, the 
 	// mini merge buf:
 	char *mptr 	= miniMergeBuf;
-	miniMergeBufEnd -= 1000; //fragile hack but no worse than the original code
+	char *miniMergeBufSafeEnd = miniMergeBufEnd - 1000; //fragile hack but no worse than the original code
 	char *lastMptr = NULL;
 
 	// Merge each set of sublists, like we merge a term's list with 
@@ -3098,7 +3098,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 				}
 			} // mink != -1
 			//log("skipping ks=%" PRId32,(int32_t)ks);
-		} while( !currTermDone && mptr < miniMergeBufEnd );	// merge more ...
+		} while( !currTermDone && mptr < miniMergeBufSafeEnd );	// merge more ...
 
 		// wrap it up here since done merging
 		miniMergedListEnd[j] = mptr;		
@@ -3107,6 +3107,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 
 	// breach?
 	if ( mptr > miniMergeBufEnd ) {
+		log(LOG_ERROR,"%s:%s:%d: miniMergeBuf=%p miniMergeBufEnd=%p mptr=%p", __FILE__, __func__, __LINE__, miniMergeBuf, miniMergeBufEnd, mptr);
 		gbshutdownAbort(true);
 	}
 
@@ -3234,7 +3235,7 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const char **miniMergedListSta
 
 			// store in matrix for "sub out" algo below
 			// when doing sliding window
-			scoreMatrix[i*m_nqt+j] = wts;
+			scoreMatrix[i*m_numQueryTermInfos+j] = wts;
 		}
 	}
 	logTrace(g_conf.m_logTracePosdb, "END");
@@ -3247,6 +3248,8 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const char **miniMergedListSta
 //
 float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedListStart, const char **miniMergedListEnd, const char **highestScoringNonBodyPos, DocIdScore *pdcs) {
 	float minSingleScore = 999999999.0;
+	bool mergedListFound = false;
+	bool allSpecialTerms = true;
 	bool scoredTerm = false;
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
@@ -3259,15 +3262,20 @@ float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedListStart, con
 	//
 	// This should be highly negative if singles[i] has a '-' 
 	// termsign...
+
+
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		if ( ! miniMergedListStart[i] ) {
 			continue;
 		}
+		mergedListFound = true;
 
 		// skip if to the left of a pipe operator
 		if( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 			continue;
 		}
+
+		allSpecialTerms = false;
 
 		// sometimes there is no wordpos subtermlist for this docid
 		// because it just has the bigram, like "streetlight" and not
@@ -3301,7 +3309,12 @@ float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedListStart, con
 		}
 	}
 
-	if( !scoredTerm ) {
+	if( !mergedListFound || (!scoredTerm && !allSpecialTerms) ) {
+		// Fix default value if no single terms were scored, and all terms are not special (e.g. numbers).
+		// This returns -1 for documents matching bigrams only, and not single terms. Can happen when searching
+		// for "bridget jones" and a document has the text "bridgetjon es" as the only match (bigram).
+		//
+		// If terms are numbers, do NOT return -1, otherwise gbsortbyint queries do not work.
 		minSingleScore = -1;
 	}
 
@@ -3323,6 +3336,8 @@ float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedListStart, con
 void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **highestScoringNonBodyPos, float *scoreMatrix) {
 	int32_t qdist = 0;
 	float minTermPairScoreInWindow = 999999999.0;
+	bool mergedListFound = false;
+	bool allSpecialTerms = true;
 	bool scoredTerms = false;
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
@@ -3331,16 +3346,17 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 	// is the term whose position got advanced in the sliding window.
 
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos; i++ ) {
-
 		// skip if to the left of a pipe operator
-		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
+		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 			continue;
+		}
+		allSpecialTerms = false;
 
 		// skip empty list
 		if( !ptrs[i] ) {
 			continue;
 		}
-		
+		mergedListFound = true;
 
 		//if ( ptrs[i] ) wpi = ptrs[i];
 		// if term does not occur in body, sub-in the best term
@@ -3351,10 +3367,10 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 
 		// loop over other terms
 		for(int32_t j = i + 1; j < m_numQueryTermInfos; j++) {
-
 			// skip if to the left of a pipe operator
-			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
+			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 				continue;
+			}
 
 			// skip empty list
 			if( !ptrs[j] ) {
@@ -3425,8 +3441,8 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 			max *= m_freqWeights[i] * m_freqWeights[j];
 
 			// use score from scoreMatrix if bigger
-			if ( scoreMatrix[m_nqt*i+j] > max ) {
-				max = scoreMatrix[m_nqt*i+j];
+			if ( scoreMatrix[i*m_numQueryTermInfos+j] > max ) {
+				max = scoreMatrix[i*m_numQueryTermInfos+j];
 			}
 
 
@@ -3475,8 +3491,13 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 		}
 	}
 
+	if( !mergedListFound || (!scoredTerms && !allSpecialTerms) ) {
+		// Similar fix as in getMinSingleTermScoreSum, but should not happen in this function ...
+		minTermPairScoreInWindow = -1;
+	}
+
 	// Our best minimum score better than current best minimum score?
-	if ( minTermPairScoreInWindow <= m_bestMinTermPairWindowScore || !scoredTerms ) {
+	if ( minTermPairScoreInWindow <= m_bestMinTermPairWindowScore ) {
 		logTrace(g_conf.m_logTracePosdb, "END.");
 		return;
 	}
@@ -3575,6 +3596,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const char **miniMergedListSt
 	// if no terms in body, no need to do sliding window
 	bool doneSliding = allNull ? true : false;
 
+	logTrace(g_conf.m_logTracePosdb, "Run sliding window algo? %s", !doneSliding?"yes":"no, no matches found in body");
 
 	while( !doneSliding ) {
 		//
@@ -3708,7 +3730,6 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const char **miniMergedListSt
 			if ( ! miniMergedListStart[j] ) {
 				continue;
 			}
-
 			// . this limits its scoring to the winning sliding window
 			//   as far as the in-body terms are concerned
 			// . it will do sub-outs using the score matrix
@@ -3737,6 +3758,16 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const char **miniMergedListSt
 
 
 
+//simple wrapper around intersectLists_real() just for transforming std::bad_alloca exceptions in ENOMEM
+void PosdbTable::intersectLists() {
+	try {
+		intersectLists_real();
+	} catch(std::bad_alloc&) {
+		log(LOG_ERROR,"posdb: caught std::bad_alloc - out of memory");
+		if(g_errno==0)
+			g_errno = ENOMEM;
+	}
+}
 
 
 // . compare the output of this to intersectLists9_r()
@@ -3744,12 +3775,16 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const char **miniMergedListSt
 // . IDEAS:
 //   we could also note that if a term was not in the title or
 //   inlink text it could never beat the 10th score.
-void PosdbTable::intersectLists10_r ( ) {
+void PosdbTable::intersectLists_real() {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN. numTerms: %" PRId32, m_q->m_numTerms);
 
 	if(!allocateTopTree()) {
 		logTrace(g_conf.m_logTracePosdb, "END. could not allocate toptree");
 		g_errno = ENOMEM;
+		return;
+	}
+	if(m_topTree->getNumNodes()==0) {
+		logTrace(g_conf.m_logTracePosdb, "END. toptree has zero size");
 		return;
 	}
 
@@ -3794,45 +3829,20 @@ void PosdbTable::intersectLists10_r ( ) {
 
 	//
 	// TRANSFORM QueryTermInfo::m_* vars into old style arrays
-	//
-	// MUST MATCH allocation in allocTopScoringDocIdsData
-	//
-	int32_t   nqt = m_q->m_numTerms;
-	int32_t need  = 0;
-	need += 4 * nqt;				// wikiPhraseIds
-	need += 4 * nqt;				// quotedStartIds
-	need += 4 * nqt;				// qpos
-	need += 4 * nqt;				// qtermNums
-	need += sizeof(float ) * nqt;			// freqWeights
-	need += sizeof(char *) * nqt;			// miniMergedListStart
-	need += sizeof(char *) * nqt;			// miniMergedListEnd
-	need += sizeof(char *) * nqt;			// highestScoringNonBodyPos
-	need += sizeof(char *) * nqt;			// winnerStack
-	need += sizeof(char *) * nqt;			// xpos
-	need += sizeof(char  ) * nqt;			// bflags
-	need += sizeof(float ) * nqt * nqt; 	// scoreMatrix
-	SmallBuf<1024> workingStorageBuf("stkbuf1");
-	if(!workingStorageBuf.reserve(need)) {
-		g_errno = ENOMEM;
-		return;
-	}
 
-	char     *pp  = workingStorageBuf.getBufStart();
-	int32_t  *wikiPhraseIds  = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
-	int32_t  *quotedStartIds = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
-	int32_t  *qpos           = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
-	int32_t  *qtermNums      = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
-	float    *freqWeights    = (float   *)pp; pp += sizeof(float) * nqt;	// from QueryTermInfo
-	const char **miniMergedListStart = (const char **)pp; pp += sizeof(const char *) * nqt;
-	const char **miniMergedListEnd  = (const char **)pp; pp += sizeof(const char *) * nqt;
-	const char **highestScoringNonBodyPos	    = (const char **)pp; pp += sizeof(const char *) * nqt;	
-	const char **winnerStack    = (const char **)pp; pp += sizeof(const char *) * nqt;
-	const char **xpos	    = (const char **)pp; pp += sizeof(const char *) * nqt;
-	char     *bflags         = (char    *)pp; pp += sizeof(char) * nqt;
-	float    *scoreMatrix    = (float   *)pp; pp += sizeof(float) *nqt*nqt;
-	if ( pp > workingStorageBuf.getBufEnd() )
-		gbshutdownAbort(true);
-
+	m_wikiPhraseIds.resize(m_numQueryTermInfos);
+	m_quotedStartIds.resize(m_numQueryTermInfos);
+	m_qpos.resize(m_numQueryTermInfos);
+	m_qtermNums.resize(m_numQueryTermInfos);
+	m_freqWeights.resize(m_numQueryTermInfos);
+	m_bflags.resize(m_numQueryTermInfos);
+	std::vector<const char *> miniMergedListStart(m_numQueryTermInfos);
+	std::vector<const char *> miniMergedListEnd(m_numQueryTermInfos);
+	std::vector<const char *> highestScoringNonBodyPos(m_numQueryTermInfos);
+	std::vector<const char *> winnerStack(m_numQueryTermInfos);
+	std::vector<const char *> xpos(m_numQueryTermInfos);
+	std::vector<float>        scoreMatrix(m_numQueryTermInfos*m_numQueryTermInfos);
+	
 	int64_t lastTime = gettimeofdayInMilliseconds();
 	int64_t now;
 	int64_t took;
@@ -3846,21 +3856,13 @@ void PosdbTable::intersectLists10_r ( ) {
 		// get it
 		QueryTermInfo *qti = &qtibuf[i];
 		// set it
-		wikiPhraseIds [i] = qti->m_wikiPhraseId;
-		quotedStartIds[i] = qti->m_quotedStartId;
+		m_wikiPhraseIds [i] = qti->m_wikiPhraseId;
+		m_quotedStartIds[i] = qti->m_quotedStartId;
 		// query term position
-		qpos          [i] = qti->m_qpos;
-		qtermNums     [i] = qti->m_qtermNum;
-		freqWeights   [i] = qti->m_termFreqWeight;
+		m_qpos          [i] = qti->m_qpos;
+		m_qtermNums     [i] = qti->m_qtermNum;
+		m_freqWeights   [i] = qti->m_termFreqWeight;
 	}
-
-
-	// for findMinTermPairScoreInWindow() function
-	m_freqWeights = freqWeights;
-	m_qtermNums   = qtermNums;
-
-	m_bflags = bflags;
-
 
 
 	//////////
@@ -4094,7 +4096,7 @@ void PosdbTable::intersectLists10_r ( ) {
 
 					if ( minWinningScore >= 0.0 && m_sortByTermNum < 0 && m_sortByTermNumInt < 0 ) {
 
-						if( !prefilterMaxPossibleScoreByDistance(qtibuf, qpos, minWinningScore*completeScoreMultiplier) ) {
+						if( !prefilterMaxPossibleScoreByDistance(qtibuf, minWinningScore*completeScoreMultiplier) ) {
 							docIdPtr += 6;
 							prefiltBestDistMaxPossScoreFail++;
 							skipToNextDocId = true;
@@ -4139,7 +4141,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			//## the miniMerged* pointers point into..
 			//##
 
-			mergeTermSubListsForDocId(qtibuf, miniMergeBuf, miniMergeBuf+sizeof(miniMergeBuf), miniMergedListStart, miniMergedListEnd, &highestInlinkSiteRank);
+			mergeTermSubListsForDocId(qtibuf, miniMergeBuf, miniMergeBuf+sizeof(miniMergeBuf), &(miniMergedListStart[0]), &(miniMergedListEnd[0]), &highestInlinkSiteRank);
 
 			// clear the counts on this DocIdScore class for this new docid
 			pdcs = NULL;
@@ -4154,22 +4156,19 @@ void PosdbTable::intersectLists10_r ( ) {
 
 			if ( !m_q->m_isBoolean ) {
 				// Used by the various scoring functions called below
-				m_qpos				= qpos;
-				m_wikiPhraseIds		= wikiPhraseIds;
-				m_quotedStartIds	= quotedStartIds;
 				m_bestMinTermPairWindowScore	= -2.0;
 
 
 				//#
 				//# NON-BODY TERM PAIR SCORING LOOP
 				//#
-				createNonBodyTermPairScoreMatrix(miniMergedListStart, miniMergedListEnd, scoreMatrix);
+				createNonBodyTermPairScoreMatrix(&(miniMergedListStart[0]), &(miniMergedListEnd[0]), &(scoreMatrix[0]));
 
 
 				//#
 				//# SINGLE TERM SCORE LOOP
 				//#
-				minSingleScore = getMinSingleTermScoreSum(miniMergedListStart, miniMergedListEnd, highestScoringNonBodyPos, pdcs);
+				minSingleScore = getMinSingleTermScoreSum(&(miniMergedListStart[0]), &(miniMergedListEnd[0]), &(highestScoringNonBodyPos[0]), pdcs);
 				logTrace(g_conf.m_logTracePosdb, "minSingleScore=%f before multiplication for docId %" PRIu64 "", minSingleScore, m_docId);
 
 				minSingleScore *= completeScoreMultiplier;
@@ -4201,7 +4200,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				// term positions set ("window") that has the highest minimum score. These
 				// pointers are used when determining the minimum term pair score returned
 				// by the function.
-				float minPairScore = getMinTermPairScoreSlidingWindow(miniMergedListStart, miniMergedListEnd, highestScoringNonBodyPos, winnerStack, xpos, scoreMatrix, pdcs);
+				float minPairScore = getMinTermPairScoreSlidingWindow(&(miniMergedListStart[0]), &(miniMergedListEnd[0]), &(highestScoringNonBodyPos[0]), &(winnerStack[0]), &(xpos[0]), &(scoreMatrix[0]), pdcs);
 				logTrace(g_conf.m_logTracePosdb, "minPairScore=%f before multiplication for docId %" PRIu64 "", minPairScore, m_docId);
 
 				minPairScore *= completeScoreMultiplier;
@@ -4480,6 +4479,14 @@ void PosdbTable::intersectLists10_r ( ) {
 	m_addListsTime = now - t1;
 	m_t1 = t1;
 	m_t2 = now;
+
+	//opportunistic cleanup (memory release)
+	m_wikiPhraseIds.clear();
+	m_quotedStartIds.clear();
+	m_qpos.clear();
+	m_qtermNums.clear();
+	m_freqWeights.clear();
+	m_bflags.clear();
 
 	logTrace(g_conf.m_logTracePosdb, "END. Took %" PRId64" msec", m_addListsTime);
 }
@@ -4781,11 +4788,10 @@ bool PosdbTable::allocateTopTree() {
 		if(list && !list->isEmpty()) {
 			if(m_debug) {
 				log(LOG_INFO, "toptree: adding listsize %" PRId32" to nn2", list->getListSize());
-		
-				// each new docid in this termlist will compress
-				// the 6 byte termid out, so reduce by 6.
-				nn2 += list->getListSize() / (sizeof(posdbkey_t)-6);
 			}
+			// each new docid in this termlist will compress
+			// the 6 byte termid out, so reduce by 6.
+			nn2 += list->getListSize() / (sizeof(posdbkey_t)-6);
 		}
 	}
 

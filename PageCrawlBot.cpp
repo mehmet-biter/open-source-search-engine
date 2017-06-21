@@ -44,8 +44,8 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 			       "\t\"statusCode\":%" PRId32",\n"
 			       "\t\"statusMsg\":\"%s\",\n"
 			       , crawlStatus, tmp.getBufStart());
-		sb->safePrintf("\t\"currentTime\":%" PRIu32",\n", (uint32_t)getTimeGlobal() );
-		sb->safePrintf("\t\"currentTimeUTC\":%" PRIu32"\n", (uint32_t)getTimeGlobal() );
+		sb->safePrintf("\t\"processStartTime\":%" PRId64",\n", (g_process.m_processStartTime / 1000));
+		sb->safePrintf("\t\"currentTime\":%" PRIu32"\n", (uint32_t)getTimeGlobal() );
 		sb->safePrintf("\t}\n");
 		sb->safePrintf("}\n");
 	}
