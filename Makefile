@@ -266,13 +266,26 @@ all: gb
 
 
 # third party libraries
-LIBFILES = libcld2_full.so libced.so slacktee.sh
-LIBS += -Wl,-rpath=. -L. -lcld2_full -lced
+LIBFILES = libcld2_full.so libcld3.so libced.so slacktee.sh
+LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced
 
-
+CLD2_SRC_DIR=third-party/cld2/internal
 libcld2_full.so:
-	cd third-party/cld2/internal && CPPFLAGS="-ggdb -std=c++98" ./compile_libs.sh
-	ln -s third-party/cld2/internal/libcld2_full.so libcld2_full.so
+	cd $(CLD2_SRC_DIR) && CPPFLAGS="-ggdb -std=c++98" ./compile_libs.sh
+	ln -s $(CLD2_SRC_DIR)/libcld2_full.so libcld2_full.so
+
+CLD3_SRC_DIR=third-party/cld3/src
+libcld3.so:
+	mkdir -p $(CLD3_SRC_DIR)/cld_3/protos && protoc --proto_path=$(CLD3_SRC_DIR)/ --cpp_out=$(CLD3_SRC_DIR)/cld_3/protos/ $(CLD3_SRC_DIR)/*.proto
+	cd $(CLD3_SRC_DIR) && g++ -std=c++11 -shared -fPIC \
+	base.cc embedding_feature_extractor.cc embedding_network.cc feature_extractor.cc feature_types.cc fml_parser.cc \
+	language_identifier_features.cc lang_id_nn_params.cc nnet_language_identifier.cc registry.cc relevant_script_feature.cc \
+	sentence_features.cc script_span/fixunicodevalue.cc script_span/generated_entities.cc script_span/generated_ulscript.cc \
+	script_span/getonescriptspan.cc script_span/offsetmap.cc script_span/text_processing.cc script_span/utf8statetable.cc \
+	task_context.cc task_context_params.cc unicodetext.cc utils.cc workspace.cc \
+	cld_3/protos/sentence.pb.cc cld_3/protos/feature_extractor.pb.cc cld_3/protos/task_spec.pb.cc \
+	-o libcld3.so
+	ln -s $(CLD3_SRC_DIR)/libcld3.so libcld3.so
 
 libced.so:
 	cd third-party/compact_enc_det && cmake -DBUILD_SHARED_LIBS=ON . && make ced
@@ -286,12 +299,12 @@ Version.o: FORCE
 FORCE:
 
 
-gb: $(OBJS) main.o $(LIBFILES)
+gb: $(LIBFILES) $(OBJS) main.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ main.o $(OBJS) $(LIBS)
 
 
 .PHONY: static
-static: $(OBJS) main.o $(LIBFILES)
+static: $(LIBFILES) $(OBJS) main.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -static -o gb main.o $(OBJS) $(LIBS)
 
 
