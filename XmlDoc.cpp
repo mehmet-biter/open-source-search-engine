@@ -3525,12 +3525,12 @@ const char* XmlDoc::getLangIdSummaryCLD2() {
 	}
 
 	Title title;
-	if (!title.setTitleFromTags(xml, 80, m_contentType)) {
+	if (!title.setTitleFromTags(xml, MAX_TITLE_LEN - 1, m_contentType)) {
 		return "xx";
 	}
 
 	Summary summary;
-	if (!summary.setSummaryFromTags(xml, 180, title.getTitle(), title.getTitleLen())) {
+	if (!summary.setSummaryFromTags(xml, MAX_SUMMARY_LEN - 1, title.getTitle(), title.getTitleLen())) {
 		return "xx";
 	}
 
@@ -3544,12 +3544,12 @@ std::string XmlDoc::getLangIdSummaryCLD3() {
 	}
 
 	Title title;
-	if (!title.setTitleFromTags(xml, 80, m_contentType)) {
+	if (!title.setTitleFromTags(xml, MAX_TITLE_LEN - 1, m_contentType)) {
 		return "xx";
 	}
 
 	Summary summary;
-	if (!summary.setSummaryFromTags(xml, 180, title.getTitle(), title.getTitleLen())) {
+	if (!summary.setSummaryFromTags(xml, MAX_SUMMARY_LEN - 1, title.getTitle(), title.getTitleLen())) {
 		return "xx";
 	}
 
