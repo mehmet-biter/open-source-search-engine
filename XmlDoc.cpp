@@ -3501,12 +3501,12 @@ uint8_t XmlDoc::getLangIdSummary() {
 	}
 
 	Title title;
-	if (!title.setTitleFromTags(xml, MAX_TITLE_LEN, m_contentType)) {
+	if (!title.setTitleFromTags(xml, MAX_TITLE_LEN - 1, m_contentType)) {
 		return langUnknown;
 	}
 
 	Summary summary;
-	if (!summary.setSummaryFromTags(xml, MAX_SUMMARY_LEN, title.getTitle(), title.getTitleLen())) {
+	if (!summary.setSummaryFromTags(xml, MAX_SUMMARY_LEN - 1, title.getTitle(), title.getTitleLen())) {
 		return langUnknown;
 	}
 
