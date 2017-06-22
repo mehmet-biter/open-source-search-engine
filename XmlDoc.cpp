@@ -3428,7 +3428,7 @@ uint8_t *XmlDoc::getLangVector ( ) {
 	return v;
 }
 
-const char* XmlDoc::getLangIdCLD2(const char *content) {
+const char* XmlDoc::getLangIdCLD2(const char *content, int32_t contentLen) {
 	// detect language hints
 
 	// language tag format:
@@ -3458,8 +3458,6 @@ const char* XmlDoc::getLangIdCLD2(const char *content) {
 	int text_bytes = 0;
 	bool is_reliable = false;
 	int valid_prefix_bytes = 0;
-
-	int32_t contentLen = size_utf8Content > 0 ? (size_utf8Content - 1) : 0;
 
 	CLD2::Language language = CLD2::ExtDetectLanguageSummaryCheckUTF8(content,
 	                                                                  contentLen,
@@ -3503,12 +3501,12 @@ uint8_t XmlDoc::getLangIdSummary() {
 	}
 
 	Title title;
-	if (!title.setTitleFromTags(xml, 80, m_contentType)) {
+	if (!title.setTitleFromTags(xml, MAX_TITLE_LEN, m_contentType)) {
 		return langUnknown;
 	}
 
 	Summary summary;
-	if (!summary.setSummaryFromTags(xml, 180, title.getTitle(), title.getTitleLen())) {
+	if (!summary.setSummaryFromTags(xml, MAX_SUMMARY_LEN, title.getTitle(), title.getTitleLen())) {
 		return langUnknown;
 	}
 
@@ -3536,7 +3534,7 @@ const char* XmlDoc::getLangIdSummaryCLD2() {
 		return "xx";
 	}
 
-	return getLangIdCLD2(summary.getSummary());
+	return getLangIdCLD2(summary.getSummary(), summary.getSummaryLen());
 }
 
 std::string XmlDoc::getLangIdSummaryCLD3() {
@@ -3614,10 +3612,11 @@ uint8_t *XmlDoc::getLangId ( ) {
 	// reset g_errno
 	g_errno = 0;
 
-	const char *content = *getRawUtf8Content();
+	char contentTextBuf[contentLen];
+	int32_t contentTextBufLen = m_xml.getText(contentTextBuf, contentLen, 0, -1, true);
 
-	const char *langCLD2 = getLangIdCLD2(content);
-	std::string langCLD3 = getLangIdCLD3(content);
+	const char *langCLD2 = getLangIdCLD2(contentTextBuf, contentTextBufLen);
+	std::string langCLD3 = getLangIdCLD3(contentTextBuf);
 	uint8_t langSummary = getLangIdSummary();
 	const char *langSummaryCLD2 = getLangIdSummaryCLD2();
 	std::string langSummaryCLD3 = getLangIdSummaryCLD3();

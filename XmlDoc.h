@@ -336,7 +336,7 @@ public:
 	class Xml *getXml ( ) ;
 	uint8_t *getLangVector ( ) ;	
 	uint8_t *getLangId ( ) ;
-	const char* getLangIdCLD2(const char *content);
+	const char* getLangIdCLD2(const char *content, int32_t contentLen);
 	std::string getLangIdCLD3(const char *content);
 	uint8_t getLangIdSummary();
 	const char* getLangIdSummaryCLD2();
