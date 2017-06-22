@@ -617,7 +617,9 @@ int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node
 	int32_t n    = node2;
 
 	// truncate n to the # of nodes we have
-	if ( n > m_numNodes ) n = m_numNodes;
+	if (n > m_numNodes || n == -1) {
+		n = m_numNodes;
+	}
 
 	// keep a non visible tag stack
 	int32_t notVisible = 0;
