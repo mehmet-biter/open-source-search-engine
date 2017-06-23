@@ -11,9 +11,8 @@
 #include <stdint.h>
 
 /// Contains methods of language identification by various means.
-class LanguageIdentifier {
-public:
-	static uint8_t guessCountryTLD(const char *url);
+namespace LanguageIdentifier {
+
 };
 
 #endif // GB_LANGUAGEIDENTIFIER_H
