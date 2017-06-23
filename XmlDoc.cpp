@@ -3497,17 +3497,17 @@ std::string XmlDoc::getLangIdCLD3(const char *content) {
 uint8_t XmlDoc::getLangIdSummary() {
 	Xml *xml = getXml();
 	if (!xml || xml == (Xml *)-1) {
-		return langUnknown;
+		return langTranslingual;
 	}
 
 	Title title;
 	if (!title.setTitleFromTags(xml, MAX_TITLE_LEN - 1, m_contentType)) {
-		return langUnknown;
+		return langTranslingual;
 	}
 
 	Summary summary;
 	if (!summary.setSummaryFromTags(xml, MAX_SUMMARY_LEN - 1, title.getTitle(), title.getTitleLen())) {
-		return langUnknown;
+		return langTranslingual;
 	}
 
 	Words words;
@@ -3521,17 +3521,17 @@ uint8_t XmlDoc::getLangIdSummary() {
 const char* XmlDoc::getLangIdSummaryCLD2() {
 	Xml *xml = getXml();
 	if (!xml || xml == (Xml *)-1) {
-		return "xx";
+		return "yy";
 	}
 
 	Title title;
 	if (!title.setTitleFromTags(xml, MAX_TITLE_LEN - 1, m_contentType)) {
-		return "xx";
+		return "yy";
 	}
 
 	Summary summary;
 	if (!summary.setSummaryFromTags(xml, MAX_SUMMARY_LEN - 1, title.getTitle(), title.getTitleLen())) {
-		return "xx";
+		return "yy";
 	}
 
 	return getLangIdCLD2(summary.getSummary(), summary.getSummaryLen());
@@ -3540,17 +3540,17 @@ const char* XmlDoc::getLangIdSummaryCLD2() {
 std::string XmlDoc::getLangIdSummaryCLD3() {
 	Xml *xml = getXml();
 	if (!xml || xml == (Xml *)-1) {
-		return "xx";
+		return "yy";
 	}
 
 	Title title;
 	if (!title.setTitleFromTags(xml, MAX_TITLE_LEN - 1, m_contentType)) {
-		return "xx";
+		return "yy";
 	}
 
 	Summary summary;
 	if (!summary.setSummaryFromTags(xml, MAX_SUMMARY_LEN - 1, title.getTitle(), title.getTitleLen())) {
-		return "xx";
+		return "yy";
 	}
 
 	return getLangIdCLD3(summary.getSummary());
