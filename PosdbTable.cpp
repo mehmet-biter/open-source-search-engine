@@ -3778,7 +3778,7 @@ void PosdbTable::intersectLists() {
 void PosdbTable::intersectLists_real() {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN. numTerms: %" PRId32, m_q->m_numTerms);
 
-	if(!allocateTopTree()) {
+	if(m_topTree->getNumNodes()==0 && !allocateTopTree()) {
 		logTrace(g_conf.m_logTracePosdb, "END. could not allocate toptree");
 		g_errno = ENOMEM;
 		return;

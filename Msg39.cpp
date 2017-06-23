@@ -167,7 +167,6 @@ Msg39::~Msg39 () {
 
 void Msg39::reset() {
 	if ( m_inUse ) gbshutdownLogicError();
-	m_allocatedTree = false;
 	//m_numDocIdSplits = 1;
 	m_query.reset();
 	m_numTotalHits = 0;
@@ -767,9 +766,6 @@ void Msg39::intersectLists(const DocumentIndexChecker &documentIndexChecker) {
 	// if msg2 had ALL empty lists we can cut it short
 	//todo: check if msg2 lists are all null or empty. If so then bail out
 		//estimateHitsAndSendReply ( );
-
-	// do not re do it if doing docid range splitting
-	m_allocatedTree = true;
 
 	// print query term bit numbers here
 	for ( int32_t i = 0 ; m_debug && i < m_query.getNumTerms() ; i++ ) {
