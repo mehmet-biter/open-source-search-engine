@@ -4778,95 +4778,96 @@ void PosdbTable::prepareWhiteListTable()
 
 
 bool PosdbTable::allocateTopTree() {
-	int64_t nn1 = m_msg39req->m_docsToGet;
-	int64_t nn2 = 0;
-
-	// just add all up in case doing boolean OR or something
-	for(int k = 0; k < m_msg2->getNumLists(); k++) {
-		RdbList *list = m_msg2->getList(k);
+	//If all Msg2 rdblists are empty then don't do anything (there is nothing to rank or score)
+	bool allEmpty = true;
+	for(int i = 0; i < m_msg2->getNumLists(); i++) {
+		RdbList *list = m_msg2->getList(i);
 		
-		if(list && !list->isEmpty()) {
-			if(m_debug) {
-				log(LOG_INFO, "toptree: adding listsize %" PRId32" to nn2", list->getListSize());
-			}
-			// each new docid in this termlist will compress
-			// the 6 byte termid out, so reduce by 6.
-			nn2 += list->getListSize() / (sizeof(posdbkey_t)-6);
+		if(list && !list->isEmpty() && list->getListSize()>=18) {
+			allEmpty = false;
+			break;
 		}
 	}
-
-	// if doing docid range phases where we compute the winning docids
-	// for a range of docids to save memory, then we need to amp this up
-	if(m_msg39req->m_numDocIdSplits > 1) {
-		// if 1 split has only 1 docid the other splits
-		// might have 10 then this doesn't work, so make it
-		// a min of 100.
-		if(nn2 < 100)
-			nn2 = 100;
-		
-		// how many docid range splits are we doing?
-		nn2 *= m_msg39req->m_numDocIdSplits;
-		
-		// just in case one split is not as big
-		nn2 *= 2;
-
-		// boost this guy too since we compare it to nn2
-		if(nn1 < 100)
-			nn1 = 100;
-		
-		nn1 *= m_msg39req->m_numDocIdSplits;
-		nn1 *= 2;
-	}
-		
-	// do not go OOM just because client asked for 10B results and we
-	// only have like 100 results.
-	int64_t nn = gbmin(nn1,nn2);
-
-
-
-	// . do not alloc space for anything if all termlists are empty
-	// . before, even if nn was 0, top tree would alloc a bunch of nodes
-	//   and we don't want to do that now to save mem and so 
-	//   Msg39 can check 
-	//   if ( m_posdbTable.m_topTree->m_numNodes == 0 )
-	//   to see if it should
-	//   advance to the next docid range or not.
-	if(nn == 0)
+	if(allEmpty) {
+		if(m_debug)
+			log(LOG_DEBUG,"toptree: all Msg2 lists are empty");
 		return true;
-
-	// always at least 100 i guess. why? it messes up the
-	// m_scoreInfoBuf capacity and it cores
-	//if ( nn < 100 ) nn = 100;
-	// but 30 is ok since m_scoreInfo buf uses 32
-	nn = gbmax(nn,30);
-
-
+	}
+	
+	// Normally m_msg39req->m_docsToGet is something sensible such as 10 or 50. Some specialized queries or attempts
+	// at DOSing can set it to something unreasonable as 1.000.000. Internal functions such as QueryReindex sets
+	// m_msg39req->m_docsToGet to 99999999 meaning "all documents".
+	// We cannot protect against DOSs here, but the 99999999 value must be handled. The problem is that 99999999
+	// would likely cause OOM, so we have to size the toptree to what is actually in the database. And in the case
+	// the database-derived size causes OOM then we'd have to use the documentSplit functionality (which is
+	// currently defunct after nomerge2 branch was merged to master. See Msg39.cpp for details).
+	//
+	// Strategy:
+	//   - if m_msg39req->m_docsToGet is smallish then accept it. Only adjust as needed by enabled clustering.
+	//   - otherwise get an estimated list size from Posdb so we can put an upper (and better) limit on
+	//     m_msg39req->m_docsToGet instead of 99999999
+	
+	int32_t docsWanted;
+	if(m_msg39req->m_docsToGet <= 1000) {
+		// smallish, accept as-is
+		docsWanted = m_msg39req->m_docsToGet;
+		if(m_debug)
+			log(LOG_DEBUG, "toptree: docsToGet is small (%d), docsWanted = %d", m_msg39req->m_docsToGet, docsWanted);
+	} else {
+		//not small. Get list size estimates and estimate an upper limit on the number of documents that could possibly match.
+		//
+		//we cannot calculate the estimate based on m_msg2->getList(...)->getListSize() because m_msg2 only holds the lists
+		//from the current fileNumber (eg. posdb0007.dat) and we need the estimate over all the files + bucket
+		int64_t totalEstimatedEntries = 0;
+		for(int i=0; i<m_q->getNumTerms(); i++) {
+			int64_t termId = m_q->getTermId(i);
+			int64_t estimatedTermListSize = g_posdb.estimateLocalTermListSize(m_msg39req->m_collnum, termId);
+			logTrace(g_conf.m_logTracePosdb, "allocateTopTree: termId=%ld, estimatedTermListSize=%ld bytes", termId, estimatedTermListSize);
+			//If we have listsize=54 then due to the double compression of posdb entries it could be one
+			//document with 7 entries, or four documents with one entry each
+			//The latter is the worst case so we'll use that.
+			int32_t estimatedEntries = estimatedTermListSize / (sizeof(posdbkey_t)-6);
+			totalEstimatedEntries += estimatedEntries;
+		}
+		logTrace(g_conf.m_logTracePosdb, "totalEstimatedEntries=%ld", totalEstimatedEntries);
+		if(m_msg39req->m_docsToGet < totalEstimatedEntries) {
+			//wants less than what is in the DB. excellent
+			docsWanted = m_msg39req->m_docsToGet;
+		} else {
+			//wants as much or more than there is in the DB. Hmmm.
+			if(totalEstimatedEntries > INT32_MAX) { //32bit overflow
+				log(LOG_ERROR,"toptree: estimated number of documents = %ld. Cannot squeeze that into a TopTree", totalEstimatedEntries);
+				return false;
+			}
+			docsWanted = totalEstimatedEntries;
+		}
+		if(m_debug)
+			log(LOG_DEBUG, "toptree: docsToGet is large (%d), docsWanted = %d", m_msg39req->m_docsToGet, docsWanted);
+	}
+	
+	//Magic multiplication. Original source had no comment on why this was done. TopTree appears to already
+	//take care of enlarging the allocation if clustering is enabled, so uhm... ?
 	if(m_msg39req->m_doSiteClustering)
-		nn *= 2;
+		docsWanted *= 2;
 
 	// limit to 2B docids i guess
-	nn = gbmin(nn,2000000000);
+	docsWanted = gbmin(docsWanted,2000000000);
 
 	if(m_debug)
-		log(LOG_INFO, "toptree: toptree: initializing %" PRId64" nodes",nn);
+		log(LOG_INFO, "toptree: toptree: initializing %d nodes",docsWanted);
 
-	if(nn < m_msg39req->m_docsToGet) {
-		log("query: warning only getting up to %" PRId64" docids "
-		    "even though %" PRId32" requested because termlist "
-		    "sizes are so small!! splits=%" PRId32
-		    , nn
-		    , m_msg39req->m_docsToGet 
-		    , (int32_t)m_msg39req->m_numDocIdSplits
-		    );
+	if(docsWanted < m_msg39req->m_docsToGet) {
+		log("query: warning only getting up to %d docids even though %d requested because termlist sizes are smaller",
+		    docsWanted, m_msg39req->m_docsToGet);
 	}
 
 	// keep it sane
-	if(nn > (int64_t)m_msg39req->m_docsToGet * 2 && nn > 60) {
-		nn = (int64_t)m_msg39req->m_docsToGet * 2;
+	if(docsWanted > m_msg39req->m_docsToGet * 2 && docsWanted > 60) {
+		docsWanted = m_msg39req->m_docsToGet * 2;
 	}
 
 	// this actually sets the # of nodes to MORE than nn!!!
-	if(!m_topTree->setNumNodes(nn,m_msg39req->m_doSiteClustering)) {
+	if(!m_topTree->setNumNodes(docsWanted, m_msg39req->m_doSiteClustering)) {
 		log("toptree: toptree: error allocating nodes: %s",
 		    mstrerror(g_errno));
 		return false;

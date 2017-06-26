@@ -408,6 +408,7 @@ void Msg39::controlLoop ( ) {
 	const int numFiles = base->getNumFiles(); //todo: this can vary if a merge finishes during the query
 
 	//todo: choose docid splits based on expected largest rdblist / most common term
+	//when fixing/re-implementing the docidsplit mechanism fix PosdbTable::allocateTopTree() too
 	int numDocIdSplits = 1;
 	const int totalChunks = (numFiles+1)*numDocIdSplits;
 	int chunksSearched = 0;

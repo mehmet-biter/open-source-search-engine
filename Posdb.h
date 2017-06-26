@@ -320,6 +320,7 @@ class Posdb {
 		return ((*(const uint16_t *)key) >> 4) & MAXMULTIPLIER; }
 
 	int64_t getTermFreq ( collnum_t collnum, int64_t termId ) ;
+	int64_t estimateLocalTermListSize(collnum_t collnum, int64_t termId);
 
 	Rdb      *getRdb   ( ) { return &m_rdb; }
 
@@ -338,6 +339,7 @@ class RdbCache;
 extern Posdb g_posdb;
 extern Posdb g_posdb2;
 extern RdbCache g_termFreqCache;
+extern RdbCache g_termListSize;
 
 void reinitializeRankingSettings();
 
