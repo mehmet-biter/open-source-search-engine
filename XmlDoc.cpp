@@ -3501,13 +3501,13 @@ uint8_t XmlDoc::getLangIdSummary() {
 	}
 
 	Title title;
-	if (!title.setTitleFromTags(xml, MAX_TITLE_LEN - 1, m_contentType)) {
-		return langTranslingual;
+	if (!title.setTitleFromTags(xml, 80, m_contentType)) {
+		return langUnknown;
 	}
 
 	Summary summary;
-	if (!summary.setSummaryFromTags(xml, MAX_SUMMARY_LEN - 1, title.getTitle(), title.getTitleLen())) {
-		return langTranslingual;
+	if (!summary.setSummaryFromTags(xml, 180, title.getTitle(), title.getTitleLen())) {
+		return langUnknown;
 	}
 
 	Words words;
@@ -3525,12 +3525,12 @@ const char* XmlDoc::getLangIdSummaryCLD2() {
 	}
 
 	Title title;
-	if (!title.setTitleFromTags(xml, MAX_TITLE_LEN - 1, m_contentType)) {
+	if (!title.setTitleFromTags(xml, 80, m_contentType)) {
 		return "yy";
 	}
 
 	Summary summary;
-	if (!summary.setSummaryFromTags(xml, MAX_SUMMARY_LEN - 1, title.getTitle(), title.getTitleLen())) {
+	if (!summary.setSummaryFromTags(xml, 180, title.getTitle(), title.getTitleLen())) {
 		return "yy";
 	}
 
@@ -3544,12 +3544,12 @@ std::string XmlDoc::getLangIdSummaryCLD3() {
 	}
 
 	Title title;
-	if (!title.setTitleFromTags(xml, MAX_TITLE_LEN - 1, m_contentType)) {
+	if (!title.setTitleFromTags(xml, 80, m_contentType)) {
 		return "yy";
 	}
 
 	Summary summary;
-	if (!summary.setSummaryFromTags(xml, MAX_SUMMARY_LEN - 1, title.getTitle(), title.getTitleLen())) {
+	if (!summary.setSummaryFromTags(xml, 180, title.getTitle(), title.getTitleLen())) {
 		return "yy";
 	}
 
