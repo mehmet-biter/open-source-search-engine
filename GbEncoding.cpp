@@ -179,7 +179,7 @@ uint16_t GbEncoding::getCharset(HttpMime *mime, const char *url, const char *s, 
 
 	int bytes_consumed;
 	Encoding encoding = CompactEncDet::DetectEncoding(s, slen,
-		//url, get_charset_str(httpHeaderCharset), get_charset_str(metaCharset),
+		                                              //url, get_charset_str(httpHeaderCharset), get_charset_str(metaCharset),
 		                                              nullptr, nullptr, nullptr,
 		                                              UNKNOWN_ENCODING, UNKNOWN_LANGUAGE,
 		                                              CompactEncDet::WEB_CORPUS, false,
@@ -380,7 +380,8 @@ uint16_t GbEncoding::getCharset(HttpMime *mime, const char *url, const char *s, 
 
 	cedCharsetStr = EncodingName(encoding);
 
-	if (charset == csUnknown && cedCharset != csUnknown) {
+	// we'll always use cedCharset when it's reliable or when charset is not already known
+	if (cedCharset != csUnknown && (is_reliable || charset == csUnknown)) {
 		charset = cedCharset;
 	}
 
