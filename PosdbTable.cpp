@@ -2955,11 +2955,9 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 		// Merge the lists into a list in miniMergeBuf.
 		// Get the min of each list
 		bool currTermDone = false;
-		char ks;
 
 		do {
 			int32_t mink = -1;
-			ks = 0;
 
 			for ( int32_t k = 0 ; k < nsub ; k++ ) {
 				// skip if list is exhausted
@@ -2985,7 +2983,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 			}
 			else {
 				// get keysize
-				ks = Posdb::getKeySize(nwp[mink]);
+				char ks = Posdb::getKeySize(nwp[mink]);
 
 				// HACK OF CONFUSION:
 				//
