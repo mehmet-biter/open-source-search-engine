@@ -2956,7 +2956,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 		// Get the min of each list
 		bool currTermDone = false;
 
-		do {
+		while( !currTermDone && mptr < miniMergeBufSafeEnd ) {
 			int32_t mink = -1;
 
 			for ( int32_t k = 0 ; k < nsub ; k++ ) {
@@ -3096,7 +3096,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 				}
 			} // mink != -1
 			//log("skipping ks=%" PRId32,(int32_t)ks);
-		} while( !currTermDone && mptr < miniMergeBufSafeEnd );	// merge more ...
+		}
 
 		// wrap it up here since done merging
 		miniMergedListEnd[j] = mptr;		
