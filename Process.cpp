@@ -994,6 +994,7 @@ void Process::resetAll ( ) {
 
 	// termfreq cache in Posdb.cpp
 	g_termFreqCache.reset();
+	g_termListSize.reset();
 
 	g_wiktionary.reset();
 

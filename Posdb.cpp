@@ -255,13 +255,11 @@ void Posdb::makeKey ( void              *vkp            ,
 }
 
 RdbCache g_termFreqCache;
+RdbCache g_termListSize;
 static bool s_cacheInit = false;
 
-// . accesses RdbMap to estimate size of the indexList for this termId
-// . returns an UPPER BOUND
-// . because this is over POSDB now and not indexdb, a document is counted
-//   once for every occurence of term "termId" it has... :{
-int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
+
+static void initializeCaches() {
 	if ( ! s_cacheInit ) {
 		int32_t maxMem = 5000000; // 5MB now... save mem (was: 20000000)
 		int32_t maxNodes = maxMem / 17; // 8+8+1
@@ -277,11 +275,32 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 					     ))
 			log("posdb: failed to init termfreqcache: %s",
 			    mstrerror(g_errno));
+		if(!g_termListSize.init(maxMem   , // maxmem 20MB
+					8        , // fixed data size
+					false    , // supportlists?
+					maxNodes ,
+					false    , // use half keys?
+					"tscache", // dbname
+					false    , // load from disk?
+					8        , // cache key size
+					0          // data key size
+		                       ))
+			log("posdb: failed to init termlistsizecache: %s",
+			    mstrerror(g_errno));
 		// ignore errors
 		g_errno = 0;
 		s_cacheInit = true;
 	}
+}
 
+
+// . accesses RdbMap to estimate size of the indexList for this termId
+// . returns an UPPER BOUND
+// . because this is over POSDB now and not indexdb, a document is counted
+//   once for every occurence of term "termId" it has... :{
+int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
+	initializeCaches();
+	
 	// . check cache for super speed
 	// . colnum is 0 for now
 	RdbCacheLock rcl(g_termFreqCache); //todo: we should really release the lock while scanning the posdb-freq
@@ -331,6 +350,57 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 	g_termFreqCache.addLongLong2 ( collnum, termId, maxRecs );
 	// return it
 	return maxRecs;
+}
+
+
+int64_t Posdb::estimateLocalTermListSize(collnum_t collnum, int64_t termId) {
+	initializeCaches();
+	
+	// . check cache for super speed
+	// . colnum is 0 for now
+	RdbCacheLock rcl(g_termListSize); //todo: we should really release the lock while scanning the posdb-freq
+	int64_t val = g_termListSize.getLongLong2(collnum,
+						  termId,  // key
+						  500,     // maxage secs
+						  true);   // promote?
+
+
+
+	// -1 means not found in cache. if found, return it though.
+	if(val>=0) {
+		//log("posdb: got %" PRId64" in cache",val);
+		return val;
+	}
+
+	// . ask rdb for an upper bound on this list size
+	// . but actually, it will be somewhat of an estimate 'cuz of RdbTree
+	// establish the list boundary keys
+	key144_t startKey;
+	key144_t endKey;
+	key144_t maxKey;
+	makeStartKey(&startKey, termId);
+	makeEndKey  (&endKey  , termId);
+
+	int64_t maxBytes = m_rdb.estimateListSize(collnum,
+						  (const char*)&startKey,
+						  (const char*)&endKey,
+						  (char *)&maxKey,
+						  -1); //no truncation
+
+	RdbBuckets *buckets = m_rdb.getBuckets();
+	if(!buckets) {
+		log(LOG_LOGIC, "%s:%s:%d: No buckets!", __FILE__, __func__, __LINE__);
+		gbshutdownLogicError();
+	}
+
+	int64_t bucketsBytes = buckets->estimateListSize(collnum, (const char *)&startKey, (const char *)&endKey, NULL, NULL);
+
+	maxBytes += bucketsBytes;
+
+	// now cache it. it sets g_errno to zero.
+	g_termListSize.addLongLong2(collnum, termId, maxBytes);
+
+	return maxBytes;
 }
 
 
