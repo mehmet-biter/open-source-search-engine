@@ -14,7 +14,6 @@
 #include "Tagdb.h"
 #include "Repair.h"
 #include "HashTableX.h"
-#include "LanguageIdentifier.h" // g_langId
 #include "CountryCode.h" // g_countryCode
 #include "sort.h"
 #include "Wiki.h"

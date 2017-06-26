@@ -3,7 +3,6 @@
 #include "Msg40.h"
 #include "Stats.h"        // for timing and graphing time to get all summaries
 #include "Collectiondb.h"
-#include "LanguageIdentifier.h"
 #include "sort.h"
 #include "matches2.h"
 #include "XmlDoc.h" // computeSimilarity()
