@@ -9360,213 +9360,212 @@ static uint16_t getCharsetFast(HttpMime *mime,
 
 	const char *cedCharsetStr = NULL;
 	bool is_reliable = false;
-	if (charset == csUnknown) {
-		int bytes_consumed;
-		Encoding encoding = CompactEncDet::DetectEncoding(s, slen,
-		                                                  //url, get_charset_str(httpHeaderCharset), get_charset_str(metaCharset),
-		                                                  nullptr, nullptr, nullptr,
-		                                                  UNKNOWN_ENCODING, UNKNOWN_LANGUAGE,
-		                                                  CompactEncDet::WEB_CORPUS, false,
-		                                                  &bytes_consumed, &is_reliable);
 
-		switch (encoding) {
-			case ISO_8859_1:
-				cedCharset = csISOLatin1;
-				break;
-			case ISO_8859_2:
-				cedCharset = csISOLatin2;
-				break;
-			case ISO_8859_3:
-				cedCharset = csISOLatin3;
-				break;
-			case ISO_8859_4:
-				cedCharset = csISOLatin4;
-				break;
-			case ISO_8859_5:
-				cedCharset = csISOLatinCyrillic;
-				break;
-			case ISO_8859_6:
-				cedCharset = csISOLatinArabic;
-				break;
-			case ISO_8859_7:
-				cedCharset = csISOLatinGreek;
-				break;
-			case ISO_8859_8:
-				cedCharset = csISOLatinHebrew;
-				break;
-			case ISO_8859_9:
-				cedCharset = csISOLatin5;
-				break;
-			case ISO_8859_10:
-				cedCharset = cslatin6;
-				break;
-			case JAPANESE_EUC_JP:
-				cedCharset = csEUCJP;
-				break;
-			case JAPANESE_SHIFT_JIS:
-				cedCharset = csxsjis;
-				break;
-			case JAPANESE_JIS:
-				cedCharset = csJISEncoding;
-				break;
-			case CHINESE_BIG5:
-				cedCharset = csBig5;
-				break;
-			case CHINESE_GB:
-				cedCharset = csISO58GB231280;
-				break;
+	int bytes_consumed;
+	Encoding encoding = CompactEncDet::DetectEncoding(s, slen,
+	                                                  //url, get_charset_str(httpHeaderCharset), get_charset_str(metaCharset),
+	                                                  nullptr, nullptr, nullptr,
+	                                                  UNKNOWN_ENCODING, UNKNOWN_LANGUAGE,
+	                                                  CompactEncDet::WEB_CORPUS, false,
+	                                                  &bytes_consumed, &is_reliable);
 
-//			case CHINESE_EUC_CN:       = 15,  // Misnamed. Should be EUC_TW
+	switch (encoding) {
+		case ISO_8859_1:
+			cedCharset = csISOLatin1;
+			break;
+		case ISO_8859_2:
+			cedCharset = csISOLatin2;
+			break;
+		case ISO_8859_3:
+			cedCharset = csISOLatin3;
+			break;
+		case ISO_8859_4:
+			cedCharset = csISOLatin4;
+			break;
+		case ISO_8859_5:
+			cedCharset = csISOLatinCyrillic;
+			break;
+		case ISO_8859_6:
+			cedCharset = csISOLatinArabic;
+			break;
+		case ISO_8859_7:
+			cedCharset = csISOLatinGreek;
+			break;
+		case ISO_8859_8:
+			cedCharset = csISOLatinHebrew;
+			break;
+		case ISO_8859_9:
+			cedCharset = csISOLatin5;
+			break;
+		case ISO_8859_10:
+			cedCharset = cslatin6;
+			break;
+		case JAPANESE_EUC_JP:
+			cedCharset = csEUCJP;
+			break;
+		case JAPANESE_SHIFT_JIS:
+			cedCharset = csxsjis;
+			break;
+		case JAPANESE_JIS:
+			cedCharset = csJISEncoding;
+			break;
+		case CHINESE_BIG5:
+			cedCharset = csBig5;
+			break;
+		case CHINESE_GB:
+			cedCharset = csISO58GB231280;
+			break;
 
-			case KOREAN_EUC_KR:
-				cedCharset = csEUCKR;
-				break;
-			case UNICODE:
-				cedCharset = csUnicode;
-				break;
+//		case CHINESE_EUC_CN:       = 15,  // Misnamed. Should be EUC_TW
 
-//			case CHINESE_EUC_DEC:      = 18,  // Misnamed. Should be EUC_TW
-//			case CHINESE_CNS:          = 19,  // Misnamed. Should be EUC_TW
-//			case CHINESE_BIG5_CP950:   = 20,  // Teragram BIG5_CP950
-//			case JAPANESE_CP932:       = 21,  // Teragram CP932
+		case KOREAN_EUC_KR:
+			cedCharset = csEUCKR;
+			break;
+		case UNICODE:
+			cedCharset = csUnicode;
+			break;
 
-			case UTF8:
-				cedCharset = csUTF8;
-				break;
-			case UNKNOWN_ENCODING:
-				cedCharset = csUnknown;
-				break;
-			case ASCII_7BIT:
-				cedCharset = csASCII;
-				break;
-			case RUSSIAN_KOI8_R:
-				cedCharset = csKOI8R;
-				break;
-			case RUSSIAN_CP1251:
-				cedCharset = cswindows1251;
-				break;
-			case MSFT_CP1252:
-				cedCharset = cswindows1252;
-				break;
-			case RUSSIAN_KOI8_RU:
-				cedCharset = csKOI8U;
-				break;
-			case MSFT_CP1250:
-				cedCharset = cswindows1250;
-				break;
-			case ISO_8859_15:
-				cedCharset = csISO885915;
-				break;
-			case MSFT_CP1254:
-				cedCharset = cswindows1254;
-				break;
-			case MSFT_CP1257:
-				cedCharset = cswindows1257;
-				break;
-			case ISO_8859_11:
-			case MSFT_CP874:
-				cedCharset = csTIS620;
-				break;
-			case MSFT_CP1256:
-				cedCharset = cswindows1256;
-				break;
-			case MSFT_CP1255:
-				cedCharset = cswindows1255;
-				break;
-			case ISO_8859_8_I:
-				cedCharset = csISO88598I;
-				break;
-			case HEBREW_VISUAL:
-				cedCharset = csISOLatinHebrew;
-				break;
-			case CZECH_CP852:
-				cedCharset = csPCp852;
-				break;
-			case CZECH_CSN_369103:
-				cedCharset = csISO139CSN369103;
-				break;
-			case MSFT_CP1253:
-				cedCharset = cswindows1253;
-				break;
-			case RUSSIAN_CP866:
-				cedCharset = csIBM866;
-				break;
-			case ISO_8859_13:
-				cedCharset = csISO885913;
-				break;
-			case ISO_2022_KR:
-				cedCharset = csISO2022KR;
-				break;
-			case GBK:
-				cedCharset = csGBK;
-				break;
-			case GB18030:
-				cedCharset = csGB18030;
-				break;
-			case BIG5_HKSCS:
-				cedCharset = csBig5HKSCS;
-				break;
-			case ISO_2022_CN:
-				cedCharset = csISO2022CN;
-				break;
+//		case CHINESE_EUC_DEC:      = 18,  // Misnamed. Should be EUC_TW
+//		case CHINESE_CNS:          = 19,  // Misnamed. Should be EUC_TW
+//		case CHINESE_BIG5_CP950:   = 20,  // Teragram BIG5_CP950
+//		case JAPANESE_CP932:       = 21,  // Teragram CP932
 
-//			case TSCII                = 49,
-//			case TAMIL_MONO           = 50,
-//			case TAMIL_BI             = 51,
-//			case JAGRAN               = 52,
+		case UTF8:
+			cedCharset = csUTF8;
+			break;
+		case UNKNOWN_ENCODING:
+			cedCharset = csUnknown;
+			break;
+		case ASCII_7BIT:
+			cedCharset = csASCII;
+			break;
+		case RUSSIAN_KOI8_R:
+			cedCharset = csKOI8R;
+			break;
+		case RUSSIAN_CP1251:
+			cedCharset = cswindows1251;
+			break;
+		case MSFT_CP1252:
+			cedCharset = cswindows1252;
+			break;
+		case RUSSIAN_KOI8_RU:
+			cedCharset = csKOI8U;
+			break;
+		case MSFT_CP1250:
+			cedCharset = cswindows1250;
+			break;
+		case ISO_8859_15:
+			cedCharset = csISO885915;
+			break;
+		case MSFT_CP1254:
+			cedCharset = cswindows1254;
+			break;
+		case MSFT_CP1257:
+			cedCharset = cswindows1257;
+			break;
+		case ISO_8859_11:
+		case MSFT_CP874:
+			cedCharset = csTIS620;
+			break;
+		case MSFT_CP1256:
+			cedCharset = cswindows1256;
+			break;
+		case MSFT_CP1255:
+			cedCharset = cswindows1255;
+			break;
+		case ISO_8859_8_I:
+			cedCharset = csISO88598I;
+			break;
+		case HEBREW_VISUAL:
+			cedCharset = csISOLatinHebrew;
+			break;
+		case CZECH_CP852:
+			cedCharset = csPCp852;
+			break;
+		case CZECH_CSN_369103:
+			cedCharset = csISO139CSN369103;
+			break;
+		case MSFT_CP1253:
+			cedCharset = cswindows1253;
+			break;
+		case RUSSIAN_CP866:
+			cedCharset = csIBM866;
+			break;
+		case ISO_8859_13:
+			cedCharset = csISO885913;
+			break;
+		case ISO_2022_KR:
+			cedCharset = csISO2022KR;
+			break;
+		case GBK:
+			cedCharset = csGBK;
+			break;
+		case GB18030:
+			cedCharset = csGB18030;
+			break;
+		case BIG5_HKSCS:
+			cedCharset = csBig5HKSCS;
+			break;
+		case ISO_2022_CN:
+			cedCharset = csISO2022CN;
+			break;
 
-			case MACINTOSH_ROMAN:
-				cedCharset = csMacintosh;
-				break;
-			case UTF7:
-				cedCharset = csUTF7;
-				break;
+//		case TSCII                = 49,
+//		case TAMIL_MONO           = 50,
+//		case TAMIL_BI             = 51,
+//		case JAGRAN               = 52,
 
-//			case BHASKAR              = 55,  // Indic encoding - Devanagari
-//			case HTCHANAKYA           = 56,  // 56 Indic encoding - Devanagari
+		case MACINTOSH_ROMAN:
+			cedCharset = csMacintosh;
+			break;
+		case UTF7:
+			cedCharset = csUTF7;
+			break;
 
-			case UTF16BE:
-				cedCharset = csUTF16BE;
-				break;
-			case UTF16LE:
-				cedCharset = csUTF16LE;
-				break;
-			case UTF32BE:
-				cedCharset = csUTF32BE;
-				break;
-			case UTF32LE:
-				cedCharset = csUTF32LE;
-				break;
+//		case BHASKAR              = 55,  // Indic encoding - Devanagari
+//		case HTCHANAKYA           = 56,  // 56 Indic encoding - Devanagari
 
-//			case BINARYENC            = 61,
+		case UTF16BE:
+			cedCharset = csUTF16BE;
+			break;
+		case UTF16LE:
+			cedCharset = csUTF16LE;
+			break;
+		case UTF32BE:
+			cedCharset = csUTF32BE;
+			break;
+		case UTF32LE:
+			cedCharset = csUTF32LE;
+			break;
 
-			case HZ_GB_2312:
-				cedCharset = csHZGB2312;
-				break;
+//		case BINARYENC            = 61,
 
-//			case UTF8UTF8             = 63,
-//			case TAM_ELANGO           = 64,  // Elango - Tamil
-//			case TAM_LTTMBARANI       = 65,  // Barani - Tamil
-//			case TAM_SHREE            = 66,  // Shree - Tamil
-//			case TAM_TBOOMIS          = 67,  // TBoomis - Tamil
-//			case TAM_TMNEWS           = 68,  // TMNews - Tamil
-//			case TAM_WEBTAMIL         = 69,  // Webtamil - Tamil
-//			case KDDI_SHIFT_JIS       = 70,
-//			case DOCOMO_SHIFT_JIS     = 71,
-//			case SOFTBANK_SHIFT_JIS   = 72,
-//			case KDDI_ISO_2022_JP     = 73,
-//			case SOFTBANK_ISO_2022_JP = 74,
+		case HZ_GB_2312:
+			cedCharset = csHZGB2312;
+			break;
 
-			default:
-				cedCharset = csUnknown;
-				break;
-		}
+//		case UTF8UTF8             = 63,
+//		case TAM_ELANGO           = 64,  // Elango - Tamil
+//		case TAM_LTTMBARANI       = 65,  // Barani - Tamil
+//		case TAM_SHREE            = 66,  // Shree - Tamil
+//		case TAM_TBOOMIS          = 67,  // TBoomis - Tamil
+//		case TAM_TMNEWS           = 68,  // TMNews - Tamil
+//		case TAM_WEBTAMIL         = 69,  // Webtamil - Tamil
+//		case KDDI_SHIFT_JIS       = 70,
+//		case DOCOMO_SHIFT_JIS     = 71,
+//		case SOFTBANK_SHIFT_JIS   = 72,
+//		case KDDI_ISO_2022_JP     = 73,
+//		case SOFTBANK_ISO_2022_JP = 74,
 
-		cedCharsetStr = EncodingName(encoding);
+		default:
+			cedCharset = csUnknown;
+			break;
+	}
 
-		if (cedCharset != csUnknown) {
-			charset = cedCharset;
-		}
+	cedCharsetStr = EncodingName(encoding);
+
+	if (charset == csUnknown && cedCharset != csUnknown) {
+		charset = cedCharset;
 	}
 
 	// alias these charsets so iconv understands
