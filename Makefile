@@ -377,6 +377,9 @@ cleandb:
 	rm -rf coll.main.?
 	rm -f *-saved.dat spiderproxystats.dat addsinprogress.dat robots.txt.cache dns.cache
 
+.PHONY: cleantest
+cleantest: cleandb
+	rm -f fatal_error
 
 # shortcuts
 .PHONY: release-safe

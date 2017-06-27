@@ -95,9 +95,9 @@ public:
 
 	// we now include the working dir in the hosts.conf file
 	// so main.cpp can do gb --install and gb --allstart
-	char           m_dir[128];
-	char           m_mergeDir[128];
-	char           m_mergeLockDir[128];
+	char           m_dir[256];
+	char           m_mergeDir[256];
+	char           m_mergeLockDir[256];
 
 	char           m_hostname[16];
 

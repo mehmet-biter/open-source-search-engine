@@ -167,7 +167,6 @@ Msg39::~Msg39 () {
 
 void Msg39::reset() {
 	if ( m_inUse ) gbshutdownLogicError();
-	m_allocatedTree = false;
 	//m_numDocIdSplits = 1;
 	m_query.reset();
 	m_numTotalHits = 0;
@@ -409,6 +408,7 @@ void Msg39::controlLoop ( ) {
 	const int numFiles = base->getNumFiles(); //todo: this can vary if a merge finishes during the query
 
 	//todo: choose docid splits based on expected largest rdblist / most common term
+	//when fixing/re-implementing the docidsplit mechanism fix PosdbTable::allocateTopTree() too
 	int numDocIdSplits = 1;
 	const int totalChunks = (numFiles+1)*numDocIdSplits;
 	int chunksSearched = 0;
@@ -486,7 +486,7 @@ void Msg39::controlLoop ( ) {
 			m_numTotalHits += m_posdbTable.getTotalHits();
 			// minus the shit we filtered out because of gbminint/gbmaxint/
 			// gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
-			m_numTotalHits -= m_posdbTable.m_filtered;
+			m_numTotalHits -= m_posdbTable.getFilteredCount();
 			
 			chunksSearched++;
 		}
@@ -768,9 +768,6 @@ void Msg39::intersectLists(const DocumentIndexChecker &documentIndexChecker) {
 	//todo: check if msg2 lists are all null or empty. If so then bail out
 		//estimateHitsAndSendReply ( );
 
-	// do not re do it if doing docid range splitting
-	m_allocatedTree = true;
-
 	// print query term bit numbers here
 	for ( int32_t i = 0 ; m_debug && i < m_query.getNumTerms() ; i++ ) {
 		const QueryTerm *qt = &m_query.m_qterms[i];
@@ -809,7 +806,7 @@ void Msg39::intersectLists(const DocumentIndexChecker &documentIndexChecker) {
 				   m_msg39req->m_niceness) ) {
 		jobState.wait_for_finish();
 	} else
-		m_posdbTable.intersectLists10_r();
+		m_posdbTable.intersectLists();
 	
 
 	// time it
@@ -834,7 +831,7 @@ void Msg39::intersectListsThreadFunction ( void *state ) {
 	// . this returns false and sets g_errno on error
 	// . Msg2 always compresses the lists so be aware that the termId
 	//   has been discarded
-	that->m_posdbTable.intersectLists10_r ( );
+	that->m_posdbTable.intersectLists();
 
 	// . exit the thread
 	// . threadDoneWrapper will be called by g_loop when he gets the 

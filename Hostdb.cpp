@@ -617,7 +617,7 @@ createFile:
 		}
 
 		// and working dir
-		if ( wdirlen > 127 ) {
+		if ( wdirlen > 255 ) {
 			g_errno = EBADENGINEER;
 			log(LOG_WARN, "conf: Host working dir too long in %s line %" PRId32".", filename, line);
 			return false;
@@ -656,9 +656,9 @@ createFile:
 		// add slash if none there
 		if ( wdir[wdirlen-1] !='/' ) wdir[wdirlen++] = '/';
 			
-		// don't breach Host::m_dir[128] buffer
-		if ( wdirlen >= 128 ) {
-			log(LOG_WARN, "conf: working dir %s is too long, >= 128 chars.", wdir);
+		// don't breach Host::m_dir[256] buffer
+		if ( wdirlen >= 256 ) {
+			log(LOG_WARN, "conf: working dir %s is too long, >= 256 chars.", wdir);
 			return false;
 		}
 

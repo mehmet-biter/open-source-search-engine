@@ -158,6 +158,18 @@ bool Robots::parseUserAgent( const char *field, int32_t fieldLen, bool *isUserAg
 				m_userAgentFound = true;
 
 				*isUserAgentPtr = true;
+			} else {
+				// try substring match
+				const char *match = strncasestr(value, m_userAgent, valueLen, m_userAgentLen);
+				if (match && value < match - 1) {
+					// we should only match prefix and not suffix (eg: testbot will match testbot-test and not atestbot)
+					char c = *(match - 1);
+					if (!isalnum(c)) {
+						m_userAgentFound = true;
+
+						*isUserAgentPtr = true;
+					}
+				}
 			}
 		}
 

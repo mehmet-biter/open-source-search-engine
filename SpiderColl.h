@@ -67,7 +67,6 @@ public:
 	key96_t m_nextKeys[MAX_SPIDER_PRIORITIES];
 
 	int64_t m_lastPrintCount;
-	int64_t m_lastPrinted;
 
 	// used by SpiderLoop.cpp
 	int32_t m_spidersOut;
@@ -89,7 +88,6 @@ public:
 	bool printWaitingTree ( ) ;
 
 	bool addToWaitingTree(int32_t firstIp);
-	uint64_t getNextSpiderTimeFromWaitingTree ( ) ;
 	void populateDoledbFromWaitingTree ( );
 
 	void populateWaitingTreeFromSpiderdb ( bool reentry ) ;
@@ -119,12 +117,8 @@ public:
 	key96_t m_nextDoledbKey;
 	int32_t  m_pri2;
 
-	bool gettingSpiderdbList() const { return m_gettingList1; }
-
 	// how many outstanding spiders a priority has
 	int32_t m_outstandingSpiders[MAX_SPIDER_PRIORITIES];
-
-	bool printStats ( SafeBuf &sb ) ;
 
 	bool isFirstIpInOverflowList ( int32_t firstIp ) ;
 

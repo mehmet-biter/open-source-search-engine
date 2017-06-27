@@ -29,16 +29,16 @@ class SpiderColl;
 
 // . values for CollectionRec::m_spiderStatus
 // . reasons why crawl is not happening
-#define SP_INITIALIZING 0
-//#define SP_UNUSED       1
-//#define SP_UNUSED       2
-//#define SP_UNUSED       3
-#define SP_ROUNDDONE    4 // spider round is done
-#define SP_NOURLS       5 // initializing
-#define SP_PAUSED       6 // user paused spider
-#define SP_INPROGRESS   7 // it is going on!
-#define SP_ADMIN_PAUSED 8 // g_conf.m_spideringEnabled = false
-#define SP_COMPLETED    9 // crawl is done, and no repeatCrawl is scheduled
+#define SP_INITIALIZING   0
+//#define SP_UNUSED_1     1
+//#define SP_UNUSED_2     2
+//#define SP_UNUSED_3     3
+//#define SP_UNUSED_4     4
+//#define SP_UNUSED_5     5
+#define SP_PAUSED         6 // user paused spider
+#define SP_INPROGRESS     7 // it is going on!
+#define SP_ADMIN_PAUSED   8 // g_conf.m_spideringEnabled = false
+//#define SP_UNUSED_9     9
 
 bool getSpiderStatusMsg ( class CollectionRec *cx , 
 			  class SafeBuf *msg , 
@@ -679,6 +679,7 @@ public:
 	int32_t print( class SafeBuf *sb );
 
 	int32_t printToTable( SafeBuf *sb, const char *status, class XmlDoc *xd, int32_t row ) ;
+	int32_t printToJSON( SafeBuf *sb, const char *status, class XmlDoc *xd, int32_t row ) ;
 
 	static int32_t printTableHeader ( SafeBuf *sb, bool currentlSpidering ) ;
 

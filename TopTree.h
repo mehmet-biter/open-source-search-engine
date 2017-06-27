@@ -12,10 +12,6 @@
 
 class TopNode {
  public:
-	//unsigned char  m_bscore ; // bit #6(0x40) is on if has all explicitly
-	// do not allow a higher-tiered node to outrank a lower that has
-	// bit #6 set, under any circumstance
-
 	char           m_depth    ;
 
 	// Msg39 now looks up the cluster recs so we can do clustering
@@ -24,8 +20,6 @@ class TopNode {
 	char     m_clusterLevel;
 	key96_t    m_clusterRec;
 
-	// no longer needed, Msg3a does not need, it has already
-	//unsigned char  m_tier     ;
 	float          m_score    ;
 	int64_t      m_docId;
 	unsigned     m_flags; //from Docid2FlagsAndSiteMap
@@ -33,32 +27,10 @@ class TopNode {
 	// option for using int scores
 	int32_t m_intScore;
 	
-	// clustering info
-	//int32_t           m_kid      ; // result from our same site below us
-	//uint32_t  m_siteHash ;
-	//uint32_t  m_contentHash ;
-	//int32_t           m_rank        ;
-
-	// the lower 64 bits of the cluster rec, used by Msg51, the new
-	// class for doing site clustering
-	//uint64_t       m_clusterRec;
-
-	// . for getting similarity between titleRecs
-	// . this is so big only include if we need it
-	//int32_t           m_vector [ VECTOR_SIZE ];
-
 	// tree info, indexes into m_nodes array
 	int32_t m_parent;
 	int32_t m_left;   // kid
 	int32_t m_right;  // kid
-
-	// so we can quickly remove its scoring info from the scoreinfo
-	// buf and replace with new docid's scoring info
-	//int64_t m_scoreInfoBufOffset;
-
-	//int64_t getDocId ( );
-
-	//int64_t getDocIdForMsg3a ( );
 };
 
 class TopTree {
@@ -132,7 +104,6 @@ private:
 	float m_partial;
 	int64_t  m_ridiculousMax;
 	bool  m_kickedOutDocIds;
-	//int64_t m_lastKickedOutDocId;
 	int32_t  m_domCount[256];
 	// the node with the minimum "score" for that domHash
 	int32_t  m_domMinNode[256];

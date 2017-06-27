@@ -25,7 +25,6 @@ TopTree::TopTree() {
 	memset(m_domCount, 0, sizeof(m_domCount));
 	memset(m_domMinNode, 0, sizeof(m_domMinNode));
 
-	// sampleVectors = NULL; 
 	reset(); 
 }
 
@@ -59,7 +58,6 @@ bool TopTree::setNumNodes ( int32_t docsWanted , bool doSiteClustering ) {
 
 	// reset this
 	m_kickedOutDocIds = false;
-	//m_lastKickedOutDocId = -1LL;
 	
 	// how many nodes to we need to accomodate "docsWanted" docids?
 	// we boost it up here for domain/host counting for site clustering.
@@ -324,7 +322,6 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 
 	key96_t k;
 	k.n1  =  domHash                 << 24; // 1 byte domHash
-	//k.n1 |= (t->m_bscore & ~0xc0)    << 16; // 1 byte bscore
 	k.n1 |=  cs                      >> 16; // 4 byte score
 	k.n0  =  ((int64_t)cs)         << (64-16);
 	k.n0 |=  t->m_docId; // getDocIdFromPtr ( t->m_docIdPtr );
@@ -354,13 +351,6 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		n = m_t2.addNode_unlocked ( 0 , (const char *)&k , NULL , 4 );
 		// the next node before the current min will be the next min
 		int32_t next = m_t2.getNextNode_unlocked(min);
-		// sanity check
-		//if ( next < 0 ) gbshutdownLogicError();
-		// sanity check
-		//key96_t *kp1 = (key96_t *)m_t2.getKey(min);
-		//if ( (kp1->n1) >>24 != domHash ) gbshutdownLogicError();
-		//key96_t *kp2 = (key96_t *)m_t2.getKey(next);
-		//if ( (kp2->n1) >>24 != domHash ) gbshutdownLogicError();
 		// the new min is the "next" of the old min
 		m_domMinNode[domHash] = next;
 		// get his "node number" in the top tree, "nn" so we can
@@ -377,11 +367,6 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	else
 	if ( m_doSiteClustering ) {
 		n = m_t2.addNode_unlocked ( 0 , (const char *)&k , NULL , 4 );
-		// sanity check
-		//if ( min > 0 ) {
-		//	key96_t *kp1 = (key96_t *)m_t2.getKey(min);
-		//	if ( (kp1->n1) >>24 != domHash ) gbshutdownLogicError();
-		//}
 		// are we the new min? if so, assign it
 		if ( min == -1 || k < *(reinterpret_cast<const key96_t*>(m_t2.getKey_unlocked(min))) )
 			m_domMinNode[domHash] = n;
@@ -515,11 +500,6 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 			//}
 			continue;
 		}
-		// sanity check
-		//if ( next < 0 ) gbshutdownLogicError();
-		// sanity check
-		//key96_t *kp2 = (key96_t *)m_t2.getKey(next);
-		//if ( (kp2->n1) >>24 != domHash2 ) gbshutdownLogicError();
 		// the new min is the "next" of the old min
 		m_domMinNode[domHash2] = next;
 	}
@@ -1105,5 +1085,3 @@ void TopTree::logTreeData(int32_t loglevel) {
 		log(loglevel,"  TopTree[%02" PRId32 "].m_docId: %14" PRId64 ", score: %f", i, m_nodes[i].m_docId, m_nodes[i].m_score);
 	}
 }
-
-
