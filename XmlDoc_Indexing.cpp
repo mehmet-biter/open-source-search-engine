@@ -1226,7 +1226,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	hi.m_prefix    = "urlhash";
 	if ( ! hashString(buf,blen,&hi) ) return false;
 
-	if (m_contentLen > 0 || (m_setFromTitleRec && size_utf8Content > 0)) {
+	if ((m_setFromTitleRec && size_utf8Content > 0) || m_contentLen > 0 ) {
 		setStatus("hashing url mid domain");
 
 		// update parms
