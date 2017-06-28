@@ -772,7 +772,7 @@ lang_t GbLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t 
 
 	CLD2::Language language = CLD2::ExtDetectLanguageSummaryCheckUTF8(content,
 	                                                                  contentLen,
-	                                                                  true,
+	                                                                  isPlainText,
 	                                                                  &cldhints,
 	                                                                  flags,
 	                                                                  language3,
