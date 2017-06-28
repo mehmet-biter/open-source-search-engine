@@ -336,11 +336,10 @@ public:
 	class Xml *getXml ( ) ;
 	uint8_t *getLangVector ( ) ;	
 	uint8_t *getLangId ( ) ;
-	const char* getLangIdCLD2(const char *content, int32_t contentLen);
-	std::string getLangIdCLD3(const char *content);
+
 	uint8_t getLangIdSummary();
-	const char* getLangIdSummaryCLD2();
-	std::string getLangIdSummaryCLD3();
+	lang_t getLangIdSummaryCLD2();
+	lang_t getLangIdSummaryCLD3();
 	char computeLangId ( Sections *sections ,Words *words , char *lv ) ;
 	class Words *getWords ( ) ;
 	class Bits *getBits ( ) ;
