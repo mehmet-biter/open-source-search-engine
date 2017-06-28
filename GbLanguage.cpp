@@ -761,7 +761,7 @@ lang_t GbLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t 
 	CLD2::CLDHints cldhints = {content_language_hint.c_str(), tld_hint.c_str(), encoding_hint, language_hint};
 
 	int flags = 0;
-	flags |= CLD2::kCLDFlagBestEffort;
+	//flags |= CLD2::kCLDFlagBestEffort;
 
 	// this is initialized by CLD2 library
 	CLD2::Language language3[3];
@@ -803,7 +803,7 @@ lang_t GbLanguage::getLangIdCLD3(const char *content, int32_t contentLen) {
 		return langUnknown;
 	}
 
-	chrome_lang_id::NNetLanguageIdentifier lang_id(0, contentLen);
+	chrome_lang_id::NNetLanguageIdentifier lang_id;
 	auto result = lang_id.FindLanguage(content);
 	if (!result.is_reliable) {
 		log(LOG_INFO, "lang: cld3: lang: %s(%f %f) is_reliable=%d",
