@@ -74,33 +74,33 @@ const char* getLanguageString ( unsigned char langId ) {
 }
 
 static const char * const s_langAbbr[] = {
-	"xx",
-	"en",
-	"fr",
-	"es",
-	"ru",
-	"tr",
-	"ja",
-	"zh_tw",
-	"zh_cn",
-	"ko",
-	"de",
-	"nl",
-	"it",
-	"fi",
-	"sv",
-	"no",
-	"pt",
-	"vi",
-	"ar",
-	"he",
-	"id",
-	"el",
-	"th",
-	"hi",
-	"bn",
-	"pl",
-	"tl",
+	"xx", // unknown
+	"en", // english
+	"fr", // french
+	"es", // spanish
+	"ru", // russian
+	"tr", // turkish
+	"ja", // japanese
+	"zh_tw", // chinese - traditional
+	"zh_cn", // chinese - simplified
+	"ko", // korean
+	"de", // german
+	"nl", // dutch
+	"it", // italian
+	"fi", // finnish
+	"sv", // swedish
+	"no", // norwegian
+	"pt", // portuguese
+	"vi", // vietnamese
+	"ar", // arabic
+	"he", // hebrew
+	"id", // indonesian
+	"el", // greek
+	"th", // thai
+	"hi", // hindi
+	"bn", // bengala
+	"pl", // polish
+	"tl", // tagalog
 	"la", // latin
 	"eo", // esperanto
 	"ca", // catalan
@@ -120,7 +120,7 @@ static const char * const s_langAbbr[] = {
 	"lv", // latvian
 	"hy", // armenian
 	"is", // icelandic
-	"ag", // ancient gree, MADE UP!
+	"ag", // ancient greek, MADE UP!
 	"gv", // manx
 	"io", // ido
 	"fa", // persian
@@ -130,6 +130,14 @@ static const char * const s_langAbbr[] = {
 	"ku", // kurdish
 	"lb", // luxembourgish
 	"et", // estonian
+	"mt", // maltese
+	"sk", // slovak
+	"sl", // slovenian
+	"eu", // basque
+	"cy", // welsh
+	"kl", // greenlandic
+	"fo", // faroese
+	"zz", // unwanted
 	NULL
 };
 
