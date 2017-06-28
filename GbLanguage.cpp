@@ -794,6 +794,7 @@ lang_t GbLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t 
 		return langUnknown;
 	}
 
+	log(LOG_INFO, "lang: cld2: lang: %s", CLD2::LanguageCode(language));
 	return convertLangCLD2(language);
 }
 
@@ -810,5 +811,35 @@ lang_t GbLanguage::getLangIdCLD3(const char *content, int32_t contentLen) {
 		return langUnknown;
 	}
 
+	log(LOG_INFO, "lang: cld3: lang: %s", result.language.c_str());
 	return convertLangCLD3(result.language);
+}
+
+lang_t GbLanguage::pickLanguage(lang_t contentLangIdCld2, lang_t contentLangIdCld3, lang_t summaryLangIdCld2,
+                                lang_t charsetLangId, lang_t langIdGB) {
+	if (summaryLangIdCld2 == langChineseSimp || summaryLangIdCld2 == langChineseTrad) {
+		return summaryLangIdCld2;
+	}
+
+	if (contentLangIdCld3 == langChineseSimp || contentLangIdCld3 == langChineseTrad || contentLangIdCld3 == langJapanese) {
+		return contentLangIdCld3;
+	}
+
+	if (contentLangIdCld2 != langUnknown) {
+		return contentLangIdCld2;
+	}
+
+	if (contentLangIdCld3 != langUnknown) {
+		return contentLangIdCld3;
+	}
+
+	if (summaryLangIdCld2 != langUnknown) {
+		return summaryLangIdCld2;
+	}
+
+	if (charsetLangId != langUnknown) {
+		return charsetLangId;
+	}
+
+	return langIdGB;
 }

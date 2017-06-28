@@ -9,6 +9,9 @@ namespace GbLanguage {
 	                     const char *tld, int32_t tldLen);
 
 	lang_t getLangIdCLD3(const char *content, int32_t contentLen);
+
+	lang_t pickLanguage(lang_t contentLangIdCld2, lang_t contentLangIdCld3, lang_t summaryLangIdCld2,
+	                    lang_t charsetLangId, lang_t langIdGB);
 };
 
 

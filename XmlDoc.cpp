@@ -3444,6 +3444,20 @@ lang_t XmlDoc::getSummaryLangIdCLD2() {
 	                                 m_currentUrl.getTLD(), m_currentUrl.getTLDLen());
 }
 
+lang_t XmlDoc::getContentLangIdCLD2() {
+	int32_t contentLen = size_utf8Content > 0 ? (size_utf8Content - 1) : 0;
+	return GbLanguage::getLangIdCLD2(false, *getRawUtf8Content(), contentLen,
+	                                 m_mime.getContentLanguage(), m_mime.getContentLanguageLen(),
+	                                 m_currentUrl.getTLD(), m_currentUrl.getTLDLen());
+}
+
+lang_t XmlDoc::getContentLangIdCLD3() {
+	int32_t contentLen = size_utf8Content > 0 ? (size_utf8Content - 1) : 0;
+	char contentTextBuf[contentLen];
+	int32_t contentTextBufLen = m_xml.getText(contentTextBuf, contentLen, 0, -1, true);
+	return GbLanguage::getLangIdCLD3(contentTextBuf, contentTextBufLen);
+}
+
 // returns -1 and sets g_errno on error
 uint8_t *XmlDoc::getLangId ( ) {
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
@@ -3500,13 +3514,10 @@ uint8_t *XmlDoc::getLangId ( ) {
 	// reset g_errno
 	g_errno = 0;
 
-	lang_t langIdCLD2 = GbLanguage::getLangIdCLD2(false, *getRawUtf8Content(), contentLen,
-	                                              m_mime.getContentLanguage(), m_mime.getContentLanguageLen(),
-	                                              m_currentUrl.getTLD(), m_currentUrl.getTLDLen());
+	setStatus ( "getting lang id");
 
-	char contentTextBuf[contentLen];
-	int32_t contentTextBufLen = m_xml.getText(contentTextBuf, contentLen, 0, -1, true);
-	lang_t langIdCLD3 = GbLanguage::getLangIdCLD3(contentTextBuf, contentTextBufLen);
+	lang_t contentLangIdCLD2 = getContentLangIdCLD2();
+	lang_t contentLangIdCLD3 = getContentLangIdCLD3();
 
 	lang_t summaryLangIdCLD2 = getSummaryLangIdCLD2();
 
@@ -3516,74 +3527,44 @@ uint8_t *XmlDoc::getLangId ( ) {
 		return (uint8_t *)lv;
 	}
 
-	setStatus ( "getting lang id");
-
 	// compute langid from vector
-	m_langId = computeLangId ( sections , words, (char *)lv );
-	if ( m_langId != langUnknown ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from langVector", getLanguageAbbr(m_langId) );
-		log(LOG_INFO, "lang: vector lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s url=%s",
-		    getLanguageAbbr(m_langId), getLanguageAbbr(langIdCLD2), getLanguageAbbr(langIdCLD3),
-		    getLanguageAbbr(summaryLangIdCLD2), m_firstUrl.getUrl());
-		m_langIdValid = true;
-		return &m_langId;
+	uint8_t langIdGB = computeLangId(sections, words, (char *)lv);
+
+	if (langIdGB == langUnknown) {
+		// . try the meta description i guess
+		// . 99% of the time we don't need this because the above code
+		//   captures the language
+		int32_t mdlen;
+		char *md = getMetaDescription(&mdlen);
+		Words mdw;
+		mdw.set(md, mdlen, true);
+
+		SafeBuf langBuf;
+		setLangVec(&mdw, &langBuf, NULL);
+		langIdGB = computeLangId(NULL, &mdw, langBuf.getBufStart());
 	}
 
-	// . try the meta description i guess
-	// . 99% of the time we don't need this because the above code
-	//   captures the language
-	int32_t mdlen;
-	char *md = getMetaDescription( &mdlen );
-	Words mdw;
-	mdw.set ( md , mdlen , true );
+	if (langIdGB == langUnknown) {
+		// try meta keywords
+		int32_t mdlen;
+		char *md = getMetaKeywords(&mdlen);
+		Words mdw;
+		mdw.set(md, mdlen, true);
 
-	SafeBuf langBuf;
-	setLangVec ( &mdw,&langBuf,NULL);
-	char *tmpLangVec = langBuf.getBufStart();
-	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
-	if ( m_langId != langUnknown ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaDescription", getLanguageAbbr(m_langId) );
-		log(LOG_INFO, "lang: meta-description lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s url=%s",
-		    getLanguageAbbr(m_langId), getLanguageAbbr(langIdCLD2), getLanguageAbbr(langIdCLD3),
-		    getLanguageAbbr(summaryLangIdCLD2), m_firstUrl.getUrl());
-		m_langIdValid = true;
-		return &m_langId;
-	}
-
-	// try meta keywords
-	md = getMetaKeywords( &mdlen );
-	mdw.set ( md , mdlen , true );
-
-	langBuf.purge();
-	setLangVec ( &mdw,&langBuf,NULL);
-	tmpLangVec = langBuf.getBufStart();
-	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
-	if (m_langId != langUnknown) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaKeywords", getLanguageAbbr(m_langId));
-		log(LOG_INFO, "lang: meta-keyword lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s url=%s",
-		    getLanguageAbbr(m_langId), getLanguageAbbr(langIdCLD2), getLanguageAbbr(langIdCLD3),
-		    getLanguageAbbr(summaryLangIdCLD2), m_firstUrl.getUrl());
-		m_langIdValid = true;
-		return &m_langId;
+		SafeBuf langBuf;
+		setLangVec(&mdw, &langBuf, NULL);
+		langIdGB = computeLangId(NULL, &mdw, langBuf.getBufStart());
 	}
 
 	// try charset
-	if (m_charsetValid && m_charset != csUnknown) {
-		m_langId = getLangIdFromCharset(m_charset);
-		if (m_langId != langUnknown) {
-			logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from charset", getLanguageAbbr(m_langId));
-			log(LOG_INFO, "lang: charset lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s url=%s",
-			    getLanguageAbbr(m_langId), getLanguageAbbr(langIdCLD2), getLanguageAbbr(langIdCLD3),
-			    getLanguageAbbr(summaryLangIdCLD2), m_firstUrl.getUrl());
-			m_langIdValid = true;
-			return &m_langId;
-		}
-	}
+	lang_t charsetLangId = getLangIdFromCharset(m_charset);
 
+	m_langId = GbLanguage::pickLanguage(contentLangIdCLD2, contentLangIdCLD3, summaryLangIdCLD2,
+	                                    charsetLangId, static_cast<lang_t>(langIdGB));
 	logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s", getLanguageAbbr(m_langId));
-	log(LOG_INFO, "lang: end lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s url=%s",
-	    getLanguageAbbr(m_langId), getLanguageAbbr(langIdCLD2), getLanguageAbbr(langIdCLD3),
-	    getLanguageAbbr(summaryLangIdCLD2), m_firstUrl.getUrl());
+	log(LOG_INFO, "lang: langId=%s contentLangCLD2=%s contentLangCLD3=%s langSummaryCLD2=%s charsetLangId=%s langIdGB=%s url=%s",
+	    getLanguageAbbr(m_langId), getLanguageAbbr(contentLangIdCLD2), getLanguageAbbr(contentLangIdCLD3),
+	    getLanguageAbbr(summaryLangIdCLD2), getLanguageAbbr(charsetLangId), getLanguageAbbr(langIdGB), m_firstUrl.getUrl());
 
 	m_langIdValid = true;
 	return &m_langId;
@@ -3591,7 +3572,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 
 
 // lv = langVec
-char XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
+uint8_t XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
 
 	Section **sp = NULL;
 	if ( sections ) sp = sections->m_sectionPtrs;
@@ -3633,9 +3614,9 @@ char XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
 
 	// get the majority count
 	int32_t max = 0;
-	int32_t maxi = 0;
+	uint8_t maxi = 0;
 	// skip langUnknown by starting at 1, langEnglish
-	for ( int32_t i = 1 ; i < MAX_LANGUAGES ; i++ ) {
+	for ( uint8_t i = 1 ; i < MAX_LANGUAGES ; i++ ) {
 		// skip translingual
 		if ( i == langTranslingual ) {
 			continue;
@@ -9094,12 +9075,6 @@ uint16_t *XmlDoc::getCharset ( ) {
 		return (uint16_t *)fc;
 	}
 
-	// scan document for two things:
-	// 1.  charset=  (in a <meta> tag)
-	// 2. encoding=  (in an <?xml> tag)
-	char *pstart = *fc;
-	//char *pend   = *fc + m_filteredContentLen;
-
 	// assume known charset
 	m_charset = csUnknown;
 	// make it valid regardless i guess
@@ -9115,11 +9090,11 @@ uint16_t *XmlDoc::getCharset ( ) {
 		return &m_charset;
 	}
 
-	if( !mime ) {
+	if (!mime) {
 		return NULL;
 	}
 
-	m_charset = GbEncoding::getCharset(mime, m_firstUrl.getUrl(), pstart, m_filteredContentLen);
+	m_charset = GbEncoding::getCharset(mime, m_firstUrl.getUrl(), *fc, m_filteredContentLen);
 	m_charsetValid = true;
 	return &m_charset;
 }

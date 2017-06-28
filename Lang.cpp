@@ -160,7 +160,7 @@ uint8_t getLangIdFromAbbr ( const char *abbr ) {
 	return langUnknown;
 }
 
-uint8_t getLangIdFromCharset(uint16_t charset) {
+lang_t getLangIdFromCharset(uint16_t charset) {
 	switch (charset) {
 		case csISO58GB231280:
 		case csGBK:
