@@ -740,6 +740,10 @@ static lang_t convertLangCLD3(std::string &language) {
 lang_t GbLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t contentLen,
                                  const char *contentLanguage, int32_t contentLanguageLen,
                                  const char *tld, int32_t tldLen) {
+	if (contentLen == 0) {
+		return langUnknown;
+	}
+
 	// detect language hints
 
 	// language tag format:
@@ -794,6 +798,10 @@ lang_t GbLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t 
 }
 
 lang_t GbLanguage::getLangIdCLD3(const char *content, int32_t contentLen) {
+	if (contentLen == 0) {
+		return langUnknown;
+	}
+
 	chrome_lang_id::NNetLanguageIdentifier lang_id(0, contentLen);
 	auto result = lang_id.FindLanguage(content);
 	if (!result.is_reliable) {
