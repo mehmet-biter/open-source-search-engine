@@ -337,9 +337,7 @@ public:
 	uint8_t *getLangVector ( ) ;	
 	uint8_t *getLangId ( ) ;
 
-	uint8_t getLangIdSummary();
-	lang_t getLangIdSummaryCLD2();
-	lang_t getLangIdSummaryCLD3();
+	lang_t getSummaryLangIdCLD2();
 	char computeLangId ( Sections *sections ,Words *words , char *lv ) ;
 	class Words *getWords ( ) ;
 	class Bits *getBits ( ) ;

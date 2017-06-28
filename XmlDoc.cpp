@@ -3423,32 +3423,7 @@ uint8_t *XmlDoc::getLangVector ( ) {
 	return v;
 }
 
-
-uint8_t XmlDoc::getLangIdSummary() {
-	Xml *xml = getXml();
-	if (!xml || xml == (Xml *)-1) {
-		return langTranslingual;
-	}
-
-	Title title;
-	if (!title.setTitleFromTags(xml, 80, m_contentType)) {
-		return langUnknown;
-	}
-
-	Summary summary;
-	if (!summary.setSummaryFromTags(xml, 180, title.getTitle(), title.getTitleLen())) {
-		return langUnknown;
-	}
-
-	Words words;
-	words.set(summary.getSummary(), summary.getSummaryLen(), true);
-
-	SafeBuf buf;
-	setLangVec(&words, &buf, NULL);
-	return static_cast<uint8_t>(computeLangId(NULL, &words, buf.getBufStart()));
-}
-
-lang_t XmlDoc::getLangIdSummaryCLD2() {
+lang_t XmlDoc::getSummaryLangIdCLD2() {
 	Xml *xml = getXml();
 	if (!xml || xml == (Xml *)-1) {
 		return langUnknown;
@@ -3467,25 +3442,6 @@ lang_t XmlDoc::getLangIdSummaryCLD2() {
 	return GbLanguage::getLangIdCLD2(true, summary.getSummary(), summary.getSummaryLen(),
 	                                 m_mime.getContentLanguage(), m_mime.getContentLanguageLen(),
 	                                 m_currentUrl.getTLD(), m_currentUrl.getTLDLen());
-}
-
-lang_t XmlDoc::getLangIdSummaryCLD3() {
-	Xml *xml = getXml();
-	if (!xml || xml == (Xml *)-1) {
-		return langUnknown;
-	}
-
-	Title title;
-	if (!title.setTitleFromTags(xml, 80, m_contentType)) {
-		return langUnknown;
-	}
-
-	Summary summary;
-	if (!summary.setSummaryFromTags(xml, 180, title.getTitle(), title.getTitleLen())) {
-		return langUnknown;
-	}
-
-	return GbLanguage::getLangIdCLD3(summary.getSummary(), summary.getSummaryLen());
 }
 
 // returns -1 and sets g_errno on error
@@ -3544,18 +3500,15 @@ uint8_t *XmlDoc::getLangId ( ) {
 	// reset g_errno
 	g_errno = 0;
 
-	char contentTextBuf[contentLen];
-	int32_t contentTextBufLen = m_xml.getText(contentTextBuf, contentLen, 0, -1, true);
-
 	lang_t langIdCLD2 = GbLanguage::getLangIdCLD2(false, *getRawUtf8Content(), contentLen,
 	                                              m_mime.getContentLanguage(), m_mime.getContentLanguageLen(),
 	                                              m_currentUrl.getTLD(), m_currentUrl.getTLDLen());
 
+	char contentTextBuf[contentLen];
+	int32_t contentTextBufLen = m_xml.getText(contentTextBuf, contentLen, 0, -1, true);
 	lang_t langIdCLD3 = GbLanguage::getLangIdCLD3(contentTextBuf, contentTextBufLen);
 
-	uint8_t langIdSummary = getLangIdSummary();
-	lang_t langIdSummaryCLD2 = getLangIdSummaryCLD2();
-	lang_t langIdSummaryCLD3 = getLangIdSummaryCLD3();
+	lang_t summaryLangIdCLD2 = getSummaryLangIdCLD2();
 
 	uint8_t *lv = getLangVector();
 	if ( ! lv || lv == (void *)-1 ) {
@@ -3569,9 +3522,9 @@ uint8_t *XmlDoc::getLangId ( ) {
 	m_langId = computeLangId ( sections , words, (char *)lv );
 	if ( m_langId != langUnknown ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from langVector", getLanguageAbbr(m_langId) );
-		log(LOG_INFO, "lang: vector lang=%s langCLD2=%s langCLD3=%s langSummary=%s langSummaryCLD2=%s langSummaryCLD3=%s url=%s",
+		log(LOG_INFO, "lang: vector lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s url=%s",
 		    getLanguageAbbr(m_langId), getLanguageAbbr(langIdCLD2), getLanguageAbbr(langIdCLD3),
-		    getLanguageAbbr(langIdSummary), getLanguageAbbr(langIdSummaryCLD2), getLanguageAbbr(langIdSummaryCLD3), m_firstUrl.getUrl());
+		    getLanguageAbbr(summaryLangIdCLD2), m_firstUrl.getUrl());
 		m_langIdValid = true;
 		return &m_langId;
 	}
@@ -3590,9 +3543,9 @@ uint8_t *XmlDoc::getLangId ( ) {
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
 	if ( m_langId != langUnknown ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaDescription", getLanguageAbbr(m_langId) );
-		log(LOG_INFO, "lang: meta-description lang=%s langCLD2=%s langCLD3=%s langSummary=%s langSummaryCLD2=%s langSummaryCLD3=%s url=%s",
+		log(LOG_INFO, "lang: meta-description lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s url=%s",
 		    getLanguageAbbr(m_langId), getLanguageAbbr(langIdCLD2), getLanguageAbbr(langIdCLD3),
-		    getLanguageAbbr(langIdSummary), getLanguageAbbr(langIdSummaryCLD2), getLanguageAbbr(langIdSummaryCLD3), m_firstUrl.getUrl());
+		    getLanguageAbbr(summaryLangIdCLD2), m_firstUrl.getUrl());
 		m_langIdValid = true;
 		return &m_langId;
 	}
@@ -3607,9 +3560,9 @@ uint8_t *XmlDoc::getLangId ( ) {
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
 	if (m_langId != langUnknown) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaKeywords", getLanguageAbbr(m_langId));
-		log(LOG_INFO, "lang: meta-keyword lang=%s langCLD2=%s langCLD3=%s langSummary=%s langSummaryCLD2=%s langSummaryCLD3=%s url=%s",
+		log(LOG_INFO, "lang: meta-keyword lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s url=%s",
 		    getLanguageAbbr(m_langId), getLanguageAbbr(langIdCLD2), getLanguageAbbr(langIdCLD3),
-		    getLanguageAbbr(langIdSummary), getLanguageAbbr(langIdSummaryCLD2), getLanguageAbbr(langIdSummaryCLD3), m_firstUrl.getUrl());
+		    getLanguageAbbr(summaryLangIdCLD2), m_firstUrl.getUrl());
 		m_langIdValid = true;
 		return &m_langId;
 	}
@@ -3619,18 +3572,18 @@ uint8_t *XmlDoc::getLangId ( ) {
 		m_langId = getLangIdFromCharset(m_charset);
 		if (m_langId != langUnknown) {
 			logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from charset", getLanguageAbbr(m_langId));
-			log(LOG_INFO, "lang: charset lang=%s langCLD2=%s langCLD3=%s langSummary=%s langSummaryCLD2=%s langSummaryCLD3=%s url=%s",
+			log(LOG_INFO, "lang: charset lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s url=%s",
 			    getLanguageAbbr(m_langId), getLanguageAbbr(langIdCLD2), getLanguageAbbr(langIdCLD3),
-			    getLanguageAbbr(langIdSummary), getLanguageAbbr(langIdSummaryCLD2), getLanguageAbbr(langIdSummaryCLD3), m_firstUrl.getUrl());
+			    getLanguageAbbr(summaryLangIdCLD2), m_firstUrl.getUrl());
 			m_langIdValid = true;
 			return &m_langId;
 		}
 	}
 
 	logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s", getLanguageAbbr(m_langId));
-	log(LOG_INFO, "lang: end lang=%s langCLD2=%s langCLD3=%s langSummary=%s langSummaryCLD2=%s langSummaryCLD3=%s url=%s",
+	log(LOG_INFO, "lang: end lang=%s langCLD2=%s langCLD3=%s langSummaryCLD2=%s url=%s",
 	    getLanguageAbbr(m_langId), getLanguageAbbr(langIdCLD2), getLanguageAbbr(langIdCLD3),
-	    getLanguageAbbr(langIdSummary), getLanguageAbbr(langIdSummaryCLD2), getLanguageAbbr(langIdSummaryCLD3), m_firstUrl.getUrl());
+	    getLanguageAbbr(summaryLangIdCLD2), m_firstUrl.getUrl());
 
 	m_langIdValid = true;
 	return &m_langId;
