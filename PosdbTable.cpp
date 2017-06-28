@@ -2956,7 +2956,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 		// Get the min of each list
 		bool currTermDone = false;
 
-		do {
+		while( !currTermDone && mptr < miniMergeBufSafeEnd ) {
 			int32_t mink = -1;
 
 			for ( int32_t k = 0 ; k < nsub ; k++ ) {
@@ -2979,34 +2979,81 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 			// all exhausted? merge next set of sublists then for term #j
 			if ( mink == -1 ) {
 				// continue outer "j < m_numQueryTermInfos" loop.
-				currTermDone = true;
+				break;
 			}
-			else {
-				// get keysize
-				char ks = Posdb::getKeySize(nwp[mink]);
 
-				// HACK OF CONFUSION:
-				//
-				// skip it if its a query phrase term, like 
-				// "searchengine" is for the 'search engine' query 
-				// AND it has the synbit which means it was a bigram
-				// in the doc (i.e. occurred as two separate terms)
-				//
-				// second check means it occurred as two separate terms
-				// or could be like bob and occurred as "bob's".
-				// see XmlDoc::hashWords3().
-				// nwp[mink][2] & 0x03 is the posdb entry original/synonym/hyponym/.. flags
-				if ( ! ((nwpFlags[mink] & BF_BIGRAM) && (nwp[mink][2] & 0x03)) ) {
+			// get keysize
+			char ks = Posdb::getKeySize(nwp[mink]);
 
-					// if the first key in our merged list store the docid crap
-					if ( isFirstKey ) {
+			// HACK OF CONFUSION:
+			//
+			// skip it if its a query phrase term, like
+			// "searchengine" is for the 'search engine' query
+			// AND it has the synbit which means it was a bigram
+			// in the doc (i.e. occurred as two separate terms)
+			//
+			// second check means it occurred as two separate terms
+			// or could be like bob and occurred as "bob's".
+			// see XmlDoc::hashWords3().
+			// nwp[mink][2] & 0x03 is the posdb entry original/synonym/hyponym/.. flags
+			if ( ! ((nwpFlags[mink] & BF_BIGRAM) && (nwp[mink][2] & 0x03)) ) {
 
-						// store a 12 byte key in the merged list buffer
-						memcpy ( mptr, nwp[mink], 12 );
+				// if the first key in our merged list store the docid crap
+				if ( isFirstKey ) {
+
+					// store a 12 byte key in the merged list buffer
+					memcpy ( mptr, nwp[mink], 12 );
+
+					// Detect highest siterank of inlinkers
+					if ( Posdb::getHashGroup(mptr+6) == HASHGROUP_INLINKTEXT) {
+						char inlinkerSiteRank = Posdb::getWordSpamRank(mptr+6);
+						if(inlinkerSiteRank > *highestInlinkSiteRank) {
+							*highestInlinkSiteRank = inlinkerSiteRank;
+						}
+					}
+
+					// wipe out its syn bits and re-use our way
+					mptr[2] &= 0xfc;
+					// set the synbit so we know if its a synonym of term
+					if ( nwpFlags[mink] & (BF_BIGRAM|BF_SYNONYM)) {
+						mptr[2] |= 0x02;
+					}
+
+					// wiki half stop bigram? so for the query
+					// 'time enough for love' the phrase term "enough for"
+					// is a half stopword wiki bigram, because it is in
+					// a phrase in wikipedia ("time enough for love") and
+					// one of the two words in the phrase term is a
+					// stop word. therefore we give it more weight than
+					// just 'enough' by itself.
+					if ( nwpFlags[mink] & BF_HALFSTOPWIKIBIGRAM ) {
+						mptr[2] |= 0x01;
+					}
+
+					// make sure its 12 bytes! it might have been
+					// the first key for the termid, and 18 bytes.
+					mptr[0] &= 0xf9;
+					mptr[0] |= 0x02;
+					// save it
+					lastMptr = mptr;
+					mptr += 12;
+					isFirstKey = false;
+				}
+				else {
+					// if matches last key word position, do not add!
+					// we should add the bigram first if more important
+					// since it should be added before the actual term
+					// above in the sublist array. so if they are
+					// wikihalfstop bigrams they will be added first,
+					// otherwise, they are added after the regular term.
+					// should fix double scoring bug for 'cheat codes'
+					// query!
+					if ( Posdb::getWordPos(lastMptr) != Posdb::getWordPos(nwp[mink]) ) {
+						memcpy ( mptr, nwp[mink], 6 );
 
 						// Detect highest siterank of inlinkers
-						if ( Posdb::getHashGroup(mptr+6) == HASHGROUP_INLINKTEXT) {
-							char inlinkerSiteRank = Posdb::getWordSpamRank(mptr+6);
+						if ( Posdb::getHashGroup(mptr) == HASHGROUP_INLINKTEXT) {
+							char inlinkerSiteRank = Posdb::getWordSpamRank(mptr);
 							if(inlinkerSiteRank > *highestInlinkSiteRank) {
 								*highestInlinkSiteRank = inlinkerSiteRank;
 							}
@@ -3019,84 +3066,35 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 							mptr[2] |= 0x02;
 						}
 
-						// wiki half stop bigram? so for the query
-						// 'time enough for love' the phrase term "enough for"
-						// is a half stopword wiki bigram, because it is in
-						// a phrase in wikipedia ("time enough for love") and
-						// one of the two words in the phrase term is a 
-						// stop word. therefore we give it more weight than
-						// just 'enough' by itself.
 						if ( nwpFlags[mink] & BF_HALFSTOPWIKIBIGRAM ) {
 							mptr[2] |= 0x01;
 						}
 
-						// make sure its 12 bytes! it might have been
-						// the first key for the termid, and 18 bytes.
+						// if it was the first key of its list it may not
+						// have its bit set for being 6 bytes now! so turn
+						// on the 2 compression bits
 						mptr[0] &= 0xf9;
-						mptr[0] |= 0x02;
+						mptr[0] |= 0x06;
 						// save it
 						lastMptr = mptr;
-						mptr += 12;
-						isFirstKey = false;
-					}
-					else {
-						// if matches last key word position, do not add!
-						// we should add the bigram first if more important
-						// since it should be added before the actual term
-						// above in the sublist array. so if they are
-						// wikihalfstop bigrams they will be added first,
-						// otherwise, they are added after the regular term.
-						// should fix double scoring bug for 'cheat codes'
-						// query!
-						if ( Posdb::getWordPos(lastMptr) != Posdb::getWordPos(nwp[mink]) ) {
-							memcpy ( mptr, nwp[mink], 6 );
-
-							// Detect highest siterank of inlinkers
-							if ( Posdb::getHashGroup(mptr) == HASHGROUP_INLINKTEXT) {
-								char inlinkerSiteRank = Posdb::getWordSpamRank(mptr);
-								if(inlinkerSiteRank > *highestInlinkSiteRank) {
-									*highestInlinkSiteRank = inlinkerSiteRank;
-								}
-							}
-
-							// wipe out its syn bits and re-use our way
-							mptr[2] &= 0xfc;
-							// set the synbit so we know if its a synonym of term
-							if ( nwpFlags[mink] & (BF_BIGRAM|BF_SYNONYM)) {
-								mptr[2] |= 0x02;
-							}
-
-							if ( nwpFlags[mink] & BF_HALFSTOPWIKIBIGRAM ) {
-								mptr[2] |= 0x01;
-							}
-
-							// if it was the first key of its list it may not
-							// have its bit set for being 6 bytes now! so turn
-							// on the 2 compression bits
-							mptr[0] &= 0xf9;
-							mptr[0] |= 0x06;
-							// save it
-							lastMptr = mptr;
-							mptr += 6;
-						}
+						mptr += 6;
 					}
 				}
+			}
 
-				// advance the cursor over the key we used.
-				nwp[mink] += ks; // Posdb::getKeySize(nwp[mink]);
+			// advance the cursor over the key we used.
+			nwp[mink] += ks; // Posdb::getKeySize(nwp[mink]);
 
-				// exhausted?
-				if ( nwp[mink] >= nwpEnd[mink] ) {
-					nwp[mink] = NULL;
-				}
-				else 
-				if ( Posdb::getKeySize(nwp[mink]) != 6 ) {
-					// or hit a different docid
-					nwp[mink] = NULL;
-				}
-			} // mink != -1
-			//log("skipping ks=%" PRId32,(int32_t)ks);
-		} while( !currTermDone && mptr < miniMergeBufSafeEnd );	// merge more ...
+			// exhausted?
+			if ( nwp[mink] >= nwpEnd[mink] ) {
+				nwp[mink] = NULL;
+			}
+			else
+			if ( Posdb::getKeySize(nwp[mink]) != 6 ) {
+				// or hit a different docid
+				nwp[mink] = NULL;
+			}
+		}
 
 		// wrap it up here since done merging
 		miniMergedListEnd[j] = mptr;		
