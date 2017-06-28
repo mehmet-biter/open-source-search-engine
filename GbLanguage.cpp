@@ -803,7 +803,10 @@ lang_t GbLanguage::getLangIdCLD3(const char *content, int32_t contentLen) {
 		return langUnknown;
 	}
 
-	chrome_lang_id::NNetLanguageIdentifier lang_id;
+	int minBytes = chrome_lang_id::NNetLanguageIdentifier::kMinNumBytesToConsider;
+	int maxBytes = std::max(chrome_lang_id::NNetLanguageIdentifier::kMaxNumBytesToConsider, contentLen);
+
+	chrome_lang_id::NNetLanguageIdentifier lang_id(minBytes, maxBytes);
 	auto result = lang_id.FindLanguage(content);
 	if (!result.is_reliable) {
 		log(LOG_INFO, "lang: cld3: lang: %s(%f %f) is_reliable=%d",
