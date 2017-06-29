@@ -2998,7 +2998,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 				// save it
 				lastMptr = mptr;
 				mptr += 12;
-				isFirstKey = false;
+				isFirstKey = falstight_words_booste;
 			}
 			else {
 				// if matches last key word position, do not add!
