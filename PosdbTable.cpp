@@ -2998,7 +2998,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 				// save it
 				lastMptr = mptr;
 				mptr += 12;
-				isFirstKey = falstight_words_booste;
+				isFirstKey = false;
 			}
 			else {
 				// if matches last key word position, do not add!
@@ -3122,7 +3122,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 // Store best scores into the scoreMatrix so the sliding window
 // algorithm can use them from there to do sub-outs
 //
-void PosdbTable::createNonBodyTermPairScoreMatrix(MiniMergeBuffer *miniMergeBuffer, float *scoreMatrix) {
+void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMergeBuffer, float *scoreMatrix) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
 
 	// scan over each query term (its synonyms are part of the
@@ -3202,7 +3202,7 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(MiniMergeBuffer *miniMergeBuff
 // Finds the highest single term score sum.
 // Creates array of highest scoring non-body positions
 //
-float PosdbTable::getMinSingleTermScoreSum(MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, DocIdScore *pdcs) {
+float PosdbTable::getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, DocIdScore *pdcs) {
 	float minSingleScore = 999999999.0;
 	bool mergedListFound = false;
 	bool allSpecialTerms = true;
@@ -3471,7 +3471,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 
 
 
-float PosdbTable::getMinTermPairScoreSlidingWindow(MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs) {
+float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs) {
 	logTrace(g_conf.m_logTracePosdb, "Sliding Window algorithm begins");
 	m_bestMinTermPairWindowPtrs = winnerStack;
 

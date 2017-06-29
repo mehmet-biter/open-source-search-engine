@@ -119,9 +119,9 @@ class PosdbTable {
 	bool prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf, float minWinningScore);
 	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffer *miniMergeBuffer, int *highestInlinkSiteRank);
 
-	void createNonBodyTermPairScoreMatrix(MiniMergeBuffer *miniMergeBuffer, float *scoreMatrix);
-	float getMinSingleTermScoreSum(MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, DocIdScore *pdcs);
-	float getMinTermPairScoreSlidingWindow(MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs);
+	void createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMergeBuffer, float *scoreMatrix);
+	float getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, DocIdScore *pdcs);
+	float getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs);
 
 
 	// how long to add the last batch of lists
