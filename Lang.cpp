@@ -65,6 +65,14 @@ static const char * const s_langStrings[] = {
 	"Kurdish",
 	"Luxembourgish",
 	"Estonian",
+	"Maltese",
+	"Slovak",
+	"Slovenian",
+	"Basque",
+	"Welsh",
+	"Greenlandic",
+	"Faroese",
+	"Unwanted",
 	NULL
 };
 
