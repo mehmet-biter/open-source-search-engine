@@ -224,7 +224,7 @@ CPPFLAGS += -Wno-unused-parameter
 
 endif
 
-LIBS = -lm -lpthread -lssl -lcrypto -lz -lpcre
+LIBS = -lm -lpthread -lssl -lcrypto -lz -lpcre -lcares
 
 # to build static libiconv.a do a './configure --enable-static' then 'make' in the iconv directory
 
