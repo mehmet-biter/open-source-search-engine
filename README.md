@@ -57,6 +57,16 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 *    libprotobuf-dev
 *    protobuf-compiler
 
+#### OpenSuse
+*    g++
+*    make
+*    cmake
+*    python
+*    pcre-devel
+*    libssl-dev
+*    protobuf-devel
+*    libprotobuf13
+
 ### Runtime
 *    Multi-instance installations require [Vagus](https://github.com/privacore/vagus) for keeping track of which instances are dead and alive.
 
