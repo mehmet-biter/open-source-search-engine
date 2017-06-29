@@ -30,6 +30,7 @@ class Msg39Request;
 class DocIdScore;
 class Query;
 class QueryTerm;
+struct MiniMergeBuffer;
 
 
 #define MAX_SUBLISTS 50
@@ -88,15 +89,12 @@ class PosdbTable {
 
 	void prepareWhiteListTable();
 
-	float getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wpj, const char *endi, const char *endj, int32_t qdist);
-	float getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const char *endi, DocIdScore *pdcs, const char **highestScoringNonBodyPos);
+	float getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMergeBuffer, int i, int j, int32_t qdist);
+	float getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeBuf, int32_t i, DocIdScore *pdcs, const char **highestScoringNonBodyPos);
 	float getScoreForTermPair(const char *wpi, const char *wpj, int32_t fixedDistance, int32_t qdist);
 	void findMinTermPairScoreInWindow(const char **ptrs, const char **highestScoringNonBodyPos, float *scoreMatrix);
 
-	float getTermPairScoreForAny   ( int32_t i, int32_t j,
-					 const char *wpi, const char *wpj, 
-					 const char *endi, const char *endj,
-					 DocIdScore *pdcs );
+	float getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer, int i, int j, DocIdScore *pdcs);
 
 
 	// some generic stuff
@@ -119,11 +117,11 @@ class PosdbTable {
 	void removeScoreInfoForDeletedDocIds();
 	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
 	bool prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf, float minWinningScore);
-	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, char *miniMergeBufEnd, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);
+	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffer *miniMergeBuffer, int *highestInlinkSiteRank);
 
-	void createNonBodyTermPairScoreMatrix(const char **miniMergedList, const char **miniMergedEnd, float *scoreMatrix);
-	float getMinSingleTermScoreSum(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, DocIdScore *pdcs);
-	float getMinTermPairScoreSlidingWindow(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs);
+	void createNonBodyTermPairScoreMatrix(MiniMergeBuffer *miniMergeBuffer, float *scoreMatrix);
+	float getMinSingleTermScoreSum(MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, DocIdScore *pdcs);
+	float getMinTermPairScoreSlidingWindow(MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs);
 
 
 	// how long to add the last batch of lists
