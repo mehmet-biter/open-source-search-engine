@@ -706,9 +706,7 @@ float PosdbTable::getScoreForTermPair(const char *wpi, const char *wpj, int32_t 
 		dist = fixedDistance;
 	}
 	else {
-		// do the math now
-		if ( helper2.p < helper1.p ) dist = helper1.p - helper2.p;
-		else                         dist = helper2.p - helper1.p;
+		dist = abs(helper1.p - helper2.p);
 		// if zero, make sure its 2. this happens when the same bigram
 		// is used by both terms. i.e. street uses the bigram 
 		// 'street light' and so does 'light'. so the wordpositions
