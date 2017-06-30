@@ -1424,6 +1424,8 @@ int main2 ( int argc , char *argv[] ) {
 		g_loop.init();
 	}
 
+	// we register log rotation here because it's after g_loop is initialized
+	g_log.registerLogRotation();
 
 	// log the version
 	log(LOG_INIT,"conf: Gigablast Version      : %s", getVersion());
