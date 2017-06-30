@@ -56,7 +56,7 @@ enum {
 	EDOCBANNED       , 
 	EDOCFORCEDELETE  , // doc force deleted
 	EDOCURLSPAM      , // url detected as spam/porn
-	EUNUSED10        ,
+	EDOCBLOCKED      ,
 	EUNUSED11        ,
 	EUNUSED12        ,
 	EUNUSED13        , // 32810
