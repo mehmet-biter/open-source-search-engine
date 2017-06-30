@@ -8504,6 +8504,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for DnsBlockList";
+	m->m_cgi   = "ltrc_dnsbl";
+	simple_m_set(Conf,m_logTraceDnsBlockList);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for File";
 	m->m_cgi   = "ltrc_file";
 	simple_m_set(Conf,m_logTraceFile);

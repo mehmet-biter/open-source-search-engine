@@ -223,6 +223,7 @@ Conf::Conf ( ) {
 	m_logDebugVagus = false;
 	m_logTraceBigFile = false;
 	m_logTraceDns = false;
+	m_logTraceDnsBlockList = false;
 	m_logTraceFile = false;
 	m_logTraceHttpMime = false;
 	m_logTraceMem = false;

@@ -370,6 +370,7 @@ class Conf {
 
 	bool m_logTraceBigFile;
 	bool m_logTraceDns;
+	bool m_logTraceDnsBlockList;
 	bool m_logTraceFile;
 	bool m_logTraceHttpMime;
 	bool m_logTraceMem;

@@ -78,6 +78,7 @@
 #include "GbUtil.h"
 #include "Dir.h"
 #include "File.h"
+#include "DnsBlockList.h"
 #include "UrlBlockList.h"
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
@@ -1560,7 +1561,8 @@ int main2 ( int argc , char *argv[] ) {
 	//load docid->flags/sitehash map
 	g_d2fasm.load();
 
-	// load url block list
+	// load block lists
+	g_dnsBlockList.init();
 	g_urlBlockList.init();
 
 	// initialize generate global index thread
