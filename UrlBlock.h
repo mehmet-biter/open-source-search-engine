@@ -2,7 +2,6 @@
 #define GB_URLBLOCK_H
 
 #include <string>
-#include <string>
 #include <memory>
 #include <vector>
 #include "GbRegex.h"
