@@ -15185,25 +15185,6 @@ SafeBuf *XmlDoc::getSpiderStatusDocMetaList ( SpiderReply *reply, bool forDelete
 		return &m_spiderStatusDocMetaList;
 	}
 
-	// doing it for diffbot throws off smoketests
-	// ok, smoketests are updated now, so remove this
-	// if ( strncmp(cr->m_coll,"crawlbottesting-",16) == 0 ) {
-	// 	m_spiderStatusDocMetaListValid = true;
-	// 	return &m_spiderStatusDocMetaList;
-	// }
-
-	// we double add regular html urls in a query reindex because the
-	// json url adds the parent, so the parent gets added twice sometimes,
-	// and for some reason it is adding a spider status doc the 2nd time
-	// so cut that out. this is kinda a hack b/c i'm not sure what's
-	// going on. but you can set a break point here and see what's up if
-	// you want.
-	// MDW: likewise, take this out, i want these recorded as well..
-	// if ( m_indexCodeValid && m_indexCode == EDOCFORCEDELETE ) {
-	// 	m_spiderStatusDocMetaListValid = true;
-	// 	return &m_spiderStatusDocMetaList;
-	// }
-
 	// . fake this out so we do not core
 	// . hashWords3() uses it i guess
 	bool forcedLangId = false;
