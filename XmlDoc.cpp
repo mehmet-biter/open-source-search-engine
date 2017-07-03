@@ -6928,7 +6928,7 @@ int32_t *XmlDoc::getIp ( ) {
 	}
 
 	// update status msg
-	setStatus ( "getting ip" );
+	setStatus ( "getting ip (msgc)" );
 
 	m_ipStartTime = gettimeofdayInMilliseconds();
 
