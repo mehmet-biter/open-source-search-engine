@@ -200,6 +200,41 @@ void PosdbTable::init(Query *q, bool debug, TopTree *topTree, const DocumentInde
 
 
 
+namespace {
+//getMaxScoreForNonBodyTermPair(), getScoreForTermPair() and getTermPairScoreForAny() need to keep several items for each of the
+//two lists and set them based on the posdb pointer(s). This helper struct handles the common things
+struct PosdbDecodeHelper {
+	int32_t p;
+	unsigned char hg;
+	unsigned char mhg;
+	unsigned char wsr;
+	float spamw;
+	float denw;
+	//float diversityWeight; //todo?
+	unsigned char syn;
+	void set(const char *wp, const ScoringWeights &scoringWeights) {
+		p = Posdb::getWordPos(wp);
+		hg = Posdb::getHashGroup(wp);
+		//temporary fix: posdb can have junk in it so clamp the hashgroup to the limit
+		if(hg>=HASHGROUP_END)
+			hg = HASHGROUP_END-1;
+		mhg = hg;
+		// reduce to either HASHGROUP_BODY/TITLE/INLINK/META
+		if(s_inBody[mhg])
+			mhg = HASHGROUP_BODY;
+		wsr = Posdb::getWordSpamRank(wp);
+		if(hg == HASHGROUP_INLINKTEXT)
+			spamw = scoringWeights.m_linkerWeights[wsr];
+		else
+			spamw = scoringWeights.m_wordSpamWeights[wsr];
+		denw = scoringWeights.m_densityWeights[Posdb::getDensityRank(wp)];
+		syn = Posdb::getIsSynonym(wp);
+	}
+};
+} //anonymous namespace
+
+
+
 //
 // Find the top score for the term for each hash group.
 // INLINK_TEXT may have more than one entry in the top-scorer list, other hash groups only 1.
@@ -232,34 +267,24 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 		char bestmhg[MAX_TOP];
 		do {
 			float score = 100.0;
+			PosdbDecodeHelper helper;
+			helper.set(wpi, m_msg39req->m_scoringWeights);
 			// good diversity?
-			unsigned char div = Posdb::getDiversityRank ( wpi );
-			score *= m_msg39req->m_scoringWeights.m_diversityWeights[div];
-			score *= m_msg39req->m_scoringWeights.m_diversityWeights[div];
+			//unsigned char div = Posdb::getDiversityRank ( wpi );
+			//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div];
+			//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div];
 			// hash group? title? body? heading? etc.
-			unsigned char hg = Posdb::getHashGroup ( wpi );
-			unsigned char mhg = hg;
-			if ( s_inBody[mhg] ) mhg = HASHGROUP_BODY;
-			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg];
-			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg];
+			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper.mhg];
+			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper.mhg];
 			// good density?
-			unsigned char dens = Posdb::getDensityRank ( wpi );
-			score *= m_msg39req->m_scoringWeights.m_densityWeights[dens];
-			score *= m_msg39req->m_scoringWeights.m_densityWeights[dens];
+			score *= helper.denw;
+			score *= helper.denw;
 			// to make more compatible with pair scores divide by distance of 2
 			//score /= 2.0;
 
 			// word spam?
-			unsigned char wspam = Posdb::getWordSpamRank ( wpi );
-			// word spam weight update
-			if ( hg == HASHGROUP_INLINKTEXT ) {
-				score *= m_msg39req->m_scoringWeights.m_linkerWeights  [wspam];
-				score *= m_msg39req->m_scoringWeights.m_linkerWeights  [wspam];
-			}
-			else {
-				score *= m_msg39req->m_scoringWeights.m_wordSpamWeights[wspam];
-				score *= m_msg39req->m_scoringWeights.m_wordSpamWeights[wspam];
-			}
+			score *= helper.spamw;
+			score *= helper.spamw;
 
 			// synonym
 			if ( Posdb::getIsSynonym(wpi) ) {
@@ -271,7 +296,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 			// do not allow duplicate hashgroups!
 			int32_t bro = -1;
 			for( int32_t k=0; k < numTop; k++) {
-				if( bestmhg[k] == mhg && hg != HASHGROUP_INLINKTEXT) {
+				if( bestmhg[k] == helper.mhg && helper.hg != HASHGROUP_INLINKTEXT) {
 					bro = k;
 					break;
 				}
@@ -285,7 +310,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 				if ( score > bestScores[bro] ) {
 					bestScores[bro] = score;
 					bestwpi   [bro] = wpi;
-					bestmhg   [bro] = mhg;
+					bestmhg   [bro] = helper.mhg;
 				}
 			}
 			else 
@@ -297,7 +322,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 				//
 				bestScores[numTop] = score;
 				bestwpi   [numTop] = wpi;
-				bestmhg   [numTop] = mhg;
+				bestmhg   [numTop] = helper.mhg;
 				numTop++;
 			}
 			else 
@@ -309,7 +334,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 				//
 				bestScores[lowestScoreTermIdx] = score;
 				bestwpi   [lowestScoreTermIdx] = wpi;
-				bestmhg   [lowestScoreTermIdx] = mhg;
+				bestmhg   [lowestScoreTermIdx] =helper. mhg;
 			}
 
 			// If top-list is full, make lowestScoreTermIdx point to the lowest score
@@ -327,7 +352,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 			// For findMinTermPairScoreInWindow() sub-out algo.
 			// If the term is not in the body, and the score is the
 			// highest non-body term score, return the position index.
-			if ( score > nonBodyMax && ! s_inBody[hg] ) {
+			if ( score > nonBodyMax && ! s_inBody[helper.hg] ) {
 				nonBodyMax = score;
 				*highestScoringNonBodyPos = wpi;
 			}
@@ -478,41 +503,9 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 #endif
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
-	int32_t p1 = Posdb::getWordPos ( wpi );
-	int32_t p2 = Posdb::getWordPos ( wpj );
-
-	unsigned char hg1 = Posdb::getHashGroup(wpi);
-	unsigned char hg2 = Posdb::getHashGroup(wpj);
-
-	//temporary fix: posdb can have junk in it so clamp the hashgroup to the limit
-	if(hg1>=HASHGROUP_END) hg1=HASHGROUP_END-1;
-	if(hg2>=HASHGROUP_END) hg2=HASHGROUP_END-1;
-
-	unsigned char wsr1 = Posdb::getWordSpamRank(wpi);
-	unsigned char wsr2 = Posdb::getWordSpamRank(wpj);
-
-	float spamw1 ;
-	float spamw2 ;
-
-	if ( hg1 == HASHGROUP_INLINKTEXT ) {
-		spamw1 = m_msg39req->m_scoringWeights.m_linkerWeights[wsr1];
-	}
-	else {
-		spamw1 = m_msg39req->m_scoringWeights.m_wordSpamWeights[wsr1];
-	}
-
-	if ( hg2 == HASHGROUP_INLINKTEXT ) {
-		spamw2 = m_msg39req->m_scoringWeights.m_linkerWeights[wsr2];
-	}
-	else  {
-		spamw2 = m_msg39req->m_scoringWeights.m_wordSpamWeights[wsr2];
-	}
-
-	// density weight
-	//float denw ;
-	//if ( hg1 == HASHGROUP_BODY ) denw = 1.0;
-	float denw1 = m_msg39req->m_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpi)];
-	float denw2 = m_msg39req->m_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpj)];
+	PosdbDecodeHelper helper1, helper2;
+	helper1.set(wpi, m_msg39req->m_scoringWeights);
+	helper2.set(wpj, m_msg39req->m_scoringWeights);
 
 	bool firsti = true;
 	bool firstj = true;
@@ -523,14 +516,14 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 
 	for(;;) {
 
-		if ( p1 <= p2 ) {
+		if ( helper1.p <= helper2.p ) {
 			// . skip the pair if they are in different hashgroups
 			// . we no longer allow either to be in the body in this
 			//   algo because we handle those cases in the sliding window
 			//   algo!
-			if( s_isCompatible[hg1][hg2] ) {
+			if( s_isCompatible[helper1.hg][helper2.hg] ) {
 				// git distance
-				dist = p2 - p1;
+				dist = helper2.p - helper1.p;
 
 				// if zero, make sure its 2. this happens when the same bigram
 				// is used by both terms. i.e. street uses the bigram 
@@ -551,29 +544,27 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 				}
 				
 				// good density?
-				score = 100 * denw1 * denw2;
+				score = 100 * helper1.denw * helper2.denw;
 
 				// hashgroup modifier
-				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg1];
-				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg2];
+				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
+				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
 
 				// if synonym or alternate word form
-				if ( Posdb::getIsSynonym(wpi) ) {
+				if ( helper1.syn ) {
 					score *= m_msg39req->m_synonymWeight;
 				}
-				if ( Posdb::getIsSynonym(wpj) ) {
+				if ( helper2.syn ) {
 					score *= m_msg39req->m_synonymWeight;
 				}
 
 				// word spam weights
-				score *= spamw1 * spamw2;
+				score *= helper1.spamw * helper2.spamw;
 				// huge title? do not allow 11th+ word to be weighted high
-				//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
-				//	score /= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg1];
+				//if ( helper1.hg == HASHGROUP_TITLE && dist > 20 )
+				//	score /= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
 				// mod by distance
 				score /= (dist + 1.0);
-				// tmp hack
-				//score *= (dist+1.0);
 				// best?
 				if ( score > max ) {
 					max = score;
@@ -598,28 +589,16 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 				break;	// exit for(;;) loop
 			}
 			
-			// update. include G-bits?
-			p1 = Posdb::getWordPos ( wpi );
-			// hash group update
-			hg1 = Posdb::getHashGroup ( wpi );
-			// update density weight in case hash group changed
-			denw1 = m_msg39req->m_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpi)];
-			// word spam weight update
-			if ( hg1 == HASHGROUP_INLINKTEXT ) {
-				spamw1=m_msg39req->m_scoringWeights.m_linkerWeights[Posdb::getWordSpamRank(wpi)];
-			}
-			else {
-				spamw1=m_msg39req->m_scoringWeights.m_wordSpamWeights[Posdb::getWordSpamRank(wpi)];
-			}
+			helper1.set(wpi, m_msg39req->m_scoringWeights);
 		}
 		else {
 			// . skip the pair if they are in different hashgroups
 			// . we no longer allow either to be in the body in this
 			//   algo because we handle those cases in the sliding window
 			//   algo!
-			if ( s_isCompatible[hg1][hg2] ) {
+			if ( s_isCompatible[helper1.hg][helper2.hg] ) {
 				// get distance
-				dist = p1 - p2;
+				dist = helper1.p - helper2.p;
 				// if zero, make sure its 2. this happens when the same bigram
 				// is used by both terms. i.e. street uses the bigram 
 				// 'street light' and so does 'light'. so the wordpositions
@@ -648,24 +627,24 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 				//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div1];
 				//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div2];
 				// good density?
-				score = 100 * denw1 * denw2;
+				score = 100 * helper1.denw * helper2.denw;
 				// hashgroup modifier
-				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg1];
-				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg2];
+				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
+				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
 				// if synonym or alternate word form
-				if ( Posdb::getIsSynonym(wpi) ) score *= m_msg39req->m_synonymWeight;
-				if ( Posdb::getIsSynonym(wpj) ) score *= m_msg39req->m_synonymWeight;
+				if ( helper1.syn )
+					score *= m_msg39req->m_synonymWeight;
+				if ( helper2.syn )
+					score *= m_msg39req->m_synonymWeight;
 				//if ( m_bflags[i] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
 				//if ( m_bflags[j] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
 				// word spam weights
-				score *= spamw1 * spamw2;
+				score *= helper1.spamw * helper2.spamw;
 				// huge title? do not allow 11th+ word to be weighted high
-				//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
-				//	score /= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg1];
+				//if ( helper1.hg == HASHGROUP_TITLE && dist > 20 )
+				//	score /= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
 				// mod by distance
 				score /= (dist + 1.0);
-				// tmp hack
-				//score *= (dist+1.0);
 				// best?
 				if ( score > max ) {
 					max = score;
@@ -690,19 +669,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 				break;	// exit for(;;) loop
 			}
 			
-			// update
-			p2 = Posdb::getWordPos(wpj);
-			// hash group update
-			hg2 = Posdb::getHashGroup(wpj);
-			// update density weight in case hash group changed
-			denw2 = m_msg39req->m_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpj)];
-			// word spam weight update
-			if ( hg2 == HASHGROUP_INLINKTEXT ) {
-				spamw2=m_msg39req->m_scoringWeights.m_linkerWeights[Posdb::getWordSpamRank(wpj)];
-			}
-			else {
-				spamw2=m_msg39req->m_scoringWeights.m_wordSpamWeights[Posdb::getWordSpamRank(wpj)];
-			}
+			helper2.set(wpj, m_msg39req->m_scoringWeights);
 		}
 	}
 
@@ -728,32 +695,18 @@ float PosdbTable::getScoreForTermPair(const char *wpi, const char *wpj, int32_t 
 	VALGRIND_CHECK_MEM_IS_DEFINED(wpi,6);
 	VALGRIND_CHECK_MEM_IS_DEFINED(wpj,6);
 #endif
-	int32_t p1 = Posdb::getWordPos ( wpi );
-	int32_t p2 = Posdb::getWordPos ( wpj );
-	unsigned char hg1 = Posdb::getHashGroup ( wpi );
-	unsigned char hg2 = Posdb::getHashGroup ( wpj );
-	unsigned char wsr1 = Posdb::getWordSpamRank(wpi);
-	unsigned char wsr2 = Posdb::getWordSpamRank(wpj);
-	float spamw1;
-	float spamw2;
-	float denw1;
-	float denw2;
+	PosdbDecodeHelper helper1, helper2;
+	helper1.set(wpi, m_msg39req->m_scoringWeights);
+	helper2.set(wpj, m_msg39req->m_scoringWeights);
+
 	float dist;
 	float score;
-	if ( hg1 ==HASHGROUP_INLINKTEXT)spamw1=m_msg39req->m_scoringWeights.m_linkerWeights[wsr1];
-	else                            spamw1=m_msg39req->m_scoringWeights.m_wordSpamWeights[wsr1];
-	if ( hg2 ==HASHGROUP_INLINKTEXT)spamw2=m_msg39req->m_scoringWeights.m_linkerWeights[wsr2];
-	else                            spamw2=m_msg39req->m_scoringWeights.m_wordSpamWeights[wsr2];
-	denw1 = m_msg39req->m_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpi)];
-	denw2 = m_msg39req->m_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpj)];
 	// set this
 	if ( fixedDistance != 0 ) {
 		dist = fixedDistance;
 	}
 	else {
-		// do the math now
-		if ( p2 < p1 ) dist = p1 - p2;
-		else           dist = p2 - p1;
+		dist = abs(helper1.p - helper2.p);
 		// if zero, make sure its 2. this happens when the same bigram
 		// is used by both terms. i.e. street uses the bigram 
 		// 'street light' and so does 'light'. so the wordpositions
@@ -762,30 +715,26 @@ float PosdbTable::getScoreForTermPair(const char *wpi, const char *wpj, int32_t 
 		// subtract from the dist the terms are apart in the query
 		if ( dist >= qdist ) dist =  dist - qdist;
 		// out of order? penalize by 1 unit
-		if ( p2 < p1 ) dist += 1;
+		if ( helper2.p < helper1.p ) dist += 1;
 	}
 	// TODO: use left and right diversity if no matching query term
 	// is on the left or right
 	//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div1];
 	//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div2];
 	// good density?
-	score = 100 * denw1 * denw2;
+	score = 100 * helper1.denw * helper2.denw;
 	// wikipedia phrase weight
 	//score *= ts;
 	// hashgroup modifier
-	score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg1];
-	score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg2];
+	score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
+	score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
 	// if synonym or alternate word form
-	if ( Posdb::getIsSynonym(wpi) ) score *= m_msg39req->m_synonymWeight;
-	if ( Posdb::getIsSynonym(wpj) ) score *= m_msg39req->m_synonymWeight;
-	//if ( m_bflags[i] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
-	//if ( m_bflags[j] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
+	if ( helper1.syn ) score *= m_msg39req->m_synonymWeight;
+	if ( helper2.syn ) score *= m_msg39req->m_synonymWeight;
 	// word spam weights
-	score *= spamw1 * spamw2;
+	score *= helper1.spamw * helper2.spamw;
 	// mod by distance
 	score /= (dist + 1.0);
-	// tmp hack
-	//score *= (dist+1.0);
 	
 	logTrace(g_conf.m_logTracePosdb, "END. score=%f", score);
 	return score;
@@ -840,44 +789,9 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		qdist = m_qpos[j] - m_qpos[i];		
 	}
 
-	int32_t p1 = Posdb::getWordPos(wpi);
-	int32_t p2 = Posdb::getWordPos(wpj);
-
-	unsigned char hg1 = Posdb::getHashGroup ( wpi );
-	unsigned char hg2 = Posdb::getHashGroup ( wpj );
-
-	// reduce to either HASHGROUP_BODY/TITLE/INLINK/META
-	unsigned char mhg1 = hg1;
-	unsigned char mhg2 = hg2;
-	if ( s_inBody[mhg1] ) {
-		mhg1 = HASHGROUP_BODY;
-	}
-	if ( s_inBody[mhg2] ) {
-		mhg2 = HASHGROUP_BODY;
-	}
-
-	unsigned char wsr1 = Posdb::getWordSpamRank(wpi);
-	unsigned char wsr2 = Posdb::getWordSpamRank(wpj);
-
-	float spamw1 ;
-	float spamw2 ;
-	if( hg1 == HASHGROUP_INLINKTEXT ) {
-		spamw1 = m_msg39req->m_scoringWeights.m_linkerWeights[wsr1];
-	}
-	else {
-		spamw1 = m_msg39req->m_scoringWeights.m_wordSpamWeights[wsr1];
-	}
-
-	if( hg2 == HASHGROUP_INLINKTEXT ) {
-		spamw2 = m_msg39req->m_scoringWeights.m_linkerWeights[wsr2];
-	}
-	else {
-		spamw2 = m_msg39req->m_scoringWeights.m_wordSpamWeights[wsr2];
-	}
-
-	// density weight
-	float denw1 = m_msg39req->m_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpi)];
-	float denw2 = m_msg39req->m_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpj)];
+	PosdbDecodeHelper helper1, helper2;
+	helper1.set(wpi, m_msg39req->m_scoringWeights);
+	helper2.set(wpj, m_msg39req->m_scoringWeights);
 
 	bool firsti = true;
 	bool firstj = true;
@@ -894,18 +808,16 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	int32_t  dist;
 	bool  fixedDistance;
 	int32_t  bro;
-	char  syn1;
-	char  syn2;
 
 	for(;;) {
 		// . if p1/p2 is in body and not in window, skip
 		// . this is how we restrict all body terms to the winning
 		//   sliding window
-		if ( s_inBody[hg1] && wpi != m_bestMinTermPairWindowPtrs[i] ) {
+		if ( s_inBody[helper1.hg] && wpi != m_bestMinTermPairWindowPtrs[i] ) {
 			goto skip1;
 		}
 		
-		if ( s_inBody[hg2] && wpj != m_bestMinTermPairWindowPtrs[j] ) {
+		if ( s_inBody[helper2.hg] && wpj != m_bestMinTermPairWindowPtrs[j] ) {
 			goto skip2;
 		}
 
@@ -913,16 +825,16 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		// of bigram terms, where p1==p2 we'd like to advance p2/wj to
 		// point to the non-syn single term in order to get a better score
 		// to fix the 'search engine' query on gigablast.com
-		if ( p1 <= p2 ) {
+		if ( helper1.p <= helper2.p ) {
 			// git distance
-			dist = p2 - p1;
+			dist = helper2.p - helper1.p;
 
 			// if in the same quoted phrase, order is bad!
 			if ( inSameQuotedPhrase ) {
 				// debug
 				//log("dddx: i=%" PRId32" j=%" PRId32" dist=%" PRId32" qdist=%" PRId32" posi=%" PRId32" "
 				//    "posj=%" PRId32,
-				//    i,j,dist,qdist,p1,p2);
+				//    i,j,dist,qdist,helper1.p,helper2.p);
 				// TODO: allow for off by 1
 				// if it has punct in it then dist will be 3, 
 				// just a space or similar then dist should be 2.
@@ -935,9 +847,6 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 				}
 			}
 
-			// are either synonyms
-			syn1 = Posdb::getIsSynonym(wpi);
-			syn2 = Posdb::getIsSynonym(wpj);
 			// if zero, make sure its 2. this happens when the same bigram
 			// is used by both terms. i.e. street uses the bigram 
 			// 'street light' and so does 'light'. so the wordpositions
@@ -950,12 +859,12 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 				fixedDistance = false;
 			}
 			// body vs title, linktext vs title, linktext vs body
-			else if ( mhg1 != mhg2 ) {
+			else if ( helper1.mhg != helper2.mhg ) {
 				dist = FIXED_DISTANCE;
 				fixedDistance = true;
 			}
 			// link text to other link text
-			else if ( mhg1 == HASHGROUP_INLINKTEXT ) {
+			else if ( helper1.mhg == HASHGROUP_INLINKTEXT ) {
 				dist = FIXED_DISTANCE;
 				fixedDistance = true;
 			}
@@ -965,24 +874,24 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			
 			// if both are link text and > 50 units apart that means
 			// they are from different link texts
-			//if ( hg1 == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip1;
+			//if ( helper1.hg == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip1;
 			// subtract from the dist the terms are apart in the query
 			if ( dist >= qdist ) {
 				dist =  dist - qdist;
 			}
 			
 			// good density?
-			score = 100 * denw1 * denw2;
+			score = 100 * helper1.denw * helper2.denw;
 			// hashgroup modifier
-			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg1];
-			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg2];
+			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
+			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
 
 			// if synonym or alternate word form
-			if ( syn1 ) {
+			if ( helper1.syn ) {
 				score *= m_msg39req->m_synonymWeight;
 			}
 			
-			if ( syn2 ) {
+			if ( helper2.syn ) {
 				score *= m_msg39req->m_synonymWeight;
 			}
 			
@@ -996,14 +905,12 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			}
 			
 			// word spam weights
-			score *= spamw1 * spamw2;
+			score *= helper1.spamw * helper2.spamw;
 			// huge title? do not allow 11th+ word to be weighted high
-			//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
-			//	score /= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg1];
+			//if ( helper1.hg == HASHGROUP_TITLE && dist > 20 )
+			//	score /= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
 			// mod by distance
 			score /= (dist + 1.0);
-			// tmp hack
-			//score *= (dist+1.0);
 
 			// if our hg1/hg2 hashgroup pairing already exists
 			// in the bestScores array we have to beat it and then
@@ -1012,11 +919,11 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 
 			bro = -1;
 			for ( int32_t k = 0 ; k < numTop ; k++ ) {
-				if ( bestmhg1[k]==mhg1 && hg1 != HASHGROUP_INLINKTEXT ){
+				if ( bestmhg1[k]==helper1.mhg && helper1.hg != HASHGROUP_INLINKTEXT ){
 					bro = k;
 					break;
 				}
-				if ( bestmhg2[k]==mhg2 && hg2 != HASHGROUP_INLINKTEXT ){
+				if ( bestmhg2[k]==helper2.mhg && helper2.hg != HASHGROUP_INLINKTEXT ){
 					bro = k;
 					break;
 				}
@@ -1027,8 +934,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 					bestScores[bro] = score;
 					bestwpi   [bro] = wpi;
 					bestwpj   [bro] = wpj;
-					bestmhg1  [bro] = mhg1;
-					bestmhg2  [bro] = mhg2;
+					bestmhg1  [bro] = helper1.mhg;
+					bestmhg2  [bro] = helper2.mhg;
 					bestFixed [bro] = fixedDistance;
 				}
 			}
@@ -1037,8 +944,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 				bestScores[numTop] = score;
 				bestwpi   [numTop] = wpi;
 				bestwpj   [numTop] = wpj;
-				bestmhg1  [numTop] = mhg1;
-				bestmhg2  [numTop] = mhg2;
+				bestmhg1  [numTop] = helper1.mhg;
+				bestmhg2  [numTop] = helper2.mhg;
 				bestFixed [numTop] = fixedDistance;
 				numTop++;
 			}
@@ -1047,8 +954,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 				bestScores[lowestScoreTermIdx] = score;
 				bestwpi   [lowestScoreTermIdx] = wpi;
 				bestwpj   [lowestScoreTermIdx] = wpj;
-				bestmhg1  [lowestScoreTermIdx] = mhg1;
-				bestmhg2  [lowestScoreTermIdx] = mhg2;
+				bestmhg1  [lowestScoreTermIdx] = helper1.mhg;
+				bestmhg2  [lowestScoreTermIdx] = helper2.mhg;
 				bestFixed [lowestScoreTermIdx] = fixedDistance;
 			}
 			
@@ -1092,33 +999,18 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 				// re-set this i guess
 				firsti = true;
 			}
-			// update. include G-bits?
-			p1 = Posdb::getWordPos ( wpi );
-			// hash group update
-			hg1 = Posdb::getHashGroup ( wpi );
-			// the "modified" hash group
-			mhg1 = hg1;
-			if ( s_inBody[mhg1] ) mhg1 = HASHGROUP_BODY;
-			// update density weight in case hash group changed
-			denw1 = m_msg39req->m_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpi)];
-			// word spam weight update
-			if ( hg1 == HASHGROUP_INLINKTEXT ) {
-				spamw1=m_msg39req->m_scoringWeights.m_linkerWeights[Posdb::getWordSpamRank(wpi)];
-			}
-			else {
-				spamw1=m_msg39req->m_scoringWeights.m_wordSpamWeights[Posdb::getWordSpamRank(wpi)];
-			}
+			helper1.set(wpi, m_msg39req->m_scoringWeights);
 		}
 		else {
 			// get distance
-			dist = p1 - p2;
+			dist = helper1.p - helper2.p;
 
 			// if in the same quoted phrase, order is bad!
 			if ( inSameQuotedPhrase ) {
 				// debug
 				//log("dddy: i=%" PRId32" j=%" PRId32" dist=%" PRId32" qdist=%" PRId32" posi=%" PRId32" "
 				//    "posj=%" PRId32,
-				//    i,j,dist,qdist,p1,p2);
+				//    i,j,dist,qdist,helper1.p,p2);
 				goto skip2;
 			}
 
@@ -1135,12 +1027,12 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 				fixedDistance = false;
 			}
 			// body vs title, linktext vs title, linktext vs body
-			else if ( mhg1 != mhg2 ) {
+			else if ( helper1.mhg != helper2.mhg ) {
 				dist = FIXED_DISTANCE;
 				fixedDistance = true;
 			}
 			// link text to other link text
-			else if ( mhg1 == HASHGROUP_INLINKTEXT ) {
+			else if ( helper1.mhg == HASHGROUP_INLINKTEXT ) {
 				dist = FIXED_DISTANCE;
 				fixedDistance = true;
 			}
@@ -1148,7 +1040,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 				fixedDistance = false;
 			// if both are link text and > 50 units apart that means
 			// they are from different link texts
-			//if ( hg1 == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip2;
+			//if ( helper1.hg == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip2;
 			// subtract from the dist the terms are apart in the query
 			if ( dist >= qdist ) {
 				dist =  dist - qdist;
@@ -1161,37 +1053,29 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 				dist += 1; // qdist - 1;
 			}
 
-			// compute score based on that junk
-			//score = (MAXWORDPOS+1) - dist;
 			// good diversity? uneeded for pair algo
-			//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div1];
-			//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div2];
 			// good density?
-			score = 100 * denw1 * denw2;
+			score = 100 * helper1.denw * helper2.denw;
 			// hashgroup modifier
-			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg1];
-			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg2];
+			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
+			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
 			
 			// if synonym or alternate word form
-			if ( Posdb::getIsSynonym(wpi) ) {
+			if ( helper1.syn ) {
 				score *= m_msg39req->m_synonymWeight;
 			}
 			
-			if ( Posdb::getIsSynonym(wpj) ) {
+			if ( helper2.syn ) {
 				score *= m_msg39req->m_synonymWeight;
 			}
 			
-			//if ( m_bflags[i] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
-			//if ( m_bflags[j] & BF_SYNONYM ) score *= m_msg39req->m_synonymWeight;
 			// word spam weights
-			score *= spamw1 * spamw2;
+			score *= helper1.spamw * helper2.spamw;
 			// huge title? do not allow 11th+ word to be weighted high
 			//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
 			//	score /= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg1];
 			// mod by distance
 			score /= (dist + 1.0);
-			// tmp hack
-			//score *= (dist+1.0);
 
 			// if our hg1/hg2 hashgroup pairing already exists
 			// in the bestScores array we have to beat it and then
@@ -1200,11 +1084,11 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 
 			bro = -1;
 			for ( int32_t k = 0 ; k < numTop ; k++ ) {
-				if ( bestmhg1[k]==mhg1 && hg1 !=HASHGROUP_INLINKTEXT ){
+				if ( bestmhg1[k]==helper1.mhg && helper1.hg !=HASHGROUP_INLINKTEXT ){
 					bro = k;
 					break;
 				}
-				if ( bestmhg2[k]==mhg2 && hg2 !=HASHGROUP_INLINKTEXT ){
+				if ( bestmhg2[k]==helper2.mhg && helper2.hg !=HASHGROUP_INLINKTEXT ){
 					bro = k;
 					break;
 				}
@@ -1214,8 +1098,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 					bestScores[bro] = score;
 					bestwpi   [bro] = wpi;
 					bestwpj   [bro] = wpj;
-					bestmhg1  [bro] = mhg1;
-					bestmhg2  [bro] = mhg2;
+					bestmhg1  [bro] = helper1.mhg;
+					bestmhg2  [bro] = helper2.mhg;
 					bestFixed [bro] = fixedDistance;
 				}
 			}
@@ -1224,8 +1108,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 				bestScores[numTop] = score;
 				bestwpi   [numTop] = wpi;
 				bestwpj   [numTop] = wpj;
-				bestmhg1  [numTop] = mhg1;
-				bestmhg2  [numTop] = mhg2;
+				bestmhg1  [numTop] = helper1.mhg;
+				bestmhg2  [numTop] = helper2.mhg;
 				bestFixed [numTop] = fixedDistance;
 				numTop++;
 			}
@@ -1233,8 +1117,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 				bestScores[lowestScoreTermIdx] = score;
 				bestwpi   [lowestScoreTermIdx] = wpi;
 				bestwpj   [lowestScoreTermIdx] = wpj;
-				bestmhg1  [lowestScoreTermIdx] = mhg1;
-				bestmhg2  [lowestScoreTermIdx] = mhg2;
+				bestmhg1  [lowestScoreTermIdx] = helper1.mhg;
+				bestmhg2  [lowestScoreTermIdx] = helper2.mhg;
 				bestFixed [lowestScoreTermIdx] = fixedDistance;
 			}
 			
@@ -1277,26 +1161,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 				firstj = true;
 			}
 
-			// update
-			p2 = Posdb::getWordPos ( wpj );
-			// hash group update
-			hg2 = Posdb::getHashGroup ( wpj );
-			// the "modified" hash group
-			mhg2 = hg2;
-			if ( s_inBody[mhg2] ) {
-				mhg2 = HASHGROUP_BODY;
-			}
-
-			// update density weight in case hash group changed
-			denw2 = m_msg39req->m_scoringWeights.m_densityWeights[Posdb::getDensityRank(wpj)];
-
-			// word spam weight update
-			if ( hg2 == HASHGROUP_INLINKTEXT ) {
-				spamw2 = m_msg39req->m_scoringWeights.m_linkerWeights[Posdb::getWordSpamRank(wpj)];
-			}
-			else {
-				spamw2 = m_msg39req->m_scoringWeights.m_wordSpamWeights[Posdb::getWordSpamRank(wpj)];
-			}
+			helper2.set(wpj, m_msg39req->m_scoringWeights);
 		}
 	} // for(;;)
 
@@ -1397,14 +1262,10 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		px->m_finalScore     = score;
 		px->m_wordPos1       = Posdb::getWordPos(maxp1);
 		px->m_wordPos2       = Posdb::getWordPos(maxp2);
-		syn1 = Posdb::getIsSynonym(maxp1);
-		syn2 = Posdb::getIsSynonym(maxp2);
-		px->m_isSynonym1     = syn1;
-		px->m_isSynonym2     = syn2;
+		px->m_isSynonym1     = Posdb::getIsSynonym(maxp1);
+		px->m_isSynonym2     = Posdb::getIsSynonym(maxp2);
 		px->m_isHalfStopWikiBigram1 = Posdb::getIsHalfStopWikiBigram(maxp1);
 		px->m_isHalfStopWikiBigram2 = Posdb::getIsHalfStopWikiBigram(maxp2);
-		//px->m_isSynonym1 = ( m_bflags[i] & BF_SYNONYM );
-		//px->m_isSynonym2 = ( m_bflags[j] & BF_SYNONYM );
 		px->m_diversityRank1 = Posdb::getDiversityRank(maxp1);
 		px->m_diversityRank2 = Posdb::getDiversityRank(maxp2);
 		px->m_wordSpamRank1  = Posdb::getWordSpamRank(maxp1);

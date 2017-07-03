@@ -3453,9 +3453,13 @@ lang_t XmlDoc::getContentLangIdCLD2() {
 
 lang_t XmlDoc::getContentLangIdCLD3() {
 	int32_t contentLen = size_utf8Content > 0 ? (size_utf8Content - 1) : 0;
-	char contentTextBuf[contentLen];
-	int32_t contentTextBufLen = m_xml.getText(contentTextBuf, contentLen, 0, -1, true);
-	return GbLanguage::getLangIdCLD3(contentTextBuf, contentTextBufLen);
+
+	char *contentTextBuf = (char*)mmalloc(contentLen, "xmldoc-cld3");
+	int32_t contentTextBufLen = m_xml.getText(contentTextBuf, contentLen - 2, 0, -1, true);
+	lang_t langId = GbLanguage::getLangIdCLD3(contentTextBuf, contentTextBufLen);
+	mfree(contentTextBuf, contentLen, "xmldoc-cld3");
+
+	return langId;
 }
 
 // returns -1 and sets g_errno on error
@@ -18063,9 +18067,13 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	Host *hosts = g_hostdb.getShard ( shardNum );
 	Host *h = &hosts[0];
 
-	key128_t spiderKey = Spiderdb::makeFirstKey(m_firstIp);
-	int32_t spiderShardNum = getShardNum(RDB_SPIDERDB, &spiderKey);
-	int32_t spiderHostId = g_hostdb.getHostIdWithSpideringEnabled(spiderShardNum);
+	int32_t *firstIp = getFirstIp();
+	int32_t spiderHostId = -1;
+	if (firstIp && firstIp != (int32_t *)-1) {
+		key128_t spiderKey = Spiderdb::makeFirstKey(*firstIp);
+		int32_t spiderShardNum = getShardNum(RDB_SPIDERDB, &spiderKey);
+		spiderHostId = g_hostdb.getHostIdWithSpideringEnabled(spiderShardNum);
+	}
 
 	if ( ! isXml )
 		sb->safePrintf (
