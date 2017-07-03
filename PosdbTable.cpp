@@ -2866,6 +2866,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 					memcpy ( mptr, nwp[mink], 12 );
 
 					// Detect highest siterank of inlinkers
+					//todo: the "+6" below is most likely an error
 					if ( Posdb::getHashGroup(mptr+6) == HASHGROUP_INLINKTEXT) {
 						char inlinkerSiteRank = Posdb::getWordSpamRank(mptr+6);
 						if(inlinkerSiteRank > *highestInlinkSiteRank) {
