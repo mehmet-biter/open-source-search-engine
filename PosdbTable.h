@@ -39,9 +39,9 @@ struct MiniMergeBuffer;
 // . these should be 1-1 with query terms, Query::m_qterms[]
 class QueryTermInfo {
 public:
+	//The lists associated with this qti, including the term itself, 9-2 bigrams and any synonyms
 	struct {
 		const QueryTerm *m_qt;
-		// the required lists for this query term, synonym lists, etc.
 		RdbList  *m_list;
 		// flags to indicate if bigram list should be scored higher
 		char      m_bigramFlag;
@@ -91,8 +91,8 @@ class PosdbTable {
 
 	float getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMergeBuffer, int i, int j, int32_t qdist);
 	float getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeBuf, int32_t i, DocIdScore *pdcs, const char **highestScoringNonBodyPos);
-	float getScoreForTermPair(const char *wpi, const char *wpj, int32_t fixedDistance, int32_t qdist);
-	void findMinTermPairScoreInWindow(const char **ptrs, const char **highestScoringNonBodyPos, float *scoreMatrix);
+	float getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, const char *wpi, const char *wpj, int32_t fixedDistance, int32_t qdist);
+	void findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const char **ptrs, const char **highestScoringNonBodyPos, float *scoreMatrix);
 
 	float getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer, int i, int j, DocIdScore *pdcs);
 
