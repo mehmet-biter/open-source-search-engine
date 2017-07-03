@@ -91,8 +91,10 @@ const char *mstrerror ( int errnum ) {
 				return "Doc force deleted";
 			case EDOCURLSPAM      :
 				return "Url detected as spam or porn";
-			case EDOCBLOCKED:
-				return "Doc blocked by block list";
+			case EDOCBLOCKEDURL:
+				return "Doc blocked by url block list";
+			case EDOCBLOCKEDDNS:
+				return "Doc blocked by dns block list";
 			case EDOCBADCONTENTTYPE :
 				return "Doc bad content type";
 			case EDOCBADHTTPSTATUS :
@@ -284,8 +286,8 @@ static const char* s_errname[] {
 	STRINGIFY( EDOCBANNED ),
 	STRINGIFY( EDOCFORCEDELETE ),
 	STRINGIFY( EDOCURLSPAM ),
-	STRINGIFY( EDOCBLOCKED ),
-	STRINGIFY( EUNUSED11 ),
+	STRINGIFY( EDOCBLOCKEDURL ),
+	STRINGIFY( EDOCBLOCKEDDNS ),
 	STRINGIFY( EUNUSED12 ),
 	STRINGIFY( EUNUSED13 ),
 	STRINGIFY( EDOCBADCONTENTTYPE ),
