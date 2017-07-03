@@ -18275,9 +18275,13 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	Host *hosts = g_hostdb.getShard ( shardNum );
 	Host *h = &hosts[0];
 
-	key128_t spiderKey = Spiderdb::makeFirstKey(m_firstIp);
-	int32_t spiderShardNum = getShardNum(RDB_SPIDERDB, &spiderKey);
-	int32_t spiderHostId = g_hostdb.getHostIdWithSpideringEnabled(spiderShardNum);
+	int32_t *firstIp = getFirstIp();
+	int32_t spiderHostId = -1;
+	if (firstIp && firstIp != (int32_t *)-1) {
+		key128_t spiderKey = Spiderdb::makeFirstKey(*firstIp);
+		int32_t spiderShardNum = getShardNum(RDB_SPIDERDB, &spiderKey);
+		spiderHostId = g_hostdb.getHostIdWithSpideringEnabled(spiderShardNum);
+	}
 
 	if ( ! isXml )
 		sb->safePrintf (
