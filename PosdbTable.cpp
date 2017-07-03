@@ -357,13 +357,13 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 				*highestScoringNonBodyPos = wpi;
 			}
 
-			// first key is 12 bytes
-			if ( first ) { 
-				wpi += 6; 
-				first = false; 
+			// advance posdb pointer
+			if(!first)
+				wpi += 6;
+			else {
+				wpi += 12;
+				first = false;
 			}
-			// advance
-			wpi += 6;
 
 		} while( wpi < endi && Posdb::getKeySize(wpi) == 6 );
 	}
@@ -571,14 +571,14 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 				}
 			}		
 
-			// first key is 12 bytes
-			if ( firsti ) { 
-				wpi += 6; 
-				firsti = false; 
+			// advance posdb pointer
+			if(!firsti)
+				wpi += 6;
+			else {
+				wpi += 12;
+				firsti = false;
 			}
 			
-			// advance
-			wpi += 6;
 			// end of list?
 			if ( wpi >= endi ) {
 				break;	// exit for(;;) loop
@@ -651,14 +651,14 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wp
 				}
 			}
 
-			// first key is 12 bytes
-			if ( firstj ) { 
-				wpj += 6; 
-				firstj = false; 
+			// advance posdb pointer
+			if(!firstj)
+				wpj += 6;
+			else {
+				wpj += 12;
+				firstj = false;
 			}
 
-			// advance
-			wpj += 6;
 			// end of list?
 			if ( wpj >= endj ) {
 				break;	// exit for(;;) loop
@@ -973,14 +973,13 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 
 			
 		skip1:
-			// first key is 12 bytes
-			if ( firsti ) { 
-				wpi += 6; 
-				firsti = false; 
+			// advance posdb pointer
+			if(!firsti)
+				wpi += 6;
+			else {
+				wpi += 12;
+				firsti = false;
 			}
-
-			// advance
-			wpi += 6;
 
 			// end of list?
 			if ( wpi >= endi ) {
@@ -1134,14 +1133,13 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			}
 
 		skip2:
-			// first key is 12 bytes
-			if ( firstj ) { 
-				wpj += 6; 
-				firstj = false; 
+			// advance posdb pointer
+			if(!firstj)
+				wpj += 6;
+			else {
+				wpj += 12;
+				firstj = false;
 			}
-			
-			// advance
-			wpj += 6;
 
 			// end of list?
 			if ( wpj >= endj ) {
