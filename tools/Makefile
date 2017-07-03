@@ -17,19 +17,25 @@ ucdata:
 $(BASE_DIR)/libcld2_full.so:
 	$(MAKE) -C $(BASE_DIR) libcld2_full.so
 
+$(BASE_DIR)/libcld3.so:
+	$(MAKE) -C $(BASE_DIR) libcld3.so
+
+$(BASE_DIR)/libced.so:
+	$(MAKE) -C $(BASE_DIR) libced.so
+
 CPPFLAGS += -g
 CPPFLAGS += -Wall -Wno-write-strings
 CPPFLAGS += -Wl,-rpath=. -Wl,-rpath=$(BASE_DIR)
-CPPFLAGS += -I$(BASE_DIR)
+CPPFLAGS += -I$(BASE_DIR) -I$(BASE_DIR)/third-party/compact_enc_det
 CPPFLAGS += -std=c++11
 
 # exported in parent make
 CPPFLAGS += $(CONFIG_CPPFLAGS)
 
 LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto -lpcre
-LIBS += -L$(BASE_DIR) -lcld2_full
+LIBS += -L$(BASE_DIR) -lcld2_full -lcld3 -lprotobuf -lced
 
-%: libgb.a $(BASE_DIR)/libcld2_full.so %.cpp
+%: libgb.a $(BASE_DIR)/libcld2_full.so $(BASE_DIR)/libcld3.so $(BASE_DIR)/libced.so %.cpp
 	$(CXX) $(CPPFLAGS) $@.cpp $(LIBS) -o $@
 
 .PHONY: clean
