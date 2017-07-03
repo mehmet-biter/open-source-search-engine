@@ -287,7 +287,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 			score *= helper.spamw;
 
 			// synonym
-			if ( Posdb::getIsSynonym(wpi) ) {
+			if ( helper.syn ) {
 				score *= m_msg39req->m_synonymWeight;
 				score *= m_msg39req->m_synonymWeight;
 			}
