@@ -196,6 +196,7 @@ void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 			     crp->m_coll, (int32_t)crp->m_collnum );
 		}
 
+		// e.g. URL Filter config has changed
 		if (sc->m_waitingTreeNeedsRebuild) {
 			// re-entry is false because we are entering for the first time
 			logTrace(g_conf.m_logTraceSpider, "Calling populateWaitingTreeFromSpiderdb");
@@ -203,7 +204,7 @@ void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 		}
 
 		logTrace( g_conf.m_logTraceSpider, "Calling populateDoledbFromWaitingTree" );
-		sc->populateDoledbFromWaitingTree ( );
+		sc->populateDoledbFromWaitingTree();
 	}
 
 	// if we have a ton of collections, reduce cpu load from calling
