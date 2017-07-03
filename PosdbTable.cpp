@@ -301,7 +301,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 			score *= helper.spamw;
 
 			// synonym
-			if ( Posdb::getIsSynonym(wpi) ) {
+			if ( helper.syn ) {
 				score *= m_msg39req->m_synonymWeight;
 				score *= m_msg39req->m_synonymWeight;
 			}
@@ -371,13 +371,13 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 				*highestScoringNonBodyPos = wpi;
 			}
 
-			// first key is 12 bytes
-			if ( first ) { 
-				wpi += 6; 
-				first = false; 
+			// advance posdb pointer
+			if(!first)
+				wpi += 6;
+			else {
+				wpi += 12;
+				first = false;
 			}
-			// advance
-			wpi += 6;
 
 		} while( wpi < endi );
 	}
@@ -588,14 +588,14 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				}
 			}		
 
-			// first key is 12 bytes
-			if ( firsti ) { 
-				wpi += 6; 
-				firsti = false; 
+			// advance posdb pointer
+			if(!firsti)
+				wpi += 6;
+			else {
+				wpi += 12;
+				firsti = false;
 			}
 			
-			// advance
-			wpi += 6;
 			// end of list?
 			if ( wpi >= endi ) {
 				break;	// exit for(;;) loop
@@ -663,14 +663,14 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				}
 			}
 
-			// first key is 12 bytes
-			if ( firstj ) { 
-				wpj += 6; 
-				firstj = false; 
+			// advance posdb pointer
+			if(!firstj)
+				wpj += 6;
+			else {
+				wpj += 12;
+				firstj = false;
 			}
 
-			// advance
-			wpj += 6;
 			// end of list?
 			if ( wpj >= endj ) {
 				break;	// exit for(;;) loop
@@ -982,14 +982,13 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 
 			
 		skip1:
-			// first key is 12 bytes
-			if ( firsti ) { 
-				wpi += 6; 
-				firsti = false; 
+			// advance posdb pointer
+			if(!firsti)
+				wpi += 6;
+			else {
+				wpi += 12;
+				firsti = false;
 			}
-
-			// advance
-			wpi += 6;
 
 			// end of list?
 			if ( wpi >= endi ) {
@@ -1131,14 +1130,13 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			}
 
 		skip2:
-			// first key is 12 bytes
-			if ( firstj ) { 
-				wpj += 6; 
-				firstj = false; 
+			// advance posdb pointer
+			if(!firstj)
+				wpj += 6;
+			else {
+				wpj += 12;
+				firstj = false;
 			}
-			
-			// advance
-			wpj += 6;
 
 			// end of list?
 			if ( wpj >= endj ) {
