@@ -379,7 +379,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 			// advance
 			wpi += 6;
 
-		} while( wpi < endi && Posdb::getKeySize(wpi) == 6 );
+		} while( wpi < endi );
 	}
 
 	// add up the top scores
@@ -601,11 +601,6 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				break;	// exit for(;;) loop
 			}
 			
-			// exhausted?
-			if ( Posdb::getKeySize ( wpi ) != 6 ) {
-				break;	// exit for(;;) loop
-			}
-			
 			helper1.set(wpi, m_msg39req->m_scoringWeights);
 		}
 		else {
@@ -678,11 +673,6 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 			wpj += 6;
 			// end of list?
 			if ( wpj >= endj ) {
-				break;	// exit for(;;) loop
-			}
-			
-			// exhausted?
-			if ( Posdb::getKeySize(wpj) != 6 ) {
 				break;	// exit for(;;) loop
 			}
 			
@@ -1006,18 +996,6 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 				break;	// exit for(;;) loop
 			}
 			
-			// exhausted?
-			if ( Posdb::getKeySize ( wpi ) != 6 ) {
-				// sometimes there is posdb index corruption and
-				// we have a 12 byte key with the same docid but
-				// different siterank or langid because it was
-				// not deleted right!
-				if ( (uint64_t)Posdb::getDocId(wpi) != m_docId ) {
-					gbshutdownAbort(true);
-				}
-				// re-set this i guess
-				firsti = true;
-			}
 			helper1.set(wpi, m_msg39req->m_scoringWeights);
 		}
 		else {
@@ -1167,19 +1145,6 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 				break;	// exit for(;;) loop
 			}
 			
-			// exhausted?
-			if ( Posdb::getKeySize ( wpj ) != 6 ) {
-				// sometimes there is posdb index corruption and
-				// we have a 12 byte key with the same docid but
-				// different siterank or langid because it was
-				// not deleted right!
-				if ( (uint64_t)Posdb::getDocId(wpj) != m_docId ) {
-					gbshutdownAbort(true);
-				}
-				// re-set this i guess
-				firstj = true;
-			}
-
 			helper2.set(wpj, m_msg39req->m_scoringWeights);
 		}
 	} // for(;;)
@@ -2909,11 +2874,6 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 
 			// exhausted?
 			if ( nwp[mink] >= nwpEnd[mink] ) {
-				nwp[mink] = NULL;
-			}
-			else
-			if ( Posdb::getKeySize(nwp[mink]) != 6 ) {
-				// or hit a different docid
 				nwp[mink] = NULL;
 			}
 		}
