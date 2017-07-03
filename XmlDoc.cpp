@@ -3453,9 +3453,13 @@ lang_t XmlDoc::getContentLangIdCLD2() {
 
 lang_t XmlDoc::getContentLangIdCLD3() {
 	int32_t contentLen = size_utf8Content > 0 ? (size_utf8Content - 1) : 0;
-	char contentTextBuf[contentLen];
-	int32_t contentTextBufLen = m_xml.getText(contentTextBuf, contentLen, 0, -1, true);
-	return GbLanguage::getLangIdCLD3(contentTextBuf, contentTextBufLen);
+
+	char *contentTextBuf = (char*)mmalloc(contentLen, "xmldoc-cld3");
+	int32_t contentTextBufLen = m_xml.getText(contentTextBuf, contentLen - 2, 0, -1, true);
+	lang_t langId = GbLanguage::getLangIdCLD3(contentTextBuf, contentTextBufLen);
+	mfree(contentTextBuf, contentLen, "xmldoc-cld3");
+
+	return langId;
 }
 
 // returns -1 and sets g_errno on error
