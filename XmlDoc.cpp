@@ -45,6 +45,7 @@
 #include <fcntl.h>
 #include "GbEncoding.h"
 #include "GbLanguage.h"
+#include "DnsBlockList.h"
 
 
 #ifdef _VALGRIND_
@@ -95,6 +96,9 @@ XmlDoc::XmlDoc() {
 	m_indexedDoc = false;
 	m_msg4Waiting = false;
 	m_msg4Launched = false;
+	m_blockedDoc = false;
+	m_checkedUrlBlockList = false;
+	m_checkedDnsBlockList = false;
 	m_dupTrPtr = NULL;
 	m_oldTitleRec = NULL;
 	m_filteredContent = NULL;
@@ -149,6 +153,9 @@ void XmlDoc::reset ( ) {
 
 	m_indexedDoc = false;
 	m_msg4Launched = false;
+	m_blockedDoc = false;
+	m_checkedUrlBlockList = false;
+	m_checkedDnsBlockList = false;
 
 	m_doConsistencyTesting = g_conf.m_doConsistencyTesting;
 
@@ -1900,11 +1907,57 @@ bool XmlDoc::indexDoc ( ) {
 }
 
 
+bool* XmlDoc::checkBlockList() {
+	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
+
+	// don't need check multiple times
+	if (m_blockedDocValid) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, already valid. blockedDoc=%d", m_blockedDoc);
+		return &m_blockedDoc;
+	}
+
+	bool blocked = false;
+	if (!m_checkedUrlBlockList) {
+		if (!m_sreq.m_urlIsDocId) {
+			Url url;
+			url.set(m_sreq.m_url);
+
+			if (g_urlBlockList.isUrlBlocked(url)) {
+				m_indexCodeValid = true;
+				m_indexCode = EDOCBLOCKEDURL;
+
+				blocked = true;
+			}
+		}
+		m_checkedUrlBlockList = true;
+	}
+
+	if (!blocked && !m_checkedDnsBlockList) {
+		/// @todo ALC fill in name server here
+		const char *dns = "";
+		if (g_dnsBlockList.isDnsBlocked(dns)) {
+			m_indexCodeValid = true;
+			m_indexCode = EDOCBLOCKEDDNS;
+
+			blocked = true;
+		}
+
+		m_checkedDnsBlockList = true;
+	}
+
+	if (blocked || (m_checkedUrlBlockList && m_checkedDnsBlockList)) {
+		m_blockedDocValid = true;
+		m_blockedDoc = blocked;
+	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "END, blockedDoc=%d", m_blockedDoc);
+
+	return &m_blockedDoc;
+}
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error and returns true
 bool XmlDoc::indexDoc2 ( ) {
-
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// if anything blocks, this will be called when it comes back
@@ -1947,6 +2000,16 @@ bool XmlDoc::indexDoc2 ( ) {
 	{
 		logTrace( g_conf.m_logTraceXmlDoc, "END. return true, g_errno set (%" PRId32")",g_errno);
 		return true;
+	}
+
+	bool *isPageBlocked = checkBlockList();
+	if (isPageBlocked == 0 || isPageBlocked == (void*)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, return false. checkedBlockList = -1");
+		return false;
+	}
+
+	if (*isPageBlocked) {
+		m_deleteFromIndex = true;
 	}
 
 	// . now get the meta list from it to add

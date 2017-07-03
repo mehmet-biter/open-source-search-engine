@@ -329,6 +329,8 @@ public:
 	SafeBuf m_spiderStatusDocMetaList;
 	char *getIsAdult ( ) ;
 
+	bool *checkBlockList();
+
 	char *getIsPermalink ( ) ;
 	char *getIsUrlPermalinkFormat ( ) ;
 	char *getIsRSS ( ) ;
@@ -820,6 +822,7 @@ public:
 	bool m_isErrorPageValid;
 	bool m_exactContentHash64Valid;
 	bool m_jpValid;
+	bool m_blockedDocValid;
 
 	bool m_isSiteMap;
 
@@ -1127,6 +1130,10 @@ public:
 
 	bool m_msg4Waiting;
 	bool m_msg4Launched;
+
+	bool m_blockedDoc;
+	bool m_checkedUrlBlockList;
+	bool m_checkedDnsBlockList;
 
 	// word spam detection
 	char *getWordSpamVec ( );
