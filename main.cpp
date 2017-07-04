@@ -2843,6 +2843,8 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 	static int64_t s_lastRepUh48 = 0LL;
 	static int32_t s_lastErrCode = 0;
 	static int32_t s_lastErrCount = 0;
+	static int32_t s_sameErrCount = 0;
+
 	CollectionRec *cr = g_collectiondb.getRec(coll);
 
  loop:
@@ -2905,6 +2907,7 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 			s_lastRepUh48 = srep->getUrlHash48();
 			s_lastErrCode = srep->m_errCode;
 			s_lastErrCount = srep->m_errCount;
+			s_sameErrCount = srep->m_sameErrCount;
 
 			// get firstip
 			if ( printStats == 1 ) {
@@ -2935,11 +2938,18 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 			printf(" hadReply=%" PRId32,(int32_t)hadReply);
 
 			printf(" errcount=%" PRId32,(int32_t)s_lastErrCount);
+			printf(" sameerrcount=%" PRId32,(int32_t)s_sameErrCount);
 
 			if ( s_lastErrCode ) {
 				printf( " errcode=%" PRId32"(%s)", ( int32_t ) s_lastErrCode, mstrerror( s_lastErrCode ) );
 			} else {
 				printf( " errcode=%" PRId32, ( int32_t ) s_lastErrCode );
+			}
+
+			if ( sreq->m_prevErrCode ) {
+				printf( " preverrcode=%" PRId32"(%s)", ( int32_t ) sreq->m_prevErrCode, mstrerror( sreq->m_prevErrCode ) );
+			} else {
+				printf( " preverrcode=%" PRId32, ( int32_t ) sreq->m_prevErrCode );
 			}
 
 			printf("\n");

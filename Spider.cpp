@@ -78,6 +78,8 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 
 	// indicate it's a request not a reply
 	sb->safePrintf("REQ ");
+	sb->safePrintf("ver=%d ", (int)m_version);
+
 	sb->safePrintf("uh48=%" PRIx64" ",getUrlHash48());
 	// if negtaive bail early now
 	if ( (m_key.n0 & 0x01) == 0x00 ) {
@@ -105,11 +107,8 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	timeStruct = gmtime_r(&ts,&tm_buf);
 	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
 	sb->safePrintf("addedTime=%s(%" PRIu32") ",time,(uint32_t)m_addedTime );
-
 	sb->safePrintf("pageNumInlinks=%i ",(int)m_pageNumInlinks);
-
 	sb->safePrintf("hopCount=%" PRId32" ",(int32_t)m_hopCount );
-
 	sb->safePrintf("ufn=%" PRId32" ", (int32_t)m_ufn);
 	// why was this unsigned?
 	sb->safePrintf("priority=%" PRId32" ", (int32_t)m_priority);
@@ -158,12 +157,12 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 
 	// indicate it's a reply
 	sb->safePrintf("REP ");
+	sb->safePrintf("ver=%d ", (int)m_version);
 
 	sb->safePrintf("uh48=%" PRIx64" ",getUrlHash48());
 	sb->safePrintf("parentDocId=%" PRIu64" ",getParentDocId());
 
-
-	// if negtaive bail early now
+	// if negative bail early now
 	if ( (m_key.n0 & 0x01) == 0x00 ) {
 		sb->safePrintf("[DELETE]");
 		if ( ! sbarg ) printf("%s",sb->getBufStart() );
@@ -187,13 +186,6 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 
 	sb->safePrintf("siteNumInlinks=%" PRId32" ",m_siteNumInlinks );
 
-	time_t ts2 = (time_t)m_pubDate;
-	timeStruct = gmtime_r(&ts2,&tm_buf);
-	time[0] = 0;
-	if ( m_pubDate != 0 && m_pubDate != -1 ) 
-		strftime (time,256,"%b %e %T %Y UTC",timeStruct);
-	sb->safePrintf("pubDate=%s(%" PRId32") ",time,m_pubDate );
-
 	sb->safePrintf("ch32=%" PRIu32" ",(uint32_t)m_contentHash32);
 
 	sb->safePrintf("crawldelayms=%" PRId32"ms ",m_crawlDelayMS );
@@ -203,6 +195,9 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 
 	if ( m_errCount )
 		sb->safePrintf("errCount=%" PRId32" ",(int32_t)m_errCount);
+
+	if ( m_sameErrCount )
+		sb->safePrintf("sameErrCount=%" PRId32" ",(int32_t)m_sameErrCount);
 
 	sb->safePrintf("errCode=%s(%" PRIu32") ",mstrerror(m_errCode),
 		       (uint32_t)m_errCode );
@@ -257,16 +252,12 @@ int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, XmlDoc *xd, 
 
 	char ipbuf[16];
 	sb->safePrintf("\t\t\t\"firstIp\": \"%s\",\n", iptoa(m_firstIp,ipbuf));
-
 	sb->safePrintf("\t\t\t\"errCount\": %hhd,\n", m_errCount);
-
+	sb->safePrintf("\t\t\t\"sameErrCount\": %hhd,\n", m_sameErrCount);
 	sb->safePrintf("\t\t\t\"urlHash48\": %" PRId64",\n", getUrlHash48());
-
 	sb->safePrintf("\t\t\t\"siteInLinks\": %" PRId32",\n", m_siteNumInlinks);
 	sb->safePrintf("\t\t\t\"hops\": %" PRId16",\n", m_hopCount);
-
 	sb->safePrintf("\t\t\t\"addedTime\": %" PRIu32",\n", m_addedTime);
-
 	sb->safePrintf("\t\t\t\"pageNumInLinks\": %" PRIu8",\n", m_pageNumInlinks);
 	sb->safePrintf("\t\t\t\"parentDocId\": %" PRId64"\n", getParentDocId());
 
@@ -314,9 +305,8 @@ int32_t SpiderRequest::printToTable(SafeBuf *sb, const char *status, XmlDoc *xd,
 	char ipbuf[16];
 	sb->safePrintf(" <td>%s</td>\n",iptoa(m_firstIp,ipbuf) );
 	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_errCount );
-
+	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_sameErrCount );
 	sb->safePrintf(" <td>%" PRIu64"</td>\n",getUrlHash48());
-
 	sb->safePrintf(" <td>%" PRId32"</td>\n",m_siteNumInlinks );
 	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_hopCount );
 
@@ -374,6 +364,7 @@ int32_t SpiderRequest::printTableHeader ( SafeBuf *sb , bool currentlySpidering)
 
 	sb->safePrintf(" <td><b>firstIp</b></td>\n");
 	sb->safePrintf(" <td><b>errCount</b></td>\n");
+	sb->safePrintf(" <td><b>sameErrCount</b></td>\n");
 	sb->safePrintf(" <td><b>urlHash48</b></td>\n");
 	sb->safePrintf(" <td><b>siteInlinks</b></td>\n");
 	sb->safePrintf(" <td><b>hops</b></td>\n");
@@ -1327,8 +1318,10 @@ checkNextRule:
 			if ( isForMsg20 ) continue;
 			// reply based
 			if ( ! srep ) continue;
+
 			// get our error code
 			int32_t errCode = srep->m_errCode;
+
 			// . make it zero if not tmp error
 			// . now have EDOCUNCHANGED and EDOCNOGOODDATE from
 			//   Msg13.cpp, so don't count those here...
@@ -1346,6 +1339,7 @@ checkNextRule:
 				errCode = 0;
 			// if no match continue
 			if ( (bool)errCode == val ) continue;
+
 			// skip
 			p += 11;
 			// skip to next constraint
@@ -2140,6 +2134,41 @@ checkNextRule:
 			goto checkNextRule;
 		}
 
+		if ( *p=='s' && strncmp(p,"sameerrorcount",14) == 0 ) {
+			// if we do not have enough info for outlink, all done
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
+				return -1;
+			}
+			// skip for msg20
+			if ( isForMsg20 ) continue;
+			// reply based
+			if ( ! srep ) continue;
+			// shortcut
+			int32_t a = srep->m_sameErrCount;
+			// make it point to the retry count
+			int32_t b = atoi(s);
+			// compare
+			if ( sign == SIGN_EQ && a != b ) continue;
+			if ( sign == SIGN_NE && a == b ) continue;
+			if ( sign == SIGN_GT && a <= b ) continue;
+			if ( sign == SIGN_LT && a >= b ) continue;
+			if ( sign == SIGN_GE && a <  b ) continue;
+			if ( sign == SIGN_LE && a >  b ) continue;
+			// skip fast
+			//p += 14;
+			p = strstr(s, "&&");
+			//if nothing, else then it is a match
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
+				return i;
+			}
+			//skip the '&&' and go to next rule
+			p += 2;
+			goto checkNextRule;
+		}
+
+
 		// EBADURL malformed url is ... 32880
 		if ( *p=='e' && strncmp(p,"errorcode",9) == 0 ) {
 			// if we do not have enough info for outlink, all done
@@ -2343,42 +2372,6 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			//skip the '&&' and go to next rule
-			p += 2;
-			goto checkNextRule;
-		}
-
-		// how old is the doc in seconds? age is the pubDate age
-		if ( *p =='a' && strncmp(p, "age", 3) == 0){
-			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
-				return -1;
-			}
-			// must have a reply
-			if ( ! srep ) continue;
-			// shortcut
-			int32_t age;
-			if ( srep->m_pubDate <= 0 ) age = -1;
-			else age = nowGlobal - srep->m_pubDate;
-			// we can not match if invalid
-			if ( age <= 0 ) continue;
-			// make it point to the priority
-			int32_t b = atoi(s);
-			// compare
-			if ( sign == SIGN_EQ && age != b ) continue;
-			if ( sign == SIGN_NE && age == b ) continue;
-			if ( sign == SIGN_GT && age <= b ) continue;
-			if ( sign == SIGN_LT && age >= b ) continue;
-			if ( sign == SIGN_GE && age <  b ) continue;
-			if ( sign == SIGN_LE && age >  b ) continue;
-			p = strstr(s, "&&");
-			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
 				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
