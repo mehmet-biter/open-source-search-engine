@@ -2401,11 +2401,18 @@ bool SpiderColl::scanListForWinners ( ) {
 		}
 		// assign
 		sreq->m_siteNumInlinks = sni;
+
 		// store error count in request so xmldoc knows what it is
 		// and can increment it and re-add it to its spiderreply if
 		// it gets another error
 		if ( srep ) {
 			sreq->m_errCount = srep->m_errCount;
+
+			// Save error code of last reply in the request so we
+			// can compare with error code after next spider attempt.
+			sreq->m_prevErrCode = srep->m_errCode;
+			sreq->m_sameErrCount = srep->m_sameErrCount;
+
 
 			// . assign this too from latest reply - smart compress
 			// . this WAS SpiderReply::m_pubdate so it might be
@@ -2414,6 +2421,11 @@ bool SpiderColl::scanListForWinners ( ) {
 			sreq->m_contentHash32 = srep->m_contentHash32;
 			// if we tried it before
 			sreq->m_hadReply = true;
+		}
+		else {
+			sreq->m_errCount = 0;
+			sreq->m_sameErrCount = 0;
+			sreq->m_prevErrCode = 0;
 		}
 
 		// . get the url filter we match
