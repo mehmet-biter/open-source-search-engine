@@ -14,6 +14,11 @@ class RdbList;
 class HashTableX;
 class SpiderColl;
 
+
+#define SPIDERREQ_CURRENT_VERSION	1
+#define SPIDERREP_CURRENT_VERSION	1
+
+
 // lower from 1300 to 300
 #define MAXUDPSLOTS 300
 
@@ -467,7 +472,7 @@ public:
 	uint8_t    m_sameErrCount;
 
 
-	uint8_t    m_reservedb3;
+	uint8_t    m_version;
 	uint8_t    m_reservedb4;
 
 	// info on the page we were harvest from
@@ -636,6 +641,7 @@ public:
 		m_ufn = -1;
 		// this too
 		m_priority = -1;
+		m_version = SPIDERREQ_CURRENT_VERSION;
 	}
 
 	static int32_t getNeededSize ( int32_t urlLen ) {
@@ -697,6 +703,10 @@ public:
 	bool setFromInject(const char *url);
 
 	bool isCorrupt() const;
+
+	SpiderRequest() {
+		reset();
+	}
 } __attribute__((packed, aligned(4)));
 
 // . XmlDoc adds this record to spiderdb after attempting to spider a url
@@ -744,7 +754,7 @@ public:
 	int32_t    m_siteNumInlinks;
 
 	uint8_t		m_sameErrCount;
-	uint8_t		m_reserved_u8a;
+	uint8_t		m_version;
 	uint8_t		m_reserved_u8b;
 	uint8_t		m_reserved_u8c;
 
@@ -838,7 +848,10 @@ public:
 	int32_t getRecSize () const { return m_dataSize + 4 + sizeof(key128_t); }
 
 	// clear all
-	void reset() { memset ( this , 0 , sizeof(SpiderReply) ); }
+	void reset() {
+		memset(this, 0, sizeof(SpiderReply));
+		m_version = SPIDERREP_CURRENT_VERSION;
+	}
 
 	void setKey ( int32_t firstIp, int64_t parentDocId, int64_t uh48, bool isDel ) ;
 
@@ -850,6 +863,10 @@ public:
 
 	int64_t getParentDocId() const {
 		return Spiderdb::getParentDocId(&m_key);
+	}
+
+	SpiderReply() {
+		reset();
 	}
 } __attribute__((packed, aligned(4)));
 
