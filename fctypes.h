@@ -244,6 +244,8 @@ inline bool is_alnum_utf8 ( const char *src ) {
 	return ucIsAlnum ( x );
 }
 
+bool is_alnum_utf8_string(const char *s, const char *send);
+
 inline bool is_alnum_utf8 ( const unsigned char *src ) {
 	// if in ascii do it quickly
 	if ( is_ascii3(*src) ) return is_alnum_a ( *src );
