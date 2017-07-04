@@ -917,10 +917,10 @@ bool is_alnum_utf8_string(const char *s, const char *send) {
 	for( ; s < send ; s += cs ) {
 		cs = getUtf8CharSize(s);
 		if(cs == 1) {
-			if(!is_alpha_a(*s))
+			if(!is_alnum_utf8(s))
 				return false;
 		} else {
-			if(!is_alpha_utf8(s) )
+			if(!is_alnum_utf8(s) )
 				return false;
 		}
 	}
