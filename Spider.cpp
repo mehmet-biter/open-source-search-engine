@@ -78,6 +78,8 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 
 	// indicate it's a request not a reply
 	sb->safePrintf("REQ ");
+	sb->safePrintf("ver=%d ", (int)m_version);
+
 	sb->safePrintf("uh48=%" PRIx64" ",getUrlHash48());
 	// if negtaive bail early now
 	if ( (m_key.n0 & 0x01) == 0x00 ) {
@@ -105,11 +107,8 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	timeStruct = gmtime_r(&ts,&tm_buf);
 	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
 	sb->safePrintf("addedTime=%s(%" PRIu32") ",time,(uint32_t)m_addedTime );
-
 	sb->safePrintf("pageNumInlinks=%i ",(int)m_pageNumInlinks);
-
 	sb->safePrintf("hopCount=%" PRId32" ",(int32_t)m_hopCount );
-
 	sb->safePrintf("ufn=%" PRId32" ", (int32_t)m_ufn);
 	// why was this unsigned?
 	sb->safePrintf("priority=%" PRId32" ", (int32_t)m_priority);
@@ -158,12 +157,12 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 
 	// indicate it's a reply
 	sb->safePrintf("REP ");
+	sb->safePrintf("ver=%d ", (int)m_version);
 
 	sb->safePrintf("uh48=%" PRIx64" ",getUrlHash48());
 	sb->safePrintf("parentDocId=%" PRIu64" ",getParentDocId());
 
-
-	// if negtaive bail early now
+	// if negative bail early now
 	if ( (m_key.n0 & 0x01) == 0x00 ) {
 		sb->safePrintf("[DELETE]");
 		if ( ! sbarg ) printf("%s",sb->getBufStart() );
