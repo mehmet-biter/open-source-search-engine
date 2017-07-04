@@ -3516,8 +3516,16 @@ lang_t XmlDoc::getContentLangIdCLD2() {
 
 lang_t XmlDoc::getContentLangIdCLD3() {
 	int32_t contentLen = size_utf8Content > 0 ? (size_utf8Content - 1) : 0;
+	if (contentLen == 0) {
+		return langUnknown;
+	}
 
 	char *contentTextBuf = (char*)mmalloc(contentLen, "xmldoc-cld3");
+	if (!contentTextBuf) {
+		log(LOG_WARN, "Unable to allocate memory for cld3");
+		return langUnknown;
+	}
+
 	int32_t contentTextBufLen = m_xml.getText(contentTextBuf, contentLen - 2, 0, -1, true);
 	lang_t langId = GbLanguage::getLangIdCLD3(contentTextBuf, contentTextBufLen);
 	mfree(contentTextBuf, contentLen, "xmldoc-cld3");
