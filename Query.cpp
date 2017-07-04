@@ -15,6 +15,7 @@
 #include "Synonyms.h"
 #include "HighFrequencyTermShortcuts.h"
 #include "Wiki.h"
+#include "ScoringWeights.h"
 #include "RdbList.h"
 #include "Process.h"
 #include "Conf.h"
@@ -2560,6 +2561,48 @@ bool Query::setQWords ( char boolFlag ,
 	// all done
 	return true;
 }
+
+
+void Query::modifyQuery(ScoringWeights *scoringWeights) {
+	logTrace(g_conf.m_logTraceQuery, "Query::modifyQuery: '%s'", originalQuery());
+	logTrace(g_conf.m_logTraceQuery, "                     m_numWords = %d", m_numWords);
+	logTrace(g_conf.m_logTraceQuery, "                     m_numTerms = %d", m_numTerms);
+	bool looksLikeADomain = false;
+	// is it a domain in the form of domain.tld ?
+	if(m_numWords==3 &&
+	   is_alnum_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
+	   m_qwords[1].m_wordLen==1 && m_qwords[1].m_word[0]=='.' &&
+	   is_alnum_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen))
+		looksLikeADomain = true;
+	// is it a domain in the form of host.domain.tld ?
+	if(m_numWords==5 &&
+	   is_alnum_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
+	   m_qwords[1].m_wordLen==1 && m_qwords[1].m_word[0]=='.' &&
+	   is_alnum_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen) &&
+	   m_qwords[3].m_wordLen==1 && m_qwords[3].m_word[0]=='.' &&
+	   is_alnum_utf8_string(m_qwords[4].m_word,m_qwords[4].m_word+m_qwords[4].m_wordLen))
+		looksLikeADomain = true;
+	if(looksLikeADomain) {
+		log(LOG_DEBUG, "query:Query '%s' looks like a domain", originalQuery());
+		//set all non-synonym terms as required and boost inUrl weight
+		for(int i=0; i<m_numTerms; i++) {
+			if(!m_qterms[i].m_synonymOf && !m_qterms[i].m_ignored) {
+				m_qterms[i].m_isRequired         = true;
+				m_qterms[i].m_rightPhraseTermNum = -1;
+				m_qterms[i].m_leftPhraseTermNum  = -1;
+				m_qterms[i].m_rightPhraseTerm    = NULL;
+				m_qterms[i].m_leftPhraseTerm     = NULL;
+			}
+		}
+		scoringWeights->m_hashGroupWeights[HASHGROUP_INURL]  *= 10; //factor 10 seems to work fine
+		log(LOG_DEBUG, "query:Query modified");
+		return;
+	}
+	
+	log(LOG_DEBUG, "query: Query not modified");
+}
+
+
 
 // return -1 if does not exist in query, otherwise return the query word num
 int32_t Query::getWordNum(int64_t wordId) const {
