@@ -459,7 +459,14 @@ public:
 	// # of spider requests from different c-blocks. capped at 255.
 	// taken from the # of SpiderRequests.
 	uint8_t    m_pageNumInlinks;
-	uint8_t    m_reservedb2;
+
+	// . this is copied from the most recent SpiderReply into here
+	// . its so XMlDoc.cpp can increment it and add it to the new
+	//   SpiderReply it adds in case there is another download error ,
+	//   like ETCPTIMEDOUT or EDNSTIMEDOUT
+	uint8_t    m_sameErrCount;
+
+
 	uint8_t    m_reservedb3;
 	uint8_t    m_reservedb4;
 
@@ -474,7 +481,9 @@ public:
 	// when we scan all of the SpiderRequests it has.
 	int32_t m_discoveryTime;
 
-	int32_t m_reservedc2;
+	// Used to compare previous errcode with current errcode, for counting
+	// sameErrCode value.
+	int32_t m_prevErrCode;	// m_reservedc2;
 
 	// . replace this with something we need for smart compression
 	// . this is zero if none or invalid
@@ -734,8 +743,10 @@ public:
 	// SpiderRequest's m_siteNumLinks
 	int32_t    m_siteNumInlinks;
 
-	// the actual pub date we extracted (0 means none, -1 unknown)
-	int32_t    m_pubDate;
+	uint8_t		m_sameErrCount;
+	uint8_t		m_reserved_u8a;
+	uint8_t		m_reserved_u8b;
+	uint8_t		m_reserved_u8c;
 
 	// . this is zero if none or invalid
 	int32_t    m_contentHash32;
