@@ -59,7 +59,7 @@ void hexToBin ( const char *src , int32_t srcLen , char *dst );
 void binToHex ( const unsigned char *src , int32_t srcLen , char *dst );
 
 // the _a suffix denotes an ascii string
-bool has_alpha_utf8(char *s, char *send ) ;
+bool has_alpha_utf8(const char *s, const char *send);
 
 int32_t to_lower_utf8        (char *dst , const char *src ) ;
 int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src ) ;

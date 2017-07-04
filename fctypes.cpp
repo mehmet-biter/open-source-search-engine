@@ -899,7 +899,7 @@ uint32_t calculateChecksum(char *buf, int32_t bufLen){
 	return sum;
 }
 
-bool has_alpha_utf8 ( char *s , char *send ) {
+bool has_alpha_utf8(const char *s, const char *send) {
 	char cs = 0;
 	for ( ; s < send ; s += cs ) {
 		cs = getUtf8CharSize ( s );
