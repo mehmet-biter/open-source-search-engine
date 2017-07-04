@@ -177,13 +177,16 @@ bool SpiderColl::load ( ) {
 		return false;
 	if (!m_cdTable.set    (4,4,0,NULL,0,false,"cdtbl"))
 		return false;
+
 	// doledb seems to have like 32000 entries in it
 	int32_t numSlots = 0; // was 128000
 	if(!m_doledbIpTable.set(4,4,numSlots,NULL,0,false,"doleip"))
 		return false;
+
 	// this should grow dynamically...
 	if (!m_waitingTable.set (4,8,16,NULL,0,false,"waittbl"))
 		return false;
+
 	// . a tree of keys, key is earliestSpiderTime|ip (key=12 bytes)
 	// . earliestSpiderTime is 0 if unknown
 	// . max nodes is 1M but we should grow dynamically! TODO
@@ -569,6 +572,9 @@ bool SpiderColl::isInDupCache(const SpiderRequest *sreq, bool addToCache) {
 
 	// quit add dups over and over again...
 	int64_t dupKey64 = sreq->getUrlHash48();
+	int64_t org_dupKey64 = dupKey64;
+
+
 	// . these flags make big difference in url filters
 	// . NOTE: if you see a url that is not getting spidered that should be it might
 	//   be because we are not incorporating other flags here...
@@ -586,35 +592,37 @@ bool SpiderColl::isInDupCache(const SpiderRequest *sreq, bool addToCache) {
 
 	// limit hopcount to 3 for making cache key so we don't flood cache
 	int32_t hopCount = (sreq->m_hopCount >= 3 ? 3 : sreq->m_hopCount);
-
 	// don't insert same hopcount
 	if (m_dupCache.getLong(0, dupKey64 ^ hopCount, 86400, true) != -1) {
-		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request same hopcount exist. url=%s uh48=%" PRIu64,
-		         sreq->m_url, sreq->getUrlHash48());
+		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request same hopcount exist. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64 ^ hopCount, org_dupKey64,
+			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
 		return true;
 	}
 
 	if (m_dupCache.getLong(0, dupKey64, 86400, true) != -1) {
-		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 0 exist. url=%s uh48=%" PRIu64,
-		         sreq->m_url, sreq->getUrlHash48());
+		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 0 exist. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64, org_dupKey64,
+			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
 		return true;
 	}
 
 	// if our hopcount is 2 and there is a hopcount 1 in there, do not add
 	if (hopCount >= 2 && m_dupCache.getLong(0, dupKey64 ^ 0x01, 86400, true) != -1) {
-		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 1 exist. url=%s uh48=%" PRIu64,
-		         sreq->m_url, sreq->getUrlHash48());
+		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 1 exist. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64 ^ 0x01, org_dupKey64,
+			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
 		return true;
 	}
 
 	// likewise, if there's a hopcount 2 in there, do not add if we are 3+
 	if (hopCount >= 3 && m_dupCache.getLong(0, dupKey64 ^ 0x02, 86400, true) != -1) {
-		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 2 exist. url=%s uh48=%" PRIu64,
-		         sreq->m_url, sreq->getUrlHash48());
+		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 2 exist. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64 ^ 0x02, org_dupKey64,
+			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
 		return true;
 	}
 
 	if (addToCache) {
+		logDebug(g_conf.m_logDebugSpider, "spider: Adding to dup cache. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64 ^ hopCount, org_dupKey64,
+			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
+
 		// mangle the key with hopcount before adding it to the cache
 		dupKey64 ^= hopCount;
 
@@ -624,6 +632,7 @@ bool SpiderColl::isInDupCache(const SpiderRequest *sreq, bool addToCache) {
 
 	return false;
 }
+
 
 // . Rdb.cpp calls SpiderColl::addSpiderRequest/Reply() for every positive
 //   spiderdb record it adds to spiderdb. that way our cache is kept 
@@ -743,7 +752,8 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 	return true;
 }
 
-bool SpiderColl::printWaitingTree ( ) {
+bool SpiderColl::printWaitingTree() {
+	ScopedLock sl(m_waitingTree.getLock());
 
 	for (int32_t node = m_waitingTree.getFirstNode_unlocked(); node >= 0;
 	     node = m_waitingTree.getNextNode_unlocked(node)) {
@@ -756,7 +766,13 @@ bool SpiderColl::printWaitingTree ( ) {
 		int32_t firstIp = wk->n0 & 0xffffffff;
 		// show it
 		char ipbuf[16];
-		log("dump: time=%" PRId64" firstip=%s",spiderTimeMS,iptoa(firstIp,ipbuf));
+
+		// for readable timestamp..
+		time_t now_t = (time_t)(spiderTimeMS / 1000);
+		struct tm tm_buf;
+		struct tm *stm = gmtime_r(&now_t,&tm_buf);
+
+		log("dump: time=%" PRId64 " (%04d%02d%02d-%02d%02d%02d-%03d) firstip=%s",spiderTimeMS, stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(spiderTimeMS%1000), iptoa(firstIp,ipbuf));
 	}
 	return true;
 }
@@ -908,15 +924,14 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 		if ( more < 10 ) more = 10;
 		if ( more > 100000 ) more = 100000;
 		int32_t newNum = max + more;
-		log("spider: growing waiting tree to from %" PRId32" to %" PRId32" nodes "
-		    "for collnum %" PRId32,
+		log("spider: growing waiting tree to from %" PRId32" to %" PRId32" nodes for collnum %" PRId32,
 		    max , newNum , (int32_t)m_collnum );
 		if (!m_waitingTree.growTree_unlocked(newNum)) {
-			log(LOG_WARN, "spider: failed to grow waiting tree to add firstip %s", iptoa(firstIp,ipbuf));
+			log(LOG_ERROR, "Failed to grow waiting tree to add firstip %s", iptoa(firstIp,ipbuf));
 			return false;
 		}
 		if (!setWaitingTableSize(newNum)) {
-			log(LOG_WARN, "spider: failed to grow waiting table to add firstip %s", iptoa(firstIp,ipbuf));
+			log(LOG_ERROR, "Failed to grow waiting table to add firstip %s", iptoa(firstIp,ipbuf));
 			return false;
 		}
 	}
@@ -926,7 +941,7 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 	// add that
 	int32_t wn;
 	if ((wn = m_waitingTree.addKey_unlocked(&wk)) < 0) {
-		log(LOG_WARN, "spider: waitingtree add failed ip=%s. increase max nodes lest we lose this IP forever. err=%s",
+		log(LOG_ERROR, "waitingtree add failed for ip=%s. increase max nodes lest we lose this IP forever. err=%s",
 		    iptoa(firstIp,ipbuf), mstrerror(g_errno));
 		//g_process.shutdownAbort(true);
 		return false;
@@ -940,12 +955,16 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 	if (!addToWaitingTable(firstIp, spiderTimeMS)) {
 		// remove from tree then
 		m_waitingTree.deleteNode_unlocked(wn, false);
+
+		log(LOG_ERROR, "waitingtable add failed for ip=%s. increase max nodes lest we lose this IP forever. err=%s",
+		    iptoa(firstIp,ipbuf), mstrerror(g_errno));
 		return false;
 	}
 
 	// tell caller there was no error
 	return true;
 }
+
 
 // . this scan is started anytime we call addSpiderRequest() or addSpiderReply
 // . if nothing is in tree it quickly exits
@@ -960,7 +979,7 @@ bool SpiderColl::addToWaitingTree(int32_t firstIp) {
 //   doledb it adds it to doleIpTable, and remove from waitingtree and 
 //   waitingtable
 // . returns false if blocked, true otherwise
-int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
+int32_t SpiderColl::getNextIpFromWaitingTree() {
 	// reset first key to get first rec in waiting tree
 	m_waitingTreeKey.setMin();
 
@@ -1079,28 +1098,31 @@ void SpiderColl::gotSpiderdbWaitingTreeListWrapper(void *state, RdbList *list, M
 // . this stores an ip into the waiting tree with a spidertime of "0" so
 //   it will be evaluate properly by populateDoledbFromWaitingTree()
 //
+// @@@ BR: "it seems they fall out over time" - wtf?
 // . scan spiderdb to make sure each firstip represented in spiderdb is
 //   in the waiting tree. it seems they fall out over time. we need to fix
 //   that but in the meantime this should do a bg repair. and is nice to have
+//
 // . the waiting tree key is really just a spidertime and a firstip. so we will
 //   still need populatedoledbfromwaitingtree to periodically scan firstips
 //   that are already in doledb to see if it has a higher-priority request
 //   for that firstip. in which case it can add that to doledb too, but then
 //   we have to be sure to only grant one lock for a firstip to avoid hammering
 //   that firstip
+//
 // . this should be called from a sleepwrapper, the same sleep wrapper we
 //   call populateDoledbFromWaitingTree() from should be fine
 void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
- 
+
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
-	
+
 	// skip if in repair mode
 	if ( g_repairMode ) 
 	{
 		logTrace( g_conf.m_logTraceSpider, "END, in repair mode" );
 		return;
 	}
-	
+
 	// sanity
 	if ( m_deleteMyself ) { g_process.shutdownAbort(true); }
 	// skip if spiders off
@@ -1109,21 +1131,21 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		logTrace( g_conf.m_logTraceSpider, "END, spiders disabled" );
 		return;
 	}
-	
+
 	if ( ! g_hostdb.getMyHost( )->m_spiderEnabled ) 
 	{
 		logTrace( g_conf.m_logTraceSpider, "END, spiders disabled (2)" );
 		return;
 	}
-		
-		
+
+
 	// skip if udp table is full
 	if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) 
 	{
 		logTrace( g_conf.m_logTraceSpider, "END, UDP table full" );
 		return;
 	}
-		
+
 	// if entering for the first time, we need to read list from spiderdb
 	if ( ! reentry ) {
 		// just return if we should not be doing this yet
@@ -1132,7 +1154,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 			logTrace( g_conf.m_logTraceSpider, "END, !m_waitingTreeNeedsRebuild" );
 			return;
 		}
-		
+
 		// a double call? can happen if list read is slow...
 		if ( m_gettingWaitingTreeList )
 		{
@@ -1235,10 +1257,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 
 		// set this lastOne for speed
 		lastOne = firstIp;
-		// check for dmoz. set up gdb on gk157/gk221 to break here
-		// so we can see what's going on
-		//if ( firstIp == -815809331 )
-		//	log("got dmoz");
+
 		// if firstip already in waiting tree, skip it
 		if (isInWaitingTable(firstIp)) {
 			char ipbuf[16];
@@ -1306,6 +1325,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		g_errno = 0;
 	}
 
+
 	// are we the final list in the scan?
 	bool shortRead = ( m_waitingTreeList.getListSize() <= 0);//(int32_t)SR_READ_SIZE) ;
 
@@ -1364,16 +1384,11 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// mark when the scan completed so we can do another one
 		// like 24 hrs from that...
 		m_lastScanTime = getTimeLocal();
-		// log it
-		// if ( m_numAdded )
-		// 	log("spider: added %" PRId32" recs to waiting tree from "
-		// 	    "scan of %" PRId64" bytes coll=%s",
-		// 	    m_numAdded,m_numBytesScanned,
-		// 	    m_cr->m_coll);
-		// note it
-		log("spider: rebuild complete for %s. Added %" PRId32" recs to waiting tree, scanned %" PRId64" bytes of spiderdb.",
-		    m_coll,m_numAdded, m_numBytesScanned);
-		    
+
+		log("WaitingTree rebuild complete for %s. Added %" PRId32" recs to waiting tree, scanned %" PRId64" bytes of spiderdb.",
+		    m_coll, m_numAdded, m_numBytesScanned);
+		//printWaitingTree();
+
 		// reset the count for next scan
 		m_numAdded = 0 ;
 		m_numBytesScanned = 0;
@@ -1458,7 +1473,6 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 		return;
 	}
 
-
 	// skip if udp table is full
 	if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) {
 		logTrace( g_conf.m_logTraceSpider, "END, no more UDP slots" );
@@ -1467,8 +1481,8 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 
 	// set this flag so we are not re-entered
 	m_isPopulatingDoledb = true;
- loop:
 
+loop:
 	// are we trying to exit? some firstip lists can be quite long, so
 	// terminate here so all threads can return and we can exit properly
 	if (g_process.isShuttingDown()) {
@@ -1606,7 +1620,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	     !m_winnerTree.set(-1, maxWinners, maxWinners * MAX_BEST_REQUEST_SIZE, true, "wintree", NULL,
 	                       sizeof(key192_t), -1)) {
 		m_isPopulatingDoledb = false;
-		log("spider: winntree set: %s",mstrerror(g_errno));
+		log(LOG_ERROR, "Could not initialize m_winnerTree: %s",mstrerror(g_errno));
 		logTrace( g_conf.m_logTraceSpider, "END, after winnerTree.set" );
 		return;
 	}
@@ -1620,7 +1634,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 				   false , // allow dups?
 				   "wtdedup" ) ) {
 		m_isPopulatingDoledb = false;
-		log("spider: wintable set: %s",mstrerror(g_errno));
+		log(LOG_ERROR, "Could not initialize m_winnerTable: %s",mstrerror(g_errno));
 		logTrace( g_conf.m_logTraceSpider, "END, after winnerTable.set" );
 		return;
 	}
@@ -1633,11 +1647,8 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 
 	// reset this as well
 	m_minFutureTimeMS = 0LL;
-
 	m_totalBytesScanned = 0LL;
-
 	m_totalNewSpiderRequests = 0LL;
-
 	m_lastOverflowFirstIp = 0;
 	
 	// . look up in spiderdb otherwise and add best req to doledb from ip
@@ -2151,17 +2162,12 @@ bool SpiderColl::scanListForWinners ( ) {
 
 			if ( tmp->m_spideredTime > nowGlobal + 1 ) {
 				if ( m_cr->m_spiderCorruptCount == 0 ) {
-					log( LOG_WARN, "spider: got corrupt time "
-						"spiderReply in "
-						"scan "
-						"uh48=%" PRId64" "
-						"httpstatus=%" PRId32" "
-						"datasize=%" PRId32" "
-						"(cn=%" PRId32")",
+					log( LOG_WARN, "spider: got corrupt time spiderReply in scan uh48=%" PRId64" httpstatus=%" PRId32" datasize=%" PRId32" (cn=%" PRId32") ip=%s",
 						tmp->getUrlHash48(),
 						(int32_t)tmp->m_httpStatus,
 						tmp->m_dataSize,
-						(int32_t)m_collnum);
+						(int32_t)m_collnum,
+						iptoa(m_scanningIp,ipbuf));
 				}
 				m_cr->m_spiderCorruptCount++;
 				// don't nuke it just for that...
@@ -2174,40 +2180,35 @@ bool SpiderColl::scanListForWinners ( ) {
 			//   in the qatest123 doc cache... so turn off for that
 			if ( tmp->m_httpStatus >= 1000 ) {
 				if ( m_cr->m_spiderCorruptCount == 0 ) {
-					log(LOG_WARN, "spider: got corrupt 3 "
-					    "spiderReply in "
-					    "scan "
-					    "uh48=%" PRId64" "
-					    "httpstatus=%" PRId32" "
-					    "datasize=%" PRId32" "
-					    "(cn=%" PRId32")",
+					log(LOG_WARN, "spider: got corrupt 3 spiderReply in scan uh48=%" PRId64" httpstatus=%" PRId32" datasize=%" PRId32" (cn=%" PRId32") ip=%s",
 					    tmp->getUrlHash48(),
 					    (int32_t)tmp->m_httpStatus,
 					    tmp->m_dataSize,
-					    (int32_t)m_collnum);
+					    (int32_t)m_collnum,
+					    iptoa(m_scanningIp,ipbuf));
 				}
 				m_cr->m_spiderCorruptCount++;
 				// don't nuke it just for that...
 				//srep = NULL;
 				continue;
 			}
+
 			// bad langid?
 			if ( ! getLanguageAbbr (tmp->m_langId) ) {
-				log(LOG_WARN, "spider: got corrupt 4 spiderReply in "
-				    "scan uh48=%" PRId64" "
-				    "langid=%" PRId32" (cn=%" PRId32")",
+				log(LOG_WARN, "spider: got corrupt 4 spiderReply in scan uh48=%" PRId64" langid=%" PRId32" (cn=%" PRId32") ip=%s",
 				    tmp->getUrlHash48(),
 				    (int32_t)tmp->m_langId,
-				    (int32_t)m_collnum);
+				    (int32_t)m_collnum,
+				    iptoa(m_scanningIp,ipbuf));
 				m_cr->m_spiderCorruptCount++;
 				//srep = NULL;
-
 				continue;
 			}
 
 			// if we are corrupt, skip us
 			if ( tmp->getRecSize() > (int32_t)MAX_SP_REPLY_SIZE )
 				continue;
+
 			// if we have a more recent reply already, skip this 
 			if ( srep && 
 			     srep->getUrlHash48() == tmp->getUrlHash48() &&
@@ -2357,17 +2358,16 @@ bool SpiderColl::scanListForWinners ( ) {
 
 		if ( sreq->isCorrupt() ) {
 			if ( m_cr->m_spiderCorruptCount == 0 )
-				log( LOG_WARN, "spider: got corrupt xx spiderRequest in "
-				    "scan because url is %s (cn=%" PRId32")"
-				    ,sreq->m_url,(int32_t)m_collnum);
+				log( LOG_WARN, "spider: got corrupt xx spiderRequest in scan because url is %s (cn=%" PRId32")",
+					sreq->m_url,(int32_t)m_collnum);
 			m_cr->m_spiderCorruptCount++;
 			continue;
 		}
+
 		if ( sreq->m_dataSize > (int32_t)sizeof(SpiderRequest) ) {
 			if ( m_cr->m_spiderCorruptCount == 0 )
-				log( LOG_WARN, "spider: got corrupt 11 spiderRequest in "
-				    "scan because rectoobig u=%s (cn=%" PRId32")"
-				    ,sreq->m_url,(int32_t)m_collnum);
+				log( LOG_WARN, "spider: got corrupt 11 spiderRequest in scan because rectoobig u=%s (cn=%" PRId32")",
+					sreq->m_url,(int32_t)m_collnum);
 			m_cr->m_spiderCorruptCount++;
 			continue;
 		}
@@ -2377,15 +2377,8 @@ bool SpiderColl::scanListForWinners ( ) {
 			static bool s_first = true;
 			if ( m_cr->m_spiderCorruptCount == 0 || s_first ) {
 				s_first = false;
-				log( LOG_WARN, "spider: got corrupt 6 spiderRequest in "
-				    "scan because added time is %" PRId32" "
-				    "(delta=%" PRId32" "
-				    "which is well into the future. url=%s "
-				    "(cn=%i)"
-				    ,(int32_t)sreq->m_addedTime
-				    ,delta
-				    ,sreq->m_url
-				    ,(int)m_collnum);
+				log( LOG_WARN, "spider: got corrupt 6 spiderRequest in scan because added time is %" PRId32" (delta=%" PRId32" which is well into the future. url=%s (cn=%i)",
+					(int32_t)sreq->m_addedTime, delta, sreq->m_url, (int)m_collnum);
 			}
 			m_cr->m_spiderCorruptCount++;
 			continue;
@@ -2408,11 +2401,12 @@ bool SpiderColl::scanListForWinners ( ) {
 		}
 		// assign
 		sreq->m_siteNumInlinks = sni;
-		// store rror count in request so xmldoc knows what it is
+		// store error count in request so xmldoc knows what it is
 		// and can increment it and re-add it to its spiderreply if
 		// it gets another error
 		if ( srep ) {
 			sreq->m_errCount = srep->m_errCount;
+
 			// . assign this too from latest reply - smart compress
 			// . this WAS SpiderReply::m_pubdate so it might be
 			//   set to a non-zero value that is wrong now... but
@@ -2429,7 +2423,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		int32_t ufn = ::getUrlFilterNum(sreq, srep, nowGlobal, false, m_cr, false, &m_localTable, -1);
 		// sanity check
 		if ( ufn == -1 ) { 
-			log( LOG_WARN, "spider: failed to match url filter for url='%s' coll='%s'", sreq->m_url, m_cr->m_coll );
+			log( LOG_WARN, "failed to match url filter for url='%s' coll='%s'", sreq->m_url, m_cr->m_coll );
 			g_errno = EBADENGINEER;
 			return true;
 		}
@@ -2447,7 +2441,9 @@ bool SpiderColl::scanListForWinners ( ) {
 			logDebug(g_conf.m_logDebugSpider, "spider: lastspidered=%" PRIu32, srep->m_spideredTime );
 
 		// spiders disabled for this row in url filteres?
-		if ( m_cr->m_maxSpidersPerRule[ufn] <= 0 ) continue;
+		if ( m_cr->m_maxSpidersPerRule[ufn] <= 0 ) {
+			continue;
+		}
 
 		// skip if banned (unless need to delete from index)
 		if (m_cr->m_forceDelete[ufn]) {
@@ -2468,15 +2464,14 @@ bool SpiderColl::scanListForWinners ( ) {
 
 		// sanity
 		if ( (int64_t)spiderTimeMS < 0 ) { 
-			log( LOG_WARN, "spider: got corrupt 2 spiderRequest in "
-			    "scan (cn=%" PRId32")",
+			log( LOG_WARN, "spider: got corrupt 2 spiderRequest in scan (cn=%" PRId32")",
 			    (int32_t)m_collnum);
 			continue;
 		}
+
 		// more corruption detection
 		if ( sreq->m_hopCount < -1 ) {
-			log( LOG_WARN, "spider: got corrupt 5 spiderRequest in "
-			    "scan (cn=%" PRId32")",
+			log( LOG_WARN, "spider: got corrupt 5 spiderRequest in scan (cn=%" PRId32")",
 			    (int32_t)m_collnum);
 			continue;
 		}
@@ -2663,6 +2658,7 @@ gotNewWinner:
 		//   repeated in tree
 		// . just skip if fail to add...
 		if ( ! m_winnerTable.addKey ( &uh48 , &wk ) ) {
+			log(LOG_WARN,"spider: skipping. could not add to winnerTable. %s. ip=%s", sreq->m_url,iptoa(m_scanningIp,ipbuf) );
 			continue;
 		}
 
@@ -2673,7 +2669,10 @@ gotNewWinner:
 		// to true above.
 		int32_t need = sreq->getRecSize();
 		char *newMem = (char *)mdup ( sreq , need , "sreqbuf" );
-		if ( ! newMem ) continue;
+		if ( ! newMem ) {
+			log(LOG_WARN,"spider: skipping. could not alloc newMem. %s. ip=%s", sreq->m_url,iptoa(m_scanningIp,ipbuf) );
+			continue;
+		}
 
 		{
 			ScopedLock sl(m_winnerTree.getLock());
@@ -3428,6 +3427,8 @@ bool SpiderColl::addToDoledbIpTable(SpiderRequest *sreq) {
 		    uh48,pdocid,ss,(int32_t)sreq->m_ufn,(int32_t)sreq->m_priority,
 		    iptoa(sreq->m_firstIp,ipbuf));
 	}
+
+
 	// we had a score there already, so inc it
 	if ( score ) {
 		// inc it
@@ -3469,8 +3470,9 @@ bool SpiderColl::addToDoledbIpTable(SpiderRequest *sreq) {
 	// . unmark individual priority buckets
 	// . do not skip them when scanning for urls to spiderd
 	int32_t pri = sreq->m_priority;
+
 	// reset scan for this priority in doledb
-	m_nextKeys     [pri] =Doledb::makeFirstKey2 ( pri );
+	m_nextKeys[pri] = Doledb::makeFirstKey2 ( pri );
 
 	return true;
 }

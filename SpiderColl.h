@@ -85,12 +85,12 @@ public:
 
 	HashTableX m_localTable;
 
-	bool printWaitingTree ( ) ;
+	bool printWaitingTree();
 
 	bool addToWaitingTree(int32_t firstIp);
-	void populateDoledbFromWaitingTree ( );
+	void populateDoledbFromWaitingTree();
 
-	void populateWaitingTreeFromSpiderdb ( bool reentry ) ;
+	void populateWaitingTreeFromSpiderdb(bool reentry);
 
 	int32_t getWaitingTableCount() const;
 	void clearWaitingTable();
@@ -210,11 +210,11 @@ private:
 	int64_t m_lastRepUh48;
 
 	// spiderdb scan for populating waiting tree
-	RdbList m_waitingTreeList;
-	Msg5 m_msg5b;
-	bool m_gettingWaitingTreeList;
-	key128_t m_waitingTreeNextKey;
-	key128_t m_waitingTreeEndKey;
+	RdbList m_waitingTreeList;		// temporary list for reading spiderdb records
+	Msg5 m_msg5b;					// msg used for reading spiderdb records
+	bool m_gettingWaitingTreeList;	// true when waiting for spiderdb read to complete
+	key128_t m_waitingTreeNextKey;	// temporary key used for reading spiderdb records
+	key128_t m_waitingTreeEndKey;	// temporary key used for reading spiderdb records
 	time_t m_lastScanTime;
 
 	std::atomic<int32_t> m_scanningIp;
