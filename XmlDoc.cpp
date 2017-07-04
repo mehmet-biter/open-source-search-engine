@@ -14095,9 +14095,11 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	}
 	// store it
 	m_srep.m_firstIp = firstIp;
-	// assume no error
-	// MDW: not right...
+
+	// Default to no error. Will be set below.
 	m_srep.m_errCount = 0;
+	m_srep.m_sameErrCount = 0;
+
 	// otherwise, inherit from oldsr to be safe
 	//if ( m_sreqValid )
 	//	m_srep.m_firstIp = m_sreq.m_firstIp;
@@ -14203,22 +14205,25 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			m_srep.m_crawlDelayMS = m_crawlDelay;
 		else
 			m_srep.m_crawlDelayMS = -1;
-		//if ( m_pubDateValid     ) m_srep.m_pubDate = m_pubDate;
-		                          m_srep.m_pubDate = 0;
+
 		if ( m_langIdValid      ) m_srep.m_langId = m_langId;
 		if ( m_isRSSValid       ) m_srep.m_isRSS = m_isRSS;
 		if ( m_isPermalinkValid ) m_srep.m_isPermalink =m_isPermalink;
 		if ( m_httpStatusValid  ) m_srep.m_httpStatus = m_httpStatus;
+
 		// stuff that is automatically valid
 		m_srep.m_isPingServer = 0;
 		if ( fu ) m_srep.m_isPingServer = (bool)fu->isPingServer();
+
 		// this was replaced by m_contentHash32
 		//m_srep.m_newRequests  = 0;
 		m_srep.m_errCode      = m_indexCode;
+
 		if ( m_downloadEndTimeValid )
 			m_srep.m_downloadEndTime = m_downloadEndTime;
 		else
 			m_srep.m_downloadEndTime = 0;
+
 		// is the original spider request valid?
 		if ( m_sreqValid ) {
 			// preserve the content hash in case m_indexCode is
@@ -14234,16 +14239,43 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			n->m_hasAuthorityInlink = o->m_hasAuthorityInlink;
 			n->m_isPingServer       = o->m_isPingServer;
 			// the validator flags
-			n->m_hasAuthorityInlinkValid =
-				o->m_hasAuthorityInlinkValid;
+			n->m_hasAuthorityInlinkValid = o->m_hasAuthorityInlinkValid;
+
 			// get error count from original spider request
 			int32_t newc = m_sreq.m_errCount;
 			// inc for us, since we had an error
 			newc++;
 			// contain to one byte
-			if ( newc > 255 ) newc = 255;
+			if ( newc > 255 ) {
+				newc = 255;
+			}
 			// store in our spiderreply
 			m_srep.m_errCount = newc;
+
+
+			// Number of times we have seen the same error code in a row
+			if( m_sreq.m_prevErrCode == m_srep.m_errCode ) {
+				int32_t newc = m_sreq.m_sameErrCount;
+
+				// Sanity. Must not be same or larger here.
+				if( newc >= m_srep.m_errCount ) {
+					log(LOG_WARN,"Correcting sameErrCount. Count=%" PRId32 ", sameErrCount=%" PRId32 ", prev_errCode=%" PRId32 ", curr_errCode=%" PRId32 ", url=%s, uh48=%" PRIx64 ", err=%s", m_srep.m_errCount, m_srep.m_sameErrCount, m_sreq.m_prevErrCode, m_srep.m_errCode, m_sreq.m_url, uh48, mstrerror( m_srep.m_errCode ));
+					newc = 0;
+				}
+
+				// inc for us, since we had an error
+				newc++;
+
+				// contain to one byte
+				if ( newc > 255 ) {
+					newc = 255;
+				}
+				// store in our spiderreply
+				m_srep.m_sameErrCount = newc;
+			}
+			else {
+				m_srep.m_sameErrCount = 0;
+			}
 		}
 		// . and do not really consider this an error
 		// . i don't want the url filters treating it as an error reply
@@ -14258,6 +14290,8 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			m_srep.m_errCode = 0;
 			// and no error count, it wasn't an error per se
 			m_srep.m_errCount = 0;
+			m_srep.m_sameErrCount = 0;
+
 			// call it 200
 			m_srep.m_httpStatus = 200;
 		}
@@ -14265,8 +14299,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		if ( m_indexCode == EDOCUNCHANGED &&
 		     m_oldDocValid &&
 		     m_oldDoc ) {
-			//m_srep.m_pubDate        = m_oldDoc->m_pubDate;
-			m_srep.m_pubDate        = 0;
 			m_srep.m_langId         = m_oldDoc->m_langId;
 			m_srep.m_isRSS          = m_oldDoc->m_isRSS;
 			m_srep.m_isPermalink    = m_oldDoc->m_isPermalink;
@@ -14371,8 +14403,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// . EUDPTIMEDOUT, EDNSTIMEDOUT, ETCPTIMEDOUT, EDNSDEAD, EBADIP,
 	//   ENETUNREACH,EBADMIME,ECONNREFUED,ECHOSTUNREACH
 	m_srep.m_siteNumInlinks       = m_siteNumInlinks;
-	//m_srep.m_pubDate              = *pubDate;
-	m_srep.m_pubDate              = 0;
 	// this was replaced by m_contentHash32
 	//m_srep.m_newRequests          = 0;
 	m_srep.m_langId               = *langId;

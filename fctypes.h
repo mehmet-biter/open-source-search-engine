@@ -59,7 +59,7 @@ void hexToBin ( const char *src , int32_t srcLen , char *dst );
 void binToHex ( const unsigned char *src , int32_t srcLen , char *dst );
 
 // the _a suffix denotes an ascii string
-bool has_alpha_utf8(char *s, char *send ) ;
+bool has_alpha_utf8(const char *s, const char *send);
 
 int32_t to_lower_utf8        (char *dst , const char *src ) ;
 int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src ) ;
@@ -243,6 +243,8 @@ inline bool is_alnum_utf8 ( const char *src ) {
 	// is this codepoint lower?
 	return ucIsAlnum ( x );
 }
+
+bool is_alnum_utf8_string(const char *s, const char *send);
 
 inline bool is_alnum_utf8 ( const unsigned char *src ) {
 	// if in ascii do it quickly
