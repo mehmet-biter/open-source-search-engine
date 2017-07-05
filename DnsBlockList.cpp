@@ -73,7 +73,7 @@ bool DnsBlockList::isDnsBlocked(const char *dns) {
 	auto dnsBlockList = getDnsBlockList();
 
 	for (auto const &dnsBlock : *dnsBlockList) {
-		if (strcmp(dnsBlock.c_str(), dns) == 0) {
+		if (strcasecmp(dnsBlock.c_str(), dns) == 0) {
 			logTrace(g_conf.m_logTraceDnsBlockList, "Dns block criteria %s matched dns '%s'", dnsBlock.c_str(), dns);
 			return true;
 		}
