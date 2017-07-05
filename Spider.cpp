@@ -1334,7 +1334,11 @@ checkNextRule:
 			     // out of memory while crawling?
 			     errCode != ENOMEM &&
 			     errCode != ENETUNREACH &&
-			     errCode != EHOSTUNREACH )
+			     errCode != EHOSTUNREACH &&
+			     errCode != ETRYAGAIN &&
+			     errCode != EHOSTDEAD &&
+			     errCode != EINTERNALERROR
+			     )
 				errCode = 0;
 			// if no match continue
 			if ( (bool)errCode == val ) continue;
