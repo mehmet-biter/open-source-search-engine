@@ -105,7 +105,8 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	time_t ts = (time_t)m_addedTime;
 	struct tm tm_buf;
 	timeStruct = gmtime_r(&ts,&tm_buf);
-	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
+
+	strftime ( time , 256 , "%Y%m%d-%H%M%S UTC", timeStruct );
 	sb->safePrintf("addedTime=%s(%" PRIu32") ",time,(uint32_t)m_addedTime );
 	sb->safePrintf("pageNumInlinks=%i ",(int)m_pageNumInlinks);
 	sb->safePrintf("hopCount=%" PRId32" ",(int32_t)m_hopCount );
@@ -180,18 +181,15 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 	struct tm tm_buf;
 	timeStruct = gmtime_r(&ts,&tm_buf);
 	time[0] = 0;
-	if ( m_spideredTime ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
-	sb->safePrintf("spideredTime=%s(%" PRIu32") ",time,
-		       (uint32_t)m_spideredTime);
-
+	if ( m_spideredTime ) {
+		strftime(time, 256, "%Y%m%d-%H%M%S UTC", timeStruct);
+	}
+	sb->safePrintf("spideredTime=%s(%" PRIu32") ", time, (uint32_t)m_spideredTime);
 	sb->safePrintf("siteNumInlinks=%" PRId32" ",m_siteNumInlinks );
-
 	sb->safePrintf("ch32=%" PRIu32" ",(uint32_t)m_contentHash32);
-
 	sb->safePrintf("crawldelayms=%" PRId32"ms ",m_crawlDelayMS );
 	sb->safePrintf("httpStatus=%" PRId32" ",(int32_t)m_httpStatus );
-	sb->safePrintf("langId=%s(%" PRId32") ",
-		       getLanguageString(m_langId),(int32_t)m_langId );
+	sb->safePrintf("langId=%s(%" PRId32") ", getLanguageString(m_langId),(int32_t)m_langId );
 
 	if ( m_errCount )
 		sb->safePrintf("errCount=%" PRId32" ",(int32_t)m_errCount);
@@ -317,7 +315,8 @@ int32_t SpiderRequest::printToTable(SafeBuf *sb, const char *status, XmlDoc *xd,
 	time_t ts3 = (time_t)m_addedTime;
 	struct tm tm_buf;
 	timeStruct = gmtime_r(&ts3,&tm_buf);
-	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
+
+	strftime(time, 256, "%Y%m%d-%H%M%S UTC", timeStruct );
 	sb->safePrintf(" <td><nobr>%s(%" PRIu32")</nobr></td>\n",time,
 		       (uint32_t)m_addedTime);
 
