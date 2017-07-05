@@ -1372,25 +1372,6 @@ checkNextRule:
 			goto checkNextRule;
 		}
 
-		if ( strncmp(p,"isdocidbased",12) == 0 ) {
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// if no match continue
-			//if ( (bool)sreq->m_urlIsDocId==val ) continue;
-			if ( (bool)sreq->m_isPageReindex==val ) continue;
-			// skip
-			p += 12;
-			// skip to next constraint
-			p = strstr(p, "&&");
-			// all done?
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			p += 2;
-			goto checkNextRule;
-		}
-
 		if ( strncmp(p,"isreindex",9) == 0 ) {
 			// skip for msg20
 			if ( isForMsg20 ) continue;
