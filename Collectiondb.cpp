@@ -1002,7 +1002,6 @@ CollectionRec::CollectionRec() {
 	m_isActive = false;
 	m_makeImageThumbnails = false;
 	m_thumbnailMaxWidthHeight = 0;
-	m_indexSpiderReplies = false;
 	m_indexBody = false;
 	m_dedupingEnabled = false;
 	m_dupCheckWWW = false;

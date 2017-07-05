@@ -39,11 +39,11 @@ typedef uint64_t qvec_t;
 #define FIELD_TYPE     7
 #define FIELD_EXT      21
 //#define FIELD_COLL     22
-#define FIELD_ILINK    23
+//#define FIELD_UNUSED    23
 #define FIELD_LINKS    24
 #define FIELD_SITELINK 25
 // non-standard field codes
-#define FIELD_ZIP      8
+//#define FIELD_UNUSED      8
 //#define FIELD_UNUSED     9
 //#define FIELD_UNUSED   10
 //#define FIELD_UNUSED   11
@@ -85,7 +85,7 @@ typedef uint64_t qvec_t;
 #define FIELD_GBREVSORTBYFLOAT 55 // i.e. sortby:price -> low to high
 #define FIELD_GBNUMBERMIN      56
 #define FIELD_GBNUMBERMAX      57
-#define FIELD_GBPARENTURL      58
+//#define FIELD_UNUSED         58
 #define FIELD_GBSORTBYINT      59
 #define FIELD_GBREVSORTBYINT   60
 #define FIELD_GBNUMBERMININT   61

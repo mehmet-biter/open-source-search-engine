@@ -7800,32 +7800,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-	m->m_title = "index spider status documents";
-	m->m_desc  = "Index a spider status \"document\" "
-		"for every url the spider "
-		"attempts to spider. Search for them using special "
-		"query operators like type:status or gberrorstr:success or "
-		"stats:gberrornum to get a histogram. "
-		"See <a href=/syntax.html>syntax</a> page for more examples. "
-		"They will not otherwise "
-		"show up in the search results.";
-	//      "This will not work for "
-	// 	"diffbot crawlbot collections yet until it has proven "
-	// 	"more stable.";
-	m->m_cgi   = "isr";
-	simple_m_set(CollectionRec,m_indexSpiderReplies);
-	// default off for now until we fix it better. 5/26/14 mdw
-	// turn back on 6/21 now that we do not index plain text terms
-	// and we add gbdocspidertime and gbdocindextime terms so you
-	// can use those to sort regular docs and not have spider reply
-	// status docs in the serps.
-	// back on 4/21/2015 seems pretty stable.
-	// but it uses disk space so turn off for now again. 6/16/2015
-	m->m_def   = "0";
-	m->m_page  = PAGE_SPIDER;
-	m->m_flags = PF_CLONE;
-	m++;
-
 	// i put this in here so i can save disk space for my global
 	// diffbot json index
 	m->m_title = "index body";

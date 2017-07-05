@@ -11330,9 +11330,6 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("useclusterdb=%i ",(int)m_useClusterdb);
 		sb->safePrintf("usespiderdb=%i ",(int)m_useSpiderdb);
 		sb->safePrintf("uselinkdb=%i ",(int)m_useLinkdb);
-		if ( cr )
-			sb->safePrintf("indexspiderreplies=%i ",(int)
-				       cr->m_indexSpiderReplies);
 	}
 
 	if ( m_imageDataValid && size_imageData ) {
@@ -12011,7 +12008,7 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 			if ( ! ( p[1] & 0x02 ) ) { g_process.shutdownAbort(true); }
 			if (   ( p[7] & 0x02 ) ) { g_process.shutdownAbort(true); }
 			int64_t docId = Posdb::getDocId(p);
-			if ( docId != m_docId && !cr->m_indexSpiderReplies) {
+			if ( docId != m_docId ) {
 				log( LOG_WARN, "xmldoc: %" PRId64" != %" PRId64, docId, m_docId );
 				g_process.shutdownAbort(true);
 			}

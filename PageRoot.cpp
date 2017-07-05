@@ -1620,17 +1620,6 @@ bool sendPageHelp ( TcpSocket *sock , HttpRequest *hr ) {
 	sb.safePrintf("<br><br>\n");
 	sb.safePrintf("<br><br><br>\n");
 
-	// submit to https now
-	//sb.safePrintf("<form method=GET "
-	//	      "action=/addurl name=f>\n" );
-
-	// char *coll = "";
-	// if ( cr ) coll = cr->m_coll;
-	// if ( cr )
-	// 	sb.safePrintf("<input type=hidden name=c value=\"%s\">",
-	// 		      cr->m_coll);
-
-
 	const char *qc = "demo";
 	const char *host = ""; // for debug make it local on laptop
 
