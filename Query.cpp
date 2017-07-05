@@ -264,8 +264,6 @@ bool Query::set2 ( const char *query        ,
 			m_hasUrlField  = true;
 		else if ( qw->m_fieldCode == FIELD_SUBURL )
 			m_hasSubUrlField = true;
-		else if ( qw->m_fieldCode == FIELD_SUBURL2 )
-			m_hasSubUrlField = true;
 	}
 
 	// set m_docIdRestriction if a term is gbdocid:
@@ -1702,7 +1700,6 @@ bool Query::setQWords ( char boolFlag ,
 		     fieldCode == FIELD_LINKS||
 		     fieldCode == FIELD_SITE ||
 		     fieldCode == FIELD_IP   ||
-		     fieldCode == FIELD_ISCLEAN ||
 		     fieldCode == FIELD_GBSORTBYFLOAT ||
 		     fieldCode == FIELD_GBREVSORTBYFLOAT ||
 		     // gbmin:price:1.23
@@ -1941,26 +1938,7 @@ bool Query::setQWords ( char boolFlag ,
 		// . add single-word term id
 		// . this is computed by hash64AsciiLower() 
 		// . but only hash64Lower_a if _HASHWITHACCENTS_ is true
-		uint64_t wid = 0LL;
-		if (fieldCode == FIELD_CHARSET){
-			// find first space -- that terminates the field value
-			const char* end =
-				(words.getWord(words.getNumWords()-1) +
-				 words.getWordLen(words.getNumWords()-1));
-			while ( w+wlen<end && 
-				! is_wspace_utf8(w+wlen) ) wlen++;
-			// ignore following words until we hit a space
-			ignoreTilSpace = true;
-			// convert to enum value
-			int16_t csenum = get_iana_charset(w,wlen);
-			// convert back to string
-			char astr[128];
-			int32_t alen = sprintf(astr, "%d", csenum);
-			wid = hash64(astr, alen, 0LL);
-		}
-		else{
- 			wid = words.getWordId(i);
-		}
+		uint64_t wid = words.getWordId(i);
 		qw->m_rawWordId = wid;
 		// we now have a first word already set
 		firstWord = false;

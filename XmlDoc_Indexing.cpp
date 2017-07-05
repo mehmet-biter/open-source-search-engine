@@ -515,9 +515,7 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		if ( j < tagLen ) continue;
 		// is it recognized?
 		code = getFieldCode ( tag , tagLen );
-		// after version 45 or more, do not allow gbrss
-		// meta tags, because those are now reserved for us
-		if ( code == FIELD_GBRSS ) continue;
+
 		// . do not allow reserved tag names
 		// . title,url,suburl,
 		if ( code != FIELD_GENERIC ) continue;
