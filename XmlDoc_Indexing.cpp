@@ -2145,7 +2145,7 @@ skipsingleword:
 					  // we set to docLang final hash loop
 					  langUnknown, // langid
 					  0 , // multiplier
-					  true  , // syn?
+					  false, // syn?
 					  false , // delkey?
 					  hi->m_shardByTermId );
 

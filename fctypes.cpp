@@ -899,7 +899,7 @@ uint32_t calculateChecksum(char *buf, int32_t bufLen){
 	return sum;
 }
 
-bool has_alpha_utf8 ( char *s , char *send ) {
+bool has_alpha_utf8(const char *s, const char *send) {
 	char cs = 0;
 	for ( ; s < send ; s += cs ) {
 		cs = getUtf8CharSize ( s );
@@ -912,6 +912,20 @@ bool has_alpha_utf8 ( char *s , char *send ) {
 	return false;
 }
 
+bool is_alnum_utf8_string(const char *s, const char *send) {
+	char cs = 0;
+	for( ; s < send ; s += cs ) {
+		cs = getUtf8CharSize(s);
+		if(cs == 1) {
+			if(!is_alnum_utf8(s))
+				return false;
+		} else {
+			if(!is_alnum_utf8(s) )
+				return false;
+		}
+	}
+	return true;
+}
 
 // . returns bytes stored into "dst" from "src"
 // . just do one character, which may be from 1 to 4 bytes

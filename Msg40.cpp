@@ -331,6 +331,7 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_hideAllClustered          = m_si->m_hideAllClustered;
 	mr.m_familyFilter              = m_si->m_familyFilter;
 	mr.m_doMaxScoreAlgo            = m_si->m_doMaxScoreAlgo;
+	mr.m_modifyQuery               = true; //we are a user-specified query so modifying it is ok. todo/hack until msg39 can carry the full query information
 	mr.m_scoringWeights.init(m_si->m_diversityWeightMin, m_si->m_diversityWeightMax,
 				 m_si->m_densityWeightMin, m_si->m_densityWeightMax,
 				 m_si->m_hashGroupWeightBody,
