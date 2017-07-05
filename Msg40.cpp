@@ -1217,11 +1217,6 @@ bool Msg40::gotSummary ( ) {
 			// XmlDoc::m_contentHash32.. it will be zero if invalid i guess
 			if ( m_si->m_doDupContentRemoval && // &dr=1
 			     mr->m_contentHash32 &&
-			     // do not dedup CT_STATUS results, those are
-			     // spider reply "documents" that indicate the last
-			     // time a doc was spidered and the error code or success
-			     // code
-			     mr->m_contentType != CT_STATUS &&
 			     m_dedupTable.isInTable ( &mr->m_contentHash32 ) ) {
 				//if ( g_conf.m_logDebugQuery )
 				log("msg40: dup sum #%" PRId32" (%" PRIu32") (d=%" PRId64")",m_printi,
@@ -1234,11 +1229,6 @@ bool Msg40::gotSummary ( ) {
 			// return true with g_errno set on error
 			if ( m_si->m_doDupContentRemoval && // &dr=1
 			     mr->m_contentHash32 &&
-			     // do not dedup CT_STATUS results, those are
-			     // spider reply "documents" that indicate the last
-			     // time a doc was spidered and the error code or success
-			     // code
-			     mr->m_contentType != CT_STATUS &&
 			     ! m_dedupTable.addKey ( &mr->m_contentHash32 ) ) {
 				log("msg40: error adding to dedup table: %s",
 				    mstrerror(g_errno));
@@ -1539,11 +1529,6 @@ bool Msg40::gotSummary ( ) {
 
 		// get it
 		const Msg20Reply *mri = m_msg20[i]->m_r;
-		// do not dedup CT_STATUS results, those are
-		// spider reply "documents" that indicate the last
-		// time a doc was spidered and the error code or 
-		// success code
-		if ( mri->m_contentType == CT_STATUS ) continue;
 
 		// see if any result lower-scoring than #i is a dup of #i
 		for( int32_t m = i+1 ; m < m_numReplies ; m++ ) {
@@ -1555,11 +1540,7 @@ bool Msg40::gotSummary ( ) {
 			if ( m_msg20[m]->m_errno ) continue;
 
 			const Msg20Reply *mrm = m_msg20[m]->m_r;
-			// do not dedup CT_STATUS results, those are
-			// spider reply "documents" that indicate the last
-			// time a doc was spidered and the error code or 
-			// success code
-			if ( mrm->m_contentType == CT_STATUS ) continue;
+
 			// use gigabit vector to do topic clustering, etc.
 			const int32_t *vi = (int32_t *)mri->ptr_vbuf;
 			const int32_t *vm = (int32_t *)mrm->ptr_vbuf;
