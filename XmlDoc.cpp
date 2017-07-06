@@ -6766,30 +6766,27 @@ static void delayWrapper ( int fd , void *state ) {
 // . returns NULL and sets g_errno on error
 // . returns -1 if blocked, will re-call m_callback
 int32_t *XmlDoc::getIp ( ) {
-
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// return if we got it
-	if ( m_ipValid )
-	{
+	if (m_ipValid) {
 		char ipbuf[16];
 		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid [%s]", iptoa(m_ip,ipbuf));
 		return &m_ip;
 	}
 
 	// update status msg
-	setStatus ( "getting ip" );
+	setStatus("getting ip");
 
 	m_ipStartTime = 0;
 	// assume the same in case we get it right away
 	m_ipEndTime = 0;
 
 	// if set from docid and recycling
-	if ( m_recycleContent ) {
+	if (m_recycleContent) {
 		// get the old xml doc from the old title rec
-		XmlDoc **pod = getOldXmlDoc ( );
-		if ( ! pod || pod == (void *)-1 )
-		{
+		XmlDoc **pod = getOldXmlDoc();
+		if (!pod || pod == (void *)-1) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. getOldXmlDoc failed" );
 			return (int32_t *)pod;
 		}
@@ -6797,28 +6794,25 @@ int32_t *XmlDoc::getIp ( ) {
 		// shortcut
 		XmlDoc *od = *pod;
 		// set it
-		if ( od ) {
-			m_ip      = od->m_ip;
+		if (od) {
+			m_ip = od->m_ip;
 			m_ipValid = true;
 
 			char ipbuf[16];
-			logTrace( g_conf.m_logTraceXmlDoc, "END, got it from old XmlDoc [%s]", iptoa(m_ip,ipbuf));
+			logTrace(g_conf.m_logTraceXmlDoc, "END, got it from old XmlDoc [%s]", iptoa(m_ip, ipbuf));
 			return &m_ip;
 		}
 	}
 
-
 	// get the best url
 	Url *u = getCurrentUrl();
-	if ( ! u || u == (void *)-1 )
-	{
+	if (!u || u == (void *)-1) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. getCurrentUrl failed." );
 		return (int32_t *)u;
 	}
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr )
-	{
+	if (!cr) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. getCollRec failed" );
 		return NULL;
 	}
@@ -6827,6 +6821,7 @@ int32_t *XmlDoc::getIp ( ) {
 	// the IP and download the page, wait for this many milliseconds.
 	// this basically slows the spider down.
 	int32_t delay = cr->m_spiderDelayInMilliseconds;
+
 	// injected?
 	if ( m_sreqValid && m_sreq.m_isInjecting  ) delay = 0;
 	if ( m_sreqValid && m_sreq.m_isPageParser ) delay = 0;
