@@ -56,7 +56,6 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 *    libssl-dev
 *    libprotobuf-dev
 *    protobuf-compiler
-*    libc-ares-dev
 
 #### OpenSuse
 *    g++
@@ -67,7 +66,6 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 *    libssl-dev
 *    protobuf-devel
 *    libprotobuf13
-*    libcares-devel
 
 #### Fedora
 *    g++
@@ -78,7 +76,6 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 *    openssl-devel
 *    protobuf-devel
 *    protobuf-compiler
-*    c-ares-devel
 
 ### Runtime
 *    Multi-instance installations require [Vagus](https://github.com/privacore/vagus) for keeping track of which instances are dead and alive.
@@ -87,7 +84,6 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 *    libssl1.0.0
 *    libpcre3
 *    libprotobuf9v5
-*    libc-ares2
 
 ## RUNNING GIGABLAST
 See <a href=html/faq.html>html/faq.html</a> for all administrative documentation including the quick start instructions.
