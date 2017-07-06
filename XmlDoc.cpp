@@ -11153,17 +11153,16 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 	struct tm tm_buf;
 	struct tm *timeStruct = gmtime_r(&spideredTime,&tm_buf);
 	char tmp[64];
-	strftime(tmp,64,"spidered=%b-%d-%Y(%H:%M:%S)", timeStruct );
-	sb->safePrintf("%s(%" PRIu32") ",tmp,(uint32_t)spideredTime);
+	strftime(tmp,64,"%Y%m%d-%H%M%S", timeStruct );
+	sb->safePrintf("spidered=%s(%" PRIu32") ",tmp, (uint32_t)spideredTime);
 
 	// when it was scheduled to be spidered
 	if ( m_sreqValid && m_sreq.m_addedTime ) {
 		time_t ts = m_sreq.m_addedTime;
 		struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
 		char tmp[64];
-		strftime ( tmp , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct );
-		sb->safePrintf("scheduledtime=%s(%" PRIu32") ",
-			       tmp,(uint32_t)m_sreq.m_addedTime);
+		strftime(tmp,64,"%Y%m%d-%H%M%S", timeStruct );
+		sb->safePrintf("scheduledtime=%s(%" PRIu32") ", tmp, (uint32_t)m_sreq.m_addedTime);
 	}
 
 	// discovery date, first time spiderrequest was added to spiderdb
@@ -11171,22 +11170,18 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 		time_t ts = m_sreq.m_discoveryTime;
 		struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
 		char tmp[64];
-		strftime ( tmp , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct );
-		sb->safePrintf("discoverydate=%s(%" PRIu32") ",
-			       tmp,(uint32_t)m_sreq.m_discoveryTime);
+		strftime(tmp,64,"%Y%m%d-%H%M%S", timeStruct );
+		sb->safePrintf("discoverydate=%s(%" PRIu32") ", tmp, (uint32_t)m_sreq.m_discoveryTime);
 	}
 
 	// print first indexed time
 	if ( m_firstIndexedDateValid ) {
 		time_t ts = m_firstIndexedDate;
 		timeStruct = gmtime_r(&ts,&tm_buf);//m_firstIndexedDate );
-		strftime(tmp,64,"firstindexed=%b-%d-%Y(%H:%M:%S)", timeStruct);
-		sb->safePrintf("%s(%" PRIu32") ",tmp,
-			       (uint32_t)m_firstIndexedDate);
+		strftime(tmp,64,"%Y%m%d-%H%M%S", timeStruct );
+		sb->safePrintf("firstindexed=%s(%" PRIu32") ", tmp, (uint32_t)m_firstIndexedDate);
 	}
 
-
-	//if ( ! m_isIndexedValid ) { g_process.shutdownAbort(true); }
 
 	// just use the oldurlfilternum for grepping i guess
 	//if ( m_oldDocValid && m_oldDoc )
@@ -11412,8 +11407,8 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 		time_t spideredTime = m_oldDoc->getSpideredTime();
 		struct tm *timeStruct = gmtime_r(&spideredTime,&tm_buf);
 		char tmp[64];
-		strftime(tmp,64,"lastindexed=%b-%d-%Y(%H:%M:%S)",timeStruct);
-		sb->safePrintf("%s(%" PRIu32") ", tmp,(uint32_t)spideredTime);
+		strftime(tmp,64,"%Y%m%d-%H%M%S", timeStruct );
+		sb->safePrintf("lastindexed=%s(%" PRIu32") ", tmp, (uint32_t)spideredTime);
 	}
 
 	if ( m_linkInfo1Valid && ptr_linkInfo1 && ptr_linkInfo1->hasRSSItem())
@@ -11518,6 +11513,11 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("errcnt=%" PRId32" ",(int32_t)m_sreq.m_errCount );
 	else
 		sb->safePrintf("errcnt=? ");
+
+	if ( m_sreqValid )
+		sb->safePrintf("sameerrcnt=%" PRId32" ",(int32_t)m_sreq.m_sameErrCount );
+	else
+		sb->safePrintf("sameerrcnt=? ");
 
 	if ( ptr_redirUrl ) { // m_redirUrlValid && m_redirUrlPtr ) {
 		sb->safePrintf("redir=%s ",ptr_redirUrl);//m_redirUrl.getUrl());

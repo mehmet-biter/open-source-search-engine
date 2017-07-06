@@ -1170,6 +1170,11 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	// tell spider loop to update active list
 	g_spiderLoop.invalidateActiveList();
 
+#ifdef PRIVACORE_SAFE_VERSION
+	// Force to the only filter profile when running in safe-mode
+	m_urlFiltersProfile.set("privacore");
+#endif
+
 	const char *s = m_urlFiltersProfile.getBufStart();
 
 	// leave custom profiles alone
@@ -1177,12 +1182,10 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 		return true;
 	}
 
-
 	// Bugfix. Make sure all arrays are cleared so e.g. ForceDelete 
 	// entries are not 'inherited' by new filter rules because they
 	// are not set for each filter.
 	clearUrlFilters();
-
 
 	if ( !strcmp(s,"privacore" ) ) {
 		return rebuildPrivacoreRules();
@@ -1190,7 +1193,6 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 
 	//if ( strcmp(s,"web") )
 	// just fall through for that
-
 
 	if ( !strcmp(s,"english") )
 		return rebuildLangRules( "en","com,us,gov");
@@ -1481,6 +1483,231 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 0; 		// 0 days default
 	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = 4; 		// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 90;
+	m_forceDelete        [n] = 0;
+	n++;
+
+	m_regExs[n].reset();
+	m_regExs[n].safePrintf("lang!=%s", langWhitelistStr);
+	m_harvestLinks       [n] = false;
+	m_spiderFreqs        [n] = 0; 		// 0 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
+	m_spiderIpWaits      [n] = 0; 		// same ip wait
+	m_spiderPriorities   [n] = 100;
+	m_forceDelete        [n] = 1;		// delete!
+	n++;
+
+#if 0
+@@@ Enable after test
+	// 4 or more of the SAME non-temporary errors - delete it
+	m_regExs[n].set("sameerrorcount>=100 && !hastmperror");			//100 is for TESTING. Will be removed once verified.
+	m_harvestLinks       [n] = false;
+	m_spiderFreqs        [n] = 0; 		// 0 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms;	// max spiders per ip
+	m_spiderIpWaits      [n] = 0; 		// same ip wait
+	m_spiderPriorities   [n] = 100;
+	m_forceDelete        [n] = 1;		// delete!
+	n++;
+#endif
+
+	// got bad HTTP status (e.g. 404) last we tried. Retry soon again to see if we keep
+	// getting the same error.
+	m_regExs[n].set("sameerrorcount>=1 && httpstatus>=400 && httpstatus<500");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 0.25;	// retry in 6 hours (0.25 days)
+	m_maxSpidersPerRule  [n] = 1; 		// max spiders
+	m_spiderIpMaxSpiders [n] = 4;		// max spiders per ip
+	m_spiderIpWaits      [n] = 500; 	// same ip wait
+	m_spiderPriorities   [n] = 89;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	// got BadIP error last we tried. Retry soon again to see if we keep
+	// getting the same error (probably expired domain).
+	m_regExs[n].set("sameerrorcount>=1 && errorcode=32853");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 0.25;	// retry in 6 hours (0.25 days)
+	m_maxSpidersPerRule  [n] = 1; 		// max spiders
+	m_spiderIpMaxSpiders [n] = 4; 		// max spiders per ip
+	m_spiderIpWaits      [n] = 500; 	// same ip wait
+	m_spiderPriorities   [n] = 89;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	// 3 or more temporary errors - slow down retries a bit
+	m_regExs[n].set("errorcount>=3 && hastmperror");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 3; 		// 3 days default
+	m_maxSpidersPerRule  [n] = 1; 		// max spiders
+	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 45;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	// 1 or more temporary errors - retry in a day
+	m_regExs[n].set("errorcount>=1 && hastmperror");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 1; 		// 1 days default
+	m_maxSpidersPerRule  [n] = 1; 		// max spiders
+	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 45;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("isaddurl");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 7; 		// 7 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 85;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("hopcount==0 && iswww && isnew");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 7; 		// 7 days default
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 50;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("hopcount==0 && iswww");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 7.0; 	// 7 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 48;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("hopcount==0 && isnew");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 7.0;		// 7 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 18;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("hopcount==0");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 10.0;	// 10 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 17;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("hopcount==1 && isnew");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 20.0;	// 20 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 16;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("hopcount==1");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 20.0;	// 20 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 15;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("hopcount==2 && isnew");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 40;		// 40 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 14;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("hopcount==2");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 40;		// 40 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 13;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("hopcount>=3 && isnew");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 60;		// 60 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 12;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("hopcount>=3");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 60;		// 60 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 11;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("default");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 60;		// 60 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 1;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+
+	m_numRegExs				= n;
+	m_numSpiderFreqs		= n;
+	m_numSpiderPriorities	= n;
+	m_numMaxSpidersPerRule	= n;
+	m_numSpiderIpWaits		= n;
+	m_numSpiderIpMaxSpiders	= n;
+	m_numHarvestLinks		= n;
+	m_numForceDelete		= n;
+
+	return true;
+}
+
+
+#if 0
+// Will be removed when the modified function above is "final"
+bool CollectionRec::rebuildPrivacoreRules () {
+	const char *langWhitelistStr = "xx,en,bg,sr,ca,cs,da,et,fi,fr,de,el,hu,is,ga,it,la,lv,lt,lb,nl,pl,pt,ro,es,sv,no,vv,mt,sk,sl,eu,cy,kl,fo";
+
+	// max spiders per ip
+	int32_t ipms = 1;
+
+	int32_t n = 0;
+
+	m_regExs[n].set("isreindex");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 0; 		// 0 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
 	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 80;
@@ -1662,7 +1889,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 
 	return true;
 }
-
+#endif
 
 
 
