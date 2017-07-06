@@ -1069,12 +1069,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		// point to the data. could be 64-bit ptr.
 		*pd = up;//(int32_t)up;
 
-		// Sanity - bail if size set, but no data
-		if( *ps && !pd ) {
-			log(LOG_ERROR,"CORRUPTED TITLEREC detected for docId %" PRId64 "", m_docId);
-			gbshutdownLogicError();
-		}
-
 		// debug
 		if ( m_pbuf ) {
 			int32_t crc = hash32(up,*ps);
