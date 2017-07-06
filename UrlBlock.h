@@ -7,10 +7,17 @@
 #include "GbRegex.h"
 
 struct urlblockdomain_t {
-	urlblockdomain_t(const std::string &domain, const std::string &allow);
+	enum pathcriteria_t {
+		pathcriteria_allow_all,
+		pathcriteria_allow_index_only,
+		pathcriteria_allow_rootpages_only
+	};
+
+	urlblockdomain_t(const std::string &domain, const std::string &allow, pathcriteria_t pathcriteria);
 
 	std::string m_domain;
 	std::vector<std::string> m_allow;
+	pathcriteria_t m_pathcriteria;
 };
 
 struct urlblockhost_t {

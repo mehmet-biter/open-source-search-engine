@@ -34,6 +34,26 @@ void UrlBlockList::reload(int /*fd*/, void *state) {
 	urlBlockList->load();
 }
 
+static void parseDomain(urlblocklist_ptr_t *urlBlockList, const std::string &col2, const std::string &col3, const std::string &col4) {
+	std::string allowStr;
+	if (!col3.empty()) {
+		if (starts_with(col3.c_str(), "allow=")) {
+			allowStr.append(col3, 6, std::string::npos);
+		}
+	}
+
+	urlblockdomain_t::pathcriteria_t pathcriteria = urlblockdomain_t::pathcriteria_allow_all;
+	if (!col4.empty()) {
+		if (col4.compare("allowindexpage") == 0) {
+			pathcriteria = urlblockdomain_t::pathcriteria_allow_index_only;
+		} else if (col4.compare("allowrootpages") == 0) {
+			pathcriteria = urlblockdomain_t::pathcriteria_allow_rootpages_only;
+		}
+	}
+
+	(*urlBlockList)->emplace_back(std::shared_ptr<urlblockdomain_t>(new urlblockdomain_t(col2, allowStr, pathcriteria)));
+}
+
 bool UrlBlockList::load() {
 	logTrace(g_conf.m_logTraceUrlBlockList, "Loading %s", m_filename);
 
@@ -70,12 +90,22 @@ bool UrlBlockList::load() {
 		}
 
 		size_t secondColEnd = line.find_first_of(" \t", secondCol);
+
 		size_t thirdCol = line.find_first_not_of(" \t", secondColEnd);
+		size_t thirdColEnd = line.find_first_of(" \t", thirdCol);
+
+		size_t fourthCol = line.find_first_not_of(" \t", thirdColEnd);
+		size_t fourthColEnd = line.find_first_of(" \t", fourthCol);
 
 		std::string col2(line, secondCol, secondColEnd - secondCol);
 		std::string col3;
 		if (thirdCol != std::string::npos) {
-			col3 = std::string(line, thirdCol);
+			col3 = std::string(line, thirdCol, thirdColEnd - thirdCol);
+		}
+
+		std::string col4;
+		if (fourthCol != std::string::npos) {
+			col4 = std::string(line, fourthCol, fourthColEnd - fourthCol);
 		}
 
 		switch (line[0]) {
@@ -86,12 +116,7 @@ bool UrlBlockList::load() {
 					continue;
 				}
 
-				if (starts_with(col3.c_str(), "allow=")) {
-					col3.erase(0, 6);
-				} else {
-					col3.clear();
-				}
-				tmpUrlBlockList->emplace_back(std::shared_ptr<urlblockdomain_t>(new urlblockdomain_t(col2, col3)));
+				parseDomain(&tmpUrlBlockList, col2, col3, col4);
 				break;
 			case 'h':
 				// host
