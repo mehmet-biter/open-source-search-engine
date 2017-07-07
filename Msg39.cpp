@@ -361,7 +361,7 @@ void Msg39::getDocIds2() {
 	if ( g_errno ) gbshutdownLogicError();
 
 	if(m_msg39req->m_modifyQuery)
-		m_query.modifyQuery(&m_msg39req->m_scoringWeights);
+		m_query.modifyQuery(&m_msg39req->m_scoringWeights, cr->m_modifyDomainLikeSearches);
 
 	// set m_errno
 	if ( m_query.m_truncated ) m_errno = EQUERYTRUNCATED;
