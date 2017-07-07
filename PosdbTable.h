@@ -218,11 +218,11 @@ public:
 
 
 	// upper score bound
-	float getMaxPossibleScore ( const QueryTermInfo *qti ,
-				    int32_t bestDist ,
-				    int32_t qdist ,
-				    const QueryTermInfo *qtm ) ;
-
+	float getMaxPossibleScore(const QueryTermInfo *qti) ;
+	float modifyMaxScoreByDistance(float score,
+				       int32_t bestDist,
+				       int32_t qdist,
+				       const QueryTermInfo *qtm);
 	int64_t getTotalHits() const { return m_docIdVoteBuf.length() / 6; }
 	int32_t getFilteredCount() const { return m_filtered; }
 

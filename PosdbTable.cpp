@@ -2700,10 +2700,11 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 		// query distance
 		int32_t qdist = m_qpos[m_minTermListIdx] - m_qpos[i];
 		// compute it
-		float maxScore2 = getMaxPossibleScore(&qtibuf[i],
-						      bestDist,
-						      qdist,
-						      &qtibuf[m_minTermListIdx]);
+		float maxScore2 = getMaxPossibleScore(&qtibuf[i]);
+		maxScore2 = modifyMaxScoreByDistance(maxScore2,
+						     bestDist,
+						     qdist,
+						     &qtibuf[m_minTermListIdx]);
 		// -1 means it has inlink text so do not apply this constraint
 		// to this docid because it is too difficult because we
 		// sum up the inlink text
@@ -3895,7 +3896,7 @@ void PosdbTable::intersectLists_real() {
 							}
 
 							// an upper bound on the score we could get
-							float maxScore = getMaxPossibleScore ( &qtibuf[i], 0, 0, NULL );
+							float maxScore = getMaxPossibleScore(&qtibuf[i]);
 							// -1 means it has inlink text so do not apply this constraint
 							// to this docid because it is too difficult because we
 							// sum up the inlink text
@@ -4325,11 +4326,7 @@ void PosdbTable::intersectLists_real() {
 
 // . "bestDist" is closest distance to query term # m_minTermListIdx
 // . set "bestDist" to 1 to ignore it
-float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
-					int32_t bestDist,
-					int32_t qdist,
-					const QueryTermInfo *qtm ) {
-
+float PosdbTable::getMaxPossibleScore(const QueryTermInfo *qti) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// get max score of all sublists
@@ -4472,30 +4469,6 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	// assume the other term we pair with will be 1.0
 	score *= qti->m_termFreqWeight;
 
-	// the new logic to fix 'time enough for love' slowness
-	if ( qdist ) {
-		// no use it
-		score *= qtm->m_termFreqWeight;
-		
-		// subtract qdist
-		bestDist -= qdist;
-		
-		// assume in correct order
-		if ( qdist < 0 ) {
-			qdist *= -1;
-		}
-		
-		// make it positive
-		if ( bestDist < 0 ) {
-			bestDist *= -1;
-		}
-		
-		// avoid 0 division
-		if ( bestDist > 1 ) {
-			score /= (float)bestDist;
-		}
-	}
-
 	// terms in same wikipedia phrase?
 	//if ( wikiWeight != 1.0 ) 
 	//	score *= WIKI_WEIGHT;
@@ -4512,6 +4485,26 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	return score;
 }
 
+
+float PosdbTable::modifyMaxScoreByDistance(float score,
+					   int32_t bestDist,
+					   int32_t qdist,
+					   const QueryTermInfo *qtm)
+{
+	score *= qtm->m_termFreqWeight;
+	
+	// subtract qdist
+	bestDist -= qdist;
+	
+	// make it positive
+	bestDist = abs(bestDist);
+	
+	// avoid 0 division
+	if(bestDist > 1)
+		score /= (float)bestDist;
+	
+	return score;
+}
 
 
 
