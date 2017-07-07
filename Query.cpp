@@ -2571,17 +2571,17 @@ void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSea
 		bool looksLikeADomain = false;
 		// is it a domain in the form of domain.tld ?
 		if(m_numWords==3 &&
-		is_alnum_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
-		m_qwords[1].m_wordLen==1 && m_qwords[1].m_word[0]=='.' &&
-		is_alnum_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen))
+		  is_alnum_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
+		  m_qwords[1].m_wordLen==1 && m_qwords[1].m_word[0]=='.' &&
+		  is_alnum_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen))
 			looksLikeADomain = true;
 		// is it a domain in the form of host.domain.tld ?
 		if(m_numWords==5 &&
-		is_alnum_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
-		m_qwords[1].m_wordLen==1 && m_qwords[1].m_word[0]=='.' &&
-		is_alnum_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen) &&
-		m_qwords[3].m_wordLen==1 && m_qwords[3].m_word[0]=='.' &&
-		is_alnum_utf8_string(m_qwords[4].m_word,m_qwords[4].m_word+m_qwords[4].m_wordLen))
+		  is_alnum_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
+		  m_qwords[1].m_wordLen==1 && m_qwords[1].m_word[0]=='.' &&
+		  is_alnum_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen) &&
+		  m_qwords[3].m_wordLen==1 && m_qwords[3].m_word[0]=='.' &&
+		  is_alnum_utf8_string(m_qwords[4].m_word,m_qwords[4].m_word+m_qwords[4].m_wordLen))
 			looksLikeADomain = true;
 		if(looksLikeADomain) {
 			log(LOG_DEBUG, "query:Query '%s' looks like a domain", originalQuery());
