@@ -226,7 +226,7 @@ CPPFLAGS += -Wno-unused-parameter
 
 endif
 
-LIBS = -lm -lpthread -lssl -lcrypto -lz -lpcre -lcares
+LIBS = -lm -lpthread -lssl -lcrypto -lz -lpcre
 
 # to build static libiconv.a do a './configure --enable-static' then 'make' in the iconv directory
 
@@ -266,8 +266,8 @@ all: gb
 
 
 # third party libraries
-LIBFILES = libcld2_full.so libcld3.so libced.so slacktee.sh
-LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced
+LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so slacktee.sh
+LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced -lcares
 
 CLD2_SRC_DIR=third-party/cld2/internal
 libcld2_full.so:
@@ -290,6 +290,11 @@ libcld3.so:
 libced.so:
 	cd third-party/compact_enc_det && cmake -DBUILD_SHARED_LIBS=ON . && make ced
 	ln -s third-party/compact_enc_det/lib/libced.so libced.so
+
+CARES_SRC_DIR=third-party/c-ares
+libcares.so:
+	cd $(CARES_SRC_DIR) && ./buildconf && ./configure && make
+	ln -s $(CARES_SRC_DIR)/.libs/libcares.so libcares.so
 
 slacktee.sh:
 	ln -sf third-party/slacktee/slacktee.sh slacktee.sh 2>/dev/null
