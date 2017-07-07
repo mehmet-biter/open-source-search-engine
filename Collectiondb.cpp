@@ -1053,6 +1053,7 @@ CollectionRec::CollectionRec() {
 	m_crawlDelayDefaultForRobotsTxtMS = 10000;
 	m_queryExpansion = false;
 	m_modifyDomainLikeSearches = false;
+	m_modifyAPILikeSearches = false;
 	m_rcache = false;
 	m_hideAllClustered = false;
 	m_END_COPY = 0;

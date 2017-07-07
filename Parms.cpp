@@ -6492,6 +6492,15 @@ void Parms::init ( ) {
 	m->m_flags = PF_API | PF_CLONE;
 	m++;
 
+	m->m_title = "Detect and modify API-like searches";
+	m->m_desc  = "Detect queries for APIs such as file.open() and modify the query to search more directed for that";
+	m->m_def   = "1";
+	simple_m_set(CollectionRec,m_modifyAPILikeSearches);
+	m->m_cgi  = "modifyapilikesearches";
+	m->m_page  = PAGE_SEARCH;
+	m->m_flags = PF_API | PF_CLONE;
+	m++;
+
 	m->m_title = "highlight query terms in summaries by default";
 	m->m_desc  = "Use to disable or enable "
 		"highlighting of the query terms in the summaries.";

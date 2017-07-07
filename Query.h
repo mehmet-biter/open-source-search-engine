@@ -437,7 +437,7 @@ class Query {
 
 	// modify query terms based on patters and rule-of-thumb. Eg "example.com" is probably a search
 	// for a domain and "file.open()" is probably for an API/SDK
-	void modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSearches);
+	void modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSearches, bool  modifyAPILikeSearches);
 
 private:
 	// sets m_qwords[] array, this function is the heart of the class
