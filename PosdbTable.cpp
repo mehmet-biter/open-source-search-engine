@@ -1769,7 +1769,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// store # lists in required group. nn might be zero!
 		qti->m_numSubLists = nn;
 		// set the term freqs for this list group/set
-		qti->m_termFreqWeight =((float *)m_msg39req->ptr_termFreqWeights)[i];
+		qti->m_termFreqWeight = qt->m_termFreqWeight;
 		// crazy?
 		if ( nn >= MAX_SUBLISTS ) {
 			log("query: too many sublists. %" PRId32" >= %" PRId32,

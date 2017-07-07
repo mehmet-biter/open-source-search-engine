@@ -381,6 +381,11 @@ void Msg39::getDocIds2() {
 		sendReply ( m_slot , this , NULL , 0 , 0 , true );
 		return ; 
 	}
+
+	//set term frequencyweights based on msg39req
+	for(int i=0; i<m_query.getNumTerms(); i++)
+		m_query.m_qterms[i].m_termFreqWeight = ((float *)m_msg39req->ptr_termFreqWeights)[i];
+
 	// debug
 	if ( m_debug )
 		logf(LOG_DEBUG,"query: msg39: [%" PTRFMT"] Got request "
