@@ -6765,18 +6765,17 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 	return NULL;
 }
 
-static void gotIpWrapper ( void *state , int32_t ip ) ;
-
 static void delayWrapper ( int fd , void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	THIS->m_masterLoop ( THIS->m_masterState );
 }
 
-static void gotAresIpWrapper(GbDns::DnsResponse *response, void *state) {
+void XmlDoc::gotIpWrapper(GbDns::DnsResponse *response, void *state) {
 	XmlDoc *that = static_cast<XmlDoc*>(state);
 
 	that->m_ipEndTime = gettimeofdayInMilliseconds();
 
+	that->setStatus("got ip");
 
 	that->m_ipValid = true;
 	if (response && !response->m_ips.empty()) {
@@ -6886,64 +6885,14 @@ int32_t *XmlDoc::getIp ( ) {
 	// update status msg
 	setStatus ( "getting ip (msgc)" );
 
-	std::string hostname(u->getHost(), u->getHostLen());
-	GbDns::getARecord(hostname.c_str(), gotAresIpWrapper, this);
-	return (int32_t*)-1;
-
-
 	m_ipStartTime = gettimeofdayInMilliseconds();
 
-	// assume valid! if reply handler gets g_errno set then m_masterLoop
-	// should see that and call the final callback
-	//m_ipValid = true;
-	// get it
-	logTrace( g_conf.m_logTraceXmlDoc, "Calling MsgC.getIp [%s]", u->getHost());
-	if (!m_msgc.getIp(u->getHost(), u->getHostLen(), &m_ip, this, gotIpWrapper)) {
-		// we blocked
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. Blocked." );
-    	return (int32_t *)-1;
-	}
+	std::string hostname(u->getHost(), u->getHostLen());
 
-	// wrap it up
-	int32_t *rval2 = gotIp ( true );
-	char ipbuf[16];
-	logTrace( g_conf.m_logTraceXmlDoc, "END, return [%s]", rval2 ? iptoa(*rval2,ipbuf) : "NULL");
-	return rval2;
-}
-
-
-
-void gotIpWrapper ( void *state , int32_t ip ) {
-	// point to us
-	XmlDoc *THIS = (XmlDoc *)state;
-
-	THIS->m_ipEndTime = gettimeofdayInMilliseconds();
-
-	char ipbuf[16];
-	logTrace( g_conf.m_logTraceXmlDoc, "Got IP [%s]. Took %" PRId64" msec", iptoa(ip,ipbuf), THIS->m_ipEndTime - THIS->m_ipStartTime);
-
-	// wrap it up
-	THIS->gotIp ( true );
-	// . call the master callback
-	// . m_masterState usually equals THIS, unless THIS is the
-	//   Xml::m_contactDoc or something...
-	THIS->m_masterLoop ( THIS->m_masterState );
-}
-
-
-int32_t *XmlDoc::gotIp ( bool save ) {
-	// return NULL on error
-	if ( g_errno ) return NULL;
-	// this is bad too
-	//if ( m_ip == 0 || m_ip == -1 ) m_indexCode = EBADIP;
-	//log("db: got ip %s for %s",iptoa(m_ip),getCurrentUrl()->getUrl());
-
-	setStatus ("got ip");
-
-	// we got it
-	m_ipValid = true;
-	// give it to them
-	return &m_ip;
+	logTrace( g_conf.m_logTraceXmlDoc, "Calling GbDns::getARecord [%s]", hostname.c_str());
+	GbDns::getARecord(hostname.c_str(), gotIpWrapper, this);
+	logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. Blocked." );
+	return (int32_t*)-1;
 }
 
 std::vector<std::string>* XmlDoc::getHostNameServers(const char *hostname) {

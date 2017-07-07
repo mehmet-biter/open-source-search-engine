@@ -396,7 +396,7 @@ public:
 	int32_t *getIp ( ) ;
 	std::vector<std::string>* getHostNameServers(const char *hostname);
 	static void gotHostNameServersWrapper(GbDns::DnsResponse *response, void *state);
-	int32_t *gotIp ( bool save ) ;
+	static void gotIpWrapper(GbDns::DnsResponse *response, void *state);
 	bool *getIsAllowed ( ) ;
 	int32_t *getFinalCrawlDelay();
 	int32_t      m_finalCrawlDelay;
