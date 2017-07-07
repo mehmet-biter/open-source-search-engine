@@ -4414,16 +4414,10 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 				continue;
 			}
 			
-			// but worst density rank?
-			if ( dr < bestDensityRank ) {
-				continue;
-			}
-			
-			// better?
+			// better density rank?
 			if ( dr > bestDensityRank ) {
 				bestDensityRank = dr;
 			}
-			// another tie, oh well... just ignore it
 		}
 		
 		// handle the beginning 12 byte key
