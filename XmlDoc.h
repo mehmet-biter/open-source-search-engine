@@ -52,7 +52,12 @@
 #include "Json.h"
 #include "Posdb.h"
 
+// forward declaration
 class GetMsg20State;
+
+namespace GbDns {
+	struct DnsResponse;
+}
 
 #define MAXFRAGWORDS 80000
 
@@ -389,6 +394,8 @@ public:
 	int32_t *getSiteNumInlinks ( ) ;
 	class LinkInfo *getSiteLinkInfo() ;
 	int32_t *getIp ( ) ;
+	std::vector<std::string>* getHostNameServers(const char *hostname);
+	static void gotHostNameServersWrapper(GbDns::DnsResponse *response, void *state);
 	int32_t *gotIp ( bool save ) ;
 	bool *getIsAllowed ( ) ;
 	int32_t *getFinalCrawlDelay();
@@ -809,7 +816,7 @@ public:
 	bool m_exactContentHash64Valid;
 	bool m_jpValid;
 	bool m_blockedDocValid;
-
+	bool m_hostNameServersValid;
 	bool m_isSiteMap;
 
 	// shadows
@@ -1113,6 +1120,8 @@ public:
 	bool m_blockedDoc;
 	bool m_checkedUrlBlockList;
 	bool m_checkedDnsBlockList;
+
+	std::vector<std::string> m_hostNameServers;
 
 	// word spam detection
 	char *getWordSpamVec ( );

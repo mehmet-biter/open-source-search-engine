@@ -46,6 +46,7 @@
 #include "GbEncoding.h"
 #include "GbLanguage.h"
 #include "DnsBlockList.h"
+#include "GbDns.h"
 
 
 #ifdef _VALGRIND_
@@ -156,6 +157,7 @@ void XmlDoc::reset ( ) {
 	m_blockedDoc = false;
 	m_checkedUrlBlockList = false;
 	m_checkedDnsBlockList = false;
+	m_hostNameServers.clear();
 
 	m_doConsistencyTesting = g_conf.m_doConsistencyTesting;
 
@@ -1869,30 +1871,43 @@ bool* XmlDoc::checkBlockList() {
 		return &m_blockedDoc;
 	}
 
+	if (m_sreq.m_urlIsDocId) {
+		// nothing to check
+		m_blockedDocValid = true;
+		m_blockedDoc = false;
+		return &m_blockedDoc;
+	}
+
+	Url url;
+	url.set(m_sreq.m_url);
+
 	bool blocked = false;
 	if (!m_checkedUrlBlockList) {
-		if (!m_sreq.m_urlIsDocId) {
-			Url url;
-			url.set(m_sreq.m_url);
+		if (g_urlBlockList.isUrlBlocked(url)) {
+			m_indexCodeValid = true;
+			m_indexCode = EDOCBLOCKEDURL;
 
-			if (g_urlBlockList.isUrlBlocked(url)) {
-				m_indexCodeValid = true;
-				m_indexCode = EDOCBLOCKEDURL;
-
-				blocked = true;
-			}
+			blocked = true;
 		}
 		m_checkedUrlBlockList = true;
 	}
 
 	if (!blocked && !m_checkedDnsBlockList) {
-		/// @todo ALC fill in name server here
-		const char *dns = "";
-		if (g_dnsBlockList.isDnsBlocked(dns)) {
-			m_indexCodeValid = true;
-			m_indexCode = EDOCBLOCKEDDNS;
+		std::string hostname(url.getHost(), url.getHostLen());
+		std::vector<std::string> *nameservers = getHostNameServers(hostname.c_str());
+		if (nameservers == (std::vector<std::string>*)-1) {
+			// blocked
+			return (bool*)nameservers;
+		}
 
-			blocked = true;
+		for (auto it = nameservers->begin(); it != nameservers->end(); ++it) {
+			if (g_dnsBlockList.isDnsBlocked(it->c_str())) {
+				m_indexCodeValid = true;
+				m_indexCode = EDOCBLOCKEDDNS;
+
+				blocked = true;
+				break;
+			}
 		}
 
 		m_checkedDnsBlockList = true;
@@ -1956,8 +1971,8 @@ bool XmlDoc::indexDoc2 ( ) {
 	}
 
 	bool *isPageBlocked = checkBlockList();
-	if (isPageBlocked == 0 || isPageBlocked == (void*)-1) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, return false. checkedBlockList = -1");
+	if (isPageBlocked == (void*)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, return false. isPageBlocked=-1");
 		return false;
 	}
 
@@ -6757,6 +6772,23 @@ static void delayWrapper ( int fd , void *state ) {
 	THIS->m_masterLoop ( THIS->m_masterState );
 }
 
+static void gotAresIpWrapper(GbDns::DnsResponse *response, void *state) {
+	XmlDoc *that = static_cast<XmlDoc*>(state);
+
+	that->m_ipEndTime = gettimeofdayInMilliseconds();
+
+
+	that->m_ipValid = true;
+	if (response && !response->m_ips.empty()) {
+		that->m_ip = response->m_ips.front();
+	}
+
+	char ipbuf[16];
+	logTrace( g_conf.m_logTraceXmlDoc, "Got IP [%s]. Took %" PRId64" msec", iptoa(that->m_ip,ipbuf), that->m_ipEndTime - that->m_ipStartTime);
+
+	that->m_masterLoop(that->m_masterState);
+}
+
 // . returns NULL and sets g_errno on error
 // . returns -1 if blocked, will re-call m_callback
 int32_t *XmlDoc::getIp ( ) {
@@ -6854,6 +6886,11 @@ int32_t *XmlDoc::getIp ( ) {
 	// update status msg
 	setStatus ( "getting ip (msgc)" );
 
+	std::string hostname(u->getHost(), u->getHostLen());
+	GbDns::getARecord(hostname.c_str(), gotAresIpWrapper, this);
+	return (int32_t*)-1;
+
+
 	m_ipStartTime = gettimeofdayInMilliseconds();
 
 	// assume valid! if reply handler gets g_errno set then m_masterLoop
@@ -6909,6 +6946,27 @@ int32_t *XmlDoc::gotIp ( bool save ) {
 	return &m_ip;
 }
 
+std::vector<std::string>* XmlDoc::getHostNameServers(const char *hostname) {
+	if (m_hostNameServersValid) {
+		return &m_hostNameServers;
+	}
+
+	GbDns::getNSRecord(hostname, gotHostNameServersWrapper, this);
+	return (std::vector<std::string>*)-1;
+}
+
+void XmlDoc::gotHostNameServersWrapper(GbDns::DnsResponse *response, void *state) {
+	XmlDoc *that = static_cast<XmlDoc*>(state);
+
+	// we don't want to request nameservers again
+	that->m_hostNameServersValid = true;
+
+	if (response) {
+		that->m_hostNameServers = std::move(response->m_nameservers);
+	}
+
+	that->m_masterLoop(that->m_masterState);
+}
 
 // when doing a custom crawl we have to decide between the provided crawl
 // delay, and the one in the robots.txt...

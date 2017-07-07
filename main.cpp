@@ -80,6 +80,7 @@
 #include "File.h"
 #include "DnsBlockList.h"
 #include "UrlBlockList.h"
+#include "GbDns.h"
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -1638,6 +1639,12 @@ int main2 ( int argc , char *argv[] ) {
 	// . Only the distributed cache shall call the dns server.
 	if ( ! g_dns.init( h9->m_dnsClientPort ) ) {
 		log("db: Dns distributed client init failed." ); return 1; }
+
+	// initialize dns client library
+	if (!GbDns::initialize()) {
+		log(LOG_ERROR, "Unable to initialize dns client");
+		return 1;
+	}
 
 	g_stable_summary_cache.configure(g_conf.m_stableSummaryCacheMaxAge, g_conf.m_stableSummaryCacheSize);
 	g_unstable_summary_cache.configure(g_conf.m_unstableSummaryCacheMaxAge, g_conf.m_unstableSummaryCacheSize);

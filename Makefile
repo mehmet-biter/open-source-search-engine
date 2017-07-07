@@ -76,6 +76,7 @@ OBJS_O3 = \
 	GbRegex.o \
 	GbThreadQueue.o \
 	GbEncoding.o GbLanguage.o \
+	GbDns.o \
 
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)

@@ -13,6 +13,7 @@
 #include "InstanceInfoExchange.h"
 
 #include "Stats.h"
+#include "GbDns.h"
 
 #include <execinfo.h>
 #include <sys/auxv.h>
@@ -711,6 +712,8 @@ void Loop::doPoll ( ) {
 		m_lastKeepaliveTimestamp = gettimeofdayInMilliseconds();
 		InstanceInfoExchange::weAreAlive();
 	}
+
+	GbDns::makeCallbacks();
 
 	int32_t n;
 
