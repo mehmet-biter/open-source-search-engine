@@ -2821,6 +2821,13 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 		// count how many requests had replies and how many did not
 		bool hadReply = ( uh48 == s_lastRepUh48 );
 
+		if( !hadReply ) {
+			// Last reply and current request do not belong together
+			s_lastErrCode = 0;
+			s_lastErrCount = 0;
+			s_sameErrCount = 0;
+		}
+
 		// get firstip
 		if ( printStats == 1 ) {
 			addUStat1( sreq, hadReply, now );
@@ -2834,19 +2841,22 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 			printf(" requestage=%" PRId32"s", (int32_t)(now-sreq->m_addedTime));
 			printf(" hadReply=%" PRId32,(int32_t)hadReply);
 
-			printf(" errcount=%" PRId32,(int32_t)s_lastErrCount);
-			printf(" sameerrcount=%" PRId32,(int32_t)s_sameErrCount);
+			if( hadReply ) {
+				// Only dump these values if last reply and current request belong together
+				printf(" errcount=%" PRId32,(int32_t)s_lastErrCount);
+				printf(" sameerrcount=%" PRId32,(int32_t)s_sameErrCount);
 
-			if ( s_lastErrCode ) {
-				printf( " errcode=%" PRId32"(%s)", ( int32_t ) s_lastErrCode, mstrerror( s_lastErrCode ) );
-			} else {
-				printf( " errcode=%" PRId32, ( int32_t ) s_lastErrCode );
-			}
+				if ( s_lastErrCode ) {
+					printf( " errcode=%" PRId32"(%s)", ( int32_t ) s_lastErrCode, mstrerror( s_lastErrCode ) );
+				} else {
+					printf( " errcode=%" PRId32, ( int32_t ) s_lastErrCode );
+				}
 
-			if ( sreq->m_prevErrCode ) {
-				printf( " preverrcode=%" PRId32"(%s)", ( int32_t ) sreq->m_prevErrCode, mstrerror( sreq->m_prevErrCode ) );
-			} else {
-				printf( " preverrcode=%" PRId32, ( int32_t ) sreq->m_prevErrCode );
+				if ( sreq->m_prevErrCode ) {
+					printf( " preverrcode=%" PRId32"(%s)", ( int32_t ) sreq->m_prevErrCode, mstrerror( sreq->m_prevErrCode ) );
+				} else {
+					printf( " preverrcode=%" PRId32, ( int32_t ) sreq->m_prevErrCode );
+				}
 			}
 
 			printf("\n");
