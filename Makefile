@@ -294,7 +294,8 @@ libced.so:
 CARES_SRC_DIR=third-party/c-ares
 libcares.so:
 	cd $(CARES_SRC_DIR) && ./buildconf && ./configure && make
-	ln -s $(CARES_SRC_DIR)/.libs/libcares.so libcares.so
+	ln -s $(CARES_SRC_DIR)/.libs/libcares.so.2 libcares.so.2
+	ln -s libcares.so.2 libcares.so
 
 slacktee.sh:
 	ln -sf third-party/slacktee/slacktee.sh slacktee.sh 2>/dev/null

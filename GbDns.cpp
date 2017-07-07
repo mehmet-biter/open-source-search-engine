@@ -3,7 +3,7 @@
 #include "ScopedLock.h"
 #include "Conf.h"
 #include "Mem.h"
-#include <ares.h>
+#include "third-party/c-ares/ares.h"
 #include <arpa/nameser.h>
 #include <netdb.h>
 #include <vector>
