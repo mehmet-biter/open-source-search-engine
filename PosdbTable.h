@@ -31,6 +31,7 @@ class DocIdScore;
 class Query;
 class QueryTerm;
 struct MiniMergeBuffer;
+class PairScoreMatrix;
 
 
 #define MAX_SUBLISTS 50
@@ -92,7 +93,7 @@ class PosdbTable {
 	float getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMergeBuffer, int i, int j, int32_t qdist);
 	float getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeBuf, int32_t i, DocIdScore *pdcs, const char **highestScoringNonBodyPos);
 	float getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, const char *wpi, const char *wpj, int32_t fixedDistance, int32_t qdist);
-	void findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const char **ptrs, const char **highestScoringNonBodyPos, float *scoreMatrix);
+	void findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const char **ptrs, const char **highestScoringNonBodyPos, const PairScoreMatrix &scoreMatrix);
 
 	float getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer, int i, int j, DocIdScore *pdcs);
 
@@ -119,9 +120,9 @@ class PosdbTable {
 	bool prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf, float minWinningScore);
 	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffer *miniMergeBuffer, int *highestInlinkSiteRank);
 
-	void createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMergeBuffer, float *scoreMatrix);
+	void createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMergeBuffer, PairScoreMatrix *scoreMatrix);
 	float getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, DocIdScore *pdcs);
-	float getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs);
+	float getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, const PairScoreMatrix &scoreMatrix, DocIdScore *pdcs);
 
 
 	// how long to add the last batch of lists
