@@ -1769,7 +1769,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// store # lists in required group. nn might be zero!
 		qti->m_numSubLists = nn;
 		// set the term freqs for this list group/set
-		qti->m_termFreqWeight =((float *)m_msg39req->ptr_termFreqWeights)[i];
+		qti->m_termFreqWeight = qt->m_termFreqWeight;
 		// crazy?
 		if ( nn >= MAX_SUBLISTS ) {
 			log("query: too many sublists. %" PRId32" >= %" PRId32,
@@ -2700,10 +2700,11 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf
 		// query distance
 		int32_t qdist = m_qpos[m_minTermListIdx] - m_qpos[i];
 		// compute it
-		float maxScore2 = getMaxPossibleScore(&qtibuf[i],
-						      bestDist,
-						      qdist,
-						      &qtibuf[m_minTermListIdx]);
+		float maxScore2 = getMaxPossibleScore(&qtibuf[i]);
+		maxScore2 = modifyMaxScoreByDistance(maxScore2,
+						     bestDist,
+						     qdist,
+						     &qtibuf[m_minTermListIdx]);
 		// -1 means it has inlink text so do not apply this constraint
 		// to this docid because it is too difficult because we
 		// sum up the inlink text
@@ -3353,6 +3354,23 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 
 
 
+// Find first entry that is a body entry (determined by 's_inBody' array).
+// Returns NULL if none found
+static const char *findFirstBodyPosdbEntry(const char *listStart, const char *listEnd) {
+	for(const char *p = listStart; p<listEnd; ) {
+		unsigned char hg = Posdb::getHashGroup(p);
+		if(s_inBody[hg])
+			return p;
+		if(*p & 0x04)
+			p += 6;
+		else
+			p += 12; //not really expected
+	}
+	return NULL;
+}
+
+
+
 float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs) {
 	logTrace(g_conf.m_logTracePosdb, "Sliding Window algorithm begins");
 	m_bestMinTermPairWindowPtrs = winnerStack;
@@ -3380,49 +3398,24 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 
 	// use special ptrs for the windows so we do not mangle 
 	// miniMergeBuffer->mergedListStart[] array because we use that below!
-	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-		xpos[i] = miniMergeBuffer->mergedListStart[i];
-	}
-
 
 	//
 	// init each list ptr to the first wordpos rec in the body
 	// for THIS DOCID and if no such rec, make it NULL
 	//
 	bool allNull = true;
-	for(int32_t i = 0; i < m_numQueryTermInfos; i++) {
-		// skip if to the left of a pipe operator
-		if( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-			continue;
-		}
-
-		// skip word position until it is in the body
-		while( xpos[i] && !s_inBody[Posdb::getHashGroup(xpos[i])]) {
-			// advance
-			if ( ! (xpos[i][0] & 0x04) ) {
-				xpos[i] += 12;
-			}
-			else {
-				xpos[i] +=  6;
-			}
-
-			// NULLify list if no more for this docid
-			if( xpos[i] < miniMergeBuffer->mergedListEnd[i] && (xpos[i][0] & 0x04)) {
-				continue;
-			}
-
-			// ok, no more! null means empty list
+	for(int i = 0; i < m_numQueryTermInfos; i++) {
+		if(m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
+			// not a ranking term
 			xpos[i] = NULL;
-
-			// must be in title or something else then
-			if ( ! highestScoringNonBodyPos[i] ) {
-				gbshutdownAbort(true);
+		} else {
+			xpos[i] = findFirstBodyPosdbEntry(miniMergeBuffer->mergedListStart[i], miniMergeBuffer->mergedListEnd[i]);
+			if(xpos[i]) {
+				allNull = false; //ok, found one entry in body
+			} else if(!highestScoringNonBodyPos[i]) {
+				// not in nody, not in title?
+				gbshutdownLogicError();
 			}
-		}
-
-		// if all xpos are NULL, then no terms are in body...
-		if ( xpos[i] ) {
-			allNull = false;
 		}
 	}
 
@@ -3895,7 +3888,7 @@ void PosdbTable::intersectLists_real() {
 							}
 
 							// an upper bound on the score we could get
-							float maxScore = getMaxPossibleScore ( &qtibuf[i], 0, 0, NULL );
+							float maxScore = getMaxPossibleScore(&qtibuf[i]);
 							// -1 means it has inlink text so do not apply this constraint
 							// to this docid because it is too difficult because we
 							// sum up the inlink text
@@ -4325,11 +4318,7 @@ void PosdbTable::intersectLists_real() {
 
 // . "bestDist" is closest distance to query term # m_minTermListIdx
 // . set "bestDist" to 1 to ignore it
-float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
-					int32_t bestDist,
-					int32_t qdist,
-					const QueryTermInfo *qtm ) {
-
+float PosdbTable::getMaxPossibleScore(const QueryTermInfo *qti) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// get max score of all sublists
@@ -4414,16 +4403,10 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 				continue;
 			}
 			
-			// but worst density rank?
-			if ( dr < bestDensityRank ) {
-				continue;
-			}
-			
-			// better?
+			// better density rank?
 			if ( dr > bestDensityRank ) {
 				bestDensityRank = dr;
 			}
-			// another tie, oh well... just ignore it
 		}
 		
 		// handle the beginning 12 byte key
@@ -4478,30 +4461,6 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	// assume the other term we pair with will be 1.0
 	score *= qti->m_termFreqWeight;
 
-	// the new logic to fix 'time enough for love' slowness
-	if ( qdist ) {
-		// no use it
-		score *= qtm->m_termFreqWeight;
-		
-		// subtract qdist
-		bestDist -= qdist;
-		
-		// assume in correct order
-		if ( qdist < 0 ) {
-			qdist *= -1;
-		}
-		
-		// make it positive
-		if ( bestDist < 0 ) {
-			bestDist *= -1;
-		}
-		
-		// avoid 0 division
-		if ( bestDist > 1 ) {
-			score /= (float)bestDist;
-		}
-	}
-
 	// terms in same wikipedia phrase?
 	//if ( wikiWeight != 1.0 ) 
 	//	score *= WIKI_WEIGHT;
@@ -4518,6 +4477,26 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	return score;
 }
 
+
+float PosdbTable::modifyMaxScoreByDistance(float score,
+					   int32_t bestDist,
+					   int32_t qdist,
+					   const QueryTermInfo *qtm)
+{
+	score *= qtm->m_termFreqWeight;
+	
+	// subtract qdist
+	bestDist -= qdist;
+	
+	// make it positive
+	bestDist = abs(bestDist);
+	
+	// avoid 0 division
+	if(bestDist > 1)
+		score /= (float)bestDist;
+	
+	return score;
+}
 
 
 

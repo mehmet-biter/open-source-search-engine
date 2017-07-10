@@ -245,6 +245,7 @@ inline bool is_alnum_utf8 ( const char *src ) {
 }
 
 bool is_alnum_utf8_string(const char *s, const char *send);
+bool is_alnum_api_utf8_string(const char *s, const char *send); //starts with letter or underscore, contains only ascii letters/digits and underscore
 
 inline bool is_alnum_utf8 ( const unsigned char *src ) {
 	// if in ascii do it quickly

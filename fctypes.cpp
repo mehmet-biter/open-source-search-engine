@@ -927,6 +927,26 @@ bool is_alnum_utf8_string(const char *s, const char *send) {
 	return true;
 }
 
+bool is_alnum_api_utf8_string(const char *s, const char *send) {
+	if(s==send)
+		return false; //empty string is not an identifyer
+	if(*s<32 || *s>=128)
+		return false; //first char must be ascii
+	if(*s!='_' && !is_alpha_a(*s)) //first char must be underscore or letter
+		return false;
+	s++;
+	char cs = 0;
+	for( ; s < send ; s += cs ) {
+		cs = getUtf8CharSize(s);
+		if(cs == 1) {
+			if(*s>=128 || !is_alnum_a(*s))
+				return false;
+		} else
+			return false; //must be ascii
+	}
+	return true;
+}
+
 // . returns bytes stored into "dst" from "src"
 // . just do one character, which may be from 1 to 4 bytes
 int32_t to_lower_utf8(char *dst, const char *src) {

@@ -366,7 +366,7 @@ bool Query::setQTerms ( const Words &words ) {
 		logTrace(g_conf.m_logTraceQuery, "Query::setQTerms(words:%d)", words.getNumWords());
 		for(int i=0; i<words.getNumWords(); i++) {
 			logTrace(g_conf.m_logTraceQuery, "  word #%d: '%*.*s'", i, words.getWordLen(i), words.getWordLen(i), words.getWord(i));
-			logTrace(g_conf.m_logTraceQuery, "            m_phraseId=%" PRId64", m_ignorePhrase=%d", m_qwords[i].m_phraseId, m_qwords[i].m_ignorePhrase);
+			logTrace(g_conf.m_logTraceQuery, "            m_phraseId=%" PRId64", m_ignorePhrase=%d m_phraseLen=%d", m_qwords[i].m_phraseId, m_qwords[i].m_ignorePhrase, m_qwords[i].m_phraseLen);
 			logTrace(g_conf.m_logTraceQuery, "            m_ignoreWord=%d, m_quoteStart=%d, m_quoteEnd=%d", m_qwords[i].m_ignoreWord, m_qwords[i].m_quoteStart, m_qwords[i].m_quoteEnd);
 		}
 	}
@@ -2537,42 +2537,87 @@ bool Query::setQWords ( char boolFlag ,
 }
 
 
-void Query::modifyQuery(ScoringWeights *scoringWeights) {
-	logTrace(g_conf.m_logTraceQuery, "Query::modifyQuery: '%s'", originalQuery());
+void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSearches, bool modifyAPILikeSearches) {
+	logTrace(g_conf.m_logTraceQuery, "Query::modifyQuery: q='%s', modifyDomainLikeSearches=%s, modifyAPILikeSearches=%s", originalQuery(),modifyDomainLikeSearches?"true":"false", modifyAPILikeSearches?"true":"false");
 	logTrace(g_conf.m_logTraceQuery, "                     m_numWords = %d", m_numWords);
 	logTrace(g_conf.m_logTraceQuery, "                     m_numTerms = %d", m_numTerms);
-	bool looksLikeADomain = false;
-	// is it a domain in the form of domain.tld ?
-	if(m_numWords==3 &&
-	   is_alnum_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
-	   m_qwords[1].m_wordLen==1 && m_qwords[1].m_word[0]=='.' &&
-	   is_alnum_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen))
-		looksLikeADomain = true;
-	// is it a domain in the form of host.domain.tld ?
-	if(m_numWords==5 &&
-	   is_alnum_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
-	   m_qwords[1].m_wordLen==1 && m_qwords[1].m_word[0]=='.' &&
-	   is_alnum_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen) &&
-	   m_qwords[3].m_wordLen==1 && m_qwords[3].m_word[0]=='.' &&
-	   is_alnum_utf8_string(m_qwords[4].m_word,m_qwords[4].m_word+m_qwords[4].m_wordLen))
-		looksLikeADomain = true;
-	if(looksLikeADomain) {
-		log(LOG_DEBUG, "query:Query '%s' looks like a domain", originalQuery());
-		//set all non-synonym terms as required and boost inUrl weight
-		for(int i=0; i<m_numTerms; i++) {
-			if(!m_qterms[i].m_synonymOf && !m_qterms[i].m_ignored) {
-				m_qterms[i].m_isRequired         = true;
-				m_qterms[i].m_rightPhraseTermNum = -1;
-				m_qterms[i].m_leftPhraseTermNum  = -1;
-				m_qterms[i].m_rightPhraseTerm    = NULL;
-				m_qterms[i].m_leftPhraseTerm     = NULL;
+	if(modifyDomainLikeSearches) {
+		bool looksLikeADomain = false;
+		// is it a domain in the form of domain.tld ?
+		if(m_numWords==3 &&
+		  is_alnum_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
+		  m_qwords[1].m_wordLen==1 && m_qwords[1].m_word[0]=='.' &&
+		  is_alnum_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen))
+			looksLikeADomain = true;
+		// is it a domain in the form of host.domain.tld ?
+		if(m_numWords==5 &&
+		  is_alnum_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
+		  m_qwords[1].m_wordLen==1 && m_qwords[1].m_word[0]=='.' &&
+		  is_alnum_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen) &&
+		  m_qwords[3].m_wordLen==1 && m_qwords[3].m_word[0]=='.' &&
+		  is_alnum_utf8_string(m_qwords[4].m_word,m_qwords[4].m_word+m_qwords[4].m_wordLen))
+			looksLikeADomain = true;
+		if(looksLikeADomain) {
+			log(LOG_DEBUG, "query:Query '%s' looks like a domain", originalQuery());
+			//set all non-synonym terms as required and boost inUrl weight
+			for(int i=0; i<m_numTerms; i++) {
+				if(!m_qterms[i].m_synonymOf && !m_qterms[i].m_ignored) {
+					m_qterms[i].m_isRequired         = true;
+					m_qterms[i].m_rightPhraseTermNum = -1;
+					m_qterms[i].m_leftPhraseTermNum  = -1;
+					m_qterms[i].m_rightPhraseTerm    = NULL;
+					m_qterms[i].m_leftPhraseTerm     = NULL;
+				}
 			}
+			scoringWeights->m_hashGroupWeights[HASHGROUP_INURL]  *= 10; //factor 10 seems to work fine
+			log(LOG_DEBUG, "query:Query modified");
+			return;
 		}
-		scoringWeights->m_hashGroupWeights[HASHGROUP_INURL]  *= 10; //factor 10 seems to work fine
-		log(LOG_DEBUG, "query:Query modified");
-		return;
 	}
 	
+	if(modifyAPILikeSearches) {
+		bool looksLikeAnAPI = false;
+		//is it something like "file.open" or "file.open()" ?
+		//todo: detect java packages like java.util.HashSet (but most java programmers probably has built-in help in their IDE so they would rarely use this)
+		if(m_numWords==3 &&
+		  is_alnum_api_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
+		  m_qwords[1].m_wordLen==1 && m_qwords[1].m_word[0]=='.' &&
+		  is_alnum_api_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen))
+			looksLikeAnAPI = true;
+		if(m_numWords==4 &&
+		   is_alnum_api_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
+		   m_qwords[1].m_wordLen==1 && m_qwords[1].m_word[0]=='.' &&
+		   is_alnum_api_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen) &&
+		   m_qwords[3].m_wordLen==2 && m_qwords[3].m_word[0]=='(' && m_qwords[3].m_word[1]==')')
+		   looksLikeAnAPI = true;
+		//or "file::open()"
+		if(m_numWords==3 &&
+		  is_alnum_api_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
+		  m_qwords[1].m_wordLen==2 && m_qwords[1].m_word[0]==':' && m_qwords[1].m_word[1]==':' &&
+		  is_alnum_api_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen))
+			looksLikeAnAPI = true;
+		if(m_numWords==4 &&
+		   is_alnum_api_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
+		   m_qwords[1].m_wordLen==2 && m_qwords[1].m_word[0]==':' && m_qwords[1].m_word[1]==':' &&
+		   is_alnum_api_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen) &&
+		   m_qwords[3].m_wordLen==2 && m_qwords[3].m_word[0]=='(' && m_qwords[3].m_word[1]==')')
+		   looksLikeAnAPI = true;
+		if(looksLikeAnAPI) {
+			log(LOG_DEBUG, "query:Query '%s' looks like an API or function call", originalQuery());
+			//set all non-synonym terms as required
+			for(int i=0; i<m_numTerms; i++) {
+				if(!m_qterms[i].m_synonymOf && !m_qterms[i].m_ignored) {
+					m_qterms[i].m_isRequired         = true;
+					m_qterms[i].m_rightPhraseTermNum = -1;
+					m_qterms[i].m_leftPhraseTermNum  = -1;
+					m_qterms[i].m_rightPhraseTerm    = NULL;
+					m_qterms[i].m_leftPhraseTerm     = NULL;
+				}
+			}
+			log(LOG_DEBUG, "query:Query modified");
+			return;
+		}
+	}
 	log(LOG_DEBUG, "query: Query not modified");
 }
 
