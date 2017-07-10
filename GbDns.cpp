@@ -4,6 +4,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "third-party/c-ares/ares.h"
+#include "ip.h"
 #include <arpa/nameser.h>
 #include <netdb.h>
 #include <vector>
@@ -175,8 +176,6 @@ struct DnsItem {
 	void (*m_callback)(GbDns::DnsResponse *response, void *state);
 	void *m_state;
 };
-
-#include "ip.h"
 
 static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen) {
 	DnsItem *item = static_cast<DnsItem*>(arg);
