@@ -87,7 +87,7 @@ OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
 
 # common flags
-DEFS = -D_REENTRANT_ -I. -Ithird-party/compact_enc_det
+DEFS = -D_REENTRANT_ -I. -Ithird-party/compact_enc_det -Ithird-party/c-ares
 DEFS += -DDEBUG_MUTEXES
 CPPFLAGS = -g -fno-stack-protector -DPTHREADS
 CPPFLAGS += -std=c++11
