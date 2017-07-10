@@ -99,6 +99,8 @@ static void* processing_thread(void *args) {
 }
 
 bool GbDns::initialize() {
+	log(LOG_INFO, "dns: Initializing library");
+
 	if (ares_library_init(ARES_LIB_INIT_ALL) != ARES_SUCCESS) {
 		logError("Unable to init ares library");
 		return false;
@@ -156,6 +158,8 @@ bool GbDns::initialize() {
 }
 
 void GbDns::finalize() {
+	log(LOG_INFO, "dns: Finalizing library");
+
 	s_stop = true;
 
 	pthread_cond_broadcast(&s_requestCond);
@@ -178,14 +182,18 @@ struct DnsItem {
 };
 
 static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen) {
+	logTrace(true, "BEGIN");
+
 	DnsItem *item = static_cast<DnsItem*>(arg);
 
 	if (status != ARES_SUCCESS) {
-		log(LOG_INFO, "dns: ares_error='%s'", ares_strerror(status));
+		logTrace(true, "ares_error='%s'", ares_strerror(status));
 
 		if (abuf == NULL) {
-			logTrace(true, "dns: no abuf returned");
+			logTrace(true, "no abuf returned");
+			logTrace(true, "adding to callback queue");
 			s_callbackQueue.push(item);
+			logTrace(true, "END");
 			return;
 		}
 	}
@@ -197,31 +205,37 @@ static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf,
 	if (parse_status == ARES_SUCCESS) {
 		for (int i = 0; i < naddrttls; ++i) {
 			char ipbuf[16];
-			logf(LOG_TRACE, "dns: ip=%s ttl=%d", iptoa(addrttls[i].ipaddr.s_addr, ipbuf), addrttls[i].ttl);
+			logTrace(true, "ip=%s ttl=%d", iptoa(addrttls[i].ipaddr.s_addr, ipbuf), addrttls[i].ttl);
 			item->m_ips.push_back(addrttls[i].ipaddr.s_addr);
 		}
+		logTrace(true, "adding to callback queue");
 		s_callbackQueue.push(item);
 
 		/// @todo alc free memory
 	}
 
 	if (parse_status != ARES_SUCCESS) {
-		logTrace(true, "@@@@!!!!!error %s", ares_strerror(parse_status));
+		logTrace(true, "ares_error='%s'", ares_strerror(status));
+		logTrace(true, "adding to callback queue");
 		s_callbackQueue.push(item);
 	}
+	logTrace(true, "END");
 }
 
 static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen) {
+	logTrace(true, "BEGIN");
 	DnsItem *item = static_cast<DnsItem*>(arg);
 
 	if (status != ARES_SUCCESS) {
-		log(LOG_INFO, "ares_error='%s'", ares_strerror(status));
-
 		if (abuf == NULL) {
-			logTrace(true, "@@@@!!!!!error");
+			logTrace(true, "ares_error='%s'", ares_strerror(status));
+			logTrace(true, "adding to callback queue");
 			s_callbackQueue.push(item);
+			logTrace(true, "END");
 			return;
 		}
+
+		log(LOG_INFO, "ares_error='%s'", ares_strerror(status));
 	}
 
 	hostent *host = nullptr;
@@ -235,39 +249,42 @@ static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf
 		ares_free_hostent(host);
 	}
 
-//	if (parse_status == ARES_ENODATA) {
-//
-//	}
-
 	if (parse_status != ARES_SUCCESS) {
-		logTrace(true, "@@@@!!!!!error %s", ares_strerror(parse_status));
-
+		logTrace(true, "error='%s'", ares_strerror(parse_status));
 		if (parse_status != ARES_EDESTRUCTION) {
-			logTrace(true, "@@@@!!!!!error %s", ares_strerror(parse_status));
+			logTrace(true, "adding to callback queue");
 			s_callbackQueue.push(item);
+		} else {
+			/// @todo ALC destroy item
 		}
+
+		logTrace(true, "END");
 		return;
 	}
 
-
-
+	logTrace(true, "adding to callback queue");
 	s_callbackQueue.push(item);
+	logTrace(true, "END");
 }
 
 void GbDns::getARecord(const char *hostname, void (*callback)(GbDns::DnsResponse *response, void *state), void *state) {
+	logTrace(true, "BEGIN hostname='%s'", hostname);
 	DnsItem *item = new DnsItem(callback, state);
 
 	ScopedLock sl(s_requestMtx);
 	ares_query(s_channel, hostname, C_IN, T_A, a_callback, item);
 	pthread_cond_signal(&s_requestCond);
+	logTrace(true, "END");
 }
 
 void GbDns::getNSRecord(const char *hostname, void (*callback)(GbDns::DnsResponse *response, void *state), void *state) {
+	logTrace(true, "BEGIN hostname='%s'", hostname);
 	DnsItem *item = new DnsItem(callback, state);
 
 	ScopedLock sl(s_requestMtx);
 	ares_query(s_channel, hostname, C_IN, T_NS, ns_callback, item);
 	pthread_cond_signal(&s_requestCond);
+	logTrace(true, "END");
 }
 
 void GbDns::makeCallbacks() {
