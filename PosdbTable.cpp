@@ -3354,6 +3354,23 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 
 
 
+// Find first entry that is a body entry (determined by 's_inBody' array).
+// Returns NULL if none found
+static const char *findFirstBodyPosdbEntry(const char *listStart, const char *listEnd) {
+	for(const char *p = listStart; p<listEnd; ) {
+		unsigned char hg = Posdb::getHashGroup(p);
+		if(s_inBody[hg])
+			return p;
+		if(*p & 0x04)
+			p += 6;
+		else
+			p += 12; //not really expected
+	}
+	return NULL;
+}
+
+
+
 float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs) {
 	logTrace(g_conf.m_logTracePosdb, "Sliding Window algorithm begins");
 	m_bestMinTermPairWindowPtrs = winnerStack;
@@ -3381,49 +3398,24 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 
 	// use special ptrs for the windows so we do not mangle 
 	// miniMergeBuffer->mergedListStart[] array because we use that below!
-	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-		xpos[i] = miniMergeBuffer->mergedListStart[i];
-	}
-
 
 	//
 	// init each list ptr to the first wordpos rec in the body
 	// for THIS DOCID and if no such rec, make it NULL
 	//
 	bool allNull = true;
-	for(int32_t i = 0; i < m_numQueryTermInfos; i++) {
-		// skip if to the left of a pipe operator
-		if( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-			continue;
-		}
-
-		// skip word position until it is in the body
-		while( xpos[i] && !s_inBody[Posdb::getHashGroup(xpos[i])]) {
-			// advance
-			if ( ! (xpos[i][0] & 0x04) ) {
-				xpos[i] += 12;
-			}
-			else {
-				xpos[i] +=  6;
-			}
-
-			// NULLify list if no more for this docid
-			if( xpos[i] < miniMergeBuffer->mergedListEnd[i] && (xpos[i][0] & 0x04)) {
-				continue;
-			}
-
-			// ok, no more! null means empty list
+	for(int i = 0; i < m_numQueryTermInfos; i++) {
+		if(m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
+			// not a ranking term
 			xpos[i] = NULL;
-
-			// must be in title or something else then
-			if ( ! highestScoringNonBodyPos[i] ) {
-				gbshutdownAbort(true);
+		} else {
+			xpos[i] = findFirstBodyPosdbEntry(miniMergeBuffer->mergedListStart[i], miniMergeBuffer->mergedListEnd[i]);
+			if(xpos[i]) {
+				allNull = false; //ok, found one entry in body
+			} else if(!highestScoringNonBodyPos[i]) {
+				// not in nody, not in title?
+				gbshutdownLogicError();
 			}
-		}
-
-		// if all xpos are NULL, then no terms are in body...
-		if ( xpos[i] ) {
-			allNull = false;
 		}
 	}
 
