@@ -308,6 +308,8 @@ FORCE:
 gb: $(LIBFILES) $(OBJS) main.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ main.o $(OBJS) $(LIBS)
 
+GbDns.o: libcares.so
+
 
 .PHONY: static
 static: $(LIBFILES) $(OBJS) main.o
