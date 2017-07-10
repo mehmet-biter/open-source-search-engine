@@ -272,7 +272,7 @@ private:
 	bool m_needsSave;
 
 	char  m_rdbId;
-	char  m_dir[128];
+	char  m_dir[256];
 	char  m_dbname[32];
 	char  m_memTag[16];
 
