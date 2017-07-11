@@ -193,18 +193,18 @@ struct DnsItem {
 };
 
 static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen) {
-	logTrace(true, "BEGIN");
+	logTrace(g_conf.m_logTraceDns, "BEGIN");
 
 	DnsItem *item = static_cast<DnsItem*>(arg);
 
 	if (status != ARES_SUCCESS) {
-		logTrace(true, "ares_error='%s'", ares_strerror(status));
+		logTrace(g_conf.m_logTraceDns, "ares_error='%s'", ares_strerror(status));
 
 		if (abuf == NULL) {
-			logTrace(true, "no abuf returned");
-			logTrace(true, "adding to callback queue");
+			logTrace(g_conf.m_logTraceDns, "no abuf returned");
+			logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
 			s_callbackQueue.push(item);
-			logTrace(true, "END");
+			logTrace(g_conf.m_logTraceDns, "END");
 			return;
 		}
 	}
@@ -216,33 +216,33 @@ static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf,
 	if (parse_status == ARES_SUCCESS) {
 		for (int i = 0; i < naddrttls; ++i) {
 			char ipbuf[16];
-			logTrace(true, "ip=%s ttl=%d", iptoa(addrttls[i].ipaddr.s_addr, ipbuf), addrttls[i].ttl);
+			logTrace(g_conf.m_logTraceDns, "ip=%s ttl=%d", iptoa(addrttls[i].ipaddr.s_addr, ipbuf), addrttls[i].ttl);
 			item->m_ips.push_back(addrttls[i].ipaddr.s_addr);
 		}
-		logTrace(true, "adding to callback queue");
+		logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
 		s_callbackQueue.push(item);
 
 		/// @todo alc free memory
 	}
 
 	if (parse_status != ARES_SUCCESS) {
-		logTrace(true, "ares_error='%s'", ares_strerror(status));
-		logTrace(true, "adding to callback queue");
+		logTrace(g_conf.m_logTraceDns, "ares_error='%s'", ares_strerror(status));
+		logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
 		s_callbackQueue.push(item);
 	}
-	logTrace(true, "END");
+	logTrace(g_conf.m_logTraceDns, "END");
 }
 
 static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen) {
-	logTrace(true, "BEGIN");
+	logTrace(g_conf.m_logTraceDns, "BEGIN");
 	DnsItem *item = static_cast<DnsItem*>(arg);
 
 	if (status != ARES_SUCCESS) {
 		if (abuf == NULL) {
-			logTrace(true, "ares_error='%s'", ares_strerror(status));
-			logTrace(true, "adding to callback queue");
+			logTrace(g_conf.m_logTraceDns, "ares_error='%s'", ares_strerror(status));
+			logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
 			s_callbackQueue.push(item);
-			logTrace(true, "END");
+			logTrace(g_conf.m_logTraceDns, "END");
 			return;
 		}
 
@@ -253,7 +253,7 @@ static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf
 	int parse_status = ares_parse_ns_reply(abuf, alen, &host);
 	if (parse_status == ARES_SUCCESS) {
 		for (int i = 0; host->h_aliases[i] != NULL; ++i) {
-			logTrace(true, "ns[%d]='%s'", i, host->h_aliases[i]);
+			logTrace(g_conf.m_logTraceDns, "ns[%d]='%s'", i, host->h_aliases[i]);
 			item->m_nameservers.push_back(host->h_aliases[i]);
 		}
 
@@ -261,41 +261,41 @@ static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf
 	}
 
 	if (parse_status != ARES_SUCCESS) {
-		logTrace(true, "error='%s'", ares_strerror(parse_status));
+		logTrace(g_conf.m_logTraceDns, "error='%s'", ares_strerror(parse_status));
 		if (parse_status != ARES_EDESTRUCTION) {
-			logTrace(true, "adding to callback queue");
+			logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
 			s_callbackQueue.push(item);
 		} else {
 			/// @todo ALC destroy item
 		}
 
-		logTrace(true, "END");
+		logTrace(g_conf.m_logTraceDns, "END");
 		return;
 	}
 
-	logTrace(true, "adding to callback queue");
+	logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
 	s_callbackQueue.push(item);
-	logTrace(true, "END");
+	logTrace(g_conf.m_logTraceDns, "END");
 }
 
 void GbDns::getARecord(const char *hostname, void (*callback)(GbDns::DnsResponse *response, void *state), void *state) {
-	logTrace(true, "BEGIN hostname='%s'", hostname);
+	logTrace(g_conf.m_logTraceDns, "BEGIN hostname='%s'", hostname);
 	DnsItem *item = new DnsItem(callback, state);
 
 	ScopedLock sl(s_requestMtx);
 	ares_query(s_channel, hostname, C_IN, T_A, a_callback, item);
 	pthread_cond_signal(&s_requestCond);
-	logTrace(true, "END");
+	logTrace(g_conf.m_logTraceDns, "END");
 }
 
 void GbDns::getNSRecord(const char *hostname, void (*callback)(GbDns::DnsResponse *response, void *state), void *state) {
-	logTrace(true, "BEGIN hostname='%s'", hostname);
+	logTrace(g_conf.m_logTraceDns, "BEGIN hostname='%s'", hostname);
 	DnsItem *item = new DnsItem(callback, state);
 
 	ScopedLock sl(s_requestMtx);
 	ares_query(s_channel, hostname, C_IN, T_NS, ns_callback, item);
 	pthread_cond_signal(&s_requestCond);
-	logTrace(true, "END");
+	logTrace(g_conf.m_logTraceDns, "END");
 }
 
 void GbDns::makeCallbacks() {
@@ -304,11 +304,15 @@ void GbDns::makeCallbacks() {
 		DnsItem *item = s_callbackQueue.front();
 		s_callbackQueueMtx.unlock();
 
+		logTrace(g_conf.m_logTraceDns, "processing callback queue item=%p", item);
+
 		DnsResponse response;
 		response.m_nameservers = std::move(item->m_nameservers);
 		response.m_ips = std::move(item->m_ips);
 
 		item->m_callback(&response, item->m_state);
+
+		logTrace(g_conf.m_logTraceDns, "removing callback queue item=%p", item);
 		delete item;
 
 		s_callbackQueueMtx.lock();
