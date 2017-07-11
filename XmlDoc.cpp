@@ -1878,12 +1878,11 @@ bool* XmlDoc::checkBlockList() {
 		return &m_blockedDoc;
 	}
 
-	Url url;
-	url.set(m_sreq.m_url);
+	Url *url = getCurrentUrl();
 
 	bool blocked = false;
 	if (!m_checkedUrlBlockList) {
-		if (g_urlBlockList.isUrlBlocked(url)) {
+		if (g_urlBlockList.isUrlBlocked(*url)) {
 			m_indexCodeValid = true;
 			m_indexCode = EDOCBLOCKEDURL;
 
@@ -1893,7 +1892,7 @@ bool* XmlDoc::checkBlockList() {
 	}
 
 	if (!blocked && !m_checkedDnsBlockList) {
-		std::string hostname(url.getHost(), url.getHostLen());
+		std::string hostname(url->getHost(), url->getHostLen());
 		std::vector<std::string> *nameservers = getHostNameServers(hostname.c_str());
 		if (nameservers == (std::vector<std::string>*)-1) {
 			// blocked
@@ -6883,7 +6882,7 @@ int32_t *XmlDoc::getIp ( ) {
 	}
 
 	// update status msg
-	setStatus ( "getting ip (msgc)" );
+	setStatus ( "getting ip (gbdns)" );
 
 	m_ipStartTime = gettimeofdayInMilliseconds();
 
@@ -7743,10 +7742,17 @@ char **XmlDoc::getHttpReply ( ) {
 			m_crawlDelayValid = false;
 		}
 
+		// recheck url block list
+		m_blockedDocValid = false;
+		m_checkedUrlBlockList = false;
+
 		// keep the same ip if hostname is unchanged
 		if ( ru->getHostLen() != cu->getHostLen() || strncmp(ru->getHost(), cu->getHost(), cu->getHostLen()) != 0 ) {
 			// ip is supposed to be that of the current url, which changed
 			m_ipValid = false;
+
+			// recheck dns block list when host changes
+			m_checkedDnsBlockList = false;
 		}
 
 		// we set our m_xml to the http reply to check for meta redirects
