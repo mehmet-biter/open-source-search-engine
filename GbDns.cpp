@@ -180,17 +180,92 @@ void GbDns::finalize() {
 	ares_library_cleanup();
 }
 
+GbDns::DnsResponse::DnsResponse()
+	: m_ips()
+	, m_nameservers()
+	, m_errno(0) {
+}
+
 struct DnsItem {
 	DnsItem(void (*callback)(GbDns::DnsResponse *response, void *state), void *state)
 		: m_callback(callback)
-		, m_state(state) {
+		, m_state(state)
+		, m_errno(0) {
 	}
 
 	std::vector<in_addr_t> m_ips;
 	std::vector<std::string> m_nameservers;
 	void (*m_callback)(GbDns::DnsResponse *response, void *state);
 	void *m_state;
+	int m_errno;
 };
+
+static int convert_ares_errorno(int ares_errno) {
+	switch (ares_errno) {
+		// Server error codes (ARES_ENODATA indicates no relevant answer)
+//		case ARES_ENODATA:
+//		case ARES_ENOTFOUND:
+//			return 0;
+
+//		case ARES_EFORMERR:
+//		case ARES_ESERVFAIL:
+//		case ARES_ENOTIMP:
+//			return EBADREQUEST;
+
+		case ARES_EREFUSED:
+			return EDNSREFUSED;
+
+		// Locally generated error codes
+//		case ARES_EBADQUERY:
+//		case ARES_EBADNAME:
+//		case ARES_EBADFAMILY:
+//			return EBADREQUEST;
+
+//		case ARES_EBADRESP:
+//		case ARES_EBADSTR:
+//			return EBADREPLY;
+
+		case ARES_ECONNREFUSED:
+		case ARES_ETIMEOUT:
+			return EDNSTIMEDOUT;
+
+//		case ARES_EOF:
+//			break;
+//		case ARES_EFILE:
+//			break;
+
+		case ARES_ENOMEM:
+			return ENOMEM;
+
+		case ARES_EDESTRUCTION:
+			return ESHUTTINGDOWN;
+
+		// ares_getnameinfo error codes
+//		case ARES_EBADFLAGS:
+//			return EBADREQUEST;
+
+		// ares_getaddrinfo error codes
+//		case ARES_ENONAME:
+//		case ARES_EBADHINTS:
+//			return EBADREQUEST;
+
+		// Uninitialized library error code
+//		case ARES_ENOTINITIALIZED:
+//			return EBADENGINEER;
+
+		// ares_library_init error codes
+//		case ARES_ELOADIPHLPAPI:
+//		case ARES_EADDRGETNETWORKPARAMS:
+//			return EBADENGINEER;
+
+		// More error codes
+//		case ARES_ECANCELLED:
+//			return ECANCELLED;
+	}
+
+	// defaults to no error code
+	return 0;
+}
 
 static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen) {
 	logTrace(g_conf.m_logTraceDns, "BEGIN");
@@ -203,7 +278,10 @@ static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf,
 		if (abuf == NULL) {
 			logTrace(g_conf.m_logTraceDns, "no abuf returned");
 			logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
+
+			item->m_errno = convert_ares_errorno(status);
 			s_callbackQueue.push(item);
+
 			logTrace(g_conf.m_logTraceDns, "END");
 			return;
 		}
@@ -220,6 +298,7 @@ static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf,
 			item->m_ips.push_back(addrttls[i].ipaddr.s_addr);
 		}
 		logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
+
 		s_callbackQueue.push(item);
 
 		ares_free_hostent(host);
@@ -228,8 +307,11 @@ static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf,
 	if (parse_status != ARES_SUCCESS) {
 		logTrace(g_conf.m_logTraceDns, "ares_error='%s'", ares_strerror(status));
 		logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
+
+		item->m_errno = convert_ares_errorno(parse_status);
 		s_callbackQueue.push(item);
 	}
+
 	logTrace(g_conf.m_logTraceDns, "END");
 }
 
@@ -238,15 +320,17 @@ static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf
 	DnsItem *item = static_cast<DnsItem*>(arg);
 
 	if (status != ARES_SUCCESS) {
+		logTrace(g_conf.m_logTraceDns, "ares_error='%s'", ares_strerror(status));
+
 		if (abuf == NULL) {
-			logTrace(g_conf.m_logTraceDns, "ares_error='%s'", ares_strerror(status));
 			logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
+
+			item->m_errno = convert_ares_errorno(status);
 			s_callbackQueue.push(item);
+
 			logTrace(g_conf.m_logTraceDns, "END");
 			return;
 		}
-
-		log(LOG_INFO, "ares_error='%s'", ares_strerror(status));
 	}
 
 	hostent *host = nullptr;
@@ -264,6 +348,8 @@ static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf
 		logTrace(g_conf.m_logTraceDns, "error='%s'", ares_strerror(parse_status));
 		if (parse_status != ARES_EDESTRUCTION) {
 			logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
+
+			item->m_errno = convert_ares_errorno(parse_status);
 			s_callbackQueue.push(item);
 		} else {
 			delete item;
@@ -309,6 +395,7 @@ void GbDns::makeCallbacks() {
 		DnsResponse response;
 		response.m_nameservers = std::move(item->m_nameservers);
 		response.m_ips = std::move(item->m_ips);
+		response.m_errno = item->m_errno;
 
 		item->m_callback(&response, item->m_state);
 

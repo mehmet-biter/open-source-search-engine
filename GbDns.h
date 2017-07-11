@@ -7,8 +7,11 @@
 
 namespace GbDns {
 	struct DnsResponse {
+		DnsResponse();
+
 		std::vector<in_addr_t> m_ips;
 		std::vector<std::string> m_nameservers;
+		int m_errno;
 	};
 
 	bool initialize();

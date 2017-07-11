@@ -6777,8 +6777,15 @@ void XmlDoc::gotIpWrapper(GbDns::DnsResponse *response, void *state) {
 	that->setStatus("got ip");
 
 	that->m_ipValid = true;
-	if (response && !response->m_ips.empty()) {
-		that->m_ip = response->m_ips.front();
+	if (response) {
+		if (!response->m_ips.empty()) {
+			that->m_ip = response->m_ips.front();
+		}
+
+		if (response->m_errno) {
+			that->m_indexCodeValid = true;
+			that->m_indexCode = response->m_errno;
+		}
 	}
 
 	char ipbuf[16];
