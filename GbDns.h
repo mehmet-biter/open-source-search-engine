@@ -12,6 +12,8 @@ namespace GbDns {
 	};
 
 	bool initialize();
+	bool initializeSettings();
+
 	void finalize();
 
 	void getARecord(const char *hostname, void (*callback)(DnsResponse *response, void *state), void *state);

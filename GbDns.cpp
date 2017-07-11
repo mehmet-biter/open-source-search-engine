@@ -98,6 +98,34 @@ static void* processing_thread(void *args) {
 	return 0;
 }
 
+bool GbDns::initializeSettings() {
+	log(LOG_INFO, "dns: Initializing settings");
+
+	// setup dns servers
+	AresList<ares_addr_port_node> servers;
+	for (int i = 0; i < g_conf.m_numDns; ++i) {
+		ares_addr_port_node *server = (ares_addr_port_node*)mmalloc(sizeof(ares_addr_port_node), "ares-server");
+		if (server == NULL) {
+			logError("Unable allocate ares server");
+			return false;
+		}
+
+		server->addr.addr4.s_addr = g_conf.m_dnsIps[i];
+		server->family = AF_INET;
+		server->udp_port = g_conf.m_dnsPorts[i];
+
+		servers.append(server);
+	}
+
+	ScopedLock sl(s_requestMtx);
+	if (ares_set_servers_ports(s_channel, servers.getHead()) != ARES_SUCCESS) {
+		logError("Unable to set ares server settings");
+		return false;
+	}
+
+	return true;
+}
+
 bool GbDns::initialize() {
 	log(LOG_INFO, "dns: Initializing library");
 
@@ -127,24 +155,7 @@ bool GbDns::initialize() {
 		return false;
 	}
 
-	// setup dns servers
-	AresList<ares_addr_port_node> servers;
-	for (int i = 0; i < g_conf.m_numDns; ++i) {
-		ares_addr_port_node *server = (ares_addr_port_node*)mmalloc(sizeof(ares_addr_port_node), "ares-server");
-		if (server == NULL) {
-			logError("Unable allocate ares server");
-			return false;
-		}
-
-		server->addr.addr4.s_addr = g_conf.m_dnsIps[i];
-		server->family = AF_INET;
-		server->udp_port = g_conf.m_dnsPorts[i];
-
-		servers.append(server);
-	}
-
-	if (ares_set_servers_ports(s_channel, servers.getHead()) != ARES_SUCCESS) {
-		logError("Unable to set ares server settings");
+	if (!initializeSettings()) {
 		return false;
 	}
 

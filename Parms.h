@@ -59,7 +59,7 @@ enum parameter_type_t {
 #define PF_API                      0x00000010
 #define PF_REBUILDURLFILTERS        0x00000020
 #define PF_NOSYNC                   0x00000040	// Don't synchronize the parameter value across hosts
-//#define PF_UNUSED                 0x00000080
+#define PF_REBUILDDNSSETTINGS       0x00000080
 #define PF_HIDDEN                   0x00000100	// Hidden parameter/setting
 #define PF_NOSAVE                   0x00000200	// Don't save to gb.conf/coll.conf/..
 #define PF_DUP                      0x00000400	// Underlying variable is coverd by other parameter already

@@ -34,6 +34,7 @@
 #include "Tagdb.h"
 #include "Clusterdb.h"
 #include "Collectiondb.h"
+#include "GbDns.h"
 #include <set>
 
 
@@ -5404,6 +5405,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	// default to google public dns #1
 	m->m_def   = (char*)PUBLICLY_AVAILABLE_DNS1;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5419,6 +5421,7 @@ void Parms::init ( ) {
 	// default to google public dns #2
 	m->m_def   = (char*)PUBLICLY_AVAILABLE_DNS2;
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5431,6 +5434,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5442,6 +5446,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5453,6 +5458,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5464,6 +5470,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5475,6 +5482,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5486,6 +5494,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5497,6 +5506,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5508,6 +5518,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5519,6 +5530,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5530,6 +5542,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5541,6 +5554,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5552,6 +5566,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5563,6 +5578,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5574,6 +5590,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -10052,6 +10069,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	CollectionRec *cx = NULL;
 
 	bool rebuildRankingSettings = false;
+	bool rebuildDnsSettings = false;
 
 	// process them
 	const char *p = we->m_parmPtr;
@@ -10110,6 +10128,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 
 		if ( parm->m_flags & PF_REBUILDRANKINGSETTINGS )
 			rebuildRankingSettings = true;
+
+		if (parm->m_flags & PF_REBUILDDNSSETTINGS) {
+			rebuildDnsSettings = true;
+		}
 
 		// get collnum i guess
 		if ( parm->m_type != TYPE_CMD )
@@ -10174,6 +10196,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 
 	if ( rebuildRankingSettings )
 		reinitializeRankingSettings();
+
+	if (rebuildDnsSettings) {
+		GbDns::initializeSettings();
+	}
 
 	// note it
 	if ( ! we->m_sentReply )
