@@ -222,7 +222,7 @@ static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf,
 		logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
 		s_callbackQueue.push(item);
 
-		/// @todo alc free memory
+		ares_free_hostent(host);
 	}
 
 	if (parse_status != ARES_SUCCESS) {
@@ -266,7 +266,7 @@ static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf
 			logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
 			s_callbackQueue.push(item);
 		} else {
-			/// @todo ALC destroy item
+			delete item;
 		}
 
 		logTrace(g_conf.m_logTraceDns, "END");
