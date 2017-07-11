@@ -89,7 +89,7 @@ static void* processing_thread(void *args) {
 		int status = errno;
 		if (count < 0 && status != EINVAL) {
 			logError("select fail: %d", status);
-			return 0;
+			continue;
 		}
 
 		ares_process(s_channel, &read_fds, &write_fds);
