@@ -6,7 +6,7 @@ This is a fork of the original Gigablast project available at https://github.com
 
 ## Modifications by Privacore
 
-Our aim is *not* to maintain backwards compatibility with the original Gigablast data files. 
+Our aim is *not* to maintain backwards compatibility with the original Gigablast data files.
 
 | Feature  | Description |
 | ------------- | ------------- |
@@ -54,6 +54,18 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 *    python
 *    libpcre3-dev
 *    libssl-dev
+*    libprotobuf-dev
+*    protobuf-compiler
+
+#### OpenSuse
+*    g++
+*    make
+*    cmake
+*    python
+*    pcre-devel
+*    libssl-dev
+*    protobuf-devel
+*    libprotobuf13
 
 ### Runtime
 *    Multi-instance installations require [Vagus](https://github.com/privacore/vagus) for keeping track of which instances are dead and alive.
@@ -61,6 +73,7 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 #### Ubuntu
 *    libssl1.0.0
 *    libpcre3
+*    libprotobuf9v5
 
 ## RUNNING GIGABLAST
 See <a href=html/faq.html>html/faq.html</a> for all administrative documentation including the quick start instructions.
@@ -76,4 +89,3 @@ Alternatively, visit http://www.gigablast.com/developer.html
 Privacore does not provide paid support for Gigablast. We refer you to the original project at https://github.com/gigablast/open-source-search-engine/ and the owner Matt Wells. He has a Pro version you can buy which include support options.
 
 We provide limited support for our fork, primarily for active contributors.
-

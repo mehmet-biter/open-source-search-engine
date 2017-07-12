@@ -1052,6 +1052,8 @@ CollectionRec::CollectionRec() {
 	m_crawlDelayDefaultForNoRobotsTxtMS = 15000;
 	m_crawlDelayDefaultForRobotsTxtMS = 10000;
 	m_queryExpansion = false;
+	m_modifyDomainLikeSearches = false;
+	m_modifyAPILikeSearches = false;
 	m_rcache = false;
 	m_hideAllClustered = false;
 	m_END_COPY = 0;
@@ -1470,10 +1472,9 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	return true;
 }
 
-
-
+// Will be removed when the modified function above is "final"
 bool CollectionRec::rebuildPrivacoreRules () {
-	const char *langWhitelistStr = "xx,en,bg,sr,ca,cs,da,et,fi,fr,de,el,hu,is,ga,it,la,lv,lt,lb,nl,pl,pt,ro,es,sv,no,vv";
+	const char *langWhitelistStr = "xx,en,bg,sr,ca,cs,da,et,fi,fr,de,el,hu,is,ga,it,la,lv,lt,lb,nl,pl,pt,ro,es,sv,no,vv,mt,sk,sl,eu,cy,kl,fo";
 
 	// max spiders per ip
 	int32_t ipms = 1;

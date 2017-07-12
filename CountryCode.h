@@ -11,6 +11,8 @@ uint8_t getCountryId ( char *cc ) ;
 // map a country id to the two letter country abbr
 const char *getCountryCode ( uint16_t crid );
 
+uint8_t guessCountryTLD(const char *url);
+
 class CountryCode {
 	public:
 		CountryCode();

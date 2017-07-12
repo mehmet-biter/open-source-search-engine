@@ -12,9 +12,10 @@
 // for langs 1-55, exclude translingual
 // 64 - 8 is 56, then minus 1 is 55 bits
 // translingual is the 31st bit, english is the first bit
-#define LANG_BIT_MASK 0x007fffffffffffffLL
+//#define LANG_BIT_MASK 0x007fffffffffffffLL
+#define LANG_BIT_MASK 0x7fffffffffffffffLL
 
-enum {
+enum lang_t {
 	langUnknown     = 0,
 	langEnglish     = 1,
 	langFrench      = 2,
@@ -22,8 +23,8 @@ enum {
 	langRussian     = 4,
 	langTurkish     = 5,
 	langJapanese    = 6,
-	langChineseTrad = 7, // cantonese
-	langChineseSimp = 8, // mandarin
+	langChineseTrad = 7,
+	langChineseSimp = 8,
 	langKorean      = 9,
 	langGerman      = 10,
 	langDutch       = 11,
@@ -72,11 +73,19 @@ enum {
 	langKurdish        = 53,
 	langLuxembourgish  = 54,
 	langEstonian       = 55,
-	langLast           = 56
+	langMaltese        = 56,
+	langSlovak         = 57,
+	langSlovenian      = 58,
+	langBasque         = 59,
+	langWelsh          = 60,
+	langGreenlandic    = 61,
+	langFaroese        = 62,
+	langUnwanted       = 63,
+	langLast
 };
 
 uint8_t getLangIdFromAbbr ( const char *abbr ) ;
-uint8_t getLangIdFromCharset(uint16_t charset);
+lang_t getLangIdFromCharset(uint16_t charset);
 
 void        languageToString ( unsigned char lang , char *buf );
 const char* getLanguageString ( unsigned char lang);

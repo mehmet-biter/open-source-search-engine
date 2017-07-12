@@ -5,6 +5,8 @@
 #ifndef GB_HTTPMIME_H
 #define GB_HTTPMIME_H
 
+#include <cstdlib>
+
 // convert text/html to CT_HTML for instance
 // convert application/json to CT_JSON for instance
 int32_t getContentTypeFromStr(const char *s, size_t slen);

@@ -60,6 +60,7 @@ class Msg39Request {
 	bool    m_allowHighFrequencyTermCache;
 	bool    m_doMaxScoreAlgo;
 
+	bool    m_modifyQuery;
 	ScoringWeights m_scoringWeights;
 	float m_termFreqWeightFreqMin;
 	float m_termFreqWeightFreqMax;

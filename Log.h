@@ -119,12 +119,17 @@ void loghex( int32_t type, void const *data, const unsigned int len, const char 
 	} while (0)
 
 
-class Log { 
+class Log {
+public:
+	// just initialize with no file
+	Log();
 
- public:
+	~Log();
 
 	// returns true if opened log file successfully, otherwise false
-	bool init ( const char *filename );
+	bool init(const char *filename);
+
+	bool registerLogRotation();
 
 	// . log this msg
 	// . "msg" must be NULL terminated
@@ -133,34 +138,30 @@ class Log {
 	// . if "asterisk" is true we print an asterisk to indicate that
 	//   the msg was actually logged earlier but only printed now because
 	//   we were in a signal handler at the time
-	bool logR ( int64_t now, int32_t type, const char *msg, bool forced = false );
+	bool logR(int64_t now, int32_t type, const char *msg, bool forced = false);
 
 	// returns false if msg should not be logged, true if it should
-	bool shouldLog ( int32_t type , const char *msg ) ;
+	bool shouldLog(int32_t type, const char *msg);
 
-	// just initialize with no file
-	Log () ;
-	~Log () ;
 
-	void reset ( );
+	void reset();
 
 	// save before exiting
-	void close () { }
+	void close() {}
 
-	bool          m_disabled;
+	bool m_disabled;
 
 	bool m_logTimestamps;
 	bool m_logReadableTimestamps;
 
 	bool m_logPrefix;
 
- private:
+private:
+	bool makeNewLogFile();
+	static void rotateLog(int fd, void *state);
 
 	const char *m_filename;
-	int     m_fd;
-
-	int64_t m_logFileSize;
-	bool makeNewLogFile ( );
+	int m_fd;
 };
 
 extern class Log g_log;

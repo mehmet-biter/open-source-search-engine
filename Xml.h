@@ -165,7 +165,7 @@ public:
 	// . get kid text of node #"nodeNumber" unless it's -1
 	// . if "filterSpaces" then don't allow back to back spaces or \n's
 	//   and replace tags with ".." not \n (but no back to back ..'s)
-	int32_t getText( char *buf, int32_t bufMaxSize, int32_t node1 = 0, int32_t node2 = 999999,
+	int32_t getText( char *buf, int32_t bufMaxSize, int32_t node1 = 0, int32_t node2 = -1,
 					 bool filterSpaces = false );
 
 	int32_t isRSSFeed();
