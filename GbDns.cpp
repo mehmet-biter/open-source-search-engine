@@ -346,7 +346,7 @@ static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf
 
 	if (status != ARES_SUCCESS) {
 		logTrace(g_conf.m_logTraceDns, "ares_error=%d(%s)", status, ares_strerror(status));
-		if (parse_status != ARES_EDESTRUCTION) {
+		if (status != ARES_EDESTRUCTION) {
 			logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
 
 			item->m_errno = convert_ares_errorno(status);
