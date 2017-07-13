@@ -817,7 +817,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	const char *endj = miniMergeBuffer->mergedListEnd[j];
 
 	// wiki phrase weight?
-	float wts;
+	float wikiPhraseWeight;
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
@@ -830,7 +830,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	if ( m_wikiPhraseIds[j] == m_wikiPhraseIds[i] && m_wikiPhraseIds[j] ) { // zero means not in a phrase
 		qdist = m_qpos[j] - m_qpos[i];
 		// wiki weight
-		wts = (float)WIKI_WEIGHT;
+		wikiPhraseWeight = (float)WIKI_WEIGHT;
 	}
 	else {
 		// basically try to get query words as close
@@ -842,7 +842,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		// yes, but hurts how to make a lock pick set.
 		//qdist = qpos[j] - qpos[i];
 		// wiki weight
-		wts = 1.0;
+		wikiPhraseWeight = 1.0;
 	}
 
 	bool inSameQuotedPhrase = false;
@@ -1239,7 +1239,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	}
 
 	// wiki phrase weight
-	sum *= wts;
+	sum *= wikiPhraseWeight;
 
 	// mod by freq weight
 	sum *= m_freqWeights[i];
@@ -1303,7 +1303,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		const char *maxp2 = bestwpj[k];
 		float score = bestScores[k];
 		bool fixedDist = bestFixed[k];
-		score *= wts;
+		score *= wikiPhraseWeight;
 		score *= m_freqWeights[i];
 		score *= m_freqWeights[j];
 
@@ -1350,7 +1350,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		px->m_bflags2        = m_bflags[j];
 
 		// flag it as in same wiki phrase
-		if ( almostEqualFloat(wts, (float)WIKI_WEIGHT) ) {
+		if ( almostEqualFloat(wikiPhraseWeight, (float)WIKI_WEIGHT) ) {
 			px->m_inSameWikiPhrase = 1;
 		}
 		else {
@@ -1372,7 +1372,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 					    "tfw0=%f "
 					    "tfw1=%f "
 					    "fixeddist=%" PRId32" " // bool
-					    "wts=%f "
+					    "wikiPhraseWeight=%f "
 					    "bflags0=%" PRId32" "
 					    "bflags1=%" PRId32" "
 					    "syn0=%" PRId32" "
@@ -1388,7 +1388,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 					    "wpos1=%" PRId32" "
 					    "dens0=%" PRId32" "
 					    "dens1=%" PRId32" ", k, i, j, px->m_qtermNum1, px->m_qtermNum2, score, m_freqWeights[i],
-			    m_freqWeights[j], (int32_t) bestFixed[k], wts, (int32_t) m_bflags[i], (int32_t) m_bflags[j],
+			    m_freqWeights[j], (int32_t) bestFixed[k], wikiPhraseWeight, (int32_t) m_bflags[i], (int32_t) m_bflags[j],
 			    (int32_t) px->m_isSynonym1, (int32_t) px->m_isSynonym2, (int32_t) px->m_diversityRank1,
 			    (int32_t) px->m_diversityRank2, (int32_t) px->m_wordSpamRank1, (int32_t) px->m_wordSpamRank2,
 			    getHashGroupString(px->m_hashGroup1), getHashGroupString(px->m_hashGroup2), (int32_t) px->m_qdist,
@@ -3046,7 +3046,7 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMer
 			// so for 'time enough for love' ideally we want
 			// 'time' to be 6 units apart from 'love'
 			int32_t qdist;
-			float wts;
+			float score;
 			// zero means not in a phrase
 			if ( m_wikiPhraseIds[j] == m_wikiPhraseIds[i] && m_wikiPhraseIds[j] ) {
 				// . the distance between the terms in the query
@@ -3054,7 +3054,7 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMer
 				//   in the matched terms in the body
 				qdist = m_qpos[j] - m_qpos[i];
 				// wiki weight
-				wts = (float)WIKI_WEIGHT; // .50;
+				score = (float)WIKI_WEIGHT; // .50;
 			}
 			else {
 				// basically try to get query words as close
@@ -3066,7 +3066,7 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMer
 				// yes, but hurts how to make a lock pick set.
 				//qdist = qpos[j] - qpos[i];
 				// wiki weight
-				wts = 1.0;
+				score = 1.0;
 			}
 
 			float maxnbtp;
@@ -3082,17 +3082,17 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMer
 
 			// it's -1 if one term is in the body/header/menu/etc.
 			if ( maxnbtp < 0 ) {
-				wts = -1.00;
+				score = -1.00;
 			}
 			else {
-				wts *= maxnbtp;
-				wts *= m_freqWeights[i];
-				wts *= m_freqWeights[j];
+				score *= maxnbtp;
+				score *= m_freqWeights[i];
+				score *= m_freqWeights[j];
 			}
 
 			// store in matrix for "sub out" algo below
 			// when doing sliding window
-			scoreMatrix->set(j,i, wts);
+			scoreMatrix->set(j,i, score);
 		}
 	}
 	logTrace(g_conf.m_logTracePosdb, "END");
