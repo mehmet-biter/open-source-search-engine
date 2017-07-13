@@ -3427,6 +3427,9 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 		if(m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
 			// not a ranking term
 			xpos[i] = NULL;
+		} else if(miniMergeBuffer->mergedListStart[i]==NULL) {
+			//no list
+			xpos[i] = NULL;
 		} else {
 			xpos[i] = findFirstBodyPosdbEntry(miniMergeBuffer->mergedListStart[i], miniMergeBuffer->mergedListEnd[i]);
 			if(xpos[i]) {
