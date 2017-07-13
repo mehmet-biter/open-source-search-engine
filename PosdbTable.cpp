@@ -567,9 +567,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 	bool firsti = true;
 	bool firstj = true;
 
-	float score;
 	float max = -1.0;
-	int32_t  dist;
 
 	for(;;) {
 
@@ -580,7 +578,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 			//   algo!
 			if( s_isCompatible[helper1.hg][helper2.hg] ) {
 				// git distance
-				dist = helper2.p - helper1.p;
+				int32_t dist = helper2.p - helper1.p;
 
 				// if zero, make sure its 2. this happens when the same bigram
 				// is used by both terms. i.e. street uses the bigram 
@@ -601,7 +599,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				}
 				
 				// good density?
-				score = 100 * helper1.denw * helper2.denw;
+				float score = 100 * helper1.denw * helper2.denw;
 
 				// hashgroup modifier
 				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
@@ -657,7 +655,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 			//   algo!
 			if ( s_isCompatible[helper1.hg][helper2.hg] ) {
 				// get distance
-				dist = helper1.p - helper2.p;
+				int32_t dist = helper1.p - helper2.p;
 				// if zero, make sure its 2. this happens when the same bigram
 				// is used by both terms. i.e. street uses the bigram 
 				// 'street light' and so does 'light'. so the wordpositions
@@ -686,7 +684,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div1];
 				//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div2];
 				// good density?
-				score = 100 * helper1.denw * helper2.denw;
+				float score = 100 * helper1.denw * helper2.denw;
 				// hashgroup modifier
 				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
 				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
@@ -760,7 +758,6 @@ float PosdbTable::getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, co
 	helper2.set(wpj, m_msg39req->m_scoringWeights);
 
 	float dist;
-	float score;
 	// set this
 	if ( fixedDistance != 0 ) {
 		dist = fixedDistance;
@@ -782,7 +779,7 @@ float PosdbTable::getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, co
 	//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div1];
 	//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div2];
 	// good density?
-	score = 100 * helper1.denw * helper2.denw;
+	float score = 100 * helper1.denw * helper2.denw;
 	// wikipedia phrase weight
 	//score *= ts;
 	// hashgroup modifier
@@ -866,7 +863,6 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	bool firsti = true;
 	bool firstj = true;
 
-	float score;
 	int32_t  lowestScoreTermIdx = -1;
 	float bestScores[MAX_TOP] = {0};	 // make Coverity happy
 	const char *bestwpi   [MAX_TOP];
@@ -875,7 +871,6 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	char  bestmhg2  [MAX_TOP];
 	char  bestFixed [MAX_TOP];
 	int32_t  numTop = 0;
-	int32_t  dist;
 	bool  fixedDistance;
 	int32_t  bro;
 
@@ -897,6 +892,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		// to fix the 'search engine' query on gigablast.com
 		if ( helper1.p <= helper2.p ) {
 			// git distance
+			int32_t dist;
 			dist = helper2.p - helper1.p;
 
 			// if in the same quoted phrase, order is bad!
@@ -951,6 +947,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			}
 			
 			// good density?
+			float score;
 			score = 100 * helper1.denw * helper2.denw;
 			// hashgroup modifier
 			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
@@ -1069,6 +1066,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		}
 		else {
 			// get distance
+			int32_t dist;
 			dist = helper1.p - helper2.p;
 
 			// if in the same quoted phrase, order is bad!
@@ -1121,6 +1119,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 
 			// good diversity? uneeded for pair algo
 			// good density?
+			float score;
 			score = 100 * helper1.denw * helper2.denw;
 			// hashgroup modifier
 			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
@@ -1302,7 +1301,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		memset(px,0,sizeof(*px));
 		const char *maxp1 = bestwpi[k];
 		const char *maxp2 = bestwpj[k];
-		score = bestScores[k];
+		float score = bestScores[k];
 		bool fixedDist = bestFixed[k];
 		score *= wts;
 		score *= m_freqWeights[i];
