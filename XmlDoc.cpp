@@ -1882,6 +1882,7 @@ bool* XmlDoc::checkBlockList() {
 
 	bool blocked = false;
 	if (!m_checkedUrlBlockList) {
+		setStatus("checking urlblocklist");
 		if (g_urlBlockList.isUrlBlocked(*url)) {
 			m_indexCodeValid = true;
 			m_indexCode = EDOCBLOCKEDURL;
@@ -1899,6 +1900,7 @@ bool* XmlDoc::checkBlockList() {
 			return (bool*)nameservers;
 		}
 
+		setStatus("checking dnsblocklist");
 		for (auto it = nameservers->begin(); it != nameservers->end(); ++it) {
 			if (g_dnsBlockList.isDnsBlocked(it->c_str())) {
 				m_indexCodeValid = true;
@@ -6778,8 +6780,11 @@ void XmlDoc::gotIpWrapper(GbDns::DnsResponse *response, void *state) {
 
 	that->m_ipValid = true;
 	if (response) {
-		if (!response->m_ips.empty()) {
-			that->m_ip = response->m_ips.front();
+		that->m_ip = response->m_ips.empty() ? 0 : response->m_ips.front();
+
+		if (!response->m_nameservers.empty()) {
+			that->m_hostNameServersValid = true;
+			that->m_hostNameServers = std::move(response->m_nameservers);
 		}
 
 		if (response->m_errno) {
@@ -6895,6 +6900,8 @@ int32_t *XmlDoc::getIp ( ) {
 
 	std::string hostname(u->getHost(), u->getHostLen());
 
+	setStatus("getting dns a record");
+
 	logTrace( g_conf.m_logTraceXmlDoc, "Calling GbDns::getARecord [%s]", hostname.c_str());
 	GbDns::getARecord(hostname.c_str(), gotIpWrapper, this);
 	logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. Blocked." );
@@ -6906,7 +6913,18 @@ std::vector<std::string>* XmlDoc::getHostNameServers(const char *hostname) {
 		return &m_hostNameServers;
 	}
 
+	// let's try to get A record first
+	int32_t *ip = getIp();
+	if (ip == (int32_t*)-1) {
+		// blocked
+		return (std::vector<std::string>*)ip;
+	}
+
+	setStatus("getting dns ns record");
+
+	logTrace( g_conf.m_logTraceXmlDoc, "Calling GbDns::getNSRecord [%s]", hostname);
 	GbDns::getNSRecord(hostname, gotHostNameServersWrapper, this);
+	logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. Blocked." );
 	return (std::vector<std::string>*)-1;
 }
 

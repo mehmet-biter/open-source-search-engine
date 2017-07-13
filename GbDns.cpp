@@ -290,13 +290,19 @@ static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf,
 	hostent *host = nullptr;
 	int naddrttls = 5;
 	ares_addrttl addrttls[naddrttls];
-	status = ares_parse_a_reply(abuf, alen, &host, addrttls, &naddrttls);
+	status = ares_parse_a_reply_ext(abuf, alen, &host, addrttls, &naddrttls);
 	if (status == ARES_SUCCESS) {
 		for (int i = 0; i < naddrttls; ++i) {
 			char ipbuf[16];
 			logTrace(g_conf.m_logTraceDns, "ip=%s ttl=%d", iptoa(addrttls[i].ipaddr.s_addr, ipbuf), addrttls[i].ttl);
 			item->m_ips.push_back(addrttls[i].ipaddr.s_addr);
 		}
+
+		for (int i = 0; host->h_aliases[i] != NULL; ++i) {
+			logTrace(g_conf.m_logTraceDns, "ns[%d]='%s'", i, host->h_aliases[i]);
+			item->m_nameservers.push_back(host->h_aliases[i]);
+		}
+
 		logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
 
 		s_callbackQueue.push(item);
