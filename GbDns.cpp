@@ -273,7 +273,7 @@ static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf,
 	DnsItem *item = static_cast<DnsItem*>(arg);
 
 	if (status != ARES_SUCCESS) {
-		logTrace(g_conf.m_logTraceDns, "ares_error='%s'", ares_strerror(status));
+		logTrace(g_conf.m_logTraceDns, "ares_error=%d(%s)", status, ares_strerror(status));
 
 		if (abuf == NULL) {
 			logTrace(g_conf.m_logTraceDns, "no abuf returned");
@@ -290,8 +290,8 @@ static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf,
 	hostent *host = nullptr;
 	int naddrttls = 5;
 	ares_addrttl addrttls[naddrttls];
-	int parse_status = ares_parse_a_reply(abuf, alen, &host, addrttls, &naddrttls);
-	if (parse_status == ARES_SUCCESS) {
+	status = ares_parse_a_reply(abuf, alen, &host, addrttls, &naddrttls);
+	if (status == ARES_SUCCESS) {
 		for (int i = 0; i < naddrttls; ++i) {
 			char ipbuf[16];
 			logTrace(g_conf.m_logTraceDns, "ip=%s ttl=%d", iptoa(addrttls[i].ipaddr.s_addr, ipbuf), addrttls[i].ttl);
@@ -304,11 +304,11 @@ static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf,
 		ares_free_hostent(host);
 	}
 
-	if (parse_status != ARES_SUCCESS) {
-		logTrace(g_conf.m_logTraceDns, "ares_error='%s'", ares_strerror(status));
+	if (status != ARES_SUCCESS) {
+		logTrace(g_conf.m_logTraceDns, "ares_error=%d(%s)", status, ares_strerror(status));
 		logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
 
-		item->m_errno = convert_ares_errorno(parse_status);
+		item->m_errno = convert_ares_errorno(status);
 		s_callbackQueue.push(item);
 	}
 
@@ -334,8 +334,8 @@ static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf
 	}
 
 	hostent *host = nullptr;
-	int parse_status = ares_parse_ns_reply(abuf, alen, &host);
-	if (parse_status == ARES_SUCCESS) {
+	status = ares_parse_ns_reply(abuf, alen, &host);
+	if (status == ARES_SUCCESS) {
 		for (int i = 0; host->h_aliases[i] != NULL; ++i) {
 			logTrace(g_conf.m_logTraceDns, "ns[%d]='%s'", i, host->h_aliases[i]);
 			item->m_nameservers.push_back(host->h_aliases[i]);
@@ -344,12 +344,12 @@ static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf
 		ares_free_hostent(host);
 	}
 
-	if (parse_status != ARES_SUCCESS) {
-		logTrace(g_conf.m_logTraceDns, "error='%s'", ares_strerror(parse_status));
+	if (status != ARES_SUCCESS) {
+		logTrace(g_conf.m_logTraceDns, "ares_error=%d(%s)", status, ares_strerror(status));
 		if (parse_status != ARES_EDESTRUCTION) {
 			logTrace(g_conf.m_logTraceDns, "adding to callback queue item=%p", item);
 
-			item->m_errno = convert_ares_errorno(parse_status);
+			item->m_errno = convert_ares_errorno(status);
 			s_callbackQueue.push(item);
 		} else {
 			delete item;
