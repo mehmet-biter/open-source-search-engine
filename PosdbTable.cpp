@@ -85,6 +85,25 @@ struct MiniMergeBuffer {
 };
 
 
+// A 2D matrix used by createNonBodyTermPairScoreMatrix/findMinTermPairScoreInWindow/getMinTermPairScoreSlidingWindow
+class PairScoreMatrix {
+	std::vector<float> m;
+	const int columns;
+public:
+	PairScoreMatrix(int size)
+	  : m(size*size),
+	    columns(size)
+	    {}
+	float get(int x, int y) const {
+		return m[y*columns+x];
+	}
+	void set(int x, int y, float value) {
+		m[y*columns+x] = value;
+	}
+};
+
+
+
 //////////////////
 //
 // THE NEW INTERSECTION LOGIC
@@ -3005,7 +3024,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 // Store best scores into the scoreMatrix so the sliding window
 // algorithm can use them from there to do sub-outs
 //
-void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMergeBuffer, float *scoreMatrix) {
+void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMergeBuffer, PairScoreMatrix *scoreMatrix) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
 
 	// scan over each query term (its synonyms are part of the
@@ -3074,7 +3093,7 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMer
 
 			// store in matrix for "sub out" algo below
 			// when doing sliding window
-			scoreMatrix[i*m_numQueryTermInfos+j] = wts;
+			scoreMatrix->set(j,i, wts);
 		}
 	}
 	logTrace(g_conf.m_logTracePosdb, "END");
@@ -3172,7 +3191,7 @@ float PosdbTable::getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffe
 //   m_bestMinTermPairWindowScore: The best minimum window score
 //   m_bestMinTermPairWindowPtrs : Pointers to query term positions giving the best minimum score
 //
-void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const char **ptrs, const char **highestScoringNonBodyPos, float *scoreMatrix) {
+void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const char **ptrs, const char **highestScoringNonBodyPos, const PairScoreMatrix &scoreMatrix) {
 	float minTermPairScoreInWindow = 999999999.0;
 	bool mergedListFound = false;
 	bool allSpecialTerms = true;
@@ -3280,8 +3299,8 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 			max *= m_freqWeights[i] * m_freqWeights[j];
 
 			// use score from scoreMatrix if bigger
-			if ( scoreMatrix[i*m_numQueryTermInfos+j] > max ) {
-				max = scoreMatrix[i*m_numQueryTermInfos+j];
+			if ( scoreMatrix.get(j,i) > max ) {
+				max = scoreMatrix.get(j,i);
 			}
 
 
@@ -3371,7 +3390,7 @@ static const char *findFirstBodyPosdbEntry(const char *listStart, const char *li
 
 
 
-float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs) {
+float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, const PairScoreMatrix &scoreMatrix, DocIdScore *pdcs) {
 	logTrace(g_conf.m_logTracePosdb, "Sliding Window algorithm begins");
 	m_bestMinTermPairWindowPtrs = winnerStack;
 
@@ -3407,6 +3426,9 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 	for(int i = 0; i < m_numQueryTermInfos; i++) {
 		if(m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
 			// not a ranking term
+			xpos[i] = NULL;
+		} else if(miniMergeBuffer->mergedListStart[i]==NULL) {
+			//no list
 			xpos[i] = NULL;
 		} else {
 			xpos[i] = findFirstBodyPosdbEntry(miniMergeBuffer->mergedListStart[i], miniMergeBuffer->mergedListEnd[i]);
@@ -3664,7 +3686,7 @@ void PosdbTable::intersectLists_real() {
 	std::vector<const char *> highestScoringNonBodyPos(m_numQueryTermInfos);
 	std::vector<const char *> winnerStack(m_numQueryTermInfos);
 	std::vector<const char *> xpos(m_numQueryTermInfos);
-	std::vector<float>        scoreMatrix(m_numQueryTermInfos*m_numQueryTermInfos);
+	PairScoreMatrix           scoreMatrix(m_numQueryTermInfos);
 	
 	int64_t lastTime = gettimeofdayInMilliseconds();
 	int64_t now;
@@ -3985,7 +4007,7 @@ void PosdbTable::intersectLists_real() {
 				//#
 				//# NON-BODY TERM PAIR SCORING LOOP
 				//#
-				createNonBodyTermPairScoreMatrix(&miniMergeBuf, &(scoreMatrix[0]));
+				createNonBodyTermPairScoreMatrix(&miniMergeBuf, &scoreMatrix);
 
 
 				//#
@@ -4023,7 +4045,7 @@ void PosdbTable::intersectLists_real() {
 				// term positions set ("window") that has the highest minimum score. These
 				// pointers are used when determining the minimum term pair score returned
 				// by the function.
-				float minPairScore = getMinTermPairScoreSlidingWindow(&miniMergeBuf, &(highestScoringNonBodyPos[0]), &(winnerStack[0]), &(xpos[0]), &(scoreMatrix[0]), pdcs);
+				float minPairScore = getMinTermPairScoreSlidingWindow(&miniMergeBuf, &(highestScoringNonBodyPos[0]), &(winnerStack[0]), &(xpos[0]), scoreMatrix, pdcs);
 				logTrace(g_conf.m_logTracePosdb, "minPairScore=%f before multiplication for docId %" PRIu64 "", minPairScore, m_docId);
 
 				minPairScore *= completeScoreMultiplier;
