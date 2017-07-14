@@ -1035,16 +1035,24 @@ bool RdbTree::checkTree_unlocked(bool printMsgs, bool doChainTest) const {
 
 		char *key = &m_keys[i*m_ks];
 		if ( isSpiderdb && m_data[i] &&
-				Spiderdb::isSpiderRequest ( (spiderdbkey_t *)key ) ) {
-				char *data = m_data[i];
-				data -= sizeof(spiderdbkey_t);
-				data -= 4;
-				SpiderRequest *sreq ;
-				sreq =(SpiderRequest *)data;
+		     Spiderdb::isSpiderRequest ( (spiderdbkey_t *)key ) ) {
+			char *data = m_data[i];
+			data -= sizeof(spiderdbkey_t);
+			data -= 4;
+			SpiderRequest *sreq ;
+			sreq =(SpiderRequest *)data;
+			if(!sreq->m_urlIsDocId) {
 				if ( strncmp(sreq->m_url,"http",4) != 0 ) {
-					log("db: spiderrequest bad url "
-						"%s",sreq->m_url);
+					log("db: spiderrequest bad url %s",sreq->m_url);
 					return false;
+				}
+			} else {
+				//sreq->m_url must contain only digits
+				size_t count = strspn(sreq->m_url,"0123456789");
+				if(count==0 || sreq->m_url[count]!='\0') {
+					log("db: spiderrequest bad url %s",sreq->m_url);
+					return false;
+				}
 			}
 		}
 
