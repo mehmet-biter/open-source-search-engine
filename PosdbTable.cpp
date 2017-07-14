@@ -85,6 +85,25 @@ struct MiniMergeBuffer {
 };
 
 
+// A 2D matrix used by createNonBodyTermPairScoreMatrix/findMinTermPairScoreInWindow/getMinTermPairScoreSlidingWindow
+class PairScoreMatrix {
+	std::vector<float> m;
+	const int columns;
+public:
+	PairScoreMatrix(int size)
+	  : m(size*size),
+	    columns(size)
+	    {}
+	float get(int x, int y) const {
+		return m[y*columns+x];
+	}
+	void set(int x, int y, float value) {
+		m[y*columns+x] = value;
+	}
+};
+
+
+
 //////////////////
 //
 // THE NEW INTERSECTION LOGIC
@@ -548,9 +567,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 	bool firsti = true;
 	bool firstj = true;
 
-	float score;
 	float max = -1.0;
-	int32_t  dist;
 
 	for(;;) {
 
@@ -561,7 +578,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 			//   algo!
 			if( s_isCompatible[helper1.hg][helper2.hg] ) {
 				// git distance
-				dist = helper2.p - helper1.p;
+				int32_t dist = helper2.p - helper1.p;
 
 				// if zero, make sure its 2. this happens when the same bigram
 				// is used by both terms. i.e. street uses the bigram 
@@ -582,7 +599,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				}
 				
 				// good density?
-				score = 100 * helper1.denw * helper2.denw;
+				float score = 100 * helper1.denw * helper2.denw;
 
 				// hashgroup modifier
 				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
@@ -638,7 +655,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 			//   algo!
 			if ( s_isCompatible[helper1.hg][helper2.hg] ) {
 				// get distance
-				dist = helper1.p - helper2.p;
+				int32_t dist = helper1.p - helper2.p;
 				// if zero, make sure its 2. this happens when the same bigram
 				// is used by both terms. i.e. street uses the bigram 
 				// 'street light' and so does 'light'. so the wordpositions
@@ -667,7 +684,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div1];
 				//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div2];
 				// good density?
-				score = 100 * helper1.denw * helper2.denw;
+				float score = 100 * helper1.denw * helper2.denw;
 				// hashgroup modifier
 				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
 				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
@@ -741,7 +758,6 @@ float PosdbTable::getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, co
 	helper2.set(wpj, m_msg39req->m_scoringWeights);
 
 	float dist;
-	float score;
 	// set this
 	if ( fixedDistance != 0 ) {
 		dist = fixedDistance;
@@ -763,7 +779,7 @@ float PosdbTable::getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, co
 	//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div1];
 	//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div2];
 	// good density?
-	score = 100 * helper1.denw * helper2.denw;
+	float score = 100 * helper1.denw * helper2.denw;
 	// wikipedia phrase weight
 	//score *= ts;
 	// hashgroup modifier
@@ -801,7 +817,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	const char *endj = miniMergeBuffer->mergedListEnd[j];
 
 	// wiki phrase weight?
-	float wts;
+	float wikiPhraseWeight;
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
@@ -814,7 +830,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	if ( m_wikiPhraseIds[j] == m_wikiPhraseIds[i] && m_wikiPhraseIds[j] ) { // zero means not in a phrase
 		qdist = m_qpos[j] - m_qpos[i];
 		// wiki weight
-		wts = (float)WIKI_WEIGHT;
+		wikiPhraseWeight = (float)WIKI_WEIGHT;
 	}
 	else {
 		// basically try to get query words as close
@@ -826,7 +842,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		// yes, but hurts how to make a lock pick set.
 		//qdist = qpos[j] - qpos[i];
 		// wiki weight
-		wts = 1.0;
+		wikiPhraseWeight = 1.0;
 	}
 
 	bool inSameQuotedPhrase = false;
@@ -847,7 +863,6 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	bool firsti = true;
 	bool firstj = true;
 
-	float score;
 	int32_t  lowestScoreTermIdx = -1;
 	float bestScores[MAX_TOP] = {0};	 // make Coverity happy
 	const char *bestwpi   [MAX_TOP];
@@ -856,7 +871,6 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	char  bestmhg2  [MAX_TOP];
 	char  bestFixed [MAX_TOP];
 	int32_t  numTop = 0;
-	int32_t  dist;
 	bool  fixedDistance;
 	int32_t  bro;
 
@@ -878,6 +892,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		// to fix the 'search engine' query on gigablast.com
 		if ( helper1.p <= helper2.p ) {
 			// git distance
+			int32_t dist;
 			dist = helper2.p - helper1.p;
 
 			// if in the same quoted phrase, order is bad!
@@ -932,6 +947,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			}
 			
 			// good density?
+			float score;
 			score = 100 * helper1.denw * helper2.denw;
 			// hashgroup modifier
 			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
@@ -1050,6 +1066,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		}
 		else {
 			// get distance
+			int32_t dist;
 			dist = helper1.p - helper2.p;
 
 			// if in the same quoted phrase, order is bad!
@@ -1102,6 +1119,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 
 			// good diversity? uneeded for pair algo
 			// good density?
+			float score;
 			score = 100 * helper1.denw * helper2.denw;
 			// hashgroup modifier
 			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
@@ -1221,7 +1239,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	}
 
 	// wiki phrase weight
-	sum *= wts;
+	sum *= wikiPhraseWeight;
 
 	// mod by freq weight
 	sum *= m_freqWeights[i];
@@ -1283,9 +1301,9 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		memset(px,0,sizeof(*px));
 		const char *maxp1 = bestwpi[k];
 		const char *maxp2 = bestwpj[k];
-		score = bestScores[k];
+		float score = bestScores[k];
 		bool fixedDist = bestFixed[k];
-		score *= wts;
+		score *= wikiPhraseWeight;
 		score *= m_freqWeights[i];
 		score *= m_freqWeights[j];
 
@@ -1332,7 +1350,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		px->m_bflags2        = m_bflags[j];
 
 		// flag it as in same wiki phrase
-		if ( almostEqualFloat(wts, (float)WIKI_WEIGHT) ) {
+		if ( almostEqualFloat(wikiPhraseWeight, (float)WIKI_WEIGHT) ) {
 			px->m_inSameWikiPhrase = 1;
 		}
 		else {
@@ -1354,7 +1372,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 					    "tfw0=%f "
 					    "tfw1=%f "
 					    "fixeddist=%" PRId32" " // bool
-					    "wts=%f "
+					    "wikiPhraseWeight=%f "
 					    "bflags0=%" PRId32" "
 					    "bflags1=%" PRId32" "
 					    "syn0=%" PRId32" "
@@ -1370,7 +1388,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 					    "wpos1=%" PRId32" "
 					    "dens0=%" PRId32" "
 					    "dens1=%" PRId32" ", k, i, j, px->m_qtermNum1, px->m_qtermNum2, score, m_freqWeights[i],
-			    m_freqWeights[j], (int32_t) bestFixed[k], wts, (int32_t) m_bflags[i], (int32_t) m_bflags[j],
+			    m_freqWeights[j], (int32_t) bestFixed[k], wikiPhraseWeight, (int32_t) m_bflags[i], (int32_t) m_bflags[j],
 			    (int32_t) px->m_isSynonym1, (int32_t) px->m_isSynonym2, (int32_t) px->m_diversityRank1,
 			    (int32_t) px->m_diversityRank2, (int32_t) px->m_wordSpamRank1, (int32_t) px->m_wordSpamRank2,
 			    getHashGroupString(px->m_hashGroup1), getHashGroupString(px->m_hashGroup2), (int32_t) px->m_qdist,
@@ -3005,7 +3023,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 // Store best scores into the scoreMatrix so the sliding window
 // algorithm can use them from there to do sub-outs
 //
-void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMergeBuffer, float *scoreMatrix) {
+void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMergeBuffer, PairScoreMatrix *scoreMatrix) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
 
 	// scan over each query term (its synonyms are part of the
@@ -3028,7 +3046,7 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMer
 			// so for 'time enough for love' ideally we want
 			// 'time' to be 6 units apart from 'love'
 			int32_t qdist;
-			float wts;
+			float score;
 			// zero means not in a phrase
 			if ( m_wikiPhraseIds[j] == m_wikiPhraseIds[i] && m_wikiPhraseIds[j] ) {
 				// . the distance between the terms in the query
@@ -3036,7 +3054,7 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMer
 				//   in the matched terms in the body
 				qdist = m_qpos[j] - m_qpos[i];
 				// wiki weight
-				wts = (float)WIKI_WEIGHT; // .50;
+				score = (float)WIKI_WEIGHT; // .50;
 			}
 			else {
 				// basically try to get query words as close
@@ -3048,7 +3066,7 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMer
 				// yes, but hurts how to make a lock pick set.
 				//qdist = qpos[j] - qpos[i];
 				// wiki weight
-				wts = 1.0;
+				score = 1.0;
 			}
 
 			float maxnbtp;
@@ -3064,17 +3082,17 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMer
 
 			// it's -1 if one term is in the body/header/menu/etc.
 			if ( maxnbtp < 0 ) {
-				wts = -1.00;
+				score = -1.00;
 			}
 			else {
-				wts *= maxnbtp;
-				wts *= m_freqWeights[i];
-				wts *= m_freqWeights[j];
+				score *= maxnbtp;
+				score *= m_freqWeights[i];
+				score *= m_freqWeights[j];
 			}
 
 			// store in matrix for "sub out" algo below
 			// when doing sliding window
-			scoreMatrix[i*m_numQueryTermInfos+j] = wts;
+			scoreMatrix->set(j,i, score);
 		}
 	}
 	logTrace(g_conf.m_logTracePosdb, "END");
@@ -3172,7 +3190,7 @@ float PosdbTable::getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffe
 //   m_bestMinTermPairWindowScore: The best minimum window score
 //   m_bestMinTermPairWindowPtrs : Pointers to query term positions giving the best minimum score
 //
-void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const char **ptrs, const char **highestScoringNonBodyPos, float *scoreMatrix) {
+void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const char **ptrs, const char **highestScoringNonBodyPos, const PairScoreMatrix &scoreMatrix) {
 	float minTermPairScoreInWindow = 999999999.0;
 	bool mergedListFound = false;
 	bool allSpecialTerms = true;
@@ -3280,8 +3298,8 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 			max *= m_freqWeights[i] * m_freqWeights[j];
 
 			// use score from scoreMatrix if bigger
-			if ( scoreMatrix[i*m_numQueryTermInfos+j] > max ) {
-				max = scoreMatrix[i*m_numQueryTermInfos+j];
+			if ( scoreMatrix.get(j,i) > max ) {
+				max = scoreMatrix.get(j,i);
 			}
 
 
@@ -3371,7 +3389,7 @@ static const char *findFirstBodyPosdbEntry(const char *listStart, const char *li
 
 
 
-float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs) {
+float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, const PairScoreMatrix &scoreMatrix, DocIdScore *pdcs) {
 	logTrace(g_conf.m_logTracePosdb, "Sliding Window algorithm begins");
 	m_bestMinTermPairWindowPtrs = winnerStack;
 
@@ -3407,6 +3425,9 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 	for(int i = 0; i < m_numQueryTermInfos; i++) {
 		if(m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
 			// not a ranking term
+			xpos[i] = NULL;
+		} else if(miniMergeBuffer->mergedListStart[i]==NULL) {
+			//no list
 			xpos[i] = NULL;
 		} else {
 			xpos[i] = findFirstBodyPosdbEntry(miniMergeBuffer->mergedListStart[i], miniMergeBuffer->mergedListEnd[i]);
@@ -3664,7 +3685,7 @@ void PosdbTable::intersectLists_real() {
 	std::vector<const char *> highestScoringNonBodyPos(m_numQueryTermInfos);
 	std::vector<const char *> winnerStack(m_numQueryTermInfos);
 	std::vector<const char *> xpos(m_numQueryTermInfos);
-	std::vector<float>        scoreMatrix(m_numQueryTermInfos*m_numQueryTermInfos);
+	PairScoreMatrix           scoreMatrix(m_numQueryTermInfos);
 	
 	int64_t lastTime = gettimeofdayInMilliseconds();
 	int64_t now;
@@ -3985,7 +4006,7 @@ void PosdbTable::intersectLists_real() {
 				//#
 				//# NON-BODY TERM PAIR SCORING LOOP
 				//#
-				createNonBodyTermPairScoreMatrix(&miniMergeBuf, &(scoreMatrix[0]));
+				createNonBodyTermPairScoreMatrix(&miniMergeBuf, &scoreMatrix);
 
 
 				//#
@@ -4023,7 +4044,7 @@ void PosdbTable::intersectLists_real() {
 				// term positions set ("window") that has the highest minimum score. These
 				// pointers are used when determining the minimum term pair score returned
 				// by the function.
-				float minPairScore = getMinTermPairScoreSlidingWindow(&miniMergeBuf, &(highestScoringNonBodyPos[0]), &(winnerStack[0]), &(xpos[0]), &(scoreMatrix[0]), pdcs);
+				float minPairScore = getMinTermPairScoreSlidingWindow(&miniMergeBuf, &(highestScoringNonBodyPos[0]), &(winnerStack[0]), &(xpos[0]), scoreMatrix, pdcs);
 				logTrace(g_conf.m_logTracePosdb, "minPairScore=%f before multiplication for docId %" PRIu64 "", minPairScore, m_docId);
 
 				minPairScore *= completeScoreMultiplier;
