@@ -146,7 +146,6 @@ void PosdbTable::reset() {
 	m_qpos.clear();
 	m_wikiPhraseIds.clear();
 	m_quotedStartIds.clear();
-	m_freqWeights.clear();
 	m_bflags.clear();
 	m_qtermNums.clear();
 	m_bestMinTermPairWindowScore = 0.0;
@@ -347,6 +346,9 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 			float userWeight = m_q->m_qterms[queryTermIndex].m_userWeight;
 			score *= userWeight;
 
+			score *= m_q->m_qterms[queryTermIndex].m_termFreqWeight;
+			score *= m_q->m_qterms[queryTermIndex].m_termFreqWeight;
+
 			// do not allow duplicate hashgroups!
 			int32_t bro = -1;
 			for( int32_t k=0; k < numTop; k++) {
@@ -441,9 +443,6 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 	// wiki weight
 	//sum *= ts;
 
-	sum *= m_freqWeights[i];
-	sum *= m_freqWeights[i];
-
 	// shortcut
 	//char *maxp = bestwpi[k];
 
@@ -519,16 +518,21 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 
 		float score = bestScores[k];
 
-		//score *= ts;
-		score *= m_freqWeights[i];
-		score *= m_freqWeights[i];
+		int queryTermIndex = miniMergeBuffer->getTermInfoIndexForBufferPos(maxp);
+		//TODO: shouldn't we multiply with userweight here too?
+		//float userWeight = m_q->m_qterms[queryTermIndex].m_userWeight;
+		//score *= userWeight;
+
+		score *= m_q->m_qterms[queryTermIndex].m_termFreqWeight;
+		score *= m_q->m_qterms[queryTermIndex].m_termFreqWeight;
+
 		// if terms is a special wiki half stop bigram
 		if ( sx->m_isHalfStopWikiBigram ) {
 			score *= WIKI_BIGRAM_WEIGHT;
 			score *= WIKI_BIGRAM_WEIGHT;
 		}
 		sx->m_finalScore = score;
-		sx->m_tfWeight = m_freqWeights[i];
+		sx->m_tfWeight = m_q->m_qterms[queryTermIndex].m_termFreqWeight;
 		sx->m_qtermNum = m_qtermNums[i];
 		//int64_t *termFreqs = (int64_t *)m_msg39req->ptr_termFreqs;
 		//sx->m_termFreq = termFreqs[sx->m_qtermNum];
@@ -965,10 +969,14 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			{
 				const int queryTermIndex1 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpi);
 				const float userWeight1 = m_q->m_qterms[queryTermIndex1].m_userWeight;
+				const float termFreqWeight1 = m_q->m_qterms[queryTermIndex1].m_termFreqWeight;
 				score *= userWeight1;
+				score *= termFreqWeight1;
 				const int queryTermIndex2 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpj);
 				const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
+				const float termFreqWeight2 = m_q->m_qterms[queryTermIndex2].m_termFreqWeight;
 				score *= userWeight2;
+				score *= termFreqWeight2;
 			}
 
 			// the new logic
@@ -1137,10 +1145,14 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			{
 				const int queryTermIndex1 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpi);
 				const float userWeight1 = m_q->m_qterms[queryTermIndex1].m_userWeight;
+				const float termFreqWeight1 = m_q->m_qterms[queryTermIndex1].m_termFreqWeight;
 				score *= userWeight1;
+				score *= termFreqWeight1;
 				const int queryTermIndex2 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpj);
 				const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
+				const float termFreqWeight2 = m_q->m_qterms[queryTermIndex2].m_termFreqWeight;
 				score *= userWeight2;
+				score *= termFreqWeight2;
 			}
 			
 			// word spam weights
@@ -1241,10 +1253,6 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	// wiki phrase weight
 	sum *= wikiPhraseWeight;
 
-	// mod by freq weight
-	sum *= m_freqWeights[i];
-	sum *= m_freqWeights[j];
-
 	if (m_debug) {
 		log(LOG_INFO, "posdb: best score final = %f",sum);
 	}
@@ -1304,8 +1312,11 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		float score = bestScores[k];
 		bool fixedDist = bestFixed[k];
 		score *= wikiPhraseWeight;
-		score *= m_freqWeights[i];
-		score *= m_freqWeights[j];
+	
+		const int queryTermIndex1 = miniMergeBuffer->getTermInfoIndexForBufferPos(maxp1);
+		const float termFreqWeight1 = m_q->m_qterms[queryTermIndex1].m_termFreqWeight;
+		const int queryTermIndex2 = miniMergeBuffer->getTermInfoIndexForBufferPos(maxp2);
+		const float termFreqWeight2 = m_q->m_qterms[queryTermIndex2].m_termFreqWeight;
 
 		// we have to encode these bits into the mini merge now
 		if ( Posdb::getIsHalfStopWikiBigram(maxp1) ) {
@@ -1341,11 +1352,8 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		px->m_fixedDistance  = fixedDist;
 		px->m_qtermNum1      = m_qtermNums[i];
 		px->m_qtermNum2      = m_qtermNums[j];
-		//int64_t *termFreqs = (int64_t *)m_msg39req->ptr_termFreqs;
-		//px->m_termFreq1      = termFreqs[px->m_qtermNum1];
-		//px->m_termFreq2      = termFreqs[px->m_qtermNum2];
-		px->m_tfWeight1      = m_freqWeights[i];
-		px->m_tfWeight2      = m_freqWeights[j];
+		px->m_tfWeight1      = termFreqWeight1;
+		px->m_tfWeight2      = termFreqWeight2;
 		px->m_bflags1        = m_bflags[i];
 		px->m_bflags2        = m_bflags[j];
 
@@ -1387,8 +1395,8 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 					    "wpos0=%" PRId32" "
 					    "wpos1=%" PRId32" "
 					    "dens0=%" PRId32" "
-					    "dens1=%" PRId32" ", k, i, j, px->m_qtermNum1, px->m_qtermNum2, score, m_freqWeights[i],
-			    m_freqWeights[j], (int32_t) bestFixed[k], wikiPhraseWeight, (int32_t) m_bflags[i], (int32_t) m_bflags[j],
+					    "dens1=%" PRId32" ", k, i, j, px->m_qtermNum1, px->m_qtermNum2, score, termFreqWeight1,
+			    termFreqWeight2, (int32_t) bestFixed[k], wikiPhraseWeight, (int32_t) m_bflags[i], (int32_t) m_bflags[j],
 			    (int32_t) px->m_isSynonym1, (int32_t) px->m_isSynonym2, (int32_t) px->m_diversityRank1,
 			    (int32_t) px->m_diversityRank2, (int32_t) px->m_wordSpamRank1, (int32_t) px->m_wordSpamRank2,
 			    getHashGroupString(px->m_hashGroup1), getHashGroupString(px->m_hashGroup2), (int32_t) px->m_qdist,
@@ -1786,8 +1794,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 
 		// store # lists in required group. nn might be zero!
 		qti->m_numSubLists = nn;
-		// set the term freqs for this list group/set
-		qti->m_termFreqWeight = qt->m_termFreqWeight;
 		// crazy?
 		if ( nn >= MAX_SUBLISTS ) {
 			log("query: too many sublists. %" PRId32" >= %" PRId32,
@@ -3086,8 +3092,6 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMer
 			}
 			else {
 				score *= maxnbtp;
-				score *= m_freqWeights[i];
-				score *= m_freqWeights[j];
 			}
 
 			// store in matrix for "sub out" algo below
@@ -3295,7 +3299,13 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 			}
 
 			// term freqweight here
-			max *= m_freqWeights[i] * m_freqWeights[j];
+			const int queryTermIndex1 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpi);
+			const float termFreqWeight1 = m_q->m_qterms[queryTermIndex1].m_termFreqWeight;
+			max *= termFreqWeight1;
+			const int queryTermIndex2 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpj);
+			const float termFreqWeight2 = m_q->m_qterms[queryTermIndex2].m_termFreqWeight;
+			max *= termFreqWeight2;
+			//TODO: shouldn't we multiply with userweight here too?
 
 			// use score from scoreMatrix if bigger
 			if ( scoreMatrix.get(j,i) > max ) {
@@ -3680,7 +3690,6 @@ void PosdbTable::intersectLists_real() {
 	m_quotedStartIds.resize(m_numQueryTermInfos);
 	m_qpos.resize(m_numQueryTermInfos);
 	m_qtermNums.resize(m_numQueryTermInfos);
-	m_freqWeights.resize(m_numQueryTermInfos);
 	m_bflags.resize(m_numQueryTermInfos);
 	std::vector<const char *> highestScoringNonBodyPos(m_numQueryTermInfos);
 	std::vector<const char *> winnerStack(m_numQueryTermInfos);
@@ -3705,7 +3714,6 @@ void PosdbTable::intersectLists_real() {
 		// query term position
 		m_qpos          [i] = qti->m_qpos;
 		m_qtermNums     [i] = qti->m_qtermNum;
-		m_freqWeights   [i] = qti->m_termFreqWeight;
 	}
 
 
@@ -4329,7 +4337,6 @@ void PosdbTable::intersectLists_real() {
 	m_quotedStartIds.clear();
 	m_qpos.clear();
 	m_qtermNums.clear();
-	m_freqWeights.clear();
 	m_bflags.clear();
 
 	logTrace(g_conf.m_logTracePosdb, "END. Took %" PRId64" msec", m_addListsTime);
@@ -4344,6 +4351,7 @@ float PosdbTable::getMaxPossibleScore(const QueryTermInfo *qti) {
 
 	// get max score of all sublists
 	float bestHashGroupWeight = -1.0;
+	float bestTermFreqWeight = -1.0;
 	unsigned char bestDensityRank = 0;
 	char siteRank = -1;
 	char docLang = -1;
@@ -4400,6 +4408,10 @@ float PosdbTable::getMaxPossibleScore(const QueryTermInfo *qti) {
 			if ( hgrp == HASHGROUP_INLINKTEXT ) {
 				return -1.0;
 			}
+			
+			float termFreqWeight = qti->m_subList[qti->m_matchingSublist[j].m_baseSubListIndex].m_qt->m_termFreqWeight;
+			if(termFreqWeight>bestTermFreqWeight)
+				bestTermFreqWeight = termFreqWeight;
 			
 			//if ( hgrp == HASHGROUP_TITLE      ) return -1.0;
 			// loser?
@@ -4480,7 +4492,10 @@ float PosdbTable::getMaxPossibleScore(const QueryTermInfo *qti) {
 	}
 	
 	// assume the other term we pair with will be 1.0
-	score *= qti->m_termFreqWeight;
+	score *= bestTermFreqWeight;
+	score *= bestTermFreqWeight;
+	//TODO: shouldn't we multiple with userweight here too?
+	
 
 	// terms in same wikipedia phrase?
 	//if ( wikiWeight != 1.0 ) 
@@ -4504,7 +4519,7 @@ float PosdbTable::modifyMaxScoreByDistance(float score,
 					   int32_t qdist,
 					   const QueryTermInfo *qtm)
 {
-	score *= qtm->m_termFreqWeight;
+	score *= qtm->m_maxMatchingTermFreqWeight;
 	
 	// subtract qdist
 	bestDist -= qdist;
@@ -4914,6 +4929,21 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists() {
 		}
 	}
 	
+	//calculate qti[].m_maxMatchingTermFreqWeight
+	for(int i=0; i<m_numQueryTermInfos; i++) {
+		QueryTermInfo *qti = ((QueryTermInfo*)m_qiBuf.getBufStart()) + i;
+		if(qti->m_numMatchingSubLists>0) {
+			float maxMatchingTermFreqWeight = qti->m_subList[qti->m_matchingSublist[0].m_baseSubListIndex].m_qt->m_termFreqWeight;
+			for(int j=1; j<qti->m_numMatchingSubLists; j++) {
+				float w = qti->m_subList[qti->m_matchingSublist[j].m_baseSubListIndex].m_qt->m_termFreqWeight;
+				if(w>maxMatchingTermFreqWeight)
+					maxMatchingTermFreqWeight = w;
+			}
+			qti->m_maxMatchingTermFreqWeight = maxMatchingTermFreqWeight;
+		} else
+			qti->m_maxMatchingTermFreqWeight = -1.0;
+	}
+
 	logTrace(g_conf.m_logTracePosdb, "END.");
 }
 
