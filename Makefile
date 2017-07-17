@@ -392,7 +392,7 @@ clean:
 	-rm -f gmon.*
 	-rm -f *.gcda *.gcno coverage*.html
 	-rm -f *.ll *.ll.out pstack.txt
-	-rm entities.inc
+	-rm -f entities.inc
 	$(MAKE) -C test $@
 
 
