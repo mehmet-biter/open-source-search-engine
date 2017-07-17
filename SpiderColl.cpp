@@ -3269,26 +3269,28 @@ uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderRep
 	if ( ! srep && sreq->m_isPageReindex ) return spiderTimeMS;
 
 
-	//log("spider: getting spider time %" PRId64, spiderTimeMS);
 	// to avoid hammering an ip, get last time we spidered it...
-	int64_t lastMS ;
 	RdbCacheLock rcl(m_lastDownloadCache);
-	lastMS = m_lastDownloadCache.getLongLong ( m_collnum       ,
-						   sreq->m_firstIp ,
-						   -1              , // maxAge
-						   true            );// promote
+	int64_t lastMS = m_lastDownloadCache.getLongLong(m_collnum, sreq->m_firstIp, -1, true);
 	rcl.unlock();
+
 	// -1 means not found
-	if ( (int64_t)lastMS == -1 ) lastMS = 0;
+	if ((int64_t)lastMS == -1) {
+		lastMS = 0;
+	}
+
 	// sanity
-	if ( (int64_t)lastMS < -1 ) { 
+	if ((int64_t)lastMS < -1) {
 		log("spider: corrupt last time in download cache. nuking.");
 		lastMS = 0;
 	}
+
 	// min time we can spider it
 	int64_t minSpiderTimeMS1 = lastMS + m_cr->m_spiderIpWaits[ufn];
 	// if not found in cache
-	if ( lastMS == -1 ) minSpiderTimeMS1 = 0LL;
+	if (lastMS == -1) {
+		minSpiderTimeMS1 = 0LL;
+	}
 
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
@@ -3307,8 +3309,12 @@ uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderRep
 	//  ensure min
 	if ( spiderTimeMS < minSpiderTimeMS1 ) spiderTimeMS = minSpiderTimeMS1;
 	if ( spiderTimeMS < minSpiderTimeMS2 ) spiderTimeMS = minSpiderTimeMS2;
+
 	// if no reply, use that
-	if ( ! srep ) return spiderTimeMS;
+	if (!srep) {
+		return spiderTimeMS;
+	}
+
 	// if this is not the first try, then re-compute the spiderTime
 	// based on that last time
 	// sanity check
