@@ -203,6 +203,7 @@ public:
 	// spider controls for this collection
 	bool m_spideringEnabled ;
 	int32_t  m_spiderDelayInMilliseconds;
+	int32_t m_spiderReindexDelayMS;
 
 	// is in active list in spider.cpp?
 	bool m_isActive;

@@ -7451,6 +7451,17 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
+	m->m_title = "spider reindex delay";
+	m->m_desc  = "throttle spider reindex with configured delay";
+	m->m_cgi  = "srdms";
+	simple_m_set(CollectionRec, m_spiderReindexDelayMS);
+	m->m_def   = "0";
+	m->m_units = "milliseconds";
+	m->m_group = false;
+	m->m_page  = PAGE_SPIDER;
+	m->m_flags = PF_CLONE;
+	m++;
+
 	m->m_title = "obey robots.txt";
 	m->m_xml   = "useRobotstxt";
 	m->m_desc  = "If this is true Gigablast will respect "

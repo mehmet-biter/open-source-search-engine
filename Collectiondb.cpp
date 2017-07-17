@@ -999,6 +999,7 @@ CollectionRec::CollectionRec() {
 	memset(m_dailyMergeDOWList, 0, sizeof(m_dailyMergeDOWList));
 	m_spideringEnabled = true;
 	m_spiderDelayInMilliseconds = 0;
+	m_spiderReindexDelayMS = 0;
 	m_isActive = false;
 	m_makeImageThumbnails = false;
 	m_thumbnailMaxWidthHeight = 0;
