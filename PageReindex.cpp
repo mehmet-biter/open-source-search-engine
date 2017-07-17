@@ -36,7 +36,7 @@ bool sendPageReindex ( TcpSocket *s , HttpRequest *r ) {
 	try { st = new (State13); }
 	catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
-		log("PageTagdb: new(%i): %s", 
+		log(LOG_ERROR, "PageReindex: new(%i): %s",
 		    (int)sizeof(State13),mstrerror(g_errno));
 		return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));}
 	mnew ( st , sizeof(State13) , "PageReindex" );
@@ -51,13 +51,13 @@ bool sendPageReindex ( TcpSocket *s , HttpRequest *r ) {
 		//In the safe version we only allow queries using site:
 		if(strstr(gr->m_query,"site:")==0) {
 			g_errno = EPERMDENIED;
-			log("PageReindex: No 'site:' in query");
+			log(LOG_ERROR, "PageReindex: No 'site:' in query");
 			return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));
 		}
 		//and we don't allow spaces
 		if(strchr(gr->m_query,' ')!=0) {
 			g_errno = EPERMDENIED;
-			log("PageReindex: Space in query");
+			log(LOG_ERROR, "PageReindex: Space in query");
 			return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));
 		}
 	}
@@ -123,7 +123,7 @@ void doneReindexing ( void *state ) {
 
 	// note it
 	if ( gr->m_query && gr->m_query[0] )
-		log(LOG_INFO,"admin: Done with query reindex. %s",
+		log(LOG_INFO,"reindex: Done with query reindex. %s",
 		    mstrerror(g_errno));
 
 	////

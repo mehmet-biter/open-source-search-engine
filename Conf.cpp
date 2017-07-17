@@ -209,6 +209,7 @@ Conf::Conf ( ) {
 	m_logDebugSpcache = false;
 	m_logDebugSpeller = false;
 	m_logDebugSpider = false;
+	m_logDebugReindex = false;
 	m_logDebugSEO = false;
 	m_logDebugStats = false;
 	m_logDebugSummary = false;
