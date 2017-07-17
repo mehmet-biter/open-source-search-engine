@@ -1069,8 +1069,8 @@ int main2 ( int argc , char *argv[] ) {
 		return doCmd( "pmerge=1", hostId, "master", true, false );
 	}
 
-	// gb smerge [hostId]
-	if ( strcmp ( cmd , "smerge" ) == 0 ) {	
+	// gb spmerge [hostId]
+	if ( strcmp ( cmd , "spmerge" ) == 0 ) {
 		int32_t hostId = -1;
 		if ( cmdarg + 1 < argc ) {
 			hostId = atoi ( argv[cmdarg+1] );
@@ -1080,9 +1080,9 @@ int main2 ( int argc , char *argv[] ) {
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
 			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "smerge=1", h1, "master", true, false, h2 );
+				return doCmd( "spmerge=1", h1, "master", true, false, h2 );
 		}
-		return doCmd( "smerge=1", hostId, "master", true, false );
+		return doCmd( "spmerge=1", hostId, "master", true, false );
 	}
 
 	// gb tmerge [hostId]
