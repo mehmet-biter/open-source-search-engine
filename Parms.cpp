@@ -8397,6 +8397,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log debug query-reindex messages";
+	m->m_cgi   = "ldqridx";
+	simple_m_set(Conf,m_logDebugReindex);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log debug seo messages";
 	m->m_cgi   = "ldseo";
 	simple_m_set(Conf,m_logDebugSEO);
