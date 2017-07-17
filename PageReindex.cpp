@@ -343,7 +343,7 @@ bool Msg1c::gotList ( ) {
 
 	m_numDocIds = numDocIds; // save for reporting
 	// log it
-	log(LOG_INFO,"admin: Got %" PRId32" docIds for query reindex.", numDocIds);
+	log(LOG_INFO,"reindex: Got %d docIds for query reindex.", numDocIds);
 	// bail if no need
 	if ( numDocIds <= 0 ) return true;
 
@@ -440,18 +440,17 @@ bool Msg1c::gotList ( ) {
 			// g_errno must be set
 			if ( ! g_errno ) { g_process.shutdownAbort(true); }
 
-			log(LOG_LOGIC,
-			    "admin: Query reindex size of %" PRId32" "
-			    "too big. Aborting. Bad engineer." , 
-			    (int32_t)0);//m_list.getListSize() );
+			log(LOG_LOGIC, "admin: Query reindex too big. safebuf=%d bytes, recSize=%d bytes. Aborting. Bad engineer.",
+			    m_sb.length(), recSize);
 			return true;
 		}
 	}
+	log(LOG_INFO, "reindex: built msg4 metalist, numDocIds=%d m_numDocIdsAdded=%d (%d duplicates)", numDocIds, m_numDocIdsAdded, numDocIds-m_numDocIdsAdded);
 
 	// free "finalBuf" etc. for msg39
 	m_msg3a.reset();
 
-	log("reindex: adding docid list to spiderdb");
+	log("reindex: adding docid list (docids:%d) to spiderdb", m_numDocIdsAdded);
 
 	return m_msg4.addMetaList(&m_sb, m_collnum, this, addedListWrapper, RDB_SPIDERDB);
 }
