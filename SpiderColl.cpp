@@ -81,6 +81,7 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_numBytesScanned = 0;
 	m_lastPrintCount = 0;
 	m_collnum = -1;
+	m_lastReindexTimeMS = 0;
 	m_countingPagesIndexed = false;
 	m_lastReqUh48a = 0;
 	m_lastReqUh48b = 0;
@@ -2472,7 +2473,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			sreq->m_forceDelete = true;
 		}
 
-		int64_t spiderTimeMS = getSpiderTimeMS(sreq, ufn, srep);
+		int64_t spiderTimeMS = getSpiderTimeMS(sreq, ufn, srep, nowGlobalMS);
 
 		// sanity
 		if ( (int64_t)spiderTimeMS < 0 ) { 
@@ -3259,15 +3260,27 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 }
 
 
-uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep) {
+uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep, int64_t nowMS) {
 	// . get the scheduled spiderTime for it
 	// . assume this SpiderRequest never been successfully spidered
 	int64_t spiderTimeMS = ((uint64_t)sreq->m_addedTime) * 1000LL;
 
 	// if injecting for first time, use that!
-	if ( ! srep && sreq->m_isInjecting ) return spiderTimeMS;
-	if ( ! srep && sreq->m_isPageReindex ) return spiderTimeMS;
+	if (!srep && sreq->m_isInjecting) {
+		return spiderTimeMS;
+	}
 
+	if (!srep && sreq->m_isPageReindex) {
+		int64_t delayMS = m_cr->m_spiderIpWaits[ufn];
+		int64_t nextReindexTimeMS = m_lastReindexTimeMS + delayMS;
+		if (nextReindexTimeMS > nowMS) {
+			return nextReindexTimeMS;
+		}
+
+		m_lastReindexTimeMS = nowMS;
+
+		return nowMS;
+	}
 
 	// to avoid hammering an ip, get last time we spidered it...
 	RdbCacheLock rcl(m_lastDownloadCache);

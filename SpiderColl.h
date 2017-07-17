@@ -134,7 +134,7 @@ private:
 
 	bool updateSiteNumInlinksTable(int32_t siteHash32, int32_t sni, time_t tstamp);
 
-	uint64_t getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep);
+	uint64_t getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep, int64_t nowMS);
 
 	bool makeWaitingTable();
 	bool addToWaitingTable(int32_t firstIp, int64_t timeMs);
@@ -202,6 +202,8 @@ private:
 	GbMutex m_cdTableMtx;
 
 	RdbCache m_lastDownloadCache;
+
+	int64_t m_lastReindexTimeMS;
 
 	bool m_countingPagesIndexed;
 
