@@ -367,8 +367,12 @@ bool Msg1c::gotList ( ) {
 	// list consists of docIds, loop through each one
  	for(int32_t i = 0; i < numDocIds; i++) {
 		int64_t docId = tmpDocIds[i];
+		logTrace( g_conf.m_logTraceReindex, "reindex: Looking at docid #%d: %13ld", i, docId);
 		// when searching events we get multiple docids that are same
-		if ( dt.isInTable ( &docId ) ) continue;
+		if ( dt.isInTable ( &docId ) ) {
+			logTrace( g_conf.m_logTraceReindex, "reindex: docId %13ld is a duplicate", docId);
+			continue;
+		}
 		// add it
 		if ( ! dt.addKey ( &docId ) ) return true;
 
@@ -405,6 +409,8 @@ bool Msg1c::gotList ( ) {
 		if ( firstIp == 0 ) {
 			firstIp = 1;
 		}
+
+		logTrace( g_conf.m_logTraceReindex, "reindex: docid=%13ld firstip=0x%08x", docId, firstIp);
 
 		// use a fake ip
 		sr.m_firstIp        =  firstIp;

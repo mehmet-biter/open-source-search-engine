@@ -392,6 +392,7 @@ class Conf {
 	bool m_logTraceRepairs;
 	bool m_logTraceRobots;
 	bool m_logTraceSpider;
+	bool m_logTraceReindex;
 	bool m_logTraceSummary;
 	bool m_logTraceTitledb;
 	bool m_logTraceXmlDoc;

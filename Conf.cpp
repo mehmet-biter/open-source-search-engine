@@ -244,6 +244,7 @@ Conf::Conf ( ) {
 	m_logTraceRepairs = false;
 	m_logTraceRobots = false;
 	m_logTraceSpider = false;
+	m_logTraceReindex = false;
 	m_logTraceSummary = false;
 	m_logTraceTitledb = false;
 	m_logTraceXmlDoc = false;
