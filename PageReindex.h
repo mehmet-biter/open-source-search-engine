@@ -12,7 +12,7 @@ public:
 
 	Msg1c();
 
-	bool reindexQuery ( char *query ,
+	bool reindexQuery ( const  char *query,
 			    collnum_t collnum, // char *coll  ,
 			    int32_t startNum ,
 			    int32_t endNum ,
