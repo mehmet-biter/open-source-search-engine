@@ -3327,8 +3327,6 @@ uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderRep
 	// compute new spiderTime for this guy, in seconds
 	int64_t waitInSecs = (uint64_t)(m_cr->m_spiderFreqs[ufn]*3600*24.0);
 
-	// in fact, force docid based guys to be zero!
-	if ( sreq->m_isPageReindex ) waitInSecs = 0;
 	// when it was spidered
 	int64_t lastSpideredMS = ((uint64_t)srep->m_spideredTime) * 1000;
 	// . when we last attempted to spider it... (base time)
