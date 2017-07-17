@@ -3271,15 +3271,14 @@ uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderRep
 	}
 
 	if (!srep && sreq->m_isPageReindex) {
-		int64_t delayMS = m_cr->m_spiderIpWaits[ufn];
-		int64_t nextReindexTimeMS = m_lastReindexTimeMS + delayMS;
+		int64_t nextReindexTimeMS = m_lastReindexTimeMS + m_cr->m_spiderReindexDelayMS;
 		if (nextReindexTimeMS > nowMS) {
 			return nextReindexTimeMS;
 		}
 
 		m_lastReindexTimeMS = nowMS;
 
-		return nowMS;
+		return nextReindexTimeMS;
 	}
 
 	// to avoid hammering an ip, get last time we spidered it...
