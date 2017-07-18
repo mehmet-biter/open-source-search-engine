@@ -2440,8 +2440,8 @@ void Parms::setToDefault(char *THIS, parameter_object_type_t objType, Collection
 // . returns false and sets g_errno on error
 // . you should set your "THIS" to its defaults before calling this
 bool Parms::setFromFile ( void *THIS        ,
-			  char *filename    ,
-			  char *filenameDef ,
+			  const char *filename,
+			  const char *filenameDef,
 			  parameter_object_type_t objType) {
 	// make sure we're init'd
 	init();
@@ -2700,7 +2700,7 @@ bool Parms::setFromFile ( void *THIS        ,
 }
 
 // returns false and sets g_errno on error
-bool Parms::setXmlFromFile(Xml *xml, char *filename, SafeBuf *sb ) {
+bool Parms::setXmlFromFile(Xml *xml, const char *filename, SafeBuf *sb ) {
 	sb->load ( filename );
 	char *buf = sb->getBufStart();
 	if ( ! buf ) {
@@ -2890,9 +2890,10 @@ skip2:
 	//	   (int32_t)MAX_CONF_SIZE);
 }
 
-bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
+bool Parms::getParmHtmlEncoded(SafeBuf *sb, const Parm *m, const char *s) {
 	// print it out
-	if ( m->m_type == TYPE_CHAR           || m->m_type == TYPE_BOOL           ||
+	if ( m->m_type == TYPE_CHAR           ||
+	     m->m_type == TYPE_BOOL           ||
 	     m->m_type == TYPE_CHECKBOX       ||
 	     m->m_type == TYPE_PRIORITY)
 		sb->safePrintf("%" PRId32,(int8_t)*s);
