@@ -3270,7 +3270,7 @@ uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderRep
 		return spiderTimeMS;
 	}
 
-	if (!srep && sreq->m_isPageReindex) {
+	if (sreq->m_isPageReindex) {
 		int64_t nextReindexTimeMS = m_lastReindexTimeMS + m_cr->m_spiderReindexDelayMS;
 		if (nextReindexTimeMS > nowMS) {
 			return nextReindexTimeMS;
