@@ -3478,7 +3478,7 @@ lang_t XmlDoc::getSummaryLangIdCLD2() {
 
 lang_t XmlDoc::getContentLangIdCLD2() {
 	int32_t contentLen = size_utf8Content > 0 ? (size_utf8Content - 1) : 0;
-	return GbLanguage::getLangIdCLD2(false, *getRawUtf8Content(), contentLen,
+	return GbLanguage::getLangIdCLD2(false, *getUtf8Content(), contentLen,
 	                                 m_mime.getContentLanguage(), m_mime.getContentLanguageLen(),
 	                                 m_currentUrl.getTLD(), m_currentUrl.getTLDLen());
 }

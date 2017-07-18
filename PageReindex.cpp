@@ -65,7 +65,7 @@ bool sendPageReindex ( TcpSocket *s , HttpRequest *r ) {
 	TcpSocket *sock = gr->m_socket;
 
 	// get collection rec
-	CollectionRec *cr = g_collectiondb.getRec ( gr->m_coll );
+	const CollectionRec *cr = g_collectiondb.getRec ( gr->m_coll );
 	// bitch if no collection rec found
 	if ( ! cr ) {
 		g_errno = ENOCOLLREC;
@@ -243,7 +243,7 @@ Msg1c::Msg1c() {
 	m_niceness = 0;
 }
 
-bool Msg1c::reindexQuery ( char *query ,
+bool Msg1c::reindexQuery ( const char *query,
 			   collnum_t collnum ,
 			   int32_t startNum ,
 			   int32_t endNum ,
@@ -333,7 +333,7 @@ bool Msg1c::gotList ( ) {
 
 	if ( g_errno ) return true;
 
-	int64_t *tmpDocIds = m_msg3a.getDocIds();
+	const int64_t *tmpDocIds = m_msg3a.getDocIds();
 	int32_t       numDocIds = m_msg3a.getNumDocIds();
 
 	if ( m_startNum > 0) {
@@ -359,8 +359,8 @@ bool Msg1c::gotList ( ) {
 
 	m_sb.setLabel("reiadd");
 
-	State13 *st = (State13 *)m_state;
-	GigablastRequest *gr = &st->m_gr;
+	const State13 *st = (State13 *)m_state;
+	const GigablastRequest *gr = &st->m_gr;
 
 	m_numDocIdsAdded = 0;
 

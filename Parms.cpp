@@ -2089,12 +2089,13 @@ bool Parms::setFromRequest(HttpRequest *r, TcpSocket *s, CollectionRec *newcr, c
 		// table to automatically adjust external values to internal ones.
 		//
 		if( strncmp(full_field_name, "fxui_", 5) == 0 ) {
-			strcpy(field_base_name, full_field_name+5);
+			strncpy(field_base_name, full_field_name+5, sizeof(field_base_name));
+			field_base_name[sizeof(field_base_name)-1] = '\0';
 			uiconvert=true;
 		}
 		else {
 			size_t nondigit_prefix_len = strcspn(full_field_name,"0123456789");
-			if(nondigit_prefix_len!=full_field_name_len) {
+			if(nondigit_prefix_len!=full_field_name_len && nondigit_prefix_len<sizeof(field_base_name)) {
 				//field name contains digits. Split into base field name and index
 				memcpy(field_base_name,full_field_name,nondigit_prefix_len);
 				field_base_name[nondigit_prefix_len] = '\0';
@@ -2105,7 +2106,8 @@ bool Parms::setFromRequest(HttpRequest *r, TcpSocket *s, CollectionRec *newcr, c
 				if(endptr && *endptr)
 					continue; //digits weren't the last part
 			} else {
-				strcpy(field_base_name,full_field_name);
+				strncpy(field_base_name, full_field_name, sizeof(field_base_name));
+				field_base_name[sizeof(field_base_name)-1] = '\0';
 			}
 		}
 
@@ -10000,6 +10002,12 @@ bool Parms::doParmSendingLoop ( ) {
 	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		// get it
 		Host *h = g_hostdb.getHost(i);
+
+		if(g_hostdb.isDead(h)) {
+			//If the host is dead we don't want to send it a parameter update. Just let the WaitEntry stick around
+			//and no log - it is too annoying
+			continue;
+		}
 		// . if in progress, gotta wait for that to complete
 		// . 0 is not a legit parmid, it starts at 1
 		if ( h->m_currentParmIdInProgress ) continue;
