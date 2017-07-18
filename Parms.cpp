@@ -10101,8 +10101,6 @@ void Parms::handleRequest3fLoop3(int fd, void *state) {
 void Parms::handleRequest3fLoop(void *weArg) {
 	WaitEntry *we = (WaitEntry *)weArg;
 
-	CollectionRec *cx = NULL;
-
 	bool rebuildRankingSettings = false;
 
 	// process them
@@ -10202,6 +10200,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	// we have to do a couple rebuilds.
 
 	// basically resetting the spider here...
+	CollectionRec *cx = g_collectiondb.getRec(we->m_collnum);
 	if ( we->m_doRebuilds && cx ) {
 		// . this tells Spider.cpp to rebuild the spider queues
 		// . this is NULL if spider stuff never initialized yet,
