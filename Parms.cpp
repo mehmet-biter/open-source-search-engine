@@ -2088,12 +2088,13 @@ bool Parms::setFromRequest(HttpRequest *r, TcpSocket *s, CollectionRec *newcr, c
 		// table to automatically adjust external values to internal ones.
 		//
 		if( strncmp(full_field_name, "fxui_", 5) == 0 ) {
-			strcpy(field_base_name, full_field_name+5);
+			strncpy(field_base_name, full_field_name+5, sizeof(field_base_name));
+			field_base_name[sizeof(field_base_name)-1] = '\0';
 			uiconvert=true;
 		}
 		else {
 			size_t nondigit_prefix_len = strcspn(full_field_name,"0123456789");
-			if(nondigit_prefix_len!=full_field_name_len) {
+			if(nondigit_prefix_len!=full_field_name_len && nondigit_prefix_len<sizeof(field_base_name)) {
 				//field name contains digits. Split into base field name and index
 				memcpy(field_base_name,full_field_name,nondigit_prefix_len);
 				field_base_name[nondigit_prefix_len] = '\0';
@@ -2104,7 +2105,8 @@ bool Parms::setFromRequest(HttpRequest *r, TcpSocket *s, CollectionRec *newcr, c
 				if(endptr && *endptr)
 					continue; //digits weren't the last part
 			} else {
-				strcpy(field_base_name,full_field_name);
+				strncpy(field_base_name, full_field_name, sizeof(field_base_name));
+				field_base_name[sizeof(field_base_name)-1] = '\0';
 			}
 		}
 
