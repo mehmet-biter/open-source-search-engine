@@ -10002,6 +10002,12 @@ bool Parms::doParmSendingLoop ( ) {
 	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		// get it
 		Host *h = g_hostdb.getHost(i);
+
+		if(g_hostdb.isDead(h)) {
+			//If the host is dead we don't want to send it a parameter update. Just let the WaitEntry stick around
+			//and no log - it is too annoying
+			continue;
+		}
 		// . if in progress, gotta wait for that to complete
 		// . 0 is not a legit parmid, it starts at 1
 		if ( h->m_currentParmIdInProgress ) continue;
