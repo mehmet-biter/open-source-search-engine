@@ -3270,7 +3270,7 @@ uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderRep
 		return spiderTimeMS;
 	}
 
-	if (!srep && sreq->m_isPageReindex) {
+	if (sreq->m_isPageReindex) {
 		int64_t nextReindexTimeMS = m_lastReindexTimeMS + m_cr->m_spiderReindexDelayMS;
 		if (nextReindexTimeMS > nowMS) {
 			return nextReindexTimeMS;
@@ -3299,10 +3299,6 @@ uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderRep
 
 	// min time we can spider it
 	int64_t minSpiderTimeMS1 = lastMS + m_cr->m_spiderIpWaits[ufn];
-	// if not found in cache
-	if (lastMS == -1) {
-		minSpiderTimeMS1 = 0LL;
-	}
 
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
