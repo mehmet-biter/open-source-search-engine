@@ -133,6 +133,10 @@ const char *mstrerror ( int errnum ) {
 				return "Bad mime";
 			case ENOHOSTSFILE     :
 				return "No hosts.conf file";
+			case EDNSNOTFOUND:
+				return "DNS returned NXDOMAIN/NODATA";
+			case EDNSSERVFAIL:
+				return "DNS returned server failure";
 			case EBADIP           :
 				return "Bad IP";
 			case EMSGTOOBIG       :
@@ -149,6 +153,8 @@ const char *mstrerror ( int errnum ) {
 				return "Collection is too long";
 			case ENOPERM          :
 				return "Permission Denied";
+			case EDNSBADREQUEST   :
+				return "DNS bad request";
 			case ECORRUPTDATA     :
 				return "Corrupt data";
 			case ENOCOLLREC       :
@@ -159,6 +165,8 @@ const char *mstrerror ( int errnum ) {
 				return "Host is marked as dead";
 			case EBADFILE         :
 				return "File is bad";
+			case EDNSBADRESPONSE  :
+				return "DNS bad response";
 			case EFILECLOSED      :
 				return "Read on closed file";//close on our thread
 			case ELISTTOOBIG      :
@@ -330,8 +338,8 @@ static const char* s_errname[] {
 	STRINGIFY( ESOCKETCLOSED ),
 	STRINGIFY( EBADMIME ),
 	STRINGIFY( ENOHOSTSFILE ),
-	STRINGIFY( EUNUSED34 ),
-	STRINGIFY( EUNUSED34A ),
+	STRINGIFY( EDNSNOTFOUND ),
+	STRINGIFY( EDNSSERVFAIL ),
 	STRINGIFY( EBADIP ),
 	STRINGIFY( EMSGTOOBIG ),
 	STRINGIFY( EDNSBAD ),
@@ -339,14 +347,14 @@ static const char* s_errname[] {
 	STRINGIFY( EDNSDEAD ),
 	STRINGIFY( EDNSTIMEDOUT ),
 	STRINGIFY( ECOLLTOOBIG ),
-	STRINGIFY( EUNUSED35 ),
+	STRINGIFY( EDNSBADREQUEST ),
 	STRINGIFY( ENOPERM ),
 	STRINGIFY( ECORRUPTDATA ),
 	STRINGIFY( ENOCOLLREC ),
 	STRINGIFY( ESHUTTINGDOWN ),
 	STRINGIFY( EHOSTDEAD ),
 	STRINGIFY( EBADFILE ),
-	STRINGIFY( EUNUSED35A ),
+	STRINGIFY( EDNSBADRESPONSE ),
 	STRINGIFY( EFILECLOSED ),
 	STRINGIFY( ELISTTOOBIG ),
 	STRINGIFY( ECANCELLED ),

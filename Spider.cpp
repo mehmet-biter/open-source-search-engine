@@ -1331,6 +1331,8 @@ checkNextRule:
 			     // seeds that failed one time and the crawl
 			     // never repeated after that!
 			     errCode != EBADIP &&
+			     errCode != EDNSSERVFAIL &&
+			     errCode != EDNSBADRESPONSE &&
 			     // out of memory while crawling?
 			     errCode != ENOMEM &&
 			     errCode != ENETUNREACH &&

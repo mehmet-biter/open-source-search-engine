@@ -203,27 +203,29 @@ struct DnsItem {
 static int convert_ares_errorno(int ares_errno) {
 	switch (ares_errno) {
 		// Server error codes (ARES_ENODATA indicates no relevant answer)
-//		case ARES_ENODATA:
-//		case ARES_ENOTFOUND:
-//			return 0;
+		case ARES_ENODATA:
+		case ARES_ENOTFOUND:
+			return EDNSNOTFOUND;
 
-//		case ARES_EFORMERR:
-//		case ARES_ESERVFAIL:
-//		case ARES_ENOTIMP:
-//			return EBADREQUEST;
+		case ARES_EFORMERR:
+		case ARES_ENOTIMP:
+			return EDNSBADREQUEST;
+
+		case ARES_ESERVFAIL:
+			return EDNSSERVFAIL;
 
 		case ARES_EREFUSED:
 			return EDNSREFUSED;
 
 		// Locally generated error codes
-//		case ARES_EBADQUERY:
-//		case ARES_EBADNAME:
-//		case ARES_EBADFAMILY:
-//			return EBADREQUEST;
+		case ARES_EBADQUERY:
+		case ARES_EBADNAME:
+		case ARES_EBADFAMILY:
+			return EDNSBADREQUEST;
 
-//		case ARES_EBADRESP:
-//		case ARES_EBADSTR:
-//			return EBADREPLY;
+		case ARES_EBADRESP:
+		case ARES_EBADSTR:
+			return EDNSBADRESPONSE;
 
 		case ARES_ECONNREFUSED:
 		case ARES_ETIMEOUT:
@@ -241,13 +243,13 @@ static int convert_ares_errorno(int ares_errno) {
 			return ESHUTTINGDOWN;
 
 		// ares_getnameinfo error codes
-//		case ARES_EBADFLAGS:
-//			return EBADREQUEST;
+		case ARES_EBADFLAGS:
+			return EDNSBADREQUEST;
 
 		// ares_getaddrinfo error codes
-//		case ARES_ENONAME:
-//		case ARES_EBADHINTS:
-//			return EBADREQUEST;
+		case ARES_ENONAME:
+		case ARES_EBADHINTS:
+			return EDNSBADREQUEST;
 
 		// Uninitialized library error code
 //		case ARES_ENOTINITIALIZED:
