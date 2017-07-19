@@ -82,8 +82,13 @@ static void* processing_thread(void *args) {
 			}
 		}
 
-		timeval tv;
-		timeval *tvp = ares_timeout(s_channel, NULL, &tv);
+		timeval *tvp = NULL;
+
+		{
+			ScopedLock sl(s_requestMtx);
+			timeval tv;
+			tvp = ares_timeout(s_channel, NULL, &tv);
+		}
 
 		int count = select(nfds, &read_fds, &write_fds, NULL, tvp);
 		int status = errno;
@@ -92,7 +97,10 @@ static void* processing_thread(void *args) {
 			continue;
 		}
 
-		ares_process(s_channel, &read_fds, &write_fds);
+		{
+			ScopedLock sl(s_requestMtx);
+			ares_process(s_channel, &read_fds, &write_fds);
+		}
 	}
 
 	return 0;
