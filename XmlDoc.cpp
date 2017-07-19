@@ -1893,8 +1893,7 @@ bool* XmlDoc::checkBlockList() {
 	}
 
 	if (!blocked && !m_checkedDnsBlockList) {
-		std::string hostname(url->getHost(), url->getHostLen());
-		std::vector<std::string> *nameservers = getHostNameServers(hostname.c_str());
+		std::vector<std::string> *nameservers = getHostNameServers(url->getHost(), url->getHostLen());
 		if (nameservers == (std::vector<std::string>*)-1) {
 			// blocked
 			return (bool*)nameservers;
@@ -6898,17 +6897,15 @@ int32_t *XmlDoc::getIp ( ) {
 
 	m_ipStartTime = gettimeofdayInMilliseconds();
 
-	std::string hostname(u->getHost(), u->getHostLen());
-
 	setStatus("getting dns a record");
 
-	logTrace( g_conf.m_logTraceXmlDoc, "Calling GbDns::getARecord [%s]", hostname.c_str());
-	GbDns::getARecord(hostname.c_str(), gotIpWrapper, this);
+	logTrace( g_conf.m_logTraceXmlDoc, "Calling GbDns::getARecord [%.*s]", u->getHostLen(), u->getHost());
+	GbDns::getARecord(u->getHost(), u->getHostLen(), gotIpWrapper, this);
 	logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. Blocked." );
 	return (int32_t*)-1;
 }
 
-std::vector<std::string>* XmlDoc::getHostNameServers(const char *hostname) {
+std::vector<std::string>* XmlDoc::getHostNameServers(const char *hostname, size_t hostnameLen) {
 	if (m_hostNameServersValid) {
 		return &m_hostNameServers;
 	}
@@ -6923,7 +6920,7 @@ std::vector<std::string>* XmlDoc::getHostNameServers(const char *hostname) {
 	setStatus("getting dns ns record");
 
 	logTrace( g_conf.m_logTraceXmlDoc, "Calling GbDns::getNSRecord [%s]", hostname);
-	GbDns::getNSRecord(hostname, gotHostNameServersWrapper, this);
+	GbDns::getNSRecord(hostname, hostnameLen, gotHostNameServersWrapper, this);
 	logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. Blocked." );
 	return (std::vector<std::string>*)-1;
 }

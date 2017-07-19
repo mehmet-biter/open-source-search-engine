@@ -187,14 +187,18 @@ GbDns::DnsResponse::DnsResponse()
 }
 
 struct DnsItem {
-	DnsItem(void (*callback)(GbDns::DnsResponse *response, void *state), void *state)
-		: m_callback(callback)
+	DnsItem(const char *hostname, size_t hostnameLen, void (*callback)(GbDns::DnsResponse *response, void *state), void *state)
+		: m_ips()
+		, m_nameservers()
+		, m_hostname(hostname, hostnameLen)
+		, m_callback(callback)
 		, m_state(state)
 		, m_errno(0) {
 	}
 
 	std::vector<in_addr_t> m_ips;
 	std::vector<std::string> m_nameservers;
+	std::string m_hostname;
 	void (*m_callback)(GbDns::DnsResponse *response, void *state);
 	void *m_state;
 	int m_errno;
@@ -372,22 +376,22 @@ static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf
 	logTrace(g_conf.m_logTraceDns, "END");
 }
 
-void GbDns::getARecord(const char *hostname, void (*callback)(GbDns::DnsResponse *response, void *state), void *state) {
-	logTrace(g_conf.m_logTraceDns, "BEGIN hostname='%s'", hostname);
-	DnsItem *item = new DnsItem(callback, state);
+void GbDns::getARecord(const char *hostname, size_t hostnameLen, void (*callback)(GbDns::DnsResponse *response, void *state), void *state) {
+	logTrace(g_conf.m_logTraceDns, "BEGIN hostname='%.*s'", static_cast<int>(hostnameLen), hostname);
+	DnsItem *item = new DnsItem(hostname, hostnameLen, callback, state);
 
 	ScopedLock sl(s_requestMtx);
-	ares_query(s_channel, hostname, C_IN, T_A, a_callback, item);
+	ares_query(s_channel, item->m_hostname.c_str(), C_IN, T_A, a_callback, item);
 	pthread_cond_signal(&s_requestCond);
 	logTrace(g_conf.m_logTraceDns, "END");
 }
 
-void GbDns::getNSRecord(const char *hostname, void (*callback)(GbDns::DnsResponse *response, void *state), void *state) {
-	logTrace(g_conf.m_logTraceDns, "BEGIN hostname='%s'", hostname);
-	DnsItem *item = new DnsItem(callback, state);
+void GbDns::getNSRecord(const char *hostname, size_t hostnameLen, void (*callback)(GbDns::DnsResponse *response, void *state), void *state) {
+	logTrace(g_conf.m_logTraceDns, "BEGIN hostname='%.*s'", static_cast<int>(hostnameLen), hostname);
+	DnsItem *item = new DnsItem(hostname, hostnameLen, callback, state);
 
 	ScopedLock sl(s_requestMtx);
-	ares_query(s_channel, hostname, C_IN, T_NS, ns_callback, item);
+	ares_query(s_channel, item->m_hostname.c_str(), C_IN, T_NS, ns_callback, item);
 	pthread_cond_signal(&s_requestCond);
 	logTrace(g_conf.m_logTraceDns, "END");
 }
