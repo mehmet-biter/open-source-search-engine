@@ -15,6 +15,7 @@
 static ares_channel s_channel;
 static pthread_t s_thread;
 static bool s_stop = false;
+static bool s_finalized = false;
 
 static pthread_cond_t s_channelCond = PTHREAD_COND_INITIALIZER;
 static GbMutex s_channelMtx;
@@ -236,8 +237,13 @@ bool GbDns::initialize() {
 }
 
 void GbDns::finalize() {
+	if (s_finalized) {
+		return;
+	}
+
 	log(LOG_INFO, "dns: Finalizing library");
 
+	s_finalized = true;
 	s_stop = true;
 
 	pthread_cond_broadcast(&s_channelCond);
