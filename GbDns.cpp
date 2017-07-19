@@ -5,6 +5,7 @@
 #include "Mem.h"
 #include "third-party/c-ares/ares.h"
 #include "ip.h"
+#include "GbThreadQueue.h"
 #include <arpa/nameser.h>
 #include <netdb.h>
 #include <vector>
@@ -15,11 +16,16 @@ static ares_channel s_channel;
 static pthread_t s_thread;
 static bool s_stop = false;
 
-static pthread_cond_t s_requestCond = PTHREAD_COND_INITIALIZER;
-static GbMutex s_requestMtx;
+static pthread_cond_t s_channelCond = PTHREAD_COND_INITIALIZER;
+static GbMutex s_channelMtx;
 
 static std::queue<struct DnsItem*> s_callbackQueue;
 static GbMutex s_callbackQueueMtx;
+
+static GbThreadQueue s_requestQueue;
+
+static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen);
+static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen);
 
 template<typename T>
 class AresList {
@@ -73,11 +79,11 @@ static void* processing_thread(void *args) {
 		int nfds;
 
 		{
-			ScopedLock sl(s_requestMtx);
+			ScopedLock sl(s_channelMtx);
 			nfds = ares_fds(s_channel, &read_fds, &write_fds);
 			if (nfds == 0) {
 				// wait until new request comes in
-				pthread_cond_wait(&s_requestCond, &s_requestMtx.mtx);
+				pthread_cond_wait(&s_channelCond, &s_channelMtx.mtx);
 				continue;
 			}
 		}
@@ -85,7 +91,7 @@ static void* processing_thread(void *args) {
 		timeval *tvp = NULL;
 
 		{
-			ScopedLock sl(s_requestMtx);
+			ScopedLock sl(s_channelMtx);
 			timeval tv;
 			tvp = ares_timeout(s_channel, NULL, &tv);
 		}
@@ -98,12 +104,60 @@ static void* processing_thread(void *args) {
 		}
 
 		{
-			ScopedLock sl(s_requestMtx);
+			ScopedLock sl(s_channelMtx);
 			ares_process(s_channel, &read_fds, &write_fds);
 		}
 	}
 
 	return 0;
+}
+
+struct DnsItem {
+	enum RequestType {
+		request_type_a,
+		request_type_ns
+	};
+
+	DnsItem(RequestType reqType, const char *hostname, size_t hostnameLen,
+	        void (*callback)(GbDns::DnsResponse *response, void *state), void *state)
+		: m_ips()
+		  , m_nameservers()
+		  , m_reqType(reqType)
+		  , m_hostname(hostname, hostnameLen)
+		  , m_callback(callback)
+		  , m_state(state)
+		  , m_errno(0) {
+	}
+
+	std::vector<in_addr_t> m_ips;
+	std::vector<std::string> m_nameservers;
+	RequestType m_reqType;
+	std::string m_hostname;
+	void (*m_callback)(GbDns::DnsResponse *response, void *state);
+	void *m_state;
+	int m_errno;
+};
+
+static void processRequest(void *item) {
+	DnsItem *dnsItem = static_cast<DnsItem*>(item);
+
+	ares_callback callback;
+	int type;
+
+	switch (dnsItem->m_reqType) {
+		case DnsItem::request_type_a:
+			callback = a_callback;
+			type = T_A;
+			break;
+		case DnsItem::request_type_ns:
+			callback = ns_callback;
+			type = T_NS;
+			break;
+	}
+
+	ScopedLock sl(s_channelMtx);
+	ares_query(s_channel, dnsItem->m_hostname.c_str(), C_IN, type, callback, dnsItem);
+	pthread_cond_signal(&s_channelCond);
 }
 
 bool GbDns::initializeSettings() {
@@ -125,7 +179,7 @@ bool GbDns::initializeSettings() {
 		servers.append(server);
 	}
 
-	ScopedLock sl(s_requestMtx);
+	ScopedLock sl(s_channelMtx);
 	if (ares_set_servers_ports(s_channel, servers.getHead()) != ARES_SUCCESS) {
 		logError("Unable to set ares server settings");
 		return false;
@@ -173,6 +227,11 @@ bool GbDns::initialize() {
 		return false;
 	}
 
+	if (!s_requestQueue.initialize(processRequest, "process-dns")) {
+		logError("Unable to initialize request queue");
+		return false;
+	}
+
 	return true;
 }
 
@@ -181,11 +240,13 @@ void GbDns::finalize() {
 
 	s_stop = true;
 
-	pthread_cond_broadcast(&s_requestCond);
+	pthread_cond_broadcast(&s_channelCond);
 	pthread_join(s_thread, nullptr);
 
 	ares_destroy(s_channel);
 	ares_library_cleanup();
+
+	s_requestQueue.finalize();
 }
 
 GbDns::DnsResponse::DnsResponse()
@@ -193,24 +254,6 @@ GbDns::DnsResponse::DnsResponse()
 	, m_nameservers()
 	, m_errno(0) {
 }
-
-struct DnsItem {
-	DnsItem(const char *hostname, size_t hostnameLen, void (*callback)(GbDns::DnsResponse *response, void *state), void *state)
-		: m_ips()
-		, m_nameservers()
-		, m_hostname(hostname, hostnameLen)
-		, m_callback(callback)
-		, m_state(state)
-		, m_errno(0) {
-	}
-
-	std::vector<in_addr_t> m_ips;
-	std::vector<std::string> m_nameservers;
-	std::string m_hostname;
-	void (*m_callback)(GbDns::DnsResponse *response, void *state);
-	void *m_state;
-	int m_errno;
-};
 
 static int convert_ares_errorno(int ares_errno) {
 	switch (ares_errno) {
@@ -335,6 +378,15 @@ static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf,
 	logTrace(g_conf.m_logTraceDns, "END");
 }
 
+void GbDns::getARecord(const char *hostname, size_t hostnameLen, void (*callback)(GbDns::DnsResponse *response, void *state), void *state) {
+	logTrace(g_conf.m_logTraceDns, "BEGIN hostname='%.*s'", static_cast<int>(hostnameLen), hostname);
+	DnsItem *item = new DnsItem(DnsItem::request_type_a, hostname, hostnameLen, callback, state);
+
+	s_requestQueue.addItem(item);
+
+	logTrace(g_conf.m_logTraceDns, "END");
+}
+
 static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen) {
 	logTrace(g_conf.m_logTraceDns, "BEGIN");
 	DnsItem *item = static_cast<DnsItem*>(arg);
@@ -384,23 +436,12 @@ static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf
 	logTrace(g_conf.m_logTraceDns, "END");
 }
 
-void GbDns::getARecord(const char *hostname, size_t hostnameLen, void (*callback)(GbDns::DnsResponse *response, void *state), void *state) {
-	logTrace(g_conf.m_logTraceDns, "BEGIN hostname='%.*s'", static_cast<int>(hostnameLen), hostname);
-	DnsItem *item = new DnsItem(hostname, hostnameLen, callback, state);
-
-	ScopedLock sl(s_requestMtx);
-	ares_query(s_channel, item->m_hostname.c_str(), C_IN, T_A, a_callback, item);
-	pthread_cond_signal(&s_requestCond);
-	logTrace(g_conf.m_logTraceDns, "END");
-}
-
 void GbDns::getNSRecord(const char *hostname, size_t hostnameLen, void (*callback)(GbDns::DnsResponse *response, void *state), void *state) {
 	logTrace(g_conf.m_logTraceDns, "BEGIN hostname='%.*s'", static_cast<int>(hostnameLen), hostname);
-	DnsItem *item = new DnsItem(hostname, hostnameLen, callback, state);
+	DnsItem *item = new DnsItem(DnsItem::request_type_ns, hostname, hostnameLen, callback, state);
 
-	ScopedLock sl(s_requestMtx);
-	ares_query(s_channel, item->m_hostname.c_str(), C_IN, T_NS, ns_callback, item);
-	pthread_cond_signal(&s_requestCond);
+	s_requestQueue.addItem(item);
+
 	logTrace(g_conf.m_logTraceDns, "END");
 }
 
