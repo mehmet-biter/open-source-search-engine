@@ -5,6 +5,12 @@
 #ifndef GB_PAGES_H
 #define GB_PAGES_H
 
+#include "TcpSocket.h"
+#include "HttpRequest.h"
+#include "HttpServer.h"
+#include "SafeBuf.h"
+#include "PageCrawlBot.h" // sendPageCrawlBot()
+
 bool printRedBox2 ( SafeBuf *sb , 
 		    class TcpSocket *sock , 
 		    class HttpRequest *hr );
@@ -12,12 +18,6 @@ bool printRedBox2 ( SafeBuf *sb ,
 bool printRedBox  ( SafeBuf *mb , 
 		    class TcpSocket *sock , 
 		    class HttpRequest *hr );
-
-#include "TcpSocket.h"
-#include "HttpRequest.h"
-#include "HttpServer.h"
-#include "SafeBuf.h"
-#include "PageCrawlBot.h" // sendPageCrawlBot()
 
 #define GOLD "f3c734"
 
