@@ -79,6 +79,7 @@
 #include "Dir.h"
 #include "File.h"
 #include "UrlBlockList.h"
+#include "ScopedLock.h"
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -2464,6 +2465,7 @@ void dumpWaitingTree (const char *coll ) {
 	// load the table with file named "THISDIR/saved"
 	RdbMem wm;
 	if ( treeExists && !wt.fastLoad(&file, &wm) ) return;
+	ScopedLock sl(wt.getLock());
 	// the the waiting tree
 	for (int32_t node = wt.getFirstNode_unlocked(); node >= 0; node = wt.getNextNode_unlocked(node)) {
 		// get key
