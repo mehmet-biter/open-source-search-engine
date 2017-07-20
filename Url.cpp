@@ -478,20 +478,20 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   491022863920110420135759
 	//   7d01p6qvcl2e72j8ivmppk12k0
 	//   XUjuplcPFGlJD2ZF5O26ApqAj5ZNEZwZrUKX5kkA
-	urlParser->removeQueryParam(UrlComponent::Matcher("psession"), UrlComponent::Validator(24, 0, (ALLOW_ALPHA | ALLOW_DIGIT)));
+	urlParser->removeQueryParam(UrlComponent::Matcher("psession"), UrlComponent::Validator(24, 0, true, (ALLOW_ALPHA | ALLOW_DIGIT)));
 
 	// Galileo
 	// eg:
 	//   65971783A4.z17ZHFAI
 	//   63105032A6BFxgQFfV8
-	urlParser->removeQueryParam(UrlComponent::Matcher("GalileoSession"), UrlComponent::Validator(19, 19, ALLOW_ALL));
+	urlParser->removeQueryParam(UrlComponent::Matcher("GalileoSession"), UrlComponent::Validator(19, 19, true, ALLOW_ALL));
 
 	// postnuke
 	//   normally it would be hex string length of 32. but shorter length exist (looks to be chopped off somehow)
 	//   eg:
 	//     549178d5035b622229a39cd5baf75d2a
 	//     4ed3b0a832d4687020b05ce70
-	urlParser->removeQueryParam(UrlComponent::Matcher("POSTNUKESID"), UrlComponent::Validator(16, 32, (ALLOW_HEX)));
+	urlParser->removeQueryParam(UrlComponent::Matcher("POSTNUKESID"), UrlComponent::Validator(16, 32, true, ALLOW_HEX));
 
 	// jsessionid
 	// eg:
