@@ -204,15 +204,15 @@ class Parms {
 			  CollectionRec *argcr );
 
 	bool setFromFile ( void *THIS        ,
-			   char *filename    ,
-			   char *filenameDef ,
+			   const char *filename,
+			   const char *filenameDef,
 			   parameter_object_type_t objType);
 
-	bool setXmlFromFile(Xml *xml, char *filename, class SafeBuf *sb );
+	bool setXmlFromFile(Xml *xml, const char *filename, class SafeBuf *sb );
 
 	bool saveToXml(char *THIS, char *f, parameter_object_type_t objType);
 
-	bool getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s );
+	bool getParmHtmlEncoded(SafeBuf *sb, const Parm *m, const char *s);
 
 	bool setGigablastRequest ( class TcpSocket *s ,
 				   class HttpRequest *hr ,

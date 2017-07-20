@@ -2441,8 +2441,8 @@ void Parms::setToDefault(char *THIS, parameter_object_type_t objType, Collection
 // . returns false and sets g_errno on error
 // . you should set your "THIS" to its defaults before calling this
 bool Parms::setFromFile ( void *THIS        ,
-			  char *filename    ,
-			  char *filenameDef ,
+			  const char *filename,
+			  const char *filenameDef,
 			  parameter_object_type_t objType) {
 	// make sure we're init'd
 	init();
@@ -2701,7 +2701,7 @@ bool Parms::setFromFile ( void *THIS        ,
 }
 
 // returns false and sets g_errno on error
-bool Parms::setXmlFromFile(Xml *xml, char *filename, SafeBuf *sb ) {
+bool Parms::setXmlFromFile(Xml *xml, const char *filename, SafeBuf *sb ) {
 	sb->load ( filename );
 	char *buf = sb->getBufStart();
 	if ( ! buf ) {
@@ -2891,9 +2891,10 @@ skip2:
 	//	   (int32_t)MAX_CONF_SIZE);
 }
 
-bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
+bool Parms::getParmHtmlEncoded(SafeBuf *sb, const Parm *m, const char *s) {
 	// print it out
-	if ( m->m_type == TYPE_CHAR           || m->m_type == TYPE_BOOL           ||
+	if ( m->m_type == TYPE_CHAR           ||
+	     m->m_type == TYPE_BOOL           ||
 	     m->m_type == TYPE_CHECKBOX       ||
 	     m->m_type == TYPE_PRIORITY)
 		sb->safePrintf("%" PRId32,(int8_t)*s);
@@ -10099,8 +10100,6 @@ void Parms::handleRequest3fLoop3(int fd, void *state) {
 void Parms::handleRequest3fLoop(void *weArg) {
 	WaitEntry *we = (WaitEntry *)weArg;
 
-	CollectionRec *cx = NULL;
-
 	bool rebuildRankingSettings = false;
 	bool rebuildDnsSettings = false;
 
@@ -10205,6 +10204,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	// we have to do a couple rebuilds.
 
 	// basically resetting the spider here...
+	CollectionRec *cx = g_collectiondb.getRec(we->m_collnum);
 	if ( we->m_doRebuilds && cx ) {
 		// . this tells Spider.cpp to rebuild the spider queues
 		// . this is NULL if spider stuff never initialized yet,
