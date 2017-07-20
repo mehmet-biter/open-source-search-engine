@@ -33,7 +33,7 @@ CPPFLAGS += -std=c++11
 CPPFLAGS += $(CONFIG_CPPFLAGS)
 
 LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto -lpcre
-LIBS += -L$(BASE_DIR) -lcld2_full -lcld3 -lprotobuf -lced
+LIBS += -L$(BASE_DIR) -lcld2_full -lcld3 -lprotobuf -lced -lcares
 
 %: libgb.a $(BASE_DIR)/libcld2_full.so $(BASE_DIR)/libcld3.so $(BASE_DIR)/libced.so %.cpp
 	$(CXX) $(CPPFLAGS) $@.cpp $(LIBS) -o $@
