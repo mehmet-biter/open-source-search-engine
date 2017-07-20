@@ -2480,7 +2480,12 @@ void dumpWaitingTree (const char *coll ) {
 		spiderTimeMS |= (key->n0 >> 32);
 		// get the rest of the data
 		char ipbuf[16];
-		fprintf(stdout,"time=%" PRIu64" firstip=%s\n", spiderTimeMS, iptoa(firstIp,ipbuf));
+
+		time_t now_t = spiderTimeMS/1000;
+		struct tm tm_buf;
+		struct tm *stm = gmtime_r(&now_t,&tm_buf);
+
+		fprintf(stdout,"time=%" PRIu64" (%04d-%02d-%02dT%02d:%02d:%02d.%03dZ) firstip=%s\n", spiderTimeMS, stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(spiderTimeMS%1000), iptoa(firstIp,ipbuf));
 	}
 }
 
