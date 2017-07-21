@@ -81,6 +81,7 @@
 #include "DnsBlockList.h"
 #include "UrlBlockList.h"
 #include "GbDns.h"
+#include "ScopedLock.h"
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -1742,6 +1743,10 @@ static       char  s_buffer[128];
 static HttpRequest s_r;
 bool doCmd ( const char *cmd , int32_t hostId , const char *filename ,
 	     bool sendToHosts , bool sendToProxies , int32_t hostId2 ) {
+
+	//so we don't supporess messages to dead hosts (we're not connected to vagus)
+	g_conf.m_doingCommandLine = true;
+
 	// need loop to work
 	if ( ! g_loop.init() ) {
 		log(LOG_WARN, "db: Loop init failed." );
@@ -2473,6 +2478,7 @@ void dumpWaitingTree (const char *coll ) {
 	// load the table with file named "THISDIR/saved"
 	RdbMem wm;
 	if ( treeExists && !wt.fastLoad(&file, &wm) ) return;
+	ScopedLock sl(wt.getLock());
 	// the the waiting tree
 	for (int32_t node = wt.getFirstNode_unlocked(); node >= 0; node = wt.getNextNode_unlocked(node)) {
 		// get key
@@ -2487,7 +2493,12 @@ void dumpWaitingTree (const char *coll ) {
 		spiderTimeMS |= (key->n0 >> 32);
 		// get the rest of the data
 		char ipbuf[16];
-		fprintf(stdout,"time=%" PRIu64" firstip=%s\n", spiderTimeMS, iptoa(firstIp,ipbuf));
+
+		time_t now_t = spiderTimeMS/1000;
+		struct tm tm_buf;
+		struct tm *stm = gmtime_r(&now_t,&tm_buf);
+
+		fprintf(stdout,"time=%" PRIu64" (%04d-%02d-%02dT%02d:%02d:%02d.%03dZ) firstip=%s\n", spiderTimeMS, stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(spiderTimeMS%1000), iptoa(firstIp,ipbuf));
 	}
 }
 

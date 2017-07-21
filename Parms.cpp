@@ -9983,7 +9983,7 @@ static bool s_inLoop = false;
 //   to all other hosts.
 // . he also sends to himself, if m_sendToGrunts is true
 bool Parms::doParmSendingLoop ( ) {
-
+	
 	if ( ! s_headNode ) return true;
 
 	if ( s_inLoop ) return true;
@@ -10004,7 +10004,7 @@ bool Parms::doParmSendingLoop ( ) {
 		// get it
 		Host *h = g_hostdb.getHost(i);
 
-		if(g_hostdb.isDead(h)) {
+		if(!g_conf.m_doingCommandLine && g_hostdb.isDead(h)) {
 			//If the host is dead we don't want to send it a parameter update. Just let the WaitEntry stick around
 			//and no log - it is too annoying
 			continue;

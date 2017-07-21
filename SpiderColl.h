@@ -15,6 +15,7 @@
 #include "types.h"
 #include "max_coll_len.h"
 #include <time.h>
+#include <vector>
 
 
 class CollectionRec;
@@ -82,6 +83,7 @@ public:
 	int32_t getDoledbIpTableCount() const;
 	bool isDoledbIpTableEmpty() const;
 	void clearDoledbIpTable();
+	std::vector<uint32_t> getDoledbIpTable() const;
 
 	HashTableX m_localTable;
 
