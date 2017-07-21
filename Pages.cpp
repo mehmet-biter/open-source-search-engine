@@ -204,7 +204,7 @@ static WebPage s_pages[] = {
 	  sendPageSpiderdb , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_DOLEIPTABLE  , "admin/doleiptable" , 0 , "DoleIP table" ,  0 , 0 ,
+	{ PAGE_DOLEIPTABLE  , "admin/doledbiptable" , 0 , "DoledbIP table" ,  0 , 0 ,
 	  "doleip table",
 	  sendPageDoledbIPTable , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
