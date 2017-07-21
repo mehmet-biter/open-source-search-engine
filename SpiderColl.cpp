@@ -331,8 +331,14 @@ CollectionRec *SpiderColl::getCollRec() {
 	return cr;
 }
 
-const char *SpiderColl::getCollName() {
-	CollectionRec *cr = getCollRec();
+const CollectionRec *SpiderColl::getCollRec() const {
+	const CollectionRec *cr = g_collectiondb.getRec(m_collnum);
+	if ( ! cr ) log("spider: lost coll rec");
+	return cr;
+}
+
+const char *SpiderColl::getCollName() const {
+	const CollectionRec *cr = getCollRec();
 	if ( ! cr ) return "lostcollection";
 	return cr->m_coll;
 }
@@ -2053,7 +2059,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 static int32_t s_lastIn  = 0;
 static int32_t s_lastOut = 0;
 
-bool SpiderColl::isFirstIpInOverflowList ( int32_t firstIp ) {
+bool SpiderColl::isFirstIpInOverflowList(int32_t firstIp) const {
 	if ( ! m_overflowList ) return false;
 	if ( firstIp == 0 || firstIp == -1 ) return false;
 	if ( firstIp == s_lastIn ) return true;

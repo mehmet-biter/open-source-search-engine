@@ -76,8 +76,9 @@ public:
 	// . 0 for main collection
 	collnum_t m_collnum;
 	char m_coll[MAX_COLL_LEN + 1];
-	class CollectionRec *getCollRec();
-	const char *getCollName();
+	CollectionRec *getCollRec();
+	const CollectionRec *getCollRec() const;
+	const char *getCollName() const;
 
 	void removeFromDoledbIpTable(int32_t firstIp);
 	int32_t getDoledbIpTableCount() const;
@@ -122,7 +123,7 @@ public:
 	// how many outstanding spiders a priority has
 	int32_t m_outstandingSpiders[MAX_SPIDER_PRIORITIES];
 
-	bool isFirstIpInOverflowList ( int32_t firstIp ) ;
+	bool isFirstIpInOverflowList(int32_t firstIp) const;
 
 private:
 	bool load();
