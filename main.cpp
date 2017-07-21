@@ -79,6 +79,7 @@
 #include "Dir.h"
 #include "File.h"
 #include "UrlBlockList.h"
+#include "ScopedLock.h"
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -1067,8 +1068,8 @@ int main2 ( int argc , char *argv[] ) {
 		return doCmd( "pmerge=1", hostId, "master", true, false );
 	}
 
-	// gb smerge [hostId]
-	if ( strcmp ( cmd , "smerge" ) == 0 ) {	
+	// gb spmerge [hostId]
+	if ( strcmp ( cmd , "spmerge" ) == 0 ) {
 		int32_t hostId = -1;
 		if ( cmdarg + 1 < argc ) {
 			hostId = atoi ( argv[cmdarg+1] );
@@ -1078,9 +1079,9 @@ int main2 ( int argc , char *argv[] ) {
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
 			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "smerge=1", h1, "master", true, false, h2 );
+				return doCmd( "spmerge=1", h1, "master", true, false, h2 );
 		}
-		return doCmd( "smerge=1", hostId, "master", true, false );
+		return doCmd( "spmerge=1", hostId, "master", true, false );
 	}
 
 	// gb tmerge [hostId]
@@ -1199,12 +1200,6 @@ int main2 ( int argc , char *argv[] ) {
 	g_process.init();
 
 	// set up the threads, might need g_conf
-
-	// avoid logging threads msgs to stderr if not actually starting up
-	// a gb daemon...
-	//if(cmd && cmd[0] && ! is_digit(cmd[0]) && ! g_jobScheduler.initialize()     ) {
-	//if ( ! g_threads.init()     ) {
-	//	log("db: Threads init failed." ); return 1; }
 
 	// . gb dump [dbLetter][coll][fileNum] [numFiles] [includeTree][termId]
 	// . spiderdb is special:
@@ -1362,10 +1357,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-	// temp merge test
-	//RdbList list;
-	//list.testIndexMerge();
-
 	// file creation test, make sure we have dir control
 	if ( checkDirPerms ( g_hostdb.m_dir ) < 0 ) {
 		return 1;
@@ -1376,26 +1367,7 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
-	// load the appropriate dictionaries
-	//g_speller.init();
-	//if ( !g_speller.init ( ) ) return 1;
-
 	g_errno = 0;
-	//g_speller.test ( );
-	//exit(-1);
-	/*
-	char dst[1024];
-	char test[1024];
- spellLoop:
-	test[0] = '\0';
-	gets ( test );
-	if ( test[strlen(test)-1] == '\n' ) test[strlen(test)-1] = '\0';
-	Query qq;
-	qq.set ( test , strlen(test) , NULL , 0 , false );
-	if ( g_speller.getRecommendation ( &qq , dst , 1000 ) )
-		log("spelling suggestion: %s", dst );
-	goto spellLoop;
-	*/
 
 	// make sure port is available, no use loading everything up then
 	// failing because another process is already running using this port
@@ -1453,10 +1425,8 @@ int main2 ( int argc , char *argv[] ) {
 		g_loop.init();
 	}
 
-	// initialize threads down here now so it logs to the logfile and
-	// not stderr
-	//if ( ( ! cmd || !cmd[0]) && ! g_jobScheduler.initialize()     ) {
-	//	log("db: Threads init failed." ); return 1; }
+	// we register log rotation here because it's after g_loop is initialized
+	g_log.registerLogRotation();
 
 	// log the version
 	log(LOG_INIT,"conf: Gigablast Version      : %s", getVersion());
@@ -1491,73 +1461,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
-	// some tests. the greek letter alpha with an accent mark (decompose)
-	/*
-	{
-		char us[] = {0xe1,0xbe,0x80};
-		UChar32 uc = utf8Decode(us);//,&next);
-		UChar32 ttt[32];
-		int32_t klen = recursiveKDExpand(uc,ttt,256);
-		char obuf[64];
-		for ( int32_t i = 0 ; i < klen ; i++ ) {
-			UChar32 ui = ttt[i];
-			int32_t blen = utf8Encode(ui,obuf);
-			obuf[blen]=0;
-			int32_t an = ucIsAlpha(ui);
-			
-			fprintf(stderr,"#%" PRId32"=%s (alnum=%" PRId32")\n",i,obuf,an);
-		}
-		fprintf(stderr,"hey\n");
-		exit(0);
-	}
-	*/
-
-	/*
-
-	  PRINT OUT all Unicode characters and their decompositions
-
-	{
-		for ( int32_t uc = 0 ; uc < 0xe01ef ; uc++ ) {
-			//if ( ! ucIsAlnum(uc) ) continue;
-			UChar32 ttt[32];
-			int32_t klen = recursiveKDExpand(uc,ttt,256);
-			char obuf[64];
-			int32_t clen = utf8Encode(uc,obuf);
-			obuf[clen]=0;
-			// print utf8 char we are decomposing
-			fprintf(stderr,"%" PRIx32") %s --> ",uc,obuf);
-			// sanity
-			if ( klen > 1 && ttt[0] == (UChar32)uc ) {
-				fprintf(stderr,"SAME\n");
-				continue;
-			}
-			// print decomposition
-			for ( int32_t i = 0 ; i < klen ; i++ ) {
-				UChar32 ui = ttt[i];
-				char qbuf[64];
-				int32_t blen = utf8Encode(ui,qbuf);
-				qbuf[blen]=0;
-				fprintf(stderr,"%s",qbuf);
-				// show the #
-				fprintf(stderr,"{%" PRIx32"}",(int32_t)ui);
-				if ( i+1<klen ) fprintf(stderr,", ");
-			}
-			// show utf8 rep
-			fprintf(stderr," [");
-			for ( int32_t i = 0 ; i < clen ; i++ ) {
-				fprintf(stderr,"0x%hhx",(int)obuf[i]);
-				if ( i+1<clen) fprintf(stderr," ");
-			}
-			fprintf(stderr,"]");
-			fprintf(stderr,"\n");
-		}
-		exit(0);
-	}
-	*/			
-
-
-	
-
 	// the wiktionary for lang identification and alternate word forms/
 	// synonyms
 	if ( ! g_wiktionary.load() ) {
@@ -1569,11 +1472,6 @@ int main2 ( int argc , char *argv[] ) {
 		log( LOG_ERROR, "Wiktionary test failed!" );
 		return 1;
 	}
-
-	// . load synonyms, synonym affinity, and stems
-	// . now we are using g_synonyms
-	//g_thesaurus.init();
-	//g_synonyms.init();
 
 	// the wiki titles
 	if ( ! g_wiki.load() ) {
@@ -2567,6 +2465,7 @@ void dumpWaitingTree (const char *coll ) {
 	// load the table with file named "THISDIR/saved"
 	RdbMem wm;
 	if ( treeExists && !wt.fastLoad(&file, &wm) ) return;
+	ScopedLock sl(wt.getLock());
 	// the the waiting tree
 	for (int32_t node = wt.getFirstNode_unlocked(); node >= 0; node = wt.getNextNode_unlocked(node)) {
 		// get key
@@ -2581,7 +2480,12 @@ void dumpWaitingTree (const char *coll ) {
 		spiderTimeMS |= (key->n0 >> 32);
 		// get the rest of the data
 		char ipbuf[16];
-		fprintf(stdout,"time=%" PRIu64" firstip=%s\n", spiderTimeMS, iptoa(firstIp,ipbuf));
+
+		time_t now_t = spiderTimeMS/1000;
+		struct tm tm_buf;
+		struct tm *stm = gmtime_r(&now_t,&tm_buf);
+
+		fprintf(stdout,"time=%" PRIu64" (%04d-%02d-%02dT%02d:%02d:%02d.%03dZ) firstip=%s\n", spiderTimeMS, stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(spiderTimeMS%1000), iptoa(firstIp,ipbuf));
 	}
 }
 
@@ -2924,6 +2828,13 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 		// count how many requests had replies and how many did not
 		bool hadReply = ( uh48 == s_lastRepUh48 );
 
+		if( !hadReply ) {
+			// Last reply and current request do not belong together
+			s_lastErrCode = 0;
+			s_lastErrCount = 0;
+			s_sameErrCount = 0;
+		}
+
 		// get firstip
 		if ( printStats == 1 ) {
 			addUStat1( sreq, hadReply, now );
@@ -2937,19 +2848,22 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 			printf(" requestage=%" PRId32"s", (int32_t)(now-sreq->m_addedTime));
 			printf(" hadReply=%" PRId32,(int32_t)hadReply);
 
-			printf(" errcount=%" PRId32,(int32_t)s_lastErrCount);
-			printf(" sameerrcount=%" PRId32,(int32_t)s_sameErrCount);
+			if( hadReply ) {
+				// Only dump these values if last reply and current request belong together
+				printf(" errcount=%" PRId32,(int32_t)s_lastErrCount);
+				printf(" sameerrcount=%" PRId32,(int32_t)s_sameErrCount);
 
-			if ( s_lastErrCode ) {
-				printf( " errcode=%" PRId32"(%s)", ( int32_t ) s_lastErrCode, mstrerror( s_lastErrCode ) );
-			} else {
-				printf( " errcode=%" PRId32, ( int32_t ) s_lastErrCode );
-			}
+				if ( s_lastErrCode ) {
+					printf( " errcode=%" PRId32"(%s)", ( int32_t ) s_lastErrCode, mstrerror( s_lastErrCode ) );
+				} else {
+					printf( " errcode=%" PRId32, ( int32_t ) s_lastErrCode );
+				}
 
-			if ( sreq->m_prevErrCode ) {
-				printf( " preverrcode=%" PRId32"(%s)", ( int32_t ) sreq->m_prevErrCode, mstrerror( sreq->m_prevErrCode ) );
-			} else {
-				printf( " preverrcode=%" PRId32, ( int32_t ) sreq->m_prevErrCode );
+				if ( sreq->m_prevErrCode ) {
+					printf( " preverrcode=%" PRId32"(%s)", ( int32_t ) sreq->m_prevErrCode, mstrerror( sreq->m_prevErrCode ) );
+				} else {
+					printf( " preverrcode=%" PRId32, ( int32_t ) sreq->m_prevErrCode );
+				}
 			}
 
 			printf("\n");

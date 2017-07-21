@@ -15,7 +15,7 @@
 
 static void print_usage(const char *argv0) {
 	fprintf(stdout, "Usage: %s [-h] PATH RDB\n", argv0);
-	fprintf(stdout, "Validate index for RDB in PATH\n");
+	fprintf(stdout, "Validate index for RDB in PATH (for test only)\n");
 	fprintf(stdout, "\n");
 	fprintf(stdout, "  -h, --help     display this help and exit\n");
 }

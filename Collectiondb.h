@@ -203,6 +203,7 @@ public:
 	// spider controls for this collection
 	bool m_spideringEnabled ;
 	int32_t  m_spiderDelayInMilliseconds;
+	int32_t m_spiderReindexDelayMS;
 
 	// is in active list in spider.cpp?
 	bool m_isActive;
@@ -359,6 +360,10 @@ public:
 
 	// use query expansion for this collection?
 	bool m_queryExpansion;
+	// rewrite domain-like queries for this collection?
+	bool m_modifyDomainLikeSearches;
+	// rewrite API-like queries?
+	bool m_modifyAPILikeSearches;
 
 	// read from cache
 	bool m_rcache;

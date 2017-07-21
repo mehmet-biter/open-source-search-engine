@@ -45,3 +45,5 @@ CMakeLists.txt
 coverage*.html
 vgcore.*
 Make.depend
+libced.so
+libcld3.so

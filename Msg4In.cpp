@@ -261,9 +261,9 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 					s_lastTime = currentTime;
 					log(LOG_WARN, "msg4: oops. got an rdbId key for a secondary "
 							"rdb and not in repair mode. waiting to be in repair mode.");
-					g_errno = ETRYAGAIN;
-					return false;
 				}
+				g_errno = ETRYAGAIN;
+				return false;
 			}
 		}
 

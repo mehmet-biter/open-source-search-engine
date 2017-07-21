@@ -999,6 +999,7 @@ CollectionRec::CollectionRec() {
 	memset(m_dailyMergeDOWList, 0, sizeof(m_dailyMergeDOWList));
 	m_spideringEnabled = true;
 	m_spiderDelayInMilliseconds = 0;
+	m_spiderReindexDelayMS = 0;
 	m_isActive = false;
 	m_makeImageThumbnails = false;
 	m_thumbnailMaxWidthHeight = 0;
@@ -1052,6 +1053,8 @@ CollectionRec::CollectionRec() {
 	m_crawlDelayDefaultForNoRobotsTxtMS = 15000;
 	m_crawlDelayDefaultForRobotsTxtMS = 10000;
 	m_queryExpansion = false;
+	m_modifyDomainLikeSearches = false;
+	m_modifyAPILikeSearches = false;
 	m_rcache = false;
 	m_hideAllClustered = false;
 	m_END_COPY = 0;
@@ -1470,10 +1473,9 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	return true;
 }
 
-
-
+// Will be removed when the modified function above is "final"
 bool CollectionRec::rebuildPrivacoreRules () {
-	const char *langWhitelistStr = "xx,en,bg,sr,ca,cs,da,et,fi,fr,de,el,hu,is,ga,it,la,lv,lt,lb,nl,pl,pt,ro,es,sv,no,vv";
+	const char *langWhitelistStr = "xx,en,bg,sr,ca,cs,da,et,fi,fr,de,el,hu,is,ga,it,la,lv,lt,lb,nl,pl,pt,ro,es,sv,no,vv,mt,sk,sl,eu,cy,kl,fo";
 
 	// max spiders per ip
 	int32_t ipms = 1;
@@ -1484,7 +1486,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 0; 		// 0 days default
 	m_maxSpidersPerRule  [n] = 99; 		// max spiders
-	m_spiderIpMaxSpiders [n] = 4; 		// max spiders per ip
+	m_spiderIpMaxSpiders [n] = ipms; 		// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 90;
 	m_forceDelete        [n] = 0;
@@ -1495,7 +1497,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_harvestLinks       [n] = false;
 	m_spiderFreqs        [n] = 0; 		// 0 days default
 	m_maxSpidersPerRule  [n] = 99; 		// max spiders
-	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
+	m_spiderIpMaxSpiders [n] = ipms; 		// max spiders per ip
 	m_spiderIpWaits      [n] = 0; 		// same ip wait
 	m_spiderPriorities   [n] = 100;
 	m_forceDelete        [n] = 1;		// delete!
@@ -1515,36 +1517,59 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 #endif
 
+
+	// got bad HTTP status (e.g. 404) last x times we tried. Now delete it.
+	m_regExs[n].set("sameerrorcount>=4 && httpstatus>=400 && httpstatus<500");
+	m_harvestLinks       [n] = false;
+	m_spiderFreqs        [n] = 1;
+	m_maxSpidersPerRule  [n] = 1; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms;	// max spiders per ip
+	m_spiderIpWaits      [n] = 500; 	// same ip wait
+	m_spiderPriorities   [n] = 89;
+	m_forceDelete        [n] = 1;		// Delete it
+	n++;
 	// got bad HTTP status (e.g. 404) last we tried. Retry soon again to see if we keep
 	// getting the same error.
 	m_regExs[n].set("sameerrorcount>=1 && httpstatus>=400 && httpstatus<500");
 	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 0.25;	// retry in 6 hours (0.25 days)
 	m_maxSpidersPerRule  [n] = 1; 		// max spiders
-	m_spiderIpMaxSpiders [n] = 4;		// max spiders per ip
+	m_spiderIpMaxSpiders [n] = ipms;	// max spiders per ip
 	m_spiderIpWaits      [n] = 500; 	// same ip wait
 	m_spiderPriorities   [n] = 89;
 	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
 
+
+	// got BadIP error last x times we tried. Now delete it.
+	m_regExs[n].set("sameerrorcount>=4 && errorcode=32853");
+	m_harvestLinks       [n] = false;
+	m_spiderFreqs        [n] = 1;
+	m_maxSpidersPerRule  [n] = 1; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 500; 	// same ip wait
+	m_spiderPriorities   [n] = 89;
+	m_forceDelete        [n] = 1;		// Delete
+	n++;
 	// got BadIP error last we tried. Retry soon again to see if we keep
 	// getting the same error (probably expired domain).
 	m_regExs[n].set("sameerrorcount>=1 && errorcode=32853");
 	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 0.25;	// retry in 6 hours (0.25 days)
 	m_maxSpidersPerRule  [n] = 1; 		// max spiders
-	m_spiderIpMaxSpiders [n] = 4; 		// max spiders per ip
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
 	m_spiderIpWaits      [n] = 500; 	// same ip wait
 	m_spiderPriorities   [n] = 89;
 	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
+
 
 	// 3 or more temporary errors - slow down retries a bit
 	m_regExs[n].set("errorcount>=3 && hastmperror");
 	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 3; 		// 3 days default
 	m_maxSpidersPerRule  [n] = 1; 		// max spiders
-	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
+	m_spiderIpMaxSpiders [n] = ipms;	// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 45;
 	m_forceDelete        [n] = 0;		// Do NOT delete
@@ -1555,7 +1580,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 1; 		// 1 days default
 	m_maxSpidersPerRule  [n] = 1; 		// max spiders
-	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
+	m_spiderIpMaxSpiders [n] = ipms;	// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 45;
 	m_forceDelete        [n] = 0;		// Do NOT delete

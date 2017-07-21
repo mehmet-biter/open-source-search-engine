@@ -9,3 +9,7 @@ host    specific.host.com
 tld	    my,dk
 host    www.somesite.com    /badpath/
 regex   itsybitsy.com ^https?://(www\.|nursery\.|)itsybitsy\.com/spider/.+
+domain  allowrootdomainrootpages.com allow=, allowrootpages
+domain  allowdomainrootpages.com allow=,www allowrootpages
+domain  allowrootdomainindexpage.com allow=, allowindexpage
+domain  allowdomainindexpage.com allow=,www allowindexpage

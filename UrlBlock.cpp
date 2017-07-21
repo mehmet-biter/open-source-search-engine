@@ -11,9 +11,10 @@ urlblocktld_t::urlblocktld_t(const std::string &tlds)
 	, m_tlds(split(tlds, ',')) {
 }
 
-urlblockdomain_t::urlblockdomain_t(const std::string &domain, const std::string &allow)
+urlblockdomain_t::urlblockdomain_t(const std::string &domain, const std::string &allow, pathcriteria_t pathcriteria)
 	: m_domain(domain)
-	, m_allow(split(allow, ',')) {
+	, m_allow(split(allow, ','))
+	, m_pathcriteria(pathcriteria) {
 }
 
 urlblockhost_t::urlblockhost_t(const std::string &host, const std::string &path)
@@ -66,7 +67,18 @@ bool UrlBlock::match(const Url &url) const {
 				if (!m_domain->m_allow.empty()) {
 					auto subDomainLen = (url.getDomain() == url.getHost()) ? 0 : url.getDomain() - url.getHost() - 1;
 					std::string subDomain(url.getHost(), subDomainLen);
-					return (std::find(m_domain->m_allow.cbegin(), m_domain->m_allow.cend(), subDomain) == m_domain->m_allow.cend());
+					bool match = (std::find(m_domain->m_allow.cbegin(), m_domain->m_allow.cend(), subDomain) == m_domain->m_allow.cend());
+					if (!match) {
+						// check for pathcriteria
+						switch (m_domain->m_pathcriteria) {
+							case urlblockdomain_t::pathcriteria_allow_all:
+								return false;
+							case urlblockdomain_t::pathcriteria_allow_index_only:
+								return (url.getPathLen() > 1);
+							case urlblockdomain_t::pathcriteria_allow_rootpages_only:
+								return (url.getPathDepth(false) > 0);
+						}
+					}
 				}
 
 				return true;

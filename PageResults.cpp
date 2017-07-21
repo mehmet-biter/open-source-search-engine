@@ -1055,10 +1055,10 @@ bool printSearchResultsHeader ( State0 *st ) {
 					       "</synonymOf>\n"
 					       ,(int)sq->m_termLen,(int)sq->m_termLen,printTerm);
 			}				
-			//int64_t tf = msg40->m_msg3a.m_termFreqs[i];
-			int64_t tf = qt->m_termFreq;
 			sb->safePrintf("\t\t\t<termFreq>%" PRId64"</termFreq>\n"
-				       ,tf);
+				       ,qt->m_termFreq);
+			sb->safePrintf("\t\t\t<termFreqWeight>%.2f</termFreqWeight>\n"
+				       ,qt->m_termFreqWeight);
 			sb->safePrintf("\t\t\t<termHash48>%" PRId64"</termHash48>\n"
 				       ,qt->m_termId);
 			sb->safePrintf("\t\t\t<termHash64>%" PRIu64"</termHash64>\n"
@@ -1130,10 +1130,10 @@ bool printSearchResultsHeader ( State0 *st ) {
 				sb->jsonEncode(sq->m_term,sq->m_termLen);
 				sb->safePrintf("\",\n");
 			}				
-			//int64_t tf = msg40->m_msg3a.m_termFreqs[i];
-			int64_t tf = qt->m_termFreq;
 			sb->safePrintf("\t\t\"termFreq\":%" PRId64",\n"
-				       ,tf);
+				       ,qt->m_termFreq);
+			sb->safePrintf("\t\t\"termFreqWeight\":%.2f,\n"
+				       ,qt->m_termFreqWeight);
 
 			sb->safePrintf("\t\t\"termHash48\":%" PRId64",\n"
 				       ,qt->m_termId);
@@ -3256,20 +3256,29 @@ badformat:
 		sb->safePrintf ("\t\t<finalScoreEquationCanonical>"
 			       "<![CDATA["
 			       "Final Score = (siteRank/%.01f+1) * "
-			       "(%.01f [if not foreign language]) * "
+			       "(%.01f [if not foreign language, %.01f if unknown]) * "
 			       "(%s of above matrix scores)"
 			       "]]>"
 			       "</finalScoreEquationCanonical>\n"
-			       , SITERANKDIVISOR, si->m_sameLangWeight, ff2);
+			       , SITERANKDIVISOR, si->m_sameLangWeight, si->m_unknownLangWeight, ff2);
 
 		sb->safePrintf ("\t\t<finalScoreEquation>"
 			       "<![CDATA["
 			       "<b>%.03f</b> = (%" PRId32"/%.01f+1) " 
 			       , dp->m_finalScore, (int32_t)dp->m_siteRank, SITERANKDIVISOR);
 
-		// then language weight
-		if ( si->m_queryLangId == 0 || mr->m_language    == 0 || si->m_queryLangId == mr->m_language )
-			sb->safePrintf(" * %.01f", si->m_sameLangWeight);
+		// Check if user specified a query language
+		if ( si->m_queryLangId != 0 ) {
+			// Query language same as document language?
+			if( si->m_queryLangId == mr->m_language ) {
+				sb->safePrintf(" * %.01f", si->m_sameLangWeight);
+			}
+			else
+			if( mr->m_language == 0 ) {
+				// Document language unknown, use the unknown language weight
+				sb->safePrintf(" * %.01f", si->m_unknownLangWeight);
+			}
+		}
 
 		// the actual min then
 		sb->safePrintf(" * %.03f",minScore);
@@ -3285,6 +3294,21 @@ badformat:
 	const char *cc = getCountryCode ( mr->m_country );
 	if ( mr->m_country == 0 ) cc = "Unknown";
 
+	float langBoost=1;
+	// Check if user specified a query language
+	if ( si->m_queryLangId != 0 ) {
+		// Query language same as document language?
+		if( si->m_queryLangId == mr->m_language ) {
+			langBoost = si->m_sameLangWeight;
+		}
+		else
+		if( mr->m_language == 0 ) {
+			// Document language unknown, use the unknown language weight
+			langBoost = si->m_unknownLangWeight;
+		}
+	}
+
+
 
 	sb->safePrintf("<table border=1 cellpadding=3>");
 	sb->safePrintf("<tr><td colspan=10><b><center>Final score</center></b></td></tr>");
@@ -3292,6 +3316,7 @@ badformat:
 	sb->safePrintf("<tr><td>Site</td><td>%s</td></tr>", mr->ptr_site);
 	sb->safePrintf("<tr><td>Hopcount</td><td>%" PRId32 "</td></tr>", (int32_t)mr->m_hopcount);
 	sb->safePrintf("<tr><td>Language</td><td><font color=green><b>%s</b></font></td></tr>", getLanguageString(mr->m_language)); // use page language
+	sb->safePrintf("<tr><td>Language boost</td><td><font color=green><b>%.01f</b></font></td></tr>", langBoost);
 	sb->safePrintf("<tr><td>Country</td><td>%s</td></tr>", cc);
 	sb->safePrintf("<tr><td>Original SiteRank</td><td><font color=blue>%" PRId32 "</font></td></tr>", (int32_t)dp->m_siteRank);
 	sb->safePrintf("<tr><td>Adjusted SiteRank</td><td><font color=blue>%f</font></td></tr>", dp->m_adjustedSiteRank);
@@ -3308,9 +3333,18 @@ badformat:
 	// list all final scores starting with pairs
 	sb->safePrintf("<b>%f</b> = (<font color=blue>%" PRId32"</font>/%.01f+1)", dp->m_finalScore, (int32_t)dp->m_siteRank, SITERANKDIVISOR);
 
-	// if lang is different
-	if ( si->m_queryLangId == 0 || mr->m_language    == 0 || si->m_queryLangId == mr->m_language )
-		sb->safePrintf(" * <font color=green><b>%.01f</b></font>", si->m_sameLangWeight);
+	// Check if user specified a query language
+	if ( si->m_queryLangId != 0 ) {
+		// Query language same as document language?
+		if( si->m_queryLangId == mr->m_language ) {
+			sb->safePrintf(" * <font color=green><b>%.01f</b></font>", langBoost);
+		}
+		else
+		if( mr->m_language == 0 ) {
+			// Document language unknown, use the unknown language weight
+			sb->safePrintf(" * <font color=green><b>%.01f</b></font>", langBoost);
+		}
+	}
 
 	// list all final scores starting with pairs
 	sb->safePrintf(" * %s(", ff);

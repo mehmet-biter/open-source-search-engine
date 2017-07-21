@@ -21,10 +21,10 @@ OBJS_O0 =  \
 	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o Docid2Siteflags.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
 	iana_charset.o Images.o ip.o \
 	JobScheduler.o Json.o \
-	Lang.o LanguageIdentifier.o Log.o \
+	Lang.o Log.o \
 	Mem.o Msg0.o Msg4In.o Msg4Out.o MsgC.o Msg13.o Msg20.o Msg22.o Msg39.o Msg3a.o Msg51.o Msge0.o Msge1.o Multicast.o \
 	Parms.o Pages.o PageAddColl.o PageAddUrl.o PageBasic.o PageCrawlBot.o PageGet.o PageHealthCheck.o PageHosts.o PageInject.o \
-	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageSpider.o \
+	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageSpider.o PageDoledbIPTable.o \
 	Phrases.o HostFlags.o Process.o Proxy.o Punycode.o \
 	InstanceInfoExchange.o \
 	Query.o \
@@ -68,15 +68,13 @@ OBJS_O3 = \
 	UrlBlock.o UrlBlockList.o UrlComponent.o UrlParser.o UdpStatistic.o \
 	UrlRealtimeClassification.o \
 	MergeSpaceCoordinator.o \
-	GbMoveFile.o \
-	GbMoveFile2.o \
-	GbCopyFile.o \
-	GbMakePath.o \
+	GbMoveFile.o GbMoveFile2.o GbCopyFile.o GbMakePath.o \
 	GbUtil.o \
 	GbSignature.o \
 	GbCompress.o \
 	GbRegex.o \
 	GbThreadQueue.o \
+	GbEncoding.o GbLanguage.o \
 
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
@@ -87,7 +85,7 @@ OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
 
 # common flags
-DEFS = -D_REENTRANT_ -I.
+DEFS = -D_REENTRANT_ -I. -Ithird-party/compact_enc_det
 DEFS += -DDEBUG_MUTEXES
 CPPFLAGS = -g -fno-stack-protector -DPTHREADS
 CPPFLAGS += -std=c++11
@@ -266,14 +264,30 @@ all: gb
 
 
 # third party libraries
-LIBFILES = libcld2_full.so slacktee.sh
-LIBS += -Wl,-rpath=. -L. -lcld2_full
+LIBFILES = libcld2_full.so libcld3.so libced.so slacktee.sh
+LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced
 
-
+CLD2_SRC_DIR=third-party/cld2/internal
 libcld2_full.so:
-	cd third-party/cld2/internal && CPPFLAGS="-ggdb -std=c++98" ./compile_libs.sh
-	ln -s third-party/cld2/internal/libcld2_full.so libcld2_full.so
+	cd $(CLD2_SRC_DIR) && CPPFLAGS="-ggdb -std=c++98" ./compile_libs.sh
+	ln -s $(CLD2_SRC_DIR)/libcld2_full.so libcld2_full.so
 
+CLD3_SRC_DIR=third-party/cld3/src
+libcld3.so:
+	mkdir -p $(CLD3_SRC_DIR)/cld_3/protos && protoc --proto_path=$(CLD3_SRC_DIR)/ --cpp_out=$(CLD3_SRC_DIR)/cld_3/protos/ $(CLD3_SRC_DIR)/*.proto
+	cd $(CLD3_SRC_DIR) && g++ -std=c++11 -shared -fPIC \
+	base.cc embedding_feature_extractor.cc embedding_network.cc feature_extractor.cc feature_types.cc fml_parser.cc \
+	language_identifier_features.cc lang_id_nn_params.cc nnet_language_identifier.cc registry.cc relevant_script_feature.cc \
+	sentence_features.cc script_span/fixunicodevalue.cc script_span/generated_entities.cc script_span/generated_ulscript.cc \
+	script_span/getonescriptspan.cc script_span/offsetmap.cc script_span/text_processing.cc script_span/utf8statetable.cc \
+	task_context.cc task_context_params.cc unicodetext.cc utils.cc workspace.cc \
+	cld_3/protos/sentence.pb.cc cld_3/protos/feature_extractor.pb.cc cld_3/protos/task_spec.pb.cc \
+	-o libcld3.so
+	ln -s $(CLD3_SRC_DIR)/libcld3.so libcld3.so
+
+libced.so:
+	cd third-party/compact_enc_det && cmake -DBUILD_SHARED_LIBS=ON . && make ced
+	ln -s third-party/compact_enc_det/lib/libced.so libced.so
 
 slacktee.sh:
 	ln -sf third-party/slacktee/slacktee.sh slacktee.sh 2>/dev/null
@@ -283,12 +297,12 @@ Version.o: FORCE
 FORCE:
 
 
-gb: $(OBJS) main.o $(LIBFILES)
+gb: $(LIBFILES) $(OBJS) main.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ main.o $(OBJS) $(LIBS)
 
 
 .PHONY: static
-static: $(OBJS) main.o $(LIBFILES)
+static: $(LIBFILES) $(OBJS) main.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -static -o gb main.o $(OBJS) $(LIBS)
 
 
@@ -368,7 +382,7 @@ clean:
 	-rm -f gmon.*
 	-rm -f *.gcda *.gcno coverage*.html
 	-rm -f *.ll *.ll.out pstack.txt
-	-rm entities.inc
+	-rm -f entities.inc
 	$(MAKE) -C test $@
 
 

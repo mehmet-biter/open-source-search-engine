@@ -104,6 +104,7 @@ void Msg39Request::reset() {
 	m_collnum                 = -1;
 	m_useQueryStopWords       = true;
 	m_doMaxScoreAlgo          = true;
+	m_modifyQuery             = false; //solution until we get msg39 to carry the whole query information
 	m_termFreqWeightFreqMin = 0.0;
 	m_termFreqWeightFreqMax = 0.5;
 	m_termFreqWeightMin = 0.5;
@@ -359,6 +360,9 @@ void Msg39::getDocIds2() {
 	// wtf?
 	if ( g_errno ) gbshutdownLogicError();
 
+	if(m_msg39req->m_modifyQuery)
+		m_query.modifyQuery(&m_msg39req->m_scoringWeights, cr->m_modifyDomainLikeSearches, cr->m_modifyAPILikeSearches);
+
 	// set m_errno
 	if ( m_query.m_truncated ) m_errno = EQUERYTRUNCATED;
 	// ensure matches with the msg3a sending us this request
@@ -377,6 +381,11 @@ void Msg39::getDocIds2() {
 		sendReply ( m_slot , this , NULL , 0 , 0 , true );
 		return ; 
 	}
+
+	//set term frequencyweights based on msg39req
+	for(int i=0; i<m_query.getNumTerms(); i++)
+		m_query.m_qterms[i].m_termFreqWeight = ((float *)m_msg39req->ptr_termFreqWeights)[i];
+
 	// debug
 	if ( m_debug )
 		logf(LOG_DEBUG,"query: msg39: [%" PTRFMT"] Got request "

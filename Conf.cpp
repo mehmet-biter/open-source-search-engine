@@ -209,6 +209,7 @@ Conf::Conf ( ) {
 	m_logDebugSpcache = false;
 	m_logDebugSpeller = false;
 	m_logDebugSpider = false;
+	m_logDebugReindex = false;
 	m_logDebugSEO = false;
 	m_logDebugStats = false;
 	m_logDebugSummary = false;
@@ -243,6 +244,7 @@ Conf::Conf ( ) {
 	m_logTraceRepairs = false;
 	m_logTraceRobots = false;
 	m_logTraceSpider = false;
+	m_logTraceReindex = false;
 	m_logTraceSummary = false;
 	m_logTraceTitledb = false;
 	m_logTraceXmlDoc = false;

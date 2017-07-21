@@ -30,6 +30,12 @@ ucdata:
 $(BASE_DIR)/libcld2_full.so:
 	$(MAKE) -C $(BASE_DIR) libcld2_full.so
 
+$(BASE_DIR)/libcld3.so:
+	$(MAKE) -C $(BASE_DIR) libcld3.so
+
+$(BASE_DIR)/libced.so:
+	$(MAKE) -C $(BASE_DIR) libced.so
+
 libgtest.so:
 	cd $(GTEST_DIR) && cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Debug && make
 	ln -s $(GTEST_DIR)/$@ .
@@ -45,9 +51,9 @@ CPPFLAGS += $(CONFIG_CPPFLAGS)
 
 LIBS += -L./ -lgtest 
 LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto -lpcre
-LIBS += -L$(BASE_DIR) -lcld2_full
+LIBS += -L$(BASE_DIR) -lcld2_full -lcld3 -lprotobuf -lced
 
-$(TARGET): libgtest.so libgb.a $(BASE_DIR)/libcld2_full.so $(OBJECTS)
+$(TARGET): libgtest.so libgb.a $(BASE_DIR)/libcld2_full.so $(BASE_DIR)/libcld3.so $(BASE_DIR)/libced.so $(OBJECTS)
 	$(CXX) $(CPPFLAGS) $(OBJECTS) $(LIBS) -o $@
 
 .PHONY: check

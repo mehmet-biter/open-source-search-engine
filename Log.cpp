@@ -27,7 +27,6 @@ static pthread_mutex_t s_lock = PTHREAD_MUTEX_INITIALIZER;
 Log::Log () { 
 	m_fd = -1; 
 	m_filename = NULL;
-	m_logFileSize = 0;
 	m_disabled = false;
 	m_logTimestamps = true;
 	m_logReadableTimestamps = true;
@@ -90,9 +89,6 @@ bool Log::init ( const char *filename ) {
 		// returns false on error
 		if ( ! renameCurrentLogFile() ) return false;
 	}
-
-	// get size of current file. getFileSize() is defined in File.h.
-	m_logFileSize = getFileSize ( m_filename );
 
 	if ( strcmp(m_filename,"/dev/stderr") == 0 ) {
 		m_fd = STDERR_FILENO; // 2; // stderr
@@ -183,7 +179,8 @@ bool Log::shouldLog ( int32_t type , const char *msg ) {
 	if (msg[0]=='t'&&msg[1]=='a' ) return g_conf.m_logDebugTagdb  ;
 	if (msg[0]=='t'&&msg[1]=='c' ) return g_conf.m_logDebugTcp    ;
 	if (msg[0]=='t'&&msg[1]=='i' ) return g_conf.m_logDebugTitle  ;
-	if (msg[0]=='r'&&msg[1]=='e' ) return g_conf.m_logDebugRepair ;
+	if (msg[0]=='r'&&msg[1]=='e'&&msg[2]=='p' ) return g_conf.m_logDebugRepair ;
+	if (msg[0]=='r'&&msg[1]=='e'&&msg[2]=='i' ) return g_conf.m_logDebugReindex ;
 	if (msg[0]=='u'&&msg[1]=='d' ) return g_conf.m_logDebugUdp    ;
 	if (msg[0]=='u'&&msg[1]=='n' ) return g_conf.m_logDebugUnicode;
 	if (msg[0]=='t'&&msg[1]=='o'&&msg[3]=='D' ) 
@@ -271,17 +268,12 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
 	// the total length, not including the \0
 	int32_t tlen = p - tt;
 
-	// . if filesize would be too big then make a new log file
-	// . should make a new m_fd
-	if ( m_logFileSize + tlen+1 > MAXLOGFILESIZE && g_conf.m_logToFile )
-		makeNewLogFile();
+
 
 	if ( m_fd >= 0 ) {
 		write ( m_fd , tt , tlen );
 		write ( m_fd , "\n", 1 );
-		m_logFileSize += tlen + 1;
-	}
-	else {
+	} else {
 		// print it out for now
 		fprintf ( stderr, "%s\n", tt );
 	}
@@ -289,7 +281,28 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
 	return false;
 }
 
-bool Log::makeNewLogFile ( ) {
+void Log::rotateLog(int fd, void *state) {
+	if (!g_conf.m_logToFile) {
+		return;
+	}
+
+	Log *that = static_cast<Log*>(state);
+	auto fileSize = getFileSize(that->m_filename);
+
+	// . if filesize would be too big then make a new log file
+	// . should make a new m_fd
+	if (fileSize > MAXLOGFILESIZE) {
+		that->makeNewLogFile();
+	}
+}
+
+bool Log::registerLogRotation() {
+	return g_loop.registerSleepCallback(10000, this, rotateLog, "Log::rotateLog");
+}
+
+bool Log::makeNewLogFile() {
+	ScopedLock sl(s_lock);
+
 	// prevent deadlock. don't log since we are in the middle of logging.
 	// otherwise, safebuf, which is used when renaming files, might
 	// call logR().
@@ -302,23 +315,27 @@ bool Log::makeNewLogFile ( ) {
 	// re-enable logging since nothing below should call logR() indirectly
 	g_loggingEnabled = true;
 
-	if ( ! status ) return false;
+	if (!status) {
+		return false;
+	}
 
 	// close old fd
-	if ( m_fd >= 0 ) ::close ( m_fd );
+	if (m_fd >= 0) {
+		::close(m_fd);
+	}
+
 	// invalidate
 	m_fd = -1;
-	// reset
-	m_logFileSize = 0;
+
 	// open it for appending.
 	// create with -rw-rw-r-- permissions if it's not there.
-	m_fd = open ( m_filename , 
-		      O_APPEND | O_CREAT | O_RDWR ,
-		      getFileCreationFlags() );
-	if ( m_fd >= 0 ) return true;
+	m_fd = open(m_filename, O_APPEND | O_CREAT | O_RDWR, getFileCreationFlags());
+	if (m_fd >= 0) {
+		return true;
+	}
+
 	// bitch to stderr and return false on error
-	fprintf(stderr,"could not open new log file %s for appending\n",
-		m_filename);
+	fprintf(stderr, "could not open new log file %s for appending\n", m_filename);
 	return false;
 }
 

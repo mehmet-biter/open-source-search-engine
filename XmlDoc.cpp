@@ -14,7 +14,6 @@
 #include "Tagdb.h"
 #include "Repair.h"
 #include "HashTableX.h"
-#include "LanguageIdentifier.h" // g_langId
 #include "CountryCode.h" // g_countryCode
 #include "sort.h"
 #include "Wiki.h"
@@ -44,6 +43,8 @@
 #include "Mem.h"
 #include "UrlBlockList.h"
 #include <fcntl.h>
+#include "GbEncoding.h"
+#include "GbLanguage.h"
 
 
 #ifdef _VALGRIND_
@@ -1067,12 +1068,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 
 		// point to the data. could be 64-bit ptr.
 		*pd = up;//(int32_t)up;
-
-		// Sanity - bail if size set, but no data
-		if( *ps && !pd ) {
-			log(LOG_ERROR,"CORRUPTED TITLEREC detected for docId %" PRId64 "", m_docId);
-			gbshutdownLogicError();
-		}
 
 		// debug
 		if ( m_pbuf ) {
@@ -3422,6 +3417,51 @@ uint8_t *XmlDoc::getLangVector ( ) {
 	return v;
 }
 
+lang_t XmlDoc::getSummaryLangIdCLD2() {
+	Xml *xml = getXml();
+	if (!xml || xml == (Xml *)-1) {
+		return langUnknown;
+	}
+
+	Title title;
+	if (!title.setTitleFromTags(xml, 80, m_contentType)) {
+		return langUnknown;
+	}
+
+	Summary summary;
+	if (!summary.setSummaryFromTags(xml, 180, title.getTitle(), title.getTitleLen())) {
+		return langUnknown;
+	}
+
+	return GbLanguage::getLangIdCLD2(true, summary.getSummary(), summary.getSummaryLen(),
+	                                 m_mime.getContentLanguage(), m_mime.getContentLanguageLen(),
+	                                 m_currentUrl.getTLD(), m_currentUrl.getTLDLen());
+}
+
+lang_t XmlDoc::getContentLangIdCLD2() {
+	int32_t contentLen = size_utf8Content > 0 ? (size_utf8Content - 1) : 0;
+
+	char **utf8content = getUtf8Content();
+	if (utf8content == NULL) {
+		return langUnknown;
+	}
+
+	return GbLanguage::getLangIdCLD2(false, *utf8content, contentLen,
+	                                 m_mime.getContentLanguage(), m_mime.getContentLanguageLen(),
+	                                 m_currentUrl.getTLD(), m_currentUrl.getTLDLen());
+}
+
+lang_t XmlDoc::getContentLangIdCLD3() {
+	int32_t contentLen = size_utf8Content > 0 ? (size_utf8Content - 1) : 0;
+
+	char *contentTextBuf = (char*)mmalloc(contentLen, "xmldoc-cld3");
+	int32_t contentTextBufLen = m_xml.getText(contentTextBuf, contentLen - 2, 0, -1, true);
+	lang_t langId = GbLanguage::getLangIdCLD3(contentTextBuf, contentTextBufLen);
+	mfree(contentTextBuf, contentLen, "xmldoc-cld3");
+
+	return langId;
+}
+
 // returns -1 and sets g_errno on error
 uint8_t *XmlDoc::getLangId ( ) {
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
@@ -3430,6 +3470,15 @@ uint8_t *XmlDoc::getLangId ( ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );
 		return &m_langId;
 	}
+
+	int32_t contentLen = size_utf8Content > 0 ? (size_utf8Content - 1) : 0;
+	if (contentLen == 0) {
+		m_langId = langUnknown;
+		m_langIdValid = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, no content" );
+		return &m_langId;
+	}
+
 	setStatus ( "getting lang id");
 
 	// get the stuff we need
@@ -3469,72 +3518,65 @@ uint8_t *XmlDoc::getLangId ( ) {
 	// reset g_errno
 	g_errno = 0;
 
+	setStatus ( "getting lang id");
+
+	lang_t contentLangIdCLD2 = getContentLangIdCLD2();
+	lang_t contentLangIdCLD3 = getContentLangIdCLD3();
+
+	lang_t summaryLangIdCLD2 = getSummaryLangIdCLD2();
+
 	uint8_t *lv = getLangVector();
 	if ( ! lv || lv == (void *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, invalid lang vector" );
 		return (uint8_t *)lv;
 	}
 
-	setStatus ( "getting lang id");
-
 	// compute langid from vector
-	m_langId = computeLangId ( sections , words, (char *)lv );
-	if ( m_langId != langUnknown ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from langVector", getLanguageAbbr(m_langId) );
-		m_langIdValid = true;
-		return &m_langId;
+	uint8_t langIdGB = computeLangId(sections, words, (char *)lv);
+
+	if (langIdGB == langUnknown) {
+		// . try the meta description i guess
+		// . 99% of the time we don't need this because the above code
+		//   captures the language
+		int32_t mdlen;
+		char *md = getMetaDescription(&mdlen);
+		Words mdw;
+		mdw.set(md, mdlen, true);
+
+		SafeBuf langBuf;
+		setLangVec(&mdw, &langBuf, NULL);
+		langIdGB = computeLangId(NULL, &mdw, langBuf.getBufStart());
 	}
 
-	// . try the meta description i guess
-	// . 99% of the time we don't need this because the above code
-	//   captures the language
-	int32_t mdlen;
-	char *md = getMetaDescription( &mdlen );
-	Words mdw;
-	mdw.set ( md , mdlen , true );
+	if (langIdGB == langUnknown) {
+		// try meta keywords
+		int32_t mdlen;
+		char *md = getMetaKeywords(&mdlen);
+		Words mdw;
+		mdw.set(md, mdlen, true);
 
-	SafeBuf langBuf;
-	setLangVec ( &mdw,&langBuf,NULL);
-	char *tmpLangVec = langBuf.getBufStart();
-	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
-	if ( m_langId != langUnknown ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaDescription", getLanguageAbbr(m_langId) );
-		m_langIdValid = true;
-		return &m_langId;
-	}
-
-	// try meta keywords
-	md = getMetaKeywords( &mdlen );
-	mdw.set ( md , mdlen , true );
-
-	langBuf.purge();
-	setLangVec ( &mdw,&langBuf,NULL);
-	tmpLangVec = langBuf.getBufStart();
-	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
-	if (m_langId != langUnknown) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaKeywords", getLanguageAbbr(m_langId));
-		m_langIdValid = true;
-		return &m_langId;
+		SafeBuf langBuf;
+		setLangVec(&mdw, &langBuf, NULL);
+		langIdGB = computeLangId(NULL, &mdw, langBuf.getBufStart());
 	}
 
 	// try charset
-	if (m_charsetValid && m_charset != csUnknown) {
-		m_langId = getLangIdFromCharset(m_charset);
-		if (m_langId != langUnknown) {
-			logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s from charset", getLanguageAbbr(m_langId));
-			m_langIdValid = true;
-			return &m_langId;
-		}
-	}
+	lang_t charsetLangId = getLangIdFromCharset(m_charset);
 
+	m_langId = GbLanguage::pickLanguage(contentLangIdCLD2, contentLangIdCLD3, summaryLangIdCLD2,
+	                                    charsetLangId, static_cast<lang_t>(langIdGB));
 	logTrace(g_conf.m_logTraceXmlDoc, "END, returning langid=%s", getLanguageAbbr(m_langId));
+	log(LOG_INFO, "lang: langId=%s contentLangCLD2=%s contentLangCLD3=%s langSummaryCLD2=%s charsetLangId=%s langIdGB=%s url=%s",
+	    getLanguageAbbr(m_langId), getLanguageAbbr(contentLangIdCLD2), getLanguageAbbr(contentLangIdCLD3),
+	    getLanguageAbbr(summaryLangIdCLD2), getLanguageAbbr(charsetLangId), getLanguageAbbr(langIdGB), m_firstUrl.getUrl());
+
 	m_langIdValid = true;
 	return &m_langId;
 }
 
 
 // lv = langVec
-char XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
+uint8_t XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
 
 	Section **sp = NULL;
 	if ( sections ) sp = sections->m_sectionPtrs;
@@ -3576,9 +3618,9 @@ char XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
 
 	// get the majority count
 	int32_t max = 0;
-	int32_t maxi = 0;
+	uint8_t maxi = 0;
 	// skip langUnknown by starting at 1, langEnglish
-	for ( int32_t i = 1 ; i < MAX_LANGUAGES ; i++ ) {
+	for ( uint8_t i = 1 ; i < MAX_LANGUAGES ; i++ ) {
 		// skip translingual
 		if ( i == langTranslingual ) {
 			continue;
@@ -5568,7 +5610,7 @@ uint16_t *XmlDoc::getCountryId ( ) {
 	if ( ! u || u == (void *)-1) return (uint16_t *)u;
 
 	// use the url's tld to guess the country
-	uint16_t country = LanguageIdentifier::guessCountryTLD ( u->getUrl ( ) );
+	uint16_t country = guessCountryTLD ( u->getUrl ( ) );
 
 	m_countryIdValid = true;
 	m_countryId      = country;
@@ -9024,247 +9066,6 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 	return &m_metaRedirUrlPtr;
 }
 
-
-
-static uint16_t getCharsetFast(HttpMime *mime,
-			       const char *url,
-			       const char *s,
-			       int32_t slen) {
-
-	int16_t httpHeaderCharset = csUnknown;
-	int16_t unicodeBOMCharset = csUnknown;
-	int16_t metaCharset = csUnknown;
-	bool invalidUtf8Encoding = false;
-
-	int16_t charset = csUnknown;
-
-	if ( slen < 0 ) slen = 0;
-
-	const char *pstart = s;
-	const char *pend   = s + slen;
-
-	const char *cs    = mime->getCharset();
-	int32_t  cslen = mime->getCharsetLen();
-	if ( cslen > 31 ) cslen = 31;
-	if ( cs && cslen > 0 ) {
-		charset = get_iana_charset ( cs , cslen );
-		httpHeaderCharset = charset;
-	}
-
-	// look for Unicode BOM first though
-	cs = ucDetectBOM ( pstart , pend - pstart );
-	if (cs) {
-		log(LOG_DEBUG, "build: Unicode BOM signature detected: %s", cs);
-		int32_t len = strlen(cs);
-		if (len > 31) len = 31;
-		unicodeBOMCharset = get_iana_charset(cs, len);
-
-		if (charset == csUnknown) {
-			charset = unicodeBOMCharset;
-		}
-	}
-
-	// prepare to scan doc
-	const char *p = pstart;
-
-	// if the doc claims it is utf-8 let's double check because
-	// newmexicomusic.org says its utf-8 in the mime header and it says
-	// it is another charset in a meta content tag, and it is NOT in
-	// utf-8, so don't trust that!
-	if ( charset == csUTF8 ) {
-		// loop over every char
-		for ( const char *s = pstart ; s < pend ; s += getUtf8CharSize(s) ) {
-			// sanity check
-			if ( ! isFirstUtf8Char ( s ) ) {
-				// note it
-				log(LOG_DEBUG,
-				    "build: mime says UTF8 but does not "
-				    "seem to be for url %s",url);
-				// reset it back to unknown then
-				charset = csUnknown;
-				invalidUtf8Encoding = true;
-				break;
-			}
-		}
-	}
-
-	// do not scan the doc if we already got it set
-	if ( charset != csUnknown ) p = pend;
-
-	//
-	// it is inefficient to set xml just to get the charset.
-	// so let's put in some quick string matching for this!
-	//
-
-	// advance a bit, we are initially looking for the = sign
-	if ( p ) p += 10;
-	// begin the string matching loop
-	for ( ; p < pend ; p++ ) {
-		// base everything off the equal sign
-		if ( *p != '=' ) continue;
-		// must have a 't' or 'g' before the equal sign
-		char c = to_lower_a(p[-1]);
-		// did we match "charset="?
-		if ( c == 't' ) {
-			if ( to_lower_a(p[-2]) != 'e' ||
-			     to_lower_a(p[-3]) != 's' ||
-			     to_lower_a(p[-4]) != 'r' ||
-			     to_lower_a(p[-5]) != 'a' ||
-			     to_lower_a(p[-6]) != 'h' ||
-			     to_lower_a(p[-7]) != 'c' ) continue;
-		}
-		// did we match "encoding="?
-		else if ( c == 'g' ) {
-			if ( to_lower_a(p[-2]) != 'n' ||
-			     to_lower_a(p[-3]) != 'i' ||
-			     to_lower_a(p[-4]) != 'd' ||
-			     to_lower_a(p[-5]) != 'o' ||
-			     to_lower_a(p[-6]) != 'c' ||
-			     to_lower_a(p[-7]) != 'n' ||
-			     to_lower_a(p[-8]) != 'e' ) continue;
-		}
-		// if not either, go to next char
-		else
-			continue;
-		// . make sure a <xml or a <meta preceeds us
-		// . do not look back more than 500 chars
-		const char *limit = p - 500;
-		// assume charset= or encoding= did NOT occur in a tag
-		bool inTag = false;
-		if ( limit <  pstart ) limit = pstart;
-		for ( const char *s = p ; s >= limit ; s -= 1 ) { // oneChar ) {
-			// break at > or <
-			if ( *s == '>' ) break;
-			if ( *s != '<' ) continue;
-			// . TODO: this could be in a quoted string too! fix!!
-			// . is it in a <meta> tag?
-			if ( to_lower_a(s[1]) == 'm' &&
-			     to_lower_a(s[2]) == 'e' &&
-			     to_lower_a(s[3]) == 't' &&
-			     to_lower_a(s[4]) == 'a' ) {
-				inTag = true;
-				break;
-			}
-			// is it in an <xml> tag?
-			if ( to_lower_a(s[1]) == 'x' &&
-			     to_lower_a(s[2]) == 'm' &&
-			     to_lower_a(s[3]) == 'l' ) {
-				inTag = true;
-				break;
-			}
-			// is it in an <?xml> tag?
-			if ( to_lower_a(s[1]) == '?' &&
-			     to_lower_a(s[2]) == 'x' &&
-			     to_lower_a(s[3]) == 'm' &&
-			     to_lower_a(s[4]) == 'l' ) {
-				inTag = true;
-				break;
-			}
-		}
-		// if not in a tag proper, it is useless
-		if ( ! inTag ) continue;
-		// skip over equal sign
-		p += 1;//oneChar;
-		// skip over ' or "
-		if ( *p == '\'' ) p += 1;//oneChar;
-		if ( *p == '\"' ) p += 1;//oneChar;
-		// keep start ptr
-		const char *csString = p;
-		// set a limit
-		limit = p + 50;
-		if ( limit > pend ) limit = pend;
-		if ( limit < p    ) limit = pend;
-		// stop at first special character
-		while ( p < limit &&
-			*p &&
-			*p !='\"' &&
-			*p !='\'' &&
-			! is_wspace_a(*p) &&
-			*p !='>' &&
-			*p != '<' &&
-			*p !='?' &&
-			*p !='/' &&
-			// fix yaya.pro-street.us which has
-			// charset=windows-1251;charset=windows-1"
-			*p !=';' &&
-			*p !='\\' )
-			p += 1;//oneChar;
-		size_t csStringLen = (size_t)(p-csString);
-		// get the character set
-		metaCharset = get_iana_charset(csString, csStringLen);
-		// update "charset" to "metaCs" if known, it overrides all
-		if (metaCharset != csUnknown ) {
-			charset = metaCharset;
-			break;
-		}
-	}
-
-        // alias these charsets so iconv understands
-	if ( charset == csISO58GB231280 ||
-	     charset == csHZGB2312      ||
-	     charset == csGB2312         )
-		charset = csGB18030;
-
-	if ( charset == csEUCKR )
-		charset = csKSC56011987; //x-windows-949
-
-	// use utf8 if still unknown
-	if ( charset == csUnknown ) {
-		if ( g_conf.m_logDebugSpider )
-			logf(LOG_DEBUG,"doc: forcing utf8 charset");
-		charset = csUTF8;
-	}
-
-	// once again, if the doc is claiming utf8 let's double check it!
-	if ( charset == csUTF8 ) {
-		// use this for iterating
-		char size;
-		// loop over every char
-		for ( const char *s = pstart ; s < pend ; s += size ) {
-			// set
-			size = getUtf8CharSize(s);
-			// sanity check
-			if ( ! isFirstUtf8Char ( s ) ) {
-				// but let 0x80 slide? it is for the
-				// 0x80 0x99 apostrophe i've seen for
-				// eventvibe.com. it did have a first byte,
-				// 0xe2 that led that sequece but it was
-				// converted into &acirc; by something that
-				// thought it was a latin1 byte.
-				if ( s[0] == (char)0x80 &&
-				     s[1] == (char)0x99 ) {
-					s += 2;
-					size = 0;
-					continue;
-				}
-				// note it
-				log(LOG_DEBUG,
-				    "build: says UTF8 (2) but does not "
-				    "seem to be for url %s"
-				    " Resetting to ISOLatin1.",url);
-				// reset it to ISO then! that's pretty common
-				// no! was causing problems for
-				// eventvibe.com/...Yacht because it had
-				// some messed up utf8 in it but it really
-				// was utf8. CRAP, but really messes up
-				// sunsetpromotions.com and washingtonia
-				// if we do not have this here
-				charset = csISOLatin1;
-				invalidUtf8Encoding = true;
-				break;
-			}
-		}
-	}
-
-	log(LOG_INFO, "encoding: charset='%s' header='%s' bom='%s' meta='%s' invalid=%d url='%s'",
-	    get_charset_str(charset), get_charset_str(httpHeaderCharset), get_charset_str(unicodeBOMCharset),
-	    get_charset_str(metaCharset), invalidUtf8Encoding, url);
-
-	// all done
-	return charset;
-}
-
-
 uint16_t *XmlDoc::getCharset ( ) {
 	if ( m_charsetValid ) {
 		return &m_charset;
@@ -9277,12 +9078,6 @@ uint16_t *XmlDoc::getCharset ( ) {
 	if ( ! fc || fc == (void *)-1 ) {
 		return (uint16_t *)fc;
 	}
-
-	// scan document for two things:
-	// 1.  charset=  (in a <meta> tag)
-	// 2. encoding=  (in an <?xml> tag)
-	char *pstart = *fc;
-	//char *pend   = *fc + m_filteredContentLen;
 
 	// assume known charset
 	m_charset = csUnknown;
@@ -9299,14 +9094,11 @@ uint16_t *XmlDoc::getCharset ( ) {
 		return &m_charset;
 	}
 
-	if( !mime ) {
+	if (!mime) {
 		return NULL;
 	}
 
-	m_charset = getCharsetFast ( mime ,
-				     m_firstUrl.getUrl(),
-				     pstart ,
-				     m_filteredContentLen );
+	m_charset = GbEncoding::getCharset(mime, m_firstUrl.getUrl(), *fc, m_filteredContentLen);
 	m_charsetValid = true;
 	return &m_charset;
 }
@@ -10227,6 +10019,7 @@ char **XmlDoc::getUtf8Content ( ) {
 	char size;
 	for ( ; *x ; x += size ) {
 		size = getUtf8CharSize(x);
+		/// @todo ALC we should use U+FFFD (replacement character) instead
 		// ok, make it a space i guess if it is a bad utf8 char
 		if ( ! isValidUtf8Char(x) ) {
 			*x = ' ';
@@ -14119,7 +13912,6 @@ void XmlDoc::copyFromOldDoc ( XmlDoc *od ) {
 	m_crawlDelayValid    = true;
 
 	m_langId        = od->m_langId;
-
 	m_langIdValid       = true;
 
 	// so get sitenuminlinks doesn't crash when called by getNewSpiderReply
