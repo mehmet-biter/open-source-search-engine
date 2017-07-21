@@ -1846,6 +1846,7 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	}
 
 	int32_t required = -1;
+
 	// . if merge not necessary, print a warning message.
 	// . caller should have just called constrain() then
 	if ( numLists == 1 ) {
@@ -1888,6 +1889,7 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	char ckey[MAX_KEY_BYTES];
 	char mkey[MAX_KEY_BYTES];
 	char minKey[MAX_KEY_BYTES];
+	char currentKey[MAX_KEY_BYTES] = {0};
 
 	/// @todo ALC only need this to clean out existing tagdb records. (remove once it's cleaned up!)
 	static std::set<int64_t> remove_tags = getDeprecatedTagTypes();
@@ -1950,17 +1952,20 @@ top:
 	}
 
 	// special filter to remove obsolete tags from tagdb
-	if ( rdbId == RDB_TAGDB ) {
-		Tag *tag = (Tag *)lists[mini]->getCurrentRec();
-		if ( remove_tags.find( tag->m_type ) != remove_tags.end() ) {
-			required -= tag->getRecSize();
-			goto skip;
-		}
-	} else if (rdbId == RDB_LINKDB) {
-		/// @todo ALC remove this when all linkdb are merged
-		if (Linkdb::getLostDate_uk(lists[mini]->getCurrentRec()) != 0) {
-			required -= lists[mini]->getCurrentRecSize();
-			goto skip;
+	lists[mini]->getCurrentKey(currentKey);
+	if (!KEYNEG(currentKey)) {
+		if (rdbId == RDB_TAGDB) {
+			Tag *tag = (Tag *)lists[mini]->getCurrentRec();
+			if (remove_tags.find(tag->m_type) != remove_tags.end()) {
+				required -= tag->getRecSize();
+				goto skip;
+			}
+		} else if (rdbId == RDB_LINKDB) {
+			/// @todo ALC remove this when all linkdb are merged
+			if (Linkdb::getLostDate_uk(lists[mini]->getCurrentRec()) != 0) {
+				required -= lists[mini]->getCurrentRecSize();
+				goto skip;
+			}
 		}
 	}
 

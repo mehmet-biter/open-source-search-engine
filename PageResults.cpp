@@ -1055,10 +1055,10 @@ bool printSearchResultsHeader ( State0 *st ) {
 					       "</synonymOf>\n"
 					       ,(int)sq->m_termLen,(int)sq->m_termLen,printTerm);
 			}				
-			//int64_t tf = msg40->m_msg3a.m_termFreqs[i];
-			int64_t tf = qt->m_termFreq;
 			sb->safePrintf("\t\t\t<termFreq>%" PRId64"</termFreq>\n"
-				       ,tf);
+				       ,qt->m_termFreq);
+			sb->safePrintf("\t\t\t<termFreqWeight>%.2f</termFreqWeight>\n"
+				       ,qt->m_termFreqWeight);
 			sb->safePrintf("\t\t\t<termHash48>%" PRId64"</termHash48>\n"
 				       ,qt->m_termId);
 			sb->safePrintf("\t\t\t<termHash64>%" PRIu64"</termHash64>\n"
@@ -1130,10 +1130,10 @@ bool printSearchResultsHeader ( State0 *st ) {
 				sb->jsonEncode(sq->m_term,sq->m_termLen);
 				sb->safePrintf("\",\n");
 			}				
-			//int64_t tf = msg40->m_msg3a.m_termFreqs[i];
-			int64_t tf = qt->m_termFreq;
 			sb->safePrintf("\t\t\"termFreq\":%" PRId64",\n"
-				       ,tf);
+				       ,qt->m_termFreq);
+			sb->safePrintf("\t\t\"termFreqWeight\":%.2f,\n"
+				       ,qt->m_termFreqWeight);
 
 			sb->safePrintf("\t\t\"termHash48\":%" PRId64",\n"
 				       ,qt->m_termId);

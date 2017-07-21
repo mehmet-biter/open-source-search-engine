@@ -5,6 +5,12 @@
 #ifndef GB_PAGES_H
 #define GB_PAGES_H
 
+#include "TcpSocket.h"
+#include "HttpRequest.h"
+#include "HttpServer.h"
+#include "SafeBuf.h"
+#include "PageCrawlBot.h" // sendPageCrawlBot()
+
 bool printRedBox2 ( SafeBuf *sb , 
 		    class TcpSocket *sock , 
 		    class HttpRequest *hr );
@@ -12,12 +18,6 @@ bool printRedBox2 ( SafeBuf *sb ,
 bool printRedBox  ( SafeBuf *mb , 
 		    class TcpSocket *sock , 
 		    class HttpRequest *hr );
-
-#include "TcpSocket.h"
-#include "HttpRequest.h"
-#include "HttpServer.h"
-#include "SafeBuf.h"
-#include "PageCrawlBot.h" // sendPageCrawlBot()
 
 #define GOLD "f3c734"
 
@@ -57,6 +57,7 @@ bool sendPageAddColl  ( TcpSocket *s , HttpRequest *r );
 bool sendPageDelColl  ( TcpSocket *s , HttpRequest *r );
 bool sendPageCloneColl( TcpSocket *s , HttpRequest *r );
 bool sendPageSpiderdb ( TcpSocket *s , HttpRequest *r );
+bool sendPageDoledbIPTable(TcpSocket *s, HttpRequest *r);
 bool sendPageReindex  ( TcpSocket *s , HttpRequest *r );
 bool sendPageInject   ( TcpSocket *s , HttpRequest *r );
 bool sendPageAddUrl2  ( TcpSocket *s , HttpRequest *r );
@@ -216,6 +217,7 @@ enum {
 
 	PAGE_TITLEDB     ,
 	PAGE_SPIDERDB    ,
+	PAGE_DOLEIPTABLE ,
 	PAGE_SEARCHBOX   ,
 	PAGE_PARSER      ,
 	PAGE_SITEDB      ,

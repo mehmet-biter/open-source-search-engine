@@ -62,9 +62,8 @@ public:
 	} m_matchingSublist[MAX_SUBLISTS];
 	int32_t   m_numMatchingSubLists;
 	
+	float m_maxMatchingTermFreqWeight;                    //= max(matchingsublist[]->sublist->qt->m_freqTermWeight)
 	
-	// the term freq weight for this term
-	float     m_termFreqWeight;
 	// what query term # do we correspond to in Query.h
 	int32_t      m_qtermNum;
 	// the word position of this query term in the Words.h class
@@ -142,7 +141,6 @@ private:
 	std::vector<int32_t> m_quotedStartIds;
 	std::vector<int32_t> m_qpos;
 	std::vector<int32_t> m_qtermNums;
-	std::vector<float> m_freqWeights;
 	std::vector<char> m_bflags;
 	//used during intersection, simple variables
 	float m_bestMinTermPairWindowScore;             //Best minimum score in a "sliding window"

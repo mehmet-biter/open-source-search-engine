@@ -2088,12 +2088,13 @@ bool Parms::setFromRequest(HttpRequest *r, TcpSocket *s, CollectionRec *newcr, c
 		// table to automatically adjust external values to internal ones.
 		//
 		if( strncmp(full_field_name, "fxui_", 5) == 0 ) {
-			strcpy(field_base_name, full_field_name+5);
+			strncpy(field_base_name, full_field_name+5, sizeof(field_base_name));
+			field_base_name[sizeof(field_base_name)-1] = '\0';
 			uiconvert=true;
 		}
 		else {
 			size_t nondigit_prefix_len = strcspn(full_field_name,"0123456789");
-			if(nondigit_prefix_len!=full_field_name_len) {
+			if(nondigit_prefix_len!=full_field_name_len && nondigit_prefix_len<sizeof(field_base_name)) {
 				//field name contains digits. Split into base field name and index
 				memcpy(field_base_name,full_field_name,nondigit_prefix_len);
 				field_base_name[nondigit_prefix_len] = '\0';
@@ -2104,7 +2105,8 @@ bool Parms::setFromRequest(HttpRequest *r, TcpSocket *s, CollectionRec *newcr, c
 				if(endptr && *endptr)
 					continue; //digits weren't the last part
 			} else {
-				strcpy(field_base_name,full_field_name);
+				strncpy(field_base_name, full_field_name, sizeof(field_base_name));
+				field_base_name[sizeof(field_base_name)-1] = '\0';
 			}
 		}
 
@@ -2438,8 +2440,8 @@ void Parms::setToDefault(char *THIS, parameter_object_type_t objType, Collection
 // . returns false and sets g_errno on error
 // . you should set your "THIS" to its defaults before calling this
 bool Parms::setFromFile ( void *THIS        ,
-			  char *filename    ,
-			  char *filenameDef ,
+			  const char *filename,
+			  const char *filenameDef,
 			  parameter_object_type_t objType) {
 	// make sure we're init'd
 	init();
@@ -2698,7 +2700,7 @@ bool Parms::setFromFile ( void *THIS        ,
 }
 
 // returns false and sets g_errno on error
-bool Parms::setXmlFromFile(Xml *xml, char *filename, SafeBuf *sb ) {
+bool Parms::setXmlFromFile(Xml *xml, const char *filename, SafeBuf *sb ) {
 	sb->load ( filename );
 	char *buf = sb->getBufStart();
 	if ( ! buf ) {
@@ -2888,9 +2890,10 @@ skip2:
 	//	   (int32_t)MAX_CONF_SIZE);
 }
 
-bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , const char *s ) {
+bool Parms::getParmHtmlEncoded(SafeBuf *sb, const Parm *m, const char *s) {
 	// print it out
-	if ( m->m_type == TYPE_CHAR           || m->m_type == TYPE_BOOL           ||
+	if ( m->m_type == TYPE_CHAR           ||
+	     m->m_type == TYPE_BOOL           ||
 	     m->m_type == TYPE_CHECKBOX       ||
 	     m->m_type == TYPE_PRIORITY)
 		sb->safePrintf("%" PRId32,(int8_t)*s);
@@ -7434,6 +7437,17 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
+	m->m_title = "spider reindex delay";
+	m->m_desc  = "throttle spider reindex with configured delay";
+	m->m_cgi  = "srdms";
+	simple_m_set(CollectionRec, m_spiderReindexDelayMS);
+	m->m_def   = "0";
+	m->m_units = "milliseconds";
+	m->m_group = false;
+	m->m_page  = PAGE_SPIDER;
+	m->m_flags = PF_CLONE;
+	m++;
+
 	m->m_title = "obey robots.txt";
 	m->m_xml   = "useRobotstxt";
 	m->m_desc  = "If this is true Gigablast will respect "
@@ -8406,6 +8420,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log debug query-reindex messages";
+	m->m_cgi   = "ldqridx";
+	simple_m_set(Conf,m_logDebugReindex);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log debug seo messages";
 	m->m_cgi   = "ldseo";
 	simple_m_set(Conf,m_logDebugSEO);
@@ -8658,6 +8679,13 @@ void Parms::init ( ) {
 	m->m_title = "log trace info for Spider";
 	m->m_cgi   = "ltrc_sp";
 	simple_m_set(Conf,m_logTraceSpider);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for reindex";
+	m->m_cgi   = "ltrc_reindex";
+	simple_m_set(Conf,m_logTraceReindex);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -9977,6 +10005,12 @@ bool Parms::doParmSendingLoop ( ) {
 	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		// get it
 		Host *h = g_hostdb.getHost(i);
+
+		if(g_hostdb.isDead(h)) {
+			//If the host is dead we don't want to send it a parameter update. Just let the WaitEntry stick around
+			//and no log - it is too annoying
+			continue;
+		}
 		// . if in progress, gotta wait for that to complete
 		// . 0 is not a legit parmid, it starts at 1
 		if ( h->m_currentParmIdInProgress ) continue;
@@ -10067,8 +10101,6 @@ void Parms::handleRequest3fLoop3(int fd, void *state) {
 // . host #0 is requesting that we update some parms
 void Parms::handleRequest3fLoop(void *weArg) {
 	WaitEntry *we = (WaitEntry *)weArg;
-
-	CollectionRec *cx = NULL;
 
 	bool rebuildRankingSettings = false;
 
@@ -10169,6 +10201,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	// we have to do a couple rebuilds.
 
 	// basically resetting the spider here...
+	CollectionRec *cx = g_collectiondb.getRec(we->m_collnum);
 	if ( we->m_doRebuilds && cx ) {
 		// . this tells Spider.cpp to rebuild the spider queues
 		// . this is NULL if spider stuff never initialized yet,

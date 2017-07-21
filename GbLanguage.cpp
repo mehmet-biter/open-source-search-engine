@@ -763,10 +763,9 @@ lang_t GbLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t 
 	int flags = 0;
 	//flags |= CLD2::kCLDFlagBestEffort;
 
-	// this is initialized by CLD2 library
-	CLD2::Language language3[3];
-	int percent3[3];
-	double normalized_score3[3];
+	CLD2::Language language3[3] = {CLD2::UNKNOWN_LANGUAGE, CLD2::UNKNOWN_LANGUAGE, CLD2::UNKNOWN_LANGUAGE};
+	int percent3[3] = {};
+	double normalized_score3[3] = {};
 
 	CLD2::ResultChunkVector *resultchunkvector = NULL;
 

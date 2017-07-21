@@ -79,6 +79,7 @@
 #include "Dir.h"
 #include "File.h"
 #include "UrlBlockList.h"
+#include "ScopedLock.h"
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -1067,8 +1068,8 @@ int main2 ( int argc , char *argv[] ) {
 		return doCmd( "pmerge=1", hostId, "master", true, false );
 	}
 
-	// gb smerge [hostId]
-	if ( strcmp ( cmd , "smerge" ) == 0 ) {	
+	// gb spmerge [hostId]
+	if ( strcmp ( cmd , "spmerge" ) == 0 ) {
 		int32_t hostId = -1;
 		if ( cmdarg + 1 < argc ) {
 			hostId = atoi ( argv[cmdarg+1] );
@@ -1078,9 +1079,9 @@ int main2 ( int argc , char *argv[] ) {
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
 			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "smerge=1", h1, "master", true, false, h2 );
+				return doCmd( "spmerge=1", h1, "master", true, false, h2 );
 		}
-		return doCmd( "smerge=1", hostId, "master", true, false );
+		return doCmd( "spmerge=1", hostId, "master", true, false );
 	}
 
 	// gb tmerge [hostId]
@@ -2464,6 +2465,7 @@ void dumpWaitingTree (const char *coll ) {
 	// load the table with file named "THISDIR/saved"
 	RdbMem wm;
 	if ( treeExists && !wt.fastLoad(&file, &wm) ) return;
+	ScopedLock sl(wt.getLock());
 	// the the waiting tree
 	for (int32_t node = wt.getFirstNode_unlocked(); node >= 0; node = wt.getNextNode_unlocked(node)) {
 		// get key
@@ -2478,7 +2480,12 @@ void dumpWaitingTree (const char *coll ) {
 		spiderTimeMS |= (key->n0 >> 32);
 		// get the rest of the data
 		char ipbuf[16];
-		fprintf(stdout,"time=%" PRIu64" firstip=%s\n", spiderTimeMS, iptoa(firstIp,ipbuf));
+
+		time_t now_t = spiderTimeMS/1000;
+		struct tm tm_buf;
+		struct tm *stm = gmtime_r(&now_t,&tm_buf);
+
+		fprintf(stdout,"time=%" PRIu64" (%04d-%02d-%02dT%02d:%02d:%02d.%03dZ) firstip=%s\n", spiderTimeMS, stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(spiderTimeMS%1000), iptoa(firstIp,ipbuf));
 	}
 }
 

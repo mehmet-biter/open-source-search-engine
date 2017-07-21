@@ -81,6 +81,7 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_numBytesScanned = 0;
 	m_lastPrintCount = 0;
 	m_collnum = -1;
+	m_lastReindexTimeMS = 0;
 	m_countingPagesIndexed = false;
 	m_lastReqUh48a = 0;
 	m_lastReqUh48b = 0;
@@ -2472,7 +2473,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			sreq->m_forceDelete = true;
 		}
 
-		int64_t spiderTimeMS = getSpiderTimeMS(sreq, ufn, srep);
+		int64_t spiderTimeMS = getSpiderTimeMS(sreq, ufn, srep, nowGlobalMS);
 
 		// sanity
 		if ( (int64_t)spiderTimeMS < 0 ) { 
@@ -3259,36 +3260,45 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 }
 
 
-uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep) {
+uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep, int64_t nowMS) {
 	// . get the scheduled spiderTime for it
 	// . assume this SpiderRequest never been successfully spidered
 	int64_t spiderTimeMS = ((uint64_t)sreq->m_addedTime) * 1000LL;
 
 	// if injecting for first time, use that!
-	if ( ! srep && sreq->m_isInjecting ) return spiderTimeMS;
-	if ( ! srep && sreq->m_isPageReindex ) return spiderTimeMS;
+	if (!srep && sreq->m_isInjecting) {
+		return spiderTimeMS;
+	}
 
+	if (sreq->m_isPageReindex) {
+		int64_t nextReindexTimeMS = m_lastReindexTimeMS + m_cr->m_spiderReindexDelayMS;
+		if (nextReindexTimeMS > nowMS) {
+			return nextReindexTimeMS;
+		}
 
-	//log("spider: getting spider time %" PRId64, spiderTimeMS);
+		m_lastReindexTimeMS = nowMS;
+
+		return nextReindexTimeMS;
+	}
+
 	// to avoid hammering an ip, get last time we spidered it...
-	int64_t lastMS ;
 	RdbCacheLock rcl(m_lastDownloadCache);
-	lastMS = m_lastDownloadCache.getLongLong ( m_collnum       ,
-						   sreq->m_firstIp ,
-						   -1              , // maxAge
-						   true            );// promote
+	int64_t lastMS = m_lastDownloadCache.getLongLong(m_collnum, sreq->m_firstIp, -1, true);
 	rcl.unlock();
+
 	// -1 means not found
-	if ( (int64_t)lastMS == -1 ) lastMS = 0;
+	if ((int64_t)lastMS == -1) {
+		lastMS = 0;
+	}
+
 	// sanity
-	if ( (int64_t)lastMS < -1 ) { 
+	if ((int64_t)lastMS < -1) {
 		log("spider: corrupt last time in download cache. nuking.");
 		lastMS = 0;
 	}
+
 	// min time we can spider it
 	int64_t minSpiderTimeMS1 = lastMS + m_cr->m_spiderIpWaits[ufn];
-	// if not found in cache
-	if ( lastMS == -1 ) minSpiderTimeMS1 = 0LL;
 
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
@@ -3307,8 +3317,12 @@ uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderRep
 	//  ensure min
 	if ( spiderTimeMS < minSpiderTimeMS1 ) spiderTimeMS = minSpiderTimeMS1;
 	if ( spiderTimeMS < minSpiderTimeMS2 ) spiderTimeMS = minSpiderTimeMS2;
+
 	// if no reply, use that
-	if ( ! srep ) return spiderTimeMS;
+	if (!srep) {
+		return spiderTimeMS;
+	}
+
 	// if this is not the first try, then re-compute the spiderTime
 	// based on that last time
 	// sanity check
@@ -3321,8 +3335,6 @@ uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderRep
 	// compute new spiderTime for this guy, in seconds
 	int64_t waitInSecs = (uint64_t)(m_cr->m_spiderFreqs[ufn]*3600*24.0);
 
-	// in fact, force docid based guys to be zero!
-	if ( sreq->m_isPageReindex ) waitInSecs = 0;
 	// when it was spidered
 	int64_t lastSpideredMS = ((uint64_t)srep->m_spideredTime) * 1000;
 	// . when we last attempted to spider it... (base time)
@@ -3552,6 +3564,18 @@ bool SpiderColl::isDoledbIpTableEmpty() const {
 void SpiderColl::clearDoledbIpTable() {
 	ScopedLock sl(m_doledbIpTableMtx);
 	m_doledbIpTable.clear();
+}
+
+std::vector<uint32_t> SpiderColl::getDoledbIpTable() const {
+	ScopedLock sl(m_doledbIpTableMtx);
+	std::vector<uint32_t> r;
+	r.reserve(m_doledbIpTable.getNumUsedSlots());
+	for(int slotNumber=0; slotNumber<m_doledbIpTable.getNumSlots(); slotNumber++) {
+		if(!m_doledbIpTable.isEmpty(slotNumber)) {
+			r.push_back(*(const uint32_t*)m_doledbIpTable.getKeyFromSlot(slotNumber));
+		}
+	}
+	return r;
 }
 
 bool SpiderColl::addToWaitingTable(int32_t firstIp, int64_t timeMs) {
