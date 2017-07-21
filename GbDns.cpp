@@ -386,7 +386,22 @@ static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf,
 
 void GbDns::getARecord(const char *hostname, size_t hostnameLen, void (*callback)(GbDns::DnsResponse *response, void *state), void *state) {
 	logTrace(g_conf.m_logTraceDns, "BEGIN hostname='%.*s'", static_cast<int>(hostnameLen), hostname);
+
 	DnsItem *item = new DnsItem(DnsItem::request_type_a, hostname, hostnameLen, callback, state);
+
+	// check if hostname is ip
+	if (is_digit(item->m_hostname[0])) {
+		in_addr addr;
+
+		// hostname is ip. skip dns lookup
+		if (inet_pton(AF_INET, item->m_hostname.c_str(), &addr) == 1) {
+			item->m_ips.push_back(addr.s_addr);
+			s_callbackQueue.push(item);
+
+			logTrace(g_conf.m_logTraceDns, "END");
+			return;
+		}
+	}
 
 	s_requestQueue.addItem(item);
 
