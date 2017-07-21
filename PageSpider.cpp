@@ -410,7 +410,7 @@ static bool generatePageHTML(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 		}
 	}
 	
-//	if(truncated_output)
+	if(truncated_output)
 		sb->safePrintf("<tr bgcolor=#%s><td colspan=3><center>&vellip;</center></td></tr>\n",
 		               LIGHT_BLUE);
 	
