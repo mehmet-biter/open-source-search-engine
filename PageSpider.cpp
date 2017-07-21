@@ -356,20 +356,22 @@ static bool generatePageHTML(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 	                cr->m_coll );
 	// print time format: 7/23/1971 10:45:32
 	int64_t timems = gettimeofdayInMilliseconds();
-	sb->safePrintf("</b> (current time = %" PRIu64")(totalcount=%" PRId32")(waittablecount=%" PRId32")",
+	sb->safePrintf(" </b>(current time = %" PRIu64") (totalcount=%" PRId32") (waittablecount=%" PRId32")",
 	              timems, sc->m_waitingTree.getNumUsedNodes(), sc->getWaitingTableCount());
 
 	char ipbuf[16];
-	sb->safePrintf("(spiderdb scanning ip %s)", iptoa(sc->getScanningIp(),ipbuf));
+	sb->safePrintf(" (spiderdb scanning ip %s)", iptoa(sc->getScanningIp(),ipbuf));
 
 	sb->safePrintf("</td></tr>\n");
-	sb->safePrintf("<tr bgcolor=#%s>",DARK_BLUE);
-	sb->safePrintf("<td><b>spidertime (MS)</b></td>\n");
-	sb->safePrintf("<td><b>firstip</b></td>\n");
+	sb->safePrintf("<tr bgcolor=#%s>", DARK_BLUE);
+	sb->safePrintf("  <td><b>spidertime (MS)</b></td>\n");
+	sb->safePrintf("  <td><b>spidertime</b></td>\n");
+	sb->safePrintf("  <td><b>firstip</b></td>\n");
 	sb->safePrintf("</tr>\n");
 	// the the waiting tree
 
 	int32_t count = 0;
+	bool truncated_output = false;
 	{
 		ScopedLock sl(sc->m_waitingTree.getLock());
 		for (int32_t node = sc->m_waitingTree.getFirstNode_unlocked(); node >= 0;
@@ -384,26 +386,34 @@ static bool generatePageHTML(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 			spiderTimeMS <<= 32;
 			// or in
 			spiderTimeMS |= (key->n0 >> 32);
-			const char *note = "";
 
-			// get the rest of the data
+			time_t spiderTimeSeconds = spiderTimeMS/1000;
+			struct tm tm_buf;
+			struct tm *stm = gmtime_r(&spiderTimeSeconds,&tm_buf);
+			char humanreadableSpiderTime[64];
+			sprintf(humanreadableSpiderTime,"%04d-%02d-%02dT%02d:%02d:%02d.%03dZ", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(spiderTimeMS%1000));
+			
 			sb->safePrintf("<tr bgcolor=#%s>"
-			              "<td>%" PRId64"%s</td>"
-			              "<td>%s</td>"
-			              "</tr>\n",
-			              LIGHT_BLUE,
-			              (int64_t)spiderTimeMS,
-			              note,
-			              iptoa(firstIp,ipbuf));
+			               "<td>%" PRId64"</td>"
+			               "<td>%s</td>"
+			               "<td><tt>%s</tt></td>"
+			               "</tr>\n",
+			               LIGHT_BLUE,
+			               (int64_t)spiderTimeMS,
+				       humanreadableSpiderTime,
+			               iptoa(firstIp,ipbuf));
 			// stop after 20
-			if (++count == 20) break;
+			if (++count == 20) {
+				truncated_output = true;
+				break;
+			}
 		}
 	}
-	// ...
-	if ( count )
-		sb->safePrintf("<tr bgcolor=#%s>"
-			              "<td colspan=10>...</td></tr>\n",
-		              LIGHT_BLUE);
+	
+//	if(truncated_output)
+		sb->safePrintf("<tr bgcolor=#%s><td colspan=3><center>&vellip;</center></td></tr>\n",
+		               LIGHT_BLUE);
+	
 	// end the table
 	sb->safePrintf ( "</table>\n" );
 	sb->safePrintf ( "<br>\n" );
