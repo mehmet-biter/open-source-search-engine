@@ -57,6 +57,7 @@ bool sendPageAddColl  ( TcpSocket *s , HttpRequest *r );
 bool sendPageDelColl  ( TcpSocket *s , HttpRequest *r );
 bool sendPageCloneColl( TcpSocket *s , HttpRequest *r );
 bool sendPageSpiderdb ( TcpSocket *s , HttpRequest *r );
+bool sendPageDoledbIPTable(TcpSocket *s, HttpRequest *r);
 bool sendPageReindex  ( TcpSocket *s , HttpRequest *r );
 bool sendPageInject   ( TcpSocket *s , HttpRequest *r );
 bool sendPageAddUrl2  ( TcpSocket *s , HttpRequest *r );
@@ -216,6 +217,7 @@ enum {
 
 	PAGE_TITLEDB     ,
 	PAGE_SPIDERDB    ,
+	PAGE_DOLEIPTABLE ,
 	PAGE_SEARCHBOX   ,
 	PAGE_PARSER      ,
 	PAGE_SITEDB      ,

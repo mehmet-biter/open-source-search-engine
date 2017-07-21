@@ -3566,6 +3566,18 @@ void SpiderColl::clearDoledbIpTable() {
 	m_doledbIpTable.clear();
 }
 
+std::vector<uint32_t> SpiderColl::getDoledbIpTable() const {
+	ScopedLock sl(m_doledbIpTableMtx);
+	std::vector<uint32_t> r;
+	r.reserve(m_doledbIpTable.getNumUsedSlots());
+	for(int slotNumber=0; slotNumber<m_doledbIpTable.getNumSlots(); slotNumber++) {
+		if(!m_doledbIpTable.isEmpty(slotNumber)) {
+			r.push_back(*(const uint32_t*)m_doledbIpTable.getKeyFromSlot(slotNumber));
+		}
+	}
+	return r;
+}
+
 bool SpiderColl::addToWaitingTable(int32_t firstIp, int64_t timeMs) {
 	ScopedLock sl(m_waitingTableMtx);
 	return m_waitingTable.addKey(&firstIp, &timeMs);
