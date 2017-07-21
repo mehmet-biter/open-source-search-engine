@@ -1006,6 +1006,9 @@ std::set<int64_t> getDeprecatedTagTypes() {
 
 	std::set<int64_t> deprecatedTagTypes;
 
+	// initialize m_type
+	g_tagdb.setHashTable();
+
 	for (int32_t i = 0; i < n; ++i) {
 		if (s_tagDesc[i].m_flags & TDF_DEPRECATED) {
 			deprecatedTagTypes.emplace(s_tagDesc[i].m_type);
@@ -1032,7 +1035,6 @@ void Tagdb::setHashTable ( ) {
 	if ( s_initialized ) {
 		return;
 	}
-
 
 	// the hashtable of TagDescriptors
 	if ( ! s_ht.set ( 4, sizeof(TagDesc *), 1024, NULL, 0, false, "tgdbtb" ) ) {
