@@ -1889,6 +1889,7 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	char ckey[MAX_KEY_BYTES];
 	char mkey[MAX_KEY_BYTES];
 	char minKey[MAX_KEY_BYTES];
+	char currentKey[MAX_KEY_BYTES] = {0};
 
 	/// @todo ALC only need this to clean out existing tagdb records. (remove once it's cleaned up!)
 	static std::set<int64_t> remove_tags = getDeprecatedTagTypes();
@@ -1951,7 +1952,6 @@ top:
 	}
 
 	// special filter to remove obsolete tags from tagdb
-	char currentKey[MAX_KEY_BYTES] = { 0 };
 	lists[mini]->getCurrentKey(currentKey);
 	if (!KEYNEG(currentKey)) {
 		if (rdbId == RDB_TAGDB) {
