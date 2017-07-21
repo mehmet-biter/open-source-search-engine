@@ -1734,6 +1734,10 @@ static       char  s_buffer[128];
 static HttpRequest s_r;
 bool doCmd ( const char *cmd , int32_t hostId , const char *filename ,
 	     bool sendToHosts , bool sendToProxies , int32_t hostId2 ) {
+
+	//so we don't supporess messages to dead hosts (we're not connected to vagus)
+	g_conf.m_doingCommandLine = true;
+
 	// need loop to work
 	if ( ! g_loop.init() ) {
 		log(LOG_WARN, "db: Loop init failed." );
