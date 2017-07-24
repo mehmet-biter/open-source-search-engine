@@ -213,6 +213,9 @@ bool GbDns::initialize() {
 	options.lookups = strdup("fb");
 	optmask |= ARES_OPT_LOOKUPS;
 
+	// round-robin selection of nameservers
+	optmask |= ARES_OPT_ROTATE;
+
 	if (ares_init_options(&s_channel, &options, optmask) != ARES_SUCCESS) {
 		logError("Unable to init ares options");
 		return false;
