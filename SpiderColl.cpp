@@ -1536,11 +1536,11 @@ loop:
 		m_lastReqUh48b = 0LL;
 		m_lastRepUh48  = 0LL;
 		// and setup the LOCAL counting table if not initialized
-		if (!m_localTable.isInitialized()) {
-			m_localTable.set(4, 4, 0, NULL, 0, false, "ltpct");
+		if (!m_siteIndexedDocumentCount.isInitialized()) {
+			         m_siteIndexedDocumentCount.set(4, 4, 0, NULL, 0, false, "ltpct");
 		}
 		// otherwise, just reset it so we can repopulate it
-		else m_localTable.reset();
+		else m_siteIndexedDocumentCount.reset();
 	}
 
 	logDebug( g_conf.m_logDebugSpider, "spider: evalIpLoop: waitingtree nextip=%s numUsedNodes=%" PRId32,
@@ -2325,7 +2325,7 @@ bool SpiderColl::scanListForWinners ( ) {
 				// seeds as "manual adds" as well as normal pg
 				int32_t h32;
 				h32 = sreq->m_siteHash32 ^ 0x123456;
-				m_localTable.addScore(h32);
+				            m_siteIndexedDocumentCount.addScore(h32);
 			}
 			// unique votes per other for quota
 			if ( uh48 == m_lastReqUh48b ) continue;
@@ -2339,9 +2339,9 @@ bool SpiderColl::scanListForWinners ( ) {
 			// TODO: what is srep->m_isIndexedINValid is set????
 			if ( ! srep->m_isIndexed ) continue;
 			// keep count per site and firstip
-			m_localTable.addScore(sreq->m_siteHash32,1);
+			         m_siteIndexedDocumentCount.addScore(sreq->m_siteHash32,1);
 
-			int32_t *tmpNum = (int32_t *)m_localTable.getValue( &( sreq->m_siteHash32 ) );
+			int32_t *tmpNum = (int32_t *)m_siteIndexedDocumentCount.getValue( &( sreq->m_siteHash32 ) );
 			logDebug( g_conf.m_logDebugSpider, "spider: sitequota: got %" PRId32" indexed docs for site from "
 			          "firstip of %s from url %s", tmpNum ? *tmpNum : -1,
 			          iptoa(sreq->m_firstIp,ipbuf),

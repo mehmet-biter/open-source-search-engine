@@ -86,7 +86,7 @@ public:
 	void clearDoledbIpTable();
 	std::vector<uint32_t> getDoledbIpTable() const;
 
-	HashTableX m_localTable;
+	HashTableX m_siteIndexedDocumentCount;
 
 	bool printWaitingTree();
 

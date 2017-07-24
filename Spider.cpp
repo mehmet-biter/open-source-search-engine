@@ -1851,7 +1851,7 @@ checkNextRule:
 		     p[7] == 'e' &&
 		     p[8] == 's' ) {
 			int32_t *valPtr ;
-			valPtr=(int32_t*)sc->m_localTable.getValue(&sreq->m_siteHash32);
+			valPtr=(int32_t*)sc->m_siteIndexedDocumentCount.getValue(&sreq->m_siteHash32);
 			// if no count in table, that is strange, i guess
 			// skip for now???
 			int32_t a;
