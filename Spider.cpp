@@ -1200,7 +1200,6 @@ int32_t getUrlFilterNum(const SpiderRequest *sreq,
 			bool		isForMsg20,
 			CollectionRec	*cr,
 			bool		isOutlink,
-			HashTableX	*quotaTable,
 			int32_t		langIdArg ) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 		
@@ -1230,8 +1229,6 @@ int32_t getUrlFilterNum(const SpiderRequest *sreq,
 	char *row = NULL;
 	bool checkedRow = false;
 	SpiderColl *sc = g_spiderCache.getSpiderColl(cr->m_collnum);
-
-	if ( ! quotaTable ) quotaTable = &sc->m_localTable;
 
 	// CONSIDER COMPILING FOR SPEED:
 	// 1) each command can be combined into a bitmask on the spiderRequest
@@ -1853,10 +1850,8 @@ checkNextRule:
 		     p[6] == 'g' &&
 		     p[7] == 'e' &&
 		     p[8] == 's' ) {
-			// need a quota table for this
-			if ( ! quotaTable ) continue;
 			int32_t *valPtr ;
-		       valPtr=(int32_t*)quotaTable->getValue(&sreq->m_siteHash32);
+			valPtr=(int32_t*)sc->m_localTable.getValue(&sreq->m_siteHash32);
 			// if no count in table, that is strange, i guess
 			// skip for now???
 			int32_t a;

@@ -699,7 +699,7 @@ bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS
 	//   means an unknown ufn and we'll add to waiting tree.
 	// get ufn/priority,because if filtered we do not want to add to doledb
 	// HACK: set isOutlink to true here since we don't know if we have sre
-	int32_t ufn = ::getUrlFilterNum(sreq, NULL, nowGlobalMS, false, m_cr, true, NULL, -1);
+	int32_t ufn = ::getUrlFilterNum(sreq, NULL, nowGlobalMS, false, m_cr, true, -1);
 	if (ufn >= 0) {
 		// spiders disabled for this row in url filters?
 		if (m_cr->m_maxSpidersPerRule[ufn] == 0) {
@@ -2439,7 +2439,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		// . if this is slow see the TODO below in dedupSpiderdbList()
 		//   which can pre-store these values assuming url filters do
 		//   not change and siteNumInlinks is about the same.
-		int32_t ufn = ::getUrlFilterNum(sreq, srep, nowGlobal, false, m_cr, false, &m_localTable, -1);
+		int32_t ufn = ::getUrlFilterNum(sreq, srep, nowGlobal, false, m_cr, false, -1);
 		// sanity check
 		if ( ufn == -1 ) { 
 			log( LOG_WARN, "failed to match url filter for url='%s' coll='%s'", sreq->m_url, m_cr->m_coll );

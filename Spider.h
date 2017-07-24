@@ -915,7 +915,6 @@ int32_t getUrlFilterNum(const class SpiderRequest *sreq,
 		       bool isForMsg20,
 		       class CollectionRec *cr,
 		       bool isOutlink,
-			  HashTableX *quotaTable,
 			  int32_t langIdArg );
 
 void parseWinnerTreeKey ( const key192_t  *k ,
