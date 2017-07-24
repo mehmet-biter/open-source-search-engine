@@ -40,6 +40,7 @@
 #include "Mem.h"
 #include "Msg4In.h"
 #include "SummaryCache.h"
+#include "GbDns.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
 #include <fcntl.h>
@@ -709,6 +710,8 @@ bool Process::shutdown2() {
 
 	g_profiler.stopRealTimeProfiler(false);
 	g_profiler.cleanup();
+
+	GbDns::finalize();
 
 	// save the conf files and caches. these block the cpu.
 	if ( m_blockersNeedSave ) {

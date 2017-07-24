@@ -34,6 +34,7 @@
 #include "Tagdb.h"
 #include "Clusterdb.h"
 #include "Collectiondb.h"
+#include "GbDns.h"
 #include <set>
 
 
@@ -5407,6 +5408,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	// default to google public dns #1
 	m->m_def   = (char*)PUBLICLY_AVAILABLE_DNS1;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5422,6 +5424,7 @@ void Parms::init ( ) {
 	// default to google public dns #2
 	m->m_def   = (char*)PUBLICLY_AVAILABLE_DNS2;
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5434,6 +5437,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5445,6 +5449,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5456,6 +5461,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5467,6 +5473,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5478,6 +5485,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5489,6 +5497,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5500,6 +5509,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5511,6 +5521,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5522,6 +5533,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5533,6 +5545,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5544,6 +5557,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5555,6 +5569,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5566,6 +5581,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5577,6 +5593,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -7832,32 +7849,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-	m->m_title = "index spider status documents";
-	m->m_desc  = "Index a spider status \"document\" "
-		"for every url the spider "
-		"attempts to spider. Search for them using special "
-		"query operators like type:status or gberrorstr:success or "
-		"stats:gberrornum to get a histogram. "
-		"See <a href=/syntax.html>syntax</a> page for more examples. "
-		"They will not otherwise "
-		"show up in the search results.";
-	//      "This will not work for "
-	// 	"diffbot crawlbot collections yet until it has proven "
-	// 	"more stable.";
-	m->m_cgi   = "isr";
-	simple_m_set(CollectionRec,m_indexSpiderReplies);
-	// default off for now until we fix it better. 5/26/14 mdw
-	// turn back on 6/21 now that we do not index plain text terms
-	// and we add gbdocspidertime and gbdocindextime terms so you
-	// can use those to sort regular docs and not have spider reply
-	// status docs in the serps.
-	// back on 4/21/2015 seems pretty stable.
-	// but it uses disk space so turn off for now again. 6/16/2015
-	m->m_def   = "0";
-	m->m_page  = PAGE_SPIDER;
-	m->m_flags = PF_CLONE;
-	m++;
-
 	// i put this in here so i can save disk space for my global
 	// diffbot json index
 	m->m_title = "index body";
@@ -8539,6 +8530,13 @@ void Parms::init ( ) {
 	m->m_title = "log trace info for Dns";
 	m->m_cgi   = "ltrc_dns";
 	simple_m_set(Conf,m_logTraceDns);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for DnsBlockList";
+	m->m_cgi   = "ltrc_dnsbl";
+	simple_m_set(Conf,m_logTraceDnsBlockList);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
@@ -10103,6 +10101,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	WaitEntry *we = (WaitEntry *)weArg;
 
 	bool rebuildRankingSettings = false;
+	bool rebuildDnsSettings = false;
 
 	// process them
 	const char *p = we->m_parmPtr;
@@ -10161,6 +10160,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 
 		if ( parm->m_flags & PF_REBUILDRANKINGSETTINGS )
 			rebuildRankingSettings = true;
+
+		if (parm->m_flags & PF_REBUILDDNSSETTINGS) {
+			rebuildDnsSettings = true;
+		}
 
 		// get collnum i guess
 		if ( parm->m_type != TYPE_CMD )
@@ -10226,6 +10229,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 
 	if ( rebuildRankingSettings )
 		reinitializeRankingSettings();
+
+	if (rebuildDnsSettings) {
+		GbDns::initializeSettings();
+	}
 
 	// note it
 	if ( ! we->m_sentReply )

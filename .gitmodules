@@ -18,3 +18,6 @@
 	path = third-party/cld3
 	url = https://github.com/privacore/cld3.git
 	ignore = dirty
+[submodule "third-party/c-ares"]
+	path = third-party/c-ares
+	url = https://github.com/privacore/c-ares.git

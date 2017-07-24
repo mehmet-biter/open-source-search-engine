@@ -45,8 +45,6 @@ private:
 	bool sendMsgC(int32_t slotIndex, const char *host, int32_t hlen);
 	void doneSending(int32_t slotIndex);
 	void doneSending_unlocked(int32_t slotIndex);
-	bool addTag(int32_t slotIndex);
-	bool doneAddingTag(int32_t slotIndex);
 
 	int32_t  m_niceness  ;
 

@@ -33,7 +33,7 @@ const char *extensionToContentTypeStr2 ( const char *ext , int32_t elen ) ;
 #define CT_CSS    15
 #define CT_JSON   16
 #define CT_IMAGE  17
-#define CT_STATUS 18 // an internal type indicating spider reply
+//#define CT_STATUS 18 // an internal type indicating spider reply
 #define CT_GZ     19
 #define CT_ARC    20
 #define CT_WARC   21

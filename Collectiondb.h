@@ -212,7 +212,6 @@ public:
 
 	int32_t m_thumbnailMaxWidthHeight ;
 
-	bool  m_indexSpiderReplies;
 	bool  m_indexBody;
 
 	bool  m_dedupingEnabled         ; // dedup content on same hostname

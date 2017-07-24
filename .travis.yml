@@ -27,3 +27,4 @@ addons:
     - libssl-dev
     - protobuf-compiler
     - libprotobuf-dev
+    - libc-ares-dev

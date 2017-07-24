@@ -78,7 +78,9 @@
 #include "GbUtil.h"
 #include "Dir.h"
 #include "File.h"
+#include "DnsBlockList.h"
 #include "UrlBlockList.h"
+#include "GbDns.h"
 #include "ScopedLock.h"
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
@@ -1561,7 +1563,8 @@ int main2 ( int argc , char *argv[] ) {
 	//load docid->flags/sitehash map
 	g_d2fasm.load();
 
-	// load url block list
+	// load block lists
+	g_dnsBlockList.init();
 	g_urlBlockList.init();
 
 	// initialize generate global index thread
@@ -1637,6 +1640,12 @@ int main2 ( int argc , char *argv[] ) {
 	// . Only the distributed cache shall call the dns server.
 	if ( ! g_dns.init( h9->m_dnsClientPort ) ) {
 		log("db: Dns distributed client init failed." ); return 1; }
+
+	// initialize dns client library
+	if (!GbDns::initialize()) {
+		log(LOG_ERROR, "Unable to initialize dns client");
+		return 1;
+	}
 
 	g_stable_summary_cache.configure(g_conf.m_stableSummaryCacheMaxAge, g_conf.m_stableSummaryCacheSize);
 	g_unstable_summary_cache.configure(g_conf.m_unstableSummaryCacheMaxAge, g_conf.m_unstableSummaryCacheSize);

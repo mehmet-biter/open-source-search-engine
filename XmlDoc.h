@@ -52,7 +52,12 @@
 #include "Json.h"
 #include "Posdb.h"
 
+// forward declaration
 class GetMsg20State;
+
+namespace GbDns {
+	struct DnsResponse;
+}
 
 #define MAXFRAGWORDS 80000
 
@@ -322,12 +327,10 @@ public:
 	bool setTitleRecBuf ( SafeBuf *buf , int64_t docId, int64_t uh48 );
 	// sets m_titleRecBuf/m_titleRecBufValid/m_titleRecKey[Valid]
 	SafeBuf *getTitleRecBuf ( );
-	SafeBuf *getSpiderStatusDocMetaList ( class SpiderReply *reply ,
-					      bool forDelete ) ;
-	SafeBuf *getSpiderStatusDocMetaList2 ( class SpiderReply *reply ) ;
-	bool setSpiderStatusDocMetaList ( SafeBuf *jd , int64_t ssDocId ) ;
-	SafeBuf m_spiderStatusDocMetaList;
+
 	char *getIsAdult ( ) ;
+
+	bool *checkBlockList();
 
 	char *getIsPermalink ( ) ;
 	char *getIsUrlPermalinkFormat ( ) ;
@@ -383,7 +386,6 @@ public:
 	class XmlDoc **getRootXmlDoc ( int32_t maxCacheAge = 0 ) ;
 	char **getOldTitleRec ( );
 	char **getRootTitleRec ( ) ;
-	int64_t *getAvailDocIdOnly ( int64_t preferredDocId ) ;
 	int64_t *getDocId ( ) ;
 	char *getIsIndexed ( ) ;
 	class TagRec *getTagRec ( ) ;
@@ -392,7 +394,9 @@ public:
 	int32_t *getSiteNumInlinks ( ) ;
 	class LinkInfo *getSiteLinkInfo() ;
 	int32_t *getIp ( ) ;
-	int32_t *gotIp ( bool save ) ;
+	std::vector<std::string>* getHostNameServers(const char *hostname, size_t hostnameLen);
+	static void gotHostNameServersWrapper(GbDns::DnsResponse *response, void *state);
+	static void gotIpWrapper(GbDns::DnsResponse *response, void *state);
 	bool *getIsAllowed ( ) ;
 	int32_t *getFinalCrawlDelay();
 	int32_t      m_finalCrawlDelay;
@@ -539,9 +543,6 @@ public:
 	bool hashString3( char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
 			  class HashTableX *wts, class SafeBuf *wbuf);
 
-	// gbfieldmatch:
-	bool hashFieldMatchTerm ( char *val, int32_t vlen, class HashInfo *hi);
-
 	bool hashNumberForSorting( const char *beginBuf ,
 			  const char *buf , 
 			  int32_t bufLen , 
@@ -624,7 +625,6 @@ public:
 
 	int32_t m_addedSpiderRequestSize;
 	int32_t m_addedSpiderReplySize;
-	int32_t m_addedStatusDocSize;
 
 	SafeBuf  m_metaList2;
 
@@ -674,7 +674,6 @@ public:
 	bool m_metaListValid;
 	bool m_addedSpiderRequestSizeValid;
 	bool m_addedSpiderReplySizeValid;
-	bool m_addedStatusDocSizeValid;
 	bool m_downloadStartTimeValid;
 	bool m_siteValid;
 	bool m_startTimeValid;
@@ -685,7 +684,6 @@ public:
 	bool m_firstUrlHash48Valid;
 	bool m_firstUrlHash64Valid;
 	bool m_docIdValid;
-	bool m_availDocIdValid;
 	bool m_tagRecValid;
 	bool m_robotsTxtLenValid;
 	bool m_tagRecDataValid;
@@ -785,7 +783,6 @@ public:
 	bool m_rootTitleRecValid;
 	bool m_isIndexedValid;
 	bool m_siteNumInlinksValid;
-	bool m_siteNumInlinks8Valid;
 	bool m_siteLinkInfoValid;
 	bool m_isWWWDupValid;
 	bool m_linkInfo1Valid;
@@ -802,7 +799,6 @@ public:
 	bool m_numOutlinksAddedValid;
 	bool m_baseUrlValid;
 	bool m_replyValid;
-	bool m_crawlInfoValid;
 	bool m_isPageParserValid;
 	bool m_imageUrlValid;
 	bool m_imageUrl2Valid;
@@ -813,14 +809,14 @@ public:
 	bool m_htbValid;
 	bool m_collnumValid;
 	bool m_summaryValid;
-	bool m_spiderStatusDocMetaListValid;
 	bool m_isNoArchiveValid;
 	bool m_titleRecBufValid;
 	bool m_isLinkSpamValid;
 	bool m_isErrorPageValid;
 	bool m_exactContentHash64Valid;
 	bool m_jpValid;
-
+	bool m_blockedDocValid;
+	bool m_hostNameServersValid;
 	bool m_isSiteMap;
 
 	// shadows
@@ -855,10 +851,8 @@ public:
 	char m_isDup;	// may be -1
 	int64_t m_docIdWeAreADupOf;
 	Msg22Request m_msg22Request;
-	Msg22Request m_msg22Requestc;
 	Msg22 m_msg22a;
 	Msg22 m_msg22b;
-	Msg22 m_msg22c;
 	Msg22 m_msg22e;
 	Msg22 m_msg22f;
 	// these now reference directly into the html src so our 
@@ -890,7 +884,6 @@ public:
 	Msg8a   m_msg8a;
 
 	Url   m_extraUrl;
-	uint8_t m_siteNumInlinks8;
 	SafeBuf m_mySiteLinkInfoBuf;
 	SafeBuf m_myPageLinkInfoBuf;
 
@@ -939,9 +932,6 @@ public:
 
 	Msge0 m_msge0;
 	Msge1 m_msge1;
-
-	char *hashJSONFields2 ( HashInfo *hi , Json *jp ,
-				bool hashWithoutFieldNames ) ;
 
 	Json *getParsedJson();
 	// object that parses the json
@@ -1082,8 +1072,7 @@ public:
 	bool m_useSecondaryRdbs ;
 
 	SafeBuf *m_pbuf;
-	// used by SpiderLoop to set m_pbuf to
-	SafeBuf  m_sbuf;
+
 	// store termlist into here if non-null
 	bool     m_storeTermListInfo;
 	char     m_sortTermListBy;
@@ -1127,6 +1116,12 @@ public:
 
 	bool m_msg4Waiting;
 	bool m_msg4Launched;
+
+	bool m_blockedDoc;
+	bool m_checkedUrlBlockList;
+	bool m_checkedDnsBlockList;
+
+	std::vector<std::string> m_hostNameServers;
 
 	// word spam detection
 	char *getWordSpamVec ( );

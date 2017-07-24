@@ -43,7 +43,7 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 ### Secondary:
 *    OpenSuSE 13.2, GCC 4.8.3
 *    OpenSuSE 42.2, GCC 6.2.1
-*    Fedora 24, GCC 6.2.1
+*    Fedora 25, GCC 6.3.1
 
 ## DEPENDENCIES
 ### Compilation
@@ -66,6 +66,16 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 *    libssl-dev
 *    protobuf-devel
 *    libprotobuf13
+
+#### Fedora
+*    g++
+*    make
+*    cmake
+*    python
+*    pcre-devel
+*    openssl-devel
+*    protobuf-devel
+*    protobuf-compiler
 
 ### Runtime
 *    Multi-instance installations require [Vagus](https://github.com/privacore/vagus) for keeping track of which instances are dead and alive.
