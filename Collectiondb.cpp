@@ -1503,6 +1503,18 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_forceDelete        [n] = 1;		// delete!
 	n++;
 
+	// dns permanent error
+	m_regExs[n].reset();
+	m_regExs[n].safePrintf("errorcode==%d || errorcode==%d || errorcode=%d", EDNSNOTFOUND, EDNSBADREQUEST, EDNSREFUSED);
+	m_harvestLinks       [n] = false;
+	m_spiderFreqs        [n] = 0;       // 0 days default
+	m_maxSpidersPerRule  [n] = 1;       // max spiders
+	m_spiderIpMaxSpiders [n] = ipms;    // max spiders per ip
+	m_spiderIpWaits      [n] = 0;       // same ip wait
+	m_spiderPriorities   [n] = 100;
+	m_forceDelete        [n] = 1;       // delete!
+	n++;
+
 #if 0
 @@@ Enable after test
 	// 4 or more of the SAME non-temporary errors - delete it
@@ -1517,7 +1529,6 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 #endif
 
-
 	// got bad HTTP status (e.g. 404) last x times we tried. Now delete it.
 	m_regExs[n].set("sameerrorcount>=4 && httpstatus>=400 && httpstatus<500");
 	m_harvestLinks       [n] = false;
@@ -1528,6 +1539,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderPriorities   [n] = 89;
 	m_forceDelete        [n] = 1;		// Delete it
 	n++;
+
 	// got bad HTTP status (e.g. 404) last we tried. Retry soon again to see if we keep
 	// getting the same error.
 	m_regExs[n].set("sameerrorcount>=1 && httpstatus>=400 && httpstatus<500");
@@ -1540,9 +1552,9 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
 
-
 	// got BadIP error last x times we tried. Now delete it.
-	m_regExs[n].set("sameerrorcount>=4 && errorcode=32853");
+	m_regExs[n].reset();
+	m_regExs[n].safePrintf("sameerrorcount>=4 && errorcode==%d", EBADIP);
 	m_harvestLinks       [n] = false;
 	m_spiderFreqs        [n] = 1;
 	m_maxSpidersPerRule  [n] = 1; 		// max spiders
@@ -1551,9 +1563,11 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderPriorities   [n] = 89;
 	m_forceDelete        [n] = 1;		// Delete
 	n++;
+
 	// got BadIP error last we tried. Retry soon again to see if we keep
 	// getting the same error (probably expired domain).
-	m_regExs[n].set("sameerrorcount>=1 && errorcode=32853");
+	m_regExs[n].reset();
+	m_regExs[n].safePrintf("sameerrorcount>=1 && errorcode==%d", EBADIP);
 	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 0.25;	// retry in 6 hours (0.25 days)
 	m_maxSpidersPerRule  [n] = 1; 		// max spiders
