@@ -66,12 +66,14 @@ static bool respondWithError(TcpSocket *s, HttpRequest *r, const char *msg) {
 	const char *contentType = NULL;
 	switch(r->getReplyFormat()) {
 		case FORMAT_HTML:
-			sb.safePrintf("<html><body><p>%s</p></body></html>",msg);
+			g_pages.printAdminTop(&sb, s, r, NULL);
+			sb.safePrintf("<p>%s</p>", msg);
+			g_pages.printAdminBottom2(&sb);
 			contentType = "text/html";
 			break;
 		case FORMAT_JSON:
 			sb.safePrintf("{error_message:\"%s\"}",msg); //todo: safe encode
-			contentType = "text/html";
+			contentType = "application/json";
 			break;
 		default:
 			contentType = "application/octet-stream";
