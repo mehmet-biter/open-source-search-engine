@@ -403,6 +403,20 @@ void GbDns::getARecord(const char *hostname, size_t hostnameLen, void (*callback
 		}
 	}
 
+	if (g_conf.m_useEtcHosts) {
+		ScopedLock sl(s_channelMtx);
+		hostent *host = nullptr;
+		if (ares_gethostbyname_file(s_channel, item->m_hostname.c_str(), AF_INET, &host) == ARES_SUCCESS) {
+			item->m_ips.push_back(((in_addr*)host->h_addr_list[0])->s_addr);
+			s_callbackQueue.push(item);
+
+			ares_free_hostent(host);
+
+			logTrace(g_conf.m_logTraceDns, "END");
+			return;
+		}
+	}
+
 	s_requestQueue.addItem(item);
 
 	logTrace(g_conf.m_logTraceDns, "END");
