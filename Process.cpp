@@ -852,17 +852,7 @@ bool Process::saveRdbTrees(bool shuttingDown) {
 		m_calledSave = true;
 	}
 
-	// . save waitingtrees for each collection, blocks.
-	// . can we make this non-blocking?
-	// . true = "usethreads"
-	// . all writes have been disabled, so should be cleanly saved
-	// . if this did not block that means it does not need any saving
-	// . this just launched all the write threads for the trees/tables
-	//   that need to be saved. it sets m_isSaving once they are all 
-	//   launched.
-	// . and sets m_isSaving=false on SpiderCache::doneSaving when they
-	//   are all done.
-	if ( shuttingDown ) g_spiderCache.save ( useThread );
+	g_spiderCache.save ( useThread );
 
 	// check if any need to finish saving
 	if (isAnyTreeSaving()) {
