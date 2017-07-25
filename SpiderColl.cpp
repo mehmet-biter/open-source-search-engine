@@ -37,7 +37,10 @@ void SpiderColl::setCollectionRec ( CollectionRec *cr ) {
 	m_cr = cr;
 }
 
-CollectionRec *SpiderColl::getCollectionRec ( ) {
+CollectionRec *SpiderColl::getCollectionRec() {
+	return m_cr;
+}
+const CollectionRec *SpiderColl::getCollectionRec() const {
 	return m_cr;
 }
 

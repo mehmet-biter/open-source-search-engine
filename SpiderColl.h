@@ -32,6 +32,7 @@ public:
 	~SpiderColl();
 
 	CollectionRec *getCollectionRec();
+	const CollectionRec *getCollectionRec() const;
 	void setCollectionRec(CollectionRec *cr);
 
 	void clearLocks();
