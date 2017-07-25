@@ -8,9 +8,13 @@
 #include <algorithm>
 
 
+static bool cmp_ip_network_order(uint32_t ip_a, uint32_t ip_b) {
+	return ntohl(ip_a) < ntohl(ip_b);
+}
+
 
 static void generatePageHtml(std::vector<uint32_t> &doleips, const char *coll, SafeBuf *sb) {
-	std::sort(doleips.begin(), doleips.end());
+	std::sort(doleips.begin(), doleips.end(), cmp_ip_network_order);
 	
 	sb->safePrintf("<table cellpadding=5 style=\"max-width:25em\" border=0>"
 	               "  <tr>"
@@ -38,7 +42,7 @@ static void generatePageHtml(std::vector<uint32_t> &doleips, const char *coll, S
 
 static void generatePageJSON(std::vector<uint32_t> &doleips, const char *coll, SafeBuf *sb) {
 	//order is irrelevant for JSON, but some humans like to look at it.
-	std::sort(doleips.begin(), doleips.end());
+	std::sort(doleips.begin(), doleips.end(), cmp_ip_network_order);
 	
 	sb->safePrintf("{\n");                 //object start
 	
