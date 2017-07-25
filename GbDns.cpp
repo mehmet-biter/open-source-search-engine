@@ -346,8 +346,8 @@ static void addToCallbackQueue(DnsItem *item, bool addToCache=true) {
 				if (s_cache.lookup(item->m_hostname, &response)) {
 					// merge response
 					response.m_nameservers = item->m_response.m_nameservers;
+					s_cache.insert(item->m_hostname, response);
 				}
-				s_cache.insert(item->m_hostname, item->m_response);
 			}
 		}
 	}
