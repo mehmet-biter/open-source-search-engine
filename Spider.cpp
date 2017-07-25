@@ -70,7 +70,7 @@ void SpiderRequest::setDataSize ( ) {
 		- sizeof(key128_t) - 4 ;
 }
 
-int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
+int32_t SpiderRequest::print(SafeBuf *sbarg) const {
 	SafeBuf tmp;
 	SafeBuf *sb = sbarg ? sbarg : &tmp;
 
@@ -148,7 +148,7 @@ void SpiderReply::setKey ( int32_t firstIp, int64_t parentDocId, int64_t uh48, b
 	m_dataSize = sizeof(SpiderReply) - sizeof(key128_t) - 4;
 }
 
-int32_t SpiderReply::print ( SafeBuf *sbarg ) {
+int32_t SpiderReply::print(SafeBuf *sbarg) const {
 
 	SafeBuf *sb = sbarg;
 	SafeBuf tmp;
@@ -230,7 +230,7 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
  *     "parentDocId": 123456789,
  * }
  */
-int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, XmlDoc *xd, int32_t row) {
+int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row) {
 	if (row != 0) {
 		sb->safePrintf("\t\t,\n");
 	}
@@ -276,7 +276,7 @@ int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, XmlDoc *xd, 
 	return sb->length();
 }
 
-int32_t SpiderRequest::printToTable(SafeBuf *sb, const char *status, XmlDoc *xd, int32_t row) {
+int32_t SpiderRequest::printToTable(SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row) {
 	// show elapsed time
 	if (xd) {
 		int64_t now = gettimeofdayInMilliseconds();
@@ -390,24 +390,24 @@ Spiderdb g_spiderdb2;
 void Spiderdb::reset() { m_rdb.reset(); }
 
 // print the spider rec
-int32_t Spiderdb::print( char *srec , SafeBuf *sb ) {
+int32_t Spiderdb::print(const char *srec, SafeBuf *sb) {
 	// get if request or reply and print it
-	if ( isSpiderRequest ( (key128_t *)srec ) )
-		((SpiderRequest *)srec)->print(sb);
+	if ( isSpiderRequest ( reinterpret_cast<const key128_t*>(srec) ) )
+		reinterpret_cast<const SpiderRequest*>(srec)->print(sb);
 	else
-		((SpiderReply *)srec)->print(sb);
+		reinterpret_cast<const SpiderReply*>(srec)->print(sb);
 	return 0;
 }
 
 void Spiderdb::printKey(const char *k) {
-	key128_t *key = (key128_t*)k;
+	const key128_t *key = reinterpret_cast<const key128_t*>(k);
 
 	SafeBuf sb;
 	// get if request or reply and print it
 	if ( isSpiderRequest (key ) ) {
-		((SpiderRequest *)key)->print(&sb);
+		reinterpret_cast<const SpiderRequest*>(key)->print(&sb);
 	} else {
-		((SpiderReply *)key)->print(&sb);
+		reinterpret_cast<const SpiderReply*>(key)->print(&sb);
 	}
 
 	logf(LOG_TRACE, "%s", sb.getBufStart());
@@ -593,7 +593,7 @@ bool isAssignedToUs ( int32_t firstIp ) {
 	if( !g_hostdb.getMyHost()->m_spiderEnabled ) return false;
 	
 	// get our group
-	Host *shard = g_hostdb.getMyShard();
+	const Host *shard = g_hostdb.getMyShard();
 	// pick a host in our group
 
 	// and number of hosts in the group
@@ -606,18 +606,18 @@ bool isAssignedToUs ( int32_t firstIp ) {
 
 	// hash to a host
 	int32_t i = ((uint32_t)h64) % hpg;
-	Host *h = &shard[i];
+	const Host *h = &shard[i];
 	// return that if alive
 	if ( ! g_hostdb.isDead(h) && h->m_spiderEnabled) {
 		return (h->m_hostId == g_hostdb.m_hostId);
 	}
 	// . select another otherwise
 	// . put all alive in an array now
-	Host *alive[64];
+	const Host *alive[64];
 	int32_t upc = 0;
 
 	for ( int32_t j = 0 ; j < hpg ; j++ ) {
-		Host *h = &shard[j];
+		const Host *h = &shard[j];
 		if ( g_hostdb.isDead(h) ) continue;
 		if( ! h->m_spiderEnabled ) continue;
 		alive[upc++] = h;
@@ -690,7 +690,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
                          bool addSeeds ,
                          const char *siteListArg ) {
 
-	CollectionRec *cr = g_collectiondb.getRec ( collnum );
+	const CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return true;
 
 	// tell spiderloop to update the active list in case this
@@ -717,7 +717,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 	// this is a safebuf PARM in Parms.cpp now HOWEVER, not really
 	// because we set it here from a call to CommandUpdateSiteList()
 	// because it requires all this computational crap.
-	char *op = cr->m_siteListBuf.getBufStart();
+	const char *op = cr->m_siteListBuf.getBufStart();
 
 	// scan and hash each line in it
 	for ( ; ; ) {
@@ -728,7 +728,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 		// done?
 		if ( ! *op ) break;
 		// get end
-		char *s = op;
+		const char *s = op;
 		// skip to end of line marker
 		for ( ; *op && *op != '\n' ; op++ ) ;
 		// keep it simple
@@ -1018,7 +1018,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 // . the url patterns all contain a domain now, so this can use the domain
 //   hash to speed things up
 // . return ptr to the start of the line in case it has "tag:" i guess
-static char *getMatchingUrlPattern(SpiderColl *sc, const SpiderRequest *sreq, char *tagArg) { // tagArg can be NULL
+static const char *getMatchingUrlPattern(const SpiderColl *sc, const SpiderRequest *sreq, const char *tagArg) { // tagArg can be NULL
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
 	// if it is just a bunch of comments or blank lines, it is empty
@@ -1029,8 +1029,8 @@ static char *getMatchingUrlPattern(SpiderColl *sc, const SpiderRequest *sreq, ch
 
 	// if we had a list of contains: or regex: directives in the sitelist
 	// we have to linear scan those
-	char *nb = sc->m_negSubstringBuf.getBufStart();
-	char *nbend = nb + sc->m_negSubstringBuf.length();
+	const char *nb = sc->m_negSubstringBuf.getBufStart();
+	const char *nbend = nb + sc->m_negSubstringBuf.length();
 	for ( ; nb && nb < nbend ; ) {
 		// return NULL if matches a negative substring
 		if ( strstr ( sreq->m_url , nb ) ) {
@@ -1045,10 +1045,10 @@ static char *getMatchingUrlPattern(SpiderColl *sc, const SpiderRequest *sreq, ch
 	const char *myPath = NULL;
 
 	// check domain specific tables
-	HashTableX *dt = &sc->m_siteListDomTable;
+	const HashTableX *dt = &sc->m_siteListDomTable;
 
 	// get this
-	CollectionRec *cr = sc->getCollectionRec();
+	const CollectionRec *cr = sc->getCollectionRec();
 
 	// need to build dom table for pattern matching?
 	if ( dt->getNumUsedSlots() == 0 && cr ) {
@@ -1070,15 +1070,15 @@ static char *getMatchingUrlPattern(SpiderColl *sc, const SpiderRequest *sreq, ch
 	// we handle.
 	int32_t slot = dt->getSlot ( &sreq->m_domHash32 );
 
-	char *buf = cr->m_siteListBuf.getBufStart();
+	const char *buf = cr->m_siteListBuf.getBufStart();
 
 	// loop over all the patterns that contain this domain and see
 	// the first one we match, and if we match a negative one.
 	for ( ; slot >= 0 ; slot = dt->getNextSlot(slot,&sreq->m_domHash32)) {
 		// get pattern
-		PatternData *pd = (PatternData *)dt->getValueFromSlot ( slot );
+		const PatternData *pd = (const PatternData *)dt->getValueFromSlot ( slot );
 		// point to string
-		char *patternStr = buf + pd->m_patternStrOff;
+		const char *patternStr = buf + pd->m_patternStrOff;
 		// is it negative? return NULL if so so url will be ignored
 		//if ( patternStr[0] == '-' )
 		//	return NULL;
@@ -1101,7 +1101,7 @@ static char *getMatchingUrlPattern(SpiderColl *sc, const SpiderRequest *sreq, ch
 		       patternStr[2]=='T' ) &&
 		     ( patternStr[3]=='p' ||
 		       patternStr[3]=='P' ) ) {
-			char *x = patternStr+4;
+			const char *x = patternStr+4;
 			// is it https:// ?
 			if ( *x == 's' || *x == 'S' ) x++;
 			// watch out for subdomains like http.foo.com
@@ -1110,7 +1110,7 @@ static char *getMatchingUrlPattern(SpiderColl *sc, const SpiderRequest *sreq, ch
 			}
 			// ok, we have to substring match exactly. like
 			// ^http://xyssds.com/foobar/
-			char *a = patternStr;
+			const char *a = patternStr;
 			const char *b = sreq->m_url;
 			for ( ; ; a++, b++ ) {
 				// stop matching when pattern is exhausted
@@ -1142,7 +1142,7 @@ static char *getMatchingUrlPattern(SpiderColl *sc, const SpiderRequest *sreq, ch
 			}
 
 			// compare tags
-			char *pdtag = pd->m_tagOff + buf;
+			const char *pdtag = pd->m_tagOff + buf;
 			if ( strncmp(tagArg,pdtag,pd->m_tagLen) != 0 ) {
 				continue;
 			}
@@ -1175,8 +1175,8 @@ static char *getMatchingUrlPattern(SpiderColl *sc, const SpiderRequest *sreq, ch
 
 	// if we had a list of contains: or regex: directives in the sitelist
 	// we have to linear scan those
-	char *pb = sc->m_posSubstringBuf.getBufStart();
-	char *pend = pb + sc->m_posSubstringBuf.length();
+	const char *pb = sc->m_posSubstringBuf.getBufStart();
+	const char *pend = pb + sc->m_posSubstringBuf.length();
 	for ( ; pb && pb < pend ; ) {
 		// return NULL if matches a negative substring
 		if ( strstr ( sreq->m_url , pb ) ) {
@@ -1195,10 +1195,10 @@ static char *getMatchingUrlPattern(SpiderColl *sc, const SpiderRequest *sreq, ch
 //   because things like "parentIsRSS" can be both true or false since a url
 //   can have multiple spider recs associated with it!
 int32_t getUrlFilterNum(const SpiderRequest *sreq,
-			SpiderReply	*srep,
+			const SpiderReply   *srep,
 			int32_t		nowGlobal,
 			bool		isForMsg20,
-			CollectionRec	*cr,
+			const CollectionRec	*cr,
 			bool		isOutlink,
 			int32_t		langIdArg ) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
@@ -1226,7 +1226,7 @@ int32_t getUrlFilterNum(const SpiderRequest *sreq,
 	int32_t  urlLen = sreq->getUrlLen();
 	const char *url = sreq->m_url;
 
-	char *row = NULL;
+	const char *row = NULL;
 	bool checkedRow = false;
 	SpiderColl *sc = g_spiderCache.getSpiderColl(cr->m_collnum);
 
@@ -1242,9 +1242,9 @@ int32_t getUrlFilterNum(const SpiderRequest *sreq,
 	// stop at first regular expression it matches
 	for ( int32_t i = 0 ; i < cr->m_numRegExs ; i++ ) {
 		// get the ith rule
-		SafeBuf *sb = &cr->m_regExs[i];
+		const SafeBuf *sb = &cr->m_regExs[i];
 		//char *p = cr->m_regExs[i];
-		char *p = sb->getBufStart();
+		const char *p = sb->getBufStart();
 
 checkNextRule:
 		// skip leading whitespace
@@ -1806,7 +1806,7 @@ checkNextRule:
 
 
 		// set the sign
-		char *s = p;
+		const char *s = p;
 		// skip s to after
 		while ( *s && is_alpha_a(*s) ) s++;
 
@@ -1889,12 +1889,12 @@ checkNextRule:
 			// set these up
 			//char *a    = tld;
 			//int32_t  alen = tldLen;
-			char *b    = s;
+			const char *b    = s;
 			// loop for the comma-separated list of tlds
 			// like tld:us,uk,fr,it,de
 		subloop1:
 			// get length of it in the regular expression box
-			char *start = b;
+			const char *start = b;
 			while ( *b && !is_wspace_a(*b) && *b!=',' ) b++;
 			int32_t  blen = b - start;
 			//char sm;
@@ -1962,12 +1962,12 @@ checkNextRule:
 			// skip if unknown? no, we support "xx" as unknown now
 			//if ( srep->m_langId == 0 ) continue;
 			// set these up
-			char *b = s;
+			const char *b = s;
 			// loop for the comma-separated list of langids
 			// like lang==en,es,...
 		subloop2:
 			// get length of it in the regular expression box
-			char *start = b;
+			const char *start = b;
 			while ( *b && !is_wspace_a(*b) && *b!=',' ) b++;
 			int32_t  blen = b - start;
 			//char sm;
@@ -2366,7 +2366,7 @@ checkNextRule:
 			// advance over caret
 			p++;
 			// now pstart pts to the string we will match
-			char *pstart = p;
+			const char *pstart = p;
 			// make "p" point to one past the last char in string
 			while ( *p && ! is_wspace_a(*p) ) p++;
 			// how long is the string to match?
@@ -2405,7 +2405,7 @@ checkNextRule:
 			// a hack for $\.css, skip over the backslash too
 			if ( *p=='\\' && *(p+1)=='.' ) p++;
 			// now pstart pts to the string we will match
-			char *pstart = p;
+			const char *pstart = p;
 			// make "p" point to one past the last char in string
 			while ( *p && ! is_wspace_a(*p) ) p++;
 			// how long is the string to match?
@@ -2446,7 +2446,7 @@ checkNextRule:
 		// . action=history
 
 		// now pstart pts to the string we will match
-		char *pstart = p;
+		const char *pstart = p;
 		// make "p" point to one past the last char in string
 		while ( *p && ! is_wspace_a(*p) ) p++;
 		// how long is the string to match?

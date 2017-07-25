@@ -13,6 +13,9 @@
 class RdbList;
 class HashTableX;
 class SpiderColl;
+class CollectionRec;
+class XmlDoc;
+class SafeBuf;
 
 
 #define SPIDERREQ_CURRENT_VERSION	1
@@ -405,7 +408,7 @@ public:
 	}
 
 	// print the spider rec
-	static int32_t print( char *srec , SafeBuf *sb = NULL );
+	static int32_t print(const char *srec, SafeBuf *sb = NULL);
 	static void printKey(const char *k);
 
 private:
@@ -691,10 +694,10 @@ public:
 		return Spiderdb::getParentDocId( &m_key );
 	}
 
-	int32_t print( class SafeBuf *sb );
+	int32_t print(SafeBuf *sb) const;
 
-	int32_t printToTable( SafeBuf *sb, const char *status, class XmlDoc *xd, int32_t row ) ;
-	int32_t printToJSON( SafeBuf *sb, const char *status, class XmlDoc *xd, int32_t row ) ;
+	int32_t printToTable( SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row ) ;
+	int32_t printToJSON( SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row ) ;
 
 	static int32_t printTableHeader ( SafeBuf *sb, bool currentlSpidering ) ;
 
@@ -855,7 +858,7 @@ public:
 
 	void setKey ( int32_t firstIp, int64_t parentDocId, int64_t uh48, bool isDel ) ;
 
-	int32_t print ( class SafeBuf *sbarg );
+	int32_t print(SafeBuf *sbarg) const;
 
 	int64_t getUrlHash48() const {
 		return Spiderdb::getUrlHash48(&m_key);
@@ -910,10 +913,10 @@ public:
 };
 
 int32_t getUrlFilterNum(const class SpiderRequest *sreq,
-		       class SpiderReply *srep,
+			const SpiderReply *srep,
 		       int32_t nowGlobal,
 		       bool isForMsg20,
-		       class CollectionRec *cr,
+		       const CollectionRec *cr,
 		       bool isOutlink,
 			  int32_t langIdArg );
 
