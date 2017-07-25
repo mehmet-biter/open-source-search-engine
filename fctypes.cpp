@@ -300,6 +300,11 @@ char *strnstr( const char *haystack, const char *needle, int32_t haystackLen ) {
 	return NULL;
 }
 
+const char *strnstrn(const char *haystack, int32_t haystackLen, const char *needle, int32_t needleLen) {
+	//glibc has a nice function for this. It is presumably fast
+	return (const char*)memmem(haystack,haystackLen,needle,needleLen);
+}
+
 // . get the # of words in this string
 int32_t getNumWords ( char *s , int32_t len, int32_t titleVersion ) {
 

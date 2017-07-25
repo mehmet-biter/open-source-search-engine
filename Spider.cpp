@@ -2453,15 +2453,8 @@ checkNextRule:
 		int32_t plen = p - pstart;
 		// need something...
 		if ( plen <= 0 ) continue;
-		// must be at least as big
-		//if ( urlLen < plen ) continue;
-		// nullilfy it temporarily
-		char c = *p;
-		*p     = '\0';
-		// does url contain it? haystack=u needle=p
-		const char *found = strstr ( url , pstart );
-		// put char back
-		*p     = c;
+		// does url contain it? haystack=url needle=pstart..p
+		const char *found = strnstrn(url, urlLen, pstart, plen);
 
 		// support "!company" meaning if it does NOT match
 		// then do this ...
