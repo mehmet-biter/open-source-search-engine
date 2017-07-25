@@ -5598,7 +5598,27 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "dns cache size";
+	m->m_desc  = "How many records to store in dns cache";
+	m->m_cgi   = "dnscachesize";
+	simple_m_set(Conf,m_dnsCacheSize);
+	m->m_def   = "50000";
+	m->m_units = "";
+	m->m_group = true;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
+	m->m_page  = PAGE_MASTER;
+	m++;
 
+	m->m_title = "dns cache max age";
+	m->m_desc  = "How long to cache dns records";
+	m->m_cgi   = "dnscachemaxage";
+	simple_m_set(Conf,m_dnsCacheMaxAge);
+	m->m_def   = "300";
+	m->m_units = "seconds";
+	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
+	m->m_page  = PAGE_MASTER;
+	m++;
 
 	m->m_title = "default collection";
 	m->m_desc  = "When no collection is explicitly specified, assume "
@@ -8538,6 +8558,14 @@ void Parms::init ( ) {
 	m->m_cgi   = "ltrc_dnsbl";
 	simple_m_set(Conf,m_logTraceDnsBlockList);
 	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for DnsCache";
+	m->m_cgi   = "ltrc_dnsc";
+	simple_m_set(Conf,m_logTraceDnsCache);
+	m->m_def   = "0";
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_LOG;
 	m++;
 
