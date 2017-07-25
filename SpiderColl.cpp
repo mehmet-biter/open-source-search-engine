@@ -284,7 +284,7 @@ bool SpiderColl::makeDoledbIPTable() {
 		// loop over entries in list
 		for (list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
 			// get rec
-			char *rec = list.getCurrentRec();
+			const char *rec = list.getCurrentRec();
 			// get key
 			key96_t k = list.getCurrentKey();
 
@@ -307,7 +307,7 @@ bool SpiderColl::makeDoledbIPTable() {
 			if (recSize <= minSize) { g_process.shutdownAbort(true); }
 			// . doledb key is 12 bytes, followed by a 4 byte datasize
 			// . so skip that key and dataSize to point to spider request
-			SpiderRequest *sreq = (SpiderRequest *)(rec + sizeof(key96_t) + 4);
+			const SpiderRequest *sreq = (const SpiderRequest *)(rec + sizeof(key96_t) + 4);
 			// add to dole tables
 			if (!addToDoledbIpTable(sreq)) {
 				// return false with g_errno set on error
@@ -493,7 +493,7 @@ bool SpiderColl::addSpiderReply(const SpiderReply *srep) {
 		ScopedLock sl(m_cdTableMtx);
 
 		// use the domain hash for this guy! since its from robots.txt
-		int32_t *cdp = (int32_t *)m_cdTable.getValue32(srep->m_domHash32);
+		const int32_t *cdp = (const int32_t *)m_cdTable.getValue32(srep->m_domHash32);
 
 		// update it only if better or empty
 		if (!cdp) {
@@ -1235,7 +1235,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	// loop over all serialized spiderdb records in the list
 	for ( ; ! m_waitingTreeList.isExhausted() ; ) {
 		// get spiderdb rec in its serialized form
-		char *rec = m_waitingTreeList.getCurrentRec();
+		const char *rec = m_waitingTreeList.getCurrentRec();
 		// skip to next guy
 		m_waitingTreeList.skipCurrentRecord();
 		// negative? wtf?
@@ -1250,7 +1250,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		}
 			
 		// cast it
-		SpiderRequest *sreq = (SpiderRequest *)rec;
+		const SpiderRequest *sreq = reinterpret_cast<const SpiderRequest *>(rec);
 		// get first ip
 		int32_t firstIp = sreq->m_firstIp;
 
@@ -1526,7 +1526,7 @@ loop:
 	m_countingPagesIndexed = false;
 
 	// get the collectionrec
-	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
+	const CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 	// but if we have quota based url filters we do have to count
 	if ( cr && cr->m_urlFiltersHavePageCounts ) {
 		// tell evalIpLoop() to count first
@@ -1744,7 +1744,7 @@ bool SpiderColl::evalIpLoop ( ) {
 	RdbCache *wc = &g_spiderLoop.m_winnerListCache;
 	time_t cachedTimestamp = 0;
 	bool useCache = true;
-	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
+	const CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 
 	// did our collection rec get deleted? since we were doing a read
 	// the SpiderColl will have been preserved in that case but its
@@ -1951,7 +1951,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	if ( ! m_waitingTreeKeyValid ) { g_process.shutdownAbort(true); }
 	if ( ! m_scanningIp ) { g_process.shutdownAbort(true); }
 
-	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
+	const CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 	if ( ! cr ) {
 		log("spider: lost collnum %" PRId32,(int32_t)m_collnum);
 		g_errno = ENOCOLLREC;
@@ -2341,7 +2341,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			// keep count per site and firstip
 			         m_siteIndexedDocumentCount.addScore(sreq->m_siteHash32,1);
 
-			int32_t *tmpNum = (int32_t *)m_siteIndexedDocumentCount.getValue( &( sreq->m_siteHash32 ) );
+			const int32_t *tmpNum = (const int32_t *)m_siteIndexedDocumentCount.getValue( &( sreq->m_siteHash32 ) );
 			logDebug( g_conf.m_logDebugSpider, "spider: sitequota: got %" PRId32" indexed docs for site from "
 			          "firstip of %s from url %s", tmpNum ? *tmpNum : -1,
 			          iptoa(sreq->m_firstIp,ipbuf),
@@ -2397,7 +2397,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			ScopedLock sl(m_sniTableMtx);
 
 			// get the # of inlinks to the site from our table
-			uint64_t *val = (uint64_t *)m_sniTable.getValue32(sreq->m_siteHash32);
+			const uint64_t *val = (const uint64_t *)m_sniTable.getValue32(sreq->m_siteHash32);
 			// use the most recent sni from this table
 			if (val)
 				sni = (int32_t)((*val) >> 32);
@@ -2561,7 +2561,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		// so we can kick out a lower priority version of the same url.
 		int32_t winSlot = m_winnerTable.getSlot ( &uh48 );
 		if ( winSlot >= 0 ) {
-			key192_t *oldwk = (key192_t *)m_winnerTable.getValueFromSlot ( winSlot );
+			const key192_t *oldwk = (const key192_t *)m_winnerTable.getValueFromSlot ( winSlot );
 
 			// get the min hopcount  
 			SpiderRequest *wsreq = (SpiderRequest *)m_winnerTree.getData(0,(char *)oldwk);
@@ -2984,11 +2984,11 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 
 
 
-bool SpiderColl::validateDoleBuf ( SafeBuf *doleBuf ) {
-	char *doleBufEnd = doleBuf->getBufPtr();
+bool SpiderColl::validateDoleBuf(const SafeBuf *doleBuf) {
+	const char *doleBufEnd = doleBuf->getBufPtr();
 	// get offset
-	char *pstart = doleBuf->getBufStart();
-	char *p = pstart;
+	const char *pstart = doleBuf->getBufStart();
+	const char *p = pstart;
 	int32_t jump = *(int32_t *)p;
 	p += 4;
 	// sanity
@@ -3265,7 +3265,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 }
 
 
-uint64_t SpiderColl::getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep, int64_t nowMS) {
+uint64_t SpiderColl::getSpiderTimeMS(const SpiderRequest *sreq, int32_t ufn, const SpiderReply *srep, int64_t nowMS) {
 	// . get the scheduled spiderTime for it
 	// . assume this SpiderRequest never been successfully spidered
 	int64_t spiderTimeMS = ((uint64_t)sreq->m_addedTime) * 1000LL;
@@ -3437,7 +3437,7 @@ bool SpiderColl::tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 // . therefore, we should add the ip to the dole table before we launch the
 //   Msg4 request to add it to doledb, that way we don't add a bunch from the
 //   same firstIP to doledb
-bool SpiderColl::addToDoledbIpTable(SpiderRequest *sreq) {
+bool SpiderColl::addToDoledbIpTable(const SpiderRequest *sreq) {
 	ScopedLock sl(m_doledbIpTableMtx);
 
 	// update how many per ip we got doled

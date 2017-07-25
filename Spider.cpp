@@ -2463,20 +2463,6 @@ checkNextRule:
 		// put char back
 		*p     = c;
 
-		// kinda of a hack fix. if they inject a filtered url
-		// into test coll, do not filter it! fixes the fact that
-		// we filtered facebook, but still add it in our test
-		// collection injection in urls.txt
-		if ( found && 
-		     sreq->m_isInjecting &&
-		     cr->m_coll[0]=='t' &&
-		     cr->m_coll[1]=='e' &&
-		     cr->m_coll[2]=='s' &&
-		     cr->m_coll[3]=='t' &&
-		     cr->m_coll[4]=='\0' &&
-		     cr->m_spiderPriorities[i] < 0 )
-			continue;
-
 		// support "!company" meaning if it does NOT match
 		// then do this ...
 		if ( ( found && val == 0 ) ||

@@ -129,15 +129,15 @@ private:
 	bool load();
 
 	bool makeDoledbIPTable();
-	bool addToDoledbIpTable(SpiderRequest *sreq);
+	bool addToDoledbIpTable(const SpiderRequest *sreq);
 	bool isInDoledbIpTable(int32_t firstIp) const;
 
-	bool validateDoleBuf(SafeBuf *doleBuf);
+	bool validateDoleBuf(const SafeBuf *doleBuf);
 	bool addDoleBufIntoDoledb(SafeBuf *doleBuf, bool isFromCache);
 
 	bool updateSiteNumInlinksTable(int32_t siteHash32, int32_t sni, time_t tstamp);
 
-	uint64_t getSpiderTimeMS(SpiderRequest *sreq, int32_t ufn, SpiderReply *srep, int64_t nowMS);
+	uint64_t getSpiderTimeMS(const SpiderRequest *sreq, int32_t ufn, const SpiderReply *srep, int64_t nowMS);
 
 	bool makeWaitingTable();
 	bool addToWaitingTable(int32_t firstIp, int64_t timeMs);
