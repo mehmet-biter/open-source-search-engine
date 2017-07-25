@@ -9784,6 +9784,28 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		// skip if "about:blank"
 		if ( urlLen==11 && strncmp(url,"about:blank",11) == 0 )
 			continue;
+
+		{
+			int width = -1;
+			int height = -1;
+
+			int tmpLen = 0;
+			const char *tmpStr = getFieldValue(p, pend - p, "width", &tmpLen);
+			if (tmpStr && tmpLen > 0) {
+				width = atol2(tmpStr, tmpLen);
+			}
+
+			tmpStr = getFieldValue(p, pend - p, "height", &tmpLen);
+			if (tmpStr && tmpLen > 0) {
+				height = atol2(tmpStr, tmpLen);
+			}
+
+			// ignore non visible iframe (treat 1px as non visible)
+			if (width >= 0 && width <= 1 && height >= 0 && height <= 1) {
+				continue;
+			}
+		}
+
 		// get our current url
 		//cu = getCurrentUrl();
 		// set our frame url
