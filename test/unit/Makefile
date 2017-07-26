@@ -7,6 +7,7 @@ TARGET = GigablastTest
 OBJECTS = GigablastTest.o GigablastTestUtils.o \
 	BitOperationsTest.o \
 	BigFileTest.o \
+	DnsBlockListTest.o \
 	FctypesTest.o \
 	GbCacheTest.o \
 	HttpMimeTest.o \

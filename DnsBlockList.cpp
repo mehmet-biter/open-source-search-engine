@@ -73,9 +73,17 @@ bool DnsBlockList::isDnsBlocked(const char *dns) {
 	auto dnsBlockList = getDnsBlockList();
 
 	for (auto const &dnsBlock : *dnsBlockList) {
-		if (strcasecmp(dnsBlock.c_str(), dns) == 0) {
-			logTrace(g_conf.m_logTraceDnsBlockList, "Dns block criteria %s matched dns '%s'", dnsBlock.c_str(), dns);
-			return true;
+		if (dnsBlock.front() == '*') {
+			// wildcard
+			if (strcasecmp(dnsBlock.c_str() + 1, dns + (strlen(dns) - (dnsBlock.length() - 1))) == 0) {
+				logTrace(g_conf.m_logTraceDnsBlockList, "Dns block criteria %s matched dns '%s'", dnsBlock.c_str(), dns);
+				return true;
+			}
+		} else {
+			if (strcasecmp(dnsBlock.c_str(), dns) == 0) {
+				logTrace(g_conf.m_logTraceDnsBlockList, "Dns block criteria %s matched dns '%s'", dnsBlock.c_str(), dns);
+				return true;
+			}
 		}
 	}
 
