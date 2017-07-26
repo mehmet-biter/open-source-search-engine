@@ -12488,12 +12488,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	//   indicate a document that will never be indexable and should,
 	//   if currently indexed, be deleted.
 	// . just add the spider reply and we're done
-	if (    *indexCode == EDNSTIMEDOUT
-	     || *indexCode == ETCPTIMEDOUT
-	     || *indexCode == EUDPTIMEDOUT
-	     || *indexCode == EDNSDEAD
-	     || *indexCode == ENETUNREACH
-	     || *indexCode == EHOSTUNREACH
+	if ( isSpiderTempError(*indexCode)
 		// . treat this as a temporary error i guess
 		// . getNewSpiderReply() below will clear the error in it and
 		//   copy stuff over from m_sreq and m_oldDoc for this case

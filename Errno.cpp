@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <cerrno>
 
 static pthread_key_t s_g_errno_key;
 
@@ -30,6 +31,27 @@ int* g_errno_location() {
 	}
 
 	return gb_errno;
+}
+
+bool isSpiderTempError(int errnum) {
+	switch (errnum) {
+		case EDNSTIMEDOUT:
+		case ETCPTIMEDOUT:
+		case EDNSDEAD:
+		case EBADIP:
+		case EDNSSERVFAIL:
+		case EDNSBADRESPONSE:
+		case ENOMEM:
+		case ENETUNREACH:
+		case EHOSTUNREACH:
+		case ETRYAGAIN:
+		case EHOSTDEAD:
+		case EINTERNALERROR:
+		case EDOCBADHTTPSTATUS: // tmp error because we want to use url filters to retry
+			return true;
+		default:
+			return false;
+	}
 }
 
 const char *mstrerror ( int errnum ) {
