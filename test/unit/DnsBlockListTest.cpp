@@ -23,4 +23,5 @@ TEST(DnsBlockListTest, BlockList) {
 	EXPECT_TRUE(dnsBlockList.isDnsBlocked("badexample.com"));
 	EXPECT_TRUE(dnsBlockList.isDnsBlocked("abadexample.com"));
 	EXPECT_TRUE(dnsBlockList.isDnsBlocked("averybadexample.com"));
+	EXPECT_FALSE(dnsBlockList.isDnsBlocked("adexample.com"));
 }
