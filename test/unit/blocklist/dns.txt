@@ -1,0 +1,8 @@
+# full nameserver
+ns1.example.com
+
+# wildcard subdomain
+*.parked.example.com
+
+# wildcard
+*badexample.com
