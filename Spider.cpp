@@ -2340,7 +2340,7 @@ checkNextRule:
 			// must have a reply
 			if ( ! srep ) continue;
 			// shortcut (errCode doubles as g_errno)
-			int32_t a = srep->m_errCode;
+			int32_t a = srep->m_httpStatus;
 			// make it point to the priority
 			int32_t b = atoi(s);
 			// compare
