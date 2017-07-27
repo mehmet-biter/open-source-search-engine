@@ -1056,7 +1056,6 @@ CollectionRec::CollectionRec() {
 	m_modifyAPILikeSearches = false;
 	m_rcache = false;
 	m_hideAllClustered = false;
-	m_END_COPY = 0;
 }
 
 CollectionRec::~CollectionRec() {

@@ -369,10 +369,6 @@ public:
 
 	bool m_hideAllClustered;
 
-	// special var to prevent Collectiondb.cpp from copying the crap
-	// below here
-	char m_END_COPY;
-
 	// use this not m_bases to get the RdbBase
 	class RdbBase *getBase(rdbid_t rdbId);
 
