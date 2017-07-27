@@ -48,7 +48,7 @@
 
 static void testWinnerTreeKey();
 
-static int32_t getFakeIpForUrl2(Url *url2);
+static int32_t getFakeIpForUrl2(const Url *url2);
 
 /////////////////////////
 /////////////////////////      SPIDEREC
@@ -230,7 +230,7 @@ int32_t SpiderReply::print(SafeBuf *sbarg) const {
  *     "parentDocId": 123456789,
  * }
  */
-int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row) {
+int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row) const {
 	if (row != 0) {
 		sb->safePrintf("\t\t,\n");
 	}
@@ -276,7 +276,7 @@ int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, const XmlDoc
 	return sb->length();
 }
 
-int32_t SpiderRequest::printToTable(SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row) {
+int32_t SpiderRequest::printToTable(SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row) const {
 	// show elapsed time
 	if (xd) {
 		int64_t now = gettimeofdayInMilliseconds();
@@ -2789,7 +2789,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 
 
-bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
+bool getSpiderStatusMsg(const CollectionRec *cx, SafeBuf *msg, int32_t *status) {
 
 	if ( ! g_conf.m_spideringEnabled ) {
 		*status = SP_ADMIN_PAUSED;
@@ -2864,7 +2864,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 
 
 
-static int32_t getFakeIpForUrl2(Url *url2) {
+static int32_t getFakeIpForUrl2(const Url *url2) {
 	// make the probable docid
 	int64_t probDocId = Titledb::getProbableDocId ( url2 );
 	// make one up, like we do in PageReindex.cpp

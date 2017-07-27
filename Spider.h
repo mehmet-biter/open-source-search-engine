@@ -48,9 +48,7 @@ class SafeBuf;
 #define SP_ADMIN_PAUSED   8 // g_conf.m_spideringEnabled = false
 //#define SP_UNUSED_9     9
 
-bool getSpiderStatusMsg ( class CollectionRec *cx , 
-			  class SafeBuf *msg , 
-			  int32_t *status ) ;
+bool getSpiderStatusMsg(const CollectionRec *cx, SafeBuf *msg, int32_t *status);
 
 
 
@@ -696,8 +694,8 @@ public:
 
 	int32_t print(SafeBuf *sb) const;
 
-	int32_t printToTable( SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row ) ;
-	int32_t printToJSON( SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row ) ;
+	int32_t printToTable(SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row) const;
+	int32_t printToJSON(SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row) const;
 
 	static int32_t printTableHeader ( SafeBuf *sb, bool currentlSpidering ) ;
 
