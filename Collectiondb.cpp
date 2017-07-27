@@ -1507,7 +1507,19 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("errorcode==%d || errorcode==%d || errorcode=%d", EDNSNOTFOUND, EDNSBADREQUEST, EDNSREFUSED);
 	m_harvestLinks       [n] = false;
-	m_spiderFreqs        [n] = 0;       // 0 days default
+	m_spiderFreqs        [n] = 1;
+	m_maxSpidersPerRule  [n] = 1;       // max spiders
+	m_spiderIpMaxSpiders [n] = ipms;    // max spiders per ip
+	m_spiderIpWaits      [n] = 0;       // same ip wait
+	m_spiderPriorities   [n] = 100;
+	m_forceDelete        [n] = 1;       // delete!
+	n++;
+
+	// http permanent error
+	m_regExs[n].reset();
+	m_regExs[n].safePrintf("errorcode==%d && httpstatus>=500 && httpstatus<600", EDOCBADHTTPSTATUS);
+	m_harvestLinks       [n] = false;
+	m_spiderFreqs        [n] = 0;
 	m_maxSpidersPerRule  [n] = 1;       // max spiders
 	m_spiderIpMaxSpiders [n] = ipms;    // max spiders per ip
 	m_spiderIpWaits      [n] = 0;       // same ip wait

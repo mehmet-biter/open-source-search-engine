@@ -1321,24 +1321,10 @@ checkNextRule:
 			// . make it zero if not tmp error
 			// . now have EDOCUNCHANGED and EDOCNOGOODDATE from
 			//   Msg13.cpp, so don't count those here...
-			if ( errCode != EDNSTIMEDOUT &&
-			     errCode != ETCPTIMEDOUT &&
-			     errCode != EDNSDEAD &&
-			     // add this here too now because we had some
-			     // seeds that failed one time and the crawl
-			     // never repeated after that!
-			     errCode != EBADIP &&
-			     errCode != EDNSSERVFAIL &&
-			     errCode != EDNSBADRESPONSE &&
-			     // out of memory while crawling?
-			     errCode != ENOMEM &&
-			     errCode != ENETUNREACH &&
-			     errCode != EHOSTUNREACH &&
-			     errCode != ETRYAGAIN &&
-			     errCode != EHOSTDEAD &&
-			     errCode != EINTERNALERROR
-			     )
+			if (!isSpiderTempError(errCode)) {
 				errCode = 0;
+			}
+
 			// if no match continue
 			if ( (bool)errCode == val ) continue;
 
@@ -2340,7 +2326,7 @@ checkNextRule:
 			// must have a reply
 			if ( ! srep ) continue;
 			// shortcut (errCode doubles as g_errno)
-			int32_t a = srep->m_errCode;
+			int32_t a = srep->m_httpStatus;
 			// make it point to the priority
 			int32_t b = atoi(s);
 			// compare

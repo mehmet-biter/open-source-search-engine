@@ -14,6 +14,8 @@ int* g_errno_location();
 const char* mstrerror ( int errnum );
 const char* merrname( int errnum );
 
+bool isSpiderTempError(int errnum);
+
 #define GB_ERRNO_BEGIN 0x00008000 // 32768
 
 enum {
