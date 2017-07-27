@@ -268,7 +268,7 @@ private:
 		generateFilename(buf,bufsize,fileId,-1,mergeNum,endMergeFileId,"idx");
 	}
 
-	bool cleanupAnyChrashedMerged();
+	bool cleanupAnyChrashedMerges(bool doDryrun, bool *anyCrashedMerges);
 	bool loadFilesFromDir(const char *dirName, bool isInMergeDir);
 	bool fixNonfirstSpiderdbFiles();
 

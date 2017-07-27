@@ -455,8 +455,13 @@ bool RdbBase::hasFileId(int32_t fildId) const {
 // . first file is always the merge file (may be empty)
 // . returns false on error
 bool RdbBase::setFiles ( ) {
-	if(!cleanupAnyChrashedMerged())
+	bool doMergeCleanupDryrun = g_conf.m_doingCommandLine;
+	bool anyCrashedMerges;
+	if(!cleanupAnyChrashedMerges(doMergeCleanupDryrun,&anyCrashedMerges))
 		return false;
+
+	if(doMergeCleanupDryrun && anyCrashedMerges)
+		log(LOG_WARN, "Unfinished/crashed merge found, but command-line is not allowed to clean up. Results may be inconsistent.");
 
 	if(!loadFilesFromDir(m_collectionDirName,false))
 		return false;
@@ -487,13 +492,15 @@ bool RdbBase::setFiles ( ) {
 //  copy/move can easily be restarted (and it would be too much effort to restart copying
 //  halfway).  Orphaned mergedir/*.map and mergedir/*.idx are removed.  Orphaned data/*.map
 //  and data/*.idx are removed.  Missing *.map and *.idx are automatically regenerated.
-bool RdbBase::cleanupAnyChrashedMerged() {
+bool RdbBase::cleanupAnyChrashedMerges(bool doDryrun, bool *anyCrashedMerges) {
 	//note: we could submit the unlik() calls to the jobscheduler if we really wanted
 	//but since this recovery-cleanup is done during startup I don't see a big problem
 	//with waiting for unlink() to finish because the collection will not be ready for
 	//use until cleanup has happened.
 
 	log(LOG_DEBUG, "Cleaning up any unfinished merges of %s %s", m_coll, m_dbname);
+
+	*anyCrashedMerges = false;
 
 	//Remove datadir/mergefile.dat
 	{
@@ -509,13 +516,16 @@ bool RdbBase::cleanupAnyChrashedMerged() {
 				int32_t mergeNum, endMergeFileId;
 				if(parseFilename(filename,&fileId,&fileId2,&mergeNum,&endMergeFileId)) {
 					if((fileId%2)==0) {
+						*anyCrashedMerges = true;
 						char fullname[1024];
 						sprintf(fullname,"%s/%s",m_collectionDirName,filename);
 						log(LOG_DEBUG,"Removing %s", fullname);
-						if(unlink(fullname)!=0) {
-							g_errno = errno;
-							log(LOG_ERROR,"unlink(%s) failed with errno=%d (%s)", fullname, errno, strerror(errno));
-							return false;
+						if(!doDryrun) {
+							if(unlink(fullname)!=0) {
+								g_errno = errno;
+								log(LOG_ERROR,"unlink(%s) failed with errno=%d (%s)", fullname, errno, strerror(errno));
+								return false;
+							}
 						}
 					}
 				}
@@ -552,13 +562,16 @@ bool RdbBase::cleanupAnyChrashedMerged() {
 				if(existingDataDirFileIds.find(fileId)==existingDataDirFileIds.end() &&  //unseen fileid
 				   (strstr(filename,".map")!=NULL || strstr(filename,".idx")!=NULL))     //.map or .idx
 				{
+					*anyCrashedMerges = true;
 					char fullname[1024];
 					sprintf(fullname,"%s/%s",m_collectionDirName,filename);
 					log(LOG_DEBUG,"Removing %s", fullname);
-					if(unlink(fullname)!=0) {
-						g_errno = errno;
-						log(LOG_ERROR,"unlink(%s) failed with errno=%d (%s)", fullname, errno, strerror(errno));
-						return false;
+					if(!doDryrun) {
+						if(unlink(fullname)!=0) {
+							g_errno = errno;
+							log(LOG_ERROR,"unlink(%s) failed with errno=%d (%s)", fullname, errno, strerror(errno));
+							return false;
+						}
 					}
 				}
 			}
@@ -594,13 +607,16 @@ bool RdbBase::cleanupAnyChrashedMerged() {
 				if(existingMergeDirFileIds.find(fileId)==existingMergeDirFileIds.end() &&  //unseen fileid
 				   (strstr(filename,".map")!=NULL || strstr(filename,".idx")!=NULL))     //.map or .idx
 				{
+					*anyCrashedMerges = true;
 					char fullname[1024];
 					sprintf(fullname,"%s/%s",m_mergeDirName,filename);
 					log(LOG_DEBUG,"Removing %s", fullname);
-					if(unlink(fullname)!=0) {
-						g_errno = errno;
-						log(LOG_ERROR,"unlink(%s) failed with errno=%d (%s)", fullname, errno, strerror(errno));
-						return false;
+					if(!doDryrun) {
+						if(unlink(fullname)!=0) {
+							g_errno = errno;
+							log(LOG_ERROR,"unlink(%s) failed with errno=%d (%s)", fullname, errno, strerror(errno));
+							return false;
+						}
 					}
 				}
 			}
