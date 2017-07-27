@@ -153,7 +153,7 @@ bool getSpiderStatusMsg(const CollectionRec *cx, SafeBuf *msg, int32_t *status);
 // waiting tree with a spiderTime of 0. so when the waiting tree scan happens
 // it will pick that up and look in spiderdb for the best SpiderRequest with
 // that same firstIP that can be spidered now, and then it adds that to
-// doledb. (To prevent from having to scan int32_t spiderdb lists and speed 
+// doledb. (To prevent from having to scan long spiderdb lists and speed 
 // things up we might want to keep a little cache that maps a firstIP to 
 // a few SpiderRequests ready to be spidered).
 
