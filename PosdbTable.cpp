@@ -1432,6 +1432,9 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	if ( ! m_qiBuf.reserve(qneed,"qibuf") ) {
 		return false; // label it too!
 	}
+#ifdef _VALGRIND_
+	VALGRIND_MAKE_MEM_UNDEFINED(m_qiBuf.getBufStart(), m_qiBuf.getCapacity());
+#endif
 	
 	// point to those
 	QueryTermInfo *qtibuf = (QueryTermInfo *)m_qiBuf.getBufStart();
@@ -4905,9 +4908,9 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists() {
 	//phase 2: set the matchingsublist pointers in qti
 	for(int i=0; i<m_numQueryTermInfos; i++) {
 		QueryTermInfo *qti = ((QueryTermInfo*)m_qiBuf.getBufStart()) + i;
+		qti->m_numMatchingSubLists = 0;
 		if(qti->m_subList[0].m_bigramFlag & BF_NEGATIVE)
 			continue; //don't modify sublist for negative terms
-		qti->m_numMatchingSubLists = 0;
 #ifdef _VALGRIND_
 		VALGRIND_MAKE_MEM_UNDEFINED(qti->m_matchingSublist, sizeof(qti->m_matchingSublist));
 #endif
