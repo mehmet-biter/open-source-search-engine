@@ -503,12 +503,10 @@ int main2 ( int argc , char *argv[] ) {
 			"\t\tdump l <collection> <fileNum> <numFiles> <includeTree>\n"
 			"\tlinkdb:\n"
 			"\t\tdump L <collection> <fileNum> <numFiles> <includeTree> <url>\n"
-			"\t#tagdb:\n"
-			"\t#\tdump z <collection> <fileNum> <numFiles> <includeTree> <site>\n"
-			"\t#tagdb:\n"
-			"\t#\tdump A <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
-			"\t#tagdb:\n"
-			"\t#\tdump G <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
+			"\ttagdb (make sitelist.txt):\n"
+			"\t\tdump z <collection> <fileNum> <numFiles> <includeTree> <site>\n"
+			"\ttagdb (output HTTP commands for adding tags):\n"
+			"\t\tdump A <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
 			);
 		
 		//word-wrap to screen width, if known
@@ -1317,8 +1315,6 @@ int main2 ( int argc , char *argv[] ) {
 			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'z', site );
 		} else if ( argv[cmdarg+1][0] == 'A' ) {
 			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'A', NULL );
-		} else if ( argv[cmdarg+1][0] == 'G' ) {
-			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'G', NULL );
 		} else if ( argv[cmdarg+1][0] == 'W' ) {
 			dumpTagdb( coll, startFileNum, numFiles, includeTree,   0, NULL );
 		} else if ( argv[cmdarg+1][0] == 'l' )
