@@ -96,6 +96,8 @@ static bool registerMsgHandlers();
 static bool registerMsgHandlers1();
 static bool registerMsgHandlers2();
 
+static const int32_t commandLineDumpdbRecSize = 10 * 1024 * 1024; //recSizes parameter for Msg5::getList() while dumping database from the command-line
+
 static void dumpTitledb  (const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   int64_t docId , bool justPrintDups );
 static int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int printStats, int32_t firstIp);
@@ -2230,8 +2232,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 	endKey.setMax();
 	lastKey.setMin();
 	startKey = Titledb::makeFirstKey ( docid );
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
 	RdbList list;
 	int64_t prevId = 0LL;
@@ -2263,7 +2263,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 				      &list         ,
 				      &startKey      ,
 				      &endKey        ,
-				      minRecSizes   ,
+				      commandLineDumpdbRecSize,
 				      includeTree   ,
 				      startFileNum  ,
 				      numFiles      ,
@@ -2526,8 +2526,6 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 	key96_t endKey   ;
 	startKey.setMin();
 	endKey.setMax();
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
 	RdbList list;
 	key96_t oldk; oldk.setMin();
@@ -2540,7 +2538,7 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 				      &list         ,
 				      &startKey      ,
 				      &endKey        ,
-				      minRecSizes   ,
+				      commandLineDumpdbRecSize,
 				      includeTree   ,
 				      startFileNum  ,
 				      numFiles      ,
@@ -2735,9 +2733,6 @@ int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, b
 		endKey.setMax();
 	}
 
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
-
 	Msg5 msg5;
 	RdbList list;
 
@@ -2786,7 +2781,7 @@ int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, b
 			      &list         ,
 			      (char *)&startKey      ,
 			      (char *)&endKey        ,
-			      minRecSizes   ,
+			      commandLineDumpdbRecSize,
 			      includeTree   ,
 			      startFileNum  ,
 			      numFiles      ,
@@ -3177,8 +3172,6 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 		log("gb: using site %s for start key",siteArg );
 	}
 
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
 	RdbList list;
 
@@ -3199,7 +3192,7 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 				      &list         ,
 				      (char *)&startKey      ,
 				      (char *)&endKey        ,
-				      minRecSizes   ,
+				      commandLineDumpdbRecSize,
 				      includeTree   ,
 				      startFileNum  ,
 				      numFiles      ,
@@ -3710,8 +3703,6 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		printf("startkey=%s\n",KEYSTR(&startKey,sizeof(posdbkey_t)));
 		printf("endkey=%s\n",KEYSTR(&endKey,sizeof(posdbkey_t)));
 	}
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 
 	// bail if not
 	if ( g_posdb.getRdb()->getNumFiles() <= startFileNum && numFiles > 0 ) {
@@ -3739,7 +3730,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		                  &list,
 		                  &startKey,
 		                  &endKey,
-		                  minRecSizes,
+		                  commandLineDumpdbRecSize,
 		                  includeTree,
 		                  startFileNum,
 		                  numFiles,
@@ -3860,8 +3851,6 @@ static void dumpClusterdb(const char *coll,
 	key96_t endKey   ;
 	startKey.setMin();
 	endKey.setMax();
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 
 	// bail if not
 	if ( g_clusterdb.getRdb()->getNumFiles() <= startFileNum ) {
@@ -3882,7 +3871,7 @@ static void dumpClusterdb(const char *coll,
 				      &list         ,
 				      &startKey      ,
 				      &endKey        ,
-				      minRecSizes   ,
+				      commandLineDumpdbRecSize,
 				      includeTree   ,
 				      startFileNum  ,
 				      numFiles      ,
@@ -3960,8 +3949,6 @@ static void dumpLinkdb(const char *coll,
 		startKey = Linkdb::makeStartKey_uk ( h32 , uh64 );
 		endKey   = Linkdb::makeEndKey_uk   ( h32 , uh64 );
 	}
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 
 	// bail if not
 	if ( g_linkdb.getRdb()->getNumFiles() <= startFileNum  && !includeTree) {
@@ -3982,7 +3969,7 @@ static void dumpLinkdb(const char *coll,
 				      &list         ,
 				      (char *)&startKey      ,
 				      (char *)&endKey        ,
-				      minRecSizes   ,
+				      commandLineDumpdbRecSize,
 				      includeTree   ,
 				      startFileNum  ,
 				      numFiles      ,
@@ -4281,8 +4268,6 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 	log( LOG_INFO, "cntDm: parms: %s, %" PRId32, coll, numRecs );
 	int64_t time_start = gettimeofdayInMilliseconds();
 
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
 	RdbList list;
 	int32_t countDocs = 0;
@@ -4306,7 +4291,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 			      &list         ,
 			      &startKey      ,
 			      &endKey        ,
-			      minRecSizes   ,
+			      commandLineDumpdbRecSize,
 			      true         , // Do we need to include tree?
 			      0             ,
 			      -1            ,
