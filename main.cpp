@@ -55,6 +55,7 @@
 #include "Msg0.h"
 #include "Msg4In.h"
 #include "Msg4Out.h"
+
 #include "Msg13.h"
 #include "Msg20.h"
 #include "Msg22.h"
@@ -85,6 +86,7 @@
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <sys/ioctl.h>
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #include <valgrind/helgrind.h>
@@ -500,10 +502,16 @@ int main2 ( int argc , char *argv[] ) {
 			"\t<db> is l to dump clusterdb.\n"
 			"\t<db> is L to dump linkdb.\n"
 			);
-		SafeBuf sb2;
-		sb2.brify2 ( sb.getBufStart() , 60 , "\n\t" , false );
-		sb2.safeMemcpy("",1);
-		fprintf(stdout,"%s",sb2.getBufStart());
+		
+		//word-wrap to screen width, if known
+		struct winsize w;
+		if(ioctl(STDOUT_FILENO,TIOCGWINSZ,&w)==0 && w.ws_col>0) {
+			SafeBuf sb2;
+			sb2.brify2(sb.getBufStart(), w.ws_col, "\n\t", false);
+			sb2.safeMemcpy("",1);
+			fprintf(stdout,"%s",sb2.getBufStart());
+		} else
+			fprintf(stdout,"%s",sb.getBufStart());
 		// disable printing of used memory
 		//g_mem.m_used = 0;
 		return 0;
