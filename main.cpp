@@ -98,8 +98,7 @@ static bool registerMsgHandlers2();
 
 static void dumpTitledb  (const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   int64_t docId , bool justPrintDups );
-static int32_t dumpSpiderdb ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
-			   char printStats , int32_t firstIp );
+static int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int printStats, int32_t firstIp);
 
 static void dumpTagdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char req,
 		      const char *site);
@@ -128,6 +127,9 @@ static bool summaryTest1(char *rec, int32_t listSize, const char *coll, int64_t 
 
 static bool cacheTest();
 static void countdomains(const char* coll, int32_t numRecs, int32_t verb, int32_t output);
+
+static bool argToBoolean(const char *arg);
+
 
 static void wakeupPollLoop() {
 	g_loop.wakeupPollLoop();
@@ -475,7 +477,7 @@ int main2 ( int argc , char *argv[] ) {
 			"all events as if the time is UTCtimestamp.\n\n"
 			*/
 
-			"dump <db> <collection> <fileNum> <numFiles> <includeTree>\n\tDump a db from disk. "
+			"dump <db> <collection> <fileNum> <numFiles> <includeTree> [other stuff]\n\tDump a db from disk. "
 			"Example: gb dump t main\n"
 			"\t<collection> is the name of the collection.\n"
 
@@ -1224,7 +1226,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg+1 >= argc ) goto printHelp;
 		int32_t startFileNum =  0;
 		int32_t numFiles     = -1;
-		int32_t includeTree  =  1;
+		bool includeTree     =  true;
 		int64_t termId  = -1;
 		const char *coll = "";
 
@@ -1239,7 +1241,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg+2 < argc ) coll         = argv[cmdarg+2];
 		if ( cmdarg+3 < argc ) startFileNum = atoi(argv[cmdarg+3]);
 		if ( cmdarg+4 < argc ) numFiles     = atoi(argv[cmdarg+4]);
-		if ( cmdarg+5 < argc ) includeTree  = atoi(argv[cmdarg+5]);
+		if ( cmdarg+5 < argc ) includeTree  = argToBoolean(argv[cmdarg+5]);
 		if ( cmdarg+6 < argc ) {
 			char *targ = argv[cmdarg+6];
 			if ( is_alpha_a(targ[0]) ) {
@@ -1283,16 +1285,12 @@ int main2 ( int argc , char *argv[] ) {
 		else if ( argv[cmdarg+1][0] == 'x' )
 			dumpDoledb  (coll,startFileNum,numFiles,includeTree);
 		else if ( argv[cmdarg+1][0] == 's' ) {
-			char  printStats = 0;
+			int printStats = 0;
 			int32_t firstIp = 0;
-			if ( cmdarg+6 < argc ){
-				printStats= atol(argv[cmdarg+6]);
-				// it could be an ip instead of printstats
-				if ( strstr(argv[cmdarg+6],".") ) {
-					printStats = 0;
-					firstIp = atoip(argv[cmdarg+6]);
-				}
-			}
+			if(cmdarg+6 < argc)
+				printStats = atol(argv[cmdarg+6]);
+			if(cmdarg+7 < argc)
+				firstIp = atoip(argv[cmdarg+6]);
 
 			int32_t ret = dumpSpiderdb ( coll, startFileNum, numFiles, includeTree, printStats, firstIp );
 			if ( ret == -1 ) {
@@ -1739,6 +1737,12 @@ int32_t checkDirPerms(const char *dir) {
 		return -1;
 	}
 	return 0;
+}
+
+
+static bool argToBoolean(const char *arg) {
+	return strcmp(arg,"1")==0 ||
+	       strcmp(arg,"true")==0;
 }
 
 // save them all
@@ -2700,8 +2704,7 @@ static void addUStat2(SpiderReply *srep , int32_t now) {
 }
 
 
-int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char printStats,
-                       int32_t firstIp ) {
+int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int printStats, int32_t firstIp) {
 	if ( startFileNum < 0 ) {
 		log(LOG_LOGIC,"db: Start file number is < 0. Must be >= 0.");
 		return -1;
