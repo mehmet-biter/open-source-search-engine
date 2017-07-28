@@ -1294,7 +1294,7 @@ int main2 ( int argc , char *argv[] ) {
 			if(cmdarg+6 < argc)
 				printStats = atol(argv[cmdarg+6]);
 			if(cmdarg+7 < argc)
-				firstIp = atoip(argv[cmdarg+6]);
+				firstIp = atoip(argv[cmdarg+7]);
 
 			int32_t ret = dumpSpiderdb ( coll, startFileNum, numFiles, includeTree, printStats, firstIp );
 			if ( ret == -1 ) {
