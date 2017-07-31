@@ -3093,7 +3093,6 @@ bool Expression::addExpression (int32_t start,
 			continue;
 		}
 		// white space?
-		continue;
 	}
 
 	m_numWordsInExpression = i - m_expressionStartWord;

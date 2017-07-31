@@ -187,8 +187,6 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t node1, int32_t node2 ) {
 
 		// used by XmlDoc.cpp
 		m_numTags++;
-
-		continue;
 	}
 
 	return true;

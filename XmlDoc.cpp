@@ -10323,7 +10323,6 @@ int32_t getContentHash32Fast ( unsigned char *p , int32_t plen ) {
 		h ^= g_hashtab[pos][p[0]];
 		pos++;
 		// assume ascii or latin1
-		continue;
 	}
 	return h;
 }

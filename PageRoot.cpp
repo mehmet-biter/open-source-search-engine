@@ -417,7 +417,6 @@ bool expandHtml (  SafeBuf& sb,
 		}
 
 		sb.safeMemcpy((char*)&head[i], 1);
-		continue;
 	}
 	//return p;
 	return true;

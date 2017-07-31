@@ -2650,7 +2650,6 @@ bool Parms::setFromFile ( void *THIS        ,
 		// try to get the next node if we're an array
 		if ( ++j < m->m_max || j < m->m_fixed ) { goto loop; }
 		// otherwise, if not an array, go to next parm
-		continue;
 	}
 
 	// backwards compatible hack for old <masterPassword> tags

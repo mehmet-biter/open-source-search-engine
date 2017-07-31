@@ -1073,7 +1073,6 @@ redo:
 		// nuke it
 		breakPoint = NULL;
 		col = 0;
-		continue;
 	}
 
 	// print out the last line which never hit the maxCharsPerLine barrier

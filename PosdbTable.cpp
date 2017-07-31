@@ -4452,7 +4452,7 @@ float PosdbTable::getMaxPossibleScore(const QueryTermInfo *qti) {
 		}
 
 	nextTermList:
-		continue;
+		;
 
 	}
 

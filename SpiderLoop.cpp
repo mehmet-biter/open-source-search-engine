@@ -1049,8 +1049,6 @@ bool SpiderLoop::spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t co
 			    xd->m_firstUrl.getUrl());
 			//g_process.shutdownAbort(true); }
 		}
-		// keep chugging
-		continue;
 	}
 
 	// reset g_errno
