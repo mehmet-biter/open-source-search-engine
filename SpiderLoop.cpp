@@ -655,11 +655,13 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 	if ( bail ) {
 		// return false to indicate to try another
+		log(LOG_DEBUG,"spider:gotDoledbList2:bailing");
 		return false;
 	}
 
 	// bail if list is empty
 	if ( m_list.getListSize() <= 0 ) {
+		log(LOG_DEBUG,"spider:gotDoledbList2:empty list");
 		return true;
 	}
 
@@ -746,6 +748,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 	// skip? and re-get another doledb list from next priority...
 	if ( out >= max ) {
+		log(LOG_DEBUG,"spider:gotDoledbList2:returning, out=%d max=%d", out, max);
 		return true;
 	}
 
@@ -769,6 +772,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 	// get the "spider rec" (SpiderRequest) (embedded in the doledb rec)
 	SpiderRequest *sreq = (SpiderRequest *)(rec + sizeof(key96_t)+4);
+	log(LOG_DEBUG,"spider:gotDoledbList2:Looking at spider record with firstIp=0x%08x", sreq->m_firstIp);
 
 	// sanity check. check for http(s)://
 	// might be a docid from a pagereindex.cpp
@@ -804,6 +808,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	// one ip from bottle corking the whole priority!!
 	if ( ipOut >= maxSpidersOutPerIp ) {
 skipDoledbRec:
+		log(LOG_DEBUG,"spider:gotDoledbList2:Skipping spider record with firstIp=0x%08x", sreq->m_firstIp);
 		// skip
 		m_list.skipCurrentRecord();
 
@@ -828,6 +833,7 @@ skipDoledbRec:
 	// line of queued results just sitting there taking up mem and
 	// spider slots so the crawlbot hourly can't pass.
 	if ( globalOut >= maxSpidersOutPerIp && ipOut >= 1 ) {
+		log(LOG_DEBUG,"spider:gotDoledbList2:too many outstanding spiders, globalOut=%d, maxSpidersOutPerIp=%d, ipOut=%d", globalOut, maxSpidersOutPerIp, ipOut);
 		goto skipDoledbRec;
 	}
 
