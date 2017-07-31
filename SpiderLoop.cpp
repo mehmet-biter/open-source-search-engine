@@ -145,7 +145,7 @@ void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 	int32_t now = getTimeLocal();
 
 	// point to head of active linked list of collection recs
-	CollectionRec *nextActive = g_spiderLoop.getActiveList(); 
+	const CollectionRec *nextActive = g_spiderLoop.getActiveList();
 	collnum_t nextActiveCollnum = nextActive ? nextActive->m_collnum : static_cast<collnum_t>( -1 );
 
 	for ( ; nextActive ;  ) {
@@ -167,7 +167,7 @@ void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 		}
 
 		// now we become him
-		CollectionRec *crp = nextActive;
+		const CollectionRec *crp = nextActive;
 
 		// update these two vars for next iteration
 		nextActive = crp->m_nextActive;
@@ -282,7 +282,7 @@ collLoop:
 	m_sc = NULL;
 
 	// set this in the loop
-	CollectionRec *cr = NULL;
+	const CollectionRec *cr = NULL;
 	uint32_t nowGlobal = 0;
 
 	m_launches = 0;
@@ -784,7 +784,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	//   to work right for some reason
 	for ( int32_t i = 0 ; i <= m_maxUsed ; i++ ) {
 		// get it
-		XmlDoc *xd = m_docs[i];
+		const XmlDoc *xd = m_docs[i];
 		if ( ! xd ) continue;
 		if ( ! xd->m_sreqValid ) continue;
 		// to prevent one collection from hogging all the urls for
@@ -1310,7 +1310,7 @@ int32_t SpiderLoop::getNumSpidersOutPerIp(int32_t firstIp, collnum_t collnum) {
 		}
 
 		// cast lock
-		UrlLock *lock = (UrlLock *)m_lockTable.getValueFromSlot(i);
+		const UrlLock *lock = (const UrlLock *)m_lockTable.getValueFromSlot(i);
 
 		// skip if not outstanding, just a 5-second expiration wait
 		// when the spiderReply returns, so that in case a lock
@@ -1456,7 +1456,7 @@ void SpiderLoop::clearLocks(collnum_t collnum) {
 				continue;
 			}
 
-			UrlLock *lock = (UrlLock *)m_lockTable.getValueFromSlot(i);
+			const UrlLock *lock = (const UrlLock *)m_lockTable.getValueFromSlot(i);
 			// skip if not our collnum
 			if (lock->m_collnum != collnum) {
 				continue;
