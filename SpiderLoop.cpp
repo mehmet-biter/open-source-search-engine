@@ -37,6 +37,9 @@
 //#define SPIDER_DONE_TIMER 90
 #define SPIDER_DONE_TIMER 20
 
+static int32_t doleDbRecSizes = 150000; //how much toe read from DoleDB in a chunk.
+
+
 /////////////////////////
 /////////////////////////      SPIDERLOOP
 /////////////////////////
@@ -569,7 +572,7 @@ subloopNextPriority:
 				// really freezes the spiders up.
 				// Also, if a spider request is corrupt in
 				// doledb it would cork us up too!
-				50000            , // minRecSizes
+				doleDbRecSizes  , // minRecSizes
 				true            , // includeTree
 				0               , // startFileNum
 				-1              , // numFiles (all)
@@ -811,7 +814,8 @@ skipDoledbRec:
 
 		// print a log msg if we corked things up even
 		// though we read 50k from doledb
-		if ( m_list.getListSize() > 50000 ) {
+		// todo: how is this test supposed to work? We only asked Msg5 for x bytes, so testing if the list is larger than x bytes seems to never be true
+		if ( m_list.getListSize() > doleDbRecSizes ) {
 			log("spider: 50k not big enough");
 		}
 
