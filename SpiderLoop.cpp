@@ -474,10 +474,7 @@ subloopNextPriority:
 		goto subloop;
 	}
 
-	// shortcut
-	SpiderColl *sc = cr->m_spiderColl;
-
-	if ( sc && sc->isDoledbIpTableEmpty() ) {
+	if ( cr->m_spiderColl && cr->m_spiderColl->isDoledbIpTableEmpty() ) {
 		logTrace( g_conf.m_logTraceSpider, "Loop, doleIpTable is empty"  );
 		goto subloop;
 	}
