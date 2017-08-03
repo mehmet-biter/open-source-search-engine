@@ -2565,15 +2565,24 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 			if ( (drec[0] & 0x01) == 0x00 ) {g_process.shutdownAbort(true); }
 			// get spider rec in it
 			char *srec = drec + 12 + 4;
+
+			struct tm *timeStruct ;
+			char time[256];
+			time_t ts = (time_t)Doledb::getSpiderTime(&k);
+			struct tm tm_buf;
+			timeStruct = gmtime_r(&ts,&tm_buf);
+			strftime ( time , 256 , "%Y%m%d-%H%M%S UTC", timeStruct );
+
 			// print doledb info first then spider request
 			fprintf(stdout,"dolekey=%s (n1=%" PRIu32" n0=%" PRIu64") "
 				"pri=%" PRId32" "
-				"spidertime=%" PRIu32" "
+				"spidertime=%s(%" PRIu32") "
 				"uh48=0x%" PRIx64"\n",
 				KEYSTR(&k,12),
 				k.n1,
 				k.n0,
 				(int32_t)Doledb::getPriority(&k),
+				time,
 				(uint32_t)Doledb::getSpiderTime(&k),
 				Doledb::getUrlHash48(&k));
 			fprintf(stdout,"spiderkey=");
