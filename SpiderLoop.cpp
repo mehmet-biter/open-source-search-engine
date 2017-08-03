@@ -711,8 +711,9 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 	if ( g_conf.m_logDebugSpider ) {
 		int32_t pri4 = Doledb::getPriority ( &m_sc->m_nextDoledbKey );
+		char keystrbuf[sizeof(m_sc->m_nextDoledbKey)*2+1];
 		log( LOG_DEBUG, "spider: setting pri2=%" PRId32" queue doledb nextkey to %s (pri=%" PRId32")",
-		     m_sc->m_pri2, KEYSTR(&m_sc->m_nextDoledbKey,12), pri4 );
+		     m_sc->m_pri2, KEYSTR(&m_sc->m_nextDoledbKey,sizeof(m_sc->m_nextDoledbKey),keystrbuf), pri4 );
 	}
 
 	// update next doledbkey for this priority to avoid having to
@@ -1054,7 +1055,8 @@ bool SpiderLoop::spiderUrl(SpiderRequest *sreq, const key96_t *doledbKey, collnu
 	// reset g_errno
 	g_errno = 0;
 
-	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(doledbKey, sizeof(*doledbKey)));
+	char doledbKeyStr[sizeof(*doledbKey)*2+1];
+	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(doledbKey, sizeof(*doledbKey), doledbKeyStr));
 
 	// now we just take it out of doledb instantly
 	bool deleted = g_doledb.getRdb()->deleteTreeNode(collnum, (const char *)doledbKey);
