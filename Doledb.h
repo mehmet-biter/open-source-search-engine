@@ -73,11 +73,11 @@ public:
 		return k;
 	}
 
-	static int32_t getPriority(key96_t *k) {
+	static int32_t getPriority(const key96_t *k) {
 		return 255 - ((k->n1 >> 24) & 0xff);
 	}
 
-	static int32_t getSpiderTime(key96_t *k) {
+	static int32_t getSpiderTime(const key96_t *k) {
 		uint32_t spiderTime = (k->n1) & 0xffffff;
 		spiderTime <<= 8;
 		// upper 8 bits of k.n0 are lower 8 bits of spiderTime
@@ -85,12 +85,12 @@ public:
 		return (int32_t)spiderTime;
 	}
 
-	static int32_t getIsDel(key96_t *k) {
+	static int32_t getIsDel(const key96_t *k) {
 		if ( (k->n0 & 0x01) ) return 0;
 		return 1;
 	}
 
-	static int64_t getUrlHash48 ( key96_t *k ) {
+	static int64_t getUrlHash48(const key96_t *k) {
 		return (k->n0>>8)&0x0000ffffffffffffLL;
 	}
 

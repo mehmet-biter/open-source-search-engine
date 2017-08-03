@@ -70,8 +70,8 @@ private:
 	// . returns false if blocked and "callback" will be called,
 	//   true otherwise
 	// . returns true and sets g_errno on error
-	bool spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum);
-	bool spiderUrl2(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum);
+	bool spiderUrl(SpiderRequest *sreq, const key96_t *doledbKey, collnum_t collnum);
+	bool spiderUrl2(SpiderRequest *sreq, const key96_t *doledbKey, collnum_t collnum);
 
 	bool indexedDoc ( XmlDoc *doc );
 

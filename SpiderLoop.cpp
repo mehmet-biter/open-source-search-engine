@@ -675,7 +675,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	char *rec = (char *)m_list.getCurrentRec();
 
 	// the doledbkey
-	key96_t *doledbKey = (key96_t *)rec;
+	const key96_t *doledbKey = (const key96_t *)rec;
 
 	// get record after it next time
 	m_sc->m_nextDoledbKey = *doledbKey ;
@@ -945,7 +945,7 @@ skipDoledbRec:
 // . returns false if blocked on a spider launch, otherwise true.
 // . returns false if your callback will be called
 // . returns true and sets g_errno on error
-bool SpiderLoop::spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum) {
+bool SpiderLoop::spiderUrl(SpiderRequest *sreq, const key96_t *doledbKey, collnum_t collnum) {
 	// sanity
 	if ( ! m_sc ) { g_process.shutdownAbort(true); }
 
@@ -1120,7 +1120,7 @@ bool SpiderLoop::spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t co
 	return spiderUrl2(sreq, doledbKey, collnum);
 }
 
-bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum) {
+bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, const key96_t *doledbKey, collnum_t collnum) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
 	// . find an available doc slot

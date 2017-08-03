@@ -288,7 +288,7 @@ public:
 		    int32_t       niceness    );
 
 	bool set4 ( class SpiderRequest *sreq  , 
-		    key96_t           *doledbKey ,
+		    const key96_t       *doledbKey,
 		    const char      *coll      ,
 		    class SafeBuf   *pbuf      , 
 		    int32_t          niceness  ,
