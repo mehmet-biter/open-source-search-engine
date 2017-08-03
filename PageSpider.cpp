@@ -212,7 +212,7 @@ static bool printList ( State11 *st ) {
 		st->m_endKey      = Doledb::makeLastKey2  (st->m_priority);
 		// if we printed something, print a blank line after it
 		if ( st->m_count > 0 && format == FORMAT_HTML) {
-			sbTable->safePrintf("<tr><td colspan=30>...</td></tr>\n");
+			sbTable->safePrintf("<tr><td colspan=30><center>&vellip;</center></td></tr>\n");
 		}
 		// reset for each priority
 		st->m_count = 0;
