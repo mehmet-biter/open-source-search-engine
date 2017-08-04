@@ -2103,7 +2103,7 @@ bool SpiderColl::scanListForWinners ( ) {
 	int64_t nowGlobalMS = gettimeofdayInMilliseconds();//Local();
 	uint32_t nowGlobal   = nowGlobalMS / 1000;
 
-	SpiderReply   *srep        = NULL;
+	const SpiderReply *srep = NULL;
 	int64_t      srepUh48 = 0;
 
 	// if we are continuing from another list...
@@ -2164,7 +2164,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		if ( ! Spiderdb::isSpiderRequest ( (key128_t *)rec ) ) {
 
 			// see if this is the most recent one
-			SpiderReply *tmp = (SpiderReply *)rec;
+			const SpiderReply *tmp = (SpiderReply *)rec;
 
 			// . MDW: we have to detect corrupt replies up here so
 			//   they do not become the winning reply because
@@ -2567,7 +2567,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			const key192_t *oldwk = (const key192_t *)m_winnerTable.getValueFromSlot ( winSlot );
 
 			// get the min hopcount  
-			SpiderRequest *wsreq = (SpiderRequest *)m_winnerTree.getData(0,(char *)oldwk);
+			SpiderRequest *wsreq = (SpiderRequest *)m_winnerTree.getData(0,(const char *)oldwk);
 			
 			if ( wsreq ) {
 				if ( sreq->m_hopCount < wsreq->m_hopCount )
@@ -2590,7 +2590,7 @@ bool SpiderColl::scanListForWinners ( ) {
 
 			// are we lower priority? (or equal)
 			// smaller keys are HIGHER priority.
-			if(KEYCMP( (char *)&wk, (char *)oldwk, sizeof(key192_t)) >= 0) 
+			if(KEYCMP( (const char *)&wk, (const char *)oldwk, sizeof(key192_t)) >= 0)
 			{
 				continue;
 			}
