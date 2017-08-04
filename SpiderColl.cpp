@@ -66,7 +66,7 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_waitingTreeNextKey.setMin();
 	m_waitingTreeEndKey.setMax();
 	m_spidersOut = 0;
-	m_coll[0] = '\0';// = NULL;
+	m_coll[0] = '\0';
 
 	// PVS-Studio
 	m_lastReplyValid = false;
@@ -1335,7 +1335,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 
 
 	// are we the final list in the scan?
-	bool shortRead = ( m_waitingTreeList.getListSize() <= 0);//(int32_t)SR_READ_SIZE) ;
+	bool shortRead = ( m_waitingTreeList.getListSize() <= 0);
 
 	m_numBytesScanned += m_waitingTreeList.getListSize();
 
@@ -1404,12 +1404,6 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		m_waitingTreeNextKey.setMin();
 		// no longer need rebuild
 		m_waitingTreeNeedsRebuild = false;
-		// and re-send the crawlinfo in handerequestc1 to each host
-		// so they no if we have urls ready to spider or not. because
-		// if we told them no before we completed this rebuild we might
-		// have found some urls.
-		// MDW: let's not do this unless we find it is a problem
-		//m_cr->localCrawlInfoUpdate();
 	}
 
 	// free list to save memory
@@ -1773,7 +1767,7 @@ bool SpiderColl::evalIpLoop ( ) {
 					  // grow from 600 to 1200
 					  // (10 mins to 20 mins) to make
 					  // some crawls faster
-					  1200, // maxAge, 600 seconds
+					  1200, // maxAge
 					  true ,// incCounts
 					  &cachedTimestamp , // rec timestamp
 					  true );  // promote rec?
@@ -2979,7 +2973,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 		}
 	}
 
-	return addDoleBufIntoDoledb ( &doleBuf , false );//, 0 );
+	return addDoleBufIntoDoledb ( &doleBuf , false );
 }
 
 
@@ -3206,8 +3200,8 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 			RdbCacheLock rcl(*wc);
 			wc->addRecord ( m_collnum,
 					(char *)&cacheKey,
-					doleBuf->getBufStart(),//+ skipSize ,
-					doleBuf->length() ,//- skipSize ,
+					doleBuf->getBufStart(),
+					doleBuf->length(),
 					0);//cachedTimestamp );
 		}
 	}
