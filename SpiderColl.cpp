@@ -1490,192 +1490,191 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	// set this flag so we are not re-entered
 	m_isPopulatingDoledb = true;
 
-loop:
-	// are we trying to exit? some firstip lists can be quite long, so
-	// terminate here so all threads can return and we can exit properly
-	if (g_process.isShuttingDown()) {
-		m_isPopulatingDoledb = false; 
-		logTrace( g_conf.m_logTraceSpider, "END, shutting down" );
-		return;
-	}
-
-	// . get next IP that is due to be spidered from
-	// . also sets m_waitingTreeKey so we can delete it easily!
-	int32_t ip = getNextIpFromWaitingTree();
-	
-	// . return if none. all done. unset populating flag.
-	// . it returns 0 if the next firstip has a spidertime in the future
-	if ( ip == 0 ) {
-		m_isPopulatingDoledb = false;
-		return;
-	}
-
-	// set read range for scanning spiderdb
-	m_nextKey = Spiderdb::makeFirstKey(ip);
-	m_endKey  = Spiderdb::makeLastKey (ip);
-
-	char ipbuf[16];
-	logDebug( g_conf.m_logDebugSpider, "spider: for cn=%i nextip=%s nextkey=%s",
-	          (int)m_collnum, iptoa(ip,ipbuf), KEYSTR( &m_nextKey, sizeof( key128_t ) ) );
-
-	//////
-	//
-	// do TWO PASSES, one to count pages, the other to get the best url!!
-	//
-	//////
-	// assume we don't have to do two passes
-	m_countingPagesIndexed = false;
-
-	// get the collectionrec
-	const CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
-	// but if we have quota based url filters we do have to count
-	if ( cr && cr->m_urlFiltersHavePageCounts ) {
-		// tell evalIpLoop() to count first
-		m_countingPagesIndexed = true;
-		// reset this stuff used for counting UNIQUE votes
-		m_lastReqUh48a = 0LL;
-		m_lastReqUh48b = 0LL;
-		m_lastRepUh48  = 0LL;
-		// and setup the LOCAL counting table if not initialized
-		if (!m_siteIndexedDocumentCount.isInitialized()) {
-			         m_siteIndexedDocumentCount.set(4, 4, 0, NULL, 0, false, "ltpct");
+	for(;;) {
+		// are we trying to exit? some firstip lists can be quite long, so
+		// terminate here so all threads can return and we can exit properly
+		if (g_process.isShuttingDown()) {
+			m_isPopulatingDoledb = false;
+			logTrace( g_conf.m_logTraceSpider, "END, shutting down" );
+			return;
 		}
-		// otherwise, just reset it so we can repopulate it
-		else m_siteIndexedDocumentCount.reset();
+
+		// . get next IP that is due to be spidered from
+		// . also sets m_waitingTreeKey so we can delete it easily!
+		int32_t ip = getNextIpFromWaitingTree();
+		
+		// . return if none. all done. unset populating flag.
+		// . it returns 0 if the next firstip has a spidertime in the future
+		if ( ip == 0 ) {
+			m_isPopulatingDoledb = false;
+			return;
+		}
+
+		// set read range for scanning spiderdb
+		m_nextKey = Spiderdb::makeFirstKey(ip);
+		m_endKey  = Spiderdb::makeLastKey (ip);
+
+		char ipbuf[16];
+		logDebug( g_conf.m_logDebugSpider, "spider: for cn=%i nextip=%s nextkey=%s",
+			(int)m_collnum, iptoa(ip,ipbuf), KEYSTR( &m_nextKey, sizeof( key128_t ) ) );
+
+		//////
+		//
+		// do TWO PASSES, one to count pages, the other to get the best url!!
+		//
+		//////
+		// assume we don't have to do two passes
+		m_countingPagesIndexed = false;
+
+		// get the collectionrec
+		const CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
+		// but if we have quota based url filters we do have to count
+		if ( cr && cr->m_urlFiltersHavePageCounts ) {
+			// tell evalIpLoop() to count first
+			m_countingPagesIndexed = true;
+			// reset this stuff used for counting UNIQUE votes
+			m_lastReqUh48a = 0LL;
+			m_lastReqUh48b = 0LL;
+			m_lastRepUh48  = 0LL;
+			// and setup the LOCAL counting table if not initialized
+			if (!m_siteIndexedDocumentCount.isInitialized()) {
+					m_siteIndexedDocumentCount.set(4, 4, 0, NULL, 0, false, "ltpct");
+			}
+			// otherwise, just reset it so we can repopulate it
+			else m_siteIndexedDocumentCount.reset();
+		}
+
+		logDebug( g_conf.m_logDebugSpider, "spider: evalIpLoop: waitingtree nextip=%s numUsedNodes=%" PRId32,
+			iptoa(ip,ipbuf), m_waitingTree.getNumUsedNodes() );
+
+	//@@@@@@ BR: THIS SHOULD BE DEBUGGED AND ENABLED
+
+		/*
+		// assume using tree
+		m_useTree = true;
+
+		// . flush the tree every 12 hours
+		// . i guess we could add incoming requests to the ufntree if
+		//   they strictly beat the ufn tree tail node, HOWEVER, we
+		//   still have the problem of that if a url we spidered is due
+		//   to be respidered very soon we will miss it, as only the reply
+		//   is added back into spiderdb, not a new request.
+		int32_t nowLocal = getTimeLocal();
+		// make it one hour so we don't cock-block a new high priority
+		// request that just got added... crap, what if its an addurl
+		// or something like that????
+		if ( nowLocal - s_lastUfnTreeFlushTime > 3600 ) {
+			s_ufnTree.clear();
+			s_lastUfnTreeFlushTime = nowLocal;
+		}
+
+		int64_t uh48;
+
+		//
+		// s_ufnTree tries to cache the top X spiderrequests for an IP
+		// that should be spidered next so we do not have to scan like
+		// a million spiderrequests in spiderdb to find the best one.
+		//
+
+		// if we have a specific uh48 targetted in s_ufnTree then that
+		// saves a ton of time!
+		// key format for s_ufnTree:
+		// iiiiiiii iiiiiiii iiiiiii iiiiiii  i = firstip
+		// PPPPPPPP tttttttt ttttttt ttttttt  P = priority
+		// tttttttt tttttttt hhhhhhh hhhhhhh  t = spiderTimeMS (40 bits)
+		// hhhhhhhh hhhhhhhh hhhhhhh hhhhhhh  h = urlhash48
+		key128_t key;
+		key.n1 = ip;
+		key.n1 <<= 32;
+		key.n0 = 0LL;
+		int32_t node = s_ufnTree.getNextNode_unlocked(0,(char *)&key);
+		// cancel node if not from our ip
+		if ( node >= 0 ) {
+			key128_t *rk = (key128_t *)s_ufnTree.getKey ( node );
+			if ( (rk->n1 >> 32) != (uint32_t)ip ) node = -1;
+		}
+		if ( node >= 0 ) {
+			// get the key
+			key128_t *nk = (key128_t *)s_ufnTree.getKey ( node );
+			// parse out uh48
+			uh48 = nk->n0;
+			// mask out spidertimems
+			uh48 &= 0x0000ffffffffffffLL;
+			// use that to refine the key range immensley!
+			m_nextKey = g_spiderdb.makeFirstKey2 (ip, uh48);
+			m_endKey  = g_spiderdb.makeLastKey2  (ip, uh48);
+			// do not add the recs to the tree!
+			m_useTree = false;
+		}
+		*/
+
+		// so we know if we are the first read or not...
+		m_firstKey = m_nextKey;
+
+		// . initialize this before scanning the spiderdb recs of an ip
+		// . it lets us know if we recvd new spider requests for m_scanningIp
+		//   while we were doing the scan
+		m_gotNewDataForScanningIp = 0;
+
+		m_lastListSize = -1;
+
+		// let evalIpLoop() know it has not yet tried to read from spiderdb
+		m_didRead = false;
+
+		// reset this
+		int32_t maxWinners = (int32_t)MAX_WINNER_NODES;
+
+		if (m_winnerTree.getNumNodes() == 0 &&
+		!m_winnerTree.set(-1, maxWinners, maxWinners * MAX_BEST_REQUEST_SIZE, true, "wintree", NULL,
+				sizeof(key192_t), -1)) {
+			m_isPopulatingDoledb = false;
+			log(LOG_ERROR, "Could not initialize m_winnerTree: %s",mstrerror(g_errno));
+			logTrace( g_conf.m_logTraceSpider, "END, after winnerTree.set" );
+			return;
+		}
+
+		if ( ! m_winnerTable.isInitialized() &&
+		! m_winnerTable.set ( 8 , // uh48 is key
+					sizeof(key192_t) , // winnertree key is data
+					64 , // 64 slots initially
+					NULL ,
+					0 ,
+					false , // allow dups?
+					"wtdedup" ) ) {
+			m_isPopulatingDoledb = false;
+			log(LOG_ERROR, "Could not initialize m_winnerTable: %s",mstrerror(g_errno));
+			logTrace( g_conf.m_logTraceSpider, "END, after winnerTable.set" );
+			return;
+		}
+
+		// clear it before evaluating this ip so it is empty
+		m_winnerTree.clear();
+
+		// and table as well now
+		m_winnerTable.clear();
+
+		// reset this as well
+		m_minFutureTimeMS = 0LL;
+		m_totalBytesScanned = 0LL;
+		m_totalNewSpiderRequests = 0LL;
+		m_lastOverflowFirstIp = 0;
+		
+		// . look up in spiderdb otherwise and add best req to doledb from ip
+		// . if it blocks ultimately it calls gotSpiderdbListWrapper() which
+		//   calls this function again with re-entry set to true
+		if ( ! evalIpLoop () ) {
+			logTrace( g_conf.m_logTraceSpider, "END, after evalIpLoop" );
+			return ;
+		}
+
+		// oom error? i've seen this happen and we end up locking up!
+		if ( g_errno ) {
+			log( "spider: evalIpLoop: %s", mstrerror(g_errno) );
+			m_isPopulatingDoledb = false;
+			logTrace( g_conf.m_logTraceSpider, "END, error after evalIpLoop" );
+			return;
+		}
 	}
-
-	logDebug( g_conf.m_logDebugSpider, "spider: evalIpLoop: waitingtree nextip=%s numUsedNodes=%" PRId32,
-	          iptoa(ip,ipbuf), m_waitingTree.getNumUsedNodes() );
-
-//@@@@@@ BR: THIS SHOULD BE DEBUGGED AND ENABLED
-
-	/*
-	// assume using tree
-	m_useTree = true;
-
-	// . flush the tree every 12 hours
-	// . i guess we could add incoming requests to the ufntree if
-	//   they strictly beat the ufn tree tail node, HOWEVER, we 
-	//   still have the problem of that if a url we spidered is due
-	//   to be respidered very soon we will miss it, as only the reply
-	//   is added back into spiderdb, not a new request.
-	int32_t nowLocal = getTimeLocal();
-	// make it one hour so we don't cock-block a new high priority 
-	// request that just got added... crap, what if its an addurl
-	// or something like that????
-	if ( nowLocal - s_lastUfnTreeFlushTime > 3600 ) {
-		s_ufnTree.clear();
-		s_lastUfnTreeFlushTime = nowLocal;
-	}
-
-	int64_t uh48;
-
-	//
-	// s_ufnTree tries to cache the top X spiderrequests for an IP
-	// that should be spidered next so we do not have to scan like
-	// a million spiderrequests in spiderdb to find the best one.
-	//
-
-	// if we have a specific uh48 targetted in s_ufnTree then that
-	// saves a ton of time!
-	// key format for s_ufnTree:
-	// iiiiiiii iiiiiiii iiiiiii iiiiiii  i = firstip
-	// PPPPPPPP tttttttt ttttttt ttttttt  P = priority
-	// tttttttt tttttttt hhhhhhh hhhhhhh  t = spiderTimeMS (40 bits)
-	// hhhhhhhh hhhhhhhh hhhhhhh hhhhhhh  h = urlhash48
-	key128_t key;
-	key.n1 = ip;
-	key.n1 <<= 32;
-	key.n0 = 0LL;
-	int32_t node = s_ufnTree.getNextNode_unlocked(0,(char *)&key);
-	// cancel node if not from our ip
-	if ( node >= 0 ) {
-		key128_t *rk = (key128_t *)s_ufnTree.getKey ( node );
-		if ( (rk->n1 >> 32) != (uint32_t)ip ) node = -1;
-	}
-	if ( node >= 0 ) {
-		// get the key
-		key128_t *nk = (key128_t *)s_ufnTree.getKey ( node );
-		// parse out uh48
-		uh48 = nk->n0;
-		// mask out spidertimems
-		uh48 &= 0x0000ffffffffffffLL;
-		// use that to refine the key range immensley!
-		m_nextKey = g_spiderdb.makeFirstKey2 (ip, uh48);
-		m_endKey  = g_spiderdb.makeLastKey2  (ip, uh48);
-		// do not add the recs to the tree!
-		m_useTree = false;
-	}
-	*/
-
-	// so we know if we are the first read or not...
-	m_firstKey = m_nextKey;
-
-	// . initialize this before scanning the spiderdb recs of an ip
-	// . it lets us know if we recvd new spider requests for m_scanningIp
-	//   while we were doing the scan
-	m_gotNewDataForScanningIp = 0;
-
-	m_lastListSize = -1;
-
-	// let evalIpLoop() know it has not yet tried to read from spiderdb
-	m_didRead = false;
-
-	// reset this
-	int32_t maxWinners = (int32_t)MAX_WINNER_NODES;
-
-	if (m_winnerTree.getNumNodes() == 0 &&
-	     !m_winnerTree.set(-1, maxWinners, maxWinners * MAX_BEST_REQUEST_SIZE, true, "wintree", NULL,
-	                       sizeof(key192_t), -1)) {
-		m_isPopulatingDoledb = false;
-		log(LOG_ERROR, "Could not initialize m_winnerTree: %s",mstrerror(g_errno));
-		logTrace( g_conf.m_logTraceSpider, "END, after winnerTree.set" );
-		return;
-	}
-
-	if ( ! m_winnerTable.isInitialized() &&
-	     ! m_winnerTable.set ( 8 , // uh48 is key
-				   sizeof(key192_t) , // winnertree key is data
-				   64 , // 64 slots initially
-				   NULL ,
-				   0 ,
-				   false , // allow dups?
-				   "wtdedup" ) ) {
-		m_isPopulatingDoledb = false;
-		log(LOG_ERROR, "Could not initialize m_winnerTable: %s",mstrerror(g_errno));
-		logTrace( g_conf.m_logTraceSpider, "END, after winnerTable.set" );
-		return;
-	}
-
-	// clear it before evaluating this ip so it is empty
-	m_winnerTree.clear();
-
-	// and table as well now
-	m_winnerTable.clear();
-
-	// reset this as well
-	m_minFutureTimeMS = 0LL;
-	m_totalBytesScanned = 0LL;
-	m_totalNewSpiderRequests = 0LL;
-	m_lastOverflowFirstIp = 0;
-	
-	// . look up in spiderdb otherwise and add best req to doledb from ip
-	// . if it blocks ultimately it calls gotSpiderdbListWrapper() which
-	//   calls this function again with re-entry set to true
-	if ( ! evalIpLoop () ) {
-		logTrace( g_conf.m_logTraceSpider, "END, after evalIpLoop" );
-		return ;
-	}
-
-	// oom error? i've seen this happen and we end up locking up!
-	if ( g_errno ) { 
-		log( "spider: evalIpLoop: %s", mstrerror(g_errno) );
-		m_isPopulatingDoledb = false; 
-		logTrace( g_conf.m_logTraceSpider, "END, error after evalIpLoop" );
-		return; 
-	}
-	// try more
-	goto loop;
 }
 
 
