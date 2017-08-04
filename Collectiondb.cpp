@@ -2378,7 +2378,6 @@ bool CollectionRec::save ( ) {
 	return true;
 }
 
-void nukeDoledb ( collnum_t collnum );
 
 // . anytime the url filters are updated, this function is called
 // . it is also called on load of the collection at startup
