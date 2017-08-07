@@ -12588,7 +12588,8 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		// . panic on blocking! this is supposed to be fast!
 		// . it might still have to lookup the tagdb rec?????
 		if (newsr == (void *)-1) {
-			g_process.shutdownAbort(true);
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getNewSpiderReply blocked");
+			return (char *)newsr;
 		}
 
 		// how much we need
