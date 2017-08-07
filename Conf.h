@@ -105,6 +105,8 @@ class Conf {
 	// used to limit all rdb's to one merge per machine at a time
 	int32_t  m_mergeBufSize;
 
+	int32_t m_doledbNukeInterval;
+	
 	// rdb settings
 
 	// posdb

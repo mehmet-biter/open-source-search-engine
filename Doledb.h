@@ -103,5 +103,6 @@ private:
 extern class Doledb g_doledb;
 
 void nukeDoledb ( collnum_t collnum ) ;
+void nukeAllDoledbs();
 
 #endif // GB_DOLEDB_H

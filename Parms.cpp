@@ -7369,6 +7369,18 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	m->m_title = "Doledb nuke interval";
+	m->m_desc  = "Sometimes spiderrecords get stuck due to plain bugs or due to priority inversion."
+		"Nuking doledb periodically masks this. 0=disabled";
+	m->m_cgi   = "doledbnukeinterval";
+	simple_m_set(Conf,m_doledbNukeInterval);
+	m->m_def   = "86400";
+	m->m_units = "seconds";
+	m->m_flags = 0;
+	m->m_page  = PAGE_RDB;
+	m->m_group = false;
+	m++;
+
 	
 
 	///////////////////////////////////////////
