@@ -34,6 +34,7 @@
 #include "Tagdb.h"
 #include "Clusterdb.h"
 #include "Collectiondb.h"
+#include "Doledb.h"
 #include "GbDns.h"
 #include <set>
 
@@ -622,6 +623,13 @@ static bool CommandRestartColl(const char *rec, WaitEntry *we) {
 	return true;
 }
 #endif
+
+static bool CommandNukeDoledb(const char *rec, WaitEntry *we) {
+	collnum_t collnum = getCollnumFromParmRec(rec);
+	nukeDoledb(collnum);
+	return true;
+}
+
 
 #ifndef PRIVACORE_SAFE_VERSION
 // . returns true and sets g_errno on error
@@ -7381,7 +7389,15 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-	
+	m->m_title = "Nuke doledb now";
+	m->m_desc  = "Clears doledb+waitingtree and refills them from spiderdb";
+	m->m_cgi   = "nukedoledbnow";
+	m->m_page  = PAGE_RDB;
+	m->m_obj   = OBJ_COLL;
+	m->m_type  = TYPE_CMD;
+	m->m_func2 = CommandNukeDoledb;
+	m++;
+
 
 	///////////////////////////////////////////
 	// PAGE SPIDER CONTROLS
