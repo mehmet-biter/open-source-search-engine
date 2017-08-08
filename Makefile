@@ -298,6 +298,11 @@ libcares.so:
 	ln -s $(CARES_SRC_DIR)/.libs/libcares.so.2 libcares.so.2
 	ln -s libcares.so.2 libcares.so
 
+wanted_check_api.so: WantedCheckExampleLib.o
+	$(CXX) WantedCheckExampleLib.o -shared -o $@
+WantedCheckExampleLib.o: WantedCheckExampleLib.cpp
+	$(CXX) -fPIC -c WantedCheckExampleLib.cpp
+
 slacktee.sh:
 	ln -sf third-party/slacktee/slacktee.sh slacktee.sh 2>/dev/null
 
