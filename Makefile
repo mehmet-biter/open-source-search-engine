@@ -68,6 +68,7 @@ OBJS_O3 = \
 	TopTree.o \
 	UrlBlock.o UrlBlockList.o UrlComponent.o UrlParser.o UdpStatistic.o \
 	UrlRealtimeClassification.o \
+	WantedChecker.o \
 	MergeSpaceCoordinator.o \
 	GbMoveFile.o GbMoveFile2.o GbCopyFile.o GbMakePath.o \
 	GbUtil.o \
@@ -226,7 +227,7 @@ CPPFLAGS += -Wno-unused-parameter
 
 endif
 
-LIBS = -lm -lpthread -lssl -lcrypto -lz -lpcre
+LIBS = -lm -lpthread -lssl -lcrypto -lz -lpcre -ldl
 
 # to build static libiconv.a do a './configure --enable-static' then 'make' in the iconv directory
 

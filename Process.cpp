@@ -36,6 +36,7 @@
 #include "Docid2Siteflags.h"
 #include "UrlRealtimeClassification.h"
 #include "InstanceInfoExchange.h"
+#include "WantedChecker.h"
 #include "Conf.h"
 #include "Mem.h"
 #include "Msg4In.h"
@@ -602,6 +603,8 @@ bool Process::shutdown2() {
 		InstanceInfoExchange::finalize();
 
 		finalizeRealtimeUrlClassification();
+
+		WantedChecker::finalize();
 
 		Statistics::finalize();
 

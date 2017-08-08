@@ -49,6 +49,7 @@
 #include "Speller.h"
 #include "SummaryCache.h"
 #include "InstanceInfoExchange.h"
+#include "WantedChecker.h"
 #include "Dns.h"
 
 // include all msgs that have request handlers, cuz we register them with g_udp
@@ -1703,6 +1704,9 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	initializeRealtimeUrlClassification();
+	
+	if(!WantedChecker::initialize())
+		return 0;
 	
 	if(!InstanceInfoExchange::initialize())
 		return 0;
