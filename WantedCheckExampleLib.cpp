@@ -30,6 +30,8 @@ static WantedCheckApi::UrlCheckResult example_check_url(const std::string &url) 
 	//filter out the fictitious scheme "spam://"
 	if(url.substr(0,7)=="spam://")
 		result.wanted = false;
+	if(url.find("evil-penguin-on-hoverboard")!=std::string::npos)
+		result.wanted = false;
 	return result;
 }
 

@@ -1,5 +1,4 @@
 #include "WantedChecker.h"
-#include "WantedCheckerApi.h"
 #include "Log.h"
 #include <dlfcn.h>
 #include <errno.h>
@@ -91,4 +90,14 @@ void WantedChecker::finalize() {
 	}
 	
 	log(LOG_INFO,"Finalized wanted-checking");
+}
+
+
+WantedChecker::DomainCheckResult WantedChecker::check_domain(const std::string &domain) {
+	return effective_descriptor_block.check_domain_pfn(domain);
+}
+
+
+WantedChecker::UrlCheckResult WantedChecker::check_url(const std::string &url) {
+	return effective_descriptor_block.check_url_pfn(url);
 }
