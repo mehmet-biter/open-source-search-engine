@@ -3,7 +3,7 @@
 //Example library for checking if a domain/url/document is wanted or not.
 
 
-static WantedCheckApi::DomainCheckResult noop_check_domain(const std::string &domain) {
+static WantedCheckApi::DomainCheckResult example_check_domain(const std::string &domain) {
 	WantedCheckApi::DomainCheckResult result;
 	result.wanted = true;
 	
@@ -24,7 +24,7 @@ static WantedCheckApi::DomainCheckResult noop_check_domain(const std::string &do
 }
 
 
-static WantedCheckApi::UrlCheckResult noop_check_url(const std::string &url) {
+static WantedCheckApi::UrlCheckResult example_check_url(const std::string &url) {
 	WantedCheckApi::UrlCheckResult result;
 	result.wanted = true;
 	//filter out the fictitious scheme "spam://"
@@ -36,7 +36,7 @@ static WantedCheckApi::UrlCheckResult noop_check_url(const std::string &url) {
 
 //No example for content filtering
 
-// static WantedCheckApi::ContentCheckResult noop_check_content(const std::vector<WantedCheckApi::Content> &/*content*/) {
+// static WantedCheckApi::ContentCheckResult example_check_content(const std::vector<WantedCheckApi::Content> &/*content*/) {
 // 	WantedCheckApi::ContentCheckResult result;
 // 	result.result = result.wanted;
 // 	return result;
@@ -45,7 +45,7 @@ static WantedCheckApi::UrlCheckResult noop_check_url(const std::string &url) {
 
 
 WantedCheckApi::APIDescriptorBlock wanted_check_api_descriptor_block = {
-	noop_check_domain,
-	noop_check_url,
-	NULL //noop_check_content
+	example_check_domain,
+	example_check_url,
+	NULL //example_check_content
 };
