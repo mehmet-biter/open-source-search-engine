@@ -193,11 +193,11 @@ bool UrlBlockList::isUrlBlocked(const Url &url) {
 	//now call the shlib functions for checking if the URL is wanted or not
 	if(!WantedChecker::check_domain(std::string(url.getHost(),url.getHostLen())).wanted) {
 		logTrace(g_conf.m_logTraceUrlBlockList, "Url block shlib matched (domain) url '%s'", url.getUrl());
-//		return true;
+		return true;
 	}
 	if(!WantedChecker::check_url(std::string(url.getUrl(),url.getUrlLen())).wanted) {
 		logTrace(g_conf.m_logTraceUrlBlockList, "Url block shlib matched (full URL) url '%s'", url.getUrl());
-//		return true;
+		return true;
 	}
 
 	return false;
