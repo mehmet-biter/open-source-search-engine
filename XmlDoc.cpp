@@ -11398,18 +11398,6 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("rawutf8size=%" PRId32" ",
 			       size_utf8Content);
 
-	// get the content type
-	uint8_t ct = CT_UNKNOWN;
-	if ( m_contentTypeValid ) ct = m_contentType;
-
-	bool isRoot = false;
-	if ( m_isSiteRootValid ) isRoot = m_isSiteRoot;
-
-	// make sure m_minInlinkerHopCount is valid
-	LinkInfo *info1 = NULL;
-	if ( m_linkInfo1Valid ) info1 = ptr_linkInfo1;
-
-
 	// hack this kinda
 	// . in PageInject.cpp we do not have a valid priority without
 	//   blocking because we did a direct injection!
