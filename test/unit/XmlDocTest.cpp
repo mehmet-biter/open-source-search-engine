@@ -244,3 +244,19 @@ TEST_F(XmlDocTest, PosdbGetMetaListDeletedDoc) {
 
 	/// @todo ALC add other terms
 }
+
+TEST_F(XmlDocTest, FirstUrlRobotsTxt) {
+	std::vector<std::tuple<const char *, bool>> test_cases = {
+		std::make_tuple("http://example.com/robots.txt", true),
+		std::make_tuple("http://example.com/arobots.txt", false),
+		std::make_tuple("http://example.com/robots.txt2", false),
+		std::make_tuple("http://example.com/abc/robots.txt", false),
+	};
+
+	for (auto it = test_cases.begin(); it != test_cases.end(); ++it) {
+		SCOPED_TRACE(std::get<0>(*it));
+		XmlDoc xmlDoc;
+		xmlDoc.setFirstUrl(std::get<0>(*it));
+		EXPECT_EQ(std::get<1>(*it), xmlDoc.isFirstUrlRobotsTxt());
+	}
+}

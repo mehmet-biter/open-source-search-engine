@@ -6990,13 +6990,15 @@ int32_t *XmlDoc::getFinalCrawlDelay() {
 }
 
 
-bool XmlDoc::isFirstUrlRobotsTxt ( ) {
-	if ( m_isRobotsTxtUrlValid )
+bool XmlDoc::isFirstUrlRobotsTxt() {
+	if (m_isRobotsTxtUrlValid) {
 		return m_isRobotsTxtUrl;
-	Url *fu = getFirstUrl();
+	}
 
-	m_isRobotsTxtUrl = ( fu->getUrlLen() > 12 && ! strncmp ( fu->getUrl() + fu->getUrlLen() - 11 , "/robots.txt" , 11 ) );
+	Url *fu = getFirstUrl();
+	m_isRobotsTxtUrl = ((fu->getPathLen() ==  11) && (strncmp(fu->getPath(), "/robots.txt", 11) == 0));
 	m_isRobotsTxtUrlValid = true;
+
 	return m_isRobotsTxtUrl;
 }
 
