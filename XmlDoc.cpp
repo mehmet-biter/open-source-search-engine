@@ -2173,12 +2173,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
 	// . don't spider robots.txt urls for indexing!
 	// . quickly see if we are a robots.txt url originally
-	int32_t fulen = getFirstUrl()->getUrlLen();
-	char *fu   = getFirstUrl()->getUrl();
-	char *fp   = fu + fulen - 11;
-	if ( fulen > 12 &&
-	     fp[1] == 'r' &&
-	     ! strncmp ( fu + fulen - 11 , "/robots.txt" , 11 )) {
+	if (isFirstUrlRobotsTxt()) {
 		m_indexCode = EBADURL;
 		m_indexCodeValid = true;
 		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADURL (robots.txt)" );
