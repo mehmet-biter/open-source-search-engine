@@ -137,6 +137,10 @@ const char *mstrerror ( int errnum ) {
 				return "Doc is dup of a www url";
 			case EDOCDISALLOWED   :
 				return "robots.txt disallows this url";
+			case EDOCDISALLOWEDHTTPSTATUS:
+				return "Disallowed due to robots.txt HTTP status";
+			case EDOCDISALLOWEDROOT:
+				return "robots.txt disallows this root url";
 			case ETOOMANYFILES    :
 				return "Too many files already";
 			case EQUERYTOOBIG     :
@@ -338,8 +342,8 @@ static const char* s_errname[] {
 	STRINGIFY( EDOCDUPWWW ),
 	STRINGIFY( EUNUSED21 ),
 	STRINGIFY( EDOCDISALLOWED ),
-	STRINGIFY( EUNUSED22 ),
-	STRINGIFY( EUNUSED23 ),
+	STRINGIFY( EDOCDISALLOWEDHTTPSTATUS ),
+	STRINGIFY( EDOCDISALLOWEDROOT ),
 	STRINGIFY( EUNUSED24 ),
 	STRINGIFY( EUNUSED25 ),
 	STRINGIFY( EUNUSED26 ),

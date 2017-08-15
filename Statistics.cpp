@@ -192,6 +192,8 @@ static void status_to_spider_statistics( std::vector<unsigned> *spiderdoc_counts
 			(*spiderdoc_counts)[ spider_doc_deleted ] += count;
 			break;
 		case EDOCDISALLOWED:
+		case EDOCDISALLOWEDHTTPSTATUS:
+		case EDOCDISALLOWEDROOT:
 			(*spiderdoc_counts)[ spider_doc_disallowed ] += count;
 			break;
 		case EDOCBADHTTPSTATUS:

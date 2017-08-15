@@ -350,6 +350,7 @@ void XmlDoc::reset ( ) {
 	m_numRedirects             = 0;
 	m_numOutlinksAdded         = 0;
 	m_useRobotsTxt             = true;
+	m_robotsTxtHttpStatusDisallowed = false;
 
 	m_allowSimplifiedRedirs    = false;
 
@@ -2338,8 +2339,15 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	}
 	// if we generated a new sitenuminlinks to store in tagdb, we might
 	// want to add this for that only reason... consider!
-	if ( disallowed ) {
-		m_indexCode      = EDOCDISALLOWED;
+	if (disallowed) {
+		if (m_robotsTxtHttpStatusDisallowed) {
+			m_indexCode = EDOCDISALLOWEDHTTPSTATUS;
+		} else if (m_firstUrl.isRoot()) {
+			m_indexCode = EDOCDISALLOWEDROOT;
+		} else {
+			m_indexCode = EDOCDISALLOWED;
+		}
+
 		m_indexCodeValid = true;
 		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCDISALLOWED" );
 		return &m_indexCode;
@@ -7218,24 +7226,21 @@ bool *XmlDoc::getIsAllowed ( ) {
 	m_isAllowed      = true;
 	m_isAllowedValid = true;
 
-
-	if ( mime->getHttpStatus() != 200 )
-	{
+	if (mime->getHttpStatus() != 200) {
 		/// @todo ALC we should allow more error codes
 		/// 2xx (successful) : allow
 		/// 3xx (redirection) : follow
-		/// 4xx (client errors) : allow
-		/// 5xx (server errors) : disallow
+		/// 4xx (client errors) : allow (except 403 - forbidden)
+		/// 5xx (server errors) : disallow (should we allow? server error is not really forbidden is it?)
 
 		// We could not get robots.txt - use default crawl-delay for
 		// sites with no robots.txt
 		m_crawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
 
-
 		// BR 20151215: Do not allow spidering if we cannot read robots.txt EXCEPT if the error code is 404 (Not Found).
-		if( mime->getHttpStatus() != 404 )
-		{
+		if (mime->getHttpStatus() != 404) {
 			m_isAllowed = false;
+			m_robotsTxtHttpStatusDisallowed = true;
 		}
 
 		logTrace( g_conf.m_logTraceSpider, "END. httpStatus != 200. Return %s", (m_isAllowed?"true":"false"));
