@@ -439,7 +439,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 	//
 	/////////////////////////////////////////////////////
 
-	char *haystack     = xml->getContent();
+	const char *haystack     = xml->getContent();
 	int32_t  haystackSize = xml->getContentLen();
 
 	// do not call them "bad links" if our link occurs before any
@@ -702,7 +702,7 @@ bool isLinkSpam ( const Url *linker,
 	//
 	/////////////////////////////////////////////////////
 
-	char *haystack     = xml->getContent();
+	const char *haystack     = xml->getContent();
 	int32_t  haystackSize = xml->getContentLen();
 
 	char *linkPos = NULL;

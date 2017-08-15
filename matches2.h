@@ -38,7 +38,7 @@ public:
 };
 
 char *getMatches2(const Needle *needles, NeedleMatch *needlesMatch, int32_t numNeedles,
-                  char *haystack, int32_t haystackSize, char *linkPos, bool *hadPreMatch);
+                  const char *haystack, int32_t haystackSize, char *linkPos, bool *hadPreMatch);
 
 
 
