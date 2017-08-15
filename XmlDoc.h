@@ -898,7 +898,6 @@ public:
 	SafeBuf m_tmpBuf12;
 	Multicast m_mcast11;
 	Multicast m_mcast12;
-	MsgC m_msgc;
 	bool m_isAllowed;
 	bool m_isChildDoc;
 	Msg13 m_msg13;
