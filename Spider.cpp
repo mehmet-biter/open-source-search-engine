@@ -2573,6 +2573,16 @@ void dedupSpiderdbList ( RdbList *list ) {
 		}
 
 		/// @note if we need to clean out existing spiderdb records, add it here
+
+		// recalculate uh48 to make sure it's the same as stored url
+		{
+			int64_t uh48 = (hash64b(sreq->m_url) & 0x0000ffffffffffffLL);
+			if (sreq->getUrlHash48() != uh48) {
+				logError("Recalculated uh48=%" PRId64" != stored uh48=%" PRId64" for url='%s'", uh48, sreq->getUrlHash48(), sreq->m_url);
+				continue;
+			}
+		}
+
 		if (!sreq->m_urlIsDocId) {
 			Url url;
 			// we don't need to strip parameter here, speed up
@@ -2964,15 +2974,6 @@ bool SpiderRequest::isCorrupt() const {
 		log(LOG_WARN, "spider: got corrupt undersize spiderrequest %i", (int)m_dataSize);
  		return true;
  	}
-
-	// recalculate uh48 to make sure it's the same as stored url
-	{
-		int64_t uh48 = (hash64b(m_url) & 0x0000ffffffffffffLL);
-		if (getUrlHash48() != uh48) {
-			log(LOG_WARN, "spider: got corrupt spiderrequest. Recalculated uh48=%" PRId64" != stored uh48=%" PRId64" for url='%s'", uh48, getUrlHash48(), m_url);
-			return false;
-		}
-	}
 
 	// sanity check. check for http(s)://
 	if (m_url[0] == 'h' && m_url[1] == 't' && m_url[2] == 't' && m_url[3] == 'p') {
