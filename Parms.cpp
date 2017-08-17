@@ -4838,6 +4838,28 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "spidered url cache size";
+	m->m_desc  = "How many records to store in spiderd url cache";
+	m->m_cgi   = "spurlcachesize";
+	simple_m_set(Conf,m_spiderUrlCacheSize);
+	m->m_def   = "1000000";
+	m->m_units = "";
+	m->m_group = true;
+	m->m_flags = PF_REBUILDSPIDERSETTINGS;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
+	m->m_title = "spidered url cache max age";
+	m->m_desc  = "How long to cache spidered url";
+	m->m_cgi   = "spurlcachemaxage";
+	simple_m_set(Conf,m_spiderUrlCacheMaxAge);
+	m->m_def   = "3600";
+	m->m_units = "seconds";
+	m->m_group = false;
+	m->m_flags = PF_REBUILDSPIDERSETTINGS;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
 	m->m_title = "add url enabled";
 	m->m_desc  = "Can people use the add url interface to add urls "
 		"to the index?";
@@ -8736,6 +8758,14 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for spider url cache";
+	m->m_cgi   = "ltrc_spurl";
+	simple_m_set(Conf,m_logTraceSpiderUrlCache);
+	m->m_def   = "0";
+	m->m_flags = PF_REBUILDSPIDERSETTINGS;
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for reindex";
 	m->m_cgi   = "ltrc_reindex";
 	simple_m_set(Conf,m_logTraceReindex);
@@ -10157,6 +10187,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 
 	bool rebuildRankingSettings = false;
 	bool rebuildDnsSettings = false;
+	bool rebuildSpiderSettings = false;
 
 	// process them
 	const char *p = we->m_parmPtr;
@@ -10218,6 +10249,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 
 		if (parm->m_flags & PF_REBUILDDNSSETTINGS) {
 			rebuildDnsSettings = true;
+		}
+
+		if (parm->m_flags & PF_REBUILDSPIDERSETTINGS) {
+			rebuildSpiderSettings = true;
 		}
 
 		// get collnum i guess
@@ -10287,6 +10322,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 
 	if (rebuildDnsSettings) {
 		GbDns::initializeSettings();
+	}
+
+	if (rebuildSpiderSettings) {
+		g_spiderLoop.initSettings();
 	}
 
 	// note it

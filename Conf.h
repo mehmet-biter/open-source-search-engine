@@ -191,6 +191,9 @@ class Conf {
 
 	int32_t m_spiderDeadHostCheckInterval;
 
+	int64_t m_spiderUrlCacheMaxAge;
+	int64_t m_spiderUrlCacheMaxSize;
+
 	// indexdb has a max cached age for getting IndexLists (10 mins deflt)
 	int32_t  m_indexdbMaxIndexListAge;
 
@@ -399,6 +402,7 @@ class Conf {
 	bool m_logTraceRepairs;
 	bool m_logTraceRobots;
 	bool m_logTraceSpider;
+	bool m_logTraceSpiderUrlCache;
 	bool m_logTraceReindex;
 	bool m_logTraceSummary;
 	bool m_logTraceTitledb;
