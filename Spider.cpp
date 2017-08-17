@@ -2949,20 +2949,19 @@ bool SpiderRequest::setFromInject(const char *url) {
 
 
 bool SpiderRequest::isCorrupt() const {
-
 	// more corruption detection
 	if ( m_hopCount < -1 ) {
-		log("spider: got corrupt 5 spiderRequest");
+		log(LOG_WARN, "spider: got corrupt 5 spiderRequest");
 		return true;
 	}
 
 	if ( m_dataSize > (int32_t)sizeof(SpiderRequest) ) {
-		log("spider: got corrupt oversize spiderrequest %i", (int)m_dataSize);
+		log(LOG_WARN, "spider: got corrupt oversize spiderrequest %i", (int)m_dataSize);
 		return true;
 	}
 
 	if ( m_dataSize <= 0 ) {
-		log("spider: got corrupt undersize spiderrequest %i", (int)m_dataSize);
+		log(LOG_WARN, "spider: got corrupt undersize spiderrequest %i", (int)m_dataSize);
  		return true;
  	}
 
@@ -2980,28 +2979,30 @@ bool SpiderRequest::isCorrupt() const {
 	     m_url[3] == 'p' ) 
 		return false;
 	// to be a docid as url must have this set
-	if ( ! m_isPageReindex && ! m_urlIsDocId ) {
-		log("spider: got corrupt 3 spiderRequest");
+	if (!m_isPageReindex && !m_urlIsDocId) {
+		log(LOG_WARN, "spider: got corrupt 3 spiderRequest");
 		return true;
-	}	// might be a docid from a pagereindex.cpp
-	if ( ! is_digit(m_url[0]) ) { 
-		log("spider: got corrupt 1 spiderRequest");
+	}
+
+	// might be a docid from a pagereindex.cpp
+	if (!is_digit(m_url[0])) {
+		log(LOG_WARN, "spider: got corrupt 1 spiderRequest");
 		return true;
 	}
 	// if it is a digit\0 it is ok, not corrupt
 	if ( ! m_url[1] )
 		return false;
 	// if it is not a digit after the first digit, that is bad
-	if ( ! is_digit(m_url[1]) ) { 
-		log("spider: got corrupt 2 spiderRequest");
+	if (!is_digit(m_url[1])) {
+		log(LOG_WARN, "spider: got corrupt 2 spiderRequest");
 		return true;
 	}
 	const char *p    = m_url + 2;
 	const char *pend = m_url + getUrlLen();
 	for ( ; p < pend && *p ; p++ ) {
 		// the whole url must be digits, a docid
-		if ( ! is_digit(*p) ) {
-			log("spider: got corrupt 13 spiderRequest");
+		if (!is_digit(*p)) {
+			log(LOG_WARN, "spider: got corrupt 13 spiderRequest");
 			return true;
 		}
 	}
