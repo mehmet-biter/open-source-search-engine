@@ -2975,9 +2975,10 @@ bool SpiderRequest::isCorrupt() const {
 	}
 
 	// sanity check. check for http(s)://
-	if ( m_url[0] == 'h' && m_url[1]=='t' && m_url[2]=='t' &&
-	     m_url[3] == 'p' ) 
+	if (m_url[0] == 'h' && m_url[1] == 't' && m_url[2] == 't' && m_url[3] == 'p') {
 		return false;
+	}
+
 	// to be a docid as url must have this set
 	if (!m_isPageReindex && !m_urlIsDocId) {
 		log(LOG_WARN, "spider: got corrupt 3 spiderRequest");
@@ -2989,17 +2990,21 @@ bool SpiderRequest::isCorrupt() const {
 		log(LOG_WARN, "spider: got corrupt 1 spiderRequest");
 		return true;
 	}
+
 	// if it is a digit\0 it is ok, not corrupt
-	if ( ! m_url[1] )
+	if (!m_url[1]) {
 		return false;
+	}
+
 	// if it is not a digit after the first digit, that is bad
 	if (!is_digit(m_url[1])) {
 		log(LOG_WARN, "spider: got corrupt 2 spiderRequest");
 		return true;
 	}
+
 	const char *p    = m_url + 2;
 	const char *pend = m_url + getUrlLen();
-	for ( ; p < pend && *p ; p++ ) {
+	for (; p < pend && *p; p++) {
 		// the whole url must be digits, a docid
 		if (!is_digit(*p)) {
 			log(LOG_WARN, "spider: got corrupt 13 spiderRequest");
