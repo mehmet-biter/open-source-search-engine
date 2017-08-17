@@ -22,19 +22,21 @@ public:
 		, m_map()
 		, m_max_age(300) // 5 minutes
 		, m_max_item(10000)
-		, m_log_trace(false) {
+		, m_log_trace(false)
+		, m_log_cache_name("cache") {
 	}
 
 	~GbCache() {
 		clear();
 	}
 
-	void configure(int64_t max_age, size_t max_item, bool log_trace) {
+	void configure(int64_t max_age, size_t max_item, bool log_trace, const char *log_cache_name) {
 		ScopedLock sl(m_mtx);
 
 		m_max_age = max_age;
 		m_max_item = max_item;
 		m_log_trace = log_trace;
+		m_log_cache_name = log_cache_name;
 
 		if (disabled()) {
 			clear_unlocked();
@@ -63,7 +65,7 @@ public:
 
 		if (m_log_trace) {
 			std::string keyStr = getKeyStr(key);
-			logTrace(m_log_trace, "inserting key='%s' to cache", keyStr.c_str());
+			logTrace(m_log_trace, "inserting key='%s' to %s", keyStr.c_str(), m_log_cache_name);
 		}
 
 		CacheItem item(data);
@@ -100,11 +102,11 @@ public:
 
 		auto map_it = m_map.find(key);
 		if (map_it != m_map.end() && !expired(map_it->second)) {
-			logTrace(m_log_trace, "found key='%s' in cache", keyStr.c_str());
+			logTrace(m_log_trace, "found key='%s' in %s", keyStr.c_str(), m_log_cache_name);
 			*data = map_it->second.m_data;
 			return true;
 		} else {
-			logTrace(m_log_trace, "unable to find key='%s' in cache", keyStr.c_str());
+			logTrace(m_log_trace, "unable to find key='%s' in %s", keyStr.c_str(), m_log_cache_name);
 			return false;
 		}
 	}
@@ -159,6 +161,7 @@ private:
 	size_t m_max_item;
 
 	bool m_log_trace;
+	const char *m_log_cache_name;
 };
 
 

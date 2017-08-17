@@ -133,7 +133,7 @@ void SpiderLoop::init() {
 }
 
 void SpiderLoop::initSettings() {
-    m_urlCache.configure(g_conf.m_spiderUrlCacheMaxAge, g_conf.m_spiderUrlCacheSize, g_conf.m_logTraceSpiderUrlCache);
+    m_urlCache.configure(g_conf.m_spiderUrlCacheMaxAge, g_conf.m_spiderUrlCacheSize, g_conf.m_logTraceSpiderUrlCache, "spider url cache");
 }
 
 
@@ -1129,18 +1129,18 @@ bool SpiderLoop::spiderUrl(SpiderRequest *sreq, const key96_t *doledbKey, collnu
 bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, const key96_t *doledbKey, collnum_t collnum) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
-	// let's check if we have spidered this recently before
-    {
-        std::string url(sreq->m_url);
-        void *data = NULL;
-        if (m_urlCache.lookup(url, &data)) {
-            // this is not suppose to happen!
-            logError("Trying to respider url within %" PRId64" seconds. Dropping url='%s'", g_conf.m_spiderUrlCacheMaxAge, url.c_str());
-            return true;
-        }
+	// let's check if we have spidered this recently before (only if it's a normal spider)
+	if (!sreq->m_fakeFirstIp && !sreq->m_urlIsDocId && !sreq->m_isAddUrl && !sreq->m_isInjecting && !sreq->m_isPageParser && !sreq->m_isPageReindex) {
+		std::string url(sreq->m_url);
+		void *data = NULL;
+		if (m_urlCache.lookup(url, &data)) {
+			// this is not suppose to happen!
+			logError("Trying to respider url within %" PRId64" seconds. Dropping url='%s'", g_conf.m_spiderUrlCacheMaxAge, url.c_str());
+			return true;
+		}
 
-        m_urlCache.insert(url, NULL);
-    }
+		m_urlCache.insert(url, NULL);
+	}
 
 	// . find an available doc slot
 	// . we can have up to MAX_SPIDERS spiders (300)
