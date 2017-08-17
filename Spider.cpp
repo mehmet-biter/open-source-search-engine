@@ -2587,13 +2587,6 @@ void dedupSpiderdbList ( RdbList *list ) {
 		// shortcut
 		int64_t uh48 = sreq->getUrlHash48();
 
-		// crazy?
-		if ( ! uh48 ) {
-			//uh48 = hash64b ( sreq->m_url );
-			uh48 = 12345678;
-			log("spider: got uh48 of zero for spider req. computing now.");
-		}
-
 		// update request with SpiderReply if newer, because ultimately
 		// ::getUrlFilterNum() will just look at SpiderRequest's 
 		// version of these bits!
@@ -2972,6 +2965,15 @@ bool SpiderRequest::isCorrupt() const {
 		log("spider: got corrupt undersize spiderrequest %i", (int)m_dataSize);
  		return true;
  	}
+
+	// recalculate uh48 to make sure it's the same as stored url
+	{
+		int64_t uh48 = (hash64b(m_url) & 0x0000ffffffffffffLL);
+		if (getUrlHash48() != uh48) {
+			log(LOG_WARN, "spider: got corrupt spiderrequest. Recalculated uh48=%" PRId64" != stored uh48=%" PRId64" for url='%s'", uh48, getUrlHash48(), m_url);
+			return false;
+		}
+	}
 
 	// sanity check. check for http(s)://
 	if ( m_url[0] == 'h' && m_url[1]=='t' && m_url[2]=='t' &&
