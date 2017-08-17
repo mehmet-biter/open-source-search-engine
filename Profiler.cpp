@@ -239,7 +239,6 @@ Profiler::getStackFrame() {
 
 		// the call stack path for profiling the worst paths
 		g_profiler.m_ipBuf.pushLongLong(addr);
-		continue;
 	}
 
 	// indicate end of call stack path

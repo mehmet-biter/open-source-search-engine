@@ -1,8 +1,9 @@
 #ifndef GB_URLBLOCKLIST_H
 #define GB_URLBLOCKLIST_H
 
-#include <vector>
 #include "UrlBlock.h"
+#include <vector>
+#include <memory>
 
 typedef std::vector<UrlBlock> urlblocklist_t;
 typedef std::shared_ptr<urlblocklist_t> urlblocklist_ptr_t;
@@ -27,7 +28,7 @@ protected:
 
 private:
 	urlblocklistconst_ptr_t getUrlBlockList();
-	void swapUrlBlockList(urlblocklistconst_ptr_t urlRegexList);
+	void swapUrlBlockList(urlblocklistconst_ptr_t urlBlockList);
 
 	urlblocklistconst_ptr_t m_urlBlockList;
 

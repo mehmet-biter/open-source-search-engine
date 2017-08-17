@@ -82,7 +82,10 @@ class Conf {
 	// . dnsDir should hold our saved cached (TODO: save the dns cache)
 	int32_t  m_numDns;
 	int32_t  m_dnsIps[MAX_DNSIPS];
-	int16_t m_dnsPorts[MAX_DNSIPS];            
+	int16_t m_dnsPorts[MAX_DNSIPS];
+
+	int64_t m_dnsCacheSize;
+	int64_t m_dnsCacheMaxAge;
 
 	int32_t  m_dnsMaxCacheMem;
 
@@ -102,6 +105,8 @@ class Conf {
 	// used to limit all rdb's to one merge per machine at a time
 	int32_t  m_mergeBufSize;
 
+	int32_t m_doledbNukeInterval;
+	
 	// rdb settings
 
 	// posdb
@@ -371,6 +376,8 @@ class Conf {
 
 	bool m_logTraceBigFile;
 	bool m_logTraceDns;
+	bool m_logTraceDnsBlockList;
+	bool m_logTraceDnsCache;
 	bool m_logTraceFile;
 	bool m_logTraceHttpMime;
 	bool m_logTraceMem;

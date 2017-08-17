@@ -37,6 +37,9 @@
 //#define SPIDER_DONE_TIMER 90
 #define SPIDER_DONE_TIMER 20
 
+static int32_t doleDbRecSizes = 150000; //how much toe read from DoleDB in a chunk.
+
+
 /////////////////////////
 /////////////////////////      SPIDERLOOP
 /////////////////////////
@@ -145,7 +148,7 @@ void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 	int32_t now = getTimeLocal();
 
 	// point to head of active linked list of collection recs
-	CollectionRec *nextActive = g_spiderLoop.getActiveList(); 
+	const CollectionRec *nextActive = g_spiderLoop.getActiveList();
 	collnum_t nextActiveCollnum = nextActive ? nextActive->m_collnum : static_cast<collnum_t>( -1 );
 
 	for ( ; nextActive ;  ) {
@@ -167,7 +170,7 @@ void SpiderLoop::doneSleepingWrapperSL ( int fd , void *state ) {
 		}
 
 		// now we become him
-		CollectionRec *crp = nextActive;
+		const CollectionRec *crp = nextActive;
 
 		// update these two vars for next iteration
 		nextActive = crp->m_nextActive;
@@ -282,7 +285,7 @@ collLoop:
 	m_sc = NULL;
 
 	// set this in the loop
-	CollectionRec *cr = NULL;
+	const CollectionRec *cr = NULL;
 	uint32_t nowGlobal = 0;
 
 	m_launches = 0;
@@ -474,10 +477,7 @@ subloopNextPriority:
 		goto subloop;
 	}
 
-	// shortcut
-	SpiderColl *sc = cr->m_spiderColl;
-
-	if ( sc && sc->isDoledbIpTableEmpty() ) {
+	if ( cr->m_spiderColl && cr->m_spiderColl->isDoledbIpTableEmpty() ) {
 		logTrace( g_conf.m_logTraceSpider, "Loop, doleIpTable is empty"  );
 		goto subloop;
 	}
@@ -572,7 +572,7 @@ subloopNextPriority:
 				// really freezes the spiders up.
 				// Also, if a spider request is corrupt in
 				// doledb it would cork us up too!
-				50000            , // minRecSizes
+				doleDbRecSizes  , // minRecSizes
 				true            , // includeTree
 				0               , // startFileNum
 				-1              , // numFiles (all)
@@ -655,11 +655,13 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 	if ( bail ) {
 		// return false to indicate to try another
+		log(LOG_DEBUG,"spider:gotDoledbList2:bailing");
 		return false;
 	}
 
 	// bail if list is empty
 	if ( m_list.getListSize() <= 0 ) {
+		log(LOG_DEBUG,"spider:gotDoledbList2:empty list");
 		return true;
 	}
 
@@ -673,7 +675,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	char *rec = (char *)m_list.getCurrentRec();
 
 	// the doledbkey
-	key96_t *doledbKey = (key96_t *)rec;
+	const key96_t *doledbKey = (const key96_t *)rec;
 
 	// get record after it next time
 	m_sc->m_nextDoledbKey = *doledbKey ;
@@ -709,8 +711,9 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 	if ( g_conf.m_logDebugSpider ) {
 		int32_t pri4 = Doledb::getPriority ( &m_sc->m_nextDoledbKey );
+		char keystrbuf[sizeof(m_sc->m_nextDoledbKey)*2+1];
 		log( LOG_DEBUG, "spider: setting pri2=%" PRId32" queue doledb nextkey to %s (pri=%" PRId32")",
-		     m_sc->m_pri2, KEYSTR(&m_sc->m_nextDoledbKey,12), pri4 );
+		     m_sc->m_pri2, KEYSTR(&m_sc->m_nextDoledbKey,sizeof(m_sc->m_nextDoledbKey),keystrbuf), pri4 );
 	}
 
 	// update next doledbkey for this priority to avoid having to
@@ -746,6 +749,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 	// skip? and re-get another doledb list from next priority...
 	if ( out >= max ) {
+		log(LOG_DEBUG,"spider:gotDoledbList2:returning, out=%d max=%d", out, max);
 		return true;
 	}
 
@@ -769,6 +773,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 	// get the "spider rec" (SpiderRequest) (embedded in the doledb rec)
 	SpiderRequest *sreq = (SpiderRequest *)(rec + sizeof(key96_t)+4);
+	log(LOG_DEBUG,"spider:gotDoledbList2:Looking at spider record with firstIp=0x%08x", sreq->m_firstIp);
 
 	// sanity check. check for http(s)://
 	// might be a docid from a pagereindex.cpp
@@ -784,7 +789,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	//   to work right for some reason
 	for ( int32_t i = 0 ; i <= m_maxUsed ; i++ ) {
 		// get it
-		XmlDoc *xd = m_docs[i];
+		const XmlDoc *xd = m_docs[i];
 		if ( ! xd ) continue;
 		if ( ! xd->m_sreqValid ) continue;
 		// to prevent one collection from hogging all the urls for
@@ -804,6 +809,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	// one ip from bottle corking the whole priority!!
 	if ( ipOut >= maxSpidersOutPerIp ) {
 skipDoledbRec:
+		log(LOG_DEBUG,"spider:gotDoledbList2:Skipping spider record with firstIp=0x%08x", sreq->m_firstIp);
 		// skip
 		m_list.skipCurrentRecord();
 
@@ -814,7 +820,8 @@ skipDoledbRec:
 
 		// print a log msg if we corked things up even
 		// though we read 50k from doledb
-		if ( m_list.getListSize() > 50000 ) {
+		// todo: how is this test supposed to work? We only asked Msg5 for x bytes, so testing if the list is larger than x bytes seems to never be true
+		if ( m_list.getListSize() > doleDbRecSizes ) {
 			log("spider: 50k not big enough");
 		}
 
@@ -827,6 +834,7 @@ skipDoledbRec:
 	// line of queued results just sitting there taking up mem and
 	// spider slots so the crawlbot hourly can't pass.
 	if ( globalOut >= maxSpidersOutPerIp && ipOut >= 1 ) {
+		log(LOG_DEBUG,"spider:gotDoledbList2:too many outstanding spiders, globalOut=%d, maxSpidersOutPerIp=%d, ipOut=%d", globalOut, maxSpidersOutPerIp, ipOut);
 		goto skipDoledbRec;
 	}
 
@@ -938,7 +946,7 @@ skipDoledbRec:
 // . returns false if blocked on a spider launch, otherwise true.
 // . returns false if your callback will be called
 // . returns true and sets g_errno on error
-bool SpiderLoop::spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum) {
+bool SpiderLoop::spiderUrl(SpiderRequest *sreq, const key96_t *doledbKey, collnum_t collnum) {
 	// sanity
 	if ( ! m_sc ) { g_process.shutdownAbort(true); }
 
@@ -1042,14 +1050,13 @@ bool SpiderLoop::spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t co
 			    xd->m_firstUrl.getUrl());
 			//g_process.shutdownAbort(true); }
 		}
-		// keep chugging
-		continue;
 	}
 
 	// reset g_errno
 	g_errno = 0;
 
-	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(doledbKey, sizeof(*doledbKey)));
+	char doledbKeyStr[sizeof(*doledbKey)*2+1];
+	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(doledbKey, sizeof(*doledbKey), doledbKeyStr));
 
 	// now we just take it out of doledb instantly
 	bool deleted = g_doledb.getRdb()->deleteTreeNode(collnum, (const char *)doledbKey);
@@ -1115,7 +1122,7 @@ bool SpiderLoop::spiderUrl(SpiderRequest *sreq, key96_t *doledbKey, collnum_t co
 	return spiderUrl2(sreq, doledbKey, collnum);
 }
 
-bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, key96_t *doledbKey, collnum_t collnum) {
+bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, const key96_t *doledbKey, collnum_t collnum) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
 	// . find an available doc slot
@@ -1310,7 +1317,7 @@ int32_t SpiderLoop::getNumSpidersOutPerIp(int32_t firstIp, collnum_t collnum) {
 		}
 
 		// cast lock
-		UrlLock *lock = (UrlLock *)m_lockTable.getValueFromSlot(i);
+		const UrlLock *lock = (const UrlLock *)m_lockTable.getValueFromSlot(i);
 
 		// skip if not outstanding, just a 5-second expiration wait
 		// when the spiderReply returns, so that in case a lock
@@ -1456,7 +1463,7 @@ void SpiderLoop::clearLocks(collnum_t collnum) {
 				continue;
 			}
 
-			UrlLock *lock = (UrlLock *)m_lockTable.getValueFromSlot(i);
+			const UrlLock *lock = (const UrlLock *)m_lockTable.getValueFromSlot(i);
 			// skip if not our collnum
 			if (lock->m_collnum != collnum) {
 				continue;

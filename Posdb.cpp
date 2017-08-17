@@ -552,8 +552,6 @@ int Posdb::printList ( RdbList &list ) {
 		       recSize,
 		       dd ,
 		       err );
-
-		continue;
 	}
 
 	// startKey = *(key144_t *)list.getLastKey();

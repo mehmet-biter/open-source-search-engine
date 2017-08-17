@@ -57,6 +57,7 @@ OBJS_O2 = \
 
 
 OBJS_O3 = \
+	DnsBlockList.o \
 	IPAddressChecks.o \
 	Linkdb.o \
 	Msg40.o \
@@ -67,6 +68,7 @@ OBJS_O3 = \
 	TopTree.o \
 	UrlBlock.o UrlBlockList.o UrlComponent.o UrlParser.o UdpStatistic.o \
 	UrlRealtimeClassification.o \
+	WantedChecker.o \
 	MergeSpaceCoordinator.o \
 	GbMoveFile.o GbMoveFile2.o GbCopyFile.o GbMakePath.o \
 	GbUtil.o \
@@ -75,6 +77,7 @@ OBJS_O3 = \
 	GbRegex.o \
 	GbThreadQueue.o \
 	GbEncoding.o GbLanguage.o \
+	GbDns.o \
 
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
@@ -85,7 +88,7 @@ OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
 
 # common flags
-DEFS = -D_REENTRANT_ -I. -Ithird-party/compact_enc_det
+DEFS = -D_REENTRANT_ -I. -Ithird-party/compact_enc_det -Ithird-party/c-ares
 DEFS += -DDEBUG_MUTEXES
 CPPFLAGS = -g -fno-stack-protector -DPTHREADS
 CPPFLAGS += -std=c++11
@@ -224,7 +227,7 @@ CPPFLAGS += -Wno-unused-parameter
 
 endif
 
-LIBS = -lm -lpthread -lssl -lcrypto -lz -lpcre
+LIBS = -lm -lpthread -lssl -lcrypto -lz -lpcre -ldl
 
 # to build static libiconv.a do a './configure --enable-static' then 'make' in the iconv directory
 
@@ -264,8 +267,8 @@ all: gb
 
 
 # third party libraries
-LIBFILES = libcld2_full.so libcld3.so libced.so slacktee.sh
-LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced
+LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so slacktee.sh
+LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced -lcares
 
 CLD2_SRC_DIR=third-party/cld2/internal
 libcld2_full.so:
@@ -289,6 +292,17 @@ libced.so:
 	cd third-party/compact_enc_det && cmake -DBUILD_SHARED_LIBS=ON . && make ced
 	ln -s third-party/compact_enc_det/lib/libced.so libced.so
 
+CARES_SRC_DIR=third-party/c-ares
+libcares.so:
+	cd $(CARES_SRC_DIR) && ./buildconf && ./configure && make
+	ln -s $(CARES_SRC_DIR)/.libs/libcares.so.2 libcares.so.2
+	ln -s libcares.so.2 libcares.so
+
+wanted_check_api.so: WantedCheckExampleLib.o
+	$(CXX) WantedCheckExampleLib.o -shared -o $@
+WantedCheckExampleLib.o: WantedCheckExampleLib.cpp
+	$(CXX) -fPIC -c WantedCheckExampleLib.cpp
+
 slacktee.sh:
 	ln -sf third-party/slacktee/slacktee.sh slacktee.sh 2>/dev/null
 
@@ -299,6 +313,8 @@ FORCE:
 
 gb: $(LIBFILES) $(OBJS) main.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ main.o $(OBJS) $(LIBS)
+
+GbDns.o: libcares.so
 
 
 .PHONY: static

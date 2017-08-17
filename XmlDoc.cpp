@@ -45,6 +45,8 @@
 #include <fcntl.h>
 #include "GbEncoding.h"
 #include "GbLanguage.h"
+#include "DnsBlockList.h"
+#include "GbDns.h"
 
 
 #ifdef _VALGRIND_
@@ -95,6 +97,9 @@ XmlDoc::XmlDoc() {
 	m_indexedDoc = false;
 	m_msg4Waiting = false;
 	m_msg4Launched = false;
+	m_blockedDoc = false;
+	m_checkedUrlBlockList = false;
+	m_checkedDnsBlockList = false;
 	m_dupTrPtr = NULL;
 	m_oldTitleRec = NULL;
 	m_filteredContent = NULL;
@@ -149,6 +154,10 @@ void XmlDoc::reset ( ) {
 
 	m_indexedDoc = false;
 	m_msg4Launched = false;
+	m_blockedDoc = false;
+	m_checkedUrlBlockList = false;
+	m_checkedDnsBlockList = false;
+	m_hostNameServers.clear();
 
 	m_doConsistencyTesting = g_conf.m_doConsistencyTesting;
 
@@ -557,7 +566,7 @@ CollectionRec *XmlDoc::getCollRec ( ) {
 
 // returns false and sets g_errno on error
 bool XmlDoc::set4 ( SpiderRequest *sreq      ,
-		    key96_t         *doledbKey ,
+		    const key96_t  *doledbKey,
 		    const char     *coll      ,
 		    SafeBuf       *pbuf      ,
 		    int32_t        niceness  ,
@@ -1754,75 +1763,41 @@ bool XmlDoc::indexDoc ( ) {
 		if ( ! m_firstIpValid ) { g_process.shutdownAbort(true); }
 		// sanity log
 		if ( *fip == 0 || *fip == -1 ) {
-			//
-			// now add a spider status doc for this so we know
-			// why a crawl might have failed to start
-			//
-			// save this
-			int32_t saved = m_indexCode;
-			// make it the real reason for the spider status doc
-			m_indexCode = EDNSERROR;
-			// get the spiderreply ready to be added. false=del
-			SafeBuf *ssDocMetaList =getSpiderStatusDocMetaList(NULL ,false);
-			// revert
-			m_indexCode = saved;
-			// error?
-			if ( ! ssDocMetaList ) return true;
-			// blocked?
-			if ( ssDocMetaList == (void *)-1 ) return false;
-			// need to alloc space for it too
-			char *list = ssDocMetaList->getBufStart();
-			int32_t len = ssDocMetaList->length();
-			//needx += len;
-			// this too
-			m_addedStatusDocSize = len;
-			m_addedStatusDocSizeValid = true;
-
 			const char *url = "unknown";
 			if ( m_sreqValid ) url = m_sreq.m_url;
-			log("build: error2 getting real firstip of "
-			    "%" PRId32" for "
-			    "%s. Not adding new spider req. "
-			    "spiderstatusdocsize=%" PRId32, (int32_t)*fip,url,
-			    m_addedStatusDocSize);
-
-			if ( ! m_metaList2.safeMemcpy ( list , len ) )
-			{
-				logTrace( g_conf.m_logTraceXmlDoc, "END, return true, metaList2 safeMemcpy returned false" );
-				return true;
-			}
+			log("build: error2 getting real firstip of %" PRId32" for %s. ", (int32_t)*fip, url);
 
 			goto skipNewAdd1;
 		}
+
 		// store the new request (store reply for this below)
-		rdbid_t rd = RDB_SPIDERDB;
-		if ( m_useSecondaryRdbs ) rd = RDB2_SPIDERDB2;
-		if ( ! m_metaList2.pushChar(rd) )
-		{
+		rdbid_t rd = m_useSecondaryRdbs ? RDB2_SPIDERDB2 : RDB_SPIDERDB;
+		if (!m_metaList2.pushChar(rd)) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, return true, metaList2 pushChar returned false" );
 			return true;
 		}
+
 		// store it here
 		SpiderRequest revisedReq;
 		// this fills it in
-		getRevisedSpiderRequest ( &revisedReq );
+		getRevisedSpiderRequest(&revisedReq);
 		// and store that new request for adding
-		if ( ! m_metaList2.safeMemcpy (&revisedReq,revisedReq.getRecSize()))
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, return true, metaList2 safeMemcpy returned false" );
+		if (!m_metaList2.safeMemcpy(&revisedReq, revisedReq.getRecSize())) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, return true, metaList2 safeMemcpy returned false");
 			return true;
 		}
+
 		// make sure to log the size of the spider request
 		m_addedSpiderRequestSize = revisedReq.getRecSize();
 		m_addedSpiderRequestSizeValid = true;
 	}
 
- skipNewAdd1:
+skipNewAdd1:
 
 	SpiderReply *nsr = NULL;
 
 	// if only rebuilding posdb do not rebuild spiderdb
-	if ( m_useSpiderdb ) {
+	if (m_useSpiderdb) {
 
 		////
 		//
@@ -1837,18 +1812,13 @@ bool XmlDoc::indexDoc ( ) {
 			return true;
 		}
 
-		//SafeBuf metaList;
-
-		rdbid_t rd = RDB_SPIDERDB;
-		if ( m_useSecondaryRdbs ) rd = RDB2_SPIDERDB2;
-		if ( ! m_metaList2.pushChar( rd ) )
-		{
+		rdbid_t rd = m_useSecondaryRdbs ? RDB2_SPIDERDB2 : RDB_SPIDERDB;
+		if (!m_metaList2.pushChar(rd)) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, return true, metaList2 pushChar returned false" );
 			return true;
 		}
 
-		if ( ! m_metaList2.safeMemcpy ( (char *)nsr,nsr->getRecSize()))
-		{
+		if ( ! m_metaList2.safeMemcpy ( (char *)nsr,nsr->getRecSize())) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, return true, metaList2 safeMemcpy returned false" );
 			return true;
 		}
@@ -1884,8 +1854,6 @@ bool XmlDoc::indexDoc ( ) {
 		return false;
 	}
 
-	//logf(LOG_DEBUG,"build: msg4 meta add3 did NOT block" );
-
 	m_msg4Launched = false;
 
 	logTrace( g_conf.m_logTraceXmlDoc, "END, return true, all done" );
@@ -1894,11 +1862,70 @@ bool XmlDoc::indexDoc ( ) {
 }
 
 
+bool* XmlDoc::checkBlockList() {
+	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
+
+	// don't need check multiple times
+	if (m_blockedDocValid) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, already valid. blockedDoc=%d", m_blockedDoc);
+		return &m_blockedDoc;
+	}
+
+	if (m_sreq.m_urlIsDocId) {
+		// nothing to check
+		m_blockedDocValid = true;
+		m_blockedDoc = false;
+		return &m_blockedDoc;
+	}
+
+	Url *url = getCurrentUrl();
+
+	bool blocked = false;
+	if (!m_checkedUrlBlockList) {
+		setStatus("checking urlblocklist");
+		if (g_urlBlockList.isUrlBlocked(*url)) {
+			m_indexCodeValid = true;
+			m_indexCode = EDOCBLOCKEDURL;
+
+			blocked = true;
+		}
+		m_checkedUrlBlockList = true;
+	}
+
+	if (!blocked && !m_checkedDnsBlockList) {
+		std::vector<std::string> *nameservers = getHostNameServers(url->getHost(), url->getHostLen());
+		if (nameservers == (std::vector<std::string>*)-1) {
+			// blocked
+			return (bool*)nameservers;
+		}
+
+		setStatus("checking dnsblocklist");
+		for (auto it = nameservers->begin(); it != nameservers->end(); ++it) {
+			if (g_dnsBlockList.isDnsBlocked(it->c_str())) {
+				m_indexCodeValid = true;
+				m_indexCode = EDOCBLOCKEDDNS;
+
+				blocked = true;
+				break;
+			}
+		}
+
+		m_checkedDnsBlockList = true;
+	}
+
+	if (blocked || (m_checkedUrlBlockList && m_checkedDnsBlockList)) {
+		m_blockedDocValid = true;
+		m_blockedDoc = blocked;
+	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "END, blockedDoc=%d", m_blockedDoc);
+
+	return &m_blockedDoc;
+}
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error and returns true
 bool XmlDoc::indexDoc2 ( ) {
-
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// if anything blocks, this will be called when it comes back
@@ -1941,6 +1968,16 @@ bool XmlDoc::indexDoc2 ( ) {
 	{
 		logTrace( g_conf.m_logTraceXmlDoc, "END. return true, g_errno set (%" PRId32")",g_errno);
 		return true;
+	}
+
+	bool *isPageBlocked = checkBlockList();
+	if (isPageBlocked == (void*)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, return false. isPageBlocked=-1");
+		return false;
+	}
+
+	if (*isPageBlocked) {
+		m_deleteFromIndex = true;
 	}
 
 	// . now get the meta list from it to add
@@ -3453,8 +3490,16 @@ lang_t XmlDoc::getContentLangIdCLD2() {
 
 lang_t XmlDoc::getContentLangIdCLD3() {
 	int32_t contentLen = size_utf8Content > 0 ? (size_utf8Content - 1) : 0;
+	if (contentLen == 0) {
+		return langUnknown;
+	}
 
 	char *contentTextBuf = (char*)mmalloc(contentLen, "xmldoc-cld3");
+	if (!contentTextBuf) {
+		log(LOG_WARN, "Unable to allocate memory for cld3");
+		return langUnknown;
+	}
+
 	int32_t contentTextBufLen = m_xml.getText(contentTextBuf, contentLen - 2, 0, -1, true);
 	lang_t langId = GbLanguage::getLangIdCLD3(contentTextBuf, contentTextBufLen);
 	mfree(contentTextBuf, contentLen, "xmldoc-cld3");
@@ -6204,38 +6249,6 @@ char **XmlDoc::getRootTitleRec ( ) {
 	return &m_rootTitleRec;
 }
 
-
-
-// used for indexing spider replies. we need a unique docid because it
-// is treated as a different document even though its url will be the same.
-// and there is never an "older" version of it because each reply is treated
-// as a brand new document.
-int64_t *XmlDoc::getAvailDocIdOnly ( int64_t preferredDocId ) {
-	if ( m_availDocIdValid && g_errno ) {
-		log("xmldoc: error getting availdocid: %s",
-		    mstrerror(g_errno));
-		return NULL;
-	}
-	if ( m_availDocIdValid )
-		// this is 0 or -1 if no avail docid was found
-		return &m_msg22c.m_availDocId;
-	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
-	// pre-validate it
-	m_availDocIdValid = true;
-	if ( ! m_msg22c.getAvailDocIdOnly ( &m_msg22Requestc ,
-					    preferredDocId ,
-					    cr->m_coll ,
-					    m_masterState ,
-					    m_masterLoop ,
-					    m_niceness ) )
-		return (int64_t *)-1;
-	// error?
-	log("xmldoc: error getting availdocid2: %s",mstrerror(g_errno));
-	return NULL;
-}
-
-
 int64_t *XmlDoc::getDocId ( ) {
 	if ( m_docIdValid ) return &m_docId;
 	setStatus ("getting docid");
@@ -6758,40 +6771,63 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 	return NULL;
 }
 
-static void gotIpWrapper ( void *state , int32_t ip ) ;
-
 static void delayWrapper ( int fd , void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	THIS->m_masterLoop ( THIS->m_masterState );
 }
 
+void XmlDoc::gotIpWrapper(GbDns::DnsResponse *response, void *state) {
+	XmlDoc *that = static_cast<XmlDoc*>(state);
+
+	that->m_ipEndTime = gettimeofdayInMilliseconds();
+
+	that->setStatus("got ip");
+
+	that->m_ipValid = true;
+	if (response) {
+		that->m_ip = response->m_ips.empty() ? 0 : response->m_ips.front();
+
+		if (!response->m_nameservers.empty()) {
+			that->m_hostNameServersValid = true;
+			that->m_hostNameServers = std::move(response->m_nameservers);
+		}
+
+		if (response->m_errno) {
+			that->m_indexCodeValid = true;
+			that->m_indexCode = response->m_errno;
+		}
+	}
+
+	char ipbuf[16];
+	logTrace( g_conf.m_logTraceXmlDoc, "Got IP [%s]. Took %" PRId64" msec", iptoa(that->m_ip,ipbuf), that->m_ipEndTime - that->m_ipStartTime);
+
+	that->m_masterLoop(that->m_masterState);
+}
+
 // . returns NULL and sets g_errno on error
 // . returns -1 if blocked, will re-call m_callback
 int32_t *XmlDoc::getIp ( ) {
-
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// return if we got it
-	if ( m_ipValid )
-	{
+	if (m_ipValid) {
 		char ipbuf[16];
 		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid [%s]", iptoa(m_ip,ipbuf));
 		return &m_ip;
 	}
 
 	// update status msg
-	setStatus ( "getting ip" );
+	setStatus("getting ip");
 
 	m_ipStartTime = 0;
 	// assume the same in case we get it right away
 	m_ipEndTime = 0;
 
 	// if set from docid and recycling
-	if ( m_recycleContent ) {
+	if (m_recycleContent) {
 		// get the old xml doc from the old title rec
-		XmlDoc **pod = getOldXmlDoc ( );
-		if ( ! pod || pod == (void *)-1 )
-		{
+		XmlDoc **pod = getOldXmlDoc();
+		if (!pod || pod == (void *)-1) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. getOldXmlDoc failed" );
 			return (int32_t *)pod;
 		}
@@ -6799,28 +6835,25 @@ int32_t *XmlDoc::getIp ( ) {
 		// shortcut
 		XmlDoc *od = *pod;
 		// set it
-		if ( od ) {
-			m_ip      = od->m_ip;
+		if (od) {
+			m_ip = od->m_ip;
 			m_ipValid = true;
 
 			char ipbuf[16];
-			logTrace( g_conf.m_logTraceXmlDoc, "END, got it from old XmlDoc [%s]", iptoa(m_ip,ipbuf));
+			logTrace(g_conf.m_logTraceXmlDoc, "END, got it from old XmlDoc [%s]", iptoa(m_ip, ipbuf));
 			return &m_ip;
 		}
 	}
 
-
 	// get the best url
 	Url *u = getCurrentUrl();
-	if ( ! u || u == (void *)-1 )
-	{
+	if (!u || u == (void *)-1) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. getCurrentUrl failed." );
 		return (int32_t *)u;
 	}
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr )
-	{
+	if (!cr) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. getCollRec failed" );
 		return NULL;
 	}
@@ -6829,6 +6862,7 @@ int32_t *XmlDoc::getIp ( ) {
 	// the IP and download the page, wait for this many milliseconds.
 	// this basically slows the spider down.
 	int32_t delay = cr->m_spiderDelayInMilliseconds;
+
 	// injected?
 	if ( m_sreqValid && m_sreq.m_isInjecting  ) delay = 0;
 	if ( m_sreqValid && m_sreq.m_isPageParser ) delay = 0;
@@ -6865,63 +6899,50 @@ int32_t *XmlDoc::getIp ( ) {
 	}
 
 	// update status msg
-	setStatus ( "getting ip" );
+	setStatus ( "getting ip (gbdns)" );
 
 	m_ipStartTime = gettimeofdayInMilliseconds();
 
-	// assume valid! if reply handler gets g_errno set then m_masterLoop
-	// should see that and call the final callback
-	//m_ipValid = true;
-	// get it
-	logTrace( g_conf.m_logTraceXmlDoc, "Calling MsgC.getIp [%s]", u->getHost());
-	if (!m_msgc.getIp(u->getHost(), u->getHostLen(), &m_ip, this, gotIpWrapper)) {
-		// we blocked
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. Blocked." );
-    	return (int32_t *)-1;
+	setStatus("getting dns a record");
+
+	logTrace( g_conf.m_logTraceXmlDoc, "Calling GbDns::getARecord [%.*s]", u->getHostLen(), u->getHost());
+	GbDns::getARecord(u->getHost(), u->getHostLen(), gotIpWrapper, this);
+	logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. Blocked." );
+	return (int32_t*)-1;
+}
+
+std::vector<std::string>* XmlDoc::getHostNameServers(const char *hostname, size_t hostnameLen) {
+	if (m_hostNameServersValid) {
+		return &m_hostNameServers;
 	}
 
-	// wrap it up
-	int32_t *rval2 = gotIp ( true );
-	char ipbuf[16];
-	logTrace( g_conf.m_logTraceXmlDoc, "END, return [%s]", rval2 ? iptoa(*rval2,ipbuf) : "NULL");
-	return rval2;
+	// let's try to get A record first
+	int32_t *ip = getIp();
+	if (ip == (int32_t*)-1) {
+		// blocked
+		return (std::vector<std::string>*)ip;
+	}
+
+	setStatus("getting dns ns record");
+
+	logTrace( g_conf.m_logTraceXmlDoc, "Calling GbDns::getNSRecord [%s]", hostname);
+	GbDns::getNSRecord(hostname, hostnameLen, gotHostNameServersWrapper, this);
+	logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. Blocked." );
+	return (std::vector<std::string>*)-1;
 }
 
+void XmlDoc::gotHostNameServersWrapper(GbDns::DnsResponse *response, void *state) {
+	XmlDoc *that = static_cast<XmlDoc*>(state);
 
+	// we don't want to request nameservers again
+	that->m_hostNameServersValid = true;
 
-void gotIpWrapper ( void *state , int32_t ip ) {
-	// point to us
-	XmlDoc *THIS = (XmlDoc *)state;
+	if (response) {
+		that->m_hostNameServers = std::move(response->m_nameservers);
+	}
 
-	THIS->m_ipEndTime = gettimeofdayInMilliseconds();
-
-	char ipbuf[16];
-	logTrace( g_conf.m_logTraceXmlDoc, "Got IP [%s]. Took %" PRId64" msec", iptoa(ip,ipbuf), THIS->m_ipEndTime - THIS->m_ipStartTime);
-
-	// wrap it up
-	THIS->gotIp ( true );
-	// . call the master callback
-	// . m_masterState usually equals THIS, unless THIS is the
-	//   Xml::m_contactDoc or something...
-	THIS->m_masterLoop ( THIS->m_masterState );
+	that->m_masterLoop(that->m_masterState);
 }
-
-
-int32_t *XmlDoc::gotIp ( bool save ) {
-	// return NULL on error
-	if ( g_errno ) return NULL;
-	// this is bad too
-	//if ( m_ip == 0 || m_ip == -1 ) m_indexCode = EBADIP;
-	//log("db: got ip %s for %s",iptoa(m_ip),getCurrentUrl()->getUrl());
-
-	setStatus ("got ip");
-
-	// we got it
-	m_ipValid = true;
-	// give it to them
-	return &m_ip;
-}
-
 
 // when doing a custom crawl we have to decide between the provided crawl
 // delay, and the one in the robots.txt...
@@ -7749,10 +7770,17 @@ char **XmlDoc::getHttpReply ( ) {
 			m_crawlDelayValid = false;
 		}
 
+		// recheck url block list
+		m_blockedDocValid = false;
+		m_checkedUrlBlockList = false;
+
 		// keep the same ip if hostname is unchanged
 		if ( ru->getHostLen() != cu->getHostLen() || strncmp(ru->getHost(), cu->getHost(), cu->getHostLen()) != 0 ) {
 			// ip is supposed to be that of the current url, which changed
 			m_ipValid = false;
+
+			// recheck dns block list when host changes
+			m_checkedDnsBlockList = false;
 		}
 
 		// we set our m_xml to the http reply to check for meta redirects
@@ -9756,6 +9784,28 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		// skip if "about:blank"
 		if ( urlLen==11 && strncmp(url,"about:blank",11) == 0 )
 			continue;
+
+		{
+			int width = -1;
+			int height = -1;
+
+			int tmpLen = 0;
+			const char *tmpStr = getFieldValue(p, pend - p, "width", &tmpLen);
+			if (tmpStr && tmpLen > 0) {
+				width = atol2(tmpStr, tmpLen);
+			}
+
+			tmpStr = getFieldValue(p, pend - p, "height", &tmpLen);
+			if (tmpStr && tmpLen > 0) {
+				height = atol2(tmpStr, tmpLen);
+			}
+
+			// ignore non visible iframe (treat 1px as non visible)
+			if (width >= 0 && width <= 1 && height >= 0 && height <= 1) {
+				continue;
+			}
+		}
+
 		// get our current url
 		//cu = getCurrentUrl();
 		// set our frame url
@@ -10273,7 +10323,6 @@ int32_t getContentHash32Fast ( unsigned char *p , int32_t plen ) {
 		h ^= g_hashtab[pos][p[0]];
 		pos++;
 		// assume ascii or latin1
-		continue;
 	}
 	return h;
 }
@@ -10768,7 +10817,7 @@ int32_t *XmlDoc::getUrlFilterNum ( ) {
 	// . look it up
 	// . use the old spidered date for "nowGlobal" so we can be consistent
 	//   for injecting into the "qatest123" coll
-	int32_t ufn = ::getUrlFilterNum(oldsr, NULL, spideredTime, false, cr, false, NULL, langIdArg);
+	int32_t ufn = ::getUrlFilterNum(oldsr, NULL, spideredTime, false, cr, false, langIdArg);
 
 	// put it back
 	//newsr->m_spideredTime = saved;
@@ -11321,23 +11370,12 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 	else
 		sb->safePrintf("addspiderrepsize=%05" PRId32" ",0);
 
-
-	if ( m_addedStatusDocSizeValid )
-		sb->safePrintf("addstatusdocsize=%05" PRId32" ",
-			       m_addedStatusDocSize);
-	else
-		sb->safePrintf("addstatusdocsize=%05" PRId32" ",0);
-
-
 	if ( m_useSecondaryRdbs ) {
 		sb->safePrintf("useposdb=%i ",(int)m_usePosdb);
 		sb->safePrintf("usetitledb=%i ",(int)m_useTitledb);
 		sb->safePrintf("useclusterdb=%i ",(int)m_useClusterdb);
 		sb->safePrintf("usespiderdb=%i ",(int)m_useSpiderdb);
 		sb->safePrintf("uselinkdb=%i ",(int)m_useLinkdb);
-		if ( cr )
-			sb->safePrintf("indexspiderreplies=%i ",(int)
-				       cr->m_indexSpiderReplies);
 	}
 
 	if ( m_imageDataValid && size_imageData ) {
@@ -12021,7 +12059,7 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 			if ( ! ( p[1] & 0x02 ) ) { g_process.shutdownAbort(true); }
 			if (   ( p[7] & 0x02 ) ) { g_process.shutdownAbort(true); }
 			int64_t docId = Posdb::getDocId(p);
-			if ( docId != m_docId && !cr->m_indexSpiderReplies) {
+			if ( docId != m_docId ) {
 				log( LOG_WARN, "xmldoc: %" PRId64" != %" PRId64, docId, m_docId );
 				g_process.shutdownAbort(true);
 			}
@@ -12331,73 +12369,6 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		return NULL;
 	}
 
-	// if we are a spider status doc/titlerec and we are doing a rebuild
-	// operation, then keep it simple
-	if (m_setFromTitleRec && m_useSecondaryRdbs && m_contentTypeValid && m_contentType == CT_STATUS) {
-		// if not rebuilding posdb then done, list is empty since
-		// spider status docs do not contribute to linkdb, clusterdb,..
-		if (!m_usePosdb && !m_useTitledb) {
-			m_metaListValid = true;
-			logTrace(g_conf.m_logTraceXmlDoc, "END, CT_STATUS");
-			return m_metaList;
-		}
-
-		/////////////
-		//
-		// if user disabled spider status docs then delete the titlerec
-		// AND the posdb index list from our dbs for this ss doc
-		//
-		/////////////
-		CollectionRec *cr = getCollRec();
-		if (!cr) {
-			return NULL;
-		}
-
-		if (!cr->m_indexSpiderReplies) {
-			logTrace(g_conf.m_logTraceXmlDoc, "Not indexing spider replies. Delete titlerec for this doc");
-
-			int64_t uh48 = m_firstUrl.getUrlHash48();
-
-			// delete title rec. true = delete?
-			key96_t tkey = Titledb::makeKey (m_docId,uh48,true);
-
-			// shortcut
-			SafeBuf *ssb = &m_spiderStatusDocMetaList;
-
-			// add to list. and we do not add the spider status
-			// doc to posdb since we deleted its titlerec.
-			ssb->pushChar(RDB_TITLEDB); // RDB2_TITLEDB2
-			ssb->safeMemcpy(&tkey, sizeof(key96_t));
-			m_metaList = ssb->getBufStart();
-			m_metaListSize = ssb->length();
-			m_metaListValid = true;
-
-			logTrace( g_conf.m_logTraceXmlDoc, "END" );
-			return m_metaList;
-		}
-
-		// set safebuf to the json of the spider status doc
-		SafeBuf jd;
-		if (!jd.safeMemcpy(ptr_utf8Content, size_utf8Content)) {
-			logTrace(g_conf.m_logTraceXmlDoc, "END, jd.safeMemcpy failed");
-			return NULL;
-		}
-
-		// set m_spiderStatusDocMetaList from the json
-		if (!setSpiderStatusDocMetaList(&jd, m_docId)) {
-			logTrace(g_conf.m_logTraceXmlDoc, "END, setSpiderStatusDocMetaList failed");
-			return NULL;
-		}
-
-		// TODO: support titledb rebuild as well
-		m_metaList = m_spiderStatusDocMetaList.getBufStart();
-		m_metaListSize = m_spiderStatusDocMetaList.length();
-		m_metaListValid = true;
-
-		logTrace( g_conf.m_logTraceXmlDoc, "END, OK" );
-		return m_metaList;
-	}
-
 	// if "rejecting" from index fake all this stuff
 	if (m_deleteFromIndex) {
 		logTrace(g_conf.m_logTraceXmlDoc, "deleteFromIndex true");
@@ -12516,12 +12487,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	//   indicate a document that will never be indexable and should,
 	//   if currently indexed, be deleted.
 	// . just add the spider reply and we're done
-	if (    *indexCode == EDNSTIMEDOUT
-	     || *indexCode == ETCPTIMEDOUT
-	     || *indexCode == EUDPTIMEDOUT
-	     || *indexCode == EDNSDEAD
-	     || *indexCode == ENETUNREACH
-	     || *indexCode == EHOSTUNREACH
+	if ( isSpiderTempError(*indexCode)
 		// . treat this as a temporary error i guess
 		// . getNewSpiderReply() below will clear the error in it and
 		//   copy stuff over from m_sreq and m_oldDoc for this case
@@ -12622,41 +12588,12 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		// . panic on blocking! this is supposed to be fast!
 		// . it might still have to lookup the tagdb rec?????
 		if (newsr == (void *)-1) {
-			g_process.shutdownAbort(true);
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getNewSpiderReply blocked");
+			return (char *)newsr;
 		}
 
 		// how much we need
 		int32_t needx = sizeof(SpiderReply) + 1;
-
-
-		// . INDEX SPIDER REPLY (1a)
-		// . index ALL spider replies as separate doc. error or not.
-		// . then print out error histograms.
-		// . we should also hash this stuff when indexing the
-		//   doc as a whole
-
-		// i guess it is safe to do this after getting the spiderreply
-		// get the spiderreply ready to be added
-		SafeBuf *spiderStatusDocMetaList = getSpiderStatusDocMetaList(newsr, forDelete);
-		// error?
-		if (!spiderStatusDocMetaList) {
-			logTrace(g_conf.m_logTraceXmlDoc, "END, getSpiderStatusDocMetaList failed");
-			return NULL;
-		}
-
-		// blocked?
-		if (spiderStatusDocMetaList==(void *)-1) {
-			logTrace( g_conf.m_logTraceXmlDoc, "END, getSpiderStatusDocMetaList blocked" );
-			return (char *)-1;
-		}
-
-		// need to alloc space for it too
-		int32_t len = spiderStatusDocMetaList->length();
-		needx += len;
-
-		// this too
-		m_addedStatusDocSize = len;
-		m_addedStatusDocSizeValid = true;
 
 		// make the buffer
 		m_metaList = (char *)mmalloc(needx, "metalist");
@@ -12673,12 +12610,6 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 		// save it
 		char *saved = m_p;
-
-		// first store spider reply "document"
-		if (spiderStatusDocMetaList) {
-			gbmemcpy (m_p, spiderStatusDocMetaList->getBufStart(), spiderStatusDocMetaList->length());
-			m_p += spiderStatusDocMetaList->length();
-		}
 
 		// sanity check
 		if (!m_docIdValid) {
@@ -12926,38 +12857,6 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		}
 	}
 
-
-	///////////
-	//
-	// BEGIN the diffbot json object index hack
-	//
-	// if we are using diffbot, then each json object in the diffbot reply
-	// should be indexed as its own document.
-	//
-	///////////
-
-
-	// i guess it is safe to do this after getting the spiderreply
-	SafeBuf *spiderStatusDocMetaList = NULL;
-
-	// get the spiderreply ready to be added to the rdbs w/ msg4
-	// but if doing a rebuild operation then do not get it, we'll rebuild
-	// it since it will have its own titlerec
-	if (!m_useSecondaryRdbs) {
-		spiderStatusDocMetaList = getSpiderStatusDocMetaList(newsr, forDelete);
-		if (!spiderStatusDocMetaList) {
-			log("build: ss doc metalist null. bad!");
-
-			logTrace(g_conf.m_logTraceXmlDoc, "END, getSpiderStatusDocMetaList failed");
-			return NULL;
-		}
-	}
-
-	if (spiderStatusDocMetaList == (void *)-1) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, getSpiderStatusDocMetaList failed");
-		return (char *)spiderStatusDocMetaList;
-	}
-
 	//
 	// CAUTION
 	//
@@ -13026,12 +12925,6 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		if (done != did) {
 			log(LOG_WARN, "xmldoc: reallocated big table! bad. old=%" PRId32" new=%" PRId32" nw=%" PRId32, did, done, m_words.getNumWords());
 		}
-	}
-
-	// if indexing the spider reply as well under a different docid
-	// there is no reason we can't toss it into our meta list here
-	if (spiderStatusDocMetaList) {
-		need += spiderStatusDocMetaList->length();
 	}
 
 	/// @todo ALC verify that we actually need sizeof(key128_t)
@@ -13593,20 +13486,6 @@ skipNewAdd2:
 
 	// sanity check
 	verifyMetaList(m_metaList, m_p, forDelete);
-
-	//
-	// ADD INDEXED SPIDER REPLY with different docid so we can
-	// search index of spider replies! (NEW!)
-	//
-	// . index spider reply with separate docid so they are all searchable.
-	// . see getSpiderStatusDocMetaList() function to see what we index
-	//   and the titlerec we create for it
-	if (spiderStatusDocMetaList) {
-		gbmemcpy (m_p, spiderStatusDocMetaList->getBufStart(), spiderStatusDocMetaList->length());
-		m_p += spiderStatusDocMetaList->length();
-		m_addedStatusDocSize = spiderStatusDocMetaList->length();
-		m_addedStatusDocSizeValid = true;
-	}
 
 	// shortcut
 	saved = m_p;
@@ -15111,479 +14990,6 @@ bool XmlDoc::addTable224 ( HashTableX *tt1 ) {
 	return true;
 }
 
-// . this is kinda hacky because it uses a short XmlDoc on the stack
-// . no need to hash this stuff for regular documents since all the terms
-//   are fielded by gberrorstr, gberrornum or gbisreply.
-// . normally we might use a separate xmldoc class for this but i wanted
-//   something more lightweight
-SafeBuf *XmlDoc::getSpiderStatusDocMetaList ( SpiderReply *reply, bool forDelete ) {
-
-	// set status for this
-	setStatus ( "getting spider reply meta list");
-
-	if ( m_spiderStatusDocMetaListValid )
-		return &m_spiderStatusDocMetaList;
-
-	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
-
-	if ( ! cr->m_indexSpiderReplies || forDelete ) {
-		m_spiderStatusDocMetaListValid = true;
-		return &m_spiderStatusDocMetaList;
-	}
-
-	// if docid based do not hash a spider reply. docid-based spider
-	// requests are added to spiderdb from the query reindex tool.
-	// do not do for diffbot subdocuments either, usespiderdb should be
-	// false for those.
-	// MDW: i disagree, i want to see when these get updated! 9/6/2014
-	// ok, let's index for diffbot objects so we can see if they are
-	// a dup of another diffbot object, or so we can see when they get
-	// revisted, etc.
-	//if ( m_setFromDocId || ! m_useSpiderdb ) {
-	if ( ! m_useSpiderdb ) {
-		m_spiderStatusDocMetaListValid = true;
-		return &m_spiderStatusDocMetaList;
-	}
-
-	// do not add a status doc if doing a query delete on a status doc
-	if ( m_contentTypeValid && m_contentType == CT_STATUS ) {
-		m_spiderStatusDocMetaListValid = true;
-		return &m_spiderStatusDocMetaList;
-	}
-
-	// doing it for diffbot throws off smoketests
-	// ok, smoketests are updated now, so remove this
-	// if ( strncmp(cr->m_coll,"crawlbottesting-",16) == 0 ) {
-	// 	m_spiderStatusDocMetaListValid = true;
-	// 	return &m_spiderStatusDocMetaList;
-	// }
-
-	// we double add regular html urls in a query reindex because the
-	// json url adds the parent, so the parent gets added twice sometimes,
-	// and for some reason it is adding a spider status doc the 2nd time
-	// so cut that out. this is kinda a hack b/c i'm not sure what's
-	// going on. but you can set a break point here and see what's up if
-	// you want.
-	// MDW: likewise, take this out, i want these recorded as well..
-	// if ( m_indexCodeValid && m_indexCode == EDOCFORCEDELETE ) {
-	// 	m_spiderStatusDocMetaListValid = true;
-	// 	return &m_spiderStatusDocMetaList;
-	// }
-
-	// . fake this out so we do not core
-	// . hashWords3() uses it i guess
-	bool forcedLangId = false;
-	if ( ! m_langIdValid ) {
-		forcedLangId = true;
-		m_langIdValid = true;
-		m_langId = langUnknown;
-	}
-
-	// prevent more cores
-	bool forcedSiteNumInlinks = false;
-	if ( ! m_siteNumInlinksValid ) {
-		forcedSiteNumInlinks = true;
-		m_siteNumInlinks = 0;
-		m_siteNumInlinksValid = true;
-	}
-
-	SafeBuf *mbuf = getSpiderStatusDocMetaList2 ( reply );
-
-	if ( forcedLangId )
-		m_langIdValid = false;
-
-	if ( forcedSiteNumInlinks ) {
-		m_siteNumInlinksValid = false;
-	}
-
-	return mbuf;
-}
-
-// . the spider status doc
-// . TODO:
-//   usedProxy:1
-//   proxyIp:1.2.3.4
-SafeBuf *XmlDoc::getSpiderStatusDocMetaList2 ( SpiderReply *reply1 ) {
-
-	setStatus ( "making spider reply meta list");
-
-	// . we also need a unique docid for indexing the spider *reply*
-	//   as a separate document
-	// . use the same url, but use a different docid.
-	// . use now to mix it up
-	//int32_t now = getTimeGlobal();
-	//int64_t h = hash64(m_docId, now );
-	// to keep qa test consistent this docid should be consistent
-	// so base it on spidertime of parent doc.
-	// if doc is being force deleted then this is invalid!
-	//if ( ! m_spideredTimeValid ) { g_process.shutdownAbort(true); }
-	int64_t h = hash64(m_docId, m_spideredTime );
-	// mask it out
-	int64_t d = h & DOCID_MASK;
-	// try to get an available docid, preferring "d" if available
-	int64_t *uqd = getAvailDocIdOnly ( d );
-	if ( ! uqd || uqd == (void *)-1 ) return  (SafeBuf *)uqd;
-
-	// unsigned char *hc = (unsigned char *)getHopCount();
-	// if ( ! hc || hc == (void *)-1 ) return (SafeBuf *)hc;
-
-	int32_t tmpVal = -1;
-	int32_t *priority = &tmpVal;
-	int32_t *ufn = &tmpVal;
-
-	// prevent a core if sreq is not valid, these will freak out
-	// diffbot replies may not have a valid m_sreq
-	if ( m_sreqValid ) {
-		priority = getSpiderPriority();
-		if ( ! priority || priority == (void *)-1 )
-			return (SafeBuf *)priority;
-
-		ufn = getUrlFilterNum();
-		if ( ! ufn || ufn == (void *)-1 )
-			return (SafeBuf *)ufn;
-	}
-
-	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
-
-
-	// sanity
-	if ( ! m_indexCodeValid ) { g_process.shutdownAbort(true); }
-
-	// why isn't gbhopcount: being indexed consistently?
-	//if ( ! m_hopCountValid )  { g_process.shutdownAbort(true); }
-
-	// reset just in case
-	m_spiderStatusDocMetaList.reset();
-
-	// sanity
-	if ( *uqd <= 0 || *uqd > MAX_DOCID ) {
-		log("xmldoc: avail docid = %" PRId64". could not index spider "
-		    "reply or %s",*uqd,m_firstUrl.getUrl());
-		//g_process.shutdownAbort(true); }
-		m_spiderStatusDocMetaListValid = true;
-		return &m_spiderStatusDocMetaList;
-	}
-
-	// the old doc
-	XmlDoc *od = NULL;
-	if ( m_oldDocValid && m_oldDoc ) od = m_oldDoc;
-
-	Url *fu = &m_firstUrl;
-
-	// . make a little json doc that we'll hash up
-	// . only index the fields in this doc, no extra gbdocid: inurl:
-	//   hash terms
-	SafeBuf jd;
-	jd.safePrintf("{\n");
-
-	// so type:status query works
-	jd.safePrintf("\"type\":\"status\",\n");
-
-	jd.safePrintf("\"gbssUrl\":\"%s\",\n" , fu->getUrl()  );
-
-	if ( ptr_redirUrl )
-		jd.safePrintf("\"gbssFinalRedirectUrl\":\"%s\",\n",
-			      ptr_redirUrl);
-
-	if ( m_indexCodeValid ) {
-		jd.safePrintf("\"gbssStatusCode\":%i,\n",(int)m_indexCode);
-		jd.safePrintf("\"gbssStatusMsg\":\"");
-		jd.jsonEncode (mstrerror(m_indexCode));
-		jd.safePrintf("\",\n");
-	}
-	else {
-		jd.safePrintf("\"gbssStatusCode\":-1,\n");
-		jd.safePrintf("\"gbssStatusMsg\":\"???\",\n");
-	}
-
-
-	if ( m_httpStatusValid )
-		jd.safePrintf("\"gbssHttpStatus\":%" PRId32",\n",
-			      (int32_t)m_httpStatus);
-
-	// do not index gbssIsSeedUrl:0 because there will be too many usually
-	bool isSeed = ( m_sreqValid && m_sreq.m_isAddUrl );
-	if ( isSeed )
-		jd.safePrintf("\"gbssIsSeedUrl\":1,\n");
-
-	if ( od )
-		jd.safePrintf("\"gbssWasIndexed\":1,\n");
-	else
-		jd.safePrintf("\"gbssWasIndexed\":0,\n");
-
-	int32_t now = getTimeGlobal();
-	if ( od )
-		jd.safePrintf("\"gbssAgeInIndex\":"
-			      "%" PRIu32",\n",now - od->m_spideredTime);
-
-	jd.safePrintf("\"gbssIsDiffbotObject\":0,\n");
-
-	jd.safePrintf("\"gbssDomain\":\"");
-	jd.safeMemcpy(fu->getDomain(), fu->getDomainLen() );
-	jd.safePrintf("\",\n");
-
-	jd.safePrintf("\"gbssSubdomain\":\"");
-	jd.safeMemcpy(fu->getHost(), fu->getHostLen() );
-	jd.safePrintf("\",\n");
-
-	//if ( m_redirUrlPtr && m_redirUrlValid )
-	//if ( m_numRedirectsValid )
-	jd.safePrintf("\"gbssNumRedirects\":%" PRId32",\n",m_numRedirects);
-
-	if ( m_docIdValid )
-		jd.safePrintf("\"gbssDocId\":%" PRId64",\n", m_docId);//*uqd);
-
-	if ( m_hopCountValid )
-		//jd.safePrintf("\"gbssHopCount\":%" PRId32",\n",(int32_t)*hc);
-		jd.safePrintf("\"gbssHopCount\":%" PRId32",\n",(int32_t)m_hopCount);
-
-	// for -diffbotxyz fake docs addedtime is 0
-	if ( m_sreqValid && m_sreq.m_discoveryTime != 0 ) {
-		// in Spider.cpp we try to set m_sreq's m_addedTime to the
-		// min of all the spider requests, and we try to ensure
-		// that in the case of deduping we preserve the one with
-		// the oldest time. no, now we actually use
-		// m_discoveryTime since we were using m_addedTime in
-		// the url filters as it was originally intended.
-		jd.safePrintf("\"gbssDiscoveredTime\":%" PRId32",\n",
-			      m_sreq.m_discoveryTime);
-	}
-
-	if ( m_isDupValid && m_isDup )
-		jd.safePrintf("\"gbssDupOfDocId\":%" PRId64",\n",
-			      m_docIdWeAreADupOf);
-
-	// how many spiderings were successful vs. failed
-	// these don't work because we only store one reply
-	// which overwrites any older reply. that's how the
-	// key is. we can change the key to use the timestamp
-	// and not parent docid in makeKey() for spider
-	// replies later.
-	// if ( m_sreqValid ) {
-	// 	jd.safePrintf("\"gbssPrevTotalNumIndexAttempts\":%" PRId32",\n",
-	// 		      m_sreq.m_reservedc1 + m_sreq.m_reservedc2 );
-	// 	jd.safePrintf("\"gbssPrevTotalNumIndexSuccesses\":%" PRId32",\n",
-	// 		      m_sreq.m_reservedc1);
-	// 	jd.safePrintf("\"gbssPrevTotalNumIndexFailures\":%" PRId32",\n",
-	// 		      m_sreq.m_reservedc2);
-	// }
-
-	if ( m_spideredTimeValid )
-		jd.safePrintf("\"gbssSpiderTime\":%" PRId32",\n",
-			      m_spideredTime);
-	else
-		jd.safePrintf("\"gbssSpiderTime\":%" PRId32",\n",0);
-
-
-	if ( m_firstIndexedDateValid )
-		jd.safePrintf("\"gbssFirstIndexed\":%" PRIu32",\n",
-			      m_firstIndexedDate);
-
-	if ( m_contentHash32Valid )
-		jd.safePrintf("\"gbssContentHash32\":%" PRIu32",\n",
-			      m_contentHash32);
-
-	if ( m_downloadStartTimeValid && m_downloadEndTimeValid ) {
-		jd.safePrintf("\"gbssDownloadStartTimeMS\":%" PRId64",\n",
-			      m_downloadStartTime);
-		jd.safePrintf("\"gbssDownloadEndTimeMS\":%" PRId64",\n",
-			      m_downloadEndTime);
-
-		int64_t took = m_downloadEndTime - m_downloadStartTime;
-		jd.safePrintf("\"gbssDownloadDurationMS\":%" PRId64",\n",took);
-
-		jd.safePrintf("\"gbssDownloadStartTime\":%" PRIu32",\n",
-			      (uint32_t)(m_downloadStartTime/1000));
-
-		jd.safePrintf("\"gbssDownloadEndTime\":%" PRIu32",\n",
-			      (uint32_t)(m_downloadEndTime/1000));
-	}
-
-
-	jd.safePrintf("\"gbssUsedRobotsTxt\":%" PRId32",\n",
-		      m_useRobotsTxt);
-
-	//if ( m_numOutlinksAddedValid )
-	// crap, this is not right because we only call addOutlinksToMetaList()
-	// after we call this function.
-	// jd.safePrintf("\"gbssNumOutlinksAdded\":%" PRId32",\n",
-	// 	      (int32_t)m_numOutlinksAdded);
-
-	// how many download/indexing errors we've had, including this one
-	// if applicable.
-	if ( m_srepValid )
-		jd.safePrintf("\"gbssConsecutiveErrors\":%" PRId32",\n",
-			      m_srep.m_errCount);
-	else
-		jd.safePrintf("\"gbssConsecutiveErrors\":%" PRId32",\n",0);
-
-
-	if ( m_ipValid ) {
-		char ipbuf[16];
-		jd.safePrintf("\"gbssIp\":\"%s\",\n",iptoa(m_ip,ipbuf));
-	} else
-		jd.safePrintf("\"gbssIp\":\"0.0.0.0\",\n");
-
-	if ( m_ipEndTime ) {
-		int64_t took = m_ipEndTime - m_ipStartTime;
-		jd.safePrintf("\"gbssIpLookupTimeMS\":%" PRId64",\n",took);
-	}
-
-	if ( m_siteNumInlinksValid ) {
-		jd.safePrintf("\"gbssSiteNumInlinks\":%" PRId32",\n",
-			      (int32_t)m_siteNumInlinks);
-		char siteRank = getSiteRank();
-		jd.safePrintf("\"gbssSiteRank\":%" PRId32",\n",
-			      (int32_t)siteRank);
-	}
-
-	jd.safePrintf("\"gbssContentInjected\":%" PRId32",\n",
-		      (int32_t)m_contentInjected);
-
-	if ( m_percentChangedValid && od )
-		jd.safePrintf("\"gbssPercentContentChanged\""
-			      ":%.01f,\n",
-			      m_percentChanged);
-
-	jd.safePrintf("\"gbssSpiderPriority\":%" PRId32",\n",
-		      *priority);
-
-	// this could be -1, careful
-	if ( *ufn >= 0 )
-		jd.safePrintf("\"gbssMatchingUrlFilter\":\"%s\",\n",
-			      cr->m_regExs[*ufn].getBufStart());
-
-	// we forced the langid valid above
-	if ( m_langIdValid && m_contentLen )
-		jd.safePrintf("\"gbssLanguage\":\"%s\",\n",
-			      getLanguageAbbr(m_langId));
-
-	if ( m_contentTypeValid && m_contentLen )
-		jd.safePrintf("\"gbssContentType\":\"%s\",\n",
-			      g_contentTypeStrings[m_contentType]);
-
-	if ( m_contentValid )
-		jd.safePrintf("\"gbssContentLen\":%" PRId32",\n",
-			      m_contentLen);
-
-	// do not show the -1 any more, just leave it out then
-	// to make things look prettier
-	if (  m_crawlDelayValid && m_crawlDelay >= 0 )
-		// -1 if none?
-		jd.safePrintf("\"gbssCrawlDelayMS\":%" PRId32",\n",
-			      (int32_t)m_crawlDelay);
-
-
-	// remove last ,\n
-	jd.incrementLength(-2);
-	// end the json spider status doc
-	jd.safePrintf("\n}\n");
-
-	// BEFORE ANY HASHING
-	int32_t savedDist = m_dist;
-
-	// add the index list for it. it returns false and sets g_errno on err
-	// otherwise it sets m_spiderStatusDocMetaList
-	if ( ! setSpiderStatusDocMetaList ( &jd , *uqd ) )
-		return NULL;
-
-	// now make the titlerec
-	char xdhead[2048];
-	// just the head of it. this is the hacky part.
-	XmlDoc *xd = (XmlDoc *)xdhead;
-	// clear it out
-	memset ( xdhead, 0 , 2048);
-
-	// copy stuff from THIS so the spider reply "document" has the same
-	// header info stuff
-	int32_t hsize = (char *)&ptr_firstUrl - (char *)this;
-	if ( hsize > 2048 ) { g_process.shutdownAbort(true); }
-	gbmemcpy ( xdhead , (char *)this , hsize );
-
-	// override spider time in case we had error to be consistent
-	// with the actual SpiderReply record
-	//xd->m_spideredTime = reply->m_spideredTime;
-	//xd->m_spideredTimeValid = true;
-	// sanity
-	//if ( reply->m_spideredTime != m_spideredTime ) {g_process.shutdownAbort(true);}
-
-	// this will cause the maroon box next to the search result to
-	// say "STATUS" similar to "PDF" "DOC" etc.
-	xd->m_contentType  = CT_STATUS;
-
-	int32_t fullsize = &m_dummyEnd - (char *)this;
-	if ( fullsize > 2048 ) { g_process.shutdownAbort(true); }
-
-	/*
-	// the ptr_* were all zero'd out, put the ones we want to keep back in
-	SafeBuf tmp;
-	// was "Spider Status: %s" but that is unnecessary
-	tmp.safePrintf("<title>%s</title>",
-		       mstrerror(m_indexCode));
-
-	// if we are a dup...
-	if ( m_indexCode == EDOCDUP )
-		tmp.safePrintf("Dup of docid %" PRId64"<br>", m_docIdWeAreADupOf );
-
-	if ( m_redirUrlPtr && m_redirUrlValid )
-		tmp.safePrintf("Redirected to %s<br>",m_redirUrlPtr->getUrl());
-	*/
-
-	// put stats like we log out from logIt
-	//tmp.safePrintf("<div style=max-width:800px;>\n");
-	// store log output into doc
-	//logIt(&tmp);
-	//tmp.safePrintf("\n</div>");
-
-	// the content is just the title tag above
-	// xd->ptr_utf8Content = tmp.getBufStart();
-	// xd->size_utf8Content = tmp.length()+1;
-	xd->ptr_utf8Content = jd.getBufStart();
-	xd->size_utf8Content = jd.length()+1;
-
-	// keep the same url as the doc we are the spider reply for
-	xd->ptr_firstUrl = ptr_firstUrl;
-	xd->size_firstUrl = size_firstUrl;
-
-	// serps need site, otherwise search results core
-	xd->ptr_site = ptr_site;
-	xd->size_site = size_site;
-
-	// if this is null then ip lookup failed i guess so just use
-	// the subdomain
-	if ( ! ptr_site && m_firstUrlValid ) {
-		xd->ptr_site  = m_firstUrl.getHost();
-		xd->size_site = m_firstUrl.getHostLen();
-	}
-
-	// use the same uh48 of our parent
-	int64_t uh48 = m_firstUrl.getUrlHash48();
-	// then make into a titlerec but store in metalistbuf, not m_titleRec
-	SafeBuf titleRecBuf;
-	// this should not include ptrs that are NULL when compressing
-	// using its m_internalFlags1
-	if ( ! xd->setTitleRecBuf( &titleRecBuf,*uqd,uh48 ) )
-		return NULL;
-
-	// concat titleRec to our posdb key records
-	if ( ! m_spiderStatusDocMetaList.pushChar((char)RDB_TITLEDB) )
-		return NULL;
-	if ( ! m_spiderStatusDocMetaList.cat(titleRecBuf) )
-		return NULL;
-
-	// return the right val
-	m_dist = savedDist;
-
-	// ok, good to go, ready to add to posdb and titledb
-	m_spiderStatusDocMetaListValid = true;
-	return &m_spiderStatusDocMetaList;
-}
-
-
-
-
 // slightly greater than m_spideredTime, which is the download time.
 // we use this for sorting as well, like for the widget so things
 // don't really get added out of order and not show up in the top spot
@@ -15925,7 +15331,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 		}
 
 		// get it
-		int32_t ufn = ::getUrlFilterNum(&sreq, &srep, spideredTime, true, cr, false, NULL, langIdArg);
+		int32_t ufn = ::getUrlFilterNum(&sreq, &srep, spideredTime, true, cr, false, langIdArg);
 
 		// get spider priority if ufn is valid
 		int32_t pr = 0;
@@ -16116,8 +15522,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	if ( ru ) rulen = strlen(ru)+1;
 
 	// need full cached page of each search result?
-	// include it always for spider status docs.
-	if ( m_req->m_includeCachedCopy || m_contentType == CT_STATUS ) {
+	if (m_req->m_includeCachedCopy) {
 		m_reply.ptr_content =  ptr_utf8Content;
 		m_reply.size_content = size_utf8Content;
 	}
@@ -21071,9 +20476,7 @@ Json *XmlDoc::getParsedJson ( ) {
 	if ( m_jpValid ) return &m_jp;
 
 	// core if not a json object
-	if ( m_contentTypeValid && m_contentType != CT_JSON &&
-	     // spider status docs are now really json
-	     m_contentType != CT_STATUS ) {
+	if (m_contentTypeValid && m_contentType != CT_JSON) {
 		g_process.shutdownAbort(true); }
 
 	// \0 terminated

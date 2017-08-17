@@ -50,6 +50,8 @@ Conf::Conf ( ) {
 	m_numDns = 0;
 	memset(m_dnsIps, 0, sizeof(m_dnsIps));
 	memset(m_dnsPorts, 0, sizeof(m_dnsPorts));
+	m_dnsCacheMaxAge = 0;
+	m_dnsCacheSize = 0;
 	m_dnsMaxCacheMem = 0;
 	m_askRootNameservers = false;
 	m_numRns = 0;
@@ -59,6 +61,7 @@ Conf::Conf ( ) {
 	m_maxOutstandingUrlClassifications = 0;
 	m_urlClassificationTimeout = 0;
 	m_mergeBufSize = 0;
+	m_doledbNukeInterval = 86400;
 	m_posdbMaxLostPositivesPercentage = 0;
 	m_posdbFileCacheSize = 0;
 	m_posdbMaxTreeMem = 0;
@@ -224,6 +227,8 @@ Conf::Conf ( ) {
 	m_logDebugVagus = false;
 	m_logTraceBigFile = false;
 	m_logTraceDns = false;
+	m_logTraceDnsBlockList = false;
+	m_logTraceDnsCache = false;
 	m_logTraceFile = false;
 	m_logTraceHttpMime = false;
 	m_logTraceMem = false;

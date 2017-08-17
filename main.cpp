@@ -49,12 +49,14 @@
 #include "Speller.h"
 #include "SummaryCache.h"
 #include "InstanceInfoExchange.h"
+#include "WantedChecker.h"
 #include "Dns.h"
 
 // include all msgs that have request handlers, cuz we register them with g_udp
 #include "Msg0.h"
 #include "Msg4In.h"
 #include "Msg4Out.h"
+
 #include "Msg13.h"
 #include "Msg20.h"
 #include "Msg22.h"
@@ -78,11 +80,14 @@
 #include "GbUtil.h"
 #include "Dir.h"
 #include "File.h"
+#include "DnsBlockList.h"
 #include "UrlBlockList.h"
+#include "GbDns.h"
 #include "ScopedLock.h"
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <sys/ioctl.h>
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #include <valgrind/helgrind.h>
@@ -92,10 +97,11 @@ static bool registerMsgHandlers();
 static bool registerMsgHandlers1();
 static bool registerMsgHandlers2();
 
+static const int32_t commandLineDumpdbRecSize = 10 * 1024 * 1024; //recSizes parameter for Msg5::getList() while dumping database from the command-line
+
 static void dumpTitledb  (const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   int64_t docId , bool justPrintDups );
-static int32_t dumpSpiderdb ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
-			   char printStats , int32_t firstIp );
+static int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int printStats, int32_t firstIp);
 
 static void dumpTagdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char req,
 		      const char *site);
@@ -124,6 +130,9 @@ static bool summaryTest1(char *rec, int32_t listSize, const char *coll, int64_t 
 
 static bool cacheTest();
 static void countdomains(const char* coll, int32_t numRecs, int32_t verb, int32_t output);
+
+static bool argToBoolean(const char *arg);
+
 
 static void wakeupPollLoop() {
 	g_loop.wakeupPollLoop();
@@ -471,37 +480,45 @@ int main2 ( int argc , char *argv[] ) {
 			"all events as if the time is UTCtimestamp.\n\n"
 			*/
 
-			"dump <db> <collection> <fileNum> <numFiles> <includeTree>\n\tDump a db from disk. "
+			"dump <db> <collection> <fileNum> <numFiles> <includeTree> [other stuff]\n\tDump a db from disk. "
 			"Example: gb dump t main\n"
 			"\t<collection> is the name of the collection.\n"
 
-			"\t<db> is s to dump spiderdb."
-			//"set [T] to 1 to print "
-			//"new stats. 2 to print old stats. "
-			//"T is ip of firstip."
-			"\n"
-
-			"\t<db> is t to dump titledb. "
-			//"\tT is the first docId to dump. Applies only to "
-			//"titledb. "
-			"\n"
-
-			"\t<db> is p to dump posdb (the index)."
-			//"\tOptional: T is the termid to dump."
-			"\n"
-
-			"\t<db> is D to dump duplicate docids in titledb.\n"
-			"\t<db> is S to dump tagdb.\n"
-			"\t<db> is W to dump tagdb for wget.\n"
-			"\t<db> is x to dump doledb.\n"
-			"\t<db> is w to dump waiting tree.\n"
-			"\t<db> is l to dump clusterdb.\n"
-			"\t<db> is L to dump linkdb.\n"
+			"\tspiderdb:\n"
+			"\t\tdump s <collection> <fileNum> <numFiles> <includeTree> <statlevel=0/1/2> <firstIp>\n"
+			"\ttitledb:\n"
+			"\t\tdump t <collection> <fileNum> <numFiles> <includeTree> <docId>\n"
+			"\tposdb (the index):\n"
+			"\t\tdump p <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
+			"\ttitledb (duplicates only):\n"
+			"\t\tdump D <collection> <fileNum> <numFiles> <includeTree> <docId>\n"
+			"\ttagdb:\n"
+			"\t\tdump S <collection> <fileNum> <numFiles> <includeTree> <site>\n"
+			"\ttagdb (for wget):\n"
+			"\t\tdump W <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
+			"\tdoledb:\n"
+			"\t\tdump x <collection> <fileNum> <numFiles> <includeTree>\n"
+			"\twaiting tree:\n"
+			"\t\tdump w <collection>\n"
+			"\tclusterdb:\n"
+			"\t\tdump l <collection> <fileNum> <numFiles> <includeTree>\n"
+			"\tlinkdb:\n"
+			"\t\tdump L <collection> <fileNum> <numFiles> <includeTree> <url>\n"
+			"\ttagdb (make sitelist.txt):\n"
+			"\t\tdump z <collection> <fileNum> <numFiles> <includeTree> <site>\n"
+			"\ttagdb (output HTTP commands for adding tags):\n"
+			"\t\tdump A <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
 			);
-		SafeBuf sb2;
-		sb2.brify2 ( sb.getBufStart() , 60 , "\n\t" , false );
-		sb2.safeMemcpy("",1);
-		fprintf(stdout,"%s",sb2.getBufStart());
+		
+		//word-wrap to screen width, if known
+		struct winsize w;
+		if(ioctl(STDOUT_FILENO,TIOCGWINSZ,&w)==0 && w.ws_col>0) {
+			SafeBuf sb2;
+			sb2.brify2(sb.getBufStart(), w.ws_col, "\n\t", false);
+			sb2.safeMemcpy("",1);
+			fprintf(stdout,"%s",sb2.getBufStart());
+		} else
+			fprintf(stdout,"%s",sb.getBufStart());
 		// disable printing of used memory
 		//g_mem.m_used = 0;
 		return 0;
@@ -1214,7 +1231,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg+1 >= argc ) goto printHelp;
 		int32_t startFileNum =  0;
 		int32_t numFiles     = -1;
-		int32_t includeTree  =  1;
+		bool includeTree     =  true;
 		int64_t termId  = -1;
 		const char *coll = "";
 
@@ -1229,7 +1246,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg+2 < argc ) coll         = argv[cmdarg+2];
 		if ( cmdarg+3 < argc ) startFileNum = atoi(argv[cmdarg+3]);
 		if ( cmdarg+4 < argc ) numFiles     = atoi(argv[cmdarg+4]);
-		if ( cmdarg+5 < argc ) includeTree  = atoi(argv[cmdarg+5]);
+		if ( cmdarg+5 < argc ) includeTree  = argToBoolean(argv[cmdarg+5]);
 		if ( cmdarg+6 < argc ) {
 			char *targ = argv[cmdarg+6];
 			if ( is_alpha_a(targ[0]) ) {
@@ -1273,16 +1290,12 @@ int main2 ( int argc , char *argv[] ) {
 		else if ( argv[cmdarg+1][0] == 'x' )
 			dumpDoledb  (coll,startFileNum,numFiles,includeTree);
 		else if ( argv[cmdarg+1][0] == 's' ) {
-			char  printStats = 0;
+			int printStats = 0;
 			int32_t firstIp = 0;
-			if ( cmdarg+6 < argc ){
-				printStats= atol(argv[cmdarg+6]);
-				// it could be an ip instead of printstats
-				if ( strstr(argv[cmdarg+6],".") ) {
-					printStats = 0;
-					firstIp = atoip(argv[cmdarg+6]);
-				}
-			}
+			if(cmdarg+6 < argc)
+				printStats = atol(argv[cmdarg+6]);
+			if(cmdarg+7 < argc)
+				firstIp = atoip(argv[cmdarg+7]);
 
 			int32_t ret = dumpSpiderdb ( coll, startFileNum, numFiles, includeTree, printStats, firstIp );
 			if ( ret == -1 ) {
@@ -1303,8 +1316,6 @@ int main2 ( int argc , char *argv[] ) {
 			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'z', site );
 		} else if ( argv[cmdarg+1][0] == 'A' ) {
 			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'A', NULL );
-		} else if ( argv[cmdarg+1][0] == 'G' ) {
-			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'G', NULL );
 		} else if ( argv[cmdarg+1][0] == 'W' ) {
 			dumpTagdb( coll, startFileNum, numFiles, includeTree,   0, NULL );
 		} else if ( argv[cmdarg+1][0] == 'l' )
@@ -1561,7 +1572,8 @@ int main2 ( int argc , char *argv[] ) {
 	//load docid->flags/sitehash map
 	g_d2fasm.load();
 
-	// load url block list
+	// load block lists
+	g_dnsBlockList.init();
 	g_urlBlockList.init();
 
 	// initialize generate global index thread
@@ -1638,6 +1650,12 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! g_dns.init( h9->m_dnsClientPort ) ) {
 		log("db: Dns distributed client init failed." ); return 1; }
 
+	// initialize dns client library
+	if (!GbDns::initialize()) {
+		log(LOG_ERROR, "Unable to initialize dns client");
+		return 1;
+	}
+
 	g_stable_summary_cache.configure(g_conf.m_stableSummaryCacheMaxAge, g_conf.m_stableSummaryCacheSize);
 	g_unstable_summary_cache.configure(g_conf.m_unstableSummaryCacheMaxAge, g_conf.m_unstableSummaryCacheSize);
 	
@@ -1687,6 +1705,9 @@ int main2 ( int argc , char *argv[] ) {
 
 	initializeRealtimeUrlClassification();
 	
+	if(!WantedChecker::initialize())
+		return 0;
+	
 	if(!InstanceInfoExchange::initialize())
 		return 0;
 
@@ -1722,6 +1743,12 @@ int32_t checkDirPerms(const char *dir) {
 		return -1;
 	}
 	return 0;
+}
+
+
+static bool argToBoolean(const char *arg) {
+	return strcmp(arg,"1")==0 ||
+	       strcmp(arg,"true")==0;
 }
 
 // save them all
@@ -2205,8 +2232,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 	endKey.setMax();
 	lastKey.setMin();
 	startKey = Titledb::makeFirstKey ( docid );
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
 	RdbList list;
 	int64_t prevId = 0LL;
@@ -2238,7 +2263,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 				      &list         ,
 				      &startKey      ,
 				      &endKey        ,
-				      minRecSizes   ,
+				      commandLineDumpdbRecSize,
 				      includeTree   ,
 				      startFileNum  ,
 				      numFiles      ,
@@ -2501,8 +2526,6 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 	key96_t endKey   ;
 	startKey.setMin();
 	endKey.setMax();
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
 	RdbList list;
 	key96_t oldk; oldk.setMin();
@@ -2515,7 +2538,7 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 				      &list         ,
 				      &startKey      ,
 				      &endKey        ,
-				      minRecSizes   ,
+				      commandLineDumpdbRecSize,
 				      includeTree   ,
 				      startFileNum  ,
 				      numFiles      ,
@@ -2546,15 +2569,24 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 			if ( (drec[0] & 0x01) == 0x00 ) {g_process.shutdownAbort(true); }
 			// get spider rec in it
 			char *srec = drec + 12 + 4;
+
+			struct tm *timeStruct ;
+			char time[256];
+			time_t ts = (time_t)Doledb::getSpiderTime(&k);
+			struct tm tm_buf;
+			timeStruct = gmtime_r(&ts,&tm_buf);
+			strftime ( time , 256 , "%Y%m%d-%H%M%S UTC", timeStruct );
+
 			// print doledb info first then spider request
 			fprintf(stdout,"dolekey=%s (n1=%" PRIu32" n0=%" PRIu64") "
 				"pri=%" PRId32" "
-				"spidertime=%" PRIu32" "
+				"spidertime=%s(%" PRIu32") "
 				"uh48=0x%" PRIx64"\n",
 				KEYSTR(&k,12),
 				k.n1,
 				k.n0,
 				(int32_t)Doledb::getPriority(&k),
+				time,
 				(uint32_t)Doledb::getSpiderTime(&k),
 				Doledb::getUrlHash48(&k));
 			fprintf(stdout,"spiderkey=");
@@ -2683,8 +2715,7 @@ static void addUStat2(SpiderReply *srep , int32_t now) {
 }
 
 
-int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char printStats,
-                       int32_t firstIp ) {
+int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int printStats, int32_t firstIp) {
 	if ( startFileNum < 0 ) {
 		log(LOG_LOGIC,"db: Start file number is < 0. Must be >= 0.");
 		return -1;
@@ -2710,9 +2741,6 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 		startKey.setMin();
 		endKey.setMax();
 	}
-
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 
 	Msg5 msg5;
 	RdbList list;
@@ -2762,7 +2790,7 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 			      &list         ,
 			      (char *)&startKey      ,
 			      (char *)&endKey        ,
-			      minRecSizes   ,
+			      commandLineDumpdbRecSize,
 			      includeTree   ,
 			      startFileNum  ,
 			      numFiles      ,
@@ -3153,8 +3181,6 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 		log("gb: using site %s for start key",siteArg );
 	}
 
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
 	RdbList list;
 
@@ -3175,7 +3201,7 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 				      &list         ,
 				      (char *)&startKey      ,
 				      (char *)&endKey        ,
-				      minRecSizes   ,
+				      commandLineDumpdbRecSize,
 				      includeTree   ,
 				      startFileNum  ,
 				      numFiles      ,
@@ -3686,8 +3712,6 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		printf("startkey=%s\n",KEYSTR(&startKey,sizeof(posdbkey_t)));
 		printf("endkey=%s\n",KEYSTR(&endKey,sizeof(posdbkey_t)));
 	}
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 
 	// bail if not
 	if ( g_posdb.getRdb()->getNumFiles() <= startFileNum && numFiles > 0 ) {
@@ -3715,7 +3739,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		                  &list,
 		                  &startKey,
 		                  &endKey,
-		                  minRecSizes,
+		                  commandLineDumpdbRecSize,
 		                  includeTree,
 		                  startFileNum,
 		                  numFiles,
@@ -3836,8 +3860,6 @@ static void dumpClusterdb(const char *coll,
 	key96_t endKey   ;
 	startKey.setMin();
 	endKey.setMax();
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 
 	// bail if not
 	if ( g_clusterdb.getRdb()->getNumFiles() <= startFileNum ) {
@@ -3858,7 +3880,7 @@ static void dumpClusterdb(const char *coll,
 				      &list         ,
 				      &startKey      ,
 				      &endKey        ,
-				      minRecSizes   ,
+				      commandLineDumpdbRecSize,
 				      includeTree   ,
 				      startFileNum  ,
 				      numFiles      ,
@@ -3936,8 +3958,6 @@ static void dumpLinkdb(const char *coll,
 		startKey = Linkdb::makeStartKey_uk ( h32 , uh64 );
 		endKey   = Linkdb::makeEndKey_uk   ( h32 , uh64 );
 	}
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 
 	// bail if not
 	if ( g_linkdb.getRdb()->getNumFiles() <= startFileNum  && !includeTree) {
@@ -3958,7 +3978,7 @@ static void dumpLinkdb(const char *coll,
 				      &list         ,
 				      (char *)&startKey      ,
 				      (char *)&endKey        ,
-				      minRecSizes   ,
+				      commandLineDumpdbRecSize,
 				      includeTree   ,
 				      startFileNum  ,
 				      numFiles      ,
@@ -4257,8 +4277,6 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 	log( LOG_INFO, "cntDm: parms: %s, %" PRId32, coll, numRecs );
 	int64_t time_start = gettimeofdayInMilliseconds();
 
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
 	RdbList list;
 	int32_t countDocs = 0;
@@ -4282,7 +4300,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 			      &list         ,
 			      &startKey      ,
 			      &endKey        ,
-			      minRecSizes   ,
+			      commandLineDumpdbRecSize,
 			      true         , // Do we need to include tree?
 			      0             ,
 			      -1            ,

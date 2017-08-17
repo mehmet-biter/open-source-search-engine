@@ -212,7 +212,7 @@ static bool printList ( State11 *st ) {
 		st->m_endKey      = Doledb::makeLastKey2  (st->m_priority);
 		// if we printed something, print a blank line after it
 		if ( st->m_count > 0 && format == FORMAT_HTML) {
-			sbTable->safePrintf("<tr><td colspan=30>...</td></tr>\n");
+			sbTable->safePrintf("<tr><td colspan=30><center>&vellip;</center></td></tr>\n");
 		}
 		// reset for each priority
 		st->m_count = 0;
@@ -417,6 +417,29 @@ static bool generatePageHTML(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 	// end the table
 	sb->safePrintf ( "</table>\n" );
 	sb->safePrintf ( "<br>\n" );
+
+
+	//print spidercoll->m_nextKeys[]
+	sb->safePrintf ( "<table %s>\n"
+	                "<tr><td colspan=50>"
+	                "<b>SpiderColl->m_nextKeys[]</b>"
+	                "</td></tr>\n",
+	                TABLE_STYLE);
+	sb->safePrintf("<tr bgcolor=#%s>", DARK_BLUE);
+	sb->safePrintf("  <td><b>Priority</b></td>\n");
+	sb->safePrintf("  <td><b>Key</b></td>\n");
+	sb->safePrintf("</tr>\n");
+
+	for(int i=0; i<MAX_SPIDER_PRIORITIES; i++) {
+		char keystrbuf[sizeof(sc->m_nextKeys[0])*2+1];
+		sb->safePrintf("<tr><td>%d</td><td><tt>%s</tt></td></tr>\n",
+			       i,
+			       KEYSTR(&sc->m_nextKeys[i], sizeof(sc->m_nextKeys[i]), keystrbuf));
+	}
+
+	sb->safePrintf ( "</table>\n" );
+	sb->safePrintf ( "<br>\n" );
+
 
 	return true;
 }

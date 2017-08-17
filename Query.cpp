@@ -264,8 +264,6 @@ bool Query::set2 ( const char *query        ,
 			m_hasUrlField  = true;
 		else if ( qw->m_fieldCode == FIELD_SUBURL )
 			m_hasSubUrlField = true;
-		else if ( qw->m_fieldCode == FIELD_SUBURL2 )
-			m_hasSubUrlField = true;
 	}
 
 	// set m_docIdRestriction if a term is gbdocid:
@@ -1695,16 +1693,13 @@ bool Query::setQWords ( char boolFlag ,
 
 		// if we're hashing a url:, link:, site: or ip: term, 
 		// then we need to hash ALL up to the first space
-		if ( fieldCode == FIELD_URL  || 
-		     fieldCode == FIELD_GBPARENTURL ||
+		if ( fieldCode == FIELD_URL  ||
 		     fieldCode == FIELD_EXT  || 
 		     fieldCode == FIELD_LINK ||
-		     fieldCode == FIELD_ILINK||
 		     fieldCode == FIELD_SITELINK||
 		     fieldCode == FIELD_LINKS||
 		     fieldCode == FIELD_SITE ||
 		     fieldCode == FIELD_IP   ||
-		     fieldCode == FIELD_ISCLEAN ||
 		     fieldCode == FIELD_GBSORTBYFLOAT ||
 		     fieldCode == FIELD_GBREVSORTBYFLOAT ||
 		     // gbmin:price:1.23
@@ -1857,9 +1852,7 @@ bool Query::setQWords ( char boolFlag ,
 
 			// should we have normalized before hashing?
 			if (fieldCode == FIELD_URL ||
-				fieldCode == FIELD_GBPARENTURL ||
 				fieldCode == FIELD_LINK ||
-				fieldCode == FIELD_ILINK ||
 				fieldCode == FIELD_SITELINK ||
 				fieldCode == FIELD_LINKS ||
 				fieldCode == FIELD_SITE) {
@@ -1945,26 +1938,7 @@ bool Query::setQWords ( char boolFlag ,
 		// . add single-word term id
 		// . this is computed by hash64AsciiLower() 
 		// . but only hash64Lower_a if _HASHWITHACCENTS_ is true
-		uint64_t wid = 0LL;
-		if (fieldCode == FIELD_CHARSET){
-			// find first space -- that terminates the field value
-			const char* end =
-				(words.getWord(words.getNumWords()-1) +
-				 words.getWordLen(words.getNumWords()-1));
-			while ( w+wlen<end && 
-				! is_wspace_utf8(w+wlen) ) wlen++;
-			// ignore following words until we hit a space
-			ignoreTilSpace = true;
-			// convert to enum value
-			int16_t csenum = get_iana_charset(w,wlen);
-			// convert back to string
-			char astr[128];
-			int32_t alen = sprintf(astr, "%d", csenum);
-			wid = hash64(astr, alen, 0LL);
-		}
-		else{
- 			wid = words.getWordId(i);
-		}
+		uint64_t wid = words.getWordId(i);
 		qw->m_rawWordId = wid;
 		// we now have a first word already set
 		firstWord = false;
@@ -2820,15 +2794,6 @@ const struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
-	{"gbzipcode", 
-	 FIELD_ZIP, 
-	 false,
-	 "gbzip:90210",
-	 "Matches all documents that have the specified zip code "
-	 "in their meta zip code tag.",
-	 NULL,
-	 0},
-
 	{"gblang",
 	 FIELD_GBLANG,
 	 false,
@@ -2840,17 +2805,6 @@ const struct QueryField g_fields[] = {
 	 "common ones are <i>gblang:en, gblang:es, gblang:fr, "
 	 // need quotes for this one!!
 	 "gblang:\"zh_cn\"</i> (note the quotes for zh_cn!).",
-	 NULL,
-	 0},
-
-	// diffbot only
-	{"gbparenturl", 
-	 FIELD_GBPARENTURL, 
-	 true,
-	 "gbparenturl:www.example.com/foo.html",
-	 "Diffbot only. Match the json urls that "
-	 "were extract from this parent url. Example: "
-	 "gbparenturl:www.example.com/addurl.htm",
 	 NULL,
 	 0},
 
@@ -2954,210 +2908,6 @@ const struct QueryField g_fields[] = {
 	 "gbindexdate:1400081479",
 	 "Like above.",//, but it does include the special spider status "
 	 //"documents.",
-	 NULL,
-	 0},
-
-	//
-	// spider status docs queries
-	//
-
-	{"gbssUrl",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssUrl:com",
-	 "Query the url of a spider status document.",
-	 "Spider Status Documents", // title
-	 QTF_BEGINNEWTABLE},
-
-
-	{"gbssFinalRedirectUrl",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssFinalRedirectUrl:example.com/page2.html",
-	 "Query on the last url redirect to, if any.",
-	 NULL, // title
-	 0},
-
-	{"gbssStatusCode",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssStatusCode:0",
-	 "Query on the status code of the index attempt. 0 means no error.",
-	 NULL,
-	 0},
-
-	{"gbssStatusMsg",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssStatusMsg:\"Tcp timed\"",
-	 "Like gbssStatusCode but a textual representation.",
-	 NULL,
-	 0},
-
-	{"gbssHttpStatus",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssHttpStatus:200",
-	 "Query on the HTTP status returned from the web server.",
-	 NULL,
-	 0},
-
-	{"gbssWasIndexed",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssWasIndexed:0",
-	 "Was the document in the index before attempting to index? Use 0 "
-	 " or 1 to find all documents that were not or were, respectively.",
-	 NULL,
-	 0},
-
-	{"gbssIsDiffbotObject",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssIsDiffbotObject:1",
-	 "This field is only present if the document was an object from "
-	 "a diffbot reply. Use gbssIsDiffbotObject:0 to find the non-diffbot "
-	 "objects.",
-	 NULL,
-	 0},
-
-	{"gbssAgeInIndex",
-	 FIELD_GENERIC,
-	 false,
-	 "gbsortby:gbssAgeInIndex",
-	 "If the document was in the index at the time we attempted to "
-	 "reindex it, how long has it been since it was last indexed?",
-	 NULL,
-	 0},
-
-	{"gbssDomain",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssDomain:yahoo.com",
-	 "Query on the domain of the url.",
-	 NULL,
-	 0},
-
-	{"gbssSubdomain",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssSubdomain:www.yahoo.com",
-	 "Query on the subdomain of the url.",
-	 NULL,
-	 0},
-
-	{"gbssDocId",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssDocId:1234567",
-	 "Show all the spider status docs for the document with this docId.",
-	 NULL,
-	 0},
-
-	{"gbssDupOfDocId",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssDupOfDocId:123456",
-	 "Show all the documents that were considered dups of this docId.",
-	 NULL,
-	 0},
-
-	{"gbssPrevTotalNumIndexAttempts",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssPrevTotalNumIndexAttempts:1",
-	 "Before this index attempt, how many attempts were there?",
-	 NULL,
-	 0},
-
-	{"gbssPrevTotalNumIndexSuccesses",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssPrevTotalNumIndexSuccesses:1",
-	 "Before this index attempt, how many successful attempts were there?",
-	 NULL,
-	 0},
-
-	{"gbssPrevTotalNumIndexFailures",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssPrevTotalNumIndexFailures:1",
-	 "Before this index attempt, how many failed attempts were there?",
-	 NULL,
-	 0},
-
-	{"gbssFirstIndexed",
-	 FIELD_GENERIC,
-	 false,
-	 "gbrevsortbyint:gbssFirsIndexed",
-	 "The date in utc that the document was first indexed.",
-	 NULL,
-	 0},
-
-	{"gbssDownloadDurationMS",
-	 FIELD_GENERIC,
-	 false,
-	 "gbsortbyint:gbssDownloadDurationMS",
-	 "How long it took in millisecons to download the document.",
-	 NULL,
-	 0},
-
-	{"gbssDownloadStartTime",
-	 FIELD_GENERIC,
-	 false,
-	 "gbsortbyint:gbssDownloadStartTime",
-	 "When the download started, in seconds since the epoch, UTC.",
-	 NULL,
-	 0},
-
-	{"gbssDownloadEndTime",
-	 FIELD_GENERIC,
-	 false,
-	 "gbsortbyint:gbssDownloadEndTime",
-	 "When the download ended, in seconds since the epoch, UTC.",
-	 NULL,
-	 0},
-
-	{"gbssIp",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssIp:192.0.2.1",
-	 "The IP address of the document being indexed. Is 0.0.0.0 "
-	 "if unknown.",
-	 NULL,
-	 0},
-
-	{"gbssIpLookupTimeMS",
-	 FIELD_GENERIC,
-	 false,
-	 "gbsortby:gbssIpLookupTimeMS",
-	 "How long it took to lookup the IP of the document. Might have been "
-	 "in the cache.",
-	 NULL,
-	 0},
-
-	{"gbssSiteNumInlinks",
-	 FIELD_GENERIC,
-	 false,
-	 "gbsortby:gbssSiteNumInlinks",
-	 "How many good inlinks the document's site had.",
-	 NULL,
-	 0},
-
-	{"gbssSiteRank",
-	 FIELD_GENERIC,
-	 false,
-	 "gbsortby:gbssSiteRank",
-	 "The site rank of the document. Based directly "
-	 "on the number of inlinks the site had.",
-	 NULL,
-	 0},
-
-	{"gbssContentLen",
-	 FIELD_GENERIC,
-	 false,
-	 "gbsortbyint:gbssContentLen",
-	 "The content length of the document. 0 if empty or not downloaded.",
 	 NULL,
 	 0},
 
@@ -3343,7 +3093,6 @@ bool Expression::addExpression (int32_t start,
 			continue;
 		}
 		// white space?
-		continue;
 	}
 
 	m_numWordsInExpression = i - m_expressionStartWord;

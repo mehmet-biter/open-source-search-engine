@@ -13,6 +13,9 @@
 class RdbList;
 class HashTableX;
 class SpiderColl;
+class CollectionRec;
+class XmlDoc;
+class SafeBuf;
 
 
 #define SPIDERREQ_CURRENT_VERSION	1
@@ -45,9 +48,7 @@ class SpiderColl;
 #define SP_ADMIN_PAUSED   8 // g_conf.m_spideringEnabled = false
 //#define SP_UNUSED_9     9
 
-bool getSpiderStatusMsg ( class CollectionRec *cx , 
-			  class SafeBuf *msg , 
-			  int32_t *status ) ;
+bool getSpiderStatusMsg(const CollectionRec *cx, SafeBuf *msg, int32_t *status);
 
 
 
@@ -152,7 +153,7 @@ bool getSpiderStatusMsg ( class CollectionRec *cx ,
 // waiting tree with a spiderTime of 0. so when the waiting tree scan happens
 // it will pick that up and look in spiderdb for the best SpiderRequest with
 // that same firstIP that can be spidered now, and then it adds that to
-// doledb. (To prevent from having to scan int32_t spiderdb lists and speed 
+// doledb. (To prevent from having to scan long spiderdb lists and speed 
 // things up we might want to keep a little cache that maps a firstIP to 
 // a few SpiderRequests ready to be spidered).
 
@@ -405,7 +406,7 @@ public:
 	}
 
 	// print the spider rec
-	static int32_t print( char *srec , SafeBuf *sb = NULL );
+	static int32_t print(const char *srec, SafeBuf *sb = NULL);
 	static void printKey(const char *k);
 
 private:
@@ -691,10 +692,10 @@ public:
 		return Spiderdb::getParentDocId( &m_key );
 	}
 
-	int32_t print( class SafeBuf *sb );
+	int32_t print(SafeBuf *sb) const;
 
-	int32_t printToTable( SafeBuf *sb, const char *status, class XmlDoc *xd, int32_t row ) ;
-	int32_t printToJSON( SafeBuf *sb, const char *status, class XmlDoc *xd, int32_t row ) ;
+	int32_t printToTable(SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row) const;
+	int32_t printToJSON(SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row) const;
 
 	static int32_t printTableHeader ( SafeBuf *sb, bool currentlSpidering ) ;
 
@@ -855,7 +856,7 @@ public:
 
 	void setKey ( int32_t firstIp, int64_t parentDocId, int64_t uh48, bool isDel ) ;
 
-	int32_t print ( class SafeBuf *sbarg );
+	int32_t print(SafeBuf *sbarg) const;
 
 	int64_t getUrlHash48() const {
 		return Spiderdb::getUrlHash48(&m_key);
@@ -910,12 +911,11 @@ public:
 };
 
 int32_t getUrlFilterNum(const class SpiderRequest *sreq,
-		       class SpiderReply *srep,
+			const SpiderReply *srep,
 		       int32_t nowGlobal,
 		       bool isForMsg20,
-		       class CollectionRec *cr,
+		       const CollectionRec *cr,
 		       bool isOutlink,
-			  HashTableX *quotaTable,
 			  int32_t langIdArg );
 
 void parseWinnerTreeKey ( const key192_t  *k ,

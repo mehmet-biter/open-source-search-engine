@@ -1021,7 +1021,10 @@ redo:
 			continue;
 		}
 
-		col++;
+		if(*p!='\t')
+			col++;
+		else
+			col = (col+8)&~7;
 		if ( is_wspace_utf8(p) ) {
 			// reset?
 			if ( ! isHtml && *p == '\n' ) {
@@ -1070,7 +1073,6 @@ redo:
 		// nuke it
 		breakPoint = NULL;
 		col = 0;
-		continue;
 	}
 
 	// print out the last line which never hit the maxCharsPerLine barrier

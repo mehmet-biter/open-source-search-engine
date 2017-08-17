@@ -14,6 +14,8 @@ int* g_errno_location();
 const char* mstrerror ( int errnum );
 const char* merrname( int errnum );
 
+bool isSpiderTempError(int errnum);
+
 #define GB_ERRNO_BEGIN 0x00008000 // 32768
 
 enum {
@@ -56,8 +58,8 @@ enum {
 	EDOCBANNED       , 
 	EDOCFORCEDELETE  , // doc force deleted
 	EDOCURLSPAM      , // url detected as spam/porn
-	EUNUSED10        ,
-	EUNUSED11        ,
+	EDOCBLOCKEDURL   ,
+	EDOCBLOCKEDDNS   ,
 	EUNUSED12        ,
 	EUNUSED13        , // 32810
 	EDOCBADCONTENTTYPE   ,
@@ -100,8 +102,8 @@ enum {
 	ESOCKETCLOSED    , //device disconnected (POLL_HUP) Loop.cpp
 	EBADMIME         , //HttpMime.cpp
 	ENOHOSTSFILE     , //Hostdb::init() needs a hosts file 32850
-	EUNUSED34        ,
-	EUNUSED34A       ,
+	EDNSNOTFOUND     ,
+	EDNSSERVFAIL     ,
 	EBADIP           , //parser/url/Url2.cpp::hashIp()
 	EMSGTOOBIG       , //msg is too big
 	EDNSBAD          , //dns sent us a wierd response code
@@ -109,14 +111,14 @@ enum {
 	EDNSDEAD         , //dns is dead
 	EDNSTIMEDOUT     , //was just EUDPTIMEDOUT
 	ECOLLTOOBIG      , //collection is too long
-	EUNUSED35        , // 32860
+	EDNSBADREQUEST   , // 32860
 	ENOPERM          , //permission denied
 	ECORRUPTDATA     , //corrupt data
 	ENOCOLLREC       , //no collection record
 	ESHUTTINGDOWN    , //shutting down the server
 	EHOSTDEAD        , // host is dead
 	EBADFILE         , //file is bad
-	EUNUSED35A       ,
+	EDNSBADRESPONSE  ,
 	EFILECLOSED      , //read on closed file?
 	ELISTTOOBIG      , //Rdb::addList() calls this
 	ECANCELLED       , //transaction was cancelled 32870

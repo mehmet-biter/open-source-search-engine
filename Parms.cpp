@@ -34,6 +34,8 @@
 #include "Tagdb.h"
 #include "Clusterdb.h"
 #include "Collectiondb.h"
+#include "Doledb.h"
+#include "GbDns.h"
 #include <set>
 
 
@@ -621,6 +623,13 @@ static bool CommandRestartColl(const char *rec, WaitEntry *we) {
 	return true;
 }
 #endif
+
+static bool CommandNukeDoledb(const char *rec, WaitEntry *we) {
+	collnum_t collnum = getCollnumFromParmRec(rec);
+	nukeDoledb(collnum);
+	return true;
+}
+
 
 #ifndef PRIVACORE_SAFE_VERSION
 // . returns true and sets g_errno on error
@@ -2649,7 +2658,6 @@ bool Parms::setFromFile ( void *THIS        ,
 		// try to get the next node if we're an array
 		if ( ++j < m->m_max || j < m->m_fixed ) { goto loop; }
 		// otherwise, if not an array, go to next parm
-		continue;
 	}
 
 	// backwards compatible hack for old <masterPassword> tags
@@ -5407,6 +5415,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	// default to google public dns #1
 	m->m_def   = (char*)PUBLICLY_AVAILABLE_DNS1;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5422,6 +5431,7 @@ void Parms::init ( ) {
 	// default to google public dns #2
 	m->m_def   = (char*)PUBLICLY_AVAILABLE_DNS2;
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5434,6 +5444,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5445,6 +5456,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5456,6 +5468,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5467,6 +5480,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5478,6 +5492,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5489,6 +5504,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5500,6 +5516,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5511,6 +5528,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5522,6 +5540,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5533,6 +5552,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5544,6 +5564,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5555,6 +5576,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5566,6 +5588,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5577,11 +5600,32 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
 	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "dns cache size";
+	m->m_desc  = "How many records to store in dns cache";
+	m->m_cgi   = "dnscachesize";
+	simple_m_set(Conf,m_dnsCacheSize);
+	m->m_def   = "50000";
+	m->m_units = "";
+	m->m_group = true;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
+	m->m_page  = PAGE_MASTER;
+	m++;
 
+	m->m_title = "dns cache max age";
+	m->m_desc  = "How long to cache dns records";
+	m->m_cgi   = "dnscachemaxage";
+	simple_m_set(Conf,m_dnsCacheMaxAge);
+	m->m_def   = "300";
+	m->m_units = "seconds";
+	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
+	m->m_page  = PAGE_MASTER;
+	m++;
 
 	m->m_title = "default collection";
 	m->m_desc  = "When no collection is explicitly specified, assume "
@@ -7333,7 +7377,27 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-	
+	m->m_title = "Doledb nuke interval";
+	m->m_desc  = "Sometimes spiderrecords get stuck due to plain bugs or due to priority inversion."
+		"Nuking doledb periodically masks this. 0=disabled";
+	m->m_cgi   = "doledbnukeinterval";
+	simple_m_set(Conf,m_doledbNukeInterval);
+	m->m_def   = "86400";
+	m->m_units = "seconds";
+	m->m_flags = 0;
+	m->m_page  = PAGE_RDB;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "Nuke doledb now";
+	m->m_desc  = "Clears doledb+waitingtree and refills them from spiderdb";
+	m->m_cgi   = "nukedoledbnow";
+	m->m_page  = PAGE_RDB;
+	m->m_obj   = OBJ_COLL;
+	m->m_type  = TYPE_CMD;
+	m->m_func2 = CommandNukeDoledb;
+	m++;
+
 
 	///////////////////////////////////////////
 	// PAGE SPIDER CONTROLS
@@ -7828,32 +7892,6 @@ void Parms::init ( ) {
 	simple_m_set(CollectionRec,m_thumbnailMaxWidthHeight);
 	m->m_def   = "250";
 	m->m_group = false;
-	m->m_page  = PAGE_SPIDER;
-	m->m_flags = PF_CLONE;
-	m++;
-
-	m->m_title = "index spider status documents";
-	m->m_desc  = "Index a spider status \"document\" "
-		"for every url the spider "
-		"attempts to spider. Search for them using special "
-		"query operators like type:status or gberrorstr:success or "
-		"stats:gberrornum to get a histogram. "
-		"See <a href=/syntax.html>syntax</a> page for more examples. "
-		"They will not otherwise "
-		"show up in the search results.";
-	//      "This will not work for "
-	// 	"diffbot crawlbot collections yet until it has proven "
-	// 	"more stable.";
-	m->m_cgi   = "isr";
-	simple_m_set(CollectionRec,m_indexSpiderReplies);
-	// default off for now until we fix it better. 5/26/14 mdw
-	// turn back on 6/21 now that we do not index plain text terms
-	// and we add gbdocspidertime and gbdocindextime terms so you
-	// can use those to sort regular docs and not have spider reply
-	// status docs in the serps.
-	// back on 4/21/2015 seems pretty stable.
-	// but it uses disk space so turn off for now again. 6/16/2015
-	m->m_def   = "0";
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_CLONE;
 	m++;
@@ -8540,6 +8578,21 @@ void Parms::init ( ) {
 	m->m_cgi   = "ltrc_dns";
 	simple_m_set(Conf,m_logTraceDns);
 	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for DnsBlockList";
+	m->m_cgi   = "ltrc_dnsbl";
+	simple_m_set(Conf,m_logTraceDnsBlockList);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for DnsCache";
+	m->m_cgi   = "ltrc_dnsc";
+	simple_m_set(Conf,m_logTraceDnsCache);
+	m->m_def   = "0";
+	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_LOG;
 	m++;
 
@@ -10103,6 +10156,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	WaitEntry *we = (WaitEntry *)weArg;
 
 	bool rebuildRankingSettings = false;
+	bool rebuildDnsSettings = false;
 
 	// process them
 	const char *p = we->m_parmPtr;
@@ -10161,6 +10215,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 
 		if ( parm->m_flags & PF_REBUILDRANKINGSETTINGS )
 			rebuildRankingSettings = true;
+
+		if (parm->m_flags & PF_REBUILDDNSSETTINGS) {
+			rebuildDnsSettings = true;
+		}
 
 		// get collnum i guess
 		if ( parm->m_type != TYPE_CMD )
@@ -10226,6 +10284,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 
 	if ( rebuildRankingSettings )
 		reinitializeRankingSettings();
+
+	if (rebuildDnsSettings) {
+		GbDns::initializeSettings();
+	}
 
 	// note it
 	if ( ! we->m_sentReply )

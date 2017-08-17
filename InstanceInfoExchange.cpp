@@ -80,9 +80,13 @@ static int connect_to_vagus(int port) {
 }
 
 
-
 static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
-	if(alive_hosts.size() != (unsigned)g_hostdb.getNumHosts()) {
+	static bool all_hosts_alive_last_time = false;
+	if(alive_hosts.size() == (unsigned)g_hostdb.getNumHosts()) {
+		if(!all_hosts_alive_last_time)
+			log(LOG_INFO, "vagus: got %zu alive hosts ", alive_hosts.size());
+		all_hosts_alive_last_time = true;
+	} else {
 		log(LOG_WARN, "vagus: got %zu alive hosts instead of %d", alive_hosts.size(), g_hostdb.getNumHosts());
 
 		char hosts[g_hostdb.getNumHosts()];
@@ -92,6 +96,7 @@ static void process_alive_hosts(std::map<int,std::string> &alive_hosts) {
 			hosts[iter.first] = '+';
 		}
 		log(LOG_WARN, "vagus: %.*s", g_hostdb.getNumHosts(), hosts);
+		all_hosts_alive_last_time = false;
 	}
 
 	time_t now = time(NULL);

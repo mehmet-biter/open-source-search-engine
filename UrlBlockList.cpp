@@ -1,4 +1,5 @@
 #include "UrlBlockList.h"
+#include "WantedChecker.h"
 #include "Log.h"
 #include "Conf.h"
 #include "Loop.h"
@@ -22,7 +23,7 @@ bool UrlBlockList::init() {
 	log(LOG_INFO, "Initializing UrlBlockList with %s", m_filename);
 
 	if (!g_loop.registerSleepCallback(60000, this, &reload, "UrlBlockList::reload", 0, true)) {
-		log(LOG_WARN, "UrlBlockList: Failed register callback.");
+		log(LOG_WARN, "UrlBlockList: Failed to register callback.");
 		return false;
 	}
 
@@ -60,7 +61,7 @@ bool UrlBlockList::load() {
 	struct stat st;
 	if (stat(m_filename, &st) != 0) {
 		// probably not found
-		log(LOG_INFO, "Unable to stat %s", m_filename);
+		log(LOG_INFO, "UrlBlockList::load: Unable to stat %s", m_filename);
 		return false;
 	}
 
@@ -178,15 +179,25 @@ bool UrlBlockList::load() {
 }
 
 bool UrlBlockList::isUrlBlocked(const Url &url) {
-	auto urlRegexList = getUrlBlockList();
+	auto urlBlockList = getUrlBlockList();
 
-	for (auto const &urlBlock : *urlRegexList) {
+	for (auto const &urlBlock : *urlBlockList) {
 		if (urlBlock.match(url)) {
 			if (g_conf.m_logTraceUrlBlockList) {
 				urlBlock.logMatch(url);
 			}
 			return true;
 		}
+	}
+
+	//now call the shlib functions for checking if the URL is wanted or not
+	if(!WantedChecker::check_domain(std::string(url.getHost(),url.getHostLen())).wanted) {
+		logTrace(g_conf.m_logTraceUrlBlockList, "Url block shlib matched (domain) url '%s'", url.getUrl());
+		return true;
+	}
+	if(!WantedChecker::check_url(std::string(url.getUrl(),url.getUrlLen())).wanted) {
+		logTrace(g_conf.m_logTraceUrlBlockList, "Url block shlib matched (full URL) url '%s'", url.getUrl());
+		return true;
 	}
 
 	return false;
@@ -196,7 +207,6 @@ urlblocklistconst_ptr_t UrlBlockList::getUrlBlockList() {
 	return m_urlBlockList;
 }
 
-void UrlBlockList::swapUrlBlockList(urlblocklistconst_ptr_t urlRegexList) {
-	std::atomic_store(&m_urlBlockList, urlRegexList);
+void UrlBlockList::swapUrlBlockList(urlblocklistconst_ptr_t urlBlockList) {
+	std::atomic_store(&m_urlBlockList, urlBlockList);
 }
-

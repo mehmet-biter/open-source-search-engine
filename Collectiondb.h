@@ -212,7 +212,6 @@ public:
 
 	int32_t m_thumbnailMaxWidthHeight ;
 
-	bool  m_indexSpiderReplies;
 	bool  m_indexBody;
 
 	bool  m_dedupingEnabled         ; // dedup content on same hostname
@@ -369,10 +368,6 @@ public:
 	bool m_rcache;
 
 	bool m_hideAllClustered;
-
-	// special var to prevent Collectiondb.cpp from copying the crap
-	// below here
-	char m_END_COPY;
 
 	// use this not m_bases to get the RdbBase
 	class RdbBase *getBase(rdbid_t rdbId);

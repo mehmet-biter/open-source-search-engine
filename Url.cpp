@@ -1733,13 +1733,14 @@ bool Url::hasNonIndexableExtension( int32_t version ) const {
 			return false;
 		}
 		
-		// BR 20160125: More unwanted extensions
+		// More unwanted extensions
 		if(
 			!s_badExtTable.addKey(hash64Lower_a("7z", 2),(int32_t)122) ||
 			!s_badExtTable.addKey(hash64Lower_a("lz", 2),(int32_t)122) ||
 			!s_badExtTable.addKey(hash64Lower_a("xz", 2),(int32_t)122) ||
 			!s_badExtTable.addKey(hash64Lower_a("apk", 3),(int32_t)122) ||
 			!s_badExtTable.addKey(hash64Lower_a("com", 3),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("dic", 3),(int32_t)122) ||
 			!s_badExtTable.addKey(hash64Lower_a("dll", 3),(int32_t)122) ||
 			!s_badExtTable.addKey(hash64Lower_a("dmg", 3),(int32_t)122) ||
 			!s_badExtTable.addKey(hash64Lower_a("flv", 3),(int32_t)122) ||
@@ -1752,14 +1753,14 @@ bool Url::hasNonIndexableExtension( int32_t version ) const {
 			!s_badExtTable.addKey(hash64Lower_a("svg", 3),(int32_t)122) ||
 			!s_badExtTable.addKey(hash64Lower_a("vcf", 3),(int32_t)122) ||
 //			!s_badExtTable.addKey(hash64Lower_a("xls", 3),(int32_t)122) ||		// Should be handled by converter (AbiWord)
-		   	!s_badExtTable.addKey(hash64Lower_a("lzma", 4),(int32_t)122) ||    
+			!s_badExtTable.addKey(hash64Lower_a("lzma", 4),(int32_t)122) ||    
 //			!s_badExtTable.addKey(hash64Lower_a("pptx", 4),(int32_t)122) ||		// Should be handled by converter (AbiWord)
 			!s_badExtTable.addKey(hash64Lower_a("thmx", 4),(int32_t)122) ||
-		   	!s_badExtTable.addKey(hash64Lower_a("zipx", 4),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("zipx", 4),(int32_t)122) ||
 //			!s_badExtTable.addKey(hash64Lower_a("xlsx", 4),(int32_t)122) ||		// Should be handled by converter (AbiWord)
-		   	!s_badExtTable.addKey(hash64Lower_a("zsync", 5),(int32_t)122) ||    
-		   	!s_badExtTable.addKey(hash64Lower_a("torrent", 7),(int32_t)122) ||
-		   	!s_badExtTable.addKey(hash64Lower_a("manifest", 8),(int32_t)122)
+			!s_badExtTable.addKey(hash64Lower_a("zsync", 5),(int32_t)122) ||    
+			!s_badExtTable.addKey(hash64Lower_a("torrent", 7),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("manifest", 8),(int32_t)122)
 		   	)
 		{
 			log(LOG_ERROR,"hasNonIndexableExtension: Could not add hash to badExtTable (3).");

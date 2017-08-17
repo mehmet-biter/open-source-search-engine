@@ -8,9 +8,13 @@
 #include <algorithm>
 
 
+static bool cmp_ip_network_order(uint32_t ip_a, uint32_t ip_b) {
+	return ntohl(ip_a) < ntohl(ip_b);
+}
+
 
 static void generatePageHtml(std::vector<uint32_t> &doleips, const char *coll, SafeBuf *sb) {
-	std::sort(doleips.begin(), doleips.end());
+	std::sort(doleips.begin(), doleips.end(), cmp_ip_network_order);
 	
 	sb->safePrintf("<table cellpadding=5 style=\"max-width:25em\" border=0>"
 	               "  <tr>"
@@ -38,7 +42,7 @@ static void generatePageHtml(std::vector<uint32_t> &doleips, const char *coll, S
 
 static void generatePageJSON(std::vector<uint32_t> &doleips, const char *coll, SafeBuf *sb) {
 	//order is irrelevant for JSON, but some humans like to look at it.
-	std::sort(doleips.begin(), doleips.end());
+	std::sort(doleips.begin(), doleips.end(), cmp_ip_network_order);
 	
 	sb->safePrintf("{\n");                 //object start
 	
@@ -66,12 +70,14 @@ static bool respondWithError(TcpSocket *s, HttpRequest *r, const char *msg) {
 	const char *contentType = NULL;
 	switch(r->getReplyFormat()) {
 		case FORMAT_HTML:
-			sb.safePrintf("<html><body><p>%s</p></body></html>",msg);
+			g_pages.printAdminTop(&sb, s, r, NULL);
+			sb.safePrintf("<p>%s</p>", msg);
+			g_pages.printAdminBottom2(&sb);
 			contentType = "text/html";
 			break;
 		case FORMAT_JSON:
 			sb.safePrintf("{error_message:\"%s\"}",msg); //todo: safe encode
-			contentType = "text/html";
+			contentType = "application/json";
 			break;
 		default:
 			contentType = "application/octet-stream";

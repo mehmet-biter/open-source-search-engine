@@ -129,6 +129,8 @@ static inline const char *gb_strncasestr(const char *haystack, int32_t haystackS
 
 char *strnstr( const char *haystack, const char *needle, int32_t haystackLen);
 
+const char *strnstrn(const char *haystack, int32_t haystackLen, const char *needle, int32_t needleLen);
+
 // convert global to local time in milliseconds
 int64_t globalToLocalTimeMilliseconds ( int64_t global ) ;
 int64_t localToGlobalTimeMilliseconds ( int64_t local  ) ;

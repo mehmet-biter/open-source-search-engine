@@ -202,6 +202,19 @@ private:
 	void set( const char *s, int32_t len, bool addWWW, bool stripParams, bool stripCommonFile,
 	          int32_t titledbVersion );
 
+	//What is what?
+	//If the given URL is http://www.foo.example.co.uk:8080/dir1/dir2/file.html?referrrrerrrr=Lrrr-from-Omicron-Persei-8
+	//then:
+	//	scheme: 	http
+	//	host:   	www.foo.example.co.uk
+	//	domain: 	example.co.uk
+	//	tld:    	co.uk
+	//	middomain       example
+	//	path:   	/dir1/dir2/file.html
+	//	port:   	8080
+	//	query:  	referrrrerrrr=Lrrr-from-Omicron-Persei-8
+	//	filename:       file.html
+
 	// the normalized url
 	char m_url[MAX_URL_LEN];
 	int32_t m_ulen;

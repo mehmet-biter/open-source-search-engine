@@ -31,7 +31,7 @@ typedef uint64_t qvec_t;
 
 // field codes
 enum field_code_t {
-        FIELD_UNSET             =  0,
+	FIELD_UNSET             =  0,
 	FIELD_URL               =  1,
 	FIELD_LINK              =  2,
 	FIELD_SITE              =  3,
@@ -41,11 +41,11 @@ enum field_code_t {
 	FIELD_TYPE              =  7,
 	FIELD_EXT               = 21,
 	//FIELD_COLL            = 22,
-	FIELD_ILINK             = 23,
+	//FIELD_UNUSED          = 23,
 	FIELD_LINKS             = 24,
 	FIELD_SITELINK          = 25,
 	// non-standard field codes
-	FIELD_ZIP               =  8,
+	//FIELD_UNUSED          =  8,
 	//FIELD_UNUSED          =  9,
 	//FIELD_UNUSED          = 10,
 	//FIELD_UNUSED          = 11,
@@ -56,10 +56,10 @@ enum field_code_t {
 	//FIELD_UNUSED          = 16,
 	//FIELD_UNUSED          = 17,
 	FIELD_GENERIC           = 18,
-	FIELD_ISCLEAN           = 19,  // we hash field="isclean:" val="1" if doc clean
+	//FIELD_UNUSED          = 19,
 	//FIELD_UNUSED          = 20,
-	FIELD_CHARSET           = 30,
-	FIELD_GBRSS             = 31,
+	//FIELD_UNUSED          = 30,
+	//FIELD_UNUSED          = 31,
 	//FIELD_UNUSED          = 32,
 	//FIELD_UNUSED          = 33,
 	//FIELD_UNUSED          = 34,
@@ -87,7 +87,7 @@ enum field_code_t {
 	FIELD_GBREVSORTBYFLOAT  = 55, // i.e. sortby:price -> low to high
 	FIELD_GBNUMBERMIN       = 56,
 	FIELD_GBNUMBERMAX       = 57,
-	FIELD_GBPARENTURL       = 58,
+	//FIELD_UNUSED          = 58,
 	FIELD_GBSORTBYINT       = 59,
 	FIELD_GBREVSORTBYINT    = 60,
 	FIELD_GBNUMBERMININT    = 61,
@@ -97,7 +97,7 @@ enum field_code_t {
 	//FIELD_UNUSED          = 65,
 	FIELD_GBNUMBEREQUALINT  = 66,
 	FIELD_GBNUMBEREQUALFLOAT= 67,
-	FIELD_SUBURL2           = 68,
+	//FIELD_UNUSED          = 68,
 	FIELD_GBFIELDMATCH      = 69,
 };
 

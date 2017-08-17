@@ -187,6 +187,8 @@ static void status_to_spider_statistics( std::vector<unsigned> *spiderdoc_counts
 			break;
 		case EDOCFILTERED:
 		case EDOCFORCEDELETE:
+		case EDOCBLOCKEDDNS:
+		case EDOCBLOCKEDURL:
 			(*spiderdoc_counts)[ spider_doc_deleted ] += count;
 			break;
 		case EDOCDISALLOWED:
