@@ -133,7 +133,7 @@ void SpiderLoop::init() {
 }
 
 void SpiderLoop::initSettings() {
-    m_urlCache.configure(g_conf.m_spiderUrlCacheMaxAge, g_conf.m_spiderUrlCacheMaxSize, g_conf.m_logTraceSpiderUrlCache);
+    m_urlCache.configure(g_conf.m_spiderUrlCacheMaxAge, g_conf.m_spiderUrlCacheSize, g_conf.m_logTraceSpiderUrlCache);
 }
 
 

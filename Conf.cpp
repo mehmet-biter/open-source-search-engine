@@ -109,7 +109,7 @@ Conf::Conf ( ) {
 	m_isLive = false;
 	m_maxTotalSpiders = 0;
 	m_spiderUrlCacheMaxAge = 0;
-	m_spiderUrlCacheMaxSize = 0;
+	m_spiderUrlCacheSize = 0;
 	m_indexdbMaxIndexListAge = 0;
 	m_udpMaxSockets = 0;
 	m_httpMaxSockets = 0;

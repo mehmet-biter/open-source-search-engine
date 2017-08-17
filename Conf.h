@@ -192,7 +192,7 @@ class Conf {
 	int32_t m_spiderDeadHostCheckInterval;
 
 	int64_t m_spiderUrlCacheMaxAge;
-	int64_t m_spiderUrlCacheMaxSize;
+	int64_t m_spiderUrlCacheSize;
 
 	// indexdb has a max cached age for getting IndexLists (10 mins deflt)
 	int32_t  m_indexdbMaxIndexListAge;
