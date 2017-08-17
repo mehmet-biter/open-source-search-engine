@@ -8,6 +8,7 @@
 #include "Msg5.h"
 #include "hash.h"
 #include "RdbCache.h"
+#include "GbCache.h"
 #include <time.h>
 #include <atomic>
 
@@ -42,6 +43,7 @@ public:
 	// . if spidering is disabled this will sleep about 10 seconds or so
 	//   before checking to see if it's been enabled
 	void init();
+	void initSettings();
 
 	int32_t getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum ) ;
 	int32_t getNumSpidersOut() const { return m_numSpidersOut; }
@@ -88,6 +90,8 @@ private:
 
 	HashTableX m_lockTable;
 	mutable GbMutex m_lockTableMtx;
+
+	GbCache<std::string, void*> m_urlCache;
 
 	// . list for getting next url(s) to spider
 	RdbList m_list;

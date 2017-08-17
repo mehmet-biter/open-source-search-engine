@@ -108,6 +108,8 @@ Conf::Conf ( ) {
 	m_doStripeBalancing = false;
 	m_isLive = false;
 	m_maxTotalSpiders = 0;
+	m_spiderUrlCacheMaxAge = 0;
+	m_spiderUrlCacheMaxSize = 0;
 	m_indexdbMaxIndexListAge = 0;
 	m_udpMaxSockets = 0;
 	m_httpMaxSockets = 0;
@@ -249,6 +251,7 @@ Conf::Conf ( ) {
 	m_logTraceRepairs = false;
 	m_logTraceRobots = false;
 	m_logTraceSpider = false;
+	m_logTraceSpiderUrlCache = false;
 	m_logTraceReindex = false;
 	m_logTraceSummary = false;
 	m_logTraceTitledb = false;

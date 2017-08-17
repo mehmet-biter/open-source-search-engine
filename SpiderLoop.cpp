@@ -39,7 +39,6 @@
 
 static int32_t doleDbRecSizes = 150000; //how much toe read from DoleDB in a chunk.
 
-
 /////////////////////////
 /////////////////////////      SPIDERLOOP
 /////////////////////////
@@ -117,6 +116,8 @@ void SpiderLoop::init() {
 					false  ) )
 		log(LOG_WARN, "spider: failed to init winnerlist cache. slows down.");
 
+	initSettings();
+
 	// don't register callbacks when we're not using it
 	if (!g_hostdb.getMyHost()->m_spiderEnabled) {
 		logTrace(g_conf.m_logTraceSpider, "END");
@@ -131,6 +132,9 @@ void SpiderLoop::init() {
 	logTrace( g_conf.m_logTraceSpider, "END" );
 }
 
+void SpiderLoop::initSettings() {
+    m_urlCache.configure(g_conf.m_spiderUrlCacheMaxAge, g_conf.m_spiderUrlCacheMaxSize, g_conf.m_logTraceSpiderUrlCache);
+}
 
 
 // call this every 50ms it seems to try to spider urls and populate doledb
@@ -1124,6 +1128,19 @@ bool SpiderLoop::spiderUrl(SpiderRequest *sreq, const key96_t *doledbKey, collnu
 
 bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, const key96_t *doledbKey, collnum_t collnum) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
+
+	// let's check if we have spidered this recently before
+    {
+        std::string url(sreq->m_url);
+        void *data = NULL;
+        if (m_urlCache.lookup(url, &data)) {
+            // this is not suppose to happen!
+            logError("Trying to respider url within %d seconds. Dropping url='%s'", m_urlCache.m_max_age, url.c_str());
+            return true;
+        }
+
+        m_urlCache.insert(url, NULL);
+    }
 
 	// . find an available doc slot
 	// . we can have up to MAX_SPIDERS spiders (300)
