@@ -116,6 +116,9 @@ static void dumpClusterdb(const char *coll, int32_t sfn, int32_t numFiles, bool 
 
 static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, const char *url);
 
+static int32_t verifySpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int32_t firstIp);
+
+
 static int copyFiles(const char *dstDir);
 
 
@@ -507,7 +510,14 @@ int main2 ( int argc , char *argv[] ) {
 			"\ttagdb (make sitelist.txt):\n"
 			"\t\tdump z <collection> <fileNum> <numFiles> <includeTree> <site>\n"
 			"\ttagdb (output HTTP commands for adding tags):\n"
-			"\t\tdump A <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
+			"\t\tdump A <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n\n"
+
+			"verify <db> <collection> <fileNum> <numFiles> <includeTree> <firstIP>\n\tVerify a db on disk. "
+			"Example: gb verify s main\n"
+			"\t<collection> is the name of the collection.\n"
+			"\tspiderdb:\n"
+			"\t\tverify s <collection> <fileNum> <numFiles> <includeTree> <statlevel=0/1/2> <firstIp>\n"
+			"\n"
 			);
 		
 		//word-wrap to screen width, if known
@@ -1334,6 +1344,57 @@ int main2 ( int argc , char *argv[] ) {
 		g_collectiondb.reset();
 		return 0;
 	}
+
+
+	// . gb dump [dbLetter][coll][fileNum] [numFiles] [includeTree][termId]
+	// . spiderdb is special:
+	//   gb dump s [coll][fileNum] [numFiles] [includeTree] [0=old|1=new]
+	//           [priority] [printStats?]
+	if ( strcmp ( cmd , "verify" ) == 0 ) {
+		//
+		// tell Collectiondb, not to verify each rdb's data
+		//
+		g_dumpMode = true;
+
+		if ( cmdarg+1 >= argc ) goto printHelp;
+		int32_t startFileNum =  0;
+		int32_t numFiles     = -1;
+		bool includeTree     =  true;
+		const char *coll = "";
+
+		// so we do not log every collection coll.conf we load
+		g_conf.m_doingCommandLine = true;
+
+		// we have to init collection db because we need to know if 
+		// the collnum is legit or not in the tree
+		if ( ! g_collectiondb.loadAllCollRecs()   ) {
+			log("db: Collectiondb init failed." ); return 1; }
+
+		if ( cmdarg+2 < argc ) coll         = argv[cmdarg+2];
+		if ( cmdarg+3 < argc ) startFileNum = atoi(argv[cmdarg+3]);
+		if ( cmdarg+4 < argc ) numFiles     = atoi(argv[cmdarg+4]);
+		if ( cmdarg+5 < argc ) includeTree  = argToBoolean(argv[cmdarg+5]);
+
+		if ( argv[cmdarg+1][0] == 's' ) {
+			int32_t firstIp = 0;
+			if(cmdarg+6 < argc)
+				firstIp = atoip(argv[cmdarg+6]);
+
+			int32_t ret = verifySpiderdb ( coll, startFileNum, numFiles, includeTree, firstIp );
+			if ( ret == -1 ) {
+				fprintf(stdout,"error verifying spiderdb\n");
+			}
+		}
+		else {
+			goto printHelp;
+		}
+		// disable any further logging so final log msg is clear
+		g_log.m_disabled = true;
+		g_collectiondb.reset();
+		return 0;
+	}
+
+
 
 	if( strcmp( cmd, "countdomains" ) == 0 && argc >= (cmdarg + 2) ) {
 		const char *coll = "";
@@ -3354,6 +3415,122 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 			printf("\n"); return;}
 	}
 }
+
+
+
+int32_t verifySpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int32_t firstIp) {
+	if ( startFileNum < 0 ) {
+		log(LOG_LOGIC,"db: Start file number is < 0. Must be >= 0.");
+		return -1;
+	}		
+
+	g_spiderdb.init ();
+	g_spiderdb.getRdb()->addRdbBase1(coll );
+
+	key128_t startKey;
+	key128_t endKey;
+
+	// start based on firstip if non-zero
+	if ( firstIp ) {
+		startKey = Spiderdb::makeFirstKey ( firstIp );
+		endKey  = Spiderdb::makeLastKey ( firstIp );
+	} else {
+		startKey.setMin();
+		endKey.setMax();
+	}
+
+	Msg5 msg5;
+	RdbList list;
+
+	// clear before calling Msg5
+	g_errno = 0;
+
+
+	// buffer for holding the domains
+	int32_t  count   = 0;
+	int32_t  countRequests = 0;
+	int64_t offset = 0LL;
+	int32_t now;
+
+	CollectionRec *cr = g_collectiondb.getRec(coll);
+
+ loop:
+	// use msg5 to get the list, should ALWAYS block since no threads
+	if ( ! msg5.getList ( RDB_SPIDERDB  ,
+			      cr->m_collnum       ,
+			      &list         ,
+			      (char *)&startKey      ,
+			      (char *)&endKey        ,
+			      commandLineDumpdbRecSize,
+			      includeTree   ,
+			      startFileNum  ,
+			      numFiles      ,
+			      NULL          , // state
+			      NULL          , // callback
+			      0             , // niceness
+			      false         , // err correction?
+			      -1,             // maxRetries
+			      false))          // isRealMerge
+	{
+		log(LOG_LOGIC,"db: getList did not block.");
+		return -1;
+	}
+	// all done if empty
+	if ( list.isEmpty() ) goto done;
+
+	// this may not be in sync with host #0!!!
+	now = getTimeLocal();
+
+	// loop over entries in list
+	for ( list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord() ) {
+		// print a counter
+		if ( ((count++) % 100000) == 0 ) {
+			fprintf( stderr, "Processed %" PRId32" records.\n", count - 1 );
+		}
+
+		// get it
+		char *srec = list.getCurrentRec();
+
+		// save it
+		int64_t curOff = offset;
+
+		// and advance
+		offset += list.getCurrentRecSize();
+
+		// must be a request
+		if ( Spiderdb::isSpiderReply((key128_t *)srec) ) {
+			continue;
+		}
+
+		// cast it
+		SpiderRequest *sreq = (SpiderRequest *)srec;
+		++countRequests;
+
+		int64_t uh48 = sreq->getUrlHash48();
+		int64_t recalc_uh48 = (hash64b(sreq->m_url) & 0x0000ffffffffffffLL);
+
+		if( uh48 != recalc_uh48 ) {
+			printf( "offset=%" PRId64" recalc_uh48=%" PRIx64 " ", curOff, recalc_uh48);
+			Spiderdb::print ( srec );
+
+			printf(" requestage=%" PRId32"s", (int32_t)(now-sreq->m_addedTime));
+			printf("\n");
+		}
+	}
+
+	startKey = *(key128_t *)list.getLastKey();
+	startKey++;
+
+	// watch out for wrap around
+	if ( startKey >= *(key128_t *)list.getLastKey() ) {
+		goto loop;
+	}
+
+ done:
+	return 0;
+}
+
+
 
 static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	g_conf.m_maxMem = 2000000000LL; // 2G
