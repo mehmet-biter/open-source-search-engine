@@ -785,8 +785,16 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 		log(LOG_WARN, "spider: got corrupt doledb record. ignoring. pls fix!!!" );
 
 		goto skipDoledbRec;
-	}		
+	}
 
+	// recalculate uh48 to make sure it's the same as stored url
+	{
+		int64_t uh48 = (hash64b(sreq->m_url) & 0x0000ffffffffffffLL);
+		if (sreq->getUrlHash48() != uh48) {
+			logError("Recalculated uh48=%" PRId64" != stored uh48=%" PRId64" for url='%s'", uh48, sreq->getUrlHash48(), sreq->m_url);
+			goto skipDoledbRec;
+		}
+	}
 
 	// . how many spiders out for this ip now?
 	// . TODO: count locks in case twin is spidering... but it did not seem
