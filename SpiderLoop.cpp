@@ -1147,7 +1147,7 @@ bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, const key96_t *doledbKey, colln
 		if (m_urlCache.lookup(urlStripped, &data)) {
 			// this is not suppose to happen!
 			logError("Trying to respider url='%s' within %" PRId64" seconds. Dropping url='%s'",
-			         g_conf.m_spiderUrlCacheMaxAge, urlStripped.c_str(), sreq->m_url);
+			         urlStripped.c_str(), g_conf.m_spiderUrlCacheMaxAge, sreq->m_url);
 			return true;
 		}
 
