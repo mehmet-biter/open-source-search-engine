@@ -8716,7 +8716,7 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		// allow for relative urls
 		Url *cu = getCurrentUrl();
 		// set base to it
-		m_canonicalRedirUrl.set( cu, link, linkLen );
+		m_canonicalRedirUrl.set(cu, link, linkLen, false, true, false);
 
 		// Detect invalid canonical URLs like <link rel="canonical" href="https://://jobs.dart.biz/search/" />
 		// The Url class really should have a "isValid" function...
