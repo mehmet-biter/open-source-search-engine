@@ -3,7 +3,7 @@
 
 TEST(GbCacheTest, InsertLookup) {
 	GbCache<int64_t, std::string> cache;
-	cache.configure(60, 10, false);
+	cache.configure(60, 10, false, "test");
 
 	int64_t key = 1;
 	cache.insert(key, std::to_string(key));
@@ -15,7 +15,7 @@ TEST(GbCacheTest, InsertLookup) {
 
 TEST(GbCacheTest, InsertLookupExpired) {
 	GbCache<int64_t, std::string> cache;
-	cache.configure(1, 10, false);
+	cache.configure(1, 10, false, "test");
 
 	int64_t key = 1;
 	cache.insert(key, std::to_string(key));
@@ -27,7 +27,7 @@ TEST(GbCacheTest, InsertLookupExpired) {
 
 TEST(GbCacheTest, InsertLookupMaxed) {
 	GbCache<int64_t, std::string> cache;
-	cache.configure(60, 5, false);
+	cache.configure(60, 5, false, "test");
 
 	for (int64_t key = 1; key <= 10; ++key) {
 		cache.insert(key, std::to_string(key));
