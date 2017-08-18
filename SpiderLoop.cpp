@@ -1137,6 +1137,19 @@ bool SpiderLoop::spiderUrl(SpiderRequest *sreq, const key96_t *doledbKey, collnu
 bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, const key96_t *doledbKey, collnum_t collnum) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 
+	if (!sreq->m_urlIsDocId) {
+		/// @todo ALC temporarily skip spider req url that are different after stripping parameters
+		size_t sreqUrlLen = strlen(sreq->m_url);
+
+		Url url;
+		url.set(sreq->m_url, sreqUrlLen, false, true);
+
+		if (memcmp(sreq->m_url, url.getUrl(), sreqUrlLen) != 0) {
+			logError("SpiderReq url is different after stripping param. Dropping url='%s'", sreq->m_url);
+			return true;
+		}
+	}
+
 	// let's check if we have spidered this recently before (only if it's a normal spider)
 	if (!sreq->m_fakeFirstIp && !sreq->m_urlIsDocId && !sreq->m_isAddUrl && !sreq->m_isInjecting && !sreq->m_isPageParser && !sreq->m_isPageReindex) {
 		std::string url(sreq->m_url);
