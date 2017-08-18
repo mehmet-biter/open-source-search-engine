@@ -1139,15 +1139,19 @@ bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, const key96_t *doledbKey, colln
 
 	// let's check if we have spidered this recently before (only if it's a normal spider)
 	if (!sreq->m_fakeFirstIp && !sreq->m_urlIsDocId && !sreq->m_isAddUrl && !sreq->m_isInjecting && !sreq->m_isPageParser && !sreq->m_isPageReindex) {
-		std::string url(sreq->m_url);
+		Url url;
+		url.set(sreq->m_url, strlen(sreq->m_url), false, true);
+
+		std::string urlStripped(url.getUrl());
 		void *data = NULL;
-		if (m_urlCache.lookup(url, &data)) {
+		if (m_urlCache.lookup(urlStripped, &data)) {
 			// this is not suppose to happen!
-			logError("Trying to respider url within %" PRId64" seconds. Dropping url='%s'", g_conf.m_spiderUrlCacheMaxAge, url.c_str());
+			logError("Trying to respider url='%s' within %" PRId64" seconds. Dropping url='%s'",
+			         g_conf.m_spiderUrlCacheMaxAge, urlStripped.c_str(), sreq->m_url);
 			return true;
 		}
 
-		m_urlCache.insert(url, NULL);
+		m_urlCache.insert(urlStripped, NULL);
 	}
 
 	// . find an available doc slot
