@@ -5424,9 +5424,9 @@ Url **XmlDoc::getRedirUrl() {
 		// try sending the cookie if we got one now and didn't have
 		// one for this last request
 		if ( ! sentCookieLastTime && m_redirCookieBuf.length() ) {
-		        m_redirUrl.set ( loc->getUrl() );
-		        m_redirUrlPtr = &m_redirUrl;
-		        return &m_redirUrlPtr;
+			m_redirUrl.set(loc->getUrl(), loc->getUrlLen(), false, true);
+			m_redirUrlPtr = &m_redirUrl;
+			return &m_redirUrlPtr;
 		}
 		if ( ! keep ) m_redirError = EDOCREDIRECTSTOSELF;
 
@@ -5490,7 +5490,7 @@ Url **XmlDoc::getRedirUrl() {
 	}
 
 	if ( ! sameDom ) {
-		m_redirUrl.set ( loc );
+		m_redirUrl.set(loc->getUrl(), loc->getUrlLen(), false, true);
 		m_redirUrlPtr   = &m_redirUrl;
 		ptr_redirUrl    = m_redirUrl.getUrl();
 		size_redirUrl    = m_redirUrl.getUrlLen()+1;
@@ -5590,7 +5590,7 @@ Url **XmlDoc::getRedirUrl() {
 
 		// set this because getLinks() treats this redirUrl
 		// as a link now, it will add a SpiderRequest for it:
-		m_redirUrl.set ( loc );
+		m_redirUrl.set(loc->getUrl(), loc->getUrlLen(), false, true);
 		m_redirUrlPtr = &m_redirUrl;
 
 		// store redirUrl in titlerec as well
@@ -5605,7 +5605,7 @@ Url **XmlDoc::getRedirUrl() {
 	}
 
 	// good to go
-	m_redirUrl.set ( loc );
+	m_redirUrl.set(loc->getUrl(), loc->getUrlLen(), false, true);
 	m_redirUrlPtr = &m_redirUrl;
 	ptr_redirUrl = m_redirUrl.getUrl();
 	size_redirUrl = m_redirUrl.getUrlLen()+1;
