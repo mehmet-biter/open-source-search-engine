@@ -1144,7 +1144,7 @@ bool SpiderLoop::spiderUrl2(SpiderRequest *sreq, const key96_t *doledbKey, colln
 		Url url;
 		url.set(sreq->m_url, sreqUrlLen, false, true);
 
-		if (memcmp(sreq->m_url, url.getUrl(), sreqUrlLen) != 0) {
+		if (strcmp(sreq->m_url, url.getUrl()) != 0) {
 			logError("SpiderReq url is different after stripping param. Dropping url='%s'", sreq->m_url);
 			return true;
 		}
