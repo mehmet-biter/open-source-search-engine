@@ -169,6 +169,7 @@ bool UrlBlockList::load() {
 				tmpUrlBlockList->emplace_back(std::shared_ptr<urlblocktld_t>(new urlblocktld_t(col2)));
 				break;
 			default:
+				logError("Invalid line found. Ignoring line='%s'", line.c_str());
 				continue;
 		}
 
