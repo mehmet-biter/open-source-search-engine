@@ -107,20 +107,16 @@ static void dumpTagdb(const char *coll, int32_t sfn, int32_t numFiles, bool incl
 		      const char *site);
 
 //dumpPosdb() is not local becaue it is called directly by unittests
-void dumpPosdb  ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree, 
-		  int64_t termId , bool justVerify ) ;
-static void dumpWaitingTree( const char *coll );
-static void dumpDoledb  ( const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
-
+void dumpPosdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, int64_t termId , bool justVerify);
+static void dumpWaitingTree(const char *coll);
+static void dumpDoledb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 static void dumpClusterdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
-
 static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, const char *url);
+static void dumpUnwantedDocs(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 
 static int32_t verifySpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int32_t firstIp);
 
-
 static int copyFiles(const char *dstDir);
-
 
 static const char *getAbsoluteGbDir(const char *argv0);
 
@@ -485,32 +481,41 @@ int main2 ( int argc , char *argv[] ) {
 
 			"dump <db> <collection> <fileNum> <numFiles> <includeTree> [other stuff]\n\tDump a db from disk. "
 			"Example: gb dump t main\n"
-			"\t<collection> is the name of the collection.\n"
+			"\t<collection> is the name of the collection.\n\n"
+
+			"\tclusterdb:\n"
+			"\t\tdump l <collection> <fileNum> <numFiles> <includeTree>\n"
+
+			"\tdoledb:\n"
+			"\t\tdump x <collection> <fileNum> <numFiles> <includeTree>\n"
+
+			"\tlinkdb:\n"
+			"\t\tdump L <collection> <fileNum> <numFiles> <includeTree> <url>\n"
+
+			"\tposdb (the index):\n"
+			"\t\tdump p <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
 
 			"\tspiderdb:\n"
 			"\t\tdump s <collection> <fileNum> <numFiles> <includeTree> <statlevel=0/1/2> <firstIp>\n"
-			"\ttitledb:\n"
-			"\t\tdump t <collection> <fileNum> <numFiles> <includeTree> <docId>\n"
-			"\tposdb (the index):\n"
-			"\t\tdump p <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
-			"\ttitledb (duplicates only):\n"
-			"\t\tdump D <collection> <fileNum> <numFiles> <includeTree> <docId>\n"
+
 			"\ttagdb:\n"
 			"\t\tdump S <collection> <fileNum> <numFiles> <includeTree> <site>\n"
 			"\ttagdb (for wget):\n"
 			"\t\tdump W <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
-			"\tdoledb:\n"
-			"\t\tdump x <collection> <fileNum> <numFiles> <includeTree>\n"
-			"\twaiting tree:\n"
-			"\t\tdump w <collection>\n"
-			"\tclusterdb:\n"
-			"\t\tdump l <collection> <fileNum> <numFiles> <includeTree>\n"
-			"\tlinkdb:\n"
-			"\t\tdump L <collection> <fileNum> <numFiles> <includeTree> <url>\n"
 			"\ttagdb (make sitelist.txt):\n"
 			"\t\tdump z <collection> <fileNum> <numFiles> <includeTree> <site>\n"
 			"\ttagdb (output HTTP commands for adding tags):\n"
-			"\t\tdump A <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n\n"
+			"\t\tdump A <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
+
+			"\ttitledb:\n"
+			"\t\tdump t <collection> <fileNum> <numFiles> <includeTree> <docId>\n"
+			"\ttitledb (Unwanted documents, checked against blocklist, plugins and url hash):\n"
+			"\t\tdump u <collection> <fileNum> <numFiles> <includeTree>\n"
+			"\ttitledb (duplicates only):\n"
+			"\t\tdump D <collection> <fileNum> <numFiles> <includeTree> <docId>\n"
+			"\twaiting tree:\n"
+			"\t\tdump w <collection>\n"
+			"\n"
 
 			"verify <db> <collection> <fileNum> <numFiles> <includeTree> <firstIP>\n\tVerify a db on disk. "
 			"Example: gb verify s main\n"
@@ -1336,6 +1341,8 @@ int main2 ( int argc , char *argv[] ) {
 			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url);
 		}  else if ( argv[cmdarg+1][0] == 'p' ) {
 			dumpPosdb( coll, startFileNum, numFiles, includeTree, termId, false );
+		}  else if ( argv[cmdarg+1][0] == 'u' ) {
+			dumpUnwantedDocs( coll, startFileNum, numFiles, includeTree);
 		} else {
 			goto printHelp;
 		}
@@ -3418,7 +3425,148 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 
 
 
-int32_t verifySpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int32_t firstIp) {
+static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree) {
+
+	if(startFileNum!=0 && numFiles<0) {
+		//this may apply to all files, but I haven't checked into hash-based ones yet
+		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
+		return;
+	}
+	if (!ucInit(g_hostdb.m_dir)) {
+		log("Unicode initialization failed!");
+		return;
+	}
+	// init our table for doing zobrist hashing
+	if ( ! hashinit() ) {
+		log("db: Failed to init hashtable." );
+		return;
+	}
+
+	g_titledb.init ();
+	g_titledb.getRdb()->addRdbBase1(coll);
+	key96_t startKey ;
+	key96_t endKey   ;
+	key96_t lastKey  ;
+	startKey.setMin();
+	endKey.setMax();
+	lastKey.setMin();
+	startKey = Titledb::makeFirstKey(0);
+	Msg5 msg5;
+	RdbList list;
+	HashTableX dedupTable;
+	dedupTable.set(4,0,10000,NULL,0,false,"maintitledb");
+
+	// make this
+	XmlDoc *xd;
+	try {
+		xd = new (XmlDoc);
+	}
+	catch(std::bad_alloc&) {
+		fprintf(stdout,"could not alloc for xmldoc\n");
+		exit(-1);
+	}
+
+	CollectionRec *cr = g_collectiondb.getRec(coll);
+	if(cr==NULL) {
+		fprintf(stderr,"Unknown collection '%s'\n", coll);
+		return;
+	}
+
+
+	g_urlBlockList.init();
+
+
+	for(;;) {
+		// use msg5 to get the list, should ALWAYS block since no threads
+		if ( ! msg5.getList ( RDB_TITLEDB   ,
+				      cr->m_collnum          ,
+				      &list         ,
+				      &startKey      ,
+				      &endKey        ,
+				      commandLineDumpdbRecSize,
+				      includeTree   ,
+				      startFileNum  ,
+				      numFiles      ,
+				      NULL          , // state
+				      NULL          , // callback
+				      0             , // niceness
+				      false         , // err correction?
+				      -1            , // maxRetries
+				      false))          // isRealMerge
+		{
+			log(LOG_LOGIC,"db: getList did not block.");
+			return;
+		}
+		// all done if empty
+		if ( list.isEmpty() ) {
+			return;
+		}
+
+		// loop over entries in list
+		for(list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
+			key96_t k = list.getCurrentKey();
+			char *rec = list.getCurrentRec();
+			int32_t recSize = list.getCurrentRecSize();
+			int64_t docId = Titledb::getDocIdFromKey(&k);
+
+			if ( k <= lastKey ) {
+				log("key out of order. lastKey.n1=%" PRIx32" n0=%" PRIx64" currKey.n1=%" PRIx32" n0=%" PRIx64" ",
+				    lastKey.n1, lastKey.n0, k.n1, k.n0);
+			}
+
+			lastKey = k;
+
+			if ( (k.n0 & 0x01) == 0) {
+				// delete key
+				continue;
+			}
+			// free the mem
+			xd->reset();
+			// uncompress the title rec
+			if ( ! xd->set2 ( rec , recSize , coll ,NULL , 0 ) ) {
+				//set2() may have logged something but not the docid
+				log(LOG_WARN, "dbdump: XmlDoc::set2() failed for docid %" PRId64, docId);
+				continue;
+			}
+
+			// extract the url
+			Url *u = xd->getFirstUrl();
+
+			//
+			// Check if url is on our blocklist
+			//
+			if( g_urlBlockList.isUrlBlocked(*u) ) {
+				fprintf(stdout, "%" PRId64 "|url is blocked|%s\n", docId, u->getUrl());
+				continue;
+			}
+
+			//
+			// Check if url is different after stripping common tracking/session parameters
+			//
+			Url url_stripped;
+			url_stripped.set(u->getUrl(), u->getUrlLen(), false, true);
+
+			if (strcmp(u->getUrl(), url_stripped.getUrl()) != 0) {
+				fprintf(stdout, "%" PRId64 "|url has unwanted params|%s\n", docId, u->getUrl());
+				continue;
+			}
+
+			// free the mem
+			xd->reset();
+		}
+		startKey = *(key96_t *)list.getLastKey();
+		startKey++;
+
+		// watch out for wrap around
+		if ( startKey < *(key96_t *)list.getLastKey() ) {
+			return;
+		}
+	}
+}
+
+
+
+static int32_t verifySpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int32_t firstIp) {
 	if ( startFileNum < 0 ) {
 		log(LOG_LOGIC,"db: Start file number is < 0. Must be >= 0.");
 		return -1;
