@@ -378,6 +378,7 @@ class Conf {
 	bool  m_logDebugVagus;
 
 	bool m_logTraceBigFile;
+	bool m_logTraceDocDelete;
 	bool m_logTraceDns;
 	bool m_logTraceDnsBlockList;
 	bool m_logTraceDnsCache;
