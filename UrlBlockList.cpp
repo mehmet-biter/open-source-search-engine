@@ -27,6 +27,7 @@ bool UrlBlockList::init() {
 		return false;
 	}
 
+	load();
 	return true;
 }
 
