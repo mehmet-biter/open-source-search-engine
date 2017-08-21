@@ -19,10 +19,14 @@ DnsBlockList::DnsBlockList()
 bool DnsBlockList::init() {
 	log(LOG_INFO, "Initializing DnsBlockList with %s", m_filename);
 
-	if (!g_loop.registerSleepCallback(60000, this, &reload, "DnsBlockList::reload", 0, true)) {
+	if (!g_loop.registerSleepCallback(60000, this, &reload, "DnsBlockList::reload", 0)) {
 		log(LOG_WARN, "DnsBlockList:: Failed to register callback.");
 		return false;
 	}
+
+	// we do a load here instead of using sleep callback with immediate set to true so
+	// we don't rely on g_loop being up and running to use dnsblocklist
+	load();
 
 	return true;
 }
