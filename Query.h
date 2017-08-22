@@ -472,7 +472,6 @@ private:
 	qvec_t         m_forcedBits;
 	// bit vector for terms that are synonyms
 	qvec_t         m_synonymBits;  
-	int32_t           m_numRequired;
 
 public:
 	// language of the query

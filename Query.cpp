@@ -44,7 +44,6 @@ void Query::constructor ( ) {
 	m_negativeBits = 0;
 	m_forcedBits = 0;
 	m_synonymBits = 0;
-	m_numRequired = 0;
 	m_langId = 0;
 	m_useQueryStopWords = false;
 	m_numTermsUntruncated = 0;
@@ -1047,7 +1046,6 @@ bool Query::setQTerms ( const Words &words ) {
 		}
 	}
 
-	m_numRequired = 0;
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
 		QueryTerm *qt = &m_qterms[i];
 		// assume not required
@@ -1060,8 +1058,6 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( qt->m_ignored ) continue;
 		// mark it
 		qt->m_isRequired = true;
-		// count them
-		m_numRequired++;
 	}
 
 
@@ -1103,8 +1099,6 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( ! qt->m_inQuotes ) continue;
 		// mark it
 		qt->m_isRequired = true;
-		// count them
-		m_numRequired++;
 	}
 
 
@@ -1139,8 +1133,6 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( ! qw2->m_isQueryStopWord ) continue;
 		// mark it
 		qt->m_isRequired = true;
-		// count them
-		m_numRequired++;
 	}
 
 	//
