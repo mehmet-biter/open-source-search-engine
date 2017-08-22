@@ -39,11 +39,6 @@ void Query::constructor ( ) {
 	m_numTerms = 0;
 
 	// Coverity
-	m_requiredBits = 0;
-	m_matchRequiredBits = 0;
-	m_negativeBits = 0;
-	m_forcedBits = 0;
-	m_synonymBits = 0;
 	m_langId = 0;
 	m_useQueryStopWords = false;
 	m_numTermsUntruncated = 0;
@@ -984,40 +979,40 @@ bool Query::setQTerms ( const Words &words ) {
 		     m_qterms[i-1].m_qword->m_quoteStart  ) continue;
 	}
 
-	// . set m_requiredBits
+	// . set bit masks
 	// . these are 1-1 with m_qterms (QueryTerms)
 	// . required terms have no - sign and have no signless phrases
 	// . these are what terms doc would NEED to have if we were default AND
 	//   BUT for boolean queries that doesn't apply
-	m_requiredBits = 0; // no - signs, no signless phrases
-	m_negativeBits = 0; // terms with - signs
-	m_forcedBits   = 0; // terms with + signs
-	m_synonymBits  = 0;
+	qvec_t requiredBits = 0; // no - signs, no signless phrases
+	qvec_t negativeBits = 0; // terms with - signs
+	qvec_t forcedBits   = 0; // terms with + signs
+	qvec_t synonymBits  = 0;
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
 		const QueryTerm *qt = &m_qterms[i];
 		// don't require if negative
 		if ( qt->m_termSign == '-' ) {
-			m_negativeBits |= qt->m_explicitBit; // (1 << i );
+			negativeBits |= qt->m_explicitBit; // (1 << i );
 			continue;
 		}
 		// forced bits
 		if ( qt->m_termSign == '+' && ! m_isBoolean ) 
-			m_forcedBits |= qt->m_explicitBit; //(1 << i);
+			forcedBits |= qt->m_explicitBit; //(1 << i);
 		// skip signless phrases
 		if ( qt->m_isPhrase && qt->m_termSign == '\0' ) continue;
 		if ( qt->m_synonymOf ) {
-			m_synonymBits |= qt->m_explicitBit; 
+			synonymBits |= qt->m_explicitBit;
 			continue;
 		}
 		// fix gbhastitleindicator:1 where "1" is a stop word
 		if ( qt->m_isQueryStopWord && ! m_qterms[i].m_fieldCode ) 
 			continue;
 		// OR it all up
-		m_requiredBits |= qt->m_explicitBit; // (1 << i);
+		requiredBits |= qt->m_explicitBit; // (1 << i);
 	}
 
 	// set m_matchRequiredBits which we use for Matches.cpp
-	m_matchRequiredBits = 0;
+	qvec_t m_matchRequiredBits = 0;
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
 		const QueryTerm *qt = &m_qterms[i];
 		// don't require if negative
@@ -1029,7 +1024,7 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 
 	// if we have '+test -test':
-	if ( m_negativeBits & m_requiredBits ) 
+	if ( negativeBits & requiredBits )
 		m_numTerms = 0;
 
         // now set m_matches,ExplicitBits, used only by Matches.cpp so far
@@ -1139,7 +1134,7 @@ bool Query::setQTerms ( const Words &words ) {
 	// new logic for XmlDoc::setRelatedDocIdWeight() to use
 	//
 	int32_t shift = 0;
-	m_requiredBits = 0;
+	requiredBits = 0;
 	for ( int32_t i = 0; i < n ; i++ ) {
 		QueryTerm *qt = &m_qterms[i];
 		qt->m_explicitBit = 0;
@@ -1147,7 +1142,7 @@ bool Query::setQTerms ( const Words &words ) {
 		// negative terms are "negative required", but we ignore here
 		if ( qt->m_termSign == '-' ) continue;
 		qt->m_explicitBit = 1<<shift;
-		m_requiredBits |= qt->m_explicitBit;
+		requiredBits |= qt->m_explicitBit;
 		shift++;
 		if ( shift >= (int32_t)(sizeof(qvec_t)*8) ) break;
 	}
