@@ -82,6 +82,7 @@
 #include "File.h"
 #include "DnsBlockList.h"
 #include "UrlBlockList.h"
+#include "DocDelete.h"
 #include "GbDns.h"
 #include "ScopedLock.h"
 #include <sys/stat.h> //umask()
@@ -1778,6 +1779,9 @@ int main2 ( int argc , char *argv[] ) {
 	
 	if(!InstanceInfoExchange::initialize())
 		return 0;
+
+	// initialize doc delete
+	g_docDelete.init();
 
 	// . start the spiderloop
 	// . comment out when testing SpiderCache

@@ -1271,8 +1271,6 @@ void XmlDoc::setCallback ( void *state, bool (*callback) (void *state) ) {
 	m_callback2 = callback;
 }
 
-
-
 static void indexDoc3(void *state) {
 	XmlDoc *that = reinterpret_cast<XmlDoc*>(state);
 	logTrace( g_conf.m_logTraceXmlDoc, "Calling XmlDoc::indexDoc" );
@@ -1872,7 +1870,7 @@ bool* XmlDoc::checkBlockList() {
 		return &m_blockedDoc;
 	}
 
-	if (m_sreq.m_urlIsDocId) {
+	if (m_setFromDocId || (m_sreqValid && m_sreq.m_urlIsDocId)) {
 		// nothing to check
 		m_blockedDocValid = true;
 		m_blockedDoc = false;

@@ -57,7 +57,7 @@ OBJS_O2 = \
 
 
 OBJS_O3 = \
-	DnsBlockList.o \
+	DocDelete.o DnsBlockList.o \
 	IPAddressChecks.o \
 	Linkdb.o \
 	Msg40.o \
