@@ -18,6 +18,13 @@ void register_document_encoding(int error_code, int16_t charsetId, uint8_t langI
 
 void register_socket_limit_hit();
 
+void increment_url_block_counter_call();
+void increment_url_block_counter_blacklisted();
+void increment_url_block_counter_whitelisted();
+void increment_url_block_counter_shlib_domain_block();
+void increment_url_block_counter_shlib_url_block();
+void increment_url_block_counter_default();
+
 } //namespace
 
 #endif
