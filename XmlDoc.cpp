@@ -1884,9 +1884,10 @@ bool* XmlDoc::checkBlockList() {
 	bool blocked = false;
 	if (!m_checkedUrlBlockList) {
 		setStatus("checking urlblocklist");
-		if (isUrlBlocked(*url)) {
+		int tmpErrno = EDOCBLOCKEDURL;
+		if (isUrlBlocked(*url, &tmpErrno)) {
 			m_indexCodeValid = true;
-			m_indexCode = EDOCBLOCKEDURL;
+			m_indexCode = tmpErrno;
 
 			blocked = true;
 		}
