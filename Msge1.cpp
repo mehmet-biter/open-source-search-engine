@@ -2,7 +2,7 @@
 #include "Process.h"
 #include "Tagdb.h"
 #include "ip.h"
-#include "UrlMatchList.h"
+#include "UrlBlockCheck.h"
 #include "Conf.h"
 #include "Mem.h"
 #include "ScopedLock.h"
@@ -191,7 +191,7 @@ bool Msge1::launchRequests ( int32_t starti ) {
 
 		Url url;
 		url.set(p);
-		if(g_urlMatchList.isUrlBlocked(url)) {
+		if(isUrlBlocked(url)) {
 			// debug for now
 			if(g_conf.m_logDebugDns)
 				log("dns: skipping dns lookup of '%*.*s' because the URL is blocked", (int)url.getHostLen(), (int)url.getHostLen(), url.getHost());

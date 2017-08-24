@@ -5,15 +5,14 @@
 class TestUrlMatchList : public UrlMatchList {
 public:
 	TestUrlMatchList(const char *filename)
-		: UrlMatchList() {
-		m_filename = filename;
+		: UrlMatchList(filename) {
 	}
 
 	bool isUrlMatched(const char *urlStr) {
 		Url url;
 		url.set(urlStr);
 
-		return UrlMatchList::isUrlBlocked(url);
+		return UrlMatchList::isUrlMatched(url);
 	}
 	using UrlMatchList::load;
 };

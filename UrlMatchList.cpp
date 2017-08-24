@@ -1,5 +1,4 @@
 #include "UrlMatchList.h"
-#include "WantedChecker.h"
 #include "Log.h"
 #include "Conf.h"
 #include "Loop.h"
@@ -9,12 +8,14 @@
 #include <sys/stat.h>
 #include <atomic>
 
-UrlMatchList g_urlMatchList;
 
 static const char s_url_filename[] = "urlblocklist.txt";
 
-UrlMatchList::UrlMatchList()
-	: m_filename(s_url_filename)
+UrlMatchList g_urlBlackList(s_url_filename);
+
+
+UrlMatchList::UrlMatchList(const char *filename)
+	: m_filename(filename)
 	, m_urlMatchList(new urlmatchlist_t)
 	, m_lastModifiedTime(0) {
 }
@@ -183,7 +184,7 @@ bool UrlMatchList::load() {
 	return true;
 }
 
-bool UrlMatchList::isUrlBlocked(const Url &url) {
+bool UrlMatchList::isUrlMatched(const Url &url) {
 	auto urlMatchList = getUrlMatchList();
 
 	for (auto const &urlMatch : *urlMatchList) {
@@ -194,17 +195,7 @@ bool UrlMatchList::isUrlBlocked(const Url &url) {
 			return true;
 		}
 	}
-
-	//now call the shlib functions for checking if the URL is wanted or not
-	if(!WantedChecker::check_domain(std::string(url.getHost(),url.getHostLen())).wanted) {
-		logTrace(g_conf.m_logTraceUrlMatchList, "Url block shlib matched (domain) url '%s'", url.getUrl());
-		return true;
-	}
-	if(!WantedChecker::check_url(std::string(url.getUrl(),url.getUrlLen())).wanted) {
-		logTrace(g_conf.m_logTraceUrlMatchList, "Url block shlib matched (full URL) url '%s'", url.getUrl());
-		return true;
-	}
-
+	
 	return false;
 }
 

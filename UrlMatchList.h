@@ -13,28 +13,28 @@ class Url;
 
 class UrlMatchList {
 public:
-	UrlMatchList();
+	UrlMatchList(const char *filename);
 
 	bool init();
 
-	bool isUrlBlocked(const Url &url);
+	bool isUrlMatched(const Url &url);
 
 	static void reload(int /*fd*/, void *state);
 
 protected:
 	bool load();
 
-	const char *m_filename;
-
 private:
 	urlmatchlistconst_ptr_t getUrlMatchList();
 	void swapUrlMatchList(urlmatchlistconst_ptr_t urlMatchList);
+
+	const char *m_filename;
 
 	urlmatchlistconst_ptr_t m_urlMatchList;
 
 	time_t m_lastModifiedTime;
 };
 
-extern UrlMatchList g_urlMatchList;
+extern UrlMatchList g_urlBlackList;
 
 #endif //GB_URLMATCHLIST_H_

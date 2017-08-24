@@ -1642,7 +1642,7 @@ int main2 ( int argc , char *argv[] ) {
 
 	// load block lists
 	g_dnsBlockList.init();
-	g_urlMatchList.init();
+	g_urlBlackList.init();
 
 	// initialize generate global index thread
 	if (!RdbBase::initializeGlobalIndexThread()) {
@@ -3473,7 +3473,7 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 	}
 
 
-	g_urlMatchList.init();
+	g_urlBlackList.init();
 
 
 	for(;;) {
@@ -3535,7 +3535,7 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 			//
 			// Check if url is on our blocklist
 			//
-			if( g_urlMatchList.isUrlBlocked(*u) ) {
+			if( g_urlBlackList.isUrlMatched(*u) ) {
 				fprintf(stdout, "%" PRId64 "|url is blocked|%s\n", docId, u->getUrl());
 				continue;
 			}

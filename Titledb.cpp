@@ -7,7 +7,7 @@
 #include "Process.h"
 #include "Conf.h"
 #include "XmlDoc.h"
-#include "UrlMatchList.h"
+#include "UrlBlockCheck.h"
 
 Titledb g_titledb;
 Titledb g_titledb2;
@@ -259,7 +259,7 @@ void filterTitledbList(RdbList *list) {
 		if (!KEYNEG(rec)) {
 			XmlDoc xd;
 			if (xd.set2(rec, recSize, "main", NULL, 0)) {
-				if (g_urlMatchList.isUrlBlocked(*(xd.getFirstUrl()))) {
+				if (isUrlBlocked(*(xd.getFirstUrl()))) {
 					++filteredCount;
 					continue;
 				}

@@ -2,7 +2,7 @@
 #include "Process.h"
 #include "Tagdb.h"
 #include "ip.h"
-#include "UrlMatchList.h"
+#include "UrlBlockCheck.h"
 #include "UdpServer.h"
 #include "Mem.h"
 #include "ScopedLock.h"
@@ -152,7 +152,7 @@ bool Msge0::launchRequests() {
 		
 		Url url;
 		url.set(p);
-		if(g_urlMatchList.isUrlBlocked(url)) {
+		if(isUrlBlocked(url)) {
 			//if(g_conf.m_logDebug...something...)
 			//	log("...something...: skipping tagrec lookup of '%*.*s' because the URL is blocked", (int)url.getHostLen(), (int)url.getHostLen(), url.getHost());
 			m_tagRecPtrs[m_n] = (TagRec *)m_baseTagRec;
