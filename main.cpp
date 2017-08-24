@@ -1781,7 +1781,10 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 
 	// initialize doc delete
-	g_docDelete.init();
+	if (!DocDelete::initialize()) {
+		logError("Unable to initialize doc delete");
+		return 0;
+	}
 
 	// . start the spiderloop
 	// . comment out when testing SpiderCache

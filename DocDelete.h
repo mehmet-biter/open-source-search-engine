@@ -4,32 +4,17 @@
 #include <time.h>
 #include <cstdint>
 
-class DocDelete {
-public:
-	DocDelete();
+namespace DocDelete {
+	bool initialize();
+	void finalize();
 
-	bool init();
+	void reload(int /*fd*/, void */*state*/);
 
-	static void reload(int /*fd*/, void *state);
+	void processFile(void *item);
+	void processDoc(void *item);
 
-	static void processFile(void *item);
-	static void processDoc(void *item);
+	void processedDoc(void *state);
+}
 
-	static void indexedDoc(void *state);
-
-protected:
-	bool load();
-
-	const char *m_filename;
-	const char *m_tmp_filename;
-	const char *m_currentdocid_filename;
-
-private:
-	void reload();
-
-	time_t m_lastModifiedTime;
-};
-
-extern DocDelete g_docDelete;
 
 #endif //DOCIDDELETE_H

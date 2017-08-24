@@ -7,38 +7,43 @@
 #include "ScopedLock.h"
 #include <fstream>
 #include <sys/stat.h>
+#include <algorithm>
 
-DocDelete g_docDelete;
+static const char *s_filename = "docdelete.txt";
+static const char *s_tmp_filename = "docdelete.txt.processing";
+static const char *s_lastdocid_filename = "docdelete.txt.docid";
 
-static const char s_docdelete_filename[] = "docdelete.txt";
-static const char s_docdelete_tmp_filename[] = "docdelete.txt.processing";
-static const char s_docdelete_currentdocid_filename[] = "docdelete.txt.currentdocid";
+static std::vector<int64_t> s_pendingDocIds;
+static GbMutex s_pendingDocIdsMtx;
+static pthread_cond_t s_pendingDocIdsCond = PTHREAD_COND_INITIALIZER;
 
-static uint32_t s_pendingDocCount = 0;
-static GbMutex s_pendingDocCountMtx;
-static pthread_cond_t s_pendingDocCountCond = PTHREAD_COND_INITIALIZER;
+
+time_t s_lastModifiedTime = 0;
 
 static GbThreadQueue s_docDeleteFileThreadQueue;
 static GbThreadQueue s_docDeleteDocThreadQueue;
 
-struct DocDeleteItem {
-	DocDeleteItem(const char *tmp_filename, int64_t currentDocId = -1)
-		: m_tmp_filename(tmp_filename)
-		, m_currentDocId(currentDocId) {
+struct DocDeleteFileItem {
+	DocDeleteFileItem(int64_t lastDocId = -1)
+		: m_lastDocId(lastDocId)
+		, m_lastDocIdFile(s_lastdocid_filename) {
 	}
 
-	const char *m_tmp_filename;
-	int64_t m_currentDocId;
+	int64_t m_lastDocId;
+	std::ofstream m_lastDocIdFile;
 };
 
-DocDelete::DocDelete()
-	: m_filename(s_docdelete_filename)
-	, m_tmp_filename(s_docdelete_tmp_filename)
-	, m_currentdocid_filename(s_docdelete_currentdocid_filename)
-	, m_lastModifiedTime(0) {
-}
+struct DocDeleteDocItem {
+	DocDeleteDocItem(std::ofstream &lastDocIdFile)
+		: m_lastDocIdFile(lastDocIdFile)
+		, m_xmlDoc(new XmlDoc()) {
+	}
 
-bool DocDelete::init() {
+	std::ofstream &m_lastDocIdFile;
+	XmlDoc *m_xmlDoc;
+};
+
+bool DocDelete::initialize() {
 	if (!s_docDeleteFileThreadQueue.initialize(processFile, "process-delfile")) {
 		logError("Unable to initialize process file queue");
 		return false;
@@ -49,130 +54,123 @@ bool DocDelete::init() {
 		return false;
 	}
 
-	if (!g_loop.registerSleepCallback(60000, this, &reload, "DocDelete::reload", 0)) {
+	if (!g_loop.registerSleepCallback(60000, NULL, &reload, "DocDelete::reload", 0)) {
 		log(LOG_WARN, "DocDelete::init: Failed to register callback.");
 		return false;
 	}
 
-	load();
-
-	return true;
-}
-
-void DocDelete::reload(int /*fd*/, void *state) {
-	DocDelete *docDelete = static_cast<DocDelete*>(state);
-	docDelete->reload();
-}
-
-bool DocDelete::load() {
 	struct stat st;
 
-	int64_t currentDocId = -1;
+	int64_t lastDocId = -1;
 
 	// we need to skip processed docid when processing pending file
-	if (stat(m_tmp_filename, &st) == 0) {
-		if (stat(m_currentdocid_filename, &st) == 0) {
-			std::ifstream file(m_currentdocid_filename);
+	if (stat(s_tmp_filename, &st) == 0) {
+		if (stat(s_lastdocid_filename, &st) == 0) {
+			std::ifstream file(s_lastdocid_filename);
 			std::string line;
 			if (std::getline(file, line)) {
-				currentDocId = strtoll(line.c_str(), NULL, 10);
+				lastDocId = strtoll(line.c_str(), NULL, 10);
 			}
 		}
 	} else {
-		if (stat(m_filename, &st) != 0) {
-			// probably not found
-			log(g_conf.m_logTraceDocDelete, "DocDelete::load: Unable to stat %s", m_filename);
-			m_lastModifiedTime = 0;
-			return false;
+		if (stat(s_filename, &st) == 0) {
+			// we only process the file if we have 2 consecutive loads with the same m_time
+			s_lastModifiedTime = st.st_mtime;
+		} else {
+			// not found
+			log(g_conf.m_logTraceDocDelete, "DocDelete::load: Unable to stat %s", s_filename);
+			s_lastModifiedTime = 0;
 		}
 
-		// we only process the file if we have 2 consecutive loads with the same m_time
-		if (m_lastModifiedTime == 0 || m_lastModifiedTime != st.st_mtime) {
-			m_lastModifiedTime = st.st_mtime;
-			log(g_conf.m_logTraceDocDelete, "DocDelete::load: Modified time changed between load");
-			return false;
-		}
-
-		// make sure file is not changed while we're processing it
-		int rc = rename(m_filename, m_tmp_filename);
-		if (rc == -1) {
-			log(LOG_WARN, "Unable to rename '%s' to '%s' due to '%s'", m_filename, m_tmp_filename, mstrerror(errno));
-			return false;
-		}
-
-		/// @todo initialize current docid file
-
+		return true;
 	}
 
-	s_docDeleteFileThreadQueue.addItem(new DocDeleteItem(m_tmp_filename, currentDocId));
+	s_docDeleteFileThreadQueue.addItem(new DocDeleteFileItem(lastDocId));
 
 	return true;
 }
 
-void DocDelete::reload() {
+void DocDelete::finalize() {
+	s_docDeleteFileThreadQueue.finalize();
+	s_docDeleteDocThreadQueue.finalize();
+}
+
+void DocDelete::reload(int /*fd*/, void */*state*/) {
 	struct stat st;
 
 	// we're currently processing tmp file
-	if (stat(m_tmp_filename, &st) == 0) {
+	if (stat(s_tmp_filename, &st) == 0) {
 		return;
 	}
 
-	if (stat(m_filename, &st) != 0) {
+	if (stat(s_filename, &st) != 0) {
 		// probably not found
-		log(g_conf.m_logTraceDocDelete, "DocDelete::load: Unable to stat %s", m_filename);
-		m_lastModifiedTime = 0;
+		log(g_conf.m_logTraceDocDelete, "DocDelete::load: Unable to stat %s", s_filename);
+		s_lastModifiedTime = 0;
 		return;
 	}
 
 	// we only process the file if we have 2 consecutive loads with the same m_time
-	if (m_lastModifiedTime == 0 || m_lastModifiedTime != st.st_mtime) {
-		m_lastModifiedTime = st.st_mtime;
+	if (s_lastModifiedTime == 0 || s_lastModifiedTime != st.st_mtime) {
+		s_lastModifiedTime = st.st_mtime;
 		log(g_conf.m_logTraceDocDelete, "DocDelete::load: Modified time changed between load");
 		return;
 	}
 
 	// make sure file is not changed while we're processing it
-	int rc = rename(m_filename, m_tmp_filename);
+	int rc = rename(s_filename, s_tmp_filename);
 	if (rc == -1) {
-		log(LOG_WARN, "Unable to rename '%s' to '%s' due to '%s'", m_filename, m_tmp_filename, mstrerror(errno));
+		log(LOG_WARN, "Unable to rename '%s' to '%s' due to '%s'", s_filename, s_tmp_filename, mstrerror(errno));
 		return;
 	}
 
-	s_docDeleteFileThreadQueue.addItem(new DocDeleteItem(m_tmp_filename));
+	s_docDeleteFileThreadQueue.addItem(new DocDeleteFileItem());
 }
 
-
-void DocDelete::indexedDoc(void *state) {
-	// reprocess xmldoc
-	s_docDeleteDocThreadQueue.addItem(state);
-}
-
-static void waitPendingCount(int max) {
-	ScopedLock sl(s_pendingDocCountMtx);
-	while (s_pendingDocCount > max) {
-		pthread_cond_wait(&s_pendingDocCountCond, &s_pendingDocCountMtx.mtx);
+static void waitPendingDocCount(unsigned maxCount) {
+	ScopedLock sl(s_pendingDocIdsMtx);
+	while (s_pendingDocIds.size() > maxCount) {
+		pthread_cond_wait(&s_pendingDocIdsCond, &s_pendingDocIdsMtx.mtx);
 	}
 }
 
-static void incrementPendingCount() {
-	ScopedLock sl(s_pendingDocCountMtx);
-	++s_pendingDocCount;
+static void addPendingDoc(int64_t docId) {
+	logTrace(g_conf.m_logTraceDocDelete, "Adding %" PRId64, docId);
+
+	ScopedLock sl(s_pendingDocIdsMtx);
+	s_pendingDocIds.push_back(docId);
 }
 
-static void decrementPendingCount() {
-	ScopedLock sl(s_pendingDocCountMtx);
-	--s_pendingDocCount;
-	pthread_cond_signal(&s_pendingDocCountCond);
+static void removePendingDoc(std::ofstream &lastDocIdFile, int64_t docId) {
+	logTrace(g_conf.m_logTraceDocDelete, "Removing %" PRId64, docId);
+
+	ScopedLock sl(s_pendingDocIdsMtx);
+	auto it = std::find(s_pendingDocIds.begin(), s_pendingDocIds.end(), docId);
+
+	// docid must be there
+	if (it == s_pendingDocIds.end()) {
+		gbshutdownLogicError();
+	}
+
+	if (it == s_pendingDocIds.begin()) {
+		lastDocIdFile.seekp(0);
+		lastDocIdFile << *it << std::endl;
+	}
+
+	s_pendingDocIds.erase(it);
+	pthread_cond_signal(&s_pendingDocIdsCond);
 }
 
 void DocDelete::processFile(void *item) {
-	DocDeleteItem *docDeleteItem = static_cast<DocDeleteItem*>(item);
+	DocDeleteFileItem *fileItem = static_cast<DocDeleteFileItem*>(item);
 
-	log(LOG_INFO, "Processing %s", docDeleteItem->m_tmp_filename);
+	log(LOG_INFO, "Processing %s", s_tmp_filename);
 
 	// start processing file
-	bool foundCurrentDocId = (docDeleteItem->m_currentDocId == -1);
-	std::ifstream file(docDeleteItem->m_tmp_filename);
+	std::ifstream file(s_tmp_filename);
+	std::ofstream lastDocIdFile(s_lastdocid_filename, std::ofstream::out|std::ofstream::trunc);
+
+	bool foundLastDocId = (fileItem->m_lastDocId == -1);
 	std::string line;
 	while (std::getline(file, line)) {
 		// ignore empty lines
@@ -187,41 +185,49 @@ void DocDelete::processFile(void *item) {
 			continue;
 		}
 
-		if (foundCurrentDocId || docDeleteItem->m_currentDocId == docId) {
-			foundCurrentDocId = true;
+		if (foundLastDocId) {
 			logTrace(g_conf.m_logTraceDocDelete, "Processing docId=%" PRId64, docId);
 
-			XmlDoc *xmlDoc = new XmlDoc();
-			xmlDoc->set3(docId, "main", 0);
-			xmlDoc->m_deleteFromIndex = true;
-			xmlDoc->setCallback(xmlDoc, indexedDoc);
-			s_docDeleteDocThreadQueue.addItem(xmlDoc);
+			DocDeleteDocItem *docItem = new DocDeleteDocItem(lastDocIdFile);
+			docItem->m_xmlDoc->set3(docId, "main", 0);
+			docItem->m_xmlDoc->m_deleteFromIndex = true;
+			docItem->m_xmlDoc->setCallback(docItem, processedDoc);
 
-			incrementPendingCount();
+			addPendingDoc(docId);
+
+			s_docDeleteDocThreadQueue.addItem(docItem);
+
+			waitPendingDocCount(10);
+		} else if (fileItem->m_lastDocId == docId) {
+			foundLastDocId = true;
 		}
-
-		waitPendingCount(10);
 	}
 
-	waitPendingCount(0);
+	waitPendingDocCount(0);
 
-	log(LOG_INFO, "Processed %s", docDeleteItem->m_tmp_filename);
+	log(LOG_INFO, "Processed %s", s_tmp_filename);
 
-	unlink(docDeleteItem->m_tmp_filename);
+	// delete files
+	unlink(s_tmp_filename);
+	unlink(s_lastdocid_filename);
 
-	delete docDeleteItem;
+	delete fileItem;
 }
 
 void DocDelete::processDoc(void *item) {
-	XmlDoc *xmlDoc = static_cast<XmlDoc*>(item);
-	if (!xmlDoc->m_indexedDoc && !xmlDoc->indexDoc()) {
-		// blocked
-		return;
-	}
+	DocDeleteDocItem *docItem = static_cast<DocDeleteDocItem*>(item);
+	XmlDoc *xmlDoc = docItem->m_xmlDoc;
 
 	// done
-	delete xmlDoc;
+	if (xmlDoc->m_indexedDoc || xmlDoc->indexDoc()) {
+		removePendingDoc(docItem->m_lastDocIdFile, xmlDoc->m_docId);
 
-	decrementPendingCount();
+		delete xmlDoc;
+		delete docItem;
+	}
 }
 
+void DocDelete::processedDoc(void *state) {
+	// reprocess xmldoc
+	s_docDeleteDocThreadQueue.addItem(state);
+}
