@@ -7,10 +7,15 @@
 
 
 bool isUrlBlocked(const Url &url) {
-	if(g_urlBlackList.isUrlMatched(url))
+	if(g_urlBlackList.isUrlMatched(url)) {
+		logTrace(g_conf.m_logTraceUrlMatchList, "Url is blacklisted: %s", url.getUrl());
 		return true;
+	}
 	
-	//TODO: check whitelist
+	if(g_urlWhiteList.isUrlMatched(url)) {
+		logTrace(g_conf.m_logTraceUrlMatchList, "Url is whitelisted: %s", url.getUrl());
+		return false;
+	}
 	
 	//now call the shlib functions for checking if the URL is wanted or not
 	if(!WantedChecker::check_domain(std::string(url.getHost(),url.getHostLen())).wanted) {

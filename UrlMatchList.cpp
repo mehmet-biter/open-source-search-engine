@@ -9,9 +9,9 @@
 #include <atomic>
 
 
-static const char s_url_filename[] = "urlblocklist.txt";
+UrlMatchList g_urlBlackList("urlblacklist.txt");
+UrlMatchList g_urlWhiteList("urlwhitelist.txt");
 
-UrlMatchList g_urlBlackList(s_url_filename);
 
 
 UrlMatchList::UrlMatchList(const char *filename)
@@ -177,6 +177,7 @@ bool UrlMatchList::load() {
 		logTrace(g_conf.m_logTraceUrlMatchList, "Adding criteria '%s' to list", line.c_str());
 	}
 
+	logTrace(g_conf.m_logTraceUrlMatchList, "Number of url-match entries in %s: %ld", m_filename, (long)tmpUrlMatchList->size());
 	swapUrlMatchList(tmpUrlMatchList);
 	m_lastModifiedTime = st.st_mtime;
 
