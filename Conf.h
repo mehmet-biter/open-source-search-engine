@@ -409,7 +409,7 @@ class Conf {
 	bool m_logTraceTitledb;
 	bool m_logTraceXmlDoc;
 	bool m_logTracePhrases;
-	bool m_logTraceUrlBlockList;
+	bool m_logTraceUrlMatchList;
 	bool m_logTraceWordSpam;
 	bool m_logTraceUrlClassification;
 	bool m_logTraceTopTree;

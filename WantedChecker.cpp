@@ -51,7 +51,7 @@ bool WantedChecker::initialize() {
 	p_shlib = dlopen(shlib_name, RTLD_NOW|RTLD_LOCAL);
 	
 	if(p_shlib==0) {
-		log(LOG_WARN,"Initializing wanted-checking: '%s' could not be loaded (%s)", shlib_name, strerror(errno));
+		log(LOG_WARN,"Initializing wanted-checking: '%s' could not be loaded (%s)", shlib_name, dlerror());
 		return true;
 	}
 	

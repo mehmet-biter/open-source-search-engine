@@ -41,7 +41,7 @@
 #include "GbUtil.h"
 #include "ScopedLock.h"
 #include "Mem.h"
-#include "UrlBlockList.h"
+#include "UrlBlockCheck.h"
 #include <fcntl.h>
 #include "GbEncoding.h"
 #include "GbLanguage.h"
@@ -1882,7 +1882,7 @@ bool* XmlDoc::checkBlockList() {
 	bool blocked = false;
 	if (!m_checkedUrlBlockList) {
 		setStatus("checking urlblocklist");
-		if (g_urlBlockList.isUrlBlocked(*url)) {
+		if (isUrlBlocked(*url)) {
 			m_indexCodeValid = true;
 			m_indexCode = EDOCBLOCKEDURL;
 
@@ -14639,7 +14639,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			url.hasScriptExtension() ||
 			url.hasJsonExtension() ||
 //			url.hasXmlExtension() ||
-			g_urlBlockList.isUrlBlocked(url))
+			isUrlBlocked(url))
 		{
 			logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", url.getUrl());
 			continue;

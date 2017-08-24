@@ -39,12 +39,6 @@ void Query::constructor ( ) {
 	m_numTerms = 0;
 
 	// Coverity
-	m_requiredBits = 0;
-	m_matchRequiredBits = 0;
-	m_negativeBits = 0;
-	m_forcedBits = 0;
-	m_synonymBits = 0;
-	m_numRequired = 0;
 	m_langId = 0;
 	m_useQueryStopWords = false;
 	m_numTermsUntruncated = 0;
@@ -985,40 +979,40 @@ bool Query::setQTerms ( const Words &words ) {
 		     m_qterms[i-1].m_qword->m_quoteStart  ) continue;
 	}
 
-	// . set m_requiredBits
+	// . set bit masks
 	// . these are 1-1 with m_qterms (QueryTerms)
 	// . required terms have no - sign and have no signless phrases
 	// . these are what terms doc would NEED to have if we were default AND
 	//   BUT for boolean queries that doesn't apply
-	m_requiredBits = 0; // no - signs, no signless phrases
-	m_negativeBits = 0; // terms with - signs
-	m_forcedBits   = 0; // terms with + signs
-	m_synonymBits  = 0;
+	qvec_t requiredBits = 0; // no - signs, no signless phrases
+	qvec_t negativeBits = 0; // terms with - signs
+	qvec_t forcedBits   = 0; // terms with + signs
+	qvec_t synonymBits  = 0;
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
 		const QueryTerm *qt = &m_qterms[i];
 		// don't require if negative
 		if ( qt->m_termSign == '-' ) {
-			m_negativeBits |= qt->m_explicitBit; // (1 << i );
+			negativeBits |= qt->m_explicitBit; // (1 << i );
 			continue;
 		}
 		// forced bits
 		if ( qt->m_termSign == '+' && ! m_isBoolean ) 
-			m_forcedBits |= qt->m_explicitBit; //(1 << i);
+			forcedBits |= qt->m_explicitBit; //(1 << i);
 		// skip signless phrases
 		if ( qt->m_isPhrase && qt->m_termSign == '\0' ) continue;
 		if ( qt->m_synonymOf ) {
-			m_synonymBits |= qt->m_explicitBit; 
+			synonymBits |= qt->m_explicitBit;
 			continue;
 		}
 		// fix gbhastitleindicator:1 where "1" is a stop word
 		if ( qt->m_isQueryStopWord && ! m_qterms[i].m_fieldCode ) 
 			continue;
 		// OR it all up
-		m_requiredBits |= qt->m_explicitBit; // (1 << i);
+		requiredBits |= qt->m_explicitBit; // (1 << i);
 	}
 
 	// set m_matchRequiredBits which we use for Matches.cpp
-	m_matchRequiredBits = 0;
+	qvec_t m_matchRequiredBits = 0;
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
 		const QueryTerm *qt = &m_qterms[i];
 		// don't require if negative
@@ -1030,7 +1024,7 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 
 	// if we have '+test -test':
-	if ( m_negativeBits & m_requiredBits ) 
+	if ( negativeBits & requiredBits )
 		m_numTerms = 0;
 
         // now set m_matches,ExplicitBits, used only by Matches.cpp so far
@@ -1047,7 +1041,6 @@ bool Query::setQTerms ( const Words &words ) {
 		}
 	}
 
-	m_numRequired = 0;
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
 		QueryTerm *qt = &m_qterms[i];
 		// assume not required
@@ -1060,8 +1053,6 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( qt->m_ignored ) continue;
 		// mark it
 		qt->m_isRequired = true;
-		// count them
-		m_numRequired++;
 	}
 
 
@@ -1079,6 +1070,22 @@ bool Query::setQTerms ( const Words &words ) {
 		//fine even with the QTI.
 	}
 	
+	//if all words are high-freq-terms then we have to mark the generated bigrams as required, otherwise PosdbTable.cpp gets unhappy and
+	//logs "no required terms in query!"
+	bool allAlnumWordsAreHighFreq = true;
+	for(int i=0; i<m_numWords; i++) {
+		if(is_alnum_utf8_string(m_qwords[i].m_word,m_qwords[i].m_word+m_qwords[i].m_wordLen) &&
+		    m_qwords[i].m_ignoreWord!=IGNORE_HIGHFREMTERM)
+			allAlnumWordsAreHighFreq = false;
+	}
+	if(allAlnumWordsAreHighFreq) {
+		log(LOG_DEBUG, "query: all alfanum-terms are high-freq-terms. Marking bigrams as required");
+		for(int i=0; i<m_numTerms; i++) {
+			if(m_qterms[i].m_isPhrase)
+				m_qterms[i].m_isRequired = true;
+		}
+	}
+	
 	// required quoted phrase terms
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
 		QueryTerm *qt = &m_qterms[i];
@@ -1087,8 +1094,6 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( ! qt->m_inQuotes ) continue;
 		// mark it
 		qt->m_isRequired = true;
-		// count them
-		m_numRequired++;
 	}
 
 
@@ -1123,15 +1128,13 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( ! qw2->m_isQueryStopWord ) continue;
 		// mark it
 		qt->m_isRequired = true;
-		// count them
-		m_numRequired++;
 	}
 
 	//
 	// new logic for XmlDoc::setRelatedDocIdWeight() to use
 	//
 	int32_t shift = 0;
-	m_requiredBits = 0;
+	requiredBits = 0;
 	for ( int32_t i = 0; i < n ; i++ ) {
 		QueryTerm *qt = &m_qterms[i];
 		qt->m_explicitBit = 0;
@@ -1139,7 +1142,7 @@ bool Query::setQTerms ( const Words &words ) {
 		// negative terms are "negative required", but we ignore here
 		if ( qt->m_termSign == '-' ) continue;
 		qt->m_explicitBit = 1<<shift;
-		m_requiredBits |= qt->m_explicitBit;
+		requiredBits |= qt->m_explicitBit;
 		shift++;
 		if ( shift >= (int32_t)(sizeof(qvec_t)*8) ) break;
 	}

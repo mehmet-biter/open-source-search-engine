@@ -81,7 +81,7 @@
 #include "Dir.h"
 #include "File.h"
 #include "DnsBlockList.h"
-#include "UrlBlockList.h"
+#include "UrlMatchList.h"
 #include "DocDelete.h"
 #include "GbDns.h"
 #include "ScopedLock.h"
@@ -1643,7 +1643,8 @@ int main2 ( int argc , char *argv[] ) {
 
 	// load block lists
 	g_dnsBlockList.init();
-	g_urlBlockList.init();
+	g_urlBlackList.init();
+	g_urlWhiteList.init();
 
 	// initialize generate global index thread
 	if (!RdbBase::initializeGlobalIndexThread()) {
@@ -3480,7 +3481,7 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 	}
 
 
-	g_urlBlockList.init();
+	g_urlBlackList.init();
 
 
 	for(;;) {
@@ -3542,7 +3543,7 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 			//
 			// Check if url is on our blocklist
 			//
-			if( g_urlBlockList.isUrlBlocked(*u) ) {
+			if( g_urlBlackList.isUrlMatched(*u) ) {
 				fprintf(stdout, "%" PRId64 "|url is blocked|%s\n", docId, u->getUrl());
 				continue;
 			}
