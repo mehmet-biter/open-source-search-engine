@@ -117,7 +117,7 @@ bool UrlMatchList::load() {
 		switch (line[0]) {
 			case 'd':
 				// domain
-				if (memcmp(line.c_str(), "domain", firstColEnd) != 0) {
+				if (firstColEnd==5 && memcmp(line.data(), "domain", 5) != 0) {
 					logTrace(g_conf.m_logTraceUrlMatchList, "");
 					continue;
 				}
@@ -126,7 +126,7 @@ bool UrlMatchList::load() {
 				break;
 			case 'h':
 				// host
-				if (memcmp(line.c_str(), "host", firstColEnd) != 0) {
+				if (firstColEnd==4 && memcmp(line.data(), "host", 4) != 0) {
 					logTrace(g_conf.m_logTraceUrlMatchList, "");
 					continue;
 				}
@@ -135,7 +135,7 @@ bool UrlMatchList::load() {
 				break;
 			case 'p':
 				// path
-				if (memcmp(line.c_str(), "path", firstColEnd) != 0) {
+				if (firstColEnd==4 && memcmp(line.data(), "path", 4) != 0) {
 					logTrace(g_conf.m_logTraceUrlMatchList, "");
 					continue;
 				}
@@ -144,7 +144,7 @@ bool UrlMatchList::load() {
 				break;
 			case 'r':
 				// regex
-				if (memcmp(line.c_str(), "regex", firstColEnd) != 0) {
+				if (firstColEnd==5 && memcmp(line.data(), "regex", 5) != 0) {
 					logTrace(g_conf.m_logTraceUrlMatchList, "");
 					continue;
 				}
@@ -162,7 +162,7 @@ bool UrlMatchList::load() {
 				tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchregex_t>(new urlmatchregex_t(col3, GbRegex(col3.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE), col2)));
 				break;
 			case 't':
-				if (memcmp(line.c_str(), "tld", firstColEnd) != 0) {
+				if (firstColEnd==3 && memcmp(line.data(), "tld", 3) != 0) {
 					logTrace(g_conf.m_logTraceUrlMatchList, "");
 					continue;
 				}
