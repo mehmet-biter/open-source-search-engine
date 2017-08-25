@@ -57,7 +57,7 @@ bool WantedChecker::initialize() {
 	
 	const void *p_descriptor = dlsym(p_shlib,"wanted_check_api_descriptor_block");
 	if(!p_descriptor) {
-		log(LOG_WARN,"wanted-checkign: shlib does not contain the symbol 'wanted_check_api_descriptor_block'");
+		log(LOG_WARN,"wanted-checking: shlib does not contain the symbol 'wanted_check_api_descriptor_block'");
 		dlclose(p_shlib);
 		p_shlib = 0;
 		return true;

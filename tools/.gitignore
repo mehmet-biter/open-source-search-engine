@@ -1,6 +1,7 @@
 decode_rdbkey
 dump_rdbbuckets
 dump_rdbindex
+dump_rdbtree
 generate_rdbindex
 get_titlerec
 print_urlinfo
