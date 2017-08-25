@@ -273,6 +273,10 @@ const char *mstrerror ( int errnum ) {
 				return "One or more shards are down";
 			case ETITLEERROR:
 				return "Error setting title";
+			case EDOCBLOCKEDSHLIBDOMAIN:
+				return "Doc blocked by shlib (domain)";
+			case EDOCBLOCKEDSHLIBURL:
+				return "Doc blocked by shlib (url)";
 		}
 	}
 
