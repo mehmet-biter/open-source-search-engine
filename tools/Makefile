@@ -32,7 +32,7 @@ CPPFLAGS += -std=c++11
 # exported in parent make
 CPPFLAGS += $(CONFIG_CPPFLAGS)
 
-LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto -lpcre
+LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto -lpcre -ldl
 LIBS += -L$(BASE_DIR) -lcld2_full -lcld3 -lprotobuf -lced -lcares
 
 %: libgb.a $(BASE_DIR)/libcld2_full.so $(BASE_DIR)/libcld3.so $(BASE_DIR)/libced.so %.cpp
