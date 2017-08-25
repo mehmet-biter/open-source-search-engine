@@ -1659,7 +1659,7 @@ int main2 ( int argc , char *argv[] ) {
 	// test all collection dirs for write permission
 	int32_t pcount = 0;
 	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
-		CollectionRec *cr = g_collectiondb.getRec(i);
+		const CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 		if ( ++pcount >= 100 ) {
 			log("rdb: not checking directory permission for more than first 100 collections to save time.");
@@ -2319,7 +2319,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 		fprintf(stdout,"could not alloc for xmldoc\n");
 		exit(-1);
 	}
-	CollectionRec *cr = g_collectiondb.getRec(coll);
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
 	if(cr==NULL) {
 		fprintf(stderr,"Unknown collection '%s'\n", coll);
 		return;
@@ -2598,7 +2598,7 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 	Msg5 msg5;
 	RdbList list;
 	key96_t oldk; oldk.setMin();
-	CollectionRec *cr = g_collectiondb.getRec(coll);
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
 
 	for(;;) {
 		// use msg5 to get the list, should ALWAYS block since no threads
@@ -2633,11 +2633,11 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 					oldk.n1,oldk.n0,k.n1,k.n0);
 			oldk = k;
 			// get it
-			char *drec = list.getCurrentRec();
+			const char *drec = list.getCurrentRec();
 			// sanity check
 			if ( (drec[0] & 0x01) == 0x00 ) {g_process.shutdownAbort(true); }
 			// get spider rec in it
-			char *srec = drec + 12 + 4;
+			const char *srec = drec + 12 + 4;
 
 			struct tm *timeStruct ;
 			char time[256];
@@ -2669,7 +2669,7 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 				continue;
 			}
 			// cast it
-			SpiderRequest *sreq = (SpiderRequest *)srec;
+			const SpiderRequest *sreq = (const SpiderRequest *)srec;
 			// skip negatives
 			if ( (sreq->m_key.n0 & 0x01) == 0x00 ) { g_process.shutdownAbort(true); }
 		}
@@ -2703,7 +2703,7 @@ public:
 
 static HashTableX g_ut;
 
-static void addUStat1(SpiderRequest *sreq, bool hadReply , int32_t now) {
+static void addUStat1(const SpiderRequest *sreq, bool hadReply , int32_t now) {
 	int32_t firstIp = sreq->m_firstIp;
 	// lookup
 	int32_t n = g_ut.getSlot ( &firstIp );
@@ -2752,7 +2752,7 @@ static void addUStat1(SpiderRequest *sreq, bool hadReply , int32_t now) {
 	}
 }
 
-static void addUStat2(SpiderReply *srep , int32_t now) {
+static void addUStat2(const SpiderReply *srep , int32_t now) {
 	int32_t firstIp = srep->m_firstIp;
 	// lookup
 	int32_t n = g_ut.getSlot ( &firstIp );
@@ -2850,7 +2850,7 @@ int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, b
 	static int32_t s_lastErrCount = 0;
 	static int32_t s_sameErrCount = 0;
 
-	CollectionRec *cr = g_collectiondb.getRec(coll);
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
 
  loop:
 	// use msg5 to get the list, should ALWAYS block since no threads
@@ -2905,7 +2905,7 @@ int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, b
 			}
 
 			// its a spider reply
-			SpiderReply *srep = (SpiderReply *)srec;
+			const SpiderReply *srep = (SpiderReply *)srec;
 			++countReplies;
 
 			// store it
@@ -2922,7 +2922,7 @@ int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, b
 		}
 
 		// cast it
-		SpiderRequest *sreq = (SpiderRequest *)srec;
+		const SpiderRequest *sreq = (SpiderRequest *)srec;
 		++countRequests;
 
 		int64_t uh48 = sreq->getUrlHash48();
@@ -3253,11 +3253,11 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 	Msg5 msg5;
 	RdbList list;
 
-	CollectionRec *cr = g_collectiondb.getRec(coll);
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
 
 	int64_t hostHash = -1;
 	int64_t lastHostHash = -2;
-	char *site = NULL;
+	const char *site = NULL;
 	char sbuf[1024*2];
 	int32_t siteNumInlinks = -1;
 	int32_t typeSite = hash64Lower_a("site",4);
@@ -3303,8 +3303,8 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 				continue;
 			}
 			// point to the data
-			char  *p       = data;
-			char  *pend    = data + size;
+			const char  *p       = data;
+			const char  *pend    = data + size;
 			// breach check
 			if ( p >= pend ) {
 				printf("corrupt tagdb rec k.n0=%" PRIu64,k.n0);
@@ -3336,7 +3336,7 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 				site = tag->getTagData();
 				// make it null if too many .'s
 				if ( site ) {
-					char *p = site;
+					const char *p = site;
 					int count = 0;
 					int alpha = 0;
 					int colons = 0;
@@ -3467,7 +3467,7 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 		exit(-1);
 	}
 
-	CollectionRec *cr = g_collectiondb.getRec(coll);
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
 	if(cr==NULL) {
 		fprintf(stderr,"Unknown collection '%s'\n", coll);
 		return;
@@ -3601,7 +3601,7 @@ static int32_t verifySpiderdb(const char *coll, int32_t startFileNum, int32_t nu
 	int64_t offset = 0LL;
 	int32_t now;
 
-	CollectionRec *cr = g_collectiondb.getRec(coll);
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
 
  loop:
 	// use msg5 to get the list, should ALWAYS block since no threads
@@ -3692,7 +3692,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	// a niceness of 0 tells it to block until it gets results!!
 	Msg5 msg5;
 
-	CollectionRec *cr = g_collectiondb.getRec(coll);
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
 	if ( ! msg5.getList ( RDB_TITLEDB    ,
 			      cr->m_collnum        ,
 			      &tlist         ,
@@ -4056,7 +4056,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 	// set this flag so Msg5.cpp if it does error correction does not
 	// try to get the list from a twin...
 	g_isDumpingRdbFromMain = true;
-	CollectionRec *cr = g_collectiondb.getRec(coll);
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
 
 	for (;;) {
 		// use msg5 to get the list, should ALWAYS block since no threads
@@ -4197,7 +4197,7 @@ static void dumpClusterdb(const char *coll,
 
 	Msg5 msg5;
 	RdbList list;
-	CollectionRec *cr = g_collectiondb.getRec(coll);
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
 
 	for(;;) {
 		// use msg5 to get the list, should ALWAYS block since no threads
@@ -4295,7 +4295,7 @@ static void dumpLinkdb(const char *coll,
 
 	Msg5 msg5;
 	RdbList list;
-	CollectionRec *cr = g_collectiondb.getRec(coll);
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
 
 	for(;;) {
 		// use msg5 to get the list, should ALWAYS block since no threads
@@ -4588,7 +4588,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 	struct ip_info **ip_table;
 	struct dom_info **dom_table;
 
-	CollectionRec *cr = g_collectiondb.getRec(coll);
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
 
 	key96_t startKey;
 	key96_t endKey  ;
@@ -4921,11 +4921,11 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 			return;
 		}		
 		int64_t total = g_titledb.estimateGlobalNumDocs();
-		char link_ip[]  = "http://www.gigablast.com/search?"
+		static const char link_ip[]  = "http://www.gigablast.com/search?"
 			          "code=gbmonitor&q=ip%3A";
-		char link_dom[] = "http://www.gigablast.com/search?"
+		static const char link_dom[] = "http://www.gigablast.com/search?"
 			          "code=gbmonitor&q=site%3A";
-		char menu[] = "<table cellpadding=\"2\" cellspacing=\"2\">\n<tr>"
+		static const char menu[] = "<table cellpadding=\"2\" cellspacing=\"2\">\n<tr>"
 			"<th bgcolor=\"#CCCC66\"><a href=\"#pid\">"
 			"Domains Sorted By Pages</a></th>"
 			"<th bgcolor=\"#CCCC66\"><a href=\"#lid\">"
@@ -4938,7 +4938,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 			"Stats</a></th>"
 			"</tr>\n</table>\n<br>\n";
 
-		char hdr[] = "<table cellpadding=\"5\" cellspacing=\"2\">"
+		static const char hdr[] = "<table cellpadding=\"5\" cellspacing=\"2\">"
 			"<tr bgcolor=\"AAAAAA\">"
 			"<th>Domain</th>"
 			"<th>Domains Linked</th>"
@@ -4948,7 +4948,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 			"<th>IP</th>"
 			"</tr>\n";
 
-		char hdr2[] = "<table cellpadding=\"5\" cellspacing=\"2\">"
+		static const char hdr2[] = "<table cellpadding=\"5\" cellspacing=\"2\">"
 			"<tr bgcolor=\"AAAAAA\">"
 			"<th>IP</th>"
 			"<th>Domain</th>"
@@ -4958,9 +4958,9 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 			"<th>Extrap # Pages</th>"
 			"</tr>\n";
 		
-		char clr1[] = "#FFFF00";//"yellow";
-		char clr2[] = "#FFFF66";//"orange";
-		char *color;
+		static const char clr1[] = "#FFFF00";//"yellow";
+		static const char clr2[] = "#FFFF66";//"orange";
+		const char *color;
 			
 		fprintf( fhndl, 
 			 "<html><head><title>Domain/IP Counter</title></head>\n"
