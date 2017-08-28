@@ -12,6 +12,8 @@ bool hasAddsInQueue     ( ) ;
 
 #include "rdbid_t.h"
 #include "types.h"
+#include <vector>
+
 class SafeBuf;
 
 class Msg4 {
@@ -33,7 +35,23 @@ public:
 	static void storeLineWaiters();
 
 private:
-	bool addMetaList2();
+	void prepareMetaList();
+	bool processMetaList();
+
+	struct RdbItem {
+		RdbItem(rdbid_t rdbId, int32_t hostId, const char *key, int32_t recSize)
+			: m_rdbId(rdbId)
+			, m_hostId(hostId)
+			, m_key(key)
+			, m_recSize(recSize) {
+		}
+
+		rdbid_t m_rdbId;
+		int32_t m_hostId;
+		const char *m_key;
+		int32_t m_recSize;
+	};
+
 
 	void (*m_callback )(void *state);
 	void *m_state;
@@ -46,7 +64,9 @@ private:
 
 	const char *m_metaList;
 	int32_t m_metaListSize;
-	const char *m_currentPtr; // into m_metaList
+
+	size_t m_destHostId;
+	std::vector<std::pair<int32_t, std::vector<RdbItem>>> m_destHosts;
 };
 
 #endif // GB_MSG4OUT_H

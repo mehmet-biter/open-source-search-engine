@@ -74,7 +74,7 @@ static Multicast *getMulticast();
 static void returnMulticast(Multicast *mcast);
 static bool prepareBuffer(int32_t hostId, int32_t needForBuf);
 static bool checkBufferSize(int32_t hostId, int32_t needForBuf);
-static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *rec, int32_t recSize);
+static void storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *rec, int32_t recSize);
 
 
 
@@ -149,15 +149,16 @@ static void flushLocal() {
 }
 
 
-Msg4::Msg4() : m_inUse(false) {
-	m_callback = NULL;
-	m_state = NULL;
-	m_rdbId = RDB_NONE;
-	m_collnum = 0;
-	m_shardOverride = 0;
-	m_metaList = NULL;
-	m_metaListSize = 0;
-	m_currentPtr = NULL;
+Msg4::Msg4()
+	: m_callback(NULL)
+	, m_state(NULL)
+	, m_rdbId(RDB_NONE)
+	, m_collnum(0)
+	, m_shardOverride(0)
+	, m_metaList(NULL)
+	, m_metaListSize(0)
+	, m_destHostId(0)
+	, m_destHosts(MAX_HOSTS) {
 }
 
 // why wasn't this saved in addsinprogress.dat file?
@@ -231,7 +232,6 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	if ( collnum < 0 ) { gbshutdownAbort(true); }
 
 	// if first time set this
-	m_currentPtr   = metaList;
 	m_metaList     = metaList;
 	m_metaListSize = metaListSize;
 	m_collnum      = collnum;
@@ -240,67 +240,37 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	m_rdbId        = rdbId;
 	m_shardOverride = shardOverride;
 
- retry:
+	prepareMetaList();
 
 	// get in line if there's a line
 	{
 		ScopedLock sl(s_mtxQueuedMsg4s);
-		if(!s_queuedMsg4s.empty()) {
-			// add ourselves to the line
+		if (s_queuedMsg4s.empty()) {
 			s_queuedMsg4s.push_back(this);
-			// debug log. seems to happen a lot if not using threads..
-			if ( g_jobScheduler.are_new_jobs_allowed() )
-				log(LOG_DEBUG, "msg4: queueing body msg4=0x%" PTRFMT"",(PTRTYPE)this);
+
+			log(LOG_DEBUG, "msg4: queueing msg4=%p", this);
+
 			// mark it
 			m_inUse = true;
-			// all done then, but return false so caller does not free
-			// this msg4
+
+			// all done then, but return false so caller does not free this msg4
 			return false;
 		}
 	}
 
-	// then do it
-	if ( addMetaList2 ( ) ) {
+	// no line. continue processing
+	if (processMetaList() ) {
 		return true;
 	}
 
-	// . sanity check
-	// . we sometimes get called with niceness 0 from possibly
-	//   an injection or something and from a quickpoll
-	//   inside addMetList2() in which case our addMetaList2() will
-	//   fail, assuming s_msg4Head got set, BUT it SHOULD be OK because
-	//   being interrupted at the one QUICKPOLL() in addMetaList2()
-	//   doesn't seem like it would hurt.
-	// . FURTHEMORE the multicast seems to always be called with
-	//   MAX_NICENESS so i'm not sure how niceness 0 will really help
-	//   with any of this stuff.
-	{
-		ScopedLock sl(s_mtxQueuedMsg4s);
-		if(!s_queuedMsg4s.empty()) {
-			log( LOG_WARN, "msg4: got unexpected head");
-			goto retry;
-		}
-	}
+	// processing error. add to queue
+	ScopedLock sl(s_mtxQueuedMsg4s);
+	s_queuedMsg4s.push_back(this);
 
-	// . spider hang bug
-	// . debug log. seems to happen a lot if not using threads..
-	if ( g_jobScheduler.are_new_jobs_allowed() )
-		log( LOG_DEBUG, "msg4: queueing head msg4=0x%" PTRFMT, (PTRTYPE)this );
+	log(LOG_DEBUG, "msg4: queueing msg4=%p after processing error", this);
 
 	// mark it
 	m_inUse = true;
-
-	// . wait in line
-	// . when the s_hostBufs[hostId] is able to accomodate our
-	//   record this loop will be resumed and the caller's callback
-	//   will be called once we are able to successfully queue up
-	//   all recs in the list
-	// . we are the only one in line, otherwise, we would have exited
-	//   the start of this function
-	{
-		ScopedLock sl(s_mtxQueuedMsg4s);
-		s_queuedMsg4s.push_back(this);
-	}
 
 	// return false so caller blocks. we will call his callback
 	// when we are able to add his list to the hostBufs[] queue
@@ -316,34 +286,16 @@ bool Msg4::isInLinkedList(const Msg4 *msg4) {
 	return false;
 }
 
-struct RdbItem {
-	RdbItem(rdbid_t rdbId, int32_t hostId, const char *key, int32_t recSize)
-		: m_rdbId(rdbId)
-		, m_hostId(hostId)
-		, m_key(key)
-		, m_recSize(recSize) {
-	}
-
-	rdbid_t m_rdbId;
-	int32_t m_hostId;
-	const char *m_key;
-	int32_t m_recSize;
-};
-
-/// @todo ALC check if m_currentPtr is still needed
-bool Msg4::addMetaList2 ( ) {
-	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
-
-	const char *p = m_currentPtr;
+void Msg4::prepareMetaList() {
+	const char *p = m_metaList;
 	const char *pend = m_metaList + m_metaListSize;
 
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(p,pend-p);
 #endif
-	if ( m_collnum < 0 ) { gbshutdownAbort(true); }
 
-	std::vector<std::pair<int32_t, std::vector<RdbItem>>> destHosts(g_hostdb.getNumHosts());
-	std::for_each(destHosts.begin(), destHosts.end(),
+	// preallocate items
+	std::for_each(m_destHosts.begin(), m_destHosts.end(),
 	              [](std::pair<int32_t, std::vector<RdbItem>> items) { items.second.reserve(10 * 1024); });
 
 	// check for space
@@ -410,17 +362,21 @@ bool Msg4::addMetaList2 ( ) {
 
 		int32_t recSize = p - key;
 
-		auto &destHost = destHosts[hostId];
+		auto &destHost = m_destHosts[hostId];
 
 		// how many bytes do we need to store the record?
 		// collnum/rdbId(1)/recSize(4bytes)/recData
 		destHost.first += (sizeof(collnum_t) + 1 + 4 + recSize);
 		destHost.second.emplace_back(rdbId, hostId, key, recSize);
 	}
+}
+
+bool Msg4::processMetaList() {
+	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
 	// reserve necessary space
-	for (size_t hostId = 0; hostId < destHosts.size(); ++hostId) {
-		auto destHost = destHosts[hostId];
+	for (; m_destHostId < m_destHosts.size(); ++m_destHostId) {
+		auto destHost = m_destHosts[m_destHostId];
 		if (destHost.first == 0) {
 			continue;
 		}
@@ -428,16 +384,16 @@ bool Msg4::addMetaList2 ( ) {
 		// +4 for USED; +8 for zid
 		int32_t neededSpaceForBuf = destHost.first + 4 + 8;
 
-		ScopedLock sl(s_mtxHostBuf[hostId]);
+		ScopedLock sl(s_mtxHostBuf[m_destHostId]);
 
 		// check size/flush buffer
-		if (!checkBufferSize(hostId, destHost.first)) {
+		if (!checkBufferSize(m_destHostId, destHost.first)) {
 			logTrace(g_conf.m_logTraceMsg4, "Unable to flush buffer");
 			return false;
 		}
 
 		// prepare buffer
-		if (!prepareBuffer(hostId, neededSpaceForBuf)) {
+		if (!prepareBuffer(m_destHostId, neededSpaceForBuf)) {
 			logTrace(g_conf.m_logTraceMsg4, "Unable to prepare buffer");
 			return false;
 		}
@@ -448,27 +404,7 @@ bool Msg4::addMetaList2 ( ) {
 			// . these are NOT allowed to be compressed (half bit set)
 			//   and this point
 			// . this returns false and sets g_errno on failure
-			if (storeRec(m_collnum, rdbItem.m_rdbId, rdbItem.m_hostId, rdbItem.m_key, rdbItem.m_recSize)) {
-				// . point to next record
-				// . will point past records if no more left!
-				m_currentPtr = p;
-
-				// get next rec
-				continue;
-			}
-
-			// g_errno is not set if the store rec could not send the
-			// buffer because no multicast was available
-			if (g_errno) {
-				logError("build: Msg4 storeRec had error: %s.", mstrerror(g_errno));
-			}
-
-			// clear this just in case
-			g_errno = 0;
-
-			// if g_errno was not set, this just means we do not have
-			// room for the data yet, and try again later
-			return false;
+			storeRec(m_collnum, rdbItem.m_rdbId, rdbItem.m_hostId, rdbItem.m_key, rdbItem.m_recSize);
 		}
 	}
 
@@ -549,7 +485,7 @@ static bool prepareBuffer(int32_t hostId, int32_t needForBuf) {
 // . modify each Msg4 request as follows
 // . collnum(2bytes)|rdbId(1bytes)|listSize&rawlistData|...
 // . store these requests in the buffer just like that
-static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *rec, int32_t recSize) {
+static void storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *rec, int32_t recSize) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(&collnum,sizeof(collnum));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&rdbId,sizeof(rdbId));
@@ -588,8 +524,6 @@ static bool storeRec(collnum_t collnum, char rdbId, int32_t hostId, const char *
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(start,p-start);
 #endif
-
-	return true;
 }
 
 // . returns false if we were UNable to get a multicast to launch the buffer, 
@@ -743,7 +677,7 @@ void Msg4::storeLineWaiters ( ) {
 		}
 
 		// grab the first Msg4 in line. ret fls if blocked adding more of list.
-		if (!msg4->addMetaList2()) {
+		if (!msg4->processMetaList()) {
 			ScopedLock sl(s_mtxQueuedMsg4s);
 			s_queuedMsg4s.push_front(msg4);
 			return;
