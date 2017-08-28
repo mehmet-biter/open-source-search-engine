@@ -78,7 +78,7 @@ bool DocDelete::initialize() {
 			s_lastModifiedTime = st.st_mtime;
 		} else {
 			// not found
-			log(g_conf.m_logTraceDocDelete, "DocDelete::load: Unable to stat %s", s_filename);
+			logTrace(g_conf.m_logTraceDocDelete, "DocDelete::load: Unable to stat %s", s_filename);
 			s_lastModifiedTime = 0;
 		}
 
@@ -105,7 +105,7 @@ void DocDelete::reload(int /*fd*/, void */*state*/) {
 
 	if (stat(s_filename, &st) != 0) {
 		// probably not found
-		log(g_conf.m_logTraceDocDelete, "DocDelete::load: Unable to stat %s", s_filename);
+		logTrace(g_conf.m_logTraceDocDelete, "DocDelete::load: Unable to stat %s", s_filename);
 		s_lastModifiedTime = 0;
 		return;
 	}
@@ -113,7 +113,7 @@ void DocDelete::reload(int /*fd*/, void */*state*/) {
 	// we only process the file if we have 2 consecutive loads with the same m_time
 	if (s_lastModifiedTime == 0 || s_lastModifiedTime != st.st_mtime) {
 		s_lastModifiedTime = st.st_mtime;
-		log(g_conf.m_logTraceDocDelete, "DocDelete::load: Modified time changed between load");
+		logTrace(g_conf.m_logTraceDocDelete, "DocDelete::load: Modified time changed between load");
 		return;
 	}
 
