@@ -82,6 +82,7 @@
 #include "File.h"
 #include "DnsBlockList.h"
 #include "UrlMatchList.h"
+#include "UrlBlockCheck.h"
 #include "DocDelete.h"
 #include "GbDns.h"
 #include "ScopedLock.h"
@@ -3480,9 +3481,13 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 		return;
 	}
 
+	// initialize shlib & blacklist
+	if (!WantedChecker::initialize()) {
+		fprintf(stderr, "Unable to initialize WantedChecker");
+		return;
+	}
 
 	g_urlBlackList.init();
-
 
 	for(;;) {
 		// use msg5 to get the list, should ALWAYS block since no threads
@@ -3543,8 +3548,21 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 			//
 			// Check if url is on our blocklist
 			//
-			if( g_urlBlackList.isUrlMatched(*u) ) {
-				fprintf(stdout, "%" PRId64 "|url is blocked|%s\n", docId, u->getUrl());
+			int errorCode = 0;
+			if (isUrlBlocked(*u, &errorCode)) {
+				const char *reason = "unknown";
+				switch (errorCode) {
+					case EDOCBLOCKEDURL:
+						reason = "blocked list";
+						break;
+					case EDOCBLOCKEDSHLIBDOMAIN:
+						reason = "blocked domain";
+						break;
+					case EDOCBLOCKEDSHLIBURL:
+						reason = "blocked url";
+						break;
+				}
+				fprintf(stdout, "%" PRId64 "|%s|%s\n", docId, reason, u->getUrl());
 				continue;
 			}
 
@@ -3555,7 +3573,7 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 			url_stripped.set(u->getUrl(), u->getUrlLen(), false, true);
 
 			if (strcmp(u->getUrl(), url_stripped.getUrl()) != 0) {
-				fprintf(stdout, "%" PRId64 "|url has unwanted params|%s\n", docId, u->getUrl());
+				fprintf(stdout, "%" PRId64 "|unwanted params|%s\n", docId, u->getUrl());
 				continue;
 			}
 
