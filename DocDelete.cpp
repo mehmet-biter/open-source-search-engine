@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <algorithm>
+#include <atomic>
 
 static const char *s_filename = "docdelete.txt";
 static const char *s_tmp_filename = "docdelete.txt.processing";
@@ -20,6 +21,7 @@ static pthread_cond_t s_pendingDocIdsCond = PTHREAD_COND_INITIALIZER;
 
 time_t s_lastModifiedTime = 0;
 
+static std::atomic<bool> s_stop(false);
 static GbThreadQueue s_docDeleteFileThreadQueue;
 static GbThreadQueue s_docDeleteDocThreadQueue;
 
@@ -91,6 +93,9 @@ bool DocDelete::initialize() {
 }
 
 void DocDelete::finalize() {
+	s_stop = true;
+	pthread_cond_broadcast(&s_pendingDocIdsCond);
+
 	s_docDeleteFileThreadQueue.finalize();
 	s_docDeleteDocThreadQueue.finalize();
 }
@@ -129,7 +134,7 @@ void DocDelete::reload(int /*fd*/, void */*state*/) {
 
 static void waitPendingDocCount(unsigned maxCount) {
 	ScopedLock sl(s_pendingDocIdsMtx);
-	while (s_pendingDocIds.size() > maxCount) {
+	while (!s_stop && s_pendingDocIds.size() > maxCount) {
 		pthread_cond_wait(&s_pendingDocIdsCond, &s_pendingDocIdsMtx.mtx);
 	}
 }
@@ -172,7 +177,7 @@ void DocDelete::processFile(void *item) {
 
 	bool foundLastDocId = (fileItem->m_lastDocId == -1);
 	std::string line;
-	while (std::getline(file, line)) {
+	while (!s_stop && std::getline(file, line)) {
 		// ignore empty lines
 		if (line.length() == 0) {
 			continue;
@@ -204,6 +209,12 @@ void DocDelete::processFile(void *item) {
 	}
 
 	waitPendingDocCount(0);
+
+	if (s_stop) {
+		log(LOG_INFO, "Shutting down. Interrupted processing of %s", s_tmp_filename);
+		delete fileItem;
+		return;
+	}
 
 	log(LOG_INFO, "Processed %s", s_tmp_filename);
 
