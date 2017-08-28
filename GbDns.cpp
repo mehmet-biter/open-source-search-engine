@@ -92,10 +92,10 @@ static void* processing_thread(void *args) {
 		}
 
 		timeval *tvp = NULL;
+		timeval tv;
 
 		{
 			ScopedLock sl(s_channelMtx);
-			timeval tv;
 			tvp = ares_timeout(s_channel, NULL, &tv);
 		}
 
