@@ -74,7 +74,7 @@ class Msg20Request {
 	// pointer+size variable section
 	char      *ptr_qbuf          ;
 	char      *ptr_ubuf          ; // url buffer
-	char      *ptr_linkee        ; // used by Msg25 for getting link text
+	const char *ptr_linkee;           // used by Msg25 for getting link text
 	char      *ptr_displayMetas  ;
 
 	int32_t       size_qbuf         ;

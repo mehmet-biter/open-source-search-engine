@@ -123,8 +123,8 @@ class Msg25 {
 	//   any link text and return true right away, really saves a bunch
 	//   of disk seeks when spidering small collections that don't need
 	//   link text/info indexing/analysis
-	bool getLinkInfo2 (char      *site,
-			   char      *url,
+	bool getLinkInfo2 (const char *site,
+			   const char *url,
 			   bool       isSiteLinkInfo,
 			   int32_t    ip,
 			   int64_t    docId,
@@ -192,8 +192,8 @@ class Msg25 {
 	bool doReadLoop();
 
 	// input vars
-	char *m_url;
-	char *m_site;
+	const char *m_url;
+	const char *m_site;
 
 	int32_t m_ourHostHash32;
 	int32_t m_ourDomHash32;

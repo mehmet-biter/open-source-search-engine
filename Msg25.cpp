@@ -638,8 +638,8 @@ void Msg25Request::deserialize() {
 // . NOTE: make sure no input vars are on the stack in case we block
 // . reallyGetLinkInfo is set to false if caller does not want it but calls
 //   us anyway for some reason forgotten...
-bool Msg25::getLinkInfo2(char      *site,
-			 char      *url,
+bool Msg25::getLinkInfo2(const char      *site,
+			 const char      *url,
 			 // either MODE_PAGELINKINFO or MODE_SITELINKINFO
 			 bool       isSiteLinkInfo,
 			 int32_t       ip,
@@ -1958,12 +1958,12 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 				   );
 
 		// m_url should point into the Msg25Request buffer
-		char *u = m_url;
+		const char *u = m_url;
 		if ( u )
 			m_pbuf->safePrintf("\t<url><![CDATA[%s]]></url>\n",u);
 
 		// m_site should point into the Msg25Request buffer
-		char *site = m_site;
+		const char *site = m_site;
 		if ( site )
 			m_pbuf->safePrintf("\t<site><![CDATA[%s]]></site>\n",
 					   site);
