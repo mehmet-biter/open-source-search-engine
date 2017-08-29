@@ -1256,6 +1256,19 @@ bool Hostdb::hasDeadHost() const {
 	return false;
 }
 
+bool Hostdb::hasDeadHostCached() const {
+	time_t now = time(NULL);
+	static std::atomic<bool> s_hasDeadHost(hasDeadHost());
+	static std::atomic<time_t> s_updatedTime(now);
+
+	if ((now - s_updatedTime) >= g_conf.m_spiderDeadHostCheckInterval) {
+		s_updatedTime = now;
+		s_hasDeadHost = hasDeadHost();
+	}
+
+	return s_hasDeadHost;
+}
+
 int Hostdb::getNumHostsDead() const {
 	int count=0;
 	for(int32_t i = 0; i < m_numHosts; i++)

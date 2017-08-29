@@ -46,17 +46,21 @@ struct DocDeleteDocItem {
 	XmlDoc *m_xmlDoc;
 };
 
-static bool isSpideringEnabled() {
+static bool docDeleteDisabled() {
 	CollectionRec *collRec = g_collectiondb.getRec("main");
 	if (g_conf.m_spideringEnabled) {
 		if (collRec) {
-			return collRec->m_spideringEnabled;
+			if (collRec->m_spideringEnabled) {
+				return true;
+			} else {
+				return g_hostdb.hasDeadHostCached();
+			}
 		}
 
 		return true;
 	}
 
-	return false;
+	return g_hostdb.hasDeadHostCached();
 }
 
 bool DocDelete::initialize() {
@@ -97,9 +101,8 @@ void DocDelete::reload(int /*fd*/, void */*state*/) {
 	struct stat st;
 	int64_t lastDocId = -1;
 	if (stat(s_tmp_filename, &st) == 0) {
-		// only start processing if spidering is disabled
-		if (isSpideringEnabled()) {
-			log(LOG_INFO, "Processing of %s is disabled because spidering is enabled", s_tmp_filename);
+		if (docDeleteDisabled()) {
+			log(LOG_INFO, "Processing of %s is disabled", s_tmp_filename);
 			return;
 		}
 
@@ -126,8 +129,8 @@ void DocDelete::reload(int /*fd*/, void */*state*/) {
 		}
 
 		// only start processing if spidering is disabled
-		if (isSpideringEnabled()) {
-			log(LOG_INFO, "Processing of %s is disabled because spidering is enabled", s_filename);
+		if (docDeleteDisabled()) {
+			log(LOG_INFO, "Processing of %s is disabled", s_filename);
 			return;
 		}
 
@@ -218,14 +221,14 @@ void DocDelete::processFile(void *item) {
 		}
 
 		// stop processing when we're shutting down or spidering is enabled
-		if (s_stop || isSpideringEnabled()) {
+		if (s_stop || docDeleteDisabled()) {
 			break;
 		}
 	}
 
 	waitPendingDocCount(0);
 
-	if (s_stop || isSpideringEnabled()) {
+	if (s_stop || docDeleteDisabled()) {
 		log(LOG_INFO, "Interrupted processing of %s", s_tmp_filename);
 		delete fileItem;
 		return;
