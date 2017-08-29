@@ -5,6 +5,7 @@
 #include "Loop.h"
 #include "XmlDoc.h"
 #include "ScopedLock.h"
+#include "Collectiondb.h"
 #include <fstream>
 #include <sys/stat.h>
 #include <algorithm>
@@ -45,6 +46,19 @@ struct DocDeleteDocItem {
 	XmlDoc *m_xmlDoc;
 };
 
+static bool isSpideringEnabled() {
+	CollectionRec *collRec = g_collectiondb.getRec("main");
+	if (g_conf.m_spideringEnabled) {
+		if (collRec) {
+			return collRec->m_spideringEnabled;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 bool DocDelete::initialize() {
 	if (!s_docDeleteFileThreadQueue.initialize(processFile, "process-delfile")) {
 		logError("Unable to initialize process file queue");
@@ -61,33 +75,7 @@ bool DocDelete::initialize() {
 		return false;
 	}
 
-	struct stat st;
-
-	int64_t lastDocId = -1;
-
-	// we need to skip processed docid when processing pending file
-	if (stat(s_tmp_filename, &st) == 0) {
-		if (stat(s_lastdocid_filename, &st) == 0) {
-			std::ifstream file(s_lastdocid_filename);
-			std::string line;
-			if (std::getline(file, line)) {
-				lastDocId = strtoll(line.c_str(), NULL, 10);
-			}
-		}
-	} else {
-		if (stat(s_filename, &st) == 0) {
-			// we only process the file if we have 2 consecutive loads with the same m_time
-			s_lastModifiedTime = st.st_mtime;
-		} else {
-			// not found
-			logTrace(g_conf.m_logTraceDocDelete, "DocDelete::load: Unable to stat %s", s_filename);
-			s_lastModifiedTime = 0;
-		}
-
-		return true;
-	}
-
-	s_docDeleteFileThreadQueue.addItem(new DocDeleteFileItem(lastDocId));
+	reload(0, NULL);
 
 	return true;
 }
@@ -101,35 +89,57 @@ void DocDelete::finalize() {
 }
 
 void DocDelete::reload(int /*fd*/, void */*state*/) {
+	if (!s_docDeleteFileThreadQueue.isEmpty()) {
+		// we're currently processing tmp file
+		return;
+	}
+
 	struct stat st;
-
-	// we're currently processing tmp file
+	int64_t lastDocId = -1;
 	if (stat(s_tmp_filename, &st) == 0) {
-		return;
+		// only start processing if spidering is disabled
+		if (isSpideringEnabled()) {
+			log(LOG_INFO, "Processing of %s is disabled because spidering is enabled", s_tmp_filename);
+			return;
+		}
+
+		if (stat(s_lastdocid_filename, &st) == 0) {
+			std::ifstream file(s_lastdocid_filename);
+			std::string line;
+			if (std::getline(file, line)) {
+				lastDocId = strtoll(line.c_str(), NULL, 10);
+			}
+		}
+	} else {
+		if (stat(s_filename, &st) != 0) {
+			// probably not found
+			logTrace(g_conf.m_logTraceDocDelete, "DocDelete::load: Unable to stat %s", s_filename);
+			s_lastModifiedTime = 0;
+			return;
+		}
+
+		// we only process the file if we have 2 consecutive loads with the same m_time
+		if (s_lastModifiedTime == 0 || s_lastModifiedTime != st.st_mtime) {
+			s_lastModifiedTime = st.st_mtime;
+			logTrace(g_conf.m_logTraceDocDelete, "DocDelete::load: Modified time changed between load");
+			return;
+		}
+
+		// only start processing if spidering is disabled
+		if (isSpideringEnabled()) {
+			log(LOG_INFO, "Processing of %s is disabled because spidering is enabled", s_filename);
+			return;
+		}
+
+		// make sure file is not changed while we're processing it
+		int rc = rename(s_filename, s_tmp_filename);
+		if (rc == -1) {
+			log(LOG_WARN, "Unable to rename '%s' to '%s' due to '%s'", s_filename, s_tmp_filename, mstrerror(errno));
+			return;
+		}
 	}
 
-	if (stat(s_filename, &st) != 0) {
-		// probably not found
-		logTrace(g_conf.m_logTraceDocDelete, "DocDelete::load: Unable to stat %s", s_filename);
-		s_lastModifiedTime = 0;
-		return;
-	}
-
-	// we only process the file if we have 2 consecutive loads with the same m_time
-	if (s_lastModifiedTime == 0 || s_lastModifiedTime != st.st_mtime) {
-		s_lastModifiedTime = st.st_mtime;
-		logTrace(g_conf.m_logTraceDocDelete, "DocDelete::load: Modified time changed between load");
-		return;
-	}
-
-	// make sure file is not changed while we're processing it
-	int rc = rename(s_filename, s_tmp_filename);
-	if (rc == -1) {
-		log(LOG_WARN, "Unable to rename '%s' to '%s' due to '%s'", s_filename, s_tmp_filename, mstrerror(errno));
-		return;
-	}
-
-	s_docDeleteFileThreadQueue.addItem(new DocDeleteFileItem());
+	s_docDeleteFileThreadQueue.addItem(new DocDeleteFileItem(lastDocId));
 }
 
 static void waitPendingDocCount(unsigned maxCount) {
