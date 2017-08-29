@@ -245,7 +245,7 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	// get in line if there's a line
 	{
 		ScopedLock sl(s_mtxQueuedMsg4s);
-		if (s_queuedMsg4s.empty()) {
+		if (!s_queuedMsg4s.empty()) {
 			s_queuedMsg4s.push_back(this);
 
 			log(LOG_DEBUG, "msg4: queueing msg4=%p", this);
@@ -259,7 +259,7 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	}
 
 	// no line. continue processing
-	if (processMetaList() ) {
+	if (processMetaList()) {
 		return true;
 	}
 
