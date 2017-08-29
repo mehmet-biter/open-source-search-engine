@@ -3590,7 +3590,7 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 			if (redirUrlPtr && *redirUrlPtr) {
 				Url *redirUrl = *redirUrlPtr;
 				if (isUrlUnwanted(redirUrl, &reason)) {
-					fprintf(stdout, "%" PRId64 "|redir %s|%s\n", docId, reason, url->getUrl());
+					fprintf(stdout, "%" PRId64 "|redir %s|%s|%s\n", docId, reason, url->getUrl(), redirUrl->getUrl());
 					continue;
 				}
 			}
