@@ -187,7 +187,7 @@ void DocDelete::processFile(void *item) {
 
 	bool foundLastDocId = (fileItem->m_lastDocId == -1);
 	std::string line;
-	while (!s_stop && std::getline(file, line)) {
+	while (std::getline(file, line)) {
 		// ignore empty lines
 		if (line.length() == 0) {
 			continue;
@@ -216,12 +216,17 @@ void DocDelete::processFile(void *item) {
 		} else if (fileItem->m_lastDocId == docId) {
 			foundLastDocId = true;
 		}
+
+		// stop processing when we're shutting down or spidering is enabled
+		if (s_stop || isSpideringEnabled()) {
+			break;
+		}
 	}
 
 	waitPendingDocCount(0);
 
-	if (s_stop) {
-		log(LOG_INFO, "Shutting down. Interrupted processing of %s", s_tmp_filename);
+	if (s_stop || isSpideringEnabled()) {
+		log(LOG_INFO, "Interrupted processing of %s", s_tmp_filename);
 		delete fileItem;
 		return;
 	}
