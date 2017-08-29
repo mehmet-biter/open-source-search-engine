@@ -1241,8 +1241,7 @@ bool XmlDoc::hashIncomingLinkText(HashTableX *tt) {
 	//   somewhere in TitleRec
 	// . otherwise, we generated it from merging a bunch of LinkInfos
 	//   and storing them in this new TitleRec
-	LinkInfo  *info1    = getLinkInfo1 ();
-	LinkInfo  *linkInfo = info1;
+	LinkInfo  *linkInfo = getLinkInfo1();
 
 	// sanity checks
 	if ( ! m_ipValid             ) { g_process.shutdownAbort(true); }
@@ -1318,8 +1317,7 @@ bool XmlDoc::hashNeighborhoods ( HashTableX *tt ) {
 	//   were not in the document being linked to in order to save
 	//   space in the titleRec
 	// . now we only do one or the other, not both
-	LinkInfo  *info1    = getLinkInfo1 ();
-	LinkInfo  *linkInfo = info1;
+	LinkInfo  *linkInfo = getLinkInfo1();
 
 	// loop over all the Inlinks
 	Inlink *k = NULL;
