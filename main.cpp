@@ -3432,7 +3432,40 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 	}
 }
 
+static bool isUrlUnwanted(Url *url, const char **reason) {
+	//
+	// Check if url is on our blocklist
+	//
+	int errorCode = 0;
+	if (isUrlBlocked(*url, &errorCode)) {
+		*reason = "blocked unknown";
+		switch (errorCode) {
+			case EDOCBLOCKEDURL:
+				*reason = "blocked list";
+				break;
+			case EDOCBLOCKEDSHLIBDOMAIN:
+				*reason = "blocked domain";
+				break;
+			case EDOCBLOCKEDSHLIBURL:
+				*reason = "blocked url";
+				break;
+		}
+		return true;
+	}
 
+	//
+	// Check if url is different after stripping common tracking/session parameters
+	//
+	Url url_stripped;
+	url_stripped.set(url->getUrl(), url->getUrlLen(), false, true);
+
+	if (strcmp(url->getUrl(), url_stripped.getUrl()) != 0) {
+		*reason = "unwanted params";
+		return true;
+	}
+
+	return false;
+}
 
 static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree) {
 
@@ -3533,8 +3566,10 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 				// delete key
 				continue;
 			}
+
 			// free the mem
 			xd->reset();
+
 			// uncompress the title rec
 			if ( ! xd->set2 ( rec , recSize , coll ,NULL , 0 ) ) {
 				//set2() may have logged something but not the docid
@@ -3543,42 +3578,22 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 			}
 
 			// extract the url
-			Url *u = xd->getFirstUrl();
+			Url *url = xd->getFirstUrl();
+			const char *reason = NULL;
 
-			//
-			// Check if url is on our blocklist
-			//
-			int errorCode = 0;
-			if (isUrlBlocked(*u, &errorCode)) {
-				const char *reason = "unknown";
-				switch (errorCode) {
-					case EDOCBLOCKEDURL:
-						reason = "blocked list";
-						break;
-					case EDOCBLOCKEDSHLIBDOMAIN:
-						reason = "blocked domain";
-						break;
-					case EDOCBLOCKEDSHLIBURL:
-						reason = "blocked url";
-						break;
+			if (isUrlUnwanted(url, &reason)) {
+				fprintf(stdout, "%" PRId64 "|%s|%s\n", docId, reason, url->getUrl());
+				continue;
+			}
+
+			Url **redirUrlPtr = xd->getRedirUrl();
+			if (redirUrlPtr && *redirUrlPtr) {
+				Url *redirUrl = *redirUrlPtr;
+				if (isUrlUnwanted(redirUrl, &reason)) {
+					fprintf(stdout, "%" PRId64 "|redir %s|%s\n", docId, reason, url->getUrl());
+					continue;
 				}
-				fprintf(stdout, "%" PRId64 "|%s|%s\n", docId, reason, u->getUrl());
-				continue;
 			}
-
-			//
-			// Check if url is different after stripping common tracking/session parameters
-			//
-			Url url_stripped;
-			url_stripped.set(u->getUrl(), u->getUrlLen(), false, true);
-
-			if (strcmp(u->getUrl(), url_stripped.getUrl()) != 0) {
-				fprintf(stdout, "%" PRId64 "|unwanted params|%s\n", docId, u->getUrl());
-				continue;
-			}
-
-			// free the mem
-			xd->reset();
 		}
 		startKey = *(key96_t *)list.getLastKey();
 		startKey++;
