@@ -57,7 +57,7 @@ OBJS_O2 = \
 
 
 OBJS_O3 = \
-	DnsBlockList.o \
+	DocDelete.o DnsBlockList.o \
 	IPAddressChecks.o \
 	Linkdb.o \
 	Msg40.o \
@@ -66,7 +66,7 @@ OBJS_O3 = \
 	SafeBuf.o sort.o Statistics.o \
 	ScoringWeights.o \
 	TopTree.o \
-	UrlBlock.o UrlBlockList.o UrlComponent.o UrlParser.o UdpStatistic.o \
+	UrlMatch.o UrlMatchList.o UrlBlockCheck.o UrlComponent.o UrlParser.o UdpStatistic.o \
 	UrlRealtimeClassification.o \
 	WantedChecker.o \
 	MergeSpaceCoordinator.o \

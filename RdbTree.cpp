@@ -2543,3 +2543,17 @@ int32_t RdbTree::getNumPositiveKeys(collnum_t collnum) const {
 	if ( ! cr ) return 0;
 	return cr->m_numPosKeysInTree[(unsigned char)m_rdbId]; 
 }
+
+void RdbTree::printTree(std::function<void(rdbid_t, const char *)> print_fn) const {
+	for ( int32_t i = 0 ; i < m_minUnusedNode ; i++ ) {
+		// skip node if parents is -2 (unoccupied)
+		if ( m_parents[i] == -2 ) continue;
+
+		if (print_fn) {
+			print_fn((rdbid_t )m_rdbId, &m_keys[i*m_ks]);
+		} else {
+			logf(LOG_TRACE, "db: i=%04" PRId32 " k=%s keySize=%" PRId32 "",
+			     i, KEYSTR(&m_keys[i*m_ks], m_ks), m_ks);
+		}
+	}
+}

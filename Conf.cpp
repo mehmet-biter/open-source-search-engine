@@ -228,6 +228,7 @@ Conf::Conf ( ) {
 	m_logDebugUrlAttempts = false;
 	m_logDebugVagus = false;
 	m_logTraceBigFile = false;
+	m_logTraceDocDelete = false;
 	m_logTraceDns = false;
 	m_logTraceDnsBlockList = false;
 	m_logTraceDnsCache = false;
@@ -257,7 +258,7 @@ Conf::Conf ( ) {
 	m_logTraceTitledb = false;
 	m_logTraceXmlDoc = false;
 	m_logTracePhrases= false;
-	m_logTraceUrlBlockList = false;
+	m_logTraceUrlMatchList = false;
 	m_logTraceWordSpam=false;
 	m_logTraceUrlClassification = false;
 	m_logTimingAddurl = false;

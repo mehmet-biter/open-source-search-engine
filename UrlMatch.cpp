@@ -1,4 +1,4 @@
-#include "UrlBlock.h"
+#include "UrlMatch.h"
 #include "Url.h"
 #include "hash.h"
 #include "GbUtil.h"
@@ -6,61 +6,61 @@
 #include "Conf.h"
 #include <algorithm>
 
-urlblocktld_t::urlblocktld_t(const std::string &tlds)
+urlmatchtld_t::urlmatchtld_t(const std::string &tlds)
 	: m_tldsStr(tlds)
 	, m_tlds(split(tlds, ',')) {
 }
 
-urlblockdomain_t::urlblockdomain_t(const std::string &domain, const std::string &allow, pathcriteria_t pathcriteria)
+urlmatchdomain_t::urlmatchdomain_t(const std::string &domain, const std::string &allow, pathcriteria_t pathcriteria)
 	: m_domain(domain)
 	, m_allow(split(allow, ','))
 	, m_pathcriteria(pathcriteria) {
 }
 
-urlblockhost_t::urlblockhost_t(const std::string &host, const std::string &path)
+urlmatchhost_t::urlmatchhost_t(const std::string &host, const std::string &path)
 	: m_host(host)
 	, m_path(path) {
 }
 
-urlblockpath_t::urlblockpath_t(const std::string &path)
+urlmatchpath_t::urlmatchpath_t(const std::string &path)
 	: m_path(path) {
 }
 
-urlblockregex_t::urlblockregex_t(const std::string &regexStr, const GbRegex &regex, const std::string &domain)
+urlmatchregex_t::urlmatchregex_t(const std::string &regexStr, const GbRegex &regex, const std::string &domain)
 	: m_regex(regex)
 	, m_regexStr(regexStr)
 	, m_domain(domain) {
 }
 
-UrlBlock::UrlBlock(const std::shared_ptr<urlblocktld_t> &urlblocktld)
-	: m_type(url_block_tld)
-	, m_tld(urlblocktld) {
+UrlMatch::UrlMatch(const std::shared_ptr<urlmatchtld_t> &urlmatchtld)
+	: m_type(url_match_tld)
+	, m_tld(urlmatchtld) {
 }
 
-UrlBlock::UrlBlock(const std::shared_ptr<urlblockdomain_t> &urlblockdomain)
-	: m_type(url_block_domain)
-	, m_domain(urlblockdomain) {
+UrlMatch::UrlMatch(const std::shared_ptr<urlmatchdomain_t> &urlmatchdomain)
+	: m_type(url_match_domain)
+	, m_domain(urlmatchdomain) {
 }
 
-UrlBlock::UrlBlock(const std::shared_ptr<urlblockhost_t> &urlblockhost)
-	: m_type(url_block_host)
-	, m_host(urlblockhost) {
+UrlMatch::UrlMatch(const std::shared_ptr<urlmatchhost_t> &urlmatchhost)
+	: m_type(url_match_host)
+	, m_host(urlmatchhost) {
 }
 
-UrlBlock::UrlBlock(const std::shared_ptr<urlblockpath_t> &urlblockpath)
-	: m_type(url_block_path)
-	, m_path(urlblockpath) {
+UrlMatch::UrlMatch(const std::shared_ptr<urlmatchpath_t> &urlmatchpath)
+	: m_type(url_match_path)
+	, m_path(urlmatchpath) {
 
 }
 
-UrlBlock::UrlBlock(const std::shared_ptr<urlblockregex_t> &urlblockregex)
-	: m_type(url_block_regex)
-	, m_regex(urlblockregex) {
+UrlMatch::UrlMatch(const std::shared_ptr<urlmatchregex_t> &urlmatchregex)
+	: m_type(url_match_regex)
+	, m_regex(urlmatchregex) {
 }
 
-bool UrlBlock::match(const Url &url) const {
+bool UrlMatch::match(const Url &url) const {
 	switch (m_type) {
-		case url_block_domain:
+		case url_match_domain:
 			if (m_domain->m_domain.length() == static_cast<size_t>(url.getDomainLen()) &&
 			   memcmp(m_domain->m_domain.c_str(), url.getDomain(), url.getDomainLen()) == 0) {
 				// check subdomain
@@ -71,11 +71,11 @@ bool UrlBlock::match(const Url &url) const {
 					if (!match) {
 						// check for pathcriteria
 						switch (m_domain->m_pathcriteria) {
-							case urlblockdomain_t::pathcriteria_allow_all:
+							case urlmatchdomain_t::pathcriteria_allow_all:
 								return false;
-							case urlblockdomain_t::pathcriteria_allow_index_only:
+							case urlmatchdomain_t::pathcriteria_allow_index_only:
 								return (url.getPathLen() > 1);
-							case urlblockdomain_t::pathcriteria_allow_rootpages_only:
+							case urlmatchdomain_t::pathcriteria_allow_rootpages_only:
 								return (url.getPathDepth(false) > 0);
 						}
 					}
@@ -84,7 +84,7 @@ bool UrlBlock::match(const Url &url) const {
 				return true;
 			}
 			break;
-		case url_block_host:
+		case url_match_host:
 			if (m_host->m_host.length() == static_cast<size_t>(url.getHostLen()) &&
 			    memcmp(m_host->m_host.c_str(), url.getHost(), url.getHostLen()) == 0) {
 				if (m_host->m_path.empty()) {
@@ -95,17 +95,17 @@ bool UrlBlock::match(const Url &url) const {
 				        memcmp(m_host->m_path.c_str(), url.getPath(), m_host->m_path.length()) == 0);
 			}
 			break;
-		case url_block_path:
+		case url_match_path:
 			return (m_path->m_path.length() <= static_cast<size_t>(url.getPathLenWithCgi()) &&
 			        memcmp(m_path->m_path.c_str(), url.getPath(), m_path->m_path.length()) == 0);
-		case url_block_regex:
+		case url_match_regex:
 			if (m_regex->m_domain.empty() || (!m_regex->m_domain.empty() &&
 				m_regex->m_domain.length() == static_cast<size_t>(url.getDomainLen()) &&
 				memcmp(m_regex->m_domain.c_str(), url.getDomain(), url.getDomainLen()) == 0)) {
 				return m_regex->m_regex.match(url.getUrl());
 			}
 			break;
-		case url_block_tld:
+		case url_match_tld:
 			if (!m_tld->m_tlds.empty()) {
 				const char *tld = url.getTLD();
 				size_t tldLen = static_cast<size_t>(url.getTLDLen());
@@ -123,31 +123,31 @@ bool UrlBlock::match(const Url &url) const {
 	return false;
 }
 
-void UrlBlock::logMatch(const Url &url) const {
+void UrlMatch::logMatch(const Url &url) const {
 	const char *type = NULL;
 	const char *value = NULL;
 
 	switch (m_type) {
-		case url_block_domain:
+		case url_match_domain:
 			type = "domain";
 			value = m_domain->m_domain.c_str();
 			break;
-		case url_block_host:
+		case url_match_host:
 			type = "host";
 			value = m_host->m_host.c_str();
 			break;
-		case url_block_path:
+		case url_match_path:
 			type = "path";
 			value = m_path->m_path.c_str();
 			break;
-		case url_block_regex:
+		case url_match_regex:
 			type = "regex";
 			value = m_regex->m_regexStr.c_str();
 			break;
-		case url_block_tld:
+		case url_match_tld:
 			type = "tld";
 			value = m_tld->m_tldsStr.c_str();
 	}
 
-	logTrace(g_conf.m_logTraceUrlBlockList, "Url block criteria %s='%s' matched url '%s'", type, value, url.getUrl());
+	logTrace(g_conf.m_logTraceUrlMatchList, "Url match criteria %s='%s' matched url '%s'", type, value, url.getUrl());
 }

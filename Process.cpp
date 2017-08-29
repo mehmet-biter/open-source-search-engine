@@ -42,6 +42,7 @@
 #include "Msg4In.h"
 #include "SummaryCache.h"
 #include "GbDns.h"
+#include "DocDelete.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
 #include <fcntl.h>
@@ -607,6 +608,8 @@ bool Process::shutdown2() {
 		WantedChecker::finalize();
 
 		Statistics::finalize();
+
+		DocDelete::finalize();
 
 		log("gb: disabling threads");
 

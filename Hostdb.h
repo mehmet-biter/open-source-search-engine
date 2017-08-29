@@ -216,6 +216,8 @@ class Hostdb {
 	bool  isDead(const Host *h) const;
 
 	bool hasDeadHost() const;
+	bool hasDeadHostCached() const;
+
 	int getNumHostsDead() const;
 
 	int64_t getNumGlobalRecs ( );

@@ -313,16 +313,7 @@ subloop:
 	}
 	
 	// don't spider if we have dead host
-	time_t now = time(NULL);
-	static bool s_hasDeadHost = g_hostdb.hasDeadHost();
-	static time_t s_updatedTime = now;
-
-	if ((now - s_updatedTime) >= g_conf.m_spiderDeadHostCheckInterval) {
-		s_updatedTime = now;
-		s_hasDeadHost = g_hostdb.hasDeadHost();
-	}
-
-	if (s_hasDeadHost) {
+	if (g_hostdb.hasDeadHostCached()) {
 		logTrace(g_conf.m_logTraceSpider, "END, has dead host");
 		return;
 	}

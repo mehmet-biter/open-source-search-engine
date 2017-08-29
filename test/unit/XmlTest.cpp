@@ -7,39 +7,39 @@
 
 #define HTML_HEAD_FORMAT "<html><head>%s</head><body></body></html>"
 
-TEST( XmlTest, MetaDescription) {
-	const char* input_strs[] =  {
-	    // valid
-	    "totally valid description",
-	    "“inside special quotes” and outside",
+TEST(XmlTest, MetaDescription) {
+	const char *input_strs[] = {
+		// valid
+		"totally valid description",
+		"“inside special quotes” and outside",
 
-	    // invalid
-	    "my \"invalid\" double quote description",
-	    "\"someone has quotes\", and nobody else has it"
-	    "'my 'invalid' single quote description'",
-	    "it's a description",
-	    "what is this quote \" doing here?"
+		// invalid
+		"my \"invalid\" double quote description",
+		"\"someone has quotes\", and nobody else has it"
+			"'my 'invalid' single quote description'",
+		"it's a description",
+		"what is this quote \" doing here?"
 	};
 
-	const char* format_strs[] = {
-	    "<meta name=\"description\" content=\"%s\">",
-	    "<meta name=\"description\" content='%s'>",
-	    "<meta name=\"description\" content=\"%s\" ng-attr-content=\"{{meta.description}}\">",
-	    "<meta name=\"description\" content='%s' ng-attr-content=\"{{meta.description}}\" >",
-	    "<meta name=\"description\" ng-attr-content=\"{{meta.description}}\" content=\"%s\">",
-	    "<meta name=\"description\" ng-attr-content=\"{{meta.description}}\" content='%s'>",
-	    "<meta name=\"description\" content=\"%s\" other-content=\"%s\">",
-	    "<meta name=\"description\" content='%s' other-content='%s'>",
-	    "<meta content=\"%s\" name=\"description\">",
-	    "<meta content='%s' name=\"description\">",
-	    "<meta name=\"description\" other-content=\"%s\" content=\"%s\">",
-	    "<meta name=\"description\" other-content='%s' content='%s'>"
+	const char *format_strs[] = {
+		"<meta name=\"description\" content=\"%s\">",
+		"<meta name=\"description\" content='%s'>",
+		"<meta name=\"description\" content=\"%s\" ng-attr-content=\"{{meta.description}}\">",
+		"<meta name=\"description\" content='%s' ng-attr-content=\"{{meta.description}}\" >",
+		"<meta name=\"description\" ng-attr-content=\"{{meta.description}}\" content=\"%s\">",
+		"<meta name=\"description\" ng-attr-content=\"{{meta.description}}\" content='%s'>",
+		"<meta name=\"description\" content=\"%s\" other-content=\"%s\">",
+		"<meta name=\"description\" content='%s' other-content='%s'>",
+		"<meta content=\"%s\" name=\"description\">",
+		"<meta content='%s' name=\"description\">",
+		"<meta name=\"description\" other-content=\"%s\" content=\"%s\">",
+		"<meta name=\"description\" other-content='%s' content='%s'>"
 	};
 
-	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
-	size_t format_len = sizeof( format_strs ) / sizeof( format_strs[0] );
+	size_t len = sizeof(input_strs) / sizeof(input_strs[0]);
+	size_t format_len = sizeof(format_strs) / sizeof(format_strs[0]);
 
-	for ( size_t i = 0; i < len; i++ ) {
+	for (size_t i = 0; i < len; i++) {
 		for (size_t j = 0; j < format_len; j++) {
 			const char *input_str = input_strs[i];
 
@@ -63,30 +63,30 @@ TEST( XmlTest, MetaDescription) {
 	}
 }
 
-TEST( XmlTest, MetaDescriptionStripTags) {
-	const char* input_strs[] =  {
-	    "my title<br> my <b>very important</b> text",
-	    "Lesser than (<) and greater than (>).",
-	    "We shouldn't strip <3 out",
-	    "123 < 1234; 1234 > 123",
-	    "<p style='text-align: center;'>A color cartoon drawing of a clapping cod fish ( rebus in the danish language for klaptorsk )</p>"
+TEST(XmlTest, MetaDescriptionStripTags) {
+	const char *input_strs[] = {
+		"my title<br> my <b>very important</b> text",
+		"Lesser than (<) and greater than (>).",
+		"We shouldn't strip <3 out",
+		"123 < 1234; 1234 > 123",
+		"<p style='text-align: center;'>A color cartoon drawing of a clapping cod fish ( rebus in the danish language for klaptorsk )</p>"
 	};
 
-	const char* expected_outputs[] = {
-	    "my title. my very important text",
-	    "Lesser than (<) and greater than (>).",
-	    "We shouldn't strip <3 out",
-	    "123 < 1234; 1234 > 123",
-	    "A color cartoon drawing of a clapping cod fish ( rebus in the danish language for klaptorsk ). "
+	const char *expected_outputs[] = {
+		"my title. my very important text",
+		"Lesser than (<) and greater than (>).",
+		"We shouldn't strip <3 out",
+		"123 < 1234; 1234 > 123",
+		"A color cartoon drawing of a clapping cod fish ( rebus in the danish language for klaptorsk ). "
 	};
 
-	const char* format_str = "<meta name=\"description\" content=\"%s\">";
+	const char *format_str = "<meta name=\"description\" content=\"%s\">";
 
-	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
+	size_t len = sizeof(input_strs) / sizeof(input_strs[0]);
 
-	ASSERT_EQ(sizeof(input_strs)/sizeof(input_strs[0]), sizeof(expected_outputs)/sizeof(expected_outputs[0]));
+	ASSERT_EQ(sizeof(input_strs) / sizeof(input_strs[0]), sizeof(expected_outputs) / sizeof(expected_outputs[0]));
 
-	for ( size_t i = 0; i < len; i++ ) {
+	for (size_t i = 0; i < len; i++) {
 		const char *input_str = input_strs[i];
 		const char *output_str = expected_outputs[i];
 

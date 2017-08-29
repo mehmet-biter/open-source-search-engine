@@ -732,9 +732,6 @@ void RdbMerge::doneMerging() {
 	//   to help avoid out of mem errors?
 	m_msg5.reset();
 
-	// . do we really need these anymore?
-	m_isMerging     = false;
-
 	// if collection rec was deleted while merging files for it
 	// then the rdbbase should be NULL i guess.
 	if (saved_errno == ENOCOLLREC) {
@@ -769,4 +766,5 @@ void RdbMerge::relinquishMergespaceLock() {
 
 void RdbMerge::mergeIncorporated(const RdbBase * /*currently irrelevant*/) {
 	relinquishMergespaceLock();
+	m_isMerging = false;
 }

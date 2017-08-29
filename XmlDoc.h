@@ -898,7 +898,6 @@ public:
 	SafeBuf m_tmpBuf12;
 	Multicast m_mcast11;
 	Multicast m_mcast12;
-	MsgC m_msgc;
 	bool m_isAllowed;
 	bool m_isChildDoc;
 	Msg13 m_msg13;
@@ -919,6 +918,7 @@ public:
 	char *m_httpReply;
 	bool m_useRobotsTxt;
 	int32_t m_robotsTxtLen;
+	bool m_robotsTxtHttpStatusDisallowed;
 	int32_t m_httpReplySize;
 	int32_t m_httpReplyAllocSize;
 	char *m_filteredContent;

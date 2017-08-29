@@ -37,9 +37,11 @@
 #define GB_RDBTREE_H
 
 #include <atomic>
+#include <functional>
 #include "JobScheduler.h" //for job_exit_t
 #include "types.h"
 #include "GbMutex.h"
+#include "rdbid_t.h"
 
 class RdbList;
 class BigFile;
@@ -211,6 +213,8 @@ public:
 	void cleanTree();
 
 	void delColl(collnum_t collnum);
+
+	void printTree(std::function<void(rdbid_t, const char *)> print_fn = nullptr) const;
 
 private:
 	static void saveWrapper(void *state);

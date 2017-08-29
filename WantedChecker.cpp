@@ -51,13 +51,13 @@ bool WantedChecker::initialize() {
 	p_shlib = dlopen(shlib_name, RTLD_NOW|RTLD_LOCAL);
 	
 	if(p_shlib==0) {
-		log(LOG_WARN,"Initializing wanted-checking: '%s' could not be loaded (%s)", shlib_name, strerror(errno));
+		log(LOG_WARN,"Initializing wanted-checking: '%s' could not be loaded (%s)", shlib_name, dlerror());
 		return true;
 	}
 	
 	const void *p_descriptor = dlsym(p_shlib,"wanted_check_api_descriptor_block");
 	if(!p_descriptor) {
-		log(LOG_WARN,"wanted-checkign: shlib does not contain the symbol 'wanted_check_api_descriptor_block'");
+		log(LOG_WARN,"wanted-checking: shlib does not contain the symbol 'wanted_check_api_descriptor_block'");
 		dlclose(p_shlib);
 		p_shlib = 0;
 		return true;

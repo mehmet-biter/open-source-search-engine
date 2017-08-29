@@ -189,9 +189,13 @@ static void status_to_spider_statistics( std::vector<unsigned> *spiderdoc_counts
 		case EDOCFORCEDELETE:
 		case EDOCBLOCKEDDNS:
 		case EDOCBLOCKEDURL:
+		case EDOCBLOCKEDSHLIBDOMAIN:
+		case EDOCBLOCKEDSHLIBURL:
 			(*spiderdoc_counts)[ spider_doc_deleted ] += count;
 			break;
 		case EDOCDISALLOWED:
+		case EDOCDISALLOWEDHTTPSTATUS:
+		case EDOCDISALLOWEDROOT:
 			(*spiderdoc_counts)[ spider_doc_disallowed ] += count;
 			break;
 		case EDOCBADHTTPSTATUS:
@@ -437,6 +441,60 @@ static void dump_assorted_statistics(FILE *fp) {
 
 
 //////////////////////////////////////////////////////////////////////////////
+// UrlBLockCheck statistics
+
+struct UrlBlockCheckCounters {
+	std::atomic<unsigned long> c_calls;
+	std::atomic<unsigned long> c_blacklisted;
+	std::atomic<unsigned long> c_whitelisted;
+	std::atomic<unsigned long> c_shlib_domain_block;
+	std::atomic<unsigned long> c_shlib_url_blocked;
+	std::atomic<unsigned long> c_default;
+};
+static UrlBlockCheckCounters url_block_check_counters;
+
+void Statistics::increment_url_block_counter_call() {
+	url_block_check_counters.c_calls++;
+}
+
+void Statistics::increment_url_block_counter_blacklisted() {
+	url_block_check_counters.c_blacklisted++;
+}
+
+void Statistics::increment_url_block_counter_whitelisted() {
+	url_block_check_counters.c_whitelisted++;
+}
+
+void Statistics::increment_url_block_counter_shlib_domain_block() {
+	url_block_check_counters.c_shlib_domain_block++;
+}
+
+void Statistics::increment_url_block_counter_shlib_url_block() {
+	url_block_check_counters.c_shlib_url_blocked++;
+}
+
+void Statistics::increment_url_block_counter_default() {
+	url_block_check_counters.c_default++;
+}
+
+
+static void dump_url_block_check_statistics(FILE *fp) {
+	//we don't have a big, fat mutex on this so the counters could be slightly inconsistent.
+	auto c_calls = url_block_check_counters.c_calls.load(); url_block_check_counters.c_calls = 0;
+	auto c_blacklisted = url_block_check_counters.c_blacklisted.load(); url_block_check_counters.c_blacklisted = 0;
+	auto c_whitelisted = url_block_check_counters.c_whitelisted.load(); url_block_check_counters.c_whitelisted = 0;
+	auto c_shlib_domain_block = url_block_check_counters.c_shlib_domain_block.load(); url_block_check_counters.c_shlib_domain_block = 0;
+	auto c_shlib_url_blocked = url_block_check_counters.c_shlib_url_blocked.load(); url_block_check_counters.c_shlib_url_blocked = 0;
+	auto c_default = url_block_check_counters.c_default.load(); url_block_check_counters.c_default = 0;
+	fprintf(fp,"urlblock:calls:%lu\n", c_calls);
+	fprintf(fp,"urlblock:blacklisted:%lu\n", c_blacklisted);
+	fprintf(fp,"urlblock:whitelisted:%lu\n", c_whitelisted);
+	fprintf(fp,"urlblock:shlib_domain_block:%lu\n", c_shlib_domain_block);
+	fprintf(fp,"urlblock:shlib_url_blocked:%lu\n", c_shlib_url_blocked);
+	fprintf(fp,"urlblock:default:%lu\n", c_default);
+}
+
+//////////////////////////////////////////////////////////////////////////////
 // statistics
 
 static void dump_statistics(time_t now) {
@@ -455,6 +513,7 @@ static void dump_statistics(time_t now) {
 	dump_encoding_statistics(fp);
 	dump_rdb_cache_statistics(fp);
 	dump_assorted_statistics(fp);
+	dump_url_block_check_statistics(fp);
 	
 	if ( fflush(fp) != 0 ) {
 		log( LOG_ERROR, "fflush(%s) failed with errno=%d (%s)", tmp_filename, errno, strerror( errno ) );

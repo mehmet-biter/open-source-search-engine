@@ -79,9 +79,9 @@ enum {
 	EDOCDUP          ,  
 	EDOCDUPWWW       ,
 	EUNUSED21        ,
-	EDOCDISALLOWED   , //robots.txt disallows this url
-	EUNUSED22        ,
-	EUNUSED23        , // 32830
+	EDOCDISALLOWED   , // robots.txt disallows this url
+	EDOCDISALLOWEDHTTPSTATUS, // disallowed due to robots.txt http status
+	EDOCDISALLOWEDROOT, // robots.txt disallows this root url 32830
 	EUNUSED24        ,
 	EUNUSED25        ,
 	EUNUSED26        ,
@@ -193,6 +193,8 @@ enum {
 	EMALFORMEDQUERY,
 	ESHARDDOWN, // 32940
 	ETITLEERROR,
+	EDOCBLOCKEDSHLIBDOMAIN,
+	EDOCBLOCKEDSHLIBURL,
 };
 
 #endif // GB_ERRNO_H

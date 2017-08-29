@@ -4384,7 +4384,7 @@ int32_t Links::getLinkText2(int32_t i,
 		if ( retNode1 ) *retNode1 = j;
 		// the end ptr
 		//char *send = s + xmlNodes[j].m_nodeLen;
-		char *send = m_xml->getContent() + m_xml->getContentLen();
+		const char *send = m_xml->getContent() + m_xml->getContentLen();
 		// . start at the first tag in this element/item
 		// . we will copy the blurb on the interval [j,k)
 		for ( int32_t k = j+1 ; k < xmlNumNodes ; k++ ) {

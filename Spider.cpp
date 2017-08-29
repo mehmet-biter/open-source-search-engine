@@ -42,7 +42,7 @@
 #include "Rebalance.h"
 #include "ip.h"
 #include "Mem.h"
-#include "UrlBlockList.h"
+#include "UrlBlockCheck.h"
 #include <list>
 
 
@@ -2588,7 +2588,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 			// we don't need to strip parameter here, speed up
 			url.set(sreq->m_url, strlen(sreq->m_url), false, false, 122);
 
-			if (g_urlBlockList.isUrlBlocked(url)) {
+			if (isUrlBlocked(url)) {
 				logDebug(g_conf.m_logDebugSpider, "Url is blocked [%s]", sreq->m_url);
 				continue;
 			}

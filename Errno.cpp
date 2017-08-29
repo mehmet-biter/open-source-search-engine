@@ -137,6 +137,10 @@ const char *mstrerror ( int errnum ) {
 				return "Doc is dup of a www url";
 			case EDOCDISALLOWED   :
 				return "robots.txt disallows this url";
+			case EDOCDISALLOWEDHTTPSTATUS:
+				return "Disallowed due to robots.txt HTTP status";
+			case EDOCDISALLOWEDROOT:
+				return "robots.txt disallows this root url";
 			case ETOOMANYFILES    :
 				return "Too many files already";
 			case EQUERYTOOBIG     :
@@ -269,6 +273,10 @@ const char *mstrerror ( int errnum ) {
 				return "One or more shards are down";
 			case ETITLEERROR:
 				return "Error setting title";
+			case EDOCBLOCKEDSHLIBDOMAIN:
+				return "Doc blocked by shlib (domain)";
+			case EDOCBLOCKEDSHLIBURL:
+				return "Doc blocked by shlib (url)";
 		}
 	}
 
@@ -338,8 +346,8 @@ static const char* s_errname[] {
 	STRINGIFY( EDOCDUPWWW ),
 	STRINGIFY( EUNUSED21 ),
 	STRINGIFY( EDOCDISALLOWED ),
-	STRINGIFY( EUNUSED22 ),
-	STRINGIFY( EUNUSED23 ),
+	STRINGIFY( EDOCDISALLOWEDHTTPSTATUS ),
+	STRINGIFY( EDOCDISALLOWEDROOT ),
 	STRINGIFY( EUNUSED24 ),
 	STRINGIFY( EUNUSED25 ),
 	STRINGIFY( EUNUSED26 ),
@@ -451,6 +459,8 @@ static const char* s_errname[] {
 	STRINGIFY( EMALFORMEDQUERY ),
 	STRINGIFY( ESHARDDOWN ),
 	STRINGIFY( ETITLEERROR ),
+	STRINGIFY( EDOCBLOCKEDSHLIBDOMAIN ),
+	STRINGIFY( EDOCBLOCKEDSHLIBURL ),
 };
 
 #undef STRINGIFY

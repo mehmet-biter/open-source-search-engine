@@ -41,7 +41,7 @@
 #include "GbUtil.h"
 #include "ScopedLock.h"
 #include "Mem.h"
-#include "UrlBlockList.h"
+#include "UrlBlockCheck.h"
 #include <fcntl.h>
 #include "GbEncoding.h"
 #include "GbLanguage.h"
@@ -350,6 +350,7 @@ void XmlDoc::reset ( ) {
 	m_numRedirects             = 0;
 	m_numOutlinksAdded         = 0;
 	m_useRobotsTxt             = true;
+	m_robotsTxtHttpStatusDisallowed = false;
 
 	m_allowSimplifiedRedirs    = false;
 
@@ -1270,8 +1271,6 @@ void XmlDoc::setCallback ( void *state, bool (*callback) (void *state) ) {
 	m_callback2 = callback;
 }
 
-
-
 static void indexDoc3(void *state) {
 	XmlDoc *that = reinterpret_cast<XmlDoc*>(state);
 	logTrace( g_conf.m_logTraceXmlDoc, "Calling XmlDoc::indexDoc" );
@@ -1871,7 +1870,7 @@ bool* XmlDoc::checkBlockList() {
 		return &m_blockedDoc;
 	}
 
-	if (m_sreq.m_urlIsDocId) {
+	if (m_setFromDocId || (m_sreqValid && m_sreq.m_urlIsDocId)) {
 		// nothing to check
 		m_blockedDocValid = true;
 		m_blockedDoc = false;
@@ -1883,9 +1882,10 @@ bool* XmlDoc::checkBlockList() {
 	bool blocked = false;
 	if (!m_checkedUrlBlockList) {
 		setStatus("checking urlblocklist");
-		if (g_urlBlockList.isUrlBlocked(*url)) {
+		int tmpErrno = EDOCBLOCKEDURL;
+		if (isUrlBlocked(*url, &tmpErrno)) {
 			m_indexCodeValid = true;
-			m_indexCode = EDOCBLOCKEDURL;
+			m_indexCode = tmpErrno;
 
 			blocked = true;
 		}
@@ -2173,12 +2173,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
 	// . don't spider robots.txt urls for indexing!
 	// . quickly see if we are a robots.txt url originally
-	int32_t fulen = getFirstUrl()->getUrlLen();
-	char *fu   = getFirstUrl()->getUrl();
-	char *fp   = fu + fulen - 11;
-	if ( fulen > 12 &&
-	     fp[1] == 'r' &&
-	     ! strncmp ( fu + fulen - 11 , "/robots.txt" , 11 )) {
+	if (isFirstUrlRobotsTxt()) {
 		m_indexCode = EBADURL;
 		m_indexCodeValid = true;
 		logTrace( g_conf.m_logTraceXmlDoc, "END, EBADURL (robots.txt)" );
@@ -2343,8 +2338,15 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	}
 	// if we generated a new sitenuminlinks to store in tagdb, we might
 	// want to add this for that only reason... consider!
-	if ( disallowed ) {
-		m_indexCode      = EDOCDISALLOWED;
+	if (disallowed) {
+		if (m_robotsTxtHttpStatusDisallowed) {
+			m_indexCode = EDOCDISALLOWEDHTTPSTATUS;
+		} else if (m_firstUrl.isRoot()) {
+			m_indexCode = EDOCDISALLOWEDROOT;
+		} else {
+			m_indexCode = EDOCDISALLOWED;
+		}
+
 		m_indexCodeValid = true;
 		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCDISALLOWED" );
 		return &m_indexCode;
@@ -6990,13 +6992,15 @@ int32_t *XmlDoc::getFinalCrawlDelay() {
 }
 
 
-bool XmlDoc::isFirstUrlRobotsTxt ( ) {
-	if ( m_isRobotsTxtUrlValid )
+bool XmlDoc::isFirstUrlRobotsTxt() {
+	if (m_isRobotsTxtUrlValid) {
 		return m_isRobotsTxtUrl;
-	Url *fu = getFirstUrl();
+	}
 
-	m_isRobotsTxtUrl = ( fu->getUrlLen() > 12 && ! strncmp ( fu->getUrl() + fu->getUrlLen() - 11 , "/robots.txt" , 11 ) );
+	Url *fu = getFirstUrl();
+	m_isRobotsTxtUrl = ((fu->getPathLen() ==  11) && (strncmp(fu->getPath(), "/robots.txt", 11) == 0));
 	m_isRobotsTxtUrlValid = true;
+
 	return m_isRobotsTxtUrl;
 }
 
@@ -7221,24 +7225,21 @@ bool *XmlDoc::getIsAllowed ( ) {
 	m_isAllowed      = true;
 	m_isAllowedValid = true;
 
-
-	if ( mime->getHttpStatus() != 200 )
-	{
+	if (mime->getHttpStatus() != 200) {
 		/// @todo ALC we should allow more error codes
 		/// 2xx (successful) : allow
 		/// 3xx (redirection) : follow
-		/// 4xx (client errors) : allow
-		/// 5xx (server errors) : disallow
+		/// 4xx (client errors) : allow (except 403 - forbidden)
+		/// 5xx (server errors) : disallow (should we allow? server error is not really forbidden is it?)
 
 		// We could not get robots.txt - use default crawl-delay for
 		// sites with no robots.txt
 		m_crawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
 
-
 		// BR 20151215: Do not allow spidering if we cannot read robots.txt EXCEPT if the error code is 404 (Not Found).
-		if( mime->getHttpStatus() != 404 )
-		{
+		if (mime->getHttpStatus() != 404) {
 			m_isAllowed = false;
+			m_robotsTxtHttpStatusDisallowed = true;
 		}
 
 		logTrace( g_conf.m_logTraceSpider, "END. httpStatus != 200. Return %s", (m_isAllowed?"true":"false"));
@@ -11401,18 +11402,6 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("rawutf8size=%" PRId32" ",
 			       size_utf8Content);
 
-	// get the content type
-	uint8_t ct = CT_UNKNOWN;
-	if ( m_contentTypeValid ) ct = m_contentType;
-
-	bool isRoot = false;
-	if ( m_isSiteRootValid ) isRoot = m_isSiteRoot;
-
-	// make sure m_minInlinkerHopCount is valid
-	LinkInfo *info1 = NULL;
-	if ( m_linkInfo1Valid ) info1 = ptr_linkInfo1;
-
-
 	// hack this kinda
 	// . in PageInject.cpp we do not have a valid priority without
 	//   blocking because we did a direct injection!
@@ -14651,7 +14640,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			url.hasScriptExtension() ||
 			url.hasJsonExtension() ||
 //			url.hasXmlExtension() ||
-			g_urlBlockList.isUrlBlocked(url))
+			isUrlBlocked(url))
 		{
 			logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", url.getUrl());
 			continue;
