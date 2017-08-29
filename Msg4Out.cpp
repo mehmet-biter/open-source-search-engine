@@ -403,7 +403,6 @@ bool Msg4::processMetaList() {
 			// . add that rec to this groupId, gid, includes the key
 			// . these are NOT allowed to be compressed (half bit set)
 			//   and this point
-			// . this returns false and sets g_errno on failure
 			storeRec(m_collnum, rdbItem.m_rdbId, rdbItem.m_hostId, rdbItem.m_key, rdbItem.m_recSize);
 		}
 	}
