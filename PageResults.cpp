@@ -1103,8 +1103,8 @@ bool printSearchResultsHeader ( State0 *st ) {
 		for ( int i = 0 ; i < q->m_numTerms ; i++ ) {
 			sb->safePrintf("\t\t{\n");
 			const QueryTerm *qt = &q->m_qterms[i];
-			sb->safePrintf("\t\t\"termNum\":%i,\n",i);
-			sb->safePrintf("\t\t\"termStr\":\"");
+			sb->safePrintf("\t\t\t\"termNum\":%i,\n",i);
+			sb->safePrintf("\t\t\t\"termStr\":\"");
 			sb->jsonEncode (qt->m_term,qt->m_termLen);
 			sb->safePrintf("\",\n");
 			// syn?
@@ -1112,7 +1112,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 			// what language did synonym come from?
 			if ( sq ) {
 				// language map from wiktionary
-				sb->safePrintf("\t\t\"termLang\":\"");
+				sb->safePrintf("\t\t\t\"termLang\":\"");
 				bool first = true;
 				for ( int i = 0 ; i < langLast ; i++ ) {
 					uint64_t bit = (uint64_t)1 << i;
@@ -1126,26 +1126,26 @@ bool printSearchResultsHeader ( State0 *st ) {
 			}
 
 			if ( sq ) {
-				sb->safePrintf("\t\t\"synonymOf\":\"");
+				sb->safePrintf("\t\t\t\"synonymOf\":\"");
 				sb->jsonEncode(sq->m_term,sq->m_termLen);
 				sb->safePrintf("\",\n");
 			}				
-			sb->safePrintf("\t\t\"termFreq\":%" PRId64",\n"
+			sb->safePrintf("\t\t\t\"termFreq\":%" PRId64",\n"
 				       ,qt->m_termFreq);
-			sb->safePrintf("\t\t\"termFreqWeight\":%.2f,\n"
+			sb->safePrintf("\t\t\t\"termFreqWeight\":%.2f,\n"
 				       ,qt->m_termFreqWeight);
 
-			sb->safePrintf("\t\t\"termHash48\":%" PRId64",\n"
+			sb->safePrintf("\t\t\t\"termHash48\":%" PRId64",\n"
 				       ,qt->m_termId);
-			sb->safePrintf("\t\t\"termHash64\":%" PRIu64",\n"
+			sb->safePrintf("\t\t\t\"termHash64\":%" PRIu64",\n"
 				       ,qt->m_rawTermId);
 
 			// don't end last query term attr on a omma
 			const QueryWord *qw = qt->m_qword;
-			sb->safePrintf("\t\t\"prefixHash64\":%" PRIu64"\n"
+			sb->safePrintf("\t\t\t\"prefixHash64\":%" PRIu64"\n"
 				       ,qw->m_prefixHash);
 
-			sb->safePrintf("\t}");
+			sb->safePrintf("\t\t}");
 			if ( i + 1 < q->m_numTerms )
 				sb->pushChar(',');
 			sb->pushChar('\n');
@@ -2969,7 +2969,7 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 		if ( si->m_format == FORMAT_JSON ) {
 			// remove last ,\n
 			sb->m_length -= 2;
-			sb->safePrintf ("\n\t}\n\n");
+			sb->safePrintf ("\n\t}\n");
 		}
 		// wtf?
 		//g_process.shutdownAbort(true);
