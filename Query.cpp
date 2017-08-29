@@ -1072,14 +1072,14 @@ bool Query::setQTerms ( const Words &words ) {
 	
 	//if all words are high-freq-terms then we have to mark the generated bigrams as required, otherwise PosdbTable.cpp gets unhappy and
 	//logs "no required terms in query!"
-	bool allAlnumWordsAreHighFreq = true;
+	bool allAlnumWordsAreIgnored = true;
 	for(int i=0; i<m_numWords; i++) {
 		if(is_alnum_utf8_string(m_qwords[i].m_word,m_qwords[i].m_word+m_qwords[i].m_wordLen) &&
-		    m_qwords[i].m_ignoreWord!=IGNORE_HIGHFREMTERM)
-			allAlnumWordsAreHighFreq = false;
+		   (m_qwords[i].m_ignoreWord!=IGNORE_HIGHFREMTERM && m_qwords[i].m_ignoreWord!=IGNORE_QSTOP))
+			allAlnumWordsAreIgnored = false;
 	}
-	if(allAlnumWordsAreHighFreq) {
-		log(LOG_DEBUG, "query: all alfanum-terms are high-freq-terms. Marking bigrams as required");
+	if(allAlnumWordsAreIgnored) {
+		log(LOG_DEBUG, "query: all alfanum-terms are ignored (highfreq/qstop). Marking bigrams as required");
 		for(int i=0; i<m_numTerms; i++) {
 			if(m_qterms[i].m_isPhrase)
 				m_qterms[i].m_isRequired = true;
