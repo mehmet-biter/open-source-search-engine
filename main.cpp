@@ -114,7 +114,9 @@ static void dumpWaitingTree(const char *coll);
 static void dumpDoledb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 static void dumpClusterdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, const char *url);
-static void dumpUnwantedDocs(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
+
+static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
+static void dumpUnwantedSpiderdbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
 
 static int32_t verifySpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int32_t firstIp);
 
@@ -499,6 +501,8 @@ int main2 ( int argc , char *argv[] ) {
 
 			"\tspiderdb:\n"
 			"\t\tdump s <collection> <fileNum> <numFiles> <includeTree> <statlevel=0/1/2> <firstIp>\n"
+			"\tspiderdb (Unwanted documents, checked against blocklist, plugins):\n"
+			"\t\tdump us <collection> <fileNum> <numFiles> <includeTree>\n"
 
 			"\ttagdb:\n"
 			"\t\tdump S <collection> <fileNum> <numFiles> <includeTree> <site>\n"
@@ -511,7 +515,7 @@ int main2 ( int argc , char *argv[] ) {
 
 			"\ttitledb:\n"
 			"\t\tdump t <collection> <fileNum> <numFiles> <includeTree> <docId>\n"
-			"\ttitledb (Unwanted documents, checked against blocklist, plugins and url hash):\n"
+			"\ttitledb (Unwanted documents, checked against blocklist, plugins):\n"
 			"\t\tdump u <collection> <fileNum> <numFiles> <includeTree>\n"
 			"\ttitledb (duplicates only):\n"
 			"\t\tdump D <collection> <fileNum> <numFiles> <includeTree> <docId>\n"
@@ -1343,8 +1347,10 @@ int main2 ( int argc , char *argv[] ) {
 			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url);
 		}  else if ( argv[cmdarg+1][0] == 'p' ) {
 			dumpPosdb( coll, startFileNum, numFiles, includeTree, termId, false );
-		}  else if ( argv[cmdarg+1][0] == 'u' ) {
-			dumpUnwantedDocs( coll, startFileNum, numFiles, includeTree);
+		}  else if (strcmp(argv[cmdarg+1], "u") == 0) {
+			dumpUnwantedTitledbRecs(coll, startFileNum, numFiles, includeTree);
+		} else if (strcmp(argv[cmdarg+1], "us") == 0) {
+			dumpUnwantedSpiderdbRecs(coll, startFileNum, numFiles, includeTree);
 		} else {
 			goto printHelp;
 		}
@@ -3432,42 +3438,7 @@ static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, 
 	}
 }
 
-static bool isUrlUnwanted(Url *url, const char **reason) {
-	//
-	// Check if url is on our blocklist
-	//
-	int errorCode = 0;
-	if (isUrlBlocked(*url, &errorCode)) {
-		*reason = "blocked unknown";
-		switch (errorCode) {
-			case EDOCBLOCKEDURL:
-				*reason = "blocked list";
-				break;
-			case EDOCBLOCKEDSHLIBDOMAIN:
-				*reason = "blocked domain";
-				break;
-			case EDOCBLOCKEDSHLIBURL:
-				*reason = "blocked url";
-				break;
-		}
-		return true;
-	}
-
-	//
-	// Check if url is different after stripping common tracking/session parameters
-	//
-	Url url_stripped;
-	url_stripped.set(url->getUrl(), url->getUrlLen(), false, true);
-
-	if (strcmp(url->getUrl(), url_stripped.getUrl()) != 0) {
-		*reason = "unwanted params";
-		return true;
-	}
-
-	return false;
-}
-
-static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree) {
+static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree) {
 
 	if(startFileNum!=0 && numFiles<0) {
 		//this may apply to all files, but I haven't checked into hash-based ones yet
@@ -3521,6 +3492,7 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 	}
 
 	g_urlBlackList.init();
+	g_urlWhiteList.init();
 
 	for(;;) {
 		// use msg5 to get the list, should ALWAYS block since no threads
@@ -3581,7 +3553,7 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 			Url *url = xd->getFirstUrl();
 			const char *reason = NULL;
 
-			if (isUrlUnwanted(url, &reason)) {
+			if (isUrlUnwanted(*url, &reason)) {
 				fprintf(stdout, "%" PRId64 "|%s|%s\n", docId, reason, url->getUrl());
 				continue;
 			}
@@ -3589,7 +3561,7 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 			Url **redirUrlPtr = xd->getRedirUrl();
 			if (redirUrlPtr && *redirUrlPtr) {
 				Url *redirUrl = *redirUrlPtr;
-				if (isUrlUnwanted(redirUrl, &reason)) {
+				if (isUrlUnwanted(*redirUrl, &reason)) {
 					fprintf(stdout, "%" PRId64 "|redir %s|%s|%s\n", docId, reason, url->getUrl(), redirUrl->getUrl());
 					continue;
 				}
@@ -3605,7 +3577,101 @@ static void dumpUnwantedDocs(const char *coll, int32_t startFileNum, int32_t num
 	}
 }
 
+static void dumpUnwantedSpiderdbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree) {
+	if (startFileNum < 0) {
+		log(LOG_LOGIC, "db: Start file number is < 0. Must be >= 0.");
+		return;
+	}
 
+	g_spiderdb.init ();
+	g_spiderdb.getRdb()->addRdbBase1(coll );
+
+	key128_t startKey;
+	startKey.setMin();
+
+	key128_t endKey;
+	endKey.setMax();
+
+	Msg5 msg5;
+	RdbList list;
+
+	// clear before calling Msg5
+	g_errno = 0;
+
+	int32_t count = 0;
+
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
+
+	g_urlBlackList.init();
+	g_urlWhiteList.init();
+
+	for(;;) {
+		// use msg5 to get the list, should ALWAYS block since no threads
+		if (!msg5.getList(RDB_SPIDERDB,
+		                  cr->m_collnum,
+		                  &list,
+		                  (char *)&startKey,
+		                  (char *)&endKey,
+		                  commandLineDumpdbRecSize,
+		                  includeTree,
+		                  startFileNum,
+		                  numFiles,
+		                  NULL, // state
+		                  NULL, // callback
+		                  0, // niceness
+		                  false, // err correction?
+		                  -1,             // maxRetries
+		                  false)) {          // isRealMerge
+			log(LOG_LOGIC, "db: getList did not block.");
+			return;
+		}
+
+		// all done if empty
+		if (list.isEmpty()) {
+			return;
+		}
+
+		// loop over entries in list
+		for (list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
+			// print a counter
+			if (((count++) % 100000) == 0) {
+				fprintf(stderr, "Processed %" PRId32" records.\n", count - 1);
+			}
+
+			// get it
+			char *srec = list.getCurrentRec();
+
+			// must be a request
+			if (Spiderdb::isSpiderReply((key128_t *)srec)) {
+				continue;
+			}
+
+			// cast it
+			SpiderRequest *sreq = (SpiderRequest *)srec;
+			if (!sreq->m_urlIsDocId) {
+				Url url;
+				// we don't need to strip parameter here, speed up
+				url.set(sreq->m_url, strlen(sreq->m_url), false, false, 122);
+
+				const char *reason = NULL;
+				if (isUrlUnwanted(url, &reason)) {
+					fprintf(stdout, "%s|%s\n", reason, sreq->m_url);
+					continue;
+				}
+			}
+		}
+
+		startKey = *(key128_t *)list.getLastKey();
+		startKey++;
+
+		// watch out for wrap around
+		if (startKey < *(key128_t *)list.getLastKey()) {
+			return;
+		}
+	}
+
+	return;
+}
 
 static int32_t verifySpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int32_t firstIp) {
 	if ( startFileNum < 0 ) {

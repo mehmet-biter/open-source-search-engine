@@ -43,3 +43,43 @@ bool isUrlBlocked(const Url &url, int *p_errno) {
 	Statistics::increment_url_block_counter_default();
 	return false;
 }
+
+bool isUrlUnwanted(const Url &url, const char **reason) {
+	//
+	// Check if url is on our blocklist
+	//
+	int errorCode = 0;
+	if (isUrlBlocked(url, &errorCode)) {
+		if (reason) {
+			*reason = "blocked unknown";
+
+			switch (errorCode) {
+				case EDOCBLOCKEDURL:
+					*reason = "blocked list";
+					break;
+				case EDOCBLOCKEDSHLIBDOMAIN:
+					*reason = "blocked domain";
+					break;
+				case EDOCBLOCKEDSHLIBURL:
+					*reason = "blocked url";
+					break;
+			}
+		}
+		return true;
+	}
+
+	//
+	// Check if url is different after stripping common tracking/session parameters
+	//
+	Url url_stripped;
+	url_stripped.set(url.getUrl(), url.getUrlLen(), false, true);
+
+	if (strcmp(url.getUrl(), url_stripped.getUrl()) != 0) {
+		if (reason) {
+			*reason = "unwanted params";
+		}
+		return true;
+	}
+
+	return false;
+}
