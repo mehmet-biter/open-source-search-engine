@@ -10,6 +10,26 @@ class TcpSocket;
 // generic gigablast request. for all apis offered.
 class GigablastRequest {
  public:
+	GigablastRequest()
+		: m_hr()
+		, m_socket(NULL)
+		, m_coll(NULL)
+		, m_url(NULL)
+		, m_docId(0)
+		, m_strip(0)
+		, m_includeHeader(false)
+		, m_urlsBuf(NULL)
+		, m_stripBox(false)
+		, m_harvestLinks(false)
+		, m_listBuf()
+		, m_msg4()
+		, m_query(NULL)
+		, m_srn(0)
+		, m_ern(0)
+		, m_qlang(NULL)
+		, m_forceDel(false)
+		, m_recycleContent(false) {
+	}
 
 	//
 	// make a copy of the http request because the original is
