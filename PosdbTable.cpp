@@ -2911,47 +2911,41 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 				isFirstKey = false;
 			}
 			else {
-				// if matches last key word position, do not add!
-				// we should add the bigram first if more important
-				// since it should be added before the actual term
-				// above in the sublist array. so if they are
-				// wikihalfstop bigrams they will be added first,
-				// otherwise, they are added after the regular term.
-				// should fix double scoring bug for 'cheat codes'
-				// query!
-				if ( Posdb::getWordPos(lastMptr) != Posdb::getWordPos(nwp[mink]) ) {
-					memcpy ( mptr, nwp[mink], 6 );
-					int termInfoIndex = qti->m_subList[qti->m_matchingSublist[mink].m_baseSubListIndex].m_qt - m_q->m_qterms;
-					*(miniMergeBuffer->getTermInfoIndexPtrForBufferPos(mptr)) = termInfoIndex;
-
-					// Detect highest siterank of inlinkers
-					if ( Posdb::getHashGroup(mptr) == HASHGROUP_INLINKTEXT) {
-						char inlinkerSiteRank = Posdb::getWordSpamRank(mptr);
-						if(inlinkerSiteRank > *highestInlinkSiteRank) {
-							*highestInlinkSiteRank = inlinkerSiteRank;
-						}
+				// Old, dubious comment: 2dont add if same keypos as previous item ..."
+				// Relied on the matchSubList to be in the order: left-bigram, right-bigram, term, synonyms...
+				// But setQueryTermInfo() has had a bug there for as long as we know and
+				// multiple entries with same position seems to have no harmful effect.
+				memcpy ( mptr, nwp[mink], 6 );
+				int termInfoIndex = qti->m_subList[qti->m_matchingSublist[mink].m_baseSubListIndex].m_qt - m_q->m_qterms;
+				*(miniMergeBuffer->getTermInfoIndexPtrForBufferPos(mptr)) = termInfoIndex;
+				
+				// Detect highest siterank of inlinkers
+				if ( Posdb::getHashGroup(mptr) == HASHGROUP_INLINKTEXT) {
+					char inlinkerSiteRank = Posdb::getWordSpamRank(mptr);
+					if(inlinkerSiteRank > *highestInlinkSiteRank) {
+						*highestInlinkSiteRank = inlinkerSiteRank;
 					}
-
-					// wipe out its syn bits and re-use our way
-					mptr[2] &= 0xfc;
-					// set the synbit so we know if its a synonym of term
-					if ( nwpFlags[mink] & (BF_BIGRAM|BF_SYNONYM)) {
-						mptr[2] |= 0x02;
-					}
-
-					if ( nwpFlags[mink] & BF_HALFSTOPWIKIBIGRAM ) {
-						mptr[2] |= 0x01;
-					}
-
-					// if it was the first key of its list it may not
-					// have its bit set for being 6 bytes now! so turn
-					// on the 2 compression bits
-					mptr[0] &= 0xf9;
-					mptr[0] |= 0x06;
-					// save it
-					lastMptr = mptr;
-					mptr += 6;
 				}
+				
+				// wipe out its syn bits and re-use our way
+				mptr[2] &= 0xfc;
+				// set the synbit so we know if its a synonym of term
+				if ( nwpFlags[mink] & (BF_BIGRAM|BF_SYNONYM)) {
+					mptr[2] |= 0x02;
+				}
+				
+				if ( nwpFlags[mink] & BF_HALFSTOPWIKIBIGRAM ) {
+					mptr[2] |= 0x01;
+				}
+				
+				// if it was the first key of its list it may not
+				// have its bit set for being 6 bytes now! so turn
+				// on the 2 compression bits
+				mptr[0] &= 0xf9;
+				mptr[0] |= 0x06;
+				// save it
+				lastMptr = mptr;
+				mptr += 6;
 			}
 
 			// advance the cursor over the key we used.
