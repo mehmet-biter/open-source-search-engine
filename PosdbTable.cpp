@@ -2839,9 +2839,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 
 		// Merge the lists into a list in miniMergeBuf.
 		// Get the min of each list
-		bool currTermDone = false;
-
-		while( !currTermDone && mptr < miniMergeBufSafeEnd ) {
+		while( mptr < miniMergeBufSafeEnd ) {
 			int32_t mink = -1;
 
 			for ( int32_t k = 0 ; k < nsub ; k++ ) {
