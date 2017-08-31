@@ -60,27 +60,27 @@ struct MiniMergeBuffer {
 	//the simpl merge buffer
 	char buffer[300000];
 	//the bufptr-to-which-term-did-it-come-from mapping. posbd keys in 'buffer' above is always a multiple of 6 so we only need a sixth
-	int16_t termInfoIndex[300000/6];
+	int16_t termIndex[300000/6];
 	std::vector<const char *> mergedListStart;
 	std::vector<const char *> mergedListEnd;
-	MiniMergeBuffer(int numQueryTermInfos)
-	  : mergedListStart(numQueryTermInfos),
-	    mergedListEnd(numQueryTermInfos)
+	MiniMergeBuffer(int numQueryTerms)
+	  : mergedListStart(numQueryTerms),
+	    mergedListEnd(numQueryTerms)
 	{
 #ifdef _VALGRIND_
-		VALGRIND_MAKE_MEM_UNDEFINED(termInfoIndex,sizeof(termInfoIndex));
+		VALGRIND_MAKE_MEM_UNDEFINED(termIndex,sizeof(termIndex));
 #endif
 	}
-	int16_t *getTermInfoIndexPtrForBufferPos(const char *ptr) {
+	int16_t *getTermIndexPtrForBufferPos(const char *ptr) {
 		size_t bufferOffset = (size_t)(ptr-buffer)/6;
-		return termInfoIndex+bufferOffset;
+		return termIndex+bufferOffset;
 	}
-	const int16_t *getTermInfoIndexPtrForBufferPos(const char *ptr) const {
+	const int16_t *getTermIndexPtrForBufferPos(const char *ptr) const {
 		size_t bufferOffset = (size_t)(ptr-buffer)/6;
-		return termInfoIndex+bufferOffset;
+		return termIndex+bufferOffset;
 	}
-	int16_t getTermInfoIndexForBufferPos(const char *ptr) const {
-		return *getTermInfoIndexPtrForBufferPos(ptr);
+	int16_t getTermIndexForBufferPos(const char *ptr) const {
+		return *getTermIndexPtrForBufferPos(ptr);
 	}
 };
 
@@ -342,7 +342,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 				score *= m_msg39req->m_synonymWeight;
 			}
 
-			int queryTermIndex = miniMergeBuffer->getTermInfoIndexForBufferPos(wpi);
+			int queryTermIndex = miniMergeBuffer->getTermIndexForBufferPos(wpi);
 			float userWeight = m_q->m_qterms[queryTermIndex].m_userWeight;
 			score *= userWeight;
 
@@ -518,7 +518,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 
 		float score = bestScores[k];
 
-		int queryTermIndex = miniMergeBuffer->getTermInfoIndexForBufferPos(maxp);
+		int queryTermIndex = miniMergeBuffer->getTermIndexForBufferPos(maxp);
 		//TODO: shouldn't we multiply with userweight here too?
 		//float userWeight = m_q->m_qterms[queryTermIndex].m_userWeight;
 		//score *= userWeight;
@@ -617,10 +617,10 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 					score *= m_msg39req->m_synonymWeight;
 				}
 
-				const int queryTermIndex1 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpi);
+				const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(wpi);
 				const float userWeight1 = m_q->m_qterms[queryTermIndex1].m_userWeight;
 				score *= userWeight1;
-				const int queryTermIndex2 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpj);
+				const int queryTermIndex2 = miniMergeBuffer->getTermIndexForBufferPos(wpj);
 				const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
 				score *= userWeight2;
 
@@ -698,10 +698,10 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				if ( helper2.syn )
 					score *= m_msg39req->m_synonymWeight;
 
-				const int queryTermIndex1 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpi);
+				const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(wpi);
 				const float userWeight1 = m_q->m_qterms[queryTermIndex1].m_userWeight;
 				score *= userWeight1;
-				const int queryTermIndex2 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpj);
+				const int queryTermIndex2 = miniMergeBuffer->getTermIndexForBufferPos(wpj);
 				const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
 				score *= userWeight2;
 
@@ -793,10 +793,10 @@ float PosdbTable::getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, co
 	if ( helper1.syn ) score *= m_msg39req->m_synonymWeight;
 	if ( helper2.syn ) score *= m_msg39req->m_synonymWeight;
 
-	const int queryTermIndex1 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpi);
+	const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(wpi);
 	const float userWeight1 = m_q->m_qterms[queryTermIndex1].m_userWeight;
 	score *= userWeight1;
-	const int queryTermIndex2 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpj);
+	const int queryTermIndex2 = miniMergeBuffer->getTermIndexForBufferPos(wpj);
 	const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
 	score *= userWeight2;
 
@@ -967,12 +967,12 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			}
 
 			{
-				const int queryTermIndex1 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpi);
+				const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(wpi);
 				const float userWeight1 = m_q->m_qterms[queryTermIndex1].m_userWeight;
 				const float termFreqWeight1 = m_q->m_qterms[queryTermIndex1].m_termFreqWeight;
 				score *= userWeight1;
 				score *= termFreqWeight1;
-				const int queryTermIndex2 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpj);
+				const int queryTermIndex2 = miniMergeBuffer->getTermIndexForBufferPos(wpj);
 				const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
 				const float termFreqWeight2 = m_q->m_qterms[queryTermIndex2].m_termFreqWeight;
 				score *= userWeight2;
@@ -1143,12 +1143,12 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			}
 
 			{
-				const int queryTermIndex1 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpi);
+				const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(wpi);
 				const float userWeight1 = m_q->m_qterms[queryTermIndex1].m_userWeight;
 				const float termFreqWeight1 = m_q->m_qterms[queryTermIndex1].m_termFreqWeight;
 				score *= userWeight1;
 				score *= termFreqWeight1;
-				const int queryTermIndex2 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpj);
+				const int queryTermIndex2 = miniMergeBuffer->getTermIndexForBufferPos(wpj);
 				const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
 				const float termFreqWeight2 = m_q->m_qterms[queryTermIndex2].m_termFreqWeight;
 				score *= userWeight2;
@@ -1313,9 +1313,9 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		bool fixedDist = bestFixed[k];
 		score *= wikiPhraseWeight;
 	
-		const int queryTermIndex1 = miniMergeBuffer->getTermInfoIndexForBufferPos(maxp1);
+		const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(maxp1);
 		const float termFreqWeight1 = m_q->m_qterms[queryTermIndex1].m_termFreqWeight;
-		const int queryTermIndex2 = miniMergeBuffer->getTermInfoIndexForBufferPos(maxp2);
+		const int queryTermIndex2 = miniMergeBuffer->getTermIndexForBufferPos(maxp2);
 		const float termFreqWeight2 = m_q->m_qterms[queryTermIndex2].m_termFreqWeight;
 
 		// we have to encode these bits into the mini merge now
@@ -2872,8 +2872,8 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 			if ( isFirstKey ) {
 				// store a 12 byte key in the merged list buffer
 				memcpy ( mptr, nwp[mink], 12 );
-				int termInfoIndex = qti->m_subList[qti->m_matchingSublist[mink].m_baseSubListIndex].m_qt - m_q->m_qterms;
-				*(miniMergeBuffer->getTermInfoIndexPtrForBufferPos(mptr)) = termInfoIndex;
+				int termIndex = qti->m_subList[qti->m_matchingSublist[mink].m_baseSubListIndex].m_qt - m_q->m_qterms;
+				*(miniMergeBuffer->getTermIndexPtrForBufferPos(mptr)) = termIndex;
 
 				// Detect highest siterank of inlinkers
 				if ( Posdb::getHashGroup(mptr) == HASHGROUP_INLINKTEXT) {
@@ -2916,8 +2916,8 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 				// But setQueryTermInfo() has had a bug there for as long as we know and
 				// multiple entries with same position seems to have no harmful effect.
 				memcpy ( mptr, nwp[mink], 6 );
-				int termInfoIndex = qti->m_subList[qti->m_matchingSublist[mink].m_baseSubListIndex].m_qt - m_q->m_qterms;
-				*(miniMergeBuffer->getTermInfoIndexPtrForBufferPos(mptr)) = termInfoIndex;
+				int termIndex = qti->m_subList[qti->m_matchingSublist[mink].m_baseSubListIndex].m_qt - m_q->m_qterms;
+				*(miniMergeBuffer->getTermIndexPtrForBufferPos(mptr)) = termIndex;
 				
 				// Detect highest siterank of inlinkers
 				if ( Posdb::getHashGroup(mptr) == HASHGROUP_INLINKTEXT) {
@@ -3293,10 +3293,10 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 			}
 
 			// term freqweight here
-			const int queryTermIndex1 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpi);
+			const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(wpi);
 			const float termFreqWeight1 = m_q->m_qterms[queryTermIndex1].m_termFreqWeight;
 			max *= termFreqWeight1;
-			const int queryTermIndex2 = miniMergeBuffer->getTermInfoIndexForBufferPos(wpj);
+			const int queryTermIndex2 = miniMergeBuffer->getTermIndexForBufferPos(wpj);
 			const float termFreqWeight2 = m_q->m_qterms[queryTermIndex2].m_termFreqWeight;
 			max *= termFreqWeight2;
 			//TODO: shouldn't we multiply with userweight here too?
