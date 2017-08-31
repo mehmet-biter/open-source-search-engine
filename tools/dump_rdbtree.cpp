@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	if (strcmp(argv[1], "--h") == 0 || strcmp(argv[1], "--help") == 0 ) {
+	if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0 ) {
 		print_usage(argv[0]);
 		return 1;
 	}
