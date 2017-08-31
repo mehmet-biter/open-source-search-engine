@@ -51,7 +51,7 @@ TEST(UrlComponentTest, ComponentNormalize) {
 }
 
 TEST(UrlComponentTest, MatcherMatchDefault) {
-	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "Param1=Value1", 13, '?');
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
 
 	UrlComponent::Matcher matcherLower("param1");
 	EXPECT_TRUE(matcherLower.isMatching(urlComponent));
@@ -59,18 +59,33 @@ TEST(UrlComponentTest, MatcherMatchDefault) {
 	UrlComponent::Matcher matcherUpper("PARAM1");
 	EXPECT_TRUE(matcherUpper.isMatching(urlComponent));
 
-	UrlComponent::Matcher matcherPrefix("Param");
+	UrlComponent::Matcher matcherPrefix("PaR");
 	EXPECT_FALSE(matcherPrefix.isMatching(urlComponent));
 
-	UrlComponent::Matcher matcherLonger("Param123");
+	UrlComponent::Matcher matcherPrefixLower("par");
+	EXPECT_FALSE(matcherPrefixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffix("Ram1");
+	EXPECT_FALSE(matcherSuffix.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffixLower("ram1");
+	EXPECT_FALSE(matcherSuffixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherLonger("PaRam123");
 	EXPECT_FALSE(matcherLonger.isMatching(urlComponent));
 
-	UrlComponent::Matcher matcherExact("Param1");
+	UrlComponent::Matcher matcherExact("PaRam1");
 	EXPECT_TRUE(matcherExact.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValue("Value1");
+	EXPECT_FALSE(matcherValue.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValueShort("Val");
+	EXPECT_FALSE(matcherValueShort.isMatching(urlComponent));
 }
 
 TEST(UrlComponentTest, MatcherMatchCase) {
-	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "Param1=Value1", 13, '?');
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
 
 	MatchCriteria matchCriteria = MATCH_CASE;
 
@@ -80,19 +95,34 @@ TEST(UrlComponentTest, MatcherMatchCase) {
 	UrlComponent::Matcher matcherUpper("PARAM1", matchCriteria);
 	EXPECT_FALSE(matcherUpper.isMatching(urlComponent));
 
-	UrlComponent::Matcher matcherPrefix("Param", matchCriteria);
+	UrlComponent::Matcher matcherPrefix("PaR", matchCriteria);
 	EXPECT_FALSE(matcherPrefix.isMatching(urlComponent));
 
-	UrlComponent::Matcher matcherLonger("Param123", matchCriteria);
+	UrlComponent::Matcher matcherPrefixLower("par", matchCriteria);
+	EXPECT_FALSE(matcherPrefixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffix("Ram1", matchCriteria);
+	EXPECT_FALSE(matcherSuffix.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffixLower("ram1");
+	EXPECT_FALSE(matcherSuffixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherLonger("PaRam123", matchCriteria);
 	EXPECT_FALSE(matcherLonger.isMatching(urlComponent));
 
-	UrlComponent::Matcher matcherExact("Param1", matchCriteria);
+	UrlComponent::Matcher matcherExact("PaRam1", matchCriteria);
 	EXPECT_TRUE(matcherExact.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValue("Value1", matchCriteria);
+	EXPECT_FALSE(matcherValue.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValueShort("Val", matchCriteria);
+	EXPECT_FALSE(matcherValueShort.isMatching(urlComponent));
 }
 
 
 TEST(UrlComponentTest, MatcherMatchPartial) {
-	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "Param1=Value1", 13, '?');
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
 
 	MatchCriteria matchCriteria = MATCH_PARTIAL;
 
@@ -102,18 +132,105 @@ TEST(UrlComponentTest, MatcherMatchPartial) {
 	UrlComponent::Matcher matcherUpper("PARAM1", matchCriteria);
 	EXPECT_TRUE(matcherUpper.isMatching(urlComponent));
 
-	UrlComponent::Matcher matcherPrefix("Param", matchCriteria);
+	UrlComponent::Matcher matcherPrefix("PaR", matchCriteria);
 	EXPECT_TRUE(matcherPrefix.isMatching(urlComponent));
 
-	UrlComponent::Matcher matcherLonger("Param123", matchCriteria);
+	UrlComponent::Matcher matcherPrefixLower("par", matchCriteria);
+	EXPECT_TRUE(matcherPrefixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffix("Ram1", matchCriteria);
+	EXPECT_TRUE(matcherSuffix.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffixLower("ram1", matchCriteria);
+	EXPECT_TRUE(matcherSuffixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherLonger("PaRam123", matchCriteria);
 	EXPECT_FALSE(matcherLonger.isMatching(urlComponent));
 
-	UrlComponent::Matcher matcherExact("Param1", matchCriteria);
+	UrlComponent::Matcher matcherExact("PaRam1", matchCriteria);
 	EXPECT_TRUE(matcherExact.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValue("Value1", matchCriteria);
+	EXPECT_FALSE(matcherValue.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValueShort("Val", matchCriteria);
+	EXPECT_FALSE(matcherValueShort.isMatching(urlComponent));
+}
+
+TEST(UrlComponentTest, MatcherMatchPrefix) {
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
+
+	MatchCriteria matchCriteria = MATCH_PREFIX;
+
+	UrlComponent::Matcher matcherLower("param1", matchCriteria);
+	EXPECT_TRUE(matcherLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherUpper("PARAM1", matchCriteria);
+	EXPECT_TRUE(matcherUpper.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherPrefix("PaR", matchCriteria);
+	EXPECT_TRUE(matcherPrefix.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherPrefixLower("par", matchCriteria);
+	EXPECT_TRUE(matcherPrefixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffix("Ram1", matchCriteria);
+	EXPECT_FALSE(matcherSuffix.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffixLower("ram1", matchCriteria);
+	EXPECT_FALSE(matcherSuffixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherLonger("PaRam123", matchCriteria);
+	EXPECT_FALSE(matcherLonger.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherExact("PaRam1", matchCriteria);
+	EXPECT_TRUE(matcherExact.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValue("Value1", matchCriteria);
+	EXPECT_FALSE(matcherValue.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValueShort("Val", matchCriteria);
+	EXPECT_FALSE(matcherValueShort.isMatching(urlComponent));
+}
+
+TEST(UrlComponentTest, MatcherMatchSuffix) {
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
+
+	MatchCriteria matchCriteria = MATCH_SUFFIX;
+
+	UrlComponent::Matcher matcherLower("param1", matchCriteria);
+	EXPECT_TRUE(matcherLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherUpper("PARAM1", matchCriteria);
+	EXPECT_TRUE(matcherUpper.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherPrefix("PaR", matchCriteria);
+	EXPECT_FALSE(matcherPrefix.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherPrefixLower("par", matchCriteria);
+	EXPECT_FALSE(matcherPrefixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffix("Ram1", matchCriteria);
+	EXPECT_TRUE(matcherSuffix.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffixLower("ram1", matchCriteria);
+	EXPECT_TRUE(matcherSuffixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherLonger("PaRam123", matchCriteria);
+	EXPECT_FALSE(matcherLonger.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherExact("PaRam1", matchCriteria);
+	EXPECT_TRUE(matcherExact.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValue("Value1", matchCriteria);
+	EXPECT_FALSE(matcherValue.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValueShort("Val", matchCriteria);
+	EXPECT_FALSE(matcherValueShort.isMatching(urlComponent));
 }
 
 TEST(UrlComponentTest, MatcherMatchCaseMatchPartial) {
-	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "Param1=Value1", 13, '?');
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
 
 	MatchCriteria matchCriteria = (MATCH_CASE | MATCH_PARTIAL);
 
@@ -123,14 +240,101 @@ TEST(UrlComponentTest, MatcherMatchCaseMatchPartial) {
 	UrlComponent::Matcher matcherUpper("PARAM1", matchCriteria);
 	EXPECT_FALSE(matcherUpper.isMatching(urlComponent));
 
-	UrlComponent::Matcher matcherPrefix("Param", matchCriteria);
+	UrlComponent::Matcher matcherPrefix("PaR", matchCriteria);
 	EXPECT_TRUE(matcherPrefix.isMatching(urlComponent));
 
-	UrlComponent::Matcher matcherLonger("Param123", matchCriteria);
+	UrlComponent::Matcher matcherPrefixLower("par", matchCriteria);
+	EXPECT_FALSE(matcherPrefixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffix("Ram1", matchCriteria);
+	EXPECT_TRUE(matcherSuffix.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffixLower("ram1", matchCriteria);
+	EXPECT_FALSE(matcherSuffixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherLonger("PaRam123", matchCriteria);
 	EXPECT_FALSE(matcherLonger.isMatching(urlComponent));
 
-	UrlComponent::Matcher matcherExact("Param1", matchCriteria);
+	UrlComponent::Matcher matcherExact("PaRam1", matchCriteria);
 	EXPECT_TRUE(matcherExact.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValue("Value1", matchCriteria);
+	EXPECT_FALSE(matcherValue.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValueShort("Val", matchCriteria);
+	EXPECT_FALSE(matcherValueShort.isMatching(urlComponent));
+}
+
+TEST(UrlComponentTest, MatcherMatchCaseMatchPrefix) {
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
+
+	MatchCriteria matchCriteria = (MATCH_CASE | MATCH_PREFIX);
+
+	UrlComponent::Matcher matcherLower("param1", matchCriteria);
+	EXPECT_FALSE(matcherLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherUpper("PARAM1", matchCriteria);
+	EXPECT_FALSE(matcherUpper.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherPrefix("PaR", matchCriteria);
+	EXPECT_TRUE(matcherPrefix.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherPrefixLower("par", matchCriteria);
+	EXPECT_FALSE(matcherPrefixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffix("Ram1", matchCriteria);
+	EXPECT_FALSE(matcherSuffix.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffixLower("ram1", matchCriteria);
+	EXPECT_FALSE(matcherSuffixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherLonger("PaRam123", matchCriteria);
+	EXPECT_FALSE(matcherLonger.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherExact("PaRam1", matchCriteria);
+	EXPECT_TRUE(matcherExact.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValue("Value1", matchCriteria);
+	EXPECT_FALSE(matcherValue.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValueShort("Val", matchCriteria);
+	EXPECT_FALSE(matcherValueShort.isMatching(urlComponent));
+}
+
+TEST(UrlComponentTest, MatcherMatchCaseMatchSuffix) {
+	UrlComponent urlComponent(UrlComponent::TYPE_QUERY, "PaRam1=Value1", 13, '?');
+
+	MatchCriteria matchCriteria = (MATCH_CASE | MATCH_SUFFIX);
+
+	UrlComponent::Matcher matcherLower("param1", matchCriteria);
+	EXPECT_FALSE(matcherLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherUpper("PARAM1", matchCriteria);
+	EXPECT_FALSE(matcherUpper.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherPrefix("PaR", matchCriteria);
+	EXPECT_FALSE(matcherPrefix.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherPrefixLower("par", matchCriteria);
+	EXPECT_FALSE(matcherPrefixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffix("Ram1", matchCriteria);
+	EXPECT_TRUE(matcherSuffix.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherSuffixLower("ram1", matchCriteria);
+	EXPECT_FALSE(matcherSuffixLower.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherLonger("PaRam123", matchCriteria);
+	EXPECT_FALSE(matcherLonger.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherExact("PaRam1", matchCriteria);
+	EXPECT_TRUE(matcherExact.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValue("Value1", matchCriteria);
+	EXPECT_FALSE(matcherValue.isMatching(urlComponent));
+
+	UrlComponent::Matcher matcherValueShort("Val", matchCriteria);
+	EXPECT_FALSE(matcherValueShort.isMatching(urlComponent));
 }
 
 UrlComponent createUrlComponent(UrlComponent::Type type, const char *component) {

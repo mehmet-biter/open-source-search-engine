@@ -65,45 +65,66 @@ UrlComponent::UrlComponent( UrlComponent::Type type, const char *pos, size_t len
 }
 
 void UrlComponent::print() const {
-	logf( LOG_DEBUG, "UrlComponent::type         : %s", m_type == TYPE_PATH ? "path" : m_type == TYPE_QUERY ? "query" : "unknown" );
-	logf( LOG_DEBUG, "UrlComponent::componentStr : %s", m_componentStr.c_str() );
-	logf( LOG_DEBUG, "UrlComponent::separator    : %c", m_separator );
-	logf( LOG_DEBUG, "UrlComponent::key          : %s", m_key.c_str() );
-	logf( LOG_DEBUG, "UrlComponent::keyLen       : %zu", m_keyLen );
-	logf( LOG_DEBUG, "UrlComponent::deleted      : %s", m_deleted ? "true" : "false" );
+	logf(LOG_DEBUG, "UrlComponent::type         : %s", m_type == TYPE_PATH ? "path" : m_type == TYPE_QUERY ? "query" : "unknown");
+	logf(LOG_DEBUG, "UrlComponent::componentStr : %s", m_componentStr.c_str());
+	logf(LOG_DEBUG, "UrlComponent::separator    : %c", m_separator);
+	logf(LOG_DEBUG, "UrlComponent::key          : %s", m_key.c_str());
+	logf(LOG_DEBUG, "UrlComponent::keyLen       : %zu", m_keyLen);
+	logf(LOG_DEBUG, "UrlComponent::deleted      : %s", m_deleted ? "true" : "false");
 }
 
-UrlComponent::Matcher::Matcher( const char *param, MatchCriteria matchCriteria )
-	: m_param( param )
-	, m_matchCriteria( matchCriteria )
-	, m_matchPartial( matchCriteria & MATCH_PARTIAL )
-	, m_matchCase( matchCriteria & MATCH_CASE ) {
-	if ( !m_matchCase ) {
-		std::transform( m_param.begin(), m_param.end(), m_param.begin(), ::tolower );
+UrlComponent::Matcher::Matcher(const char *param, MatchCriteria matchCriteria)
+	: m_param(param)
+	, m_matchCriteria(matchCriteria)
+	, m_matchPartial(matchCriteria & MATCH_PARTIAL)
+	, m_matchCase(matchCriteria & MATCH_CASE)
+	, m_matchPrefix(matchCriteria & MATCH_PREFIX)
+	, m_matchSuffix(matchCriteria & MATCH_SUFFIX) {
+
+	// invalid combination
+	if ((m_matchPrefix && m_matchSuffix) ||
+		(m_matchPartial && (m_matchPrefix || m_matchSuffix))) {
+		gbshutdownLogicError();
+	}
+
+	if (!m_matchCase) {
+		std::transform(m_param.begin(), m_param.end(), m_param.begin(), ::tolower);
 	}
 }
 
 void UrlComponent::Matcher::print() const {
-	logf( LOG_DEBUG, "UrlComponent::Matcher::param         : %s", m_param.c_str() );
-	logf( LOG_DEBUG, "UrlComponent::Matcher::matchCriteria : %d", m_matchCriteria );
-	logf( LOG_DEBUG, "UrlComponent::Matcher::matchPartial  : %s", m_matchPartial ? "true" : "false" );
-	logf( LOG_DEBUG, "UrlComponent::Matcher::matchCase     : %s", m_matchCase ? "true" : "false" );
+	logf(LOG_DEBUG, "UrlComponent::Matcher::param         : %s", m_param.c_str());
+	logf(LOG_DEBUG, "UrlComponent::Matcher::matchCriteria : %d", m_matchCriteria);
+	logf(LOG_DEBUG, "UrlComponent::Matcher::matchPartial  : %s", m_matchPartial ? "true" : "false");
+	logf(LOG_DEBUG, "UrlComponent::Matcher::matchPrefix   : %s", m_matchPrefix ? "true" : "false");
+	logf(LOG_DEBUG, "UrlComponent::Matcher::matchSuffix   : %s", m_matchSuffix ? "true" : "false");
+	logf(LOG_DEBUG, "UrlComponent::Matcher::matchCase     : %s", m_matchCase ? "true" : "false");
 }
 
-bool UrlComponent::Matcher::isMatching( const UrlComponent &urlPart ) const {
-	if ( m_matchCase ) {
-		if ( ( m_matchPartial && m_param.size() <= urlPart.m_keyLen ) || ( m_param.size() == urlPart.m_keyLen ) ) {
-			return ( std::equal( m_param.begin(), m_param.end(), urlPart.m_componentStr.begin() ) );
+bool UrlComponent::Matcher::isMatching(const UrlComponent &urlPart) const {
+	const std::string &matchStr = m_matchCase ? urlPart.m_componentStr : urlPart.m_key;
+	size_t matchStrLen = urlPart.m_keyLen;
+
+	if (m_param.size() == matchStrLen) {
+		return std::equal(m_param.begin(), m_param.end(), matchStr.begin());
+	}
+
+	if (m_param.size() < matchStrLen) {
+		if (m_matchPartial) {
+			size_t pos = matchStr.find(m_param);
+			return (pos != std::string::npos && pos + m_param.size() <= matchStrLen);
 		}
 
-		return false;
+		if (m_matchPrefix) {
+			return std::equal(m_param.begin(), m_param.end(), matchStr.begin());
+		}
+
+		if (m_matchSuffix) {
+			return std::equal(m_param.rbegin(), m_param.rend(), matchStr.rbegin() + (matchStr.size() - matchStrLen));
+		}
 	}
 
-	if ( m_matchPartial ) {
-		return ( urlPart.m_key.find(m_param) != std::string::npos );
-	}
-
-	return ( urlPart.m_key == m_param );
+	return false;
 }
 
 UrlComponent::Validator::Validator( size_t minLength, size_t maxLength, bool allowEmpty,

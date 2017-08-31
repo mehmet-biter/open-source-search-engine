@@ -83,7 +83,9 @@ private:
 enum MatchCriteria {
 	MATCH_DEFAULT = 0,
 	MATCH_CASE = 1,
-	MATCH_PARTIAL = 2
+	MATCH_PARTIAL = 2,
+	MATCH_PREFIX = 4,
+	MATCH_SUFFIX = 8
 };
 
 inline MatchCriteria operator|( MatchCriteria a, MatchCriteria b ) {
@@ -115,6 +117,8 @@ private:
 	MatchCriteria m_matchCriteria;
 	bool m_matchPartial;
 	bool m_matchCase;
+	bool m_matchPrefix;
+	bool m_matchSuffix;
 };
 
 // allowed characters
