@@ -234,6 +234,7 @@ class Conf {
 	float m_hashGroupWeightInUrl;
 	float m_hashGroupWeightInMenu;
 	float m_synonymWeight;
+	float m_bigramWeight;
 	float m_pageTemperatureWeightMin;
 	float m_pageTemperatureWeightMax;
 

@@ -67,6 +67,7 @@ class Msg39Request {
 	float m_termFreqWeightMin;
 	float m_termFreqWeightMax;
 	float   m_synonymWeight;
+	float   m_bigramWeight;
 	float	m_pageTemperatureWeightMin;
 	float	m_pageTemperatureWeightMax;
 	bool    m_usePageTemperatureForRanking;

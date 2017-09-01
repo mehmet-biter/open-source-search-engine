@@ -72,6 +72,7 @@ SearchInput::SearchInput() {
 	m_termFreqWeightMax = 1.0;
 
 	m_synonymWeight = 0.9;
+	m_bigramWeight  = 5.0;
 	m_pageTemperatureWeightMin = 1.0;
 	m_pageTemperatureWeightMax = 20.0;
 	m_usePageTemperatureForRanking = true;

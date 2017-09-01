@@ -349,6 +349,11 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 			score *= m_q->m_qterms[queryTermIndex].m_termFreqWeight;
 			score *= m_q->m_qterms[queryTermIndex].m_termFreqWeight;
 
+			if(m_q->m_qterms[queryTermIndex].m_isPhrase) {
+				score *= m_msg39req->m_bigramWeight;
+				score *= m_msg39req->m_bigramWeight;
+			}
+
 			// do not allow duplicate hashgroups!
 			int32_t bro = -1;
 			for( int32_t k=0; k < numTop; k++) {
@@ -624,6 +629,11 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
 				score *= userWeight2;
 
+				if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
+					score *= m_msg39req->m_bigramWeight;
+				if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
+					score *= m_msg39req->m_bigramWeight;
+
 				// word spam weights
 				score *= helper1.spamw * helper2.spamw;
 				// huge title? do not allow 11th+ word to be weighted high
@@ -704,6 +714,11 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				const int queryTermIndex2 = miniMergeBuffer->getTermIndexForBufferPos(wpj);
 				const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
 				score *= userWeight2;
+
+				if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
+					score *= m_msg39req->m_bigramWeight;
+				if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
+					score *= m_msg39req->m_bigramWeight;
 
 				// word spam weights
 				score *= helper1.spamw * helper2.spamw;
@@ -799,6 +814,11 @@ float PosdbTable::getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, co
 	const int queryTermIndex2 = miniMergeBuffer->getTermIndexForBufferPos(wpj);
 	const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
 	score *= userWeight2;
+
+	if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
+		score *= m_msg39req->m_bigramWeight;
+	if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
+		score *= m_msg39req->m_bigramWeight;
 
 	// word spam weights
 	score *= helper1.spamw * helper2.spamw;
@@ -977,6 +997,10 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 				const float termFreqWeight2 = m_q->m_qterms[queryTermIndex2].m_termFreqWeight;
 				score *= userWeight2;
 				score *= termFreqWeight2;
+				if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
+					score *= m_msg39req->m_bigramWeight;
+				if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
+					score *= m_msg39req->m_bigramWeight;
 			}
 
 			// the new logic
@@ -1153,6 +1177,10 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 				const float termFreqWeight2 = m_q->m_qterms[queryTermIndex2].m_termFreqWeight;
 				score *= userWeight2;
 				score *= termFreqWeight2;
+				if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
+					score *= m_msg39req->m_bigramWeight;
+				if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
+					score *= m_msg39req->m_bigramWeight;
 			}
 			
 			// word spam weights

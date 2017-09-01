@@ -352,6 +352,7 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_termFreqWeightMax = m_si->m_termFreqWeightMax;
 
 	mr.m_synonymWeight             = m_si->m_synonymWeight;
+	mr.m_bigramWeight              = m_si->m_bigramWeight;
 	mr.m_pageTemperatureWeightMin = m_si->m_pageTemperatureWeightMin;
 	mr.m_pageTemperatureWeightMax = m_si->m_pageTemperatureWeightMax;
 

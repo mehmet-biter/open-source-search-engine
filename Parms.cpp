@@ -79,6 +79,7 @@ const struct {
 	{"hgw_inintlinktext", 10.0},
 	{"hgw_inurl", 10.0},
 	{"synonym_weight", 10.0},
+	{"bigram_weight", 10.0},
 	{"termfreqweightfreqmin", 100.0},
 	{"termfreqweightfreqmax", 100.0},
 	{"termfreqweightmin", 100.0},
@@ -3784,6 +3785,16 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "Bigram weight";
+	m->m_desc  = "Weight of bigrams in relation to single words";
+	m->m_cgi   = "bigram_weight";
+	simple_m_set(SearchInput,m_bigramWeight);
+	m->m_defOff2 = offsetof(Conf,m_bigramWeight);
+	m->m_def   = "5.000000";
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	m->m_title = "Page temp weight min";
 	m->m_desc  = "Page temp is scaled to be between the min and max";
 	m->m_cgi   = "pagetempweightmin";
@@ -4183,6 +4194,16 @@ void Parms::init ( ) {
 	m->m_cgi   = "synonym_weight";
 	simple_m_set(Conf,m_synonymWeight);
 	m->m_def   = "0.900000";
+	m->m_group = true;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
+	m->m_page  = PAGE_RANKING;
+	m++;
+
+	m->m_title = "Bigram weight";
+	m->m_desc  = "Weight of bigrams in relation to single words";
+	m->m_cgi   = "bigram_weight";
+	simple_m_set(Conf,m_bigramWeight);
+	m->m_def   = "5.000000";
 	m->m_group = true;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
