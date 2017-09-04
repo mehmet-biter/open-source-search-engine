@@ -8270,7 +8270,7 @@ char **XmlDoc::gotHttpReply ( ) {
 	}
 
 	//Slighty weird in the original code: this block didn't exist so for all errors not
-	//explicitly tested for above woudl slip through as empty responses.
+	//explicitly tested for in the code above would slip through as empty responses.
 	if(g_errno) {
 		if(m_httpReply) {
 			mfree ( m_httpReply, m_httpReplyAllocSize, "XmlDocHR" );
