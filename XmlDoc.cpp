@@ -8130,6 +8130,10 @@ char **XmlDoc::gotHttpReply ( ) {
 
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
+	//if m_errno isn't set then take whatever from g_errno, such as econnreset
+	if(!m_errno)
+		m_errno = g_errno;
+	
 	// save it
 	int32_t saved = g_errno;
 	// note it
@@ -8263,6 +8267,19 @@ char **XmlDoc::gotHttpReply ( ) {
 		m_httpReplySize      = 0;
 		m_httpReply          = NULL;
 		m_httpReplyAllocSize = 0;
+	}
+
+	//Slighty weird in the original code: this block didn't exist so for all errors not
+	//explicitly tested for above woudl slip through as empty responses.
+	if(g_errno) {
+		if(m_httpReply) {
+			mfree ( m_httpReply, m_httpReplyAllocSize, "XmlDocHR" );
+			m_httpReplySize      = 0;
+			m_httpReply          = NULL;
+			m_httpReplyAllocSize = 0;
+		}
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. ENOMEM" );
+		return NULL;
 	}
 
 	// clear this i guess
