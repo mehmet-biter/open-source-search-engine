@@ -5794,7 +5794,7 @@ void XmlDoc::nukeDoc ( XmlDoc *nd ) {
 
 static LinkInfo s_dummy;
 
-XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
+XmlDoc **XmlDoc::getExtraDoc(const char *u, int32_t maxCacheAge) {
 
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN [%s]", u);
 

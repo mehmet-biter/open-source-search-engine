@@ -381,7 +381,7 @@ public:
 	int32_t *getOutlinksAddedDate ( ) ;
 	uint16_t *getCountryId ( ) ;
 	class XmlDoc **getOldXmlDoc ( ) ;
-	class XmlDoc **getExtraDoc ( char *url , int32_t maxCacheAge = 0 ) ;
+	class XmlDoc **getExtraDoc(const char *url, int32_t maxCacheAge = 0);
 	bool getIsPageParser ( ) ;
 	class XmlDoc **getRootXmlDoc ( int32_t maxCacheAge = 0 ) ;
 	char **getOldTitleRec ( );
