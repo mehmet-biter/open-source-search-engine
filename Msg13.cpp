@@ -13,6 +13,8 @@
 #include "GbUtil.h"
 #include "zlib.h"
 #include "Mem.h"
+#include "PageInject.h"
+#include "Pages.h"
 #include "Sanity.h"
 
 
@@ -318,7 +320,6 @@ bool Msg13::gotForwardedReply ( UdpSlot *slot ) {
 	return gotFinalReply ( reply , replySize , replyAllocSize );
 }
 
-#include "PageInject.h"
 
 bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSize ){
 
@@ -2390,7 +2391,6 @@ int64_t computeProxiedCacheKey64 ( Msg13Request *r ) {
 	return h64;
 }
 
-#include "Pages.h"
 
 bool printHammerQueueTable ( SafeBuf *sb ) {
 
