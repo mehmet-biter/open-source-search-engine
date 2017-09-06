@@ -342,7 +342,7 @@ UrlComponent createUrlComponent(UrlComponent::Type type, const char *component) 
 }
 
 TEST(UrlComponentTest, ValidatorDefault) {
-	UrlComponent::Validator validator;
+	UrlComponent::Validator validator(0, 0, false, ALLOW_ALL, MANDATORY_NONE);
 
 	EXPECT_TRUE(validator.isValid(createUrlComponent(UrlComponent::TYPE_QUERY, "param=abcdefghijklmnopqrstuvwxyz")));
 	EXPECT_TRUE(validator.isValid(createUrlComponent(UrlComponent::TYPE_QUERY, "param=ABCDEFGHIJKLMNOPQRSTUVWXYZ")));
