@@ -137,16 +137,37 @@ TEST(UrlMatchListTest, Path) {
 	TestUrlMatchList urlMatchList("blocklist/path.txt");
 	urlMatchList.load();
 
+	//path  /wp-admin/
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/wp-admin/"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/wp-admin/example/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.example.com/tag/wp-admin/"));
 
+	//file  wp-login.php
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/blog/wp-login.php"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/wp-login.php"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.example.com/awp-login.php"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.example.com/wp-login.php5"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/blog/wp-login.php?param=value&param2=value2"));
 
+	//regex   *   https?://[^/]+/file1.html
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.host.com/file1.html"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/file1.html"));
+
+	//param url
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?URL=abc"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?url=abcde"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?uRl=abcde"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?url=http://www.example.com"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?urlz=http://www.example.com"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/bogus.html?zurl=http://www.example.com"));
+
+	//param action  buy_now
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?action=buy_now&product_id=123"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?ACTION=buy_now&product_id=123"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?product_id=123&action=buy_now"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?product_id=123&ACTION=buy_now"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?action1=buy_now&product_id=123"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?daction=buy_now&product_id=123"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?action=dbuy_now&product_id=123"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?action=buy_nowd&product_id=123"));
 }

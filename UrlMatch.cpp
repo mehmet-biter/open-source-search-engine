@@ -4,6 +4,7 @@
 #include "GbUtil.h"
 #include "Log.h"
 #include "Conf.h"
+#include "UrlParser.h"
 #include <algorithm>
 
 urlmatchstr_t::urlmatchstr_t(urlmatchtype_t type, const std::string &str)
@@ -20,6 +21,11 @@ urlmatchdomain_t::urlmatchdomain_t(const std::string &domain, const std::string 
 urlmatchhost_t::urlmatchhost_t(const std::string &host, const std::string &path)
 	: m_host(host)
 	, m_path(path) {
+}
+
+urlmatchparam_t::urlmatchparam_t(const std::string &name, const std::string &value)
+	: m_name(name)
+	, m_value(value) {
 }
 
 urlmatchregex_t::urlmatchregex_t(const std::string &regexStr, const GbRegex &regex, const std::string &domain)
@@ -46,6 +52,11 @@ UrlMatch::UrlMatch(const std::shared_ptr<urlmatchdomain_t> &urlmatchdomain)
 UrlMatch::UrlMatch(const std::shared_ptr<urlmatchhost_t> &urlmatchhost)
 	: m_type(url_match_host)
 	, m_host(urlmatchhost) {
+}
+
+UrlMatch::UrlMatch(const std::shared_ptr<urlmatchparam_t> &urlmatchparam)
+	: m_type(url_match_param)
+	, m_param(urlmatchparam) {
 }
 
 UrlMatch::UrlMatch(const std::shared_ptr<urlmatchregex_t> &urlmatchregex)
@@ -99,6 +110,22 @@ bool UrlMatch::match(const Url &url) const {
 				return matchString(m_host->m_path, url.getPath(), url.getPathLenWithCgi(), true);
 			}
 			break;
+		case url_match_param:
+			if (strncasestr(url.getQuery(), m_param->m_name.c_str(), url.getQueryLen()) != NULL) {
+				// not the most efficient, but there is already parsing logic for query parameter in UrlParser
+				UrlParser urlParser(url.getUrl(), url.getUrlLen(), TITLEREC_CURRENT_VERSION);
+				auto queryMatches = urlParser.matchQueryParam(UrlComponent::Matcher(m_param->m_name.c_str()));
+				if (m_param->m_value.empty()) {
+					return (!queryMatches.empty());
+				}
+
+				for (auto &queryMatch : queryMatches) {
+					if (matchString(m_param->m_value, queryMatch->getValue(), queryMatch->getValueLen())) {
+						return true;
+					}
+				}
+			}
+			break;
 		case url_match_path:
 			return matchString(m_str->m_str, url.getPath(), url.getPathLenWithCgi(), true);
 		case url_match_regex:
@@ -140,6 +167,10 @@ void UrlMatch::logMatch(const Url &url) const {
 		case url_match_host:
 			type = "host";
 			value = m_host->m_host.c_str();
+			break;
+		case url_match_param:
+			type = "param";
+			value = m_param->m_name.c_str();
 			break;
 		case url_match_path:
 			type = "path";

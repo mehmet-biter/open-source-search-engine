@@ -10,6 +10,7 @@ enum urlmatchtype_t {
 	url_match_domain,
 	url_match_file,
 	url_match_host,
+	url_match_param,
 	url_match_path,
 	url_match_regex,
 	url_match_tld
@@ -43,6 +44,13 @@ struct urlmatchhost_t {
 	std::string m_path;
 };
 
+struct urlmatchparam_t {
+	urlmatchparam_t(const std::string &name, const std::string &value);
+
+	std::string m_name;
+	std::string m_value;
+};
+
 struct urlmatchregex_t {
 	urlmatchregex_t(const std::string &regexStr, const GbRegex &regex, const std::string &domain = "");
 
@@ -65,6 +73,7 @@ public:
 	UrlMatch(const std::shared_ptr<urlmatchstr_t> &urlmatchstr);
 	UrlMatch(const std::shared_ptr<urlmatchdomain_t> &urlmatchdomain);
 	UrlMatch(const std::shared_ptr<urlmatchhost_t> &urlmatchhost);
+	UrlMatch(const std::shared_ptr<urlmatchparam_t> &urlmatchparam);
 	UrlMatch(const std::shared_ptr<urlmatchregex_t> &urlmatchregex);
 	UrlMatch(const std::shared_ptr<urlmatchtld_t> &urlmatchtld);
 
@@ -78,6 +87,7 @@ private:
 
 	std::shared_ptr<urlmatchdomain_t> m_domain;
 	std::shared_ptr<urlmatchhost_t> m_host;
+	std::shared_ptr<urlmatchparam_t> m_param;
 	std::shared_ptr<urlmatchregex_t> m_regex;
 	std::shared_ptr<urlmatchtld_t> m_tld;
 };

@@ -60,6 +60,21 @@ host	www.example.com
 #   allows: www.example.com/some/
 host	www.example.com	/path/
 
+# param example
+# =============
+# block specific param (case insensitive)
+#   blocks: www.example.com/file.html?good=abc&bad=123
+#   blocks: www.example.com/?bad=123
+#   allows: www.example.com/?good=abc
+param	bad
+
+# block specific param (case insensitive) with specific value
+#   blocks: www.example.com/file.html?good=abc&bad=xyz
+#   blocks: www.example.com/file.html?good=abc&BAD=xyz
+#   allows: www.example.com/file.html?good=abc&bad=abc
+#   allows: www.example.com/file.html?good=abc&bad=xyz1
+param	bad	xyz
+
 # path example
 # ============
 # blocks specific path (prefix)

@@ -143,8 +143,11 @@ bool UrlMatchList::load() {
 				}
 				break;
 			case 'p':
-				// path
-				if (firstColEnd == 4 && memcmp(line.data(), "path", 4) == 0) {
+				if (firstColEnd == 5 && memcmp(line.data(), "param", 5) == 0) {
+					// param
+					tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchparam_t>(new urlmatchparam_t(col2, col3)));
+				} else if (firstColEnd == 4 && memcmp(line.data(), "path", 4) == 0) {
+					// path
 					tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_path, col2)));
 				} else {
 					logError("Invalid line found. Ignoring line='%s'", line.c_str());

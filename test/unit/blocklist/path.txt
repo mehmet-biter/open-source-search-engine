@@ -1,3 +1,5 @@
 path    /wp-admin/
 file	wp-login.php
 regex   *   https?://[^/]+/file1.html
+param	url
+param	action	buy_now
