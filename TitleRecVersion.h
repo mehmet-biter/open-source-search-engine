@@ -12,6 +12,9 @@
 //#define TITLEREC_CURRENT_VERSION  122
 
 // normalize url encoded url (url encode, strip params)
-#define TITLEREC_CURRENT_VERSION    123
+//#define TITLEREC_CURRENT_VERSION    123
+
+// strip more parameters
+#define TITLEREC_CURRENT_VERSION    124
 
 #endif // GB_TITLERECVERSION_H

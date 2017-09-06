@@ -127,8 +127,11 @@ bool UrlComponent::Matcher::isMatching(const UrlComponent &urlPart) const {
 	return false;
 }
 
-UrlComponent::Validator::Validator( size_t minLength, size_t maxLength, bool allowEmpty,
-                                    AllowCriteria allowCriteria, MandatoryCriteria mandatoryCriteria )
+UrlComponent::Validator::Validator(size_t minLength, size_t maxLength, AllowCriteria allowCriteria, MandatoryCriteria mandatoryCriteria)
+	: Validator(minLength, maxLength, false, allowCriteria, mandatoryCriteria) {
+}
+
+UrlComponent::Validator::Validator(size_t minLength, size_t maxLength, bool allowEmpty, AllowCriteria allowCriteria, MandatoryCriteria mandatoryCriteria)
 	: m_minLength( minLength )
 	, m_maxLength( maxLength )
 	, m_allowEmpty( allowEmpty )
@@ -179,12 +182,12 @@ bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
 	}
 
 	// check length
-	if ( ( m_minLength && m_minLength > valueLen ) || ( m_maxLength && m_maxLength < valueLen ) ) {
+	if ((m_minLength && m_minLength > valueLen) || (m_maxLength && m_maxLength < valueLen)) {
 		return false;
 	}
 
 	// no other checks required
-	if ( m_allowCriteria == ALLOW_ALL && m_mandatoryCriteria == MANDATORY_NONE ) {
+	if (m_allowCriteria == ALLOW_ALL && m_mandatoryCriteria == MANDATORY_NONE) {
 		return true;
 	}
 

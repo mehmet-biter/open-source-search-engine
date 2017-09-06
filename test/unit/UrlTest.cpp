@@ -632,6 +632,24 @@ TEST(UrlTest, StripApacheDirSort) {
 	strip_param_tests(test_cases, 123);
 }
 
+TEST(UrlTest, StripToken) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// token
+		std::make_tuple("http://www.svb-marine.es/?token=72fa1c46b266790a1184dbf4830e7526",
+		                "http://www.svb-marine.es/"),
+	    std::make_tuple("http://sklep.ledix24.pl/cart?qty=1&id_product=349&token=08fbe731b6fabd4960b7d37f0bb4a040&add",
+	                    "http://sklep.ledix24.pl/cart?qty=1&id_product=349&add"),
+
+	    // token (no strip)
+		std::make_tuple("http://mmm.pulsemob.com/event/million-miles-at-miller-2014/fundraise?token=9574e813bfd80ebd90fc83a8e6217d39",
+		                "http://mmm.pulsemob.com/event/million-miles-at-miller-2014/fundraise?token=9574e813bfd80ebd90fc83a8e6217d39"),
+		std::make_tuple("http://publish.folders.eu/nl/fixed/1037308?token=a96c1dbe8a313ed66daa9c258b739ddc",
+		                "http://publish.folders.eu/nl/fixed/1037308?token=a96c1dbe8a313ed66daa9c258b739ddc")
+	};
+
+	strip_param_tests(test_cases, 124);
+}
+
 TEST(UrlTest, StripParamsOracleEloqua) {
 	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// oracle eloqua
@@ -754,6 +772,272 @@ TEST(UrlTest, StripParamsPartnerRef) {
 	};
 
 	strip_param_tests(test_cases, 123);
+}
+
+TEST(UrlTest, StripParamsZenid) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// zenid
+		std::make_tuple("http://shop.bekyoot.com/index.php?main_page=index&cPath=6_30&zenid=Dx6UNhv0I08S7wxT5C2V93",
+		                "http://shop.bekyoot.com/index.php?main_page=index&cPath=6_30")
+	};
+
+	strip_param_tests(test_cases, 124);
+}
+
+TEST(UrlTest, StripParamsEndSid) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// ends with sid
+		std::make_tuple("http://www.fajnaapteka.pl/cart?SHOPSID=20aae8ec775b5b81f33a6bb81a557624",
+		                "http://www.fajnaapteka.pl/cart"),
+		std::make_tuple("https://www.sport-conrad.com/outdoor/schuhe/zubehoer/?force_sid=6eqfjtn17nodv610d673eldki1",
+		                "https://www.sport-conrad.com/outdoor/schuhe/zubehoer/"),
+
+	    // ends with sid (no strip)
+	    std::make_tuple("http://www.cchlp.sk/index.php?mid=17&sid=103",
+	                    "http://www.cchlp.sk/index.php?mid=17&sid=103"),
+
+		// SMPagesId (no strip)
+		std::make_tuple("http://www.anholtkro.dk/index.php?SMExt=SMPages&SMPagesId=2c37a67f126601a3717462278f42024c",
+		                "http://www.anholtkro.dk/index.php?SMExt=SMPages&SMPagesId=2c37a67f126601a3717462278f42024c"),
+
+		// newsid (no strip)
+		std::make_tuple("http://www.vdpolizei.de/shop/index.php?sid=h4spcnqpulog3s874s97dj2v73&cl=news&newsid=27c8c9c166ea120ea2a112a554f3f00a&archive=true",
+		                "http://www.vdpolizei.de/shop/index.php?cl=news&newsid=27c8c9c166ea120ea2a112a554f3f00a&archive=true")
+	};
+
+	strip_param_tests(test_cases, 124);
+}
+
+TEST(UrlTest, StripParamsGallery) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// g1_return
+		std::make_tuple("http://galeria.waw.net.pl/login.php?g1_return=http%3A%2F%2Fgaleria.waw.net.pl%2Fwesele%3Fpage%3D1",
+		                "http://galeria.waw.net.pl/login.php"),
+		std::make_tuple("http://straatvoetbal.nl/gallery/login.php?g1_return=%2Fgallery%2F12-maart%2Fadc",
+		                "http://straatvoetbal.nl/gallery/login.php"),
+
+	    // g2_return
+		std::make_tuple("http://www.theonepic.com/main.php?g2_view=core.UserAdmin&g2_subView=contactowner.Contact&g2_return=%2Fmain.php%3Fg2_view%3Decard.SendEcard%26g2_itemId%3D6017%26g2_GALLERYSID%3D091c48bee07495b3ae33498884b71643&g2_GALLERYSID=091c48bee07495b3ae33498884b71643",
+		                "http://www.theonepic.com/main.php?g2_view=core.UserAdmin&g2_subView=contactowner.Contact"),
+		std::make_tuple("http://www.theonepic.com/main.php?g2_view=ecard.SendEcard&g2_itemId=2547&g2_return=%2Fv%2Fwycieczki%2Ftsr2007%2FTallShipsRaces2007_0568.JPG.html%3F",
+		                "http://www.theonepic.com/main.php?g2_view=ecard.SendEcard&g2_itemId=2547"),
+
+		// g2_returnUrl
+		std::make_tuple("http://tangsookarate.com/gallery/main.php?g2_controller=photoaccess.PrintPhoto&g2_itemId=526&g2_returnUrl=http%3A%2F%2Ftangsookarate.com%2Fgallery%2Fmain.php%3Fg2_itemId%3D526%26g2_GALLERYSID%3D54ac7931e806241de1b164d66d95cb39",
+		                "http://tangsookarate.com/gallery/main.php?g2_controller=photoaccess.PrintPhoto&g2_itemId=526"),
+		std::make_tuple("http://www.laketalquinlodge.com/gallery/main.php?g2_view=core.UserAdmin&g2_subView=core.UserLogin&g2_return=%2Fgallery%2F3rd%2BAnnual%2BRusty%2BLeverette%2BMemorial%2BTournament%2FSAM_0235.JPG.html%3Fg2_GALLERYSID%3D4f9d05edcda62d067d5eacc9506db024&g2_returnName=photo",
+		                "http://www.laketalquinlodge.com/gallery/main.php?g2_view=core.UserAdmin&g2_subView=core.UserLogin"),
+
+		// g2_returnName
+		std::make_tuple("http://www.hobohash.com/phpBB2/gallery2.php?g2_controller=exif.SwitchDetailMode&g2_mode=detailed&g2_return=%2FphpBB2%2Fgallery2.php%3Fg2_itemId%3D5613%26g2_imageViewsIndex%3D1%26&g2_returnName=photo",
+		                "http://www.hobohash.com/phpBB2/gallery2.php?g2_controller=exif.SwitchDetailMode&g2_mode=detailed"),
+		std::make_tuple("http://www.reflectionsbypaul.com/gallery2/main.php?g2_controller=checkout.AddToCart&g2_itemId=808575&g2_return=%2Fgallery2%2Fmain.php%3Fg2_itemId%3D808486%26&g2_returnName=album",
+		                "http://www.reflectionsbypaul.com/gallery2/main.php?g2_controller=checkout.AddToCart&g2_itemId=808575"),
+
+		// g2_authToken
+		std::make_tuple("http://www.tagarao.com/photos/main.php?g2_controller=cart.AddToCart&g2_itemId=6893&g2_return=%2Fphotos%2Fmain.php%3Fg2_itemId%3D6893%26g2_jsWarning%3Dtrue%26g2_GALLERYSID%3D47e24de4dee311d3fc29db301f9148b8&g2_authToken=cc3edd692f88",
+		                "http://www.tagarao.com/photos/main.php?g2_controller=cart.AddToCart&g2_itemId=6893"),
+		std::make_tuple("http://www.siouxtools.com/gallery/main.php?g2_view=shutterfly.PrintPhotos&g2_itemId=3020&g2_returnUrl=http%3A%2F%2Fwww.siouxtools.com%2Fgallery%2Fmain.php%3Fg2_itemId%3D2987&g2_authToken=1e18a5706c51",
+		                "http://www.siouxtools.com/gallery/main.php?g2_view=shutterfly.PrintPhotos&g2_itemId=3020")
+	};
+
+	strip_param_tests(test_cases, 124);
+}
+
+TEST(UrlTest, StripParamsRedirect) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// redirect
+		std::make_tuple("http://www.deg-tippspiel.de/index.php?content=get_spieltaglist&s_nr=2&user_id=939&redirect=get_userpunkte",
+		                "http://www.deg-tippspiel.de/index.php?content=get_spieltaglist&s_nr=2&user_id=939"),
+		std::make_tuple("http://www.wskc.org/resources/-/asset_publisher/mE9ojzmgdeRG/content/women-scientists-in-industry-a-winning-formula-for-companies?redirect=http%3A%2F%2Fwww.wskc.org%2Fresources%3Bjsessionid%3DBC4BA3BF23D5F904241A478F1F8256A4%3Fp_p_id%3D101_INSTANCE_mE9ojzmgdeRG%26p_p_lifecycle%3D0%26p_p_state%3Dnormal%26p_p_mode%3Dview%26p_p_col_id%3Dcolumn-2%26p_p_col_pos%3D3%26p_p_col_count%3D4",
+		                "http://www.wskc.org/resources/-/asset_publisher/mE9ojzmgdeRG/content/women-scientists-in-industry-a-winning-formula-for-companies"),
+
+		// redirect_to
+		std::make_tuple("http://www.davidchapman.com/news/wp-login.php?redirect_to=http://www.davidchapman.com/news/updates/1816/chart-of-the-week-27/",
+		                "http://www.davidchapman.com/news/wp-login.php"),
+		std::make_tuple("http://www.cetuesday.com/cetlog?redirect_to=http%3A%2F%2Fwww.cetuesday.com%2Fbasics-of-chronic-pain-definition-and-statistics%2F",
+		                "http://www.cetuesday.com/cetlog"),
+
+		// redirectto
+		std::make_tuple("http://www.winsornewton.com.tradeitlive.com/uk/login/connect?redirectto=/uk/connect/member?UserID=77316",
+		                "http://www.winsornewton.com.tradeitlive.com/uk/login/connect"),
+		std::make_tuple("http://ippe16.mapyourshow.com/6_0/noscript/includes/stats.cfm?useraction=Banner&useractiontype=Click&actionvalue=IDSSearch&altvalue=10&redirectto=%2F6_0%2Fnoscript%2Fexhibitor%2Fexhibitor-details.cfm%3Fexhid%3D996&test=1&CFID=147188389&CFTOKEN=f40d459438d9c17-40680BB5-0676-BC0F-7208FDA55CF401AB",
+		                "http://ippe16.mapyourshow.com/6_0/noscript/includes/stats.cfm?useraction=Banner&useractiontype=Click&actionvalue=IDSSearch&altvalue=10&test=1"),
+
+		// redirectto (path)
+		std::make_tuple("http://www.diveoahu.com/pages/panel/redirectto/L3BhZ2VzL3BhbmVsL3BsdWdpbi9yZXNlcnZlL2FyZWEvY3VzdG9tZXIvZXZlbnQvMTAyNTc=",
+		                "http://www.diveoahu.com/pages/panel"),
+		std::make_tuple("https://discounts.aarp.org/login/index/forceCard/0/redirectTo/http%253A%252F%252Fdiscounts.aarp.org%252Foffer%252Fxanterra-parks-and-resorts%252Fdeal%252F508524%252FuSource%252FMTTCET%252FcategoryId%252F130%252FsubCategoryId%252F137",
+		                "https://discounts.aarp.org/login/index/forceCard/0"),
+
+		// redirect_uri
+		std::make_tuple("http://www.movescount.com/auth?redirect_uri=%2Fmembers%2Fmember254485-AnneRasku&register",
+		                "http://www.movescount.com/auth?register"),
+		std::make_tuple("https://tyr-prod.apigee.net/v1/oauth2/authorizeapp?response_type=code&client_id=IhdEuDi9nnuoj8jfCLQ8sAEgYOaIDdkD&redirect_uri=https%3A%2F%2Fforum.nos.pt%2Fsso%2Freturn%2Foauth_nos&state=3169412fc0588874c4d7b72a47c9d367570f68fb&scope=user_profile&auto_login=false&prompt=login",
+		                "https://tyr-prod.apigee.net/v1/oauth2/authorizeapp?response_type=code&client_id=IhdEuDi9nnuoj8jfCLQ8sAEgYOaIDdkD&state=3169412fc0588874c4d7b72a47c9d367570f68fb&scope=user_profile&auto_login=false&prompt=login"),
+
+		// redirect_url
+		std::make_tuple("http://www.leighlabs.com/newshop/index.php?target=auth&mode=login_form&redirect_url=index.php%3Ftarget%3Dproducts%26product_id%3D29901",
+		                "http://www.leighlabs.com/newshop/index.php?target=auth&mode=login_form"),
+		std::make_tuple("https://www.swissmem-academy.ch/speziell/404.html?redirect_url=%2Funser-angebot%2Fseminare%2Fswissmem-executive-seminar.html",
+		                "https://www.swissmem-academy.ch/speziell/404.html"),
+
+		// redirecturl
+		std::make_tuple("https://payment001.server-secure.com/esvc000910_secure/customerShowOrders.shop?redirecturl=customerShowOrders.shop&track=569336b18544651b7cd8aae7e4e20c63",
+		                "https://payment001.server-secure.com/esvc000910_secure/customerShowOrders.shop?track=569336b18544651b7cd8aae7e4e20c63"),
+		std::make_tuple("http://pdme.webwareop.com/Login.aspx?redirecturl=/Login.aspx?redirecturl=%2FCatalog%2FOffice%2FUSSCO%2FCatalogResults.aspx%3FsubCategoryValue%3D4294593604%26subCateg%26sessionexpire%3D1",
+		                "http://pdme.webwareop.com/Login.aspx"),
+
+		// return
+		std::make_tuple("http://lms.fce.vutbr.cz/calendar/set.php?return=aHR0cDovL2xtcy5mY2UudnV0YnIuY3ovY2FsZW5kYXIvdmlldy5waHA%2Fdmlldz1tb250aCZjYWxfZD0xJmNhbF9tPTImY2FsX3k9MjAxNSZjb3Vyc2U9MQ%3D%3D&sesskey=8cSr5r965C&var=showcourses",
+		                "http://lms.fce.vutbr.cz/calendar/set.php?sesskey=8cSr5r965C&var=showcourses"),
+		std::make_tuple("http://www.activodinamico.com/login.asp?return=http%3A%2F%2Fwww.activodinamico.com%2Fdetail.asp%3Fid%3D612%23comments",
+		                "http://www.activodinamico.com/login.asp"),
+
+		// return_page
+		std::make_tuple("http://nowprint.print.iastate.edu/NowPrint/PrivacyStatement.aspx?return_page=%2FNowPrint%2FLegal.aspx%3Freturn_page%3D%252fNowPrint%252fLogin.aspx%253freturn_page%253d%25252fNowPrint%25252fContactUs.aspx%25253freturn_page%25253d%2525252fNowPrint%2525252fRegister.aspx%2525253fcurrent_group_id%2525253d1",
+		                "http://nowprint.print.iastate.edu/NowPrint/PrivacyStatement.aspx"),
+		std::make_tuple("http://mediatheque-patrimoine.perpignan.fr/view.php?titn=280507&lg=FR&return_page=enligne",
+		                "http://mediatheque-patrimoine.perpignan.fr/view.php?titn=280507&lg=FR"),
+
+		// returnpage
+		std::make_tuple("http://www.melaniegleason.com/myaccount/get.php?action=savehome&lid=92982870&aid=051500002&oid=051500000&temp=1754&aname=Melanie+Gleason&aimg=1&agent_hasfeat=10&returnpage=%2Flistings%2Fquery.php%3Ffeat%3D1%26aid%3D051500002",
+		                "http://www.melaniegleason.com/myaccount/get.php?action=savehome&lid=92982870&aid=051500002&oid=051500000&temp=1754&aname=Melanie+Gleason&aimg=1&agent_hasfeat=10"),
+		std::make_tuple("http://www.bladebid.com/asp/addwatch.asp?watchitem=70374&returnpage=detail.asp?id=70374",
+		                "http://www.bladebid.com/asp/addwatch.asp?watchitem=70374"),
+
+		// return_to
+		std::make_tuple("https://support.simulationcurriculum.com/login?return_to=https%3A%2F%2Fsupport.simulationcurriculum.com%2Fforums%2F20594523-Meade-Click-Here-To-Ask-A-Question%2Fentries%2Fnew",
+		                "https://support.simulationcurriculum.com/login"),
+		std::make_tuple("http://www.dailyindonesia.com/cgi-bin/mt/mt-cp.cgi?__mode=login&blog_id=1&return_to=http://www.dailyindonesia.com/news/2010/11/first-planet-from-another-galaxy-discovered.php",
+		                "http://www.dailyindonesia.com/cgi-bin/mt/mt-cp.cgi?__mode=login&blog_id=1"),
+
+		// returnto
+		std::make_tuple("http://wiki.securityweekly.com/wiki/index.php?title=Special:UserLogin&returnto=Episode196",
+		                "http://wiki.securityweekly.com/wiki/index.php?title=Special:UserLogin"),
+		std::make_tuple("http://www.qilania.com/wiki/index.php?title=Especial:Entrar&returnto=La_Ardilla_Scout&returntoquery=printable%3Dyes",
+		                "http://www.qilania.com/wiki/index.php?title=Especial:Entrar"),
+
+	    // returnto (path)
+		std::make_tuple("https://unistats.direct.gov.uk/Subjects/Overview/10003645FT-UBAH3ASEU/ReturnTo/Search",
+		                "https://unistats.direct.gov.uk/Subjects/Overview/10003645FT-UBAH3ASEU"),
+
+	    std::make_tuple("http://www.habion.nl/Inloggen-2.mvc/ReturnTo/http$3A$2F$2Fwww$2Ehabion$2Enl$2F2$2FWelkom$2FProjecten$2FIn$252Duitvoering$2FAmsterdam$2C$252DNieuwbouw$252DOostpoort$2Ehtml",
+	                    "http://www.habion.nl/Inloggen-2.mvc"),
+		// returntopage
+		std::make_tuple("https://web4.facs.org/ebusiness/login.aspx?returntopage=http%3A%2F%2Facscommunities.facs.org%2Fcommunities%2Fresources%2Fviewdocument%2F%3FDocumentKey%3D794f4345-9fd8-4512-9aae-0799a7cf14e1",
+		                "https://web4.facs.org/ebusiness/login.aspx"),
+
+		// returntoquery
+		std::make_tuple("http://wiki.zenoss.org/index.php?title=Special:UserLogin&returnto=Special%3ASearchByProperty%2FFlavor%2Ffree&returntoquery=limit%3D50%26offset%3D170%26property%3DFlavor%26value%3Dfree",
+		                "http://wiki.zenoss.org/index.php?title=Special:UserLogin"),
+
+		// returntosearch
+		std::make_tuple("http://gppl.evanced.info/eventsignup.asp?ID=4151&rts=&disptype=info&ret=eventcalendar.asp&pointer=&returnToSearch=&num=0&ad=&dt=mo&mo=01/02/2015&df=calendar&EventType=ALL&Lib=&AgeGroup=ALL&LangType=0&WindowMode=&noheader=&lad=&pub=1&nopub=&page=&pgdisp=",
+		                "http://gppl.evanced.info/eventsignup.asp?ID=4151&disptype=info&ret=eventcalendar.asp&num=0&dt=mo&mo=01/02/2015&df=calendar&EventType=ALL&AgeGroup=ALL&LangType=0&pub=1"),
+
+		// returntotitle
+		std::make_tuple("http://metis.ipfn.ist.utl.pt/index.php?title=Special:Userlogin&returntotitle=CODAC%2FInstrumentation%2FDesign%2FHigh-speed+Processing",
+		                "http://metis.ipfn.ist.utl.pt/index.php?title=Special:Userlogin"),
+
+		// returntourl
+		std::make_tuple("https://www.ausbiotech.org/updates/details.asp?cat=4&id=1231&returnToUrl=%2Fdefault.asp",
+		                "https://www.ausbiotech.org/updates/details.asp?cat=4&id=1231"),
+
+		// return_uri
+		std::make_tuple("http://www.bavoir-et-tablier.fr/login.html?return_uri=%2Fcours%2F54314335%2Fles_desserts_c_est_un_jeu_d_enfant__gateau_au_yaourt_crepes_brochettes_de_fruits_.html",
+		                "http://www.bavoir-et-tablier.fr/login.html"),
+
+		// return_url
+		std::make_tuple("http://www.gandgwebstore.com/index.php?dispatch=auth.login_form&return_url=%2Findex.php%3Fdispatch%3Dsitemap.view",
+		                "http://www.gandgwebstore.com/index.php?dispatch=auth.login_form"),
+
+		// return_url (path)
+		std::make_tuple("http://www.crowdfunding.biz/login/return_url/64-L2Jsb2dzLzEvODkvY3Jvd2RmdW5kaW5nLWluZHVzdHJ5LXNwb3RsaWdodC0xNS1taWtlLWhheWVz",
+		                "http://www.crowdfunding.biz/login"),
+		std::make_tuple("http://www.ideanasnuvens.com.br/ideanasnuvens/login/return_url/64-L2lkZWFuYXNudXZlbnMvcHJvZmlsZS9hLWFuZHJ1c2tldmljaXVz?mobile=0",
+		                "http://www.ideanasnuvens.com.br/ideanasnuvens/login?mobile=0"),
+
+		// returnurl
+		std::make_tuple("http://forumdacasa.com/people.php?ReturnUrl=http%3A%2F%2Fforumdacasa.com%2Faccount%2F2603%2F",
+		                "http://forumdacasa.com/people.php"),
+
+		// returnurl (path)
+		std::make_tuple("http://www.av-warehouse.com/Login/tabid/1641/returnurl/0/Default.aspx?wsusReturnurl=%2FShop%2FShopProducts%2Ftabid%2F1650%2Fc%2FProjectors%2FCategoryID%2F7962%2FDefault.aspx%3Fpoverride%3Dy%23p57346",
+		                "http://www.av-warehouse.com/Login/tabid/1641/Default.aspx?wsusReturnurl=%2FShop%2FShopProducts%2Ftabid%2F1650%2Fc%2FProjectors%2FCategoryID%2F7962%2FDefault.aspx%3Fpoverride%3Dy%23p57346"),
+		std::make_tuple("http://www.toshibaclim.com/inscription/returnurl/-connexion-returnurl--connexion-returnurl--inscription-returnurl--default-aspx-tabid-106-aspx-aspx-aspx.aspx",
+		                "http://www.toshibaclim.com/inscription"),
+
+		// referer
+		std::make_tuple("http://church.onlinebizca.com/cpg1410/login.php?referer=thumbnails.php%3Falbum%3Dlas",
+		                "http://church.onlinebizca.com/cpg1410/login.php"),
+
+		// referer (path)
+		std::make_tuple("http://europeanflora.com/nm/index.php/customer/account/login/referer/aHR0cDovL2V1cm9wZWFuZmxvcmEuY29tL25tL2luZGV4LnBocC9jYXRhbG9nL3Byb2R1Y3Qvdmlldy9pZC8yMzEvY2F0ZWdvcnkvMzkvP19fX1NJRD1V/",
+		                "http://europeanflora.com/nm/index.php/customer/account/login/"),
+
+		/// @todo
+		std::make_tuple("http://shop.heinrichsweikamp.com/customer/account/login/referer/aHR0cDovL3Nob3AuaGVpbnJpY2hzd2Vpa2FtcC5jb20vY3VzdG9tZXIvYWNjb3VudC9pbmRleC8,/?___store=en&___from_store=de",
+		                "http://shop.heinrichsweikamp.com/customer/account/login/?___store=en&___from_store=de"),
+
+		// referer (path param)
+		std::make_tuple("https://www.location-bretagne.de/ferienhaus/suche/buchen/2490/-/12.12.2015/referer,TXSLferienhausTXSLsucheTXSLanzeigeTXSL2490TXSLurlaub-in-einer-ferienwohnung-oder-ferienhaus-bretagneTXPOhtml.html",
+		                "https://www.location-bretagne.de/ferienhaus/suche/buchen/2490/-/12.12.2015"),
+
+		// referrer
+		std::make_tuple("https://book.bestpricecruises.com/web/cruises/details.aspx?pid=813736&referrer=Top-40-Last-Minute-Cruise-Deals",
+		                "https://book.bestpricecruises.com/web/cruises/details.aspx?pid=813736")
+	};
+
+	strip_param_tests(test_cases, 124);
+}
+
+TEST(UrlTest, StripParamsAffiliateId) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// afid
+		std::make_tuple("http://www.papercards.com/help/affiliates.asp?afID=va197177240341",
+		                "http://www.papercards.com/help/affiliates.asp"),
+		std::make_tuple("http://www.rawandrough.com/vod/RAWANDROUGH/browse.php?by_category=174&afid=HDK&noconsent=true",
+		                "http://www.rawandrough.com/vod/RAWANDROUGH/browse.php?by_category=174&noconsent=true"),
+
+		// affid
+		std::make_tuple("http://www.phoenixflowershops.com/productCategory.cfm?catID=1573&affID=35&obit=1476061",
+		                "http://www.phoenixflowershops.com/productCategory.cfm?catID=1573&obit=1476061"),
+		std::make_tuple("http://www.autocreditexpress.com/?affid=ap001985&subid=aceinfo_about",
+		                "http://www.autocreditexpress.com/?subid=aceinfo_about"),
+
+		// affiliateid
+		std::make_tuple("http://www.legacy.com/news/photo-galleries/?affiliateId=3201",
+		                "http://www.legacy.com/news/photo-galleries/"),
+		std::make_tuple("http://claimadvice.euclaim.eu/IncidentTypeWebForm.aspx?CountryCode=NL&Culture=nl-NL&Style=Default&AffiliateId=755210d5-995f-42b1-af7e-ac5cfdace694&ProblemFlightId=130593d8-a842-40c3-9c77-a4b4755d5c68",
+		                "http://claimadvice.euclaim.eu/IncidentTypeWebForm.aspx?CountryCode=NL&Culture=nl-NL&Style=Default&ProblemFlightId=130593d8-a842-40c3-9c77-a4b4755d5c68"),
+
+		// affiliate_id
+		std::make_tuple("http://www.play-asia.com/nendoroid-no-501-star-wars-stormtrooper/13/708n57?affiliate_id=1644989",
+		                "http://www.play-asia.com/nendoroid-no-501-star-wars-stormtrooper/13/708n57"),
+		std::make_tuple("http://www.onlineticketstore.co.uk/region/Bay-of-Plenty-region.aspx/?affiliate_id=tcook",
+		                "http://www.onlineticketstore.co.uk/region/Bay-of-Plenty-region.aspx/"),
+
+		// affiliate
+		std::make_tuple("https://members.bet365.com/Members/OpenAccount/?affiliate=365_085707&lng=3",
+		                "https://members.bet365.com/Members/OpenAccount/?lng=3"),
+		std::make_tuple("https://ersatzteile.kawasaki.at/d2p/d2p?ALIAS=25205&CLIENT=MOTO&LANGUAGE=DE&BRAND=KAWASAKI&NAVGROUP=MC&MACHINE=670&AFFILIATE=ersatzteile.kawasaki.at&HEAD=002.999121442F05",
+		                "https://ersatzteile.kawasaki.at/d2p/d2p?ALIAS=25205&CLIENT=MOTO&LANGUAGE=DE&BRAND=KAWASAKI&NAVGROUP=MC&MACHINE=670&HEAD=002.999121442F05"),
+
+		// psid
+		std::make_tuple("http://jasmin.com/fi/nainen/18-22?category=girls&pstool=15_11&psprogram=PPS&pstour=t1&psid=allmodels&langua=",
+		                "http://jasmin.com/fi/nainen/18-22?category=girls&pstool=15_11&psprogram=PPS&pstour=t1"),
+		std::make_tuple("http://www.mycams.com/hu/?psid=diamondxxxsites&pstool=205_1&psprogram=pps&campaign_id=83269&utm_source=promotools&utm_medium=banner&utm_campaign=awets&more=2242442539749270272",
+		                "http://www.mycams.com/hu/?pstool=205_1&psprogram=pps&campaign_id=83269&more=2242442539749270272"),
+
+	    // psid (no strip)
+		std::make_tuple("http://www.play18.com/phoenix/gold-canyon/teetime/Details/201706291009?courseid=7&psid=15",
+		                "http://www.play18.com/phoenix/gold-canyon/teetime/Details/201706291009?courseid=7&psid=15"),
+		std::make_tuple("http://www.accessoryincdropship.com/product/productlist.aspx?psid=46&pmid=3367",
+		                "http://www.accessoryincdropship.com/product/productlist.aspx?psid=46&pmid=3367")
+	};
+
+	strip_param_tests(test_cases, 124);
 }
 
 TEST(UrlTest, StripAffiliateAmazon) {

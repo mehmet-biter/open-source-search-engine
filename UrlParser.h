@@ -7,11 +7,12 @@
 
 class UrlParser {
 public:
-	UrlParser( const char *url, size_t urlLen );
+	UrlParser(const char *url, size_t urlLen, int32_t titledbVersion);
 
 	void print() const;
 
-	void deleteComponent( UrlComponent *urlComponent );
+	void deleteComponent(UrlComponent *urlComponent);
+	void deleteComponents(std::vector<UrlComponent*> &urlComponents);
 
 	// path
 	std::vector<std::pair<UrlComponent*, UrlComponent*> > matchPath( const UrlComponent::Matcher &keyMatch );
@@ -39,6 +40,8 @@ public:
 	void unparse();
 
 	// member access
+	int32_t getTitledbVersion() const;
+
 	const char* getUrl() const;
 	size_t getUrlLen() const;
 
@@ -64,6 +67,8 @@ private:
 
 	bool removeComponent( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator );
 
+	int32_t m_titledbVersion;
+
 	const char *m_url;
 	size_t m_urlLen;
 
@@ -87,13 +92,16 @@ private:
 	size_t m_pathsDeleteCount;
 
 	std::vector<UrlComponent> m_queries;
-	std::map<std::string, size_t> m_queriesMap;
 	size_t m_queriesDeleteCount;
 
 	std::string m_urlParsed;
 };
 
 // member access
+inline int32_t UrlParser::getTitledbVersion() const {
+	return m_titledbVersion;
+}
+
 inline const char* UrlParser::getUrl() const {
 	return m_url;
 }

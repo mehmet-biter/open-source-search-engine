@@ -5,6 +5,7 @@
 #include "ip.h"
 #include <string.h>
 #include <iterator>
+#include <algorithm>
 
 static const char *strnpbrk(const char *str1, size_t len, const char *str2) {
 	const char *haystack = str1;
@@ -27,8 +28,9 @@ static const char *strnpbrk(const char *str1, size_t len, const char *str2) {
 /// @todo ALC we should see if we need to do relative path resolution here
 /// @todo ALC we should cater for scheme relative address (pass in parent scheme)
 /// https://tools.ietf.org/html/rfc3986#section-5.2
-UrlParser::UrlParser(const char *url, size_t urlLen)
-	: m_url(url)
+UrlParser::UrlParser(const char *url, size_t urlLen, int32_t titledbVersion)
+	: m_titledbVersion(titledbVersion)
+	, m_url(url)
 	, m_urlLen(urlLen)
 	, m_scheme(NULL)
 	, m_schemeLen(0)
@@ -44,7 +46,6 @@ UrlParser::UrlParser(const char *url, size_t urlLen)
 	, m_pathEndChar('\0')
 	, m_pathsDeleteCount(0)
 	, m_queries()
-	, m_queriesMap()
 	, m_queriesDeleteCount(0)
 	, m_urlParsed() {
 	m_urlParsed.reserve(m_urlLen);
@@ -184,7 +185,7 @@ void UrlParser::parse() {
 
 		// check for special cases before adding to m_paths
 		if (len == 1 && memcmp(prevPos, ".", 1) == 0) {
-			urlPart.setDeleted();
+			deleteComponent(&urlPart);
 			updatePathEncChar = true;
 		} else if (len == 2 && memcmp(prevPos, "..", 2) == 0) {
 			deleteComponent(&urlPart);
@@ -246,17 +247,25 @@ void UrlParser::parse() {
 			bool isAmpersand = (!urlPart.hasValue() && urlPart.getKey() == "amp");
 			if (!key.empty() && !isAmpersand) {
 				// we don't cater for case sensitive query parameter (eg: parm, Parm, PARM is assumed to be the same)
-				auto it = m_queriesMap.find(key);
-				if (it == m_queriesMap.end()) {
+				auto it = std::find_if(m_queries.begin(), m_queries.end(), [&key](const UrlComponent& u) { return key == u.getKey(); });
+				if (it == m_queries.end()) {
 					m_queries.push_back(urlPart);
-					m_queriesMap[key] = m_queries.size() - 1;
 				} else {
-					m_queries[it->second] = urlPart;
+					*it = urlPart;
 				}
 			}
 
 			prevPos = currentPos ? currentPos + 1 : NULL;
 			isPrevAmpersand = isAmpersand;
+		}
+	}
+
+	if (m_titledbVersion >= 124) {
+		// remove empty query parameters
+		for (auto &query : m_queries) {
+			if (query.getValueLen() == 0) {
+				deleteComponent(&query);
+			}
 		}
 	}
 }
@@ -290,55 +299,73 @@ void UrlParser::unparse() {
 		m_urlParsed.append(m_port, m_portLen);
 	}
 
-	bool isFirst = true;
-	for (auto it = m_paths.begin(); it != m_paths.end(); ++it) {
-		if (!it->isDeleted()) {
-			if (isFirst) {
-				isFirst = false;
-				if (it->getSeparator() != '/') {
-					m_urlParsed.append("/");
-				}
-			}
+	if (m_pathsDeleteCount != m_paths.size()) {
+		bool isFirst = true;
 
-			m_urlParsed += it->getSeparator();
-			m_urlParsed.append(it->getString());
+		for (auto it = m_paths.begin(); it != m_paths.end(); ++it) {
+			if (!it->isDeleted()) {
+				if (isFirst) {
+					isFirst = false;
+					if (it->getSeparator() != '/') {
+						m_urlParsed.append("/");
+					}
+				}
+
+				m_urlParsed += it->getSeparator();
+				m_urlParsed.append(it->getString());
+			}
+		}
+
+		if (m_urlParsed[m_urlParsed.size() - 1] != '/' && m_pathEndChar == '/') {
+			m_urlParsed += m_pathEndChar;
+		}
+	} else {
+		if (m_titledbVersion >= 124) {
+			m_urlParsed += '/';
 		}
 	}
 
-	if (m_urlParsed[m_urlParsed.size() - 1] != '/' && m_pathEndChar == '/') {
-		m_urlParsed += m_pathEndChar;
-	}
+	if (m_queriesDeleteCount != m_queries.size()) {
+		bool isFirst = true;
+		for (auto it = m_queries.begin(); it != m_queries.end(); ++it) {
+			if (!it->isDeleted()) {
+				if (isFirst) {
+					isFirst = false;
+					m_urlParsed.append("?");
+				} else {
+					m_urlParsed += (it->getSeparator() == '?') ? '&' : it->getSeparator();
+				}
 
-	isFirst = true;
-	for (auto it = m_queries.begin(); it != m_queries.end(); ++it) {
-		if (!it->isDeleted()) {
-			if (isFirst) {
-				isFirst = false;
-				m_urlParsed.append("?");
-			} else {
-				m_urlParsed += (it->getSeparator() == '?') ? '&' : it->getSeparator();
+				m_urlParsed.append(it->getString());
 			}
-
-			m_urlParsed.append(it->getString());
 		}
 	}
 }
 
 void UrlParser::deleteComponent(UrlComponent *urlComponent) {
-	if (urlComponent) {
-		urlComponent->setDeleted();
+	if (urlComponent == nullptr || urlComponent->isDeleted()) {
+		return;
+	}
 
-		switch (urlComponent->getType()) {
-			case UrlComponent::TYPE_PATH:
-				++m_pathsDeleteCount;
-				break;
-			case UrlComponent::TYPE_QUERY:
-				++m_queriesDeleteCount;
+	urlComponent->setDeleted();
 
-				// also remove from map
-				m_queriesMap.erase(urlComponent->getKey());
-				break;
+	switch (urlComponent->getType()) {
+		case UrlComponent::TYPE_PATH:
+			++m_pathsDeleteCount;
+			break;
+		case UrlComponent::TYPE_QUERY:
+			++m_queriesDeleteCount;
+			break;
+	}
+}
+
+void UrlParser::deleteComponents(std::vector<UrlComponent*> &urlComponents) {
+	for (auto &urlComponent : urlComponents) {
+		if (urlComponent->isDeleted()) {
+			continue;
 		}
+
+		deleteComponent(urlComponent);
 	}
 }
 
@@ -386,7 +413,7 @@ bool UrlParser::removePath(const std::vector<std::pair<UrlComponent *, UrlCompon
                            const UrlComponent::Validator &validator) {
 	bool hasRemoval = false;
 	for (auto it = urlComponents.begin(); it != urlComponents.end(); ++it) {
-		if (it->second == NULL) {
+		if (it->second == NULL || (m_titledbVersion <= 123 && it->second->getValueLen() == 0)) {
 			if (validator.allowEmptyValue()) {
 				hasRemoval = true;
 				deleteComponent(it->first);
@@ -448,20 +475,13 @@ std::vector<UrlComponent *> UrlParser::matchQueryParam(const UrlComponent::Match
 		return result;
 	}
 
-	if (matcher.getMatchCriteria() == MATCH_DEFAULT) {
-		auto it = m_queriesMap.find(matcher.getParam());
-		if (it != m_queriesMap.end()) {
-			result.push_back(&(m_queries[it->second]));
+	for (auto it = m_queries.begin(); it != m_queries.end(); ++it) {
+		if (it->isDeleted()) {
+			continue;
 		}
-	} else {
-		for (auto it = m_queries.begin(); it != m_queries.end(); ++it) {
-			if (it->isDeleted()) {
-				continue;
-			}
 
-			if (matcher.isMatching(*it)) {
-				result.push_back(&(*it));
-			}
+		if (matcher.isMatching(*it)) {
+			result.push_back(&(*it));
 		}
 	}
 

@@ -19,7 +19,7 @@ void checkResult(const char *expected, const char *result, size_t resultLen) {
 
 TEST(UrlParserTest, ParseScheme) {
 	std::string url("http://www.example.com/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -31,7 +31,7 @@ TEST(UrlParserTest, ParseScheme) {
 
 TEST(UrlParserTest, ParseSchemeUppercase) {
 	std::string url("HTTP://www.example.com/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("HTTP", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -43,7 +43,7 @@ TEST(UrlParserTest, ParseSchemeUppercase) {
 
 TEST(UrlParserTest, ParseSchemeHttps) {
 	std::string url("https://www.example.com/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("https", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -55,7 +55,7 @@ TEST(UrlParserTest, ParseSchemeHttps) {
 
 TEST(UrlParserTest, ParseSchemeNone) {
 	std::string url("www.example.com/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult(NULL, urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -67,7 +67,7 @@ TEST(UrlParserTest, ParseSchemeNone) {
 
 TEST(UrlParserTest, ParseSchemeRelative) {
 	std::string url("//www.example.com/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult(NULL, urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -79,7 +79,7 @@ TEST(UrlParserTest, ParseSchemeRelative) {
 
 TEST(UrlParserTest, ParseUserInfo) {
 	std::string url("http://username:password@www.example.com/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("username:password@www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -91,7 +91,7 @@ TEST(UrlParserTest, ParseUserInfo) {
 
 TEST(UrlParserTest, ParseUserInfoPort) {
 	std::string url("http://username:password@www.example.com:8080/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("username:password@www.example.com:8080", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -103,7 +103,7 @@ TEST(UrlParserTest, ParseUserInfoPort) {
 
 TEST(UrlParserTest, ParsePort) {
 	std::string url("http://www.example.com:8080/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.example.com:8080", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -115,7 +115,7 @@ TEST(UrlParserTest, ParsePort) {
 
 TEST(UrlParserTest, ParsePortSchemeNone) {
 	std::string url("www.example.com:8080/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult(NULL, urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.example.com:8080", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -127,7 +127,7 @@ TEST(UrlParserTest, ParsePortSchemeNone) {
 
 TEST(UrlParserTest, ParseIP) {
 	std::string url("http://127.0.0.1/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("127.0.0.1", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -139,7 +139,7 @@ TEST(UrlParserTest, ParseIP) {
 
 TEST(UrlParserTest, ParseIPPort) {
 	std::string url("http://127.0.0.1:8080/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("127.0.0.1:8080", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -151,7 +151,7 @@ TEST(UrlParserTest, ParseIPPort) {
 
 TEST(UrlParserTest, ParseSubdomainNone) {
 	std::string url("http://example.com/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -163,7 +163,7 @@ TEST(UrlParserTest, ParseSubdomainNone) {
 
 TEST(UrlParserTest, ParseSubdomainMultiple) {
 	std::string url("http://abc.def.ghi.jkl.example.com/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("abc.def.ghi.jkl.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -175,7 +175,7 @@ TEST(UrlParserTest, ParseSubdomainMultiple) {
 
 TEST(UrlParserTest, ParseTLDUnknown) {
 	std::string url("http://subdomain.example.abcde/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("subdomain.example.abcde", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -187,7 +187,7 @@ TEST(UrlParserTest, ParseTLDUnknown) {
 
 TEST(UrlParserTest, ParseTLDNone) {
 	std::string url("http://ok/");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("ok", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -199,7 +199,7 @@ TEST(UrlParserTest, ParseTLDNone) {
 
 TEST(UrlParserTest, ParseSLD) {
 	std::string url("http://subdomain.example.co.uk/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("subdomain.example.co.uk", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -211,7 +211,7 @@ TEST(UrlParserTest, ParseSLD) {
 
 TEST(UrlParserTest, ParseSLDUnknown) {
 	std::string url("http://subdomain.example.fuel.aero/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("subdomain.example.fuel.aero", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -223,7 +223,7 @@ TEST(UrlParserTest, ParseSLDUnknown) {
 
 TEST(UrlParserTest, ParseHost) {
 	std::string url("http://www.example.com");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -235,7 +235,7 @@ TEST(UrlParserTest, ParseHost) {
 
 TEST(UrlParserTest, ParseHostUppercase) {
 	std::string url("http://www.EXAMPLE.com/param1=abc-123");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.EXAMPLE.com", urlParser.getAuthority(), urlParser.getAuthorityLen());
@@ -247,7 +247,7 @@ TEST(UrlParserTest, ParseHostUppercase) {
 
 TEST(UrlParserTest, ParseIDN) {
 	std::string url("http://www.xn--relgeroskilde-5fb0y.dk/");
-	UrlParser urlParser(url.c_str(), url.size());
+	UrlParser urlParser(url.c_str(), url.size(), 123);
 
 	checkResult("http", urlParser.getScheme(), urlParser.getSchemeLen());
 	checkResult("www.xn--relgeroskilde-5fb0y.dk", urlParser.getAuthority(), urlParser.getAuthorityLen());
