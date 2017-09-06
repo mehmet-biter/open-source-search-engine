@@ -117,66 +117,61 @@ bool UrlMatchList::load() {
 		switch (line[0]) {
 			case 'd':
 				// domain
-				if (firstColEnd == 5 && memcmp(line.data(), "domain", 5) != 0) {
+				if (firstColEnd == 6 && memcmp(line.data(), "domain", 6) == 0) {
+					parseDomain(&tmpUrlMatchList, col2, col3, col4);
+				} else {
 					logError("Invalid line found. Ignoring line='%s'", line.c_str());
 					continue;
 				}
-
-				parseDomain(&tmpUrlMatchList, col2, col3, col4);
 				break;
 			case 'f':
 				// file
-				if (firstColEnd == 4 && memcmp(line.data(), "file", 4) != 0) {
+				if (firstColEnd == 4 && memcmp(line.data(), "file", 4) == 0) {
+					tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_file, col2)));
+				} else {
 					logError("Invalid line found. Ignoring line='%s'", line.c_str());
 					continue;
 				}
-
-				tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchfile_t>(new urlmatchfile_t(col2)));
 				break;
 			case 'h':
 				// host
-				if (firstColEnd == 4 && memcmp(line.data(), "host", 4) != 0) {
+				if (firstColEnd == 4 && memcmp(line.data(), "host", 4) == 0) {
+					tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchhost_t>(new urlmatchhost_t(col2, col3)));
+				} else {
 					logError("Invalid line found. Ignoring line='%s'", line.c_str());
 					continue;
 				}
-
-				tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchhost_t>(new urlmatchhost_t(col2, col3)));
 				break;
 			case 'p':
 				// path
-				if (firstColEnd == 4 && memcmp(line.data(), "path", 4) != 0) {
+				if (firstColEnd == 4 && memcmp(line.data(), "path", 4) == 0) {
+					tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_path, col2)));
+				} else {
 					logError("Invalid line found. Ignoring line='%s'", line.c_str());
 					continue;
 				}
-
-				tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchpath_t>(new urlmatchpath_t(col2)));
 				break;
 			case 'r':
 				// regex
-				if (firstColEnd == 5 && memcmp(line.data(), "regex", 5) != 0) {
+				if (firstColEnd == 5 && memcmp(line.data(), "regex", 5) == 0 && !col3.empty()) {
+					// check for wildcard domain
+					if (col2.length() == 1 && col2[0] == '*') {
+						col2.clear();
+					}
+
+					tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchregex_t>(new urlmatchregex_t(col3, GbRegex(col3.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE), col2)));
+				} else {
 					logError("Invalid line found. Ignoring line='%s'", line.c_str());
 					continue;
 				}
-
-				if (col3.empty()) {
-					// invalid format
-					continue;
-				}
-
-				// check for wildcard domain
-				if (col2.length() == 1 && col2[0] == '*') {
-					col2.clear();
-				}
-
-				tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchregex_t>(new urlmatchregex_t(col3, GbRegex(col3.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE), col2)));
 				break;
 			case 't':
-				if (firstColEnd == 3 && memcmp(line.data(), "tld", 3) != 0) {
+				if (firstColEnd == 3 && memcmp(line.data(), "tld", 3) == 0) {
+					tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchtld_t>(new urlmatchtld_t(col2)));
+				} else {
 					logError("Invalid line found. Ignoring line='%s'", line.c_str());
 					continue;
 				}
-
-				tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchtld_t>(new urlmatchtld_t(col2)));
 				break;
 			default:
 				logError("Invalid line found. Ignoring line='%s'", line.c_str());

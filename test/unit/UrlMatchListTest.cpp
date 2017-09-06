@@ -138,6 +138,7 @@ TEST(UrlMatchListTest, Path) {
 	urlMatchList.load();
 
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/wp-admin/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/wp-admin/example/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.example.com/tag/wp-admin/"));
 
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/blog/wp-login.php"));

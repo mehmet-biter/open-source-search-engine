@@ -6,9 +6,9 @@
 #include "Conf.h"
 #include <algorithm>
 
-urlmatchtld_t::urlmatchtld_t(const std::string &tlds)
-	: m_tldsStr(tlds)
-	, m_tlds(split(tlds, ',')) {
+urlmatchstr_t::urlmatchstr_t(urlmatchtype_t type, const std::string &str)
+	: m_type(type)
+	, m_str(str) {
 }
 
 urlmatchdomain_t::urlmatchdomain_t(const std::string &domain, const std::string &allow, pathcriteria_t pathcriteria)
@@ -17,19 +17,9 @@ urlmatchdomain_t::urlmatchdomain_t(const std::string &domain, const std::string 
 	, m_pathcriteria(pathcriteria) {
 }
 
-
-urlmatchfile_t::urlmatchfile_t(const std::string &file)
-	: m_file(file) {
-}
-
-
 urlmatchhost_t::urlmatchhost_t(const std::string &host, const std::string &path)
 	: m_host(host)
 	, m_path(path) {
-}
-
-urlmatchpath_t::urlmatchpath_t(const std::string &path)
-	: m_path(path) {
 }
 
 urlmatchregex_t::urlmatchregex_t(const std::string &regexStr, const GbRegex &regex, const std::string &domain)
@@ -38,9 +28,14 @@ urlmatchregex_t::urlmatchregex_t(const std::string &regexStr, const GbRegex &reg
 	, m_domain(domain) {
 }
 
-UrlMatch::UrlMatch(const std::shared_ptr<urlmatchtld_t> &urlmatchtld)
-	: m_type(url_match_tld)
-	, m_tld(urlmatchtld) {
+urlmatchtld_t::urlmatchtld_t(const std::string &tlds)
+	: m_tldsStr(tlds)
+	, m_tlds(split(tlds, ',')) {
+}
+
+UrlMatch::UrlMatch(const std::shared_ptr<urlmatchstr_t> &urlmatchstr)
+	: m_type(urlmatchstr->m_type)
+	, m_str(urlmatchstr){
 }
 
 UrlMatch::UrlMatch(const std::shared_ptr<urlmatchdomain_t> &urlmatchdomain)
@@ -48,20 +43,9 @@ UrlMatch::UrlMatch(const std::shared_ptr<urlmatchdomain_t> &urlmatchdomain)
 	, m_domain(urlmatchdomain) {
 }
 
-UrlMatch::UrlMatch(const std::shared_ptr<urlmatchfile_t> &urlmatchfile)
-	: m_type(url_match_file)
-	, m_file(urlmatchfile) {
-}
-
 UrlMatch::UrlMatch(const std::shared_ptr<urlmatchhost_t> &urlmatchhost)
 	: m_type(url_match_host)
 	, m_host(urlmatchhost) {
-}
-
-UrlMatch::UrlMatch(const std::shared_ptr<urlmatchpath_t> &urlmatchpath)
-	: m_type(url_match_path)
-	, m_path(urlmatchpath) {
-
 }
 
 UrlMatch::UrlMatch(const std::shared_ptr<urlmatchregex_t> &urlmatchregex)
@@ -69,11 +53,20 @@ UrlMatch::UrlMatch(const std::shared_ptr<urlmatchregex_t> &urlmatchregex)
 	, m_regex(urlmatchregex) {
 }
 
+UrlMatch::UrlMatch(const std::shared_ptr<urlmatchtld_t> &urlmatchtld)
+	: m_type(url_match_tld)
+	, m_tld(urlmatchtld) {
+}
+
+static bool matchString(const std::string &needle, const char *haystack, int32_t haystackLen, bool matchPrefix = false) {
+	bool matchingLen = matchPrefix ? (needle.length() <= static_cast<size_t>(haystackLen)) : (needle.length() == static_cast<size_t>(haystackLen));
+	return (matchingLen && memcmp(needle.c_str(), haystack, needle.length()) == 0);
+}
+
 bool UrlMatch::match(const Url &url) const {
 	switch (m_type) {
 		case url_match_domain:
-			if (m_domain->m_domain.length() == static_cast<size_t>(url.getDomainLen()) &&
-			   memcmp(m_domain->m_domain.c_str(), url.getDomain(), url.getDomainLen()) == 0) {
+			if (matchString(m_domain->m_domain, url.getDomain(), url.getDomainLen())) {
 				// check subdomain
 				if (!m_domain->m_allow.empty()) {
 					auto subDomainLen = (url.getDomain() == url.getHost()) ? 0 : url.getDomain() - url.getHost() - 1;
@@ -96,26 +89,20 @@ bool UrlMatch::match(const Url &url) const {
 			}
 			break;
 		case url_match_file:
-			return (m_file->m_file.length() == static_cast<size_t>(url.getFilenameLen()) &&
-			        memcmp(m_file->m_file.c_str(), url.getFilename(), url.getFilenameLen()) == 0);
+			return matchString(m_str->m_str, url.getFilename(), url.getFilenameLen());
 		case url_match_host:
-			if (m_host->m_host.length() == static_cast<size_t>(url.getHostLen()) &&
-			    memcmp(m_host->m_host.c_str(), url.getHost(), url.getHostLen()) == 0) {
+			if (matchString(m_host->m_host, url.getHost(), url.getHostLen())) {
 				if (m_host->m_path.empty()) {
 					return true;
 				}
 
-				return (m_host->m_path.length() <= static_cast<size_t>(url.getPathLenWithCgi()) &&
-				        memcmp(m_host->m_path.c_str(), url.getPath(), m_host->m_path.length()) == 0);
+				return matchString(m_host->m_path, url.getPath(), url.getPathLenWithCgi(), true);
 			}
 			break;
 		case url_match_path:
-			return (m_path->m_path.length() <= static_cast<size_t>(url.getPathLenWithCgi()) &&
-			        memcmp(m_path->m_path.c_str(), url.getPath(), m_path->m_path.length()) == 0);
+			return matchString(m_str->m_str, url.getPath(), url.getPathLenWithCgi(), true);
 		case url_match_regex:
-			if (m_regex->m_domain.empty() || (!m_regex->m_domain.empty() &&
-				m_regex->m_domain.length() == static_cast<size_t>(url.getDomainLen()) &&
-				memcmp(m_regex->m_domain.c_str(), url.getDomain(), url.getDomainLen()) == 0)) {
+			if (m_regex->m_domain.empty() || (!m_regex->m_domain.empty() && matchString(m_regex->m_domain, url.getDomain(), url.getDomainLen()))) {
 				return m_regex->m_regex.match(url.getUrl());
 			}
 			break;
@@ -148,7 +135,7 @@ void UrlMatch::logMatch(const Url &url) const {
 			break;
 		case url_match_file:
 			type = "file";
-			value = m_file->m_file.c_str();
+			value = m_str->m_str.c_str();
 			break;
 		case url_match_host:
 			type = "host";
@@ -156,7 +143,7 @@ void UrlMatch::logMatch(const Url &url) const {
 			break;
 		case url_match_path:
 			type = "path";
-			value = m_path->m_path.c_str();
+			value = m_str->m_str.c_str();
 			break;
 		case url_match_regex:
 			type = "regex";
