@@ -68,10 +68,11 @@ host	www.example.com	/path/
 #   allows: www.example.com/?good=abc
 param	bad
 
-# block specific param (case insensitive) with specific value
+# block specific param (case insensitive) with specific value (case sensitive)
 #   blocks: www.example.com/file.html?good=abc&bad=xyz
 #   blocks: www.example.com/file.html?good=abc&BAD=xyz
 #   allows: www.example.com/file.html?good=abc&bad=abc
+#   blocks: www.example.com/file.html?good=abc&bad=XYZ
 #   allows: www.example.com/file.html?good=abc&bad=xyz1
 param	bad	xyz
 
