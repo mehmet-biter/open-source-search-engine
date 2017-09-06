@@ -4,6 +4,7 @@
 #
 # types:
 #   - domain
+#   - file
 #   - host
 #   - path
 #   - regex (pcre)
@@ -12,13 +13,38 @@
 # domain example
 # ==============
 # block all subdomain of example.com domain
-#   blocks: www.example.com, sub.example.com, example.com
+#   blocks: www.example.com
+#   blocks: sub.example.com
+#   blocks: example.com
 domain	example.com
 
 # block all of example.com except empty subdomain & www
 #   blocks: sub.example.com
-#   allows: example.com, www.example.com
+#   allows: example.com
+#   allows: www.example.com
 domain	example.com	allow=,www
+
+# block all of example.com except empty subdomain & www root pages
+#   blocks: example.com/dir/file.html
+#   allows: example.com/file.html
+#   allows: www.example.com/index.html
+domain	example.com	allow=,www	allowrootpages
+
+# block all of example.com except empty subdomain & www index page
+#   blocks: example.com/file.html
+#   blocks: example.com/index.html
+#   allows: example.com/?param=value
+#   allows: www.example.com/
+domain	example.com	allow=,www	allowindexpage
+
+# file example
+# ============
+# block file (exact match)
+#   blocks: www.example.com/wp-login.php
+#   blocks: www.example.com/blog/wp-login.php
+#   allows: www.example.com/blog/wp-login.php5
+#   allows: www.example.com/blog/nwp-login.php
+file	wp-login.php
 
 # host example
 # ============
@@ -37,7 +63,8 @@ host	www.example.com	/path/
 # path example
 # ============
 # blocks specific path (prefix)
-#   blocks: www.example.com/wp-admin, www.example.com/wp-admin/login
+#   blocks: www.example.com/wp-admin
+#   blocks: www.example.com/wp-admin/login
 #   allows: www.example.com/en/wp-admin
 path	/wp-admin
 
