@@ -20,6 +20,12 @@ struct urlmatchdomain_t {
 	pathcriteria_t m_pathcriteria;
 };
 
+struct urlmatchfile_t {
+	urlmatchfile_t(const std::string &file);
+
+	std::string m_file;
+};
+
 struct urlmatchhost_t {
 	urlmatchhost_t(const std::string &host, const std::string &path);
 
@@ -53,6 +59,7 @@ class Url;
 class UrlMatch {
 public:
 	UrlMatch(const std::shared_ptr<urlmatchdomain_t> &urlmatchdomain);
+	UrlMatch(const std::shared_ptr<urlmatchfile_t> &urlmatchfile);
 	UrlMatch(const std::shared_ptr<urlmatchhost_t> &urlmatchhost);
 	UrlMatch(const std::shared_ptr<urlmatchpath_t> &urlmatchpath);
 	UrlMatch(const std::shared_ptr<urlmatchregex_t> &urlmatchregex);
@@ -64,6 +71,7 @@ public:
 private:
 	enum urlmatchtype_t {
 		url_match_domain,
+		url_match_file,
 		url_match_host,
 		url_match_path,
 		url_match_regex,
@@ -73,6 +81,7 @@ private:
 	urlmatchtype_t m_type;
 
 	std::shared_ptr<urlmatchdomain_t> m_domain;
+	std::shared_ptr<urlmatchfile_t> m_file;
 	std::shared_ptr<urlmatchhost_t> m_host;
 	std::shared_ptr<urlmatchpath_t> m_path;
 	std::shared_ptr<urlmatchregex_t> m_regex;

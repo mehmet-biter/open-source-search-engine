@@ -140,6 +140,12 @@ TEST(UrlMatchListTest, Path) {
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/wp-admin/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.example.com/tag/wp-admin/"));
 
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/blog/wp-login.php"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/wp-login.php"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.example.com/awp-login.php"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.example.com/wp-login.php5"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.example.com/blog/wp-login.php?param=value&param2=value2"));
+
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.host.com/file1.html"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://www.example.com/file1.html"));
 }

@@ -1,2 +1,3 @@
 path    /wp-admin/
+file	wp-login.php
 regex   *   https?://[^/]+/file1.html

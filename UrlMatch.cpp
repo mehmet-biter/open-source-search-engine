@@ -17,6 +17,12 @@ urlmatchdomain_t::urlmatchdomain_t(const std::string &domain, const std::string 
 	, m_pathcriteria(pathcriteria) {
 }
 
+
+urlmatchfile_t::urlmatchfile_t(const std::string &file)
+	: m_file(file) {
+}
+
+
 urlmatchhost_t::urlmatchhost_t(const std::string &host, const std::string &path)
 	: m_host(host)
 	, m_path(path) {
@@ -40,6 +46,11 @@ UrlMatch::UrlMatch(const std::shared_ptr<urlmatchtld_t> &urlmatchtld)
 UrlMatch::UrlMatch(const std::shared_ptr<urlmatchdomain_t> &urlmatchdomain)
 	: m_type(url_match_domain)
 	, m_domain(urlmatchdomain) {
+}
+
+UrlMatch::UrlMatch(const std::shared_ptr<urlmatchfile_t> &urlmatchfile)
+	: m_type(url_match_file)
+	, m_file(urlmatchfile) {
 }
 
 UrlMatch::UrlMatch(const std::shared_ptr<urlmatchhost_t> &urlmatchhost)
@@ -84,6 +95,9 @@ bool UrlMatch::match(const Url &url) const {
 				return true;
 			}
 			break;
+		case url_match_file:
+			return (m_file->m_file.length() == static_cast<size_t>(url.getFilenameLen()) &&
+			        memcmp(m_file->m_file.c_str(), url.getFilename(), url.getFilenameLen()) == 0);
 		case url_match_host:
 			if (m_host->m_host.length() == static_cast<size_t>(url.getHostLen()) &&
 			    memcmp(m_host->m_host.c_str(), url.getHost(), url.getHostLen()) == 0) {
@@ -131,6 +145,10 @@ void UrlMatch::logMatch(const Url &url) const {
 		case url_match_domain:
 			type = "domain";
 			value = m_domain->m_domain.c_str();
+			break;
+		case url_match_file:
+			type = "file";
+			value = m_file->m_file.c_str();
 			break;
 		case url_match_host:
 			type = "host";

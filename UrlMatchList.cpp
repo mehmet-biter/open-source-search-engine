@@ -117,17 +117,26 @@ bool UrlMatchList::load() {
 		switch (line[0]) {
 			case 'd':
 				// domain
-				if (firstColEnd==5 && memcmp(line.data(), "domain", 5) != 0) {
-					logTrace(g_conf.m_logTraceUrlMatchList, "");
+				if (firstColEnd == 5 && memcmp(line.data(), "domain", 5) != 0) {
+					logError("Invalid line found. Ignoring line='%s'", line.c_str());
 					continue;
 				}
 
 				parseDomain(&tmpUrlMatchList, col2, col3, col4);
 				break;
+			case 'f':
+				// file
+				if (firstColEnd == 4 && memcmp(line.data(), "file", 4) != 0) {
+					logError("Invalid line found. Ignoring line='%s'", line.c_str());
+					continue;
+				}
+
+				tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchfile_t>(new urlmatchfile_t(col2)));
+				break;
 			case 'h':
 				// host
-				if (firstColEnd==4 && memcmp(line.data(), "host", 4) != 0) {
-					logTrace(g_conf.m_logTraceUrlMatchList, "");
+				if (firstColEnd == 4 && memcmp(line.data(), "host", 4) != 0) {
+					logError("Invalid line found. Ignoring line='%s'", line.c_str());
 					continue;
 				}
 
@@ -135,8 +144,8 @@ bool UrlMatchList::load() {
 				break;
 			case 'p':
 				// path
-				if (firstColEnd==4 && memcmp(line.data(), "path", 4) != 0) {
-					logTrace(g_conf.m_logTraceUrlMatchList, "");
+				if (firstColEnd == 4 && memcmp(line.data(), "path", 4) != 0) {
+					logError("Invalid line found. Ignoring line='%s'", line.c_str());
 					continue;
 				}
 
@@ -144,8 +153,8 @@ bool UrlMatchList::load() {
 				break;
 			case 'r':
 				// regex
-				if (firstColEnd==5 && memcmp(line.data(), "regex", 5) != 0) {
-					logTrace(g_conf.m_logTraceUrlMatchList, "");
+				if (firstColEnd == 5 && memcmp(line.data(), "regex", 5) != 0) {
+					logError("Invalid line found. Ignoring line='%s'", line.c_str());
 					continue;
 				}
 
@@ -162,8 +171,8 @@ bool UrlMatchList::load() {
 				tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchregex_t>(new urlmatchregex_t(col3, GbRegex(col3.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE), col2)));
 				break;
 			case 't':
-				if (firstColEnd==3 && memcmp(line.data(), "tld", 3) != 0) {
-					logTrace(g_conf.m_logTraceUrlMatchList, "");
+				if (firstColEnd == 3 && memcmp(line.data(), "tld", 3) != 0) {
+					logError("Invalid line found. Ignoring line='%s'", line.c_str());
 					continue;
 				}
 
