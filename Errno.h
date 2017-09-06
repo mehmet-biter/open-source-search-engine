@@ -60,7 +60,7 @@ enum {
 	EDOCURLSPAM      , // url detected as spam/porn
 	EDOCBLOCKEDURL   ,
 	EDOCBLOCKEDDNS   ,
-	EUNUSED12        ,
+	EDOCBLOCKEDURLIP ,
 	EUNUSED13        , // 32810
 	EDOCBADCONTENTTYPE   ,
 	EUNUSED14            ,

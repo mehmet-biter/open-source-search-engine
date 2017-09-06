@@ -179,6 +179,7 @@ class Conf {
 	bool  m_queryingEnabled;
 	bool  m_returnResultsAnyway;
 
+	bool m_spiderIPUrl;
 	bool  m_addUrlEnabled; // TODO: use at http interface level
 	bool  m_doStripeBalancing;
 

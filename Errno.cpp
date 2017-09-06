@@ -117,6 +117,8 @@ const char *mstrerror ( int errnum ) {
 				return "Doc blocked by url block list";
 			case EDOCBLOCKEDDNS:
 				return "Doc blocked by dns block list";
+			case EDOCBLOCKEDURLIP:
+				return "Doc blocked due to url is IP";
 			case EDOCBADCONTENTTYPE :
 				return "Doc bad content type";
 			case EDOCBADHTTPSTATUS :
@@ -326,7 +328,7 @@ static const char* s_errname[] {
 	STRINGIFY( EDOCURLSPAM ),
 	STRINGIFY( EDOCBLOCKEDURL ),
 	STRINGIFY( EDOCBLOCKEDDNS ),
-	STRINGIFY( EUNUSED12 ),
+	STRINGIFY( EDOCBLOCKEDURLIP ),
 	STRINGIFY( EUNUSED13 ),
 	STRINGIFY( EDOCBADCONTENTTYPE ),
 	STRINGIFY( EUNUSED14 ),

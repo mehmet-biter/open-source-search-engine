@@ -4878,6 +4878,16 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "spider IP based url";
+	m->m_desc  = "Should we spider IP based url (eg: http://127.0.0.1/)";
+	m->m_cgi   = "spipurl";
+	simple_m_set(Conf,m_spiderIPUrl);
+	m->m_def   = "1";
+	m->m_units = "";
+	m->m_group = true;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
 	m->m_title = "add url enabled";
 	m->m_desc  = "Can people use the add url interface to add urls "
 		"to the index?";
