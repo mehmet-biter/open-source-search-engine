@@ -16,6 +16,7 @@
 #include "PageInject.h"
 #include "Pages.h"
 #include "Sanity.h"
+#include <string.h>
 
 
 static const char g_fakeReply[] =
@@ -1008,6 +1009,58 @@ static bool ipWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 	return false;
 }
 
+
+static bool crawlWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
+	//logTrace ..."crawlWasBanned, %.*s", r->size_url, r->ptr_url);
+	// no socket -> must be a bulk import job so obviously  not banned
+	if(!ts)
+		return false;
+
+	//todo: should we check for specific error cores, eg ECONNRESET which some webservers
+	//might use for requests they don't like?
+	//if(g_errno==ECONNRESET || ... )
+	//	*msg = "connection reset";
+	//	return true;
+	//}
+
+	//todo: proxy proxy returns empty reply not ECONNRESET if it experiences a conn reset
+	//if(g_errno==EBADMIME && ts->m_readOffset==0) ...
+
+	//we only do ban checks if there weren't any other error
+	if(g_errno!=0)
+		return false;
+
+	//todo: if the server returned an empty response then we might be banned. But let's assume not for now.
+
+	// check the http mime for 403 Forbidden
+	HttpMime mime;
+	mime.set ( ts->m_readBuf , ts->m_readOffset , NULL );
+
+	int32_t httpStatus = mime.getHttpStatus();
+	if(httpStatus == 403) { //forbidden
+		//Cloudflare's only indication that it didn't like is that we get a 403 and the response is "branded" by cloudflare,
+		//which apparently means the response body contains the text "Cloudflare"
+		//The string Cloudflare should be within the first 1KB but we search the first 4KB
+		size_t pre_size = mime.getMimeLen(); //size of http response line, mime headers and empty line separator
+		size_t haystack_size = ts->m_readOffset - pre_size;
+		if(haystack_size>4096)
+			haystack_size = 4096;
+		const void *haystack = ts->m_readBuf + pre_size;
+		if(memmem(haystack,haystack_size,"Cloudflare",10)!=0) {
+			log(LOG_INFO,"Url %.*s appears to be blocked by cloudflare (http-status-code=%d, response contains 'Cloudflare')", r->size_url, r->ptr_url, httpStatus);
+			*msg = "403 forbidden";
+			return true;
+		}
+	}
+	
+	//logTrace ..."Url crawl seems to not be banned");
+	// otherwise assume not.
+	*msg = NULL;
+
+	return false;
+}
+
+
 // come here after telling host #0 we are done using this proxy.
 // host #0 will update the loadbucket for it, using m_lbId.
 void gotHttpReply9 ( void *state , TcpSocket *ts ) {
@@ -1158,6 +1211,16 @@ void gotHttpReply2 ( void *state ,
 		    , banMsg
 		    , iptoa(r->m_urlIp,ipbuf)
 		    );
+	}
+
+	if(crawlWasBanned(ts,&banMsg,r)) {
+		char ipbuf[16];
+		log("msg13: url %.*s detected as banned2 (%s), for ip %s"
+		    , (int)r->size_url, r->ptr_url
+		    , banMsg
+		    , iptoa(r->m_urlIp,ipbuf)
+		    );
+		savedErr = g_errno = EBANNEDCRAWL;
 	}
 
 	// . add to the table if not in there yet
@@ -1603,7 +1666,9 @@ void gotHttpReply2 ( void *state ,
 			     // broken pipe
 			     err != EPIPE &&
 			     // connection reset by peer
-			     err != ECONNRESET ) {
+			     err != ECONNRESET &&
+			     err != EBANNEDCRAWL)
+			{
 				log("http: bad error from httpserver get doc: %s",
 				    mstrerror(err));
 				gbshutdownAbort(true);
