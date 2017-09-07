@@ -419,7 +419,9 @@ bool UrlParser::removePath(const std::vector<std::pair<UrlComponent *, UrlCompon
 				deleteComponent(it->first);
 			}
 		} else {
-			if (validator.isValid(*(it->second))) {
+			const char *value = (m_titledbVersion <= 123) ? it->second->getValue() : it->second->getString().c_str();
+			size_t valueLen = (m_titledbVersion <= 123) ? it->second->getValueLen() : it->second->getString().size();
+			if (validator.isValid(value, valueLen)) {
 				hasRemoval = true;
 				deleteComponent(it->first);
 				deleteComponent(it->second);

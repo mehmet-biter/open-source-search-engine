@@ -173,8 +173,11 @@ void UrlComponent::Validator::print() const {
 	logf( LOG_DEBUG, "UrlComponent::Validator::mandatoryPunctuation : %s", m_mandatoryPunctuation ? "true" : "false" );
 }
 
-bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
-	size_t valueLen = urlPart.getValueLen();
+bool UrlComponent::Validator::isValid(const UrlComponent &urlPart) const {
+	return isValid(urlPart.getValue(), urlPart.getValueLen());
+}
+
+bool UrlComponent::Validator::isValid(const char *value, size_t valueLen) const {
 
 	// allow empty value
 	if ( valueLen == 0 && m_allowEmpty ) {
@@ -199,7 +202,7 @@ bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
 	bool hasDigit = false;
 	bool hasPunctuation = false;
 
-	const char *value = urlPart.getValue();
+
 	for ( size_t i = 0; i < valueLen; ++i ) {
 		char c = value[i];
 

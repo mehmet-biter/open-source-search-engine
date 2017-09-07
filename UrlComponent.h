@@ -170,7 +170,9 @@ public:
 		return m_allowEmpty;
 	}
 
-	bool isValid( const UrlComponent &urlPart ) const;
+	bool isValid(const UrlComponent &urlPart) const;
+
+	bool isValid(const char *value, size_t valueLen) const;
 
 private:
 	size_t m_minLength;
