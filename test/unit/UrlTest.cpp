@@ -140,13 +140,15 @@ TEST(UrlTest, GetDisplayUrlFromUrl) {
 }
 
 static void strip_param_tests(const std::vector<std::tuple<const char *, const char *>> &test_cases, int32_t titleDbVersion) {
-	for (auto it = test_cases.begin(); it != test_cases.end(); ++it) {
-		const char *input_url = std::get<0>(*it);
+	for (int version = titleDbVersion; version <= TITLEREC_CURRENT_VERSION; ++version) {
+		for (auto it = test_cases.begin(); it != test_cases.end(); ++it) {
+			const char *input_url = std::get<0>(*it);
 
-		Url url;
-		url.set(input_url, strlen(input_url), false, true, titleDbVersion);
+			Url url;
+			url.set(input_url, strlen(input_url), false, true, titleDbVersion);
 
-		EXPECT_STREQ(std::get<1>(*it), (const char *)url.getUrl());
+			EXPECT_STREQ(std::get<1>(*it), (const char *)url.getUrl());
+		}
 	}
 }
 
@@ -976,7 +978,6 @@ TEST(UrlTest, StripParamsRedirect) {
 		std::make_tuple("http://europeanflora.com/nm/index.php/customer/account/login/referer/aHR0cDovL2V1cm9wZWFuZmxvcmEuY29tL25tL2luZGV4LnBocC9jYXRhbG9nL3Byb2R1Y3Qvdmlldy9pZC8yMzEvY2F0ZWdvcnkvMzkvP19fX1NJRD1V/",
 		                "http://europeanflora.com/nm/index.php/customer/account/login/"),
 
-		/// @todo
 		std::make_tuple("http://shop.heinrichsweikamp.com/customer/account/login/referer/aHR0cDovL3Nob3AuaGVpbnJpY2hzd2Vpa2FtcC5jb20vY3VzdG9tZXIvYWNjb3VudC9pbmRleC8,/?___store=en&___from_store=de",
 		                "http://shop.heinrichsweikamp.com/customer/account/login/?___store=en&___from_store=de"),
 
