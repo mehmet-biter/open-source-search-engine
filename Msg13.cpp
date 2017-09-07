@@ -1052,6 +1052,21 @@ static bool crawlWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 			return true;
 		}
 	}
+	if(httpStatus == 200) { //ok
+		//Detect Distil networks capcha
+		//No documentation but it appears that their responses always contain a refresh header like:
+		//  http-equiv="refresh" content="10; url=/distil_r_captcha.html ....
+		size_t pre_size = mime.getMimeLen(); //size of http response line, mime headers and empty line separator
+		size_t haystack_size = ts->m_readOffset - pre_size;
+		if(haystack_size>4096)
+			haystack_size = 4096;
+		const void *haystack = ts->m_readBuf + pre_size;
+		if(memmem(haystack,haystack_size,"distil_r_captcha",16)!=0) {
+			log(LOG_INFO,"Url %.*s appears to be captcha-blocked by distilnetworks (http-status-code=%d, response contains 'distil_r_captcha')", r->size_url, r->ptr_url, httpStatus);
+			*msg = "captcha-blocked";
+			return true;
+		}
+	}
 	
 	//logTrace ..."Url crawl seems to not be banned");
 	// otherwise assume not.
