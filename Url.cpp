@@ -681,6 +681,15 @@ static void stripParameters(UrlParser *urlParser) {
 		}
 	}
 
+	if (urlParser->getTitledbVersion() >= 124) {
+		// cart_id
+		// eg:
+		//   680114.127.22580
+		//   4988233_28056
+		//   84
+		urlParser->removeQueryParam("cart_id");
+	}
+
 	// ts
 	// eg:
 	//   1422344216175

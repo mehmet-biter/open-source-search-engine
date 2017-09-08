@@ -847,6 +847,18 @@ TEST(UrlTest, StripParamsEndSid) {
 	strip_param_tests(test_cases, 124);
 }
 
+TEST(UrlTest, StripCartId) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// cart_id
+		std::make_tuple("http://www.verion.de/cgi-bin/web_store.cgi?cart_id=9285660_31936&page=Products/de/GP002021BK.html",
+		                "http://www.verion.de/cgi-bin/web_store.cgi?page=Products/de/GP002021BK.html"),
+		std::make_tuple("http://www.windsongsd.com/shop/clicksite.cgi?dc=1&cart_id=7954189.1805*pC6uE6&ppinc=D-INDPA&exact_match=on&p_id=WWWB140",
+		                "http://www.windsongsd.com/shop/clicksite.cgi?dc=1&ppinc=D-INDPA&exact_match=on&p_id=WWWB140"),
+		std::make_tuple("http://www.wijmakenalles.nl/Agora_wma/store5/agora.cgi?cartlink=Voorwaarden.html&cart_id=8509182.3645*6T4OU38509182.3645",
+		                "http://www.wijmakenalles.nl/Agora_wma/store5/agora.cgi?cartlink=Voorwaarden.html")
+	};
+}
+
 TEST(UrlTest, StripParamsGallery) {
 	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// g1_return
