@@ -1056,6 +1056,9 @@ static bool crawlWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 		//Detect Distil networks capcha
 		//No documentation but it appears that their responses always contain a refresh header like:
 		//  http-equiv="refresh" content="10; url=/distil_r_captcha.html ....
+		//Their documentation say that they include a X-DB header which is a bitmask but inconsistencies
+		//have been seen where they also include two such headers (?) and the name is very generic. So
+		//checking for X-DB header is probably not the best way.
 		size_t pre_size = mime.getMimeLen(); //size of http response line, mime headers and empty line separator
 		size_t haystack_size = ts->m_readOffset - pre_size;
 		if(haystack_size>4096)
@@ -1065,6 +1068,17 @@ static bool crawlWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 			log(LOG_INFO,"Url %.*s appears to be captcha-blocked by distilnetworks (http-status-code=%d, response contains 'distil_r_captcha')", r->size_url, r->ptr_url, httpStatus);
 			*msg = "captcha-blocked";
 			return true;
+		}
+	}
+	if(httpStatus==405) { //method not allowed
+		//Apparently a simple block by Distil network. a status-code of 405 and a content-length > 0 but no content
+		if(mime.getContentLen()>0) {
+			int32_t actual_content_size = ts->m_readOffset - mime.getMimeLen();
+			if(actual_content_size<=0) {
+				log(LOG_INFO,"Url %.*s appears to be blocked by distilnetworks (http-status-code=%d, response is shorter than Content-Length)", r->size_url, r->ptr_url, httpStatus);
+				*msg = "405-blocked";
+				return true;
+			}
 		}
 	}
 	
