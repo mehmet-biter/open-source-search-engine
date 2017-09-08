@@ -1010,6 +1010,17 @@ static bool ipWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 }
 
 
+static void appendCrawlBan(const char *group, const char *url, int urlLen) {
+	char filename[1024];
+	sprintf(filename,"%s/crawlban.%s", g_hostdb.m_myHost->m_dir, group);
+	FILE *fp = fopen(filename,"a");
+	if(fp) {
+		fprintf(fp,"%.*s\n",urlLen,url);
+		fclose(fp);
+	}
+}
+
+
 static bool crawlWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 	//logTrace ..."crawlWasBanned, %.*s", r->size_url, r->ptr_url);
 	// no socket -> must be a bulk import job so obviously  not banned
@@ -1049,6 +1060,7 @@ static bool crawlWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 		if(memmem(haystack,haystack_size,"Cloudflare",10)!=0) {
 			log(LOG_INFO,"Url %.*s appears to be blocked by cloudflare (http-status-code=%d, response contains 'Cloudflare')", r->size_url, r->ptr_url, httpStatus);
 			*msg = "403 forbidden";
+			appendCrawlBan("cloudflare", r->ptr_url, r->size_url);
 			return true;
 		}
 	}
@@ -1067,6 +1079,7 @@ static bool crawlWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 		if(memmem(haystack,haystack_size,"distil_r_captcha",16)!=0) {
 			log(LOG_INFO,"Url %.*s appears to be captcha-blocked by distilnetworks (http-status-code=%d, response contains 'distil_r_captcha')", r->size_url, r->ptr_url, httpStatus);
 			*msg = "captcha-blocked";
+			appendCrawlBan("distil-captcha", r->ptr_url, r->size_url);
 			return true;
 		}
 	}
@@ -1077,6 +1090,7 @@ static bool crawlWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 			if(actual_content_size<=0) {
 				log(LOG_INFO,"Url %.*s appears to be blocked by distilnetworks (http-status-code=%d, response is shorter than Content-Length)", r->size_url, r->ptr_url, httpStatus);
 				*msg = "405-blocked";
+				appendCrawlBan("distil-block", r->ptr_url, r->size_url);
 				return true;
 			}
 		}
