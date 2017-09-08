@@ -15,6 +15,7 @@
 #include "Mem.h"
 #include "PageInject.h"
 #include "Pages.h"
+#include "Statistics.h"
 #include "Sanity.h"
 #include <string.h>
 
@@ -1018,6 +1019,7 @@ static void appendCrawlBan(const char *group, const char *url, int urlLen) {
 		fprintf(fp,"%.*s\n",urlLen,url);
 		fclose(fp);
 	}
+	Statistics::increment_crawl_ban_counter(group);
 }
 
 

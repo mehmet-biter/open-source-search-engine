@@ -27,6 +27,8 @@ void increment_url_block_counter_shlib_domain_block();
 void increment_url_block_counter_shlib_url_block();
 void increment_url_block_counter_default();
 
+void increment_crawl_ban_counter(const char *group);
+
 } //namespace
 
 #endif

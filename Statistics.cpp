@@ -510,6 +510,28 @@ static void dump_url_block_check_statistics(FILE *fp) {
 	fprintf(fp,"urlblock:default:%lu\n", c_default);
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+// crawl ban (blocks / captches)
+static GbMutex mtx_crawl_ban_counters;
+static std::map<std::string,unsigned long> crawl_ban_counters;
+
+void Statistics::increment_crawl_ban_counter(const char *group) {
+	ScopedLock sl(mtx_crawl_ban_counters);
+	crawl_ban_counters[group]++;
+}
+
+static void dump_crawl_ban_statistics(FILE *fp) {
+	std::map<std::string,unsigned long> c;
+	ScopedLock sl(mtx_crawl_ban_counters);
+	c.swap(crawl_ban_counters);
+	sl.unlock();
+	for(const auto &iter : c) {
+		fprintf(fp,"crawlban:%s:%lu\n",iter.first.c_str(),iter.second);
+	}
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 // statistics
 
@@ -530,6 +552,7 @@ static void dump_statistics(time_t now) {
 	dump_rdb_cache_statistics(fp);
 	dump_assorted_statistics(fp);
 	dump_url_block_check_statistics(fp);
+	dump_crawl_ban_statistics(fp);
 	
 	if ( fflush(fp) != 0 ) {
 		log( LOG_ERROR, "fflush(%s) failed with errno=%d (%s)", tmp_filename, errno, strerror( errno ) );
