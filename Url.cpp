@@ -737,6 +737,20 @@ static void stripParameters(UrlParser *urlParser) {
 		}
 	}
 
+	if (urlParser->getTitledbVersion() >= 124) {
+		// random
+		urlParser->removeQueryParam("random");
+
+		// _random
+		urlParser->removeQueryParam("_random");
+
+		// rand
+		urlParser->removeQueryParam("rand");
+
+		// _rand
+		urlParser->removeQueryParam("_rand");
+	}
+
 	// Skip most common tracking parameters
 
 	// Oracle Eloqua

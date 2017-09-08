@@ -652,6 +652,43 @@ TEST(UrlTest, StripToken) {
 	strip_param_tests(test_cases, 124);
 }
 
+TEST(UrlTest, StripRandom) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// random
+		std::make_tuple("http://store.k7computing.com/ccc/index.html?cccid=[DASID_16944]&random=284491aa176612aa5b0cfe078ea469c9&top=1",
+		                "http://store.k7computing.com/ccc/index.html?cccid=[DASID_16944]&top=1"),
+		std::make_tuple("http://paloalto.tennistonic.com/action/tennis/update_vote_result?random=125939027&plid=96&pollresult=368&act=add",
+		                "http://paloalto.tennistonic.com/action/tennis/update_vote_result?plid=96&pollresult=368&act=add"),
+
+		std::make_tuple("https://getalongwithgod.com/?random",
+		                "https://getalongwithgod.com/"),
+		std::make_tuple("http://comic.hmp.is.it/?random&nocache=1",
+		                "http://comic.hmp.is.it/?nocache=1"),
+		std::make_tuple("http://f.webring.com/go?ring=toptoyshowdogs&id=9&random",
+		                "http://f.webring.com/go?ring=toptoyshowdogs&id=9"),
+
+		// _random
+		std::make_tuple("http://shop.savit.de/kreuz-apotheke-hannover/warenkorb.html?_random=2077824064",
+		                "http://shop.savit.de/kreuz-apotheke-hannover/warenkorb.html"),
+		std::make_tuple("http://www.hh-apotheke-diabetes.de/kontaktdaten.html?_random=-1768353868",
+		                "http://www.hh-apotheke-diabetes.de/kontaktdaten.html"),
+
+		// rand
+		std::make_tuple("http://www.alphalift.com/opencms/site/en/products/components/?rand=0.8042187468013982",
+		                "http://www.alphalift.com/opencms/site/en/products/components/"),
+		std::make_tuple("http://train.ucweb.com/TrainSearch/index/?rand=1148&uc_param_str=dnfrpfbivela&stationTo=MAC",
+		                "http://train.ucweb.com/TrainSearch/index/?uc_param_str=dnfrpfbivela&stationTo=MAC"),
+
+		// _rand
+		std::make_tuple("http://mm.naij.com/?_rand=1421694310",
+		                "http://mm.naij.com/"),
+		std::make_tuple("http://dramatech.org/events/?page_id=27&epl_action=process_cart_action&cart_action=add&event_id=381&_rand=56e61ecbabe86&_date_id=eb3ff28b25",
+		                "http://dramatech.org/events/?page_id=27&epl_action=process_cart_action&cart_action=add&event_id=381&_date_id=eb3ff28b25")
+	};
+
+	strip_param_tests(test_cases, 124);
+}
+
 TEST(UrlTest, StripParamsOracleEloqua) {
 	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// oracle eloqua
