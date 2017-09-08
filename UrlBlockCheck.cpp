@@ -28,6 +28,20 @@ bool isUrlBlocked(const Url &url, int *p_errno) {
 		}
 	}
 
+	// filter out %[0-1][0-9A-F] (most likely corrupted urls that got in somehow)
+	if (memcmp(url.getUrl() + url.getUrlLen() - 3, "%", 1) == 0 &&
+		is_hex(*(url.getUrl() + url.getUrlLen() - 2)) && is_hex(*(url.getUrl() + url.getUrlLen() - 1))) {
+		long encoded = strtol(url.getUrl() + url.getUrlLen() - 2, NULL, 16);
+		if (encoded >= 0x00 && encoded <= 0x1F) {
+			logTrace(g_conf.m_logTraceUrlMatchList, "Url is corrupted: %s", url.getUrl());
+			Statistics::increment_url_block_counter_blacklisted_urlcorrupt();
+			if (p_errno) {
+				*p_errno = EDOCBLOCKEDURLCORRUPT;
+			}
+			return true;
+		}
+	}
+
 	if (g_urlBlackList.isUrlMatched(url)) {
 		logTrace(g_conf.m_logTraceUrlMatchList, "Url is blacklisted: %s", url.getUrl());
 		Statistics::increment_url_block_counter_blacklisted();
@@ -81,6 +95,9 @@ bool isUrlUnwanted(const Url &url, const char **reason) {
 					break;
 				case EDOCBLOCKEDURLIP:
 					*reason = "blocked ip";
+					break;
+				case EDOCBLOCKEDURLCORRUPT:
+					*reason = "blocked corrupt";
 					break;
 				case EDOCBLOCKEDSHLIBDOMAIN:
 					*reason = "blocked domain";

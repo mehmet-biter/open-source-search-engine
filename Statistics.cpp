@@ -190,6 +190,7 @@ static void status_to_spider_statistics( std::vector<unsigned> *spiderdoc_counts
 		case EDOCBLOCKEDDNS:
 		case EDOCBLOCKEDURL:
 		case EDOCBLOCKEDURLIP:
+		case EDOCBLOCKEDURLCORRUPT:
 		case EDOCBLOCKEDSHLIBDOMAIN:
 		case EDOCBLOCKEDSHLIBURL:
 			(*spiderdoc_counts)[ spider_doc_deleted ] += count;
@@ -448,6 +449,7 @@ struct UrlBlockCheckCounters {
 	std::atomic<unsigned long> c_calls;
 	std::atomic<unsigned long> c_blacklisted;
 	std::atomic<unsigned long> c_blacklisted_urlip;
+	std::atomic<unsigned long> c_blacklisted_urlcorrupt;
 	std::atomic<unsigned long> c_whitelisted;
 	std::atomic<unsigned long> c_shlib_domain_block;
 	std::atomic<unsigned long> c_shlib_url_blocked;
@@ -465,6 +467,10 @@ void Statistics::increment_url_block_counter_blacklisted() {
 
 void Statistics::increment_url_block_counter_blacklisted_urlip() {
 	url_block_check_counters.c_blacklisted_urlip++;
+}
+
+void Statistics::increment_url_block_counter_blacklisted_urlcorrupt() {
+	url_block_check_counters.c_blacklisted_urlcorrupt++;
 }
 
 void Statistics::increment_url_block_counter_whitelisted() {
@@ -489,6 +495,7 @@ static void dump_url_block_check_statistics(FILE *fp) {
 	auto c_calls = url_block_check_counters.c_calls.load(); url_block_check_counters.c_calls = 0;
 	auto c_blacklisted = url_block_check_counters.c_blacklisted.load(); url_block_check_counters.c_blacklisted = 0;
 	auto c_blacklisted_urlip = url_block_check_counters.c_blacklisted_urlip.load(); url_block_check_counters.c_blacklisted_urlip = 0;
+	auto c_blacklisted_urlcorrupt = url_block_check_counters.c_blacklisted_urlcorrupt.load(); url_block_check_counters.c_blacklisted_urlcorrupt = 0;
 	auto c_whitelisted = url_block_check_counters.c_whitelisted.load(); url_block_check_counters.c_whitelisted = 0;
 	auto c_shlib_domain_block = url_block_check_counters.c_shlib_domain_block.load(); url_block_check_counters.c_shlib_domain_block = 0;
 	auto c_shlib_url_blocked = url_block_check_counters.c_shlib_url_blocked.load(); url_block_check_counters.c_shlib_url_blocked = 0;
@@ -496,6 +503,7 @@ static void dump_url_block_check_statistics(FILE *fp) {
 	fprintf(fp,"urlblock:calls:%lu\n", c_calls);
 	fprintf(fp,"urlblock:blacklisted:%lu\n", c_blacklisted);
 	fprintf(fp,"urlblock:blacklisted_urlip:%lu\n", c_blacklisted_urlip);
+	fprintf(fp,"urlblock:blacklisted_urlcorrupt:%lu\n", c_blacklisted_urlcorrupt);
 	fprintf(fp,"urlblock:whitelisted:%lu\n", c_whitelisted);
 	fprintf(fp,"urlblock:shlib_domain_block:%lu\n", c_shlib_domain_block);
 	fprintf(fp,"urlblock:shlib_url_blocked:%lu\n", c_shlib_url_blocked);

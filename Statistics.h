@@ -21,6 +21,7 @@ void register_socket_limit_hit();
 void increment_url_block_counter_call();
 void increment_url_block_counter_blacklisted();
 void increment_url_block_counter_blacklisted_urlip();
+void increment_url_block_counter_blacklisted_urlcorrupt();
 void increment_url_block_counter_whitelisted();
 void increment_url_block_counter_shlib_domain_block();
 void increment_url_block_counter_shlib_url_block();
