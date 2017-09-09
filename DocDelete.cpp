@@ -188,6 +188,7 @@ void DocDelete::processFile(void *item) {
 	std::ifstream file(s_tmp_filename);
 	std::ofstream lastDocIdFile(s_lastdocid_filename, std::ofstream::out|std::ofstream::trunc);
 
+	bool isInterrupted = false;
 	bool foundLastDocId = (fileItem->m_lastDocId == -1);
 	std::string line;
 	while (std::getline(file, line)) {
@@ -222,13 +223,14 @@ void DocDelete::processFile(void *item) {
 
 		// stop processing when we're shutting down or spidering is enabled
 		if (s_stop || docDeleteDisabled()) {
+			isInterrupted = true;
 			break;
 		}
 	}
 
 	waitPendingDocCount(0);
 
-	if (s_stop || docDeleteDisabled()) {
+	if (isInterrupted) {
 		log(LOG_INFO, "Interrupted processing of %s", s_tmp_filename);
 		delete fileItem;
 		return;
@@ -260,3 +262,4 @@ void DocDelete::processedDoc(void *state) {
 	// reprocess xmldoc
 	s_docDeleteDocThreadQueue.addItem(state);
 }
+
