@@ -220,7 +220,6 @@ private:
 	Msg5 m_msg5b;					// msg used for reading spiderdb records
 	bool m_gettingWaitingTreeList;	// true when waiting for spiderdb read to complete
 	key128_t m_waitingTreeNextKey;	// temporary key used for reading spiderdb records
-	key128_t m_waitingTreeEndKey;	// temporary key used for reading spiderdb records
 	time_t m_lastScanTime;
 
 	std::atomic<int32_t> m_scanningIp;

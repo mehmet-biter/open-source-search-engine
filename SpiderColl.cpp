@@ -64,7 +64,6 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	// when the admin updates the url filters page
 	m_waitingTreeNeedsRebuild = false;
 	m_waitingTreeNextKey.setMin();
-	m_waitingTreeEndKey.setMax();
 	m_spidersOut = 0;
 	m_coll[0] = '\0';
 
@@ -1192,7 +1191,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		                      m_cr->m_collnum,
 		                      &m_waitingTreeList,
 		                      &m_waitingTreeNextKey,
-		                      &m_waitingTreeEndKey,
+		                      KEYMAX(),
 		                      SR_READ_SIZE, // minRecSizes (512k)
 		                      true, // includeTree
 		                      0, // startFileNum
@@ -1368,7 +1367,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 			// this should result in an empty list read for
 			// our next scan of spiderdb. unfortunately we could
 			// miss a lot of spider requests then
-			m_waitingTreeNextKey  = m_waitingTreeEndKey;
+			KEYMAX((char*)&m_waitingTreeNextKey,sizeof(m_waitingTreeNextKey));
 		}
 		else {
 			m_waitingTreeNextKey  = lastKey;
