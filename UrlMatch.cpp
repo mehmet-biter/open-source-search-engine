@@ -20,7 +20,13 @@ urlmatchdomain_t::urlmatchdomain_t(const std::string &domain, const std::string 
 
 urlmatchhost_t::urlmatchhost_t(const std::string &host, const std::string &path)
 	: m_host(host)
-	, m_path(path) {
+	, m_path(path)
+	, m_port(0) {
+	size_t pos = m_host.find(':');
+	if (pos != std::string::npos) {
+		m_port = static_cast<int>(strtol(m_host.c_str() + pos + 1, NULL, 10));
+		m_host.erase(pos, std::string::npos);
+	}
 }
 
 urlmatchparam_t::urlmatchparam_t(const std::string &name, const std::string &value)
@@ -103,6 +109,11 @@ bool UrlMatch::match(const Url &url) const {
 			return matchString(m_str->m_str, url.getFilename(), url.getFilenameLen());
 		case url_match_host:
 			if (matchString(m_host->m_host, url.getHost(), url.getHostLen())) {
+				// validate port
+				if (m_host->m_port > 0 && (m_host->m_port != url.getPort())) {
+					return false;
+				}
+
 				if (m_host->m_path.empty()) {
 					return true;
 				}

@@ -76,6 +76,20 @@ TEST(UrlMatchListTest, Domain) {
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.somesite.com/path/me.html"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://sub.somesite.com/badpath/"));
 
+	//host    port.host.com:3001
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://port.host.com:3001/example/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://port.host.com:3001/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://port.host.com:3001/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://port.host.com:3002/example/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://port.host.com"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://port.host.com"));
+
+	//host    ssl.host.com:443
+	EXPECT_TRUE(urlMatchList.isUrlMatched("https://ssl.host.com/example/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://ssl.host.com:443/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://ssl.host.com:3001/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("https://ssl.host.com:3001/"));
+
 	//regex   itsybitsy.com ^https?://(www\.|nursery\.|)itsybitsy\.com/spider/.+
 	EXPECT_FALSE(urlMatchList.isUrlMatched("http://www.itsybitsy.com/spider/"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://itsybitsy.com/spider/waterspout.html"));

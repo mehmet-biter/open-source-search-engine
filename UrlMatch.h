@@ -42,6 +42,7 @@ struct urlmatchhost_t {
 
 	std::string m_host;
 	std::string m_path;
+	int m_port;
 };
 
 struct urlmatchparam_t {

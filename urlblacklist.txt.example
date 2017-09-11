@@ -53,6 +53,12 @@ file	wp-login.php
 #   allows: sub.example.com
 host	www.example.com
 
+# block specific host with specific port
+#   blocks: www.example.com:3001
+#   allows: www.example.com
+#   allows: www.example.com:3002
+host	www.example.com:3001
+
 # block specific host with path (prefix)
 #   blocks: www.example.com/path/abc
 #   blocks: www.example.com/path/def
