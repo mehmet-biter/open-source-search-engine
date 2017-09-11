@@ -1179,8 +1179,9 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// . do not include cache, those results are old and will mess
 		//   us up
 		char ipbuf[16];
-		log(LOG_DEBUG,"spider: populateWaitingTree: calling msg5: startKey=0x%" PRIx64",0x%" PRIx64" firstip=%s",
-		    m_waitingTreeNextKey.n1, m_waitingTreeNextKey.n0, iptoa(Spiderdb::getFirstIp(&m_waitingTreeNextKey),ipbuf));
+		char keystrbuf[MAX_KEYSTR_BYTES];
+		log(LOG_DEBUG,"spider: populateWaitingTree: calling msg5: startKey=0x%s firstip=%s",
+		    KEYSTR(&m_waitingTreeNextKey,sizeof(m_waitingTreeNextKey),keystrbuf), iptoa(Spiderdb::getFirstIp(&m_waitingTreeNextKey),ipbuf));
 		    
 		// flag it
 		m_gettingWaitingTreeList = true;
@@ -1312,11 +1313,9 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// this will return false if we are saving the tree i guess
 		if (!addToWaitingTree(firstIp)) {
 			char ipbuf[16];
-			log("spider: failed to add ip %s to waiting tree. "
-			    "ip will not get spidered then and our "
-			    "population of waiting tree will repeat until "
-			    "this add happens."
-			    , iptoa(firstIp,ipbuf) );
+			log(LOG_INFO, "spider: failed to add ip %s to waiting tree. "
+			              "ip will not get spidered then and our population of waiting tree will repeat until this add happens.",
+			    iptoa(firstIp,ipbuf) );
 			logTrace( g_conf.m_logTraceSpider, "END, addToWaitingTree for IP [%s] failed" , iptoa(firstIp,ipbuf));
 			return;
 		}
@@ -1344,8 +1343,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 
 	// announce every 10MB
 	if ( m_numBytesScanned - m_lastPrintCount > 10000000 ) {
-		log("spider: %" PRIu64" spiderdb bytes scanned for waiting tree "
-		    "re-population for cn=%" PRId32,m_numBytesScanned,
+		log(LOG_INFO, "spider: %" PRIu64" spiderdb bytes scanned for waiting tree re-population for cn=%" PRId32,m_numBytesScanned,
 		    (int32_t)m_collnum);
 		m_lastPrintCount = m_numBytesScanned;
 	}
@@ -1392,7 +1390,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// like 24 hrs from that...
 		m_lastScanTime = getTimeLocal();
 
-		log("WaitingTree rebuild complete for %s. Added %" PRId32" recs to waiting tree, scanned %" PRId64" bytes of spiderdb.",
+		log(LOG_DEBUG, "spider: WaitingTree rebuild complete for %s. Added %" PRId32" recs to waiting tree, scanned %" PRId64" bytes of spiderdb.",
 		    m_coll, m_numAdded, m_numBytesScanned);
 		//printWaitingTree();
 
