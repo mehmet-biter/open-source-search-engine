@@ -131,8 +131,8 @@ public:
 	const char *getContentTypePos() { return m_contentTypePos; }
 
 	// convert a file extension like "gif" to "images/gif"
-	const char *getContentTypeFromExtension ( const char *ext ) ;
-	const char *getContentTypeFromExtension ( const char *ext , int32_t elen ) ;
+	static const char *getContentTypeFromExtension ( const char *ext ) ;
+	static const char *getContentTypeFromExtension ( const char *ext , int32_t elen ) ;
 
 	void print() const;
 
