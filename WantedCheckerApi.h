@@ -38,7 +38,7 @@ struct UrlCheckResult {
 typedef UrlCheckResult (*check_url_t)(const std::string &url);
 
 
-// check_content
+// check_multi_content
 //
 //Called after content has been fetched and transcoded into UTF-8
 //Possible outcomes:
