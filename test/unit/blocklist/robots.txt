@@ -1,0 +1,8 @@
+# full host
+host1.example.com
+
+# wildcard subdomain
+*.host2.example.com
+
+# wildcard
+*badexample.com
