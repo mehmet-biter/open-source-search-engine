@@ -38,7 +38,20 @@ struct UrlCheckResult {
 typedef UrlCheckResult (*check_url_t)(const std::string &url);
 
 
-// check_content
+// check_single_content
+//Called after content has been successfully fetched and transcoded into UTF-8
+//Possible outcomes:
+//  wanted
+//  unwanted
+
+struct SingleContentCheckResult {
+	bool wanted;
+};
+
+typedef SingleContentCheckResult (*check_single_content_t)(const std::string &url, const void *content, size_t content_len);
+
+
+// check_multi_content
 //
 //Called after content has been fetched and transcoded into UTF-8
 //Possible outcomes:
@@ -71,6 +84,7 @@ typedef MultiContentCheckResult (*check_multi_content_t)(const std::vector<Multi
 struct APIDescriptorBlock {
 	check_domain_t check_domain_pfn;
 	check_url_t check_url_pfn;
+	check_single_content_t check_single_content_pfn;
 	check_multi_content_t check_multi_content_pfn;
 	
 };

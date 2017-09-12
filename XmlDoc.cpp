@@ -1742,6 +1742,11 @@ bool XmlDoc::indexDoc ( ) {
 		m_indexCodeValid = true;
 	}
 
+	if ( g_errno == EDOCBLOCKEDSHLICONTENT ) {
+		m_indexCode = g_errno;
+		m_indexCodeValid = true;
+	}
+
 	// default to internal error which will be retried forever otherwise
 	if ( ! m_indexCodeValid ) {
 		m_indexCode = EINTERNALERROR;//g_errno;

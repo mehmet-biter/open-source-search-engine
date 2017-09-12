@@ -25,6 +25,12 @@ static WantedCheckApi::UrlCheckResult noop_check_url(const std::string &/*url*/)
 	return result;
 }
 
+static WantedCheckApi::SingleContentCheckResult noop_check_single_content(const std::string &/*url*/, const void */*content*/, size_t /*content_len*/) {
+	WantedCheckApi::SingleContentCheckResult result;
+	result.wanted = true;
+	return result;
+}
+
 static WantedCheckApi::MultiContentCheckResult noop_check_multi_content(const std::vector<WantedCheckApi::MultiContent> &/*content*/) {
 	WantedCheckApi::MultiContentCheckResult result;
 	result.result = result.wanted;
@@ -41,7 +47,8 @@ static void *p_shlib = 0;
 static WantedCheckApi::APIDescriptorBlock effective_descriptor_block = {
 	noop_check_domain,
 	noop_check_url,
-	noop_check_multi_content
+	noop_check_single_content,
+	noop_check_multi_content,
 };
 
 
@@ -69,6 +76,8 @@ bool WantedChecker::initialize() {
 		effective_descriptor_block.check_domain_pfn = desc->check_domain_pfn;
 	if(desc->check_url_pfn)
 		effective_descriptor_block.check_url_pfn = desc->check_url_pfn;
+	if(desc->check_single_content_pfn)
+		effective_descriptor_block.check_single_content_pfn = desc->check_single_content_pfn;
 	if(desc->check_multi_content_pfn)
 		effective_descriptor_block.check_multi_content_pfn = desc->check_multi_content_pfn;
 	
@@ -82,6 +91,7 @@ void WantedChecker::finalize() {
 	
 	effective_descriptor_block.check_domain_pfn = noop_check_domain;
 	effective_descriptor_block.check_url_pfn = noop_check_url;
+	effective_descriptor_block.check_single_content_pfn = noop_check_single_content;
 	effective_descriptor_block.check_multi_content_pfn = noop_check_multi_content;
 	
 	if(p_shlib) {
@@ -100,4 +110,8 @@ WantedChecker::DomainCheckResult WantedChecker::check_domain(const std::string &
 
 WantedChecker::UrlCheckResult WantedChecker::check_url(const std::string &url) {
 	return effective_descriptor_block.check_url_pfn(url);
+}
+
+WantedChecker::SingleContentCheckResult WantedChecker::check_single_content(const std::string &url, const void *content, size_t content_len) {
+	return effective_descriptor_block.check_single_content_pfn(url,content,content_len);
 }

@@ -196,6 +196,7 @@ enum {
 	EDOCBLOCKEDSHLIBDOMAIN,
 	EDOCBLOCKEDSHLIBURL,
 	EBANNEDCRAWL,      // we are apparently banned/blacklisted by the Webserver/IDS/
+	EDOCBLOCKEDSHLICONTENT,
 };
 
 #endif // GB_ERRNO_H

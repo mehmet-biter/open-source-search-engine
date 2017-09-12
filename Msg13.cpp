@@ -9,6 +9,7 @@
 #include "SpiderProxy.h" // OP_GETPROXY OP_RETPROXY
 #include "RdbCache.h"
 #include "Collectiondb.h"
+#include "WantedChecker.h"
 #include "ip.h"
 #include "GbUtil.h"
 #include "zlib.h"
@@ -1118,6 +1119,43 @@ static bool crawlWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 }
 
 
+static bool contentIsUnwanted(TcpSocket *ts, const char **msg, Msg13Request *r) {
+log(LOG_INFO,"contentIsUnwanted: url=%s", r->ptr_url);
+	//logTrace ..."contentIsUnwanted, %.*s", r->size_url, r->ptr_url);
+	// no socket -> must be a bulk import job so obviously wanted
+	if(!ts)
+		return false;
+
+	//we only do ban checks if there weren't any other error
+	if(g_errno!=0)
+		return false;
+
+	//todo: if the server returned an empty response then we might be banned. But let's assume not for now.
+
+	// check the http mime for 403 Forbidden
+	HttpMime mime;
+	mime.set ( ts->m_readBuf , ts->m_readOffset , NULL );
+
+	int32_t httpStatus = mime.getHttpStatus();
+	if(httpStatus == 200) { //ok
+		size_t pre_size = mime.getMimeLen(); //size of http response line, mime headers and empty line separator
+		size_t haystack_size = ts->m_readOffset - pre_size;
+		const void *haystack = ts->m_readBuf + pre_size;
+		if(!WantedChecker::check_single_content(r->ptr_url,haystack,haystack_size).wanted) {
+			log(LOG_INFO,"Url %s is unwanted by shlib", r->ptr_url);
+			*msg = "shlib-unwanted";
+			return true;
+		}
+	}
+	
+	//logTrace ..."Url crawl seems to not be banned");
+	// otherwise assume not.
+	*msg = NULL;
+
+	return false;
+}
+
+
 // come here after telling host #0 we are done using this proxy.
 // host #0 will update the loadbucket for it, using m_lbId.
 void gotHttpReply9 ( void *state , TcpSocket *ts ) {
@@ -1278,6 +1316,14 @@ void gotHttpReply2 ( void *state ,
 		    , iptoa(r->m_urlIp,ipbuf)
 		    );
 		savedErr = g_errno = EBANNEDCRAWL;
+	}
+
+	if(contentIsUnwanted(ts,&banMsg,r)) {
+		log("msg13: url %.*s is unwanted (%s)"
+		    , (int)r->size_url, r->ptr_url
+		    , banMsg
+		    );
+		savedErr = g_errno = EDOCBLOCKEDSHLICONTENT;
 	}
 
 	// . add to the table if not in there yet
@@ -1724,7 +1770,8 @@ void gotHttpReply2 ( void *state ,
 			     err != EPIPE &&
 			     // connection reset by peer
 			     err != ECONNRESET &&
-			     err != EBANNEDCRAWL)
+			     err != EBANNEDCRAWL &&
+			     err != EDOCBLOCKEDSHLICONTENT)
 			{
 				log("http: bad error from httpserver get doc: %s",
 				    mstrerror(err));
