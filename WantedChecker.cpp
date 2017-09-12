@@ -25,8 +25,8 @@ static WantedCheckApi::UrlCheckResult noop_check_url(const std::string &/*url*/)
 	return result;
 }
 
-static WantedCheckApi::ContentCheckResult noop_check_content(const std::vector<WantedCheckApi::Content> &/*content*/) {
-	WantedCheckApi::ContentCheckResult result;
+static WantedCheckApi::MultiContentCheckResult noop_check_multi_content(const std::vector<WantedCheckApi::MultiContent> &/*content*/) {
+	WantedCheckApi::MultiContentCheckResult result;
 	result.result = result.wanted;
 	return result;
 }
@@ -41,7 +41,7 @@ static void *p_shlib = 0;
 static WantedCheckApi::APIDescriptorBlock effective_descriptor_block = {
 	noop_check_domain,
 	noop_check_url,
-	noop_check_content
+	noop_check_multi_content
 };
 
 
@@ -69,8 +69,8 @@ bool WantedChecker::initialize() {
 		effective_descriptor_block.check_domain_pfn = desc->check_domain_pfn;
 	if(desc->check_url_pfn)
 		effective_descriptor_block.check_url_pfn = desc->check_url_pfn;
-	if(desc->check_content_pfn)
-		effective_descriptor_block.check_content_pfn = desc->check_content_pfn;
+	if(desc->check_multi_content_pfn)
+		effective_descriptor_block.check_multi_content_pfn = desc->check_multi_content_pfn;
 	
 	log(LOG_INFO,"Initialized wanted-checking");
 	return true;
@@ -82,7 +82,7 @@ void WantedChecker::finalize() {
 	
 	effective_descriptor_block.check_domain_pfn = noop_check_domain;
 	effective_descriptor_block.check_url_pfn = noop_check_url;
-	effective_descriptor_block.check_content_pfn = noop_check_content;
+	effective_descriptor_block.check_multi_content_pfn = noop_check_multi_content;
 	
 	if(p_shlib) {
 		dlclose(p_shlib);

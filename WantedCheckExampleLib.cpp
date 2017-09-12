@@ -38,8 +38,8 @@ static WantedCheckApi::UrlCheckResult example_check_url(const std::string &url) 
 
 //No example for content filtering
 
-// static WantedCheckApi::ContentCheckResult example_check_content(const std::vector<WantedCheckApi::Content> &/*content*/) {
-// 	WantedCheckApi::ContentCheckResult result;
+// static WantedCheckApi::ContentMultiCheckResult example_check_multi_content(const std::vector<WantedCheckApi::Content> &/*content*/) {
+// 	WantedCheckApi::ContentMultiCheckResult result;
 // 	result.result = result.wanted;
 // 	return result;
 // }
@@ -49,5 +49,5 @@ static WantedCheckApi::UrlCheckResult example_check_url(const std::string &url) 
 WantedCheckApi::APIDescriptorBlock wanted_check_api_descriptor_block = {
 	example_check_domain,
 	example_check_url,
-	NULL //example_check_content
+	NULL //example_check_multi_content
 };

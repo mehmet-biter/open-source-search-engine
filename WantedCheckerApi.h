@@ -48,7 +48,7 @@ typedef UrlCheckResult (*check_url_t)(const std::string &url);
 // The first item in the 'content' array is the page we are asking about. The
 // other items are documents the callout asked for.
 
-struct ContentCheckResult {
+struct MultiContentCheckResult {
 	enum {
 		wanted,
 		unwanted,
@@ -57,7 +57,7 @@ struct ContentCheckResult {
 	std::string other_url_to_fetch;
 };
 
-struct Content {
+struct MultiContent {
 	const void *ptr;
 	size_t size;
 	std::string content_type;
@@ -65,13 +65,13 @@ struct Content {
 };
 
 
-typedef ContentCheckResult (*check_content_t)(const std::vector<Content> &content);
+typedef MultiContentCheckResult (*check_multi_content_t)(const std::vector<MultiContent> &content);
 
 
 struct APIDescriptorBlock {
 	check_domain_t check_domain_pfn;
 	check_url_t check_url_pfn;
-	check_content_t check_content_pfn;
+	check_multi_content_t check_multi_content_pfn;
 	
 };
 
