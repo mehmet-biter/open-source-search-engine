@@ -1745,7 +1745,7 @@ bool XmlDoc::indexDoc ( ) {
 		m_indexCodeValid = true;
 	}
 
-	if ( g_errno == EDOCBLOCKEDSHLICONTENT ) {
+	if ( g_errno == EDOCBLOCKEDSHLIBCONTENT ) {
 		m_indexCode = g_errno;
 		m_indexCodeValid = true;
 	}

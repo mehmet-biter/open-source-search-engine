@@ -1322,7 +1322,7 @@ void gotHttpReply2 ( void *state ,
 		    , (int)r->size_url, r->ptr_url
 		    , banMsg
 		    );
-		savedErr = g_errno = EDOCBLOCKEDSHLICONTENT;
+		savedErr = g_errno = EDOCBLOCKEDSHLIBCONTENT;
 	}
 
 	// . add to the table if not in there yet
@@ -1770,7 +1770,7 @@ void gotHttpReply2 ( void *state ,
 			     // connection reset by peer
 			     err != ECONNRESET &&
 			     err != EBANNEDCRAWL &&
-			     err != EDOCBLOCKEDSHLICONTENT)
+			     err != EDOCBLOCKEDSHLIBCONTENT)
 			{
 				log("http: bad error from httpserver get doc: %s",
 				    mstrerror(err));
