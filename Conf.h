@@ -404,6 +404,7 @@ class Conf {
 
 	bool m_logTraceRepairs;
 	bool m_logTraceRobots;
+	bool m_logTraceRobotsCheckList;
 	bool m_logTraceSpider;
 	bool m_logTraceSpiderUrlCache;
 	bool m_logTraceReindex;

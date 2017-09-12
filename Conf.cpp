@@ -253,6 +253,7 @@ Conf::Conf ( ) {
 	m_logTraceRdbTree = false;
 	m_logTraceRepairs = false;
 	m_logTraceRobots = false;
+	m_logTraceRobotsCheckList = false;
 	m_logTraceSpider = false;
 	m_logTraceSpiderUrlCache = false;
 	m_logTraceReindex = false;

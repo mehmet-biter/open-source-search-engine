@@ -8786,6 +8786,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for RobotsCheckList";
+	m->m_cgi   = "ltrc_robotscl";
+	simple_m_set(Conf,m_logTraceRobotsCheckList);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for Spider";
 	m->m_cgi   = "ltrc_sp";
 	simple_m_set(Conf,m_logTraceSpider);

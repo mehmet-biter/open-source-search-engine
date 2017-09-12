@@ -47,6 +47,7 @@
 #include "GbLanguage.h"
 #include "DnsBlockList.h"
 #include "GbDns.h"
+#include "RobotsCheckList.h"
 
 
 #ifdef _VALGRIND_
@@ -7909,6 +7910,15 @@ char **XmlDoc::getHttpReply2 ( ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, return empty reply, download not allowed" );
 		return &m_httpReply;
 		//return gotHttpReply ( );
+	}
+
+	// double check with known blocked sites to make sure we don't accidentally spider what we're not allowed to
+	if (!isFirstUrlRobotsTxt()) {
+		std::string host(getCurrentUrl()->getHost(), getCurrentUrl()->getHostLen());
+		if (g_robotsCheckList.isHostBlocked(host.c_str())) {
+			logError("Trying to download url='%s' when not allowed to", getCurrentUrl()->getUrl());
+			gbshutdownLogicError();
+		}
 	}
 
 	// are we site root page?

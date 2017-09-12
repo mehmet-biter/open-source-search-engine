@@ -62,7 +62,7 @@ OBJS_O3 = \
 	Linkdb.o \
 	Msg40.o \
 	Msg25.o \
-	RdbBuckets.o RdbIndex.o RdbIndexQuery.o RdbList.o RdbMap.o \
+	RdbBuckets.o RdbIndex.o RdbIndexQuery.o RdbList.o RdbMap.o RobotsCheckList.o \
 	SafeBuf.o sort.o Statistics.o \
 	ScoringWeights.o \
 	TopTree.o \

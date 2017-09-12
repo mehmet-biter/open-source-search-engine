@@ -86,6 +86,7 @@
 #include "DocDelete.h"
 #include "GbDns.h"
 #include "ScopedLock.h"
+#include "RobotsCheckList.h"
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -1658,6 +1659,7 @@ int main2 ( int argc , char *argv[] ) {
 	g_dnsBlockList.init();
 	g_urlBlackList.init();
 	g_urlWhiteList.init();
+	g_robotsCheckList.init();
 
 	// initialize generate global index thread
 	if (!RdbBase::initializeGlobalIndexThread()) {
