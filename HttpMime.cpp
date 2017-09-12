@@ -1514,7 +1514,7 @@ void HttpMime::addCookie(const httpcookie_t &cookie, const Url &currentUrl, Safe
 	cookieJar->pushChar('\n');
 }
 
-bool HttpMime::addToCookieJar(Url *currentUrl, SafeBuf *sb) {
+bool HttpMime::addToCookieJar(const Url *currentUrl, SafeBuf *sb) {
 	/// @note Slightly modified from Netscape HTTP Cookie File format
 	/// Difference is we only have one column for name/value
 

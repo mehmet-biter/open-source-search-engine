@@ -72,12 +72,12 @@ public:
 	// http status: 404, 200, etc.
 	int32_t getHttpStatus() const { return m_status; }
 
-	char *getContent() { return const_cast<char*>(m_content); }
+	const char *getContent() const { return m_content; }
 	int32_t getContentLen() const { return m_contentLen; }
 
 	int32_t getContentType() { return m_contentType; }
 
-	Url *getLocationUrl() { return &m_locUrl; }
+	const Url *getLocationUrl() const { return &m_locUrl; }
 
 	// new stuff for Msg13.cpp to use
 	const char *getLocationField() { return m_locationField; }
@@ -108,11 +108,11 @@ public:
 	// make a redirect mime
 	void makeRedirMime ( const char *redirUrl , int32_t redirUrlLen );
 
-	bool addToCookieJar(Url *currentUrl, SafeBuf *sb);
+	bool addToCookieJar(const Url *currentUrl, SafeBuf *sb);
 
 	static bool addCookieHeader(const char *cookieJar, const char *url, SafeBuf *sb);
 
-	char *getMime() { return m_buf; }
+	const char *getMime() const { return m_buf; }
 	// does this include the last \r\n\r\n? yes!
 	int32_t getMimeLen() const { return m_mimeLen; }
 

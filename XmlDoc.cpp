@@ -619,7 +619,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		// it's valid
 		m_mimeValid = true;
 		// advance
-		utf8Content = m_mime.getContent();
+		utf8Content = const_cast<char*>(m_mime.getContent()); //we promose not to modify it
 	}
 
 	// use this to avoid ip lookup if it is not zero
@@ -5307,7 +5307,7 @@ Url **XmlDoc::getRedirUrl() {
 
 	int32_t httpStatus = mime.getHttpStatus();
 
-	Url *loc = NULL;
+	const Url *loc = NULL;
 
 	// quickly see if we are a robots.txt url originally
 	bool isRobotsTxt = isFirstUrlRobotsTxt ( );
@@ -5514,7 +5514,7 @@ Url **XmlDoc::getRedirUrl() {
 	// . by simpler, i mean one w/ fewer path components
 	// . or one with a www for hostname
 	// . or could be same as firstUrl but with a / appended
-	char *r   = loc->getUrl();
+	const char *r   = loc->getUrl();
 	char *u   = f->getUrl();
 	int32_t rlen = loc->getUrlLen();
 	int32_t ulen = f->getUrlLen();
