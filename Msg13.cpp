@@ -1120,7 +1120,6 @@ static bool crawlWasBanned(TcpSocket *ts, const char **msg, Msg13Request *r) {
 
 
 static bool contentIsUnwanted(TcpSocket *ts, const char **msg, Msg13Request *r) {
-log(LOG_INFO,"contentIsUnwanted: url=%s", r->ptr_url);
 	//logTrace ..."contentIsUnwanted, %.*s", r->size_url, r->ptr_url);
 	// no socket -> must be a bulk import job so obviously wanted
 	if(!ts)
