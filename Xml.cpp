@@ -1022,6 +1022,50 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 	return (contentLen > 0);
 }
 
+bool Xml::getTagValue(const char *fieldName, const char *fieldContent, const char *fieldValueName,
+                      const char **valuePtr, int32_t *valueLenPtr, bool ignoreExpandedIframe,
+                      nodeid_t expectedNodeId, int32_t startNode) {
+	int32_t fieldNameLen = strlen(fieldName);
+	int32_t fieldContentLen = strlen(fieldContent);
+	int32_t fieldValueNameLen = strlen(fieldValueName);
+
+	int inTagCount = 0;
+
+	for (int32_t i = startNode; i < getNumNodes(); ++i) {
+		// don't get tag from gbframe (expanded iframe content)
+		if (ignoreExpandedIframe && inTag(getNodePtr(i), TAG_GBFRAME, &inTagCount)) {
+			continue;
+		}
+
+		if (expectedNodeId != LAST_TAG && getNodeId(i) != expectedNodeId) {
+			continue;
+		}
+
+		bool found = false;
+		if (fieldNameLen > 0) {
+			int32_t tagLen = 0;
+			char *tag = getNodePtr(i)->getAttrValue(fieldName, fieldNameLen, &tagLen);
+			if (tagLen == fieldContentLen && strncasecmp(tag, fieldContent, fieldContentLen) == 0) {
+				found = true;
+			}
+		} else {
+			found = true;
+		}
+
+		if (found) {
+			// extract value
+			*valuePtr = getNodePtr(i)->getAttrValue(fieldValueName, fieldValueNameLen, valueLenPtr);
+			if (!*valuePtr || *valueLenPtr <= 0) {
+				// no content
+				continue;
+			}
+
+			break;
+		}
+	}
+
+	return (*valueLenPtr > 0);
+}
 //  TEST CASES:
 //. this is NOT rss, but has an rdf:rdf tag in it!
 //  http://www.silverstripe.com/silverstripe-adds-a-touch-of-design-and-a-whole-lot-more/

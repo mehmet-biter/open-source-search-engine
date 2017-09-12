@@ -524,8 +524,7 @@ public:
 	// are we a request/reply from PageReindex.cpp
 	unsigned    m_isPageReindex:1;
 
-	// are we a request/reply from PageInject.cpp
-	unsigned    m_reserved3a:1;
+	unsigned    m_isUrlCanonical:1;
 
 	// or from PageParser.cpp directly
 	unsigned    m_isPageParser:1;

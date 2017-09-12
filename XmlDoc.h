@@ -376,6 +376,7 @@ public:
 	int64_t getFirstUrlHash64();
 	class Url **getRedirUrl() ;
 	class Url **getMetaRedirUrl() ;
+	class Url *getCanonicalUrl();
 	class Url **getCanonicalRedirUrl ( ) ;
 	int32_t *getFirstIndexedDate ( ) ;
 	int32_t *getOutlinksAddedDate ( ) ;
@@ -603,7 +604,7 @@ public:
 	SafeBuf    m_redirCookieBuf;
 	Url        m_metaRedirUrl;
 	Url       *m_metaRedirUrlPtr;
-	Url        m_canonicalRedirUrl;
+	Url        m_canonicalUrl;
 	Url       *m_canonicalRedirUrlPtr;
 	int32_t       m_redirError;
 	bool       m_allowSimplifiedRedirs;
@@ -653,6 +654,9 @@ public:
 	bool isFirstUrlRobotsTxt();
 	bool m_isRobotsTxtUrl;
 
+	bool isFirstUrlCanonical();
+	bool m_isUrlCanonical;
+
 	Images     m_images;
 	HashTableX m_countTable;
 	HttpMime   m_mime;
@@ -693,6 +697,7 @@ public:
 	bool m_titleBufValid;
 	bool m_fragBufValid;
 	bool m_isRobotsTxtUrlValid;
+	bool m_isUrlCanonicalValid;
 	bool m_wordSpamBufValid;
 	bool m_finalSummaryBufValid;
 
@@ -744,6 +749,7 @@ public:
 	bool m_redirUrlValid;
 	bool m_redirCookieBufValid;
 	bool m_metaRedirUrlValid;
+	bool m_canonicalUrlValid;
 	bool m_canonicalRedirUrlValid;
 	bool m_statusMsgValid;
 	bool m_mimeValid;
