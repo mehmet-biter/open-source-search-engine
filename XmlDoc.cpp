@@ -2474,6 +2474,10 @@ int32_t *XmlDoc::getIndexCode ( ) {
 			ptr_redirUrl    = m_canonicalUrl.getUrl();
 			size_redirUrl   = m_canonicalUrl.getUrlLen()+1;
 
+			// make sure we store an empty document
+			ptr_utf8Content = NULL;
+			size_utf8Content = 0;
+
 			logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCNONCANONICAL");
 			return &m_indexCode;
 		}
@@ -5615,6 +5619,10 @@ Url **XmlDoc::getRedirUrl() {
 		// store redirUrl in titlerec as well
 		ptr_redirUrl = m_redirUrl.getUrl();
 		size_redirUrl = m_redirUrl.getUrlLen() + 1;
+
+		// make sure we store an empty document
+		ptr_utf8Content = NULL;
+		size_utf8Content = 0;
 
 		// mdw: let this path through so contactXmlDoc gets a proper
 		// redirect that we can follow. for the base xml doc at
@@ -12772,7 +12780,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			addPosRec = true;
 
 			// if we are adding a simplified redirect as a link to spiderdb
-			// likewise if the error was ENONCANONICAL treat it like that
+			// likewise if the error was EDOCNONCANONICAL treat it like that
 			spideringLinks = true;
 
 			// don't add linkinfo since titlerec is empty
