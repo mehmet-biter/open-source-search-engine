@@ -144,7 +144,7 @@ public:
 
 	bool getTagValue(const char *fieldName, const char *fieldContent, const char *fieldValueName,
 	                 const char **valuePtr, int32_t *valueLenPtr, bool ignoreExpandedIframe,
-	                 nodeid_t expectedNodeId, int32_t startNode = 0);
+	                 nodeid_t expectedNodeId, int32_t *startNode = nullptr);
 
 	// . like getText() below but gets the content from a meta tag
 	// . stores it in "buf"  and NULL terminates it

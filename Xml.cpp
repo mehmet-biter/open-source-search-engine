@@ -1024,11 +1024,11 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 
 bool Xml::getTagValue(const char *fieldName, const char *fieldContent, const char *fieldValueName,
                       const char **valuePtr, int32_t *valueLenPtr, bool ignoreExpandedIframe,
-                      nodeid_t expectedNodeId, int32_t startNode) {
+                      nodeid_t expectedNodeId, int32_t *startNodePtr) {
 	int32_t fieldNameLen = strlen(fieldName);
 	int32_t fieldContentLen = strlen(fieldContent);
 	int32_t fieldValueNameLen = strlen(fieldValueName);
-
+	int32_t startNode = (startNodePtr != nullptr) ? *startNodePtr : 0;
 	int inTagCount = 0;
 
 	for (int32_t i = startNode; i < getNumNodes(); ++i) {
@@ -1060,6 +1060,9 @@ bool Xml::getTagValue(const char *fieldName, const char *fieldContent, const cha
 				continue;
 			}
 
+			if (startNodePtr) {
+				*startNodePtr = i;
+			}
 			break;
 		}
 	}

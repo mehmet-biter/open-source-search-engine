@@ -8730,7 +8730,7 @@ Url *XmlDoc::getCanonicalUrl() {
 	int32_t linkLen = 0;
 	int32_t startNode = 0;
 	while (startNode < xml->getNumNodes() &&
-	       xml->getTagValue("rel", "canonical", "href", &link, &linkLen, true, TAG_LINK, startNode)) {
+	       xml->getTagValue("rel", "canonical", "href", &link, &linkLen, true, TAG_LINK, &startNode)) {
 		// allow for relative urls
 		Url *bu = getBaseUrl();
 
@@ -8742,6 +8742,7 @@ Url *XmlDoc::getCanonicalUrl() {
 		if( m_canonicalUrl.getTLDLen() == 0 || m_canonicalUrl.getDomainLen() == 0 ) {
 			log(LOG_DEBUG, "Invalid canonical URL ignored [%.*s]", linkLen, link);
 			m_canonicalUrl.reset();
+			++startNode;
 			continue;
 		}
 
