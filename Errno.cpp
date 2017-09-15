@@ -283,6 +283,8 @@ const char *mstrerror ( int errnum ) {
 				return "Doc blocked by shlib (url)";
 			case EBANNEDCRAWL:
 				return "Crawl banned by server";
+			case EDOCBLOCKEDSHLIBCONTENT:
+				return "Doc blocked by shlib (content)";
 		}
 	}
 
@@ -468,6 +470,7 @@ static const char* s_errname[] {
 	STRINGIFY( EDOCBLOCKEDSHLIBDOMAIN ),
 	STRINGIFY( EDOCBLOCKEDSHLIBURL ),
 	STRINGIFY( EBANNEDCRAWL ),
+	STRINGIFY( EDOCBLOCKEDSHLIBCONTENT ),
 };
 
 #undef STRINGIFY

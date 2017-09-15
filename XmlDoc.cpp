@@ -604,6 +604,9 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		m_deleteFromIndex = true;
 	}
 
+	m_isUrlCanonical = sreq->m_isUrlCanonical;
+	m_isUrlCanonicalValid = true;
+
 	char *utf8Content = utf8ContentArg;
 
 	if ( contentHasMimeArg && utf8Content ) {
@@ -1742,6 +1745,11 @@ bool XmlDoc::indexDoc ( ) {
 		m_indexCodeValid = true;
 	}
 
+	if ( g_errno == EDOCBLOCKEDSHLIBCONTENT ) {
+		m_indexCode = g_errno;
+		m_indexCodeValid = true;
+	}
+
 	// default to internal error which will be retried forever otherwise
 	if ( ! m_indexCodeValid ) {
 		m_indexCode = EINTERNALERROR;//g_errno;
@@ -2463,8 +2471,12 @@ int32_t *XmlDoc::getIndexCode ( ) {
 			m_indexCodeValid = true;
 
 			// store canonical url in titlerec as well
-			ptr_redirUrl    = m_canonicalRedirUrl.getUrl();
-			size_redirUrl   = m_canonicalRedirUrl.getUrlLen()+1;
+			ptr_redirUrl    = m_canonicalUrl.getUrl();
+			size_redirUrl   = m_canonicalUrl.getUrlLen()+1;
+
+			// make sure we store an empty document
+			ptr_utf8Content = NULL;
+			size_utf8Content = 0;
 
 			logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCNONCANONICAL");
 			return &m_indexCode;
@@ -4062,7 +4074,7 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 	}
 
 	if ( m_indexCodeValid && m_indexCode == EDOCNONCANONICAL ) {
-		m_links.set(m_canonicalRedirUrl.getUrl());
+		m_links.set(m_canonicalUrl.getUrl());
 		m_linksValid = true;
 		return &m_links;
 	}
@@ -5586,6 +5598,12 @@ Url **XmlDoc::getRedirUrl() {
 		allowSimplifiedRedirs = true;
 	}
 
+	// if it's a canonical url, follow the redirect
+	if (isFirstUrlCanonical()) {
+		logTrace(g_conf.m_logTraceXmlDoc, "first url is canonical. allowSimplifiedRedirs=true");
+		allowSimplifiedRedirs = true;
+	}
+
 	// . don't bother indexing this url if the redir is better
 	// . 301 means moved PERMANENTLY...
 	// . many people use 301 on their root pages though, so treat
@@ -5601,6 +5619,10 @@ Url **XmlDoc::getRedirUrl() {
 		// store redirUrl in titlerec as well
 		ptr_redirUrl = m_redirUrl.getUrl();
 		size_redirUrl = m_redirUrl.getUrlLen() + 1;
+
+		// make sure we store an empty document
+		ptr_utf8Content = NULL;
+		size_utf8Content = 0;
 
 		// mdw: let this path through so contactXmlDoc gets a proper
 		// redirect that we can follow. for the base xml doc at
@@ -7010,6 +7032,18 @@ bool XmlDoc::isFirstUrlRobotsTxt() {
 	return m_isRobotsTxtUrl;
 }
 
+bool XmlDoc::isFirstUrlCanonical() {
+	if (m_isUrlCanonicalValid) {
+		return m_isUrlCanonical;
+	}
+
+	Url *fu = getFirstUrl();
+	Url *cu = getCanonicalUrl();
+	m_isUrlCanonical = (strcmp(fu->getUrl(), cu->getUrl()) == 0);
+	m_isUrlCanonicalValid = true;
+
+	return m_isUrlCanonical;
+}
 
 // . get the Robots.txt and see if we are allowed
 // . returns NULL and sets g_errno on error
@@ -8662,6 +8696,66 @@ uint8_t *XmlDoc::getContentType ( ) {
 }
 
 
+Url *XmlDoc::getCanonicalUrl() {
+	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
+
+	// return if we got it
+	if (m_canonicalUrlValid) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. Already valid");
+		return &m_canonicalUrl;
+	}
+
+	uint8_t *ct = getContentType();
+	if (!ct) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. content type is null, returning NULL");
+		return NULL;
+	}
+
+	// these canonical links only supported in xml/html i think
+	if (*ct != CT_HTML && *ct != CT_XML) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. Content type not HTML/XML. No canonical redirection");
+		m_canonicalUrlValid = true;
+		return &m_canonicalUrl;
+	}
+
+	Xml *xml = getXml();
+	if (!xml || xml == (Xml *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. Unable to get xml");
+		return (Url *)xml;
+	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "xmlNumNodes=%d", xml->getNumNodes());
+
+	const char *link = NULL;
+	int32_t linkLen = 0;
+	int32_t startNode = 0;
+	while (startNode < xml->getNumNodes() &&
+	       xml->getTagValue("rel", "canonical", "href", &link, &linkLen, true, TAG_LINK, &startNode)) {
+		// allow for relative urls
+		Url *bu = getBaseUrl();
+
+		// set base to it
+		m_canonicalUrl.set(bu, link, linkLen, false, true, false);
+
+		// Detect invalid canonical URLs like <link rel="canonical" href="https://://jobs.dart.biz/search/" />
+		// The Url class really should have a "isValid" function...
+		if( m_canonicalUrl.getTLDLen() == 0 || m_canonicalUrl.getDomainLen() == 0 ) {
+			log(LOG_DEBUG, "Invalid canonical URL ignored [%.*s]", linkLen, link);
+			m_canonicalUrl.reset();
+			++startNode;
+			continue;
+		}
+
+		logTrace(g_conf.m_logTraceXmlDoc, "Got canonical url");
+
+		break;
+	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "END. Returning canonical url[%s]", m_canonicalUrl.getUrl());
+	m_canonicalUrlValid = true;
+
+	return &m_canonicalUrl;
+}
 
 // . similar to getMetaRedirUrl but look for different strings
 // . rel="canonical" or rel=canonical in a link tag.
@@ -8701,121 +8795,29 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		return &m_canonicalRedirUrlPtr;
 	}
 
-	uint8_t *ct = getContentType();
-	if ( ! ct ) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END. content type is null, returning NULL");
-		return NULL;
+	Url *canonicalUrl = getCanonicalUrl();
+	if (!canonicalUrl || canonicalUrl == (Url*) -1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. Unable to get canonicalUrl");
+		return (Url **)canonicalUrl;
 	}
 
-	// these canonical links only supported in xml/html i think
-	if ( *ct != CT_HTML && *ct != CT_XML ) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END. Content type not HTML/XML. No canonical redirection");
-		m_canonicalRedirUrlValid = true;
-		return &m_canonicalRedirUrlPtr;
-	}
-
-	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END. Unable to get xml");
-		return (Url **)xml;
-	}
-
-	// scan nodes looking for a <link> node. like getBaseUrl()
-	for ( int32_t i=0 ; i < xml->getNumNodes() ; i++ ) {
-		// 12 is the <base href> tag id
-		if ( xml->getNodeId ( i ) != TAG_LINK ) {
-			continue;
-		}
-
-		// get the href field of this base tag
-		int32_t linkLen;
-		char *link = xml->getString ( i, "href", &linkLen );
-		// skip if not valid
-		if ( ! link || linkLen == 0 ) {
-			continue;
-		}
-
-		// must also have rel=canoncial
-		int32_t relLen;
-		char *rel = xml->getString(i,"rel",&relLen);
-		if ( ! rel ) continue;
-		// skip if does not match "canonical"
-		if ( strncasecmp(rel,"canonical",relLen) != 0 ) {
-			continue;
-		}
-
-		// allow for relative urls
-		Url *cu = getCurrentUrl();
-		// set base to it
-		m_canonicalRedirUrl.set(cu, link, linkLen, false, true, false);
-
-		// Detect invalid canonical URLs like <link rel="canonical" href="https://://jobs.dart.biz/search/" />
-		// The Url class really should have a "isValid" function...
-		if( m_canonicalRedirUrl.getTLDLen() == 0 || m_canonicalRedirUrl.getDomainLen() == 0 ) {
-			log(LOG_DEBUG, "Invalid canonical URL ignored [%.*s]", linkLen, link);
-			continue;
-		}
-
-		// assume it is not our url
-		bool isMe = false;
-		// if it is us, then skip!
-		if(strcmp(m_canonicalRedirUrl.getUrl(),m_firstUrl.getUrl())==0)
-			isMe = true;
-		// might also be our redir url i guess
-		if(strcmp(m_canonicalRedirUrl.getUrl(),m_redirUrl.getUrl())==0)
-			isMe = true;
-		// if it is us, keep it NULL, it's not a redirect. we are
-		// the canonical url.
-		if ( isMe ) break;
-
-		// ignore if in an expanded iframe (<gbframe>) tag
-		char *pstart = xml->getContent();
-		char *p      = link;
-		// scan backwards
-		if ( ! m_didExpansion ) p = pstart;
-		bool skip = false;
-		for ( ; p > pstart ; p-- ) {
-			if ( p[0] != '<' )
-				continue;
-			if ( p[1] == '/' &&
-			     p[2] == 'g' &&
-			     p[3] == 'b' &&
-			     p[4] == 'f' &&
-			     p[5] == 'r' &&
-			     p[6] == 'a' &&
-			     p[7] == 'm' &&
-			     p[8] == 'e' &&
-			     p[9] == '>' )
-				break;
-			if ( p[1] == 'g' &&
-			     p[2] == 'b' &&
-			     p[3] == 'f' &&
-			     p[4] == 'r' &&
-			     p[5] == 'a' &&
-			     p[6] == 'm' &&
-			     p[7] == 'e' &&
-			     p[8] == '>' ) {
-				skip = true;
-				break;
-			}
-		}
-		if ( skip ) continue;
-
+	// it's only a canon redirect if it's not us
+	if (m_canonicalUrl.getUrlLen() > 0 &&
+		strcmp(m_canonicalUrl.getUrl(), m_firstUrl.getUrl()) != 0 &&
+		strcmp(m_canonicalUrl.getUrl(), m_redirUrl.getUrl()) != 0) {
 		// otherwise, it is not us, we are NOT the canonical url
 		// and we should not be indexed, but just ass the canonical
 		// url as a spiderrequest into spiderdb, just like
 		// simplified meta redirect does.
-		m_canonicalRedirUrlPtr = &m_canonicalRedirUrl;
-		logTrace(g_conf.m_logTraceXmlDoc, "Got canonical url");
-		break;
+		m_canonicalRedirUrlPtr = &m_canonicalUrl;
+		logTrace(g_conf.m_logTraceXmlDoc, "Got canonical redir url");
 	}
 
-	logTrace(g_conf.m_logTraceXmlDoc, "END. Returning canonical url[%s]", m_canonicalRedirUrlPtr ? m_canonicalRedirUrlPtr->getUrl() : NULL);
+	logTrace(g_conf.m_logTraceXmlDoc, "END. Returning redir canonical url[%s]", m_canonicalRedirUrlPtr ? m_canonicalRedirUrlPtr->getUrl() : NULL);
+
 	m_canonicalRedirUrlValid = true;
 	return &m_canonicalRedirUrlPtr;
 }
-
-
 
 // returns false if none found
 static bool setMetaRedirUrlFromTag(char *p, Url *metaRedirUrl, Url *cu) {
@@ -12779,7 +12781,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			addPosRec = true;
 
 			// if we are adding a simplified redirect as a link to spiderdb
-			// likewise if the error was ENONCANONICAL treat it like that
+			// likewise if the error was EDOCNONCANONICAL treat it like that
 			spideringLinks = true;
 
 			// don't add linkinfo since titlerec is empty
@@ -14744,6 +14746,10 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		if ( m_indexCodeValid &&
 		     ( m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL ) ) {
 			ksr.m_hopCount = m_hopCount;
+
+			if (m_indexCode == EDOCNONCANONICAL) {
+				ksr.m_isUrlCanonical = true;
+			}
 		}
 
 		if ( issiteroot   ) ksr.m_hopCount = 0;
