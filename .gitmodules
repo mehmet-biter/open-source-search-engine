@@ -21,3 +21,8 @@
 [submodule "third-party/c-ares"]
 	path = third-party/c-ares
 	url = https://github.com/privacore/c-ares.git
+	ignore = dirty
+[submodule "third-party/sparsepp"]
+	path = third-party/sparsepp
+	url = https://github.com/privacore/sparsepp.git
+	ignore = dirty
