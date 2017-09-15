@@ -1,9 +1,6 @@
 #ifndef DOCIDDELETE_H
 #define DOCIDDELETE_H
 
-#include <time.h>
-#include <cstdint>
-
 namespace DocDelete {
 	bool initialize();
 	void finalize();
