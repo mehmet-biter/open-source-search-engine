@@ -19,10 +19,10 @@ static std::vector<int64_t> s_pendingDocIds;
 static GbMutex s_pendingDocIdsMtx;
 static pthread_cond_t s_pendingDocIdsCond = PTHREAD_COND_INITIALIZER;
 
-
-time_t s_lastModifiedTime = 0;
+static time_t s_lastModifiedTime = 0;
 
 static std::atomic<bool> s_stop(false);
+
 static GbThreadQueue s_docDeleteFileThreadQueue;
 static GbThreadQueue s_docDeleteDocThreadQueue;
 
