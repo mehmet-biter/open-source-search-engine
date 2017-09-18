@@ -70,10 +70,11 @@ bool sendPageGraph      ( TcpSocket *s , HttpRequest *r );
 bool sendPageHealthCheck ( TcpSocket *sock , HttpRequest *hr ) ;
 
 
-// values for m_usePost:
-#define M_GET   0x00
-#define M_POST  0x01
-#define M_MULTI 0x02
+enum class page_method_t {
+	page_method_get = 1,		//plain http get
+	page_method_post_url,		//http post, with url-encoded form values
+	page_method_post_form		//http post, with form-data attachement
+};
 
 // values for WebPage::m_flags
 #define PG_NOAPI 0x01
@@ -91,7 +92,7 @@ class WebPage {
 	int32_t  m_flen;
 	const char *m_name;     // for printing the links to the pages in admin sect.
 	bool  m_cast;     // broadcast input to all hosts?
-	char  m_usePost;  // use a POST request/reply instead of GET?
+	page_method_t  m_page_method;  // use a POST request/reply instead of GET?
 	                  // used because GET's input is limited to a few k.
 	//char  m_perm;     // permissions, see USER_* #define's below
 	const char *m_desc; // page description

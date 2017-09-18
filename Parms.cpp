@@ -966,7 +966,7 @@ bool Parms::sendPageGeneric ( TcpSocket *s , HttpRequest *r ) {
 		sb->safeStrcpy ( res );
 
 
-	bool POSTReply = g_pages.getPage ( page )->m_usePost;
+	bool POSTReply = g_pages.getPage(page)->m_page_method==page_method_t::page_method_post_url || g_pages.getPage(page)->m_page_method==page_method_t::page_method_post_form;
 
 	const char *ct = "text/html";
 	if ( format == FORMAT_XML ) ct = "text/xml";
