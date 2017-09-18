@@ -1741,8 +1741,13 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 
 	if ( m_nextMergeForced ) forceMergeAll = true;
 
-	if ( forceMergeAll ) {
+	int minMergeFileCount = 1;
+	if (forceMergeAll) {
 		log(LOG_INFO,"merge: forcing merge for %s. (collnum=%" PRId32")",m_dbname,(int32_t)m_collnum);
+
+		if (m_rdb->getRdbId() == RDB_SPIDERDB) {
+			minMergeFileCount = 0;
+		}
 	}
 
 	rdbid_t rdbId = getIdFromRdb ( m_rdb );
@@ -1812,7 +1817,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 
 	// this triggers the negative rec concentration and
 	// tries to merge on one file...
-	if ( ! resuming && m_numFiles <= 1 ) {
+	if ( ! resuming && m_numFiles <= minMergeFileCount ) {
 		m_nextMergeForced = false;
 		logTrace( g_conf.m_logTraceRdbBase, "END, too few files (%" PRId32")", m_numFiles);
 		return false;
@@ -1900,8 +1905,10 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 			log(LOG_LOGIC,"merge:attemptMerge:resuming: unexpected filename for %s coll=%s file=%s",m_dbname,m_coll,m_fileInfo[i].m_file->getFilename());
 			gbshutdownCorrupted();
 		}
-		if(mergeFileCount == 1) {
-			log(LOG_LOGIC,"merge:attemptMerge:resuming: fishy filename for %s coll=%s file=%s",m_dbname,m_coll,m_fileInfo[i].m_file->getFilename());
+
+		if (mergeFileCount == 1) {
+			int logLevel = (m_rdb->getRdbId() == RDB_SPIDERDB) ? LOG_INFO : LOG_LOGIC;
+			log(logLevel,"merge:attemptMerge:resuming: filename with single file merge for %s coll=%s file=%s",m_dbname,m_coll,m_fileInfo[i].m_file->getFilename());
 		}
 
 		if(endMergeFileId <= 0) {
@@ -2050,9 +2057,9 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		}
 		// clear after each call to attemptMerge()
 		m_nextMergeForced = false;
-		
+
 		// sanity check
-		if ( mergeFileCount <= 1 ) {
+		if ( mergeFileCount <= minMergeFileCount ) {
 			log(LOG_LOGIC,"merge: attemptMerge: Not merging %" PRId32" files.", mergeFileCount);
 			return false; 
 		}

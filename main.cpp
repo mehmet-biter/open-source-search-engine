@@ -87,6 +87,7 @@
 #include "GbDns.h"
 #include "ScopedLock.h"
 #include "RobotsCheckList.h"
+#include "SpiderdbHostDelete.h"
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -1657,8 +1658,10 @@ int main2 ( int argc , char *argv[] ) {
 
 	// load block lists
 	g_dnsBlockList.init();
+
 	g_urlBlackList.init();
 	g_urlWhiteList.init();
+
 	g_robotsCheckList.init();
 
 	// initialize generate global index thread
@@ -1799,6 +1802,12 @@ int main2 ( int argc , char *argv[] ) {
 	// initialize doc delete
 	if (!DocDelete::initialize()) {
 		logError("Unable to initialize doc delete");
+		return 0;
+	}
+
+	// initialize spiderdb host delete
+	if (!SpiderdbHostDelete::initialize()) {
+		logError("Unable to initialize Spiderdb host delete");
 		return 0;
 	}
 

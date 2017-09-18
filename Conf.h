@@ -407,12 +407,14 @@ class Conf {
 	bool m_logTraceRobotsCheckList;
 	bool m_logTraceSpider;
 	bool m_logTraceSpiderUrlCache;
+	bool m_logTraceSpiderdbHostDelete;
 	bool m_logTraceReindex;
 	bool m_logTraceSummary;
 	bool m_logTraceTitledb;
 	bool m_logTraceXmlDoc;
 	bool m_logTracePhrases;
 	bool m_logTraceUrlMatchList;
+	bool m_logTraceUrlMatchHostList;
 	bool m_logTraceWordSpam;
 	bool m_logTraceUrlClassification;
 	bool m_logTraceTopTree;

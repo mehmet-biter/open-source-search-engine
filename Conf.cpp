@@ -256,12 +256,14 @@ Conf::Conf ( ) {
 	m_logTraceRobotsCheckList = false;
 	m_logTraceSpider = false;
 	m_logTraceSpiderUrlCache = false;
+	m_logTraceSpiderdbHostDelete = false;
 	m_logTraceReindex = false;
 	m_logTraceSummary = false;
 	m_logTraceTitledb = false;
 	m_logTraceXmlDoc = false;
 	m_logTracePhrases= false;
 	m_logTraceUrlMatchList = false;
+	m_logTraceUrlMatchHostList = false;
 	m_logTraceWordSpam=false;
 	m_logTraceUrlClassification = false;
 	m_logTimingAddurl = false;

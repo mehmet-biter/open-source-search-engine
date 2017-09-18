@@ -63,10 +63,10 @@ OBJS_O3 = \
 	Msg40.o \
 	Msg25.o \
 	RdbBuckets.o RdbIndex.o RdbIndexQuery.o RdbList.o RdbMap.o RobotsCheckList.o \
-	SafeBuf.o sort.o Statistics.o \
+	SafeBuf.o sort.o SpiderdbHostDelete.o Statistics.o \
 	ScoringWeights.o \
 	TopTree.o \
-	UrlMatch.o UrlMatchList.o UrlBlockCheck.o UrlComponent.o UrlParser.o UdpStatistic.o \
+	UrlMatch.o UrlMatchList.o UrlMatchHostList.o UrlBlockCheck.o UrlComponent.o UrlParser.o UdpStatistic.o \
 	UrlRealtimeClassification.o \
 	WantedChecker.o \
 	MergeSpaceCoordinator.o \
@@ -88,7 +88,7 @@ OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
 
 # common flags
-DEFS = -D_REENTRANT_ -I. -Ithird-party/compact_enc_det -Ithird-party/c-ares
+DEFS = -D_REENTRANT_ -I. -Ithird-party/compact_enc_det -Ithird-party/c-ares -Ithird-party/sparsepp
 DEFS += -DDEBUG_MUTEXES
 CPPFLAGS = -g -fno-stack-protector -DPTHREADS
 CPPFLAGS += -std=c++11

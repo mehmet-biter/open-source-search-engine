@@ -5,6 +5,7 @@
 #include "Conf.h"
 #include "Log.h"
 #include "Statistics.h"
+#include "UrlMatchHostList.h"
 #include <arpa/inet.h>
 
 bool isUrlBlocked(const Url &url, int *p_errno) {
@@ -119,6 +120,16 @@ bool isUrlUnwanted(const Url &url, const char **reason) {
 	if (strcmp(url.getUrl(), url_stripped.getUrl()) != 0) {
 		if (reason) {
 			*reason = "unwanted params";
+		}
+		return true;
+	}
+
+	//
+	// Check if url is on url host blacklist
+	//
+	if (g_urlHostBlackList.isUrlMatched(url)) {
+		if (reason) {
+			*reason = "blocked host";
 		}
 		return true;
 	}

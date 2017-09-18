@@ -43,6 +43,7 @@
 #include "SummaryCache.h"
 #include "GbDns.h"
 #include "DocDelete.h"
+#include "SpiderdbHostDelete.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
 #include <fcntl.h>
@@ -610,6 +611,8 @@ bool Process::shutdown2() {
 		Statistics::finalize();
 
 		DocDelete::finalize();
+
+		SpiderdbHostDelete::finalize();
 
 		log("gb: disabling threads");
 
