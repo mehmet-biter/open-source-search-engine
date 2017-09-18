@@ -278,12 +278,6 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 		       "<style>\n"
 		       "h2{font-size: 12px; color: #666666;}\n"
 
-		       ".gbtag { border: 1px solid gray;"
-		  	"background: #ffffef;display:inline;}\n"
-		  	".gbcomment { border: 1px solid gray;"
-		  	"color: #888888; font-style:italic; "
-		  	"background: #ffffef;display:inline;}\n"
-
 		       ".spam { border: 1px solid gray;"
 		       "background: #af0000;"
 		       "color: #ffffa0;}"
