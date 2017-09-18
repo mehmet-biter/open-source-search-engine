@@ -785,18 +785,6 @@ bool Collectiondb::resetColl2(collnum_t oldCollnum, collnum_t newCollnum) {
 CollectionRec *Collectiondb::getRec ( HttpRequest *r , bool useDefaultRec ) {
 	const char *coll = r->getString ( "c" );
 	if ( coll && ! coll[0] ) coll = NULL;
-	// maybe it is crawlbot?
-	const char *name = NULL;
-	const char *token = NULL;
-	if ( ! coll ) {
-		name = r->getString("name");
-		token = r->getString("token");
-	}
-	char tmp[MAX_COLL_LEN+1];
-	if ( ! coll && token && name ) {
-		snprintf(tmp,MAX_COLL_LEN,"%s-%s",token,name);
-		coll = tmp;
-	}
 
 	// default to main first
 	if ( ! coll && useDefaultRec ) {

@@ -284,8 +284,6 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 		  	"color: #888888; font-style:italic; "
 		  	"background: #ffffef;display:inline;}\n"
 
-		       ".token { border: 1px solid gray;"
-		       "background: #f0ffff;display:inline;}\n"
 		       ".spam { border: 1px solid gray;"
 		       "background: #af0000;"
 		       "color: #ffffa0;}"
