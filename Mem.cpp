@@ -265,7 +265,7 @@ void Mem::addMem ( void *mem , size_t size , const char *note , char isnew ) {
 		//m_memtablesize = m_maxMem / 6510;
 		// support 1.2M ptrs for now. good for about 8GB
 		// raise from 3000 to 8194 to fix host #1
-		m_memtablesize = 8194*1024;//m_maxMem / 6510;
+		m_memtablesize = 8194*1024*2;//m_maxMem / 6510;
 		//if ( m_maxMem < 8000000000 ) gbshutdownLogicError();
 	}
 
