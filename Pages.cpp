@@ -197,7 +197,6 @@ static WebPage s_pages[] = {
 	  "titledb",
 	  sendPageTitledb  , 2,NULL,NULL,
 	  PG_NOAPI|PG_MASTERADMIN},
-	// 1 = usePost
 
 	{ PAGE_SPIDERDB  , "admin/spiderdb" , 0 , "Spider queue" ,  0 , 0 ,
 	  "spider queue",
