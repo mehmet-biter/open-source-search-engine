@@ -726,10 +726,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// get the dynamic page number, is -1 if not a dynamic page
 	int32_t n = g_pages.getDynamicPageNumber ( r );
 
-	int32_t niceness = g_pages.getNiceness(n);
-	niceness = r->getLong("niceness", niceness);
-	// save it
-	s->m_niceness = niceness;
+	s->m_niceness = 0;
 
 	// the new cached page format. for twitter.
 	if ( ! strncmp ( path , "/?id=" , 5 ) ) n = PAGE_RESULTS;

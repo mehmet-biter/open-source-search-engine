@@ -97,9 +97,6 @@ class WebPage {
 	//char  m_perm;     // permissions, see USER_* #define's below
 	const char *m_desc; // page description
 	bool (* m_function)(TcpSocket *s , HttpRequest *r);
-	int32_t  m_niceness;
-	char *m_reserved1;
-	char *m_reserved2;
 	char  m_pgflags;
 };
 
@@ -124,8 +121,6 @@ class Pages {
 	// this passes control to the dynamic page generation routine based
 	// on the path of the GET request
 	bool sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page );
-
-	bool getNiceness ( int32_t page );
 
 	//
 	// HTML generation utility routines
