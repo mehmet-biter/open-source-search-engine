@@ -1047,7 +1047,7 @@ bool Summary::getDefaultSummary(const Xml *xml, const Words *words, const Sectio
 	int32_t bestEnd = -1;
 	int32_t longestConsecutive = 0;
 	int32_t lastAlnum = -1;
-	int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_TITLE|SEC_IN_HEAD;
+	int32_t badFlags = NOINDEXFLAGS|SEC_IN_TITLE|SEC_IN_HEAD;
 	// shortcut
 	const nodeid_t  *tids = words->getTagIds();
 	const int64_t *wids = words->getWordIds();

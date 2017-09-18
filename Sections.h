@@ -35,7 +35,7 @@
 #define SEC_IN_HEAD      0x0080 // in <head>
 #define SEC_IN_TITLE     0x0100 // in title
 #define SEC_IN_HEADER    0x0200 // in <hN> tags
-//#define SEC_UNUSED     0x0400 
+#define SEC_IN_IFRAME    0x0400
 #define SEC_HIDDEN       0x0800 // <div style="display: none">
 //#define SEC_UNUSED     0x1000
 #define SEC_FAKE         0x2000 // <hr>/<br>/sentence based faux section
@@ -70,7 +70,7 @@
 #define BH_SENTENCE 4590649
 #define BH_IMPLIED  95468323
 
-#define NOINDEXFLAGS (SEC_SCRIPT|SEC_STYLE|SEC_SELECT)
+#define NOINDEXFLAGS (SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_IFRAME)
 
 // the section type (bit flag vector for SEC_*) is currently 32 bits
 typedef int64_t sec_t;

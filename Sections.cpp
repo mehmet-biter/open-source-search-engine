@@ -641,8 +641,10 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, uint8_t contentT
 		goto doagain;
 	}
 
-	bool inFrame = false;
+	bool inGbFrame = false;
 	int32_t gbFrameNum = 0;
+
+	bool inIFrame = false;
 
 	//
 	// . set Section::m_xmlNameHash for xml tags here
@@ -651,23 +653,32 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, uint8_t contentT
 	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
 		// get it
 		Section *sn = &m_sections[i];
+
 		// get it
 		int32_t ws = sn->m_a;
 		// shortcut
 		nodeid_t tid = tids[ws];
 
-		// set SEC_IN_FRAME
-		if ( tid == TAG_GBFRAME ) {
+		if (tid == TAG_IFRAME) {
+			inIFrame = true;
+		} else if (tid == (TAG_IFRAME | BACKBIT)) {
+			inIFrame = false;
+		} else if ( tid == TAG_GBFRAME ) {
 			// start or end?
 			gbFrameNum++;
-			inFrame = true;
+			inGbFrame = true;
+		} else if ( tid == (TAG_GBFRAME | BACKBIT) ) {
+			inGbFrame = false;
 		}
-		if ( tid == (TAG_GBFRAME | BACKBIT) )
-			inFrame = false;
+
+		if (inIFrame && !inGbFrame) {
+			sn->m_flags |= SEC_IN_IFRAME;
+		}
 
 		// mark it
-		if ( inFrame )
+		if (inGbFrame) {
 			sn->m_gbFrameNum = gbFrameNum;
+		}
 
 		// custom xml tag, hash the tag itself
 		if ( tid != TAG_XMLTAG ) continue;
@@ -2319,6 +2330,9 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 
 	if ( f & SEC_IN_HEADER )
 		sbuf->safePrintf("inheader ");
+
+	if ( f & SEC_IN_IFRAME )
+		sbuf->safePrintf("iniframe ");
 }
 
 bool Sections::isHardSection ( Section *sn ) {
