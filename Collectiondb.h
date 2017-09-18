@@ -39,8 +39,8 @@ class Collectiondb  {
 	class CollectionRec *getRec ( class HttpRequest *r ,
 				      bool useDefaultRec = true );
 
-	// do not support diffbot style token/name style for this one:
-	const char *getDefaultColl ( HttpRequest *r ) ;
+	//Returns the specified collection name, or the default collection if no collection name was specified
+	const char *getDefaultColl(const char *collname_from_httprequest);
 
 	// . get collectionRec from name
 	// returns NULL if not available

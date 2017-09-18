@@ -539,7 +539,7 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 		return false;
 	}
 	
-	const char *coll = g_collectiondb.getDefaultColl(r);
+	const char *coll = g_collectiondb.getDefaultColl(r->getString("c"));
 	bool status = true;
 
 	sb->safePrintf("<html>\n");

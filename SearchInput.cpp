@@ -133,7 +133,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 
 	m_hr.copy(r);
 
-	const char *coll = g_collectiondb.getDefaultColl ( r );
+	const char *coll = g_collectiondb.getDefaultColl(r->getString("c"));
 
 	//////
 	//

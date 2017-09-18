@@ -1034,7 +1034,7 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 	}
 
 	if ( format == FORMAT_XML || format == FORMAT_JSON ) {
-		const char *coll = g_collectiondb.getDefaultColl(r);
+		const char *coll = g_collectiondb.getDefaultColl(r->getString("c"));
 		CollectionRec *cr = g_collectiondb.getRec(coll);//2(r,true);
 		bool isMasterAdmin = g_conf.isMasterAdmin ( s , r );
 		bool isCollAdmin = g_conf.isCollAdmin ( s , r );
@@ -1194,7 +1194,7 @@ bool Parms::printParms (SafeBuf* sb, TcpSocket *s , HttpRequest *r) {
 	int32_t  page = g_pages.getDynamicPageNumber ( r );
 	int32_t nc = r->getLong("nc",1);
 	int32_t pd = r->getLong("pd",1);
-	const char *coll = g_collectiondb.getDefaultColl(r);
+	const char *coll = g_collectiondb.getDefaultColl(r->getString("c"));
 	CollectionRec *cr = g_collectiondb.getRec(coll);//2(r,true);
 
 	bool isMasterAdmin = g_conf.isMasterAdmin ( s , r );

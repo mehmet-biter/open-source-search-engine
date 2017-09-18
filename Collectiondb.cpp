@@ -812,8 +812,8 @@ CollectionRec *Collectiondb::getRec ( HttpRequest *r , bool useDefaultRec ) {
 	return g_collectiondb.getRec ( coll );
 }
 
-const char *Collectiondb::getDefaultColl ( HttpRequest *r ) {
-	const char *coll = r->getString ( "c" );
+const char *Collectiondb::getDefaultColl(const char *collname_from_httprequest) {
+	const char *coll = collname_from_httprequest;
 	if ( coll && ! coll[0] ) coll = NULL;
 	if ( coll ) return coll;
 	CollectionRec *cr = NULL;
