@@ -17050,8 +17050,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 
 
-	const char *ddd = "---";
-
 	char strLanguage[128];
 	languageToString(m_langId, strLanguage);
 
@@ -17089,7 +17087,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 	char ipString[16];
 	iptoa(m_ip,ipString);
-	const char *estimated = "";
 
 	//char *ls = getIsLinkSpam();
 	Links *links = getLinks();
@@ -17106,9 +17103,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	if ( xml == (void *)-1 ) { g_process.shutdownAbort(true); }
 
 	sb->safePrintf (
-		  "<tr><td>datedb date</td><td>%s UTC (%" PRIu32")%s"
-		  "</td></tr>\n"
-
 		  "<tr><td>compressed size</td><td>%" PRId32" bytes</td></tr>\n"
 
 		  "<tr><td>original charset</td><td>%s</td></tr>\n"
@@ -17139,10 +17133,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 		  "<tr><td>time axis used</td><td>%" PRId32"</td></tr>\n"
 		  "<tr><td>metadata</td><td>%s</td></tr>\n"
 		  "</td></tr>\n",
-
-		  ddd ,
-		  0 ,
-		  estimated ,
 
 		  m_oldTitleRecSize,
 
