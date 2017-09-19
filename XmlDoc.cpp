@@ -9858,8 +9858,15 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		if ( strstr(furl.getUrl(),"google.com/" ) ) continue;
 		// and bing just to be safe
 		if ( strstr(furl.getUrl(),"bing.com/" ) ) continue;
+
+		// don't expand iframe if src url is blocked
+		if (isUrlBlocked(furl)) {
+			continue;
+		}
+
 		// save it in case we have to return and come back later
 		m_savedp = p;
+
 		// break here
 		//log("mdw: breakpoing here");
 		// . download that. get as a doc. use 0 for max cache time
