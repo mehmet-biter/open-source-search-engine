@@ -154,8 +154,8 @@ void SpiderdbHostDelete::processFile(void *item) {
 		}
 	}
 
-	// tight merge
-	if (!base->attemptMerge(0, true)) {
+	// tight merge (only force merge all when not resuming)
+	if (!base->attemptMerge(0, !resume)) {
 		// unable to start merge
 		g_urlHostBlackList.unload();
 		return;
