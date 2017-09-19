@@ -196,6 +196,15 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// but always local if only one host
 	if ( g_hostdb.getNumHosts() == 1 ) isLocal = true;
 
+	//if it is spiderdb then we only have it it we are a spider host too
+	if((rdbId == RDB_SPIDERDB || rdbId == RDB2_SPIDERDB2) &&
+	   isLocal &&
+	   !g_hostdb.getMyHost()->m_spiderEnabled)
+	{
+		logTrace( g_conf.m_logTraceMsg0, "Not local (spiderdb and we're not a spider host");
+		isLocal = false;
+	}
+
 	// . if the group is local then do it locally
 	// . Msg5::getList() returns false if blocked, true otherwise
 	// . Msg5::getList() sets g_errno on error
