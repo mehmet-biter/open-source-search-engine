@@ -16,7 +16,7 @@ UrlMatchHostList::UrlMatchHostList()
 bool UrlMatchHostList::load(const char *filename) {
 	m_filename = filename;
 
-	logTrace(g_conf.m_logTraceUrlMatchHostList, "Loading %s", m_filename);
+	log(LOG_INFO, "Loading %s", m_filename);
 
 	struct stat st;
 	if (stat(m_filename, &st) != 0) {
@@ -29,7 +29,6 @@ bool UrlMatchHostList::load(const char *filename) {
 
 	std::ifstream file(m_filename);
 	std::string line;
-	unsigned total = 0;
 	while (std::getline(file, line)) {
 		// ignore comments & empty lines
 		if (line.length() == 0 || line[0] == '#') {
@@ -37,11 +36,6 @@ bool UrlMatchHostList::load(const char *filename) {
 		}
 
 		tmpUrlMatchHostList->insert(line);
-		++total;
-
-		if ((total % 100000) == 0) {
-			log(LOG_INFO, "UrlMatchHostList::load: current total=%u", total);
-		}
 
 		logTrace(g_conf.m_logTraceUrlMatchHostList, "Adding criteria '%s' to list", line.c_str());
 	}
@@ -49,7 +43,7 @@ bool UrlMatchHostList::load(const char *filename) {
 	logTrace(g_conf.m_logTraceUrlMatchHostList, "Number of urlhost-match entries in %s: %ld", m_filename, (long)tmpUrlMatchHostList->size());
 	swapUrlMatchHostList(tmpUrlMatchHostList);
 
-	logTrace(g_conf.m_logTraceUrlMatchHostList, "Loaded %s", m_filename);
+	log(LOG_INFO, "Loaded %s", m_filename);
 	return true;
 }
 
