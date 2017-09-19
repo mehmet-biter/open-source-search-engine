@@ -142,9 +142,11 @@ static void gotTagRec(void *state) {
 
 
 static bool getSpiderRecs(State *st) {
+	log(LOG_TRACE,"PageSpiderdbLookup: getSpiderRecs(%p)",st);
 	int64_t uh48 = hash64b(st->m_url_str);
 	key128_t startKey = Spiderdb::makeFirstKey(st->m_firstip, uh48);
 	key128_t endKey = Spiderdb::makeLastKey(st->m_firstip, uh48);
+	log(LOG_TRACE,"PageSpiderdbLookup: getSpiderRecs(%p): Calling Msg0::getList()", st);
 	if(!st->m_msg0.getList(-1, //hostId
 		               RDB_SPIDERDB,
 		               st->m_collnum,
@@ -166,17 +168,20 @@ static bool getSpiderRecs(State *st) {
 		               false, //noSplit (?)
 		               -1))//forceParitySplit
 		return false;
-	return gotSpiderRecs2(st);
+	log(LOG_TRACE,"PageSpiderdbLookup: getSpiderRecs: msg0.getlist didn't block");
+	return true;
 }
 
 
 
 static void gotSpiderRecs(void *state) {
+	log(LOG_TRACE,"PageSpiderdbLookup: gotSpiderRecs(%p)", state);
 	State *st = reinterpret_cast<State*>(state);
 	gotSpiderRecs2(st);
 }
 
 static bool gotSpiderRecs2(State *st) {
+	log(LOG_TRACE,"PageSpiderdbLookup: gotSpiderRecs2(%p)", st);
 	log(LOG_TRACE,"PageSpiderdbLookup: gotSpiderRecs2: g_errno=%d", g_errno);
 	log(LOG_TRACE,"PageSpiderdbLookup: gotSpiderRecs2: st->m_rdbList.getListSize()=%d", st->m_rdbList.getListSize());
 	return sendResult(st);
@@ -184,7 +189,7 @@ static bool gotSpiderRecs2(State *st) {
 
 
 static bool sendResult(State *st) {
-	log(LOG_TRACE,"PageSpiderdbLookup: sendResult: g_erno=%d", g_errno);
+	log(LOG_TRACE,"PageSpiderdbLookup(%p): sendResult: g_errno=%d", st, g_errno);
 	// get the socket
 	TcpSocket *s = st->m_socket;
 
