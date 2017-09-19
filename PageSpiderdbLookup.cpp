@@ -8,6 +8,7 @@
 #include "Conf.h"
 #include "ip.h"
 #include "max_url_len.h"
+#include <time.h>
 
 
 namespace {
@@ -37,6 +38,9 @@ static bool getSpiderRecs(State *st);
 static void gotSpiderRecs(void *state);
 static bool gotSpiderRecs2(State *st);
 static bool sendResult(State *st);
+
+static const char *formatTime(time_t when, char buf[32]);
+static const char *formatTimeMs(int64_t when, char buf[32]);
 
 
 //Normal flow (assuming no errors):
@@ -240,27 +244,29 @@ static bool sendResult(State *st) {
 	
 	if(spiderRequest) {
 		char ipbuf[16];
+		char timebuf[32];
 		sb.safePrintf("<table %s>\n", TABLE_STYLE);
 		sb.safePrintf("  <tr><th colspan=50>Spider request</th><tr>\n");
 		sb.safePrintf("  <tr bgcolor=#%s><th>Field</th><th>Value</th></tr>\n", DARK_BLUE);
 		sb.safePrintf("  <tr><td>m_firstIp</td><td>%s</td></tr>\n", iptoa(spiderRequest->m_firstIp,ipbuf));
-		sb.safePrintf("  <tr><td>m_addedTime</td><td>%d</td></tr>\n", spiderRequest->m_addedTime);
-		sb.safePrintf("  <tr><td>m_discoveryTime</td><td>%d</td></tr>\n", spiderRequest->m_discoveryTime);
+		sb.safePrintf("  <tr><td>m_addedTime</td><td>%s (%d)</td></tr>\n", formatTime(spiderRequest->m_addedTime,timebuf), spiderRequest->m_addedTime);
+		sb.safePrintf("  <tr><td>m_discoveryTime</td><td>%s (%d)</td></tr>\n", formatTime(spiderRequest->m_discoveryTime,timebuf), spiderRequest->m_discoveryTime);
 		sb.safePrintf("  <tr><td>m_prevErrCode</td><td>%d</td></tr>\n", spiderRequest->m_prevErrCode);
 		sb.safePrintf("  <tr><td>m_priority</td><td>%d</td></tr>\n", spiderRequest->m_priority);
 		sb.safePrintf("  <tr><td>m_errCount</td><td>%d</td></tr>\n", spiderRequest->m_errCount);
 		sb.safePrintf("</table>\n");
 	}
 	if(spiderReply) {
+		char timebuf[32];
 		sb.safePrintf("<table %s>\n", TABLE_STYLE);
 		sb.safePrintf("  <tr><th colspan=50>Spider reply</th><tr>\n");
 		sb.safePrintf("  <tr bgcolor=#%s><th>Field</th><th>Value</th></tr>\n", DARK_BLUE);
-		sb.safePrintf("  <tr><td>m_spideredTime</td><td>%d</td></tr>\n", spiderReply->m_spideredTime);
+		sb.safePrintf("  <tr><td>m_spideredTime</td><td>%s (%d)</td></tr>\n", formatTime(spiderReply->m_spideredTime,timebuf), spiderReply->m_spideredTime);
 		sb.safePrintf("  <tr><td>m_errCode</td><td>%d</td></tr>\n", spiderReply->m_errCode);
 		sb.safePrintf("  <tr><td>m_percentChangedPerDay</td><td>%f</td></tr>\n", spiderReply->m_percentChangedPerDay);
 		sb.safePrintf("  <tr><td>m_contentHash32</td><td>%u</td></tr>\n", spiderReply->m_contentHash32);
 		sb.safePrintf("  <tr><td>m_crawlDelayMS</td><td>%d</td></tr>\n", spiderReply->m_crawlDelayMS);
-		sb.safePrintf("  <tr><td>m_downloadEndTime</td><td>%ld</td></tr>\n", spiderReply->m_downloadEndTime);
+		sb.safePrintf("  <tr><td>m_downloadEndTime</td><td>%s (%ld)</td></tr>\n", formatTimeMs(spiderReply->m_downloadEndTime,timebuf), spiderReply->m_downloadEndTime);
 		sb.safePrintf("  <tr><td>m_httpStatus</td><td>%d</td></tr>\n", spiderReply->m_httpStatus);
 		sb.safePrintf(" <tr><td>m_errCount</td><td>%d</td></tr>\n", spiderReply->m_errCount);
 		sb.safePrintf("</table>\n");
@@ -276,4 +282,22 @@ static bool sendResult(State *st) {
 	delete st;
 	// now encapsulate it in html head/tail and send it off
 	return g_httpServer.sendDynamicPage (s, sb.getBufStart(), sb.length());
+}
+
+
+
+static const char *formatTime(time_t when, char buf[32]) {
+	struct tm t;
+	gmtime_r(&when, &t);
+	strftime(buf,32,"%Y-%m-%dT%H:%M:%SZ",&t);
+	return buf;
+}
+
+static const char *formatTimeMs(int64_t when, char buf[32]) {
+	time_t when_secs = when/1000;
+	struct tm t;
+	gmtime_r(&when_secs, &t);
+	strftime(buf,32,"%Y-%m-%dT%H:%M:%S",&t);
+	sprintf(strchr(buf,'\0'),".%03dZ",(int)(when%1000));
+	return buf;
 }
