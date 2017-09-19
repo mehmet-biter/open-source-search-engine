@@ -32,33 +32,33 @@ class Tag {
 	void set ( const char *site, const char *tagname, int32_t  timestamp, const char *user,
 	           int32_t ip, const char *data, int32_t  dataSize );
 
-	bool printToBuf             ( SafeBuf *sb );
-	bool printToBufAsAddRequest ( SafeBuf *sb );
-	bool printToBufAsXml        ( SafeBuf *sb );
-	bool printToBufAsHtml       ( SafeBuf *sb , const char *prefix );
-	bool printToBufAsTagVector  ( SafeBuf *sb );
+	bool printToBuf            (SafeBuf *sb) const;
+	bool printToBufAsAddRequest(SafeBuf *sb) const;
+	bool printToBufAsXml       (SafeBuf *sb) const;
+	bool printToBufAsHtml      (SafeBuf *sb, const char *prefix) const;
+	bool printToBufAsTagVector (SafeBuf *sb) const;
 	// just print the m_data...
-	bool printDataToBuf         ( SafeBuf *sb );
-	bool isType                 ( const char *t );
+	bool printDataToBuf        (SafeBuf *sb) const;
+	bool isType                (const char *t) const;
 
 	// for parsing output of printToBuf()
-	int32_t setFromBuf            ( char *p , char *pend ) ;
-	int32_t setDataFromBuf        ( char *p , char *pend ) ;
+	int32_t setFromBuf(const char *p, const char *pend);
+	int32_t setDataFromBuf(const char *p, const char *pend);
 
 	// skip of the username, whose size (including \0) is encoded
 	// as the first byte in the m_recData buffer
-	char *getTagData     ( ) {return m_buf + *m_buf + 1;}
-	int32_t  getTagDataSize ( ) {return m_bufSize - *m_buf - 1; }
+	char       *getTagData()       { return m_buf + *m_buf + 1; }
+	const char *getTagData() const { return m_buf + *m_buf + 1; }
+	int32_t getTagDataSize() const { return m_bufSize - *m_buf - 1; }
 
 	// what user added this tag?
-	char *getUser ( ) { return m_buf + 1;}
-
-	// remove the terminating \0 which is included as part of the size
-	int32_t  getUserLen ( ) { return *m_buf - 1; }
+	char       *getUser()       { return m_buf + 1;}
+	const char *getUser() const { return m_buf + 1;}
+	int32_t  getUserLen() const { return *m_buf - 1; }
 
 	// used to determine if one Tag should overwrite the other! if they
 	// have the same dedup hash... then yes...
-	int32_t getDedupHash ( );
+	int32_t getDedupHash();
 
 	// tagdb uses 128 bit keys now
 	key128_t  m_key;

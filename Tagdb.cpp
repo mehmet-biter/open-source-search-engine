@@ -26,7 +26,7 @@ static bool s_initialized = false;
 static GbMutex s_htMutex;
 
 
-bool Tag::printToBuf ( SafeBuf *sb ) {
+bool Tag::printToBuf(SafeBuf *sb) const {
 	sb->safePrintf("k.hsthash=%016" PRIx64" k.duphash=%08" PRIx32" k.sitehash=%08" PRIx32" ",
 	               m_key.n1, (int32_t)(m_key.n0>>32), (int32_t)(m_key.n0&0xffffffff));
 
@@ -129,9 +129,9 @@ void Tag::set ( const char *site, const char *tagname, int32_t  timestamp, const
 // . return 0 on error
 // . parses output of printToBuf() above
 // . k.n1=0x695b3 k.n0=0xa4118684fa4edf93 version=0 TAG=ruleset,"mwells",Jan-02-2009-18:26:04,<timestamp>,67.16.94.2,3735437892,36 TAG=blog,"mwells",Jan-02-2009-18:26:04,67.16.94.2,2207516434,1 TAG=site,"tagdb",Jan-02-2009-18:26:04,0.0.0.0,833534375,mini-j-gaidin.livejournal.com/
-int32_t Tag::setFromBuf ( char *p , char *pend ) {
+int32_t Tag::setFromBuf(const char *p, const char *pend) {
 	// save our place
-	char *start = p;
+	const char *start = p;
 
 	// tags always start with " TAG="
 	if ( strncmp(p," TAG=",5) != 0 ) {
@@ -143,7 +143,7 @@ int32_t Tag::setFromBuf ( char *p , char *pend ) {
 	p += 5;
 
 	// get the type
-	char *type = p;
+	const char *type = p;
 
 	// get type length
 	while ( p < pend && *p != ',' ) p++;
@@ -167,7 +167,7 @@ int32_t Tag::setFromBuf ( char *p , char *pend ) {
 	char *dst = m_buf;
 
 	// point to it
-	char *user = p;
+	const char *user = p;
 
 	// get end of it
 	while ( p < pend && *p != '\"' ) p++;
@@ -205,7 +205,7 @@ int32_t Tag::setFromBuf ( char *p , char *pend ) {
 	p++;
 
 	// save start
-	char *ts = p;
+	const char *ts = p;
 
 	// skip until comma again
 	while ( p < pend && *p != ',' ) p++;
@@ -220,7 +220,7 @@ int32_t Tag::setFromBuf ( char *p , char *pend ) {
 	p++;
 
 	// ip address as text
-	char *ips = p;
+	const char *ips = p;
 
 	// skip until comma again
 	while ( p < pend && *p != ',' ) p++;
@@ -248,7 +248,7 @@ int32_t Tag::setFromBuf ( char *p , char *pend ) {
 
 // . return # of chars scanned in "p"
 // . return 0 on error
-int32_t Tag::setDataFromBuf ( char *p , char *pend ) {
+int32_t Tag::setDataFromBuf(const char *p, const char *pend) {
 	// skip over username in the buffer to point to where to put tag data
 	char *dst = m_buf + *m_buf + 1;
 
@@ -276,8 +276,8 @@ int32_t Tag::setDataFromBuf ( char *p , char *pend ) {
 	return m_bufSize - 1;
 }
 
-bool Tag::printDataToBuf ( SafeBuf *sb ) {
-	char *data     = getTagData();
+bool Tag::printDataToBuf(SafeBuf *sb) const {
+	const char *data     = getTagData();
 	int32_t  dataSize = getTagDataSize();
 
 	for ( int32_t i = 0 ; data[i] && i < dataSize ; i++ )
@@ -286,7 +286,7 @@ bool Tag::printDataToBuf ( SafeBuf *sb ) {
 }
 
 // /admin/tagdb?c=mdw&u=www.mdw123.com&ufu=&username=admin&tagtype0=sitenuminlinks&tagdata0=10&tagtype1=rootlang&tagdata1=&tagtype2=rootlang&tagdata2=&add=Add+Tags
-bool Tag::printToBufAsAddRequest ( SafeBuf *sb ) {
+bool Tag::printToBufAsAddRequest(SafeBuf *sb) const {
 	// print the tagname
 	const char *str = getTagStrFromType ( m_type );
 	sb->safePrintf("/admin/tagdb?");
@@ -320,7 +320,7 @@ bool Tag::printToBufAsAddRequest ( SafeBuf *sb ) {
 	return true;
 }
 
-bool Tag::printToBufAsXml ( SafeBuf *sb ) {
+bool Tag::printToBufAsXml(SafeBuf *sb) const {
 	// print the tagname
 	const char *str = getTagStrFromType ( m_type );
 
@@ -345,7 +345,7 @@ bool Tag::printToBufAsXml ( SafeBuf *sb ) {
 	return true;
 }
 
-bool Tag::printToBufAsHtml ( SafeBuf *sb , const char *prefix ) {
+bool Tag::printToBufAsHtml(SafeBuf *sb, const char *prefix) const {
 	// print the tagname
 	const char *str = getTagStrFromType ( m_type );
 
@@ -376,7 +376,7 @@ bool Tag::printToBufAsHtml ( SafeBuf *sb , const char *prefix ) {
 	return true;
 }
 
-bool Tag::printToBufAsTagVector ( SafeBuf *sb ) {
+bool Tag::printToBufAsTagVector(SafeBuf *sb) const {
 	// print the tagname
 	const char *str = getTagStrFromType ( m_type );
 	sb->safePrintf("%s:",str);
@@ -389,7 +389,7 @@ bool Tag::printToBufAsTagVector ( SafeBuf *sb ) {
 	return true;
 }
 
-bool Tag::isType ( const char *t ) {
+bool Tag::isType(const char *t) const {
 	int32_t h = hash32n ( t );
 	return (m_type == h);
 }
@@ -2189,7 +2189,7 @@ static bool isTagTypeUnique ( int32_t tt ) {
 
 // used to determine if one Tag should overwrite the other! if they
 // have the same dedup hash... then yes...
-int32_t Tag::getDedupHash ( ) {
+int32_t Tag::getDedupHash() {
 
 	// if unique use that!
 	if ( isTagTypeUnique ( m_type ) ) return m_type;
@@ -2199,9 +2199,9 @@ int32_t Tag::getDedupHash ( ) {
 	// way it will just update the timestamp and/or ip.
 
 	// start hashing here
-	char *startHashing = (char *)&m_type;
+	const char *startHashing = (char *)&m_type;
 	// end here. include username (and tag data!)
-	char *endHashing = m_buf + m_bufSize;
+	const char *endHashing = m_buf + m_bufSize;
 
 	// do not include bufsize in hash
 	int32_t saved = m_bufSize;
