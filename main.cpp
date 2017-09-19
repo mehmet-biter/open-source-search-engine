@@ -1778,7 +1778,7 @@ int main2 ( int argc , char *argv[] ) {
 	// . put this in here instead of Rdb.cpp because we don't want generator commands merging on us
 	// . niceness is 1
 	// BR: Upped from 2 sec to 60. No need to check for merge every 2 seconds.
-	if (!g_loop.registerSleepCallback(60000, NULL, attemptMergeAllCallback, "Rdb::attemptMergeAllCallback", 1, true)) {
+	if (!g_loop.registerSleepCallback(60000, NULL, attemptMergeAllCallback, "Rdb::attemptMergeAllCallback", 1)) {
 		log( LOG_WARN, "db: Failed to init merge sleep callback." );
 	}
 

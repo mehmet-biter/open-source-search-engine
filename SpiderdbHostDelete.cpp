@@ -5,6 +5,7 @@
 #include "UrlMatchHostList.h"
 #include "Spider.h"
 #include "Process.h"
+#include "ScopedLock.h"
 #include <fstream>
 #include <sys/stat.h>
 #include <ctime>
@@ -14,6 +15,8 @@ static const char *s_tmp_filename = "spiderdbhostdelete.txt.processing";
 
 static time_t s_lastModifiedTime = 0;
 
+static GbMutex s_sleepMtx;
+static pthread_cond_t s_sleepCond = PTHREAD_COND_INITIALIZER;
 static std::atomic<bool> s_stop(false);
 
 static GbThreadQueue s_fileThreadQueue;
@@ -52,7 +55,11 @@ bool SpiderdbHostDelete::initialize() {
 }
 
 void SpiderdbHostDelete::finalize() {
-	s_stop = true;
+	{
+		ScopedLock sl(s_sleepMtx);
+		s_stop = true;
+		pthread_cond_broadcast(&s_sleepCond);
+	}
 
 	s_fileThreadQueue.finalize();
 }
@@ -130,27 +137,43 @@ void SpiderdbHostDelete::processFile(void *item) {
 	if (!resume) {
 		// dump tree
 		rdb->submitRdbDumpJob(true);
-		while (!s_stop && rdb->hasPendingRdbDumpJob()) {
-			sleep(1);
-		}
 
-		if (s_stop) {
-			return;
+		{
+			ScopedLock sl(s_sleepMtx);
+			while (!s_stop && rdb->hasPendingRdbDumpJob()) {
+				timespec ts;
+				clock_gettime(CLOCK_REALTIME, &ts);
+				ts.tv_sec += 1;
+
+				pthread_cond_timedwait(&s_sleepCond, &s_sleepMtx.mtx, &ts);
+			}
+
+			if (s_stop) {
+				return;
+			}
 		}
 	}
 
 	// tight merge
 	if (!base->attemptMerge(0, true)) {
 		// unable to start merge
+		g_urlHostBlackList.unload();
 		return;
 	}
 
-	while (!s_stop && rdb->isMerging()) {
-		sleep(60);
-	}
+	{
+		ScopedLock sl(s_sleepMtx);
+		while (!s_stop && rdb->isMerging()) {
+			timespec ts;
+			clock_gettime(CLOCK_REALTIME, &ts);
+			ts.tv_sec += 60;
 
-	if (s_stop) {
-		return;
+			pthread_cond_timedwait(&s_sleepCond, &s_sleepMtx.mtx, &ts);
+		}
+
+		if (s_stop) {
+			return;
+		}
 	}
 
 	log(LOG_INFO, "Processed %s", s_tmp_filename);
