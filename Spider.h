@@ -400,9 +400,15 @@ public:
 	static key128_t makeFirstKey( int32_t firstIp ) {
 		return makeKey( firstIp, 0LL, false, 0LL, true );
 	}
+	static key128_t makeFirstKey( int32_t firstIp, int64_t urlHash48) {
+		return makeKey(firstIp, urlHash48, false, 0LL, true);
+	}
 
 	static key128_t makeLastKey( int32_t firstIp ) {
 		return makeKey( firstIp, 0xffffffffffffLL, true, MAX_DOCID, false );
+	}
+	static key128_t makeLastKey( int32_t firstIp, int64_t urlHash48) {
+		return makeKey( firstIp, urlHash48, true, MAX_DOCID, false );
 	}
 
 	// print the spider rec
