@@ -86,7 +86,6 @@ SiteGetter::SiteGetter ( ) {
 	m_niceness = 0;
 	m_oldSitePathDepth = 0;
 	m_allDone = false;
-	m_timestamp = 0;
 	m_hasSubdomain = false;
 	m_tryAgain = false;
 }
@@ -109,7 +108,6 @@ bool SiteGetter::getSite ( const char *url, TagRec *gr, int32_t timestamp, colln
 	m_collnum = collnum;
 	m_state    = state;
 	m_callback = callback;
-	m_timestamp= timestamp;
 	m_niceness = niceness;
 	m_errno    = 0;
 

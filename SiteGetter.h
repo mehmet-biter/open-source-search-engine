@@ -54,7 +54,6 @@ private:
 	int32_t   m_niceness;
 	int32_t   m_oldSitePathDepth;
 	bool   m_allDone;
-	int32_t   m_timestamp;
 
 	bool   m_hasSubdomain;
 
