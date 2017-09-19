@@ -285,6 +285,8 @@ const char *mstrerror ( int errnum ) {
 				return "Crawl banned by server";
 			case EDOCBLOCKEDSHLIBCONTENT:
 				return "Doc blocked by shlib (content)";
+			case ENOFIRSTIPFOUND:
+				return "No 'firstip' tag record found";
 		}
 	}
 

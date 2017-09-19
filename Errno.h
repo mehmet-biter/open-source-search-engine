@@ -197,6 +197,7 @@ enum {
 	EDOCBLOCKEDSHLIBURL,
 	EBANNEDCRAWL,      // we are apparently banned/blacklisted by the Webserver/IDS/
 	EDOCBLOCKEDSHLIBCONTENT,
+	ENOFIRSTIPFOUND,       //didn't find a firstip tag record for url/site
 };
 
 #endif // GB_ERRNO_H

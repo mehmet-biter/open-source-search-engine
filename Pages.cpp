@@ -197,6 +197,11 @@ static WebPage s_pages[] = {
 	  sendPageTitledb,
 	  PG_NOAPI|PG_MASTERADMIN},
 
+	{ PAGE_SPIDERDBLOOKUP, "admin/spiderdblookup", 0, "Spiderdb",  0, page_method_t::page_method_get,
+	  "Lookup record in spiderdb",
+	  sendPageSpiderdbLookup,
+	  PG_NOAPI|PG_MASTERADMIN},
+
 	{ PAGE_SPIDERDB  , "admin/spiderdb" , 0 , "Spider queue" ,  0 , page_method_t::page_method_get,
 	  "spider queue",
 	  sendPageSpiderdb,
