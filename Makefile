@@ -410,6 +410,9 @@ cleandb:
 .PHONY: cleantest
 cleantest: cleandb
 	rm -f fatal_error
+	rm -f urlblacklist.txt urlwhitelist.txt dnsblocklist.txt robotschecklist.txt
+	rm -f docdelete.txt docdelete.txt.processing docdelete.txt.docid
+	rm -f spiderdbhostdelete.txt spiderdbhostdelete.txt.processing
 
 # shortcuts
 .PHONY: release-safe
