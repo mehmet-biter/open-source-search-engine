@@ -6,9 +6,6 @@
 #include <set>
 #include "Rdb.h"
 #include "Xml.h"
-#include "Url.h"
-#include "Loop.h"
-#include "SafeBuf.h"
 #include "Msg0.h"
 #include "GbMutex.h"
 
@@ -22,6 +19,8 @@
 
 class HttpRequest;
 class TcpSocket;
+class SafeBuf;
+class Url;
 
 // a TagRec can contain multiple Tags, even of the same Tag::m_type
 class Tag {
