@@ -926,13 +926,14 @@ int main2 ( int argc , char *argv[] ) {
 			// get hostId to install TO (-1 means all)
 			int32_t h1 = -1;
 			int32_t h2 = -1;
+
 			if (cmdarg + 2 < argc) {
 				h1 = atoi(argv[cmdarg + 2]);
-			}
 
-			// might have a range
-			if (cmdarg + 2 < argc && strstr(argv[cmdarg + 2], "-")) {
-				sscanf(argv[cmdarg + 2], "%" PRId32"-%" PRId32, &h1, &h2);
+				// might have a range
+				if (strstr(argv[cmdarg + 2], "-")) {
+					sscanf(argv[cmdarg + 2], "%" PRId32"-%" PRId32, &h1, &h2);
+				}
 			}
 
 			return install_file(argv[cmdarg + 1], h1, h2);
