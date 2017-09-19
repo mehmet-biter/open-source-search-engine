@@ -30,8 +30,8 @@ bool UrlMatchHostList::load(const char *filename) {
 	std::ifstream file(m_filename);
 	std::string line;
 	while (std::getline(file, line)) {
-		// ignore comments & empty lines
-		if (line.length() == 0 || line[0] == '#') {
+		// ignore empty lines
+		if (line.length() == 0) {
 			continue;
 		}
 
