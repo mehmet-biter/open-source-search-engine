@@ -163,7 +163,7 @@ typedef enum {
 	ifk_proxy_start
 } install_flag_konst_t;
 
-static int install_file(const char *file);
+static int install_file(const char *file, int32_t hostId, int32_t hostId2);
 static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir = NULL,
                      int32_t hostId2 = -1, char *cmd = NULL );
 
@@ -921,9 +921,22 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	// gb installfile
-	if ( strcmp ( cmd , "installfile" ) == 0 ) {	
-		if(cmdarg+1 < argc)
-			return install_file ( argv[cmdarg+1] );
+	if ( strcmp ( cmd , "installfile" ) == 0 ) {
+		if (cmdarg+1 < argc) {
+			// get hostId to install TO (-1 means all)
+			int32_t h1 = -1;
+			int32_t h2 = -1;
+			if (cmdarg + 2 < argc) {
+				h1 = atoi(argv[cmdarg + 2]);
+			}
+
+			// might have a range
+			if (cmdarg + 2 < argc && strstr(argv[cmdarg + 2], "-")) {
+				sscanf(argv[cmdarg + 2], "%" PRId32"-%" PRId32, &h1, &h2);
+			}
+
+			return install_file(argv[cmdarg + 1], h1, h2);
+		}
 	}
 
 	// gb installtmpgb
@@ -1967,28 +1980,38 @@ void doCmdAll ( int fd, void *state ) {
 static int install_file(const char *dst_host, const char *src_file, const char *dst_file)
 {
 	char cmd[1024];
-	sprintf(cmd, "scp -p %s %s:%s",
-		src_file,
-		dst_host,
-		dst_file);
+	sprintf(cmd, "scp -p %s %s:%s", src_file, dst_host, dst_file);
 	log(LOG_INIT,"admin: %s", cmd);
 	int rc = system(cmd);
 	return rc;
 }
 
 
-static int install_file(const char *file)
-{
-	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
+static int install_file(const char *file, int32_t hostId, int32_t hostId2) {
+	// use hostId2 to indicate the range hostId-hostId2, but if it is -1
+	// then it was not given, so restrict to just hostId
+	if ( hostId2 == -1 ) {
+		hostId2 = hostId;
+	}
+
+	for (int32_t i = 0; i < g_hostdb.getNumHosts(); i++) {
 		Host *h2 = g_hostdb.getHost(i);
-		if(h2==g_hostdb.getMyShard())
+		if (h2 == g_hostdb.getMyShard()) {
 			continue; //skip ourselves
+		}
+
+		// if doing a range of hostid, hostId2 is >= 0
+		if (hostId >= 0 && hostId2 >= 0) {
+			if (h2->m_hostId < hostId || h2->m_hostId > hostId2) {
+				continue;
+			}
+		}
+
 		char full_dst_file[1024];
-		sprintf(full_dst_file, "%s%s",h2->m_dir,file);
+		sprintf(full_dst_file, "%s%s", h2->m_dir, file);
+
 		char ipbuf[16];
-		install_file(iptoa(h2->m_ip,ipbuf),
-		             file,
-	                     full_dst_file);
+		install_file(iptoa(h2->m_ip, ipbuf), file, full_dst_file);
 	}
 	return 0; //return value is unclear
 }
