@@ -48,7 +48,9 @@ bool UrlMatchHostList::load(const char *filename) {
 }
 
 void UrlMatchHostList::unload() {
+	log(LOG_INFO, "Unloading %s", m_filename);
 	swapUrlMatchHostList(urlmatchhostlist_ptr_t(new urlmatchhostlist_t));
+	log(LOG_INFO, "Unloaded %s", m_filename);
 }
 
 bool UrlMatchHostList::isUrlMatched(const Url &url) {
