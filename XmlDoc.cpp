@@ -9808,14 +9808,21 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		//if ( strncasecmp(p+1,"frame " , 6) &&
 		//     strncasecmp(p+1,"iframe ", 7) )
 		//	continue;
+
 		// get src tag (function in Words.h)
-		url = getFieldValue ( p , pend - p ,"src" , &urlLen );
+		url = getFieldValue(p, pend - p, "src", &urlLen);
+
 		// needs a src field
-		if ( ! url ) continue;
+		if (!url) {
+			continue;
+		}
+
 		// "" is not acceptable either. techcrunch.com has
 		// <iframe src=""> which ends up embedding the root url.
-		if ( urlLen == 0 )
+		if (urlLen == 0) {
 			continue;
+		}
+
 		// skip if "about:blank"
 		if ( urlLen==11 && strncmp(url,"about:blank",11) == 0 )
 			continue;

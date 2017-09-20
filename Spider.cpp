@@ -2512,13 +2512,13 @@ void dedupSpiderdbList ( RdbList *list ) {
 		if ( ( rec[0] & 0x01 ) == 0x00 ) {
 			// otherwise, keep it
 			lastKey = dst;
-			memmove ( dst , rec , sizeof(key128_t) );
+			memmove(dst, rec, sizeof(key128_t));
 			dst += sizeof(key128_t);
 			continue;
 		}
 
 		// is it a reply?
-		if ( Spiderdb::isSpiderReply ( (key128_t *)rec ) ) {
+		if (Spiderdb::isSpiderReply((key128_t *)rec)) {
 			// cast it
 			SpiderReply *srep = (SpiderReply *)rec;
 
@@ -2526,21 +2526,21 @@ void dedupSpiderdbList ( RdbList *list ) {
 			int64_t uh48 = srep->getUrlHash48();
 
 			// crazy?
-			if ( ! uh48 ) { 
+			if (!uh48) {
 				//uh48 = hash64b ( srep->m_url );
 				uh48 = 12345678;
 				log("spider: got uh48 of zero for spider req. computing now.");
 			}
 
 			// does match last reply?
-			if ( repUh48 == uh48 ) {
+			if (repUh48 == uh48) {
 				// if he's a later date than us, skip us!
-				if ( oldRep->m_spideredTime >= srep->m_spideredTime ) {
+				if (oldRep->m_spideredTime >= srep->m_spideredTime) {
 					// skip us!
 					continue;
 				}
 				// otherwise, erase him
-				dst     = restorePoint;
+				dst = restorePoint;
 			}
 
 			// save in case we get erased
@@ -2551,13 +2551,13 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 			// and add us
 			lastKey = dst;
-			memmove ( dst , rec , recSize );
+			memmove(dst, rec, recSize);
 
 			// advance
 			dst += recSize;
 			// update this crap for comparing to next reply
 			repUh48 = uh48;
-			oldRep  = srep;
+			oldRep = srep;
 
 			// get next spiderdb record
 			continue;
@@ -2567,7 +2567,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		SpiderRequest *sreq = (SpiderRequest *)rec;
 
 		// might as well filter out corruption
-		if ( sreq->isCorrupt() ) {
+		if (sreq->isCorrupt()) {
 			corrupt += sreq->getRecSize();
 			continue;
 		}
@@ -2600,21 +2600,14 @@ void dedupSpiderdbList ( RdbList *list ) {
 		// update request with SpiderReply if newer, because ultimately
 		// ::getUrlFilterNum() will just look at SpiderRequest's 
 		// version of these bits!
-		if ( oldRep && repUh48 == uh48 && oldRep->m_spideredTime > sreq->m_addedTime ) {
-
+		if (oldRep && repUh48 == uh48 && oldRep->m_spideredTime > sreq->m_addedTime) {
 			// if request was a page reindex docid based request and url has since been spidered, nuke it!
-			//if ( sreq->m_urlIsDocId ) continue;
-			if ( sreq->m_isPageReindex ) {
-				continue;
-			}
 
 			// same if indexcode was EFAKEFIRSTIP which XmlDoc.cpp
 			// re-adds to spiderdb with the right firstip. once
 			// those guys have a reply we can ignore them.
-			// TODO: what about diffbotxyz spider requests? those
-			// have a fakefirstip... they should not have requests
-			// though, since their parent url has that.
-			if ( sreq->m_fakeFirstIp ) {
+
+			if (sreq->m_isPageReindex || sreq->m_fakeFirstIp) {
 				continue;
 			}
 
@@ -2647,8 +2640,8 @@ void dedupSpiderdbList ( RdbList *list ) {
 		bool skipUs = false;
 
 		// now we keep a list of requests with same uh48
-		for ( auto it = spiderRequests.begin(); it != spiderRequests.end(); ++it ) {
-			if ( srh != it->first ) {
+		for (auto it = spiderRequests.begin(); it != spiderRequests.end(); ++it) {
+			if (srh != it->first) {
 				continue;
 			}
 
@@ -2660,8 +2653,8 @@ void dedupSpiderdbList ( RdbList *list ) {
 			// . if the same check who has the most recentaddedtime
 			// . if we are not the most recent, just do not add us
 			// . no, now i want the oldest so we can do gbssDiscoveryTime and set sreq->m_discoveryTime accurately, above
-			if ( ( sreq->m_hopCount > prevReq->m_hopCount ) ||
-				 ( ( sreq->m_hopCount == prevReq->m_hopCount ) && ( sreq->m_addedTime >= prevReq->m_addedTime ) ) ) {
+			if ((sreq->m_hopCount > prevReq->m_hopCount) ||
+				((sreq->m_hopCount == prevReq->m_hopCount) && (sreq->m_addedTime >= prevReq->m_addedTime))) {
 				skipUs = true;
 				break;
 			}
@@ -2680,7 +2673,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 			prevReq->m_url[0] = 'x';
 
 			// no issue with erasing list here as we break out of loop immediately
-			spiderRequests.erase( it );
+			spiderRequests.erase(it);
 
 			// make a note of this so we physically remove these
 			// entries after we are done with this scan.
@@ -2689,26 +2682,26 @@ void dedupSpiderdbList ( RdbList *list ) {
 		}
 
 		// if we were not as good as someone that was basically the same SpiderRequest before us, keep going
-		if ( skipUs ) {
+		if (skipUs) {
 			continue;
 		}
 
 		// add to linked list
-		spiderRequests.emplace_front( srh, (SpiderRequest *)dst );
+		spiderRequests.emplace_front(srh, (SpiderRequest *)dst);
 
 		// get our size
 		int32_t recSize = sreq->getRecSize();
 
 		// and add us
 		lastKey = dst;
-		memmove ( dst , rec , recSize );
+		memmove(dst, rec, recSize);
 
 		// advance
 		dst += recSize;
 	}
 
 	// sanity check
-	if ( dst < list->getList() || dst > list->getListEnd() ) {
+	if (dst < list->getList() || dst > list->getListEnd()) {
 		g_process.shutdownAbort(true);
 	}
 
@@ -2718,7 +2711,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 	// now remove xttp:// urls if we had some
 	//
 	/////////
-	if ( numToFilter > 0 ) {
+	if (numToFilter > 0) {
 		// update list so for-loop below works
 		list->setListSize(dst - newList);
 		list->setListEnd(list->getList() + list->getListSize());
@@ -2728,7 +2721,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		dst = newList;
 	}
 
-	for ( ; ! list->isExhausted() ; ) {
+	for (; !list->isExhausted();) {
 		// get rec
 		char *rec = list->getCurrentRec();
 
@@ -2738,30 +2731,30 @@ void dedupSpiderdbList ( RdbList *list ) {
 		// skip if negative, just copy over
 		if ( ( rec[0] & 0x01 ) == 0x00 ) {
 			lastKey = dst;
-			memmove ( dst , rec , sizeof(key128_t) );
+			memmove(dst, rec, sizeof(key128_t));
 			dst += sizeof(key128_t);
 			continue;
 		}
 
 		// is it a reply?
-		if ( Spiderdb::isSpiderReply ( (key128_t *)rec ) ) {
+		if (Spiderdb::isSpiderReply((key128_t *)rec)) {
 			SpiderReply *srep = (SpiderReply *)rec;
 			int32_t recSize = srep->getRecSize();
 			lastKey = dst;
-			memmove ( dst , rec , recSize );
+			memmove(dst, rec, recSize);
 			dst += recSize;
 			continue;
 		}
 
 		SpiderRequest *sreq = (SpiderRequest *)rec;
 		// skip if filtered out
-		if ( sreq->m_url[0] == 'x' ) {
+		if (sreq->m_url[0] == 'x') {
 			continue;
 		}
 
 		int32_t recSize = sreq->getRecSize();
 		lastKey = dst;
-		memmove ( dst , rec , recSize );
+		memmove(dst, rec, recSize);
 		dst += recSize;
 	}
 
