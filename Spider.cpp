@@ -2509,7 +2509,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		list->skipCurrentRecord();
 
 		// skip if negative, just copy over
-		if ( ( rec[0] & 0x01 ) == 0x00 ) {
+		if (KEYNEG(rec)) {
 			// otherwise, keep it
 			lastKey = dst;
 			memmove(dst, rec, sizeof(key128_t));
@@ -2729,7 +2729,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		list->skipCurrentRecord();
 
 		// skip if negative, just copy over
-		if ( ( rec[0] & 0x01 ) == 0x00 ) {
+		if (KEYNEG(rec)) {
 			lastKey = dst;
 			memmove(dst, rec, sizeof(key128_t));
 			dst += sizeof(key128_t);
