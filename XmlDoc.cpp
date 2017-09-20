@@ -5865,8 +5865,7 @@ XmlDoc **XmlDoc::getExtraDoc(const char *u, int32_t maxCacheAge) {
 
 	// a spider rec for the extra doc to use
 	SpiderRequest sreq;
-	// clear it
-	sreq.reset();
+
 	// spider the url "u"
 	strcpy ( sreq.m_url , u );
 	// inherit page parser
@@ -6053,8 +6052,7 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	else {
 		// a spider rec for the contact doc
 		SpiderRequest sreq;
-		// clear it
-		sreq.reset();
+
 		// spider the url "u"
 		strcpy ( sreq.m_url , mysite );
 		// set this
@@ -14738,9 +14736,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 
 		// make the spider request rec for it
 		SpiderRequest ksr;
-
-		// to defaults (zero out)
-		ksr.reset();
 
 		// set other fields besides key
 		ksr.m_firstIp          = firstIp;

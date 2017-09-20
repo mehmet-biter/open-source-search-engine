@@ -180,7 +180,6 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	// url based?
 	if ( url ) {
 		SpiderRequest sreq;
-		sreq.reset();
 		strcpy(sreq.m_url, url );
 		sreq.setDataSize();
 		// this returns false if "coll" is invalid

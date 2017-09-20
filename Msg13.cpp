@@ -1920,7 +1920,6 @@ static bool getIframeExpandedContent(Msg13Request *r, TcpSocket *ts) {
 
 	// make a fake spider request so we can do it
 	SpiderRequest sreq;
-	sreq.reset();
 	strcpy(sreq.m_url,r->ptr_url);
 	int32_t firstIp = hash32n(r->ptr_url);
 	if ( firstIp == -1 || firstIp == 0 ) firstIp = 1;

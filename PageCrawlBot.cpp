@@ -109,7 +109,6 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 
 		// make it
 		SpiderRequest sreq;
-		sreq.reset();
 		sreq.m_firstIp = url.getHostHash32(); // fakeip!
 
 		// avoid ips of 0 or -1

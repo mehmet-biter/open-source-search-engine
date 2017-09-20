@@ -517,7 +517,6 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	XmlDoc *xd = &st->m_xd;
 	// set this up
 	SpiderRequest sreq;
-	sreq.reset();
 	strcpy(sreq.m_url,st->m_u);
 	int32_t firstIp = hash32n(st->m_u);
 	if ( firstIp == -1 || firstIp == 0 ) firstIp = 1;
@@ -801,7 +800,6 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 
 	// set this up
 	SpiderRequest sreq;
-	sreq.reset();
 	if ( st->m_u ) strcpy(sreq.m_url,st->m_u);
 	int32_t firstIp = hash32n(st->m_u);
 	if ( firstIp == -1 || firstIp == 0 ) firstIp = 1;

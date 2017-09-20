@@ -377,7 +377,6 @@ bool Msg1c::gotList ( ) {
 		if ( ! dt.addKey ( &docId ) ) return true;
 
 		SpiderRequest sr;
-		sr.reset();
 
 		// url is a docid!
 		sprintf ( sr.m_url , "%" PRIu64 , (uint64_t)docId );
