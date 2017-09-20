@@ -1031,6 +1031,10 @@ bool Xml::getTagValue(const char *fieldName, const char *fieldContent, const cha
 	int32_t startNode = (startNodePtr != nullptr) ? *startNodePtr : 0;
 	int inTagCount = 0;
 
+	// clear value
+	*valuePtr = nullptr;
+	*valueLenPtr = 0;
+
 	for (int32_t i = startNode; i < getNumNodes(); ++i) {
 		// don't get tag from gbframe (expanded iframe content)
 		if (ignoreExpandedIframe && inTag(getNodePtr(i), TAG_GBFRAME, &inTagCount)) {
@@ -1069,6 +1073,7 @@ bool Xml::getTagValue(const char *fieldName, const char *fieldContent, const cha
 
 	return (*valueLenPtr > 0);
 }
+
 //  TEST CASES:
 //. this is NOT rss, but has an rdf:rdf tag in it!
 //  http://www.silverstripe.com/silverstripe-adds-a-touch-of-design-and-a-whole-lot-more/
