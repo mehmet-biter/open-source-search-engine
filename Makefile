@@ -183,9 +183,9 @@ else ifeq ($(findstring g++, $(CXX)),g++)
 CPPFLAGS += -MMD -MP
 
 # versions
-GCC_VER_MIN_71 := $(shell echo `$(CXX) -dumpfullversion |cut -f1-2 -d.` \>= 7.1 |bc)
-GCC_VER_MIN_61 := $(shell echo `$(CXX) -dumpfullversion |cut -f1-2 -d.` \>= 6.1 |bc)
-GCC_VER_MIN_51 := $(shell echo `$(CXX) -dumpfullversion |cut -f1-2 -d.` \>= 5.1 |bc)
+GCC_VER_MIN_71 := $(shell echo `$(CXX) -dumpfullversion 2>/dev/null |cut -f1-2 -d.` \>= 7.1 |bc)
+GCC_VER_MIN_61 := $(shell echo `$(CXX) -dumpversion |cut -f1-2 -d.` \>= 6.1 |bc)
+GCC_VER_MIN_51 := $(shell echo `$(CXX) -dumpversion |cut -f1-2 -d.` \>= 5.1 |bc)
 
 # warnings
 CPPFLAGS += -Wall
