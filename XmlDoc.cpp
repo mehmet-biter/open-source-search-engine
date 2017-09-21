@@ -9848,18 +9848,22 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 			}
 		}
 
-		// get our current url
-		//cu = getCurrentUrl();
 		// set our frame url
-		furl.set( cu, url, urlLen );
+		furl.set(cu, url, urlLen);
+
 		// no recursion
-		if ( strcmp(furl.getUrl(),m_firstUrl.getUrl()) == 0 )
+		if (strcmp(furl.getUrl(), m_firstUrl.getUrl()) == 0) {
 			continue;
+		}
+
 		// must be http or https, not ftp! ftp was causing us to
 		// core in Msg22.cpp where it checks the url's protocol
 		// when trying to lookup the old title rec.
 		// http://sweetaub.ipower.com/ had an iframe with a ftp url.
-		if ( ! furl.isHttp() && ! furl.isHttps() ) continue;
+		if (!furl.isHttp() && !furl.isHttps()) {
+			continue;
+		}
+
 		/// @todo why are we ignoring specific domains here?
 		// ignore google.com/ assholes for now
 		if ( strstr(furl.getUrl(),"google.com/" ) ) continue;
