@@ -9821,9 +9821,11 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 			continue;
 		}
 
-		// skip if "about:blank"
-		if ( urlLen==11 && strncmp(url,"about:blank",11) == 0 )
+		// skip if starts with about: / javascript:
+		if ((urlLen >= 6 && strncasecmp(url, "about:", 6)) ||
+			(urlLen >= 11 && strncasecmp(url, "javascript:", 6))) {
 			continue;
+		}
 
 		{
 			int width = -1;
