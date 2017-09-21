@@ -271,28 +271,6 @@ int32_t Pages::getDynamicPageNumber ( HttpRequest *r ) {
 		pathLen--;
 	}
 
-	// historical backwards compatibility fix
-	if ( pathLen == 9 && strncmp ( path , "cgi/0.cgi" , 9 ) == 0 ) {
-		path = "search";
-		pathLen = strlen(path);
-	}
-	if ( pathLen == 9 && strncmp ( path , "cgi/1.cgi" , 9 ) == 0 ) {
-		path = "addurl";
-		pathLen = strlen(path);
-	}
-	if ( pathLen == 6 && strncmp ( path , "inject" , 6 ) == 0 ) {
-		path = "admin/inject";
-		pathLen = strlen(path);
-	}
-	if ( pathLen == 9 && strncmp ( path , "index.php" , 9 ) == 0 ) {
-		path = "search";
-		pathLen = strlen(path);
-	}
-	if ( pathLen == 10 && strncmp ( path , "search.csv" , 10 ) == 0 ) {
-		path = "search";
-		pathLen = strlen(path);
-	}
-
 	// go down the list comparing the pathname to dynamic page names
 	for ( int32_t i = 0 ; i < s_numPages ; i++ ) {
 		if ( pathLen != s_pages[i].m_flen ) {
