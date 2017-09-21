@@ -268,10 +268,16 @@ static bool sendResult(State *st) {
 		sb.safePrintf("  <tr bgcolor=#%s><th>Field</th><th>Value</th></tr>\n", DARK_BLUE);
 		sb.safePrintf("  <tr><td>m_firstIp</td><td>%s</td></tr>\n", iptoa(spiderRequest->m_firstIp,ipbuf));
 		sb.safePrintf("  <tr><td>m_addedTime</td><td>%s (%d)</td></tr>\n", formatTime(spiderRequest->m_addedTime,timebuf), spiderRequest->m_addedTime);
-		sb.safePrintf("  <tr><td>m_discoveryTime</td><td>%s (%d)</td></tr>\n", formatTime(spiderRequest->m_discoveryTime,timebuf), spiderRequest->m_discoveryTime);
 		sb.safePrintf("  <tr><td>m_prevErrCode</td><td>%d</td></tr>\n", spiderRequest->m_prevErrCode);
 		sb.safePrintf("  <tr><td>m_priority</td><td>%d</td></tr>\n", spiderRequest->m_priority);
 		sb.safePrintf("  <tr><td>m_errCount</td><td>%d</td></tr>\n", spiderRequest->m_errCount);
+		sb.safePrintf("  <tr><td>m_isAddUrl</td><td>%s</td></tr>\n", spiderRequest->m_isAddUrl?"true":"false");
+		sb.safePrintf("  <tr><td>m_isPageReindex</td><td>%s</td></tr>\n", spiderRequest->m_isPageReindex?"true":"false");
+		sb.safePrintf("  <tr><td>m_isUrlCanonical</td><td>%s</td></tr>\n", spiderRequest->m_isUrlCanonical?"true":"false");
+		sb.safePrintf("  <tr><td>m_isPageParser</td><td>%s</td></tr>\n", spiderRequest->m_isPageParser?"true":"false");
+		sb.safePrintf("  <tr><td>m_urlIsDocId</td><td>%s</td></tr>\n", spiderRequest->m_urlIsDocId?"true":"false");
+		sb.safePrintf("  <tr><td>m_forceDelete</td><td>%s</td></tr>\n", spiderRequest->m_forceDelete?"true":"false");
+		sb.safePrintf("  <tr><td>m_fakeFirstIp</td><td>%s</td></tr>\n", spiderRequest->m_fakeFirstIp?"true":"false");
 		sb.safePrintf("</table>\n");
 	}
 	if(spiderReply) {
@@ -287,6 +293,8 @@ static bool sendResult(State *st) {
 		sb.safePrintf("  <tr><td>m_downloadEndTime</td><td>%s (%ld)</td></tr>\n", formatTimeMs(spiderReply->m_downloadEndTime,timebuf), spiderReply->m_downloadEndTime);
 		sb.safePrintf("  <tr><td>m_httpStatus</td><td>%d</td></tr>\n", spiderReply->m_httpStatus);
 		sb.safePrintf(" <tr><td>m_errCount</td><td>%d</td></tr>\n", spiderReply->m_errCount);
+		sb.safePrintf(" <tr><td>m_langId</td><td>%d</td></tr>\n", spiderReply->m_langId);
+		sb.safePrintf(" <tr><td>m_isIndexed</td><td>%s</td></tr>\n", spiderReply->m_isIndexed?"true":"false");
 		sb.safePrintf("</table>\n");
 	}
 	if(!spiderRequest && !spiderReply) {
