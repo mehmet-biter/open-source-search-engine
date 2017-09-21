@@ -69,6 +69,7 @@ bool sendPageAPI        ( TcpSocket *s , HttpRequest *r );
 bool sendPageHelp       ( TcpSocket *s , HttpRequest *r );
 bool sendPageGraph      ( TcpSocket *s , HttpRequest *r );
 bool sendPageHealthCheck ( TcpSocket *sock , HttpRequest *hr ) ;
+bool sendPageDefaultCss(TcpSocket *s, HttpRequest *r);
 
 
 enum class page_method_t {

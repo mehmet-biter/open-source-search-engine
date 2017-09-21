@@ -404,6 +404,7 @@ clean:
 	-rm -f *.gcda *.gcno coverage*.html
 	-rm -f *.ll *.ll.out pstack.txt
 	-rm -f entities.inc
+	-rm -f default_css.inc
 	$(MAKE) -C test $@
 
 
@@ -467,6 +468,12 @@ entities.json entities.inc:
 
 Entities.o: entities.inc
 Version.o: CPPFLAGS += -DGIT_COMMIT_ID=$(GIT_VERSION) -DGIT_BRANCH=$(GIT_BRANCH) -DBUILD_CONFIG=$(config)
+
+default_css.inc: default.css
+	echo "static const char embedded_default_css[] =" >$@.tmp
+	sed -e 's/^/"/g' -e 's/$$/\\n"/g' <default.css >>$@.tmp
+	echo ";" >>$@.tmp
+	mv $@.tmp $@
 
 # different optimization level
 $(OBJS_O1): CPPFLAGS += $(O1)

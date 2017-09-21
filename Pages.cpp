@@ -9,10 +9,12 @@
 #include "Rebalance.h"
 #include "Profiler.h"
 #include "PageRoot.h"
+#include "HttpMime.h"
 #include "Process.h"
 #include "ip.h"
 #include "Conf.h"
 #include "GbUtil.h"
+#include "default_css.inc"
 
 
 // a global class extern'd in Pages.h
@@ -524,6 +526,7 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 		     "<title>%s | gigablast admin</title>\n"
 		     "<meta http-equiv=\"Content-Type\" "
 		     "content=\"text/html;charset=utf8\" />\n"
+		     "<link rel=\"stylesheet\" type=\"text/css\" href=\"/default.css\" title=\"Default\"/>\n"
 		     "</head>\n",  s_pages[page].m_name);
 
 	// print bg colors
@@ -1400,6 +1403,26 @@ bool sendPageAPI ( TcpSocket *s , HttpRequest *r ) {
 						   sbufLen,
 						   -1/*cachetime*/);
 	return 	retval;
+}
+
+
+bool sendPageDefaultCss(TcpSocket *s, HttpRequest *r) {
+	HttpMime mime;
+	mime.makeMime(sizeof(embedded_default_css)-1, //content length
+	              3600, //cache time
+	              0, //last modified
+	              0, 0,
+	              NULL, //ext
+	              false, //postreply
+	              "text/css",
+	              NULL, //charset
+	              200, //httpStatus
+	              NULL);
+	return g_httpServer.sendReply2(mime.getMime(), mime.getMimeLen(),
+				       embedded_default_css, sizeof(embedded_default_css)-1,
+				       s,
+				       false,
+				       r);
 }
 
 

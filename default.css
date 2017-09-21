@@ -1,0 +1,25 @@
+table.main {
+	border-radius: 10px;
+	border-width: 3px;
+	border-style: solid;
+	border-color: #a0a0ff;
+	background-color: #a0a0ff;
+}
+table.main td {
+	padding: 4px;
+	background-color: #e0e0ff;
+}
+table.main tr.level1 {
+	background-color: #a0a0ff;
+	text-align: left;
+}
+table.main tr.level2 {
+	background-color: #c0c0ff;
+}
+/*bg0 and bg1 are meant for alternating colors in rows, eg. event-odd or grouping*/
+table.main tr.bg0 {
+	background-color: #d0d0ff;
+}
+table.main tr {
+	background-color: #e0e0ff;
+}

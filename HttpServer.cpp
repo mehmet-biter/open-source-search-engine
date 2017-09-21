@@ -904,6 +904,10 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	}		
 	// if f STILL does not exist (or error) then send a 404
 	if ( f->doesExist() <= 0 ) {
+		//except if it is the /default.css in which case we have a built-in default
+		if(strcmp(path,"/default.css")==0)
+			return sendPageDefaultCss(s,r);
+
 		if ( g_conf.m_logDebugTcp )
 			log("tcp: deleting filestate=0x%" PTRFMT" [3]",
 			    (PTRTYPE)f);

@@ -265,9 +265,9 @@ static bool sendResult(State *st) {
 	if(spiderRequest) {
 		char ipbuf[16];
 		char timebuf[32];
-		sb.safePrintf("<table %s>\n", TABLE_STYLE);
-		sb.safePrintf("  <tr><th colspan=50>Spider request</th></tr>\n");
-		sb.safePrintf("  <tr bgcolor=#%s><th>Field</th><th>Value</th></tr>\n", DARK_BLUE);
+		sb.safePrintf("<table class=\"main\" width=100%%>\n");
+		sb.safePrintf("  <tr class=\"level1\"><th colspan=50>Spider request</th></tr>\n");
+		sb.safePrintf("  <tr class=\"level2\"><th>Field</th><th>Value</th></tr>\n");
 		sb.safePrintf("  <tr><td>m_firstIp</td><td>%s</td></tr>\n", iptoa(spiderRequest->m_firstIp,ipbuf));
 		sb.safePrintf("  <tr><td>m_addedTime</td><td>%s (%d)</td></tr>\n", formatTime(spiderRequest->m_addedTime,timebuf), spiderRequest->m_addedTime);
 		sb.safePrintf("  <tr><td>m_prevErrCode</td><td>%d</td></tr>\n", spiderRequest->m_prevErrCode);
@@ -282,11 +282,13 @@ static bool sendResult(State *st) {
 		sb.safePrintf("  <tr><td>m_fakeFirstIp</td><td>%s</td></tr>\n", spiderRequest->m_fakeFirstIp?"true":"false");
 		sb.safePrintf("</table>\n");
 	}
+	if(spiderRequest && spiderReply)
+		sb.safePrintf("<br/>\n");
 	if(spiderReply) {
 		char timebuf[32];
-		sb.safePrintf("<table %s>\n", TABLE_STYLE);
-		sb.safePrintf("  <tr><th colspan=50>Spider reply</th><tr>\n");
-		sb.safePrintf("  <tr bgcolor=#%s><th>Field</th><th>Value</th></tr>\n", DARK_BLUE);
+		sb.safePrintf("<table class=\"main\" width=100%%>\n");
+		sb.safePrintf("  <tr class=\"level1\"><th colspan=50>Spider reply</th><tr>\n");
+		sb.safePrintf("  <tr class=\"level2\"><th>Field</th><th>Value</th></tr>\n");
 		sb.safePrintf("  <tr><td>m_spideredTime</td><td>%s (%d)</td></tr>\n", formatTime(spiderReply->m_spideredTime,timebuf), spiderReply->m_spideredTime);
 		sb.safePrintf("  <tr><td>m_errCode</td><td>%d</td></tr>\n", spiderReply->m_errCode);
 		sb.safePrintf("  <tr><td>m_percentChangedPerDay</td><td>%f</td></tr>\n", spiderReply->m_percentChangedPerDay);
