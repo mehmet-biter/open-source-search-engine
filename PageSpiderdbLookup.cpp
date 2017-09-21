@@ -246,16 +246,18 @@ static bool sendResult(State *st) {
 	const SpiderReply *spiderReply = NULL;
 	if(st->m_rdbList.getListSize()>0) {
 		//log(LOG_INFO, "@@@ sendResult: st->m_rdbList.getListSize()=%d", st->m_rdbList.getListSize());
+		log(LOG_TRACE, "PageSpiderdbLookup(%p): sendResult: st->m_rdbList.getListSize()=%d", st, st->m_rdbList.getListSize());
 		for(st->m_rdbList.resetListPtr(); !st->m_rdbList.isExhausted(); st->m_rdbList.skipCurrentRecord()) {
 			const char *currentRec = st->m_rdbList.getCurrentRec();
+			loghex(LOG_TRACE, currentRec, st->m_rdbList.getCurrentRecSize(), "PageSpiderdbLookup(%p): ", st);
 			if((currentRec[0]&0x01) == 0x00)
 				continue; //skip negative records (which should even be there)
 			if(Spiderdb::isSpiderRequest((const key128_t *)currentRec)) {
+				log(LOG_TRACE, "PageSpiderdbLookup: it's a request");
 				spiderRequest = reinterpret_cast<const SpiderRequest*>(currentRec);
-			} else if(Spiderdb::isSpiderReply((const key128_t *)currentRec)) {
+			} else  {
+				log(LOG_TRACE, "PageSpiderdbLookup: it's a reply");
 				spiderReply = reinterpret_cast<const SpiderReply*>(currentRec);
-			} else {
-				//hmmm. corrupted db?
 			}
 		}
 	}
