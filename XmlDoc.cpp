@@ -9822,8 +9822,8 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		}
 
 		// skip if starts with about: / javascript:
-		if ((urlLen >= 6 && strncasecmp(url, "about:", 6)) ||
-			(urlLen >= 11 && strncasecmp(url, "javascript:", 11))) {
+		if ((urlLen >= 6 && strncasecmp(url, "about:", 6) == 0) ||
+			(urlLen >= 11 && strncasecmp(url, "javascript:", 11) == 0)) {
 			continue;
 		}
 
