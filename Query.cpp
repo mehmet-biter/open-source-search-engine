@@ -2803,7 +2803,7 @@ const struct QueryField g_fields[] = {
 	 "gblang:de",
 	 "Matches all documents in german. "
 	 "The supported language abbreviations "
-	 "are at the bottom of the <a href=/admin/filters>url filters</a> "
+	 "are at the bottom of the <a href=\"/admin/filters\">url filters</a> "
 	 "page. Some more "
 	 "common ones are <i>gblang:en, gblang:es, gblang:fr, "
 	 // need quotes for this one!!

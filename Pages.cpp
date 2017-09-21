@@ -599,7 +599,7 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 		      "<br style=line-height:14px;>"
 
 		      "<center>"
-		      "<a href=/?c=%s>"
+		      "<a href=\"/?c=%s\">"
 		      "<div style=\""
 		      "background-color:white;"
 		      "padding:10px;"
@@ -1027,7 +1027,7 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 	total += g_hostdb.m_numProxyHosts;	
 
 	sb->safePrintf (  //"&nbsp; &nbsp; &nbsp; "
-			  "<a style=text-decoration:none; href=/admin/hosts>"
+			  "<a style=text-decoration:none; href=\"/admin/hosts\">"
 			  "<b><u>hosts in cluster</u></b></a>: ");
 
 	if ( ! qs   ) qs   = "";
@@ -1251,9 +1251,9 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 	sb->safePrintf( "<center>"
 			"<nobr>"
 			"<font size=-1>"
-			"<a href=/admin/addcoll?c=%s>add</a> &nbsp; &nbsp; "
-			"<a href=/admin/delcoll?c=%s>delete</a> &nbsp; &nbsp; "
-			"<a href=/admin/clonecoll?c=%s>clone</a>"
+			"<a href=\"/admin/addcoll?c=%s\">add</a> &nbsp; &nbsp; "
+			"<a href=\"/admin/delcoll?c=%s\">delete</a> &nbsp; &nbsp; "
+			"<a href=\"/admin/clonecoll?c=%s\">clone</a>"
 			"</font>"
 			"</nobr>"
 			"</center>"
@@ -1443,17 +1443,17 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 
 
 	sb->safePrintf(
-		       "<font size=+2><b><a href=/%s?c=%s>/%s</a></b></font>"
+		       "<font size=+2><b><a href=\"/%s?c=%s\">/%s</a></b></font>"
 		       ,pageStr,cr->m_coll,pageStr);
 	sb->safePrintf("</a>");
 
 	sb->safePrintf("<font size=-0> - %s "
 	               " &nbsp; "
 	               "[ <b>show parms in</b> "
-	               "<a href=/%s?showinput=1&format=xml>"
+	               "<a href=\"/%s?showinput=1&format=xml\">"
 	               "xml</a> "
 	               "or "
-	               "<a href=/%s?showinput=1&format=json>"
+	               "<a href=\"/%s?showinput=1&format=json\">"
 	               "json</a> "
 	               " ] "
 	               "</font>",
@@ -1467,12 +1467,12 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 		sb->safePrintf("<font size=-0>"
 			       " &nbsp; "
 			       "[ <b>show status in</b> "
-			       "<a href=/%s?c=%s&format=xml>"
+			       "<a href=\"/%s?c=%s&format=xml\">"
 			       "xml</a> "
 			       "or "
-			       "<a href=/%s?format=json>"
+			       "<a href=\"/%s?format=json\">"
 			       "json</a> "
-			       //"or <a href=/%s>html</a> ] "  
+			       //"or <a href=\"/%s\">html</a> ] "
 			       " ] "
 			       "</font>",
 			       pageStr,
@@ -1603,7 +1603,7 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 
 		sb->safePrintf("<td><b>%s</b></td>", cgi);
 
-		//sb->safePrintf("<td><nobr><a href=/%s?c=%s>/%s"
+		//sb->safePrintf("<td><nobr><a href=\"/%s?c=%s\">/%s"
 		//"</a></nobr></td>",
 		//page,coll,page);
 
@@ -2362,7 +2362,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		mb->safePrintf("Welcome to Gigablast. The most powerful "
 			       "search engine you can legally download. "
 			       "Please add the websites you want to spider "
-			       "<a href=/admin/settings?c=main>here</a>."
+			       "<a href=\"/admin/settings?c=main\">here</a>."
 			       );
 		mb->safePrintf("%s",boxEnd);
 	}
@@ -2380,7 +2380,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		mb->safePrintf("%s",box);
 		mb->safePrintf("URGENT. Please specify a MASTER password "
 			       "or IP address in the "
-			       "<a href=/admin/masterpasswords>master "
+			       "<a href=\"/admin/masterpasswords\">master "
 			       "password</a> "
 			       "table. Right now anybody might be able "
 			       "to access the Gigablast admin controls.");
@@ -2403,7 +2403,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		mb->safePrintf("%s",box);
 		mb->safePrintf("URGENT. Please specify a COLLECTION password "
 			       "or IP address in the "
-			       "<a href=/admin/collectionpasswords?c=%s>"
+			       "<a href=\"/admin/collectionpasswords?c=%s\">"
 			       "password</a> "
 			       "table. Right now anybody might be able "
 			       "to access the Gigablast admin controls "
@@ -2420,7 +2420,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		adds++;
 		mb->safePrintf("%s",box);
 		mb->safePrintf("Injections are disabled in the "
-			       "<a href=/admin/master?c=%s>"
+			       "<a href=\"/admin/master?c=%s\">"
 			       "master controls</a>."
 			       ,coll);
 		mb->safePrintf("%s",boxEnd);
@@ -2432,7 +2432,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		adds++;
 		mb->safePrintf("%s",box);
 		mb->safePrintf("Querying is disabled in the "
-			       "<a href=/admin/master?c=%s>"
+			       "<a href=\"/admin/master?c=%s\">"
 			       "master controls</a>."
 			       ,coll);
 		mb->safePrintf("%s",boxEnd);
@@ -2454,7 +2454,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		adds++;
 		mb->safePrintf("%s",box);
 		mb->safePrintf("One or more hosts have different gb versions. "
-			       "See the <a href=/admin/hosts?c=%s>hosts</a> "
+			       "See the <a href=\"/admin/hosts?c=%s\">hosts</a> "
 			       "table.",coll);
 		mb->safePrintf("%s",boxEnd);
 	}
@@ -2496,7 +2496,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		mb->safePrintf("%s",box);
 		mb->safePrintf("A host requires a shard rebalance. "
 			       "Click 'rebalance shards' in the "
-			       "<a href=/admin/master?c=%s>"
+			       "<a href=\"/admin/master?c=%s\">"
 			       "master controls</a> "
 			       "to rebalance all hosts.",coll);
 		mb->safePrintf("%s",boxEnd);
@@ -2543,7 +2543,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		adds++;
 		mb->safePrintf("%s",box);
 		mb->safePrintf("%d hosts are dead and not responding to pings. See the "
-			       "<a href=/admin/hosts?c=%s>hosts table</a>.",
+			       "<a href=\"/admin/hosts?c=%s\">hosts table</a>.",
 			       g_hostdb.getNumHostsDead(), coll);
 		mb->safePrintf("%s",boxEnd);
 	}

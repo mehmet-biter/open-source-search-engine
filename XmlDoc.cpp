@@ -16824,7 +16824,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 			"<tr>"
 			"<td width=\"25%%\">docId</td>"
-			"<td><a href=/get?c=%s&d=%" PRIu64">%" PRIu64"</a></td>"
+			"<td><a href=\"/get?c=%s&d=%" PRIu64"\">%" PRIu64"</a></td>"
 			"</tr>\n"
 
 			"<tr>"
@@ -17542,7 +17542,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 
 				"<tr>"
 				"<td width=\"25%%\">docId</td>"
-				"<td><a href=/get?c=%s&d=%" PRIu64">%" PRIu64"</a></td>"
+				"<td><a href=\"/get?c=%s&d=%" PRIu64"\">%" PRIu64"</a></td>"
 				"</tr>\n"
 
 				"<tr>"
@@ -18178,8 +18178,8 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 		if ( m_sortTermListBy == 0 )
 			sb->safePrintf("<b>Term</b>");
 		else
-			sb->safePrintf("<a href=/print?c=%s&page=5&u=%s&"
-				       "sortby=0>"
+			sb->safePrintf("<a href=\"/print?c=%s&page=5&u=%s&"
+				       "sortby=0\">"
 				       "Term</a>"
 				       , cr->m_coll
 				       , ue.getBufStart()
@@ -18188,8 +18188,8 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 		if ( m_sortTermListBy == 1 )
 			sb->safePrintf("<b>WordPos</b>");
 		else
-			sb->safePrintf("<a href=/print?c=%s&page=5&u=%s&"
-				       "sortby=1>"
+			sb->safePrintf("<a href=\"/print?c=%s&page=5&u=%s&"
+				       "sortby=1\">"
 				       "WordPos</a>"
 				       , cr->m_coll
 				       , ue.getBufStart()

@@ -3189,15 +3189,15 @@ void Parms::init ( ) {
 		"dmoz.org</i>"
 		"<br><br>"
 		"Gigablast uses the "
-		"<a href=/admin/filters#insitelist>insitelist</a> "
+		"<a href=\"/admin/filters#insitelist\">insitelist</a> "
 		"directive on "
-		"the <a href=/admin/filters>url filters</a> "
+		"the <a href=\"/admin/filters\">url filters</a> "
 		"page to make sure that the spider only indexes urls "
 		"that match the site patterns you specify here, other than "
 		"urls you add individually via the add urls or inject url "
 		"tools. "
 		"Limit list to 300MB. If you have a lot of INDIVIDUAL urls "
-		"to add then consider using the <a href=/admin/addurl>add "
+		"to add then consider using the <a href=\"/admin/addurl\">add "
 		"urls</a> interface.";
 	m->m_cgi   = "sitelist";
 	simple_m_set(CollectionRec,m_siteListBuf);
@@ -3213,7 +3213,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Remove all documents from the collection and re-add "
 		"seed urls from site list.";
 	// If you do this accidentally there "
-	//"is a <a href=/faq.html#recover>recovery procedure</a> to "
+	//"is a <a href=\"/faq.html#recover\">recovery procedure</a> to "
 	//	"get back the trashed data.";
 	m->m_cgi   = "restart";
 	m->m_page  = PAGE_BASIC_SETTINGS;
@@ -3360,7 +3360,7 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "query";
-	m->m_desc  = "The query to perform. See <a href=/help.html>help</a>. "
+	m->m_desc  = "The query to perform. See <a href=\"/help.html\">help</a>. "
 		"See the <a href=#qops>query operators</a> below for "
 		"more info.";
 	m->m_obj   = OBJ_SI;
@@ -3866,7 +3866,7 @@ void Parms::init ( ) {
 		"\"en\" for English. Use <i>xx</i> to give ranking "
 		"boosts to no language in particular. See the language "
 		"abbreviations at the bottom of the "
-		"<a href=/admin/filters>url filters</a> page.";
+		"<a href=\"/admin/filters\">url filters</a> page.";
 	m->m_cgi   = "qlang";
 	m->m_off   = offsetof(SearchInput,m_defaultSortLang);
 	m->m_type  = TYPE_CHARPTR;
@@ -6122,12 +6122,12 @@ void Parms::init ( ) {
 		"If your url does not index as you expect you "
 		"can check it's spider history by doing a url: search on it. "
 		"Added urls will have a "
-		"<a href=/admin/filters#hopcount>hopcount</a> of 0. "
-		"Added urls will match the <i><a href=/admin/filters#isaddurl>"
+		"<a href=\"/admin/filters#hopcount\">hopcount</a> of 0. "
+		"Added urls will match the <i><a href=\"/admin/filters#isaddurl\">"
 		"isaddurl</a></i> directive on "
 		"the url filters page. "
 		"The add url api is described on the "
-		"<a href=/admin/api>api</a> page.";
+		"<a href=\"/admin/api\">api</a> page.";
 	m->m_cgi   = "urls";
 	m->m_page  = PAGE_ADDURL2;
 	m->m_obj   = OBJ_GBREQUEST; // do not store in g_conf or collectionrec
@@ -6180,22 +6180,22 @@ void Parms::init ( ) {
 		"and indexed in real time while you wait. The browser "
 		"will return the "
 		"final index status code. Alternatively, "
-		"use the <a href=/admin/addurl>add url</a> page "
+		"use the <a href=\"/admin/addurl\">add url</a> page "
 		"to add urls individually or in bulk "
 		"without having to wait for the pages to be "
 		"actually indexed in realtime. "
 
 		"By default, injected urls "
 		"take precedence over the \"insitelist\" expression in the "
-		"<a href=/admin/filters>url filters</a> "
+		"<a href=\"/admin/filters\">url filters</a> "
 		"so injected urls need not match the patterns in your "
-		"<a href=/admin/sites>site list</a>. You can "
-		"change that behavior in the <a href=/admin/filters>url "
+		"<a href=\"/admin/sites\">site list</a>. You can "
+		"change that behavior in the <a href=\"/admin/filters\">url "
 		"filters</a> if you want. "
 		"Injected urls will have a "
-		"<a href=/admin/filters#hopcount>hopcount</a> of 0. "
+		"<a href=\"/admin/filters#hopcount\">hopcount</a> of 0. "
 		"The injection api is described on the "
-		"<a href=/admin/api>api</a> page. "
+		"<a href=\"/admin/api\">api</a> page. "
 		"Make up a fake url if you are injecting content that "
 		"does not have one."
 		"<br>"
@@ -6707,7 +6707,7 @@ void Parms::init ( ) {
 		"\"en\" for English. Use <i>xx</i> to give ranking "
 		"boosts to no language in particular. See the language "
 		"abbreviations at the bottom of the "
-		"<a href=/admin/filters>url filters</a> page.";
+		"<a href=\"/admin/filters\">url filters</a> page.";
 	m->m_cgi   = "defqlang";
 	m->m_off   = offsetof(CollectionRec,m_defaultSortLanguage2);
 	m->m_type  = TYPE_STRING;
@@ -6824,7 +6824,7 @@ void Parms::init ( ) {
 			      "<body onload=\"x()\">"
 			      "<br><br>"
 			      "<center>"
-			      "<a href=/>"
+			      "<a href=\"/\">"
 			      "<img border=0 width=500 height=122 "
 			      "src=/logo-med.jpg></a>"
 			      "<br><br>"
@@ -7480,15 +7480,15 @@ void Parms::init ( ) {
 	m->m_desc  = "List of sites to spider, one per line. "
 		"See <a href=#examples>example site list</a> below. "
 		"Gigablast uses the "
-		"<a href=/admin/filters#insitelist>insitelist</a> "
+		"<a href=\"/admin/filters#insitelist\">insitelist</a> "
 		"directive on "
-		"the <a href=/admin/filters>url filters</a> "
+		"the <a href=\"/admin/filters\">url filters</a> "
 		"page to make sure that the spider only indexes urls "
 		"that match the site patterns you specify here, other than "
 		"urls you add individually via the add urls or inject url "
 		"tools. "
 		"Limit list to 300MB. If you have a lot of INDIVIDUAL urls "
-		"to add then consider using the <a href=/admin/addurl>addurl"
+		"to add then consider using the <a href=\"/admin/addurl\">addurl"
 		"</a> interface.";
 	m->m_cgi   = "sitelist";
 	simple_m_set(CollectionRec,m_siteListBuf);
@@ -7640,12 +7640,12 @@ void Parms::init ( ) {
 
 	m->m_title = "always use spider proxies";
 	m->m_desc  = "If this is true Gigablast will ALWAYS use the proxies "
-		"listed on the <a href=/admin/proxies>proxies</a> "
+		"listed on the <a href=\"/admin/proxies\">proxies</a> "
 		"page for "
 		"spidering for "
 		"this collection."
 		//"regardless whether the proxies are enabled "
-		//"on the <a href=/admin/proxies>proxies</a> page."
+		//"on the <a href=\"/admin/proxies\">proxies</a> page."
 		;
 	m->m_cgi   = "useproxies";
 	simple_m_set(CollectionRec,m_forceUseFloaters);
@@ -11148,7 +11148,7 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "</td>"
 			  "<td>"
 			  "This is true if the url matches a pattern in "
-			  "the list of sites on the <a href=/admin/sites>"
+			  "the list of sites on the <a href=\"/admin/sites\">"
 			  "site list</a> page. That site list is useful for "
 			  "adding a large number of sites that can not be "
 			  "accomodated by the url fitlers table. Plus "
@@ -11173,13 +11173,13 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "<td>"
 			  "This is true if the url was directly "
 			  "injected from the "
-			  "<a href=/admin/inject>inject page</a> or API."
+			  "<a href=\"/admin/inject\">inject page</a> or API."
 			  "</td></tr>"
 
 			  "<tr class=poo><td>isreindex | !isreindex</td>"
 			  "<td>"
 			  "This is true if the url was added from the "
-			  "<a href=/admin/reindex>query reindex</a> "
+			  "<a href=\"/admin/reindex\">query reindex</a> "
 			  "interface. The request does not contain "
 			  "a url, but only a docid, that way we can add "
 			  "millions of search results very quickly without "
@@ -11427,7 +11427,7 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "<td>"
 			  "This is true if the url is tagged with this "
 			  "<i>tagname</i> in the site list. Read about tags "
-			  "on the <a href=/admin/settings>"//#examples>"
+			  "on the <a href=\"/admin/settings\">"//#examples>"
 			  "site list</a> "
 			  "page."
 			  "</td></tr>"

@@ -1303,9 +1303,9 @@ bool printSearchResultsHeader ( State0 *st ) {
 	if ( numResults == 0 && si->m_format == FORMAT_HTML && url ) {
 		sb->safePrintf("<br><br>"
 			      "Could not find that url in the "
-			      "index. Try <a href=/addurl?u=");
+			      "index. Try <a href=\"/addurl?u=");
 		urlEncode(sb,url,ue-url,false,false);
-		sb->safePrintf(">Adding it.</a>");
+		sb->safePrintf("\">Adding it.</a>");
 	}
 
 	// sometimes ppl search for "www.whatever.com" so ask them if they
@@ -1314,9 +1314,9 @@ bool printSearchResultsHeader ( State0 *st ) {
 		sb->safePrintf("<br><br>"
 			      "Did you mean to "
 			      "search for the url "
-			      "<a href=/search?q=url%%3A");
+			      "<a href=\"/search?q=url%%3A");
 		urlEncode(sb,url,ue-url,false,false);
-		sb->safePrintf(">");
+		sb->safePrintf("\">");
 		sb->safeMemcpy(url,ue-url);
 		sb->safePrintf("</a> itself?");
 	}
@@ -1655,7 +1655,7 @@ bool printSearchResultsTail ( State0 *st ) {
 				 // or various other widget content properties
 				 // because we can't edit the width/height
 				 // of the widget like this.
-				 "<a href=/widget?inlineedit=1>edit</a> "
+				 "<a href=\"/widget?inlineedit=1\">edit</a> "
 				 "&bull; "
 				 //"Copyright &copy; 2014. All Rights "
 				 //"Reserved.<br/>"
@@ -1828,7 +1828,7 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 		}
 		firstTime = false;
 		sb->safePrintf("<tr><td>"
-			      "<a href=/get?c=%s&d=%" PRId64"&cnsp=0>"
+			      "<a href=\"/get?c=%s&d=%" PRId64"&cnsp=0\">"
 			      //"<a href=\"/print?"
 			      //"page=7&"
 			      //"c=%s&"
@@ -1843,8 +1843,8 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 		if ( host ) sb->safeMemcpy(host,hostLen);
 		sb->safePrintf("</td><td>");
 		char ipbuf[16];
-		sb->safePrintf("<a href=/search?c=%s&q=ip%%3A%s"
-			       "+gbsortbyint%%3Agbsitenuminlinks&n=100>"
+		sb->safePrintf("<a href=\"/search?c=%s&q=ip%%3A%s"
+// 			       "+gbsortbyint%%3Agbsitenuminlinks&n=100\">"
 			       ,si->m_cr->m_coll,iptoa(k->m_ip,ipbuf));
 		sb->safePrintf("%s</a>",iptoa(k->m_ip,ipbuf));
 		sb->safePrintf("</td><td>%" PRId32"</td></tr>"

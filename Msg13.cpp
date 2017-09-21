@@ -2640,9 +2640,9 @@ bool printHammerQueueTable ( SafeBuf *sb ) {
 		if ( cr ) coll = cr->m_coll;
 		sb->safePrintf("<td>");
 		if ( cr ) {
-			sb->safePrintf("<a href=/admin/sockets?c=");
+			sb->safePrintf("<a href=\"/admin/sockets?c=");
 			urlEncode(sb,coll);
-			sb->safePrintf(">");
+			sb->safePrintf("\">");
 		}
 		sb->safeTruncateEllipsis ( coll , 32 );
 		if ( cr ) sb->safePrintf("</a>");

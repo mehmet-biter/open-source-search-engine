@@ -282,7 +282,7 @@ bool printSitePatternExamples ( SafeBuf *sb , HttpRequest *hr ) {
 		      "Tag any urls matching these 5 url patterns "
 		      "so we can use "
 		      "the expression <i>tag:boots</i> in the "
-		      "<a href=/admin/filters>url filters</a> and perhaps "
+		      "<a href=\"/admin/filters\">url filters</a> and perhaps "
 		      "give such urls higher spider priority. "
 		      "For more "
 		      "precise spidering control over url subsets. "

@@ -460,7 +460,7 @@ bool printLeftColumnRocketAndTabs ( SafeBuf *sb ,
 		      "<br>"
 
 		      "<center>"
-		      "<a href=/?c=%s>"
+		      "<a href=\"/?c=%s\">"
 		      "<div style=\""
 		      "background-color:white;"
 		      "padding:10px;"
@@ -571,7 +571,7 @@ bool printLeftColumnRocketAndTabs ( SafeBuf *sb ,
 	if ( isSearchResultsPage ) return true;
 
 	sb->safePrintf(
-		      "<a href=/admin/settings?c=%s>"
+		      "<a href=\"/admin/settings?c=%s\">"
 		      "<div style=\"background-color:green;"
 		      // for try it out bubble:
 		      //"position:relative;"
@@ -716,7 +716,7 @@ bool printFrontPageShell ( SafeBuf *sb , const char *tabName , CollectionRec *cr
 	sb->safePrintf("<br><br>");
 
 	if ( printGigablast ) {
-		sb->safePrintf("<a href=/><img border=0 width=470 "
+		sb->safePrintf("<a href=\"/\"><img border=0 width=470 "
 			      "height=44 src=/gigablast.jpg></a>\n");
 	}
 
@@ -1521,12 +1521,12 @@ static void doneInjectingWrapper3 ( void *st ) {
 			uint32_t rand32 = rand();
 			// in the mime to 0 seconds!
 			sb.safePrintf("<b>Url successfully added. "
-				      "<a href=/search?rand=%" PRIu32"&"
+				      "<a href=\"/search?rand=%" PRIu32"&"
 				      "c=%s&q=url%%3A",
 				      rand32,
 				      coll);
 			urlEncode(&sb,url);
-			sb.safePrintf(">Check it</a>"// or "
+			sb.safePrintf("\">Check it</a>"// or "
 				      //"<a href=http://www.gigablast."
 				      //"com/seo?u=");
 				      //sb.urlEncode(url);
@@ -1534,12 +1534,6 @@ static void doneInjectingWrapper3 ( void *st ) {
 				      "."
 				      "</b>");
 		}
-			
-		//pm = msg;
-		//url = "http://";
-		//else
-		//	pm = "Don't forget to <a href=/gigaboost.html>"
-		//		"Gigaboost</a> your URL.";
 	}
 
 	// store it
@@ -1642,102 +1636,102 @@ bool sendPageHelp ( TcpSocket *sock , HttpRequest *hr ) {
 	"<th><font color=33dcff>Description</font></th>"
 	"</tr>"
 	"<tr> "
-	"<td><a href=%s/search?c=%s&q=cat+dog>cat dog</a></td>"
+	"<td><a href=\"%s/search?c=%s&q=cat dog\">cat dog</a></td>"
 	"            <td>Search results have the word <em>cat</em> and the word <em>dog</em> "
 	"              in them. They could also have <i>cats</i> and <i>dogs</i>.</td>"
 	"          </tr>"
 	""
 	""
 	"          <tr bgcolor=#E1FFFF> "
-	"            <td><a href=%s/search?c=%s&q=%%2Bcat>+cat</a></td>"
+	"            <td><a href=\"%s/search?c=%s&q=%%2Bcat\">+cat</a></td>"
 	"            <td>Search results have the word <em>cat</em> in them. If the search results has the word <i>cats</i> then it will not be included. The plus sign indicates an exact match and not to use synonyms, hypernyms or hyponyms or any other form of the word.</td>"
 	"          </tr>"
 	""
 	""
 	"          <tr> "
-	"            <td height=10><a href=%s/search?c=%s&q=mp3+%%22take+five%%22>mp3&nbsp;\"take&nbsp;five\"</a></td>"
+	"            <td height=10><a href=\"%s/search?c=%s&q=mp3 %%22take five%%22\">mp3&nbsp;\"take&nbsp;five\"</a></td>"
 	"            <td>Search results have the word <em>mp3</em> and the exact phrase <em>take "
 	"              five</em> in them.</td>"
 	"          </tr>"
 	"          <tr bgcolor=#E1FFFF> "
-	"            <td><a href=%s/search?c=%s&q=%%22john+smith%%22+-%%22bob+dole%%22>\"john&nbsp;smith\"&nbsp;-\"bob&nbsp;dole\"</a></td>"
+	"            <td><a href=\"%s/search?c=%s&q=%%22john smith%%22 -%%22bob dole%%22\">john&nbsp;smith\"&nbsp;-\"bob&nbsp;dole\"</a></td>"
 	"            <td>Search results have the phrase <em>john smith</em> but NOT the "
 	"              phrase <em>bob dole</em> in them.</td>"
 	"          </tr>"
 	"          <tr> "
-	"            <td><a href=%s/search?c=%s&q=bmx+-game>bmx&nbsp;-game</a></td>"
+	"            <td><a href=\"%s/search?c=%s&q=bmx -game\">bmx&nbsp;-game</a></td>"
 	"            <td>Search results have the word <em>bmx</em> but not <em>game</em>.</td>"
 	"          </tr>"
 	// "          <tr> "
-	// "            <td><a href=/search?q=inurl%%3Aedu+title%%3Auniversity><b>inurl:</b></a><a href=/search?q=inurl%%3Aedu+title%%3Auniversity>edu <b>title:</b>university</a></td>"
+	// "            <td><a href=\"/search?q=inurl%%3Aedu title%%3Auniversity\"><b>inurl:</b></a><a href=\"/search?q=inurl%%3Aedu title%%3Auniversity\">edu <b>title:</b>university</a></td>"
 	// "            <td>Search results have <em>university</em> in their title and <em>edu</em> "
 	// "              in their url.</td>"
 	// "          </tr>"
 	// "          <tr bgcolor=#E1FFFF> "
-	// "            <td><a href=/search?q=site%%3Awww.ibm.com+%%22big+blue%%22><b>site:</b></a><a href=/search?q=site%%3Awww.ibm.com+%%22big+blue%%22>www.ibm.com&nbsp;\"big&nbsp;blue\"</a></td>"
+	// "            <td><a href=\"/search?q=site%%3Awww.ibm.com %%22big blue%%22\"><b>site:</b></a><a href=\"/search?q=site%%3Awww.ibm.com %%22big blue%%22\">www.ibm.com&nbsp;\"big&nbsp;blue\"</a></td>"
 	// "            <td>Search results are from the site <em>www.ibm.com</em> and have the phrase "
 	// "              <em>big blue</em> in them.</td>"
 	// "          </tr>"
 	// "          <tr> "
-	// "            <td><a href=/search?q=url%%3Awww.yahoo.com><b>url:</b></a><a href=/search?q=url%%3Awww.yahoo.com&n=10>www.yahoo.com</a></td>"
+	// "            <td><a href=\"/search?q=url%%3Awww.yahoo.com\"><b>url:</b></a><a href=\"/search?q=url%%3Awww.yahoo.com&n=10\">www.yahoo.com</a></td>"
 	// "            <td>Search result is the single URL www.yahoo.com, if it is indexed.</td>"
 	// "          </tr>"
 
 	// "          <tr bgcolor=#E1FFFF> "
-	// "            <td><nobr><a href=/search?q=title%%3A%%22the+news%%22+-%%22weather+report%%22><b>title:</b>\"the "
+	// "            <td><nobr><a href=\"/search?q=title%%3A%%22the news%%22 -%%22weather report%%22\"><b>title:</b>\"the "
 	// "              news\" -\"weather report\"</a></nobr></td>"
 	// "            <td>Search results have the phrase <em>the news</em> in their title, "
 	// "              and do NOT have the phrase <em>weather report</em> anywhere in their "
 	// "              content.</td>"
 	// "          </tr>"
 	// "          <tr> "
-	// "            <td><a href=/search?q=ip%%3A216.32.120+cars><b>ip:</b></a><a href=/search?q=ip%%3A216.32.120>216.32.120</a></td>"
+	// "            <td><a href=\"/search?q=ip%%3A216.32.120 cars\"><b>ip:</b></a><a href=\"/search?q=ip%%3A216.32.120\">216.32.120</a></td>"
 	// "            <td>Search results are from the the ip 216.32.120.*.</td>"
 	// "          </tr>"
 	// ""
 	// "          <tr bgcolor=#E1FFFF> "
-	// "            <td><a href=/search?q=type%%3Apdf+nutrition><b>type:</b>pdf nutrition</a></td>"
+	// "            <td><a href=\"/search?q=type%%3Apdf nutrition\"><b>type:</b>pdf nutrition</a></td>"
 	// "            <td>Search results are PDF (Portable Document Format) documents that "
 	// "              contain the word <em>nutrition</em>.</td>"
 	// "          </tr>"
 	// "          <tr> "
-	// "            <td><a href=/search?q=type%%3Adoc><b>type:</b>doc</a></td>"
+	// "            <td><a href=\"/search?q=type%%3Adoc\"><b>type:</b>doc</a></td>"
 	// "            <td>Search results are Microsoft Word documents.</td>"
 	// "          </tr>"
 	// "          <tr bgcolor=#E1FFFF> "
-	// "            <td><a href=/search?q=type%%3Axls><b>type:</b>xls</a></td>"
+	// "            <td><a href=\"/search?q=type%%3Axls\"><b>type:</b>xls</a></td>"
 	// "            <td>Search results are Microsoft Excel documents.</td>"
 	// "          </tr>"
 	// "          <tr> "
-	// "            <td><a href=/search?q=type%%3Appt><b>type:</b>ppt</a></td>"
+	// "            <td><a href=\"/search?q=type%%3Appt\"><b>type:</b>ppt</a></td>"
 	// "            <td>Search results are Microsoft Power Point documents.</td>"
 	// "          </tr>"
 	// "          <tr bgcolor=#E1FFFF> "
-	// "            <td><a href=/search?q=type%%3Aps><b>type:</b>ps</a></td>"
+	// "            <td><a href=\"/search?q=type%%3Aps\"><b>type:</b>ps</a></td>"
 	// "            <td>Search results are Postscript documents.</td>"
 	// "          </tr>"
 	// "          <tr> "
-	// "            <td><a href=/search?q=type%%3Atext><b>type:</b>text</a></td>"
+	// "            <td><a href=\"/search?q=type%%3Atext\"><b>type:</b>text</a></td>"
 	// "            <td>Search results are plain text documents.</td>"
 	// "          </tr>"
 	// "          <tr bgcolor=#E1FFFF> "
-	// "            <td><a href=/search?q=filetype%%3Apdf><b>filetype:</b>pdf</a></td>"
+	// "            <td><a href=\"/search?q=filetype%%3Apdf\"><b>filetype:</b>pdf</a></td>"
 	// "            <td>Search results are PDF documents.</td>"
 	// "          </tr>"
 	// ""
 	// ""
 	// "          <tr bgcolor=#E1FFFF> "
-	// "            <td><a href=/search?q=link%%3Awww.yahoo.com><b>link:</b>www.yahoo.com</a></td>"
+	// "            <td><a href=\"/search?q=link%%3Awww.yahoo.com\"><b>link:</b>www.yahoo.com</a></td>"
 	// "            <td>All the pages that link to www.yahoo.com.</td>"
 	// "          </tr>"
 	// ""
 	// "          <tr bgcolor=#E1FFFF> "
-	// "            <td><a href=/search?q=sitelink%%3Awww.yahoo.com><b>sitelink:</b>www.yahoo.com</a></td>"
+	// "            <td><a href=\"/search?q=sitelink%%3Awww.yahoo.com\"><b>sitelink:</b>www.yahoo.com</a></td>"
 	// "            <td>All the pages that link to any page on www.yahoo.com.</td>"
 	// "          </tr>"
 	// ""
 	// "          <tr bgcolor=#E1FFFF> "
-	// "            <td><a href=/search?q=ext%%3Atxt><b>ext:</b>txt</a></td>"
+	// "            <td><a href=\"/search?q=ext%%3Atxt\"><b>ext:</b>txt</a></td>"
 	// "            <td>All the pages whose url ends in the .txt extension.</td>"
 	// "          </tr>"
 	// ""

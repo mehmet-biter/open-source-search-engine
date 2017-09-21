@@ -288,11 +288,11 @@ int32_t SpiderRequest::printToTable(SafeBuf *sb, const char *status, const XmlDo
 		const char *cs = "";
 		if ( cr ) cs = cr->m_coll;
 
-		sb->safePrintf(" <td><a href=/search?c=%s&q=url%%3A%s>%s</a>"
+		sb->safePrintf(" <td><a href=\"/search?c=%s&q=url%%3A%s\">%s</a>"
 			       "</td>\n",cs,m_url,cs);
 	}
 
-	sb->safePrintf(" <td><a href=%s><nobr>",m_url);
+	sb->safePrintf(" <td><a href=\"%s\"><nobr>",m_url);
 	sb->safeTruncateEllipsis ( m_url , 64 );
 	sb->safePrintf("</nobr></a></td>\n");
 	sb->safePrintf(" <td><nobr>%s</nobr></td>\n",status );
