@@ -223,6 +223,24 @@ static bool sendResult(State *st) {
 						      sb.length() );
 	}
 	
+	if(st->m_url_str[0]) {
+		int64_t uh48 = hash64b(st->m_url_str);
+		key128_t startKey = Spiderdb::makeFirstKey(st->m_firstip, uh48);
+		uint32_t shardNum = g_hostdb.getShardNum(RDB_SPIDERDB, &startKey);
+		sb.safePrintf("<p>Shard: %u</p>\n", shardNum);
+		int32_t numHosts;
+		const Host *host = g_hostdb.getShard(shardNum, &numHosts);
+		if(host) {
+			sb.safePrintf("<p>Host:");
+			while(numHosts--) {
+				if(host->m_spiderEnabled)
+					sb.safePrintf(" %u", host->m_hostId);
+				host++;
+			}
+			sb.safePrintf("</p>\n");
+		}
+	}
+	
 	//locate spider request and reply
 	const SpiderRequest *spiderRequest = NULL;
 	const SpiderReply *spiderReply = NULL;
@@ -246,7 +264,7 @@ static bool sendResult(State *st) {
 		char ipbuf[16];
 		char timebuf[32];
 		sb.safePrintf("<table %s>\n", TABLE_STYLE);
-		sb.safePrintf("  <tr><th colspan=50>Spider request</th><tr>\n");
+		sb.safePrintf("  <tr><th colspan=50>Spider request</th></tr>\n");
 		sb.safePrintf("  <tr bgcolor=#%s><th>Field</th><th>Value</th></tr>\n", DARK_BLUE);
 		sb.safePrintf("  <tr><td>m_firstIp</td><td>%s</td></tr>\n", iptoa(spiderRequest->m_firstIp,ipbuf));
 		sb.safePrintf("  <tr><td>m_addedTime</td><td>%s (%d)</td></tr>\n", formatTime(spiderRequest->m_addedTime,timebuf), spiderRequest->m_addedTime);
