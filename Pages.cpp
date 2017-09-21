@@ -2345,7 +2345,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 	int32_t adds = 0;
 
 
-	mb->safePrintf("<div style=max-width:500px;>");
+	mb->safePrintf("<div>");
 
 	int32_t page = g_pages.getDynamicPageNumber ( hr );
 
