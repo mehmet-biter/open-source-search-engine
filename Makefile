@@ -476,6 +476,9 @@ default_css.inc: default.css
 	echo ";" >>$@.tmp
 	mv $@.tmp $@
 
+Pages.o: default_css.inc
+
+
 # different optimization level
 $(OBJS_O1): CPPFLAGS += $(O1)
 $(OBJS_O2): CPPFLAGS += $(O2)
