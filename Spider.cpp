@@ -346,31 +346,31 @@ int32_t SpiderRequest::printToTable(SafeBuf *sb, const char *status, const XmlDo
 
 int32_t SpiderRequest::printTableHeader ( SafeBuf *sb , bool currentlySpidering) {
 
-	sb->safePrintf("<tr bgcolor=#%s>\n",DARK_BLUE);
+	sb->safePrintf("<tr class=\"level2\">\n");
 
 	// how long its been being spidered
 	if ( currentlySpidering ) {
-		sb->safePrintf(" <td><b>#</b></td>\n");
-		sb->safePrintf(" <td><b>elapsed</b></td>\n");
-		sb->safePrintf(" <td><b>coll</b></td>\n");
+		sb->safePrintf(" <th>#</th>\n");
+		sb->safePrintf(" <th>elapsed</th>\n");
+		sb->safePrintf(" <th>coll</th>\n");
 	}
 
-	sb->safePrintf(" <td><b>url</b></td>\n");
-	sb->safePrintf(" <td><b>status</b></td>\n");
+	sb->safePrintf(" <th>url</th>\n");
+	sb->safePrintf(" <th>status</th>\n");
 
-	sb->safePrintf(" <td><b>pri</b></td>\n");
-	sb->safePrintf(" <td><b>ufn</b></td>\n");
+	sb->safePrintf(" <th>pri</th>\n");
+	sb->safePrintf(" <th>ufn</th>\n");
 
-	sb->safePrintf(" <td><b>firstIp</b></td>\n");
-	sb->safePrintf(" <td><b>errCount</b></td>\n");
-	sb->safePrintf(" <td><b>sameErrCount</b></td>\n");
-	sb->safePrintf(" <td><b>urlHash48</b></td>\n");
-	sb->safePrintf(" <td><b>siteInlinks</b></td>\n");
-	sb->safePrintf(" <td><b>hops</b></td>\n");
-	sb->safePrintf(" <td><b>addedTime</b></td>\n");
-	sb->safePrintf(" <td><b>pageNumInLinks</b></td>\n");
-	sb->safePrintf(" <td><b>parentDocId</b></td>\n");
-	sb->safePrintf(" <td><b>flags</b></td>\n");
+	sb->safePrintf(" <th>firstIp</th>\n");
+	sb->safePrintf(" <th>errCount</th>\n");
+	sb->safePrintf(" <th>sameErrCount</th>\n");
+	sb->safePrintf(" <th>urlHash48</th>\n");
+	sb->safePrintf(" <th>siteInlinks</th>\n");
+	sb->safePrintf(" <th>hops</th>\n");
+	sb->safePrintf(" <th>addedTime</th>\n");
+	sb->safePrintf(" <th>pageNumInLinks</th>\n");
+	sb->safePrintf(" <th>parentDocId</th>\n");
+	sb->safePrintf(" <th>flags</th>\n");
 	sb->safePrintf("</tr>\n");
 
 	return sb->length();

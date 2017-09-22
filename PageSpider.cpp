@@ -240,11 +240,10 @@ static bool generatePageHTML(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 		               , mb.getBufStart() );
 
 	// begin the table
-	sb->safePrintf("<table %s>\n"
-		           "<tr><td colspan=50>"
-		           "<b>Currently Spidering on This Host</b>(%" PRId32" spiders)"
-		           "</td></tr>\n"
-		           , TABLE_STYLE
+	sb->safePrintf("<table class=\"main\" width=100%%>\n"
+		           "<tr class=\"level1\"><th colspan=50>"
+		           "Currently Spidering on This Host <span class=\"comment\">(%" PRId32" spiders)</span>"
+		           "</th></tr>\n"
 		           , g_spiderLoop.getNumSpidersOut()
 	);
 
@@ -310,13 +309,11 @@ static bool generatePageHTML(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 	int32_t ns = sc->getDoledbIpTableCount();
 
 	// begin the table
-	sb->safePrintf ( "<table %s>\n"
-	                "<tr><td colspan=50>"
-	                "<b>URLs Ready to Spider for collection "
-	                "<font color=red><b>%s</b>"
-	                "</font>"
-	                " (%" PRId32" ips in doleiptable)",
-	                TABLE_STYLE,
+	sb->safePrintf ( "<table class=\"main\" width=100%%>\n"
+	                "<tr class=\"level1\"><th colspan=50>"
+	                "URLs Ready to Spider for collection "
+	                "<font color=red>%s</font>"
+	                " <span class=\"comment\">(%" PRId32" ips in doleiptable)</span>",
 	                cr->m_coll ,
 	                ns );
 
@@ -327,7 +324,7 @@ static bool generatePageHTML(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 	struct tm tm_buf;
 	timeStruct = gmtime_r(&nowUTC,&tm_buf);
 	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
-	sb->safePrintf("</b></td></tr>\n");
+	sb->safePrintf("</th></tr>\n");
 
 	// the table headers so SpiderRequest::printToTable() works
 	if (!SpiderRequest::printTableHeader(sb, false)) return false;
@@ -347,30 +344,31 @@ static bool generatePageHTML(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 	// each row is an ip. print the next url to spider for that ip.
 	//
 	/////////////////
-	sb->safePrintf ( "<table %s>\n"
-	                "<tr><td colspan=50>"
-	                "<b>IPs Waiting for Selection Scan for collection "
-	                "<font color=red><b>%s</b>"
-	                "</font>",
-	                TABLE_STYLE,
+	sb->safePrintf ( "<table class=\"main\" width=100%%>\n"
+	                "<tr class=\"level1\"><th colspan=50>"
+	                "IPs Waiting for Selection Scan for collection "
+	                "<font color=red>%s</font>",
 	                cr->m_coll );
+	sb->safePrintf("<span class=\"comment\">");
 	// print time format: 7/23/1971 10:45:32
 	int64_t timems = gettimeofdayInMilliseconds();
-	sb->safePrintf(" </b>(current time = %" PRIu64") (totalcount=%" PRId32") (waittablecount=%" PRId32")",
+	sb->safePrintf(" (current time = %" PRIu64") (totalcount=%" PRId32") (waittablecount=%" PRId32")",
 	              timems, sc->m_waitingTree.getNumUsedNodes(), sc->getWaitingTableCount());
 
 	char ipbuf[16];
 	sb->safePrintf(" (spiderdb scanning ip %s)", iptoa(sc->getScanningIp(),ipbuf));
 
-	sb->safePrintf("</td></tr>\n");
-	sb->safePrintf("<tr bgcolor=#%s>", DARK_BLUE);
-	sb->safePrintf("  <td><b>spidertime (MS)</b></td>\n");
-	sb->safePrintf("  <td><b>spidertime</b></td>\n");
-	sb->safePrintf("  <td><b>firstip</b></td>\n");
+	sb->safePrintf("</span>");
+	sb->safePrintf("</th></tr>\n");
+	sb->safePrintf("<tr class=\"level2\">");
+	sb->safePrintf("  <th>spidertime (MS)</th>\n");
+	sb->safePrintf("  <th>spidertime</th>\n");
+	sb->safePrintf("  <th>firstip</th>\n");
 	sb->safePrintf("</tr>\n");
 	// the the waiting tree
 
 	int32_t count = 0;
+	int32_t zero_spidertime_count = 0;
 	bool truncated_output = false;
 	{
 		ScopedLock sl(sc->m_waitingTree.getLock());
@@ -393,26 +391,36 @@ static bool generatePageHTML(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 			char humanreadableSpiderTime[64];
 			sprintf(humanreadableSpiderTime,"%04d-%02d-%02dT%02d:%02d:%02d.%03dZ", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(spiderTimeMS%1000));
 			
-			sb->safePrintf("<tr bgcolor=#%s>"
+			sb->safePrintf("<tr>"
 			               "<td>%" PRId64"</td>"
 			               "<td>%s</td>"
 			               "<td><tt>%s</tt></td>"
 			               "</tr>\n",
-			               LIGHT_BLUE,
 			               (int64_t)spiderTimeMS,
 				       humanreadableSpiderTime,
 			               iptoa(firstIp,ipbuf));
-			// stop after 20
-			if (++count == 20) {
+			// stop after 40
+			if (++count == 40) {
 				truncated_output = true;
 				break;
 			}
 		}
+		for (int32_t node = sc->m_waitingTree.getFirstNode_unlocked(); node >= 0;
+		     node = sc->m_waitingTree.getNextNode_unlocked(node)) {
+			// get key
+			const key96_t *key = reinterpret_cast<const key96_t *>(sc->m_waitingTree.getKey_unlocked(node));
+			// get the timedocs
+			uint64_t spiderTimeMS = key->n1;
+			if(spiderTimeMS==0)
+				zero_spidertime_count++;
+		}
 	}
 	
 	if(truncated_output)
-		sb->safePrintf("<tr bgcolor=#%s><td colspan=3><center>&vellip;</center></td></tr>\n",
-		               LIGHT_BLUE);
+		sb->safePrintf("<tr><td colspan=3><center>&vellip;</center></td></tr>\n");
+	
+	sb->safePrintf("<tr><td class=\"bg0\" colspan=50>%d of %d nodes have spidertime==0</td></tr>\n",
+		       zero_spidertime_count, sc->m_waitingTree.getNumUsedNodes());
 	
 	// end the table
 	sb->safePrintf ( "</table>\n" );
@@ -420,14 +428,13 @@ static bool generatePageHTML(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 
 
 	//print spidercoll->m_nextKeys[]
-	sb->safePrintf ( "<table %s>\n"
-	                "<tr><td colspan=50>"
-	                "<b>SpiderColl->m_nextKeys[]</b>"
-	                "</td></tr>\n",
-	                TABLE_STYLE);
-	sb->safePrintf("<tr bgcolor=#%s>", DARK_BLUE);
-	sb->safePrintf("  <td><b>Priority</b></td>\n");
-	sb->safePrintf("  <td><b>Key</b></td>\n");
+	sb->safePrintf ( "<table class=\"main\" width=100%%>\n"
+	                "<tr class=\"level1\"><th colspan=50>"
+	                "SpiderColl->m_nextKeys[]"
+	                "</th></tr>\n");
+	sb->safePrintf("<tr class=\"level2\">");
+	sb->safePrintf("  <th>Priority</th>\n");
+	sb->safePrintf("  <th>Key</th>\n");
 	sb->safePrintf("</tr>\n");
 
 	for(int i=0; i<MAX_SPIDER_PRIORITIES; i++) {
