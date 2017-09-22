@@ -189,15 +189,13 @@ bool RdbCache::init ( int32_t  maxMem        ,
 	// . if we do more than 128MB per buf then pthread_create() will fail
 	int32_t bufMem = m_maxMem - m_memAllocated;
 	if( bufMem <= 0 ) {
-		log("rdbcache: cache for %s does not have enough mem. fix "
-		    "by increasing maxmem or number of recs, etc.",m_dbname);
+		log("rdbcache: cache for %s does not have enough mem. fix by increasing maxmem or number of recs, etc.",
+		    m_dbname);
 		return false;
 	}
 	if ( bufMem  && m_fixedDataSize > 0 &&
 	     bufMem / m_fixedDataSize < maxRecs / 2 ) {
-		log("cache: warning. "
-		    "cache for %s can have %i ptrs but buf mem "
-		    "can only hold %i objects"
+		log("cache: warning: cache for %s can have %i ptrs but buf mem can only hold %i objects"
 		    ,m_dbname
 		    ,(int)maxRecs
 		    ,(int)(bufMem/m_fixedDataSize));
@@ -472,9 +470,7 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 		// don't print for tagdb, however, spider prints it
 		// too much and i don't care about it
 		if ( m_dbname[0]!='s' || m_dbname[1]!='i' )
-			log(LOG_DEBUG,"db: Found rec in cache for %s, "
-			    "but elapsed time of %" PRId32" is greater "
-			    "than %" PRId32".",
+			log(LOG_DEBUG,"db: Found rec in cache for %s, but elapsed time of %" PRId32" is greater than %" PRId32".",
 			    m_dbname, 
 			    (int32_t)(getTimeLocal() - timestamp) , 
 			    maxAge );
@@ -867,8 +863,7 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	// . if we are already in there, preserve the 
 	addKey ( collnum , cacheKey , start ); // , crc ); // debug test
 	// debug msg time
-	log(LOG_TIMING,"db: cache: %s addRecord %" PRId32" bytes took %" PRId64" "
-	    "ms this=0x%" PTRFMT" key.n1=%" PRIu32" n0=%" PRIu64,
+	log(LOG_TIMING,"db: cache: %s addRecord %" PRId32" bytes took %" PRId64" ms this=0x%" PTRFMT" key.n1=%" PRIu32" n0=%" PRIu64,
 	    m_dbname, (int32_t)(p - start) ,
 	    gettimeofdayInMilliseconds()-t,
 	    (PTRTYPE)this,
@@ -1036,8 +1031,7 @@ void RdbCache::removeKey ( collnum_t collnum, const char *key, const char *rec )
 	//   the gets placed at the end of the last m_buf, changing m_bufEnds
 	//   then m_tail may revisit many recs it already removed from hashtbl
 	if ( ! m_ptrs[n] ) {
-		log(LOG_LOGIC,"db: cache: removeKey: Could not find key. "
-		    "Trying to scan whole table.");
+		log(LOG_LOGIC,"db: cache: removeKey: Could not find key. Trying to scan whole table.");
 		// try scanning whole table
 		int32_t i;
 		for ( i = 0 ; i < m_numPtrsMax ; i++ ) {
@@ -1047,14 +1041,12 @@ void RdbCache::removeKey ( collnum_t collnum, const char *key, const char *rec )
 			if (KEYCMP(m_ptrs[i]+sizeof(collnum_t),key,m_cks) != 0)
 				continue;
 			// got a match
-			log(LOG_LOGIC,"db: cache: removeKey. Found key in "
-			    "linear scan. Wierd.");
+			log(LOG_LOGIC,"db: cache: removeKey. Found key in linear scan. Wierd.");
 			n = i;
 			break;
 		}
 		if ( i >= m_numPtrsMax ) {
-			log(LOG_LOGIC,"db: cache: removeKey: BAD ENGINEER. "
-			    "dbname=%s",m_dbname );
+			log(LOG_LOGIC,"db: cache: removeKey: BAD ENGINEER. dbname=%s", m_dbname);
 			gbshutdownLogicError();
 		}
 	}
@@ -1383,8 +1375,7 @@ bool RdbCache::load ( const char *dbname ) {
 	//   the site quality cache
 	if ( numPtrsMax != m_numPtrsMax ||
 	     maxMem     != m_maxMem      ) {
-		log("db: Error while loading cache file %s. Does not match "
-		    "current cache config. "
+		log("db: Error while loading cache file %s. Does not match current cache config. "
 		    "current numPtrsMax=%" PRId32" maxMem=%" PRId32", "
 		    "ondisk  numPtrsMax=%" PRId32" maxMem=%" PRId32". "
 		    "Attempting to convert.",
