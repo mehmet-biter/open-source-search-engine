@@ -61,7 +61,7 @@ static std::vector<Request> queued_requests;
 static GbMutex mtx_queued_requests;
 static pthread_t tid;
 static bool please_stop = false;
-static int wakeup_fd[2];
+static int wakeup_fd[2] = {-1,-1};
 static time_t next_connect_attempt = 0;
 static std::atomic<bool> communication_works(false);
 static std::atomic<unsigned> outstanding_request_count(0);
