@@ -3379,7 +3379,6 @@ static int32_t dumpSpiderdbCsv(const char *coll) {
 					printf("%d,",prevSpiderReply->m_langId);
 					printf("%d,",prevSpiderReply->m_isRSS);
 					printf("%d,",prevSpiderReply->m_isPermalink);
-					printf("%d,",prevSpiderReply->m_isPingServer);
 					printf("%d,",prevSpiderReply->m_isIndexed);
 					printf("%d,",prevSpiderReply->m_hasAuthorityInlink);
 					printf("%d,",prevSpiderReply->m_isIndexedINValid);
@@ -3389,7 +3388,7 @@ static int32_t dumpSpiderdbCsv(const char *coll) {
 					printf("%d,",prevSpiderReply->m_wasIndexed);
 					printf("%d,",prevSpiderReply->m_wasIndexedValid);
 				} else {
-					printf(",,,,,,,,,,,,,,,,,");
+					printf(",,,,,,,,,,,,,,,,");
 				}
 				printf("\n");
 			}
