@@ -39,6 +39,15 @@
 
 static int32_t doleDbRecSizes = 150000; //how much toe read from DoleDB in a chunk.
 
+
+class UrlLock {
+public:
+	int32_t m_firstIp;
+	char m_spiderOutstanding;
+	collnum_t m_collnum;
+};
+
+
 /////////////////////////
 /////////////////////////      SPIDERLOOP
 /////////////////////////
