@@ -135,7 +135,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query);
 static bool summaryTest1(char *rec, int32_t listSize, const char *coll, int64_t docId, const char *query );
 
 static bool cacheTest();
-static void countdomains(const char* coll, int32_t numRecs, int32_t verb, int32_t output);
+static void countdomains(const char* coll, int32_t numRecs, int32_t output);
 
 static bool argToBoolean(const char *arg);
 
@@ -609,8 +609,8 @@ int main2 ( int argc , char *argv[] ) {
 		g_conf.m_logToFile = true;
 	}
 
-	if( (strcmp( cmd, "countdomains" ) == 0) &&  (argc >= (cmdarg + 2)) ) {
-		uint32_t tmp = atoi( argv[cmdarg+2] );
+	if( (strcmp( cmd, "countdomains" ) == 0) &&  (argc >= (cmdarg + 3)) ) {
+		uint32_t tmp = atoi( argv[cmdarg+1] );
 		if( (tmp * 10) > g_mem.getMemTableSize() )
 			g_mem.setMemTableSize(tmp * 10);
 	}
@@ -1435,23 +1435,21 @@ int main2 ( int argc , char *argv[] ) {
 
 	if( strcmp( cmd, "countdomains" ) == 0 && argc >= (cmdarg + 2) ) {
 		const char *coll = "";
-		int32_t verb;
 		int32_t outpt;
 		coll = argv[cmdarg+1];
 
-		if( argv[cmdarg+2][0] < 0x30 || argv[cmdarg+2][0] > 0x39 ) {
-			goto printHelp;
-		}
+		int32_t numRecs;
+		if(argc>cmdarg+2) {
+			if(!isdigit(argv[cmdarg+2][0]))
+				goto printHelp;
+			numRecs = atoi( argv[cmdarg+2] );
+		} else
+			numRecs = 1000000;
 
-		int32_t numRecs = atoi( argv[cmdarg+2] );
-
-		if( argc > (cmdarg + 2) ) verb = atoi( argv[cmdarg+2] );
-		else verb = 0;
-
-		if( argc > (cmdarg + 3) ) outpt = atoi( argv[cmdarg+3] );
+		if( argc > (cmdarg + 2) ) outpt = atoi( argv[cmdarg+2] );
 		else outpt = 0;
 
-		log( LOG_INFO, "cntDm: Allocated Larger Mem Table for: %" PRId32,
+		log( LOG_INFO, "countdomains: Allocated Larger Mem Table for: %" PRId32,
 		     g_mem.getMemTableSize() );
 		if (!ucInit(g_hostdb.m_dir)) {
 			log("Unicode initialization failed!");
@@ -1461,7 +1459,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( ! g_collectiondb.loadAllCollRecs()   ) {
 			log("db: Collectiondb init failed." ); return 1; }
 
-		countdomains( coll, numRecs, verb, outpt );
+		countdomains( coll, numRecs, outpt );
 		g_log.m_disabled = true;
 		return 0;
 	}
@@ -4871,7 +4869,7 @@ static int ip_dcmp  (const void *p1, const void *p2);
 static int dom_fcmp (const void *p1, const void *p2);
 static int dom_lcmp (const void *p1, const void *p2);
 
-static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, int32_t output) {
+static void countdomains(const char* coll, int32_t numRecs, int32_t output) {
 	struct ip_info **ip_table;
 	struct dom_info **dom_table;
 
@@ -4887,7 +4885,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 	g_titledb.init ();
 	g_titledb.getRdb()->addRdbBase1(coll );
 
-	log( LOG_INFO, "cntDm: parms: %s, %" PRId32, coll, numRecs );
+	log( LOG_INFO, "countdomains: parms: coll=%s, numrec s=%d", coll, numRecs );
 	int64_t time_start = gettimeofdayInMilliseconds();
 
 	Msg5 msg5;
@@ -4906,533 +4904,533 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t verbosity, i
 		ip_table[i] = NULL;
 		dom_table[i] = NULL;
 	}
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_TITLEDB   ,
-			      cr->m_collnum       ,
-			      &list         ,
-			      &startKey      ,
-			      &endKey        ,
-			      commandLineDumpdbRecSize,
-			      true         , // Do we need to include tree?
-			      0             ,
-			      -1            ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         , // err correction?
-			      -1            , // maxRetries
-			      false))          // isRealMerge
-	{
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) goto freeInfo;
-	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
-		key96_t k       = list.getCurrentKey();
-		char *rec     = list.getCurrentRec();
-		int32_t  recSize = list.getCurrentRecSize();
-		int64_t docId       = Titledb::getDocId        ( &k );
-		attempts++;
 
-		if ( k <= lastKey ) 
-			log("key out of order. "
-			    "lastKey.n1=%" PRIx32" n0=%" PRIx64" "
-			    "currKey.n1=%" PRIx32" n0=%" PRIx64" ",
-			    lastKey.n1,lastKey.n0,
-			    k.n1,k.n0);
-		lastKey = k;
-		// print deletes
-		if ( (k.n0 & 0x01) == 0) {
-			fprintf(stderr,"n1=%08" PRIx32" n0=%016" PRIx64" docId=%012" PRId64" "
-				"(del)\n",
-			       k.n1 , k.n0 , docId );
-			continue;
-		}
-
-		if( (countIp >= numRecs) || (countDom >= numRecs) ) {
-			log( LOG_INFO, "cntDm: countIp | countDom, greater than"
-			     "numRecs requested, should never happen!!!!" );
-			goto freeInfo;
-		}
-
-		XmlDoc xd;
-		if ( ! xd.set2 (rec, recSize, coll,NULL,0) )
-			continue;
-
-		struct ip_info  *sipi ;
-		struct dom_info *sdomi;
-
-		int32_t i;
-		for( i = 0; i < countIp; i++ ) {
-			if( !ip_table[i] ) continue;
-			sipi = (struct ip_info *)ip_table[i];
-			if( sipi->ip == (uint32_t)xd.m_ip ) break;
-		}
-
-		if( i == countIp ) {
-			sipi = (struct ip_info *)mmalloc(sizeof(struct ip_info),
-							 "main-dcip" );
-			if( !sipi ) { g_process.shutdownAbort(true); }
-			ip_table[countIp++]  = sipi;
-			sipi->ip = xd.m_ip;//u->getIp();
-			sipi->pages = 1;
-			sipi->numDom = 0;
-		} else {
-			sipi->pages++; 
-		}
-		
-		char *fu = xd.ptr_firstUrl;
-		int32_t dlen;
-		const char *dom = getDomFast ( fu , &dlen );
-		int32_t dkey = hash32( dom , dlen );
-
-		for( i = 0; i < countDom; i++ ) {
-			if( !dom_table[i] ) continue;
-			sdomi = (struct dom_info *)dom_table[i];
-			if( sdomi->dHash == dkey ) break;
-		}
-
-		if( i == countDom ) {
-			sdomi =(struct dom_info*)mmalloc(sizeof(struct dom_info),
-							 "main-dcdm" );
-			if( !sdomi ) { g_process.shutdownAbort(true); }
-			dom_table[countDom++] = sdomi;
-			sdomi->dom = (char *)mmalloc( dlen,"main-dcsdm" );
-
-			strncpy( sdomi->dom, dom , dlen );
-			sdomi->domLen = dlen;
-			sdomi->dHash = dkey;
-			sdomi->pages = 1;
-			sdomi->numIp = 0;
-
-			sdomi->tableSize = 0;
-			sdomi->lnkCnt = 0;
-		}
-		else { 
-			sdomi->pages++; 
-		}
-
-		Links *dlinks = xd.getLinks();
-
-		int32_t size = dlinks->getNumLinks();
-		if( !sdomi->tableSize ) {
-			sdomi->lnk_table = (int32_t *)mmalloc(size * sizeof(int32_t),
-							   "main-dclt" );
-			sdomi->tableSize = size;
-		}
-		else {
-			if( size > (sdomi->tableSize - sdomi->lnkCnt) ) {
-				size += sdomi->lnkCnt;
-				sdomi->lnk_table = (int32_t *)
-					mrealloc(sdomi->lnk_table,
-						 sdomi->tableSize*sizeof(int32_t),
-						 size*sizeof(int32_t),
-						 "main-dcrlt" );
-				sdomi->tableSize = size;
-			}
-		}
-			
-		for( int32_t i = 0; i < dlinks->getNumLinks(); i++ ) {
-			char *link = dlinks->getLinkPtr(i);
-			int32_t dlen;
-			const char *dom = getDomFast ( link , &dlen );
-			uint32_t lkey = hash32( dom , dlen );
-			int32_t j;
-			for( j = 0; j < sdomi->lnkCnt; j++ ) {
-				if( sdomi->lnk_table[j] == (int32_t)lkey ) break;
-			}
-			
-			sdomi->lnkPages++;
-			if( j != sdomi->lnkCnt ) continue;
-			sdomi->lnk_table[sdomi->lnkCnt++] = lkey;
-			sdomi->lnkPages++;
-		}
-
-		// Handle lists
-		if( !sipi->numDom || !sdomi->numIp ){
-			sdomi->numIp++; sipi->numDom++;
-			//Add to IP list for Domain
-			sdomi->ip_list = (struct ip_info **)
-				mrealloc( sdomi->ip_list,
-					  (sdomi->numIp-1)*sizeof(char *),
-					  sdomi->numIp*sizeof(char *),
-					  "main-dcldm" );
-			sdomi->ip_list[sdomi->numIp-1] = sipi;
-
-			//Add to domain list for IP
-			sipi->dom_list = (struct dom_info **)
-				mrealloc( sipi->dom_list,
-					  (sipi->numDom-1)*sizeof(char *),
-					  sipi->numDom*sizeof(char *),
-					  "main-dclip" );
-			sipi->dom_list[sipi->numDom-1] = sdomi;
-		}
-		else {
-			int32_t i;
-			for( i = 0; 
-			     (i < sdomi->numIp) 
-				     && (sdomi->ip_list[i] != sipi);
-			     i++ );
-			if( sdomi->numIp != i ) goto updateIp;
-
-			sdomi->numIp++;
-			sdomi->ip_list = (struct ip_info **)
-				mrealloc( sdomi->ip_list,
-					  (sdomi->numIp-1)*sizeof(int32_t),
-					  sdomi->numIp*sizeof(int32_t),
-					  "main-dcldm" );
-			sdomi->ip_list[sdomi->numIp-1] = sipi;
-
-		updateIp:
-			for( i = 0; 
-			     (i < sipi->numDom) 
-				     && (sipi->dom_list[i] != sdomi);
-			     i++ );
-			if( sipi->numDom != i ) goto endListUpdate;
-
-			sipi->numDom++;
-			sipi->dom_list = (struct dom_info **)
-				mrealloc( sipi->dom_list,
-					  (sipi->numDom-1)*sizeof(int32_t),
-					  sipi->numDom*sizeof(int32_t),
-					  "main-dclip" );
-			sipi->dom_list[sipi->numDom-1] = sdomi;
-
-		endListUpdate:
-			i=0;
-		}				
-		if( !((++countDocs) % 1000) ) 
-			log(LOG_INFO, "cntDm: %" PRId32" records searched.",countDocs);
-		if( countDocs == numRecs ) goto freeInfo;
-		//else countDocs++;
-	}
-	startKey = *(key96_t *)list.getLastKey();
-	startKey++;
-	// watch out for wrap around
-	if ( startKey < *(key96_t *)list.getLastKey() ) {
-		log( LOG_INFO, "cntDm: Keys wrapped around! Exiting." );
-		goto freeInfo;
-	}
-		
-	if ( countDocs >= numRecs ) {
-	freeInfo:
-		char             buf[128];
-		//int32_t             value   ;
-		int32_t             len     ;
-		char             loop    ;
-		int32_t             recsDisp;
-		struct ip_info  *tmpipi  ;
-		struct dom_info *tmpdomi ;
-		loop = 0;
-
-		FILE *fhndl;		
-		char out[128];
-		if( output != 9 ) goto printHtml;
-		// Dump raw data to a file to parse later
-		snprintf( out, sizeof(out), "%scntdom.xml", g_hostdb.m_dir );
-		out[ sizeof(out)-1 ] = '\0';
-		if( !(fhndl = fopen( out, "wb" )) ) {
-			log( LOG_INFO, "cntDm: File Open Failed." );
+	for(;;) {
+		// use msg5 to get the list, should ALWAYS block since no threads
+		if ( ! msg5.getList ( RDB_TITLEDB   ,
+				cr->m_collnum       ,
+				&list         ,
+				&startKey      ,
+				&endKey        ,
+				commandLineDumpdbRecSize,
+				true         , // Do we need to include tree?
+				0             ,
+				-1            ,
+				NULL          , // state
+				NULL          , // callback
+				0             , // niceness
+				false         , // err correction?
+				-1            , // maxRetries
+				false))          // isRealMerge
+		{
+			log(LOG_LOGIC,"db: getList did not block.");
 			return;
 		}
+		// all done if empty
+		if ( list.isEmpty() ) goto freeInfo;
+		// loop over entries in list
+		for ( list.resetListPtr(); ! list.isExhausted(); list.skipCurrentRecord() ) {
+			key96_t k       = list.getCurrentKey();
+			char *rec     = list.getCurrentRec();
+			int32_t  recSize = list.getCurrentRecSize();
+			int64_t docId       = Titledb::getDocId        ( &k );
+			attempts++;
 
-		gbsort( dom_table, countDom, sizeof(struct dom_info *), dom_fcmp );		
-		for( int32_t i = 0; i < countDom; i++ ) {
-			if( !dom_table[i] ) continue;
-			tmpdomi = (struct dom_info *)dom_table[i];
-			len = tmpdomi->domLen;
-			if( tmpdomi->domLen > 127 ) len = 126;
-			strncpy( buf, tmpdomi->dom, len );
-			buf[len] = '\0';
-			fprintf(fhndl,
-				"<rec1>\n\t<domain>%s</domain>\n"
-				"\t<pages>%" PRId32"</pages>\n"
-				//"\t<quality>%" PRId64"</quality>\n"
-				"\t<block>\n",
-				buf, tmpdomi->pages
-				//,(tmpdomi->quality/tmpdomi->pages)
-				);
-			gbsort( tmpdomi->ip_list,tmpdomi->numIp, sizeof(int32_t), 
-			       ip_fcmp );
-			for( int32_t j = 0; j < tmpdomi->numIp; j++ ) {
-				if( !tmpdomi->ip_list[j] ) continue;
-				tmpipi = (struct ip_info *)tmpdomi->ip_list[j];
-				iptoa( tmpipi->ip,buf);
-				fprintf(fhndl,"\t\t<ip>%s</ip>\n",buf);
+			if ( k <= lastKey ) 
+				log("key out of order. "
+				"lastKey.n1=%" PRIx32" n0=%" PRIx64" "
+				"currKey.n1=%" PRIx32" n0=%" PRIx64" ",
+				lastKey.n1,lastKey.n0,
+				k.n1,k.n0);
+			lastKey = k;
+			// print deletes
+			if ( (k.n0 & 0x01) == 0) {
+				fprintf(stderr,"n1=%08" PRIx32" n0=%016" PRIx64" docId=%012" PRId64" "
+					"(del)\n",
+				k.n1 , k.n0 , docId );
+				continue;
 			}
-			fprintf(fhndl,
-				"\t</block>\n"
-				"\t<links>\n");
+
+			if( (countIp >= numRecs) || (countDom >= numRecs) ) {
+				log( LOG_INFO, "countdomains: countIp | countDom, greater than"
+				"numRecs requested, should never happen!!!!" );
+				goto freeInfo;
+			}
+
+			XmlDoc xd;
+			if ( ! xd.set2 (rec, recSize, coll,NULL,0) )
+				continue;
+
+			struct ip_info  *sipi ;
+			struct dom_info *sdomi;
+
+			int32_t i;
+			for( i = 0; i < countIp; i++ ) {
+				if( !ip_table[i] ) continue;
+				sipi = (struct ip_info *)ip_table[i];
+				if( sipi->ip == (uint32_t)xd.m_ip ) break;
+			}
+
+			if( i == countIp ) {
+				sipi = (struct ip_info *)mmalloc(sizeof(struct ip_info),
+								"main-dcip" );
+				if( !sipi ) { g_process.shutdownAbort(true); }
+				ip_table[countIp++]  = sipi;
+				sipi->ip = xd.m_ip;//u->getIp();
+				sipi->pages = 1;
+				sipi->numDom = 0;
+			} else {
+				sipi->pages++; 
+			}
+			
+			char *fu = xd.ptr_firstUrl;
+			int32_t dlen;
+			const char *dom = getDomFast ( fu , &dlen );
+			int32_t dkey = hash32( dom , dlen );
+
+			for( i = 0; i < countDom; i++ ) {
+				if( !dom_table[i] ) continue;
+				sdomi = (struct dom_info *)dom_table[i];
+				if( sdomi->dHash == dkey ) break;
+			}
+
+			if( i == countDom ) {
+				sdomi =(struct dom_info*)mmalloc(sizeof(struct dom_info),
+								"main-dcdm" );
+				if( !sdomi ) { g_process.shutdownAbort(true); }
+				dom_table[countDom++] = sdomi;
+				sdomi->dom = (char *)mmalloc( dlen,"main-dcsdm" );
+
+				strncpy( sdomi->dom, dom , dlen );
+				sdomi->domLen = dlen;
+				sdomi->dHash = dkey;
+				sdomi->pages = 1;
+				sdomi->numIp = 0;
+
+				sdomi->tableSize = 0;
+				sdomi->lnkCnt = 0;
+			}
+			else { 
+				sdomi->pages++; 
+			}
+
+			Links *dlinks = xd.getLinks();
+
+			int32_t size = dlinks->getNumLinks();
+			if( !sdomi->tableSize ) {
+				sdomi->lnk_table = (int32_t *)mmalloc(size * sizeof(int32_t),
+								"main-dclt" );
+				sdomi->tableSize = size;
+			}
+			else {
+				if( size > (sdomi->tableSize - sdomi->lnkCnt) ) {
+					size += sdomi->lnkCnt;
+					sdomi->lnk_table = (int32_t *)
+						mrealloc(sdomi->lnk_table,
+							sdomi->tableSize*sizeof(int32_t),
+							size*sizeof(int32_t),
+							"main-dcrlt" );
+					sdomi->tableSize = size;
+				}
+			}
+				
+			for( int32_t i = 0; i < dlinks->getNumLinks(); i++ ) {
+				char *link = dlinks->getLinkPtr(i);
+				int32_t dlen;
+				const char *dom = getDomFast ( link , &dlen );
+				uint32_t lkey = hash32( dom , dlen );
+				int32_t j;
+				for( j = 0; j < sdomi->lnkCnt; j++ ) {
+					if( sdomi->lnk_table[j] == (int32_t)lkey ) break;
+				}
+				
+				sdomi->lnkPages++;
+				if( j != sdomi->lnkCnt ) continue;
+				sdomi->lnk_table[sdomi->lnkCnt++] = lkey;
+				sdomi->lnkPages++;
+			}
+
+			// Handle lists
+			if( !sipi->numDom || !sdomi->numIp ){
+				sdomi->numIp++; sipi->numDom++;
+				//Add to IP list for Domain
+				sdomi->ip_list = (struct ip_info **)
+					mrealloc( sdomi->ip_list,
+						(sdomi->numIp-1)*sizeof(char *),
+						sdomi->numIp*sizeof(char *),
+						"main-dcldm" );
+				sdomi->ip_list[sdomi->numIp-1] = sipi;
+
+				//Add to domain list for IP
+				sipi->dom_list = (struct dom_info **)
+					mrealloc( sipi->dom_list,
+						(sipi->numDom-1)*sizeof(char *),
+						sipi->numDom*sizeof(char *),
+						"main-dclip" );
+				sipi->dom_list[sipi->numDom-1] = sdomi;
+			}
+			else {
+				int32_t i;
+				for( i = 0; 
+				(i < sdomi->numIp) 
+					&& (sdomi->ip_list[i] != sipi);
+				i++ );
+				if( sdomi->numIp != i ) goto updateIp;
+
+				sdomi->numIp++;
+				sdomi->ip_list = (struct ip_info **)
+					mrealloc( sdomi->ip_list,
+						(sdomi->numIp-1)*sizeof(int32_t),
+						sdomi->numIp*sizeof(int32_t),
+						"main-dcldm" );
+				sdomi->ip_list[sdomi->numIp-1] = sipi;
+
+			updateIp:
+				for( i = 0; 
+				(i < sipi->numDom) 
+					&& (sipi->dom_list[i] != sdomi);
+				i++ );
+				if( sipi->numDom != i ) goto endListUpdate;
+
+				sipi->numDom++;
+				sipi->dom_list = (struct dom_info **)
+					mrealloc( sipi->dom_list,
+						(sipi->numDom-1)*sizeof(int32_t),
+						sipi->numDom*sizeof(int32_t),
+						"main-dclip" );
+				sipi->dom_list[sipi->numDom-1] = sdomi;
+
+			endListUpdate:
+				i=0;
+			}				
+			if( !((++countDocs) % 1000) ) 
+				log(LOG_INFO, "countdomains: %" PRId32" records searched.",countDocs);
+			if( countDocs == numRecs ) goto freeInfo;
+			//else countDocs++;
 		}
-		gbsort( ip_table, countIp, sizeof(struct ip_info *), ip_fcmp );		
-		for( int32_t i = 0; i < countIp; i++ ) {
-			if( !ip_table[i] ) continue;
-			tmpipi = (struct ip_info *)ip_table[i];
-			iptoa( tmpipi->ip,buf);
-			fprintf(fhndl,
-				"<rec2>\n\t<ip>%s</ip>\n"
-				"\t<pages>%" PRId32"</pages>\n"
-				"\t<block>\n",
-				buf, tmpipi->pages);
-			for( int32_t j = 0; j < tmpipi->numDom; j++ ) {
-				tmpdomi = (struct dom_info *)tmpipi->dom_list[j];
+		startKey = *(key96_t *)list.getLastKey();
+		startKey++;
+		// watch out for wrap around
+		if ( startKey < *(key96_t *)list.getLastKey() ) {
+			log( LOG_INFO, "countdomains: Keys wrapped around! Exiting." );
+			goto freeInfo;
+		}
+			
+		if ( countDocs >= numRecs ) {
+		freeInfo:
+			char             buf[128];
+			//int32_t             value   ;
+			int32_t             len     ;
+			char             loop    ;
+			int32_t             recsDisp;
+			struct ip_info  *tmpipi  ;
+			struct dom_info *tmpdomi ;
+			loop = 0;
+
+			FILE *fhndl;		
+			char out[128];
+			if( output != 9 ) goto printHtml;
+			// Dump raw data to a file to parse later
+			snprintf( out, sizeof(out), "%scntdom.xml", g_hostdb.m_dir );
+			out[ sizeof(out)-1 ] = '\0';
+			if( !(fhndl = fopen( out, "wb" )) ) {
+				log( LOG_INFO, "countdomains: File Open Failed." );
+				return;
+			}
+
+			gbsort( dom_table, countDom, sizeof(struct dom_info *), dom_fcmp );		
+			for( int32_t i = 0; i < countDom; i++ ) {
+				if( !dom_table[i] ) continue;
+				tmpdomi = (struct dom_info *)dom_table[i];
 				len = tmpdomi->domLen;
 				if( tmpdomi->domLen > 127 ) len = 126;
 				strncpy( buf, tmpdomi->dom, len );
 				buf[len] = '\0';
 				fprintf(fhndl,
-					"\t\t<domain>%s</domain>\n",
-					buf);
+					"<rec1>\n\t<domain>%s</domain>\n"
+					"\t<pages>%" PRId32"</pages>\n"
+					//"\t<quality>%" PRId64"</quality>\n"
+					"\t<block>\n",
+					buf, tmpdomi->pages
+					//,(tmpdomi->quality/tmpdomi->pages)
+					);
+				gbsort( tmpdomi->ip_list,tmpdomi->numIp, sizeof(int32_t), 
+				ip_fcmp );
+				for( int32_t j = 0; j < tmpdomi->numIp; j++ ) {
+					if( !tmpdomi->ip_list[j] ) continue;
+					tmpipi = (struct ip_info *)tmpdomi->ip_list[j];
+					iptoa( tmpipi->ip,buf);
+					fprintf(fhndl,"\t\t<ip>%s</ip>\n",buf);
+				}
+				fprintf(fhndl,
+					"\t</block>\n"
+					"\t<links>\n");
 			}
-			fprintf(fhndl,
-				"\t</block>\n"
-				"</rec2>\n");
-		}
+			gbsort( ip_table, countIp, sizeof(struct ip_info *), ip_fcmp );		
+			for( int32_t i = 0; i < countIp; i++ ) {
+				if( !ip_table[i] ) continue;
+				tmpipi = (struct ip_info *)ip_table[i];
+				iptoa( tmpipi->ip,buf);
+				fprintf(fhndl,
+					"<rec2>\n\t<ip>%s</ip>\n"
+					"\t<pages>%" PRId32"</pages>\n"
+					"\t<block>\n",
+					buf, tmpipi->pages);
+				for( int32_t j = 0; j < tmpipi->numDom; j++ ) {
+					tmpdomi = (struct dom_info *)tmpipi->dom_list[j];
+					len = tmpdomi->domLen;
+					if( tmpdomi->domLen > 127 ) len = 126;
+					strncpy( buf, tmpdomi->dom, len );
+					buf[len] = '\0';
+					fprintf(fhndl,
+						"\t\t<domain>%s</domain>\n",
+						buf);
+				}
+				fprintf(fhndl,
+					"\t</block>\n"
+					"</rec2>\n");
+			}
 
-		if( fclose( fhndl ) < 0 ) {
-			log( LOG_INFO, "cntDm: File Close Failed." );
-			return;
-		}
-		fhndl = 0;
+			if( fclose( fhndl ) < 0 ) {
+				log( LOG_INFO, "countdomains: File Close Failed." );
+				return;
+			}
+			fhndl = 0;
 
-	printHtml:
-		// HTML file Output
-		snprintf( out, sizeof(out), "%scntdom.html", g_hostdb.m_dir );
-		out[ sizeof(out)-1 ] = '\0';
-		if( !(fhndl = fopen( out, "wb" )) ) {
-			log( LOG_INFO, "cntDm: File Open Failed." );
-			return;
-		}		
-		int64_t total = g_titledb.estimateGlobalNumDocs();
-		static const char link_ip[]  = "http://www.gigablast.com/search?"
-			          "code=gbmonitor&q=ip%3A";
-		static const char link_dom[] = "http://www.gigablast.com/search?"
-			          "code=gbmonitor&q=site%3A";
-		static const char menu[] = "<table cellpadding=\"2\" cellspacing=\"2\">\n<tr>"
-			"<th bgcolor=\"#CCCC66\"><a href=\"#pid\">"
-			"Domains Sorted By Pages</a></th>"
-			"<th bgcolor=\"#CCCC66\"><a href=\"#lid\">"
-			"Domains Sorted By Links</a></th>"
-			"<th bgcolor=\"#CCCC66\"><a href=\"#pii\">"
-			"IPs Sorted By Pages</a></th>"
-			"<th bgcolor=\"#CCCC66\"><a href=\"#dii\">"
-			"IPs Sorted By Domains</a></th>"
-			"<th bgcolor=\"#CCCC66\"><a href=\"#stats\">"
-			"Stats</a></th>"
-			"</tr>\n</table>\n<br>\n";
+		printHtml:
+			// HTML file Output
+			snprintf( out, sizeof(out), "%scntdom.html", g_hostdb.m_dir );
+			out[ sizeof(out)-1 ] = '\0';
+			if( !(fhndl = fopen( out, "wb" )) ) {
+				log( LOG_INFO, "countdomains: File Open Failed." );
+				return;
+			}		
+			int64_t total = g_titledb.estimateGlobalNumDocs();
+			static const char link_ip[]  = "http://www.gigablast.com/search?"
+					"code=gbmonitor&q=ip%3A";
+			static const char link_dom[] = "http://www.gigablast.com/search?"
+					"code=gbmonitor&q=site%3A";
+			static const char menu[] = "<table cellpadding=\"2\" cellspacing=\"2\">\n<tr>"
+				"<th bgcolor=\"#CCCC66\"><a href=\"#pid\">"
+				"Domains Sorted By Pages</a></th>"
+				"<th bgcolor=\"#CCCC66\"><a href=\"#lid\">"
+				"Domains Sorted By Links</a></th>"
+				"<th bgcolor=\"#CCCC66\"><a href=\"#pii\">"
+				"IPs Sorted By Pages</a></th>"
+				"<th bgcolor=\"#CCCC66\"><a href=\"#dii\">"
+				"IPs Sorted By Domains</a></th>"
+				"<th bgcolor=\"#CCCC66\"><a href=\"#stats\">"
+				"Stats</a></th>"
+				"</tr>\n</table>\n<br>\n";
 
-		static const char hdr[] = "<table cellpadding=\"5\" cellspacing=\"2\">"
-			"<tr bgcolor=\"AAAAAA\">"
-			"<th>Domain</th>"
-			"<th>Domains Linked</th>"
-			//"<th>Avg Quality</th>"
-			"<th># Pages</th>"
-			"<th>Extrap # Pages</th>"
-			"<th>IP</th>"
-			"</tr>\n";
+			static const char hdr[] = "<table cellpadding=\"5\" cellspacing=\"2\">"
+				"<tr bgcolor=\"AAAAAA\">"
+				"<th>Domain</th>"
+				"<th>Domains Linked</th>"
+				//"<th>Avg Quality</th>"
+				"<th># Pages</th>"
+				"<th>Extrap # Pages</th>"
+				"<th>IP</th>"
+				"</tr>\n";
 
-		static const char hdr2[] = "<table cellpadding=\"5\" cellspacing=\"2\">"
-			"<tr bgcolor=\"AAAAAA\">"
-			"<th>IP</th>"
-			"<th>Domain</th>"
-			"<th>Domains Linked</th>"
-			//"<th>Avg Quality</th>"
-			"<th># Pages</th>"
-			"<th>Extrap # Pages</th>"
-			"</tr>\n";
-		
-		static const char clr1[] = "#FFFF00";//"yellow";
-		static const char clr2[] = "#FFFF66";//"orange";
-		const char *color;
+			static const char hdr2[] = "<table cellpadding=\"5\" cellspacing=\"2\">"
+				"<tr bgcolor=\"AAAAAA\">"
+				"<th>IP</th>"
+				"<th>Domain</th>"
+				"<th>Domains Linked</th>"
+				//"<th>Avg Quality</th>"
+				"<th># Pages</th>"
+				"<th>Extrap # Pages</th>"
+				"</tr>\n";
 			
-		fprintf( fhndl, 
-			 "<html><head><title>Domain/IP Counter</title></head>\n"
-			 "<body>"
-			 "<h1>Domain/IP Counter</h1><br><br>"
-			 "<a name=\"stats\">"
-			 "<h2>Stats</h2>\n%s", menu );
+			static const char clr1[] = "#FFFF00";//"yellow";
+			static const char clr2[] = "#FFFF66";//"orange";
+			const char *color;
+				
+			fprintf( fhndl, 
+				"<html><head><title>Domain/IP Counter</title></head>\n"
+				"<body>"
+				"<h1>Domain/IP Counter</h1><br><br>"
+				"<a name=\"stats\">"
+				"<h2>Stats</h2>\n%s", menu );
 
-		// Stats
-		fprintf( fhndl, "<br>\n\n<table>\n"
-			 "<tr><th align=\"left\">Total Number of Domains</th>"
-			 "<td>%" PRId32"</td></tr>\n"
-			 "<tr><th align=\"left\">Total Number of Ips</th>"
-			 "<td>%" PRId32"</td></tr>\n"
-			 "<tr><th align=\"left\">Number of Documents Searched"
-			 "</th><td>%" PRId32"</td></tr>\n"
-			 "<tr><th align=\"left\">Number of Failed Attempts</th>"
-			 "<td>%" PRId32"</td></tr><tr></tr><tr>\n"
-			 "<tr><th align=\"left\">Number of Documents in Index"
-			 "</th><td>%" PRId64"</td></tr>\n"
-			 "<tr><th align=\"left\">Estimated Domains in index</th>"
-			 "<td>%" PRId64"</td></tr>"
-			 "</table><br><br><br>\n"
-			 ,countDom,countIp,
-			 countDocs, attempts-countDocs,total, 
-			 countDocs ? ((countDom*total)/countDocs) : 0 );
-		
-		
-		fprintf( fhndl, "<a name=\"pid\">\n"
-			 "<h2>Domains Sorted By Pages</h2>\n"
-			 "%s", menu );
-		gbsort( dom_table, countDom, sizeof(struct dom_info *), dom_fcmp );
-	printDomLp:
+			// Stats
+			fprintf( fhndl, "<br>\n\n<table>\n"
+				"<tr><th align=\"left\">Total Number of Domains</th>"
+				"<td>%" PRId32"</td></tr>\n"
+				"<tr><th align=\"left\">Total Number of Ips</th>"
+				"<td>%" PRId32"</td></tr>\n"
+				"<tr><th align=\"left\">Number of Documents Searched"
+				"</th><td>%" PRId32"</td></tr>\n"
+				"<tr><th align=\"left\">Number of Failed Attempts</th>"
+				"<td>%" PRId32"</td></tr><tr></tr><tr>\n"
+				"<tr><th align=\"left\">Number of Documents in Index"
+				"</th><td>%" PRId64"</td></tr>\n"
+				"<tr><th align=\"left\">Estimated Domains in index</th>"
+				"<td>%" PRId64"</td></tr>"
+				"</table><br><br><br>\n"
+				,countDom,countIp,
+				countDocs, attempts-countDocs,total, 
+				countDocs ? ((countDom*total)/countDocs) : 0 );
+			
+			
+			fprintf( fhndl, "<a name=\"pid\">\n"
+				"<h2>Domains Sorted By Pages</h2>\n"
+				"%s", menu );
+			gbsort( dom_table, countDom, sizeof(struct dom_info *), dom_fcmp );
+		printDomLp:
 
-		fprintf( fhndl,"%s", hdr );
-		recsDisp = countDom;
-		if( countDom > 1000 ) recsDisp = 1000;
-		for( int32_t i = 0; i < recsDisp; i++ ) {
-			char buf[128];
-			int32_t len;
-			if( !dom_table[i] ) continue;
-			if( i%2 ) color = clr2;
-			else color = clr1;
-			tmpdomi = (struct dom_info *)dom_table[i];
-			len = tmpdomi->domLen;
-			if( tmpdomi->domLen > 127 ) len = 126;
-			strncpy( buf, tmpdomi->dom, len );
-			buf[len] = '\0';
-			fprintf( fhndl, "<tr bgcolor=\"%s\"><td>"
-				 "<a href=\"%s%s\" target=\"_blank\">%s</a>"
-				 "</td><td>%" PRId32"</td>"
-				 //"<td>%" PRId64"</td>"
-				 "<td>%" PRId32"</td>"
-				 "<td>%" PRId64"</td><td>",
-				 color, link_dom,
-				 buf, buf, tmpdomi->lnkCnt,
-				 //(tmpdomi->quality/tmpdomi->pages), 
-				 tmpdomi->pages,
-				 ((tmpdomi->pages*total)/countDocs) );
-			for( int32_t j = 0; j < tmpdomi->numIp; j++ ) {
-				tmpipi = (struct ip_info *)tmpdomi->ip_list[j];
+			fprintf( fhndl,"%s", hdr );
+			recsDisp = countDom;
+			if( countDom > 1000 ) recsDisp = 1000;
+			for( int32_t i = 0; i < recsDisp; i++ ) {
+				char buf[128];
+				int32_t len;
+				if( !dom_table[i] ) continue;
+				if( i%2 ) color = clr2;
+				else color = clr1;
+				tmpdomi = (struct dom_info *)dom_table[i];
+				len = tmpdomi->domLen;
+				if( tmpdomi->domLen > 127 ) len = 126;
+				strncpy( buf, tmpdomi->dom, len );
+				buf[len] = '\0';
+				fprintf( fhndl, "<tr bgcolor=\"%s\"><td>"
+					"<a href=\"%s%s\" target=\"_blank\">%s</a>"
+					"</td><td>%" PRId32"</td>"
+					//"<td>%" PRId64"</td>"
+					"<td>%" PRId32"</td>"
+					"<td>%" PRId64"</td><td>",
+					color, link_dom,
+					buf, buf, tmpdomi->lnkCnt,
+					//(tmpdomi->quality/tmpdomi->pages), 
+					tmpdomi->pages,
+					((tmpdomi->pages*total)/countDocs) );
+				for( int32_t j = 0; j < tmpdomi->numIp; j++ ) {
+					tmpipi = (struct ip_info *)tmpdomi->ip_list[j];
+					iptoa(tmpipi->ip,buf);
+					fprintf( fhndl, "<a href=\"%s%s\""
+						"target=\"_blank\">%s</a>\n", 
+						link_ip, buf, buf );
+				}
+				fprintf( fhndl, "</td></tr>\n" );
+				fprintf( fhndl, "\n" );
+			}
+
+			fprintf( fhndl, "</table>\n<br><br><br>" );
+			if( loop == 0 ) {
+				loop = 1;
+				gbsort( dom_table, countDom, sizeof(struct dom_info *), dom_lcmp );
+				fprintf( fhndl, "<a name=\"lid\">"
+					"<h2>Domains Sorted By Links</h2>\n%s", menu );
+
+				goto printDomLp;
+			}
+			loop = 0;
+
+			fprintf( fhndl, "<a name=\"pii\">"
+				"<h2>IPs Sorted By Pages</h2>\n%s", menu );
+
+
+			gbsort( ip_table, countIp, sizeof(struct ip_info *), ip_fcmp );
+		printIpLp:
+			fprintf( fhndl,"%s", hdr2 );
+			recsDisp = countIp;
+			if( countIp > 1000 ) recsDisp = 1000;
+			for( int32_t i = 0; i < recsDisp; i++ ) {
+				char buf[128];
+				if( !ip_table[i] ) continue;
+				tmpipi = (struct ip_info *)ip_table[i];
 				iptoa(tmpipi->ip,buf);
-				fprintf( fhndl, "<a href=\"%s%s\""
-					 "target=\"_blank\">%s</a>\n", 
-					 link_ip, buf, buf );
+				if( i%2 ) color = clr2;
+				else color = clr1;
+				int32_t linked = 0;
+				for( int32_t j = 0; j < tmpipi->numDom; j++ ) {
+					tmpdomi=(struct dom_info *)tmpipi->dom_list[j];
+					linked += tmpdomi->lnkCnt;
+				}
+				fprintf( fhndl, "\t<tr bgcolor=\"%s\"><td>"
+					"<a href=\"%s%s\" target=\"_blank\">%s</a>"
+					"</td>"
+					"<td>%" PRId32"</td>"
+					"<td>%" PRId32"</td>"
+					//"<td>%" PRId64"</td>"
+					"<td>%" PRId32"</td>"
+					"<td>%" PRId64"</td></tr>\n",
+					color,
+					link_ip, buf, buf, tmpipi->numDom, linked,
+					//(tmpipi->quality/tmpipi->pages), 
+					tmpipi->pages, 
+					((tmpipi->pages*total)/countDocs) );
+				fprintf( fhndl, "\n" );
 			}
-			fprintf( fhndl, "</td></tr>\n" );
-			fprintf( fhndl, "\n" );
-		}
 
-		fprintf( fhndl, "</table>\n<br><br><br>" );
-		if( loop == 0 ) {
-			loop = 1;
-			gbsort( dom_table, countDom, sizeof(struct dom_info *), dom_lcmp );
-			fprintf( fhndl, "<a name=\"lid\">"
-				 "<h2>Domains Sorted By Links</h2>\n%s", menu );
-
-			goto printDomLp;
-		}
-		loop = 0;
-
-		fprintf( fhndl, "<a name=\"pii\">"
-			 "<h2>IPs Sorted By Pages</h2>\n%s", menu );
-
-
-		gbsort( ip_table, countIp, sizeof(struct ip_info *), ip_fcmp );
-	printIpLp:
-		fprintf( fhndl,"%s", hdr2 );
-		recsDisp = countIp;
-		if( countIp > 1000 ) recsDisp = 1000;
-		for( int32_t i = 0; i < recsDisp; i++ ) {
-			char buf[128];
-			if( !ip_table[i] ) continue;
-			tmpipi = (struct ip_info *)ip_table[i];
-			iptoa(tmpipi->ip,buf);
-			if( i%2 ) color = clr2;
-			else color = clr1;
-			int32_t linked = 0;
-			for( int32_t j = 0; j < tmpipi->numDom; j++ ) {
-				tmpdomi=(struct dom_info *)tmpipi->dom_list[j];
-				linked += tmpdomi->lnkCnt;
+			fprintf( fhndl, "</table>\n<br><br><br>" );
+			if( loop == 0 ) {
+				loop = 1;
+				gbsort( ip_table, countIp, sizeof(struct ip_info *), ip_dcmp );
+				fprintf( fhndl, "<a name=\"dii\">"
+					"<h2>IPs Sorted By Domains</h2>\n%s", menu );
+				goto printIpLp;
 			}
-			fprintf( fhndl, "\t<tr bgcolor=\"%s\"><td>"
-				 "<a href=\"%s%s\" target=\"_blank\">%s</a>"
-				 "</td>"
-				 "<td>%" PRId32"</td>"
-				 "<td>%" PRId32"</td>"
-				 //"<td>%" PRId64"</td>"
-				 "<td>%" PRId32"</td>"
-				 "<td>%" PRId64"</td></tr>\n",
-				 color,
-				 link_ip, buf, buf, tmpipi->numDom, linked,
-				 //(tmpipi->quality/tmpipi->pages), 
-				 tmpipi->pages, 
-				 ((tmpipi->pages*total)/countDocs) );
-			fprintf( fhndl, "\n" );
-		}
 
-		fprintf( fhndl, "</table>\n<br><br><br>" );
-		if( loop == 0 ) {
-			loop = 1;
-			gbsort( ip_table, countIp, sizeof(struct ip_info *), ip_dcmp );
-			fprintf( fhndl, "<a name=\"dii\">"
-				 "<h2>IPs Sorted By Domains</h2>\n%s", menu );
-			goto printIpLp;
-		}
+			if( fclose( fhndl ) < 0 ) {
+				log( LOG_INFO, "countdomains: File Close Failed." );
+				return;
+			}
+			fhndl = 0;
 
-		if( fclose( fhndl ) < 0 ) {
-			log( LOG_INFO, "cntDm: File Close Failed." );
+
+			int32_t ima = 0;
+			int32_t dma = 0;
+
+			log( LOG_INFO, "countdomains: Freeing ip info struct..." );
+			for( int32_t i = 0; i < countIp; i++ ) {
+				if( !ip_table[i] ) continue;
+				//value = ipHT.getValue( ip_table[i] );
+				//if(value == 0) continue;
+				tmpipi = (struct ip_info *)ip_table[i]; 
+				mfree( tmpipi->dom_list, tmpipi->numDom*sizeof(tmpipi->dom_list[0]),
+				"main-dcflip" );
+				ima += tmpipi->numDom * sizeof(int32_t);
+				mfree( tmpipi, sizeof(struct ip_info), "main-dcfip" );
+				ima += sizeof(struct ip_info);
+				tmpipi = NULL;
+			}
+			mfree( ip_table, numRecs * sizeof(struct ip_info *), "main-dcfit" );
+
+			log( LOG_INFO, "countdomains: Freeing domain info struct..." );
+			for( int32_t i = 0; i < countDom; i++ ) {
+				if( !dom_table[i] ) continue;
+				tmpdomi = (struct dom_info *)dom_table[i];
+				mfree( tmpdomi->lnk_table,
+				tmpdomi->tableSize*sizeof(int32_t), 
+				"main-dcfsdlt" );
+				dma += tmpdomi->tableSize * sizeof(int32_t);
+				mfree( tmpdomi->ip_list, tmpdomi->numIp*sizeof(tmpdomi->ip_list[0]),
+				"main-dcfldom" );
+				dma += tmpdomi->numIp * sizeof(int32_t);
+				mfree( tmpdomi->dom, tmpdomi->domLen, "main-dcfsdom" );
+				dma += tmpdomi->domLen;
+				mfree( tmpdomi, sizeof(struct dom_info), "main-dcfdom" );
+				dma+= sizeof(struct dom_info);
+				tmpdomi = NULL;
+			}
+						
+			mfree( dom_table, numRecs * sizeof(struct dom_info *), "main-dcfdt" );
+
+			int64_t time_end = gettimeofdayInMilliseconds();
+			log( LOG_INFO, "countdomains: Took %" PRId64"ms to count domains in %" PRId32" recs.",
+			time_end-time_start, countDocs );
+			log( LOG_INFO, "countdomains: %" PRId32" bytes of Total Memory Used.",
+			ima + dma + (8 * numRecs) );
+			log( LOG_INFO, "countdomains: %" PRId32" bytes Total for IP.", ima );
+			log( LOG_INFO, "countdomains: %" PRId32" bytes Total for Dom.", dma );
+			log( LOG_INFO, "countdomains: %" PRId32" bytes Average for IP.", countIp ? ima/countIp : 0 );
+			log( LOG_INFO, "countdomains: %" PRId32" bytes Average for Dom.", countDom ? dma/countDom : 0 );
+			
 			return;
-		}
-		fhndl = 0;
-
-
-		int32_t ima = 0;
-		int32_t dma = 0;
-
-		log( LOG_INFO, "cntDm: Freeing ip info struct..." );
-		for( int32_t i = 0; i < countIp; i++ ) {
-			if( !ip_table[i] ) continue;
-			//value = ipHT.getValue( ip_table[i] );
-			//if(value == 0) continue;
-			tmpipi = (struct ip_info *)ip_table[i]; 
-			mfree( tmpipi->dom_list, tmpipi->numDom*sizeof(tmpipi->dom_list[0]),
-			       "main-dcflip" );
-			ima += tmpipi->numDom * sizeof(int32_t);
-			mfree( tmpipi, sizeof(struct ip_info), "main-dcfip" );
-			ima += sizeof(struct ip_info);
-			tmpipi = NULL;
-		}
-		mfree( ip_table, numRecs * sizeof(struct ip_info *), "main-dcfit" );
-
-		log( LOG_INFO, "cntDm: Freeing domain info struct..." );
-		for( int32_t i = 0; i < countDom; i++ ) {
-			if( !dom_table[i] ) continue;
-			tmpdomi = (struct dom_info *)dom_table[i];
-			mfree( tmpdomi->lnk_table,
-			       tmpdomi->tableSize*sizeof(int32_t), 
-			       "main-dcfsdlt" );
-			dma += tmpdomi->tableSize * sizeof(int32_t);
-			mfree( tmpdomi->ip_list, tmpdomi->numIp*sizeof(tmpdomi->ip_list[0]),
-			       "main-dcfldom" );
-			dma += tmpdomi->numIp * sizeof(int32_t);
-			mfree( tmpdomi->dom, tmpdomi->domLen, "main-dcfsdom" );
-			dma += tmpdomi->domLen;
-			mfree( tmpdomi, sizeof(struct dom_info), "main-dcfdom" );
-			dma+= sizeof(struct dom_info);
-			tmpdomi = NULL;
-		}
-					
-		mfree( dom_table, numRecs * sizeof(struct dom_info *), "main-dcfdt" );
-
-		int64_t time_end = gettimeofdayInMilliseconds();
-		log( LOG_INFO, "cntDm: Took %" PRId64"ms to count domains in %" PRId32" recs.",
-		     time_end-time_start, countDocs );
-		log( LOG_INFO, "cntDm: %" PRId32" bytes of Total Memory Used.",
-		     ima + dma + (8 * numRecs) );
-		log( LOG_INFO, "cntDm: %" PRId32" bytes Total for IP.", ima );
-		log( LOG_INFO, "cntDm: %" PRId32" bytes Total for Dom.", dma );
-		log( LOG_INFO, "cntDm: %" PRId32" bytes Average for IP.", countIp ? ima/countIp : 0 );
-		log( LOG_INFO, "cntDm: %" PRId32" bytes Average for Dom.", countDom ? dma/countDom : 0 );
-		
-		return;
-	}	
-	goto loop;	
+		}	
+	}
 }
 
 // Sort by IP frequency in pages 9->0
