@@ -2907,216 +2907,216 @@ int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, b
 
 	const CollectionRec *cr = g_collectiondb.getRec(coll);
 
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_SPIDERDB  ,
-			      cr->m_collnum       ,
-			      &list         ,
-			      (char *)&startKey      ,
-			      (char *)&endKey        ,
-			      commandLineDumpdbRecSize,
-			      includeTree   ,
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         , // err correction?
-			      -1,             // maxRetries
-			      false))          // isRealMerge
-	{
-		log(LOG_LOGIC,"db: getList did not block.");
-		return -1;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) goto done;
-
-	// this may not be in sync with host #0!!!
-	now = getTimeLocal();
-
-	// loop over entries in list
-	for ( list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord() ) {
-		// print a counter
-		if ( ((count++) % 100000) == 0 ) {
-			fprintf( stderr, "Processed %" PRId32" records.\n", count - 1 );
+	for(;;) {
+		// use msg5 to get the list, should ALWAYS block since no threads
+		if ( ! msg5.getList ( RDB_SPIDERDB  ,
+				cr->m_collnum       ,
+				&list         ,
+				(char *)&startKey      ,
+				(char *)&endKey        ,
+				commandLineDumpdbRecSize,
+				includeTree   ,
+				startFileNum  ,
+				numFiles      ,
+				NULL          , // state
+				NULL          , // callback
+				0             , // niceness
+				false         , // err correction?
+				-1,             // maxRetries
+				false))          // isRealMerge
+		{
+			log(LOG_LOGIC,"db: getList did not block.");
+			return -1;
 		}
+		// all done if empty
+		if ( list.isEmpty() )
+			break;
 
-		// get it
-		char *srec = list.getCurrentRec();
+		// this may not be in sync with host #0!!!
+		now = getTimeLocal();
 
-		// save it
-		int64_t curOff = offset;
+		// loop over entries in list
+		for ( list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord() ) {
+			// print a counter
+			if ( ((count++) % 100000) == 0 ) {
+				fprintf( stderr, "Processed %" PRId32" records.\n", count - 1 );
+			}
 
-		// and advance
-		offset += list.getCurrentRecSize();
+			// get it
+			char *srec = list.getCurrentRec();
 
-		// must be a request -- for now, for stats
-		if ( Spiderdb::isSpiderReply((key128_t *)srec) ) {
+			// save it
+			int64_t curOff = offset;
+
+			// and advance
+			offset += list.getCurrentRecSize();
+
+			// must be a request -- for now, for stats
+			if ( Spiderdb::isSpiderReply((key128_t *)srec) ) {
+				// print it
+				if ( ! printStats ) {
+					printf( "offset=%" PRId64" ",curOff);
+					Spiderdb::print ( srec );
+					printf("\n");
+				}
+
+				// its a spider reply
+				const SpiderReply *srep = (SpiderReply *)srec;
+				++countReplies;
+
+				// store it
+				s_lastRepUh48 = srep->getUrlHash48();
+				s_lastErrCode = srep->m_errCode;
+				s_lastErrCount = srep->m_errCount;
+				s_sameErrCount = srep->m_sameErrCount;
+
+				// get firstip
+				if ( printStats == 1 ) {
+					addUStat2( srep, now );
+				}
+				continue;
+			}
+
+			// cast it
+			const SpiderRequest *sreq = (SpiderRequest *)srec;
+			++countRequests;
+
+			int64_t uh48 = sreq->getUrlHash48();
+			// count how many requests had replies and how many did not
+			bool hadReply = ( uh48 == s_lastRepUh48 );
+
+			if( !hadReply ) {
+				// Last reply and current request do not belong together
+				s_lastErrCode = 0;
+				s_lastErrCount = 0;
+				s_sameErrCount = 0;
+			}
+
+			// get firstip
+			if ( printStats == 1 ) {
+				addUStat1( sreq, hadReply, now );
+			}
+
 			// print it
 			if ( ! printStats ) {
 				printf( "offset=%" PRId64" ",curOff);
 				Spiderdb::print ( srec );
+
+				printf(" requestage=%" PRId32"s", (int32_t)(now-sreq->m_addedTime));
+				printf(" hadReply=%" PRId32,(int32_t)hadReply);
+
+				if( hadReply ) {
+					// Only dump these values if last reply and current request belong together
+					printf(" errcount=%" PRId32,(int32_t)s_lastErrCount);
+					printf(" sameerrcount=%" PRId32,(int32_t)s_sameErrCount);
+
+					if ( s_lastErrCode ) {
+						printf( " errcode=%" PRId32"(%s)", ( int32_t ) s_lastErrCode, mstrerror( s_lastErrCode ) );
+					} else {
+						printf( " errcode=%" PRId32, ( int32_t ) s_lastErrCode );
+					}
+
+					if ( sreq->m_prevErrCode ) {
+						printf( " preverrcode=%" PRId32"(%s)", ( int32_t ) sreq->m_prevErrCode, mstrerror( sreq->m_prevErrCode ) );
+					} else {
+						printf( " preverrcode=%" PRId32, ( int32_t ) sreq->m_prevErrCode );
+					}
+				}
+
 				printf("\n");
 			}
 
-			// its a spider reply
-			const SpiderReply *srep = (SpiderReply *)srec;
-			++countReplies;
-
-			// store it
-			s_lastRepUh48 = srep->getUrlHash48();
-			s_lastErrCode = srep->m_errCode;
-			s_lastErrCount = srep->m_errCount;
-			s_sameErrCount = srep->m_sameErrCount;
-
-			// get firstip
-			if ( printStats == 1 ) {
-				addUStat2( srep, now );
-			}
-			continue;
-		}
-
-		// cast it
-		const SpiderRequest *sreq = (SpiderRequest *)srec;
-		++countRequests;
-
-		int64_t uh48 = sreq->getUrlHash48();
-		// count how many requests had replies and how many did not
-		bool hadReply = ( uh48 == s_lastRepUh48 );
-
-		if( !hadReply ) {
-			// Last reply and current request do not belong together
-			s_lastErrCode = 0;
-			s_lastErrCount = 0;
-			s_sameErrCount = 0;
-		}
-
-		// get firstip
-		if ( printStats == 1 ) {
-			addUStat1( sreq, hadReply, now );
-		}
-
-		// print it
-		if ( ! printStats ) {
-			printf( "offset=%" PRId64" ",curOff);
-			Spiderdb::print ( srec );
-
-			printf(" requestage=%" PRId32"s", (int32_t)(now-sreq->m_addedTime));
-			printf(" hadReply=%" PRId32,(int32_t)hadReply);
-
-			if( hadReply ) {
-				// Only dump these values if last reply and current request belong together
-				printf(" errcount=%" PRId32,(int32_t)s_lastErrCount);
-				printf(" sameerrcount=%" PRId32,(int32_t)s_sameErrCount);
-
-				if ( s_lastErrCode ) {
-					printf( " errcode=%" PRId32"(%s)", ( int32_t ) s_lastErrCode, mstrerror( s_lastErrCode ) );
-				} else {
-					printf( " errcode=%" PRId32, ( int32_t ) s_lastErrCode );
-				}
-
-				if ( sreq->m_prevErrCode ) {
-					printf( " preverrcode=%" PRId32"(%s)", ( int32_t ) sreq->m_prevErrCode, mstrerror( sreq->m_prevErrCode ) );
-				} else {
-					printf( " preverrcode=%" PRId32, ( int32_t ) sreq->m_prevErrCode );
-				}
+			if ( printStats != 2 ) {
+				continue;
 			}
 
-			printf("\n");
+			// skip negatives
+			if ( (sreq->m_key.n0 & 0x01) == 0x00 ) {
+				++negRecs;
+				continue;
+			}
+
+			// skip bogus shit
+			if ( sreq->m_firstIp == 0 || sreq->m_firstIp==-1 ) continue;
+
+			// shortcut
+			int32_t domHash = sreq->m_domHash32;
+			// . is it in the domain table?
+			// . keeps count of how many urls per domain
+			int32_t slot = domTable.getSlot ( domHash );
+			if ( slot >= 0 ) {
+				int32_t off = domTable.getValueFromSlot ( slot );
+				// just inc the count for this domain
+				*(int32_t *)(buf + off) = *(int32_t *)(buf + off) + 1;
+				continue;
+			}
+
+			// get the domain
+			int32_t  domLen = 0;
+			const char *dom = getDomFast ( sreq->m_url , &domLen );
+
+			// always need enough room...
+			if ( bufOff + 4 + domLen + 1 >= bufSize ) {
+				int32_t  growth     = bufSize * 2 - bufSize;
+				// limit growth to 10MB each time
+				if ( growth > 10*1024*1024 ) growth = 10*1024*1024;
+				int32_t  newBufSize = bufSize + growth;
+				char *newBuf = (char *)mrealloc( buf , bufSize , 
+								newBufSize,
+								"spiderstats");
+				if ( ! newBuf ) return -1;
+				// re-assign
+				buf     = newBuf;
+				bufSize = newBufSize;
+			}
+
+			// store the count of urls followed by the domain
+			char *ptr = buf + bufOff;
+			*(int32_t *)ptr = 1;
+			ptr += 4;
+			gbmemcpy ( ptr , dom , domLen );
+			ptr += domLen;
+			*ptr = '\0';
+			// use an ip of 1 if it is 0 so it hashes right
+			int32_t useip = sreq->m_firstIp; // ip;
+
+			// this table counts how many urls per domain, as
+			// well as stores the domain
+			if ( ! domTable.addKey (domHash , bufOff) ) return -1;
+
+			// . if this is the first time we've seen this domain,
+			//   add it to the ipDomTable
+			// . this hash table must support dups.
+			// . we need to print out all the domains for each ip
+			if ( ! ipDomTable.addKey ( &useip , &bufOff ) ) return -1;
+
+			// . this table counts how many unique domains per ip
+			// . it is kind of redundant since we have ipDomTable
+			int32_t ipCnt = ipDomCntTable.getValue ( useip );
+
+			if ( ipCnt < 0 ) {
+				ipCnt = 0;
+			}
+
+			if ( ! ipDomCntTable.addKey ( useip, ipCnt+1) ) {
+				return -1;
+			}
+
+			// advance to next empty spot
+			bufOff += 4 + domLen + 1;
+
+			// count unque domains
+			++uniqDoms;
 		}
 
-		if ( printStats != 2 ) {
-			continue;
-		}
+		startKey = *(key128_t *)list.getLastKey();
+		startKey++;
 
-		// skip negatives
-		if ( (sreq->m_key.n0 & 0x01) == 0x00 ) {
-			++negRecs;
-			continue;
-		}
-
-		// skip bogus shit
-		if ( sreq->m_firstIp == 0 || sreq->m_firstIp==-1 ) continue;
-
-		// shortcut
-		int32_t domHash = sreq->m_domHash32;
-		// . is it in the domain table?
-		// . keeps count of how many urls per domain
-		int32_t slot = domTable.getSlot ( domHash );
-		if ( slot >= 0 ) {
-			int32_t off = domTable.getValueFromSlot ( slot );
-			// just inc the count for this domain
-			*(int32_t *)(buf + off) = *(int32_t *)(buf + off) + 1;
-			continue;
-		}
-
-		// get the domain
-		int32_t  domLen = 0;
-		const char *dom = getDomFast ( sreq->m_url , &domLen );
-
-		// always need enough room...
-		if ( bufOff + 4 + domLen + 1 >= bufSize ) {
-			int32_t  growth     = bufSize * 2 - bufSize;
-			// limit growth to 10MB each time
-			if ( growth > 10*1024*1024 ) growth = 10*1024*1024;
-			int32_t  newBufSize = bufSize + growth;
-			char *newBuf = (char *)mrealloc( buf , bufSize , 
-							 newBufSize,
-							 "spiderstats");
-			if ( ! newBuf ) return -1;
-			// re-assign
-			buf     = newBuf;
-			bufSize = newBufSize;
-		}
-
-		// store the count of urls followed by the domain
-		char *ptr = buf + bufOff;
-		*(int32_t *)ptr = 1;
-		ptr += 4;
-		gbmemcpy ( ptr , dom , domLen );
-		ptr += domLen;
-		*ptr = '\0';
-		// use an ip of 1 if it is 0 so it hashes right
-		int32_t useip = sreq->m_firstIp; // ip;
-
-		// this table counts how many urls per domain, as
-		// well as stores the domain
-		if ( ! domTable.addKey (domHash , bufOff) ) return -1;
-
-		// . if this is the first time we've seen this domain,
-		//   add it to the ipDomTable
-		// . this hash table must support dups.
-		// . we need to print out all the domains for each ip
-		if ( ! ipDomTable.addKey ( &useip , &bufOff ) ) return -1;
-
-		// . this table counts how many unique domains per ip
-		// . it is kind of redundant since we have ipDomTable
-		int32_t ipCnt = ipDomCntTable.getValue ( useip );
-
-		if ( ipCnt < 0 ) {
-			ipCnt = 0;
-		}
-
-		if ( ! ipDomCntTable.addKey ( useip, ipCnt+1) ) {
-			return -1;
-		}
-
-		// advance to next empty spot
-		bufOff += 4 + domLen + 1;
-
-		// count unque domains
-		++uniqDoms;
+		// watch out for wrap around
+		if ( startKey < *(key128_t *)list.getLastKey() )
+			break;
 	}
 
-	startKey = *(key128_t *)list.getLastKey();
-	startKey++;
-
-	// watch out for wrap around
-	if ( startKey >= *(key128_t *)list.getLastKey() ) {
-		goto loop;
-	}
-
- done:
 	// print out the stats
 	if ( ! printStats ) {
 		return 0;
