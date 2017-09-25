@@ -106,6 +106,7 @@ static const int32_t commandLineDumpdbRecSize = 10 * 1024 * 1024; //recSizes par
 static void dumpTitledb  (const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   int64_t docId , bool justPrintDups );
 static int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int printStats, int32_t firstIp);
+static int32_t dumpSpiderdbCsv(const char *coll);
 
 static void dumpTagdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char req,
 		      const char *site);
@@ -1382,6 +1383,18 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
+	if(strcmp(cmd, "dumpcsv") == 0) {
+		g_conf.m_doingCommandLine = true; // so we do not log every collection coll.conf we load
+		if( !g_collectiondb.loadAllCollRecs()) {
+			log("db: Collectiondb init failed.");
+			return 1;
+		}
+		if(argv[cmdarg+1][0] == 's')
+			dumpSpiderdbCsv(argv[cmdarg+2]);
+		g_log.m_disabled = true;
+		g_collectiondb.reset();
+		return 0;
+	}
 
 	// . gb dump [dbLetter][coll][fileNum] [numFiles] [includeTree][termId]
 	// . spiderdb is special:
@@ -3239,6 +3252,167 @@ int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, b
 
 	return 0;
 }
+
+
+static int32_t dumpSpiderdbCsv(const char *coll) {
+	g_spiderdb.init();
+	g_spiderdb.getRdb()->addRdbBase1(coll);
+
+	key128_t startKey;
+	startKey.setMin();
+
+	Msg5 msg5;
+	RdbList list;
+
+	unsigned count = 0;
+	const SpiderReply *prevSpiderReply = NULL;
+	char prevSpiderReplyBuf[sizeof(SpiderReply)+MAX_URL_LEN+100];
+	int64_t prevSpiderReplyUrlHash48 = 0LL;
+
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
+
+	for(;;) {
+		// use msg5 to get the list, should ALWAYS block since no threads
+		if( ! msg5.getList(RDB_SPIDERDB,
+				   cr->m_collnum,
+				   &list,
+				   &startKey,
+				   KEYMAX(),
+				   commandLineDumpdbRecSize,
+				   true,           //includeTree
+				   0,              //startFileNum
+				   -1,             //numFiles
+				   NULL,           // state
+				   NULL,           // callback
+				   0,              // niceness
+				   false,          // err correction?
+				   -1,             // maxRetries
+				   false))         // isRealMerge
+		{
+			log(LOG_LOGIC,"db: getList did not block.");
+			return -1;
+		}
+		// all done if empty
+		if(list.isEmpty())
+			break;
+
+		// loop over entries in list
+		for(list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
+			count++;
+			if((count % 100000) == 0) {
+				fprintf( stderr, "Processed %u records.\n", count - 1);
+			}
+
+			const char *srec = list.getCurrentRec();
+
+			if(Spiderdb::isSpiderReply((const key128_t *)srec)) {
+				const SpiderReply *srep = reinterpret_cast<const SpiderReply *>(srec);
+				prevSpiderReplyUrlHash48 = srep->getUrlHash48();
+				prevSpiderReply = srep;
+			} else {
+				const SpiderRequest *spiderRequest = reinterpret_cast<const SpiderRequest*>(srec);
+
+				int64_t uh48 = spiderRequest->getUrlHash48();
+				// count how many requests had replies and how many did not
+				bool hadReply = prevSpiderReply && (uh48 == prevSpiderReplyUrlHash48);
+
+				if( !hadReply ) {
+					// Last reply and current request do not belong together
+					prevSpiderReply = NULL;
+				}
+
+				// print it
+				printf("%u,",spiderRequest->m_firstIp);
+				printf("%u,",spiderRequest->m_hostHash32);
+				printf("%u,",spiderRequest->m_domHash32);
+				printf("%u,",spiderRequest->m_siteHash32);
+				printf("%d,",spiderRequest->m_siteNumInlinks);
+				printf("%d,",spiderRequest->m_addedTime);
+				printf("%d,",spiderRequest->m_parentPrevSpiderTime);
+				printf("%d,",spiderRequest->m_pageNumInlinks);
+				printf("%d,",spiderRequest->m_sameErrCount);
+				printf("%d,",spiderRequest->m_version);
+				printf("%d,",spiderRequest->m_discoveryTime);
+				printf("%d,",spiderRequest->m_prevErrCode);
+				printf("%d,",spiderRequest->m_contentHash32);
+				printf("%d,",spiderRequest->m_hopCount);
+				printf("%d,",spiderRequest->m_recycleContent);
+				printf("%d,",spiderRequest->m_hopCountValid);
+				printf("%d,",spiderRequest->m_isAddUrl);
+				printf("%d,",spiderRequest->m_isPageReindex);
+				printf("%d,",spiderRequest->m_isUrlCanonical);
+				printf("%d,",spiderRequest->m_isPageParser);
+				printf("%d,",spiderRequest->m_urlIsDocId);
+				printf("%d,",spiderRequest->m_isRSSExt);
+				printf("%d,",spiderRequest->m_isUrlPermalinkFormat);
+				printf("%d,",spiderRequest->m_isPingServer);
+				printf("%d,",spiderRequest->m_forceDelete);
+				printf("%d,",spiderRequest->m_isInjecting);
+				printf("%d,",spiderRequest->m_hadReply);
+				printf("%d,",spiderRequest->m_fakeFirstIp);
+				printf("%d,",spiderRequest->m_isWWWSubdomain);
+				printf("%d,",spiderRequest->m_hasAuthorityInlink);
+				printf("%d,",spiderRequest->m_hasAuthorityInlinkValid);
+				printf("%d,",spiderRequest->m_siteNumInlinksValid);
+				printf("%d,",spiderRequest->m_avoidSpiderLinks);
+				printf("%d,",spiderRequest->m_ufn);
+				printf("%d,",spiderRequest->m_priority);
+				printf("%d,",spiderRequest->m_errCount);
+				printf("\"%s\",",spiderRequest->m_url);
+
+				if(prevSpiderReply) {
+					// Only dump these values if last reply and current request belong together
+					//printf("%d,",prevSpiderReply->m_firstIp);
+					//printf("%d,",prevSpiderReply->m_siteHash32);
+					//printf("%d,",prevSpiderReply->m_domHash32);
+					printf("%f,",prevSpiderReply->m_percentChangedPerDay);
+					printf("%d,",prevSpiderReply->m_spideredTime);
+					printf("%d,",prevSpiderReply->m_errCode);
+					//printf("%d,",prevSpiderReply->m_siteNumInlinks);
+					//printf("%d,",prevSpiderReply->m_sameErrCount);
+					//printf("%d,",prevSpiderReply->m_version);
+					//printf("%d,",prevSpiderReply->m_contentHash32);
+					printf("%d,",prevSpiderReply->m_crawlDelayMS);
+					printf("%ld,",prevSpiderReply->m_downloadEndTime);
+					printf("%d,",prevSpiderReply->m_httpStatus);
+					//printf("%d,",prevSpiderReply->m_errCount);
+					printf("%d,",prevSpiderReply->m_langId);
+					printf("%d,",prevSpiderReply->m_isRSS);
+					printf("%d,",prevSpiderReply->m_isPermalink);
+					printf("%d,",prevSpiderReply->m_isPingServer);
+					printf("%d,",prevSpiderReply->m_isIndexed);
+					printf("%d,",prevSpiderReply->m_hasAuthorityInlink);
+					printf("%d,",prevSpiderReply->m_isIndexedINValid);
+					printf("%d,",prevSpiderReply->m_hasAuthorityInlinkValid);
+					printf("%d,",prevSpiderReply->m_siteNumInlinksValid);
+					printf("%d,",prevSpiderReply->m_fromInjectionRequest);
+					printf("%d,",prevSpiderReply->m_wasIndexed);
+					printf("%d,",prevSpiderReply->m_wasIndexedValid);
+				} else {
+					printf(",,,,,,,,,,,,,,,,,");
+				}
+				printf("\n");
+			}
+		}
+		
+		//copy prevspiderreply to tmp buf, so we can rememerb the value to next list
+		if(prevSpiderReply && sizeof(key128_t)+prevSpiderReply->m_dataSize < sizeof(prevSpiderReplyBuf)) {
+			memcpy(prevSpiderReplyBuf, prevSpiderReply, sizeof(key128_t)+prevSpiderReply->m_dataSize);
+			prevSpiderReply = reinterpret_cast<const SpiderReply*>(prevSpiderReplyBuf);
+		} else
+			prevSpiderReply = NULL;
+
+		const key128_t *listLastKey = reinterpret_cast<const key128_t *>(list.getLastKey());
+		startKey = *listLastKey;
+		startKey++;
+
+		// watch out for wrap around
+		if ( startKey < *listLastKey)
+			break;
+	}
+	return 0;
+}
+
 
 // time speed of inserts into RdbTree for indexdb
 static bool hashtest() {
