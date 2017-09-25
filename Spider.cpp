@@ -2785,61 +2785,62 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 
 
-bool getSpiderStatusMsg(const CollectionRec *cx, SafeBuf *msg, int32_t *status) {
-
+void getSpiderStatusMsg(const CollectionRec *cx, const char **msg, int32_t *status) {
 	if ( ! g_conf.m_spideringEnabled ) {
 		*status = SP_ADMIN_PAUSED;
-		return msg->safePrintf("Spidering disabled in "
-				       "master controls. You can turn it "
-				       "back on there.");
+		*msg = "Spidering disabled in master controls. You can turn it back on there.";
+		return;
 	}
 
 	if ( g_conf.m_readOnlyMode ) {
 		*status = SP_ADMIN_PAUSED;
-		return msg->safePrintf("In read-only mode. Spidering off.");
+		*msg = "In read-only mode. Spidering off.";
+		return;
 	}
 
 	if ( g_dailyMerge.m_mergeMode ) {
 		*status = SP_ADMIN_PAUSED;
-		return msg->safePrintf("Daily merge engaged, spidering "
-				       "paused.");
+		*msg = "Daily merge engaged, spidering paused.";
+		return;
 	}
 
 	if ( g_repairMode ) {
 		*status = SP_ADMIN_PAUSED;
-		return msg->safePrintf("In repair mode, spidering paused.");
+		*msg = "In repair mode, spidering paused.";
+		return;
 	}
 
 	// do not spider until collections/parms in sync with host #0
 	if ( ! g_parms.inSyncWithHost0() ) {
 		*status = SP_ADMIN_PAUSED;
-		return msg->safePrintf("Parms not in sync with host #0, "
-				       "spidering paused");
+		*msg = "Parms not in sync with host #0, spidering paused";
+		return;
 	}
 
 	// don't spider if not all hosts are up, or they do not all
 	// have the same hosts.conf.
 	if ( g_hostdb.hostsConfInDisagreement() ) {
 		*status = SP_ADMIN_PAUSED;
-		return msg->safePrintf("Hosts.conf discrepancy, "
-				       "spidering paused.");
+		*msg = "Hosts.conf discrepancy, spidering paused.";
+		return;
 	}
 
 	if ( ! cx->m_spideringEnabled ) {
 		*status = SP_PAUSED;
-		return msg->safePrintf("Spidering disabled in spider controls.");
+		*msg = "Spidering disabled in spider controls.";
+		return;
 	}
 
 	if ( cx->m_spiderStatus == SP_INITIALIZING ) {
 		*status = SP_INITIALIZING;
-		return msg->safePrintf("Job is initializing.");
+		*msg = "Job is initializing.";
+		return;
 	}
 
 	if ( ! g_conf.m_spideringEnabled ) {
 		*status = SP_ADMIN_PAUSED;
-		return msg->safePrintf("All crawling temporarily paused "
-				       "by root administrator for "
-				       "maintenance.");
+		*msg = "All crawling temporarily paused by root administrator for maintenance.";
+		return;
 	}
 
 	// out CollectionRec::m_globalCrawlInfo counts do not have a dead
@@ -2847,15 +2848,14 @@ bool getSpiderStatusMsg(const CollectionRec *cx, SafeBuf *msg, int32_t *status) 
 	// whether we have exceed a maxtocrawl limit or some such, so wait...
 	if (g_hostdb.hasDeadHost()) {
 		*status = SP_ADMIN_PAUSED;
-		return msg->safePrintf("All crawling temporarily paused "
-				       "because a shard is down.");
+		*msg = "All crawling temporarily paused because a shard is down.";
+		return;
 	}
-
 
 
 	// otherwise in progress?
 	*status = SP_INPROGRESS;
-	return msg->safePrintf("Spider is in progress.");
+	*msg = "Spider is in progress.";
 }
 
 

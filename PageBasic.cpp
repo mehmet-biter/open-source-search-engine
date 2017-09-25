@@ -840,9 +840,9 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 		//
 		// show stats
 		//
-		SafeBuf tmp;
+		const char *crawlMsg;
 		int32_t crawlStatus = -1;
-		getSpiderStatusMsg ( cr , &tmp , &crawlStatus );
+		getSpiderStatusMsg ( cr , &crawlMsg, &crawlStatus );
 
 		sb.safePrintf(
 			      "<table id=stats border=0 cellpadding=5>"
@@ -857,7 +857,7 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 			      "<td>%s</td>"
 			      "</tr>"
 			      , crawlStatus
-			      , tmp.getBufStart());
+			      , crawlMsg);
 
 		// print link to embed the code in their own site
 		SafeBuf embed;

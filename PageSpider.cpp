@@ -225,9 +225,9 @@ static bool printList ( State11 *st ) {
 static bool generatePageHTML(CollectionRec *cr, SafeBuf *sb, const SafeBuf *doledbbuf) {
 	// print reason why spiders are not active for this collection
 	int32_t tmp2;
-	SafeBuf mb;
-	getSpiderStatusMsg ( cr , &mb , &tmp2 );
-	if ( mb.length() && tmp2 != SP_INITIALIZING )
+	const char *crawlMsg;
+	getSpiderStatusMsg ( cr , &crawlMsg, &tmp2 );
+	if ( crawlMsg && tmp2 != SP_INITIALIZING )
 		sb->safePrintf("<table cellpadding=5 style=\"max-width:600px\" border=0>"
 		               "<tr>"
 		               "<td>"
@@ -237,7 +237,7 @@ static bool generatePageHTML(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 		               "</tr>"
 		               "</table>\n"
 		               , cr->m_coll
-		               , mb.getBufStart() );
+		               , crawlMsg);
 
 	// begin the table
 	sb->safePrintf("<table class=\"main\" width=100%%>\n"
@@ -465,11 +465,11 @@ static bool generatePageJSON(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 	sb->safePrintf("{\n\"response\": {\n");
 
 	int32_t crawlStatus;
-	SafeBuf crawlMsg;
+	const char *crawlMsg;
 	getSpiderStatusMsg ( cr , &crawlMsg , &crawlStatus );
 
 	sb->safePrintf("\t\"statusCode\": %d,\n", crawlStatus);
-	sb->safePrintf("\t\"statusMsg\": \"%s\",\n", crawlMsg.getBufStart());
+	sb->safePrintf("\t\"statusMsg\": \"%s\",\n", crawlMsg);
 	sb->safePrintf("\t\"spiderCount\": %d,\n", g_spiderLoop.getNumSpidersOut());
 
 	sb->safePrintf("\t\"spiders\": [\n");

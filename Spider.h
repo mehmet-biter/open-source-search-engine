@@ -48,7 +48,7 @@ class SafeBuf;
 #define SP_ADMIN_PAUSED   8 // g_conf.m_spideringEnabled = false
 //#define SP_UNUSED_9     9
 
-bool getSpiderStatusMsg(const CollectionRec *cx, SafeBuf *msg, int32_t *status);
+void getSpiderStatusMsg(const CollectionRec *cx, const char **msg, int32_t *status);
 
 
 
