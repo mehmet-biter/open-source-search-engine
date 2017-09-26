@@ -30,6 +30,9 @@ bool isSecondaryRdb ( rdbid_t rdbId ) ;
 // get the dbname
 const char *getDbnameFromId(rdbid_t rdbId);
 
+//initialize all primary Rdbs
+bool initialiseAllPrimaryRdbs();
+
 // size of keys
 char getKeySizeFromRdbId(rdbid_t rdbId);
 

@@ -1575,50 +1575,12 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
-	if ( ! g_posdb.init()    ) {
-		log( LOG_ERROR, "db: Posdb init failed." );
+	if(!initialiseAllPrimaryRdbs())
 		return 1;
-	}
-
-	// then titledb
-	if ( ! g_titledb.init()    ) {
-		log( LOG_ERROR, "db: Titledb init failed." );
-		return 1;
-	}
-
-	// then tagdb
-	if ( ! g_tagdb.init()     ) {
-		log( LOG_ERROR, "db: Tagdb init failed." );
-		return 1;
-	}
-
-	// then spiderdb
-	if ( ! g_spiderdb.init()   ) {
-		log( LOG_ERROR, "db: Spiderdb init failed." );
-		return 1;
-	}
-
-	// then doledb
-	if ( ! g_doledb.init()   ) {
-		log( LOG_ERROR, "db: Doledb init failed." );
-		return 1;
-	}
 
 	// the spider cache used by SpiderLoop
 	if ( ! g_spiderCache.init() ) {
 		log( LOG_ERROR, "db: SpiderCache init failed." );
-		return 1;
-	}
-
-	// site clusterdb
-	if ( ! g_clusterdb.init()   ) {
-		log( LOG_ERROR, "db: Clusterdb init failed." );
-		return 1;
-	}
-
-	// linkdb
-	if ( ! g_linkdb.init()     ) {
-		log( LOG_ERROR, "db: Linkdb init failed." );
 		return 1;
 	}
 

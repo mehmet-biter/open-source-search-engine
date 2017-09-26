@@ -1993,6 +1993,40 @@ const char *getDbnameFromId(rdbid_t rdbId) {
 	}
 }
 
+
+bool initialiseAllPrimaryRdbs() {
+	if(!g_posdb.init()) {
+		log( LOG_ERROR, "db: Posdb init failed." );
+		return false;
+	}
+	if(!g_titledb.init()) {
+		log( LOG_ERROR, "db: Titledb init failed." );
+		return false;
+	}
+	if(!g_tagdb.init()) {
+		log( LOG_ERROR, "db: Tagdb init failed." );
+		return false;
+	}
+	if(!g_spiderdb.init()) {
+		log( LOG_ERROR, "db: Spiderdb init failed." );
+		return false;
+	}
+	if(!g_doledb.init()) {
+		log( LOG_ERROR, "db: Doledb init failed." );
+		return false;
+	}
+	if(!g_clusterdb.init()   ) {
+		log( LOG_ERROR, "db: Clusterdb init failed." );
+		return false;
+	}
+	if(!g_linkdb.init()) {
+		log( LOG_ERROR, "db: Linkdb init failed." );
+		return false;
+	}
+	return true;
+}
+
+
 // get the RdbBase class for an rdbId and collection name
 RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum) {
 	Rdb *rdb = getRdbFromId ( rdbId );
