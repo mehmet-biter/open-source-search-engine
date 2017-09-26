@@ -717,8 +717,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
-	Host *h9 = g_hostdb.m_myHost;
-
 	// init our table for doing zobrist hashing
 	if ( ! hashinit() ) {
 		log( LOG_ERROR, "db: Failed to init hashtable." );
@@ -1193,7 +1191,7 @@ int main2 ( int argc , char *argv[] ) {
 	//   name gbHID.conf
 	// . now that hosts.conf has more of the burden, all gbHID.conf files
 	//   can be identical
-	if ( ! g_conf.init ( h9->m_dir ) ) {
+	if ( ! g_conf.init ( g_hostdb.m_myHost->m_dir ) ) {
 		log( LOG_ERROR, "db: Conf init failed." );
 		return 1;
 	}
@@ -1721,7 +1719,7 @@ int main2 ( int argc , char *argv[] ) {
 	// . then dns Distributed client
 	// . server should listen to a socket and register with g_loop
 	// . Only the distributed cache shall call the dns server.
-	if ( ! g_dns.init( h9->m_dnsClientPort ) ) {
+	if ( ! g_dns.init( g_hostdb.m_myHost->m_dnsClientPort ) ) {
 		log("db: Dns distributed client init failed." ); return 1; }
 
 	// initialize dns client library
@@ -1735,7 +1733,7 @@ int main2 ( int argc , char *argv[] ) {
 	
 	// . then webserver
 	// . server should listen to a socket and register with g_loop
-	if ( ! g_httpServer.init( h9->getInternalHttpPort(), h9->getInternalHttpsPort() ) ) {
+	if ( ! g_httpServer.init( g_hostdb.m_myHost->getInternalHttpPort(), g_hostdb.m_myHost->getInternalHttpsPort() ) ) {
 		log("db: HttpServer init failed. Another gb already running?" );
 		// this is dangerous!!! do not do the shutdown thing
 		return 1;
