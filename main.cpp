@@ -3268,6 +3268,7 @@ static int32_t dumpSpiderdbCsv(const char *coll) {
 	const SpiderReply *prevSpiderReply = NULL;
 	char prevSpiderReplyBuf[sizeof(SpiderReply)+MAX_URL_LEN+100];
 	int64_t prevSpiderReplyUrlHash48 = 0LL;
+	int64_t prevRequestUh48 = 0;
 
 	const CollectionRec *cr = g_collectiondb.getRec(coll);
 
@@ -3309,6 +3310,8 @@ static int32_t dumpSpiderdbCsv(const char *coll) {
 				const SpiderReply *srep = reinterpret_cast<const SpiderReply *>(srec);
 				prevSpiderReplyUrlHash48 = srep->getUrlHash48();
 				prevSpiderReply = srep;
+			} else if(prevRequestUh48==Spiderdb::getUrlHash48(reinterpret_cast<const key128_t*>(srec))) {
+				//skip duplicate
 			} else {
 				const SpiderRequest *spiderRequest = reinterpret_cast<const SpiderRequest*>(srec);
 
@@ -3320,9 +3323,12 @@ static int32_t dumpSpiderdbCsv(const char *coll) {
 					// Last reply and current request do not belong together
 					prevSpiderReply = NULL;
 				}
+				
+				prevRequestUh48 = spiderRequest->getUrlHash48();
 
 				// print it
 				printf("%u,",spiderRequest->m_firstIp);
+				printf("%lu,",spiderRequest->getUrlHash48());
 				printf("%u,",spiderRequest->m_hostHash32);
 				printf("%u,",spiderRequest->m_domHash32);
 				printf("%u,",spiderRequest->m_siteHash32);
@@ -3380,15 +3386,12 @@ static int32_t dumpSpiderdbCsv(const char *coll) {
 					printf("%d,",prevSpiderReply->m_isRSS);
 					printf("%d,",prevSpiderReply->m_isPermalink);
 					printf("%d,",prevSpiderReply->m_isIndexed);
-					printf("%d,",prevSpiderReply->m_hasAuthorityInlink);
 					printf("%d,",prevSpiderReply->m_isIndexedINValid);
-					printf("%d,",prevSpiderReply->m_hasAuthorityInlinkValid);
-					printf("%d,",prevSpiderReply->m_siteNumInlinksValid);
 					printf("%d,",prevSpiderReply->m_fromInjectionRequest);
 					printf("%d,",prevSpiderReply->m_wasIndexed);
-					printf("%d,",prevSpiderReply->m_wasIndexedValid);
+					printf("%d",prevSpiderReply->m_wasIndexedValid);
 				} else {
-					printf(",,,,,,,,,,,,,,,,");
+					printf(",,,,,,,,,,,,,");
 				}
 				printf("\n");
 			}
