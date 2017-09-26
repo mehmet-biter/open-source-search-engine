@@ -1798,6 +1798,11 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
+	if(cmd && cmd[0] && cmd[0]!='-') {
+		log(LOG_ERROR, "Unknown command: '%s'", cmd);
+		return 1;
+	}
+
 	// . register a callback to try to merge everything every 60 seconds
 	// . do not exit if we couldn't do this, not a huge deal
 	// . put this in here instead of Rdb.cpp because we don't want generator commands merging on us
