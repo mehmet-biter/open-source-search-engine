@@ -196,6 +196,8 @@ public:
 	//   is probably more accurate than this function.
 	bool isLinkLoop() const;
 
+	bool isValid() const;
+
 	static char* getDisplayUrl( const char* url, SafeBuf* sb );
 
 private:
@@ -259,6 +261,9 @@ private:
 	int32_t m_port;
 	int32_t m_defPort;
 	int32_t m_portLen;
+
+	const char *m_portPtr;
+	int32_t m_portPtrLen;
 };
 
 #endif // GB_URL_H

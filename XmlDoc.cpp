@@ -8325,7 +8325,7 @@ char **XmlDoc::gotHttpReply ( ) {
 			m_httpReply          = NULL;
 			m_httpReplyAllocSize = 0;
 		}
-		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL. ENOMEM" );
+		logTrace(g_conf.m_logTraceXmlDoc, "END, return NULL. %s", merrname(g_errno));
 		return NULL;
 	}
 

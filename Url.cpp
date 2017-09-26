@@ -48,9 +48,13 @@ void Url::reset() {
 	m_plen = 0;
 	m_flen = 0;
 	m_tldLen = 0;
+
 	m_port = 0;
 	m_defPort = 0;
 	m_portLen = 0;
+
+	m_portPtr = nullptr;
+	m_portPtrLen = 0;
 }
 
 void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams,
@@ -1407,8 +1411,13 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 		// scan for a '/' 
 		j = i + 1;
 		while ( s[j] && s[j]!='/') m_url[m_ulen++] = s[j++];
+
+		m_portPtr = s + i + 1;
+		m_portPtrLen = j - (i + 1);
+
 		// now read our port
-		m_port = atol2 ( s + (i + 1) , j - (i + 1) );
+		m_port = atol2(m_portPtr, m_portPtrLen);
+
 		// if it's the default port, then remove what we copied
 		if ( m_port == m_defPort ) m_ulen = savedLen;
 		// make i point to the root / in the m_path, if any
@@ -2094,6 +2103,14 @@ bool Url::isLinkLoop ( ) const {
 //http://www.pittsburghlive.com:8000/x/tribune-review/opinion/steigerwald/letters\/send/archive/bish/letters/send/archive/bish/letters/bish/letters/send/archive/\bish/archive/letters/bish/letters/send/archive/bish/letters/send/bish/archive/l\etters/bish/letters/archive/letters/send/
 //http://www.pittsburghlive.com:8000/x/tribune-review/opinion/steigerwald/letters\/send/archive/bish/letters/send/archive/bish/letters/send/bish/archive/letters/\send/bish/archive/letters/send/archive/letters/bish/archive/bish/archive/letter\s/
 
+bool Url::isValid() const {
+	// validate port
+	if (m_port <= 0 || m_port > 65535 || m_portPtrLen > 5) {
+		return false;
+	}
+
+	return true;
+}
 
 bool Url::isIp() const {
 	if(!m_host)            return false;

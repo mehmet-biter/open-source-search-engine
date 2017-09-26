@@ -120,9 +120,11 @@ const char *mstrerror ( int errnum ) {
 			case EDOCBLOCKEDURLIP:
 				return "Doc blocked due to url is IP";
 			case EDOCBLOCKEDURLCORRUPT:
-				return "Doc blocked due to corruption";
+				return "Doc blocked due to url corruption";
 			case EDOCBADCONTENTTYPE :
 				return "Doc bad content type";
+			case EDOCBLOCKEDURLINVALID:
+				return "Doc blocked due to invalid url";
 			case EDOCBADHTTPSTATUS :
 				return "Doc bad http status";
 			case EDOCREDIRECTSTOSELF:
@@ -339,7 +341,7 @@ static const char* s_errname[] {
 	STRINGIFY( EDOCBLOCKEDURLIP ),
 	STRINGIFY( EDOCBLOCKEDURLCORRUPT ),
 	STRINGIFY( EDOCBADCONTENTTYPE ),
-	STRINGIFY( EUNUSED14 ),
+	STRINGIFY( EDOCBLOCKEDURLINVALID ),
 	STRINGIFY( EDOCBADHTTPSTATUS ),
 	STRINGIFY( EDOCREDIRECTSTOSELF ),
 	STRINGIFY( EDOCTOOMANYREDIRECTS ),

@@ -11,6 +11,19 @@
 bool isUrlBlocked(const Url &url, int *p_errno) {
 	Statistics::increment_url_block_counter_call();
 
+/*
+	if (!url.isValid()) {
+		logTrace(g_conf.m_logTraceUrlMatchList, "Url is invalid: %s", url.getUrl());
+		Statistics::increment_url_block_counter_blacklisted_urlinvalid();
+
+		if (p_errno) {
+			*p_errno = EDOCBLOCKEDURLINVALID;
+		}
+
+		return true;
+	}
+*/
+
 	if (!g_conf.m_spiderIPUrl) {
 		// check if hostname is ip
 		std::string hostname(url.getHost(), url.getHostLen());
@@ -99,6 +112,9 @@ bool isUrlUnwanted(const Url &url, const char **reason) {
 					break;
 				case EDOCBLOCKEDURLCORRUPT:
 					*reason = "blocked corrupt";
+					break;
+				case EDOCBLOCKEDURLINVALID:
+					*reason = "blocked invalid";
 					break;
 				case EDOCBLOCKEDSHLIBDOMAIN:
 					*reason = "blocked domain";
