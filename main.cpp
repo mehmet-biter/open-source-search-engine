@@ -631,23 +631,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-	/*
-	if ( strcmp ( cmd , "querytest" ) == 0){
-		if ( ! g_hostdb.init(hostsConf, hostId) ) {
-			log("db: hostdb init failed." ); return 1; }
-		// init our table for doing zobrist hashing
-		if ( ! hashinit() ) {
-			log("db: Failed to init hashtable." ); return 1; }
-		if (!ucInit(g_hostdb.m_dir)) {
-			log("Unicode initialization failed!");
-			return 1;
-		}
-		queryTest();
-		return 0;
-		
-	}
-	*/
-
 	if ( strcmp ( cmd ,"isportinuse") == 0 ) {
 		if ( cmdarg+1 >= argc ) goto printHelp;
 		int port = atol ( argv[cmdarg+1] );
@@ -1220,17 +1203,10 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 	
-	//if ( ! g_hostdb.validateIps ( &g_conf ) ) {
-	//	log("db: Failed to validate ips." ); return 1;}
-
 	// put in read only mode
 	if ( useTmpCluster ) {
 		g_conf.m_readOnlyMode = true;
 	}
-
-	// log how much mem we can use
-	//log(LOG_INIT,"conf: Max mem allowed to use is %" PRId64"\n",
-	//g_conf.m_maxMem);
 
 	// init the loop, needs g_conf
 	if ( ! g_loop.init() ) {
