@@ -187,7 +187,6 @@ extern void resetUnicode       ( );
 
 
 extern bool g_recoveryMode; // HostFlags.cpp
-static int s_recoveryLevel = 0;
 
 static int argc_copy;
 static char **argv_copy;
@@ -583,22 +582,8 @@ int main2 ( int argc , char *argv[] ) {
 	//send an email on startup for -r, like if we are recovering from an
 	//unclean shutdown.
 	g_recoveryMode = false;
-	const char *cc = NULL;
-	if ( strncmp ( cmd , "-r" ,2 ) == 0 ) {
-		cc = cmd;
-	}
-	if ( strncmp ( cmd2 , "-r",2 ) == 0 ) {
-		cc = cmd2;
-	}
-	if ( cc ) {
+	if ( strncmp ( cmd , "-r" ,2 ) == 0 || strncmp ( cmd2 , "-r",2 ) == 0 ) {
 		g_recoveryMode = true;
-		s_recoveryLevel = 1;
-		if ( strlen(cc) > 2 ) {
-			s_recoveryLevel = atoi(cc+2);
-		}
-		if ( s_recoveryLevel < 0 ) {
-			s_recoveryLevel = 0;
-		}
 	}
 
 	// run as daemon? then we have to fork
