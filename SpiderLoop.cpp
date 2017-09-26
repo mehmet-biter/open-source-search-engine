@@ -907,7 +907,7 @@ skipDoledbRec:
 	}
 
 	// reset reason why crawl is not running, because we basically are now
-	cr->m_spiderStatus = SP_INPROGRESS; // this is 7
+	cr->m_spiderStatus = spider_status_t::SP_INPROGRESS;
 
 	// be sure to save state so we do not re-send emails
 	cr->setNeedsSave();

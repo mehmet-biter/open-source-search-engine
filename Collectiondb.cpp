@@ -706,7 +706,7 @@ bool Collectiondb::resetColl2(collnum_t oldCollnum, collnum_t newCollnum) {
 		cr->m_spiderColl = NULL;
 	}
 
-	cr->m_spiderStatus = SP_INITIALIZING; // this is 0
+	cr->m_spiderStatus = spider_status_t::SP_INITIALIZING; // this is 0
 	//cr->m_spiderStatusMsg = NULL;
 
 	// so XmlDoc.cpp can detect if the collection was reset since it
@@ -768,7 +768,7 @@ bool Collectiondb::resetColl2(collnum_t oldCollnum, collnum_t newCollnum) {
 	g_linkdb.getRdb()->deleteColl    ( oldCollnum , newCollnum );
 
 	// reset crawl status too!
-	cr->m_spiderStatus = SP_INITIALIZING;
+	cr->m_spiderStatus = spider_status_t::SP_INITIALIZING;
 
 	// . set m_recs[oldCollnum] to NULL and remove from hash table
 	// . do after calls to deleteColl() above so it wont crash
@@ -958,7 +958,7 @@ CollectionRec::CollectionRec() {
 	m_overflow  = 0x12345678;
 	m_overflow2 = 0x12345678;
 	// the spiders are currently uninhibited i guess
-	m_spiderStatus = SP_INITIALIZING; // this is 0
+	m_spiderStatus = spider_status_t::SP_INITIALIZING; // this is 0
 	// inits for sortbydatetable
 	m_msg5       = NULL;
 	// JAB - track which regex parsers have been initialized

@@ -35,7 +35,7 @@
 
 bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 	const char *crawlMsg;
-	int32_t crawlStatus = -1;
+	spider_status_t crawlStatus;
 	getSpiderStatusMsg ( cx , &crawlMsg, &crawlStatus );
 
 	if ( format == FORMAT_JSON ) {
@@ -43,7 +43,7 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 			       "\"response\":{\n"
 			       "\t\"statusCode\":%" PRId32",\n"
 			       "\t\"statusMsg\":\"%s\",\n"
-			       , crawlStatus, crawlMsg);
+			       , (int)crawlStatus, crawlMsg);
 		sb->safePrintf("\t\"processStartTime\":%" PRId64",\n", (g_process.m_processStartTime / 1000));
 		sb->safePrintf("\t\"currentTime\":%" PRIu32"\n", (uint32_t)getTimeGlobal() );
 		sb->safePrintf("\t}\n");
@@ -51,7 +51,7 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 	}
 
 	if ( format == FORMAT_XML ) {
-		sb->safePrintf("<response>\n\t<statusCode>%" PRId32"</statusCode>\n", crawlStatus);
+		sb->safePrintf("<response>\n\t<statusCode>%" PRId32"</statusCode>\n", (int)crawlStatus);
 		sb->safePrintf("\t<statusMsg><![CDATA[%s]]></statusMsg>\n", crawlMsg);
 		sb->safePrintf("\t<currentTime>%" PRIu32"</currentTime>\n", (uint32_t)getTimeGlobal() );
 		sb->safePrintf("\t<currentTimeUTC>%" PRIu32"</currentTimeUTC>\n", (uint32_t)getTimeGlobal() );

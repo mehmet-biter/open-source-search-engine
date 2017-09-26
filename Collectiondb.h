@@ -8,6 +8,7 @@
 #include <atomic>
 #include "SafeBuf.h"
 #include "rdbid_t.h"
+#include "spider_status_t.h"
 #include "GbMutex.h"
 
 
@@ -236,7 +237,7 @@ public:
 
 	int32_t  m_maxQueryTerms;
 
-	char  m_spiderStatus;
+	spider_status_t  m_spiderStatus;
 
 	//ranking settings
 	float m_sameLangWeight;

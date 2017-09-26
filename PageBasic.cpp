@@ -841,7 +841,7 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 		// show stats
 		//
 		const char *crawlMsg;
-		int32_t crawlStatus = -1;
+		spider_status_t crawlStatus;
 		getSpiderStatusMsg ( cr , &crawlMsg, &crawlStatus );
 
 		sb.safePrintf(
@@ -856,7 +856,7 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 			      "<td><b>Crawl Status Msg:</td>"
 			      "<td>%s</td>"
 			      "</tr>"
-			      , crawlStatus
+			      , (int)crawlStatus
 			      , crawlMsg);
 
 		// print link to embed the code in their own site

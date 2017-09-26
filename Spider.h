@@ -8,6 +8,7 @@
 #include "Rdb.h"
 #include "Titledb.h" //DOCID_MASK
 #include "hash.h"
+#include "spider_status_t.h"
 
 
 class RdbList;
@@ -35,20 +36,8 @@ class SafeBuf;
 // we reduce this below if the spiderdb is smaller.
 #define MAX_WINNER_NODES 2000
 
-// . values for CollectionRec::m_spiderStatus
-// . reasons why crawl is not happening
-#define SP_INITIALIZING   0
-//#define SP_UNUSED_1     1
-//#define SP_UNUSED_2     2
-//#define SP_UNUSED_3     3
-//#define SP_UNUSED_4     4
-//#define SP_UNUSED_5     5
-#define SP_PAUSED         6 // user paused spider
-#define SP_INPROGRESS     7 // it is going on!
-#define SP_ADMIN_PAUSED   8 // g_conf.m_spideringEnabled = false
-//#define SP_UNUSED_9     9
 
-void getSpiderStatusMsg(const CollectionRec *cx, const char **msg, int32_t *status);
+void getSpiderStatusMsg(const CollectionRec *cx, const char **msg, spider_status_t *status);
 
 
 
