@@ -60,6 +60,25 @@ static RdbCache s_httpCacheOthers;
 // queue up identical requests
 static HashTableX s_rt;
 
+struct HttpCacheData {
+	HttpCacheData()
+		: ptr_reply(nullptr)
+		, size_reply(0)
+		, m_errno(0) {
+	}
+
+	HttpCacheData(char *reply, int32_t replySize, int32_t err)
+		: ptr_reply(reply)
+		, size_reply(replySize)
+		, m_errno(err) {
+	}
+
+	int32_t m_errno;
+
+	char *ptr_reply;
+	int32_t size_reply;
+};
+
 void resetMsg13Caches ( ) {
 	s_httpCacheRobots.reset();
 	s_httpCacheOthers.reset();
@@ -490,8 +509,8 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 	char *rec;
 	int32_t  recSize;
 	// get the cache
-	RdbCache *c = &s_httpCacheOthers;
-	if ( r->m_isRobotsTxt ) c = &s_httpCacheRobots;
+	RdbCache *c = r->m_isRobotsTxt ? &s_httpCacheRobots : &s_httpCacheOthers;
+
 	// the key is just the 64 bit hash of the url
 	key96_t k; k.n1 = 0; k.n0 = r->m_cacheKey;
 	// see if in there already
@@ -503,20 +522,24 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 					true             , // copy?
 					r->m_maxCacheAge , // 24*60*60 ,
 					true             ); // stats?
-	
+
 	// . an empty rec is a cached not found (no robot.txt file)
 	// . therefore it's allowed, so set *reply to 1 (true)
 	if (inCache) {
-		logDebug(g_conf.m_logDebugSpider, "proxy: found %" PRId32" bytes in cache for %s", recSize,r->ptr_url);
+		HttpCacheData *httpCacheData = static_cast<HttpCacheData*>(rec);
+		if (deserializeMsg2(&httpCacheData->ptr_reply, &httpCacheData->size_reply)) {
+			logDebug(g_conf.m_logDebugSpider, "proxy: found %" PRId32" bytes in cache for %s", recSize, r->ptr_url);
 
-		// helpful for debugging. even though you may see a robots.txt
-		// redirect and think we are downloading that each time,
-		// we are not... the redirect is cached here as well.
-		//log("spider: %s was in cache",r->ptr_url);
-		// . send the cached reply back
-		// . this will free send/read bufs on completion/g_errno
-		g_udpServer.sendReply(rec, recSize, rec, recSize, slot);
-		return;
+			if (httpCacheData->m_errno == 0) {
+				// . send the cached reply back
+				// . this will free send/read bufs on completion/g_errno
+				g_udpServer.sendReply(httpCacheData->ptr_reply, httpCacheData->size_reply, httpCacheData->ptr_reply, httpCacheData->size_reply, slot);
+			} else {
+				g_udpServer.sendErrorReply(slot, httpCacheData->m_errno);
+			}
+
+			return;
+		}
 	}
 	rcl.unlock();
 
@@ -1721,16 +1744,21 @@ void gotHttpReply2 ( void *state ,
 	}
 
 	// store reply in the cache (might be compressed)
-	if ( r->m_maxCacheAge > 0 ) { // && ! r->m_parent ) {
+	if (r->m_maxCacheAge > 0) {
 		// get the cache
-		RdbCache *c = &s_httpCacheOthers;
-		// use robots cache if we are a robots.txt file
-		if ( r->m_isRobotsTxt ) c = &s_httpCacheRobots;
+		RdbCache *c = r->m_isRobotsTxt ? &s_httpCacheRobots : &s_httpCacheOthers;
+
 		// key is based on url hash
 		key96_t k; k.n1 = 0; k.n0 = r->m_cacheKey;
+
+		HttpCacheData cacheData(reply, replySize, savedErr);
+		int32_t serializeCacheDataSize = 0;
+		char *serializeCacheData = serializeMsg2(&cacheData, sizeof(cacheData), &cacheData.ptr_reply, &cacheData.size_reply, &serializeCacheDataSize);
+
 		// add it, use a generic collection
 		RdbCacheLock rcl(*c);
-		c->addRecord ( (collnum_t) 0 , k , reply , replySize );
+		c->addRecord((collnum_t) 0, k, serializeCacheData, serializeCacheDataSize);
+
 		// ignore errors caching it
 		g_errno = 0;
 	}
