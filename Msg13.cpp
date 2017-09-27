@@ -62,15 +62,15 @@ static HashTableX s_rt;
 
 struct HttpCacheData {
 	HttpCacheData()
-		: ptr_reply(nullptr)
-		, size_reply(0)
-		, m_errno(0) {
+		: m_errno(0)
+		, ptr_reply(nullptr)
+		, size_reply(0) {
 	}
 
 	HttpCacheData(char *reply, int32_t replySize, int32_t err)
-		: ptr_reply(reply)
-		, size_reply(replySize)
-		, m_errno(err) {
+		: m_errno(err)
+		, ptr_reply(reply)
+		, size_reply(replySize) {
 	}
 
 	int32_t m_errno;
@@ -526,8 +526,8 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 	// . an empty rec is a cached not found (no robot.txt file)
 	// . therefore it's allowed, so set *reply to 1 (true)
 	if (inCache) {
-		HttpCacheData *httpCacheData = static_cast<HttpCacheData*>(rec);
-		if (deserializeMsg2(&httpCacheData->ptr_reply, &httpCacheData->size_reply)) {
+		HttpCacheData *httpCacheData = reinterpret_cast<HttpCacheData*>(rec);
+		if (deserializeMsg(sizeof(*httpCacheData), &httpCacheData->size_reply, &httpCacheData->size_reply, &httpCacheData->ptr_reply, ((char*)httpCacheData + sizeof(*httpCacheData))) != -1) {
 			logDebug(g_conf.m_logDebugSpider, "proxy: found %" PRId32" bytes in cache for %s", recSize, r->ptr_url);
 
 			if (httpCacheData->m_errno == 0) {
@@ -1753,7 +1753,7 @@ void gotHttpReply2 ( void *state ,
 
 		HttpCacheData cacheData(reply, replySize, savedErr);
 		int32_t serializeCacheDataSize = 0;
-		char *serializeCacheData = serializeMsg2(&cacheData, sizeof(cacheData), &cacheData.ptr_reply, &cacheData.size_reply, &serializeCacheDataSize);
+		char *serializeCacheData = serializeMsg(sizeof(cacheData), &cacheData.size_reply, &cacheData.size_reply, &cacheData.ptr_reply, &cacheData, &serializeCacheDataSize, NULL, 0);
 
 		// add it, use a generic collection
 		RdbCacheLock rcl(*c);
