@@ -449,13 +449,7 @@ public:
 	//   date in the request... UNFORTUNATELY we lose m_addedTime then!!!
 	uint32_t  m_addedTime; // time_t
 
-	// if m_isNewOutlink is true, then this SpiderRequest is being added 
-	// for a link that did not exist on this page the last time it was
-	// spidered. XmlDoc.cpp needs to set XmlDoc::m_min/maxPubDate for
-	// m_url. if m_url's content does not contain a pub date explicitly
-	// then we can estimate it based on when m_url's parent was last
-	// spidered (when m_url was not an outlink on its parent page)
-	uint32_t  m_parentPrevSpiderTime; // time_t
+	uint32_t  m_reserved4b; //m_parentPrevSpiderTime
 
 	// # of spider requests from different c-blocks. capped at 255.
 	// taken from the # of SpiderRequests.

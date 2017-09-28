@@ -706,22 +706,6 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 	m_version   = TITLEREC_CURRENT_VERSION;
 	m_versionValid = true;
 
-	/*
-	// set min/max pub dates right away
-	m_minPubDate = -1;
-	m_maxPubDate = -1;
-	// parentPrevSpiderTime is 0 if that was the first time that the
-	// parent was spidered, in which case isNewOutlink will always be set
-	// for every outlink it had!
-	if ( sreq->m_isNewOutlink && sreq->m_parentPrevSpiderTime ) {
-		// sanity check
-		if ( ! sreq->m_parentPrevSpiderTime ) {g_process.shutdownAbort(true);}
-		// pub date is somewhere between these two times
-		m_minPubDate = sreq->m_parentPrevSpiderTime;
-		m_maxPubDate = sreq->m_addedTime;
-	}
-	*/
-
 	// this is used to removing the rec from doledb after we spider it
 	m_doledbKey.setMin();
 	if ( doledbKey ) m_doledbKey = *doledbKey;
@@ -14789,18 +14773,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// this is used for building dmoz. we just want to index
 		// the urls in dmoz, not their outlinks.
 		if ( avoid  ) ksr.m_avoidSpiderLinks = 1;
-
-		// . if this is the 2nd+ time we were spidered and this outlink
-		//   wasn't there last time, then set this!
-		// . if this is the first time spidering this doc then set it
-		//   to zero so that m_minPubDate is set to -1 when the outlink
-		//   defined by "ksr" is spidered.
-		if ( m_oldDocValid && m_oldDoc ) {
-			int32_t oldSpideredTime = m_oldDoc->getSpideredTime();
-			ksr.m_parentPrevSpiderTime = oldSpideredTime;
-		} else {
-			ksr.m_parentPrevSpiderTime = 0;
-		}
 
 		//
 		// . inherit manual add bit if redirecting to simplified url

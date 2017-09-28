@@ -3268,7 +3268,6 @@ static int32_t dumpSpiderdbCsv(const char *coll) {
 				printf("%u,",spiderRequest->m_siteHash32);
 				printf("%d,",spiderRequest->m_siteNumInlinks);
 				printf("%d,",spiderRequest->m_addedTime);
-				printf("%d,",spiderRequest->m_parentPrevSpiderTime);
 				printf("%d,",spiderRequest->m_pageNumInlinks);
 				printf("%d,",spiderRequest->m_sameErrCount);
 				printf("%d,",spiderRequest->m_version);
