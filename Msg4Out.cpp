@@ -912,6 +912,7 @@ bool loadAddsInProgress(const char *prefix) {
 		p += used;
 		// sanity check
 		if ( *(int32_t *)buf != used ) {
+			close(fd);
 			log(LOG_ERROR, "%s:%s: file %s is bad.",__FILE__,__func__,filename);
 			return false;
 		}
