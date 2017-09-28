@@ -30,8 +30,7 @@ static const char *strnpbrk(const char *str1, size_t len, const char *str2) {
 /// https://tools.ietf.org/html/rfc3986#section-5.2
 UrlParser::UrlParser(const char *url, size_t urlLen, int32_t titledbVersion)
 	: m_titledbVersion(titledbVersion)
-	, m_url(url)
-	, m_urlLen(urlLen)
+	, m_url(url, urlLen)
 	, m_scheme(NULL)
 	, m_schemeLen(0)
 	, m_authority(NULL)
@@ -48,12 +47,16 @@ UrlParser::UrlParser(const char *url, size_t urlLen, int32_t titledbVersion)
 	, m_queries()
 	, m_queriesDeleteCount(0)
 	, m_urlParsed() {
-	m_urlParsed.reserve(m_urlLen);
+	if (m_titledbVersion >= 125) {
+		m_url.erase(std::remove_if(m_url.begin(), m_url.end(), [](char c) { return c == 0x09 || c == 0x0A || c == 0x0D; }), m_url.end());
+	}
+
+	m_urlParsed.reserve(m_url.length());
 	parse();
 }
 
 void UrlParser::print() const {
-	logf(LOG_DEBUG, "UrlParser::url       : '%.*s'", static_cast<uint32_t>(m_urlLen), m_url);
+	logf(LOG_DEBUG, "UrlParser::url       : '%s'", m_url.c_str());
 	logf(LOG_DEBUG, "UrlParser::scheme    : '%.*s'", static_cast<uint32_t>(m_schemeLen), m_scheme);
 	logf(LOG_DEBUG, "UrlParser::authority : '%.*s'", static_cast<uint32_t>(m_authorityLen), m_authority);
 	logf(LOG_DEBUG, "UrlParser::host      : '%.*s'", static_cast<uint32_t>(m_hostLen), m_host);
@@ -72,8 +75,8 @@ void UrlParser::print() const {
 void UrlParser::parse() {
 	// URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
 
-	const char *urlEnd = m_url + m_urlLen;
-	const char *currentPos = m_url;
+	const char *urlEnd = m_url.c_str() + m_url.length();
+	const char *currentPos = m_url.c_str();
 
 	// hier-part   = "//" authority path-abempty
 	//             / path-absolute
