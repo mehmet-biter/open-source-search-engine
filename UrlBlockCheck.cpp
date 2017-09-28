@@ -11,7 +11,6 @@
 bool isUrlBlocked(const Url &url, int *p_errno) {
 	Statistics::increment_url_block_counter_call();
 
-/*
 	if (!url.isValid()) {
 		logTrace(g_conf.m_logTraceUrlMatchList, "Url is invalid: %s", url.getUrl());
 		Statistics::increment_url_block_counter_blacklisted_urlinvalid();
@@ -22,7 +21,6 @@ bool isUrlBlocked(const Url &url, int *p_errno) {
 
 		return true;
 	}
-*/
 
 	if (!g_conf.m_spiderIPUrl) {
 		// check if hostname is ip
