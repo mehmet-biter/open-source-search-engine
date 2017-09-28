@@ -69,8 +69,7 @@ private:
 
 	int32_t m_titledbVersion;
 
-	const char *m_url;
-	size_t m_urlLen;
+	std::string m_url;
 
 	const char *m_scheme;
 	size_t m_schemeLen;
@@ -103,11 +102,11 @@ inline int32_t UrlParser::getTitledbVersion() const {
 }
 
 inline const char* UrlParser::getUrl() const {
-	return m_url;
+	return m_url.c_str();
 }
 
 inline size_t UrlParser::getUrlLen() const {
-	return m_urlLen;
+	return m_url.length();
 }
 
 inline const char* UrlParser::getScheme() const {

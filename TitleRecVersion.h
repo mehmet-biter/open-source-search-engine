@@ -15,6 +15,9 @@
 //#define TITLEREC_CURRENT_VERSION    123
 
 // strip more parameters
-#define TITLEREC_CURRENT_VERSION    124
+//#define TITLEREC_CURRENT_VERSION    124
+
+// strip ascii tab & newline from url
+#define TITLEREC_CURRENT_VERSION    125
 
 #endif // GB_TITLERECVERSION_H

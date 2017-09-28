@@ -1014,7 +1014,8 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 	int32_t i;
 	int32_t nonAsciiPos = -1;
 	for ( i = 0 ; i < tlen ; i++ )	{
-		if ( is_wspace_a(t[i]) ) {
+		// tabs/cr/lf is actually allowed (we just need to strip it)
+		if ((titledbVersion < 125 && is_wspace_a(t[i])) || (titledbVersion >= 125 && t[i] == ' ')) {
 			break; // no spaces allowed
 		}
 
@@ -1212,7 +1213,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 
 	if (titledbVersion <= 122) {
 		// store filtered url into s
-		gbmemcpy (s, t, tlen);
+		memcpy(s, t, tlen);
 		s[len] = '\0';
 
 		if (stripParams) {
