@@ -120,7 +120,6 @@ int32_t SpiderRequest::print(SafeBuf *sbarg) const {
 	if ( m_urlIsDocId ) sb->safePrintf("URLISDOCID ");
 	if ( m_isRSSExt ) sb->safePrintf("ISRSSEXT ");
 	if ( m_isUrlPermalinkFormat ) sb->safePrintf("ISURLPERMALINKFORMAT ");
-	if ( m_isPingServer ) sb->safePrintf("ISPINGSERVER ");
 	if ( m_fakeFirstIp ) sb->safePrintf("ISFAKEFIRSTIP ");
 	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
 	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
@@ -202,7 +201,6 @@ int32_t SpiderReply::print(SafeBuf *sbarg) const {
 	//if ( m_isSpam ) sb->safePrintf("ISSPAM ");
 	if ( m_isRSS ) sb->safePrintf("ISRSS ");
 	if ( m_isPermalink ) sb->safePrintf("ISPERMALINK ");
-	if ( m_isPingServer ) sb->safePrintf("ISPINGSERVER ");
 	//if ( m_deleted ) sb->safePrintf("DELETED ");
 	if ( ! m_isIndexedINValid && m_isIndexed ) sb->safePrintf("ISINDEXED ");
 
@@ -265,7 +263,6 @@ int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, const XmlDoc
 //	if ( m_urlIsDocId ) sb->safePrintf("URLISDOCID ");
 //	if ( m_isRSSExt ) sb->safePrintf("ISRSSEXT ");
 //	if ( m_isUrlPermalinkFormat ) sb->safePrintf("ISURLPERMALINKFORMAT ");
-//	if ( m_isPingServer ) sb->safePrintf("ISPINGSERVER ");
 //	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
 //	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
 //	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
@@ -330,7 +327,6 @@ int32_t SpiderRequest::printToTable(SafeBuf *sb, const char *status, const XmlDo
 	if ( m_urlIsDocId ) sb->safePrintf("URLISDOCID ");
 	if ( m_isRSSExt ) sb->safePrintf("ISRSSEXT ");
 	if ( m_isUrlPermalinkFormat ) sb->safePrintf("ISURLPERMALINKFORMAT ");
-	if ( m_isPingServer ) sb->safePrintf("ISPINGSERVER ");
 	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
 	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
 
@@ -1524,24 +1520,6 @@ checkNextRule:
 			if ( ! srep && val == 0 ) continue;
 			// skip
 			p += 9;
-			// skip to next constraint
-			p = strstr(p, "&&");
-			// all done?
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			p += 2;
-			goto checkNextRule;
-		}
-
-		if ( strncmp(p,"ispingserver",12) == 0 ) {
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// if no match continue
-			if ( (bool)sreq->m_isPingServer == val ) continue;
-			// skip
-			p += 12;
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?

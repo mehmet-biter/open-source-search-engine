@@ -537,7 +537,7 @@ public:
 	unsigned    m_isUrlPermalinkFormat:1;
 
 	// is url "rpc.weblogs.com/shortChanges.xml"?
-	unsigned    m_isPingServer:1;
+	unsigned    m_reserved4a:1; // m_isPingServer
 
 	// . are we a delete instruction? (from Msg7.cpp as well)
 	// . if you want it to be permanently banned you should ban or filter
@@ -789,8 +789,7 @@ public:
 	// was the page a permalink?
 	unsigned    m_isPermalink:1;
 
-	// are we a pingserver page?
-	unsigned    m_isPingServer:1;
+	unsigned    m_reserved4a; //m_isPingServer:1;
 
 	// was it in the index when we were done?
 	unsigned    m_isIndexed:1;

@@ -1547,7 +1547,6 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 	Url *fu = getFirstUrl();
 
 	sreq->m_isAddUrl             = 0;//m_isAddUrl;
-	sreq->m_isPingServer         = fu->isPingServer();
 	//sreq->m_isUrlPermalinkFormat = m_isUrlPermalinkFormat;
 
 	// transcribe from old spider rec, stuff should be the same
@@ -14131,10 +14130,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		if ( m_isPermalinkValid ) m_srep.m_isPermalink =m_isPermalink;
 		if ( m_httpStatusValid  ) m_srep.m_httpStatus = m_httpStatus;
 
-		// stuff that is automatically valid
-		m_srep.m_isPingServer = 0;
-		if ( fu ) m_srep.m_isPingServer = (bool)fu->isPingServer();
-
 		// this was replaced by m_contentHash32
 		//m_srep.m_newRequests  = 0;
 		m_srep.m_errCode      = m_indexCode;
@@ -14157,7 +14152,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			SpiderRequest *o = &m_sreq;
 			// more stuff
 			n->m_hasAuthorityInlink = o->m_hasAuthorityInlink;
-			n->m_isPingServer       = o->m_isPingServer;
 			// the validator flags
 			n->m_hasAuthorityInlinkValid = o->m_hasAuthorityInlinkValid;
 
@@ -14328,7 +14322,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	m_srep.m_langId               = *langId;
 	m_srep.m_isRSS                = (bool)*isRSS;
 	m_srep.m_isPermalink          = (bool)*pl;
-        m_srep.m_isPingServer         = (bool)fu->isPingServer();
 	//m_srep.m_isSpam             = m_isSpam;
 
 	m_srep.m_siteNumInlinksValid = true;
@@ -14371,8 +14364,6 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 	if ( ! m_isRSSValid                ) { g_process.shutdownAbort(true); }
 	if ( ! m_isPermalinkValid          ) { g_process.shutdownAbort(true); }
 
-	Url *fu = getFirstUrl();
-
 	// reset
 	sreq->reset();
 	// assume not valid
@@ -14391,7 +14382,6 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 	sreq->m_pageNumInlinks       = 0;//m_sreq.m_parentFirstIp;
 
 	sreq->m_isAddUrl             = 0;//m_isAddUrl;
-	sreq->m_isPingServer         = fu->isPingServer();
 	//sreq->m_isUrlPermalinkFormat = m_isUrlPermalinkFormat;
 
 	// transcribe from old spider rec, stuff should be the same
@@ -14784,7 +14774,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// set some bit flags. the rest are 0 since we call reset()
 		if ( isupf        ) ksr.m_isUrlPermalinkFormat = 1;
 		//if ( isIndexed    ) ksr.m_isIndexed          = 1;
-		if ( ispingserver ) ksr.m_isPingServer         = 1;
 
 
 		// if parent is a root of a popular site, then it is considered

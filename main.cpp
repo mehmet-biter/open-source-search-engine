@@ -3285,7 +3285,6 @@ static int32_t dumpSpiderdbCsv(const char *coll) {
 				printf("%d,",spiderRequest->m_urlIsDocId);
 				printf("%d,",spiderRequest->m_isRSSExt);
 				printf("%d,",spiderRequest->m_isUrlPermalinkFormat);
-				printf("%d,",spiderRequest->m_isPingServer);
 				printf("%d,",spiderRequest->m_forceDelete);
 				printf("%d,",spiderRequest->m_isInjecting);
 				printf("%d,",spiderRequest->m_hadReply);
