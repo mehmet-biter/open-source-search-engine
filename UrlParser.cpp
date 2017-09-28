@@ -48,7 +48,7 @@ UrlParser::UrlParser(const char *url, size_t urlLen, int32_t titledbVersion)
 	, m_queriesDeleteCount(0)
 	, m_urlParsed() {
 	if (m_titledbVersion >= 125) {
-		m_url.erase(std::remove_if(m_url.begin(), m_url.end(), [](char c) { return c == '\r' || c == '\n' || c == '\t'; }), m_url.end());
+		m_url.erase(std::remove_if(m_url.begin(), m_url.end(), [](char c) { return c == 0x09 || c == 0x0A || c == 0x0D; }), m_url.end());
 	}
 
 	m_urlParsed.reserve(m_url.length());
