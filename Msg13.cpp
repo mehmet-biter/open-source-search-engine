@@ -77,7 +77,7 @@ struct HttpCacheData {
 
 	char *ptr_reply;
 	int32_t size_reply;
-};
+} __attribute__((packed));
 
 void resetMsg13Caches ( ) {
 	s_httpCacheRobots.reset();
