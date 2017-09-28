@@ -127,7 +127,6 @@ int32_t SpiderRequest::print(SafeBuf *sbarg) const {
 
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 
-	if ( m_isWWWSubdomain  ) sb->safePrintf("WWWSUBDOMAIN ");
 	if ( m_avoidSpiderLinks ) sb->safePrintf("AVOIDSPIDERLINKS ");
 
 	int32_t shardNum = g_hostdb.getShardNum( RDB_SPIDERDB, this );
@@ -1716,9 +1715,6 @@ checkNextRule:
 		}
 		// iswww, means url is like www.xyz.com/...
 		if ( strncmp(p,"iswww", 5) == 0 ) {
-			// now this is a bit - doesn't seem to be working yet
-			//if ( (bool)sreq->m_isWWWSubdomain == (bool)val ) 
-			//	continue;
 			// skip "iswww"
 			p += 5;
 			// skip over http:// or https://

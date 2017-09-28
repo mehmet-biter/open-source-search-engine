@@ -2716,13 +2716,21 @@ static void addUStat1(const SpiderRequest *sreq, bool hadReply , int32_t now) {
 		return;
 	}
 
+	bool isWWWSubdomain;
+	if(!sreq->m_urlIsDocId) {
+		Url url;
+		url.set(sreq->m_url);
+		isWWWSubdomain = url.isSimpleSubdomain();
+	} else
+		isWWWSubdomain = false;
+
 	int32_t age = now - sreq->m_addedTime;
 	// inc the counts
 	us->m_numRequests++;
 	if ( hadReply) us->m_numRequestsWithReplies++;
 	if ( sreq->m_hopCount == 0 ) {
-		if  ( sreq->m_isWWWSubdomain ) us->m_numWWWRoots++;
-		else                           us->m_numNonWWWRoots++;
+		if  ( isWWWSubdomain ) us->m_numWWWRoots++;
+		else                   us->m_numNonWWWRoots++;
 	}
 	else if ( sreq->m_hopCount == 1 ) us->m_numHops1++;
 	else if ( sreq->m_hopCount == 2 ) us->m_numHops2++;
@@ -2737,7 +2745,7 @@ static void addUStat1(const SpiderRequest *sreq, bool hadReply , int32_t now) {
 		          us->m_ageOfOldestUnspideredRequest == 0 )
 			us->m_ageOfOldestUnspideredRequest = age;
 	}
-	if ( ! hadReply && sreq->m_hopCount == 0 && sreq->m_isWWWSubdomain ) {
+	if ( ! hadReply && sreq->m_hopCount == 0 && isWWWSubdomain ) {
 		if (age > us->m_ageOfOldestUnspideredWWWRootRequest ||
 		          us->m_ageOfOldestUnspideredWWWRootRequest == 0 )
 			us->m_ageOfOldestUnspideredWWWRootRequest = age;
@@ -3282,7 +3290,6 @@ static int32_t dumpSpiderdbCsv(const char *coll) {
 				printf("%d,",spiderRequest->m_isInjecting);
 				printf("%d,",spiderRequest->m_hadReply);
 				printf("%d,",spiderRequest->m_fakeFirstIp);
-				printf("%d,",spiderRequest->m_isWWWSubdomain);
 				printf("%d,",spiderRequest->m_hasAuthorityInlink);
 				printf("%d,",spiderRequest->m_hasAuthorityInlinkValid);
 				printf("%d,",spiderRequest->m_siteNumInlinksValid);

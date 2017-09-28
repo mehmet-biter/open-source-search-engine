@@ -14786,10 +14786,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		//if ( isIndexed    ) ksr.m_isIndexed          = 1;
 		if ( ispingserver ) ksr.m_isPingServer         = 1;
 
-		// is it like www.xxx.com/* (does not include www.xxx.yyy.com)
-		// includes xxx.com/* however
-		ksr.m_isWWWSubdomain = url.isSimpleSubdomain();
-
 
 		// if parent is a root of a popular site, then it is considered
 		// an authority linker.  (see updateTagdb() function above)

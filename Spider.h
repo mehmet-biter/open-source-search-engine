@@ -558,8 +558,7 @@ public:
 	// is first ip a hash of url or docid or whatever?
 	unsigned    m_fakeFirstIp:1;
 
-	// www.xxx.com/*? or xxx.com/*?
-	unsigned    m_isWWWSubdomain:1;
+	unsigned    m_reserved3z        :1; //m_isWWWSubdomain
 
 	unsigned    m_reserved3x        :1;
 	unsigned    m_reserved3s        :1;
