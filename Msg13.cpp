@@ -533,13 +533,19 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 			if (httpCacheData->m_errno == 0) {
 				// . send the cached reply back
 				// . this will free send/read bufs on completion/g_errno
-				g_udpServer.sendReply(httpCacheData->ptr_reply, httpCacheData->size_reply, httpCacheData->ptr_reply, httpCacheData->size_reply, slot);
+				char *reply = (char*)mdup(httpCacheData->ptr_reply, httpCacheData->size_reply, "Msg13CacheReply");
+				g_udpServer.sendReply(reply, httpCacheData->size_reply, reply, httpCacheData->size_reply, slot);
 			} else {
 				g_udpServer.sendErrorReply(slot, httpCacheData->m_errno);
 			}
 
+			delete rec;
+
 			return;
 		}
+
+		// we need to free memory even when we're unable to deserialize message
+		delete rec;
 	}
 	rcl.unlock();
 
