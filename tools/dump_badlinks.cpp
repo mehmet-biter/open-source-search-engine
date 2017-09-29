@@ -133,6 +133,9 @@ int main(int argc, char **argv) {
 				newLinks.emplace_back(links->getLinkPtr(i), links->getLinkLen(i));
 			}
 
+			std::sort(oldLinks.begin(), oldLinks.end());
+			std::sort(newLinks.begin(), newLinks.end());
+
 			std::vector<std::string> diffLinks;
 			std::set_difference(oldLinks.begin(), oldLinks.end(), newLinks.begin(), newLinks.end(), std::back_inserter(diffLinks));
 
