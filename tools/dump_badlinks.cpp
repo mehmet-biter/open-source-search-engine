@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
 	key96_t endKey;
 	endKey.setMax();
 
-	while (msg5.getList(RDB_TITLEDB, cr->m_collnum, &list, &startKey, &endKey, 500000000, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
+	while (msg5.getList(RDB_TITLEDB, cr->m_collnum, &list, &startKey, &endKey, 10485760, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
 
 		if (list.isEmpty()) {
 			break;
@@ -115,6 +115,9 @@ int main(int argc, char **argv) {
 
 			Links *links = nullptr;
 
+			xmlDoc.m_linksValid = false;
+			xmlDoc.m_version = 124;
+
 			std::vector<std::string> oldLinks;
 			links = xmlDoc.getLinks();
 			for (int i = 0; i < links->getNumLinks(); ++i) {
@@ -122,7 +125,7 @@ int main(int argc, char **argv) {
 			}
 
 			xmlDoc.m_linksValid = false;
-			xmlDoc.m_version = TITLEREC_CURRENT_VERSION;
+			xmlDoc.m_version = 125;
 
 			std::vector<std::string> newLinks;
 			links = xmlDoc.getLinks();
