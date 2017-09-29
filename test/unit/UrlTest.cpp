@@ -50,7 +50,7 @@ TEST(UrlTest, SetNonAsciiInvalid) {
 		std::make_tuple("http://www.fas.org/blog/ssp/2009/08/securing-venezuela\032s-arsenals.php",
 		                "http://www.fas.org/blog/ssp/2009/08/securing-venezuela%1As-arsenals.php"),
 		std::make_tuple("https://pypi.python\n\n\t\t\t\t.org/packages/source/p/pyramid/pyramid-1.5.tar.gz",
-		                "https://pypi.python/"),
+		                "https://pypi.python.org/packages/source/p/pyramid/pyramid-1.5.tar.gz"),
 		std::make_tuple("http://undocs.org/ru/A/C.3/68/\vSR.48", "http://undocs.org/ru/A/C.3/68/%0BSR.48")
 	};
 
