@@ -8,6 +8,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include <libgen.h>
+#include <algorithm>
 
 static void print_usage(const char *argv0) {
 	fprintf(stdout, "Usage: %s [-h] PATH\n", argv0);
@@ -109,22 +110,37 @@ int main(int argc, char **argv) {
 			XmlDoc xmlDoc;
 			if (!xmlDoc.set2(list.getCurrentRec(), list.getCurrentRecSize(), "main", NULL, 0)) {
 				logf(LOG_TRACE, "Unable to set XmlDoc for docId=%" PRIu64, docId);
-				cleanup();
-				exit(1);
+				continue;
 			}
 
-			logf(LOG_TRACE, "XmlDoc info");
-			logf(LOG_TRACE, "\tdocId      : %" PRId64, docId);
-			logf(LOG_TRACE, "\tfirstUrl   : %.*s", xmlDoc.size_firstUrl, xmlDoc.ptr_firstUrl);
+			Links *links = nullptr;
 
-			logf(LOG_TRACE, "Links info");
-			g_log.m_disabled = true;
-			Links *links = xmlDoc.getLinks();
-			g_log.m_disabled = false;
+			std::vector<std::string> oldLinks;
+			links = xmlDoc.getLinks();
 			for (int i = 0; i < links->getNumLinks(); ++i) {
-				logf(LOG_TRACE, "\tlink      : %.*s", links->getLinkLen(i), links->getLinkPtr(i));
+				oldLinks.emplace_back(links->getLinkPtr(i), links->getLinkLen(i));
+			}
+
+			xmlDoc.m_linksValid = false;
+			xmlDoc.m_version = TITLEREC_CURRENT_VERSION;
+
+			std::vector<std::string> newLinks;
+			links = xmlDoc.getLinks();
+			for (int i = 0; i < links->getNumLinks(); ++i) {
+				newLinks.emplace_back(links->getLinkPtr(i), links->getLinkLen(i));
+			}
+
+			std::sort(oldLinks.begin(), oldLinks.end());
+			std::sort(newLinks.begin(), newLinks.end());
+
+			std::vector<std::string> diffLinks;
+			std::set_symmetric_difference(oldLinks.begin(), oldLinks.end(), newLinks.begin(), newLinks.end(), std::back_inserter(diffLinks));
+
+			for (auto link : diffLinks) {
+				fprintf(stdout, "%" PRId64"|%.*s|%s\n", docId, xmlDoc.size_firstUrl, xmlDoc.ptr_firstUrl, link.c_str());
 			}
 		}
+
 		startKey = *(key96_t *)list.getLastKey();
 		startKey++;
 
@@ -133,6 +149,7 @@ int main(int argc, char **argv) {
 			break;
 		}
 	}
+
 	cleanup();
 
 	return 0;
