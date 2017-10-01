@@ -288,6 +288,13 @@ void Phrases::getPhrase(int32_t i, char *buf, size_t bufsize, int32_t *phrLen) c
 		const char *w1   = m_words->getWord(w);
 		const char *wend = w1 + m_words->getWordLen(w);
 		for ( int32_t j = 0 ; j < m_words->getWordLen(w) && s<send ; j++){
+			// make sure not to overflow destination buffer
+			if( s + m_words->getWordLen(w) >= send ) {
+				*phrLen=0;
+				*buf='\0';
+				return;
+			}
+
 			// write the lower case char from w1+j into "s"
 			int32_t size = to_lower_utf8 ( s , send , w1 + j , wend );
 			// advance
