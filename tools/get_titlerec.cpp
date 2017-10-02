@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
 	key96_t startKey = Titledb::makeFirstKey(docId);
 	key96_t endKey = Titledb::makeLastKey(docId);
 
-	if (!msg5.getList(RDB_TITLEDB, cr->m_collnum, &list, &startKey, &endKey, 500000000, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
+	if (!msg5.getList(RDB_TITLEDB, cr->m_collnum, &list, &startKey, &endKey, 10485760, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
 		logf(LOG_TRACE, "msg5.getlist didn't block");
 		cleanup();
 		exit(1);
