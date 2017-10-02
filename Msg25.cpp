@@ -3900,6 +3900,13 @@ bool Links::addLink(const char *link, int32_t linkLen, int32_t nodeNum,
 	// normalize the link and prepend base url if needed
 	Url url;
 
+	if (titleRecVersion >= 125) {
+		// strip ending spaces
+		while (linkLen > 0 && link[linkLen - 1] == ' ') {
+			--linkLen;
+		}
+	}
+
 	/////
 	//
 	// hack fix. if link has spaces in it convert to +'s
