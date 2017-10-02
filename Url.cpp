@@ -1060,13 +1060,16 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 		gbmemcpy(encodedDomStart, t, p-t);
 		encodedDomStart += p-t;
 
-		while ( p < pend && *p != '/' ) {
+		while (p < pend && *p != '/' && *p != ':') {
 			const char *labelStart = p;
 			uint32_t tmpBuf[MAX_URL_LEN];
 			int32_t tmpLen = 0;
 
-			while ( p < pend && *p != '.' && *p != '/' )
+			while (p < pend && *p != '.' && *p != '/' &&
+			       (titledbVersion < 125 || (titledbVersion >= 125 && *p != ':'))) {
 				p++;
+			}
+
 			int32_t labelLen = p - labelStart;
 
 			bool tryLatin1 = false;
