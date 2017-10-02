@@ -826,10 +826,10 @@ public:
 	// . we use this with m_isIndexed above to adjust quota counts for
 	//   this m_siteHash32 which is basically just the subdomain/host
 	//   for SpiderColl::m_quotaTable
-	unsigned    m_wasIndexed              :1;
+	unsigned    m_reserved010             :1; //m_wasIndexed
 
 	// this also pertains to m_isIndexed as well:
-	unsigned    m_wasIndexedValid         :1;
+	unsigned    m_reserved011             :1; //m_wasIndexedValid
 
 	// how much buf will we need to serialize ourselves?
 	int32_t getRecSize () const { return m_dataSize + 4 + sizeof(key128_t); }

@@ -14066,18 +14066,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	if ( m_sreqValid && m_sreq.m_isInjecting )
 		m_srep.m_fromInjectionRequest = 1;
 
-	// were we already in titledb before we started spidering?
-	m_srep.m_wasIndexed = m_wasInIndex;
-
-	// note whether m_wasIndexed is valid because if it isn't then
-	// we shouldn't be counting this reply towards the page counts.
-	// if we never made it this far i guess we should not forcibly call
-	// getIsIndexed() at this point so our performance is fast in case
-	// this is an EFAKEFIRSTIP error or something similar where we
-	// basically just add this reply and we're done.
-	// NOTE: this also pertains to SpiderReply::m_isIndexed.
-	m_srep.m_wasIndexedValid = m_wasInIndexValid;
-
 	// assume no change
 	m_srep.m_isIndexed = m_isInIndex;
 

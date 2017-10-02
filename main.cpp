@@ -3319,10 +3319,8 @@ static int32_t dumpSpiderdbCsv(const char *coll) {
 					printf("%d,",prevSpiderReply->m_isIndexed);
 					printf("%d,",prevSpiderReply->m_isIndexedINValid);
 					printf("%d,",prevSpiderReply->m_fromInjectionRequest);
-					printf("%d,",prevSpiderReply->m_wasIndexed);
-					printf("%d",prevSpiderReply->m_wasIndexedValid);
 				} else {
-					printf(",,,,,,,,,,,,,");
+					printf(",,,,,,,,,,,");
 				}
 				printf("\n");
 			}
