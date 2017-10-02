@@ -1590,7 +1590,7 @@ int main2 ( int argc , char *argv[] ) {
 	// still have the collection's data in it
 	if ( ! g_collectiondb.addRdbBaseToAllRdbsForEachCollRec ( ) ) {
 		log("db: Collectiondb init failed." );
-		return 1;
+		_exit(1);
 	}
 
 	//Load the high-frequency term shortcuts (if they exist)
@@ -1613,12 +1613,12 @@ int main2 ( int argc , char *argv[] ) {
 	// initialize generate global index thread
 	if (!RdbBase::initializeGlobalIndexThread()) {
 		logError("Unable to initialize global index thread");
-		return 1;
+		_exit(1);
 	}
 
 	if (!Msg4In::initializeIncomingThread()) {
 		logError("Unable to initialize Msg4 incoming thread");
-		return 1;
+		_exit(1);
 	}
 
 	// test all collection dirs for write permission
@@ -1641,7 +1641,7 @@ int main2 ( int argc , char *argv[] ) {
 
 	// load the appropriate dictionaries
 	if ( ! g_speller.init() && g_conf.m_isLive ) {
-		return 1;
+		_exit(1);
 	}
 
 	// Load the category language table
@@ -1650,7 +1650,7 @@ int main2 ( int argc , char *argv[] ) {
 	// init minsitenuminlinks buffer
 	if ( ! g_tagdb.loadMinSiteInlinksBuffer() ) {
 		log("db: failed to load sitelinks.txt data");
-		return 1;
+		_exit(1);
 	}
 
 	// . then our main udp server
@@ -1687,7 +1687,7 @@ int main2 ( int argc , char *argv[] ) {
 	// initialize dns client library
 	if (!GbDns::initialize()) {
 		log(LOG_ERROR, "Unable to initialize dns client");
-		return 1;
+		_exit(1);
 	}
 
 	g_stable_summary_cache.configure(g_conf.m_stableSummaryCacheMaxAge, g_conf.m_stableSummaryCacheSize);
@@ -1698,7 +1698,7 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! g_httpServer.init( g_hostdb.m_myHost->getInternalHttpPort(), g_hostdb.m_myHost->getInternalHttpsPort() ) ) {
 		log("db: HttpServer init failed. Another gb already running?" );
 		// this is dangerous!!! do not do the shutdown thing
-		return 1;
+		_exit(1);
 	}
 
 	// . now register all msg handlers with g_udp server
@@ -1709,19 +1709,19 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "spellcheck" ) == 0 ) {	
 		if ( argc != cmdarg + 2 ) goto printHelp; // take no other args
 		g_speller.test ( argv[cmdarg + 1] );
-		return 0;
+		_exit(0);
 	}
 	
 	// gb dictLookupTest
 	if ( strcmp ( cmd , "dictlookuptest" ) == 0 ) {	
 		if ( argc != cmdarg + 2 ) goto printHelp; // take no other args
 		g_speller.dictLookupTest ( argv[cmdarg + 1] );
-		return 0;
+		_exit(0);
 	}
 
 	if(cmd && cmd[0] && cmd[0]!='-') {
 		log(LOG_ERROR, "Unknown command: '%s'", cmd);
-		return 1;
+		_exit(1);
 	}
 
 	// . register a callback to try to merge everything every 60 seconds
