@@ -3902,7 +3902,7 @@ bool Links::addLink(const char *link, int32_t linkLen, int32_t nodeNum,
 
 	if (titleRecVersion >= 125) {
 		// strip ending spaces
-		while (linkLen > 0 && link[linkLen - 1] == ' ') {
+		while (linkLen > 0 && is_wspace_a(link[linkLen - 1])) {
 			--linkLen;
 		}
 	}
