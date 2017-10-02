@@ -1162,6 +1162,12 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 					break;
 				}
 
+				// skip over tab/cr/lf
+				if (titledbVersion >= 125 && is_wspace_a(*p)) {
+					p += cs;
+					continue;
+				}
+
 				char stored = urlEncode ( &encoded[newUrlLen], 12 , p , cs );
 				p += cs;
 				newUrlLen += stored;
