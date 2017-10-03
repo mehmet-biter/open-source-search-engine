@@ -999,6 +999,29 @@ void Url::set(const char *t, int32_t tlen, bool addWWW, bool stripParams, bool s
 		tlen = MAX_URL_LEN - 10;
 	}
 
+	char stripped[MAX_URL_LEN];
+
+	if (titledbVersion >= 125) {
+		// skip starting spaces
+		while (tlen > 0 && is_wspace_a(*t)) {
+			++t;
+			--tlen;
+		}
+
+		// remove tab/cr/lf
+		std::string url(t, tlen);
+		url.erase(std::remove_if(url.begin(), url.end(), [](char c) { return c == 0x09 || c == 0x0A || c == 0x0D; }), url.end());
+		memcpy(stripped, url.c_str(), url.size());
+		stripped[url.size()] = '\0';
+		t = stripped;
+		tlen = url.size();
+
+		// skip ending spaces
+		while (tlen > 0 && is_wspace_a(t[tlen - 1])) {
+			--tlen;
+		}
+	}
+
 	// . skip over non-alnum chars (except - or /) in the beginning
 	// . if url begins with // then it's just missing the http: (slashdot)
 	// . watch out for hostname like: -dark-.deviantart.com(yes, it's real)
@@ -1012,14 +1035,9 @@ void Url::set(const char *t, int32_t tlen, bool addWWW, bool stripParams, bool s
 	// . url should be in encoded form!
 	int32_t i;
 	int32_t nonAsciiPos = -1;
-	for ( i = 0 ; i < tlen ; i++ )	{
-		if (is_wspace_a(t[i])) {
-			if ((titledbVersion < 125) || (titledbVersion >= 125 && t[i] == ' ')) {
-				break;
-			}
-
-			// tabs/cr/lf is actually allowed (we just need to strip it)
-			continue;
+	for ( i = 0 ; i < tlen ; i++ ) {
+		if (titledbVersion < 125 && is_wspace_a(t[i])) {
+			break;
 		}
 
 		if (!is_ascii(t[i])) {
@@ -1162,12 +1180,6 @@ void Url::set(const char *t, int32_t tlen, bool addWWW, bool stripParams, bool s
 				// too long?
 				if ( newUrlLen + 12 >= MAX_URL_LEN ) {
 					break;
-				}
-
-				// skip over tab/cr/lf
-				if (titledbVersion >= 125 && is_wspace_a(*p)) {
-					p += cs;
-					continue;
 				}
 
 				char stored = urlEncode ( &encoded[newUrlLen], 12 , p , cs );

@@ -34,9 +34,10 @@ TEST(UrlTest, SetNonAsciiValid) {
 		std::make_tuple("http://сацминэнерго.рф/robots.txt", "http://xn--80agflthakqd0d1e.xn--p1ai/robots.txt"),
 		std::make_tuple("http://сацминэнерго.рф:8080/", "http://xn--80agflthakqd0d1e.xn--p1ai:8080/"),
 		std::make_tuple("http://faß.de/", "http://xn--fa-hia.de/"),
+		std::make_tuple("http://\n\tfaß.\nde/", "http://xn--fa-hia.de/"),
 		std::make_tuple("http://βόλος.com/", "http://xn--nxasmm1c.com/"),
 		std::make_tuple("http://ශ්‍රී.com/", "http://xn--10cl1a0b660p.com/"),
-		std::make_tuple("http://نامه‌ای.com/", "http://xn--mgba3gch31f060k.com/")
+		std::make_tuple("http://نامه‌ای.com/", "http://xn--mgba3gch31f060k.com/"),
 	};
 
 	for (auto it = test_cases.begin(); it != test_cases.end(); ++it) {
