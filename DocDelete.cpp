@@ -11,15 +11,21 @@
 #include <algorithm>
 #include <atomic>
 
-static const char *s_filename = "docdelete.txt";
-static const char *s_tmp_filename = "docdelete.txt.processing";
-static const char *s_lastdocid_filename = "docdelete.txt.docid";
+static const char *s_docdelete_filename = "docdelete.txt";
+static const char *s_docdelete_tmp_filename = "docdelete.txt.processing";
+static const char *s_docdelete_lastdocid_filename = "docdelete.txt.lastpos";
 
-static std::vector<int64_t> s_pendingDocIds;
-static GbMutex s_pendingDocIdsMtx;
-static pthread_cond_t s_pendingDocIdsCond = PTHREAD_COND_INITIALIZER;
+static time_t s_docdelete_lastModifiedTime = 0;
 
-static time_t s_lastModifiedTime = 0;
+static const char *s_docdeleteurl_filename = "docdeleteurl.txt";
+static const char *s_docdeleteurl_tmp_filename = "docdeleteurl.txt.processing";
+static const char *s_docdeleteurl_lastpos_filename = "docdeleteurl.txt.lastpos";
+
+static time_t s_docdeleteurl_lastModifiedTime = 0;
+
+static std::vector<struct DocDeleteDocItem*> s_pendingDocItems;
+static GbMutex s_pendingDocItemsMtx;
+static pthread_cond_t s_pendingDocItemsCond = PTHREAD_COND_INITIALIZER;
 
 static std::atomic<bool> s_stop(false);
 
@@ -27,22 +33,30 @@ static GbThreadQueue s_docDeleteFileThreadQueue;
 static GbThreadQueue s_docDeleteDocThreadQueue;
 
 struct DocDeleteFileItem {
-	DocDeleteFileItem(int64_t lastDocId = -1)
-		: m_lastDocId(lastDocId)
-		, m_lastDocIdFile(s_lastdocid_filename) {
+	DocDeleteFileItem(const char *tmpFilename, const char *lastPosFilename, const std::string &lastPos, bool isDocDeleteUrl)
+		: m_tmpFilename(tmpFilename)
+		, m_lastPosFilename(lastPosFilename)
+		, m_lastPos(lastPos)
+		, m_isDocDeleteUrl(isDocDeleteUrl) {
 	}
 
-	int64_t m_lastDocId;
-	std::ofstream m_lastDocIdFile;
+	const char *m_tmpFilename;
+	const char *m_lastPosFilename;
+	std::string m_lastPos;
+	bool m_isDocDeleteUrl;
 };
 
 struct DocDeleteDocItem {
-	DocDeleteDocItem(std::ofstream &lastDocIdFile)
-		: m_lastDocIdFile(lastDocIdFile)
+	DocDeleteDocItem(const std::string &key, std::ofstream &lastPosFile, int64_t lastPos)
+		: m_key(key)
+		, m_lastPosFile(lastPosFile)
+		, m_lastPos(lastPos)
 		, m_xmlDoc(new XmlDoc()) {
 	}
 
-	std::ofstream &m_lastDocIdFile;
+	std::string m_key;
+	std::ofstream &m_lastPosFile;
+	int64_t m_lastPos;
 	XmlDoc *m_xmlDoc;
 };
 
@@ -86,110 +100,154 @@ bool DocDelete::initialize() {
 
 void DocDelete::finalize() {
 	s_stop = true;
-	pthread_cond_broadcast(&s_pendingDocIdsCond);
+	pthread_cond_broadcast(&s_pendingDocItemsCond);
 
 	s_docDeleteFileThreadQueue.finalize();
 	s_docDeleteDocThreadQueue.finalize();
 }
 
-void DocDelete::reload(int /*fd*/, void */*state*/) {
+void reloadDocDelete(bool isDocDeleteUrl) {
 	if (!s_docDeleteFileThreadQueue.isEmpty()) {
 		// we're currently processing tmp file
 		return;
 	}
 
+	const char *filename = nullptr;
+	const char *tmpFilename = nullptr;
+	const char *lastPosFilename = nullptr;
+	time_t *lastModifiedTime = nullptr;
+
+	if (isDocDeleteUrl) {
+		filename = s_docdeleteurl_filename;
+		tmpFilename = s_docdeleteurl_tmp_filename;
+		lastPosFilename = s_docdeleteurl_lastpos_filename;
+		lastModifiedTime = &s_docdeleteurl_lastModifiedTime;
+	} else {
+		filename = s_docdelete_filename;
+		tmpFilename = s_docdelete_tmp_filename;
+		lastPosFilename = s_docdelete_lastdocid_filename;
+		lastModifiedTime = &s_docdelete_lastModifiedTime;
+	}
+
 	struct stat st;
-	int64_t lastDocId = -1;
-	if (stat(s_tmp_filename, &st) == 0) {
+	std::string lastPos;
+	if (stat(tmpFilename, &st) == 0) {
 		if (docDeleteDisabled()) {
-			log(LOG_INFO, "Processing of %s is disabled", s_tmp_filename);
+			log(LOG_INFO, "Processing of %s is disabled", tmpFilename);
 			return;
 		}
 
-		if (stat(s_lastdocid_filename, &st) == 0) {
-			std::ifstream file(s_lastdocid_filename);
+		if (stat(lastPosFilename, &st) == 0) {
+			std::ifstream file(lastPosFilename);
 			std::string line;
 			if (std::getline(file, line)) {
-				lastDocId = strtoll(line.c_str(), NULL, 10);
+				lastPos = line;
 			}
 		}
 	} else {
-		if (stat(s_filename, &st) != 0) {
+		if (stat(filename, &st) != 0) {
 			// probably not found
-			logTrace(g_conf.m_logTraceDocDelete, "DocDelete::load: Unable to stat %s", s_filename);
-			s_lastModifiedTime = 0;
+			logTrace(g_conf.m_logTraceDocDelete, "DocDelete::load: Unable to stat %s", filename);
+			*lastModifiedTime = 0;
 			return;
 		}
 
 		// we only process the file if we have 2 consecutive loads with the same m_time
-		if (s_lastModifiedTime == 0 || s_lastModifiedTime != st.st_mtime) {
-			s_lastModifiedTime = st.st_mtime;
+		if (*lastModifiedTime == 0 || *lastModifiedTime != st.st_mtime) {
+			*lastModifiedTime = st.st_mtime;
 			logTrace(g_conf.m_logTraceDocDelete, "DocDelete::load: Modified time changed between load");
 			return;
 		}
 
 		// only start processing if spidering is disabled
 		if (docDeleteDisabled()) {
-			log(LOG_INFO, "Processing of %s is disabled", s_filename);
+			log(LOG_INFO, "Processing of %s is disabled", filename);
 			return;
 		}
 
 		// make sure file is not changed while we're processing it
-		int rc = rename(s_filename, s_tmp_filename);
+		int rc = rename(filename, tmpFilename);
 		if (rc == -1) {
-			log(LOG_WARN, "Unable to rename '%s' to '%s' due to '%s'", s_filename, s_tmp_filename, mstrerror(errno));
+			log(LOG_WARN, "Unable to rename '%s' to '%s' due to '%s'", filename, tmpFilename, mstrerror(errno));
 			return;
 		}
 	}
 
-	s_docDeleteFileThreadQueue.addItem(new DocDeleteFileItem(lastDocId));
+	s_docDeleteFileThreadQueue.addItem(new DocDeleteFileItem(tmpFilename, lastPosFilename, lastPos, isDocDeleteUrl));
+}
+
+void DocDelete::reload(int /*fd*/, void */*state*/) {
+	// docdelete.txt
+	reloadDocDelete(false);
+
+	// docdeleteurl.txt
+	reloadDocDelete(true);
 }
 
 static void waitPendingDocCount(unsigned maxCount) {
-	ScopedLock sl(s_pendingDocIdsMtx);
-	while (!s_stop && s_pendingDocIds.size() > maxCount) {
-		pthread_cond_wait(&s_pendingDocIdsCond, &s_pendingDocIdsMtx.mtx);
+	ScopedLock sl(s_pendingDocItemsMtx);
+	while (!s_stop && s_pendingDocItems.size() > maxCount) {
+		pthread_cond_wait(&s_pendingDocItemsCond, &s_pendingDocItemsMtx.mtx);
 	}
 }
 
-static void addPendingDoc(int64_t docId) {
-	logTrace(g_conf.m_logTraceDocDelete, "Adding %" PRId64, docId);
+static void addPendingDoc(DocDeleteDocItem *item) {
+	logTrace(g_conf.m_logTraceDocDelete, "Adding %s", item->m_key.c_str());
 
-	ScopedLock sl(s_pendingDocIdsMtx);
-	s_pendingDocIds.push_back(docId);
+	ScopedLock sl(s_pendingDocItemsMtx);
+	s_pendingDocItems.push_back(item);
 }
 
-static void removePendingDoc(std::ofstream &lastDocIdFile, int64_t docId) {
-	logTrace(g_conf.m_logTraceDocDelete, "Removing %" PRId64, docId);
+static void removePendingDoc(DocDeleteDocItem *docItem) {
+	logTrace(g_conf.m_logTraceDocDelete, "Removing %s", docItem->m_key.c_str());
 
-	ScopedLock sl(s_pendingDocIdsMtx);
-	auto it = std::find(s_pendingDocIds.begin(), s_pendingDocIds.end(), docId);
+	ScopedLock sl(s_pendingDocItemsMtx);
+	auto it = std::find(s_pendingDocItems.begin(), s_pendingDocItems.end(), docItem);
 
 	// docid must be there
-	if (it == s_pendingDocIds.end()) {
+	if (it == s_pendingDocItems.end()) {
 		gbshutdownLogicError();
 	}
 
-	if (it == s_pendingDocIds.begin()) {
-		lastDocIdFile.seekp(0);
-		lastDocIdFile << *it << std::endl;
+	if (it == s_pendingDocItems.begin()) {
+		docItem->m_lastPosFile.seekp(0);
+		docItem->m_lastPosFile << docItem->m_lastPos << "|" << docItem->m_key << std::endl;
 	}
 
-	s_pendingDocIds.erase(it);
-	pthread_cond_signal(&s_pendingDocIdsCond);
+	s_pendingDocItems.erase(it);
+	pthread_cond_signal(&s_pendingDocItemsCond);
 }
 
 void DocDelete::processFile(void *item) {
 	DocDeleteFileItem *fileItem = static_cast<DocDeleteFileItem*>(item);
 
-	log(LOG_INFO, "Processing %s", s_tmp_filename);
+	log(LOG_INFO, "Processing %s", fileItem->m_tmpFilename);
 
 	// start processing file
-	std::ifstream file(s_tmp_filename);
-	std::ofstream lastDocIdFile(s_lastdocid_filename, std::ofstream::out|std::ofstream::trunc);
+	std::ifstream file(fileItem->m_tmpFilename);
+	std::ofstream lastPosFile(fileItem->m_lastPosFilename, std::ofstream::out|std::ofstream::trunc);
 
 	bool isInterrupted = false;
-	bool foundLastDocId = (fileItem->m_lastDocId == -1);
+
+	bool foundLastPos = fileItem->m_lastPos.empty();
+
+	int64_t lastPos = 0;
+	std::string lastPosKey;
+	if (!fileItem->m_lastPos.empty()) {
+		lastPos = strtoll(fileItem->m_lastPos.c_str(), NULL, 10);
+		lastPosKey = fileItem->m_lastPos.substr(fileItem->m_lastPos.find('|') + 1);
+
+		if (lastPosKey.empty()) {
+			lastPos = 0;
+		}
+	}
+
+	// skip to last position
+	if (lastPos) {
+		file.seekg(lastPos);
+	}
+
+	int64_t currentFilePos = file.tellg();
 	std::string line;
 	while (std::getline(file, line)) {
 		// ignore empty lines
@@ -197,28 +255,34 @@ void DocDelete::processFile(void *item) {
 			continue;
 		}
 
-		char *pend = NULL;
-		int64_t docId = strtoll(line.c_str(), &pend, 10);
-		if (*pend != '|') {
-			log(LOG_INFO, "Skipping line %s due to invalid format", line.c_str());
-			continue;
-		}
+		std::string key = fileItem->m_isDocDeleteUrl ? line : line.substr(0, line.find('|'));
 
-		if (foundLastDocId) {
-			logTrace(g_conf.m_logTraceDocDelete, "Processing docId=%" PRId64, docId);
+		if (foundLastPos) {
+			logTrace(g_conf.m_logTraceDocDelete, "Processing key='%s'", key.c_str());
+			DocDeleteDocItem *docItem = new DocDeleteDocItem(key, lastPosFile, currentFilePos);
 
-			DocDeleteDocItem *docItem = new DocDeleteDocItem(lastDocIdFile);
-			docItem->m_xmlDoc->set3(docId, "main", 0);
-			docItem->m_xmlDoc->m_deleteFromIndex = true;
-			docItem->m_xmlDoc->setCallback(docItem, processedDoc);
+			if (fileItem->m_isDocDeleteUrl) {
+				SpiderRequest sreq;
+				sreq.setFromAddUrl(key.c_str());
+				sreq.m_isAddUrl = 0;
+				sreq.m_forceDelete = 1;
 
-			addPendingDoc(docId);
+				docItem->m_xmlDoc->set4(&sreq, NULL, "main", NULL, 0);
+				docItem->m_xmlDoc->setCallback(docItem, processedDoc);
+			} else {
+				int64_t docId = strtoll(line.c_str(), NULL, 10);
 
+				docItem->m_xmlDoc->set3(docId, "main", 0);
+				docItem->m_xmlDoc->m_deleteFromIndex = true;
+				docItem->m_xmlDoc->setCallback(docItem, processedDoc);
+			}
+
+			addPendingDoc(docItem);
 			s_docDeleteDocThreadQueue.addItem(docItem);
 
 			waitPendingDocCount(10);
-		} else if (fileItem->m_lastDocId == docId) {
-			foundLastDocId = true;
+		} else if (lastPosKey.compare(key) == 0) {
+			foundLastPos = true;
 		}
 
 		// stop processing when we're shutting down or spidering is enabled
@@ -226,21 +290,23 @@ void DocDelete::processFile(void *item) {
 			isInterrupted = true;
 			break;
 		}
+
+		currentFilePos = file.tellg();
 	}
 
 	waitPendingDocCount(0);
 
 	if (isInterrupted) {
-		log(LOG_INFO, "Interrupted processing of %s", s_tmp_filename);
+		log(LOG_INFO, "Interrupted processing of %s", fileItem->m_tmpFilename);
 		delete fileItem;
 		return;
 	}
 
-	log(LOG_INFO, "Processed %s", s_tmp_filename);
+	log(LOG_INFO, "Processed %s", fileItem->m_tmpFilename);
 
 	// delete files
-	unlink(s_tmp_filename);
-	unlink(s_lastdocid_filename);
+	unlink(fileItem->m_tmpFilename);
+	unlink(fileItem->m_lastPosFilename);
 
 	delete fileItem;
 }
@@ -251,7 +317,7 @@ void DocDelete::processDoc(void *item) {
 
 	// done
 	if (xmlDoc->m_indexedDoc || xmlDoc->indexDoc()) {
-		removePendingDoc(docItem->m_lastDocIdFile, xmlDoc->m_docId);
+		removePendingDoc(docItem);
 
 		delete xmlDoc;
 		delete docItem;
