@@ -983,19 +983,18 @@ static void stripParameters(UrlParser *urlParser) {
 //    reserved purposes may be used unencoded within a URL."
 // . i know sun.com has urls like "http://sun.com/;$sessionid=123ABC$"
 // . url should be ENCODED PROPERLY for this to work properly
-void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool stripCommonFile,
-               int32_t titledbVersion ) {
+void Url::set(const char *t, int32_t tlen, bool addWWW, bool stripParams, bool stripCommonFile, int32_t titledbVersion) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(t,tlen);
 #endif
 	reset();
 
-	if ( ! t || tlen == 0 ) {
+	if (!t || tlen == 0) {
 		return;
 	}
 
 	// we may add a "www." a trailing backslash and \0, ...
-	if ( tlen > MAX_URL_LEN - 10 ) {
+	if (tlen > MAX_URL_LEN - 10) {
 		log( LOG_LIMIT, "db: Encountered url of length %" PRId32 ". Truncating to %i", tlen, MAX_URL_LEN - 10 );
 		tlen = MAX_URL_LEN - 10;
 	}
@@ -1004,7 +1003,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 	// . if url begins with // then it's just missing the http: (slashdot)
 	// . watch out for hostname like: -dark-.deviantart.com(yes, it's real)
 	// . so all protocols are hostnames MUST start with alnum OR hyphen
-	while ( tlen > 0 && !is_alnum_a( *t ) && *t != '-' && *t != '/' ) {
+	while (tlen > 0 && !is_alnum_a(*t) && *t != '-' && *t != '/') {
 		t++;
 		tlen--;
 	}
