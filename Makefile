@@ -346,7 +346,6 @@ dist: all
 	gb \
 	gbstart.sh \
 	gbconvert.sh \
-	libcld2_full.so \
 	pnmscale \
 	libnetpbm.so.10 \
 	bmptopnm \
@@ -369,8 +368,12 @@ dist: all
 	unifiedDict.txt \
 	valgrind.cfg \
 	.valgrindrc \
+	$(LIBFILES) \
 	$(DIST_DIR)
 	@cp third-party/cld2/LICENSE $(DIST_DIR)/LICENSE-3RD-PARTY-CLD2
+	@cp third-party/cld3/LICENSE $(DIST_DIR)/LICENSE-3RD-PARTY-CLD3
+	@cp third-party/compact_enc_det/LICENSE $(DIST_DIR)/LICENSE-3RD-PARTY-CED
+	@cp third-party/c-ares/LICENSE.md $(DIST_DIR)/LICENSE-3RD-PARTY-CARES
 	@cp third-party/slacktee/LICENSE $(DIST_DIR)/LICENSE-3RD-PARTY-SLACKTEE
 	@tar -czvf $(DIST_DIR).tar.gz $(DIST_DIR)
 	@rm -rf $(DIST_DIR)
