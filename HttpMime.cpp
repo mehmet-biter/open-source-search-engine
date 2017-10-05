@@ -853,8 +853,8 @@ int32_t getContentTypeFromStr(const char *s, size_t slen) {
 	}
 
 	int32_t ct = CT_UNKNOWN;
-	if ( !strncasecmp(s, "text/", 5) ) {
-		if (!strncasecmp(s, "text/html", slen)) {
+	if (strncasecmp(s, "text/", 5) == 0) {
+		if (strncasecmp(s, "text/html", slen) == 0) {
 			ct = CT_HTML;
 		} else if (strncasecmp(s, "text/plain", slen) == 0) {
 			ct = CT_TEXT;
@@ -877,42 +877,73 @@ int32_t getContentTypeFromStr(const char *s, size_t slen) {
 		} else {
 			ct = CT_TEXT;
 		}
+	} else if (strncasecmp(s, "text", slen) == 0) {
+		ct = CT_TEXT;
+	} else if (strncasecmp(s, "txt", slen) == 0) {
+		ct = CT_TEXT;
+	} else if (strncasecmp(s, "application/xml", slen) == 0) {
+		ct = CT_XML;
+	} else if (strncasecmp(s, "application/xhtml+xml", slen) == 0) {
+		// we were not able to spider links on an xhtml doc because
+		// this was set to CT_XML, so try CT_HTML
+		ct = CT_HTML;
+	} else if (strncasecmp(s, "application/rss+xml", slen) == 0) {
+		ct = CT_XML;
+	} else if (strncasecmp(s, "rss", slen) == 0) {
+		ct = CT_XML;
+	} else if (strncasecmp(s, "application/rdf+xml", slen) == 0) {
+		ct = CT_XML;
+	} else if (strncasecmp(s, "application/atom+xml", slen) == 0) {
+		ct = CT_XML;
+	} else if (strncasecmp(s, "atom+xml", slen) == 0) {
+		ct = CT_XML;
+	} else if (strncasecmp(s, "application/pdf", slen) == 0) {
+		ct = CT_PDF;
+	} else if (strncasecmp(s, "application/msword", slen) == 0) {
+		ct = CT_DOC;
+	} else if (strncasecmp(s, "application/vnd.ms-excel", slen) == 0) {
+		ct = CT_XLS;
+	} else if (strncasecmp(s, "application/vnd.ms-powerpoint", slen) == 0) {
+		ct = CT_PPT;
+	} else if (strncasecmp(s, "application/mspowerpoint", slen) == 0) {
+		ct = CT_PPT;
+	} else if (strncasecmp(s, "application/postscript", slen) == 0) {
+		ct = CT_PS;
+	} else if (strncasecmp(s, "application/warc", slen) == 0) {
+		ct = CT_WARC;
+	} else if (strncasecmp(s, "application/arc", slen) == 0) {
+		ct = CT_ARC;
+	} else if (strncasecmp(s, "image/gif", slen) == 0) {
+		ct = CT_GIF;
+	} else if (strncasecmp(s, "image/jpeg", slen) == 0) {
+		ct = CT_JPG;
+	} else if (strncasecmp(s, "image/png", slen) == 0) {
+		ct = CT_PNG;
+	} else if (strncasecmp(s, "image/tiff", slen) == 0) {
+		ct = CT_TIFF;
+	} else if (strncasecmp(s, "image/", 6) == 0) {
+		ct = CT_IMAGE;
+	} else if (strncasecmp(s, "application/javascript", slen) == 0) {
+		ct = CT_JS;
+	} else if (strncasecmp(s, "application/x-javascript", slen) == 0) {
+		ct = CT_JS;
+	} else if (strncasecmp(s, "application/x-gzip", slen) == 0) {
+		ct = CT_GZ;
+	} else if (strncasecmp(s, "application/json", slen) == 0) {
+		ct = CT_JSON;
+	} else if (strncasecmp(s, "application/vnd.wap.xhtml+xml", slen) == 0) {
+		ct = CT_HTML;
+	} else if (strncasecmp(s, "binary/octet-stream", slen) == 0) {
+		ct = CT_UNKNOWN;
+	} else if (strncasecmp(s, "application/octet-stream", slen) == 0) {
+		ct = CT_UNKNOWN;
+	} else if (strncasecmp(s, "application/binary", slen) == 0) {
+		ct = CT_UNKNOWN;
+	} else if (strncasecmp(s, "application/x-tar", slen) == 0) {
+		ct = CT_UNKNOWN;
+	} else if (strncmp(s, "audio/", 6) == 0) {
+		ct = CT_UNKNOWN;
 	}
-	else if (!strcasecmp(s,"text"                    ) ) ct = CT_TEXT;
-	else if (!strcasecmp(s,"txt"                     ) ) ct = CT_TEXT;
-	else if (!strcasecmp(s,"application/xml"         ) ) ct = CT_XML;
-	// we were not able to spider links on an xhtml doc because
-	// this was set to CT_XML, so try CT_HTML
-	else if (!strcasecmp(s,"application/xhtml+xml"   ) ) ct = CT_HTML;
-	else if (!strcasecmp(s,"application/rss+xml"     ) ) ct = CT_XML;
-	else if (!strcasecmp(s,"rss"                     ) ) ct = CT_XML;
-	else if (!strcasecmp(s,"application/rdf+xml"     ) ) ct = CT_XML;
-	else if (!strcasecmp(s,"application/atom+xml"    ) ) ct = CT_XML;
-	else if (!strcasecmp(s,"atom+xml"                ) ) ct = CT_XML;
-	else if (!strcasecmp(s,"application/pdf"         ) ) ct = CT_PDF;
-	else if (!strcasecmp(s,"application/msword"      ) ) ct = CT_DOC;
-	else if (!strcasecmp(s,"application/vnd.ms-excel") ) ct = CT_XLS;
-	else if (!strcasecmp(s,"application/vnd.ms-powerpoint")) ct = CT_PPT;
-	else if (!strcasecmp(s,"application/mspowerpoint") ) ct = CT_PPT;
-	else if (!strcasecmp(s,"application/postscript"  ) ) ct = CT_PS;
-	else if (!strcasecmp(s,"application/warc"        ) ) ct = CT_WARC;
-	else if (!strcasecmp(s,"application/arc"         ) ) ct = CT_ARC;
-	else if (!strcasecmp(s,"image/gif"               ) ) ct = CT_GIF;
-	else if (!strcasecmp(s,"image/jpeg"              ) ) ct = CT_JPG;
-	else if (!strcasecmp(s,"image/png"               ) ) ct = CT_PNG;
-	else if (!strcasecmp(s,"image/tiff"              ) ) ct = CT_TIFF;
-	else if (!strncasecmp(s,"image/",6               ) ) ct = CT_IMAGE;
-	else if (!strcasecmp(s,"application/javascript"  ) ) ct = CT_JS;
-	else if (!strcasecmp(s,"application/x-javascript") ) ct = CT_JS;
-	else if (!strcasecmp(s,"application/x-gzip"      ) ) ct = CT_GZ;
-	else if (!strcasecmp(s,"application/json"        ) ) ct = CT_JSON;
-	// facebook.com:
-	else if (!strcasecmp(s,"application/vnd.wap.xhtml+xml") ) ct =CT_HTML;
-	else if (!strcasecmp(s,"binary/octet-stream") ) ct = CT_UNKNOWN;
-	else if (!strcasecmp(s,"application/octet-stream") ) ct = CT_UNKNOWN;
-	else if (!strcasecmp(s,"application/binary" ) ) ct = CT_UNKNOWN;
-	else if (!strcasecmp(s,"application/x-tar" ) ) ct = CT_UNKNOWN;
-	else if ( !strncmp ( s , "audio/",6)  ) ct = CT_UNKNOWN;
 
 	return ct;
 }
@@ -956,11 +987,8 @@ int32_t HttpMime::getContentTypePrivate(const char *s, size_t slen) {
 
 	// returns CT_UNKNOWN if unknown
 	ct = getContentTypeFromStr(s, slen);
-
-	// log it for reference
-	//if ( ct == -1 ) { g_process.shutdownAbort(true); }
-	if ( ct == CT_UNKNOWN ) {
-		log("http: unrecognized content type \"%s\"",s);
+	if (ct == CT_UNKNOWN) {
+		log(LOG_WARN, "http: unrecognized content type \"%s\"",s);
 	}
 
 	// return 0 for the contentType if unknown
