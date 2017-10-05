@@ -15927,7 +15927,7 @@ Query *XmlDoc::getQuery() {
 	int64_t start = logQueryTimingStart();
 
 	// return NULL with g_errno set on error
-	if ( !m_query.set2( m_req->ptr_qbuf, m_req->m_langId, m_req->m_queryExpansion, m_req->m_useQueryStopWords ) ) {
+	if (!m_query.set2(m_req->ptr_qbuf, m_req->m_langId, m_req->m_queryExpansion, m_req->m_useQueryStopWords, m_req->m_allowHighFrequencyTermCache)) {
 		if(!g_errno)
 			g_errno = EBADENGINEER; //can fail due to a multitude of problems
 		return NULL;

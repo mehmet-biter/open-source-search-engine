@@ -50,7 +50,6 @@ public:
 	int64_t  m_docId;
 	void      *m_state ;
 	void    (* m_callback) (void *state);
-	Query      m_tq;
 	Query     *m_q;
 	int64_t *m_termFreqs;
 	float     *m_termFreqWeights;
@@ -202,10 +201,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	//int32_t  ulen    = 0;
 	//char *u     = r->getString ( "u" , &ulen     , NULL /*default*/);
 	int32_t  old     = r->getLong   ( "old", 0 );
-	// set query
-	int32_t qlen;
-	const char *qs = r->getString("q",&qlen,NULL);
-	if ( qs ) st->m_tq.set2 ( (char*)qs , langUnknown , true, true );
+
 	// url will override docid if given
 	if ( ! st->m_u || ! st->m_u[0] ) 
 		st->m_docId = r->getLongLong ("docid",-1);
@@ -719,10 +715,7 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	// default to 0 if not provided
 	st->m_hopCount = r->getLong("hc",0);
 	int32_t  old     = r->getLong   ( "old", 0 );
-	// set query
-	int32_t qlen;
-	const char *qs = r->getString("q",&qlen,NULL);
-	if ( qs ) st->m_tq.set2 ( (char*)qs , langUnknown , true, true );
+
 	// url will override docid if given
 	st->m_docId = r->getLongLong ("d",-1);
 	st->m_docId = r->getLongLong ("docid",st->m_docId);

@@ -29,10 +29,6 @@ Query::Query()
     m_filteredQuery("qrystk"),
     m_originalQuery("oqbuf")
 {
-	constructor();
-}
-
-void Query::constructor ( ) {
 	m_qwords      = NULL;
 	m_numWords = 0;
 	m_qwords               = NULL;
@@ -41,6 +37,7 @@ void Query::constructor ( ) {
 	// Coverity
 	m_langId = 0;
 	m_useQueryStopWords = false;
+	m_allowHighFreqTermCache = false;
 	m_numTermsUntruncated = 0;
 	m_isBoolean = false;
 	m_maxQueryTerms = 0;
@@ -49,10 +46,6 @@ void Query::constructor ( ) {
 	memset(m_expressions, 0, sizeof(m_expressions));
 
 	reset ( );
-}
-
-void Query::destructor ( ) {
-	reset();
 }
 
 Query::~Query ( ) {
@@ -103,6 +96,7 @@ bool Query::set2 ( const char *query        ,
 		   uint8_t  langId ,
 		   bool     queryExpansion ,
 		   bool     useQueryStopWords ,
+           bool allowHighFreqTermCache,
 		   int32_t  maxQueryTerms  ) {
 	log(LOG_DEBUG,"query: set2(query='%s', langId=%d, queryExpansion=%s, useQueryStopWords=%s maxQueryTerms=%d)",
 	    query, langId, queryExpansion?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
@@ -111,6 +105,8 @@ bool Query::set2 ( const char *query        ,
 
 	m_langId = langId;
 	m_useQueryStopWords = useQueryStopWords;
+	m_allowHighFreqTermCache = allowHighFreqTermCache;
+
 	// fix summary rerank and highlighting.
 	bool keepAllSingles = true;
 
@@ -1980,7 +1976,8 @@ bool Query::setQWords ( char boolFlag ,
 
 		//except if it is a high-frequency-term and expensive to look up. In that case ignore the word but keep the phrases/bigrams thereof
 		uint64_t termId = (qw->m_wordId & TERMID_MASK);
-		if(g_hfts.is_registered_term(termId)) {
+		if(g_conf.m_useHighFrequencyTermCache &&
+			m_allowHighFreqTermCache && g_hfts.is_registered_term(termId)) {
 			log(LOG_DEBUG, "query: term='%.*s' with termId %lu is a highfreq term. Marking it for ignoring", wlen, w, termId);
 			qw->m_ignoreWord = IGNORE_HIGHFREMTERM;
 		}

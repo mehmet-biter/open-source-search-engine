@@ -351,6 +351,7 @@ void Msg39::getDocIds2() {
 			      m_msg39req->m_language ,
 			      m_msg39req->m_queryExpansion ,
 			      m_msg39req->m_useQueryStopWords ,
+	              m_msg39req->m_allowHighFrequencyTermCache,
 			      m_msg39req->m_maxQueryTerms ) ) {
 		log("query: msg39: setQuery: %s." , 
 		    mstrerror(g_errno) );

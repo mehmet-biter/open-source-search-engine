@@ -406,8 +406,6 @@ class Query {
 
 	Query();
 	~Query();
-	void constructor();
-	void destructor();
 
 	// . returns false and sets g_errno on error
 	// . after calling this you can call functions below
@@ -415,6 +413,7 @@ class Query {
 		    uint8_t  langId ,
 		    bool     queryExpansion ,
 		    bool     useQueryStopWords,
+	        bool allowHighFreqTermCache,
 		    int32_t  maxQueryTerms = 0x7fffffff );
 
 	const char *getQuery() const { return m_originalQuery.getBufStart(); }
@@ -470,6 +469,8 @@ public:
 	bool m_useQueryStopWords;
 
 private:
+	bool m_allowHighFreqTermCache;
+
 	// use a generic buffer for m_qwords to point into
 	// so we don't have to malloc for them
 	SmallBuf<GBUF_SIZE> m_queryWordBuf;

@@ -70,6 +70,7 @@ class Msg20Request {
 	unsigned char       m_onlyNeedGoodInlinks       :1;
 	// if true, sets ptr_linkText, etc.
 	unsigned char       m_getLinkText               :1;
+	unsigned char       m_allowHighFrequencyTermCache:1;
 
 	// pointer+size variable section
 	char      *ptr_qbuf          ;
