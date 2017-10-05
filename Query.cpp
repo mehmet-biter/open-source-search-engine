@@ -1977,11 +1977,11 @@ bool Query::setQWords ( char boolFlag ,
 
 		// do not ignore the word
 		qw->m_ignoreWord = IGNORE_NO_IGNORE;
-		
+
 		//except if it is a high-frequency-term and expensive to look up. In that case ignore the word but keep the phrases/bigrams thereof
-		uint64_t termId = (wid & TERMID_MASK);
+		uint64_t termId = (qw->m_wordId & TERMID_MASK);
 		if(g_hfts.is_registered_term(termId)) {
-			log(LOG_DEBUG, "query: termId %lu is a highfreq term. Marking it for ignoring",termId);
+			log(LOG_DEBUG, "query: term='%.*s' with termId %lu is a highfreq term. Marking it for ignoring", wlen, w, termId);
 			qw->m_ignoreWord = IGNORE_HIGHFREMTERM;
 		}
 	}
