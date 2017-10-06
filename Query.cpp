@@ -2810,15 +2810,6 @@ const struct QueryField g_fields[] = {
 
 // mdw
 
-	{"gbpermalink",
-	 FIELD_GBPERMALINK,
-	 false,
-	 "gbpermalink:1",
-	 "Matches documents that are permalinks. Use <i>gbpermalink:0</i> "
-	 "to match documents that are NOT permalinks.",
-	 NULL,
-	0},
-
 	{"gbdocid",
 	 FIELD_GBDOCID,
 	 false,

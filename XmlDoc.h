@@ -507,7 +507,6 @@ public:
 	bool hashLanguage ( class HashTableX *table ) ;
 	bool hashLanguageString ( class HashTableX *table ) ;
 	bool hashCountry ( class HashTableX *table ) ;
-	bool hashPermalink ( class HashTableX *table ) ;
 
 	class Url *getBaseUrl ( ) ;
 

@@ -449,11 +449,6 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		return NULL;
 	}
 
-	if (!hashPermalink(table)) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, hashPermaLink failed");
-		return NULL;
-	}
-
 	// hash gblang:de last for parsing consistency
 	if (!hashLanguageString(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashLanguageString failed");
@@ -1592,23 +1587,6 @@ bool XmlDoc::hashCountry ( HashTableX *tt ) {
 	}
 	// all done
 	return true;
-}
-
-bool XmlDoc::hashPermalink ( HashTableX *tt ) {
-
-	setStatus ( "hashing is permalink" );
-
-	// put a colon in there so it can't be faked using a meta tag.
-	char *s = "0";
-	if ( *getIsPermalink() ) s = "1";
-
-	// update hash parms
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_hashGroup = HASHGROUP_INTAG;
-	hi.m_prefix    = "gbpermalink";
-
-	return hashString ( s,1,&hi );
 }
 
 bool XmlDoc::hashSingleTerm( const char *s, int32_t slen, HashInfo *hi ) {

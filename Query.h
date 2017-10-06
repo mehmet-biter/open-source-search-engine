@@ -77,7 +77,7 @@ enum field_code_t {
 	FIELD_GBCOUNTRY         = 46,
 	//FIELD_UNUSED          = 47,
 	//FIELD_UNUSED          = 48,
-	FIELD_GBPERMALINK       = 49,
+	//FIELD_UNUSED          = 49,
 	//FIELD_UNUSED          = 50,
 	FIELD_GBTERMID          = 50,
 	//FIELD_UNUSED          = 51,
