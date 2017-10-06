@@ -161,6 +161,7 @@ void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool
 	}
 	strncpy( temp + blen, s, len );
 	temp[blen+len] = '\0';
+
 	set( temp, blen + len, addWWW, stripParams, stripCommonFile, titledbVersion );
 }
 
@@ -1177,12 +1178,14 @@ void Url::set(const char *t, int32_t tlen, bool addWWW, bool stripParams, bool s
 					break;
 				}
 
+				int maxDestLen = (cs * 3) + 1; // %XX + \0
+
 				// too long?
-				if ( newUrlLen + 12 >= MAX_URL_LEN ) {
+				if ( newUrlLen + maxDestLen >= MAX_URL_LEN ) {
 					break;
 				}
 
-				char stored = urlEncode ( &encoded[newUrlLen], 12 , p , cs );
+				char stored = urlEncode(&encoded[newUrlLen], maxDestLen, p, cs);
 				p += cs;
 				newUrlLen += stored;
 

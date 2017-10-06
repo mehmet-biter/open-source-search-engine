@@ -1245,6 +1245,16 @@ TEST(UrlTest, BaseUrlQueryParam) {
 	EXPECT_STREQ("http://example.com/documentation", linkUrl.getUrl());
 }
 
+TEST(UrlTest, BaseUrlPoo) {
+	Url baseUrl;
+	baseUrl.set("http://s1.t42.privacore.test:28080/");
+
+	Url linkUrl;
+	linkUrl.set(&baseUrl, "/what%20💩.html", strlen("/what%20💩.html"));
+
+	EXPECT_STREQ("http://s1.t42.privacore.test:28080/what%20%F0%9F%92%A9.html", linkUrl.getUrl());
+}
+
 TEST(UrlTest, BaseUrlRelative) {
 	Url currentUrl;
 	currentUrl.set("http://example.com/b/c/d;p?q");

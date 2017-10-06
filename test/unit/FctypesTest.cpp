@@ -26,3 +26,16 @@ TEST(FctypesTest, VerifyStrnstrTrue) {
 		EXPECT_TRUE( ( strnstr( haystack[i], needle[i], strlen( haystack[i] ) ) != NULL ) );
 	}
 }
+
+TEST(FctypesTest, UrlEncode) {
+	std::vector<std::tuple<const char *, const char*>> test_cases = {
+		std::make_tuple("💩", "%F0%9F%92%A9")
+	};
+
+	for (auto it = test_cases.begin(); it != test_cases.end(); ++it) {
+		size_t inputLen = strlen(std::get<0>(*it));
+		char dest[1024];
+		EXPECT_EQ(strlen(std::get<1>(*it)), urlEncode(dest, 1024, std::get<0>(*it), inputLen));
+		EXPECT_STREQ(std::get<1>(*it), dest);
+	}
+}

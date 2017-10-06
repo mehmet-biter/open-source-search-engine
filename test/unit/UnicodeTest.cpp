@@ -197,3 +197,13 @@ TEST(UnicodeTest, UnwantedSymbols) {
 		EXPECT_TRUE(isUtf8UnwantedSymbols(inputs[i]));
 	}
 }
+
+TEST(UnicodeTest, CharSize) {
+	std::vector<std::tuple<const char *, size_t>> test_cases = {
+		std::make_tuple("💩", 4)
+	};
+
+	for (auto it = test_cases.begin(); it != test_cases.end(); ++it) {
+		EXPECT_EQ(std::get<1>(*it), getUtf8CharSize(std::get<0>(*it)));
+	}
+}
