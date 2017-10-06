@@ -149,8 +149,11 @@ bool Collectiondb::cleanTrees() {
 	// remove any nodes with illegal collnums
 	g_posdb.getRdb()->cleanTree();
 	g_titledb.getRdb()->cleanTree();
+	g_tagdb.getRdb()->cleanTree();
 	g_spiderdb.getRdb()->cleanTree();
 	g_doledb.getRdb()->cleanTree();
+	g_clusterdb.getRdb()->cleanTree();
+	g_linkdb.getRdb()->cleanTree();
 
 	// success
 	return true;
