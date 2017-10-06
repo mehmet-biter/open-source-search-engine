@@ -88,6 +88,7 @@
 #include "ScopedLock.h"
 #include "RobotsCheckList.h"
 #include "SpiderdbHostDelete.h"
+#include "ConvertSpiderdb.h"
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -1350,6 +1351,18 @@ int main2 ( int argc , char *argv[] ) {
 		}
 		if(argv[cmdarg+1][0] == 's')
 			dumpSpiderdbCsv(argv[cmdarg+2]);
+		g_log.m_disabled = true;
+		g_collectiondb.reset();
+		return 0;
+	}
+
+	if(strcmp(cmd, "convertspiderdb") == 0) {
+		g_conf.m_doingCommandLine = true; // so we do not log every collection coll.conf we load
+		if( !g_collectiondb.loadAllCollRecs()) {
+			log("db: Collectiondb init failed.");
+			return 1;
+		}
+		convertSpiderDb(argv[cmdarg+1]);
 		g_log.m_disabled = true;
 		g_collectiondb.reset();
 		return 0;
