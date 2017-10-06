@@ -31,6 +31,7 @@
 #include "RdbIndex.h"
 #include "GbThreadQueue.h"
 #include "rdbid_t.h"
+#include "collnum_t.h"
 #include "GbMutex.h"
 
 

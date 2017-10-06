@@ -8,6 +8,7 @@
 #include <atomic>
 #include "SafeBuf.h"
 #include "rdbid_t.h"
+#include "collnum_t.h"
 #include "spider_status_t.h"
 #include "GbMutex.h"
 

@@ -6,6 +6,7 @@
 #define GB_MSG20_H
 
 #include "Multicast.h"
+#include "collnum_t.h"
 
 
 class Msg20Request {

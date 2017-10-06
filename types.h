@@ -4,10 +4,8 @@
 #include <stdint.h>
 #include <string.h>
 #include "Sanity.h"
+//#include "collnum_t.h"
 
-// . up to 32768 collections possible, MUST be signed
-// . a collnum_t of -1 is used by RdbCache to mean "no collection"
-typedef int16_t collnum_t;
 
 #define MAX_KEY_BYTES 28
 #define MAX_KEYSTR_BYTES ((MAX_KEY_BYTES*2)+3)

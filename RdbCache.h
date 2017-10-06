@@ -43,6 +43,7 @@
 
 #include "JobScheduler.h" //job_exit_t
 #include <time.h>       // time_t
+#include "collnum_t.h"
 #include "GbMutex.h"
 
 class RdbList;

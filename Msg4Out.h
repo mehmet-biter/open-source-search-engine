@@ -12,6 +12,7 @@ bool hasAddsInQueue     ( ) ;
 
 #include "rdbid_t.h"
 #include "types.h"
+#include "collnum_t.h"
 #include <vector>
 
 class SafeBuf;

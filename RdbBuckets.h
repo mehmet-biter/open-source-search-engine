@@ -27,6 +27,7 @@
 #include <functional>
 #include <atomic>
 #include "rdbid_t.h"
+#include "collnum_t.h"
 #include "types.h"
 #include "GbMutex.h"
 #include "JobScheduler.h"

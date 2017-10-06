@@ -10,6 +10,7 @@
 #define GB_MSG13_H
 
 #include "SpiderProxy.h" // MAXUSERNAMEPWD
+#include "collnum_t.h"
 #include <stddef.h>
 
 // max crawl delay form proxy backoff of 1 minute (60 seconds)

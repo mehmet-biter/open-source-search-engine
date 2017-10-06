@@ -40,6 +40,7 @@
 #include <functional>
 #include "JobScheduler.h" //for job_exit_t
 #include "types.h"
+#include "collnum_t.h"
 #include "GbMutex.h"
 #include "rdbid_t.h"
 

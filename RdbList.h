@@ -7,6 +7,7 @@
 #include "types.h"
 #include "GbSignature.h"
 #include "rdbid_t.h"
+#include "collnum_t.h"
 #include <stdint.h>
 
 /**
