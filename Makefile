@@ -78,6 +78,7 @@ OBJS_O3 = \
 	GbThreadQueue.o \
 	GbEncoding.o GbLanguage.o \
 	GbDns.o \
+	ConvertSpiderdb.o \
 
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
@@ -238,7 +239,7 @@ CPPFLAGS += -Wno-unused-parameter
 
 endif
 
-LIBS = -lm -lpthread -lssl -lcrypto -lz -lpcre -ldl
+LIBS = -lm -lpthread -lssl -lcrypto -lz -lpcre -lsqlite3 -ldl
 
 # to build static libiconv.a do a './configure --enable-static' then 'make' in the iconv directory
 
