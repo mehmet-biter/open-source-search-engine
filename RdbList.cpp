@@ -2290,7 +2290,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 		const char *minPtrHi   = hiKeys[0]; // highest 6 bytes
 		int16_t mini = 0; // int16_t -> must be able to accomodate MAX_RDB_FILES!!
 
-		logTrace(g_conf.m_logTraceRdbList, "new_listPtr=%p numLists=%" PRId32". assume key in the first list is the winner", new_listPtr, numLists);
+		logTrace(g_conf.m_logTraceRdbList, "new_listPtr=%p numLists=%d. assume key in the first list is the winner", new_listPtr, numLists);
 
 		// merge loop over the lists, get the smallest key
 		for (int32_t i = 1; i < numLists; i++) {
@@ -2299,7 +2299,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			// . continue if tie, so we get the oldest first
 			// . treat negative and positive keys as identical for this
 			if (ss < 0) {
-				logTrace(g_conf.m_logTraceRdbList, "i=%" PRId32" ss < 0. continue", i);
+				logTrace(g_conf.m_logTraceRdbList, "i=%d ss < 0. continue", i);
 				continue;
 			}
 
@@ -2307,11 +2307,11 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			// and minPtrBase/Lo/Hi was a negative key! so this is
 			// the annihilation. skip the positive key.
 			if (ss == 0) {
-				logTrace(g_conf.m_logTraceRdbList, "i=%" PRId32" ss == 0. skip", i);
+				logTrace(g_conf.m_logTraceRdbList, "i=%d ss == 0. skip", i);
 				goto skip;
 			}
 
-			logTrace(g_conf.m_logTraceRdbList, "new min i=%" PRId32, i);
+			logTrace(g_conf.m_logTraceRdbList, "new min i=%d", i);
 
 			// we got a new min
 			minPtrBase = ptrs  [i];
