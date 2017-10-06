@@ -2150,6 +2150,16 @@ skip:
 	}
 }
 
+int getPtrIndex(RdbList **lists, int32_t numLists, const char *ptr) {
+	for (int i = 0; i < numLists; ++i) {
+		if (lists[i]->getListEnd() == ptr) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
 ////////
 //
 // SPECIALTY MERGE FOR POSDB
@@ -2159,6 +2169,8 @@ skip:
 bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
                            rdbid_t rdbId, bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t startFileIndex, bool isRealMerge) {
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN");
+
+	int oriNumLists = numLists;
 
 	// sanity
 	if (m_ks != sizeof(key144_t)) {
@@ -2399,10 +2411,12 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 			logTrace(g_conf.m_logTraceRdbList, "Found docId=%" PRIu64" with filePos=%" PRId32, docId, filePos);
 
-			if (filePos > (mini + listOffset) + startFileIndex) {
+			int prtIndex = getPtrIndex(lists, oriNumLists, ends[mini + listOffset]);
+			if (filePos > prtIndex + startFileIndex) {
 				// docId is present in newer file
-				logTrace(g_conf.m_logTraceRdbList, "docId in newer list. skip. filePos=%" PRId32" mini=%" PRId16" listOffset=%" PRId32,
-				         filePos, mini, listOffset);
+				logTrace(g_conf.m_logTraceRdbList, "docId in newer list. skip. filePos=%d mini=%hd listOffset=%d startFileIndex=%d ptrIndex=%d",
+				         filePos, mini, listOffset, startFileIndex, prtIndex);
+
 				goto skip;
 			}
 		}
