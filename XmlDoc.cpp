@@ -2458,8 +2458,9 @@ int32_t *XmlDoc::getIndexCode ( ) {
 			size_redirUrl   = m_canonicalUrl.getUrlLen()+1;
 
 			// make sure we store an empty document
-			ptr_utf8Content = NULL;
-			size_utf8Content = 0;
+			m_contentValid = true;
+			m_content    = NULL;
+			m_contentLen = 0;
 
 			logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCNONCANONICAL");
 			return &m_indexCode;
@@ -3013,8 +3014,9 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	if (*indexCode) {
 		if (*indexCode == EDOCSIMPLIFIEDREDIR || *indexCode == EDOCNONCANONICAL) {
 			// make sure we store an empty document if it's a simplified redirect/non-canonical
-			ptr_utf8Content = NULL;
-			size_utf8Content = 0;
+			m_contentValid = true;
+			m_content    = NULL;
+			m_contentLen = 0;
 		} else {
 			m_titleRecBufValid = true;
 			return &m_titleRecBuf;
@@ -5604,8 +5606,9 @@ Url **XmlDoc::getRedirUrl() {
 		size_redirUrl = m_redirUrl.getUrlLen() + 1;
 
 		// make sure we store an empty document
-		ptr_utf8Content = NULL;
-		size_utf8Content = 0;
+		m_contentValid = true;
+		m_content    = NULL;
+		m_contentLen = 0;
 
 		// mdw: let this path through so contactXmlDoc gets a proper
 		// redirect that we can follow. for the base xml doc at
