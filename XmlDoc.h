@@ -510,7 +510,6 @@ public:
 	bool hashPermalink ( class HashTableX *table ) ;
 
 	class Url *getBaseUrl ( ) ;
-	bool hashIsAdult    ( class HashTableX *table ) ;
 
 	void setMsg20Request(Msg20Request *req);
 	class Msg20Reply *getMsg20Reply ( ) ;

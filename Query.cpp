@@ -2783,17 +2783,6 @@ const struct QueryField g_fields[] = {
 	 NULL,
 	0},
 
-	{"gbisadult",
-	 FIELD_GENERIC,
-	 false,
-	 "gbisadult:1",
-	 "Matches all documents that have been detected as adult documents "
-	 "and may be unsuitable for children. Likewise, use "
-	 "<i>gbisadult:0</i> to match all documents that were NOT detected "
-	 "as adult documents.",
-	 NULL,
-	 0},
-
 	{"gblang",
 	 FIELD_GBLANG,
 	 false,

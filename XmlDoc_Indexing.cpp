@@ -349,11 +349,6 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		return NULL;
 	}
 
-	if (!hashIsAdult(table)) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, hashIsAdult failed");
-		return NULL;
-	}
-
 	// now hash the terms sharded by termid and not docid here since they
 	// just set a special bit in posdb key so Rebalance.cpp can work.
 	// this will hash the content checksum which we need for deduping
@@ -1614,34 +1609,6 @@ bool XmlDoc::hashPermalink ( HashTableX *tt ) {
 	hi.m_prefix    = "gbpermalink";
 
 	return hashString ( s,1,&hi );
-}
-
-// returns false and sets g_errno on error
-bool XmlDoc::hashIsAdult ( HashTableX *tt ) {
-
-	setStatus ("hashing isadult");
-
-	char *ia = getIsAdult();
-	// this should not block or return error! should have been
-	// set in prepareToMakeTitleRec() before hashAll() was called!
-	if ( ! ia || ia == (void *)-1 ) {g_process.shutdownAbort(true); }
-
-	// index gbisadult:1 if adult or gbisadult:0 if not
-	char *val;
-	if ( *ia ) val = "1";
-	else       val = "0";
-
-	// update hash parms
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_hashGroup = HASHGROUP_INTAG;
-	hi.m_prefix    = "gbisadult";
-	hi.m_desc      = "is document adult content";
-
-	// this returns false on failure
-	if ( ! hashString ( val,1,&hi ) ) return false;
-
-	return true;
 }
 
 bool XmlDoc::hashSingleTerm( const char *s, int32_t slen, HashInfo *hi ) {
