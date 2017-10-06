@@ -7,12 +7,6 @@
 // . 2. To directly process a provided URL (injection)
 // . 3. the Cache API so phantomjs can quickly check the cache for files
 //      and quickly add files to the cache.
-//
-
-// Related pages:
-//
-// * http://diffbot.com/dev/docs/  (Crawlbot API tab, and others)
-// * http://diffbot.com/dev/crawl/
 
 #include "Errno.h"
 #include "PageCrawlBot.h"
@@ -61,12 +55,6 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 	return true;
 }
 
-// . do not add dups into m_diffbotSeeds safebuf
-// . return 0 if not in table, 1 if in table. -1 on error adding to table.
-static int32_t isInSeedBuf(CollectionRec *cr, const char *url, int len) {
-	return 0;
-}
-
 // just use "fakeips" based on the hash of each url hostname/subdomain
 // so we don't waste time doing ip lookups.
 bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLinks, CollectionRec *cr ) {
@@ -80,10 +68,10 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 
 	uint32_t now = (uint32_t)getTimeGlobal();
 
-	// a big loop
-	while ( true ) {
+	for(;;) {
 		// skip white space (\0 is not a whitespace)
-		for ( ; is_wspace_a(*p) ; p++ );
+		while(is_wspace_a(*p))
+			p++;
 
 		// all done?
 		if ( ! *p ) break;
@@ -92,7 +80,8 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 		const char *saved = p;
 
 		// advance to next white space
-		for ( ; ! is_wspace_a(*p) && *p ; p++ );
+		while(!is_wspace_a(*p) && *p)
+			p++;
 
 		// set end
 		const char *end = p;
@@ -160,24 +149,6 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 		if ( ! listBuf->safeMemcpy ( &sreq , sreq.getRecSize() ) ) {
 			// return false with g_errno set
 			return false;
-		}
-
-		if ( ! cr ) {
-			continue;
-		}
-
-		// do not add dups into m_diffbotSeeds safebuf
-		int32_t status = isInSeedBuf ( cr , saved , end - saved );
-
-		// error?
-		if ( status == -1 ) {
-			log ( LOG_WARN, "crawlbot: error adding seed to table: %s", mstrerror(g_errno) );
-			return true;
-		}
-
-		// already in buf
-		if ( status == 1 ) {
-			continue;
 		}
 	}
 

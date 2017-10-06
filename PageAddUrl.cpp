@@ -80,7 +80,7 @@ bool sendPageAddUrl2 ( TcpSocket *sock , HttpRequest *hr ) {
 	if ( ! urls ) return sendReply (  gr );
 
 	// do not spider links for spots
-	bool status = getSpiderRequestMetaList ( (char*)urls, &gr->m_listBuf , gr->m_harvestLinks, NULL );
+	bool status = getSpiderRequestMetaList ( urls, &gr->m_listBuf , gr->m_harvestLinks, NULL );
 	int32_t size = gr->m_listBuf.length();
 	
 	// error / not list
