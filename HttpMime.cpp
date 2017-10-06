@@ -988,7 +988,7 @@ int32_t HttpMime::getContentTypePrivate(const char *s, size_t slen) {
 	// returns CT_UNKNOWN if unknown
 	ct = getContentTypeFromStr(s, slen);
 	if (ct == CT_UNKNOWN) {
-		log(LOG_WARN, "http: unrecognized content type \"%s\"",s);
+		log(LOG_WARN, "http: unrecognized content type '%.*s'", (int)slen, s);
 	}
 
 	// return 0 for the contentType if unknown
