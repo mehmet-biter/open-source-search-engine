@@ -7,6 +7,8 @@
 
 #include "Url.h"
 #include "Multicast.h"
+#include "collnum_t.h"
+
 
 // m_url[0]!=0 if this is a url-based request and NOT docid-based
 class Msg22Request {

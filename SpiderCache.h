@@ -2,6 +2,7 @@
 #define GB_SPIDERCACHE_H
 
 #include "types.h"
+#include "collnum_t.h"
 
 class SpiderColl;
 
