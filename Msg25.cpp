@@ -4234,7 +4234,7 @@ bool Links::addLink(const char *link, int32_t linkLen, int32_t nodeNum,
 
 // . does link #i have link text?
 // . link text must have at least one alnum in it
-bool Links::hasLinkText(int32_t n, int32_t version) {
+bool Links::hasLinkText(int32_t n) {
 	// return 0 if no link to our "url"
 	if ( n >= m_numLinks ) return false;
 	// get the node range so we can call Xml::getText()

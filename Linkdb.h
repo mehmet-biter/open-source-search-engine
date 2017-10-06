@@ -654,7 +654,7 @@ public:
 
 	// . does link #n have link text that has at least 1 alnum char in it?
 	// . used for scoring link: terms to make link-text adds more efficient
-	bool hasLinkText ( int32_t n, int32_t version );
+	bool hasLinkText(int32_t n);
 
 	// . returns false on error and sets errno
 	// . get our outgoing link text for this url
