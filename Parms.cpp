@@ -733,6 +733,7 @@ static bool CommandDiskDump(const char *rec) {
 	g_posdb.getRdb()->submitRdbDumpJob(true);
 	g_titledb.getRdb()->submitRdbDumpJob(true);
 	g_linkdb.getRdb()->submitRdbDumpJob(true);
+	//g_doledb is a tree-only dbs so cannot be dumped
 	g_errno = 0;
 	return true;
 }
