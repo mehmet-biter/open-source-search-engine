@@ -1295,6 +1295,10 @@ bool Repair::injectTitleRec ( ) {
 	xd->m_content = xd->ptr_utf8Content;
 	xd->m_contentLen = xd->size_utf8Content - 1;
 
+	// don't check block list
+	xd->m_blockedDocValid = true;
+	xd->m_blockedDoc = false;
+
 	// . get the meta list to add
 	// . sets m_usePosdb, m_useTitledb, etc.
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: Calling indexDoc", __FILE__, __func__, __LINE__);
