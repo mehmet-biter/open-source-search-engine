@@ -195,7 +195,7 @@ int convertSpiderDb(const char *collname) {
 				
 				hadReply ? insert_with_reply_count++ : insert_no_reply_count++;
 				
-				sqlite3_bind_int(stmt, 1, Spiderdb::getFirstIp(reinterpret_cast<const key128_t*>(srec)));
+				sqlite3_bind_int64(stmt, 1, (uint32_t)Spiderdb::getFirstIp(reinterpret_cast<const key128_t*>(srec)));
 				sqlite3_bind_int64(stmt, 2, Spiderdb::getUrlHash48(reinterpret_cast<const key128_t*>(srec)));
 				sqlite3_bind_int(stmt, 3, spiderRequest->m_hostHash32);
 				sqlite3_bind_int(stmt, 4, spiderRequest->m_domHash32);
@@ -260,7 +260,7 @@ int convertSpiderDb(const char *collname) {
 				sqlite3_bind_int(updateStatementDuplicateRequest, 3, spiderRequest->m_addedTime);
 				sqlite3_bind_int(updateStatementDuplicateRequest, 4, spiderRequest->m_discoveryTime);
 				sqlite3_bind_int(updateStatementDuplicateRequest, 5, spiderRequest->m_priority);
-				sqlite3_bind_int(updateStatementDuplicateRequest, 6, Spiderdb::getFirstIp(reinterpret_cast<const key128_t*>(srec)));
+				sqlite3_bind_int64(updateStatementDuplicateRequest, 6, (uint32_t)Spiderdb::getFirstIp(reinterpret_cast<const key128_t*>(srec)));
 				sqlite3_bind_int64(updateStatementDuplicateRequest, 17, Spiderdb::getUrlHash48(reinterpret_cast<const key128_t*>(srec)));
 				
 				if(sqlite3_step(updateStatementDuplicateRequest) != SQLITE_DONE) {
