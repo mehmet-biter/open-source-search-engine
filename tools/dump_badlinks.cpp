@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
 				Url url;
 				url.set(link.c_str());
 
-				if (isUrlUnwanted(url)) {
+				if (isUrlUnwanted(url) || (url.isRoot() && url.isValid())) {
 					continue;
 				}
 
