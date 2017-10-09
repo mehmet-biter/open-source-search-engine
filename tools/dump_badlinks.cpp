@@ -140,16 +140,15 @@ int main(int argc, char **argv) {
 			std::set_difference(oldLinks.begin(), oldLinks.end(), newLinks.begin(), newLinks.end(), std::back_inserter(diffLinks));
 
 			for (auto link : diffLinks) {
-				fprintf(stdout, "%" PRId64"|old|%s\n", docId, link.c_str());
+				fprintf(stdout, "%s\n", link.c_str());
 			}
 
-			diffLinks.clear();
-			std::set_difference(newLinks.begin(), newLinks.end(), oldLinks.begin(), oldLinks.end(), std::back_inserter(diffLinks));
-
-			for (auto link : diffLinks) {
-				fprintf(stdout, "%" PRId64"|new|%s\n", docId, link.c_str());
-			}
-
+//			diffLinks.clear();
+//			std::set_difference(newLinks.begin(), newLinks.end(), oldLinks.begin(), oldLinks.end(), std::back_inserter(diffLinks));
+//
+//			for (auto link : diffLinks) {
+//				fprintf(stdout, "%" PRId64"|new|%s\n", docId, link.c_str());
+//			}
 		}
 
 		startKey = *(key96_t *)list.getLastKey();
