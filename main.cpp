@@ -1934,7 +1934,7 @@ static int install_file(const char *file, int32_t hostId, int32_t hostId2) {
 
 	for (int32_t i = 0; i < g_hostdb.getNumHosts(); i++) {
 		Host *h2 = g_hostdb.getHost(i);
-		if (h2 == g_hostdb.getMyShard()) {
+		if (h2 == g_hostdb.getMyHost()) {
 			continue; //skip ourselves
 		}
 
