@@ -231,6 +231,10 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 
 		const char *rec = p;
 
+		// recSize can't go over pend
+		if(p + recSize > pend)
+			gbshutdownAbort(true);
+
 		// Sanity. Shut down if data sizes are wrong.
 		if( rdbId == RDB_TITLEDB ) {
 			Titledb::validateSerializedRecord( rec, recSize );
@@ -267,18 +271,10 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 			}
 		}
 
-		// recSize can't go over pend
-		if (p + recSize > pend) {
-			gbshutdownAbort(true);
-		}
-
 		// if we don't have data, recSize must be the same with keySize
 		if (rdb->getFixedDataSize() == 0 && recSize != rdb->getKeySize()) {
 			gbshutdownAbort(true);
 		}
-
-		// advance over the rec data to point to next entry
-		p += recSize;
 
 		// don't add to spiderdb when we're nospider host
 		if (!g_hostdb.getMyHost()->m_spiderEnabled && (rdbId == RDB_SPIDERDB || rdbId == RDB2_SPIDERDB2)) {
@@ -296,6 +292,9 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 		rdbItem.m_dataSizes += dataSize;
 
 		rdbItem.m_items.emplace_back(collnum, rec, recSize);
+
+		// advance over the rec data to point to next entry
+		p += recSize;
 	}
 
 	bool hasRoom = true;
