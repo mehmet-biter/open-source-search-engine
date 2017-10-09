@@ -42,6 +42,7 @@ MergeSpaceCoordinator::MergeSpaceCoordinator(const char *lock_dir_, int min_lock
 		log(LOG_ERROR,"pthread_create() returned %d (%s)", rc, strerror(rc));
 		return;
 	}
+	pthread_setname_np(hold_lock_tid, "mergecoord-lock");
 	hold_lock_thread_running = true;
 }
 
