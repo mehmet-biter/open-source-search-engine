@@ -139,6 +139,8 @@ int main(int argc, char **argv) {
 			std::vector<std::string> diffLinks;
 			std::set_difference(oldLinks.begin(), oldLinks.end(), newLinks.begin(), newLinks.end(), std::back_inserter(diffLinks));
 
+			std::sort(diffLinks.begin(), diffLinks.end());
+			diffLinks.erase(std::unique(diffLinks.begin(), diffLinks.end()), diffLinks.end());
 			for (auto link : diffLinks) {
 				fprintf(stdout, "%s\n", link.c_str());
 			}
