@@ -17487,7 +17487,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	if (firstIp && firstIp != (int32_t *)-1) {
 		key128_t spiderKey = Spiderdb::makeFirstKey(*firstIp);
 		int32_t spiderShardNum = getShardNum(RDB_SPIDERDB, &spiderKey);
-		spiderHostId = g_hostdb.getHostIdWithSpideringEnabled(spiderShardNum);
+		spiderHostId = g_hostdb.getHostIdWithSpideringEnabled(spiderShardNum, false);
 	}
 
 	if ( ! isXml )

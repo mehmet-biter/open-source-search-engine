@@ -245,8 +245,7 @@ bool Msg13::forwardRequest ( ) {
 		// one we find sequentially because that makes the load
 		// imbalanced to the lowest host with spidering enabled.
 		if(!h->m_spiderEnabled) {
-			h = g_hostdb.getHost(g_hostdb.getHostIdWithSpideringEnabled(
-			  h->m_hostId));
+			h = g_hostdb.getHost(g_hostdb.getHostIdWithSpideringEnabled(h->m_hostId, true));
 		}
 
 		// stop if he is alive and able to spider

@@ -1178,7 +1178,7 @@ bool Hostdb::isShardDead(int32_t shardNum) const {
 }
 
 
-int32_t Hostdb::getHostIdWithSpideringEnabled ( uint32_t shardNum ) {
+int32_t Hostdb::getHostIdWithSpideringEnabled ( uint32_t shardNum, bool answerRequired ) {
 	Host *hosts = getShard ( shardNum);
 	int32_t numHosts = getNumHostsPerShard();
 
@@ -1189,10 +1189,15 @@ int32_t Hostdb::getHostIdWithSpideringEnabled ( uint32_t shardNum ) {
 		numTried++;
 	}
 	if( !hosts [ hostNum ].m_spiderEnabled) {
-		log("build: cannot spider when entire shard has nospider enabled");
-		g_process.shutdownAbort(true);
+		if( answerRequired ) {
+			log("build: cannot spider when entire shard has nospider enabled");
+			g_process.shutdownAbort(true);
+		}
+		else {
+			return -1;
+		}
 	}
-	return hosts [ hostNum ].m_hostId ;
+	return hosts[hostNum].m_hostId;
 }
 
 

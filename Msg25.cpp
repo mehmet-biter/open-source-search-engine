@@ -336,7 +336,7 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 	if ( hostNum >= numHosts ) { g_process.shutdownAbort(true); }
 	int32_t hostId = hosts [ hostNum ].m_hostId ;
 	if( !hosts [ hostNum ].m_spiderEnabled) {
-		hostId = g_hostdb.getHostIdWithSpideringEnabled ( shardNum );
+		hostId = g_hostdb.getHostIdWithSpideringEnabled(shardNum, true);
 	}
 
 

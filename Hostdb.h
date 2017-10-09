@@ -226,7 +226,7 @@ class Hostdb {
 	bool isShardDead(int32_t shardNum) const;
 
 	Host *getLeastLoadedInShard ( uint32_t shardNum , char niceness );
-	int32_t getHostIdWithSpideringEnabled ( uint32_t shardNum );
+	int32_t getHostIdWithSpideringEnabled ( uint32_t shardNum, bool answerRequired );
 	Host *getHostWithSpideringEnabled ( uint32_t shardNum );
 
 	// in the entire cluster. return host #0 if its alive, otherwise
