@@ -2411,7 +2411,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 			logTrace(g_conf.m_logTraceRdbList, "Found docId=%" PRIu64" with filePos=%" PRId32, docId, filePos);
 
-			int prtIndex = getPtrIndex(lists, oriNumLists, ends[mini + listOffset]);
+			int prtIndex = getPtrIndex(lists, oriNumLists, ends[mini]);
 			if (filePos > prtIndex + startFileIndex) {
 				// docId is present in newer file
 				logTrace(g_conf.m_logTraceRdbList, "docId in newer list. skip. filePos=%d mini=%hd listOffset=%d startFileIndex=%d ptrIndex=%d",
