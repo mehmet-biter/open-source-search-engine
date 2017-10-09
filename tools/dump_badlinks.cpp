@@ -142,6 +142,13 @@ int main(int argc, char **argv) {
 			std::sort(diffLinks.begin(), diffLinks.end());
 			diffLinks.erase(std::unique(diffLinks.begin(), diffLinks.end()), diffLinks.end());
 			for (auto link : diffLinks) {
+				Url url;
+				url.set(link.c_str());
+
+				if (isUrlUnwanted(url)) {
+					continue;
+				}
+
 				fprintf(stdout, "%s\n", link.c_str());
 			}
 
