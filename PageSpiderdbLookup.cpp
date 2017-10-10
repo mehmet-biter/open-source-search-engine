@@ -146,11 +146,11 @@ static void gotTagRec(void *state) {
 
 
 static bool getSpiderRecs(State *st) {
-	log(LOG_TRACE,"PageSpiderdbLookup: getSpiderRecs(%p)",st);
+	logTrace(g_conf.m_logTracePageSpiderdbLookup, "getSpiderRecs(%p)",st);
 	int64_t uh48 = hash64b(st->m_url_str);
 	key128_t startKey = Spiderdb::makeFirstKey(st->m_firstip, uh48);
 	key128_t endKey = Spiderdb::makeLastKey(st->m_firstip, uh48);
-	log(LOG_TRACE,"PageSpiderdbLookup: getSpiderRecs(%p): Calling Msg0::getList()", st);
+	logTrace(g_conf.m_logTracePageSpiderdbLookup, "getSpiderRecs(%p): Calling Msg0::getList()", st);
 	if(!st->m_msg0.getList(-1, //hostId
 		               RDB_SPIDERDB,
 		               st->m_collnum,
@@ -172,28 +172,28 @@ static bool getSpiderRecs(State *st) {
 		               false, //noSplit (?)
 		               -1))//forceParitySplit
 		return false;
-	log(LOG_TRACE,"PageSpiderdbLookup: getSpiderRecs: msg0.getlist didn't block");
+	logTrace(g_conf.m_logTracePageSpiderdbLookup, "getSpiderRecs: msg0.getlist didn't block");
 	return true;
 }
 
 
 
 static void gotSpiderRecs(void *state) {
-	log(LOG_TRACE,"PageSpiderdbLookup: gotSpiderRecs(%p)", state);
+	logTrace(g_conf.m_logTracePageSpiderdbLookup, "gotSpiderRecs(%p)", state);
 	State *st = reinterpret_cast<State*>(state);
 	gotSpiderRecs2(st);
 }
 
 static bool gotSpiderRecs2(State *st) {
-	log(LOG_TRACE,"PageSpiderdbLookup: gotSpiderRecs2(%p)", st);
-	log(LOG_TRACE,"PageSpiderdbLookup: gotSpiderRecs2: g_errno=%d", g_errno);
-	log(LOG_TRACE,"PageSpiderdbLookup: gotSpiderRecs2: st->m_rdbList.getListSize()=%d", st->m_rdbList.getListSize());
+	logTrace(g_conf.m_logTracePageSpiderdbLookup, "gotSpiderRecs2(%p)", st);
+	logTrace(g_conf.m_logTracePageSpiderdbLookup, "gotSpiderRecs2: g_errno=%d", g_errno);
+	logTrace(g_conf.m_logTracePageSpiderdbLookup, "gotSpiderRecs2: st->m_rdbList.getListSize()=%d", st->m_rdbList.getListSize());
 	return sendResult(st);
 }
 
 
 static bool sendResult(State *st) {
-	log(LOG_TRACE,"PageSpiderdbLookup(%p): sendResult: g_errno=%d", st, g_errno);
+	logTrace(g_conf.m_logTracePageSpiderdbLookup, "st(%p): sendResult: g_errno=%d", st, g_errno);
 	// get the socket
 	TcpSocket *s = st->m_socket;
 
@@ -245,18 +245,17 @@ static bool sendResult(State *st) {
 	const SpiderRequest *spiderRequest = NULL;
 	const SpiderReply *spiderReply = NULL;
 	if(st->m_rdbList.getListSize()>0) {
-		//log(LOG_INFO, "@@@ sendResult: st->m_rdbList.getListSize()=%d", st->m_rdbList.getListSize());
-		log(LOG_TRACE, "PageSpiderdbLookup(%p): sendResult: st->m_rdbList.getListSize()=%d", st, st->m_rdbList.getListSize());
+		logTrace(g_conf.m_logTracePageSpiderdbLookup, "st(%p): sendResult: st->m_rdbList.getListSize()=%d", st, st->m_rdbList.getListSize());
 		for(st->m_rdbList.resetListPtr(); !st->m_rdbList.isExhausted(); st->m_rdbList.skipCurrentRecord()) {
 			const char *currentRec = st->m_rdbList.getCurrentRec();
-			loghex(LOG_TRACE, currentRec, st->m_rdbList.getCurrentRecSize(), "PageSpiderdbLookup(%p): ", st);
+			logHexTrace(g_conf.m_logTracePageSpiderdbLookup, currentRec, st->m_rdbList.getCurrentRecSize(), "st(%p): ", st);
 			if((currentRec[0]&0x01) == 0x00)
 				continue; //skip negative records (which should even be there)
 			if(Spiderdb::isSpiderRequest((const key128_t *)currentRec)) {
-				log(LOG_TRACE, "PageSpiderdbLookup: it's a request");
+				logTrace(g_conf.m_logTracePageSpiderdbLookup, "it's a request");
 				spiderRequest = reinterpret_cast<const SpiderRequest*>(currentRec);
 			} else  {
-				log(LOG_TRACE, "PageSpiderdbLookup: it's a reply");
+				logTrace(g_conf.m_logTracePageSpiderdbLookup, "it's a reply");
 				spiderReply = reinterpret_cast<const SpiderReply*>(currentRec);
 			}
 		}
