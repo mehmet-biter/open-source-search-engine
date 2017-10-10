@@ -8,6 +8,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "UrlBlockCheck.h"
+#include "UrlMatchList.h"
 #include <libgen.h>
 #include <algorithm>
 
@@ -97,6 +98,9 @@ int main(int argc, char **argv) {
 
 	key96_t endKey;
 	endKey.setMax();
+
+	g_urlBlackList.init();
+	g_urlWhiteList.init();
 
 	while (msg5.getList(RDB_TITLEDB, cr->m_collnum, &list, &startKey, &endKey, 10485760, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
 
