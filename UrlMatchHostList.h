@@ -14,7 +14,7 @@ class UrlMatchHostList {
 public:
 	UrlMatchHostList();
 
-	bool load(const char *filename);
+	bool load(const char *filename, bool matchHost);
 	void unload();
 
 	bool isUrlMatched(const Url &url);
@@ -24,6 +24,7 @@ private:
 	void swapUrlMatchHostList(urlmatchhostlistconst_ptr_t urlMatchHostList);
 
 	const char *m_filename;
+	bool m_matchHost;
 
 	urlmatchhostlistconst_ptr_t m_urlmatchhostlist;
 };
