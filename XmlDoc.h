@@ -149,7 +149,9 @@ public:
 	uint32_t  m_tagPairHash32;
 	int32_t      m_siteNumInlinks;
 
-	int32_t    m_reserved1;
+	// this is non-zero if we decided not to index the doc
+	int32_t m_indexCode;
+
 	int32_t    m_reserved2;
 	uint32_t   m_spideredTime; // time_t
 	uint32_t  m_indexedTime; // slightly > m_spideredTime (time_t)
@@ -1040,9 +1042,6 @@ public:
 	void (* m_callback1) ( void *state );	
 	bool (* m_callback2) ( void *state );	
 	void  *m_state;
-
-	// this is non-zero if we decided not to index the doc
-	int32_t m_indexCode;
 
 	// the spider priority
 	int32_t m_priority;
