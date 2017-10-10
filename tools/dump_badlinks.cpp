@@ -7,6 +7,7 @@
 #include "Log.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "UrlBlockCheck.h"
 #include <libgen.h>
 #include <algorithm>
 
