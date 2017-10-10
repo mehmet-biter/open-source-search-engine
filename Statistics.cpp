@@ -404,7 +404,7 @@ static RdbCacheHistory rdb_cache_history[] = {
 	{RDB_TAGDB,    "tagdb",    0,0},
 	{RDB_CLUSTERDB,"clusterdb",0,0},
 	{RDB_TITLEDB,  "titledb",  0,0},
-	{RDB_SPIDERDB, "spiderdb", 0,0},
+	{RDB_SPIDERDB_DEPRECATED, "spiderdb", 0,0},
 	{RDB_NONE,0,0,0}
 };
 

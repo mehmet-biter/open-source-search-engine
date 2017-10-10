@@ -11,6 +11,7 @@
 #include "ip.h"
 #include "Mem.h"
 #include "Titledb.h"	// for Titledb::validateSerializedRecord
+#include "SpiderdbRdbSqliteBridge.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
 
@@ -240,59 +241,71 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 			Titledb::validateSerializedRecord( rec, recSize );
 		}
 
-		// . get the rdb to which it belongs, use Msg0::getRdb()
-		// . do not call this for every rec if we do not have to
-		if (rdbId != lastRdbId || !rdb) {
-			rdb = getRdbFromId(rdbId);
+		if(rdbId!=RDB_SPIDERDB_DEPRECATED && rdbId!=RDB2_SPIDERDB2_DEPRECATED) {
+			// . get the rdb to which it belongs, use Msg0::getRdb()
+			// . do not call this for every rec if we do not have to
+			if (rdbId != lastRdbId || !rdb) {
+				rdb = getRdbFromId(rdbId);
 
-			if (!rdb) {
-				char ipbuf[16];
-				log(LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized from hostip=%s. dropping WHOLE request",
-				    (int32_t)rdbId, slot ? iptoa(slot->getIp(),ipbuf) : "unknown");
+				if (!rdb) {
+					char ipbuf[16];
+					log(LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized from hostip=%s. dropping WHOLE request",
+					(int32_t)rdbId, slot ? iptoa(slot->getIp(),ipbuf) : "unknown");
+					gbshutdownAbort(true);
+				}
+
+				// an uninitialized secondary rdb?
+				// don't core any more, we probably restarted this shard
+				// and it needs to wait for host #0 to syncs its
+				// g_conf.m_repairingEnabled to '1' so it can start its
+				// Repair.cpp repairWrapper() loop and init the secondary
+				// rdbs so "rdb" here won't be NULL any more.
+				if (!rdb->isInitialized()) {
+					time_t currentTime = getTime();
+					static time_t s_lastTime = 0;
+					if (currentTime > s_lastTime + 10) {
+						s_lastTime = currentTime;
+						log(LOG_WARN, "msg4: oops. got an rdbId key for a secondary "
+								"rdb and not in repair mode. waiting to be in repair mode.");
+					}
+					g_errno = ETRYAGAIN;
+					return false;
+				}
+			}
+
+			// if we don't have data, recSize must be the same with keySize
+			if (rdb->getFixedDataSize() == 0 && recSize != rdb->getKeySize()) {
 				gbshutdownAbort(true);
 			}
 
-			// an uninitialized secondary rdb?
-			// don't core any more, we probably restarted this shard
-			// and it needs to wait for host #0 to syncs its
-			// g_conf.m_repairingEnabled to '1' so it can start its
-			// Repair.cpp repairWrapper() loop and init the secondary
-			// rdbs so "rdb" here won't be NULL any more.
-			if (!rdb->isInitialized()) {
-				time_t currentTime = getTime();
-				static time_t s_lastTime = 0;
-				if (currentTime > s_lastTime + 10) {
-					s_lastTime = currentTime;
-					log(LOG_WARN, "msg4: oops. got an rdbId key for a secondary "
-							"rdb and not in repair mode. waiting to be in repair mode.");
-				}
-				g_errno = ETRYAGAIN;
-				return false;
+			auto &rdbItem = rdbItems[rdbId];
+			++rdbItem.m_numRecs;
+
+			int32_t dataSize = recSize - rdb->getKeySize();
+			if (rdb->getFixedDataSize() == -1) {
+				dataSize -= 4;
 			}
+
+			rdbItem.m_dataSizes += dataSize;
+
+			rdbItem.m_items.emplace_back(collnum, rec, recSize);
+		} else {
+			//spiderdb records no longer reside in an Rdb
+			
+			// don't add to spiderdb when we're nospider host
+			if (!g_hostdb.getMyHost()->m_spiderEnabled)
+				continue;
+			
+			auto &rdbItem = rdbItems[rdbId];
+			++rdbItem.m_numRecs;
+
+			int32_t dataSize = recSize - sizeof(key128_t) - 4;
+
+			rdbItem.m_dataSizes += dataSize;
+
+			rdbItem.m_items.emplace_back(collnum, rec, recSize);
 		}
-
-		// if we don't have data, recSize must be the same with keySize
-		if (rdb->getFixedDataSize() == 0 && recSize != rdb->getKeySize()) {
-			gbshutdownAbort(true);
-		}
-
-		// don't add to spiderdb when we're nospider host
-		if (!g_hostdb.getMyHost()->m_spiderEnabled && (rdbId == RDB_SPIDERDB || rdbId == RDB2_SPIDERDB2)) {
-			continue;
-		}
-
-		auto &rdbItem = rdbItems[rdbId];
-		++rdbItem.m_numRecs;
-
-		int32_t dataSize = recSize - rdb->getKeySize();
-		if (rdb->getFixedDataSize() == -1) {
-			dataSize -= 4;
-		}
-
-		rdbItem.m_dataSizes += dataSize;
-
-		rdbItem.m_items.emplace_back(collnum, rec, recSize);
-
+		
 		// advance over the rec data to point to next entry
 		p += recSize;
 	}
@@ -300,12 +313,14 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 	bool hasRoom = true;
 	bool anyDumping = false;
 	for (auto const &rdbItem : rdbItems) {
-		Rdb *rdb = getRdbFromId(rdbItem.first);
-		if (rdb->isDumping()) {
-			anyDumping = true;
-		} else if (!rdb->hasRoom(rdbItem.second.m_numRecs, rdbItem.second.m_dataSizes)) {
-			rdb->submitRdbDumpJob(true);
-			hasRoom = false;
+		if(rdbItem.first!=RDB_SPIDERDB_DEPRECATED && rdbItem.first!=RDB2_SPIDERDB2_DEPRECATED) {
+			Rdb *rdb = getRdbFromId(rdbItem.first);
+			if (rdb->isDumping()) {
+				anyDumping = true;
+			} else if (!rdb->hasRoom(rdbItem.second.m_numRecs, rdbItem.second.m_dataSizes)) {
+				rdb->submitRdbDumpJob(true);
+				hasRoom = false;
+			}
 		}
 	}
 
@@ -323,53 +338,66 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 
 
 	for (auto const &rdbItem : rdbItems) {
-		Rdb *rdb = getRdbFromId(rdbItem.first);
+		if(rdbItem.first!=RDB_SPIDERDB_DEPRECATED && rdbItem.first!=RDB2_SPIDERDB2_DEPRECATED) {
+			Rdb *rdb = getRdbFromId(rdbItem.first);
 
-		bool status = false;
-		for (auto const &item : rdbItem.second.m_items) {
-			// reset g_errno
-			g_errno = 0;
-
-			// . make a list from this data
-			// . skip over the first 4 bytes which is the rdbId
-			// . TODO: embed the rdbId in the msgtype or something...
-			RdbList list;
-
-			// set the list
-			// todo: dodgy cast to char*. RdbList should be fixed
-			list.set((char *)item.m_rec, item.m_recSize, (char *)item.m_rec, item.m_recSize,
-			         rdb->getFixedDataSize(), false, rdb->useHalfKeys(), rdb->getKeySize());
-
-			// keep track of stats
-			rdb->readRequestAdd(item.m_recSize);
-
-			// this returns false and sets g_errno on error
-			status = rdb->addListNoSpaceCheck(item.m_collNum, &list);
-
-			// bad coll #? ignore it. common when deleting and resetting
-			// collections using crawlbot. but there are other recs in this
-			// list from different collections, so do not abandon the whole
-			// meta list!! otherwise we lose data!!
-			if (g_errno == ENOCOLLREC && !status) {
+			bool status = true;
+			for (auto const &item : rdbItem.second.m_items) {
+				// reset g_errno
 				g_errno = 0;
-				status = true;
+
+				// . make a list from this data
+				// . skip over the first 4 bytes which is the rdbId
+				// . TODO: embed the rdbId in the msgtype or something...
+				RdbList list;
+
+				// set the list
+				// todo: dodgy cast to char*. RdbList should be fixed
+				list.set((char *)item.m_rec, item.m_recSize, (char *)item.m_rec, item.m_recSize,
+					rdb->getFixedDataSize(), false, rdb->useHalfKeys(), rdb->getKeySize());
+
+				// keep track of stats
+				rdb->readRequestAdd(item.m_recSize);
+
+				// this returns false and sets g_errno on error
+				status = rdb->addListNoSpaceCheck(item.m_collNum, &list);
+
+				// bad coll #? ignore it. common when deleting and resetting
+				// collections using crawlbot. but there are other recs in this
+				// list from different collections, so do not abandon the whole
+				// meta list!! otherwise we lose data!!
+				if (g_errno == ENOCOLLREC && !status) {
+					g_errno = 0;
+					status = true;
+				}
+
+				if (!status) {
+					break;
+				}
 			}
 
 			if (!status) {
 				break;
 			}
-		}
-
-		if (!status) {
-			break;
+		} else {
+			bool status = true;
+			for(auto const &item : rdbItem.second.m_items) {
+				status = SpiderdbRdbSqliteBridge::addRecord(item.m_collNum, item.m_rec, item.m_recSize);
+				if(!status)
+					break;
+			}
+			if(!status)
+				break;
 		}
 	}
 
 	// verify integrity if wanted
 	if (g_conf.m_verifyTreeIntegrity) {
-		for (auto const &rdbItem : rdbItems) {
-			Rdb *rdb = getRdbFromId(rdbItem.first);
-			rdb->verifyTreeIntegrity();
+		for(auto const &rdbItem : rdbItems) {
+			if(rdbItem.first!=RDB_SPIDERDB_DEPRECATED && rdbItem.first!=RDB2_SPIDERDB2_DEPRECATED) {
+				Rdb *rdb = getRdbFromId(rdbItem.first);
+				rdb->verifyTreeIntegrity();
+			}
 		}
 	}
 

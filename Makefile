@@ -30,6 +30,8 @@ OBJS_O0 =  \
 	Query.o \
 	RdbCache.o RdbDump.o RdbMem.o RdbMerge.o RdbScan.o RdbTree.o \
 	Rebalance.o Repair.o RobotRule.o Robots.o \
+	SpiderdbSqlite.o \
+	SpiderdbRdbSqliteBridge.o \
 	Sanity.o ScalingFunctions.o SearchInput.o SiteGetter.o Speller.o SpiderProxy.o Stats.o SummaryCache.o Synonyms.o \
 	Tagdb.o TcpServer.o Titledb.o \
 	Version.o \

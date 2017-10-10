@@ -74,7 +74,7 @@ int32_t SpiderRequest::print(SafeBuf *sbarg) const {
 	SafeBuf tmp;
 	SafeBuf *sb = sbarg ? sbarg : &tmp;
 
-	sb->safePrintf("k=%s ", KEYSTR( this, getKeySizeFromRdbId( RDB_SPIDERDB ) ) );
+	sb->safePrintf("k=%s ", KEYSTR( this, getKeySizeFromRdbId( RDB_SPIDERDB_SQLITE ) ) );
 
 	// indicate it's a request not a reply
 	sb->safePrintf("REQ ");
@@ -128,7 +128,7 @@ int32_t SpiderRequest::print(SafeBuf *sbarg) const {
 
 	if ( m_avoidSpiderLinks ) sb->safePrintf("AVOIDSPIDERLINKS ");
 
-	int32_t shardNum = g_hostdb.getShardNum( RDB_SPIDERDB, this );
+	int32_t shardNum = g_hostdb.getShardNum( RDB_SPIDERDB_SQLITE, this );
 	sb->safePrintf("shardnum=%" PRIu32" ",(uint32_t)shardNum);
 
 	sb->safePrintf("url=%s",m_url);
@@ -999,7 +999,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 
 	// use spidercoll to contain this msg4 but if in use it
 	// won't be able to be deleted until it comes back..
-	if(!sc->m_msg4x.addMetaList(spiderReqBuf, sc->m_collnum, spiderReqBuf, doneAddingSeedsWrapper, RDB_SPIDERDB))
+	if(!sc->m_msg4x.addMetaList(spiderReqBuf, sc->m_collnum, spiderReqBuf, doneAddingSeedsWrapper, RDB_SPIDERDB_DEPRECATED))
 		return false;
 	else {
 		delete spiderReqBuf;

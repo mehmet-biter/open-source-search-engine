@@ -13,6 +13,7 @@
 #include "ip.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "SpiderdbRdbSqliteBridge.h"
 #include "ScopedLock.h"
 #include "Sanity.h"
 
@@ -1188,25 +1189,17 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// make state
 		//int32_t state2 = (int32_t)m_cr->m_collnum;
 		// read the list from local disk
-		if ( !m_msg5b.getList(RDB_SPIDERDB,
-		                      m_cr->m_collnum,
-		                      &m_waitingTreeList,
-		                      &m_waitingTreeNextKey,
-		                      KEYMAX(),
-		                      SR_READ_SIZE, // minRecSizes (512k)
-		                      true, // includeTree
-		                      0, // startFileNum
-		                      -1, // numFiles (all)
-		                      this,//(void *)state2,//this//state
-		                      gotSpiderdbWaitingTreeListWrapper,
-		                      MAX_NICENESS, // niceness
-		                      true, // do error correct?
-		                      -1,              // maxRetries
-		                      false))           // isRealMerge
+		if(!SpiderdbRdbSqliteBridge::getList(m_cr->m_collnum,
+						     &m_waitingTreeList,
+						     m_waitingTreeNextKey,
+						     *(const key128_t*)KEYMAX(),
+						     SR_READ_SIZE))
 		{
-			// return if blocked
-			logTrace( g_conf.m_logTraceSpider, "END, msg5b.getList blocked" );
-			return;
+			if(!g_errno) {
+				g_errno = EIO; //imprecise
+				logTrace( g_conf.m_logTraceSpider, "END, got io-error from sqlite" );
+				return;
+			}
 		}
 	}
 
@@ -2014,27 +2007,18 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	//   end up timing out the round. so try checking for
 	//   m_gettingList in spiderDoledUrls() and setting
 	//   m_lastSpiderCouldLaunch
-	if ( ! m_msg5.getList ( RDB_SPIDERDB   ,
-				m_cr->m_collnum   ,
-				&m_list        ,
-				&m_nextKey      ,
-				&m_endKey       ,
-				SR_READ_SIZE   , // minRecSizes (512k)
-				true           , // includeTree
-				0              , // startFileNum
-				-1             , // numFiles (all)
-				this,//(void *)state2,//this,//state 
-				gotSpiderdbListWrapper ,
-				MAX_NICENESS   , // niceness
-				true,            // do error correct?
-				-1,              // maxRetries
-				false))          // isRealMerge
+	if(!SpiderdbRdbSqliteBridge::getList(m_cr->m_collnum,
+					     &m_list,
+					     m_nextKey,
+					     m_endKey,
+					     SR_READ_SIZE))
 	{
-		// return false if blocked
-		logTrace( g_conf.m_logTraceSpider, "END, msg5.getList blocked" );
-		return false ;
+		if(!g_errno)
+			g_errno = EIO; //imprecise
+		logTrace( g_conf.m_logTraceSpider, "END, got io-error from sqlite" );
+		return true;
 	}
-	
+
 	// note its return
 	logDebug( g_conf.m_logDebugSpider, "spider: back from msg5 spiderdb read of %" PRId32" bytes",m_list.getListSize());
 		

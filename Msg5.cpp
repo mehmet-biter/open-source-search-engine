@@ -411,7 +411,7 @@ bool Msg5::readList ( ) {
 			// . we set endKey for spiderdb when reading from tree above
 			//   based on the current minRecSizes so do not mess with it
 			//   in that case.
-			if ( m_rdbId != RDB_SPIDERDB ) {
+			if ( m_rdbId != RDB_SPIDERDB_DEPRECATED ) {
 				//m_newMinRecSizes += rs * numNegativeRecs;
 				int32_t nn = m_newMinRecSizes + rs * numNegativeRecs;
 				if ( rs > 0 && nn < m_newMinRecSizes ) nn = 0x7fffffff;
@@ -540,7 +540,7 @@ bool Msg5::needsRecall() {
 	}
 
 	// limit to just doledb for now in case it results in data loss
-	if( rc && m_readAbsolutelyNothing && (m_rdbId==RDB_DOLEDB||m_rdbId==RDB_SPIDERDB) ) {
+	if( rc && m_readAbsolutelyNothing && (m_rdbId==RDB_DOLEDB||m_rdbId==RDB_SPIDERDB_DEPRECATED) ) {
 		rc = false;
 	}
 

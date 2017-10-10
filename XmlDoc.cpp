@@ -1771,7 +1771,7 @@ bool XmlDoc::indexDoc ( ) {
 		}
 
 		// store the new request (store reply for this below)
-		rdbid_t rd = m_useSecondaryRdbs ? RDB2_SPIDERDB2 : RDB_SPIDERDB;
+		rdbid_t rd = m_useSecondaryRdbs ? RDB2_SPIDERDB2_DEPRECATED : RDB_SPIDERDB_DEPRECATED;
 		if (!m_metaList2.pushChar(rd)) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, return true, metaList2 pushChar returned false" );
 			return true;
@@ -1812,7 +1812,7 @@ skipNewAdd1:
 			return true;
 		}
 
-		rdbid_t rd = m_useSecondaryRdbs ? RDB2_SPIDERDB2 : RDB_SPIDERDB;
+		rdbid_t rd = m_useSecondaryRdbs ? RDB2_SPIDERDB2_DEPRECATED : RDB_SPIDERDB_DEPRECATED;
 		if (!m_metaList2.pushChar(rd)) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, return true, metaList2 pushChar returned false" );
 			return true;
@@ -11998,7 +11998,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 				       docId );
 		}
 		// key parsing logic taken from Address::makePlacedbKey
-		else if ( rdbId == RDB_SPIDERDB ) {
+		else if ( rdbId == RDB_SPIDERDB_DEPRECATED ) {
 			sb->safePrintf("<td><nobr>");
 			key128_t *k2 = (key128_t *)k;
 			if ( Spiderdb::isSpiderRequest(k2) ) {
@@ -12078,7 +12078,7 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 		// positive and a spiderdoc
 		// no, this is no longer the case because we add spider
 		// replies to the index when deleting or rejecting a doc.
-		//if ( m_deleteFromIndex && ! del && rdbId != RDB_SPIDERDB) {
+		//if ( m_deleteFromIndex && ! del && rdbId != RDB_SPIDERDB_DEPRECATED) {
 		//	g_process.shutdownAbort(true); }
 
 		// get the key size. a table lookup in Rdb.cpp.
@@ -12131,7 +12131,7 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 		if ( del ) dataSize = 0;
 
 		// ensure spiderdb request recs have data/url in them
-		if ( (rdbId == RDB_SPIDERDB || rdbId == RDB2_SPIDERDB2) &&
+		if ( (rdbId == RDB_SPIDERDB_DEPRECATED || rdbId == RDB2_SPIDERDB2_DEPRECATED) &&
 		     g_spiderdb.isSpiderRequest ( (spiderdbkey_t *)rec ) &&
 		     ! forDelete &&
 		     ! del &&
@@ -12202,8 +12202,8 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 		// skip the data
 		p += dataSize;
 		// ignore spiderdb recs for parsing consistency check
-		if ( rdbId == RDB_SPIDERDB ) continue;
-		if ( rdbId == RDB2_SPIDERDB2 ) continue;
+		if ( rdbId == RDB_SPIDERDB_DEPRECATED ) continue;
+		if ( rdbId == RDB2_SPIDERDB2_DEPRECATED ) continue;
 		// ignore tagdb as well!
 		if ( rdbId == RDB_TAGDB || rdbId == RDB2_TAGDB2 ) continue;
 
@@ -12304,7 +12304,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 		SafeBuf sb2;
 
 		// print it out
-		if ( rdbId == RDB_SPIDERDB ) {
+		if ( rdbId == RDB_SPIDERDB_DEPRECATED ) {
 			// get rec
 			if ( Spiderdb::isSpiderRequest((key128_t *)rec) ) {
 				SpiderRequest *sreq1 = (SpiderRequest *)rec;
@@ -12652,7 +12652,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		logTrace(g_conf.m_logTraceXmlDoc, "Adding spider reply to spiderdb");
 
 		// rdbid first
-		rdbid_t rd = m_useSecondaryRdbs ? RDB2_SPIDERDB2 : RDB_SPIDERDB;
+		rdbid_t rd = m_useSecondaryRdbs ? RDB2_SPIDERDB2_DEPRECATED : RDB_SPIDERDB_DEPRECATED;
 		*m_p++ = (char)rd;
 
 		// get this
@@ -13356,7 +13356,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		setStatus("adding SpiderReply to spiderdb");
 
 		// rdbid first
-		*m_p++ = (m_useSecondaryRdbs) ? RDB2_SPIDERDB2 : RDB_SPIDERDB;
+		*m_p++ = (m_useSecondaryRdbs) ? RDB2_SPIDERDB2_DEPRECATED : RDB_SPIDERDB_DEPRECATED;
 
 		// get this
 		if (!m_srepValid) {
@@ -13423,7 +13423,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		}
 
 		// copy it
-		*m_p++ = (m_useSecondaryRdbs) ? RDB2_SPIDERDB2 : RDB_SPIDERDB;
+		*m_p++ = (m_useSecondaryRdbs) ? RDB2_SPIDERDB2_DEPRECATED : RDB_SPIDERDB_DEPRECATED;
 
 		// store it back
 		gbmemcpy (m_p, &revisedReq, revisedReq.getRecSize());
@@ -14849,8 +14849,8 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// sanity check
 		if ( p + 1 + need > m_pend ) { g_process.shutdownAbort(true); }
 		// store the rdbId
-		if ( m_useSecondaryRdbs ) *p++ = RDB2_SPIDERDB2;
-		else                      *p++ = RDB_SPIDERDB;
+		if ( m_useSecondaryRdbs ) *p++ = RDB2_SPIDERDB2_DEPRECATED;
+		else                      *p++ = RDB_SPIDERDB_DEPRECATED;
 
 		// store the spider rec
 		gbmemcpy ( p , &ksr , need );
@@ -16972,7 +16972,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	if ( m_sreqValid ) {
 		// must not block
 		SpiderRequest *oldsr = &m_sreq;
-		uint32_t shard = g_hostdb.getShardNum(RDB_SPIDERDB,oldsr);
+		uint32_t shard = g_hostdb.getShardNum(RDB_SPIDERDB_DEPRECATED,oldsr);
 		sb->safePrintf ("<tr><td><b>assigned spider shard</b>"
 				"</td>\n"
 				"<td><b>%" PRIu32"</b></td></tr>\n",shard);
@@ -17490,7 +17490,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	int32_t spiderHostId = -1;
 	if (firstIp && firstIp != (int32_t *)-1) {
 		key128_t spiderKey = Spiderdb::makeFirstKey(*firstIp);
-		int32_t spiderShardNum = getShardNum(RDB_SPIDERDB, &spiderKey);
+		int32_t spiderShardNum = getShardNum(RDB_SPIDERDB_DEPRECATED, &spiderKey);
 		spiderHostId = g_hostdb.getHostIdWithSpideringEnabled(spiderShardNum, false);
 	}
 

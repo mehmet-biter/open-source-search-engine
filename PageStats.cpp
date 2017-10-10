@@ -1420,13 +1420,13 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	const Rdb *rdbs[] = {
 		g_posdb.getRdb(),
 		g_titledb.getRdb(),
-		g_spiderdb.getRdb(),
 		g_doledb.getRdb() ,
 		g_tagdb.getRdb(),
 		g_clusterdb.getRdb(),
 		g_linkdb.getRdb(),
 	};
 	int32_t nr = sizeof(rdbs) / sizeof(Rdb *);
+	//TODO: sqlite: show statistics for sqlite database(s)
 
 	// print dbname
 	p.safePrintf("<tr class=poo><td>&nbsp;</td>");

@@ -1518,8 +1518,10 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) const {
 			return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
 		}
 
-		case RDB_SPIDERDB:
-		case RDB2_SPIDERDB2: {
+		case RDB_SPIDERDB_DEPRECATED:
+		case RDB2_SPIDERDB2_DEPRECATED:
+		case RDB_SPIDERDB_SQLITE:
+		case RDB2_SPIDERDB2_SQLITE: {
 			int32_t firstIp = Spiderdb::getFirstIp((key128_t *)k);
 			// do what Spider.h getGroupId() used to do so we are
 			// backwards compatible

@@ -265,7 +265,7 @@ bool Process::init ( ) {
 	//   followed by titledb perhaps...
 	m_rdbs[m_numRdbs++] = g_titledb.getRdb     ();
 	m_rdbs[m_numRdbs++] = g_posdb.getRdb     ();
-	m_rdbs[m_numRdbs++] = g_spiderdb.getRdb    ();
+	m_rdbs[m_numRdbs++] = g_spiderdb.getRdb_deprecated();
 	m_rdbs[m_numRdbs++] = g_clusterdb.getRdb   (); 
 	m_rdbs[m_numRdbs++] = g_tagdb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_linkdb.getRdb      ();
@@ -274,7 +274,7 @@ bool Process::init ( ) {
 	m_rdbs[m_numRdbs++] = g_doledb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_titledb2.getRdb    ();
 	m_rdbs[m_numRdbs++] = g_posdb2.getRdb    ();
-	m_rdbs[m_numRdbs++] = g_spiderdb2.getRdb   ();
+	m_rdbs[m_numRdbs++] = g_spiderdb2.getRdb_deprecated();
 	m_rdbs[m_numRdbs++] = g_clusterdb2.getRdb  ();
 	m_rdbs[m_numRdbs++] = g_linkdb2.getRdb     ();
 	m_rdbs[m_numRdbs++] = g_tagdb2.getRdb      ();

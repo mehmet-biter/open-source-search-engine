@@ -151,70 +151,70 @@ void SpiderdbHostDelete::reload(int /*fd*/, void */*state*/) {
 }
 
 void SpiderdbHostDelete::processFile(void *item) {
-	FileItem *fileItem = static_cast<FileItem*>(item);
-
-	log(LOG_INFO, "Processing %s", fileItem->m_tmpFilename);
-
-	g_urlHostBlackList.load(fileItem->m_tmpFilename, fileItem->m_matchHost);
-
-	CollectionRec *collRec = g_collectiondb.getRec("main");
-	if (!collRec) {
-		gbshutdownLogicError();
-	}
-	RdbBase *base = collRec->getBase(RDB_SPIDERDB);
-	Rdb *rdb = g_spiderdb.getRdb();
-
-	if (!fileItem->m_resume) {
-		// dump tree
-		rdb->submitRdbDumpJob(true);
-
-		{
-			ScopedLock sl(s_sleepMtx);
-			while (!s_stop && rdb->hasPendingRdbDumpJob()) {
-				timespec ts;
-				clock_gettime(CLOCK_REALTIME, &ts);
-				ts.tv_sec += 1;
-
-				pthread_cond_timedwait(&s_sleepCond, &s_sleepMtx.mtx, &ts);
-			}
-
-			if (s_stop) {
-				delete fileItem;
-				return;
-			}
-		}
-	}
-
-	// tight merge (only force merge all when not resuming)
-	if (!base->attemptMerge(0, !fileItem->m_resume)) {
-		// unable to start merge
-		g_urlHostBlackList.unload();
-		delete fileItem;
-		return;
-	}
-
-	{
-		ScopedLock sl(s_sleepMtx);
-		while (!s_stop && rdb->isMerging()) {
-			timespec ts;
-			clock_gettime(CLOCK_REALTIME, &ts);
-			ts.tv_sec += 60;
-
-			pthread_cond_timedwait(&s_sleepCond, &s_sleepMtx.mtx, &ts);
-		}
-
-		if (s_stop) {
-			delete fileItem;
-			return;
-		}
-	}
-
-	log(LOG_INFO, "Processed %s", fileItem->m_tmpFilename);
-
-	g_urlHostBlackList.unload();
-
-	// delete files
-	unlink(fileItem->m_tmpFilename);
-
-	delete fileItem;
+// 	FileItem *fileItem = static_cast<FileItem*>(item);
+// 
+// 	log(LOG_INFO, "Processing %s", fileItem->m_tmpFilename);
+// 
+// 	g_urlHostBlackList.load(fileItem->m_tmpFilename, fileItem->m_matchHost);
+// 
+// 	CollectionRec *collRec = g_collectiondb.getRec("main");
+// 	if (!collRec) {
+// 		gbshutdownLogicError();
+// 	}
+// 	RdbBase *base = collRec->getBase(RDB_SPIDERDB);
+// 	Rdb *rdb = g_spiderdb.getRdb();
+// 
+// 	if (!fileItem->m_resume) {
+// 		// dump tree
+// 		rdb->submitRdbDumpJob(true);
+// 
+// 		{
+// 			ScopedLock sl(s_sleepMtx);
+// 			while (!s_stop && rdb->hasPendingRdbDumpJob()) {
+// 				timespec ts;
+// 				clock_gettime(CLOCK_REALTIME, &ts);
+// 				ts.tv_sec += 1;
+// 
+// 				pthread_cond_timedwait(&s_sleepCond, &s_sleepMtx.mtx, &ts);
+// 			}
+// 
+// 			if (s_stop) {
+// 				delete fileItem;
+// 				return;
+// 			}
+// 		}
+// 	}
+// 
+// 	// tight merge (only force merge all when not resuming)
+// 	if (!base->attemptMerge(0, !fileItem->m_resume)) {
+// 		// unable to start merge
+// 		g_urlHostBlackList.unload();
+// 		delete fileItem;
+// 		return;
+// 	}
+// 
+// 	{
+// 		ScopedLock sl(s_sleepMtx);
+// 		while (!s_stop && rdb->isMerging()) {
+// 			timespec ts;
+// 			clock_gettime(CLOCK_REALTIME, &ts);
+// 			ts.tv_sec += 60;
+// 
+// 			pthread_cond_timedwait(&s_sleepCond, &s_sleepMtx.mtx, &ts);
+// 		}
+// 
+// 		if (s_stop) {
+// 			delete fileItem;
+// 			return;
+// 		}
+// 	}
+// 
+// 	log(LOG_INFO, "Processed %s", fileItem->m_tmpFilename);
+// 
+// 	g_urlHostBlackList.unload();
+// 
+// 	// delete files
+// 	unlink(fileItem->m_tmpFilename);
+// 
+// 	delete fileItem;
 }

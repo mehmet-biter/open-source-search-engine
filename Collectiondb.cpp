@@ -150,7 +150,7 @@ bool Collectiondb::cleanTrees() {
 	g_posdb.getRdb()->cleanTree();
 	g_titledb.getRdb()->cleanTree();
 	g_tagdb.getRdb()->cleanTree();
-	g_spiderdb.getRdb()->cleanTree();
+	g_spiderdb.getRdb_deprecated()->cleanTree();
 	g_doledb.getRdb()->cleanTree();
 	g_clusterdb.getRdb()->cleanTree();
 	g_linkdb.getRdb()->cleanTree();
@@ -436,7 +436,7 @@ bool Collectiondb::addRdbBasesForCollRec ( CollectionRec *cr ) {
 	if ( ! g_tagdb.getRdb()->addRdbBase1        ( coll ) ) goto hadError;
 	if ( ! g_clusterdb.getRdb()->addRdbBase1    ( coll ) ) goto hadError;
 	if ( ! g_linkdb.getRdb()->addRdbBase1       ( coll ) ) goto hadError;
-	if ( ! g_spiderdb.getRdb()->addRdbBase1     ( coll ) ) goto hadError;
+	if ( ! g_spiderdb.getRdb_deprecated()->addRdbBase1(coll) ) goto hadError;
 	if ( ! g_doledb.getRdb()->addRdbBase1       ( coll ) ) goto hadError;
 
 	// now clean the trees
@@ -504,7 +504,6 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) {
 
 	g_titledb.getRdb()->delColl    ( coll );
 	g_tagdb.getRdb()->delColl ( coll );
-	g_spiderdb.getRdb()->delColl   ( coll );
 	g_doledb.getRdb()->delColl     ( coll );
 	g_clusterdb.getRdb()->delColl  ( coll );
 	g_linkdb.getRdb()->delColl     ( coll );
@@ -765,7 +764,6 @@ bool Collectiondb::resetColl2(collnum_t oldCollnum, collnum_t newCollnum) {
 	g_posdb.getRdb()->deleteColl     ( oldCollnum , newCollnum );
 	g_titledb.getRdb()->deleteColl   ( oldCollnum , newCollnum );
 	g_tagdb.getRdb()->deleteColl     ( oldCollnum , newCollnum );
-	g_spiderdb.getRdb()->deleteColl  ( oldCollnum , newCollnum );
 	g_doledb.getRdb()->deleteColl    ( oldCollnum , newCollnum );
 	g_clusterdb.getRdb()->deleteColl ( oldCollnum , newCollnum );
 	g_linkdb.getRdb()->deleteColl    ( oldCollnum , newCollnum );

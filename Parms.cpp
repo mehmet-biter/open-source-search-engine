@@ -700,11 +700,6 @@ static bool CommandMergeTitledb(const char *rec) {
 }
 
 
-static bool CommandMergeSpiderdb(const char *rec) {
-	forceMergeAll(RDB_SPIDERDB);
-	return true;
-}
-
 static bool CommandMergeLinkdb(const char *rec) {
 	forceMergeAll(RDB_LINKDB);
 	return true;
@@ -729,7 +724,7 @@ static bool CommandForceIt(const char *rec) {
 static bool CommandDiskDump(const char *rec) {
 	g_clusterdb.getRdb()->submitRdbDumpJob(true);
 	g_tagdb.getRdb()->submitRdbDumpJob(true);
-	g_spiderdb.getRdb()->submitRdbDumpJob(true);
+	g_spiderdb.getRdb_deprecated()->submitRdbDumpJob(true);
 	g_posdb.getRdb()->submitRdbDumpJob(true);
 	g_titledb.getRdb()->submitRdbDumpJob(true);
 	g_linkdb.getRdb()->submitRdbDumpJob(true);
@@ -5070,18 +5065,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
-
-	m->m_title = "tight merge spiderdb";
-	m->m_desc  = "Merges all outstanding spiderdb files.";
-	m->m_cgi   = "spmerge";
-	m->m_type  = TYPE_CMD;
-	m->m_func  = CommandMergeSpiderdb;
-	m->m_cast  = true;
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 
         m->m_title = "tight merge linkdb";
         m->m_desc  = "Merges all outstanding linkdb files.";

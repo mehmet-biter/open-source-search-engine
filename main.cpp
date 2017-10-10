@@ -106,8 +106,8 @@ static const int32_t commandLineDumpdbRecSize = 10 * 1024 * 1024; //recSizes par
 
 static void dumpTitledb  (const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   int64_t docId , bool justPrintDups );
-static int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int printStats, int32_t firstIp);
-static int32_t dumpSpiderdbCsv(const char *coll);
+//static int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int printStats, int32_t firstIp);
+//static int32_t dumpSpiderdbCsv(const char *coll);
 
 static void dumpTagdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char req,
 		      const char *site);
@@ -121,9 +121,9 @@ static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool inc
 
 static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
 static void dumpWantedTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
-static void dumpUnwantedSpiderdbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
-
-static int32_t verifySpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int32_t firstIp);
+//static void dumpUnwantedSpiderdbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
+//
+//static int32_t verifySpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int32_t firstIp);
 
 static int copyFiles(const char *dstDir);
 
@@ -1291,19 +1291,19 @@ int main2 ( int argc , char *argv[] ) {
 		}
 		else if ( argv[cmdarg+1][0] == 'x' )
 			dumpDoledb  (coll,startFileNum,numFiles,includeTree);
-		else if ( argv[cmdarg+1][0] == 's' ) {
-			int printStats = 0;
-			int32_t firstIp = 0;
-			if(cmdarg+6 < argc)
-				printStats = atol(argv[cmdarg+6]);
-			if(cmdarg+7 < argc)
-				firstIp = atoip(argv[cmdarg+7]);
-
-			int32_t ret = dumpSpiderdb ( coll, startFileNum, numFiles, includeTree, printStats, firstIp );
-			if ( ret == -1 ) {
-				fprintf(stdout,"error dumping spiderdb\n");
-			}
-		}
+// 		else if ( argv[cmdarg+1][0] == 's' ) {
+// 			int printStats = 0;
+// 			int32_t firstIp = 0;
+// 			if(cmdarg+6 < argc)
+// 				printStats = atol(argv[cmdarg+6]);
+// 			if(cmdarg+7 < argc)
+// 				firstIp = atoip(argv[cmdarg+7]);
+// 
+// 			int32_t ret = dumpSpiderdb ( coll, startFileNum, numFiles, includeTree, printStats, firstIp );
+// 			if ( ret == -1 ) {
+// 				fprintf(stdout,"error dumping spiderdb\n");
+// 			}
+// 		}
 		else if ( argv[cmdarg+1][0] == 'S' ) {
 			char *site = NULL;
 			if ( cmdarg+6 < argc ) {
@@ -1332,8 +1332,8 @@ int main2 ( int argc , char *argv[] ) {
 			dumpUnwantedTitledbRecs(coll, startFileNum, numFiles, includeTree);
 		}  else if (strcmp(argv[cmdarg+1], "wt") == 0) {
 			dumpWantedTitledbRecs(coll, startFileNum, numFiles, includeTree);
-		} else if (strcmp(argv[cmdarg+1], "us") == 0) {
-			dumpUnwantedSpiderdbRecs(coll, startFileNum, numFiles, includeTree);
+// 		} else if (strcmp(argv[cmdarg+1], "us") == 0) {
+// 			dumpUnwantedSpiderdbRecs(coll, startFileNum, numFiles, includeTree);
 		} else {
 			goto printHelp;
 		}
@@ -1343,18 +1343,18 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-	if(strcmp(cmd, "dumpcsv") == 0) {
-		g_conf.m_doingCommandLine = true; // so we do not log every collection coll.conf we load
-		if( !g_collectiondb.loadAllCollRecs()) {
-			log("db: Collectiondb init failed.");
-			return 1;
-		}
-		if(argv[cmdarg+1][0] == 's')
-			dumpSpiderdbCsv(argv[cmdarg+2]);
-		g_log.m_disabled = true;
-		g_collectiondb.reset();
-		return 0;
-	}
+// 	if(strcmp(cmd, "dumpcsv") == 0) {
+// 		g_conf.m_doingCommandLine = true; // so we do not log every collection coll.conf we load
+// 		if( !g_collectiondb.loadAllCollRecs()) {
+// 			log("db: Collectiondb init failed.");
+// 			return 1;
+// 		}
+// 		if(argv[cmdarg+1][0] == 's')
+// 			dumpSpiderdbCsv(argv[cmdarg+2]);
+// 		g_log.m_disabled = true;
+// 		g_collectiondb.reset();
+// 		return 0;
+// 	}
 
 	if(strcmp(cmd, "convertspiderdb") == 0) {
 		g_conf.m_doingCommandLine = true; // so we do not log every collection coll.conf we load
@@ -1368,53 +1368,53 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-	// . gb dump [dbLetter][coll][fileNum] [numFiles] [includeTree][termId]
-	// . spiderdb is special:
-	//   gb dump s [coll][fileNum] [numFiles] [includeTree] [0=old|1=new]
-	//           [priority] [printStats?]
-	if ( strcmp ( cmd , "verify" ) == 0 ) {
-		//
-		// tell Collectiondb, not to verify each rdb's data
-		//
-		g_dumpMode = true;
-
-		if ( cmdarg+1 >= argc ) goto printHelp;
-		int32_t startFileNum =  0;
-		int32_t numFiles     = -1;
-		bool includeTree     =  true;
-		const char *coll = "";
-
-		// so we do not log every collection coll.conf we load
-		g_conf.m_doingCommandLine = true;
-
-		// we have to init collection db because we need to know if 
-		// the collnum is legit or not in the tree
-		if ( ! g_collectiondb.loadAllCollRecs()   ) {
-			log("db: Collectiondb init failed." ); return 1; }
-
-		if ( cmdarg+2 < argc ) coll         = argv[cmdarg+2];
-		if ( cmdarg+3 < argc ) startFileNum = atoi(argv[cmdarg+3]);
-		if ( cmdarg+4 < argc ) numFiles     = atoi(argv[cmdarg+4]);
-		if ( cmdarg+5 < argc ) includeTree  = argToBoolean(argv[cmdarg+5]);
-
-		if ( argv[cmdarg+1][0] == 's' ) {
-			int32_t firstIp = 0;
-			if(cmdarg+6 < argc)
-				firstIp = atoip(argv[cmdarg+6]);
-
-			int32_t ret = verifySpiderdb ( coll, startFileNum, numFiles, includeTree, firstIp );
-			if ( ret == -1 ) {
-				fprintf(stdout,"error verifying spiderdb\n");
-			}
-		}
-		else {
-			goto printHelp;
-		}
-		// disable any further logging so final log msg is clear
-		g_log.m_disabled = true;
-		g_collectiondb.reset();
-		return 0;
-	}
+// 	// . gb dump [dbLetter][coll][fileNum] [numFiles] [includeTree][termId]
+// 	// . spiderdb is special:
+// 	//   gb dump s [coll][fileNum] [numFiles] [includeTree] [0=old|1=new]
+// 	//           [priority] [printStats?]
+// 	if ( strcmp ( cmd , "verify" ) == 0 ) {
+// 		//
+// 		// tell Collectiondb, not to verify each rdb's data
+// 		//
+// 		g_dumpMode = true;
+// 
+// 		if ( cmdarg+1 >= argc ) goto printHelp;
+// 		int32_t startFileNum =  0;
+// 		int32_t numFiles     = -1;
+// 		bool includeTree     =  true;
+// 		const char *coll = "";
+// 
+// 		// so we do not log every collection coll.conf we load
+// 		g_conf.m_doingCommandLine = true;
+// 
+// 		// we have to init collection db because we need to know if 
+// 		// the collnum is legit or not in the tree
+// 		if ( ! g_collectiondb.loadAllCollRecs()   ) {
+// 			log("db: Collectiondb init failed." ); return 1; }
+// 
+// 		if ( cmdarg+2 < argc ) coll         = argv[cmdarg+2];
+// 		if ( cmdarg+3 < argc ) startFileNum = atoi(argv[cmdarg+3]);
+// 		if ( cmdarg+4 < argc ) numFiles     = atoi(argv[cmdarg+4]);
+// 		if ( cmdarg+5 < argc ) includeTree  = argToBoolean(argv[cmdarg+5]);
+// 
+// 		if ( argv[cmdarg+1][0] == 's' ) {
+// 			int32_t firstIp = 0;
+// 			if(cmdarg+6 < argc)
+// 				firstIp = atoip(argv[cmdarg+6]);
+// 
+// 			int32_t ret = verifySpiderdb ( coll, startFileNum, numFiles, includeTree, firstIp );
+// 			if ( ret == -1 ) {
+// 				fprintf(stdout,"error verifying spiderdb\n");
+// 			}
+// 		}
+// 		else {
+// 			goto printHelp;
+// 		}
+// 		// disable any further logging so final log msg is clear
+// 		g_log.m_disabled = true;
+// 		g_collectiondb.reset();
+// 		return 0;
+// 	}
 
 
 
@@ -2706,6 +2706,7 @@ public:
 	int32_t m_numErrorReplies;
 };
 
+#if 0
 static HashTableX g_ut;
 
 static void addUStat1(const SpiderRequest *sreq, bool hadReply , int32_t now) {
@@ -3356,7 +3357,7 @@ static int32_t dumpSpiderdbCsv(const char *coll) {
 	}
 	return 0;
 }
-
+#endif
 
 // time speed of inserts into RdbTree for indexdb
 static bool hashtest() {
@@ -3874,6 +3875,7 @@ static void dumpWantedTitledbRecs(const char *coll, int32_t startFileNum, int32_
 
 
 
+#if 0
 static void dumpUnwantedSpiderdbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree) {
 	if (startFileNum < 0) {
 		log(LOG_LOGIC, "db: Start file number is < 0. Must be >= 0.");
@@ -4081,7 +4083,7 @@ static int32_t verifySpiderdb(const char *coll, int32_t startFileNum, int32_t nu
  done:
 	return 0;
 }
-
+#endif
 
 
 static bool parseTest(const char *coll, int64_t docId, const char *query) {

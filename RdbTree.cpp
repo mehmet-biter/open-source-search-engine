@@ -921,7 +921,7 @@ bool RdbTree::fixTree_unlocked() {
 
 	/// @todo ALC should we check repair RDB as well?
 	bool isTitledb = (m_rdbId == RDB_TITLEDB || m_rdbId == RDB2_TITLEDB2);
-	bool isSpiderdb = (m_rdbId == RDB_SPIDERDB || m_rdbId == RDB2_SPIDERDB2);
+	bool isSpiderdb = (m_rdbId == RDB_SPIDERDB_DEPRECATED || m_rdbId == RDB2_SPIDERDB2_DEPRECATED);
 
 	// now re-add the old nods to the tree, they should not be overwritten
 	// by addNode()
@@ -1007,7 +1007,7 @@ bool RdbTree::checkTree_unlocked(bool printMsgs, bool doChainTest) const {
 
 	/// @todo ALC should we check repair RDB as well?
 	bool isTitledb = (m_rdbId == RDB_TITLEDB || m_rdbId == RDB2_TITLEDB2);
-	bool isSpiderdb = (m_rdbId == RDB_SPIDERDB || m_rdbId == RDB2_SPIDERDB2);
+	bool isSpiderdb = (m_rdbId == RDB_SPIDERDB_DEPRECATED || m_rdbId == RDB2_SPIDERDB2_DEPRECATED);
 
 	// now check parent kid correlations
 	for ( int32_t i = 0 ; i < m_minUnusedNode ; i++ ) {

@@ -735,7 +735,7 @@ bool RdbList::checkList_r(bool abortOnProblem, rdbid_t rdbId) {
 					gbshutdownAbort(true); }
 			}
 		}
-		if ( rdbId == RDB_SPIDERDB && ! KEYNEG(k) &&
+		if ( rdbId == RDB_SPIDERDB_DEPRECATED && ! KEYNEG(k) &&
 		     getCurrentDataSize() > 0 ) {
 			char *rec = getCurrentRec();
 			// bad url in spider request?

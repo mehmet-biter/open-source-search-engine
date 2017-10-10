@@ -453,7 +453,7 @@ bool Msg1c::gotList ( ) {
 
 	log("reindex: adding docid list (docids:%d) to spiderdb", m_numDocIdsAdded);
 
-	return m_msg4.addMetaList(&m_sb, m_collnum, this, addedListWrapper, RDB_SPIDERDB);
+	return m_msg4.addMetaList(&m_sb, m_collnum, this, addedListWrapper, RDB_SPIDERDB_DEPRECATED);
 }
 
 void addedListWrapper ( void *state ) {

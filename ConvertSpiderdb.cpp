@@ -64,7 +64,7 @@ static const char update_statement_duplicate_request[] =
 int convertSpiderDb(const char *collname) {
 	if(!g_spiderdb.init())
 		return 1;
-	if(!g_spiderdb.getRdb()->addRdbBase1(collname))
+	if(!g_spiderdb.getRdb_deprecated()->addRdbBase1(collname))
 		return 2;
 
 	collnum_t collnum = g_collectiondb.getRec(collname)->m_collnum;
@@ -134,7 +134,7 @@ int convertSpiderDb(const char *collname) {
 	printf("Starting conversion\n");
 	for(;;) {
 		// use msg5 to get the list, should ALWAYS block since no threads
-		if(!msg5.getList(RDB_SPIDERDB,
+		if(!msg5.getList(RDB_SPIDERDB_DEPRECATED,
 				 collnum,
 				 &list,
 				 &startKey,
@@ -221,7 +221,8 @@ int convertSpiderDb(const char *collname) {
 					      (spiderRequest->m_hadReply             ? (1<<10) : 0) |
 					      (spiderRequest->m_fakeFirstIp          ? (1<<11) : 0) |
 					      (spiderRequest->m_hasAuthorityInlink   ? (1<<12) : 0) |
-					      (spiderRequest->m_avoidSpiderLinks     ? (1<<13) : 0);
+					      (spiderRequest->m_hasAuthorityInlinkValid ? (1<<13) : 0) |
+					      (spiderRequest->m_avoidSpiderLinks     ? (1<<14) : 0);
 				sqlite3_bind_int(stmt, 11, rqf);
 				if(spiderRequest->m_priority>=0)
 					sqlite3_bind_int(stmt, 12, spiderRequest->m_priority);
@@ -240,7 +241,8 @@ int convertSpiderDb(const char *collname) {
 					              (prevSpiderReply->m_isPermalink          ? (1<<1) : 0) |
 					              (prevSpiderReply->m_isIndexed            ? (1<<2) : 0) |
 					              (prevSpiderReply->m_hasAuthorityInlink   ? (1<<3) : 0) |
-					              (prevSpiderReply->m_fromInjectionRequest ? (1<<4) : 0);
+					              (prevSpiderReply->m_fromInjectionRequest ? (1<<4) : 0) |
+					              (prevSpiderReply->m_isIndexedINValid     ? (1<<5) : 0);
 					sqlite3_bind_int(stmt, 21, rpf);
 				}
 				

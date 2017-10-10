@@ -362,7 +362,8 @@ public:
 	// init the rebuild/secondary rdb, used by PageRepair.cpp
 	bool init2 ( int32_t treeMem );
 
-	Rdb *getRdb  ( ) { return &m_rdb; }
+//	Rdb *getRdb  ( ) { return &m_rdb; }
+	Rdb *getRdb_deprecated() { return &m_rdb; }
 
 	static int64_t getUrlHash48(const key128_t *k ) {
 		return (((k->n1)<<16) | k->n0>>(64-16)) & 0xffffffffffffLL;

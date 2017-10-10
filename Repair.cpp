@@ -60,7 +60,6 @@ static Rdb **getSecondaryRdbs ( int32_t *nsr ) {
 
 		s_rdbs[s_nsr++] = g_titledb2.getRdb    ();
 		s_rdbs[s_nsr++] = g_posdb2.getRdb    ();
-		s_rdbs[s_nsr++] = g_spiderdb2.getRdb   ();
 		s_rdbs[s_nsr++] = g_clusterdb2.getRdb  ();
 		s_rdbs[s_nsr++] = g_linkdb2.getRdb     ();
 		s_rdbs[s_nsr++] = g_tagdb2.getRdb      ();
@@ -529,8 +528,6 @@ void Repair::initScan ( ) {
 
 	if ( m_rebuildClusterdb )
 		if ( ! g_clusterdb2.init2  ( clusterdbMem  ) ) goto hadError;
-	if ( m_rebuildSpiderdb )
-		if ( ! g_spiderdb2.init2   ( spiderdbMem   ) ) goto hadError;
 	if ( m_rebuildLinkdb )
 		if ( ! g_linkdb2.init2     ( linkdbMem     ) ) goto hadError;
 
@@ -635,11 +632,6 @@ void Repair::getNextCollToRepair ( ) {
 
 	if ( m_rebuildClusterdb ) {
 		if ( ! g_clusterdb2.getRdb()->addRdbBase1 ( coll ) &&
-		     g_errno != EEXIST ) goto hadError;
-	}
-
-	if ( m_rebuildSpiderdb ) {
-		if ( ! g_spiderdb2.getRdb()->addRdbBase1 ( coll ) &&
 		     g_errno != EEXIST ) goto hadError;
 	}
 
@@ -922,11 +914,6 @@ void Repair::updateRdbs ( ) {
 	if ( m_rebuildClusterdb ) {
 		rdb1 = g_clusterdb.getRdb();
 		rdb2 = g_clusterdb2.getRdb();
-		rdb1->updateToRebuildFiles ( rdb2 , m_cr->m_coll );
-	}
-	if ( m_rebuildSpiderdb ) {
-		rdb1 = g_spiderdb.getRdb();
-		rdb2 = g_spiderdb2.getRdb();
 		rdb1->updateToRebuildFiles ( rdb2 , m_cr->m_coll );
 	}
 	if ( m_rebuildLinkdb ) {
@@ -1356,12 +1343,6 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 		m_recsCorruptErrors +
 		m_recsDupDocIds    ;
 
-	// the spiderdb scan stats (phase 2)
-	int64_t ns2     = m_spiderRecsScanned ;
-	int64_t nr2     = g_spiderdb.getRdb()->getNumTotalRecs() ;
-	float     ratio2  = nr2 ? ((float)ns2 * 100.0) / (float)nr2 : 0.0;
-	int64_t errors2 = m_spiderRecSetErrors;
-
 	const char *newColl = " &nbsp; ";
 
 	const char *oldColl = " &nbsp; ";
@@ -1516,38 +1497,6 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 
 			 DARK_BLUE,
 			 m_recsWrongGroupId
-			 );
-
-
-	sb->safePrintf(
-			 // spider recs done
-			 "<tr bgcolor=#%s><td><b>spider recs scanned</b></td>"
-			 "<td>%" PRId64" of %" PRId64" (%.2f%%)</td></tr>\n"
-
-			 // spider recs set errors, parsing errors, etc.
-			 "<tr bgcolor=#%s><td><b>spider rec not "
-			 "assigned to us</b></td>"
-			 "<td>%" PRId32"</td></tr>\n"
-
-			 // spider recs set errors, parsing errors, etc.
-			 "<tr bgcolor=#%s><td><b>spider rec errors</b></td>"
-			 "<td>%" PRId64"</td></tr>\n"
-
-			 // spider recs set errors, parsing errors, etc.
-			 "<tr bgcolor=#%s><td><b>spider rec bad tld</b></td>"
-			 "<td>%" PRId32"</td></tr>\n"
-
-			 ,
-			 LIGHT_BLUE ,
-			 ns2    ,
-			 nr2    ,
-			 ratio2 ,
-			 LIGHT_BLUE ,
-			 m_spiderRecNotAssigned ,
-			 LIGHT_BLUE ,
-			 errors2,
-			 LIGHT_BLUE ,
-			 m_spiderRecBadTLD
 			 );
 
 

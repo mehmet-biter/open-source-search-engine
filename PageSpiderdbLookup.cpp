@@ -152,7 +152,7 @@ static bool getSpiderRecs(State *st) {
 	key128_t endKey = Spiderdb::makeLastKey(st->m_firstip, uh48);
 	log(LOG_TRACE,"PageSpiderdbLookup: getSpiderRecs(%p): Calling Msg0::getList()", st);
 	if(!st->m_msg0.getList(-1, //hostId
-		               RDB_SPIDERDB,
+		               RDB_SPIDERDB_DEPRECATED, //TODO: use rdb_spiderdb_sqlite and new record format (also much simpler)
 		               st->m_collnum,
 		               &st->m_rdbList,
 		               (const char*)&startKey,
@@ -226,7 +226,7 @@ static bool sendResult(State *st) {
 	if(st->m_url_str[0]) {
 		int64_t uh48 = hash64b(st->m_url_str);
 		key128_t startKey = Spiderdb::makeFirstKey(st->m_firstip, uh48);
-		uint32_t shardNum = g_hostdb.getShardNum(RDB_SPIDERDB, &startKey);
+		uint32_t shardNum = g_hostdb.getShardNum(RDB_SPIDERDB_SQLITE, &startKey);
 		sb.safePrintf("<p>Shard: %u</p>\n", shardNum);
 		int32_t numHosts;
 		const Host *host = g_hostdb.getShard(shardNum, &numHosts);

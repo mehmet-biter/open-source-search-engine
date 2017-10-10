@@ -160,7 +160,7 @@ class RdbCache *getDiskPageCache ( rdbid_t rdbId ) {
 			maxRecs = maxMem / 3000;
 			dbname = "titdbcache";
 			break;
-		case RDB_SPIDERDB:
+		case RDB_SPIDERDB_DEPRECATED:
 			rpc = &g_rdbCaches[4];
 			maxMem = g_conf.m_spiderdbFileCacheSize;
 			maxRecs = maxMem / 3000;

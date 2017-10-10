@@ -140,7 +140,7 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 		}
 
 		// store rdbid first
-		if ( ! listBuf->pushChar(RDB_SPIDERDB) ) {
+		if ( ! listBuf->pushChar(RDB_SPIDERDB_DEPRECATED) ) {
 			// return false with g_errno set
 			return false;
 		}

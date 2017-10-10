@@ -164,7 +164,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// get groupid from hostid here lest we core in getGroupId() below.
 	// it does that for dumping spiderdb to the client browser. they
 	// can download the whole enchilada.
-	if ( hostId >= 0 && m_rdbId == RDB_SPIDERDB )
+	if ( hostId >= 0 && m_rdbId == RDB_SPIDERDB_DEPRECATED )
 		m_shardNum = 0;
 	// did they force it? core until i figure out what this is
 	else if ( forceParitySplit >= 0 )
@@ -197,7 +197,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	if ( g_hostdb.getNumHosts() == 1 ) isLocal = true;
 
 	//if it is spiderdb then we only have it it we are a spider host too
-	if((rdbId == RDB_SPIDERDB || rdbId == RDB2_SPIDERDB2) &&
+	if((rdbId == RDB_SPIDERDB_DEPRECATED || rdbId == RDB2_SPIDERDB2_DEPRECATED) &&
 	   isLocal &&
 	   !g_hostdb.getMyHost()->m_spiderEnabled)
 	{
