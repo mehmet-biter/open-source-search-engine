@@ -1149,7 +1149,11 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_isSiteRootValid             = true;
 
 	// there was no issue indexing it...
-	m_indexCode       = 0;
+	if (m_version < 125) {
+		// we only start storing indexCode in version 125
+		m_indexCode = 0;
+	}
+
 	m_indexCodeValid  = true;
 	m_redirError      = 0;
 	m_redirErrorValid = true;

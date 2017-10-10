@@ -10,11 +10,13 @@ UrlMatchHostList g_urlHostBlackList;
 
 UrlMatchHostList::UrlMatchHostList()
 	: m_filename()
+	, m_matchHost(false)
 	, m_urlmatchhostlist(new urlmatchhostlist_t) {
 }
 
-bool UrlMatchHostList::load(const char *filename) {
+bool UrlMatchHostList::load(const char *filename, bool matchHost) {
 	m_filename = filename;
+	m_matchHost = matchHost;
 
 	log(LOG_INFO, "Loading %s", m_filename);
 
@@ -56,8 +58,8 @@ void UrlMatchHostList::unload() {
 bool UrlMatchHostList::isUrlMatched(const Url &url) {
 	auto urlmatchhostlist = getUrlMatchHostList();
 
-	std::string host(url.getHost(), url.getHostLen());
-	return (urlmatchhostlist->count(host) > 0);
+	std::string key = m_matchHost ? std::string(url.getHost(), url.getHostLen()) : std::string(url.getUrl(), url.getUrlLen());
+	return (urlmatchhostlist->count(key) > 0);
 }
 
 urlmatchhostlistconst_ptr_t UrlMatchHostList::getUrlMatchHostList() {

@@ -106,7 +106,7 @@ void DocDelete::finalize() {
 	s_docDeleteDocThreadQueue.finalize();
 }
 
-void reloadDocDelete(bool isDocDeleteUrl) {
+static void reloadDocDelete(bool isDocDeleteUrl) {
 	if (!s_docDeleteFileThreadQueue.isEmpty()) {
 		// we're currently processing tmp file
 		return;
