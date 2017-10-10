@@ -118,6 +118,12 @@ void loghex( int32_t type, void const *data, const unsigned int len, const char 
 		} \
 	} while (0)
 
+#define logHexTrace(condition, data, len, msg, ...) \
+	do { \
+		if (condition) { \
+			loghex(LOG_TRACE, data, len, "%s:%s:%d: " msg, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+		} \
+	} while (0)
 
 class Log {
 public:
