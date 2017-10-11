@@ -192,6 +192,176 @@ static bool gotSpiderRecs2(State *st) {
 }
 
 
+static bool respondWithError(State *st, const char *msg) {
+	// get the socket
+	TcpSocket *s = st->m_socket;
+
+	SafeBuf sb;
+	const char *contentType = NULL;
+	switch(st->m_r.getReplyFormat()) {
+		case FORMAT_HTML:
+			g_pages.printAdminTop(&sb, s, &st->m_r, NULL);
+			sb.safePrintf("<p>%s</p>", msg);
+			g_pages.printAdminBottom2(&sb);
+			contentType = "text/html";
+			break;
+		case FORMAT_JSON:
+			sb.safePrintf("{error_message:\"%s\"}", msg); //todo: safe encode
+			contentType = "application/json";
+			break;
+		default:
+			contentType = "application/octet-stream";
+			break;
+	}
+
+	mdelete (st, sizeof(State) , "pgspdrdblookup");
+	delete st;
+
+	return g_httpServer.sendDynamicPage(s, sb.getBufStart(), sb.length(), -1, false, contentType);
+}
+
+
+static void generatePageHtml(int64_t shardNum, const char *url, const SpiderRequest *spiderRequest, const SpiderReply *spiderReply, SafeBuf *sb) {
+	// print URL in box
+	sb->safePrintf("<br>\n"
+		              "Enter URL: "
+		              "<input type=text name=url value=\"%s\" size=60>", url);
+	sb->safePrintf("</form><br>\n");
+
+	if (shardNum >= 0) {
+		sb->safePrintf("<p>Shard: %u</p>\n", static_cast<uint32_t>(shardNum));
+
+		int32_t numHosts;
+		const Host *host = g_hostdb.getShard(shardNum, &numHosts);
+		if(host) {
+			sb->safePrintf("<p>Host:");
+
+			while (numHosts--) {
+				if (host->m_spiderEnabled) {
+					sb->safePrintf(" %u", host->m_hostId);
+				}
+				host++;
+			}
+
+			sb->safePrintf("</p>\n");
+		}
+	}
+
+	if (spiderRequest) {
+		char ipbuf[16];
+		char timebuf[32];
+		sb->safePrintf("<table class=\"main\" width=100%%>\n");
+		sb->safePrintf("  <tr class=\"level1\"><th colspan=50>Spider request</th></tr>\n");
+		sb->safePrintf("  <tr class=\"level2\"><th>Field</th><th>Value</th></tr>\n");
+		sb->safePrintf("  <tr><td>m_firstIp</td><td>%s</td></tr>\n", iptoa(spiderRequest->m_firstIp, ipbuf));
+		sb->safePrintf("  <tr><td>m_addedTime</td><td>%s (%d)</td></tr>\n", formatTime(spiderRequest->m_addedTime, timebuf), spiderRequest->m_addedTime);
+		sb->safePrintf("  <tr><td>m_prevErrCode</td><td>%d</td></tr>\n", spiderRequest->m_prevErrCode);
+		sb->safePrintf("  <tr><td>m_priority</td><td>%d</td></tr>\n", spiderRequest->m_priority);
+		sb->safePrintf("  <tr><td>m_errCount</td><td>%d</td></tr>\n", spiderRequest->m_errCount);
+		sb->safePrintf("  <tr><td>m_isAddUrl</td><td>%s</td></tr>\n", spiderRequest->m_isAddUrl ? "true" : "false");
+		sb->safePrintf("  <tr><td>m_isPageReindex</td><td>%s</td></tr>\n", spiderRequest->m_isPageReindex ? "true" : "false");
+		sb->safePrintf("  <tr><td>m_isUrlCanonical</td><td>%s</td></tr>\n", spiderRequest->m_isUrlCanonical ? "true" : "false");
+		sb->safePrintf("  <tr><td>m_isPageParser</td><td>%s</td></tr>\n", spiderRequest->m_isPageParser ? "true" : "false");
+		sb->safePrintf("  <tr><td>m_urlIsDocId</td><td>%s</td></tr>\n", spiderRequest->m_urlIsDocId ? "true" : "false");
+		sb->safePrintf("  <tr><td>m_forceDelete</td><td>%s</td></tr>\n", spiderRequest->m_forceDelete ? "true" : "false");
+		sb->safePrintf("  <tr><td>m_fakeFirstIp</td><td>%s</td></tr>\n", spiderRequest->m_fakeFirstIp ? "true" : "false");
+		sb->safePrintf("</table>\n");
+	}
+
+	if (spiderRequest && spiderReply) {
+		sb->safePrintf("<br/>\n");
+	}
+
+	if(spiderReply) {
+		char timebuf[32];
+		sb->safePrintf("<table class=\"main\" width=100%%>\n");
+		sb->safePrintf("  <tr class=\"level1\"><th colspan=50>Spider reply</th><tr>\n");
+		sb->safePrintf("  <tr class=\"level2\"><th>Field</th><th>Value</th></tr>\n");
+		sb->safePrintf("  <tr><td>m_spideredTime</td><td>%s (%d)</td></tr>\n", formatTime(spiderReply->m_spideredTime, timebuf), spiderReply->m_spideredTime);
+		sb->safePrintf("  <tr><td>m_errCode</td><td>%d</td></tr>\n", spiderReply->m_errCode);
+		sb->safePrintf("  <tr><td>m_percentChangedPerDay</td><td>%f</td></tr>\n", spiderReply->m_percentChangedPerDay);
+		sb->safePrintf("  <tr><td>m_contentHash32</td><td>%u</td></tr>\n", spiderReply->m_contentHash32);
+		sb->safePrintf("  <tr><td>m_crawlDelayMS</td><td>%d</td></tr>\n", spiderReply->m_crawlDelayMS);
+		sb->safePrintf("  <tr><td>m_downloadEndTime</td><td>%s (%ld)</td></tr>\n", formatTimeMs(spiderReply->m_downloadEndTime, timebuf), spiderReply->m_downloadEndTime);
+		sb->safePrintf("  <tr><td>m_httpStatus</td><td>%d</td></tr>\n", spiderReply->m_httpStatus);
+		sb->safePrintf(" <tr><td>m_errCount</td><td>%d</td></tr>\n", spiderReply->m_errCount);
+		sb->safePrintf(" <tr><td>m_langId</td><td>%d</td></tr>\n", spiderReply->m_langId);
+		sb->safePrintf(" <tr><td>m_isIndexed</td><td>%s</td></tr>\n", spiderReply->m_isIndexed ? "true" : "false");
+		sb->safePrintf("</table>\n");
+	}
+
+	if(!spiderRequest && !spiderReply) {
+		sb->safePrintf("<strong>No request, no reply.</strong>\n");
+	}
+}
+
+static void generatePageJSON(int64_t shardNum, const SpiderRequest *spiderRequest, const SpiderReply *spiderReply, SafeBuf *sb) {
+	sb->safePrintf("{\n");
+	if (shardNum >= 0) {
+		sb->safePrintf("\"shard\": %u,\n", static_cast<uint32_t>(shardNum));
+
+		int32_t numHosts;
+		const Host *host = g_hostdb.getShard(shardNum, &numHosts);
+		if(host) {
+			sb->safePrintf("\"host\": [");
+
+			bool isFirst = true;
+			while (numHosts--) {
+				if (host->m_spiderEnabled) {
+					if (!isFirst) {
+						sb->safePrintf(", ");
+					}
+					sb->safePrintf("%u", host->m_hostId);
+					isFirst = false;
+				}
+				host++;
+			}
+
+			sb->safePrintf("]");
+		}
+	}
+
+	if (spiderRequest) {
+		sb->safePrintf(",\n\"spiderRequest\": {\n");
+
+		char ipbuf[16];
+
+		sb->safePrintf("\t\"firstIp\": \"%s\",\n", iptoa(spiderRequest->m_firstIp, ipbuf));
+		sb->safePrintf("\t\"addedTime\": %u,\n", spiderRequest->m_addedTime);
+		sb->safePrintf("\t\"priority\": %d,\n", spiderRequest->m_priority);
+		sb->safePrintf("\t\"prevErrCode\": %d,\n", spiderRequest->m_prevErrCode);
+		sb->safePrintf("\t\"errCount\": %d,\n", spiderRequest->m_errCount);
+		sb->safePrintf("\t\"isAddUrl\": %s,\n", spiderRequest->m_isAddUrl ? "true" : "false");
+		sb->safePrintf("\t\"isPageReindex\": %s,\n", spiderRequest->m_isPageReindex ? "true" : "false");
+		sb->safePrintf("\t\"isUrlCanonical\": %s,\n", spiderRequest->m_isUrlCanonical ? "true" : "false");
+		sb->safePrintf("\t\"isPageParser\": %s,\n", spiderRequest->m_isPageParser ? "true" : "false");
+		sb->safePrintf("\t\"urlIsDocId\": %s,\n", spiderRequest->m_urlIsDocId ? "true" : "false");
+		sb->safePrintf("\t\"forceDelete\": %s,\n", spiderRequest->m_forceDelete ? "true" : "false");
+		sb->safePrintf("\t\"fakeFirstIp\": %s\n", spiderRequest->m_fakeFirstIp ? "true" : "false");
+
+		sb->safePrintf("}");
+	}
+
+	if(spiderReply) {
+		sb->safePrintf(",\n\"spiderReply\": {\n");
+
+		sb->safePrintf("\t\"spideredTime\": %d,\n", spiderReply->m_spideredTime);
+		sb->safePrintf("\t\"errCode\": %d,\n", spiderReply->m_errCode);
+		sb->safePrintf("\t\"percentChangedPerDay\": %f,\n", spiderReply->m_percentChangedPerDay);
+		sb->safePrintf("\t\"contentHash32\": %u,\n", spiderReply->m_contentHash32);
+		sb->safePrintf("\t\"crawlDelayMS\": %d,\n", spiderReply->m_crawlDelayMS);
+		sb->safePrintf("\t\"downloadEndTime\": %ld,\n", spiderReply->m_downloadEndTime);
+		sb->safePrintf("\t\"httpStatus\": %d,\n", spiderReply->m_httpStatus);
+		sb->safePrintf("\t\"errCount\": %d,\n", spiderReply->m_errCount);
+		sb->safePrintf("\t\"langId\": %d,\n", spiderReply->m_langId);
+		sb->safePrintf("\t\"isIndexed\": %s\n", spiderReply->m_isIndexed ? "true" : "false");
+
+		sb->safePrintf("}\n");
+	}
+
+	sb->safePrintf("}");
+}
+
 static bool sendResult(State *st) {
 	logTrace(g_conf.m_logTracePageSpiderdbLookup, "st(%p): sendResult: g_errno=%d", st, g_errno);
 	// get the socket
@@ -200,47 +370,18 @@ static bool sendResult(State *st) {
 	SafeBuf sb;
 	// print standard header
 	sb.reserve2x ( 32768 );
-	g_pages.printAdminTop (&sb, st->m_socket, &st->m_r );
 
-	// print URL in box
-	sb.safePrintf ("<br>\n"
-		       "Enter URL: "
-		       "<input type=text name=url value=\"%s\" size=60>", st->m_url_str);
-	sb.safePrintf("</form><br>\n");
-	
 	if(g_errno) {
-		sb.safePrintf("<br><br>Error = %s",mstrerror(g_errno));
-		g_pages.printAdminBottom2(&sb);
-		
-		mdelete (st, sizeof(State) , "pgspdrdblookup");
-		delete st;
-		
-		// erase g_errno for sending
-		g_errno = 0;
-		// now encapsulate it in html head/tail and send it off
-		return g_httpServer.sendDynamicPage ( s , 
-						      sb.getBufStart(),
-						      sb.length() );
+		return respondWithError(st, mstrerror(g_errno));
 	}
-	
+
+	int64_t shardNum = -1;
 	if(st->m_url_str[0]) {
 		int64_t uh48 = hash64b(st->m_url_str);
 		key128_t startKey = Spiderdb::makeFirstKey(st->m_firstip, uh48);
-		uint32_t shardNum = g_hostdb.getShardNum(RDB_SPIDERDB, &startKey);
-		sb.safePrintf("<p>Shard: %u</p>\n", shardNum);
-		int32_t numHosts;
-		const Host *host = g_hostdb.getShard(shardNum, &numHosts);
-		if(host) {
-			sb.safePrintf("<p>Host:");
-			while(numHosts--) {
-				if(host->m_spiderEnabled)
-					sb.safePrintf(" %u", host->m_hostId);
-				host++;
-			}
-			sb.safePrintf("</p>\n");
-		}
+		shardNum = g_hostdb.getShardNum(RDB_SPIDERDB, &startKey);
 	}
-	
+
 	//locate spider request and reply
 	const SpiderRequest *spiderRequest = NULL;
 	const SpiderReply *spiderReply = NULL;
@@ -249,9 +390,11 @@ static bool sendResult(State *st) {
 		for(st->m_rdbList.resetListPtr(); !st->m_rdbList.isExhausted(); st->m_rdbList.skipCurrentRecord()) {
 			const char *currentRec = st->m_rdbList.getCurrentRec();
 			logHexTrace(g_conf.m_logTracePageSpiderdbLookup, currentRec, st->m_rdbList.getCurrentRecSize(), "st(%p): ", st);
-			if((currentRec[0]&0x01) == 0x00)
+			if (KEYNEG(currentRec)) {
 				continue; //skip negative records (which should even be there)
-			if(Spiderdb::isSpiderRequest((const key128_t *)currentRec)) {
+			}
+
+			if (Spiderdb::isSpiderRequest((const key128_t *)currentRec)) {
 				logTrace(g_conf.m_logTracePageSpiderdbLookup, "it's a request");
 				spiderRequest = reinterpret_cast<const SpiderRequest*>(currentRec);
 			} else  {
@@ -260,57 +403,32 @@ static bool sendResult(State *st) {
 			}
 		}
 	}
-	
-	if(spiderRequest) {
-		char ipbuf[16];
-		char timebuf[32];
-		sb.safePrintf("<table class=\"main\" width=100%%>\n");
-		sb.safePrintf("  <tr class=\"level1\"><th colspan=50>Spider request</th></tr>\n");
-		sb.safePrintf("  <tr class=\"level2\"><th>Field</th><th>Value</th></tr>\n");
-		sb.safePrintf("  <tr><td>m_firstIp</td><td>%s</td></tr>\n", iptoa(spiderRequest->m_firstIp,ipbuf));
-		sb.safePrintf("  <tr><td>m_addedTime</td><td>%s (%d)</td></tr>\n", formatTime(spiderRequest->m_addedTime,timebuf), spiderRequest->m_addedTime);
-		sb.safePrintf("  <tr><td>m_prevErrCode</td><td>%d</td></tr>\n", spiderRequest->m_prevErrCode);
-		sb.safePrintf("  <tr><td>m_priority</td><td>%d</td></tr>\n", spiderRequest->m_priority);
-		sb.safePrintf("  <tr><td>m_errCount</td><td>%d</td></tr>\n", spiderRequest->m_errCount);
-		sb.safePrintf("  <tr><td>m_isAddUrl</td><td>%s</td></tr>\n", spiderRequest->m_isAddUrl?"true":"false");
-		sb.safePrintf("  <tr><td>m_isPageReindex</td><td>%s</td></tr>\n", spiderRequest->m_isPageReindex?"true":"false");
-		sb.safePrintf("  <tr><td>m_isUrlCanonical</td><td>%s</td></tr>\n", spiderRequest->m_isUrlCanonical?"true":"false");
-		sb.safePrintf("  <tr><td>m_isPageParser</td><td>%s</td></tr>\n", spiderRequest->m_isPageParser?"true":"false");
-		sb.safePrintf("  <tr><td>m_urlIsDocId</td><td>%s</td></tr>\n", spiderRequest->m_urlIsDocId?"true":"false");
-		sb.safePrintf("  <tr><td>m_forceDelete</td><td>%s</td></tr>\n", spiderRequest->m_forceDelete?"true":"false");
-		sb.safePrintf("  <tr><td>m_fakeFirstIp</td><td>%s</td></tr>\n", spiderRequest->m_fakeFirstIp?"true":"false");
-		sb.safePrintf("</table>\n");
+
+	const char *contentType = NULL;
+	switch(st->m_r.getReplyFormat()) {
+		case FORMAT_HTML:
+			g_pages.printAdminTop(&sb, s, &st->m_r, NULL);
+			generatePageHtml(shardNum, st->m_url_str, spiderRequest, spiderReply, &sb);
+			g_pages.printAdminBottom2(&sb);
+			contentType = "text/html";
+			break;
+		case FORMAT_JSON:
+			generatePageJSON(shardNum, spiderRequest, spiderReply, &sb);
+			contentType = "application/json";
+			break;
+		default:
+			contentType = "text/html";
+			sb.safePrintf("oops!");
+			break;
+
 	}
-	if(spiderRequest && spiderReply)
-		sb.safePrintf("<br/>\n");
-	if(spiderReply) {
-		char timebuf[32];
-		sb.safePrintf("<table class=\"main\" width=100%%>\n");
-		sb.safePrintf("  <tr class=\"level1\"><th colspan=50>Spider reply</th><tr>\n");
-		sb.safePrintf("  <tr class=\"level2\"><th>Field</th><th>Value</th></tr>\n");
-		sb.safePrintf("  <tr><td>m_spideredTime</td><td>%s (%d)</td></tr>\n", formatTime(spiderReply->m_spideredTime,timebuf), spiderReply->m_spideredTime);
-		sb.safePrintf("  <tr><td>m_errCode</td><td>%d</td></tr>\n", spiderReply->m_errCode);
-		sb.safePrintf("  <tr><td>m_percentChangedPerDay</td><td>%f</td></tr>\n", spiderReply->m_percentChangedPerDay);
-		sb.safePrintf("  <tr><td>m_contentHash32</td><td>%u</td></tr>\n", spiderReply->m_contentHash32);
-		sb.safePrintf("  <tr><td>m_crawlDelayMS</td><td>%d</td></tr>\n", spiderReply->m_crawlDelayMS);
-		sb.safePrintf("  <tr><td>m_downloadEndTime</td><td>%s (%ld)</td></tr>\n", formatTimeMs(spiderReply->m_downloadEndTime,timebuf), spiderReply->m_downloadEndTime);
-		sb.safePrintf("  <tr><td>m_httpStatus</td><td>%d</td></tr>\n", spiderReply->m_httpStatus);
-		sb.safePrintf(" <tr><td>m_errCount</td><td>%d</td></tr>\n", spiderReply->m_errCount);
-		sb.safePrintf(" <tr><td>m_langId</td><td>%d</td></tr>\n", spiderReply->m_langId);
-		sb.safePrintf(" <tr><td>m_isIndexed</td><td>%s</td></tr>\n", spiderReply->m_isIndexed?"true":"false");
-		sb.safePrintf("</table>\n");
-	}
-	if(!spiderRequest && !spiderReply) {
-		sb.safePrintf("<strong>No request, no reply.</strong>\n");
-	}
-	
-	g_pages.printAdminBottom2(&sb);
-	
+
 	// don't forget to cleanup
 	mdelete(st, sizeof(State) , "pgspdrdblookup");
 	delete st;
+
 	// now encapsulate it in html head/tail and send it off
-	return g_httpServer.sendDynamicPage (s, sb.getBufStart(), sb.length());
+	return g_httpServer.sendDynamicPage (s, sb.getBufStart(), sb.length(), -1, false, contentType);
 }
 
 
