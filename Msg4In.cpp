@@ -278,6 +278,8 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 
 		// don't add to spiderdb when we're nospider host
 		if (!g_hostdb.getMyHost()->m_spiderEnabled && (rdbId == RDB_SPIDERDB || rdbId == RDB2_SPIDERDB2)) {
+			// advance over the rec data to point to next entry
+			p += recSize;
 			continue;
 		}
 
