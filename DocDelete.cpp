@@ -265,17 +265,18 @@ void DocDelete::processFile(void *item) {
 				SpiderRequest sreq;
 				sreq.setFromAddUrl(key.c_str());
 				sreq.m_isAddUrl = 0;
-				sreq.m_forceDelete = 1;
 
 				docItem->m_xmlDoc->set4(&sreq, NULL, "main", NULL, 0);
-				docItem->m_xmlDoc->setCallback(docItem, processedDoc);
 			} else {
 				int64_t docId = strtoll(line.c_str(), NULL, 10);
 
 				docItem->m_xmlDoc->set3(docId, "main", 0);
-				docItem->m_xmlDoc->m_deleteFromIndex = true;
-				docItem->m_xmlDoc->setCallback(docItem, processedDoc);
 			}
+
+			docItem->m_xmlDoc->m_deleteFromIndex = true;
+			docItem->m_xmlDoc->m_blockedDoc = false;
+			docItem->m_xmlDoc->m_blockedDocValid = true;
+			docItem->m_xmlDoc->setCallback(docItem, processedDoc);
 
 			addPendingDoc(docItem);
 			s_docDeleteDocThreadQueue.addItem(docItem);
