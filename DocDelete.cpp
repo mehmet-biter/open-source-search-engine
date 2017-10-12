@@ -47,15 +47,15 @@ struct DocDeleteFileItem {
 };
 
 struct DocDeleteDocItem {
-	DocDeleteDocItem(const std::string &key, std::ofstream &lastPosFile, int64_t lastPos)
+	DocDeleteDocItem(const std::string &key, const char* lastPosFilename, int64_t lastPos)
 		: m_key(key)
-		, m_lastPosFile(lastPosFile)
+		, m_lastPosFilename(lastPosFilename)
 		, m_lastPos(lastPos)
 		, m_xmlDoc(new XmlDoc()) {
 	}
 
 	std::string m_key;
-	std::ofstream &m_lastPosFile;
+	const char *m_lastPosFilename;
 	int64_t m_lastPos;
 	XmlDoc *m_xmlDoc;
 };
@@ -210,8 +210,8 @@ static void removePendingDoc(DocDeleteDocItem *docItem) {
 	}
 
 	if (it == s_pendingDocItems.begin()) {
-		docItem->m_lastPosFile.seekp(0);
-		docItem->m_lastPosFile << docItem->m_lastPos << "|" << docItem->m_key << std::endl;
+		std::ofstream lastPosFile(docItem->m_lastPosFilename, std::ofstream::out|std::ofstream::trunc);
+		lastPosFile << docItem->m_lastPos << "|" << docItem->m_key << std::endl;
 	}
 
 	s_pendingDocItems.erase(it);
@@ -225,7 +225,6 @@ void DocDelete::processFile(void *item) {
 
 	// start processing file
 	std::ifstream file(fileItem->m_tmpFilename);
-	std::ofstream lastPosFile(fileItem->m_lastPosFilename, std::ofstream::out|std::ofstream::trunc);
 
 	bool isInterrupted = false;
 
@@ -259,23 +258,24 @@ void DocDelete::processFile(void *item) {
 
 		if (foundLastPos) {
 			logTrace(g_conf.m_logTraceDocDelete, "Processing key='%s'", key.c_str());
-			DocDeleteDocItem *docItem = new DocDeleteDocItem(key, lastPosFile, currentFilePos);
+			DocDeleteDocItem *docItem = new DocDeleteDocItem(key, fileItem->m_lastPosFilename, currentFilePos);
 
 			if (fileItem->m_isDocDeleteUrl) {
 				SpiderRequest sreq;
 				sreq.setFromAddUrl(key.c_str());
 				sreq.m_isAddUrl = 0;
-				sreq.m_forceDelete = 1;
 
 				docItem->m_xmlDoc->set4(&sreq, NULL, "main", NULL, 0);
-				docItem->m_xmlDoc->setCallback(docItem, processedDoc);
 			} else {
 				int64_t docId = strtoll(line.c_str(), NULL, 10);
 
 				docItem->m_xmlDoc->set3(docId, "main", 0);
-				docItem->m_xmlDoc->m_deleteFromIndex = true;
-				docItem->m_xmlDoc->setCallback(docItem, processedDoc);
 			}
+
+			docItem->m_xmlDoc->m_deleteFromIndex = true;
+			docItem->m_xmlDoc->m_blockedDoc = false;
+			docItem->m_xmlDoc->m_blockedDocValid = true;
+			docItem->m_xmlDoc->setCallback(docItem, processedDoc);
 
 			addPendingDoc(docItem);
 			s_docDeleteDocThreadQueue.addItem(docItem);

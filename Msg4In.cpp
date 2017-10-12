@@ -293,17 +293,16 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 			//spiderdb records no longer reside in an Rdb
 			
 			// don't add to spiderdb when we're nospider host
-			if (!g_hostdb.getMyHost()->m_spiderEnabled)
-				continue;
-			
-			auto &rdbItem = rdbItems[rdbId];
-			++rdbItem.m_numRecs;
+			if(g_hostdb.getMyHost()->m_spiderEnabled) {
+				auto &rdbItem = rdbItems[rdbId];
+				++rdbItem.m_numRecs;
 
-			int32_t dataSize = recSize - sizeof(key128_t) - 4;
+				int32_t dataSize = recSize - sizeof(key128_t) - 4;
 
-			rdbItem.m_dataSizes += dataSize;
+				rdbItem.m_dataSizes += dataSize;
 
-			rdbItem.m_items.emplace_back(collnum, rec, recSize);
+				rdbItem.m_items.emplace_back(collnum, rec, recSize);
+			}
 		}
 		
 		// advance over the rec data to point to next entry
