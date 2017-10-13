@@ -22,6 +22,7 @@ public:
 	void finalize(); //closes all DBs
 	
 	sqlite3 *getDb(collnum_t collnum);
+private:
 	sqlite3 *getOrCreateDb(collnum_t collnum);
 };
 

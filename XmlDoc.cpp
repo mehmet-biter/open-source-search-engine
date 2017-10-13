@@ -1943,6 +1943,11 @@ bool XmlDoc::indexDoc2 ( ) {
 	}
 
 
+	//log(LOG_DEBUG,"@ XmlDoc::indexDoc2: m_sreqValid            = %s", m_sreqValid?"true":"false");
+	//log(LOG_DEBUG,"@ XmlDoc::indexDoc2: m_sreq.m_fakeFirstIp   = %s", m_sreq.m_fakeFirstIp?"true":"false");
+	//log(LOG_DEBUG,"@ XmlDoc::indexDoc2: m_sreq.m_isInjecting   = %s", m_sreq.m_isInjecting?"true":"false");
+	//log(LOG_DEBUG,"@ XmlDoc::indexDoc2: m_sreq.m_isPageReindex = %s", m_sreq.m_isPageReindex?"true":"false");
+	//log(LOG_DEBUG,"@ XmlDoc::indexDoc2: m_sreq.m_isAddUrl      = %s", m_sreq.m_isAddUrl?"true":"false");
 	// do this before we increment pageDownloadAttempts below so that
 	// john's smoke tests, which use those counts, are not affected
 	if ( m_sreqValid && m_sreq.m_fakeFirstIp &&

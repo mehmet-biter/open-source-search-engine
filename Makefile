@@ -32,6 +32,7 @@ OBJS_O0 =  \
 	Rebalance.o Repair.o RobotRule.o Robots.o \
 	SpiderdbSqlite.o \
 	SpiderdbRdbSqliteBridge.o \
+	DumpSpiderdbSqlite.o \
 	Sanity.o ScalingFunctions.o SearchInput.o SiteGetter.o Speller.o SpiderProxy.o Stats.o SummaryCache.o Synonyms.o \
 	Tagdb.o TcpServer.o Titledb.o \
 	Version.o \

@@ -7,7 +7,7 @@
 #include <stddef.h>
 
 
-static sqlite3 *createDb(const char *sqlitedbName);
+static sqlite3 *openDb(const char *sqlitedbName);
 
 SpiderdbSqlite g_spiderdb_sqlite(RDB_SPIDERDB_SQLITE);
 SpiderdbSqlite g_spiderdb_sqlite2(RDB2_SPIDERDB2_SQLITE);
@@ -28,17 +28,11 @@ sqlite3 *SpiderdbSqlite::getDb(collnum_t collnum) {
 	if(iter!=dbs.end())
 		return iter->second;
 	else
-		return NULL;
+		return getOrCreateDb(collnum);
 }
 
 
 sqlite3 *SpiderdbSqlite::getOrCreateDb(collnum_t collnum) {
-	ScopedLock sl(mtx);
-	auto iter = dbs.find(collnum);
-	if(iter!=dbs.end())
-		return iter->second;
-	
-	//not found, open or create it
 	const auto cr = g_collectiondb.getRec(collnum);
 	
 	char collectionDirName[1024];
@@ -50,7 +44,7 @@ sqlite3 *SpiderdbSqlite::getOrCreateDb(collnum_t collnum) {
 	else	
 		sprintf(sqlitedbName, "%s/spiderdbRebuild.sqlite3", collectionDirName);
 	
-	sqlite3 *db = createDb(sqlitedbName);
+	sqlite3 *db = openDb(sqlitedbName);
 	
 	dbs[collnum] = db;
 	
@@ -87,7 +81,7 @@ static const char create_table_statmeent[] =
 ;
 
 
-static sqlite3 *createDb(const char *sqlitedbName) {
+static sqlite3 *openDb(const char *sqlitedbName) {
 	sqlite3 *db;
 	if(g_conf.m_readOnlyMode) {
 		//read-only, creation is not allowed

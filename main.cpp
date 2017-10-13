@@ -51,6 +51,7 @@
 #include "InstanceInfoExchange.h"
 #include "WantedChecker.h"
 #include "Dns.h"
+#include "DumpSpiderdbSqlite.h"
 
 // include all msgs that have request handlers, cuz we register them with g_udp
 #include "Msg0.h"
@@ -1343,18 +1344,20 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-// 	if(strcmp(cmd, "dumpcsv") == 0) {
-// 		g_conf.m_doingCommandLine = true; // so we do not log every collection coll.conf we load
-// 		if( !g_collectiondb.loadAllCollRecs()) {
-// 			log("db: Collectiondb init failed.");
-// 			return 1;
-// 		}
-// 		if(argv[cmdarg+1][0] == 's')
-// 			dumpSpiderdbCsv(argv[cmdarg+2]);
-// 		g_log.m_disabled = true;
-// 		g_collectiondb.reset();
-// 		return 0;
-// 	}
+	if(strcmp(cmd, "dumpcsv") == 0) {
+		g_conf.m_doingCommandLine = true; // so we do not log every collection coll.conf we load
+		if( !g_collectiondb.loadAllCollRecs()) {
+			log("db: Collectiondb init failed.");
+			return 1;
+		}
+		if(argv[cmdarg+1][0] == 's') {
+			bool interpret_values = argc>cmdarg+3 ? argToBoolean(argv[cmdarg+3]) : false;
+			dumpSpiderdbSqlite(argv[cmdarg+2],interpret_values);
+		}
+		g_log.m_disabled = true;
+		g_collectiondb.reset();
+		return 0;
+	}
 
 	if(strcmp(cmd, "convertspiderdb") == 0) {
 		g_conf.m_doingCommandLine = true; // so we do not log every collection coll.conf we load

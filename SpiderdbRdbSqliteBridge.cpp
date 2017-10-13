@@ -6,7 +6,8 @@
 #include "Log.h"
 #include "IOBuffer.h"
 #include "Mem.h"
-#include "Conf.h"
+#include "SpiderCache.h"
+#include "SpiderColl.h"
 
 
 static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len);
@@ -18,15 +19,30 @@ bool SpiderdbRdbSqliteBridge::addRecord(collnum_t collnum, const void *record, s
 		log(LOG_ERROR,"sqlitespider: Got negative spiderrecord");
 		gbshutdownCorrupted();
 	}
-	sqlite3 *db = g_spiderdb_sqlite.getOrCreateDb(collnum);
+	sqlite3 *db = g_spiderdb_sqlite.getDb(collnum);
 	if(!db) {
 		log(LOG_ERROR,"sqlitespider: Could not get sqlite db for collection %d", collnum);
 		return false;
 	}
+	
+	bool rc;
 	if(Spiderdb::isSpiderRequest(reinterpret_cast<const key128_t *>(record)))
-		return addRequestRecord(db,record,record_len);
+		rc = addRequestRecord(db,record,record_len);
 	else
-		return addReplyRecord(db,record,record_len);
+		rc = addReplyRecord(db,record,record_len);
+	
+	//inform the spidercollection that we have just added a record
+	if(rc) {
+		SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
+		if(sc) {
+			if(Spiderdb::isSpiderRequest(reinterpret_cast<const key128_t *>(record)))
+				sc->addSpiderRequest(reinterpret_cast<const SpiderRequest*>(record));
+			else
+				sc->addSpiderReply(reinterpret_cast<const SpiderReply*>(record));
+		}
+	}
+	
+	return rc;
 }
 
 
@@ -74,7 +90,7 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 			return false;
 		}
 		
-		sqlite3_bind_int(insertStatement, 1, firstIp);
+		sqlite3_bind_int64(insertStatement, 1, (uint32_t)firstIp);
 		sqlite3_bind_int64(insertStatement, 2, uh48);
 		sqlite3_bind_int(insertStatement, 3, sreq->m_hostHash32);
 		sqlite3_bind_int(insertStatement, 4, sreq->m_domHash32);
@@ -173,7 +189,30 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 	int64_t uh48 = Spiderdb::getUrlHash48(&srep->m_key);
 
 	const char *pzTail="";
-	if(srep->m_errCode==0) {
+	if(srep->m_errCode==EFAKEFIRSTIP) {
+		//To clean up the spider-requests with the fakeip key (and flag) Gb generates spider-replies with a specific
+		//error code that tells this logic to delete the equivalent spider-request row
+		static const char delete_statement[] =
+			"DELETE FROM spiderdb"
+			"  WHERE m_firstIp=? and m_uh48=?";
+		
+		sqlite3_stmt *deleteStatement = NULL;
+		if(sqlite3_prepare_v2(db, delete_statement, -1, &deleteStatement, &pzTail) != SQLITE_OK) {
+			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errmsg(db),pzTail);
+			return false;
+		}
+		
+		sqlite3_bind_int64(deleteStatement, 1, (uint32_t)firstIp);
+		sqlite3_bind_int64(deleteStatement, 2, uh48);
+		
+		if(sqlite3_step(deleteStatement) != SQLITE_DONE) {
+			log(LOG_ERROR,"sqlitespider: delete error: %s",sqlite3_errmsg(db));
+			sqlite3_finalize(deleteStatement);
+			return false;
+		}
+		sqlite3_finalize(deleteStatement);
+		return true;
+	} else if(srep->m_errCode==0) {
 		static const char update_statement[] =
 			"UPDATE spiderdb"
 			"  SET m_percentChangedPerDay = ?,"
@@ -204,7 +243,7 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			      (srep->m_fromInjectionRequest ? (1<<4) : 0);
 		sqlite3_bind_int(updateStatement, 6, rpf);
 		sqlite3_bind_int(updateStatement, 7, srep->m_contentHash32);
-		sqlite3_bind_int(updateStatement, 8, firstIp);
+		sqlite3_bind_int64(updateStatement, 8, (uint32_t)firstIp);
 		sqlite3_bind_int64(updateStatement, 9, uh48);
 		
 		if(sqlite3_step(updateStatement) != SQLITE_DONE) {
@@ -233,7 +272,7 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 		sqlite3_bind_int(updateStatement, 2, srep->m_errCode);
 		sqlite3_bind_int(updateStatement, 3, srep->m_httpStatus);
 		sqlite3_bind_int(updateStatement, 4, srep->m_errCode);
-		sqlite3_bind_int(updateStatement, 5, firstIp);
+		sqlite3_bind_int64(updateStatement, 5, (uint32_t)firstIp);
 		sqlite3_bind_int64(updateStatement, 6, uh48);
 		
 		if(sqlite3_step(updateStatement) != SQLITE_DONE) {
@@ -254,7 +293,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 				      const key128_t &endKey,
 				      int32_t         minRecSizes)
 {
-	sqlite3 *db = g_conf.m_readOnlyMode ? g_spiderdb_sqlite.getDb(collnum) : g_spiderdb_sqlite.getOrCreateDb(collnum);
+	sqlite3 *db = g_spiderdb_sqlite.getDb(collnum);
 	if(!db) {
 		log(LOG_ERROR,"sqlitespider: Could not get sqlite db for collection %d", collnum);
 		g_errno = ENOCOLLREC;
@@ -266,11 +305,11 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 	int64_t uh48Start = Spiderdb::getUrlHash48(&startKey);
 	int64_t uh48End = Spiderdb::getUrlHash48(&endKey);
 	
-	
 	bool breakMidIPAddressAllowed;
 	const char *pzTail="";
 	sqlite3_stmt *stmt;
 	if(firstIpStart==firstIpEnd) {
+		//since we are dealing with just a single ip-address it is fine to cut the data into chunks
 		breakMidIPAddressAllowed = true;
 		static const char statement_text[] =
 			"SELECT m_firstIp, m_uh48, m_hostHash32, m_domHash32, m_siteHash32,"
@@ -294,6 +333,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 			log(LOG_ERROR, " SpiderdbRdbSqliteBridge::getList(): startip!=endip, and uh48Start!=0");
 			gbshutdownLogicError();
 		}
+		//this code is not clever enough to deal with mid-ip breaks when spanning multiple ips
 		breakMidIPAddressAllowed = false;
 		static const char statement_text[] =
 			"SELECT m_firstIp, m_uh48, m_hostHash32, m_domHash32, m_siteHash32,"
@@ -318,37 +358,40 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 	int rc;
 	while((rc=sqlite3_step(stmt))==SQLITE_ROW) {
 		//fetch all columns. null checks are done later
-		int32_t firstIp              = sqlite3_column_int(stmt, 1);
-		int64_t uh48                 = sqlite3_column_int64(stmt, 2);
-		int32_t hosthash32           = sqlite3_column_int(stmt, 3);
-		int32_t domHash32            = sqlite3_column_int(stmt, 4);
-		int32_t siteHash32           = sqlite3_column_int(stmt, 5);
-		int32_t siteNumInlinks       = sqlite3_column_int(stmt, 6);
-		int32_t pageNumInlinks       = sqlite3_column_int(stmt, 7);
-		int32_t addedTime            = sqlite3_column_int(stmt, 8);
-		int32_t discoveryTime        = sqlite3_column_int(stmt, 9);
-		int32_t contentHash32        = sqlite3_column_int(stmt, 10);
-		int32_t requestFlags         = sqlite3_column_int(stmt, 11);
-		int32_t priority             = sqlite3_column_int(stmt, 12);
-		int32_t errCount             = sqlite3_column_int(stmt, 13);
-		int32_t sameErrCount         = sqlite3_column_int(stmt, 14);
-		const unsigned char *url     = sqlite3_column_text(stmt, 15);
-		double percentChangedPerDay  = sqlite3_column_double(stmt, 16);
-		int32_t spideredTime         = sqlite3_column_int(stmt, 17);
-		int32_t errCode              = sqlite3_column_int(stmt, 18);
-		int32_t httpStatus           = sqlite3_column_int(stmt, 19);
-		int32_t langId               = sqlite3_column_int(stmt, 20);
-		int32_t replyFlags           = sqlite3_column_int(stmt, 21);
+		int32_t firstIp              = sqlite3_column_int(stmt, 0);
+		int64_t uh48                 = sqlite3_column_int64(stmt, 1);
+		int32_t hosthash32           = sqlite3_column_int(stmt, 2);
+		int32_t domHash32            = sqlite3_column_int(stmt, 3);
+		int32_t siteHash32           = sqlite3_column_int(stmt, 4);
+		int32_t siteNumInlinks       = sqlite3_column_int(stmt, 5);
+		int32_t pageNumInlinks       = sqlite3_column_int(stmt, 6);
+		int32_t addedTime            = sqlite3_column_int(stmt, 7);
+		int32_t discoveryTime        = sqlite3_column_int(stmt, 8);
+		int32_t contentHash32        = sqlite3_column_int(stmt, 9);
+		int32_t requestFlags         = sqlite3_column_int(stmt, 10);
+		int32_t priority             = sqlite3_column_int(stmt, 11);
+		int32_t errCount             = sqlite3_column_int(stmt, 12);
+		int32_t sameErrCount         = sqlite3_column_int(stmt, 13);
+		const unsigned char *url     = sqlite3_column_text(stmt, 14);
+		double percentChangedPerDay  = sqlite3_column_double(stmt, 15);
+		int32_t spideredTime         = sqlite3_column_int(stmt, 16);
+		int32_t errCode              = sqlite3_column_int(stmt, 17);
+		int32_t httpStatus           = sqlite3_column_int(stmt, 18);
+		int32_t langId               = sqlite3_column_int(stmt, 19);
+		int32_t replyFlags           = sqlite3_column_int(stmt, 20);
 		
 		
 		if(breakMidIPAddressAllowed) {
 			if(minRecSizes>0 && io_buffer.used() >= (size_t)minRecSizes)
 				break;
 		} else {
-			
+			if(!list->isEmpty() && Spiderdb::getFirstIp(&listLastKey)!=firstIp) {
+				if(minRecSizes>0 && io_buffer.used() >= (size_t)minRecSizes)
+					break;
+			}
 		}
 			
-		if(sqlite3_column_type(stmt,21)!=SQLITE_NULL) {
+		if(sqlite3_column_type(stmt,20)!=SQLITE_NULL) {
 			//replyflags are non-null so there must be a reply
 			SpiderReply srep;
 			srep.reset();
@@ -375,8 +418,8 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 			srep.m_fromInjectionRequest     = (replyFlags&(1<<4))!=0; 
 			srep.m_isIndexedINValid         = (replyFlags&(1<<4))!=0;
 			srep.m_hasAuthorityInlinkValid  = (requestFlags&(1<<15))!=0;
-			srep.m_siteNumInlinksValid      = sqlite3_column_type(stmt,6)!=SQLITE_NULL;
-			
+			srep.m_siteNumInlinksValid      = sqlite3_column_type(stmt,5)!=SQLITE_NULL;
+
 			io_buffer.reserve_extra(sizeof(srep));
 			memcpy(io_buffer.end(), &srep, sizeof(srep));
 			io_buffer.push_back(sizeof(srep));
@@ -385,7 +428,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		
 		SpiderRequest sreq;
 		sreq.reset();
-		sreq.m_key = Spiderdb::makeKey(firstIp,uh48,false,0,false);
+		sreq.m_key = Spiderdb::makeKey(firstIp,uh48,true,0,false);
 		//sreq.m_dataSize
 		sreq.m_firstIp                  = firstIp;
 		sreq.m_hostHash32               = hosthash32;
@@ -439,17 +482,17 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 	int32_t listSize = io_buffer.used();
 	char *listMemory;
 	if(listSize>0) {
+		listMemory = (char*)mmalloc(listSize, "sqliterdblist");
 		if(!listMemory) {
 			log(LOG_ERROR,"sqlitespider: OOM allocating spiderdb rdblist (%d bytes)", listSize);
 			return false;
 		}
-		listMemory = (char*)mmalloc(listSize, "sqliterdblist");
 		memcpy(listMemory, io_buffer.begin(), io_buffer.used());
 	} else
 		listMemory = NULL;
 	key128_t listFirstKey = Spiderdb::makeFirstKey(firstIpStart, uh48Start);
 	if(rc==SQLITE_ROW) {
-		//early break
+		//early break, so use the listLastKey as-is
 	} else {
 		//select exhaustion, so jump to last specified key
 		listLastKey = Spiderdb::makeFirstKey(firstIpEnd, uh48End);
@@ -461,6 +504,9 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		  true,                 //owndata
 		  false,                //halfkeys
 		  sizeof(key128_t));    //keysize
-
+	if(listSize!=0)
+		list->setLastKey((const char*)&listLastKey);
+	log(LOG_TRACE,"sqlitespider: listSize = %d", list->getListSize());
+	
 	return true;
 }
