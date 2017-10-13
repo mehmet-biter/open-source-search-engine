@@ -133,9 +133,7 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 		throw std::bad_alloc(); 
 	} 
 
-	// hack so hostid #0 can use more mem
 	size_t max = g_conf.m_maxMem;
-	//if ( g_hostdb.m_hostId == 0 )  max += 2000000000;
 
 	// don't go over max
 	if ( g_mem.getUsedMem() + size >= max &&
@@ -979,9 +977,7 @@ void *Mem::gbrealloc ( void *ptr , size_t oldSize , size_t newSize , const char 
 		return NULL;
 	}
 
-	// hack so hostid #0 can use more mem
 	size_t max = g_conf.m_maxMem;
-	//if ( g_hostdb.m_hostId == 0 )  max += 2000000000;
 
 	// don't go over max
 	if ( g_mem.getUsedMem() + newSize - oldSize >= max ) {

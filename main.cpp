@@ -771,7 +771,7 @@ int main2 ( int argc , char *argv[] ) {
 		//we need udpserver for addurl
 		uint16_t udpPort  = h->m_port;
 
-		if ( ! g_conf.init ( h->m_dir ) ) { // , h->m_hostId ) ) {
+		if ( ! g_conf.init ( h->m_dir ) ) {
 			log( LOG_ERROR, "db: Conf init failed." );
 			return 1;
 		}
@@ -1821,9 +1821,7 @@ bool doCmd ( const char *cmd , int32_t hostId , const char *filename ,
 		log(LOG_WARN, "db: Loop init failed." );
 		return false;
 	}
-	// save it
-	// we are no part of it
-	//g_hostdb.m_hostId = -1;
+
 	// pass it on
 	s_hostId = hostId;
 	s_sendToHosts = sendToHosts;
@@ -2145,10 +2143,8 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 				"scp -p %sgb.conf %shosts.conf %s:%s %s",
 				dir ,
 				dir ,
-				//h->m_hostId ,
 				iptoa(h2->m_ip,ipbuf),
 				h2->m_dir,
-				//h2->m_hostId);
 				amp);
 
 			log(LOG_INIT,"admin: %s", tmp);

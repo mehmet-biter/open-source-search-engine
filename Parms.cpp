@@ -10416,9 +10416,6 @@ void Parms::handleRequest3fLoop(void *weArg) {
 void Parms::handleRequest3f(UdpSlot *slot, int32_t /*niceness*/) {
 	log("parms: handling updated parameters (request type 3f)");
 
-	// sending to host #0 is not right...
-	//if ( g_hostdb.m_hostId == 0 ) { g_process.shutdownAbort(true); }
-
 	char *parmRecs = slot->m_readBuf;
 	char *parmEnd  = parmRecs + slot->m_readBufSize;
 

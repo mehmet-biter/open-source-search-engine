@@ -345,7 +345,7 @@ bool sendHttpReply ( void *state ) {
 	// might already be EURLTOOBIG set from above
 	if ( ! g_errno ) g_errno = msg7->m_replyIndexCode;
 
-	int32_t      hostId = 0;//msg7->m_msg7.m_hostId;
+	int32_t      hostId = 0;
 
 	char format = msg7->m_format;
 

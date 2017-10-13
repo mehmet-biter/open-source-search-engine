@@ -622,7 +622,6 @@ bool isAssignedToUs ( int32_t firstIp ) {
 		char ipbuf[16];
 		log("spider: no hosts can handle spider request for ip=%s", iptoa(firstIp,ipbuf));
 		return false;
-		//return (h->m_hostId == g_hostdb.m_hostId);
 	}
 	// select from the good ones now
 	i  = ((uint32_t)firstIp) % upc;
