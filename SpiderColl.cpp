@@ -653,7 +653,8 @@ bool SpiderColl::isInDupCache(const SpiderRequest *sreq, bool addToCache) {
 //   not add this spider request to keep the cache trimmed!!! (MDW: TODO)
 // . BUT! if we have 150,000 urls that is going to take a long time to
 //   spider, so it should have a high reload rate!
-bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS) {
+bool SpiderColl::addSpiderRequest(const SpiderRequest *sreq) {
+	int64_t nowGlobalMS = gettimeofdayInMilliseconds();
 	// don't add negative keys or data less thangs
 	if ( sreq->m_dataSize <= 0 ) {
 		log( "spider: add spider request is dataless for uh48=%" PRIu64, sreq->getUrlHash48() );

@@ -1640,7 +1640,7 @@ bool Rdb::addRecord(collnum_t collnum, const char *key, const char *data, int32_
 			// in addSpiderRequest(), like if its a dup and
 			// gets "nuked". (removed callEval arg since not
 			// really needed)
-			sc->addSpiderRequest(sreq, gettimeofdayInMilliseconds());
+			sc->addSpiderRequest(sreq);
 		} else {
 			// otherwise repl
 			SpiderReply *rr = (SpiderReply *)sreq;
