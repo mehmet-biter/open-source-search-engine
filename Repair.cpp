@@ -1089,7 +1089,7 @@ bool Repair::gotScanRecList ( ) {
 	// . are we the host this url is meant for?
 	// . however, if you are rebuilding tfndb, each twin must scan all
 	//   title recs and make individual entries for those title recs
-	if ( hosts[ii].m_hostId != g_hostdb.m_hostId ){
+	if ( hosts[ii].m_hostId != g_hostdb.m_myHostId ){
 		m_recsUnassigned++;
 		m_stage = STAGE_TITLEDB_0;
 		return true;

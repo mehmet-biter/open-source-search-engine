@@ -1388,7 +1388,7 @@ bool Msg5::getRemoteList ( ) {
 	// select our twin
 	int32_t i;
 	for ( i = 0 ; i < n ; i++ ) 
-		if ( group[i].m_hostId != g_hostdb.m_hostId ) break;
+		if ( group[i].m_hostId != g_hostdb.m_myHostId ) break;
 	Host *h = &group[i];
 	// get our groupnum. the column #
 	int32_t forceParitySplit = h->m_shardNum;//group;

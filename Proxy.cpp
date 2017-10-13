@@ -88,27 +88,12 @@ bool Proxy::initProxy ( int32_t proxyId, uint16_t udpPort,
 	m_proxyId = proxyId;
 
 	// set this in Hostdb too!
-	g_hostdb.m_hostId = proxyId;
+	g_hostdb.m_myHostId = proxyId;
 
 	m_proxyRunning = true;
-	// load up hosts.conf
-	/*char *hostsConf = "./hosts.conf";
-	g_hostdb.reset();
-	if ( ! g_hostdb.init(hostsConf, m_proxyId, NULL,
-			     true  ) ) {//isproxy
-		log("db: hostdb init failed." ); return 1; }*/
-
-	//gb.conf should be in the same directory as gb
- 	//if ( ! g_conf.init ( "./" ) ) { // , h->m_hostId ) ) {
-	//	log("db: Conf init failed." ); return 1; }
 
 	//We log the http requests, althogh this is directly done by us
 	g_conf.m_logHttpRequests = true;
-
-	//Don't send email alerts, the machines on the cluster can do that
-	//g_conf.m_sendEmailAlerts = false;
-
-	// my new email
 
 	// if proxy, always have autosave on so we can save user accouting
 	// info regularly for billing feed access. save every 5 minutes.
@@ -398,10 +383,6 @@ bool Proxy::forwardRequest ( StateControl *stC ) {
 	stC->m_hostId = h->m_hostId;
 
 	TcpSocket *s = stC->m_s;
-
-	//log (LOG_DEBUG,"query: proxy: (hash=%" PRIu32") %s from "
-	//     "hostId #%" PRId32", port %i", stC->m_hash, hr.getRequest(),
-	//     h->m_hostId,h->m_httpPort);
 
 	// if sending to the temporary network, add one to port
 	int32_t port = h->getInternalHttpPort();

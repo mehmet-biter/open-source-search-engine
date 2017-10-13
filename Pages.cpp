@@ -1017,7 +1017,7 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 
 	// print the 64 hosts before and after us
 	int32_t radius = 512;//64;
-	int32_t hid = g_hostdb.m_hostId;
+	int32_t hid = g_hostdb.m_myHostId;
 	int32_t a = hid - radius;
 	int32_t b = hid + radius;
 	int32_t diff ;

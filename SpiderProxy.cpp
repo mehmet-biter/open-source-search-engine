@@ -861,12 +861,6 @@ void returnProxy ( Msg13Request *preq , UdpSlot *udpSlot ) {
 
 // call this at startup to register the handlers
 bool initSpiderProxyStuff() {
-	
-	// do this for all hosts in case host #0 goes dead, then everyone
-	// will, according to Msg13.cpp, send to host #1, the next in line
-	// if she is alive
-	//if ( g_hostdb.m_myHostId != 0 ) return true;
-
 	// only host #0 has handlers
 	if ( ! g_udpServer.registerHandler ( msg_type_54, handleRequest54 ))
 		return false;

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <fnmatch.h>
 
 Dir::Dir ( ) {
 	m_dirname = NULL;
@@ -69,10 +70,9 @@ bool Dir::open ( ) {
 	return true;
 }
 
-const char *Dir::getNextFilename ( const char *pattern ) {
-
-	if ( ! m_dir ) {
-		log("dir: m_dir is NULL so can't find pattern %s",pattern);
+const char *Dir::getNextFilename(const char *pattern) {
+	if (!m_dir) {
+		log("dir: m_dir is NULL so can't find pattern %s", pattern);
 		return NULL;
 	}
 
@@ -81,27 +81,11 @@ const char *Dir::getNextFilename ( const char *pattern ) {
 	//be. I just take a wild guess that no paths are longer than 1024
 	//characters.
 	struct dirent *ent;
-	int32_t plen = pattern ? strlen(pattern) : 0;
-	while( readdir_r(m_dir,(dirent*)m_dentryBuffer,&ent)==0 && ent ) {
+	while (readdir_r(m_dir, (dirent *)m_dentryBuffer, &ent) == 0 && ent) {
 		const char *filename = ent->d_name;
-		if ( ! pattern ) return filename;
-		if ( plen>2 && pattern[0] == '*' && pattern[plen-1] == '*' ) {
-			char tmp[128];
-			memcpy(tmp,pattern+1,plen-2);
-			tmp[plen-2] = '\0';
-			if ( strstr ( filename, tmp ) )
-				return filename;
-		}
-		if ( pattern[0] == '*' ) {
-			if ( strlen(filename) < strlen(pattern + 1) ) continue;
-			const char *tail = filename + 
-				strlen ( filename ) - 
-				strlen ( pattern ) + 1;
-			if ( strcmp ( tail , pattern+1) == 0 ) return filename;
-		}
-		if ( pattern[plen-1]=='*' ) {
-			if ( strncmp ( filename , pattern , plen - 1 ) == 0 )
-				return filename;
+
+		if (!pattern || (fnmatch(pattern, filename, FNM_PATHNAME) == 0)) {
+			return filename;
 		}
 	}
 

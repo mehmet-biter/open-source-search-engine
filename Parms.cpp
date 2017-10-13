@@ -10399,9 +10399,6 @@ void Parms::handleRequest3fLoop(void *weArg) {
 void Parms::handleRequest3f(UdpSlot *slot, int32_t /*niceness*/) {
 	log("parms: handling updated parameters (request type 3f)");
 
-	// sending to host #0 is not right...
-	//if ( g_hostdb.m_hostId == 0 ) { g_process.shutdownAbort(true); }
-
 	char *parmRecs = slot->m_readBuf;
 	char *parmEnd  = parmRecs + slot->m_readBufSize;
 
@@ -10484,7 +10481,7 @@ bool Parms::syncParmsWithHost0 ( ) {
 	m_inSyncWithHost0 = false;
 
 	// dont sync with ourselves
-	if ( g_hostdb.m_hostId == 0 ) {
+	if ( g_hostdb.m_myHostId == 0 ) {
 		m_inSyncWithHost0 = true;
 		return true;
 	}
@@ -10538,7 +10535,7 @@ bool Parms::syncParmsWithHost0 ( ) {
 // . include an "insync" command parm as last parm
 void Parms::handleRequest3e(UdpSlot *slot, int32_t /*niceness*/) {
 	// right now we must be host #0
-	if ( g_hostdb.m_hostId != 0 ) {
+	if ( g_hostdb.m_myHostId != 0 ) {
 		log(LOG_WARN,"parms: got request 0x3f but we are not host #0");
 		g_errno = EBADENGINEER;
 		g_udpServer.sendErrorReply( slot, g_errno );

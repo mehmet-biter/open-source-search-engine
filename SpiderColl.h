@@ -63,7 +63,7 @@ public:
 
 	// Rdb.cpp calls this
 	bool addSpiderReply(const SpiderReply *srep);
-	bool addSpiderRequest(const SpiderRequest *sreq, int64_t nowGlobalMS);
+	bool addSpiderRequest(const SpiderRequest *sreq);
 
 	// doledb cursor keys for each priority to speed up performance
 	key96_t m_nextKeys[MAX_SPIDER_PRIORITIES];

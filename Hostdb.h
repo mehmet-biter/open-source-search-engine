@@ -83,17 +83,6 @@ public:
 	// send to eth 0 or 1 when sending to this host?
 	char           m_preferEth;
 
-	// . this is used for sending email alerts to admin about dead hosts
-	// .  0 means we can send an email for this host if he goes dead on us
-	// . +1 means we already sent an email for him since he was down and 
-	//      he hasn't come back up since
-	// . -1 means he went down gracefully so no alert is needed
-	// . -2 means he went down while g_conf.m_sendEmailAlert was false
-	// . -3 means another host was responsible for sending to him, not us
-	// . -4 means we are currently in progress sending an email for him
-	// . -5 means he went down before host we alerted admin about revived
-	int32_t           m_emailCode;
-
 	// we now include the working dir in the hosts.conf file
 	// so main.cpp can do gb --install and gb --allstart
 	char           m_dir[256];
@@ -111,9 +100,7 @@ public:
 	// was host in gk0 cluster and retired because its twin got
 	// ssds, so it was no longer really needed.
 	bool           m_retired;
-	// this toggles between 0 and 1 for alternating packet sends to
-	// eth0 and eth1 of this host
-	char           m_shotgunBit;
+
 	// how many total error replies we got from this host
 	int32_t           m_errorReplies;
 
@@ -143,8 +130,6 @@ public:
 
 	std::atomic<int32_t>     m_totalResends; //how many UDP packets has been resent
 	std::atomic<int32_t>     m_etryagains;   //how many times a request got an ETRYAGAIN
-
-	char           m_repairMode;
 
 	// for timing how long the msg39 takes from this host
 	int32_t           m_splitsDone;
@@ -203,7 +188,7 @@ class Hostdb {
 
 	uint32_t  getMyIp         ( ) { return m_myIp; }
 	uint16_t getMyPort       ( ) { return m_myPort; }
-	int32_t           getMyHostId     ( ) { return m_hostId; }
+	int32_t           getMyHostId     ( ) { return m_myHostId; }
 	uint32_t  getLoopbackIp   ( ) { return m_loopbackIp; }
 	Host          *getMyHost       ( ) { return m_myHost; }
 	bool           amProxy         ( ) { return m_myHost->isProxy(); }
@@ -332,7 +317,6 @@ class Hostdb {
 	
 	// our host's info used by Udp* classes for internal communication
 	uint32_t  m_myIp;
-	uint32_t  m_myIpShotgun;
 	uint16_t m_myPort;
 	Host          *m_myHost;
 	Host          *m_myShard;
@@ -369,7 +353,7 @@ class Hostdb {
 	int32_t  m_numIps;
 
 	// . our group info
-	int32_t          m_hostId;      // our hostId
+	int32_t          m_myHostId;      // our hostId
 	int32_t          m_numShards;
 	char          m_dir[256];
 
