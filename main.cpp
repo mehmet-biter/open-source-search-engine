@@ -2098,7 +2098,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 			tmpBuf.safePrintf(
 					  // ensure directory is there, if
 					  // not then make it
-					  "ssh %s 'mkdir %s' ; "
+					  "ssh %s 'mkdir -p %s' ; "
 					  "scp -p -r %s %s:%s"
 					  , ipbuf
 					  , h2->m_dir
