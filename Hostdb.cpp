@@ -47,7 +47,6 @@ Hostdb::Hostdb ( ) {
 	m_created = false;
 	m_myHost = NULL;
 	m_myIp = 0;
-	m_myIpShotgun = 0;
 	m_myPort = 0;
 	m_myHost = NULL;
 	m_myShard = NULL;
@@ -106,7 +105,6 @@ void Hostdb::reset ( ) {
 bool Hostdb::init(int32_t hostIdArg, bool proxyHost, bool useTmpCluster, const char *cwd) {
 	// reset my ip and port
 	m_myIp             = 0;
-	m_myIpShotgun      = 0;
 	m_myPort           = 0;
 	m_myHost           = NULL;
 	//m_myPort2          = 0;
@@ -669,9 +667,6 @@ createFile:
 		m_hosts[i].m_mergeDir[mdirlen] = '\0';
 		memcpy(m_hosts[i].m_mergeLockDir, ldir, ldirlen);
 		m_hosts[i].m_mergeLockDir[ldirlen] = '\0';
-		
-		// and don't send emails on him until we got a good ping
-		m_hosts[i].m_emailCode = -2;
 
 		m_hosts[i].m_lastResponseReceiveTimestamp = 0;
 		m_hosts[i].m_lastRequestSendTimestamp = 0;
@@ -834,7 +829,6 @@ createFile:
 		return false;
 	}
 	m_myIp         = host->m_ip;    // internal IP
-	m_myIpShotgun  = host->m_ipShotgun;
 	m_myPort       = host->m_port;  // low priority udp port
 	m_myHost       = host;
 
@@ -931,8 +925,6 @@ bool Hostdb::hashHosts ( ) {
 	// this also holds g_hosts2 as well as g_hosts so we cannot preallocate
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
 		Host *h = &m_hosts[i];
-		// init shotgun bit here, 0 or 1 depending on our hostId
-		h->m_shotgunBit = m_myHostId & 0x01;
 		int32_t ip;
 		ip = h->m_ip;
 		if ( ! hashHost ( 1,h,ip, h->m_port     )) return false;
@@ -970,8 +962,6 @@ bool Hostdb::hashHosts ( ) {
 	// and the proxies as well
 	for ( int32_t i = 0 ; i < m_numProxyHosts ; i++ ) {
 		Host *h = getProxy(i);
-		// init shotgun bit here, 0 or 1 depending on our hostId
-		h->m_shotgunBit = m_myHostId & 0x01;
 		int32_t ip;
 		ip = h->m_ip;
 		if ( ! hashHost ( 1,h,ip, h->m_port     )) return false;
@@ -1360,13 +1350,11 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 
 	// reset these stats
 	oldHost->m_runtimeInformation.m_totalDocsIndexed         = 0;
-	oldHost->m_emailCode           = 0;
 	oldHost->m_errorReplies        = 0;
 	oldHost->m_dgramsTo            = 0;
 	oldHost->m_dgramsFrom          = 0;
 	oldHost->m_totalResends        = 0;
 	oldHost->m_etryagains          = 0;
-	oldHost->m_repairMode          = 0;
 	oldHost->m_splitsDone          = 0;
 	oldHost->m_splitTimes          = 0;
 
