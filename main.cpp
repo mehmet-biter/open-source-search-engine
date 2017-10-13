@@ -1532,7 +1532,7 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	// show it
-	log("host: Running as host id #%" PRId32,g_hostdb.m_hostId );
+	log("host: Running as host id #%" PRId32,g_hostdb.m_myHostId );
 
 
 	if (!ucInit(g_hostdb.m_dir)) {

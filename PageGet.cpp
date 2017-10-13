@@ -320,9 +320,9 @@ bool processLoop ( void *state ) {
 	if ( ! utf8 ) return sendErrorReply ( st , g_errno );
 
 	// get this host
-	Host *h = g_hostdb.getHost ( g_hostdb.m_hostId );
+	Host *h = g_hostdb.getHost ( g_hostdb.m_myHostId );
 	if ( ! h ) {
-		log("pageget: hostid %" PRId32" is bad",g_hostdb.m_hostId);
+		log("pageget: hostid %" PRId32" is bad",g_hostdb.m_myHostId);
 		return sendErrorReply(st,EBADENGINEER );
 	}
 

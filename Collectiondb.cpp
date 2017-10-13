@@ -73,7 +73,7 @@ bool Collectiondb::save ( ) {
 		return true;
 	}
 
-	if ( g_inAutoSave && m_numRecsUsed > 20 && g_hostdb.m_hostId != 0 ) {
+	if ( g_inAutoSave && m_numRecsUsed > 20 && g_hostdb.m_myHostId != 0 ) {
 		return true;
 	}
 

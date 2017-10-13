@@ -190,7 +190,7 @@ bool SiteGetter::getSite ( const char *url, TagRec *gr, int32_t timestamp, colln
 
 	// right now we only run on host #0 so we do not flood the cluster
 	// with queries...
-	if ( g_hostdb.m_hostId != 0 ) { 
+	if ( g_hostdb.m_myHostId != 0 ) {
 		// do not add to tagdb and do not block!
 		m_state = NULL;
 

@@ -88,7 +88,7 @@ bool Proxy::initProxy ( int32_t proxyId, uint16_t udpPort,
 	m_proxyId = proxyId;
 
 	// set this in Hostdb too!
-	g_hostdb.m_hostId = proxyId;
+	g_hostdb.m_myHostId = proxyId;
 
 	m_proxyRunning = true;
 

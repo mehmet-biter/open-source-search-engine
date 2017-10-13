@@ -203,7 +203,7 @@ class Hostdb {
 
 	uint32_t  getMyIp         ( ) { return m_myIp; }
 	uint16_t getMyPort       ( ) { return m_myPort; }
-	int32_t           getMyHostId     ( ) { return m_hostId; }
+	int32_t           getMyHostId     ( ) { return m_myHostId; }
 	uint32_t  getLoopbackIp   ( ) { return m_loopbackIp; }
 	Host          *getMyHost       ( ) { return m_myHost; }
 	bool           amProxy         ( ) { return m_myHost->isProxy(); }
@@ -369,7 +369,7 @@ class Hostdb {
 	int32_t  m_numIps;
 
 	// . our group info
-	int32_t          m_hostId;      // our hostId
+	int32_t          m_myHostId;      // our hostId
 	int32_t          m_numShards;
 	char          m_dir[256];
 

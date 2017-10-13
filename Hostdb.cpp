@@ -59,7 +59,7 @@ Hostdb::Hostdb ( ) {
 	m_numStripeHostsPerShard = 0;
 	m_bufSize = 0;
 	m_numIps = 0;
-	m_hostId = 0;
+	m_myHostId = 0;
 	m_numShards = 0;
 	m_indexSplits = 0;
 	m_numSpareHosts = 0;
@@ -130,7 +130,7 @@ bool Hostdb::init(int32_t hostIdArg, bool proxyHost, bool useTmpCluster, const c
 	}
 
 	// init to -1
-	m_hostId = -1;
+	m_myHostId = -1;
 
 retry:
 	// . File::open() open old if it exists, otherwise,
@@ -851,7 +851,7 @@ createFile:
 	m_minRepairModeHost = m_myHost;
 
 	// THIS hostId
-	m_hostId = m_myHost->m_hostId;
+	m_myHostId = m_myHost->m_hostId;
 	// set hosts per shard (mirror group)
 	m_numHostsPerShard = m_numHosts / m_numShards;
 
@@ -885,11 +885,11 @@ createFile:
 
 
 	// get THIS host
-	Host *h = getHost ( m_hostId );
+	Host *h = getHost ( m_myHostId );
 	if ( proxyHost )
-		h = getProxy ( m_hostId );
+		h = getProxy ( m_myHostId );
 	if ( ! h ) {
-		log(LOG_WARN, "conf: HostId %" PRId32" not found in %s.", m_hostId,filename);
+		log(LOG_WARN, "conf: HostId %" PRId32" not found in %s.", m_myHostId,filename);
 		return false;
 	}
 	// set m_dir to THIS host's working dir
@@ -900,7 +900,7 @@ createFile:
 	snprintf(m_httpRootDir, sizeof(m_httpRootDir), "%shtml/" , m_dir );
 	m_httpRootDir[sizeof(m_httpRootDir)-1] = '\0';
 
-	snprintf(m_logFilename, sizeof(m_logFilename), "%slog%03" PRId32, m_dir , m_hostId );
+	snprintf(m_logFilename, sizeof(m_logFilename), "%slog%03" PRId32, m_dir , m_myHostId );
 	m_logFilename[sizeof(m_logFilename)-1] = '\0';
 	
 	if ( ! g_conf.m_runAsDaemon &&
@@ -932,7 +932,7 @@ bool Hostdb::hashHosts ( ) {
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
 		Host *h = &m_hosts[i];
 		// init shotgun bit here, 0 or 1 depending on our hostId
-		h->m_shotgunBit = m_hostId & 0x01;
+		h->m_shotgunBit = m_myHostId & 0x01;
 		int32_t ip;
 		ip = h->m_ip;
 		if ( ! hashHost ( 1,h,ip, h->m_port     )) return false;
@@ -971,7 +971,7 @@ bool Hostdb::hashHosts ( ) {
 	for ( int32_t i = 0 ; i < m_numProxyHosts ; i++ ) {
 		Host *h = getProxy(i);
 		// init shotgun bit here, 0 or 1 depending on our hostId
-		h->m_shotgunBit = m_hostId & 0x01;
+		h->m_shotgunBit = m_myHostId & 0x01;
 		int32_t ip;
 		ip = h->m_ip;
 		if ( ! hashHost ( 1,h,ip, h->m_port     )) return false;

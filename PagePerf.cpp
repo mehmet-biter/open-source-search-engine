@@ -59,7 +59,7 @@ bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
 	     //   "            alert(\"There was a problem retrieving \");"
 		     "        }"
 		     "    }"
-		     "} \n ",g_hostdb.m_hostId);
+		     "} \n ",g_hostdb.m_myHostId);
 
 		p.safePrintf( "// --></script>");
 
