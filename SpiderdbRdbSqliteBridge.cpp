@@ -103,21 +103,23 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 			sqlite3_bind_int(insertStatement, 10, sreq->m_contentHash32);
 		else
 			sqlite3_bind_null(insertStatement, 10);
-		int32_t rqf = (sreq->m_recycleContent       ? (1<<0) : 0) |
-				(sreq->m_isAddUrl             ? (1<<1) : 0) |
-				(sreq->m_isPageReindex        ? (1<<2) : 0) |
-				(sreq->m_isUrlCanonical       ? (1<<3) : 0) |
-				(sreq->m_isPageParser         ? (1<<4) : 0) |
-				(sreq->m_urlIsDocId           ? (1<<5) : 0) |
-				(sreq->m_isRSSExt             ? (1<<6) : 0) |
-				(sreq->m_isUrlPermalinkFormat ? (1<<7) : 0) |
-				(sreq->m_forceDelete          ? (1<<8) : 0) |
-				(sreq->m_isInjecting          ? (1<<9) : 0) |
-				(sreq->m_hadReply             ? (1<<10) : 0) |
-				(sreq->m_fakeFirstIp          ? (1<<11) : 0) |
-				(sreq->m_hasAuthorityInlink   ? (1<<12) : 0) |
-				(sreq->m_avoidSpiderLinks     ? (1<<13) : 0);
-		sqlite3_bind_int(insertStatement, 11, rqf);
+		SpiderdbRequestFlags rqf;
+		rqf.m_recycleContent  = sreq->m_recycleContent;
+		rqf.m_isAddUrl  = sreq->m_isAddUrl;
+		rqf.m_isPageReindex  = sreq->m_isPageReindex;
+		rqf.m_isUrlCanonical  = sreq->m_isUrlCanonical;
+		rqf.m_isPageParser  = sreq->m_isPageParser;
+		rqf.m_urlIsDocId  = sreq->m_urlIsDocId;
+		rqf.m_isRSSExt  = sreq->m_isRSSExt;
+		rqf.m_isUrlPermalinkFormat  = sreq->m_isUrlPermalinkFormat;
+		rqf.m_forceDelete  = sreq->m_forceDelete;
+		rqf.m_isInjecting  = sreq->m_isInjecting;
+		rqf.m_hadReply  = sreq->m_hadReply;
+		rqf.m_fakeFirstIp  = sreq->m_fakeFirstIp;
+		rqf.m_hasAuthorityInlink  = sreq->m_hasAuthorityInlink;
+		rqf.m_hasAuthorityInlinkValid  = sreq->m_hasAuthorityInlinkValid;
+		rqf.m_avoidSpiderLinks  = sreq->m_avoidSpiderLinks;
+		sqlite3_bind_int(insertStatement, 11, (int)rqf);
 		if(sreq->m_priority>=0)
 			sqlite3_bind_int(insertStatement, 12, sreq->m_priority);
 		else
@@ -236,12 +238,14 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 		sqlite3_bind_int(updateStatement, 3, srep->m_errCode);
 		sqlite3_bind_int(updateStatement, 4, srep->m_httpStatus);
 		sqlite3_bind_int(updateStatement, 5, srep->m_langId);
-		int32_t rpf = (srep->m_isRSS                ? (1<<0) : 0) |
-			      (srep->m_isPermalink          ? (1<<1) : 0) |
-			      (srep->m_isIndexed            ? (1<<2) : 0) |
-			      (srep->m_hasAuthorityInlink   ? (1<<3) : 0) |
-			      (srep->m_fromInjectionRequest ? (1<<4) : 0);
-		sqlite3_bind_int(updateStatement, 6, rpf);
+		SpiderdbReplyFlags rpf;
+		rpf.m_isRSS                = srep->m_isRSS;
+		rpf.m_isPermalink          = srep->m_isPermalink;
+		rpf.m_isIndexed            = srep->m_isIndexed;
+		rpf.m_hasAuthorityInlink   = srep->m_hasAuthorityInlink;
+		rpf.m_fromInjectionRequest = srep->m_fromInjectionRequest;
+		rpf.m_isIndexedINValid     = srep->m_isIndexedINValid;
+		sqlite3_bind_int(updateStatement, 6, (int)rpf);
 		sqlite3_bind_int(updateStatement, 7, srep->m_contentHash32);
 		sqlite3_bind_int64(updateStatement, 8, (uint32_t)firstIp);
 		sqlite3_bind_int64(updateStatement, 9, uh48);
@@ -416,7 +420,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 			srep.m_isIndexed                = (replyFlags&(1<<2))!=0;
 			srep.m_hasAuthorityInlink       = (replyFlags&(1<<3))!=0;
 			srep.m_fromInjectionRequest     = (replyFlags&(1<<4))!=0; 
-			srep.m_isIndexedINValid         = (replyFlags&(1<<4))!=0;
+			srep.m_isIndexedINValid         = (replyFlags&(1<<5))!=0;
 			srep.m_hasAuthorityInlinkValid  = (requestFlags&(1<<15))!=0;
 			srep.m_siteNumInlinksValid      = sqlite3_column_type(stmt,5)!=SQLITE_NULL;
 

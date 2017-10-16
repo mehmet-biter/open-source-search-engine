@@ -7,6 +7,7 @@
 #include "Msg5.h"
 #include "Collectiondb.h"
 #include "Hostdb.h"
+#include "SpiderdbSqlite.h"
 
 
 static const char create_table_statmeent[] =
@@ -208,22 +209,23 @@ int convertSpiderDb(const char *collname) {
 					sqlite3_bind_int(stmt, 10, spiderRequest->m_contentHash32);
 				else
 					sqlite3_bind_null(stmt, 10);
-				int32_t rqf = (spiderRequest->m_recycleContent       ? (1<<0) : 0) |
-					      (spiderRequest->m_isAddUrl             ? (1<<1) : 0) |
-					      (spiderRequest->m_isPageReindex        ? (1<<2) : 0) |
-					      (spiderRequest->m_isUrlCanonical       ? (1<<3) : 0) |
-					      (spiderRequest->m_isPageParser         ? (1<<4) : 0) |
-					      (spiderRequest->m_urlIsDocId           ? (1<<5) : 0) |
-					      (spiderRequest->m_isRSSExt             ? (1<<6) : 0) |
-					      (spiderRequest->m_isUrlPermalinkFormat ? (1<<7) : 0) |
-					      (spiderRequest->m_forceDelete          ? (1<<8) : 0) |
-					      (spiderRequest->m_isInjecting          ? (1<<9) : 0) |
-					      (spiderRequest->m_hadReply             ? (1<<10) : 0) |
-					      (spiderRequest->m_fakeFirstIp          ? (1<<11) : 0) |
-					      (spiderRequest->m_hasAuthorityInlink   ? (1<<12) : 0) |
-					      (spiderRequest->m_hasAuthorityInlinkValid ? (1<<13) : 0) |
-					      (spiderRequest->m_avoidSpiderLinks     ? (1<<14) : 0);
-				sqlite3_bind_int(stmt, 11, rqf);
+				SpiderdbRequestFlags rqf;
+				rqf.m_recycleContent = spiderRequest->m_recycleContent;
+				rqf.m_isAddUrl = spiderRequest->m_isAddUrl;
+				rqf.m_isPageReindex = spiderRequest->m_isPageReindex;
+				rqf.m_isUrlCanonical = spiderRequest->m_isUrlCanonical;
+				rqf.m_isPageParser = spiderRequest->m_isPageParser;
+				rqf.m_urlIsDocId = spiderRequest->m_urlIsDocId;
+				rqf.m_isRSSExt = spiderRequest->m_isRSSExt;
+				rqf.m_isUrlPermalinkFormat = spiderRequest->m_isUrlPermalinkFormat;
+				rqf.m_forceDelete = spiderRequest->m_forceDelete;
+				rqf.m_isInjecting = spiderRequest->m_isInjecting;
+				rqf.m_hadReply = spiderRequest->m_hadReply;
+				rqf.m_fakeFirstIp = spiderRequest->m_fakeFirstIp;
+				rqf.m_hasAuthorityInlink = spiderRequest->m_hasAuthorityInlink;
+				rqf.m_hasAuthorityInlinkValid = spiderRequest->m_hasAuthorityInlinkValid;
+				rqf.m_avoidSpiderLinks = spiderRequest->m_avoidSpiderLinks;
+				sqlite3_bind_int(stmt, 11, (int)rqf);
 				if(spiderRequest->m_priority>=0)
 					sqlite3_bind_int(stmt, 12, spiderRequest->m_priority);
 				else
@@ -237,13 +239,14 @@ int convertSpiderDb(const char *collname) {
 					sqlite3_bind_int(stmt, 18, prevSpiderReply->m_errCode);
 					sqlite3_bind_int(stmt, 19, prevSpiderReply->m_httpStatus);
 					sqlite3_bind_int(stmt, 20, prevSpiderReply->m_langId);
-					int32_t rpf = (prevSpiderReply->m_isRSS                ? (1<<0) : 0) |
-					              (prevSpiderReply->m_isPermalink          ? (1<<1) : 0) |
-					              (prevSpiderReply->m_isIndexed            ? (1<<2) : 0) |
-					              (prevSpiderReply->m_hasAuthorityInlink   ? (1<<3) : 0) |
-					              (prevSpiderReply->m_fromInjectionRequest ? (1<<4) : 0) |
-					              (prevSpiderReply->m_isIndexedINValid     ? (1<<5) : 0);
-					sqlite3_bind_int(stmt, 21, rpf);
+					SpiderdbReplyFlags rpf;
+					rpf.m_isRSS = prevSpiderReply->m_isRSS;
+					rpf.m_isPermalink = prevSpiderReply->m_isPermalink;
+					rpf.m_isIndexed = prevSpiderReply->m_isIndexed;
+					rpf.m_hasAuthorityInlink = prevSpiderReply->m_hasAuthorityInlink;
+					rpf.m_fromInjectionRequest = prevSpiderReply->m_fromInjectionRequest;
+					rpf.m_isIndexedINValid = prevSpiderReply->m_isIndexedINValid;
+					sqlite3_bind_int(stmt, 21, (int)rpf);
 				}
 				
 				if(sqlite3_step(stmt) != SQLITE_DONE) {

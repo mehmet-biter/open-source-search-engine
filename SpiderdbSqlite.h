@@ -32,6 +32,51 @@ extern SpiderdbSqlite g_spiderdb_sqlite2;
 
 //see Spider.h for field definitions/comments/caveats
 
+//To save space we have to pack several flags into bitfields. This is done for both some requestand reply flags. To make things a bit easier with
+struct SpiderdbRequestFlags {
+	bool m_recycleContent:1;
+	bool m_isAddUrl:1;
+	bool m_isPageReindex:1;
+	bool m_isUrlCanonical:1;
+	bool m_isPageParser:1;
+	bool m_urlIsDocId:1;
+	bool m_isRSSExt:1;
+	bool m_isUrlPermalinkFormat:1;
+	bool m_forceDelete:1;
+	bool m_isInjecting:1;
+	bool m_hadReply:1;
+	bool m_fakeFirstIp:1;
+	bool m_hasAuthorityInlink:1;
+	bool m_hasAuthorityInlinkValid:1;
+	bool m_avoidSpiderLinks:1;
+	SpiderdbRequestFlags() : m_reserved(0) {}
+	SpiderdbRequestFlags(int v) { *reinterpret_cast<int*>(this) = v; }
+	SpiderdbRequestFlags(unsigned v) { *reinterpret_cast<unsigned*>(this) = v; }
+	operator int() const { return *reinterpret_cast<const int*>(this); }
+	operator unsigned() const { return *reinterpret_cast<const unsigned*>(this); }
+private:
+	//force the compiler to use 32 bits for this struct
+	uint32_t m_reserved:17;
+};
+
+struct SpiderdbReplyFlags {
+	bool m_isRSS:1;
+	bool m_isPermalink:1;
+	bool m_isIndexed:1;
+	bool m_hasAuthorityInlink:1;
+	bool m_fromInjectionRequest:1;
+	bool m_isIndexedINValid:1;
+	SpiderdbReplyFlags() : m_reserved(0) {}
+	SpiderdbReplyFlags(int v) { *reinterpret_cast<int*>(this) = v; }
+	SpiderdbReplyFlags(unsigned v) { *reinterpret_cast<unsigned*>(this) = v; }
+	operator int() const { return *reinterpret_cast<const int*>(this); }
+	operator unsigned() const { return *reinterpret_cast<const unsigned*>(this); }
+private:
+	//force the compiler to use 32 bits for this struct
+	uint32_t m_reserved:26;
+};
+
+
 struct RawSpiderdbRecord {
 	int32_t         m_firstIp;
 	int32_t         m_uh48;
@@ -45,25 +90,8 @@ struct RawSpiderdbRecord {
 	int32_t         m_discoveryTime;
 	int32_t         m_contentHash32; //0 = unknown/invalid
 	union {
-		struct {
-			bool            m_recycleContent:1;
-			bool            m_isAddUrl:1;
-			bool            m_isPageReindex:1;
-			bool            m_isUrlCanonical:1;
-			bool            m_isPageParser:1;
-			bool            m_urlIsDocId:1;
-			bool            m_isRSSExt:1;
-			bool            m_isUrlPermalinkFormat:1;
-			bool            m_forceDelete:1;
-			bool            m_isInjecting:1;
-			bool            m_hadReply:1;
-			bool            m_fakeFirstIp:1;
-			bool            m_hasAuthorityInlink:1;
-			bool            m_hasAuthorityInlinkValid:1;
-			bool            m_siteNumInlinksValid:1;
-			bool            m_avoidSpiderLinks:1;
-		} requestFlags;
-		uint32_t u32_request;
+		SpiderdbRequestFlags requestFlags;
+		uint32_t m_requestFlags;
 	};
 	int32_t         m_priority;
 	bool            m_priorityValid;
@@ -83,17 +111,8 @@ struct RawSpiderdbRecord {
 	int32_t         m_langId;
 	bool            m_langIdValid;
 	union {
-		struct {
-			bool            m_httpStatus:1;
-			bool            m_isRSS:1;
-			bool            m_isPermalink:1;
-			bool            m_isIndexed:1;
-			bool            m_hasAuthorityInlink:1;
-			bool            m_isIndexedINValid:1;
-			bool            m_hasAuthorityInlinkValid:1;
-			bool            m_fromInjectionRequest:1;
-		} replyFlags;
-		uint32_t u32_reply;
+		SpiderdbReplyFlags replyFlags;
+		uint32_t m_replyFlags;
 	};
 };
 
