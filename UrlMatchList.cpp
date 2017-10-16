@@ -261,8 +261,9 @@ bool UrlMatchList::isUrlMatched(const Url &url) {
 		return true;
 	}
 
+	UrlParser urlParser(url.getUrl(), url.getUrlLen(), TITLEREC_CURRENT_VERSION);
 	for (auto const &urlMatch : urlMatchList->m_urlMatches) {
-		if (urlMatch.match(url)) {
+		if (urlMatch.match(url, urlParser)) {
 			if (g_conf.m_logTraceUrlMatchList) {
 				urlMatch.logMatch(url);
 			}

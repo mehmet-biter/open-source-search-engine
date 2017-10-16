@@ -80,7 +80,7 @@ static bool matchString(const std::string &needle, const char *haystack, int32_t
 	return (matchingLen && memcmp(needle.c_str(), haystack, needle.length()) == 0);
 }
 
-bool UrlMatch::match(const Url &url) const {
+bool UrlMatch::match(const Url &url, const UrlParser &urlParser) const {
 	switch (m_type) {
 		case url_match_domain:
 			if (matchString(m_domain->m_domain, url.getDomain(), url.getDomainLen())) {
@@ -124,7 +124,6 @@ bool UrlMatch::match(const Url &url) const {
 		case url_match_param:
 			if (strncasestr(url.getQuery(), m_param->m_name.c_str(), url.getQueryLen()) != NULL) {
 				// not the most efficient, but there is already parsing logic for query parameter in UrlParser
-				UrlParser urlParser(url.getUrl(), url.getUrlLen(), TITLEREC_CURRENT_VERSION);
 				auto queryMatches = urlParser.matchQueryParam(UrlComponent::Matcher(m_param->m_name.c_str()));
 				if (m_param->m_value.empty()) {
 					return (!queryMatches.empty());

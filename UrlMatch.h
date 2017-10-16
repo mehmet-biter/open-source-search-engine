@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include "GbRegex.h"
+#include "UrlParser.h"
 
 enum urlmatchtype_t {
 	url_match_domain,
@@ -78,7 +79,7 @@ public:
 	UrlMatch(const std::shared_ptr<urlmatchregex_t> &urlmatchregex);
 	UrlMatch(const std::shared_ptr<urlmatchtld_t> &urlmatchtld);
 
-	bool match(const Url &url) const;
+	bool match(const Url &url, const UrlParser &urlParser) const;
 	void logMatch(const Url &url) const;
 
 private:
