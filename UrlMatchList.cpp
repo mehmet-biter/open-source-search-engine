@@ -49,6 +49,12 @@ void UrlMatchList::reload(int /*fd*/, void *state) {
 }
 
 static void parseDomain(urlmatchlist_ptr_t *urlMatchList, const std::string &col2, const std::string &col3, const std::string &col4) {
+	// simple domain match
+	if (col3.empty() && col4.empty()) {
+		(*urlMatchList)->m_domainMatches.insert(col2);
+		return;
+	}
+
 	std::string allowStr;
 	if (!col3.empty()) {
 		if (starts_with(col3.c_str(), "allow=")) {
@@ -65,7 +71,21 @@ static void parseDomain(urlmatchlist_ptr_t *urlMatchList, const std::string &col
 		}
 	}
 
-	(*urlMatchList)->emplace_back(std::shared_ptr<urlmatchdomain_t>(new urlmatchdomain_t(col2, allowStr, pathcriteria)));
+	(*urlMatchList)->m_urlMatches.emplace_back(std::shared_ptr<urlmatchdomain_t>(new urlmatchdomain_t(col2, allowStr, pathcriteria)));
+}
+
+static void parseHost(urlmatchlist_ptr_t *urlMatchList, const std::string &col2, const std::string &col3) {
+	// simple host match
+	if (col3.empty()) {
+		// only do simple match if we're not doing port matching
+		size_t pos = col2.find(':');
+		if (pos == std::string::npos) {
+			(*urlMatchList)->m_hostMatches.insert(col2);
+			return;
+		}
+	}
+
+	(*urlMatchList)->m_urlMatches.emplace_back(std::shared_ptr<urlmatchhost_t>(new urlmatchhost_t(col2, col3)));
 }
 
 bool UrlMatchList::load() {
@@ -157,7 +177,7 @@ bool UrlMatchList::load() {
 				case 'f':
 					// file
 					if (firstColEnd == 4 && memcmp(line.data(), "file", 4) == 0) {
-						tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_file, col2)));
+						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_file, col2)));
 					} else {
 						logError("Invalid line found. Ignoring line='%s'", line.c_str());
 						continue;
@@ -166,7 +186,7 @@ bool UrlMatchList::load() {
 				case 'h':
 					// host
 					if (firstColEnd == 4 && memcmp(line.data(), "host", 4) == 0) {
-						tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchhost_t>(new urlmatchhost_t(col2, col3)));
+						parseHost(&tmpUrlMatchList, col2, col3);
 					} else {
 						logError("Invalid line found. Ignoring line='%s'", line.c_str());
 						continue;
@@ -175,10 +195,10 @@ bool UrlMatchList::load() {
 				case 'p':
 					if (firstColEnd == 5 && memcmp(line.data(), "param", 5) == 0) {
 						// param
-						tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchparam_t>(new urlmatchparam_t(col2, col3)));
+						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchparam_t>(new urlmatchparam_t(col2, col3)));
 					} else if (firstColEnd == 4 && memcmp(line.data(), "path", 4) == 0) {
 						// path
-						tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_path, col2)));
+						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_path, col2)));
 					} else {
 						logError("Invalid line found. Ignoring line='%s'", line.c_str());
 						continue;
@@ -192,7 +212,7 @@ bool UrlMatchList::load() {
 							col2.clear();
 						}
 
-						tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchregex_t>(new urlmatchregex_t(col3, GbRegex(col3.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE), col2)));
+						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchregex_t>(new urlmatchregex_t(col3, GbRegex(col3.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE), col2)));
 					} else {
 						logError("Invalid line found. Ignoring line='%s'", line.c_str());
 						continue;
@@ -200,7 +220,7 @@ bool UrlMatchList::load() {
 					break;
 				case 't':
 					if (firstColEnd == 3 && memcmp(line.data(), "tld", 3) == 0) {
-						tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchtld_t>(new urlmatchtld_t(col2)));
+						tmpUrlMatchList->m_urlMatches.emplace_back(std::shared_ptr<urlmatchtld_t>(new urlmatchtld_t(col2)));
 					} else {
 						logError("Invalid line found. Ignoring line='%s'", line.c_str());
 						continue;
@@ -221,7 +241,7 @@ bool UrlMatchList::load() {
 	}
 
 	if (loadedFile) {
-		logTrace(g_conf.m_logTraceUrlMatchList, "Number of url-match entries in %s: %ld", m_filename.c_str(), (long)tmpUrlMatchList->size());
+		logTrace(g_conf.m_logTraceUrlMatchList, "Number of url-match entries in %s: %ld", m_filename.c_str(), (long)tmpUrlMatchList->m_urlMatches.size());
 		swapUrlMatchList(tmpUrlMatchList);
 	}
 
@@ -231,7 +251,17 @@ bool UrlMatchList::load() {
 bool UrlMatchList::isUrlMatched(const Url &url) {
 	auto urlMatchList = getUrlMatchList();
 
-	for (auto const &urlMatch : *urlMatchList) {
+	// simple domain check
+	if (urlMatchList->m_domainMatches.count(std::string(url.getDomain(), url.getDomainLen())) > 0) {
+		return true;
+	}
+
+	// simple host check
+	if (urlMatchList->m_hostMatches.count(std::string(url.getHost(), url.getHostLen())) > 0) {
+		return true;
+	}
+
+	for (auto const &urlMatch : urlMatchList->m_urlMatches) {
 		if (urlMatch.match(url)) {
 			if (g_conf.m_logTraceUrlMatchList) {
 				urlMatch.logMatch(url);

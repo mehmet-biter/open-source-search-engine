@@ -62,6 +62,7 @@ TEST(UrlMatchListTest, Domain) {
 
 	//host    specific.host.com
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://specific.host.com/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://specific.host.com:3001/"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://specific.host.com/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.host.com/"));
 
