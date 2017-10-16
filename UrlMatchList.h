@@ -29,7 +29,8 @@ private:
 	urlmatchlistconst_ptr_t getUrlMatchList();
 	void swapUrlMatchList(urlmatchlistconst_ptr_t urlMatchList);
 
-	const char *m_filename;
+	std::string m_filename;
+	std::string m_dirname;
 	urlmatchlistconst_ptr_t m_urlMatchList;
 
 	std::map<std::string, time_t> m_lastModifiedTimes;

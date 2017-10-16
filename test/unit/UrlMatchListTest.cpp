@@ -185,3 +185,12 @@ TEST(UrlMatchListTest, Path) {
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?action=dbuy_now&product_id=123"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.example.com/cart.html?action=buy_nowd&product_id=123"));
 }
+
+TEST(UrlMatchListTest, Multi) {
+	TestUrlMatchList urlMatchList("blocklist/multi*.txt");
+	urlMatchList.load();
+
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://multi1.example.com/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://multi2.example.com/"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://multi3.example.com/"));
+}
