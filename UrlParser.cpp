@@ -468,7 +468,7 @@ bool UrlParser::removePathParam(const UrlComponent::Matcher &matcher, const UrlC
 	return removeComponent(matches, validator);
 }
 
-std::vector<UrlComponent *> UrlParser::matchQueryParam(const UrlComponent::Matcher &matcher) {
+const std::vector<UrlComponent *> UrlParser::matchQueryParam(const UrlComponent::Matcher &matcher) {
 	std::vector<UrlComponent *> result;
 
 	// don't need to loop if it's all deleted
@@ -476,13 +476,34 @@ std::vector<UrlComponent *> UrlParser::matchQueryParam(const UrlComponent::Match
 		return result;
 	}
 
-	for (auto it = m_queries.begin(); it != m_queries.end(); ++it) {
-		if (it->isDeleted()) {
+	for (auto &query : m_queries) {
+		if (query.isDeleted()) {
 			continue;
 		}
 
-		if (matcher.isMatching(*it)) {
-			result.push_back(&(*it));
+		if (matcher.isMatching(query)) {
+			result.push_back(&query);
+		}
+	}
+
+	return result;
+}
+
+const std::vector<const UrlComponent *> UrlParser::matchQueryParam(const UrlComponent::Matcher &matcher) const {
+	std::vector<const UrlComponent *> result;
+
+	// don't need to loop if it's all deleted
+	if (m_queriesDeleteCount == m_queries.size()) {
+		return result;
+	}
+
+	for (const auto &query : m_queries) {
+		if (query.isDeleted()) {
+			continue;
+		}
+
+		if (matcher.isMatching(query)) {
+			result.push_back(&query);
 		}
 	}
 
