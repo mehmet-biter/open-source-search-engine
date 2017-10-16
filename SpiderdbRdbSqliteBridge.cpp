@@ -362,27 +362,27 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 	int rc;
 	while((rc=sqlite3_step(stmt))==SQLITE_ROW) {
 		//fetch all columns. null checks are done later
-		int32_t firstIp              = sqlite3_column_int(stmt, 0);
-		int64_t uh48                 = sqlite3_column_int64(stmt, 1);
-		int32_t hosthash32           = sqlite3_column_int(stmt, 2);
-		int32_t domHash32            = sqlite3_column_int(stmt, 3);
-		int32_t siteHash32           = sqlite3_column_int(stmt, 4);
-		int32_t siteNumInlinks       = sqlite3_column_int(stmt, 5);
-		int32_t pageNumInlinks       = sqlite3_column_int(stmt, 6);
-		int32_t addedTime            = sqlite3_column_int(stmt, 7);
-		int32_t discoveryTime        = sqlite3_column_int(stmt, 8);
-		int32_t contentHash32        = sqlite3_column_int(stmt, 9);
-		int32_t requestFlags         = sqlite3_column_int(stmt, 10);
-		int32_t priority             = sqlite3_column_int(stmt, 11);
-		int32_t errCount             = sqlite3_column_int(stmt, 12);
-		int32_t sameErrCount         = sqlite3_column_int(stmt, 13);
-		const unsigned char *url     = sqlite3_column_text(stmt, 14);
-		double percentChangedPerDay  = sqlite3_column_double(stmt, 15);
-		int32_t spideredTime         = sqlite3_column_int(stmt, 16);
-		int32_t errCode              = sqlite3_column_int(stmt, 17);
-		int32_t httpStatus           = sqlite3_column_int(stmt, 18);
-		int32_t langId               = sqlite3_column_int(stmt, 19);
-		int32_t replyFlags           = sqlite3_column_int(stmt, 20);
+		int32_t firstIp                   = sqlite3_column_int(stmt, 0);
+		int64_t uh48                      = sqlite3_column_int64(stmt, 1);
+		int32_t hosthash32                = sqlite3_column_int(stmt, 2);
+		int32_t domHash32                 = sqlite3_column_int(stmt, 3);
+		int32_t siteHash32                = sqlite3_column_int(stmt, 4);
+		int32_t siteNumInlinks            = sqlite3_column_int(stmt, 5);
+		int32_t pageNumInlinks            = sqlite3_column_int(stmt, 6);
+		int32_t addedTime                 = sqlite3_column_int(stmt, 7);
+		int32_t discoveryTime             = sqlite3_column_int(stmt, 8);
+		int32_t contentHash32             = sqlite3_column_int(stmt, 9);
+		SpiderdbRequestFlags requestFlags = sqlite3_column_int(stmt, 10);
+		int32_t priority                  = sqlite3_column_int(stmt, 11);
+		int32_t errCount                  = sqlite3_column_int(stmt, 12);
+		int32_t sameErrCount              = sqlite3_column_int(stmt, 13);
+		const unsigned char *url          = sqlite3_column_text(stmt, 14);
+		double percentChangedPerDay       = sqlite3_column_double(stmt, 15);
+		int32_t spideredTime              = sqlite3_column_int(stmt, 16);
+		int32_t errCode                   = sqlite3_column_int(stmt, 17);
+		int32_t httpStatus                = sqlite3_column_int(stmt, 18);
+		int32_t langId                    = sqlite3_column_int(stmt, 19);
+		SpiderdbReplyFlags replyFlags     = sqlite3_column_int(stmt, 20);
 		
 		
 		if(breakMidIPAddressAllowed) {
@@ -415,13 +415,13 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 			srep.m_httpStatus               = httpStatus;
 			srep.m_errCount                 = errCount;
 			srep.m_langId                   = langId;
-			srep.m_isRSS                    = (replyFlags&(1<<0))!=0;
-			srep.m_isPermalink              = (replyFlags&(1<<1))!=0;
-			srep.m_isIndexed                = (replyFlags&(1<<2))!=0;
-			srep.m_hasAuthorityInlink       = (replyFlags&(1<<3))!=0;
-			srep.m_fromInjectionRequest     = (replyFlags&(1<<4))!=0; 
-			srep.m_isIndexedINValid         = (replyFlags&(1<<5))!=0;
-			srep.m_hasAuthorityInlinkValid  = (requestFlags&(1<<15))!=0;
+			srep.m_isRSS                    = replyFlags.m_isRSS;
+			srep.m_isPermalink              = replyFlags.m_isPermalink;
+			srep.m_isIndexed                = replyFlags.m_isIndexed;
+			srep.m_hasAuthorityInlink       = replyFlags.m_hasAuthorityInlink;
+			srep.m_fromInjectionRequest     = replyFlags.m_fromInjectionRequest;
+			srep.m_isIndexedINValid         = replyFlags.m_isIndexedINValid;
+			srep.m_hasAuthorityInlinkValid  = requestFlags.m_hasAuthorityInlinkValid;
 			srep.m_siteNumInlinksValid      = sqlite3_column_type(stmt,5)!=SQLITE_NULL;
 
 			io_buffer.reserve_extra(sizeof(srep));
@@ -447,22 +447,22 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		sreq.m_contentHash32            = contentHash32;
 		sreq.m_hopCount                 = 0;
 		sreq.m_hopCountValid            = 0;
-		sreq.m_isAddUrl                 = (requestFlags&(1<<1))!=0;
-		sreq.m_isPageReindex            = (requestFlags&(1<<2))!=0;
-		sreq.m_isUrlCanonical           = (requestFlags&(1<<3))!=0;
-		sreq.m_isPageParser             = (requestFlags&(1<<4))!=0;
-		sreq.m_urlIsDocId               = (requestFlags&(1<<5))!=0;
-		sreq.m_isRSSExt                 = (requestFlags&(1<<6))!=0;
-		sreq.m_isUrlPermalinkFormat     = (requestFlags&(1<<7))!=0;
-		sreq.m_recycleContent           = (requestFlags&(1<<0))!=0;
-		sreq.m_forceDelete              = (requestFlags&(1<<8))!=0;
-		sreq.m_isInjecting              = (requestFlags&(1<<9))!=0;
-		sreq.m_hadReply                 = (requestFlags&(1<<10))!=0;
-		sreq.m_fakeFirstIp              = (requestFlags&(1<<11))!=0;
-		sreq.m_hasAuthorityInlink       = (requestFlags&(1<<12))!=0;
-		sreq.m_hasAuthorityInlinkValid  = (requestFlags&(1<<13))!=0;
+		sreq.m_isAddUrl                 = requestFlags.m_isAddUrl;
+		sreq.m_isPageReindex            = requestFlags.m_isPageReindex;
+		sreq.m_isUrlCanonical           = requestFlags.m_isUrlCanonical;
+		sreq.m_isPageParser             = requestFlags.m_isPageParser;
+		sreq.m_urlIsDocId               = requestFlags.m_urlIsDocId;
+		sreq.m_isRSSExt                 = requestFlags.m_isRSSExt;
+		sreq.m_isUrlPermalinkFormat     = requestFlags.m_isUrlPermalinkFormat;
+		sreq.m_recycleContent           = requestFlags.m_recycleContent;
+		sreq.m_forceDelete              = requestFlags.m_forceDelete;
+		sreq.m_isInjecting              = requestFlags.m_isInjecting;
+		sreq.m_hadReply                 = requestFlags.m_hadReply;
+		sreq.m_fakeFirstIp              = requestFlags.m_fakeFirstIp;
+		sreq.m_hasAuthorityInlink       = requestFlags.m_hasAuthorityInlink;
+		sreq.m_hasAuthorityInlinkValid  = requestFlags.m_hasAuthorityInlinkValid;
 		sreq.m_siteNumInlinksValid      = sqlite3_column_type(stmt,6)!=SQLITE_NULL;
-		sreq.m_avoidSpiderLinks         = (requestFlags&(1<<14))!=0;
+		sreq.m_avoidSpiderLinks         = requestFlags.m_avoidSpiderLinks;
 		sreq.m_ufn                      = 0; //only used in-memory
 		sreq.m_priority                 = priority;
 		sreq.m_errCount                 = errCount;
