@@ -301,17 +301,17 @@ void UrlParser::unparse() {
 	if (m_pathsDeleteCount != m_paths.size()) {
 		bool isFirst = true;
 
-		for (auto it = m_paths.begin(); it != m_paths.end(); ++it) {
-			if (!it->isDeleted()) {
+		for (auto &path : m_paths) {
+			if (!path.isDeleted()) {
 				if (isFirst) {
 					isFirst = false;
-					if (it->getSeparator() != '/') {
+					if (path.getSeparator() != '/') {
 						m_urlParsed.append("/");
 					}
 				}
 
-				m_urlParsed += it->getSeparator();
-				m_urlParsed.append(it->getString());
+				m_urlParsed += path.getSeparator();
+				m_urlParsed.append(path.getString());
 			}
 		}
 
@@ -326,16 +326,16 @@ void UrlParser::unparse() {
 
 	if (m_queriesDeleteCount != m_queries.size()) {
 		bool isFirst = true;
-		for (auto it = m_queries.begin(); it != m_queries.end(); ++it) {
-			if (!it->isDeleted()) {
+		for (auto &query : m_queries) {
+			if (!query.isDeleted()) {
 				if (isFirst) {
 					isFirst = false;
 					m_urlParsed.append("?");
 				} else {
-					m_urlParsed += (it->getSeparator() == '?') ? '&' : it->getSeparator();
+					m_urlParsed += (query.getSeparator() == '?') ? '&' : query.getSeparator();
 				}
 
-				m_urlParsed.append(it->getString());
+				m_urlParsed.append(query.getString());
 			}
 		}
 	}
@@ -371,15 +371,15 @@ void UrlParser::deleteComponents(std::vector<UrlComponent*> &urlComponents) {
 bool UrlParser::removeComponent(const std::vector<UrlComponent *> &urlComponents, const UrlComponent::Validator &validator) {
 	bool hasRemoval = false;
 
-	for (auto it = urlComponents.begin(); it != urlComponents.end(); ++it) {
-		if ((*it)->isDeleted()) {
+	for (auto urlComponent : urlComponents) {
+		if (urlComponent->isDeleted()) {
 			continue;
 		}
 
-		if (((*it)->hasValue() && validator.isValid(*(*it))) ||
-		    (!(*it)->hasValue() && validator.allowEmptyValue())) {
+		if ((urlComponent->hasValue() && validator.isValid(*urlComponent)) ||
+		    (!urlComponent->hasValue() && validator.allowEmptyValue())) {
 			hasRemoval = true;
-			deleteComponent(*it);
+			deleteComponent(urlComponent);
 		}
 	}
 
@@ -401,7 +401,7 @@ std::vector<std::pair<UrlComponent *, UrlComponent *> > UrlParser::matchPath(con
 
 		if (!it->hasValue() && matcher.isMatching(*it)) {
 			auto valueIt = std::next(it, 1);
-			result.push_back(std::make_pair(&(*it), (valueIt != m_paths.end() ? &(*valueIt) : NULL)));
+			result.emplace_back(&(*it), (valueIt != m_paths.end() ? &(*valueIt) : NULL));
 		}
 	}
 
@@ -411,19 +411,19 @@ std::vector<std::pair<UrlComponent *, UrlComponent *> > UrlParser::matchPath(con
 bool UrlParser::removePath(const std::vector<std::pair<UrlComponent *, UrlComponent *> > &urlComponents,
                            const UrlComponent::Validator &validator) {
 	bool hasRemoval = false;
-	for (auto it = urlComponents.begin(); it != urlComponents.end(); ++it) {
-		if (it->second == NULL || (m_titledbVersion <= 123 && it->second->getValueLen() == 0)) {
+	for (const auto &urlComponent : urlComponents) {
+		if (urlComponent.second == NULL || (m_titledbVersion <= 123 && urlComponent.second->getValueLen() == 0)) {
 			if (validator.allowEmptyValue()) {
 				hasRemoval = true;
-				deleteComponent(it->first);
+				deleteComponent(urlComponent.first);
 			}
 		} else {
-			const char *value = (m_titledbVersion <= 123) ? it->second->getValue() : it->second->getString().c_str();
-			size_t valueLen = (m_titledbVersion <= 123) ? it->second->getValueLen() : it->second->getString().size();
+			const char *value = (m_titledbVersion <= 123) ? urlComponent.second->getValue() : urlComponent.second->getString().c_str();
+			size_t valueLen = (m_titledbVersion <= 123) ? urlComponent.second->getValueLen() : urlComponent.second->getString().size();
 			if (validator.isValid(value, valueLen)) {
 				hasRemoval = true;
-				deleteComponent(it->first);
-				deleteComponent(it->second);
+				deleteComponent(urlComponent.first);
+				deleteComponent(urlComponent.second);
 			}
 		}
 	}
@@ -445,13 +445,13 @@ std::vector<UrlComponent *> UrlParser::matchPathParam(const UrlComponent::Matche
 		return result;
 	}
 
-	for (auto it = m_paths.begin(); it != m_paths.end(); ++it) {
-		if (it->isDeleted()) {
+	for (auto &path : m_paths) {
+		if (path.isDeleted()) {
 			continue;
 		}
 
-		if (it->hasValue() && matcher.isMatching(*it)) {
-			result.push_back(&(*it));
+		if (path.hasValue() && matcher.isMatching(path)) {
+			result.push_back(&path);
 		}
 	}
 
