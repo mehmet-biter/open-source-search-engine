@@ -18,13 +18,18 @@ UrlMatchList g_urlWhiteList("urlwhitelist.txt");
 
 UrlMatchList::UrlMatchList(const char *filename)
 	: m_filename(filename)
+	, m_dirname()
 	, m_urlMatchList(new urlmatchlist_t)
 	, m_lastModifiedTimes() {
-
+	size_t pos = m_filename.find_last_of('/');
+	if (pos != std::string::npos) {
+		m_dirname = m_filename.substr(0, pos);
+		m_filename.erase(0, pos + 1);
+	}
 }
 
 bool UrlMatchList::init() {
-	log(LOG_INFO, "Initializing UrlMatchList with %s", m_filename);
+	log(LOG_INFO, "Initializing UrlMatchList with %s", m_filename.c_str());
 
 	if (!g_loop.registerSleepCallback(60000, this, &reload, "UrlMatchList::reload", 0)) {
 		log(LOG_WARN, "UrlMatchList: Failed to register callback.");
@@ -64,8 +69,13 @@ static void parseDomain(urlmatchlist_ptr_t *urlMatchList, const std::string &col
 }
 
 bool UrlMatchList::load() {
+	std::string dirname(m_dirname);
+	if (dirname.empty()) {
+		dirname = g_hostdb.m_dir;
+	}
+
 	Dir dir;
-	if (!dir.set(g_hostdb.m_dir) || !dir.open()) {
+	if (!dir.set(dirname.c_str()) || !dir.open()) {
 		logError("Had error opening directory %s", g_hostdb.m_dir);
 		return false;
 	}
@@ -73,13 +83,19 @@ bool UrlMatchList::load() {
 	urlmatchlist_ptr_t tmpUrlMatchList(new urlmatchlist_t);
 
 	bool loadedFile = false;
-	while (const char *filename = dir.getNextFilename(m_filename)) {
-		logTrace(g_conf.m_logTraceUrlMatchList, "Loading %s", filename);
+	while (const char *filename = dir.getNextFilename(m_filename.c_str())) {
+		std::string filePath(filename);
+		if (!m_dirname.empty()) {
+			filePath.insert(0, "/");
+			filePath.insert(0, m_dirname);
+		}
+
+		logTrace(g_conf.m_logTraceUrlMatchList, "Loading %s", filePath.c_str());
 
 		struct stat st;
-		if (stat(filename, &st) != 0) {
+		if (stat(filePath.c_str(), &st) != 0) {
 			// probably not found
-			log(LOG_INFO, "UrlMatchList::load: Unable to stat %s", filename);
+			log(LOG_INFO, "UrlMatchList::load: Unable to stat %s", filePath.c_str());
 			continue;
 		}
 
@@ -90,9 +106,9 @@ bool UrlMatchList::load() {
 			continue;
 		}
 
-		log(LOG_INFO, "Loading '%s' for UrlMatchList", filename);
+		log(LOG_INFO, "Loading '%s' for UrlMatchList", filePath.c_str());
 
-		std::ifstream file(filename);
+		std::ifstream file(filePath.c_str());
 		std::string line;
 		while (std::getline(file, line)) {
 			// ignore comments & empty lines
@@ -205,7 +221,7 @@ bool UrlMatchList::load() {
 	}
 
 	if (loadedFile) {
-		logTrace(g_conf.m_logTraceUrlMatchList, "Number of url-match entries in %s: %ld", m_filename, (long)tmpUrlMatchList->size());
+		logTrace(g_conf.m_logTraceUrlMatchList, "Number of url-match entries in %s: %ld", m_filename.c_str(), (long)tmpUrlMatchList->size());
 		swapUrlMatchList(tmpUrlMatchList);
 	}
 
