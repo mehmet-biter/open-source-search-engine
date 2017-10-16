@@ -102,6 +102,7 @@ bool UrlMatchList::load() {
 
 	urlmatchlist_ptr_t tmpUrlMatchList(new urlmatchlist_t);
 
+	int totalCount = 0;
 	bool loadedFile = false;
 	while (const char *filename = dir.getNextFilename(m_filename.c_str())) {
 		std::string filePath(filename);
@@ -119,7 +120,7 @@ bool UrlMatchList::load() {
 			continue;
 		}
 
-		time_t lastModifiedTime = m_lastModifiedTimes[filename];
+		time_t lastModifiedTime = m_lastModifiedTimes[filePath];
 		if (lastModifiedTime != 0 && lastModifiedTime == st.st_mtime) {
 			// not modified. assume successful
 			logTrace(g_conf.m_logTraceUrlMatchList, "Not modified");
@@ -128,6 +129,7 @@ bool UrlMatchList::load() {
 
 		log(LOG_INFO, "Loading '%s' for UrlMatchList", filePath.c_str());
 
+		int count = 0;
 		std::ifstream file(filePath.c_str());
 		std::string line;
 		while (std::getline(file, line)) {
@@ -232,16 +234,19 @@ bool UrlMatchList::load() {
 			}
 
 			logTrace(g_conf.m_logTraceUrlMatchList, "Adding criteria '%s' to list", line.c_str());
+			++count;
 		}
 
-		m_lastModifiedTimes[filename] = st.st_mtime;
+		m_lastModifiedTimes[filePath] = st.st_mtime;
 
 		loadedFile = true;
-		logTrace(g_conf.m_logTraceUrlMatchList, "Loaded %s", filename);
+		log(LOG_INFO, "Loaded '%s' with %d entries for UrlMatchList", filePath.c_str(), count);
+
+		totalCount += count;
 	}
 
 	if (loadedFile) {
-		logTrace(g_conf.m_logTraceUrlMatchList, "Number of url-match entries in %s: %ld", m_filename.c_str(), (long)tmpUrlMatchList->m_urlMatches.size());
+		logTrace(g_conf.m_logTraceUrlMatchList, "Number of url-match entries in %s: %d", m_filename.c_str(), totalCount);
 		swapUrlMatchList(tmpUrlMatchList);
 	}
 
