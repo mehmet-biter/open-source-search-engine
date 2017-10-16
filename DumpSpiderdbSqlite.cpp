@@ -13,33 +13,36 @@ static const char *formatTime(time_t when, char buf[32]) {
 }
 
 static const char *formatRequestFlags(int rf, char *buf) {
+	SpiderdbRequestFlags flags(rf);
 	sprintf(buf,"%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
-		(rf&(1<<1))!=0 ? "au":"",
-		(rf&(1<<2))!=0 ? "Ri":"",
-		(rf&(1<<3))!=0 ? "Cn":"",
-		(rf&(1<<4))!=0 ? "PP":"",
-		(rf&(1<<5))!=0 ? "Di":"",
-		(rf&(1<<6))!=0 ? "rs":"",
-		(rf&(1<<7))!=0 ? "pl":"",
-		(rf&(1<<0))!=0 ? "rc":"",
-		(rf&(1<<8))!=0 ? "fd":"",
-		(rf&(1<<9))!=0 ? "ij":"",
-		(rf&(1<<10))!=0 ? "rp":"",
-		(rf&(1<<11))!=0 ? "ff":"",
-		(rf&(1<<12))!=0 ? "ai":"",
-		(rf&(1<<13))!=0 ? "aV":"",
-		(rf&(1<<14))!=0 ? "sl":"");
+		flags.m_isAddUrl ? "au":"",
+		flags.m_isPageReindex ? "Ri":"",
+		flags.m_isUrlCanonical ? "Cn":"",
+		flags.m_isPageParser ? "PP":"",
+		flags.m_urlIsDocId ? "Di":"",
+		flags.m_isRSSExt ? "rs":"",
+		flags.m_isUrlPermalinkFormat ? "pl":"",
+		flags.m_recycleContent ? "rc":"",
+		flags.m_forceDelete ? "fd":"",
+		flags.m_forceDelete ? "ij":"",
+		flags.m_hadReply ? "rp":"",
+		flags.m_fakeFirstIp ? "ff":"",
+		flags.m_hasAuthorityInlink ? "ai":"",
+		flags.m_hasAuthorityInlinkValid ? "aV":"",
+		flags.m_avoidSpiderLinks ? "sl":"");
 	return buf;
 }
 
 
 static const char *formatReplyFlags(int rf, char *buf) {
-	sprintf(buf,"%s|%s|%s|%s|%s",
-		(rf&(1<<0)) ? "rs":"",
-		(rf&(1<<1)) ? "pl":"",
-		(rf&(1<<2)) ? "ix":"",
-		(rf&(1<<3)) ? "ai":"",
-		(rf&(1<<4)) ? "ir":"");
+	SpiderdbReplyFlags flags(rf);
+	sprintf(buf,"%s|%s|%s|%s|%s|%s",
+		flags.m_isRSS ? "rs":"",
+		flags.m_isPermalink ? "pl":"",
+		flags.m_isIndexed ? "ix":"",
+		flags.m_hasAuthorityInlink ? "ai":"",
+		flags.m_fromInjectionRequest ? "ir":"",
+		flags.m_isIndexedINValid ? "iX":"");
 	return buf;
 }
 
@@ -76,7 +79,7 @@ void dumpSpiderdbSqlite(const char *collname, bool interpret_values) {
 	}
 	
 	if(interpret_values)
-		printf("#%14s,%15s,%10s,%10s,%10s,%5s,%5s,%20s,%20s,%10s,%20s,%3s,%3s,%s,%s,%s,%s,%s,%s,%s,%s\n", "firstip","uh48","hosthash","domhash","sitehash","slink","plink","add-time","discovery-time","chash","reqflags","pri","err","sme","url","pctchange","spidertime","errcode","http","lang","replyflags");
+		printf("#%14s,%15s,%10s,%10s,%10s,%5s,%5s,%20s,%20s,%10s,%25s,%3s,%3s,%s,%s,%s,%s,%s,%s,%s,%s\n", "firstip","uh48","hosthash","domhash","sitehash","slink","plink","add-time","discovery-time","chash","reqflags","pri","err","sme","url","pctchange","spidertime","errcode","http","lang","replyflags");
 	else
 		printf("#%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n", "firstip","uh48","hosthash","domhash","sitehash","slink","plink","add-time","discovery-time","chash","reqflags","pri","err","sme","url","pctchange","spidertime","errcode","http","lang","replyflags");
 			
@@ -132,7 +135,7 @@ void dumpSpiderdbSqlite(const char *collname, bool interpret_values) {
 		else
 			printf("%10s,","");
 		if(interpret_values)
-			printf("%20s,",formatRequestFlags(requestFlags,requestflagbuf));
+			printf("%-25s,",formatRequestFlags(requestFlags,requestflagbuf));
 		else
 			printf("%5u,",requestFlags);
 		if(sqlite3_column_type(stmt,11)!=SQLITE_NULL)
