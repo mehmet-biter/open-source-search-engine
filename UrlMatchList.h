@@ -3,6 +3,7 @@
 
 #include "UrlMatch.h"
 #include <vector>
+#include <map>
 #include <memory>
 
 typedef std::vector<UrlMatch> urlmatchlist_t;
@@ -29,10 +30,9 @@ private:
 	void swapUrlMatchList(urlmatchlistconst_ptr_t urlMatchList);
 
 	const char *m_filename;
-
 	urlmatchlistconst_ptr_t m_urlMatchList;
 
-	time_t m_lastModifiedTime;
+	std::map<std::string, time_t> m_lastModifiedTimes;
 };
 
 extern UrlMatchList g_urlBlackList;

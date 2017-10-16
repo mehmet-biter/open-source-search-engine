@@ -4,12 +4,14 @@
 #include "Loop.h"
 #include "Url.h"
 #include "GbUtil.h"
+#include "Dir.h"
+#include "Hostdb.h"
 #include <fstream>
 #include <sys/stat.h>
 #include <atomic>
 
 
-UrlMatchList g_urlBlackList("urlblacklist.txt");
+UrlMatchList g_urlBlackList("urlblacklist*.txt");
 UrlMatchList g_urlWhiteList("urlwhitelist.txt");
 
 
@@ -17,7 +19,8 @@ UrlMatchList g_urlWhiteList("urlwhitelist.txt");
 UrlMatchList::UrlMatchList(const char *filename)
 	: m_filename(filename)
 	, m_urlMatchList(new urlmatchlist_t)
-	, m_lastModifiedTime(0) {
+	, m_lastModifiedTimes() {
+
 }
 
 bool UrlMatchList::init() {
@@ -61,135 +64,152 @@ static void parseDomain(urlmatchlist_ptr_t *urlMatchList, const std::string &col
 }
 
 bool UrlMatchList::load() {
-	logTrace(g_conf.m_logTraceUrlMatchList, "Loading %s", m_filename);
-
-	struct stat st;
-	if (stat(m_filename, &st) != 0) {
-		// probably not found
-		log(LOG_INFO, "UrlMatchList::load: Unable to stat %s", m_filename);
+	Dir dir;
+	if (!dir.set(g_hostdb.m_dir) || !dir.open()) {
+		logError("Had error opening directory %s", g_hostdb.m_dir);
 		return false;
-	}
-
-	if (m_lastModifiedTime != 0 && m_lastModifiedTime == st.st_mtime) {
-		// not modified. assume successful
-		logTrace(g_conf.m_logTraceUrlMatchList, "Not modified");
-		return true;
 	}
 
 	urlmatchlist_ptr_t tmpUrlMatchList(new urlmatchlist_t);
 
-	std::ifstream file(m_filename);
-	std::string line;
-	while (std::getline(file, line)) {
-		// ignore comments & empty lines
-		if (line.length() == 0 || line[0] == '#') {
+	bool loadedFile = false;
+	while (const char *filename = dir.getNextFilename(m_filename)) {
+		logTrace(g_conf.m_logTraceUrlMatchList, "Loading %s", filename);
+
+		struct stat st;
+		if (stat(filename, &st) != 0) {
+			// probably not found
+			log(LOG_INFO, "UrlMatchList::load: Unable to stat %s", filename);
 			continue;
 		}
 
-		// look for first space or tab
-		auto firstColEnd = line.find_first_of(" \t");
-		size_t secondCol = line.find_first_not_of(" \t", firstColEnd);
-
-		if (firstColEnd == std::string::npos || secondCol == std::string::npos) {
-			// invalid format
+		time_t lastModifiedTime = m_lastModifiedTimes[filename];
+		if (lastModifiedTime != 0 && lastModifiedTime == st.st_mtime) {
+			// not modified. assume successful
+			logTrace(g_conf.m_logTraceUrlMatchList, "Not modified");
 			continue;
 		}
 
-		size_t secondColEnd = line.find_first_of(" \t", secondCol);
+		log(LOG_INFO, "Loading '%s' for UrlMatchList", filename);
 
-		size_t thirdCol = line.find_first_not_of(" \t", secondColEnd);
-		size_t thirdColEnd = line.find_first_of(" \t", thirdCol);
-
-		size_t fourthCol = line.find_first_not_of(" \t", thirdColEnd);
-		size_t fourthColEnd = line.find_first_of(" \t", fourthCol);
-
-		std::string col2(line, secondCol, secondColEnd - secondCol);
-		std::string col3;
-		if (thirdCol != std::string::npos) {
-			col3 = std::string(line, thirdCol, thirdColEnd - thirdCol);
-		}
-
-		std::string col4;
-		if (fourthCol != std::string::npos) {
-			col4 = std::string(line, fourthCol, fourthColEnd - fourthCol);
-		}
-
-		switch (line[0]) {
-			case 'd':
-				// domain
-				if (firstColEnd == 6 && memcmp(line.data(), "domain", 6) == 0) {
-					parseDomain(&tmpUrlMatchList, col2, col3, col4);
-				} else {
-					logError("Invalid line found. Ignoring line='%s'", line.c_str());
-					continue;
-				}
-				break;
-			case 'f':
-				// file
-				if (firstColEnd == 4 && memcmp(line.data(), "file", 4) == 0) {
-					tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_file, col2)));
-				} else {
-					logError("Invalid line found. Ignoring line='%s'", line.c_str());
-					continue;
-				}
-				break;
-			case 'h':
-				// host
-				if (firstColEnd == 4 && memcmp(line.data(), "host", 4) == 0) {
-					tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchhost_t>(new urlmatchhost_t(col2, col3)));
-				} else {
-					logError("Invalid line found. Ignoring line='%s'", line.c_str());
-					continue;
-				}
-				break;
-			case 'p':
-				if (firstColEnd == 5 && memcmp(line.data(), "param", 5) == 0) {
-					// param
-					tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchparam_t>(new urlmatchparam_t(col2, col3)));
-				} else if (firstColEnd == 4 && memcmp(line.data(), "path", 4) == 0) {
-					// path
-					tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_path, col2)));
-				} else {
-					logError("Invalid line found. Ignoring line='%s'", line.c_str());
-					continue;
-				}
-				break;
-			case 'r':
-				// regex
-				if (firstColEnd == 5 && memcmp(line.data(), "regex", 5) == 0 && !col3.empty()) {
-					// check for wildcard domain
-					if (col2.length() == 1 && col2[0] == '*') {
-						col2.clear();
-					}
-
-					tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchregex_t>(new urlmatchregex_t(col3, GbRegex(col3.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE), col2)));
-				} else {
-					logError("Invalid line found. Ignoring line='%s'", line.c_str());
-					continue;
-				}
-				break;
-			case 't':
-				if (firstColEnd == 3 && memcmp(line.data(), "tld", 3) == 0) {
-					tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchtld_t>(new urlmatchtld_t(col2)));
-				} else {
-					logError("Invalid line found. Ignoring line='%s'", line.c_str());
-					continue;
-				}
-				break;
-			default:
-				logError("Invalid line found. Ignoring line='%s'", line.c_str());
+		std::ifstream file(filename);
+		std::string line;
+		while (std::getline(file, line)) {
+			// ignore comments & empty lines
+			if (line.length() == 0 || line[0] == '#') {
 				continue;
+			}
+
+			// look for first space or tab
+			auto firstColEnd = line.find_first_of(" \t");
+			size_t secondCol = line.find_first_not_of(" \t", firstColEnd);
+
+			if (firstColEnd == std::string::npos || secondCol == std::string::npos) {
+				// invalid format
+				continue;
+			}
+
+			size_t secondColEnd = line.find_first_of(" \t", secondCol);
+
+			size_t thirdCol = line.find_first_not_of(" \t", secondColEnd);
+			size_t thirdColEnd = line.find_first_of(" \t", thirdCol);
+
+			size_t fourthCol = line.find_first_not_of(" \t", thirdColEnd);
+			size_t fourthColEnd = line.find_first_of(" \t", fourthCol);
+
+			std::string col2(line, secondCol, secondColEnd - secondCol);
+			std::string col3;
+			if (thirdCol != std::string::npos) {
+				col3 = std::string(line, thirdCol, thirdColEnd - thirdCol);
+			}
+
+			std::string col4;
+			if (fourthCol != std::string::npos) {
+				col4 = std::string(line, fourthCol, fourthColEnd - fourthCol);
+			}
+
+			switch (line[0]) {
+				case 'd':
+					// domain
+					if (firstColEnd == 6 && memcmp(line.data(), "domain", 6) == 0) {
+						parseDomain(&tmpUrlMatchList, col2, col3, col4);
+					} else {
+						logError("Invalid line found. Ignoring line='%s'", line.c_str());
+						continue;
+					}
+					break;
+				case 'f':
+					// file
+					if (firstColEnd == 4 && memcmp(line.data(), "file", 4) == 0) {
+						tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_file, col2)));
+					} else {
+						logError("Invalid line found. Ignoring line='%s'", line.c_str());
+						continue;
+					}
+					break;
+				case 'h':
+					// host
+					if (firstColEnd == 4 && memcmp(line.data(), "host", 4) == 0) {
+						tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchhost_t>(new urlmatchhost_t(col2, col3)));
+					} else {
+						logError("Invalid line found. Ignoring line='%s'", line.c_str());
+						continue;
+					}
+					break;
+				case 'p':
+					if (firstColEnd == 5 && memcmp(line.data(), "param", 5) == 0) {
+						// param
+						tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchparam_t>(new urlmatchparam_t(col2, col3)));
+					} else if (firstColEnd == 4 && memcmp(line.data(), "path", 4) == 0) {
+						// path
+						tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchstr_t>(new urlmatchstr_t(url_match_path, col2)));
+					} else {
+						logError("Invalid line found. Ignoring line='%s'", line.c_str());
+						continue;
+					}
+					break;
+				case 'r':
+					// regex
+					if (firstColEnd == 5 && memcmp(line.data(), "regex", 5) == 0 && !col3.empty()) {
+						// check for wildcard domain
+						if (col2.length() == 1 && col2[0] == '*') {
+							col2.clear();
+						}
+
+						tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchregex_t>(new urlmatchregex_t(col3, GbRegex(col3.c_str(), PCRE_NO_AUTO_CAPTURE, PCRE_STUDY_JIT_COMPILE), col2)));
+					} else {
+						logError("Invalid line found. Ignoring line='%s'", line.c_str());
+						continue;
+					}
+					break;
+				case 't':
+					if (firstColEnd == 3 && memcmp(line.data(), "tld", 3) == 0) {
+						tmpUrlMatchList->emplace_back(std::shared_ptr<urlmatchtld_t>(new urlmatchtld_t(col2)));
+					} else {
+						logError("Invalid line found. Ignoring line='%s'", line.c_str());
+						continue;
+					}
+					break;
+				default:
+					logError("Invalid line found. Ignoring line='%s'", line.c_str());
+					continue;
+			}
+
+			logTrace(g_conf.m_logTraceUrlMatchList, "Adding criteria '%s' to list", line.c_str());
 		}
 
-		logTrace(g_conf.m_logTraceUrlMatchList, "Adding criteria '%s' to list", line.c_str());
+		m_lastModifiedTimes[filename] = st.st_mtime;
+
+		loadedFile = true;
+		logTrace(g_conf.m_logTraceUrlMatchList, "Loaded %s", filename);
 	}
 
-	logTrace(g_conf.m_logTraceUrlMatchList, "Number of url-match entries in %s: %ld", m_filename, (long)tmpUrlMatchList->size());
-	swapUrlMatchList(tmpUrlMatchList);
-	m_lastModifiedTime = st.st_mtime;
+	if (loadedFile) {
+		logTrace(g_conf.m_logTraceUrlMatchList, "Number of url-match entries in %s: %ld", m_filename, (long)tmpUrlMatchList->size());
+		swapUrlMatchList(tmpUrlMatchList);
+	}
 
-	logTrace(g_conf.m_logTraceUrlMatchList, "Loaded %s", m_filename);
-	return true;
+	return loadedFile;
 }
 
 bool UrlMatchList::isUrlMatched(const Url &url) {
