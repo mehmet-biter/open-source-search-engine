@@ -226,11 +226,19 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			"      m_errCount = 0,"
 			"      m_sameErrCount = 0,"
 			"      m_contentHash32 = ?"
+			"      m_requestFlags = m_requestFlags | ?,"
 			"  WHERE m_firstIp=? and m_uh48=?";
 		sqlite3_stmt *updateStatement = NULL;
 		if(sqlite3_prepare_v2(db, update_statement, -1, &updateStatement, &pzTail) != SQLITE_OK) {
 			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errmsg(db),pzTail);
 			return false;
+		}
+		int requestFlagBits = 0;
+		if(srep->m_hasAuthorityInlinkValid && srep->m_hasAuthorityInlink) {
+			//a bit cumbersome but flexible when we rearrange the bitmasks
+			SpiderdbRequestFlags a(0), b(0);
+			b.m_hasAuthorityInlink = true;
+			requestFlagBits = ((int)b) - ((int)a);
 		}
 		
 		sqlite3_bind_double(updateStatement, 1, srep->m_percentChangedPerDay);
@@ -242,13 +250,13 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 		rpf.m_isRSS                = srep->m_isRSS;
 		rpf.m_isPermalink          = srep->m_isPermalink;
 		rpf.m_isIndexed            = srep->m_isIndexed;
-		rpf.m_hasAuthorityInlink   = srep->m_hasAuthorityInlink;
 		rpf.m_fromInjectionRequest = srep->m_fromInjectionRequest;
 		rpf.m_isIndexedINValid     = srep->m_isIndexedINValid;
 		sqlite3_bind_int(updateStatement, 6, (int)rpf);
 		sqlite3_bind_int(updateStatement, 7, srep->m_contentHash32);
-		sqlite3_bind_int64(updateStatement, 8, (uint32_t)firstIp);
-		sqlite3_bind_int64(updateStatement, 9, uh48);
+		sqlite3_bind_int(updateStatement, 8, requestFlagBits);
+		sqlite3_bind_int64(updateStatement, 9, (uint32_t)firstIp);
+		sqlite3_bind_int64(updateStatement, 10, uh48);
 		
 		if(sqlite3_step(updateStatement) != SQLITE_DONE) {
 			log(LOG_ERROR,"sqlitespider: Update error: %s",sqlite3_errmsg(db));
@@ -418,7 +426,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 			srep.m_isRSS                    = replyFlags.m_isRSS;
 			srep.m_isPermalink              = replyFlags.m_isPermalink;
 			srep.m_isIndexed                = replyFlags.m_isIndexed;
-			srep.m_hasAuthorityInlink       = replyFlags.m_hasAuthorityInlink;
+			srep.m_hasAuthorityInlink       = requestFlags.m_hasAuthorityInlink;
 			srep.m_fromInjectionRequest     = replyFlags.m_fromInjectionRequest;
 			srep.m_isIndexedINValid         = replyFlags.m_isIndexedINValid;
 			srep.m_hasAuthorityInlinkValid  = requestFlags.m_hasAuthorityInlinkValid;

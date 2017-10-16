@@ -36,11 +36,10 @@ static const char *formatRequestFlags(int rf, char *buf) {
 
 static const char *formatReplyFlags(int rf, char *buf) {
 	SpiderdbReplyFlags flags(rf);
-	sprintf(buf,"%s|%s|%s|%s|%s|%s",
+	sprintf(buf,"%s|%s|%s|%s|%s",
 		flags.m_isRSS ? "rs":"",
 		flags.m_isPermalink ? "pl":"",
 		flags.m_isIndexed ? "ix":"",
-		flags.m_hasAuthorityInlink ? "ai":"",
 		flags.m_fromInjectionRequest ? "ir":"",
 		flags.m_isIndexedINValid ? "iX":"");
 	return buf;

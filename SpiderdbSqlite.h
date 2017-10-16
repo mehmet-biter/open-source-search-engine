@@ -63,7 +63,6 @@ struct SpiderdbReplyFlags {
 	bool m_isRSS:1;
 	bool m_isPermalink:1;
 	bool m_isIndexed:1;
-	bool m_hasAuthorityInlink:1;
 	bool m_fromInjectionRequest:1;
 	bool m_isIndexedINValid:1;
 	SpiderdbReplyFlags() : m_reserved(0) {}
@@ -73,7 +72,7 @@ struct SpiderdbReplyFlags {
 	operator unsigned() const { return *reinterpret_cast<const unsigned*>(this); }
 private:
 	//force the compiler to use 32 bits for this struct
-	uint32_t m_reserved:26;
+	uint32_t m_reserved:27;
 };
 
 

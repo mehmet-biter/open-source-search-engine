@@ -243,7 +243,6 @@ int convertSpiderDb(const char *collname) {
 					rpf.m_isRSS = prevSpiderReply->m_isRSS;
 					rpf.m_isPermalink = prevSpiderReply->m_isPermalink;
 					rpf.m_isIndexed = prevSpiderReply->m_isIndexed;
-					rpf.m_hasAuthorityInlink = prevSpiderReply->m_hasAuthorityInlink;
 					rpf.m_fromInjectionRequest = prevSpiderReply->m_fromInjectionRequest;
 					rpf.m_isIndexedINValid = prevSpiderReply->m_isIndexedINValid;
 					sqlite3_bind_int(stmt, 21, (int)rpf);
