@@ -469,7 +469,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		sreq.m_fakeFirstIp              = requestFlags.m_fakeFirstIp;
 		sreq.m_hasAuthorityInlink       = requestFlags.m_hasAuthorityInlink;
 		sreq.m_hasAuthorityInlinkValid  = requestFlags.m_hasAuthorityInlinkValid;
-		sreq.m_siteNumInlinksValid      = sqlite3_column_type(stmt,6)!=SQLITE_NULL;
+		sreq.m_siteNumInlinksValid      = sqlite3_column_type(stmt,5)!=SQLITE_NULL;
 		sreq.m_avoidSpiderLinks         = requestFlags.m_avoidSpiderLinks;
 		sreq.m_ufn                      = 0; //only used in-memory
 		sreq.m_priority                 = priority;
