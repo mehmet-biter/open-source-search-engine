@@ -272,7 +272,8 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			"      m_errCode = ?,"
 			"      m_httpStatus = ?,"
 			"      m_errCount = m_errCount + 1,"
-			"      m_sameErrCount = CASE WHEN m_errCode=? THEN IFNULL(m_sameErrCount,0) + 1 ELSE 0 END"
+			"      m_sameErrCount = CASE WHEN m_errCode=? THEN IFNULL(m_sameErrCount,0) + 1 ELSE 0 END,"
+			"      m_errCode = IFNULL(m_errCode,0)"
 			"  WHERE m_firstIp=? and m_uh48=?";
 		sqlite3_stmt *updateStatement = NULL;
 		if(sqlite3_prepare_v2(db, update_statement, -1, &updateStatement, &pzTail) != SQLITE_OK) {
