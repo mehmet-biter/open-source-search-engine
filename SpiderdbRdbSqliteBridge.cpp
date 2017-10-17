@@ -237,7 +237,7 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 		if(srep->m_hasAuthorityInlinkValid && srep->m_hasAuthorityInlink) {
 			//a bit cumbersome but flexible when we rearrange the bitmasks
 			SpiderdbRequestFlags a(0), b(0);
-			b.m_hasAuthorityInlink = true;
+			b.m_hasAuthorityInlink |= true;
 			requestFlagBits = ((int)b) - ((int)a);
 		}
 		
