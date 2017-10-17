@@ -30,9 +30,13 @@ extern SpiderdbSqlite g_spiderdb_sqlite;
 extern SpiderdbSqlite g_spiderdb_sqlite2;
 
 
-//see Spider.h for field definitions/comments/caveats
+//see Spider.h for bitfield definitions/comments/caveats
 
-//To save space we have to pack several flags into bitfields. This is done for both some requestand reply flags. To make things a bit easier with
+//To save space we have to pack several flags into bitfields. This is done for both some request and reply
+//flags. To make things a bit easier with manipulating them the structs also have conversion to/from ints.
+//Do not insert or delete bitfield members as the values are persisted in spiderdb. Instead take bit from
+//the bottom m_reserved for new fields and mark deleted fields as reserved.
+
 struct SpiderdbRequestFlags {
 	bool m_recycleContent:1;
 	bool m_isAddUrl:1;
@@ -52,6 +56,9 @@ struct SpiderdbRequestFlags {
 	SpiderdbRequestFlags() : m_reserved(0) {}
 	SpiderdbRequestFlags(int v) { *reinterpret_cast<int*>(this) = v; }
 	SpiderdbRequestFlags(unsigned v) { *reinterpret_cast<unsigned*>(this) = v; }
+	SpiderdbRequestFlags& operator=(const SpiderdbRequestFlags&) = default;
+	SpiderdbRequestFlags& operator=(int v) { *reinterpret_cast<int*>(this) = v; return *this; }
+	SpiderdbRequestFlags& operator=(unsigned v) { *reinterpret_cast<unsigned*>(this) = v; return *this; }
 	operator int() const { return *reinterpret_cast<const int*>(this); }
 	operator unsigned() const { return *reinterpret_cast<const unsigned*>(this); }
 private:
@@ -68,51 +75,14 @@ struct SpiderdbReplyFlags {
 	SpiderdbReplyFlags() : m_reserved(0) {}
 	SpiderdbReplyFlags(int v) { *reinterpret_cast<int*>(this) = v; }
 	SpiderdbReplyFlags(unsigned v) { *reinterpret_cast<unsigned*>(this) = v; }
+	SpiderdbReplyFlags& operator=(const SpiderdbReplyFlags&) = default;
+	SpiderdbReplyFlags& operator=(int v) { *reinterpret_cast<int*>(this) = v; return *this; }
+	SpiderdbReplyFlags& operator=(unsigned v) { *reinterpret_cast<unsigned*>(this) = v; return *this; }
 	operator int() const { return *reinterpret_cast<const int*>(this); }
 	operator unsigned() const { return *reinterpret_cast<const unsigned*>(this); }
 private:
 	//force the compiler to use 32 bits for this struct
 	uint32_t m_reserved:27;
-};
-
-
-struct RawSpiderdbRecord {
-	int32_t         m_firstIp;
-	int32_t         m_uh48;
-	//Request fields:
-	int32_t         m_hostHash32;
-	int32_t         m_domHash32;
-	int32_t         m_siteHash32;
-	int32_t         m_siteNumInlinks;
-	int32_t         m_pageNumInlinks;
-	int32_t         m_addedTime;
-	int32_t         m_discoveryTime;
-	int32_t         m_contentHash32; //0 = unknown/invalid
-	union {
-		SpiderdbRequestFlags requestFlags;
-		uint32_t m_requestFlags;
-	};
-	int32_t         m_priority;
-	bool            m_priorityValid;
-	int32_t         m_errCount;
-	bool            m_errCountValid;
-	int32_t         m_sameErrCount;
-	std::string     m_url;
-	//Reply fields
-	float           m_percentChangedPerDay;
-	bool            m_percentChangedPerDayValid;
-	int32_t         m_spideredTime;
-	bool            m_spideredTimeValid;
-	int32_t         m_errCodeValid;
-	bool            m_errCode;
-	int32_t         m_httpStatus;
-	bool            m_httpStatusValid;
-	int32_t         m_langId;
-	bool            m_langIdValid;
-	union {
-		SpiderdbReplyFlags replyFlags;
-		uint32_t m_replyFlags;
-	};
 };
 
 #endif
