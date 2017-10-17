@@ -11,6 +11,7 @@ enum urlmatchtype_t {
 	url_match_domain,
 	url_match_file,
 	url_match_host,
+	url_match_hostsuffix,
 	url_match_param,
 	url_match_path,
 	url_match_regex,
