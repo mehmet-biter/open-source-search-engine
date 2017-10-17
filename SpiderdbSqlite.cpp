@@ -45,6 +45,8 @@ sqlite3 *SpiderdbSqlite::getOrCreateDb(collnum_t collnum) {
 		sprintf(sqlitedbName, "%s/spiderdbRebuild.sqlite3", collectionDirName);
 	
 	sqlite3 *db = openDb(sqlitedbName);
+	if(!db)
+		return NULL;
 	
 	dbs[collnum] = db;
 	

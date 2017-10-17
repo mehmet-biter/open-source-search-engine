@@ -1345,6 +1345,7 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	if(strcmp(cmd, "dumpcsv") == 0) {
+		g_conf.m_readOnlyMode = true; //we don't need write access
 		g_conf.m_doingCommandLine = true; // so we do not log every collection coll.conf we load
 		if( !g_collectiondb.loadAllCollRecs()) {
 			log("db: Collectiondb init failed.");
