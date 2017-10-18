@@ -134,6 +134,7 @@ static const char * const g_files[] = {
 	"libcld2_full.so",
 	"libcld3.so",
 	"libced.so",
+	"libcares.so.2",
 
 	"LICENSE",
 	"pngtopnm",
