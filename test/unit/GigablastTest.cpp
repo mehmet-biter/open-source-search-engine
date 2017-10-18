@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 		strcat(currentPath, "/");
 	}
 
-	g_hostdb.init(-1, false, false, currentPath);
+	g_hostdb.init(-1, false, false, true, currentPath);
 	g_conf.init(NULL);
 
 	g_log.init("/dev/stdout");

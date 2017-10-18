@@ -102,7 +102,7 @@ void Hostdb::reset ( ) {
 // . gets filename that contains the hosts from the Conf file
 // . return false on errro
 // . g_errno may NOT be set
-bool Hostdb::init(int32_t hostIdArg, bool proxyHost, bool useTmpCluster, const char *cwd) {
+bool Hostdb::init(int32_t hostIdArg, bool proxyHost, bool useTmpCluster, bool initMyHost, const char *cwd) {
 	// reset my ip and port
 	m_myIp             = 0;
 	m_myPort           = 0;
@@ -818,34 +818,37 @@ createFile:
 		return true;
 	}
 
-	// now get host based on cwd and ip
-	Host *host = getHost2 ( cwd , localIps );
+	if (initMyHost) {
+		// now get host based on cwd and ip
+		Host *host = getHost2(cwd, localIps);
 
-	// now set m_myIp, m_myPort, m_myPort2 and m_myMachineNum
-	if ( proxyHost )
-		host = getProxy2 ( cwd , localIps ); //hostId );
-	if ( ! host ) {
-		log(LOG_WARN, "conf: Could not find host with path %s and local ip in %s", cwd, filename);
-		return false;
+		// now set m_myIp, m_myPort, m_myPort2 and m_myMachineNum
+		if (proxyHost)
+			host = getProxy2(cwd, localIps); //hostId );
+		if (!host) {
+			log(LOG_WARN, "conf: Could not find host with path %s and local ip in %s", cwd, filename);
+			return false;
+		}
+		m_myIp = host->m_ip;    // internal IP
+		m_myPort = host->m_port;  // low priority udp port
+		m_myHost = host;
+
+		//we are alive, obviously
+		m_myHost->m_isAlive = true;
+
+		//we are the lowest repair mode host until we know better
+		m_minRepairModeHost = m_myHost;
+
+		// THIS hostId
+		m_myHostId = m_myHost->m_hostId;
 	}
-	m_myIp         = host->m_ip;    // internal IP
-	m_myPort       = host->m_port;  // low priority udp port
-	m_myHost       = host;
-
-	//we are alive, obviously
-	m_myHost->m_isAlive = true;
 
 	//in single-instance setups the hosts.conf CRC is always OK
 	if(m_numHosts==1) {
 		m_hostsConfInDisagreement = false;
 		m_hostsConfInAgreement = true;
 	}
-	
-	//we are the lowest repair mode host until we know better
-	m_minRepairModeHost = m_myHost;
 
-	// THIS hostId
-	m_myHostId = m_myHost->m_hostId;
 	// set hosts per shard (mirror group)
 	m_numHostsPerShard = m_numHosts / m_numShards;
 
@@ -877,26 +880,27 @@ createFile:
 		m_numStripeHostsPerShard = (m_numHosts - num_noquery) / m_numShards;
 	}
 
+	if (initMyHost) {
+		// get THIS host
+		Host *h = getHost(m_myHostId);
+		if (proxyHost)
+			h = getProxy(m_myHostId);
+		if (!h) {
+			log(LOG_WARN, "conf: HostId %" PRId32" not found in %s.", m_myHostId, filename);
+			return false;
+		}
+		// set m_dir to THIS host's working dir
+		strncpy(m_dir, h->m_dir, sizeof(m_dir));
+		m_dir[sizeof(m_dir) - 1] = '\0';
 
-	// get THIS host
-	Host *h = getHost ( m_myHostId );
-	if ( proxyHost )
-		h = getProxy ( m_myHostId );
-	if ( ! h ) {
-		log(LOG_WARN, "conf: HostId %" PRId32" not found in %s.", m_myHostId,filename);
-		return false;
+		// likewise, set m_htmlDir to this host's html dir
+		snprintf(m_httpRootDir, sizeof(m_httpRootDir), "%shtml/", m_dir);
+		m_httpRootDir[sizeof(m_httpRootDir) - 1] = '\0';
+
+		snprintf(m_logFilename, sizeof(m_logFilename), "%slog%03" PRId32, m_dir, m_myHostId);
+		m_logFilename[sizeof(m_logFilename) - 1] = '\0';
 	}
-	// set m_dir to THIS host's working dir
-	strncpy(m_dir, h->m_dir, sizeof(m_dir));
-	m_dir[sizeof(m_dir)-1] = '\0';
-	
-	// likewise, set m_htmlDir to this host's html dir
-	snprintf(m_httpRootDir, sizeof(m_httpRootDir), "%shtml/" , m_dir );
-	m_httpRootDir[sizeof(m_httpRootDir)-1] = '\0';
 
-	snprintf(m_logFilename, sizeof(m_logFilename), "%slog%03" PRId32, m_dir , m_myHostId );
-	m_logFilename[sizeof(m_logFilename)-1] = '\0';
-	
 	if ( ! g_conf.m_runAsDaemon &&
 	     ! g_conf.m_logToFile )
 		sprintf(m_logFilename,"/dev/stderr");
@@ -910,18 +914,20 @@ createFile:
 		gcount++;
 	}
 
-	// set our group
-	m_myShard = getShard ( m_myHost->m_shardNum );
+	if (initMyHost) {
+		// set our group
+		m_myShard = getShard(m_myHost->m_shardNum);
+	}
 
 	//calculate CRC once and ofr all
 	getCRC();
 
 	// has the hosts
-	return hashHosts();
+	return hashHosts(initMyHost);
 }
 
 
-bool Hostdb::hashHosts ( ) {
+bool Hostdb::hashHosts(bool initMyHost) {
 	// this also holds g_hosts2 as well as g_hosts so we cannot preallocate
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
 		Host *h = &m_hosts[i];
@@ -950,13 +956,15 @@ bool Hostdb::hashHosts ( ) {
 	// . udpserver needs this?
 	// . only do this if they did not already specify a 127.0.0.1 in
 	//   the hosts.conf i guess
-	int32_t lbip = atoip("127.0.0.1");
-	Host *hxx = getUdpHost ( lbip , m_myHost->m_port );
-	// only do this if not explicitly assigned to 127.0.0.1 in hosts.conf
-	if ( ! hxx && (int32_t)m_myHost->m_ip != lbip ) {
-		int32_t loopbackIP = atoip("127.0.0.1",9);
-		if ( ! hashHost(1,m_myHost,loopbackIP,m_myHost->m_port)) 
-			return false;
+	if (initMyHost) {
+		int32_t lbip = atoip("127.0.0.1");
+		Host *hxx = getUdpHost(lbip, m_myHost->m_port);
+		// only do this if not explicitly assigned to 127.0.0.1 in hosts.conf
+		if (!hxx && (int32_t)m_myHost->m_ip != lbip) {
+			int32_t loopbackIP = atoip("127.0.0.1", 9);
+			if (!hashHost(1, m_myHost, loopbackIP, m_myHost->m_port))
+				return false;
+		}
 	}
 
 	// and the proxies as well

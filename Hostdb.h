@@ -177,7 +177,7 @@ class Hostdb {
 	// . sets itself from g_conf (our configuration class)
 	// . returns false on fatal error
 	// . gets filename from Conf.h class
-	bool init(int32_t hostId, bool proxyHost=false, bool useTempCluster=false, const char *cwd=NULL);
+	bool init(int32_t hostId, bool proxyHost=false, bool useTempCluster=false, bool initMyHost=true, const char *cwd=NULL);
 
 	// if config changes this *should* change
 	int32_t getCRC();
@@ -276,7 +276,7 @@ class Hostdb {
 	}
 
 	// hash the hosts into the hash tables for lookup
-	bool  hashHosts();
+	bool  hashHosts(bool initMyHost=true);
 	bool  hashHost ( bool udp , Host *h , uint32_t ip , uint16_t port ) ;
 	int32_t  getHostId        ( uint32_t ip , uint16_t port ) ;
 	Host *getHostByIp      ( uint32_t ip ) ;
