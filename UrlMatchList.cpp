@@ -19,8 +19,8 @@ typedef std::vector<UrlMatch> urlmatchlist_t;
 typedef spp::sparse_hash_map<std::string, urlmatchlist_t> urlmatchlist_map_t;
 
 struct UrlMatchListItem {
+	spp::sparse_hash_set<std::string> m_domainMatches;
 	urlmatchlist_map_t m_listMatches;
-
 	urlmatchlist_t m_urlMatches;
 };
 
@@ -56,7 +56,20 @@ void UrlMatchList::reload(int /*fd*/, void *state) {
 	urlMatchList->load();
 }
 
-static void parseDomain(urlmatchlistitem_ptr_t *urlMatchList, const std::string &col2, const std::string &col3, const std::string &col4) {
+static bool parseDomain(urlmatchlistitem_ptr_t *urlMatchList, const std::string &col2, const std::string &col3, const std::string &col4) {
+	// verify that col2 is actually a domain
+	Url url;
+	url.set(col2.c_str());
+
+	if (static_cast<size_t>(url.getDomainLen()) != col2.length()) {
+		return false;
+	}
+
+	if (col3.empty() && col4.empty()) {
+		(*urlMatchList)->m_domainMatches.insert(col2);
+		return true;
+	}
+
 	std::string allowStr;
 	if (!col3.empty()) {
 		if (starts_with(col3.c_str(), "allow=")) {
@@ -76,6 +89,8 @@ static void parseDomain(urlmatchlistitem_ptr_t *urlMatchList, const std::string 
 	auto matcher = std::shared_ptr<urlmatchdomain_t>(new urlmatchdomain_t(col2, allowStr, pathcriteria));
 	auto &list = (*urlMatchList)->m_listMatches[matcher->m_domain];
 	list.emplace_back(matcher);
+
+	return true;
 }
 
 static void parseHost(urlmatchlistitem_ptr_t *urlMatchList, const std::string &col2, const std::string &col3) {
@@ -196,7 +211,10 @@ bool UrlMatchList::load() {
 				case 'd':
 					// domain
 					if (firstColEnd == 6 && memcmp(line.data(), "domain", 6) == 0) {
-						parseDomain(&tmpUrlMatchList, col2, col3, col4);
+						if (!parseDomain(&tmpUrlMatchList, col2, col3, col4)) {
+							logError("Invalid line found. Ignoring line='%s'", line.c_str());
+							continue;
+						}
 					} else {
 						logError("Invalid line found. Ignoring line='%s'", line.c_str());
 						continue;
@@ -298,8 +316,15 @@ bool UrlMatchList::isUrlMatched(const Url &url) {
 
 	auto urlMatchList = getUrlMatchList();
 
-	// domain
-	if (matchList(urlMatchList->m_listMatches, std::string(url.getDomain(), url.getDomainLen()), url, urlParser)) {
+	std::string domain(url.getDomain(), url.getDomainLen());
+
+	// simple domain match
+	if (urlMatchList->m_domainMatches.count(domain) > 0) {
+		return true;
+	}
+
+	// check urlmatches using domain as key
+	if (matchList(urlMatchList->m_listMatches, domain, url, urlParser)) {
 		return true;
 	}
 
