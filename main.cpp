@@ -696,7 +696,8 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	bool initMyHost = true;
-	if ( strcmp ( cmd , "install" ) == 0 ) {
+	if (strcmp(cmd, "install") == 0 ||
+	    strcmp(cmd, "installfile") == 0) {
 		initMyHost = false;
 	}
 
