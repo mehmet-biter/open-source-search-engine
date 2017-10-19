@@ -31,7 +31,8 @@ public:
 		return m_queries.size();
 	}
 
-	std::vector<UrlComponent*> matchQueryParam( const UrlComponent::Matcher &keyMatch );
+	const std::vector<UrlComponent*> matchQueryParam(const UrlComponent::Matcher &keyMatch);
+	const std::vector<const UrlComponent*> matchQueryParam(const UrlComponent::Matcher &keyMatch) const;
 
 	bool removeQueryParam( const char *param );
 	bool removeQueryParam( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator );

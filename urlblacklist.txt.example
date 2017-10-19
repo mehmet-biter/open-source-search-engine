@@ -6,6 +6,7 @@
 #   - domain
 #   - file
 #   - host
+#   - hostsuffix
 #   - path
 #   - regex (pcre)
 #   - tld
@@ -65,6 +66,13 @@ host	www.example.com:3001
 #   allows: www.example.com/
 #   allows: www.example.com/some/
 host	www.example.com	/path/
+
+# block host with suffix
+#   blocks: sub2.sub1.example.com
+#   blocks: sub1.example.com
+#   allows: www.example.com
+#   allows: notsub1.example.com
+hostsuffix	sub1.example.com
 
 # param example
 # =============

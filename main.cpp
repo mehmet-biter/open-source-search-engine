@@ -697,6 +697,12 @@ int main2 ( int argc , char *argv[] ) {
 		useTmpCluster = true;
 	}
 
+	bool initMyHost = true;
+	if (strcmp(cmd, "install") == 0 ||
+	    strcmp(cmd, "installfile") == 0) {
+		initMyHost = false;
+	}
+
 	//
 	// get current working dir that the gb binary is in. all the data
 	// files should in there too!!
@@ -714,7 +720,7 @@ int main2 ( int argc , char *argv[] ) {
 	// load up hosts.conf
 	// . it will determine our hostid based on the directory path of this
 	//   gb binary and the ip address of this server
-	if ( ! g_hostdb.init(-1, isProxy, useTmpCluster, workingDir)) {
+	if ( ! g_hostdb.init(-1, isProxy, useTmpCluster, initMyHost, workingDir)) {
 		log( LOG_ERROR, "db: hostdb init failed." );
 		return 1;
 	}

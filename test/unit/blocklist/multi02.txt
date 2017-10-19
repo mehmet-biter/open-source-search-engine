@@ -1,0 +1,2 @@
+# file 2
+host multi2.example.com

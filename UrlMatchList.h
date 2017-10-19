@@ -2,13 +2,13 @@
 #define GB_URLMATCHLIST_H_
 
 #include "UrlMatch.h"
-#include <vector>
 #include <map>
 #include <memory>
 
-typedef std::vector<UrlMatch> urlmatchlist_t;
-typedef std::shared_ptr<urlmatchlist_t> urlmatchlist_ptr_t;
-typedef std::shared_ptr<const urlmatchlist_t> urlmatchlistconst_ptr_t;
+struct UrlMatchListItem;
+
+typedef std::shared_ptr<UrlMatchListItem> urlmatchlistitem_ptr_t;
+typedef std::shared_ptr<const UrlMatchListItem> urlmatchlistitemconst_ptr_t;
 
 class Url;
 
@@ -26,12 +26,12 @@ protected:
 	bool load();
 
 private:
-	urlmatchlistconst_ptr_t getUrlMatchList();
-	void swapUrlMatchList(urlmatchlistconst_ptr_t urlMatchList);
+	urlmatchlistitemconst_ptr_t getUrlMatchList();
+	void swapUrlMatchList(urlmatchlistitemconst_ptr_t urlMatchList);
 
 	std::string m_filename;
 	std::string m_dirname;
-	urlmatchlistconst_ptr_t m_urlMatchList;
+	urlmatchlistitemconst_ptr_t m_urlMatchList;
 
 	std::map<std::string, time_t> m_lastModifiedTimes;
 };

@@ -15,3 +15,9 @@ domain  allowrootdomainrootpages.com allow=, allowrootpages
 domain  allowdomainrootpages.com allow=,www allowrootpages
 domain  allowrootdomainindexpage.com allow=, allowindexpage
 domain  allowdomainindexpage.com allow=,www allowindexpage
+hostsuffix  hostsuffix01.com
+hostsuffix  .hostsuffix02.com
+hostsuffix  hostsuffix03.co.uk
+hostsuffix  .hostsuffix04.co.uk
+hostsuffix  hostsuffix05.a.se
+hostsuffix  .hostsuffix06.a.se

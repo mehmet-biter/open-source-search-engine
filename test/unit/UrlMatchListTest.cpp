@@ -62,6 +62,7 @@ TEST(UrlMatchListTest, Domain) {
 
 	//host    specific.host.com
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://specific.host.com/"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://specific.host.com:3001/"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("https://specific.host.com/"));
 	EXPECT_FALSE(urlMatchList.isUrlMatched("https://www.host.com/"));
 
@@ -145,6 +146,48 @@ TEST(UrlMatchListTest, Domain) {
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.allowdomainindexpage.com/d1/def.html"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://allowdomainindexpage.com/d1/d2/xyz.html"));
 	EXPECT_TRUE(urlMatchList.isUrlMatched("http://www.allowdomainindexpage.com/d1/d2/jkl.html"));
+
+	//hostsuffix  hostsuffix01.com
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.hostsuffix01.com"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.sub.hostsuffix01.com"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://hostsuffix01.com"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://bhostsuffix01.com"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://jostsuffix01.com"));
+
+	//hostsuffix  .hostsuffix02.com
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.hostsuffix02.com"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.sub.hostsuffix02.com"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://hostsuffix02.com"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://bhostsuffix02.com"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://jostsuffix02.com"));
+
+	//hostsuffix  hostsuffix03.co.uk
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.hostsuffix03.co.uk"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.sub.hostsuffix03.co.uk"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://hostsuffix03.co.uk"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://bhostsuffix03.co.uk"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://jostsuffix03.co.uk"));
+
+	//hostsuffix  .hostsuffix04.co.uk
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.hostsuffix04.co.uk"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.sub.hostsuffix04.co.uk"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://hostsuffix04.co.uk"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://bhostsuffix04.co.uk"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://jostsuffix04.co.uk"));
+
+	//hostsuffix  hostsuffix05.a.se
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.hostsuffix05.a.se"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.sub.hostsuffix05.a.se"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://hostsuffix05.a.se"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://bhostsuffix05.a.se"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://jostsuffix05.a.se"));
+
+	//hostsuffix  .hostsuffix06.a.se
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub.hostsuffix06.a.se"));
+	EXPECT_TRUE(urlMatchList.isUrlMatched("http://sub1.sub.hostsuffix06.a.se"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://hostsuffix06.a.se"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://bhostsuffix06.a.se"));
+	EXPECT_FALSE(urlMatchList.isUrlMatched("http://jostsuffix06.a.se"));
 }
 
 TEST(UrlMatchListTest, Path) {
