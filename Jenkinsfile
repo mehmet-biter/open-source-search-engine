@@ -56,6 +56,13 @@ pipeline {
 			}
 		}
 
+		stage('Test (setup)') {
+			steps {
+				sh "cd ${env.PYWEBTEST_DIR} && ./setup_instances.py --num-instances=1 --num-shards=1 --offset=0"
+				sh "cd ${env.PYWEBTEST_DIR} && ./setup_instances.py --num-instances=4 --num-shards=2 --offset=1"
+			}
+		}
+
 		stage('Test') {
 			steps {
 				parallel(
