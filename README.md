@@ -56,6 +56,7 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 *    libssl-dev
 *    libprotobuf-dev
 *    protobuf-compiler
+*    libsqlite3-dev
 
 #### OpenSuse
 *    g++
@@ -76,6 +77,7 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 *    openssl-devel
 *    protobuf-devel
 *    protobuf-compiler
+*    sqlite-devel
 
 ### Runtime
 *    Multi-instance installations require [Vagus](https://github.com/privacore/vagus) for keeping track of which instances are dead and alive.
