@@ -62,10 +62,10 @@ pipeline {
 					'unit test': {
 						sh "cd ${env.GB_DIR} && make -j8 unittest"
 					},
-					'system test (single)': {
+					'system test single': {
 						sh "cd ${env.PYWEBTEST_DIR} && ./run_all_testcases.py --num-instances=1 --num-shards=1 --offset=0"
 					}
-					'system test (multiple)': {
+					'system test multiple': {
 						sh "cd ${env.PYWEBTEST_DIR} && ./run_all_testcases.py --num-instances=4 --num-shards=2 --offset=1"
 					}
 				)
