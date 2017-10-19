@@ -227,7 +227,7 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			"      m_errCount = 0,"
 			"      m_sameErrCount = 0,"
 			"      m_contentHash32 = ?,"
-			"      m_requestFlags = (m_requestFlags | ?)"
+			"      m_requestFlags = (IFNULL(m_requestFlags,0) | ?)"
 			"  WHERE m_firstIp=? and m_uh48=?";
 		sqlite3_stmt *updateStatement = NULL;
 		if(sqlite3_prepare_v2(db, update_statement, -1, &updateStatement, &pzTail) != SQLITE_OK) {
@@ -274,7 +274,8 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			"      m_httpStatus = ?,"
 			"      m_errCount = m_errCount + 1,"
 			"      m_sameErrCount = CASE WHEN m_errCode=? THEN IFNULL(m_sameErrCount,0) + 1 ELSE 0 END,"
-			"      m_errCode = IFNULL(m_errCode,0)"
+			"      m_errCode = ?,"
+			"      m_requestFlags = IFNULL(m_requestFlags,0)"
 			"  WHERE m_firstIp=? and m_uh48=?";
 		sqlite3_stmt *updateStatement = NULL;
 		if(sqlite3_prepare_v2(db, update_statement, -1, &updateStatement, &pzTail) != SQLITE_OK) {
@@ -286,8 +287,9 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 		sqlite3_bind_int(updateStatement, 2, srep->m_errCode);
 		sqlite3_bind_int(updateStatement, 3, srep->m_httpStatus);
 		sqlite3_bind_int(updateStatement, 4, srep->m_errCode);
-		sqlite3_bind_int64(updateStatement, 5, (uint32_t)firstIp);
-		sqlite3_bind_int64(updateStatement, 6, uh48);
+		sqlite3_bind_int(updateStatement, 5, srep->m_errCode);
+		sqlite3_bind_int64(updateStatement, 6, (uint32_t)firstIp);
+		sqlite3_bind_int64(updateStatement, 7, uh48);
 		
 		if(sqlite3_step(updateStatement) != SQLITE_DONE) {
 			log(LOG_ERROR,"sqlitespider: Update error: %s",sqlite3_errmsg(db));
