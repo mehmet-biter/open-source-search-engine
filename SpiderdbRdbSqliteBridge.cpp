@@ -8,6 +8,7 @@
 #include "Mem.h"
 #include "SpiderCache.h"
 #include "SpiderColl.h"
+#include "Conf.h"
 
 
 static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len);
@@ -73,7 +74,7 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 		return false;
 	}
 	
-	sqlite3_bind_int(selectStatement, 1, firstIp);
+	sqlite3_bind_int64(selectStatement, 1, (uint32_t)firstIp);
 	sqlite3_bind_int64(selectStatement, 2, uh48);
 	int select_rc = sqlite3_step(selectStatement);
 	if(select_rc==SQLITE_DONE) {
@@ -521,7 +522,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		  sizeof(key128_t));    //keysize
 	if(listSize!=0)
 		list->setLastKey((const char*)&listLastKey);
-	log(LOG_TRACE,"sqlitespider: listSize = %d", list->getListSize());
+	logTrace( g_conf.m_logTraceSpider, "sqlitespider: listSize = %d", list->getListSize());
 	
 	return true;
 }
