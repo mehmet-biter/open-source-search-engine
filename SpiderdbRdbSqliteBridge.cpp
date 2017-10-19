@@ -227,7 +227,7 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			"      m_errCount = 0,"
 			"      m_sameErrCount = 0,"
 			"      m_contentHash32 = ?,"
-			"      m_requestFlags = (IFNULL(m_requestFlags,0) | ?)"
+			"      m_replyFlags = (IFNULL(m_replyFlags,0) | ?)"
 			"  WHERE m_firstIp=? and m_uh48=?";
 		sqlite3_stmt *updateStatement = NULL;
 		if(sqlite3_prepare_v2(db, update_statement, -1, &updateStatement, &pzTail) != SQLITE_OK) {
@@ -275,7 +275,7 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			"      m_errCount = m_errCount + 1,"
 			"      m_sameErrCount = CASE WHEN m_errCode=? THEN IFNULL(m_sameErrCount,0) + 1 ELSE 0 END,"
 			"      m_errCode = ?,"
-			"      m_requestFlags = IFNULL(m_requestFlags,0)"
+			"      m_replyFlags = IFNULL(m_replyFlags,0)"
 			"  WHERE m_firstIp=? and m_uh48=?";
 		sqlite3_stmt *updateStatement = NULL;
 		if(sqlite3_prepare_v2(db, update_statement, -1, &updateStatement, &pzTail) != SQLITE_OK) {
