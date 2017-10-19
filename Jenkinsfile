@@ -84,7 +84,7 @@ pipeline {
 					      tools: [[$class: 'GoogleTestType', pattern: '**/test_detail.xml']]])
 					step([$class: 'XUnitPublisher',
 					      thresholds: [[$class: 'FailedThreshold', unstableThreshold: '0']],
-					      tools: [[$class: 'JUnitType', pattern: "${env.PYWEBTEST_DIR}/output.xml"]]])
+					      tools: [[$class: 'JUnitType', pattern: "${env.PYWEBTEST_DIR}/output*.xml"]]])
 				}
 			}
 		}
