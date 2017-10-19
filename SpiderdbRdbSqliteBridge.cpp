@@ -398,7 +398,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 			if(minRecSizes>0 && io_buffer.used() >= (size_t)minRecSizes)
 				break;
 		} else {
-			if(!list->isEmpty() && Spiderdb::getFirstIp(&listLastKey)!=firstIp) {
+			if(!io_buffer.empty() && Spiderdb::getFirstIp(&listLastKey)!=firstIp) {
 				if(minRecSizes>0 && io_buffer.used() >= (size_t)minRecSizes)
 					break;
 			}
