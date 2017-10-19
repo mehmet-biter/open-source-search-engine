@@ -433,7 +433,8 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 			srep.m_hasAuthorityInlinkValid  = requestFlags.m_hasAuthorityInlinkValid;
 			srep.m_siteNumInlinksValid      = sqlite3_column_type(stmt,5)!=SQLITE_NULL;
 
-			io_buffer.reserve_extra(sizeof(srep));
+			if(io_buffer.spare()<(size_t)srep.getRecSize())
+				io_buffer.reserve_extra(io_buffer.used()/2+srep.getRecSize());
 			memcpy(io_buffer.end(), &srep, sizeof(srep));
 			io_buffer.push_back(sizeof(srep));
 		} else
@@ -478,7 +479,8 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		strcpy(sreq.m_url,(const char*)url);
 		sreq.setDataSize();
 
-		io_buffer.reserve_extra(sreq.getRecSize());
+		if(io_buffer.spare()<(size_t)sreq.getRecSize())
+			io_buffer.reserve_extra(io_buffer.used()/2+sreq.getRecSize());
 		memcpy(io_buffer.end(), &sreq, sreq.getRecSize());
 		io_buffer.push_back(sreq.getRecSize());
 		
