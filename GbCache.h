@@ -20,7 +20,7 @@ public:
 		: m_mtx()
 		, m_queue()
 		, m_map()
-		, m_max_age(300) // 5 minutes
+		, m_max_age(300000) // 5 minutes
 		, m_max_item(10000)
 		, m_log_trace(false)
 		, m_log_cache_name("cache") {
@@ -109,7 +109,7 @@ private:
 
 	struct CacheItem {
 		CacheItem(const TData &data)
-			: m_timestamp(getTime())
+			: m_timestamp(gettimeofdayInMilliseconds())
 			, m_data(data) {
 		}
 
@@ -118,7 +118,7 @@ private:
 	};
 
 	bool expired(const CacheItem &item) const {
-		return (item.m_timestamp + m_max_age < getTime());
+		return (item.m_timestamp + m_max_age < gettimeofdayInMilliseconds());
 	}
 
 	bool disabled() const {
@@ -151,11 +151,11 @@ private:
 	}
 
 	GbMutex m_mtx;
-	std::deque<TKey> m_queue;
-	std::unordered_map<TKey,CacheItem> m_map;
+	std::deque<TKey> m_queue;                       //queue of items to expire, ordered by epiration time
+	std::unordered_map<TKey,CacheItem> m_map;       //cached items
 
-	int64_t m_max_age;
-	size_t m_max_item;
+	int64_t m_max_age;                              //max item age (expiry) in msecs
+	size_t m_max_item;                              //maximum number of items
 
 	bool m_log_trace;
 	const char *m_log_cache_name;
