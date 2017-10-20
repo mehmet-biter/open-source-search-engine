@@ -145,6 +145,11 @@ void SpiderLoop::initSettings() {
     m_urlCache.configure(g_conf.m_spiderUrlCacheMaxAge*1000, g_conf.m_spiderUrlCacheSize, g_conf.m_logTraceSpiderUrlCache, "spider url cache");
 }
 
+void SpiderLoop::nukeWinnerListCache(collnum_t collnum) {
+	RdbCacheLock rcl(m_winnerListCache);
+	m_winnerListCache.clear(collnum);
+}
+
 
 // call this every 50ms it seems to try to spider urls and populate doledb
 // from the waiting tree

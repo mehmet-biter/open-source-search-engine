@@ -56,10 +56,7 @@ static void nukeDoledbWrapper ( int fd , void *state ) {
 
 void nukeDoledb ( collnum_t collnum ) {
 	// in case we changed url filters for this collection #
-	{
-		RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
-		g_spiderLoop.m_winnerListCache.clear ( collnum );
-	}
+	g_spiderLoop.nukeWinnerListCache(collnum);
 
 	// . nuke doledb for this collnum
 	// . it will unlink the files and maps for doledb for this collnum
@@ -120,10 +117,7 @@ void nukeAllDoledbs() {
 	{
 		if(g_collectiondb.getRec(collnum)) {
 			// in case we changed url filters for this collection #
-			{
-				RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
-				g_spiderLoop.m_winnerListCache.clear ( collnum );
-			}
+			g_spiderLoop.nukeWinnerListCache(collnum);
 			
 			// . nuke doledb for this collnum
 			// . it will unlink the files and maps for doledb for this collnum
