@@ -77,7 +77,6 @@ class RdbCache {
 	bool init ( int32_t maxCacheMem   , 
 		    int32_t fixedDataSize , 
 		    int32_t maxCacheNodes ,
-		    bool useHalfKeys   ,
 		    const char *dbname       ,
 		    bool  loadFromDisk ,
 		    char  cacheKeySize = 12 ,
@@ -308,7 +307,6 @@ private:
 	GbMutex mtx_hits_misses; //mutex protecting just hits&misses
 
 	int32_t m_fixedDataSize;
-	bool m_useHalfKeys;
 	bool m_useDisk;  // load/save from disk?
 
 	// have we wrapped yet?

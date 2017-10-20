@@ -37,7 +37,6 @@ RdbCache::RdbCache() : m_dbname(NULL) {
 	m_memoryLabelPtrs[0] = '\0';
 	m_memoryLabelBufs[0] = '\0';
 	m_fixedDataSize = 0;
-	m_useHalfKeys = false;
 	m_useDisk = false;
 	m_wrapped = 0;
 	m_cks = 0;
@@ -92,7 +91,6 @@ void RdbCache::reset ( ) {
 bool RdbCache::init ( int32_t  maxMem        ,
 		      int32_t  fixedDataSize ,
 		      int32_t  maxRecs       ,
-		      bool  useHalfKeys   ,
 		      const char *dbname  ,
 		      bool  loadFromDisk  ,
 		      char  cacheKeySize  ,
@@ -137,7 +135,6 @@ bool RdbCache::init ( int32_t  maxMem        ,
 	// this is the fixed dataSize of all records in a list, not the
 	// fixed dataSize of a list itself. Note that.
 	m_fixedDataSize = fixedDataSize;
-	m_useHalfKeys   = useHalfKeys;
 	m_useDisk       = loadFromDisk;
 	m_dbname        = dbname;
 	m_dks           = dataKeySize;
@@ -1376,7 +1373,6 @@ bool RdbCache::convertCache ( int32_t numPtrsMax , int32_t maxMem ) {
 	if ( ! tmp.init ( maxMem          ,
 			  m_fixedDataSize ,
 			  maxRecs         ,
-			  m_useHalfKeys   ,
 			  m_dbname        ,
 			  true            , // loadFromDisk
 			  m_cks           , // cacheKeySize

@@ -119,7 +119,6 @@ void SpiderLoop::init() {
 	if ( ! m_winnerListCache.init ( 20000000 , // maxcachemem, 20MB
 					-1     , // fixedatasize
 					10000  , // maxcachenodes
-					false , // use half keys
 					"winnerspidercache", // dbname
 					false  ) )
 		log(LOG_WARN, "spider: failed to init winnerlist cache. slows down.");

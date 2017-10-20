@@ -266,7 +266,6 @@ static void initializeCaches() {
 		if( ! g_termFreqCache.init ( maxMem   , // maxmem 20MB
 					     8        , // fixed data size
 					     maxNodes ,
-					     false    , // use half keys?
 					     "tfcache", // dbname
 					     false    , // load from disk?
 					     8        , // cache key size
@@ -277,7 +276,6 @@ static void initializeCaches() {
 		if(!g_termListSize.init(maxMem   , // maxmem 20MB
 					8        , // fixed data size
 					maxNodes ,
-					false    , // use half keys?
 					"tscache", // dbname
 					false    , // load from disk?
 					8        , // cache key size

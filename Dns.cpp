@@ -164,7 +164,6 @@ bool Dns::init ( uint16_t clientPort ) {
 	if ( ! m_rdbCache.init ( maxMem        ,
 				 4             ,  // fixed data size of rec
 				 maxCacheNodes ,
-				 false         ,  // use half keys?
 				 "dns"         ,  // dbname
 				 true          )) { // save cache to disk?
 		log( LOG_ERROR, "dns: Cache init failed." );
@@ -178,7 +177,6 @@ bool Dns::init ( uint16_t clientPort ) {
 	if ( ! m_rdbCacheLocal.init ( maxMemLocal   ,
 				      4             , // fixed data size of rec
 				      maxMemLocal/25,
-				      false         ,  // use half keys?
 				      "dnsLocal"    ,  // dbname
 				      true          )) { // save cache?
 		log( LOG_ERROR, "dns: Cache local init failed." );
@@ -220,7 +218,6 @@ bool Dns::init ( uint16_t clientPort ) {
 	g_timedoutCache.init ( maxCacheMem ,
 			       4     ,  // fixed data size of rec
 			       maxCacheNodes           ,
-			       false                   ,  // use half keys?
 			       "dnstimedout"           ,  // dbname
 			       true                    ); // save cache?
 	return true;

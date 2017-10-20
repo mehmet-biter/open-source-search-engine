@@ -163,7 +163,6 @@ bool SpiderColl::load ( ) {
 	if ( ! m_lastDownloadCache.init ( maxMem     , // maxcachemem,
 					  8          , // fixed data size (MS)
 					  maxNodes   , // max nodes
-					  false      , // use half keys?
 					  "downcache", // dbname
 					  false      , // load from disk?
 					  12         , // key size (firstip)
@@ -572,7 +571,6 @@ bool SpiderColl::isInDupCache(const SpiderRequest *sreq, bool addToCache) {
 		m_dupCache.init ( 90000, 
 				  4 , // fixeddatasize (don't really need this)
 				  5000, // maxcachenodes
-				  false, // usehalfkeys?
 				  "urldups", // dbname
 				  false, // loadfromdisk
 				  12, // cachekeysize
