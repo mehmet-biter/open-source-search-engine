@@ -48,12 +48,7 @@ public:
 		clear_unlocked();
 	}
 
-	void clear_unlocked() {
-		m_map.clear();
-		m_queue.clear();
-	}
-
-	void insert(TKey &key, const TData &data) {
+	void insert(const TKey &key, const TData &data) {
 		ScopedLock sl(m_mtx);
 
 		// cache disabled
@@ -64,8 +59,7 @@ public:
 		purge_step();
 
 		if (m_log_trace) {
-			std::string keyStr = getKeyStr(key);
-			logTrace(m_log_trace, "inserting key='%s' to %s", keyStr.c_str(), m_log_cache_name);
+			logTrace(m_log_trace, "inserting key='%s' to %s", getKeyStr(key).c_str(), m_log_cache_name);
 		}
 
 		CacheItem item(data);
@@ -88,7 +82,7 @@ public:
 		}
 	}
 
-	bool lookup(TKey &key, TData *data) {
+	bool lookup(const TKey &key, TData *data) {
 		ScopedLock sl(m_mtx);
 
 		// cache disabled
@@ -98,15 +92,13 @@ public:
 
 		purge_step();
 
-		std::string keyStr = m_log_trace ? getKeyStr(key) : "";
-
 		auto map_it = m_map.find(key);
 		if (map_it != m_map.end() && !expired(map_it->second)) {
-			logTrace(m_log_trace, "found key='%s' in %s", keyStr.c_str(), m_log_cache_name);
+			logTrace(m_log_trace, "found key='%s' in %s", getKeyStr(key).c_str(), m_log_cache_name);
 			*data = map_it->second.m_data;
 			return true;
 		} else {
-			logTrace(m_log_trace, "unable to find key='%s' in %s", keyStr.c_str(), m_log_cache_name);
+			logTrace(m_log_trace, "unable to find key='%s' in %s", getKeyStr(key).c_str(), m_log_cache_name);
 			return false;
 		}
 	}
@@ -125,15 +117,20 @@ private:
 		TData m_data;
 	};
 
-	bool expired(CacheItem &item) {
+	bool expired(const CacheItem &item) const {
 		return (item.m_timestamp + m_max_age < getTime());
 	}
 
-	bool disabled() {
+	bool disabled() const {
 		return (m_max_age == 0 || m_max_item == 0);
 	}
 
-	static std::string getKeyStr(TKey &key) {
+	void clear_unlocked() {
+		m_map.clear();
+		m_queue.clear();
+	}
+
+	static std::string getKeyStr(const TKey &key) {
 		std::stringstream os;
 		os << key;
 		return os.str();
