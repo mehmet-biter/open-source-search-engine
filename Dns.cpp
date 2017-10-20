@@ -163,7 +163,6 @@ bool Dns::init ( uint16_t clientPort ) {
 	// set the cache
 	if ( ! m_rdbCache.init ( maxMem        ,
 				 4             ,  // fixed data size of rec
-				 false         ,  // support lists of recs?
 				 maxCacheNodes ,
 				 false         ,  // use half keys?
 				 "dns"         ,  // dbname
@@ -178,7 +177,6 @@ bool Dns::init ( uint16_t clientPort ) {
 	int32_t maxMemLocal = 100000;
 	if ( ! m_rdbCacheLocal.init ( maxMemLocal   ,
 				      4             , // fixed data size of rec
-				      false         , // support lists of recs?
 				      maxMemLocal/25,
 				      false         ,  // use half keys?
 				      "dnsLocal"    ,  // dbname
@@ -221,7 +219,6 @@ bool Dns::init ( uint16_t clientPort ) {
 	maxCacheNodes = maxCacheMem / 25;
 	g_timedoutCache.init ( maxCacheMem ,
 			       4     ,  // fixed data size of rec
-			       false ,  // support lists of recs?
 			       maxCacheNodes           ,
 			       false                   ,  // use half keys?
 			       "dnstimedout"           ,  // dbname

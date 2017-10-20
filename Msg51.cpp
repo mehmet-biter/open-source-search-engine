@@ -406,7 +406,6 @@ void Msg51::gotClusterRec(Slot *slot) {
 	if(!s_cacheInit &&
 		s_clusterdbQuickCache.init(200*1024,         // maxMem
 					   sizeof(key96_t),  // fixedDataSize (clusterdb rec)
-					   false,            // support lists
 					   10000,            // max recs
 					   false,            // use half keys?
 					   "clusterdbQuickCache" ,

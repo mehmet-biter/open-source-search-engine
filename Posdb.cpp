@@ -265,7 +265,6 @@ static void initializeCaches() {
 		int32_t maxNodes = maxMem / 17; // 8+8+1
 		if( ! g_termFreqCache.init ( maxMem   , // maxmem 20MB
 					     8        , // fixed data size
-					     false    , // supportlists?
 					     maxNodes ,
 					     false    , // use half keys?
 					     "tfcache", // dbname
@@ -277,7 +276,6 @@ static void initializeCaches() {
 			    mstrerror(g_errno));
 		if(!g_termListSize.init(maxMem   , // maxmem 20MB
 					8        , // fixed data size
-					false    , // supportlists?
 					maxNodes ,
 					false    , // use half keys?
 					"tscache", // dbname

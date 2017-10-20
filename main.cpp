@@ -4779,7 +4779,6 @@ static bool cacheTest() {
 	// set the cache
 	if ( ! c.init ( maxMem        ,
 			4             ,  // fixed data size of rec
-			false         ,  // support lists of recs?
 			maxCacheNodes ,
 			false         ,  // use half keys?
 			"cachetest"        ,  // dbname
@@ -4856,7 +4855,6 @@ static bool cacheTest() {
 	// set the cache
 	if ( ! c.init ( maxMem        ,
 			-1            ,  // fixed data size of rec
-			false         ,  // support lists of recs?
 			maxCacheNodes ,
 			false         ,  // use half keys?
 			"cachetest"        ,  // dbname

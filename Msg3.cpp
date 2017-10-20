@@ -180,7 +180,6 @@ class RdbCache *getDiskPageCache ( rdbid_t rdbId ) {
 	// re-init or init for the first time here
 	if ( ! rpc->init ( maxMem ,
 			   -1 , // fixedDataSize. -1 since we are lists
-			   false , // support lists?
 			   maxRecs ,
 			   false , // use half keys?
 			   dbname ,

@@ -118,7 +118,6 @@ void SpiderLoop::init() {
 
 	if ( ! m_winnerListCache.init ( 20000000 , // maxcachemem, 20MB
 					-1     , // fixedatasize
-					false , // supportlists?
 					10000  , // maxcachenodes
 					false , // use half keys
 					"winnerspidercache", // dbname
