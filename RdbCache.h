@@ -268,8 +268,6 @@ private:
 
 	pthread_mutex_t m_mtx; //big fat mutex protecting everything
 	
-	int32_t m_errno;
-
 	// . mem stats -- just for arrays we contain -- not in tree
 	// . memory that is allocated and in use, including dataSizes
 	int32_t m_memOccupied;

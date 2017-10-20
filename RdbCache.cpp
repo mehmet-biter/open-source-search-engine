@@ -32,7 +32,6 @@ RdbCache::RdbCache() : m_dbname(NULL) {
 	m_needsSave    = false;
 	m_convertNumPtrsMax = 0;
 	m_convertMaxMem = 0;
-	m_errno = 0;
 	m_threshold = 0;
 	m_memoryLabelPtrs[0] = '\0';
 	m_memoryLabelBufs[0] = '\0';
@@ -1084,11 +1083,6 @@ bool RdbCache::save () {
 
 	// and we are in sync with that data saved on disk
 	m_needsSave = false;
-
-	// report
-	if ( m_errno ) {
-		log(LOG_WARN, "db: Had error saving cache to disk for %s: %s.", m_dbname, mstrerror(m_errno));
-	}
 
 	return true;
 }
