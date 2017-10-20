@@ -1733,7 +1733,6 @@ bool SpiderColl::evalIpLoop ( ) {
 	cacheKey.n1 = 0;
 	char *doleBuf = NULL;
 	int32_t doleBufSize;
-	RdbCache *wc = &g_spiderLoop.m_winnerListCache;
 	time_t cachedTimestamp = 0;
 	bool useCache = true;
 	const CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
@@ -1754,21 +1753,21 @@ bool SpiderColl::evalIpLoop ( ) {
 		useCache = false;
 	// assume not from cache
 	if ( useCache ) {
-		//wc->verify();
-		RdbCacheLock rcl(*wc);
-		bool inCache = wc->getRecord ( m_collnum     ,
-					  (char *)&cacheKey ,
-					  &doleBuf,
-					  &doleBufSize  ,
-					  false, // doCopy?
-					  // we raised MAX_WINNER_NODES so
-					  // grow from 600 to 1200
-					  // (10 mins to 20 mins) to make
-					  // some crawls faster
-					  1200, // maxAge
-					  true ,// incCounts
-					  &cachedTimestamp , // rec timestamp
-					  true );  // promote rec?
+		//g_spiderLoop.m_winnerListCache.verify();
+		RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
+		bool inCache = g_spiderLoop.m_winnerListCache.getRecord(m_collnum,
+									(char *)&cacheKey,
+									&doleBuf,
+									&doleBufSize,
+									false, // doCopy?
+									// we raised MAX_WINNER_NODES so
+									// grow from 600 to 1200
+									// (10 mins to 20 mins) to make
+									// some crawls faster
+									1200, // maxAge
+									true, // incCounts
+									&cachedTimestamp, // rec timestamp
+									true );  // promote rec?
 		if ( inCache ) {
 			int32_t crc = hash32 ( doleBuf + 4 , doleBufSize - 4 );
 	
@@ -3146,8 +3145,6 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// allow this to add a 0 length record otherwise we keep the same
 	// old url in here and keep spidering it over and over again!
 
-	RdbCache *wc = &g_spiderLoop.m_winnerListCache;
-
 	// remove from cache? if we added the last spider request in the
 	// cached dolebuf to doledb then remove it from cache so it's not
 	// a cached empty dolebuf and we recompute it not using the cache.
@@ -3160,14 +3157,14 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		key96_t cacheKey;
 		cacheKey.n0 = firstIp;
 		cacheKey.n1 = 0;
-		//wc->verify();
-		RdbCacheLock rcl(*wc);
-		wc->addRecord ( m_collnum,
-				(char *)&cacheKey,
-				&byte ,
-				1 ,
-		 		12345 );
-		//wc->verify();
+		//g_spiderLoop.m_winnerListCache.verify();
+		RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
+		g_spiderLoop.m_winnerListCache.addRecord(m_collnum,
+							 (char *)&cacheKey,
+							 &byte,
+							 1,
+							 12345);
+		//g_spiderLoop.m_winnerListCache.verify();
 	}
 
 	// if it wasn't in the cache and it was only one record we
@@ -3190,18 +3187,18 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 			"to winnerlistcache for ip %s oldjump=%" PRId32" newJump=%" PRId32" ptr=0x%" PTRFMT,
 		         doleBuf->length(),iptoa(firstIp,ipbuf),oldJump, newJump, (PTRTYPE)x);
 		//validateDoleBuf ( doleBuf );
-		//wc->verify();
+		//g_spiderLoop.m_winnerListCache.verify();
 		// inherit timestamp. if 0, RdbCache will set to current time
 		// don't re-add just use the same modified buffer so we
 		// don't churn the cache.
 		// but do add it to cache if not already in there yet.
 		if ( ! isFromCache ) {
-			RdbCacheLock rcl(*wc);
-			wc->addRecord ( m_collnum,
-					(char *)&cacheKey,
-					doleBuf->getBufStart(),
-					doleBuf->length(),
-					0);//cachedTimestamp );
+			RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
+			g_spiderLoop.m_winnerListCache.addRecord(m_collnum,
+								 (char *)&cacheKey,
+								 doleBuf->getBufStart(),
+								 doleBuf->length(),
+								 0); //cachedTimestamp );
 		}
 	}
 
