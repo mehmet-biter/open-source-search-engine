@@ -20,7 +20,7 @@ public:
 		: m_mtx()
 		, m_queue()
 		, m_map()
-		, m_max_age(300) // 5 minutes
+		, m_max_age(300000) // 5 minutes
 		, m_max_item(10000)
 		, m_log_trace(false)
 		, m_log_cache_name("cache") {
@@ -48,12 +48,7 @@ public:
 		clear_unlocked();
 	}
 
-	void clear_unlocked() {
-		m_map.clear();
-		m_queue.clear();
-	}
-
-	void insert(TKey &key, const TData &data) {
+	void insert(const TKey &key, const TData &data) {
 		ScopedLock sl(m_mtx);
 
 		// cache disabled
@@ -64,8 +59,7 @@ public:
 		purge_step();
 
 		if (m_log_trace) {
-			std::string keyStr = getKeyStr(key);
-			logTrace(m_log_trace, "inserting key='%s' to %s", keyStr.c_str(), m_log_cache_name);
+			logTrace(m_log_trace, "inserting key='%s' to %s", getKeyStr(key).c_str(), m_log_cache_name);
 		}
 
 		CacheItem item(data);
@@ -88,7 +82,7 @@ public:
 		}
 	}
 
-	bool lookup(TKey &key, TData *data) {
+	bool lookup(const TKey &key, TData *data) {
 		ScopedLock sl(m_mtx);
 
 		// cache disabled
@@ -98,15 +92,13 @@ public:
 
 		purge_step();
 
-		std::string keyStr = m_log_trace ? getKeyStr(key) : "";
-
 		auto map_it = m_map.find(key);
 		if (map_it != m_map.end() && !expired(map_it->second)) {
-			logTrace(m_log_trace, "found key='%s' in %s", keyStr.c_str(), m_log_cache_name);
+			logTrace(m_log_trace, "found key='%s' in %s", getKeyStr(key).c_str(), m_log_cache_name);
 			*data = map_it->second.m_data;
 			return true;
 		} else {
-			logTrace(m_log_trace, "unable to find key='%s' in %s", keyStr.c_str(), m_log_cache_name);
+			logTrace(m_log_trace, "unable to find key='%s' in %s", getKeyStr(key).c_str(), m_log_cache_name);
 			return false;
 		}
 	}
@@ -117,7 +109,7 @@ private:
 
 	struct CacheItem {
 		CacheItem(const TData &data)
-			: m_timestamp(getTime())
+			: m_timestamp(gettimeofdayInMilliseconds())
 			, m_data(data) {
 		}
 
@@ -125,15 +117,20 @@ private:
 		TData m_data;
 	};
 
-	bool expired(CacheItem &item) {
-		return (item.m_timestamp + m_max_age < getTime());
+	bool expired(const CacheItem &item) const {
+		return (item.m_timestamp + m_max_age < gettimeofdayInMilliseconds());
 	}
 
-	bool disabled() {
+	bool disabled() const {
 		return (m_max_age == 0 || m_max_item == 0);
 	}
 
-	static std::string getKeyStr(TKey &key) {
+	void clear_unlocked() {
+		m_map.clear();
+		m_queue.clear();
+	}
+
+	static std::string getKeyStr(const TKey &key) {
 		std::stringstream os;
 		os << key;
 		return os.str();
@@ -154,11 +151,11 @@ private:
 	}
 
 	GbMutex m_mtx;
-	std::deque<TKey> m_queue;
-	std::unordered_map<TKey,CacheItem> m_map;
+	std::deque<TKey> m_queue;                       //queue of items to expire, ordered by epiration time
+	std::unordered_map<TKey,CacheItem> m_map;       //cached items
 
-	int64_t m_max_age;
-	size_t m_max_item;
+	int64_t m_max_age;                              //max item age (expiry) in msecs
+	size_t m_max_item;                              //maximum number of items
 
 	bool m_log_trace;
 	const char *m_log_cache_name;

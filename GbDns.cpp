@@ -187,7 +187,7 @@ bool GbDns::initializeSettings() {
 		}
 	}
 
-	s_cache.configure(g_conf.m_dnsCacheMaxAge, g_conf.m_dnsCacheSize, g_conf.m_logTraceDnsCache, "dns cache");
+	s_cache.configure(g_conf.m_dnsCacheMaxAge*1000, g_conf.m_dnsCacheSize, g_conf.m_logTraceDnsCache, "dns cache");
 
 	return true;
 }
