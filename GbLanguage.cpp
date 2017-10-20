@@ -7,6 +7,7 @@
 #include "third-party/cld3/src/nnet_language_identifier.h"
 
 #include "Log.h"
+#include "Conf.h"
 
 static lang_t convertLangCLD2(CLD2::Language language) {
 	switch (language) {
@@ -756,7 +757,7 @@ lang_t GbLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t 
 	int encoding_hint = CLD2::UNKNOWN_ENCODING; // encoding detector applied to the input document
 	CLD2::Language language_hint = CLD2::UNKNOWN_LANGUAGE; // any other context
 
-	log(LOG_INFO, "lang: cld2: using content_language_hint='%s' tld_hint='%s'", content_language_hint.c_str(), tld_hint.c_str());
+	logDebug(g_conf.m_logDebugLang, "lang: cld2: using content_language_hint='%s' tld_hint='%s'", content_language_hint.c_str(), tld_hint.c_str());
 
 	CLD2::CLDHints cldhints = {content_language_hint.c_str(), tld_hint.c_str(), encoding_hint, language_hint};
 
@@ -787,13 +788,13 @@ lang_t GbLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t 
 	                                                                  &valid_prefix_bytes);
 
 	if (!is_reliable) {
-		log(LOG_INFO, "lang: cld2: lang0: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[0]), percent3[0], normalized_score3[0]);
-		log(LOG_INFO, "lang: cld2: lang1: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[1]), percent3[1], normalized_score3[1]);
-		log(LOG_INFO, "lang: cld2: lang2: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[2]), percent3[2], normalized_score3[2]);
+		logDebug(g_conf.m_logDebugLang, "lang: cld2: lang0: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[0]), percent3[0], normalized_score3[0]);
+		logDebug(g_conf.m_logDebugLang, "lang: cld2: lang1: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[1]), percent3[1], normalized_score3[1]);
+		logDebug(g_conf.m_logDebugLang, "lang: cld2: lang2: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[2]), percent3[2], normalized_score3[2]);
 		return langUnknown;
 	}
 
-	log(LOG_INFO, "lang: cld2: lang: %s", CLD2::LanguageCode(language));
+	logDebug(g_conf.m_logDebugLang, "lang: cld2: lang: %s", CLD2::LanguageCode(language));
 	return convertLangCLD2(language);
 }
 
@@ -808,12 +809,12 @@ lang_t GbLanguage::getLangIdCLD3(const char *content, int32_t contentLen) {
 	chrome_lang_id::NNetLanguageIdentifier lang_id(minBytes, maxBytes);
 	auto result = lang_id.FindLanguage(content);
 	if (!result.is_reliable) {
-		log(LOG_INFO, "lang: cld3: lang: %s(%f %f) is_reliable=%d",
+		logDebug(g_conf.m_logDebugLang, "lang: cld3: lang: %s(%f %f) is_reliable=%d",
 		    result.language.c_str(), result.probability, result.proportion, result.is_reliable);
 		return langUnknown;
 	}
 
-	log(LOG_INFO, "lang: cld3: lang: %s", result.language.c_str());
+	logDebug(g_conf.m_logDebugLang, "lang: cld3: lang: %s", result.language.c_str());
 	return convertLangCLD3(result.language);
 }
 

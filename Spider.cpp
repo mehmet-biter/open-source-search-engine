@@ -2798,6 +2798,15 @@ void getSpiderStatusMsg(const CollectionRec *cx, const char **msg, spider_status
 		return;
 	}
 
+	// out CollectionRec::m_globalCrawlInfo counts do not have a dead
+	// host's counts tallied into it, which could make a difference on
+	// whether we have exceed a maxtocrawl limit or some such, so wait...
+	if (g_hostdb.hasDeadHost()) {
+		*status = spider_status_t::SP_ADMIN_PAUSED;
+		*msg = "All crawling temporarily paused because a shard is down.";
+		return;
+	}
+
 	if ( ! cx->m_spideringEnabled ) {
 		*status = spider_status_t::SP_PAUSED;
 		*msg = "Spidering disabled in spider controls.";
@@ -2815,16 +2824,6 @@ void getSpiderStatusMsg(const CollectionRec *cx, const char **msg, spider_status
 		*msg = "All crawling temporarily paused by root administrator for maintenance.";
 		return;
 	}
-
-	// out CollectionRec::m_globalCrawlInfo counts do not have a dead
-	// host's counts tallied into it, which could make a difference on
-	// whether we have exceed a maxtocrawl limit or some such, so wait...
-	if (g_hostdb.hasDeadHost()) {
-		*status = spider_status_t::SP_ADMIN_PAUSED;
-		*msg = "All crawling temporarily paused because a shard is down.";
-		return;
-	}
-
 
 	// otherwise in progress?
 	*status = spider_status_t::SP_INPROGRESS;

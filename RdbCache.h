@@ -48,8 +48,6 @@
 
 class RdbList;
 
-extern bool g_cacheWritesEnabled;
-
 class RdbCache {
 
  public:
@@ -164,36 +162,6 @@ class RdbCache {
 			 bool     promoteRecord = true) {
 		return getRecord (coll,(const char *)&cacheKey,rec,recSize,doCopy,
 				  maxAge,incCounts,cachedTime, promoteRecord);
-	}
-
-	// . returns true if found, false if not found
-	// . sets errno no error
-	// . if "copyRecords" is true then COPIES into a new buffer
-	// . maxAge constraint for ignoring the stale nodes
-	// . promotes the returned list to the head of the linked list
-	// . maxAge of -1 means no maxAge
-	// . maxAge of  0 means do not check the cache
-	// . uses "startKey" to get the list
-	// . if "incCounts" is true and we hit  we inc the hit  count
-	// . if "incCounts" is true and we miss we inc the miss count
-	bool getList ( collnum_t collnum  ,
-		       const char    *cacheKey  ,
-		       const char    *startKey  ,
-		       RdbList *list      ,
-		       bool     doCopy    ,
-		       int32_t     maxAge    , // in seconds
-		       bool     incCounts );
-
-	// use this key for cache lookup of the list rather than form from 
-	// startKey/endKey
-	bool addList ( collnum_t collnum, const char *cacheKey, RdbList *list );
-	bool addList ( collnum_t collnum, key96_t cacheKey, RdbList *list ) {
-		return addList(collnum,(const char *)&cacheKey,list);
-	}
-
-	bool addList ( const char *coll, const char *cacheKey, RdbList *list );
-	bool addList ( const char *coll, key96_t cacheKey, RdbList *list ) {
-		return addList(coll,(const char *)&cacheKey,list);
 	}
 
 	// . add a list of only 1 record
