@@ -17,8 +17,6 @@
 #include <fcntl.h>
 
 
-bool g_cacheWritesEnabled = true;
-
 static const int64_t m_maxColls = (1LL << (sizeof(collnum_t)*8));	// 65536
 
 
@@ -547,8 +545,7 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	// . now promote the record, same as adding (this always copies)
 	// . do this after mdup as there is a chance it will overwrite
 	//   the original record with the copy of the same record
-	// . Process.cpp turns off g_cacheWritesEnabled while it saves them
-	if ( promoteRecord && g_cacheWritesEnabled ) {
+	if ( promoteRecord ) {
 		//char *ptr = m_ptrs[n];
 		//removeKey ( collnum , cacheKey , ptr );
 		//markDeletedRecord(ptr);
@@ -641,8 +638,6 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 		log(LOG_LOGIC, "db: cache: addRecord: Bad key/timestamp.");
 		return false;
 	}
-	// bail if no writing ops allowed now
-	if ( ! g_cacheWritesEnabled ) return false;
 
 	// collnum_t and cache key
 	need += sizeof(collnum_t) + m_cks;
@@ -1056,9 +1051,6 @@ void RdbCache::clearAll ( ) {
 //   Rdb::updateToRebuild() when updating/setting the rdb to a rebuilt rdb
 // . try it again now with new 64-bit logic updates (MDW 2/10/2015)
 void RdbCache::clear ( collnum_t collnum ) {
-	// bail if no writing ops allowed now
-	if ( ! g_cacheWritesEnabled ) gbshutdownLogicError();
-
 	for ( int32_t i = 0 ; i < m_numPtrsMax ; i++ ) {
 		// skip if empty bucket
 		if ( ! m_ptrs[i] ) continue;

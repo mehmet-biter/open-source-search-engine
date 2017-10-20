@@ -48,8 +48,6 @@
 
 class RdbList;
 
-extern bool g_cacheWritesEnabled;
-
 class RdbCache {
 
  public:
