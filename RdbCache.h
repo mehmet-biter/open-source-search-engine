@@ -76,9 +76,7 @@ class RdbCache {
 	// . can only do this if fixedDataSize is not -1
 	bool init ( int32_t maxCacheMem   , 
 		    int32_t fixedDataSize , 
-		    bool supportLists  ,
 		    int32_t maxCacheNodes ,
-		    bool useHalfKeys   ,
 		    const char *dbname       ,
 		    bool  loadFromDisk ,
 		    char  cacheKeySize = 12 ,
@@ -270,8 +268,6 @@ private:
 
 	pthread_mutex_t m_mtx; //big fat mutex protecting everything
 	
-	int32_t m_errno;
-
 	// . mem stats -- just for arrays we contain -- not in tree
 	// . memory that is allocated and in use, including dataSizes
 	int32_t m_memOccupied;
@@ -309,8 +305,6 @@ private:
 	GbMutex mtx_hits_misses; //mutex protecting just hits&misses
 
 	int32_t m_fixedDataSize;
-	bool m_supportLists;
-	bool m_useHalfKeys;
 	bool m_useDisk;  // load/save from disk?
 
 	// have we wrapped yet?

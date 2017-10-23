@@ -60,6 +60,8 @@ public:
 	RdbCache   m_winnerListCache;
 
 	void invalidateActiveList() { m_activeListValid = false; }
+	
+	void nukeWinnerListCache(collnum_t collnum);
 
 private:
 	static void indexedDocWrapper ( void *state ) ;

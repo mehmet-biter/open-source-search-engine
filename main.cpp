@@ -4798,9 +4798,7 @@ static bool cacheTest() {
 	// set the cache
 	if ( ! c.init ( maxMem        ,
 			4             ,  // fixed data size of rec
-			false         ,  // support lists of recs?
 			maxCacheNodes ,
-			false         ,  // use half keys?
 			"cachetest"        ,  // dbname
 			false         )) {// save cache to disk?
 		log(LOG_WARN, "test: Cache init failed.");
@@ -4875,9 +4873,7 @@ static bool cacheTest() {
 	// set the cache
 	if ( ! c.init ( maxMem        ,
 			-1            ,  // fixed data size of rec
-			false         ,  // support lists of recs?
 			maxCacheNodes ,
-			false         ,  // use half keys?
 			"cachetest"        ,  // dbname
 			false         )) { // save cache to disk?
 		log(LOG_WARN, "test: Cache init failed.");

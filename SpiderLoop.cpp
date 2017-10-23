@@ -118,9 +118,7 @@ void SpiderLoop::init() {
 
 	if ( ! m_winnerListCache.init ( 20000000 , // maxcachemem, 20MB
 					-1     , // fixedatasize
-					false , // supportlists?
 					10000  , // maxcachenodes
-					false , // use half keys
 					"winnerspidercache", // dbname
 					false  ) )
 		log(LOG_WARN, "spider: failed to init winnerlist cache. slows down.");
@@ -142,7 +140,12 @@ void SpiderLoop::init() {
 }
 
 void SpiderLoop::initSettings() {
-    m_urlCache.configure(g_conf.m_spiderUrlCacheMaxAge, g_conf.m_spiderUrlCacheSize, g_conf.m_logTraceSpiderUrlCache, "spider url cache");
+    m_urlCache.configure(g_conf.m_spiderUrlCacheMaxAge*1000, g_conf.m_spiderUrlCacheSize, g_conf.m_logTraceSpiderUrlCache, "spider url cache");
+}
+
+void SpiderLoop::nukeWinnerListCache(collnum_t collnum) {
+	RdbCacheLock rcl(m_winnerListCache);
+	m_winnerListCache.clear(collnum);
 }
 
 

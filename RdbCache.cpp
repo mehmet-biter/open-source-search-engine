@@ -32,13 +32,10 @@ RdbCache::RdbCache() : m_dbname(NULL) {
 	m_needsSave    = false;
 	m_convertNumPtrsMax = 0;
 	m_convertMaxMem = 0;
-	m_errno = 0;
 	m_threshold = 0;
 	m_memoryLabelPtrs[0] = '\0';
 	m_memoryLabelBufs[0] = '\0';
 	m_fixedDataSize = 0;
-	m_supportLists = false;
-	m_useHalfKeys = false;
 	m_useDisk = false;
 	m_wrapped = 0;
 	m_cks = 0;
@@ -92,9 +89,7 @@ void RdbCache::reset ( ) {
 
 bool RdbCache::init ( int32_t  maxMem        ,
 		      int32_t  fixedDataSize ,
-		      bool  supportLists  ,
 		      int32_t  maxRecs       ,
-		      bool  useHalfKeys   ,
 		      const char *dbname  ,
 		      bool  loadFromDisk  ,
 		      char  cacheKeySize  ,
@@ -139,8 +134,6 @@ bool RdbCache::init ( int32_t  maxMem        ,
 	// this is the fixed dataSize of all records in a list, not the
 	// fixed dataSize of a list itself. Note that.
 	m_fixedDataSize = fixedDataSize;
-	m_supportLists  = supportLists;
-	m_useHalfKeys   = useHalfKeys;
 	m_useDisk       = loadFromDisk;
 	m_dbname        = dbname;
 	m_dks           = dataKeySize;
@@ -479,7 +472,7 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	p += 4;
 	// store data size if our recs are var length or we cache lists of
 	// fixed length recs, and those lists need a dataSize
-	if ( m_fixedDataSize == -1 || m_supportLists ) { 
+	if ( m_fixedDataSize == -1 ) {
 		*recSize = *(int32_t *)p; p += 4; }
 	else    
 		*recSize = m_fixedDataSize;
@@ -626,7 +619,7 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	int32_t need = recSize1 + recSize2;
 
 	// are we bad?
-	if (m_fixedDataSize>=0 && ! m_supportLists && need != m_fixedDataSize){
+	if (m_fixedDataSize>=0 && need != m_fixedDataSize){
 		log(LOG_LOGIC,"db: cache: addRecord: %" PRId32" != %" PRId32".", need,m_fixedDataSize);
 		gbshutdownLogicError();
 	}
@@ -647,7 +640,7 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	// . this DELIMETER tells us to go to the next buf
 	need += sizeof(collnum_t) + m_cks + 4 ;
 	// and size, if not fixed or we support lists
-	if ( m_fixedDataSize == -1 || m_supportLists ) need += 4;
+	if ( m_fixedDataSize == -1 ) need += 4;
 	// watch out
 	if ( need >= m_totalBufSize ) {
 		log(LOG_INFO, "db: Could not fit record of %" PRId32" bytes into %s cache. Max size is %" PRId32".",
@@ -736,7 +729,7 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	*(int32_t *)p = timestamp; p += 4;
 
 	// then dataSize if we need to
-	if ( m_fixedDataSize == -1 || m_supportLists ) { 
+	if ( m_fixedDataSize == -1 ) {
 		*(int32_t *)p = recSize1+recSize2; p +=4; //datasize
 	// sanity : check if the recSizes add up right
 	} else if ( m_fixedDataSize != recSize1 + recSize2 ){
@@ -855,7 +848,7 @@ bool RdbCache::deleteRec ( ) {
 	// get data size
 	int32_t dataSize;
 	// get dataSize and data
-	if ( m_fixedDataSize == -1 || m_supportLists ) {
+	if ( m_fixedDataSize == -1 ) {
 		dataSize = *(int32_t *)p; p += 4; }
 	else 	
 		dataSize = m_fixedDataSize;
@@ -900,7 +893,7 @@ bool RdbCache::deleteRec ( ) {
 void RdbCache::markDeletedRecord(char *ptr){
 	int32_t dataSize = sizeof(collnum_t)+m_cks+sizeof(int32_t);
 	// get dataSize and data
-	if ( m_fixedDataSize == -1 || m_supportLists ) {
+	if ( m_fixedDataSize == -1 ) {
 		dataSize += 4 +                      // size
 			*(int32_t*)(ptr+
 				 sizeof(collnum_t)+ // collnum
@@ -1090,11 +1083,6 @@ bool RdbCache::save () {
 
 	// and we are in sync with that data saved on disk
 	m_needsSave = false;
-
-	// report
-	if ( m_errno ) {
-		log(LOG_WARN, "db: Had error saving cache to disk for %s: %s.", m_dbname, mstrerror(m_errno));
-	}
 
 	return true;
 }
@@ -1378,9 +1366,7 @@ bool RdbCache::convertCache ( int32_t numPtrsMax , int32_t maxMem ) {
 	RdbCache tmp;
 	if ( ! tmp.init ( maxMem          ,
 			  m_fixedDataSize ,
-			  m_supportLists  ,
 			  maxRecs         ,
-			  m_useHalfKeys   ,
 			  m_dbname        ,
 			  true            , // loadFromDisk
 			  m_cks           , // cacheKeySize
@@ -1478,7 +1464,7 @@ void RdbCache::verify(){
 		 // get data size
 		 int32_t dataSize;
 		 // get dataSize and data
-		 if ( m_fixedDataSize == -1 || m_supportLists ) {
+		 if ( m_fixedDataSize == -1 ) {
 			 dataSize = *(int32_t *)p; p += 4; }
 		 else 	
 			 dataSize = m_fixedDataSize;

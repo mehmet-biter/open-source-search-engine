@@ -128,18 +128,14 @@ bool Msg13::registerHandler ( ) {
 
 	if ( ! s_httpCacheRobots.init ( memRobots ,
 					-1        , // fixedDataSize
-					false     , // lists o recs?
 					maxCacheNodesRobots ,
-					false     , // use half keys
 					"robots.txt"  , // dbname
 					true      ))// save to disk
 		return false;
 
 	if ( ! s_httpCacheOthers.init ( memOthers ,
 					-1        , // fixedDataSize
-					false     , // lists o recs?
 					maxCacheNodesOthers ,
-					false     , // use half keys
 					"htmlPages"  , // dbname
 					true      ))// save to disk
 		return false;
@@ -563,9 +559,7 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 		s_flag = true;
 		s_hammerCache.init ( 15000       , // maxcachemem,
 				     8          , // fixed data size
-				     false      , // support lists?
 				     500        , // max nodes
-				     false      , // use half keys?
 				     "hamcache" , // dbname
 				     false      , // load from disk?
 				     12         , // key size
