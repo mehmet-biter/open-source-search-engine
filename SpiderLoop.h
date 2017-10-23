@@ -7,7 +7,7 @@
 #include "HashTableX.h"
 #include "Msg5.h"
 #include "hash.h"
-#include "RdbCache.h"
+#include "FxBlobCache.h"
 #include "GbCache.h"
 #include <time.h>
 #include <atomic>
@@ -57,7 +57,7 @@ public:
 	// for spidering/parsing/indexing a url(s)
 	XmlDoc *m_docs [ MAX_SPIDERS ];
 
-	RdbCache   m_winnerListCache;
+	FxBlobCache<int32_t> m_winnerListCache;
 
 	void invalidateActiveList() { m_activeListValid = false; }
 	

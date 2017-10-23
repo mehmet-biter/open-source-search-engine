@@ -298,7 +298,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	caches[numCaches++] = Msg13::getHttpCacheOthers();
 	caches[numCaches++] = g_dns.getCache();
 	caches[numCaches++] = g_dns.getCacheLocal();
-	caches[numCaches++] = &g_spiderLoop.m_winnerListCache;
+	auto const winnerlist_statistics = g_spiderLoop.m_winnerListCache.query_statistics();
 
 	if ( format == FORMAT_HTML ) {
 		p.safePrintf (
@@ -339,6 +339,26 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			     (int32_t)caches[i]->useDisk());
 		p.safePrintf("\t</cacheStats>\n");
 	}
+	if(format==FORMAT_XML) {
+		p.safePrintf("\t<cacheStats>\n");
+		p.safePrintf("\t\t<name>%s</name>\n","winnercache");
+		int64_t a = winnerlist_statistics.lookup_hits;
+		int64_t b = winnerlist_statistics.lookup_misses;
+		double r = 100.0 * (double)a / (double)(a+b);
+		p.safePrintf("\t\t<hitRatio>");
+		if(a+b > 0.0) p.safePrintf("%.1f%%",r);
+		p.safePrintf("</hitRatio>\n");
+		p.safePrintf("\t\t<numHits>%lu</numHits>\n", winnerlist_statistics.lookup_hits);
+		p.safePrintf("\t\t<numMisses>%lu</numMisses>\n", winnerlist_statistics.lookup_misses);
+		p.safePrintf("\t\t<numTries>%lu</numTries>\n", winnerlist_statistics.lookups);
+
+		p.safePrintf("\t\t<numUsedSlots>%u</numUsedSlots>\n", winnerlist_statistics.items);
+		p.safePrintf("\t\t<numTotalSlots>%u</numTotalSlots>\n", winnerlist_statistics.max_items);
+		p.safePrintf("\t\t<bytesUsed>%zu</bytesUsed>\n", winnerlist_statistics.memory_used);
+		p.safePrintf("\t\t<maxBytes>%zu</maxBytes>\n", winnerlist_statistics.max_memory);
+		p.safePrintf("\t\t<saveToDisk>%d</saveToDisk>\n", 0);
+		p.safePrintf("\t</cacheStats>\n");
+	}
 
 	for ( int32_t i = 0 ; format == FORMAT_JSON && i < numCaches ; i++ ) {
 		p.safePrintf("\t\"cacheStats\":{\n");
@@ -365,6 +385,26 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			     (int32_t)caches[i]->useDisk());
 		p.safePrintf("\t},\n");
 	}
+	if(format==FORMAT_JSON) {
+		p.safePrintf("\t\"cacheStats\":{\n");
+		p.safePrintf("\t\t\"name\":\"%s\",\n","winnercache");
+		int64_t a = winnerlist_statistics.lookup_hits;
+		int64_t b = winnerlist_statistics.lookup_misses;
+		double r = 100.0 * (double)a / (double)(a+b);
+		p.safePrintf("\t\t\"hitRatio\":\"");
+		if ( a+b > 0.0 ) p.safePrintf("%.1f%%",r);
+		p.safePrintf("\",\n");
+		p.safePrintf("\t\t\"numHits\":%lu,\n", winnerlist_statistics.lookup_hits);
+		p.safePrintf("\t\t\"numMisses\":%lu,\n", winnerlist_statistics.lookup_misses);
+		p.safePrintf("\t\t\"numTries\":%lu,\n", winnerlist_statistics.lookups);
+
+		p.safePrintf("\t\t\"numUsedSlots\":%u,\n", winnerlist_statistics.items);
+		p.safePrintf("\t\t\"numTotalSlots\":%u,\n", winnerlist_statistics.max_items);
+		p.safePrintf("\t\t\"bytesUsed\":%zu,\n", winnerlist_statistics.memory_used);
+		p.safePrintf("\t\t\"maxBytes\":%zu,\n", winnerlist_statistics.max_memory);
+		p.safePrintf("\t\t\"saveToDisk\":%d\n", 0);
+		p.safePrintf("\t},\n");
+	}
 
 
 	// do not print any more if xml or json
@@ -374,6 +414,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		p.safePrintf("<td><b>%s</b></td>",caches[i]->getDbname() );
 	}
+	p.safePrintf("<td><b>%s</b></td>", "winnercache");
 	//p.safePrintf ("<td><b><i>Total</i></b></td></tr>\n" );
 
 	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>hit ratio</nobr></b></td>" );
@@ -386,12 +427,14 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 		else
 			p.safePrintf("<td>--</td>");
 	}
+	p.safePrintf("<td>--</td>"); //todo
 
 	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>hits</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getNumHits();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
+	p.safePrintf("<td>%lu</td>", winnerlist_statistics.lookup_hits);
 
 	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>tries</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
@@ -399,48 +442,56 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 		int64_t b = caches[i]->getNumMisses();
 		p.safePrintf("<td>%" PRId64"</td>",a+b);
 	}
+	p.safePrintf("<td>%lu</td>", winnerlist_statistics.lookups);
 
 	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>used slots</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getNumUsedNodes();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
+	p.safePrintf("<td>%u</td>", winnerlist_statistics.items);
 
 	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>max slots</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getNumTotalNodes();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
+	p.safePrintf("<td>%u</td>", winnerlist_statistics.max_items);
 
 	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>used bytes</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getMemOccupied();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
+	p.safePrintf("<td>%zu</td>", winnerlist_statistics.memory_used);
 
 	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>max bytes</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getMaxMem();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
+	p.safePrintf("<td>%zu</td>", winnerlist_statistics.max_memory);
 
 	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>dropped recs</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getNumDeletes();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
+	p.safePrintf("<td>%lu</td>", winnerlist_statistics.removes);
 
 	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>added recs</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getNumAdds();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
+	p.safePrintf("<td>%lu</td>", winnerlist_statistics.inserts);
 
 	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>save to disk</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->useDisk();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
+	p.safePrintf("<td>0</td>");
 
 	// end the table now
 	p.safePrintf ( "</tr>\n</table><br><br>" );

@@ -1721,8 +1721,7 @@ bool SpiderColl::evalIpLoop ( ) {
 	cacheKey.n0 = m_scanningIp;
 	cacheKey.n1 = 0;
 	char *doleBuf = NULL;
-	int32_t doleBufSize;
-	time_t cachedTimestamp = 0;
+	size_t doleBufSize;
 	bool useCache = true;
 	const CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 
@@ -1743,41 +1742,28 @@ bool SpiderColl::evalIpLoop ( ) {
 	// assume not from cache
 	if ( useCache ) {
 		//g_spiderLoop.m_winnerListCache.verify();
-		RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
-		bool inCache = g_spiderLoop.m_winnerListCache.getRecord(m_collnum,
-									(char *)&cacheKey,
-									&doleBuf,
-									&doleBufSize,
-									false, // doCopy?
-									// we raised MAX_WINNER_NODES so
-									// grow from 600 to 1200
-									// (10 mins to 20 mins) to make
-									// some crawls faster
-									1200, // maxAge
-									true, // incCounts
-									&cachedTimestamp, // rec timestamp
-									true );  // promote rec?
+		FxBlobCacheLock<int32_t> rcl(g_spiderLoop.m_winnerListCache);
+		bool inCache = g_spiderLoop.m_winnerListCache.lookup(m_scanningIp, (void**)&doleBuf, &doleBufSize);
 		if ( inCache ) {
 			int32_t crc = hash32 ( doleBuf + 4 , doleBufSize - 4 );
 	
 			char ipbuf[16];
-			logDebug( g_conf.m_logDebugSpider, "spider: GOT %" PRId32" bytes of SpiderRequests "
+			logDebug( g_conf.m_logDebugSpider, "spider: GOT %zu bytes of SpiderRequests "
 				"from winnerlistcache for ip %s ptr=0x%" PTRFMT" crc=%" PRIu32,
 				doleBufSize,
 				iptoa(m_scanningIp,ipbuf),
 				(PTRTYPE)doleBuf,
 				crc);
 	
-			// we no longer re-add to avoid churn. but do not free it
-			// so do not 'own' it.
+			//copy doleuf out from cache so we can release the lock
 			SafeBuf sb;
-			sb.setBuf ( doleBuf, doleBufSize, doleBufSize, false );
+			sb.safeMemcpy(doleBuf,doleBufSize);
 
 			rcl.unlock();
 
 			// now add the first rec m_doleBuf into doledb's tree
 			// and re-add the rest back to the cache with the same key.
-			bool rc = addDoleBufIntoDoledb(&sb,true);//,cachedTimestamp)
+			bool rc = addDoleBufIntoDoledb(&sb,true);
 	
 			logTrace( g_conf.m_logTraceSpider, "END, after addDoleBufIntoDoledb. returning %s", rc ? "true" : "false" );
 			return rc;
@@ -3128,31 +3114,11 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// remove from cache? if we added the last spider request in the
 	// cached dolebuf to doledb then remove it from cache so it's not
 	// a cached empty dolebuf and we recompute it not using the cache.
-	if ( isFromCache && p >= doleBufEnd ) {
-		// i don't think we can remove keys from cache so add
-		// a rec with a byte size of 1 to indicate for us to ignore.
-		// set the timestamp to 12345 so the getRecord above will
-		// not get it and promote it in the linked list.
-		char byte = 0;
-		key96_t cacheKey;
-		cacheKey.n0 = firstIp;
-		cacheKey.n1 = 0;
-		//g_spiderLoop.m_winnerListCache.verify();
-		RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
-		g_spiderLoop.m_winnerListCache.addRecord(m_collnum,
-							 (char *)&cacheKey,
-							 &byte,
-							 1,
-							 12345);
-		//g_spiderLoop.m_winnerListCache.verify();
-	}
-
-	// if it wasn't in the cache and it was only one record we
-	// obviously do not want to add it to the cache.
-	else if ( p < doleBufEnd ) {
-		key96_t cacheKey;
-		cacheKey.n0 = firstIp;
-		cacheKey.n1 = 0;
+	if ( p >= doleBufEnd ) {
+		FxBlobCacheLock<int32_t> rcl(g_spiderLoop.m_winnerListCache);
+		g_spiderLoop.m_winnerListCache.remove(firstIp);
+	} else {
+		// insert (or replace) the3 list in the cache
 		char *x = doleBuf->getBufStart();
 		// the new offset is the next record after the one we
 		// just added to doledb
@@ -3172,14 +3138,8 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		// don't re-add just use the same modified buffer so we
 		// don't churn the cache.
 		// but do add it to cache if not already in there yet.
-		if ( ! isFromCache ) {
-			RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
-			g_spiderLoop.m_winnerListCache.addRecord(m_collnum,
-								 (char *)&cacheKey,
-								 doleBuf->getBufStart(),
-								 doleBuf->length(),
-								 0); //cachedTimestamp );
-		}
+		FxBlobCacheLock<int32_t> rcl(g_spiderLoop.m_winnerListCache);
+		g_spiderLoop.m_winnerListCache.insert(firstIp, doleBuf->getBufStart(), doleBuf->length());
 	}
 
 	// keep it on stack now that doledb is tree-only
