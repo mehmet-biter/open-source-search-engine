@@ -3868,8 +3868,8 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
-	m->m_title = "Browser language";
-	m->m_desc  = "Detected browser language";
+	m->m_title = "Browser accept language";
+	m->m_desc  = "Detected browser accept language";
 	simple_m_set(SearchInput,m_fx_blang);
 	m->m_cgi   = "fx_blang";
 	m->m_def   = "";
