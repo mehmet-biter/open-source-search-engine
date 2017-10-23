@@ -54,6 +54,17 @@ bool isSpiderTempError(int errnum) {
 	}
 }
 
+bool storeEmptyTitleRec(int errnum) {
+	switch (errnum) {
+		case EDOCSIMPLIFIEDREDIR:
+		case EDOCNONCANONICAL:
+		case EDOCDISALLOWEDROOT:
+			return true;
+		default:
+			return false;
+	}
+}
+
 const char *mstrerror ( int errnum ) {
 	if ( errnum >= GB_ERRNO_BEGIN ) {
 		switch ( errnum ) {

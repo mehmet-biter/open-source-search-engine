@@ -2698,7 +2698,7 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 
 	int32_t *indexCode = getIndexCode();
 	if (! indexCode || indexCode == (void *)-1) return (char *)indexCode;
-	if (*indexCode && (*indexCode != EDOCSIMPLIFIEDREDIR && *indexCode != EDOCNONCANONICAL)) {
+	if (*indexCode && !storeEmptyTitleRec(*indexCode)) {
 		m_prepared = true;
 		return (char *)1;
 	}
@@ -3016,7 +3016,7 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	if ( ! indexCode ) return NULL;
 	// force delete? EDOCFORCEDELETE
 	if (*indexCode) {
-		if (*indexCode == EDOCSIMPLIFIEDREDIR || *indexCode == EDOCNONCANONICAL) {
+		if (storeEmptyTitleRec(*indexCode)) {
 			// make sure we store an empty document if it's a simplified redirect/non-canonical
 			m_contentValid = true;
 			m_content    = NULL;
@@ -12781,8 +12781,10 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		addTitleRec = true;
 		addClusterRec = true;
 	} else {
-		if (m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL) {
-			// we're adding titlerec to keep links between redirection intact
+		if (storeEmptyTitleRec(m_indexCode)) {
+			// we're adding titlerec to:
+			// - keep links between redirection intact
+			// - display disallowed root pages
 			addTitleRec = true;
 
 			// since we're adding titlerec, add posrec as well
@@ -12790,7 +12792,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 			// if we are adding a simplified redirect as a link to spiderdb
 			// likewise if the error was EDOCNONCANONICAL treat it like that
-			spideringLinks = true;
+			spideringLinks = (m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL);
 
 			// don't add linkinfo since titlerec is empty
 			addLinkInfo = false;

@@ -15,6 +15,7 @@ const char* mstrerror ( int errnum );
 const char* merrname( int errnum );
 
 bool isSpiderTempError(int errnum);
+bool storeEmptyTitleRec(int errnum);
 
 #define GB_ERRNO_BEGIN 0x00008000 // 32768
 
