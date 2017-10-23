@@ -4640,17 +4640,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_SI;
 	m++;
 
-	m->m_title = "GB Country";
-	m->m_desc  = "Country code to restrict search";
-	m->m_off   = offsetof(SearchInput,m_gbcountry);
-	m->m_type  = TYPE_CHARPTR;
-	m->m_def   = NULL;
-	m->m_cgi   = "gbcountry";
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m->m_flags = PF_NOAPI;
-	m++;
-
 	m->m_title = "show banned pages";
 	m->m_desc  = "show banned pages";
 	simple_m_set(SearchInput,m_showBanned);

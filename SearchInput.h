@@ -106,8 +106,6 @@ public:
 
 	char  *m_queryCharset;
 
-	char  *m_gbcountry;
-
 	// advanced query parms
 	char  *m_url; // for url: search
 	char  *m_sites;

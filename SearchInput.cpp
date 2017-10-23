@@ -32,7 +32,6 @@ SearchInput::SearchInput() {
 	m_debug = false;
 	m_displayMetas = NULL;
 	m_queryCharset = NULL;
-	m_gbcountry = NULL;
 	m_url = NULL;
 	m_sites = NULL;
 	m_plus = NULL;
