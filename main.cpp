@@ -88,6 +88,7 @@
 #include "ScopedLock.h"
 #include "RobotsCheckList.h"
 #include "SpiderdbHostDelete.h"
+#include "RobotsBlockedResultOverride.h"
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -1615,6 +1616,8 @@ int main2 ( int argc , char *argv[] ) {
 	g_urlWhiteList.init();
 
 	g_robotsCheckList.init();
+
+	g_robotsBlockedResultOverride.init();
 
 	// initialize generate global index thread
 	if (!RdbBase::initializeGlobalIndexThread()) {

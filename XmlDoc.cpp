@@ -15545,6 +15545,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	m_reply.m_firstIp          = *fip;
 	m_reply.m_docId            = m_docId;
 	m_reply.m_httpStatus       = m_httpStatus;
+	m_reply.m_indexCode        = m_indexCode;
 	m_reply.m_contentLen       = size_utf8Content - 1;
 	m_reply.m_lastSpidered     = getSpideredTime();//m_spideredTime;
 	m_reply.m_datedbDate       = 0;

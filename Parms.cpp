@@ -8817,6 +8817,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for RobotsBlockedMsg";
+	m->m_cgi   = "ltrc_robotsb";
+	simple_m_set(Conf,m_logTraceRobotsBlocked);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for RobotsCheckList";
 	m->m_cgi   = "ltrc_robotscl";
 	simple_m_set(Conf,m_logTraceRobotsCheckList);

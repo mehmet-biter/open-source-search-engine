@@ -1497,8 +1497,14 @@ bool Msg40::gotSummary ( ) {
 			continue;
 		}
 
+		// don't filter out disallowed root doc
+		if (mr && mr->m_indexCode == EDOCDISALLOWEDROOT) {
+			continue;
+		}
+
 		// filter simplified redirection/non-caconical document
-		if (mr && mr->size_rubuf > 1 && (mr->m_contentLen <= 0 || mr->m_httpStatus != 200)) {
+		if (mr && mr->size_rubuf > 1 && (mr->m_contentLen <= 0 || mr->m_httpStatus != 200 ||
+		    mr->m_indexCode == EDOCNONCANONICAL || mr->m_indexCode == EDOCSIMPLIFIEDREDIR)) {
 			if (!m_si->m_showErrors) {
 				*level = CR_EMPTY_REDIRECTION_PAGE;
 				continue;

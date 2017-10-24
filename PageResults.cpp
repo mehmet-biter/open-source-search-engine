@@ -31,6 +31,7 @@
 #include "GbUtil.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "RobotsBlockedResultOverride.h"
 
 
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;
@@ -1870,7 +1871,17 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 	return true;
 }
 
+static std::string getPreferredResultLanguage(const SearchInput *si) {
+	if (si->m_fx_qlang && strlen(si->m_fx_qlang) == 2) {
+		return si->m_fx_qlang;
+	}
 
+	if (si->m_fx_blang && strlen(si->m_fx_blang) >= 2) {
+		return std::string(si->m_fx_blang, 2);
+	}
+
+	return "en";
+}
 
 // use this for xml as well as html
 bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
@@ -2219,17 +2230,28 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 		sb->safePrintf ( "\">");
 	}
 
+	const char  *str = nullptr;
+	int32_t strLen = 0;
 
 	// . then the title  (should be NULL terminated)
 	// . the title can be NULL
 	// . highlight it first
 	// . the title itself should not have any tags in it!
-	const char  *str  = mr->ptr_tbuf;
-	int32_t strLen = mr->size_tbuf - 1;
-	if ( ! str || strLen < 0 ) {
+	str = mr->ptr_tbuf;
+	strLen = mr->size_tbuf - 1;
+	if (!str || strLen < 0) {
 		strLen = 0;
 	}
-	
+
+	std::string preferredResultLang = getPreferredResultLanguage(si);
+	std::string overriddenTitle;
+	// override title
+	if (mr->m_indexCode == EDOCDISALLOWEDROOT) {
+		overriddenTitle = g_robotsBlockedResultOverride.getTitle(preferredResultLang, uu);
+		str = overriddenTitle.c_str();
+		strLen = overriddenTitle.length();
+	}
+
 	const char *frontTag = "<font style=\"color:black;background-color:yellow\">" ;
 	const char *backTag = "</font>";
 	if ( si->m_format == FORMAT_XML ) {
@@ -2379,6 +2401,14 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 	// this includes the terminating \0 or \0\0 so back up
 	if ( strLen < 0 ) {
 		strLen  = 0;
+	}
+
+	// override summary
+	std::string overriddenSummary;
+	if (mr->m_indexCode == EDOCDISALLOWEDROOT) {
+		overriddenSummary = g_robotsBlockedResultOverride.getSummary(preferredResultLang, uu);
+		str = overriddenSummary.c_str();
+		strLen = overriddenSummary.length();
 	}
 
 	bool printSummary = true;
