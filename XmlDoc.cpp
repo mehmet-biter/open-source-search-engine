@@ -1001,10 +1001,13 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	int32_t shouldbe = (char *)&ptr_firstUrl - (char *)&m_headerSize;
 
 	if ( headerSize != shouldbe ) {
+		if(headerSize==84 && shouldbe==88 && *(uint16_t*)(m_ubuf+2) == 121) {
+			//very specific case of known, short-lived corruption which should be safe to just ignore.
+			g_errno = ECORRUPTDATA;
+			return false;
+		}
 		log(LOG_ERROR,"CORRUPTED TITLEREC detected for docId %" PRId64 "", m_docId);
 		gbshutdownLogicError();
-		//g_errno = ECORRUPTDATA;
-		//return false;
 	}
 
 	// set our easy stuff
@@ -2703,7 +2706,7 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 
 	int32_t *indexCode = getIndexCode();
 	if (! indexCode || indexCode == (void *)-1) return (char *)indexCode;
-	if (*indexCode && (*indexCode != EDOCSIMPLIFIEDREDIR && *indexCode != EDOCNONCANONICAL)) {
+	if (*indexCode && !storeEmptyTitleRec(*indexCode)) {
 		m_prepared = true;
 		return (char *)1;
 	}
@@ -3021,7 +3024,7 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	if ( ! indexCode ) return NULL;
 	// force delete? EDOCFORCEDELETE
 	if (*indexCode) {
-		if (*indexCode == EDOCSIMPLIFIEDREDIR || *indexCode == EDOCNONCANONICAL) {
+		if (storeEmptyTitleRec(*indexCode)) {
 			// make sure we store an empty document if it's a simplified redirect/non-canonical
 			m_contentValid = true;
 			m_content    = NULL;
@@ -12786,8 +12789,10 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		addTitleRec = true;
 		addClusterRec = true;
 	} else {
-		if (m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL) {
-			// we're adding titlerec to keep links between redirection intact
+		if (storeEmptyTitleRec(m_indexCode)) {
+			// we're adding titlerec to:
+			// - keep links between redirection intact
+			// - display disallowed root pages
 			addTitleRec = true;
 
 			// since we're adding titlerec, add posrec as well
@@ -12795,7 +12800,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 			// if we are adding a simplified redirect as a link to spiderdb
 			// likewise if the error was EDOCNONCANONICAL treat it like that
-			spideringLinks = true;
+			spideringLinks = (m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL);
 
 			// don't add linkinfo since titlerec is empty
 			addLinkInfo = false;
@@ -15548,6 +15553,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	m_reply.m_firstIp          = *fip;
 	m_reply.m_docId            = m_docId;
 	m_reply.m_httpStatus       = m_httpStatus;
+	m_reply.m_indexCode        = m_indexCode;
 	m_reply.m_contentLen       = size_utf8Content - 1;
 	m_reply.m_lastSpidered     = getSpideredTime();//m_spideredTime;
 	m_reply.m_datedbDate       = 0;

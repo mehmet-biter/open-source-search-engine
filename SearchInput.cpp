@@ -32,7 +32,6 @@ SearchInput::SearchInput() {
 	m_debug = false;
 	m_displayMetas = NULL;
 	m_queryCharset = NULL;
-	m_gbcountry = NULL;
 	m_url = NULL;
 	m_sites = NULL;
 	m_plus = NULL;
@@ -49,6 +48,10 @@ SearchInput::SearchInput() {
 	m_minSerpDocId = 0;
 	m_sameLangWeight = 0.0;
 	m_unknownLangWeight = 0.0;
+	m_fx_qlang = nullptr;
+	m_fx_blang = nullptr;
+	m_fx_fetld = nullptr;
+	m_fx_country = nullptr;
 	m_defaultSortLang = NULL;
 	m_dedupURL = 0;
 	m_percentSimilarSummary = 0;
@@ -304,31 +307,29 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 
 		bool valid_qlang = false;
 		{
-			const char* qlang = r->getString("fx_qlang");
-			if (qlang) {
+			if (m_fx_qlang) {
 				// validate lang
-				if (strlen(qlang) == 2) {
+				if (strlen(m_fx_qlang) == 2) {
 					valid_qlang = true;
-					strcat(content_language_hint, qlang);
+					strcat(content_language_hint, m_fx_qlang);
 				}
 			}
 		}
 
 		// only use other hints if fx_qlang is not set
 		if (!valid_qlang) {
-			const char* blang = r->getString("fx_blang");
-			if (blang) {
+			if (m_fx_blang) {
 				// validate lang
-				size_t len = strlen(blang);
+				size_t len = strlen(m_fx_blang);
 				if (len > 0 && len <= 17) {
-					strcat(content_language_hint, blang);
+					strcat(content_language_hint, m_fx_blang);
 				}
 			}
 
 			// use fx_fetld if available; if not, try with fx_country
-			tld_hint = r->getString("fx_fetld");
-			if (!tld_hint) {
-				tld_hint = r->getString("fx_country");
+			tld_hint = m_fx_fetld;
+			if (!tld_hint || strlen(tld_hint) == 0) {
+				tld_hint = m_fx_country;
 			}
 		}
 
