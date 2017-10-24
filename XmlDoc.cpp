@@ -1001,10 +1001,13 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	int32_t shouldbe = (char *)&ptr_firstUrl - (char *)&m_headerSize;
 
 	if ( headerSize != shouldbe ) {
+		if(headerSize==84 && shouldbe==88 && *(uint16_t*)(m_ubuf+2) == 121) {
+			//very specific case of known, short-lived corruption which should be safe to just ignore.
+			g_errno = ECORRUPTDATA;
+			return false;
+		}
 		log(LOG_ERROR,"CORRUPTED TITLEREC detected for docId %" PRId64 "", m_docId);
 		gbshutdownLogicError();
-		//g_errno = ECORRUPTDATA;
-		//return false;
 	}
 
 	// set our easy stuff
