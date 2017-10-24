@@ -56,7 +56,7 @@ bool FxBlobCache<K>::insert(const K &key, const void *ptr, size_t size) {
 	   max_items==0)
 		return false; //there will never be room
 	
-	//remove current element, if nay
+	//remove current element, if any
 	remove_(key);
 	
 	//purge items until there is room for the new item
@@ -65,28 +65,38 @@ bool FxBlobCache<K>::insert(const K &key, const void *ptr, size_t size) {
 	while(memory_used+size>max_memory)
 		purge_one_item();
 	
-	void *buf;
+	//slightly tedious because we want exception guarantees of consistent state and no memory leaks
 	try {
-		buf = new char[size];
+		char *buf = new char[size];
+	
+		time_t now = time(0);
+		Item item;
+		item.timestamp = now;
+		item.ptr = buf;
+		memcpy(item.ptr, ptr, size);
+		item.size = size;
+		
+		try {
+			key_map[key] = item;
+			try {
+				timestamp_map.insert(std::make_pair(item.timestamp,key));
+				
+				items++;
+				memory_used += size;
+				inserts++;
+				
+				return true;
+			} catch(std::bad_alloc&) {
+				key_map.erase(key);
+				throw;
+			}
+		} catch(std::bad_alloc&) {
+			delete[] buf;
+			throw;
+		}
 	} catch(std::bad_alloc&) {
 		return false;
 	}
-	
-	//todo: make insertion exception-safe
-	time_t now = time(0);
-	Item item;
-	item.timestamp = now;
-	item.ptr = buf;
-	memcpy(item.ptr, ptr, size);
-	item.size = size;
-	
-	key_map[key] = item;
-	timestamp_map.insert(std::make_pair(item.timestamp,key));
-	
-	items++;
-	memory_used += size;
-	inserts++;
-	return true;
 }
 
 template<typename K>
