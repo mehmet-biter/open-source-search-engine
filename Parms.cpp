@@ -2949,6 +2949,7 @@ namespace {
 	template<> parameter_type_t c_type_to_pf_type<uint64_t>() { return TYPE_INT64; } //ahem... signed?
 	template<> parameter_type_t c_type_to_pf_type<bool>() { return TYPE_BOOL; }
 	template<> parameter_type_t c_type_to_pf_type<char>() { return TYPE_CHAR; } //dubious type. rarely used
+	template<> parameter_type_t c_type_to_pf_type<char*>() { return TYPE_CHARPTR; }
 	template<> parameter_type_t c_type_to_pf_type<float>() { return TYPE_FLOAT; }
 	template<> parameter_type_t c_type_to_pf_type<double>() { return TYPE_DOUBLE; }
 	template<> parameter_type_t c_type_to_pf_type<SafeBuf>() { return TYPE_SAFEBUF; }
@@ -3852,8 +3853,42 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
 	m++;
-	
-	
+
+	m->m_title = "Query language";
+	m->m_desc  = "User's configured search results language";
+	simple_m_set(SearchInput,m_fx_qlang);
+	m->m_cgi   = "fx_qlang";
+	m->m_def   = "";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "Browser accept language";
+	m->m_desc  = "Detected browser accept language";
+	simple_m_set(SearchInput,m_fx_blang);
+	m->m_cgi   = "fx_blang";
+	m->m_def   = "";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "Frontend TLD";
+	m->m_desc  = "TLD of the frontend used for query";
+	simple_m_set(SearchInput,m_fx_fetld);
+	m->m_cgi   = "fx_fetld";
+	m->m_def   = "";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "Country";
+	m->m_desc  = "Country detected by geo-ip lookup";
+	simple_m_set(SearchInput,m_fx_country);
+	m->m_cgi   = "fx_country";
+	m->m_def   = "";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
 
 	m->m_title = "sort language preference";
 	m->m_desc  = "Default language to use for ranking results. "
@@ -3863,14 +3898,12 @@ void Parms::init ( ) {
 		"boosts to no language in particular. See the language "
 		"abbreviations at the bottom of the "
 		"<a href=\"/admin/filters\">url filters</a> page.";
+	simple_m_set(SearchInput,m_defaultSortLang);
 	m->m_cgi   = "qlang";
-	m->m_off   = offsetof(SearchInput,m_defaultSortLang);
-	m->m_type  = TYPE_CHARPTR;
-	m->m_def   = "";//"xx";//_US";
+	m->m_def   = "";
 	m->m_group = false;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
 	m++;
 
 	m->m_title = "language weight";
@@ -4633,17 +4666,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "prepend";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
-	m++;
-
-	m->m_title = "GB Country";
-	m->m_desc  = "Country code to restrict search";
-	m->m_off   = offsetof(SearchInput,m_gbcountry);
-	m->m_type  = TYPE_CHARPTR;
-	m->m_def   = NULL;
-	m->m_cgi   = "gbcountry";
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m->m_flags = PF_NOAPI;
 	m++;
 
 	m->m_title = "show banned pages";
@@ -8774,6 +8796,13 @@ void Parms::init ( ) {
 	m->m_title = "log trace info for Robots";
 	m->m_cgi   = "ltrc_robots";
 	simple_m_set(Conf,m_logTraceRobots);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for RobotsBlockedMsg";
+	m->m_cgi   = "ltrc_robotsb";
+	simple_m_set(Conf,m_logTraceRobotsBlocked);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;

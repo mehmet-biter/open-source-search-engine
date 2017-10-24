@@ -12,7 +12,7 @@ OBJECTS = GigablastTest.o GigablastTestUtils.o \
 	HttpMimeTest.o \
 	JsonTest.o \
 	PosTest.o PosdbTest.o ProcessTest.o \
-	RdbBaseTest.o RdbBucketsTest.o RdbIndexTest.o RdbListTest.o RdbTreeTest.o RobotRuleTest.o RobotsCheckListTest.o RobotsTest.o \
+	RdbBaseTest.o RdbBucketsTest.o RdbIndexTest.o RdbListTest.o RdbTreeTest.o ResultOverrideTest.o RobotRuleTest.o RobotsCheckListTest.o RobotsTest.o \
 	ScalingFunctionsTest.o SiteGetterTest.o SummaryTest.o \
 	UnicodeTest.o UrlBlockCheckTest.o UrlComponentTest.o UrlMatchListTest.o UrlParserTest.o UrlTest.o \
 	WordsTest.o \

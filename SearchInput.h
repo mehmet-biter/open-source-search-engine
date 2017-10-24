@@ -106,8 +106,6 @@ public:
 
 	char  *m_queryCharset;
 
-	char  *m_gbcountry;
-
 	// advanced query parms
 	char  *m_url; // for url: search
 	char  *m_sites;
@@ -131,6 +129,11 @@ public:
 
 	float m_sameLangWeight;
 	float m_unknownLangWeight;
+
+	char *m_fx_qlang;
+	char *m_fx_blang;
+	char *m_fx_fetld;
+	char *m_fx_country;
 
 	// prefer what lang in the results. it gets a 20x boost. "en" "xx" "fr"
 	char 	      *m_defaultSortLang;

@@ -1178,7 +1178,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	hi.m_prefix    = "urlhash";
 	if ( ! hashString(buf,blen,&hi) ) return false;
 
-	if (size_utf8Content - 1 > 0) {
+	if (size_utf8Content - 1 > 0 || m_indexCode == EDOCDISALLOWEDROOT) {
 		setStatus("hashing url mid domain");
 
 		// update parms
@@ -1194,7 +1194,9 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		if (!hashSingleTerm(fu->getDomain(), fu->getDomainLen(), &hi)) {
 			return false;
 		}
+	}
 
+	if (size_utf8Content - 1 > 0) {
 		setStatus("hashing url path");
 		char *path = fu->getPath();
 		int32_t plen = fu->getPathLen();
