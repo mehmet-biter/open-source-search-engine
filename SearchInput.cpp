@@ -328,7 +328,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 
 			// use fx_fetld if available; if not, try with fx_country
 			tld_hint = m_fx_fetld;
-			if (!tld_hint) {
+			if (!tld_hint || strlen(tld_hint) == 0) {
 				tld_hint = m_fx_country;
 			}
 		}
