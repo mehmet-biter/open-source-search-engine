@@ -386,6 +386,7 @@ class Conf {
 	bool m_logTraceDnsCache;
 	bool m_logTraceFile;
 	bool m_logTraceHttpMime;
+	bool m_logTraceLanguageResultOverride;
 	bool m_logTraceMem;
 	bool m_logTraceMsg0;
 	bool m_logTraceMsg4;
@@ -405,7 +406,6 @@ class Conf {
 
 	bool m_logTraceRepairs;
 	bool m_logTraceRobots;
-	bool m_logTraceRobotsBlocked;
 	bool m_logTraceRobotsCheckList;
 	bool m_logTraceSpider;
 	bool m_logTraceSpiderUrlCache;
@@ -417,6 +417,7 @@ class Conf {
 	bool m_logTracePhrases;
 	bool m_logTraceUrlMatchList;
 	bool m_logTraceUrlMatchHostList;
+	bool m_logTraceUrlResultOverride;
 	bool m_logTraceWordSpam;
 	bool m_logTraceUrlClassification;
 	bool m_logTraceTopTree;

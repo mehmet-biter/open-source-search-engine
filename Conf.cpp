@@ -236,6 +236,7 @@ Conf::Conf ( ) {
 	m_logTraceDnsCache = false;
 	m_logTraceFile = false;
 	m_logTraceHttpMime = false;
+	m_logTraceLanguageResultOverride = false;
 	m_logTraceMem = false;
 	m_logTraceMsg0 = false;
 	m_logTraceMsg4 = false;
@@ -254,7 +255,6 @@ Conf::Conf ( ) {
 	m_logTraceRdbTree = false;
 	m_logTraceRepairs = false;
 	m_logTraceRobots = false;
-	m_logTraceRobotsBlocked = false;
 	m_logTraceRobotsCheckList = false;
 	m_logTraceSpider = false;
 	m_logTraceSpiderUrlCache = false;
@@ -266,6 +266,7 @@ Conf::Conf ( ) {
 	m_logTracePhrases= false;
 	m_logTraceUrlMatchList = false;
 	m_logTraceUrlMatchHostList = false;
+	m_logTraceUrlResultOverride = false;
 	m_logTraceWordSpam=false;
 	m_logTraceUrlClassification = false;
 	m_logTimingAddurl = false;

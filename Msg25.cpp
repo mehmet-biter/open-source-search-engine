@@ -1272,6 +1272,7 @@ bool Msg25::sendRequests() {
 		// buzz sets the query to see if inlinker has the query terms
 		// so we can set <absScore2>
 		r->m_langId             = langUnknown; // no synonyms i guess
+		r->m_prefferedResultLangId = langUnknown;
 		r->ptr_qbuf             = m_qbuf;
 		r->size_qbuf            = m_qbufSize;
 

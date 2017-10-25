@@ -94,6 +94,14 @@ bool Summary::verifySummary(const char *titleBuf, int32_t titleBufLen) {
 	return false;
 }
 
+void Summary::setSummary(const std::string &summary) {
+	m_summaryLen = summary.copy(m_summary, MAX_SUMMARY_LEN);
+	m_summary[m_summaryLen] = '\0';
+	m_summaryExcerptLen[0] = m_summaryLen;
+	m_numExcerpts = 1;
+	m_displayLen = m_summaryLen;
+}
+
 // let's try to get a nicer summary by using what the website set as description
 // Use the following in priority order (highest first)
 // - itemprop = "description"

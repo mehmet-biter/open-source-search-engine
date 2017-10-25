@@ -48,6 +48,7 @@
 #include "DnsBlockList.h"
 #include "GbDns.h"
 #include "RobotsCheckList.h"
+#include "UrlResultOverride.h"
 
 
 #ifdef _VALGRIND_
@@ -16119,6 +16120,16 @@ Title *XmlDoc::getTitle() {
 		return &m_title;
 	}
 
+	// look for override
+	if (m_req && m_req->m_prefferedResultLangId != langUnknown) {
+		std::string title = g_urlResultOverride.getTitle(getLanguageAbbr(m_req->m_prefferedResultLangId), m_firstUrl);
+		if (!title.empty()) {
+			m_titleValid = true;
+			m_title.setTitle(title);
+			return &m_title;
+		}
+	}
+
 	uint8_t *contentTypePtr = getContentType();
 	if ( ! contentTypePtr || contentTypePtr == (void *)-1 ) {
 		return (Title *)contentTypePtr;
@@ -16190,6 +16201,16 @@ Title *XmlDoc::getTitle() {
 Summary *XmlDoc::getSummary () {
 	if ( m_summaryValid ) {
 		return &m_summary;
+	}
+
+	// look for override
+	if (m_req && m_req->m_prefferedResultLangId != langUnknown) {
+		std::string summary = g_urlResultOverride.getSummary(getLanguageAbbr(m_req->m_prefferedResultLangId), m_firstUrl);
+		if (!summary.empty()) {
+			m_summaryValid = true;
+			m_summary.setSummary(summary);
+			return &m_summary;
+		}
 	}
 
 	// time cpu set time

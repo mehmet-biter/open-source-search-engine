@@ -1871,18 +1871,6 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 	return true;
 }
 
-static std::string getPreferredResultLanguage(const SearchInput *si) {
-	if (si->m_fx_qlang && strlen(si->m_fx_qlang) == 2) {
-		return si->m_fx_qlang;
-	}
-
-	if (si->m_fx_blang && strlen(si->m_fx_blang) >= 2) {
-		return std::string(si->m_fx_blang, 2);
-	}
-
-	return "en";
-}
-
 // use this for xml as well as html
 bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 	SafeBuf *sb = &st->m_sb;
@@ -2243,10 +2231,10 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 		strLen = 0;
 	}
 
-	std::string preferredResultLang = getPreferredResultLanguage(si);
+	std::string preferredResultLang = si->getPreferredResultLanguage();
 	std::string overriddenTitle;
 	// override title
-	if (mr->m_indexCode == EDOCDISALLOWEDROOT) {
+	if (strLen == 0 && mr->m_indexCode == EDOCDISALLOWEDROOT) {
 		overriddenTitle = g_robotsBlockedResultOverride.getTitle(preferredResultLang, uu);
 		str = overriddenTitle.c_str();
 		strLen = overriddenTitle.length();
@@ -2405,7 +2393,7 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 
 	// override summary
 	std::string overriddenSummary;
-	if (mr->m_indexCode == EDOCDISALLOWEDROOT) {
+	if (strLen == 0 && mr->m_indexCode == EDOCDISALLOWEDROOT) {
 		overriddenSummary = g_robotsBlockedResultOverride.getSummary(preferredResultLang, uu);
 		str = overriddenSummary.c_str();
 		strLen = overriddenSummary.length();

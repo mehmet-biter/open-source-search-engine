@@ -4,6 +4,7 @@
 #define GB_TITLE_H
 
 #include <stdint.h>
+#include <string>
 
 #define MAX_TITLE_LEN 2048
 
@@ -21,6 +22,8 @@ public:
 	~Title();
 
 	void reset();
+
+	void setTitle(const std::string &title);
 
 	bool setTitle( Xml *xml, Words *words, int32_t maxTitleLen, Query *query, LinkInfo *linkInfo, Url *firstUrl,
 				   const char *filteredRootTitleBuf, int32_t filteredRootTitleBufSize, uint8_t contentType,

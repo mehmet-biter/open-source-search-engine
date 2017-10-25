@@ -976,6 +976,7 @@ bool Msg40::launchMsg20s(bool recalled) {
 		req.ptr_qbuf             = const_cast<char*>(q->getQuery());
 		req.size_qbuf            = q->getQueryLen()+1;
 		req.m_langId             = m_si->m_queryLangId;
+		req.m_prefferedResultLangId = getLangIdFromAbbr(m_si->getPreferredResultLanguage().c_str());
 
 		req.m_highlightQueryTerms = m_si->m_doQueryHighlighting;
 
