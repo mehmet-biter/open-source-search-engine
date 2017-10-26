@@ -16,6 +16,7 @@
 
 #include "Query.h" // MAX_QUERY_LEN
 #include "HttpRequest.h"
+#include <string>
 
 class CollectionRec;
 
@@ -34,6 +35,8 @@ public:
 	~SearchInput     ( );
 
 	void  copy                  ( class SearchInput *si ) ;
+
+	std::string getPreferredResultLanguage();
 
 	///////////
 	//

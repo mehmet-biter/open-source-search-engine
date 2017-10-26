@@ -2,7 +2,7 @@
 #include "UrlParser.h"
 #include "Domains.h"
 #include "HashTable.h"
-#include "AdultCheck.h"
+#include "FxAdultCheck.h"
 #include "ip.h"      // atoip ( s,len)
 #include "Punycode.h"
 #include "Unicode.h"
@@ -1670,8 +1670,13 @@ bool Url::isHostWWW ( ) const {
 // . if you add a word here, add it to PageResults.cpp:isQueryDirty()
 bool Url::isAdult() const {
 	//certain TLDs are clearly adult-oriented
-	if(isAdultTLD(m_tld,m_tldLen))
+	if( isAdultTLD(m_tld, m_tldLen))
 		return true;
+
+
+#if 0
+//@@@
+
 	if(m_hlen<=0)
 		return false; // Invalid URL (no hostname)
 	if(m_tldLen<=0)
@@ -1716,9 +1721,9 @@ bool Url::isAdult() const {
 		// point to next
 		p = pend + 1;
 	}
+#endif
 	return false;
 }
-
 
 // . remove any session id
 // . i'm sick of these tihngs causing dup problems

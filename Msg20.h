@@ -51,6 +51,7 @@ class Msg20Request {
 
 	// language the query is in (ptr_qbuf)
 	uint8_t    m_langId;
+	uint8_t m_prefferedResultLangId;
 	// we now use the numeric collection # and not the ptr_coll
 	collnum_t  m_collnum;
 

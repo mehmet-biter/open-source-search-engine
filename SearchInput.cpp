@@ -751,3 +751,15 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 
 	return true;
 }
+
+std::string SearchInput::getPreferredResultLanguage() {
+	if (m_fx_qlang && strlen(m_fx_qlang) == 2) {
+		return m_fx_qlang;
+	}
+
+	if (m_fx_blang && strlen(m_fx_blang) >= 2) {
+		return std::string(m_fx_blang, 2);
+	}
+
+	return "en";
+}

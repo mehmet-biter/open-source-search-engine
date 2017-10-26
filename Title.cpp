@@ -61,6 +61,11 @@ void Title::reset() {
 	m_titleTagEnd   = -1;
 }
 
+void Title::setTitle(const std::string &title) {
+	m_titleLen = title.copy(m_title, MAX_TITLE_LEN);
+	m_title[m_titleLen] = '\0';
+}
+
 bool Title::setTitleFromTags( Xml *xml, int32_t maxTitleLen, uint8_t contentType ) {
 	/// @todo cater for CT_DOC (when antiword is replaced)
 	// only allow html & pdf documents for now

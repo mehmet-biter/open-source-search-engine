@@ -1,0 +1,39 @@
+#
+# language | word | score
+#
+# Language is currently unused. Even though a word must have a language specified, it may
+# be used in other languages as well.
+#
+# Score based on "would you want your 10 year old daughter to see and read this content?".
+#
+# scores
+#	 1		as single term, the word can be considered OK in some situations (like "rape" in "rape conviction rate")
+#	 5		likely adult content
+#   10      very likely adult content
+#   20      almost certainly adult content
+#
+# 5 matches or a score over 30 should be a clear adult content indicator. Phrase matches will use higher scores.
+#
+en|redtube|10
+en|porntube|20
+en|twats|5
+en|pantyhose|1
+en|3some|5
+en|4some|5
+en|analdildo|20
+en|anal|1
+en|assfucking|20
+en|assfuck|20
+en|bangbros|20
+en|banging|5
+en|bbw|20
+en|bdsm|2
+en|blowjobs|20
+en|blowjobx|20
+en|blowjob|20
+en|bondage|5
+en|boners|1
+en|boner|1
+#
+# .. etc. Filling this in is left as an exercise for the reader.
+#

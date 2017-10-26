@@ -11,12 +11,13 @@ export BASE_DIR
 unexport CONFIG_CPPFLAGS
 
 OBJS_O0 =  \
-	Abbreviations.o AdultCheck.o \
+	Abbreviations.o \
 	BigFile.o \
 	Clusterdb.o Collectiondb.o Conf.o CountryCode.o \
 	DailyMerge.o Dir.o Dns.o Domains.o \
 	Errno.o Entities.o \
 	File.o \
+	FxAdultCheckList.o FxAdultCheck.o\
 	GbMutex.o \
 	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o Docid2Siteflags.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
 	iana_charset.o Images.o ip.o \
@@ -62,7 +63,7 @@ OBJS_O2 = \
 OBJS_O3 = \
 	DocDelete.o DnsBlockList.o \
 	IPAddressChecks.o \
-	Linkdb.o \
+	LanguageResultOverride.o Linkdb.o \
 	Msg40.o \
 	Msg25.o \
 	RdbBuckets.o RdbIndex.o RdbIndexQuery.o RdbList.o RdbMap.o ResultOverride.o RobotsBlockedResultOverride.o RobotsCheckList.o \
@@ -70,7 +71,7 @@ OBJS_O3 = \
 	ScoringWeights.o \
 	TopTree.o \
 	UrlMatch.o UrlMatchList.o UrlMatchHostList.o UrlBlockCheck.o UrlComponent.o UrlParser.o UdpStatistic.o \
-	UrlRealtimeClassification.o \
+	UrlRealtimeClassification.o UrlResultOverride.o \
 	WantedChecker.o \
 	MergeSpaceCoordinator.o \
 	GbMoveFile.o GbMoveFile2.o GbCopyFile.o GbMakePath.o \

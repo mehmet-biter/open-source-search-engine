@@ -5402,7 +5402,7 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-	m->m_title = "stable-summary cache max age";
+	m->m_title = "unstable-summary cache max age";
 	m->m_desc  = "How long to cache unstable summaries.";
 	m->m_cgi   = "unstablesumcacheage";
 	m->m_xml   = "UnstableSummaryCacheAge";
@@ -8673,6 +8673,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for LanguageResultOverride";
+	m->m_cgi   = "ltrc_langro";
+	simple_m_set(Conf,m_logTraceLanguageResultOverride);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for Mem";
 	m->m_cgi   = "ltrc_mem";
 	simple_m_set(Conf,m_logTraceMem);
@@ -8800,13 +8807,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log trace info for RobotsBlockedMsg";
-	m->m_cgi   = "ltrc_robotsb";
-	simple_m_set(Conf,m_logTraceRobotsBlocked);
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m++;
-
 	m->m_title = "log trace info for RobotsCheckList";
 	m->m_cgi   = "ltrc_robotscl";
 	simple_m_set(Conf,m_logTraceRobotsCheckList);
@@ -8886,6 +8886,12 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for UrlResultOverride";
+	m->m_cgi   = "ltrc_urlro";
+	simple_m_set(Conf,m_logTraceUrlResultOverride);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
 
 	m->m_title = "log trace info for Word Spam detection";
 	m->m_cgi   = "ltrc_wordspam";

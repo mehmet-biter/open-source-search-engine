@@ -49,7 +49,7 @@ class Words {
 	// . use range (node1,node2] and if node2 is -1 that means the last one
 	bool set( Xml *xml, bool computeIds, int32_t node1 = 0, int32_t node2 = -1 );
 
-	inline bool addWords( char *s, int32_t nodeLen, bool computeIds );
+	bool addWords( char *s, int32_t nodeLen, bool computeIds );
 
 	// get the spam modified score of the ith word (baseScore is the 
 	// score if the word is not spammed)

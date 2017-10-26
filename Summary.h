@@ -21,6 +21,7 @@
 #define GB_SUMMARY_H
 
 #include "gb-include.h"
+#include <string>
 
 #define MAX_SUMMARY_LEN (1024*20)
 #define MAX_SUMMARY_EXCERPTS 1024
@@ -38,6 +39,8 @@ class Summary {
 public:
 	Summary();
 	~Summary();
+
+	void setSummary(const std::string &summary);
 
 	bool setSummary(const Xml *xml, const Words *words, const Sections *sections, Pos *pos, const Query *q,
 	                int32_t maxSummaryLen, int32_t numDisplayLines, int32_t maxNumLines, int32_t maxNumCharsPerLine,
