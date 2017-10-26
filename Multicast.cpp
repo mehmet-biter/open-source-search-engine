@@ -9,6 +9,8 @@
 #include "Process.h"
 #include "ip.h"
 #include "Mem.h"
+#include "Msg0.h"         //msg+MSG0RDBIDOFFSET
+
 
 // TODO: if we're ordered to close and we still are waiting on stuff
 //       to send we should send as much as we can and save the remaining
@@ -133,13 +135,7 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 	for(int i=0; i<MAX_HOSTS_PER_GROUP; i++)
 		m_host[i].reset();
 
-	// . get the list of hosts in this shard
-	Host *hostList = g_hostdb.getShard ( shardNum , &m_numHosts );
-
-	// now copy the ptr into our array
-	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
-		m_host[i].m_hostPtr = &hostList[i];
-	}
+	getCandidateHostList(shardNum, msgType, msg, msgSize);
 
 	// . pick the fastest host in the group
 	// . this should pick the fastest one we haven't already sent to yet
@@ -162,6 +158,36 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 		return true;
 	}
 }
+
+
+//Get the list of hosts in the shard, filtering out unwanted hosts
+//Used for filtering out no-spider hosts when sending msg0-get-list with db=spiderdb.
+void Multicast::getCandidateHostList(uint32_t shardNum, msg_type_t msgType, const char *msg, int32_t /*msgSize*/) {
+	bool requireQueryEnabled = false; //logical preparation for when we eliminate dbs on spider-only hosts
+	bool requireSpiderEnabled = false;
+	if(msgType==msg_type_0) {
+		rdbid_t rdbid = (rdbid_t)*(msg+MSG0RDBIDOFFSET);
+		if(rdbid==RDB_SPIDERDB) {
+			//spiderdb is only present on hosss with spidering enabled
+			requireSpiderEnabled = true;
+		}
+	}
+	
+	int32_t numCandidateHosts = 0;
+	Host *candidateHosts = g_hostdb.getShard(shardNum, &numCandidateHosts);
+	m_numHosts = 0;
+	for(int i=0; i<numCandidateHosts; i++) {
+		if(requireQueryEnabled && !candidateHosts[i].m_queryEnabled)
+			continue;
+		if(requireSpiderEnabled && !candidateHosts[i].m_spiderEnabled)
+			continue;
+		if(candidateHosts[i].m_retired)
+			continue;
+		m_host[m_numHosts].m_hostPtr = candidateHosts+i;
+		m_numHosts++;
+	}
+}
+
 
 ///////////////////////////////////////////////////////
 //                                                   //
