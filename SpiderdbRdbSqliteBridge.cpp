@@ -9,21 +9,81 @@
 #include "SpiderCache.h"
 #include "SpiderColl.h"
 #include "Conf.h"
+#include <algorithm>
 
 
+static bool addRecords(collnum_t collnum, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator begin, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator end);
+static bool addRecord(collnum_t collnum, sqlite3 *db, const void *record, size_t record_len);
 static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len);
 static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len);
 
 
-bool SpiderdbRdbSqliteBridge::addRecord(collnum_t collnum, const void *record, size_t record_len) {
-	if(KEYNEG((const char*)record)) {
-		log(LOG_ERROR,"sqlitespider: Got negative spiderrecord");
-		gbshutdownCorrupted();
+bool SpiderdbRdbSqliteBridge::addRecords(const std::vector<BatchedRecord> &records) {
+	//copy&sort
+	auto records_copy(records);
+	std::sort(records_copy.begin(), records_copy.end(), [](const BatchedRecord &a, const BatchedRecord &b) {
+		return a.collnum < b.collnum;
+	});
+	
+	//find ranges of same collnum, do each range at a time
+	auto range_begin = records_copy.begin();
+	while(range_begin != records_copy.end()) {
+		auto range_end = range_begin;
+		while(range_end != records_copy.end()) {
+			if(range_end->collnum == range_begin->collnum)
+				++range_end;
+			else
+				break;
+		}
+		if(!::addRecords(range_begin->collnum, range_begin, range_end))
+			return false;
+		range_begin = range_end;
 	}
+	return true;
+}
+
+
+static bool addRecords(collnum_t collnum, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator begin, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator end) {
 	sqlite3 *db = g_spiderdb_sqlite.getDb(collnum);
 	if(!db) {
 		log(LOG_ERROR,"sqlitespider: Could not get sqlite db for collection %d", collnum);
 		return false;
+	}
+	
+	char *errmsg = NULL;
+	int rc = sqlite3_exec(db, "begin transaction", NULL, NULL, &errmsg);
+	if(rc!=SQLITE_OK) {
+		log(LOG_ERROR,"sqlitespider: could not start transaction: %s", errmsg);
+		return false;
+	}
+	
+	for(auto iter = begin; iter!=end; ++iter) {
+		if(!addRecord(collnum, db, iter->record, iter->record_len)) {
+			sqlite3_exec(db, "rollback", NULL, NULL, &errmsg);
+			return false;
+		}
+	}
+	
+	sqlite3_exec(db, "commit", NULL, NULL, &errmsg);
+	
+	return true;
+}
+
+
+bool SpiderdbRdbSqliteBridge::addRecord(collnum_t collnum, const void *record, size_t record_len) {
+	sqlite3 *db = g_spiderdb_sqlite.getDb(collnum);
+	if(!db) {
+		log(LOG_ERROR,"sqlitespider: Could not get sqlite db for collection %d", collnum);
+		return false;
+	}
+	return addRecord(collnum,db,record,record_len);
+}
+
+
+static bool addRecord(collnum_t collnum, sqlite3 *db, const void *record, size_t record_len) {
+	if(KEYNEG((const char*)record)) {
+		log(LOG_ERROR,"sqlitespider: Got negative spiderrecord");
+		gbshutdownCorrupted();
 	}
 	
 	bool rc;

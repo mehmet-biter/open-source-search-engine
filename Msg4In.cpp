@@ -379,12 +379,12 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 				break;
 			}
 		} else {
-			bool status = true;
-			for(auto const &item : rdbItem.second.m_items) {
-				status = SpiderdbRdbSqliteBridge::addRecord(item.m_collNum, item.m_rec, item.m_recSize);
-				if(!status)
-					break;
-			}
+			//transform record list into something the sqlite bridge understands
+			std::vector<SpiderdbRdbSqliteBridge::BatchedRecord> v;
+			for(auto const &item : rdbItem.second.m_items)
+				v.emplace_back(item.m_collNum, item.m_rec, item.m_recSize);
+			//then insert all at once
+			bool status = SpiderdbRdbSqliteBridge::addRecords(v);
 			if(!status)
 				break;
 		}
