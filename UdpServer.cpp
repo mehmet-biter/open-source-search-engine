@@ -230,7 +230,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	// maintain a ptr to the protocol
 	m_proto   = proto;
 	// sanity test so we can peek at the rdbid in a msg0 request
-	if( ! m_isDns && RDBIDOFFSET +1 > m_proto->getMaxPeekSize() ) {
+	if( ! m_isDns && MSG0RDBIDOFFSET +1 > m_proto->getMaxPeekSize() ) {
 		g_process.shutdownAbort(true);
 	}
 
@@ -1127,8 +1127,8 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 		if ( msgType == msg_type_0 && m_numUsedSlots > 1500 && niceness ) {
 			// allow a ton of those tagdb lookups to come in
 			char rdbId = 0;
-			if ( readSize > RDBIDOFFSET )
-				rdbId = readBuffer[RDBIDOFFSET];
+			if ( readSize > MSG0RDBIDOFFSET )
+				rdbId = readBuffer[MSG0RDBIDOFFSET];
 			if ( rdbId != RDB_TAGDB )
 				getSlot = false;
 		}
@@ -1337,8 +1337,8 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 					// higher and reads short.
 					char rdbId = 0;
 					if ( slot->m_readBuf &&
-					     slot->m_readBufSize > RDBIDOFFSET ) 
-						rdbId = slot->m_readBuf[RDBIDOFFSET];
+					     slot->m_readBufSize > MSG0RDBIDOFFSET )
+						rdbId = slot->m_readBuf[MSG0RDBIDOFFSET];
 					if ( rdbId != RDB_TAGDB )
 						continue;
 				}

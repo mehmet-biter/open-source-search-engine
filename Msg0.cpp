@@ -160,14 +160,8 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// . groupMask must turn on higher bits first (count downwards kinda)
 	// . titledb and spiderdb use special masks to get groupId
 
-	// if diffbot.cpp is reading spiderdb from each shard we have to
-	// get groupid from hostid here lest we core in getGroupId() below.
-	// it does that for dumping spiderdb to the client browser. they
-	// can download the whole enchilada.
-	if ( hostId >= 0 && m_rdbId == RDB_SPIDERDB_DEPRECATED )
-		m_shardNum = 0;
 	// did they force it? core until i figure out what this is
-	else if ( forceParitySplit >= 0 )
+	if ( forceParitySplit >= 0 )
 		m_shardNum = forceParitySplit;
 	else
 		m_shardNum = getShardNum ( m_rdbId , startKey );
@@ -277,7 +271,7 @@ skip:
 	*(int32_t      *) p = startFileNum     ; p += 4;
 	*(int32_t      *) p = numFiles         ; p += 4;
 	*(int32_t      *) p = 0      ; p += 4; // unused (maxCacheAge)
-	if ( p - m_request != RDBIDOFFSET ) { g_process.shutdownAbort(true); }
+	if ( p - m_request != MSG0RDBIDOFFSET ) { g_process.shutdownAbort(true); }
 	*p               = m_rdbId          ; p++;
 	*p               = false       ; p++; // unused (addToCache)
 	*p               = doErrorCorrection; p++;

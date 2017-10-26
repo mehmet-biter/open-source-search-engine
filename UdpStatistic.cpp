@@ -40,8 +40,8 @@ UdpStatistic::UdpStatistic(const UdpSlot &slot)
 
 	switch (m_msgType) {
 		case msg_type_0:
-			if (buf && bufSize > RDBIDOFFSET) {
-				rdbid_t rdbId = static_cast<rdbid_t>(buf[RDBIDOFFSET]);
+			if (buf && bufSize > MSG0RDBIDOFFSET) {
+				rdbid_t rdbId = static_cast<rdbid_t>(buf[MSG0RDBIDOFFSET]);
 				snprintf(m_description, sizeof(m_description), "get from %s", getDbnameFromId(rdbId));
 			}
 			break;

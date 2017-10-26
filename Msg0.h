@@ -11,7 +11,7 @@
 #include "RdbList.h"
 #include "rdbid_t.h"
 
-#define RDBIDOFFSET (8+4+4+4+4)
+#define MSG0RDBIDOFFSET (8+4+4+4+4)
 
 #define MSG0_REQ_SIZE (8 + 2 * MAX_KEY_BYTES + 16 + 5 + 4 + 1 + 1 )
 

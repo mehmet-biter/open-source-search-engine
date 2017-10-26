@@ -187,6 +187,8 @@ private:
 
 	bool        m_sentToTwin;
 
+	void getCandidateHostList(uint32_t shardNum, msg_type_t msgType, const char *msg, int32_t msgSize);
+
 	void destroySlotsInProgress ( UdpSlot *slot );
 
 	void sendToWholeGroup();
