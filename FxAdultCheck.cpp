@@ -393,23 +393,23 @@ bool AdultCheck::isDocAdult() {
 			//log(LOG_ERROR,"@@@ USC 2257 compliance statement FOUND in %s: score=%" PRId32 "", url->getUrl(), m_docAdultScore);
 		}
 
-		//TODO:
-		//18 U.S.C. 2257
-		//Title 18 U.S.C. 2257 Compliance Statement
-		//Compliance with 18 U.S.C. &sect; 2257
+        //TODO:
+        //18 U.S.C. 2257
+        //Title 18 U.S.C. 2257 Compliance Statement
+        //Compliance with 18 U.S.C. &sect; 2257
 
-		//<meta http-equiv="PICS-Label" content='(pics-1.1 "http://www.icra.org/ratingsv02.html" comment "ICRAonline EN v2.0" l gen true for "" r (nb 1 nc 1 nd 1 ne 1 nh 1 ni 1 vz 1 la 1 oz 1 cz 1) "http://www.rsac.org/ratingsv01.html" l gen true for "" r (n 3 s 3 v 0 l 4))' />
+        //<meta http-equiv="PICS-Label" content='(pics-1.1 "http://www.icra.org/ratingsv02.html" comment "ICRAonline EN v2.0" l gen true for "" r (nb 1 nc 1 nd 1 ne 1 nh 1 ni 1 vz 1 la 1 oz 1 cz 1) "http://www.rsac.org/ratingsv01.html" l gen true for "" r (n 3 s 3 v 0 l 4))' />
 
-		//Beskyt dine børn mod erotiske sites med
-		//Protect your children against Adult Content with
-		//Eltern können ihre Kinder vor ungeeigneten Inhalten schützen mit
-		//Protégez vos enfants contre le Contenu pour adultes au moyen de
-		//Skydda dina barn mot innehåll som endast är avsett för vuxna med hjälp av
-		//Beskytt barna dine mot voksent innhold med
-		//Proteggete i vostri figli dal contenuto erotico di questo sito con
-		//Los padres, protegen a sus menores del Contenido Adulto con				
-		//Os Pais devem usar um dos seguintes programas para salvaguardar os filhos do conteúdo erótico
-		//Bescherm minderjarigen tegen expliciete beelden op internet met software als Netnanny, Cyberpatrol of Cybersitter.
+        //Beskyt dine bÃ¸rn mod erotiske sites med
+        //Protect your children against Adult Content with
+        //Eltern kÃ¶nnen ihre Kinder vor ungeeigneten Inhalten schÃ¼tzen mit
+        //ProtÃ©gez vos enfants contre le Contenu pour adultes au moyen de
+        //Skydda dina barn mot innehÃ¥ll som endast Ã¤r avsett fÃ¶r vuxna med hjÃ¤lp av
+        //Beskytt barna dine mot voksent innhold med
+        //Proteggete i vostri figli dal contenuto erotico di questo sito con
+        //Los padres, protegen a sus menores del Contenido Adulto con
+        //Os Pais devem usar um dos seguintes programas para salvaguardar os filhos do conteÃºdo erÃ³tico
+        //Bescherm minderjarigen tegen expliciete beelden op internet met software als Netnanny, Cyberpatrol of Cybersitter.
 	}
 
 
