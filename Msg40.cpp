@@ -11,7 +11,7 @@
 #include "HttpServer.h"
 #include "PageResults.h"
 #include "HashTable.h"
-#include "AdultCheck.h"
+//#include "AdultCheck.h"
 #include "Process.h"
 #include "UrlRealtimeClassification.h"
 #include "UdpServer.h"
@@ -263,6 +263,8 @@ bool Msg40::prepareToGetDocIds ( ) {
 	// . if query has dirty words and family filter is on, set
 	//   number of results to 0, and set the m_queryClen flag to true
 	// . m_qbuf1 should be the advanced/composite query
+#if 0
+	//@@@ TODO
 	if ( m_si->m_familyFilter && 
 	     getAdultPoints ( m_si->m_sbuf1.getBufStart() , 
 			      m_si->m_sbuf1.length() , 
@@ -271,6 +273,7 @@ bool Msg40::prepareToGetDocIds ( ) {
 		m_msg3a.reset();
 		return true;
 	}
+#endif
 
 	return getDocIds( false );
 }

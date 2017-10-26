@@ -27,7 +27,7 @@
 #include "Wiktionary.h"
 #include "Parms.h"
 #include "Domains.h"
-#include "AdultCheck.h"
+#include "FxAdultCheck.h"
 #include "Doledb.h"
 #include "IPAddressChecks.h"
 #include "PageRoot.h"
@@ -1158,6 +1158,12 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		m_indexCode = 0;
 	}
 
+	// adult detection code replaced. Invalidate old document versions.
+	if( m_version < 126 ) {
+		m_isAdultValid = false;
+	}
+
+
 	m_indexCodeValid  = true;
 	m_redirError      = 0;
 	m_redirErrorValid = true;
@@ -2168,6 +2174,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
 	if ( cr->m_doUrlSpamCheck && ! m_check2 ) {
 		m_check2         = true;
+
 		if ( m_firstUrl.isAdult() ) {
 			m_indexCode      = EDOCURLSPAM;
 			m_indexCodeValid = true;
@@ -3133,6 +3140,11 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 // . check content for adult words
 char *XmlDoc::getIsAdult ( ) {
 
+	// adult detection code replaced. Invalidate old document versions.
+	if( m_version < 126 ) {
+		m_isAdultValid = false;
+	}
+
 	if ( m_isAdultValid ) return &m_isAdult2;
 
 	// call that
@@ -3146,9 +3158,8 @@ char *XmlDoc::getIsAdult ( ) {
 	// time it
 	int64_t start = gettimeofdayInMilliseconds();
 
-	// score that up
-	int32_t total = getAdultPoints ( ptr_utf8Content, size_utf8Content - 1 , m_firstUrl.getUrl() );
-
+	AdultCheck achk(this);
+	m_isAdult = achk.isDocAdult();
 
 	// debug msg
 	int64_t took = gettimeofdayInMilliseconds() - start;
@@ -3157,9 +3168,6 @@ char *XmlDoc::getIsAdult ( ) {
 		     "build: Took %" PRId64" ms to check doc of %" PRId32" bytes for "
 		     "dirty words.",took,size_utf8Content-1);
 
-	m_isAdult  = false;
-	// adult?
-	if ( total >= 2 ) m_isAdult = true;
 	// set shadow member
 	m_isAdult2 = (bool)m_isAdult;
 	// validate
@@ -3167,7 +3175,7 @@ char *XmlDoc::getIsAdult ( ) {
 
 	// note it
 	if ( m_isAdult2 && g_conf.m_logDebugDirty )
-		log("dirty: %s points = %" PRId32,m_firstUrl.getUrl(),total);
+		log("dirty: %s score = %" PRId32,m_firstUrl.getUrl(), achk.getScore());
 
 	// no dirty words found
 	return &m_isAdult2;

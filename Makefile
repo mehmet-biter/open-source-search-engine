@@ -11,12 +11,13 @@ export BASE_DIR
 unexport CONFIG_CPPFLAGS
 
 OBJS_O0 =  \
-	Abbreviations.o AdultCheck.o \
+	Abbreviations.o \
 	BigFile.o \
 	Clusterdb.o Collectiondb.o Conf.o CountryCode.o \
 	DailyMerge.o Dir.o Dns.o Domains.o \
 	Errno.o Entities.o \
 	File.o \
+	FxAdultCheckList.o FxAdultCheck.o\
 	GbMutex.o \
 	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o Docid2Siteflags.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
 	iana_charset.o Images.o ip.o \

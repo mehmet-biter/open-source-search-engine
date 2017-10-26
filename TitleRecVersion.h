@@ -19,6 +19,9 @@
 
 // strip ascii tab & newline from url
 // store m_indexCode in TitleRec
-#define TITLEREC_CURRENT_VERSION    125
+//#define TITLEREC_CURRENT_VERSION    125
+
+// new adult detection
+#define TITLEREC_CURRENT_VERSION	126
 
 #endif // GB_TITLERECVERSION_H
