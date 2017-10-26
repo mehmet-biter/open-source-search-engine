@@ -24,7 +24,6 @@
 #include <string>
 #include "FxAdultCheckList.h"
 
-
 class AdultCheck {
 public:
 	AdultCheck(XmlDoc *xd, bool debug=false);

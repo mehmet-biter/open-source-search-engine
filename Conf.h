@@ -421,6 +421,7 @@ class Conf {
 	bool m_logTraceWordSpam;
 	bool m_logTraceUrlClassification;
 	bool m_logTraceTopTree;
+	bool m_logTraceAdultCheck;
 
 	// expensive timing messages
 	bool m_logTimingAddurl;

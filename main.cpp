@@ -4028,7 +4028,7 @@ static void dumpAdultTitledbRecs(const char *coll, int32_t startFileNum, int32_t
 				AdultCheck achk(xd, true);
 				bool newblocked = achk.isDocAdult();
 
-
+#if 0
 				// Sanity check.
 				bool gbadult = false;
 				char *adultbit = xd->getIsAdult();
@@ -4040,6 +4040,7 @@ static void dumpAdultTitledbRecs(const char *coll, int32_t startFileNum, int32_t
 						gbshutdownLogicError();
 					}
 				}
+#endif
 
 				if( newblocked ) {
 					time_t idxtim = (time_t)xd->getIndexedTime();

@@ -24,55 +24,37 @@
 #include "Phrases.h"
 #include "Words.h"
 #include "XmlDoc.h"
-#include <stddef.h>
-#include <fstream>
-#include <sys/stat.h>
 
 
-AdultCheck::AdultCheck(XmlDoc *xd, bool debug) {
-	m_docAdultScore = 0;
-	m_numUniqueDirtyWords = 0;
-	m_numUniqueDirtyPhrases = 0;
-	m_numWordsChecked = 0;
-	m_emptyDocumentBody = false;
-	m_result = false;
-	m_resultValid = false;
+AdultCheck::AdultCheck(XmlDoc *xd, bool debug) :
+	m_debbuf(NULL), m_debbufUsed(0), m_debbufSize(0), m_docAdultScore(-1),
+	m_numUniqueDirtyWords(0), m_numUniqueDirtyPhrases(0), m_numWordsChecked(0),
+	m_emptyDocumentBody(false), m_resultValid(false), m_result(false) {
 
-	if( xd ) {
-		m_url = xd->getFirstUrl();
-		if( m_url == (Url *)-1 ) {
-			log(LOG_WARN, "XmlDoc::getFirstUrl() failed in AdultCheck::AdultCheck");
-			m_url = NULL;
-		}
-
-		m_xml = xd->getXml();
-		if( m_xml == (Xml *)-1 ) {
-			log(LOG_WARN, "XmlDoc::getXml() failed in AdultCheck::AdultCheck");
-			m_xml = NULL;
-		}
-
-		m_words = xd->getWords();
-		if( m_words == (Words *)-1 ) {
-			log(LOG_WARN, "XmlDoc::getWords() failed in AdultCheck::AdultCheck");
-			m_words = NULL;
-		}
-
-		m_phrases = xd->getPhrases();
-		if( m_phrases == (Phrases *)-1 ) {
-			log(LOG_WARN, "XmlDoc::getPhrases() failed in AdultCheck::AdultCheck");
-			m_phrases = NULL;
-		}
+	if( !xd ) {
+		log(LOG_ERROR, "AdultCheck::AdultCheck passed NULL-pointer");
+		gbshutdownLogicError();
 	}
-	else {
+
+	m_url = xd->getFirstUrl();
+	if( m_url == (Url *)-1 ) {
 		m_url = NULL;
+	}
+
+	m_xml = xd->getXml();
+	if( m_xml == (Xml *)-1 ) {
 		m_xml = NULL;
+	}
+
+	m_words = xd->getWords();
+	if( m_words == (Words *)-1 ) {
 		m_words = NULL;
+	}
+
+	m_phrases = xd->getPhrases();
+	if( m_phrases == (Phrases *)-1 ) {
 		m_phrases = NULL;
 	}
-
-	m_debbufSize = 0;
-	m_debbufUsed = 0;
-	m_debbuf = NULL;
 	
 	if( debug ) {
 		m_debbufSize = 2000;
@@ -92,38 +74,23 @@ AdultCheck::~AdultCheck() {
 
 
 int32_t AdultCheck::getScore() {
-	if( m_resultValid ) {
-		return m_docAdultScore;
-	}
-	return -1;
+	return m_docAdultScore;
 }
 
 int32_t AdultCheck::getNumUniqueDirtyWords() {
-	if( m_resultValid ) {
-		return m_numUniqueDirtyWords;
-	}
-	return -1;
+	return m_numUniqueDirtyWords;
 }
 
 int32_t AdultCheck::getNumUniqueDirtyPhrases() {
-	if( m_resultValid ) {
-		return m_numUniqueDirtyPhrases;
-	}
-	return -1;
+	return m_numUniqueDirtyPhrases;
 }
 
 int32_t AdultCheck::getNumWordsChecked() {
-	if( m_resultValid ) {
-		return m_numWordsChecked;
-	}
-	return -1;
+	return m_numWordsChecked;
 }
 
 bool AdultCheck::hasEmptyDocumentBody() {
-	if( m_resultValid ) {
-		return m_emptyDocumentBody;
-	}
-	return false;
+	return m_emptyDocumentBody;
 }
 
 const char *AdultCheck::getReason() {
@@ -255,12 +222,14 @@ bool AdultCheck::isDocAdult() {
 		return m_result;
 	}
 
+	m_docAdultScore = 0;
 	//
 	// Check for adult TLDs
 	//
 	if( m_url && m_url->isAdult() ) {
 		m_reason = "adultTLD";
 		m_docAdultScore += 1000;
+		logTrace(g_conf.m_logTraceAdultCheck, "Adult TLD found in %s", m_url->getUrl());
 	}
 
 	//
@@ -270,12 +239,14 @@ bool AdultCheck::isDocAdult() {
 		if( hasAdultRatingTag() ) {
 			m_reason = "adultRatingTag";
 			m_docAdultScore += 1000;
+			logTrace(g_conf.m_logTraceAdultCheck, "Rating tag found in %s", m_url->getUrl());
 		}
 
 		if( !m_docAdultScore &&
 			hasAdultAds() ) {
 			m_reason = "adultAds";
 			m_docAdultScore += 1000;
+			logTrace(g_conf.m_logTraceAdultCheck, "Adult ads found in %s", m_url->getUrl());
 		}
 	}	
 
@@ -290,7 +261,7 @@ bool AdultCheck::isDocAdult() {
 
 		if( m_words ) {
 			if (!uniqueTermIds.set(sizeof(int64_t), 0, m_words->getNumWords()+5000, NULL, 0, false, "uniquetermids", false, 0)) {
-				log(LOG_ERROR,"Could not initialize uniqueTermIds hash table");
+				log(LOG_ERROR,"isDocAdult: Could not initialize uniqueTermIds hash table");
 			}
 
 			if( !m_words->getNumWords() ) {
@@ -301,10 +272,13 @@ bool AdultCheck::isDocAdult() {
 				g_adultCheckList.getDirtyScore(m_words, m_phrases, &uniqueTermIds, &m_docAdultScore, &m_numUniqueDirtyWords, &m_numUniqueDirtyPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
 				m_numWordsChecked += m_words->getNumWords();
 			}
+			logTrace(g_conf.m_logTraceAdultCheck, "%" PRId32 " words checked (%" PRId32 " unique) in body: %s. %" PRId32 " unique dirty words, %" PRId32 " unique dirty phrases. Score: %" PRId32 "",
+				m_words->getNumWords(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueDirtyWords, m_numUniqueDirtyPhrases, m_docAdultScore);
 		}
 		else {
 			// No words in document body
 			m_emptyDocumentBody = true;
+			logTrace(g_conf.m_logTraceAdultCheck, "Document body is empty in %s", m_url->getUrl());
 		}
 
 		//
@@ -322,18 +296,20 @@ bool AdultCheck::isDocAdult() {
 			}
 			mtag = m_xml->getMetaContentPointer( "description", 11, "name", &mtlen );
 			if( mtlen > 0 ) {
-				//log(LOG_ERROR, "SETTING DESCRIPTION WORDS");
 				metaw.addWords(mtag, mtlen, true);
 			}
 			if( metaw.getNumWords() ) {
 				if( !metab.set(&metaw) ) {
-					log(LOG_ERROR,"COULD NOT SET BITS FOR META WORDS");
+					log(LOG_ERROR,"isDocAdult: Could not set bits for meta words");
 				}
 				if( !metap.set(&metaw, &metab) ) {
-					log(LOG_ERROR,"COULD NOT SET PHRASES FOR META WORDS");
+					log(LOG_ERROR,"isDocAdult: Could not set phrases for meta words");
 				}
 				g_adultCheckList.getDirtyScore(&metaw, &metap, &uniqueTermIds, &m_docAdultScore, &m_numUniqueDirtyWords, &m_numUniqueDirtyPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
 				m_numWordsChecked += metaw.getNumWords();
+
+				logTrace(g_conf.m_logTraceAdultCheck, "%" PRId32 " words checked (%" PRId32 " unique) in meta tags: %s. %" PRId32 " unique dirty words, %" PRId32 " unique dirty phrases. Score: %" PRId32 "",
+					metaw.getNumWords(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueDirtyWords, m_numUniqueDirtyPhrases, m_docAdultScore);
 			}
 		}
 
@@ -347,19 +323,17 @@ bool AdultCheck::isDocAdult() {
 
 			urlw.set(m_url->getUrl(), m_url->getUrlLen(), true);
 			if( !urlb.set(&urlw) ) {
-				log(LOG_ERROR,"COULD NOT SET BITS FOR URL WORDS");
+				log(LOG_ERROR,"isDocAdult: Could not set bits for URL words");
 			}
 			if( !urlp.set(&urlw, &urlb) ) {
-				log(LOG_ERROR,"COULD NOT SET PHRASES FOR URL WORDS");
+				log(LOG_ERROR,"isDocAdult: Could not set phrases for URL words");
 			}
 			g_adultCheckList.getDirtyScore(&urlw, &urlp, &uniqueTermIds, &m_docAdultScore, &m_numUniqueDirtyWords, &m_numUniqueDirtyPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
 			m_numWordsChecked += urlw.getNumWords();
-		}
 
-		if( m_docAdultScore > 0 ) {
-			m_reason = "adultTerms";
+			logTrace(g_conf.m_logTraceAdultCheck, "%" PRId32 " words checked (%" PRId32 " unique) in URL: %s. %" PRId32 " unique dirty words, %" PRId32 " unique dirty phrases. Score: %" PRId32 "", 
+				urlw.getNumWords(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueDirtyWords, m_numUniqueDirtyPhrases, m_docAdultScore);
 		}
-
 
 		//
 		// Additional check for adult content compliance statement
@@ -388,9 +362,12 @@ bool AdultCheck::isDocAdult() {
 				uniqueTermIds.getSlot(&hsc) >= 0) ||
 				uniqueTermIds.getSlot(&hsusc) >= 0
 			)) {
-			m_reason = "USC2257Disclaimer";
-			m_docAdultScore+=1000;
-			//log(LOG_ERROR,"@@@ USC 2257 compliance statement FOUND in %s: score=%" PRId32 "", url->getUrl(), m_docAdultScore);
+			//m_reason = "USC2257Disclaimer";
+
+			// Give it a score of 10 and count it as a phrase
+			m_docAdultScore += 10;
+			m_numUniqueDirtyPhrases++;
+			logTrace(g_conf.m_logTraceAdultCheck, "USC 2257 compliance statement found in %s: score=%" PRId32 "", m_url->getUrl(), m_docAdultScore);
 		}
 
         //TODO:
@@ -410,22 +387,24 @@ bool AdultCheck::isDocAdult() {
         //Los padres, protegen a sus menores del Contenido Adulto con
         //Os Pais devem usar um dos seguintes programas para salvaguardar os filhos do conteúdo erótico
         //Bescherm minderjarigen tegen expliciete beelden op internet met software als Netnanny, Cyberpatrol of Cybersitter.
+
+		if( m_docAdultScore > 0 ) {
+			m_reason = "adultTerms";
+		}
 	}
 
+	logTrace(g_conf.m_logTraceAdultCheck, "Final score %" PRId32 " for: %s. %" PRId32 " unique dirty words, %" PRId32 " unique dirty phrases", 
+		m_docAdultScore, m_url->getUrl(), m_numUniqueDirtyWords, m_numUniqueDirtyPhrases);
 
-	bool adult = false;
+	m_result = false;
 	if( ( m_docAdultScore >= 30 || m_numUniqueDirtyWords > 7) ||
 		( m_docAdultScore >= 30 || m_numUniqueDirtyPhrases >= 3) ) {
-		adult = true;
+		m_result = true;
 	}
-	
-	
-	m_result = adult;
 	m_resultValid = true;
 	
 	return m_result;
 }
-
 
 
 
