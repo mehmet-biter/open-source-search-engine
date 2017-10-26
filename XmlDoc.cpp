@@ -13289,9 +13289,9 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 	// . do we have adult content?
 	// . should already be valid!
-	if (addClusterRec && !m_isAdultValid) {
-		g_process.shutdownAbort(true);
-	}
+	//if (addClusterRec && !m_isAdultValid) {
+	//	g_process.shutdownAbort(true);
+	//}
 
 	// . store old only if new tr is good and keys are different from old
 	// . now we store even if skipIndexing is true because i'd like to
