@@ -17,11 +17,11 @@
 // License TL;DR: If you change this file, you must publish your changes.
 //
 #include "FxAdultCheckList.h"
+#include "Conf.h"
 #include "Log.h"
 #include "termid_mask.h"
 #include "Phrases.h"
 #include "Words.h"
-#include <stddef.h>
 #include <fstream>
 #include <sys/stat.h>
 
@@ -58,14 +58,14 @@ bool AdultCheckList::load() {
 	}
 
 	if( !loadScoredTermList(&m_dirtyTerms, "adultwords.txt") ) {
-		log(LOG_ERROR,"Could not load dirty word file");
+		log(LOG_ERROR,"Could not load 'adultwords.txt'");
 	}
 
 	//
 	// Initialize dirty phrases (bigrams) - use same hash table as words
 	//
 	if( !loadScoredTermList(&m_dirtyTerms, "adultphrases.txt") ) {
-		log(LOG_ERROR,"Could not load dirty phrase file");
+		log(LOG_ERROR,"Could not load 'adultphrases.txt'");
 	}
 
 	return true;
@@ -95,14 +95,14 @@ bool AdultCheckList::loadScoredTermList(HashTableX *ht, const char *filename) {
 		size_t secondCol = line.find_first_not_of("|", firstColEnd);
 		if( firstColEnd == std::string::npos || secondCol == std::string::npos) {
 			// invalid format
-			log(LOG_ERROR,"Invalid line read: %.*s", (int)line.length(), line.data());
+			log(LOG_ERROR,"Invalid line read from %s: %.*s", filename, (int)line.length(), line.data());
 			continue;
 		}
 		size_t secondColEnd = line.find_first_of("|", secondCol);
 		size_t thirdCol = line.find_first_not_of("|", secondColEnd);
 		if (thirdCol == std::string::npos) {
 			// invalid format
-			log(LOG_ERROR,"Invalid line read: %.*s", (int)line.length(), line.data());
+			log(LOG_ERROR,"Invalid line read from %s: %.*s", filename, (int)line.length(), line.data());
 			continue;
 		}
 
@@ -113,7 +113,7 @@ bool AdultCheckList::loadScoredTermList(HashTableX *ht, const char *filename) {
 		int32_t dwscore = atoi(col3.data());
 
 		if( dwscore < 1 || col2.length() < 1 || col3.length() < 1 ) {
-			log(LOG_ERROR,"Invalid line read: %.*s", (int)line.length(), line.data());
+			log(LOG_ERROR,"Invalid line read from %s: %.*s", filename, (int)line.length(), line.data());
 			continue;
 		}
 
@@ -122,7 +122,7 @@ bool AdultCheckList::loadScoredTermList(HashTableX *ht, const char *filename) {
 		int64_t dwid = hash64Lower_utf8_nospaces(col2.data(), col2.length());
 
 		if( !ht->addKey(&dwid, &dwscore) ) {
-			log(LOG_ERROR,"COULD NOT ADD [%.*s] TO DIRTY WORD LIST", (int)col2.length(), col2.data());
+			log(LOG_ERROR,"Could not add [%.*s] to dirty word list", (int)col2.length(), col2.data());
 			return false;
 		}
 	}
@@ -145,12 +145,9 @@ bool AdultCheckList::getDirtyScore(Words *w, Phrases *p, HashTableX *uniqueTermI
 	}
 
 	int rc;
-	bool debug=false;
-
 	const uint64_t *wids = reinterpret_cast<const uint64_t*>(w->getWordIds());
 	int32_t nw = w->getNumWords();
 
-	// log(LOG_ERROR,"=== numWords=%" PRId32 ", debbuf=%p, debbuf_size=%" PRId32 " ===", nw, debbuf, debbuf_size);
 	for(int32_t i=0; i < nw; i++) {
 		if( !wids[i] ) {
 			continue;
@@ -166,7 +163,7 @@ bool AdultCheckList::getDirtyScore(Words *w, Phrases *p, HashTableX *uniqueTermI
 
 		// only process if we haven't seen it before
 		if ( uniqueTermIds->getSlot( &termId ) >= 0 ) {
-			if(debug) log(LOG_ERROR,"ALREADY SEEN WORD %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, slen, s, (uint64_t)termId, (uint64_t)(termId & TERMID_MASK));
+			logTrace(g_conf.m_logTraceAdultCheck, "Already seen word %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, slen, s, (uint64_t)termId, (uint64_t)(termId & TERMID_MASK));
 		}
 		else {
 			// add to hash table. return NULL and set g_errno on error
@@ -176,7 +173,7 @@ bool AdultCheckList::getDirtyScore(Words *w, Phrases *p, HashTableX *uniqueTermI
 
 			int32_t *sc = (int32_t*)m_dirtyTerms.getValue64(termId);
 			if( sc ) {
-				if(debug) log(LOG_ERROR,"DIRTY WORD %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ") score %" PRId32 ". debbuf_used=%" PRId32 ", debbuf_size=%" PRId32 "", i, slen, s, (uint64_t)termId, (uint64_t)(termId & TERMID_MASK), *sc, debbuf_used, debbuf_size);
+				logTrace(g_conf.m_logTraceAdultCheck, "Dirty word %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ") score %" PRId32 ". debbuf_used=%" PRId32 ", debbuf_size=%" PRId32 "", i, slen, s, (uint64_t)termId, (uint64_t)(termId & TERMID_MASK), *sc, debbuf_used, debbuf_size);
 				(*docAdultScore) += *sc;
 				(*numUniqueDirtyWords)++;
 
@@ -198,7 +195,7 @@ bool AdultCheckList::getDirtyScore(Words *w, Phrases *p, HashTableX *uniqueTermI
 				}
 			}
 			else {
-				if(debug) log(LOG_ERROR,"WORD %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, slen, s, (uint64_t)termId, (uint64_t)(termId & TERMID_MASK));
+				logTrace(g_conf.m_logTraceAdultCheck, "Word %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, slen, s, (uint64_t)termId, (uint64_t)(termId & TERMID_MASK));
 			}
 		}
 
@@ -218,7 +215,7 @@ bool AdultCheckList::getDirtyScore(Words *w, Phrases *p, HashTableX *uniqueTermI
 			int64_t phraseId = hash64Lower_utf8_nospaces( pbuf , plen );
 
 			if ( uniqueTermIds->getSlot ( &phraseId ) >= 0 ) {
-				if(debug) log(LOG_ERROR,"ALREADY SEEN PHRASE %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK));
+				logTrace(g_conf.m_logTraceAdultCheck, "Already seen phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK));
 				continue;
 			}
 
@@ -229,7 +226,7 @@ bool AdultCheckList::getDirtyScore(Words *w, Phrases *p, HashTableX *uniqueTermI
 
 			int32_t *sc = (int32_t*)m_dirtyTerms.getValue64(phraseId);
 			if( sc ) {
-				if(debug) log(LOG_ERROR,"DIRTY PHRASE %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ") score %" PRId32 ". debbuf_used=%" PRId32 ", debbuf_size=%" PRId32 "", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK), *sc, debbuf_used, debbuf_size);
+				logTrace(g_conf.m_logTraceAdultCheck, "Dirty phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ") score %" PRId32 ". debbuf_used=%" PRId32 ", debbuf_size=%" PRId32 "", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK), *sc, debbuf_used, debbuf_size);
 				(*docAdultScore) += *sc;
 				(*numUniqueDirtyPhrases)++;
 
@@ -250,7 +247,7 @@ bool AdultCheckList::getDirtyScore(Words *w, Phrases *p, HashTableX *uniqueTermI
 				}
 			}
 			else {
-				if(debug) log(LOG_ERROR,"PHRASE %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK));
+				logTrace(g_conf.m_logTraceAdultCheck, "Phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK));
 			}
 		}
 	}

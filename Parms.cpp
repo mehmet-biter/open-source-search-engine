@@ -8640,6 +8640,13 @@ void Parms::init ( ) {
 	// log trace
 	////////////////////
 
+	m->m_title = "log trace info for AdultCheck";
+	m->m_cgi   = "ltrc_adult";
+	simple_m_set(Conf,m_logTraceAdultCheck);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for BigFile";
 	m->m_cgi   = "ltrc_bf";
 	simple_m_set(Conf,m_logTraceBigFile);

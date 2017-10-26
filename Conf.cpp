@@ -269,6 +269,7 @@ Conf::Conf ( ) {
 	m_logTraceUrlResultOverride = false;
 	m_logTraceWordSpam=false;
 	m_logTraceUrlClassification = false;
+	m_logTraceAdultCheck = false;
 	m_logTimingAddurl = false;
 	m_logTimingAdmin = false;
 	m_logTimingBuild = false;
