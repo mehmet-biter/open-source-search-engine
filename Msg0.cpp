@@ -277,7 +277,7 @@ skip:
 	*(int32_t      *) p = startFileNum     ; p += 4;
 	*(int32_t      *) p = numFiles         ; p += 4;
 	*(int32_t      *) p = 0      ; p += 4; // unused (maxCacheAge)
-	if ( p - m_request != RDBIDOFFSET ) { g_process.shutdownAbort(true); }
+	if ( p - m_request != MSG0RDBIDOFFSET ) { g_process.shutdownAbort(true); }
 	*p               = m_rdbId          ; p++;
 	*p               = false       ; p++; // unused (addToCache)
 	*p               = doErrorCorrection; p++;
