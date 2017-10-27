@@ -269,8 +269,8 @@ static void initializeCaches() {
 					     "tfcache", // dbname
 					     false    , // load from disk?
 					     8        , // cache key size
-					     0          // data key size
-					     ))
+					     0,         // data key size
+					     -1))       // numPtrsMax
 			log("posdb: failed to init termfreqcache: %s",
 			    mstrerror(g_errno));
 		if(!g_termListSize.init(maxMem   , // maxmem 20MB
@@ -279,8 +279,8 @@ static void initializeCaches() {
 					"tscache", // dbname
 					false    , // load from disk?
 					8        , // cache key size
-					0          // data key size
-		                       ))
+					0,         // data key size
+		                        -1))       // numPtrsMax
 			log("posdb: failed to init termlistsizecache: %s",
 			    mstrerror(g_errno));
 		// ignore errors

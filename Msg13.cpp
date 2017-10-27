@@ -130,14 +130,20 @@ bool Msg13::registerHandler ( ) {
 					-1        , // fixedDataSize
 					maxCacheNodesRobots ,
 					"robots.txt"  , // dbname
-					true      ))// save to disk
+					true,          // save to disk
+					12,            // cachekeysize
+					12,            // datakeysize
+					-1))           // numPtrsMax
 		return false;
 
 	if ( ! s_httpCacheOthers.init ( memOthers ,
 					-1        , // fixedDataSize
 					maxCacheNodesOthers ,
 					"htmlPages"  , // dbname
-					true      ))// save to disk
+					true,          // save to disk
+					12,            // cachekeysize
+					12,            // datakeysize
+					-1))           // numPtrsMax
 		return false;
 
 	// . set up the request table (aka wait in line table)

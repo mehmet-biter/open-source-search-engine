@@ -79,9 +79,9 @@ class RdbCache {
 		    int32_t maxCacheNodes ,
 		    const char *dbname       ,
 		    bool  loadFromDisk ,
-		    char  cacheKeySize = 12 ,
-		    char  dataKeySize  = 12 ,
-		    int32_t  numPtrsMax   = -1 );
+		    char  cacheKeySize,
+		    char  dataKeySize,
+		    int32_t  numPtrsMax);
 
 	// . a quick hack for SpiderCache.cpp
 	// . if your record is always a 4 byte int32_t call this
