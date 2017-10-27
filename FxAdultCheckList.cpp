@@ -153,13 +153,14 @@ bool AdultCheckList::getDirtyScore(Words *w, Phrases *p, HashTableX *uniqueTermI
 			continue;
 		}
 
-		char *s = w->getWord(i);
-		if( !s ) {
-			continue;
+		char *s = NULL;
+		int32_t slen = 0;
+		if( g_conf.m_logTraceAdultCheck || debbuf ) {
+			s = w->getWord(i);
+			slen = w->getWordLen(i);
 		}
 
-		int32_t slen = w->getWordLen(i);
-		int64_t termId = hash64Lower_utf8_nospaces( s , slen );
+		int64_t termId = w->getWordId(i);
 
 		// only process if we haven't seen it before
 		if ( uniqueTermIds->getSlot( &termId ) >= 0 ) {
@@ -200,55 +201,55 @@ bool AdultCheckList::getDirtyScore(Words *w, Phrases *p, HashTableX *uniqueTermI
 		}
 
 
-		const uint64_t *pids = reinterpret_cast<const uint64_t*>(p->getPhraseIds2());
+		const int64_t *pids = reinterpret_cast<const int64_t*>(p->getPhraseIds2());
 
 		if( !pids[i] ) {
 			// No phrases
 			continue;
 		}
 
-		int32_t plen;
-		char pbuf[256];
-		p->getPhrase(i, pbuf, sizeof(pbuf), &plen);
+		int32_t plen=0;
+		char pbuf[256]={0};
+		if( g_conf.m_logTraceAdultCheck || debbuf ) {
+			p->getPhrase(i, pbuf, sizeof(pbuf)-1, &plen);
+		}
 
-		if( plen ) {
-			int64_t phraseId = hash64Lower_utf8_nospaces( pbuf , plen );
+		int64_t phraseId = pids[i];
 
-			if ( uniqueTermIds->getSlot ( &phraseId ) >= 0 ) {
-				//logTrace(g_conf.m_logTraceAdultCheck, "Already seen phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK));
-				continue;
-			}
+		if ( uniqueTermIds->getSlot ( &phraseId ) >= 0 ) {
+			//logTrace(g_conf.m_logTraceAdultCheck, "Already seen phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK));
+			continue;
+		}
 
-			// add to hash table. return NULL and set g_errno on error
-			if ( !uniqueTermIds->addKey(&phraseId)) {
-				log(LOG_ERROR,"Could not add phraseId to uniqueTermIds hash table");
-			}
+		// add to hash table. return NULL and set g_errno on error
+		if ( !uniqueTermIds->addKey(&phraseId)) {
+			log(LOG_ERROR,"Could not add phraseId to uniqueTermIds hash table");
+		}
 
-			int32_t *sc = (int32_t*)m_dirtyTerms.getValue64(phraseId);
-			if( sc ) {
-				logTrace(g_conf.m_logTraceAdultCheck, "Dirty phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ") score %" PRId32 ". debbuf_used=%" PRId32 ", debbuf_size=%" PRId32 "", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK), *sc, debbuf_used, debbuf_size);
-				(*docAdultScore) += *sc;
-				(*numUniqueDirtyPhrases)++;
+		int32_t *sc = (int32_t*)m_dirtyTerms.getValue64(phraseId);
+		if( sc ) {
+			logTrace(g_conf.m_logTraceAdultCheck, "Dirty phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ") score %" PRId32 ". debbuf_used=%" PRId32 ", debbuf_size=%" PRId32 "", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK), *sc, debbuf_used, debbuf_size);
+			(*docAdultScore) += *sc;
+			(*numUniqueDirtyPhrases)++;
 
-				if( debbuf ) {
-					// 2=", ", 2="p:"
-					if( debbuf_used+plen+2+2+1 < debbuf_size ) {
-						if(debbuf_used) {
-							rc = snprintf(&debbuf[debbuf_used], debbuf_size-debbuf_used, ", ");
-							if( rc > 0 ) {
-								debbuf_used += rc;
-							}
-						}
-						rc = snprintf(&debbuf[debbuf_used], debbuf_size-debbuf_used, "p:%.*s", plen, pbuf);
+			if( debbuf ) {
+				// 2=", ", 2="p:"
+				if( debbuf_used+plen+2+2+1 < debbuf_size ) {
+					if(debbuf_used) {
+						rc = snprintf(&debbuf[debbuf_used], debbuf_size-debbuf_used, ", ");
 						if( rc > 0 ) {
 							debbuf_used += rc;
 						}
 					}
+					rc = snprintf(&debbuf[debbuf_used], debbuf_size-debbuf_used, "p:%.*s", plen, pbuf);
+					if( rc > 0 ) {
+						debbuf_used += rc;
+					}
 				}
 			}
-			else {
-				//logTrace(g_conf.m_logTraceAdultCheck, "Phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK));
-			}
+		}
+		else {
+			//logTrace(g_conf.m_logTraceAdultCheck, "Phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK));
 		}
 	}
 

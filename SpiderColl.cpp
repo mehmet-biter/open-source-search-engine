@@ -20,6 +20,16 @@
 #include "Sanity.h"
 
 
+#define OVERFLOWLISTSIZE 200
+
+// How large chunks of spiderdb to load in for each read
+#define SR_READ_SIZE (512*1024)
+//Hint for size allocation to m_winnerTree
+#define MAX_REQUEST_SIZE	(sizeof(SpiderRequest)+MAX_URL_LEN+1)
+#define MAX_SP_REPLY_SIZE	sizeof(SpiderReply)
+
+
+
 static key96_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp ) {
 	// sanity
 	if ( ((int64_t)spiderTimeMS) < 0 ) gbshutdownAbort(true);
@@ -86,7 +96,6 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_waitingTreeNeedsRebuild = false;
 	m_numAdded = 0;
 	m_numBytesScanned = 0;
-	m_lastPrintCount = 0;
 	m_collnum = -1;
 	m_lastReindexTimeMS = 0;
 	m_countingPagesIndexed = false;
@@ -115,9 +124,6 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 
 	// reset this
 	memset ( m_outstandingSpiders , 0 , 4 * MAX_SPIDER_PRIORITIES );
-	// start off sending all colls local crawl info to all hosts to
-	// be sure we are in sync
-	memset ( m_sendLocalCrawlInfoToHost , 1 , MAX_HOSTS );
 
 	m_collnum = cr->m_collnum;
 	strcpy(m_coll, cr->m_coll);
@@ -1608,7 +1614,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 		int32_t maxWinners = (int32_t)MAX_WINNER_NODES;
 
 		if (m_winnerTree.getNumNodes() == 0 &&
-		!m_winnerTree.set(-1, maxWinners, maxWinners * MAX_BEST_REQUEST_SIZE, true, "wintree", NULL,
+		!m_winnerTree.set(-1, maxWinners, maxWinners * MAX_REQUEST_SIZE, true, "wintree", NULL,
 				sizeof(key192_t), -1)) {
 			m_isPopulatingDoledb = false;
 			log(LOG_ERROR, "Could not initialize m_winnerTree: %s",mstrerror(g_errno));
@@ -2696,7 +2702,8 @@ gotNewWinner:
 	// if read is not yet done, save the reply in case next list needs it
 	if ( srep ) { // && ! m_isReadDone ) {
 		int32_t rsize = srep->getRecSize();
-		if ( rsize > (int32_t)MAX_SP_REPLY_SIZE) gbshutdownAbort(true);
+		if((size_t)rsize > sizeof(m_lastReplyBuf))
+			gbshutdownAbort(true);
 		gbmemcpy ( m_lastReplyBuf, srep, rsize );
 		m_lastReplyValid = true;
 	}

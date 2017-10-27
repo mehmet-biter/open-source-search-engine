@@ -23,7 +23,6 @@ class SpiderRequest;
 class SpiderReply;
 
 
-#define OVERFLOWLISTSIZE 200
 
 // we have one SpiderColl for each collection record
 class SpiderColl {
@@ -52,11 +51,6 @@ public:
 	SafeBuf m_negSubstringBuf;
 	SafeBuf m_posSubstringBuf;
 
-	// . do not re-send CrawlInfoLocal for a coll if not update
-	// . we store the flags in here as true if we should send our
-	//   CrawlInfoLocal for this coll to this hostId
-	char m_sendLocalCrawlInfoToHost[MAX_HOSTS];
-
 	Msg4 m_msg4x;
 
 	bool isInDupCache(const SpiderRequest *sreq, bool addToCache);
@@ -67,8 +61,6 @@ public:
 
 	// doledb cursor keys for each priority to speed up performance
 	key96_t m_nextKeys[MAX_SPIDER_PRIORITIES];
-
-	int64_t m_lastPrintCount;
 
 	// used by SpiderLoop.cpp
 	int32_t m_spidersOut;
@@ -160,7 +152,7 @@ private:
 	key128_t m_endKey;
 
 	bool m_lastReplyValid;
-	char m_lastReplyBuf[MAX_SP_REPLY_SIZE];
+	char m_lastReplyBuf[sizeof(SpiderReply)];
 
 	bool m_isLoading;
 
@@ -196,6 +188,8 @@ private:
 
 	int32_t     m_numAdded;
 	int64_t m_numBytesScanned;
+
+	int64_t m_lastPrintCount;
 
 	// freshest m_siteNumInlinks per site stored in here
 	HashTableX m_sniTable;

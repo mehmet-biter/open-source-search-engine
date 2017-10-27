@@ -26,11 +26,6 @@ class SafeBuf;
 // lower from 1300 to 300
 #define MAXUDPSLOTS 300
 
-// . size of spiderecs to load in one call to readList
-// . i increased it to 1MB to speed everything up, seems like cache is 
-//   getting loaded up way too slow
-#define SR_READ_SIZE (512*1024)
-
 // up it to 2000 because shard #15 has slow disk reads and some collections
 // are taking forever to spider because the spiderdb scan is so slow.
 // we reduce this below if the spiderdb is smaller.
@@ -857,10 +852,6 @@ public:
 		reset();
 	}
 } __attribute__((packed, aligned(4)));
-
-// was 1000 but breached, now equals SR_READ_SIZE/sizeof(SpiderReply)
-#define MAX_BEST_REQUEST_SIZE (MAX_URL_LEN+1+sizeof(SpiderRequest))
-#define MAX_SP_REPLY_SIZE     (sizeof(SpiderReply))
 
 // are we responsible for this ip?
 bool isAssignedToUs ( int32_t firstIp ) ;
