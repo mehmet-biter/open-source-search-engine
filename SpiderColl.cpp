@@ -1725,9 +1725,6 @@ bool SpiderColl::evalIpLoop ( ) {
 
 	// if this ip is in the winnerlistcache use that. it saves
 	// us a lot of time.
-	key96_t cacheKey;
-	cacheKey.n0 = m_scanningIp;
-	cacheKey.n1 = 0;
 	char *doleBuf = NULL;
 	size_t doleBufSize;
 	bool useCache = true;
