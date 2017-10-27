@@ -173,7 +173,6 @@ bool SpiderColl::load ( ) {
 					  "downcache", // dbname
 					  false      , // load from disk?
 					  12         , // key size (firstip)
-					  12         , // data key size?
 					  -1         )) {// numPtrsMax
 		log(LOG_WARN, "spider: dcache init failed");
 		return false;
@@ -581,7 +580,6 @@ bool SpiderColl::isInDupCache(const SpiderRequest *sreq, bool addToCache) {
 				  "urldups", // dbname
 				  false, // loadfromdisk
 				  12, // cachekeysize
-				  0, // datakeysize
 				  -1 ); // numptrsmax
 
 	// quit add dups over and over again...

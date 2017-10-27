@@ -4971,7 +4971,6 @@ static bool cacheTest() {
 			"cachetest"        ,  // dbname
 			false,            // save cache to disk?
 			12,               // cachekeysize
-			12,               // datakeysize
 			-1)) {            // numptrsmax
 		log(LOG_WARN, "test: Cache init failed.");
 		return false;
@@ -5047,7 +5046,7 @@ static bool cacheTest() {
 			-1            ,  // fixed data size of rec
 			maxCacheNodes ,
 			"cachetest"        ,  // dbname
-			false,12,12,-1         )) { // save cache to disk?
+			false,12,-1         )) { // save cache to disk?
 		log(LOG_WARN, "test: Cache init failed.");
 		return false;
 	}

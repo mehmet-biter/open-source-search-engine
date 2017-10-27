@@ -132,7 +132,6 @@ bool Msg13::registerHandler ( ) {
 					"robots.txt"  , // dbname
 					true,          // save to disk
 					12,            // cachekeysize
-					12,            // datakeysize
 					-1))           // numPtrsMax
 		return false;
 
@@ -142,7 +141,6 @@ bool Msg13::registerHandler ( ) {
 					"htmlPages"  , // dbname
 					true,          // save to disk
 					12,            // cachekeysize
-					12,            // datakeysize
 					-1))           // numPtrsMax
 		return false;
 
@@ -569,7 +567,6 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 				     "hamcache" , // dbname
 				     false      , // load from disk?
 				     12         , // key size
-				     12         , // data key size?
 				     -1         );// numPtrsMax
 	}
 

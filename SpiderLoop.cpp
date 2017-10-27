@@ -122,7 +122,6 @@ void SpiderLoop::init() {
 					"winnerspidercache", // dbname
 					false, //loadfromdisk
 					12, //cachekeysize
-					12, //datakeysize
 					-1)) //numptrsmax
 		log(LOG_WARN, "spider: failed to init winnerlist cache. slows down.");
 

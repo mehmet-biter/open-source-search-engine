@@ -80,7 +80,6 @@ class RdbCache {
 		    const char *dbname       ,
 		    bool  loadFromDisk ,
 		    char  cacheKeySize,
-		    char  dataKeySize,
 		    int32_t  numPtrsMax);
 
 	// . a quick hack for SpiderCache.cpp
@@ -312,9 +311,6 @@ private:
 
 	// keySize of cache keys in bytes
 	char m_cks;
-
-	// keysize of lists for addList() and getList()
-	char m_dks;
 
 	// count the add ops
 	int64_t m_adds;

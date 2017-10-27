@@ -410,7 +410,6 @@ void Msg51::gotClusterRec(Slot *slot) {
 					   "clusterdbQuickCache" ,
 					   false,            // load from disk?
 					   sizeof(key96_t),  // cache key size
-					   sizeof(key96_t),  // cache data size
 					   -1))              // numPtrsMax
 		// only init once if successful
 		s_cacheInit = true;

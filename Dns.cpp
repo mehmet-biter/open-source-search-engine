@@ -167,7 +167,6 @@ bool Dns::init ( uint16_t clientPort ) {
 				 "dns"         ,  // dbname
 				 true,            // save cache to disk?
 				 12,              //cachekeysize
-				 12,              //datakeysize
 				 -1            )) { // numPtrsMax
 		log( LOG_ERROR, "dns: Cache init failed." );
 		return false;
@@ -183,7 +182,6 @@ bool Dns::init ( uint16_t clientPort ) {
 				      "dnsLocal"    ,  // dbname
 				      true,            // save cache to disk?
 				      12,              //cachekeysize
-				      12,              //datakeysize
 				      -1            )) { // numPtrsMax
 		log( LOG_ERROR, "dns: Cache local init failed." );
 		return false;
@@ -227,7 +225,6 @@ bool Dns::init ( uint16_t clientPort ) {
 			       "dnstimedout"           ,  // dbname
 			       true,            // save cache to disk?
 			       12,              //cachekeysize
-			       12,              //datakeysize
 			       -1);             // numPtrsMax
 	return true;
 }
