@@ -130,7 +130,6 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 	sqlite3_stmt *selectStatement = NULL;
 	if(sqlite3_prepare_v2(db, "select 1 from spiderdb where m_firstIp=? and m_uh48=?", -1, &selectStatement, &pzTail) != SQLITE_OK) {
 		log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errmsg(db),pzTail);
-		sqlite3_close(db);
 		return false;
 	}
 	
