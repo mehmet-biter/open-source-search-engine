@@ -18,6 +18,9 @@
 #include "Sanity.h"
 
 
+#define OVERFLOWLISTSIZE 200
+
+
 static key96_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp ) {
 	// sanity
 	if ( ((int64_t)spiderTimeMS) < 0 ) gbshutdownAbort(true);

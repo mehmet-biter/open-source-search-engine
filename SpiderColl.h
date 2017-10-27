@@ -23,7 +23,6 @@ class SpiderRequest;
 class SpiderReply;
 
 
-#define OVERFLOWLISTSIZE 200
 
 // we have one SpiderColl for each collection record
 class SpiderColl {
