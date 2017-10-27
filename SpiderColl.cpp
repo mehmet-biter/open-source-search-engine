@@ -1729,13 +1729,6 @@ bool SpiderColl::evalIpLoop ( ) {
 		return true;
 	}
 
-	// if this ip is in the winnerlistcache use that. it saves
-	// us a lot of time.
-	key96_t cacheKey;
-	cacheKey.n0 = m_scanningIp;
-	cacheKey.n1 = 0;
-	char *doleBuf = NULL;
-	int32_t doleBufSize;
 	time_t cachedTimestamp = 0;
 	bool useCache = true;
 	const CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
@@ -1756,6 +1749,12 @@ bool SpiderColl::evalIpLoop ( ) {
 		useCache = false;
 	// assume not from cache
 	if ( useCache ) {
+		// if this ip is in the winnerlistcache use that. it saves us a lot of time.
+		key96_t cacheKey;
+		cacheKey.n0 = m_scanningIp;
+		cacheKey.n1 = 0;
+		char *doleBuf = NULL;
+		int32_t doleBufSize;
 		//g_spiderLoop.m_winnerListCache.verify();
 		RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
 		bool inCache = g_spiderLoop.m_winnerListCache.getRecord(m_collnum,
