@@ -14,6 +14,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "SpiderdbRdbSqliteBridge.h"
+#include "UrlBlockCheck.h"
 #include "ScopedLock.h"
 #include "Sanity.h"
 
@@ -2318,6 +2319,18 @@ bool SpiderColl::scanListForWinners ( ) {
 		if ( sreq->m_fakeFirstIp && srep && srep->m_spideredTime > sreq->m_addedTime ) {
 			logDebug( g_conf.m_logDebugSpider, "spider: skipping6 %s", sreq->m_url );
 			continue;
+		}
+
+		if(!sreq->m_urlIsDocId) {
+			//skip request if it is anurl we don't want to index
+			Url url;
+			url.set(sreq->m_url);
+			if(url.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION)) {
+				continue;
+			}
+			if(isUrlBlocked(url,NULL)) {
+				continue;
+			}
 		}
 
 		if ( sreq->isCorrupt() ) {

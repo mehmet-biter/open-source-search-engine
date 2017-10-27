@@ -59,7 +59,11 @@ AdultCheck::AdultCheck(XmlDoc *xd, bool debug) :
 	if( debug ) {
 		m_debbufSize = 2000;
 		m_debbuf = (char *)mmalloc(m_debbufSize, "adultcheck");
-		if( !m_debbuf ) {
+		if( m_debbuf ) {
+			// zero-terminate now as we may not need it, but may try logging it later
+			m_debbuf[0] = '\0';
+		}
+		else {
 			m_debbufSize = 0;
 		}
 	}
