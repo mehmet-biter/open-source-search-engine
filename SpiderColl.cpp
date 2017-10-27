@@ -14,6 +14,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "SpiderdbRdbSqliteBridge.h"
+#include "SpiderdbUtil.h"
 #include "UrlBlockCheck.h"
 #include "ScopedLock.h"
 #include "Sanity.h"
@@ -2322,13 +2323,17 @@ bool SpiderColl::scanListForWinners ( ) {
 		}
 
 		if(!sreq->m_urlIsDocId) {
-			//skip request if it is anurl we don't want to index
+			//delete request if it is an url we don't want to index
 			Url url;
 			url.set(sreq->m_url);
 			if(url.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION)) {
+				log(LOG_DEBUG, "Found non-indexable URL '%s' in spiderdb. Deleting it", sreq->m_url);
+				SpiderdbUtil::deleteRecord(m_collnum,sreq->m_firstIp, uh48);
 				continue;
 			}
 			if(isUrlBlocked(url,NULL)) {
+				log(LOG_DEBUG, "Found unwanted URL '%s' in spiderdb. Deleting it", sreq->m_url);
+				SpiderdbUtil::deleteRecord(m_collnum,sreq->m_firstIp, uh48);
 				continue;
 			}
 		}

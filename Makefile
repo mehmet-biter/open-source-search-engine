@@ -83,6 +83,7 @@ OBJS_O3 = \
 	GbEncoding.o GbLanguage.o \
 	GbDns.o \
 	ConvertSpiderdb.o \
+	SpiderdbUtil.o \
 	FxBlobCache.o \
 	FxBlobCacheInstantiation.o \
 
