@@ -1904,6 +1904,7 @@ static const char * const s_badExtensions[] = {
         "xyz",
         "zip",//
 };//look below, I added 3 more types for TR version 73
+static const size_t s_badExtensionsCount = sizeof(s_badExtensions)/sizeof(s_badExtensions[0]);
 
 
 
@@ -1916,9 +1917,8 @@ bool Url::hasNonIndexableExtension( int32_t version ) const {
 	if ( ! m_extension || m_elen == 0 ) return false;
 	ScopedLock sl(s_badExtTableMutex);
 	if(!s_badExtInitialized) { //if hash has not been created-create one
-		int32_t i=0;
 		//version 72 and before.
-		do {
+		for(size_t i=0; i<s_badExtensionsCount; i++) {
 			int tlen = strlen(s_badExtensions[i]);
 			int64_t swh = hash64Lower_a(s_badExtensions[i],tlen);
 			if(!s_badExtTable.addKey(swh,(int32_t)50))
@@ -1926,9 +1926,7 @@ bool Url::hasNonIndexableExtension( int32_t version ) const {
 				log(LOG_ERROR,"hasNonIndexableExtension: Could not add hash %" PRId64" to badExtTable.", swh);
 				return false;
 			}
-			i++;
-
-		} while(strcmp(s_badExtensions[i],"zip")!=0);
+		}
 
 
 		//version 73 and after.
