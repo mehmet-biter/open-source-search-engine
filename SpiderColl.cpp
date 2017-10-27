@@ -123,9 +123,6 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 
 	// reset this
 	memset ( m_outstandingSpiders , 0 , 4 * MAX_SPIDER_PRIORITIES );
-	// start off sending all colls local crawl info to all hosts to
-	// be sure we are in sync
-	memset ( m_sendLocalCrawlInfoToHost , 1 , MAX_HOSTS );
 
 	m_collnum = cr->m_collnum;
 	strcpy(m_coll, cr->m_coll);
