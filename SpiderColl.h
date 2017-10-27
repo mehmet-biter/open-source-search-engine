@@ -62,8 +62,6 @@ public:
 	// doledb cursor keys for each priority to speed up performance
 	key96_t m_nextKeys[MAX_SPIDER_PRIORITIES];
 
-	int64_t m_lastPrintCount;
-
 	// used by SpiderLoop.cpp
 	int32_t m_spidersOut;
 
@@ -190,6 +188,8 @@ private:
 
 	int32_t     m_numAdded;
 	int64_t m_numBytesScanned;
+
+	int64_t m_lastPrintCount;
 
 	// freshest m_siteNumInlinks per site stored in here
 	HashTableX m_sniTable;

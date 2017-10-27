@@ -94,7 +94,6 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_waitingTreeNeedsRebuild = false;
 	m_numAdded = 0;
 	m_numBytesScanned = 0;
-	m_lastPrintCount = 0;
 	m_collnum = -1;
 	m_lastReindexTimeMS = 0;
 	m_countingPagesIndexed = false;
