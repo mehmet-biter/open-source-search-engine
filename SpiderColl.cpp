@@ -64,7 +64,6 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_lastOverflowFirstIp = 0;
 	m_deleteMyself = false;
 	m_isLoading = false;
-	m_gettingList1 = false;
 	m_gettingWaitingTreeList = false;
 	m_lastScanTime = 0;
 	m_isPopulatingDoledb = false;
@@ -110,7 +109,6 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_totalBytesScanned = 0;
 	m_deleteMyself = false;
 	m_pri2 = 0;
-	m_gettingList1 = false;
 	memset(m_outstandingSpiders, 0, sizeof(m_outstandingSpiders));
 	m_overflowList = NULL;
 	m_totalNewSpiderRequests = 0;
@@ -1667,31 +1665,6 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 }
 
 
-void SpiderColl::gotSpiderdbListWrapper(void *state, RdbList *list, Msg5 *msg5) {
-	SpiderColl *THIS = (SpiderColl *)state;
-
-	// prevent a core
-	THIS->m_gettingList1 = false;
-
-	// are we trying to exit? some firstip lists can be quite long, so
-	// terminate here so all threads can return and we can exit properly
-	if (g_process.isShuttingDown()) {
-		return;
-	}
-
-	// return if that blocked
-	if (!THIS->evalIpLoop()) {
-		return;
-	}
-
-	// we are done, re-entry popuatedoledb
-	THIS->m_isPopulatingDoledb = false;
-
-	// gotta set m_isPopulatingDoledb to false lest it won't work
-	THIS->populateDoledbFromWaitingTree();
-}
-
-
 
 ///////////////////
 //
@@ -1961,8 +1934,6 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 		return true;
 	}
 
-	// sanity check
-	if ( m_gettingList1 ) gbshutdownLogicError();
 	// . read in a replacement SpiderRequest to add to doledb from
 	//   this ip
 	// . get the list of spiderdb records
@@ -1987,9 +1958,6 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	logDebug(g_conf.m_logDebugSpider, "spider: readListFromSpiderdb: firstip=%s key=%s",
 	         iptoa(m_scanningIp,ipbuf), KEYSTR( &m_nextKey, sizeof( key128_t ) ) );
 		    
-	// flag it
-	m_gettingList1 = true;
-
 	// . read the list from local disk
 	// . if a niceness 0 intersect thread is taking a LONG time
 	//   then this will not complete in a long time and we
@@ -2011,9 +1979,6 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	// note its return
 	logDebug( g_conf.m_logDebugSpider, "spider: back from msg5 spiderdb read of %" PRId32" bytes",m_list.getListSize());
 		
-	// no longer getting list
-	m_gettingList1 = false;
-
 	// got it without blocking. maybe all in tree or in cache
 	logTrace( g_conf.m_logTraceSpider, "END, didn't block" );
 	return true;
@@ -3336,31 +3301,12 @@ bool SpiderColl::tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 	// if not being deleted return false
 	if ( ! sc->m_deleteMyself ) return false;
 	// otherwise always return true
-	if ( sc->m_msg5b.isWaitingForList() ) {
-		log(LOG_INFO, "spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
-			    "waiting1",
-		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
-		return true;
-	}
 	if ( sc->m_isLoading ) {
 		log(LOG_INFO, "spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
 			    "waiting3",
 		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
 		return true;
 	}
-	// this means msg5 is out
-	if ( sc->m_msg5.isWaitingForList() ) {
-		log(LOG_INFO, "spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
-			    "waiting4",
-		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
-		return true;
-	}
-	// if ( sc->m_gettingList1 ) {
-	// 	log(LOG_INFO, "spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32"
-	//"waiting5",
-	// 	    (int32_t)sc,(int32_t)sc->m_collnum);
-	// 	return true;
-	// }
 	// if ( sc->m_gettingWaitingTreeList ) {
 	// 	log(LOG_INFO, "spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32"
 	//"waiting6",
