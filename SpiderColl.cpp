@@ -1723,10 +1723,6 @@ bool SpiderColl::evalIpLoop ( ) {
 		return true;
 	}
 
-	// if this ip is in the winnerlistcache use that. it saves
-	// us a lot of time.
-	char *doleBuf = NULL;
-	size_t doleBufSize;
 	bool useCache = true;
 	const CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 
@@ -1746,6 +1742,12 @@ bool SpiderColl::evalIpLoop ( ) {
 		useCache = false;
 	// assume not from cache
 	if ( useCache ) {
+		// if this ip is in the winnerlistcache use that. it saves us a lot of time.
+		key96_t cacheKey;
+		cacheKey.n0 = m_scanningIp;
+		cacheKey.n1 = 0;
+		char *doleBuf = NULL;
+		size_t doleBufSize;
 		//g_spiderLoop.m_winnerListCache.verify();
 		FxBlobCacheLock<int32_t> rcl(g_spiderLoop.m_winnerListCache);
 		bool inCache = g_spiderLoop.m_winnerListCache.lookup(m_scanningIp, (void**)&doleBuf, &doleBufSize);
