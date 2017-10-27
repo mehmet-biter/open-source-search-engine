@@ -163,7 +163,7 @@ bool AdultCheckList::getDirtyScore(Words *w, Phrases *p, HashTableX *uniqueTermI
 
 		// only process if we haven't seen it before
 		if ( uniqueTermIds->getSlot( &termId ) >= 0 ) {
-			logTrace(g_conf.m_logTraceAdultCheck, "Already seen word %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, slen, s, (uint64_t)termId, (uint64_t)(termId & TERMID_MASK));
+			//logTrace(g_conf.m_logTraceAdultCheck, "Already seen word %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, slen, s, (uint64_t)termId, (uint64_t)(termId & TERMID_MASK));
 		}
 		else {
 			// add to hash table. return NULL and set g_errno on error
@@ -195,7 +195,7 @@ bool AdultCheckList::getDirtyScore(Words *w, Phrases *p, HashTableX *uniqueTermI
 				}
 			}
 			else {
-				logTrace(g_conf.m_logTraceAdultCheck, "Word %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, slen, s, (uint64_t)termId, (uint64_t)(termId & TERMID_MASK));
+				//logTrace(g_conf.m_logTraceAdultCheck, "Word %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, slen, s, (uint64_t)termId, (uint64_t)(termId & TERMID_MASK));
 			}
 		}
 
@@ -215,7 +215,7 @@ bool AdultCheckList::getDirtyScore(Words *w, Phrases *p, HashTableX *uniqueTermI
 			int64_t phraseId = hash64Lower_utf8_nospaces( pbuf , plen );
 
 			if ( uniqueTermIds->getSlot ( &phraseId ) >= 0 ) {
-				logTrace(g_conf.m_logTraceAdultCheck, "Already seen phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK));
+				//logTrace(g_conf.m_logTraceAdultCheck, "Already seen phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK));
 				continue;
 			}
 
@@ -247,7 +247,7 @@ bool AdultCheckList::getDirtyScore(Words *w, Phrases *p, HashTableX *uniqueTermI
 				}
 			}
 			else {
-				logTrace(g_conf.m_logTraceAdultCheck, "Phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK));
+				//logTrace(g_conf.m_logTraceAdultCheck, "Phrase %" PRId32 ": %.*s -> %" PRIu64 " (%" PRId64 ")", i, plen, pbuf, (uint64_t)phraseId, (uint64_t)(phraseId & TERMID_MASK));
 			}
 		}
 	}
