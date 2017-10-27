@@ -159,7 +159,7 @@ private:
 	key128_t m_endKey;
 
 	bool m_lastReplyValid;
-	char m_lastReplyBuf[MAX_SP_REPLY_SIZE];
+	char m_lastReplyBuf[sizeof(SpiderReply)];
 
 	bool m_isLoading;
 
