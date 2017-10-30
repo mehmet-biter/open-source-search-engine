@@ -9394,12 +9394,10 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	unlink ( out );
 	// ignore errno from those unlinks
 	errno = 0;
+
 	// open the input file
- retry11:
 	int fd = open ( in , O_WRONLY | O_CREAT , getFileCreationFlags() );
 	if ( fd < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry11;
 		m_errno = errno;
 		log(LOG_WARN, "build: Could not open file %s for writing: %s.", in,mstrerror(m_errno));
 		return;
@@ -9407,11 +9405,8 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	// we are in a thread, this must be valid!
 	if ( ! m_mimeValid ) { g_process.shutdownAbort(true);}
 
- retry12:
 	// write the content into the input file
 	int32_t w = write ( fd , m_content , m_contentLen );
-	// valgrind
-	if ( w < 0 && errno == EINTR ) goto retry12;
 	// did we get an error
 	if ( w != m_contentLen ) {
 		//int32_t w = fwrite ( m_buf , 1 , m_bufLen , pd );
@@ -9466,11 +9461,8 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 		errno = 0;
 	}
 
-retry13:
 	fd = open ( out , O_RDONLY );
 	if ( fd < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry13;
 		m_errno = errno;
 		log( LOG_WARN, "gbfilter: Could not open file %s for reading: %s.", out,mstrerror(m_errno));
 		return;
@@ -9479,13 +9471,11 @@ retry13:
 	if ( m_filteredContentAllocSize < 2 ) { g_process.shutdownAbort(true); }
 	// to read - leave room for \0
 	int32_t toRead = m_filteredContentAllocSize - 1;
-retry14:
+
 	// read right from pipe descriptor
 	int32_t r = read (fd, m_filteredContent,toRead);
 	// note errors
 	if ( r < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry14;
 		log( LOG_WARN, "gbfilter: reading output: %s",mstrerror(errno));
 		// this is often bad fd from an oom error, so ignore it
 		//m_errno = errno;
