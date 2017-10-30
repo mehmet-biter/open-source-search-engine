@@ -1025,7 +1025,7 @@ bool Repair::gotScanRecList ( ) {
 		log("repair: Encountered corruption1 in titledb. NextKey=%s",
 		    KEYSTR(&m_nextTitledbKey,sizeof(key96_t)));
 		// advance one if positive, must always start on a neg
-		if ( (m_nextTitledbKey.n0 & 0x01) == 0x01 ) 
+		if(!KEYNEG(m_nextTitledbKey))
 			m_nextTitledbKey++;
 		// count as error
 		m_recsCorruptErrors++;
@@ -1071,7 +1071,7 @@ bool Repair::gotScanRecList ( ) {
 		    docId);
 		m_nextTitledbKey++;
 		// advance one if positive, must always start on a negative key
-		if ( (m_nextTitledbKey.n0 & 0x01) == 0x01 ) 
+		if(!KEYNEG(m_nextTitledbKey))
 			m_nextTitledbKey++;
 		m_stage = STAGE_TITLEDB_0;
 		return true;
@@ -1081,7 +1081,7 @@ bool Repair::gotScanRecList ( ) {
 		m_nextTitledbKey = m_titleRecList.getCurrentKey();
 		m_nextTitledbKey++;
 		// advance one if positive, must always start on a negative key
-		if ( (m_nextTitledbKey.n0 & 0x01) == 0x01 ) 
+		if(!KEYNEG(m_nextTitledbKey))
 			m_nextTitledbKey++;
 	}
 
@@ -1110,7 +1110,7 @@ bool Repair::gotScanRecList ( ) {
 
 	bool isDelete = false;
 	// is it a negative titledb key?
-	if ( (tkey.n0 & 0x01) == 0x00 ) {
+	if(KEYNEG(tkey)) {
 		// count it
 		m_recsNegativeKeys++;
 		// otherwise, we need to delete this
@@ -1172,7 +1172,7 @@ bool Repair::injectTitleRec ( ) {
 		// get that key
 		key96_t *k = (key96_t *)rec;
 		// skip negative recs, first one should not be negative however
-		if ( ( k->n0 & 0x01 ) == 0x00 ) continue;
+		if(KEYNEG(*k)) continue;
 		// get docid of that guy
 		int64_t dd = Titledb::getDocId(k);
 		// compare that
