@@ -2331,7 +2331,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			// TODO: what is srep->m_isIndexedINValid is set????
 			if ( ! srep->m_isIndexed ) continue;
 			// keep count per site and firstip
-			         m_siteIndexedDocumentCount.addScore(sreq->m_siteHash32,1);
+			m_siteIndexedDocumentCount.addScore(sreq->m_siteHash32,1);
 
 			const int32_t *tmpNum = (const int32_t *)m_siteIndexedDocumentCount.getValue( &( sreq->m_siteHash32 ) );
 			logDebug( g_conf.m_logDebugSpider, "spider: sitequota: got %" PRId32" indexed docs for site from "
@@ -2355,7 +2355,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		}
 
 		if(!sreq->m_urlIsDocId) {
-			//skip request if it is anurl we don't want to index
+			//skip request if it is an url we don't want to index
 			Url url;
 			url.set(sreq->m_url);
 			if(url.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION)) {

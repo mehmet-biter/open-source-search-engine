@@ -2414,6 +2414,22 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		return &m_indexCode;
 	}
 
+	if( !g_conf.m_spiderAdultContent ) {
+		char *isAdult = getIsAdult();
+		if ( !isAdult || isAdult == (void *)-1) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getIsAdult failed");
+			return (int32_t *)isAdult;
+		}
+
+		if ( *isAdult ) {
+			m_indexCode      = EDOCADULT;
+			m_indexCodeValid = true;
+			logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCADULT");
+			return &m_indexCode;
+		}
+	}
+
+
 	// . i moved this up to perhaps fix problems of two dup pages being
 	//   downloaded at about the same time
 	// . are we a dup of another doc from any other site already indexed?
@@ -14246,8 +14262,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	if ( ! ct ) return NULL;
 	char *isRoot = getIsSiteRoot();
 	if ( ! isRoot || isRoot == (char *)-1 ) return (SpiderReply *)isRoot;
-
-
 
 	uint8_t *langId = getLangId();
 	if ( ! langId || langId == (uint8_t *)-1 )

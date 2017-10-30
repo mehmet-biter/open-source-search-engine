@@ -180,6 +180,7 @@ class Conf {
 	bool  m_returnResultsAnyway;
 
 	bool m_spiderIPUrl;
+	bool m_spiderAdultContent;
 	bool  m_addUrlEnabled; // TODO: use at http interface level
 	bool  m_doStripeBalancing;
 

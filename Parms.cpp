@@ -4911,6 +4911,16 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "spider adult content";
+	m->m_desc  = "Should we spider content detected as adult?";
+	m->m_cgi   = "spadult";
+	simple_m_set(Conf,m_spiderAdultContent);
+	m->m_def   = "1";
+	m->m_units = "";
+	m->m_group = true;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
 	m->m_title = "add url enabled";
 	m->m_desc  = "Can people use the add url interface to add urls "
 		"to the index?";

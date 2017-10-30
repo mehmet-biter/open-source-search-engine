@@ -1938,7 +1938,7 @@ checkNextRule:
 				// if we matched any, that's great
 				goto matched2;
 			// if its lang!=en,es,...
-			// and we equal the string, then we do not matcht his
+			// and we equal the string, then we do not match this
 			// particular rule!!!
 			if ( sign == SIGN_NE &&
 			     blen == langLen && 
