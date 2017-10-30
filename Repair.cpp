@@ -751,7 +751,7 @@ bool Repair::loop() {
 	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 
 	// was repairing turned off all of a sudden?
-	if ( ! g_conf.m_repairingEnabled ) {
+	if(!g_conf.m_repairingEnabled) {
 		//log("repair: suspending repair.");
 		// when it gets turned back on, the sleep callback above
 		// will notice it was suspended and call loop() again to
@@ -763,8 +763,7 @@ bool Repair::loop() {
 
 	// if we re-entered this loop from doneWithIndexDocWrapper
 	// do not launch another msg5 if it is currently out!
-	if ( m_msg5InUse ) 
-	{
+	if(m_msg5InUse) {
 		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, waiting for msg5", __FILE__, __func__, __LINE__);
 		return false;
 	}
@@ -772,79 +771,71 @@ bool Repair::loop() {
 	// set this to on
 	g_process.m_repairNeedsSave = true;
 
- loop1:
+	//loop until something blocks or we hit m_maxRepairinjections limit
+	for(;;) {
+		if(g_process.isShuttingDown())
+			return true;
 
-	if (g_process.isShuttingDown()) {
-		return true;
-	}
+		if(m_stage == STAGE_TITLEDB_0) {
+			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_0 - scanRecs", __FILE__, __func__, __LINE__);
+			m_stage++;
+			if(!scanRecs())
+				return false;
+		}
 
-	if ( m_stage == STAGE_TITLEDB_0  ) 
-	{
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_0 - scanRecs", __FILE__, __func__, __LINE__);
-		m_stage++;
-		if ( ! scanRecs()       ) 
-		{
-			return false;
+		if(m_stage == STAGE_TITLEDB_1) {
+			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_1 - gotScanRecList", __FILE__, __func__, __LINE__);
+			m_stage++;
+			if(!gotScanRecList())
+				return false;
 		}
-	}
-	
-	if ( m_stage == STAGE_TITLEDB_1  ) 
-	{
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_1 - gotScanRecList", __FILE__, __func__, __LINE__);
-		m_stage++;
-		if ( ! gotScanRecList()   ) 
-		{
-			return false;
+
+		if(m_stage == STAGE_TITLEDB_2) {
+			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_2", __FILE__, __func__, __LINE__);
+			m_stage++;
 		}
-	}
-	
-	if ( m_stage == STAGE_TITLEDB_2  ) {
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_2", __FILE__, __func__, __LINE__);
-		m_stage++;
-	}
-	// get the site rec to see if it is banned first, before injecting it
-	if ( m_stage == STAGE_TITLEDB_3 ) {
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_3", __FILE__, __func__, __LINE__);
-		
-		// if we have maxed out our injects, wait for one to come back
-		if ( m_numOutstandingInjects >= g_conf.m_maxRepairinjections ) {
-			return false;
+		// get the site rec to see if it is banned first, before injecting it
+		if(m_stage == STAGE_TITLEDB_3) {
+			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_3", __FILE__, __func__, __LINE__);
+
+			// if we have maxed out our injects, wait for one to come back
+			if(m_numOutstandingInjects >= g_conf.m_maxRepairinjections)
+				return false;
+			m_stage++;
+
+			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: injectTitleRec", __FILE__, __func__, __LINE__);
+			bool status = injectTitleRec();
+			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: injectTitleRec returned %s", __FILE__, __func__, __LINE__, status?"true":"false");
+
+			// try to launch another
+			if(m_numOutstandingInjects < g_conf.m_maxRepairinjections) {
+				m_stage = STAGE_TITLEDB_0;
+				logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: Still have more free repair spiders, loop.", __FILE__, __func__, __LINE__);
+				continue;
+			}
+
+			// if we are full and it blocked... wait now
+			if(! status) {
+				logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return false. Full queue and blocked.", __FILE__, __func__, __LINE__);
+				return false;
+			}
 		}
-		m_stage++;
-		
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: injectTitleRec", __FILE__, __func__, __LINE__);
-		bool status = injectTitleRec();
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: injectTitleRec returned %s", __FILE__, __func__, __LINE__, status?"true":"false");
-			
-		// try to launch another
-		if ( m_numOutstandingInjects<g_conf.m_maxRepairinjections ) {
+
+		if(m_stage == STAGE_TITLEDB_4) {
+			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_4", __FILE__, __func__, __LINE__);
+			m_stage++;
+		}
+
+		// if we are not done with the titledb scan loop back up
+		if(!m_completedFirstScan) {
 			m_stage = STAGE_TITLEDB_0;
-			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: Still have more free repair spiders, loop.", __FILE__, __func__, __LINE__);
-			goto loop1;
+			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: loop, set STAGE_TITLEDB_0", __FILE__, __func__, __LINE__);
+			continue;
 		}
-		
-		// if we are full and it blocked... wait now
-		if ( ! status ) 
-		{
-			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return false. Full queue and blocked.", __FILE__, __func__, __LINE__);
-			return false;
-		}
-	}
-	
-	if ( m_stage == STAGE_TITLEDB_4  ) {
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_4", __FILE__, __func__, __LINE__);
-		m_stage++;
-	}
-
-	// if we are not done with the titledb scan loop back up
-	if ( ! m_completedFirstScan ) {
-		m_stage = STAGE_TITLEDB_0;
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: loop, set STAGE_TITLEDB_0", __FILE__, __func__, __LINE__);
-		goto loop1;
 	}
 
 	// if we are waiting for injects to come back, return
-	if ( m_numOutstandingInjects > 0 ) {
+	if(m_numOutstandingInjects > 0) {
 		// tell injection complete wrapper to call us back, otherwise
 		// we never end up moving on to the spider phase
 		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return false. Have %" PRId32" outstanding injects", __FILE__, __func__, __LINE__, m_numOutstandingInjects);
