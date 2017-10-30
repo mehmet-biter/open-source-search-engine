@@ -52,7 +52,7 @@ pipeline {
 
 		stage('Build') {
 			steps {
-				sh "cd ${env.GB_DIR} && make -j8"
+				sh "cd ${env.GB_DIR} && make -j8 debug"
 			}
 		}
 
