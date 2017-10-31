@@ -469,6 +469,7 @@ class Conf {
 	bool  m_rebuildPosdb;
 	bool  m_rebuildClusterdb;
 	bool  m_rebuildSpiderdb;
+	bool  m_rebuildSpiderdbSmall;
 	bool  m_rebuildLinkdb;
 	bool  m_rebuildRoots;
 	bool  m_rebuildNonRoots;

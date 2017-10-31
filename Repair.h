@@ -48,6 +48,8 @@ private:
 	bool gotScanRecList ( );
 	bool getTitleRec ( );
 	bool injectTitleRec ( ) ; // TitleRec *tr );
+	bool injectTitleRecSmall(char *titleRec, int32_t titleRecSize);
+	static void smallInjectCallback(void *state);
 
 
 	bool load();
@@ -82,6 +84,9 @@ private:
 	int64_t  m_recsUnassigned;
 	int64_t  m_recsWrongGroupId;
 	int64_t  m_recsInjected;
+	int64_t  m_nonIndexableExtensions;
+	int64_t  m_urlBlocked;
+	int64_t  m_urlUnwanted;
 
 	// spiderdb scan stats
 	int32_t       m_spiderRecsScanned  ;
@@ -94,6 +99,7 @@ private:
 	bool       m_rebuildPosdb    ;
 	bool       m_rebuildClusterdb  ;
 	bool       m_rebuildSpiderdb   ;
+	bool       m_rebuildSpiderdbSmall;
 	bool       m_rebuildSitedb     ;
 	bool       m_rebuildLinkdb     ;
 	bool       m_rebuildTagdb      ;

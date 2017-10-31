@@ -8125,6 +8125,15 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	m->m_title = "rebuild spiderdb (small)";
+	m->m_desc  = "If enabled, gigablast will rebuild this rdb but only insert spiderrequests for already successfully crawled pages";
+	m->m_cgi   = "rrspsmall";
+	simple_m_set(Conf,m_rebuildSpiderdbSmall);
+	m->m_page  = PAGE_REPAIR;
+	m->m_def   = "0";
+	m->m_group = false;
+	m++;
+
 	m->m_title = "rebuild linkdb";
 	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
 	m->m_cgi   = "rrld";

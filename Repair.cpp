@@ -16,6 +16,7 @@
 #include "File.h"
 #include "RdbMerge.h"
 #include "Collectiondb.h"
+#include "UrlBlockCheck.h"
 #include "max_niceness.h"
 #include "Conf.h"
 #include "Mem.h"
@@ -92,6 +93,9 @@ Repair::Repair() {
 	m_recsUnassigned = 0;
 	m_recsWrongGroupId = 0;
 	m_recsInjected = 0;
+	m_nonIndexableExtensions = 0;
+	m_urlBlocked = 0;
+	m_urlUnwanted = 0;
 	m_spiderRecsScanned = 0;
 	m_spiderRecSetErrors = 0;
 	m_spiderRecNotAssigned = 0;
@@ -100,6 +104,7 @@ Repair::Repair() {
 	m_rebuildPosdb = false;
 	m_rebuildClusterdb = false;
 	m_rebuildSpiderdb = false;
+	m_rebuildSpiderdbSmall = false;
 	m_rebuildSitedb = false;
 	m_rebuildLinkdb = false;
 	m_rebuildTagdb = false;
@@ -418,6 +423,9 @@ void Repair::initScan ( ) {
 	m_recsDupDocIds     = 0;
 	m_recsUnassigned   = 0;
 	m_recsWrongGroupId = 0;
+	m_nonIndexableExtensions = 0;
+	m_urlBlocked = 0;
+	m_urlUnwanted = 0;
 
 	m_spiderRecsScanned     = 0;
 	m_spiderRecSetErrors    = 0;
@@ -428,6 +436,7 @@ void Repair::initScan ( ) {
 	m_rebuildPosdb      = g_conf.m_rebuildPosdb;
 	m_rebuildClusterdb  = g_conf.m_rebuildClusterdb;
 	m_rebuildSpiderdb   = g_conf.m_rebuildSpiderdb;
+	m_rebuildSpiderdbSmall = g_conf.m_rebuildSpiderdbSmall;
 	m_rebuildLinkdb     = g_conf.m_rebuildLinkdb;
 	m_fullRebuild       = g_conf.m_fullRebuild;
 
@@ -442,6 +451,7 @@ void Repair::initScan ( ) {
 		// rebuild it for new event displays.
 		m_rebuildTitledb    = true;
 		m_rebuildSpiderdb   = false;
+		m_rebuildSpiderdbSmall = false;
 		m_rebuildPosdb    = true;
 		m_rebuildClusterdb  = true;
 		m_rebuildLinkdb     = true;
@@ -491,6 +501,7 @@ void Repair::initScan ( ) {
 	if ( m_rebuildPosdb      ) weight += 100.0;
 	if ( m_rebuildClusterdb  ) weight +=   1.0;
 	if ( m_rebuildSpiderdb   ) weight +=   5.0;
+	if ( m_rebuildSpiderdbSmall) weight += 5.0;
 	if ( m_rebuildLinkdb     ) weight +=  20.0;
 	if ( m_rebuildTagdb      ) weight +=   5.0;
 	// assign memory based on weight
@@ -504,6 +515,7 @@ void Repair::initScan ( ) {
 	if ( m_rebuildPosdb      ) posdbMem    = (int32_t)((100.0 * tt)/weight);
 	if ( m_rebuildClusterdb  ) clusterdbMem  = (int32_t)((  1.0 * tt)/weight);
 	if ( m_rebuildSpiderdb   ) spiderdbMem   = (int32_t)((  5.0 * tt)/weight);
+	if ( m_rebuildSpiderdbSmall ) spiderdbMem   = (int32_t)((  5.0 * tt)/weight);
 	if ( m_rebuildLinkdb     ) linkdbMem     = (int32_t)(( 20.0 * tt)/weight);
 
 	if ( m_numColls <= 0 ) {
@@ -529,7 +541,7 @@ void Repair::initScan ( ) {
 
 	if ( m_rebuildClusterdb )
 		if ( ! g_clusterdb2.init2  ( clusterdbMem  ) ) goto hadError;
-	if ( m_rebuildSpiderdb )
+	if ( m_rebuildSpiderdb || m_rebuildSpiderdbSmall )
 		if ( ! g_spiderdb2.init2   ( spiderdbMem   ) ) goto hadError;
 	if ( m_rebuildLinkdb )
 		if ( ! g_linkdb2.init2     ( linkdbMem     ) ) goto hadError;
@@ -638,7 +650,7 @@ void Repair::getNextCollToRepair ( ) {
 		     g_errno != EEXIST ) goto hadError;
 	}
 
-	if ( m_rebuildSpiderdb ) {
+	if ( m_rebuildSpiderdb || m_rebuildSpiderdbSmall ) {
 		if ( ! g_spiderdb2.getRdb()->addRdbBase1 ( coll ) &&
 		     g_errno != EEXIST ) goto hadError;
 	}
@@ -871,7 +883,10 @@ bool Repair::loop() {
 	    " negative=%" PRId64
 	    " unassigned=%" PRId64
 	    " wrong-group=%" PRId64
-	    " injected=%" PRId64,
+	    " injected=%" PRId64
+	    " m_nonIndexableExtensions=%" PRId64
+	    " m_urlBlocked=%" PRId64
+	    " m_urlUnwanted=%" PRId64,
 	    m_recsScanned,
 	    m_recsetErrors,
 	    m_recsCorruptErrors,
@@ -879,7 +894,10 @@ bool Repair::loop() {
 	    m_recsNegativeKeys,
 	    m_recsUnassigned,
 	    m_recsWrongGroupId,
-	    m_recsInjected
+	    m_recsInjected,
+	    m_nonIndexableExtensions,
+	    m_urlBlocked,
+	    m_urlUnwanted
 	   );
 	// we are all done with the repair loop
 	logTrace(g_conf.m_logTraceRepairs,"END");
@@ -916,7 +934,7 @@ void Repair::updateRdbs ( ) {
 		rdb2 = g_clusterdb2.getRdb();
 		rdb1->updateToRebuildFiles ( rdb2 , m_cr->m_coll );
 	}
-	if ( m_rebuildSpiderdb ) {
+	if ( m_rebuildSpiderdb || m_rebuildSpiderdbSmall ) {
 		rdb1 = g_spiderdb.getRdb();
 		rdb2 = g_spiderdb2.getRdb();
 		rdb1->updateToRebuildFiles ( rdb2 , m_cr->m_coll );
@@ -1175,6 +1193,11 @@ bool Repair::injectTitleRec ( ) {
 		break;
 	}
 
+	if(m_rebuildSpiderdbSmall) {
+		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: Jumping to injectTitleRecSmall", __FILE__, __func__, __LINE__);
+		return injectTitleRecSmall(titleRec,titleRecSize);
+	}
+	
 	XmlDoc *xd = NULL;
 	try { xd = new ( XmlDoc ); }
 	catch(std::bad_alloc&) {
@@ -1310,6 +1333,87 @@ bool Repair::injectTitleRec ( ) {
 }
 
 
+namespace {
+//state for when we create spider requests just with the titlerec first-url (and not the links in the documents)
+struct SmallInjectState {
+	Msg4 msg4;
+	SpiderRequest sreq;
+};
+}
+
+
+bool Repair::injectTitleRecSmall(char *titleRec, int32_t titleRecSize) {
+	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	
+	//decompress+decode xmldoc
+	XmlDoc xd;
+	if(!xd.set2(titleRec,titleRecSize, m_cr->m_coll, NULL, MAX_NICENESS))  {
+		m_recsetErrors++;
+		m_stage = STAGE_TITLEDB_0;
+		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. XmlDoc->set2 failed", __FILE__, __func__, __LINE__);
+		return true;
+	}
+	
+	//get url and check if it is still wanted
+	const Url *url = xd.getFirstUrl();
+	if(url->hasNonIndexableExtension(TITLEREC_CURRENT_VERSION)) {
+		m_nonIndexableExtensions++;
+		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. hasNonIndexableExtension", __FILE__, __func__, __LINE__);
+		return true;
+	}
+	if(isUrlBlocked(*url)) {
+		m_urlBlocked++;
+		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. isUrlBlocked", __FILE__, __func__, __LINE__);
+		return true;
+	}
+	if(isUrlUnwanted(*url)) {
+		m_urlUnwanted++;
+		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. isUrlUnwanted", __FILE__, __func__, __LINE__);
+		return true;
+	}
+	
+	//set up state on heap, and prepare spiderrequest for msg4-out
+	SmallInjectState *sis;
+	try {
+		sis = new SmallInjectState();
+	} catch(std::bad_alloc&) {
+		m_recsetErrors++; //sort of
+		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. std::bad_alloc", __FILE__, __func__, __LINE__);
+		return true;
+	}
+	
+	sis->sreq.reset();
+	strcpy(sis->sreq.m_url, url->getUrl());
+	sis->sreq.setKey(*xd.getFirstIp(), 0, false);
+	sis->sreq.m_firstIp       = *xd.getFirstIp();
+	sis->sreq.m_hostHash32    = url->getHostHash32();
+	sis->sreq.m_domHash32     = url->getDomainHash32();
+	sis->sreq.m_siteHash32    = url->getHostHash32();
+	sis->sreq.m_hopCount      = xd.m_hopCountValid ? xd.m_hopCount : 0;
+	sis->sreq.m_hopCountValid = xd.m_hopCountValid;
+	sis->sreq.m_addedTime     = xd.m_firstIndexedDate;
+	if(xd.m_siteNumInlinksValid)
+		sis->sreq.m_siteNumInlinks = xd.m_siteNumInlinks;
+	
+	if(sis->msg4.addMetaList((const char*)&sis->sreq,sis->sreq.getRecSize(), m_collnum, sis,smallInjectCallback, RDB2_SPIDERDB2)) {
+		//failed or immediateley succeeded
+		delete sis;
+		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. addMetaList", __FILE__, __func__, __LINE__);
+		return true;
+	}
+	//blocked
+	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. blocked", __FILE__, __func__, __LINE__);
+	return false;
+}
+
+
+void Repair::smallInjectCallback(void *state) {
+	SmallInjectState *sis = reinterpret_cast<SmallInjectState*>(state);
+	delete sis;
+	g_repair.loop();
+}
+
+
 // . returns false if fails cuz buffer cannot be grown (oom)
 // . this is called by Parms.cpp
 bool Repair::printRepairStatus(SafeBuf *sb) {
@@ -1373,13 +1477,11 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 
 	// now show the rebuild status
 	sb->safePrintf ( 
-			 "<table%s"
-			 " id=\"repairstatustable\">"
+			 "<table class=\"main\" id=\"repairstatustable\">\n"
 
-			 "<tr class=hdrow><td colspan=2><b><center>"
-			 "Rebuild Status</center></b></td></tr>\n"
+			 "<tr class=\"level1\"><th colspan=2>Rebuild Status</th></tr>\n"
 
-			 "<tr bgcolor=#%s><td colspan=2>"
+			 "<tr class=\"level2\"><td colspan=2>"
 			 "<font size=-2>"
 			 "Use this to rebuild a database or to reindex "
 			 "all pages to pick up new link text. Or to "
@@ -1413,132 +1515,116 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 			 "</td></tr>"
 
 			 // status (see list of above statuses)
-			 "<tr bgcolor=#%s><td width=50%%><b>status</b></td>"
+			 "<tr><td width=50%%>status</td>"
 			 "<td>%s</td></tr>\n"
 
-			 "<tr bgcolor=#%s><td width=50%%><b>rebuild mode</b>"
+			 "<tr><td width=50%%>rebuild mode"
 			 "</td>"
 			 "<td>%" PRId32"</td></tr>\n"
 
-			 "<tr bgcolor=#%s>"
+			 "<tr>"
 
-			 "<td width=50%%><b>min rebuild mode</b></td>"
+			 "<td width=50%%>min rebuild mode</td>"
 			 "<td>%" PRId32"</td></tr>\n"
 
-			 "<tr bgcolor=#%s>"
-			 "<td width=50%%><b>host ID with min rebuild mode"
-			 "</b></td>"
+			 "<tr>"
+			 "<td width=50%%>host ID with min rebuild mode"
+			 "</td>"
 
 			 "<td><a href=\"http://%s:%hu/admin/rebuild\">"
 			 "%" PRId32"</a></td></tr>\n"
 
-			 "<tr bgcolor=#%s><td><b>old collection</b></td>"
+			 "<tr><td>old collection</td>"
 			 "<td>%s</td></tr>"
 
-			 "<tr bgcolor=#%s><td><b>new collection</b></td>"
+			 "<tr><td>new collection</td>"
 			 "<td>%s</td></tr>"
 
 			 ,
-			 TABLE_STYLE ,
-
-
-			 LIGHT_BLUE ,
-			 LIGHT_BLUE ,
 			 status ,
 
-			 LIGHT_BLUE ,
 			 (int32_t)g_repairMode,
 
-			 LIGHT_BLUE ,
 			 (int32_t)g_hostdb.getMinRepairMode(),
 
-			 LIGHT_BLUE ,
 			 minIpBuf, // ip string
 			 minPort,  // port
 			 (int32_t)minHostId,
 
-			 LIGHT_BLUE ,
 			 oldColl ,
 
-			 LIGHT_BLUE ,
 			 newColl
 			 );
 
 	sb->safePrintf ( 
 			 // docs done, includes overwritten title recs
-			 "<tr bgcolor=#%s><td><b>titledb recs scanned</b></td>"
-			 "<td>%" PRId64" of %" PRId64 " (%.2f%%)</td></tr>\n"
+			 "<tr class=\"bg0\"><td>titledb recs scanned</td>"
+			 "<td>%" PRId64" of up to %" PRId64 " (~%.2f%%)</td></tr>\n"
 
-			 "<tr bgcolor=#%s><td><b>titledb rec error count</b></td>"
+			 "<tr class=\"bg0\"><td>titledb rec error count</td>"
 			 "<td>%" PRId64"</td></tr>\n"
 
 			 // sub errors
-			 "<tr bgcolor=#%s><td> &nbsp; set errors</b></td>"
+			 "<tr class=\"bg0\"><td> &nbsp; set errors</td>"
 			 "<td>%" PRId64"</td></tr>\n"
-			 "<tr bgcolor=#%s><td> &nbsp; corrupt errors</b></td>"
+			 "<tr class=\"bg0\"><td> &nbsp; corrupt errors</td>"
 			 "<td>%" PRId64"</td></tr>\n"
-			 "<tr bgcolor=#%s><td> &nbsp; dup docid errors</b></td>"
+			 "<tr class=\"bg0\"><td> &nbsp; dup docid errors</td>"
 			 "<td>%" PRId64"</td></tr>\n"
-			 "<tr bgcolor=#%s><td> &nbsp; negative keys</b></td>"
+			 "<tr class=\"bg0\"><td> &nbsp; negative keys</td>"
 			 "<td>%" PRId64"</td></tr>\n"
-			 "<tr bgcolor=#%s><td> &nbsp; twin's "
-			 "respsponsibility</b></td>"
+			 "<tr class=\"bg0\"><td> &nbsp; twin's responsibility</td>"
 			 "<td>%" PRId64"</td></tr>\n"
-
-			 "<tr bgcolor=#%s><td> &nbsp; wrong shard</b></td>"
+			 "<tr class=\"bg0\"><td> &nbsp; wrong shard</td>"
+			 "<td>%" PRId64"</td></tr>\n"
+			 "<tr class=\"bg0\"><td> &nbsp; non-indexable extension</td>"
+			 "<td>%" PRId64"</td></tr>\n"
+			 "<tr class=\"bg0\"><td> &nbsp; Blocked URL</td>"
+			 "<td>%" PRId64"</td></tr>\n"
+			 "<tr class=\"bg0\"><td> &nbsp; Unwanted</td>"
 			 "<td>%" PRId64"</td></tr>\n"
 
 			 ,
-			 DARK_BLUE,
 			 ns     ,
 			 nr     ,
 			 ratio  ,
-			 DARK_BLUE,
 			 errors ,
-			 DARK_BLUE,
 			 m_recsetErrors  ,
-			 DARK_BLUE,
 			 m_recsCorruptErrors  ,
-			 DARK_BLUE,
 			 m_recsDupDocIds ,
-			 DARK_BLUE,
 			 m_recsNegativeKeys ,
-			 DARK_BLUE,
 			 m_recsUnassigned ,
-
-			 DARK_BLUE,
-			 m_recsWrongGroupId
+			 m_recsWrongGroupId,
+			 m_nonIndexableExtensions,
+			 m_urlBlocked,
+			 m_urlUnwanted
 			 );
 
 
 	sb->safePrintf(
 			 // spider recs done
-			 "<tr bgcolor=#%s><td><b>spider recs scanned</b></td>"
+			 "<tr><td>spider recs scanned</td>"
 			 "<td>%" PRId64" of %" PRId64" (%.2f%%)</td></tr>\n"
 
 			 // spider recs set errors, parsing errors, etc.
-			 "<tr bgcolor=#%s><td><b>spider rec not "
-			 "assigned to us</b></td>"
+			 "<tr><td>spider rec not "
+			 "assigned to us</td>"
 			 "<td>%" PRId32"</td></tr>\n"
 
 			 // spider recs set errors, parsing errors, etc.
-			 "<tr bgcolor=#%s><td><b>spider rec errors</b></td>"
+			 "<tr><td>spider rec errors</td>"
 			 "<td>%" PRId64"</td></tr>\n"
 
 			 // spider recs set errors, parsing errors, etc.
-			 "<tr bgcolor=#%s><td><b>spider rec bad tld</b></td>"
+			 "<tr><td>spider rec bad tld</td>"
 			 "<td>%" PRId32"</td></tr>\n"
 
 			 ,
-			 LIGHT_BLUE ,
 			 ns2    ,
 			 nr2    ,
 			 ratio2 ,
-			 LIGHT_BLUE ,
 			 m_spiderRecNotAssigned ,
-			 LIGHT_BLUE ,
 			 errors2,
-			 LIGHT_BLUE ,
 			 m_spiderRecBadTLD
 			 );
 
@@ -1556,7 +1642,7 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 		// m_dbname will be 0
 		if ( tr == 0 ) continue;
 		sb->safePrintf(
-			 "<tr bgcolor=#%s><td><b>%s2 recs</b></td>"
+			 "<tr bgcolor=#%s><td>%s2 recs</td>"
 			 "<td>%" PRId64"</td></tr>\n" ,
 			 bg,
 			 rdb->getDbname(),
@@ -1567,95 +1653,59 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 	sb->safePrintf("</table>\n<br>");
 
 	// print a table
-	const char *rr[23];
-	if ( m_fullRebuild )       rr[0] = "Y";
-	else                       rr[0] = "N";
-
-	if ( m_rebuildTitledb )    rr[1] = "Y";
-	else                       rr[1] = "N";
-
-	if ( m_rebuildPosdb )      rr[3] = "Y";
-	else                       rr[3] = "N";
-	if ( m_rebuildClusterdb )  rr[5] = "Y";
-	else                       rr[5] = "N";
-	if ( m_rebuildSpiderdb )   rr[7] = "Y";
-	else                       rr[7] = "N";
-	if ( m_rebuildLinkdb )     rr[9] = "Y";
-	else                       rr[9] = "N";
-
-
-	if ( m_rebuildRoots  )     rr[11] = "Y";
-	else                       rr[11] = "N";
-	if ( m_rebuildNonRoots  )  rr[12] = "Y";
-	else                       rr[12] = "N";
-
 	sb->safePrintf ( 
 
-			 "<table %s "
-			 "id=\"repairstatustable2\">"
+			 "<table class=\"main\" width=\"100%%\" id=\"repairstatustable2\">\n"
 
 			 // current collection being repaired
-			 "<tr class=hdrow><td colspan=2><b><center>"
-			 "Rebuild Settings In Use</center></b></td></tr>"
+			 "<tr class=\"level1\"><th colspan=2>Rebuild Settings In Use</th></tr>"
 
 			 // . print parms for this repair
 			 // . they may differ than current controls because
 			 //   the current controls were changed after the
 			 //   repair started
-			 "<tr bgcolor=#%s>"
-			 "<td width=50%%><b>full rebuild</b></td>"
+			 "<tr>"
+			 "<td width=50%%>full rebuild</td>"
 			 "<td>%s</td></tr>\n"
 
-			 "<tr bgcolor=#%s><td><b>rebuild titledb</b></td>"
+			 "<tr><td>rebuild titledb</td>"
 			 "<td>%s</td></tr>\n"
 
-			 "<tr bgcolor=#%s><td><b>rebuild posdb</b></td>"
+			 "<tr><td>rebuild posdb</td>"
 			 "<td>%s</td></tr>\n"
 
-			 "<tr bgcolor=#%s><td><b>rebuild clusterdb</b></td>"
+			 "<tr><td>rebuild clusterdb</td>"
 			 "<td>%s</td></tr>\n"
 
-			 "<tr bgcolor=#%s><td><b>rebuild spiderdb</b></td>"
+			 "<tr><td>rebuild spiderdb</td>"
 			 "<td>%s</td></tr>\n" 
 
-			 "<tr bgcolor=#%s><td><b>rebuild linkdb</b></td>"
+			 "<tr><td>rebuild spiderdb (small)</td>"
 			 "<td>%s</td></tr>\n" 
 
-			 "<tr bgcolor=#%s><td><b>rebuild root urls</b></td>"
+			 "<tr><td>rebuild linkdb</td>"
 			 "<td>%s</td></tr>\n" 
 
-			 "<tr bgcolor=#%s>"
-			 "<td><b>rebuild non-root urls</b></td>"
+			 "<tr><td>rebuild root urls</td>"
+			 "<td>%s</td></tr>\n"
+
+			 "<tr>"
+			 "<td>rebuild non-root urls</td>"
 			 "<td>%s</td></tr>\n" 
 
 			 "</table>\n"
 			 "<br>\n"
 			 ,
-			 TABLE_STYLE,
 
-			 LIGHT_BLUE,
-			 rr[0],
-
-			 LIGHT_BLUE,
-			 rr[1],
-
-			 LIGHT_BLUE,
-			 rr[3],
-
-			 LIGHT_BLUE,
-			 rr[5],
-
-			 LIGHT_BLUE,
-			 rr[7],
-
-			 LIGHT_BLUE,
-			 rr[9],
-
-			 LIGHT_BLUE,
-			 rr[11],
-
-			 LIGHT_BLUE,
-			 rr[12] 
+			 m_fullRebuild ? "Y":"N",
+			 m_rebuildTitledb ? "Y":"N",
+			 m_rebuildPosdb ? "Y":"N",
+			 m_rebuildClusterdb ? "Y":"N",
+			 m_rebuildSpiderdb ? "Y":"N",
+			 m_rebuildSpiderdbSmall ? "Y":"N",
+			 m_rebuildLinkdb ? "Y":"N",
+			 m_rebuildRoots ? "Y":"N",
+			 m_rebuildNonRoots ? "Y":"N"
 			 );
 	return true;
 }
