@@ -748,7 +748,7 @@ bool Repair::load ( ) {
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool Repair::loop() {
-	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	logTrace(g_conf.m_logTraceRepairs,"BEGIN");
 
 	// was repairing turned off all of a sudden?
 	if(!g_conf.m_repairingEnabled) {
@@ -757,14 +757,14 @@ bool Repair::loop() {
 		// will notice it was suspended and call loop() again to
 		// resume where we left off...
 		m_isSuspended = true;
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, repair suspended", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, repair suspended");
 		return true;
 	}
 
 	// if we re-entered this loop from doneWithIndexDocWrapper
 	// do not launch another msg5 if it is currently out!
 	if(m_msg5InUse) {
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, waiting for msg5", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, waiting for msg5");
 		return false;
 	}
 
@@ -777,59 +777,59 @@ bool Repair::loop() {
 			return true;
 
 		if(m_stage == STAGE_TITLEDB_0) {
-			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_0 - scanRecs", __FILE__, __func__, __LINE__);
+			logTrace(g_conf.m_logTraceRepairs,"STAGE_TITLEDB_0 - scanRecs");
 			m_stage++;
 			if(!scanRecs())
 				return false;
 		}
 
 		if(m_stage == STAGE_TITLEDB_1) {
-			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_1 - gotScanRecList", __FILE__, __func__, __LINE__);
+			logTrace(g_conf.m_logTraceRepairs,"STAGE_TITLEDB_1 - gotScanRecList");
 			m_stage++;
 			if(!gotScanRecList())
 				return false;
 		}
 
 		if(m_stage == STAGE_TITLEDB_2) {
-			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_2", __FILE__, __func__, __LINE__);
+			logTrace(g_conf.m_logTraceRepairs,"STAGE_TITLEDB_2");
 			m_stage++;
 		}
 		// get the site rec to see if it is banned first, before injecting it
 		if(m_stage == STAGE_TITLEDB_3) {
-			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_3", __FILE__, __func__, __LINE__);
+			logTrace(g_conf.m_logTraceRepairs,"STAGE_TITLEDB_3");
 
 			// if we have maxed out our injects, wait for one to come back
 			if(m_numOutstandingInjects >= g_conf.m_maxRepairinjections)
 				return false;
 			m_stage++;
 
-			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: injectTitleRec", __FILE__, __func__, __LINE__);
+			logTrace(g_conf.m_logTraceRepairs,"injectTitleRec");
 			bool status = injectTitleRec();
-			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: injectTitleRec returned %s", __FILE__, __func__, __LINE__, status?"true":"false");
+			logTrace(g_conf.m_logTraceRepairs,"injectTitleRec returned %s", status?"true":"false");
 
 			// try to launch another
 			if(m_numOutstandingInjects < g_conf.m_maxRepairinjections) {
 				m_stage = STAGE_TITLEDB_0;
-				logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: Still have more free repair spiders, loop.", __FILE__, __func__, __LINE__);
+				logTrace(g_conf.m_logTraceRepairs,"Still have more free repair spiders, loop.");
 				continue;
 			}
 
 			// if we are full and it blocked... wait now
 			if(! status) {
-				logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return false. Full queue and blocked.", __FILE__, __func__, __LINE__);
+				logTrace(g_conf.m_logTraceRepairs,"END, return false. Full queue and blocked.");
 				return false;
 			}
 		}
 
 		if(m_stage == STAGE_TITLEDB_4) {
-			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: STAGE_TITLEDB_4", __FILE__, __func__, __LINE__);
+			logTrace(g_conf.m_logTraceRepairs,"STAGE_TITLEDB_4");
 			m_stage++;
 		}
 
 		// if we are not done with the titledb scan loop back up
 		if(!m_completedFirstScan) {
 			m_stage = STAGE_TITLEDB_0;
-			logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: loop, set STAGE_TITLEDB_0", __FILE__, __func__, __LINE__);
+			logTrace(g_conf.m_logTraceRepairs,"loop, set STAGE_TITLEDB_0");
 			continue;
 		}
 	}
@@ -838,7 +838,7 @@ bool Repair::loop() {
 	if(m_numOutstandingInjects > 0) {
 		// tell injection complete wrapper to call us back, otherwise
 		// we never end up moving on to the spider phase
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return false. Have %" PRId32" outstanding injects", __FILE__, __func__, __LINE__, m_numOutstandingInjects);
+		logTrace(g_conf.m_logTraceRepairs,"return false. Have %" PRId32" outstanding injects", m_numOutstandingInjects);
 		return false;
 	}
 
@@ -881,7 +881,7 @@ bool Repair::loop() {
 	    m_recsInjected
 	   );
 	// we are all done with the repair loop
-	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
+	logTrace(g_conf.m_logTraceRepairs,"END");
 	return true;
 }
 
@@ -1119,7 +1119,7 @@ bool Repair::gotScanRecList ( ) {
 
 
 void Repair::doneWithIndexDoc(XmlDoc *xd) {
-	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	logTrace(g_conf.m_logTraceRepairs,"BEGIN");
 	
 	// preserve
 	int32_t saved_errno = g_errno;
@@ -1134,23 +1134,23 @@ void Repair::doneWithIndexDoc(XmlDoc *xd) {
 		g_repair.m_stage = STAGE_TITLEDB_0; // 0
 		return;
 	}
-	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
+	logTrace(g_conf.m_logTraceRepairs,"END");
 }
 
 
 void Repair::doneWithIndexDocWrapper(void *state) {
-	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	logTrace(g_conf.m_logTraceRepairs,"BEGIN");
 	// clean up
 	doneWithIndexDoc ( (XmlDoc *)state );
 	// and re-enter the loop to get next title rec
 	g_repair.loop();
-	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
+	logTrace(g_conf.m_logTraceRepairs,"END");
 }
 
 
 
 bool Repair::injectTitleRec ( ) {
-	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	logTrace(g_conf.m_logTraceRepairs,"BEGIN");
 
 	// scan for our docid in the title rec list
 	char *titleRec = NULL;
@@ -1187,7 +1187,7 @@ bool Repair::injectTitleRec ( ) {
 	if ( ! xd->set2 ( titleRec,-1,m_cr->m_coll , NULL , MAX_NICENESS ) ) {
 		m_recsetErrors++;
 		m_stage = STAGE_TITLEDB_0; // 0
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. XmlDoc->set2 failed", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, return true. XmlDoc->set2 failed");
 		return true;
 	}
 	// set callback
@@ -1292,19 +1292,19 @@ bool Repair::injectTitleRec ( ) {
 
 	// . get the meta list to add
 	// . sets m_usePosdb, m_useTitledb, etc.
-	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: Calling indexDoc", __FILE__, __func__, __LINE__);
+	logTrace(g_conf.m_logTraceRepairs,"Calling indexDoc");
 	bool status = xd->indexDoc ( );
 	// blocked?
 	if ( ! status ) 
 	{
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return false. XmlDoc->indexDoc blocked", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, return false. XmlDoc->indexDoc blocked");
 		return false;
 	}
 
 	// give it back
 	doneWithIndexDoc ( xd );
 
-	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true", __FILE__, __func__, __LINE__);
+	logTrace(g_conf.m_logTraceRepairs,"END, return true");
 	return true;
 }
 
