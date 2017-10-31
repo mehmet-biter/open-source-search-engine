@@ -180,6 +180,7 @@ class Conf {
 	bool  m_returnResultsAnyway;
 
 	bool m_spiderIPUrl;
+	bool m_spiderAdultContent;
 	bool  m_addUrlEnabled; // TODO: use at http interface level
 	bool  m_doStripeBalancing;
 
@@ -468,6 +469,7 @@ class Conf {
 	bool  m_rebuildPosdb;
 	bool  m_rebuildClusterdb;
 	bool  m_rebuildSpiderdb;
+	bool  m_rebuildSpiderdbSmall;
 	bool  m_rebuildLinkdb;
 	bool  m_rebuildRoots;
 	bool  m_rebuildNonRoots;

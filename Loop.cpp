@@ -337,20 +337,14 @@ bool Loop::addSlot(bool forReading, int fd, void *state, void (*callback)(int fd
 // . set it non-blocing and enable signal catching for it
 // . listen for an interrupt for this fd
 bool Loop::setNonBlocking(int fd) {
- retry:
 	int flags = fcntl ( fd , F_GETFL ) ;
 	if ( flags < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry;
 		g_errno = errno;
 		log( LOG_WARN, "loop: fcntl(F_GETFL): %s.",strerror(errno));
 		return false;
 	}
 
- retry9:
 	if ( fcntl ( fd, F_SETFL, flags|O_NONBLOCK) < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry9;
 		g_errno = errno;
 		log( LOG_WARN, "loop: fcntl(NONBLOCK): %s.",strerror(errno));
 		return false;

@@ -180,6 +180,9 @@ class RdbBase {
 	// the primary rdb.
 	bool removeRebuildFromFilenames ( ) ;
 
+	//unlink all data, map and index files.
+	bool unlink();
+
 	void forceNextMerge() { m_nextMergeForced = true; }
 
 	void setDumpingFileId(int n) { m_dumpingFileId = n; }

@@ -39,7 +39,6 @@ RdbCache::RdbCache() : m_dbname(NULL) {
 	m_useDisk = false;
 	m_wrapped = 0;
 	m_cks = 0;
-	m_dks = 0;
 	pthread_mutex_init(&m_mtx,NULL);
 }
 
@@ -93,7 +92,6 @@ bool RdbCache::init ( int32_t  maxMem        ,
 		      const char *dbname  ,
 		      bool  loadFromDisk  ,
 		      char  cacheKeySize  ,
-		      char  dataKeySize   ,
 		      int32_t  numPtrsMax    ) {
 	// reset all
 	reset();
@@ -136,7 +134,6 @@ bool RdbCache::init ( int32_t  maxMem        ,
 	m_fixedDataSize = fixedDataSize;
 	m_useDisk       = loadFromDisk;
 	m_dbname        = dbname;
-	m_dks           = dataKeySize;
 	m_cks           = cacheKeySize;
 	// if maxMem is zero just return true
 	if ( m_maxMem <= 0 ) return true;
@@ -285,7 +282,6 @@ int64_t RdbCache::getLongLong2 ( collnum_t collnum ,
 	k.n1 = 0;
 	// sanity check
 	if ( m_cks != 8 ) gbshutdownLogicError();
-	if ( m_dks != 0 ) gbshutdownLogicError();
 	// return -1 if not found
 	if ( ! getRecord ( collnum  ,
 			   (char *)&k,
@@ -314,7 +310,6 @@ void RdbCache::addLongLong2 ( collnum_t collnum ,
 	k.n1 = 0;
 	// sanity check
 	if ( m_cks != 8 ) gbshutdownLogicError();
-	if ( m_dks != 0 ) gbshutdownLogicError();
 	addRecord ( collnum , (char *)&k , NULL , 0 , (char *)&value , 8 ,
 		    0 , // timestamp=now
 		    NULL );
@@ -1370,7 +1365,6 @@ bool RdbCache::convertCache ( int32_t numPtrsMax , int32_t maxMem ) {
 			  m_dbname        ,
 			  true            , // loadFromDisk
 			  m_cks           , // cacheKeySize
-			  m_dks           , // dataKeySize
 			  numPtrsMax      ))
 		return false;
 	// load it from disk

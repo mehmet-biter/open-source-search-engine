@@ -383,6 +383,61 @@ bool RdbBase::removeRebuildFromFilename ( BigFile *f ) {
 	return true;
 }
 
+
+bool RdbBase::unlink() {
+	for(int i = 0; i < m_numFiles; i++) {
+		// unlink the map file
+		{
+			BigFile *f = m_fileInfo[i].m_map->getFile();
+			logf(LOG_INFO,"repair: Removing %s ", f->getFilename());
+			if(!f->unlink()) {
+				log(LOG_WARN, "repair: Could not unlink %s: %s", f->getFilename(), mstrerror(g_errno));
+				return false;
+			}
+		}
+		
+		// unlink index file if used
+		if(m_useIndexFile) {
+			BigFile *f = m_fileInfo[i].m_index->getFile();
+			if (f->doesExist()) {
+				logf(LOG_INFO,"repair: Removing %s ", f->getFilename());
+				if(!f->unlink()) {
+					log(LOG_WARN, "repair: Could not unlink %s: %s", f->getFilename(), mstrerror(g_errno));
+				}
+			}
+		}
+		
+		// unlink the data file(s)
+		{
+			BigFile *f = m_fileInfo[i].m_file;
+			logf(LOG_INFO,"repair: Removing %s ", f->getFilename());
+			if(!f->unlink()) {
+				log(LOG_WARN, "repair: Could not unlink %s: %s", f->getFilename(), mstrerror(g_errno));
+				return false;
+			}
+		}
+	}
+	
+	if(m_useIndexFile) {
+		// rename tree index file
+		BigFile *f = m_treeIndex.getFile();
+		if (f->doesExist()) {
+			logf(LOG_INFO,"repair: Removing %s ", f->getFilename());
+			if(!f->unlink()) {
+				log(LOG_WARN, "repair: Could not unlink %s: %s", f->getFilename(), mstrerror(g_errno));
+				return false;
+			}
+		}
+	}
+	
+	// now just reset the files so we are empty
+	reset();
+	
+	// great success
+	return true;
+}
+
+
 bool RdbBase::parseFilename( const char* filename, int32_t *p_fileId, int32_t *p_fileId2,
                              int32_t *p_mergeNum, int32_t *p_endMergeFileId ) {
 	// then a 4 digit number should follow filename
@@ -521,7 +576,7 @@ bool RdbBase::cleanupAnyChrashedMerges(bool doDryrun, bool *anyCrashedMerges) {
 						sprintf(fullname,"%s/%s",m_collectionDirName,filename);
 						log(LOG_DEBUG,"Removing %s", fullname);
 						if(!doDryrun) {
-							if(unlink(fullname)!=0) {
+							if(::unlink(fullname)!=0) {
 								g_errno = errno;
 								log(LOG_ERROR,"unlink(%s) failed with errno=%d (%s)", fullname, errno, strerror(errno));
 								return false;
@@ -567,7 +622,7 @@ bool RdbBase::cleanupAnyChrashedMerges(bool doDryrun, bool *anyCrashedMerges) {
 					sprintf(fullname,"%s/%s",m_collectionDirName,filename);
 					log(LOG_DEBUG,"Removing %s", fullname);
 					if(!doDryrun) {
-						if(unlink(fullname)!=0) {
+						if(::unlink(fullname)!=0) {
 							g_errno = errno;
 							log(LOG_ERROR,"unlink(%s) failed with errno=%d (%s)", fullname, errno, strerror(errno));
 							return false;
@@ -612,7 +667,7 @@ bool RdbBase::cleanupAnyChrashedMerges(bool doDryrun, bool *anyCrashedMerges) {
 					sprintf(fullname,"%s/%s",m_mergeDirName,filename);
 					log(LOG_DEBUG,"Removing %s", fullname);
 					if(!doDryrun) {
-						if(unlink(fullname)!=0) {
+						if(::unlink(fullname)!=0) {
 							g_errno = errno;
 							log(LOG_ERROR,"unlink(%s) failed with errno=%d (%s)", fullname, errno, strerror(errno));
 							return false;

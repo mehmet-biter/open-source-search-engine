@@ -4906,6 +4906,16 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "spider adult content";
+	m->m_desc  = "Should we spider content detected as adult?";
+	m->m_cgi   = "spadult";
+	simple_m_set(Conf,m_spiderAdultContent);
+	m->m_def   = "1";
+	m->m_units = "";
+	m->m_group = true;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
 	m->m_title = "add url enabled";
 	m->m_desc  = "Can people use the add url interface to add urls "
 		"to the index?";
@@ -8093,6 +8103,15 @@ void Parms::init ( ) {
 	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
 	m->m_cgi   = "rrsp";
 	simple_m_set(Conf,m_rebuildSpiderdb);
+	m->m_page  = PAGE_REPAIR;
+	m->m_def   = "0";
+	m->m_group = false;
+	m++;
+
+	m->m_title = "rebuild spiderdb (small)";
+	m->m_desc  = "If enabled, gigablast will rebuild this rdb but only insert spiderrequests for already successfully crawled pages";
+	m->m_cgi   = "rrspsmall";
+	simple_m_set(Conf,m_rebuildSpiderdbSmall);
 	m->m_page  = PAGE_REPAIR;
 	m->m_def   = "0";
 	m->m_group = false;

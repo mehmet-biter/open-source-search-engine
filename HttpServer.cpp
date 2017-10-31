@@ -1837,12 +1837,7 @@ int32_t getMsgSize(const char *buf, int32_t bufSize, TcpSocket *s) {
 	if ( i + 2 >= bufSize      ) return bufSize;
 	if ( i + 2 >= 20           ) return bufSize;
 	if ( ! is_digit ( buf[i] ) ) return bufSize;
-	// . if not a 200 then we can return bufSize and not read anymore
-	// . we get a lot of 404s here from getting robots.txt's
-	if(buf[i+0] != '2' ||
-	   buf[i+1] != '0' ||
-	   buf[i+2] != '0')
-		return mimeSize;
+
 	// . don't read more than total max
 	// . http://autos.link2link.com/ was sending us an infinite amount
 	//   of content (no content-length) very slowly
@@ -2044,8 +2039,6 @@ bool HttpServer::sendDynamicPage ( TcpSocket *s, const char *page, int32_t pageL
 }
 
 TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
-	//int64_t start = gettimeofdayInMilliseconds();
-
 	HttpMime mime;
 	if(!mime.set(s->m_readBuf,s->m_readOffset, NULL)) {
 		g_errno = EBADMIME;
@@ -2055,8 +2048,22 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 	// . return if not zipped,
 	// . or sometimes we get an empty reply that claims its gzipped
 	int32_t zipLen = s->m_readOffset - mime.getMimeLen();
-	if(mime.getContentEncoding() != ET_GZIP ||
-	   zipLen < (int)sizeof(gz_header)) { 
+
+	// http://www.gzip.org/zlib/rfc-gzip.html
+	//
+	// header
+	// +---+---+---+---+---+---+---+---+---+---+
+	// |ID1|ID2|CM |FLG|     MTIME     |XFL|OS |
+	// +---+---+---+---+---+---+---+---+---+---+
+	//
+	// trailer
+	// +---+---+---+---+---+---+---+---+
+	// |     CRC32     |     ISIZE     |
+	// +---+---+---+---+---+---+---+---+
+	static const int32_t minSize = 18;
+	char gzip_id1 = mime.getContent()[0];
+	char gzip_id2 = mime.getContent()[1];
+	if (mime.getContentEncoding() != ET_GZIP || gzip_id1 != 0x1f || gzip_id2 == 0x8b || zipLen < minSize) {
 		m_bytesDownloaded += zipLen;
 		m_uncompressedBytes += zipLen;
 		return s;
@@ -2168,7 +2175,7 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 	int zipErr = gbuncompress((unsigned char*)pnew, &uncompressedLen,
 				  (unsigned char*)src, 
 				  compressedLen);
-	
+
 
 	if(zipErr != Z_OK ||
 	   uncompressedLen != (uint32_t)newSize) {

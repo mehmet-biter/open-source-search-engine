@@ -184,7 +184,6 @@ class RdbCache *getDiskPageCache ( rdbid_t rdbId ) {
 			   dbname ,
 			   false , // loadfromdisk
 			   sizeof(key192_t), // cache key size
-			   0 , // data key size
 			   -1 ) )  // numptrsmax
 		return NULL;
 

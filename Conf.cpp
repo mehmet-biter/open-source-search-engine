@@ -105,6 +105,7 @@ Conf::Conf ( ) {
 	m_queryingEnabled = false;
 	m_returnResultsAnyway = false;
 	m_spiderIPUrl = true;
+	m_spiderAdultContent = true;
 	m_addUrlEnabled = false;
 	m_doStripeBalancing = false;
 	m_isLive = false;

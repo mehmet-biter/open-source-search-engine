@@ -130,14 +130,18 @@ bool Msg13::registerHandler ( ) {
 					-1        , // fixedDataSize
 					maxCacheNodesRobots ,
 					"robots.txt"  , // dbname
-					true      ))// save to disk
+					true,          // save to disk
+					12,            // cachekeysize
+					-1))           // numPtrsMax
 		return false;
 
 	if ( ! s_httpCacheOthers.init ( memOthers ,
 					-1        , // fixedDataSize
 					maxCacheNodesOthers ,
 					"htmlPages"  , // dbname
-					true      ))// save to disk
+					true,          // save to disk
+					12,            // cachekeysize
+					-1))           // numPtrsMax
 		return false;
 
 	// . set up the request table (aka wait in line table)
@@ -563,7 +567,6 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 				     "hamcache" , // dbname
 				     false      , // load from disk?
 				     12         , // key size
-				     12         , // data key size?
 				     -1         );// numPtrsMax
 	}
 

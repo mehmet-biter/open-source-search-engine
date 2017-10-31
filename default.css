@@ -18,7 +18,7 @@ table.main tr.level2 {
 	text-align: left;
 }
 /*bg0 and bg1 are meant for alternating colors in rows, eg. event-odd or grouping*/
-table.main tr.bg0 {
+table.main tr.bg0 td {
 	background-color: #d0d0ff;
 }
 table.main tr {
