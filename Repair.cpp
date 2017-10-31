@@ -771,7 +771,7 @@ bool Repair::loop() {
 	// set this to on
 	g_process.m_repairNeedsSave = true;
 
-	//loop until something blocks or we hit m_maxRepairinjections limit
+	//loop over the rdblist until something blocks or we hit m_maxRepairinjections limit
 	for(;;) {
 		if(g_process.isShuttingDown())
 			return true;
@@ -832,6 +832,7 @@ bool Repair::loop() {
 			logTrace(g_conf.m_logTraceRepairs,"loop, set STAGE_TITLEDB_0");
 			continue;
 		}
+		break;
 	}
 
 	// if we are waiting for injects to come back, return
