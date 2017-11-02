@@ -45,6 +45,7 @@ enum thread_type_t {
 	thread_type_statistics,         //mostly i/o
 	thread_type_unspecified_io,     //until we can be more specific
 	thread_type_generate_thumbnail,
+	thread_type_config_load,
 };
 
 

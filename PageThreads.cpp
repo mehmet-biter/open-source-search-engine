@@ -31,6 +31,7 @@ static const char *thread_type_name(thread_type_t tt) {
 		case thread_type_statistics:         return "statistics";
 		case thread_type_unspecified_io:     return "unspecified IO";
 		case thread_type_generate_thumbnail: return "generate-thumbnail";
+		case thread_type_config_load:        return "config-load";
 		default: return "?";
 	}
 }

@@ -4,6 +4,7 @@
 #include "UrlMatch.h"
 #include <map>
 #include <memory>
+#include <atomic>
 
 struct UrlMatchListItem;
 
@@ -14,13 +15,14 @@ class Url;
 
 class UrlMatchList {
 public:
-	UrlMatchList(const char *filename);
+	explicit UrlMatchList(const char *filename);
 
 	bool init();
 
 	bool isUrlMatched(const Url &url);
 
 	static void reload(int /*fd*/, void *state);
+	static void reload(void *state);
 
 protected:
 	bool load();
@@ -31,6 +33,9 @@ private:
 
 	std::string m_filename;
 	std::string m_dirname;
+
+	std::atomic_bool m_loading;
+
 	urlmatchlistitemconst_ptr_t m_urlMatchList;
 
 	std::map<std::string, time_t> m_lastModifiedTimes;
