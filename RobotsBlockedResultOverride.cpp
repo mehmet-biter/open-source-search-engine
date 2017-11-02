@@ -3,6 +3,7 @@
 #include "Url.h"
 #include "Log.h"
 #include "Conf.h"
+#include "JobScheduler.h"
 
 
 RobotsBlockedResultOverride g_robotsBlockedResultOverride;
@@ -25,8 +26,24 @@ bool RobotsBlockedResultOverride::init() {
 }
 
 void RobotsBlockedResultOverride::reload(int /*fd*/, void *state) {
+	if (g_jobScheduler.submit(reload, nullptr, state, thread_type_config_load, 0)) {
+		return;
+	}
+
+	// unable to submit job (load on main thread)
+	reload(state);
+}
+
+void RobotsBlockedResultOverride::reload(void *state) {
 	RobotsBlockedResultOverride *robotsBlockedResultOverride = static_cast<RobotsBlockedResultOverride*>(state);
+
+	// don't load multiple times at the same time
+	if (robotsBlockedResultOverride->m_loading.exchange(true)) {
+		return;
+	}
+
 	robotsBlockedResultOverride->load();
+	robotsBlockedResultOverride->m_loading = false;
 }
 
 std::string RobotsBlockedResultOverride::getTitle(const std::string &lang, const Url &url) const {
