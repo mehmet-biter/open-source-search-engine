@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
 		strcat(path, "/");
 	}
 
-	g_hostdb.init(-1, false, false, path);
+	g_hostdb.init(-1, false, false, true, path);
 	g_conf.init(path);
 
 	ucInit();
@@ -88,6 +88,7 @@ int main(int argc, char **argv) {
 	CollectionRec *cr = g_collectiondb.getRec("main");
 	if (!cr) {
 		logf(LOG_TRACE, "No main collection found");
+		return 1;
 	}
 
 	Msg5 msg5;
