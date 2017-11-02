@@ -34,6 +34,8 @@ static void handleSpiderdbRequest(State00 *state);
 static void execSpiderdbRequest(void *pv);
 static void doneSpiderdbRequest(void *state, job_exit_t exit_type);
 
+static void handleLocalSpiderdbGetList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes, RdbList *list);
+
 
 Msg0::Msg0 ( ) {
 	constructor();
@@ -215,6 +217,12 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	if ( isLocal ) {
 		logTrace( g_conf.m_logTraceMsg0, "isLocal" );
 
+		if(rdbId==RDB_SPIDERDB_DEPRECATED) {
+			logTrace( g_conf.m_logTraceMsg0, "Jump to handleLocalSpiderdbGetList()" );
+			handleLocalSpiderdbGetList(m_collnum,m_startKey,m_endKey,m_minRecSizes,m_list);
+			logTrace( g_conf.m_logTraceMsg0, "END, jump to handleLocalSpiderdbGetList()" );
+			return true;
+		}
 		if ( msg5 ) {
 			m_msg5 = msg5;
 			m_deleteMsg5 = false;
@@ -804,4 +812,15 @@ static void doneSpiderdbRequest(void *pv, job_exit_t exit_type) {
 		delete state;
 	}
 	logTrace( g_conf.m_logTraceMsg0, "END");
+}
+
+
+
+static void handleLocalSpiderdbGetList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes, RdbList *list) {
+	g_errno = 0;
+	SpiderdbRdbSqliteBridge::getList(collnum,
+					 list,
+					 *(reinterpret_cast<const u_int128_t*>(startKey)),
+					 *(reinterpret_cast<const u_int128_t*>(endKey)),
+					 minRecSizes);
 }
