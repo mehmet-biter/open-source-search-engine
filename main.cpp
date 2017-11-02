@@ -1380,7 +1380,8 @@ int main2 ( int argc , char *argv[] ) {
 			log("db: Collectiondb init failed.");
 			return 1;
 		}
-		convertSpiderDb(argv[cmdarg+1]);
+		const char *collname = argc>cmdarg+1 ? argv[cmdarg+1] : "main";
+		convertSpiderDb(collname);
 		g_log.m_disabled = true;
 		g_collectiondb.reset();
 		return 0;
