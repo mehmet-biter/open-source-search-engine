@@ -384,7 +384,7 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 			for(auto const &item : rdbItem.second.m_items)
 				v.emplace_back(item.m_collNum, item.m_rec, item.m_recSize);
 			//then insert all at once
-			bool status = SpiderdbRdbSqliteBridge::addRecords(v);
+			bool status = rdbItem.first==RDB_SPIDERDB_DEPRECATED ?  SpiderdbRdbSqliteBridge::addRecords(v) : SpiderdbRdbSqliteBridge::addRecords2(v);
 			if(!status)
 				break;
 		}

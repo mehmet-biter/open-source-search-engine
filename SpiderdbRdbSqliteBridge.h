@@ -23,6 +23,7 @@ struct BatchedRecord {
 	  {}
 };
 bool addRecords(const std::vector<BatchedRecord> &records);
+bool addRecords2(const std::vector<BatchedRecord> &records); //secondary db
 
 //Fetch all records or a subset of the recoreds with startKey<=key<=endKey, and try to limit the rdblist size of recSizes
 //Returns false on error

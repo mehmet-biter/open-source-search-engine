@@ -17,6 +17,7 @@
 #include "RdbMerge.h"
 #include "Collectiondb.h"
 #include "UrlBlockCheck.h"
+#include "SpiderdbSqlite.h"
 #include "max_niceness.h"
 #include "Conf.h"
 #include "Mem.h"
@@ -931,6 +932,8 @@ void Repair::updateRdbs ( ) {
 		rdb2 = g_linkdb2.getRdb();
 		rdb1->updateToRebuildFiles ( rdb2 , m_cr->m_coll );
 	}
+	if(m_rebuildSpiderdb || m_rebuildSpiderdbSmall)
+		SpiderdbSqlite::swapinSecondarySpiderdb(m_collnum, m_cr->m_coll);
 }
 
 void Repair::resetSecondaryRdbs ( ) {
@@ -940,6 +943,7 @@ void Repair::resetSecondaryRdbs ( ) {
 		Rdb *rdb = rdbs[i];
 		rdb->reset();
 	}
+	//g_spiderdb2 has alraedy closed the the collection as a side-effect of SpiderdbSqlite::swapinSecondarySpiderdb()
 }
 
 

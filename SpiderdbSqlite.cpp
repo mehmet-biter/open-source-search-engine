@@ -4,6 +4,8 @@
 #include "Collectiondb.h"
 #include "Conf.h"
 #include "Log.h"
+#include "GbMoveFile.h"
+#include <sys/stat.h>
 #include <stddef.h>
 
 
@@ -29,6 +31,82 @@ sqlite3 *SpiderdbSqlite::getDb(collnum_t collnum) {
 		return iter->second;
 	else
 		return getOrCreateDb(collnum);
+}
+
+
+void SpiderdbSqlite::closeDb(collnum_t collnum) {
+	ScopedLock sl(mtx);
+	auto iter = dbs.find(collnum);
+	if(iter!=dbs.end()) {
+		sqlite3_close_v2(iter->second);
+		dbs.erase(iter);
+	}
+}
+
+
+void SpiderdbSqlite::swapinSecondarySpiderdb(collnum_t collnum, const char *collname) {
+	//lock both primary and secondary while we swap them in
+	ScopedLock sl_this(g_spiderdb_sqlite.mtx);
+	ScopedLock sl_other(g_spiderdb_sqlite2.mtx);
+	
+	//close db handles
+	auto iter = g_spiderdb_sqlite.dbs.find(collnum);
+	if(iter!=g_spiderdb_sqlite.dbs.end()) {
+		sqlite3_close(iter->second);
+		g_spiderdb_sqlite.dbs.erase(iter);
+	}
+	iter = g_spiderdb_sqlite2.dbs.find(collnum);
+	if(iter!=g_spiderdb_sqlite2.dbs.end()) {
+		sqlite3_close(iter->second);
+		g_spiderdb_sqlite2.dbs.erase(iter);
+	}
+	//note: we must close the primary because it is now obsolete; and the secondary so if we do another rebuild
+	//we don't end up writing to the now-primary - Repair::updateRdbs() and Repair::resetSecondaryRdbs() relies
+	//on this behaviour
+	
+	//create trash directory
+	char trash_dir[1024];
+	sprintf(trash_dir,"%s/trash",g_hostdb.m_dir);
+	int rc;
+	rc = ::mkdir(trash_dir,0777);
+	if(rc!=0 && errno!=EEXIST) {
+		log(LOG_ERROR,"repair: Could not create trash directory %s", trash_dir);
+		return;
+	}
+	
+	//create trash instance directory
+	char trash_instance_dir[1024];
+	sprintf(trash_instance_dir,"%s/rebuilt%d", trash_dir, (int)time(0));
+	rc = ::mkdir(trash_instance_dir,0777);
+	if(rc!=0 && errno!=EEXIST) {
+		log(LOG_ERROR,"repair: Could not create trash directory %s", trash_dir);
+		return;
+	}
+	
+	//form trash, primary and secondary filenames
+	char trash_filename[1024];
+	char primary_filename[1024];
+	char secondary_filename[1024];
+	
+	sprintf(trash_filename,"%s/spiderdb.sqlite3", trash_instance_dir);
+	
+	char collection_dir_name[1024];
+	sprintf(collection_dir_name, "%scoll.%s.%d", g_hostdb.m_dir, collname, (int)collnum);
+	
+	sprintf(primary_filename, "%s/spiderdb.sqlite3", collection_dir_name);
+	sprintf(secondary_filename, "%s/spiderdbRebuild.sqlite3", collection_dir_name);
+	
+	//move primary to trash instance
+	rc = moveFile(primary_filename,trash_filename);
+	if(rc!=0)
+		return;
+	
+	//move secondary to primary
+	rc = moveFile(secondary_filename,primary_filename);
+	if(rc!=0)
+		return;
+	
+	//done
 }
 
 

@@ -22,12 +22,17 @@ public:
 	void finalize(); //closes all DBs
 	
 	sqlite3 *getDb(collnum_t collnum);
+	
+	void closeDb(collnum_t collnum);
+	
+	static void swapinSecondarySpiderdb(collnum_t collnum, const char *collname);
 private:
 	sqlite3 *getOrCreateDb(collnum_t collnum);
 };
 
 extern SpiderdbSqlite g_spiderdb_sqlite;
 extern SpiderdbSqlite g_spiderdb_sqlite2;
+
 
 
 //see Spider.h for bitfield definitions/comments/caveats

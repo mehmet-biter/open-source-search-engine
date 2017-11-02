@@ -12,16 +12,25 @@
 #include <algorithm>
 
 
-static bool addRecords(collnum_t collnum, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator begin, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator end);
+static bool addRecords(SpiderdbSqlite &spiderdb, const std::vector<SpiderdbRdbSqliteBridge::BatchedRecord> &records);
+static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator begin, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator end);
 static bool addRecord(collnum_t collnum, sqlite3 *db, const void *record, size_t record_len);
 static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len);
 static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len);
 
 
 bool SpiderdbRdbSqliteBridge::addRecords(const std::vector<BatchedRecord> &records) {
+	return addRecords(g_spiderdb_sqlite, records);
+}
+
+bool SpiderdbRdbSqliteBridge::addRecords2(const std::vector<BatchedRecord> &records) {
+	return addRecords(g_spiderdb_sqlite2, records);
+}
+
+static bool addRecords(SpiderdbSqlite &spiderdb, const std::vector<SpiderdbRdbSqliteBridge::BatchedRecord> &records) {
 	//copy&sort
 	auto records_copy(records);
-	std::sort(records_copy.begin(), records_copy.end(), [](const BatchedRecord &a, const BatchedRecord &b) {
+	std::sort(records_copy.begin(), records_copy.end(), [](const SpiderdbRdbSqliteBridge::BatchedRecord &a, const SpiderdbRdbSqliteBridge::BatchedRecord &b) {
 		return a.collnum < b.collnum;
 	});
 	
@@ -35,7 +44,7 @@ bool SpiderdbRdbSqliteBridge::addRecords(const std::vector<BatchedRecord> &recor
 			else
 				break;
 		}
-		if(!::addRecords(range_begin->collnum, range_begin, range_end))
+		if(!::addRecords(spiderdb, range_begin->collnum, range_begin, range_end))
 			return false;
 		range_begin = range_end;
 	}
@@ -43,8 +52,8 @@ bool SpiderdbRdbSqliteBridge::addRecords(const std::vector<BatchedRecord> &recor
 }
 
 
-static bool addRecords(collnum_t collnum, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator begin, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator end) {
-	sqlite3 *db = g_spiderdb_sqlite.getDb(collnum);
+static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator begin, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator end) {
+	sqlite3 *db = spiderdb.getDb(collnum);
 	if(!db) {
 		log(LOG_ERROR,"sqlitespider: Could not get sqlite db for collection %d", collnum);
 		return false;
