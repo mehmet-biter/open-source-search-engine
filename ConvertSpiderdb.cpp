@@ -82,13 +82,13 @@ int convertSpiderDb(const char *collname) {
 	
 	sqlite3 *db = NULL;
 	if(sqlite3_open_v2(sqlitedbName,&db,SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE,NULL) != SQLITE_OK) {
-		log(LOG_ERROR,"sqlite3_open_v2: %s",sqlite3_errmsg(db));
+		log(LOG_ERROR,"convertsqlite3_open_v2: %s: %s", sqlitedbName, sqlite3_errmsg(db));
 		return 4;
 	}
 	
 	char *errmsg = NULL;
 	if(sqlite3_exec(db, create_table_statmeent, NULL, NULL, &errmsg) != SQLITE_OK) {
-		log(LOG_ERROR,"%s",sqlite3_errmsg(db));
+		log(LOG_ERROR,"convert: sqlite3_exec: %s", sqlite3_errmsg(db));
 		sqlite3_close(db);
 		return 5;
 	}
