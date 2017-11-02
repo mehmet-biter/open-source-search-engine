@@ -21,7 +21,7 @@
 #include "Msg13.h"
 #include "Msg3.h"
 #include "Mem.h"
-#include <math.h>
+#include <cmath>
 
 
 static bool printNumAbbr(SafeBuf &p, int64_t vvv) {
@@ -345,7 +345,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 				p.safePrintf("\t<cacheStats>\n");
 				p.safePrintf("\t\t<name>%s</name>\n",cacheStatistics[i].name);
 				p.safePrintf("\t\t<hitRatio>");
-				if(!isnan(cacheStatistics[i].hit_ratio))
+				if(!std::isnan(cacheStatistics[i].hit_ratio))
 					p.safePrintf("%.1f%%",cacheStatistics[i].hit_ratio);
 				p.safePrintf("</hitRatio>\n");
 				p.safePrintf("\t\t<numHits>%lu</numHits>\n",cacheStatistics[i].hits);
@@ -363,7 +363,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			for(int32_t i = 0; i < numCaches; i++) {
 				p.safePrintf("\t\"cacheStats\":{\n");
 				p.safePrintf("\t\t\"name\":\"%s\",\n", cacheStatistics[i].name);
-				if(!isnan(cacheStatistics[i].hit_ratio))
+				if(!std::isnan(cacheStatistics[i].hit_ratio))
 					p.safePrintf("\t\t\"hitRatio\":\"%.1f%%\",\n", cacheStatistics[i].hit_ratio);
 				p.safePrintf("\t\t\"numHits\":%lu,\n", cacheStatistics[i].hits);
 				p.safePrintf("\t\t\"numMisses\":%lu,\n", cacheStatistics[i].misses);
@@ -390,7 +390,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 			p.safePrintf ("</tr>\n<tr><td><b><nobr>hit ratio</nobr></b></td>" );
 			for(int32_t i = 0; i < numCaches; i++) {
-				if(!isnan(cacheStatistics[i].hit_ratio))
+				if(!std::isnan(cacheStatistics[i].hit_ratio))
 					p.safePrintf("<td>%.1f%%</td>", cacheStatistics[i].hit_ratio);
 				else
 					p.safePrintf("<td>--</td>");
