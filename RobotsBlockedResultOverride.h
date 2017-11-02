@@ -12,8 +12,8 @@ public:
 
 	static void reload(int /*fd*/, void *state);
 
-	std::string getTitle(const std::string &lang, const Url &url) const;
-	std::string getSummary(const std::string &lang, const Url &url) const;
+	std::string getTitle(const std::string &lang, const Url &url) const override;
+	std::string getSummary(const std::string &lang, const Url &url) const override;
 };
 
 extern RobotsBlockedResultOverride g_robotsBlockedResultOverride;
