@@ -21,6 +21,7 @@
 #include "Msg13.h"
 #include "Msg3.h"
 #include "Mem.h"
+#include <math.h>
 
 
 static bool printNumAbbr(SafeBuf &p, int64_t vvv) {
