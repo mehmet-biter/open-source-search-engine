@@ -363,7 +363,7 @@ void gotListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
 	THIS->reset(); // delete m_msg5
 	THIS->m_callback ( THIS->m_state );//, THIS->m_list );
 
-	logTrace( g_conf.m_logTraceMsg0, "END. rdbId=%d", (int)THIS->m_rdbId );
+	logTrace( g_conf.m_logTraceMsg0, "END." ); //we cannot log any members here because we may have been deleted+destroyed
 }
 
 
