@@ -20,10 +20,7 @@
 
 
 static void handleRequest0           ( UdpSlot *slot , int32_t niceness ) ;
-static void gotMulticastReplyWrapper0( void *state , void *state2 ) ;
-static void gotSingleReplyWrapper    ( void *state , UdpSlot *slot ) ;
 static void gotListWrapper           ( void *state, RdbList *list, Msg5 *msg5);
-static void gotListWrapper2          ( void *state, RdbList *list, Msg5 *msg5);
 static void doneSending_ass          ( void *state , UdpSlot *slot ) ;
 
 Msg0::Msg0 ( ) {
@@ -347,10 +344,10 @@ skip:
 
 // . this is called when we got a local RdbList
 // . we need to call it to call the original caller callback
-void gotListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
+void Msg0::gotListWrapper2(void *state, RdbList *list, Msg5 *msg5) {
 	logTrace( g_conf.m_logTraceMsg0, "BEGIN" );
 
-	Msg0 *THIS = (Msg0 *) state;
+	Msg0 *THIS = reinterpret_cast<Msg0*>(state);
 	THIS->reset(); // delete m_msg5
 	THIS->m_callback ( THIS->m_state );//, THIS->m_list );
 
@@ -359,8 +356,8 @@ void gotListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
 
 
 // . return false if you want this slot immediately nuked w/o replying to it
-void gotSingleReplyWrapper ( void *state , UdpSlot *slot ) {
-	Msg0 *THIS = (Msg0 *)state;
+void Msg0::gotSingleReplyWrapper(void *state, UdpSlot *slot) {
+	Msg0 *THIS = reinterpret_cast<Msg0*>(state);
 	if ( ! g_errno ) { 
 		int32_t  replySize    = slot->m_readBufSize;
 		int32_t  replyMaxSize = slot->m_readBufMaxSize;
@@ -377,10 +374,10 @@ void gotSingleReplyWrapper ( void *state , UdpSlot *slot ) {
 	THIS->m_callback ( THIS->m_state );// THIS->m_list );
 }
 
-void gotMulticastReplyWrapper0 ( void *state , void *state2 ) {
+void Msg0::gotMulticastReplyWrapper0(void *state, void *state2) {
 	logTrace( g_conf.m_logTraceMsg0, "BEGIN" );
 
-	Msg0 *THIS = (Msg0 *)state;
+	Msg0 *THIS = reinterpret_cast<Msg0*>(state);
 
 	if ( ! g_errno ) {
 		int32_t  replySize;

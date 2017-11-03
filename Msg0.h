@@ -17,6 +17,10 @@
 
 static const int64_t msg0_getlist_infinite_timeout = 999999999999;
 
+class Msg5;
+class UdpSlot;
+
+
 class Msg0 {
 
  public:
@@ -61,10 +65,10 @@ class Msg0 {
 		       bool        noSplit           , // MDW ????
 		       int32_t        forceParitySplit     );
 
-	// . YOU NEED NOT CALL routines below here
-	// . private:
-
-	// gotta keep this handler public so the C wrappers can call them
+private:
+	static void gotListWrapper2(void *state, RdbList *list, Msg5 *msg5);
+	static void gotSingleReplyWrapper(void *state, UdpSlot *slot);
+	static void gotMulticastReplyWrapper0(void *state, void *state2);
 	void gotReply   ( char *reply , int32_t replySize , int32_t replyMaxSize );
 
 	// callback info
