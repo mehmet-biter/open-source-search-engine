@@ -179,6 +179,8 @@ bool UrlMatchList::load() {
 			continue;
 		}
 
+		filePaths.push_back(filePath);
+
 		time_t lastModifiedTime = m_lastModifiedTimes[filePath];
 		if (lastModifiedTime != 0 && lastModifiedTime == st.st_mtime) {
 			// not modified. assume successful
@@ -189,7 +191,6 @@ bool UrlMatchList::load() {
 		anyFileModified = true;
 
 		m_lastModifiedTimes[filePath] = st.st_mtime;
-		filePaths.push_back(filePath);
 	}
 
 	if (!anyFileModified) {
