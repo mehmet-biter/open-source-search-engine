@@ -8,6 +8,8 @@ bool SpiderdbUtil::deleteRecord(collnum_t collnum, int32_t firstIp, int64_t uh48
 	if(!db)
 		return false;
 	
+	ScopedSqlitedbLock ssl(db);
+	
 	const char *pzTail="";
 	sqlite3_stmt *stmt = NULL;
 	if(sqlite3_prepare_v2(db, "delete from spiderdb where m_firstip=? and m_uh48=?", -1, &stmt, &pzTail) != SQLITE_OK) {

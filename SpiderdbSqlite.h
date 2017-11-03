@@ -35,6 +35,16 @@ extern SpiderdbSqlite g_spiderdb_sqlite2;
 
 
 
+class ScopedSqlitedbLock {
+	sqlite3 *db;
+	ScopedSqlitedbLock(const ScopedSqlitedbLock&) = delete;
+	ScopedSqlitedbLock& operator=(const ScopedSqlitedbLock&) = delete;
+public:
+	ScopedSqlitedbLock(sqlite3 *db_);
+	~ScopedSqlitedbLock();
+};
+
+
 //see Spider.h for bitfield definitions/comments/caveats
 
 //To save space we have to pack several flags into bitfields. This is done for both some request and reply

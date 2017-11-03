@@ -60,6 +60,8 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 		return false;
 	}
 	
+	ScopedSqlitedbLock ssl(db);
+	
 	char *errmsg = NULL;
 	int rc = sqlite3_exec(db, "begin transaction", NULL, NULL, &errmsg);
 	if(rc!=SQLITE_OK) {
@@ -90,6 +92,7 @@ bool SpiderdbRdbSqliteBridge::addRecord(collnum_t collnum, const void *record, s
 		log(LOG_ERROR,"sqlitespider: Could not get sqlite db for collection %d", collnum);
 		return false;
 	}
+	ScopedSqlitedbLock ssl(db);
 	return addRecord(collnum,db,record,record_len);
 }
 
@@ -412,6 +415,8 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		g_errno = ENOCOLLREC;
 		return false;
 	}
+	
+	ScopedSqlitedbLock ssl(db);
 	
 	int32_t firstIpStart = Spiderdb::getFirstIp(&startKey);
 	int32_t firstIpEnd = Spiderdb::getFirstIp(&endKey);

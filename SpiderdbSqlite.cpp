@@ -199,3 +199,15 @@ static sqlite3 *openDb(const char *sqlitedbName) {
 	
 	return db;
 }
+
+
+
+ScopedSqlitedbLock::ScopedSqlitedbLock(sqlite3 *db_)
+  : db(db_)
+{
+	sqlite3_mutex_enter(sqlite3_db_mutex(db));
+}
+
+ScopedSqlitedbLock::~ScopedSqlitedbLock() {
+	sqlite3_mutex_leave(sqlite3_db_mutex(db));
+}
