@@ -2,6 +2,7 @@
 #include "Log.h"
 #include "Conf.h"
 #include "Loop.h"
+#include "JobScheduler.h"
 #include <fstream>
 #include <sys/stat.h>
 #include <atomic>
@@ -12,6 +13,7 @@ static const char s_robots_filename[] = "robotschecklist.txt";
 
 RobotsCheckList::RobotsCheckList()
 	: m_filename(s_robots_filename)
+	, m_loading(false)
 	, m_robotsCheckList(new robotschecklist_t)
 	, m_lastModifiedTime(0) {
 }
@@ -30,8 +32,24 @@ bool RobotsCheckList::init() {
 }
 
 void RobotsCheckList::reload(int /*fd*/, void *state) {
+	if (g_jobScheduler.submit(reload, nullptr, state, thread_type_config_load, 0)) {
+		return;
+	}
+
+	// unable to submit job (load on main thread)
+	reload(state);
+}
+
+void RobotsCheckList::reload(void *state) {
 	RobotsCheckList *robotsCheckList = static_cast<RobotsCheckList*>(state);
+
+	// don't load multiple times at the same time
+	if (robotsCheckList->m_loading.exchange(true)) {
+		return;
+	}
+
 	robotsCheckList->load();
+	robotsCheckList->m_loading = false;
 }
 
 bool RobotsCheckList::load() {

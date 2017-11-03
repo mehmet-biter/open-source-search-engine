@@ -148,7 +148,6 @@ private:
 		Msg51     *m_msg51; //points to self
 		Msg0       m_msg0;
 		RdbList    m_list;
-		Msg5       m_msg5;
 		bool       m_inUse;
 		int32_t    m_ci;
 	};

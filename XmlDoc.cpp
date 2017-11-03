@@ -5026,7 +5026,6 @@ RdbList *XmlDoc::getDupList ( ) {
 				// never timeout when spidering in case
 				// a host is down.
 				msg0_getlist_infinite_timeout , // timeout
-				NULL, // msg5
 				false , // isRealMerge
 				true, // shardByTermId? THIS IS DIFFERENT!!!
 				-1  ) ) // forceParitySplit

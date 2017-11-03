@@ -2,6 +2,7 @@
 #include "Log.h"
 #include "Conf.h"
 #include "Loop.h"
+#include "JobScheduler.h"
 #include <fstream>
 #include <sys/stat.h>
 #include <atomic>
@@ -12,6 +13,7 @@ static const char s_dns_filename[] = "dnsblocklist.txt";
 
 DnsBlockList::DnsBlockList()
 	: m_filename(s_dns_filename)
+	, m_loading(false)
 	, m_dnsBlockList(new dnsblocklist_t)
 	, m_lastModifiedTime(0) {
 }
@@ -32,8 +34,24 @@ bool DnsBlockList::init() {
 }
 
 void DnsBlockList::reload(int /*fd*/, void *state) {
+	if (g_jobScheduler.submit(reload, nullptr, state, thread_type_config_load, 0)) {
+		return;
+	}
+
+	// unable to submit job (load on main thread)
+	reload(state);
+}
+
+void DnsBlockList::reload(void *state) {
 	DnsBlockList *dnsBlockList = static_cast<DnsBlockList*>(state);
+
+	// don't load multiple times at the same time
+	if (dnsBlockList->m_loading.exchange(true)) {
+		return;
+	}
+
 	dnsBlockList->load();
+	dnsBlockList->m_loading = false;
 }
 
 bool DnsBlockList::load() {

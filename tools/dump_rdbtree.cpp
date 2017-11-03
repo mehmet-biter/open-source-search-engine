@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
 	g_mem.init();
 	hashinit();
 
-	g_hostdb.init(-1, false, false, dir);
+	g_hostdb.init(-1, false, false, true, dir);
 	g_conf.init(NULL);
 	g_collectiondb.loadAllCollRecs();
 

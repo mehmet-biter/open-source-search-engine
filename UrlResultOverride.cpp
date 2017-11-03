@@ -6,6 +6,7 @@
 #include "Conf.h"
 #include "Url.h"
 #include "GbUtil.h"
+#include "JobScheduler.h"
 
 #include <sys/stat.h>
 #include <fstream>
@@ -16,6 +17,7 @@ static const char *s_resultoverride_filename = "urlresultoverride.txt";
 
 UrlResultOverride::UrlResultOverride()
 	: m_filename(s_resultoverride_filename)
+	, m_loading(false)
 	, m_urlResultOverrideMap(new urlresultoverridemap_t)
 	, m_lastModifiedTime(0) {
 }
@@ -32,8 +34,24 @@ bool UrlResultOverride::init() {
 }
 
 void UrlResultOverride::reload(int /*fd*/, void *state) {
+	if (g_jobScheduler.submit(reload, nullptr, state, thread_type_config_load, 0)) {
+		return;
+	}
+
+	// unable to submit job (load on main thread)
+	reload(state);
+}
+
+void UrlResultOverride::reload(void *state) {
 	UrlResultOverride *urlResultOverride = static_cast<UrlResultOverride*>(state);
+
+	// don't load multiple times at the same time
+	if (urlResultOverride->m_loading.exchange(true)) {
+		return;
+	}
+
 	urlResultOverride->load();
+	urlResultOverride->m_loading = false;
 }
 
 bool UrlResultOverride::load() {

@@ -7,6 +7,7 @@
 #include "Dir.h"
 #include "Hostdb.h"
 #include "third-party/sparsepp/sparsepp/spp.h"
+#include "JobScheduler.h"
 #include <fstream>
 #include <sys/stat.h>
 #include <atomic>
@@ -27,6 +28,7 @@ struct UrlMatchListItem {
 UrlMatchList::UrlMatchList(const char *filename)
 	: m_filename(filename)
 	, m_dirname()
+	, m_loading(false)
 	, m_urlMatchList(new UrlMatchListItem)
 	, m_lastModifiedTimes() {
 	size_t pos = m_filename.find_last_of('/');
@@ -52,8 +54,24 @@ bool UrlMatchList::init() {
 }
 
 void UrlMatchList::reload(int /*fd*/, void *state) {
+	if (g_jobScheduler.submit(reload, nullptr, state, thread_type_config_load, 0)) {
+		return;
+	}
+
+	// unable to submit job (load on main thread)
+	reload(state);
+}
+
+void UrlMatchList::reload(void *state) {
 	UrlMatchList *urlMatchList = static_cast<UrlMatchList*>(state);
+
+	// don't load multiple times at the same time
+	if (urlMatchList->m_loading.exchange(true)) {
+		return;
+	}
+
 	urlMatchList->load();
+	urlMatchList->m_loading = false;
 }
 
 static bool parseDomain(urlmatchlistitem_ptr_t *urlMatchList, const std::string &col2, const std::string &col3, const std::string &col4) {

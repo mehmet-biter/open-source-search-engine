@@ -1,7 +1,10 @@
+clean_url
 decode_rdbkey
+dump_badlinks
 dump_rdbbuckets
 dump_rdbindex
 dump_rdbtree
+dump_wordcount
 generate_rdbindex
 get_titlerec
 print_urlinfo

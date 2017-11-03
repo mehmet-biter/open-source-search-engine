@@ -5,6 +5,7 @@
 #include <string>
 #include <map>
 #include <memory>
+#include <atomic>
 
 class LanguageResultOverride;
 
@@ -21,6 +22,7 @@ public:
 	bool init();
 
 	static void reload(int /*fd*/, void *state);
+	static void reload(void *state);
 
 	std::string getTitle(const std::string &lang, const Url &url);
 	std::string getSummary(const std::string &lang, const Url &url);
@@ -34,6 +36,7 @@ private:
 	void swapUrlResultOverride(urlresultoverridemapconst_ptr_t resultOverrideMap);
 	urlresultoverridemapconst_ptr_t getUrlResultOverrideMap();
 
+	std::atomic_bool m_loading;
 	urlresultoverridemapconst_ptr_t m_urlResultOverrideMap;
 	time_t m_lastModifiedTime;
 };

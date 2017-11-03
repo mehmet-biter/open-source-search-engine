@@ -311,7 +311,6 @@ bool SiteGetter::getSiteList ( ) {
 				         0,  // startFileNum
 				         -1,  // numFiles
 				         msg0_getlist_infinite_timeout,  // timeout
-				         NULL,  // msg5
 				         false,  // isrealmerge?
 				         false,  // doIndexdbSplit? nosplit
 				         shardNum ))//split ))

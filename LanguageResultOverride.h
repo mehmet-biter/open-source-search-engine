@@ -19,8 +19,8 @@ public:
 	explicit LanguageResultOverride(const char *filename);
 	explicit LanguageResultOverride(languageresultoverridemap_ptr_t languageResultOverrideMap);
 
-	std::string getTitle(const std::string &lang, const Url &url) const;
-	std::string getSummary(const std::string &lang, const Url &url) const;
+	virtual std::string getTitle(const std::string &lang, const Url &url) const;
+	virtual std::string getSummary(const std::string &lang, const Url &url) const;
 
 protected:
 	bool load();

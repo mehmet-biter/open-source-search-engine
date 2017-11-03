@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 		strcat(path, "/");
 	}
 
-	g_hostdb.init(-1, false, false, path);
+	g_hostdb.init(-1, false, false, true, path);
 	g_conf.init(path);
 
 	ucInit();

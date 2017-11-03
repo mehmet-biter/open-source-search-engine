@@ -24,10 +24,7 @@
 class State00;
 
 static void handleRequest0           ( UdpSlot *slot , int32_t niceness ) ;
-static void gotMulticastReplyWrapper0( void *state , void *state2 ) ;
-static void gotSingleReplyWrapper    ( void *state , UdpSlot *slot ) ;
 static void gotListWrapper           ( void *state, RdbList *list, Msg5 *msg5);
-static void gotListWrapper2          ( void *state, RdbList *list, Msg5 *msg5);
 static void doneSending_ass          ( void *state , UdpSlot *slot ) ;
 
 static void handleSpiderdbRequest(State00 *state);
@@ -66,7 +63,6 @@ void Msg0::constructor ( ) {
 	m_minRecSizes = 0;
 	m_rdbId = RDB_NONE;
 	m_collnum = 0;
-	m_deleteMsg5 = false;
 	m_isRealMerge = false;
 	m_startTime = 0;
 	m_niceness = 0;
@@ -78,7 +74,7 @@ Msg0::~Msg0 ( ) {
 }
 
 void Msg0::reset ( ) {
-	if ( m_msg5  && m_deleteMsg5  ) {
+	if ( m_msg5  ) {
 		mdelete ( m_msg5 , sizeof(Msg5) , "Msg0::Msg5" );
 		delete ( m_msg5  );
 	}
@@ -123,7 +119,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     int32_t      startFileNum  ,
 		     int32_t      numFiles      ,
 		     int64_t      timeout       ,
-		     Msg5     *msg5             ,
 		     bool      isRealMerge      ,
 		     bool      noSplit ,
 		     int32_t      forceParitySplit  ) {
@@ -223,23 +218,16 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 			logTrace( g_conf.m_logTraceMsg0, "END, jump to handleLocalSpiderdbGetList()" );
 			return true;
 		}
-		if ( msg5 ) {
-			m_msg5 = msg5;
-			m_deleteMsg5 = false;
+		try { m_msg5 = new ( Msg5 ); } 
+		catch(std::bad_alloc&) {
+			g_errno = ENOMEM;
+			log(LOG_WARN, "net: Local alloc for disk read failed "
+				"while tring to read data for %s. "
+				"Trying remote request.",
+				getDbnameFromId(m_rdbId));
+			goto skip;
 		}
-		else {
-			try { m_msg5 = new ( Msg5 ); } 
-			catch(std::bad_alloc&) {
-				g_errno = ENOMEM;
-				log(LOG_WARN, "net: Local alloc for disk read failed "
-				    "while tring to read data for %s. "
-				    "Trying remote request.",
-				    getDbnameFromId(m_rdbId));
-				goto skip;
-			}
-			mnew ( m_msg5 , sizeof(Msg5) , "Msg0::Msg5" );
-			m_deleteMsg5 = true;
-		}
+		mnew ( m_msg5 , sizeof(Msg5) , "Msg0::Msg5" );
 
 		if ( ! m_msg5->getList ( rdbId,
 					 m_collnum ,
@@ -373,10 +361,10 @@ skip:
 
 // . this is called when we got a local RdbList
 // . we need to call it to call the original caller callback
-void gotListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
+void Msg0::gotListWrapper2(void *state, RdbList *list, Msg5 *msg5) {
 	logTrace( g_conf.m_logTraceMsg0, "BEGIN" );
 
-	Msg0 *THIS = (Msg0 *) state;
+	Msg0 *THIS = reinterpret_cast<Msg0*>(state);
 	THIS->reset(); // delete m_msg5
 	THIS->m_callback ( THIS->m_state );//, THIS->m_list );
 
@@ -385,8 +373,8 @@ void gotListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
 
 
 // . return false if you want this slot immediately nuked w/o replying to it
-void gotSingleReplyWrapper ( void *state , UdpSlot *slot ) {
-	Msg0 *THIS = (Msg0 *)state;
+void Msg0::gotSingleReplyWrapper(void *state, UdpSlot *slot) {
+	Msg0 *THIS = reinterpret_cast<Msg0*>(state);
 	if ( ! g_errno ) { 
 		int32_t  replySize    = slot->m_readBufSize;
 		int32_t  replyMaxSize = slot->m_readBufMaxSize;
@@ -403,10 +391,10 @@ void gotSingleReplyWrapper ( void *state , UdpSlot *slot ) {
 	THIS->m_callback ( THIS->m_state );// THIS->m_list );
 }
 
-void gotMulticastReplyWrapper0 ( void *state , void *state2 ) {
+void Msg0::gotMulticastReplyWrapper0(void *state, void *state2) {
 	logTrace( g_conf.m_logTraceMsg0, "BEGIN" );
 
-	Msg0 *THIS = (Msg0 *)state;
+	Msg0 *THIS = reinterpret_cast<Msg0*>(state);
 
 	if ( ! g_errno ) {
 		int32_t  replySize;

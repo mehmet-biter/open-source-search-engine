@@ -1423,7 +1423,6 @@ bool Msg5::getRemoteList ( ) {
 				 0                    , // startFileNum
 				 -1                   , // numFiles (-1=all)
 				 60*60*24*1000            , // timeout
-				 NULL                 , // msg5
 				 m_isRealMerge        , // merging files?
 				 false                , // doIndexdbSplit
 				 // "forceParitySplit" is a group # 

@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <atomic>
 
 typedef std::vector<std::string> dnsblocklist_t;
 typedef std::shared_ptr<dnsblocklist_t> dnsblocklist_ptr_t;
@@ -18,6 +19,7 @@ public:
 	bool isDnsBlocked(const char *dns);
 
 	static void reload(int /*fd*/, void *state);
+	static void reload(void *state);
 
 protected:
 	bool load();
@@ -28,6 +30,7 @@ private:
 	dnsblocklistconst_ptr_t getDnsBlockList();
 	void swapDnsBlockList(dnsblocklistconst_ptr_t dnsBlockList);
 
+	std::atomic_bool m_loading;
 	dnsblocklistconst_ptr_t m_dnsBlockList;
 
 	time_t m_lastModifiedTime;

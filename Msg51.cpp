@@ -304,7 +304,6 @@ bool Msg51::sendRequest ( int32_t    i ) {
 				     0           , // startFileNum
 				     -1          , // numFiles
 				     30000       , // timeout
-				     &m_slot[i].m_msg5, // use for local reads
 				     false       , // isRealMerge?
 				     false       , // noSplit?
 				     -1          );// forceParitySplit
@@ -351,7 +350,7 @@ void Msg51::gotClusterRec(Slot *slot) {
 	// free up
 	slot->m_inUse = false;
 
-	RdbList *list = slot->m_msg0.m_list;
+	RdbList *list = &m_slot->m_list;
 
 	// update m_errno if we had an error
 	if ( ! m_errno ) m_errno = g_errno;

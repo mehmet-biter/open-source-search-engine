@@ -91,6 +91,11 @@ pipeline {
 	}
 
 	post {
+		always {
+			sh "cd ${env.PYWEBTEST_DIR} && ./shutdown_instances.py --num-instances=1 --num-shards=1 --offset=0"
+			sh "cd ${env.PYWEBTEST_DIR} && ./shutdown_instances.py --num-instances=4 --num-shards=2 --offset=1"
+		}
+
 		changed {
 			script {
 				if (currentBuild.result == "SUCCESS" && env.BUILD_NUMBER != 1) {
