@@ -356,7 +356,6 @@ bool Images::getThumbnail ( const char *pageSite,
 				0     , // start filenum
 				-1    , // numFiles
 				30000 , // timeout
-				NULL  , // msg5
 				false , // isRealMerge?
 				false , // doIndexdbSplit?
 				shardNum ))// force paritysplit
@@ -428,7 +427,6 @@ bool Images::launchRequests ( ) {
 					0     , // start filenum
 					-1    , // numFiles
 					30000 , // timeout
-					NULL  , // msg5
 					false , // isRealMerge?
 					false , // doIndexdbSplit?
 					shardNum ))// force paritysplit

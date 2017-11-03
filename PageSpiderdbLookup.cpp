@@ -167,7 +167,6 @@ static bool getSpiderRecs(State *st) {
 		               0, //startFileNum,
 		               -1, //numFiles,
 		               10000, //timeout in msecs
-		               NULL, //msg5
 		               false, //isRealMerge
 		               false, //noSplit (?)
 		               -1))//forceParitySplit

@@ -55,7 +55,6 @@ void Msg0::constructor ( ) {
 	m_minRecSizes = 0;
 	m_rdbId = RDB_NONE;
 	m_collnum = 0;
-	m_deleteMsg5 = false;
 	m_isRealMerge = false;
 	m_startTime = 0;
 	m_niceness = 0;
@@ -67,7 +66,7 @@ Msg0::~Msg0 ( ) {
 }
 
 void Msg0::reset ( ) {
-	if ( m_msg5  && m_deleteMsg5  ) {
+	if ( m_msg5  ) {
 		mdelete ( m_msg5 , sizeof(Msg5) , "Msg0::Msg5" );
 		delete ( m_msg5  );
 	}
@@ -112,7 +111,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     int32_t      startFileNum  ,
 		     int32_t      numFiles      ,
 		     int64_t      timeout       ,
-		     Msg5     *msg5             ,
 		     bool      isRealMerge      ,
 		     bool      noSplit ,
 		     int32_t      forceParitySplit  ) {
@@ -206,23 +204,16 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	if ( isLocal ) {
 		logTrace( g_conf.m_logTraceMsg0, "isLocal" );
 
-		if ( msg5 ) {
-			m_msg5 = msg5;
-			m_deleteMsg5 = false;
+		try { m_msg5 = new ( Msg5 ); } 
+		catch(std::bad_alloc&) {
+			g_errno = ENOMEM;
+			log(LOG_WARN, "net: Local alloc for disk read failed "
+				"while tring to read data for %s. "
+				"Trying remote request.",
+				getDbnameFromId(m_rdbId));
+			goto skip;
 		}
-		else {
-			try { m_msg5 = new ( Msg5 ); } 
-			catch(std::bad_alloc&) {
-				g_errno = ENOMEM;
-				log(LOG_WARN, "net: Local alloc for disk read failed "
-				    "while tring to read data for %s. "
-				    "Trying remote request.",
-				    getDbnameFromId(m_rdbId));
-				goto skip;
-			}
-			mnew ( m_msg5 , sizeof(Msg5) , "Msg0::Msg5" );
-			m_deleteMsg5 = true;
-		}
+		mnew ( m_msg5 , sizeof(Msg5) , "Msg0::Msg5" );
 
 		if ( ! m_msg5->getList ( rdbId,
 					 m_collnum ,

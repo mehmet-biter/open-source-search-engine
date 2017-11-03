@@ -304,7 +304,6 @@ bool Msg51::sendRequest ( int32_t    i ) {
 				     0           , // startFileNum
 				     -1          , // numFiles
 				     30000       , // timeout
-				     &m_slot[i].m_msg5, // use for local reads
 				     false       , // isRealMerge?
 				     false       , // noSplit?
 				     -1          );// forceParitySplit

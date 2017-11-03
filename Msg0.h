@@ -57,7 +57,6 @@ class Msg0 {
 		       int32_t      startFileNum        ,
 		       int32_t      numFiles            ,
 		       int64_t      timeout             ,
-		       class Msg5 *msg5            ,
 		       bool        isRealMerge     , // file merge?
 		       bool        noSplit           , // MDW ????
 		       int32_t        forceParitySplit     );
@@ -109,7 +108,6 @@ class Msg0 {
 	collnum_t m_collnum;
 
 	class Msg5  *m_msg5 ;
-	bool         m_deleteMsg5;
 	bool         m_isRealMerge;
 
 	// for timing the get
