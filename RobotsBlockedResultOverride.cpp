@@ -11,7 +11,8 @@ RobotsBlockedResultOverride g_robotsBlockedResultOverride;
 static const char *s_resultoverride_filename = "robotsblockedresultoverride.txt";
 
 RobotsBlockedResultOverride::RobotsBlockedResultOverride()
-	: LanguageResultOverride(s_resultoverride_filename) {
+	: LanguageResultOverride(s_resultoverride_filename)
+	, m_loading(false) {
 }
 
 bool RobotsBlockedResultOverride::init() {
