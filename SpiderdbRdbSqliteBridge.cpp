@@ -17,6 +17,7 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 static bool addRecord(collnum_t collnum, sqlite3 *db, const void *record, size_t record_len);
 static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len);
 static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len);
+static int map_sqlite_error_to_gb_errno(int err);
 
 
 bool SpiderdbRdbSqliteBridge::addRecords(const std::vector<BatchedRecord> &records) {
@@ -73,7 +74,11 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 		}
 	}
 	
-	sqlite3_exec(db, "commit", NULL, NULL, &errmsg);
+	if(sqlite3_exec(db, "commit", NULL, NULL, &errmsg) != SQLITE_OK) {
+		int err = sqlite3_errcode(db);
+		log(LOG_ERROR,"sqlitespider: commit errror: %s", sqlite3_errstr(err));
+		g_errno = map_sqlite_error_to_gb_errno(err);
+	}
 	
 	return true;
 }
@@ -138,7 +143,9 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 	const char *pzTail="";
 	sqlite3_stmt *selectStatement = NULL;
 	if(sqlite3_prepare_v2(db, "select 1 from spiderdb where m_firstIp=? and m_uh48=?", -1, &selectStatement, &pzTail) != SQLITE_OK) {
-		log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errmsg(db),pzTail);
+		int err = sqlite3_errcode(db);
+		log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
+		g_errno = map_sqlite_error_to_gb_errno(err);
 		return false;
 	}
 	
@@ -154,8 +161,10 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 			"VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 		sqlite3_stmt *insertStatement = NULL;
 		if(sqlite3_prepare_v2(db, insert_statement, -1, &insertStatement, &pzTail) != SQLITE_OK) {
-			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errmsg(db),pzTail);
+			int err = sqlite3_errcode(db);
+			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
 			sqlite3_finalize(selectStatement);
+			g_errno = map_sqlite_error_to_gb_errno(err);
 			return false;
 		}
 		
@@ -198,9 +207,11 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 		sqlite3_bind_text(insertStatement, 15, sreq->m_url,-1,SQLITE_TRANSIENT);
 		
 		if(sqlite3_step(insertStatement) != SQLITE_DONE) {
-			log(LOG_ERROR,"sqlitespider: Insert error: %s",sqlite3_errmsg(db));
+			int err = sqlite3_errcode(db);
+			log(LOG_ERROR,"sqlitespider: Insert error: %s", sqlite3_errstr(err));
 			sqlite3_finalize(insertStatement);
 			sqlite3_finalize(selectStatement);
+			g_errno = map_sqlite_error_to_gb_errno(err);
 			return false;
 		}
 		sqlite3_finalize(insertStatement);
@@ -219,8 +230,10 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 		
 		sqlite3_stmt *updateStatement = NULL;
 		if(sqlite3_prepare_v2(db, update_statement, -1, &updateStatement, &pzTail) != SQLITE_OK) {
-			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errmsg(db),pzTail);
+			int err = sqlite3_errcode(db);
+			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
 			sqlite3_finalize(selectStatement);
+			g_errno = map_sqlite_error_to_gb_errno(err);
 			return false;
 		}
 		
@@ -233,15 +246,19 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 		sqlite3_bind_int64(updateStatement, 17, uh48);
 		
 		if(sqlite3_step(updateStatement) != SQLITE_DONE) {
-			log(LOG_ERROR,"sqlitespider: Update error: %s",sqlite3_errmsg(db));
+			int err = sqlite3_errcode(db);
+			log(LOG_ERROR,"sqlitespider: Update error: %s", sqlite3_errstr(err));
 			sqlite3_finalize(updateStatement);
 			sqlite3_finalize(selectStatement);
+			g_errno = map_sqlite_error_to_gb_errno(err);
 			return false;
 		}
 		return true;
 	} else {
-		log(LOG_WARN,"sqlitespider: sqlite3_step(...select...) failed with %s", sqlite3_errmsg(db));
+		int err = sqlite3_errcode(db);
+		log(LOG_WARN,"sqlitespider: sqlite3_step(...select...) failed with %s", sqlite3_errstr(err));
 		sqlite3_finalize(selectStatement);
+		g_errno = map_sqlite_error_to_gb_errno(err);
 		return false;
 	}
 }
@@ -269,7 +286,9 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 		
 		sqlite3_stmt *deleteStatement = NULL;
 		if(sqlite3_prepare_v2(db, delete_statement, -1, &deleteStatement, &pzTail) != SQLITE_OK) {
-			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errmsg(db),pzTail);
+			int err = sqlite3_errcode(db);
+			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
+			g_errno = map_sqlite_error_to_gb_errno(err);
 			return false;
 		}
 		
@@ -277,8 +296,10 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 		sqlite3_bind_int64(deleteStatement, 2, uh48);
 		
 		if(sqlite3_step(deleteStatement) != SQLITE_DONE) {
-			log(LOG_ERROR,"sqlitespider: delete error: %s",sqlite3_errmsg(db));
+			int err = sqlite3_errcode(db);
+			log(LOG_ERROR,"sqlitespider: delete error: %s",sqlite3_errstr(err));
 			sqlite3_finalize(deleteStatement);
+			g_errno = map_sqlite_error_to_gb_errno(err);
 			return false;
 		}
 		sqlite3_finalize(deleteStatement);
@@ -299,7 +320,9 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			"  WHERE m_firstIp=? and m_uh48=?";
 		sqlite3_stmt *updateStatement = NULL;
 		if(sqlite3_prepare_v2(db, update_statement, -1, &updateStatement, &pzTail) != SQLITE_OK) {
-			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errmsg(db),pzTail);
+			int err = sqlite3_errcode(db);
+			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
+			g_errno = map_sqlite_error_to_gb_errno(err);
 			return false;
 		}
 		int requestFlagBits = 0;
@@ -328,8 +351,10 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 		sqlite3_bind_int64(updateStatement, 10, uh48);
 		
 		if(sqlite3_step(updateStatement) != SQLITE_DONE) {
-			log(LOG_ERROR,"sqlitespider: Update error: %s",sqlite3_errmsg(db));
+			int err = sqlite3_errcode(db);
+			log(LOG_ERROR,"sqlitespider: Update error: %s",sqlite3_errstr(err));
 			sqlite3_finalize(updateStatement);
+			g_errno = map_sqlite_error_to_gb_errno(err);
 			return false;
 		}
 		sqlite3_finalize(updateStatement);
@@ -347,7 +372,9 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			"  WHERE m_firstIp=? and m_uh48=?";
 		sqlite3_stmt *updateStatement = NULL;
 		if(sqlite3_prepare_v2(db, update_statement, -1, &updateStatement, &pzTail) != SQLITE_OK) {
-			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errmsg(db),pzTail);
+			int err = sqlite3_errcode(db);
+			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
+			g_errno = map_sqlite_error_to_gb_errno(err);
 			return false;
 		}
 		
@@ -360,8 +387,10 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 		sqlite3_bind_int64(updateStatement, 7, uh48);
 		
 		if(sqlite3_step(updateStatement) != SQLITE_DONE) {
-			log(LOG_ERROR,"sqlitespider: Update error: %s",sqlite3_errmsg(db));
+			int err = sqlite3_errcode(db);
+			log(LOG_ERROR,"sqlitespider: Update error: %s",sqlite3_errstr(err));
 			sqlite3_finalize(updateStatement);
+			g_errno = map_sqlite_error_to_gb_errno(err);
 			return false;
 		}
 		sqlite3_finalize(updateStatement);
@@ -405,7 +434,8 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 			" WHERE m_firstIp=? and m_uh48>=? and m_uh48<=?"
 			" ORDER BY m_firstIp, m_uh48";
 		if(sqlite3_prepare_v2(db, statement_text, -1, &stmt, &pzTail) != SQLITE_OK) {
-			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errmsg(db),pzTail);
+			int err = sqlite3_errcode(db);
+			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
 			g_errno = EBADENGINEER;
 			return false;
 		}
@@ -429,7 +459,8 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 			" WHERE m_firstIp>=? and m_firstIp<=?"
 			" ORDER BY m_firstIp, m_uh48";
 		if(sqlite3_prepare_v2(db, statement_text, -1, &stmt, &pzTail) != SQLITE_OK) {
-			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errmsg(db),pzTail);
+			int err = sqlite3_errcode(db);
+			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
 			g_errno = EBADENGINEER;
 			return false;
 		}
@@ -558,7 +589,8 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		listLastKey = sreq.m_key;
 	}
 	if(rc!=SQLITE_DONE && rc!=SQLITE_ROW) {
-		log(LOG_ERROR,"sqlitespider: Fetch error: %s",sqlite3_errmsg(db));
+		int err = sqlite3_errcode(db);
+		log(LOG_ERROR,"sqlitespider: Fetch error: %s",sqlite3_errstr(err));
 		g_errno = EBADENGINEER; //TODO
 		return false;
 	}
@@ -595,4 +627,15 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 	logTrace( g_conf.m_logTraceSpider, "sqlitespider: listSize = %d", list->getListSize());
 	
 	return true;
+}
+
+
+
+static int map_sqlite_error_to_gb_errno(int err) {
+	switch(err) {
+		case SQLITE_NOMEM:      return ENOMEM;
+		case SQLITE_FULL:       return ENOSPC;
+		case SQLITE_CORRUPT:    return ECORRUPTDATA;
+		default:                return EINTERNALERROR;
+	}
 }
