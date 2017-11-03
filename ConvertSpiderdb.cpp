@@ -73,16 +73,23 @@ int convertSpiderDb(const char *collname) {
 	char collectionDirName[1024];
 	sprintf(collectionDirName, "%scoll.%s.%d", g_hostdb.m_dir, collname, (int)collnum);
 	
-	char sqlitedbName[1024];
-	sprintf(sqlitedbName, "%s/spiderdb.sqlite3", collectionDirName);
-	if(access(sqlitedbName,F_OK)==0) {
-		log(LOG_ERROR,"convert: %s already exists. Aborting conversion", sqlitedbName);
+	char temporarySqlitedbName[1024];
+	char finalSqlitedbName[1024];
+	sprintf(temporarySqlitedbName, "%s/spiderdb.sqlite3.new", collectionDirName);
+	sprintf(finalSqlitedbName, "%s/spiderdb.sqlite3", collectionDirName);
+	if(access(finalSqlitedbName,F_OK)==0) {
+		log(LOG_ERROR,"convert: %s already exists. Aborting conversion", finalSqlitedbName);
+		return 3;
+	}
+	if(::unlink(temporarySqlitedbName)!=0 && errno!=ENOENT) {
+		log(LOG_ERROR,"convert: %s exists and could not be removed. Aborting conversion", temporarySqlitedbName);
 		return 3;
 	}
 	
+	
 	sqlite3 *db = NULL;
-	if(sqlite3_open_v2(sqlitedbName,&db,SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE,NULL) != SQLITE_OK) {
-		log(LOG_ERROR,"convertsqlite3_open_v2: %s: %s", sqlitedbName, sqlite3_errmsg(db));
+	if(sqlite3_open_v2(temporarySqlitedbName,&db,SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE,NULL) != SQLITE_OK) {
+		log(LOG_ERROR,"convertsqlite3_open_v2: %s: %s", temporarySqlitedbName, sqlite3_errmsg(db));
 		return 4;
 	}
 	
@@ -102,18 +109,21 @@ int convertSpiderDb(const char *collname) {
 	if(sqlite3_prepare_v2(db, insert_statement_no_reply, sizeof(insert_statement_no_reply)-1, &insertStatementNoReply, &pzTail) != SQLITE_OK) {
 		log(LOG_ERROR,"Statement preparation error %s at or near %s",sqlite3_errmsg(db),pzTail);
 		sqlite3_close(db);
+		(void)::unlink(temporarySqlitedbName);
 		return 6;
 	}
 	
 	if(sqlite3_prepare_v2(db, insert_statement_with_reply, sizeof(insert_statement_with_reply)-1, &insertStatementWithReply, &pzTail) != SQLITE_OK) {
 		log(LOG_ERROR,"Statement preparation error %s at or near %s",sqlite3_errmsg(db),pzTail);
 		sqlite3_close(db);
+		(void)::unlink(temporarySqlitedbName);
 		return 7;
 	}
 	
 	if(sqlite3_prepare_v2(db, update_statement_duplicate_request, sizeof(update_statement_duplicate_request)-1, &updateStatementDuplicateRequest, &pzTail) != SQLITE_OK) {
 		log(LOG_ERROR,"Statement preparation error %s at or near %s",sqlite3_errmsg(db),pzTail);
 		sqlite3_close(db);
+		(void)::unlink(temporarySqlitedbName);
 		return 8;
 	}
 	
@@ -152,7 +162,7 @@ int convertSpiderDb(const char *collname) {
 				 false))         // isRealMerge
 		{
 			log(LOG_LOGIC,"db: getList did not block.");
-			return -1;
+			goto abort_conversion;
 		}
 		// all done if empty
 		if(list.isEmpty())
@@ -249,7 +259,9 @@ int convertSpiderDb(const char *collname) {
 				}
 				
 				if(sqlite3_step(stmt) != SQLITE_DONE) {
-					log(LOG_ERROR,"insert error: %s",sqlite3_errmsg(db));
+					int err = sqlite3_errcode(db);
+					log(LOG_ERROR,"insert error, err=%d: %s",err,sqlite3_errstr(err));
+					goto abort_conversion;
 				}
 				
 				sqlite3_clear_bindings(stmt);
@@ -268,14 +280,20 @@ int convertSpiderDb(const char *collname) {
 				sqlite3_bind_int64(updateStatementDuplicateRequest, 17, Spiderdb::getUrlHash48(reinterpret_cast<const key128_t*>(srec)));
 				
 				if(sqlite3_step(updateStatementDuplicateRequest) != SQLITE_DONE) {
-					log(LOG_ERROR,"update error: %s",sqlite3_errmsg(db));
+					int err = sqlite3_errcode(db);
+					log(LOG_ERROR,"update error, err=%d: %s",err,sqlite3_errstr(err));
+					goto abort_conversion;
 				}
 				
 				sqlite3_clear_bindings(updateStatementDuplicateRequest);
 				sqlite3_reset(updateStatementDuplicateRequest);
 			}
 		}
-		sqlite3_exec(db,"COMMIT",NULL,NULL,NULL);
+		if(sqlite3_exec(db,"COMMIT",NULL,NULL,NULL)!=SQLITE_OK) {
+			int err = sqlite3_errcode(db);
+			log(LOG_ERROR,"commit error, err=%d: %s",err,sqlite3_errstr(err));
+			goto abort_conversion;
+		}
 		
 		//copy prevspiderreply to tmp buf, so we can rememer the value to next list
 		if(prevSpiderReply && sizeof(key128_t)+prevSpiderReply->m_dataSize < sizeof(prevSpiderReplyBuf)) {
@@ -302,5 +320,19 @@ int convertSpiderDb(const char *collname) {
 	
 	sqlite3_close(db);
 	
+	if(::rename(temporarySqlitedbName,finalSqlitedbName)!=0) {
+		log(LOG_ERROR,"Could not rename %s to %s: %d (%s)", temporarySqlitedbName, finalSqlitedbName, errno, strerror(errno));
+		(void)::unlink(temporarySqlitedbName);
+		return 10;
+	}
+	
 	return 0;
+
+abort_conversion:
+	sqlite3_finalize(insertStatementNoReply);
+	sqlite3_finalize(insertStatementWithReply);
+	sqlite3_finalize(updateStatementDuplicateRequest);
+	sqlite3_close(db);
+	(void)::unlink(temporarySqlitedbName);
+	return 11;
 }
