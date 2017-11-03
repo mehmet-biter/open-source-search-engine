@@ -3714,7 +3714,7 @@ static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int3
 			const char *reason = NULL;
 
 			if (isUrlUnwanted(*url, &reason)) {
-				fprintf(stdout, "%" PRId64 "|%s|%s\n", docId, reason, url->getUrl());
+				fprintf(stdout, "%" PRId64"|%s|%s\n", docId, reason, url->getUrl());
 				continue;
 			}
 
@@ -3722,7 +3722,16 @@ static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int3
 			if (redirUrlPtr && *redirUrlPtr) {
 				Url *redirUrl = *redirUrlPtr;
 				if (isUrlUnwanted(*redirUrl, &reason)) {
-					fprintf(stdout, "%" PRId64 "|redir %s|%s|%s\n", docId, reason, url->getUrl(), redirUrl->getUrl());
+					fprintf(stdout, "%" PRId64"|redir %s|%s|%s\n", docId, reason, url->getUrl(), redirUrl->getUrl());
+					continue;
+				}
+			}
+
+			// check content
+			int32_t contentLen = xd->size_utf8Content > 0 ? (xd->size_utf8Content - 1) : 0;
+			if (contentLen > 0) {
+				if (!WantedChecker::check_single_content(url->getUrl(), xd->ptr_utf8Content, contentLen).wanted) {
+					fprintf(stdout, "%" PRId64"|blocked content|%s\n", docId, url->getUrl());
 					continue;
 				}
 			}
