@@ -161,8 +161,8 @@ bool UrlMatchList::load() {
 
 	urlmatchlistitem_ptr_t tmpUrlMatchList(new UrlMatchListItem);
 
-	int totalCount = 0;
-	bool loadedFile = false;
+	std::vector<std::string> filePaths;
+	bool anyFileModified = false;
 	while (const char *filename = dir.getNextFilename(m_filename.c_str())) {
 		std::string filePath(filename);
 		if (!m_dirname.empty()) {
@@ -186,6 +186,19 @@ bool UrlMatchList::load() {
 			continue;
 		}
 
+		anyFileModified = true;
+
+		m_lastModifiedTimes[filePath] = st.st_mtime;
+		filePaths.push_back(filePath);
+	}
+
+	if (!anyFileModified) {
+		return false;
+	}
+
+	int totalCount = 0;
+	bool loadedFile = false;
+	for (const auto &filePath : filePaths) {
 		log(LOG_INFO, "Loading '%s' for UrlMatchList", filePath.c_str());
 
 		int count = 0;
@@ -296,8 +309,6 @@ bool UrlMatchList::load() {
 			logTrace(g_conf.m_logTraceUrlMatchList, "Adding criteria '%s' to list", line.c_str());
 			++count;
 		}
-
-		m_lastModifiedTimes[filePath] = st.st_mtime;
 
 		loadedFile = true;
 		log(LOG_INFO, "Loaded '%s' with %d entries for UrlMatchList", filePath.c_str(), count);
