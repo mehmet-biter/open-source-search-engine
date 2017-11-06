@@ -428,7 +428,7 @@ clean:
 .PHONY: cleandb
 cleandb:
 	rm -rf coll.main.?
-	rm -f *-saved.dat spiderproxystats.dat addsinprogress.dat robots.txt.cache dns.cache
+	rm -f *-saved.dat spiderproxystats.dat addsinprogress.dat robots.txt.cache dns.cache rebalance.txt
 
 .PHONY: cleantest
 cleantest: cleandb
