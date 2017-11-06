@@ -409,6 +409,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 				      const key128_t &endKey,
 				      int32_t         minRecSizes)
 {
+	logTrace(g_conf.m_logTraceSpider, "SpiderdbRdbSqliteBridge::getList() ->");
 	sqlite3 *db = g_spiderdb_sqlite.getDb(collnum);
 	if(!db) {
 		log(LOG_ERROR,"sqlitespider: Could not get sqlite db for collection %d", collnum);
@@ -427,6 +428,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 	const char *pzTail="";
 	sqlite3_stmt *stmt;
 	if(firstIpStart==firstIpEnd) {
+		logTrace(g_conf.m_logTraceSpider, "single ip-range");
 		//since we are dealing with just a single ip-address it is fine to cut the data into chunks
 		breakMidIPAddressAllowed = true;
 		static const char statement_text[] =
@@ -448,6 +450,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		sqlite3_bind_int64(stmt, 2, uh48Start);
 		sqlite3_bind_int64(stmt, 3, uh48End);
 	} else {
+		logTrace(g_conf.m_logTraceSpider, "multiple-ip range");
 		if(uh48Start!=0) {
 			log(LOG_ERROR, " SpiderdbRdbSqliteBridge::getList(): startip!=endip, and uh48Start!=0");
 			gbshutdownLogicError();
