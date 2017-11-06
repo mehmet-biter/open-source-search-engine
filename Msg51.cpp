@@ -350,7 +350,7 @@ void Msg51::gotClusterRec(Slot *slot) {
 	// free up
 	slot->m_inUse = false;
 
-	RdbList *list = &m_slot->m_list;
+	RdbList *list = &slot->m_list;
 
 	// update m_errno if we had an error
 	if ( ! m_errno ) m_errno = g_errno;
