@@ -7069,12 +7069,12 @@ bool XmlDoc::isFirstUrlCanonical() {
 //   so we make use of the powerful XmlDoc class for this
 bool *XmlDoc::getIsAllowed ( ) {
 
-	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// return if we got it
 	if ( m_isAllowedValid )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. Valid. Allowed=%s",(m_isAllowed?"true":"false"));
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Valid. Allowed=%s",(m_isAllowed?"true":"false"));
 		return &m_isAllowed;
 	}
 
@@ -7094,7 +7094,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 
 		//log("xmldoc: skipping robots.txt lookup for %s",
 		//    m_firstUrl.m_url);
-		logTrace( g_conf.m_logTraceSpider, "END. !m_useRobotsTxt" );
+		logTrace( g_conf.m_logTraceXmlDoc, "END. !m_useRobotsTxt" );
 		return &m_isAllowed;
 	}
 
@@ -7103,14 +7103,14 @@ bool *XmlDoc::getIsAllowed ( ) {
 	if ( m_setFromTitleRec ) {
 		m_isAllowed      = true;
 		m_isAllowedValid = true;
-		logTrace( g_conf.m_logTraceSpider, "END. Allowed, m_setFromTitleRec" );
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Allowed, m_setFromTitleRec" );
 		return &m_isAllowed;
 	}
 
 	if ( m_recycleContent ) {
 		m_isAllowed      = true;
 		m_isAllowedValid = true;
-		logTrace( g_conf.m_logTraceSpider, "END. Allowed, m_recycleContent" );
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Allowed, m_recycleContent" );
 		return &m_isAllowed;
 	}
 
@@ -7125,7 +7125,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		m_crawlDelayValid = true;
 		// make it super fast...
 		m_crawlDelay      = 0;
-		logTrace( g_conf.m_logTraceSpider, "END. Allowed, WE are robots.txt" );
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Allowed, WE are robots.txt" );
 		return &m_isAllowed;
 	}
 
@@ -7136,7 +7136,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// error? or blocked?
 	if ( ! ip || ip == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. getIp failed" );
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getIp failed" );
 		return (bool *)ip;
 	}
 
@@ -7145,7 +7145,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// it is pointless... this can happen in the dir coll and we basically
 	// have "m_siteInCatdb" set to true
 	char ipbuf[16];
-	logTrace( g_conf.m_logTraceSpider, "IP=%s", iptoa(*ip,ipbuf));
+	logTrace( g_conf.m_logTraceXmlDoc, "IP=%s", iptoa(*ip,ipbuf));
 
 	if ( *ip == 1 || *ip == 0 || *ip == -1 ) {
 		// note this
@@ -7161,7 +7161,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		// is invalid in getNewSpiderReply()
 		m_crawlDelayValid = true;
 		m_crawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;;
-		logTrace( g_conf.m_logTraceSpider, "END. We allow it. FIX?" );
+		logTrace( g_conf.m_logTraceXmlDoc, "END. We allow it. FIX?" );
 		return &m_isAllowed;
 	}
 
@@ -7169,7 +7169,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	int32_t *pfip = getFirstIp();
 	if ( ! pfip || pfip == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. No first IP, return %s", ((bool *)pfip?"true":"false"));
+		logTrace( g_conf.m_logTraceXmlDoc, "END. No first IP, return %s", ((bool *)pfip?"true":"false"));
 		return (bool *)pfip;
 	}
 
@@ -7178,7 +7178,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	Url *cu = getCurrentUrl();
 	if ( ! cu || cu == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. No current URL, return %s", ((bool *)cu?"true":"false"));
+		logTrace( g_conf.m_logTraceXmlDoc, "END. No current URL, return %s", ((bool *)cu?"true":"false"));
 		return (bool *)cu;
 	}
 
@@ -7212,7 +7212,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	p += sprintf ( p , "/robots.txt" );
 	m_extraUrl.set ( buf );
 
-	logTrace( g_conf.m_logTraceSpider, "m_extraUrl [%s]", buf);
+	logTrace( g_conf.m_logTraceXmlDoc, "m_extraUrl [%s]", buf);
 
 
 	// . maxCacheAge = 3600 seconds = 1 hour for robots.txt
@@ -7223,7 +7223,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	XmlDoc **ped = getExtraDoc(m_extraUrl.getUrl(), cr->m_maxRobotsCacheAge);
 	if ( ! ped || ped == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. getExtraDoc (ped) failed, return %s", ((bool *)ped?"true":"false"));
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getExtraDoc (ped) failed, return %s", ((bool *)ped?"true":"false"));
 		return (bool *)ped;
 	}
 
@@ -7237,7 +7237,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		log("doc: had error getting robots.txt: %s",
 		    mstrerror(g_errno));
 
-		logTrace( g_conf.m_logTraceSpider, "END. Return NULL, ed failed" );
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Return NULL, ed failed" );
 
 		return NULL;
 	}
@@ -7247,7 +7247,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	char **pcontent = ed->getContent();
 	if ( ! pcontent || pcontent == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. pcontent failed, return %s", ((bool *)pcontent?"true":"false"));
+		logTrace( g_conf.m_logTraceXmlDoc, "END. pcontent failed, return %s", ((bool *)pcontent?"true":"false"));
 		return (bool *)pcontent;
 	}
 
@@ -7255,7 +7255,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	HttpMime *mime = ed->getMime();
 	if ( ! mime || mime == (HttpMime *)-1 )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. mime failed, return %s", ((bool *)mime?"true":"false"));
+		logTrace( g_conf.m_logTraceXmlDoc, "END. mime failed, return %s", ((bool *)mime?"true":"false"));
 		return (bool *)mime;
 	}
 
@@ -7299,13 +7299,11 @@ bool *XmlDoc::getIsAllowed ( ) {
 			m_robotsTxtHttpStatusDisallowed = true;
 		}
 
-		logTrace( g_conf.m_logTraceSpider, "END. httpStatus != 200. Return %s", (m_isAllowed?"true":"false"));
-
+		logTrace( g_conf.m_logTraceXmlDoc, "END. httpStatus != 200. Return %s", (m_isAllowed?"true":"false"));
 		// nuke it to save mem
 		nukeDoc ( ed );
 		return &m_isAllowed;
 	}
-
 
 	/// @todo ALC cache robots instead of robots.txt
 	// initialize robots
@@ -7320,11 +7318,10 @@ bool *XmlDoc::getIsAllowed ( ) {
 	}
 
 	m_isAllowedValid = true;
-
 	// nuke it to save mem
 	nukeDoc ( ed );
 
-	logTrace( g_conf.m_logTraceSpider, "END. Returning %s (m_crawlDelay=%" PRId32 "", (m_isAllowed?"true":"false"), m_crawlDelay);
+	logTrace( g_conf.m_logTraceXmlDoc, "END. Returning %s (m_crawlDelay=%" PRId32 ")", (m_isAllowed?"true":"false"), m_crawlDelay);
 
 	return &m_isAllowed;
 }
