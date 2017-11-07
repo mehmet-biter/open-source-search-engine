@@ -4085,20 +4085,22 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 	// get the latest url we are on
 	Url *u = getCurrentUrl();
 
-	//
-	// if we had a EDOCSIMPLIFIEDREDIR error, pretend it is a link
-	// so addOutlinkSpiderRecsToMetaList() will add it to spiderdb
-	//
-	if ( m_indexCodeValid && m_indexCode == EDOCSIMPLIFIEDREDIR ) {
-		m_links.set(m_redirUrl.getUrl());
-		m_linksValid = true;
-		return &m_links;
-	}
+	if (!doQuickSet) {
+		//
+		// if we had a EDOCSIMPLIFIEDREDIR error, pretend it is a link
+		// so addOutlinkSpiderRecsToMetaList() will add it to spiderdb
+		//
+		if (m_indexCodeValid && m_indexCode == EDOCSIMPLIFIEDREDIR) {
+			m_links.set(m_redirUrl.getUrl());
+			m_linksValid = true;
+			return &m_links;
+		}
 
-	if ( m_indexCodeValid && m_indexCode == EDOCNONCANONICAL ) {
-		m_links.set(m_canonicalUrl.getUrl());
-		m_linksValid = true;
-		return &m_links;
+		if (m_indexCodeValid && m_indexCode == EDOCNONCANONICAL) {
+			m_links.set(m_canonicalUrl.getUrl());
+			m_linksValid = true;
+			return &m_links;
+		}
 	}
 
 	CollectionRec *cr = getCollRec();
@@ -17099,7 +17101,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	iptoa(m_ip,ipString);
 
 	//char *ls = getIsLinkSpam();
-	Links *links = getLinks();
+	Links *links = getLinks(true);
 	// sanity check. should NEVER block!
 	if ( links == (void *)-1 ) { g_process.shutdownAbort(true); }
 
