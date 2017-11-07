@@ -99,7 +99,6 @@ int main(int argc, char **argv) {
 	endKey.setMax();
 
 	while (msg5.getList(RDB_TITLEDB, cr->m_collnum, &list, &startKey, &endKey, 10485760, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
-
 		if (list.isEmpty()) {
 			break;
 		}
@@ -114,13 +113,21 @@ int main(int argc, char **argv) {
 				continue;
 			}
 
+			if (xmlDoc.m_indexCode != 0 || xmlDoc.m_httpStatus != 200 || (xmlDoc.size_redirUrl > 1 && xmlDoc.size_utf8Content == 0)) {
+				continue;
+			}
+
+			if (xmlDoc.m_contentType != CT_HTML && xmlDoc.m_contentType != CT_TEXT) {
+				continue;
+			}
+
 			Words *words = xmlDoc.getWords();
 			if (words == nullptr || words == (Words*)-1) {
 				logf(LOG_TRACE, "Unable to get Words for docId=%" PRIu64, docId);
 				continue;
 			}
 
-			fprintf(stdout, "%" PRIu64"|%s|%d\n", docId, xmlDoc.getFirstUrl()->getUrl(), words->getNumAlnumWords());
+			fprintf(stdout, "%" PRIu64"|%d|%s\n", docId, words->getNumAlnumWords(), xmlDoc.getFirstUrl()->getUrl());
 		}
 
 		startKey = *(key96_t *)list.getLastKey();
