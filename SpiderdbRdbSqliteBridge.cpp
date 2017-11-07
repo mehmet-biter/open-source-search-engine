@@ -95,11 +95,13 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 		return false;
 	}
 	
+	long records = 0;
 	for(auto iter = begin; iter!=end; ++iter) {
 		if(!addRecord(collnum, db, iter->record, iter->record_len)) {
 			sqlite3_exec(db, "rollback", NULL, NULL, &errmsg);
 			return false;
 		}
+		records++;
 	}
 	
 	if(sqlite3_exec(db, "commit", NULL, NULL, &errmsg) != SQLITE_OK) {
@@ -108,6 +110,8 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 		g_errno = map_sqlite_error_to_gb_errno(err);
 	}
 	transaction_timer.finish();
+	if(g_conf.m_logTimingDb)
+		log(LOG_TIMING,"db:sqlite-add:record count=%ld",records);
 	
 	return true;
 }
