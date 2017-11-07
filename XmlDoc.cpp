@@ -9441,9 +9441,6 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 		gbshutdownLogicError();
 	}
 
-	// breach sanity check
-	//if ( strlen(cmd) > 2040 ) { g_process.shutdownAbort(true); }
-
 	// execute it
 	int retVal = gbsystem ( cmd );
 	if ( retVal == -1 ) {
@@ -9809,10 +9806,6 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 			match = true;
 		// skip tag if not iframe or frame
 		if ( ! match ) continue;
-		// check for frame or iframe
-		//if ( strncasecmp(p+1,"frame " , 6) &&
-		//     strncasecmp(p+1,"iframe ", 7) )
-		//	continue;
 
 		// get src tag (function in Words.h)
 		url = getFieldValue(p, pend - p, "src", &urlLen);
