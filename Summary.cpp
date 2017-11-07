@@ -658,7 +658,7 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 	}
 
 	// . we NULLify the section ptrs if we already used the word in another summary.
-	int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_TITLE;
+	int32_t badFlags = NOINDEXFLAGS|SEC_IN_TITLE;
 	if ( (bb[matchWordNum] & D_USED) || ( sp && (sp[matchWordNum]->m_flags & badFlags) ) ) {
 		// assume no best window
 		*besta = -1;
