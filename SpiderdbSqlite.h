@@ -41,7 +41,8 @@ class ScopedSqlitedbLock {
 	ScopedSqlitedbLock& operator=(const ScopedSqlitedbLock&) = delete;
 public:
 	ScopedSqlitedbLock(sqlite3 *db_);
-	~ScopedSqlitedbLock();
+	~ScopedSqlitedbLock() { unlock(); }
+	void unlock();
 };
 
 

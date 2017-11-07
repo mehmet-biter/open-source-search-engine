@@ -208,6 +208,8 @@ ScopedSqlitedbLock::ScopedSqlitedbLock(sqlite3 *db_)
 	sqlite3_mutex_enter(sqlite3_db_mutex(db));
 }
 
-ScopedSqlitedbLock::~ScopedSqlitedbLock() {
-	sqlite3_mutex_leave(sqlite3_db_mutex(db));
+void ScopedSqlitedbLock::unlock() {
+	if(db)
+		sqlite3_mutex_leave(sqlite3_db_mutex(db));
+	db = NULL;
 }

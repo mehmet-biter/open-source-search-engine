@@ -19,6 +19,29 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len);
 static int map_sqlite_error_to_gb_errno(int err);
 
+namespace {
+class DbTimerLogger {
+	const char *name;
+	int64_t timing_lock_start;
+public:
+	DbTimerLogger(const char *name_)
+	  : name(name_),
+	    timing_lock_start(gettimeofdayInMillisecondsGlobal())
+	{}
+	~DbTimerLogger() {
+		finish();
+	}
+	void finish() {
+		if(name && g_conf.m_logTimingDb) {
+			int64_t timing_lock_end = gettimeofdayInMillisecondsGlobal();
+			int64_t duration = timing_lock_end-timing_lock_start;
+			log(LOG_TIMING,"db:%s: lock: %ld ms", name, duration);
+			name = NULL;
+		}
+	}
+};
+}
+
 
 bool SpiderdbRdbSqliteBridge::addRecords(const std::vector<BatchedRecord> &records) {
 	return addRecords(g_spiderdb_sqlite, records);
@@ -60,8 +83,11 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 		return false;
 	}
 	
+	DbTimerLogger lock_timer("sqlite-add:lock");
 	ScopedSqlitedbLock ssl(db);
+	lock_timer.finish();
 	
+	DbTimerLogger transaction_timer("sqlite-add-trans");
 	char *errmsg = NULL;
 	int rc = sqlite3_exec(db, "begin transaction", NULL, NULL, &errmsg);
 	if(rc!=SQLITE_OK) {
@@ -81,6 +107,7 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 		log(LOG_ERROR,"sqlitespider: commit errror: %s", sqlite3_errstr(err));
 		g_errno = map_sqlite_error_to_gb_errno(err);
 	}
+	transaction_timer.finish();
 	
 	return true;
 }
@@ -92,7 +119,9 @@ bool SpiderdbRdbSqliteBridge::addRecord(collnum_t collnum, const void *record, s
 		log(LOG_ERROR,"sqlitespider: Could not get sqlite db for collection %d", collnum);
 		return false;
 	}
+	DbTimerLogger lock_timer("sqlite-add:lock");
 	ScopedSqlitedbLock ssl(db);
+	lock_timer.finish();
 	return addRecord(collnum,db,record,record_len);
 }
 
@@ -417,13 +446,16 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		return false;
 	}
 	
+	DbTimerLogger lock_timer("sqlite-getlist:lock");
 	ScopedSqlitedbLock ssl(db);
+	lock_timer.finish();
 	
 	int32_t firstIpStart = Spiderdb::getFirstIp(&startKey);
 	int32_t firstIpEnd = Spiderdb::getFirstIp(&endKey);
 	int64_t uh48Start = Spiderdb::getUrlHash48(&startKey);
 	int64_t uh48End = Spiderdb::getUrlHash48(&endKey);
 	
+	DbTimerLogger prepare_timer("sqlite-getlist:prepare");
 	bool breakMidIPAddressAllowed;
 	const char *pzTail="";
 	sqlite3_stmt *stmt;
@@ -475,7 +507,9 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		sqlite3_bind_int64(stmt, 1, (uint32_t)firstIpStart);
 		sqlite3_bind_int64(stmt, 2, (uint32_t)firstIpEnd);
 	}
+	prepare_timer.finish();
 	
+	DbTimerLogger read_timer("sqlite-getlist:read");
 	key128_t listLastKey;
 	IOBuffer io_buffer;
 	int rc;
@@ -603,6 +637,8 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		return false;
 	}
 	sqlite3_finalize(stmt);
+	read_timer.finish();
+	ssl.unlock();
 
 	
 	int32_t listSize = io_buffer.used();
