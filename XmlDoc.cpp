@@ -43,6 +43,7 @@
 #include "Mem.h"
 #include "UrlBlockCheck.h"
 #include <fcntl.h>
+#include <algorithm>
 #include "GbEncoding.h"
 #include "GbLanguage.h"
 #include "DnsBlockList.h"
@@ -9834,11 +9835,16 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		}
 
 		{
+			// ignore non visible iframe
+			// - treat width & height of 0px or 1px as non visible
+			// - treat style of display:none; or visibility:hidden; as non visible
 			int width = -1;
 			int height = -1;
 
 			int tmpLen = 0;
-			const char *tmpStr = getFieldValue(p, pend - p, "width", &tmpLen);
+			const char *tmpStr = nullptr;
+
+			tmpStr = getFieldValue(p, pend - p, "width", &tmpLen);
 			if (tmpStr && tmpLen > 0) {
 				width = atol2(tmpStr, tmpLen);
 			}
@@ -9848,9 +9854,23 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 				height = atol2(tmpStr, tmpLen);
 			}
 
-			// ignore non visible iframe (treat 1px as non visible)
 			if (width >= 0 && width <= 1 && height >= 0 && height <= 1) {
 				continue;
+			}
+
+			tmpStr = getFieldValue(p, pend - p, "style", &tmpLen);
+			if (tmpStr && tmpLen > 0) {
+				std::string styleStr(tmpStr, tmpLen);
+				styleStr.erase(std::remove_if(styleStr.begin(), styleStr.end(), ::isspace), styleStr.end());
+				if (styleStr.find("display:none;") != std::string::npos ||
+					styleStr.find("visibility:hidden;") != std::string::npos) {
+					continue;
+				}
+
+				if (styleStr.find("width:0px;") != std::string::npos &&
+				    styleStr.find("height:0px;") != std::string::npos) {
+					continue;
+				}
 			}
 		}
 
