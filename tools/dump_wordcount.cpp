@@ -121,13 +121,27 @@ int main(int argc, char **argv) {
 				continue;
 			}
 
+			Xml *xml = xmlDoc.getXml();
+			if (xml == nullptr || xml == (Xml*)-1) {
+				logf(LOG_TRACE, "Unable to get Xml for docId=%" PRIu64, docId);
+				continue;
+			}
+
+			bool hasScript = false;
+			for (int i = 0; i < xml->getNumNodes(); ++i) {
+				if (xml->getNodeId(i) == TAG_SCRIPT) {
+					hasScript = true;
+					break;
+				}
+			}
+
 			Words *words = xmlDoc.getWords();
 			if (words == nullptr || words == (Words*)-1) {
 				logf(LOG_TRACE, "Unable to get Words for docId=%" PRIu64, docId);
 				continue;
 			}
 
-			fprintf(stdout, "%" PRIu64"|%d|%s\n", docId, words->getNumAlnumWords(), xmlDoc.getFirstUrl()->getUrl());
+			fprintf(stdout, "%" PRIu64"|%d|%d|%s\n", docId, words->getNumAlnumWords(), hasScript, xmlDoc.getFirstUrl()->getUrl());
 		}
 
 		startKey = *(key96_t *)list.getLastKey();
