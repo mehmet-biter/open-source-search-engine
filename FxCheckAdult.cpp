@@ -16,7 +16,7 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
-#include "FxAdultCheck.h"
+#include "FxCheckAdult.h"
 #include "Log.h"
 #include "Conf.h"
 #include "Mem.h"
@@ -25,14 +25,16 @@
 #include "Words.h"
 #include "XmlDoc.h"
 
+TermCheckList g_checkAdultList;
 
-AdultCheck::AdultCheck(XmlDoc *xd, bool debug) :
-	m_debbuf(NULL), m_debbufUsed(0), m_debbufSize(0), m_docAdultScore(-1),
-	m_numUniqueDirtyWords(0), m_numUniqueDirtyPhrases(0), m_numWordsChecked(0),
+
+CheckAdult::CheckAdult(XmlDoc *xd, bool debug) :
+	m_debbuf(NULL), m_debbufUsed(0), m_debbufSize(0), m_docMatchScore(-1),
+	m_numUniqueMatchedWords(0), m_numUniqueMatchedPhrases(0), m_numWordsChecked(0),
 	m_emptyDocumentBody(false), m_resultValid(false), m_result(false) {
 
 	if( !xd ) {
-		log(LOG_ERROR, "AdultCheck::AdultCheck passed NULL-pointer");
+		log(LOG_ERROR, "CheckAdult::CheckAdult passed NULL-pointer");
 		gbshutdownLogicError();
 	}
 
@@ -58,7 +60,7 @@ AdultCheck::AdultCheck(XmlDoc *xd, bool debug) :
 	
 	if( debug ) {
 		m_debbufSize = 2000;
-		m_debbuf = (char *)mmalloc(m_debbufSize, "adultcheck");
+		m_debbuf = (char *)mmalloc(m_debbufSize, "CheckAdult");
 		if( m_debbuf ) {
 			// zero-terminate now as we may not need it, but may try logging it later
 			m_debbuf[0] = '\0';
@@ -70,38 +72,38 @@ AdultCheck::AdultCheck(XmlDoc *xd, bool debug) :
 }
 
 
-AdultCheck::~AdultCheck() {
+CheckAdult::~CheckAdult() {
 	if( m_debbuf ) {
-		mfree(m_debbuf, m_debbufSize, "adultcheck");
+		mfree(m_debbuf, m_debbufSize, "CheckAdult");
 	}
 }
 
 
-int32_t AdultCheck::getScore() {
-	return m_docAdultScore;
+int32_t CheckAdult::getScore() {
+	return m_docMatchScore;
 }
 
-int32_t AdultCheck::getNumUniqueDirtyWords() {
-	return m_numUniqueDirtyWords;
+int32_t CheckAdult::getNumUniqueMatchedWords() {
+	return m_numUniqueMatchedWords;
 }
 
-int32_t AdultCheck::getNumUniqueDirtyPhrases() {
-	return m_numUniqueDirtyPhrases;
+int32_t CheckAdult::getNumUniqueMatchedPhrases() {
+	return m_numUniqueMatchedPhrases;
 }
 
-int32_t AdultCheck::getNumWordsChecked() {
+int32_t CheckAdult::getNumWordsChecked() {
 	return m_numWordsChecked;
 }
 
-bool AdultCheck::hasEmptyDocumentBody() {
+bool CheckAdult::hasEmptyDocumentBody() {
 	return m_emptyDocumentBody;
 }
 
-const char *AdultCheck::getReason() {
+const char *CheckAdult::getReason() {
 	return m_reason.c_str();
 }
 
-const char *AdultCheck::getDebugInfo() {
+const char *CheckAdult::getDebugInfo() {
 	if( m_debbuf ) {
 		return m_debbuf;
 	}
@@ -109,7 +111,7 @@ const char *AdultCheck::getDebugInfo() {
 }
 
 
-bool AdultCheck::hasAdultRatingTag() {
+bool CheckAdult::hasAdultRatingTag() {
 	if( !m_xml ) {
 		return false;
 	}
@@ -184,7 +186,7 @@ bool AdultCheck::hasAdultRatingTag() {
 
 
 
-bool AdultCheck::hasAdultAds() {
+bool CheckAdult::hasAdultAds() {
 	if( !m_xml ) {
 		return false;
 	}
@@ -218,7 +220,7 @@ bool AdultCheck::hasAdultAds() {
 
 
 
-bool AdultCheck::isDocAdult() {
+bool CheckAdult::isDocAdult() {
 	// Hash table used to hold unique termIds to make sure we only count each unique word once
 	HashTableX uniqueTermIds;
 
@@ -226,31 +228,31 @@ bool AdultCheck::isDocAdult() {
 		return m_result;
 	}
 
-	m_docAdultScore = 0;
+	m_docMatchScore = 0;
 	//
 	// Check for adult TLDs
 	//
 	if( m_url && m_url->isAdult() ) {
 		m_reason = "adultTLD";
-		m_docAdultScore += 1000;
-		logTrace(g_conf.m_logTraceAdultCheck, "Adult TLD found in %s", m_url->getUrl());
+		m_docMatchScore += 1000;
+		logTrace(g_conf.m_logTraceTermCheckList, "Adult TLD found in %s", m_url->getUrl());
 	}
 
 	//
 	// Check for adult content meta tags
 	//
-	if( !m_docAdultScore ) {
+	if( !m_docMatchScore ) {
 		if( hasAdultRatingTag() ) {
 			m_reason = "adultRatingTag";
-			m_docAdultScore += 1000;
-			logTrace(g_conf.m_logTraceAdultCheck, "Rating tag found in %s", m_url->getUrl());
+			m_docMatchScore += 1000;
+			logTrace(g_conf.m_logTraceTermCheckList, "Rating tag found in %s", m_url->getUrl());
 		}
 
-		if( !m_docAdultScore &&
+		if( !m_docMatchScore &&
 			hasAdultAds() ) {
 			m_reason = "adultAds";
-			m_docAdultScore += 1000;
-			logTrace(g_conf.m_logTraceAdultCheck, "Adult ads found in %s", m_url->getUrl());
+			m_docMatchScore += 1000;
+			logTrace(g_conf.m_logTraceTermCheckList, "Adult ads found in %s", m_url->getUrl());
 		}
 	}	
 
@@ -258,7 +260,7 @@ bool AdultCheck::isDocAdult() {
 	//
 	// If not blocked by the cheaper checks, do the hard work and check document content
 	//
-	if( !m_docAdultScore ) {
+	if( !m_docMatchScore ) {
 		//
 		// Score words and phrases from the document body text
 		//
@@ -273,16 +275,16 @@ bool AdultCheck::isDocAdult() {
 				m_emptyDocumentBody = true;
 			}
 			else {
-				g_adultCheckList.getDirtyScore(m_words, m_phrases, &uniqueTermIds, &m_docAdultScore, &m_numUniqueDirtyWords, &m_numUniqueDirtyPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
+				g_checkAdultList.getScore(m_words, m_phrases, &uniqueTermIds, &m_docMatchScore, &m_numUniqueMatchedWords, &m_numUniqueMatchedPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
 				m_numWordsChecked += m_words->getNumWords();
 			}
-			logTrace(g_conf.m_logTraceAdultCheck, "%" PRId32 " words checked (%" PRId32 " unique) in body: %s. %" PRId32 " unique dirty words, %" PRId32 " unique dirty phrases. Score: %" PRId32 "",
-				m_words->getNumWords(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueDirtyWords, m_numUniqueDirtyPhrases, m_docAdultScore);
+			logTrace(g_conf.m_logTraceTermCheckList, "%" PRId32 " words checked (%" PRId32 " unique) in body: %s. %" PRId32 " unique matched words, %" PRId32 " unique matched phrases. Score: %" PRId32 "",
+				m_words->getNumWords(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueMatchedWords, m_numUniqueMatchedPhrases, m_docMatchScore);
 		}
 		else {
 			// No words in document body
 			m_emptyDocumentBody = true;
-			logTrace(g_conf.m_logTraceAdultCheck, "Document body is empty in %s", m_url->getUrl());
+			logTrace(g_conf.m_logTraceTermCheckList, "Document body is empty in %s", m_url->getUrl());
 		}
 
 		//
@@ -309,11 +311,11 @@ bool AdultCheck::isDocAdult() {
 				if( !metap.set(&metaw, &metab) ) {
 					log(LOG_ERROR,"isDocAdult: Could not set phrases for meta words");
 				}
-				g_adultCheckList.getDirtyScore(&metaw, &metap, &uniqueTermIds, &m_docAdultScore, &m_numUniqueDirtyWords, &m_numUniqueDirtyPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
+				g_checkAdultList.getScore(&metaw, &metap, &uniqueTermIds, &m_docMatchScore, &m_numUniqueMatchedWords, &m_numUniqueMatchedPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
 				m_numWordsChecked += metaw.getNumWords();
 
-				logTrace(g_conf.m_logTraceAdultCheck, "%" PRId32 " words checked (%" PRId32 " unique) in meta tags: %s. %" PRId32 " unique dirty words, %" PRId32 " unique dirty phrases. Score: %" PRId32 "",
-					metaw.getNumWords(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueDirtyWords, m_numUniqueDirtyPhrases, m_docAdultScore);
+				logTrace(g_conf.m_logTraceTermCheckList, "%" PRId32 " words checked (%" PRId32 " unique) in meta tags: %s. %" PRId32 " unique matched words, %" PRId32 " unique matched phrases. Score: %" PRId32 "",
+					metaw.getNumWords(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueMatchedWords, m_numUniqueMatchedPhrases, m_docMatchScore);
 			}
 		}
 
@@ -332,11 +334,11 @@ bool AdultCheck::isDocAdult() {
 			if( !urlp.set(&urlw, &urlb) ) {
 				log(LOG_ERROR,"isDocAdult: Could not set phrases for URL words");
 			}
-			g_adultCheckList.getDirtyScore(&urlw, &urlp, &uniqueTermIds, &m_docAdultScore, &m_numUniqueDirtyWords, &m_numUniqueDirtyPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
+			g_checkAdultList.getScore(&urlw, &urlp, &uniqueTermIds, &m_docMatchScore, &m_numUniqueMatchedWords, &m_numUniqueMatchedPhrases, m_debbuf, m_debbufUsed, m_debbufSize);
 			m_numWordsChecked += urlw.getNumWords();
 
-			logTrace(g_conf.m_logTraceAdultCheck, "%" PRId32 " words checked (%" PRId32 " unique) in URL: %s. %" PRId32 " unique dirty words, %" PRId32 " unique dirty phrases. Score: %" PRId32 "", 
-				urlw.getNumWords(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueDirtyWords, m_numUniqueDirtyPhrases, m_docAdultScore);
+			logTrace(g_conf.m_logTraceTermCheckList, "%" PRId32 " words checked (%" PRId32 " unique) in URL: %s. %" PRId32 " unique matched words, %" PRId32 " unique matched phrases. Score: %" PRId32 "", 
+				urlw.getNumWords(), uniqueTermIds.getNumUsedSlots(), m_url->getUrl(), m_numUniqueMatchedWords, m_numUniqueMatchedPhrases, m_docMatchScore);
 		}
 
 		//
@@ -369,9 +371,9 @@ bool AdultCheck::isDocAdult() {
 			//m_reason = "USC2257Disclaimer";
 
 			// Give it a score of 10 and count it as a phrase
-			m_docAdultScore += 10;
-			m_numUniqueDirtyPhrases++;
-			logTrace(g_conf.m_logTraceAdultCheck, "USC 2257 compliance statement found in %s: score=%" PRId32 "", m_url->getUrl(), m_docAdultScore);
+			m_docMatchScore += 10;
+			m_numUniqueMatchedPhrases++;
+			logTrace(g_conf.m_logTraceTermCheckList, "USC 2257 compliance statement found in %s: score=%" PRId32 "", m_url->getUrl(), m_docMatchScore);
 		}
 
         //TODO:
@@ -392,17 +394,17 @@ bool AdultCheck::isDocAdult() {
         //Os Pais devem usar um dos seguintes programas para salvaguardar os filhos do conteúdo erótico
         //Bescherm minderjarigen tegen expliciete beelden op internet met software als Netnanny, Cyberpatrol of Cybersitter.
 
-		if( m_docAdultScore > 0 ) {
+		if( m_docMatchScore > 0 ) {
 			m_reason = "adultTerms";
 		}
 	}
 
-	logTrace(g_conf.m_logTraceAdultCheck, "Final score %" PRId32 " for: %s. %" PRId32 " unique dirty words, %" PRId32 " unique dirty phrases", 
-		m_docAdultScore, m_url->getUrl(), m_numUniqueDirtyWords, m_numUniqueDirtyPhrases);
+	logTrace(g_conf.m_logTraceTermCheckList, "Final score %" PRId32 " for: %s. %" PRId32 " unique matched words, %" PRId32 " unique matched phrases", 
+		m_docMatchScore, m_url->getUrl(), m_numUniqueMatchedWords, m_numUniqueMatchedPhrases);
 
 	m_result = false;
-	if( ( m_docAdultScore >= 30 || m_numUniqueDirtyWords > 7) ||
-		( m_docAdultScore >= 30 || m_numUniqueDirtyPhrases >= 3) ) {
+	if( ( m_docMatchScore >= 30 || m_numUniqueMatchedWords > 7) ||
+		( m_docMatchScore >= 30 || m_numUniqueMatchedPhrases >= 3) ) {
 		m_result = true;
 	}
 	m_resultValid = true;

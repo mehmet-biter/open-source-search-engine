@@ -17,7 +17,7 @@ OBJS_O0 =  \
 	DailyMerge.o Dir.o Dns.o Domains.o \
 	Errno.o Entities.o \
 	File.o \
-	FxAdultCheckList.o FxAdultCheck.o\
+	FxTermCheckList.o FxCheckAdult.o FxCheckSpam.o \
 	GbMutex.o \
 	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o Docid2Siteflags.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
 	iana_charset.o Images.o ip.o \

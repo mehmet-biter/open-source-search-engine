@@ -90,7 +90,8 @@
 #include "SpiderdbHostDelete.h"
 #include "RobotsBlockedResultOverride.h"
 #include "UrlResultOverride.h"
-#include "FxAdultCheck.h"
+#include "FxCheckAdult.h"
+#include "FxCheckSpam.h"
 
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
@@ -125,6 +126,7 @@ static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool inc
 static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
 static void dumpWantedTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
 static void dumpAdultTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
+static void dumpSpamTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
 
 static void dumpUnwantedSpiderdbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
 
@@ -529,6 +531,10 @@ int main2 ( int argc , char *argv[] ) {
 			"\ttitledb (Wanted documents, checked against blocklist, plugins):\n"
 			"\t\tdump wt <collection> <fileNum> <numFiles> <includeTree>\n"
 			"\ttitledb (duplicates only):\n"
+			"\t\tdump at <collection> <fileNum> <numFiles> <includeTree>\n"
+			"\ttitledb (Adult titlerecs):\n"
+			"\t\tdump st <collection> <fileNum> <numFiles> <includeTree>\n"
+			"\ttitledb (Spam titlerecs):\n"
 			"\t\tdump D <collection> <fileNum> <numFiles> <includeTree> <docId>\n"
 			"\twaiting tree:\n"
 			"\t\tdump w <collection>\n"
@@ -1302,7 +1308,9 @@ int main2 ( int argc , char *argv[] ) {
 		}
 		else if ( argv[cmdarg+1][0] == 'x' )
 			dumpDoledb  (coll,startFileNum,numFiles,includeTree);
-		else if ( argv[cmdarg+1][0] == 's' ) {
+		//else if ( argv[cmdarg+1][0] == 's' ) {
+		else if (strcmp(argv[cmdarg+1], "s") == 0) {
+
 			int printStats = 0;
 			int32_t firstIp = 0;
 			if(cmdarg+6 < argc)
@@ -1345,6 +1353,8 @@ int main2 ( int argc , char *argv[] ) {
 			dumpWantedTitledbRecs(coll, startFileNum, numFiles, includeTree);
 		}  else if (strcmp(argv[cmdarg+1], "at") == 0) {
 			dumpAdultTitledbRecs(coll, startFileNum, numFiles, includeTree);
+		}  else if (strcmp(argv[cmdarg+1], "st") == 0) {
+			dumpSpamTitledbRecs(coll, startFileNum, numFiles, includeTree);
 		} else if (strcmp(argv[cmdarg+1], "us") == 0) {
 			dumpUnwantedSpiderdbRecs(coll, startFileNum, numFiles, includeTree);
 		} else {
@@ -1628,7 +1638,10 @@ int main2 ( int argc , char *argv[] ) {
 	g_urlResultOverride.init();
 
 	// Initialize adult detection
-	g_adultCheckList.init();
+	g_checkAdultList.init("adultwords.txt", "adultphrases.txt");
+
+	// Initialize spam detection
+	g_checkSpamList.init("spamphrases.txt");
 
 	// initialize generate global index thread
 	if (!RdbBase::initializeGlobalIndexThread()) {
@@ -3937,7 +3950,7 @@ static void dumpAdultTitledbRecs(const char *coll, int32_t startFileNum, int32_t
 	g_urlBlackList.init();
 	g_urlWhiteList.init();
 
-	g_adultCheckList.init();
+	g_checkAdultList.init("adultwords.txt", "adultphrases.txt");
 
 	for(;;) {
 		// use msg5 to get the list, should ALWAYS block since no threads
@@ -4016,7 +4029,7 @@ static void dumpAdultTitledbRecs(const char *coll, int32_t startFileNum, int32_t
 				// Get adult flag including generating debug info.
 				// Could just call xd->getIsAdult() to get the simple indicator
 				// without debug information.
-				AdultCheck achk(xd, true);
+				CheckAdult achk(xd, true);
 				bool newblocked = achk.isDocAdult();
 
 #if 0
@@ -4042,8 +4055,169 @@ static void dumpAdultTitledbRecs(const char *coll, int32_t startFileNum, int32_t
 
 					fprintf(stdout, "%" PRId64 "\t%s\t%s\t%s\tscore=%" PRId32 "\tunique dw=%" PRId32 "\tunique dp=%" PRId32 "\twords=%" PRId32 "\t%s\t%s\n",
 						docId, url->getUrl(), idxtim_s, achk.getReason(),
-						achk.getScore(), achk.getNumUniqueDirtyWords(), achk.getNumUniqueDirtyPhrases(),
+						achk.getScore(), achk.getNumUniqueMatchedWords(), achk.getNumUniqueMatchedPhrases(),
 						achk.getNumWordsChecked(), achk.hasEmptyDocumentBody()?"EMPTYDOC":"HASCONTENT", achk.getDebugInfo());
+				}
+			}
+		}
+
+		startKey = *(key96_t *)list.getLastKey();
+		startKey++;
+
+		// watch out for wrap around
+		if ( startKey < *(key96_t *)list.getLastKey() ) {
+			return;
+		}
+	}
+}
+
+
+
+static void dumpSpamTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree) {
+	if(startFileNum!=0 && numFiles<0) {
+		//this may apply to all files, but I haven't checked into hash-based ones yet
+		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
+		return;
+	}
+	if (!ucInit(g_hostdb.m_dir)) {
+		log("Unicode initialization failed!");
+		return;
+	}
+	// init our table for doing zobrist hashing
+	if ( ! hashinit() ) {
+		log("db: Failed to init hashtable." );
+		return;
+	}
+
+	g_titledb.init ();
+	g_titledb.getRdb()->addRdbBase1(coll);
+	key96_t startKey ;
+	key96_t endKey   ;
+	key96_t lastKey  ;
+	startKey.setMin();
+	endKey.setMax();
+	lastKey.setMin();
+	startKey = Titledb::makeFirstKey(0);
+	Msg5 msg5;
+	RdbList list;
+
+	// make this
+	XmlDoc *xd;
+	try {
+		xd = new (XmlDoc);
+	}
+	catch(std::bad_alloc&) {
+		fprintf(stdout,"could not alloc for xmldoc\n");
+		exit(-1);
+	}
+
+	const CollectionRec *cr = g_collectiondb.getRec(coll);
+	if(cr==NULL) {
+		fprintf(stderr,"Unknown collection '%s'\n", coll);
+		return;
+	}
+
+	// initialize shlib & blacklist
+	if (!WantedChecker::initialize()) {
+		fprintf(stderr, "Unable to initialize WantedChecker");
+		return;
+	}
+	g_urlBlackList.init();
+	g_urlWhiteList.init();
+
+	g_checkSpamList.init("spamphrases.txt");
+
+	for(;;) {
+		// use msg5 to get the list, should ALWAYS block since no threads
+		if ( ! msg5.getList ( RDB_TITLEDB   ,
+				      cr->m_collnum          ,
+				      &list         ,
+				      &startKey      ,
+				      &endKey        ,
+				      commandLineDumpdbRecSize,
+				      includeTree   ,
+				      startFileNum  ,
+				      numFiles      ,
+				      NULL          , // state
+				      NULL          , // callback
+				      0             , // niceness
+				      false         , // err correction?
+				      -1            , // maxRetries
+				      false))          // isRealMerge
+		{
+			log(LOG_LOGIC,"db: getList did not block.");
+			return;
+		}
+		// all done if empty
+		if ( list.isEmpty() ) {
+			return;
+		}
+
+		// loop over entries in list
+		for(list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
+			key96_t k = list.getCurrentKey();
+			char *rec = list.getCurrentRec();
+			int32_t recSize = list.getCurrentRecSize();
+			int64_t docId = Titledb::getDocIdFromKey(&k);
+
+			if ( k <= lastKey ) {
+				log("key out of order. lastKey.n1=%" PRIx32" n0=%" PRIx64" currKey.n1=%" PRIx32" n0=%" PRIx64" ",
+				    lastKey.n1, lastKey.n0, k.n1, k.n0);
+			}
+
+			lastKey = k;
+
+			if ( (k.n0 & 0x01) == 0) {
+				// delete key
+				continue;
+			}
+
+			// free the mem
+			xd->reset();
+
+			// uncompress the title rec
+			if ( ! xd->set2 ( rec , recSize , coll ,NULL , 0 ) ) {
+				//set2() may have logged something but not the docid
+				log(LOG_WARN, "dbdump: XmlDoc::set2() failed for docid %" PRId64, docId);
+				continue;
+			}
+
+			// extract the url
+			Url *url = xd->getFirstUrl();
+			if( url == (void *)-1 ) {
+				log(LOG_WARN, "dbdump: XmlDoc::getFirstUrl() failed for docid %" PRId64, docId);
+				continue;
+			}
+
+			const char *reason = NULL;
+
+			// Don't dump unwanted URLs
+			if( ! isUrlUnwanted(*url, &reason)) {
+				Url **redirUrlPtr = xd->getRedirUrl();
+				if (redirUrlPtr && *redirUrlPtr) {
+					Url *redirUrl = *redirUrlPtr;
+					if (isUrlUnwanted(*redirUrl, &reason)) {
+						continue;
+					}
+				}
+
+				// Get adult flag including generating debug info.
+				// Could just call xd->getIsAdult() to get the simple indicator
+				// without debug information.
+				CheckSpam schk(xd, true);
+				bool newblocked = schk.isDocSpam();
+
+				if( newblocked ) {
+					time_t idxtim = (time_t)xd->getIndexedTime();
+					struct tm tm_buf;
+					tm *tm1 = gmtime_r(&idxtim,&tm_buf);
+					char idxtim_s[64];
+					strftime(idxtim_s,64,"%Y%m%d-%H%M%S",tm1);
+
+					fprintf(stdout, "%" PRId64 "\t%s\t%s\t%s\tscore=%" PRId32 "\tunique dw=%" PRId32 "\tunique dp=%" PRId32 "\twords=%" PRId32 "\t%s\t%s\n",
+						docId, url->getUrl(), idxtim_s, schk.getReason(),
+						schk.getScore(), schk.getNumUniqueMatchedWords(), schk.getNumUniqueMatchedPhrases(),
+						schk.getNumWordsChecked(), schk.hasEmptyDocumentBody()?"EMPTYDOC":"HASCONTENT", schk.getDebugInfo());
 				}
 			}
 		}

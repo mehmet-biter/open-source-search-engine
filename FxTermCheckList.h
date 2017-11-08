@@ -16,8 +16,8 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
-#ifndef FXADULTCHECKLIST_H_
-#define FXADULTCHECKLIST_H_
+#ifndef FXTERMCHECKLIST_H_
+#define FXTERMCHECKLIST_H_
 
 #include <inttypes.h>
 #include <stddef.h>
@@ -30,24 +30,21 @@ class Xml;
 class XmlDoc;
 class Url;
 
-class AdultCheckList {
+class TermCheckList {
 public:
-	AdultCheckList();
-	~AdultCheckList();
-	bool init();
+	TermCheckList();
+	~TermCheckList();
+	bool init(const char *fname1, const char *fname2=NULL);
 
-	bool getDirtyScore(Words *w, Phrases *p, HashTableX *uniqueTermIds, int32_t *docAdultScore, int32_t *numUniqueDirtyWords, int32_t *numUniqueDirtyPhrases, char *debbuf, int32_t &debbuf_used, int32_t debbuf_size);
-
-protected:
-	bool load();
+	bool getScore(Words *w, Phrases *p, HashTableX *uniqueTermIds, int32_t *docScore, int32_t *numUniqueWords, int32_t *numUniquePhrases, char *debbuf, int32_t &debbuf_used, int32_t debbuf_size);
 
 private:
 	bool loadScoredTermList(HashTableX *ht, const char *filename);
 
-	HashTableX m_dirtyTerms;
+	HashTableX m_terms;
+
 	bool m_initialized;
 };
 
-extern AdultCheckList g_adultCheckList;
 
 #endif
