@@ -9371,7 +9371,7 @@ static void filterStartWrapper_r ( void *state ) {
 
 
 // sets m_errno on error
-void XmlDoc::filterStart_r ( bool amThread ) {
+void XmlDoc::filterStart_r(bool amThread) {
 	// get thread id
 	pthread_t id = pthread_self();
 	// sanity check
@@ -9385,24 +9385,29 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	// pass the input to the program through this file
 	// rather than a pipe, since popen() seems broken
 	char in[1024];
-	snprintf(in,1023,"%sin.%" PRId64, g_hostdb.m_dir , (int64_t)id );
-	unlink ( in );
+	snprintf(in, 1023, "%sin.%" PRId64, g_hostdb.m_dir, (int64_t)id);
+	unlink(in);
+
 	// collect the output from the filter from this file
 	char out[1024];
-	snprintf ( out , 1023,"%sout.%" PRId64, g_hostdb.m_dir, (int64_t)id );
-	unlink ( out );
+	snprintf(out, 1023, "%sout.%" PRId64, g_hostdb.m_dir, (int64_t)id);
+	unlink(out);
+
 	// ignore errno from those unlinks
 	errno = 0;
 
 	// open the input file
-	int fd = open ( in , O_WRONLY | O_CREAT , getFileCreationFlags() );
-	if ( fd < 0 ) {
+	int fd = open(in, O_WRONLY | O_CREAT, getFileCreationFlags());
+	if (fd < 0) {
 		m_errno = errno;
-		log(LOG_WARN, "build: Could not open file %s for writing: %s.", in,mstrerror(m_errno));
+		log(LOG_WARN, "build: Could not open file %s for writing: %s.", in, mstrerror(m_errno));
 		return;
 	}
+
 	// we are in a thread, this must be valid!
-	if ( ! m_mimeValid ) { g_process.shutdownAbort(true);}
+	if (!m_mimeValid) {
+		g_process.shutdownAbort(true);
+	}
 
 	// write the content into the input file
 	int32_t w = write ( fd , m_content , m_contentLen );
@@ -9411,7 +9416,7 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 		//int32_t w = fwrite ( m_buf , 1 , m_bufLen , pd );
 		//if ( w != m_bufLen ) {
 		m_errno = errno;
-		log(LOG_WARN, "build: Error writing to %s: %s.",in, mstrerror(m_errno));
+		log(LOG_WARN, "build: Error writing to %s: %s.", in, mstrerror(m_errno));
 		close(fd);
 		return;
 	}
@@ -9447,11 +9452,10 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 		log( LOG_WARN, "gb: system(%s) : %s", cmd, mstrerror( g_errno ) );
 	}
 
-	// all done with input file
-	// clean up the binary input file from disk
-	if ( unlink ( in ) != 0 ) {
+	// all done with input file. clean up the binary input file from disk
+	if (unlink(in) != 0) {
 		// log error
-		log( LOG_WARN, "gbfilter: unlink(%s): %s",in, strerror(errno));
+		log(LOG_WARN, "gbfilter: unlink(%s): %s", in, strerror(errno));
 
 		// ignore it, since it was not a processing error per se
 		errno = 0;
@@ -9471,38 +9475,37 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	// read right from pipe descriptor
 	int32_t r = read (fd, m_filteredContent,toRead);
 	// note errors
-	if ( r < 0 ) {
+	if (r < 0) {
 		log( LOG_WARN, "gbfilter: reading output: %s",mstrerror(errno));
 		// this is often bad fd from an oom error, so ignore it
-		//m_errno = errno;
 		errno = 0;
 		r = 0;
 	}
-	// clean up shop
-	close ( fd );
-	// delete output file
-	unlink ( out );
+
+	close(fd);
+	unlink(out);
 
 	// validate now
-	m_filteredContentValid = 1;
+	m_filteredContentValid = true;
+
 	// save the new buf len
 	m_filteredContentLen = r;
+
 	// ensure enough room for null term
-	if ( r >= m_filteredContentAllocSize ) {
+	if (r >= m_filteredContentAllocSize) {
 		g_process.shutdownAbort(true);
 	}
+
 	// ensure filtered stuff is NULL terminated so we can set the Xml class
-	m_filteredContent [ m_filteredContentLen ] = '\0';
-	// it is good
-	m_filteredContentValid = true;
+	m_filteredContent[m_filteredContentLen] = '\0';
 
 	// . at this point we got the filtered content
 	// . bitch if we didn't allocate enough space
-	if ( r > 0 && r == toRead )
-		log(LOG_LOGIC,"build: Had to truncate document to %" PRId32" bytes "
+	if (r > 0 && r == toRead)
+		log(LOG_LOGIC, "build: Had to truncate document to %" PRId32" bytes "
 		    "because did not allocate enough space for filter. "
 		    "This should never happen. It is a hack that should be "
-		    "fixed right.", toRead );
+		    "fixed right.", toRead);
 }
 
 
