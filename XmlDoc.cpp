@@ -9376,8 +9376,6 @@ void XmlDoc::filterStart_r(bool amThread) {
 	pthread_t id = pthread_self();
 	// sanity check
 	if ( ! m_contentTypeValid ) { g_process.shutdownAbort(true); }
-	// shortcut
-	int32_t ctype = m_contentType;
 
 	// assume none
 	m_filteredContentLen = 0;
@@ -9409,48 +9407,38 @@ void XmlDoc::filterStart_r(bool amThread) {
 		g_process.shutdownAbort(true);
 	}
 
+	const char *inputContent = m_content;
+	size_t inputContentLen = m_contentLen;
+
 	// write the content into the input file
-	int32_t w = write ( fd , m_content , m_contentLen );
+	ssize_t w = write(fd, inputContent, inputContentLen);
 	// did we get an error
-	if ( w != m_contentLen ) {
-		//int32_t w = fwrite ( m_buf , 1 , m_bufLen , pd );
-		//if ( w != m_bufLen ) {
+	if (w != static_cast<ssize_t>(inputContentLen)) {
 		m_errno = errno;
 		log(LOG_WARN, "build: Error writing to %s: %s.", in, mstrerror(m_errno));
 		close(fd);
 		return;
 	}
-	// close the file
-	close ( fd );
 
-	// shortcut
-	char *wdir = g_hostdb.m_dir;
+	// close the file
+	close(fd);
 
 	char cmd[2048] = {};
 
-	if (ctype == CT_PDF) {
-		snprintf(cmd, 2047, "%sgbconvert.sh %s %s %s", wdir, g_contentTypeStrings[ctype], in, out);
-	} else if ( ctype == CT_DOC ) {
-		// "wdir" include trailing '/'? not sure
-		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30 ; export ANTIWORDHOME=%s/antiword-dir ; timeout 30s nice -n 19 %s/antiword %s> %s" , wdir , wdir , in , out );
-	} else if ( ctype == CT_XLS ) {
-		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30 ; timeout 10s nice -n 19 %s/xlhtml %s > %s" , wdir , in , out );
-	// this is too buggy for now... causes hanging threads because it
-	// hangs, so i added 'timeout 10s' but that only works on newer
-	// linux version, so it'll just error out otherwise.
-	} else if ( ctype == CT_PPT ) {
-		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30 ; timeout 10s nice -n 19 %s/ppthtml %s > %s" , wdir , in , out );
-	} else if ( ctype == CT_PS  ) {
-		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30; timeout 10s nice -n 19 %s/pstotext %s > %s" , wdir , in , out );
-	} else {
-		gbshutdownLogicError();
+	switch (m_contentType) {
+		case CT_PDF:
+		case CT_DOC:
+		case CT_XLS:
+		case CT_PPT:
+		case CT_PS:
+			snprintf(cmd, 2047, "%sgbconvert.sh %s %s %s", g_hostdb.m_dir, g_contentTypeStrings[m_contentType], in, out);
+			break;
+		default:
+			gbshutdownLogicError();
 	}
 
 	// execute it
-	int retVal = gbsystem ( cmd );
-	if ( retVal == -1 ) {
-		log( LOG_WARN, "gb: system(%s) : %s", cmd, mstrerror( g_errno ) );
-	}
+	int retVal = gbsystem(cmd);
 
 	// all done with input file. clean up the binary input file from disk
 	if (unlink(in) != 0) {
@@ -9461,12 +9449,22 @@ void XmlDoc::filterStart_r(bool amThread) {
 		errno = 0;
 	}
 
-	fd = open ( out , O_RDONLY );
-	if ( fd < 0 ) {
-		m_errno = errno;
-		log( LOG_WARN, "gbfilter: Could not open file %s for reading: %s.", out,mstrerror(m_errno));
+	if (retVal == -1 || (WIFEXITED(retVal) && WEXITSTATUS(retVal) != 0) || !WIFEXITED(retVal)) {
+		log(LOG_WARN, "gb: system(%s): retVal=%d ifexited=%d exitstatus=%d url=%s",
+		    cmd, retVal, WIFEXITED(retVal), WEXITSTATUS(retVal), m_currentUrl.getUrl());
+		m_errno = m_indexCode = EDOCCONVERTFAILED;
+		m_indexCodeValid = true;
 		return;
 	}
+
+	fd = open(out, O_RDONLY);
+	if (fd < 0) {
+		log(LOG_WARN, "gbfilter: Could not open file %s for reading: %s. url=%s", out, mstrerror(m_errno), m_currentUrl.getUrl());
+		m_errno = m_indexCode = EDOCCONVERTFAILED;
+		m_indexCodeValid = true;
+		return;
+	}
+
 	// sanity -- need room to store a \0
 	if ( m_filteredContentAllocSize < 2 ) { g_process.shutdownAbort(true); }
 	// to read - leave room for \0
