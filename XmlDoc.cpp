@@ -27,7 +27,7 @@
 #include "Wiktionary.h"
 #include "Parms.h"
 #include "Domains.h"
-#include "FxAdultCheck.h"
+#include "FxCheckAdult.h"
 #include "Doledb.h"
 #include "IPAddressChecks.h"
 #include "PageRoot.h"
@@ -3179,7 +3179,7 @@ char *XmlDoc::getIsAdult ( ) {
 	// time it
 	int64_t start = gettimeofdayInMilliseconds();
 
-	AdultCheck achk(this);
+	CheckAdult achk(this);
 	m_isAdult = achk.isDocAdult();
 
 	// debug msg

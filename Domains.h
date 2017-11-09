@@ -15,4 +15,7 @@ char *getDomainOfIp ( char *host , int32_t hostLen , int32_t *dlen );
 // used by getDomain() above
 const char *getTLD ( const char *host , int32_t hostLen ) ;
 
+//is the string (com or co.uk) a known TLD?
+bool isTLD(const char *tld, int32_t tldLen);
+
 #endif // GB_DOMAINS_H

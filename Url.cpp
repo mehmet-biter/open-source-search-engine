@@ -2,7 +2,7 @@
 #include "UrlParser.h"
 #include "Domains.h"
 #include "HashTable.h"
-#include "FxAdultCheck.h"
+#include "FxCheckAdult.h"
 #include "ip.h"      // atoip ( s,len)
 #include "Punycode.h"
 #include "Unicode.h"

@@ -16,33 +16,30 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
-#ifndef FXADULTCHECK_H_
-#define FXADULTCHECK_H_
+#ifndef FXCHECKSPAM_H_
+#define FXCHECKSPAM_H_
 
 #include <inttypes.h>
 #include <stddef.h>
 #include <string>
-#include "FxAdultCheckList.h"
+#include "FxTermCheckList.h"
 
-class AdultCheck {
+class CheckSpam {
 public:
-	AdultCheck(XmlDoc *xd, bool debug=false);
-	~AdultCheck();
+	CheckSpam(XmlDoc *xd, bool debug=false);
+	~CheckSpam();
 
 	bool init();
-	bool isDocAdult();
+	bool isDocSpam();
 	int32_t getScore();
-	int32_t getNumUniqueDirtyWords();
-	int32_t getNumUniqueDirtyPhrases();
+	int32_t getNumUniqueMatchedWords();
+	int32_t getNumUniqueMatchedPhrases();
 	int32_t getNumWordsChecked();
 	bool hasEmptyDocumentBody();
 	const char *getReason();
 	const char *getDebugInfo();
 
 private:
-	bool hasAdultRatingTag();
-	bool hasAdultAds();
-
 	Url *m_url;
 	Xml *m_xml;
 	Words *m_words;
@@ -53,17 +50,16 @@ private:
 	int m_debbufSize;
 
 	std::string m_reason;
-	int32_t m_docAdultScore;
-	int32_t m_numUniqueDirtyWords;
-	int32_t m_numUniqueDirtyPhrases;
+	int32_t m_docMatchScore;
+	int32_t m_numUniqueMatchedWords;
+	int32_t m_numUniqueMatchedPhrases;
 	int32_t m_numWordsChecked;
 	bool m_emptyDocumentBody;
 	bool m_resultValid;
 	bool m_result;
 };
 
-
-bool isAdultTLD(const char *tld, size_t tld_len);
+extern TermCheckList g_checkSpamList;
 
 
 #endif
