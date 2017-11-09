@@ -2562,7 +2562,8 @@ void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSea
 			looksLikeADomain = false; //nope - last component isn't a known tld
 		if(looksLikeADomain) {
 			log(LOG_DEBUG, "query:Query '%s' looks like a domain", originalQuery());
-			//set all non-synonym terms as required and boost inUrl weight
+			//set all non-synonym terms as required and boost inUrl weight.
+			//The last term is marked non-required because the tld terms are normally not indexed (see XmlDoc::hashUrl() -> hashString() -> hashString3())
 			for(int i=0; i<m_numTerms; i++) {
 				if(!m_qterms[i].m_synonymOf && !m_qterms[i].m_ignored) {
 					m_qterms[i].m_isRequired         = true;
@@ -2572,6 +2573,7 @@ void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSea
 					m_qterms[i].m_leftPhraseTerm     = NULL;
 				}
 			}
+			m_qterms[m_numWords-1].m_isRequired = false;
 			scoringWeights->m_hashGroupWeights[HASHGROUP_INURL]  *= 10; //factor 10 seems to work fine
 			log(LOG_DEBUG, "query:Query modified");
 			return;
