@@ -14,6 +14,9 @@
 #include "SpiderdbRdbSqliteBridge.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/syscall.h>
+#include <spawn.h>
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -64,6 +67,31 @@ void Msg4In::finalizeIncomingThread() {
 // . NOTE: Must always call g_udpServer::sendReply or sendErrorReply() so
 //   read/send bufs can be freed
 static void Msg4In::processMsg4(void *item) {
+	//temporary debugging aid
+	static bool strace_setup = false;
+	if(!strace_setup) {
+		unsigned our_tid=(unsigned)syscall(SYS_gettid);
+		char strace_output_filename[1024];
+		sprintf(strace_output_filename, "strace.output.%ld",(long)getpid());
+		char tid_arg[64];
+		sprintf(tid_arg,"%u",(unsigned)our_tid);
+		char *argv[] = {
+			"strace",
+			"-tt",
+			"-q",
+			"-T",
+			"-p",
+			tid_arg,
+			"-o",
+			strace_output_filename,
+			"-C",
+			NULL
+		};
+		pid_t pid;
+		posix_spawnp(&pid, "strace", NULL, NULL, argv, NULL);
+		strace_setup = true;
+	}
+	
 	UdpSlot *slot = static_cast<UdpSlot*>(item);
 
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
