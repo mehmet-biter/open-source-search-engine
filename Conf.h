@@ -191,6 +191,8 @@ class Conf {
 
 	int32_t  m_maxTotalSpiders;
 
+	int32_t m_spiderFilterableMaxWordCount;
+
 	int32_t m_spiderDeadHostCheckInterval;
 
 	int64_t m_spiderUrlCacheMaxAge;

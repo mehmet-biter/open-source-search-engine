@@ -8,6 +8,10 @@ convert_file() {
 	output=$3
 
 	case "${filetype}" in
+	html)
+		./browser.py --input-file ${input} > "${output}"
+		exit $?
+		;;
 	pdf)
 		pdftohtml -q -i -noframes -enc UTF-8 -stdout "${input}" > "${output}"
 		exit $?
