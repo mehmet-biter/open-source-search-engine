@@ -160,6 +160,7 @@ Conf::Conf ( ) {
 	m_flushWrites = false;
 	m_verifyWrites = false;
 	m_corruptRetries = 0;
+	m_sqliteSynchronous = 1;
 	m_detectMemLeaks = false;
 	m_forceIt = false;
 	m_doIncrementalUpdating = false;

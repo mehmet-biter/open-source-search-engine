@@ -5827,6 +5827,16 @@ void Parms::init ( ) {
 	m->m_group = true;
 	m++;
 
+	m->m_title = "sqlite synchronous level";
+	m->m_desc  = "0=off, 1=normal, 2=full, 3=extra. See <a href=\"https://sqlite.org/pragma.html#pragma_synchronous\">sqlite documentation </a> for details";
+	m->m_cgi   = "sqlitesynchronous";
+	simple_m_set(Conf,m_sqliteSynchronous);
+	m->m_def   = "1";
+	m->m_flags = PF_API;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_MASTER;
+	m->m_group = true;
+	m++;
+
 	m->m_title = "verify tree integrity";
 	m->m_desc  = "Ensure that tree/buckets have not been corrupted after modifcations. "
 		"Helps isolate sources of corruption. Used for debugging.";

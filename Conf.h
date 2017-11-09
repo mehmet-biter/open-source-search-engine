@@ -274,6 +274,7 @@ class Conf {
 	bool   m_flushWrites; 
 	bool   m_verifyWrites;
 	int32_t   m_corruptRetries;
+	int m_sqliteSynchronous;
 
 	bool m_msg20FallbackToAllHosts;
 

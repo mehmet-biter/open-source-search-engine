@@ -10,6 +10,7 @@
 
 
 static sqlite3 *openDb(const char *sqlitedbName);
+static bool setSqliteSynchronous(sqlite3 *db, int value);
 
 SpiderdbSqlite g_spiderdb_sqlite(RDB_SPIDERDB_SQLITE);
 SpiderdbSqlite g_spiderdb_sqlite2(RDB2_SPIDERDB2_SQLITE);
@@ -161,6 +162,7 @@ static const char create_table_statmeent[] =
 ;
 
 
+
 static sqlite3 *openDb(const char *sqlitedbName) {
 	sqlite3 *db;
 	if(g_conf.m_readOnlyMode) {
@@ -170,6 +172,7 @@ static sqlite3 *openDb(const char *sqlitedbName) {
 			log(LOG_ERROR,"sqlite: Could not open %s: %s", sqlitedbName, sqlite3_errmsg(db));
 			return NULL;
 		}
+		(void)setSqliteSynchronous(db,g_conf.m_sqliteSynchronous);
 		return db;
 	}
 	//read-write, creation is allowed
@@ -178,6 +181,10 @@ static sqlite3 *openDb(const char *sqlitedbName) {
 		int rc = sqlite3_open_v2(sqlitedbName,&db,SQLITE_OPEN_READWRITE,NULL);
 		if(rc!=SQLITE_OK) {
 			log(LOG_ERROR,"sqlite: Could not open %s: %s", sqlitedbName, sqlite3_errmsg(db));
+			return NULL;
+		}
+		if(!setSqliteSynchronous(db,g_conf.m_sqliteSynchronous)) {
+			sqlite3_close(db);
 			return NULL;
 		}
 		return db;
@@ -197,9 +204,27 @@ static sqlite3 *openDb(const char *sqlitedbName) {
 		return NULL;
 	}
 	
+	if(!setSqliteSynchronous(db,g_conf.m_sqliteSynchronous)) {
+		sqlite3_close(db);
+		unlink(sqlitedbName);
+		return NULL;
+	}
+	
 	return db;
 }
 
+
+static bool setSqliteSynchronous(sqlite3 *db, int value) {
+	//yes, non-prepared statement, but value is fixed and it is unclear if pragmas can een be prepared
+	char pragma[64];
+	sprintf(pragma, "pragma main.synchronous = %d", value);
+	char *errmsg = NULL;
+	if(sqlite3_exec(db,pragma,NULL,NULL,&errmsg) != SQLITE_OK) {
+		log(LOG_ERROR,"sqlite: %s",sqlite3_errmsg(db));
+		return false;
+	}
+	return true;
+}
 
 
 ScopedSqlitedbLock::ScopedSqlitedbLock(sqlite3 *db_)
