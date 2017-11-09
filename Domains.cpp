@@ -6,7 +6,8 @@
 #include "GbMutex.h"
 #include "ScopedLock.h"
 
-static bool isTLD ( const char *tld, int32_t tldLen );
+static bool isTLDForUrl(const char *tld, int32_t tldLen);
+
 
 char *getDomainOfIp ( char *host , int32_t hostLen , int32_t *dlen ) {
 	// get host length
@@ -66,7 +67,7 @@ const char *getTLD ( const char *host , int32_t hostLen ) {
 	// reset our current tld ptr
 	const char *tld = NULL;
 	// is t a valid tld? if so, set "tld" to "t".
-	if ( isTLD ( t , hostEnd - t ) ) tld = t;
+	if ( isTLDForUrl ( t , hostEnd - t ) ) tld = t;
 	// host had no period at most we had just a tld so return NULL
 	if ( s == host ) return tld;
 
@@ -78,7 +79,7 @@ const char *getTLD ( const char *host , int32_t hostLen ) {
 	t  = s;
 	if ( *t == '.' ) t++; 
 	// is t a valid tld? if so, set "tld" to "t".
-	if ( isTLD ( t , hostEnd - t ) ) tld = t;
+	if ( isTLDForUrl ( t , hostEnd - t ) ) tld = t;
 	// host had no period at most we had just a tld so return NULL
 	if ( s == host ) return tld;
 
@@ -93,35 +94,18 @@ const char *getTLD ( const char *host , int32_t hostLen ) {
 	t  = s;
 	if ( *t == '.' ) t++; 
 	// is t a valid tld? if so, set "tld" to "t".
-	if ( isTLD ( t , hostEnd - t ) ) tld = t;
+	if ( isTLDForUrl ( t , hostEnd - t ) ) tld = t;
 	// we must have gotten the tld by this point, if there was a valid one
 	return tld;
 }
 
-//static TermTable  s_table(false);
+
 static HashTableX s_table;
 static bool       s_isInitialized = false;
 static GbMutex    s_tableMutex;
-static bool isTLD ( const char *tld , int32_t tldLen ) {
 
-	int32_t pcount = 0;
-	// now they are random!
-	for ( int32_t i = 0 ; i < tldLen ; i++ ) {
-		// period count
-		if ( tld[i] == '.' ) { pcount++; continue; }
-		if ( ! is_alnum_a(tld[i]) && tld[i] != '-' ) return false;
-	}
-
-	if ( pcount == 0 ) return true;
-	if ( pcount >= 2 ) return false;
-
-	// otherwise, if one period, check table to see if qualified
-
-	// . i shrunk this list a lot
-	// . see backups for the hold list
-	static const char * const s_tlds[] = {
-
-	  // From: https://data.iana.org/TLD/tlds-alpha-by-domain.txt
+// From: https://data.iana.org/TLD/tlds-alpha-by-domain.txt
+static const char * const s_tlds[] = {
 	"AAA",
 	"AARP",
 	"ABB",
@@ -1869,21 +1853,20 @@ static bool isTLD ( const char *tld , int32_t tldLen ) {
 	"ZJ.CN"
 };
 
+static bool initializeTLDTable() {
 	ScopedLock sl(s_tableMutex);
-	if ( ! s_isInitialized ) {
-		// set up the hash table
-		if ( ! s_table.set ( 8 , 0, sizeof(s_tlds)*2,NULL,0,false, "tldtbl") ) {
-			log( LOG_WARN, "build: Could not init table of TLDs.");
+	if(!s_isInitialized) {
+		if(!s_table.set(8, 0, sizeof(s_tlds)*2,NULL,0,false, "tldtbl")) {
+			log(LOG_WARN, "build: Could not init table of TLDs.");
 			return false;
 		}
 
-		// now add in all the stop words
 		int32_t n = (int32_t)sizeof(s_tlds)/ sizeof(char *); 
-		for ( int32_t i = 0 ; i < n ; i++ ) {
-			const char      *d    = s_tlds[i];
-			int32_t       dlen = strlen ( d );
-			int64_t  dh   = hash64Lower_a ( d , dlen );
-			if ( ! s_table.addKey (&dh,NULL) ) {
+		for(int32_t i = 0; i < n; i++) {
+			const char *d    = s_tlds[i];
+			int32_t     dlen = strlen (d);
+			int64_t     dh   = hash64Lower_a(d, dlen);
+			if(!s_table.addKey (&dh,NULL)) {
 				log( LOG_WARN, "build: dom table failed");
 				return false;
 			}
@@ -1891,10 +1874,39 @@ static bool isTLD ( const char *tld , int32_t tldLen ) {
 		s_isInitialized = true;
 	} 
 	sl.unlock();
+	return true;
+}
+
+static bool isTLDForUrl(const char *tld, int32_t tldLen) {
+	if(!initializeTLDTable())
+		return false;
+
+	int32_t pcount = 0;
+	for ( int32_t i = 0 ; i < tldLen ; i++ ) {
+		// period count
+		if ( tld[i] == '.' ) { pcount++; continue; }
+		if ( ! is_alnum_a(tld[i]) && tld[i] != '-' ) return false;
+	}
+
+	if ( pcount == 0 ) return true;
+	if ( pcount >= 2 ) return false;
+
+	// otherwise, if one period, check table to see if qualified
+
 	int64_t h = hash64Lower_a ( tld , tldLen ); // strlen(tld));
 	return s_table.isInTable ( &h );//getScoreFromTermId ( h );
 }		
 
+
+bool isTLD(const char *tld, int32_t tldLen) {
+	if(!initializeTLDTable())
+		return false;
+	int64_t h = hash64Lower_a(tld, tldLen);
+	return s_table.isInTable(&h);
+}
+
+
 void resetDomains ( ) {
 	s_table.reset();
+	s_isInitialized = false;
 }

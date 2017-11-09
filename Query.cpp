@@ -5,6 +5,7 @@
 #include "Bits.h"
 #include "Phrases.h"
 #include "Url.h"
+#include "Domains.h"
 #include "Clusterdb.h" // g_clusterdb.getNumGlobalRecs()
 #include "StopWords.h" // isQueryStopWord()
 #include "Sections.h"
@@ -2557,6 +2558,8 @@ void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSea
 		  m_qwords[3].m_wordLen==1 && m_qwords[3].m_word[0]=='.' &&
 		  is_alnum_utf8_string(m_qwords[4].m_word,m_qwords[4].m_word+m_qwords[4].m_wordLen))
 			looksLikeADomain = true;
+		if(looksLikeADomain && !isTLD(m_qwords[m_numWords-1].m_word,m_qwords[m_numWords-1].m_wordLen))
+			looksLikeADomain = false; //nope - last component isn't a known tld
 		if(looksLikeADomain) {
 			log(LOG_DEBUG, "query:Query '%s' looks like a domain", originalQuery());
 			//set all non-synonym terms as required and boost inUrl weight
