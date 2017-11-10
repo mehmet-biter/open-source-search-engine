@@ -110,6 +110,8 @@ Conf::Conf ( ) {
 	m_doStripeBalancing = false;
 	m_isLive = false;
 	m_maxTotalSpiders = 0;
+	m_spiderFilterableMaxWordCount = 0;
+	m_spiderDeadHostCheckInterval = 0;
 	m_spiderUrlCacheMaxAge = 0;
 	m_spiderUrlCacheSize = 0;
 	m_indexdbMaxIndexListAge = 0;

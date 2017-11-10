@@ -875,7 +875,6 @@ void Loop::wakeupPollLoop() {
 
 
 int gbsystem(const char *cmd ) {
-	log("gb: running system(\"%s\")",cmd);
-	int ret = system(cmd);
-	return ret;
+	log("gb: running system(\"%s\")", cmd);
+	return system(cmd);
 }

@@ -43,13 +43,15 @@
 #include "Mem.h"
 #include "UrlBlockCheck.h"
 #include <fcntl.h>
+#include <algorithm>
 #include "GbEncoding.h"
 #include "GbLanguage.h"
 #include "DnsBlockList.h"
 #include "GbDns.h"
 #include "RobotsCheckList.h"
 #include "UrlResultOverride.h"
-
+#include <iostream>
+#include <fstream>
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -7074,12 +7076,12 @@ bool XmlDoc::isFirstUrlCanonical() {
 //   so we make use of the powerful XmlDoc class for this
 bool *XmlDoc::getIsAllowed ( ) {
 
-	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// return if we got it
 	if ( m_isAllowedValid )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. Valid. Allowed=%s",(m_isAllowed?"true":"false"));
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Valid. Allowed=%s",(m_isAllowed?"true":"false"));
 		return &m_isAllowed;
 	}
 
@@ -7099,7 +7101,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 
 		//log("xmldoc: skipping robots.txt lookup for %s",
 		//    m_firstUrl.m_url);
-		logTrace( g_conf.m_logTraceSpider, "END. !m_useRobotsTxt" );
+		logTrace( g_conf.m_logTraceXmlDoc, "END. !m_useRobotsTxt" );
 		return &m_isAllowed;
 	}
 
@@ -7108,14 +7110,14 @@ bool *XmlDoc::getIsAllowed ( ) {
 	if ( m_setFromTitleRec ) {
 		m_isAllowed      = true;
 		m_isAllowedValid = true;
-		logTrace( g_conf.m_logTraceSpider, "END. Allowed, m_setFromTitleRec" );
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Allowed, m_setFromTitleRec" );
 		return &m_isAllowed;
 	}
 
 	if ( m_recycleContent ) {
 		m_isAllowed      = true;
 		m_isAllowedValid = true;
-		logTrace( g_conf.m_logTraceSpider, "END. Allowed, m_recycleContent" );
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Allowed, m_recycleContent" );
 		return &m_isAllowed;
 	}
 
@@ -7130,7 +7132,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		m_crawlDelayValid = true;
 		// make it super fast...
 		m_crawlDelay      = 0;
-		logTrace( g_conf.m_logTraceSpider, "END. Allowed, WE are robots.txt" );
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Allowed, WE are robots.txt" );
 		return &m_isAllowed;
 	}
 
@@ -7141,7 +7143,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// error? or blocked?
 	if ( ! ip || ip == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. getIp failed" );
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getIp failed" );
 		return (bool *)ip;
 	}
 
@@ -7150,7 +7152,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// it is pointless... this can happen in the dir coll and we basically
 	// have "m_siteInCatdb" set to true
 	char ipbuf[16];
-	logTrace( g_conf.m_logTraceSpider, "IP=%s", iptoa(*ip,ipbuf));
+	logTrace( g_conf.m_logTraceXmlDoc, "IP=%s", iptoa(*ip,ipbuf));
 
 	if ( *ip == 1 || *ip == 0 || *ip == -1 ) {
 		// note this
@@ -7166,7 +7168,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		// is invalid in getNewSpiderReply()
 		m_crawlDelayValid = true;
 		m_crawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;;
-		logTrace( g_conf.m_logTraceSpider, "END. We allow it. FIX?" );
+		logTrace( g_conf.m_logTraceXmlDoc, "END. We allow it. FIX?" );
 		return &m_isAllowed;
 	}
 
@@ -7174,7 +7176,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	int32_t *pfip = getFirstIp();
 	if ( ! pfip || pfip == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. No first IP, return %s", ((bool *)pfip?"true":"false"));
+		logTrace( g_conf.m_logTraceXmlDoc, "END. No first IP, return %s", ((bool *)pfip?"true":"false"));
 		return (bool *)pfip;
 	}
 
@@ -7183,7 +7185,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	Url *cu = getCurrentUrl();
 	if ( ! cu || cu == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. No current URL, return %s", ((bool *)cu?"true":"false"));
+		logTrace( g_conf.m_logTraceXmlDoc, "END. No current URL, return %s", ((bool *)cu?"true":"false"));
 		return (bool *)cu;
 	}
 
@@ -7217,7 +7219,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	p += sprintf ( p , "/robots.txt" );
 	m_extraUrl.set ( buf );
 
-	logTrace( g_conf.m_logTraceSpider, "m_extraUrl [%s]", buf);
+	logTrace( g_conf.m_logTraceXmlDoc, "m_extraUrl [%s]", buf);
 
 
 	// . maxCacheAge = 3600 seconds = 1 hour for robots.txt
@@ -7228,7 +7230,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	XmlDoc **ped = getExtraDoc(m_extraUrl.getUrl(), cr->m_maxRobotsCacheAge);
 	if ( ! ped || ped == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. getExtraDoc (ped) failed, return %s", ((bool *)ped?"true":"false"));
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getExtraDoc (ped) failed, return %s", ((bool *)ped?"true":"false"));
 		return (bool *)ped;
 	}
 
@@ -7242,7 +7244,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		log("doc: had error getting robots.txt: %s",
 		    mstrerror(g_errno));
 
-		logTrace( g_conf.m_logTraceSpider, "END. Return NULL, ed failed" );
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Return NULL, ed failed" );
 
 		return NULL;
 	}
@@ -7252,7 +7254,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	char **pcontent = ed->getContent();
 	if ( ! pcontent || pcontent == (void *)-1 )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. pcontent failed, return %s", ((bool *)pcontent?"true":"false"));
+		logTrace( g_conf.m_logTraceXmlDoc, "END. pcontent failed, return %s", ((bool *)pcontent?"true":"false"));
 		return (bool *)pcontent;
 	}
 
@@ -7260,7 +7262,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	HttpMime *mime = ed->getMime();
 	if ( ! mime || mime == (HttpMime *)-1 )
 	{
-		logTrace( g_conf.m_logTraceSpider, "END. mime failed, return %s", ((bool *)mime?"true":"false"));
+		logTrace( g_conf.m_logTraceXmlDoc, "END. mime failed, return %s", ((bool *)mime?"true":"false"));
 		return (bool *)mime;
 	}
 
@@ -7286,7 +7288,6 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// assume valid and ok to spider
 	m_isAllowed      = true;
 	m_isAllowedValid = true;
-
 	if (mime->getHttpStatus() != 200) {
 		/// @todo ALC we should allow more error codes
 		/// 2xx (successful) : allow
@@ -7304,13 +7305,11 @@ bool *XmlDoc::getIsAllowed ( ) {
 			m_robotsTxtHttpStatusDisallowed = true;
 		}
 
-		logTrace( g_conf.m_logTraceSpider, "END. httpStatus != 200. Return %s", (m_isAllowed?"true":"false"));
-
+		logTrace( g_conf.m_logTraceXmlDoc, "END. httpStatus != 200. Return %s", (m_isAllowed?"true":"false"));
 		// nuke it to save mem
 		nukeDoc ( ed );
 		return &m_isAllowed;
 	}
-
 
 	/// @todo ALC cache robots instead of robots.txt
 	// initialize robots
@@ -7325,11 +7324,10 @@ bool *XmlDoc::getIsAllowed ( ) {
 	}
 
 	m_isAllowedValid = true;
-
 	// nuke it to save mem
 	nukeDoc ( ed );
 
-	logTrace( g_conf.m_logTraceSpider, "END. Returning %s (m_crawlDelay=%" PRId32 "", (m_isAllowed?"true":"false"), m_crawlDelay);
+	logTrace( g_conf.m_logTraceXmlDoc, "END. Returning %s (m_crawlDelay=%" PRId32 ")", (m_isAllowed?"true":"false"), m_crawlDelay);
 
 	return &m_isAllowed;
 }
@@ -9209,14 +9207,6 @@ char **XmlDoc::getFilteredContent ( ) {
 	HttpMime *mime = getMime();
 	if ( ! mime || mime == (void *)-1 ) return (char **)mime;
 
-	// make sure NULL terminated always
-	// Why? pdfs can have nulls embedded
-	// if ( m_content &&
-	//      m_contentValid &&
-	//      m_content[m_contentLen] ) {
-	// 	g_process.shutdownAbort(true); }
-
-	int32_t max , max2;
 	bool filterable = false;
 
 	if ( !m_calledThread ) {
@@ -9230,7 +9220,29 @@ char **XmlDoc::getFilteredContent ( ) {
 		// empty content?
 		if ( ! m_content ) return &m_filteredContent;
 
-		if ( *ct == CT_HTML    ) return &m_filteredContent;
+		if (*ct == CT_HTML) {
+			Xml xml;
+			xml.set(m_content, m_contentLen, m_version, *ct);
+
+			Words words;
+			words.set(&xml, true);
+			if (words.getNumAlnumWords() > g_conf.m_spiderFilterableMaxWordCount) {
+				return &m_filteredContent;
+			}
+
+			bool hasScript = false;
+			for (int i = 0; i < xml.getNumNodes(); ++i) {
+				if (xml.getNodeId(i) == TAG_SCRIPT) {
+					hasScript = true;
+					break;
+				}
+			}
+
+			if (!hasScript) {
+				return &m_filteredContent;
+			}
+		}
+
 		if ( *ct == CT_TEXT    ) return &m_filteredContent;
 		if ( *ct == CT_XML     ) return &m_filteredContent;
 		// javascript - sometimes has address information in it, so keep it!
@@ -9245,6 +9257,7 @@ char **XmlDoc::getFilteredContent ( ) {
 
 		// unknown content types are 0 since it is probably binary... and
 		// we do not want to parse it!!
+		if ( *ct == CT_HTML ) filterable = true;
 		if ( *ct == CT_PDF ) filterable = true;
 		if ( *ct == CT_DOC ) filterable = true;
 		if ( *ct == CT_XLS ) filterable = true;
@@ -9261,34 +9274,6 @@ char **XmlDoc::getFilteredContent ( ) {
 
 		// invalidate
 		m_filteredContentValid = false;
-
-		CollectionRec *cr = getCollRec();
-		if( !cr ) {
-			return NULL;
-		}
-
-		// if not text/html or text/plain, use the other max
-		//max = MAXDOCLEN; // cr->m_maxOtherDocLen;
-		max = cr->m_maxOtherDocLen;
-
-		// if not text/html or text/plain, use the other max
-		// max = MAXDOCLEN; // cr->m_maxOtherDocLen;
-
-		// now we base this on the pre-filtered length to save memory because
-		// our maxOtherDocLen can be 30M and when we have a lot of injections
-		// at the same time we lose all our memory quickly
-		max2 = 5 * m_contentLen + 10*1024;
-		if ( max > max2 ) max = max2;
-		// user uses -1 to specify no maxTextDocLen or maxOtherDocLen
-		if ( max < 0    ) max = max2;
-		// make a buf to hold filtered reply
-		m_filteredContentAllocSize = max;
-		m_filteredContent = (char *)mmalloc(m_filteredContentAllocSize,"xdfc");
-		if ( ! m_filteredContent ) {
-			log("build: Could not allocate %" PRId32" bytes for call to "
-			    "content filter.",m_filteredContentMaxSize);
-			return NULL;
-		}
 
 		// reset this here in case thread gets killed by the kill() call below
 		m_filteredContentLen = 0;
@@ -9378,13 +9363,13 @@ static void filterStartWrapper_r ( void *state ) {
 
 
 // sets m_errno on error
-void XmlDoc::filterStart_r ( bool amThread ) {
+void XmlDoc::filterStart_r(bool amThread) {
 	// get thread id
 	pthread_t id = pthread_self();
 	// sanity check
-	if ( ! m_contentTypeValid ) { g_process.shutdownAbort(true); }
-	// shortcut
-	int32_t ctype = m_contentType;
+	if (!m_contentTypeValid || !m_mimeValid) {
+		g_process.shutdownAbort(true);
+	}
 
 	// assume none
 	m_filteredContentLen = 0;
@@ -9392,127 +9377,179 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	// pass the input to the program through this file
 	// rather than a pipe, since popen() seems broken
 	char in[1024];
-	snprintf(in,1023,"%sin.%" PRId64, g_hostdb.m_dir , (int64_t)id );
-	unlink ( in );
+	snprintf(in, 1023, "%sin.%" PRId64, g_hostdb.m_dir, (int64_t)id);
+	unlink(in);
+
 	// collect the output from the filter from this file
 	char out[1024];
-	snprintf ( out , 1023,"%sout.%" PRId64, g_hostdb.m_dir, (int64_t)id );
-	unlink ( out );
+	snprintf(out, 1023, "%sout.%" PRId64, g_hostdb.m_dir, (int64_t)id);
+	unlink(out);
+
 	// ignore errno from those unlinks
 	errno = 0;
 
 	// open the input file
-	int fd = open ( in , O_WRONLY | O_CREAT , getFileCreationFlags() );
-	if ( fd < 0 ) {
+	int fd = open(in, O_WRONLY | O_CREAT, getFileCreationFlags());
+	if (fd < 0) {
 		m_errno = errno;
-		log(LOG_WARN, "build: Could not open file %s for writing: %s.", in,mstrerror(m_errno));
+		log(LOG_WARN, "build: Could not open file %s for writing: %s.", in, mstrerror(m_errno));
 		return;
 	}
-	// we are in a thread, this must be valid!
-	if ( ! m_mimeValid ) { g_process.shutdownAbort(true);}
+
+	static const int bufLen = MAX_URL_LEN + 200;
+	char buf[bufLen];
+	const char *inputContent = nullptr;
+	size_t inputContentLen = 0;
+
+	if (m_contentType == CT_HTML) {
+		snprintf(buf, bufLen - 1, "%s\n%s", g_conf.m_spiderBotName, m_firstUrl.getUrl());
+		inputContent = buf;
+		inputContentLen = strlen(buf);
+	} else {
+		inputContent = m_content;
+		inputContentLen = m_contentLen;
+	}
 
 	// write the content into the input file
-	int32_t w = write ( fd , m_content , m_contentLen );
+	ssize_t w = write(fd, inputContent, inputContentLen);
 	// did we get an error
-	if ( w != m_contentLen ) {
-		//int32_t w = fwrite ( m_buf , 1 , m_bufLen , pd );
-		//if ( w != m_bufLen ) {
+	if (w != static_cast<ssize_t>(inputContentLen)) {
 		m_errno = errno;
-		log(LOG_WARN, "build: Error writing to %s: %s.",in, mstrerror(m_errno));
+		log(LOG_WARN, "build: Error writing to %s: %s.", in, mstrerror(m_errno));
 		close(fd);
 		return;
 	}
-	// close the file
-	close ( fd );
 
-	// shortcut
-	char *wdir = g_hostdb.m_dir;
+	// close the file
+	close(fd);
 
 	char cmd[2048] = {};
 
-	if (ctype == CT_PDF) {
-		snprintf(cmd, 2047, "%sgbconvert.sh %s %s %s", wdir, g_contentTypeStrings[ctype], in, out);
-	} else if ( ctype == CT_DOC ) {
-		// "wdir" include trailing '/'? not sure
-		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30 ; export ANTIWORDHOME=%s/antiword-dir ; timeout 30s nice -n 19 %s/antiword %s> %s" , wdir , wdir , in , out );
-	} else if ( ctype == CT_XLS ) {
-		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30 ; timeout 10s nice -n 19 %s/xlhtml %s > %s" , wdir , in , out );
-	// this is too buggy for now... causes hanging threads because it
-	// hangs, so i added 'timeout 10s' but that only works on newer
-	// linux version, so it'll just error out otherwise.
-	} else if ( ctype == CT_PPT ) {
-		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30 ; timeout 10s nice -n 19 %s/ppthtml %s > %s" , wdir , in , out );
-	} else if ( ctype == CT_PS  ) {
-		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30; timeout 10s nice -n 19 %s/pstotext %s > %s" , wdir , in , out );
-	} else {
-		gbshutdownLogicError();
+	switch (m_contentType) {
+		case CT_HTML:
+		case CT_PDF:
+		case CT_DOC:
+		case CT_XLS:
+		case CT_PPT:
+		case CT_PS:
+			snprintf(cmd, 2047, "%sgbconvert.sh %s %s %s", g_hostdb.m_dir, g_contentTypeStrings[m_contentType], in, out);
+			break;
+		default:
+			gbshutdownLogicError();
 	}
 
-	// breach sanity check
-	//if ( strlen(cmd) > 2040 ) { g_process.shutdownAbort(true); }
+	log(LOG_INFO, "gbfilter: converting url=%s from %s to html", m_currentUrl.getUrl(), g_contentTypeStrings[m_contentType]);
 
 	// execute it
-	int retVal = gbsystem ( cmd );
-	if ( retVal == -1 ) {
-		log( LOG_WARN, "gb: system(%s) : %s", cmd, mstrerror( g_errno ) );
-	}
+	int retVal = gbsystem(cmd);
 
-	// all done with input file
-	// clean up the binary input file from disk
-	if ( unlink ( in ) != 0 ) {
+	// all done with input file. clean up the binary input file from disk
+	if (unlink(in) != 0) {
 		// log error
-		log( LOG_WARN, "gbfilter: unlink(%s): %s",in, strerror(errno));
+		log(LOG_WARN, "gbfilter: unlink(%s): %s", in, strerror(errno));
 
 		// ignore it, since it was not a processing error per se
 		errno = 0;
 	}
 
-	fd = open ( out , O_RDONLY );
-	if ( fd < 0 ) {
-		m_errno = errno;
-		log( LOG_WARN, "gbfilter: Could not open file %s for reading: %s.", out,mstrerror(m_errno));
+	if (retVal == -1 || (WIFEXITED(retVal) && WEXITSTATUS(retVal) != 0) || !WIFEXITED(retVal)) {
+		log(LOG_WARN, "gb: system(%s): retVal=%d ifexited=%d exitstatus=%d url=%s",
+		    cmd, retVal, WIFEXITED(retVal), WEXITSTATUS(retVal), m_currentUrl.getUrl());
+		m_errno = m_indexCode = EDOCCONVERTFAILED;
+		m_indexCodeValid = true;
 		return;
 	}
-	// sanity -- need room to store a \0
-	if ( m_filteredContentAllocSize < 2 ) { g_process.shutdownAbort(true); }
-	// to read - leave room for \0
-	int32_t toRead = m_filteredContentAllocSize - 1;
 
-	// read right from pipe descriptor
-	int32_t r = read (fd, m_filteredContent,toRead);
-	// note errors
-	if ( r < 0 ) {
-		log( LOG_WARN, "gbfilter: reading output: %s",mstrerror(errno));
-		// this is often bad fd from an oom error, so ignore it
-		//m_errno = errno;
-		errno = 0;
-		r = 0;
+	CollectionRec *cr = getCollRec();
+	if (!cr) {
+		return;
 	}
-	// clean up shop
-	close ( fd );
-	// delete output file
-	unlink ( out );
+
+	// if not text/html or text/plain, use the other max
+	int32_t max = m_contentType == CT_HTML ? cr->m_maxTextDocLen : cr->m_maxOtherDocLen;
+
+	std::ifstream outputFile(out, std::ios::in | std::ios::binary);
+	if (!outputFile.is_open()) {
+		log(LOG_DEBUG, "gbfilter: Could not open file %s for reading: %s. url=%s", out, mstrerror(errno), m_firstUrl.getUrl());
+		m_errno = m_indexCode = EDOCCONVERTFAILED;
+		m_indexCodeValid = true;
+		return;
+	}
+
+	if (m_contentType == CT_HTML) {
+		std::string line;
+		if (!getline(outputFile, line)) {
+			log(LOG_DEBUG, "gbfilter: Could not read first line of file %s: %s. url=%s", out, mstrerror(m_errno),
+			    m_firstUrl.getUrl());
+			m_errno = m_indexCode = EDOCCONVERTFAILED;
+			m_indexCodeValid = true;
+			return;
+		}
+
+		m_currentUrl.set(line.c_str());
+	}
+
+	auto startPos = outputFile.tellg();
+	outputFile.seekg(0, std::ios::end);
+
+	auto endPos = outputFile.tellg();
+	auto size = endPos - startPos;
+	bool isSizeModified = false;
+	if (max != -1 && size > max) {
+		log(LOG_DEBUG, "gbfilter: truncating output from %d to %d", static_cast<int>(size), max);
+		size = max;
+		isSizeModified = true;
+	}
+
+	if (size == 0) {
+		log(LOG_DEBUG, "gbfilter: Empty content after url %s: %s. url=%s", out, mstrerror(m_errno), m_firstUrl.getUrl());
+		m_errno = m_indexCode = EDOCCONVERTFAILED;
+		m_indexCodeValid = true;
+		return;
+	}
+
+	// make a buf to hold filtered reply
+	m_filteredContentAllocSize = size + 1;
+	m_filteredContent = (char *)mmalloc(m_filteredContentAllocSize, "xdfc");
+	if (!m_filteredContent) {
+		m_errno = ENOMEM;
+		log(LOG_WARN, "gbfilter: Could not allocate %" PRId32" bytes for call to content filter.", m_filteredContentMaxSize);
+		outputFile.close();
+		unlink(out);
+		return;
+	}
+
+	outputFile.seekg(startPos);
+	if (!outputFile.read(m_filteredContent, size)) {
+		// unable to read content (treat as conversion failure?)
+		log(LOG_WARN, "gbfilter: Could not read output file. url=%s.", m_firstUrl.getUrl());
+		m_errno = m_indexCode = EDOCCONVERTFAILED;
+		m_indexCodeValid = true;
+		outputFile.close();
+		unlink(out);
+		return;
+	}
+
+	auto readSize = outputFile.gcount();
+	if (!isSizeModified && outputFile.gcount() != size) {
+		log(LOG_WARN, "gbfilter: document truncated to %d bytes", static_cast<int>(readSize));
+	}
+
+	unlink(out);
 
 	// validate now
-	m_filteredContentValid = 1;
-	// save the new buf len
-	m_filteredContentLen = r;
-	// ensure enough room for null term
-	if ( r >= m_filteredContentAllocSize ) {
-		g_process.shutdownAbort(true);
-	}
-	// ensure filtered stuff is NULL terminated so we can set the Xml class
-	m_filteredContent [ m_filteredContentLen ] = '\0';
-	// it is good
 	m_filteredContentValid = true;
 
-	// . at this point we got the filtered content
-	// . bitch if we didn't allocate enough space
-	if ( r > 0 && r == toRead )
-		log(LOG_LOGIC,"build: Had to truncate document to %" PRId32" bytes "
-		    "because did not allocate enough space for filter. "
-		    "This should never happen. It is a hack that should be "
-		    "fixed right.", toRead );
+	// save the new buf len
+	m_filteredContentLen = readSize;
+
+	// ensure enough room for null term
+	if (m_filteredContentLen >= m_filteredContentAllocSize) {
+		gbshutdownLogicError();
+	}
+
+	// ensure filtered stuff is NULL terminated so we can set the Xml class
+	m_filteredContent[m_filteredContentLen] = '\0';
 }
 
 
@@ -9749,6 +9786,15 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		return &m_expandedUtf8Content;
 	}
 
+	// check if it's already expanded
+	if (memmem(m_rawUtf8Content, m_rawUtf8ContentSize, "<gbframe>", 9) != 0 &&
+		memmem(m_rawUtf8Content, m_rawUtf8ContentSize, "</gbframe>", 10) != 0) {
+		m_expandedUtf8Content     = m_rawUtf8Content;
+		m_expandedUtf8ContentSize = m_rawUtf8ContentSize;
+		m_expandedUtf8ContentValid = true;
+		return &m_expandedUtf8Content;
+	}
+
 	// we need this so getExtraDoc does not core
 	int32_t *pfip = getFirstIp();
 	if ( ! pfip || pfip == (void *)-1 ) return (char **)pfip;
@@ -9774,6 +9820,7 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		// and see if we got the mime now
 		goto gotMime;
 	}
+
 	// now loop for frame and iframe tags
 	for ( ; p < pend ; p += getUtf8CharSize(p) ) {
 		// if never found a frame tag, just keep on chugging
@@ -9816,10 +9863,6 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 			match = true;
 		// skip tag if not iframe or frame
 		if ( ! match ) continue;
-		// check for frame or iframe
-		//if ( strncasecmp(p+1,"frame " , 6) &&
-		//     strncasecmp(p+1,"iframe ", 7) )
-		//	continue;
 
 		// get src tag (function in Words.h)
 		url = getFieldValue(p, pend - p, "src", &urlLen);
@@ -9842,11 +9885,16 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		}
 
 		{
+			// ignore non visible iframe
+			// - treat width & height of 0px or 1px as non visible
+			// - treat style of display:none; or visibility:hidden; as non visible
 			int width = -1;
 			int height = -1;
 
 			int tmpLen = 0;
-			const char *tmpStr = getFieldValue(p, pend - p, "width", &tmpLen);
+			const char *tmpStr = nullptr;
+
+			tmpStr = getFieldValue(p, pend - p, "width", &tmpLen);
 			if (tmpStr && tmpLen > 0) {
 				width = atol2(tmpStr, tmpLen);
 			}
@@ -9856,9 +9904,23 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 				height = atol2(tmpStr, tmpLen);
 			}
 
-			// ignore non visible iframe (treat 1px as non visible)
 			if (width >= 0 && width <= 1 && height >= 0 && height <= 1) {
 				continue;
+			}
+
+			tmpStr = getFieldValue(p, pend - p, "style", &tmpLen);
+			if (tmpStr && tmpLen > 0) {
+				std::string styleStr(tmpStr, tmpLen);
+				styleStr.erase(std::remove_if(styleStr.begin(), styleStr.end(), ::isspace), styleStr.end());
+				if (styleStr.find("display:none;") != std::string::npos ||
+					styleStr.find("visibility:hidden;") != std::string::npos) {
+					continue;
+				}
+
+				if (styleStr.find("width:0px;") != std::string::npos &&
+				    styleStr.find("height:0px;") != std::string::npos) {
+					continue;
+				}
 			}
 		}
 

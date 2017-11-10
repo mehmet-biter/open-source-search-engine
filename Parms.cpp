@@ -4863,6 +4863,16 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "spider filterable html document max word count";
+	m->m_desc  = "Maximum word count in the HTML document for it to be still filterable.";
+	m->m_cgi   = "sfmwc";
+	simple_m_set(Conf,m_spiderFilterableMaxWordCount);
+	m->m_def   = "0";
+	m->m_group = false;
+	m->m_units = "words";
+	m->m_page  = PAGE_MASTER;
+	m++;
+
 	m->m_title = "spider dead host check interval";
 	m->m_desc  = "Number of seconds before rechecking Hostdb for dead host. This will impact how fast we stop spidering"
 	             "after dead host is detected.";
