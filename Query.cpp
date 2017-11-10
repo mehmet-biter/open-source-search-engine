@@ -2558,8 +2558,21 @@ void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSea
 		  m_qwords[3].m_wordLen==1 && m_qwords[3].m_word[0]=='.' &&
 		  is_alnum_utf8_string(m_qwords[4].m_word,m_qwords[4].m_word+m_qwords[4].m_wordLen))
 			looksLikeADomain = true;
-		if(looksLikeADomain && !isTLD(m_qwords[m_numWords-1].m_word,m_qwords[m_numWords-1].m_wordLen))
-			looksLikeADomain = false; //nope - last component isn't a known tld
+		// is it a domain in the form of host.domain.tld1.tld2 ? (eg www.example.co.uk)
+		if(m_numWords==7 &&
+		  is_alnum_utf8_string(m_qwords[0].m_word,m_qwords[0].m_word+m_qwords[0].m_wordLen) &&
+		  m_qwords[1].m_wordLen==1 && m_qwords[1].m_word[0]=='.' &&
+		  is_alnum_utf8_string(m_qwords[2].m_word,m_qwords[2].m_word+m_qwords[2].m_wordLen) &&
+		  m_qwords[3].m_wordLen==1 && m_qwords[3].m_word[0]=='.' &&
+		  is_alnum_utf8_string(m_qwords[4].m_word,m_qwords[4].m_word+m_qwords[4].m_wordLen) &&
+		  m_qwords[5].m_wordLen==1 && m_qwords[5].m_word[0]=='.' &&
+		  is_alnum_utf8_string(m_qwords[6].m_word,m_qwords[6].m_word+m_qwords[6].m_wordLen))
+			looksLikeADomain = true;
+		if(looksLikeADomain) {
+			if(!isTLD(m_qwords[m_numWords-1].m_word,m_qwords[m_numWords-1].m_wordLen) &&
+			   !isTLD(m_qwords[m_numWords-3].m_word,m_qwords[m_numWords-3].m_wordLen+m_qwords[m_numWords-2].m_wordLen+m_qwords[m_numWords-1].m_wordLen))
+				looksLikeADomain = false; //nope - last component(s) isn't a known tld
+		}
 		if(looksLikeADomain) {
 			log(LOG_DEBUG, "query:Query '%s' looks like a domain", originalQuery());
 			//set all non-synonym terms as required and boost inUrl weight.
