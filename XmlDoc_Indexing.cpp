@@ -12,6 +12,8 @@
 #include "Posdb.h"
 #include "Conf.h"
 #include "UrlBlockCheck.h"
+#include "Domains.h"
+
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -43,7 +45,7 @@ public:
 		// gbsortby:gbisadultfloat32, gbrevsortby:gbisadultfloat32
 		m_createSortByForNumbers= false;
 		m_hashNumbers			= true;
-		m_hashCommonWebWords	= true;
+		m_filterUrlIndexableWords	= false;
 		m_linkerSiteRank		= 0;
 	}
 	class HashTableX *m_tt;
@@ -59,7 +61,7 @@ public:
 	bool			m_useSections;
 	bool			m_createSortByForNumbers;
 	bool			m_hashNumbers;
-	bool			m_hashCommonWebWords;
+	bool			m_filterUrlIndexableWords; //Do special filtering on words in url, eg. exclude "com" before path
 };
 
 
@@ -938,13 +940,13 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 
 	// BR 20160114: Skip numbers in urls when doing "inurl:" queries
 	hi.m_hashNumbers = false;
-	hi.m_hashCommonWebWords = false;
+	hi.m_filterUrlIndexableWords = true;
 	if ( ! hashString ( s,slen, &hi ) ) return false;
 
 
 	setStatus ( "hashing ip colon" );
 	hi.m_hashNumbers = true;
-	hi.m_hashCommonWebWords = true;
+	hi.m_filterUrlIndexableWords = false;
 
 	//
 	// HASH ip:a.b.c.d
@@ -1185,12 +1187,12 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		hi.m_prefix = NULL;
 		hi.m_desc = "middle domain";
 		hi.m_hashGroup = HASHGROUP_INURL;
-		hi.m_hashCommonWebWords = false;    // Skip www, com, http etc.
+		hi.m_filterUrlIndexableWords = true;    // Skip com, http etc.
 		if (!hashString(host, hlen, &hi)) {
 			return false;
 		}
 
-		hi.m_hashCommonWebWords = true;
+		hi.m_filterUrlIndexableWords = false;
 		if (!hashSingleTerm(fu->getDomain(), fu->getDomainLen(), &hi)) {
 			return false;
 		}
@@ -1824,8 +1826,12 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 	// a handy ptr
 	int32_t *wposvec = (int32_t *)wpos.getBufStart();
 
+	bool seen_slash = false;
 	int32_t i;
 	for ( i = 0 ; i < nw ; i++ ) {
+		if(wlens[i]==1 && wptrs[i][0]=='/')
+			seen_slash = true;
+		
 		if ( ! wids[i] ) continue;
 		// ignore if in repeated fragment
 		if ( fragVec && i<MAXFRAGWORDS && fragVec[i] == 0 ) continue;
@@ -1903,165 +1909,122 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 			wd = MAXDIVERSITYRANK;
 		}
 
-		// BR 20160115: Don't hash 'junk' words
 		bool skipword = false;
-		if( !hi->m_hashCommonWebWords )
-		{
-			
-			// Don't hash the words below as individual words.
-			// Yes, hack'ish. Will have to do for now..
-			switch( wlens[i] )
-			{
-				case 2:
-					if( memcmp(wptrs[i], "uk", 2) == 0 ||
-						memcmp(wptrs[i], "de", 2) == 0 ||
-						memcmp(wptrs[i], "dk", 2) == 0 ||
-						memcmp(wptrs[i], "co", 2) == 0 ||
-						memcmp(wptrs[i], "cn", 2) == 0 ||
-						memcmp(wptrs[i], "ru", 2) == 0 )
-					{
-						// Skip single word but include bigram (for domain searches)
-						skipword = true;
-					}
-					break;
-
-				case 3:
-					if( memcmp(wptrs[i], "www", 3) == 0 ||
-						memcmp(wptrs[i], "com", 3) == 0 ||
-						memcmp(wptrs[i], "net", 3) == 0 ||
-						memcmp(wptrs[i], "org", 3) == 0 ||
-						memcmp(wptrs[i], "biz", 3) == 0 ||
-						memcmp(wptrs[i], "edu", 3) == 0 ||
-						memcmp(wptrs[i], "gov", 3) == 0 )
-					{
-						// Skip single word but include bigram (for domain searches)
-						skipword = true;
-					}
-					break;
-
-				case 4:
-					if( memcmp(wptrs[i], "http", 4) == 0 )
-					{
-						// Never include as single word or in bigrams
-						continue;
-					}
-					break;
-
-				case 5:
-					if( memcmp(wptrs[i], "https", 5) == 0 )
-					{
-						// Never include as single word or in bigrams
-						continue;
-					}
-					break;
-					
-				default:
-					break;
-			}
-			
-			if( skipword )
-			{
-				// sticking to the gb style ;)
-				goto skipsingleword;
+		if(hi->m_filterUrlIndexableWords) {
+			if(!seen_slash) {
+				//Scheme/host/domain part of URL
+				//the http/https prefix is not indexed at all
+				if((wlens[i]==4 && memcmp(wptrs[i],"http",4)==0) ||
+				   (wlens[i]==5 && memcmp(wptrs[i],"https",5)==0))
+				{
+					// Never include as single word or in bigrams
+					continue; //skip to next word
+				}
+				//the terms .com .co .dk etc have lots of hits and give very little value for indexing. We only index the bigrams.
+				if(isTLD(wptrs[i], wlens[i])) {
+					skipword = true; //skip word by index bigram
+				}
+			} else {
+				//Path parth for URL
+				//potentially filter out "html" "aspx" index" "cgi" etc.
 			}
 		}
 
-		
-		// if using posdb
-		key144_t k;
+		if(!skipword) {
+			key144_t k;
 
-		Posdb::makeKey ( &k ,
-				  h ,
-				  0LL,//docid
-				  wposvec[i], // dist,
-				  densvec[i],// densityRank , // 0-15
-				  wd, // diversityRank 0-15
-				  ws, // wordSpamRank  0-15
-				  0, // siterank
-				  hashGroup ,
-				  // we set to docLang final hash loop
-				  langUnknown, // langid
-				  0 , // multiplier
-				  false , // syn?
-				  false , // delkey?
-				  hi->m_shardByTermId );
+			Posdb::makeKey(&k,
+				       h,
+				       0LL,//docid
+				       wposvec[i], // dist,
+				       densvec[i],// densityRank , // 0-15
+				       wd, // diversityRank 0-15
+				       ws, // wordSpamRank  0-15
+				       0, // siterank
+				       hashGroup,
+				       // we set to docLang final hash loop
+				       langUnknown, // langid
+				       0, // multiplier
+				       false, // syn?
+				       false, // delkey?
+				       hi->m_shardByTermId);
 
-		// key should NEVER collide since we are always incrementing
-		// the distance cursor, m_dist
-		dt->addTerm144 ( &k );
+			// key should NEVER collide since we are always incrementing
+			// the distance cursor, m_dist
+			dt->addTerm144(&k);
 
-		// add to wts for PageParser.cpp display
-		if ( wts ) {
-			if ( ! storeTerm ( wptrs[i],wlens[i],h,hi,i,
-					   wposvec[i], // wordPos
-					   densvec[i],// densityRank , // 0-15
-					   wd,//v[i],
-					   ws,
-					   hashGroup,
-					   wbuf,
-					   wts,
-					   SOURCE_NONE, // synsrc
-					   langId ,
-					   k))
-				return false;
-		}
+			// add to wts for PageParser.cpp display
+			if(wts) {
+				if(!storeTerm(wptrs[i],wlens[i],h,hi,i,
+					      wposvec[i], // wordPos
+					      densvec[i],// densityRank , // 0-15
+					      wd,//v[i],
+					      ws,
+					      hashGroup,
+					      wbuf,
+					      wts,
+					      SOURCE_NONE, // synsrc
+					      langId,
+					      k))
+					return false;
+			}
 
-		//
-		// STRIP POSSESSIVE WORDS for indexing
-		//
-		// . for now do simple stripping here
-		// . if word is "bob's" hash "bob"
-		//
+			//
+			// STRIP POSSESSIVE WORDS for indexing
+			//
+			// . for now do simple stripping here
+			// . if word is "bob's" hash "bob"
+			//
 
-		//@todo BR 20160107: Is this always good? Is the same done in Query.cpp?
-		if ( wlens[i] >= 3 &&
-		     wptrs[i][wlens[i]-2] == '\'' &&
-		     to_lower_a(wptrs[i][wlens[i]-1]) == 's' ) {
-			int64_t nah = hash64Lower_utf8 ( wptrs[i], wlens[i]-2 );
-			if ( plen>0 ) nah = hash64 ( nah , prefixHash );
-			Posdb::makeKey ( &k ,
-					  nah,
-					  0LL,//docid
-					  wposvec[i], // dist,
-					  densvec[i],// densityRank , // 0-15
-					  wd,//v[i], // diversityRank ,
-					  ws, // wordSpamRank ,
-					  0, //siterank
-					  hashGroup,
-					  // we set to docLang final hash loop
-					  langUnknown, // langid
-					  0 , // multiplier
-					  true  , // syn?
-					  false , // delkey?
-					  hi->m_shardByTermId );
-			// key should NEVER collide since we are always
-			// incrementing the distance cursor, m_dist
-			dt->addTerm144 ( &k );
-			// keep going if not debug
-			if ( ! wts ) continue;
-			// print the synonym
-			if ( ! storeTerm(wptrs[i], // synWord,
-					 wlens[i] -2, // strlen(synWord),
-					 nah,  // termid
-					 hi,
-					 i, // wordnum
-					 wposvec[i], // wordPos
-					 densvec[i],// densityRank , // 0-15
-					 wd,//v[i],
-					 ws,
-					 hashGroup,
-					 //false, // is phrase?
-					 wbuf,
-					 wts,
-					 SOURCE_GENERATED,
-					 langId,
-					 k) )
-				return false;
-		}
+			//@todo BR 20160107: Is this always good? Is the same done in Query.cpp?
+			if(wlens[i] >= 3 &&
+			   wptrs[i][wlens[i]-2] == '\'' &&
+			   to_lower_a(wptrs[i][wlens[i]-1]) == 's')
+			{
+				int64_t nah = hash64Lower_utf8(wptrs[i], wlens[i]-2);
+				if(plen>0) nah = hash64(nah, prefixHash);
+				Posdb::makeKey(&k,
+					       nah,
+					       0LL,//docid
+					       wposvec[i], // dist,
+					       densvec[i],// densityRank , // 0-15
+					       wd,//v[i], // diversityRank ,
+					       ws, // wordSpamRank ,
+					       0, //siterank
+					       hashGroup,
+					       // we set to docLang final hash loop
+					       langUnknown, // langid
+					       0 , // multiplier
+					       true, // syn?
+					       false, // delkey?
+					       hi->m_shardByTermId );
+				// key should NEVER collide since we are always
+				// incrementing the distance cursor, m_dist
+				dt->addTerm144(&k);
+				// keep going if not debug
+				if(!wts) continue;
+				// print the synonym
+				if(!storeTerm(wptrs[i], // synWord,
+					      wlens[i] -2, // strlen(synWord),
+					      nah,  // termid
+					      hi,
+					      i, // wordnum
+					      wposvec[i], // wordPos
+					      densvec[i],// densityRank , // 0-15
+					      wd,//v[i],
+					      ws,
+					      hashGroup,
+					      //false, // is phrase?
+					      wbuf,
+					      wts,
+					      SOURCE_GENERATED,
+					      langId,
+					      k))
+					return false;
+			}
+		} //!skipword
 
 
-
-skipsingleword:
 		////////
 		//
 		// two-word phrase
@@ -2076,6 +2039,7 @@ skipsingleword:
 			// hash with prefix
 			if ( plen > 0 ) ph2 = hash64 ( npid , prefixHash );
 			else            ph2 = npid;
+			key144_t k;
 			Posdb::makeKey ( &k ,
 					  ph2 ,
 					  0LL,//docid
@@ -2095,28 +2059,28 @@ skipsingleword:
 			// key should NEVER collide since we are always
 			// incrementing the distance cursor, m_dist
 			dt->addTerm144 ( &k );
-		}
 
-		// add to wts for PageParser.cpp display
-		if ( wts && npid ) {
-			// get phrase as a string
-			int32_t plen;
-			char phraseBuffer[256];
-			phrases->getPhrase(i, phraseBuffer, sizeof(phraseBuffer), &plen);
-			// store it
-			if ( ! storeTerm ( phraseBuffer,plen,ph2,hi,i,
-					   wposvec[i], // wordPos
-					   densvec[i],// densityRank , // 0-15
-					   MAXDIVERSITYRANK,//phrase
-					   ws,
-					   hashGroup,
-					   //true,
-					   wbuf,
-					   wts,
-					   SOURCE_BIGRAM, // synsrc
-					   langId,
-					   k) )
-				return false;
+			// add to wts for PageParser.cpp display
+			if(wts) {
+				// get phrase as a string
+				int32_t plen;
+				char phraseBuffer[256];
+				phrases->getPhrase(i, phraseBuffer, sizeof(phraseBuffer), &plen);
+				// store it
+				if(!storeTerm(phraseBuffer,plen,ph2,hi,i,
+					      wposvec[i], // wordPos
+					      densvec[i],// densityRank , // 0-15
+					      MAXDIVERSITYRANK,//phrase
+					      ws,
+					      hashGroup,
+					      //true,
+					      wbuf,
+					      wts,
+					      SOURCE_BIGRAM, // synsrc
+					      langId,
+					      k))
+					return false;
+			}
 		}
 
 
