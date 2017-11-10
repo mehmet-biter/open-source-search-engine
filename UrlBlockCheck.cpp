@@ -148,5 +148,13 @@ bool isUrlUnwanted(const Url &url, const char **reason) {
 		return true;
 	}
 
+	if (url.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION)) {
+		if (reason) {
+			*reason = "blocked ext";
+		}
+
+		return true;
+	}
+
 	return false;
 }
