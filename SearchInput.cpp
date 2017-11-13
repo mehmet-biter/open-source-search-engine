@@ -39,10 +39,6 @@ SearchInput::SearchInput() {
 	m_link = NULL;
 	m_quote1 = NULL;
 	m_quote2 = NULL;
-	m_imgUrl = NULL;
-	m_imgLink = NULL;
-	m_imgWidth = 0;
-	m_imgHeight = 0;
 	m_titleMaxLen = 0;
 	m_maxSerpScore = 0.0;
 	m_minSerpDocId = 0;

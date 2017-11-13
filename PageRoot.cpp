@@ -130,40 +130,7 @@ static bool printRadioButtons ( SafeBuf& sb , SearchInput *si ) {
 }
 
 static bool printLogo ( SafeBuf& sb , SearchInput *si ) {
-	// if an image was provided...
-	if ( ! si->m_imgUrl || ! si->m_imgUrl[0] ) {
-		// no, now we default to our logo
-		//return true;
-		//p += sprintf ( p ,
-		return sb.safePrintf (
-			  "<a href=\"/\">"
-			  "<img valign=top width=250 height=61 border=0 "
-			  // avoid https for this, so make it absolute
-			  "src=\"/logo-med.jpg\"></a>" );
-		//return p;
-	}
-	// do we have a link?
-	if ( si->m_imgLink && si->m_imgLink[0])
-		//p += sprintf ( p , "<a href=\"%s\">",si->m_imgLink);
-		sb.safePrintf ( "<a href=\"%s\">", si->m_imgLink );
-	// print image width and length
-	if ( si->m_imgWidth >= 0 && si->m_imgHeight >= 0 ) 
-		//p += sprintf ( p , "<img width=%" PRId32" height=%" PRId32" ",
-		sb.safePrintf( "<img width=%" PRId32" height=%" PRId32" ",
-			       si->m_imgWidth , si->m_imgHeight );
-	else
-		//p += sprintf ( p , "<img " );
-		sb.safePrintf ( "<img " );
-
-	//p += sprintf ( p , "border=0 src=\"%s\">",
-	sb.safePrintf( "border=0 src=\"%s\">",
-		       si->m_imgUrl );
-	// end the link if we had one
-	if ( si->m_imgLink && si->m_imgLink[0] ) 
-		//p += sprintf ( p , "</a>");
-		sb.safePrintf ( "</a>");
-
-	return true;
+	return sb.safePrintf("<a href=\"/\"><img valign=top width=250 height=61 border=0 src=\"/rocket.jpg\"></a>");
 }
 
 /////////////

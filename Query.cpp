@@ -2586,7 +2586,7 @@ void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSea
 					m_qterms[i].m_leftPhraseTerm     = NULL;
 				}
 			}
-			m_qterms[m_numWords-1].m_isRequired = false;
+			m_qterms[m_numTerms-1].m_isRequired = false;
 			scoringWeights->m_hashGroupWeights[HASHGROUP_INURL]  *= 10; //factor 10 seems to work fine
 			log(LOG_DEBUG, "query:Query modified");
 			return;

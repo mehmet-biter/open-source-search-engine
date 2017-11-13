@@ -6,6 +6,11 @@
 #include <memory>
 #include <vector>
 
+
+//Overrides result by language and URL so you can have a text file with title and summary.
+//Not to be confused with RobotsBlockedResultOverride which deals with blocked URLs.
+
+
 struct ResultOverride;
 
 typedef std::map<std::string, ResultOverride> languageresultoverridemap_t;

@@ -118,12 +118,6 @@ public:
 	char  *m_quote1;
 	char  *m_quote2;
 
-	// co-branding parms
-	char  *m_imgUrl;
-	char  *m_imgLink;
-	int32_t   m_imgWidth;
-	int32_t   m_imgHeight;
-
 	int32_t m_titleMaxLen;
 
 	// for limiting results by score in the widget

@@ -4605,50 +4605,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
-	m->m_title = "image url";
-	m->m_desc  = "The url of an image to co-brand on the search "
-		"results page.";
-	m->m_off   = offsetof(SearchInput,m_imgUrl);
-	m->m_type  = TYPE_CHARPTR;
-	m->m_def   = NULL;
-	//m->m_size  = 512;
-	m->m_cgi   = "iu";
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m->m_flags = PF_NOAPI;
-	m++;
-
-	m->m_title = "image link";
-	m->m_desc  = "The hyperlink to use on the image to co-brand on "
-		"the search results page.";
-	m->m_off   = offsetof(SearchInput,m_imgLink);
-	m->m_type  = TYPE_CHARPTR;
-	m->m_def   = NULL;
-	m->m_cgi   = "ix";
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m->m_flags = PF_NOAPI;
-	m++;
-
-	m->m_title = "image width";
-	m->m_desc  = "The width of the image on the search results page.";
-	simple_m_set(SearchInput,m_imgWidth);
-	m->m_cgi   = "iw";
-	m->m_page  = PAGE_RESULTS;
-	m->m_def   = "200";
-	m->m_flags = PF_NOAPI;
-	m++;
-
-	m->m_title = "image height";
-	m->m_desc  = "The height of the image on the search results "
-		"page.";
-	simple_m_set(SearchInput,m_imgHeight);
-	m->m_cgi   = "ih";
-	m->m_page  = PAGE_RESULTS;
-	m->m_def   = "200";
-	m->m_flags = PF_NOAPI;
-	m++;
-
 	m->m_title = "admin override";
 	m->m_desc  = "admin override";
 	simple_m_set(SearchInput,m_isMasterAdmin);
