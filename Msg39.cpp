@@ -630,7 +630,6 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     "phr=%" PRId32" termId=%" PRIu64" rawTermId=%" PRIu64" "
 			     "tfweight=%.02f "
 			     "sign=%c "
-			     "numPlusses=%hhu "
 			     "required=%" PRId32" "
 			     "fieldcode=%" PRId32" "
 
@@ -652,7 +651,6 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     m_query.getRawTermId(i) ,
 			     ((float *)m_msg39req->ptr_termFreqWeights)[i] ,
 			     sign , //c ,
-			     0 , 
 			     (int32_t)qt->m_isRequired,
 			     (int32_t)qt->m_fieldCode,
 
