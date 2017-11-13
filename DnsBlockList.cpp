@@ -97,7 +97,8 @@ bool DnsBlockList::isDnsBlocked(const char *dns) {
 	for (auto const &dnsBlock : *dnsBlockList) {
 		if (dnsBlock.front() == '*') {
 			// wildcard
-			if (strcasecmp(dnsBlock.c_str() + 1, dns + (strlen(dns) - (dnsBlock.length() - 1))) == 0) {
+			size_t dnsLen = strlen(dns);
+			if (dnsLen >= dnsBlock.length() - 1 && strcasecmp(dnsBlock.c_str() + 1, dns + (dnsLen - (dnsBlock.length() - 1))) == 0) {
 				logTrace(g_conf.m_logTraceDnsBlockList, "Dns block criteria %s matched dns '%s'", dnsBlock.c_str(), dns);
 				return true;
 			}
