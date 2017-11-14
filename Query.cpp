@@ -2573,7 +2573,6 @@ void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSea
 		if(looksLikeADomain) {
 			log(LOG_DEBUG, "query:Query '%s' looks like a domain", originalQuery());
 			//set all non-synonym terms as required and boost inUrl weight.
-			//The last term is marked non-required because the tld terms are normally not indexed (see XmlDoc::hashUrl() -> hashString() -> hashString3())
 			for(int i=0; i<m_numTerms; i++) {
 				if(!m_qterms[i].m_synonymOf && !m_qterms[i].m_ignored) {
 					m_qterms[i].m_isRequired         = true;
@@ -2583,7 +2582,14 @@ void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSea
 					m_qterms[i].m_leftPhraseTerm     = NULL;
 				}
 			}
-			m_qterms[m_numTerms-1].m_isRequired = false;
+			if(isTLD(m_qwords[m_numWords-1].m_word,m_qwords[m_numWords-1].m_wordLen)) {
+				//The last term is marked non-required because the tld terms are normally not indexed (see XmlDoc::hashUrl() -> hashString() -> hashString3())
+				//high-freq-terms and stopwords means that the term may not have been generated, so look for it
+				for(int i=0; i<m_numTerms; i++) {
+					if(m_qterms[i].m_qword == &(m_qwords[m_numWords-1]) && !m_qterms[i].m_isPhrase)
+						m_qterms[i].m_isRequired = false;
+				}
+			}
 			scoringWeights->m_hashGroupWeights[HASHGROUP_INURL]  *= 10; //factor 10 seems to work fine
 			log(LOG_DEBUG, "query:Query modified");
 			traceTermsToLog("domain-like search terms");
