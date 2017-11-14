@@ -92,6 +92,8 @@
 #include "UrlResultOverride.h"
 #include "FxCheckAdult.h"
 #include "FxCheckSpam.h"
+#include "GbCompress.h"
+
 
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
@@ -119,6 +121,8 @@ static void dumpTagdb(const char *coll, int32_t sfn, int32_t numFiles, bool incl
 //dumpPosdb() is not local becaue it is called directly by unittests
 void dumpPosdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, int64_t termId , bool justVerify);
 static void dumpWaitingTree(const char *coll);
+static void dumpRobotsTxtCache(const char *coll);
+
 static void dumpDoledb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 static void dumpClusterdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, const char *url);
@@ -538,6 +542,9 @@ int main2 ( int argc , char *argv[] ) {
 			"\t\tdump D <collection> <fileNum> <numFiles> <includeTree> <docId>\n"
 			"\twaiting tree:\n"
 			"\t\tdump w <collection>\n"
+
+			"\trobots.txt.cache:\n"
+			"\t\tdump rtc <url>\n"
 			"\n"
 
 			"verify <db> <collection> <fileNum> <numFiles> <includeTree> <firstIP>\n\tVerify a db on disk. "
@@ -868,42 +875,14 @@ int main2 ( int argc , char *argv[] ) {
 		}
 
 		char *cmd = argv[cmdarg+1];
-
-		// get hostId to install TO (-1 means all)
-		int32_t h1 = -1;
-		int32_t h2 = -1;
-
-		if (cmdarg + 2 < argc) {
-			h1 = atoi(argv[cmdarg + 2]);
-
-			// might have a range
-			if (strstr(argv[cmdarg + 2], "-")) {
-				sscanf(argv[cmdarg + 2], "%" PRId32"-%" PRId32, &h1, &h2);
-			}
-		}
-
-		return install ( ifk_dsh, h1, NULL, h2, cmd );
+		return install ( ifk_dsh, -1, NULL, -1, cmd );
 	}
 
 	// gb dsh2
 	if ( strcmp ( cmd , "dsh2" ) == 0 ) {
 		if ( cmdarg+1 >= argc ) goto printHelp;
 		char *cmd = argv[cmdarg+1];
-
-		// get hostId to install TO (-1 means all)
-		int32_t h1 = -1;
-		int32_t h2 = -1;
-
-		if (cmdarg + 2 < argc) {
-			h1 = atoi(argv[cmdarg + 2]);
-
-			// might have a range
-			if (strstr(argv[cmdarg + 2], "-")) {
-				sscanf(argv[cmdarg + 2], "%" PRId32"-%" PRId32, &h1, &h2);
-			}
-		}
-
-		return install ( ifk_dsh2, h1, NULL, h2, cmd );
+		return install ( ifk_dsh2, -1, NULL, -1, cmd );
 	}
 
 	// gb copyfiles, like gb install but takes a dir not a host #
@@ -1333,6 +1312,9 @@ int main2 ( int argc , char *argv[] ) {
 		}
 		else if (strcmp(argv[cmdarg+1], "w") == 0) {
 		       dumpWaitingTree(coll);
+		}
+		else if (strcmp(argv[cmdarg+1], "rtc") == 0) {
+		       dumpRobotsTxtCache(coll);
 		}
 		else if ( argv[cmdarg+1][0] == 'x' )
 			dumpDoledb  (coll,startFileNum,numFiles,includeTree);
@@ -2728,6 +2710,106 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 		if ( startKey < *(key96_t *)list.getLastKey() ) return;
 	}
 }
+
+
+
+
+
+void dumpRobotsTxtCache(const char *url) {
+	struct HttpCacheData {
+		int32_t m_errno;
+		char *ptr_reply;
+		int32_t size_reply;
+	} __attribute__((packed));
+
+	if( !url || strlen(url) <= 0 ) {
+		fprintf(stdout, "robots.txt.cache lookup failed, you must supply a url as parameter\n");
+		return;
+	}
+
+	fprintf(stdout, "robots.txt.cache lookup of %s\n", url);
+
+	RdbCache httpCacheRobots;
+	int32_t memRobots = 3000000;
+	int32_t maxCacheNodesRobots = memRobots / 106;
+
+	if ( ! httpCacheRobots.init ( memRobots ,
+					-1        , // fixedDataSize
+					maxCacheNodesRobots ,
+					"robots.txt"  , // dbname
+					true,          // load from disk
+					12,            // cachekeysize
+					-1)) {           // numPtrsMax
+		fprintf(stdout, "Could not initialize local robots.txt.cache\n");
+		return;
+	}
+
+	int32_t numElem = httpCacheRobots.getNumUsedNodes();
+	fprintf(stdout,"%" PRId32 " elements in cache.\n", numElem);
+
+	char *rec;
+	int32_t  recSize;
+	key96_t k;
+	k.n1 = 0;
+	k.n0 = hash64(url, strlen(url));
+	k.n0 ^= 0xff;	// for compressed keys
+
+	int64_t uh48 = k.n0 & 0x0000ffffffffffffLL;
+	fprintf(stdout, "Cache key=%" PRIu64 ", uh48=%" PRIu64 "\n", k.n0, uh48);
+
+	bool inCache = httpCacheRobots.getRecord ( (collnum_t)0     , // share btwn colls
+					k                , // cacheKey
+					&rec             ,
+					&recSize         ,
+					true             , // copy?
+					9999999,		//r->m_maxCacheAge , // 24*60*60 ,
+					false); // stats?
+	fprintf(stdout, "Found: %s\n", inCache?"true":"false");
+
+	if( inCache ) {
+		HttpCacheData *httpCacheData = reinterpret_cast<HttpCacheData*>(rec);
+
+		if( deserializeMsg(sizeof(*httpCacheData), &httpCacheData->size_reply, &httpCacheData->size_reply, &httpCacheData->ptr_reply, ((char*)httpCacheData + sizeof(*httpCacheData))) != -1) {
+			fprintf(stdout, "deserializeMsg OK. errno=%" PRId32 ", size_reply=%" PRId32 "\n", httpCacheData->m_errno, httpCacheData->size_reply);
+
+			// get uncompressed size
+			uint32_t unzippedLen = *(int32_t*)httpCacheData->ptr_reply;
+			// sanity checks
+			if ( unzippedLen > 10000000 ) {
+				fprintf(stdout, "Unzipped length appears too big: %" PRId32 "\n", unzippedLen);
+				return;
+			}
+			// make buffer to hold uncompressed data
+			char *newBuf = (char*)mmalloc(unzippedLen, "DumpUnzip");
+			if( ! newBuf ) {
+				fprintf(stdout, "Could not allocate memory for uncompressed document: %" PRId32 "\n", unzippedLen);
+				return;
+			}
+			// make another var to get mangled by gbuncompress
+			uint32_t uncompressedLen = unzippedLen;
+			// uncompress it
+			int zipErr = gbuncompress( (unsigned char*)newBuf, // dst
+						   &uncompressedLen, // dstLen
+						   (unsigned char*)httpCacheData->ptr_reply+4, // src
+						   httpCacheData->size_reply-4); // srcLen
+
+			if(zipErr != Z_OK || uncompressedLen != (uint32_t)unzippedLen) {
+				fprintf(stdout, "Error unzipping compressed robots.txt unzipped len should be %" PRId32" but is %" PRId32". ziperr=%" PRId32,
+					(int32_t)uncompressedLen, (int32_t)unzippedLen, (int32_t)zipErr);
+				mfree(newBuf, unzippedLen, "DumpUnzip");
+				return;
+			}
+
+			fprintf(stdout,"\n%s\n\n", newBuf);
+			mfree(newBuf, unzippedLen, "DumpUnzip");
+		}
+		else {
+			fprintf(stderr,"deserialize failed\n");
+		}
+	}
+}
+
+
 
 
 // . dataSlot fo the hashtable for spider stats in dumpSpiderdb
