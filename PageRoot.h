@@ -18,8 +18,8 @@ bool expandHtml (  SafeBuf& sb,
 		   int32_t hlen ,
 		   const char *q    , 
 		   int32_t qlen ,
-		   HttpRequest *r ,
-		   SearchInput *si,
+		   const HttpRequest *r ,
+		   const SearchInput *si,
 		   const char *method ,
 		   CollectionRec *cr );
 

@@ -46,19 +46,18 @@ static bool replaceParm2 ( const char *cgi , SafeBuf *newUrl ,
 			   const char *oldUrl , int32_t oldUrlLen ) ;
 
 
-static bool printPairScore (SafeBuf *sb , SearchInput *si , PairScore *ps , Msg20Reply *mr ) ;
+static bool printPairScore(SafeBuf *sb, const SearchInput *si, const PairScore *ps, Msg20Reply *mr);
 
 static bool printScoresHeader ( SafeBuf *sb ) ;
 
 static bool printMetaContent ( Msg40 *msg40 , int32_t i ,State0 *st, SafeBuf *sb );
 
-static bool printSingleScore (SafeBuf *sb , SearchInput *si , SingleScore *ss ,
-			Msg20Reply *mr ) ;
+static bool printSingleScore(SafeBuf *sb, const SearchInput *si, const SingleScore *ss, Msg20Reply *mr);
 
-static bool printSingleTerm ( SafeBuf *sb , class Query *q , class SingleScore *ss );
-static bool printTermPairs ( SafeBuf *sb , class Query *q , class PairScore *ps ) ;
+static bool printSingleTerm(SafeBuf *sb, const Query *q, const SingleScore *ss);
+static bool printTermPairs(SafeBuf *sb, const Query *q, const PairScore *ps);
 
-static bool printLogoAndSearchBox (SafeBuf *sb , class HttpRequest *hr, SearchInput *si );
+static bool printLogoAndSearchBox (SafeBuf *sb , class HttpRequest *hr, const SearchInput *si );
 
 
 static bool sendReply(State0 *st, char *reply) {
@@ -661,7 +660,7 @@ static bool printIgnoredWords ( SafeBuf *sb , const SearchInput *si ) {
 
 bool printSearchResultsHeader ( State0 *st ) {
 
-	SearchInput *si = &st->m_si;
+	const SearchInput *si = &st->m_si;
 
 	// grab the query
 	Msg40 *msg40 = &(st->m_msg40);
@@ -986,7 +985,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 	// print individual query term info
 	if ( si->m_format == FORMAT_XML ) {
-		Query *q = &si->m_q;
+		const Query *q = &si->m_q;
 		sb->safePrintf("\t<queryInfo>\n");
 		sb->safePrintf("\t\t<fullQuery><![CDATA[");
 		cdataEncode(sb, q->originalQuery());
@@ -1074,7 +1073,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 	// print individual query term info
 	if ( si->m_format == FORMAT_JSON && st->m_header ) {
-		Query *q = &si->m_q;
+		const Query *q = &si->m_q;
 		sb->safePrintf("\"queryInfo\":{\n");
 		sb->safePrintf("\t\"fullQuery\":\"");
 		sb->jsonEncode(q->originalQuery());
@@ -3056,7 +3055,7 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 			if ( almostEqualFloat(ps->m_finalScore, 0.0) ) continue;
 			// first time?
 			if ( firstTime && si->m_format == FORMAT_HTML ) {
-				Query *q = &si->m_q;
+				const Query *q = &si->m_q;
 				printTermPairs ( sb , q , ps );
 				printScoresHeader ( sb );
 				firstTime = false;
@@ -3105,7 +3104,7 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 			if ( almostEqualFloat(ss->m_finalScore, 0.0) ) continue;
 			// first time?
 			if ( firstTime && si->m_format == FORMAT_HTML ) {
-				Query *q = &si->m_q;
+				const Query *q = &si->m_q;
 				printSingleTerm ( sb , q , ss );
 				printScoresHeader ( sb );
 				firstTime = false;
@@ -3327,10 +3326,10 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 
 
 
-static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg20Reply *mr) {
+static bool printPairScore(SafeBuf *sb, const SearchInput *si, const PairScore *ps, Msg20Reply *mr) {
 
 	// shortcut
-	Query *q = &si->m_q;
+	const Query *q = &si->m_q;
 
 	int32_t qtn1 = ps->m_qtermNum1;
 	int32_t qtn2 = ps->m_qtermNum2;
@@ -3874,7 +3873,7 @@ static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg
 	return true;
 }
 
-static bool printSingleTerm ( SafeBuf *sb , Query *q , SingleScore *ss ) {
+static bool printSingleTerm(SafeBuf *sb, const Query *q, const SingleScore *ss) {
 
 	int32_t qtn = ss->m_qtermNum;
 
@@ -3895,7 +3894,7 @@ static bool printSingleTerm ( SafeBuf *sb , Query *q , SingleScore *ss ) {
 	return true;
 }
 
-static bool printTermPairs ( SafeBuf *sb , Query *q , PairScore *ps ) {
+static bool printTermPairs(SafeBuf *sb, const Query *q, const PairScore *ps) {
 	// print pair text
 	int32_t qtn1 = ps->m_qtermNum1;
 	int32_t qtn2 = ps->m_qtermNum2;
@@ -3938,10 +3937,10 @@ static bool printScoresHeader ( SafeBuf *sb ) {
 	return true;
 }
 
-static bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Msg20Reply *mr ) {
+static bool printSingleScore(SafeBuf *sb, const SearchInput *si, const SingleScore *ss, Msg20Reply *mr) {
 
 	// shortcut
-	Query *q = &si->m_q;
+	const Query *q = &si->m_q;
 
 	//SafeBuf ft;
 	// store in final score calc
@@ -4387,7 +4386,7 @@ static bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Ms
 }
 
 // if catId >= 1 then print the dmoz radio button
-static bool printLogoAndSearchBox ( SafeBuf *sb, HttpRequest *hr, SearchInput *si ) {
+static bool printLogoAndSearchBox(SafeBuf *sb, HttpRequest *hr, const SearchInput *si) {
 	const char *coll = hr->getString("c");
 	if ( ! coll ) coll = "";
 
