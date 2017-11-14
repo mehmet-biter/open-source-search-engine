@@ -451,6 +451,7 @@ private:
 	bool        isConnection(const char *s, int32_t len) const;
 
 	void dumpToLog() const;
+	void traceTermsToLog(const char *header);
 
 public:
 	const char *originalQuery() const { return m_originalQuery.getBufStart(); }

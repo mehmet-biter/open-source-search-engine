@@ -1217,11 +1217,8 @@ bool Query::setQTerms ( const Words &words ) {
 		qt->m_isWikiHalfStopBigram = true;
 	}
 	
-	if(g_conf.m_logTraceQuery) {
-		logTrace(g_conf.m_logTraceQuery, "final query-terms:");
-		for(int i=0; i<m_numTerms; i++)
-			logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s', weight=%f %s", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term, m_qterms[i].m_userWeight, m_qterms[i].m_ignored?"ignored":"");
-	}
+	if(g_conf.m_logTraceQuery)
+		traceTermsToLog("final query-terms");
 
 	return true;
 }
@@ -2589,6 +2586,7 @@ void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSea
 			m_qterms[m_numTerms-1].m_isRequired = false;
 			scoringWeights->m_hashGroupWeights[HASHGROUP_INURL]  *= 10; //factor 10 seems to work fine
 			log(LOG_DEBUG, "query:Query modified");
+			traceTermsToLog("domain-like search terms");
 			return;
 		}
 	}
@@ -2633,6 +2631,7 @@ void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSea
 				}
 			}
 			log(LOG_DEBUG, "query:Query modified");
+			traceTermsToLog("api-like search terms");
 			return;
 		}
 	}
@@ -3024,6 +3023,15 @@ void Query::dumpToLog() const
 		log("  m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, (void*)qt.m_rightPhraseTerm);
 	}
 }
+
+void Query::traceTermsToLog(const char *header) {
+	logTrace(g_conf.m_logTraceQuery, "%s:", header);
+	for(int i=0; i<m_numTerms; i++) {
+		logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s', weight=%f %s", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term, m_qterms[i].m_userWeight, m_qterms[i].m_ignored?"ignored":"");
+		logTrace(g_conf.m_logTraceQuery, "                  qstopw=%s req=%s", m_qterms[i].m_isQueryStopWord?"true":"false", m_qterms[i].m_isRequired?"yes":"no");
+	}
+}
+
 
 
 ////////////////////////////////////////////////////////
