@@ -21,6 +21,8 @@
 #include "Process.h"
 #include "Conf.h"
 #include "termid_mask.h"
+#include "Collectiondb.h"
+
 
 #include "GbMutex.h"
 #include "ScopedLock.h"
@@ -2535,11 +2537,11 @@ bool Query::setQWords ( char boolFlag ,
 }
 
 
-void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSearches, bool modifyAPILikeSearches) {
-	logTrace(g_conf.m_logTraceQuery, "Query::modifyQuery: q='%s', modifyDomainLikeSearches=%s, modifyAPILikeSearches=%s", originalQuery(),modifyDomainLikeSearches?"true":"false", modifyAPILikeSearches?"true":"false");
+void Query::modifyQuery(ScoringWeights *scoringWeights, const CollectionRec& cr, bool *doSiteClustering) {
+	logTrace(g_conf.m_logTraceQuery, "Query::modifyQuery: q='%s', modifyDomainLikeSearches=%s, modifyAPILikeSearches=%s", originalQuery(),cr.m_modifyDomainLikeSearches?"true":"false", cr.m_modifyAPILikeSearches?"true":"false");
 	logTrace(g_conf.m_logTraceQuery, "                     m_numWords = %d", m_numWords);
 	logTrace(g_conf.m_logTraceQuery, "                     m_numTerms = %d", m_numTerms);
-	if(modifyDomainLikeSearches) {
+	if(cr.m_modifyDomainLikeSearches) {
 		bool looksLikeADomain = false;
 		// is it a domain in the form of domain.tld ?
 		if(m_numWords==3 &&
@@ -2591,13 +2593,15 @@ void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSea
 				}
 			}
 			scoringWeights->m_hashGroupWeights[HASHGROUP_INURL]  *= 10; //factor 10 seems to work fine
+			if(cr.m_domainLikeSearchDisablesSiteCluster)
+				*doSiteClustering = false;
 			log(LOG_DEBUG, "query:Query modified");
 			traceTermsToLog("domain-like search terms");
 			return;
 		}
 	}
 	
-	if(modifyAPILikeSearches) {
+	if(cr.m_modifyAPILikeSearches) {
 		bool looksLikeAnAPI = false;
 		//is it something like "file.open" or "file.open()" ?
 		//todo: detect java packages like java.util.HashSet (but most java programmers probably has built-in help in their IDE so they would rarely use this)

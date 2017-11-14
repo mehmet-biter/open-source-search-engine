@@ -6589,6 +6589,15 @@ void Parms::init ( ) {
 	m->m_flags = PF_API | PF_CLONE;
 	m++;
 
+	m->m_title = "Domain-like searches disables site clustering";
+	m->m_desc  = "When a domain-like query is detected should site clustering be disabled for that query?";
+	m->m_def   = "1";
+	simple_m_set(CollectionRec,m_domainLikeSearchDisablesSiteCluster);
+	m->m_cgi  = "domainlikesearchdisablessitecluster";
+	m->m_page  = PAGE_SEARCH;
+	m->m_flags = PF_API | PF_CLONE;
+	m++;
+
 	m->m_title = "Detect and modify API-like searches";
 	m->m_desc  = "Detect queries for APIs such as file.open() and modify the query to search more directed for that";
 	m->m_def   = "1";

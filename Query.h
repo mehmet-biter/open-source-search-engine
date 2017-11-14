@@ -6,6 +6,8 @@
 #define GB_QUERY_H
 
 #include "SafeBuf.h"
+class CollectionRec;
+
 
 // support big OR queries for image shingles
 #define ABS_MAX_QUERY_LEN 62000
@@ -437,7 +439,7 @@ class Query {
 
 	// modify query terms based on patters and rule-of-thumb. Eg "example.com" is probably a search
 	// for a domain and "file.open()" is probably for an API/SDK
-	void modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSearches, bool  modifyAPILikeSearches);
+	void modifyQuery(ScoringWeights *scoringWeights, const CollectionRec& cr, bool *doSiteClustering);
 
 private:
 	// sets m_qwords[] array, this function is the heart of the class

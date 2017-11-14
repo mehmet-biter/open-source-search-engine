@@ -361,9 +361,11 @@ void Msg39::getDocIds2() {
 
 	// wtf?
 	if ( g_errno ) gbshutdownLogicError();
-
-	if(m_msg39req->m_modifyQuery)
-		m_query.modifyQuery(&m_msg39req->m_scoringWeights, cr->m_modifyDomainLikeSearches, cr->m_modifyAPILikeSearches);
+	
+	if(m_msg39req->m_modifyQuery) {
+		bool dont_care; //artifact because queries are parsed both at sender and on each shard.
+		m_query.modifyQuery(&m_msg39req->m_scoringWeights, *cr, &dont_care);
+	}
 
 	// set m_errno
 	if ( m_query.m_truncated ) m_errno = EQUERYTRUNCATED;
