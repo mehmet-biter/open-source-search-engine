@@ -870,14 +870,42 @@ int main2 ( int argc , char *argv[] ) {
 		}
 
 		char *cmd = argv[cmdarg+1];
-		return install ( ifk_dsh, -1, NULL, -1, cmd );
+
+		// get hostId to install TO (-1 means all)
+		int32_t h1 = -1;
+		int32_t h2 = -1;
+
+		if (cmdarg + 2 < argc) {
+			h1 = atoi(argv[cmdarg + 2]);
+
+			// might have a range
+			if (strstr(argv[cmdarg + 2], "-")) {
+				sscanf(argv[cmdarg + 2], "%" PRId32"-%" PRId32, &h1, &h2);
+			}
+		}
+
+		return install ( ifk_dsh, h1, NULL, h2, cmd );
 	}
 
 	// gb dsh2
 	if ( strcmp ( cmd , "dsh2" ) == 0 ) {
 		if ( cmdarg+1 >= argc ) goto printHelp;
 		char *cmd = argv[cmdarg+1];
-		return install ( ifk_dsh2, -1, NULL, -1, cmd );
+
+		// get hostId to install TO (-1 means all)
+		int32_t h1 = -1;
+		int32_t h2 = -1;
+
+		if (cmdarg + 2 < argc) {
+			h1 = atoi(argv[cmdarg + 2]);
+
+			// might have a range
+			if (strstr(argv[cmdarg + 2], "-")) {
+				sscanf(argv[cmdarg + 2], "%" PRId32"-%" PRId32, &h1, &h2);
+			}
+		}
+
+		return install ( ifk_dsh2, h1, NULL, h2, cmd );
 	}
 
 	// gb copyfiles, like gb install but takes a dir not a host #

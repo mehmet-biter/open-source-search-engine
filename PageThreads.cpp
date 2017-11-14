@@ -1,6 +1,7 @@
 #include "gb-include.h"
 
 #include "TcpServer.h"
+#include "HttpServer.h"
 #include "Pages.h"
 #include "JobScheduler.h"
 #include "SafeBuf.h"

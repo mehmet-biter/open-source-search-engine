@@ -21,6 +21,8 @@
 #include "Process.h"
 #include "Conf.h"
 #include "termid_mask.h"
+#include "Collectiondb.h"
+
 
 #include "GbMutex.h"
 #include "ScopedLock.h"
@@ -1217,11 +1219,8 @@ bool Query::setQTerms ( const Words &words ) {
 		qt->m_isWikiHalfStopBigram = true;
 	}
 	
-	if(g_conf.m_logTraceQuery) {
-		logTrace(g_conf.m_logTraceQuery, "final query-terms:");
-		for(int i=0; i<m_numTerms; i++)
-			logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s', weight=%f %s", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term, m_qterms[i].m_userWeight, m_qterms[i].m_ignored?"ignored":"");
-	}
+	if(g_conf.m_logTraceQuery)
+		traceTermsToLog("final query-terms");
 
 	return true;
 }
@@ -2538,11 +2537,11 @@ bool Query::setQWords ( char boolFlag ,
 }
 
 
-void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSearches, bool modifyAPILikeSearches) {
-	logTrace(g_conf.m_logTraceQuery, "Query::modifyQuery: q='%s', modifyDomainLikeSearches=%s, modifyAPILikeSearches=%s", originalQuery(),modifyDomainLikeSearches?"true":"false", modifyAPILikeSearches?"true":"false");
+void Query::modifyQuery(ScoringWeights *scoringWeights, const CollectionRec& cr, bool *doSiteClustering) {
+	logTrace(g_conf.m_logTraceQuery, "Query::modifyQuery: q='%s', modifyDomainLikeSearches=%s, modifyAPILikeSearches=%s", originalQuery(),cr.m_modifyDomainLikeSearches?"true":"false", cr.m_modifyAPILikeSearches?"true":"false");
 	logTrace(g_conf.m_logTraceQuery, "                     m_numWords = %d", m_numWords);
 	logTrace(g_conf.m_logTraceQuery, "                     m_numTerms = %d", m_numTerms);
-	if(modifyDomainLikeSearches) {
+	if(cr.m_modifyDomainLikeSearches) {
 		bool looksLikeADomain = false;
 		// is it a domain in the form of domain.tld ?
 		if(m_numWords==3 &&
@@ -2576,7 +2575,6 @@ void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSea
 		if(looksLikeADomain) {
 			log(LOG_DEBUG, "query:Query '%s' looks like a domain", originalQuery());
 			//set all non-synonym terms as required and boost inUrl weight.
-			//The last term is marked non-required because the tld terms are normally not indexed (see XmlDoc::hashUrl() -> hashString() -> hashString3())
 			for(int i=0; i<m_numTerms; i++) {
 				if(!m_qterms[i].m_synonymOf && !m_qterms[i].m_ignored) {
 					m_qterms[i].m_isRequired         = true;
@@ -2586,14 +2584,24 @@ void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSea
 					m_qterms[i].m_leftPhraseTerm     = NULL;
 				}
 			}
-			m_qterms[m_numTerms-1].m_isRequired = false;
+			if(isTLD(m_qwords[m_numWords-1].m_word,m_qwords[m_numWords-1].m_wordLen)) {
+				//The last term is marked non-required because the tld terms are normally not indexed (see XmlDoc::hashUrl() -> hashString() -> hashString3())
+				//high-freq-terms and stopwords means that the term may not have been generated, so look for it
+				for(int i=0; i<m_numTerms; i++) {
+					if(m_qterms[i].m_qword == &(m_qwords[m_numWords-1]) && !m_qterms[i].m_isPhrase)
+						m_qterms[i].m_isRequired = false;
+				}
+			}
 			scoringWeights->m_hashGroupWeights[HASHGROUP_INURL]  *= 10; //factor 10 seems to work fine
+			if(cr.m_domainLikeSearchDisablesSiteCluster)
+				*doSiteClustering = false;
 			log(LOG_DEBUG, "query:Query modified");
+			traceTermsToLog("domain-like search terms");
 			return;
 		}
 	}
 	
-	if(modifyAPILikeSearches) {
+	if(cr.m_modifyAPILikeSearches) {
 		bool looksLikeAnAPI = false;
 		//is it something like "file.open" or "file.open()" ?
 		//todo: detect java packages like java.util.HashSet (but most java programmers probably has built-in help in their IDE so they would rarely use this)
@@ -2633,6 +2641,7 @@ void Query::modifyQuery(ScoringWeights *scoringWeights, bool modifyDomainLikeSea
 				}
 			}
 			log(LOG_DEBUG, "query:Query modified");
+			traceTermsToLog("api-like search terms");
 			return;
 		}
 	}
@@ -3024,6 +3033,15 @@ void Query::dumpToLog() const
 		log("  m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, (void*)qt.m_rightPhraseTerm);
 	}
 }
+
+void Query::traceTermsToLog(const char *header) {
+	logTrace(g_conf.m_logTraceQuery, "%s:", header);
+	for(int i=0; i<m_numTerms; i++) {
+		logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s', weight=%f %s", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term, m_qterms[i].m_userWeight, m_qterms[i].m_ignored?"ignored":"");
+		logTrace(g_conf.m_logTraceQuery, "                  qstopw=%s req=%s", m_qterms[i].m_isQueryStopWord?"true":"false", m_qterms[i].m_isRequired?"yes":"no");
+	}
+}
+
 
 
 ////////////////////////////////////////////////////////

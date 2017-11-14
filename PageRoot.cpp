@@ -1,6 +1,7 @@
 #include "gb-include.h"
 
 #include "PageRoot.h"
+#include "HttpServer.h"
 #include "Titledb.h"
 #include "Spider.h"
 #include "Tagdb.h"
@@ -51,7 +52,7 @@ static bool printFamilyFilter ( SafeBuf& sb , bool familyFilterOn ) {
 
 #include "SearchInput.h"
 
-static bool printRadioButtons ( SafeBuf& sb , SearchInput *si ) {
+static bool printRadioButtons( SafeBuf& sb, const SearchInput *si) {
 	// don't display this for directory search
 	// look it up. returns catId <= 0 if dmoz not setup yet.
 	// From PageDirectory.cpp
@@ -129,7 +130,7 @@ static bool printRadioButtons ( SafeBuf& sb , SearchInput *si ) {
 	return true;
 }
 
-static bool printLogo ( SafeBuf& sb , SearchInput *si ) {
+static bool printLogo(SafeBuf& sb, const SearchInput *si) {
 	return sb.safePrintf("<a href=\"/\"><img valign=top width=250 height=61 border=0 src=\"/rocket.jpg\"></a>");
 }
 
@@ -145,8 +146,8 @@ bool expandHtml (  SafeBuf& sb,
 		   int32_t hlen ,
 		   const char *q    , 
 		   int32_t qlen ,
-		   HttpRequest *r ,
-		   SearchInput *si,
+		   const HttpRequest *r ,
+		   const SearchInput *si,
 		   const char *method ,
 		   CollectionRec *cr ) {
 	//char *pend = p + plen;

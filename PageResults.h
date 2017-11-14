@@ -1,9 +1,10 @@
 #ifndef GB_PAGERESULTS_H
 #define GB_PAGERESULTS_H
 
+#include "HttpRequest.h"
 #include "SafeBuf.h"
 #include "Msg40.h"
-#include "Msg0.h"
+#include "SearchInput.h"
 #include "Speller.h" // MAX_FRAG_SIZE
 
 // height of each search result div in the widget
@@ -15,6 +16,7 @@
 
 
 class XmlDoc;
+class TcpSocket;
 
 class State0 {
 public:

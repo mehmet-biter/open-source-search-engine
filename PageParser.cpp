@@ -1,6 +1,7 @@
 #include "PageParser.h"
 #include "XmlDoc.h"
 #include "Pages.h"
+#include "HttpServer.h"
 #include "HttpRequest.h"
 #include "Process.h"
 #include "Conf.h"

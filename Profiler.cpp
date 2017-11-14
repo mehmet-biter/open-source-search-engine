@@ -2,6 +2,7 @@
 #include "gb-include.h"
 #include "Profiler.h"
 #include "HttpRequest.h"
+#include "HttpServer.h"
 #include "Pages.h"
 #include "Conf.h"
 #include "Hostdb.h"

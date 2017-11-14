@@ -1,11 +1,11 @@
 #ifndef GB_PAGEROOT_H
 #define GB_PAGEROOT_H
 
-#include "SafeBuf.h"
 
 class SearchInput;
 class CollectionRec;
 class HttpRequest;
+class SafeBuf;
 
 bool printFrontPageShell ( SafeBuf *sb,
                            const char *tabName,
@@ -18,8 +18,8 @@ bool expandHtml (  SafeBuf& sb,
 		   int32_t hlen ,
 		   const char *q    , 
 		   int32_t qlen ,
-		   HttpRequest *r ,
-		   SearchInput *si,
+		   const HttpRequest *r ,
+		   const SearchInput *si,
 		   const char *method ,
 		   CollectionRec *cr );
 

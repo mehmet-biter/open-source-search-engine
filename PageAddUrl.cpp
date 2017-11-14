@@ -1,11 +1,13 @@
 #include "gb-include.h"
 
 #include "Pages.h"
+#include "HttpServer.h"
 #include "Collectiondb.h"
 #include "Msg4Out.h"
 #include "Spider.h"
 #include "Parms.h"
 #include "GigablastRequest.h"
+#include "PageCrawlBot.h"
 #include "Conf.h"
 #include "Mem.h"
 

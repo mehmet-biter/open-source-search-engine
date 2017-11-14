@@ -5,11 +5,13 @@
 #ifndef GB_PAGES_H
 #define GB_PAGES_H
 
-#include "TcpSocket.h"
-#include "HttpRequest.h"
-#include "HttpServer.h"
-#include "SafeBuf.h"
-#include "PageCrawlBot.h" // sendPageCrawlBot()
+#include <inttypes.h>
+#include <stddef.h>
+
+class TcpSocket;
+class HttpRequest;
+class SafeBuf;
+class CollectionRec;
 
 bool printRedBox2 ( SafeBuf *sb , 
 		    class TcpSocket *sock , 

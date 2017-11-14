@@ -2,6 +2,7 @@
 
 #include "TcpServer.h"
 #include "Pages.h"
+#include "HttpServer.h"
 #include "SafeBuf.h"
 #include "Stats.h"
 

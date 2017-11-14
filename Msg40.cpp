@@ -416,6 +416,22 @@ bool Msg40::federatedLoop ( ) {
 	// store it in the reuquest now
 	mr.m_numDocIdSplits = numDocIdSplits;
 
+	if(m_si->m_doSiteClustering && cr) {
+		//Make a temporary query instance so we can calculate if site clustering should be turned off. We cannot use m_si->m_q because that could affect word highlighting
+		Query tmpQuery;
+		const CollectionRec *cr = g_collectiondb.getRec(m_firstCollnum);
+		tmpQuery.set2(m_si->m_query,
+			      m_si->m_queryLangId,
+			      false,
+			      true,
+			      m_si->m_allowHighFrequencyTermCache,
+			      cr->m_maxQueryTerms);
+		
+		tmpQuery.modifyQuery(&mr.m_scoringWeights, *cr, &m_si->m_doSiteClustering);
+		mr.m_doSiteClustering = m_si->m_doSiteClustering;
+	}
+
+
 	int32_t maxOutMsg3as = 1;
 
 	// create new ones if searching more than 1 coll

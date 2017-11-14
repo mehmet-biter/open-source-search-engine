@@ -2,6 +2,7 @@
 
 #include "TcpSocket.h"
 #include "HttpServer.h"
+#include "HttpRequest.h"
 #include "Pages.h"
 #include "Hostdb.h"
 #include "HostFlags.h"

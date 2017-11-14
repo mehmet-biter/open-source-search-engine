@@ -1,6 +1,7 @@
 #include "Pages.h"
 #include "TcpSocket.h"
 #include "HttpRequest.h"
+#include "HttpServer.h"
 #include "SafeBuf.h"
 #include "Collectiondb.h"
 #include "SpiderColl.h"

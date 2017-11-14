@@ -363,6 +363,7 @@ public:
 	bool m_queryExpansion;
 	// rewrite domain-like queries for this collection?
 	bool m_modifyDomainLikeSearches;
+	bool m_domainLikeSearchDisablesSiteCluster;
 	// rewrite API-like queries?
 	bool m_modifyAPILikeSearches;
 
