@@ -8,6 +8,7 @@
 #include "Unicode.h"
 #include "JobScheduler.h"
 #include "HttpServer.h"
+#include "HttpRequest.h"
 #include "Pages.h"
 #include "SiteGetter.h"
 #include "HashTableX.h"

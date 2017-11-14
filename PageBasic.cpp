@@ -1,6 +1,8 @@
 #include "SafeBuf.h"
 #include "HttpRequest.h"
+#include "HttpServer.h"
 #include "SearchInput.h"
+#include "PageCrawlBot.h"
 #include "Collectiondb.h"
 #include "Pages.h"
 #include "Parms.h"

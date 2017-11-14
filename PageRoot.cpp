@@ -1,6 +1,7 @@
 #include "gb-include.h"
 
 #include "PageRoot.h"
+#include "HttpServer.h"
 #include "Titledb.h"
 #include "Spider.h"
 #include "Tagdb.h"

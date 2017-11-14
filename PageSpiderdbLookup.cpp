@@ -1,4 +1,6 @@
 #include "Collectiondb.h"
+#include "HttpServer.h"
+#include "HttpRequest.h"
 #include "Msg0.h"
 #include "Pages.h"
 #include "SafeBuf.h"

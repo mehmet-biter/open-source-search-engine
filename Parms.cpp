@@ -7,6 +7,7 @@
 #include "UdpServer.h"
 #include "UdpSlot.h"
 #include "HttpRequest.h"
+#include "HttpServer.h"
 #include "Pages.h"         // g_pages
 #include "Tagdb.h"        // g_tagdb
 #include "Collectiondb.h"

@@ -2,6 +2,8 @@
 
 #include "TcpServer.h"
 #include "UdpServer.h"
+#include "HttpRequest.h"
+#include "HttpServer.h"
 #include "Rdb.h"
 #include "Pages.h"
 #include "Dns.h"

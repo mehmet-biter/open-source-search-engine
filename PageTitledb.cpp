@@ -1,5 +1,6 @@
 #include "gb-include.h"
 
+#include "HttpServer.h"
 #include "Collectiondb.h"
 #include "Msg22.h"
 #include "Pages.h"

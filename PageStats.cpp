@@ -11,6 +11,8 @@
 #include "Dns.h"
 #include "TcpServer.h"
 #include "UdpServer.h"
+#include "HttpRequest.h"
+#include "HttpServer.h"
 #include "Msg51.h"
 #include "Pages.h"
 #include "Stats.h"

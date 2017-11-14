@@ -3,6 +3,7 @@
 #include "Pages.h"
 #include "TcpSocket.h"
 #include "HttpRequest.h"
+#include "HttpServer.h"
 #include "Collectiondb.h"
 #include "Parms.h"
 

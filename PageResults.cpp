@@ -1,6 +1,7 @@
 #include "gb-include.h"
 
 #include "Collectiondb.h"
+#include "HttpServer.h"
 #include "Stats.h"
 #include "Statistics.h"
 #include "Query.h"
