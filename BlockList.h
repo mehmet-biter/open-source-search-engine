@@ -16,17 +16,43 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
-#ifndef FX_DNSBLOCKLIST_H
-#define FX_DNSBLOCKLIST_H
+#ifndef FX_BLOCKLIST_H
+#define FX_BLOCKLIST_H
 
-#include "BlockList.h"
 
-class DnsBlockList : public BlockList {
+#include <memory>
+#include <vector>
+#include <string>
+#include <atomic>
+
+typedef std::vector<std::string> blocklist_t;
+typedef std::shared_ptr<blocklist_t> blocklist_ptr_t;
+typedef std::shared_ptr<const blocklist_t> blocklistconst_ptr_t;
+
+class BlockList {
 public:
-	DnsBlockList();
-	bool isDnsBlocked(const char *dns);
+	BlockList(const char *filename);
+
+	bool init();
+
+	static void reload(int /*fd*/, void *state);
+	static void reload(void *state);
+
+protected:
+	bool load();
+
+	const char *m_filename;
+
+	blocklistconst_ptr_t getBlockList();
+
+private:
+	void swapBlockList(blocklistconst_ptr_t blockList);
+
+	std::atomic_bool m_loading;
+	blocklistconst_ptr_t m_blockList;
+
+	time_t m_lastModifiedTime;
 };
 
-extern DnsBlockList g_dnsBlockList;
 
-#endif //FX_DNSBLOCKLIST_H
+#endif //FX_BLOCKLIST_H

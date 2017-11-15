@@ -50,6 +50,7 @@
 #include "GbDns.h"
 #include "RobotsCheckList.h"
 #include "UrlResultOverride.h"
+#include "ContentTypeBlockList.h"
 #include <iostream>
 #include <fstream>
 
@@ -2278,6 +2279,13 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	{
 		logTrace( g_conf.m_logTraceXmlDoc, "END, error. Could not getMime" );
 		return (int32_t *)mime;
+	}
+
+	if (g_contentTypeBlockList.isContentTypeBlocked(mime->getContentTypePos(), mime->getContentTypeLen())) {
+		m_indexCode = EDOCBADCONTENTTYPE;
+		m_indexCodeValid = true;
+		logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCBADCONTENTTYPE");
+		return &m_indexCode;
 	}
 
 	// check redir url
@@ -9240,8 +9248,6 @@ char **XmlDoc::getFilteredContent ( ) {
 
 		if ( *ct == CT_TEXT    ) return &m_filteredContent;
 		if ( *ct == CT_XML     ) return &m_filteredContent;
-		// javascript - sometimes has address information in it, so keep it!
-		if ( *ct == CT_JS      ) return &m_filteredContent;
 		if ( m_contentLen == 0 ) return &m_filteredContent;
 
 		// we now support JSON for diffbot

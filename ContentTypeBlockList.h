@@ -16,17 +16,27 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
-#ifndef FX_DNSBLOCKLIST_H
-#define FX_DNSBLOCKLIST_H
+#ifndef FX_CONTENTTYPEBLOCKLIST_H
+#define FX_CONTENTTYPEBLOCKLIST_H
+
 
 #include "BlockList.h"
+#include <pthread.h>
+#include <vector>
 
-class DnsBlockList : public BlockList {
+class ContentTypeBlockList : public BlockList {
 public:
-	DnsBlockList();
-	bool isDnsBlocked(const char *dns);
+	ContentTypeBlockList();
+
+	bool isContentTypeBlocked(const char *contentType, size_t contentTypeLen);
+	void addContentTypeAllowed(const std::string &contentType);
+
+private:
+	std::vector<std::string> m_contenttype_allowed;
+	mutable pthread_mutex_t m_contenttype_allowed_mtx;
 };
 
-extern DnsBlockList g_dnsBlockList;
+extern ContentTypeBlockList g_contentTypeBlockList;
 
-#endif //FX_DNSBLOCKLIST_H
+
+#endif //FX_CONTENTTYPEBLOCKLIST_H

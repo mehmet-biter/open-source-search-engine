@@ -8649,6 +8649,20 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for BlockList";
+	m->m_cgi   = "ltrc_bl";
+	simple_m_set(Conf,m_logTraceBlockList);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for ContentTypeBlockList";
+	m->m_cgi   = "ltrc_ctbl";
+	simple_m_set(Conf,m_logTraceContentTypeBlockList);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for DocDelete";
 	m->m_cgi   = "ltrc_docdel";
 	simple_m_set(Conf,m_logTraceDocDelete);

@@ -74,6 +74,7 @@ void HttpMime::reset ( ) {
 	m_contentEncodingPos = NULL;
 	m_contentLengthPos = NULL;
 	m_contentTypePos = NULL;
+	m_contentTypeLen = 0;
 
 	m_cookies.clear();
 }
@@ -625,6 +626,7 @@ bool HttpMime::parseContentType(const char *field, size_t fieldLen) {
 
 		if (getValue(&value, &valueLen)) {
 			m_contentTypePos = value;
+			m_contentTypeLen = valueLen;
 			m_contentType = getContentTypePrivate(value, valueLen);
 		}
 

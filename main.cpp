@@ -81,6 +81,7 @@
 #include "Dir.h"
 #include "File.h"
 #include "DnsBlockList.h"
+#include "ContentTypeBlockList.h"
 #include "UrlMatchList.h"
 #include "UrlBlockCheck.h"
 #include "DocDelete.h"
@@ -1666,6 +1667,7 @@ int main2 ( int argc , char *argv[] ) {
 
 	// load block lists
 	g_dnsBlockList.init();
+	g_contentTypeBlockList.init();
 
 	g_urlBlackList.init();
 	g_urlWhiteList.init();
