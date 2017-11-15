@@ -472,6 +472,7 @@ static bool sendResult(State *st) {
 			// want to hammer the first host with spidering enabled.
 			robotsShardNum = hash32n ( urlRobots ) % nh;
 		}
+		robotsShardNum = robotsShardNum % g_hostdb.getNumShards();
 	}
 
 	//locate spider request and reply
