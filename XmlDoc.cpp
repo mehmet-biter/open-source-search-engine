@@ -9403,7 +9403,7 @@ void XmlDoc::filterStart_r(bool amThread) {
 	size_t inputContentLen = 0;
 
 	if (m_contentType == CT_HTML) {
-		snprintf(buf, bufLen - 1, "%s\n%s", g_conf.m_spiderBotName, m_firstUrl.getUrl());
+		snprintf(buf, bufLen - 1, "%s\n%s", g_conf.m_spiderUserAgent, m_firstUrl.getUrl());
 		inputContent = buf;
 		inputContentLen = strlen(buf);
 	} else {
