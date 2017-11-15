@@ -222,31 +222,54 @@ static bool respondWithError(State *st, const char *msg) {
 }
 
 
-static void generatePageHtml(int64_t shardNum, const char *url, const SpiderRequest *spiderRequest, const SpiderReply *spiderReply, SafeBuf *sb) {
+static void generatePageHtml(int32_t shardNum, int32_t firstIp, int32_t robotsShardNum, const char *url, const SpiderRequest *spiderRequest, const SpiderReply *spiderReply, SafeBuf *sb) {
 	// print URL in box
 	sb->safePrintf("<br>\n"
 		              "Enter URL: "
 		              "<input type=text name=url value=\"%s\" size=60>", url);
-	sb->safePrintf("</form><br>\n");
+	sb->safePrintf("</form><br/><br/>\n");
 
 	if (shardNum >= 0) {
-		sb->safePrintf("<p>Shard: %u</p>\n", static_cast<uint32_t>(shardNum));
-
+		sb->safePrintf("<table class=\"main\" width=100%%>\n");
+		sb->safePrintf("<tr class=\"level1\"><th colspan=50>Host information</th></tr>\n");
+		sb->safePrintf("<tr><td>Shard:</td><td>%u</td></tr>\n", static_cast<uint32_t>(shardNum));
 		int32_t numHosts;
 		const Host *host = g_hostdb.getShard(shardNum, &numHosts);
 		if(host) {
-			sb->safePrintf("<p>Host:");
-
+			sb->safePrintf("<tr><td>Host:</td><td>");
 			while (numHosts--) {
 				if (host->m_spiderEnabled) {
 					sb->safePrintf(" %u", host->m_hostId);
 				}
 				host++;
 			}
-
-			sb->safePrintf("</p>\n");
+			sb->safePrintf("</td></tr>\n");
 		}
 	}
+
+	if (robotsShardNum >= 0) {
+		int32_t numHosts;
+		const Host *host = g_hostdb.getShard(robotsShardNum, &numHosts);
+		if(host) {
+			sb->safePrintf("<tr><td>Robots.txt host:</td><td>");
+			while (numHosts--) {
+				if (host->m_spiderEnabled) {
+					sb->safePrintf(" %u", host->m_hostId);
+				}
+				host++;
+			}
+			sb->safePrintf("</td></tr>\n");
+		}
+	}
+
+	if (shardNum >= 0) {
+		char ipbuf[16];
+		iptoa(firstIp,ipbuf);
+		sb->safePrintf("<tr><td>FirstIP:</td><td>%s</td></tr>\n", ipbuf);
+		sb->safePrintf("</table>\n");
+		sb->safePrintf("<br/>\n");
+	}
+
 
 	if (spiderRequest) {
 		char ipbuf[16];
@@ -296,7 +319,7 @@ static void generatePageHtml(int64_t shardNum, const char *url, const SpiderRequ
 	}
 }
 
-static void generatePageJSON(int64_t shardNum, const SpiderRequest *spiderRequest, const SpiderReply *spiderReply, SafeBuf *sb) {
+static void generatePageJSON(int32_t shardNum, int32_t firstIp, int32_t robotsShardNum, const SpiderRequest *spiderRequest, const SpiderReply *spiderReply, SafeBuf *sb) {
 	sb->safePrintf("{\n");
 	if (shardNum >= 0) {
 		sb->safePrintf("\"shard\": %u,\n", static_cast<uint32_t>(shardNum));
@@ -321,6 +344,35 @@ static void generatePageJSON(int64_t shardNum, const SpiderRequest *spiderReques
 			sb->safePrintf("]");
 		}
 	}
+
+	if (robotsShardNum >= 0) {
+		int32_t numHosts;
+		const Host *host = g_hostdb.getShard(robotsShardNum, &numHosts);
+		if(host) {
+			sb->safePrintf(",\n\"robotsTxtHost\": [");
+
+			bool isFirst = true;
+			while (numHosts--) {
+				if (host->m_spiderEnabled) {
+					if (!isFirst) {
+						sb->safePrintf(", ");
+					}
+					sb->safePrintf("%u", host->m_hostId);
+					isFirst = false;
+				}
+				host++;
+			}
+
+			sb->safePrintf("]");
+		}
+	}
+	if (shardNum >= 0) {
+		char ipbuf[16];
+		iptoa(firstIp,ipbuf);
+		sb->safePrintf(",\n\"firstIp\": \"%s\"", iptoa(firstIp, ipbuf));
+	}
+
+
 
 	if (spiderRequest) {
 		sb->safePrintf(",\n\"spiderRequest\": {\n");
@@ -376,11 +428,50 @@ static bool sendResult(State *st) {
 		return respondWithError(st, mstrerror(g_errno));
 	}
 
-	int64_t shardNum = -1;
+	int32_t shardNum = -1;
+	int32_t robotsShardNum = -1;
 	if(st->m_url_str[0]) {
 		int64_t uh48 = hash64b(st->m_url_str);
 		key128_t startKey = Spiderdb::makeFirstKey(st->m_firstip, uh48);
 		shardNum = g_hostdb.getShardNum(RDB_SPIDERDB, &startKey);
+
+		//
+		// locate host that caches robots.txt
+		//
+		Url u;
+		u.set(st->m_url_str);
+
+		// build robots.txt url
+		char urlRobots[MAX_URL_LEN+1];
+		char *p = urlRobots;
+		if ( ! u.getScheme() )
+		{
+			p += sprintf ( p , "http://" );
+		}
+		else
+		{
+			gbmemcpy ( p , u.getScheme() , u.getSchemeLen() );
+			p += u.getSchemeLen();
+			p += sprintf(p,"://");
+		}
+
+		gbmemcpy ( p , u.getHost() , u.getHostLen() );
+		p += u.getHostLen();
+
+		// add port if not default
+		if ( u.getPort() != u.getDefaultPort() ) {
+			p += sprintf( p, ":%" PRId32, u.getPort() );
+		}
+		p += sprintf ( p , "/robots.txt" );
+
+		// find host based on firstip and robots.txt url
+		int32_t nh     = g_hostdb.getNumHosts();
+		robotsShardNum = hash32h(((uint32_t)st->m_firstip >> 8), 0) % nh;
+		if((uint32_t)st->m_firstip >> 8 == 0) {
+			// If the first IP is not set for the request then we don't
+			// want to hammer the first host with spidering enabled.
+			robotsShardNum = hash32n ( urlRobots ) % nh;
+		}
 	}
 
 	//locate spider request and reply
@@ -409,12 +500,12 @@ static bool sendResult(State *st) {
 	switch(st->m_r.getReplyFormat()) {
 		case FORMAT_HTML:
 			g_pages.printAdminTop(&sb, s, &st->m_r, NULL);
-			generatePageHtml(shardNum, st->m_url_str, spiderRequest, spiderReply, &sb);
+			generatePageHtml(shardNum, st->m_firstip, robotsShardNum, st->m_url_str, spiderRequest, spiderReply, &sb);
 			g_pages.printAdminBottom2(&sb);
 			contentType = "text/html";
 			break;
 		case FORMAT_JSON:
-			generatePageJSON(shardNum, spiderRequest, spiderReply, &sb);
+			generatePageJSON(shardNum, st->m_firstip, robotsShardNum, spiderRequest, spiderReply, &sb);
 			contentType = "application/json";
 			break;
 		default:
