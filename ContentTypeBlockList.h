@@ -29,9 +29,10 @@ public:
 	ContentTypeBlockList();
 
 	bool isContentTypeBlocked(const char *contentType, size_t contentTypeLen);
-	void addContentTypeAllowed(const std::string &contentType);
 
 private:
+	void addContentTypeAllowed(const char *contentType, size_t contentTypeLen);
+
 	std::vector<std::string> m_contenttype_allowed;
 	mutable pthread_mutex_t m_contenttype_allowed_mtx;
 };

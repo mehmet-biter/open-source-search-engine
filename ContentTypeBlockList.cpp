@@ -41,13 +41,16 @@ ContentTypeBlockList::ContentTypeBlockList()
 	}
 }
 
-void ContentTypeBlockList::addContentTypeAllowed(const std::string &contentType) {
+void ContentTypeBlockList::addContentTypeAllowed(const char *contentType, size_t contentTypeLen) {
+	std::string contentTypeStr(contentType, contentTypeLen);
+	std::transform(contentTypeStr.begin(), contentTypeStr.end(), contentTypeStr.begin(), ::tolower);
+
 	ScopedLock sl(m_contenttype_allowed_mtx);
-	if (std::find(m_contenttype_allowed.begin(), m_contenttype_allowed.end(), contentType) != m_contenttype_allowed.end()) {
+	if (std::find(m_contenttype_allowed.begin(), m_contenttype_allowed.end(), contentTypeStr) != m_contenttype_allowed.end()) {
 		return;
 	}
 
-	m_contenttype_allowed.push_back(contentType);
+	m_contenttype_allowed.push_back(contentTypeStr);
 	std::ofstream file(s_contenttype_allowed_filename, (std::ios::out | std::ios::app));
 	file << contentType << std::endl;
 }
@@ -74,6 +77,6 @@ bool ContentTypeBlockList::isContentTypeBlocked(const char *contentType, size_t 
 		}
 	}
 
-	addContentTypeAllowed(std::string(contentType, contentTypeLen));
+	addContentTypeAllowed(contentType, contentTypeLen);
 	return false;
 }
