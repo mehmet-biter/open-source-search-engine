@@ -2743,8 +2743,6 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 
 
 
-
-
 void dumpRobotsTxtCache(const char *url) {
 	struct HttpCacheData {
 		int32_t m_errno;
@@ -2757,7 +2755,36 @@ void dumpRobotsTxtCache(const char *url) {
 		return;
 	}
 
-	fprintf(stdout, "robots.txt.cache lookup of %s\n", url);
+	// Generate robots.txt url
+	Url u;
+	u.set(url);
+
+	// build robots.txt url
+	char urlRobots[MAX_URL_LEN+1];
+	char *p = urlRobots;
+	if ( ! u.getScheme() )
+	{
+		p += sprintf ( p , "http://" );
+	}
+	else
+	{
+		gbmemcpy ( p , u.getScheme() , u.getSchemeLen() );
+		p += u.getSchemeLen();
+		p += sprintf(p,"://");
+	}
+
+	gbmemcpy ( p , u.getHost() , u.getHostLen() );
+	p += u.getHostLen();
+
+	// add port if not default
+	if ( u.getPort() != u.getDefaultPort() ) {
+		p += sprintf( p, ":%" PRId32, u.getPort() );
+	}
+	p += sprintf ( p , "/robots.txt" );
+
+
+
+	fprintf(stdout, "robots.txt.cache lookup of %s\n", urlRobots);
 
 	RdbCache httpCacheRobots;
 	int32_t memRobots = 3000000;
@@ -2781,7 +2808,7 @@ void dumpRobotsTxtCache(const char *url) {
 	int32_t  recSize;
 	key96_t k;
 	k.n1 = 0;
-	k.n0 = hash64(url, strlen(url));
+	k.n0 = hash64(urlRobots, strlen(urlRobots));
 	k.n0 ^= 0xff;	// for compressed keys
 
 	int64_t uh48 = k.n0 & 0x0000ffffffffffffLL;
