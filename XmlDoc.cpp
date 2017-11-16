@@ -53,6 +53,7 @@
 #include "ContentTypeBlockList.h"
 #include <iostream>
 #include <fstream>
+#include <sysexits.h>
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -9444,6 +9445,31 @@ void XmlDoc::filterStart_r(bool amThread) {
 	// execute it
 	int retVal = gbsystem(cmd);
 
+	if (retVal == -1 || (WIFEXITED(retVal) && WEXITSTATUS(retVal) != 0) || !WIFEXITED(retVal)) {
+		log(LOG_WARN, "gb: system(%s): retVal=%d ifexited=%d exitstatus=%d url=%s",
+		    cmd, retVal, WIFEXITED(retVal), WEXITSTATUS(retVal), m_currentUrl.getUrl());
+
+		// remove output file
+		if (WIFEXITED(retVal)) {
+			// only remove input file if converter doesn't exist
+			if (WEXITSTATUS(retVal) == EX_UNAVAILABLE) {
+				unlink(in);
+			} else {
+				// output file only exist if converter exist
+				unlink(out);
+
+				// move to error file so we have a chance to figure out what's wrong
+				char new_in[1030];
+				snprintf(new_in, 1029, "%sin.error.%" PRId64, g_hostdb.m_dir, (int64_t)id);
+				rename(in, new_in);
+			}
+		}
+
+		m_errno = m_indexCode = EDOCCONVERTFAILED;
+		m_indexCodeValid = true;
+		return;
+	}
+
 	// all done with input file. clean up the binary input file from disk
 	if (unlink(in) != 0) {
 		// log error
@@ -9451,14 +9477,6 @@ void XmlDoc::filterStart_r(bool amThread) {
 
 		// ignore it, since it was not a processing error per se
 		errno = 0;
-	}
-
-	if (retVal == -1 || (WIFEXITED(retVal) && WEXITSTATUS(retVal) != 0) || !WIFEXITED(retVal)) {
-		log(LOG_WARN, "gb: system(%s): retVal=%d ifexited=%d exitstatus=%d url=%s",
-		    cmd, retVal, WIFEXITED(retVal), WEXITSTATUS(retVal), m_currentUrl.getUrl());
-		m_errno = m_indexCode = EDOCCONVERTFAILED;
-		m_indexCodeValid = true;
-		return;
 	}
 
 	CollectionRec *cr = getCollRec();
