@@ -9461,7 +9461,7 @@ void XmlDoc::filterStart_r(bool amThread) {
 				// move to error file so we have a chance to figure out what's wrong
 				char new_in[1030];
 				snprintf(new_in, 1029, "%sin.error.%" PRId64, g_hostdb.m_dir, (int64_t)id);
-				rename(in, new_in);
+				(void)rename(in, new_in);
 			}
 		}
 
