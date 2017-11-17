@@ -52,7 +52,7 @@ void ContentTypeBlockList::addContentTypeAllowed(const char *contentType, size_t
 
 	m_contenttype_allowed.push_back(contentTypeStr);
 	std::ofstream file(s_contenttype_allowed_filename, (std::ios::out | std::ios::app));
-	file << contentType << std::endl;
+	file << contentTypeStr << std::endl;
 }
 
 bool ContentTypeBlockList::isContentTypeBlocked(const char *contentType, size_t contentTypeLen) {
