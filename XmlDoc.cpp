@@ -9376,15 +9376,18 @@ void XmlDoc::filterStart_r(bool amThread) {
 	// assume none
 	m_filteredContentLen = 0;
 
+	// 20 (64bit int len) + 1 (dot)
+	static const size_t max_filename_len = sizeof(g_hostdb.m_dir) + 21;
+
 	// pass the input to the program through this file
 	// rather than a pipe, since popen() seems broken
-	char in[1024];
-	snprintf(in, 1023, "%sin.%" PRId64, g_hostdb.m_dir, (int64_t)id);
+	char in[max_filename_len];
+	snprintf(in, sizeof(in) - 1, "%sin.%" PRId64, g_hostdb.m_dir, (int64_t)id);
 	unlink(in);
 
 	// collect the output from the filter from this file
-	char out[1024];
-	snprintf(out, 1023, "%sout.%" PRId64, g_hostdb.m_dir, (int64_t)id);
+	char out[max_filename_len];
+	snprintf(out, sizeof(out) - 1, "%sout.%" PRId64, g_hostdb.m_dir, (int64_t)id);
 	unlink(out);
 
 	// ignore errno from those unlinks
@@ -9449,6 +9452,7 @@ void XmlDoc::filterStart_r(bool amThread) {
 		log(LOG_WARN, "gb: system(%s): retVal=%d ifexited=%d exitstatus=%d url=%s",
 		    cmd, retVal, WIFEXITED(retVal), WEXITSTATUS(retVal), m_currentUrl.getUrl());
 
+		bool moveInputFile = false;
 		// remove output file
 		if (WIFEXITED(retVal)) {
 			// only remove input file if converter doesn't exist
@@ -9458,11 +9462,17 @@ void XmlDoc::filterStart_r(bool amThread) {
 				// output file only exist if converter exist
 				unlink(out);
 
-				// move to error file so we have a chance to figure out what's wrong
-				char new_in[1030];
-				snprintf(new_in, 1029, "%sin.error.%" PRId64, g_hostdb.m_dir, (int64_t)id);
-				(void)rename(in, new_in);
+				moveInputFile = true;
 			}
+		} else {
+			moveInputFile = true;
+		}
+
+		if (moveInputFile) {
+			// move to error file so we have a chance to figure out what's wrong
+			char new_in[max_filename_len + 6];
+			snprintf(new_in, sizeof(new_in) - 1, "%sin.error.%" PRId64, g_hostdb.m_dir, (int64_t)id);
+			(void)rename(in, new_in);
 		}
 
 		m_errno = m_indexCode = EDOCCONVERTFAILED;
