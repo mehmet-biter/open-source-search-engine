@@ -194,9 +194,6 @@ private:
 	bool parseContentLanguage(const char *field, size_t fieldLen);
 	bool parseServer(const char *field, size_t fieldLen);
 
-	// converts a string contentType like "text/html" to a int32_t
-	int32_t getContentTypePrivate(const char *s, size_t slen);
-
 	// used for bz2, gz files
 	const char *getContentEncodingFromExtension ( const char *ext ) ;
 
