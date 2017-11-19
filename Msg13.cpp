@@ -1350,6 +1350,10 @@ void gotHttpReply2 ( void *state ,
 		savedErr = g_errno = EDOCBLOCKEDSHLIBCONTENT;
 	}
 
+	if (ts->m_truncated) {
+		savedErr = g_errno = EDOCTOOBIG;
+	}
+
 	// . add to the table if not in there yet
 	// . store in our table of ips we should use proxies for
 	// . also start off with a crawldelay of like 1 sec for this
@@ -1773,7 +1777,6 @@ void gotHttpReply2 ( void *state ,
 		// use this
 		int32_t err = 0;
 		// set g_errno appropriately
-		//if ( ! ts || savedErr ) err = savedErr;
 		if ( savedErr ) err = savedErr;
 		// sanity check. must be empty on any error
 		if ( reply && replySize > 0 && err ) {
@@ -1796,7 +1799,8 @@ void gotHttpReply2 ( void *state ,
 			     // connection reset by peer
 			     err != ECONNRESET &&
 			     err != EBANNEDCRAWL &&
-			     err != EDOCBLOCKEDSHLIBCONTENT)
+			     err != EDOCBLOCKEDSHLIBCONTENT &&
+			     err != EDOCTOOBIG)
 			{
 				log("http: bad error from httpserver get doc: %s",
 				    mstrerror(err));

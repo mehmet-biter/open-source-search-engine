@@ -8047,7 +8047,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 
 	// max to download in bytes.
 	r->m_maxTextDocLen          = cr->m_maxTextDocLen;
-	r->m_maxOtherDocLen         = cr->m_maxOtherDocLen;
+	r->m_maxOtherDocLen         = cr->m_maxOtherDocDownloadLen;
 
 	// but if url is on the intranet/internal nets
 	if ( m_ipValid && is_internal_net_ip(m_ip) ) {
@@ -8365,6 +8365,7 @@ char **XmlDoc::gotHttpReply ( ) {
 
 
 char *XmlDoc::getIsContentTruncated ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 	if ( m_isContentTruncatedValid ) return &m_isContentTruncated2;
 
 	setStatus ( "getting is content truncated" );
@@ -8402,22 +8403,19 @@ char *XmlDoc::getIsContentTruncated ( ) {
 	// was the content truncated? these might label a doc is truncated
 	// when it really is not... but we only use this for link spam stuff,
 	// so it should not matter too much. it should only happen rarely.
-	if ( cr->m_maxTextDocLen >= 0 &&
-		LEN >= cr->m_maxTextDocLen-1  &&
-		*ct == CT_HTML )
-			m_isContentTruncated = true;
+	if (cr->m_maxTextDocLen >= 0 && LEN >= cr->m_maxTextDocLen - 1 && *ct == CT_HTML) {
+		m_isContentTruncated = true;
+	}
 
-	if ( cr->m_maxOtherDocLen >= 0 &&
-		LEN >= cr->m_maxOtherDocLen-1 &&
-		*ct != CT_HTML )
-			m_isContentTruncated = true;
+	if (cr->m_maxOtherDocDownloadLen >= 0 && LEN >= cr->m_maxOtherDocDownloadLen - 1 && *ct != CT_HTML) {
+		m_isContentTruncated = true;
+	}
 
-	//if ( LEN > MAXDOCLEN ) m_isContentTruncated = true;
 	// set this
 	m_isContentTruncated2 = (bool)m_isContentTruncated;
-	// validate it
 	m_isContentTruncatedValid = true;
 
+	logTrace(g_conf.m_logTraceXmlDoc, "END, returning isContentTruncated=%d", m_isContentTruncated2);
 	return &m_isContentTruncated2;
 }
 

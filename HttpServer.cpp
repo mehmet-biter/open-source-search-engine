@@ -660,6 +660,7 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 }
 
 #include "Pages.h" // sendPageAPI, printApiForPage()
+#include "ContentTypeBlockList.h"
 
 // . reply to a GET (including partial get) or HEAD request
 // . HEAD just returns the MIME header for the file requested
@@ -1675,7 +1676,10 @@ int32_t getMsgSize(const char *buf, int32_t bufSize, TcpSocket *s) {
 	// . don't read more than this many bytes!
 	// . this may change if we detect a Content-Type: field in the MIME
 	int32_t max = s->m_maxTextDocLen + 10*1024;
-	if ( s->m_maxTextDocLen == -1 ) max = 0x7fffffff;
+	if (s->m_maxTextDocLen == -1) {
+		max = 0x7fffffff;
+	}
+
 	// hey, now, requests can have this to if they're POSTs
 	// is it a reply?
 	bool hasContent = ( bufSize>=4  && buf[0]=='H' && buf[1]=='T' && 
@@ -1730,32 +1734,57 @@ int32_t getMsgSize(const char *buf, int32_t bufSize, TcpSocket *s) {
 	// set allOrNothing to true
 	bool  allOrNothing = false;
 	for ( ; p < pend ; p++ ) {
-		if ( *p != 'c' && *p != 'C' ) continue;
-		if ( p + 13 >= pend ) break;
-		if ( strncasecmp ( p, "Content-Type:", 13 ) != 0 ) continue;
-		p += 13; while ( p < pend && is_wspace_a(*p) ) p++;
-		if ( p + 9 < pend && strncasecmp ( p,"text/html" , 9 )==0)
+		if (*p != 'c' && *p != 'C') {
 			continue;
-		if ( p + 10 < pend && strncasecmp( p,"text/plain",10)==0)
+		}
+
+		if (p + 13 >= pend) {
+			break;
+		}
+
+		if (strncasecmp(p, "Content-Type:", 13) != 0) {
 			continue;
-		// . we cannot parse partial PDFs cuz they have a table at the 
+		}
+		p += 13;
+
+		while (p < pend && is_wspace_a(*p)) p++;
+
+		const char *ct_end = p;
+		while (ct_end < pend && !is_wspace_a(*ct_end)) ct_end++;
+
+		// don't try to download more for blocked content type
+		if (g_contentTypeBlockList.isContentTypeBlocked(p, ct_end - p)) {
+			s->m_truncated = true;
+			return bufSize;
+		}
+
+		if (p + 5 < pend && strncasecmp(p, "text/", 5) == 0) {
+			continue;
+		}
+
+		// . we cannot parse partial PDFs cuz they have a table at the
 		//   end that gets cutoff
 		// . but we can still index their url components and link
 		//   text and it won't take up much space at all, so we might
 		//   as well index that at least.
-		if ( p + 15 < pend && strncasecmp( p,"application/pdf",15)==0)
+		if (p + 12 < pend && strncasecmp(p, "application/", 12) == 0) {
 			allOrNothing = true;
-		if ( p + 15 < pend&&strncasecmp(p,"application/x-gzip",18)==0)
-			allOrNothing = true;
+		}
+
 		// adjust "max to read" if we don't have an html/plain doc
 		// this can be pdf or xml etc
-		if ( ! isPost ) {
-			max = s->m_maxOtherDocLen + 10*1024 ;
-			if ( s->m_maxOtherDocLen == -1 ) max = 0x7fffffff;
+		if (!isPost) {
+			if (s->m_maxOtherDocLen == -1) {
+				max = 0x7fffffff;
+			} else {
+				max = s->m_maxOtherDocLen + 10 * 1024;
+			}
+
 			// overflow? we added 10k to it make sure did not
 			// wrap around to a negative number
-			if ( max<s->m_maxOtherDocLen && s->m_maxOtherDocLen>0 )
+			if (max < s->m_maxOtherDocLen && s->m_maxOtherDocLen > 0) {
 				max = s->m_maxOtherDocLen;
+			}
 		}
 	}
 
@@ -1796,6 +1825,7 @@ int32_t getMsgSize(const char *buf, int32_t bufSize, TcpSocket *s) {
 		    "of this type are useless. "
 		    "Abandoning.",totalReplySize,max);
 		// do not read any more than what we have
+		s->m_truncated = true;
 		return bufSize;
 	}
 	// warn if we received a post that was truncated
@@ -1809,6 +1839,7 @@ int32_t getMsgSize(const char *buf, int32_t bufSize, TcpSocket *s) {
 	if ( totalReplySize > max ) {
 		log(LOG_WARN, "http: truncating reply of %" PRId32" to %" PRId32" bytes", totalReplySize,max);
 		totalReplySize = max;
+		s->m_truncated = true;
 	}
 	// truncate if we need to
 	if ( totalReplySize )

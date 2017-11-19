@@ -148,6 +148,8 @@ const char *mstrerror ( int errnum ) {
 				return "Doc bad redirect url";
 			case EDOCCONVERTFAILED:
 				return "Doc conversion error";
+			case EDOCTOOBIG:
+				return "Doc is too big";
 			case EDOCUNCHANGED    :
 				return "Doc unchanged";
 			case EDOCDUP          :
@@ -361,7 +363,7 @@ static const char* s_errname[] {
 	STRINGIFY( EDOCSIMPLIFIEDREDIR ),
 	STRINGIFY( EDOCBADREDIRECTURL ),
 	STRINGIFY( EDOCCONVERTFAILED ),
-	STRINGIFY( EUNUSED16 ),
+	STRINGIFY( EDOCTOOBIG ),
 	STRINGIFY( EUNUSED17 ),
 	STRINGIFY( EUNUSED18 ),
 	STRINGIFY( EUNUSED19 ),
