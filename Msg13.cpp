@@ -1418,10 +1418,6 @@ void gotHttpReply2 ( void *state ,
 		    "err=%s",
 		    iptoa(r->m_firstIp,ipbuf),r->ptr_url,mstrerror(savedErr));
 	}
-	
-
-	// sanity. this was happening from iframe download
-	//if ( g_errno == EDNSTIMEDOUT ) { gbshutdownAbort(true); }
 
 	// . sanity check - robots.txt requests must always be compressed
 	// . saves space in the cache
