@@ -273,6 +273,11 @@ bool HttpMime::getValue(const char **value, size_t *valueLen) {
 		m_attributeStartPos = semicolonPos - m_currentLine + 1;
 	}
 
+	// strip ending whitespace
+	while (*valueLen > 0 && (is_wspace_a((*value)[*valueLen - 1]))) {
+		--(*valueLen);
+	}
+
 	logTrace(g_conf.m_logTraceHttpMime, "value='%.*s'", static_cast<int>(*valueLen), *value);
 
 	return (*valueLen > 0);
