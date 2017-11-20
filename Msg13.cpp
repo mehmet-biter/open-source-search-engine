@@ -1351,7 +1351,11 @@ void gotHttpReply2 ( void *state ,
 	}
 
 	if (ts->m_truncated) {
-		savedErr = g_errno = EDOCTOOBIG;
+		if (ts->m_blockedContentType) {
+			savedErr = g_errno = EDOCBADCONTENTTYPE;
+		} else {
+			savedErr = g_errno = EDOCTOOBIG;
+		}
 	}
 
 	// . add to the table if not in there yet
@@ -1800,7 +1804,8 @@ void gotHttpReply2 ( void *state ,
 			     err != ECONNRESET &&
 			     err != EBANNEDCRAWL &&
 			     err != EDOCBLOCKEDSHLIBCONTENT &&
-			     err != EDOCTOOBIG)
+			     err != EDOCTOOBIG &&
+			     err != EDOCBADCONTENTTYPE)
 			{
 				log("http: bad error from httpserver get doc: %s",
 				    mstrerror(err));

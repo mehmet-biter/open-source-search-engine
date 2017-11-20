@@ -367,8 +367,7 @@ bool HttpServer::gotDoc ( int32_t n, TcpSocket *s ) {
 	states[n]    = NULL;
 	callbacks[n] = NULL;
 	s_numOutgoingSockets--;
-	//figure out if it came back zipped, unzip if so.
-	//if(g_conf.m_gzipDownloads && !g_errno && s->m_readBuf)
+
 	// now wikipedia force gzip on us regardless
 	if( !g_errno && s->m_readBuf) {
 		// this could set g_errno to EBADMIME or ECORRUPTHTTPGZIP
@@ -1754,7 +1753,9 @@ int32_t getMsgSize(const char *buf, int32_t bufSize, TcpSocket *s) {
 
 		// don't try to download more for blocked content type
 		if (g_contentTypeBlockList.isContentTypeBlocked(p, ct_end - p)) {
+			s->m_blockedContentType = true;
 			s->m_truncated = true;
+
 			return bufSize;
 		}
 

@@ -616,6 +616,7 @@ bool TcpServer::sendMsg( const char *hostname, int32_t hostnameLen, int32_t ip, 
 	s->m_streamingMode    = false;
 	s->m_tunnelMode       = 0;
 	s->m_truncated        = false;
+	s->m_blockedContentType = false;
 
 	// if http request starts with "CONNECT ..." then enter tunnel mode
 	if ( useHttpTunnel ) {
