@@ -925,6 +925,7 @@ public:
 	bool m_useRobotsTxt;
 	int32_t m_robotsTxtLen;
 	bool m_robotsTxtHttpStatusDisallowed;
+	bool m_robotsTxtErrorDisallowed;
 	int32_t m_httpReplySize;
 	int32_t m_httpReplyAllocSize;
 	char *m_filteredContent;

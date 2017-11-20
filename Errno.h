@@ -83,7 +83,7 @@ enum {
 	EDOCDISALLOWED   , // robots.txt disallows this url
 	EDOCDISALLOWEDHTTPSTATUS, // disallowed due to robots.txt http status
 	EDOCDISALLOWEDROOT, // robots.txt disallows this root url 32830
-	EUNUSED24        ,
+	EDOCDISALLOWEDERROR, // disallowed due to error downloading robots.txt
 	EUNUSED25        ,
 	EUNUSED26        ,
 	EUNUSED27        ,

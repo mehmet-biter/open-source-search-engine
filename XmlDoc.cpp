@@ -357,6 +357,7 @@ void XmlDoc::reset ( ) {
 	m_numOutlinksAdded         = 0;
 	m_useRobotsTxt             = true;
 	m_robotsTxtHttpStatusDisallowed = false;
+	m_robotsTxtErrorDisallowed = false;
 
 	m_allowSimplifiedRedirs    = false;
 
@@ -2364,6 +2365,8 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if (disallowed) {
 		if (m_robotsTxtHttpStatusDisallowed) {
 			m_indexCode = EDOCDISALLOWEDHTTPSTATUS;
+		} else if (m_robotsTxtErrorDisallowed) {
+			m_indexCode = EDOCDISALLOWEDERROR;
 		} else if (m_firstUrl.isRoot()) {
 			m_indexCode = EDOCDISALLOWEDROOT;
 		} else {
@@ -7253,6 +7256,30 @@ bool *XmlDoc::getIsAllowed ( ) {
 		return NULL;
 	}
 
+	int32_t *dstatus = ed->getDownloadStatus();
+	if (!dstatus || dstatus == (void *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. dstatus failed, return %s", ((bool *)dstatus ? "true" : "false"));
+		return (bool *)dstatus;
+	}
+
+	if (*dstatus) {
+		// reset this. -1 means unknown or none found. We now use a more sane default
+		// as the caller would have defaulted to 250ms if set to -1 here.
+		m_crawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
+		m_crawlDelayValid = true;
+
+		m_robotsTxtErrorDisallowed = true;
+
+		m_isAllowed      = false;
+		m_isAllowedValid = true;
+
+		logTrace( g_conf.m_logTraceXmlDoc, "END. dstatus != 0. Return %s", (m_isAllowed?"true":"false"));
+
+		// nuke it to save mem
+		nukeDoc(ed);
+		return &m_isAllowed;
+	}
+
 	// . now try the content
 	// . should call getHttpReply
 	char **pcontent = ed->getContent();
@@ -8340,19 +8367,6 @@ char **XmlDoc::gotHttpReply ( ) {
 		m_httpReplySize      = 0;
 		m_httpReply          = NULL;
 		m_httpReplyAllocSize = 0;
-	}
-
-	//Slighty weird in the original code: this block didn't exist so for all errors not
-	//explicitly tested for in the code above would slip through as empty responses.
-	if(g_errno) {
-		if(m_httpReply) {
-			mfree ( m_httpReply, m_httpReplyAllocSize, "XmlDocHR" );
-			m_httpReplySize      = 0;
-			m_httpReply          = NULL;
-			m_httpReplyAllocSize = 0;
-		}
-		logTrace(g_conf.m_logTraceXmlDoc, "END, return NULL. %s", merrname(g_errno));
-		return NULL;
 	}
 
 	// clear this i guess
