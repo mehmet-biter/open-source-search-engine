@@ -334,6 +334,9 @@ public:
 
 	bool *checkBlockList();
 
+	bool *parseRobotsMetaTag();
+	void parseRobotsMetaTagContent(const char *content, int32_t contentLen);
+
 	char *getIsPermalink ( ) ;
 	char *getIsUrlPermalinkFormat ( ) ;
 	char *getIsRSS ( ) ;
@@ -527,7 +530,10 @@ public:
 	class Title *getTitle ();
 	class Summary *getSummary () ;
 	char *getHighlightedSummary ( bool *isSetFromTagsPtr );
-	char *getIsNoArchive ( ) ;
+	bool *getIsNoArchive();
+	bool *getIsNoFollow();
+	bool *getIsNoIndex();
+	bool *getIsNoSnippet();
 	int32_t *getUrlFilterNum();
 	char *getIsLinkSpam ( ) ;
 	char *getIsErrorPage ( ) ;
@@ -815,7 +821,6 @@ public:
 	bool m_htbValid;
 	bool m_collnumValid;
 	bool m_summaryValid;
-	bool m_isNoArchiveValid;
 	bool m_titleRecBufValid;
 	bool m_isLinkSpamValid;
 	bool m_isErrorPageValid;
@@ -974,7 +979,6 @@ public:
 	SafeBuf m_htb;
 	Title m_title;
 	Summary m_summary;
-	char m_isNoArchive;		// May be -1
 	char m_isErrorPage;		// May be -1
 
 	// stuff
@@ -1124,6 +1128,13 @@ public:
 	bool m_blockedDoc;
 	bool m_checkedUrlBlockList;
 	bool m_checkedDnsBlockList;
+
+	bool m_parsedRobotsMetaTag;
+	bool m_robotsNoIndex;
+	bool m_robotsNoFollow;
+	bool m_robotsNoArchive;
+	bool m_robotsNoSnippet;
+
 
 	std::vector<std::string> m_hostNameServers;
 

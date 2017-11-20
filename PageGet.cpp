@@ -266,7 +266,7 @@ bool processLoop ( void *state ) {
 		return sendErrorReply ( st , ENOTFOUND);
 
 	// set callback
-	char *na = xd->getIsNoArchive();
+	bool *na = xd->getIsNoArchive();
 	// wait if blocked
 	if ( na == (void *)-1 ) return false;
 	// error?

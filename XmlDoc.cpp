@@ -106,6 +106,11 @@ XmlDoc::XmlDoc() {
 	m_blockedDoc = false;
 	m_checkedUrlBlockList = false;
 	m_checkedDnsBlockList = false;
+	m_parsedRobotsMetaTag = false;
+	m_robotsNoIndex = false;
+	m_robotsNoFollow = false;
+	m_robotsNoArchive = false;
+	m_robotsNoSnippet = false;
 	m_dupTrPtr = NULL;
 	m_oldTitleRec = NULL;
 	m_filteredContent = NULL;
@@ -163,6 +168,11 @@ void XmlDoc::reset ( ) {
 	m_blockedDoc = false;
 	m_checkedUrlBlockList = false;
 	m_checkedDnsBlockList = false;
+	m_parsedRobotsMetaTag = false;
+	m_robotsNoIndex = false;
+	m_robotsNoFollow = false;
+	m_robotsNoArchive = false;
+	m_robotsNoSnippet = false;
 	m_hostNameServers.clear();
 
 	m_doConsistencyTesting = g_conf.m_doConsistencyTesting;
@@ -11161,12 +11171,6 @@ int8_t *XmlDoc::getHopCount ( ) {
 //set to false fo rinjecting and validate it... if &spiderlinks=0
 // should we spider links?
 char *XmlDoc::getSpiderLinks ( ) {
-	// set it to false on issues
-	//if ( m_indexCode ) {
-	//	m_spiderLinks      = false;
-	//	m_spiderLinks2     = false;
-	//	m_spiderLinksValid = true ; }
-
 	// this slows importing down because we end up doing ip lookups
 	// for every outlink if "firstip" not in tagdb.
 	// shoot. set2() already sets m_spiderLinksValid to true so we
@@ -11197,26 +11201,18 @@ char *XmlDoc::getSpiderLinks ( ) {
 		return &m_spiderLinks2;
 	}
 
-	// check the xml for a meta robots tag
-	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
-
 	// assume true
 	m_spiderLinks = (char)true;
 
 	// or if meta tag says not to
-	char buf1 [256];
-	char buf2 [256];
-	buf1[0] = '\0';
-	buf2[0] = '\0';
-	xml->getMetaContent ( buf1, 255 , "robots" , 6 );
-	xml->getMetaContent ( buf2, 255 , g_conf.m_spiderBotName, strlen(g_conf.m_spiderBotName) );
+	bool *inf = getIsNoFollow();
+	if (!inf || inf == (bool *)-1) {
+		return (char *)inf;
+	}
 
-	if ( strstr ( buf1 , "nofollow" ) ||
-	     strstr ( buf2 , "nofollow" ) ||
-	     strstr ( buf1 , "none"     ) ||
-	     strstr ( buf2 , "none"     ) )
+	if (*inf) {
 		m_spiderLinks = (char)false;
+	}
 
 	// spider links if not using robots.txt
 	if ( ! m_useRobotsTxt )
@@ -15602,8 +15598,8 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	m_reply.m_noArchive = 0;
 	// are we noarchive? only check this if not getting link text
 	if ( ! m_req->m_getLinkText ) {
-		char *na = getIsNoArchive();
-		if ( ! na || na == (char *)-1 ) { checkPointerError(na); return (Msg20Reply *)na; }
+		bool *na = getIsNoArchive();
+		if ( ! na || na == (bool *)-1 ) { checkPointerError(na); return (Msg20Reply *)na; }
 		m_reply.m_noArchive = *na;
 	}
 
@@ -16520,50 +16516,136 @@ char *XmlDoc::getHighlightedSummary ( bool *isSetFromTagsPtr ) {
 	return m_finalSummaryBuf.getBufStart();
 }
 
+void XmlDoc::parseRobotsMetaTagContent(const char *content, int32_t contentLen) {
+	std::string contentStr(content, contentLen);
+	std::transform(contentStr.begin(), contentStr.end(), contentStr.begin(), ::tolower);
+	contentStr.erase(std::remove_if(contentStr.begin(), contentStr.end(), ::isspace), contentStr.end());
+
+	auto tokens = split(contentStr, ',');
+	for (const auto &token : tokens) {
+		switch (token.size()) {
+			case 4:
+				// none
+				if (token.compare("none") == 0) {
+					m_robotsNoIndex = true;
+					m_robotsNoFollow = true;
+				}
+				break;
+			case 7:
+				// noindex
+				if (token.compare("noindex") == 0) {
+					m_robotsNoIndex = true;
+				}
+				break;
+			case 8:
+				// nofollow
+				if (token.compare("nofollow") == 0) {
+					m_robotsNoFollow = true;
+				}
+				break;
+			case 9:
+				// noarchive
+				// nosnippet
+				if (token.compare("noarchive") == 0) {
+					m_robotsNoArchive = true;
+				} else if (token.compare("nosnippet") == 0) {
+					m_robotsNoSnippet = true;
+				}
+				break;
+			default:
+				break;
+		}
+	}
+}
+
+
+bool *XmlDoc::parseRobotsMetaTag() {
+	if (m_parsedRobotsMetaTag) {
+		return &m_parsedRobotsMetaTag;
+	}
+
+	Xml *xml = getXml();
+	if (!xml || xml == (void *)-1) {
+		return (bool*)xml;
+	}
+
+	const char *content = nullptr;
+	int32_t contentLen = 0;
+
+	if (xml->getTagValue("name", "robots", "content", &content, &contentLen, true, TAG_META)) {
+		parseRobotsMetaTagContent(content, contentLen);
+	}
+
+	if (xml->getTagValue("name", g_conf.m_spiderBotName, "content", &content, &contentLen, true, TAG_META)) {
+		parseRobotsMetaTagContent(content, contentLen);
+	}
+
+	m_parsedRobotsMetaTag = true;
+	return &m_parsedRobotsMetaTag;
+}
+
 // <meta name=robots value=noarchive>
 // <meta name=<configured botname> value=noarchive>
-char *XmlDoc::getIsNoArchive ( ) {
-	if ( m_isNoArchiveValid ) return &m_isNoArchive;
-	Xml *xml = getXml();
-	if ( ! xml || xml == (void *)-1 ) return (char *)xml;
-	m_isNoArchive      = (char)false;
-	m_isNoArchiveValid = true;
-	int32_t     n     = xml->getNumNodes();
-	XmlNode *nodes = xml->getNodes();
-	// find the meta tags
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// continue if not a meta tag
-		if ( nodes[i].m_nodeId != TAG_META ) continue;
-		// get robots attribute
-		int32_t alen; char *att;
-		// <meta name=robots value=noarchive>
-		att = nodes[i].getFieldValue ( "name" , &alen );
-		// need a name!
-		if ( ! att ) continue;
-		// get end
-		char *end = att + alen;
-		// skip leading spaces
-		while ( att < end && *att && is_wspace_a(*att) ) att++;
-		// must be robots or <configured botname>. skip if not
-		if ( strncasecmp(att,"robots" ,6) &&
-		     strncasecmp(att,g_conf.m_spiderBotName,strlen(g_conf.m_spiderBotName))   ) continue;
-
-		// get the content vaue
-		att = nodes[i].getFieldValue("content",&alen);
-		// skip if none
-		if ( ! att ) continue;
-		// get end
-		end = att + alen;
-		// skip leading spaces
-		while ( att < end && *att && is_wspace_a(*att) ) att++;
-		// is is noarchive? skip if no such match
-		if ( strncasecmp(att,"noarchive",9) != 0 ) continue;
-		// ok, we got it
-		m_isNoArchive = (char)true;
-		break;
+bool *XmlDoc::getIsNoArchive() {
+	bool *parsed = parseRobotsMetaTag();
+	if (!parsed || parsed == (void *)-1) {
+		return parsed;
 	}
-	// return what we got
-	return &m_isNoArchive;
+
+	// sanity check. must be parsed at this point
+	if (!*parsed) {
+		gbshutdownLogicError();
+	}
+
+	return &m_robotsNoArchive;
+}
+
+// <meta name=robots value=nofollow>
+// <meta name=<configured botname> value=nofollow>
+bool *XmlDoc::getIsNoFollow() {
+	bool *parsed = parseRobotsMetaTag();
+	if (!parsed || parsed == (void *)-1) {
+		return parsed;
+	}
+
+	// sanity check. must be parsed at this point
+	if (!*parsed) {
+		gbshutdownLogicError();
+	}
+
+	return &m_robotsNoFollow;
+}
+
+// <meta name=robots value=noindex>
+// <meta name=<configured botname> value=noindex>
+bool *XmlDoc::getIsNoIndex() {
+	bool *parsed = parseRobotsMetaTag();
+	if (!parsed || parsed == (void *)-1) {
+		return parsed;
+	}
+
+	// sanity check. must be parsed at this point
+	if (!*parsed) {
+		gbshutdownLogicError();
+	}
+
+	return &m_robotsNoIndex;
+}
+
+// <meta name=robots value=nosnippet>
+// <meta name=<configured botname> value=nosnippet>
+bool *XmlDoc::getIsNoSnippet() {
+	bool *parsed = parseRobotsMetaTag();
+	if (!parsed || parsed == (void *)-1) {
+		return parsed;
+	}
+
+	// sanity check. must be parsed at this point
+	if (!*parsed) {
+		gbshutdownLogicError();
+	}
+
+	return &m_robotsNoSnippet;
 }
 
 char *XmlDoc::getIsLinkSpam ( ) {
