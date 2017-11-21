@@ -149,10 +149,10 @@ static const char * const s_langAbbr[] = {
 	NULL
 };
 
-uint8_t getLangIdFromAbbr ( const char *abbr ) {
+lang_t getLangIdFromAbbr ( const char *abbr ) {
 	for (int x = 0; x < langLast && s_langAbbr[x]; ++x) {
 		if (!strcasecmp((char*)abbr, s_langAbbr[x])) {
-			return x;
+			return (lang_t)x;
 		}
 	}
 
