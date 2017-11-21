@@ -22,3 +22,4 @@ clean:
 	-rm -f libsto.a
 	-rm -f core
 	-rm -f sto.unittest
+	-rm -f dump_sto
