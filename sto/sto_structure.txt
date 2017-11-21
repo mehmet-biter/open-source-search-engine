@@ -1,0 +1,51 @@
+Lexicon			::= Version
+			,   { LexicalEntry }
+
+LexicalEntry		::= PartOfSpeech
+			,   WordFormType
+			,   [ ExplicitWordForms ]
+
+WordFormType		::= 1-byte: explicit(1) | regular
+
+
+ExplicitWordForms	::= { ExplicitWordForm }
+
+ExplicitWordForm	::= { WordFormAttribute } * 6
+			,   WrittenForm
+
+WordFormAttribute	::= <tbd>
+
+
+PartOfSpeech		::= adjective(0)
+			|   commonNoun(1)
+			|   conjunction(2)
+			|   demonstrativePronoun(3)
+			|   deponentVerb(4)
+			|   existentialPronoun(5)
+			|   generalAdverb(6)
+			|   indefinitePronoun(7)
+			|   infinitiveParticle(8)
+			|   interjection(9)
+			|   interrogativeRelativePronoun(10)
+			|   mainVerb(11)
+			|   numeral(12)
+			|   ordinalAdjective(13)
+			|   personalPronoun(14)
+			|   possessivePronoun(15)
+			|   preposition(16)
+			|   properNoun(17)
+			|   reciprocalPronoun(18)
+			|   unclassifiedParticle(19)
+			|   unspecified(20)
+
+WordFormAttribute	::= 1-byte /*plural|secondPerson|indicative|...*/
+
+WrittenForm		::= 1-byte length field + UTF-8 string
+
+Version			::= 80-byte string
+
+
+/***
+WordFormType: currently only "explicit" is used. The "regular" type is intended for words with regular morphology (and orthography) where the variations can be computed easily instead of stored. It is also possible to have the field specify eg. declension paradigm.
+ExplicitWordForm: it is limited to 6 attributes. 6 seems sufficient for most indoeuropean languages.
+***/
