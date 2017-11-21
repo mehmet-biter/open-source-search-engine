@@ -6,6 +6,7 @@
 #define GB_QUERY_H
 
 #include "SafeBuf.h"
+#include "Lang.h"
 class CollectionRec;
 
 
@@ -412,7 +413,7 @@ class Query {
 	// . returns false and sets g_errno on error
 	// . after calling this you can call functions below
 	bool set2 ( const char *query    , 
-		    uint8_t  langId ,
+		    lang_t  langId ,
 		    bool     queryExpansion ,
 		    bool     useQueryStopWords,
 	        bool allowHighFreqTermCache,
@@ -467,7 +468,7 @@ public:
 
 public:
 	// language of the query
-	uint8_t m_langId;
+	lang_t m_langId;
 
 	bool m_useQueryStopWords;
 

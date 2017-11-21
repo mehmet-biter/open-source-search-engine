@@ -97,7 +97,7 @@ bool sendPageReindex ( TcpSocket *s , HttpRequest *r ) {
 		return true;
 	}
 
-	int32_t langId = getLangIdFromAbbr ( gr->m_qlang );
+	lang_t langId = getLangIdFromAbbr ( gr->m_qlang );
 
 	// let msg1d do all the work now
 	if ( ! st->m_msg1c.reindexQuery ( gr->m_query ,
@@ -248,7 +248,7 @@ bool Msg1c::reindexQuery ( const char *query,
 			   int32_t startNum ,
 			   int32_t endNum ,
 			   bool forceDel ,
-			   int32_t langId,
+			   lang_t langId,
 			   void *state ,
 			   void (* callback) (void *state ) ) {
 

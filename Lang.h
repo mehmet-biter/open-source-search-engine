@@ -84,7 +84,7 @@ enum lang_t {
 	langLast
 };
 
-uint8_t getLangIdFromAbbr ( const char *abbr ) ;
+lang_t getLangIdFromAbbr ( const char *abbr ) ;
 lang_t getLangIdFromCharset(uint16_t charset);
 
 void        languageToString ( unsigned char lang , char *buf );

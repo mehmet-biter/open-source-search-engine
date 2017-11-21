@@ -38,7 +38,7 @@ Query::Query()
 	m_numTerms = 0;
 
 	// Coverity
-	m_langId = 0;
+	m_langId = langUnknown;
 	m_useQueryStopWords = false;
 	m_allowHighFreqTermCache = false;
 	m_numTermsUntruncated = 0;
@@ -96,13 +96,13 @@ void Query::reset ( ) {
 //   This is used for term highlighting (Highlight.cpp and Summary.cpp)
 bool Query::set2 ( const char *query        , 
 		   // need language for doing synonyms
-		   uint8_t  langId ,
+		   lang_t  langId ,
 		   bool     queryExpansion ,
 		   bool     useQueryStopWords ,
            bool allowHighFreqTermCache,
 		   int32_t  maxQueryTerms  ) {
 	log(LOG_DEBUG,"query: set2(query='%s', langId=%d, queryExpansion=%s, useQueryStopWords=%s maxQueryTerms=%d)",
-	    query, langId, queryExpansion?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
+	    query, (int)langId, queryExpansion?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
 
 	reset();
 

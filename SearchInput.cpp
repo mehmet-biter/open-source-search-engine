@@ -19,7 +19,7 @@ SearchInput::SearchInput() {
 	m_cr = NULL;
 	m_isMasterAdmin = false;
 	m_isCollAdmin = false;
-	m_queryLangId = 0;
+	m_queryLangId = langUnknown;
 	m_format = 0;
 	m_START = 0;
 	m_coll = NULL;

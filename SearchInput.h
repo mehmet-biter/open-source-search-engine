@@ -73,7 +73,7 @@ public:
 
 	// we convert m_defaultSortLang to this number, like langEnglish
 	// or langFrench or langUnknown...
-	int32_t m_queryLangId;
+	lang_t m_queryLangId;
 
 	// can be 1 for FORMAT_HTML, 2 = FORMAT_XML, 3=FORMAT_JSON, 4=csv
 	int32_t m_format;

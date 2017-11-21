@@ -3,6 +3,7 @@
 
 #include "Msg4Out.h"
 #include "SafeBuf.h"
+#include "Lang.h"
 
 // . for adding docid-based spider requests to spiderdb
 // . this is the original method, for queuing up docid-based spider requests
@@ -17,7 +18,7 @@ public:
 			    int32_t startNum ,
 			    int32_t endNum ,
 			    bool forceDel ,
-			    int32_t langId,
+			    lang_t langId,
 			    void *state ,
 			    void (* callback) (void *state ) ) ;
 	

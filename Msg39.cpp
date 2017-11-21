@@ -348,7 +348,7 @@ void Msg39::getDocIds2() {
 
 	// . set our m_query instance
 	if ( ! m_query.set2 ( m_msg39req->ptr_query,
-			      m_msg39req->m_language ,
+			      (lang_t)m_msg39req->m_language ,
 			      m_msg39req->m_queryExpansion ,
 			      m_msg39req->m_useQueryStopWords ,
 	              m_msg39req->m_allowHighFrequencyTermCache,
