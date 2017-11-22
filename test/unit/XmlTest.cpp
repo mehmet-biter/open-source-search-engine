@@ -132,3 +132,27 @@ TEST(XmlTest, GetCanonicalLink) {
 		EXPECT_STREQ(output, valueStr.c_str());
 	}
 }
+
+TEST(XmlTest, GetRobotsTag) {
+	std::vector<std::tuple<const char*, const char*>> testcases = {
+		std::make_tuple("<html><head><meta name=\"ROBOTS\" content=\"NOINDEX\"></head><body></body></html>", "NOINDEX"),
+		std::make_tuple("<html><head></head><body><gbframe><html><head><meta name=\"ROBOTS\" content=\"NOINDEX\"></head><body></body></html></gbframe></body></html>", "")
+	};
+
+	for (const auto &testcase : testcases) {
+		Xml xml;
+		char input[MAX_BUF_SIZE];
+		std::sprintf(input, "%s", std::get<0>(testcase));
+
+		ASSERT_TRUE(xml.set(input, strlen(input), 0, CT_HTML));
+
+		const char *output = std::get<1>(testcase);
+		const char *value = NULL;
+		int32_t valueLen = 0;
+		ASSERT_EQ(xml.getTagValue("name", "robots", "content", &value, &valueLen, true, TAG_META), (strlen(output) != 0));
+		std::string valueStr(value, valueLen);
+
+		EXPECT_EQ(strlen(output), valueLen);
+		EXPECT_STREQ(output, valueStr.c_str());
+	}
+}
