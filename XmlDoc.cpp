@@ -2300,6 +2300,24 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		return &m_indexCode;
 	}
 
+	// check meta noindex
+	bool *ini = getIsNoIndex();
+	if (!ini || ini == (bool*) -1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, could not getIsNoIndex");
+		return (int32_t *) ini;
+	}
+
+	if (*ini) {
+		if (m_firstUrl.isRoot()) {
+			m_indexCode = EDOCDISALLOWEDROOT;
+		} else {
+			m_indexCode = EDOCDISALLOWED;
+		}
+		m_indexCodeValid = true;
+		logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCDISALLOWED");
+		return &m_indexCode;
+	}
+
 	// check redir url
 	Url **redirp = getRedirUrl();
 	if ( ! redirp || redirp == (void *)-1 ) {
