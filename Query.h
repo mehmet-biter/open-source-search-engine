@@ -307,7 +307,7 @@ class QueryTerm {
 	int32_t       m_bitNum;
 
 	// point to term, either m_word or m_phrase
-	char      *m_term;
+	const char      *m_term;
 	int32_t       m_termLen;
 
 	// point to the posdblist that represents us
