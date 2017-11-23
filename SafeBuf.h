@@ -115,9 +115,8 @@ public:
 	bool  safeMemcpy(const SafeBuf *c) { return safeMemcpy(c->m_buf,c->m_length); }
 	bool  safeStrcpy ( const char *s ) ;
 	//bool  safeStrcpyPrettyJSON ( char *decodedJson ) ;
-	bool  safeUtf8ToJSON ( const char *utf8 ) ;
-	bool jsonEncode ( const char *utf8 ) { return safeUtf8ToJSON(utf8); }
-	bool jsonEncode ( char *utf8 , int32_t utf8Len );
+	bool jsonEncode(const char *utf8);
+	bool jsonEncode(const char *utf8, int32_t utf8Len);
 
 	bool  base64Encode ( const char *s , int32_t len );
 	bool  base64Decode ( const char *src , int32_t srcLen ) ;
