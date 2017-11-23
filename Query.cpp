@@ -443,6 +443,30 @@ bool Query::setQTerms ( const Words &words ) {
 			nqt += naids;
 		}
 	}
+	
+	std::vector<std::string> wvg_source_words;
+	std::vector<int> wvg_source_word_index; //idx in wvg_source_words -> idx of queryword
+	if(true) {
+		for(int i=0; i<m_numWords; i++) {
+			const QueryWord *qw  = &m_qwords[i];
+			if(qw->m_inQuotes) continue;
+			if(qw->m_wordSign == '+') continue;
+			if(qw->m_wordSign == '-') continue;
+			if(qw->m_fieldCode &&
+			qw->m_fieldCode != FIELD_TITLE &&
+			qw->m_fieldCode != FIELD_GENERIC )
+				continue;
+			if(qw->m_ignoreWord == IGNORE_FIELDNAME) continue;
+			if(qw->m_userWeightForWord == 0) continue;
+			wvg_source_words.emplace_back(qw->m_word,qw->m_wordLen);
+			wvg_source_word_index.emplace_back(i);
+		}
+		auto wvg(WordVariationGenerator::get_generator(m_langId));
+		m_wordVariations = wvg->query_variations(wvg_source_words,WordVariationWeights(),1.0);
+		nqt += m_wordVariations.size();
+	} else
+		m_wordVariations.clear();
+
 
 	m_numTermsUntruncated = nqt;
 	logTrace(g_conf.m_logTraceQuery, "m_numTermsUntruncated=%d",m_numTermsUntruncated);
@@ -935,6 +959,105 @@ bool Query::setQTerms ( const Words &words ) {
 		}
 	}
 
+	if(true) {
+		for(unsigned i=0; i<m_wordVariations.size(); i++) {
+			if(n>=nqt)
+				break;
+			
+			auto const &word_variation(m_wordVariations[i]);
+			QueryWord *qw = &m_qwords[wvg_source_word_index[i]];
+			if((unsigned)qw->m_wordLen==word_variation.word.length() &&
+			   memcmp(qw->m_word, word_variation.word.data(), word_variation.word.length())==0)
+			{
+				//Variation is the same as the base word. The word-variation-plugin is allowed to produce that.
+				continue; //skip
+			}
+			QueryTerm *origTerm = qw->m_queryWordTerm;
+
+
+			// add that query term
+			QueryTerm *qt   = &m_qterms[n];
+			qt->m_qword     = qw; // NULL;
+			qt->m_piped     = qw->m_piped;
+			qt->m_isPhrase  = false ;
+			qt->m_langIdBits = 0;
+			// synonym of this term...
+			qt->m_synonymOf = origTerm;
+			// nuke this crap since it was done above and we
+			// missed out!
+			qt->m_rightPhraseTermNum = -1;
+			qt->m_leftPhraseTermNum  = -1;
+			qt->m_rightPhraseTerm    = NULL;
+			qt->m_leftPhraseTerm     = NULL;
+			// need this for displaying language of syn in
+			// the json/xml feed in PageResults.cpp
+			qt->m_langIdBitsValid = true;
+			//int langId = syn.m_langIds[j];  //syn-todo?
+			//uint64_t langBit = (uint64_t)1 << langId;  //syn-todo?
+			//if(langId >= 64) langBit = 0; //syn-todo?
+			//qt->m_langIdBits |= langBit; //syn-todo?
+			// need this for Matches.cpp
+			qt->m_synWids0 = 0;
+			qt->m_synWids1 = 0;
+			qt->m_numAlnumWordsInSynonym = 0;
+
+			// crap, "nj" is a synonym of the PHRASE TERM
+			// bigram "new jersey" not of the single word term
+			// "new" so fix that.
+			if(origTerm->m_rightPhraseTerm)
+				qt->m_synonymOf = origTerm->m_rightPhraseTerm;
+
+			// ignore some synonym terms if tf is too low
+			qt->m_ignored = qw->m_ignoreWord;
+			// stop word? no, we're a phrase term
+			qt->m_isQueryStopWord = qw->m_isQueryStopWord;
+			// change in both places
+			//int64_t wid = syn.m_aids[j];
+			int64_t wid = hash64Lower_utf8_nospaces(word_variation.word.data(), word_variation.word.length());
+			// might be in a title: field or something
+			if(qw->m_prefixHash) {
+				int64_t ph = qw->m_prefixHash;
+				wid= hash64h(wid,ph);
+			}
+			qt->m_termId    = wid & TERMID_MASK;
+			//qt->m_rawTermId = syn.m_aids[j]; //syn-todo?
+			// assume explicit bit is 0
+			qt->m_explicitBit = 0;
+			qt->m_matchesExplicitBits = 0;
+			// boolean queries are not allowed term signs
+			if(m_isBoolean) {
+				qt->m_termSign = '\0';
+				// boolean fix for "health OR +sports" because
+				// the + there means exact word match, no syns
+				if(qw->m_wordSign == '+') {
+					qt->m_termSign  = qw->m_wordSign;
+				}
+			}
+			// if not bool, ensure to change signs in both places
+			else {
+				qt->m_termSign  = qw->m_wordSign;
+			}
+			// do not use an explicit bit up if we got a hard count
+			qt->m_hardCount = qw->m_hardCount;
+			// IndexTable.cpp uses this one
+			qt->m_inQuotes  = qw->m_inQuotes;
+			// point to the string itself that is the word
+			qt->m_term     = word_variation.word.data();
+			qt->m_termLen  = word_variation.word.length();
+			// reset our implicit bits to 0
+			qt->m_implicitBits = 0;
+			// assign score weight, we're a phrase here
+			qt->m_userWeight = qw->m_userWeightForWord; //todo: use dedicated user weight for synonyms
+			qt->m_fieldCode  = qw->m_fieldCode  ;
+			// stuff before a pipe always has a weight of 1
+			if(qt->m_piped) {
+				qt->m_userWeight = 1;
+			}
+			// otherwise, add it
+			n++;
+		}
+	}
+	
 	m_numTerms = n;
 	
 	if ( n > ABS_MAX_QUERY_TERMS ) { g_process.shutdownAbort(true); }

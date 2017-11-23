@@ -73,6 +73,7 @@ OBJS_O3 = \
 	UrlRealtimeClassification.o UrlResultOverride.o \
 	WantedChecker.o \
 	MergeSpaceCoordinator.o \
+	WordVariations.o \
 	GbMoveFile.o GbMoveFile2.o GbCopyFile.o GbMakePath.o \
 	GbUtil.o \
 	GbSignature.o \
@@ -82,6 +83,7 @@ OBJS_O3 = \
 	GbEncoding.o GbLanguage.o \
 	GbDns.o \
 
+OBJS_O3 += TestWordVariations.o
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 

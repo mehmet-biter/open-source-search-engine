@@ -7,6 +7,7 @@
 
 #include "SafeBuf.h"
 #include "Lang.h"
+#include "WordVariations.h"
 class CollectionRec;
 
 
@@ -475,6 +476,7 @@ private:
 	// so we don't have to malloc for them
 	SmallBuf<GBUF_SIZE> m_queryWordBuf;
 
+	std::vector<WordVariationGenerator::Variation> m_wordVariations; //have to keep that around because queryterms point into it with qt->m_term
 public:
 	QueryWord *m_qwords;
 	int32_t       m_numWords;
