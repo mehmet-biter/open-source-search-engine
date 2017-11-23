@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
 					continue;
 				}
 			}
-			uint8_t *contentType = xd->getContentType();
+			uint8_t *contentType = xmlDoc.getContentType();
 			switch (*contentType) {
 				case CT_GIF:
 				case CT_JPG:
