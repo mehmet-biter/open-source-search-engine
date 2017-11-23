@@ -166,7 +166,7 @@ public:
 
 	bool hasDigits() const;
 
-	bool utf8Encode2( char *s, int32_t len, bool htmlEncode = false);
+	bool utf8Encode2(const char *s, int32_t len, bool htmlEncode = false);
 
 	bool utf32Encode(UChar32* codePoints, int32_t cpLen);
 

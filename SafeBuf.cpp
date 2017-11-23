@@ -531,7 +531,7 @@ bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
 	return status;
 }
 
-bool  SafeBuf::utf8Encode2(char *s, int32_t len, bool encodeHTML) {
+bool  SafeBuf::utf8Encode2(const char *s, int32_t len, bool encodeHTML) {
 	int32_t tmp = m_length;
 	if (! safeMemcpy(s,len)) return false;
 	if (!encodeHTML) return true;
