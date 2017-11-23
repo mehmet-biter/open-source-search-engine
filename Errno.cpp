@@ -157,11 +157,11 @@ const char *mstrerror ( int errnum ) {
 			case EDOCDUPWWW       :
 				return "Doc is dup of a www url";
 			case EDOCDISALLOWED   :
-				return "robots.txt disallows this url";
+				return "robots.txt/meta tag disallows this url";
 			case EDOCDISALLOWEDHTTPSTATUS:
 				return "Disallowed due to robots.txt HTTP status";
 			case EDOCDISALLOWEDROOT:
-				return "robots.txt disallows this root url";
+				return "robots.txt/meta tag disallows this root url";
 			case EDOCDISALLOWEDERROR:
 				return "Disallowed due to robots.txt download error";
 			case ETOOMANYFILES    :

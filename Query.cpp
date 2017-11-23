@@ -860,7 +860,6 @@ bool Query::setQTerms ( const Words &words ) {
 				// word.
 				int32_t ba        = syn.m_numAlnumWordsInBase[j];
 				qt->m_numAlnumWordsInSynonym = na;
-				qt->m_numAlnumWordsInBase    = ba;
 
 				// crap, "nj" is a synonym of the PHRASE TERM
 				// bigram "new jersey" not of the single word term
@@ -902,7 +901,7 @@ bool Query::setQTerms ( const Words &words ) {
 				// IndexTable.cpp uses this one
 				qt->m_inQuotes  = qw->m_inQuotes;
 				// usually this is right
-				char *ptr = syn.m_termPtrs[j];
+				const char *ptr = syn.m_termPtrs[j];
 				// buf if it is NULL that means we transformed the
 				// word by like removing accent marks and stored
 				// it in m_synWordBuf, as opposed to just pointing
