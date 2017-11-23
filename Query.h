@@ -167,7 +167,7 @@ class QueryWord {
 	void destructor ();
 
 	// this ptr references into the actual query
-	char       *m_word    ;
+	const char     *m_word;
 	int32_t        m_wordLen ;
 	// the length of the phrase, if any. it starts at m_word. It can be less than the source string length because
 	// non-alfanum words are treated as a single space by Phrases::getPhrase(), so eg "aaa::bbb" will only have m_phraseLen=7
