@@ -901,7 +901,7 @@ bool Query::setQTerms ( const Words &words ) {
 				// IndexTable.cpp uses this one
 				qt->m_inQuotes  = qw->m_inQuotes;
 				// usually this is right
-				char *ptr = syn.m_termPtrs[j];
+				const char *ptr = syn.m_termPtrs[j];
 				// buf if it is NULL that means we transformed the
 				// word by like removing accent marks and stored
 				// it in m_synWordBuf, as opposed to just pointing
