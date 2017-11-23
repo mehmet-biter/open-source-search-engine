@@ -47,3 +47,6 @@ vgcore.*
 Make.depend
 libced.so
 libcld3.so
+sto/dump_sto
+sto/libsto.a
+word_variations/libword_variations.a

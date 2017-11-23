@@ -13,7 +13,7 @@ public:
 TestWordVariationGenerator TestWordVariationGenerator_instance;
 
 
-std::vector<WordVariationGenerator::Variation> TestWordVariationGenerator::query_variations(const std::vector<std::string> source_words, const WordVariationWeights& /*weights*/, float /*threshold*/) {
+std::vector<WordVariationGenerator::Variation> TestWordVariationGenerator::query_variations(const std::vector<std::string> &source_words, const WordVariationWeights& /*weights*/, float /*threshold*/) {
 	std::vector<Variation> v;
 	for(unsigned i=0; i<source_words.size(); i++) {
 		auto word(source_words[i]);

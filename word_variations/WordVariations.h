@@ -31,10 +31,12 @@ public:
 		unsigned        source_word_end;    //end (non-inclusive) index of the source words that this variations covers
 	};
 	
-	virtual std::vector<Variation> query_variations(const std::vector<std::string> source_words, const WordVariationWeights& weights, float threshold) = 0;
+	virtual std::vector<Variation> query_variations(const std::vector<std::string> &source_words, const WordVariationWeights& weights, float threshold) = 0;
 	//todo: change API so query_variations() method has access to full query and is also allowed to provide variations of bigrams etc.
 	
 	static WordVariationGenerator *get_generator(lang_t lang);
 };
+
+bool initializeWordVariationGenerator_Danish();
 
 #endif

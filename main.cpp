@@ -43,6 +43,7 @@
 #include "Speller.h"       // g_speller
 #include "Wiki.h"          // g_wiki
 #include "Wiktionary.h"    // g_wiktionary
+#include "WordVariations.h"
 #include "CountryCode.h"
 #include "Pos.h"
 #include "Title.h"
@@ -1342,6 +1343,11 @@ int main2 ( int argc , char *argv[] ) {
 
 	if ( ! g_wiktionary.test() ) {
 		log( LOG_ERROR, "Wiktionary test failed!" );
+		return 1;
+	}
+
+	if(!initializeWordVariationGenerator_Danish()) {
+		log(LOG_ERROR, "word-variation-danish initialization failed!" );
 		return 1;
 	}
 

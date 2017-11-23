@@ -22,6 +22,7 @@
 #include "Conf.h"
 #include "termid_mask.h"
 #include "Collectiondb.h"
+#include <set>
 
 
 #include "GbMutex.h"
@@ -404,6 +405,7 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 	// thirdly, count synonyms
 	Synonyms syn;
+m_queryExpansion=false;
 	if ( m_queryExpansion ) {
 		int64_t to = hash64n("to");
 		for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
@@ -960,18 +962,25 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 
 	if(true) {
+		std::set<std::string> seen_variations;
 		for(unsigned i=0; i<m_wordVariations.size(); i++) {
 			if(n>=nqt)
 				break;
 			
 			auto const &word_variation(m_wordVariations[i]);
-			QueryWord *qw = &m_qwords[wvg_source_word_index[i]];
+			QueryWord *qw = &m_qwords[wvg_source_word_index[word_variation.source_word_start]];
 			if((unsigned)qw->m_wordLen==word_variation.word.length() &&
 			   memcmp(qw->m_word, word_variation.word.data(), word_variation.word.length())==0)
 			{
 				//Variation is the same as the base word. The word-variation-plugin is allowed to produce that.
 				continue; //skip
 			}
+			if(seen_variations.find(word_variation.word)!=seen_variations.end()) {
+				//Word variation seen before.
+				//syn-todo:morphology can cause two identically-written words to mean different things. We should use the entry with the higest weight
+				continue; //skip
+			}
+			seen_variations.insert(word_variation.word);
 			QueryTerm *origTerm = qw->m_queryWordTerm;
 
 

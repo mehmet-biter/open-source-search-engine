@@ -9,7 +9,7 @@ static std::map<lang_t,WordVariationGenerator*> lang_generator_map;
 class NullGenerator : public WordVariationGenerator {
 public:
 	NullGenerator() : WordVariationGenerator(langUnknown) {}
-	std::vector<Variation> query_variations(const std::vector<std::string> /*source_words*/, const WordVariationWeights& /*weights*/, float /*threshold*/) {
+	std::vector<Variation> query_variations(const std::vector<std::string> &/*source_words*/, const WordVariationWeights& /*weights*/, float /*threshold*/) {
 		return std::vector<Variation>();
 	}
 };
