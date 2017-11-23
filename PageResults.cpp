@@ -639,9 +639,7 @@ static bool printIgnoredWords ( SafeBuf *sb , const SearchInput *si ) {
 			firstIgnored = false;
 		}
 		// print the word
-		char *t    = qw->m_word; 
-		int32_t  tlen = qw->m_wordLen;
-		sb->utf8Encode2 ( t , tlen );
+		sb->utf8Encode2(qw->m_word, qw->m_wordLen);
 		sb->safePrintf (" ");
 	}
 	// print tail if we had ignored terms
