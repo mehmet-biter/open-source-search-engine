@@ -672,9 +672,6 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 				sb.safePrintf("synwid0=%" PRId64" ",qt->m_synWids0);
 				sb.safePrintf("synwid1=%" PRId64" ",qt->m_synWids1);
 				sb.safePrintf("synalnumwords=%d ", qt->m_numAlnumWordsInSynonym);
-				// like for synonym "nj" it's base,
-				// "new jersey" has 2 alnum words!
-				sb.safePrintf("synbasealnumwords=%d ", qt->m_numAlnumWordsInBase);
 				sb.safePrintf("synterm=\"%*.*s\" ", (int)synterm->m_termLen, (int)synterm->m_termLen, synterm->m_term);
 			}
 			logf(LOG_DEBUG,"%s",sb.getBufStart());

@@ -355,10 +355,6 @@ class QueryTerm {
 	int64_t m_synWids1;
 	int32_t      m_numAlnumWordsInSynonym;
 
-	// like if we are the "nj" syn of "new jersey", this will be 2 words
-	// since "new jersey", our base, is 2 alnum words.
-	int32_t      m_numAlnumWordsInBase;
-
 	// copied from derived QueryWord
 	field_code_t m_fieldCode;
 	bool isSplit() const;

@@ -860,7 +860,6 @@ bool Query::setQTerms ( const Words &words ) {
 				// word.
 				int32_t ba        = syn.m_numAlnumWordsInBase[j];
 				qt->m_numAlnumWordsInSynonym = na;
-				qt->m_numAlnumWordsInBase    = ba;
 
 				// crap, "nj" is a synonym of the PHRASE TERM
 				// bigram "new jersey" not of the single word term
