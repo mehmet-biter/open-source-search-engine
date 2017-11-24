@@ -67,13 +67,19 @@ pipeline {
 			steps {
 				parallel(
 					'unit test': {
-						sh "cd ${env.GB_DIR} && make -j8 unittest"
+						timeout(time: 10, unit: 'MINUTES') {
+							sh "cd ${env.GB_DIR} && make -j8 unittest"
+						}
 					},
 					'system test (single)': {
-						sh "cd ${env.PYWEBTEST_DIR} && ./run_all_testcases.py --num-instances=1 --num-shards=1 --offset=0"
+						timeout(time: 30, unit: 'MINUTES') {
+							sh "cd ${env.PYWEBTEST_DIR} && ./run_all_testcases.py --num-instances=1 --num-shards=1 --offset=0"
+						}
 					},
 					'system test (multiple)': {
-						sh "cd ${env.PYWEBTEST_DIR} && ./run_all_testcases.py --num-instances=4 --num-shards=2 --offset=1"
+						timeout(time: 30, unit: 'MINUTES') {
+							sh "cd ${env.PYWEBTEST_DIR} && ./run_all_testcases.py --num-instances=4 --num-shards=2 --offset=1"
+						}
 					}
 				)
 			}
