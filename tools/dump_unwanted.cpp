@@ -175,7 +175,12 @@ int main(int argc, char **argv) {
 
 			bool *ini = xmlDoc.getIsNoIndex();
 			if (*ini) {
-				fprintf(stdout, "%" PRId64"|meta noindex|%s\n", docId, url->getUrl());
+				bool *inf = xmlDoc.getIsNoFollow();
+				if (*inf) {
+					fprintf(stdout, "%" PRId64"|meta noindex nofollow|%s\n", docId, url->getUrl());
+				} else {
+					fprintf(stdout, "%" PRId64"|meta noindex follow|%s\n", docId, url->getUrl());
+				}
 				continue;
 			}
 		}
