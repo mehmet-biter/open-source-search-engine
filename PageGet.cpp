@@ -28,7 +28,7 @@ public:
 	char m_format;
 	int32_t       m_niceness;
 	XmlDoc     m_xd;
-	uint8_t    m_langId;
+	lang_t       m_langId;
 	//Msg8a      m_msg8a;
 	//SiteRec    m_sr;
 	//TagRec     m_tagRec;
@@ -134,7 +134,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	const char *langAbbr = r->getString("qlang",NULL);
 	st->m_langId = langUnknown;
 	if ( langAbbr ) {
-		uint8_t langId = getLangIdFromAbbr ( langAbbr );
+		lang_t langId = getLangIdFromAbbr ( langAbbr );
 		st->m_langId = langId;
 	}
 	strncpy ( st->m_coll , coll , MAX_COLL_LEN+1 );
@@ -266,7 +266,7 @@ bool processLoop ( void *state ) {
 		return sendErrorReply ( st , ENOTFOUND);
 
 	// set callback
-	char *na = xd->getIsNoArchive();
+	bool *na = xd->getIsNoArchive();
 	// wait if blocked
 	if ( na == (void *)-1 ) return false;
 	// error?
@@ -483,7 +483,7 @@ bool processLoop ( void *state ) {
 	x += strlen(x);		
 	// set our query for highlighting
 	Query qq;
-	qq.set2(q, st->m_langId, true, true, false);
+	qq.set2(q, st->m_langId, true, true, false, ABS_MAX_QUERY_TERMS);
 
 	// print the query terms into our highlight buffer
 	Highlight hi;

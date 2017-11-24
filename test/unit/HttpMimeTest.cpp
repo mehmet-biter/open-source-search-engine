@@ -187,6 +187,117 @@ TEST(HttpMimeTest, GetNextLineMultiEnd) {
 	expectLine(&httpMime);
 }
 
+TEST(HttpMimeTest, GetContentTypeNoCharset) {
+	char httpResponse[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Cache-Control: max-age=604800\r\n"
+		"Content-Type: text/html \r\n"
+		"Date: Fri, 17 Nov 2017 10:39:20 GMT\r\n"
+		"Etag: \"359670651+ident\"\r\n"
+		"Expires: Fri, 24 Nov 2017 10:39:20 GMT\r\n"
+		"Last-Modified: Fri, 09 Aug 2013 23:54:35 GMT\r\n"
+		"Server: ECS (dca/249E)\r\n"
+		"Vary: Accept-Encoding\r\n"
+		"X-Cache: HIT\r\n"
+		"Content-Length: 1270\r\n"
+		"\r\n";
+
+	TestHttpMime httpMime(httpResponse, "http://www.example.com");
+	EXPECT_EQ(strlen("text/html"), httpMime.getContentTypeLen());
+	std::string contentType(httpMime.getContentTypePos(), httpMime.getContentTypeLen());
+	EXPECT_STREQ(contentType.c_str(), "text/html");
+}
+
+TEST(HttpMimeTest, GetContentTypeNoCharsetNoSpace) {
+	char httpResponse[] =
+		"HTTP/1.1 200 OK\r\n"
+			"Cache-Control: max-age=604800\r\n"
+			"Content-Type:text/html\r\n"
+			"Date: Fri, 17 Nov 2017 10:39:20 GMT\r\n"
+			"Etag: \"359670651+ident\"\r\n"
+			"Expires: Fri, 24 Nov 2017 10:39:20 GMT\r\n"
+			"Last-Modified: Fri, 09 Aug 2013 23:54:35 GMT\r\n"
+			"Server: ECS (dca/249E)\r\n"
+			"Vary: Accept-Encoding\r\n"
+			"X-Cache: HIT\r\n"
+			"Content-Length: 1270\r\n"
+			"\r\n";
+
+	TestHttpMime httpMime(httpResponse, "http://www.example.com");
+	EXPECT_EQ(strlen("text/html"), httpMime.getContentTypeLen());
+	std::string contentType(httpMime.getContentTypePos(), httpMime.getContentTypeLen());
+	EXPECT_STREQ(contentType.c_str(), "text/html");
+}
+
+TEST(HttpMimeTest, GetContentTypeWithCharsetUTF8) {
+	char httpResponse[] =
+		"HTTP/1.1 200 OK\r\n"
+			"Cache-Control: max-age=604800\r\n"
+			"Content-Type: text/html ; charset=utf-8 \r\n"
+			"Date: Fri, 17 Nov 2017 10:39:20 GMT\r\n"
+			"Etag: \"359670651+ident\"\r\n"
+			"Expires: Fri, 24 Nov 2017 10:39:20 GMT\r\n"
+			"Last-Modified: Fri, 09 Aug 2013 23:54:35 GMT\r\n"
+			"Server: ECS (dca/249E)\r\n"
+			"Vary: Accept-Encoding\r\n"
+			"X-Cache: HIT\r\n"
+			"Content-Length: 1270\r\n"
+			"\r\n";
+
+	TestHttpMime httpMime(httpResponse, "http://www.example.com");
+	EXPECT_EQ(strlen("text/html"), httpMime.getContentTypeLen());
+	std::string contentType(httpMime.getContentTypePos(), httpMime.getContentTypeLen());
+	EXPECT_STREQ(contentType.c_str(), "text/html");
+	std::string charset(httpMime.getCharset(), httpMime.getCharsetLen());
+	EXPECT_STREQ(charset.c_str(), "utf-8");
+}
+
+TEST(HttpMimeTest, GetContentTypeWithCharsetISO88691) {
+	char httpResponse[] =
+		"HTTP/1.1 200 OK\r\n"
+			"Cache-Control: max-age=604800\r\n"
+			"Content-Type: text/html; charset=iso-8859-1\r\n"
+			"Date: Fri, 17 Nov 2017 10:39:20 GMT\r\n"
+			"Etag: \"359670651+ident\"\r\n"
+			"Expires: Fri, 24 Nov 2017 10:39:20 GMT\r\n"
+			"Last-Modified: Fri, 09 Aug 2013 23:54:35 GMT\r\n"
+			"Server: ECS (dca/249E)\r\n"
+			"Vary: Accept-Encoding\r\n"
+			"X-Cache: HIT\r\n"
+			"Content-Length: 1270\r\n"
+			"\r\n";
+
+	TestHttpMime httpMime(httpResponse, "http://www.example.com");
+	EXPECT_EQ(strlen("text/html"), httpMime.getContentTypeLen());
+	std::string contentType(httpMime.getContentTypePos(), httpMime.getContentTypeLen());
+	EXPECT_STREQ(contentType.c_str(), "text/html");
+	std::string charset(httpMime.getCharset(), httpMime.getCharsetLen());
+	EXPECT_STREQ(charset.c_str(), "iso-8859-1");
+}
+
+TEST(HttpMimeTest, GetContentTypeWithCharsetNoSpace) {
+	char httpResponse[] =
+		"HTTP/1.1 200 OK\r\n"
+			"Cache-Control: max-age=604800\r\n"
+			"Content-Type: text/html;charset=iso-8859-1\r\n"
+			"Date: Fri, 17 Nov 2017 10:39:20 GMT\r\n"
+			"Etag: \"359670651+ident\"\r\n"
+			"Expires: Fri, 24 Nov 2017 10:39:20 GMT\r\n"
+			"Last-Modified: Fri, 09 Aug 2013 23:54:35 GMT\r\n"
+			"Server: ECS (dca/249E)\r\n"
+			"Vary: Accept-Encoding\r\n"
+			"X-Cache: HIT\r\n"
+			"Content-Length: 1270\r\n"
+			"\r\n";
+
+	TestHttpMime httpMime(httpResponse, "http://www.example.com");
+	EXPECT_EQ(strlen("text/html"), httpMime.getContentTypeLen());
+	std::string contentType(httpMime.getContentTypePos(), httpMime.getContentTypeLen());
+	EXPECT_STREQ(contentType.c_str(), "text/html");
+	std::string charset(httpMime.getCharset(), httpMime.getCharsetLen());
+	EXPECT_STREQ(charset.c_str(), "iso-8859-1");
+}
+
 static void verifyCookieDate(const char *cookieDateStr, time_t expectedCookieDate) {
 	time_t cookieDate = 0;
 	bool expectedResult = (expectedCookieDate != 0);

@@ -6,6 +6,7 @@ BASE_DIR ?= ../..
 TARGET = GigablastTest
 OBJECTS = GigablastTest.o GigablastTestUtils.o \
 	BitOperationsTest.o BigFileTest.o \
+	ContentTypeBlockListTest.o \
 	DirTest.o DnsBlockListTest.o \
 	FctypesTest.o \
 	GbCacheTest.o \

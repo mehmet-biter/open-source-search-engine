@@ -7910,13 +7910,21 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "max other doc length";
-	m->m_desc  = "Gigablast will not download, index or "
-		     "store more than this many bytes of a non-html, non-text "
-		     "document. XML documents will be restricted to this "
-		     "length. "
-		     "Use -1 for no max.";
+	m->m_desc  = "Gigablast will not index or store more than this many bytes of a non-html, non-text "
+	             "document. XML documents will be restricted to this length. Use -1 for no max.";
 	m->m_cgi   = "modl";
 	simple_m_set(CollectionRec,m_maxOtherDocLen);
+	m->m_def   = "10000000";
+	m->m_group = 0;
+	m->m_page  = PAGE_SPIDER;
+	m->m_flags = PF_CLONE|PF_API;
+	m++;
+
+	m->m_title = "max other doc download length";
+	m->m_desc  = "Gigablast will not download more than this many bytes of a non-html, non-text "
+	             "document. XML documents will be restricted to this length. Use -1 for no max.";
+	m->m_cgi   = "moddl";
+	simple_m_set(CollectionRec,m_maxOtherDocDownloadLen);
 	m->m_def   = "10000000";
 	m->m_group = 0;
 	m->m_page  = PAGE_SPIDER;
@@ -8638,6 +8646,20 @@ void Parms::init ( ) {
 	m->m_title = "log trace info for BigFile";
 	m->m_cgi   = "ltrc_bf";
 	simple_m_set(Conf,m_logTraceBigFile);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for BlockList";
+	m->m_cgi   = "ltrc_bl";
+	simple_m_set(Conf,m_logTraceBlockList);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for ContentTypeBlockList";
+	m->m_cgi   = "ltrc_ctbl";
+	simple_m_set(Conf,m_logTraceContentTypeBlockList);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;

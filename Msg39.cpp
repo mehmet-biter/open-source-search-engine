@@ -348,7 +348,7 @@ void Msg39::getDocIds2() {
 
 	// . set our m_query instance
 	if ( ! m_query.set2 ( m_msg39req->ptr_query,
-			      m_msg39req->m_language ,
+			      (lang_t)m_msg39req->m_language ,
 			      m_msg39req->m_queryExpansion ,
 			      m_msg39req->m_useQueryStopWords ,
 	              m_msg39req->m_allowHighFrequencyTermCache,
@@ -621,10 +621,8 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     qt->m_rightPhraseTerm->m_isWikiHalfStopBigram )
 				rightwikibigram = 1;
 
-			bool isSynonym = 0;
 			const QueryTerm *synterm = qt->m_synonymOf;
-			if ( synterm )
-				isSynonym = true;
+			bool isSynonym = synterm!=NULL;
 			SafeBuf sb;
 			sb.safePrintf(
 			     "query: msg39: [%" PTRFMT"] "
@@ -652,7 +650,7 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     m_query.getTermId(i) ,
 			     m_query.getRawTermId(i) ,
 			     ((float *)m_msg39req->ptr_termFreqWeights)[i] ,
-			     sign , //c ,
+			     sign , //c
 			     (int32_t)qt->m_isRequired,
 			     (int32_t)qt->m_fieldCode,
 
@@ -667,18 +665,13 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     (isSynonym ? "true" : "false"),
 			     (int32_t)m_query.m_langId );
 			if ( synterm ) {
-				int32_t stnum = synterm - m_query.m_qterms;
-				sb.safePrintf("synofterm#=%" PRId32,stnum);
+				unsigned stnum = (unsigned)(synterm - m_query.m_qterms);
+				sb.safePrintf("synofterm#=%u",stnum);
 				//sb.safeMemcpy(st->m_term,st->m_termLen);
 				sb.pushChar(' ');
 				sb.safePrintf("synwid0=%" PRId64" ",qt->m_synWids0);
 				sb.safePrintf("synwid1=%" PRId64" ",qt->m_synWids1);
-				sb.safePrintf("synalnumwords=%" PRId32" ",
-					      qt->m_numAlnumWordsInSynonym);
-				// like for synonym "nj" it's base,
-				// "new jersey" has 2 alnum words!
-				sb.safePrintf("synbasealnumwords=%" PRId32" ",
-					      qt->m_numAlnumWordsInBase);
+				sb.safePrintf("synalnumwords=%d ", qt->m_numAlnumWordsInSynonym);
 				sb.safePrintf("synterm=\"%*.*s\" ", (int)synterm->m_termLen, (int)synterm->m_termLen, synterm->m_term);
 			}
 			logf(LOG_DEBUG,"%s",sb.getBufStart());

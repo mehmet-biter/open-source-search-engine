@@ -1,98 +1,35 @@
+//
+// Copyright (C) 2017 Privacore ApS - https://www.privacore.com
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+// License TL;DR: If you change this file, you must publish your changes.
+//
 #include "DnsBlockList.h"
 #include "Log.h"
 #include "Conf.h"
-#include "Loop.h"
-#include "JobScheduler.h"
-#include <fstream>
-#include <sys/stat.h>
-#include <atomic>
 
 DnsBlockList g_dnsBlockList;
 
 static const char s_dns_filename[] = "dnsblocklist.txt";
 
 DnsBlockList::DnsBlockList()
-	: m_filename(s_dns_filename)
-	, m_loading(false)
-	, m_dnsBlockList(new dnsblocklist_t)
-	, m_lastModifiedTime(0) {
-}
-
-bool DnsBlockList::init() {
-	log(LOG_INFO, "Initializing DnsBlockList with %s", m_filename);
-
-	if (!g_loop.registerSleepCallback(60000, this, &reload, "DnsBlockList::reload", 0)) {
-		log(LOG_WARN, "DnsBlockList:: Failed to register callback.");
-		return false;
-	}
-
-	// we do a load here instead of using sleep callback with immediate set to true so
-	// we don't rely on g_loop being up and running to use dnsblocklist
-	load();
-
-	return true;
-}
-
-void DnsBlockList::reload(int /*fd*/, void *state) {
-	if (g_jobScheduler.submit(reload, nullptr, state, thread_type_config_load, 0)) {
-		return;
-	}
-
-	// unable to submit job (load on main thread)
-	reload(state);
-}
-
-void DnsBlockList::reload(void *state) {
-	DnsBlockList *dnsBlockList = static_cast<DnsBlockList*>(state);
-
-	// don't load multiple times at the same time
-	if (dnsBlockList->m_loading.exchange(true)) {
-		return;
-	}
-
-	dnsBlockList->load();
-	dnsBlockList->m_loading = false;
-}
-
-bool DnsBlockList::load() {
-	logTrace(g_conf.m_logTraceDnsBlockList, "Loading %s", m_filename);
-
-	struct stat st;
-	if (stat(m_filename, &st) != 0) {
-		// probably not found
-		log(LOG_INFO, "DnsBlockList::load: Unable to stat %s", m_filename);
-		return false;
-	}
-
-	if (m_lastModifiedTime != 0 && m_lastModifiedTime == st.st_mtime) {
-		// not modified. assume successful
-		logTrace(g_conf.m_logTraceDnsBlockList, "Not modified");
-		return true;
-	}
-
-	dnsblocklist_ptr_t tmpDnsBlockList(new dnsblocklist_t);
-
-	std::ifstream file(m_filename);
-	std::string line;
-	while (std::getline(file, line)) {
-		// ignore comments & empty lines
-		if (line.length() == 0 || line[0] == '#') {
-			continue;
-		}
-
-		tmpDnsBlockList->emplace_back(line);
-		logTrace(g_conf.m_logTraceDnsBlockList, "Adding criteria '%s' to list", line.c_str());
-	}
-
-	swapDnsBlockList(tmpDnsBlockList);
-	m_lastModifiedTime = st.st_mtime;
-
-	logTrace(g_conf.m_logTraceDnsBlockList, "Loaded %s", m_filename);
-	return true;
+	: BlockList(s_dns_filename) {
 }
 
 bool DnsBlockList::isDnsBlocked(const char *dns) {
-	auto dnsBlockList = getDnsBlockList();
+	auto dnsBlockList = getBlockList();
 
 	for (auto const &dnsBlock : *dnsBlockList) {
 		if (dnsBlock.front() == '*') {
@@ -111,12 +48,4 @@ bool DnsBlockList::isDnsBlocked(const char *dns) {
 	}
 
 	return false;
-}
-
-dnsblocklistconst_ptr_t DnsBlockList::getDnsBlockList() {
-	return m_dnsBlockList;
-}
-
-void DnsBlockList::swapDnsBlockList(dnsblocklistconst_ptr_t dnsBlockList) {
-	std::atomic_store(&m_dnsBlockList, dnsBlockList);
 }

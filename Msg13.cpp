@@ -1350,6 +1350,14 @@ void gotHttpReply2 ( void *state ,
 		savedErr = g_errno = EDOCBLOCKEDSHLIBCONTENT;
 	}
 
+	if (ts->m_truncated) {
+		if (ts->m_blockedContentType) {
+			savedErr = g_errno = EDOCBADCONTENTTYPE;
+		} else {
+			savedErr = g_errno = EDOCTOOBIG;
+		}
+	}
+
 	// . add to the table if not in there yet
 	// . store in our table of ips we should use proxies for
 	// . also start off with a crawldelay of like 1 sec for this
@@ -1418,10 +1426,6 @@ void gotHttpReply2 ( void *state ,
 		    "err=%s",
 		    iptoa(r->m_firstIp,ipbuf),r->ptr_url,mstrerror(savedErr));
 	}
-	
-
-	// sanity. this was happening from iframe download
-	//if ( g_errno == EDNSTIMEDOUT ) { gbshutdownAbort(true); }
 
 	// . sanity check - robots.txt requests must always be compressed
 	// . saves space in the cache
@@ -1777,7 +1781,6 @@ void gotHttpReply2 ( void *state ,
 		// use this
 		int32_t err = 0;
 		// set g_errno appropriately
-		//if ( ! ts || savedErr ) err = savedErr;
 		if ( savedErr ) err = savedErr;
 		// sanity check. must be empty on any error
 		if ( reply && replySize > 0 && err ) {
@@ -1800,7 +1803,9 @@ void gotHttpReply2 ( void *state ,
 			     // connection reset by peer
 			     err != ECONNRESET &&
 			     err != EBANNEDCRAWL &&
-			     err != EDOCBLOCKEDSHLIBCONTENT)
+			     err != EDOCBLOCKEDSHLIBCONTENT &&
+			     err != EDOCTOOBIG &&
+			     err != EDOCBADCONTENTTYPE)
 			{
 				log("http: bad error from httpserver get doc: %s",
 				    mstrerror(err));

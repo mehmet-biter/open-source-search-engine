@@ -615,6 +615,8 @@ bool TcpServer::sendMsg( const char *hostname, int32_t hostnameLen, int32_t ip, 
 	s->m_udpSlot          = NULL;
 	s->m_streamingMode    = false;
 	s->m_tunnelMode       = 0;
+	s->m_truncated        = false;
+	s->m_blockedContentType = false;
 
 	// if http request starts with "CONNECT ..." then enter tunnel mode
 	if ( useHttpTunnel ) {
@@ -1524,23 +1526,8 @@ bool TcpServer::setTotalToRead ( TcpSocket *s ) {
 	if ( size < s->m_readBufSize ) return true;
 	// prepare for realloc if we're point to s->m_tmpBuf
 	//char *tmp = NULL;
-	char *newBuf = NULL;
-	/*
-	if ( s->m_readBuf == s->m_tmpBuf ) {
-		log(LOG_LOGIC,"tcp: This should not have been called.");
-		sleep(10000);
-		tmp = s->m_tmpBuf;
-		//s->m_readBuf = NULL;
-		newBuf = (char *)mmalloc(size,"TcpServerR2");
-		// copy over from tmpBuf if we have to
-		if ( newBuf ) gbmemcpy (newBuf, s->m_readBuf, s->m_readBufSize);
-	}
-	// otherwise, it's bigger than our 10k buffer and we gotta realloc
-	else 
-	*/
-	newBuf = (char * ) mrealloc(s->m_readBuf,s->m_readBufSize,size,
-				    "TcpServerR");
-	if ( ! newBuf ) {
+	char *newBuf = (char *) mrealloc(s->m_readBuf, s->m_readBufSize, size, "TcpServerR");
+	if (!newBuf) {
 		log(LOG_WARN, "tcp: Failed to reallocate from %" PRId32" to %" PRId32" bytes to read from socket.",
 		    s->m_readBufSize, size);
 		return false;

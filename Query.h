@@ -6,6 +6,7 @@
 #define GB_QUERY_H
 
 #include "SafeBuf.h"
+#include "Lang.h"
 class CollectionRec;
 
 
@@ -166,7 +167,7 @@ class QueryWord {
 	void destructor ();
 
 	// this ptr references into the actual query
-	char       *m_word    ;
+	const char     *m_word;
 	int32_t        m_wordLen ;
 	// the length of the phrase, if any. it starts at m_word. It can be less than the source string length because
 	// non-alfanum words are treated as a single space by Phrases::getPhrase(), so eg "aaa::bbb" will only have m_phraseLen=7
@@ -306,7 +307,7 @@ class QueryTerm {
 	int32_t       m_bitNum;
 
 	// point to term, either m_word or m_phrase
-	char      *m_term;
+	const char      *m_term;
 	int32_t       m_termLen;
 
 	// point to the posdblist that represents us
@@ -353,10 +354,6 @@ class QueryTerm {
 	int64_t m_synWids0;
 	int64_t m_synWids1;
 	int32_t      m_numAlnumWordsInSynonym;
-
-	// like if we are the "nj" syn of "new jersey", this will be 2 words
-	// since "new jersey", our base, is 2 alnum words.
-	int32_t      m_numAlnumWordsInBase;
 
 	// copied from derived QueryWord
 	field_code_t m_fieldCode;
@@ -412,11 +409,11 @@ class Query {
 	// . returns false and sets g_errno on error
 	// . after calling this you can call functions below
 	bool set2 ( const char *query    , 
-		    uint8_t  langId ,
+		    lang_t  langId ,
 		    bool     queryExpansion ,
 		    bool     useQueryStopWords,
 	        bool allowHighFreqTermCache,
-		    int32_t  maxQueryTerms = 0x7fffffff );
+		    int32_t  maxQueryTerms);
 
 	const char *getQuery() const { return m_originalQuery.getBufStart(); }
 	int32_t     getQueryLen() const { return m_originalQuery.length(); }
@@ -467,7 +464,7 @@ public:
 
 public:
 	// language of the query
-	uint8_t m_langId;
+	lang_t m_langId;
 
 	bool m_useQueryStopWords;
 

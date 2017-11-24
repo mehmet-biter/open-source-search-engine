@@ -198,6 +198,7 @@ static void status_to_spider_statistics( std::vector<unsigned> *spiderdoc_counts
 			break;
 		case EDOCDISALLOWED:
 		case EDOCDISALLOWEDHTTPSTATUS:
+		case EDOCDISALLOWEDERROR:
 		case EDOCDISALLOWEDROOT:
 			(*spiderdoc_counts)[ spider_doc_disallowed ] += count;
 			break;

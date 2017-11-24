@@ -50,8 +50,10 @@
 #include "GbDns.h"
 #include "RobotsCheckList.h"
 #include "UrlResultOverride.h"
+#include "ContentTypeBlockList.h"
 #include <iostream>
 #include <fstream>
+#include <sysexits.h>
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -104,6 +106,11 @@ XmlDoc::XmlDoc() {
 	m_blockedDoc = false;
 	m_checkedUrlBlockList = false;
 	m_checkedDnsBlockList = false;
+	m_parsedRobotsMetaTag = false;
+	m_robotsNoIndex = false;
+	m_robotsNoFollow = false;
+	m_robotsNoArchive = false;
+	m_robotsNoSnippet = false;
 	m_dupTrPtr = NULL;
 	m_oldTitleRec = NULL;
 	m_filteredContent = NULL;
@@ -161,6 +168,11 @@ void XmlDoc::reset ( ) {
 	m_blockedDoc = false;
 	m_checkedUrlBlockList = false;
 	m_checkedDnsBlockList = false;
+	m_parsedRobotsMetaTag = false;
+	m_robotsNoIndex = false;
+	m_robotsNoFollow = false;
+	m_robotsNoArchive = false;
+	m_robotsNoSnippet = false;
 	m_hostNameServers.clear();
 
 	m_doConsistencyTesting = g_conf.m_doConsistencyTesting;
@@ -355,6 +367,7 @@ void XmlDoc::reset ( ) {
 	m_numOutlinksAdded         = 0;
 	m_useRobotsTxt             = true;
 	m_robotsTxtHttpStatusDisallowed = false;
+	m_robotsTxtErrorDisallowed = false;
 
 	m_allowSimplifiedRedirs    = false;
 
@@ -2285,6 +2298,31 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		return (int32_t *)mime;
 	}
 
+	if (g_contentTypeBlockList.isContentTypeBlocked(mime->getContentTypePos(), mime->getContentTypeLen())) {
+		m_indexCode = EDOCBADCONTENTTYPE;
+		m_indexCodeValid = true;
+		logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCBADCONTENTTYPE");
+		return &m_indexCode;
+	}
+
+	// check meta noindex
+	bool *ini = getIsNoIndex();
+	if (!ini || ini == (bool*) -1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, could not getIsNoIndex");
+		return (int32_t *) ini;
+	}
+
+	if (*ini) {
+		if (m_firstUrl.isRoot()) {
+			m_indexCode = EDOCDISALLOWEDROOT;
+		} else {
+			m_indexCode = EDOCDISALLOWED;
+		}
+		m_indexCodeValid = true;
+		logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCDISALLOWED");
+		return &m_indexCode;
+	}
+
 	// check redir url
 	Url **redirp = getRedirUrl();
 	if ( ! redirp || redirp == (void *)-1 ) {
@@ -2360,6 +2398,8 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if (disallowed) {
 		if (m_robotsTxtHttpStatusDisallowed) {
 			m_indexCode = EDOCDISALLOWEDHTTPSTATUS;
+		} else if (m_robotsTxtErrorDisallowed) {
+			m_indexCode = EDOCDISALLOWEDERROR;
 		} else if (m_firstUrl.isRoot()) {
 			m_indexCode = EDOCDISALLOWEDROOT;
 		} else {
@@ -2499,6 +2539,10 @@ int32_t *XmlDoc::getIndexCode ( ) {
 			m_contentValid = true;
 			m_content    = NULL;
 			m_contentLen = 0;
+
+			ptr_utf8Content    = NULL;
+			size_utf8Content   = 0;
+			m_utf8ContentValid = true;
 
 			logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCNONCANONICAL");
 			return &m_indexCode;
@@ -3055,6 +3099,10 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 			m_contentValid = true;
 			m_content    = NULL;
 			m_contentLen = 0;
+
+			ptr_utf8Content    = NULL;
+			size_utf8Content   = 0;
+			m_utf8ContentValid = true;
 		} else {
 			m_titleRecBufValid = true;
 			return &m_titleRecBuf;
@@ -5650,6 +5698,10 @@ Url **XmlDoc::getRedirUrl() {
 		m_content    = NULL;
 		m_contentLen = 0;
 
+		ptr_utf8Content    = NULL;
+		size_utf8Content   = 0;
+		m_utf8ContentValid = true;
+
 		// mdw: let this path through so contactXmlDoc gets a proper
 		// redirect that we can follow. for the base xml doc at
 		// least the m_indexCode will be set
@@ -7249,6 +7301,30 @@ bool *XmlDoc::getIsAllowed ( ) {
 		return NULL;
 	}
 
+	int32_t *dstatus = ed->getDownloadStatus();
+	if (!dstatus || dstatus == (void *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END. dstatus failed, return %s", ((bool *)dstatus ? "true" : "false"));
+		return (bool *)dstatus;
+	}
+
+	if (*dstatus) {
+		// reset this. -1 means unknown or none found. We now use a more sane default
+		// as the caller would have defaulted to 250ms if set to -1 here.
+		m_crawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
+		m_crawlDelayValid = true;
+
+		m_robotsTxtErrorDisallowed = true;
+
+		m_isAllowed      = false;
+		m_isAllowedValid = true;
+
+		logTrace( g_conf.m_logTraceXmlDoc, "END. dstatus != 0. Return %s", (m_isAllowed?"true":"false"));
+
+		// nuke it to save mem
+		nukeDoc(ed);
+		return &m_isAllowed;
+	}
+
 	// . now try the content
 	// . should call getHttpReply
 	char **pcontent = ed->getContent();
@@ -8043,7 +8119,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 
 	// max to download in bytes.
 	r->m_maxTextDocLen          = cr->m_maxTextDocLen;
-	r->m_maxOtherDocLen         = cr->m_maxOtherDocLen;
+	r->m_maxOtherDocLen         = cr->m_maxOtherDocDownloadLen;
 
 	// but if url is on the intranet/internal nets
 	if ( m_ipValid && is_internal_net_ip(m_ip) ) {
@@ -8338,19 +8414,6 @@ char **XmlDoc::gotHttpReply ( ) {
 		m_httpReplyAllocSize = 0;
 	}
 
-	//Slighty weird in the original code: this block didn't exist so for all errors not
-	//explicitly tested for in the code above would slip through as empty responses.
-	if(g_errno) {
-		if(m_httpReply) {
-			mfree ( m_httpReply, m_httpReplyAllocSize, "XmlDocHR" );
-			m_httpReplySize      = 0;
-			m_httpReply          = NULL;
-			m_httpReplyAllocSize = 0;
-		}
-		logTrace(g_conf.m_logTraceXmlDoc, "END, return NULL. %s", merrname(g_errno));
-		return NULL;
-	}
-
 	// clear this i guess
 	g_errno = 0;
 
@@ -8361,6 +8424,7 @@ char **XmlDoc::gotHttpReply ( ) {
 
 
 char *XmlDoc::getIsContentTruncated ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 	if ( m_isContentTruncatedValid ) return &m_isContentTruncated2;
 
 	setStatus ( "getting is content truncated" );
@@ -8398,22 +8462,19 @@ char *XmlDoc::getIsContentTruncated ( ) {
 	// was the content truncated? these might label a doc is truncated
 	// when it really is not... but we only use this for link spam stuff,
 	// so it should not matter too much. it should only happen rarely.
-	if ( cr->m_maxTextDocLen >= 0 &&
-		LEN >= cr->m_maxTextDocLen-1  &&
-		*ct == CT_HTML )
-			m_isContentTruncated = true;
+	if (cr->m_maxTextDocLen >= 0 && LEN >= cr->m_maxTextDocLen - 1 && *ct == CT_HTML) {
+		m_isContentTruncated = true;
+	}
 
-	if ( cr->m_maxOtherDocLen >= 0 &&
-		LEN >= cr->m_maxOtherDocLen-1 &&
-		*ct != CT_HTML )
-			m_isContentTruncated = true;
+	if (cr->m_maxOtherDocDownloadLen >= 0 && LEN >= cr->m_maxOtherDocDownloadLen - 1 && *ct != CT_HTML) {
+		m_isContentTruncated = true;
+	}
 
-	//if ( LEN > MAXDOCLEN ) m_isContentTruncated = true;
 	// set this
 	m_isContentTruncated2 = (bool)m_isContentTruncated;
-	// validate it
 	m_isContentTruncatedValid = true;
 
+	logTrace(g_conf.m_logTraceXmlDoc, "END, returning isContentTruncated=%d", m_isContentTruncated2);
 	return &m_isContentTruncated2;
 }
 
@@ -9245,8 +9306,6 @@ char **XmlDoc::getFilteredContent ( ) {
 
 		if ( *ct == CT_TEXT    ) return &m_filteredContent;
 		if ( *ct == CT_XML     ) return &m_filteredContent;
-		// javascript - sometimes has address information in it, so keep it!
-		if ( *ct == CT_JS      ) return &m_filteredContent;
 		if ( m_contentLen == 0 ) return &m_filteredContent;
 
 		// we now support JSON for diffbot
@@ -9374,15 +9433,18 @@ void XmlDoc::filterStart_r(bool amThread) {
 	// assume none
 	m_filteredContentLen = 0;
 
+	// 20 (64bit int len) + 1 (dot)
+	static const size_t max_filename_len = sizeof(g_hostdb.m_dir) + 21;
+
 	// pass the input to the program through this file
 	// rather than a pipe, since popen() seems broken
-	char in[1024];
-	snprintf(in, 1023, "%sin.%" PRId64, g_hostdb.m_dir, (int64_t)id);
+	char in[max_filename_len];
+	snprintf(in, sizeof(in) - 1, "%sin.%" PRId64, g_hostdb.m_dir, (int64_t)id);
 	unlink(in);
 
 	// collect the output from the filter from this file
-	char out[1024];
-	snprintf(out, 1023, "%sout.%" PRId64, g_hostdb.m_dir, (int64_t)id);
+	char out[max_filename_len];
+	snprintf(out, sizeof(out) - 1, "%sout.%" PRId64, g_hostdb.m_dir, (int64_t)id);
 	unlink(out);
 
 	// ignore errno from those unlinks
@@ -9402,7 +9464,7 @@ void XmlDoc::filterStart_r(bool amThread) {
 	size_t inputContentLen = 0;
 
 	if (m_contentType == CT_HTML) {
-		snprintf(buf, bufLen - 1, "%s\n%s", g_conf.m_spiderBotName, m_firstUrl.getUrl());
+		snprintf(buf, bufLen - 1, "%s\n%s", g_conf.m_spiderUserAgent, m_firstUrl.getUrl());
 		inputContent = buf;
 		inputContentLen = strlen(buf);
 	} else {
@@ -9443,6 +9505,38 @@ void XmlDoc::filterStart_r(bool amThread) {
 	// execute it
 	int retVal = gbsystem(cmd);
 
+	if (retVal == -1 || (WIFEXITED(retVal) && WEXITSTATUS(retVal) != 0) || !WIFEXITED(retVal)) {
+		log(LOG_WARN, "gb: system(%s): retVal=%d ifexited=%d exitstatus=%d url=%s",
+		    cmd, retVal, WIFEXITED(retVal), WEXITSTATUS(retVal), m_currentUrl.getUrl());
+
+		bool moveInputFile = false;
+		// remove output file
+		if (WIFEXITED(retVal)) {
+			// only remove input file if converter doesn't exist
+			if (WEXITSTATUS(retVal) == EX_UNAVAILABLE) {
+				unlink(in);
+			} else {
+				// output file only exist if converter exist
+				unlink(out);
+
+				moveInputFile = true;
+			}
+		} else {
+			moveInputFile = true;
+		}
+
+		if (moveInputFile) {
+			// move to error file so we have a chance to figure out what's wrong
+			char new_in[max_filename_len + 6];
+			snprintf(new_in, sizeof(new_in) - 1, "%sin.error.%" PRId64, g_hostdb.m_dir, (int64_t)id);
+			(void)rename(in, new_in);
+		}
+
+		m_errno = m_indexCode = EDOCCONVERTFAILED;
+		m_indexCodeValid = true;
+		return;
+	}
+
 	// all done with input file. clean up the binary input file from disk
 	if (unlink(in) != 0) {
 		// log error
@@ -9450,14 +9544,6 @@ void XmlDoc::filterStart_r(bool amThread) {
 
 		// ignore it, since it was not a processing error per se
 		errno = 0;
-	}
-
-	if (retVal == -1 || (WIFEXITED(retVal) && WEXITSTATUS(retVal) != 0) || !WIFEXITED(retVal)) {
-		log(LOG_WARN, "gb: system(%s): retVal=%d ifexited=%d exitstatus=%d url=%s",
-		    cmd, retVal, WIFEXITED(retVal), WEXITSTATUS(retVal), m_currentUrl.getUrl());
-		m_errno = m_indexCode = EDOCCONVERTFAILED;
-		m_indexCodeValid = true;
-		return;
 	}
 
 	CollectionRec *cr = getCollRec();
@@ -11120,12 +11206,6 @@ int8_t *XmlDoc::getHopCount ( ) {
 //set to false fo rinjecting and validate it... if &spiderlinks=0
 // should we spider links?
 char *XmlDoc::getSpiderLinks ( ) {
-	// set it to false on issues
-	//if ( m_indexCode ) {
-	//	m_spiderLinks      = false;
-	//	m_spiderLinks2     = false;
-	//	m_spiderLinksValid = true ; }
-
 	// this slows importing down because we end up doing ip lookups
 	// for every outlink if "firstip" not in tagdb.
 	// shoot. set2() already sets m_spiderLinksValid to true so we
@@ -11156,26 +11236,18 @@ char *XmlDoc::getSpiderLinks ( ) {
 		return &m_spiderLinks2;
 	}
 
-	// check the xml for a meta robots tag
-	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
-
 	// assume true
 	m_spiderLinks = (char)true;
 
 	// or if meta tag says not to
-	char buf1 [256];
-	char buf2 [256];
-	buf1[0] = '\0';
-	buf2[0] = '\0';
-	xml->getMetaContent ( buf1, 255 , "robots" , 6 );
-	xml->getMetaContent ( buf2, 255 , g_conf.m_spiderBotName, strlen(g_conf.m_spiderBotName) );
+	bool *inf = getIsNoFollow();
+	if (!inf || inf == (bool *)-1) {
+		return (char *)inf;
+	}
 
-	if ( strstr ( buf1 , "nofollow" ) ||
-	     strstr ( buf2 , "nofollow" ) ||
-	     strstr ( buf1 , "none"     ) ||
-	     strstr ( buf2 , "none"     ) )
+	if (*inf) {
 		m_spiderLinks = (char)false;
+	}
 
 	// spider links if not using robots.txt
 	if ( ! m_useRobotsTxt )
@@ -15561,8 +15633,8 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	m_reply.m_noArchive = 0;
 	// are we noarchive? only check this if not getting link text
 	if ( ! m_req->m_getLinkText ) {
-		char *na = getIsNoArchive();
-		if ( ! na || na == (char *)-1 ) { checkPointerError(na); return (Msg20Reply *)na; }
+		bool *na = getIsNoArchive();
+		if ( ! na || na == (bool *)-1 ) { checkPointerError(na); return (Msg20Reply *)na; }
 		m_reply.m_noArchive = *na;
 	}
 
@@ -16021,7 +16093,7 @@ Query *XmlDoc::getQuery() {
 	int64_t start = logQueryTimingStart();
 
 	// return NULL with g_errno set on error
-	if (!m_query.set2(m_req->ptr_qbuf, m_req->m_langId, m_req->m_queryExpansion, m_req->m_useQueryStopWords, m_req->m_allowHighFrequencyTermCache)) {
+	if (!m_query.set2(m_req->ptr_qbuf, (lang_t)m_req->m_langId, m_req->m_queryExpansion, m_req->m_useQueryStopWords, m_req->m_allowHighFrequencyTermCache, ABS_MAX_QUERY_TERMS)) {
 		if(!g_errno)
 			g_errno = EBADENGINEER; //can fail due to a multitude of problems
 		return NULL;
@@ -16479,50 +16551,142 @@ char *XmlDoc::getHighlightedSummary ( bool *isSetFromTagsPtr ) {
 	return m_finalSummaryBuf.getBufStart();
 }
 
+void XmlDoc::parseRobotsMetaTagContent(const char *content, int32_t contentLen) {
+	std::string contentStr(content, contentLen);
+	std::transform(contentStr.begin(), contentStr.end(), contentStr.begin(), ::tolower);
+	contentStr.erase(std::remove_if(contentStr.begin(), contentStr.end(), ::isspace), contentStr.end());
+
+	auto tokens = split(contentStr, ',');
+	for (const auto &token : tokens) {
+		switch (token.size()) {
+			case 4:
+				// none
+				if (token.compare("none") == 0) {
+					m_robotsNoIndex = true;
+					m_robotsNoFollow = true;
+				}
+				break;
+			case 7:
+				// noindex
+				if (token.compare("noindex") == 0) {
+					m_robotsNoIndex = true;
+				}
+				break;
+			case 8:
+				// nofollow
+				if (token.compare("nofollow") == 0) {
+					m_robotsNoFollow = true;
+				}
+				break;
+			case 9:
+				// noarchive
+				// nosnippet
+				if (token.compare("noarchive") == 0) {
+					m_robotsNoArchive = true;
+				} else if (token.compare("nosnippet") == 0) {
+					m_robotsNoSnippet = true;
+				}
+				break;
+			default:
+				break;
+		}
+	}
+}
+
+
+bool *XmlDoc::parseRobotsMetaTag() {
+	if (m_parsedRobotsMetaTag) {
+		return &m_parsedRobotsMetaTag;
+	}
+
+	Xml *xml = getXml();
+	if (!xml || xml == (void *)-1) {
+		return (bool*)xml;
+	}
+
+	const char *content = nullptr;
+	int32_t contentLen = 0;
+
+	int32_t startNode = 0;
+	while (startNode < xml->getNumNodes() &&
+	       xml->getTagValue("name", "robots", "content", &content, &contentLen, true, TAG_META, &startNode)) {
+		parseRobotsMetaTagContent(content, contentLen);
+		++startNode;
+	}
+
+	startNode = 0;
+	while (startNode < xml->getNumNodes() &&
+	       xml->getTagValue("name", g_conf.m_spiderBotName, "content", &content, &contentLen, true, TAG_META, &startNode)) {
+		parseRobotsMetaTagContent(content, contentLen);
+		++startNode;
+	}
+
+	m_parsedRobotsMetaTag = true;
+	return &m_parsedRobotsMetaTag;
+}
+
 // <meta name=robots value=noarchive>
 // <meta name=<configured botname> value=noarchive>
-char *XmlDoc::getIsNoArchive ( ) {
-	if ( m_isNoArchiveValid ) return &m_isNoArchive;
-	Xml *xml = getXml();
-	if ( ! xml || xml == (void *)-1 ) return (char *)xml;
-	m_isNoArchive      = (char)false;
-	m_isNoArchiveValid = true;
-	int32_t     n     = xml->getNumNodes();
-	XmlNode *nodes = xml->getNodes();
-	// find the meta tags
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// continue if not a meta tag
-		if ( nodes[i].m_nodeId != TAG_META ) continue;
-		// get robots attribute
-		int32_t alen; char *att;
-		// <meta name=robots value=noarchive>
-		att = nodes[i].getFieldValue ( "name" , &alen );
-		// need a name!
-		if ( ! att ) continue;
-		// get end
-		char *end = att + alen;
-		// skip leading spaces
-		while ( att < end && *att && is_wspace_a(*att) ) att++;
-		// must be robots or <configured botname>. skip if not
-		if ( strncasecmp(att,"robots" ,6) &&
-		     strncasecmp(att,g_conf.m_spiderBotName,strlen(g_conf.m_spiderBotName))   ) continue;
-
-		// get the content vaue
-		att = nodes[i].getFieldValue("content",&alen);
-		// skip if none
-		if ( ! att ) continue;
-		// get end
-		end = att + alen;
-		// skip leading spaces
-		while ( att < end && *att && is_wspace_a(*att) ) att++;
-		// is is noarchive? skip if no such match
-		if ( strncasecmp(att,"noarchive",9) != 0 ) continue;
-		// ok, we got it
-		m_isNoArchive = (char)true;
-		break;
+bool *XmlDoc::getIsNoArchive() {
+	bool *parsed = parseRobotsMetaTag();
+	if (!parsed || parsed == (void *)-1) {
+		return parsed;
 	}
-	// return what we got
-	return &m_isNoArchive;
+
+	// sanity check. must be parsed at this point
+	if (!*parsed) {
+		gbshutdownLogicError();
+	}
+
+	return &m_robotsNoArchive;
+}
+
+// <meta name=robots value=nofollow>
+// <meta name=<configured botname> value=nofollow>
+bool *XmlDoc::getIsNoFollow() {
+	bool *parsed = parseRobotsMetaTag();
+	if (!parsed || parsed == (void *)-1) {
+		return parsed;
+	}
+
+	// sanity check. must be parsed at this point
+	if (!*parsed) {
+		gbshutdownLogicError();
+	}
+
+	return &m_robotsNoFollow;
+}
+
+// <meta name=robots value=noindex>
+// <meta name=<configured botname> value=noindex>
+bool *XmlDoc::getIsNoIndex() {
+	bool *parsed = parseRobotsMetaTag();
+	if (!parsed || parsed == (void *)-1) {
+		return parsed;
+	}
+
+	// sanity check. must be parsed at this point
+	if (!*parsed) {
+		gbshutdownLogicError();
+	}
+
+	return &m_robotsNoIndex;
+}
+
+// <meta name=robots value=nosnippet>
+// <meta name=<configured botname> value=nosnippet>
+bool *XmlDoc::getIsNoSnippet() {
+	bool *parsed = parseRobotsMetaTag();
+	if (!parsed || parsed == (void *)-1) {
+		return parsed;
+	}
+
+	// sanity check. must be parsed at this point
+	if (!*parsed) {
+		gbshutdownLogicError();
+	}
+
+	return &m_robotsNoSnippet;
 }
 
 char *XmlDoc::getIsLinkSpam ( ) {

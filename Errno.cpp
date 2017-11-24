@@ -148,6 +148,8 @@ const char *mstrerror ( int errnum ) {
 				return "Doc bad redirect url";
 			case EDOCCONVERTFAILED:
 				return "Doc conversion error";
+			case EDOCTOOBIG:
+				return "Doc is too big";
 			case EDOCUNCHANGED    :
 				return "Doc unchanged";
 			case EDOCDUP          :
@@ -155,11 +157,13 @@ const char *mstrerror ( int errnum ) {
 			case EDOCDUPWWW       :
 				return "Doc is dup of a www url";
 			case EDOCDISALLOWED   :
-				return "robots.txt disallows this url";
+				return "robots.txt/meta tag disallows this url";
 			case EDOCDISALLOWEDHTTPSTATUS:
 				return "Disallowed due to robots.txt HTTP status";
 			case EDOCDISALLOWEDROOT:
-				return "robots.txt disallows this root url";
+				return "robots.txt/meta tag disallows this root url";
+			case EDOCDISALLOWEDERROR:
+				return "Disallowed due to robots.txt download error";
 			case ETOOMANYFILES    :
 				return "Too many files already";
 			case EQUERYTOOBIG     :
@@ -361,7 +365,7 @@ static const char* s_errname[] {
 	STRINGIFY( EDOCSIMPLIFIEDREDIR ),
 	STRINGIFY( EDOCBADREDIRECTURL ),
 	STRINGIFY( EDOCCONVERTFAILED ),
-	STRINGIFY( EUNUSED16 ),
+	STRINGIFY( EDOCTOOBIG ),
 	STRINGIFY( EUNUSED17 ),
 	STRINGIFY( EUNUSED18 ),
 	STRINGIFY( EUNUSED19 ),
@@ -373,7 +377,7 @@ static const char* s_errname[] {
 	STRINGIFY( EDOCDISALLOWED ),
 	STRINGIFY( EDOCDISALLOWEDHTTPSTATUS ),
 	STRINGIFY( EDOCDISALLOWEDROOT ),
-	STRINGIFY( EUNUSED24 ),
+	STRINGIFY( EDOCDISALLOWEDERROR ),
 	STRINGIFY( EUNUSED25 ),
 	STRINGIFY( EUNUSED26 ),
 	STRINGIFY( EUNUSED27 ),

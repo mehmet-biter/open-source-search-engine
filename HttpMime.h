@@ -129,6 +129,7 @@ public:
 	const char *getContentEncodingPos() { return m_contentEncodingPos; }
 	const char *getContentLengthPos() { return m_contentLengthPos; }
 	const char *getContentTypePos() { return m_contentTypePos; }
+	int32_t getContentTypeLen() const { return m_contentTypeLen; }
 
 	// convert a file extension like "gif" to "images/gif"
 	static const char *getContentTypeFromExtension ( const char *ext ) ;
@@ -193,9 +194,6 @@ private:
 	bool parseContentLanguage(const char *field, size_t fieldLen);
 	bool parseServer(const char *field, size_t fieldLen);
 
-	// converts a string contentType like "text/html" to a int32_t
-	int32_t getContentTypePrivate(const char *s, size_t slen);
-
 	// used for bz2, gz files
 	const char *getContentEncodingFromExtension ( const char *ext ) ;
 
@@ -237,7 +235,9 @@ private:
 	int32_t m_contentEncoding;
 	const char *m_contentEncodingPos;
 	const char *m_contentLengthPos;
+
 	const char *m_contentTypePos;
+	size_t m_contentTypeLen;
 
 	// Content-Type: text/html;charset=euc-jp  // japanese (euc-jp)
 	// Content-Type: text/html;charset=gb2312  // chinese (gb2312)

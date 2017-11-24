@@ -74,6 +74,7 @@ void HttpMime::reset ( ) {
 	m_contentEncodingPos = NULL;
 	m_contentLengthPos = NULL;
 	m_contentTypePos = NULL;
+	m_contentTypeLen = 0;
 
 	m_cookies.clear();
 }
@@ -270,6 +271,11 @@ bool HttpMime::getValue(const char **value, size_t *valueLen) {
 		// value should end at semicolon if present
 		*valueLen = semicolonPos - *value;
 		m_attributeStartPos = semicolonPos - m_currentLine + 1;
+	}
+
+	// strip ending whitespace
+	while (*valueLen > 0 && (is_wspace_a((*value)[*valueLen - 1]))) {
+		--(*valueLen);
 	}
 
 	logTrace(g_conf.m_logTraceHttpMime, "value='%.*s'", static_cast<int>(*valueLen), *value);
@@ -625,7 +631,34 @@ bool HttpMime::parseContentType(const char *field, size_t fieldLen) {
 
 		if (getValue(&value, &valueLen)) {
 			m_contentTypePos = value;
-			m_contentType = getContentTypePrivate(value, valueLen);
+			m_contentTypeLen = valueLen;
+
+			static const char s_charset[] = "charset";
+			static const size_t s_charsetLen = strlen(s_charset);
+
+			const char *attribute = NULL;
+			size_t attributeLen = 0;
+			const char *attributeValue = NULL;
+			size_t attributeValueLen = 0;
+			while (getAttribute(&attribute, &attributeLen, &attributeValue, &attributeValueLen)) {
+				logTrace(g_conf.m_logTraceHttpMime, "attribute=%.*s (len=%d)", static_cast<int>(attributeLen), attribute, static_cast<int>(attributeLen));
+				logTrace(g_conf.m_logTraceHttpMime, "attributeValueLen=%d", static_cast<int>(attributeValueLen));
+
+				if (attributeValueLen > 0) {
+					// charset
+					if (attributeLen == s_charsetLen && strncasecmp(attribute, s_charset, attributeLen) == 0) {
+						m_charset = attributeValue;
+						m_charsetLen = attributeValueLen;
+						continue;
+					}
+				}
+			}
+
+			// returns CT_UNKNOWN if unknown
+			m_contentType = getContentTypeFromStr(m_contentTypePos, m_contentTypeLen);
+			if (m_contentType == CT_UNKNOWN) {
+				log(LOG_WARN, "http: unrecognized content type '%.*s'", (int)m_contentTypeLen, m_contentTypePos);
+			}
 		}
 
 		return true;
@@ -840,18 +873,6 @@ bool HttpMime::parse(const char *mime, int32_t mimeLen, Url *url) {
 
 
 int32_t getContentTypeFromStr(const char *s, size_t slen) {
-	// trim off spaces at the end
-	char tmp[64];
-	if ( s[slen-1] == ' ' ) {
-		strncpy(tmp,s,63);
-		tmp[63] = '\0';
-		int32_t newLen = strlen(tmp);
-		s = tmp;
-		char *send = tmp + newLen;
-		for ( ; send>s && send[-1] == ' '; send-- );
-		*send = '\0';
-	}
-
 	int32_t ct = CT_UNKNOWN;
 	if (strncasecmp(s, "text/", 5) == 0) {
 		if (strncasecmp(s, "text/html", slen) == 0) {
@@ -870,10 +891,6 @@ int32_t getContentTypeFromStr(const char *s, size_t slen) {
 			ct = CT_JS;
 		} else if (strncasecmp(s, "text/css", slen) == 0) {
 			ct = CT_CSS;
-		} else if (strncasecmp(s, "text/x-vcard", slen) == 0) {
-			// . semicolon separated list of info, sometimes an element is html
-			// . these might have an address in them...
-			ct = CT_HTML;
 		} else {
 			ct = CT_TEXT;
 		}
@@ -941,57 +958,10 @@ int32_t getContentTypeFromStr(const char *s, size_t slen) {
 		ct = CT_UNKNOWN;
 	} else if (strncasecmp(s, "application/x-tar", slen) == 0) {
 		ct = CT_UNKNOWN;
-	} else if (strncmp(s, "audio/", 6) == 0) {
+	} else if (strncasecmp(s, "audio/", 6) == 0) {
 		ct = CT_UNKNOWN;
 	}
 
-	return ct;
-}
-
-// . s is a NULL terminated string like "text/html"
-int32_t HttpMime::getContentTypePrivate(const char *s, size_t slen) {
-	const char *send = NULL;
-	int32_t ct;
-	// skip spaces
-	while ( *s==' ' || *s=='\t' ) s++;
-	// find end of s
-	send = s;
-	// they can have "text/plain;charset=UTF-8" too
-	for ( ; *send && *send !=';' && *send !='\r' && *send !='\n' ; send++);
-
-	//
-	// point to possible charset desgination
-	//
-	const char *t = send ;
-	// charset follows the semicolon
-	if ( *t == ';' ) {
-		// skip semicolon
-		t++;
-		// skip spaces
-		while ( *t==' ' || *t=='\t' ) t++;
-		// get charset name "charset=euc-jp"
-		if ( strncasecmp ( t , "charset" , 7 ) == 0 ) {
-			// skip it
-			t += 7;
-			// skip spaces, equal, spaces
-			while ( *t==' ' || *t=='\t' ) t++;
-			if    ( *t=='='             ) t++;
-			while ( *t==' ' || *t=='\t' ) t++;
-			// get charset
-			m_charset = t;
-			// get length
-			while ( *t && *t!='\r' && *t!='\n' && *t!=' ' && *t!='\t') t++;
-			m_charsetLen = t - m_charset;
-		}
-	}
-
-	// returns CT_UNKNOWN if unknown
-	ct = getContentTypeFromStr(s, slen);
-	if (ct == CT_UNKNOWN) {
-		log(LOG_WARN, "http: unrecognized content type '%.*s'", (int)slen, s);
-	}
-
-	// return 0 for the contentType if unknown
 	return ct;
 }
 

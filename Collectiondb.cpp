@@ -1036,6 +1036,7 @@ CollectionRec::CollectionRec() {
 	m_maxAddUrlsPerIpDomPerDay = 0;
 	m_maxTextDocLen = 0;
 	m_maxOtherDocLen = 0;
+	m_maxOtherDocDownloadLen = 0;
 	m_summaryMaxWidth = 0;
 	m_maxRobotsCacheAge = 0;
 	m_crawlDelayDefaultForNoRobotsTxtMS = 15000;

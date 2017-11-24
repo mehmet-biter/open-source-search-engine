@@ -38,7 +38,7 @@ Query::Query()
 	m_numTerms = 0;
 
 	// Coverity
-	m_langId = 0;
+	m_langId = langUnknown;
 	m_useQueryStopWords = false;
 	m_allowHighFreqTermCache = false;
 	m_numTermsUntruncated = 0;
@@ -96,13 +96,13 @@ void Query::reset ( ) {
 //   This is used for term highlighting (Highlight.cpp and Summary.cpp)
 bool Query::set2 ( const char *query        , 
 		   // need language for doing synonyms
-		   uint8_t  langId ,
+		   lang_t  langId ,
 		   bool     queryExpansion ,
 		   bool     useQueryStopWords ,
            bool allowHighFreqTermCache,
 		   int32_t  maxQueryTerms  ) {
 	log(LOG_DEBUG,"query: set2(query='%s', langId=%d, queryExpansion=%s, useQueryStopWords=%s maxQueryTerms=%d)",
-	    query, langId, queryExpansion?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
+	    query, (int)langId, queryExpansion?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
 
 	reset();
 
@@ -860,7 +860,6 @@ bool Query::setQTerms ( const Words &words ) {
 				// word.
 				int32_t ba        = syn.m_numAlnumWordsInBase[j];
 				qt->m_numAlnumWordsInSynonym = na;
-				qt->m_numAlnumWordsInBase    = ba;
 
 				// crap, "nj" is a synonym of the PHRASE TERM
 				// bigram "new jersey" not of the single word term
@@ -902,7 +901,7 @@ bool Query::setQTerms ( const Words &words ) {
 				// IndexTable.cpp uses this one
 				qt->m_inQuotes  = qw->m_inQuotes;
 				// usually this is right
-				char *ptr = syn.m_termPtrs[j];
+				const char *ptr = syn.m_termPtrs[j];
 				// buf if it is NULL that means we transformed the
 				// word by like removing accent marks and stored
 				// it in m_synWordBuf, as opposed to just pointing

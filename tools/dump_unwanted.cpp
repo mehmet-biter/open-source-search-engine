@@ -144,6 +144,25 @@ int main(int argc, char **argv) {
 					continue;
 				}
 			}
+			uint8_t *contentType = xmlDoc.getContentType();
+			switch (*contentType) {
+				case CT_GIF:
+				case CT_JPG:
+				case CT_PNG:
+				case CT_TIFF:
+				case CT_BMP:
+				case CT_JS:
+				case CT_CSS:
+				case CT_JSON:
+				case CT_IMAGE:
+				case CT_GZ:
+				case CT_ARC:
+				case CT_WARC:
+					fprintf(stdout, "%" PRId64"|blocked content type|%s\n", docId, url->getUrl());
+					continue;
+				default:
+					break;
+			}
 
 			// check content
 			int32_t contentLen = xmlDoc.size_utf8Content > 0 ? (xmlDoc.size_utf8Content - 1) : 0;
@@ -152,6 +171,17 @@ int main(int argc, char **argv) {
 					fprintf(stdout, "%" PRId64"|blocked content|%s\n", docId, url->getUrl());
 					continue;
 				}
+			}
+
+			bool *ini = xmlDoc.getIsNoIndex();
+			if (*ini) {
+				bool *inf = xmlDoc.getIsNoFollow();
+				if (*inf) {
+					fprintf(stdout, "%" PRId64"|meta noindex nofollow|%s\n", docId, url->getUrl());
+				} else {
+					fprintf(stdout, "%" PRId64"|meta noindex follow|%s\n", docId, url->getUrl());
+				}
+				continue;
 			}
 		}
 

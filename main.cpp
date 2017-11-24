@@ -82,6 +82,7 @@
 #include "Dir.h"
 #include "File.h"
 #include "DnsBlockList.h"
+#include "ContentTypeBlockList.h"
 #include "UrlMatchList.h"
 #include "UrlBlockCheck.h"
 #include "DocDelete.h"
@@ -94,6 +95,8 @@
 #include "UrlResultOverride.h"
 #include "FxCheckAdult.h"
 #include "FxCheckSpam.h"
+#include "GbCompress.h"
+
 
 #include <sys/stat.h> //umask()
 #include <fcntl.h>
@@ -110,6 +113,8 @@ static bool registerMsgHandlers2();
 
 static const int32_t commandLineDumpdbRecSize = 10 * 1024 * 1024; //recSizes parameter for Msg5::getList() while dumping database from the command-line
 
+static void printHelp();
+
 static void dumpTitledb  (const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   int64_t docId , bool justPrintDups );
 //static int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int printStats, int32_t firstIp);
@@ -121,6 +126,8 @@ static void dumpTagdb(const char *coll, int32_t sfn, int32_t numFiles, bool incl
 //dumpPosdb() is not local becaue it is called directly by unittests
 void dumpPosdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, int64_t termId , bool justVerify);
 static void dumpWaitingTree(const char *coll);
+static void dumpRobotsTxtCache(const char *coll);
+
 static void dumpDoledb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 static void dumpClusterdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, const char *url);
@@ -254,316 +261,6 @@ int main2 ( int argc , char *argv[] ) {
 	// record time for uptime
 	g_stats.m_uptimeStart = time(NULL);
 
-	if (argc < 0) {
-	printHelp:
-		SafeBuf sb;
-		sb.safePrintf(
-			      "\n"
-			      "Usage: gb [CMD]\n");
-		sb.safePrintf(
-			      "\n"
-			      "\tgb will first try to load "
-			      "the hosts.conf in the same directory as the "
-			      "gb binary. "
-			      "Then it will determine its hostId based on "
-			      "the directory and IP address listed in the "
-			      "hosts.conf file it loaded. Things in []'s "
-			      "are optional.");
-		sb.safePrintf(
-			"[CMD] can have the following values:\n\n"
-
-			"-h\tPrint this help.\n\n"
-			"-v\tPrint version and exit.\n\n"
-
-			//"<hostId>\n"
-			//"\tstart the gb process for this <hostId> locally."
-			//" <hostId> is 0 to run as host #0, for instance."
-			//"\n\n"
-
-
-			//"<hostId> -d\n\trun as daemon.\n\n"
-			"-d\tRun as daemon.\n\n"
-
-			//"-o\tprint the overview documentation in HTML. "
-			//"Contains the format of hosts.conf.\n\n"
-
-			// "<hostId> -r\n\tindicates recovery mode, "
-			// "sends email to addresses "
-			// "specified in Conf.h upon startup.\n\n"
-			// "-r\tindicates recovery mode, "
-			// "sends email to addresses "
-			// "specified in Conf.h upon startup.\n\n"
-
-			"start [hostId]\n"
-			"\tStart the gb process on all hosts or just on "
-			"[hostId], if specified, using an ssh command. Runs "
-			"each gb process in a keepalive loop under bash.\n\n"
-
-			"start <hostId1-hostId2>\n"
-			"\tLike above but just start gb on the supplied "
-			"range of hostIds.\n\n"
-
-			"stop [hostId]\n"
-			"\tSaves and exits for all gb hosts or "
-			"just on [hostId], if specified.\n\n"
-
-			"stop <hostId1-hostId2>\n"
-			"\tTell gb to save and exit on the given range of "
-			"hostIds.\n\n"
-
-			"save [hostId]\n"
-			"\tJust saves for all gb hosts or "
-			"just on [hostId], if specified.\n\n"
-
-
-			/*
-			"tmpstart [hostId]\n"
-			"\tstart the gb process on all hosts or just on "
-			"[hostId] if specified, but "
-			"use the ports specified in hosts.conf PLUS one. "
-			"Then you can switch the "
-			"proxy over to point to those and upgrade the "
-			"original cluster's gb. "
-			"That can be done in the Master Controls of the "
-			"proxy using the 'use "
-			"temporary cluster'. Also, this assumes the binary "
-			"name is tmpgb not gb.\n\n"
-
-			"tmpstop [hostId]\n"
-			"\tsaves and exits for all gb hosts or "
-			"just on [hostId] if specified, for the "
-			"tmpstart command.\n\n"
-			*/
-
-			"spidersoff [hostId]\n"
-			"\tDisables spidering for all gb hosts or "
-			"just on [hostId], if specified.\n\n"
-
-			"spiderson [hostId]\n"
-			"\tEnables spidering for all gb hosts or "
-			"just on [hostId], if specified.\n\n"
-
-			/*
-			"cacheoff [hostId]\n"
-			"\tdisables all disk PAGE caches on all hosts or "
-			"just on [hostId] if specified.\n\n"
-
-			"freecache [maxShmid]\n"
-			"\tfinds and frees all shared memory up to shmid "
-			"maxShmid, default is 3000000.\n\n"
-			*/
-
-			/*
-			"ddump [hostId]\n"
-			"\tdump all b-trees in memory to sorted files on "
-			"disk. "
-			"Will likely trigger merges on files on disk. "
-			"Restrict to just host [hostId] if given.\n\n"
-			*/
-
-			/*
-			"pmerge [hostId|hostId1-hostId2]\n"
-			"\tforce merge of posdb files "
-			"just on [hostId] if specified.\n\n"
-
-			"smerge [hostId|hostId1-hostId2]\n"
-			"\tforce merge of sectiondb files "
-			"just on [hostId] if specified.\n\n"
-
-			"tmerge [hostId|hostId1-hostId2]\n"
-			"\tforce merge of titledb files "
-			"just on [hostId] if specified.\n\n"
-
-			"merge [hostId|hostId1-hostId2]\n"
-			"\tforce merge of all rdb files "
-			"just on [hostId] if specified.\n\n"
-			*/
-
-			"dsh <CMD>\n"
-			"\tRun this command on the primary IPs of "
-			"all active hosts in hosts.conf. It will be "
-			"executed in the gigablast working directory on "
-			"each host. Example: "
-			"gb dsh 'ps auxw; uptime'\n\n"
-
-			/*
-			"dsh2 <CMD>\n"
-			"\trun this command on the secondary IPs of "
-			"all active hosts in hosts.conf. Example: "
-			"gb dsh2 'ps auxw; uptime'\n\n"
-			*/
-
-			"install [hostId]\n"
-			"\tInstall all required files for gb from "
-			"current working directory of the gb binary "
-			"to [hostId]. If no [hostId] is specified, install "
-			"to ALL hosts.\n\n"
-
-			/*
-			"install2 [hostId]\n"
-			"\tlike above, but use the secondary IPs in the "
-			"hosts.conf.\n\n"
-			*/
-
-			"installgb [hostId]\n"
-			"\tLike above, but install just the gb executable.\n\n"
-
-			"installfile <file>\n"
-			"\tInstalls the specified file on all hosts\n\n"
-
-			/*
-			"installtmpgb [hostId]\n"
-			"\tlike above, but install just the gb executable "
-			"as tmpgb (for tmpstart).\n\n"
-			*/
-
-			"installconf [hostId]\n"
-			"\tlike above, but install hosts.conf and gb.conf\n\n"
-			/*
-			"installconf2 [hostId]\n"
-			"\tlike above, but install hosts.conf and gbN.conf "
-			"to the secondary IPs.\n\n"
-
-			"backupcopy <backupSubdir>\n"
-			"\tsave a copy of all xml, config, data and map files "
-			"into <backupSubdir> which is relative "
-			"to the working dir. Done for all hosts.\n\n"
-
-			"backupmove <backupSubdir>\n"
-			"\tmove all all xml, config, data and map files "
-			"into <backupSubdir> which  is relative "
-			"to the working dir. Done for all hosts.\n\n"
-
-			"backuprestore <backupSubdir>\n"
-			"\tmove all all xml, config, data and map files "
-			"in <backupSubdir>,  which is relative "
-			"to the working dir, into the working dir. "
-			"Will NOT overwrite anything. Done for all "
-			"hosts.\n\n"
-			
-			"proxy start [proxyId]\n"
-			"\tStart a proxy that acts as a frontend to gb "
-			"and passes on requests to random machines on "
-			"the cluster given in hosts.conf. Helps to "
-			"distribute the load evenly across all machines.\n\n"
-
-			"proxy load <proxyId>\n"
-			"\tStart a proxy process directly without calling "
-			"ssh. Called by 'gb proxy start'.\n\n"
-
-			"proxy stop [proxyId]\n"
-			"\tStop a proxy that acts as a frontend to gb.\n\n"
-			*/
-
-			/*
-			"spellcheck <file>\n"
-			"\tspellchecks the the queries in <file>.\n\n"
-
-			"dictlookuptest <file>\n"
-			"\tgets the popularities of the entries in the "
-			"<file>. Used to only check performance of "
-			"getPhrasePopularity.\n\n"
-
-			// less common things
-			"gendict <coll> [numWordsToDump]\n\tgenerate "
-			"dictionary used for spellchecker "
-			"from titledb files in collection <coll>. Use "
-			"first [numWordsToDump] words.\n\n"
-
-			//"update\tupdate titledb0001.dat\n\n"
-			"treetest\n\ttree insertion speed test\n\n"
-
-			"hashtest\n\tadd and delete into hashtable test\n\n"
-
-			"parsetest <docIdToTest> [coll] [query]\n\t"
-			"parser speed tests\n\n"
-			*/
-
-			/*
-			// Quality Tests
-			"countdomains <coll> <X>\n"
-			"\tCounts the domains and IPs in collection coll and "
-			"in the first X titledb records.  Results are sorted"
-			"by popularity and stored in the log file. \n\n"
-
-			"cachetest\n\t"
-			"cache stability and speed tests\n\n"
-
-			"dump e <coll> <UTCtimestamp>\n\tdump all events "
-			"as if the time is UTCtimestamp.\n\n"
-
-			"dump es <coll> <UTCtimestamp>\n\tdump stats for "
-			"all events as if the time is UTCtimestamp.\n\n"
-			*/
-
-			"dump <db> <collection> <fileNum> <numFiles> <includeTree> [other stuff]\n\tDump a db from disk. "
-			"Example: gb dump t main\n"
-			"\t<collection> is the name of the collection.\n\n"
-
-			"\tclusterdb:\n"
-			"\t\tdump l <collection> <fileNum> <numFiles> <includeTree>\n"
-
-			"\tdoledb:\n"
-			"\t\tdump x <collection> <fileNum> <numFiles> <includeTree>\n"
-
-			"\tlinkdb:\n"
-			"\t\tdump L <collection> <fileNum> <numFiles> <includeTree> <url>\n"
-
-			"\tposdb (the index):\n"
-			"\t\tdump p <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
-
-			"\tspiderdb:\n"
-			"\t\tdump s <collection> <fileNum> <numFiles> <includeTree> <statlevel=0/1/2> <firstIp>\n"
-			"\tspiderdb (Unwanted documents, checked against blocklist, plugins):\n"
-			"\t\tdump us <collection> <fileNum> <numFiles> <includeTree>\n"
-
-			"\ttagdb:\n"
-			"\t\tdump S <collection> <fileNum> <numFiles> <includeTree> <site>\n"
-			"\ttagdb (for wget):\n"
-			"\t\tdump W <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
-			"\ttagdb (make sitelist.txt):\n"
-			"\t\tdump z <collection> <fileNum> <numFiles> <includeTree> <site>\n"
-			"\ttagdb (output HTTP commands for adding tags):\n"
-			"\t\tdump A <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
-
-			"\ttitledb:\n"
-			"\t\tdump t <collection> <fileNum> <numFiles> <includeTree> <docId>\n"
-			"\ttitledb (Unwanted documents, checked against blocklist, plugins):\n"
-			"\t\tdump u <collection> <fileNum> <numFiles> <includeTree>\n"
-			"\ttitledb (Wanted documents, checked against blocklist, plugins):\n"
-			"\t\tdump wt <collection> <fileNum> <numFiles> <includeTree>\n"
-			"\ttitledb (duplicates only):\n"
-			"\t\tdump at <collection> <fileNum> <numFiles> <includeTree>\n"
-			"\ttitledb (Adult titlerecs):\n"
-			"\t\tdump st <collection> <fileNum> <numFiles> <includeTree>\n"
-			"\ttitledb (Spam titlerecs):\n"
-			"\t\tdump D <collection> <fileNum> <numFiles> <includeTree> <docId>\n"
-			"\twaiting tree:\n"
-			"\t\tdump w <collection>\n"
-			"\n"
-
-			"verify <db> <collection> <fileNum> <numFiles> <includeTree> <firstIP>\n\tVerify a db on disk. "
-			"Example: gb verify s main\n"
-			"\t<collection> is the name of the collection.\n"
-			"\tspiderdb:\n"
-			"\t\tverify s <collection> <fileNum> <numFiles> <includeTree> <statlevel=0/1/2> <firstIp>\n"
-			"\n"
-			);
-		
-		//word-wrap to screen width, if known
-		struct winsize w;
-		if(ioctl(STDOUT_FILENO,TIOCGWINSZ,&w)==0 && w.ws_col>0) {
-			SafeBuf sb2;
-			sb2.brify2(sb.getBufStart(), w.ws_col, "\n\t", false);
-			sb2.safeMemcpy("",1);
-			fprintf(stdout,"%s",sb2.getBufStart());
-		} else
-			fprintf(stdout,"%s",sb.getBufStart());
-		// disable printing of used memory
-		//g_mem.m_used = 0;
-		return 0;
-	}
-
 	int32_t  cmdarg = 0;
 
 	// get command
@@ -584,7 +281,8 @@ int main2 ( int argc , char *argv[] ) {
 
 	// help
 	if ( strcmp ( cmd , "-h" ) == 0 ) {
-		goto printHelp;
+		printHelp();
+		return 0;
 	}
 
 	// version
@@ -617,18 +315,27 @@ int main2 ( int argc , char *argv[] ) {
 
 	// these tests do not need a hosts.conf
 	if ( strcmp ( cmd , "hashtest" ) == 0 ) {
-		if ( argc > cmdarg+1 ) goto printHelp;
+		if ( argc > cmdarg+1 ) {
+			printHelp();
+			return 1;
+		}
 		hashtest();
 		return 0;
 	}
 	// these tests do not need a hosts.conf
 	if ( strcmp ( cmd , "cachetest" ) == 0 ) {
-		if ( argc > cmdarg+1 ) goto printHelp;
+		if ( argc > cmdarg+1 ) {
+			printHelp();
+			return 1;
+		}
 		cacheTest();
 		return 0;
 	}
 	if ( strcmp ( cmd , "parsetest"  ) == 0 ) {
-		if ( cmdarg+1 >= argc ) goto printHelp;
+		if ( cmdarg+1 >= argc ) {
+			printHelp();
+			return 1;
+		}
 		// load up hosts.conf
 		//if ( ! g_hostdb.init(hostId) ) {
 		//	log("db: hostdb init failed." ); return 1; }
@@ -646,7 +353,10 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	if ( strcmp ( cmd ,"isportinuse") == 0 ) {
-		if ( cmdarg+1 >= argc ) goto printHelp;
+		if ( cmdarg+1 >= argc ) {
+			printHelp();
+			return 1;
+		}
 		int port = atol ( argv[cmdarg+1] );
 		// make sure port is available. returns false if in use.
 		if ( ! g_httpServer.m_tcp.testBind(port,false) )
@@ -754,7 +464,8 @@ int main2 ( int argc , char *argv[] ) {
 	//Put this here so that now we can log messages
   	if ( strcmp ( cmd , "proxy" ) == 0 ) {
 		if (argc < 3){
-			goto printHelp;
+			printHelp();
+			return 1;
 		}
 
 		int32_t proxyId = -1;
@@ -782,7 +493,8 @@ int main2 ( int argc , char *argv[] ) {
 		}
 
 		else if ( proxyId == -1 || strcmp ( argv[cmdarg+1] , "load" ) != 0 ) {
-			goto printHelp;
+			printHelp();
+			return 1;
 		}
 
 		Host *h = g_hostdb.getProxy( proxyId );
@@ -866,7 +578,8 @@ int main2 ( int argc , char *argv[] ) {
 	// gb dsh
 	if ( strcmp ( cmd , "dsh" ) == 0 ) {	
 		if ( cmdarg+1 >= argc ) {
-			goto printHelp;
+			printHelp();
+			return 1;
 		}
 
 		char *cmd = argv[cmdarg+1];
@@ -889,7 +602,10 @@ int main2 ( int argc , char *argv[] ) {
 
 	// gb dsh2
 	if ( strcmp ( cmd , "dsh2" ) == 0 ) {
-		if ( cmdarg+1 >= argc ) goto printHelp;
+		if ( cmdarg+1 >= argc ) {
+			printHelp();
+			return 1;
+		}
 		char *cmd = argv[cmdarg+1];
 
 		// get hostId to install TO (-1 means all)
@@ -910,7 +626,10 @@ int main2 ( int argc , char *argv[] ) {
 
 	// gb copyfiles, like gb install but takes a dir not a host #
 	if ( strcmp ( cmd , "copyfiles" ) == 0 ) {	
-		if ( cmdarg + 1 >= argc ) goto printHelp;
+		if ( cmdarg + 1 >= argc ) {
+			printHelp();
+			return 1;
+		}
 		char *dir = argv[cmdarg+1];
 		return copyFiles ( dir );
 	}
@@ -1048,19 +767,28 @@ int main2 ( int argc , char *argv[] ) {
 
 	// gb backupcopy [hostId] <backupSubdirName>
 	if ( strcmp ( cmd , "backupcopy" ) == 0 ) {	
-		if ( cmdarg + 1 >= argc ) goto printHelp;
+		if ( cmdarg + 1 >= argc ) {
+			printHelp();
+			return 1;
+		}
 		return install( ifk_backupcopy , -1 , argv[cmdarg+1] );
 	}
 
 	// gb backupmove [hostId] <backupSubdirName>
 	if ( strcmp ( cmd , "backupmove" ) == 0 ) {	
-		if ( cmdarg + 1 >= argc ) goto printHelp;
+		if ( cmdarg + 1 >= argc ) {
+			printHelp();
+			return 1;
+		}
 		return install( ifk_backupmove , -1 , argv[cmdarg+1] );
 	}
 
 	// gb backupmove [hostId] <backupSubdirName>
 	if ( strcmp ( cmd , "backuprestore" ) == 0 ) {	
-		if ( cmdarg + 1 >= argc ) goto printHelp;
+		if ( cmdarg + 1 >= argc ) {
+			printHelp();
+			return 1;
+		}
 		return install( ifk_backuprestore, -1 , argv[cmdarg+1] );
 	}
 
@@ -1276,7 +1004,10 @@ int main2 ( int argc , char *argv[] ) {
 		//
 		g_dumpMode = true;
 
-		if ( cmdarg+1 >= argc ) goto printHelp;
+		if ( cmdarg+1 >= argc ) {
+			printHelp();
+			return 1;
+		}
 		int32_t startFileNum =  0;
 		int32_t numFiles     = -1;
 		bool includeTree     =  true;
@@ -1336,6 +1067,9 @@ int main2 ( int argc , char *argv[] ) {
 		else if (strcmp(argv[cmdarg+1], "w") == 0) {
 		       dumpWaitingTree(coll);
 		}
+		else if (strcmp(argv[cmdarg+1], "rtc") == 0) {
+		       dumpRobotsTxtCache(coll);
+		}
 		else if ( argv[cmdarg+1][0] == 'x' )
 			dumpDoledb  (coll,startFileNum,numFiles,includeTree);
 // 		else if (strcmp(argv[cmdarg+1], "s") == 0) {
@@ -1386,7 +1120,8 @@ int main2 ( int argc , char *argv[] ) {
 // 		} else if (strcmp(argv[cmdarg+1], "us") == 0) {
 // 			dumpUnwantedSpiderdbRecs(coll, startFileNum, numFiles, includeTree);
 		} else {
-			goto printHelp;
+			printHelp();
+			return 1;
 		}
 		// disable any further logging so final log msg is clear
 		g_log.m_disabled = true;
@@ -1480,8 +1215,10 @@ int main2 ( int argc , char *argv[] ) {
 
 		int32_t numRecs;
 		if(argc>cmdarg+2) {
-			if(!isdigit(argv[cmdarg+2][0]))
-				goto printHelp;
+			if(!isdigit(argv[cmdarg+2][0])) {
+				printHelp();
+				return 1;
+			}
 			numRecs = atoi( argv[cmdarg+2] );
 		} else
 			numRecs = 1000000;
@@ -1672,6 +1409,7 @@ int main2 ( int argc , char *argv[] ) {
 
 	// load block lists
 	g_dnsBlockList.init();
+	g_contentTypeBlockList.init();
 
 	g_urlBlackList.init();
 	g_urlWhiteList.init();
@@ -1782,16 +1520,12 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! registerMsgHandlers() ) {
 		log("db: registerMsgHandlers failed" ); return 1; }
 
-	// gb spellcheck
-	if ( strcmp ( cmd , "spellcheck" ) == 0 ) {	
-		if ( argc != cmdarg + 2 ) goto printHelp; // take no other args
-		g_speller.test ( argv[cmdarg + 1] );
-		_exit(0);
-	}
-	
 	// gb dictLookupTest
 	if ( strcmp ( cmd , "dictlookuptest" ) == 0 ) {	
-		if ( argc != cmdarg + 2 ) goto printHelp; // take no other args
+		if ( argc != cmdarg + 2 ) {
+			printHelp();
+			return 1;
+		}
 		g_speller.dictLookupTest ( argv[cmdarg + 1] );
 		_exit(0);
 	}
@@ -1853,6 +1587,316 @@ int main2 ( int argc , char *argv[] ) {
 	// . when it gets a signal it dispatches to a server or db to handle it
 	g_loop.runLoop();
 }
+
+
+static void printHelp() {
+	SafeBuf sb;
+	sb.safePrintf(
+		      "\n"
+		      "Usage: gb [CMD]\n");
+	sb.safePrintf(
+		      "\n"
+		      "\tgb will first try to load "
+		      "the hosts.conf in the same directory as the "
+		      "gb binary. "
+		      "Then it will determine its hostId based on "
+		      "the directory and IP address listed in the "
+		      "hosts.conf file it loaded. Things in []'s "
+		      "are optional.");
+	sb.safePrintf(
+		" [CMD] can have the following values:\n\n"
+
+		"-h\tPrint this help.\n\n"
+		"-v\tPrint version and exit.\n\n"
+
+		//"<hostId>\n"
+		//"\tstart the gb process for this <hostId> locally."
+		//" <hostId> is 0 to run as host #0, for instance."
+		//"\n\n"
+
+
+		//"<hostId> -d\n\trun as daemon.\n\n"
+		"-d\tRun as daemon.\n\n"
+
+		//"-o\tprint the overview documentation in HTML. "
+		//"Contains the format of hosts.conf.\n\n"
+
+		// "<hostId> -r\n\tindicates recovery mode, "
+		// "sends email to addresses "
+		// "specified in Conf.h upon startup.\n\n"
+		// "-r\tindicates recovery mode, "
+		// "sends email to addresses "
+		// "specified in Conf.h upon startup.\n\n"
+
+		"start [hostId]\n"
+		"\tStart the gb process on all hosts or just on "
+		"[hostId], if specified, using an ssh command. Runs "
+		"each gb process in a keepalive loop under bash.\n\n"
+
+		"start <hostId1-hostId2>\n"
+		"\tLike above but just start gb on the supplied "
+		"range of hostIds.\n\n"
+
+		"stop [hostId]\n"
+		"\tSaves and exits for all gb hosts or "
+		"just on [hostId], if specified.\n\n"
+
+		"stop <hostId1-hostId2>\n"
+		"\tTell gb to save and exit on the given range of "
+		"hostIds.\n\n"
+
+		"save [hostId]\n"
+		"\tJust saves for all gb hosts or "
+		"just on [hostId], if specified.\n\n"
+
+
+		/*
+		"tmpstart [hostId]\n"
+		"\tstart the gb process on all hosts or just on "
+		"[hostId] if specified, but "
+		"use the ports specified in hosts.conf PLUS one. "
+		"Then you can switch the "
+		"proxy over to point to those and upgrade the "
+		"original cluster's gb. "
+		"That can be done in the Master Controls of the "
+		"proxy using the 'use "
+		"temporary cluster'. Also, this assumes the binary "
+		"name is tmpgb not gb.\n\n"
+
+		"tmpstop [hostId]\n"
+		"\tsaves and exits for all gb hosts or "
+		"just on [hostId] if specified, for the "
+		"tmpstart command.\n\n"
+		*/
+
+		"spidersoff [hostId]\n"
+		"\tDisables spidering for all gb hosts or "
+		"just on [hostId], if specified.\n\n"
+
+		"spiderson [hostId]\n"
+		"\tEnables spidering for all gb hosts or "
+		"just on [hostId], if specified.\n\n"
+
+		/*
+		"cacheoff [hostId]\n"
+		"\tdisables all disk PAGE caches on all hosts or "
+		"just on [hostId] if specified.\n\n"
+
+		"freecache [maxShmid]\n"
+		"\tfinds and frees all shared memory up to shmid "
+		"maxShmid, default is 3000000.\n\n"
+		*/
+
+		/*
+		"ddump [hostId]\n"
+		"\tdump all b-trees in memory to sorted files on "
+		"disk. "
+		"Will likely trigger merges on files on disk. "
+		"Restrict to just host [hostId] if given.\n\n"
+		*/
+
+		/*
+		"pmerge [hostId|hostId1-hostId2]\n"
+		"\tforce merge of posdb files "
+		"just on [hostId] if specified.\n\n"
+
+		"smerge [hostId|hostId1-hostId2]\n"
+		"\tforce merge of sectiondb files "
+		"just on [hostId] if specified.\n\n"
+
+		"tmerge [hostId|hostId1-hostId2]\n"
+		"\tforce merge of titledb files "
+		"just on [hostId] if specified.\n\n"
+
+		"merge [hostId|hostId1-hostId2]\n"
+		"\tforce merge of all rdb files "
+		"just on [hostId] if specified.\n\n"
+		*/
+
+		"dsh <CMD>\n"
+		"\tRun this command on the primary IPs of "
+		"all active hosts in hosts.conf. It will be "
+		"executed in the gigablast working directory on "
+		"each host. Example: "
+		"gb dsh 'ps auxw; uptime'\n\n"
+
+		/*
+		"dsh2 <CMD>\n"
+		"\trun this command on the secondary IPs of "
+		"all active hosts in hosts.conf. Example: "
+		"gb dsh2 'ps auxw; uptime'\n\n"
+		*/
+
+		"install [hostId]\n"
+		"\tInstall all required files for gb from "
+		"current working directory of the gb binary "
+		"to [hostId]. If no [hostId] is specified, install "
+		"to ALL hosts.\n\n"
+
+		/*
+		"install2 [hostId]\n"
+		"\tlike above, but use the secondary IPs in the "
+		"hosts.conf.\n\n"
+		*/
+
+		"installgb [hostId]\n"
+		"\tLike above, but install just the gb executable.\n\n"
+
+		"installfile <file>\n"
+		"\tInstalls the specified file on all hosts\n\n"
+
+		/*
+		"installtmpgb [hostId]\n"
+		"\tlike above, but install just the gb executable "
+		"as tmpgb (for tmpstart).\n\n"
+		*/
+
+		"installconf [hostId]\n"
+		"\tlike above, but install hosts.conf and gb.conf\n\n"
+		/*
+		"installconf2 [hostId]\n"
+		"\tlike above, but install hosts.conf and gbN.conf "
+		"to the secondary IPs.\n\n"
+
+		"backupcopy <backupSubdir>\n"
+		"\tsave a copy of all xml, config, data and map files "
+		"into <backupSubdir> which is relative "
+		"to the working dir. Done for all hosts.\n\n"
+
+		"backupmove <backupSubdir>\n"
+		"\tmove all all xml, config, data and map files "
+		"into <backupSubdir> which  is relative "
+		"to the working dir. Done for all hosts.\n\n"
+
+		"backuprestore <backupSubdir>\n"
+		"\tmove all all xml, config, data and map files "
+		"in <backupSubdir>,  which is relative "
+		"to the working dir, into the working dir. "
+		"Will NOT overwrite anything. Done for all "
+		"hosts.\n\n"
+
+		"proxy start [proxyId]\n"
+		"\tStart a proxy that acts as a frontend to gb "
+		"and passes on requests to random machines on "
+		"the cluster given in hosts.conf. Helps to "
+		"distribute the load evenly across all machines.\n\n"
+
+		"proxy load <proxyId>\n"
+		"\tStart a proxy process directly without calling "
+		"ssh. Called by 'gb proxy start'.\n\n"
+
+		"proxy stop [proxyId]\n"
+		"\tStop a proxy that acts as a frontend to gb.\n\n"
+		*/
+
+		/*
+		"dictlookuptest <file>\n"
+		"\tgets the popularities of the entries in the "
+		"<file>. Used to only check performance of "
+		"getPhrasePopularity.\n\n"
+
+		// less common things
+		"gendict <coll> [numWordsToDump]\n\tgenerate "
+		"dictionary used for spellchecker "
+		"from titledb files in collection <coll>. Use "
+		"first [numWordsToDump] words.\n\n"
+
+		//"update\tupdate titledb0001.dat\n\n"
+		"treetest\n\ttree insertion speed test\n\n"
+
+		"hashtest\n\tadd and delete into hashtable test\n\n"
+
+		"parsetest <docIdToTest> [coll] [query]\n\t"
+		"parser speed tests\n\n"
+		*/
+
+		/*
+		// Quality Tests
+		"countdomains <coll> <X>\n"
+		"\tCounts the domains and IPs in collection coll and "
+		"in the first X titledb records.  Results are sorted"
+		"by popularity and stored in the log file. \n\n"
+
+		"cachetest\n\t"
+		"cache stability and speed tests\n\n"
+
+		"dump e <coll> <UTCtimestamp>\n\tdump all events "
+		"as if the time is UTCtimestamp.\n\n"
+
+		"dump es <coll> <UTCtimestamp>\n\tdump stats for "
+		"all events as if the time is UTCtimestamp.\n\n"
+		*/
+
+		"dump <db> <collection> <fileNum> <numFiles> <includeTree> [other stuff]\n\tDump a db from disk. "
+		"Example: gb dump t main\n"
+		"\t<collection> is the name of the collection.\n\n"
+
+		"\tclusterdb:\n"
+		"\t\tdump l <collection> <fileNum> <numFiles> <includeTree>\n"
+
+		"\tdoledb:\n"
+		"\t\tdump x <collection> <fileNum> <numFiles> <includeTree>\n"
+
+		"\tlinkdb:\n"
+		"\t\tdump L <collection> <fileNum> <numFiles> <includeTree> <url>\n"
+
+		"\tposdb (the index):\n"
+		"\t\tdump p <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
+
+		"\tspiderdb:\n"
+		"\t\tdump s <collection> <fileNum> <numFiles> <includeTree> <statlevel=0/1/2> <firstIp>\n"
+		"\tspiderdb (Unwanted documents, checked against blocklist, plugins):\n"
+		"\t\tdump us <collection> <fileNum> <numFiles> <includeTree>\n"
+
+		"\ttagdb:\n"
+		"\t\tdump S <collection> <fileNum> <numFiles> <includeTree> <site>\n"
+		"\ttagdb (for wget):\n"
+		"\t\tdump W <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
+		"\ttagdb (make sitelist.txt):\n"
+		"\t\tdump z <collection> <fileNum> <numFiles> <includeTree> <site>\n"
+		"\ttagdb (output HTTP commands for adding tags):\n"
+		"\t\tdump A <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
+
+		"\ttitledb:\n"
+		"\t\tdump t <collection> <fileNum> <numFiles> <includeTree> <docId>\n"
+		"\ttitledb (Unwanted documents, checked against blocklist, plugins):\n"
+		"\t\tdump u <collection> <fileNum> <numFiles> <includeTree>\n"
+		"\ttitledb (Wanted documents, checked against blocklist, plugins):\n"
+		"\t\tdump wt <collection> <fileNum> <numFiles> <includeTree>\n"
+		"\ttitledb (duplicates only):\n"
+		"\t\tdump at <collection> <fileNum> <numFiles> <includeTree>\n"
+		"\ttitledb (Adult titlerecs):\n"
+		"\t\tdump st <collection> <fileNum> <numFiles> <includeTree>\n"
+		"\ttitledb (Spam titlerecs):\n"
+		"\t\tdump D <collection> <fileNum> <numFiles> <includeTree> <docId>\n"
+		"\twaiting tree:\n"
+		"\t\tdump w <collection>\n"
+
+		"\trobots.txt.cache:\n"
+		"\t\tdump rtc <url>\n"
+		"\n"
+
+		"verify <db> <collection> <fileNum> <numFiles> <includeTree> <firstIP>\n\tVerify a db on disk. "
+		"Example: gb verify s main\n"
+		"\t<collection> is the name of the collection.\n"
+		"\tspiderdb:\n"
+		"\t\tverify s <collection> <fileNum> <numFiles> <includeTree> <statlevel=0/1/2> <firstIp>\n"
+		"\n"
+		);
+
+	//word-wrap to screen width, if known
+	struct winsize w;
+	if(ioctl(STDOUT_FILENO,TIOCGWINSZ,&w)==0 && w.ws_col>0) {
+		SafeBuf sb2;
+		sb2.brify2(sb.getBufStart(), w.ws_col, "\n\t", false);
+		sb2.safeMemcpy("",1);
+		fprintf(stdout,"%s",sb2.getBufStart());
+	} else
+		fprintf(stdout,"%s",sb.getBufStart());
+	// disable printing of used memory
+	//g_mem.m_used = 0;
+}
+
 
 /// @todo ALC wouldn't it be faster to actually check the dir permission instead of trying to write a tmp file?
 int32_t checkDirPerms(const char *dir) {
@@ -2744,6 +2788,133 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 		if ( startKey < *(key96_t *)list.getLastKey() ) return;
 	}
 }
+
+
+
+void dumpRobotsTxtCache(const char *url) {
+	struct HttpCacheData {
+		int32_t m_errno;
+		char *ptr_reply;
+		int32_t size_reply;
+	} __attribute__((packed));
+
+	if( !url || strlen(url) <= 0 ) {
+		fprintf(stdout, "robots.txt.cache lookup failed, you must supply a url as parameter\n");
+		return;
+	}
+
+	// Generate robots.txt url
+	Url u;
+	u.set(url);
+
+	// build robots.txt url
+	char urlRobots[MAX_URL_LEN+1];
+	char *p = urlRobots;
+	if ( ! u.getScheme() )
+	{
+		p += sprintf ( p , "http://" );
+	}
+	else
+	{
+		gbmemcpy ( p , u.getScheme() , u.getSchemeLen() );
+		p += u.getSchemeLen();
+		p += sprintf(p,"://");
+	}
+
+	gbmemcpy ( p , u.getHost() , u.getHostLen() );
+	p += u.getHostLen();
+
+	// add port if not default
+	if ( u.getPort() != u.getDefaultPort() ) {
+		p += sprintf( p, ":%" PRId32, u.getPort() );
+	}
+	p += sprintf ( p , "/robots.txt" );
+
+
+
+	fprintf(stdout, "robots.txt.cache lookup of %s\n", urlRobots);
+
+	RdbCache httpCacheRobots;
+	int32_t memRobots = 3000000;
+	int32_t maxCacheNodesRobots = memRobots / 106;
+
+	if ( ! httpCacheRobots.init ( memRobots ,
+					-1        , // fixedDataSize
+					maxCacheNodesRobots ,
+					"robots.txt"  , // dbname
+					true,          // load from disk
+					12,            // cachekeysize
+					-1)) {           // numPtrsMax
+		fprintf(stdout, "Could not initialize local robots.txt.cache\n");
+		return;
+	}
+
+	int32_t numElem = httpCacheRobots.getNumUsedNodes();
+	fprintf(stdout,"%" PRId32 " elements in cache.\n", numElem);
+
+	char *rec;
+	int32_t  recSize;
+	key96_t k;
+	k.n1 = 0;
+	k.n0 = hash64(urlRobots, strlen(urlRobots));
+	k.n0 ^= 0xff;	// for compressed keys
+
+	int64_t uh48 = k.n0 & 0x0000ffffffffffffLL;
+	fprintf(stdout, "Cache key=%" PRIu64 ", uh48=%" PRIu64 "\n", k.n0, uh48);
+
+	bool inCache = httpCacheRobots.getRecord ( (collnum_t)0     , // share btwn colls
+					k                , // cacheKey
+					&rec             ,
+					&recSize         ,
+					true             , // copy?
+					9999999,		//r->m_maxCacheAge , // 24*60*60 ,
+					false); // stats?
+	fprintf(stdout, "Found: %s\n", inCache?"true":"false");
+
+	if( inCache ) {
+		HttpCacheData *httpCacheData = reinterpret_cast<HttpCacheData*>(rec);
+
+		if( deserializeMsg(sizeof(*httpCacheData), &httpCacheData->size_reply, &httpCacheData->size_reply, &httpCacheData->ptr_reply, ((char*)httpCacheData + sizeof(*httpCacheData))) != -1) {
+			fprintf(stdout, "deserializeMsg OK. errno=%" PRId32 ", size_reply=%" PRId32 "\n", httpCacheData->m_errno, httpCacheData->size_reply);
+
+			// get uncompressed size
+			uint32_t unzippedLen = *(int32_t*)httpCacheData->ptr_reply;
+			// sanity checks
+			if ( unzippedLen > 10000000 ) {
+				fprintf(stdout, "Unzipped length appears too big: %" PRId32 "\n", unzippedLen);
+				return;
+			}
+			// make buffer to hold uncompressed data
+			char *newBuf = (char*)mmalloc(unzippedLen, "DumpUnzip");
+			if( ! newBuf ) {
+				fprintf(stdout, "Could not allocate memory for uncompressed document: %" PRId32 "\n", unzippedLen);
+				return;
+			}
+			// make another var to get mangled by gbuncompress
+			uint32_t uncompressedLen = unzippedLen;
+			// uncompress it
+			int zipErr = gbuncompress( (unsigned char*)newBuf, // dst
+						   &uncompressedLen, // dstLen
+						   (unsigned char*)httpCacheData->ptr_reply+4, // src
+						   httpCacheData->size_reply-4); // srcLen
+
+			if(zipErr != Z_OK || uncompressedLen != (uint32_t)unzippedLen) {
+				fprintf(stdout, "Error unzipping compressed robots.txt unzipped len should be %" PRId32" but is %" PRId32". ziperr=%" PRId32,
+					(int32_t)uncompressedLen, (int32_t)unzippedLen, (int32_t)zipErr);
+				mfree(newBuf, unzippedLen, "DumpUnzip");
+				return;
+			}
+
+			fprintf(stdout,"\n%s\n\n", newBuf);
+			mfree(newBuf, unzippedLen, "DumpUnzip");
+		}
+		else {
+			fprintf(stderr,"deserialize failed\n");
+		}
+	}
+}
+
+
 
 
 // . dataSlot fo the hashtable for spider stats in dumpSpiderdb
@@ -3785,6 +3956,26 @@ static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int3
 				}
 			}
 
+			uint8_t *contentType = xd->getContentType();
+			switch (*contentType) {
+				case CT_GIF:
+				case CT_JPG:
+				case CT_PNG:
+				case CT_TIFF:
+				case CT_BMP:
+				case CT_JS:
+				case CT_CSS:
+				case CT_JSON:
+				case CT_IMAGE:
+				case CT_GZ:
+				case CT_ARC:
+				case CT_WARC:
+					fprintf(stdout, "%" PRId64"|blocked content type|%s\n", docId, url->getUrl());
+					continue;
+				default:
+					break;
+			}
+
 			// check content
 			int32_t contentLen = xd->size_utf8Content > 0 ? (xd->size_utf8Content - 1) : 0;
 			if (contentLen > 0) {
@@ -4767,7 +4958,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	Matches matches;
 	Query q;
-	q.set2 ( query , langUnknown , false, false, true );
+	q.set2(query, langUnknown, false, false, true, ABS_MAX_QUERY_TERMS);
 	matches.setQuery ( &q );
 	words.set ( &xml , true ) ;
 	t = gettimeofdayInMilliseconds();
@@ -4797,7 +4988,7 @@ static bool summaryTest1(char *rec, int32_t listSize, const char *coll, int64_t 
 	int64_t t = gettimeofdayInMilliseconds();
 
 	Query q;
-	q.set2 ( query , langUnknown , false, false, true );
+	q.set2(query, langUnknown, false, false, true, ABS_MAX_QUERY_TERMS);
 
 	char *content ;
 	int32_t  contentLen ;

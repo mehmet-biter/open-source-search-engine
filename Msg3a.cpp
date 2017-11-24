@@ -969,32 +969,13 @@ void Msg3a::printTerms ( ) {
 	int32_t n = m_q->getNumTerms();
 	// do the loop
 	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// get the term in utf8
-		//char bb[256];
-		// "s" points to the term, "tid" the termId
-		//char      *s;
-		//int32_t       slen;
-		//int64_t  tid;
-		//char buf[2048];
-		//buf[0]='\0';
 		int64_t tid  = m_q->m_qterms[i].m_termId;
-		char *s    = m_q->m_qterms[i].m_term;
+		const char *s    = m_q->m_qterms[i].m_term;
 		if ( ! s ) {
-			logf(LOG_DEBUG,"query: term #%" PRId32" "
-			     "\"<notstored>\" (%" PRIu64")",
-			     i,tid);
-		}
-		else {
+			logf(LOG_DEBUG,"query: term #%d <notstored> (%" PRIu64")", i, tid);
+		} else {
 			int32_t slen = m_q->m_qterms[i].m_termLen;
-			char c = s[slen];
-			s[slen] = '\0';
-			//utf16ToUtf8(bb, 256, s , slen );
-			//sprintf(buf," termId#%" PRId32"=%" PRId64,i,tid);
-			// this term freq is estimated from the rdbmap and
-			// does not hit disk...
-			logf(LOG_DEBUG,"query: term #%" PRId32" \"%s\" (%" PRIu64")",
-			     i,s,tid);
-			s[slen] = c;
+			logf(LOG_DEBUG,"query: term #%d \"%.*s\" (%" PRIu64")", i, slen,s, tid);
 		}
 	}
 }

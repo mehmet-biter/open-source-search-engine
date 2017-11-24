@@ -37,30 +37,6 @@ void Speller::reset(){
 	m_unifiedDict.reset();
 }
 
-// test it.
-void Speller::test ( char *ff ) {
-	FILE *fd = fopen ( ff, "r" );
-	if ( ! fd ) {
-		log("speller: test: Could not open %s for "
-		    "reading: %s.", ff,strerror(errno));
-		return;
-	}
-
-	char buf[1026];
-	//char dst[1026];
-	// go through the words in dict/words
-	while ( fgets ( buf , MAX_FRAG_SIZE , fd ) ) {
-		// length of word(s), including the terminating \n
-		int32_t wlen = strlen(buf) ;
-		// skip if empty
-		if ( wlen <= 0 ) continue;
-		buf[wlen-1]='\0';
-		Query q;
-		q.set2 ( buf , langUnknown , false, false, true );
-	}
-	fclose(fd);
-}
-
 
 // The unified dict is the combination of the word list, title rec and the top
 // query dict of all languages. It has to be created by loading each languages

@@ -177,13 +177,6 @@ class TcpServer {
        
 	bool m_doReadRateTimeouts;
 
-	//MsgC m_msgc;
-	
-	// . we don't wanna use too much memory reading/sending a big msg
-	//   so we have a limit on our buffer sizes (set with set())
-	//int32_t        m_maxReadBufSize;
-	//int32_t        m_maxSendBufSize;
-
 	// these callbacks should be set in init()
 	int32_t (* m_getMsgSize    )(const char *msg, int32_t msgBytesRead, TcpSocket *s);
 	int32_t (* m_getMsgPiece   )(TcpSocket *s );

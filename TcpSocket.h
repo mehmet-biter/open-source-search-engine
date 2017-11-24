@@ -103,6 +103,9 @@ class TcpSocket {
 	int32_t        m_maxTextDocLen;  // if reading text/html or text/plain
 	int32_t        m_maxOtherDocLen; // if reading other doc types
 
+	bool m_truncated;
+	bool m_blockedContentType;
+
 	char        m_niceness;
 	bool        m_streamingMode;
 
