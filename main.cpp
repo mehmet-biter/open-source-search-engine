@@ -1508,16 +1508,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! registerMsgHandlers() ) {
 		log("db: registerMsgHandlers failed" ); return 1; }
 
-	// gb spellcheck
-	if ( strcmp ( cmd , "spellcheck" ) == 0 ) {	
-		if ( argc != cmdarg + 2 ) {
-			printHelp();
-			return 1;
-		}
-		g_speller.test ( argv[cmdarg + 1] );
-		_exit(0);
-	}
-	
 	// gb dictLookupTest
 	if ( strcmp ( cmd , "dictlookuptest" ) == 0 ) {	
 		if ( argc != cmdarg + 2 ) {
@@ -1788,9 +1778,6 @@ static void printHelp() {
 		*/
 
 		/*
-		"spellcheck <file>\n"
-		"\tspellchecks the the queries in <file>.\n\n"
-
 		"dictlookuptest <file>\n"
 		"\tgets the popularities of the entries in the "
 		"<file>. Used to only check performance of "
