@@ -3599,10 +3599,19 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "noun: indefinite->definite";
-	m->m_desc  = "Weight of indefinite to definute form variations.";
+	m->m_desc  = "Weight of indefinite to definite form variations.";
 	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.noun_indefinite_definite);
 	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_indefinite_definite);
 	m->m_cgi  = "lwv_noun_indef_def";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "noun: definite->indefinite";
+	m->m_desc  = "Weight of definite to indefinite form variations.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.noun_definite_indefinite);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_definite_indefinite);
+	m->m_cgi  = "lwv_noun_def_indef";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -7099,10 +7108,19 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "noun: indefinite->definite";
-	m->m_desc  = "Weight of indefinite to definute form variations.";
+	m->m_desc  = "Weight of indefinite to definite form variations.";
 	m->m_def   = "0.7";
 	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_indefinite_definite);
 	m->m_cgi  = "lwv_noun_indef_def";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "noun: definite->indefinite";
+	m->m_desc  = "Weight of definite to indefinite form variations.";
+	m->m_def   = "0.6";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_definite_indefinite);
+	m->m_cgi  = "lwv_noun_def_indef";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_WORD_VARIATIONS;
 	m++;

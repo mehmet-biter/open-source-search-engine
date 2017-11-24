@@ -8,9 +8,11 @@
 //Weight to use when generating variations. Values are in the range [0.0 .. 1.0]
 struct WordVariationWeights {
 	float noun_indefinite_definite;
+	float noun_definite_indefinite;
 	//todo: more configurable weights in WordVariationWeights
 	WordVariationWeights()
-	  : noun_indefinite_definite(1.0)
+	  : noun_indefinite_definite(1.0),
+	    noun_definite_indefinite(1.0)
 	  {}
 };
 
