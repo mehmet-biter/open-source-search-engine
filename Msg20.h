@@ -7,6 +7,7 @@
 
 #include "Multicast.h"
 #include "collnum_t.h"
+#include "WordVariationsConfig.h"
 
 
 class Msg20Request {
@@ -55,8 +56,8 @@ class Msg20Request {
 	// we now use the numeric collection # and not the ptr_coll
 	collnum_t  m_collnum;
 
-	unsigned char       m_wiktionaryWordVariations  :1;
-	unsigned char       m_languageSpecificWordVariations:1;
+	WordVariationsConfig m_word_variations_config;
+
 	unsigned char       m_useQueryStopWords         :1;
 	unsigned char       m_highlightQueryTerms       :1;
 	unsigned char       m_getSummaryVector          :1;

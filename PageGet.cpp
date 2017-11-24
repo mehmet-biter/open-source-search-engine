@@ -483,7 +483,7 @@ bool processLoop ( void *state ) {
 	x += strlen(x);		
 	// set our query for highlighting
 	Query qq;
-	qq.set2(q, st->m_langId, true, true, true, false, ABS_MAX_QUERY_TERMS); //todo:use wordvariation settings form original query, if any
+	qq.set2(q, st->m_langId, NULL, true, false, ABS_MAX_QUERY_TERMS); //todo:use wordvariation settings form original query, if any
 
 	// print the query terms into our highlight buffer
 	Highlight hi;

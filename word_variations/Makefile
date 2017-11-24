@@ -1,4 +1,5 @@
-CPPFLAGS += -O3
+#CPPFLAGS += -O3
+CPPFLAGS += -O0 -g
 CPPFLAGS += -std=c++11
 CPPFLAGS += -Wall
 CPPFLAGS+= -I..

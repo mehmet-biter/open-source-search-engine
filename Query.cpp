@@ -31,7 +31,8 @@
 Query::Query()
   : m_queryWordBuf("Query4"),
     m_filteredQuery("qrystk"),
-    m_originalQuery("oqbuf")
+    m_originalQuery("oqbuf"),
+    m_word_variations_config()
 {
 	m_qwords      = NULL;
 	m_numWords = 0;
@@ -45,8 +46,6 @@ Query::Query()
 	m_numTermsUntruncated = 0;
 	m_isBoolean = false;
 	m_maxQueryTerms = 0;
-	m_wiktionaryWordVariations = false;
-	m_languageSpecificWordVariations = false;
 
 	memset(m_expressions, 0, sizeof(m_expressions));
 
@@ -99,13 +98,16 @@ void Query::reset ( ) {
 bool Query::set2 ( const char *query        , 
 		   // need language for doing synonyms
 		   lang_t  langId ,
-		   bool     wiktionaryWordVariations,
-		   bool     languageSpecificWordVariations,
+		   const WordVariationsConfig *wordVariationsConfig,
 		   bool     useQueryStopWords ,
            bool allowHighFreqTermCache,
-		   int32_t  maxQueryTerms  ) {
+		   int32_t  maxQueryTerms  )
+{
+	static const WordVariationsConfig defaultWordVariationsConfig;
+	if(!wordVariationsConfig)
+		wordVariationsConfig = &defaultWordVariationsConfig;
 	log(LOG_DEBUG,"query: set2(query='%s', langId=%d, wiktionaryWordVariations=%s, languageSpecificWordVariations=%s useQueryStopWords=%s maxQueryTerms=%d)",
-	    query, (int)langId, wiktionaryWordVariations?"true":"false", languageSpecificWordVariations?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
+	    query, (int)langId, wordVariationsConfig->m_wiktionaryWordVariations?"true":"false", wordVariationsConfig->m_languageSpecificWordVariations?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
 
 	reset();
 
@@ -124,8 +126,7 @@ bool Query::set2 ( const char *query        ,
 
 	if ( ! query ) return true;
 
-	m_wiktionaryWordVariations = wiktionaryWordVariations;
-	m_languageSpecificWordVariations = languageSpecificWordVariations;
+	m_word_variations_config = *wordVariationsConfig;
 
 	int32_t queryLen = strlen(query);
 
@@ -408,7 +409,7 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 	// thirdly, count synonyms
 	Synonyms syn;
-	if(m_wiktionaryWordVariations) {
+	if(m_word_variations_config.m_wiktionaryWordVariations) {
 		int64_t to = hash64n("to");
 		for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 			// get query word
@@ -450,7 +451,8 @@ bool Query::setQTerms ( const Words &words ) {
 	
 	std::vector<std::string> wvg_source_words;
 	std::vector<int> wvg_source_word_index; //idx in wvg_source_words -> idx of queryword
-	if(m_languageSpecificWordVariations) {
+	if(m_word_variations_config.m_languageSpecificWordVariations) {
+log(LOG_INFO,"@@@@@@@@@@@@@@@ enabled");
 		for(int i=0; i<m_numWords; i++) {
 			const QueryWord *qw  = &m_qwords[i];
 			if(qw->m_inQuotes) continue;
@@ -466,10 +468,12 @@ bool Query::setQTerms ( const Words &words ) {
 			wvg_source_word_index.emplace_back(i);
 		}
 		auto wvg(WordVariationGenerator::get_generator(m_langId));
-		m_wordVariations = wvg->query_variations(wvg_source_words,WordVariationWeights(),1.0);
+		m_wordVariations = wvg->query_variations(wvg_source_words, m_word_variations_config.m_word_variations_weights, m_word_variations_config.m_word_variations_threshold);
 		nqt += m_wordVariations.size();
-	} else
+	} else {
 		m_wordVariations.clear();
+log(LOG_INFO,"@@@@@@@@@@@@@@@ disabled");
+}
 
 
 	m_numTermsUntruncated = nqt;
@@ -792,7 +796,7 @@ bool Query::setQTerms ( const Words &words ) {
 	//
 	////////////
 
-	if(m_wiktionaryWordVariations) {
+	if(m_word_variations_config.m_wiktionaryWordVariations) {
 		int64_t to = hash64n("to");
 		for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 			// get query word
@@ -963,7 +967,7 @@ bool Query::setQTerms ( const Words &words ) {
 		}
 	}
 
-	if(m_languageSpecificWordVariations) {
+	if(m_word_variations_config.m_languageSpecificWordVariations) {
 		for(unsigned i=0; i<m_wordVariations.size(); i++) {
 			if(n>=nqt)
 				break;
@@ -1061,7 +1065,7 @@ bool Query::setQTerms ( const Words &words ) {
 			n++;
 		}
 	}
-	
+else log(LOG_INFO,"@@@@@@@@@@@@@@@ disabled");	
 	m_numTerms = n;
 	
 	if ( n > ABS_MAX_QUERY_TERMS ) { g_process.shutdownAbort(true); }

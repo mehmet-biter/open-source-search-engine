@@ -7,7 +7,7 @@
 
 #include "SafeBuf.h"
 #include "Lang.h"
-#include "WordVariations.h"
+#include "WordVariationsConfig.h"
 class CollectionRec;
 
 
@@ -411,8 +411,7 @@ class Query {
 	// . after calling this you can call functions below
 	bool set2 ( const char *query    , 
 		    lang_t  langId ,
-		    bool     wiktionaryWordVariations,
-		    bool     languageSpecificWordVariations,
+		    const WordVariationsConfig *wordVariationsConfig, //NULL=disable variations
 		    bool     useQueryStopWords,
 	        bool allowHighFreqTermCache,
 		    int32_t  maxQueryTerms);
@@ -521,8 +520,7 @@ public:
 
 	int32_t m_maxQueryTerms ;
 
-	bool m_wiktionaryWordVariations;
-	bool m_languageSpecificWordVariations;
+	WordVariationsConfig m_word_variations_config;
 
 	bool m_truncated;
 };

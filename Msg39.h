@@ -12,6 +12,7 @@
 #include "TopTree.h"
 #include "Msg51.h"
 #include "ScoringWeights.h"
+#include "WordVariationsConfig.h"
 #include "JobScheduler.h"
 
 
@@ -45,8 +46,7 @@ class Msg39Request {
 	uint8_t m_language;
 
 	// flags
-	bool    m_wiktionaryWordVariations;
-	bool    m_languageSpecificWordVariations;
+	WordVariationsConfig m_word_variations_config;
 	bool    m_debug;
 	bool    m_doSiteClustering;
 	bool    m_hideAllClustered;

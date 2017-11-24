@@ -9,6 +9,9 @@
 struct WordVariationWeights {
 	float noun_indefinite_definite;
 	//todo: more configurable weights in WordVariationWeights
+	WordVariationWeights()
+	  : noun_indefinite_definite(1.0)
+	  {}
 };
 
 

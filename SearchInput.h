@@ -16,6 +16,7 @@
 
 #include "Query.h" // MAX_QUERY_LEN
 #include "HttpRequest.h"
+#include "WordVariationsConfig.h"
 #include <string>
 
 class CollectionRec;
@@ -226,9 +227,7 @@ public:
 
 	char  *m_formatStr;
 
-	// this should be part of the key because it will affect the results!
-	bool   m_wiktionaryWordVariations;
-	bool   m_languageSpecificWordVariations;
+	WordVariationsConfig m_word_variations_config;
 
 	////////
 	//

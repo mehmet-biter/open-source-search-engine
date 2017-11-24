@@ -3573,8 +3573,8 @@ void Parms::init ( ) {
 
 	m->m_title = "wiktionary-based word variations";
 	m->m_desc  = "If enabled, queries will be expanded with \"synonyms\" from the compiled wiktionary data.";
-	simple_m_set(SearchInput,m_wiktionaryWordVariations);
-	m->m_defOff= offsetof(CollectionRec,m_wiktionaryWordVariations);
+	simple_m_set(SearchInput,m_word_variations_config.m_wiktionaryWordVariations);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_wiktionaryWordVariations);
 	m->m_cgi  = "qe";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
@@ -3582,9 +3582,27 @@ void Parms::init ( ) {
 
 	m->m_title = "language-specific word variations";
 	m->m_desc  = "If enabled, queries will be expaneded using launguage-specific rules, eg. based on STO lexicon.";
-	simple_m_set(SearchInput,m_languageSpecificWordVariations);
-	m->m_defOff= offsetof(CollectionRec,m_languageSpecificWordVariations);
+	simple_m_set(SearchInput,m_word_variations_config.m_languageSpecificWordVariations);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_languageSpecificWordVariations);
 	m->m_cgi  = "lwv";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "Weight threshold";
+	m->m_desc  = "Weight threshold of variations to before they are used.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_threshold);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_threshold);
+	m->m_cgi  = "lwv_wt";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "noun: indefinite->definite";
+	m->m_desc  = "Weight of indefinite to definute form variations.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.noun_indefinite_definite);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_indefinite_definite);
+	m->m_cgi  = "lwv_noun_indef_def";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -7056,7 +7074,7 @@ void Parms::init ( ) {
 	m->m_title = "wiktionary-based word variations";
 	m->m_desc  = "If enabled, queries will be expanded with \"synonyms\" from the compiled wiktionary data.";
 	m->m_def   = "0";
-	simple_m_set(CollectionRec,m_wiktionaryWordVariations);
+	simple_m_set(CollectionRec,m_word_variations_config.m_wiktionaryWordVariations);
 	m->m_cgi  = "qe";
 	m->m_page  = PAGE_WORD_VARIATIONS;
 	m->m_flags = PF_API | PF_CLONE;
@@ -7065,10 +7083,28 @@ void Parms::init ( ) {
 	m->m_title = "language-specific word variations";
 	m->m_desc  = "If enabled, queries will be expaneded using launguage-specific rules, eg. based on STO lexicon.";
 	m->m_def   = "0";
-	simple_m_set(CollectionRec,m_languageSpecificWordVariations);
+	simple_m_set(CollectionRec,m_word_variations_config.m_languageSpecificWordVariations);
 	m->m_cgi  = "langwordvariations";
 	m->m_page  = PAGE_WORD_VARIATIONS;
 	m->m_flags = PF_API | PF_CLONE;
+	m++;
+
+	m->m_title = "Weight threshold";
+	m->m_desc  = "Weight threshold of variations to before they are used.";
+	m->m_def   = "1.0";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_threshold);
+	m->m_cgi  = "lwv_wt";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "noun: indefinite->definite";
+	m->m_desc  = "Weight of indefinite to definute form variations.";
+	m->m_def   = "0.7";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_indefinite_definite);
+	m->m_cgi  = "lwv_noun_indef_def";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
 	m++;
 
 

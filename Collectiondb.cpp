@@ -945,7 +945,9 @@ collnum_t Collectiondb::reserveCollNum ( ) {
 //#include "CollectionRec.h"
 
 
-CollectionRec::CollectionRec() {
+CollectionRec::CollectionRec()
+  : m_word_variations_config()
+{
 	m_spiderCorruptCount = 0;
 	m_collnum = -1;
 	m_coll[0] = '\0';
@@ -1043,8 +1045,6 @@ CollectionRec::CollectionRec() {
 	m_maxRobotsCacheAge = 0;
 	m_crawlDelayDefaultForNoRobotsTxtMS = 15000;
 	m_crawlDelayDefaultForRobotsTxtMS = 10000;
-	m_wiktionaryWordVariations = false;
-	m_languageSpecificWordVariations = false;
 	m_modifyDomainLikeSearches = false;
 	m_domainLikeSearchDisablesSiteCluster = true;
 	m_modifyAPILikeSearches = false;

@@ -11,6 +11,7 @@
 #include "collnum_t.h"
 #include "spider_status_t.h"
 #include "GbMutex.h"
+#include "WordVariationsConfig.h"
 
 
 class Collectiondb  {
@@ -363,16 +364,14 @@ public:
 	int32_t m_crawlDelayDefaultForRobotsTxtMS;
 
 
-	// use query expansion for this collection?
-	bool m_wiktionaryWordVariations;
-	//Eg. is STO-based word variations enabled?
-	bool m_languageSpecificWordVariations;
 	// rewrite domain-like queries for this collection?
 	bool m_modifyDomainLikeSearches;
 	bool m_domainLikeSearchDisablesSiteCluster;
 	// rewrite API-like queries?
 	bool m_modifyAPILikeSearches;
 
+	WordVariationsConfig m_word_variations_config;
+	
 	// read from cache
 	bool m_rcache;
 

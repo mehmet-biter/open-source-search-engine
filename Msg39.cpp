@@ -90,8 +90,7 @@ void Msg39Request::reset() {
 	m_maxQueryTerms           = 9999;
 	//m_compoundListMaxSize     = 20000000;
 	m_language                = 0;
-	m_wiktionaryWordVariations= false;
-	m_languageSpecificWordVariations = false;
+	m_word_variations_config = WordVariationsConfig();
 	m_debug                   = false;
 	m_getDocIdScoringInfo     = true;
 	m_doSiteClustering        = true;
@@ -350,8 +349,7 @@ void Msg39::getDocIds2() {
 	// . set our m_query instance
 	if ( ! m_query.set2 ( m_msg39req->ptr_query,
 			      (lang_t)m_msg39req->m_language ,
-			      m_msg39req->m_wiktionaryWordVariations,
-			      m_msg39req->m_languageSpecificWordVariations,
+			      &m_msg39req->m_word_variations_config,
 			      m_msg39req->m_useQueryStopWords ,
 	              m_msg39req->m_allowHighFrequencyTermCache,
 			      m_msg39req->m_maxQueryTerms ) ) {

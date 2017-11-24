@@ -1175,7 +1175,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 	//   QueryTerms even if they're in quotes or in a connection (cd-rom).
 	//   we use this for highlighting purposes
 	Query qq;
-	qq.set2 ( si->m_displayQuery, langUnknown , si->m_wiktionaryWordVariations, si->m_languageSpecificWordVariations, false, si->m_allowHighFrequencyTermCache, ABS_MAX_QUERY_TERMS);
+	qq.set2(si->m_displayQuery, langUnknown, &si->m_word_variations_config, false, si->m_allowHighFrequencyTermCache, ABS_MAX_QUERY_TERMS);
 	//syn-todo: in the call above si->m_queryExpansion was used for both 'queryExpansion' and 'useQueryStopWords'. Why?
 
 	if ( g_errno ) return false;//sendReply (st,NULL);
