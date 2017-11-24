@@ -45,7 +45,7 @@ Query::Query()
 	m_numTermsUntruncated = 0;
 	m_isBoolean = false;
 	m_maxQueryTerms = 0;
-	m_queryExpansion = false;
+	m_wiktionaryWordVariations = false;
 
 	memset(m_expressions, 0, sizeof(m_expressions));
 
@@ -98,12 +98,12 @@ void Query::reset ( ) {
 bool Query::set2 ( const char *query        , 
 		   // need language for doing synonyms
 		   lang_t  langId ,
-		   bool     queryExpansion ,
+		   bool     wiktionaryWordVariations,
 		   bool     useQueryStopWords ,
            bool allowHighFreqTermCache,
 		   int32_t  maxQueryTerms  ) {
-	log(LOG_DEBUG,"query: set2(query='%s', langId=%d, queryExpansion=%s, useQueryStopWords=%s maxQueryTerms=%d)",
-	    query, (int)langId, queryExpansion?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
+	log(LOG_DEBUG,"query: set2(query='%s', langId=%d, wiktionaryWordVariations=%s, useQueryStopWords=%s maxQueryTerms=%d)",
+	    query, (int)langId, wiktionaryWordVariations?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
 
 	reset();
 
@@ -122,7 +122,7 @@ bool Query::set2 ( const char *query        ,
 
 	if ( ! query ) return true;
 
-	m_queryExpansion = queryExpansion;
+	m_wiktionaryWordVariations = wiktionaryWordVariations;
 
 	int32_t queryLen = strlen(query);
 
@@ -405,8 +405,7 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 	// thirdly, count synonyms
 	Synonyms syn;
-m_queryExpansion=false;
-	if ( m_queryExpansion ) {
+	if(m_wiktionaryWordVariations) {
 		int64_t to = hash64n("to");
 		for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 			// get query word
@@ -778,7 +777,7 @@ m_queryExpansion=false;
 	}
 
 	if(g_conf.m_logTraceQuery) {
-		logTrace(g_conf.m_logTraceQuery, "query-terms before expansion:");
+		logTrace(g_conf.m_logTraceQuery, "query-terms before word variations:");
 		for(int i=0; i<n; i++)
 			logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s'", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term);
 	}
@@ -790,7 +789,7 @@ m_queryExpansion=false;
 	//
 	////////////
 
-	if(m_queryExpansion) {
+	if(m_wiktionaryWordVariations) {
 		int64_t to = hash64n("to");
 		for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 			// get query word

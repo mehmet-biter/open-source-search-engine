@@ -411,7 +411,7 @@ class Query {
 	// . after calling this you can call functions below
 	bool set2 ( const char *query    , 
 		    lang_t  langId ,
-		    bool     queryExpansion ,
+		    bool     wiktionaryWordVariations,
 		    bool     useQueryStopWords,
 	        bool allowHighFreqTermCache,
 		    int32_t  maxQueryTerms = 0x7fffffff );
@@ -520,7 +520,7 @@ public:
 
 	int32_t m_maxQueryTerms ;
 
-	bool m_queryExpansion;
+	bool m_wiktionaryWordVariations;
 
 	bool m_truncated;
 };
