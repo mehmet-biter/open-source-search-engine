@@ -1027,7 +1027,7 @@ bool Msg40::launchMsg20s(bool recalled) {
 		req.m_getSummaryVector   = true;
 		req.m_titleMaxLen = m_si->m_titleMaxLen;
 		req.m_summaryMaxLen = cr->m_summaryMaxLen;
-		req.m_queryExpansion     = m_si->m_wiktionaryWordVariations;
+		req.m_wiktionaryWordVariations     = m_si->m_wiktionaryWordVariations;
 		req.m_useQueryStopWords  = m_si->m_wiktionaryWordVariations; //SearchInput doesn't have a m_useQueryStopWords, but if they wanted synonyms (m_queryExpansion) then they probably also want stop words
 		req.m_allowHighFrequencyTermCache = m_si->m_allowHighFrequencyTermCache;
 
