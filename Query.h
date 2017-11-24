@@ -415,7 +415,7 @@ class Query {
 		    bool     languageSpecificWordVariations,
 		    bool     useQueryStopWords,
 	        bool allowHighFreqTermCache,
-		    int32_t  maxQueryTerms = 0x7fffffff );
+		    int32_t  maxQueryTerms);
 
 	const char *getQuery() const { return m_originalQuery.getBufStart(); }
 	int32_t     getQueryLen() const { return m_originalQuery.length(); }

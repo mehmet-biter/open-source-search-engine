@@ -424,6 +424,7 @@ bool Msg40::federatedLoop ( ) {
 		tmpQuery.set2(m_si->m_query,
 			      m_si->m_queryLangId,
 			      false,
+			      false,
 			      true,
 			      m_si->m_allowHighFrequencyTermCache,
 			      cr->m_maxQueryTerms);
