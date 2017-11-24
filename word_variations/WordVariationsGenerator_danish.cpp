@@ -41,6 +41,14 @@ std::vector<WordVariationGenerator::Variation> WordVariationGenerator_danish::qu
 		//find definite-noun -> indefinite-noun variations (eg. "katten" -> "kat")
 		find_simple_attribute_difference_wordforms(variations,source_words,sto::word_form_attribute_t::definiteness_definite,sto::word_form_attribute_t::definiteness_indefinite, weights.noun_definite_indefinite);
 	}
+	if(weights.noun_singular_plural >= threshold) {
+		//find singular->plural variations (eg. "kat" -> "katte")
+		find_simple_attribute_difference_wordforms(variations,source_words,sto::word_form_attribute_t::grammaticalNumber_singular,sto::word_form_attribute_t::grammaticalNumber_plural, weights.noun_singular_plural);
+	}
+	if(weights.noun_plural_singular >= threshold) {
+		//find plural -> singular variations (eg. "kattene" -> "katten")
+		find_simple_attribute_difference_wordforms(variations,source_words,sto::word_form_attribute_t::grammaticalNumber_plural,sto::word_form_attribute_t::grammaticalNumber_singular, weights.noun_plural_singular);
+	}
 	
 	//filter out duplicates and variations below threshold
 	//syn-todo: when filtering out duplicates choose the one with the higest weight
