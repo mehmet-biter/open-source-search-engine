@@ -56,6 +56,7 @@ class Msg20Request {
 	collnum_t  m_collnum;
 
 	unsigned char       m_wiktionaryWordVariations  :1;
+	unsigned char       m_languageSpecificWordVariations:1;
 	unsigned char       m_useQueryStopWords         :1;
 	unsigned char       m_highlightQueryTerms       :1;
 	unsigned char       m_getSummaryVector          :1;

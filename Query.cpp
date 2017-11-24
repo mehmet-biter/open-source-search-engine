@@ -41,11 +41,12 @@ Query::Query()
 	// Coverity
 	m_langId = langUnknown;
 	m_useQueryStopWords = false;
-	m_allowHighFreqTermCache = false;
+		m_allowHighFreqTermCache = false;
 	m_numTermsUntruncated = 0;
 	m_isBoolean = false;
 	m_maxQueryTerms = 0;
 	m_wiktionaryWordVariations = false;
+	m_languageSpecificWordVariations = false;
 
 	memset(m_expressions, 0, sizeof(m_expressions));
 
@@ -99,11 +100,12 @@ bool Query::set2 ( const char *query        ,
 		   // need language for doing synonyms
 		   lang_t  langId ,
 		   bool     wiktionaryWordVariations,
+		   bool     languageSpecificWordVariations,
 		   bool     useQueryStopWords ,
            bool allowHighFreqTermCache,
 		   int32_t  maxQueryTerms  ) {
-	log(LOG_DEBUG,"query: set2(query='%s', langId=%d, wiktionaryWordVariations=%s, useQueryStopWords=%s maxQueryTerms=%d)",
-	    query, (int)langId, wiktionaryWordVariations?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
+	log(LOG_DEBUG,"query: set2(query='%s', langId=%d, wiktionaryWordVariations=%s, languageSpecificWordVariations=%s useQueryStopWords=%s maxQueryTerms=%d)",
+	    query, (int)langId, wiktionaryWordVariations?"true":"false", languageSpecificWordVariations?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
 
 	reset();
 
@@ -123,6 +125,7 @@ bool Query::set2 ( const char *query        ,
 	if ( ! query ) return true;
 
 	m_wiktionaryWordVariations = wiktionaryWordVariations;
+	m_languageSpecificWordVariations = languageSpecificWordVariations;
 
 	int32_t queryLen = strlen(query);
 
@@ -447,7 +450,7 @@ bool Query::setQTerms ( const Words &words ) {
 	
 	std::vector<std::string> wvg_source_words;
 	std::vector<int> wvg_source_word_index; //idx in wvg_source_words -> idx of queryword
-	if(true) {
+	if(m_languageSpecificWordVariations) {
 		for(int i=0; i<m_numWords; i++) {
 			const QueryWord *qw  = &m_qwords[i];
 			if(qw->m_inQuotes) continue;
@@ -960,7 +963,7 @@ bool Query::setQTerms ( const Words &words ) {
 		}
 	}
 
-	if(true) {
+	if(m_languageSpecificWordVariations) {
 		for(unsigned i=0; i<m_wordVariations.size(); i++) {
 			if(n>=nqt)
 				break;

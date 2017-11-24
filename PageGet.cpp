@@ -483,7 +483,7 @@ bool processLoop ( void *state ) {
 	x += strlen(x);		
 	// set our query for highlighting
 	Query qq;
-	qq.set2(q, st->m_langId, true, true, false);
+	qq.set2(q, st->m_langId, true, true, true, false); //todo:use wordvariation settings form original query, if any
 
 	// print the query terms into our highlight buffer
 	Highlight hi;

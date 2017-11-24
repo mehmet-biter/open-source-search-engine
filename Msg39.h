@@ -46,6 +46,7 @@ class Msg39Request {
 
 	// flags
 	bool    m_wiktionaryWordVariations;
+	bool    m_languageSpecificWordVariations;
 	bool    m_debug;
 	bool    m_doSiteClustering;
 	bool    m_hideAllClustered;

@@ -3580,6 +3580,15 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "language-specific word variations";
+	m->m_desc  = "If enabled, queries will be expaneded using launguage-specific rules, eg. based on STO lexicon.";
+	simple_m_set(SearchInput,m_languageSpecificWordVariations);
+	m->m_defOff= offsetof(CollectionRec,m_languageSpecificWordVariations);
+	m->m_cgi  = "lwv";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	// limit to this # of the top term pairs from inlink text whose
 	// score is accumulated
 	m->m_title = "real max top";
@@ -7049,6 +7058,15 @@ void Parms::init ( ) {
 	m->m_def   = "0";
 	simple_m_set(CollectionRec,m_wiktionaryWordVariations);
 	m->m_cgi  = "qe";
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m->m_flags = PF_API | PF_CLONE;
+	m++;
+
+	m->m_title = "language-specific word variations";
+	m->m_desc  = "If enabled, queries will be expaneded using launguage-specific rules, eg. based on STO lexicon.";
+	m->m_def   = "0";
+	simple_m_set(CollectionRec,m_languageSpecificWordVariations);
+	m->m_cgi  = "langwordvariations";
 	m->m_page  = PAGE_WORD_VARIATIONS;
 	m->m_flags = PF_API | PF_CLONE;
 	m++;

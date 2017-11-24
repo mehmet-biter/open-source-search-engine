@@ -365,6 +365,8 @@ public:
 
 	// use query expansion for this collection?
 	bool m_wiktionaryWordVariations;
+	//Eg. is STO-based word variations enabled?
+	bool m_languageSpecificWordVariations;
 	// rewrite domain-like queries for this collection?
 	bool m_modifyDomainLikeSearches;
 	bool m_domainLikeSearchDisablesSiteCluster;

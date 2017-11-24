@@ -1044,6 +1044,7 @@ CollectionRec::CollectionRec() {
 	m_crawlDelayDefaultForNoRobotsTxtMS = 15000;
 	m_crawlDelayDefaultForRobotsTxtMS = 10000;
 	m_wiktionaryWordVariations = false;
+	m_languageSpecificWordVariations = false;
 	m_modifyDomainLikeSearches = false;
 	m_domainLikeSearchDisablesSiteCluster = true;
 	m_modifyAPILikeSearches = false;

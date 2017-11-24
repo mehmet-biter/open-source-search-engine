@@ -228,6 +228,7 @@ public:
 
 	// this should be part of the key because it will affect the results!
 	bool   m_wiktionaryWordVariations;
+	bool   m_languageSpecificWordVariations;
 
 	////////
 	//

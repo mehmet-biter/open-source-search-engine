@@ -91,6 +91,7 @@ void Msg39Request::reset() {
 	//m_compoundListMaxSize     = 20000000;
 	m_language                = 0;
 	m_wiktionaryWordVariations= false;
+	m_languageSpecificWordVariations = false;
 	m_debug                   = false;
 	m_getDocIdScoringInfo     = true;
 	m_doSiteClustering        = true;
@@ -350,6 +351,7 @@ void Msg39::getDocIds2() {
 	if ( ! m_query.set2 ( m_msg39req->ptr_query,
 			      (lang_t)m_msg39req->m_language ,
 			      m_msg39req->m_wiktionaryWordVariations,
+			      m_msg39req->m_languageSpecificWordVariations,
 			      m_msg39req->m_useQueryStopWords ,
 	              m_msg39req->m_allowHighFrequencyTermCache,
 			      m_msg39req->m_maxQueryTerms ) ) {

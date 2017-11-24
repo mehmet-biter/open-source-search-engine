@@ -412,6 +412,7 @@ class Query {
 	bool set2 ( const char *query    , 
 		    lang_t  langId ,
 		    bool     wiktionaryWordVariations,
+		    bool     languageSpecificWordVariations,
 		    bool     useQueryStopWords,
 	        bool allowHighFreqTermCache,
 		    int32_t  maxQueryTerms = 0x7fffffff );
@@ -521,6 +522,7 @@ public:
 	int32_t m_maxQueryTerms ;
 
 	bool m_wiktionaryWordVariations;
+	bool m_languageSpecificWordVariations;
 
 	bool m_truncated;
 };

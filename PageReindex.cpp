@@ -264,7 +264,7 @@ bool Msg1c::reindexQuery ( const char *query,
 	m_niceness = MAX_NICENESS;
 
 	// langunknown?
-	m_qq.set2(query, langId, false, true, false);
+	m_qq.set2(query, langId, false, false, true, false);
 
 	// sanity fix
 	if ( endNum - startNum > MAXDOCIDSTOCOMPUTE )
@@ -284,6 +284,7 @@ bool Msg1c::reindexQuery ( const char *query,
 	m_msg3a.m_msg39req.size_query                  = strlen(m_qq.originalQuery())+1;
 	m_msg3a.m_msg39req.m_timeout                   = 86400*1000; // a whole day. todo: should we just go for infinite here?
 	m_msg3a.m_msg39req.m_wiktionaryWordVariations  = false;
+	m_msg3a.m_msg39req.m_languageSpecificWordVariations = false;
 	// add language dropdown or take from [query reindex] link
 	m_msg3a.m_msg39req.m_language                  = langId;
 	m_msg3a.m_msg39req.m_allowHighFrequencyTermCache = false;
