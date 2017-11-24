@@ -16602,12 +16602,18 @@ bool *XmlDoc::parseRobotsMetaTag() {
 	const char *content = nullptr;
 	int32_t contentLen = 0;
 
-	if (xml->getTagValue("name", "robots", "content", &content, &contentLen, true, TAG_META)) {
+	int32_t startNode = 0;
+	while (startNode < xml->getNumNodes() &&
+	       xml->getTagValue("name", "robots", "content", &content, &contentLen, true, TAG_META, &startNode)) {
 		parseRobotsMetaTagContent(content, contentLen);
+		++startNode;
 	}
 
-	if (xml->getTagValue("name", g_conf.m_spiderBotName, "content", &content, &contentLen, true, TAG_META)) {
+	startNode = 0;
+	while (startNode < xml->getNumNodes() &&
+	       xml->getTagValue("name", g_conf.m_spiderBotName, "content", &content, &contentLen, true, TAG_META, &startNode)) {
 		parseRobotsMetaTagContent(content, contentLen);
+		++startNode;
 	}
 
 	m_parsedRobotsMetaTag = true;
