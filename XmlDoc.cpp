@@ -2535,6 +2535,10 @@ int32_t *XmlDoc::getIndexCode ( ) {
 			m_content    = NULL;
 			m_contentLen = 0;
 
+			ptr_utf8Content    = NULL;
+			size_utf8Content   = 0;
+			m_utf8ContentValid = true;
+
 			logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCNONCANONICAL");
 			return &m_indexCode;
 		}
@@ -3090,6 +3094,10 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 			m_contentValid = true;
 			m_content    = NULL;
 			m_contentLen = 0;
+
+			ptr_utf8Content    = NULL;
+			size_utf8Content   = 0;
+			m_utf8ContentValid = true;
 		} else {
 			m_titleRecBufValid = true;
 			return &m_titleRecBuf;
@@ -5684,6 +5692,10 @@ Url **XmlDoc::getRedirUrl() {
 		m_contentValid = true;
 		m_content    = NULL;
 		m_contentLen = 0;
+
+		ptr_utf8Content    = NULL;
+		size_utf8Content   = 0;
+		m_utf8ContentValid = true;
 
 		// mdw: let this path through so contactXmlDoc gets a proper
 		// redirect that we can follow. for the base xml doc at
@@ -16590,12 +16602,18 @@ bool *XmlDoc::parseRobotsMetaTag() {
 	const char *content = nullptr;
 	int32_t contentLen = 0;
 
-	if (xml->getTagValue("name", "robots", "content", &content, &contentLen, true, TAG_META)) {
+	int32_t startNode = 0;
+	while (startNode < xml->getNumNodes() &&
+	       xml->getTagValue("name", "robots", "content", &content, &contentLen, true, TAG_META, &startNode)) {
 		parseRobotsMetaTagContent(content, contentLen);
+		++startNode;
 	}
 
-	if (xml->getTagValue("name", g_conf.m_spiderBotName, "content", &content, &contentLen, true, TAG_META)) {
+	startNode = 0;
+	while (startNode < xml->getNumNodes() &&
+	       xml->getTagValue("name", g_conf.m_spiderBotName, "content", &content, &contentLen, true, TAG_META, &startNode)) {
 		parseRobotsMetaTagContent(content, contentLen);
+		++startNode;
 	}
 
 	m_parsedRobotsMetaTag = true;
