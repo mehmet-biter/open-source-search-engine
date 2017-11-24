@@ -962,7 +962,6 @@ m_queryExpansion=false;
 	}
 
 	if(true) {
-		std::set<std::string> seen_variations;
 		for(unsigned i=0; i<m_wordVariations.size(); i++) {
 			if(n>=nqt)
 				break;
@@ -975,12 +974,6 @@ m_queryExpansion=false;
 				//Variation is the same as the base word. The word-variation-plugin is allowed to produce that.
 				continue; //skip
 			}
-			if(seen_variations.find(word_variation.word)!=seen_variations.end()) {
-				//Word variation seen before.
-				//syn-todo:morphology can cause two identically-written words to mean different things. We should use the entry with the higest weight
-				continue; //skip
-			}
-			seen_variations.insert(word_variation.word);
 			QueryTerm *origTerm = qw->m_queryWordTerm;
 
 

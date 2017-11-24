@@ -1,6 +1,7 @@
 #include "WordVariations.h"
 #include "STOWordVariationGenerator.h"
 #include <string.h>
+#include <set>
 
 
 namespace {
@@ -45,6 +46,19 @@ std::vector<WordVariationGenerator::Variation> WordVariationGenerator_danish::qu
 					variations.push_back(v);
 				}
 			}
+		}
+	}
+	//filter out duplcates and variations below threshold
+	//syn-todo: when filtering out duplicates choose the one with the higest threshold
+	std::set<std::string> seen_variations;
+	for(auto iter = variations.begin(); iter!=variations.end(); ) {
+		if(iter->weight < threshold)
+			iter = variations.erase(iter);
+		else if(seen_variations.find(iter->word)!=seen_variations.end())
+			iter = variations.erase(iter);
+		else {
+			seen_variations.insert(iter->word);
+			++iter;
 		}
 	}
 	return variations;
