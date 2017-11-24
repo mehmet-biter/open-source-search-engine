@@ -27,8 +27,6 @@ class Speller {
 
 	bool init();
 
-	void test (char *ff);
-
 	void dictLookupTest ( char *ff );
 
 	int64_t getLangBits64 ( int64_t wid ) ;
