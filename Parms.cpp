@@ -6567,17 +6567,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_API | PF_CLONE;
 	m++;
 
-	m->m_title = "do query expansion by default";
-	m->m_desc  = "If enabled, query expansion will expand your query "
-		"to include the various forms and "
-		"synonyms of the query terms.";
-	m->m_def   = "1";
-	simple_m_set(CollectionRec,m_wiktionaryWordVariations);
-	m->m_cgi  = "qe";
-	m->m_page  = PAGE_SEARCH;
-	m->m_flags = PF_API | PF_CLONE;
-	m++;
-
 	m->m_title = "Detect and modify domain searches";
 	m->m_desc  = "Detect queries for domains such as example.com or www.example.com and modify the query to search more directed for that";
 	m->m_def   = "1";
@@ -7048,6 +7037,23 @@ void Parms::init ( ) {
 	m->m_units = "seconds";
 	m->m_flags = 0;
 	m++;
+
+	///////////////////
+	//
+	// Word Variation Controls
+	//
+	///////////////////
+	
+	m->m_title = "wiktionary-based word variations";
+	m->m_desc  = "If enabled, queries will be expanded with \"synonyms\" from the compiled wiktionary data.";
+	m->m_def   = "0";
+	simple_m_set(CollectionRec,m_wiktionaryWordVariations);
+	m->m_cgi  = "qe";
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m->m_flags = PF_API | PF_CLONE;
+	m++;
+
+
 
 	///////////////////////////////////////////
 	// PAGE DATAFILE CONTROLS
