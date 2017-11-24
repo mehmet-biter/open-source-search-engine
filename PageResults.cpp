@@ -1175,7 +1175,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 	//   QueryTerms even if they're in quotes or in a connection (cd-rom).
 	//   we use this for highlighting purposes
 	Query qq;
-	qq.set2 ( si->m_displayQuery, langUnknown , si->m_queryExpansion, si->m_queryExpansion, si->m_allowHighFrequencyTermCache);
+	qq.set2(si->m_displayQuery, langUnknown, si->m_queryExpansion, si->m_queryExpansion, si->m_allowHighFrequencyTermCache, ABS_MAX_QUERY_TERMS);
 
 	if ( g_errno ) return false;//sendReply (st,NULL);
 

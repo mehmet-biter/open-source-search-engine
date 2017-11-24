@@ -4944,7 +4944,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	Matches matches;
 	Query q;
-	q.set2 ( query , langUnknown , false, false, true );
+	q.set2(query, langUnknown, false, false, true, ABS_MAX_QUERY_TERMS);
 	matches.setQuery ( &q );
 	words.set ( &xml , true ) ;
 	t = gettimeofdayInMilliseconds();
@@ -4974,7 +4974,7 @@ static bool summaryTest1(char *rec, int32_t listSize, const char *coll, int64_t 
 	int64_t t = gettimeofdayInMilliseconds();
 
 	Query q;
-	q.set2 ( query , langUnknown , false, false, true );
+	q.set2(query, langUnknown, false, false, true, ABS_MAX_QUERY_TERMS);
 
 	char *content ;
 	int32_t  contentLen ;
