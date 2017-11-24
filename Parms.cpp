@@ -3571,12 +3571,10 @@ void Parms::init ( ) {
 
 
 
-	m->m_title = "do query expansion";
-	m->m_desc  = "If enabled, query expansion will expand your query "
-		"to include the various forms and "
-		"synonyms of the query terms.";
-	simple_m_set(SearchInput,m_queryExpansion);
-	m->m_defOff= offsetof(CollectionRec,m_queryExpansion);
+	m->m_title = "wiktionary-based word variations";
+	m->m_desc  = "If enabled, queries will be expanded with \"synonyms\" from the compiled wiktionary data.";
+	simple_m_set(SearchInput,m_wiktionaryWordVariations);
+	m->m_defOff= offsetof(CollectionRec,m_wiktionaryWordVariations);
 	m->m_cgi  = "qe";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
@@ -6574,7 +6572,7 @@ void Parms::init ( ) {
 		"to include the various forms and "
 		"synonyms of the query terms.";
 	m->m_def   = "1";
-	simple_m_set(CollectionRec,m_queryExpansion);
+	simple_m_set(CollectionRec,m_wiktionaryWordVariations);
 	m->m_cgi  = "qe";
 	m->m_page  = PAGE_SEARCH;
 	m->m_flags = PF_API | PF_CLONE;

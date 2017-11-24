@@ -283,7 +283,7 @@ bool Msg1c::reindexQuery ( const char *query,
 	m_msg3a.m_msg39req.ptr_query                   = const_cast<char*>(m_qq.originalQuery()); //we promise not to modify it
 	m_msg3a.m_msg39req.size_query                  = strlen(m_qq.originalQuery())+1;
 	m_msg3a.m_msg39req.m_timeout                   = 86400*1000; // a whole day. todo: should we just go for infinite here?
-	m_msg3a.m_msg39req.m_queryExpansion            = false;
+	m_msg3a.m_msg39req.m_wiktionaryWordVariations  = false;
 	// add language dropdown or take from [query reindex] link
 	m_msg3a.m_msg39req.m_language                  = langId;
 	m_msg3a.m_msg39req.m_allowHighFrequencyTermCache = false;

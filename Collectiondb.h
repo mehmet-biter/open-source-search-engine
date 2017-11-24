@@ -364,7 +364,7 @@ public:
 
 
 	// use query expansion for this collection?
-	bool m_queryExpansion;
+	bool m_wiktionaryWordVariations;
 	// rewrite domain-like queries for this collection?
 	bool m_modifyDomainLikeSearches;
 	bool m_domainLikeSearchDisablesSiteCluster;

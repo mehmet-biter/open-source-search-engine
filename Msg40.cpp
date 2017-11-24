@@ -363,7 +363,7 @@ bool Msg40::federatedLoop ( ) {
 	memcpy(mr.m_flagScoreMultiplier, m_si->m_flagScoreMultiplier, sizeof(mr.m_flagScoreMultiplier));
 	memcpy(mr.m_flagRankAdjustment, m_si->m_flagRankAdjustment, sizeof(mr.m_flagRankAdjustment));
 	mr.m_doDupContentRemoval       = m_si->m_doDupContentRemoval ;
-	mr.m_queryExpansion            = m_si->m_queryExpansion; 
+	mr.m_wiktionaryWordVariations  = m_si->m_wiktionaryWordVariations;
 	mr.m_familyFilter              = m_si->m_familyFilter        ;
 	mr.m_allowHighFrequencyTermCache = m_si->m_allowHighFrequencyTermCache;
 	mr.m_language                  = (unsigned char)m_si->m_queryLangId;
@@ -1027,8 +1027,8 @@ bool Msg40::launchMsg20s(bool recalled) {
 		req.m_getSummaryVector   = true;
 		req.m_titleMaxLen = m_si->m_titleMaxLen;
 		req.m_summaryMaxLen = cr->m_summaryMaxLen;
-		req.m_queryExpansion     = m_si->m_queryExpansion;
-		req.m_useQueryStopWords  = m_si->m_queryExpansion; //SearchInput doesn't have a m_useQueryStopWords, but if they wanted synonyms (m_queryExpansion) then they probably also want stop words
+		req.m_queryExpansion     = m_si->m_wiktionaryWordVariations;
+		req.m_useQueryStopWords  = m_si->m_wiktionaryWordVariations; //SearchInput doesn't have a m_useQueryStopWords, but if they wanted synonyms (m_queryExpansion) then they probably also want stop words
 		req.m_allowHighFrequencyTermCache = m_si->m_allowHighFrequencyTermCache;
 
 		// Line means excerpt 

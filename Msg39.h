@@ -45,7 +45,7 @@ class Msg39Request {
 	uint8_t m_language;
 
 	// flags
-	bool    m_queryExpansion;
+	bool    m_wiktionaryWordVariations;
 	bool    m_debug;
 	bool    m_doSiteClustering;
 	bool    m_hideAllClustered;

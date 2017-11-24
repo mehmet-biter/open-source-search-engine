@@ -1043,7 +1043,7 @@ CollectionRec::CollectionRec() {
 	m_maxRobotsCacheAge = 0;
 	m_crawlDelayDefaultForNoRobotsTxtMS = 15000;
 	m_crawlDelayDefaultForRobotsTxtMS = 10000;
-	m_queryExpansion = false;
+	m_wiktionaryWordVariations = false;
 	m_modifyDomainLikeSearches = false;
 	m_domainLikeSearchDisablesSiteCluster = true;
 	m_modifyAPILikeSearches = false;
