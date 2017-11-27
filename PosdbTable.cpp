@@ -2831,9 +2831,11 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 		const char *nwp[MAX_SUBLISTS];
 		const char *nwpEnd[MAX_SUBLISTS];
 		char  nwpFlags[MAX_SUBLISTS];
+		int baseSubListIndex[MAX_SUBLISTS];
 		// populate the nwp[] arrays for merging
 		int32_t nsub = 0;
 		for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
+			baseSubListIndex[nsub] = k;
 			// NULL means does not have that docid
 			if ( ! qti->m_matchingSublist[k].m_savedCursor ) {
 				continue;
@@ -2900,7 +2902,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 			if ( isFirstKey ) {
 				// store a 12 byte key in the merged list buffer
 				memcpy ( mptr, nwp[mink], 12 );
-				int termIndex = qti->m_subList[qti->m_matchingSublist[mink].m_baseSubListIndex].m_qt - m_q->m_qterms;
+				int termIndex = qti->m_subList[baseSubListIndex[mink]].m_qt - m_q->m_qterms;
 				*(miniMergeBuffer->getTermIndexPtrForBufferPos(mptr)) = termIndex;
 
 				// Detect highest siterank of inlinkers
