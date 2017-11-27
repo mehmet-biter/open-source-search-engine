@@ -103,7 +103,7 @@ bool DocProcess::init() {
 		return false;
 	}
 
-	reload(0, nullptr);
+	reload(0, this);
 
 	return true;
 }
