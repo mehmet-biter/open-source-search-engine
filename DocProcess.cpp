@@ -30,7 +30,7 @@
 
 static GbThreadQueue s_docProcessFileThreadQueue;
 static GbThreadQueue s_docProcessDocThreadQueue;
-static std::atomic<bool> s_stop(false);
+static std::atomic<int> s_count(0);
 
 struct DocProcessFileItem {
 	DocProcessFileItem(DocProcess *docProcess, const std::string &lastPos)
@@ -88,14 +88,16 @@ DocProcess::DocProcess(const char *filename, bool isUrl, void (*updateXmldocFunc
 }
 
 bool DocProcess::init() {
-	if (!s_docProcessFileThreadQueue.initialize(processFile, "docprocess-file")) {
-		logError("Unable to initialize process file queue");
-		return false;
-	}
+	if (s_count.fetch_add(1) == 0) {
+		if (!s_docProcessFileThreadQueue.initialize(processFile, "docprocess-file")) {
+			logError("Unable to initialize process file queue");
+			return false;
+		}
 
-	if (!s_docProcessDocThreadQueue.initialize(processDoc, "docprocess-doc")) {
-		logError("Unable to initialize process doc queue");
-		return false;
+		if (!s_docProcessDocThreadQueue.initialize(processDoc, "docprocess-doc")) {
+			logError("Unable to initialize process doc queue");
+			return false;
+		}
 	}
 
 	if (!g_loop.registerSleepCallback(60000, this, &reload, "DocProcess::reload", 0)) {
@@ -117,12 +119,10 @@ void DocProcess::finalize() {
 	pthread_cond_broadcast(&m_pendingDocItemsCond);
 
 	// only finalize static variables once
-	if (s_stop.exchange(true)) {
-		return;
+	if (s_count.fetch_sub(1) == 0) {
+		s_docProcessFileThreadQueue.finalize();
+		s_docProcessDocThreadQueue.finalize();
 	}
-
-	s_docProcessFileThreadQueue.finalize();
-	s_docProcessDocThreadQueue.finalize();
 }
 
 void DocProcess::reload(int /*fd*/, void *state) {
