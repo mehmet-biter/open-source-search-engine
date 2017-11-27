@@ -338,6 +338,9 @@ class QueryTerm {
 	// IndexTable.cpp uses this one
 	bool m_inQuotes;
 
+	//base weight of this term. normally 1.0 for regular terms. Less of synonyms, more for bigrams
+	float m_termWeight;
+	
 	// user defined weight for this term, be it phrase or word
 	float m_userWeight;
 
@@ -411,6 +414,8 @@ class Query {
 	// . after calling this you can call functions below
 	bool set2 ( const char *query    , 
 		    lang_t  langId ,
+		    float  bigramWeight,
+		    float  synonymWeight,
 		    const WordVariationsConfig *wordVariationsConfig, //NULL=disable variations
 		    bool     useQueryStopWords,
 	        bool allowHighFreqTermCache,
@@ -439,6 +444,8 @@ class Query {
 	// for a domain and "file.open()" is probably for an API/SDK
 	void modifyQuery(ScoringWeights *scoringWeights, const CollectionRec& cr, bool *doSiteClustering);
 
+	void dumpToLog() const;
+
 private:
 	// sets m_qwords[] array, this function is the heart of the class
 	bool setQWords ( char boolFlag , bool keepAllSingles ,
@@ -450,7 +457,6 @@ private:
 	// helper funcs for parsing query into m_qwords[]
 	bool        isConnection(const char *s, int32_t len) const;
 
-	void dumpToLog() const;
 	void traceTermsToLog(const char *header);
 
 public:
@@ -520,6 +526,9 @@ public:
 
 	int32_t m_maxQueryTerms ;
 
+	//used for setting the qterm->m_termWeight value
+	float  m_bigramWeight;
+	float  m_synonymWeight;
 	WordVariationsConfig m_word_variations_config;
 
 	bool m_truncated;

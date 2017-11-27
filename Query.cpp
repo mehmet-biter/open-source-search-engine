@@ -98,6 +98,8 @@ void Query::reset ( ) {
 bool Query::set2 ( const char *query        , 
 		   // need language for doing synonyms
 		   lang_t  langId ,
+		   float  bigramWeight,
+		   float  synonymWeight,
 		   const WordVariationsConfig *wordVariationsConfig,
 		   bool     useQueryStopWords ,
            bool allowHighFreqTermCache,
@@ -126,6 +128,8 @@ bool Query::set2 ( const char *query        ,
 
 	if ( ! query ) return true;
 
+	m_bigramWeight = bigramWeight;
+	m_synonymWeight = synonymWeight;
 	m_word_variations_config = *wordVariationsConfig;
 
 	int32_t queryLen = strlen(query);
@@ -565,6 +569,7 @@ bool Query::setQTerms ( const Words &words ) {
 		// doh! gotta reset to 0
 		qt->m_implicitBits = 0;
 		// assign score weight, we're a phrase here
+		qt->m_termWeight = m_bigramWeight;
 		qt->m_userWeight = qw->m_userWeightForPhrase ;
 		qt->m_fieldCode  = qw->m_fieldCode  ;
 		// stuff before a pipe always has a weight of 1
@@ -709,7 +714,8 @@ bool Query::setQTerms ( const Words &words ) {
 		// reset our implicit bits to 0
 		qt->m_implicitBits = 0;
 
-		// assign score weight, we're a phrase here
+		// assign score weight, we're a single-term here
+		qt->m_termWeight = 1.0;
 		qt->m_userWeight = qw->m_userWeightForWord;
 		qt->m_fieldCode  = qw->m_fieldCode  ;
 		// stuff before a pipe always has a weight of 1
@@ -951,7 +957,8 @@ bool Query::setQTerms ( const Words &words ) {
 				qt->m_termLen  = syn.m_termLens[j];
 				// reset our implicit bits to 0
 				qt->m_implicitBits = 0;
-				// assign score weight, we're a phrase here
+				// assign score weight, we're a synonym here
+				qt->m_termWeight = m_synonymWeight;
 				qt->m_userWeight = qw->m_userWeightForWord; //todo: use dedicated user weight for synonyms
 				qt->m_fieldCode  = qw->m_fieldCode  ;
 				// stuff before a pipe always has a weight of 1
@@ -1051,7 +1058,8 @@ bool Query::setQTerms ( const Words &words ) {
 			qt->m_termLen  = word_variation.word.length();
 			// reset our implicit bits to 0
 			qt->m_implicitBits = 0;
-			// assign score weight, we're a phrase here
+			// assign score weight
+			qt->m_termWeight = word_variation.weight;
 			qt->m_userWeight = qw->m_userWeightForWord; //todo: use dedicated user weight for synonyms
 			qt->m_fieldCode  = qw->m_fieldCode  ;
 			// stuff before a pipe always has a weight of 1
@@ -3140,7 +3148,7 @@ void Query::dumpToLog() const
 	log(LOG_DEBUG, "Query:setQTerms: dumping %d query-words:", m_numWords);
 	for(int i=0; i<m_numWords; i++) {
 		const QueryWord &qw = m_qwords[i];
-		log("  %d",i);
+		log("  qword #%d:",i);
 		log("    word='%*.*s'", (int)qw.m_wordLen, (int)qw.m_wordLen, qw.m_word);
 		log("    phrase='%*.*s'", (int)qw.m_phraseLen, (int)qw.m_phraseLen, qw.m_word);
 		log("    m_wordId=%" PRId64, qw.m_wordId);
@@ -3149,21 +3157,24 @@ void Query::dumpToLog() const
 	log("Query:setQTerms: dumping %d query-terms:", m_numTerms);
 	for(int i=0; i<m_numTerms; i++) {
 		const QueryTerm &qt = m_qterms[i];
-		log("%d",i);
-		log("  m_isPhrase=%s", qt.m_isPhrase?"true":"false");
-		log("  m_termId=%" PRId64, qt.m_termId);
-		log("  m_rawTermId=%" PRId64, qt.m_rawTermId);
-		log("  m_term='%*.*s'", (int)qt.m_termLen, (int)qt.m_termLen, qt.m_term);
-		log("  m_isWikiHalfStopBigram=%s", qt.m_isWikiHalfStopBigram?"true":"false");
-		log("  m_leftPhraseTermNum=%d, m_leftPhraseTerm=%p", qt.m_leftPhraseTermNum, (void*)qt.m_leftPhraseTerm);
-		log("  m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, (void*)qt.m_rightPhraseTerm);
+		log("  term #%d:",i);
+		log("    m_term='%*.*s'", (int)qt.m_termLen, (int)qt.m_termLen, qt.m_term);
+		log("    m_isPhrase=%s synonym=%s", qt.m_isPhrase?"true":"false", qt.m_synonymOf?"true":"false");
+		log("    m_termId=%" PRId64, qt.m_termId);
+		log("    m_rawTermId=%" PRId64, qt.m_rawTermId);
+		log("    m_isWikiHalfStopBigram=%s", qt.m_isWikiHalfStopBigram?"true":"false");
+		log("    m_leftPhraseTermNum=%d, m_leftPhraseTerm=%p", qt.m_leftPhraseTermNum, (void*)qt.m_leftPhraseTerm);
+		log("    m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, (void*)qt.m_rightPhraseTerm);
+		log("    m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, (void*)qt.m_rightPhraseTerm);
+		log("    m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, (void*)qt.m_rightPhraseTerm);
+		log("    m_termFreqWeight=%f m_termWeight=%f m_userWeight=%f", qt.m_termFreqWeight, qt.m_termWeight, qt.m_userWeight);
 	}
 }
 
 void Query::traceTermsToLog(const char *header) {
 	logTrace(g_conf.m_logTraceQuery, "%s:", header);
 	for(int i=0; i<m_numTerms; i++) {
-		logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s', weight=%f %s", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term, m_qterms[i].m_userWeight, m_qterms[i].m_ignored?"ignored":"");
+		logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s', t-weight=%f u-weight=%f %s", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term, m_qterms[i].m_termWeight,m_qterms[i].m_userWeight, m_qterms[i].m_ignored?"ignored":"");
 		logTrace(g_conf.m_logTraceQuery, "                  qstopw=%s req=%s", m_qterms[i].m_isQueryStopWord?"true":"false", m_qterms[i].m_isRequired?"yes":"no");
 	}
 }

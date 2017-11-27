@@ -21,7 +21,7 @@ struct WordVariationWeights {
 };
 
 
-//Class to generate word variations. Some variations can be basede on lookups in dictionatries
+//Class to generate word variations. Some variations can be based on lookups in dictionaries
 //and lexicons while other can be generated on-the-fly. Use get_generator() to get the generator
 //for a language.
 class WordVariationGenerator {

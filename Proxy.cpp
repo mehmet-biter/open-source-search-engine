@@ -316,7 +316,7 @@ bool Proxy::handleRequest (TcpSocket *s){
 	const char *qs = hr.getString("q",NULL);
 	Query q;
 	if (qs) {
-		q.set2(qs, langUnknown, NULL, false, hr.getBool("highfreqtermcache", true), ABS_MAX_QUERY_TERMS);
+		q.set2(qs, langUnknown, 1.0, 1.0, NULL, false, hr.getBool("highfreqtermcache", true), ABS_MAX_QUERY_TERMS);
 	}
 	// clear g_errno in case Query::set() set it
 	g_errno = 0;

@@ -259,7 +259,7 @@ struct PosdbDecodeHelper {
 	float spamw;
 	float denw;
 	//float diversityWeight; //todo?
-	unsigned char syn;
+	//unsigned char syn; //not supported anymore
 	void set(const char *wp, const ScoringWeights &scoringWeights) {
 		p = Posdb::getWordPos(wp);
 		hg = Posdb::getHashGroup(wp);
@@ -276,7 +276,7 @@ struct PosdbDecodeHelper {
 		else
 			spamw = scoringWeights.m_wordSpamWeights[wsr];
 		denw = scoringWeights.m_densityWeights[Posdb::getDensityRank(wp)];
-		syn = Posdb::getIsSynonym(wp);
+		//syn = Posdb::getIsSynonym(wp);
 	}
 };
 } //anonymous namespace
@@ -336,23 +336,16 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 			score *= helper.spamw;
 			score *= helper.spamw;
 
-			// synonym
-			if ( helper.syn ) {
-				score *= m_msg39req->m_synonymWeight;
-				score *= m_msg39req->m_synonymWeight;
-			}
-
 			int queryTermIndex = miniMergeBuffer->getTermIndexForBufferPos(wpi);
-			float userWeight = m_q->m_qterms[queryTermIndex].m_userWeight;
-			score *= userWeight;
+			const QueryTerm &qterm = m_q->m_qterms[queryTermIndex];
+
+			score *= qterm.m_userWeight;
 
 			score *= m_q->m_qterms[queryTermIndex].m_termFreqWeight;
 			score *= m_q->m_qterms[queryTermIndex].m_termFreqWeight;
 
-			if(m_q->m_qterms[queryTermIndex].m_isPhrase) {
-				score *= m_msg39req->m_bigramWeight;
-				score *= m_msg39req->m_bigramWeight;
-			}
+			score *= qterm.m_termWeight; //regular/bigram/synonym
+			score *= qterm.m_termWeight; //regular/bigram/synonym
 
 			// do not allow duplicate hashgroups!
 			int32_t bro = -1;
@@ -614,25 +607,16 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
 				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
 
-				// if synonym or alternate word form
-				if ( helper1.syn ) {
-					score *= m_msg39req->m_synonymWeight;
-				}
-				if ( helper2.syn ) {
-					score *= m_msg39req->m_synonymWeight;
-				}
-
 				const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(wpi);
-				const float userWeight1 = m_q->m_qterms[queryTermIndex1].m_userWeight;
-				score *= userWeight1;
+				const QueryTerm &qterm1 = m_q->m_qterms[queryTermIndex1];
 				const int queryTermIndex2 = miniMergeBuffer->getTermIndexForBufferPos(wpj);
-				const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
-				score *= userWeight2;
+				const QueryTerm &qterm2 = m_q->m_qterms[queryTermIndex2];
 
-				if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
-				if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
+				score *= qterm1.m_userWeight;
+				score *= qterm2.m_userWeight;
+
+				score *= qterm1.m_termWeight; //regular/bigram/synonym
+				score *= qterm2.m_termWeight; //regular/bigram/synonym
 
 				// word spam weights
 				score *= helper1.spamw * helper2.spamw;
@@ -702,23 +686,17 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				// hashgroup modifier
 				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
 				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
-				// if synonym or alternate word form
-				if ( helper1.syn )
-					score *= m_msg39req->m_synonymWeight;
-				if ( helper2.syn )
-					score *= m_msg39req->m_synonymWeight;
 
 				const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(wpi);
-				const float userWeight1 = m_q->m_qterms[queryTermIndex1].m_userWeight;
-				score *= userWeight1;
+				const QueryTerm &qterm1 = m_q->m_qterms[queryTermIndex1];
 				const int queryTermIndex2 = miniMergeBuffer->getTermIndexForBufferPos(wpj);
-				const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
-				score *= userWeight2;
+				const QueryTerm &qterm2 = m_q->m_qterms[queryTermIndex2];
+				
+				score *= qterm1.m_userWeight;
+				score *= qterm2.m_userWeight;
 
-				if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
-				if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
+				score *= qterm1.m_termWeight; //regular/bigram/synonym
+				score *= qterm2.m_termWeight; //regular/bigram/synonym
 
 				// word spam weights
 				score *= helper1.spamw * helper2.spamw;
@@ -804,21 +782,17 @@ float PosdbTable::getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, co
 	// hashgroup modifier
 	score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
 	score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
-	// if synonym or alternate word form
-	if ( helper1.syn ) score *= m_msg39req->m_synonymWeight;
-	if ( helper2.syn ) score *= m_msg39req->m_synonymWeight;
 
 	const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(wpi);
-	const float userWeight1 = m_q->m_qterms[queryTermIndex1].m_userWeight;
-	score *= userWeight1;
+	const QueryTerm &qterm1 = m_q->m_qterms[queryTermIndex1];
 	const int queryTermIndex2 = miniMergeBuffer->getTermIndexForBufferPos(wpj);
-	const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
-	score *= userWeight2;
+	const QueryTerm &qterm2 = m_q->m_qterms[queryTermIndex2];
 
-	if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
-		score *= m_msg39req->m_bigramWeight;
-	if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
-		score *= m_msg39req->m_bigramWeight;
+	score *= qterm1.m_userWeight;
+	score *= qterm2.m_userWeight;
+	
+	score *= qterm1.m_termWeight; //regular/bigram/synonym
+	score *= qterm2.m_termWeight; //regular/bigram/synonym
 
 	// word spam weights
 	score *= helper1.spamw * helper2.spamw;
@@ -977,30 +951,20 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
 			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
 
-			// if synonym or alternate word form
-			if ( helper1.syn ) {
-				score *= m_msg39req->m_synonymWeight;
-			}
-			
-			if ( helper2.syn ) {
-				score *= m_msg39req->m_synonymWeight;
-			}
-
 			{
 				const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(wpi);
-				const float userWeight1 = m_q->m_qterms[queryTermIndex1].m_userWeight;
-				const float termFreqWeight1 = m_q->m_qterms[queryTermIndex1].m_termFreqWeight;
-				score *= userWeight1;
-				score *= termFreqWeight1;
+				const QueryTerm &qterm1 = m_q->m_qterms[queryTermIndex1];
 				const int queryTermIndex2 = miniMergeBuffer->getTermIndexForBufferPos(wpj);
-				const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
-				const float termFreqWeight2 = m_q->m_qterms[queryTermIndex2].m_termFreqWeight;
-				score *= userWeight2;
-				score *= termFreqWeight2;
-				if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
-				if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
+				const QueryTerm &qterm2 = m_q->m_qterms[queryTermIndex2];
+				
+				score *= qterm1.m_termFreqWeight;
+				score *= qterm2.m_termFreqWeight;
+				
+				score *= qterm1.m_userWeight;
+				score *= qterm2.m_userWeight;
+				
+				score *= qterm1.m_termWeight; //regular/bigram/synonym
+				score *= qterm2.m_termWeight; //regular/bigram/synonym
 			}
 
 			// the new logic
@@ -1157,30 +1121,20 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
 			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
 			
-			// if synonym or alternate word form
-			if ( helper1.syn ) {
-				score *= m_msg39req->m_synonymWeight;
-			}
-			
-			if ( helper2.syn ) {
-				score *= m_msg39req->m_synonymWeight;
-			}
-
 			{
 				const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(wpi);
-				const float userWeight1 = m_q->m_qterms[queryTermIndex1].m_userWeight;
-				const float termFreqWeight1 = m_q->m_qterms[queryTermIndex1].m_termFreqWeight;
-				score *= userWeight1;
-				score *= termFreqWeight1;
+				const QueryTerm &qterm1 = m_q->m_qterms[queryTermIndex1];
 				const int queryTermIndex2 = miniMergeBuffer->getTermIndexForBufferPos(wpj);
-				const float userWeight2 = m_q->m_qterms[queryTermIndex2].m_userWeight;
-				const float termFreqWeight2 = m_q->m_qterms[queryTermIndex2].m_termFreqWeight;
-				score *= userWeight2;
-				score *= termFreqWeight2;
-				if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
-				if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
+				const QueryTerm &qterm2 = m_q->m_qterms[queryTermIndex2];
+				
+				score *= qterm1.m_termFreqWeight;
+				score *= qterm2.m_termFreqWeight;
+				
+				score *= qterm1.m_userWeight;
+				score *= qterm2.m_userWeight;
+				
+				score *= qterm1.m_termWeight; //regular/bigram/synonym
+				score *= qterm2.m_termWeight; //regular/bigram/synonym
 			}
 			
 			// word spam weights
@@ -4283,6 +4237,7 @@ void PosdbTable::intersectLists_real() {
 				t->m_score = score;
 				t->m_docId = m_docId;
 				t->m_flags = flags;
+				logTrace(g_conf.m_logTracePosdb, "docid=%15ld score=%f", m_docId, score);
 
 				// use an integer score like lastSpidered timestamp?
 				if ( m_sortByTermNumInt >= 0 ) {

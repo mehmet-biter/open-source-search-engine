@@ -422,7 +422,7 @@ bool Msg40::federatedLoop ( ) {
 		const CollectionRec *cr = g_collectiondb.getRec(m_firstCollnum);
 		tmpQuery.set2(m_si->m_query,
 			      m_si->m_queryLangId,
-			      NULL,
+			      1.0, 1.0, NULL,
 			      true,
 			      m_si->m_allowHighFrequencyTermCache,
 			      cr->m_maxQueryTerms);
