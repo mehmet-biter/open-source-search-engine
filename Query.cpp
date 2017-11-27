@@ -452,7 +452,6 @@ bool Query::setQTerms ( const Words &words ) {
 	std::vector<std::string> wvg_source_words;
 	std::vector<int> wvg_source_word_index; //idx in wvg_source_words -> idx of queryword
 	if(m_word_variations_config.m_languageSpecificWordVariations) {
-log(LOG_INFO,"@@@@@@@@@@@@@@@ enabled");
 		for(int i=0; i<m_numWords; i++) {
 			const QueryWord *qw  = &m_qwords[i];
 			if(qw->m_inQuotes) continue;
@@ -470,10 +469,8 @@ log(LOG_INFO,"@@@@@@@@@@@@@@@ enabled");
 		auto wvg(WordVariationGenerator::get_generator(m_langId));
 		m_wordVariations = wvg->query_variations(wvg_source_words, m_word_variations_config.m_word_variations_weights, m_word_variations_config.m_word_variations_threshold);
 		nqt += m_wordVariations.size();
-	} else {
+	} else
 		m_wordVariations.clear();
-log(LOG_INFO,"@@@@@@@@@@@@@@@ disabled");
-}
 
 
 	m_numTermsUntruncated = nqt;
@@ -1065,7 +1062,6 @@ log(LOG_INFO,"@@@@@@@@@@@@@@@ disabled");
 			n++;
 		}
 	}
-else log(LOG_INFO,"@@@@@@@@@@@@@@@ disabled");	
 	m_numTerms = n;
 	
 	if ( n > ABS_MAX_QUERY_TERMS ) { g_process.shutdownAbort(true); }
