@@ -293,7 +293,7 @@ void DocProcess::processFile(void *item) {
 
 	fileItem->m_docProcess->waitPendingDocCount(0);
 
-	if (isInterrupted) {
+	if (isInterrupted || fileItem->m_docProcess->m_stop) {
 		log(LOG_INFO, "Interrupted processing of %s", fileItem->m_docProcess->m_tmpFilename.c_str());
 		delete fileItem;
 		return;
