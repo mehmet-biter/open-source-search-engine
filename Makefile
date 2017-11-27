@@ -60,7 +60,7 @@ OBJS_O2 = \
 OBJS_O3 = \
 	BlockList.o \
 	ContentTypeBlockList.o \
-	DocDelete.o DnsBlockList.o \
+	DocDelete.o DocProcess.o DocRebuild.o DocReindex.o DnsBlockList.o \
 	IPAddressChecks.o \
 	LanguageResultOverride.o Linkdb.o \
 	Msg40.o \

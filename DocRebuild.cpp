@@ -16,16 +16,16 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
-#include "DocDelete.h"
+#include "DocRebuild.h"
 #include "XmlDoc.h"
 
-DocDelete g_docDelete("docdelete.txt", false);
-DocDelete g_docDeleteUrl("docdeleteurl.txt", true);
+DocRebuild g_docRebuild("docrebuild.txt", false);
+DocRebuild g_docRebuildUrl("docrebuildurl.txt", true);
 
-DocDelete::DocDelete(const char *filename, bool isUrl)
+DocRebuild::DocRebuild(const char *filename, bool isUrl)
 	: DocProcess(filename, isUrl, updateXmldoc) {
 }
 
-void DocDelete::updateXmldoc(XmlDoc *xmlDoc) {
-	xmlDoc->m_deleteFromIndex = true;
+void DocRebuild::updateXmldoc(XmlDoc *xmlDoc) {
+	xmlDoc->m_recycleContent = true;
 }

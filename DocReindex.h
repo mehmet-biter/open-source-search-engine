@@ -16,16 +16,19 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
-#include "DocDelete.h"
-#include "XmlDoc.h"
+#ifndef FX_DOCREINDEX_H
+#define FX_DOCREINDEX_H
 
-DocDelete g_docDelete("docdelete.txt", false);
-DocDelete g_docDeleteUrl("docdeleteurl.txt", true);
+#include "DocProcess.h"
 
-DocDelete::DocDelete(const char *filename, bool isUrl)
-	: DocProcess(filename, isUrl, updateXmldoc) {
-}
+class DocReindex : public DocProcess {
+public:
+	DocReindex(const char *filename, bool isUrl);
 
-void DocDelete::updateXmldoc(XmlDoc *xmlDoc) {
-	xmlDoc->m_deleteFromIndex = true;
-}
+	static void updateXmldoc(XmlDoc *xmlDoc);
+};
+
+extern DocReindex g_docReindex;
+extern DocReindex g_docReindexUrl;
+
+#endif //FX_DOCREINDEX_H
