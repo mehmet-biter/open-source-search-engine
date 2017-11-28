@@ -111,6 +111,7 @@ XmlDoc::XmlDoc() {
 	m_robotsNoFollow = false;
 	m_robotsNoArchive = false;
 	m_robotsNoSnippet = false;
+	m_addSpiderRequest = false;
 	m_dupTrPtr = NULL;
 	m_oldTitleRec = NULL;
 	m_filteredContent = NULL;
@@ -174,6 +175,7 @@ void XmlDoc::reset ( ) {
 	m_robotsNoArchive = false;
 	m_robotsNoSnippet = false;
 	m_hostNameServers.clear();
+	m_addSpiderRequest = false;
 
 	m_doConsistencyTesting = g_conf.m_doConsistencyTesting;
 
@@ -1549,9 +1551,8 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 
 	// set other fields besides key
 	sreq->m_firstIp              = m_firstIp;
-	sreq->m_hostHash32           = m_hostHash32a;
-	//sreq->m_domHash32            = m_domHash32;
-	//sreq->m_siteNumInlinks       = m_siteNumInlinks;
+	sreq->m_hostHash32           = getHostHash32a();
+	sreq->m_domHash32            = getDomHash32();
 	//sreq->m_pageNumInlinks     = m_pageNumInlinks;
 	sreq->m_hopCount             = m_hopCount;
 
@@ -2553,12 +2554,15 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	}
 
 	XmlDoc *od = NULL;
-	if ( *pod ) od = *pod;
+	if (*pod) {
+		od = *pod;
+	}
 
 	// if recycling content is true you gotta have an old title rec.
-	if ( ! od && m_recycleContent ) {
+	if (!od && m_recycleContent) {
 		m_indexCode = ENOTITLEREC;
 		m_indexCodeValid = true;
+		m_useSpiderdb = false;
 		logTrace( g_conf.m_logTraceXmlDoc, "END, ENOTITLEREC" );
 		return &m_indexCode;
 	}
@@ -6238,13 +6242,19 @@ char **XmlDoc::getOldTitleRec() {
 	}
 	// if url not valid, use NULL
 	char *u = NULL;
-	if ( docId == 0LL && ptr_firstUrl ) u = getFirstUrl()->getUrl();
-	// if both are not given that is a problem
-	if ( docId == 0LL && ! u ) {
-		log(LOG_WARN, "doc: no url or docid provided to get old doc");
-		g_errno = EBADENGINEER;
-		return NULL;
+	if (docId == 0LL) {
+		if (ptr_firstUrl || m_firstUrlValid) {
+			u = getFirstUrl()->getUrl();
+		}
+
+		// if both are not given that is a problem
+		if (!u) {
+			log(LOG_WARN, "doc: no url or docid provided to get old doc");
+			g_errno = EBADENGINEER;
+			return NULL;
+		}
 	}
+
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) {
 		return NULL;
@@ -13183,16 +13193,9 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	int32_t needSpiderdb1 = forDelete ? 0 : (sizeof(SpiderReply) + 1);
 	need += needSpiderdb1;
 
-	// if injecting we add a spiderrequest to be able to update it
-	// but don't do this if it is pagereindex. why is pagereindex
-	// setting the injecting flag anyway?
 	int32_t needSpiderdbRequest = 0;
-	if (m_sreqValid && m_sreq.m_isInjecting && m_sreq.m_fakeFirstIp && !m_sreq.m_forceDelete) {
-		// NO! because when injecting a warc and the subdocs
-		// it contains, gb then tries to spider all of them !!! sux...
-		needSpiderdbRequest = 0;
-	} else if (m_useSpiderdb && m_useSecondaryRdbs) {
-		// or if we are rebuilding spiderdb
+	if (m_useSpiderdb && (m_useSecondaryRdbs || m_addSpiderRequest)) {
+		// if we are rebuilding spiderdb / we need to force add it
 		needSpiderdbRequest = sizeof(SpiderRequest) + m_firstUrl.getUrlLen() + 1;
 	}
 	need += needSpiderdbRequest;
@@ -13557,7 +13560,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		SpiderRequest revisedReq;
 
  		// if doing a repair/rebuild of spiderdb...
-		if (m_useSecondaryRdbs) {
+		if (m_useSecondaryRdbs || m_addSpiderRequest) {
 			getRebuiltSpiderRequest(&revisedReq);
 		} else {
 			// this fills it in for doing injections
@@ -14470,9 +14473,11 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		int64_t lock1 = makeLockTableKey(&m_sreq);
 		int64_t lock2 = makeLockTableKey(&m_srep);
 		if ( lock1 != lock2 ) {
-			log("build: lock1 != lock2 lock mismatch for %s",
-			    m_firstUrl.getUrl());
-			g_process.shutdownAbort(true);
+			logError("build: lock1(%" PRId64":%d) != lock2(%" PRId64":%d) lock mismatch for %s",
+			         m_sreq.getUrlHash48(), m_sreq.m_firstIp,
+			         m_srep.getUrlHash48(), m_srep.m_firstIp,
+			         m_firstUrl.getUrl());
+			gbshutdownLogicError();
 		}
 	}
 

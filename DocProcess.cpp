@@ -47,13 +47,21 @@ struct DocProcessDocItem {
 		: m_docProcess(docProcess)
 		, m_key(key)
 		, m_lastPos(lastPos)
-		, m_xmlDoc(new XmlDoc()) {
+		, m_xmlDoc(new XmlDoc())
+		, m_msg0()
+		, m_spiderdbList()
+		, m_spiderdbListRequested(false)
+		, m_spiderdbListProcessed(false) {
 	}
 
 	DocProcess *m_docProcess;
 	std::string m_key;
 	int64_t m_lastPos;
 	XmlDoc *m_xmlDoc;
+	Msg0 m_msg0;
+	RdbList m_spiderdbList;
+	bool m_spiderdbListRequested;
+	bool m_spiderdbListProcessed;
 };
 
 static bool docProcessDisabled() {
@@ -261,15 +269,19 @@ void DocProcess::processFile(void *item) {
 				sreq.setFromAddUrl(key.c_str());
 				sreq.m_isAddUrl = 0;
 
+				logTrace(g_conf.m_logTraceDocProcess, "Adding url=%s", key.c_str());
 				docItem->m_xmlDoc->set4(&sreq, nullptr, "main", nullptr, 0);
 			} else {
 				int64_t docId = strtoll(line.c_str(), nullptr, 10);
 
+				if (docId == 0) {
+					// ignore invalid docId
+					continue;
+				}
+
+				logTrace(g_conf.m_logTraceDocProcess, "Adding docid=%" PRId64, docId);
 				docItem->m_xmlDoc->set3(docId, "main", 0);
 			}
-
-			docItem->m_xmlDoc->m_blockedDoc = false;
-			docItem->m_xmlDoc->m_blockedDocValid = true;
 
 			docItem->m_docProcess->m_updateXmldocFunc(docItem->m_xmlDoc);
 			docItem->m_xmlDoc->setCallback(docItem, processedDoc);
@@ -311,6 +323,52 @@ void DocProcess::processFile(void *item) {
 void DocProcess::processDoc(void *item) {
 	DocProcessDocItem *docItem = static_cast<DocProcessDocItem*>(item);
 	XmlDoc *xmlDoc = docItem->m_xmlDoc;
+
+	// prepare
+	if (!xmlDoc->m_loaded && !xmlDoc->loadFromOldTitleRec()) {
+		return;
+	}
+
+	int32_t *firstIp = xmlDoc->getFirstIp();
+	if (!firstIp || firstIp == (int32_t*)-1) {
+		// blocked
+		return;
+	}
+
+	int32_t *siteNumInLinks = xmlDoc->getSiteNumInlinks();
+	if (!siteNumInLinks || siteNumInLinks == (int32_t*)-1) {
+		// blocked
+		return;
+	}
+
+	// set spider request
+	if (!docItem->m_spiderdbListRequested) {
+		int64_t urlHash48 = xmlDoc->getFirstUrlHash48();
+		key128_t startKey = Spiderdb::makeKey(*firstIp, urlHash48, true, 0, false);
+		key128_t endKey = Spiderdb::makeKey(*firstIp, urlHash48, true, MAX_DOCID, false);
+
+		docItem->m_spiderdbListRequested = true;
+
+		if (!docItem->m_msg0.getList(-1, RDB_SPIDERDB, xmlDoc->m_collnum, &docItem->m_spiderdbList, (const char *)&startKey,
+		                  (const char *)&endKey,
+		                  1000000, docItem, processedDoc, 0, true, true, -1, 0, -1, 10000, false, false, -1)) {
+			// blocked
+			return;
+		}
+	}
+
+	if (!docItem->m_spiderdbListProcessed) {
+		if (docItem->m_spiderdbList.isEmpty()) {
+			xmlDoc->getRebuiltSpiderRequest(&xmlDoc->m_sreq);
+			xmlDoc->m_addSpiderRequest = true;
+		} else {
+			SpiderRequest *sreq = reinterpret_cast<SpiderRequest *>(docItem->m_spiderdbList.getCurrentRec());
+			xmlDoc->m_sreq = *sreq;
+		}
+
+		xmlDoc->m_sreqValid = true;
+		docItem->m_spiderdbListProcessed = true;
+	}
 
 	// done
 	if (xmlDoc->m_indexedDoc || xmlDoc->indexDoc()) {

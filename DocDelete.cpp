@@ -27,5 +27,8 @@ DocDelete::DocDelete(const char *filename, bool isUrl)
 }
 
 void DocDelete::updateXmldoc(XmlDoc *xmlDoc) {
+	xmlDoc->m_blockedDoc = false;
+	xmlDoc->m_blockedDocValid = true;
+
 	xmlDoc->m_deleteFromIndex = true;
 }
