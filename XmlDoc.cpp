@@ -461,10 +461,7 @@ int32_t XmlDoc::getSpideredTime ( ) {
 // . we need this so PageGet.cpp can get the cached web page
 // . but not for Msg20::getSummary(), that uses XmlDoc::set(Msg20Request*)
 // . returns false and sets g_errno on error
-bool XmlDoc::set3 ( int64_t  docId       ,
-		    const char   *coll        ,
-		    int32_t       niceness    ) {
-
+bool XmlDoc::set3(int64_t docId, const char *coll, int32_t niceness) {
 	reset();
 
 	// this is true
@@ -1328,9 +1325,9 @@ static void indexDoc3(void *state) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, indexDoc blocked");
 		return;
 	}
-	
+
 	// otherwise, all done, call the caller callback
-	
+
 	that->m_indexedDoc = true;
 
 	logTrace(g_conf.m_logTraceXmlDoc, "END");
@@ -1543,9 +1540,6 @@ void XmlDoc::getRevisedSpiderRequest ( SpiderRequest *revisedReq ) {
 
 	// this must be valid for us of course
 	if ( ! m_firstIpValid ) { g_process.shutdownAbort(true); }
-
-	// wtf? it might be invalid!!! parent caller will handle it...
-	//if ( m_firstIp == 0 || m_firstIp == -1 ) { g_process.shutdownAbort(true); }
 
 	// store the real ip in there now
 	revisedReq->m_firstIp = m_firstIp;
@@ -7117,7 +7111,7 @@ int32_t *XmlDoc::getFinalCrawlDelay() {
 	// getIsAllowed already sets m_crawlDelayValid to true
 	m_finalCrawlDelay = m_crawlDelay;
 
-	// Changed previously hard coded default of 250ms to the 
+	// Changed previously hard coded default of 250ms to the
 	// configurable delay for sites with no robots.txt
 	if ( m_crawlDelay < 0 )	{
 		m_finalCrawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
@@ -8313,7 +8307,7 @@ char **XmlDoc::gotHttpReply ( ) {
 	//if m_errno isn't set then take whatever from g_errno, such as econnreset
 	if(!m_errno)
 		m_errno = g_errno;
-	
+
 	// save it
 	int32_t saved = g_errno;
 	// note it
@@ -11331,7 +11325,10 @@ int32_t *XmlDoc::getSpiderPriority ( ) {
 	}
 
 	// sanity check
-	if ( *ufn < 0 ) { g_process.shutdownAbort(true); }
+	if ( *ufn < 0 ) {
+		g_process.shutdownAbort(true);
+	}
+
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END. No collection" );
@@ -14125,12 +14122,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// diffbot guys, robots.txt, frames, sshould not be here
 	if ( m_isChildDoc ) { g_process.shutdownAbort(true); }
 
-	// . get the mime first
-	// . if we are setting XmlDoc from a titleRec, this causes
-	//   doConsistencyCheck() to block and core
-	//HttpMime *mime = getMime();
-	//if ( ! mime || mime == (HttpMime *)-1 ) return (SpiderReply *)mime;
-
 	// if we had a critical error, do not do this
 	int32_t *indexCode = getIndexCode();
 	if (! indexCode || indexCode == (void *)-1)
@@ -14138,10 +14129,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 
 	TagRec *gr = getTagRec();
 	if ( ! gr || gr == (TagRec *)-1 ) return (SpiderReply *)gr;
-
-	// can't call getIsPermalink() here without entering a dependency loop
-	//char *pp = getIsUrlPermalinkFormat();
-	//if ( !pp || pp == (char *)-1 ) return (SpiderReply *)pp;
 
 	// the site hash
 	int32_t *sh32 = getSiteHash32();
@@ -14198,10 +14185,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	m_srep.m_errCount = 0;
 	m_srep.m_sameErrCount = 0;
 
-	// otherwise, inherit from oldsr to be safe
-	//if ( m_sreqValid )
-	//	m_srep.m_firstIp = m_sreq.m_firstIp;
-
 	// do not inherit this one, it MIGHT HAVE CHANGE!
 	m_srep.m_siteHash32 = m_siteHash32;
 
@@ -14212,12 +14195,11 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	if ( ! m_tagRecValid               ) { g_process.shutdownAbort(true); }
 	if ( ! m_ipValid                   ) { g_process.shutdownAbort(true); }
 	if ( ! m_siteHash32Valid           ) { g_process.shutdownAbort(true); }
-	//if ( ! m_spideredTimeValid         ) { g_process.shutdownAbort(true); }
 
 	// . set other fields besides key
 	// . crap! if we are the "qatest123" collection then m_spideredTime
 	//   was read from disk usually and is way in the past! watch out!!
-	m_srep.m_spideredTime = getSpideredTime();//m_spideredTime;
+	m_srep.m_spideredTime = getSpideredTime();
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
@@ -14366,7 +14348,9 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			// we should have had a spider request, because that's
 			// where we got the m_contentHash32 we passed to
 			// Msg13Request.
-			if ( ! m_sreqValid ) { g_process.shutdownAbort(true); }
+			if (!m_sreqValid) {
+				g_process.shutdownAbort(true);
+			}
 			// make it a success
 			m_srep.m_errCode = 0;
 			// and no error count, it wasn't an error per se
@@ -14440,22 +14424,16 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	}
 
 	// sanity checks
-	//if(! m_sreqValid                ) { g_process.shutdownAbort(true); }
 	if ( ! m_siteNumInlinksValid       ) { g_process.shutdownAbort(true); }
 	if ( ! m_hopCountValid             ) { g_process.shutdownAbort(true); }
 	if ( ! m_langIdValid               ) { g_process.shutdownAbort(true); }
 	if ( ! m_isRSSValid                ) { g_process.shutdownAbort(true); }
 	if ( ! m_isPermalinkValid          ) { g_process.shutdownAbort(true); }
-	//if ( ! m_pageNumInlinksValid     ) { g_process.shutdownAbort(true); }
 	if ( ! m_percentChangedValid       ) { g_process.shutdownAbort(true); }
-	//if ( ! m_isSpamValid               ) { g_process.shutdownAbort(true); }
-	//if ( ! m_crawlDelayValid           ) { g_process.shutdownAbort(true); }
 
 	// httpStatus is -1 if not found (like for empty http replies)
 	m_srep.m_httpStatus = *hs;
 
-	// zero if none
-	//m_srep.m_percentChangedPerDay = 0;
 	// . only if had old one
 	// . we use this in url filters to set the respider wait time usually
 	if ( od ) {
@@ -14984,31 +14962,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// our original hopcount of 0 with this guy that has a
 		// hopcount of 1. that sux... so don't do it.
 		if ( ksr.getUrlHash48() == myUh48 ) continue;
-
-		// . technically speaking we do not have any reply so we
-		//   should not be calling this! cuz we don't have all the info
-		// . see if banned or filtered, etc.
-		// . at least try to call it. getUrlFilterNum() should
-		//   break out and return -1 if it encounters a filter rule
-		//   that it does not have enough info to answer.
-		//   so if your first X filters all map to a "FILTERED"
-		//   priority and this url matches one of them we can
-		//   confidently toss this guy out.
-		// . show this for debugging!
-		// int32_t ufn = ::getUrlFilterNum ( &ksr , NULL, m_spideredTime ,
-		// 			       false, m_niceness, cr,
-		// 			       false,//true , // outlink?
-		// 			       NULL ); // quotatable
-		// logf(LOG_DEBUG,"build: ufn=%" PRId32" for %s",
-		//      ufn,ksr.m_url);
-
-		// bad?
-		//if ( ufn < 0 ) {
-		//	log("build: link %s had bad url filter."
-		//	    , ksr.m_url );
-		//	g_errno = EBADENGINEER;
-		//	return NULL;
-		//}
 
 		// debug
 		if ( g_conf.m_logDebugUrlAttempts ) {
