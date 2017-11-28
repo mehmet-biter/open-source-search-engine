@@ -22,6 +22,10 @@ public:
 						    const std::vector<std::string> &source_words,
 						    const std::vector<std::string> &lower_source_words,
 						    float weight);
+	void transliterate_proper_noun_acute_accent(std::vector<WordVariationGenerator::Variation> &variations,
+						    const std::vector<std::string> &source_words,
+						    const std::vector<std::string> &lower_source_words,
+						    float weight);
 };
 
 static WordVariationGenerator_danish s_WordVariationGenerator_danish;
@@ -56,8 +60,10 @@ std::vector<WordVariationGenerator::Variation> WordVariationGenerator_danish::qu
 		find_simple_attribute_difference_wordforms(variations,lower_source_words,sto::word_form_attribute_t::grammaticalNumber_plural,sto::word_form_attribute_t::grammaticalNumber_singular, weights.noun_plural_singular);
 	}
 	
-	if(weights.proper_noun_spelling_variants >= threshold)
+	if(weights.proper_noun_spelling_variants >= threshold) {
 		transliterate_proper_noun_aring_and_aa(variations,source_words,lower_source_words,weights.proper_noun_spelling_variants);
+		transliterate_proper_noun_acute_accent(variations,source_words,lower_source_words,weights.proper_noun_spelling_variants);
+	}
 	
 	//filter out duplicates and variations below threshold
 	//syn-todo: when filtering out duplicates choose the one with the highest weight
@@ -156,7 +162,7 @@ void WordVariationGenerator_danish::transliterate_proper_noun_aring_and_aa(std::
 			//do å -> aa transliteration
 			std::string tmp(source_word);
 			for(std::string::size_type p=tmp.find(unicode_00E5); p!=tmp.npos; p=tmp.find(unicode_00E5)) {
-				tmp.replace(p,unicode_00E5.length(), "aa");
+				tmp.replace(p,unicode_00E5.length(), double_aa);
 			}
 			WordVariationGenerator::Variation v;
 			v.word = tmp;
@@ -170,6 +176,40 @@ void WordVariationGenerator_danish::transliterate_proper_noun_aring_and_aa(std::
 			std::string tmp(source_word);
 			for(std::string::size_type p=tmp.find(double_aa); p!=tmp.npos; p=tmp.find(double_aa)) {
 				tmp.replace(p,double_aa.length(), unicode_00E5);
+			}
+			WordVariationGenerator::Variation v;
+			v.word = tmp;
+			v.weight = weight;
+			v.source_word_start = i;
+			v.source_word_end = i+1;
+			variations.push_back(v);
+		}
+	}
+}
+
+
+void WordVariationGenerator_danish::transliterate_proper_noun_acute_accent(std::vector<WordVariationGenerator::Variation> &variations,
+									   const std::vector<std::string> &/*source_words*/,
+									   const std::vector<std::string> &lower_source_words,
+									   float weight)
+{
+	//Acute accent / accent aigu is the only accent used in Danish and it is always optional.
+	//It is used for indicating where the stress in the word is and for disambiguation and reading help.
+	//It is always optional and rare. Examples:
+	//  - ...alle vs. ...allé          (...-street)
+	//  - Rene vs. René                (name, originally from French)
+	//  - Implementer vs. implementér  (imperative)
+	//But since it is optional we can always strip the accent away
+	
+	std::string unicode_00E9("é",2);
+	std::string plain_e("e",1);
+	for(unsigned i=0; i<lower_source_words.size(); i++) {
+		auto source_word(lower_source_words[i]);
+		if(source_word.find(unicode_00E9)!=source_word.npos) {
+			//do å -> aa transliteration
+			std::string tmp(source_word);
+			for(std::string::size_type p=tmp.find(unicode_00E9); p!=tmp.npos; p=tmp.find(unicode_00E9)) {
+				tmp.replace(p,unicode_00E9.length(), plain_e);
 			}
 			WordVariationGenerator::Variation v;
 			v.word = tmp;
