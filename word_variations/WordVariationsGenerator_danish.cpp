@@ -17,6 +17,11 @@ public:
 						        const std::vector<std::string> &source_words,
 						        sto::word_form_attribute_t from_attr, sto::word_form_attribute_t to_attr,
 						        float weight);
+
+	void transliterate_proper_noun_aring_and_aa(std::vector<WordVariationGenerator::Variation> &variations,
+						    const std::vector<std::string> &source_words,
+						    const std::vector<std::string> &lower_source_words,
+						    float weight);
 };
 
 static WordVariationGenerator_danish s_WordVariationGenerator_danish;
@@ -51,8 +56,11 @@ std::vector<WordVariationGenerator::Variation> WordVariationGenerator_danish::qu
 		find_simple_attribute_difference_wordforms(variations,lower_source_words,sto::word_form_attribute_t::grammaticalNumber_plural,sto::word_form_attribute_t::grammaticalNumber_singular, weights.noun_plural_singular);
 	}
 	
+	if(weights.proper_noun_spelling_variants >= threshold)
+		transliterate_proper_noun_aring_and_aa(variations,source_words,lower_source_words,weights.proper_noun_spelling_variants);
+	
 	//filter out duplicates and variations below threshold
-	//syn-todo: when filtering out duplicates choose the one with the higest weight
+	//syn-todo: when filtering out duplicates choose the one with the highest weight
 	std::set<std::string> seen_variations;
 	for(auto iter = variations.begin(); iter!=variations.end(); ) {
 		if(iter->weight < threshold)
@@ -114,6 +122,61 @@ void WordVariationGenerator_danish::find_simple_attribute_difference_wordforms(s
 					}
 				}
 			}
+		}
+	}
+}
+
+
+void WordVariationGenerator_danish::transliterate_proper_noun_aring_and_aa(std::vector<WordVariationGenerator::Variation> &variations,
+									   const std::vector<std::string> &/*source_words*/,
+									   const std::vector<std::string> &lower_source_words,
+									   float weight)
+{
+	//In 1948 the "bolle-å" was introduced (Unicode U+00C5 and U+00E5). Prior to that the letter was written as two a's, eg "vestergaard".
+	//Some people kept using double-a in their names, mostly in surnames. All place names changed to bolle-å. For various reasons some cities
+	//and towns insisted on using double-a. In 1984 double-a was allowed in place names. Some cities switched immediately to double-a (eg. Aabenraa),
+	//others kept using bolle-å, some changed back to double-a much later. Some people keep using bolle-å even if a name's official spelling is
+	//with double-a.
+	//Result:
+	//  - First names are "usually" with bolle-å
+	//  - Surnames can be either.
+	//  - Town and city names: Either and both are used
+	//  - Other place names: typically bolle-å is used
+	
+	//Limitation: We don't have a complete list of proper nouns (town, cities, places, first names, surnames, ...). Users typically don't write
+	//proper nouns using capitalization, so we can't even use that as a hint.
+	//So we transliterate all occurrences and hope for the best. It will result in some hilarity, eg the middle-eastern name Aamin where the
+	//two a's represent a long a-sound will generate the variation "Åmin". Oh well.
+	
+	std::string unicode_00E5("å",2);
+	std::string double_aa("aa",2);
+	for(unsigned i=0; i<lower_source_words.size(); i++) {
+		auto source_word(lower_source_words[i]);
+		if(source_word.length()>=3 && source_word.find(unicode_00E5)!=source_word.npos) {
+			//do å -> aa transliteration
+			std::string tmp(source_word);
+			for(std::string::size_type p=tmp.find(unicode_00E5); p!=tmp.npos; p=tmp.find(unicode_00E5)) {
+				tmp.replace(p,unicode_00E5.length(), "aa");
+			}
+			WordVariationGenerator::Variation v;
+			v.word = tmp;
+			v.weight = weight;
+			v.source_word_start = i;
+			v.source_word_end = i+1;
+			variations.push_back(v);
+		}
+		if(source_word.length()>=4 && source_word.find(double_aa)!=source_word.npos) {
+			//do aa -> å transliteration
+			std::string tmp(source_word);
+			for(std::string::size_type p=tmp.find(double_aa); p!=tmp.npos; p=tmp.find(double_aa)) {
+				tmp.replace(p,double_aa.length(), unicode_00E5);
+			}
+			WordVariationGenerator::Variation v;
+			v.word = tmp;
+			v.weight = weight;
+			v.source_word_start = i;
+			v.source_word_end = i+1;
+			variations.push_back(v);
 		}
 	}
 }
