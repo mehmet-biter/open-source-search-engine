@@ -11,6 +11,8 @@ public:
 	using WordVariationGenerator::WordVariationGenerator;
 	bool load_lexicon(const char *filename);
 	void unload_lexicon() { lexicon.unload(); }
+
+	std::vector<std::string> lower_words(const std::vector<std::string> &source_words);
 };
 
 #endif

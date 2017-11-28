@@ -32,22 +32,23 @@ bool initializeWordVariationGenerator_Danish() {
 
 
 std::vector<WordVariationGenerator::Variation> WordVariationGenerator_danish::query_variations(const std::vector<std::string> &source_words, const WordVariationWeights& weights, float threshold) {
+	std::vector<std::string> lower_source_words(lower_words(source_words));
 	std::vector<WordVariationGenerator::Variation> variations;
 	if(weights.noun_indefinite_definite >= threshold) {
 		//find indefinite-noun -> definite-noun variations (eg. "kat" -> "katten")
-		find_simple_attribute_difference_wordforms(variations,source_words,sto::word_form_attribute_t::definiteness_indefinite,sto::word_form_attribute_t::definiteness_definite, weights.noun_indefinite_definite);
+		find_simple_attribute_difference_wordforms(variations,lower_source_words,sto::word_form_attribute_t::definiteness_indefinite,sto::word_form_attribute_t::definiteness_definite, weights.noun_indefinite_definite);
 	}
 	if(weights.noun_definite_indefinite >= threshold) {
 		//find definite-noun -> indefinite-noun variations (eg. "katten" -> "kat")
-		find_simple_attribute_difference_wordforms(variations,source_words,sto::word_form_attribute_t::definiteness_definite,sto::word_form_attribute_t::definiteness_indefinite, weights.noun_definite_indefinite);
+		find_simple_attribute_difference_wordforms(variations,lower_source_words,sto::word_form_attribute_t::definiteness_definite,sto::word_form_attribute_t::definiteness_indefinite, weights.noun_definite_indefinite);
 	}
 	if(weights.noun_singular_plural >= threshold) {
 		//find singular->plural variations (eg. "kat" -> "katte")
-		find_simple_attribute_difference_wordforms(variations,source_words,sto::word_form_attribute_t::grammaticalNumber_singular,sto::word_form_attribute_t::grammaticalNumber_plural, weights.noun_singular_plural);
+		find_simple_attribute_difference_wordforms(variations,lower_source_words,sto::word_form_attribute_t::grammaticalNumber_singular,sto::word_form_attribute_t::grammaticalNumber_plural, weights.noun_singular_plural);
 	}
 	if(weights.noun_plural_singular >= threshold) {
 		//find plural -> singular variations (eg. "kattene" -> "katten")
-		find_simple_attribute_difference_wordforms(variations,source_words,sto::word_form_attribute_t::grammaticalNumber_plural,sto::word_form_attribute_t::grammaticalNumber_singular, weights.noun_plural_singular);
+		find_simple_attribute_difference_wordforms(variations,lower_source_words,sto::word_form_attribute_t::grammaticalNumber_plural,sto::word_form_attribute_t::grammaticalNumber_singular, weights.noun_plural_singular);
 	}
 	
 	//filter out duplicates and variations below threshold
