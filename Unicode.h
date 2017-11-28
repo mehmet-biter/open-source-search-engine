@@ -281,36 +281,23 @@ inline int32_t utf8Encode(UChar32 c, char* buf) {
 }
 
 // return the utf8 character at "p" as a 32-bit unicode character
-inline UChar32 utf8Decode(const char *p){
-	// single byte character
-	if (!(*p & 0x80)){
-		//*next = (char*) p + 1;
+inline UChar32 utf8Decode(const char *p) {
+	uint8_t c0 = static_cast<uint8_t>(p[0]);
+	if((c0&0x80)==0x00) { //single byte character
 		return (UChar32)*p;
-	}
-	// 2 bytes
-	else if (!(*p & 0x20)){
-		//*next = (char*) p + 2;
+	} else if((c0&0xc0)==0xc0 && (p[1]&0xc0)==0x80) { //two or more bytes
 		return (UChar32)((*p & 0x1f)<<6 | 
 				(*(p+1) & 0x3f));
-	}
-	// 3 bytes
-	else if (!(*p & 0x10)){
-		//*next = (char*) p + 3;
+	} else if((c0&0xf0)==0xe0 && (p[1]&0xc0)==0x80 && (p[2]&0xc0)==0x80) { //three or more bytes
 		return (UChar32)((*p & 0x0f)<<12 | 
 				(*(p+1) & 0x3f)<<6 |
 				(*(p+2) & 0x3f));
-	}
-	// 4 bytes
-	else if (!(*p & 0x08)){
-		//*next = (char*) p + 4;
+	} else if((c0&0xf8)==0xf0 && (p[1]&0xc0)==0x80 && (p[2]&0xc0)==0x80 && (p[3]&0xc0)==0x80) { //three or more bytes
 		return (UChar32)((*p & 0x07)<<18 | 
 				(*(p+1) & 0x3f)<<12 |
 				(*(p+2) & 0x3f)<<6 |
 				(*(p+3) & 0x3f));
-	}
-	// invalid
-	else{
-		//*next = (char*) p + 1;
+	} else { //invalid
 		return (UChar32)-1;
 	}
 }
