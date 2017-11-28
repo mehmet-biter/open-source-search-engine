@@ -501,47 +501,77 @@ static void loadFromOldTitleRecWrapper ( void *state ) {
 }
 
 // returns false if blocked, returns true and sets g_errno on error otherwise
-bool XmlDoc::loadFromOldTitleRec ( ) {
-	// . we are an entry point.
-	// . if anything blocks, this will be called when it comes back
-	if ( ! m_masterLoop ) {
-		m_masterLoop  = loadFromOldTitleRecWrapper;
-		m_masterState = this;
-	}
+bool XmlDoc::loadFromOldTitleRec() {
+	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
+
 	// if we already loaded!
-	if ( m_loaded ) return true;
-	// if set from a docid, use msg22 for this!
-	char **otr = getOldTitleRec ( );
-	// error?
-	if ( ! otr ) return true;
-	// blocked?
-	if ( otr == (void *)-1 ) return false;
-	// this is a not found
-	if ( ! *otr ) {
-		// so we do not retry
-		m_loaded = true;
-		// make it an error
-		g_errno = ENOTFOUND;
+	if (m_loaded) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END already loaded, return true");
 		return true;
 	}
+
+	// . we are an entry point.
+	// . if anything blocks, this will be called when it comes back
+	if (!m_masterLoop) {
+		m_masterLoop = loadFromOldTitleRecWrapper;
+		m_masterState = this;
+	}
+
+	// if set from a docid, use msg22 for this!
+	char **otr = getOldTitleRec();
+	// error?
+	if (!otr) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END getOldTitleRec error, return true");
+		return true;
+	}
+
+	// blocked?
+	if (otr == (void *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END getOldTitleRec blocked, return false");
+		return false;
+	}
+
+	// this is a not found
+	if (!*otr) {
+		// so we do not retry
+		m_loaded = true;
+
+		// make it an error
+		g_errno = ENOTFOUND;
+
+		logTrace(g_conf.m_logTraceXmlDoc, "END getOldTitleRec not found, return true");
+		return true;
+	}
+
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return true;
+	if (!cr) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END getCollRec not found, return true");
+		return true;
+	}
+
 	// use that. decompress it! this will also set
 	// m_setFromTitleRec to true
-	if ( ! set2 ( m_oldTitleRec     ,
-		      m_oldTitleRecSize , // maxSize
-		      cr->m_coll            ,
-		      NULL              , // pbuf
-		      m_niceness        )) {
+	if (!set2(m_oldTitleRec, m_oldTitleRecSize, cr->m_coll, nullptr, m_niceness)) {
 		// we are now loaded, do not re-call
 		m_loaded = true;
+
+		logTrace(g_conf.m_logTraceXmlDoc, "END set2 error, return true");
+
 		// return true with g_errno set on error uncompressing
 		return true;
 	}
+
 	// we are now loaded, do not re-call
 	m_loaded = true;
+
 	// sanity check
-	if ( ! m_titleRecBufValid ) { g_process.shutdownAbort(true); }
+	if (!m_titleRecBufValid) {
+		logError("invalid titleRefBuf");
+		gbshutdownLogicError();
+	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "END return true");
+
 	// good to go
 	return true;
 }
