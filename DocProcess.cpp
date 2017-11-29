@@ -329,6 +329,28 @@ void DocProcess::processDoc(void *item) {
 		return;
 	}
 
+	// validate that we got oldTitleRec
+	char **oldTitleRec = xmlDoc->getOldTitleRec();
+	if (!oldTitleRec || oldTitleRec == (char**)-1) {
+		// must not be blocked at this point
+		gbshutdownLogicError();
+	}
+
+	if (!docItem->m_docProcess->m_isUrl && *oldTitleRec == nullptr) {
+		// oldTitleRec is mandatory for docid based docProcess
+		xmlDoc->m_indexCode = ENOTFOUND;
+		xmlDoc->m_indexCodeValid = true;
+
+		xmlDoc->logIt();
+
+		docItem->m_docProcess->removePendingDoc(docItem);
+
+		delete xmlDoc;
+		delete docItem;
+
+		return;
+	}
+
 	int32_t *firstIp = xmlDoc->getFirstIp();
 	if (!firstIp || firstIp == (int32_t*)-1) {
 		// blocked
