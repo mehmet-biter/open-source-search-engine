@@ -385,6 +385,7 @@ void XmlDoc::reset ( ) {
 	m_setTr                    = false;
 
 	m_recycleContent           = false;
+	m_docRebuild               = false;
 	m_callback1                = NULL;
 	m_callback2                = NULL;
 	m_state                    = NULL;
@@ -6620,7 +6621,9 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 	if ( m_siteNumInlinksValid ) return &m_siteNumInlinks;
 
 	// sanity check
-	if ( m_setFromTitleRec && ! m_useSecondaryRdbs) {g_process.shutdownAbort(true);}
+	if (m_setFromTitleRec && !m_useSecondaryRdbs && !m_docRebuild) {
+		g_process.shutdownAbort(true);
+	}
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
@@ -12930,7 +12933,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// . so at least now set all the data members we will need to
 	//   seriazlize into the title rec because we can't be blocking further
 	//   down below after we set all the hashtables and XmlDoc::ptr_ stuff
-	if (!m_setFromTitleRec || m_useSecondaryRdbs) {
+	if (!m_setFromTitleRec || m_useSecondaryRdbs || m_docRebuild) {
 		// all member vars should already be valid if set from titlerec
 		char *ptg = prepareToMakeTitleRec();
 

@@ -48,8 +48,8 @@ DocProcessDocItem* DocRebuild::createDocItem(DocProcess *docProcess, const std::
 }
 
 void DocRebuild::updateXmldoc(XmlDoc *xmlDoc) {
-	// use the ptr_utf8Content that we have
 	xmlDoc->m_recycleContent = true;
+	xmlDoc->m_docRebuild = true;
 }
 
 void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
@@ -119,10 +119,6 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 		// rebuild the title rec! otherwise we re-add the old one
 		xmlDoc->m_titleRecBufValid = false;
 		xmlDoc->m_titleRecBuf.purge();
-
-		// save for logging
-		xmlDoc->m_logLangId = xmlDoc->m_langId;
-		xmlDoc->m_logSiteNumInlinks = xmlDoc->m_siteNumInlinks;
 
 		// recompute site, no more domain sites allowed
 		xmlDoc->m_siteValid = false;

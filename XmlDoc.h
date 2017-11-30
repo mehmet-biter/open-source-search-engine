@@ -1104,6 +1104,7 @@ public:
 	bool          m_contentInjected;
 
 	bool          m_recycleContent;
+	bool          m_docRebuild;
 
 	char *m_rawUtf8Content;
 	int32_t  m_rawUtf8ContentSize;
