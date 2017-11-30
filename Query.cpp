@@ -473,6 +473,10 @@ bool Query::setQTerms ( const Words &words ) {
 		auto wvg(WordVariationGenerator::get_generator(m_langId));
 		m_wordVariations = wvg->query_variations(wvg_source_words, m_word_variations_config.m_word_variations_weights, m_word_variations_config.m_word_variations_threshold);
 		nqt += m_wordVariations.size();
+		if(!m_wordVariations.empty())
+			logTrace(g_conf.m_logTraceQuery, "word variations produced %d variants", (int)m_wordVariations.size());
+		else
+			logTrace(g_conf.m_logTraceQuery, "word variations didn't produce any");
 	} else
 		m_wordVariations.clear();
 

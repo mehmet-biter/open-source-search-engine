@@ -25,7 +25,7 @@ public:
 	void transliterate_proper_noun_acute_accent(std::vector<WordVariationGenerator::Variation> &variations,
 						    const std::vector<std::string> &source_words,
 						    const std::vector<std::string> &lower_source_words,
-						    float weight);
+						    float weight, float threshold);
 };
 
 static WordVariationGenerator_danish s_WordVariationGenerator_danish;
@@ -62,7 +62,7 @@ std::vector<WordVariationGenerator::Variation> WordVariationGenerator_danish::qu
 	
 	if(weights.proper_noun_spelling_variants >= threshold) {
 		transliterate_proper_noun_aring_and_aa(variations,source_words,lower_source_words,weights.proper_noun_spelling_variants);
-		transliterate_proper_noun_acute_accent(variations,source_words,lower_source_words,weights.proper_noun_spelling_variants);
+		transliterate_proper_noun_acute_accent(variations,source_words,lower_source_words,weights.proper_noun_spelling_variants, threshold);
 	}
 	
 	//filter out duplicates and variations below threshold
@@ -191,14 +191,15 @@ void WordVariationGenerator_danish::transliterate_proper_noun_aring_and_aa(std::
 void WordVariationGenerator_danish::transliterate_proper_noun_acute_accent(std::vector<WordVariationGenerator::Variation> &variations,
 									   const std::vector<std::string> &/*source_words*/,
 									   const std::vector<std::string> &lower_source_words,
-									   float weight)
+									   float weight, float threshold)
 {
-	//Acute accent / accent aigu is the only accent used in Danish and it is always optional.
+	//Acute accent / accent aigu is the only accent used in Danish.
 	//It is used for indicating where the stress in the word is and for disambiguation and reading help.
 	//It is always optional and rare. Examples:
 	//  - ...alle vs. ...allé          (...-street)
 	//  - Rene vs. René                (name, originally from French)
-	//  - Implementer vs. implementér  (imperative)
+	//  - implementer vs. implementér  (imperative)
+	//It is very rare for the accent to be used for anything except the letter e.
 	//But since it is optional we can always strip the accent away
 	
 	std::string unicode_00E9("é",2);
@@ -206,7 +207,7 @@ void WordVariationGenerator_danish::transliterate_proper_noun_acute_accent(std::
 	for(unsigned i=0; i<lower_source_words.size(); i++) {
 		auto source_word(lower_source_words[i]);
 		if(source_word.find(unicode_00E9)!=source_word.npos) {
-			//do å -> aa transliteration
+			//do é -> e transliteration
 			std::string tmp(source_word);
 			for(std::string::size_type p=tmp.find(unicode_00E9); p!=tmp.npos; p=tmp.find(unicode_00E9)) {
 				tmp.replace(p,unicode_00E9.length(), plain_e);
@@ -217,6 +218,58 @@ void WordVariationGenerator_danish::transliterate_proper_noun_acute_accent(std::
 			v.source_word_start = i;
 			v.source_word_end = i+1;
 			variations.push_back(v);
+		}
+	}
+	
+	//The reverse is not true: we cannot add the accent to all instances of the letter e because then it starts getting silly.
+	//Eg. for "Rene" we would have to generate "Réne", "René" and "Réné".
+	//The accent is usually only used on the last syllable. So a bit hackish:
+	//  We hardcode some common suffixes
+	//  we only consider added the accent for e's in the last three positions which is usually the last syllable
+	for(unsigned i=0; i<lower_source_words.size(); i++) {
+		auto source_word(lower_source_words[i]);
+		if(source_word.length()>4 && source_word.substr(source_word.length()-4)=="alle") {
+			//possibly a street name
+			WordVariationGenerator::Variation v;
+			v.word = source_word.substr(0,source_word.length()-4)+"allé";
+			v.weight = weight;
+			v.source_word_start = i;
+			v.source_word_end = i+1;
+			variations.push_back(v);
+			continue;
+		}
+		if(source_word=="rene" || source_word=="Rene") {
+			//possibly the first name René (could also be the adjective "rene")
+			WordVariationGenerator::Variation v;
+			v.word = source_word[0] + "ené";
+			v.weight = weight;
+			v.source_word_start = i;
+			v.source_word_end = i+1;
+			variations.push_back(v);
+			continue;
+		}
+		if(source_word.length()>4 && source_word.substr(source_word.length()-2)=="er") {
+			//possibly a verb in imperative
+			bool is_imperative = false;
+			auto matches(lexicon.query_matches(source_word));
+			for(auto match : matches) {
+				auto wordforms(match->query_all_explicit_ford_forms());
+				for(auto wordform : wordforms) {
+					if(same_wordform_as_source(*wordform,source_word) &&
+						wordform->has_attribute(sto::word_form_attribute_t::verbFormMood_imperative))
+					{
+						is_imperative = true;
+					}
+				}
+			}
+			if(is_imperative) {
+				WordVariationGenerator::Variation v;
+				v.word = source_word.substr(0,source_word.length()-2)+"ér";
+				v.weight = weight;
+				v.source_word_start = i;
+				v.source_word_end = i+1;
+				variations.push_back(v);
+			}
 		}
 	}
 }
