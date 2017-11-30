@@ -136,6 +136,12 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		g_process.shutdownAbort(true);
 	}
 
+	// callback is mandatory because msg0 can get from different host
+	if (callback == nullptr) {
+		logError("net: msg0: callback not supplied");
+		gbshutdownLogicError();
+	}
+
 	// remember these
 	m_state         = state;
 	m_callback      = callback;

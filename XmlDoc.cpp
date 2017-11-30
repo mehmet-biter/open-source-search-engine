@@ -111,6 +111,7 @@ XmlDoc::XmlDoc() {
 	m_robotsNoFollow = false;
 	m_robotsNoArchive = false;
 	m_robotsNoSnippet = false;
+	m_addSpiderRequest = false;
 	m_dupTrPtr = NULL;
 	m_oldTitleRec = NULL;
 	m_filteredContent = NULL;
@@ -174,6 +175,7 @@ void XmlDoc::reset ( ) {
 	m_robotsNoArchive = false;
 	m_robotsNoSnippet = false;
 	m_hostNameServers.clear();
+	m_addSpiderRequest = false;
 
 	m_doConsistencyTesting = g_conf.m_doConsistencyTesting;
 
@@ -459,10 +461,7 @@ int32_t XmlDoc::getSpideredTime ( ) {
 // . we need this so PageGet.cpp can get the cached web page
 // . but not for Msg20::getSummary(), that uses XmlDoc::set(Msg20Request*)
 // . returns false and sets g_errno on error
-bool XmlDoc::set3 ( int64_t  docId       ,
-		    const char   *coll        ,
-		    int32_t       niceness    ) {
-
+bool XmlDoc::set3(int64_t docId, const char *coll, int32_t niceness) {
 	reset();
 
 	// this is true
@@ -499,47 +498,77 @@ static void loadFromOldTitleRecWrapper ( void *state ) {
 }
 
 // returns false if blocked, returns true and sets g_errno on error otherwise
-bool XmlDoc::loadFromOldTitleRec ( ) {
-	// . we are an entry point.
-	// . if anything blocks, this will be called when it comes back
-	if ( ! m_masterLoop ) {
-		m_masterLoop  = loadFromOldTitleRecWrapper;
-		m_masterState = this;
-	}
+bool XmlDoc::loadFromOldTitleRec() {
+	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
+
 	// if we already loaded!
-	if ( m_loaded ) return true;
-	// if set from a docid, use msg22 for this!
-	char **otr = getOldTitleRec ( );
-	// error?
-	if ( ! otr ) return true;
-	// blocked?
-	if ( otr == (void *)-1 ) return false;
-	// this is a not found
-	if ( ! *otr ) {
-		// so we do not retry
-		m_loaded = true;
-		// make it an error
-		g_errno = ENOTFOUND;
+	if (m_loaded) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END already loaded, return true");
 		return true;
 	}
+
+	// . we are an entry point.
+	// . if anything blocks, this will be called when it comes back
+	if (!m_masterLoop) {
+		m_masterLoop = loadFromOldTitleRecWrapper;
+		m_masterState = this;
+	}
+
+	// if set from a docid, use msg22 for this!
+	char **otr = getOldTitleRec();
+	// error?
+	if (!otr) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END getOldTitleRec error, return true");
+		return true;
+	}
+
+	// blocked?
+	if (otr == (void *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END getOldTitleRec blocked, return false");
+		return false;
+	}
+
+	// this is a not found
+	if (!*otr) {
+		// so we do not retry
+		m_loaded = true;
+
+		// make it an error
+		g_errno = ENOTFOUND;
+
+		logTrace(g_conf.m_logTraceXmlDoc, "END getOldTitleRec not found, return true");
+		return true;
+	}
+
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return true;
+	if (!cr) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END getCollRec not found, return true");
+		return true;
+	}
+
 	// use that. decompress it! this will also set
 	// m_setFromTitleRec to true
-	if ( ! set2 ( m_oldTitleRec     ,
-		      m_oldTitleRecSize , // maxSize
-		      cr->m_coll            ,
-		      NULL              , // pbuf
-		      m_niceness        )) {
+	if (!set2(m_oldTitleRec, m_oldTitleRecSize, cr->m_coll, nullptr, m_niceness)) {
 		// we are now loaded, do not re-call
 		m_loaded = true;
+
+		logTrace(g_conf.m_logTraceXmlDoc, "END set2 error, return true");
+
 		// return true with g_errno set on error uncompressing
 		return true;
 	}
+
 	// we are now loaded, do not re-call
 	m_loaded = true;
+
 	// sanity check
-	if ( ! m_titleRecBufValid ) { g_process.shutdownAbort(true); }
+	if (!m_titleRecBufValid) {
+		logError("invalid titleRefBuf");
+		gbshutdownLogicError();
+	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "END return true");
+
 	// good to go
 	return true;
 }
@@ -1296,9 +1325,9 @@ static void indexDoc3(void *state) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, indexDoc blocked");
 		return;
 	}
-	
+
 	// otherwise, all done, call the caller callback
-	
+
 	that->m_indexedDoc = true;
 
 	logTrace(g_conf.m_logTraceXmlDoc, "END");
@@ -1512,9 +1541,6 @@ void XmlDoc::getRevisedSpiderRequest ( SpiderRequest *revisedReq ) {
 	// this must be valid for us of course
 	if ( ! m_firstIpValid ) { g_process.shutdownAbort(true); }
 
-	// wtf? it might be invalid!!! parent caller will handle it...
-	//if ( m_firstIp == 0 || m_firstIp == -1 ) { g_process.shutdownAbort(true); }
-
 	// store the real ip in there now
 	revisedReq->m_firstIp = m_firstIp;
 
@@ -1549,9 +1575,8 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 
 	// set other fields besides key
 	sreq->m_firstIp              = m_firstIp;
-	sreq->m_hostHash32           = m_hostHash32a;
-	//sreq->m_domHash32            = m_domHash32;
-	//sreq->m_siteNumInlinks       = m_siteNumInlinks;
+	sreq->m_hostHash32           = getHostHash32a();
+	sreq->m_domHash32            = getDomHash32();
 	//sreq->m_pageNumInlinks     = m_pageNumInlinks;
 	sreq->m_hopCount             = m_hopCount;
 
@@ -2553,12 +2578,15 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	}
 
 	XmlDoc *od = NULL;
-	if ( *pod ) od = *pod;
+	if (*pod) {
+		od = *pod;
+	}
 
 	// if recycling content is true you gotta have an old title rec.
-	if ( ! od && m_recycleContent ) {
+	if (!od && m_recycleContent) {
 		m_indexCode = ENOTITLEREC;
 		m_indexCodeValid = true;
+		m_useSpiderdb = false;
 		logTrace( g_conf.m_logTraceXmlDoc, "END, ENOTITLEREC" );
 		return &m_indexCode;
 	}
@@ -6238,13 +6266,19 @@ char **XmlDoc::getOldTitleRec() {
 	}
 	// if url not valid, use NULL
 	char *u = NULL;
-	if ( docId == 0LL && ptr_firstUrl ) u = getFirstUrl()->getUrl();
-	// if both are not given that is a problem
-	if ( docId == 0LL && ! u ) {
-		log(LOG_WARN, "doc: no url or docid provided to get old doc");
-		g_errno = EBADENGINEER;
-		return NULL;
+	if (docId == 0LL) {
+		if (ptr_firstUrl || m_firstUrlValid) {
+			u = getFirstUrl()->getUrl();
+		}
+
+		// if both are not given that is a problem
+		if (!u) {
+			log(LOG_WARN, "doc: no url or docid provided to get old doc");
+			g_errno = EBADENGINEER;
+			return NULL;
+		}
 	}
+
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) {
 		return NULL;
@@ -7077,7 +7111,7 @@ int32_t *XmlDoc::getFinalCrawlDelay() {
 	// getIsAllowed already sets m_crawlDelayValid to true
 	m_finalCrawlDelay = m_crawlDelay;
 
-	// Changed previously hard coded default of 250ms to the 
+	// Changed previously hard coded default of 250ms to the
 	// configurable delay for sites with no robots.txt
 	if ( m_crawlDelay < 0 )	{
 		m_finalCrawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
@@ -8273,7 +8307,7 @@ char **XmlDoc::gotHttpReply ( ) {
 	//if m_errno isn't set then take whatever from g_errno, such as econnreset
 	if(!m_errno)
 		m_errno = g_errno;
-	
+
 	// save it
 	int32_t saved = g_errno;
 	// note it
@@ -11291,7 +11325,10 @@ int32_t *XmlDoc::getSpiderPriority ( ) {
 	}
 
 	// sanity check
-	if ( *ufn < 0 ) { g_process.shutdownAbort(true); }
+	if ( *ufn < 0 ) {
+		g_process.shutdownAbort(true);
+	}
+
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END. No collection" );
@@ -13183,16 +13220,9 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	int32_t needSpiderdb1 = forDelete ? 0 : (sizeof(SpiderReply) + 1);
 	need += needSpiderdb1;
 
-	// if injecting we add a spiderrequest to be able to update it
-	// but don't do this if it is pagereindex. why is pagereindex
-	// setting the injecting flag anyway?
 	int32_t needSpiderdbRequest = 0;
-	if (m_sreqValid && m_sreq.m_isInjecting && m_sreq.m_fakeFirstIp && !m_sreq.m_forceDelete) {
-		// NO! because when injecting a warc and the subdocs
-		// it contains, gb then tries to spider all of them !!! sux...
-		needSpiderdbRequest = 0;
-	} else if (m_useSpiderdb && m_useSecondaryRdbs) {
-		// or if we are rebuilding spiderdb
+	if (m_useSpiderdb && (m_useSecondaryRdbs || m_addSpiderRequest)) {
+		// if we are rebuilding spiderdb / we need to force add it
 		needSpiderdbRequest = sizeof(SpiderRequest) + m_firstUrl.getUrlLen() + 1;
 	}
 	need += needSpiderdbRequest;
@@ -13557,7 +13587,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		SpiderRequest revisedReq;
 
  		// if doing a repair/rebuild of spiderdb...
-		if (m_useSecondaryRdbs) {
+		if (m_useSecondaryRdbs || m_addSpiderRequest) {
 			getRebuiltSpiderRequest(&revisedReq);
 		} else {
 			// this fills it in for doing injections
@@ -14092,12 +14122,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// diffbot guys, robots.txt, frames, sshould not be here
 	if ( m_isChildDoc ) { g_process.shutdownAbort(true); }
 
-	// . get the mime first
-	// . if we are setting XmlDoc from a titleRec, this causes
-	//   doConsistencyCheck() to block and core
-	//HttpMime *mime = getMime();
-	//if ( ! mime || mime == (HttpMime *)-1 ) return (SpiderReply *)mime;
-
 	// if we had a critical error, do not do this
 	int32_t *indexCode = getIndexCode();
 	if (! indexCode || indexCode == (void *)-1)
@@ -14105,10 +14129,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 
 	TagRec *gr = getTagRec();
 	if ( ! gr || gr == (TagRec *)-1 ) return (SpiderReply *)gr;
-
-	// can't call getIsPermalink() here without entering a dependency loop
-	//char *pp = getIsUrlPermalinkFormat();
-	//if ( !pp || pp == (char *)-1 ) return (SpiderReply *)pp;
 
 	// the site hash
 	int32_t *sh32 = getSiteHash32();
@@ -14132,8 +14152,9 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	if ( tag ) firstIp = atoip(tag->getTagData());
 
 	// this is usually the authority
-	if ( m_firstIpValid )
+	if (m_firstIpValid) {
 		firstIp = m_firstIp;
+	}
 
 	// otherwise, inherit from oldsr to be safe
 	// BUT NOT if it was a fakeip and we were injecting because
@@ -14146,8 +14167,9 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// we set the injection bit and the pagereindex bit, we should let
 	// thise guys keep the firstip because the docid-based spider request
 	// is in spiderdb. it needs to match up.
-	if ( m_sreqValid && (!m_sreq.m_isInjecting||m_sreq.m_isPageReindex) )
+	if (m_sreqValid && (!m_sreq.m_isInjecting || m_sreq.m_isPageReindex)) {
 		firstIp = m_sreq.m_firstIp;
+	}
 
 	// sanity
 	if ( firstIp == 0 || firstIp == -1 ) {
@@ -14156,18 +14178,14 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		else
 			log("xmldoc: BAD FIRST IP for %" PRId64,m_docId);
 		firstIp = 12345;
-		//g_process.shutdownAbort(true); }
 	}
+
 	// store it
 	m_srep.m_firstIp = firstIp;
 
 	// Default to no error. Will be set below.
 	m_srep.m_errCount = 0;
 	m_srep.m_sameErrCount = 0;
-
-	// otherwise, inherit from oldsr to be safe
-	//if ( m_sreqValid )
-	//	m_srep.m_firstIp = m_sreq.m_firstIp;
 
 	// do not inherit this one, it MIGHT HAVE CHANGE!
 	m_srep.m_siteHash32 = m_siteHash32;
@@ -14179,12 +14197,11 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	if ( ! m_tagRecValid               ) { g_process.shutdownAbort(true); }
 	if ( ! m_ipValid                   ) { g_process.shutdownAbort(true); }
 	if ( ! m_siteHash32Valid           ) { g_process.shutdownAbort(true); }
-	//if ( ! m_spideredTimeValid         ) { g_process.shutdownAbort(true); }
 
 	// . set other fields besides key
 	// . crap! if we are the "qatest123" collection then m_spideredTime
 	//   was read from disk usually and is way in the past! watch out!!
-	m_srep.m_spideredTime = getSpideredTime();//m_spideredTime;
+	m_srep.m_spideredTime = getSpideredTime();
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
@@ -14333,7 +14350,9 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			// we should have had a spider request, because that's
 			// where we got the m_contentHash32 we passed to
 			// Msg13Request.
-			if ( ! m_sreqValid ) { g_process.shutdownAbort(true); }
+			if (!m_sreqValid) {
+				g_process.shutdownAbort(true);
+			}
 			// make it a success
 			m_srep.m_errCode = 0;
 			// and no error count, it wasn't an error per se
@@ -14407,22 +14426,16 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	}
 
 	// sanity checks
-	//if(! m_sreqValid                ) { g_process.shutdownAbort(true); }
 	if ( ! m_siteNumInlinksValid       ) { g_process.shutdownAbort(true); }
 	if ( ! m_hopCountValid             ) { g_process.shutdownAbort(true); }
 	if ( ! m_langIdValid               ) { g_process.shutdownAbort(true); }
 	if ( ! m_isRSSValid                ) { g_process.shutdownAbort(true); }
 	if ( ! m_isPermalinkValid          ) { g_process.shutdownAbort(true); }
-	//if ( ! m_pageNumInlinksValid     ) { g_process.shutdownAbort(true); }
 	if ( ! m_percentChangedValid       ) { g_process.shutdownAbort(true); }
-	//if ( ! m_isSpamValid               ) { g_process.shutdownAbort(true); }
-	//if ( ! m_crawlDelayValid           ) { g_process.shutdownAbort(true); }
 
 	// httpStatus is -1 if not found (like for empty http replies)
 	m_srep.m_httpStatus = *hs;
 
-	// zero if none
-	//m_srep.m_percentChangedPerDay = 0;
 	// . only if had old one
 	// . we use this in url filters to set the respider wait time usually
 	if ( od ) {
@@ -14470,9 +14483,11 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		int64_t lock1 = makeLockTableKey(&m_sreq);
 		int64_t lock2 = makeLockTableKey(&m_srep);
 		if ( lock1 != lock2 ) {
-			log("build: lock1 != lock2 lock mismatch for %s",
-			    m_firstUrl.getUrl());
-			g_process.shutdownAbort(true);
+			logError("build: lock1(%" PRId64":%d) != lock2(%" PRId64":%d) lock mismatch for %s",
+			         m_sreq.getUrlHash48(), m_sreq.m_firstIp,
+			         m_srep.getUrlHash48(), m_srep.m_firstIp,
+			         m_firstUrl.getUrl());
+			gbshutdownLogicError();
 		}
 	}
 
@@ -14949,31 +14964,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// our original hopcount of 0 with this guy that has a
 		// hopcount of 1. that sux... so don't do it.
 		if ( ksr.getUrlHash48() == myUh48 ) continue;
-
-		// . technically speaking we do not have any reply so we
-		//   should not be calling this! cuz we don't have all the info
-		// . see if banned or filtered, etc.
-		// . at least try to call it. getUrlFilterNum() should
-		//   break out and return -1 if it encounters a filter rule
-		//   that it does not have enough info to answer.
-		//   so if your first X filters all map to a "FILTERED"
-		//   priority and this url matches one of them we can
-		//   confidently toss this guy out.
-		// . show this for debugging!
-		// int32_t ufn = ::getUrlFilterNum ( &ksr , NULL, m_spideredTime ,
-		// 			       false, m_niceness, cr,
-		// 			       false,//true , // outlink?
-		// 			       NULL ); // quotatable
-		// logf(LOG_DEBUG,"build: ufn=%" PRId32" for %s",
-		//      ufn,ksr.m_url);
-
-		// bad?
-		//if ( ufn < 0 ) {
-		//	log("build: link %s had bad url filter."
-		//	    , ksr.m_url );
-		//	g_errno = EBADENGINEER;
-		//	return NULL;
-		//}
 
 		// debug
 		if ( g_conf.m_logDebugUrlAttempts ) {

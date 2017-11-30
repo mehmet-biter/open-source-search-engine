@@ -385,7 +385,7 @@ class Conf {
 	bool m_logTraceBigFile;
 	bool m_logTraceBlockList;
 	bool m_logTraceContentTypeBlockList;
-	bool m_logTraceDocDelete;
+	bool m_logTraceDocProcess;
 	bool m_logTraceDns;
 	bool m_logTraceDnsBlockList;
 	bool m_logTraceDnsCache;

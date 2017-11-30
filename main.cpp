@@ -95,6 +95,8 @@
 #include "FxCheckAdult.h"
 #include "FxCheckSpam.h"
 #include "GbCompress.h"
+#include "DocRebuild.h"
+#include "DocReindex.h"
 
 
 #include <sys/stat.h> //umask()
@@ -1555,9 +1557,34 @@ int main2 ( int argc , char *argv[] ) {
 	if(!InstanceInfoExchange::initialize())
 		return 0;
 
-	// initialize doc delete
-	if (!DocDelete::initialize()) {
-		logError("Unable to initialize doc delete");
+	// initialize doc process
+	if (!g_docDelete.init()) {
+		logError("Unwable to initialize doc delete");
+		return 0;
+	}
+
+	if (!g_docDeleteUrl.init()) {
+		logError("Unwable to initialize doc delete url");
+		return 0;
+	}
+
+	if (!g_docRebuild.init()) {
+		logError("Unwable to initialize doc rebuild");
+		return 0;
+	}
+
+	if (!g_docRebuildUrl.init()) {
+		logError("Unwable to initialize doc rebuild url");
+		return 0;
+	}
+
+	if (!g_docReindex.init()) {
+		logError("Unwable to initialize doc reindex");
+		return 0;
+	}
+
+	if (!g_docReindexUrl.init()) {
+		logError("Unwable to initialize doc reindex url");
 		return 0;
 	}
 

@@ -16,20 +16,21 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
-#ifndef FX_DOCDELETE_H
-#define FX_DOCDELETE_H
+#ifndef FX_DOCREBUILD_H
+#define FX_DOCREBUILD_H
 
 #include "DocProcess.h"
 
-class DocDelete : public DocProcess {
+class DocRebuild : public DocProcess {
 public:
-	DocDelete(const char *filename, bool isUrl);
+	DocRebuild(const char *filename, bool isUrl);
 
+	DocProcessDocItem* createDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos) override;
 	void updateXmldoc(XmlDoc *xmlDoc) override;
-	void processDocItem(DocProcessDocItem *docItem) override;
+	void processDocItem(DocProcessDocItem *processDocItem) override;
 };
 
-extern DocDelete g_docDelete;
-extern DocDelete g_docDeleteUrl;
+extern DocRebuild g_docRebuild;
+extern DocRebuild g_docRebuildUrl;
 
-#endif //FX_DOCDELETE_H
+#endif //FX_DOCREBUILD_H

@@ -8804,9 +8804,9 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log trace info for DocDelete";
-	m->m_cgi   = "ltrc_docdel";
-	simple_m_set(Conf,m_logTraceDocDelete);
+	m->m_title = "log trace info for DocProcess";
+	m->m_cgi   = "ltrc_docpro";
+	simple_m_set(Conf,m_logTraceDocProcess);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;

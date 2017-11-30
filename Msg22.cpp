@@ -99,7 +99,6 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
                 log("msg22: BAD URL! It is empty!");
                 m_errno = g_errno = EBADENGINEER;
                 return true;
-//g_process.shutdownAbort(true); 
 	}
 	if ( docId!=0LL && url    ) { g_process.shutdownAbort(true); }
 	if ( ! coll               ) { g_process.shutdownAbort(true); }

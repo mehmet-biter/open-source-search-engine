@@ -1135,8 +1135,9 @@ public:
 	bool m_robotsNoArchive;
 	bool m_robotsNoSnippet;
 
-
 	std::vector<std::string> m_hostNameServers;
+
+	bool m_addSpiderRequest;
 
 	// word spam detection
 	char *getWordSpamVec ( );

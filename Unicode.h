@@ -285,7 +285,7 @@ inline UChar32 utf8Decode(const char *p) {
 	uint8_t c0 = static_cast<uint8_t>(p[0]);
 	if((c0&0x80)==0x00) { //single byte character
 		return (UChar32)*p;
-	} else if((c0&0xc0)==0xc0 && (p[1]&0xc0)==0x80) { //two or more bytes
+	} else if((c0&0xe0)==0xc0 && (p[1]&0xc0)==0x80) { //two or more bytes
 		return (UChar32)((*p & 0x1f)<<6 | 
 				(*(p+1) & 0x3f));
 	} else if((c0&0xf0)==0xe0 && (p[1]&0xc0)==0x80 && (p[2]&0xc0)==0x80) { //three or more bytes
