@@ -249,19 +249,6 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getContentType failed");
 		return NULL;
 	}
-	
-	// BR 20160127: Never index JSON and XML content
-	if (*ct == CT_JSON || *ct == CT_XML) {
-		// For XML (JSON should not get here as it should be filtered out during spidering)
-		// store the URL as the only thing in posdb so we are able to find it, and
-		// eventually ban it.
-		if (!hashUrl(table, true)) {  // urlOnly (skip IP and term generation)
-			logTrace(g_conf.m_logTraceXmlDoc, "END, hashUrl failed");
-			return NULL;
-		}
-		m_allHashed = true;
-		return (char *)1;
-	}
 
 	unsigned char *hc = (unsigned char *)getHopCount();
 	if (!hc || hc == (void *)-1) {
@@ -374,6 +361,11 @@ char *XmlDoc::hashAll(HashTableX *table) {
 
 	if ((size_utf8Content - 1) <= 0) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, contentLen == 0");
+		return (char *)1;
+	}
+
+	// never index body of JSON and XML content
+	if (*ct == CT_JSON || *ct == CT_XML) {
 		return (char *)1;
 	}
 
