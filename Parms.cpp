@@ -3636,7 +3636,7 @@ void Parms::init ( ) {
 
 	m->m_title = "proper noun: common spelling differences";
 	m->m_desc  = "Weight of common spelling differences within a language, eg Danish aa<->å, German eszet, etc. "
-		     "Note that what is and isn't a proper nound is determined by heuristics.";
+		     "Note that what is and isn't a proper noun is determined by heuristics.";
 	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.proper_noun_spelling_variants);
 	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.proper_noun_spelling_variants);
 	m->m_cgi  = "lwv_proper_noun_spelling_variants";
@@ -7183,7 +7183,7 @@ void Parms::init ( ) {
 
 	m->m_title = "proper noun: common spelling differences";
 	m->m_desc  = "Weight of common spelling differences within a language, eg Danish aa<->å, German eszet, etc. "
-		     "Note that what is and isn't a proper nound is determined by heuristics.";
+		     "Note that what is and isn't a proper noun is determined by heuristics.";
 	m->m_def   = "0.95";
 	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.proper_noun_spelling_variants);
 	m->m_cgi  = "lwv_proper_noun_spelling_variants";
