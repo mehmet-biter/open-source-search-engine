@@ -1349,8 +1349,8 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	if(!initializeWordVariationGenerator_Danish()) {
-		log(LOG_ERROR, "word-variation-danish initialization failed!" );
-		return 1;
+		log(LOG_WARN, "word-variation-danish initialization failed" );
+		//but not fatal
 	}
 
 	// the wiki titles
