@@ -48,6 +48,7 @@ DocProcessDocItem* DocRebuild::createDocItem(DocProcess *docProcess, const std::
 }
 
 void DocRebuild::updateXmldoc(XmlDoc *xmlDoc) {
+	// use the ptr_utf8Content that we have
 	xmlDoc->m_recycleContent = true;
 }
 
@@ -56,8 +57,10 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 	XmlDoc *xmlDoc = rebuildDocItem->m_xmlDoc;
 
 	// set callback
-	xmlDoc->m_masterLoop = processedDoc;
-	xmlDoc->m_masterState = rebuildDocItem;
+	if (xmlDoc->m_masterLoop == nullptr) {
+		xmlDoc->m_masterLoop = processedDoc;
+		xmlDoc->m_masterState = rebuildDocItem;
+	}
 
 	// prepare
 	char **oldTitleRec = xmlDoc->getOldTitleRec();
@@ -80,11 +83,7 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 		return;
 	}
 
-	// reset callback
-	xmlDoc->m_masterLoop = nullptr;
-	xmlDoc->m_masterState = nullptr;
-
-	if (!xmlDoc->set2(*oldTitleRec, -1, "main", nullptr, MAX_NICENESS)) {
+	if (!xmlDoc->m_contentValid && !xmlDoc->set2(*oldTitleRec, -1, "main", nullptr, MAX_NICENESS)) {
 		xmlDoc->m_indexCode = ECORRUPTDATA;
 		xmlDoc->m_indexCodeValid = true;
 
@@ -100,8 +99,8 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 
 	int32_t *firstIp = xmlDoc->getFirstIp();
 	if (!firstIp || firstIp == (int32_t*)-1) {
-		// we must not be blocked/invalid at this point
-		gbshutdownLogicError();
+		// blocked
+		return;
 	}
 
 	int32_t *siteNumInLinks = xmlDoc->getSiteNumInlinks();
@@ -114,6 +113,43 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 	if (xmlDoc->m_masterLoop == processedDoc) {
 		xmlDoc->m_masterLoop = nullptr;
 		xmlDoc->m_masterState = nullptr;
+
+		// logic copied from Repair.cpp
+
+		// rebuild the title rec! otherwise we re-add the old one
+		xmlDoc->m_titleRecBufValid = false;
+		xmlDoc->m_titleRecBuf.purge();
+
+		// save for logging
+		xmlDoc->m_logLangId = xmlDoc->m_langId;
+		xmlDoc->m_logSiteNumInlinks = xmlDoc->m_siteNumInlinks;
+
+		// recompute site, no more domain sites allowed
+		xmlDoc->m_siteValid = false;
+		xmlDoc->ptr_site = nullptr;
+		xmlDoc->size_site = 0;
+
+		// recalculate the sitenuminlinks
+		xmlDoc->m_siteNumInlinksValid = false;
+
+		// recalculate the langid
+		xmlDoc->m_langIdValid = false;
+
+		// recalcualte and store the link info
+		xmlDoc->m_linkInfo1Valid = false;
+		xmlDoc->ptr_linkInfo1 = nullptr;
+		xmlDoc->size_linkInfo1 = 0;
+
+		// re-get the tag rec from tagdb
+		xmlDoc->m_tagRecValid = false;
+		xmlDoc->m_tagRecDataValid = false;
+
+		xmlDoc->m_priority = -1;
+		xmlDoc->m_priorityValid = true;
+
+		xmlDoc->m_contentValid = true;
+		xmlDoc->m_content = xmlDoc->ptr_utf8Content;
+		xmlDoc->m_contentLen = xmlDoc->size_utf8Content - 1;
 	}
 
 	// set spider request
