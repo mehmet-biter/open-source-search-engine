@@ -2332,7 +2332,15 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		return (int32_t *) ini;
 	}
 
-	if (*ini) {
+	// check meta nofollow
+	bool *inf = getIsNoFollow();
+	if (!inf || inf == (bool*) -1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, could not getIsNoFollow");
+		return (int32_t *) inf;
+	}
+
+	// meta noindex & nofollow
+	if (*ini && *inf) {
 		if (m_firstUrl.isRoot()) {
 			m_indexCode = EDOCDISALLOWEDROOT;
 		} else {
