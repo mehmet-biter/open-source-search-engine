@@ -25,7 +25,11 @@ public:
 	void transliterate_proper_noun_acute_accent(std::vector<WordVariationGenerator::Variation> &variations,
 						    const std::vector<std::string> &source_words,
 						    const std::vector<std::string> &lower_source_words,
-						    float weight, float threshold);
+						    float weight);
+	void transliterate_verb_acute_accent(std::vector<WordVariationGenerator::Variation> &variations,
+					     const std::vector<std::string> &source_words,
+					     const std::vector<std::string> &lower_source_words,
+					     float weight);
 };
 
 static WordVariationGenerator_danish s_WordVariationGenerator_danish;
@@ -62,7 +66,10 @@ std::vector<WordVariationGenerator::Variation> WordVariationGenerator_danish::qu
 	
 	if(weights.proper_noun_spelling_variants >= threshold) {
 		transliterate_proper_noun_aring_and_aa(variations,source_words,lower_source_words,weights.proper_noun_spelling_variants);
-		transliterate_proper_noun_acute_accent(variations,source_words,lower_source_words,weights.proper_noun_spelling_variants, threshold);
+		transliterate_proper_noun_acute_accent(variations,source_words,lower_source_words,weights.proper_noun_spelling_variants);
+	}
+	if(weights.verb_spelling_variants >= threshold) {
+		transliterate_verb_acute_accent(variations,source_words,lower_source_words,weights.verb_spelling_variants);
 	}
 	
 	//filter out duplicates and variations below threshold
@@ -191,7 +198,7 @@ void WordVariationGenerator_danish::transliterate_proper_noun_aring_and_aa(std::
 void WordVariationGenerator_danish::transliterate_proper_noun_acute_accent(std::vector<WordVariationGenerator::Variation> &variations,
 									   const std::vector<std::string> &/*source_words*/,
 									   const std::vector<std::string> &lower_source_words,
-									   float weight, float threshold)
+									   float weight)
 {
 	//Acute accent / accent aigu is the only accent used in Danish.
 	//It is used for indicating where the stress in the word is and for disambiguation and reading help.
@@ -248,6 +255,16 @@ void WordVariationGenerator_danish::transliterate_proper_noun_acute_accent(std::
 			variations.push_back(v);
 			continue;
 		}
+	}
+}
+
+void WordVariationGenerator_danish::transliterate_verb_acute_accent(std::vector<WordVariationGenerator::Variation> &variations,
+								    const std::vector<std::string> &source_words,
+								    const std::vector<std::string> &lower_source_words,
+								    float weight)
+{
+	for(unsigned i=0; i<lower_source_words.size(); i++) {
+		auto source_word(lower_source_words[i]);
 		if(source_word.length()>4 && source_word.substr(source_word.length()-2)=="er") {
 			//possibly a verb in imperative
 			bool is_imperative = false;
