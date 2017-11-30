@@ -195,20 +195,21 @@ void WordVariationGenerator_danish::transliterate_proper_noun_aring_and_aa(std::
 }
 
 
+//Acute accent / accent aigu is the only accent used in Danish.
+//It is used for indicating where the stress in the word is and for disambiguation and reading help.
+//It is always optional and rare. Examples:
+//  - ...alle vs. ...allé          (...-street)
+//  - Rene vs. René                (name, originally from French)
+//  - implementer vs. implementér  (imperative)
+//It is very rare for the accent to be used for anything except the letter e.
+//When using foreign words (esp. proper nouns) there may be other accents (eg Citroën, Genève, Granö, München, ...)
+
 void WordVariationGenerator_danish::transliterate_proper_noun_acute_accent(std::vector<WordVariationGenerator::Variation> &variations,
 									   const std::vector<std::string> &/*source_words*/,
 									   const std::vector<std::string> &lower_source_words,
 									   float weight)
 {
-	//Acute accent / accent aigu is the only accent used in Danish.
-	//It is used for indicating where the stress in the word is and for disambiguation and reading help.
-	//It is always optional and rare. Examples:
-	//  - ...alle vs. ...allé          (...-street)
-	//  - Rene vs. René                (name, originally from French)
-	//  - implementer vs. implementér  (imperative)
-	//It is very rare for the accent to be used for anything except the letter e.
-	//But since it is optional we can always strip the accent away
-	
+	//because the accent is optional we can always strip it away
 	std::string unicode_00E9("é",2);
 	std::string plain_e("e",1);
 	for(unsigned i=0; i<lower_source_words.size(); i++) {
@@ -230,9 +231,9 @@ void WordVariationGenerator_danish::transliterate_proper_noun_acute_accent(std::
 	
 	//The reverse is not true: we cannot add the accent to all instances of the letter e because then it starts getting silly.
 	//Eg. for "Rene" we would have to generate "Réne", "René" and "Réné".
-	//The accent is usually only used on the last syllable. So a bit hackish:
-	//  We hardcode some common suffixes
-	//  we only consider added the accent for e's in the last three positions which is usually the last syllable
+	//The accent is usually only used on the last syllable. So we use a bit hackish approach: We hardcode some common suffixes.
+	//We could use the fact that the accent is rarely put on any other syllable than the last, but that is mostly the verb
+	//imperative form which is handled by transliterate_verb_acute_accent() so it would gain very little.
 	for(unsigned i=0; i<lower_source_words.size(); i++) {
 		auto source_word(lower_source_words[i]);
 		if(source_word.length()>4 && source_word.substr(source_word.length()-4)=="alle") {
