@@ -26,23 +26,42 @@
 #include <string>
 
 class XmlDoc;
+class DocProcess;
+
+struct DocProcessDocItem {
+	DocProcessDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos);
+	virtual ~DocProcessDocItem();
+
+	DocProcess *m_docProcess;
+	std::string m_key;
+	int64_t m_lastPos;
+	XmlDoc *m_xmlDoc;
+};
 
 class DocProcess {
 public:
-	DocProcess(const char *filename, bool isUrl, void (*updateXmldocFunc)(XmlDoc *xmlDoc));
+	DocProcess(const char *filename, bool isUrl);
 
 	bool init();
 	void finalize();
+
+	virtual DocProcessDocItem* createDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos);
+	virtual void updateXmldoc(XmlDoc *xmlDoc) = 0;
+	virtual void processDocItem(DocProcessDocItem *docItem) = 0;
 
 	static void reload(int /*fd*/, void */*state*/);
 	static void processFile(void *item);
 	static void processDoc(void *item);
 	static void processedDoc(void *state);
 
+protected:
+	void removePendingDoc(DocProcessDocItem *docItem);
+
+	bool m_isUrl;
+
 private:
 	void waitPendingDocCount(unsigned maxCount);
-	void addPendingDoc(struct DocProcessDocItem *docItem);
-	void removePendingDoc(struct DocProcessDocItem *docItem);
+	void addPendingDoc(DocProcessDocItem *docItem);
 
 	const char *m_filename;
 	std::string m_tmpFilename;
@@ -50,15 +69,11 @@ private:
 
 	time_t m_lastModifiedTime;
 
-	bool m_isUrl;
-
-	void (*m_updateXmldocFunc)(XmlDoc *xmlDoc);
-	std::vector<struct DocProcessDocItem*> m_pendingDocItems;
+	std::vector<DocProcessDocItem*> m_pendingDocItems;
 	GbMutex m_pendingDocItemsMtx;
 	pthread_cond_t m_pendingDocItemsCond;
 
 	std::atomic<bool> m_stop;
 };
-
 
 #endif //FX_DOCPROCESS_H

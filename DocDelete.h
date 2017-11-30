@@ -25,7 +25,8 @@ class DocDelete : public DocProcess {
 public:
 	DocDelete(const char *filename, bool isUrl);
 
-	static void updateXmldoc(XmlDoc *xmlDoc);
+	void updateXmldoc(XmlDoc *xmlDoc) override;
+	void processDocItem(DocProcessDocItem *docItem) override;
 };
 
 extern DocDelete g_docDelete;

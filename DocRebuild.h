@@ -25,7 +25,9 @@ class DocRebuild : public DocProcess {
 public:
 	DocRebuild(const char *filename, bool isUrl);
 
-	static void updateXmldoc(XmlDoc *xmlDoc);
+	DocProcessDocItem* createDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos) override;
+	void updateXmldoc(XmlDoc *xmlDoc) override;
+	void processDocItem(DocProcessDocItem *processDocItem) override;
 };
 
 extern DocRebuild g_docRebuild;

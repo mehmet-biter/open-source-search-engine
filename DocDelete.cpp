@@ -23,7 +23,7 @@ DocDelete g_docDelete("docdelete.txt", false);
 DocDelete g_docDeleteUrl("docdeleteurl.txt", true);
 
 DocDelete::DocDelete(const char *filename, bool isUrl)
-	: DocProcess(filename, isUrl, updateXmldoc) {
+	: DocProcess(filename, isUrl) {
 }
 
 void DocDelete::updateXmldoc(XmlDoc *xmlDoc) {
@@ -31,4 +31,65 @@ void DocDelete::updateXmldoc(XmlDoc *xmlDoc) {
 	xmlDoc->m_blockedDocValid = true;
 
 	xmlDoc->m_deleteFromIndex = true;
+}
+
+void DocDelete::processDocItem(DocProcessDocItem *docItem) {
+	XmlDoc *xmlDoc = docItem->m_xmlDoc;
+
+	// set callback
+	xmlDoc->m_masterLoop = processedDoc;
+	xmlDoc->m_masterState = docItem;
+
+	// prepare
+	char **oldTitleRec = xmlDoc->getOldTitleRec();
+	if (!oldTitleRec || oldTitleRec == (char**)-1) {
+		return;
+	}
+
+	// oldTitleRec is mandatory for docdelete
+	if (*oldTitleRec == nullptr) {
+		xmlDoc->m_indexCode = ENOTFOUND;
+		xmlDoc->m_indexCodeValid = true;
+
+		xmlDoc->logIt();
+
+		removePendingDoc(docItem);
+
+		delete xmlDoc;
+		delete docItem;
+
+		return;
+	}
+
+	XmlDoc **oldXmlDoc = xmlDoc->getOldXmlDoc();
+	if (!oldXmlDoc || oldXmlDoc == (XmlDoc **)-1) {
+		// we must not be blocked/invalid at this point
+		gbshutdownLogicError();
+	}
+
+	int32_t *firstIp = (*oldXmlDoc)->getFirstIp();
+	if (!firstIp || firstIp == (int32_t *)-1) {
+		// we must not be blocked/invalid at this point
+		gbshutdownLogicError();
+	}
+
+	if (!xmlDoc->m_firstIpValid) {
+		xmlDoc->m_firstIp = *firstIp;
+		xmlDoc->m_firstIpValid = true;
+		xmlDoc->m_sreq.m_firstIp = *firstIp;
+	}
+
+	// reset callback
+	if (xmlDoc->m_masterLoop == processedDoc) {
+		xmlDoc->m_masterLoop = nullptr;
+		xmlDoc->m_masterState = nullptr;
+	}
+
+	// done
+	if (xmlDoc->m_indexedDoc || xmlDoc->indexDoc()) {
+		removePendingDoc(docItem);
+
+		delete xmlDoc;
+		delete docItem;
+	}
 }

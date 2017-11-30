@@ -42,27 +42,15 @@ struct DocProcessFileItem {
 	std::string m_lastPos;
 };
 
-struct DocProcessDocItem {
-	DocProcessDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos)
-		: m_docProcess(docProcess)
-		, m_key(key)
-		, m_lastPos(lastPos)
-		, m_xmlDoc(new XmlDoc())
-		, m_msg0()
-		, m_spiderdbList()
-		, m_spiderdbListRequested(false)
-		, m_spiderdbListProcessed(false) {
-	}
+DocProcessDocItem::DocProcessDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos)
+	: m_docProcess(docProcess)
+	, m_key(key)
+	, m_lastPos(lastPos)
+	, m_xmlDoc(new XmlDoc()) {
+}
 
-	DocProcess *m_docProcess;
-	std::string m_key;
-	int64_t m_lastPos;
-	XmlDoc *m_xmlDoc;
-	Msg0 m_msg0;
-	RdbList m_spiderdbList;
-	bool m_spiderdbListRequested;
-	bool m_spiderdbListProcessed;
-};
+DocProcessDocItem::~DocProcessDocItem(){
+}
 
 static bool docProcessDisabled() {
 	CollectionRec *collRec = g_collectiondb.getRec("main");
@@ -81,12 +69,11 @@ static bool docProcessDisabled() {
 	return g_hostdb.hasDeadHostCached();
 }
 
-DocProcess::DocProcess(const char *filename, bool isUrl, void (*updateXmldocFunc)(XmlDoc *xmlDoc))
-	: m_filename(filename)
+DocProcess::DocProcess(const char *filename, bool isUrl)
+	: m_isUrl(isUrl)
+	, m_filename(filename)
 	, m_tmpFilename(filename)
 	, m_lastPosFilename(filename)
-	, m_isUrl(isUrl)
-	, m_updateXmldocFunc(updateXmldocFunc)
 	, m_pendingDocItems()
 	, m_pendingDocItemsMtx()
 	, m_pendingDocItemsCond(PTHREAD_COND_INITIALIZER)
@@ -188,6 +175,10 @@ void DocProcess::reload(int /*fd*/, void *state) {
 	s_docProcessFileThreadQueue.addItem(new DocProcessFileItem(that, lastPos));
 }
 
+DocProcessDocItem* DocProcess::createDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos) {
+	return new DocProcessDocItem(docProcess, key, lastPos);
+}
+
 void DocProcess::waitPendingDocCount(unsigned maxCount) {
 	ScopedLock sl(m_pendingDocItemsMtx);
 	while (!m_stop && m_pendingDocItems.size() > maxCount) {
@@ -262,7 +253,7 @@ void DocProcess::processFile(void *item) {
 
 		if (foundLastPos) {
 			logTrace(g_conf.m_logTraceDocProcess, "Processing key='%s'", key.c_str());
-			DocProcessDocItem *docItem = new DocProcessDocItem(fileItem->m_docProcess, key, currentFilePos);
+			DocProcessDocItem *docItem = fileItem->m_docProcess->createDocItem(fileItem->m_docProcess, key, currentFilePos);
 
 			if (fileItem->m_docProcess->m_isUrl) {
 				SpiderRequest sreq;
@@ -283,7 +274,7 @@ void DocProcess::processFile(void *item) {
 				docItem->m_xmlDoc->set3(docId, "main", 0);
 			}
 
-			docItem->m_docProcess->m_updateXmldocFunc(docItem->m_xmlDoc);
+			docItem->m_docProcess->updateXmldoc(docItem->m_xmlDoc);
 			docItem->m_xmlDoc->setCallback(docItem, processedDoc);
 
 			fileItem->m_docProcess->addPendingDoc(docItem);
@@ -322,88 +313,10 @@ void DocProcess::processFile(void *item) {
 
 void DocProcess::processDoc(void *item) {
 	DocProcessDocItem *docItem = static_cast<DocProcessDocItem*>(item);
-	XmlDoc *xmlDoc = docItem->m_xmlDoc;
-
-	// prepare
-	if (!xmlDoc->m_loaded && !xmlDoc->loadFromOldTitleRec()) {
-		return;
-	}
-
-	// validate that we got oldTitleRec
-	char **oldTitleRec = xmlDoc->getOldTitleRec();
-	if (!oldTitleRec || oldTitleRec == (char**)-1) {
-		// must not be blocked at this point
-		gbshutdownLogicError();
-	}
-
-	if (!docItem->m_docProcess->m_isUrl && *oldTitleRec == nullptr) {
-		// oldTitleRec is mandatory for docid based docProcess
-		xmlDoc->m_indexCode = ENOTFOUND;
-		xmlDoc->m_indexCodeValid = true;
-
-		xmlDoc->logIt();
-
-		docItem->m_docProcess->removePendingDoc(docItem);
-
-		delete xmlDoc;
-		delete docItem;
-
-		return;
-	}
-
-	int32_t *firstIp = xmlDoc->getFirstIp();
-	if (!firstIp || firstIp == (int32_t*)-1) {
-		// blocked
-		return;
-	}
-
-	int32_t *siteNumInLinks = xmlDoc->getSiteNumInlinks();
-	if (!siteNumInLinks || siteNumInLinks == (int32_t*)-1) {
-		// blocked
-		return;
-	}
-
-	// set spider request
-	if (!docItem->m_spiderdbListRequested) {
-		int64_t urlHash48 = xmlDoc->getFirstUrlHash48();
-		key128_t startKey = Spiderdb::makeKey(*firstIp, urlHash48, true, 0, false);
-		key128_t endKey = Spiderdb::makeKey(*firstIp, urlHash48, true, MAX_DOCID, false);
-
-		docItem->m_spiderdbListRequested = true;
-
-		if (!docItem->m_msg0.getList(-1, RDB_SPIDERDB, xmlDoc->m_collnum, &docItem->m_spiderdbList, (const char *)&startKey,
-		                  (const char *)&endKey,
-		                  1000000, docItem, processedDoc, 0, true, true, -1, 0, -1, 10000, false, false, -1)) {
-			// blocked
-			return;
-		}
-	}
-
-	if (!docItem->m_spiderdbListProcessed) {
-		if (docItem->m_spiderdbList.isEmpty()) {
-			xmlDoc->getRebuiltSpiderRequest(&xmlDoc->m_sreq);
-			xmlDoc->m_addSpiderRequest = true;
-		} else {
-			SpiderRequest *sreq = reinterpret_cast<SpiderRequest *>(docItem->m_spiderdbList.getCurrentRec());
-			xmlDoc->m_sreq = *sreq;
-		}
-
-		xmlDoc->m_sreqValid = true;
-		docItem->m_spiderdbListProcessed = true;
-	}
-
-	// done
-	if (xmlDoc->m_indexedDoc || xmlDoc->indexDoc()) {
-		docItem->m_docProcess->removePendingDoc(docItem);
-
-		delete xmlDoc;
-		delete docItem;
-	}
+	docItem->m_docProcess->processDocItem(docItem);
 }
 
 void DocProcess::processedDoc(void *state) {
 	// reprocess xmldoc
 	s_docProcessDocThreadQueue.addItem(state);
 }
-
-

@@ -25,7 +25,9 @@ class DocReindex : public DocProcess {
 public:
 	DocReindex(const char *filename, bool isUrl);
 
-	static void updateXmldoc(XmlDoc *xmlDoc);
+	DocProcessDocItem* createDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos) override;
+	void updateXmldoc(XmlDoc *xmlDoc) override;
+	void processDocItem(DocProcessDocItem *docItem) override;
 };
 
 extern DocReindex g_docReindex;

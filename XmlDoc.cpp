@@ -14152,8 +14152,9 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	if ( tag ) firstIp = atoip(tag->getTagData());
 
 	// this is usually the authority
-	if ( m_firstIpValid )
+	if (m_firstIpValid) {
 		firstIp = m_firstIp;
+	}
 
 	// otherwise, inherit from oldsr to be safe
 	// BUT NOT if it was a fakeip and we were injecting because
@@ -14166,8 +14167,9 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// we set the injection bit and the pagereindex bit, we should let
 	// thise guys keep the firstip because the docid-based spider request
 	// is in spiderdb. it needs to match up.
-	if ( m_sreqValid && (!m_sreq.m_isInjecting||m_sreq.m_isPageReindex) )
+	if (m_sreqValid && (!m_sreq.m_isInjecting || m_sreq.m_isPageReindex)) {
 		firstIp = m_sreq.m_firstIp;
+	}
 
 	// sanity
 	if ( firstIp == 0 || firstIp == -1 ) {
@@ -14176,8 +14178,8 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		else
 			log("xmldoc: BAD FIRST IP for %" PRId64,m_docId);
 		firstIp = 12345;
-		//g_process.shutdownAbort(true); }
 	}
+
 	// store it
 	m_srep.m_firstIp = firstIp;
 
