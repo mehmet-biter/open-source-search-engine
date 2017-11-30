@@ -1017,12 +1017,6 @@ bool Query::setQTerms ( const Words &words ) {
 			qt->m_synWids1 = 0;
 			qt->m_numAlnumWordsInSynonym = 0;
 
-			// crap, "nj" is a synonym of the PHRASE TERM
-			// bigram "new jersey" not of the single word term
-			// "new" so fix that.
-			if(origTerm->m_rightPhraseTerm)
-				qt->m_synonymOf = origTerm->m_rightPhraseTerm;
-
 			// ignore some synonym terms if tf is too low
 			qt->m_ignored = qw->m_ignoreWord;
 			// stop word? no, we're a phrase term
@@ -3157,6 +3151,8 @@ void Query::dumpToLog() const
 		log("    phrase='%*.*s'", (int)qw.m_phraseLen, (int)qw.m_phraseLen, qw.m_word);
 		log("    m_wordId=%" PRId64, qw.m_wordId);
 		log("    m_phraseId=%" PRId64, qw.m_phraseId);
+		if(qw.m_queryWordTerm)
+			log("    m_queryWordTerm= #%d", (int)(qw.m_queryWordTerm-m_qterms));
 	}
 	log("Query:setQTerms: dumping %d query-terms:", m_numTerms);
 	for(int i=0; i<m_numTerms; i++) {
@@ -3172,6 +3168,8 @@ void Query::dumpToLog() const
 		log("    m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, (void*)qt.m_rightPhraseTerm);
 		log("    m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, (void*)qt.m_rightPhraseTerm);
 		log("    m_termFreqWeight=%f m_termWeight=%f m_userWeight=%f", qt.m_termFreqWeight, qt.m_termWeight, qt.m_userWeight);
+		if(qt.m_synonymOf)
+			log("    m_synonymOf=#%d '%.*s'", (int)(qt.m_synonymOf-m_qterms), qt.m_synonymOf->m_termLen, qt.m_synonymOf->m_term);
 	}
 }
 
