@@ -632,10 +632,6 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     "sign=%c "
 			     "required=%" PRId32" "
 			     "fieldcode=%" PRId32" "
-
-			     "ebit=0x%0" PRIx64" "
-			     "impBits=0x%0" PRIx64" "
-
 			     "wikiphrid=%" PRId32" "
 			     "leftwikibigram=%" PRId32" "
 			     "rightwikibigram=%" PRId32" "
@@ -653,10 +649,6 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     sign , //c
 			     (int32_t)qt->m_isRequired,
 			     (int32_t)qt->m_fieldCode,
-
-			     (int64_t)qt->m_explicitBit  ,
-			     (int64_t)qt->m_implicitBits ,
-
 			     wikiPhrId,
 			     (int32_t)leftwikibigram,
 			     (int32_t)rightwikibigram,
