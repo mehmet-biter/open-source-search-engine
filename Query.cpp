@@ -304,9 +304,6 @@ bool Query::set2 ( const char *query        ,
 	// . if it is not truncated, no need to use hard counts
 	// . comment this line and the next one out for testing hard counts
 	if ( ! m_truncated ) return true;
-	// if got truncated AND under the HARD max, nothing we can do, it
-	// got cut off due to m_maxQueryTerms limit in Parms.cpp
-	if ( m_numTerms < (int32_t)MAX_EXPLICIT_BITS ) return true;
 	// if they just hit the admin's ceiling, there's nothing we can do
 	if ( m_numTerms >= m_maxQueryTerms ) return true;
 	// a temp log message
@@ -321,8 +318,6 @@ bool Query::set2 ( const char *query        ,
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 		// get the ith word
 		QueryWord *qw = &m_qwords[i];
-		// mark him as NOT hard required
-		qw->m_hardCount = 0;
 		// skip if not on first level
 		if ( qw->m_level != 0 ) continue;
 		// stop at first OR on this level
@@ -341,8 +336,6 @@ bool Query::set2 ( const char *query        ,
 			// use a hard count for this term
 			goto stop;
 		}
-		// mark him as required, so he won't use an explicit bit now
-		qw->m_hardCount = 1;
 		// mark it so we can reduce our number of explicit bits used
 		redo = 1;
 	}
@@ -351,11 +344,7 @@ bool Query::set2 ( const char *query        ,
 	// if nothing changed, return now
 	if ( ! redo ) return true;
 
-	// . set the query terms again if we have a int32_t query
-	// . if QueryWords has m_hardCount set, ensure the explicit bit is 0
-	// . non-quoted phrases that contain a "required" single word should
-	//   themselves have 0 for their implicit bits, BUT 0x8000 for their
-	//   explicit bit
+	// . set the query terms again if we have a long query
 	if ( ! setQTerms ( words ) )
 		return false;
 
@@ -376,9 +365,6 @@ bool Query::setQTerms ( const Words &words ) {
 	// . use one bit position for each phraseId and wordId
 	// . first set phrases
 	int32_t n = 0;
-	// what is the max value for "shift"?
-	int32_t max = (int32_t)MAX_EXPLICIT_BITS;
-	if ( max > m_maxQueryTerms ) max = m_maxQueryTerms;
 
 	// count phrases first for allocating
 	int32_t nqt = 0;
@@ -548,9 +534,6 @@ bool Query::setQTerms ( const Words &words ) {
 		// change in both places
 		qt->m_termId    = qw->m_phraseId & TERMID_MASK;
 		qt->m_rawTermId = qw->m_rawPhraseId;
-		// assume explicit bit is 0
-		qt->m_explicitBit = 0;
-		qt->m_matchesExplicitBits = 0;
 		// boolean queries are not allowed term signs for phrases
 		// UNLESS it is a '*' soft require sign which we need for
 		// phrases like: "cat dog" AND pig
@@ -562,8 +545,6 @@ bool Query::setQTerms ( const Words &words ) {
 			qt->m_termSign  = qw->m_phraseSign;
 		}
 
-		// do not use an explicit bit up if we have a hard count
-		qt->m_hardCount = qw->m_hardCount;
 		qw->m_queryWordTerm = NULL;
 		// IndexTable.cpp uses this one
 		qt->m_inQuotes  = qw->m_inQuotes;
@@ -575,8 +556,6 @@ bool Query::setQTerms ( const Words &words ) {
 		// at least for phrase, so we can OR in the bits of its
 		// constituents in the for loop below
 		qw->m_queryPhraseTerm = qt ;
-		// doh! gotta reset to 0
-		qt->m_implicitBits = 0;
 		// assign score weight, we're a phrase here
 		qt->m_termWeight = m_bigramWeight;
 		qt->m_userWeight = qw->m_userWeightForPhrase ;
@@ -637,9 +616,6 @@ bool Query::setQTerms ( const Words &words ) {
 		// change in both places
 		qt->m_termId    = qw->m_wordId & TERMID_MASK;
 		qt->m_rawTermId = qw->m_rawWordId;
-		// assume explicit bit is 0
-		qt->m_explicitBit = 0;
-		qt->m_matchesExplicitBits = 0;
 		// boolean queries are not allowed term signs
 		if ( m_isBoolean ) {
 			qt->m_termSign = '\0';
@@ -695,8 +671,6 @@ bool Query::setQTerms ( const Words &words ) {
 				   m_qwords[pw-1].m_wordLen -
 				   m_qwords[fieldStart].m_word;
 		}
-		// do not use an explicit bit up if we have a hard count
-		qt->m_hardCount = qw->m_hardCount;
 		qw->m_queryWordTerm   = qt;
 		// IndexTable.cpp uses this one
 		qt->m_inQuotes  = qw->m_inQuotes;
@@ -720,11 +694,7 @@ bool Query::setQTerms ( const Words &words ) {
 			qt->m_term      = qw->m_word;
 		}
 					  
-		// reset our implicit bits to 0
-		qt->m_implicitBits = 0;
-
 		// assign score weight, we're a single-term here
-		qt->m_termWeight = 1.0;
 		qt->m_userWeight = qw->m_userWeightForWord;
 		qt->m_fieldCode  = qw->m_fieldCode  ;
 		// stuff before a pipe always has a weight of 1
@@ -744,14 +714,11 @@ bool Query::setQTerms ( const Words &words ) {
 		qt->m_leftPhraseTerm     = NULL;
 	}
 
-	// . set implicit bits, m_implicitBits
 	// . set m_inPhrase
 	for (int32_t i = 0; i < m_numWords ; i++ ) {
 		const QueryWord *qw = &m_qwords[i];
 		QueryTerm *qt = qw->m_queryWordTerm;
 		if (!qt) continue;
- 		if ( qw->m_queryPhraseTerm )
-			qw->m_queryPhraseTerm->m_implicitBits |= qt->m_explicitBit;
 		// set flag if in a a phrase, and set phrase term num
 		if ( qw->m_queryPhraseTerm  ) {
 			QueryTerm *pt = qw->m_queryPhraseTerm;
@@ -763,7 +730,6 @@ bool Query::setQTerms ( const Words &words ) {
 		// convert word to its phrase QueryTerm ptr, if any
 		QueryTerm *tt = NULL;
 		if ( pn >= 0 ) tt = m_qwords[pn].m_queryPhraseTerm;
-		if ( tt      ) tt->m_implicitBits |= qt->m_explicitBit;
 		if ( tt      ) {
 			qt->m_leftPhraseTermNum = tt - m_qterms;
 			qt->m_leftPhraseTerm    = tt;
@@ -786,7 +752,6 @@ bool Query::setQTerms ( const Words &words ) {
 			if ( pn2 < 0 ) continue;
 			// he implies us!
 			QueryTerm *tt2 = m_qwords[pn2].m_queryPhraseTerm;
-			if ( tt2 ) tt2->m_implicitBits |= qt->m_explicitBit;
 			if ( tt2 ) {
 				qt->m_leftPhraseTermNum = tt2 - m_qterms;
 				qt->m_leftPhraseTerm    = tt2;
@@ -924,9 +889,6 @@ bool Query::setQTerms ( const Words &words ) {
 				}
 				qt->m_termId    = wid & TERMID_MASK;
 				qt->m_rawTermId = syn.m_aids[j];
-				// assume explicit bit is 0
-				qt->m_explicitBit = 0;
-				qt->m_matchesExplicitBits = 0;
 				// boolean queries are not allowed term signs
 				if ( m_isBoolean ) {
 					qt->m_termSign = '\0';
@@ -940,8 +902,6 @@ bool Query::setQTerms ( const Words &words ) {
 				else {
 					qt->m_termSign  = qw->m_wordSign;
 				}
-				// do not use an explicit bit up if we got a hard count
-				qt->m_hardCount = qw->m_hardCount;
 				// IndexTable.cpp uses this one
 				qt->m_inQuotes  = qw->m_inQuotes;
 				// usually this is right
@@ -964,10 +924,7 @@ bool Query::setQTerms ( const Words &words ) {
 				// point to the string itself that is the word
 				qt->m_term     = ptr;
 				qt->m_termLen  = syn.m_termLens[j];
-				// reset our implicit bits to 0
-				qt->m_implicitBits = 0;
 				// assign score weight, we're a synonym here
-				qt->m_termWeight = m_synonymWeight;
 				qt->m_userWeight = qw->m_userWeightForWord; //todo: use dedicated user weight for synonyms
 				qt->m_fieldCode  = qw->m_fieldCode  ;
 				// stuff before a pipe always has a weight of 1
@@ -1061,9 +1018,6 @@ bool Query::setQTerms ( const Words &words ) {
 			}
 			qt->m_termId    = wid & TERMID_MASK;
 			//qt->m_rawTermId = syn.m_aids[j]; //syn-todo?
-			// assume explicit bit is 0
-			qt->m_explicitBit = 0;
-			qt->m_matchesExplicitBits = 0;
 			// boolean queries are not allowed term signs
 			if(m_isBoolean) {
 				qt->m_termSign = '\0';
@@ -1077,15 +1031,11 @@ bool Query::setQTerms ( const Words &words ) {
 			else {
 				qt->m_termSign  = qw->m_wordSign;
 			}
-			// do not use an explicit bit up if we got a hard count
-			qt->m_hardCount = qw->m_hardCount;
 			// IndexTable.cpp uses this one
 			qt->m_inQuotes  = qw->m_inQuotes;
 			// point to the string itself that is the word
 			qt->m_term     = word_variation.word.data();
 			qt->m_termLen  = word_variation.word.length();
-			// reset our implicit bits to 0
-			qt->m_implicitBits = 0;
 			// assign score weight
 			qt->m_termWeight = word_variation.weight;
 			qt->m_userWeight = qw->m_userWeightForWord; //todo: use dedicated user weight for synonyms
@@ -1101,22 +1051,6 @@ bool Query::setQTerms ( const Words &words ) {
 	m_numTerms = n;
 	
 	if ( n > ABS_MAX_QUERY_TERMS ) { g_process.shutdownAbort(true); }
-
-	// . repeated terms have the same termbits!!
-	// . this is only for bool queries since regular queries ignore
-	//   repeated terms in setWords()
-	// . we need to support: "trains AND (perl OR python) NOT python"
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		for ( int32_t j = 0 ; j < i ; j++ ) {
-			// skip if not a termid match
-			if(m_qterms[i].m_termId!=m_qterms[j].m_termId) continue;
-			m_qterms[i].m_explicitBit = m_qterms[j].m_explicitBit;
-			// if doing phrases, ignore the unrequired phrase
-			if ( m_qterms[i].m_isPhrase ) {
-				continue;
-			}
-		}
-	}
 
 	// . if only have one term and it is a signless phrase, make it signed
 	// . don't forget to set m_termSigns too!
@@ -1140,67 +1074,9 @@ bool Query::setQTerms ( const Words &words ) {
 		     m_qterms[i-1].m_qword->m_quoteStart  ) continue;
 	}
 
-	// . set bit masks
-	// . these are 1-1 with m_qterms (QueryTerms)
-	// . required terms have no - sign and have no signless phrases
-	// . these are what terms doc would NEED to have if we were default AND
-	//   BUT for boolean queries that doesn't apply
-	qvec_t requiredBits = 0; // no - signs, no signless phrases
-	qvec_t negativeBits = 0; // terms with - signs
-	qvec_t forcedBits   = 0; // terms with + signs
-	qvec_t synonymBits  = 0;
-	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		const QueryTerm *qt = &m_qterms[i];
-		// don't require if negative
-		if ( qt->m_termSign == '-' ) {
-			negativeBits |= qt->m_explicitBit; // (1 << i );
-			continue;
-		}
-		// forced bits
-		if ( qt->m_termSign == '+' && ! m_isBoolean ) 
-			forcedBits |= qt->m_explicitBit; //(1 << i);
-		// skip signless phrases
-		if ( qt->m_isPhrase && qt->m_termSign == '\0' ) continue;
-		if ( qt->m_synonymOf ) {
-			synonymBits |= qt->m_explicitBit;
-			continue;
-		}
-		// fix gbhastitleindicator:1 where "1" is a stop word
-		if ( qt->m_isQueryStopWord && ! m_qterms[i].m_fieldCode ) 
-			continue;
-		// OR it all up
-		requiredBits |= qt->m_explicitBit; // (1 << i);
-	}
-
-	// set m_matchRequiredBits which we use for Matches.cpp
-	qvec_t m_matchRequiredBits = 0;
-	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		const QueryTerm *qt = &m_qterms[i];
-		// don't require if negative
-		if ( qt->m_termSign == '-' ) continue;
-		// skip all phrase terms
-		if ( qt->m_isPhrase ) continue;
-		// OR it all up
-		m_matchRequiredBits |= qt->m_explicitBit;
-	}
-
 	// if we have '+test -test':
-	if ( negativeBits & requiredBits )
-		m_numTerms = 0;
-
-        // now set m_matches,ExplicitBits, used only by Matches.cpp so far
-	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		// set it up
-		m_qterms[i].m_matchesExplicitBits = m_qterms[i].m_explicitBit;
-		// or in the repeats
-		for ( int32_t j = 0 ; j < m_numTerms ; j++ ) {
-			// skip if termid mismatch
-			if ( m_qterms[i].m_termId != m_qterms[j].m_termId ) 
-				continue;
-			m_qterms[i].m_matchesExplicitBits |= 
-				m_qterms[j].m_explicitBit;
-		}
-	}
+	//if ( negativeBits & requiredBits )
+	//	m_numTerms = 0;
 
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
 		QueryTerm *qt = &m_qterms[i];
@@ -1290,43 +1166,6 @@ bool Query::setQTerms ( const Words &words ) {
 		// mark it
 		qt->m_isRequired = true;
 	}
-
-	//
-	// new logic for XmlDoc::setRelatedDocIdWeight() to use
-	//
-	int32_t shift = 0;
-	requiredBits = 0;
-	for ( int32_t i = 0; i < n ; i++ ) {
-		QueryTerm *qt = &m_qterms[i];
-		qt->m_explicitBit = 0;
-		if ( ! qt->m_isRequired ) continue;
-		// negative terms are "negative required", but we ignore here
-		if ( qt->m_termSign == '-' ) continue;
-		qt->m_explicitBit = 1<<shift;
-		requiredBits |= qt->m_explicitBit;
-		shift++;
-		if ( shift >= (int32_t)(sizeof(qvec_t)*8) ) break;
-	}
-	// now implicit bits
-	for ( int32_t i = 0; i < n ; i++ ) {
-		QueryTerm *qt = &m_qterms[i];
-		// make it explicit bit at least
-		qt->m_implicitBits = qt->m_explicitBit;
-		if ( qt->m_isRequired ) continue;
-		// synonym?
-		if ( qt->m_synonymOf )
-			qt->m_implicitBits |= qt->m_synonymOf->m_explicitBit;
-		// skip if not bigram
-		if ( ! qt->m_isPhrase ) continue;
-		// get sides
-		const QueryTerm *t1 = qt->m_leftPhraseTerm;
-		const QueryTerm *t2 = qt->m_rightPhraseTerm;
-		if ( ! t1 || ! t2 ) continue;
-		qt->m_implicitBits |= t1->m_explicitBit;
-		qt->m_implicitBits |= t2->m_explicitBit;
-	}
-
-
 
 	// . for query 'to be or not to be shakespeare'
 	//   give big bonus for 'ornot' and 'notto' bigram terms because
@@ -3436,9 +3275,6 @@ void QueryTerm::constructor ( ) {
 	m_termId = 0;
 	m_rawTermId = 0;
 	m_termSign = 0;
-	m_explicitBit = 0;
-	m_matchesExplicitBits = 0;
-	m_hardCount = 0;
 	m_bitNum = 0;
 	m_term = NULL;
 	m_termLen = 0;
@@ -3447,7 +3283,6 @@ void QueryTerm::constructor ( ) {
 	m_langIdBitsValid = false;
 	m_termFreq = 0;
 	m_termFreqWeight = 0.0;
-	m_implicitBits = 0;
 	m_isQueryStopWord = false;
 	m_inQuotes = false;
 	m_userWeight = 0;
@@ -3466,7 +3301,6 @@ void QueryTerm::constructor ( ) {
 	m_rightPhraseTerm = NULL;
 	memset(m_startKey,0,sizeof(m_startKey));
 	memset(m_endKey,0,sizeof(m_endKey));
-	m_ks = 0;
 }
 
 bool QueryTerm::isSplit() const {

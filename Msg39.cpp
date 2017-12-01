@@ -608,7 +608,6 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 		// store now in qterm
 		Posdb::makeStartKey ( m_query.m_qterms[i].m_startKey, tid, docIdStart );
 		Posdb::makeEndKey   ( m_query.m_qterms[i].m_endKey,   tid, docIdEnd   );
-		m_query.m_qterms[i].m_ks = sizeof(posdbkey_t);
 	}
 
 	// debug msg
@@ -644,14 +643,9 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     "sign=%c "
 			     "required=%" PRId32" "
 			     "fieldcode=%" PRId32" "
-
-			     "ebit=0x%0" PRIx64" "
-			     "impBits=0x%0" PRIx64" "
-
 			     "wikiphrid=%" PRId32" "
 			     "leftwikibigram=%" PRId32" "
 			     "rightwikibigram=%" PRId32" "
-			     "hc=%" PRId32" "
 			     "otermLen=%" PRId32" "
 			     "isSynonym=%s"
 			     "querylangid=%" PRId32" " ,
@@ -665,14 +659,9 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     sign , //c
 			     (int32_t)qt->m_isRequired,
 			     (int32_t)qt->m_fieldCode,
-
-			     (int64_t)qt->m_explicitBit  ,
-			     (int64_t)qt->m_implicitBits ,
-
 			     wikiPhrId,
 			     (int32_t)leftwikibigram,
 			     (int32_t)rightwikibigram,
-			     (int32_t)m_query.m_qterms[i].m_hardCount ,
 			     (int32_t)m_query.getTermLen(i) ,
 			     (isSynonym ? "true" : "false"),
 			     (int32_t)m_query.m_langId );
