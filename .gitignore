@@ -13,8 +13,6 @@ gb
 gb.oldsave
 urlinfo
 create_ucd_tables
-libcld2_full.so
-libgb.a
 rebalance.txt
 unifiedDict-buf.txt
 statistics.txt
@@ -22,11 +20,15 @@ statistics.txt
 log000*
 file_state*.txt
 gb_output*.txt
+contenttypeallowed.txt
+cleanexit
 # slacktee
 slacktee.sh
 slacktee.conf
 # core file
 lastcore.*
+vgcore.*
+core.*
 # kdevelop
 .kdev4/
 # clion
@@ -43,10 +45,22 @@ CMakeLists.txt
 *.gcda
 *.gcno
 coverage*.html
-vgcore.*
 Make.depend
+# library
 libced.so
 libcld3.so
+libcld2_full.so
+libgb.a
+wanted_check_api.so
+libcares.so
+libcares.so.2
+# config files
+adultphrases.txt
+adultwords.txt
+contenttypeblocklist.txt
+urlblacklist*.txt
+urlhostblacklist.txt
+urlresultoverride.txt
 sto/dump_sto
 sto/libsto.a
 word_variations/libword_variations.a
