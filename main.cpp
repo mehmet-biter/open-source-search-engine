@@ -5385,7 +5385,10 @@ static bool cacheTest() {
 	g_conf.m_maxMem = 2000000000LL; // 2G
 	//g_mem.m_maxMem  = 2000000000LL; // 2G
 
-	hashinit();
+	if ( ! hashinit() ) {
+		log( LOG_ERROR, "db: Failed to init hashtable." );
+		return 1;
+	}
 
 	// use an rdb cache
 	RdbCache c;
