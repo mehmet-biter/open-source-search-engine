@@ -749,7 +749,13 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 	//m_coll      = coll;
 	m_pbuf      = pbuf;
 	m_niceness  = niceness;
-	m_version   = TITLEREC_CURRENT_VERSION;
+
+#ifndef PRIVACORE_SAFE_VERSION
+	m_version = g_conf.m_titleRecVersion;
+#else
+	m_version = TITLEREC_CURRENT_VERSION;
+#endif
+
 	m_versionValid = true;
 
 	// this is used to removing the rec from doledb after we spider it
@@ -2930,8 +2936,12 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 	// assume could not make one because we were banned or something
 	tbuf->purge(); // m_titleRec = NULL;
 
+#ifndef PRIVACORE_SAFE_VERSION
+	m_version = g_conf.m_titleRecVersion;
+#else
 	// start seting members in THIS's header before compression
-	m_version           = TITLEREC_CURRENT_VERSION;
+	m_version = TITLEREC_CURRENT_VERSION;
+#endif
 
 	// set this
 	m_headerSize = (char *)&ptr_firstUrl - (char *)&m_headerSize;
