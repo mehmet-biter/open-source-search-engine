@@ -3140,7 +3140,6 @@ void QueryTerm::constructor ( ) {
 	m_rightPhraseTerm = NULL;
 	memset(m_startKey,0,sizeof(m_startKey));
 	memset(m_endKey,0,sizeof(m_endKey));
-	m_ks = 0;
 }
 
 bool QueryTerm::isSplit() const {

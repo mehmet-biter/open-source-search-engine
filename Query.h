@@ -340,7 +340,6 @@ class QueryTerm {
 
 	char m_startKey[MAX_KEY_BYTES];
 	char m_endKey  [MAX_KEY_BYTES];
-	char m_ks;
 };
 
 #define MAX_EXPRESSIONS 100
