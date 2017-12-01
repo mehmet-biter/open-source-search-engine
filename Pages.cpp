@@ -857,55 +857,6 @@ bool printGigabotAdvice(SafeBuf *sb,
 	return true;
 }
 
-void Pages::printFormTop( SafeBuf *sb, HttpRequest *r ) {
-	int32_t  page   = getDynamicPageNumber ( r );
-
-	if( page < 0 ) {
-		logError("getDynamicPageNumber returned negative index!");
-		return;
-	}
-
-	// . the form
-	// . we cannot use the GET method if there is more than a few k of
-	//   parameters, like in the case of the Search Controls page. The
-	//   browser simply will not send the request if it is that big.
-	switch(s_pages[page].m_page_method) {
-		case page_method_t::page_method_post_form:
-			sb->safePrintf ("<form name=\"SubmitInput\" method=\"post\" "
-					// we need this for <input type=file> tags
-					"ENCTYPE=\"multipart/form-data\" "
-					"action=\"/%s\">\n",
-					s_pages[page].m_filename);
-		case page_method_t::page_method_post_url:
-			sb->safePrintf ("<form name=\"SubmitInput\" method=\"post\" "
-					"action=\"/%s\">\n",
-					s_pages[page].m_filename);
-		case page_method_t::page_method_get:
-			sb->safePrintf ("<form name=\"SubmitInput\" method=\"get\" "
-					"action=\"/%s\">\n",
-					s_pages[page].m_filename);
-	}
-}
-
-void Pages::printFormData( SafeBuf *sb, TcpSocket *s, HttpRequest *r ) {
-
-	int32_t  page   = getDynamicPageNumber ( r );
-	const char *coll   = r->getString ( "c"   );
-	if ( ! coll ) coll = "";
-	sb->safePrintf ( "<input type=\"hidden\" name=\"c\" "
-			 "value=\"%s\" />\n", coll);
-
-	// should any changes be broadcasted to all hosts?
-	sb->safePrintf ("<input type=\"hidden\" name=\"cast\" value=\"%" PRId32"\" "
-			"/>\n",
-			page >= 0 ? (int32_t)s_pages[page].m_cast : 0);
-
-}
-
-bool Pages::printAdminBottom ( SafeBuf *sb, HttpRequest *r ) {
-	return printAdminBottom ( sb );
-}
-
 bool Pages::printSubmit ( SafeBuf *sb ) {
 	// update button
 	return sb->safePrintf ( 

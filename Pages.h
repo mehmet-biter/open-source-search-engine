@@ -69,7 +69,6 @@ bool sendPageProfiler   ( TcpSocket *s , HttpRequest *r );
 bool sendPageThreads    ( TcpSocket *s , HttpRequest *r );
 bool sendPageAPI        ( TcpSocket *s , HttpRequest *r );
 bool sendPageHelp       ( TcpSocket *s , HttpRequest *r );
-bool sendPageGraph      ( TcpSocket *s , HttpRequest *r );
 bool sendPageHealthCheck ( TcpSocket *sock , HttpRequest *hr ) ;
 bool sendPageDefaultCss(TcpSocket *s, HttpRequest *r);
 
@@ -137,10 +136,6 @@ class Pages {
 					 const char  *qs = NULL,
 					 const char* bodyJavascript = "" );
 
-	void printFormTop(  SafeBuf *sb, HttpRequest *r );
-	void printFormData( SafeBuf *sb, TcpSocket *s, HttpRequest *r );
-
-	bool  printAdminBottom         ( SafeBuf *sb, HttpRequest *r );
 	bool  printAdminBottom         ( SafeBuf *sb);
 	bool  printAdminBottom2        ( SafeBuf *sb);
 	bool  printTail                ( SafeBuf* sb, bool isLocal );
