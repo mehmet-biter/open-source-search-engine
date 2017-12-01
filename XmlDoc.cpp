@@ -6242,8 +6242,11 @@ SafeBuf *XmlDoc::getTimeAxisUrl ( ) {
 //   from scratch. this loads it from titledb.
 // . NULL is a valid value (EDOCNOTFOUND) so return a char **
 char **XmlDoc::getOldTitleRec() {
+	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
+
 	// if valid return that
 	if ( m_oldTitleRecValid ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, already valid");
 		return &m_oldTitleRec;
 	}
 
@@ -6253,6 +6256,7 @@ char **XmlDoc::getOldTitleRec() {
 	if ( m_setFromTitleRec ) {
 		m_oldTitleRecValid = true;
 		m_oldTitleRec      = NULL;//m_titleRec;
+		logTrace(g_conf.m_logTraceXmlDoc, "END, setFromTitleRec");
 		return &m_oldTitleRec;
 	}
 	// sanity check
@@ -6271,6 +6275,7 @@ char **XmlDoc::getOldTitleRec() {
 	if ( m_isIndexedValid && ! m_isIndexed && m_docIdValid ) {
 		m_oldTitleRec      = NULL;
 		m_oldTitleRecValid = true;
+		logTrace(g_conf.m_logTraceXmlDoc, "END, not indexed");
 		return &m_oldTitleRec;
 	}
 	// sanity check. if we have no url or docid ...
@@ -6300,6 +6305,7 @@ char **XmlDoc::getOldTitleRec() {
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, no collection");
 		return NULL;
 	}
 
@@ -6328,6 +6334,7 @@ char **XmlDoc::getOldTitleRec() {
 				      m_niceness           , // niceness
 				      999999               )) {// timeout seconds
 		// return -1 if we blocked
+		logTrace(g_conf.m_logTraceXmlDoc, "END, blocked");
 		return (char **)-1;
 	}
 
@@ -6338,8 +6345,11 @@ char **XmlDoc::getOldTitleRec() {
 
 	// error?
 	if ( g_errno ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, error=%s", mstrerror(g_errno));
 		return NULL;
 	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "END");
 
 	// got it
 	return &m_oldTitleRec;
