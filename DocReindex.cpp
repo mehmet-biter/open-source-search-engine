@@ -53,6 +53,10 @@ void DocReindex::updateXmldoc(XmlDoc *xmlDoc) {
 
 void DocReindex::processDocItem(DocProcessDocItem *docItem) {
 	DocReindexDocItem *reindexDocItem = dynamic_cast<DocReindexDocItem*>(docItem);
+	if (reindexDocItem == nullptr) {
+		gbshutdownLogicError();
+	}
+
 	XmlDoc *xmlDoc = reindexDocItem->m_xmlDoc;
 
 	// set callback

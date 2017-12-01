@@ -54,6 +54,10 @@ void DocRebuild::updateXmldoc(XmlDoc *xmlDoc) {
 
 void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 	DocRebuildDocItem *rebuildDocItem = dynamic_cast<DocRebuildDocItem*>(docItem);
+	if (rebuildDocItem == nullptr) {
+		gbshutdownLogicError();
+	}
+
 	XmlDoc *xmlDoc = rebuildDocItem->m_xmlDoc;
 
 	// set callback
