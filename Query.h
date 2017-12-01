@@ -192,12 +192,6 @@ class QueryWord {
 	// . if we're a phrase term, signs distribute across quotes
 	char        m_wordSign;
 	char        m_phraseSign;
-	// this is 1 if the associated word is a valid query term but its
-	// m_explicitBit is 0. we use this to save explicit bits for those
-	// terms that need them (like those terms in complicated nested boolean
-	// expressions) and just use a hardCount to see how many hard required
-	// terms are contained by a document. see IndexTable.cpp "hardCount"
-	char        m_hardCount;
 	// the parenthetical level of this word in the boolean expression.
 	// level 0 is the first level.
 	char        m_level;
@@ -281,13 +275,6 @@ class QueryTerm {
 
 	// sign of the phrase or word we used
 	char       m_termSign;
-
-	// this is 1 if the associated word is a valid query term but its
-	// m_explicitBit is 0. we use this to save explicit bits for those
-	// terms that need them (like those terms in complicated nested boolean
-	// expressions) and just use a hardCount to see how many hard required
-	// terms are contained by a document. see IndexTable.cpp "hardCount"
-	char       m_hardCount;
 
 	// the "number" of the query term used for evaluation boolean
 	// expressions in Expression::isTruth(). Basically just the

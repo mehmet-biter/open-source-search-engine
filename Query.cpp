@@ -309,8 +309,6 @@ bool Query::set2 ( const char *query        ,
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 		// get the ith word
 		QueryWord *qw = &m_qwords[i];
-		// mark him as NOT hard required
-		qw->m_hardCount = 0;
 		// skip if not on first level
 		if ( qw->m_level != 0 ) continue;
 		// stop at first OR on this level
@@ -329,8 +327,6 @@ bool Query::set2 ( const char *query        ,
 			// use a hard count for this term
 			goto stop;
 		}
-		// mark him as required, so he won't use an explicit bit now
-		qw->m_hardCount = 1;
 		// mark it so we can reduce our number of explicit bits used
 		redo = 1;
 	}
@@ -339,11 +335,7 @@ bool Query::set2 ( const char *query        ,
 	// if nothing changed, return now
 	if ( ! redo ) return true;
 
-	// . set the query terms again if we have a int32_t query
-	// . if QueryWords has m_hardCount set, ensure the explicit bit is 0
-	// . non-quoted phrases that contain a "required" single word should
-	//   themselves have 0 for their implicit bits, BUT 0x8000 for their
-	//   explicit bit
+	// . set the query terms again if we have a long query
 	if ( ! setQTerms ( words ) )
 		return false;
 
@@ -511,8 +503,6 @@ bool Query::setQTerms ( const Words &words ) {
 			qt->m_termSign  = qw->m_phraseSign;
 		}
 
-		// do not use an explicit bit up if we have a hard count
-		qt->m_hardCount = qw->m_hardCount;
 		qw->m_queryWordTerm = NULL;
 		// IndexTable.cpp uses this one
 		qt->m_inQuotes  = qw->m_inQuotes;
@@ -638,8 +628,6 @@ bool Query::setQTerms ( const Words &words ) {
 				   m_qwords[pw-1].m_wordLen -
 				   m_qwords[fieldStart].m_word;
 		}
-		// do not use an explicit bit up if we have a hard count
-		qt->m_hardCount = qw->m_hardCount;
 		qw->m_queryWordTerm   = qt;
 		// IndexTable.cpp uses this one
 		qt->m_inQuotes  = qw->m_inQuotes;
@@ -871,8 +859,6 @@ bool Query::setQTerms ( const Words &words ) {
 				else {
 					qt->m_termSign  = qw->m_wordSign;
 				}
-				// do not use an explicit bit up if we got a hard count
-				qt->m_hardCount = qw->m_hardCount;
 				// IndexTable.cpp uses this one
 				qt->m_inQuotes  = qw->m_inQuotes;
 				// usually this is right
@@ -3128,7 +3114,6 @@ void QueryTerm::constructor ( ) {
 	m_termId = 0;
 	m_rawTermId = 0;
 	m_termSign = 0;
-	m_hardCount = 0;
 	m_bitNum = 0;
 	m_term = NULL;
 	m_termLen = 0;

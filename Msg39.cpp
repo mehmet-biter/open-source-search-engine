@@ -635,7 +635,6 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     "wikiphrid=%" PRId32" "
 			     "leftwikibigram=%" PRId32" "
 			     "rightwikibigram=%" PRId32" "
-			     "hc=%" PRId32" "
 			     "otermLen=%" PRId32" "
 			     "isSynonym=%s"
 			     "querylangid=%" PRId32" " ,
@@ -652,7 +651,6 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     wikiPhrId,
 			     (int32_t)leftwikibigram,
 			     (int32_t)rightwikibigram,
-			     (int32_t)m_query.m_qterms[i].m_hardCount ,
 			     (int32_t)m_query.getTermLen(i) ,
 			     (isSynonym ? "true" : "false"),
 			     (int32_t)m_query.m_langId );
