@@ -479,6 +479,11 @@ bool Query::setQTerms ( const Words &words ) {
 			logTrace(g_conf.m_logTraceQuery, "word variations didn't produce any");
 	} else
 		m_wordVariations.clear();
+	if(g_conf.m_logTraceQuery) {
+		logTrace(g_conf.m_logTraceQuery, "m_wordVariations.size()=%zu", m_wordVariations.size());
+		for(unsigned i=0; i<m_wordVariations.size(); i++)
+			logTrace(g_conf.m_logTraceQuery, "  variation #%u: %s weight=%f src=[%d..%d)", i, m_wordVariations[i].word.c_str(), m_wordVariations[i].weight, m_wordVariations[i].source_word_start, m_wordVariations[i].source_word_end);
+	}
 
 
 	m_numTermsUntruncated = nqt;
@@ -976,6 +981,7 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 
 	if(m_word_variations_config.m_languageSpecificWordVariations) {
+		logTrace(g_conf.m_logTraceQuery, "Word variations: %zu", m_wordVariations.size());
 		for(unsigned i=0; i<m_wordVariations.size(); i++) {
 			if(n>=nqt)
 				break;
@@ -983,7 +989,7 @@ bool Query::setQTerms ( const Words &words ) {
 			auto const &word_variation(m_wordVariations[i]);
 			int wordStartIdx = wvg_source_word_index[word_variation.source_word_start];
 			int wordEndIdx = wvg_source_word_index[word_variation.source_word_end-1];
-			logTrace(g_conf.m_logTraceQuery, "Word variation #%u '%s' covers words [%d..%d]", i,word_variation.word.c_str(),wordStartIdx,wordEndIdx);
+			logTrace(g_conf.m_logTraceQuery, "  Word variation #%u: '%s' weight=%f src=[%u..%u]", i, word_variation.word.c_str(), word_variation.weight, wordStartIdx, wordEndIdx);
 			QueryWord *qw = &m_qwords[wordStartIdx];
 			if((unsigned)qw->m_wordLen==word_variation.word.length() &&
 			   memcmp(qw->m_word, word_variation.word.data(), word_variation.word.length())==0)
