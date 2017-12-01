@@ -71,7 +71,7 @@ bool sendPageAPI        ( TcpSocket *s , HttpRequest *r );
 bool sendPageHelp       ( TcpSocket *s , HttpRequest *r );
 bool sendPageHealthCheck ( TcpSocket *sock , HttpRequest *hr ) ;
 bool sendPageDefaultCss(TcpSocket *s, HttpRequest *r);
-
+bool sendPageDocProcess(TcpSocket *s, HttpRequest *r);
 
 enum class page_method_t {
 	page_method_get = 1,		//plain http get
@@ -216,6 +216,7 @@ enum {
 	PAGE_DOLEIPTABLE ,
 	PAGE_SEARCHBOX   ,
 	PAGE_PARSER      ,
+	PAGE_DOCPROCESS  ,
 	PAGE_SITEDB      ,
 	PAGE_HEALTHCHECK ,
 	PAGE_NONE     	};

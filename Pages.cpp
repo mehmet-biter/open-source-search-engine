@@ -228,6 +228,11 @@ static WebPage s_pages[] = {
 	  sendPageParser,
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},
 
+	{ PAGE_DOCPROCESS, "admin/docprocess", 0, "DocProcess", 0, page_method_t::page_method_get,
+	  "Various doc process methods",
+	  sendPageDocProcess,
+	  PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
+
 	{ PAGE_SITEDB    , "admin/tagdb"  , 0 , "Tagdb"  ,  0, page_method_t::page_method_post_url,
 	  "add/remove/get tags for sites/urls",
 	  sendPageTagdb,
@@ -1070,6 +1075,7 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 		if ( i == PAGE_SEARCHBOX ) continue;
 		if ( i == PAGE_TITLEDB ) continue;
 		if ( i == PAGE_HEALTHCHECK ) continue;
+		if ( i == PAGE_DOCPROCESS ) continue;
 		
 
 

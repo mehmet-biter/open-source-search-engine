@@ -205,13 +205,45 @@ void DocProcess::removePendingDoc(DocProcessDocItem *docItem) {
 		gbshutdownLogicError();
 	}
 
-	if (it == m_pendingDocItems.begin()) {
+	if (docItem->m_lastPos >= 0 && it == m_pendingDocItems.begin()) {
 		std::ofstream lastPosFile(docItem->m_docProcess->m_lastPosFilename, std::ofstream::out|std::ofstream::trunc);
 		lastPosFile << docItem->m_lastPos << "|" << docItem->m_key << std::endl;
 	}
 
 	m_pendingDocItems.erase(it);
 	pthread_cond_signal(&m_pendingDocItemsCond);
+}
+
+bool DocProcess::addKey(const std::string &key, int64_t currentFilePos) {
+	logTrace(g_conf.m_logTraceDocProcess, "Processing key='%s'", key.c_str());
+	DocProcessDocItem *docItem = createDocItem(this, key, currentFilePos);
+
+	if (m_isUrl) {
+		SpiderRequest sreq;
+		sreq.setFromAddUrl(key.c_str());
+		sreq.m_isAddUrl = 0;
+
+		logTrace(g_conf.m_logTraceDocProcess, "Adding url=%s", key.c_str());
+		docItem->m_xmlDoc->set4(&sreq, nullptr, "main", nullptr, 0);
+	} else {
+		int64_t docId = strtoll(key.c_str(), nullptr, 10);
+
+		if (docId == 0) {
+			// ignore invalid docId
+			return false;
+		}
+
+		logTrace(g_conf.m_logTraceDocProcess, "Adding docid=%" PRId64, docId);
+		docItem->m_xmlDoc->set3(docId, "main", 0);
+	}
+
+	updateXmldoc(docItem->m_xmlDoc);
+	docItem->m_xmlDoc->setCallback(docItem, processedDoc);
+
+	addPendingDoc(docItem);
+	s_docProcessDocThreadQueue.addItem(docItem);
+
+	return true;
 }
 
 void DocProcess::processFile(void *item) {
@@ -253,35 +285,9 @@ void DocProcess::processFile(void *item) {
 		std::string key = fileItem->m_docProcess->m_isUrl ? line : line.substr(0, line.find('|'));
 
 		if (foundLastPos) {
-			logTrace(g_conf.m_logTraceDocProcess, "Processing key='%s'", key.c_str());
-			DocProcessDocItem *docItem = fileItem->m_docProcess->createDocItem(fileItem->m_docProcess, key, currentFilePos);
-
-			if (fileItem->m_docProcess->m_isUrl) {
-				SpiderRequest sreq;
-				sreq.setFromAddUrl(key.c_str());
-				sreq.m_isAddUrl = 0;
-
-				logTrace(g_conf.m_logTraceDocProcess, "Adding url=%s", key.c_str());
-				docItem->m_xmlDoc->set4(&sreq, nullptr, "main", nullptr, 0);
-			} else {
-				int64_t docId = strtoll(line.c_str(), nullptr, 10);
-
-				if (docId == 0) {
-					// ignore invalid docId
-					continue;
-				}
-
-				logTrace(g_conf.m_logTraceDocProcess, "Adding docid=%" PRId64, docId);
-				docItem->m_xmlDoc->set3(docId, "main", 0);
+			if (fileItem->m_docProcess->addKey(key, currentFilePos)) {
+				fileItem->m_docProcess->waitPendingDocCount(10);
 			}
-
-			docItem->m_docProcess->updateXmldoc(docItem->m_xmlDoc);
-			docItem->m_xmlDoc->setCallback(docItem, processedDoc);
-
-			fileItem->m_docProcess->addPendingDoc(docItem);
-			s_docProcessDocThreadQueue.addItem(docItem);
-
-			fileItem->m_docProcess->waitPendingDocCount(10);
 		} else if (lastPosKey.compare(key) == 0) {
 			foundLastPos = true;
 		}
