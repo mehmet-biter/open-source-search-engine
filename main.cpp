@@ -1520,7 +1520,7 @@ int main2 ( int argc , char *argv[] ) {
 		_exit(0);
 	}
 
-	if(cmd && cmd[0] && cmd[0]!='-') {
+	if(cmd[0] && cmd[0]!='-') {
 		log(LOG_ERROR, "Unknown command: '%s'", cmd);
 		_exit(1);
 	}
