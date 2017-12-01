@@ -1861,7 +1861,7 @@ void gotHttpReply2 ( void *state ,
 
 		// now final udp slot will free the reply, so tcp server
 		// no longer has to. set this tcp buf to null then.
-		if ( ts && ts->m_readBuf == reply && count == 0 ) 
+		if ( ts->m_readBuf == reply && count == 0 )
 			ts->m_readBuf = NULL;
 	}
 
