@@ -3653,6 +3653,15 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "verb: past<->past variants";
+	m->m_desc  = "Weight of different pasts (including compound tenses). Eg 'ate' vs. 'had eaten'";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.verb_past_past_variants);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.verb_past_past_variants);
+	m->m_cgi  = "lwv_verb_past_past_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	
 	// limit to this # of the top term pairs from inlink text whose
 	// score is accumulated
@@ -7196,6 +7205,15 @@ void Parms::init ( ) {
 	m->m_def   = "0.95";
 	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.verb_spelling_variants);
 	m->m_cgi  = "lwv_verb_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "verb: past<->past variants";
+	m->m_desc  = "Weight of different pasts (including compound tenses). Eg 'ate' vs. 'had eaten'";
+	m->m_def   = "0.95";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.verb_past_past_variants);
+	m->m_cgi  = "lwv_verb_past_past_variants";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_WORD_VARIATIONS;
 	m++;

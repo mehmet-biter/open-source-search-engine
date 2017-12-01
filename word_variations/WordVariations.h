@@ -13,6 +13,7 @@ struct WordVariationWeights {
 	float noun_plural_singular;
 	float proper_noun_spelling_variants;
 	float verb_spelling_variants;
+	float verb_past_past_variants;
 	//todo: more configurable weights in WordVariationWeights
 	WordVariationWeights()
 	  : noun_indefinite_definite(1.0),
@@ -20,7 +21,8 @@ struct WordVariationWeights {
 	    noun_singular_plural(1.0),
 	    noun_plural_singular(1.0),
 	    proper_noun_spelling_variants(1.0),
-	    verb_spelling_variants(1.0)
+	    verb_spelling_variants(1.0),
+	    verb_past_past_variants(1.0)
 	  {}
 };
 

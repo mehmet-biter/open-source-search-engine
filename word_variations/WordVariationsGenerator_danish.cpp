@@ -30,6 +30,10 @@ public:
 					     const std::vector<std::string> &source_words,
 					     const std::vector<std::string> &lower_source_words,
 					     float weight);
+	void make_verb_past_past_variants(std::vector<WordVariationGenerator::Variation> &variations,
+					  const std::vector<std::string> &source_words,
+					  const std::vector<std::string> &lower_source_words,
+					  float weight);
 };
 
 static WordVariationGenerator_danish s_WordVariationGenerator_danish;
@@ -70,6 +74,10 @@ std::vector<WordVariationGenerator::Variation> WordVariationGenerator_danish::qu
 	}
 	if(weights.verb_spelling_variants >= threshold) {
 		transliterate_verb_acute_accent(variations,source_words,lower_source_words,weights.verb_spelling_variants);
+	}
+	
+	if(weights.verb_past_past_variants >= threshold) {
+		make_verb_past_past_variants(variations,source_words,lower_source_words,weights.verb_past_past_variants);
 	}
 	
 	//filter out duplicates and variations below threshold
@@ -289,5 +297,202 @@ void WordVariationGenerator_danish::transliterate_verb_acute_accent(std::vector<
 				variations.push_back(v);
 			}
 		}
+	}
+}
+
+
+void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<WordVariationGenerator::Variation> &variations,
+								 const std::vector<std::string> &source_words,
+								 const std::vector<std::string> &lower_source_words,
+								 float weight)
+{
+	//In Danish changing one past tense to another past tense can be a bit sketchy because we really should know the context.
+	//There isn't much difference between written and colloquial forms so the variations don't give us that much in that respect.
+	//But since you can change the weight of these variations there is no harm in having this possibility.
+	//Danish tenses
+	//  perfect (førnutid)		auxiliary verb in present tense + past participle	"har købt"
+	//  preterite (datid)		past tense						"købte"
+	//  pluperfect (førdatid)	auxiliary verb in past tense + past participle		"havde købt"
+	//the auxilliary verbs are "være" ("er"/"var") and "have" ("har"/"havde"). We blatantly ignore the two other auxilliary verbs "blive" and "få"
+
+	bool prev_was_er = false,
+	     prev_was_var = false,
+	     prev_was_har = false,
+	     prev_was_havde = false;
+	unsigned prev_word_idx=0;
+	for(unsigned i=0; i<lower_source_words.size(); i++) {
+		auto source_word(lower_source_words[i]);
+		if(source_word==" ")
+			continue;
+		auto matches(lexicon.query_matches(source_word));
+		if(prev_was_er || prev_was_var || prev_was_har || prev_was_havde) {
+			//check if this word is the past participle
+			const sto::WordForm *wordform_past_participle = NULL;
+			const sto::WordForm *wordform_preterite = NULL;
+			for(auto match : matches) {
+				auto wordforms(match->query_all_explicit_ford_forms());
+				for(auto wordform : wordforms) {
+					if(same_wordform_as_source(*wordform,source_word) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::tense_past) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::verbFormMood_participle))
+					{
+						wordform_past_participle = wordform;
+					}
+					if(wordform->has_attribute(sto::word_form_attribute_t::tense_past) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::verbFormMood_indicative) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::voice_activeVoice)) //we'll ignore this complication for now
+						wordform_preterite = wordform;
+				}
+			}
+			if(wordform_past_participle!=NULL) {
+				//word is past participle and previous word was one of the auxilliary verbs
+				if(prev_was_er) {
+					//generate preterite
+					if(wordform_preterite) {
+						WordVariationGenerator::Variation v0;
+						v0.word.assign(wordform_preterite->written_form,wordform_preterite->written_form_length);
+						v0.weight = weight;
+						v0.source_word_start = prev_word_idx;
+						v0.source_word_end = i+1;
+						variations.push_back(v0);
+					}
+					//generate pluperfect
+					WordVariationGenerator::Variation v;
+					v.word = "var";
+					v.weight = weight;
+					v.source_word_start = prev_word_idx;
+					v.source_word_end = i;
+					variations.push_back(v);
+				}
+				if(prev_was_var) {
+					//generate preterite
+					if(wordform_preterite) {
+						WordVariationGenerator::Variation v0;
+						v0.word.assign(wordform_preterite->written_form,wordform_preterite->written_form_length);
+						v0.weight = weight;
+						v0.source_word_start = prev_word_idx;
+						v0.source_word_end = i+1;
+						variations.push_back(v0);
+					}
+					//generate perfect
+					WordVariationGenerator::Variation v;
+					v.word = "er";
+					v.weight = weight;
+					v.source_word_start = prev_word_idx;
+					v.source_word_end = i;
+					variations.push_back(v);
+				}
+				if(prev_was_har) {
+					//generate preterite
+					if(wordform_preterite) {
+						WordVariationGenerator::Variation v0;
+						v0.word.assign(wordform_preterite->written_form,wordform_preterite->written_form_length);
+						v0.weight = weight;
+						v0.source_word_start = prev_word_idx;
+						v0.source_word_end = i+1;
+						variations.push_back(v0);
+					}
+					//generate pluperfect
+					WordVariationGenerator::Variation v;
+					v.word = "havde";
+					v.weight = weight;
+					v.source_word_start = prev_word_idx;
+					v.source_word_end = i;
+					variations.push_back(v);
+				}
+				if(prev_was_havde) {
+					//generate preterite
+					if(wordform_preterite) {
+						WordVariationGenerator::Variation v0;
+						v0.word.assign(wordform_preterite->written_form,wordform_preterite->written_form_length);
+						v0.weight = weight;
+						v0.source_word_start = prev_word_idx;
+						v0.source_word_end = i+1;
+						variations.push_back(v0);
+					}
+					//generate perfect
+					WordVariationGenerator::Variation v;
+					v.word = "har";
+					v.weight = weight;
+					v.source_word_start = prev_word_idx;
+					v.source_word_end = i;
+					variations.push_back(v);
+				}
+			}
+		} else {
+			//check if word is preterite (and also look for past participle)
+			const sto::WordForm *wordform_past_participle = NULL;
+			bool is_preterite = false;
+			for(auto match : matches) {
+				auto wordforms(match->query_all_explicit_ford_forms());
+				for(auto wordform : wordforms) {
+					if(same_wordform_as_source(*wordform,source_word) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::tense_past) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::verbFormMood_indicative) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::voice_activeVoice)) //we'll ignore this complication for now
+					{
+						is_preterite = true;
+					}
+					if(wordform->has_attribute(sto::word_form_attribute_t::tense_past) &&
+					   wordform->has_attribute(sto::word_form_attribute_t::verbFormMood_participle) &&
+					   !wordform->has_attribute(sto::word_form_attribute_t::transcategorization_transadjectival) &&
+					   !wordform->has_attribute(sto::word_form_attribute_t::transcategorization_transadverbial) &&
+					   !wordform->has_attribute(sto::word_form_attribute_t::transcategorization_transnominal))
+					{
+						wordform_past_participle = wordform;
+					}
+				}
+			}
+			if(is_preterite && wordform_past_participle!=NULL) {
+				//complication: we don't know which auxilliary verb is the proper one. We would need to analyze the sentece to see
+				//if the main verb was used as transitive or intransitive and if the voice was passive. We ignore this problem and generate both forms and hope for the best. Except for "er"/"var" which takes the auxilliary verb "har"/"havde"
+				//generate perfect
+				if(source_word!="var") {
+					WordVariationGenerator::Variation v0_0;
+					v0_0.word = "har "+std::string(wordform_past_participle->written_form,wordform_past_participle->written_form_length);
+					v0_0.weight = weight;
+					v0_0.source_word_start = i;
+					v0_0.source_word_end = i+1;
+					variations.push_back(v0_0);
+					WordVariationGenerator::Variation v0_1;
+					v0_1.word = "er "+std::string(wordform_past_participle->written_form,wordform_past_participle->written_form_length);
+					v0_1.weight = weight;
+					v0_1.source_word_start = i;
+					v0_1.source_word_end = i+1;
+					variations.push_back(v0_1);
+					//generate pluperfect
+					WordVariationGenerator::Variation v1_0;
+					v1_0.word = "havde "+std::string(wordform_past_participle->written_form,wordform_past_participle->written_form_length);
+					v1_0.weight = weight;
+					v1_0.source_word_start = i;
+					v1_0.source_word_end = i+1;
+					variations.push_back(v1_0);
+					WordVariationGenerator::Variation v1_1;
+					v1_1.word = "var "+std::string(wordform_past_participle->written_form,wordform_past_participle->written_form_length);
+					v1_1.weight = weight;
+					v1_1.source_word_start = i;
+					v1_1.source_word_end = i+1;
+					variations.push_back(v1_1);
+				} else {
+					WordVariationGenerator::Variation v0_0;
+					v0_0.word = "har "+std::string(wordform_past_participle->written_form,wordform_past_participle->written_form_length);
+					v0_0.weight = weight;
+					v0_0.source_word_start = i;
+					v0_0.source_word_end = i+1;
+					variations.push_back(v0_0);
+					WordVariationGenerator::Variation v1_0;
+					v1_0.word = "havde "+std::string(wordform_past_participle->written_form,wordform_past_participle->written_form_length);
+					v1_0.weight = weight;
+					v1_0.source_word_start = i;
+					v1_0.source_word_end = i+1;
+					variations.push_back(v1_0);
+				}
+			}
+		}
+		prev_was_er = source_word=="er";
+		prev_was_var = source_word=="var";
+		prev_was_har = source_word=="har";
+		prev_was_havde = source_word=="havde";
+		prev_word_idx = i;
 	}
 }
