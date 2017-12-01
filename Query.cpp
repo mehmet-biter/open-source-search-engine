@@ -981,7 +981,10 @@ bool Query::setQTerms ( const Words &words ) {
 				break;
 			
 			auto const &word_variation(m_wordVariations[i]);
-			QueryWord *qw = &m_qwords[wvg_source_word_index[word_variation.source_word_start]];
+			int wordStartIdx = wvg_source_word_index[word_variation.source_word_start];
+			int wordEndIdx = wvg_source_word_index[word_variation.source_word_end-1];
+			logTrace(g_conf.m_logTraceQuery, "Word variation #%u '%s' covers words [%d..%d]", i,word_variation.word.c_str(),wordStartIdx,wordEndIdx);
+			QueryWord *qw = &m_qwords[wordStartIdx];
 			if((unsigned)qw->m_wordLen==word_variation.word.length() &&
 			   memcmp(qw->m_word, word_variation.word.data(), word_variation.word.length())==0)
 			{
@@ -989,13 +992,34 @@ bool Query::setQTerms ( const Words &words ) {
 				continue; //skip
 			}
 			QueryTerm *origTerm = qw->m_queryWordTerm;
-
+			
+			//handle if the word variant is a bigram/phrase
+			bool isPhrase = false;
+			if(wordEndIdx-wordStartIdx>1) {
+				logTrace(g_conf.m_logTraceQuery, "Word variation '%s' spans more than 1 word", word_variation.word.c_str());
+				if(wordEndIdx-wordStartIdx==2) {
+					//find bigram pointing to first word
+					QueryTerm *bigramQueryTerm = NULL;
+					for(int j=0; j<n && !bigramQueryTerm; j++) {
+						if(m_qterms[j].m_qword==qw && m_qterms[j].m_isPhrase)
+							bigramQueryTerm = &m_qterms[j];
+					}
+					if(bigramQueryTerm) {
+						logTrace(g_conf.m_logTraceQuery, "Word variation covers '%.*s'", bigramQueryTerm->m_termLen, bigramQueryTerm->m_term);
+						origTerm = bigramQueryTerm;
+						isPhrase = true;
+					} else
+						log(LOG_LOGIC,"Word variation '%s' bigram/phrase didn't find base bigram", word_variation.word.c_str());
+				} else {
+					log(LOG_LOGIC,"Word variation '%s' spans more than 2 words. This is not supported (yet)", word_variation.word.c_str());
+				}
+			}
 
 			// add that query term
 			QueryTerm *qt   = &m_qterms[n];
 			qt->m_qword     = qw; // NULL;
 			qt->m_piped     = qw->m_piped;
-			qt->m_isPhrase  = false ;
+			qt->m_isPhrase  = isPhrase;
 			qt->m_langIdBits = 0;
 			// synonym of this term...
 			qt->m_synonymOf = origTerm;
