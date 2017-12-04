@@ -82,14 +82,14 @@ bool sendPageDocProcess(TcpSocket *s, HttpRequest *r) {
 			}
 			break;
 		case 10:
-			if (strncasecmp(type, "docrebuild", 9) == 0) {
+			if (strncasecmp(type, "docrebuild", 10) == 0) {
 				// docrebuild
 				if (starts_with(keyStr.c_str(), "http")) {
 					docProcess = &g_docRebuildUrl;
 				} else {
 					docProcess = &g_docRebuild;
 				}
-			} else if (strncasecmp(type, "docrebuild", 9) == 0) {
+			} else if (strncasecmp(type, "docreindex", 10) == 0) {
 				// docreindex
 				if (starts_with(keyStr.c_str(), "http")) {
 					docProcess = &g_docReindexUrl;
