@@ -244,7 +244,7 @@ void WordVariationGenerator_danish::transliterate_proper_noun_acute_accent(std::
 	//imperative form which is handled by transliterate_verb_acute_accent() so it would gain very little.
 	for(unsigned i=0; i<lower_source_words.size(); i++) {
 		auto source_word(lower_source_words[i]);
-		if(source_word.length()>4 && source_word.substr(source_word.length()-4)=="alle") {
+		if(source_word.length()>=4 && source_word.substr(source_word.length()-4)=="alle") {
 			//possibly a street name
 			WordVariationGenerator::Variation v;
 			v.word = source_word.substr(0,source_word.length()-4)+"allé";
