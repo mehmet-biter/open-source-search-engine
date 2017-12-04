@@ -47,8 +47,6 @@ static bool  s_inBody           [HASHGROUP_END];
 #define gbmin(a,b) ((a)<(b) ? (a) : (b))
 #define gbmax(a,b) ((a)>(b) ? (a) : (b))
 
-static inline bool isTermValueInRange( const char *p, const QueryTerm *qt);
-static inline bool isTermValueInRange2 ( const char *recPtr, const char *subListEnd, const QueryTerm *qt);
 static inline const char *getWordPosList(uint64_t docId, const char *list, int32_t listSize);
 static int docIdVoteBufKeyCompare_desc ( const void *h1, const void *h2 );
 static void initWeights();
@@ -1511,34 +1509,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		qti->m_quotedStartId = qw->m_quoteStart;
 		switch(qt->m_fieldCode) {
 			// is it gbsortby:?
-			case FIELD_GBSORTBYFLOAT:
-			case FIELD_GBREVSORTBYFLOAT:
-				m_sortByTermNum = i;
-				m_sortByTermInfoNum = nrg;
-				break;
 			case FIELD_GBSORTBYINT:
 			case FIELD_GBREVSORTBYINT:
 				m_sortByTermNumInt = i;
 				m_sortByTermInfoNumInt = nrg;
 				// tell topTree to use int scores
 				m_topTree->m_useIntScores = true;
-				break;
-			// is it gbmin:price:1.99?
-			case FIELD_GBNUMBERMIN:
-				m_minScoreTermNum = i;
-				m_minScoreVal = qt->m_qword->m_float;
-				break;
-			case FIELD_GBNUMBERMAX:
-				m_maxScoreTermNum = i;
-				m_maxScoreVal = qt->m_qword->m_float;
-				break;
-			case FIELD_GBNUMBERMININT:
-				m_minScoreTermNumInt = i;
-				m_minScoreValInt = qt->m_qword->m_int;
-				break;
-			case FIELD_GBNUMBERMAXINT:
-				m_maxScoreTermNumInt = i;
-				m_maxScoreValInt = qt->m_qword->m_int;
 				break;
 			default:
 				; //not numeric condition
@@ -1677,17 +1653,8 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// numeric posdb termlist flags. instead of word position
 		// they have a float stored there for sorting etc.
 		switch(qt->m_fieldCode) {
-			case FIELD_GBSORTBYFLOAT:
-			case FIELD_GBREVSORTBYFLOAT:
-			case FIELD_GBNUMBERMIN:
-			case FIELD_GBNUMBERMAX:
-			case FIELD_GBNUMBEREQUALFLOAT:
-
 			case FIELD_GBSORTBYINT:
 			case FIELD_GBREVSORTBYINT:
-			case FIELD_GBNUMBERMININT:
-			case FIELD_GBNUMBERMAXINT:
-			case FIELD_GBNUMBEREQUALINT:
 				qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
 				break;
 			default:
@@ -5087,25 +5054,6 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 	}
 
 
-	// range terms tend to disappear if the docid's value falls outside
-	// of the specified range... gbmin:offerprice:190
-	bool isRangeTerm;
-	const QueryTerm *qt = qti->m_subList[0].m_qt;
-	switch(qt->m_fieldCode) {
-		case FIELD_GBNUMBERMIN:
-		case FIELD_GBNUMBERMAX:
-		case FIELD_GBNUMBEREQUALFLOAT:
-		case FIELD_GBNUMBERMININT:
-		case FIELD_GBNUMBERMAXINT:
-		case FIELD_GBNUMBEREQUALINT:
-		//case FIELD_GBFIELDMATCH:
-			isRangeTerm = true;
-			break;
-		default:
-			isRangeTerm = false;
-	}
-
-
 	//
 	// add the first sublist's docids into the docid buf
 	//
@@ -5117,7 +5065,7 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 		// for "car", resulting in a buffer with docids that contain 
 		// both terms.
 
-		makeDocIdVoteBufForRarestTerm( qti, isRangeTerm);
+		makeDocIdVoteBufForRarestTerm(qti);
 		logTrace(g_conf.m_logTracePosdb, "END.");
 		return;
 	}
@@ -5170,15 +5118,6 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 			
 			if ( *(unsigned char *)(voteBufPtr) < (*(unsigned char *)(subListPtr+7) & 0xfc ) ) {
 				continue;
-			}
-
-			// if we are a range term, does this subtermlist
-			// for this docid meet the min/max requirements
-			// of the range term, i.e. gbmin:offprice:190.
-			// if it doesn't then do not add this docid to the
-			// docidVoteBuf, "voteBufPtr"
-			if ( isRangeTerm && ! isTermValueInRange2(subListPtr, subListEnd, qt)) {
-				break;
 			}
 
 			// . equal! record our vote!
@@ -5255,7 +5194,7 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 // each run, the list is "compacted" and shortened so only the 
 // matching docids are left.
 //
-void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool isRangeTerm) {
+void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti) {
 	char *cursor[MAX_SUBLISTS];
 	char *cursorEnd[MAX_SUBLISTS];
 
@@ -5271,7 +5210,6 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 	char *voteBufPtr = m_docIdVoteBuf.getBufStart();
 	char *lastMinRecPtr = NULL;
 	int32_t mini = -1;
-	const QueryTerm * const qt = qti->m_subList[0].m_qt;
 	
 	// get the next min from all the termlists
 	for(;;) {
@@ -5334,22 +5272,6 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 			return;
 		}
 
-		bool inRange=false;
-
-		// if we are a range term, does this subtermlist
-		// for this docid meet the min/max requirements
-		// of the range term, i.e. gbmin:offprice:190.
-		// if it doesn't then do not add this docid to the
-		// docidVoteBuf, "voteBufPtr"
-		if ( isRangeTerm ) {
-
-			// no longer in range
-			if ( isTermValueInRange2(cursor[mini],cursorEnd[mini],qt)) {
-				inRange = true;
-			}
-		}
-
-
 		// advance that guy over that docid
 		cursor[mini] += 12;
 		// 6 byte keys follow?
@@ -5364,11 +5286,6 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 			// if we hit a new 12 byte key for a new docid, stop
 			if ( ! ( cursor[mini][0] & 0x04 ) ) {
 				break;
-			}
-
-			// check range again
-			if (isRangeTerm && isTermValueInRange2(cursor[mini],cursorEnd[mini],qt)) {
-				inRange = true;
 			}
 
 			// otherwise, skip this 6 byte key
@@ -5392,10 +5309,6 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 		//   should be the same for the site: terms we indexed for the same
 		//   docid!!
 		if ( m_useWhiteTable && ! m_whiteListTable.isInTable(minRecPtr+7) ) {
-			continue;
-		}
-
-		if ( isRangeTerm && ! inRange ) {
 			continue;
 		}
 
@@ -5464,24 +5377,6 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 		// just use the word # now
 		//int32_t opNum = qw->m_wordNum;//opNum;
 
-		// if this query term # is a gbmin:offprice:190 type
-		// of thing, then we may end up ignoring it based on the
-		// score contained within!
-		bool isRangeTerm;
-		switch(qt->m_fieldCode) {
-			case FIELD_GBNUMBERMIN:
-			case FIELD_GBNUMBERMAX:
-			case FIELD_GBNUMBEREQUALFLOAT:
-			case FIELD_GBNUMBERMININT:
-			case FIELD_GBNUMBERMAXINT:
-			case FIELD_GBNUMBEREQUALINT:
-			//case FIELD_GBFIELDMATCH:
-				isRangeTerm = true;
-				break;
-			default:
-				isRangeTerm = false;
-		}
-
 		// . make it consistent with Query::isTruth()
 		// . m_bitNum is set above to the QueryTermInfo #
 		int32_t bitNum = qt->m_bitNum;
@@ -5512,10 +5407,6 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 				// place holder
 				int64_t docId = Posdb::getDocId(p);
 
-				// assume this docid is not in range if we
-				// had a range term like gbmin:offerprice:190
-				bool inRange = false;
-
 				// sanity
 				//if ( d < lastDocId )
 				//	gbshutdownAbort(true);
@@ -5523,12 +5414,6 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 
 				// point to it
 				//char *voteBufPtr = p + 8;
-
-				// check each posdb key for compliance
-				// for gbmin:offprice:190 bool terms
-				if ( isRangeTerm && isTermValueInRange(p,qt) ) {
-					inRange = true;
-				}
 
 				// this was the first key for this docid for 
 				// this termid and possible the first key for 
@@ -5546,21 +5431,8 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 				// same docid, so skip those as well
 			subloop:
 				if( p < pend && (((char *)p)[0]) & 0x04 ) {
-					// check each posdb key for compliance
-					// for gbmin:offprice:190 bool terms
-					if ( isRangeTerm && isTermValueInRange(p,qt) ) {
-						inRange = true;
-					}
-					
 					p += 6;
 					goto subloop;
-				}
-
-				// if we had gbmin:offprice:190 and it
-				// was not satisfied, then do not OR in this
-				// bit in the bitvector for the docid
-				if ( isRangeTerm && ! inRange ) {
-					continue;
 				}
 
 				// convert docid into hash key
@@ -5706,63 +5578,6 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 // sort vote buf entries in descending order
 static int docIdVoteBufKeyCompare_desc ( const void *h1, const void *h2 ) {
 	return KEYCMP((const char*)h1, (const char*)h2, 6);
-}
-
-
-
-// for boolean queries containing terms like gbmin:offerprice:190
-static inline bool isTermValueInRange( const char *p, const QueryTerm *qt ) {
-	// return false if outside of range
-	switch(qt->m_fieldCode) {
-		case FIELD_GBNUMBERMIN: {
-			float score2 = Posdb::getFloat(p);
-			return score2 >= qt->m_qword->m_float;
-		}
-		case FIELD_GBNUMBERMAX: {
-			float score2 = Posdb::getFloat(p);
-			return score2 <= qt->m_qword->m_float;
-		}
-		case FIELD_GBNUMBEREQUALFLOAT: {
-			float score2 = Posdb::getFloat(p);
-			return almostEqualFloat(score2, qt->m_qword->m_float);
-		}
-		case FIELD_GBNUMBERMININT: {
-			int32_t score2 = Posdb::getInt(p);
-			return score2 >= qt->m_qword->m_int;
-		}
-		case FIELD_GBNUMBERMAXINT: {
-			int32_t score2 = Posdb::getInt(p);
-			return score2 <= qt->m_qword->m_int;
-		}
-		case FIELD_GBNUMBEREQUALINT: {
-			int32_t score2 = Posdb::getInt(p);
-			return score2 == qt->m_qword->m_int;
-		}
-		// case FIELD_GBFIELDMATCH: {
-		// 	int32_t score2 = Posdb::getInt(p);
-		// 	return score2 == qt->m_qword->m_int;
-		// }
-		default:
-			// how did this happen?
-			gbshutdownAbort(true);
-	}
-}
-
-
-
-static inline bool isTermValueInRange2 ( const char *recPtr, const char *subListEnd, const QueryTerm *qt ) {
-	// if we got a range term see if in range.
-	if ( isTermValueInRange(recPtr,qt) ) {
-		return true;
-	}
-	
-	recPtr += 12;
-	for(;recPtr<subListEnd&&((*recPtr)&0x04);recPtr +=6) {
-		if ( isTermValueInRange(recPtr,qt) ) {
-			return true;
-		}
-	}
-	return false;
 }
 
 

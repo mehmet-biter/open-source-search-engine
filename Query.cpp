@@ -1372,8 +1372,7 @@ bool Query::setQWords ( char boolFlag ,
 		// likewise for gbsortby operators watch out for boolean
 		// operators at the end of the field. we also check for 
 		// parens below when computing the hash of the value.
-		if ( (fieldCode == FIELD_GBSORTBYINT ||
-		      fieldCode == FIELD_GBSORTBYFLOAT ) &&
+		if ( (fieldCode == FIELD_GBSORTBYINT) &&
 		     ( w[0] == '(' || w[0] == ')' ) )
 			cancelField = true;
 
@@ -1511,26 +1510,6 @@ bool Query::setQWords ( char boolFlag ,
 		if ( fieldCode == FIELD_TYPE )
 			ph = hash64 ("type",4);
 
-		// these are range constraints on the gbsortby: termlist
-		// which sorts numbers in a field from low to high
-		if ( fieldCode == FIELD_GBNUMBERMIN )
-			ph = hash64 ("gbsortby", 8);
-		if ( fieldCode == FIELD_GBNUMBERMAX )
-			ph = hash64 ("gbsortby", 8);
-		if ( fieldCode == FIELD_GBNUMBEREQUALFLOAT )
-			ph = hash64 ("gbsortby", 8);
-
-		// fix for gbsortbyfloat:product.price
-		if ( fieldCode == FIELD_GBSORTBYFLOAT )
-			ph = hash64 ("gbsortby", 8);
-
-		if ( fieldCode == FIELD_GBNUMBERMININT )
-			ph = hash64 ("gbsortbyint", 11);
-		if ( fieldCode == FIELD_GBNUMBERMAXINT )
-			ph = hash64 ("gbsortbyint", 11);
-		if ( fieldCode == FIELD_GBNUMBEREQUALINT )
-			ph = hash64 ("gbsortbyint", 11);
-
 		// ptr to field, if any
 		qw->m_fieldCode = fieldCode;
 
@@ -1546,18 +1525,9 @@ bool Query::setQWords ( char boolFlag ,
 		     fieldCode == FIELD_LINKS||
 		     fieldCode == FIELD_SITE ||
 		     fieldCode == FIELD_IP   ||
-		     fieldCode == FIELD_GBSORTBYFLOAT ||
-		     fieldCode == FIELD_GBREVSORTBYFLOAT ||
-		     // gbmin:price:1.23
-		     fieldCode == FIELD_GBNUMBERMIN ||
-		     fieldCode == FIELD_GBNUMBERMAX ||
-		     fieldCode == FIELD_GBNUMBEREQUALFLOAT ||
 
 		     fieldCode == FIELD_GBSORTBYINT ||
 		     fieldCode == FIELD_GBREVSORTBYINT ||
-		     fieldCode == FIELD_GBNUMBERMININT ||
-		     fieldCode == FIELD_GBNUMBERMAXINT ||
-		     fieldCode == FIELD_GBNUMBEREQUALINT ||
 
 		     fieldCode == FIELD_GBFIELDMATCH ) {
 			// . find 1st space -- that terminates the field value
@@ -1606,9 +1576,7 @@ bool Query::setQWords ( char boolFlag ,
 			// gbsortby:products.offerPrice 
 			// gbmin:price:1.23 case insensitive
 			// too late... we have to support what we have
-			if (fieldCode == FIELD_GBSORTBYFLOAT ||
-				fieldCode == FIELD_GBREVSORTBYFLOAT ||
-				fieldCode == FIELD_GBSORTBYINT ||
+			if (fieldCode == FIELD_GBSORTBYINT ||
 				fieldCode == FIELD_GBREVSORTBYINT) {
 				wid = hash64Lower_utf8(w, wlen, 0LL);
 				// do not include this word as part of
@@ -1662,39 +1630,6 @@ bool Query::setQWords ( char boolFlag ,
 				// just like XmlDoc.cpp::hashFacet2() does
 				wid = hash64(val64, wid);
 			}
-
-			// gbmin:price:1.23
-			if (lastColonLen > 0 &&
-				(fieldCode == FIELD_GBNUMBERMIN ||
-				 fieldCode == FIELD_GBNUMBERMAX ||
-				 fieldCode == FIELD_GBNUMBEREQUALFLOAT ||
-				 fieldCode == FIELD_GBNUMBEREQUALINT ||
-				 fieldCode == FIELD_GBNUMBERMININT ||
-				 fieldCode == FIELD_GBNUMBERMAXINT)) {
-
-				// record the field
-				wid = hash64Lower_utf8(w, lastColonLen, 0LL);
-
-				// fix gbminint:gbfacetstr:gbxpath...:165004297
-				if (colonCount == 2) {
-					int64_t wid1;
-					int64_t wid2;
-					const char *a = w;
-					const char *b = w + firstColonLen;
-					wid1 = hash64Lower_utf8(a, b - a);
-					a = w + firstColonLen + 1;
-					b = w + lastColonLen;
-					wid2 = hash64Lower_utf8(a, b - a);
-					// keep prefix as 2nd arg to this
-					wid = hash64(wid2, wid1);
-					// we need this for it to work
-					ph = 0LL;
-				}
-				// and also the floating point after that
-				qw->m_float = atof(w + lastColonLen + 1);
-				qw->m_int = (int32_t) atoll(w + lastColonLen + 1);
-			}
-
 
 			// should we have normalized before hashing?
 			if (fieldCode == FIELD_URL ||

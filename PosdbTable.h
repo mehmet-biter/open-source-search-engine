@@ -210,7 +210,7 @@ public:
 
 	// for intersecting docids
 	void addDocIdVotes( const QueryTermInfo *qti , int32_t listGroupNum );
-	void makeDocIdVoteBufForRarestTerm( const QueryTermInfo *qti , bool isRangeTerm );
+	void makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti);
 	bool makeDocIdVoteBufForBoolQuery() ;
 	void delDocIdVotes ( const QueryTermInfo *qti );	// for negative query terms...
 	bool findCandidateDocIds();
