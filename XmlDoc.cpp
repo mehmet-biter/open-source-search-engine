@@ -18053,13 +18053,13 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	if (ogr) {
 		switch (format) {
 			case FORMAT_HTML:
-				ogr->printToBufAsHtml ( sb , "tag" );
+				ogr->printToBufAsHtml(sb, "tag");
 				break;
 			case FORMAT_XML:
-				ogr->printToBufAsXml  ( sb  );
+				ogr->printToBufAsXml(sb);
 				break;
 			case FORMAT_JSON:
-				/// @todo ALC print to json
+				ogr->printToBufAsJson(sb);
 				break;
 			default:
 				break;
