@@ -66,18 +66,25 @@ static void generatePageJSON(std::vector<uint32_t> &doleips, const char *coll, S
 }
 
 
-static bool respondWithError(TcpSocket *s, HttpRequest *r, const char *msg) {
+static bool respondWithError(TcpSocket *s, HttpRequest *r, int32_t error, const char *errmsg) {
 	SafeBuf sb;
 	const char *contentType = NULL;
 	switch(r->getReplyFormat()) {
 		case FORMAT_HTML:
 			g_pages.printAdminTop(&sb, s, r, NULL);
-			sb.safePrintf("<p>%s</p>", msg);
+			sb.safePrintf("<p>%s</p>", errmsg);
 			g_pages.printAdminBottom2(&sb);
 			contentType = "text/html";
 			break;
 		case FORMAT_JSON:
-			sb.safePrintf("{error_message:\"%s\"}",msg); //todo: safe encode
+			sb.safePrintf("{\"response\":{\n"
+				              "\t\"statusCode\":%" PRId32",\n"
+				              "\t\"statusMsg\":\"", error);
+			sb.jsonEncode(errmsg);
+			sb.safePrintf("\"\n"
+				              "}\n"
+				              "}\n");
+			contentType = "application/json";
 			contentType = "application/json";
 			break;
 		default:
@@ -94,12 +101,12 @@ bool sendPageDoledbIPTable(TcpSocket *s, HttpRequest *r) {
 	const char *coll = r->getString("c", NULL, NULL);
 	CollectionRec *cr = g_collectiondb.getRec(coll);
 	if(!cr) {
-		return respondWithError(s, r, "No collection specified");
+		return respondWithError(s, r, ENOCOLLREC, "No collection specified");
 	}
 	
 	SpiderColl *spiderColl = cr->m_spiderColl;
 	if(!spiderColl) {
-		return respondWithError(s, r, "No spider-collection (?)");
+		return respondWithError(s, r, EBADENGINEER, "No spider-collection (?)");
 	}
 	
 	std::vector<uint32_t> doleips = spiderColl->getDoledbIpTable();
