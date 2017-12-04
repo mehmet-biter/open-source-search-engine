@@ -254,10 +254,10 @@ void WordVariationGenerator_danish::transliterate_proper_noun_acute_accent(std::
 			variations.push_back(v);
 			continue;
 		}
-		if(source_word=="rene" || source_word=="Rene") {
+		if(source_word=="rene") {
 			//possibly the first name René (could also be the adjective "rene")
 			WordVariationGenerator::Variation v;
-			v.word = source_word[0] + "ené";
+			v.word = "rené";
 			v.weight = weight;
 			v.source_word_start = i;
 			v.source_word_end = i+1;
