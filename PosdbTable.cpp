@@ -156,14 +156,6 @@ void PosdbTable::reset() {
 	m_sortByTermNumInt = -1;
 	m_sortByTermInfoNum = 0;
 	m_sortByTermInfoNumInt = 0;
-	m_minScoreTermNum = 0;
-	m_maxScoreTermNum = 0;
-	m_minScoreVal = 0.0;
-	m_maxScoreVal = 0.0;
-	m_minScoreTermNumInt = 0;
-	m_maxScoreTermNumInt = 0;
-	m_minScoreValInt = 0;
-	m_maxScoreValInt = 0;
 	m_useWhiteTable = false;
 	m_numQueryTermInfos = 0;
 	m_minTermListSize = 0;
@@ -1470,14 +1462,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	// assume not sorting by a numeric termlist
 	m_sortByTermNum = -1;
 	m_sortByTermNumInt = -1;
-
-	// now we have score ranges for gbmin:price:1.99 etc.
-	m_minScoreTermNum = -1;
-	m_maxScoreTermNum = -1;
-
-	// for gbminint:count:99 etc.
-	m_minScoreTermNumInt = -1;
-	m_maxScoreTermNumInt = -1;
 
 	m_hasMaxSerpScore = false;
 	if ( m_msg39req->m_minSerpDocId ) {
