@@ -144,13 +144,16 @@ enum ignore_reason_t {
 };
 
 // boolean query operators (m_opcode field in QueryWord)
-#define OP_OR         1
-#define OP_AND        2
-#define OP_NOT        3
-#define OP_LEFTPAREN  4
-#define OP_RIGHTPAREN 5
-#define OP_UOR        6
-#define OP_PIPE       7
+enum class opcode_t {
+	OP_NONE       = 0,
+	OP_OR         = 1,
+	OP_AND        = 2,
+	OP_NOT        = 3,
+	OP_LEFTPAREN  = 4,
+	OP_RIGHTPAREN = 5,
+	OP_UOR        = 6,
+	OP_PIPE       = 7,
+};
 
 // . these first two classes are functionless
 // . QueryWord, like the Phrases class, is an extension on the Words class
@@ -201,7 +204,7 @@ class QueryWord {
 	bool        m_isStopWord ; 
 	bool        m_isPunct;
 	// are we an op code?
-	char        m_opcode;
+	opcode_t        m_opcode;
 	// . the ignore code
 	// . explains why this query term should be ignored
 	// . see IGNORE_* enums above

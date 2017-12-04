@@ -312,7 +312,7 @@ bool Query::set2 ( const char *query        ,
 		// skip if not on first level
 		if ( qw->m_level != 0 ) continue;
 		// stop at first OR on this level
-		if ( qw->m_opcode == OP_OR ) break;
+		if ( qw->m_opcode == opcode_t::OP_OR ) break;
 		// skip all punct
 		if (  qw->m_isPunct ) continue;
 		// if we are a boolean query,the next operator can NOT be OP_OR
@@ -320,9 +320,9 @@ bool Query::set2 ( const char *query        ,
 		// as a hard count term, because they are not required terms
 		for ( int32_t j=i+1 ; m_isBoolean && j<m_numWords; j++ ) {
 			// stop at previous operator
-			char opcode = m_qwords[j].m_opcode;
-			if ( ! opcode          ) continue;
-			if (   opcode != OP_OR ) break;
+			opcode_t opcode = m_qwords[j].m_opcode;
+			if ( opcode == opcode_t::OP_NONE ) continue;
+			if ( opcode != opcode_t::OP_OR   ) break;
 			// otherwise, the next operator is an OR, so do not
 			// use a hard count for this term
 			goto stop;
@@ -1263,7 +1263,7 @@ bool Query::setQWords ( char boolFlag ,
 		if ( wlen == 5 &&
 		     w[0]=='P'&&w[1]=='i'&&w[2]=='i'&&w[3]=='P'&&w[4]=='E') {
 			pi = i;
-			qw->m_opcode = OP_PIPE;
+			qw->m_opcode = opcode_t::OP_PIPE;
 			continue;
 		}
 		// [133.0r]
@@ -1657,7 +1657,7 @@ bool Query::setQWords ( char boolFlag ,
 			qw->m_rawWordId   = 0LL; // only for highlighting?
 			qw->m_phraseId    = 0LL;
 			qw->m_rawPhraseId = 0LL;
-			qw->m_opcode      = 0;
+			qw->m_opcode      = opcode_t::OP_NONE;
 
 			// definitely not a query stop word
 			qw->m_isQueryStopWord = false;
@@ -1673,7 +1673,7 @@ bool Query::setQWords ( char boolFlag ,
 		}
 		
 
-		char opcode = 0;
+		opcode_t opcode = opcode_t::OP_NONE;
 		// if query is all in upper case and we're doing boolean 
 		// DETECT, then assume not boolean
 		if ( allUpper && boolFlag == 2 ) boolFlag = 0;
@@ -1683,34 +1683,34 @@ bool Query::setQWords ( char boolFlag ,
 			// are we an operator?
 			if      ( ! firstWord && wlen==2 && 
 				  w[0]=='O' && w[1]=='R') 
-				opcode = OP_OR;
+				opcode = opcode_t::OP_OR;
 			else if ( ! firstWord && wlen==3 && 
 				  w[0]=='A' && w[1]=='N' && w[2]=='D') 
-				opcode = OP_AND;
+				opcode = opcode_t::OP_AND;
 			else if ( ! firstWord && wlen==3 && 
 				  w[0]=='N' && w[1]=='O' && w[2]=='T') 
-				opcode = OP_NOT;
+				opcode = opcode_t::OP_NOT;
 			else if ( wlen==5 && w[0]=='L' && w[1]=='e' &&
 				  w[2]=='F' && w[3]=='t' && w[4]=='P' )
-				opcode = OP_LEFTPAREN;
+				opcode = opcode_t::OP_LEFTPAREN;
 			else if ( wlen==5 && w[0]=='R' && w[1]=='i' &&
 				  w[2]=='G' && w[3]=='h' && w[4]=='P' )
-				opcode = OP_RIGHTPAREN;
+				opcode = opcode_t::OP_RIGHTPAREN;
 			// no pair across or even include any boolean op phrs
-			if ( opcode ) {
+			if ( opcode != opcode_t::OP_NONE ) {
 				bits.m_bits[i] &= ~D_CAN_PAIR_ACROSS;
 				bits.m_bits[i] &= ~D_CAN_BE_IN_PHRASE;
 				qw->m_ignoreWord = IGNORE_BOOLOP;
 				qw->m_opcode     = opcode;
-				if ( opcode == OP_LEFTPAREN  ) continue;
-				if ( opcode == OP_RIGHTPAREN ) continue;
+				if ( opcode == opcode_t::OP_LEFTPAREN  ) continue;
+				if ( opcode == opcode_t::OP_RIGHTPAREN ) continue;
 				// if this is uncommented all of our operators
 				// become actual query terms (mdw)
-				if ( opcode == OP_UOR        ) continue;
+				if ( opcode == opcode_t::OP_UOR        ) continue;
 				// if you just have ANDs and ()'s that does
 				// not make you a boolean query! we are bool
 				// by default!!
-				if ( opcode == OP_AND        ) continue;
+				if ( opcode == opcode_t::OP_AND        ) continue;
 				m_isBoolean = true;
 				continue;
 			}
@@ -1816,7 +1816,7 @@ bool Query::setQWords ( char boolFlag ,
 		QueryWord *qw = &m_qwords[i];
 		// . skip if part of a query weight operator
 		// . cannot be in a phrase, or anything
-		if ( qw->m_queryOp && !qw->m_opcode) { 
+		if ( qw->m_queryOp && qw->m_opcode==opcode_t::OP_NONE) {
 			b = D_CAN_PAIR_ACROSS;
 		}
 		// is this word a sequence of punctuation and spaces?
@@ -1856,7 +1856,7 @@ bool Query::setQWords ( char boolFlag ,
 			}
 			// . no boolean ops
 			// . 'this OR that' --> no "this OR that" phrase
-			if ( qw->m_opcode ) {
+			if ( qw->m_opcode != opcode_t::OP_NONE ) {
 				b &= ~D_CAN_PAIR_ACROSS;
 				b &= ~D_CAN_BE_IN_PHRASE;
 			}
@@ -2859,13 +2859,13 @@ bool Expression::addExpression (int32_t start,
 		QueryWord * qw = &qwords[i];
 
 		// set leaf node if not an opcode like "AND" and not punct.
-		if ( ! qw->m_opcode && qw->isAlphaWord()){
+		if ( qw->m_opcode==opcode_t::OP_NONE && qw->isAlphaWord()){
 			continue;
 		}
-		if (qw->m_opcode == OP_NOT){
+		if (qw->m_opcode == opcode_t::OP_NOT) {
 			continue;
 		}
-		else if (qw->m_opcode == OP_LEFTPAREN){
+		else if (qw->m_opcode == opcode_t::OP_LEFTPAREN ) {
 			// this is expression
 			// . it should advance "i" to end of expression
 			// point to next...
@@ -2882,12 +2882,12 @@ bool Expression::addExpression (int32_t start,
 			i += e->m_numWordsInExpression;
 			qw->m_expressionPtr = e;
 		}
-		else if (qw->m_opcode == OP_RIGHTPAREN){
+		else if (qw->m_opcode == opcode_t::OP_RIGHTPAREN ) {
 			// return size i guess, include )
 			m_numWordsInExpression = i - m_expressionStartWord+1;
 			return true;
 		}
-		else if (qw->m_opcode) {
+		else if (qw->m_opcode!=opcode_t::OP_NONE) {
 			continue;
 		}
 		// white space?
@@ -2923,7 +2923,7 @@ bool Expression::isTruth(const unsigned char *bitVec, int32_t vecSize) const {
 	// result: -1 means unknown at this point
 	int32_t result = -1;
 
-	char prevOpCode = 0;
+	opcode_t prevOpCode = opcode_t::OP_NONE;
 	int32_t prevResult ;
 	// result of current operand
 	int32_t opResult = -1;
@@ -2939,13 +2939,13 @@ bool Expression::isTruth(const unsigned char *bitVec, int32_t vecSize) const {
 
 		// ignore parentheses, aren't real opcodes.
 		// we just want OP_AND/OP_OR/OP_NOT
-		int32_t opcode = qw->m_opcode;
-		if ( opcode != OP_AND && 
-		     opcode != OP_OR  && 
-		     opcode != OP_NOT )
-			opcode = 0;
+		opcode_t opcode = qw->m_opcode;
+		if ( opcode != opcode_t::OP_AND &&
+		     opcode != opcode_t::OP_OR  &&
+		     opcode != opcode_t::OP_NOT )
+			opcode = opcode_t::OP_NONE;
 
-		if ( opcode == OP_NOT ) {
+		if ( opcode == opcode_t::OP_NOT ) {
 			hasNot = true;
 			continue;
 		}
@@ -2968,13 +2968,13 @@ bool Expression::isTruth(const unsigned char *bitVec, int32_t vecSize) const {
 			}
 		}
 
-		if ( opcode && ! e ) {
+		if ( opcode!=opcode_t::OP_NONE && ! e ) {
 			prevOpCode = opcode;//m_opSlots[i];
 			continue;
 		}
 
 		// simple operand
-		if ( ! opcode && ! e ) {
+		if ( opcode==opcode_t::OP_NONE && ! e ) {
 			// for regular word operands
 			// ignore it like a space?
 			if ( qw->m_ignoreWord ) continue;
@@ -3008,7 +3008,7 @@ bool Expression::isTruth(const unsigned char *bitVec, int32_t vecSize) const {
 		if ( prevResult == -1 ) continue;
 
 		// if this is not the first time... we got two
-		if ( prevOpCode == OP_AND ) {
+		if ( prevOpCode == opcode_t::OP_AND ) {
 			// if first operation we encount is A AND B then
 			// default result to on. only allow an AND operation
 			// to turn if off.
@@ -3016,7 +3016,7 @@ bool Expression::isTruth(const unsigned char *bitVec, int32_t vecSize) const {
 			if ( ! prevResult ) result = 0;
 			if ( !    opResult ) result = 0;
 		}
-		else if ( prevOpCode == OP_OR ) {
+		else if ( prevOpCode == opcode_t::OP_OR ) {
 			// if first operation we encount is A OR B then
 			// default result to off
 			if ( result == -1 ) result = 0;
@@ -3029,7 +3029,7 @@ bool Expression::isTruth(const unsigned char *bitVec, int32_t vecSize) const {
 	// argument expression like something in double parens like
 	// ((site:xyz.com OR site:abc.com)). so set it to value of
 	// first operand, opResult.
-	if ( prevOpCode == 0 && result == -1 ) result = opResult;
+	if ( prevOpCode == opcode_t::OP_NONE && result == -1 ) result = opResult;
 
 	if ( result == -1 ) return true;
 	if ( result ==  0 ) return false;
