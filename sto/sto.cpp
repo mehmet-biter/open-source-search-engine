@@ -8,7 +8,7 @@
 
 static const char version_1_signature[80] = "parsed-sto-v1\n";
 
-std::vector<const sto::WordForm *> sto::LexicalEntry::query_all_explicit_ford_forms() const {
+std::vector<const sto::WordForm *> sto::LexicalEntry::query_all_explicit_word_forms() const {
 	std::vector<const WordForm*> entries;
 	const char *p = explicit_word_forms;
 	for(unsigned i=0; i<explicit_word_form_count; i++) {

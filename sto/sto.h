@@ -115,7 +115,7 @@ struct LexicalEntry {
 	uint8_t explicit_word_form_count;
 	char explicit_word_forms[];
 	const WordForm *query_first_explicit_word_form() const { return reinterpret_cast<const WordForm*>(explicit_word_forms); }
-	std::vector<const WordForm *> query_all_explicit_ford_forms() const;
+	std::vector<const WordForm *> query_all_explicit_word_forms() const;
 	const WordForm *find_first_wordform(const std::string &word) const;
 };
 

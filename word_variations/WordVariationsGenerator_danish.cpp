@@ -127,7 +127,7 @@ void WordVariationGenerator_danish::find_simple_attribute_difference_wordforms(s
 		auto source_word(source_words[i]);
 		auto matches(lexicon.query_matches(source_word));
 		for(auto match : matches) {
-			auto wordforms(match->query_all_explicit_ford_forms());
+			auto wordforms(match->query_all_explicit_word_forms());
 			for(auto wordform : wordforms) {
 				if(same_wordform_as_source(*wordform,source_word) &&
 					wordform->has_attribute(from_attr))
@@ -163,7 +163,7 @@ void WordVariationGenerator_danish::find_simple_attribute_match_wordforms(std::v
 		auto source_word(source_words[i]);
 		auto matches(lexicon.query_matches(source_word));
 		for(auto match : matches) {
-			auto wordforms(match->query_all_explicit_ford_forms());
+			auto wordforms(match->query_all_explicit_word_forms());
 			for(auto wordform : wordforms) {
 				if(same_wordform_as_source(*wordform,source_word)) {
 					//found the word match. Now look for other wordforms with exactly the same attributes. Those are alternate spellings
@@ -318,7 +318,7 @@ void WordVariationGenerator_danish::transliterate_verb_acute_accent(std::vector<
 			bool is_imperative = false;
 			auto matches(lexicon.query_matches(source_word));
 			for(auto match : matches) {
-				auto wordforms(match->query_all_explicit_ford_forms());
+				auto wordforms(match->query_all_explicit_word_forms());
 				for(auto wordform : wordforms) {
 					if(same_wordform_as_source(*wordform,source_word) &&
 						wordform->has_attribute(sto::word_form_attribute_t::verbFormMood_imperative))
@@ -369,7 +369,7 @@ void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<Wor
 			const sto::WordForm *wordform_past_participle = NULL;
 			const sto::WordForm *wordform_preterite = NULL;
 			for(auto match : matches) {
-				auto wordforms(match->query_all_explicit_ford_forms());
+				auto wordforms(match->query_all_explicit_word_forms());
 				for(auto wordform : wordforms) {
 					if(same_wordform_as_source(*wordform,source_word) &&
 					   wordform->has_attribute(sto::word_form_attribute_t::tense_past) &&
@@ -463,7 +463,7 @@ void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<Wor
 			const sto::WordForm *wordform_past_participle = NULL;
 			bool is_preterite = false;
 			for(auto match : matches) {
-				auto wordforms(match->query_all_explicit_ford_forms());
+				auto wordforms(match->query_all_explicit_word_forms());
 				for(auto wordform : wordforms) {
 					if(same_wordform_as_source(*wordform,source_word) &&
 					   wordform->has_attribute(sto::word_form_attribute_t::tense_past) &&
