@@ -20,6 +20,7 @@
 #include "XmlDoc.h"
 #include "Msg0.h"
 #include "RdbList.h"
+#include "Conf.h"
 
 DocRebuild g_docRebuild("docrebuild.txt", false);
 DocRebuild g_docRebuildUrl("docrebuildurl.txt", true);
@@ -150,6 +151,14 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 		xmlDoc->m_contentValid = true;
 		xmlDoc->m_content = xmlDoc->ptr_utf8Content;
 		xmlDoc->m_contentLen = xmlDoc->size_utf8Content - 1;
+
+		// update to latest version
+#ifndef PRIVACORE_SAFE_VERSION
+		xmlDoc->m_version = g_conf.m_titleRecVersion;
+#else
+		xmlDoc->m_version = TITLEREC_CURRENT_VERSION;
+#endif
+		xmlDoc->m_versionValid = true;
 	}
 
 	// set spider request
