@@ -2978,7 +2978,7 @@ void Query::dumpToLog() const
 }
 
 void Query::traceTermsToLog(const char *header) {
-	logTrace(g_conf.m_logTraceQuery, "%s:", header);
+	logTrace(g_conf.m_logTraceQuery, "%s: %d queryterms:", header, m_numTerms);
 	for(int i=0; i<m_numTerms; i++) {
 		logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s', t-weight=%f u-weight=%f %s", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term, m_qterms[i].m_termWeight,m_qterms[i].m_userWeight, m_qterms[i].m_ignored?"ignored":"");
 		logTrace(g_conf.m_logTraceQuery, "                  qstopw=%s req=%s", m_qterms[i].m_isQueryStopWord?"true":"false", m_qterms[i].m_isRequired?"yes":"no");
@@ -3220,6 +3220,7 @@ void QueryTerm::constructor ( ) {
 	m_termFreqWeight = 0.0;
 	m_isQueryStopWord = false;
 	m_inQuotes = false;
+	m_termWeight = 0;
 	m_userWeight = 0;
 	m_piped = false;
 	m_ignored = false;
