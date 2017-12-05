@@ -14,6 +14,7 @@ struct WordVariationWeights {
 	float proper_noun_spelling_variants;
 	float verb_spelling_variants;
 	float verb_past_past_variants;
+	float simple_spelling_variants;       //simple variants, eg "cyklen" vs. "cykelen"
 	//todo: more configurable weights in WordVariationWeights
 	WordVariationWeights()
 	  : noun_indefinite_definite(1.0),

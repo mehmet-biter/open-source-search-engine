@@ -17,6 +17,9 @@ public:
 						        const std::vector<std::string> &source_words,
 						        sto::word_form_attribute_t from_attr, sto::word_form_attribute_t to_attr,
 						        float weight);
+	void find_simple_attribute_match_wordforms(std::vector<WordVariationGenerator::Variation> &variations,
+						   const std::vector<std::string> &source_words,
+						   float weight);
 
 	void transliterate_proper_noun_aring_and_aa(std::vector<WordVariationGenerator::Variation> &variations,
 						    const std::vector<std::string> &source_words,
@@ -80,6 +83,10 @@ std::vector<WordVariationGenerator::Variation> WordVariationGenerator_danish::qu
 		make_verb_past_past_variants(variations,source_words,lower_source_words,weights.verb_past_past_variants);
 	}
 	
+	if(weights.simple_spelling_variants >= threshold) {
+		find_simple_attribute_match_wordforms(variations,lower_source_words,weights.simple_spelling_variants);
+	}
+	
 	//filter out duplicates and variations below threshold
 	//syn-todo: when filtering out duplicates choose the one with the highest weight
 	std::set<std::string> seen_variations;
@@ -135,6 +142,38 @@ void WordVariationGenerator_danish::find_simple_attribute_difference_wordforms(s
 							//this may match multiple alternative spellings of the wordform, but the STO database cannot distinguish
 							Variation v;
 							v.word.assign(definite_wordform->written_form,definite_wordform->written_form_length);
+							v.weight = weight;
+							v.source_word_start = i;
+							v.source_word_end = i+1;
+							variations.push_back(v);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
+void WordVariationGenerator_danish::find_simple_attribute_match_wordforms(std::vector<WordVariationGenerator::Variation> &variations,
+									  const std::vector<std::string> &source_words,
+									  float weight)
+{
+	for(unsigned i=0; i<source_words.size(); i++) {
+		auto source_word(source_words[i]);
+		auto matches(lexicon.query_matches(source_word));
+		for(auto match : matches) {
+			auto wordforms(match->query_all_explicit_ford_forms());
+			for(auto wordform : wordforms) {
+				if(same_wordform_as_source(*wordform,source_word)) {
+					//found the word match. Now look for other wordforms with exactly the same attributes. Those are alternate spellings
+					for(auto wordform2 : wordforms) {
+						if(wordform2!=wordform &&
+						   memcmp(wordform2->attribute,wordform->attribute,sizeof(wordform2->attribute))==0)
+						{
+							//found an alternative spelling of the word
+							Variation v;
+							v.word.assign(wordform2->written_form,wordform2->written_form_length);
 							v.weight = weight;
 							v.source_word_start = i;
 							v.source_word_end = i+1;

@@ -3653,6 +3653,15 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "simple spelling variants";
+	m->m_desc  = "Simple spelling variantions (usually approved)";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.simple_spelling_variants);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.simple_spelling_variants);
+	m->m_cgi  = "lwv_simple_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	m->m_title = "verb: past<->past variants";
 	m->m_desc  = "Weight of different pasts (including compound tenses). Eg 'ate' vs. 'had eaten'";
 	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.verb_past_past_variants);
@@ -7186,6 +7195,15 @@ void Parms::init ( ) {
 	m->m_def   = "0.6";
 	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_plural_singular);
 	m->m_cgi  = "lwv_noun_plural_singular";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "simple spelling variants";
+	m->m_desc  = "Simple spelling variantions (usually approved)";
+	m->m_def   = "1.0";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.simple_spelling_variants);
+	m->m_cgi  = "lwv_simple_spelling_variants";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_WORD_VARIATIONS;
 	m++;
