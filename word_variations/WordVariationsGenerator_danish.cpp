@@ -474,6 +474,7 @@ void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<Wor
 					v1_1.source_word_end = i+1;
 					variations.push_back(v1_1);
 				} else {
+					//"at være" takes the auxilliary verb "have"
 					WordVariationGenerator::Variation v0_0;
 					v0_0.word = "har "+std::string(wordform_past_participle->written_form,wordform_past_participle->written_form_length);
 					v0_0.weight = weight;
