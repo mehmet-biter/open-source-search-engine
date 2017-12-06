@@ -2577,7 +2577,6 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
 			ptr_utf8Content    = NULL;
 			size_utf8Content   = 0;
-			m_utf8ContentValid = true;
 
 			logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCNONCANONICAL");
 			return &m_indexCode;
@@ -3144,7 +3143,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 
 			ptr_utf8Content    = NULL;
 			size_utf8Content   = 0;
-			m_utf8ContentValid = true;
 		} else {
 			m_titleRecBufValid = true;
 			return &m_titleRecBuf;
@@ -5742,7 +5740,6 @@ Url **XmlDoc::getRedirUrl() {
 
 		ptr_utf8Content    = NULL;
 		size_utf8Content   = 0;
-		m_utf8ContentValid = true;
 
 		// mdw: let this path through so contactXmlDoc gets a proper
 		// redirect that we can follow. for the base xml doc at
