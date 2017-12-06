@@ -14476,7 +14476,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 
 	// . only if had old one
 	// . we use this in url filters to set the respider wait time usually
-	if ( od ) {
+	if ( od && !m_recycleContent) {
 		int32_t spideredTime = getSpideredTime();
 		int32_t oldSpideredTime = od->getSpideredTime();
 		float numDays = spideredTime - oldSpideredTime;
