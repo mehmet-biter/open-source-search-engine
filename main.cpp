@@ -1520,7 +1520,7 @@ int main2 ( int argc , char *argv[] ) {
 		_exit(0);
 	}
 
-	if(cmd && cmd[0] && cmd[0]!='-') {
+	if(cmd[0] && cmd[0]!='-') {
 		log(LOG_ERROR, "Unknown command: '%s'", cmd);
 		_exit(1);
 	}
@@ -5385,7 +5385,10 @@ static bool cacheTest() {
 	g_conf.m_maxMem = 2000000000LL; // 2G
 	//g_mem.m_maxMem  = 2000000000LL; // 2G
 
-	hashinit();
+	if ( ! hashinit() ) {
+		log( LOG_ERROR, "db: Failed to init hashtable." );
+		return 1;
+	}
 
 	// use an rdb cache
 	RdbCache c;

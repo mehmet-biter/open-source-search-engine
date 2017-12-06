@@ -5968,6 +5968,15 @@ XmlDoc **XmlDoc::getExtraDoc(const char *u, int32_t maxCacheAge) {
 		return NULL;
 	}
 
+	// a spider rec for the extra doc to use
+	SpiderRequest sreq;
+
+	if(strlen(u)>=sizeof(sreq.m_url)) {
+		g_errno = EURLTOOLONG;
+		logTrace( g_conf.m_logTraceXmlDoc, "END - URL too long" );
+		return NULL;
+	}
+
 	// . if *otr is NULL that means not found
 	// . return a NULL old XmlDoc in that case as well?
 	// . make a new one
@@ -5983,8 +5992,6 @@ XmlDoc **XmlDoc::getExtraDoc(const char *u, int32_t maxCacheAge) {
 	// . if we did not have it in titledb then download it!
 	// . or if titleRec was too old!
 
-	// a spider rec for the extra doc to use
-	SpiderRequest sreq;
 
 	// spider the url "u"
 	strcpy ( sreq.m_url , u );

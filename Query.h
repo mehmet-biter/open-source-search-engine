@@ -28,8 +28,6 @@ class CollectionRec;
 // let's support up to 64 query terms for now
 typedef uint64_t qvec_t;
 
-#define MAX_EXPLICIT_BITS (sizeof(qvec_t)*8)
-
 #define MAX_OVEC_SIZE 256
 
 // field codes
@@ -86,20 +84,20 @@ enum field_code_t {
 	//FIELD_UNUSED          = 51,
 	FIELD_GBDOCID           = 52,
 	FIELD_GBCONTENTHASH     = 53, // for deduping at spider time
-	FIELD_GBSORTBYFLOAT     = 54, // i.e. sortby:price -> numeric termlist
-	FIELD_GBREVSORTBYFLOAT  = 55, // i.e. sortby:price -> low to high
-	FIELD_GBNUMBERMIN       = 56,
-	FIELD_GBNUMBERMAX       = 57,
+	//FIELD_GBSORTBYFLOAT     = 54, // i.e. sortby:price -> numeric termlist
+	//FIELD_GBREVSORTBYFLOAT  = 55, // i.e. sortby:price -> low to high
+	//FIELD_GBNUMBERMIN       = 56,
+	//FIELD_GBNUMBERMAX       = 57,
 	//FIELD_UNUSED          = 58,
 	FIELD_GBSORTBYINT       = 59,
 	FIELD_GBREVSORTBYINT    = 60,
-	FIELD_GBNUMBERMININT    = 61,
-	FIELD_GBNUMBERMAXINT    = 62,
+	//FIELD_GBNUMBERMININT    = 61,
+	//FIELD_GBNUMBERMAXINT    = 62,
 	//FIELD_UNUSED          = 63,
 	//FIELD_UNUSED          = 64,
 	//FIELD_UNUSED          = 65,
-	FIELD_GBNUMBEREQUALINT  = 66,
-	FIELD_GBNUMBEREQUALFLOAT= 67,
+	//FIELD_GBNUMBEREQUALINT  = 66,
+	//FIELD_GBNUMBEREQUALFLOAT= 67,
 	//FIELD_UNUSED          = 68,
 	FIELD_GBFIELDMATCH      = 69,
 };
@@ -146,13 +144,16 @@ enum ignore_reason_t {
 };
 
 // boolean query operators (m_opcode field in QueryWord)
-#define OP_OR         1
-#define OP_AND        2
-#define OP_NOT        3
-#define OP_LEFTPAREN  4
-#define OP_RIGHTPAREN 5
-#define OP_UOR        6
-#define OP_PIPE       7
+enum class opcode_t {
+	OP_NONE       = 0,
+	OP_OR         = 1,
+	OP_AND        = 2,
+	OP_NOT        = 3,
+	OP_LEFTPAREN  = 4,
+	OP_RIGHTPAREN = 5,
+	OP_UOR        = 6,
+	OP_PIPE       = 7,
+};
 
 // . these first two classes are functionless
 // . QueryWord, like the Phrases class, is an extension on the Words class
@@ -194,12 +195,6 @@ class QueryWord {
 	// . if we're a phrase term, signs distribute across quotes
 	char        m_wordSign;
 	char        m_phraseSign;
-	// this is 1 if the associated word is a valid query term but its
-	// m_explicitBit is 0. we use this to save explicit bits for those
-	// terms that need them (like those terms in complicated nested boolean
-	// expressions) and just use a hardCount to see how many hard required
-	// terms are contained by a document. see IndexTable.cpp "hardCount"
-	char        m_hardCount;
 	// the parenthetical level of this word in the boolean expression.
 	// level 0 is the first level.
 	char        m_level;
@@ -209,7 +204,7 @@ class QueryWord {
 	bool        m_isStopWord ; 
 	bool        m_isPunct;
 	// are we an op code?
-	char        m_opcode;
+	opcode_t        m_opcode;
 	// . the ignore code
 	// . explains why this query term should be ignored
 	// . see IGNORE_* enums above
@@ -284,22 +279,6 @@ class QueryTerm {
 	// sign of the phrase or word we used
 	char       m_termSign;
 
-	// our representative bit (up to 16 MAX_QUERY_TERMS)
-	qvec_t     m_explicitBit;
-
-	// usually this equal m_explicitBit, BUT if a word is repeated
-	// in different areas of the doc, we union all the individual
-	// explicit bits of that repeated word into this bit vec. it is
-	// used by Matches.cpp only so far.
-	qvec_t     m_matchesExplicitBits;
-
-	// this is 1 if the associated word is a valid query term but its
-	// m_explicitBit is 0. we use this to save explicit bits for those
-	// terms that need them (like those terms in complicated nested boolean
-	// expressions) and just use a hardCount to see how many hard required
-	// terms are contained by a document. see IndexTable.cpp "hardCount"
-	char       m_hardCount;
-
 	// the "number" of the query term used for evaluation boolean
 	// expressions in Expression::isTruth(). Basically just the
 	// QueryTermInfo for which this query term belongs. each QueryTermInfo
@@ -321,15 +300,6 @@ class QueryTerm {
 
 	int64_t   m_termFreq;
 	float     m_termFreqWeight;
-
-	// . our representative bits
-	// . the bits in this bit vector is 1-1 with the QueryTerms
-	// . if a doc has query term #i then bit #i will be set
-	// . if a doc EXplicitly has phrase "A B" then it may have 
-	//   term A and term B implicity
-	// . therefore we also OR the bits for term A and B into m_implicitBits
-	// . THIS SHIT SHOULD be just used in setBitScores() !!!
-	qvec_t m_implicitBits;
 
 	// Summary.cpp and Matches.cpp use this one
 	bool m_isQueryStopWord ; 
@@ -373,7 +343,6 @@ class QueryTerm {
 
 	char m_startKey[MAX_KEY_BYTES];
 	char m_endKey  [MAX_KEY_BYTES];
-	char m_ks;
 };
 
 #define MAX_EXPRESSIONS 100

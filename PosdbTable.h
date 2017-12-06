@@ -176,22 +176,6 @@ private:
 	int32_t m_sortByTermInfoNum;
 	int32_t m_sortByTermInfoNumInt;
 
-	// for gbmin:price:1.99
-	int32_t m_minScoreTermNum;
-	int32_t m_maxScoreTermNum;
-
-	// for gbmin:price:1.99
-	float m_minScoreVal;
-	float m_maxScoreVal;
-
-	// for gbmin:count:99
-	int32_t m_minScoreTermNumInt;
-	int32_t m_maxScoreTermNumInt;
-
-	// for gbmin:count:99
-	int32_t m_minScoreValInt;
-	int32_t m_maxScoreValInt;
-
 
 	HashTableX m_whiteListTable;
 	bool m_useWhiteTable;
@@ -210,7 +194,7 @@ public:
 
 	// for intersecting docids
 	void addDocIdVotes( const QueryTermInfo *qti , int32_t listGroupNum );
-	void makeDocIdVoteBufForRarestTerm( const QueryTermInfo *qti , bool isRangeTerm );
+	void makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti);
 	bool makeDocIdVoteBufForBoolQuery() ;
 	void delDocIdVotes ( const QueryTermInfo *qti );	// for negative query terms...
 	bool findCandidateDocIds();
