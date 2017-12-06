@@ -132,7 +132,6 @@ int main(int argc, char **argv) {
 			const char *reason = NULL;
 
 			if (isUrlUnwanted(*url, &reason)) {
-				fprintf(stdout, "%" PRId64"|%s|%s\n", docId, reason, url->getUrl());
 				continue;
 			}
 
@@ -140,10 +139,10 @@ int main(int argc, char **argv) {
 			if (redirUrlPtr && *redirUrlPtr) {
 				Url *redirUrl = *redirUrlPtr;
 				if (isUrlUnwanted(*redirUrl, &reason)) {
-					fprintf(stdout, "%" PRId64"|redir %s|%s|%s\n", docId, reason, url->getUrl(), redirUrl->getUrl());
 					continue;
 				}
 			}
+
 			uint8_t *contentType = xmlDoc.getContentType();
 			switch (*contentType) {
 				case CT_GIF:
@@ -158,7 +157,6 @@ int main(int argc, char **argv) {
 				case CT_GZ:
 				case CT_ARC:
 				case CT_WARC:
-					fprintf(stdout, "%" PRId64"|blocked content type|%s\n", docId, url->getUrl());
 					continue;
 				default:
 					break;
@@ -168,7 +166,6 @@ int main(int argc, char **argv) {
 			int32_t contentLen = xmlDoc.size_utf8Content > 0 ? (xmlDoc.size_utf8Content - 1) : 0;
 			if (contentLen > 0) {
 				if (!WantedChecker::check_single_content(url->getUrl(), xmlDoc.ptr_utf8Content, contentLen).wanted) {
-					fprintf(stdout, "%" PRId64"|blocked content|%s\n", docId, url->getUrl());
 					continue;
 				}
 			}
@@ -176,10 +173,10 @@ int main(int argc, char **argv) {
 			bool *ini = xmlDoc.getIsNoIndex();
 			if (*ini) {
 				bool *inf = xmlDoc.getIsNoFollow();
-				if (*inf) {
-					fprintf(stdout, "%" PRId64"|meta noindex nofollow|%s\n", docId, url->getUrl());
-					continue;
+				if (!*inf) {
+					fprintf(stdout, "%" PRId64"|meta noindex follow|%s\n", docId, url->getUrl());
 				}
+				continue;
 			}
 		}
 
