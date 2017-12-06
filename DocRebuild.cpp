@@ -88,6 +88,11 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 		return;
 	}
 
+	XmlDoc **oldXmlDoc = xmlDoc->getOldXmlDoc();
+	if (!oldXmlDoc || oldXmlDoc == (XmlDoc**)-1) {
+		return;
+	}
+
 	if (!xmlDoc->m_contentValid && !xmlDoc->set2(*oldTitleRec, -1, "main", nullptr, MAX_NICENESS)) {
 		xmlDoc->m_indexCode = ECORRUPTDATA;
 		xmlDoc->m_indexCodeValid = true;
