@@ -3,6 +3,7 @@ Lexicon			::= Version
 
 LexicalEntry		::= PartOfSpeech
 			,   WordFormType
+			,   MorphologicalUnitId
 			,   [ ExplicitWordForms ]
 
 WordFormType		::= 1-byte: explicit(1) | regular
@@ -38,6 +39,8 @@ PartOfSpeech		::= adjective(0)
 			|   unclassifiedParticle(19)
 			|   unspecified(20)
 
+MorphologicalUnitId	::= 1-byte length field + UTF-8 string
+
 WordFormAttribute	::= 1-byte /*plural|secondPerson|indicative|...*/
 
 WrittenForm		::= 1-byte length field + UTF-8 string
@@ -46,6 +49,8 @@ Version			::= 80-byte string
 
 
 /***
-WordFormType: currently only "explicit" is used. The "regular" type is intended for words with regular morphology (and orthography) where the variations can be computed easily instead of stored. It is also possible to have the field specify eg. declension paradigm.
+WordFormType: currently only "explicit" is used. The "regular" type is intended for words with regular
+morphology (and orthography) where the variations can be computed easily instead of stored. It is also
+possible to have the field specify eg. declension paradigm.
 ExplicitWordForm: it is limited to 6 attributes. 6 seems sufficient for most indoeuropean languages.
 ***/

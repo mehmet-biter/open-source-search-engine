@@ -112,9 +112,16 @@ struct WordForm {
 struct LexicalEntry {
 	part_of_speech_t part_of_speech;
 	word_form_type_t word_form_type;
+	uint8_t morphological_unit_id_len;
 	uint8_t explicit_word_form_count;
-	char explicit_word_forms[];
-	const WordForm *query_first_explicit_word_form() const { return reinterpret_cast<const WordForm*>(explicit_word_forms); }
+	//char morphological_unit_id[];
+	//char explicit_word_forms[];
+	const char *query_morphological_unit_id() const { return reinterpret_cast<const char*>(this) + sizeof(*this); }
+	const WordForm *query_first_explicit_word_form() const {
+		const char *p = reinterpret_cast<const char*>(this) + sizeof(*this);
+		p += morphological_unit_id_len;
+		return reinterpret_cast<const WordForm*>(p);
+	}
 	std::vector<const WordForm *> query_all_explicit_word_forms() const;
 	const WordForm *find_first_wordform(const std::string &word) const;
 };
@@ -126,10 +133,11 @@ class Lexicon {
 	
 	void *mapped_memory_start;
 	size_t mapped_memory_size;
-	std::multimap<std::string,const LexicalEntry*> entries;
+	std::multimap<std::string,const LexicalEntry*> entries; //wordform -> entry[]
+	std::multimap<std::string,const LexicalEntry*> morphological_unit_id_entries; //morphological_unit_id -> entry[]
 
 public:
-	Lexicon() : mapped_memory_start(0), mapped_memory_size(0), entries() {}
+	Lexicon() : mapped_memory_start(0), mapped_memory_size(0), entries(), morphological_unit_id_entries() {}
 	~Lexicon() { unload(); }
 	
 	bool load(const std::string &filename);
@@ -140,6 +148,7 @@ public:
 	
 	const LexicalEntry *first_entry() const;
 	const LexicalEntry *next_entry(const LexicalEntry *le) const;
+	std::vector<const LexicalEntry *> query_lexical_entries_with_same_morphological_unit_id(const LexicalEntry *le) const;
 };
 
 } //namespace

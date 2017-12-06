@@ -6,11 +6,12 @@
 #include <string.h>
 
 
-static const char version_1_signature[80] = "parsed-sto-v1\n";
+//static const char version_1_signature[80] = "parsed-sto-v2\n";
+static const char version_2_signature[80] = "parsed-sto-v2\n";
 
 std::vector<const sto::WordForm *> sto::LexicalEntry::query_all_explicit_word_forms() const {
 	std::vector<const WordForm*> entries;
-	const char *p = explicit_word_forms;
+	const char *p = reinterpret_cast<const char*>(query_first_explicit_word_form());
 	for(unsigned i=0; i<explicit_word_form_count; i++) {
 		const WordForm *e = reinterpret_cast<const WordForm*>(p);
 		entries.push_back(e);
@@ -21,7 +22,7 @@ std::vector<const sto::WordForm *> sto::LexicalEntry::query_all_explicit_word_fo
 
 
 const sto::WordForm *sto::LexicalEntry::find_first_wordform(const std::string &word) const {
-	const char *p = explicit_word_forms;
+	const char *p = reinterpret_cast<const char*>(query_first_explicit_word_form());
 	for(unsigned i=0; i<explicit_word_form_count; i++) {
 		const WordForm *e = reinterpret_cast<const WordForm*>(p);
 		if(e->written_form_length==word.length() &&
@@ -45,7 +46,7 @@ bool sto::Lexicon::load(const std::string &filename) {
 		::close(fd);
 		return false;
 	}
-	if((size_t)st.st_size<sizeof(version_1_signature)) {
+	if((size_t)st.st_size<sizeof(version_2_signature)) {
 		::close(fd);
 		return false;
 	}
@@ -59,7 +60,7 @@ bool sto::Lexicon::load(const std::string &filename) {
 	
 	mapped_memory_size = st.st_size;
 	
-	if(memcmp(mapped_memory_start,version_1_signature,sizeof(version_1_signature))!=0) {
+	if(memcmp(mapped_memory_start,version_2_signature,sizeof(version_2_signature))!=0) {
 		unload();
 		return false;
 	}
@@ -68,7 +69,7 @@ bool sto::Lexicon::load(const std::string &filename) {
 	//see sto_structure.txt for details
 	const char *start = reinterpret_cast<const char*>(mapped_memory_start);
 	const char *end = start + mapped_memory_size;
-	const char *p = start + sizeof(version_1_signature);
+	const char *p = start + sizeof(version_2_signature);
 	while(p<end) {
 		const LexicalEntry *le = reinterpret_cast<const LexicalEntry*>(p);
 		p = reinterpret_cast<const char*>(le->query_first_explicit_word_form());
@@ -81,7 +82,15 @@ bool sto::Lexicon::load(const std::string &filename) {
 			entries.emplace(std::string(wf->written_form,wf->written_form_length),le);
 			p = p2;
 		}
+		morphological_unit_id_entries.emplace(std::string(le->query_morphological_unit_id(), le->morphological_unit_id_len),le);
 	}
+	
+	//todo:removed non-duplicates from query_morphological_unit_id
+//	for(std::multimap<std::string,const LexicalEntry*>::iterator iter = morphological_unit_id_entries.begin(); iter!=morphological_unit_id_entries.end()) {
+//		std::multimap<std::string,const LexicalEntry*>::iterator next(iter);
+//		++next;
+//		if(next!=morphological_unit_id_entries.end()
+//	}
 	
 	return true;
 }
@@ -94,6 +103,7 @@ void sto::Lexicon::unload() {
 		mapped_memory_size = 0;
 	}
 	entries.clear();
+	morphological_unit_id_entries.clear();
 }
 
 
@@ -120,7 +130,7 @@ std::vector<const sto::LexicalEntry *> sto::Lexicon::query_matches(const std::st
 
 const sto::LexicalEntry *sto::Lexicon::first_entry() const {
 	const char *start = reinterpret_cast<const char*>(mapped_memory_start);
-	const char *p = start + sizeof(version_1_signature);
+	const char *p = start + sizeof(version_2_signature);
 	return reinterpret_cast<const LexicalEntry*>(p);
 }
 
@@ -143,6 +153,16 @@ const sto::LexicalEntry *sto::Lexicon::next_entry(const LexicalEntry *le) const 
 		return reinterpret_cast<const LexicalEntry*>(p);
 	else
 		return NULL;
+}
+
+
+std::vector<const sto::LexicalEntry *> sto::Lexicon::query_lexical_entries_with_same_morphological_unit_id(const sto::LexicalEntry *le) const {
+	std::vector<const sto::LexicalEntry *> v;
+	auto range = morphological_unit_id_entries.equal_range(std::string(le->query_morphological_unit_id(),le->morphological_unit_id_len));
+	for(auto iter=range.first; iter!=range.second; ++iter) {
+		v.push_back(iter->second);
+	}
+	return v;
 }
 
 
@@ -190,7 +210,7 @@ int main(void) {
 	//file with just the signature
 	{
 		int fd = open("sto.unittest",O_WRONLY|O_CREAT|O_TRUNC,0666);
-		write(fd,version_1_signature,sizeof(version_1_signature));
+		write(fd,version_2_signature,sizeof(version_2_signature));
 		close(fd);
 		Lexicon l;
 		assert(l.load("sto.unittest"));
@@ -202,13 +222,15 @@ int main(void) {
 	{
 		int fd = open("sto.unittest",O_WRONLY|O_CREAT|O_TRUNC,0666);
 		char tmp[16];
-		write(fd,version_1_signature,sizeof(version_1_signature));
+		write(fd,version_2_signature,sizeof(version_2_signature));
 		//le#0
 		tmp[0] = (char)part_of_speech_t::commonNoun;
 		write(fd, tmp, 1);
 		tmp[0] = (char)word_form_type_t::wordFormsExplicit;
 		write(fd, tmp, 1);
-		write(fd,"\002",1);
+		write(fd, "\006",1); //morph-unit-id len
+		write(fd,"\002",1); //wordforms
+		write(fd, "morph1",6); //morph-unit-id
 		//le#0:wf#0
 		tmp[0]=tmp[1]=tmp[2]=tmp[3]=tmp[4]=tmp[5] = (char)word_form_attribute_t::none;
 		tmp[0]=(char)word_form_attribute_t::degree_positive;
@@ -251,14 +273,16 @@ int main(void) {
 	{
 		int fd = open("sto.unittest",O_WRONLY|O_CREAT|O_TRUNC,0666);
 		char tmp[16];
-		write(fd,version_1_signature,sizeof(version_1_signature));
+		write(fd,version_2_signature,sizeof(version_2_signature));
 		
 		//le#0
 		tmp[0] = (char)part_of_speech_t::commonNoun;
 		write(fd, tmp, 1);
 		tmp[0] = (char)word_form_type_t::wordFormsExplicit;
 		write(fd, tmp, 1);
+		write(fd,"\006",1); //morph-unit-id len
 		write(fd,"\002",1); //#wordforms
+		write(fd, "morph1",6); //morph-unit-id
 		//le#0:wf#0
 		tmp[0]=tmp[1]=tmp[2]=tmp[3]=tmp[4]=tmp[5] = (char)word_form_attribute_t::none;
 		write(fd,tmp,6);
@@ -274,7 +298,9 @@ int main(void) {
 		write(fd, tmp, 1);
 		tmp[0] = (char)word_form_type_t::wordFormsExplicit;
 		write(fd, tmp, 1);
+		write(fd,"\006",1); //morph-unit-id len
 		write(fd,"\002",1); //#wordforms
+		write(fd, "morph2",6); //morph-unit-id
 		//le#1:wf#0
 		tmp[0]=tmp[1]=tmp[2]=tmp[3]=tmp[4]=tmp[5] = (char)word_form_attribute_t::none;
 		write(fd,tmp,6);
@@ -290,7 +316,9 @@ int main(void) {
 		write(fd, tmp, 1);
 		tmp[0] = (char)word_form_type_t::wordFormsExplicit;
 		write(fd, tmp, 1);
+		write(fd,"\006",1); //morph-unit-id len
 		write(fd,"\003",1); //#wordforms
+		write(fd, "morph1",6); //morph-unit-id
 		//le#2:wf#0
 		tmp[0]=tmp[1]=tmp[2]=tmp[3]=tmp[4]=tmp[5] = (char)word_form_attribute_t::none;
 		write(fd,tmp,6);
@@ -328,6 +356,14 @@ int main(void) {
 		assert(v4.size()==1);
 		
 		assert(v0[0]==v1[0] || v0[1]==v1[0]);
+		
+		auto m0 = l.query_lexical_entries_with_same_morphological_unit_id(l.lookup("foos"));
+		assert(m0.size()==2);
+		assert(m0[0]!=m0[1]);
+		
+		auto m1 = l.query_lexical_entries_with_same_morphological_unit_id(l.lookup("boos"));
+		assert(m1.size()==1);
+		assert(m1[0]==l.lookup("boos"));
 	}
 	
 }

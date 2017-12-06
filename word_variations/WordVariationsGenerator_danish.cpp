@@ -155,6 +155,12 @@ void WordVariationGenerator_danish::find_simple_attribute_difference_wordforms(s
 }
 
 
+static bool has_same_attributes(const sto::WordForm *wf1, const sto::WordForm *wf2) {
+	//quick and dirty check. The source sto file currently has the attributes in the same order.
+	return memcmp(wf1->attribute,wf2->attribute,sizeof(wf2->attribute))==0;
+}
+
+
 void WordVariationGenerator_danish::find_simple_attribute_match_wordforms(std::vector<WordVariationGenerator::Variation> &variations,
 									  const std::vector<std::string> &source_words,
 									  float weight)
@@ -166,18 +172,21 @@ void WordVariationGenerator_danish::find_simple_attribute_match_wordforms(std::v
 			auto wordforms(match->query_all_explicit_word_forms());
 			for(auto wordform : wordforms) {
 				if(same_wordform_as_source(*wordform,source_word)) {
-					//found the word match. Now look for other wordforms with exactly the same attributes. Those are alternate spellings
-					for(auto wordform2 : wordforms) {
-						if(wordform2!=wordform &&
-						   memcmp(wordform2->attribute,wordform->attribute,sizeof(wordform2->attribute))==0)
-						{
-							//found an alternative spelling of the word
-							Variation v;
-							v.word.assign(wordform2->written_form,wordform2->written_form_length);
-							v.weight = weight;
-							v.source_word_start = i;
-							v.source_word_end = i+1;
-							variations.push_back(v);
+					//found the word form match. Now look for other wordforms with exactly the same attributes. Those are alternate spellings.
+					//so first find all lexical entries with the same morphological unit id, and check all wordforms of those, looking for an attribute match
+					auto same_morph_entries = lexicon.query_lexical_entries_with_same_morphological_unit_id(match);
+					for(auto same_morph_entry : same_morph_entries) {
+						auto wordforms2(same_morph_entry->query_all_explicit_word_forms());
+						for(auto wordform2 : wordforms2) {
+							if(wordform2!=wordform && has_same_attributes(wordform,wordform2)) {
+								//found an alternative spelling of the word
+								Variation v;
+								v.word.assign(wordform2->written_form,wordform2->written_form_length);
+								v.weight = weight;
+								v.source_word_start = i;
+								v.source_word_end = i+1;
+								variations.push_back(v);
+							}
 						}
 					}
 				}

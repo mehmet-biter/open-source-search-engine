@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
 	unsigned lexical_entry_count = 0;
 	unsigned word_form_count = 0;
 	for(auto le = l.first_entry(); le; le=l.next_entry(le)) {
-		printf("===== %s\n", part_of_speech_str(le->part_of_speech));
+		printf("===== %.*s: %s\n", (int)le->morphological_unit_id_len, le->query_morphological_unit_id(), part_of_speech_str(le->part_of_speech));
 		auto v(le->query_all_explicit_word_forms());
 		for(auto wf : v) {
 			printf("%.*s",(int)wf->written_form_length, wf->written_form);

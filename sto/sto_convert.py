@@ -91,6 +91,7 @@ def do_convert(input_file_name, output_file):
 	for lexicalentry in lexicon.findall("LexicalEntry"):
 		part_of_speech=None
 		id=None
+		morphological_unit_id=None
 		for feat in lexicalentry.findall("feat"):
 			att=feat.attrib["att"]
 			val=feat.attrib["val"]
@@ -103,9 +104,14 @@ def do_convert(input_file_name, output_file):
 					sys.exit(2)
 			elif att=="id":
 				id=val
+			elif att=="morphologicalUnitId":
+				morphological_unit_id=val
 			#todo:decomposition
 		if part_of_speech==None:
 			print("Entry %s doesn't have partOfSpeech"%id, file=sys.stderr)
+		if morphological_unit_id==None:
+			print("Entry %s doesn't have morphologicalUnitId"%id, file=sys.stderr)
+			sys.exit(2)
 		
 		raw_wordforms = b""
 		wordform_count = 0
@@ -146,7 +152,8 @@ def do_convert(input_file_name, output_file):
 				wordform_count += 1
 				raw_wordforms += raw_wordform
 		
-		raw_entry = struct.pack(">BBB",part_of_speech,1,wordform_count) + raw_wordforms
+		raw_morphological_unit_id = morphological_unit_id.encode()
+		raw_entry = struct.pack(">BBBB",part_of_speech,1,len(raw_morphological_unit_id),wordform_count) + raw_morphological_unit_id + raw_wordforms
 		output_file.write(raw_entry)
 		
 		total_entry_count += 1
@@ -178,7 +185,7 @@ if args.command=="convert" and (not args.input_file):
 output_file = open(args.output_file,"ab")
 if args.command=="signature":
 	#simple
-	version_1_signature = ("parsed-sto-v1\n"+'\0'*80)[0:80]
+	version_1_signature = ("parsed-sto-v2\n"+'\0'*80)[0:80]
 	output_file.write(version_1_signature.encode())
 elif args.command=="convert":
 	do_convert(args.input_file,output_file)
