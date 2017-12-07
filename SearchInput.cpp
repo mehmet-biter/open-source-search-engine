@@ -46,6 +46,7 @@ SearchInput::SearchInput()
 	m_minSerpDocId = 0;
 	m_sameLangWeight = 0.0;
 	m_unknownLangWeight = 0.0;
+	m_siteRankMultiplier = 0.0;
 	m_fx_qlang = nullptr;
 	m_fx_blang = nullptr;
 	m_fx_fetld = nullptr;

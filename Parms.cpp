@@ -4028,6 +4028,15 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "site-rank multiplier";
+	m->m_desc  = "formula: score = (siterank*multiplier)+1";
+	simple_m_set(SearchInput,m_siteRankMultiplier);
+	m->m_defOff= offsetof(CollectionRec,m_siteRankMultiplier);
+	m->m_cgi   = "siterankmultiplier";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	m->m_title = "max query terms";
 	m->m_desc  = "Do not allow more than this many query terms. Helps "
 		"prevent big queries from resource hogging.";
@@ -4115,6 +4124,16 @@ void Parms::init ( ) {
 	m->m_cgi   = "ulangw";
 	simple_m_set(CollectionRec,m_unknownLangWeight);
 	m->m_def   = "10.000000";
+	m->m_group = true;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
+	m->m_page  = PAGE_RANKING;
+	m++;
+
+	m->m_title = "site-rank multiplier";
+	m->m_desc  = "formula: score = (siterank*multiplier)+1";
+	m->m_cgi   = "siterankmultiplier";
+	simple_m_set(CollectionRec,m_siteRankMultiplier);
+	m->m_def   = "0.333333";
 	m->m_group = true;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;

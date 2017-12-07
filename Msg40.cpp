@@ -379,6 +379,7 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_maxSerpScore              = m_si->m_maxSerpScore;
 	mr.m_sameLangWeight            = m_si->m_sameLangWeight;
 	mr.m_unknownLangWeight = m_si->m_unknownLangWeight;
+	mr.m_siteRankMultiplier        = m_si->m_siteRankMultiplier;
 	memcpy(mr.m_queryId, m_si->m_queryId, sizeof(m_si->m_queryId));
 
 	if ( mr.m_timeout < m_si->m_minMsg3aTimeout )

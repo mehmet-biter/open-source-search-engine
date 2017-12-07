@@ -244,6 +244,7 @@ public:
 	//ranking settings
 	float m_sameLangWeight;
 	float m_unknownLangWeight;
+	float m_siteRankMultiplier;
 
 	// Language stuff
 	char 			m_defaultSortLanguage2[6];

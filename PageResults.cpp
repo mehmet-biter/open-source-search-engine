@@ -1222,7 +1222,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 		// best term freqs
 		max *= maxtfw1 * maxtfw2;
 		// site rank effect
-		max *= MAXSITERANK/SITERANKDIVISOR + 1;
+		max *= MAXSITERANK*si->m_siteRankMultiplier + 1;
 		sb->safePrintf ("\t\t<theoreticalMaxFinalScore>%f"
 			       "</theoreticalMaxFinalScore>\n",
 			       max );
@@ -3196,17 +3196,17 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 		sb->safePrintf("\t\t<finalScore>%f</finalScore>\n", score);
 		sb->safePrintf ("\t\t<finalScoreEquationCanonical>"
 			       "<![CDATA["
-			       "Final Score = (siteRank/%.01f+1) * "
+			       "Final Score = (siteRank*%.01f+1) * "
 			       "(%.01f [if not foreign language, %.01f if unknown]) * "
 			       "(%s of above matrix scores)"
 			       "]]>"
 			       "</finalScoreEquationCanonical>\n"
-			       , SITERANKDIVISOR, si->m_sameLangWeight, si->m_unknownLangWeight, ff2);
+			       , si->m_siteRankMultiplier, si->m_sameLangWeight, si->m_unknownLangWeight, ff2);
 
 		sb->safePrintf ("\t\t<finalScoreEquation>"
 			       "<![CDATA["
-			       "<b>%.03f</b> = (%" PRId32"/%.01f+1) " 
-			       , dp->m_finalScore, (int32_t)dp->m_siteRank, SITERANKDIVISOR);
+			       "<b>%.03f</b> = (%" PRId32"*%.01f+1) "
+			       , dp->m_finalScore, (int32_t)dp->m_siteRank, si->m_siteRankMultiplier);
 
 		// Check if user specified a query language
 		if ( si->m_queryLangId != 0 ) {
@@ -3272,7 +3272,7 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 	sb->safePrintf("<tr><td colspan=100>");
 
 	// list all final scores starting with pairs
-	sb->safePrintf("<b>%f</b> = (<font color=blue>%" PRId32"</font>/%.01f+1)", dp->m_finalScore, (int32_t)dp->m_siteRank, SITERANKDIVISOR);
+	sb->safePrintf("<b>%f</b> = (<font color=blue>%" PRId32"</font>*%.01f+1)", dp->m_finalScore, (int32_t)dp->m_siteRank, si->m_siteRankMultiplier);
 
 	// Check if user specified a query language
 	if ( si->m_queryLangId != 0 ) {
