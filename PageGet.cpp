@@ -214,16 +214,10 @@ bool sendErrorReply ( void *state , int32_t err ) {
 	// get the tcp socket from the state
 	TcpSocket *s = st->m_socket;
 
-	char tmp [ 1024*32 ] ;
-	sprintf ( tmp , "%s",
-		  mstrerror(g_errno));
 	// nuke state2
 	mdelete ( st , sizeof(State2) , "PageGet1" );
 	delete (st);
-	// erase g_errno for sending
-	//g_errno = 0;
-	// . now encapsulate it in html head/tail and send it off
-	//return g_httpServer.sendDynamicPage ( s , tmp , strlen(tmp) );
+
 	return g_httpServer.sendErrorReply ( s, err, mstrerror(err) );
 }
 

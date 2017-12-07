@@ -2659,6 +2659,14 @@ const struct QueryField g_fields[] = {
 	 NULL,
 	 QTF_DUP },
 
+	{"sitenoindex",
+	 FIELD_SITE,
+	 true,
+	 "sitenoindex:example.com",
+	 "Matches all documents on the example.com domain that in not indexed.",
+	 NULL,
+	 0 },
+
 	{"ip", 
 	 FIELD_IP, 
 	 true,

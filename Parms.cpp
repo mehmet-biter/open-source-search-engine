@@ -5390,6 +5390,18 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+#ifndef PRIVACORE_SAFE_VERSION
+	m->m_title = "TitleRec version number";
+	m->m_desc  = "Override TitleRec version number (for testing only!)";
+	m->m_cgi   = "trvn";
+	simple_m_set(Conf,m_titleRecVersion);
+	m->m_def   = TITLEREC_CURRENT_VERSION_STR;
+	m->m_group = false;
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_MASTER;
+	m++;
+#endif
+
 	m->m_title = "use shotgun";
 	m->m_desc  = "If enabled, all servers must have two gigabit "
 		"ethernet ports hooked up and Gigablast will round robin "

@@ -49,10 +49,15 @@ public:
 	virtual void updateXmldoc(XmlDoc *xmlDoc) = 0;
 	virtual void processDocItem(DocProcessDocItem *docItem) = 0;
 
+	bool addKey(const std::string &key, int64_t currentFilePos = -1);
+
 	static void reload(int /*fd*/, void */*state*/);
+
 	static void processFile(void *item);
 	static void processDoc(void *item);
 	static void processedDoc(void *state);
+
+	void waitPendingDocCount(unsigned maxCount);
 
 protected:
 	void removePendingDoc(DocProcessDocItem *docItem);
@@ -60,7 +65,6 @@ protected:
 	bool m_isUrl;
 
 private:
-	void waitPendingDocCount(unsigned maxCount);
 	void addPendingDoc(DocProcessDocItem *docItem);
 
 	const char *m_filename;

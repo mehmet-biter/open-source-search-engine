@@ -193,7 +193,7 @@ static bool gotSpiderRecs2(State *st) {
 }
 
 
-static bool respondWithError(State *st, const char *msg) {
+static bool respondWithError(State *st, int32_t error, const char *errmsg) {
 	// get the socket
 	TcpSocket *s = st->m_socket;
 
@@ -202,12 +202,18 @@ static bool respondWithError(State *st, const char *msg) {
 	switch(st->m_r.getReplyFormat()) {
 		case FORMAT_HTML:
 			g_pages.printAdminTop(&sb, s, &st->m_r, NULL);
-			sb.safePrintf("<p>%s</p>", msg);
+			sb.safePrintf("<p>%s</p>", errmsg);
 			g_pages.printAdminBottom2(&sb);
 			contentType = "text/html";
 			break;
 		case FORMAT_JSON:
-			sb.safePrintf("{error_message:\"%s\"}", msg); //todo: safe encode
+			sb.safePrintf("{\"response\":{\n"
+			              "\t\"statusCode\":%" PRId32",\n"
+			              "\t\"statusMsg\":\"", error);
+			sb.jsonEncode(errmsg);
+			sb.safePrintf("\"\n"
+			              "}\n"
+			              "}\n");
 			contentType = "application/json";
 			break;
 		default:
@@ -425,7 +431,7 @@ static bool sendResult(State *st) {
 	sb.reserve2x ( 32768 );
 
 	if(g_errno) {
-		return respondWithError(st, mstrerror(g_errno));
+		return respondWithError(st, g_errno, mstrerror(g_errno));
 	}
 
 	int32_t shardNum = -1;

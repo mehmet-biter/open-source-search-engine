@@ -385,6 +385,7 @@ void XmlDoc::reset ( ) {
 	m_setTr                    = false;
 
 	m_recycleContent           = false;
+	m_docRebuild               = false;
 	m_callback1                = NULL;
 	m_callback2                = NULL;
 	m_state                    = NULL;
@@ -748,7 +749,13 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 	//m_coll      = coll;
 	m_pbuf      = pbuf;
 	m_niceness  = niceness;
-	m_version   = TITLEREC_CURRENT_VERSION;
+
+#ifndef PRIVACORE_SAFE_VERSION
+	m_version = g_conf.m_titleRecVersion;
+#else
+	m_version = TITLEREC_CURRENT_VERSION;
+#endif
+
 	m_versionValid = true;
 
 	// this is used to removing the rec from doledb after we spider it
@@ -2332,7 +2339,15 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		return (int32_t *) ini;
 	}
 
-	if (*ini) {
+	// check meta nofollow
+	bool *inf = getIsNoFollow();
+	if (!inf || inf == (bool*) -1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, could not getIsNoFollow");
+		return (int32_t *) inf;
+	}
+
+	// meta noindex & nofollow
+	if (*ini && *inf) {
 		if (m_firstUrl.isRoot()) {
 			m_indexCode = EDOCDISALLOWEDROOT;
 		} else {
@@ -2562,7 +2577,6 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
 			ptr_utf8Content    = NULL;
 			size_utf8Content   = 0;
-			m_utf8ContentValid = true;
 
 			logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCNONCANONICAL");
 			return &m_indexCode;
@@ -2921,8 +2935,12 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 	// assume could not make one because we were banned or something
 	tbuf->purge(); // m_titleRec = NULL;
 
+#ifndef PRIVACORE_SAFE_VERSION
+	m_version = g_conf.m_titleRecVersion;
+#else
 	// start seting members in THIS's header before compression
-	m_version           = TITLEREC_CURRENT_VERSION;
+	m_version = TITLEREC_CURRENT_VERSION;
+#endif
 
 	// set this
 	m_headerSize = (char *)&ptr_firstUrl - (char *)&m_headerSize;
@@ -3125,7 +3143,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 
 			ptr_utf8Content    = NULL;
 			size_utf8Content   = 0;
-			m_utf8ContentValid = true;
 		} else {
 			m_titleRecBufValid = true;
 			return &m_titleRecBuf;
@@ -5723,7 +5740,6 @@ Url **XmlDoc::getRedirUrl() {
 
 		ptr_utf8Content    = NULL;
 		size_utf8Content   = 0;
-		m_utf8ContentValid = true;
 
 		// mdw: let this path through so contactXmlDoc gets a proper
 		// redirect that we can follow. for the base xml doc at
@@ -6230,8 +6246,11 @@ SafeBuf *XmlDoc::getTimeAxisUrl ( ) {
 //   from scratch. this loads it from titledb.
 // . NULL is a valid value (EDOCNOTFOUND) so return a char **
 char **XmlDoc::getOldTitleRec() {
+	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
+
 	// if valid return that
 	if ( m_oldTitleRecValid ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, already valid");
 		return &m_oldTitleRec;
 	}
 
@@ -6241,6 +6260,7 @@ char **XmlDoc::getOldTitleRec() {
 	if ( m_setFromTitleRec ) {
 		m_oldTitleRecValid = true;
 		m_oldTitleRec      = NULL;//m_titleRec;
+		logTrace(g_conf.m_logTraceXmlDoc, "END, setFromTitleRec");
 		return &m_oldTitleRec;
 	}
 	// sanity check
@@ -6259,6 +6279,7 @@ char **XmlDoc::getOldTitleRec() {
 	if ( m_isIndexedValid && ! m_isIndexed && m_docIdValid ) {
 		m_oldTitleRec      = NULL;
 		m_oldTitleRecValid = true;
+		logTrace(g_conf.m_logTraceXmlDoc, "END, not indexed");
 		return &m_oldTitleRec;
 	}
 	// sanity check. if we have no url or docid ...
@@ -6288,6 +6309,7 @@ char **XmlDoc::getOldTitleRec() {
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, no collection");
 		return NULL;
 	}
 
@@ -6316,6 +6338,7 @@ char **XmlDoc::getOldTitleRec() {
 				      m_niceness           , // niceness
 				      999999               )) {// timeout seconds
 		// return -1 if we blocked
+		logTrace(g_conf.m_logTraceXmlDoc, "END, blocked");
 		return (char **)-1;
 	}
 
@@ -6326,8 +6349,11 @@ char **XmlDoc::getOldTitleRec() {
 
 	// error?
 	if ( g_errno ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, error=%s", mstrerror(g_errno));
 		return NULL;
 	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "END");
 
 	// got it
 	return &m_oldTitleRec;
@@ -6619,7 +6645,9 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 	if ( m_siteNumInlinksValid ) return &m_siteNumInlinks;
 
 	// sanity check
-	if ( m_setFromTitleRec && ! m_useSecondaryRdbs) {g_process.shutdownAbort(true);}
+	if (m_setFromTitleRec && !m_useSecondaryRdbs && !m_docRebuild) {
+		g_process.shutdownAbort(true);
+	}
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
@@ -12929,7 +12957,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// . so at least now set all the data members we will need to
 	//   seriazlize into the title rec because we can't be blocking further
 	//   down below after we set all the hashtables and XmlDoc::ptr_ stuff
-	if (!m_setFromTitleRec || m_useSecondaryRdbs) {
+	if (!m_setFromTitleRec || m_useSecondaryRdbs || m_docRebuild) {
 		// all member vars should already be valid if set from titlerec
 		char *ptg = prepareToMakeTitleRec();
 
@@ -14445,7 +14473,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 
 	// . only if had old one
 	// . we use this in url filters to set the respider wait time usually
-	if ( od ) {
+	if ( od && !m_recycleContent) {
 		int32_t spideredTime = getSpideredTime();
 		int32_t oldSpideredTime = od->getSpideredTime();
 		float numDays = spideredTime - oldSpideredTime;
@@ -17634,9 +17662,10 @@ bool XmlDoc::printDocForProCog ( SafeBuf *sb , HttpRequest *hr ) {
 
 	// for some reason sections page blocks forever in browser
 	if ( page != 7 && ! m_printedMenu ) {
-		printFrontPageShell ( sb , "search" , cr , false );
+		if (hr->getReplyFormat() == FORMAT_HTML) {
+			printFrontPageShell(sb, "search", cr, false);
+		}
 		m_printedMenu = true;
-		//printMenu ( sb );
 	}
 
 
@@ -17741,9 +17770,8 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	const char *es = mstrerror(m_indexCode);
 	if ( ! m_indexCode ) es = mstrerror(g_errno);
 
-	int32_t isXml = hr->getLong("xml",0);
-
-	if ( ! isXml ) printMenu ( sb );
+	char format = hr->getReplyFormat();
+	if ( format == FORMAT_HTML ) printMenu ( sb );
 
 	int32_t shardNum = getShardNumFromDocId ( m_docId );
 	Host *hosts = g_hostdb.getShard ( shardNum );
@@ -17757,7 +17785,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 		spiderHostId = g_hostdb.getHostIdWithSpideringEnabled(spiderShardNum, false);
 	}
 
-	if ( ! isXml )
+	if ( format == FORMAT_HTML )
 		sb->safePrintf (
 				"<table cellpadding=3 border=0>\n"
 
@@ -17777,10 +17805,14 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 				"</tr>\n"
 
 				"<tr>"
+				"<td width=\"25%%\">title rec version</td>"
+				"<td>%" PRIu16"</td>"
+				"</tr>\n"
+
+				"<tr>"
 				"<td>index error code</td>"
 				"<td>%s</td>"
 				"</tr>\n"
-
 
 				"<tr>"
 				"<td>robots.txt allows</td>"
@@ -17800,6 +17832,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 
 				h->m_hostId,
 				spiderHostId,
+				m_version,
 				es,
 				allowed,
 
@@ -17807,13 +17840,14 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 				fu
 
 				);
-	else
+	else if (format == FORMAT_XML)
 		sb->safePrintf (
 				"<?xml version=\"1.0\" "
 				"encoding=\"UTF-8\" ?>\n"
 				"<response>\n"
 				"\t<coll><![CDATA[%s]]></coll>\n"
 				"\t<docId>%" PRId64"</docId>\n"
+				"\t<titleRecVersion>%" PRIu16"</titleRecVersion>\n"
 				"\t<indexError><![CDATA[%s]]></indexError>\n"
 				"\t<robotsTxtAllows>%" PRId32
 				"</robotsTxtAllows>\n"
@@ -17821,30 +17855,75 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 				,
 				cr->m_coll,
 				m_docId ,
+				m_version,
 				es,
 				allowedInt,//(int32_t)m_isAllowed,
 				fu
 				);
+	else if (format == FORMAT_JSON) {
+		sb->safePrintf("{\"response\":{\n");
+
+		sb->safePrintf("\t\"coll\": \"");
+		sb->jsonEncode(cr->m_coll);
+		sb->safePrintf("\",\n");
+
+		sb->safePrintf("\t\"docId\": %" PRIu64",\n", m_docId);
+		sb->safePrintf("\t\"titleRecVersion\": %" PRIu16",\n", m_version);
+
+		sb->safePrintf("\t\"indexError\": \"");
+		sb->jsonEncode(es);
+		sb->safePrintf("\",\n");
+
+		sb->safePrintf("\t\"robotsTxtAllows\": %" PRId32",\n", allowedInt);
+
+		sb->safePrintf("\t\"url\": \"");
+		sb->jsonEncode(fu);
+		sb->safePrintf("\",\n");
+	}
 
 	char *redir = ptr_redirUrl;
-	if ( redir && ! isXml ) {
-		sb->safePrintf(
-			       "<tr>"
-			       "<td>redir url</td>"
-			       "<td><a href=\"%s\">%s</a></td>"
-			       "</tr>\n"
-			       ,redir
-			       ,redir );
+	if (redir) {
+		switch (format) {
+			case FORMAT_HTML:
+				sb->safePrintf(
+					"<tr>"
+						"<td>redir url</td>"
+						"<td><a href=\"%s\">%s</a></td>"
+						"</tr>\n"
+					,redir
+					,redir );
+				break;
+			case FORMAT_XML:
+				sb->safePrintf("\t<redirectUrl><![CDATA[%s]]></redirectUrl>\n" ,redir );
+				break;
+			case FORMAT_JSON:
+				sb->safePrintf("\t\"redirectUrl\": \"");
+				sb->jsonEncode(redir);
+				sb->safePrintf("\",\n");
+				break;
+			default:
+				break;
+		}
 	}
-	else if ( redir ) {
-		sb->safePrintf("\t<redirectUrl><![CDATA[%s]]>"
-			       "</redirectUrl>\n" ,redir );
-	}
-
 
 	if ( m_indexCode || g_errno ) {
-		if ( ! isXml ) sb->safePrintf("</table><br>\n");
-		else           sb->safePrintf("</response>\n");
+		switch (format) {
+			case FORMAT_HTML:
+				sb->safePrintf("</table><br>\n");
+				break;
+			case FORMAT_XML:
+				sb->safePrintf("</response>\n");
+				break;
+			case FORMAT_JSON:
+				sb->removeLastChar('\n');
+				sb->removeLastChar(',');
+				sb->safePrintf("}\n");
+				sb->safePrintf("}\n");
+				break;
+			default:
+				break;
+		}
+
 		return true;
 	}
 
@@ -17852,157 +17931,120 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	// must always start with http
 	if ( strncmp ( fu , "http" , 4 ) != 0 ) { g_process.shutdownAbort(true); }
 
-	struct tm tm_buf;
-	char buf[64];
-	time_t ts = (time_t)m_firstIndexedDate;
-
-	if ( ! isXml )
-		sb->safePrintf("<tr><td>first indexed date</td>"
-			       "<td>%s UTC</td></tr>\n" ,
-			       asctime_r(gmtime_r(&ts,&tm_buf),buf) );
-	else
-		sb->safePrintf("\t<firstIndexedDateUTC>%" PRIu32
-			       "</firstIndexedDateUTC>\n",
-			       (uint32_t)m_firstIndexedDate );
-
-	ts = m_spideredTime;
-
-	if ( ! isXml )
-		sb->safePrintf("<tr><td>last indexed date</td>"
-			       "<td>%s UTC</td></tr>\n" ,
-			       asctime_r(gmtime_r(&ts,&tm_buf),buf) );
-	else
-		sb->safePrintf("\t<lastIndexedDateUTC>%" PRIu32
-			       "</lastIndexedDateUTC>\n",
-			       (uint32_t)m_spideredTime );
-
-	ts = m_outlinksAddedDate;
-
-	if ( ! isXml )
-		sb->safePrintf("<tr><td>outlinks last added date</td>"
-			       "<td>%s UTC</td></tr>\n" ,
-			       asctime_r(gmtime_r(&ts,&tm_buf),buf) );
-	else
-		sb->safePrintf("\t<outlinksLastAddedUTC>%" PRIu32
-			       "</outlinksLastAddedUTC>\n",
-			       (uint32_t)m_outlinksAddedDate );
-
-	// hop count
-	if ( ! isXml )
-		sb->safePrintf("<tr><td>hop count</td><td>%" PRId32"</td>"
-			       "</tr>\n",
-			       (int32_t)m_hopCount);
-	else
-		sb->safePrintf("\t<hopCount>%" PRId32"</hopCount>\n",
-			       (int32_t)m_hopCount);
-
-
 	char strLanguage[128];
 	languageToString(m_langId, strLanguage);
-
-	// print tags
-	//SafeBuf tb;
-	int32_t sni  = m_siteNumInlinks;
 
 	char ipString[16];
 	iptoa(m_ip,ipString);
 
-	//int32_t sni = info1->getNumGoodInlinks();
+	switch (format) {
+		case FORMAT_HTML: {
+			struct tm tm_buf;
+			char buf[64];
 
-	time_t tlu = info1->getLastUpdated();
-	struct tm *timeStruct3 = gmtime_r(&tlu,&tm_buf);//info1->m_lastUpdated );
-	char tmp3[64];
-	strftime ( tmp3 , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct3 );
+			time_t ts = (time_t)m_firstIndexedDate;
+			sb->safePrintf("<tr><td>first indexed date</td><td>%s UTC</td></tr>\n",
+			               asctime_r(gmtime_r(&ts, &tm_buf), buf));
 
+			ts = m_spideredTime;
+			sb->safePrintf("<tr><td>last indexed date</td><td>%s UTC</td></tr>\n",
+			               asctime_r(gmtime_r(&ts, &tm_buf), buf));
 
-	if ( ! isXml )
-		sb->safePrintf (
-			"<tr><td>original charset</td><td>%s</td></tr>\n"
-			"<tr><td>adult bit</td><td>%" PRId32"</td></tr>\n"
-			//"<tr><td>is link spam?</td><td>%" PRId32" <b>%s</b></td></tr>\n"
-			"<tr><td>is permalink?</td><td>%" PRId32"</td></tr>\n"
-			"<tr><td>is RSS feed?</td><td>%" PRId32"</td></tr>\n"
-			"<tr><td>ip</td><td><a href=\"/search?q=ip%%3A%s&c=%s&n=100\">"
-			"%s</td></tr>\n"
-			"<tr><td>http status</td><td>%d</td></tr>"
-			"<tr><td>content len</td><td>%" PRId32" bytes</td></tr>\n"
-			"<tr><td>content truncated</td><td>%" PRId32"</td></tr>\n"
-			"<tr><td>content type</td><td>%s</td></tr>\n"
-			"<tr><td>language</td><td>%s</td></tr>\n"
-			"<tr><td>country</td><td>%s</td></tr>\n"
+			ts = m_outlinksAddedDate;
+			sb->safePrintf("<tr><td>outlinks last added date</td><td>%s UTC</td></tr>\n",
+			               asctime_r(gmtime_r(&ts, &tm_buf), buf));
 
-			"<tr><td><b>good inlinks to site</b>"
-			"</td><td>%" PRId32"</td></tr>\n"
+			sb->safePrintf("<tr><td>hop count</td><td>%" PRId32"</td></tr>\n", (int32_t)m_hopCount);
 
-			"<tr><td><b>site rank</b></td><td>%" PRId32"</td></tr>\n"
+			sb->safePrintf("<tr><td>original charset</td><td>%s</td></tr>\n", get_charset_str(m_charset));
+			sb->safePrintf("<tr><td>adult bit</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isAdult);
+			sb->safePrintf("<tr><td>is permalink?</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isPermalink);
+			sb->safePrintf("<tr><td>is RSS feed?</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isRSS);
+			sb->safePrintf("<tr><td>ip</td><td><a href=\"/search?q=ip%%3A%s&c=%s&n=100\">%s</td></tr>\n", ipString, cr->m_coll, ipString);
+			sb->safePrintf("<tr><td>http status</td><td>%d</td></tr>", m_httpStatus);
+			sb->safePrintf("<tr><td>content len</td><td>%" PRId32" bytes</td></tr>\n", size_utf8Content - 1);
+			sb->safePrintf("<tr><td>content truncated</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isContentTruncated);
+			sb->safePrintf("<tr><td>content type</td><td>%s</td></tr>\n", g_contentTypeStrings[(int)m_contentType]);
+			sb->safePrintf("<tr><td>language</td><td>%s</td></tr>\n", strLanguage);
+			sb->safePrintf("<tr><td>country</td><td>%s</td></tr>\n", g_countryCode.getName(m_countryId));
+			sb->safePrintf("<tr><td><b>good inlinks to site</b></td><td>%" PRId32"</td></tr>\n", m_siteNumInlinks);
+			sb->safePrintf("<tr><td><b>site rank</b></td><td>%" PRId32"</td></tr>\n", ::getSiteRank(m_siteNumInlinks));
+			sb->safePrintf("<tr><td>good inlinks to page</td><td>%" PRId32"</td></tr>\n", info1->getNumGoodInlinks());
 
-			"<tr><td>good inlinks to page"
-			"</td><td>%" PRId32"</td></tr>\n"
+			time_t tlu = info1->getLastUpdated();
+			struct tm *timeStruct3 = gmtime_r(&tlu,&tm_buf);
+			char tmp3[64];
+			strftime ( tmp3 , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct3 );
+			sb->safePrintf("<tr><td><nobr>page inlinks last computed</nobr></td><td>%s</td></tr>\n", tmp3);
 
-			"<tr><td><nobr>page inlinks last computed</nobr></td>"
-			"<td>%s</td></tr>\n"
-			"</td></tr>\n",
-			get_charset_str(m_charset),
-			(int32_t)m_isAdult,
-			(int32_t)m_isPermalink,
-			(int32_t)m_isRSS,
-			ipString,
-			cr->m_coll,
-			ipString,
-			m_httpStatus,
-			size_utf8Content - 1,
-			(int32_t)m_isContentTruncated,
-			g_contentTypeStrings[(int)m_contentType] ,
-			strLanguage,
-			g_countryCode.getName(m_countryId) ,
-			sni,
-			::getSiteRank(sni),
-			info1->getNumGoodInlinks(),
+			sb->safePrintf("</td></tr>\n");
+		} break;
+		case FORMAT_XML:
+			sb->safePrintf("\t<firstIndexedDateUTC>%" PRIu32"</firstIndexedDateUTC>\n", (uint32_t)m_firstIndexedDate);
+			sb->safePrintf("\t<lastIndexedDateUTC>%" PRIu32"</lastIndexedDateUTC>\n", (uint32_t)m_spideredTime);
+			sb->safePrintf("\t<outlinksLastAddedUTC>%" PRIu32"</outlinksLastAddedUTC>\n", (uint32_t)m_outlinksAddedDate);
 
-			tmp3
-			);
-	else {
-		sb->safePrintf (
-			"\t<charset><![CDATA[%s]]></charset>\n"
-			"\t<isAdult>%" PRId32"</isAdult>\n"
-			"\t<isLinkSpam>%" PRId32"</isLinkSpam>\n"
-			"\t<siteRank>%" PRId32"</siteRank>\n"
+			sb->safePrintf("\t<hopCount>%" PRId32"</hopCount>\n", (int32_t)m_hopCount);
 
-			"\t<numGoodSiteInlinks>%" PRId32"</numGoodSiteInlinks>\n"
+			sb->safePrintf("\t<charset><![CDATA[%s]]></charset>\n", get_charset_str(m_charset));
+			sb->safePrintf("\t<isAdult>%" PRId32"</isAdult>\n", (int32_t)m_isAdult);
+			sb->safePrintf("\t<isLinkSpam>%" PRId32"</isLinkSpam>\n", (int32_t)m_isLinkSpam);
+			sb->safePrintf("\t<siteRank>%" PRId32"</siteRank>\n", ::getSiteRank(m_siteNumInlinks));
+			sb->safePrintf("\t<numGoodSiteInlinks>%" PRId32"</numGoodSiteInlinks>\n", m_siteNumInlinks);
+			sb->safePrintf("\t<numGoodPageInlinks>%" PRId32"</numGoodPageInlinks>\n", info1->getNumGoodInlinks());
+			sb->safePrintf("\t<pageInlinksLastComputed>%" PRId32"</pageInlinksLastComputed>\n", (int32_t)info1->m_lastUpdated);
+			sb->safePrintf("\t<isPermalink>%" PRId32"</isPermalink>\n", (int32_t)m_isPermalink);
+			sb->safePrintf("\t<isRSSFeed>%" PRId32"</isRSSFeed>\n", (int32_t)m_isRSS);
+			sb->safePrintf("\t<ipAddress><![CDATA[%s]]></ipAddress>\n", ipString);
+			sb->safePrintf("\t<httpStatus>%d</httpStatus>", m_httpStatus);
+			sb->safePrintf("\t<contentLenInBytes>%" PRId32"</contentLenInBytes>\n", size_utf8Content - 1);
+			sb->safePrintf("\t<isContentTruncated>%" PRId32"</isContentTruncated>\n", (int32_t)m_isContentTruncated);
+			sb->safePrintf("\t<contentType><![CDATA[%s]]></contentType>\n", g_contentTypeStrings[(int)m_contentType]);
+			sb->safePrintf("\t<language><![CDATA[%s]]></language>\n", strLanguage);
+			sb->safePrintf("\t<country><![CDATA[%s]]></country>\n", g_countryCode.getName(m_countryId));
+			break;
+		case FORMAT_JSON:
+			sb->safePrintf("\t\"firstIndexedDateUTC\": %" PRIu32",\n", m_firstIndexedDate);
+			sb->safePrintf("\t\"lastIndexedDateUTC\": %" PRIu32",\n", m_spideredTime);
+			sb->safePrintf("\t\"outlinksLastAddedUTC\": %" PRIu32",\n", m_outlinksAddedDate);
 
-			"\t<numGoodPageInlinks>%" PRId32"</numGoodPageInlinks>\n"
-			"\t<pageInlinksLastComputed>%" PRId32
-			"</pageInlinksLastComputed>\n"
+			sb->safePrintf("\t\"hopCount\": %" PRId8",\n", m_hopCount);
 
-			,get_charset_str(m_charset)
-			,(int32_t)m_isAdult
-			,(int32_t)m_isLinkSpam
-			,::getSiteRank(sni)
-			,sni
+			sb->safePrintf("\t\"charset\": \"");
+			sb->jsonEncode(get_charset_str(m_charset));
+			sb->safePrintf("\",\n");
 
-			,info1->getNumGoodInlinks()
-			,(int32_t)info1->m_lastUpdated
-			);
-		sb->safePrintf("\t<isPermalink>%" PRId32"</isPermalink>\n"
-			       "\t<isRSSFeed>%" PRId32"</isRSSFeed>\n"
-			       "\t<ipAddress><![CDATA[%s]]></ipAddress>\n"
-			       "\t<httpStatus>%d</httpStatus>"
-			       "\t<contentLenInBytes>%" PRId32
-			       "</contentLenInBytes>\n"
-			       "\t<isContentTruncated>%" PRId32
-			       "</isContentTruncated>\n"
-			       "\t<contentType><![CDATA[%s]]></contentType>\n"
-			       "\t<language><![CDATA[%s]]></language>\n"
-			       "\t<country><![CDATA[%s]]></country>\n",
-			       (int32_t)m_isPermalink,
-			       (int32_t)m_isRSS,
-			       ipString,
-			       m_httpStatus,
-			       size_utf8Content - 1,
-			       (int32_t)m_isContentTruncated,
-			       g_contentTypeStrings[(int)m_contentType] ,
-			       strLanguage,
-			       g_countryCode.getName(m_countryId) );
+			sb->safePrintf("\t\"isAdult\": %s,\n", m_isAdult ? "true" : "false");
+			sb->safePrintf("\t\"isLinkSpam\": %s,\n", m_isLinkSpam ? "true" : "false");
+			sb->safePrintf("\t\"siteRank\": %" PRId32",\n", ::getSiteRank(m_siteNumInlinks));
+			sb->safePrintf("\t\"numGoodSiteInlinks\": %" PRId32",\n", m_siteNumInlinks);
+			sb->safePrintf("\t\"numGoodPageInlinks\": %" PRId32",\n", info1->getNumGoodInlinks());
+			sb->safePrintf("\t\"pageInlinksLastComputed\": %" PRId32",\n", info1->m_lastUpdated);
+			sb->safePrintf("\t\"isPermalink\": %s,\n", m_isPermalink ? "true" : "false");
+			sb->safePrintf("\t\"isRSSFeed\": %s,\n", m_isRSS ? "true" : "false");
+
+			sb->safePrintf("\t\"ipAddress\": \"");
+			sb->jsonEncode(ipString);
+			sb->safePrintf("\",\n");
+
+			sb->safePrintf("\t\"httpStatus\": %" PRId16",\n", m_httpStatus);
+			sb->safePrintf("\t\"contentLenInBytes\": %" PRId32",\n", size_utf8Content - 1);
+			sb->safePrintf("\t\"isContentTruncated\": %s,\n", m_isContentTruncated ? "true" : "false");
+
+			sb->safePrintf("\t\"contentType\": \"");
+			sb->jsonEncode(g_contentTypeStrings[(int)m_contentType]);
+			sb->safePrintf("\",\n");
+
+			sb->safePrintf("\t\"language\": \"");
+			sb->jsonEncode(strLanguage);
+			sb->safePrintf("\",\n");
+
+			sb->safePrintf("\t\"country\": \"");
+			sb->jsonEncode(g_countryCode.getName(m_countryId));
+			sb->safePrintf("\",\n");
+			break;
+		default:
+			break;
 	}
 
 	TagRec *ogr = NULL;
@@ -18011,18 +18053,45 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 		// sanity. should be set from titlerec, so no blocking!
 		if ( ! ogr || ogr == (void *)-1 ) { g_process.shutdownAbort(true); }
 	}
-	if ( ogr && ! isXml ) ogr->printToBufAsHtml ( sb , "tag" );
-	else if ( ogr )       ogr->printToBufAsXml  ( sb  );
+
+	if (ogr) {
+		switch (format) {
+			case FORMAT_HTML:
+				ogr->printToBufAsHtml(sb, "tag");
+				break;
+			case FORMAT_XML:
+				ogr->printToBufAsXml(sb);
+				break;
+			case FORMAT_JSON:
+				ogr->printToBufAsJson(sb);
+				break;
+			default:
+				break;
+		}
+	}
 
 	// show the good inlinks we used when indexing this
-	if ( ! isXml )
-		info1->print(sb,cr->m_coll);
+	if (format == FORMAT_HTML) {
+		info1->print(sb, cr->m_coll);
+	}
 
 	// close the table
-	if ( ! isXml )
-		sb->safePrintf ( "</table></center><br>\n" );
-	else
-		sb->safePrintf("</response>\n");
+	switch (format) {
+		case FORMAT_HTML:
+			sb->safePrintf("</table><br>\n");
+			break;
+		case FORMAT_XML:
+			sb->safePrintf("</response>\n");
+			break;
+		case FORMAT_JSON:
+			sb->removeLastChar('\n');
+			sb->removeLastChar(',');
+			sb->safePrintf("}\n");
+			sb->safePrintf("}\n");
+			break;
+		default:
+			break;
+	}
 
 	return true;
 }

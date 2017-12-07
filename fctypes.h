@@ -66,7 +66,7 @@ int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src ) ;
 int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src, const char *srcEnd) ;
 
 // . get the # of words in this string
-int32_t      getNumWords ( char *s , int32_t len, int32_t titleVersion ) ;
+int32_t      getNumWords ( char *s , int32_t len ) ;
 int32_t      atol2       ( const char *s, int32_t len ) ;
 int64_t atoll1      ( const char *s ) ;
 int64_t atoll2      ( const char *s, int32_t len ) ;

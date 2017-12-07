@@ -172,6 +172,7 @@ Conf::Conf ( ) {
 	m_useShotgun = false;
 	m_testMem = false;
 	m_doConsistencyTesting = false;
+	m_titleRecVersion = TITLEREC_CURRENT_VERSION;
 	memset(m_spiderUserAgent, 0, sizeof(m_spiderUserAgent));
 	memset(m_spiderBotName, 0, sizeof(m_spiderBotName));
 	m_autoSaveFrequency = 0;

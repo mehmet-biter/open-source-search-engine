@@ -20,6 +20,7 @@
 #include "XmlDoc.h"
 #include "Msg0.h"
 #include "RdbList.h"
+#include "Conf.h"
 
 DocRebuild g_docRebuild("docrebuild.txt", false);
 DocRebuild g_docRebuildUrl("docrebuildurl.txt", true);
@@ -49,15 +50,22 @@ DocProcessDocItem* DocRebuild::createDocItem(DocProcess *docProcess, const std::
 
 void DocRebuild::updateXmldoc(XmlDoc *xmlDoc) {
 	xmlDoc->m_recycleContent = true;
+	xmlDoc->m_docRebuild = true;
 }
 
 void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 	DocRebuildDocItem *rebuildDocItem = dynamic_cast<DocRebuildDocItem*>(docItem);
+	if (rebuildDocItem == nullptr) {
+		gbshutdownLogicError();
+	}
+
 	XmlDoc *xmlDoc = rebuildDocItem->m_xmlDoc;
 
 	// set callback
-	xmlDoc->m_masterLoop = processedDoc;
-	xmlDoc->m_masterState = rebuildDocItem;
+	if (xmlDoc->m_masterLoop == nullptr) {
+		xmlDoc->m_masterLoop = processedDoc;
+		xmlDoc->m_masterState = rebuildDocItem;
+	}
 
 	// prepare
 	char **oldTitleRec = xmlDoc->getOldTitleRec();
@@ -80,11 +88,12 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 		return;
 	}
 
-	// reset callback
-	xmlDoc->m_masterLoop = nullptr;
-	xmlDoc->m_masterState = nullptr;
+	XmlDoc **oldXmlDoc = xmlDoc->getOldXmlDoc();
+	if (!oldXmlDoc || oldXmlDoc == (XmlDoc**)-1) {
+		return;
+	}
 
-	if (!xmlDoc->set2(*oldTitleRec, -1, "main", nullptr, MAX_NICENESS)) {
+	if (!xmlDoc->m_contentValid && !xmlDoc->set2(*oldTitleRec, -1, "main", nullptr, MAX_NICENESS)) {
 		xmlDoc->m_indexCode = ECORRUPTDATA;
 		xmlDoc->m_indexCodeValid = true;
 
@@ -100,8 +109,8 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 
 	int32_t *firstIp = xmlDoc->getFirstIp();
 	if (!firstIp || firstIp == (int32_t*)-1) {
-		// we must not be blocked/invalid at this point
-		gbshutdownLogicError();
+		// blocked
+		return;
 	}
 
 	int32_t *siteNumInLinks = xmlDoc->getSiteNumInlinks();
@@ -114,6 +123,47 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 	if (xmlDoc->m_masterLoop == processedDoc) {
 		xmlDoc->m_masterLoop = nullptr;
 		xmlDoc->m_masterState = nullptr;
+
+		// logic copied from Repair.cpp
+
+		// rebuild the title rec! otherwise we re-add the old one
+		xmlDoc->m_titleRecBufValid = false;
+		xmlDoc->m_titleRecBuf.purge();
+
+		// recompute site, no more domain sites allowed
+		xmlDoc->m_siteValid = false;
+		xmlDoc->ptr_site = nullptr;
+		xmlDoc->size_site = 0;
+
+		// recalculate the sitenuminlinks
+		xmlDoc->m_siteNumInlinksValid = false;
+
+		// recalculate the langid
+		xmlDoc->m_langIdValid = false;
+
+		// recalcualte and store the link info
+		xmlDoc->m_linkInfo1Valid = false;
+		xmlDoc->ptr_linkInfo1 = nullptr;
+		xmlDoc->size_linkInfo1 = 0;
+
+		// re-get the tag rec from tagdb
+		xmlDoc->m_tagRecValid = false;
+		xmlDoc->m_tagRecDataValid = false;
+
+		xmlDoc->m_priority = -1;
+		xmlDoc->m_priorityValid = true;
+
+		xmlDoc->m_contentValid = true;
+		xmlDoc->m_content = xmlDoc->ptr_utf8Content;
+		xmlDoc->m_contentLen = xmlDoc->size_utf8Content - 1;
+
+		// update to latest version
+#ifndef PRIVACORE_SAFE_VERSION
+		xmlDoc->m_version = g_conf.m_titleRecVersion;
+#else
+		xmlDoc->m_version = TITLEREC_CURRENT_VERSION;
+#endif
+		xmlDoc->m_versionValid = true;
 	}
 
 	// set spider request

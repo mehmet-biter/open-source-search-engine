@@ -20,6 +20,8 @@
 #include "XmlDoc.h"
 #include "Msg0.h"
 #include "RdbList.h"
+#include "Conf.h"
+#include "TitleRecVersion.h"
 
 DocReindex g_docReindex("docreindex.txt", false);
 DocReindex g_docReindexUrl("docreindexurl.txt", true);
@@ -49,10 +51,22 @@ DocProcessDocItem* DocReindex::createDocItem(DocProcess *docProcess, const std::
 
 void DocReindex::updateXmldoc(XmlDoc *xmlDoc) {
 	xmlDoc->m_indexCodeValid = false;
+
+#ifndef PRIVACORE_SAFE_VERSION
+	xmlDoc->m_version = g_conf.m_titleRecVersion;
+#else
+	xmlDoc->m_version = TITLEREC_CURRENT_VERSION;
+#endif
+
+	xmlDoc->m_versionValid = true;
 }
 
 void DocReindex::processDocItem(DocProcessDocItem *docItem) {
 	DocReindexDocItem *reindexDocItem = dynamic_cast<DocReindexDocItem*>(docItem);
+	if (reindexDocItem == nullptr) {
+		gbshutdownLogicError();
+	}
+
 	XmlDoc *xmlDoc = reindexDocItem->m_xmlDoc;
 
 	// set callback

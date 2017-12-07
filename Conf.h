@@ -299,6 +299,8 @@ class Conf {
 	bool   m_testMem;
 	bool   m_doConsistencyTesting;
 
+	int32_t m_titleRecVersion;
+
 	// defaults to "Gigabot/1.0"
 	char m_spiderUserAgent[USERAGENTMAXSIZE];
 

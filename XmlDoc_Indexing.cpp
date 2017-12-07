@@ -372,6 +372,17 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		return (char *)1;
 	}
 
+	bool *ini = getIsNoIndex();
+	if (ini == nullptr || ini == (bool*)-1) {
+		// must not be blocked
+		gbshutdownLogicError();
+	}
+
+	if (*ini && m_version > 126) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, noindex");
+		return (char *)1;
+	}
+
 	if ((size_utf8Content - 1) <= 0) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, contentLen == 0");
 		return (char *)1;
@@ -916,50 +927,57 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	if ( ! hashSingleTerm(uw.getUrl(),uw.getUrlLen(),&hi) )
 		return false;
 
-	if( urlOnly )
-	{
+	if (urlOnly) {
 		return true;
 	}
 
+	bool *ini = getIsNoIndex();
+	if (ini == nullptr || ini == (bool*)-1) {
+		// must not be blocked
+		gbshutdownLogicError();
+	}
 
-	if ( getUseTimeAxis() ) { // g_conf.m_useTimeAxis ) {
+	if ( getUseTimeAxis() ) {
 		hi.m_prefix = "gbtimeurl";
 		SafeBuf *tau = getTimeAxisUrl();
 		hashSingleTerm ( tau->getBufStart(),tau->length(),&hi);
 	}
 
-	setStatus ( "hashing inurl colon" );
+	char *s = fu->getUrl();
+	int32_t slen = fu->getUrlLen();
 
-	//
-	// HASH inurl: terms
-	//
-	char *s    = fu->getUrl   ();
-	int32_t  slen = fu->getUrlLen();
-	hi.m_prefix = "inurl";
+	if (!*ini || m_version <= 126) {
+		setStatus("hashing inurl colon");
 
+		//
+		// HASH inurl: terms
+		//
+		hi.m_prefix = "inurl";
 
-	// BR 20160114: Skip numbers in urls when doing "inurl:" queries
-	hi.m_hashNumbers = false;
-	hi.m_filterUrlIndexableWords = true;
-	if ( ! hashString ( s,slen, &hi ) ) return false;
+		// BR 20160114: Skip numbers in urls when doing "inurl:" queries
+		hi.m_hashNumbers = false;
+		hi.m_filterUrlIndexableWords = true;
+		if (!hashString(s, slen, &hi)) return false;
+	}
 
+	{
+		setStatus("hashing ip colon");
+		hi.m_hashNumbers = true;
+		hi.m_filterUrlIndexableWords = false;
 
-	setStatus ( "hashing ip colon" );
-	hi.m_hashNumbers = true;
-	hi.m_filterUrlIndexableWords = false;
+		//
+		// HASH ip:a.b.c.d
+		//
+		if (!m_ipValid) { g_process.shutdownAbort(true); }
+		// copy it to save it
+		char ipbuf[64];
+		int32_t iplen = strlen(iptoa(m_ip, ipbuf));
+		hi.m_prefix = "ip";
+		if (!hashSingleTerm(ipbuf, iplen, &hi)) return false;
 
-	//
-	// HASH ip:a.b.c.d
-	//
-	if ( ! m_ipValid ) { g_process.shutdownAbort(true); }
-	// copy it to save it
-	char ipbuf[64];
-	int32_t iplen = strlen(iptoa(m_ip,ipbuf));
-	hi.m_prefix = "ip";
-	if ( ! hashSingleTerm(ipbuf,iplen,&hi) ) return false;
-
-	// . sanity check
-	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
+		// . sanity check
+		if (!m_siteNumInlinksValid) { g_process.shutdownAbort(true); }
+	}
 
 
 	//
@@ -1033,9 +1051,12 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		*p = '\0';
 
 		// update hash parms
-		hi.m_prefix    = "site";
-		// no longer, we just index json now
-		//if ( isStatusDoc ) hi.m_prefix = "site2";
+		if (m_version <= 126) {
+			hi.m_prefix = "site";
+		} else {
+			hi.m_prefix = *ini ? "sitenoindex" : "site";
+		}
+
 		hi.m_hashGroup = HASHGROUP_INURL;
 		
 		
@@ -1105,24 +1126,26 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		}
 	}
 
+	const char *ext = fu->getExtension();
+	int32_t elen = fu->getExtensionLen();
+	if (!*ini || m_version <= 126) {
+		//
+		// HASH ext: term
+		//
+		// i.e. ext:gif ext:html ext:htm ext:pdf, etc.
+		setStatus("hashing ext colon");
+		// update hash parms
+		hi.m_prefix = "ext";
+		if (!hashSingleTerm(ext, elen, &hi)) return false;
+	}
 
-	//
-	// HASH ext: term
-	//
-	// i.e. ext:gif ext:html ext:htm ext:pdf, etc.
-	setStatus ( "hashing ext colon");
-	const char *ext  = fu->getExtension();
-	int32_t  elen = fu->getExtensionLen();
-	// update hash parms
-	hi.m_prefix    = "ext";
-	if ( ! hashSingleTerm(ext,elen,&hi ) ) return false;
-
-
-	setStatus ( "hashing gbdocid" );
-	hi.m_prefix = "gbdocid";
-	char buf2[32];
-	sprintf(buf2,"%" PRIu64, (uint64_t)m_docId );
-	if ( ! hashSingleTerm(buf2,strlen(buf2),&hi) ) return false;
+	{
+		setStatus("hashing gbdocid");
+		hi.m_prefix = "gbdocid";
+		char buf2[32];
+		sprintf(buf2, "%" PRIu64, (uint64_t)m_docId);
+		if (!hashSingleTerm(buf2, strlen(buf2), &hi)) return false;
+	}
 
 	setStatus ( "hashing SiteGetter terms");
 
@@ -1179,6 +1202,11 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	blen = sprintf(buf,"%" PRIu32,h);
 	hi.m_prefix    = "urlhash";
 	if ( ! hashString(buf,blen,&hi) ) return false;
+
+	// don't index mid domain or url path for noindex document
+	if (*ini && m_version > 126) {
+		return true;
+	}
 
 	if (size_utf8Content - 1 > 0 || m_indexCode == EDOCDISALLOWEDROOT) {
 		setStatus("hashing url mid domain");
