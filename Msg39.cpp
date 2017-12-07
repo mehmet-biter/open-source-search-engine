@@ -126,6 +126,7 @@ void Msg39Request::reset() {
 	size_whiteList            = 0;
 	m_sameLangWeight          = 20.0;
 	m_unknownLangWeight       = 10.0;
+	m_siteRankMultiplier      = 0.33333333;
 
 	// -1 means to not to docid range restriction
 	m_minDocId = -1LL;

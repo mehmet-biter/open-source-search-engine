@@ -126,6 +126,7 @@ public:
 
 	float m_sameLangWeight;
 	float m_unknownLangWeight;
+	float m_siteRankMultiplier;
 
 	char *m_fx_qlang;
 	char *m_fx_blang;

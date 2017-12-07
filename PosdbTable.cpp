@@ -222,7 +222,7 @@ void PosdbTable::init(Query *q, bool debug, TopTree *topTree, const DocumentInde
 	m_realMaxTop = r->m_realMaxTop;
 	if ( m_realMaxTop > MAX_TOP ) m_realMaxTop = MAX_TOP;
 
-	m_siteRankMultiplier = SITERANKMULTIPLIER;
+	m_siteRankMultiplier = r->m_siteRankMultiplier;
 	if ( m_q->m_isBoolean ) m_siteRankMultiplier = 0.0;
 
 	// sanity

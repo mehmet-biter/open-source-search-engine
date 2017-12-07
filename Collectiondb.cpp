@@ -1016,6 +1016,7 @@ CollectionRec::CollectionRec() {
 	m_maxQueryTerms = 0;
 	m_sameLangWeight = 0.0;
 	m_unknownLangWeight = 0.0;
+	m_siteRankMultiplier = 0.0;
 	memset(m_defaultSortLanguage2, 0, sizeof(m_defaultSortLanguage2));
 	m_posdbMinFilesToMerge = 0;
 	m_titledbMinFilesToMerge = 0;

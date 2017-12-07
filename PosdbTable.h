@@ -12,8 +12,6 @@ float getLinkerWeight    ( unsigned char wordSpamRank );
 float getHashGroupWeight ( unsigned char hg );
 
 #define WIKI_WEIGHT    0.10 // was 0.20
-#define SITERANKDIVISOR 3.0
-#define SITERANKMULTIPLIER 0.33333333
 
 // if query is 'the tigers' we weight bigram "the tigers" x 1.20 because
 // its in wikipedia.
