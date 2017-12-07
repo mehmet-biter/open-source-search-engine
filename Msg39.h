@@ -113,7 +113,7 @@ class Msg39Reply {
 public:
 
 	// zero ourselves out
-	void reset() { memset ( (char *)this,0,sizeof(Msg39Reply) ); }
+	void reset() { memset(this,0,sizeof(*this)); }
 
 	int32_t   m_numDocIds;
 	// # of "unignored" query terms
