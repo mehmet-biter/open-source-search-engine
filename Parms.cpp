@@ -4678,18 +4678,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_NOAPI;
 	m++;
 
-	// buzz
-	m->m_title = "display outlinks";
-	m->m_desc  = "Display all outlinks of each result. outlinks=1 "
-		"displays only external outlinks. outlinks=2 displays "
-		"external and internal outlinks.";
-	simple_m_set(SearchInput,m_displayOutlinks);
-	m->m_def   = "0";
-	m->m_cgi   = "outlinks";
-	m->m_page  = PAGE_RESULTS;
-	m->m_flags = PF_NOAPI;
-	m++;
-
 	m->m_title = "include cached copy of page";
 	m->m_desc  = "Will cause a cached copy of content to be returned "
 		"instead of summary.";

@@ -95,7 +95,6 @@ SearchInput::SearchInput() {
 	m_doQueryHighlighting = false;
 	m_highlightQuery = NULL;
 	m_displayInlinks = 0;
-	m_displayOutlinks = 0;
 	m_docIdsOnly = 0;
 	m_formatStr = NULL;
 	m_queryExpansion = false;

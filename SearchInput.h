@@ -219,7 +219,6 @@ public:
 	// . these controls the set of results, so should be in the makeKey()
 	//   as it is, in between the start and end hash vars
 	int32_t   m_displayInlinks;
-	int32_t   m_displayOutlinks;
 
 	// we do not do summary deduping, and other filtering with docids
 	// only, so can change the result and should be part of the key
