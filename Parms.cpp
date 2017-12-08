@@ -2956,6 +2956,7 @@ namespace {
 	template<> parameter_type_t c_type_to_pf_type<bool>() { return TYPE_BOOL; }
 	template<> parameter_type_t c_type_to_pf_type<char>() { return TYPE_CHAR; } //dubious type. rarely used
 	template<> parameter_type_t c_type_to_pf_type<char*>() { return TYPE_CHARPTR; }
+	template<> parameter_type_t c_type_to_pf_type<const char*>() { return TYPE_CHARPTR; }
 	template<> parameter_type_t c_type_to_pf_type<float>() { return TYPE_FLOAT; }
 	template<> parameter_type_t c_type_to_pf_type<double>() { return TYPE_DOUBLE; }
 	template<> parameter_type_t c_type_to_pf_type<SafeBuf>() { return TYPE_SAFEBUF; }
@@ -4028,6 +4029,15 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "site-rank multiplier";
+	m->m_desc  = "formula: score = (siterank*multiplier)+1";
+	simple_m_set(SearchInput,m_siteRankMultiplier);
+	m->m_defOff= offsetof(CollectionRec,m_siteRankMultiplier);
+	m->m_cgi   = "siterankmultiplier";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 	m->m_title = "max query terms";
 	m->m_desc  = "Do not allow more than this many query terms. Helps "
 		"prevent big queries from resource hogging.";
@@ -4115,6 +4125,16 @@ void Parms::init ( ) {
 	m->m_cgi   = "ulangw";
 	simple_m_set(CollectionRec,m_unknownLangWeight);
 	m->m_def   = "10.000000";
+	m->m_group = true;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
+	m->m_page  = PAGE_RANKING;
+	m++;
+
+	m->m_title = "site-rank multiplier";
+	m->m_desc  = "formula: score = (siterank*multiplier)+1";
+	m->m_cgi   = "siterankmultiplier";
+	simple_m_set(CollectionRec,m_siteRankMultiplier);
+	m->m_def   = "0.333333";
 	m->m_group = true;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
@@ -4745,18 +4765,6 @@ void Parms::init ( ) {
 	simple_m_set(SearchInput,m_displayInlinks);
 	m->m_def   = "0";
 	m->m_cgi   = "inlinks";
-	m->m_page  = PAGE_RESULTS;
-	m->m_flags = PF_NOAPI;
-	m++;
-
-	// buzz
-	m->m_title = "display outlinks";
-	m->m_desc  = "Display all outlinks of each result. outlinks=1 "
-		"displays only external outlinks. outlinks=2 displays "
-		"external and internal outlinks.";
-	simple_m_set(SearchInput,m_displayOutlinks);
-	m->m_def   = "0";
-	m->m_cgi   = "outlinks";
 	m->m_page  = PAGE_RESULTS;
 	m->m_flags = PF_NOAPI;
 	m++;

@@ -370,7 +370,7 @@ bool Msg40::federatedLoop ( ) {
 	mr.ptr_query                   = const_cast<char*>(m_si->m_q.originalQuery());
 	mr.size_query                  = strlen(m_si->m_q.originalQuery())+1;
 	int32_t slen = 0; if ( m_si->m_sites ) slen=strlen(m_si->m_sites)+1;
-	mr.ptr_whiteList               = m_si->m_sites;
+	mr.ptr_whiteList               = const_cast<char*>(m_si->m_sites);
 	mr.size_whiteList              = slen;
 	mr.m_timeout                   = g_conf.m_msg40_msg39_timeout;
 	mr.m_realMaxTop                = m_si->m_realMaxTop;
@@ -379,6 +379,7 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_maxSerpScore              = m_si->m_maxSerpScore;
 	mr.m_sameLangWeight            = m_si->m_sameLangWeight;
 	mr.m_unknownLangWeight = m_si->m_unknownLangWeight;
+	mr.m_siteRankMultiplier        = m_si->m_siteRankMultiplier;
 	memcpy(mr.m_queryId, m_si->m_queryId, sizeof(m_si->m_queryId));
 
 	if ( mr.m_timeout < m_si->m_minMsg3aTimeout )
@@ -1003,7 +1004,7 @@ bool Msg40::launchMsg20s(bool recalled) {
 
 		if ( m_si->m_displayMetas && m_si->m_displayMetas[0] ) {
 			int32_t dlen = strlen(m_si->m_displayMetas);
-			req.ptr_displayMetas     = m_si->m_displayMetas;
+			req.ptr_displayMetas     = const_cast<char *>(m_si->m_displayMetas);
 			req.size_displayMetas    = dlen+1;
 		}
 
