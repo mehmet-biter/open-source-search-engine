@@ -5689,19 +5689,7 @@ static void initWeights ( ) {
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 	
-	s_scoringWeights.init(g_conf.m_diversityWeightMin, g_conf.m_diversityWeightMax,
-	                      g_conf.m_densityWeightMin, g_conf.m_densityWeightMax,
-			      g_conf.m_hashGroupWeightBody,
-			      g_conf.m_hashGroupWeightTitle,
-			      g_conf.m_hashGroupWeightHeading,
-			      g_conf.m_hashGroupWeightInlist,
-			      g_conf.m_hashGroupWeightInMetaTag,
-			      g_conf.m_hashGroupWeightInLinkText,
-			      g_conf.m_hashGroupWeightInTag,
-			      g_conf.m_hashGroupWeightNeighborhood,
-			      g_conf.m_hashGroupWeightInternalLinkText,
-			      g_conf.m_hashGroupWeightInUrl,
-			      g_conf.m_hashGroupWeightInMenu);
+	s_scoringWeights.init(g_conf.m_baseScoringParameters);
 
 	// if two hashgroups are comaptible they can be paired
 	for ( int32_t i = 0 ; i < HASHGROUP_END ; i++ ) {
