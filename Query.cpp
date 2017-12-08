@@ -2473,7 +2473,7 @@ bool Query::setQWords ( char boolFlag ,
 }
 
 
-void Query::modifyQuery(ScoringWeights *scoringWeights, const CollectionRec& cr, bool *doSiteClustering) {
+void Query::modifyQuery(DerivedScoringWeights *scoringWeights, const CollectionRec& cr, bool *doSiteClustering) {
 	logTrace(g_conf.m_logTraceQuery, "Query::modifyQuery: q='%s', modifyDomainLikeSearches=%s, modifyAPILikeSearches=%s", originalQuery(),cr.m_modifyDomainLikeSearches?"true":"false", cr.m_modifyAPILikeSearches?"true":"false");
 	logTrace(g_conf.m_logTraceQuery, "                     m_numWords = %d", m_numWords);
 	logTrace(g_conf.m_logTraceQuery, "                     m_numTerms = %d", m_numTerms);

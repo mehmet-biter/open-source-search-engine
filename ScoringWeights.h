@@ -5,7 +5,7 @@
 
 //misc. rank-to-weight, group-to-weight, shoesize-to-weight lookups
 
-class ScoringWeights {
+class DerivedScoringWeights {
 public:
 	float m_diversityWeights [MAXDIVERSITYRANK+1];
 	float m_densityWeights   [MAXDENSITYRANK+1];

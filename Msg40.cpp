@@ -335,19 +335,19 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_familyFilter              = m_si->m_familyFilter;
 	mr.m_doMaxScoreAlgo            = m_si->m_doMaxScoreAlgo;
 	mr.m_modifyQuery               = true; //we are a user-specified query so modifying it is ok. todo/hack until msg39 can carry the full query information
-	mr.m_scoringWeights.init(m_si->m_diversityWeightMin, m_si->m_diversityWeightMax,
-				 m_si->m_densityWeightMin, m_si->m_densityWeightMax,
-				 m_si->m_hashGroupWeightBody,
-				 m_si->m_hashGroupWeightTitle,
-				 m_si->m_hashGroupWeightHeading,
-				 m_si->m_hashGroupWeightInlist,
-				 m_si->m_hashGroupWeightInMetaTag,
-				 m_si->m_hashGroupWeightInLinkText,
-				 m_si->m_hashGroupWeightInTag,
-				 m_si->m_hashGroupWeightNeighborhood,
-				 m_si->m_hashGroupWeightInternalLinkText,
-				 m_si->m_hashGroupWeightInUrl,
-				 m_si->m_hashGroupWeightInMenu);
+	mr.m_derivedScoringWeights.init(m_si->m_diversityWeightMin, m_si->m_diversityWeightMax,
+				        m_si->m_densityWeightMin, m_si->m_densityWeightMax,
+				        m_si->m_hashGroupWeightBody,
+				        m_si->m_hashGroupWeightTitle,
+				        m_si->m_hashGroupWeightHeading,
+				        m_si->m_hashGroupWeightInlist,
+				        m_si->m_hashGroupWeightInMetaTag,
+				        m_si->m_hashGroupWeightInLinkText,
+				        m_si->m_hashGroupWeightInTag,
+				        m_si->m_hashGroupWeightNeighborhood,
+				        m_si->m_hashGroupWeightInternalLinkText,
+				        m_si->m_hashGroupWeightInUrl,
+				        m_si->m_hashGroupWeightInMenu);
 
 	mr.m_termFreqWeightFreqMin = m_si->m_termFreqWeightFreqMin;
 	mr.m_termFreqWeightFreqMax = m_si->m_termFreqWeightFreqMax;
@@ -428,7 +428,7 @@ bool Msg40::federatedLoop ( ) {
 			      m_si->m_allowHighFrequencyTermCache,
 			      cr->m_maxQueryTerms);
 		
-		tmpQuery.modifyQuery(&mr.m_scoringWeights, *cr, &m_si->m_doSiteClustering);
+		tmpQuery.modifyQuery(&mr.m_derivedScoringWeights, *cr, &m_si->m_doSiteClustering);
 		mr.m_doSiteClustering = m_si->m_doSiteClustering;
 	}
 
