@@ -2,19 +2,19 @@
 #include "ScalingFunctions.h"
 #include <math.h>
 
-void ScoringWeights::init(float diversityWeightMin, float diversityWeightMax,
-			  float densityWeightMin,   float densityWeightMax,
-			  float hashGroupWeightBody,
-			  float hashGroupWeightTitle,
-			  float hashGroupWeightHeading,
-			  float hashGroupWeightInlist,
-			  float hashGroupWeightInMetaTag,
-			  float hashGroupWeightInLinkText,
-			  float hashGroupWeightInTag,
-			  float hashGroupWeightNeighborhood,
-			  float hashGroupWeightInternalLinkText,
-			  float hashGroupWeightInUrl,
-			  float hashGroupWeightInMenu)
+void DerivedScoringWeights::init(float diversityWeightMin, float diversityWeightMax,
+			         float densityWeightMin,   float densityWeightMax,
+			         float hashGroupWeightBody,
+			         float hashGroupWeightTitle,
+			         float hashGroupWeightHeading,
+			         float hashGroupWeightInlist,
+			         float hashGroupWeightInMetaTag,
+			         float hashGroupWeightInLinkText,
+			         float hashGroupWeightInTag,
+			         float hashGroupWeightNeighborhood,
+			         float hashGroupWeightInternalLinkText,
+			         float hashGroupWeightInUrl,
+			         float hashGroupWeightInMenu)
 {
 	for(int i = 0; i <= MAXDIVERSITYRANK; i++)
 		m_diversityWeights[i] = scale_quadratic(i, 0, MAXDIVERSITYRANK, diversityWeightMin, diversityWeightMax);

@@ -60,7 +60,7 @@ class Msg39Request {
 	bool    m_doMaxScoreAlgo;
 
 	bool    m_modifyQuery;
-	ScoringWeights m_scoringWeights;
+	DerivedScoringWeights m_scoringWeights;
 	float m_termFreqWeightFreqMin;
 	float m_termFreqWeightFreqMax;
 	float m_termFreqWeightMin;

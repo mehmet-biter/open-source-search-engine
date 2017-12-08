@@ -39,7 +39,7 @@ static const int INTERSECT_DEBUG_INFO = 1;
 
 static bool  s_init = false;
 static GbMutex s_mtx_weights;
-static ScoringWeights s_scoringWeights;
+static DerivedScoringWeights s_scoringWeights;
 static bool  s_isCompatible     [HASHGROUP_END][HASHGROUP_END];
 static bool  s_inBody           [HASHGROUP_END];
 
@@ -250,7 +250,7 @@ struct PosdbDecodeHelper {
 	float denw;
 	//float diversityWeight; //todo?
 	unsigned char syn;
-	void set(const char *wp, const ScoringWeights &scoringWeights) {
+	void set(const char *wp, const DerivedScoringWeights &scoringWeights) {
 		p = Posdb::getWordPos(wp);
 		hg = Posdb::getHashGroup(wp);
 		//temporary fix: posdb can have junk in it so clamp the hashgroup to the limit

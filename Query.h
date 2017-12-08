@@ -108,7 +108,7 @@ field_code_t getFieldCode(const char *s, int32_t len, bool *hasColon = NULL);
 int32_t getNumFieldCodes ( );
 
 class Query;
-class ScoringWeights;
+class DerivedScoringWeights;
 
 // . values for QueryField::m_flag
 // . QTF_DUP means it is just for the help page in PageRoot.cpp to 
@@ -405,7 +405,7 @@ class Query {
 
 	// modify query terms based on patters and rule-of-thumb. Eg "example.com" is probably a search
 	// for a domain and "file.open()" is probably for an API/SDK
-	void modifyQuery(ScoringWeights *scoringWeights, const CollectionRec& cr, bool *doSiteClustering);
+	void modifyQuery(DerivedScoringWeights *scoringWeights, const CollectionRec& cr, bool *doSiteClustering);
 
 private:
 	// sets m_qwords[] array, this function is the heart of the class
