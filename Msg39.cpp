@@ -363,7 +363,7 @@ void Msg39::getDocIds2() {
 	
 	if(m_msg39req->m_modifyQuery) {
 		bool dont_care; //artifact because queries are parsed both at sender and on each shard.
-		m_query.modifyQuery(&m_msg39req->m_scoringWeights, *cr, &dont_care);
+		m_query.modifyQuery(&m_msg39req->m_derivedScoringWeights, *cr, &dont_care);
 	}
 
 	// set m_errno
