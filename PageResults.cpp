@@ -5156,8 +5156,8 @@ static bool replaceParm2 ( const char *cgi , SafeBuf *newUrl ,
 static bool printMetaContent ( Msg40 *msg40 , int32_t i , State0 *st, SafeBuf *sb ) {
 	// store the user-requested meta tags content
 	SearchInput *si = &st->m_si;
-	char *pp      =      si->m_displayMetas;
-	char *ppend   = pp + strlen(si->m_displayMetas);
+	const char *pp      =      si->m_displayMetas;
+	const char *ppend   = pp + strlen(si->m_displayMetas);
 	Msg20 *m = msg40->m_msg20[i];//getMsg20(i);
 	Msg20Reply *mr = m->m_r;
 	char *dbuf    = mr->ptr_dbuf;//msg40->getDisplayBuf(i);
@@ -5180,23 +5180,16 @@ static bool printMetaContent ( Msg40 *msg40 , int32_t i , State0 *st, SafeBuf *s
 		// break if done
 		if ( ! *pp ) break;
 		// that's the start of the meta tag name
-		char *ss = pp;
+		const char *ss = pp;
 		// . find end of that meta tag name
 		// . can end in :<integer> -- specifies max len
 		while ( pp < ppend && ! is_wspace_a(*pp) && 
 			*pp != ':' ) pp++;
-		// save current char
-		char  c  = *pp;
-		char *cp = pp;
-		// NULL terminate the name
-		*pp++ = '\0';
+		size_t sslen = (size_t)(pp-ss);
 		// if ':' was specified, skip the rest
-		if ( c == ':' ) while ( pp < ppend && ! is_wspace_a(*pp)) pp++;
+		if ( *pp == ':' ) while ( pp < ppend && ! is_wspace_a(*pp)) pp++;
 		// print the name
-		//int32_t sslen = strlen ( ss   );
-		//int32_t ddlen = strlen ( dptr );
 		int32_t ddlen = dbufLen;
-		//if ( p + sslen + ddlen + 100 > pend ) continue;
 		// newspaperarchive wants tags printed even if no value
 		// make sure the meta tag isn't fucked up
 		for ( int32_t ti = 0; ti < ddlen; ti++ ) {
@@ -5214,26 +5207,24 @@ static bool printMetaContent ( Msg40 *msg40 , int32_t i , State0 *st, SafeBuf *s
 		if ( ddlen > 0 ) {
 			// ship it out
 			if ( si->m_format == FORMAT_XML ) {
-				sb->safePrintf ( "\t\t<display name=\"%s\">"
-					  	"<![CDATA[", ss );
+				sb->safePrintf ( "\t\t<display name=\"%.*s\">"
+					         "<![CDATA[", (int)sslen, ss);
 				cdataEncode(sb, dptr, ddlen);
 				sb->safePrintf ( "]]></display>\n" );
 			}
 			else if ( si->m_format == FORMAT_JSON ) {
-				sb->safePrintf ( "\t\t\"display.%s\":\"",ss);
+				sb->safePrintf ( "\t\t\"display.%.*s\":\"", (int)sslen, ss);
 				sb->jsonEncode ( dptr, ddlen );
 				sb->safePrintf ( "\",\n");
 			}
 			// otherwise, print in light gray
 			else {
 				sb->safePrintf("<font color=#c62939>"
-					      "<b>%s</b>: ", ss );
+					      "<b>%.*s</b>: ", (int)sslen, ss);
 				sb->safeMemcpy ( dptr, ddlen );
 				sb->safePrintf ( "</font><br>" );
 			}
 		}
-		// restore tag name buffer
-		*cp = c;
 		// point to next content of tag to display
 		dptr += ddlen + 1;
 	}
