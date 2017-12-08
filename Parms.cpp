@@ -6593,7 +6593,7 @@ void Parms::init ( ) {
 	m->m_desc  = "If enabled, query expansion will expand your query "
 		"to include the various forms and "
 		"synonyms of the query terms.";
-	m->m_def   = "1";
+	m->m_def   = "0";
 	simple_m_set(CollectionRec,m_queryExpansion);
 	m->m_cgi  = "qe";
 	m->m_page  = PAGE_SEARCH;
