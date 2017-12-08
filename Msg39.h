@@ -42,7 +42,6 @@ class Msg39Request {
 	float	m_unknownLangWeight;
 	float   m_siteRankMultiplier;
 
-	//int32_t    m_compoundListMaxSize;
 	uint8_t m_language;
 
 	// flags
@@ -50,7 +49,6 @@ class Msg39Request {
 	bool    m_debug;
 	bool    m_doSiteClustering;
 	bool    m_hideAllClustered;
-	//char    m_doIpClustering;
 	bool    m_doDupContentRemoval;
 	bool    m_addToCache;
 	bool    m_familyFilter;
@@ -95,14 +93,12 @@ class Msg39Request {
 	char   *ptr_termFreqWeights;
 	char   *ptr_query; // in utf8?
 	char   *ptr_whiteList;
-	//char   *ptr_coll;
 	
 	// do not add new string parms before size_readSizes or
 	// after size_whiteList so serializeMsg() calls still work
 	int32_t    size_termFreqWeights;
 	int32_t    size_query;
 	int32_t    size_whiteList;
-	//int32_t    size_coll;
 
 	// variable data comes here
 };
