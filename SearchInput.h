@@ -90,9 +90,9 @@ public:
 	//////
 
 	const char *m_coll;
-	char *m_query;
+	const char *m_query;
 	
-	char *m_prepend;
+	const char *m_prepend;
 
 	bool  m_showImages;
 
@@ -103,20 +103,20 @@ public:
 
 	bool   m_debug;                      // msg40
 
-	char  *m_displayMetas;               // msg40
+	const char  *m_displayMetas;         // msg40
 
 	// do not include these in makeKey()
 
-	char  *m_queryCharset;
+	const char  *m_queryCharset;
 
 	// advanced query parms
-	char  *m_url; // for url: search
-	char  *m_sites;
-	char  *m_plus;
-	char  *m_minus;
-	char  *m_link;
-	char  *m_quote1;
-	char  *m_quote2;
+	const char  *m_url; // for url: search
+	const char  *m_sites;
+	const char  *m_plus;
+	const char  *m_minus;
+	const char  *m_link;
+	const char  *m_quote1;
+	const char  *m_quote2;
 
 	int32_t m_titleMaxLen;
 
@@ -128,10 +128,10 @@ public:
 	float m_unknownLangWeight;
 	float m_siteRankMultiplier;
 
-	char *m_fx_qlang;
-	char *m_fx_blang;
-	char *m_fx_fetld;
-	char *m_fx_country;
+	const char *m_fx_qlang;
+	const char *m_fx_blang;
+	const char *m_fx_fetld;
+	const char *m_fx_country;
 
 	// prefer what lang in the results. it gets a 20x boost. "en" "xx" "fr"
 	char 	      *m_defaultSortLang;

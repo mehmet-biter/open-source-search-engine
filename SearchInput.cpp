@@ -649,14 +649,14 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 
 	// append plus terms
 	if ( m_plus && m_plus[0] ) {
-		char *s = m_plus;
-		char *send = m_plus + strlen(m_plus);
+		const char *s = m_plus;
+		const char *send = m_plus + strlen(m_plus);
 
 		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
 		if ( m_sbuf2.length() ) m_sbuf2.pushChar(' ');
 		while (s < send) {
 			while (isspace(*s) && s < send) s++;
-			char *s2 = s+1;
+			const char *s2 = s+1;
 			if (*s == '\"') {
 				// if there's no closing quote just treat
 				// the end of the line as such
@@ -688,13 +688,13 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 	}  
 	// append minus terms
 	if ( m_minus && m_minus[0] ) {
-		char *s = m_minus;
-		char *send = m_minus + strlen(m_minus);
+		const char *s = m_minus;
+		const char *send = m_minus + strlen(m_minus);
 		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
 		if ( m_sbuf2.length() ) m_sbuf2.pushChar(' ');
 		while (s < send) {
 			while (isspace(*s) && s < send) s++;
-			char *s2 = s+1;
+			const char *s2 = s+1;
 			if (*s == '\"') {
 				// if there's no closing quote just treat
 				// the end of the line as such

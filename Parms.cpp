@@ -2956,6 +2956,7 @@ namespace {
 	template<> parameter_type_t c_type_to_pf_type<bool>() { return TYPE_BOOL; }
 	template<> parameter_type_t c_type_to_pf_type<char>() { return TYPE_CHAR; } //dubious type. rarely used
 	template<> parameter_type_t c_type_to_pf_type<char*>() { return TYPE_CHARPTR; }
+	template<> parameter_type_t c_type_to_pf_type<const char*>() { return TYPE_CHARPTR; }
 	template<> parameter_type_t c_type_to_pf_type<float>() { return TYPE_FLOAT; }
 	template<> parameter_type_t c_type_to_pf_type<double>() { return TYPE_DOUBLE; }
 	template<> parameter_type_t c_type_to_pf_type<SafeBuf>() { return TYPE_SAFEBUF; }
