@@ -16,6 +16,8 @@
 #include "ScopedLock.h"
 #include "Conf.h"
 #include "Mem.h"
+#include "SiteGetter.h"
+
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -4097,6 +4099,19 @@ bool Links::addLink(const char *link, int32_t linkLen, int32_t nodeNum,
 		flags |= LF_SELFLINK;
 		// turn this flag on
 		if ( nodeNum >= 0 ) m_xml->getNodePtr(nodeNum)->m_isSelfLink = 1;
+	}
+
+	// same site?
+	{
+		SiteGetter parentSiteGetter;
+		parentSiteGetter.getSite(m_parentUrl->getUrl(), nullptr, 0, 0, 0);
+
+		SiteGetter siteGetter;
+		siteGetter.getSite(url.getUrl(), nullptr, 0, 0, 0);
+
+		if (strcmp(siteGetter.getSite(), parentSiteGetter.getSite()) == 0) {
+			flags |= LF_SAMESITE;
+		}
 	}
 
 	// now check for the "permalink" key word or "permanent link" keyphrase

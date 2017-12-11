@@ -10878,7 +10878,7 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 				    links->m_linkFlags ,
 				    links->m_numLinks  ,
 				    // make it point to this basetagrec if
-				    // the LF_SAMEHOST flag is set for the link
+				    // the LF_SAMESITE flag is set for the link
 				    gr ,
 				    cr->m_collnum             ,
 				    m_niceness         ,
