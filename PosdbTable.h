@@ -3,6 +3,8 @@
 
 #include "RdbList.h"
 #include "HashTableX.h"
+#include "ScoringWeights.h"
+#include "BaseScoringParameters.h"
 #include <vector>
 
 float getDiversityWeight ( unsigned char diversityRank );
@@ -12,8 +14,6 @@ float getLinkerWeight    ( unsigned char wordSpamRank );
 float getHashGroupWeight ( unsigned char hg );
 
 #define WIKI_WEIGHT    0.10 // was 0.20
-#define SITERANKDIVISOR 3.0
-#define SITERANKMULTIPLIER 0.33333333
 
 // if query is 'the tigers' we weight bigram "the tigers" x 1.20 because
 // its in wikipedia.
@@ -148,8 +148,6 @@ private:
 
 	bool m_hasMaxSerpScore;
 
-	float m_siteRankMultiplier;
-
 	uint64_t m_docId; //the current docid intersection is working on
 
 	Msg2 *m_msg2;
@@ -167,6 +165,8 @@ private:
 	bool m_debug;
 
 	Msg39Request *m_msg39req;
+	BaseScoringParameters m_baseScoringParameters;
+	DerivedScoringWeights m_derivedScoringWeights;
 
 	// for gbsortby:item.price ...
 	int32_t m_sortByTermNum;
@@ -175,22 +175,6 @@ private:
 	// fix core with these two
 	int32_t m_sortByTermInfoNum;
 	int32_t m_sortByTermInfoNumInt;
-
-	// for gbmin:price:1.99
-	int32_t m_minScoreTermNum;
-	int32_t m_maxScoreTermNum;
-
-	// for gbmin:price:1.99
-	float m_minScoreVal;
-	float m_maxScoreVal;
-
-	// for gbmin:count:99
-	int32_t m_minScoreTermNumInt;
-	int32_t m_maxScoreTermNumInt;
-
-	// for gbmin:count:99
-	int32_t m_minScoreValInt;
-	int32_t m_maxScoreValInt;
 
 
 	HashTableX m_whiteListTable;
@@ -210,7 +194,7 @@ public:
 
 	// for intersecting docids
 	void addDocIdVotes( const QueryTermInfo *qti , int32_t listGroupNum );
-	void makeDocIdVoteBufForRarestTerm( const QueryTermInfo *qti , bool isRangeTerm );
+	void makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti);
 	bool makeDocIdVoteBufForBoolQuery() ;
 	void delDocIdVotes ( const QueryTermInfo *qti );	// for negative query terms...
 	bool findCandidateDocIds();

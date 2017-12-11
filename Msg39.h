@@ -11,7 +11,7 @@
 #include "PosdbTable.h"
 #include "TopTree.h"
 #include "Msg51.h"
-#include "ScoringWeights.h"
+#include "BaseScoringParameters.h"
 #include "JobScheduler.h"
 
 
@@ -38,10 +38,7 @@ class Msg39Request {
 	int32_t    m_maxAge;
 	int32_t    m_maxQueryTerms;
 	int32_t    m_numDocIdSplits;
-	float   m_sameLangWeight;
-	float	m_unknownLangWeight;
 
-	//int32_t    m_compoundListMaxSize;
 	uint8_t m_language;
 
 	// flags
@@ -49,7 +46,6 @@ class Msg39Request {
 	bool    m_debug;
 	bool    m_doSiteClustering;
 	bool    m_hideAllClustered;
-	//char    m_doIpClustering;
 	bool    m_doDupContentRemoval;
 	bool    m_addToCache;
 	bool    m_familyFilter;
@@ -61,19 +57,7 @@ class Msg39Request {
 	bool    m_doMaxScoreAlgo;
 
 	bool    m_modifyQuery;
-	ScoringWeights m_scoringWeights;
-	float m_termFreqWeightFreqMin;
-	float m_termFreqWeightFreqMax;
-	float m_termFreqWeightMin;
-	float m_termFreqWeightMax;
-	float   m_synonymWeight;
-	float   m_bigramWeight;
-	float	m_pageTemperatureWeightMin;
-	float	m_pageTemperatureWeightMax;
-	bool    m_usePageTemperatureForRanking;
-
-	float m_flagScoreMultiplier[26];
-	int m_flagRankAdjustment[26];
+	BaseScoringParameters m_baseScoringParameters;
 
 	collnum_t m_collnum;
 
@@ -94,14 +78,12 @@ class Msg39Request {
 	char   *ptr_termFreqWeights;
 	char   *ptr_query; // in utf8?
 	char   *ptr_whiteList;
-	//char   *ptr_coll;
 	
 	// do not add new string parms before size_readSizes or
 	// after size_whiteList so serializeMsg() calls still work
 	int32_t    size_termFreqWeights;
 	int32_t    size_query;
 	int32_t    size_whiteList;
-	//int32_t    size_coll;
 
 	// variable data comes here
 };
@@ -112,7 +94,7 @@ class Msg39Reply {
 public:
 
 	// zero ourselves out
-	void reset() { memset ( (char *)this,0,sizeof(Msg39Reply) ); }
+	void reset() { memset(this,0,sizeof(*this)); }
 
 	int32_t   m_numDocIds;
 	// # of "unignored" query terms

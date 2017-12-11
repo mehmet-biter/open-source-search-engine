@@ -10,6 +10,7 @@
 #include "HttpRequest.h"
 #include "Process.h"
 #include "Mem.h"
+#include "TitleRecVersion.h"
 #include "ip.h"
 #include <sys/stat.h> //umask()
 
@@ -121,35 +122,12 @@ Conf::Conf ( ) {
 	m_httpMaxSendBufSize = 0;
 	m_docSummaryWithDescriptionMaxCacheAge = 0;
 	m_sliderParm = 0;
-	m_termFreqWeightFreqMin = 0.0;
-	m_termFreqWeightFreqMax = 0.0;
-	m_termFreqWeightMin = 0.0;
-	m_termFreqWeightMax = 0.0;
-	m_densityWeightMin = 0.0;
-	m_densityWeightMax = 0.0;
-	m_diversityWeightMin = 0.0;
-	m_diversityWeightMax = 0.0;
-	m_hashGroupWeightBody = 0.0;
-	m_hashGroupWeightTitle = 0.0;
-	m_hashGroupWeightHeading = 0.0;
-	m_hashGroupWeightInlist = 0.0;
-	m_hashGroupWeightInMetaTag = 0.0;
-	m_hashGroupWeightInLinkText = 0.0;
-	m_hashGroupWeightInTag = 0.0;
-	m_hashGroupWeightNeighborhood = 0.0;
-	m_hashGroupWeightInternalLinkText = 0.0;
-	m_hashGroupWeightInUrl = 0.0;
-	m_hashGroupWeightInMenu = 0.0;
-	m_synonymWeight = 0.0;
-	m_bigramWeight = 5.0;
-	m_pageTemperatureWeightMin = 0.0;
-	m_pageTemperatureWeightMax = 0.0;
-	m_usePageTemperatureForRanking = true;
+	m_baseScoringParameters.clear();
 	m_numFlagScoreMultipliers = 26;
 	m_numFlagRankAdjustments = 26;
 	for(int i=0; i<26; i++) {
-		m_flagScoreMultiplier[i] = 1.0;
-		m_flagRankAdjustment[i] = 0;
+		m_baseScoringParameters.m_flagScoreMultiplier[i] = 1.0;
+		m_baseScoringParameters.m_flagRankAdjustment[i] = 0;
 	}
 	m_maxCorruptLists = 0;
 	m_defaultQueryResultsValidityTime = 0;
@@ -173,6 +151,7 @@ Conf::Conf ( ) {
 	m_useShotgun = false;
 	m_testMem = false;
 	m_doConsistencyTesting = false;
+	m_titleRecVersion = TITLEREC_CURRENT_VERSION;
 	memset(m_spiderUserAgent, 0, sizeof(m_spiderUserAgent));
 	memset(m_spiderBotName, 0, sizeof(m_spiderBotName));
 	m_autoSaveFrequency = 0;
@@ -236,7 +215,7 @@ Conf::Conf ( ) {
 	m_logTraceBigFile = false;
 	m_logTraceBlockList = false;
 	m_logTraceContentTypeBlockList = false;
-	m_logTraceDocDelete = false;
+	m_logTraceDocProcess = false;
 	m_logTraceDns = false;
 	m_logTraceDnsBlockList = false;
 	m_logTraceDnsCache = false;

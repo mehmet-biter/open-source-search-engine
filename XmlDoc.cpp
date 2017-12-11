@@ -111,6 +111,7 @@ XmlDoc::XmlDoc() {
 	m_robotsNoFollow = false;
 	m_robotsNoArchive = false;
 	m_robotsNoSnippet = false;
+	m_addSpiderRequest = false;
 	m_dupTrPtr = NULL;
 	m_oldTitleRec = NULL;
 	m_filteredContent = NULL;
@@ -158,9 +159,6 @@ void XmlDoc::reset ( ) {
 	m_mySiteLinkInfoBuf.purge();
 	m_myPageLinkInfoBuf.purge();
 
-	// we need to reset this to false
-	m_useTimeAxis = false;
-
 	m_loaded = false;
 
 	m_indexedDoc = false;
@@ -174,6 +172,7 @@ void XmlDoc::reset ( ) {
 	m_robotsNoArchive = false;
 	m_robotsNoSnippet = false;
 	m_hostNameServers.clear();
+	m_addSpiderRequest = false;
 
 	m_doConsistencyTesting = g_conf.m_doConsistencyTesting;
 
@@ -383,6 +382,7 @@ void XmlDoc::reset ( ) {
 	m_setTr                    = false;
 
 	m_recycleContent           = false;
+	m_docRebuild               = false;
 	m_callback1                = NULL;
 	m_callback2                = NULL;
 	m_state                    = NULL;
@@ -459,10 +459,7 @@ int32_t XmlDoc::getSpideredTime ( ) {
 // . we need this so PageGet.cpp can get the cached web page
 // . but not for Msg20::getSummary(), that uses XmlDoc::set(Msg20Request*)
 // . returns false and sets g_errno on error
-bool XmlDoc::set3 ( int64_t  docId       ,
-		    const char   *coll        ,
-		    int32_t       niceness    ) {
-
+bool XmlDoc::set3(int64_t docId, const char *coll, int32_t niceness) {
 	reset();
 
 	// this is true
@@ -499,47 +496,77 @@ static void loadFromOldTitleRecWrapper ( void *state ) {
 }
 
 // returns false if blocked, returns true and sets g_errno on error otherwise
-bool XmlDoc::loadFromOldTitleRec ( ) {
-	// . we are an entry point.
-	// . if anything blocks, this will be called when it comes back
-	if ( ! m_masterLoop ) {
-		m_masterLoop  = loadFromOldTitleRecWrapper;
-		m_masterState = this;
-	}
+bool XmlDoc::loadFromOldTitleRec() {
+	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
+
 	// if we already loaded!
-	if ( m_loaded ) return true;
-	// if set from a docid, use msg22 for this!
-	char **otr = getOldTitleRec ( );
-	// error?
-	if ( ! otr ) return true;
-	// blocked?
-	if ( otr == (void *)-1 ) return false;
-	// this is a not found
-	if ( ! *otr ) {
-		// so we do not retry
-		m_loaded = true;
-		// make it an error
-		g_errno = ENOTFOUND;
+	if (m_loaded) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END already loaded, return true");
 		return true;
 	}
+
+	// . we are an entry point.
+	// . if anything blocks, this will be called when it comes back
+	if (!m_masterLoop) {
+		m_masterLoop = loadFromOldTitleRecWrapper;
+		m_masterState = this;
+	}
+
+	// if set from a docid, use msg22 for this!
+	char **otr = getOldTitleRec();
+	// error?
+	if (!otr) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END getOldTitleRec error, return true");
+		return true;
+	}
+
+	// blocked?
+	if (otr == (void *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END getOldTitleRec blocked, return false");
+		return false;
+	}
+
+	// this is a not found
+	if (!*otr) {
+		// so we do not retry
+		m_loaded = true;
+
+		// make it an error
+		g_errno = ENOTFOUND;
+
+		logTrace(g_conf.m_logTraceXmlDoc, "END getOldTitleRec not found, return true");
+		return true;
+	}
+
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return true;
+	if (!cr) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END getCollRec not found, return true");
+		return true;
+	}
+
 	// use that. decompress it! this will also set
 	// m_setFromTitleRec to true
-	if ( ! set2 ( m_oldTitleRec     ,
-		      m_oldTitleRecSize , // maxSize
-		      cr->m_coll            ,
-		      NULL              , // pbuf
-		      m_niceness        )) {
+	if (!set2(m_oldTitleRec, m_oldTitleRecSize, cr->m_coll, nullptr, m_niceness)) {
 		// we are now loaded, do not re-call
 		m_loaded = true;
+
+		logTrace(g_conf.m_logTraceXmlDoc, "END set2 error, return true");
+
 		// return true with g_errno set on error uncompressing
 		return true;
 	}
+
 	// we are now loaded, do not re-call
 	m_loaded = true;
+
 	// sanity check
-	if ( ! m_titleRecBufValid ) { g_process.shutdownAbort(true); }
+	if (!m_titleRecBufValid) {
+		logError("invalid titleRefBuf");
+		gbshutdownLogicError();
+	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "END return true");
+
 	// good to go
 	return true;
 }
@@ -719,7 +746,13 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 	//m_coll      = coll;
 	m_pbuf      = pbuf;
 	m_niceness  = niceness;
-	m_version   = TITLEREC_CURRENT_VERSION;
+
+#ifndef PRIVACORE_SAFE_VERSION
+	m_version = g_conf.m_titleRecVersion;
+#else
+	m_version = TITLEREC_CURRENT_VERSION;
+#endif
+
 	m_versionValid = true;
 
 	// this is used to removing the rec from doledb after we spider it
@@ -1296,9 +1329,9 @@ static void indexDoc3(void *state) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, indexDoc blocked");
 		return;
 	}
-	
+
 	// otherwise, all done, call the caller callback
-	
+
 	that->m_indexedDoc = true;
 
 	logTrace(g_conf.m_logTraceXmlDoc, "END");
@@ -1512,9 +1545,6 @@ void XmlDoc::getRevisedSpiderRequest ( SpiderRequest *revisedReq ) {
 	// this must be valid for us of course
 	if ( ! m_firstIpValid ) { g_process.shutdownAbort(true); }
 
-	// wtf? it might be invalid!!! parent caller will handle it...
-	//if ( m_firstIp == 0 || m_firstIp == -1 ) { g_process.shutdownAbort(true); }
-
 	// store the real ip in there now
 	revisedReq->m_firstIp = m_firstIp;
 
@@ -1549,9 +1579,8 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 
 	// set other fields besides key
 	sreq->m_firstIp              = m_firstIp;
-	sreq->m_hostHash32           = m_hostHash32a;
-	//sreq->m_domHash32            = m_domHash32;
-	//sreq->m_siteNumInlinks       = m_siteNumInlinks;
+	sreq->m_hostHash32           = getHostHash32a();
+	sreq->m_domHash32            = getDomHash32();
 	//sreq->m_pageNumInlinks     = m_pageNumInlinks;
 	sreq->m_hopCount             = m_hopCount;
 
@@ -2312,7 +2341,15 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		return (int32_t *) ini;
 	}
 
-	if (*ini) {
+	// check meta nofollow
+	bool *inf = getIsNoFollow();
+	if (!inf || inf == (bool*) -1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, could not getIsNoFollow");
+		return (int32_t *) inf;
+	}
+
+	// meta noindex & nofollow
+	if (*ini && *inf) {
 		if (m_firstUrl.isRoot()) {
 			m_indexCode = EDOCDISALLOWEDROOT;
 		} else {
@@ -2542,7 +2579,6 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
 			ptr_utf8Content    = NULL;
 			size_utf8Content   = 0;
-			m_utf8ContentValid = true;
 
 			logTrace(g_conf.m_logTraceXmlDoc, "END, EDOCNONCANONICAL");
 			return &m_indexCode;
@@ -2558,12 +2594,15 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	}
 
 	XmlDoc *od = NULL;
-	if ( *pod ) od = *pod;
+	if (*pod) {
+		od = *pod;
+	}
 
 	// if recycling content is true you gotta have an old title rec.
-	if ( ! od && m_recycleContent ) {
+	if (!od && m_recycleContent) {
 		m_indexCode = ENOTITLEREC;
 		m_indexCodeValid = true;
+		m_useSpiderdb = false;
 		logTrace( g_conf.m_logTraceXmlDoc, "END, ENOTITLEREC" );
 		return &m_indexCode;
 	}
@@ -2898,8 +2937,12 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 	// assume could not make one because we were banned or something
 	tbuf->purge(); // m_titleRec = NULL;
 
+#ifndef PRIVACORE_SAFE_VERSION
+	m_version = g_conf.m_titleRecVersion;
+#else
 	// start seting members in THIS's header before compression
-	m_version           = TITLEREC_CURRENT_VERSION;
+	m_version = TITLEREC_CURRENT_VERSION;
+#endif
 
 	// set this
 	m_headerSize = (char *)&ptr_firstUrl - (char *)&m_headerSize;
@@ -3102,7 +3145,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 
 			ptr_utf8Content    = NULL;
 			size_utf8Content   = 0;
-			m_utf8ContentValid = true;
 		} else {
 			m_titleRecBufValid = true;
 			return &m_titleRecBuf;
@@ -5293,11 +5335,6 @@ int64_t XmlDoc::getFirstUrlHash48() {
 	if ( m_firstUrlHash48Valid ) return m_firstUrlHash48;
 	// this must work
 	if ( ! m_firstUrlValid ) { g_process.shutdownAbort(true); }
-	if ( getUseTimeAxis() ) {
-		m_firstUrlHash48 = hash64b ( getTimeAxisUrl()->getBufStart() ) & 0x0000ffffffffffffLL;
-		m_firstUrlHash48Valid = true;
-		return m_firstUrlHash48;
-	}
 
 	m_firstUrlHash48 = hash64b ( m_firstUrl.getUrl() ) & 0x0000ffffffffffffLL;
 	m_firstUrlHash48Valid = true;
@@ -5308,12 +5345,6 @@ int64_t XmlDoc::getFirstUrlHash64() {
 	if ( m_firstUrlHash64Valid ) return m_firstUrlHash64;
 	// this must work
 	if ( ! m_firstUrlValid ) { g_process.shutdownAbort(true); }
-
-	if ( getUseTimeAxis() ) {
-		m_firstUrlHash64 = hash64b ( getTimeAxisUrl()->getBufStart() );
-		m_firstUrlHash64Valid = true;
-		return m_firstUrlHash64;
-	}
 
 	m_firstUrlHash64 = hash64b ( m_firstUrl.getUrl() );
 	m_firstUrlHash64Valid = true;
@@ -5700,7 +5731,6 @@ Url **XmlDoc::getRedirUrl() {
 
 		ptr_utf8Content    = NULL;
 		size_utf8Content   = 0;
-		m_utf8ContentValid = true;
 
 		// mdw: let this path through so contactXmlDoc gets a proper
 		// redirect that we can follow. for the base xml doc at
@@ -5926,6 +5956,15 @@ XmlDoc **XmlDoc::getExtraDoc(const char *u, int32_t maxCacheAge) {
 		return NULL;
 	}
 
+	// a spider rec for the extra doc to use
+	SpiderRequest sreq;
+
+	if(strlen(u)>=sizeof(sreq.m_url)) {
+		g_errno = EURLTOOLONG;
+		logTrace( g_conf.m_logTraceXmlDoc, "END - URL too long" );
+		return NULL;
+	}
+
 	// . if *otr is NULL that means not found
 	// . return a NULL old XmlDoc in that case as well?
 	// . make a new one
@@ -5941,8 +5980,6 @@ XmlDoc **XmlDoc::getExtraDoc(const char *u, int32_t maxCacheAge) {
 	// . if we did not have it in titledb then download it!
 	// . or if titleRec was too old!
 
-	// a spider rec for the extra doc to use
-	SpiderRequest sreq;
 
 	// spider the url "u"
 	strcpy ( sreq.m_url , u );
@@ -6184,24 +6221,17 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	return &m_rootDoc;
 }
 
-SafeBuf *XmlDoc::getTimeAxisUrl ( ) {
-	if ( m_timeAxisUrlValid ) return &m_timeAxisUrl;
-	if ( m_setFromDocId ) return &m_timeAxisUrl;
-	m_timeAxisUrlValid = true;
-	Url *fu = getFirstUrl();
-	m_timeAxisUrl.reset();
-	m_timeAxisUrl.safePrintf("%s.%u",fu->getUrl(),m_contentHash32);
-	return &m_timeAxisUrl;
-}
-
 // . look up TitleRec using Msg22 if we need to
 // . set our m_titleRec member from titledb
 // . the twin brother of XmlDoc::getTitleRecBuf() which makes the title rec
 //   from scratch. this loads it from titledb.
 // . NULL is a valid value (EDOCNOTFOUND) so return a char **
 char **XmlDoc::getOldTitleRec() {
+	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
+
 	// if valid return that
 	if ( m_oldTitleRecValid ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, already valid");
 		return &m_oldTitleRec;
 	}
 
@@ -6211,6 +6241,7 @@ char **XmlDoc::getOldTitleRec() {
 	if ( m_setFromTitleRec ) {
 		m_oldTitleRecValid = true;
 		m_oldTitleRec      = NULL;//m_titleRec;
+		logTrace(g_conf.m_logTraceXmlDoc, "END, setFromTitleRec");
 		return &m_oldTitleRec;
 	}
 	// sanity check
@@ -6229,6 +6260,7 @@ char **XmlDoc::getOldTitleRec() {
 	if ( m_isIndexedValid && ! m_isIndexed && m_docIdValid ) {
 		m_oldTitleRec      = NULL;
 		m_oldTitleRecValid = true;
+		logTrace(g_conf.m_logTraceXmlDoc, "END, not indexed");
 		return &m_oldTitleRec;
 	}
 	// sanity check. if we have no url or docid ...
@@ -6243,25 +6275,23 @@ char **XmlDoc::getOldTitleRec() {
 	}
 	// if url not valid, use NULL
 	char *u = NULL;
-	if ( docId == 0LL && ptr_firstUrl ) u = getFirstUrl()->getUrl();
-	// if both are not given that is a problem
-	if ( docId == 0LL && ! u ) {
-		log(LOG_WARN, "doc: no url or docid provided to get old doc");
-		g_errno = EBADENGINEER;
-		return NULL;
-	}
-	CollectionRec *cr = getCollRec();
-	if ( ! cr ) {
-		return NULL;
+	if (docId == 0LL) {
+		if (ptr_firstUrl || m_firstUrlValid) {
+			u = getFirstUrl()->getUrl();
+		}
+
+		// if both are not given that is a problem
+		if (!u) {
+			log(LOG_WARN, "doc: no url or docid provided to get old doc");
+			g_errno = EBADENGINEER;
+			return NULL;
+		}
 	}
 
-	// if using time axis then append the timestamp to the end of
-	// the url. this way Msg22::getAvailDocId() will return a docid
-	// based on that so we don't collide with other instances of this
-	// same url.
-	if ( u && getUseTimeAxis() ) { // g_conf.m_useTimeAxis ) {
-		SafeBuf *tau = getTimeAxisUrl();
-		u = tau->getBufStart();
+	CollectionRec *cr = getCollRec();
+	if ( ! cr ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, no collection");
+		return NULL;
 	}
 
 	// the title must be local since we're spidering it
@@ -6280,6 +6310,7 @@ char **XmlDoc::getOldTitleRec() {
 				      m_niceness           , // niceness
 				      999999               )) {// timeout seconds
 		// return -1 if we blocked
+		logTrace(g_conf.m_logTraceXmlDoc, "END, blocked");
 		return (char **)-1;
 	}
 
@@ -6290,8 +6321,11 @@ char **XmlDoc::getOldTitleRec() {
 
 	// error?
 	if ( g_errno ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, error=%s", mstrerror(g_errno));
 		return NULL;
 	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "END");
 
 	// got it
 	return &m_oldTitleRec;
@@ -6386,13 +6420,12 @@ int64_t *XmlDoc::getDocId ( ) {
 	}
 
 	// ensure it is within probable range
-	if ( ! getUseTimeAxis () ) {
-		char *u = getFirstUrl()->getUrl();
-		int64_t pd = Titledb::getProbableDocId(u);
-		int64_t d1 = Titledb::getFirstProbableDocId ( pd );
-		int64_t d2 = Titledb::getLastProbableDocId  ( pd );
-		if ( m_docId < d1 || m_docId > d2 ) {
-			g_process.shutdownAbort(true); }
+	char *u = getFirstUrl()->getUrl();
+	int64_t pd = Titledb::getProbableDocId(u);
+	int64_t d1 = Titledb::getFirstProbableDocId ( pd );
+	int64_t d2 = Titledb::getLastProbableDocId  ( pd );
+	if ( m_docId < d1 || m_docId > d2 ) {
+		g_process.shutdownAbort(true);
 	}
 
 	m_docIdValid = true;
@@ -6583,7 +6616,9 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 	if ( m_siteNumInlinksValid ) return &m_siteNumInlinks;
 
 	// sanity check
-	if ( m_setFromTitleRec && ! m_useSecondaryRdbs) {g_process.shutdownAbort(true);}
+	if (m_setFromTitleRec && !m_useSecondaryRdbs && !m_docRebuild) {
+		g_process.shutdownAbort(true);
+	}
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
@@ -7082,7 +7117,7 @@ int32_t *XmlDoc::getFinalCrawlDelay() {
 	// getIsAllowed already sets m_crawlDelayValid to true
 	m_finalCrawlDelay = m_crawlDelay;
 
-	// Changed previously hard coded default of 250ms to the 
+	// Changed previously hard coded default of 250ms to the
 	// configurable delay for sites with no robots.txt
 	if ( m_crawlDelay < 0 )	{
 		m_finalCrawlDelay = cr->m_crawlDelayDefaultForNoRobotsTxtMS;
@@ -8278,7 +8313,7 @@ char **XmlDoc::gotHttpReply ( ) {
 	//if m_errno isn't set then take whatever from g_errno, such as econnreset
 	if(!m_errno)
 		m_errno = g_errno;
-	
+
 	// save it
 	int32_t saved = g_errno;
 	// note it
@@ -11296,7 +11331,10 @@ int32_t *XmlDoc::getSpiderPriority ( ) {
 	}
 
 	// sanity check
-	if ( *ufn < 0 ) { g_process.shutdownAbort(true); }
+	if ( *ufn < 0 ) {
+		g_process.shutdownAbort(true);
+	}
+
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END. No collection" );
@@ -11476,7 +11514,6 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 	sb->safePrintf("probdocid=%" PRIu64" ",pd);
 	sb->safePrintf("probdocidmin=%" PRIu64" ",d1);
 	sb->safePrintf("probdocidmax=%" PRIu64" ",d2);
-	sb->safePrintf("usetimeaxis=%i ",(int)m_useTimeAxis);
 
 	if ( m_siteNumInlinksValid ) {
 		sb->safePrintf("siteinlinks=%04" PRId32" ",m_siteNumInlinks );
@@ -12890,7 +12927,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// . so at least now set all the data members we will need to
 	//   seriazlize into the title rec because we can't be blocking further
 	//   down below after we set all the hashtables and XmlDoc::ptr_ stuff
-	if (!m_setFromTitleRec || m_useSecondaryRdbs) {
+	if (!m_setFromTitleRec || m_useSecondaryRdbs || m_docRebuild) {
 		// all member vars should already be valid if set from titlerec
 		char *ptg = prepareToMakeTitleRec();
 
@@ -13188,16 +13225,9 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	int32_t needSpiderdb1 = forDelete ? 0 : (sizeof(SpiderReply) + 1);
 	need += needSpiderdb1;
 
-	// if injecting we add a spiderrequest to be able to update it
-	// but don't do this if it is pagereindex. why is pagereindex
-	// setting the injecting flag anyway?
 	int32_t needSpiderdbRequest = 0;
-	if (m_sreqValid && m_sreq.m_isInjecting && m_sreq.m_fakeFirstIp && !m_sreq.m_forceDelete) {
-		// NO! because when injecting a warc and the subdocs
-		// it contains, gb then tries to spider all of them !!! sux...
-		needSpiderdbRequest = 0;
-	} else if (m_useSpiderdb && m_useSecondaryRdbs) {
-		// or if we are rebuilding spiderdb
+	if (m_useSpiderdb && (m_useSecondaryRdbs || m_addSpiderRequest)) {
+		// if we are rebuilding spiderdb / we need to force add it
 		needSpiderdbRequest = sizeof(SpiderRequest) + m_firstUrl.getUrlLen() + 1;
 	}
 	need += needSpiderdbRequest;
@@ -13562,7 +13592,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		SpiderRequest revisedReq;
 
  		// if doing a repair/rebuild of spiderdb...
-		if (m_useSecondaryRdbs) {
+		if (m_useSecondaryRdbs || m_addSpiderRequest) {
 			getRebuiltSpiderRequest(&revisedReq);
 		} else {
 			// this fills it in for doing injections
@@ -14097,12 +14127,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// diffbot guys, robots.txt, frames, sshould not be here
 	if ( m_isChildDoc ) { g_process.shutdownAbort(true); }
 
-	// . get the mime first
-	// . if we are setting XmlDoc from a titleRec, this causes
-	//   doConsistencyCheck() to block and core
-	//HttpMime *mime = getMime();
-	//if ( ! mime || mime == (HttpMime *)-1 ) return (SpiderReply *)mime;
-
 	// if we had a critical error, do not do this
 	int32_t *indexCode = getIndexCode();
 	if (! indexCode || indexCode == (void *)-1)
@@ -14110,10 +14134,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 
 	TagRec *gr = getTagRec();
 	if ( ! gr || gr == (TagRec *)-1 ) return (SpiderReply *)gr;
-
-	// can't call getIsPermalink() here without entering a dependency loop
-	//char *pp = getIsUrlPermalinkFormat();
-	//if ( !pp || pp == (char *)-1 ) return (SpiderReply *)pp;
 
 	// the site hash
 	int32_t *sh32 = getSiteHash32();
@@ -14137,8 +14157,9 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	if ( tag ) firstIp = atoip(tag->getTagData());
 
 	// this is usually the authority
-	if ( m_firstIpValid )
+	if (m_firstIpValid) {
 		firstIp = m_firstIp;
+	}
 
 	// otherwise, inherit from oldsr to be safe
 	// BUT NOT if it was a fakeip and we were injecting because
@@ -14151,8 +14172,9 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// we set the injection bit and the pagereindex bit, we should let
 	// thise guys keep the firstip because the docid-based spider request
 	// is in spiderdb. it needs to match up.
-	if ( m_sreqValid && (!m_sreq.m_isInjecting||m_sreq.m_isPageReindex) )
+	if (m_sreqValid && (!m_sreq.m_isInjecting || m_sreq.m_isPageReindex)) {
 		firstIp = m_sreq.m_firstIp;
+	}
 
 	// sanity
 	if ( firstIp == 0 || firstIp == -1 ) {
@@ -14161,18 +14183,14 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		else
 			log("xmldoc: BAD FIRST IP for %" PRId64,m_docId);
 		firstIp = 12345;
-		//g_process.shutdownAbort(true); }
 	}
+
 	// store it
 	m_srep.m_firstIp = firstIp;
 
 	// Default to no error. Will be set below.
 	m_srep.m_errCount = 0;
 	m_srep.m_sameErrCount = 0;
-
-	// otherwise, inherit from oldsr to be safe
-	//if ( m_sreqValid )
-	//	m_srep.m_firstIp = m_sreq.m_firstIp;
 
 	// do not inherit this one, it MIGHT HAVE CHANGE!
 	m_srep.m_siteHash32 = m_siteHash32;
@@ -14184,12 +14202,11 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	if ( ! m_tagRecValid               ) { g_process.shutdownAbort(true); }
 	if ( ! m_ipValid                   ) { g_process.shutdownAbort(true); }
 	if ( ! m_siteHash32Valid           ) { g_process.shutdownAbort(true); }
-	//if ( ! m_spideredTimeValid         ) { g_process.shutdownAbort(true); }
 
 	// . set other fields besides key
 	// . crap! if we are the "qatest123" collection then m_spideredTime
 	//   was read from disk usually and is way in the past! watch out!!
-	m_srep.m_spideredTime = getSpideredTime();//m_spideredTime;
+	m_srep.m_spideredTime = getSpideredTime();
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
@@ -14338,7 +14355,9 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			// we should have had a spider request, because that's
 			// where we got the m_contentHash32 we passed to
 			// Msg13Request.
-			if ( ! m_sreqValid ) { g_process.shutdownAbort(true); }
+			if (!m_sreqValid) {
+				g_process.shutdownAbort(true);
+			}
 			// make it a success
 			m_srep.m_errCode = 0;
 			// and no error count, it wasn't an error per se
@@ -14412,25 +14431,19 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	}
 
 	// sanity checks
-	//if(! m_sreqValid                ) { g_process.shutdownAbort(true); }
 	if ( ! m_siteNumInlinksValid       ) { g_process.shutdownAbort(true); }
 	if ( ! m_hopCountValid             ) { g_process.shutdownAbort(true); }
 	if ( ! m_langIdValid               ) { g_process.shutdownAbort(true); }
 	if ( ! m_isRSSValid                ) { g_process.shutdownAbort(true); }
 	if ( ! m_isPermalinkValid          ) { g_process.shutdownAbort(true); }
-	//if ( ! m_pageNumInlinksValid     ) { g_process.shutdownAbort(true); }
 	if ( ! m_percentChangedValid       ) { g_process.shutdownAbort(true); }
-	//if ( ! m_isSpamValid               ) { g_process.shutdownAbort(true); }
-	//if ( ! m_crawlDelayValid           ) { g_process.shutdownAbort(true); }
 
 	// httpStatus is -1 if not found (like for empty http replies)
 	m_srep.m_httpStatus = *hs;
 
-	// zero if none
-	//m_srep.m_percentChangedPerDay = 0;
 	// . only if had old one
 	// . we use this in url filters to set the respider wait time usually
-	if ( od ) {
+	if ( od && !m_recycleContent) {
 		int32_t spideredTime = getSpideredTime();
 		int32_t oldSpideredTime = od->getSpideredTime();
 		float numDays = spideredTime - oldSpideredTime;
@@ -14475,9 +14488,11 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		int64_t lock1 = makeLockTableKey(&m_sreq);
 		int64_t lock2 = makeLockTableKey(&m_srep);
 		if ( lock1 != lock2 ) {
-			log("build: lock1 != lock2 lock mismatch for %s",
-			    m_firstUrl.getUrl());
-			g_process.shutdownAbort(true);
+			logError("build: lock1(%" PRId64":%d) != lock2(%" PRId64":%d) lock mismatch for %s",
+			         m_sreq.getUrlHash48(), m_sreq.m_firstIp,
+			         m_srep.getUrlHash48(), m_srep.m_firstIp,
+			         m_firstUrl.getUrl());
+			gbshutdownLogicError();
 		}
 	}
 
@@ -14954,31 +14969,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// our original hopcount of 0 with this guy that has a
 		// hopcount of 1. that sux... so don't do it.
 		if ( ksr.getUrlHash48() == myUh48 ) continue;
-
-		// . technically speaking we do not have any reply so we
-		//   should not be calling this! cuz we don't have all the info
-		// . see if banned or filtered, etc.
-		// . at least try to call it. getUrlFilterNum() should
-		//   break out and return -1 if it encounters a filter rule
-		//   that it does not have enough info to answer.
-		//   so if your first X filters all map to a "FILTERED"
-		//   priority and this url matches one of them we can
-		//   confidently toss this guy out.
-		// . show this for debugging!
-		// int32_t ufn = ::getUrlFilterNum ( &ksr , NULL, m_spideredTime ,
-		// 			       false, m_niceness, cr,
-		// 			       false,//true , // outlink?
-		// 			       NULL ); // quotatable
-		// logf(LOG_DEBUG,"build: ufn=%" PRId32" for %s",
-		//      ufn,ksr.m_url);
-
-		// bad?
-		//if ( ufn < 0 ) {
-		//	log("build: link %s had bad url filter."
-		//	    , ksr.m_url );
-		//	g_errno = EBADENGINEER;
-		//	return NULL;
-		//}
 
 		// debug
 		if ( g_conf.m_logDebugUrlAttempts ) {
@@ -17368,7 +17358,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 		  "<tr><td>content type</td><td>%" PRId32" (%s)</td></tr>\n"
 		  "<tr><td>language</td><td>%" PRId32" (%s)</td></tr>\n"
 		  "<tr><td>country</td><td>%" PRId32" (%s)</td></tr>\n"
-		  "<tr><td>time axis used</td><td>%" PRId32"</td></tr>\n"
 		  "<tr><td>metadata</td><td>%s</td></tr>\n"
 		  "</td></tr>\n",
 
@@ -17412,7 +17401,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 		  (int32_t)m_countryId,
 		  g_countryCode.getName(m_countryId),
-		  m_useTimeAxis,
 		  "");
 
 	if ( info1 ) {
@@ -17642,9 +17630,10 @@ bool XmlDoc::printDocForProCog ( SafeBuf *sb , HttpRequest *hr ) {
 
 	// for some reason sections page blocks forever in browser
 	if ( page != 7 && ! m_printedMenu ) {
-		printFrontPageShell ( sb , "search" , cr , false );
+		if (hr->getReplyFormat() == FORMAT_HTML) {
+			printFrontPageShell(sb, "search", cr, false);
+		}
 		m_printedMenu = true;
-		//printMenu ( sb );
 	}
 
 
@@ -17749,9 +17738,8 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	const char *es = mstrerror(m_indexCode);
 	if ( ! m_indexCode ) es = mstrerror(g_errno);
 
-	int32_t isXml = hr->getLong("xml",0);
-
-	if ( ! isXml ) printMenu ( sb );
+	char format = hr->getReplyFormat();
+	if ( format == FORMAT_HTML ) printMenu ( sb );
 
 	int32_t shardNum = getShardNumFromDocId ( m_docId );
 	Host *hosts = g_hostdb.getShard ( shardNum );
@@ -17765,7 +17753,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 		spiderHostId = g_hostdb.getHostIdWithSpideringEnabled(spiderShardNum, false);
 	}
 
-	if ( ! isXml )
+	if ( format == FORMAT_HTML )
 		sb->safePrintf (
 				"<table cellpadding=3 border=0>\n"
 
@@ -17785,10 +17773,14 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 				"</tr>\n"
 
 				"<tr>"
+				"<td width=\"25%%\">title rec version</td>"
+				"<td>%" PRIu16"</td>"
+				"</tr>\n"
+
+				"<tr>"
 				"<td>index error code</td>"
 				"<td>%s</td>"
 				"</tr>\n"
-
 
 				"<tr>"
 				"<td>robots.txt allows</td>"
@@ -17808,6 +17800,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 
 				h->m_hostId,
 				spiderHostId,
+				m_version,
 				es,
 				allowed,
 
@@ -17815,13 +17808,14 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 				fu
 
 				);
-	else
+	else if (format == FORMAT_XML)
 		sb->safePrintf (
 				"<?xml version=\"1.0\" "
 				"encoding=\"UTF-8\" ?>\n"
 				"<response>\n"
 				"\t<coll><![CDATA[%s]]></coll>\n"
 				"\t<docId>%" PRId64"</docId>\n"
+				"\t<titleRecVersion>%" PRIu16"</titleRecVersion>\n"
 				"\t<indexError><![CDATA[%s]]></indexError>\n"
 				"\t<robotsTxtAllows>%" PRId32
 				"</robotsTxtAllows>\n"
@@ -17829,30 +17823,75 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 				,
 				cr->m_coll,
 				m_docId ,
+				m_version,
 				es,
 				allowedInt,//(int32_t)m_isAllowed,
 				fu
 				);
+	else if (format == FORMAT_JSON) {
+		sb->safePrintf("{\"response\":{\n");
+
+		sb->safePrintf("\t\"coll\": \"");
+		sb->jsonEncode(cr->m_coll);
+		sb->safePrintf("\",\n");
+
+		sb->safePrintf("\t\"docId\": %" PRIu64",\n", m_docId);
+		sb->safePrintf("\t\"titleRecVersion\": %" PRIu16",\n", m_version);
+
+		sb->safePrintf("\t\"indexError\": \"");
+		sb->jsonEncode(es);
+		sb->safePrintf("\",\n");
+
+		sb->safePrintf("\t\"robotsTxtAllows\": %" PRId32",\n", allowedInt);
+
+		sb->safePrintf("\t\"url\": \"");
+		sb->jsonEncode(fu);
+		sb->safePrintf("\",\n");
+	}
 
 	char *redir = ptr_redirUrl;
-	if ( redir && ! isXml ) {
-		sb->safePrintf(
-			       "<tr>"
-			       "<td>redir url</td>"
-			       "<td><a href=\"%s\">%s</a></td>"
-			       "</tr>\n"
-			       ,redir
-			       ,redir );
+	if (redir) {
+		switch (format) {
+			case FORMAT_HTML:
+				sb->safePrintf(
+					"<tr>"
+						"<td>redir url</td>"
+						"<td><a href=\"%s\">%s</a></td>"
+						"</tr>\n"
+					,redir
+					,redir );
+				break;
+			case FORMAT_XML:
+				sb->safePrintf("\t<redirectUrl><![CDATA[%s]]></redirectUrl>\n" ,redir );
+				break;
+			case FORMAT_JSON:
+				sb->safePrintf("\t\"redirectUrl\": \"");
+				sb->jsonEncode(redir);
+				sb->safePrintf("\",\n");
+				break;
+			default:
+				break;
+		}
 	}
-	else if ( redir ) {
-		sb->safePrintf("\t<redirectUrl><![CDATA[%s]]>"
-			       "</redirectUrl>\n" ,redir );
-	}
-
 
 	if ( m_indexCode || g_errno ) {
-		if ( ! isXml ) sb->safePrintf("</table><br>\n");
-		else           sb->safePrintf("</response>\n");
+		switch (format) {
+			case FORMAT_HTML:
+				sb->safePrintf("</table><br>\n");
+				break;
+			case FORMAT_XML:
+				sb->safePrintf("</response>\n");
+				break;
+			case FORMAT_JSON:
+				sb->removeLastChar('\n');
+				sb->removeLastChar(',');
+				sb->safePrintf("}\n");
+				sb->safePrintf("}\n");
+				break;
+			default:
+				break;
+		}
+
 		return true;
 	}
 
@@ -17860,157 +17899,120 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	// must always start with http
 	if ( strncmp ( fu , "http" , 4 ) != 0 ) { g_process.shutdownAbort(true); }
 
-	struct tm tm_buf;
-	char buf[64];
-	time_t ts = (time_t)m_firstIndexedDate;
-
-	if ( ! isXml )
-		sb->safePrintf("<tr><td>first indexed date</td>"
-			       "<td>%s UTC</td></tr>\n" ,
-			       asctime_r(gmtime_r(&ts,&tm_buf),buf) );
-	else
-		sb->safePrintf("\t<firstIndexedDateUTC>%" PRIu32
-			       "</firstIndexedDateUTC>\n",
-			       (uint32_t)m_firstIndexedDate );
-
-	ts = m_spideredTime;
-
-	if ( ! isXml )
-		sb->safePrintf("<tr><td>last indexed date</td>"
-			       "<td>%s UTC</td></tr>\n" ,
-			       asctime_r(gmtime_r(&ts,&tm_buf),buf) );
-	else
-		sb->safePrintf("\t<lastIndexedDateUTC>%" PRIu32
-			       "</lastIndexedDateUTC>\n",
-			       (uint32_t)m_spideredTime );
-
-	ts = m_outlinksAddedDate;
-
-	if ( ! isXml )
-		sb->safePrintf("<tr><td>outlinks last added date</td>"
-			       "<td>%s UTC</td></tr>\n" ,
-			       asctime_r(gmtime_r(&ts,&tm_buf),buf) );
-	else
-		sb->safePrintf("\t<outlinksLastAddedUTC>%" PRIu32
-			       "</outlinksLastAddedUTC>\n",
-			       (uint32_t)m_outlinksAddedDate );
-
-	// hop count
-	if ( ! isXml )
-		sb->safePrintf("<tr><td>hop count</td><td>%" PRId32"</td>"
-			       "</tr>\n",
-			       (int32_t)m_hopCount);
-	else
-		sb->safePrintf("\t<hopCount>%" PRId32"</hopCount>\n",
-			       (int32_t)m_hopCount);
-
-
 	char strLanguage[128];
 	languageToString(m_langId, strLanguage);
-
-	// print tags
-	//SafeBuf tb;
-	int32_t sni  = m_siteNumInlinks;
 
 	char ipString[16];
 	iptoa(m_ip,ipString);
 
-	//int32_t sni = info1->getNumGoodInlinks();
+	switch (format) {
+		case FORMAT_HTML: {
+			struct tm tm_buf;
+			char buf[64];
 
-	time_t tlu = info1->getLastUpdated();
-	struct tm *timeStruct3 = gmtime_r(&tlu,&tm_buf);//info1->m_lastUpdated );
-	char tmp3[64];
-	strftime ( tmp3 , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct3 );
+			time_t ts = (time_t)m_firstIndexedDate;
+			sb->safePrintf("<tr><td>first indexed date</td><td>%s UTC</td></tr>\n",
+			               asctime_r(gmtime_r(&ts, &tm_buf), buf));
 
+			ts = m_spideredTime;
+			sb->safePrintf("<tr><td>last indexed date</td><td>%s UTC</td></tr>\n",
+			               asctime_r(gmtime_r(&ts, &tm_buf), buf));
 
-	if ( ! isXml )
-		sb->safePrintf (
-			"<tr><td>original charset</td><td>%s</td></tr>\n"
-			"<tr><td>adult bit</td><td>%" PRId32"</td></tr>\n"
-			//"<tr><td>is link spam?</td><td>%" PRId32" <b>%s</b></td></tr>\n"
-			"<tr><td>is permalink?</td><td>%" PRId32"</td></tr>\n"
-			"<tr><td>is RSS feed?</td><td>%" PRId32"</td></tr>\n"
-			"<tr><td>ip</td><td><a href=\"/search?q=ip%%3A%s&c=%s&n=100\">"
-			"%s</td></tr>\n"
-			"<tr><td>http status</td><td>%d</td></tr>"
-			"<tr><td>content len</td><td>%" PRId32" bytes</td></tr>\n"
-			"<tr><td>content truncated</td><td>%" PRId32"</td></tr>\n"
-			"<tr><td>content type</td><td>%s</td></tr>\n"
-			"<tr><td>language</td><td>%s</td></tr>\n"
-			"<tr><td>country</td><td>%s</td></tr>\n"
+			ts = m_outlinksAddedDate;
+			sb->safePrintf("<tr><td>outlinks last added date</td><td>%s UTC</td></tr>\n",
+			               asctime_r(gmtime_r(&ts, &tm_buf), buf));
 
-			"<tr><td><b>good inlinks to site</b>"
-			"</td><td>%" PRId32"</td></tr>\n"
+			sb->safePrintf("<tr><td>hop count</td><td>%" PRId32"</td></tr>\n", (int32_t)m_hopCount);
 
-			"<tr><td><b>site rank</b></td><td>%" PRId32"</td></tr>\n"
+			sb->safePrintf("<tr><td>original charset</td><td>%s</td></tr>\n", get_charset_str(m_charset));
+			sb->safePrintf("<tr><td>adult bit</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isAdult);
+			sb->safePrintf("<tr><td>is permalink?</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isPermalink);
+			sb->safePrintf("<tr><td>is RSS feed?</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isRSS);
+			sb->safePrintf("<tr><td>ip</td><td><a href=\"/search?q=ip%%3A%s&c=%s&n=100\">%s</td></tr>\n", ipString, cr->m_coll, ipString);
+			sb->safePrintf("<tr><td>http status</td><td>%d</td></tr>", m_httpStatus);
+			sb->safePrintf("<tr><td>content len</td><td>%" PRId32" bytes</td></tr>\n", size_utf8Content - 1);
+			sb->safePrintf("<tr><td>content truncated</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isContentTruncated);
+			sb->safePrintf("<tr><td>content type</td><td>%s</td></tr>\n", g_contentTypeStrings[(int)m_contentType]);
+			sb->safePrintf("<tr><td>language</td><td>%s</td></tr>\n", strLanguage);
+			sb->safePrintf("<tr><td>country</td><td>%s</td></tr>\n", g_countryCode.getName(m_countryId));
+			sb->safePrintf("<tr><td><b>good inlinks to site</b></td><td>%" PRId32"</td></tr>\n", m_siteNumInlinks);
+			sb->safePrintf("<tr><td><b>site rank</b></td><td>%" PRId32"</td></tr>\n", ::getSiteRank(m_siteNumInlinks));
+			sb->safePrintf("<tr><td>good inlinks to page</td><td>%" PRId32"</td></tr>\n", info1->getNumGoodInlinks());
 
-			"<tr><td>good inlinks to page"
-			"</td><td>%" PRId32"</td></tr>\n"
+			time_t tlu = info1->getLastUpdated();
+			struct tm *timeStruct3 = gmtime_r(&tlu,&tm_buf);
+			char tmp3[64];
+			strftime ( tmp3 , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct3 );
+			sb->safePrintf("<tr><td><nobr>page inlinks last computed</nobr></td><td>%s</td></tr>\n", tmp3);
 
-			"<tr><td><nobr>page inlinks last computed</nobr></td>"
-			"<td>%s</td></tr>\n"
-			"</td></tr>\n",
-			get_charset_str(m_charset),
-			(int32_t)m_isAdult,
-			(int32_t)m_isPermalink,
-			(int32_t)m_isRSS,
-			ipString,
-			cr->m_coll,
-			ipString,
-			m_httpStatus,
-			size_utf8Content - 1,
-			(int32_t)m_isContentTruncated,
-			g_contentTypeStrings[(int)m_contentType] ,
-			strLanguage,
-			g_countryCode.getName(m_countryId) ,
-			sni,
-			::getSiteRank(sni),
-			info1->getNumGoodInlinks(),
+			sb->safePrintf("</td></tr>\n");
+		} break;
+		case FORMAT_XML:
+			sb->safePrintf("\t<firstIndexedDateUTC>%" PRIu32"</firstIndexedDateUTC>\n", (uint32_t)m_firstIndexedDate);
+			sb->safePrintf("\t<lastIndexedDateUTC>%" PRIu32"</lastIndexedDateUTC>\n", (uint32_t)m_spideredTime);
+			sb->safePrintf("\t<outlinksLastAddedUTC>%" PRIu32"</outlinksLastAddedUTC>\n", (uint32_t)m_outlinksAddedDate);
 
-			tmp3
-			);
-	else {
-		sb->safePrintf (
-			"\t<charset><![CDATA[%s]]></charset>\n"
-			"\t<isAdult>%" PRId32"</isAdult>\n"
-			"\t<isLinkSpam>%" PRId32"</isLinkSpam>\n"
-			"\t<siteRank>%" PRId32"</siteRank>\n"
+			sb->safePrintf("\t<hopCount>%" PRId32"</hopCount>\n", (int32_t)m_hopCount);
 
-			"\t<numGoodSiteInlinks>%" PRId32"</numGoodSiteInlinks>\n"
+			sb->safePrintf("\t<charset><![CDATA[%s]]></charset>\n", get_charset_str(m_charset));
+			sb->safePrintf("\t<isAdult>%" PRId32"</isAdult>\n", (int32_t)m_isAdult);
+			sb->safePrintf("\t<isLinkSpam>%" PRId32"</isLinkSpam>\n", (int32_t)m_isLinkSpam);
+			sb->safePrintf("\t<siteRank>%" PRId32"</siteRank>\n", ::getSiteRank(m_siteNumInlinks));
+			sb->safePrintf("\t<numGoodSiteInlinks>%" PRId32"</numGoodSiteInlinks>\n", m_siteNumInlinks);
+			sb->safePrintf("\t<numGoodPageInlinks>%" PRId32"</numGoodPageInlinks>\n", info1->getNumGoodInlinks());
+			sb->safePrintf("\t<pageInlinksLastComputed>%" PRId32"</pageInlinksLastComputed>\n", (int32_t)info1->m_lastUpdated);
+			sb->safePrintf("\t<isPermalink>%" PRId32"</isPermalink>\n", (int32_t)m_isPermalink);
+			sb->safePrintf("\t<isRSSFeed>%" PRId32"</isRSSFeed>\n", (int32_t)m_isRSS);
+			sb->safePrintf("\t<ipAddress><![CDATA[%s]]></ipAddress>\n", ipString);
+			sb->safePrintf("\t<httpStatus>%d</httpStatus>", m_httpStatus);
+			sb->safePrintf("\t<contentLenInBytes>%" PRId32"</contentLenInBytes>\n", size_utf8Content - 1);
+			sb->safePrintf("\t<isContentTruncated>%" PRId32"</isContentTruncated>\n", (int32_t)m_isContentTruncated);
+			sb->safePrintf("\t<contentType><![CDATA[%s]]></contentType>\n", g_contentTypeStrings[(int)m_contentType]);
+			sb->safePrintf("\t<language><![CDATA[%s]]></language>\n", strLanguage);
+			sb->safePrintf("\t<country><![CDATA[%s]]></country>\n", g_countryCode.getName(m_countryId));
+			break;
+		case FORMAT_JSON:
+			sb->safePrintf("\t\"firstIndexedDateUTC\": %" PRIu32",\n", m_firstIndexedDate);
+			sb->safePrintf("\t\"lastIndexedDateUTC\": %" PRIu32",\n", m_spideredTime);
+			sb->safePrintf("\t\"outlinksLastAddedUTC\": %" PRIu32",\n", m_outlinksAddedDate);
 
-			"\t<numGoodPageInlinks>%" PRId32"</numGoodPageInlinks>\n"
-			"\t<pageInlinksLastComputed>%" PRId32
-			"</pageInlinksLastComputed>\n"
+			sb->safePrintf("\t\"hopCount\": %" PRId8",\n", m_hopCount);
 
-			,get_charset_str(m_charset)
-			,(int32_t)m_isAdult
-			,(int32_t)m_isLinkSpam
-			,::getSiteRank(sni)
-			,sni
+			sb->safePrintf("\t\"charset\": \"");
+			sb->jsonEncode(get_charset_str(m_charset));
+			sb->safePrintf("\",\n");
 
-			,info1->getNumGoodInlinks()
-			,(int32_t)info1->m_lastUpdated
-			);
-		sb->safePrintf("\t<isPermalink>%" PRId32"</isPermalink>\n"
-			       "\t<isRSSFeed>%" PRId32"</isRSSFeed>\n"
-			       "\t<ipAddress><![CDATA[%s]]></ipAddress>\n"
-			       "\t<httpStatus>%d</httpStatus>"
-			       "\t<contentLenInBytes>%" PRId32
-			       "</contentLenInBytes>\n"
-			       "\t<isContentTruncated>%" PRId32
-			       "</isContentTruncated>\n"
-			       "\t<contentType><![CDATA[%s]]></contentType>\n"
-			       "\t<language><![CDATA[%s]]></language>\n"
-			       "\t<country><![CDATA[%s]]></country>\n",
-			       (int32_t)m_isPermalink,
-			       (int32_t)m_isRSS,
-			       ipString,
-			       m_httpStatus,
-			       size_utf8Content - 1,
-			       (int32_t)m_isContentTruncated,
-			       g_contentTypeStrings[(int)m_contentType] ,
-			       strLanguage,
-			       g_countryCode.getName(m_countryId) );
+			sb->safePrintf("\t\"isAdult\": %s,\n", m_isAdult ? "true" : "false");
+			sb->safePrintf("\t\"isLinkSpam\": %s,\n", m_isLinkSpam ? "true" : "false");
+			sb->safePrintf("\t\"siteRank\": %" PRId32",\n", ::getSiteRank(m_siteNumInlinks));
+			sb->safePrintf("\t\"numGoodSiteInlinks\": %" PRId32",\n", m_siteNumInlinks);
+			sb->safePrintf("\t\"numGoodPageInlinks\": %" PRId32",\n", info1->getNumGoodInlinks());
+			sb->safePrintf("\t\"pageInlinksLastComputed\": %" PRId32",\n", info1->m_lastUpdated);
+			sb->safePrintf("\t\"isPermalink\": %s,\n", m_isPermalink ? "true" : "false");
+			sb->safePrintf("\t\"isRSSFeed\": %s,\n", m_isRSS ? "true" : "false");
+
+			sb->safePrintf("\t\"ipAddress\": \"");
+			sb->jsonEncode(ipString);
+			sb->safePrintf("\",\n");
+
+			sb->safePrintf("\t\"httpStatus\": %" PRId16",\n", m_httpStatus);
+			sb->safePrintf("\t\"contentLenInBytes\": %" PRId32",\n", size_utf8Content - 1);
+			sb->safePrintf("\t\"isContentTruncated\": %s,\n", m_isContentTruncated ? "true" : "false");
+
+			sb->safePrintf("\t\"contentType\": \"");
+			sb->jsonEncode(g_contentTypeStrings[(int)m_contentType]);
+			sb->safePrintf("\",\n");
+
+			sb->safePrintf("\t\"language\": \"");
+			sb->jsonEncode(strLanguage);
+			sb->safePrintf("\",\n");
+
+			sb->safePrintf("\t\"country\": \"");
+			sb->jsonEncode(g_countryCode.getName(m_countryId));
+			sb->safePrintf("\",\n");
+			break;
+		default:
+			break;
 	}
 
 	TagRec *ogr = NULL;
@@ -18019,18 +18021,45 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 		// sanity. should be set from titlerec, so no blocking!
 		if ( ! ogr || ogr == (void *)-1 ) { g_process.shutdownAbort(true); }
 	}
-	if ( ogr && ! isXml ) ogr->printToBufAsHtml ( sb , "tag" );
-	else if ( ogr )       ogr->printToBufAsXml  ( sb  );
+
+	if (ogr) {
+		switch (format) {
+			case FORMAT_HTML:
+				ogr->printToBufAsHtml(sb, "tag");
+				break;
+			case FORMAT_XML:
+				ogr->printToBufAsXml(sb);
+				break;
+			case FORMAT_JSON:
+				ogr->printToBufAsJson(sb);
+				break;
+			default:
+				break;
+		}
+	}
 
 	// show the good inlinks we used when indexing this
-	if ( ! isXml )
-		info1->print(sb,cr->m_coll);
+	if (format == FORMAT_HTML) {
+		info1->print(sb, cr->m_coll);
+	}
 
 	// close the table
-	if ( ! isXml )
-		sb->safePrintf ( "</table></center><br>\n" );
-	else
-		sb->safePrintf("</response>\n");
+	switch (format) {
+		case FORMAT_HTML:
+			sb->safePrintf("</table><br>\n");
+			break;
+		case FORMAT_XML:
+			sb->safePrintf("</response>\n");
+			break;
+		case FORMAT_JSON:
+			sb->removeLastChar('\n');
+			sb->removeLastChar(',');
+			sb->safePrintf("}\n");
+			sb->safePrintf("}\n");
+			break;
+		default:
+			break;
+	}
 
 	return true;
 }
@@ -18641,7 +18670,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 		score *= getHashGroupWeight(hg) * getHashGroupWeight(hg);
 		score *= getDiversityWeight(tp[i]->m_diversityRank);
 		score *= getDensityWeight(tp[i]->m_densityRank);
-		if ( tp[i]->m_synSrc ) score *= g_conf.m_synonymWeight;
+		if ( tp[i]->m_synSrc ) score *= g_conf.m_baseScoringParameters.m_synonymWeight;
 		if ( hg == HASHGROUP_INLINKTEXT ) score *= getLinkerWeight(ws);
 		else                           score *= getWordSpamWeight(ws);
 		if ( isXml )

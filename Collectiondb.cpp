@@ -996,7 +996,6 @@ CollectionRec::CollectionRec() {
 	m_dedupingEnabled = false;
 	m_dupCheckWWW = false;
 	m_useSimplifiedRedirects = false;
-	m_useTimeAxis = false;
 	m_oneVotePerIpDom = false;
 	m_doUrlSpamCheck = false;
 	m_doLinkSpamCheck = false;
@@ -1014,6 +1013,7 @@ CollectionRec::CollectionRec() {
 	m_maxQueryTerms = 0;
 	m_sameLangWeight = 0.0;
 	m_unknownLangWeight = 0.0;
+	m_siteRankMultiplier = 0.0;
 	memset(m_defaultSortLanguage2, 0, sizeof(m_defaultSortLanguage2));
 	m_posdbMinFilesToMerge = 0;
 	m_titledbMinFilesToMerge = 0;

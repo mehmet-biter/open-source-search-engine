@@ -42,8 +42,6 @@ SearchInput::SearchInput() {
 	m_titleMaxLen = 0;
 	m_maxSerpScore = 0.0;
 	m_minSerpDocId = 0;
-	m_sameLangWeight = 0.0;
-	m_unknownLangWeight = 0.0;
 	m_fx_qlang = nullptr;
 	m_fx_blang = nullptr;
 	m_fx_fetld = nullptr;
@@ -64,23 +62,9 @@ SearchInput::SearchInput() {
 	m_askOtherShards = false;
 	memset(m_queryId, 0, sizeof(m_queryId));
 	m_doMaxScoreAlgo = false;
-
-	m_termFreqWeightFreqMin = 0.0;
-	m_termFreqWeightFreqMax = 0.5;
-	m_termFreqWeightMin = 0.5;
-	m_termFreqWeightMax = 1.0;
-
-	m_synonymWeight = 0.9;
-	m_bigramWeight  = 5.0;
-	m_pageTemperatureWeightMin = 1.0;
-	m_pageTemperatureWeightMax = 20.0;
-	m_usePageTemperatureForRanking = true;
+	m_baseScoringParameters.clear();
 	m_numFlagScoreMultipliers=26;
-	for(int i=0; i<26; i++)
-		m_flagScoreMultiplier[i] = 1.0;
 	m_numFlagRankAdjustments=26;
-	for(int i=0; i<26; i++)
-		m_flagRankAdjustment[i] = 0;
 	m_streamResults = false;
 	m_secsBack = 0;
 	m_sortBy = 0;
@@ -94,7 +78,6 @@ SearchInput::SearchInput() {
 	m_doQueryHighlighting = false;
 	m_highlightQuery = NULL;
 	m_displayInlinks = 0;
-	m_displayOutlinks = 0;
 	m_docIdsOnly = 0;
 	m_formatStr = NULL;
 	m_queryExpansion = false;
@@ -649,14 +632,14 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 
 	// append plus terms
 	if ( m_plus && m_plus[0] ) {
-		char *s = m_plus;
-		char *send = m_plus + strlen(m_plus);
+		const char *s = m_plus;
+		const char *send = m_plus + strlen(m_plus);
 
 		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
 		if ( m_sbuf2.length() ) m_sbuf2.pushChar(' ');
 		while (s < send) {
 			while (isspace(*s) && s < send) s++;
-			char *s2 = s+1;
+			const char *s2 = s+1;
 			if (*s == '\"') {
 				// if there's no closing quote just treat
 				// the end of the line as such
@@ -688,13 +671,13 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 	}  
 	// append minus terms
 	if ( m_minus && m_minus[0] ) {
-		char *s = m_minus;
-		char *send = m_minus + strlen(m_minus);
+		const char *s = m_minus;
+		const char *send = m_minus + strlen(m_minus);
 		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
 		if ( m_sbuf2.length() ) m_sbuf2.pushChar(' ');
 		while (s < send) {
 			while (isspace(*s) && s < send) s++;
-			char *s2 = s+1;
+			const char *s2 = s+1;
 			if (*s == '\"') {
 				// if there's no closing quote just treat
 				// the end of the line as such

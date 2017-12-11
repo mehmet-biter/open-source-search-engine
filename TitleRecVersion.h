@@ -1,6 +1,11 @@
 #ifndef GB_TITLERECVERSION_H
 #define GB_TITLERECVERSION_H
 
+#ifndef STRINGIFY
+#define STRINGIFY(x) #x
+#define TO_STRING(x) STRINGIFY(x)
+#endif
+
 // Starting version when Gigablast was open-sourced
 //#define TITLEREC_CURRENT_VERSION 120
 
@@ -22,6 +27,11 @@
 //#define TITLEREC_CURRENT_VERSION    125
 
 // new adult detection
-#define TITLEREC_CURRENT_VERSION	126
+//#define TITLEREC_CURRENT_VERSION    126
+
+// handle robots meta with noindex, follow
+#define TITLEREC_CURRENT_VERSION    127
+
+#define TITLEREC_CURRENT_VERSION_STR    TO_STRING(TITLEREC_CURRENT_VERSION)
 
 #endif // GB_TITLERECVERSION_H

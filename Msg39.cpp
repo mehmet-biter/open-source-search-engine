@@ -9,6 +9,7 @@
 #include "Sanity.h"
 #include "Posdb.h"
 #include "Conf.h"
+#include "ScoringWeights.h"
 #include "Mem.h"
 #include "GbSignature.h"
 #include <new>
@@ -88,14 +89,12 @@ void Msg39Request::reset() {
 	m_niceness                = MAX_NICENESS;
 	m_maxAge                  = 0;
 	m_maxQueryTerms           = 9999;
-	//m_compoundListMaxSize     = 20000000;
 	m_language                = 0;
 	m_queryExpansion          = false;
 	m_debug                   = false;
 	m_getDocIdScoringInfo     = true;
 	m_doSiteClustering        = true;
 	m_hideAllClustered        = false;
-	//m_doIpClustering          = true;
 	m_doDupContentRemoval     = true;
 	m_addToCache              = false;
 	m_familyFilter            = false;
@@ -105,27 +104,11 @@ void Msg39Request::reset() {
 	m_useQueryStopWords       = true;
 	m_doMaxScoreAlgo          = true;
 	m_modifyQuery             = false; //solution until we get msg39 to carry the whole query information
-	m_termFreqWeightFreqMin = 0.0;
-	m_termFreqWeightFreqMax = 0.5;
-	m_termFreqWeightMin = 0.5;
-	m_termFreqWeightMax = 1.0;
-	m_synonymWeight           = 0.9;
-	m_bigramWeight            = 5.0;
-	m_pageTemperatureWeightMin = 1.0;
-	m_pageTemperatureWeightMax = 20.0;
-	m_usePageTemperatureForRanking = true;
-
-	for(int i=0; i<26; i++)
-		m_flagScoreMultiplier[i] = 1.0;
-	for(int i=0; i<26; i++)
-		m_flagRankAdjustment[i] = 0;
-
+	m_baseScoringParameters.clear();
 	ptr_query                 = NULL; // in utf8?
 	ptr_whiteList             = NULL;
 	size_query                = 0;
 	size_whiteList            = 0;
-	m_sameLangWeight          = 20.0;
-	m_unknownLangWeight       = 10.0;
 
 	// -1 means to not to docid range restriction
 	m_minDocId = -1LL;
@@ -364,7 +347,9 @@ void Msg39::getDocIds2() {
 	
 	if(m_msg39req->m_modifyQuery) {
 		bool dont_care; //artifact because queries are parsed both at sender and on each shard.
-		m_query.modifyQuery(&m_msg39req->m_scoringWeights, *cr, &dont_care);
+		DerivedScoringWeights dsw;
+		dsw.init(m_msg39req->m_baseScoringParameters);
+		m_query.modifyQuery(&dsw, *cr, &dont_care);
 	}
 
 	// set m_errno
@@ -596,7 +581,6 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 		// store now in qterm
 		Posdb::makeStartKey ( m_query.m_qterms[i].m_startKey, tid, docIdStart );
 		Posdb::makeEndKey   ( m_query.m_qterms[i].m_endKey,   tid, docIdEnd   );
-		m_query.m_qterms[i].m_ks = sizeof(posdbkey_t);
 	}
 
 	// debug msg
@@ -632,14 +616,9 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     "sign=%c "
 			     "required=%" PRId32" "
 			     "fieldcode=%" PRId32" "
-
-			     "ebit=0x%0" PRIx64" "
-			     "impBits=0x%0" PRIx64" "
-
 			     "wikiphrid=%" PRId32" "
 			     "leftwikibigram=%" PRId32" "
 			     "rightwikibigram=%" PRId32" "
-			     "hc=%" PRId32" "
 			     "otermLen=%" PRId32" "
 			     "isSynonym=%s"
 			     "querylangid=%" PRId32" " ,
@@ -653,14 +632,9 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     sign , //c
 			     (int32_t)qt->m_isRequired,
 			     (int32_t)qt->m_fieldCode,
-
-			     (int64_t)qt->m_explicitBit  ,
-			     (int64_t)qt->m_implicitBits ,
-
 			     wikiPhrId,
 			     (int32_t)leftwikibigram,
 			     (int32_t)rightwikibigram,
-			     (int32_t)m_query.m_qterms[i].m_hardCount ,
 			     (int32_t)m_query.getTermLen(i) ,
 			     (isSynonym ? "true" : "false"),
 			     (int32_t)m_query.m_langId );

@@ -43,6 +43,8 @@
 #include "SummaryCache.h"
 #include "GbDns.h"
 #include "DocDelete.h"
+#include "DocRebuild.h"
+#include "DocReindex.h"
 #include "SpiderdbHostDelete.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
@@ -611,7 +613,12 @@ bool Process::shutdown2() {
 
 		Statistics::finalize();
 
-		DocDelete::finalize();
+		g_docDelete.finalize();
+		g_docDeleteUrl.finalize();
+		g_docRebuild.finalize();
+		g_docRebuildUrl.finalize();
+		g_docReindex.finalize();
+		g_docReindexUrl.finalize();
 
 		SpiderdbHostDelete::finalize();
 

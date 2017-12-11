@@ -34,6 +34,7 @@ class Tag {
 	bool printToBuf            (SafeBuf *sb) const;
 	bool printToBufAsAddRequest(SafeBuf *sb) const;
 	bool printToBufAsXml       (SafeBuf *sb) const;
+	bool printToBufAsJson      (SafeBuf *sb) const;
 	bool printToBufAsHtml      (SafeBuf *sb, const char *prefix) const;
 	bool printToBufAsTagVector (SafeBuf *sb) const;
 	// just print the m_data...
@@ -116,6 +117,7 @@ public:
 	bool printToBuf             ( SafeBuf *sb );
 	bool printToBufAsAddRequest ( SafeBuf *sb );
 	bool printToBufAsXml        ( SafeBuf *sb );
+	bool printToBufAsJson       ( SafeBuf *sb );
 	bool printToBufAsHtml       ( SafeBuf *sb , const char *prefix );
 	bool printToBufAsTagVector  ( SafeBuf *sb );
 

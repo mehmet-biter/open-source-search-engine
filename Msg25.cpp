@@ -2853,7 +2853,7 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 		// get approx # of words in link text
 		int32_t nw = 0;
 		if ( txtLen > 0 )
-			nw = getNumWords(txt,txtLen,TITLEREC_CURRENT_VERSION);
+			nw = getNumWords(txt,txtLen);
 		// store it
 		r->m_linkTextNumWords = nw;
 		

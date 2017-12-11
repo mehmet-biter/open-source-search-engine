@@ -39,7 +39,7 @@ static const int INTERSECT_DEBUG_INFO = 1;
 
 static bool  s_init = false;
 static GbMutex s_mtx_weights;
-static ScoringWeights s_scoringWeights;
+static DerivedScoringWeights s_scoringWeights;
 static bool  s_isCompatible     [HASHGROUP_END][HASHGROUP_END];
 static bool  s_inBody           [HASHGROUP_END];
 
@@ -47,8 +47,6 @@ static bool  s_inBody           [HASHGROUP_END];
 #define gbmin(a,b) ((a)<(b) ? (a) : (b))
 #define gbmax(a,b) ((a)>(b) ? (a) : (b))
 
-static inline bool isTermValueInRange( const char *p, const QueryTerm *qt);
-static inline bool isTermValueInRange2 ( const char *recPtr, const char *subListEnd, const QueryTerm *qt);
 static inline const char *getWordPosList(uint64_t docId, const char *list, int32_t listSize);
 static int docIdVoteBufKeyCompare_desc ( const void *h1, const void *h2 );
 static void initWeights();
@@ -140,7 +138,6 @@ void PosdbTable::reset() {
 	// Coverity
 	m_docId = 0;
 	m_hasMaxSerpScore = false;
-	m_siteRankMultiplier = 0.0;
 	m_addListsTime = 0;
 	m_t2 = 0;
 	m_qpos.clear();
@@ -158,14 +155,6 @@ void PosdbTable::reset() {
 	m_sortByTermNumInt = -1;
 	m_sortByTermInfoNum = 0;
 	m_sortByTermInfoNumInt = 0;
-	m_minScoreTermNum = 0;
-	m_maxScoreTermNum = 0;
-	m_minScoreVal = 0.0;
-	m_maxScoreVal = 0.0;
-	m_minScoreTermNumInt = 0;
-	m_maxScoreTermNumInt = 0;
-	m_minScoreValInt = 0;
-	m_maxScoreValInt = 0;
 	m_useWhiteTable = false;
 	m_numQueryTermInfos = 0;
 	m_minTermListSize = 0;
@@ -213,6 +202,11 @@ void PosdbTable::init(Query *q, bool debug, TopTree *topTree, const DocumentInde
 	// save the request
 	m_msg39req = r;
 
+	m_baseScoringParameters = r->m_baseScoringParameters;
+	m_derivedScoringWeights.init(m_baseScoringParameters);
+	if(g_conf.m_logTracePosdb || m_msg39req->m_debug)
+		m_baseScoringParameters.traceToLog("posdbtable");
+	
 	// save this
 	//m_coll = coll;
 	// get the rec for it
@@ -232,8 +226,7 @@ void PosdbTable::init(Query *q, bool debug, TopTree *topTree, const DocumentInde
 	m_realMaxTop = r->m_realMaxTop;
 	if ( m_realMaxTop > MAX_TOP ) m_realMaxTop = MAX_TOP;
 
-	m_siteRankMultiplier = SITERANKMULTIPLIER;
-	if ( m_q->m_isBoolean ) m_siteRankMultiplier = 0.0;
+	if ( m_q->m_isBoolean ) m_baseScoringParameters.m_siteRankMultiplier = 0.0;
 
 	// sanity
 	if ( msg2->getNumLists() != m_q->getNumTerms() )
@@ -260,7 +253,7 @@ struct PosdbDecodeHelper {
 	float denw;
 	//float diversityWeight; //todo?
 	unsigned char syn;
-	void set(const char *wp, const ScoringWeights &scoringWeights) {
+	void set(const char *wp, const DerivedScoringWeights &derivedScoringWeights) {
 		p = Posdb::getWordPos(wp);
 		hg = Posdb::getHashGroup(wp);
 		//temporary fix: posdb can have junk in it so clamp the hashgroup to the limit
@@ -272,10 +265,10 @@ struct PosdbDecodeHelper {
 			mhg = HASHGROUP_BODY;
 		wsr = Posdb::getWordSpamRank(wp);
 		if(hg == HASHGROUP_INLINKTEXT)
-			spamw = scoringWeights.m_linkerWeights[wsr];
+			spamw = derivedScoringWeights.m_linkerWeights[wsr];
 		else
-			spamw = scoringWeights.m_wordSpamWeights[wsr];
-		denw = scoringWeights.m_densityWeights[Posdb::getDensityRank(wp)];
+			spamw = derivedScoringWeights.m_wordSpamWeights[wsr];
+		denw = derivedScoringWeights.m_densityWeights[Posdb::getDensityRank(wp)];
 		syn = Posdb::getIsSynonym(wp);
 	}
 };
@@ -318,14 +311,14 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 		do {
 			float score = 100.0;
 			PosdbDecodeHelper helper;
-			helper.set(wpi, m_msg39req->m_scoringWeights);
+			helper.set(wpi, m_derivedScoringWeights);
 			// good diversity?
 			//unsigned char div = Posdb::getDiversityRank ( wpi );
-			//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div];
-			//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div];
+			//score *= m_derivedScoringWeights.m_diversityWeights[div];
+			//score *= m_derivedScoringWeights.m_diversityWeights[div];
 			// hash group? title? body? heading? etc.
-			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper.mhg];
-			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper.mhg];
+			score *= m_derivedScoringWeights.m_hashGroupWeights[helper.mhg];
+			score *= m_derivedScoringWeights.m_hashGroupWeights[helper.mhg];
 			// good density?
 			score *= helper.denw;
 			score *= helper.denw;
@@ -338,8 +331,8 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 
 			// synonym
 			if ( helper.syn ) {
-				score *= m_msg39req->m_synonymWeight;
-				score *= m_msg39req->m_synonymWeight;
+				score *= m_baseScoringParameters.m_synonymWeight;
+				score *= m_baseScoringParameters.m_synonymWeight;
 			}
 
 			int queryTermIndex = miniMergeBuffer->getTermIndexForBufferPos(wpi);
@@ -350,8 +343,8 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 			score *= m_q->m_qterms[queryTermIndex].m_termFreqWeight;
 
 			if(m_q->m_qterms[queryTermIndex].m_isPhrase) {
-				score *= m_msg39req->m_bigramWeight;
-				score *= m_msg39req->m_bigramWeight;
+				score *= m_baseScoringParameters.m_bigramWeight;
+				score *= m_baseScoringParameters.m_bigramWeight;
 			}
 
 			// do not allow duplicate hashgroups!
@@ -570,8 +563,8 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	PosdbDecodeHelper helper1, helper2;
-	helper1.set(wpi, m_msg39req->m_scoringWeights);
-	helper2.set(wpj, m_msg39req->m_scoringWeights);
+	helper1.set(wpi, m_derivedScoringWeights);
+	helper2.set(wpj, m_derivedScoringWeights);
 
 	bool firsti = true;
 	bool firstj = true;
@@ -611,15 +604,15 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				float score = 100 * helper1.denw * helper2.denw;
 
 				// hashgroup modifier
-				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
-				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
+				score *= m_derivedScoringWeights.m_hashGroupWeights[helper1.hg];
+				score *= m_derivedScoringWeights.m_hashGroupWeights[helper2.hg];
 
 				// if synonym or alternate word form
 				if ( helper1.syn ) {
-					score *= m_msg39req->m_synonymWeight;
+					score *= m_baseScoringParameters.m_synonymWeight;
 				}
 				if ( helper2.syn ) {
-					score *= m_msg39req->m_synonymWeight;
+					score *= m_baseScoringParameters.m_synonymWeight;
 				}
 
 				const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(wpi);
@@ -630,15 +623,15 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				score *= userWeight2;
 
 				if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
+					score *= m_baseScoringParameters.m_bigramWeight;
 				if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
+					score *= m_baseScoringParameters.m_bigramWeight;
 
 				// word spam weights
 				score *= helper1.spamw * helper2.spamw;
 				// huge title? do not allow 11th+ word to be weighted high
 				//if ( helper1.hg == HASHGROUP_TITLE && dist > 20 )
-				//	score /= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
+				//	score /= m_baseScoringParameters.m_derivedScoringWeights.m_hashGroupWeights[helper1.hg];
 				// mod by distance
 				score /= (dist + 1.0);
 				// best?
@@ -660,7 +653,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				break;	// exit for(;;) loop
 			}
 			
-			helper1.set(wpi, m_msg39req->m_scoringWeights);
+			helper1.set(wpi, m_derivedScoringWeights);
 		}
 		else {
 			// . skip the pair if they are in different hashgroups
@@ -695,18 +688,18 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				// compute score based on that junk
 				//score = (MAXWORDPOS+1) - dist;
 				// good diversity? uneeded for pair algo
-				//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div1];
-				//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div2];
+				//score *= m_derivedScoringWeights.m_diversityWeights[div1];
+				//score *= m_derivedScoringWeights.m_diversityWeights[div2];
 				// good density?
 				float score = 100 * helper1.denw * helper2.denw;
 				// hashgroup modifier
-				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
-				score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
+				score *= m_derivedScoringWeights.m_hashGroupWeights[helper1.hg];
+				score *= m_derivedScoringWeights.m_hashGroupWeights[helper2.hg];
 				// if synonym or alternate word form
 				if ( helper1.syn )
-					score *= m_msg39req->m_synonymWeight;
+					score *= m_baseScoringParameters.m_synonymWeight;
 				if ( helper2.syn )
-					score *= m_msg39req->m_synonymWeight;
+					score *= m_baseScoringParameters.m_synonymWeight;
 
 				const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(wpi);
 				const float userWeight1 = m_q->m_qterms[queryTermIndex1].m_userWeight;
@@ -716,15 +709,15 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				score *= userWeight2;
 
 				if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
+					score *= m_baseScoringParameters.m_bigramWeight;
 				if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
+					score *= m_baseScoringParameters.m_bigramWeight;
 
 				// word spam weights
 				score *= helper1.spamw * helper2.spamw;
 				// huge title? do not allow 11th+ word to be weighted high
 				//if ( helper1.hg == HASHGROUP_TITLE && dist > 20 )
-				//	score /= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
+				//	score /= m_derivedScoringWeights.m_hashGroupWeights[helper1.hg];
 				// mod by distance
 				score /= (dist + 1.0);
 				// best?
@@ -746,7 +739,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				break;	// exit for(;;) loop
 			}
 			
-			helper2.set(wpj, m_msg39req->m_scoringWeights);
+			helper2.set(wpj, m_derivedScoringWeights);
 		}
 	}
 
@@ -773,8 +766,8 @@ float PosdbTable::getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, co
 	VALGRIND_CHECK_MEM_IS_DEFINED(wpj,6);
 #endif
 	PosdbDecodeHelper helper1, helper2;
-	helper1.set(wpi, m_msg39req->m_scoringWeights);
-	helper2.set(wpj, m_msg39req->m_scoringWeights);
+	helper1.set(wpi, m_derivedScoringWeights);
+	helper2.set(wpj, m_derivedScoringWeights);
 
 	float dist;
 	// set this
@@ -795,18 +788,18 @@ float PosdbTable::getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, co
 	}
 	// TODO: use left and right diversity if no matching query term
 	// is on the left or right
-	//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div1];
-	//score *= m_msg39req->m_scoringWeights.m_diversityWeights[div2];
+	//score *= m_derivedScoringWeights.m_diversityWeights[div1];
+	//score *= m_derivedScoringWeights.m_diversityWeights[div2];
 	// good density?
 	float score = 100 * helper1.denw * helper2.denw;
 	// wikipedia phrase weight
 	//score *= ts;
 	// hashgroup modifier
-	score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
-	score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
+	score *= m_derivedScoringWeights.m_hashGroupWeights[helper1.hg];
+	score *= m_derivedScoringWeights.m_hashGroupWeights[helper2.hg];
 	// if synonym or alternate word form
-	if ( helper1.syn ) score *= m_msg39req->m_synonymWeight;
-	if ( helper2.syn ) score *= m_msg39req->m_synonymWeight;
+	if ( helper1.syn ) score *= m_baseScoringParameters.m_synonymWeight;
+	if ( helper2.syn ) score *= m_baseScoringParameters.m_synonymWeight;
 
 	const int queryTermIndex1 = miniMergeBuffer->getTermIndexForBufferPos(wpi);
 	const float userWeight1 = m_q->m_qterms[queryTermIndex1].m_userWeight;
@@ -816,9 +809,9 @@ float PosdbTable::getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, co
 	score *= userWeight2;
 
 	if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
-		score *= m_msg39req->m_bigramWeight;
+		score *= m_baseScoringParameters.m_bigramWeight;
 	if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
-		score *= m_msg39req->m_bigramWeight;
+		score *= m_baseScoringParameters.m_bigramWeight;
 
 	// word spam weights
 	score *= helper1.spamw * helper2.spamw;
@@ -881,8 +874,8 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	}
 
 	PosdbDecodeHelper helper1, helper2;
-	helper1.set(wpi, m_msg39req->m_scoringWeights);
-	helper2.set(wpj, m_msg39req->m_scoringWeights);
+	helper1.set(wpi, m_derivedScoringWeights);
+	helper2.set(wpj, m_derivedScoringWeights);
 
 	bool firsti = true;
 	bool firstj = true;
@@ -974,16 +967,16 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			float score;
 			score = 100 * helper1.denw * helper2.denw;
 			// hashgroup modifier
-			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
-			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
+			score *= m_derivedScoringWeights.m_hashGroupWeights[helper1.hg];
+			score *= m_derivedScoringWeights.m_hashGroupWeights[helper2.hg];
 
 			// if synonym or alternate word form
 			if ( helper1.syn ) {
-				score *= m_msg39req->m_synonymWeight;
+				score *= m_baseScoringParameters.m_synonymWeight;
 			}
 			
 			if ( helper2.syn ) {
-				score *= m_msg39req->m_synonymWeight;
+				score *= m_baseScoringParameters.m_synonymWeight;
 			}
 
 			{
@@ -998,9 +991,9 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 				score *= userWeight2;
 				score *= termFreqWeight2;
 				if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
+					score *= m_baseScoringParameters.m_bigramWeight;
 				if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
+					score *= m_baseScoringParameters.m_bigramWeight;
 			}
 
 			// the new logic
@@ -1016,7 +1009,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			score *= helper1.spamw * helper2.spamw;
 			// huge title? do not allow 11th+ word to be weighted high
 			//if ( helper1.hg == HASHGROUP_TITLE && dist > 20 )
-			//	score /= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
+			//	score /= m_derivedScoringWeights.m_hashGroupWeights[helper1.hg];
 			// mod by distance
 			score /= (dist + 1.0);
 
@@ -1094,7 +1087,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 				break;	// exit for(;;) loop
 			}
 			
-			helper1.set(wpi, m_msg39req->m_scoringWeights);
+			helper1.set(wpi, m_derivedScoringWeights);
 		}
 		else {
 			// get distance
@@ -1154,16 +1147,16 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			float score;
 			score = 100 * helper1.denw * helper2.denw;
 			// hashgroup modifier
-			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper1.hg];
-			score *= m_msg39req->m_scoringWeights.m_hashGroupWeights[helper2.hg];
+			score *= m_derivedScoringWeights.m_hashGroupWeights[helper1.hg];
+			score *= m_derivedScoringWeights.m_hashGroupWeights[helper2.hg];
 			
 			// if synonym or alternate word form
 			if ( helper1.syn ) {
-				score *= m_msg39req->m_synonymWeight;
+				score *= m_baseScoringParameters.m_synonymWeight;
 			}
 			
 			if ( helper2.syn ) {
-				score *= m_msg39req->m_synonymWeight;
+				score *= m_baseScoringParameters.m_synonymWeight;
 			}
 
 			{
@@ -1178,16 +1171,16 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 				score *= userWeight2;
 				score *= termFreqWeight2;
 				if(m_q->m_qterms[queryTermIndex1].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
+					score *= m_baseScoringParameters.m_bigramWeight;
 				if(m_q->m_qterms[queryTermIndex2].m_isPhrase)
-					score *= m_msg39req->m_bigramWeight;
+					score *= m_baseScoringParameters.m_bigramWeight;
 			}
 			
 			// word spam weights
 			score *= helper1.spamw * helper2.spamw;
 			// huge title? do not allow 11th+ word to be weighted high
 			//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
-			//	score /= m_msg39req->m_scoringWeights.m_hashGroupWeights[hg1];
+			//	score /= m_derivedScoringWeights.m_hashGroupWeights[hg1];
 			// mod by distance
 			score /= (dist + 1.0);
 
@@ -1261,7 +1254,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 				break;	// exit for(;;) loop
 			}
 			
-			helper2.set(wpj, m_msg39req->m_scoringWeights);
+			helper2.set(wpj, m_derivedScoringWeights);
 		}
 	} // for(;;)
 
@@ -1473,14 +1466,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	m_sortByTermNum = -1;
 	m_sortByTermNumInt = -1;
 
-	// now we have score ranges for gbmin:price:1.99 etc.
-	m_minScoreTermNum = -1;
-	m_maxScoreTermNum = -1;
-
-	// for gbminint:count:99 etc.
-	m_minScoreTermNumInt = -1;
-	m_maxScoreTermNumInt = -1;
-
 	m_hasMaxSerpScore = false;
 	if ( m_msg39req->m_minSerpDocId ) {
 		m_hasMaxSerpScore = true;
@@ -1511,34 +1496,12 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		qti->m_quotedStartId = qw->m_quoteStart;
 		switch(qt->m_fieldCode) {
 			// is it gbsortby:?
-			case FIELD_GBSORTBYFLOAT:
-			case FIELD_GBREVSORTBYFLOAT:
-				m_sortByTermNum = i;
-				m_sortByTermInfoNum = nrg;
-				break;
 			case FIELD_GBSORTBYINT:
 			case FIELD_GBREVSORTBYINT:
 				m_sortByTermNumInt = i;
 				m_sortByTermInfoNumInt = nrg;
 				// tell topTree to use int scores
 				m_topTree->m_useIntScores = true;
-				break;
-			// is it gbmin:price:1.99?
-			case FIELD_GBNUMBERMIN:
-				m_minScoreTermNum = i;
-				m_minScoreVal = qt->m_qword->m_float;
-				break;
-			case FIELD_GBNUMBERMAX:
-				m_maxScoreTermNum = i;
-				m_maxScoreVal = qt->m_qword->m_float;
-				break;
-			case FIELD_GBNUMBERMININT:
-				m_minScoreTermNumInt = i;
-				m_minScoreValInt = qt->m_qword->m_int;
-				break;
-			case FIELD_GBNUMBERMAXINT:
-				m_maxScoreTermNumInt = i;
-				m_maxScoreValInt = qt->m_qword->m_int;
 				break;
 			default:
 				; //not numeric condition
@@ -1677,17 +1640,8 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// numeric posdb termlist flags. instead of word position
 		// they have a float stored there for sorting etc.
 		switch(qt->m_fieldCode) {
-			case FIELD_GBSORTBYFLOAT:
-			case FIELD_GBREVSORTBYFLOAT:
-			case FIELD_GBNUMBERMIN:
-			case FIELD_GBNUMBERMAX:
-			case FIELD_GBNUMBEREQUALFLOAT:
-
 			case FIELD_GBSORTBYINT:
 			case FIELD_GBREVSORTBYINT:
-			case FIELD_GBNUMBERMININT:
-			case FIELD_GBNUMBERMAXINT:
-			case FIELD_GBNUMBEREQUALINT:
 				qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
 				break;
 			default:
@@ -2831,9 +2785,11 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 		const char *nwp[MAX_SUBLISTS];
 		const char *nwpEnd[MAX_SUBLISTS];
 		char  nwpFlags[MAX_SUBLISTS];
+		int baseSubListIndex[MAX_SUBLISTS];
 		// populate the nwp[] arrays for merging
 		int32_t nsub = 0;
 		for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
+			baseSubListIndex[nsub] = k;
 			// NULL means does not have that docid
 			if ( ! qti->m_matchingSublist[k].m_savedCursor ) {
 				continue;
@@ -2900,7 +2856,7 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 			if ( isFirstKey ) {
 				// store a 12 byte key in the merged list buffer
 				memcpy ( mptr, nwp[mink], 12 );
-				int termIndex = qti->m_subList[qti->m_matchingSublist[mink].m_baseSubListIndex].m_qt - m_q->m_qterms;
+				int termIndex = qti->m_subList[baseSubListIndex[mink]].m_qt - m_q->m_qterms;
 				*(miniMergeBuffer->getTermIndexPtrForBufferPos(mptr)) = termIndex;
 
 				// Detect highest siterank of inlinkers
@@ -3892,7 +3848,7 @@ void PosdbTable::intersectLists_real() {
 			if(g_d2fasm.lookupFlags(m_docId,&flags) && flags) {
 				for(int i=0; i<26; i++) {
 					if(flags&(1<<i))
-						completeScoreMultiplier *= m_msg39req->m_flagScoreMultiplier[i];
+						completeScoreMultiplier *= m_baseScoringParameters.m_flagScoreMultiplier[i];
 				}
 			}
 
@@ -4119,7 +4075,7 @@ void PosdbTable::intersectLists_real() {
 				adjustedSiteRank = siteRank + (highestInlinkSiteRank-siteRank) / 3.0;
 				logTrace(g_conf.m_logTracePosdb, "Highest inlink siterank %d > siterank %d. Adjusting to %f for docId %" PRIu64 "", highestInlinkSiteRank, (int)siteRank, adjustedSiteRank, m_docId);
 			}
-			score = minScore * (adjustedSiteRank*m_siteRankMultiplier+1.0);
+			score = minScore * (adjustedSiteRank*m_baseScoringParameters.m_siteRankMultiplier+1.0);
 			logTrace(g_conf.m_logTracePosdb, "Score %f for docId %" PRIu64 "", score, m_docId);
 
 			//# 
@@ -4131,13 +4087,13 @@ void PosdbTable::intersectLists_real() {
 			//#
 			if ( m_msg39req->m_language != 0 ) {
 				if( m_msg39req->m_language == docLang) {
-					score *= (m_msg39req->m_sameLangWeight);
-					logTrace(g_conf.m_logTracePosdb, "Giving score a matching language boost of x%f: %f for docId %" PRIu64 "", m_msg39req->m_sameLangWeight, score, m_docId);
+					score *= (m_msg39req->m_baseScoringParameters.m_sameLangWeight);
+					logTrace(g_conf.m_logTracePosdb, "Giving score a matching language boost of x%f: %f for docId %" PRIu64 "", m_msg39req->m_baseScoringParameters.m_sameLangWeight, score, m_docId);
 				}
 				else
 				if( docLang == 0 ) {
-					score *= (m_msg39req->m_unknownLangWeight); 
-					logTrace(g_conf.m_logTracePosdb, "Giving score an unknown language boost of x%f: %f for docId %" PRIu64 "", m_msg39req->m_unknownLangWeight, score, m_docId);
+					score *= (m_msg39req->m_baseScoringParameters.m_unknownLangWeight);
+					logTrace(g_conf.m_logTracePosdb, "Giving score an unknown language boost of x%f: %f for docId %" PRIu64 "", m_msg39req->m_baseScoringParameters.m_unknownLangWeight, score, m_docId);
 				}
 			}
 
@@ -4145,9 +4101,9 @@ void PosdbTable::intersectLists_real() {
 			bool use_page_temperature = false;
 			float score_before_page_temp = score;
 
-			if(m_msg39req->m_usePageTemperatureForRanking) {
+			if(m_baseScoringParameters.m_usePageTemperatureForRanking) {
 				use_page_temperature = true;
-				page_temperature = g_pageTemperatureRegistry.query_page_temperature(m_docId, m_msg39req->m_pageTemperatureWeightMin, m_msg39req->m_pageTemperatureWeightMax);
+				page_temperature = g_pageTemperatureRegistry.query_page_temperature(m_docId, m_baseScoringParameters.m_pageTemperatureWeightMin, m_baseScoringParameters.m_pageTemperatureWeightMax);
 				score *= page_temperature;
 				logTrace(g_conf.m_logTracePosdb, "Page temperature for docId %" PRIu64 " is %.14f, score %f -> %f", m_docId, page_temperature, score_before_page_temp, score);
 			}
@@ -4437,7 +4393,7 @@ float PosdbTable::getMaxPossibleScore(const QueryTermInfo *qti) {
 			
 			//if ( hgrp == HASHGROUP_TITLE      ) return -1.0;
 			// loser?
-			if ( m_msg39req->m_scoringWeights.m_hashGroupWeights[hgrp] < bestHashGroupWeight ) {
+			if ( m_derivedScoringWeights.m_hashGroupWeights[hgrp] < bestHashGroupWeight ) {
 				// if in body, it's over for this termlist 
 				// because this is the last hash group
 				// we will encounter.
@@ -4452,8 +4408,8 @@ float PosdbTable::getMaxPossibleScore(const QueryTermInfo *qti) {
 			unsigned char dr = Posdb::getDensityRank(dc);
 			
 			// a clean win?
-			if ( m_msg39req->m_scoringWeights.m_hashGroupWeights[hgrp] > bestHashGroupWeight ) {
-				bestHashGroupWeight = m_msg39req->m_scoringWeights.m_hashGroupWeights[hgrp];
+			if ( m_derivedScoringWeights.m_hashGroupWeights[hgrp] > bestHashGroupWeight ) {
+				bestHashGroupWeight = m_derivedScoringWeights.m_hashGroupWeights[hgrp];
 				bestDensityRank = dr;
 				continue;
 			}
@@ -4490,8 +4446,8 @@ float PosdbTable::getMaxPossibleScore(const QueryTermInfo *qti) {
 	// since adjacent, 2nd term in pair will be in same sentence
 	// TODO: fix this for 'qtm' it might have a better density rank and
 	//       better hashgroup weight, like being in title!
-	score *= m_msg39req->m_scoringWeights.m_densityWeights[bestDensityRank];
-	score *= m_msg39req->m_scoringWeights.m_densityWeights[bestDensityRank];
+	score *= m_derivedScoringWeights.m_densityWeights[bestDensityRank];
+	score *= m_derivedScoringWeights.m_densityWeights[bestDensityRank];
 	
 	// wiki bigram?
 	if ( hadHalfStopWikiBigram ) {
@@ -4500,16 +4456,16 @@ float PosdbTable::getMaxPossibleScore(const QueryTermInfo *qti) {
 	}
 	
 	//score *= perfectWordSpamWeight * perfectWordSpamWeight;
-	score *= (((float)siteRank)*m_siteRankMultiplier+1.0);
+	score *= (((float)siteRank)*m_baseScoringParameters.m_siteRankMultiplier+1.0);
 
 	// language boost if language specified and if page is same language, or unknown language
 	if ( m_msg39req->m_language != 0 ) {
 		if( m_msg39req->m_language == docLang) {
-			score *= (m_msg39req->m_sameLangWeight);
+			score *= (m_msg39req->m_baseScoringParameters.m_sameLangWeight);
 		}
 		else
 		if( docLang == 0 ) {
-			score *= (m_msg39req->m_unknownLangWeight); 
+			score *= (m_msg39req->m_baseScoringParameters.m_unknownLangWeight);
 		}
 	}
 	
@@ -5085,25 +5041,6 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 	}
 
 
-	// range terms tend to disappear if the docid's value falls outside
-	// of the specified range... gbmin:offerprice:190
-	bool isRangeTerm;
-	const QueryTerm *qt = qti->m_subList[0].m_qt;
-	switch(qt->m_fieldCode) {
-		case FIELD_GBNUMBERMIN:
-		case FIELD_GBNUMBERMAX:
-		case FIELD_GBNUMBEREQUALFLOAT:
-		case FIELD_GBNUMBERMININT:
-		case FIELD_GBNUMBERMAXINT:
-		case FIELD_GBNUMBEREQUALINT:
-		//case FIELD_GBFIELDMATCH:
-			isRangeTerm = true;
-			break;
-		default:
-			isRangeTerm = false;
-	}
-
-
 	//
 	// add the first sublist's docids into the docid buf
 	//
@@ -5115,7 +5052,7 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 		// for "car", resulting in a buffer with docids that contain 
 		// both terms.
 
-		makeDocIdVoteBufForRarestTerm( qti, isRangeTerm);
+		makeDocIdVoteBufForRarestTerm(qti);
 		logTrace(g_conf.m_logTracePosdb, "END.");
 		return;
 	}
@@ -5168,15 +5105,6 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 			
 			if ( *(unsigned char *)(voteBufPtr) < (*(unsigned char *)(subListPtr+7) & 0xfc ) ) {
 				continue;
-			}
-
-			// if we are a range term, does this subtermlist
-			// for this docid meet the min/max requirements
-			// of the range term, i.e. gbmin:offprice:190.
-			// if it doesn't then do not add this docid to the
-			// docidVoteBuf, "voteBufPtr"
-			if ( isRangeTerm && ! isTermValueInRange2(subListPtr, subListEnd, qt)) {
-				break;
 			}
 
 			// . equal! record our vote!
@@ -5253,7 +5181,7 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 // each run, the list is "compacted" and shortened so only the 
 // matching docids are left.
 //
-void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool isRangeTerm) {
+void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti) {
 	char *cursor[MAX_SUBLISTS];
 	char *cursorEnd[MAX_SUBLISTS];
 
@@ -5269,7 +5197,6 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 	char *voteBufPtr = m_docIdVoteBuf.getBufStart();
 	char *lastMinRecPtr = NULL;
 	int32_t mini = -1;
-	const QueryTerm * const qt = qti->m_subList[0].m_qt;
 	
 	// get the next min from all the termlists
 	for(;;) {
@@ -5332,22 +5259,6 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 			return;
 		}
 
-		bool inRange=false;
-
-		// if we are a range term, does this subtermlist
-		// for this docid meet the min/max requirements
-		// of the range term, i.e. gbmin:offprice:190.
-		// if it doesn't then do not add this docid to the
-		// docidVoteBuf, "voteBufPtr"
-		if ( isRangeTerm ) {
-
-			// no longer in range
-			if ( isTermValueInRange2(cursor[mini],cursorEnd[mini],qt)) {
-				inRange = true;
-			}
-		}
-
-
 		// advance that guy over that docid
 		cursor[mini] += 12;
 		// 6 byte keys follow?
@@ -5362,11 +5273,6 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 			// if we hit a new 12 byte key for a new docid, stop
 			if ( ! ( cursor[mini][0] & 0x04 ) ) {
 				break;
-			}
-
-			// check range again
-			if (isRangeTerm && isTermValueInRange2(cursor[mini],cursorEnd[mini],qt)) {
-				inRange = true;
 			}
 
 			// otherwise, skip this 6 byte key
@@ -5390,10 +5296,6 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 		//   should be the same for the site: terms we indexed for the same
 		//   docid!!
 		if ( m_useWhiteTable && ! m_whiteListTable.isInTable(minRecPtr+7) ) {
-			continue;
-		}
-
-		if ( isRangeTerm && ! inRange ) {
 			continue;
 		}
 
@@ -5462,24 +5364,6 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 		// just use the word # now
 		//int32_t opNum = qw->m_wordNum;//opNum;
 
-		// if this query term # is a gbmin:offprice:190 type
-		// of thing, then we may end up ignoring it based on the
-		// score contained within!
-		bool isRangeTerm;
-		switch(qt->m_fieldCode) {
-			case FIELD_GBNUMBERMIN:
-			case FIELD_GBNUMBERMAX:
-			case FIELD_GBNUMBEREQUALFLOAT:
-			case FIELD_GBNUMBERMININT:
-			case FIELD_GBNUMBERMAXINT:
-			case FIELD_GBNUMBEREQUALINT:
-			//case FIELD_GBFIELDMATCH:
-				isRangeTerm = true;
-				break;
-			default:
-				isRangeTerm = false;
-		}
-
 		// . make it consistent with Query::isTruth()
 		// . m_bitNum is set above to the QueryTermInfo #
 		int32_t bitNum = qt->m_bitNum;
@@ -5510,10 +5394,6 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 				// place holder
 				int64_t docId = Posdb::getDocId(p);
 
-				// assume this docid is not in range if we
-				// had a range term like gbmin:offerprice:190
-				bool inRange = false;
-
 				// sanity
 				//if ( d < lastDocId )
 				//	gbshutdownAbort(true);
@@ -5521,12 +5401,6 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 
 				// point to it
 				//char *voteBufPtr = p + 8;
-
-				// check each posdb key for compliance
-				// for gbmin:offprice:190 bool terms
-				if ( isRangeTerm && isTermValueInRange(p,qt) ) {
-					inRange = true;
-				}
 
 				// this was the first key for this docid for 
 				// this termid and possible the first key for 
@@ -5544,21 +5418,8 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 				// same docid, so skip those as well
 			subloop:
 				if( p < pend && (((char *)p)[0]) & 0x04 ) {
-					// check each posdb key for compliance
-					// for gbmin:offprice:190 bool terms
-					if ( isRangeTerm && isTermValueInRange(p,qt) ) {
-						inRange = true;
-					}
-					
 					p += 6;
 					goto subloop;
-				}
-
-				// if we had gbmin:offprice:190 and it
-				// was not satisfied, then do not OR in this
-				// bit in the bitvector for the docid
-				if ( isRangeTerm && ! inRange ) {
-					continue;
 				}
 
 				// convert docid into hash key
@@ -5708,63 +5569,6 @@ static int docIdVoteBufKeyCompare_desc ( const void *h1, const void *h2 ) {
 
 
 
-// for boolean queries containing terms like gbmin:offerprice:190
-static inline bool isTermValueInRange( const char *p, const QueryTerm *qt ) {
-	// return false if outside of range
-	switch(qt->m_fieldCode) {
-		case FIELD_GBNUMBERMIN: {
-			float score2 = Posdb::getFloat(p);
-			return score2 >= qt->m_qword->m_float;
-		}
-		case FIELD_GBNUMBERMAX: {
-			float score2 = Posdb::getFloat(p);
-			return score2 <= qt->m_qword->m_float;
-		}
-		case FIELD_GBNUMBEREQUALFLOAT: {
-			float score2 = Posdb::getFloat(p);
-			return almostEqualFloat(score2, qt->m_qword->m_float);
-		}
-		case FIELD_GBNUMBERMININT: {
-			int32_t score2 = Posdb::getInt(p);
-			return score2 >= qt->m_qword->m_int;
-		}
-		case FIELD_GBNUMBERMAXINT: {
-			int32_t score2 = Posdb::getInt(p);
-			return score2 <= qt->m_qword->m_int;
-		}
-		case FIELD_GBNUMBEREQUALINT: {
-			int32_t score2 = Posdb::getInt(p);
-			return score2 == qt->m_qword->m_int;
-		}
-		// case FIELD_GBFIELDMATCH: {
-		// 	int32_t score2 = Posdb::getInt(p);
-		// 	return score2 == qt->m_qword->m_int;
-		// }
-		default:
-			// how did this happen?
-			gbshutdownAbort(true);
-	}
-}
-
-
-
-static inline bool isTermValueInRange2 ( const char *recPtr, const char *subListEnd, const QueryTerm *qt ) {
-	// if we got a range term see if in range.
-	if ( isTermValueInRange(recPtr,qt) ) {
-		return true;
-	}
-	
-	recPtr += 12;
-	for(;recPtr<subListEnd&&((*recPtr)&0x04);recPtr +=6) {
-		if ( isTermValueInRange(recPtr,qt) ) {
-			return true;
-		}
-	}
-	return false;
-}
-
-
-
 // . b-step into list looking for docid "docId"
 // . assume p is start of list, excluding 6 byte of termid
 static inline const char *getWordPosList(uint64_t docId, const char *list, int32_t listSize) {
@@ -5888,19 +5692,7 @@ static void initWeights ( ) {
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 	
-	s_scoringWeights.init(g_conf.m_diversityWeightMin, g_conf.m_diversityWeightMax,
-	                      g_conf.m_densityWeightMin, g_conf.m_densityWeightMax,
-			      g_conf.m_hashGroupWeightBody,
-			      g_conf.m_hashGroupWeightTitle,
-			      g_conf.m_hashGroupWeightHeading,
-			      g_conf.m_hashGroupWeightInlist,
-			      g_conf.m_hashGroupWeightInMetaTag,
-			      g_conf.m_hashGroupWeightInLinkText,
-			      g_conf.m_hashGroupWeightInTag,
-			      g_conf.m_hashGroupWeightNeighborhood,
-			      g_conf.m_hashGroupWeightInternalLinkText,
-			      g_conf.m_hashGroupWeightInUrl,
-			      g_conf.m_hashGroupWeightInMenu);
+	s_scoringWeights.init(g_conf.m_baseScoringParameters);
 
 	// if two hashgroups are comaptible they can be paired
 	for ( int32_t i = 0 ; i < HASHGROUP_END ; i++ ) {

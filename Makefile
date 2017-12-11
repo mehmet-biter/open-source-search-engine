@@ -25,7 +25,7 @@ OBJS_O0 =  \
 	Lang.o Log.o \
 	Mem.o Msg0.o Msg4In.o Msg4Out.o MsgC.o Msg13.o Msg20.o Msg22.o Msg39.o Msg3a.o Msg51.o Msge0.o Msge1.o Multicast.o \
 	Parms.o Pages.o PageAddColl.o PageAddUrl.o PageBasic.o PageCrawlBot.o PageGet.o PageHealthCheck.o PageHosts.o PageInject.o \
-	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageSpiderdbLookup.o PageSpider.o PageDoledbIPTable.o \
+	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageSpiderdbLookup.o PageSpider.o PageDoledbIPTable.o PageDocProcess.o \
 	Phrases.o HostFlags.o Process.o Proxy.o Punycode.o \
 	InstanceInfoExchange.o \
 	Query.o \
@@ -63,7 +63,7 @@ OBJS_O2 = \
 OBJS_O3 = \
 	BlockList.o \
 	ContentTypeBlockList.o \
-	DocDelete.o DnsBlockList.o \
+	DocDelete.o DocProcess.o DocRebuild.o DocReindex.o DnsBlockList.o \
 	IPAddressChecks.o \
 	LanguageResultOverride.o Linkdb.o \
 	Msg40.o \
@@ -71,6 +71,7 @@ OBJS_O3 = \
 	RdbBuckets.o RdbIndex.o RdbIndexQuery.o RdbList.o RdbMap.o ResultOverride.o RobotsBlockedResultOverride.o RobotsCheckList.o \
 	SafeBuf.o sort.o SpiderdbHostDelete.o Statistics.o \
 	ScoringWeights.o \
+	BaseScoringParameters.o \
 	TopTree.o \
 	UrlMatch.o UrlMatchList.o UrlMatchHostList.o UrlBlockCheck.o UrlComponent.o UrlParser.o UdpStatistic.o \
 	UrlRealtimeClassification.o UrlResultOverride.o \

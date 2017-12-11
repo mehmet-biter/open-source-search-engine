@@ -306,7 +306,7 @@ const char *strnstrn(const char *haystack, int32_t haystackLen, const char *need
 }
 
 // . get the # of words in this string
-int32_t getNumWords ( char *s , int32_t len, int32_t titleVersion ) {
+int32_t getNumWords ( char *s , int32_t len ) {
 
 	int32_t wordCount = 0;
 	bool inWord   = false;

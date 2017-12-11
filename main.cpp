@@ -96,6 +96,8 @@
 #include "FxCheckAdult.h"
 #include "FxCheckSpam.h"
 #include "GbCompress.h"
+#include "DocRebuild.h"
+#include "DocReindex.h"
 
 
 #include <sys/stat.h> //umask()
@@ -1530,7 +1532,7 @@ int main2 ( int argc , char *argv[] ) {
 		_exit(0);
 	}
 
-	if(cmd && cmd[0] && cmd[0]!='-') {
+	if(cmd[0] && cmd[0]!='-') {
 		log(LOG_ERROR, "Unknown command: '%s'", cmd);
 		_exit(1);
 	}
@@ -1561,9 +1563,34 @@ int main2 ( int argc , char *argv[] ) {
 	if(!InstanceInfoExchange::initialize())
 		return 0;
 
-	// initialize doc delete
-	if (!DocDelete::initialize()) {
-		logError("Unable to initialize doc delete");
+	// initialize doc process
+	if (!g_docDelete.init()) {
+		logError("Unwable to initialize doc delete");
+		return 0;
+	}
+
+	if (!g_docDeleteUrl.init()) {
+		logError("Unwable to initialize doc delete url");
+		return 0;
+	}
+
+	if (!g_docRebuild.init()) {
+		logError("Unwable to initialize doc rebuild");
+		return 0;
+	}
+
+	if (!g_docRebuildUrl.init()) {
+		logError("Unwable to initialize doc rebuild url");
+		return 0;
+	}
+
+	if (!g_docReindex.init()) {
+		logError("Unwable to initialize doc reindex");
+		return 0;
+	}
+
+	if (!g_docReindexUrl.init()) {
+		logError("Unwable to initialize doc reindex url");
 		return 0;
 	}
 
@@ -2534,8 +2561,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 						"cs=%04d "
 						"lang=%02d "
 						"sni=%03" PRId32" "
-						"usetimeaxis=%i "
-						//"cats=%" PRId32" "
 						"lastspidered=%s "
 						"ip=%s "
 						"numLinkTexts=%04" PRId32" "
@@ -2559,7 +2584,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 						xd->m_charset,//tr.getCharset(),
 						xd->m_langId,//tr.getLanguage(),
 						(int32_t)xd->m_siteNumInlinks,//tr.getDo
-						xd->m_useTimeAxis,
 						//nc,
 						ppp, 
 						iptoa(xd->m_ip,ipbuf2),
@@ -2613,7 +2637,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 				"ctype=%s "
 				"lang=%02d "
 				"sni=%03" PRId32" "
-				"usetimeaxis=%i "
 				"lastspidered=%s "
 				"ip=%s "
 				"numLinkTexts=%04" PRId32" "
@@ -2633,7 +2656,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 				g_contentTypeStrings[xd->m_contentType],
 				xd->m_langId,//tr.getLanguage(),
 				(int32_t)xd->m_siteNumInlinks,//tr.getDocQuality(),
-				xd->m_useTimeAxis,
 				ppp,
 				iptoa(xd->m_ip,ipbuf2),
 				info->getNumGoodInlinks(),
@@ -5372,7 +5394,10 @@ static bool cacheTest() {
 	g_conf.m_maxMem = 2000000000LL; // 2G
 	//g_mem.m_maxMem  = 2000000000LL; // 2G
 
-	hashinit();
+	if ( ! hashinit() ) {
+		log( LOG_ERROR, "db: Failed to init hashtable." );
+		return 1;
+	}
 
 	// use an rdb cache
 	RdbCache c;

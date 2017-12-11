@@ -16,6 +16,7 @@
 #include "max_coll_len.h"
 #include "max_url_len.h"
 #include "SafeBuf.h"
+#include "BaseScoringParameters.h"
 
 #define USERAGENTMAXSIZE      128
 
@@ -214,40 +215,10 @@ class Conf {
 	// for Weights.cpp
 	int32_t   m_sliderParm;
 
-	//ranking settings
-	float m_termFreqWeightFreqMin;
-	float m_termFreqWeightFreqMax;
-	float m_termFreqWeightMin;
-	float m_termFreqWeightMax;
-	
-	float m_densityWeightMin;
-	float m_densityWeightMax;
-	
-	float m_diversityWeightMin;
-	float m_diversityWeightMax;
-	
-	float m_hashGroupWeightBody;
-	float m_hashGroupWeightTitle;
-	float m_hashGroupWeightHeading;
-	float m_hashGroupWeightInlist;
-	float m_hashGroupWeightInMetaTag;
-	float m_hashGroupWeightInLinkText;
-	float m_hashGroupWeightInTag;
-	float m_hashGroupWeightNeighborhood;
-	float m_hashGroupWeightInternalLinkText;
-	float m_hashGroupWeightInUrl;
-	float m_hashGroupWeightInMenu;
-	float m_synonymWeight;
-	float m_bigramWeight;
-	float m_pageTemperatureWeightMin;
-	float m_pageTemperatureWeightMax;
+	BaseScoringParameters m_baseScoringParameters;
 
-	bool m_usePageTemperatureForRanking;
-
-	int32_t m_numFlagScoreMultipliers;
-	float m_flagScoreMultiplier[26];
-	int32_t m_numFlagRankAdjustments;
-	int m_flagRankAdjustment[26];
+	int32_t m_numFlagScoreMultipliers; //constant = 26
+	int32_t m_numFlagRankAdjustments; //constant = 26
 	
 	int32_t m_maxCorruptLists;
 
@@ -299,6 +270,8 @@ class Conf {
 	bool   m_useShotgun;
 	bool   m_testMem;
 	bool   m_doConsistencyTesting;
+
+	int32_t m_titleRecVersion;
 
 	// defaults to "Gigabot/1.0"
 	char m_spiderUserAgent[USERAGENTMAXSIZE];
@@ -386,7 +359,7 @@ class Conf {
 	bool m_logTraceBigFile;
 	bool m_logTraceBlockList;
 	bool m_logTraceContentTypeBlockList;
-	bool m_logTraceDocDelete;
+	bool m_logTraceDocProcess;
 	bool m_logTraceDns;
 	bool m_logTraceDnsBlockList;
 	bool m_logTraceDnsCache;

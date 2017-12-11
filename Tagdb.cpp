@@ -346,6 +346,37 @@ bool Tag::printToBufAsXml(SafeBuf *sb) const {
 	return true;
 }
 
+bool Tag::printToBufAsJson(SafeBuf *sb) const {
+	sb->safePrintf("\t{\n");
+	// print the tagname
+	sb->safePrintf("\t\t\"name\": \"");
+	sb->jsonEncode(getTagStrFromType(m_type));
+	sb->safePrintf("\",\n");
+
+	sb->safePrintf("\t\t\"user\": \"");
+	sb->jsonEncode(getUser());
+	sb->safePrintf("\",\n");
+
+	// print the date when this tag was added
+	sb->safePrintf("\t\t\"timestamp\": %" PRId32",\n", m_timestamp);
+
+	// print the ip added from
+	char ipbuf[16];
+	sb->safePrintf("\t\t\"ip\": \"");
+	sb->jsonEncode(iptoa(m_ip,ipbuf));
+	sb->safePrintf("\",\n");
+
+
+	sb->safePrintf("\t\t\"value\": \"");
+
+	// print the m_data
+	if ( ! printDataToBuf ( sb ) ) return false;
+
+	sb->safePrintf("\"\n");
+	sb->safePrintf("\t},\n");
+	return true;
+}
+
 bool Tag::printToBufAsHtml(SafeBuf *sb, const char *prefix) const {
 	// print the tagname
 	const char *str = getTagStrFromType ( m_type );
@@ -844,6 +875,20 @@ bool TagRec::printToBufAsXml ( SafeBuf *sb ) {
 	Tag *tag = getFirstTag();
 	for ( ; tag ; tag = getNextTag ( tag ) )
 		if ( tag->m_type != TT_DUP ) tag->printToBufAsXml ( sb );
+	return true;
+}
+
+bool TagRec::printToBufAsJson ( SafeBuf *sb ) {
+	sb->safePrintf("\t\"tag\": [\n");
+
+	Tag *tag = getFirstTag();
+	for ( ; tag ; tag = getNextTag ( tag ) )
+		if ( tag->m_type != TT_DUP ) tag->printToBufAsJson ( sb );
+
+	sb->removeLastChar('\n');
+	sb->removeLastChar(',');
+
+	sb->safePrintf("\t]\n");
 	return true;
 }
 

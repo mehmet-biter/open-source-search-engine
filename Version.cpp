@@ -6,8 +6,10 @@
 #include "Process.h"
 #include <string.h>
 
+#ifndef STRINGIFY
 #define STRINGIFY(x) #x
 #define TO_STRING(x) STRINGIFY(x)
+#endif
 
 #ifndef GIT_COMMIT_ID
 #define GIT_COMMIT_ID unknown
@@ -65,6 +67,3 @@ void printVersion() {
 	fprintf(stdout,"Gigablast Git branch   : %s\n", getBranch());
 	fprintf(stdout,"Gigablast Git commit   : %s\n", getCommitId());
 }
-
-#undef STRINGIFY
-#undef TO_STRING
