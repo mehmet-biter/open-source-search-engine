@@ -10948,14 +10948,9 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 	setStatus ( "getting outlink first ip vector" );
 	// assume valid
 	m_outlinkIpVectorValid = true;
-	// sanity check
-	//if ( ! m_spideredTimeValid ) { g_process.shutdownAbort(true); }
+
 	// use this
 	int32_t nowGlobal = getSpideredTime();//m_spideredTime;
-	// add tags to tagdb?
-	bool addTags = true;
-	//if ( m_sreqValid && m_sreq.m_isPageParser ) addTags = false;
-	if ( getIsPageParser() ) addTags = false;
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
