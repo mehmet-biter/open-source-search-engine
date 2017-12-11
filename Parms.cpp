@@ -3697,9 +3697,9 @@ void Parms::init ( ) {
 	m->m_title = "termfreq min";
 	m->m_desc  = "Term frequency estimate minimum";
 	m->m_cgi   = "termfreqweightfreqmin";
-	simple_m_set(Conf,m_termFreqWeightFreqMin);
-	simple_m_set(SearchInput,m_termFreqWeightFreqMin);
-	m->m_defOff2 = offsetof(Conf,m_termFreqWeightFreqMin);
+	simple_m_set(Conf,m_baseScoringParameters.m_termFreqWeightFreqMin);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_termFreqWeightFreqMin);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_termFreqWeightFreqMin);
 	m->m_def   = "0.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3707,8 +3707,8 @@ void Parms::init ( ) {
 	m->m_title = "termfreq max";
 	m->m_desc  = "Term frequency estimate maximum";
 	m->m_cgi   = "termfreqweightfreqmax";
-	simple_m_set(SearchInput,m_termFreqWeightFreqMax);
-	m->m_defOff2 = offsetof(Conf,m_termFreqWeightFreqMax);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_termFreqWeightFreqMax);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_termFreqWeightFreqMax);
 	m->m_def   = "0.500000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3716,8 +3716,8 @@ void Parms::init ( ) {
 	m->m_title = "termfreq weight min";
 	m->m_desc  = "Term frequency weight minimum";
 	m->m_cgi   = "termfreqweightmin";
-	simple_m_set(SearchInput,m_termFreqWeightMin);
-	m->m_defOff2 = offsetof(Conf,m_termFreqWeightMin);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_termFreqWeightMin);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_termFreqWeightMin);
 	m->m_def   = "0.500000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3725,8 +3725,8 @@ void Parms::init ( ) {
 	m->m_title = "termfreq weight max";
 	m->m_desc  = "Term frequency weight maximum";
 	m->m_cgi   = "termfreqweightmax";
-	simple_m_set(SearchInput,m_termFreqWeightMax);
-	m->m_defOff2 = offsetof(Conf,m_termFreqWeightMax);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_termFreqWeightMax);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_termFreqWeightMax);
 	m->m_def   = "1.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3736,8 +3736,8 @@ void Parms::init ( ) {
 	m->m_title = "densityWeightMin";
 	m->m_desc  = "densityWeightMin";
 	m->m_cgi   = "densityweightmin";
-	simple_m_set(SearchInput,m_densityWeightMin);
-	m->m_defOff2 = offsetof(Conf,m_densityWeightMin);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_densityWeightMin);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_densityWeightMin);
 	m->m_def   = "0.350000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3745,8 +3745,8 @@ void Parms::init ( ) {
 	m->m_title = "densityWeightMax";
 	m->m_desc  = "densityWeightMax";
 	m->m_cgi   = "densityweightmax";
-	simple_m_set(SearchInput,m_densityWeightMax);
-	m->m_defOff2 = offsetof(Conf,m_densityWeightMax);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_densityWeightMax);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_densityWeightMax);
 	m->m_def   = "1.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3754,8 +3754,8 @@ void Parms::init ( ) {
 	m->m_title = "diversityWeightMin";
 	m->m_desc  = "diversityWeightMin";
 	m->m_cgi   = "diversityweightmin";
-	simple_m_set(SearchInput,m_diversityWeightMin);
-	m->m_defOff2 = offsetof(Conf,m_diversityWeightMin);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_diversityWeightMin);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_diversityWeightMin);
 	m->m_def   = "1.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3763,8 +3763,8 @@ void Parms::init ( ) {
 	m->m_title = "diversityWeightMax";
 	m->m_desc  = "diversityWeightMax";
 	m->m_cgi   = "diversityweightmax";
-	simple_m_set(SearchInput,m_diversityWeightMax);
-	m->m_defOff2 = offsetof(Conf,m_diversityWeightMax);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_diversityWeightMax);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_diversityWeightMax);
 	m->m_def   = "1.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3772,8 +3772,8 @@ void Parms::init ( ) {
 	m->m_title = "hashGroupWeightBody";
 	m->m_desc  = "hashGroupWeightBody";
 	m->m_cgi   = "hgw_body";
-	simple_m_set(SearchInput,m_hashGroupWeightBody);
-	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightBody);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightBody);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightBody);
 	m->m_def   = "1.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3781,8 +3781,8 @@ void Parms::init ( ) {
 	m->m_title = "hashGroupWeightTitle";
 	m->m_desc  = "hashGroupWeightTitle";
 	m->m_cgi   = "hgw_title";
-	simple_m_set(SearchInput,m_hashGroupWeightTitle);
-	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightTitle);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightTitle);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightTitle);
 	m->m_def   = "8.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3790,8 +3790,8 @@ void Parms::init ( ) {
 	m->m_title = "hashGroupWeightHeading";
 	m->m_desc  = "hashGroupWeightHeading";
 	m->m_cgi   = "hgw_heading";
-	simple_m_set(SearchInput,m_hashGroupWeightHeading);
-	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightHeading);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightHeading);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightHeading);
 	m->m_def   = "1.500000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3799,8 +3799,8 @@ void Parms::init ( ) {
 	m->m_title = "hashGroupWeightInlist";
 	m->m_desc  = "hashGroupWeightInlist";
 	m->m_cgi   = "hgw_list";
-	simple_m_set(SearchInput,m_hashGroupWeightInlist);
-	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightInlist);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightInlist);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightInlist);
 	m->m_def   = "0.300000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3808,8 +3808,8 @@ void Parms::init ( ) {
 	m->m_title = "hashGroupWeightInMetaTag";
 	m->m_desc  = "hashGroupWeightInMetaTag";
 	m->m_cgi   = "hgw_metatag";
-	simple_m_set(SearchInput,m_hashGroupWeightInMetaTag);
-	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightInMetaTag);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightInMetaTag);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightInMetaTag);
 	m->m_def   = "0.100000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3817,8 +3817,8 @@ void Parms::init ( ) {
 	m->m_title = "hashGroupWeightInLinkText";
 	m->m_desc  = "hashGroupWeightInLinkText";
 	m->m_cgi   = "hgw_inlinktext";
-	simple_m_set(SearchInput,m_hashGroupWeightInLinkText);
-	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightInLinkText);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightInLinkText);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightInLinkText);
 	m->m_def   = "16.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3826,8 +3826,8 @@ void Parms::init ( ) {
 	m->m_title = "hashGroupWeightInTag";
 	m->m_desc  = "hashGroupWeightInTag";
 	m->m_cgi   = "hgw_intag";
-	simple_m_set(SearchInput,m_hashGroupWeightInTag);
-	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightInTag);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightInTag);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightInTag);
 	m->m_def   = "1.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3835,8 +3835,8 @@ void Parms::init ( ) {
 	m->m_title = "hashGroupWeightNeighborhood";
 	m->m_desc  = "hashGroupWeightNeighborhood";
 	m->m_cgi   = "hgw_neighborhood";
-	simple_m_set(SearchInput,m_hashGroupWeightNeighborhood);
-	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightNeighborhood);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightNeighborhood);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightNeighborhood);
 	m->m_def   = "0.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3844,8 +3844,8 @@ void Parms::init ( ) {
 	m->m_title = "hashGroupWeightInternalLinkText";
 	m->m_desc  = "hashGroupWeightInternalLinkText";
 	m->m_cgi   = "hgw_inintlinktext";
-	simple_m_set(SearchInput,m_hashGroupWeightInternalLinkText);
-	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightInternalLinkText);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightInternalLinkText);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightInternalLinkText);
 	m->m_def   = "4.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3853,8 +3853,8 @@ void Parms::init ( ) {
 	m->m_title = "hashGroupWeightInUrl";
 	m->m_desc  = "hashGroupWeightInUrl";
 	m->m_cgi   = "hgw_inurl";
-	simple_m_set(SearchInput,m_hashGroupWeightInUrl);
-	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightInUrl);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightInUrl);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightInUrl);
 	m->m_def   = "1.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3862,8 +3862,8 @@ void Parms::init ( ) {
 	m->m_title = "hashGroupWeightInMenu";
 	m->m_desc  = "hashGroupWeightInMenu";
 	m->m_cgi   = "hgw_inmenu";
-	simple_m_set(SearchInput,m_hashGroupWeightInMenu);
-	m->m_defOff2 = offsetof(Conf,m_hashGroupWeightInMenu);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightInMenu);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightInMenu);
 	m->m_def   = "0.200000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3872,8 +3872,8 @@ void Parms::init ( ) {
 	m->m_title = "Synonym weight";
 	m->m_desc  = "Weight of synonyms in relation to original words";
 	m->m_cgi   = "synonym_weight";
-	simple_m_set(SearchInput,m_synonymWeight);
-	m->m_defOff2 = offsetof(Conf,m_synonymWeight);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_synonymWeight);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_synonymWeight);
 	m->m_def   = "0.900000";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
@@ -3882,8 +3882,8 @@ void Parms::init ( ) {
 	m->m_title = "Bigram weight";
 	m->m_desc  = "Weight of bigrams in relation to single words";
 	m->m_cgi   = "bigram_weight";
-	simple_m_set(SearchInput,m_bigramWeight);
-	m->m_defOff2 = offsetof(Conf,m_bigramWeight);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_bigramWeight);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_bigramWeight);
 	m->m_def   = "5.000000";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
@@ -3892,8 +3892,8 @@ void Parms::init ( ) {
 	m->m_title = "Page temp weight min";
 	m->m_desc  = "Page temp is scaled to be between the min and max";
 	m->m_cgi   = "pagetempweightmin";
-	simple_m_set(SearchInput,m_pageTemperatureWeightMin);
-	m->m_defOff2 = offsetof(Conf,m_pageTemperatureWeightMin);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_pageTemperatureWeightMin);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_pageTemperatureWeightMin);
 	m->m_def   = "1.000000";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
@@ -3902,8 +3902,8 @@ void Parms::init ( ) {
 	m->m_title = "Page temp weight max";
 	m->m_desc  = "Page temp is scaled to be between the min and max";
 	m->m_cgi   = "pagetempweightmax";
-	simple_m_set(SearchInput,m_pageTemperatureWeightMax);
-	m->m_defOff2 = offsetof(Conf,m_pageTemperatureWeightMax);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_pageTemperatureWeightMax);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_pageTemperatureWeightMax);
 	m->m_def   = "20.000000";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
@@ -3912,8 +3912,8 @@ void Parms::init ( ) {
 	m->m_title = "Use page temperature";
 	m->m_desc  = "Use page temperature (if available) for ranking";
 	m->m_cgi   = "use_page_temperature";
-	simple_m_set(SearchInput,m_usePageTemperatureForRanking);
-	m->m_defOff2 = offsetof(Conf,m_usePageTemperatureForRanking);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_usePageTemperatureForRanking);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_usePageTemperatureForRanking);
 	m->m_def   = "1";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
@@ -3927,8 +3927,8 @@ void Parms::init ( ) {
 	m->m_fixed = 26;
 	m->m_obj   = OBJ_SI;
 	m->m_arrayCountOffset= offsetof(SearchInput,m_numFlagScoreMultipliers);
-	m->m_off   = offsetof(SearchInput,m_flagScoreMultiplier);
-	m->m_defOff2 = offsetof(Conf,m_flagScoreMultiplier);
+	m->m_off   = offsetof(SearchInput,m_baseScoringParameters.m_flagScoreMultiplier);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_flagScoreMultiplier);
 	m->m_rowid = 1;
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.0";
@@ -3942,8 +3942,8 @@ void Parms::init ( ) {
 	m->m_fixed = 26;
 	m->m_obj   = OBJ_SI;
 	m->m_arrayCountOffset= offsetof(SearchInput,m_numFlagRankAdjustments);
-	m->m_off   = offsetof(SearchInput,m_flagRankAdjustment);
-	m->m_defOff2 = offsetof(Conf,m_flagRankAdjustment);
+	m->m_off   = offsetof(SearchInput,m_baseScoringParameters.m_flagRankAdjustment);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_flagRankAdjustment);
 	m->m_rowid = 1;
 	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
@@ -4010,7 +4010,7 @@ void Parms::init ( ) {
 		"20.0. Which means that we multiply a result's score by 20 "
 		"if from the same language as the query or the language is "
 		"unknown.";
-	simple_m_set(SearchInput,m_sameLangWeight);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_sameLangWeight);
 	m->m_defOff= offsetof(CollectionRec,m_sameLangWeight);
 	m->m_cgi  = "langw";
 	m->m_flags = PF_API;
@@ -4022,7 +4022,7 @@ void Parms::init ( ) {
 		"for this collection. We multiply a result's score by this value "
 		"if the user requested a specific language, but the language of the "
 		"indexed page could not be determined.";
-	simple_m_set(SearchInput,m_unknownLangWeight);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_unknownLangWeight);
 	m->m_defOff= offsetof(CollectionRec,m_unknownLangWeight);
 	m->m_cgi  = "ulangw";
 	m->m_flags = PF_API;
@@ -4031,7 +4031,7 @@ void Parms::init ( ) {
 
 	m->m_title = "site-rank multiplier";
 	m->m_desc  = "formula: score = (siterank*multiplier)+1";
-	simple_m_set(SearchInput,m_siteRankMultiplier);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_siteRankMultiplier);
 	m->m_defOff= offsetof(CollectionRec,m_siteRankMultiplier);
 	m->m_cgi   = "siterankmultiplier";
 	m->m_flags = PF_API;
@@ -4145,7 +4145,7 @@ void Parms::init ( ) {
 	m->m_title = "termfreq min";
 	m->m_desc  = "Term frequency estimate minimum";
 	m->m_cgi   = "termfreqweightfreqmin";
-	simple_m_set(Conf,m_termFreqWeightFreqMin);
+	simple_m_set(Conf,m_baseScoringParameters.m_termFreqWeightFreqMin);
 	m->m_def   = "0.000000";
 	m->m_group = true;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4155,7 +4155,7 @@ void Parms::init ( ) {
 	m->m_title = "termfreq max";
 	m->m_desc  = "Term frequency estimate maximum";
 	m->m_cgi   = "termfreqweightfreqmax";
-	simple_m_set(Conf,m_termFreqWeightFreqMax);
+	simple_m_set(Conf,m_baseScoringParameters.m_termFreqWeightFreqMax);
 	m->m_def   = "0.500000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4165,7 +4165,7 @@ void Parms::init ( ) {
 	m->m_title = "termfreq weight min";
 	m->m_desc  = "Term frequency weight minimum";
 	m->m_cgi   = "termfreqweightmin";
-	simple_m_set(Conf,m_termFreqWeightMin);
+	simple_m_set(Conf,m_baseScoringParameters.m_termFreqWeightMin);
 	m->m_def   = "0.500000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4175,7 +4175,7 @@ void Parms::init ( ) {
 	m->m_title = "termfreq weight max";
 	m->m_desc  = "Term frequency weight maximum";
 	m->m_cgi   = "termfreqweightmax";
-	simple_m_set(Conf,m_termFreqWeightMax);
+	simple_m_set(Conf,m_baseScoringParameters.m_termFreqWeightMax);
 	m->m_def   = "1.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4185,7 +4185,7 @@ void Parms::init ( ) {
 	m->m_title = "density weight min";
 	m->m_desc  = "Term density weight minimum. Normally less than 1.0";
 	m->m_cgi   = "densityweightmin";
-	simple_m_set(Conf,m_densityWeightMin);
+	simple_m_set(Conf,m_baseScoringParameters.m_densityWeightMin);
 	m->m_def   = "0.350000";
 	m->m_group = true;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4195,7 +4195,7 @@ void Parms::init ( ) {
 	m->m_title = "density weight max";
 	m->m_desc  = "Term density weight maximum. Normally 1.0";
 	m->m_cgi   = "densityweightmax";
-	simple_m_set(Conf,m_densityWeightMax);
+	simple_m_set(Conf,m_baseScoringParameters.m_densityWeightMax);
 	m->m_def   = "1.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4205,7 +4205,7 @@ void Parms::init ( ) {
 	m->m_title = "diversity weight min";
 	m->m_desc  = "Term diversity weight minimum. Normally less than 1.0";
 	m->m_cgi   = "diversityweightmin";
-	simple_m_set(Conf,m_diversityWeightMin);
+	simple_m_set(Conf,m_baseScoringParameters.m_diversityWeightMin);
 	m->m_def   = "1.000000"; //"0.15"; disabled for now
 	m->m_group = true;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4215,7 +4215,7 @@ void Parms::init ( ) {
 	m->m_title = "diversity weight max";
 	m->m_desc  = "Term diversity weight maximum. Normally 1.0";
 	m->m_cgi   = "diversityweightmax";
-	simple_m_set(Conf,m_diversityWeightMax);
+	simple_m_set(Conf,m_baseScoringParameters.m_diversityWeightMax);
 	m->m_def   = "1.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4227,7 +4227,7 @@ void Parms::init ( ) {
 	m->m_title = "Hashgroup weight - body";
 	m->m_desc  = "";
 	m->m_cgi   = "hgw_body";
-	simple_m_set(Conf,m_hashGroupWeightBody);
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightBody);
 	m->m_def   = "1.000000";
 	m->m_group = true;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4237,7 +4237,7 @@ void Parms::init ( ) {
 	m->m_title = "Hashgroup weight - title";
 	m->m_desc  = "";
 	m->m_cgi   = "hgw_title";
-	simple_m_set(Conf,m_hashGroupWeightTitle);
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightTitle);
 	m->m_def   = "8.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4247,7 +4247,7 @@ void Parms::init ( ) {
 	m->m_title = "Hashgroup weight - heading";
 	m->m_desc  = "";
 	m->m_cgi   = "hgw_heading";
-	simple_m_set(Conf,m_hashGroupWeightHeading);
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightHeading);
 	m->m_def   = "1.500000"; //3.0
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4257,7 +4257,7 @@ void Parms::init ( ) {
 	m->m_title = "Hashgroup weight - list";
 	m->m_desc  = "";
 	m->m_cgi   = "hgw_list";
-	simple_m_set(Conf,m_hashGroupWeightInlist);
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightInlist);
 	m->m_def   = "0.300000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4267,7 +4267,7 @@ void Parms::init ( ) {
 	m->m_title = "Hashgroup weight - metatag";
 	m->m_desc  = "";
 	m->m_cgi   = "hgw_metatag";
-	simple_m_set(Conf,m_hashGroupWeightInMetaTag);
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightInMetaTag);
 	m->m_def   = "0.100000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4277,7 +4277,7 @@ void Parms::init ( ) {
 	m->m_title = "Hashgroup weight - in link text";
 	m->m_desc  = "";
 	m->m_cgi   = "hgw_inlinktext";
-	simple_m_set(Conf,m_hashGroupWeightInLinkText);
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightInLinkText);
 	m->m_def   = "16.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4287,7 +4287,7 @@ void Parms::init ( ) {
 	m->m_title = "Hashgroup weight - tag";
 	m->m_desc  = "";
 	m->m_cgi   = "hgw_intag";
-	simple_m_set(Conf,m_hashGroupWeightInTag);
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightInTag);
 	m->m_def   = "1.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4297,7 +4297,7 @@ void Parms::init ( ) {
 	m->m_title = "Hashgroup weight - neighborhood";
 	m->m_desc  = "";
 	m->m_cgi   = "hgw_neighborhood";
-	simple_m_set(Conf,m_hashGroupWeightNeighborhood);
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightNeighborhood);
 	m->m_def   = "0.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4307,7 +4307,7 @@ void Parms::init ( ) {
 	m->m_title = "Hashgroup weight - internal link text";
 	m->m_desc  = "";
 	m->m_cgi   = "hgw_inintlinktext";
-	simple_m_set(Conf,m_hashGroupWeightInternalLinkText);
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightInternalLinkText);
 	m->m_def   = "4.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4317,7 +4317,7 @@ void Parms::init ( ) {
 	m->m_title = "Hashgroup weight - URL";
 	m->m_desc  = "";
 	m->m_cgi   = "hgw_inurl";
-	simple_m_set(Conf,m_hashGroupWeightInUrl);
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightInUrl);
 	m->m_def   = "1.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4327,7 +4327,7 @@ void Parms::init ( ) {
 	m->m_title = "Hashgroup weight - in menu";
 	m->m_desc  = "";
 	m->m_cgi   = "hgw_inmenu";
-	simple_m_set(Conf,m_hashGroupWeightInMenu);
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightInMenu);
 	m->m_def   = "0.200000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4337,7 +4337,7 @@ void Parms::init ( ) {
 	m->m_title = "Synonym weight";
 	m->m_desc  = "Weight of synonyms in relation to original words";
 	m->m_cgi   = "synonym_weight";
-	simple_m_set(Conf,m_synonymWeight);
+	simple_m_set(Conf,m_baseScoringParameters.m_synonymWeight);
 	m->m_def   = "0.900000";
 	m->m_group = true;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4347,7 +4347,7 @@ void Parms::init ( ) {
 	m->m_title = "Bigram weight";
 	m->m_desc  = "Weight of bigrams in relation to single words";
 	m->m_cgi   = "bigram_weight";
-	simple_m_set(Conf,m_bigramWeight);
+	simple_m_set(Conf,m_baseScoringParameters.m_bigramWeight);
 	m->m_def   = "5.000000";
 	m->m_group = true;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4357,7 +4357,7 @@ void Parms::init ( ) {
 	m->m_title = "Page temp weight min";
 	m->m_desc  = "Page temp is scaled to be between the min and max";
 	m->m_cgi   = "pagetempweightmin";
-	simple_m_set(Conf,m_pageTemperatureWeightMin);
+	simple_m_set(Conf,m_baseScoringParameters.m_pageTemperatureWeightMin);
 	m->m_def   = "1.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4367,7 +4367,7 @@ void Parms::init ( ) {
 	m->m_title = "Page temp weight max";
 	m->m_desc  = "Page temp is scaled to be between the min and max";
 	m->m_cgi   = "pagetempweightmax";
-	simple_m_set(Conf,m_pageTemperatureWeightMax);
+	simple_m_set(Conf,m_baseScoringParameters.m_pageTemperatureWeightMax);
 	m->m_def   = "20.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4377,7 +4377,7 @@ void Parms::init ( ) {
 	m->m_title = "Use page temperature";
 	m->m_desc  = "Use page temperature (if available) for ranking";
 	m->m_cgi   = "use_page_temperature";
-	simple_m_set(Conf,m_usePageTemperatureForRanking);
+	simple_m_set(Conf,m_baseScoringParameters.m_usePageTemperatureForRanking);
 	m->m_def   = "1";
 	m->m_group = true;
 	m->m_flags = 0;
@@ -4392,7 +4392,7 @@ void Parms::init ( ) {
 	m->m_max   = 26;
 	m->m_fixed = 26;
 	m->m_arrayCountOffset= offsetof(Conf,m_numFlagScoreMultipliers);
-	m->m_off   = offsetof(Conf,m_flagScoreMultiplier);
+	m->m_off   = offsetof(Conf,m_baseScoringParameters.m_flagScoreMultiplier);
 	m->m_rowid = 1;
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.0";
@@ -4407,7 +4407,7 @@ void Parms::init ( ) {
 	m->m_max   = 26;
 	m->m_fixed = 26;
 	m->m_arrayCountOffset= offsetof(Conf,m_numFlagRankAdjustments);
-	m->m_off   = offsetof(Conf,m_flagRankAdjustment);
+	m->m_off   = offsetof(Conf,m_baseScoringParameters.m_flagRankAdjustment);
 	m->m_rowid = 1;
 	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
@@ -7881,19 +7881,6 @@ void Parms::init ( ) {
 	simple_m_set(CollectionRec,m_automaticallyUseProxies);
 	m->m_def   = "0";
 	m->m_group = false;
-	m->m_page  = PAGE_SPIDER;
-	m->m_flags = PF_CLONE;
-	m++;
-
-
-	m->m_title = "use time axis";
-	m->m_desc  = "If this is true Gigablast will index the same "
-		"url multiple times if its content varies over time, "
-		"rather than overwriting the older version in the index. "
-		"Useful for archive web pages as they change over time.";
-	m->m_cgi   = "usetimeaxis";
-	simple_m_set(CollectionRec,m_useTimeAxis);
-	m->m_def   = "0";
 	m->m_page  = PAGE_SPIDER;
 	m->m_flags = PF_CLONE;
 	m++;

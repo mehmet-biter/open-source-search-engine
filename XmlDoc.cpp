@@ -159,9 +159,6 @@ void XmlDoc::reset ( ) {
 	m_mySiteLinkInfoBuf.purge();
 	m_myPageLinkInfoBuf.purge();
 
-	// we need to reset this to false
-	m_useTimeAxis = false;
-
 	m_loaded = false;
 
 	m_indexedDoc = false;
@@ -5333,11 +5330,6 @@ int64_t XmlDoc::getFirstUrlHash48() {
 	if ( m_firstUrlHash48Valid ) return m_firstUrlHash48;
 	// this must work
 	if ( ! m_firstUrlValid ) { g_process.shutdownAbort(true); }
-	if ( getUseTimeAxis() ) {
-		m_firstUrlHash48 = hash64b ( getTimeAxisUrl()->getBufStart() ) & 0x0000ffffffffffffLL;
-		m_firstUrlHash48Valid = true;
-		return m_firstUrlHash48;
-	}
 
 	m_firstUrlHash48 = hash64b ( m_firstUrl.getUrl() ) & 0x0000ffffffffffffLL;
 	m_firstUrlHash48Valid = true;
@@ -5348,12 +5340,6 @@ int64_t XmlDoc::getFirstUrlHash64() {
 	if ( m_firstUrlHash64Valid ) return m_firstUrlHash64;
 	// this must work
 	if ( ! m_firstUrlValid ) { g_process.shutdownAbort(true); }
-
-	if ( getUseTimeAxis() ) {
-		m_firstUrlHash64 = hash64b ( getTimeAxisUrl()->getBufStart() );
-		m_firstUrlHash64Valid = true;
-		return m_firstUrlHash64;
-	}
 
 	m_firstUrlHash64 = hash64b ( m_firstUrl.getUrl() );
 	m_firstUrlHash64Valid = true;
@@ -6230,16 +6216,6 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	return &m_rootDoc;
 }
 
-SafeBuf *XmlDoc::getTimeAxisUrl ( ) {
-	if ( m_timeAxisUrlValid ) return &m_timeAxisUrl;
-	if ( m_setFromDocId ) return &m_timeAxisUrl;
-	m_timeAxisUrlValid = true;
-	Url *fu = getFirstUrl();
-	m_timeAxisUrl.reset();
-	m_timeAxisUrl.safePrintf("%s.%u",fu->getUrl(),m_contentHash32);
-	return &m_timeAxisUrl;
-}
-
 // . look up TitleRec using Msg22 if we need to
 // . set our m_titleRec member from titledb
 // . the twin brother of XmlDoc::getTitleRecBuf() which makes the title rec
@@ -6311,15 +6287,6 @@ char **XmlDoc::getOldTitleRec() {
 	if ( ! cr ) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, no collection");
 		return NULL;
-	}
-
-	// if using time axis then append the timestamp to the end of
-	// the url. this way Msg22::getAvailDocId() will return a docid
-	// based on that so we don't collide with other instances of this
-	// same url.
-	if ( u && getUseTimeAxis() ) { // g_conf.m_useTimeAxis ) {
-		SafeBuf *tau = getTimeAxisUrl();
-		u = tau->getBufStart();
 	}
 
 	// the title must be local since we're spidering it
@@ -6448,13 +6415,12 @@ int64_t *XmlDoc::getDocId ( ) {
 	}
 
 	// ensure it is within probable range
-	if ( ! getUseTimeAxis () ) {
-		char *u = getFirstUrl()->getUrl();
-		int64_t pd = Titledb::getProbableDocId(u);
-		int64_t d1 = Titledb::getFirstProbableDocId ( pd );
-		int64_t d2 = Titledb::getLastProbableDocId  ( pd );
-		if ( m_docId < d1 || m_docId > d2 ) {
-			g_process.shutdownAbort(true); }
+	char *u = getFirstUrl()->getUrl();
+	int64_t pd = Titledb::getProbableDocId(u);
+	int64_t d1 = Titledb::getFirstProbableDocId ( pd );
+	int64_t d2 = Titledb::getLastProbableDocId  ( pd );
+	if ( m_docId < d1 || m_docId > d2 ) {
+		g_process.shutdownAbort(true);
 	}
 
 	m_docIdValid = true;
@@ -11543,7 +11509,6 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 	sb->safePrintf("probdocid=%" PRIu64" ",pd);
 	sb->safePrintf("probdocidmin=%" PRIu64" ",d1);
 	sb->safePrintf("probdocidmax=%" PRIu64" ",d2);
-	sb->safePrintf("usetimeaxis=%i ",(int)m_useTimeAxis);
 
 	if ( m_siteNumInlinksValid ) {
 		sb->safePrintf("siteinlinks=%04" PRId32" ",m_siteNumInlinks );
@@ -17388,7 +17353,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 		  "<tr><td>content type</td><td>%" PRId32" (%s)</td></tr>\n"
 		  "<tr><td>language</td><td>%" PRId32" (%s)</td></tr>\n"
 		  "<tr><td>country</td><td>%" PRId32" (%s)</td></tr>\n"
-		  "<tr><td>time axis used</td><td>%" PRId32"</td></tr>\n"
 		  "<tr><td>metadata</td><td>%s</td></tr>\n"
 		  "</td></tr>\n",
 
@@ -17432,7 +17396,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 		  (int32_t)m_countryId,
 		  g_countryCode.getName(m_countryId),
-		  m_useTimeAxis,
 		  "");
 
 	if ( info1 ) {
@@ -18702,7 +18665,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 		score *= getHashGroupWeight(hg) * getHashGroupWeight(hg);
 		score *= getDiversityWeight(tp[i]->m_diversityRank);
 		score *= getDensityWeight(tp[i]->m_densityRank);
-		if ( tp[i]->m_synSrc ) score *= g_conf.m_synonymWeight;
+		if ( tp[i]->m_synSrc ) score *= g_conf.m_baseScoringParameters.m_synonymWeight;
 		if ( hg == HASHGROUP_INLINKTEXT ) score *= getLinkerWeight(ws);
 		else                           score *= getWordSpamWeight(ws);
 		if ( isXml )

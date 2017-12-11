@@ -1000,7 +1000,6 @@ CollectionRec::CollectionRec()
 	m_dedupingEnabled = false;
 	m_dupCheckWWW = false;
 	m_useSimplifiedRedirects = false;
-	m_useTimeAxis = false;
 	m_oneVotePerIpDom = false;
 	m_doUrlSpamCheck = false;
 	m_doLinkSpamCheck = false;

@@ -11,7 +11,7 @@
 #include "PosdbTable.h"
 #include "TopTree.h"
 #include "Msg51.h"
-#include "ScoringWeights.h"
+#include "BaseScoringParameters.h"
 #include "WordVariationsConfig.h"
 #include "JobScheduler.h"
 
@@ -39,9 +39,6 @@ class Msg39Request {
 	int32_t    m_maxAge;
 	int32_t    m_maxQueryTerms;
 	int32_t    m_numDocIdSplits;
-	float   m_sameLangWeight;
-	float	m_unknownLangWeight;
-	float   m_siteRankMultiplier;
 
 	uint8_t m_language;
 
@@ -61,19 +58,7 @@ class Msg39Request {
 	bool    m_doMaxScoreAlgo;
 
 	bool    m_modifyQuery;
-	DerivedScoringWeights m_derivedScoringWeights;
-	float m_termFreqWeightFreqMin;
-	float m_termFreqWeightFreqMax;
-	float m_termFreqWeightMin;
-	float m_termFreqWeightMax;
-	float   m_synonymWeight;
-	float   m_bigramWeight;
-	float	m_pageTemperatureWeightMin;
-	float	m_pageTemperatureWeightMax;
-	bool    m_usePageTemperatureForRanking;
-
-	float m_flagScoreMultiplier[26];
-	int m_flagRankAdjustment[26];
+	BaseScoringParameters m_baseScoringParameters;
 
 	collnum_t m_collnum;
 

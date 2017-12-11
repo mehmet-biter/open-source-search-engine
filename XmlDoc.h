@@ -197,7 +197,7 @@ public:
 	uint16_t  m_reserved800:1;
 	uint16_t  m_reserved801:1;
 	uint16_t  m_reserved802:1;
-	uint16_t  m_useTimeAxis:1;
+	uint16_t  m_reserved803:1;
 	uint16_t  m_reserved805:1;
 	uint16_t  m_reserved806:1;
 	uint16_t  m_reserved807:1;
@@ -497,8 +497,6 @@ public:
 	bool hashContentType ( class HashTableX *table ) ;
 	
 	bool hashLinks ( class HashTableX *table ) ;
-	bool getUseTimeAxis ( ) ;
-	SafeBuf *getTimeAxisUrl ( );
 	bool hashUrl ( class HashTableX *table, bool urlOnly );
 	bool hashDateNumbers ( class HashTableX *tt );
 	bool hashIncomingLinkText(HashTableX *table);
@@ -655,8 +653,6 @@ public:
 	char m_logLangId;
 	int32_t m_logSiteNumInlinks;
 
-	SafeBuf m_timeAxisUrl;
-
 	bool isFirstUrlRobotsTxt();
 	bool m_isRobotsTxtUrl;
 
@@ -688,8 +684,6 @@ public:
 	bool m_siteValid;
 	bool m_startTimeValid;
 	bool m_currentUrlValid;
-	bool m_useTimeAxisValid;
-	bool m_timeAxisUrlValid;
 	bool m_firstUrlValid;
 	bool m_firstUrlHash48Valid;
 	bool m_firstUrlHash64Valid;

@@ -3,6 +3,8 @@
 
 #include "Posdb.h"
 
+struct BaseScoringParameters;
+
 //misc. rank-to-weight, group-to-weight, shoesize-to-weight lookups
 
 class DerivedScoringWeights {
@@ -26,6 +28,7 @@ public:
 	          float hashGroupWeightInternalLinkText,
 	          float hashGroupWeightInUrl,
 	          float hashGroupWeightInMenu);
+	void init(const BaseScoringParameters& bsp);
 };
 
 #endif

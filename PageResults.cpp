@@ -1222,7 +1222,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 		// best term freqs
 		max *= maxtfw1 * maxtfw2;
 		// site rank effect
-		max *= MAXSITERANK*si->m_siteRankMultiplier + 1;
+		max *= MAXSITERANK*si->m_baseScoringParameters.m_siteRankMultiplier + 1;
 		sb->safePrintf ("\t\t<theoreticalMaxFinalScore>%f"
 			       "</theoreticalMaxFinalScore>\n",
 			       max );
@@ -3146,7 +3146,7 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 		if(docFlags) {
 			for(int bit=0; bit < 26; bit++) {
 				if( (1<<bit) & docFlags ) {
-					sb->safePrintf("<tr><td>%d</td><td>%f</td><td>%d</td></tr>", bit, si->m_flagScoreMultiplier[bit], si->m_flagRankAdjustment[bit]);
+					sb->safePrintf("<tr><td>%d</td><td>%f</td><td>%d</td></tr>", bit, si->m_baseScoringParameters.m_flagScoreMultiplier[bit], si->m_baseScoringParameters.m_flagRankAdjustment[bit]);
 				}
 			}
 		}
@@ -3201,23 +3201,23 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 			       "(%s of above matrix scores)"
 			       "]]>"
 			       "</finalScoreEquationCanonical>\n"
-			       , si->m_siteRankMultiplier, si->m_sameLangWeight, si->m_unknownLangWeight, ff2);
+			       , si->m_baseScoringParameters.m_siteRankMultiplier, si->m_baseScoringParameters.m_sameLangWeight, si->m_baseScoringParameters.m_unknownLangWeight, ff2);
 
 		sb->safePrintf ("\t\t<finalScoreEquation>"
 			       "<![CDATA["
 			       "<b>%.03f</b> = (%" PRId32"*%.01f+1) "
-			       , dp->m_finalScore, (int32_t)dp->m_siteRank, si->m_siteRankMultiplier);
+			       , dp->m_finalScore, (int32_t)dp->m_siteRank, si->m_baseScoringParameters.m_siteRankMultiplier);
 
 		// Check if user specified a query language
 		if ( si->m_queryLangId != 0 ) {
 			// Query language same as document language?
 			if( si->m_queryLangId == mr->m_language ) {
-				sb->safePrintf(" * %.01f", si->m_sameLangWeight);
+				sb->safePrintf(" * %.01f", si->m_baseScoringParameters.m_sameLangWeight);
 			}
 			else
 			if( mr->m_language == 0 ) {
 				// Document language unknown, use the unknown language weight
-				sb->safePrintf(" * %.01f", si->m_unknownLangWeight);
+				sb->safePrintf(" * %.01f", si->m_baseScoringParameters.m_unknownLangWeight);
 			}
 		}
 
@@ -3240,12 +3240,12 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 	if ( si->m_queryLangId != 0 ) {
 		// Query language same as document language?
 		if( si->m_queryLangId == mr->m_language ) {
-			langBoost = si->m_sameLangWeight;
+			langBoost = si->m_baseScoringParameters.m_sameLangWeight;
 		}
 		else
 		if( mr->m_language == 0 ) {
 			// Document language unknown, use the unknown language weight
-			langBoost = si->m_unknownLangWeight;
+			langBoost = si->m_baseScoringParameters.m_unknownLangWeight;
 		}
 	}
 
@@ -3272,7 +3272,7 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 	sb->safePrintf("<tr><td colspan=100>");
 
 	// list all final scores starting with pairs
-	sb->safePrintf("<b>%f</b> = (<font color=blue>%" PRId32"</font>*%.01f+1)", dp->m_finalScore, (int32_t)dp->m_siteRank, si->m_siteRankMultiplier);
+	sb->safePrintf("<b>%f</b> = (<font color=blue>%" PRId32"</font>*%.01f+1)", dp->m_finalScore, (int32_t)dp->m_siteRank, si->m_baseScoringParameters.m_siteRankMultiplier);
 
 	// Check if user specified a query language
 	if ( si->m_queryLangId != 0 ) {
@@ -3366,11 +3366,11 @@ static bool printPairScore(SafeBuf *sb, const SearchInput *si, const PairScore *
 	float sw2 = 1.0;
 	if ( ps->m_isSynonym1 ) {
 		syn1 = "yes";
-		sw1  = g_conf.m_synonymWeight;
+		sw1  = g_conf.m_baseScoringParameters.m_synonymWeight;
 	}
 	if ( ps->m_isSynonym2 ) {
 		syn2 = "yes";
-		sw2  = g_conf.m_synonymWeight;
+		sw2  = g_conf.m_baseScoringParameters.m_synonymWeight;
 	}
 
 	const char *bs1  = "no";
@@ -3950,7 +3950,7 @@ static bool printSingleScore(SafeBuf *sb, const SearchInput *si, const SingleSco
 	float sw = 1.0;
 	if ( ss->m_isSynonym ) {
 		syn = "yes";
-		sw = g_conf.m_synonymWeight;
+		sw = g_conf.m_baseScoringParameters.m_synonymWeight;
 	}
 	//char bf = ss->m_bflags;
 	float wbw = 1.0;

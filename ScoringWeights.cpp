@@ -1,5 +1,6 @@
 #include "ScoringWeights.h"
 #include "ScalingFunctions.h"
+#include "BaseScoringParameters.h"
 #include <math.h>
 
 void DerivedScoringWeights::init(float diversityWeightMin, float diversityWeightMax,
@@ -50,4 +51,21 @@ void DerivedScoringWeights::init(float diversityWeightMin, float diversityWeight
 	m_hashGroupWeights[HASHGROUP_INTERNALINLINKTEXT] = hashGroupWeightInternalLinkText;
 	m_hashGroupWeights[HASHGROUP_INURL             ] = hashGroupWeightInUrl;
 	m_hashGroupWeights[HASHGROUP_INMENU            ] = hashGroupWeightInMenu;
+}
+
+void DerivedScoringWeights::init(const BaseScoringParameters& bsp) {
+	init(bsp.m_diversityWeightMin, bsp.m_diversityWeightMax,
+	     bsp.m_densityWeightMin, bsp.m_densityWeightMax,
+	     bsp.m_hashGroupWeightBody,
+	     bsp.m_hashGroupWeightTitle,
+	     bsp.m_hashGroupWeightHeading,
+	     bsp.m_hashGroupWeightInlist,
+	     bsp.m_hashGroupWeightInMetaTag,
+	     bsp.m_hashGroupWeightInLinkText,
+	     bsp.m_hashGroupWeightInTag,
+	     bsp.m_hashGroupWeightNeighborhood,
+	     bsp.m_hashGroupWeightInternalLinkText,
+	     bsp.m_hashGroupWeightInUrl,
+	     bsp.m_hashGroupWeightInMenu);
+
 }
