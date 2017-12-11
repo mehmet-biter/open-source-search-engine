@@ -237,7 +237,7 @@ class QueryWord {
 	class QueryTerm *m_queryWordTerm;
 
 	// user defined weights
-	int32_t m_userWeightForWord;
+	float m_userWeightForWord;
 	float m_userWeightForPhrase;
 
 	bool m_queryOp;

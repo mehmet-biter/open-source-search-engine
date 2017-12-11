@@ -200,17 +200,18 @@ bool Query::set2 ( const char *query        ,
 
 		if(query[i] == '[') {
 			// translate [#w] [#p] [w] [p] to operators
-			if(is_digit(query[i+1])) {
-				int32_t j = i+2;
-				int32_t val = atol ( &query[i+1] );
-				while(is_digit(query[j]))
-					j++;
+			char *endptr=NULL;
+			double val;
+			if(is_digit(query[i+1]))
+				val=strtod(query+i+1,&endptr);
+			if(endptr!=NULL && endptr!=query+1) {
+				size_t j = (size_t)(endptr-query);
 				if(query[j]=='w' && query[j+1]==']') {
-					m_filteredQuery.safePrintf(" LeFtB %" PRId32" w RiGhB ", val);
+					m_filteredQuery.safePrintf(" LeFtB %f w RiGhB ", val);
 					i = j + 1;
 					continue;
 				} else if(query[j]=='p' && query[j+1]==']') {
-					m_filteredQuery.safePrintf(" LeFtB %" PRId32" p RiGhB ", val);
+					m_filteredQuery.safePrintf(" LeFtB %f p RiGhB ", val);
 					i = j + 1;
 					continue;
 				}
@@ -1198,8 +1199,8 @@ bool Query::setQWords ( char boolFlag ,
 		return false;
 	}
 
-	int32_t userWeightForWord   = 1;
-	int32_t userWeightForPhrase = 1;
+	float userWeightForWord   = 1;
+	float userWeightForPhrase = 1;
 	int32_t ignorei          = -1;
 
 	// assume we contain no pipe operator
@@ -1275,6 +1276,7 @@ bool Query::setQWords ( char boolFlag ,
 			// s MUST point to a number
 			const char *s = words.getWord(i+2);
 			int32_t slen = words.getWordLen(i+2);
+
 			// if no number, it must be
 			// " leFtB w RiGhB " or " leFtB p RiGhB "
 			if ( ! is_digit(s[0]) ) {
