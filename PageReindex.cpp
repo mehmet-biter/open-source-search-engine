@@ -287,7 +287,7 @@ bool Msg1c::reindexQuery ( const char *query,
 	// add language dropdown or take from [query reindex] link
 	m_msg3a.m_msg39req.m_language                  = langId;
 	m_msg3a.m_msg39req.m_allowHighFrequencyTermCache = false;
-	m_msg3a.m_msg39req.m_derivedScoringWeights.init(g_conf.m_baseScoringParameters);
+	m_msg3a.m_msg39req.m_baseScoringParameters = g_conf.m_baseScoringParameters;
 
 	// log for now
 	logf(LOG_DEBUG,"reindex: qlangid=%" PRId32" q=%s",langId,query);

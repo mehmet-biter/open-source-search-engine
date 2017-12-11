@@ -200,8 +200,8 @@ bool Msg3a::getDocIds(const SearchInput *si, Query *q, void *state,
 		     (PTRTYPE)this);
 	}
 
-	setTermFreqWeights(m_msg39req.m_collnum, m_q, m_msg39req.m_termFreqWeightFreqMin, m_msg39req.m_termFreqWeightFreqMax,
-		m_msg39req.m_termFreqWeightMin,	m_msg39req.m_termFreqWeightMax);
+	setTermFreqWeights(m_msg39req.m_collnum, m_q, m_msg39req.m_baseScoringParameters.m_termFreqWeightFreqMin, m_msg39req.m_baseScoringParameters.m_termFreqWeightFreqMax,
+		m_msg39req.m_baseScoringParameters.m_termFreqWeightMin,	m_msg39req.m_baseScoringParameters.m_termFreqWeightMax);
 
 	if ( m_debug ) {
 		for ( int32_t i = 0 ; i < m_q->m_numTerms ; i++ ) {

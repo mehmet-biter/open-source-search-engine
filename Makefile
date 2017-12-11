@@ -68,6 +68,7 @@ OBJS_O3 = \
 	RdbBuckets.o RdbIndex.o RdbIndexQuery.o RdbList.o RdbMap.o ResultOverride.o RobotsBlockedResultOverride.o RobotsCheckList.o \
 	SafeBuf.o sort.o SpiderdbHostDelete.o Statistics.o \
 	ScoringWeights.o \
+	BaseScoringParameters.o \
 	TopTree.o \
 	UrlMatch.o UrlMatchList.o UrlMatchHostList.o UrlBlockCheck.o UrlComponent.o UrlParser.o UdpStatistic.o \
 	UrlRealtimeClassification.o UrlResultOverride.o \

@@ -3607,9 +3607,9 @@ void Parms::init ( ) {
 	m->m_title = "termfreq min";
 	m->m_desc  = "Term frequency estimate minimum";
 	m->m_cgi   = "termfreqweightfreqmin";
-	simple_m_set(Conf,m_termFreqWeightFreqMin);
-	simple_m_set(SearchInput,m_termFreqWeightFreqMin);
-	m->m_defOff2 = offsetof(Conf,m_termFreqWeightFreqMin);
+	simple_m_set(Conf,m_baseScoringParameters.m_termFreqWeightFreqMin);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_termFreqWeightFreqMin);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_termFreqWeightFreqMin);
 	m->m_def   = "0.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3617,8 +3617,8 @@ void Parms::init ( ) {
 	m->m_title = "termfreq max";
 	m->m_desc  = "Term frequency estimate maximum";
 	m->m_cgi   = "termfreqweightfreqmax";
-	simple_m_set(SearchInput,m_termFreqWeightFreqMax);
-	m->m_defOff2 = offsetof(Conf,m_termFreqWeightFreqMax);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_termFreqWeightFreqMax);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_termFreqWeightFreqMax);
 	m->m_def   = "0.500000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3626,8 +3626,8 @@ void Parms::init ( ) {
 	m->m_title = "termfreq weight min";
 	m->m_desc  = "Term frequency weight minimum";
 	m->m_cgi   = "termfreqweightmin";
-	simple_m_set(SearchInput,m_termFreqWeightMin);
-	m->m_defOff2 = offsetof(Conf,m_termFreqWeightMin);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_termFreqWeightMin);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_termFreqWeightMin);
 	m->m_def   = "0.500000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3635,8 +3635,8 @@ void Parms::init ( ) {
 	m->m_title = "termfreq weight max";
 	m->m_desc  = "Term frequency weight maximum";
 	m->m_cgi   = "termfreqweightmax";
-	simple_m_set(SearchInput,m_termFreqWeightMax);
-	m->m_defOff2 = offsetof(Conf,m_termFreqWeightMax);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_termFreqWeightMax);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_termFreqWeightMax);
 	m->m_def   = "1.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
@@ -3782,8 +3782,8 @@ void Parms::init ( ) {
 	m->m_title = "Synonym weight";
 	m->m_desc  = "Weight of synonyms in relation to original words";
 	m->m_cgi   = "synonym_weight";
-	simple_m_set(SearchInput,m_synonymWeight);
-	m->m_defOff2 = offsetof(Conf,m_synonymWeight);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_synonymWeight);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_synonymWeight);
 	m->m_def   = "0.900000";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
@@ -3792,8 +3792,8 @@ void Parms::init ( ) {
 	m->m_title = "Bigram weight";
 	m->m_desc  = "Weight of bigrams in relation to single words";
 	m->m_cgi   = "bigram_weight";
-	simple_m_set(SearchInput,m_bigramWeight);
-	m->m_defOff2 = offsetof(Conf,m_bigramWeight);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_bigramWeight);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_bigramWeight);
 	m->m_def   = "5.000000";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
@@ -3802,8 +3802,8 @@ void Parms::init ( ) {
 	m->m_title = "Page temp weight min";
 	m->m_desc  = "Page temp is scaled to be between the min and max";
 	m->m_cgi   = "pagetempweightmin";
-	simple_m_set(SearchInput,m_pageTemperatureWeightMin);
-	m->m_defOff2 = offsetof(Conf,m_pageTemperatureWeightMin);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_pageTemperatureWeightMin);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_pageTemperatureWeightMin);
 	m->m_def   = "1.000000";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
@@ -3812,8 +3812,8 @@ void Parms::init ( ) {
 	m->m_title = "Page temp weight max";
 	m->m_desc  = "Page temp is scaled to be between the min and max";
 	m->m_cgi   = "pagetempweightmax";
-	simple_m_set(SearchInput,m_pageTemperatureWeightMax);
-	m->m_defOff2 = offsetof(Conf,m_pageTemperatureWeightMax);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_pageTemperatureWeightMax);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_pageTemperatureWeightMax);
 	m->m_def   = "20.000000";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
@@ -3822,8 +3822,8 @@ void Parms::init ( ) {
 	m->m_title = "Use page temperature";
 	m->m_desc  = "Use page temperature (if available) for ranking";
 	m->m_cgi   = "use_page_temperature";
-	simple_m_set(SearchInput,m_usePageTemperatureForRanking);
-	m->m_defOff2 = offsetof(Conf,m_usePageTemperatureForRanking);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_usePageTemperatureForRanking);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_usePageTemperatureForRanking);
 	m->m_def   = "1";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
@@ -3837,8 +3837,8 @@ void Parms::init ( ) {
 	m->m_fixed = 26;
 	m->m_obj   = OBJ_SI;
 	m->m_arrayCountOffset= offsetof(SearchInput,m_numFlagScoreMultipliers);
-	m->m_off   = offsetof(SearchInput,m_flagScoreMultiplier);
-	m->m_defOff2 = offsetof(Conf,m_flagScoreMultiplier);
+	m->m_off   = offsetof(SearchInput,m_baseScoringParameters.m_flagScoreMultiplier);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_flagScoreMultiplier);
 	m->m_rowid = 1;
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.0";
@@ -3852,8 +3852,8 @@ void Parms::init ( ) {
 	m->m_fixed = 26;
 	m->m_obj   = OBJ_SI;
 	m->m_arrayCountOffset= offsetof(SearchInput,m_numFlagRankAdjustments);
-	m->m_off   = offsetof(SearchInput,m_flagRankAdjustment);
-	m->m_defOff2 = offsetof(Conf,m_flagRankAdjustment);
+	m->m_off   = offsetof(SearchInput,m_baseScoringParameters.m_flagRankAdjustment);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_flagRankAdjustment);
 	m->m_rowid = 1;
 	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";
@@ -3920,7 +3920,7 @@ void Parms::init ( ) {
 		"20.0. Which means that we multiply a result's score by 20 "
 		"if from the same language as the query or the language is "
 		"unknown.";
-	simple_m_set(SearchInput,m_sameLangWeight);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_sameLangWeight);
 	m->m_defOff= offsetof(CollectionRec,m_sameLangWeight);
 	m->m_cgi  = "langw";
 	m->m_flags = PF_API;
@@ -3932,7 +3932,7 @@ void Parms::init ( ) {
 		"for this collection. We multiply a result's score by this value "
 		"if the user requested a specific language, but the language of the "
 		"indexed page could not be determined.";
-	simple_m_set(SearchInput,m_unknownLangWeight);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_unknownLangWeight);
 	m->m_defOff= offsetof(CollectionRec,m_unknownLangWeight);
 	m->m_cgi  = "ulangw";
 	m->m_flags = PF_API;
@@ -3941,7 +3941,7 @@ void Parms::init ( ) {
 
 	m->m_title = "site-rank multiplier";
 	m->m_desc  = "formula: score = (siterank*multiplier)+1";
-	simple_m_set(SearchInput,m_siteRankMultiplier);
+	simple_m_set(SearchInput,m_baseScoringParameters.m_siteRankMultiplier);
 	m->m_defOff= offsetof(CollectionRec,m_siteRankMultiplier);
 	m->m_cgi   = "siterankmultiplier";
 	m->m_flags = PF_API;
@@ -4055,7 +4055,7 @@ void Parms::init ( ) {
 	m->m_title = "termfreq min";
 	m->m_desc  = "Term frequency estimate minimum";
 	m->m_cgi   = "termfreqweightfreqmin";
-	simple_m_set(Conf,m_termFreqWeightFreqMin);
+	simple_m_set(Conf,m_baseScoringParameters.m_termFreqWeightFreqMin);
 	m->m_def   = "0.000000";
 	m->m_group = true;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4065,7 +4065,7 @@ void Parms::init ( ) {
 	m->m_title = "termfreq max";
 	m->m_desc  = "Term frequency estimate maximum";
 	m->m_cgi   = "termfreqweightfreqmax";
-	simple_m_set(Conf,m_termFreqWeightFreqMax);
+	simple_m_set(Conf,m_baseScoringParameters.m_termFreqWeightFreqMax);
 	m->m_def   = "0.500000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4075,7 +4075,7 @@ void Parms::init ( ) {
 	m->m_title = "termfreq weight min";
 	m->m_desc  = "Term frequency weight minimum";
 	m->m_cgi   = "termfreqweightmin";
-	simple_m_set(Conf,m_termFreqWeightMin);
+	simple_m_set(Conf,m_baseScoringParameters.m_termFreqWeightMin);
 	m->m_def   = "0.500000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4085,7 +4085,7 @@ void Parms::init ( ) {
 	m->m_title = "termfreq weight max";
 	m->m_desc  = "Term frequency weight maximum";
 	m->m_cgi   = "termfreqweightmax";
-	simple_m_set(Conf,m_termFreqWeightMax);
+	simple_m_set(Conf,m_baseScoringParameters.m_termFreqWeightMax);
 	m->m_def   = "1.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4247,7 +4247,7 @@ void Parms::init ( ) {
 	m->m_title = "Synonym weight";
 	m->m_desc  = "Weight of synonyms in relation to original words";
 	m->m_cgi   = "synonym_weight";
-	simple_m_set(Conf,m_synonymWeight);
+	simple_m_set(Conf,m_baseScoringParameters.m_synonymWeight);
 	m->m_def   = "0.900000";
 	m->m_group = true;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4257,7 +4257,7 @@ void Parms::init ( ) {
 	m->m_title = "Bigram weight";
 	m->m_desc  = "Weight of bigrams in relation to single words";
 	m->m_cgi   = "bigram_weight";
-	simple_m_set(Conf,m_bigramWeight);
+	simple_m_set(Conf,m_baseScoringParameters.m_bigramWeight);
 	m->m_def   = "5.000000";
 	m->m_group = true;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4267,7 +4267,7 @@ void Parms::init ( ) {
 	m->m_title = "Page temp weight min";
 	m->m_desc  = "Page temp is scaled to be between the min and max";
 	m->m_cgi   = "pagetempweightmin";
-	simple_m_set(Conf,m_pageTemperatureWeightMin);
+	simple_m_set(Conf,m_baseScoringParameters.m_pageTemperatureWeightMin);
 	m->m_def   = "1.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4277,7 +4277,7 @@ void Parms::init ( ) {
 	m->m_title = "Page temp weight max";
 	m->m_desc  = "Page temp is scaled to be between the min and max";
 	m->m_cgi   = "pagetempweightmax";
-	simple_m_set(Conf,m_pageTemperatureWeightMax);
+	simple_m_set(Conf,m_baseScoringParameters.m_pageTemperatureWeightMax);
 	m->m_def   = "20.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
@@ -4287,7 +4287,7 @@ void Parms::init ( ) {
 	m->m_title = "Use page temperature";
 	m->m_desc  = "Use page temperature (if available) for ranking";
 	m->m_cgi   = "use_page_temperature";
-	simple_m_set(Conf,m_usePageTemperatureForRanking);
+	simple_m_set(Conf,m_baseScoringParameters.m_usePageTemperatureForRanking);
 	m->m_def   = "1";
 	m->m_group = true;
 	m->m_flags = 0;
@@ -4302,7 +4302,7 @@ void Parms::init ( ) {
 	m->m_max   = 26;
 	m->m_fixed = 26;
 	m->m_arrayCountOffset= offsetof(Conf,m_numFlagScoreMultipliers);
-	m->m_off   = offsetof(Conf,m_flagScoreMultiplier);
+	m->m_off   = offsetof(Conf,m_baseScoringParameters.m_flagScoreMultiplier);
 	m->m_rowid = 1;
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.0";
@@ -4317,7 +4317,7 @@ void Parms::init ( ) {
 	m->m_max   = 26;
 	m->m_fixed = 26;
 	m->m_arrayCountOffset= offsetof(Conf,m_numFlagRankAdjustments);
-	m->m_off   = offsetof(Conf,m_flagRankAdjustment);
+	m->m_off   = offsetof(Conf,m_baseScoringParameters.m_flagRankAdjustment);
 	m->m_rowid = 1;
 	m->m_type  = TYPE_INT32;
 	m->m_def   = "0";

@@ -3,6 +3,8 @@
 
 #include "RdbList.h"
 #include "HashTableX.h"
+#include "ScoringWeights.h"
+#include "BaseScoringParameters.h"
 #include <vector>
 
 float getDiversityWeight ( unsigned char diversityRank );
@@ -146,8 +148,6 @@ private:
 
 	bool m_hasMaxSerpScore;
 
-	float m_siteRankMultiplier;
-
 	uint64_t m_docId; //the current docid intersection is working on
 
 	Msg2 *m_msg2;
@@ -165,6 +165,8 @@ private:
 	bool m_debug;
 
 	Msg39Request *m_msg39req;
+	BaseScoringParameters m_baseScoringParameters;
+	DerivedScoringWeights m_derivedScoringWeights;
 
 	// for gbsortby:item.price ...
 	int32_t m_sortByTermNum;

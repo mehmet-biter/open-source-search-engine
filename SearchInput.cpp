@@ -42,9 +42,6 @@ SearchInput::SearchInput() {
 	m_titleMaxLen = 0;
 	m_maxSerpScore = 0.0;
 	m_minSerpDocId = 0;
-	m_sameLangWeight = 0.0;
-	m_unknownLangWeight = 0.0;
-	m_siteRankMultiplier = 0.0;
 	m_fx_qlang = nullptr;
 	m_fx_blang = nullptr;
 	m_fx_fetld = nullptr;
@@ -65,23 +62,9 @@ SearchInput::SearchInput() {
 	m_askOtherShards = false;
 	memset(m_queryId, 0, sizeof(m_queryId));
 	m_doMaxScoreAlgo = false;
-
-	m_termFreqWeightFreqMin = 0.0;
-	m_termFreqWeightFreqMax = 0.5;
-	m_termFreqWeightMin = 0.5;
-	m_termFreqWeightMax = 1.0;
-
-	m_synonymWeight = 0.9;
-	m_bigramWeight  = 5.0;
-	m_pageTemperatureWeightMin = 1.0;
-	m_pageTemperatureWeightMax = 20.0;
-	m_usePageTemperatureForRanking = true;
+	m_baseScoringParameters.clear();
 	m_numFlagScoreMultipliers=26;
-	for(int i=0; i<26; i++)
-		m_flagScoreMultiplier[i] = 1.0;
 	m_numFlagRankAdjustments=26;
-	for(int i=0; i<26; i++)
-		m_flagRankAdjustment[i] = 0;
 	m_streamResults = false;
 	m_secsBack = 0;
 	m_sortBy = 0;

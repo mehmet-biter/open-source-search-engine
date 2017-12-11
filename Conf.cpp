@@ -10,6 +10,7 @@
 #include "HttpRequest.h"
 #include "Process.h"
 #include "Mem.h"
+#include "TitleRecVersion.h"
 #include "ip.h"
 #include <sys/stat.h> //umask()
 
@@ -121,21 +122,12 @@ Conf::Conf ( ) {
 	m_httpMaxSendBufSize = 0;
 	m_docSummaryWithDescriptionMaxCacheAge = 0;
 	m_sliderParm = 0;
-	m_termFreqWeightFreqMin = 0.0;
-	m_termFreqWeightFreqMax = 0.0;
-	m_termFreqWeightMin = 0.0;
-	m_termFreqWeightMax = 0.0;
 	m_baseScoringParameters.clear();
-	m_synonymWeight = 0.0;
-	m_bigramWeight = 5.0;
-	m_pageTemperatureWeightMin = 0.0;
-	m_pageTemperatureWeightMax = 0.0;
-	m_usePageTemperatureForRanking = true;
 	m_numFlagScoreMultipliers = 26;
 	m_numFlagRankAdjustments = 26;
 	for(int i=0; i<26; i++) {
-		m_flagScoreMultiplier[i] = 1.0;
-		m_flagRankAdjustment[i] = 0;
+		m_baseScoringParameters.m_flagScoreMultiplier[i] = 1.0;
+		m_baseScoringParameters.m_flagRankAdjustment[i] = 0;
 	}
 	m_maxCorruptLists = 0;
 	m_defaultQueryResultsValidityTime = 0;

@@ -125,10 +125,6 @@ public:
 	double    m_maxSerpScore;
 	int64_t m_minSerpDocId;
 
-	float m_sameLangWeight;
-	float m_unknownLangWeight;
-	float m_siteRankMultiplier;
-
 	const char *m_fx_qlang;
 	const char *m_fx_blang;
 	const char *m_fx_fetld;
@@ -150,22 +146,10 @@ public:
 	bool   m_doDupContentRemoval;     // msg40
 	bool   m_getDocIdScoringInfo;
 
-	float m_termFreqWeightFreqMin;
-	float m_termFreqWeightFreqMax;
-	float m_termFreqWeightMin;
-	float m_termFreqWeightMax;
-
 	BaseScoringParameters m_baseScoringParameters;
-	float m_synonymWeight;
-	float m_bigramWeight;
-	float m_pageTemperatureWeightMin;
-	float m_pageTemperatureWeightMax;
-	bool m_usePageTemperatureForRanking;
 
-	int32_t m_numFlagScoreMultipliers;
-	float m_flagScoreMultiplier[26];
-	int32_t m_numFlagRankAdjustments;
-	int m_flagRankAdjustment[26];
+	int32_t m_numFlagScoreMultipliers; //constant = 26
+	int32_t m_numFlagRankAdjustments;  //constant = 26
 	
 	bool   m_hideAllClustered;
 
