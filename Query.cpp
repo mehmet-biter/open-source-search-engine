@@ -208,7 +208,7 @@ bool Query::set2 ( const char *query        ,
 		}
 
 		if(query[i] == '[') {
-			// translate [#w] [#p] [w] [p] to operators
+			// translate [#w] [#p] [#s] [w] [p] [s] to operators
 			char *endptr=NULL;
 			double val;
 			if(is_digit(query[i+1]))
@@ -223,6 +223,10 @@ bool Query::set2 ( const char *query        ,
 					m_filteredQuery.safePrintf(" LeFtB %f p RiGhB ", val);
 					i = j + 1;
 					continue;
+				} else if(query[j]=='s' && query[j+1]==']') {
+					m_filteredQuery.safePrintf(" LeFtB %f s RiGhB ", val);
+					i = j + 1;
+					continue;
 				}
 			} else if(query[i+1] == 'w' && query[i+2]==']') {
 				m_filteredQuery.safePrintf(" LeFtB w RiGhB ");
@@ -230,6 +234,10 @@ bool Query::set2 ( const char *query        ,
 				continue;
 			} else if(query[i+1] == 'p' && query[i+2]==']') {
 				m_filteredQuery.safePrintf(" LeFtB p RiGhB ");
+				i = i + 2;
+				continue;
+			} else if(query[i+1] == 's' && query[i+2]==']') {
+				m_filteredQuery.safePrintf(" LeFtB s RiGhB ");
 				i = i + 2;
 				continue;
 			}
@@ -928,7 +936,7 @@ bool Query::setQTerms ( const Words &words ) {
 				qt->m_termLen  = syn.m_termLens[j];
 				// assign score weight, we're a synonym here
 				qt->m_termWeight = m_synonymWeight;
-				qt->m_userWeight = qw->m_userWeightForWord; //todo: use dedicated user weight for synonyms
+				qt->m_userWeight = qw->m_userWeightForSynonym;
 				qt->m_fieldCode  = qw->m_fieldCode  ;
 				// stuff before a pipe always has a weight of 1
 				if ( qt->m_piped ) {
@@ -1041,7 +1049,7 @@ bool Query::setQTerms ( const Words &words ) {
 			qt->m_termLen  = word_variation.word.length();
 			// assign score weight
 			qt->m_termWeight = word_variation.weight;
-			qt->m_userWeight = qw->m_userWeightForWord; //todo: use dedicated user weight for synonyms
+			qt->m_userWeight = qw->m_userWeightForSynonym;
 			qt->m_fieldCode  = qw->m_fieldCode  ;
 			// stuff before a pipe always has a weight of 1
 			if(qt->m_piped) {
@@ -1357,6 +1365,7 @@ bool Query::setQWords ( char boolFlag ,
 
 	float userWeightForWord   = 1;
 	float userWeightForPhrase = 1;
+	float userWeightForSynonym = 1;
 	int32_t ignorei          = -1;
 
 	// assume we contain no pipe operator
@@ -1443,6 +1452,9 @@ bool Query::setQWords ( char boolFlag ,
 				} else if(s[0] == 'p') {
 					// phrase weight reset
 					userWeightForPhrase = 1;
+				} else if(s[0] == 's') {
+					// phrase weight reset
+					userWeightForSynonym = 1;
 				}
 				ignorei = i + 4;
 			} else {
@@ -1455,6 +1467,8 @@ bool Query::setQWords ( char boolFlag ,
 					userWeightForWord = fval;
 				} else if(s2[0] == 'p') {
 					userWeightForPhrase = fval;
+				} else if(s2[0] == 's') {
+					userWeightForSynonym = fval;
 				}
 				// ignore all following words up and inc. i+6
 				ignorei = i + 6;
@@ -1465,6 +1479,7 @@ bool Query::setQWords ( char boolFlag ,
 		// assign score weight, if any for this guy
 		qw->m_userWeightForWord       = userWeightForWord;
 		qw->m_userWeightForPhrase = userWeightForPhrase;
+		qw->m_userWeightForSynonym = userWeightForSynonym;
 		qw->m_queryOp          = false;
 		// does word #i have a space in it? that will cancel fieldCode
 		// if we were in a field

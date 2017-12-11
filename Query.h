@@ -240,6 +240,7 @@ class QueryWord {
 	// user defined weights
 	float m_userWeightForWord;
 	float m_userWeightForPhrase;
+	float m_userWeightForSynonym;
 
 	bool m_queryOp;
 	// is this query word before a | (pipe) operator?
