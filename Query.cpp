@@ -695,6 +695,7 @@ bool Query::setQTerms ( const Words &words ) {
 		}
 					  
 		// assign score weight, we're a single-term here
+		qt->m_termWeight = 1.0;
 		qt->m_userWeight = qw->m_userWeightForWord;
 		qt->m_fieldCode  = qw->m_fieldCode  ;
 		// stuff before a pipe always has a weight of 1
@@ -925,6 +926,7 @@ bool Query::setQTerms ( const Words &words ) {
 				qt->m_term     = ptr;
 				qt->m_termLen  = syn.m_termLens[j];
 				// assign score weight, we're a synonym here
+				qt->m_termWeight = m_synonymWeight;
 				qt->m_userWeight = qw->m_userWeightForWord; //todo: use dedicated user weight for synonyms
 				qt->m_fieldCode  = qw->m_fieldCode  ;
 				// stuff before a pipe always has a weight of 1
