@@ -7698,19 +7698,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-
-	m->m_title = "use time axis";
-	m->m_desc  = "If this is true Gigablast will index the same "
-		"url multiple times if its content varies over time, "
-		"rather than overwriting the older version in the index. "
-		"Useful for archive web pages as they change over time.";
-	m->m_cgi   = "usetimeaxis";
-	simple_m_set(CollectionRec,m_useTimeAxis);
-	m->m_def   = "0";
-	m->m_page  = PAGE_SPIDER;
-	m->m_flags = PF_CLONE;
-	m++;
-
 	m->m_title = "daily merge time";
 	m->m_desc  = "Do a tight merge on posdb and titledb at this time "
 		"every day. This is expressed in MINUTES past midnight UTC. "
