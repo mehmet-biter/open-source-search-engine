@@ -196,9 +196,6 @@ class QueryWord {
 	// . if we're a phrase term, signs distribute across quotes
 	char        m_wordSign;
 	char        m_phraseSign;
-	// the parenthetical level of this word in the boolean expression.
-	// level 0 is the first level.
-	char        m_level;
 	// is this word a query stop word?
 	bool        m_isQueryStopWord ; 
 	// is it a plain stop word?
