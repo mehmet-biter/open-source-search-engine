@@ -335,19 +335,19 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_familyFilter              = m_si->m_familyFilter;
 	mr.m_doMaxScoreAlgo            = m_si->m_doMaxScoreAlgo;
 	mr.m_modifyQuery               = true; //we are a user-specified query so modifying it is ok. todo/hack until msg39 can carry the full query information
-	mr.m_scoringWeights.init(m_si->m_diversityWeightMin, m_si->m_diversityWeightMax,
-				 m_si->m_densityWeightMin, m_si->m_densityWeightMax,
-				 m_si->m_hashGroupWeightBody,
-				 m_si->m_hashGroupWeightTitle,
-				 m_si->m_hashGroupWeightHeading,
-				 m_si->m_hashGroupWeightInlist,
-				 m_si->m_hashGroupWeightInMetaTag,
-				 m_si->m_hashGroupWeightInLinkText,
-				 m_si->m_hashGroupWeightInTag,
-				 m_si->m_hashGroupWeightNeighborhood,
-				 m_si->m_hashGroupWeightInternalLinkText,
-				 m_si->m_hashGroupWeightInUrl,
-				 m_si->m_hashGroupWeightInMenu);
+	mr.m_derivedScoringWeights.init(m_si->m_diversityWeightMin, m_si->m_diversityWeightMax,
+				        m_si->m_densityWeightMin, m_si->m_densityWeightMax,
+				        m_si->m_hashGroupWeightBody,
+				        m_si->m_hashGroupWeightTitle,
+				        m_si->m_hashGroupWeightHeading,
+				        m_si->m_hashGroupWeightInlist,
+				        m_si->m_hashGroupWeightInMetaTag,
+				        m_si->m_hashGroupWeightInLinkText,
+				        m_si->m_hashGroupWeightInTag,
+				        m_si->m_hashGroupWeightNeighborhood,
+				        m_si->m_hashGroupWeightInternalLinkText,
+				        m_si->m_hashGroupWeightInUrl,
+				        m_si->m_hashGroupWeightInMenu);
 
 	mr.m_termFreqWeightFreqMin = m_si->m_termFreqWeightFreqMin;
 	mr.m_termFreqWeightFreqMax = m_si->m_termFreqWeightFreqMax;
@@ -370,7 +370,7 @@ bool Msg40::federatedLoop ( ) {
 	mr.ptr_query                   = const_cast<char*>(m_si->m_q.originalQuery());
 	mr.size_query                  = strlen(m_si->m_q.originalQuery())+1;
 	int32_t slen = 0; if ( m_si->m_sites ) slen=strlen(m_si->m_sites)+1;
-	mr.ptr_whiteList               = m_si->m_sites;
+	mr.ptr_whiteList               = const_cast<char*>(m_si->m_sites);
 	mr.size_whiteList              = slen;
 	mr.m_timeout                   = g_conf.m_msg40_msg39_timeout;
 	mr.m_realMaxTop                = m_si->m_realMaxTop;
@@ -428,7 +428,7 @@ bool Msg40::federatedLoop ( ) {
 			      m_si->m_allowHighFrequencyTermCache,
 			      cr->m_maxQueryTerms);
 		
-		tmpQuery.modifyQuery(&mr.m_scoringWeights, *cr, &m_si->m_doSiteClustering);
+		tmpQuery.modifyQuery(&mr.m_derivedScoringWeights, *cr, &m_si->m_doSiteClustering);
 		mr.m_doSiteClustering = m_si->m_doSiteClustering;
 	}
 
@@ -1004,7 +1004,7 @@ bool Msg40::launchMsg20s(bool recalled) {
 
 		if ( m_si->m_displayMetas && m_si->m_displayMetas[0] ) {
 			int32_t dlen = strlen(m_si->m_displayMetas);
-			req.ptr_displayMetas     = m_si->m_displayMetas;
+			req.ptr_displayMetas     = const_cast<char *>(m_si->m_displayMetas);
 			req.size_displayMetas    = dlen+1;
 		}
 

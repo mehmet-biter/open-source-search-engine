@@ -5,7 +5,8 @@
 
 //misc. rank-to-weight, group-to-weight, shoesize-to-weight lookups
 
-struct ScoringWeights {
+class DerivedScoringWeights {
+public:
 	float m_diversityWeights [MAXDIVERSITYRANK+1];
 	float m_densityWeights   [MAXDENSITYRANK+1];
 	float m_wordSpamWeights  [MAXWORDSPAMRANK+1]; // wordspam

@@ -88,14 +88,12 @@ void Msg39Request::reset() {
 	m_niceness                = MAX_NICENESS;
 	m_maxAge                  = 0;
 	m_maxQueryTerms           = 9999;
-	//m_compoundListMaxSize     = 20000000;
 	m_language                = 0;
 	m_word_variations_config = WordVariationsConfig();
 	m_debug                   = false;
 	m_getDocIdScoringInfo     = true;
 	m_doSiteClustering        = true;
 	m_hideAllClustered        = false;
-	//m_doIpClustering          = true;
 	m_doDupContentRemoval     = true;
 	m_addToCache              = false;
 	m_familyFilter            = false;
@@ -369,7 +367,7 @@ void Msg39::getDocIds2() {
 	
 	if(m_msg39req->m_modifyQuery) {
 		bool dont_care; //artifact because queries are parsed both at sender and on each shard.
-		m_query.modifyQuery(&m_msg39req->m_scoringWeights, *cr, &dont_care);
+		m_query.modifyQuery(&m_msg39req->m_derivedScoringWeights, *cr, &dont_care);
 	}
 
 	// set m_errno
