@@ -188,7 +188,7 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 			xmlDoc->m_addSpiderRequest = true;
 		} else {
 			SpiderRequest *sreq = reinterpret_cast<SpiderRequest *>(rebuildDocItem->m_spiderdbList.getCurrentRec());
-			xmlDoc->m_sreq = *sreq;
+			memcpy(&xmlDoc->m_sreq, sreq, sreq->m_dataSize + sizeof(key128_t));
 		}
 
 		xmlDoc->m_sreqValid = true;
