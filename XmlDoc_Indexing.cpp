@@ -886,20 +886,6 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 	return true;
 }
 
-bool XmlDoc::getUseTimeAxis ( ) {
-	if ( m_useTimeAxisValid )
-		return m_useTimeAxis;
-	if ( m_setFromTitleRec )
-		// return from titlerec header
-		return m_useTimeAxis;
-	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
-	if ( ! cr ) return false;
-	m_useTimeAxis = cr->m_useTimeAxis;
-	m_useTimeAxisValid = true;
-	return m_useTimeAxis;
-}
-
-
 // . returns false and sets g_errno on error
 // . copied Url2.cpp into here basically, so we can now dump Url2.cpp
 bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) {
@@ -935,12 +921,6 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	if (ini == nullptr || ini == (bool*)-1) {
 		// must not be blocked
 		gbshutdownLogicError();
-	}
-
-	if ( getUseTimeAxis() ) {
-		hi.m_prefix = "gbtimeurl";
-		SafeBuf *tau = getTimeAxisUrl();
-		hashSingleTerm ( tau->getBufStart(),tau->length(),&hi);
 	}
 
 	char *s = fu->getUrl();

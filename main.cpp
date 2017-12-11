@@ -2549,8 +2549,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 						"cs=%04d "
 						"lang=%02d "
 						"sni=%03" PRId32" "
-						"usetimeaxis=%i "
-						//"cats=%" PRId32" "
 						"lastspidered=%s "
 						"ip=%s "
 						"numLinkTexts=%04" PRId32" "
@@ -2574,7 +2572,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 						xd->m_charset,//tr.getCharset(),
 						xd->m_langId,//tr.getLanguage(),
 						(int32_t)xd->m_siteNumInlinks,//tr.getDo
-						xd->m_useTimeAxis,
 						//nc,
 						ppp, 
 						iptoa(xd->m_ip,ipbuf2),
@@ -2628,7 +2625,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 				"ctype=%s "
 				"lang=%02d "
 				"sni=%03" PRId32" "
-				"usetimeaxis=%i "
 				"lastspidered=%s "
 				"ip=%s "
 				"numLinkTexts=%04" PRId32" "
@@ -2648,7 +2644,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 				g_contentTypeStrings[xd->m_contentType],
 				xd->m_langId,//tr.getLanguage(),
 				(int32_t)xd->m_siteNumInlinks,//tr.getDocQuality(),
-				xd->m_useTimeAxis,
 				ppp,
 				iptoa(xd->m_ip,ipbuf2),
 				info->getNumGoodInlinks(),

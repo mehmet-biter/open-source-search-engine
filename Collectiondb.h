@@ -219,7 +219,6 @@ public:
 	bool  m_dedupingEnabled         ; // dedup content on same hostname
 	bool  m_dupCheckWWW             ;
 	bool  m_useSimplifiedRedirects  ;
-	bool  m_useTimeAxis             ;
 	bool  m_oneVotePerIpDom         ;
 	bool  m_doUrlSpamCheck          ; //filter urls w/ naughty hostnames
 	bool  m_doLinkSpamCheck         ; //filters dynamically generated pages
