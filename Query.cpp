@@ -310,8 +310,6 @@ bool Query::set2 ( const char *query        ,
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 		// get the ith word
 		QueryWord *qw = &m_qwords[i];
-		// skip if not on first level
-		if ( qw->m_level != 0 ) continue;
 		// stop at first OR on this level
 		if ( qw->m_opcode == opcode_t::OP_OR ) break;
 		// skip all punct
