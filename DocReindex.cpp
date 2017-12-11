@@ -135,7 +135,7 @@ void DocReindex::processDocItem(DocProcessDocItem *docItem) {
 
 		reindexDocItem->m_spiderdbListRequested = true;
 
-		if (!reindexDocItem->m_msg0.getList(-1, RDB_SPIDERDB, xmlDoc->m_collnum, &reindexDocItem->m_spiderdbList, (const char *)&startKey,
+		if (!reindexDocItem->m_msg0.getList(-1, RDB_SPIDERDB_DEPRECATED, xmlDoc->m_collnum, &reindexDocItem->m_spiderdbList, (const char *)&startKey,
 		                             (const char *)&endKey,
 		                             1000000, reindexDocItem, processedDoc, 0, true, true, -1, 0, -1, 10000, false, false, -1)) {
 			// blocked

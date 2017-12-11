@@ -174,7 +174,7 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 
 		rebuildDocItem->m_spiderdbListRequested = true;
 
-		if (!rebuildDocItem->m_msg0.getList(-1, RDB_SPIDERDB, xmlDoc->m_collnum, &rebuildDocItem->m_spiderdbList, (const char *)&startKey,
+		if (!rebuildDocItem->m_msg0.getList(-1, RDB_SPIDERDB_DEPRECATED, xmlDoc->m_collnum, &rebuildDocItem->m_spiderdbList, (const char *)&startKey,
 		                             (const char *)&endKey,
 		                             1000000, rebuildDocItem, processedDoc, 0, true, true, -1, 0, -1, 10000, false, false, -1)) {
 			// blocked
