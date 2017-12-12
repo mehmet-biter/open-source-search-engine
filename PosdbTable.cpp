@@ -2012,6 +2012,9 @@ bool PosdbTable::findCandidateDocIds() {
 		// get it
 		const QueryTermInfo *qti = &qtibuf[i];
 
+		if(qti->m_numSubLists==0)
+			continue; //ignored word or stopword.
+
 		// skip if negative query term
 		if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 			continue;
@@ -2226,7 +2229,7 @@ nextNode:
 		// get it
 		QueryTermInfo *qti = &qtibuf[i];
 		// do not advance negative termlist cursor
-		if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
+		if ( qti->m_numSubLists>0 && qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 			continue;
 		}
 		
@@ -2503,7 +2506,7 @@ bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qti
 		// get it
 		QueryTermInfo *qti = &qtibuf[i];
 		// do not advance negative termlist cursor
-		if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
+		if ( qti->m_numSubLists>0 && qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 			continue;
 		}
 
@@ -2786,9 +2789,9 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 		// NO! this loses the wikihalfstopbigram bit! so we gotta
 		// add that in for the key i guess the same way we add in
 		// the syn bits below!!!!!
-		m_bflags [j] = qti->m_subList[0].m_bigramFlag;
+		m_bflags [j] = qti->m_numSubLists>0 ? qti->m_subList[0].m_bigramFlag : 0;
 		// if we have a negative term, skip it
-		if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
+		if ( qti->m_numSubLists>0 && qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 			// need to make this NULL for getSiteRank() call below
 			miniMergeBuffer->mergedListStart[j] = NULL;
 			// if its empty, that's good!
@@ -3794,7 +3797,7 @@ void PosdbTable::intersectLists_real() {
 				// get it
 				QueryTermInfo *qti = &qtibuf[i];
 				// skip negative termlists
-				if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
+				if ( qti->m_numSubLists>0 && qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 					continue;
 				}
 				
@@ -4901,7 +4904,7 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists() {
 	for(int i=0; i<m_numQueryTermInfos; i++) {
 		QueryTermInfo *qti = ((QueryTermInfo*)m_qiBuf.getBufStart()) + i;
 		qti->m_numMatchingSubLists = 0;
-		if(qti->m_subList[0].m_bigramFlag & BF_NEGATIVE)
+		if(qti->m_numSubLists>0 && qti->m_subList[0].m_bigramFlag & BF_NEGATIVE)
 			continue; //don't modify sublist for negative terms
 #ifdef _VALGRIND_
 		VALGRIND_MAKE_MEM_UNDEFINED(qti->m_matchingSublist, sizeof(qti->m_matchingSublist));
