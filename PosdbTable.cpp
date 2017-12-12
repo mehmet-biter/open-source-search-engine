@@ -1841,6 +1841,23 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		}
 	}
 
+	//check if any of the terms are not being used. This can happen if query was truncated and some bigrams or synonyms were included while the base word was not.
+	std::vector<bool> termUsed(m_q->m_numTerms);
+	for(int i=0; i<m_numQueryTermInfos; i++) {
+		const QueryTermInfo *qti = &qtibuf[i];
+		for(int j=0; j<qti->m_numSubLists; j++) {
+			const QueryTerm *qt = qti->m_subList[j].m_qt;
+			int qtermNum = qt - m_q->m_qterms;
+			termUsed[qtermNum] = true;
+		}
+	}
+	for(int i=0; i<m_q->m_numTerms; i++) {
+		const QueryTerm *qt = &m_q->m_qterms[i];
+		logTrace(g_conf.m_logTracePosdb,"termUsed[%d]=%s (%.*s)", i, termUsed[i]?"true":"false", qt->m_termLen,qt->m_term);
+		if(!termUsed[i] && !qt->m_ignored)
+			log(LOG_DEBUG, "posdb: unused term found #%d '%.*s' in query '%.*s'. Was query truncated?", i, qt->m_termLen, qt->m_term, m_q->getQueryLen(), m_q->getQuery());
+	}
+
 	// . m_minTermListSize is set in setQueryTermInfo()
 	// . how many docids do we have at most in the intersection?
 	// . all keys are of same termid, so they are 12 or 6 bytes compressed
