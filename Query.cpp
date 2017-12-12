@@ -400,7 +400,7 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( qw->m_quoteStart >= 0 && qw->m_quoteStart != i )
 			continue;
 		// ignore if weight is absolute zero
-		if ( qw->m_userWeightForWord == 0 )
+		if ( almostEqualFloat(qw->m_userWeightForWord,0) )
 			continue;
 		nqt++;
 	}
@@ -426,6 +426,9 @@ bool Query::setQTerms ( const Words &words ) {
 			if ( qw->m_ignoreWord == IGNORE_FIELDNAME ) continue;
 			// ignore boolean operators
 			if ( qw->m_ignoreWord ) continue;// IGNORE_BOOLOP
+			// ignore if word weight is zero
+			if(almostEqualFloat(qw->m_userWeightForWord,0))
+				continue;
 			// no, hurts 'Greencastle IN economic development'
 			if ( qw->m_wordId == to ) continue;
 			// single letters...
@@ -593,7 +596,7 @@ bool Query::setQTerms ( const Words &words ) {
 			continue;
 
 		// ignore if weight is absolute zero
-		if ( qw->m_userWeightForWord == 0 )
+		if ( almostEqualFloat(qw->m_userWeightForWord,0) )
 			continue;
 
 		// stop breach
@@ -803,6 +806,9 @@ bool Query::setQTerms ( const Words &words ) {
 			if ( qw->m_ignoreWord == IGNORE_FIELDNAME ) continue;
 			// ignore boolean operators
 			if ( qw->m_ignoreWord ) continue;// IGNORE_BOOLOP
+			// ignore if word weight is zero
+			if(almostEqualFloat(qw->m_userWeightForWord,0))
+				continue;
 			// no, hurts 'Greencastle IN economic development'
 			if ( qw->m_wordId == to ) continue;
 			// single letters...

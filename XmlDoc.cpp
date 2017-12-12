@@ -10878,7 +10878,7 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 				    links->m_linkFlags ,
 				    links->m_numLinks  ,
 				    // make it point to this basetagrec if
-				    // the LF_SAMEHOST flag is set for the link
+				    // the LF_SAMESITE flag is set for the link
 				    gr ,
 				    cr->m_collnum             ,
 				    m_niceness         ,
@@ -10948,14 +10948,9 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 	setStatus ( "getting outlink first ip vector" );
 	// assume valid
 	m_outlinkIpVectorValid = true;
-	// sanity check
-	//if ( ! m_spideredTimeValid ) { g_process.shutdownAbort(true); }
+
 	// use this
 	int32_t nowGlobal = getSpideredTime();//m_spideredTime;
-	// add tags to tagdb?
-	bool addTags = true;
-	//if ( m_sreqValid && m_sreq.m_isPageParser ) addTags = false;
-	if ( getIsPageParser() ) addTags = false;
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
