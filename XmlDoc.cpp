@@ -5605,7 +5605,7 @@ Url **XmlDoc::getRedirUrl() {
 		sameDom = false;
 	}
 
-	if ( ! sameDom ) {
+	if (httpStatus != 301 && httpStatus != 308 && !sameDom) {
 		m_redirUrl.set(loc->getUrl(), loc->getUrlLen(), false, true);
 		m_redirUrlPtr   = &m_redirUrl;
 		ptr_redirUrl    = m_redirUrl.getUrl();
@@ -5630,20 +5630,25 @@ Url **XmlDoc::getRedirUrl() {
 	int32_t rlen = loc->getUrlLen();
 	int32_t ulen = f->getUrlLen();
 
+	if (httpStatus == 301 || httpStatus == 308) {
+		logTrace(g_conf.m_logTraceXmlDoc, "permanent redirection. simplifiedRedir=true");
+		simplifiedRedir = true;
+	}
+
 	// simpler if new path depth is shorter
-	if ( loc->getPathDepth( true ) < f->getPathDepth( true ) ) {
+	else if (loc->getPathDepth(true) < f->getPathDepth(true)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirected url path depth is shorter. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// simpler if old has cgi and new does not
-	if ( !simplifiedRedir && f->isCgi() && ! loc->isCgi() ) {
+	else if (f->isCgi() && !loc->isCgi()) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirected url doesn't have query param, old url does. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// simpler if new one is same as old but has a '/' at the end
-	if ( !simplifiedRedir && rlen == ulen+1 && r[rlen-1]=='/' && strncmp(r, u, ulen) == 0 ) {
+	else if (rlen == ulen + 1 && r[rlen - 1] == '/' && strncmp(r, u, ulen) == 0) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirected url has '/', old url doesn't. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
@@ -5651,27 +5656,25 @@ Url **XmlDoc::getRedirUrl() {
 	// . if new url does not have semicolon but old one does
 	// . http://news.yahoo.com/i/738;_ylt=AoL4eFRYKEdXbfDh6W2cF
 	//   redirected to http://news.yahoo.com/i/738
-	if ( !simplifiedRedir && strchr ( u, ';' ) &&  ! strchr ( r, ';' ) ) {
+	else if (strchr(u, ';') && !strchr(r, ';')) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirected url doesn't have semicolon, old url does. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// simpler is new host is www and old is not
-	if ( !simplifiedRedir && loc->isHostWWW() && ! f->isHostWWW() ) {
+	else if (loc->isHostWWW() && !f->isHostWWW()) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirect is www & original is not. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// if redirect is to different domain, set simplified
 	// this helps locks from bunching on one domain
-	if ( !simplifiedRedir && ( loc->getDomainLen() != f->getDomainLen() ||
-	     strncasecmp ( loc->getDomain(), f->getDomain(), loc->getDomainLen() ) != 0 ) ) {
+	else if ((loc->getDomainLen() != f->getDomainLen() ||
+	          strncasecmp(loc->getDomain(), f->getDomain(), loc->getDomainLen()) != 0) && !f->isRoot()) {
 		// crap, but www.hotmail.com redirects to live.msn.com
 		// login page ... so add this check here
-		if ( !f->isRoot() ) {
-			logTrace(g_conf.m_logTraceXmlDoc, "different domain & not root. simplifiedRedir=true");
-			simplifiedRedir = true;
-		}
+		logTrace(g_conf.m_logTraceXmlDoc, "different domain & not root. simplifiedRedir=true");
+		simplifiedRedir = true;
 	}
 
 	bool allowSimplifiedRedirs = m_allowSimplifiedRedirs;
