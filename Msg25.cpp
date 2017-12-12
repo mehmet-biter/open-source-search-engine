@@ -4102,7 +4102,7 @@ bool Links::addLink(const char *link, int32_t linkLen, int32_t nodeNum,
 	}
 
 	// same site?
-	{
+	if (m_parentUrl) {
 		SiteGetter parentSiteGetter;
 		parentSiteGetter.getSite(m_parentUrl->getUrl(), nullptr, 0, 0, 0);
 
