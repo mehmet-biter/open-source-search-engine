@@ -5635,6 +5635,13 @@ Url **XmlDoc::getRedirUrl() {
 		simplifiedRedir = true;
 	}
 
+	// http -> https on same hostname
+	else if (f->isHttp() && loc->isHttps() &&
+		loc->getHostLen() == f->getHostLen() && strncasecmp(loc->getHost(), f->getHost(), loc->getHostLen()) == 0) {
+		logTrace(g_conf.m_logTraceXmlDoc, "redirected from http to https on same host. simplifiedRedir=true");
+		simplifiedRedir = true;
+	}
+
 	// simpler if new path depth is shorter
 	else if (loc->getPathDepth(true) < f->getPathDepth(true)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirected url path depth is shorter. simplifiedRedir=true");
