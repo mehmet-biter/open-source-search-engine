@@ -426,8 +426,10 @@ bool Query::setQTerms ( const Words &words ) {
 			if ( qw->m_ignoreWord == IGNORE_FIELDNAME ) continue;
 			// ignore boolean operators
 			if ( qw->m_ignoreWord ) continue;// IGNORE_BOOLOP
-			// ignore if word weight is zero
+			// ignore if word weight is zero or synonym weight is zero
 			if(almostEqualFloat(qw->m_userWeightForWord,0))
+				continue;
+			if(almostEqualFloat(qw->m_userWeightForSynonym,0))
 				continue;
 			// no, hurts 'Greencastle IN economic development'
 			if ( qw->m_wordId == to ) continue;
@@ -462,7 +464,11 @@ bool Query::setQTerms ( const Words &words ) {
 			qw->m_fieldCode != FIELD_GENERIC )
 				continue;
 			if(qw->m_ignoreWord == IGNORE_FIELDNAME) continue;
-			if(qw->m_userWeightForWord == 0) continue;
+			// ignore if word weight is zero or synonym weight is zero
+			if(almostEqualFloat(qw->m_userWeightForWord,0))
+				continue;
+			if(almostEqualFloat(qw->m_userWeightForSynonym,0))
+				continue;
 			wvg_source_words.emplace_back(qw->m_word,qw->m_wordLen);
 			wvg_source_word_index.emplace_back(i);
 		}
@@ -806,8 +812,10 @@ bool Query::setQTerms ( const Words &words ) {
 			if ( qw->m_ignoreWord == IGNORE_FIELDNAME ) continue;
 			// ignore boolean operators
 			if ( qw->m_ignoreWord ) continue;// IGNORE_BOOLOP
-			// ignore if word weight is zero
+			// ignore if word weight is zero or synonym weight is zero
 			if(almostEqualFloat(qw->m_userWeightForWord,0))
+				continue;
+			if(almostEqualFloat(qw->m_userWeightForSynonym,0))
 				continue;
 			// no, hurts 'Greencastle IN economic development'
 			if ( qw->m_wordId == to ) continue;
