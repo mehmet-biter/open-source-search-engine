@@ -17864,28 +17864,6 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 		}
 	}
 
-	if ( m_indexCode || g_errno ) {
-		switch (format) {
-			case FORMAT_HTML:
-				sb->safePrintf("</table><br>\n");
-				break;
-			case FORMAT_XML:
-				sb->safePrintf("</response>\n");
-				break;
-			case FORMAT_JSON:
-				sb->removeLastChar('\n');
-				sb->removeLastChar(',');
-				sb->safePrintf("}\n");
-				sb->safePrintf("}\n");
-				break;
-			default:
-				break;
-		}
-
-		return true;
-	}
-
-
 	// must always start with http
 	if ( strncmp ( fu , "http" , 4 ) != 0 ) { g_process.shutdownAbort(true); }
 
@@ -17920,7 +17898,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("<tr><td>is RSS feed?</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isRSS);
 			sb->safePrintf("<tr><td>ip</td><td><a href=\"/search?q=ip%%3A%s&c=%s&n=100\">%s</td></tr>\n", ipString, cr->m_coll, ipString);
 			sb->safePrintf("<tr><td>http status</td><td>%d</td></tr>", m_httpStatus);
-			sb->safePrintf("<tr><td>content len</td><td>%" PRId32" bytes</td></tr>\n", size_utf8Content - 1);
+			sb->safePrintf("<tr><td>content len</td><td>%" PRId32" bytes</td></tr>\n", size_utf8Content ? size_utf8Content - 1 : size_utf8Content);
 			sb->safePrintf("<tr><td>content truncated</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isContentTruncated);
 			sb->safePrintf("<tr><td>content type</td><td>%s</td></tr>\n", g_contentTypeStrings[(int)m_contentType]);
 			sb->safePrintf("<tr><td>language</td><td>%s</td></tr>\n", strLanguage);
@@ -17955,7 +17933,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\t<isRSSFeed>%" PRId32"</isRSSFeed>\n", (int32_t)m_isRSS);
 			sb->safePrintf("\t<ipAddress><![CDATA[%s]]></ipAddress>\n", ipString);
 			sb->safePrintf("\t<httpStatus>%d</httpStatus>", m_httpStatus);
-			sb->safePrintf("\t<contentLenInBytes>%" PRId32"</contentLenInBytes>\n", size_utf8Content - 1);
+			sb->safePrintf("\t<contentLenInBytes>%" PRId32"</contentLenInBytes>\n", size_utf8Content ? size_utf8Content - 1 : size_utf8Content);
 			sb->safePrintf("\t<isContentTruncated>%" PRId32"</isContentTruncated>\n", (int32_t)m_isContentTruncated);
 			sb->safePrintf("\t<contentType><![CDATA[%s]]></contentType>\n", g_contentTypeStrings[(int)m_contentType]);
 			sb->safePrintf("\t<language><![CDATA[%s]]></language>\n", strLanguage);
@@ -17986,7 +17964,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\",\n");
 
 			sb->safePrintf("\t\"httpStatus\": %" PRId16",\n", m_httpStatus);
-			sb->safePrintf("\t\"contentLenInBytes\": %" PRId32",\n", size_utf8Content - 1);
+			sb->safePrintf("\t\"contentLenInBytes\": %" PRId32",\n", size_utf8Content ? size_utf8Content - 1 : size_utf8Content);
 			sb->safePrintf("\t\"isContentTruncated\": %s,\n", m_isContentTruncated ? "true" : "false");
 
 			sb->safePrintf("\t\"contentType\": \"");
