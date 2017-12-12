@@ -1,0 +1,359 @@
+<script>
+/* Storing & retrieving form fields in a JSON cookie 
+ * copyright Will Bradley, 2012, released under a CC-BY license
+ * 
+ * Change all instances of "myform" as necessary.
+ * Cookie will be stored under the current URL, but
+ * it won't include any hidden fields, etc.
+ */
+
+function setCookie(c_name,value,expireminutes)
+{
+   var exdate=new Date();
+   exdate.setMinutes(exdate.getMinutes()+expireminutes);
+   document.cookie=c_name+ "=" +escape(value)+
+   ((expireminutes==null) ? "" : ";expires="+exdate.toUTCString());
+}
+
+function getCookie(c_name)
+{
+if (document.cookie.length>0)
+  {
+  c_start=document.cookie.indexOf(c_name + "=");
+  if (c_start!=-1)
+    {
+    c_start=c_start + c_name.length+1;
+    c_end=document.cookie.indexOf(";",c_start);
+    if (c_end==-1) c_end=document.cookie.length;
+    return unescape(document.cookie.substring(c_start,c_end));
+    }
+  }
+return "";
+}
+
+function onSubmit()
+{
+  var form=document.ranktest;
+  var json = [];
+  // Loop through all the form elements
+  for (var i=0;i<form.length;i++) {
+    // Make sure they're valid to be stored (i.e. checked, not a button)
+    if (form.elements[i].name && (form.elements[i].checked
+      || /select|textarea/i.test(form.elements[i].nodeName)
+      || /text|password/i.test(form.elements[i].type))) {
+      // Store them in an object association
+      var entry = {};
+      entry[form.elements[i].name] = form.elements[i].value;
+      json.push(entry);
+      //alert(form.elements[i].id+": "+form.elements[i].value);
+    }
+  }
+  setCookie("ranktest",JSON.stringify(json), 24*60*365);
+  //alert(JSON.stringify(json));
+}
+
+function onLoad() {
+  // load values from cookie
+  var cookie = getCookie("ranktest");
+  
+  if(cookie.length > 10){
+    var retval = JSON.parse(cookie);
+    //alert(retval.length);
+    for(var i=0;i<retval.length;i++) {
+      var obj = retval[i];
+      for(var key in obj){
+        //alert(key+": "+obj[key]);
+        document.ranktest.elements[key].value = obj[key];
+      }
+    }
+  }
+}
+</script>
+  
+
+<br><br><br>
+<form method=GET action=/search name="ranktest" id="ranktest" onsubmit="return onSubmit()">
+
+<table width=605 border=0 align=center cellpadding=5 cellspacing=3 bordercolor="#b0b0c0">
+<tbody>
+<tr align=left valign=middle><th colspan=3>Search for...</th></tr>
+
+<tr bgcolor=#d0d0e0 align=left valign=middle><td>Query string</td><td colspan=2><input type=text name=q size=40 /></td></tr>
+<tr align=right><td></td><td><input type=submit></td></tr>
+
+<tr bgcolor=#c0c0f0 align=left valign=middle><td>fx_fetld:</td><td colspan=2>
+<select name=fx_fetld id=fx_fetld style=width:415px;>
+<option value=>Any</option>
+<option value="com">.com</option>
+<option value="de">.de</option>
+<option value="dk">.dk</option>
+<option value="eu">.eu</option>
+<option value="fi">.fi</option>
+<option value="fr">.fr</option>
+<option value="no">.no</option>
+<option value="se">.se</option>
+<option value="uk">.uk</option>
+</select></td></tr>
+
+<tr bgcolor=#c0c0f0 align=left valign=middle><td>fx_blang:</td><td colspan=2>
+<select name=fx_blang style=width:415px;>
+<option value=>Any</option>
+<option value="da-DK">da-DK</option>
+<option value="en-US">en-US</option>
+<option value="en-AU">en-AU</option>
+</select></td></tr>
+
+
+<tr bgcolor=#c0c0f0 align=left valign=middle><td>fx_country:</td><td colspan=2>
+<select name=fx_country style=width:415px;>
+<option value=>Any</option>
+<option value="DE">Germany</option>
+<option value="DK">Denmark</option>
+<option value="FI">Finland</option>
+<option value="FR">France</option>
+<option value="NO">Norway</option>
+<option value="SE">Sweden</option>
+<option value="UK">United Kingdom</option>
+<option value="US">USA</option>
+</select></td></tr>
+
+<tr bgcolor=#d0d0e0 align=left valign=middle><td>Family Filter</td><td colspan=2><input type=radio name=ff value=1/>yes&nbsp;&nbsp;&nbsp;<input type=radio name=ff value=0 checked/>no</td></tr>
+
+
+<tr bgcolor=#d0d0e0 align=left valign=middle><td>Language (qlang):</td><td colspan=2>
+<select name=qlang style=width:415px;>
+<option value=-1>Any</option>
+<option value=0>Unknown</option>
+<option value=34>Danish</option>
+<option value=11>Dutch</option>
+<option value=1>English</option>
+<option value=13>Finnish</option>
+<option value=2>French</option>
+<option value=10>German</option>
+<option value=12>Italian</option>
+<option value=15>Norwegian</option>
+<option value=25>Polish</option>
+<option value=3>Spanish</option>
+<option value=14>Swedish</option>
+</select></td></tr>
+
+
+<tr bgcolor=#d0d0e0 align=left valign=middle><td>Site Clustering</td><td colspan=2><input type=radio name=sc value=1 checked/>yes&nbsp;&nbsp;&nbsp;<input type=radio name=sc value=0/>no</td></tr>
+
+<tr bgcolor=#c0c0f0 align=left valign=middle><td>Number of summary excerpts</td><td colspan=2><input type=radio name=ns value=0>0&nbsp;&nbsp;&nbsp;<input type=radio name=ns value=1>1&nbsp;&nbsp;&nbsp;<input type=radio name=ns value=2>2&nbsp;&nbsp;&nbsp;<input type=radio name=ns value=3 checked>3&nbsp;&nbsp;&nbsp;<input type=radio name=ns value=4>4&nbsp;&nbsp;&nbsp;<input type=radio name=ns value=5>5</td></tr>
+<tr bgcolor=#c0c0f0 align=left valign=middle><td>Results per Page</td>
+<td colspan=2><input type=radio name=n value=10 checked/>10&nbsp;&nbsp;<input type=radio name=n value=20 />20&nbsp;&nbsp;<input type=radio name=n value=30 />30&nbsp;&nbsp;<input type=radio name=n value=40 />40&nbsp;&nbsp;<input type=radio name=n value=50 />50&nbsp;&nbsp;<input type=radio name=n value=100 />100</td></tr>
+
+
+
+<tr bgcolor=#d0d0e0><td width=37%><b>Language weight</b><br><font size=1>Default language weight if document matches query language. Default: 20.000000</font></td>
+<td width=12%><input type=text name=langw value="20.000000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Unknown language weight</b><br><font size=1>Default language weight if query language is specified but document language could not be determined. Default: 10.000000</font></td>
+<td width=12%><input type=text name=ulangw value="5.000000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Site-rank multiplier</b><br><font size=1>formula: score = (siterank*multiplier)+1 Default: 0.333333</font></td>
+<td width=12%><input type=text name=siterankmultiplier value="0.333333" size=7></td>
+</tr>
+<tr bgcolor=#c0c0f0><td width=37%><b>Termfreq min</b><br><font size=1>Term frequency estimate minimum Default: 0.000000</font></td>
+<td width=12%><input type=text name=termfreqweightfreqmin value="0.000000" size=7></td>
+</tr>
+<tr bgcolor=#c0c0f0><td width=37%><b>Termfreq max</b><br><font size=1>Term frequency estimate maximum Default: 0.500000</font></td>
+<td width=12%><input type=text name=termfreqweightfreqmax value="0.500000" size=7></td>
+</tr>
+<tr bgcolor=#c0c0f0><td width=37%><b>Termfreq weight min</b><br><font size=1>Term frequency weight minimum Default: 0.500000</font></td>
+<td width=12%><input type=text name=termfreqweightmin value="0.500000" size=7></td>
+</tr>
+<tr bgcolor=#c0c0f0><td width=37%><b>Termfreq weight max</b><br><font size=1>Term frequency weight maximum Default: 1.000000</font></td>
+<td width=12%><input type=text name=termfreqweightmax value="1.000000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Density weight min</b><br><font size=1>Term density weight minimum. Normally less than 1.0 Default: 0.350000</font></td>
+<td width=12%><input type=text name=densityweightmin value="0.350000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Density weight max</b><br><font size=1>Term density weight maximum. Normally 1.0 Default: 1.000000</font></td>
+<td width=12%><input type=text name=densityweightmax value="1.000000" size=7></td>
+</tr>
+<tr bgcolor=#c0c0f0><td width=37%><b>Diversity weight min</b><br><font size=1>Term diversity weight minimum. Normally less than 1.0 Default: 1.000000</font></td>
+<td width=12%><input type=text name=diversityweightmin value="1.000000" size=7></td>
+</tr>
+<tr bgcolor=#c0c0f0><td width=37%><b>Diversity weight max</b><br><font size=1>Term diversity weight maximum. Normally 1.0 Default: 1.000000</font></td>
+<td width=12%><input type=text name=diversityweightmax value="1.000000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Hashgroup weight - body</b><br><font size=1> Default: 1.000000</font></td>
+<td width=12%><input type=text name=hgw_body value="1.000000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Hashgroup weight - title</b><br><font size=1> Default: 8.000000</font></td>
+<td width=12%><input type=text name=hgw_title value="8.000000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Hashgroup weight - heading</b><br><font size=1> Default: 1.500000</font></td>
+<td width=12%><input type=text name=hgw_heading value="1.500000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Hashgroup weight - list</b><br><font size=1> Default: 0.300000</font></td>
+<td width=12%><input type=text name=hgw_list value="0.300000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Hashgroup weight - metatag</b><br><font size=1> Default: 0.100000</font></td>
+<td width=12%><input type=text name=hgw_metatag value="0.100000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Hashgroup weight - in link text</b><br><font size=1> Default: 16.000000</font></td>
+<td width=12%><input type=text name=hgw_inlinktext value="16.000000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Hashgroup weight - tag</b><br><font size=1> Default: 1.000000</font></td>
+<td width=12%><input type=text name=hgw_intag value="1.000000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Hashgroup weight - neighborhood</b><br><font size=1> Default: 0.000000</font></td>
+<td width=12%><input type=text name=hgw_neighborhood value="0.000000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Hashgroup weight - internal link text</b><br><font size=1> Default: 4.000000</font></td>
+<td width=12%><input type=text name=hgw_inintlinktext value="4.000000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Hashgroup weight - URL</b><br><font size=1> Default: 1.000000</font></td>
+<td width=12%><input type=text name=hgw_inurl value="1.000000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Hashgroup weight - in menu</b><br><font size=1> Default: 0.200000</font></td>
+<td width=12%><input type=text name=hgw_inmenu value="0.200000" size=7></td>
+</tr>
+<tr bgcolor=#c0c0f0><td width=37%><b>Synonym weight</b><br><font size=1>Weight of synonyms in relation to original words Default: 0.900000</font></td>
+<td width=12%><input type=text name=synonym_weight value="0.900000" size=7></td>
+</tr>
+<tr bgcolor=#c0c0f0><td width=37%><b>Bigram weight</b><br><font size=1>Weight of bigrams in relation to single words Default: 5.000000</font></td>
+<td width=12%><input type=text name=bigram_weight value="5.000000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Page temp weight min</b><br><font size=1>Page temp is scaled to be between the min and max Default: 1.000000</font></td>
+<td width=12%><input type=text name=pagetempweightmin value="1.000000" size=7></td>
+</tr>
+<tr bgcolor=#d0d0e0><td width=37%><b>Page temp weight max</b><br><font size=1>Page temp is scaled to be between the min and max Default: 20.000000</font></td>
+<td width=12%><input type=text name=pagetempweightmax value="20.000000" size=7></td>
+
+<tr bgcolor=#d0d0e0 align=left valign=middle><td>Use Page Temperature</td><td colspan=2><input type=radio name=use_page_temperature value=1/>yes&nbsp;&nbsp;&nbsp;<input type=radio name=use_page_temperature value=0 checked/>no</td></tr>
+
+<tr align=right><td></td><td><input type=submit></td></tr>
+
+</tbody>
+</table>
+<br><br>
+
+<table width=605 border=0 align=center cellpadding=5 cellspacing=3>
+<tbody>
+<td colspan=20 bgcolor=#c0c0f0><font size=-1>
+26 flags per docid are supported. If a flag bit is set on a page the scoring and ranking can be modified.</font></td></tr><tr bgcolor=#c0c0f0>
+<td><b>#</b></td>
+<td><b>Score multiplier</b></td>
+<td><b>Rank adjustment</b></td>
+</tr>
+<tr bgcolor=#d0d0e0><td>0</td>
+<td><input type=text name=flag_score_multiplier value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank value="0" size=11></td>
+</tr>
+<tr bgcolor=#c0c0f0><td>1</td>
+<td><input type=text name=flag_score_multiplier1 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank1 value="0" size=11></td>
+</tr>
+<tr bgcolor=#d0d0e0><td>2</td>
+<td><input type=text name=flag_score_multiplier2 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank2 value="0" size=11></td>
+</tr>
+<tr bgcolor=#c0c0f0><td>3</td>
+<td><input type=text name=flag_score_multiplier3 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank3 value="0" size=11></td>
+</tr>
+<tr bgcolor=#d0d0e0><td>4</td>
+<td><input type=text name=flag_score_multiplier4 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank4 value="0" size=11></td>
+</tr>
+<tr bgcolor=#c0c0f0><td>5</td>
+<td><input type=text name=flag_score_multiplier5 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank5 value="0" size=11></td>
+</tr>
+<tr bgcolor=#d0d0e0><td>6</td>
+<td><input type=text name=flag_score_multiplier6 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank6 value="0" size=11></td>
+</tr>
+<tr bgcolor=#c0c0f0><td>7</td>
+<td><input type=text name=flag_score_multiplier7 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank7 value="0" size=11></td>
+</tr>
+<tr bgcolor=#d0d0e0><td>8</td>
+<td><input type=text name=flag_score_multiplier8 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank8 value="0" size=11></td>
+</tr>
+<tr bgcolor=#c0c0f0><td>9</td>
+<td><input type=text name=flag_score_multiplier9 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank9 value="0" size=11></td>
+</tr>
+<tr bgcolor=#d0d0e0><td>10</td>
+<td><input type=text name=flag_score_multiplier10 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank10 value="0" size=11></td>
+</tr>
+<tr bgcolor=#c0c0f0><td>11</td>
+<td><input type=text name=flag_score_multiplier11 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank11 value="0" size=11></td>
+</tr>
+<tr bgcolor=#d0d0e0><td>12</td>
+<td><input type=text name=flag_score_multiplier12 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank12 value="0" size=11></td>
+</tr>
+<tr bgcolor=#c0c0f0><td>13</td>
+<td><input type=text name=flag_score_multiplier13 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank13 value="0" size=11></td>
+</tr>
+<tr bgcolor=#d0d0e0><td>14</td>
+<td><input type=text name=flag_score_multiplier14 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank14 value="0" size=11></td>
+</tr>
+<tr bgcolor=#c0c0f0><td>15</td>
+<td><input type=text name=flag_score_multiplier15 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank15 value="0" size=11></td>
+</tr>
+<tr bgcolor=#d0d0e0><td>16</td>
+<td><input type=text name=flag_score_multiplier16 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank16 value="0" size=11></td>
+</tr>
+<tr bgcolor=#c0c0f0><td>17</td>
+<td><input type=text name=flag_score_multiplier17 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank17 value="0" size=11></td>
+</tr>
+<tr bgcolor=#d0d0e0><td>18</td>
+<td><input type=text name=flag_score_multiplier18 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank18 value="0" size=11></td>
+</tr>
+<tr bgcolor=#c0c0f0><td>19</td>
+<td><input type=text name=flag_score_multiplier19 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank19 value="0" size=11></td>
+</tr>
+<tr bgcolor=#d0d0e0><td>20</td>
+<td><input type=text name=flag_score_multiplier20 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank20 value="0" size=11></td>
+</tr>
+<tr bgcolor=#c0c0f0><td>21</td>
+<td><input type=text name=flag_score_multiplier21 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank21 value="0" size=11></td>
+</tr>
+<tr bgcolor=#d0d0e0><td>22</td>
+<td><input type=text name=flag_score_multiplier22 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank22 value="0" size=11></td>
+</tr>
+<tr bgcolor=#c0c0f0><td>23</td>
+<td><input type=text name=flag_score_multiplier23 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank23 value="0" size=11></td>
+</tr>
+<tr bgcolor=#d0d0e0><td>24</td>
+<td><input type=text name=flag_score_multiplier24 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank24 value="0" size=11></td>
+</tr>
+<tr bgcolor=#c0c0f0><td>25</td>
+<td><input type=text name=flag_score_multiplier25 value="1.000000" size=7></td>
+<td><input type=text name=flag_rerank25 value="0" size=11></td>
+</tr>
+
+<tr align=right><td></td><td></td><td><input type=submit></td></tr>
+
+  </tbody></table>
+
+</form>
+<br>
+
+<br><br>
+<script type="text/javascript">
+onLoad();
+</script>
+

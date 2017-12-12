@@ -811,6 +811,10 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	if ( ! strncmp ( path ,"/adv.html", pathLen ) )
 		return sendPagePretty ( s , r,"adv.html","advanced");
 
+	if ( ! strncmp ( path ,"/ranktest.html", pathLen ) )
+		return sendPagePretty ( s , r,"ranktest.html","rank test");
+
+
 	// decorate the plain html page, rants.html, with our nav chrome
 	if ( ! strncmp ( path ,"/faq.html", pathLen ) )
 		return sendPagePretty ( s , r , "faq.html", "faq");
