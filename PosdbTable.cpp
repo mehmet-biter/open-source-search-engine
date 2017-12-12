@@ -1795,6 +1795,23 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		}
 	}
 
+	//check if any of the terms are not being used. This can happen if query was truncated and some bigrams or synonyms were included while the base word was not.
+	std::vector<bool> termUsed(m_q->m_numTerms);
+	for(int i=0; i<m_numQueryTermInfos; i++) {
+		const QueryTermInfo *qti = &qtibuf[i];
+		for(int j=0; j<qti->m_numSubLists; j++) {
+			const QueryTerm *qt = qti->m_subList[j].m_qt;
+			int qtermNum = qt - m_q->m_qterms;
+			termUsed[qtermNum] = true;
+		}
+	}
+	for(int i=0; i<m_q->m_numTerms; i++) {
+		const QueryTerm *qt = &m_q->m_qterms[i];
+		logTrace(g_conf.m_logTracePosdb,"termUsed[%d]=%s (%.*s)", i, termUsed[i]?"true":"false", qt->m_termLen,qt->m_term);
+		if(!termUsed[i] && !qt->m_ignored && !qt->m_isQueryStopWord)
+			log(LOG_DEBUG, "posdb: unused term found #%d '%.*s' in query '%.*s'. Was query truncated?", i, qt->m_termLen, qt->m_term, m_q->getQueryLen(), m_q->getQuery());
+	}
+
 	// . m_minTermListSize is set in setQueryTermInfo()
 	// . how many docids do we have at most in the intersection?
 	// . all keys are of same termid, so they are 12 or 6 bytes compressed
@@ -1948,6 +1965,9 @@ bool PosdbTable::findCandidateDocIds() {
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// get it
 		const QueryTermInfo *qti = &qtibuf[i];
+
+		if(qti->m_numSubLists==0)
+			continue; //ignored word or stopword.
 
 		// skip if negative query term
 		if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
@@ -2163,7 +2183,7 @@ nextNode:
 		// get it
 		QueryTermInfo *qti = &qtibuf[i];
 		// do not advance negative termlist cursor
-		if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
+		if ( qti->m_numSubLists>0 && qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 			continue;
 		}
 		
@@ -2440,7 +2460,7 @@ bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qti
 		// get it
 		QueryTermInfo *qti = &qtibuf[i];
 		// do not advance negative termlist cursor
-		if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
+		if ( qti->m_numSubLists>0 && qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 			continue;
 		}
 
@@ -2723,9 +2743,9 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffe
 		// NO! this loses the wikihalfstopbigram bit! so we gotta
 		// add that in for the key i guess the same way we add in
 		// the syn bits below!!!!!
-		m_bflags [j] = qti->m_subList[0].m_bigramFlag;
+		m_bflags [j] = qti->m_numSubLists>0 ? qti->m_subList[0].m_bigramFlag : 0;
 		// if we have a negative term, skip it
-		if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
+		if ( qti->m_numSubLists>0 && qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 			// need to make this NULL for getSiteRank() call below
 			miniMergeBuffer->mergedListStart[j] = NULL;
 			// if its empty, that's good!
@@ -3731,7 +3751,7 @@ void PosdbTable::intersectLists_real() {
 				// get it
 				QueryTermInfo *qti = &qtibuf[i];
 				// skip negative termlists
-				if ( qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
+				if ( qti->m_numSubLists>0 && qti->m_subList[0].m_bigramFlag & BF_NEGATIVE ) {
 					continue;
 				}
 				
@@ -4839,7 +4859,7 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists() {
 	for(int i=0; i<m_numQueryTermInfos; i++) {
 		QueryTermInfo *qti = ((QueryTermInfo*)m_qiBuf.getBufStart()) + i;
 		qti->m_numMatchingSubLists = 0;
-		if(qti->m_subList[0].m_bigramFlag & BF_NEGATIVE)
+		if(qti->m_numSubLists>0 && qti->m_subList[0].m_bigramFlag & BF_NEGATIVE)
 			continue; //don't modify sublist for negative terms
 #ifdef _VALGRIND_
 		VALGRIND_MAKE_MEM_UNDEFINED(qti->m_matchingSublist, sizeof(qti->m_matchingSublist));

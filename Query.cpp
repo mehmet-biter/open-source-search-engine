@@ -581,6 +581,12 @@ bool Query::setQTerms ( const Words &words ) {
 			qt->m_userWeight = 1;
 		}
 		n++;
+		if(n+1>=m_maxQueryTerms) {
+			//We must leave room at least one regular term - otherwise posdbtable won't work
+			//note: this quick hack leaves some bigrams danlging in posdbtable and won't work
+			//that well, but it is better than no results at all.
+			break;
+		}
 	}
 
 	// now if we have enough room, do the singles
