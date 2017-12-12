@@ -1854,7 +1854,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	for(int i=0; i<m_q->m_numTerms; i++) {
 		const QueryTerm *qt = &m_q->m_qterms[i];
 		logTrace(g_conf.m_logTracePosdb,"termUsed[%d]=%s (%.*s)", i, termUsed[i]?"true":"false", qt->m_termLen,qt->m_term);
-		if(!termUsed[i] && !qt->m_ignored)
+		if(!termUsed[i] && !qt->m_ignored && !qt->m_isQueryStopWord)
 			log(LOG_DEBUG, "posdb: unused term found #%d '%.*s' in query '%.*s'. Was query truncated?", i, qt->m_termLen, qt->m_term, m_q->getQueryLen(), m_q->getQuery());
 	}
 
