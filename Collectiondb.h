@@ -180,6 +180,7 @@ public:
 	bool rebuildLangRules( const char *lang , const char *tld );
 
 	bool rebuildPrivacoreRules();
+	bool rebuildPrivacoreDKOnlyRules();
 
 	bool m_urlFiltersHavePageCounts;
 

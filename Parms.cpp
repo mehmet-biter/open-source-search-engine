@@ -1163,7 +1163,8 @@ static DropLangs g_drops[] = {
 	{"italian"},
 	{"romantic"},
 #endif
-	{"privacore"}
+	{"privacore"},
+	{"privacore-DK"}
 };
 
 // "url filters profile" values. used to set default crawl rules
