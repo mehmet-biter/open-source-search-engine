@@ -2006,13 +2006,12 @@ bool Query::setQWords ( char boolFlag ,
 			if ( ph ) qw->m_phraseId = hash64 ( pid , ph );
 			else      qw->m_phraseId = pid;
 
-			// how many regular words int32_t is the bigram?
-			int32_t plen2;
-			char buf[256];
-			phrases.getPhrase(i, buf, sizeof(buf), &plen2);
-
-			// get just the bigram for now
-			qw->m_phraseLen = plen2;
+			//calculate length of phrase(bigram) in bytes
+			int32_t numWordsInPhrase = phrases.getNumWordsInPhrase2(i);
+			int phraseLen = 0;
+			for(int j=i; j<i+numWordsInPhrase; j++)
+				phraseLen += m_qwords[j].m_wordLen;
+			qw->m_phraseLen = phraseLen;
 
 			// do not ignore the phrase, it's valid
 			qw->m_ignorePhrase = IGNORE_NO_IGNORE;
