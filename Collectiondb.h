@@ -181,6 +181,7 @@ public:
 	bool rebuildLangRules( const char *lang , const char *tld );
 
 	bool rebuildPrivacoreRules();
+	bool rebuildPrivacoreDKOnlyRules();
 
 	bool m_urlFiltersHavePageCounts;
 
@@ -364,6 +365,8 @@ public:
 	int32_t m_crawlDelayDefaultForRobotsTxtMS;
 
 
+	// check URL filters for manual ban and force delete?
+	bool m_checkURLFilters;
 	// rewrite domain-like queries for this collection?
 	bool m_modifyDomainLikeSearches;
 	bool m_domainLikeSearchDisablesSiteCluster;

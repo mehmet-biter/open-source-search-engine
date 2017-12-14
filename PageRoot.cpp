@@ -404,6 +404,7 @@ bool printLeftColumnRocketAndTabs ( SafeBuf *sb ,
 	static const MenuItem mi[] = {
 		{"SEARCH","/"},
 		{"ADVANCED","/adv.html"},
+		{"RANK TEST","/ranktest.html"},
 		{"ADD URL","/addurl"},
 		{"WIDGETS","/widgets.html"},
 		{"SYNTAX","/syntax.html"},

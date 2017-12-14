@@ -5605,7 +5605,7 @@ Url **XmlDoc::getRedirUrl() {
 		sameDom = false;
 	}
 
-	if ( ! sameDom ) {
+	if (httpStatus != 301 && httpStatus != 308 && !sameDom) {
 		m_redirUrl.set(loc->getUrl(), loc->getUrlLen(), false, true);
 		m_redirUrlPtr   = &m_redirUrl;
 		ptr_redirUrl    = m_redirUrl.getUrl();
@@ -5630,20 +5630,32 @@ Url **XmlDoc::getRedirUrl() {
 	int32_t rlen = loc->getUrlLen();
 	int32_t ulen = f->getUrlLen();
 
+	if (httpStatus == 301 || httpStatus == 308) {
+		logTrace(g_conf.m_logTraceXmlDoc, "permanent redirection. simplifiedRedir=true");
+		simplifiedRedir = true;
+	}
+
+	// http -> https on same hostname
+	else if (f->isHttp() && loc->isHttps() &&
+		loc->getHostLen() == f->getHostLen() && strncasecmp(loc->getHost(), f->getHost(), loc->getHostLen()) == 0) {
+		logTrace(g_conf.m_logTraceXmlDoc, "redirected from http to https on same host. simplifiedRedir=true");
+		simplifiedRedir = true;
+	}
+
 	// simpler if new path depth is shorter
-	if ( loc->getPathDepth( true ) < f->getPathDepth( true ) ) {
+	else if (loc->getPathDepth(true) < f->getPathDepth(true)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirected url path depth is shorter. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// simpler if old has cgi and new does not
-	if ( !simplifiedRedir && f->isCgi() && ! loc->isCgi() ) {
+	else if (f->isCgi() && !loc->isCgi()) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirected url doesn't have query param, old url does. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// simpler if new one is same as old but has a '/' at the end
-	if ( !simplifiedRedir && rlen == ulen+1 && r[rlen-1]=='/' && strncmp(r, u, ulen) == 0 ) {
+	else if (rlen == ulen + 1 && r[rlen - 1] == '/' && strncmp(r, u, ulen) == 0) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirected url has '/', old url doesn't. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
@@ -5651,27 +5663,25 @@ Url **XmlDoc::getRedirUrl() {
 	// . if new url does not have semicolon but old one does
 	// . http://news.yahoo.com/i/738;_ylt=AoL4eFRYKEdXbfDh6W2cF
 	//   redirected to http://news.yahoo.com/i/738
-	if ( !simplifiedRedir && strchr ( u, ';' ) &&  ! strchr ( r, ';' ) ) {
+	else if (strchr(u, ';') && !strchr(r, ';')) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirected url doesn't have semicolon, old url does. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// simpler is new host is www and old is not
-	if ( !simplifiedRedir && loc->isHostWWW() && ! f->isHostWWW() ) {
+	else if (loc->isHostWWW() && !f->isHostWWW()) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirect is www & original is not. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// if redirect is to different domain, set simplified
 	// this helps locks from bunching on one domain
-	if ( !simplifiedRedir && ( loc->getDomainLen() != f->getDomainLen() ||
-	     strncasecmp ( loc->getDomain(), f->getDomain(), loc->getDomainLen() ) != 0 ) ) {
+	else if ((loc->getDomainLen() != f->getDomainLen() ||
+	          strncasecmp(loc->getDomain(), f->getDomain(), loc->getDomainLen()) != 0) && !f->isRoot()) {
 		// crap, but www.hotmail.com redirects to live.msn.com
 		// login page ... so add this check here
-		if ( !f->isRoot() ) {
-			logTrace(g_conf.m_logTraceXmlDoc, "different domain & not root. simplifiedRedir=true");
-			simplifiedRedir = true;
-		}
+		logTrace(g_conf.m_logTraceXmlDoc, "different domain & not root. simplifiedRedir=true");
+		simplifiedRedir = true;
 	}
 
 	bool allowSimplifiedRedirs = m_allowSimplifiedRedirs;
@@ -8912,10 +8922,9 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		return (Url **)canonicalUrl;
 	}
 
-	// it's only a canon redirect if it's not us
+	// it's only a canon redirect if it's not us (first url)
 	if (m_canonicalUrl.getUrlLen() > 0 &&
-		strcmp(m_canonicalUrl.getUrl(), m_firstUrl.getUrl()) != 0 &&
-		strcmp(m_canonicalUrl.getUrl(), m_redirUrl.getUrl()) != 0) {
+		strcmp(m_canonicalUrl.getUrl(), m_firstUrl.getUrl()) != 0) {
 		// otherwise, it is not us, we are NOT the canonical url
 		// and we should not be indexed, but just ass the canonical
 		// url as a spiderrequest into spiderdb, just like
@@ -13255,6 +13264,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 		// set this before calling getTitleRecBuf() below
 		uint8_t currentMetaListCheckSum8 = (uint8_t)ck32;
+
 		// see if matches what was in old titlerec
 		if (m_metaListCheckSum8Valid &&
 		    // if we were set from a titleRec, see if we got
@@ -13263,9 +13273,11 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		    // fix for import log spam
 		    !m_isImporting &&
 		    m_metaListCheckSum8 != currentMetaListCheckSum8) {
-			log(LOG_WARN, "xmldoc: checksum parsing inconsistency for %s (old)%i != %i(new). ",
-			    m_firstUrl.getUrl(), (int)m_metaListCheckSum8, (int)currentMetaListCheckSum8);
-			//tt1.print();
+
+			// ONLY log as warning if hashes differ for SAME titlerec versions -
+			// otherwise the values we hash may have changed.
+			log( m_version==TITLEREC_CURRENT_VERSION?LOG_WARN:LOG_DEBUG, "build: checksum parsing inconsistency for %s (old)%i != %i(new). Titlerec version %" PRIu16 " (current %" PRIu16 ")",
+			    m_firstUrl.getUrl(), (int)m_metaListCheckSum8, (int)currentMetaListCheckSum8, m_version, TITLEREC_CURRENT_VERSION);
 		}
 
 		// assign the new one, getTitleRecBuf() call below needs this
@@ -15447,7 +15459,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	if ( m_contentHash32Valid ) m_reply.m_contentHash32 = m_contentHash32;
 	else                        m_reply.m_contentHash32 = 0;
 
-	if ( ! m_checkedUrlFilters ) {
+	if ( cr->m_checkURLFilters && ! m_checkedUrlFilters ) {
 		// do not re-check
 		m_checkedUrlFilters = true;
 
@@ -17864,28 +17876,6 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 		}
 	}
 
-	if ( m_indexCode || g_errno ) {
-		switch (format) {
-			case FORMAT_HTML:
-				sb->safePrintf("</table><br>\n");
-				break;
-			case FORMAT_XML:
-				sb->safePrintf("</response>\n");
-				break;
-			case FORMAT_JSON:
-				sb->removeLastChar('\n');
-				sb->removeLastChar(',');
-				sb->safePrintf("}\n");
-				sb->safePrintf("}\n");
-				break;
-			default:
-				break;
-		}
-
-		return true;
-	}
-
-
 	// must always start with http
 	if ( strncmp ( fu , "http" , 4 ) != 0 ) { g_process.shutdownAbort(true); }
 
@@ -17920,7 +17910,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("<tr><td>is RSS feed?</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isRSS);
 			sb->safePrintf("<tr><td>ip</td><td><a href=\"/search?q=ip%%3A%s&c=%s&n=100\">%s</td></tr>\n", ipString, cr->m_coll, ipString);
 			sb->safePrintf("<tr><td>http status</td><td>%d</td></tr>", m_httpStatus);
-			sb->safePrintf("<tr><td>content len</td><td>%" PRId32" bytes</td></tr>\n", size_utf8Content - 1);
+			sb->safePrintf("<tr><td>content len</td><td>%" PRId32" bytes</td></tr>\n", size_utf8Content ? size_utf8Content - 1 : size_utf8Content);
 			sb->safePrintf("<tr><td>content truncated</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isContentTruncated);
 			sb->safePrintf("<tr><td>content type</td><td>%s</td></tr>\n", g_contentTypeStrings[(int)m_contentType]);
 			sb->safePrintf("<tr><td>language</td><td>%s</td></tr>\n", strLanguage);
@@ -17955,7 +17945,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\t<isRSSFeed>%" PRId32"</isRSSFeed>\n", (int32_t)m_isRSS);
 			sb->safePrintf("\t<ipAddress><![CDATA[%s]]></ipAddress>\n", ipString);
 			sb->safePrintf("\t<httpStatus>%d</httpStatus>", m_httpStatus);
-			sb->safePrintf("\t<contentLenInBytes>%" PRId32"</contentLenInBytes>\n", size_utf8Content - 1);
+			sb->safePrintf("\t<contentLenInBytes>%" PRId32"</contentLenInBytes>\n", size_utf8Content ? size_utf8Content - 1 : size_utf8Content);
 			sb->safePrintf("\t<isContentTruncated>%" PRId32"</isContentTruncated>\n", (int32_t)m_isContentTruncated);
 			sb->safePrintf("\t<contentType><![CDATA[%s]]></contentType>\n", g_contentTypeStrings[(int)m_contentType]);
 			sb->safePrintf("\t<language><![CDATA[%s]]></language>\n", strLanguage);
@@ -17986,7 +17976,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\",\n");
 
 			sb->safePrintf("\t\"httpStatus\": %" PRId16",\n", m_httpStatus);
-			sb->safePrintf("\t\"contentLenInBytes\": %" PRId32",\n", size_utf8Content - 1);
+			sb->safePrintf("\t\"contentLenInBytes\": %" PRId32",\n", size_utf8Content ? size_utf8Content - 1 : size_utf8Content);
 			sb->safePrintf("\t\"isContentTruncated\": %s,\n", m_isContentTruncated ? "true" : "false");
 
 			sb->safePrintf("\t\"contentType\": \"");

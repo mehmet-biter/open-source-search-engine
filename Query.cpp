@@ -370,11 +370,9 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 	// . set m_qptrs/m_qtermIds/m_qbits
 	// . use one bit position for each phraseId and wordId
-	// . first set phrases
-	int32_t n = 0;
 
 	// count phrases first for allocating
-	int32_t nqt = 0;
+	int numCandidatePhrases = 0;
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 		const QueryWord *qw  = &m_qwords[i];
 		// skip if ignored... mdw...
@@ -383,9 +381,10 @@ bool Query::setQTerms ( const Words &words ) {
 		// none if weight is absolute zero
 		if ( almostEqualFloat(qw->m_userWeightForPhrase, 0) )
 			continue;
-		nqt++;
+		numCandidatePhrases++;
 	}
 	// count single terms
+	int numCandidateSingles = 0;
 	for ( int32_t i = 0 ; i < m_numWords; i++ ) {
 		const QueryWord *qw  = &m_qwords[i];
  		if ( qw->m_ignoreWord && 
@@ -402,9 +401,10 @@ bool Query::setQTerms ( const Words &words ) {
 		// ignore if weight is absolute zero
 		if ( almostEqualFloat(qw->m_userWeightForWord,0) )
 			continue;
-		nqt++;
+		numCandidateSingles++;
 	}
 	// thirdly, count synonyms
+	int numCandidateSynonyms = 0;
 	Synonyms syn;
 	if(m_word_variations_config.m_wiktionaryWordVariations) {
 		int64_t to = hash64n("to");
@@ -447,7 +447,7 @@ bool Query::setQTerms ( const Words &words ) {
 							  tmpBuf );
 			// if no synonyms, all done
 			if ( naids <= 0 ) continue;
-			nqt += naids;
+			numCandidateSynonyms += naids;
 		}
 	}
 	
@@ -474,7 +474,7 @@ bool Query::setQTerms ( const Words &words ) {
 		}
 		auto wvg(WordVariationGenerator::get_generator(m_langId));
 		m_wordVariations = wvg->query_variations(wvg_source_words, m_word_variations_config.m_word_variations_weights, m_word_variations_config.m_word_variations_threshold);
-		nqt += m_wordVariations.size();
+		numCandidateSynonyms += m_wordVariations.size();
 		if(!m_wordVariations.empty())
 			logTrace(g_conf.m_logTraceQuery, "word variations produced %d variants", (int)m_wordVariations.size());
 		else
@@ -488,14 +488,17 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 
 
-	m_numTermsUntruncated = nqt;
-	logTrace(g_conf.m_logTraceQuery, "m_numTermsUntruncated=%d",m_numTermsUntruncated);
-
-	if ( nqt > m_maxQueryTerms ) nqt = m_maxQueryTerms;
+	m_numTermsUntruncated = numCandidatePhrases+numCandidateSingles+numCandidateSynonyms;
+	logTrace(g_conf.m_logTraceQuery, "m_numTermsUntruncated=%d (%d phrases, %d singles, %d synonyms)", m_numTermsUntruncated, numCandidatePhrases, numCandidateSingles, numCandidateSynonyms);
+	const int numQueryTerms = std::min(std::min(m_numTermsUntruncated,m_maxQueryTerms),ABS_MAX_QUERY_TERMS);
+	if(numQueryTerms!=m_numTermsUntruncated)
+		log(LOG_DEBUG, "m_numTermsUntruncated=%d (%d phrases, %d singles, %d synonyms), will be truncated to %d terms for query '%s'",
+		    m_numTermsUntruncated, numCandidatePhrases, numCandidateSingles, numCandidateSynonyms, numQueryTerms,
+		    m_filteredQuery.getBufStart());
 
 	// allocate the term buffer
-	if ( nqt ) {
-		int32_t need = nqt * sizeof(QueryTerm) ;
+	if(numQueryTerms) {
+		int32_t need = numQueryTerms * sizeof(QueryTerm);
 		if ( ! m_queryTermBuf.reserve ( need ) )
 			return false;
 		m_queryTermBuf.setLabel("stkbuf3");
@@ -504,14 +507,23 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 
 	// call constructor on each one here
-	for ( int32_t i = 0 ; i < nqt ; i++ ) {
+	for(int32_t i = 0; i < numQueryTerms; i++) {
 		QueryTerm *qt = &m_qterms[i];
 		qt->constructor();
 	}
 
 
+	int32_t n = 0;
+
 	// do phrase terms
-	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
+	for(int32_t i = 0; i<m_numWords && n<numQueryTerms; i++) {
+		if(numCandidateSingles+numCandidatePhrases > m_maxQueryTerms) {
+			//we won't have room for both phrases and singles. Put in as many singles as possible. But phrases
+			//must come first in the list due to bad assumptions elsewhere in the code.
+			if(numQueryTerms - n - 1 < numCandidateSingles)
+				break;
+		}
+
 		QueryWord *qw  = &m_qwords[i];
 		// skip if ignored... mdw...
 		if ( ! qw->m_phraseId ) continue;
@@ -519,21 +531,6 @@ bool Query::setQTerms ( const Words &words ) {
 		// none if weight is absolute zero
 		if ( almostEqualFloat(qw->m_userWeightForPhrase, 0) )
 			continue;
-
-		// stop breach
-		if ( n >= ABS_MAX_QUERY_TERMS ) {
-			log("query: lost query phrase terms to max term limit of %" PRId32,
-			    (int32_t)ABS_MAX_QUERY_TERMS);
-			break;
-		}
-		if ( n >= m_maxQueryTerms ) {
-			log("query: lost query phrase terms to max term cr limit of %" PRId32,
-			    (int32_t)m_maxQueryTerms);
-			break;
-		}
-
-		if(n>=nqt)
-			break;
 
 		QueryTerm *qt = &m_qterms[n];
 		qt->m_qword     = qw ;
@@ -581,16 +578,10 @@ bool Query::setQTerms ( const Words &words ) {
 			qt->m_userWeight = 1;
 		}
 		n++;
-		if(n+1>=m_maxQueryTerms) {
-			//We must leave room at least one regular term - otherwise posdbtable won't work
-			//note: this quick hack leaves some bigrams danlging in posdbtable and won't work
-			//that well, but it is better than no results at all.
-			break;
-		}
 	}
 
 	// now if we have enough room, do the singles
-	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
+	for(int32_t i = 0; i < m_numWords && n<numQueryTerms; i++) {
 		QueryWord *qw  = &m_qwords[i];
 
  		if ( qw->m_ignoreWord && 
@@ -610,21 +601,6 @@ bool Query::setQTerms ( const Words &words ) {
 		// ignore if weight is absolute zero
 		if ( almostEqualFloat(qw->m_userWeightForWord,0) )
 			continue;
-
-		// stop breach
-		if ( n >= ABS_MAX_QUERY_TERMS ) {
-			log("query: lost query terms to max term limit of %" PRId32,
-			    (int32_t)ABS_MAX_QUERY_TERMS);
-			break;
-		}
-		if ( n >= m_maxQueryTerms ) {
-			log("query: lost query terms to max term cr limit of %" PRId32,
-			    (int32_t)m_maxQueryTerms);
-			break;
-		}
-
-		if(n>=nqt)
-			break;
 
 		QueryTerm *qt = &m_qterms[n];
 		qt->m_qword     = qw ;
@@ -798,7 +774,7 @@ bool Query::setQTerms ( const Words &words ) {
 
 	if(m_word_variations_config.m_wiktionaryWordVariations) {
 		int64_t to = hash64n("to");
-		for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
+		for(int32_t i = 0; i<m_numWords && n<numQueryTerms; i++) {
 			// get query word
 			QueryWord *qw  = &m_qwords[i];
 			// skip if in quotes, we will not get synonyms for it
@@ -847,24 +823,9 @@ bool Query::setQTerms ( const Words &words ) {
 			// get the term for this word
 			QueryTerm *origTerm = qw->m_queryWordTerm;
 			// loop over synonyms for word #i now
-			for ( int32_t j = 0 ; j < naids ; j++ ) {
-				// stop breach
-				if ( n >= ABS_MAX_QUERY_TERMS ) {
-					log("query: lost synonyms due to max term limit of %" PRId32,
-					    (int32_t)ABS_MAX_QUERY_TERMS);
-					break;
-				}
+			for(int32_t j = 0; j < naids && n<numQueryTerms; j++) {
 				// this happens for 'da da da'
 				if ( ! origTerm ) continue;
-				
-				if ( n >= m_maxQueryTerms ) {
-					log("query: lost synonyms due to max cr term limit of %" PRId32,
-					    (int32_t)m_maxQueryTerms);
-					break;
-				}
-				
-				if(n>=nqt)
-					break;
 				
 				// add that query term
 				QueryTerm *qt   = &m_qterms[n];
@@ -968,10 +929,7 @@ bool Query::setQTerms ( const Words &words ) {
 
 	if(m_word_variations_config.m_languageSpecificWordVariations) {
 		logTrace(g_conf.m_logTraceQuery, "Word variations: %zu", m_wordVariations.size());
-		for(unsigned i=0; i<m_wordVariations.size(); i++) {
-			if(n>=nqt)
-				break;
-			
+		for(unsigned i=0; i<m_wordVariations.size() && n<numQueryTerms; i++) {
 			auto const &word_variation(m_wordVariations[i]);
 			int wordStartIdx = wvg_source_word_index[word_variation.source_word_start];
 			int wordEndIdx = wvg_source_word_index[word_variation.source_word_end-1];
@@ -2185,13 +2143,12 @@ bool Query::setQWords ( char boolFlag ,
 			if ( ph ) qw->m_phraseId = hash64 ( pid , ph );
 			else      qw->m_phraseId = pid;
 
-			// how many regular words int32_t is the bigram?
-			int32_t plen2;
-			char buf[256];
-			phrases.getPhrase(i, buf, sizeof(buf), &plen2);
-
-			// get just the bigram for now
-			qw->m_phraseLen = plen2;
+			//calculate length of phrase(bigram) in bytes
+			int32_t numWordsInPhrase = phrases.getNumWordsInPhrase2(i);
+			int phraseLen = 0;
+			for(int j=i; j<i+numWordsInPhrase; j++)
+				phraseLen += m_qwords[j].m_wordLen;
+			qw->m_phraseLen = phraseLen;
 
 			// do not ignore the phrase, it's valid
 			qw->m_ignorePhrase = IGNORE_NO_IGNORE;

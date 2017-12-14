@@ -1163,7 +1163,8 @@ static DropLangs g_drops[] = {
 	{"italian"},
 	{"romantic"},
 #endif
-	{"privacore"}
+	{"privacore"},
+	{"privacore-DK"}
 };
 
 // "url filters profile" values. used to set default crawl rules
@@ -6667,17 +6668,27 @@ void Parms::init ( ) {
 	//
 	///////////////////
 
-	m->m_title = "get scoring info by default";
+	m->m_title = "Get scoring info by default";
 	m->m_desc  = "Get scoring information for each result so you "
 		"can see how each result is scored. You must explicitly "
 		"request this using &scores=1 for the XML feed because it "
 		"is not included by default.";
-	m->m_cgi   = "scores"; // dedupResultsByDefault";
+	m->m_cgi   = "scores";
 	simple_m_set(CollectionRec,m_getDocIdScoringInfo);
 	m->m_page  = PAGE_SEARCH;
 	m->m_def   = "1";
 	m->m_flags = PF_API | PF_CLONE;
 	m++;
+
+	m->m_title = "Check URL filters when searching";
+	m->m_desc  = "Run results through URL Filters to check for manual ban and force delete.";
+	m->m_cgi   = "checkuf";
+	simple_m_set(CollectionRec,m_checkURLFilters);
+	m->m_page  = PAGE_SEARCH;
+	m->m_def   = "1";
+	m->m_flags = PF_API | PF_CLONE;
+	m++;
+
 
 	m->m_title = "Detect and modify domain searches";
 	m->m_desc  = "Detect queries for domains such as example.com or www.example.com and modify the query to search more directed for that";

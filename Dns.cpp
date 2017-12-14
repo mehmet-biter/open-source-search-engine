@@ -201,7 +201,7 @@ bool Dns::init ( uint16_t clientPort ) {
 	}
 
 	// innocent log msg
-	log ( LOG_INIT,"dns: Sending requests on client port %" PRId32, (int32_t)m_dnsClientPort );
+	log ( LOG_INIT,"dns: Sending requests on client port %" PRIu16, (uint16_t)m_dnsClientPort );
 
 	for ( int32_t i = 0 ; i < g_conf.m_numDns ; i++ ) {
 		if ( !g_conf.m_dnsIps[i] ) continue;
