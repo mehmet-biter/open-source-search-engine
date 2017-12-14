@@ -902,10 +902,13 @@ bool SafeBuf::jsonEncode(const char *utf8, int32_t srcLen) {
 	// scan and copy
 	const char *src = utf8;
 
+	//note: the NUL-check in the for-loop condition below shouldn't be necessary, but callers supply a srcLen
+	//that is too long. Eg. queryterms::m_termLen in some phrase scenarios
+
 	// concatenate to what's already there
 	char *dst = m_buf + m_length;
 	char char_size;
-	for(int j=0; j<srcLen; j+=char_size, src+=char_size) {
+	for(int j=0; j<srcLen && utf8[j]!='\0'; j+=char_size, src+=char_size) {
 		char_size = getUtf8CharSize(src);
 
 		// remove invalid UTF-8 characters
