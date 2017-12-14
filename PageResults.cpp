@@ -1104,7 +1104,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 			const QueryTerm *qt = &q->m_qterms[i];
 			sb->safePrintf("\t\t\t\"termNum\":%i,\n",i);
 			sb->safePrintf("\t\t\t\"termStr\":\"");
-			sb->jsonEncode (qt->m_term,qt->m_termLen);
+			sb->jsonEncode ((char*)qt->m_term,qt->m_termLen);
 			sb->safePrintf("\",\n");
 			// syn?
 			const QueryTerm *sq = qt->m_synonymOf;
@@ -1126,7 +1126,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 			if ( sq ) {
 				sb->safePrintf("\t\t\t\"synonymOf\":\"");
-				sb->jsonEncode(sq->m_term,sq->m_termLen);
+				sb->jsonEncode((char*)sq->m_term,sq->m_termLen);
 				sb->safePrintf("\",\n");
 			}				
 			sb->safePrintf("\t\t\t\"termFreq\":%" PRId64",\n"
