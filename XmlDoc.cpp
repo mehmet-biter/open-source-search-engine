@@ -8922,10 +8922,9 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		return (Url **)canonicalUrl;
 	}
 
-	// it's only a canon redirect if it's not us
+	// it's only a canon redirect if it's not us (first url)
 	if (m_canonicalUrl.getUrlLen() > 0 &&
-		strcmp(m_canonicalUrl.getUrl(), m_firstUrl.getUrl()) != 0 &&
-		strcmp(m_canonicalUrl.getUrl(), m_redirUrl.getUrl()) != 0) {
+		strcmp(m_canonicalUrl.getUrl(), m_firstUrl.getUrl()) != 0) {
 		// otherwise, it is not us, we are NOT the canonical url
 		// and we should not be indexed, but just ass the canonical
 		// url as a spiderrequest into spiderdb, just like
