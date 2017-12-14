@@ -13264,6 +13264,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 		// set this before calling getTitleRecBuf() below
 		uint8_t currentMetaListCheckSum8 = (uint8_t)ck32;
+
 		// see if matches what was in old titlerec
 		if (m_metaListCheckSum8Valid &&
 		    // if we were set from a titleRec, see if we got
@@ -13272,9 +13273,11 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		    // fix for import log spam
 		    !m_isImporting &&
 		    m_metaListCheckSum8 != currentMetaListCheckSum8) {
-			log(LOG_WARN, "xmldoc: checksum parsing inconsistency for %s (old)%i != %i(new). ",
-			    m_firstUrl.getUrl(), (int)m_metaListCheckSum8, (int)currentMetaListCheckSum8);
-			//tt1.print();
+
+			// ONLY log as warning if hashes differ for SAME titlerec versions -
+			// otherwise the values we hash may have changed.
+			log( m_version==TITLEREC_CURRENT_VERSION?LOG_WARN:LOG_DEBUG, "build: checksum parsing inconsistency for %s (old)%i != %i(new). Titlerec version %" PRIu16 " (current %" PRIu16 ")",
+			    m_firstUrl.getUrl(), (int)m_metaListCheckSum8, (int)currentMetaListCheckSum8, m_version, TITLEREC_CURRENT_VERSION);
 		}
 
 		// assign the new one, getTitleRecBuf() call below needs this
