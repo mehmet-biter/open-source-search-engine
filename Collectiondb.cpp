@@ -1510,7 +1510,7 @@ bool CollectionRec::rebuildPrivacoreDKOnlyRules() {
 
 	// dns permanent error
 	m_regExs[n].reset();
-	m_regExs[n].safePrintf("(errorcode==%d || errorcode==%d || errorcode==%d) && tld==dk", EDNSNOTFOUND, EDNSBADREQUEST, EDNSREFUSED);
+	m_regExs[n].safePrintf("errorcode==%d || errorcode==%d || errorcode==%d && tld==dk", EDNSNOTFOUND, EDNSBADREQUEST, EDNSREFUSED);
 	m_harvestLinks       [n] = false;
 	m_spiderFreqs        [n] = 0;
 	m_maxSpidersPerRule  [n] = 1;       // max spiders
