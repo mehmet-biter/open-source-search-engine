@@ -891,10 +891,23 @@ bool SafeBuf::safeDecodeJSONToUtf8 ( const char *json, int32_t jsonLen) {
 	return true;
 }
 
-bool SafeBuf::jsonEncode(const char *utf8, int32_t srcLen) {
+bool SafeBuf::jsonEncode ( char *src , int32_t srcLen ) {
+	char c = src[srcLen];
+	src[srcLen] = 0;
+	bool status = jsonEncode ( src );
+	src[srcLen] = c;
+	return status;
+}
+
+// encode into json
+bool SafeBuf::safeUtf8ToJSON ( const char *utf8 ) {
+	if ( ! utf8 ) {
+		return true;
+	}
+
 	// how much space do we need?
 	// each single byte \t char for instance will need 2 bytes
-	int32_t need = srcLen * 2 + 1;
+	int32_t need = strlen(utf8) * 2 + 1;
 	if ( ! reserve ( need ) ) {
 		return false;
 	}
@@ -904,17 +917,17 @@ bool SafeBuf::jsonEncode(const char *utf8, int32_t srcLen) {
 
 	// concatenate to what's already there
 	char *dst = m_buf + m_length;
-	char char_size;
-	for(int j=0; j<srcLen; j+=char_size, src+=char_size) {
-		char_size = getUtf8CharSize(src);
+	char size;
+	for ( ; *src ; src += size ) {
+		size = getUtf8CharSize(src);
 
 		// remove invalid UTF-8 characters
 		if ( ! isValidUtf8Char(src) ) {
-			char_size = 1;
+			size = 1;
 			continue;
 		}
 
-		if ( char_size == 1 ) {
+		if ( size == 1 ) {
 			// remove invalid ascii control characters
 			if ((*src >= 1 && *src <= 7) ||
 			    (*src == 11) ||
@@ -956,7 +969,7 @@ bool SafeBuf::jsonEncode(const char *utf8, int32_t srcLen) {
 					*dst++ = *src;
 			}
 		} else {
-			for (int i = 0; i < char_size; ++i) {
+			for (int i = 0; i < size; ++i) {
 				*dst++ = src[i];
 			}
 		}
@@ -968,16 +981,6 @@ bool SafeBuf::jsonEncode(const char *utf8, int32_t srcLen) {
 	m_length = dst - m_buf;
 
 	return true;
-}
-
-
-bool SafeBuf::jsonEncode(const char *utf8) {
-	if ( ! utf8 ) {
-		//legacy allowance for null ptrs. Who calls this method with a null pointer? 
-		return true;
-	}
-
-	return jsonEncode(utf8,strlen(utf8));
 }
 
 
