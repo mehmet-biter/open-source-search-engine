@@ -366,6 +366,8 @@ public:
 
 	// use query expansion for this collection?
 	bool m_queryExpansion;
+	// check URL filters for manual ban and force delete?
+	bool m_checkURLFilters;
 	// rewrite domain-like queries for this collection?
 	bool m_modifyDomainLikeSearches;
 	bool m_domainLikeSearchDisablesSiteCluster;

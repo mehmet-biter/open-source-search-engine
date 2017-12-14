@@ -1044,6 +1044,7 @@ CollectionRec::CollectionRec() {
 	m_crawlDelayDefaultForNoRobotsTxtMS = 15000;
 	m_crawlDelayDefaultForRobotsTxtMS = 10000;
 	m_queryExpansion = false;
+	m_checkURLFilters = true;
 	m_modifyDomainLikeSearches = false;
 	m_domainLikeSearchDisablesSiteCluster = true;
 	m_modifyAPILikeSearches = false;

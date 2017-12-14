@@ -15457,7 +15457,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	if ( m_contentHash32Valid ) m_reply.m_contentHash32 = m_contentHash32;
 	else                        m_reply.m_contentHash32 = 0;
 
-	if ( ! m_checkedUrlFilters ) {
+	if ( cr->m_checkURLFilters && ! m_checkedUrlFilters ) {
 		// do not re-check
 		m_checkedUrlFilters = true;
 
