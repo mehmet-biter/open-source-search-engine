@@ -16,6 +16,11 @@ dump_sto: dump_sto.o libsto.a
 
 dump_sto.o: dump_sto.cpp sto.h
 
+load_sto: load_sto.o libsto.a
+	$(CXX) $^ -o $@
+
+load_sto.o: load_sto.cpp sto.h
+
 
 .PHONY: clean
 clean:

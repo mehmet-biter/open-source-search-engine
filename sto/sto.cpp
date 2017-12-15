@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <algorithm>
 
 
 //static const char version_1_signature[80] = "parsed-sto-v2\n";
@@ -60,6 +61,8 @@ bool sto::Lexicon::load(const std::string &filename) {
 	
 	mapped_memory_size = st.st_size;
 	
+	(void)madvise(mapped_memory_start, mapped_memory_size, MADV_WILLNEED);
+	
 	if(memcmp(mapped_memory_start,version_2_signature,sizeof(version_2_signature))!=0) {
 		unload();
 		return false;
@@ -67,6 +70,10 @@ bool sto::Lexicon::load(const std::string &filename) {
 	
 	//parse and index the entries
 	//see sto_structure.txt for details
+	size_t estimated_entries = mapped_memory_size/171;
+	size_t entries_to_reserve = (size_t)(estimated_entries*1.25);
+	entries.reserve(entries_to_reserve);
+	morphological_unit_id_entries.reserve(entries_to_reserve);
 	const char *start = reinterpret_cast<const char*>(mapped_memory_start);
 	const char *end = start + mapped_memory_size;
 	const char *p = start + sizeof(version_2_signature);
@@ -79,20 +86,33 @@ bool sto::Lexicon::load(const std::string &filename) {
 			if(p2>end)
 				return false;
 			
-			entries.emplace(std::string(wf->written_form,wf->written_form_length),le);
+			entries.emplace_back(wf->written_form,wf->written_form_length,le);
 			p = p2;
 		}
-		morphological_unit_id_entries.emplace(std::string(le->query_morphological_unit_id(), le->morphological_unit_id_len),le);
+		morphological_unit_id_entries.emplace_back(le->query_morphological_unit_id(),le->morphological_unit_id_len,le);
 	}
 	
-	//todo:removed non-duplicates from query_morphological_unit_id
-//	for(std::multimap<std::string,const LexicalEntry*>::iterator iter = morphological_unit_id_entries.begin(); iter!=morphological_unit_id_entries.end()) {
-//		std::multimap<std::string,const LexicalEntry*>::iterator next(iter);
-//		++next;
-//		if(next!=morphological_unit_id_entries.end()
-//	}
+	sort(entries);
+	sort(morphological_unit_id_entries);
 	
 	return true;
+}
+
+
+bool sto::Lexicon::MapEntry::compare(const MapEntry &me1, const MapEntry &me2) {
+	if(me1.length<me2.length) {
+		int r = memcmp(me1.str,me2.str,me1.length);
+		return r<=0;
+	} else if(me1.length>me2.length) {
+		int r = memcmp(me1.str,me2.str,me2.length);
+		return r<0;
+	} else {
+		return memcmp(me1.str,me2.str,me1.length)<0;
+	}
+}
+
+void sto::Lexicon::sort(std::vector<MapEntry> &v) {
+	std::sort(v.begin(),v.end(),MapEntry::compare);
 }
 
 
@@ -109,20 +129,21 @@ void sto::Lexicon::unload() {
 
 
 const sto::LexicalEntry *sto::Lexicon::lookup(const std::string &word) const {
-	auto iter = entries.find(word);
+	MapEntry me_word(word.data(),word.length(),0);
+	auto iter = std::lower_bound(entries.begin(),entries.end(),me_word,MapEntry::compare);
 	if(iter!=entries.end())
-		return iter->second;
+		return iter->entry;
 	else
 		return 0;
 }
 
 
 std::vector<const sto::LexicalEntry *> sto::Lexicon::query_matches(const std::string &word) const {
-	auto lower = entries.lower_bound(word);
-	auto upper = entries.upper_bound(word);
+	MapEntry me_word(word.data(),word.length(),0);
+	auto range = std::equal_range(entries.begin(),entries.end(), me_word, MapEntry::compare);
 	std::vector<const LexicalEntry *> entries;
-	for(auto iter=lower; iter!=upper; ++iter)
-		entries.push_back(iter->second);
+	for(auto iter=range.first; iter!=range.second; ++iter)
+		entries.push_back(iter->entry);
 	return entries;
 }
 
@@ -157,10 +178,11 @@ const sto::LexicalEntry *sto::Lexicon::next_entry(const LexicalEntry *le) const 
 
 
 std::vector<const sto::LexicalEntry *> sto::Lexicon::query_lexical_entries_with_same_morphological_unit_id(const sto::LexicalEntry *le) const {
+	MapEntry me_word(le->query_morphological_unit_id(),le->morphological_unit_id_len,0);
 	std::vector<const sto::LexicalEntry *> v;
-	auto range = morphological_unit_id_entries.equal_range(std::string(le->query_morphological_unit_id(),le->morphological_unit_id_len));
+	auto range = std::equal_range(morphological_unit_id_entries.begin(), morphological_unit_id_entries.end(), me_word, MapEntry::compare);
 	for(auto iter=range.first; iter!=range.second; ++iter) {
-		v.push_back(iter->second);
+		v.push_back(iter->entry);
 	}
 	return v;
 }

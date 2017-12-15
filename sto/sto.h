@@ -4,7 +4,6 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include <vector>
-#include <map>
 #include <string>
 
 
@@ -133,8 +132,18 @@ class Lexicon {
 	
 	void *mapped_memory_start;
 	size_t mapped_memory_size;
-	std::multimap<std::string,const LexicalEntry*> entries; //wordform -> entry[]
-	std::multimap<std::string,const LexicalEntry*> morphological_unit_id_entries; //morphological_unit_id -> entry[]
+	struct MapEntry { //efficient (str,leng)->entry mapping structure (std::map is too slow and memory-inefficient)
+		uint32_t length;
+		const char *str;
+		const LexicalEntry *entry;
+		MapEntry(const char *str_, uint32_t length_, const LexicalEntry *entry_)
+		  : length(length_), str(str_), entry(entry_)
+		  {}
+		static bool compare(const MapEntry &me1, const MapEntry &me2);
+	};
+	std::vector<MapEntry> entries; //wordform -> entry[]
+	std::vector<MapEntry> morphological_unit_id_entries; //morphological_unit_id -> entry[]
+	void sort(std::vector<MapEntry> &v);
 
 public:
 	Lexicon() : mapped_memory_start(0), mapped_memory_size(0), entries(), morphological_unit_id_entries() {}
