@@ -945,7 +945,7 @@ bool Parms::sendPageGeneric ( TcpSocket *s , HttpRequest *r ) {
 			"\t<statusCode>0</statusCode>\n"
 			"\t<statusMsg>Success</statusMsg>\n";
 	if ( format == FORMAT_JSON )
-		res = "{ \"response:\"{\n"
+		res = "{ \"response\":{\n"
 			"\t\"statusCode\":0,\n"
 			"\t\"statusMsg\":\"Success\"\n";
 	if ( res )

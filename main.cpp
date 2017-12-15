@@ -258,7 +258,6 @@ int main2 ( int argc , char *argv[] ) {
 	//threads are incrementing the counters all over the place
 	VALGRIND_HG_DISABLE_CHECKING(&g_stats,sizeof(g_stats));
 #endif
-
 	// record time for uptime
 	g_stats.m_uptimeStart = time(NULL);
 
@@ -1012,7 +1011,6 @@ int main2 ( int argc , char *argv[] ) {
 		int32_t startFileNum =  0;
 		int32_t numFiles     = -1;
 		bool includeTree     =  true;
-		int64_t termId  = -1;
 		const char *coll = "";
 
 		// so we do not log every collection coll.conf we load
@@ -1027,27 +1025,8 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg+3 < argc ) startFileNum = atoi(argv[cmdarg+3]);
 		if ( cmdarg+4 < argc ) numFiles     = atoi(argv[cmdarg+4]);
 		if ( cmdarg+5 < argc ) includeTree  = argToBoolean(argv[cmdarg+5]);
-		if ( cmdarg+6 < argc ) {
-			char *targ = argv[cmdarg+6];
-			if ( is_alpha_a(targ[0]) ) {
-				char *colon = strstr(targ,":");
-				int64_t prefix64 = 0LL;
-				if ( colon ) {
-					*colon = '\0';
-					prefix64 = hash64n(targ);
-					targ = colon + 1;
-				}
-				// hash the term itself
-				termId = hash64n(targ);
-				// hash prefix with termhash
-				if ( prefix64 )
-					termId = hash64(termId,prefix64);
-				termId &= TERMID_MASK;
-			}
-			else {
-				termId = atoll1(targ);
-			}
-		}
+
+
 		if ( argv[cmdarg+1][0] == 't' ) {
 			int64_t docId = 0LL;
 			if ( cmdarg+6 < argc ) {
@@ -1111,6 +1090,28 @@ int main2 ( int argc , char *argv[] ) {
 			if ( cmdarg+6 < argc ) url = argv[cmdarg+6];
 			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url);
 		}  else if ( argv[cmdarg+1][0] == 'p' ) {
+			int64_t termId  = -1;
+			if ( cmdarg+6 < argc ) {
+				char *targ = argv[cmdarg+6];
+				if ( is_alpha_a(targ[0]) ) {
+					char *colon = strstr(targ,":");
+					int64_t prefix64 = 0LL;
+					if ( colon ) {
+						*colon = '\0';
+						prefix64 = hash64n(targ);
+						targ = colon + 1;
+					}
+					// hash the term itself
+					termId = hash64n(targ);
+					// hash prefix with termhash
+					if ( prefix64 )
+						termId = hash64(termId,prefix64);
+					termId &= TERMID_MASK;
+				}
+				else {
+					termId = atoll1(targ);
+				}
+			}
 			dumpPosdb( coll, startFileNum, numFiles, includeTree, termId, false );
 		}  else if (strcmp(argv[cmdarg+1], "u") == 0) {
 			dumpUnwantedTitledbRecs(coll, startFileNum, numFiles, includeTree);
@@ -5289,12 +5290,13 @@ static void dumpLinkdb(const char *coll,
 	key224_t endKey   ;
 	startKey.setMin();
 	endKey.setMax();
-	// set to docid
+
+	// set start/end key to url hash
 	if ( url ) {
 		Url u;
 		u.set( url, strlen( url ), true, false );
 		uint32_t h32 = u.getHostHash32();
-		int64_t uh64 = hash64n(url);
+		int64_t uh64 = hash64n(u.getUrl(), u.getUrlLen());
 		startKey = Linkdb::makeStartKey_uk ( h32 , uh64 );
 		endKey   = Linkdb::makeEndKey_uk   ( h32 , uh64 );
 	}
@@ -5352,7 +5354,7 @@ static void dumpLinkdb(const char *coll,
 			       "siterank=%02" PRId32" "
 			       //"hopcount=%03hhu "
 			       "ip32=%s "
-			       "docId=%012" PRIu64" "
+			       "docId=%" PRIu64" "
 			       "discovered=%" PRIu32" "
 			       "lost=%" PRIu32" "
 			       "sitehash32=0x%08" PRIx32" "
