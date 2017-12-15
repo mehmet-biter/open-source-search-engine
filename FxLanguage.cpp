@@ -1,4 +1,22 @@
-#include "GbLanguage.h"
+//
+// Copyright (C) 2017 Privacore ApS - https://www.privacore.com
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+// License TL;DR: If you change this file, you must publish your changes.
+//
+#include "FxLanguage.h"
 
 #include <cstdio>
 #include "third-party/cld2/public/compact_lang_det.h"
@@ -738,7 +756,7 @@ static lang_t convertLangCLD3(std::string &language) {
 	}
 }
 
-lang_t GbLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t contentLen,
+lang_t FxLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t contentLen,
                                  const char *contentLanguage, int32_t contentLanguageLen,
                                  const char *tld, int32_t tldLen) {
 	if (contentLen == 0) {
@@ -798,7 +816,7 @@ lang_t GbLanguage::getLangIdCLD2(bool isPlainText, const char *content, int32_t 
 	return convertLangCLD2(language);
 }
 
-lang_t GbLanguage::getLangIdCLD3(const char *content, int32_t contentLen) {
+lang_t FxLanguage::getLangIdCLD3(const char *content, int32_t contentLen) {
 	if (contentLen == 0) {
 		return langUnknown;
 	}
@@ -818,7 +836,7 @@ lang_t GbLanguage::getLangIdCLD3(const char *content, int32_t contentLen) {
 	return convertLangCLD3(result.language);
 }
 
-lang_t GbLanguage::pickLanguage(lang_t contentLangIdCld2, lang_t contentLangIdCld3, lang_t summaryLangIdCld2,
+lang_t FxLanguage::pickLanguage(lang_t contentLangIdCld2, lang_t contentLangIdCld3, lang_t summaryLangIdCld2,
                                 lang_t charsetLangId, lang_t langIdGB) {
 	if (summaryLangIdCld2 == langChineseSimp || summaryLangIdCld2 == langChineseTrad) {
 		return summaryLangIdCld2;

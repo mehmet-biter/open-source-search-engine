@@ -80,7 +80,7 @@ OBJS_O3 = \
 	GbCompress.o \
 	GbRegex.o \
 	GbThreadQueue.o \
-	GbEncoding.o GbLanguage.o \
+	GbEncoding.o FxLanguage.o \
 	GbDns.o \
 
 
