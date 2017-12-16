@@ -1190,6 +1190,10 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 		return rebuildPrivacoreDKOnlyRules();
 	}
 
+	if ( strcmp(s, "privacore-OldPages") == 0 ) {
+		return rebuildPrivacoreOldOnlyRules();
+	}
+
 	if ( strcmp(s, "privacore") == 0 ) {
 		return rebuildPrivacoreRules();
 	}
@@ -1465,6 +1469,129 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	}
 	n++;
 
+
+	m_numRegExs				= n;
+	m_numSpiderFreqs		= n;
+	m_numSpiderPriorities	= n;
+	m_numMaxSpidersPerRule	= n;
+	m_numSpiderIpWaits		= n;
+	m_numSpiderIpMaxSpiders	= n;
+	m_numHarvestLinks		= n;
+	m_numForceDelete		= n;
+
+	return true;
+}
+
+
+
+bool CollectionRec::rebuildPrivacoreOldOnlyRules() {
+	const char *langWhitelistStr = "xx,en,bg,sr,ca,cs,da,et,fi,fr,de,el,hu,is,ga,it,la,lv,lt,lb,nl,pl,pt,ro,es,sv,no,vv,mt,sk,sl,eu,cy,kl,fo";
+
+	// max spiders per ip
+	int32_t ipms = 1;
+
+	int32_t n = 0;
+
+	m_regExs[n].set("isreindex");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 0; 		// 0 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 90;
+	m_forceDelete        [n] = 0;
+	n++;
+
+	m_regExs[n].reset();
+	m_regExs[n].safePrintf("lang!=%s", langWhitelistStr);
+	m_harvestLinks       [n] = false;
+	m_spiderFreqs        [n] = 0; 		// 0 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 0; 		// same ip wait
+	m_spiderPriorities   [n] = 100;
+	m_forceDelete        [n] = 1;		// delete!
+	n++;
+
+	// dns permanent error
+	m_regExs[n].reset();
+	m_regExs[n].safePrintf("errorcode==%d || errorcode==%d || errorcode==%d && tld==dk", EDNSNOTFOUND, EDNSBADREQUEST, EDNSREFUSED);
+	m_harvestLinks       [n] = false;
+	m_spiderFreqs        [n] = 0;
+	m_maxSpidersPerRule  [n] = 1;       // max spiders
+	m_spiderIpMaxSpiders [n] = ipms;    // max spiders per ip
+	m_spiderIpWaits      [n] = 0;       // same ip wait
+	m_spiderPriorities   [n] = 100;
+	m_forceDelete        [n] = 1;       // delete!
+	n++;
+
+	// http permanent error
+	m_regExs[n].reset();
+	m_regExs[n].safePrintf("errorcode==%d && httpstatus>=500 && httpstatus<600 && tld==dk", EDOCBADHTTPSTATUS);
+	m_harvestLinks       [n] = false;
+	m_spiderFreqs        [n] = 0;
+	m_maxSpidersPerRule  [n] = 1;       // max spiders
+	m_spiderIpMaxSpiders [n] = ipms;    // max spiders per ip
+	m_spiderIpWaits      [n] = 0;       // same ip wait
+	m_spiderPriorities   [n] = 100;
+	m_forceDelete        [n] = 1;       // delete!
+	n++;
+
+#if 0
+@@@ Enable after test
+	// 4 or more of the SAME non-temporary errors - delete it
+	m_regExs[n].set("sameerrorcount>=100 && !hastmperror && tld==dk");			//100 is for TESTING. Will be removed once verified.
+	m_harvestLinks       [n] = false;
+	m_spiderFreqs        [n] = 0; 		// 0 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms;	// max spiders per ip
+	m_spiderIpWaits      [n] = 0; 		// same ip wait
+	m_spiderPriorities   [n] = 100;
+	m_forceDelete        [n] = 1;		// delete!
+	n++;
+#endif
+
+	// got bad HTTP status (e.g. 404). Now delete it.
+	m_regExs[n].set("httpstatus>=400 && httpstatus<500");
+	m_harvestLinks       [n] = false;
+	m_spiderFreqs        [n] = 0;
+	m_maxSpidersPerRule  [n] = 1; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms;	// max spiders per ip
+	m_spiderIpWaits      [n] = 500; 	// same ip wait
+	m_spiderPriorities   [n] = 100;
+	m_forceDelete        [n] = 1;		// Delete it
+	n++;
+
+
+	m_regExs[n].set("isaddurl");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 7; 		// 7 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 85;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("spiderwaited>31536000");	// Waited more than 365 days (365*86400)
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 30; 		// 7 days default
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 80;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("default");
+	m_harvestLinks       [n] = false;	// DO NOT harvest links
+	m_spiderFreqs        [n] = 60;		// 60 days before respider
+	m_maxSpidersPerRule  [n] = 0; 		// 0 spiders - spidering DISABLED for matching URLs
+	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 1;
+	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
 
 	m_numRegExs				= n;
 	m_numSpiderFreqs		= n;

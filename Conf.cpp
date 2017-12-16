@@ -188,6 +188,7 @@ Conf::Conf ( ) {
 	m_logDebugMemUsage = false;
 	m_logDebugMerge = false;
 	m_logDebugMsg13 = false;
+	m_logDebugMsg20 = false;
 	m_logDebugMulticast = false;
 	m_logDebugNet = false;
 	m_logDebugProxies = false;

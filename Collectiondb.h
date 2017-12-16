@@ -181,6 +181,7 @@ public:
 
 	bool rebuildPrivacoreRules();
 	bool rebuildPrivacoreDKOnlyRules();
+	bool rebuildPrivacoreOldOnlyRules();
 
 	bool m_urlFiltersHavePageCounts;
 

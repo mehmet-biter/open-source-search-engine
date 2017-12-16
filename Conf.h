@@ -331,6 +331,7 @@ class Conf {
 	bool  m_logDebugMemUsage;
 	bool  m_logDebugMerge;
 	bool  m_logDebugMsg13;
+	bool  m_logDebugMsg20;
 	bool  m_logDebugMulticast;
 	bool  m_logDebugNet;
 	bool  m_logDebugProxies;

@@ -188,9 +188,9 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 		cand[nc++] = hh;
 	}
 	if(nc==0) {
-		log(LOG_DEBUG, "msg20: no live candidate hosts for shard %d", shardNum);
+		logDebug(g_conf.m_logDebugMsg20, "msg20: no live candidate hosts for shard %d", shardNum);
 		if(g_conf.m_msg20FallbackToAllHosts) {
-			log(LOG_DEBUG,"msg20: No alive desired hosts in shard %d - falling back to all hosts in the shard", shardNum);
+			logDebug(g_conf.m_logDebugMsg20, "msg20: No alive desired hosts in shard %d - falling back to all hosts in the shard", shardNum);
 			for(int32_t i = 0; i < allNumHosts; i++) {
 				cand[nc++] = &allHosts[i];
 			}
@@ -288,7 +288,16 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 	// save error so Msg40 can look at it
 	if ( g_errno ) { 
 		m_errno = g_errno;
-		log( LOG_WARN, "query: msg20: got reply for docid %" PRId64" : %s", m_requestDocId,mstrerror(g_errno));
+
+		switch(m_errno) {
+			case ENOLINKTEXT_AREATAG:
+				logDebug(g_conf.m_logDebugMsg20, "msg20: got error reply for docid %" PRId64" : %s", m_requestDocId,mstrerror(g_errno));
+				break;
+			default:
+				log(LOG_WARN, "msg20: error got reply for docid %" PRId64" : %s", m_requestDocId,mstrerror(g_errno));
+				break;
+		}
+
 		return; 
 	}
 	// . get the best reply we got
@@ -313,13 +322,13 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 	// sanity check. make sure multicast is not going to free the
 	// slot's m_readBuf... we need to own it.
 	if ( freeit ) {
-		log(LOG_LOGIC,"query: msg20: gotReply: Bad engineer.");
+		log(LOG_LOGIC,"msg20: gotReply: Bad engineer.");
 		g_process.shutdownAbort(true);
 	}
 
 	// see if too small for a getSummary request
 	if ( m_replySize < (int32_t)sizeof(Msg20Reply) ) { 
-		log("query: Summary reply is too small.");
+		log("msg20: Summary reply is too small.");
 		//g_process.shutdownAbort(true);
 		m_errno = g_errno = EREPLYTOOSMALL; return; }
 
@@ -369,7 +378,7 @@ static void handleRequest20(UdpSlot *slot, int32_t netnice) {
 	// sanity check, the size include the \0
 	if ( req->m_collnum < 0 ) {
 		char ipbuf[16];
-		log(LOG_WARN, "query: Got empty collection in msg20 handler. FIX! "
+		log(LOG_WARN, "msg20: Got empty collection in msg20 handler. FIX! "
 		    "from ip=%s port=%i",iptoa(slot->getIp(),ipbuf),(int)slot->getPort());
 		    
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
@@ -383,15 +392,15 @@ static void handleRequest20(UdpSlot *slot, int32_t netnice) {
 	if(g_stable_summary_cache.lookup(cache_key, &cached_summary, &cached_summary_len) ||
 	   g_unstable_summary_cache.lookup(cache_key, &cached_summary, &cached_summary_len))
 	{
-		log(LOG_DEBUG, "query: Summary cache hit");
+		logDebug(g_conf.m_logDebugMsg20, "msg20: Summary cache hit");
 		sendCachedReply(req,cached_summary,cached_summary_len,slot);
 		return;
 	} else
-		log(LOG_DEBUG, "query: Summary cache miss");
+		logDebug(g_conf.m_logDebugMsg20, "msg20: Summary cache miss");
 
 	// if it's not stored locally that's an error
 	if ( req->m_docId >= 0 && ! Titledb::isLocal ( req->m_docId ) ) {
-		log(LOG_WARN, "query: Got msg20 request for non-local docId %" PRId64, req->m_docId);
+		log(LOG_WARN, "msg20: Got msg20 request for non-local docId %" PRId64, req->m_docId);
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , ENOTLOCAL ); 
 		return; 
@@ -399,7 +408,7 @@ static void handleRequest20(UdpSlot *slot, int32_t netnice) {
 
 	// sanity
 	if ( req->m_docId == 0 && ! req->ptr_ubuf ) { //g_process.shutdownAbort(true); }
-		log( LOG_WARN, "query: Got msg20 request for docid of 0 and no url for "
+		log( LOG_WARN, "msg20: Got msg20 request for docid of 0 and no url for "
 		    "collnum=%" PRId32" query %s",(int32_t)req->m_collnum,req->ptr_qbuf);
 
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
@@ -415,7 +424,7 @@ static void handleRequest20(UdpSlot *slot, int32_t netnice) {
 		state = new Msg20State(slot,req);
 	} catch(std::bad_alloc&) {
 		g_errno = ENOMEM;
-		log("query: msg20 new(%" PRId32"): %s", (int32_t)sizeof(XmlDoc),
+		log("msg20: msg20 new(%" PRId32"): %s", (int32_t)sizeof(XmlDoc),
 		    mstrerror(g_errno));
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror( g_errno ));
 		g_udpServer.sendErrorReply ( slot, g_errno ); 
@@ -595,13 +604,21 @@ void Msg20Reply::destructor ( ) {
 bool Msg20Reply::sendReply(Msg20State *state) {
 	if ( g_errno ) {
 		// extract titleRec ptr
-		log(LOG_WARN, "query: Had error generating msg20 reply for d=%" PRId64": %s",state->m_xmldoc.m_docId, mstrerror(g_errno));
+		switch(g_errno) {
+			case ENOLINKTEXT_AREATAG:
+				logDebug(g_conf.m_logDebugMsg20, "msg20: Had error generating msg20 reply for d=%" PRId64": %s",state->m_xmldoc.m_docId, mstrerror(g_errno));
+				break;
+			default:
+				log(LOG_WARN, "msg20: Had error generating msg20 reply for d=%" PRId64": %s",state->m_xmldoc.m_docId, mstrerror(g_errno));
+				break;
+		}
+
 		// don't forget to delete this list
 	haderror:
 		UdpSlot *slot = state->m_slot;
 		mdelete(state, sizeof(*state), "Msg20");
 		delete state;
-		log(LOG_DEBUG,"msg20: %s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror( g_errno ));
+		logDebug(g_conf.m_logDebugMsg20, "msg20: %s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror( g_errno ));
 		g_udpServer.sendErrorReply(slot, g_errno);
 		return true;
 	}
