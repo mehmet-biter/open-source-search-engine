@@ -8760,6 +8760,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for Msg25";
+	m->m_cgi   = "ltrc_msgtwofive";
+	simple_m_set(Conf,m_logTraceMsg25);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 
 	m->m_title = "log trace info for PageSpiderdbLookup";
 	m->m_cgi   = "ltrc_pgspl";

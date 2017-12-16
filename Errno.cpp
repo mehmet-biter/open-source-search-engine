@@ -260,6 +260,8 @@ const char *mstrerror ( int errnum ) {
 				return "SSL error of some kind";
 			case EPERMDENIED      :
 				return "Permission denied";
+			case ENOLINKTEXT_AREATAG      :
+				return "No link text (area tag)";
 			case EINTERNALERROR:
 				return "Internal error";
 			case EBADJSONPARSER:

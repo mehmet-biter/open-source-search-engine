@@ -368,6 +368,7 @@ class Conf {
 	bool m_logTraceMem;
 	bool m_logTraceMsg0;
 	bool m_logTraceMsg4;
+	bool m_logTraceMsg25;
 	bool m_logTracePageSpiderdbLookup;
 	bool m_logTracePos;
 	bool m_logTracePosdb;

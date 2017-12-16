@@ -2842,6 +2842,7 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 
 	// set m_linkTextNumWords
 	for ( int32_t i = 0 ; i < numReplies ; i++ ) {
+
 		// get the reply
 		Msg20Reply *r = replies[i];
 		// replies are NULL if MsgE had an error, like ENOTFOUND
@@ -4293,17 +4294,31 @@ int32_t Links::getLinkText(const char *linkee,
 			   char      **itemPtr,
 			   int32_t    *itemLen,
 			   int32_t    *retNode1,
-			   int32_t    *retLinkNum)
+			   int32_t    *retLinkNum,
+			   int32_t    *errCode)
 {
-	log(LOG_DEBUG, "build: Links::getLinkText: linkee=%s", linkee);
+	log(LOG_DEBUG, "build: Links::getLinkText: linkee=%s, getSiteLinkInfo: %s", linkee, getSiteLinkInfo?"true":"false");
 
 	// assume none
-	if ( retNode1   ) *retNode1 = -1;
+	if( retNode1 ) {
+		*retNode1 = -1;
+	}
+
 	// assume no link text
 	buf[0] = '\0';
+
 	// assume no item
-	if ( itemPtr ) *itemPtr = NULL;
-	if ( itemLen ) *itemLen = 0;
+	if ( itemPtr ) {
+		*itemPtr = NULL;
+	}
+	if ( itemLen ) {
+		*itemLen = 0;
+	}
+	// assume no error
+	if( errCode ) {
+		*errCode = 0;
+	}
+
 
 	// if it is site based, skip the protocol because the site might
 	// be just a domain and not a subdomain
@@ -4319,25 +4334,43 @@ int32_t Links::getLinkText(const char *linkee,
 	for ( i = 0 ; i < m_numLinks ; i++ ) {
 		char *link    = getLinkPtr(i);
 		int32_t  linkLen = getLinkLen(i);
+		logTrace(g_conf.m_logTraceMsg25, "  Check %" PRId32 ": %.*s", i, linkLen, link);
+
 		// now see if its a full match
 		// special case if site
 		if ( getSiteLinkInfo ) {
-			if ( strstr ( link, linkee ) ) break;
+			if ( strstr ( link, linkee ) ) {
+				logTrace(g_conf.m_logTraceMsg25, "match for site check [%s] [%s]", link, linkee);
+				break;
+			}
 			continue;
 		}
 		// continue if don't match
-		if ( linkLen != linkeeLen ) continue;
+		if ( linkLen != linkeeLen ) {
+			logTrace(g_conf.m_logTraceMsg25, "Length differs [%s] [%s]", link, linkee);
+			continue;
+		}
 		// continue if don't match
-		if ( strcmp ( link , linkee ) != 0 ) continue;
+		if ( strcmp ( link , linkee ) != 0 ) {
+			logTrace(g_conf.m_logTraceMsg25, "no match [%s] [%s]", link, linkee);
+			continue;
+		}
 		// otherwise it's a hit
+		logTrace(g_conf.m_logTraceMsg25, "MATCH [%s] [%s]", link, linkee);
 		break;
 	}
+
 	// return 0 if no link to our "url"
-	if ( i >= m_numLinks ) return 0;
+	if ( i >= m_numLinks ) {
+		logTrace(g_conf.m_logTraceMsg25, "no match found, returning 0");
+		return 0;
+	}
 
 	*retLinkNum = i;
 
-	return getLinkText2(i,buf,bufMaxLen,itemPtr,itemLen,retNode1);
+	logTrace(g_conf.m_logTraceMsg25, "retLinkNum: %" PRId32 "", *retLinkNum);
+
+	return getLinkText2(i,buf,bufMaxLen,itemPtr,itemLen,retNode1,errCode);
 }
 
 
@@ -4346,8 +4379,11 @@ int32_t Links::getLinkText2(int32_t i,
 			    int32_t   bufMaxLen,
 			    char **itemPtr,
 			    int32_t  *itemLen,
-			    int32_t  *retNode1)
+			    int32_t  *retNode1,
+			    int32_t *errCode)
 {
+	logTrace(g_conf.m_logTraceMsg25, "Get link text for link %" PRId32 "", i);
+
 	// get the node range so we can call Xml::getText()
 	int32_t node1 = m_linkNodes [ i ];
 
@@ -4356,7 +4392,13 @@ int32_t Links::getLinkText2(int32_t i,
 	//   link to phdcomics.com . it was picking up bogus link text
 	//   from page tail.
 	XmlNode *xmlNodes = m_xml->getNodes();
-	if ( xmlNodes[node1].m_nodeId == TAG_AREA ) return 0;
+	if ( xmlNodes[node1].m_nodeId == TAG_AREA ) {
+		logTrace(g_conf.m_logTraceMsg25, "END, Area tag link - ignoring");
+		if( errCode ) {
+			*errCode = ENOLINKTEXT_AREATAG;
+		}
+		return 0;
+	}
 
 	// what delimeter are we using? this only applies to rss/atom feeds.
 	//char *del = NULL;
@@ -4373,16 +4415,26 @@ int32_t Links::getLinkText2(int32_t i,
 		gbmemcpy(del, "entry\0", 6);
 		dlen = 5;
 	}
+	logTrace(g_conf.m_logTraceMsg25, "rss=%" PRId32 "", rss);
+
 	// if rss or atom page, return the whole xml <item> or <entry>
 	//if ( itemBuf && del ) {
 	if ( dlen > 0 ) {
 		// bail if not wanted
-		if ( ! itemPtr ) return 0;
+		if ( ! itemPtr ) {
+			logTrace(g_conf.m_logTraceMsg25, "END, no itemPtr");
+			return 0;
+		}
+
 		//log ( LOG_INFO, "Links: Getting Link Item For Url" );
 		int32_t     xmlNumNodes = m_xml->getNumNodes();
+
 		// . must come from a <link> node, not a <a>
 		// . can also be an <enclosure> tag now too
-		if ( xmlNodes[node1].m_nodeId == TAG_A ) goto skipItem;
+		if ( xmlNodes[node1].m_nodeId == TAG_A ) {
+			goto skipItem;
+		}
+
 		// get item delimeter length
 		//int32_t dlen = strlen(del);
 		// back pedal node until we hit <item> or <entry> tag
@@ -4450,14 +4502,19 @@ skipItem:
 	// if not found use the last node in the document
 	if ( node2 < 0 ) node2 = 99999999;
 
-	// now we can call Xml::getText()
+	logTrace(g_conf.m_logTraceMsg25, "Getting text for Xml node %" PRId32 "", node1);
+
 	int32_t bufLen = m_xml->getText( buf, bufMaxLen, node1, node2, false );
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufLen);
 #endif
 
 	// set it
-	if ( retNode1 ) *retNode1 = node1;
+	if ( retNode1 ) {
+		*retNode1 = node1;
+		logTrace(g_conf.m_logTraceMsg25, "Setting retNode1 to %" PRId32 "", *retNode1);
+	}
+
 	// hunt for an alnum in the link text
 	// Sligtly unusual looping because we may have cut the last utf8
 	// character in half by using the limited buffer. This happens quite
@@ -4473,7 +4530,11 @@ skipItem:
 		p += character_len;
 	}
 	// if no alnum then return 0 as the link text len
-	if ( p >= pend ) return 0;
+	if ( p >= pend ) {
+		logTrace(g_conf.m_logTraceMsg25, "END, No alnum match - returning 0");
+		return 0;
+	}
+
 	// find last non-space char
 	char *q = p;
 	char *last = NULL;
@@ -4494,6 +4555,7 @@ skipItem:
 	// null terminate
 	buf [ bufLen ] = '\0';
 	// return length
+	logTrace(g_conf.m_logTraceMsg25, "END, returning length %" PRId32 "", bufLen);
 	return bufLen;
 }
 
