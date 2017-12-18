@@ -1349,10 +1349,12 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
+	log(LOG_DEBUG,"main: initializing word variations: Danish");
 	if(!initializeWordVariationGenerator_Danish()) {
 		log(LOG_WARN, "word-variation-danish initialization failed" );
 		//but not fatal
 	}
+	log(LOG_DEBUG,"main: initialized word variations: Danish");
 
 	// the wiki titles
 	if ( ! g_wiki.load() ) {
