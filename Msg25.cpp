@@ -341,6 +341,8 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 		hostId = g_hostdb.getHostIdWithSpideringEnabled(shardNum, true);
 	}
 
+	logTrace(g_conf.m_logTraceMsg25, "Send msg25 to host [%" PRId32 "] ptr_url [%s] (hashed from [%.*s]) ptr_site [%s] docId [%" PRId64 "] isSiteLinkInfo [%s]",
+		hostId, req->ptr_url, u.getUrlLen(), u.getUrl(), req->ptr_site, req->m_docId, isSiteLinkInfo?"true":"false");
 
 	// . serialize the string buffers
 	// . use Msg25Request::m_buf[MAX_NEEDED]
@@ -449,7 +451,6 @@ static void sendReplyWrapper(void *state) {
 
 
 void handleRequest25(UdpSlot *slot, int32_t netnice) {
-
 	Msg25Request *req = (Msg25Request *)slot->m_readBuf;
 
 	req->deserialize();
@@ -460,6 +461,11 @@ void handleRequest25(UdpSlot *slot, int32_t netnice) {
 	// udp socket for sending back the final linkInfo in m_linkInfoBuf
 	// used by sendReply()
 	req->m_udpSlot = slot;
+
+	char ipbuf[16];
+	logTrace(g_conf.m_logTraceMsg25,"ip [%s] port [%" PRIu16 "] ptr_url [%s] ptr_site [%s] docId [%" PRId64 "]",
+		iptoa(slot->getIp(),ipbuf), slot->getPort(), req->ptr_url, req->ptr_site, req->m_docId);
+
 
 	if ( g_conf.m_logDebugLinkInfo && req->m_mode == Msg25::MODE_SITELINKINFO ) {
 		log(LOG_DEBUG, "linkdb: got msg25 request sitehash64=%" PRId64" "
@@ -668,6 +674,7 @@ bool Msg25::getLinkInfo2(const char      *site,
 			 // put LinkInfo output class in here
 			 SafeBuf   *linkInfoBuf )
 {
+	logTrace(g_conf.m_logTraceMsg25,"site [%s] url [%s] isSiteLinkInfo [%s] docId [%" PRId64 "] getLinkerTitles [%s]", site, url, isSiteLinkInfo?"true":"false", docId, getLinkerTitles?"true":"false");
 
 	// reset the ip table
 	reset();
@@ -791,6 +798,8 @@ bool Msg25::doReadLoop() {
 	// . these keys are ordered from lowest to highest
 	key224_t startKey ;
 	key224_t endKey   ;
+
+	logTrace(g_conf.m_logTraceMsg25, "doReadLoop. m_site [%s] m_url [%s]", m_site, m_url);
 
 	int32_t siteHash32 = hash32n ( m_site );
 
@@ -1022,8 +1031,10 @@ bool Msg25::gotList() {
 	}
 
 	// if we are doing site linkinfo, bail now
-	if ( m_mode == MODE_SITELINKINFO )
+	if ( m_mode == MODE_SITELINKINFO ) {
+		logTrace(g_conf.m_logTraceMsg25, "Read from disk. sending requests for linkers to url [%s]. m_siteNumInlinks=%" PRId32 ". mode=SITELINKINFO", m_url, m_siteNumInlinks);
 		return sendRequests();
+	}
 
 	// when MODE_PAGELINKINFO we must have a site quality for that site
 	if ( m_siteNumInlinks < 0 ) { g_process.shutdownAbort(true); }
@@ -1040,6 +1051,8 @@ bool Msg25::gotList() {
 	else if ( n >=   70 ) {m_spamWeight = 07; m_maxSpam =   10;}
 	else if ( n >=   20 ) {m_spamWeight = 05; m_maxSpam =    7;}
 
+
+	logTrace(g_conf.m_logTraceMsg25,"Read from disk. sending requests for linkers to url [%s]. m_siteNumInlinks=%" PRId32 ". mode!=SITELINKINFO", m_url, m_siteNumInlinks);
 	// now send the requests
 	m_list.resetListPtr();
 	return sendRequests();
@@ -1076,6 +1089,8 @@ bool Msg25::sendRequests() {
 		// looking up this many titlerecs
 		if ( m_numRequests >= MAX_DOCIDS_TO_SAMPLE )
 			break;
+
+
 		// . we only need at most MAX_LINKERS in our sample
 		// . but we do keep "losers" until the very end so we can
 		//   remove them in an order-independent fashion to guarantee
@@ -1253,10 +1268,12 @@ bool Msg25::sendRequests() {
 			r->m_isSiteLinkInfo = false;
 			r-> ptr_linkee = m_url;
 			r->size_linkee = strlen(m_url)+1; // include \0
+			logTrace(g_conf.m_logTraceMsg25, "send request with linkee=m_url [%s], docId=%" PRId64 "", m_url, docId);
 		} else {
 			r->m_isSiteLinkInfo = true;
 			r-> ptr_linkee = m_site;
 			r->size_linkee = strlen(m_site)+1; // include \0
+			logTrace(g_conf.m_logTraceMsg25, "send request with linkee=m_site [%s], docId=%" PRId64 "", m_site, docId);
 		}
 		r->m_collnum = cr->m_collnum;
 		r->m_docId           = docId;
@@ -4018,6 +4035,9 @@ bool Links::addLink(const char *link, int32_t linkLen, int32_t nodeNum,
 	// and NULL terminate it
 	*m_bufPtr++  = '\0';
 
+	logTrace(g_conf.m_logTraceMsg25, "Stored link: [%s]", m_linkPtrs[m_numLinks]);
+
+
 	// . set link hash if we need to
 	// . the Vector class uses these link hashes for determining similarity
 	//   of this document to another for purposes of fightling link spam
@@ -4106,7 +4126,6 @@ bool Links::addLink(const char *link, int32_t linkLen, int32_t nodeNum,
 	if (m_parentUrl) {
 		SiteGetter parentSiteGetter;
 		parentSiteGetter.getSite(m_parentUrl->getUrl(), nullptr, 0, 0, 0);
-
 		SiteGetter siteGetter;
 		siteGetter.getSite(url.getUrl(), nullptr, 0, 0, 0);
 
@@ -4320,11 +4339,27 @@ int32_t Links::getLinkText(const char *linkee,
 	}
 
 
+	const char *no_www_linkee = NULL;
+
 	// if it is site based, skip the protocol because the site might
 	// be just a domain and not a subdomain
 	if ( getSiteLinkInfo ) {
 		const char *pp = strstr ( linkee, "://");
-		if ( pp ) linkee = pp + 3;
+		// skip scheme
+		if( pp ) {
+			linkee = pp + 3;
+		}
+
+		// If linkee starts with www., keep a pointer to the domain WITHOUT "www." prefix
+		// as we have seen a problem with links without www not being
+		// found for pages even though linkdb says it has a link
+		// ("build: Got linknode=-1 < 0. Cached linker AAA does not have outlink to
+		// www.domain.com like linkdb says it should.") - therefore, we try both
+		// for siteinfo requests (SiteGetter [stupidly] adds www for domains without it).
+		pp = strstr(linkee, "www.");
+		if( pp == linkee ) {
+			no_www_linkee = pp + 4;
+		}
 	}
 
 	int32_t linkeeLen = strlen(linkee);
@@ -4339,10 +4374,31 @@ int32_t Links::getLinkText(const char *linkee,
 		// now see if its a full match
 		// special case if site
 		if ( getSiteLinkInfo ) {
-			if ( strstr ( link, linkee ) ) {
-				logTrace(g_conf.m_logTraceMsg25, "match for site check [%s] [%s]", link, linkee);
-				break;
+			// Lets skip protocol in link too, to make check more accurate and
+			// not just a simple strstr with no position check
+			const char *prot = strstr(link, "://");
+			if( prot ) {
+				link = (char*)prot + 3;
 			}
+
+			const char *linkee_used = linkee;
+			// See if link matches linkee (destination) with "www." prefix
+			char *match = strstr(link, linkee);
+			if( !match && no_www_linkee ) {
+				// Nope, See if link matches linkee (destination) without "www." prefix
+				linkee_used = no_www_linkee;
+				match = strstr(link, no_www_linkee);
+			}
+
+			if( match ) {
+				if( link - match == 0 ) {
+					logTrace(g_conf.m_logTraceMsg25, "match for site check [%s] [%s]. usedNoWWW=%s", link, linkee_used, linkee_used==no_www_linkee?"true":"false");
+					break;
+				}
+				logTrace(g_conf.m_logTraceMsg25, "match but at wrong position (%d) for site check [%s] [%s]. usedNoWWW=%s", (int)(link-match), link, linkee_used, linkee_used==no_www_linkee?"true":"false");
+			}
+
+			logTrace(g_conf.m_logTraceMsg25, "no match site check [%s] [%s]", link, linkee);
 			continue;
 		}
 		// continue if don't match
@@ -4362,7 +4418,7 @@ int32_t Links::getLinkText(const char *linkee,
 
 	// return 0 if no link to our "url"
 	if ( i >= m_numLinks ) {
-		logTrace(g_conf.m_logTraceMsg25, "no match found, returning 0");
+		logTrace(g_conf.m_logTraceMsg25, "NO match found, returning 0");
 		return 0;
 	}
 
