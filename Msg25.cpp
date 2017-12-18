@@ -824,8 +824,6 @@ bool Msg25::doReadLoop() {
 
 	m_minRecSizes = READSIZE; // MAX_LINKERS_IN_TERMLIST * 10 + 6;
 
-log(LOG_ERROR,"m_minRecSizes=%" PRId32 "", m_minRecSizes);
-
 	// NO, DON't restrict because it will mess up the hopcount.
 	//bool includeTree = true;
 	//It's expensive to do include the tree. Can we avoid it?
