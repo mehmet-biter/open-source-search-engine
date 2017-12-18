@@ -32,6 +32,8 @@ Query::Query()
   : m_queryWordBuf("Query4"),
     m_filteredQuery("qrystk"),
     m_originalQuery("oqbuf"),
+    m_bigramWeight(1.0),
+    m_synonymWeight(1.0),
     m_word_variations_config()
 {
 	m_qwords      = NULL;
