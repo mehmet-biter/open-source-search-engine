@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
 		loghex(LOG_TRACE, xmlDoc.ptr_utf8Content, xmlDoc.size_utf8Content, "\tutf8Content:");
 		logf(LOG_TRACE, "\tsite       : %.*s", xmlDoc.size_site, xmlDoc.ptr_site);
 
-		logf(LOG_TRACE, "\tlinkInfo");
+		logf(LOG_TRACE, "\tlinkInfo (from titlerec)");
 		LinkInfo *linkInfo = xmlDoc.getLinkInfo1();
 		logf(LOG_TRACE, "\t\tm_numGoodInlinks     : %d", linkInfo->m_numGoodInlinks);
 		logf(LOG_TRACE, "\t\tm_numInlinksInternal : %d", linkInfo->m_numInlinksInternal);
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
 
 		loghex(LOG_TRACE, xmlDoc.ptr_linkdbData, xmlDoc.size_linkdbData, "\tlinkdbData");
 
-		logf(LOG_TRACE, "\ttagRec");
+		logf(LOG_TRACE, "\ttagRec (from titlerec)");
 		TagRec *tagRec = xmlDoc.getTagRec();
 		for (Tag *tag = tagRec->getFirstTag(); tag; tag = tagRec->getNextTag(tag)) {
 			SafeBuf sb;
@@ -153,12 +153,18 @@ int main(int argc, char **argv) {
 
 		logf(LOG_TRACE, "\t");
 
-		logf(LOG_TRACE, "Links info");
+		logf(LOG_TRACE, "Links info (from parsed titlerec)");
 		g_log.m_disabled = true;
 		Links *links = xmlDoc.getLinks();
 		g_log.m_disabled = false;
 		for (int i = 0; i < links->getNumLinks(); ++i) {
+			Url u;
+			u.set( links->getLinkPtr(i), links->getLinkLen(i), true, false );
+			uint32_t h32 = u.getHostHash32();
+			int64_t uh64 = hash64n(u.getUrl(), u.getUrlLen());
+
 			logf(LOG_TRACE, "\tlink      : %.*s", links->getLinkLen(i), links->getLinkPtr(i));
+			logf(LOG_TRACE, "\tsitehash32: 0x%08" PRIx32 ", urlhash=0x%012" PRIx64 "", h32, uh64);
 		}
 	}
 	cleanup();

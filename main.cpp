@@ -5294,9 +5294,14 @@ static void dumpLinkdb(const char *coll,
 	// set start/end key to url hash
 	if ( url ) {
 		Url u;
-		u.set( url, strlen( url ), true, false );
+		u.set( url, strlen( url ), false, false );
+
 		uint32_t h32 = u.getHostHash32();
 		int64_t uh64 = hash64n(u.getUrl(), u.getUrlLen());
+
+		printf("URL=%.*s, sitehash32=0x%08" PRIx32 ", urlhash=0x%012" PRIx64 "\n",
+			u.getUrlLen(), u.getUrl(), h32, uh64);
+
 		startKey = Linkdb::makeStartKey_uk ( h32 , uh64 );
 		endKey   = Linkdb::makeEndKey_uk   ( h32 , uh64 );
 	}

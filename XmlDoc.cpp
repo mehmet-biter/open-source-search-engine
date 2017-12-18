@@ -7550,8 +7550,9 @@ static LinkInfo s_dummy2;
 // . returns NULL and sets g_errno on error
 // . returns -1 if blocked, will re-call m_callback
 LinkInfo *XmlDoc::getLinkInfo1 ( ) {
-	if ( m_linkInfo1Valid && ptr_linkInfo1 )
+	if ( m_linkInfo1Valid && ptr_linkInfo1 ) {
 		return ptr_linkInfo1;
+	}
 
 	// do not generate in real-time from a msg20 request for a summary,
 	// because if this falls through then getFirstIp() below can return -1
@@ -7568,12 +7569,16 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	// at least get our firstip so if cr->m_getLinkInfo is false
 	// then getRevisedSpiderReq() will not core because it is invalid
 	int32_t *ip = getFirstIp();
-	if ( ! ip || ip == (int32_t *)-1 ) return (LinkInfo *)ip;
+	if ( ! ip || ip == (int32_t *)-1 ) {
+		return (LinkInfo *)ip;
+	}
 
 
 	// just return nothing if not doing link voting
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) {
+		return NULL;
+	}
 	// to keep things fast we avoid getting link info for some collections
 	if ( ! m_linkInfo1Valid && ! cr->m_getLinkInfo ) {
 		ptr_linkInfo1 = NULL;
@@ -7590,8 +7595,9 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	}
 
 	// return if we got it
-	if ( m_linkInfo1Valid )
+	if ( m_linkInfo1Valid ) {
 		return ptr_linkInfo1;
+	}
 
 	// change status
 	setStatus ( "getting local inlinkers" );
@@ -7610,6 +7616,7 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 		g_errno = EBADENGINEER;
 		return NULL;
 	}
+
 	char *mysite = getSite();
 	if ( ! mysite || mysite == (void *)-1 ) return (LinkInfo *)mysite;
 
@@ -15675,16 +15682,26 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	// that has the provided site and domain hash, Msg20Request::
 	// m_ourHostHash32 and m_ourDomHash32?
 	int32_t nl = 0;
-	if ( links ) nl = links->getNumLinks();
+	if ( links ) {
+		nl = links->getNumLinks();
+	}
+	logTrace(g_conf.m_logTraceXmlDoc, "num links: %" PRId32 "", nl);
+
 	// scan all outlinks we have on this page
 	int32_t i ; for ( i = 0 ; i < nl ; i++ ) {
 		// get the normalized url
 		//char *url = links->getLinkPtr(i);
 		// get the site. this will not block or have an error.
 		int32_t hh32 = (int32_t)((uint32_t)links->getHostHash64(i));
-		if ( hh32 == m_req->m_ourHostHash32 ) break;
+		if ( hh32 == m_req->m_ourHostHash32 ) {
+			logTrace(g_conf.m_logTraceXmlDoc, "Stop at link #%" PRId32 " - matches request host hash32 (%" PRIx32 ")", i, hh32);
+			break;
+		}
 		int32_t dh32 = links->getDomHash32(i);
-		if ( dh32 == m_req->m_ourDomHash32 ) break;
+		if ( dh32 == m_req->m_ourDomHash32 ) {
+			logTrace(g_conf.m_logTraceXmlDoc, "Stop at link #%" PRId32 " - matches request domain hash32 (%" PRIx32 ")", i, dh32);
+			break;
+		}
 	}
 
 	// easy ones
@@ -15719,6 +15736,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
 	m_reply.m_siteNumInlinks       = m_siteNumInlinks;
+	logTrace(g_conf.m_logTraceXmlDoc, "m_siteNumInlinks: %" PRId32 "", m_siteNumInlinks);
 
 	// . get stuff from link info
 	// . this is so fast, just do it for all Msg20 requests
@@ -15737,9 +15755,12 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	// supplied url as part of the SPIDER process..
 	// this was done by Msg23 before
 	if ( ! m_req->m_getLinkText ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, not getting link text");
 		m_replyValid = true;
 		return &m_reply;
 	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "We're here to get link text");
 
 	// use the first url of the linker by default
 	Url *linker = &m_firstUrl;
@@ -15778,6 +15799,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	// we have bad links or not.
 	int32_t linkNode = -1;
 	int32_t linkNum  = -1;
+	int32_t errcode  = 0;
 	// . get associated link text from the linker's document for our "url"
 	// . only gets from FIRST link to us
 	// . TODO: allow more link text from better quality pages?
@@ -15805,38 +15827,47 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	//   case we get the best inlink to that site, and linkee is
 	//   something like blogspot.com/mary/ or some other site.
 	int32_t blen = links->getLinkText ( m_req->ptr_linkee  ,//&linkee,
-					 m_req->m_isSiteLinkInfo ,
-					 m_linkTextBuf       ,
+					 m_req->m_isSiteLinkInfo,
+					 m_linkTextBuf,
 					 sizeof(m_linkTextBuf)-2,
-					 &rssItem            ,
-					 &rssItemLen         ,
-					 &linkNode           ,
-					 &linkNum            );
+					 &rssItem,
+					 &rssItemLen,
+					 &linkNode,
+					 &linkNum,
+					 &errcode);
 
 	// . BUT this skips the news topic stuff too. bad?
 	// . THIS HAPPENED before because we were truncating the xml(see above)
 	if ( linkNode < 0 ) {
-
 		int64_t took = gettimeofdayInMilliseconds() - start;
-		if ( took > 100 )
+		if ( took > 100 ) {
 			log("build: took %" PRId64" ms to get link text for "
 			    "%s from linker %s",
 			    took,
 			    m_req->ptr_linkee,
 			    m_firstUrl.getUrl() );
+		}
 
-		logf(LOG_DEBUG,"build: Got linknode = %" PRId32" < 0. Cached "
-		     "linker %s does not have outlink to %s like linkdb "
-		     "says it should. page is probably too big and the "
-		     "outlink is past our limit. contentLen=%" PRId32". or "
-		     "a sitehash collision, or an area tag link.",
-		     linkNode,getFirstUrl()->getUrl(),m_req->ptr_linkee,
-		     m_xml.getContentLen());
-		//g_errno = ECORRUPTDATA;
-		// do not let multicast forward to a twin! so use this instead
-		// of ECORRUTPDATA
-		g_errno = EBADENGINEER;
-		//g_process.shutdownAbort(true);
+		switch( errcode ) {
+			case ENOLINKTEXT_AREATAG:
+				log(LOG_DEBUG,"build: Got linknode=%" PRId32" < 0 trying to get link text. "
+				     "Linker %s outlink to %s is an area tag (no link text) - ignored",
+				     linkNode, getFirstUrl()->getUrl(), m_req->ptr_linkee);
+				g_errno = errcode;
+				break;
+			default:
+				logf(LOG_DEBUG,"build: Got linknode=%" PRId32" < 0. Cached "
+				     "linker %s does not have outlink to %s like linkdb "
+				     "says it should. Page is probably too big and the "
+				     "outlink is past our limit (contentLen=%" PRId32"), or "
+				     "a sitehash collision.",
+				     linkNode, getFirstUrl()->getUrl(), m_req->ptr_linkee,
+				     m_xml.getContentLen());
+
+				// do not let multicast forward to a twin! so use this instead of ECORRUTPDATA
+				g_errno = EBADENGINEER;
+				break;
+		}
 		return NULL;
 	}
 

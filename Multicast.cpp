@@ -843,7 +843,10 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 	// return if we kicked another request off ok
 	if ( g_errno ) {
 		// do not log not found on an external network
-		if ( g_errno != ENOTFOUND ) {
+		// Only log those errors that are real errors as warning
+
+		if ( g_errno != ENOTFOUND &&
+			 g_errno != ENOLINKTEXT_AREATAG ) {
 			// log the error
 			Host *h = g_hostdb.getUdpHost(slot->getIp(), slot->getPort());
 			if (h) {
@@ -891,7 +894,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		if ( g_errno == EUNCOMPRESSERROR   ) sendToTwin = false;
 		// ok, let's give up on ENOTFOUND, because the vast majority
 		// of time it seems it is really not on the twin either...
-		if (g_errno == ENOTFOUND && (m_msgType == msg_type_20 || m_msgType == msg_type_22)) {
+		if ( (g_errno == ENOTFOUND || g_errno == ENOLINKTEXT_AREATAG) && (m_msgType == msg_type_20 || m_msgType == msg_type_22)) {
 			sendToTwin = false;
 		}
 

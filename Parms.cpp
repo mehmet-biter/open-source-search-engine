@@ -1164,7 +1164,8 @@ static DropLangs g_drops[] = {
 	{"romantic"},
 #endif
 	{"privacore"},
-	{"privacore-DK"}
+	{"privacore-DK"},
+	{"privacore-OldPages"}
 };
 
 // "url filters profile" values. used to set default crawl rules
@@ -8676,6 +8677,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log debug msg20 messages";
+	m->m_cgi   = "ldmsgtwozero";
+	simple_m_set(Conf,m_logDebugMsg20);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log debug multicast";
 	m->m_cgi   = "ldmc";
 	simple_m_set(Conf,m_logDebugMulticast);
@@ -8943,6 +8951,13 @@ void Parms::init ( ) {
 	m->m_title = "log trace info for Msg4";
 	m->m_cgi   = "ltrc_msgfour";
 	simple_m_set(Conf,m_logTraceMsg4);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for Msg25";
+	m->m_cgi   = "ltrc_msgtwofive";
+	simple_m_set(Conf,m_logTraceMsg25);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
