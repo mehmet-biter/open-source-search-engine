@@ -3326,7 +3326,8 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 
 	// Record term positions in winning window
 	for(int32_t i=0; i < m_numQueryTermInfos; i++) {
-		m_bestMinTermPairWindowPtrs[i] = ptrs[i];
+		if(ptrs[i]!=NULL)
+			m_bestMinTermPairWindowPtrs[i] = ptrs[i];
 	}
 
 	logTrace(g_conf.m_logTracePosdb, "END.");
