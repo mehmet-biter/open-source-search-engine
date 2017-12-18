@@ -23,7 +23,8 @@ struct WordVariationWeights {
 	    noun_plural_singular(1.0),
 	    proper_noun_spelling_variants(1.0),
 	    verb_spelling_variants(1.0),
-	    verb_past_past_variants(1.0)
+	    verb_past_past_variants(1.0),
+	    simple_spelling_variants(1.0)
 	  {}
 };
 
