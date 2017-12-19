@@ -1,0 +1,22 @@
+This directory contains GB-specific tools and libraries to process the STO database.
+
+The STO database is a lexicon made by Center for Sprogteknologi (CST), a subsection
+of University of Copenhagen. Web site: http://cst.ku.dk/
+
+The GB distribution does not contain the STO database. CST did not make any files in
+this directory. You have to get hold of the STO files yourself.
+
+The source lexicon is a bit too big (320MB) to use as-is in GB. It is processed into
+a more compact format without losing details we care about. This resulting file is
+binary and can be accessed using the classes in sto.h
+
+
+To generate the binary lexicon:
+
+1: Get hold of the STO XML files.
+	The download link is difficult to find. You may have to email CST.
+
+2: Run ./convert_sto.sh <directory where you unpacked the STO files> <target file>
+	The tool will run through the XML files (STO_LMF_morphology_noun_a_jan2013.xml, STO_LMF_morphology_pronoun_jan2013.xml, ...). It will complain a bit about entries that seem incomplete (no recognized "feat" attribute values).
+
+3: You now have a binary lexicon, approximately 14MB. You can use ./dump_sto to check the contents.

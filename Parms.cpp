@@ -1164,7 +1164,8 @@ static DropLangs g_drops[] = {
 	{"romantic"},
 #endif
 	{"privacore"},
-	{"privacore-DK"}
+	{"privacore-DK"},
+	{"privacore-OldPages"}
 };
 
 // "url filters profile" values. used to set default crawl rules
@@ -3573,17 +3574,107 @@ void Parms::init ( ) {
 
 
 
-	m->m_title = "do query expansion";
-	m->m_desc  = "If enabled, query expansion will expand your query "
-		"to include the various forms and "
-		"synonyms of the query terms.";
-	simple_m_set(SearchInput,m_queryExpansion);
-	m->m_defOff= offsetof(CollectionRec,m_queryExpansion);
+	m->m_title = "wiktionary-based word variations";
+	m->m_desc  = "If enabled, queries will be expanded with \"synonyms\" from the compiled wiktionary data.";
+	simple_m_set(SearchInput,m_word_variations_config.m_wiktionaryWordVariations);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_wiktionaryWordVariations);
 	m->m_cgi  = "qe";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "language-specific word variations";
+	m->m_desc  = "If enabled, queries will be expaneded using launguage-specific rules, eg. based on STO lexicon.";
+	simple_m_set(SearchInput,m_word_variations_config.m_languageSpecificWordVariations);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_languageSpecificWordVariations);
+	m->m_cgi  = "lwv";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "Weight threshold";
+	m->m_desc  = "Weight threshold of variations to before they are used.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_threshold);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_threshold);
+	m->m_cgi  = "lwv_wt";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "noun: indefinite->definite";
+	m->m_desc  = "Weight of indefinite to definite form variations.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.noun_indefinite_definite);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_indefinite_definite);
+	m->m_cgi  = "lwv_noun_indef_def";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "noun: definite->indefinite";
+	m->m_desc  = "Weight of definite to indefinite form variations.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.noun_definite_indefinite);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_definite_indefinite);
+	m->m_cgi  = "lwv_noun_def_indef";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "noun: singular->plural";
+	m->m_desc  = "Weight of singular to plural form variations.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.noun_singular_plural);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_singular_plural);
+	m->m_cgi  = "lwv_noun_singular_plural";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "noun: plural->singular";
+	m->m_desc  = "Weight of plural to singular form variations.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.noun_plural_singular);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_plural_singular);
+	m->m_cgi  = "lwv_noun_plural_singular";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "proper noun: common spelling differences";
+	m->m_desc  = "Weight of common spelling differences within a language, eg Danish aa<->å, German eszet, etc. "
+		     "Note that what is and isn't a proper noun is determined by heuristics.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.proper_noun_spelling_variants);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.proper_noun_spelling_variants);
+	m->m_cgi  = "lwv_proper_noun_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "verb: common spelling differences";
+	m->m_desc  = "Weight of common spelling differences within a language, eg Danish acute accent";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.verb_spelling_variants);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.verb_spelling_variants);
+	m->m_cgi  = "lwv_verb_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "simple spelling variants";
+	m->m_desc  = "Simple spelling variantions (usually approved)";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.simple_spelling_variants);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.simple_spelling_variants);
+	m->m_cgi  = "lwv_simple_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "verb: past<->past variants";
+	m->m_desc  = "Weight of different pasts (including compound tenses). Eg 'ate' vs. 'had eaten'";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.verb_past_past_variants);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.verb_past_past_variants);
+	m->m_cgi  = "lwv_verb_past_past_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	
 	// limit to this # of the top term pairs from inlink text whose
 	// score is accumulated
 	m->m_title = "real max top";
@@ -6590,17 +6681,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_API | PF_CLONE;
 	m++;
 
-	m->m_title = "Do query expansion by default";
-	m->m_desc  = "If enabled, query expansion will expand your query "
-		"to include the various forms and "
-		"synonyms of the query terms.";
-	m->m_def   = "0";
-	simple_m_set(CollectionRec,m_queryExpansion);
-	m->m_cgi  = "qe";
-	m->m_page  = PAGE_SEARCH;
-	m->m_flags = PF_API | PF_CLONE;
-	m++;
-
 	m->m_title = "Check URL filters when searching";
 	m->m_desc  = "Run results through URL Filters to check for manual ban and force delete.";
 	m->m_cgi   = "checkuf";
@@ -7081,6 +7161,114 @@ void Parms::init ( ) {
 	m->m_units = "seconds";
 	m->m_flags = 0;
 	m++;
+
+	///////////////////
+	//
+	// Word Variation Controls
+	//
+	///////////////////
+	
+	m->m_title = "wiktionary-based word variations";
+	m->m_desc  = "If enabled, queries will be expanded with \"synonyms\" from the compiled wiktionary data.";
+	m->m_def   = "0";
+	simple_m_set(CollectionRec,m_word_variations_config.m_wiktionaryWordVariations);
+	m->m_cgi  = "qe";
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m->m_flags = PF_API | PF_CLONE;
+	m++;
+
+	m->m_title = "language-specific word variations";
+	m->m_desc  = "If enabled, queries will be expaneded using launguage-specific rules, eg. based on STO lexicon.";
+	m->m_def   = "0";
+	simple_m_set(CollectionRec,m_word_variations_config.m_languageSpecificWordVariations);
+	m->m_cgi  = "langwordvariations";
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m->m_flags = PF_API | PF_CLONE;
+	m++;
+
+	m->m_title = "Weight threshold";
+	m->m_desc  = "Weight threshold of variations to before they are used.";
+	m->m_def   = "1.0";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_threshold);
+	m->m_cgi  = "lwv_wt";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "noun: indefinite->definite";
+	m->m_desc  = "Weight of indefinite to definite form variations.";
+	m->m_def   = "0.7";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_indefinite_definite);
+	m->m_cgi  = "lwv_noun_indef_def";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "noun: definite->indefinite";
+	m->m_desc  = "Weight of definite to indefinite form variations.";
+	m->m_def   = "0.6";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_definite_indefinite);
+	m->m_cgi  = "lwv_noun_def_indef";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "noun: singular->plural";
+	m->m_desc  = "Weight of singular to plural form variations.";
+	m->m_def   = "0.6";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_singular_plural);
+	m->m_cgi  = "lwv_noun_singular_plural";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "noun: plural->singular";
+	m->m_desc  = "Weight of plural to singular form variations.";
+	m->m_def   = "0.6";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_plural_singular);
+	m->m_cgi  = "lwv_noun_plural_singular";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "simple spelling variants";
+	m->m_desc  = "Simple spelling variantions (usually approved)";
+	m->m_def   = "1.0";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.simple_spelling_variants);
+	m->m_cgi  = "lwv_simple_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "proper noun: common spelling differences";
+	m->m_desc  = "Weight of common spelling differences within a language, eg Danish aa<->å, German eszet, etc. "
+		     "Note that what is and isn't a proper noun is determined by heuristics.";
+	m->m_def   = "0.95";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.proper_noun_spelling_variants);
+	m->m_cgi  = "lwv_proper_noun_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "verb: common spelling differences";
+	m->m_desc  = "Weight of common spelling differences within a language, eg Danish acute accent";
+	m->m_def   = "0.95";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.verb_spelling_variants);
+	m->m_cgi  = "lwv_verb_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "verb: past<->past variants";
+	m->m_desc  = "Weight of different pasts (including compound tenses). Eg 'ate' vs. 'had eaten'";
+	m->m_def   = "0.95";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.verb_past_past_variants);
+	m->m_cgi  = "lwv_verb_past_past_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+
 
 	///////////////////////////////////////////
 	// PAGE DATAFILE CONTROLS
@@ -8489,6 +8677,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log debug msg20 messages";
+	m->m_cgi   = "ldmsgtwozero";
+	simple_m_set(Conf,m_logDebugMsg20);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log debug multicast";
 	m->m_cgi   = "ldmc";
 	simple_m_set(Conf,m_logDebugMulticast);
@@ -8756,6 +8951,13 @@ void Parms::init ( ) {
 	m->m_title = "log trace info for Msg4";
 	m->m_cgi   = "ltrc_msgfour";
 	simple_m_set(Conf,m_logTraceMsg4);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for Msg25";
+	m->m_cgi   = "ltrc_msgtwofive";
+	simple_m_set(Conf,m_logTraceMsg25);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;

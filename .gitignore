@@ -61,4 +61,9 @@ contenttypeblocklist.txt
 urlblacklist*.txt
 urlhostblacklist.txt
 urlresultoverride.txt
+sto/dump_sto
+sto/libsto.a
+word_variations/libword_variations.a
+libsto.a
+libword_variations.a
 default_css.inc

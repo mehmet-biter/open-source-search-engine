@@ -22,6 +22,7 @@
 #include "Conf.h"
 #include "termid_mask.h"
 #include "Collectiondb.h"
+#include <set>
 
 
 #include "GbMutex.h"
@@ -30,7 +31,10 @@
 Query::Query()
   : m_queryWordBuf("Query4"),
     m_filteredQuery("qrystk"),
-    m_originalQuery("oqbuf")
+    m_originalQuery("oqbuf"),
+    m_bigramWeight(1.0),
+    m_synonymWeight(1.0),
+    m_word_variations_config()
 {
 	m_qwords      = NULL;
 	m_numWords = 0;
@@ -40,11 +44,10 @@ Query::Query()
 	// Coverity
 	m_langId = langUnknown;
 	m_useQueryStopWords = false;
-	m_allowHighFreqTermCache = false;
+		m_allowHighFreqTermCache = false;
 	m_numTermsUntruncated = 0;
 	m_isBoolean = false;
 	m_maxQueryTerms = 0;
-	m_queryExpansion = false;
 
 	memset(m_expressions, 0, sizeof(m_expressions));
 
@@ -97,12 +100,18 @@ void Query::reset ( ) {
 bool Query::set2 ( const char *query        , 
 		   // need language for doing synonyms
 		   lang_t  langId ,
-		   bool     queryExpansion ,
+		   float  bigramWeight,
+		   float  synonymWeight,
+		   const WordVariationsConfig *wordVariationsConfig,
 		   bool     useQueryStopWords ,
            bool allowHighFreqTermCache,
-		   int32_t  maxQueryTerms  ) {
-	log(LOG_DEBUG,"query: set2(query='%s', langId=%d, queryExpansion=%s, useQueryStopWords=%s maxQueryTerms=%d)",
-	    query, (int)langId, queryExpansion?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
+		   int32_t  maxQueryTerms  )
+{
+	static const WordVariationsConfig defaultWordVariationsConfig;
+	if(!wordVariationsConfig)
+		wordVariationsConfig = &defaultWordVariationsConfig;
+	log(LOG_DEBUG,"query: set2(query='%s', langId=%d, wiktionaryWordVariations=%s, languageSpecificWordVariations=%s useQueryStopWords=%s maxQueryTerms=%d)",
+	    query, (int)langId, wordVariationsConfig->m_wiktionaryWordVariations?"true":"false", wordVariationsConfig->m_languageSpecificWordVariations?"true":"false", useQueryStopWords?"true":"false", maxQueryTerms);
 
 	reset();
 
@@ -121,7 +130,9 @@ bool Query::set2 ( const char *query        ,
 
 	if ( ! query ) return true;
 
-	m_queryExpansion = queryExpansion;
+	m_bigramWeight = bigramWeight;
+	m_synonymWeight = synonymWeight;
+	m_word_variations_config = *wordVariationsConfig;
 
 	int32_t queryLen = strlen(query);
 
@@ -199,7 +210,7 @@ bool Query::set2 ( const char *query        ,
 		}
 
 		if(query[i] == '[') {
-			// translate [#w] [#p] [w] [p] to operators
+			// translate [#w] [#p] [#s] [w] [p] [s] to operators
 			char *endptr=NULL;
 			double val;
 			if(is_digit(query[i+1]))
@@ -214,6 +225,10 @@ bool Query::set2 ( const char *query        ,
 					m_filteredQuery.safePrintf(" LeFtB %f p RiGhB ", val);
 					i = j + 1;
 					continue;
+				} else if(query[j]=='s' && query[j+1]==']') {
+					m_filteredQuery.safePrintf(" LeFtB %f s RiGhB ", val);
+					i = j + 1;
+					continue;
 				}
 			} else if(query[i+1] == 'w' && query[i+2]==']') {
 				m_filteredQuery.safePrintf(" LeFtB w RiGhB ");
@@ -221,6 +236,10 @@ bool Query::set2 ( const char *query        ,
 				continue;
 			} else if(query[i+1] == 'p' && query[i+2]==']') {
 				m_filteredQuery.safePrintf(" LeFtB p RiGhB ");
+				i = i + 2;
+				continue;
+			} else if(query[i+1] == 's' && query[i+2]==']') {
+				m_filteredQuery.safePrintf(" LeFtB s RiGhB ");
 				i = i + 2;
 				continue;
 			}
@@ -389,7 +408,7 @@ bool Query::setQTerms ( const Words &words ) {
 	// thirdly, count synonyms
 	int numCandidateSynonyms = 0;
 	Synonyms syn;
-	if ( m_queryExpansion ) {
+	if(m_word_variations_config.m_wiktionaryWordVariations) {
 		int64_t to = hash64n("to");
 		for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 			// get query word
@@ -409,8 +428,10 @@ bool Query::setQTerms ( const Words &words ) {
 			if ( qw->m_ignoreWord == IGNORE_FIELDNAME ) continue;
 			// ignore boolean operators
 			if ( qw->m_ignoreWord ) continue;// IGNORE_BOOLOP
-			// ignore if word weight is zero
+			// ignore if word weight is zero or synonym weight is zero
 			if(almostEqualFloat(qw->m_userWeightForWord,0))
+				continue;
+			if(almostEqualFloat(qw->m_userWeightForSynonym,0))
 				continue;
 			// no, hurts 'Greencastle IN economic development'
 			if ( qw->m_wordId == to ) continue;
@@ -431,6 +452,43 @@ bool Query::setQTerms ( const Words &words ) {
 			numCandidateSynonyms += naids;
 		}
 	}
+	
+	std::vector<std::string> wvg_source_words;
+	std::vector<int> wvg_source_word_index; //idx in wvg_source_words -> idx of queryword
+	if(m_word_variations_config.m_languageSpecificWordVariations) {
+		for(int i=0; i<m_numWords; i++) {
+			const QueryWord *qw  = &m_qwords[i];
+			if(qw->m_inQuotes) continue;
+			if(qw->m_wordSign == '+') continue;
+			if(qw->m_wordSign == '-') continue;
+			if(qw->m_fieldCode &&
+			qw->m_fieldCode != FIELD_TITLE &&
+			qw->m_fieldCode != FIELD_GENERIC )
+				continue;
+			if(qw->m_ignoreWord == IGNORE_FIELDNAME) continue;
+			// ignore if word weight is zero or synonym weight is zero
+			if(almostEqualFloat(qw->m_userWeightForWord,0))
+				continue;
+			if(almostEqualFloat(qw->m_userWeightForSynonym,0))
+				continue;
+			wvg_source_words.emplace_back(qw->m_word,qw->m_wordLen);
+			wvg_source_word_index.emplace_back(i);
+		}
+		auto wvg(WordVariationGenerator::get_generator(m_langId));
+		m_wordVariations = wvg->query_variations(wvg_source_words, m_word_variations_config.m_word_variations_weights, m_word_variations_config.m_word_variations_threshold);
+		numCandidateSynonyms += m_wordVariations.size();
+		if(!m_wordVariations.empty())
+			logTrace(g_conf.m_logTraceQuery, "word variations produced %d variants", (int)m_wordVariations.size());
+		else
+			logTrace(g_conf.m_logTraceQuery, "word variations didn't produce any");
+	} else
+		m_wordVariations.clear();
+	if(g_conf.m_logTraceQuery) {
+		logTrace(g_conf.m_logTraceQuery, "m_wordVariations.size()=%zu", m_wordVariations.size());
+		for(unsigned i=0; i<m_wordVariations.size(); i++)
+			logTrace(g_conf.m_logTraceQuery, "  variation #%u: %s weight=%f src=[%d..%d)", i, m_wordVariations[i].word.c_str(), m_wordVariations[i].weight, m_wordVariations[i].source_word_start, m_wordVariations[i].source_word_end);
+	}
+
 
 	m_numTermsUntruncated = numCandidatePhrases+numCandidateSingles+numCandidateSynonyms;
 	logTrace(g_conf.m_logTraceQuery, "m_numTermsUntruncated=%d (%d phrases, %d singles, %d synonyms)", m_numTermsUntruncated, numCandidatePhrases, numCandidateSingles, numCandidateSynonyms);
@@ -514,6 +572,7 @@ bool Query::setQTerms ( const Words &words ) {
 		// constituents in the for loop below
 		qw->m_queryPhraseTerm = qt ;
 		// assign score weight, we're a phrase here
+		qt->m_termWeight = m_bigramWeight;
 		qt->m_userWeight = qw->m_userWeightForPhrase ;
 		qt->m_fieldCode  = qw->m_fieldCode  ;
 		// stuff before a pipe always has a weight of 1
@@ -635,7 +694,8 @@ bool Query::setQTerms ( const Words &words ) {
 			qt->m_term      = qw->m_word;
 		}
 					  
-		// assign score weight, we're a phrase here
+		// assign score weight, we're a single-term here
+		qt->m_termWeight = 1.0;
 		qt->m_userWeight = qw->m_userWeightForWord;
 		qt->m_fieldCode  = qw->m_fieldCode  ;
 		// stuff before a pipe always has a weight of 1
@@ -702,7 +762,7 @@ bool Query::setQTerms ( const Words &words ) {
 	}
 
 	if(g_conf.m_logTraceQuery) {
-		logTrace(g_conf.m_logTraceQuery, "query-terms before expansion:");
+		logTrace(g_conf.m_logTraceQuery, "query-terms before word variations:");
 		for(int i=0; i<n; i++)
 			logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s'", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term);
 	}
@@ -714,7 +774,7 @@ bool Query::setQTerms ( const Words &words ) {
 	//
 	////////////
 
-	if(m_queryExpansion) {
+	if(m_word_variations_config.m_wiktionaryWordVariations) {
 		int64_t to = hash64n("to");
 		for(int32_t i = 0; i<m_numWords && n<numQueryTerms; i++) {
 			// get query word
@@ -736,8 +796,10 @@ bool Query::setQTerms ( const Words &words ) {
 			if ( qw->m_ignoreWord == IGNORE_FIELDNAME ) continue;
 			// ignore boolean operators
 			if ( qw->m_ignoreWord ) continue;// IGNORE_BOOLOP
-			// ignore if word weight is zero
+			// ignore if word weight is zero or synonym weight is zero
 			if(almostEqualFloat(qw->m_userWeightForWord,0))
+				continue;
+			if(almostEqualFloat(qw->m_userWeightForSynonym,0))
 				continue;
 			// no, hurts 'Greencastle IN economic development'
 			if ( qw->m_wordId == to ) continue;
@@ -853,8 +915,9 @@ bool Query::setQTerms ( const Words &words ) {
 				// point to the string itself that is the word
 				qt->m_term     = ptr;
 				qt->m_termLen  = syn.m_termLens[j];
-				// assign score weight, we're a phrase here
-				qt->m_userWeight = qw->m_userWeightForWord; //todo: use dedicated user weight for synonyms
+				// assign score weight, we're a synonym here
+				qt->m_termWeight = m_synonymWeight;
+				qt->m_userWeight = qw->m_userWeightForSynonym;
 				qt->m_fieldCode  = qw->m_fieldCode  ;
 				// stuff before a pipe always has a weight of 1
 				if ( qt->m_piped ) {
@@ -866,6 +929,114 @@ bool Query::setQTerms ( const Words &words ) {
 		}
 	}
 
+	if(m_word_variations_config.m_languageSpecificWordVariations) {
+		logTrace(g_conf.m_logTraceQuery, "Word variations: %zu", m_wordVariations.size());
+		for(unsigned i=0; i<m_wordVariations.size() && n<numQueryTerms; i++) {
+			auto const &word_variation(m_wordVariations[i]);
+			int wordStartIdx = wvg_source_word_index[word_variation.source_word_start];
+			int wordEndIdx = wvg_source_word_index[word_variation.source_word_end-1];
+			logTrace(g_conf.m_logTraceQuery, "  Word variation #%u: '%s' weight=%f src=[%u..%u]", i, word_variation.word.c_str(), word_variation.weight, wordStartIdx, wordEndIdx);
+			QueryWord *qw = &m_qwords[wordStartIdx];
+			if((unsigned)qw->m_wordLen==word_variation.word.length() &&
+			   memcmp(qw->m_word, word_variation.word.data(), word_variation.word.length())==0)
+			{
+				//Variation is the same as the base word. The word-variation-plugin is allowed to produce that.
+				continue; //skip
+			}
+			QueryTerm *origTerm = qw->m_queryWordTerm;
+			
+			//handle if the word variant is a bigram/phrase
+			bool isPhrase = false;
+			if(wordEndIdx-wordStartIdx>1) {
+				logTrace(g_conf.m_logTraceQuery, "Word variation '%s' spans more than 1 word", word_variation.word.c_str());
+				if(wordEndIdx-wordStartIdx==2) {
+					//find bigram pointing to first word
+					QueryTerm *bigramQueryTerm = NULL;
+					for(int j=0; j<n && !bigramQueryTerm; j++) {
+						if(m_qterms[j].m_qword==qw && m_qterms[j].m_isPhrase)
+							bigramQueryTerm = &m_qterms[j];
+					}
+					if(bigramQueryTerm) {
+						logTrace(g_conf.m_logTraceQuery, "Word variation covers '%.*s'", bigramQueryTerm->m_termLen, bigramQueryTerm->m_term);
+						origTerm = bigramQueryTerm;
+						isPhrase = true;
+					} else
+						log(LOG_LOGIC,"Word variation '%s' bigram/phrase didn't find base bigram", word_variation.word.c_str());
+				} else {
+					log(LOG_LOGIC,"Word variation '%s' spans more than 2 words. This is not supported (yet)", word_variation.word.c_str());
+				}
+			}
+
+			// add that query term
+			QueryTerm *qt   = &m_qterms[n];
+			qt->m_qword     = qw; // NULL;
+			qt->m_piped     = qw->m_piped;
+			qt->m_isPhrase  = isPhrase;
+			qt->m_langIdBits = 0;
+			// synonym of this term...
+			qt->m_synonymOf = origTerm;
+			// nuke this crap since it was done above and we
+			// missed out!
+			qt->m_rightPhraseTermNum = -1;
+			qt->m_leftPhraseTermNum  = -1;
+			qt->m_rightPhraseTerm    = NULL;
+			qt->m_leftPhraseTerm     = NULL;
+			// need this for displaying language of syn in
+			// the json/xml feed in PageResults.cpp
+			qt->m_langIdBitsValid = true;
+			//int langId = syn.m_langIds[j];  //syn-todo?
+			//uint64_t langBit = (uint64_t)1 << langId;  //syn-todo?
+			//if(langId >= 64) langBit = 0; //syn-todo?
+			//qt->m_langIdBits |= langBit; //syn-todo?
+			// need this for Matches.cpp
+			qt->m_synWids0 = 0;
+			qt->m_synWids1 = 0;
+			qt->m_numAlnumWordsInSynonym = 0;
+
+			// ignore some synonym terms if tf is too low
+			qt->m_ignored = qw->m_ignoreWord;
+			// stop word? no, we're a phrase term
+			qt->m_isQueryStopWord = qw->m_isQueryStopWord;
+			// change in both places
+			//int64_t wid = syn.m_aids[j];
+			int64_t wid = hash64Lower_utf8_nospaces(word_variation.word.data(), word_variation.word.length());
+			// might be in a title: field or something
+			if(qw->m_prefixHash) {
+				int64_t ph = qw->m_prefixHash;
+				wid= hash64h(wid,ph);
+			}
+			qt->m_termId    = wid & TERMID_MASK;
+			//qt->m_rawTermId = syn.m_aids[j]; //syn-todo?
+			// boolean queries are not allowed term signs
+			if(m_isBoolean) {
+				qt->m_termSign = '\0';
+				// boolean fix for "health OR +sports" because
+				// the + there means exact word match, no syns
+				if(qw->m_wordSign == '+') {
+					qt->m_termSign  = qw->m_wordSign;
+				}
+			}
+			// if not bool, ensure to change signs in both places
+			else {
+				qt->m_termSign  = qw->m_wordSign;
+			}
+			// IndexTable.cpp uses this one
+			qt->m_inQuotes  = qw->m_inQuotes;
+			// point to the string itself that is the word
+			qt->m_term     = word_variation.word.data();
+			qt->m_termLen  = word_variation.word.length();
+			// assign score weight
+			qt->m_termWeight = word_variation.weight;
+			qt->m_userWeight = qw->m_userWeightForSynonym;
+			qt->m_fieldCode  = qw->m_fieldCode  ;
+			// stuff before a pipe always has a weight of 1
+			if(qt->m_piped) {
+				qt->m_userWeight = 1;
+			}
+			// otherwise, add it
+			n++;
+		}
+	}
 	m_numTerms = n;
 	
 	if ( n > ABS_MAX_QUERY_TERMS ) { g_process.shutdownAbort(true); }
@@ -1172,6 +1343,7 @@ bool Query::setQWords ( char boolFlag ,
 
 	float userWeightForWord   = 1;
 	float userWeightForPhrase = 1;
+	float userWeightForSynonym = 1;
 	int32_t ignorei          = -1;
 
 	// assume we contain no pipe operator
@@ -1258,6 +1430,9 @@ bool Query::setQWords ( char boolFlag ,
 				} else if(s[0] == 'p') {
 					// phrase weight reset
 					userWeightForPhrase = 1;
+				} else if(s[0] == 's') {
+					// phrase weight reset
+					userWeightForSynonym = 1;
 				}
 				ignorei = i + 4;
 			} else {
@@ -1270,6 +1445,8 @@ bool Query::setQWords ( char boolFlag ,
 					userWeightForWord = fval;
 				} else if(s2[0] == 'p') {
 					userWeightForPhrase = fval;
+				} else if(s2[0] == 's') {
+					userWeightForSynonym = fval;
 				}
 				// ignore all following words up and inc. i+6
 				ignorei = i + 6;
@@ -1280,6 +1457,7 @@ bool Query::setQWords ( char boolFlag ,
 		// assign score weight, if any for this guy
 		qw->m_userWeightForWord       = userWeightForWord;
 		qw->m_userWeightForPhrase = userWeightForPhrase;
+		qw->m_userWeightForSynonym = userWeightForSynonym;
 		qw->m_queryOp          = false;
 		// does word #i have a space in it? that will cancel fieldCode
 		// if we were in a field
@@ -2776,30 +2954,37 @@ void Query::dumpToLog() const
 	log(LOG_DEBUG, "Query:setQTerms: dumping %d query-words:", m_numWords);
 	for(int i=0; i<m_numWords; i++) {
 		const QueryWord &qw = m_qwords[i];
-		log("  %d",i);
+		log("  qword #%d:",i);
 		log("    word='%*.*s'", (int)qw.m_wordLen, (int)qw.m_wordLen, qw.m_word);
 		log("    phrase='%*.*s'", (int)qw.m_phraseLen, (int)qw.m_phraseLen, qw.m_word);
 		log("    m_wordId=%" PRId64, qw.m_wordId);
 		log("    m_phraseId=%" PRId64, qw.m_phraseId);
+		if(qw.m_queryWordTerm)
+			log("    m_queryWordTerm= #%d", (int)(qw.m_queryWordTerm-m_qterms));
 	}
 	log("Query:setQTerms: dumping %d query-terms:", m_numTerms);
 	for(int i=0; i<m_numTerms; i++) {
 		const QueryTerm &qt = m_qterms[i];
-		log("%d",i);
-		log("  m_isPhrase=%s", qt.m_isPhrase?"true":"false");
-		log("  m_termId=%" PRId64, qt.m_termId);
-		log("  m_rawTermId=%" PRId64, qt.m_rawTermId);
-		log("  m_term='%*.*s'", (int)qt.m_termLen, (int)qt.m_termLen, qt.m_term);
-		log("  m_isWikiHalfStopBigram=%s", qt.m_isWikiHalfStopBigram?"true":"false");
-		log("  m_leftPhraseTermNum=%d, m_leftPhraseTerm=%p", qt.m_leftPhraseTermNum, (void*)qt.m_leftPhraseTerm);
-		log("  m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, (void*)qt.m_rightPhraseTerm);
+		log("  term #%d:",i);
+		log("    m_term='%*.*s'", (int)qt.m_termLen, (int)qt.m_termLen, qt.m_term);
+		log("    m_isPhrase=%s synonym=%s", qt.m_isPhrase?"true":"false", qt.m_synonymOf?"true":"false");
+		log("    m_termId=%" PRId64, qt.m_termId);
+		log("    m_rawTermId=%" PRId64, qt.m_rawTermId);
+		log("    m_isWikiHalfStopBigram=%s", qt.m_isWikiHalfStopBigram?"true":"false");
+		log("    m_leftPhraseTermNum=%d, m_leftPhraseTerm=%p", qt.m_leftPhraseTermNum, (void*)qt.m_leftPhraseTerm);
+		log("    m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, (void*)qt.m_rightPhraseTerm);
+		log("    m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, (void*)qt.m_rightPhraseTerm);
+		log("    m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, (void*)qt.m_rightPhraseTerm);
+		log("    m_termFreqWeight=%f m_termWeight=%f m_userWeight=%f", qt.m_termFreqWeight, qt.m_termWeight, qt.m_userWeight);
+		if(qt.m_synonymOf)
+			log("    m_synonymOf=#%d '%.*s'", (int)(qt.m_synonymOf-m_qterms), qt.m_synonymOf->m_termLen, qt.m_synonymOf->m_term);
 	}
 }
 
 void Query::traceTermsToLog(const char *header) {
-	logTrace(g_conf.m_logTraceQuery, "%s:", header);
+	logTrace(g_conf.m_logTraceQuery, "%s: %d queryterms:", header, m_numTerms);
 	for(int i=0; i<m_numTerms; i++) {
-		logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s', weight=%f %s", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term, m_qterms[i].m_userWeight, m_qterms[i].m_ignored?"ignored":"");
+		logTrace(g_conf.m_logTraceQuery, "  query-term #%d: termid=%15" PRId64" '%*.*s', t-weight=%f u-weight=%f %s", i, m_qterms[i].m_termId, m_qterms[i].m_termLen,m_qterms[i].m_termLen,m_qterms[i].m_term, m_qterms[i].m_termWeight,m_qterms[i].m_userWeight, m_qterms[i].m_ignored?"ignored":"");
 		logTrace(g_conf.m_logTraceQuery, "                  qstopw=%s req=%s", m_qterms[i].m_isQueryStopWord?"true":"false", m_qterms[i].m_isRequired?"yes":"no");
 	}
 }
@@ -3039,6 +3224,7 @@ void QueryTerm::constructor ( ) {
 	m_termFreqWeight = 0.0;
 	m_isQueryStopWord = false;
 	m_inQuotes = false;
+	m_termWeight = 0;
 	m_userWeight = 0;
 	m_piped = false;
 	m_ignored = false;

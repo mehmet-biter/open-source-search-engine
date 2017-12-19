@@ -95,6 +95,11 @@ static WebPage s_pages[] = {
 	  "search controls", sendPageGeneric,
 	  PG_ACTIVE},
 
+	// use POST for html head/tail and page root html. might be large.
+	{ PAGE_WORD_VARIATIONS, "admin/wordvariations"   , 0 , "Word Variations" ,1, page_method_t::page_method_post_url,
+	  "word variation controls", sendPageGeneric,
+	  PG_ACTIVE},
+
 	{ PAGE_RANKING   , "admin/ranking"   , 0 , "Ranking controls" ,1, page_method_t::page_method_get,
 	  "ranking controls", sendPageGeneric,
 	  PG_ACTIVE},

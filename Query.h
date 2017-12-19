@@ -7,6 +7,7 @@
 
 #include "SafeBuf.h"
 #include "Lang.h"
+#include "WordVariationsConfig.h"
 class CollectionRec;
 
 
@@ -236,6 +237,7 @@ class QueryWord {
 	// user defined weights
 	float m_userWeightForWord;
 	float m_userWeightForPhrase;
+	float m_userWeightForSynonym;
 
 	bool m_queryOp;
 	// is this query word before a | (pipe) operator?
@@ -304,6 +306,9 @@ class QueryTerm {
 	// IndexTable.cpp uses this one
 	bool m_inQuotes;
 
+	//base weight of this term. normally 1.0 for regular terms. Less of synonyms, more for bigrams
+	float m_termWeight;
+	
 	// user defined weight for this term, be it phrase or word
 	float m_userWeight;
 
@@ -376,7 +381,9 @@ class Query {
 	// . after calling this you can call functions below
 	bool set2 ( const char *query    , 
 		    lang_t  langId ,
-		    bool     queryExpansion ,
+		    float  bigramWeight,
+		    float  synonymWeight,
+		    const WordVariationsConfig *wordVariationsConfig, //NULL=disable variations
 		    bool     useQueryStopWords,
 	        bool allowHighFreqTermCache,
 		    int32_t  maxQueryTerms);
@@ -404,6 +411,8 @@ class Query {
 	// for a domain and "file.open()" is probably for an API/SDK
 	void modifyQuery(DerivedScoringWeights *scoringWeights, const CollectionRec& cr, bool *doSiteClustering);
 
+	void dumpToLog() const;
+
 private:
 	// sets m_qwords[] array, this function is the heart of the class
 	bool setQWords ( char boolFlag , bool keepAllSingles ,
@@ -415,7 +424,6 @@ private:
 	// helper funcs for parsing query into m_qwords[]
 	bool        isConnection(const char *s, int32_t len) const;
 
-	void dumpToLog() const;
 	void traceTermsToLog(const char *header);
 
 public:
@@ -441,6 +449,7 @@ private:
 	// so we don't have to malloc for them
 	SmallBuf<GBUF_SIZE> m_queryWordBuf;
 
+	std::vector<WordVariationGenerator::Variation> m_wordVariations; //have to keep that around because queryterms point into it with qt->m_term
 public:
 	QueryWord *m_qwords;
 	int32_t       m_numWords;
@@ -484,7 +493,10 @@ public:
 
 	int32_t m_maxQueryTerms ;
 
-	bool m_queryExpansion;
+	//used for setting the qterm->m_termWeight value
+	float  m_bigramWeight;
+	float  m_synonymWeight;
+	WordVariationsConfig m_word_variations_config;
 
 	bool m_truncated;
 };

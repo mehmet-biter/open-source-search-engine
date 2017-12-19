@@ -11,6 +11,7 @@
 #include "collnum_t.h"
 #include "spider_status_t.h"
 #include "GbMutex.h"
+#include "WordVariationsConfig.h"
 
 
 class Collectiondb  {
@@ -181,6 +182,7 @@ public:
 
 	bool rebuildPrivacoreRules();
 	bool rebuildPrivacoreDKOnlyRules();
+	bool rebuildPrivacoreOldOnlyRules();
 
 	bool m_urlFiltersHavePageCounts;
 
@@ -364,8 +366,6 @@ public:
 	int32_t m_crawlDelayDefaultForRobotsTxtMS;
 
 
-	// use query expansion for this collection?
-	bool m_queryExpansion;
 	// check URL filters for manual ban and force delete?
 	bool m_checkURLFilters;
 	// rewrite domain-like queries for this collection?
@@ -374,6 +374,8 @@ public:
 	// rewrite API-like queries?
 	bool m_modifyAPILikeSearches;
 
+	WordVariationsConfig m_word_variations_config;
+	
 	// read from cache
 	bool m_rcache;
 

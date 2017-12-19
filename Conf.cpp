@@ -188,6 +188,7 @@ Conf::Conf ( ) {
 	m_logDebugMemUsage = false;
 	m_logDebugMerge = false;
 	m_logDebugMsg13 = false;
+	m_logDebugMsg20 = false;
 	m_logDebugMulticast = false;
 	m_logDebugNet = false;
 	m_logDebugProxies = false;
@@ -224,6 +225,7 @@ Conf::Conf ( ) {
 	m_logTraceMem = false;
 	m_logTraceMsg0 = false;
 	m_logTraceMsg4 = false;
+	m_logTraceMsg25 = false;
 	m_logTracePageSpiderdbLookup = false;
 	m_logTracePos = false;
 	m_logTracePosdb = false;

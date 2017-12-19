@@ -142,15 +142,22 @@ function onLoad() {
 <option value="sv">Swedish</option>
 </select></td></tr>
 
-
 <tr bgcolor=#d0d0e0 align=left valign=middle><td>Site Clustering</td><td colspan=2><input type=radio name=sc value="1" checked/>yes&nbsp;&nbsp;&nbsp;<input type=radio name=sc value="0"/>no</td></tr>
 
 <tr bgcolor=#c0c0f0 align=left valign=middle><td>Number of summary excerpts</td><td colspan=2><input type=radio name=ns value="0">0&nbsp;&nbsp;&nbsp;<input type=radio name=ns value="1">1&nbsp;&nbsp;&nbsp;<input type=radio name=ns value="2">2&nbsp;&nbsp;&nbsp;<input type=radio name=ns value="3" checked>3&nbsp;&nbsp;&nbsp;<input type=radio name=ns value="4">4&nbsp;&nbsp;&nbsp;<input type=radio name=ns value="5">5</td></tr>
-<tr bgcolor=#c0c0f0 align=left valign=middle><td>Results per Page</td>
-<td colspan=2><input type=radio name=n value="10" checked/>10&nbsp;&nbsp;<input type=radio name=n value="20" />20&nbsp;&nbsp;<input type=radio name=n value="30" />30&nbsp;&nbsp;<input type=radio name=n value="40" />40&nbsp;&nbsp;<input type=radio name=n value="50" />50&nbsp;&nbsp;<input type=radio name=n value="100" />100</td></tr>
+<tr bgcolor=#c0c0f0 align=left valign=middle><td>Results per Page</td><td colspan=2><input type=radio name=n value="10" checked/>10&nbsp;&nbsp;<input type=radio name=n value="20" />20&nbsp;&nbsp;<input type=radio name=n value="30" />30&nbsp;&nbsp;<input type=radio name=n value="40" />40&nbsp;&nbsp;<input type=radio name=n value="50" />50&nbsp;&nbsp;<input type=radio name=n value="100" />100</td></tr>
 
+<tr bgcolor=#d0d0e0 align=left valign=middle><td>Use Page Temperature</td><td colspan=2><input type=radio name=use_page_temperature value=1/>yes&nbsp;&nbsp;&nbsp;<input type=radio name=use_page_temperature value=0 checked/>no</td></tr>
+<tr bgcolor=#d0d0e0 align=left valign=middle><td>Use High Frequency Term Cache</td><td colspan=2><input type=radio name=highfreqtermcache value=1 checked/>yes&nbsp;&nbsp;&nbsp;<input type=radio name=highfreqtermcache value=0/>no</td></tr>
 
+<tr bgcolor=#c0c0f0 align=left valign=middle><td>Output format</td><td colspan=2><input type=radio name=format value="json" checked/>JSON&nbsp;&nbsp;&nbsp;<input type=radio name=format value="html"/>HTML</td></tr>
+<tr align=right><td></td><td><input type=submit></td></tr>
+</tbody>
+</table>
+<br><br>
 
+<table width=605 border=0 align=center cellpadding=5 cellspacing=3>
+<tbody>
 <tr bgcolor=#d0d0e0><td width=37%><b>Language weight</b><br><font size=1>Default language weight if document matches query language. Default: 20.000000</font></td>
 <td width=12%><input type=text name=langw value="20.000000" size=7></td>
 </tr>
@@ -228,8 +235,7 @@ function onLoad() {
 </tr>
 <tr bgcolor=#d0d0e0><td width=37%><b>Page temp weight max</b><br><font size=1>Page temp is scaled to be between the min and max Default: 20.000000</font></td>
 <td width=12%><input type=text name=pagetempweightmax value="20.000000" size=7></td>
-
-<tr bgcolor=#d0d0e0 align=left valign=middle><td>Use Page Temperature</td><td colspan=2><input type=radio name=use_page_temperature value=1/>yes&nbsp;&nbsp;&nbsp;<input type=radio name=use_page_temperature value=0 checked/>no</td></tr>
+</tr>
 
 <tr align=right><td></td><td><input type=submit></td></tr>
 

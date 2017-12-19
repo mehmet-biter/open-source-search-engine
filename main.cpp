@@ -43,6 +43,7 @@
 #include "Speller.h"       // g_speller
 #include "Wiki.h"          // g_wiki
 #include "Wiktionary.h"    // g_wiktionary
+#include "WordVariations.h"
 #include "CountryCode.h"
 #include "Pos.h"
 #include "Title.h"
@@ -1347,6 +1348,13 @@ int main2 ( int argc , char *argv[] ) {
 		log( LOG_ERROR, "Wiktionary test failed!" );
 		return 1;
 	}
+
+	log(LOG_DEBUG,"main: initializing word variations: Danish");
+	if(!initializeWordVariationGenerator_Danish()) {
+		log(LOG_WARN, "word-variation-danish initialization failed" );
+		//but not fatal
+	}
+	log(LOG_DEBUG,"main: initialized word variations: Danish");
 
 	// the wiki titles
 	if ( ! g_wiki.load() ) {
@@ -4967,7 +4975,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	Matches matches;
 	Query q;
-	q.set2(query, langUnknown, false, false, true, ABS_MAX_QUERY_TERMS);
+	q.set2(query, langUnknown, 1.0, 1.0, NULL, false, true, ABS_MAX_QUERY_TERMS);
 	matches.setQuery ( &q );
 	words.set ( &xml , true ) ;
 	t = gettimeofdayInMilliseconds();
@@ -4997,7 +5005,7 @@ static bool summaryTest1(char *rec, int32_t listSize, const char *coll, int64_t 
 	int64_t t = gettimeofdayInMilliseconds();
 
 	Query q;
-	q.set2(query, langUnknown, false, false, true, ABS_MAX_QUERY_TERMS);
+	q.set2(query, langUnknown, 1.0, 1.0, NULL, false, true, ABS_MAX_QUERY_TERMS);
 
 	char *content ;
 	int32_t  contentLen ;
@@ -5288,9 +5296,14 @@ static void dumpLinkdb(const char *coll,
 	// set start/end key to url hash
 	if ( url ) {
 		Url u;
-		u.set( url, strlen( url ), true, false );
+		u.set( url, strlen( url ), false, false );
+
 		uint32_t h32 = u.getHostHash32();
 		int64_t uh64 = hash64n(u.getUrl(), u.getUrlLen());
+
+		printf("URL=%.*s, sitehash32=0x%08" PRIx32 ", urlhash=0x%012" PRIx64 "\n",
+			u.getUrlLen(), u.getUrl(), h32, uh64);
+
 		startKey = Linkdb::makeStartKey_uk ( h32 , uh64 );
 		endKey   = Linkdb::makeEndKey_uk   ( h32 , uh64 );
 	}

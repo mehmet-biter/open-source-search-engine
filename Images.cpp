@@ -119,7 +119,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 		snprintf ( buf , 1999, "gbimage:\"%s\"",iu.getUrl());
 		// TODO: make sure this is a no-split termid storage thingy
 		// in Msg14.cpp
-		if ( ! q.set2 ( buf, langUnknown, false, false, true, ABS_MAX_QUERY_TERMS ) ) return;
+		if ( ! q.set2 ( buf, langUnknown, 1.0, 1.0, NULL, false, true, ABS_MAX_QUERY_TERMS ) ) return;
 		// sanity test
 		if(q.getNumTerms()!=1) { g_process.shutdownAbort(true); }
 		// store the termid
@@ -248,7 +248,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 		sprintf ( buf , "gbimage:\"%s\"",u);
 		// TODO: make sure this is a no-split termid storage thingy
 		// in Msg14.cpp
-		if ( ! q.set2 ( buf, langUnknown, false, false, true, ABS_MAX_QUERY_TERMS ) )
+		if ( ! q.set2 ( buf, langUnknown, 1.0, 1.0, NULL, false, true, ABS_MAX_QUERY_TERMS ) )
 			// return true with g_errno set on error
 			return;
 		if(q.getNumTerms()!= 1) { g_process.shutdownAbort(true); }
@@ -321,7 +321,7 @@ bool Images::getThumbnail ( const char *pageSite,
 	// TODO: make sure this is a no-split termid storage thingy
 	// in Msg14.cpp
 	Query q;
-	if ( ! q.set2 ( buf, langUnknown, false, false, true, ABS_MAX_QUERY_TERMS ) )
+	if ( ! q.set2 ( buf, langUnknown, 1.0, 1.0, NULL, false, true, ABS_MAX_QUERY_TERMS ) )
 		// return true with g_errno set on error
 		return true;
 	if(q.getNumTerms()!=1) { g_process.shutdownAbort(true); }
