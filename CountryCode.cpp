@@ -304,7 +304,7 @@ uint8_t guessCountryTLD(const char *url) {
 }
 
 // get the id from a 2 character country code
-uint8_t getCountryId ( char *cc ) {
+uint8_t getCountryId ( const char *cc ) {
 	static bool s_init = false;
 	static char buf[2000];
 	static HashTableX ht;
@@ -316,7 +316,7 @@ uint8_t getCountryId ( char *cc ) {
 		// now add in all the country codes
 		int32_t n = (int32_t) sizeof(s_countryCode) / sizeof(char *); 
 		for ( int32_t i = 0 ; i < n ; i++ ) {
-			char *s    = (char *)s_countryCode[i];
+			const char *s    = s_countryCode[i];
 			//int32_t  slen = strlen ( s );
 			// sanity check
 			if ( !s[0] || !s[1] || s[2]) { g_process.shutdownAbort(true); }
