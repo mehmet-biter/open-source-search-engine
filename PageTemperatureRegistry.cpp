@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <math.h>
+#include <float.h>      // FLT_EPSILON, DBL_EPSILON
 
 PageTemperatureRegistry g_pageTemperatureRegistry;
 
@@ -98,7 +99,7 @@ bool PageTemperatureRegistry::load() {
 
 	temperature_range_for_scaling = max_temperature-min_temperature;
 	
-	min_temperature_log = log(min_temperature);
+	min_temperature_log = min_temperature>0 ? log(min_temperature) : DBL_EPSILON;
 	max_temperature_log = log(max_temperature);
 	temperature_range_for_scaling_log = log(temperature_range_for_scaling);
 	default_temperature_log = log(default_temperature);
