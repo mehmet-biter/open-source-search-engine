@@ -17780,11 +17780,39 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 
 	int32_t *firstIp = getFirstIp();
 	int32_t spiderHostId = -1;
+
 	if (firstIp && firstIp != (int32_t *)-1) {
 		key128_t spiderKey = Spiderdb::makeFirstKey(*firstIp);
 		int32_t spiderShardNum = getShardNum(RDB_SPIDERDB, &spiderKey);
 		spiderHostId = g_hostdb.getHostIdWithSpideringEnabled(spiderShardNum, false);
 	}
+
+	//
+	// Find LinkDB host
+	//
+	int32_t linkdbHostId = -1;
+	int32_t siteHash32 = -1;
+	int32_t *tmphash = getSiteHash32();
+	if( tmphash && *tmphash != -1 ) {
+		siteHash32 = *tmphash;
+		key224_t startKey;
+		startKey = Linkdb::makeStartKey_uk ( siteHash32 );
+		// what group has this linkdb list?
+		uint32_t linkdbShardNum = getShardNum ( RDB_LINKDB, &startKey );
+		int32_t linkdbHostNum = siteHash32 / ((0xffffffff/(int64_t)g_hostdb.getNumHostsPerShard()) + 1);
+		int32_t numHosts = g_hostdb.getNumHostsPerShard();
+		hosts = g_hostdb.getShard(linkdbShardNum);
+		if ( linkdbHostNum < numHosts ) {
+			linkdbHostId = hosts[linkdbHostNum].m_hostId ;
+			if( !hosts[linkdbHostNum].m_spiderEnabled) {
+				linkdbHostId = g_hostdb.getHostIdWithSpideringEnabled(linkdbShardNum, true);
+			}
+		}
+		else {
+			linkdbHostId = -1;
+		}
+	}
+
 
 	if ( format == FORMAT_HTML )
 		sb->safePrintf (
@@ -17806,6 +17834,11 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 				"</tr>\n"
 
 				"<tr>"
+				"<td width=\"25%%\">linkdb on host #</td>"
+				"<td>%" PRId32"</td>"
+				"</tr>\n"
+
+				"<tr>"
 				"<td width=\"25%%\">title rec version</td>"
 				"<td>%" PRIu16"</td>"
 				"</tr>\n"
@@ -17820,12 +17853,10 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 				"<td>%s</td>"
 				"</tr>\n"
 
-
 				"<tr>"
 				"<td>url</td>"
 				"<td><a href=\"%s\">%s</a></td>"
 				"</tr>\n"
-
 				,
 				cr->m_coll,
 				m_docId ,
@@ -17833,13 +17864,13 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 
 				h->m_hostId,
 				spiderHostId,
+				linkdbHostId,
 				m_version,
 				es,
 				allowed,
 
 				fu,
 				fu
-
 				);
 	else if (format == FORMAT_XML)
 		sb->safePrintf (
@@ -17932,6 +17963,9 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			ts = m_outlinksAddedDate;
 			sb->safePrintf("<tr><td>outlinks last added date</td><td>%s UTC</td></tr>\n",
 			               asctime_r(gmtime_r(&ts, &tm_buf), buf));
+
+
+			sb->safePrintf("<tr><td>sitehash32</td><td>%" PRIx32"</td></tr>\n", siteHash32);
 
 			sb->safePrintf("<tr><td>hop count</td><td>%" PRId32"</td></tr>\n", (int32_t)m_hopCount);
 
