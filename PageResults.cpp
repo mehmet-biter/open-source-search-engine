@@ -1935,7 +1935,8 @@ bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
 	// . i think this happens if all hosts in a shard are down or timeout
 	//   or something
 	if ( ! mr ) {
-		sb->safePrintf("<i>getting summary for docid %" PRId64" had error: %s</i><br><br>", d, mstrerror(m20->m_errno));
+		if(si->m_format == FORMAT_HTML)
+			sb->safePrintf("<i>getting summary for docid %" PRId64" had error: %s</i><br>\n", d, mstrerror(m20->m_errno));
 		return true;
 	}
 
