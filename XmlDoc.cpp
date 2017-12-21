@@ -17824,6 +17824,21 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 				"</tr>\n"
 
 				"<tr>"
+				"<td width=\"25%%\">urlhash48</td>"
+				"<td>0x%" PRIx64"</td>"
+				"</tr>\n"
+
+				"<tr>"
+				"<td width=\"25%%\">urlhash64</td>"
+				"<td>0x%" PRIx64"</td>"
+				"</tr>\n"
+
+				"<tr>"
+				"<td width=\"25%%\">sitehash32</td>"
+				"<td>0x%" PRIx32"</td>"
+				"</tr>\n"
+
+				"<tr>"
 				"<td width=\"25%%\">on host #</td>"
 				"<td>%" PRId32"</td>"
 				"</tr>\n"
@@ -17861,6 +17876,10 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 				cr->m_coll,
 				m_docId ,
 				m_docId ,
+
+				getFirstUrlHash48(),
+				getFirstUrlHash64(),
+				siteHash32,
 
 				h->m_hostId,
 				spiderHostId,
@@ -17965,7 +17984,6 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			               asctime_r(gmtime_r(&ts, &tm_buf), buf));
 
 
-			sb->safePrintf("<tr><td>sitehash32</td><td>%" PRIx32"</td></tr>\n", siteHash32);
 
 			sb->safePrintf("<tr><td>hop count</td><td>%" PRId32"</td></tr>\n", (int32_t)m_hopCount);
 
