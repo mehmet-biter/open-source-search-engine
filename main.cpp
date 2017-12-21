@@ -131,7 +131,7 @@ static void dumpRobotsTxtCache(const char *coll);
 
 static void dumpDoledb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 static void dumpClusterdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
-static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, const char *url);
+static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, const char *url, bool urlhash);
 
 static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
 static void dumpWantedTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
@@ -1085,10 +1085,15 @@ int main2 ( int argc , char *argv[] ) {
 			dumpTagdb( coll, startFileNum, numFiles, includeTree,   0, NULL );
 		} else if ( argv[cmdarg+1][0] == 'l' )
 			dumpClusterdb (coll,startFileNum,numFiles,includeTree);
-		else if ( argv[cmdarg+1][0] == 'L' ) {
+		else if (strcmp(argv[cmdarg+1], "Lu") == 0) {
 			char *url = NULL;
 			if ( cmdarg+6 < argc ) url = argv[cmdarg+6];
-			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url);
+			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url,true);
+		}
+		else if (strcmp(argv[cmdarg+1], "Ls") == 0) {
+			char *url = NULL;
+			if ( cmdarg+6 < argc ) url = argv[cmdarg+6];
+			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url,false);
 		}  else if ( argv[cmdarg+1][0] == 'p' ) {
 			int64_t termId  = -1;
 			if ( cmdarg+6 < argc ) {
@@ -1861,8 +1866,10 @@ static void printHelp() {
 		"\tdoledb:\n"
 		"\t\tdump x <collection> <fileNum> <numFiles> <includeTree>\n"
 
-		"\tlinkdb:\n"
-		"\t\tdump L <collection> <fileNum> <numFiles> <includeTree> <url>\n"
+		"\tlinkdb (site):\n"
+		"\t\tdump Ls <collection> <fileNum> <numFiles> <includeTree> <url>\n"
+		"\tlinkdb (url):\n"
+		"\t\tdump Lu <collection> <fileNum> <numFiles> <includeTree> <url>\n"
 
 		"\tposdb (the index):\n"
 		"\t\tdump p <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
@@ -5281,11 +5288,7 @@ static void dumpClusterdb(const char *coll,
 	}
 }
 
-static void dumpLinkdb(const char *coll,
-		       int32_t startFileNum,
-		       int32_t numFiles,
-		       bool includeTree ,
-		       const char *url) {
+static void dumpLinkdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, const char *url, bool urlhash) {
 	g_linkdb.init ();
 	g_linkdb.getRdb()->addRdbBase1(coll );
 	key224_t startKey ;
@@ -5299,13 +5302,23 @@ static void dumpLinkdb(const char *coll,
 		u.set( url, strlen( url ), false, false );
 
 		uint32_t h32 = u.getHostHash32();
-		int64_t uh64 = hash64n(u.getUrl(), u.getUrlLen());
+		int64_t uh64 = 0;
+		if( urlhash ) {
+			uh64=hash64n(u.getUrl(), u.getUrlLen());
+			startKey = Linkdb::makeStartKey_uk(h32, uh64);
+			endKey   = Linkdb::makeEndKey_uk  (h32, uh64);
+		}
+		else {
+			startKey = Linkdb::makeStartKey_uk(h32, uh64);
+			endKey   = Linkdb::makeEndKey_uk  (h32, LDB_MAXURLHASH);
+		}
+
 
 		printf("URL=%.*s, sitehash32=0x%08" PRIx32 ", urlhash=0x%012" PRIx64 "\n",
 			u.getUrlLen(), u.getUrl(), h32, uh64);
 
-		startKey = Linkdb::makeStartKey_uk ( h32 , uh64 );
-		endKey   = Linkdb::makeEndKey_uk   ( h32 , uh64 );
+		printf("Startkey=%s\n", KEYSTR(&startKey,sizeof(key224_t)));
+		printf("Endkey  =%s\n", KEYSTR(&endKey,sizeof(key224_t)));
 	}
 
 	// bail if not
