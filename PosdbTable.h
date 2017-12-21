@@ -111,13 +111,13 @@ class PosdbTable {
 	}
 
 	// functions used by intersectlist
-	bool genDebugScoreInfo1(int32_t *numProcessed, int32_t *topCursor, bool *docInThisFile, QueryTermInfo *qtibuf);
+	bool genDebugScoreInfo1(int32_t *numProcessed, int32_t *topCursor, bool *docInThisFile);
 	bool genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t *lastDocId, char siteRank, float score, int32_t intScore, char docLang);
 	void logDebugScoreInfo(int32_t loglevel);
 	void removeScoreInfoForDeletedDocIds();
-	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
-	bool prefilterMaxPossibleScoreByDistance(const QueryTermInfo *qtibuf, float minWinningScore);
-	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, MiniMergeBuffer *miniMergeBuffer, int *highestInlinkSiteRank);
+	bool advanceTermListCursors(const char *docIdPtr);
+	bool prefilterMaxPossibleScoreByDistance(float minWinningScore);
+	void mergeTermSubListsForDocId(MiniMergeBuffer *miniMergeBuffer, int *highestInlinkSiteRank);
 
 	void createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMergeBuffer, PairScoreMatrix *scoreMatrix);
 	float getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, DocIdScore *pdcs);
@@ -211,7 +211,7 @@ public:
 
 private:
 	// stuff set in setQueryTermInf() function:
-	SafeBuf              m_qiBuf;
+	std::vector<QueryTermInfo> m_queryTermInfos;
 	int32_t                 m_numQueryTermInfos;
 	// the size of the smallest set of sublists. each sublists is
 	// the main term or a synonym, etc. of the main term.
