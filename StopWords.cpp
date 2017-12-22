@@ -184,44 +184,87 @@ bool isStopWord ( const char *s , int32_t len , int64_t h ) {
 	return s_stopWordTable.getScore(h);
 }		
 
+
 #include "query_stop_words.xx.inc"
 #include "query_stop_words.en.inc"
 #include "query_stop_words.de.inc"
 
+#include "query_stop_words_list.inc"
 
 static HashTableX s_queryStopWordTables[MAXLANGID+1];
 static bool       s_queryStopWordsInitialized = false;
 static GbMutex    s_queryStopWordsMutex;
 
-static const char * const * s_queryStopWords2[MAXLANGID+1];
+
+static void initializeQueryStopWords(lang_t lang) {
+	HashTableX &table = s_queryStopWordTables[lang];
+	if(!table.set(8,4,50,NULL,0,false,"qrystops") ) {
+		log(LOG_INIT, "build: Could not init stop words table.");
+		return;
+	}
+	
+	const char *abbrev = getLanguageAbbr(lang);
+	char filename[1024];
+	sprintf(filename, "%s/query_stop_words.%s.txt", g_hostdb.getMyHost()->m_dir, abbrev);
+	FILE *fp=fopen(filename,"r");
+	if(fp) {
+		//use what is in the file, and only that
+		log(LOG_DEBUG,"Loading query-stop-words for '%s' from %s", abbrev, filename);
+		char line[128];
+		while(fgets(line,sizeof(line),fp)) {
+			if(char *p = strchr(line,'/'))
+				*p = '\0';
+			if(char *p = strchr(line,' '))
+				*p = '\0';
+			if(char *p = strchr(line,'\n'))
+				*p = '\0';
+			if(line[0]=='\0')
+				continue;
+			
+			int word_len = strlen(line);
+			int64_t  word_hash = hash64Lower_utf8(line,word_len);
+			table.addTerm(word_hash,1);
+		}
+		fclose(fp);
+		log(LOG_DEBUG,"Loaded query-stop-words for '%s' from %s", abbrev, filename);
+	} else {
+		//fall back to build-in default, if any
+		//log(LOG_DEBUG,"Using builtin-default query-stop-words for '%s'", abbrev); //too noisy log upon startup
+		const char * const *words = NULL;
+		for(size_t i=0; i<sizeof(s_query_stop_words_lang)/sizeof(s_query_stop_words_lang[0]); i++) {
+			if(s_query_stop_words_lang[i].lang==lang) {
+				words = s_query_stop_words_lang[i].words;
+				break;
+			}
+		}
+		if(!words)
+			words = s_query_stop_words_xx; //use default table
+		
+		for(;
+		    *words;
+		    words++)
+		{
+			int word_len = strlen(*words);
+			int64_t word_hash = hash64Lower_utf8(*words,word_len);
+			table.addTerm(word_hash,1);
+		}
+	}
+}
+
+
+static void initializeQueryStopWords() {
+	ScopedLock sl(s_queryStopWordsMutex);
+	if(s_queryStopWordsInitialized)
+		return;
+	
+	for(int lang=langUnknown; lang<langUnwanted; lang++)
+		initializeQueryStopWords((lang_t)lang);
+	s_queryStopWordsInitialized = true;
+}
+
 
 bool isQueryStopWord ( const char *s , int32_t len , int64_t h , int32_t langId ) {
-
-	// include a bunch of foreign prepositions so they don't get required
-	// by the bitScores in IndexTable.cpp
-	ScopedLock sl(s_queryStopWordsMutex);
-	if ( ! s_queryStopWordsInitialized ) {
-		// reset these
-		for ( int32_t i = 0 ; i <= MAXLANGID ; i++ )
-			s_queryStopWords2[i] = NULL;
-		// now set to what we got
-		s_queryStopWords2[langUnknown] = s_query_stop_words_xx;
-		s_queryStopWords2[langEnglish] = s_query_stop_words_en;
-		s_queryStopWords2[langGerman ] = s_query_stop_words_de;
-		// set up the hash table
-		for ( int32_t i = 0 ; i <= MAXLANGID ; i++ ) {
-			HashTableX *ht = &s_queryStopWordTables[i];
-			const char * const *words = s_queryStopWords2[i];
-			if ( ! words ) continue;
-			if ( ! initWordTable ( ht,//&s_queryStopWordTable, 
-					       words,
-					       //sizeof(words),
-					       "qrystops") )
-				return false;
-		}
-		s_queryStopWordsInitialized = true;
-	} 
-	sl.unlock();
+	initializeQueryStopWords();
 
 	// . all 1 char letter words are stop words
 	// . good for initials and some contractions
@@ -231,9 +274,6 @@ bool isQueryStopWord ( const char *s , int32_t len , int64_t h , int32_t langId 
 
 	if ( langId < 0 ) langId = langUnknown;
 	if ( langId > MAXLANGID ) langId = langUnknown;
-
-	// if empty, use default table
-	if ( ! s_queryStopWords2[langId] ) langId = langUnknown;
 
 	// get from table
 	return s_queryStopWordTables[langId].getScore(h);

@@ -68,3 +68,4 @@ libsto.a
 libword_variations.a
 default_css.inc
 query_stop_words.??.inc
+query_stop_words_list.inc
