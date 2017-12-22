@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
-#include "GbCache.h"
+#include "FxCache.h"
 
-TEST(GbCacheTest, InsertLookup) {
-	GbCache<int64_t, std::string> cache;
+TEST(FxCacheTest, InsertLookup) {
+	FxCache<int64_t, std::string> cache;
 	cache.configure(60000, 10, false, "test");
 
 	int64_t key = 1;
@@ -13,8 +13,8 @@ TEST(GbCacheTest, InsertLookup) {
 	EXPECT_STREQ(std::to_string(key).c_str(), stored_data.c_str());
 }
 
-TEST(GbCacheTest, InsertLookupExpired) {
-	GbCache<int64_t, std::string> cache;
+TEST(FxCacheTest, InsertLookupExpired) {
+	FxCache<int64_t, std::string> cache;
 	cache.configure(1000, 10, false, "test");
 
 	int64_t key = 1;
@@ -25,8 +25,8 @@ TEST(GbCacheTest, InsertLookupExpired) {
 	EXPECT_FALSE(cache.lookup(key, &stored_data));
 }
 
-TEST(GbCacheTest, InsertLookupMaxed) {
-	GbCache<int64_t, std::string> cache;
+TEST(FxCacheTest, InsertLookupMaxed) {
+	FxCache<int64_t, std::string> cache;
 	cache.configure(60000, 5, false, "test");
 
 	for (int64_t key = 1; key <= 10; ++key) {

@@ -6,7 +6,7 @@
 #include "third-party/c-ares/ares.h"
 #include "ip.h"
 #include "GbThreadQueue.h"
-#include "GbCache.h"
+#include "FxCache.h"
 #include <arpa/nameser.h>
 #include <netdb.h>
 #include <vector>
@@ -25,7 +25,7 @@ static std::queue<struct DnsItem*> s_callbackQueue;
 static GbMutex s_callbackQueueMtx;
 
 static GbThreadQueue s_requestQueue;
-static GbCache<std::string, GbDns::DnsResponse> s_cache;
+static FxCache<std::string, GbDns::DnsResponse> s_cache;
 
 static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen);
 static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen);

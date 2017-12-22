@@ -8,7 +8,7 @@
 #include "Msg5.h"
 #include "hash.h"
 #include "RdbCache.h"
-#include "GbCache.h"
+#include "FxCache.h"
 #include <time.h>
 #include <atomic>
 
@@ -93,7 +93,7 @@ private:
 	HashTableX m_lockTable;
 	mutable GbMutex m_lockTableMtx;
 
-	GbCache<std::string, void*> m_urlCache;
+	FxCache<std::string, void*> m_urlCache;
 
 	// . list for getting next url(s) to spider
 	RdbList m_list;
