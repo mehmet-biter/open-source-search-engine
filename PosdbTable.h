@@ -66,12 +66,15 @@ public:
 	
 	// what query term # do we correspond to in Query.h
 	int32_t      m_qtermNum;
+	QueryTerm   *m_qterm;
 	// the word position of this query term in the Words.h class
 	int32_t      m_qpos;
 	// the wikipedia phrase id if we start one
 	int32_t      m_wikiPhraseId;
 	// phrase id term or bigram is in
 	int32_t      m_quotedStartId;
+	//The base term to the left of this qti/baseterm is ignored
+	bool         m_leftTermIsIgnored;
 };
 
 
