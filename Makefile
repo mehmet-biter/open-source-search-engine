@@ -401,7 +401,7 @@ doc:
 
 # used for tools/unittest
 libgb.a: $(OBJS)
-	ar rcs $@ $^
+	ar rcs $@ $^ word_variations/*.o sto/*.o
 
 .PHONY: tools
 tools:
