@@ -1753,7 +1753,6 @@ bool SpiderColl::evalIpLoop ( ) {
 		cacheKey.n1 = 0;
 		char *doleBuf = NULL;
 		int32_t doleBufSize;
-		//g_spiderLoop.m_winnerListCache.verify();
 		RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
 		bool inCache = g_spiderLoop.m_winnerListCache.getRecord(m_collnum,
 									(char *)&cacheKey,
@@ -3170,14 +3169,12 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		key96_t cacheKey;
 		cacheKey.n0 = firstIp;
 		cacheKey.n1 = 0;
-		//g_spiderLoop.m_winnerListCache.verify();
 		RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
 		g_spiderLoop.m_winnerListCache.addRecord(m_collnum,
 							 (char *)&cacheKey,
 							 &byte,
 							 1,
 							 12345);
-		//g_spiderLoop.m_winnerListCache.verify();
 	}
 
 	// if it wasn't in the cache and it was only one record we
@@ -3200,7 +3197,6 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 			"to winnerlistcache for ip %s oldjump=%" PRId32" newJump=%" PRId32" ptr=0x%" PTRFMT,
 		         doleBuf->length(),iptoa(firstIp,ipbuf),oldJump, newJump, (PTRTYPE)x);
 		//validateDoleBuf ( doleBuf );
-		//g_spiderLoop.m_winnerListCache.verify();
 		// inherit timestamp. if 0, RdbCache will set to current time
 		// don't re-add just use the same modified buffer so we
 		// don't churn the cache.
