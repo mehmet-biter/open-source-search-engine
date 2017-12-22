@@ -14,4 +14,5 @@ egrep -v '^$' |
 awk '{print "	\"" $1 "\","}' |
 cat - >>$3
 
+echo "	NULL" >>$3
 echo "};" >>$3
