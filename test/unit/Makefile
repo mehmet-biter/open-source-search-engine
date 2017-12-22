@@ -9,7 +9,7 @@ OBJECTS = GigablastTest.o GigablastTestUtils.o \
 	ContentTypeBlockListTest.o \
 	DirTest.o DnsBlockListTest.o \
 	FctypesTest.o \
-	GbCacheTest.o \
+	FxCacheTest.o \
 	HttpMimeTest.o \
 	JsonTest.o \
 	PosTest.o PosdbTest.o ProcessTest.o \
