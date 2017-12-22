@@ -831,12 +831,7 @@ bool RdbCache::deleteRec ( ) {
 		// otherwise, point to the start of the next buffer
 		p      = m_bufs[bufNum];
 		m_tail = bufNum * BUFSIZE;
-		// sanity
-		//if ( m_tail < 0  || m_tail > m_totalBufSize ) {
-		//	gbshutdownLogicError();}
-		// if ( this == &g_spiderLoop.m_winnerListCache )
-		// 	logf(LOG_DEBUG, "db: cachebug: wrapping tail to 0");
-		//return true; // continue;
+
 		goto top;
 	}
 	
@@ -862,10 +857,6 @@ bool RdbCache::deleteRec ( ) {
 	if ( m_tail < 0 || 
 	     m_tail +(int32_t)sizeof(collnum_t)+m_cks+4>m_totalBufSize)
 		gbshutdownLogicError();
-	
-	// if ( this == &g_spiderLoop.m_winnerListCache )
-	// 	log("spider: rdbcache: removing tail rec collnum=%i",
-	// 	    (int)collnum);
 
 	// delete key from hash table, iff is for THIS record
 	// but if it has not already been voided.
