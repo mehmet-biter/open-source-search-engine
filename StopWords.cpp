@@ -904,7 +904,7 @@ static const char      *s_commonWords[] = {
 	"ma",		// my
 	"mais",		// but
 	"me",		// me
-	"mЙme",		// same;
+	"même",		// same;
 	"mes",		// me
 	"moi",		// me
 	"mon",		// my
@@ -1275,7 +1275,7 @@ static const char      *s_commonWords[] = {
 	"chi",		// who
 	"cui",		// whom
 	"non",		// not
-	"piЫ",		// more
+	"più",		// more
 	"quale",	// who,
 	"quanto",	// how
 	"quanti",	// 
@@ -1423,7 +1423,7 @@ static const char      *s_commonWords[] = {
 	"deires",	// theirs
 	"deim",		// them
 	"di",		// your
-	"dЕ",		// as/when
+	"då",		// as/when
 	"eg",		// I
 	"ein",		// a/an
 	"ei",		// a/an
@@ -1495,7 +1495,7 @@ static const char      *s_commonWords[] = {
 	"um",		// a
 	"para",		// for
 	//"com",		// with
-	"nЦo",		// not,
+	"não",		// not,
 	"uma",		// a
 	"os",		// the;
 	"no",		// em
@@ -1510,20 +1510,20 @@ static const char      *s_commonWords[] = {
 	"ao",		// a
 	"ele",		// he
 	"das",		// de
-	//"Ю",		// a
+	//"à",		// a
 	"seu",		// his
 	"sua",		// her
 	"ou",		// or
 	"quando",	// when
 	"muito",	// much
 	"nos",		// em
-	"jА",		// already,
+	"já",		// already,
 	"eu",		// I
-	"tambИm",	// also
-	"sС",		// only,
+	"também",	// also
+	"só",		// only,
 	"pelo",		// per
 	"pela",		// per
-	"atИ",		// up
+	"até",		// up
 	"isso",		// that
 	"ela",		// he
 	"entre",	// between
@@ -1537,19 +1537,19 @@ static const char      *s_commonWords[] = {
 	"me",		// me
 	"esse",		// that
 	"eles",		// they
-	"vocЙ",		// you
+	"você",		// you
 	"essa",		// that
 	"num",		// em
 	"nem",		// nor
 	"suas",		// her
 	"meu",		// my
-	"Юs",		// a
+	"às",		// a
 	"minha",	// my
 	"numa",		// em
 	"pelos",	// per
 	"elas",		// they
 	"qual",		// which
-	"nСs",		// we
+	"nós",		// we
 	"lhe",		// to
 	"deles",	// of them
 	"essas",	// those
@@ -1559,7 +1559,7 @@ static const char      *s_commonWords[] = {
 	"dele",		// of
 	"tu",		// thou
 	"te",		// thee
-	"vocЙs",	// you
+	"vocês",	// you
 	"vos",		// you
 	"lhes",		// to
 	"meus",		// my
@@ -1584,9 +1584,9 @@ static const char      *s_commonWords[] = {
 	"isto",		// this
 	"aquilo",	// that
 	"estou",	// 
-	"estА",		// 
+	"está",		//
 	"estamos",	// 
-	"estЦo",	// 
+	"estão",	//
 	"estive",	// 
 	"esteve",	// 
 	"estivemos",	// 
@@ -1595,12 +1595,12 @@ static const char      *s_commonWords[] = {
 	"estАvamos",	// 
 	"estavam",	// 
 	"estivera",	// 
-	"estivИramos",	// 
+	"estivéramos",	//
 	"esteja",	// 
 	"estejamos",	// 
 	"estejam",	// 
 	"estivesse",	// 
-	"estivИssemos",	// 
+	"estivéssemos",	//
 	"estivessem",	// 
 	"estiver",	// 
 	"estivermos",	// 
@@ -1789,14 +1789,14 @@ static const char      *s_commonWords[] = {
 	"al",		// a
 	"lo",		// him
 	"como",		// how
-	"mАs",		// more
+	"más",		// more
 	"pero",		// pero
 	"sus",		// su
 	"le",		// to
 	"ya",		// already
 	"o",		// or
 	"este",		// this
-	"sМ",		// himself
+	"sí",		// himself
 	"porque",	// because
 	"esta",		// this
 	"entre",	// between
@@ -1804,7 +1804,7 @@ static const char      *s_commonWords[] = {
 	"muy",		// very
 	"sin",		// without
 	"sobre",	// on
-	"tambiИn",	// also
+	"también",	// also
 	"me",		// me
 	"hasta",	// until
 	"hay",		// there
@@ -1829,13 +1829,13 @@ static const char      *s_commonWords[] = {
 	"mМ",		// me
 	"antes",	// before
 	"algunos",	// some
-	"quИ",		// what?
+	"qué",		// what?
 	"unos",		// a
 	"yo",		// I
 	"otro",		// other
 	"otras",	// other
 	"otra",		// other
-	"Иl",		// he
+	"él",		// he
 	"tanto",	// so
 	"esa",		// that
 	"estos",	// these
@@ -1853,7 +1853,7 @@ static const char      *s_commonWords[] = {
 	"nosotros",	// we
 	"mi",		// me
 	"mis",		// mi
-	"tЗ",		// thou
+	"tú",		// thou
 	"te",		// thee
 	"ti",		// thee
 	"tu",		// thy
@@ -1863,10 +1863,10 @@ static const char      *s_commonWords[] = {
 	"vosostros",	// you
 	"vosostras",	// you
 	"os",		// you
-	"mМo",		// mine
-	"mМa",		// 
-	"mМos",		// 
-	"mМas",		// 
+	"mío",		// mine
+	"mía",		//
+	"míos",		//
+	"mías",		//
 	"tuyo",		// thine
 	"tuya",		// 
 	"tuyos",	// 
@@ -1886,30 +1886,30 @@ static const char      *s_commonWords[] = {
 	"esos",		// those
 	"esas",		// those
 	"estoy",	// 
-	"estАs",	// 
-	"estА",		// 
+	"estás",	//
+	"está",		//
 	"estamos",	// 
-	"estАis",	// 
-	"estАn",	// 
-	"estИ",		// 
-	"estИs",	// 
+	"estáis",	//
+	"están",	//
+	"esté",		//
+	"estés",	//
 	"estemos",	// 
-	"estИis",	// 
-	"estИn",	// 
-	"estarИ",	// 
-	"estarАs",	// 
-	"estarА",	// 
+	"estéis",	//
+	"estén",	//
+	"estaré",	//
+	"estarás",	//
+	"estará",	//
 	"estaremos",	// 
-	"estarИis",	// 
-	"estarАn",	// 
-	"estarМa",	// 
-	"estarМas",	// 
-	"estarМamos",	// 
-	"estarМais",	// 
-	"estarМan",	// 
+	"estaréis",	//
+	"estarán",	//
+	"estaría",	//
+	"estarías",	//
+	"estaríamos",	//
+	"estaríais",	//
+	"estarían",	//
 	"estaba",	// 
 	"estabas",	// 
-	"estАbamos",	// 
+	"estábamos",	//
 	"estabais",	// 
 	"estaban",	// 
 	"estuve",	// 
@@ -1920,12 +1920,12 @@ static const char      *s_commonWords[] = {
 	"estuvieron",	// 
 	"estuviera",	// 
 	"estuvieras",	// 
-	"estuviИramos",	// 
+	"estuviéramos",	//
 	"estuvierais",	// 
 	"estuvieran",	// 
 	"estuviese",	// 
 	"estuvieses",	// 
-	"estuviИsemos",	// 
+	"estuviésemos",	//
 	"estuvieseis",	// 
 	"estuviesen",	// 
 	"estando",	// 
@@ -1945,15 +1945,15 @@ static const char      *s_commonWords[] = {
 	"hon",		// she
 	"som",		// who,
 	"han",		// he
-	"pЕ",		// on
+	"på",		// on
 	"den",		// it,
 	"med",		// with
 	"var",		// where,
 	"sig",		// him(self)
-	//"fЖr",		// for
-	"sЕ",		// so
+	//"för",		// for
+	"så",		// so
 	"till",		// to
-	"Дr",		// is
+	"är",		// is
 	"men",		// but
 	"ett",		// a
 	"om",		// if;
@@ -1964,7 +1964,7 @@ static const char      *s_commonWords[] = {
 	"mig",		// me
 	"du",		// you
 	"henne",	// her
-	"dЕ",		// then,
+	"då",		// then,
 	"sin",		// his
 	"nu",		// now
 	"har",		// have
@@ -1973,42 +1973,42 @@ static const char      *s_commonWords[] = {
 	"honom",	// him
 	"skulle",	// 'sake'
 	"hennes",	// her
-	"dДr",		// there
+	"där",		// there
 	"min",		// my
 	"man",		// one
 	"ej",		// nor
 	"vid",		// at,
 	"kunde",	// could
-	"nЕgot",	// some
-	"frЕn",		// from,
+	"något",	// some
+	"från",		// from,
 	"ut",		// out
-	"nДr",		// when
+	"när",		// when
 	"efter",	// after,
 	"upp",		// up
 	"vi",		// we
 	"dem",		// them
 	"vara",		// be
 	"vad",		// what
-	"Жver",		// over
-	"Дn",		// than
+	"över",		// over
+	"än",		// than
 	"dig",		// you
 	"kan",		// can
 	"sina",		// his
-	"hДr",		// here
+	"här",		// here
 	"ha",		// have
 	"mot",		// towards
 	"alla",		// all
 	"under",	// under
-	"nЕgon",	// some
+	"någon",	// some
 	"eller",	// or
 	"allt",		// all
 	"mycket",	// much
 	"sedan",	// since
 	"ju",		// why
 	"denna",	// this/that
-	"sjДlv",	// myself,
+	"själv",	// myself,
 	"detta",	// this/that
-	"Еt",		// to
+	"åt",		// to
 	"utan",		// without
 	"varit",	// was
 	"hur",		// how
@@ -2020,33 +2020,33 @@ static const char      *s_commonWords[] = {
 	"oss",		// us
 	"din",		// thy
 	"dessa",	// these/those
-	"nЕgra",	// some
+	"några",	// some
 	"deras",	// their
 	"blir",		// from
 	"mina",		// my
 	"samma",	// (the)
 	"vilken",	// who,
 	"er",		// you,
-	"sЕdan",	// such
-	"vЕr",		// our
+	"sådan",	// such
+	"vår",		// our
 	"blivit",	// from
 	"dess",		// its
 	"inom",		// within
 	"mellan",	// between
-	"sЕdant",	// such
-	//"varfЖr",	// why
+	"sådant",	// such
+	//"varför",	// why
 	"varje",	// each
 	"vilka",	// who,
 	"ditt",		// thy
 	"vem",		// who
 	"vilket",	// who,
 	"sitta",	// his
-	"sЕdana",	// such
+	"sådana",	// such
 	"vart",		// each
 	"dina",		// thy
 	"vars",		// whose
-	"vЕrt",		// our
-	"vЕra",		// our
+	"vårt",		// our
+	"våra",		// our
 	"ert",		// your
 	"era",		// your
 	"vilkas",	// whose
