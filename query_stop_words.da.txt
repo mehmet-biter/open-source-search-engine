@@ -40,9 +40,7 @@ fra	// from/off/since,
 //op	// up
 //man	// you/one
 //hans	// his
-//hvor	// where
 eller// or
-//hvad	// what
 //skal	// must/shall
 //selv	// myself/youself/herself/ourselves
 //her	// here
@@ -80,7 +78,6 @@ eller// or
 //vor	// our
 //mod// against
 //disse// these
-//hvis// if
 //din	// your/yours
 //nogle// some
 hos	// by/at
@@ -90,7 +87,44 @@ hos	// by/at
 //bliver// present
 //hendes// her/hers
 //været// be
-//vaeret// be
 thi	// for
 //jer	// you
 //sådan// such
+
+//Interrogative relative pronouns:
+hvad
+hvem
+hvilken
+hvilket
+hvilke
+hvis
+//hvo	//so old and archaic that it is mostly used in quotes, sayings and psalms, so it's actually a good word to use
+
+//General adverbs used in queries (but also used for other things):
+hvoraf
+hvorefter
+hvorhen
+hvoriblandt
+hvorigennem
+hvorind
+hvornår
+hvorover
+hvortil
+hvorunder
+hvordan
+hvori
+hvorimellem
+hvorlunde
+hvorom
+hvorpå
+hvorinde
+hvor
+hvormed
+hvorimod
+hvorhenne
+hvorfra
+hvorledes
+hvorhos
+hvorfor
+hvorved
+hvorvidt
