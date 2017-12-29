@@ -366,8 +366,11 @@ bool Query::setQTerms ( const Words &words ) {
 		logTrace(g_conf.m_logTraceQuery, "Query::setQTerms(words:%d)", words.getNumWords());
 		for(int i=0; i<words.getNumWords(); i++) {
 			logTrace(g_conf.m_logTraceQuery, "  word #%d: '%*.*s'", i, words.getWordLen(i), words.getWordLen(i), words.getWord(i));
-			logTrace(g_conf.m_logTraceQuery, "            m_phraseId=%" PRId64", m_ignorePhrase=%d m_phraseLen=%d", m_qwords[i].m_phraseId, m_qwords[i].m_ignorePhrase, m_qwords[i].m_phraseLen);
-			logTrace(g_conf.m_logTraceQuery, "            m_ignoreWord=%d, m_quoteStart=%d, m_quoteEnd=%d", m_qwords[i].m_ignoreWord, m_qwords[i].m_quoteStart, m_qwords[i].m_quoteEnd);
+			int64_t phraseTermId = m_qwords[i].m_phraseId&TERMID_MASK;
+			int64_t wordTermId = m_qwords[i].m_phraseId&TERMID_MASK;
+			logTrace(g_conf.m_logTraceQuery, "    m_phraseId=%20" PRId64" (%15" PRId64"), m_ignorePhrase=%d m_phraseLen=%d", m_qwords[i].m_phraseId, phraseTermId, m_qwords[i].m_ignorePhrase, m_qwords[i].m_phraseLen);
+			logTrace(g_conf.m_logTraceQuery, "    m_wordId  =%20" PRId64" (%15" PRId64"), m_ignoreWord=%d, m_quoteStart=%d, m_quoteEnd=%d", m_qwords[i].m_wordId, wordTermId, m_qwords[i].m_ignoreWord, m_qwords[i].m_quoteStart, m_qwords[i].m_quoteEnd);
+
 		}
 	}
 	// . set m_qptrs/m_qtermIds/m_qbits
