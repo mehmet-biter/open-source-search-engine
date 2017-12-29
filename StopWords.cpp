@@ -185,10 +185,6 @@ bool isStopWord ( const char *s , int32_t len , int64_t h ) {
 }		
 
 
-#include "query_stop_words.xx.inc"
-#include "query_stop_words.en.inc"
-#include "query_stop_words.de.inc"
-
 #include "query_stop_words_list.inc"
 
 static HashTableX s_queryStopWordTables[MAXLANGID+1];

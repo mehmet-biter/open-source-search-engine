@@ -500,9 +500,9 @@ query_stop_words.en.inc: query_stop_words.en.txt generate_query_stop_words.sh
 	./generate_query_stop_words.sh en $< $@
 query_stop_words.de.inc: query_stop_words.de.txt generate_query_stop_words.sh
 	./generate_query_stop_words.sh de $< $@
-query_stop_words_list.inc: ./generate_query_stop_word_languages.sh
+query_stop_words_list.inc: ./generate_query_stop_word_languages.sh query_stop_words.xx.inc query_stop_words.en.inc query_stop_words.de.inc
 	./generate_query_stop_word_languages.sh $@
-StopWords.o: query_stop_words.xx.inc query_stop_words.en.inc query_stop_words.de.inc query_stop_words_list.inc
+StopWords.o: query_stop_words_list.inc
 
 default_css.inc: default.css
 	echo "static const char embedded_default_css[] =" >$@.tmp
