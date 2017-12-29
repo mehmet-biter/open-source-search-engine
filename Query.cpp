@@ -366,8 +366,11 @@ bool Query::setQTerms ( const Words &words ) {
 		logTrace(g_conf.m_logTraceQuery, "Query::setQTerms(words:%d)", words.getNumWords());
 		for(int i=0; i<words.getNumWords(); i++) {
 			logTrace(g_conf.m_logTraceQuery, "  word #%d: '%*.*s'", i, words.getWordLen(i), words.getWordLen(i), words.getWord(i));
-			logTrace(g_conf.m_logTraceQuery, "            m_phraseId=%" PRId64", m_ignorePhrase=%d m_phraseLen=%d", m_qwords[i].m_phraseId, m_qwords[i].m_ignorePhrase, m_qwords[i].m_phraseLen);
-			logTrace(g_conf.m_logTraceQuery, "            m_ignoreWord=%d, m_quoteStart=%d, m_quoteEnd=%d", m_qwords[i].m_ignoreWord, m_qwords[i].m_quoteStart, m_qwords[i].m_quoteEnd);
+			int64_t phraseTermId = m_qwords[i].m_phraseId&TERMID_MASK;
+			int64_t wordTermId = m_qwords[i].m_wordId&TERMID_MASK;
+			logTrace(g_conf.m_logTraceQuery, "    m_phraseId=%20" PRId64" (%15" PRId64"), m_ignorePhrase=%d m_phraseLen=%d", m_qwords[i].m_phraseId, phraseTermId, m_qwords[i].m_ignorePhrase, m_qwords[i].m_phraseLen);
+			logTrace(g_conf.m_logTraceQuery, "    m_wordId  =%20" PRId64" (%15" PRId64"), m_ignoreWord=%d, m_quoteStart=%d, m_quoteEnd=%d", m_qwords[i].m_wordId, wordTermId, m_qwords[i].m_ignoreWord, m_qwords[i].m_quoteStart, m_qwords[i].m_quoteEnd);
+
 		}
 	}
 	// . set m_qptrs/m_qtermIds/m_qbits
@@ -420,9 +423,7 @@ bool Query::setQTerms ( const Words &words ) {
 			// not '-' either i guess
 			if ( qw->m_wordSign == '-' ) continue;
 			// no url: stuff, maybe only title
-			if ( qw->m_fieldCode &&
-			qw->m_fieldCode != FIELD_TITLE &&
-			qw->m_fieldCode != FIELD_GENERIC )
+			if ( qw->m_fieldCode && qw->m_fieldCode != FIELD_TITLE )
 				continue;
 			// ignore title: etc. words, they are field names
 			if ( qw->m_ignoreWord == IGNORE_FIELDNAME ) continue;
@@ -461,9 +462,7 @@ bool Query::setQTerms ( const Words &words ) {
 			if(qw->m_inQuotes) continue;
 			if(qw->m_wordSign == '+') continue;
 			if(qw->m_wordSign == '-') continue;
-			if(qw->m_fieldCode &&
-			qw->m_fieldCode != FIELD_TITLE &&
-			qw->m_fieldCode != FIELD_GENERIC )
+			if(qw->m_fieldCode && qw->m_fieldCode != FIELD_TITLE )
 				continue;
 			if(qw->m_ignoreWord == IGNORE_FIELDNAME) continue;
 			// ignore if word weight is zero or synonym weight is zero
@@ -786,9 +785,7 @@ bool Query::setQTerms ( const Words &words ) {
 			// not '-' either i guess
 			if ( qw->m_wordSign == '-' ) continue;
 			// no url: stuff, maybe only title
-			if ( qw->m_fieldCode &&
-			qw->m_fieldCode != FIELD_TITLE &&
-			qw->m_fieldCode != FIELD_GENERIC )
+			if ( qw->m_fieldCode && qw->m_fieldCode != FIELD_TITLE )
 				continue;
 			// skip if ignored like a stopword (stop to->too)
 			//if ( qw->m_ignoreWord ) continue;
@@ -1462,7 +1459,8 @@ bool Query::setQWords ( char boolFlag ,
 		// does word #i have a space in it? that will cancel fieldCode
 		// if we were in a field
 		bool endField = false;
-		if ( words.hasSpace(i) && ! inQuotes ) endField = true;
+		if(words.hasSpace(i) && ! inQuotes)
+			endField = true;
 		// TODO: fix title:" hey there" (space in quotes is ok)
 		// if there's a quote before the first space then
 		// it's ok!!!
@@ -1472,8 +1470,12 @@ bool Query::setQWords ( char boolFlag ,
 			for ( ; s < send ; s++ ) {
 				// if the space is inside the quotes then it
 				// doesn't count!
-				if ( *s == '\"' ) { endField = false; break;}
-				if ( is_wspace_a(*s) ) break;
+				if(*s == '\"') {
+					endField = false;
+					break;
+				}
+				if(is_wspace_a(*s))
+					break;
 			}
 		}
 		// cancel the field if we hit a space (not in quotes)
@@ -1514,7 +1516,8 @@ bool Query::setQWords ( char boolFlag ,
 		// if we were in a field
 		// TODO: fix title:" hey there" (space in quotes is ok)
 		bool cancelField = false;
-		if ( words.hasSpace(i) && ! inQuotes ) cancelField = true;
+		if ( words.hasSpace(i) && ! inQuotes )
+			cancelField = true;
 		// fix title:"foo bar" "another quote" so "another quote"
 		// is not in the title: field
 		if ( words.hasSpace(i) && inQuotes && nq>= 2 ) 
@@ -1556,13 +1559,11 @@ bool Query::setQWords ( char boolFlag ,
 		}
 		// . is this word potentially a field? 
 		// . it cannot be another field name in a field
-		if ( i < (m_numWords-2) &&
-		     w[wlen]   == ':' && ! is_wspace_utf8(w+wlen+1) && 
-		     //w[wlen+1] != '/' &&  // as in http://
-		     (! is_punct_utf8(w+wlen+1) || w[wlen+1]=='\"' ||
-		      // for gblatrange2:-106.940994to-106.361282
-		      w[wlen+1]=='-') &&  
-		     ! fieldCode      && ! inQuotes                ) {
+		if(i < m_numWords-2 &&
+		   w[wlen]  == ':' && ! is_wspace_utf8(w+wlen+1) &&
+		   (!is_punct_utf8(w+wlen+1) || w[wlen+1]=='\"' || w[wlen+1]=='-') &&
+		   ! fieldCode && ! inQuotes)
+		{
 			// field name may have started before though if it
 			// was a compound field name containing hyphens,
 			// underscores or periods
@@ -1581,7 +1582,8 @@ bool Query::setQWords ( char boolFlag ,
 			}
 
 			// advance j to a non-punct word
-			while (words.isPunct(j)) j++;
+			while (words.isPunct(j))
+				j++;
 
 			// ignore all of these words then, 
 			// they're part of field name
@@ -1591,20 +1593,19 @@ bool Query::setQWords ( char boolFlag ,
 			// set field name to the compound name if it is
 			field     = words.getWord (j);
 			fieldLen  = tlen;
-			if ( j == i ) fieldSign = wordSign;
-			else          fieldSign = m_qwords[j].m_wordSign;
+			if(j == i)
+				fieldSign = wordSign;
+			else
+				fieldSign = m_qwords[j].m_wordSign;
 
 			// . is it recognized field name,like "title" or "url"?
-			// . does it officially end in a colon? incl. in hash?
-			bool hasColon;
-			fieldCode = getFieldCode (field, fieldLen, &hasColon) ;
+			fieldCode = getFieldCode (field, fieldLen);
 
 			// if so, it does NOT get its own QueryWord,
 			// but its sign can be inherited by its members
 			if ( fieldCode ) {
 				for ( int32_t k = j ; k <= i ; k++ )
-					m_qwords[k].m_ignoreWord = 
-						IGNORE_FIELDNAME;
+					m_qwords[k].m_ignoreWord = IGNORE_FIELDNAME;
 				continue;
 			}
 		}
@@ -1773,7 +1774,8 @@ bool Query::setQWords ( char boolFlag ,
 					if (is_wspace_utf8(b)) break;
 				}
 				// if in quotes, go until we hit quote
-				for (; inQuotes && *b != '\"'; b++);
+				for (; inQuotes && *b != '\"'; b++)
+					;
 				// now hash that up. this must be 64 bit
 				// to match in XmlDoc.cpp::hashFieldMatch()
 				uint64_t val64 = hash64(a, b - a);
@@ -2899,21 +2901,16 @@ static bool initFieldTable(){
 }
 
 
-field_code_t getFieldCode(const char *s, int32_t len, bool *hasColon) {
-	// default
-	if ( hasColon ) {
-		*hasColon = false;
-	}
-
+field_code_t getFieldCode(const char *s, int32_t len) {
 	if ( !initFieldTable() ) {
-		return FIELD_GENERIC;
+		return FIELD_UNSET;
 	}
 
 	int64_t h = hash64Lower_a( s, len );
 	int32_t i = (int32_t) s_table.getScore(h);
 
 	if ( i == 0 ) {
-		return FIELD_GENERIC;
+		return FIELD_UNSET;
 	}
 
 	return g_fields[i-1].field;

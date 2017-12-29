@@ -22,7 +22,10 @@ bool Speller::init(){
 	if ( s_init ) return true;
 	s_init = true;
 
-	if ( !loadUnifiedDict() ) {
+	log(LOG_INFO,"Loading unified dict");
+	bool loaded = loadUnifiedDict();
+	log(LOG_INFO,"Loaded unified dict");
+	if (!loaded) {
 		log(LOG_WARN, "spell: Could not load unified dict from unifiedDict-buf.txt and unifiedDict-map.dat");
 		return false;
 	}

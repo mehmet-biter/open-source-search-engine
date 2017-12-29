@@ -25,7 +25,7 @@ OBJS_O0 =  \
 	Lang.o Log.o \
 	Mem.o Msg0.o Msg4In.o Msg4Out.o MsgC.o Msg13.o Msg20.o Msg22.o Msg39.o Msg3a.o Msg51.o Msge0.o Msge1.o Multicast.o \
 	Parms.o Pages.o PageAddColl.o PageAddUrl.o PageBasic.o PageCrawlBot.o PageGet.o PageHealthCheck.o PageHosts.o PageInject.o \
-	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageSpiderdbLookup.o PageSpider.o PageDoledbIPTable.o PageDocProcess.o \
+	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageLinkdbLookup.o PageSpiderdbLookup.o PageSpider.o PageDoledbIPTable.o PageDocProcess.o \
 	Phrases.o HostFlags.o Process.o Proxy.o Punycode.o \
 	InstanceInfoExchange.o \
 	Query.o \
@@ -401,7 +401,7 @@ doc:
 
 # used for tools/unittest
 libgb.a: $(OBJS)
-	ar rcs $@ $^
+	ar rcs $@ $^ word_variations/*.o sto/*.o
 
 .PHONY: tools
 tools:
@@ -429,6 +429,7 @@ clean:
 	-rm -f *.ll *.ll.out pstack.txt
 	-rm -f entities.inc
 	-rm -f default_css.inc
+	-rm -f query_stop_words.??.inc query_stop_words_list.inc
 	$(MAKE) -C test $@
 
 
@@ -492,6 +493,18 @@ entities.json entities.inc:
 
 Entities.o: entities.inc
 Version.o: CPPFLAGS += -DGIT_COMMIT_ID=$(GIT_VERSION) -DGIT_BRANCH=$(GIT_BRANCH) -DBUILD_CONFIG=$(config)
+
+query_stop_words.xx.inc: query_stop_words.xx.txt generate_query_stop_words.sh
+	./generate_query_stop_words.sh xx $< $@
+query_stop_words.en.inc: query_stop_words.en.txt generate_query_stop_words.sh
+	./generate_query_stop_words.sh en $< $@
+query_stop_words.de.inc: query_stop_words.de.txt generate_query_stop_words.sh
+	./generate_query_stop_words.sh de $< $@
+query_stop_words.da.inc: query_stop_words.da.txt generate_query_stop_words.sh
+	./generate_query_stop_words.sh da $< $@
+query_stop_words_list.inc: ./generate_query_stop_word_languages.sh query_stop_words.xx.inc query_stop_words.en.inc query_stop_words.de.inc query_stop_words.da.inc
+	./generate_query_stop_word_languages.sh $@
+StopWords.o: query_stop_words_list.inc
 
 default_css.inc: default.css
 	echo "static const char embedded_default_css[] =" >$@.tmp

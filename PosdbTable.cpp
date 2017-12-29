@@ -306,6 +306,12 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 #ifdef _VALGRIND_
 		VALGRIND_CHECK_MEM_IS_DEFINED(wpi,endi-wpi);
 #endif
+		//stuff for detecting when a position has bigram matches on both sides
+		const bool leftTermIsIgnored = m_queryTermInfos[i].m_leftTermIsIgnored;
+		int prevBigramMatchPos = -1;
+		int prevBigramMatchQtermIdx = -1;
+		float prevBigramMatchTermWeight = 1.0;
+		
 		bool first = true;
 		char bestmhg[MAX_TOP];
 		do {
@@ -340,6 +346,23 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 			score *= qterm.m_termWeight; //regular/bigram/synonym
 			score *= qterm.m_termWeight; //regular/bigram/synonym
 
+			if(leftTermIsIgnored && m_q->m_qterms[queryTermIndex].m_isPhrase) {
+				//if the term to the left of us is ignored (stopword/qstopword/highfreqterm/...) then that bigram boost may be lost. Worst case:
+				//        <ignored> term <ignored>
+				// ==>
+				//        <bigram-hit-left> <term-hit> <bigram-hit-2>
+				//and then the boost from the left bigram hit would be lost. So detect this case and give it the extra boost:
+				if(prevBigramMatchPos+2>=helper.p &&
+				   prevBigramMatchQtermIdx!=queryTermIndex) {
+					score *= prevBigramMatchTermWeight;
+					score *= prevBigramMatchTermWeight;
+				}
+				//record where we got a bigram hit
+				prevBigramMatchPos = helper.p;
+				prevBigramMatchQtermIdx = queryTermIndex;
+				prevBigramMatchTermWeight = qterm.m_termWeight;
+			}
+				
 			// do not allow duplicate hashgroups!
 			int32_t bro = -1;
 			for( int32_t k=0; k < numTop; k++) {
@@ -810,7 +833,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	// wiki phrase weight?
 	float wikiPhraseWeight;
 
-	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
+	logTrace(g_conf.m_logTracePosdb, "BEGIN. i=%d, j=%d", i, j);
 
 	int32_t qdist;
 
@@ -1212,6 +1235,12 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		}
 	} // for(;;)
 
+	if(g_conf.m_logTracePosdb) {
+		logTrace(g_conf.m_logTracePosdb, "numTop=%d", numTop);
+		for(int i=0; i<numTop; i++)
+			logTrace(g_conf.m_logTracePosdb, "  bestScores[%d]=%f", i, bestScores[i]);
+	}
+		
 
 	// add up the top scores
 	float sum = 0.0;
@@ -1434,6 +1463,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		QueryTermInfo *qti = &(m_queryTermInfos[nrg]);
 		// and set it
 		qti->m_qtermNum      = i;
+		qti->m_qterm         = qt;
 
 		// this is not good enough, we need to count 
 		// non-whitespace punct as 2 units not 1 unit
@@ -1740,6 +1770,23 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		nrg++;
 	}
 
+	//Detect the cases where the base term to the left of the qti-baseterm is ignored. This is used by getBestScoreSumForSingleTerm()
+	//to ensure that bigram match boosts are not lost.
+	for(int i=0; i<nrg; i++) {
+		QueryTermInfo &qti = m_queryTermInfos[i];
+		qti.m_leftTermIsIgnored = false;
+		if(m_queryTermInfos[i].m_qterm->m_leftPhraseTerm) {
+			for(int j=0; j<m_q->m_numTerms; j++) {
+				QueryTerm *qt = &m_q->m_qterms[j];
+				if(qt==m_queryTermInfos[i].m_qterm->m_leftPhraseTerm) {
+					if(qt->m_qword->m_ignoreWord!=IGNORE_NO_IGNORE)
+						qti.m_leftTermIsIgnored = true;
+					break; //assumption: only one bigram per term. May not be true when bigram-synonyms are added by word variations
+				}
+			}
+		}
+	}
+
 	//
 	// get the query term with the least data in posdb including syns
 	//
@@ -1783,7 +1830,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		logTrace(g_conf.m_logTracePosdb, "m_numQueryTermInfos=%d", m_numQueryTermInfos);
 		for(int i=0; i<m_numQueryTermInfos; i++) {
 			const QueryTermInfo *qti = &(m_queryTermInfos[i]);
-			logTrace(g_conf.m_logTracePosdb, "  qti[%d]: m_numSubLists=%d m_qtermNum=%d m_qpos=%d", i, qti->m_numSubLists, qti->m_qtermNum, qti->m_qpos);
+			logTrace(g_conf.m_logTracePosdb, "  qti[%d]: m_numSubLists=%d m_qtermNum=%d m_qpos=%d m_leftTermIsIgnored=%s", i, qti->m_numSubLists, qti->m_qtermNum, qti->m_qpos, qti->m_leftTermIsIgnored?"true":"false");
 			for(int j=0; j<qti->m_numSubLists; j++)
 				logTrace(g_conf.m_logTracePosdb, "    sublist %d = %p", j, qti->m_subList[j].m_list);
 		}
@@ -3102,6 +3149,7 @@ float PosdbTable::getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffe
 		// pdcs is NULL if not currPassNum == INTERSECT_DEBUG_INFO
 		float sts = getBestScoreSumForSingleTerm(miniMergeBuffer, i, pdcs, &highestScoringNonBodyPos[i]);
 		scoredTerm = true;
+		//logTrace(g_conf.m_logTracePosdb, "i=%d sts=%f", i,sts);
 
 		// sanity check
 		if ( highestScoringNonBodyPos[i] && s_inBody[Posdb::getHashGroup(highestScoringNonBodyPos[i])] ) {
@@ -3306,6 +3354,8 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 		// Similar fix as in getMinSingleTermScoreSum, but should not happen in this function ...
 		minTermPairScoreInWindow = -1;
 	}
+
+	logTrace(g_conf.m_logTracePosdb, "minTermPairScoreInWindow=%f, m_bestMinTermPairWindowScore=%f", minTermPairScoreInWindow, m_bestMinTermPairWindowScore);
 
 	// Our best minimum score better than current best minimum score?
 	if ( minTermPairScoreInWindow <= m_bestMinTermPairWindowScore ) {
@@ -3549,6 +3599,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 			}
 
 			// got a new min
+			logTrace(g_conf.m_logTracePosdb, "i=%d, tpscore=%f", i, tpscore);
 			minPairScore = tpscore;
 		}
 	}
