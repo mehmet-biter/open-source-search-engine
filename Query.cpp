@@ -1595,9 +1595,7 @@ bool Query::setQWords ( char boolFlag ,
 			else          fieldSign = m_qwords[j].m_wordSign;
 
 			// . is it recognized field name,like "title" or "url"?
-			// . does it officially end in a colon? incl. in hash?
-			bool hasColon;
-			fieldCode = getFieldCode (field, fieldLen, &hasColon) ;
+			fieldCode = getFieldCode (field, fieldLen);
 
 			// if so, it does NOT get its own QueryWord,
 			// but its sign can be inherited by its members
@@ -2899,12 +2897,7 @@ static bool initFieldTable(){
 }
 
 
-field_code_t getFieldCode(const char *s, int32_t len, bool *hasColon) {
-	// default
-	if ( hasColon ) {
-		*hasColon = false;
-	}
-
+field_code_t getFieldCode(const char *s, int32_t len) {
 	if ( !initFieldTable() ) {
 		return FIELD_GENERIC;
 	}
