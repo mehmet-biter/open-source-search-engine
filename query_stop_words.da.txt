@@ -1,0 +1,96 @@
+// danish query stop words
+i	// in
+jeg	// I
+//det	// that
+//at	// that
+en	// a/an
+//den	// it
+til	// to/at/for/until/against/by/of/into,
+//er	// present
+//som	// who,
+på	// on/upon/in/on/at/to/after/of/with/for,
+//de	// they
+//med	// with/by/in,
+//han	// he
+af	// of/by/from/off/for/in/with/on,
+for	// at/for/to/from/by/of/ago,
+ikke	// not
+//der	// who/which,
+//var	// past
+//mig	// me/myself
+//sig	// oneself/himself/herself/itself/themselves
+//men	// but
+//et	// a/an/one,
+//har	// present
+//om	// round/about/for/in/a,
+//vi	// we
+//min	// my
+//havde// past
+//ham	// him
+//hun	// she
+//nu	// now
+//over	// over/above/across/by/beyond/past/on/about,
+//da	// then,
+fra	// from/off/since,
+//du	// you
+//ud	// out
+//sin	// his/her/its/one's
+//dem	// them
+//os	// us/ourselves
+//op	// up
+//man	// you/one
+//hans	// his
+//hvor	// where
+eller// or
+//hvad	// what
+//skal	// must/shall
+//selv	// myself/youself/herself/ourselves
+//her	// here
+//alle	// all/everyone/everybody
+//vil	// will
+//blev	// past
+//kunne// could
+//ind	// in
+//når// when
+//være// present
+//dog// however/yet/after
+//noget// something
+//ville// would
+//jo	// you
+//deres// their/theirs
+//efter// after/behind/according
+//ned// down
+//skulle// should
+//denne// this
+//end// than
+//dette// this
+//mit// my/mine
+//også	// also
+//ogsa	// also
+//under// under/beneath/below/during
+//have	// have
+//dig// you
+//anden// other
+//hende// her
+//mine	// my
+//alt// everything
+//meget// much/very,
+//sit// his,
+//sine// his,
+//vor	// our
+//mod// against
+//disse// these
+//hvis// if
+//din	// your/yours
+//nogle// some
+hos	// by/at
+//blive// be/become
+//mange// many
+//ad	// by/through
+//bliver// present
+//hendes// her/hers
+//været// be
+//vaeret// be
+thi	// for
+//jer	// you
+//sådan// such
