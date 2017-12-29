@@ -25,7 +25,7 @@ OBJS_O0 =  \
 	Lang.o Log.o \
 	Mem.o Msg0.o Msg4In.o Msg4Out.o MsgC.o Msg13.o Msg20.o Msg22.o Msg39.o Msg3a.o Msg51.o Msge0.o Msge1.o Multicast.o \
 	Parms.o Pages.o PageAddColl.o PageAddUrl.o PageBasic.o PageCrawlBot.o PageGet.o PageHealthCheck.o PageHosts.o PageInject.o \
-	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageSpiderdbLookup.o PageSpider.o PageDoledbIPTable.o PageDocProcess.o \
+	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageLinkdbLookup.o PageSpiderdbLookup.o PageSpider.o PageDoledbIPTable.o PageDocProcess.o \
 	Phrases.o HostFlags.o Process.o Proxy.o Punycode.o \
 	InstanceInfoExchange.o \
 	Query.o \
