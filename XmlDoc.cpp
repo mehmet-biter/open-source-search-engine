@@ -4004,6 +4004,22 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 		return (int32_t *)links;
 	}
 
+	Url *fu = getFirstUrl();
+	Url *cu = getCurrentUrl();
+	bool isRedir = (fu->getUrlHash64() != cu->getUrlHash64());
+
+	TagRec *tr = getTagRec();
+	if (!tr || tr == (TagRec *)-1) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getTagRec returned -1" );
+		return (int32_t *)tr;
+	}
+
+	TagRec *ctr = getCurrentTagRec();
+	if (!ctr || ctr == (TagRec *)-1) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getCurrentTagRec returned -1" );
+		return (int32_t *)ctr;
+	}
+
 	// . get the outlink tag rec vector
 	// . each link's tagrec may have a "site" tag that is basically
 	//   the cached SiteGetter::getSite() computation
@@ -4075,15 +4091,22 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		// get the link
 		char *u = links->getLinkPtr(i);
+
 		// get full host from link
 		int32_t hostLen = 0;
 		const char *host = ::getHost ( u , &hostLen );
 		int32_t hostHash32 = hash32 ( host , hostLen , 0 );
+
 		// get the site
 		TagRec *gr = (*grv)[i];
 		const char *site = NULL;
 		int32_t  siteLen = 0;
 		if ( gr ) {
+			// we should use current tagrec instead of tagrec if it's a redirect
+			if (isRedir && gr == tr) {
+				gr = ctr;
+			}
+
 			int32_t dataSize = 0;
 			site = gr->getString("site",NULL,&dataSize);
 			if ( dataSize ) siteLen = dataSize - 1;
@@ -6582,6 +6605,48 @@ TagRec *XmlDoc::getTagRec ( ) {
 	return &m_tagRec;
 }
 
+static void gotCurrentTagRecWrapper(void *state) {
+	XmlDoc *THIS = (XmlDoc *)state;
+	// note it
+	THIS->setStatus ( "in got current tag rec wrapper" );
+	// set these
+	if ( ! g_errno ) {
+		THIS->m_currentTagRecValid = true;
+	}
+	// continue
+	THIS->m_masterLoop ( THIS->m_masterState );
+}
+
+// . returns NULL and sets g_errno on error
+// . returns -1 if blocked, will re-call m_callback
+TagRec *XmlDoc::getCurrentTagRec ( ) {
+	// if we got it give it
+	if ( m_currentTagRecValid ) return &m_currentTagRec;
+
+	CollectionRec *cr = getCollRec();
+	if ( ! cr ) return NULL;
+
+	// update status msg
+	setStatus ( "getting current tagdb record" );
+
+	// nah, try this
+	Url *u = getCurrentUrl();
+
+	// get it, user our collection for lookups, not m_tagdbColl[] yet!
+	if ( !m_msg8a.getTagRec( u, cr->m_collnum, m_niceness, this, gotCurrentTagRecWrapper, &m_currentTagRec ) ) {
+		// we blocked, return -1
+		return (TagRec *) -1;
+	}
+
+	// error? ENOCOLLREC?
+	if ( g_errno ) {
+		return NULL;
+	}
+
+	// our tag rec should be all valid now
+	m_currentTagRecValid = true;
+	return &m_currentTagRec;
+}
 
 
 
