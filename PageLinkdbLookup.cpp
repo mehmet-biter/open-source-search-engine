@@ -27,6 +27,7 @@
 #include "Conf.h"
 #include "ip.h"
 #include "Linkdb.h"
+#include "SiteGetter.h"
 
 
 namespace {
@@ -108,10 +109,12 @@ static bool getLinkdbRecs(State *st) {
 	Url u;
 	u.set(st->m_url_str, strlen(st->m_url_str), false, false);
 
-	uint32_t h32 = u.getHostHash32();
-	uint64_t uh64 = hash64n(u.getUrl(), u.getUrlLen());
-	key224_t startKey = Linkdb::makeStartKey_uk(h32, uh64);
-	key224_t endKey = Linkdb::makeEndKey_uk(h32, uh64);
+	SiteGetter sg;
+	sg.getSite(st->m_url_str, NULL, 0, 0, 0);
+
+	uint32_t h32 = hash32(sg.getSite(), sg.getSiteLen(), 0);
+	key224_t startKey = Linkdb::makeStartKey_uk(h32, u.getUrlHash64());
+	key224_t endKey = Linkdb::makeEndKey_uk(h32, u.getUrlHash64());
 
 	logTrace(g_conf.m_logTracePageLinkdbLookup, "(%p): Calling Msg0::getList()", st);
 

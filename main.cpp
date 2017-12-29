@@ -5301,21 +5301,22 @@ static void dumpLinkdb(const char *coll, int32_t startFileNum, int32_t numFiles,
 		Url u;
 		u.set( url, strlen( url ), false, false );
 
-		uint32_t h32 = u.getHostHash32();
-		int64_t uh64 = 0;
+		SiteGetter sg;
+		sg.getSite(url, NULL, 0, 0, 0);
+
+		uint32_t h32 = hash32(sg.getSite(), sg.getSiteLen(), 0);
 		if( urlhash ) {
-			uh64=hash64n(u.getUrl(), u.getUrlLen());
-			startKey = Linkdb::makeStartKey_uk(h32, uh64);
-			endKey   = Linkdb::makeEndKey_uk  (h32, uh64);
+			startKey = Linkdb::makeStartKey_uk(h32, u.getUrlHash64());
+			endKey   = Linkdb::makeEndKey_uk  (h32, u.getUrlHash64());
 		}
 		else {
-			startKey = Linkdb::makeStartKey_uk(h32, uh64);
+			startKey = Linkdb::makeStartKey_uk(h32, 0);
 			endKey   = Linkdb::makeEndKey_uk  (h32, LDB_MAXURLHASH);
 		}
 
 
 		printf("URL=%.*s, sitehash32=0x%08" PRIx32 ", urlhash=0x%012" PRIx64 "\n",
-			u.getUrlLen(), u.getUrl(), h32, uh64);
+			u.getUrlLen(), u.getUrl(), h32, u.getUrlHash64());
 
 		printf("Startkey=%s\n", KEYSTR(&startKey,sizeof(key224_t)));
 		printf("Endkey  =%s\n", KEYSTR(&endKey,sizeof(key224_t)));
