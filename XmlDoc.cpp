@@ -1143,7 +1143,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 
 	// set the urls i guess
 	m_firstUrl.set   ( ptr_firstUrl );
-	if ( ptr_redirUrl ) {
+	if (ptr_redirUrl && strlen(ptr_redirUrl)) {
 		m_redirUrl.set   ( ptr_redirUrl );
 		m_currentUrl.set ( ptr_redirUrl );
 		m_currentUrlValid = true;
