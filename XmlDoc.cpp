@@ -6542,8 +6542,10 @@ static void gotTagRecWrapper(void *state) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// note it
 	THIS->setStatus ( "in got tag rec wrapper" );
-	// set these
-	if ( ! g_errno ) {
+
+	if (g_errno) {
+		log(LOG_WARN, "gotTagRecWrapper: url=%s error='%s'", THIS->m_firstUrl.getUrl(), mstrerror(g_errno));
+	} else {
 		THIS->m_tagRec.serialize ( THIS->m_tagRecBuf );
 		THIS->ptr_tagRecData =  THIS->m_tagRecBuf.getBufStart();
 		THIS->size_tagRecData = THIS->m_tagRecBuf.length();
@@ -6612,8 +6614,10 @@ static void gotCurrentTagRecWrapper(void *state) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// note it
 	THIS->setStatus ( "in got current tag rec wrapper" );
-	// set these
-	if ( ! g_errno ) {
+
+	if (g_errno) {
+		log(LOG_WARN, "gotCurrentTagRecWrapper: url=%s error='%s'", THIS->m_firstUrl.getUrl(), mstrerror(g_errno));
+	} else {
 		THIS->m_currentTagRecValid = true;
 	}
 	// continue
