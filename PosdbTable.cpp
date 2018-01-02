@@ -3475,7 +3475,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 			advanceMin = false;
 			
 			//
-			// Find the minimum word position in the document body for ANY of the query terms.
+			// Find the minimum word position in the document for ANY of the query terms.
 			// minPosTermIdx will contain the term index, minPos the position.
 			//
 			int32_t minPosTermIdx = -1;
