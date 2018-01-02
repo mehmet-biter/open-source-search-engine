@@ -4014,10 +4014,13 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 		return (int32_t *)tr;
 	}
 
-	TagRec *ctr = getCurrentTagRec();
-	if (!ctr || ctr == (TagRec *)-1) {
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getCurrentTagRec returned -1" );
-		return (int32_t *)ctr;
+	TagRec *ctr = nullptr;
+	if (isRedir) {
+		ctr = getCurrentTagRec();
+		if (!ctr || ctr == (TagRec *)-1) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getCurrentTagRec returned -1");
+			return (int32_t *)ctr;
+		}
 	}
 
 	// . get the outlink tag rec vector
@@ -5522,6 +5525,9 @@ Url **XmlDoc::getRedirUrl() {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, Forced redirect from '%s' to '%s'", cu->getUrl(),m_redirUrl.getUrl() );
 			return &m_redirUrlPtr;
 		}
+
+		// make sure we clear redirUrl to avoid confusion
+		m_redirUrl.reset();
 	}
 
 	// if no location url, then no redirect a NULL redir url
