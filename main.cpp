@@ -249,11 +249,6 @@ int main2 ( int argc , char *argv[] ) {
 	g_conf.m_runAsDaemon = false;
 	g_conf.m_logToFile = false;
 
-	// appears that linux 2.4.17 kernel would crash with this?
-	// let's try again on gk127 to make sure
-	// YES! gk0 cluster has run for months with this just fine!!
-	mlockall(MCL_CURRENT|MCL_FUTURE);
-
 #ifdef _VALGRIND_
 	//threads are incrementing the counters all over the place
 	VALGRIND_HG_DISABLE_CHECKING(&g_stats,sizeof(g_stats));
@@ -1608,6 +1603,19 @@ int main2 ( int argc , char *argv[] ) {
 
 	// allow saving of conf again
 	g_conf.m_save = true;
+
+	if(g_conf.m_mlockAllCurrent || g_conf.m_mlockAllFuture) {
+		log(LOG_DEBUG,"Locking memory");
+		int rc;
+		if(g_conf.m_mlockAllCurrent && g_conf.m_mlockAllFuture)
+			rc = mlockall(MCL_CURRENT|MCL_FUTURE);
+		else if(g_conf.m_mlockAllCurrent)
+			rc = mlockall(MCL_CURRENT);
+		else //if(g_conf.m_mlockAllFuture) //doesn't make a lot of sense to me
+			rc = mlockall(MCL_FUTURE);
+		if(rc!=0)
+			log(LOG_WARN, "mlockall() failed with errno=%d (%s)", errno, mstrerror(errno));
+	}
 
 	log("db: gb is now ready");
 

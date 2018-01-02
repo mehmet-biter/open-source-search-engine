@@ -43,6 +43,8 @@ Conf::Conf ( ) {
 
 	// set max mem to 16GB at least until we load on disk
 	m_maxMem = 16000000000;
+	m_mlockAllCurrent = true;
+	m_mlockAllFuture = true;
 
 	// Coverity.. a bit overkill, but wth...
 	m_runAsDaemon = false;

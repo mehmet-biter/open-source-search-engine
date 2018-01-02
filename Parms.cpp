@@ -4910,6 +4910,24 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER; // PAGE_NONE;
 	m++;
 
+	m->m_title = "mlock-all, current";
+	m->m_desc  = "Try to lock memory after rdb caches etc has been allocated/initialized.";
+	m->m_cgi   = "mlockallcurrent";
+	simple_m_set(Conf,m_mlockAllCurrent);
+	m->m_def   = "1";
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "mlock-all, future";
+	m->m_desc  = "Try to lock future memory after rdb caches etc has been allocated/initialized.";
+	m->m_cgi   = "mlockallfuture";
+	simple_m_set(Conf,m_mlockAllFuture);
+	m->m_def   = "1";
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
 	m->m_title = "max total spiders";
 	m->m_desc  = "What is the maximum number of web "
 		"pages the spider is allowed to download "
@@ -4921,7 +4939,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "mtsp";
 	simple_m_set(Conf,m_maxTotalSpiders);
 	m->m_def   = "100";
-	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m++;
 
