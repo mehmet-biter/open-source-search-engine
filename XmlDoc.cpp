@@ -5525,9 +5525,6 @@ Url **XmlDoc::getRedirUrl() {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, Forced redirect from '%s' to '%s'", cu->getUrl(),m_redirUrl.getUrl() );
 			return &m_redirUrlPtr;
 		}
-
-		// make sure we clear redirUrl to avoid confusion
-		m_redirUrl.reset();
 	}
 
 	// if no location url, then no redirect a NULL redir url
