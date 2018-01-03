@@ -14163,18 +14163,6 @@ SpiderReply *XmlDoc::getFakeSpiderReply ( ) {
 		m_isPermalinkValid = true;
 	}
 
-	//if ( ! m_sreqValid ) {
-	// 	m_sreqValid = true;
-	// 	m_sreq.m_parentDocId = 0LL;
-	// }
-
-
-	// if error is EFAKEFIRSTIP, do not core
-	//if ( ! m_isIndexedValid ) {
-	//	m_isIndexed = false;
-	//	m_isIndexedValid = true;
-	//}
-
 	// if this is EABANDONED or ECORRUPTDATA (corrupt gzip reply)
 	// then this should not block. we need a spiderReply to release the
 	// url spider lock in SpiderLoop::m_lockTable.
