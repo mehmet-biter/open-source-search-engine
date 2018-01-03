@@ -37,6 +37,7 @@ bool isSpiderTempError(int errnum) {
 	switch (errnum) {
 		case EDNSTIMEDOUT:
 		case ETCPTIMEDOUT:
+		case EUDPTIMEDOUT:
 		case EDNSDEAD:
 		case EBADIP:
 		case EDNSSERVFAIL:
