@@ -14472,6 +14472,9 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	int32_t *sni = getSiteNumInlinks();
 	if ( ! sni || sni == (int32_t *)-1 ) return (SpiderReply *)sni;
 
+	int8_t *hc = getHopCount();
+	if ( ! hc || hc == (int8_t*)-1 ) return (SpiderReply *)hc;
+
 	float *pc = getPercentChanged();
 	if ( ! pc || pc == (void *)-1 ) return (SpiderReply *)pc;
 
