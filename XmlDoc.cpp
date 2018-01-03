@@ -6617,9 +6617,12 @@ static void gotCurrentTagRecWrapper(void *state) {
 
 	if (g_errno) {
 		log(LOG_WARN, "gotCurrentTagRecWrapper: url=%s error='%s'", THIS->m_firstUrl.getUrl(), mstrerror(g_errno));
+		THIS->m_indexCode = g_errno;
+		THIS->m_indexCodeValid = true;
 	} else {
 		THIS->m_currentTagRecValid = true;
 	}
+
 	// continue
 	THIS->m_masterLoop ( THIS->m_masterState );
 }
