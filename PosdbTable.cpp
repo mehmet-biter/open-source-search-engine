@@ -163,13 +163,6 @@ void PosdbTable::reset() {
 }
 
 
-// realloc to save mem if we're rat
-void PosdbTable::freeMem ( ) {
-	//@todo: ?
-}
-
-
-
 // . returns false on error and sets g_errno
 // . NOTE: termFreqs is just referenced by us, not copied
 // . sets m_startKeys, m_endKeys and m_minNumRecs for each termId

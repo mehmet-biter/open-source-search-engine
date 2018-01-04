@@ -97,9 +97,6 @@ class PosdbTable {
 	~PosdbTable();
 	void reset();
 
-	// Msg39 needs to call these
-	void freeMem ( ) ;
-
 	// has init already been called?
 	bool isInitialized() {
 		return m_initialized;
