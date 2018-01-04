@@ -239,6 +239,7 @@ class QueryWord {
 	float m_userWeightForWord;
 	float m_userWeightForPhrase;
 	float m_userWeightForSynonym;
+	bool m_userNotRequiredForWord;
 
 	bool m_queryOp;
 	// is this query word before a | (pipe) operator?
@@ -312,6 +313,8 @@ class QueryTerm {
 	
 	// user defined weight for this term, be it phrase or word
 	float m_userWeight;
+
+	bool m_userNotRequired;
 
 	// . is this query term before a | (pipe) operator?
 	// . if so we must read the whole termlist
