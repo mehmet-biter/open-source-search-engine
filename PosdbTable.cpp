@@ -640,9 +640,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				// mod by distance
 				score /= (dist + 1.0);
 				// best?
-				if ( score > max ) {
-					max = score;
-				}
+				max = gbmax(max,score);
 			}		
 
 			// advance posdb pointer
@@ -720,9 +718,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				// mod by distance
 				score /= (dist + 1.0);
 				// best?
-				if ( score > max ) {
-					max = score;
-				}
+				max = gbmax(max,score);
 			}
 
 			// advance posdb pointer
@@ -3267,21 +3263,15 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 			// but these two terms are really far apart, we should
 			// get a better score
 			float score = getScoreForTermPair(miniMergeBuffer, highestScoringNonBodyPos[i], wpj, FIXED_DISTANCE, qdist);
-			if ( score > max ) {
-				max   = score;
-			}
+			max = gbmax(max,score);
 
 			// a double pair sub should be covered in the
 			// getMaxScoreForNonBodyTermPair() function
 			score = getScoreForTermPair(miniMergeBuffer, highestScoringNonBodyPos[i], highestScoringNonBodyPos[j], FIXED_DISTANCE, qdist);
-			if ( score > max ) {
-				max = score;
-			}
+			max = gbmax(max,score);
 
 			score = getScoreForTermPair(miniMergeBuffer, wpi, highestScoringNonBodyPos[j], FIXED_DISTANCE, qdist);
-			if ( score > max ) {
-				max = score;
-			}
+			max = gbmax(max,score);
 
 			// wikipedia phrase weight
 			if ( !almostEqualFloat(wikiWeight, 1.0) ) {
@@ -3298,9 +3288,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 			//TODO: shouldn't we multiply with userweight here too?
 
 			// use score from scoreMatrix if bigger
-			if ( scoreMatrix.get(j,i) > max ) {
-				max = scoreMatrix.get(j,i);
-			}
+			max = gbmax(max,scoreMatrix.get(j,i));
 
 
 			// in same quoted phrase?
@@ -3342,9 +3330,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 
 			// now we want the sliding window with the largest min
 			// term pair score!
-			if(max < minTermPairScoreInWindow) {
-				minTermPairScoreInWindow = max;
-			}
+			minTermPairScoreInWindow = gbmin(max,minTermPairScoreInWindow);
 		}
 	}
 
