@@ -2916,6 +2916,33 @@ field_code_t getFieldCode(const char *s, int32_t len) {
 	return g_fields[i-1].field;
 }
 
+const char *getFieldCodeName(field_code_t fc) {
+	switch(fc) {
+		case FIELD_UNSET: return "unset";
+		case FIELD_URL: return "url";
+		case FIELD_LINK: return "link";
+		case FIELD_SITE: return "site";
+		case FIELD_IP: return "ip";
+		case FIELD_SUBURL: return "suburl";
+		case FIELD_TITLE: return "title";
+		case FIELD_TYPE: return "type";
+		case FIELD_EXT: return "ext";
+		case FIELD_LINKS: return "links";
+		case FIELD_SITELINK: return "sitelink";
+		case FIELD_GENERIC: return "generic";
+		case FIELD_GBLANG: return "gblang";
+		case FIELD_GBCOUNTRY: return "gbcountry";
+		case FIELD_GBTERMID: return "gbtermid";
+		case FIELD_GBDOCID: return "gbdocid";
+		case FIELD_GBCONTENTHASH: return "gbcontenthash";
+		case FIELD_GBSORTBYINT: return "gbsortbyint";
+		case FIELD_GBREVSORTBYINT: return "gbrevsortbyint";
+		case FIELD_GBFIELDMATCH: return "gbfieldmatch";
+		default: return NULL;
+	}
+}
+
+
 // guaranteed to be punctuation
 bool Query::isConnection(const char *s, int32_t len) const {
 	if ( len == 1 ) {

@@ -105,6 +105,7 @@ enum field_code_t {
 
 // returns a FIELD_* code above, or FIELD_GENERIC if not in the list
 field_code_t getFieldCode(const char *s, int32_t len);
+const char *getFieldCodeName(field_code_t fc);
 
 int32_t getNumFieldCodes ( );
 
