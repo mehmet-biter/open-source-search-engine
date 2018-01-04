@@ -95,7 +95,7 @@ class PosdbTable {
 	float getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMergeBuffer, int i, int j, int32_t qdist);
 	float getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeBuf, int32_t i, DocIdScore *pdcs, const char **highestScoringNonBodyPos);
 	float getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, const char *wpi, const char *wpj, int32_t fixedDistance, int32_t qdist);
-	void findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const char **ptrs, std::vector<const char *> *bestMinTermPairWindowPtrs, const char **highestScoringNonBodyPos, const PairScoreMatrix &scoreMatrix);
+	void findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const char **ptrs, std::vector<const char *> *bestMinTermPairWindowPtrs, float *bestMinTermPairWindowScore, const char **highestScoringNonBodyPos, const PairScoreMatrix &scoreMatrix);
 
 	float getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer, int i, int j, const std::vector<const char *> &bestMinTermPairWindowPtrs, DocIdScore *pdcs);
 
@@ -145,8 +145,6 @@ private:
 	std::vector<int32_t> m_qpos;
 	std::vector<int32_t> m_qtermNums;
 	std::vector<char> m_bflags;
-	//used during intersection, simple variables
-	float m_bestMinTermPairWindowScore;             //Best minimum score in a "sliding window"
 
 	bool m_hasMaxSerpScore;
 
