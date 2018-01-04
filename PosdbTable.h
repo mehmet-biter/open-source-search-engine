@@ -79,28 +79,22 @@ public:
 
 
 class PosdbTable {
-
- public:
-
-	// . returns false on error and sets errno
-	// . "termFreqs" are 1-1 with q->m_qterms[]
-	// . sets m_q to point to q
-	void init(Query *q, bool debug, TopTree *topTree, const DocumentIndexChecker &documentIndexChecker, Msg2 *msg2, Msg39Request *r);
-
-	// pre-allocate m_whiteListTable
-	bool allocWhiteListTable ( ) ;
-
-	void prepareWhiteListTable();
-
-	// some generic stuff
+public:
 	PosdbTable();
 	~PosdbTable();
 	void reset();
 
+	// . sets m_q to point to q
+	void init(Query *q, bool debug, TopTree *topTree, const DocumentIndexChecker &documentIndexChecker, Msg2 *msg2, Msg39Request *r);
+
 	// has init already been called?
-	bool isInitialized() {
-		return m_initialized;
-	}
+	bool isInitialized() const { return m_initialized; }
+
+	// the new intersection/scoring algo
+	void intersectLists();
+
+	int64_t getTotalHits() const { return m_docIdVoteBuf.length() / 6; }
+	int32_t getFilteredCount() const { return m_filtered; }
 
 	// how long to add the last batch of lists
 	int64_t       m_addListsTime;
@@ -160,6 +154,10 @@ private:
 	bool allocateScoringInfo();
 	bool setQueryTermInfo();
 
+	// allocation&preparation of m_whiteListTable
+	bool allocWhiteListTable();
+	void prepareWhiteListTable();
+
 	void intersectLists_real();
 
 	bool genDebugScoreInfo1(int32_t *numProcessed, int32_t *topCursor, bool *docInThisFile);
@@ -197,14 +195,6 @@ private:
 				       int32_t qdist,
 				       const QueryTermInfo *qtm);
 
-public:
-	// the new intersection/scoring algo
-	void intersectLists();
-
-	int64_t getTotalHits() const { return m_docIdVoteBuf.length() / 6; }
-	int32_t getFilteredCount() const { return m_filtered; }
-
-private:
 	// stuff set in setQueryTermInf() function:
 	std::vector<QueryTermInfo> m_queryTermInfos;
 	int32_t                 m_numQueryTermInfos;
