@@ -95,9 +95,9 @@ class PosdbTable {
 	float getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMergeBuffer, int i, int j, int32_t qdist);
 	float getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeBuf, int32_t i, DocIdScore *pdcs, const char **highestScoringNonBodyPos);
 	float getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, const char *wpi, const char *wpj, int32_t fixedDistance, int32_t qdist);
-	void findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const char **ptrs, const char **highestScoringNonBodyPos, const PairScoreMatrix &scoreMatrix);
+	void findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const char **ptrs, std::vector<const char *> *bestMinTermPairWindowPtrs, const char **highestScoringNonBodyPos, const PairScoreMatrix &scoreMatrix);
 
-	float getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer, int i, int j, DocIdScore *pdcs);
+	float getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer, int i, int j, const std::vector<const char *> &bestMinTermPairWindowPtrs, DocIdScore *pdcs);
 
 
 	// some generic stuff
@@ -124,7 +124,7 @@ class PosdbTable {
 
 	void createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMergeBuffer, PairScoreMatrix *scoreMatrix);
 	float getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, DocIdScore *pdcs);
-	float getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, const PairScoreMatrix &scoreMatrix, DocIdScore *pdcs);
+	float getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, std::vector<const char *> &bestMinTermPairWindowPtrs, const char **xpos, const PairScoreMatrix &scoreMatrix, DocIdScore *pdcs);
 
 
 	// how long to add the last batch of lists
@@ -147,7 +147,6 @@ private:
 	std::vector<char> m_bflags;
 	//used during intersection, simple variables
 	float m_bestMinTermPairWindowScore;             //Best minimum score in a "sliding window"
-	const char **m_bestMinTermPairWindowPtrs;       //Position pointers of best minimum score
 
 	bool m_hasMaxSerpScore;
 
