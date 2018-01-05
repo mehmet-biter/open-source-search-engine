@@ -3470,7 +3470,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 					continue;
 				}
 
-				if ( xpos[x] && minPosTermIdx == -1 ) {
+				if ( minPosTermIdx == -1 ) {
 					minPosTermIdx = x;
 					//minRec = xpos[x];
 					minPos = Posdb::getWordPos(xpos[x]);
