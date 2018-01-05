@@ -145,8 +145,6 @@ void PosdbTable::reset() {
 	m_quotedStartIds.clear();
 	m_bflags.clear();
 	m_qtermNums.clear();
-	m_bestMinTermPairWindowScore = 0.0;
-	m_bestMinTermPairWindowPtrs = NULL;
 	m_msg2 = NULL;
 	m_topTree = NULL;
 	m_nqt = 0;
@@ -163,13 +161,6 @@ void PosdbTable::reset() {
 	m_allInSameWikiPhrase = 0;
 	m_realMaxTop = 0;
 }
-
-
-// realloc to save mem if we're rat
-void PosdbTable::freeMem ( ) {
-	//@todo: ?
-}
-
 
 
 // . returns false on error and sets g_errno
@@ -642,9 +633,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				// mod by distance
 				score /= (dist + 1.0);
 				// best?
-				if ( score > max ) {
-					max = score;
-				}
+				max = gbmax(max,score);
 			}		
 
 			// advance posdb pointer
@@ -722,9 +711,7 @@ float PosdbTable::getMaxScoreForNonBodyTermPair(const MiniMergeBuffer *miniMerge
 				// mod by distance
 				score /= (dist + 1.0);
 				// best?
-				if ( score > max ) {
-					max = score;
-				}
+				max = gbmax(max,score);
 			}
 
 			// advance posdb pointer
@@ -823,8 +810,8 @@ float PosdbTable::getScoreForTermPair(const MiniMergeBuffer *miniMergeBuffer, co
 
 // . advance two ptrs at the same time so it's just a linear scan
 // . TODO: add all up, then basically taking a weight of the top 6 or so...
-// . skip body terms not in the sliding window as defined by m_bestMinTermPairWindowPtrs[]
-float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer, int i, int j, DocIdScore *pdcs) {
+// . skip body terms not in the sliding window as defined by bestMinTermPairWindowPtrs[]
+float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer, int i, int j, const std::vector<const char *> &bestMinTermPairWindowPtrs, DocIdScore *pdcs) {
 	const char *wpi = miniMergeBuffer->mergedListStart[i];
 	const char *wpj = miniMergeBuffer->mergedListStart[j];
 	const char *endi = miniMergeBuffer->mergedListEnd[i];
@@ -892,11 +879,11 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		// . if p1/p2 is in body and not in window, skip
 		// . this is how we restrict all body terms to the winning
 		//   sliding window
-		if ( s_inBody[helper1.hg] && wpi != m_bestMinTermPairWindowPtrs[i] ) {
+		if ( s_inBody[helper1.hg] && wpi != bestMinTermPairWindowPtrs[i] ) {
 			goto skip1;
 		}
 		
-		if ( s_inBody[helper2.hg] && wpj != m_bestMinTermPairWindowPtrs[j] ) {
+		if ( s_inBody[helper2.hg] && wpj != bestMinTermPairWindowPtrs[j] ) {
 			goto skip2;
 		}
 
@@ -3098,7 +3085,7 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMer
 // Finds the highest single term score sum.
 // Creates array of highest scoring non-body positions
 //
-float PosdbTable::getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, DocIdScore *pdcs) {
+float PosdbTable::getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffer, std::vector<const char *> &highestScoringNonBodyPos, DocIdScore *pdcs) {
 	float minSingleScore = 999999999.0;
 	bool mergedListFound = false;
 	bool allSpecialTerms = true;
@@ -3147,7 +3134,7 @@ float PosdbTable::getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffe
 		// Adds up MAX_TOP top scores and returns that sum.
 		//
 		// pdcs is NULL if not currPassNum == INTERSECT_DEBUG_INFO
-		float sts = getBestScoreSumForSingleTerm(miniMergeBuffer, i, pdcs, &highestScoringNonBodyPos[i]);
+		float sts = getBestScoreSumForSingleTerm(miniMergeBuffer, i, pdcs, &(highestScoringNonBodyPos[i]));
 		scoredTerm = true;
 		//logTrace(g_conf.m_logTracePosdb, "i=%d sts=%f", i,sts);
 
@@ -3183,10 +3170,10 @@ float PosdbTable::getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffe
 //   pointed to by "highestScoringNonBodyPos[i]".
 //
 // OUTPUT:
-//   m_bestMinTermPairWindowScore: The best minimum window score
-//   m_bestMinTermPairWindowPtrs : Pointers to query term positions giving the best minimum score
+//   bestMinTermPairWindowScore: The best minimum window score
+//   bestMinTermPairWindowPtrs : Pointers to query term positions giving the best minimum score
 //
-void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const char **ptrs, const char **highestScoringNonBodyPos, const PairScoreMatrix &scoreMatrix) {
+void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBuffer, const std::vector<const char *> &ptrs, std::vector<const char *> *bestMinTermPairWindowPtrs, float *bestMinTermPairWindowScore, const std::vector<const char *> &highestScoringNonBodyPos, const PairScoreMatrix &scoreMatrix) {
 	float minTermPairScoreInWindow = 999999999.0;
 	bool mergedListFound = false;
 	bool allSpecialTerms = true;
@@ -3269,21 +3256,15 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 			// but these two terms are really far apart, we should
 			// get a better score
 			float score = getScoreForTermPair(miniMergeBuffer, highestScoringNonBodyPos[i], wpj, FIXED_DISTANCE, qdist);
-			if ( score > max ) {
-				max   = score;
-			}
+			max = gbmax(max,score);
 
 			// a double pair sub should be covered in the
 			// getMaxScoreForNonBodyTermPair() function
 			score = getScoreForTermPair(miniMergeBuffer, highestScoringNonBodyPos[i], highestScoringNonBodyPos[j], FIXED_DISTANCE, qdist);
-			if ( score > max ) {
-				max = score;
-			}
+			max = gbmax(max,score);
 
 			score = getScoreForTermPair(miniMergeBuffer, wpi, highestScoringNonBodyPos[j], FIXED_DISTANCE, qdist);
-			if ( score > max ) {
-				max = score;
-			}
+			max = gbmax(max,score);
 
 			// wikipedia phrase weight
 			if ( !almostEqualFloat(wikiWeight, 1.0) ) {
@@ -3300,9 +3281,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 			//TODO: shouldn't we multiply with userweight here too?
 
 			// use score from scoreMatrix if bigger
-			if ( scoreMatrix.get(j,i) > max ) {
-				max = scoreMatrix.get(j,i);
-			}
+			max = gbmax(max,scoreMatrix.get(j,i));
 
 
 			// in same quoted phrase?
@@ -3344,9 +3323,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 
 			// now we want the sliding window with the largest min
 			// term pair score!
-			if(max < minTermPairScoreInWindow) {
-				minTermPairScoreInWindow = max;
-			}
+			minTermPairScoreInWindow = gbmin(max,minTermPairScoreInWindow);
 		}
 	}
 
@@ -3355,21 +3332,21 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 		minTermPairScoreInWindow = -1;
 	}
 
-	logTrace(g_conf.m_logTracePosdb, "minTermPairScoreInWindow=%f, m_bestMinTermPairWindowScore=%f", minTermPairScoreInWindow, m_bestMinTermPairWindowScore);
+	logTrace(g_conf.m_logTracePosdb, "minTermPairScoreInWindow=%f, bestMinTermPairWindowScore=%f", minTermPairScoreInWindow, *bestMinTermPairWindowScore);
 
 	// Our best minimum score better than current best minimum score?
-	if ( minTermPairScoreInWindow <= m_bestMinTermPairWindowScore ) {
+	if ( minTermPairScoreInWindow <= *bestMinTermPairWindowScore ) {
 		logTrace(g_conf.m_logTracePosdb, "END.");
 		return;
 	}
 
 	// Yep, our best minimum score is the highest so far
-	m_bestMinTermPairWindowScore = minTermPairScoreInWindow;
+	*bestMinTermPairWindowScore = minTermPairScoreInWindow;
 
 	// Record term positions in winning window
 	for(int32_t i=0; i < m_numQueryTermInfos; i++) {
 		if(ptrs[i]!=NULL)
-			m_bestMinTermPairWindowPtrs[i] = ptrs[i];
+			(*bestMinTermPairWindowPtrs)[i] = ptrs[i];
 	}
 
 	logTrace(g_conf.m_logTracePosdb, "END.");
@@ -3394,9 +3371,8 @@ static const char *findFirstBodyPosdbEntry(const char *listStart, const char *li
 
 
 
-float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, const PairScoreMatrix &scoreMatrix, DocIdScore *pdcs) {
+float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const std::vector<const char *> &highestScoringNonBodyPos, std::vector<const char *> &bestMinTermPairWindowPtrs, std::vector<const char *> &xpos, const PairScoreMatrix &scoreMatrix, DocIdScore *pdcs) {
 	logTrace(g_conf.m_logTracePosdb, "Sliding Window algorithm begins");
-	m_bestMinTermPairWindowPtrs = winnerStack;
 
 	// Scan the terms that are in the body in a sliding window
 	//
@@ -3451,13 +3427,15 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 
 	logTrace(g_conf.m_logTracePosdb, "Run sliding window algo? %s", !doneSliding?"yes":"no, no matches found in body");
 
+	float bestMinTermPairWindowScore = -2.0;
+
 	while( !doneSliding ) {
 		//
 		// Now all xpos point to positions in the document body. Calc the "window" score (score
 		// for current term positions).
 		//
-		// If window score beats m_bestMinTermPairWindowScore we store the term xpos pointers
-		// that define this window in the m_bestMinTermPairWindowPtrs[] array.
+		// If window score beats bestMinTermPairWindowScore we store the term xpos pointers
+		// that define this window in the bestMinTermPairWindowPtrs[] array.
 		//
 		// Will try to substitute either of the two term positions with highestScoringNonBodyPos[i] 
 		// if better, but will fix the distance to FIXED_DISTANCE to give a distance penalty.
@@ -3465,9 +3443,9 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 		// "scoreMatrix" contains the highest scoring non-body term pair score, which will 
 		// be used if higher than the calculated score for the terms.
 		//
-		// Sets m_bestMinTermPairWindowScore and m_bestMinTermPairWindowPtrs if this window score beats it.
+		// Sets m_bestMinTermPairWindowScore and bestMinTermPairWindowPtrs if this window score beats it.
 		//
-		findMinTermPairScoreInWindow(miniMergeBuffer, xpos, highestScoringNonBodyPos, scoreMatrix);
+		findMinTermPairScoreInWindow(miniMergeBuffer, xpos, &bestMinTermPairWindowPtrs, &bestMinTermPairWindowScore, highestScoringNonBodyPos, scoreMatrix);
 
 	 	bool advanceMin;
 
@@ -3588,10 +3566,10 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 			//   as far as the in-body terms are concerned
 			// . it will do sub-outs using the score matrix
 			// . this will skip over body terms that are not 
-			//   in the winning window defined by m_bestMinTermPairWindowPtrs[]
+			//   in the winning window defined by bestMinTermPairWindowPtrs[]
 			//   that we set in findMinTermPairScoreInWindow()
 			// . returns the best score for this term
-			float tpscore = getTermPairScoreForAny(miniMergeBuffer, i, j, pdcs);
+			float tpscore = getTermPairScoreForAny(miniMergeBuffer, i, j, bestMinTermPairWindowPtrs, pdcs);
 
 			// get min of all term pair scores
 			if ( tpscore >= minPairScore && minPairScore >= 0.0 ) {
@@ -3688,7 +3666,7 @@ void PosdbTable::intersectLists_real() {
 	m_qtermNums.resize(m_numQueryTermInfos);
 	m_bflags.resize(m_numQueryTermInfos);
 	std::vector<const char *> highestScoringNonBodyPos(m_numQueryTermInfos);
-	std::vector<const char *> winnerStack(m_numQueryTermInfos);
+	std::vector<const char *> bestMinTermPairWindowPtrs(m_numQueryTermInfos);
 	std::vector<const char *> xpos(m_numQueryTermInfos);
 	PairScoreMatrix           scoreMatrix(m_numQueryTermInfos);
 	
@@ -4000,10 +3978,6 @@ void PosdbTable::intersectLists_real() {
 			//##
 
 			if ( !m_q->m_isBoolean ) {
-				// Used by the various scoring functions called below
-				m_bestMinTermPairWindowScore	= -2.0;
-
-
 				//#
 				//# NON-BODY TERM PAIR SCORING LOOP
 				//#
@@ -4013,7 +3987,7 @@ void PosdbTable::intersectLists_real() {
 				//#
 				//# SINGLE TERM SCORE LOOP
 				//#
-				minSingleScore = getMinSingleTermScoreSum(&miniMergeBuf, &(highestScoringNonBodyPos[0]), pdcs);
+				minSingleScore = getMinSingleTermScoreSum(&miniMergeBuf, highestScoringNonBodyPos, pdcs);
 				logTrace(g_conf.m_logTracePosdb, "minSingleScore=%f before multiplication for docId %" PRIu64 "", minSingleScore, m_docId);
 
 				minSingleScore *= completeScoreMultiplier;
@@ -4041,11 +4015,11 @@ void PosdbTable::intersectLists_real() {
 				//#
 				//# SLIDING WINDOW SCORING ALGORITHM
 				//#
-				// After calling this, m_bestMinTermPairWindowPtrs will point to the
+				// After calling this, bestMinTermPairWindowPtrs will point to the
 				// term positions set ("window") that has the highest minimum score. These
 				// pointers are used when determining the minimum term pair score returned
 				// by the function.
-				float minPairScore = getMinTermPairScoreSlidingWindow(&miniMergeBuf, &(highestScoringNonBodyPos[0]), &(winnerStack[0]), &(xpos[0]), scoreMatrix, pdcs);
+				float minPairScore = getMinTermPairScoreSlidingWindow(&miniMergeBuf, highestScoringNonBodyPos, bestMinTermPairWindowPtrs, xpos, scoreMatrix, pdcs);
 				logTrace(g_conf.m_logTracePosdb, "minPairScore=%f before multiplication for docId %" PRIu64 "", minPairScore, m_docId);
 
 				minPairScore *= completeScoreMultiplier;

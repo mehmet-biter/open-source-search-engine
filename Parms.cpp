@@ -1635,7 +1635,6 @@ bool Parms::printParm( SafeBuf* sb,
 		sb->safePrintf ( "<td width=%" PRId32"%%>" , 100/nc/2 );
 	}
 
-	// if parm value is not defaut, use orange!
 	StackBuf<1024> val1;
 	if ( m->m_type != TYPE_FILEUPLOADBUTTON )
 		m->printVal ( &val1 , collnum , j ); // occNum );
@@ -1643,10 +1642,21 @@ bool Parms::printParm( SafeBuf* sb,
 	if ( m->m_def &&
 	     m->m_obj != OBJ_NONE &&
 	     m->m_obj != OBJ_IR && // do not do for injectionrequest
-	     m->m_obj != OBJ_GBREQUEST && // do not do for GigablastRequest
-	     strcmp(val1.getBufStart(), m->m_def) != 0 )
-		// put non-default valued parms in orange!
-		bg = "ffa500";
+	     m->m_obj != OBJ_GBREQUEST) // do not do for GigablastRequest
+	{
+		bool is_non_default = false;
+		if(m->m_type==TYPE_FLOAT || m->m_type==TYPE_DOUBLE) {
+			if(!almostEqualDouble(atof(val1.getBufStart()),atof(m->m_def)))
+				is_non_default = true;
+		} else {
+			if(strcmp(val1.getBufStart(), m->m_def) != 0)
+				is_non_default = true;
+		}
+		if(is_non_default) {
+			// put non-default valued parms in orange!
+			bg = "ffa500";
+		}
+	}
 
 
 	// print the title/description in current table for non-arrays

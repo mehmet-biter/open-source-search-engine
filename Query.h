@@ -105,6 +105,7 @@ enum field_code_t {
 
 // returns a FIELD_* code above, or FIELD_GENERIC if not in the list
 field_code_t getFieldCode(const char *s, int32_t len);
+const char *getFieldCodeName(field_code_t fc);
 
 int32_t getNumFieldCodes ( );
 
@@ -238,6 +239,7 @@ class QueryWord {
 	float m_userWeightForWord;
 	float m_userWeightForPhrase;
 	float m_userWeightForSynonym;
+	bool m_userNotRequiredForWord;
 
 	bool m_queryOp;
 	// is this query word before a | (pipe) operator?
@@ -311,6 +313,8 @@ class QueryTerm {
 	
 	// user defined weight for this term, be it phrase or word
 	float m_userWeight;
+
+	bool m_userNotRequired;
 
 	// . is this query term before a | (pipe) operator?
 	// . if so we must read the whole termlist

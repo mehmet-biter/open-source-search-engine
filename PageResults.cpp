@@ -1100,57 +1100,62 @@ bool printSearchResultsHeader ( State0 *st ) {
 			
 		sb->safePrintf("\t\"terms\":[\n");
 		for ( int i = 0 ; i < q->m_numTerms ; i++ ) {
+			const QueryTerm &qt = q->m_qterms[i];
 			sb->safePrintf("\t\t{\n");
-			const QueryTerm *qt = &q->m_qterms[i];
 			sb->safePrintf("\t\t\t\"termNum\":%i,\n",i);
 			sb->safePrintf("\t\t\t\"termStr\":\"");
-			sb->jsonEncode (qt->m_term,qt->m_termLen);
+			sb->jsonEncode(qt.m_term, qt.m_termLen);
 			sb->safePrintf("\",\n");
-			// syn?
-			const QueryTerm *sq = qt->m_synonymOf;
-			// what language did synonym come from?
-			if ( sq ) {
-				// language map from wiktionary
-				sb->safePrintf("\t\t\t\"termLang\":\"");
-				bool first = true;
-				for ( int i = 0 ; i < langLast ; i++ ) {
-					uint64_t bit = (uint64_t)1 << i;
-					if ( ! (qt->m_langIdBits&bit))continue;
-					const char *str = getLanguageAbbr(i);
-					if ( ! first ) sb->pushChar(',');
-					first = false;
-					sb->jsonEncode ( str );
+			sb->safePrintf("\t\t\t\"isPhrase\":%s,\n", qt.m_isPhrase?"true":"false");
+			sb->safePrintf("\t\t\t\"termHash48\":%" PRId64",\n",   qt.m_termId);
+			sb->safePrintf("\t\t\t\"termHash64\":%" PRIu64",\n",    qt.m_rawTermId);
+			//m_termSign?
+			sb->safePrintf("\t\t\t\"termFreq\":%" PRId64",\n",      qt.m_termFreq);
+			sb->safePrintf("\t\t\t\"termFreqWeight\":%.2f,\n",      qt.m_termFreqWeight);
+			sb->safePrintf("\t\t\t\"queryStopWord\":%s,\n",         qt.m_isQueryStopWord?"true":"false");
+			sb->safePrintf("\t\t\t\"termWeight\":%.2f,\n",          qt.m_termWeight);
+			sb->safePrintf("\t\t\t\"userWeight\":%.2f,\n",          qt.m_userWeight);
+			sb->safePrintf("\t\t\t\"userNotRequired\":%s,\n",       qt.m_userNotRequired?"true":"false");
+			sb->safePrintf("\t\t\t\"ignored\":%s,\n",               qt.m_ignored?"true":"false");
+			const QueryTerm *synqt = qt.m_synonymOf;
+			if(synqt) {
+				if(qt.m_langIdBitsValid) {
+					// what language did synonym come from?
+					// language map from wiktionary
+					sb->safePrintf("\t\t\t\"termLang\":\"");
+					bool first = true;
+					for(int i = 0; i < langLast; i++) {
+						uint64_t bit = (uint64_t)1 << i;
+						if(!(qt.m_langIdBits&bit))
+							continue;
+						const char *str = getLanguageAbbr(i);
+						if(!first)
+							sb->pushChar(',');
+						first = false;
+						sb->jsonEncode(str);
+					}
+					sb->safePrintf("\",\n");
 				}
+				
+				sb->safePrintf("\t\t\t\"synonymOf\":\"");
+				sb->jsonEncode(synqt->m_term, synqt->m_termLen);
 				sb->safePrintf("\",\n");
 			}
+			const char *fieldCodeName = getFieldCodeName(qt.m_fieldCode);
+			if(fieldCodeName)
+				sb->safePrintf("\t\t\t\"fieldCodeName\":\"%s\",\n", fieldCodeName);
+			sb->safePrintf("\t\t\t\"required\":%s,\n",              qt.m_isRequired?"true":"false");
 
-			if ( sq ) {
-				sb->safePrintf("\t\t\t\"synonymOf\":\"");
-				sb->jsonEncode(sq->m_term,sq->m_termLen);
-				sb->safePrintf("\",\n");
-			}				
-			sb->safePrintf("\t\t\t\"termFreq\":%" PRId64",\n"
-				       ,qt->m_termFreq);
-			sb->safePrintf("\t\t\t\"termFreqWeight\":%.2f,\n"
-				       ,qt->m_termFreqWeight);
-
-			sb->safePrintf("\t\t\t\"termHash48\":%" PRId64",\n"
-				       ,qt->m_termId);
-			sb->safePrintf("\t\t\t\"termHash64\":%" PRIu64",\n"
-				       ,qt->m_rawTermId);
-
-			// don't end last query term attr on a omma
-			const QueryWord *qw = qt->m_qword;
-			sb->safePrintf("\t\t\t\"prefixHash64\":%" PRIu64"\n"
-				       ,qw->m_prefixHash);
+			sb->safePrintf("\t\t\t\"prefixHash64\":%" PRIu64"\n", qt.m_qword->m_prefixHash);
 
 			sb->safePrintf("\t\t}");
-			if ( i + 1 < q->m_numTerms )
+			// don't end last query term attr on a omma
+			if( i + 1 < q->m_numTerms)
 				sb->pushChar(',');
 			sb->pushChar('\n');
 		}
 		sb->safePrintf("\t]\n"); // end "terms":[]
-		sb->safePrintf("},\n");
+		sb->safePrintf("},\n"); //end "queryInfo":{}
 	}
 
 	if ( si->m_format == FORMAT_JSON && st->m_header ) {
