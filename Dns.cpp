@@ -151,7 +151,7 @@ bool Dns::init ( uint16_t clientPort ) {
 	// get primary dns server info from the conf class
 	m_dnsClientPort = clientPort; // g_conf.m_dnsClientPort;
 	// set the name of the cache. it will save to WORKDIR/{name}.dat
-	int32_t maxMem = g_conf.m_dnsMaxCacheMem ;
+	int32_t maxMem = g_conf.m_dnsCacheMaxMem ;
 	// . how many nodes in cache tree can we fit?
 	// . each rec is key (12) and ip(4)
 	// . overhead in cache is 56

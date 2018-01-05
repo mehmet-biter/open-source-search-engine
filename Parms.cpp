@@ -3148,14 +3148,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "dns max cache mem";
-	m->m_desc  = "How many bytes should be used for caching DNS replies?";
-	simple_m_set(Conf,m_dnsMaxCacheMem);
-	m->m_def   = "128000";
-	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_NONE;
-	m++;
-
 	m->m_title = "http max send buf size";
 	m->m_desc  = "Maximum bytes of a doc that can be sent before having "
 		"to read more from disk";
@@ -4995,6 +4987,17 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "spidered url cache max mem";
+	m->m_desc  = "How many bytes shoudl be used for caching spiderd url?";
+	m->m_cgi   = "spurlcachemaxmem";
+	simple_m_set(Conf,m_spiderUrlCacheMaxMem);
+	m->m_def   = "10000000";
+	m->m_units = "bytes";
+	m->m_group = true;
+	m->m_flags = PF_REBUILDSPIDERSETTINGS;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
 	m->m_title = "spider IP based url";
 	m->m_desc  = "Should we spider IP based url (eg: http://127.0.0.1/)";
 	m->m_cgi   = "spipurl";
@@ -5811,6 +5814,17 @@ void Parms::init ( ) {
 	simple_m_set(Conf,m_dnsCacheMaxAge);
 	m->m_def   = "300";
 	m->m_units = "seconds";
+	m->m_group = false;
+	m->m_flags = PF_REBUILDDNSSETTINGS;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
+	m->m_title = "dns cache max mem";
+	m->m_desc  = "How many bytes should be used for caching DNS replies?";
+	m->m_cgi   = "dnscachemaxmem";
+	simple_m_set(Conf,m_dnsCacheMaxMem);
+	m->m_def   = "128000";
+	m->m_units = "bytes";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDDNSSETTINGS;
 	m->m_page  = PAGE_MASTER;

@@ -89,8 +89,7 @@ class Conf {
 
 	int64_t m_dnsCacheSize;
 	int64_t m_dnsCacheMaxAge;
-
-	int32_t  m_dnsMaxCacheMem;
+	int64_t m_dnsCacheMaxMem;
 
 	SafeBuf m_proxyIps;
 	SafeBuf m_proxyAuth;
@@ -200,6 +199,7 @@ class Conf {
 
 	int64_t m_spiderUrlCacheMaxAge;
 	int64_t m_spiderUrlCacheSize;
+	int64_t m_spiderUrlCacheMaxMem;
 
 	// indexdb has a max cached age for getting IndexLists (10 mins deflt)
 	int32_t  m_indexdbMaxIndexListAge;

@@ -142,7 +142,7 @@ void SpiderLoop::init() {
 }
 
 void SpiderLoop::initSettings() {
-    m_urlCache.configure(g_conf.m_spiderUrlCacheMaxAge*1000, g_conf.m_spiderUrlCacheSize, g_conf.m_logTraceSpiderUrlCache, "spider url cache");
+    m_urlCache.configure(g_conf.m_spiderUrlCacheMaxAge*1000, g_conf.m_spiderUrlCacheSize, g_conf.m_spiderUrlCacheMaxMem, g_conf.m_logTraceSpiderUrlCache, "spider url cache");
 }
 
 void SpiderLoop::nukeWinnerListCache(collnum_t collnum) {

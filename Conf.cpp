@@ -55,7 +55,7 @@ Conf::Conf ( ) {
 	memset(m_dnsPorts, 0, sizeof(m_dnsPorts));
 	m_dnsCacheMaxAge = 0;
 	m_dnsCacheSize = 0;
-	m_dnsMaxCacheMem = 0;
+	m_dnsCacheMaxMem = 0;
 	m_askRootNameservers = false;
 	m_numRns = 0;
 	memset(m_rnsIps, 0, sizeof(m_rnsIps));
@@ -117,6 +117,7 @@ Conf::Conf ( ) {
 	m_spiderDeadHostCheckInterval = 0;
 	m_spiderUrlCacheMaxAge = 0;
 	m_spiderUrlCacheSize = 0;
+	m_spiderUrlCacheMaxMem = 0;
 	m_indexdbMaxIndexListAge = 0;
 	m_udpMaxSockets = 0;
 	m_httpMaxSockets = 0;
