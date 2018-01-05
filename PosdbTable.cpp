@@ -3374,6 +3374,10 @@ static const char *findFirstBodyPosdbEntry(const char *listStart, const char *li
 float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMergeBuffer, const std::vector<const char *> &highestScoringNonBodyPos, std::vector<const char *> &bestMinTermPairWindowPtrs, std::vector<const char *> &xpos, const PairScoreMatrix &scoreMatrix, DocIdScore *pdcs) {
 	logTrace(g_conf.m_logTracePosdb, "Sliding Window algorithm begins");
 
+	//bestMinTermPairWindowPtrs is just a buffer allocated ones by caller
+	for(int i=0; i<m_numQueryTermInfos; i++)
+		bestMinTermPairWindowPtrs[i] = NULL;
+
 	// Scan the terms that are in the body in a sliding window
 	//
 	// Compute the term pair score on just the terms in that
