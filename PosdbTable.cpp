@@ -3498,7 +3498,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 				}
 
 				// NULLify list if no more positions for this docid for that term.
-				if ( xpos[minPosTermIdx] >= miniMergeBuffer->mergedListEnd[minPosTermIdx] || ! (xpos[minPosTermIdx][0] & 0x04) ) {
+				if ( xpos[minPosTermIdx] >= miniMergeBuffer->mergedListEnd[minPosTermIdx] ) {
 					// exhausted list now
 					xpos[minPosTermIdx] = NULL;
 
