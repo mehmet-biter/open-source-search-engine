@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <string.h>
 #include "Sanity.h"
+#include <functional>
+#include <ostream>
 //#include "collnum_t.h"
 
 
@@ -718,5 +720,14 @@ static inline const char *KEYMAX() {
 	return (const char *)s_foo;
 }
 
+struct KeyHash {
+	std::size_t operator()(u_int96_t const& key) const noexcept {
+		std::size_t h1 = std::hash<uint64_t>{}(key.n0);
+		std::size_t h2 = std::hash<uint32_t>{}(key.n1);
+		return h1 ^ (h2 << 1);
+	}
+};
+
+std::ostream& operator<<(std::ostream& os, const u_int96_t& key);
 
 #endif // GB_TYPES_H
