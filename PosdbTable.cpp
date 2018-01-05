@@ -3459,13 +3459,6 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 			int32_t minPosTermIdx = -1;
 			int32_t minPos = 0;
 			for ( int32_t x = 0 ; x < m_numQueryTermInfos ; x++ ) {
-				// skip if to the left of a pipe operator
-				// and numeric posdb termlists do not have word positions,
-				// they store a float there.
-				if ( m_bflags[x] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-					continue;
-				}
-
 				if ( ! xpos[x] ) {
 					continue;
 				}
