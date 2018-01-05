@@ -1115,6 +1115,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 			sb->safePrintf("\t\t\t\"queryStopWord\":%s,\n",         qt.m_isQueryStopWord?"true":"false");
 			sb->safePrintf("\t\t\t\"termWeight\":%.2f,\n",          qt.m_termWeight);
 			sb->safePrintf("\t\t\t\"userWeight\":%.2f,\n",          qt.m_userWeight);
+			sb->safePrintf("\t\t\t\"userNotRequired\":%s,\n",       qt.m_userNotRequired?"true":"false");
 			sb->safePrintf("\t\t\t\"ignored\":%s,\n",               qt.m_ignored?"true":"false");
 			const QueryTerm *synqt = qt.m_synonymOf;
 			if(synqt) {
