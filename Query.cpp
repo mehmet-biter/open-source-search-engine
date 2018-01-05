@@ -3274,6 +3274,7 @@ void QueryTerm::constructor ( ) {
 	m_inQuotes = false;
 	m_termWeight = 0;
 	m_userWeight = 0;
+	m_userNotRequired = false;
 	m_piped = false;
 	m_ignored = false;
 	m_synonymOf = NULL;
