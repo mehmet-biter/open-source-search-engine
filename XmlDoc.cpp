@@ -1143,7 +1143,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 
 	// set the urls i guess
 	m_firstUrl.set   ( ptr_firstUrl );
-	if ( ptr_redirUrl ) {
+	if (ptr_redirUrl && strlen(ptr_redirUrl)) {
 		m_redirUrl.set   ( ptr_redirUrl );
 		m_currentUrl.set ( ptr_redirUrl );
 		m_currentUrlValid = true;
@@ -1791,9 +1791,15 @@ bool XmlDoc::indexDoc ( ) {
 		m_indexCodeValid = true;
 	}
 
+	if ( g_errno == EDOCCONVERTFAILED ) {
+		m_indexCode = g_errno;
+		m_indexCodeValid = true;
+	}
+
 	// default to internal error which will be retried forever otherwise
 	if ( ! m_indexCodeValid ) {
-		m_indexCode = EINTERNALERROR;//g_errno;
+		logTrace(g_conf.m_logTraceXmlDoc, "Setting indexCode to EINTERNALERROR. g_errno=%s", mstrerror(g_errno));
+		m_indexCode = EINTERNALERROR;
 		m_indexCodeValid = true;
 	}
 
@@ -4014,10 +4020,13 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 		return (int32_t *)tr;
 	}
 
-	TagRec *ctr = getCurrentTagRec();
-	if (!ctr || ctr == (TagRec *)-1) {
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getCurrentTagRec returned -1" );
-		return (int32_t *)ctr;
+	TagRec *ctr = nullptr;
+	if (isRedir) {
+		ctr = getCurrentTagRec();
+		if (!ctr || ctr == (TagRec *)-1) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getCurrentTagRec returned -1");
+			return (int32_t *)ctr;
+		}
 	}
 
 	// . get the outlink tag rec vector
@@ -6539,8 +6548,10 @@ static void gotTagRecWrapper(void *state) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// note it
 	THIS->setStatus ( "in got tag rec wrapper" );
-	// set these
-	if ( ! g_errno ) {
+
+	if (g_errno) {
+		log(LOG_WARN, "gotTagRecWrapper: url=%s error='%s'", THIS->m_firstUrl.getUrl(), mstrerror(g_errno));
+	} else {
 		THIS->m_tagRec.serialize ( THIS->m_tagRecBuf );
 		THIS->ptr_tagRecData =  THIS->m_tagRecBuf.getBufStart();
 		THIS->size_tagRecData = THIS->m_tagRecBuf.length();
@@ -6609,10 +6620,15 @@ static void gotCurrentTagRecWrapper(void *state) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// note it
 	THIS->setStatus ( "in got current tag rec wrapper" );
-	// set these
-	if ( ! g_errno ) {
+
+	if (g_errno) {
+		log(LOG_WARN, "gotCurrentTagRecWrapper: url=%s error='%s'", THIS->m_firstUrl.getUrl(), mstrerror(g_errno));
+		THIS->m_indexCode = g_errno;
+		THIS->m_indexCodeValid = true;
+	} else {
 		THIS->m_currentTagRecValid = true;
 	}
+
 	// continue
 	THIS->m_masterLoop ( THIS->m_masterState );
 }
@@ -14156,18 +14172,6 @@ SpiderReply *XmlDoc::getFakeSpiderReply ( ) {
 		m_isPermalinkValid = true;
 	}
 
-	//if ( ! m_sreqValid ) {
-	// 	m_sreqValid = true;
-	// 	m_sreq.m_parentDocId = 0LL;
-	// }
-
-
-	// if error is EFAKEFIRSTIP, do not core
-	//if ( ! m_isIndexedValid ) {
-	//	m_isIndexed = false;
-	//	m_isIndexedValid = true;
-	//}
-
 	// if this is EABANDONED or ECORRUPTDATA (corrupt gzip reply)
 	// then this should not block. we need a spiderReply to release the
 	// url spider lock in SpiderLoop::m_lockTable.
@@ -14476,6 +14480,9 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 
 	int32_t *sni = getSiteNumInlinks();
 	if ( ! sni || sni == (int32_t *)-1 ) return (SpiderReply *)sni;
+
+	int8_t *hc = getHopCount();
+	if ( ! hc || hc == (int8_t*)-1 ) return (SpiderReply *)hc;
 
 	float *pc = getPercentChanged();
 	if ( ! pc || pc == (void *)-1 ) return (SpiderReply *)pc;

@@ -67,6 +67,8 @@ class Conf {
 
 	// max amount of memory we can use
 	size_t m_maxMem;
+	bool m_mlockAllCurrent;
+	bool m_mlockAllFuture;
 
 	// if this is false, we do not save, used by dump routines
 	// in main.cpp so they can change parms here and not worry about

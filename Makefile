@@ -27,7 +27,6 @@ OBJS_O0 =  \
 	Parms.o Pages.o PageAddColl.o PageAddUrl.o PageBasic.o PageCrawlBot.o PageGet.o PageHealthCheck.o PageHosts.o PageInject.o \
 	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageLinkdbLookup.o PageSpiderdbLookup.o PageSpider.o PageDoledbIPTable.o PageDocProcess.o \
 	Phrases.o HostFlags.o Process.o Proxy.o Punycode.o \
-	InstanceInfoExchange.o \
 	Query.o \
 	RdbCache.o RdbDump.o RdbMem.o RdbMerge.o RdbScan.o RdbTree.o \
 	Rebalance.o Repair.o RobotRule.o Robots.o \
@@ -82,6 +81,7 @@ OBJS_O3 = \
 	GbThreadQueue.o \
 	GbEncoding.o GbLanguage.o \
 	GbDns.o \
+	InstanceInfoExchange.o \
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 

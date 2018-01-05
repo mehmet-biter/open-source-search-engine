@@ -210,7 +210,7 @@ bool Query::set2 ( const char *query        ,
 		}
 
 		if(query[i] == '[') {
-			// translate [#w] [#p] [#s] [w] [p] [s] to operators
+			// translate [#w] [#p] [#s] [w] [p] [s] [nrw] to operators
 			char *endptr=NULL;
 			double val;
 			if(is_digit(query[i+1]))
@@ -241,6 +241,11 @@ bool Query::set2 ( const char *query        ,
 			} else if(query[i+1] == 's' && query[i+2]==']') {
 				m_filteredQuery.safePrintf(" LeFtB s RiGhB ");
 				i = i + 2;
+				continue;
+			} else if( i+4 < queryLen && query[i+1] == 'n' && query[i+2] == 'r' && query[i+3] == 'w' && query[i+4]==']') {
+				// user specified [nrw] before word, meaning treat it as not required
+				m_filteredQuery.safePrintf(" LeFtB nrw RiGhB ");
+				i = i + 4;
 				continue;
 			}
 		}
@@ -573,7 +578,8 @@ bool Query::setQTerms ( const Words &words ) {
 		// assign score weight, we're a phrase here
 		qt->m_termWeight = m_bigramWeight;
 		qt->m_userWeight = qw->m_userWeightForPhrase ;
-		qt->m_fieldCode  = qw->m_fieldCode  ;
+		qt->m_fieldCode  = qw->m_fieldCode;
+
 		// stuff before a pipe always has a weight of 1
 		if ( qt->m_piped ) {
 			qt->m_userWeight = 1;
@@ -696,7 +702,9 @@ bool Query::setQTerms ( const Words &words ) {
 		// assign score weight, we're a single-term here
 		qt->m_termWeight = 1.0;
 		qt->m_userWeight = qw->m_userWeightForWord;
-		qt->m_fieldCode  = qw->m_fieldCode  ;
+		qt->m_fieldCode  = qw->m_fieldCode;
+		qt->m_userNotRequired = qw->m_userNotRequiredForWord;
+
 		// stuff before a pipe always has a weight of 1
 		if ( qt->m_piped ) {
 			qt->m_userWeight = 1;
@@ -915,7 +923,8 @@ bool Query::setQTerms ( const Words &words ) {
 				// assign score weight, we're a synonym here
 				qt->m_termWeight = m_synonymWeight;
 				qt->m_userWeight = qw->m_userWeightForSynonym;
-				qt->m_fieldCode  = qw->m_fieldCode  ;
+				qt->m_fieldCode  = qw->m_fieldCode;
+
 				// stuff before a pipe always has a weight of 1
 				if ( qt->m_piped ) {
 					qt->m_userWeight = 1;
@@ -1074,6 +1083,10 @@ bool Query::setQTerms ( const Words &words ) {
 		if ( qt->m_synonymOf ) continue;
 		// IGNORE_QSTOP?
 		if ( qt->m_ignored ) continue;
+
+		// user specified "[nrw]" before word
+		if( qt->m_userNotRequired) continue;
+
 		// mark it
 		qt->m_isRequired = true;
 	}
@@ -1341,6 +1354,7 @@ bool Query::setQWords ( char boolFlag ,
 	float userWeightForWord   = 1;
 	float userWeightForPhrase = 1;
 	float userWeightForSynonym = 1;
+	bool userNotRequiredForWord = false;
 	int32_t ignorei          = -1;
 
 	// assume we contain no pipe operator
@@ -1430,6 +1444,9 @@ bool Query::setQWords ( char boolFlag ,
 				} else if(s[0] == 's') {
 					// phrase weight reset
 					userWeightForSynonym = 1;
+				} else if(s[0] == 'n' && s[1] == 'r' && s[2] == 'w') {
+					// set word as not required
+					userNotRequiredForWord = true;
 				}
 				ignorei = i + 4;
 			} else {
@@ -1452,10 +1469,14 @@ bool Query::setQWords ( char boolFlag ,
 		}
 					
 		// assign score weight, if any for this guy
-		qw->m_userWeightForWord       = userWeightForWord;
+		qw->m_userWeightForWord = userWeightForWord;
 		qw->m_userWeightForPhrase = userWeightForPhrase;
 		qw->m_userWeightForSynonym = userWeightForSynonym;
+		// Set required state based on user input
+		qw->m_userNotRequiredForWord = userNotRequiredForWord;
 		qw->m_queryOp          = false;
+
+
 		// does word #i have a space in it? that will cancel fieldCode
 		// if we were in a field
 		bool endField = false;
@@ -1916,6 +1937,9 @@ bool Query::setQWords ( char boolFlag ,
 			log(LOG_DEBUG, "query: term='%.*s' with termId %lu is a highfreq term. Marking it for ignoring", wlen, w, termId);
 			qw->m_ignoreWord = IGNORE_HIGHFREMTERM;
 		}
+
+		// reset for next word
+		userNotRequiredForWord = false;
 	}
 
 	//If there's only one alphanumerical word and it was ignored due to high-freq-term then the query is treated as 0 terms and will return an empty
@@ -2916,6 +2940,33 @@ field_code_t getFieldCode(const char *s, int32_t len) {
 	return g_fields[i-1].field;
 }
 
+const char *getFieldCodeName(field_code_t fc) {
+	switch(fc) {
+		case FIELD_UNSET: return "unset";
+		case FIELD_URL: return "url";
+		case FIELD_LINK: return "link";
+		case FIELD_SITE: return "site";
+		case FIELD_IP: return "ip";
+		case FIELD_SUBURL: return "suburl";
+		case FIELD_TITLE: return "title";
+		case FIELD_TYPE: return "type";
+		case FIELD_EXT: return "ext";
+		case FIELD_LINKS: return "links";
+		case FIELD_SITELINK: return "sitelink";
+		case FIELD_GENERIC: return "generic";
+		case FIELD_GBLANG: return "gblang";
+		case FIELD_GBCOUNTRY: return "gbcountry";
+		case FIELD_GBTERMID: return "gbtermid";
+		case FIELD_GBDOCID: return "gbdocid";
+		case FIELD_GBCONTENTHASH: return "gbcontenthash";
+		case FIELD_GBSORTBYINT: return "gbsortbyint";
+		case FIELD_GBREVSORTBYINT: return "gbrevsortbyint";
+		case FIELD_GBFIELDMATCH: return "gbfieldmatch";
+		default: return NULL;
+	}
+}
+
+
 // guaranteed to be punctuation
 bool Query::isConnection(const char *s, int32_t len) const {
 	if ( len == 1 ) {
@@ -3223,6 +3274,7 @@ void QueryTerm::constructor ( ) {
 	m_inQuotes = false;
 	m_termWeight = 0;
 	m_userWeight = 0;
+	m_userNotRequired = false;
 	m_piped = false;
 	m_ignored = false;
 	m_synonymOf = NULL;

@@ -445,11 +445,15 @@ bool Msg5::readList ( ) {
 		//   and smaller than that when a file is large
 		// . but just to be save reading an extra 2% won't hurt too much
 		if ( base->useHalfKeys() ) {
-			int32_t numSources = m_numFiles;
-			if ( numSources == -1 )
-				numSources = base->getNumFiles();
+			m_numSources = m_numFiles;
+			if (m_numSources == -1) {
+				m_numSources = base->getNumFiles();
+			}
 			// if tree is empty, don't count it
-			if ( m_includeTree && ! m_treeList.isEmpty() ) numSources++;
+			if (m_includeTree && !m_treeList.isEmpty()) {
+				m_numSources++;
+			}
+
 			// . if we don't do a merge then we return the list directly
 			//   (see condition where m_numListPtrs == 1 below)
 			//   from Msg3 (or tree) and we must hit minRecSizes as
@@ -459,7 +463,7 @@ bool Msg5::readList ( ) {
 			//   the single list we get back from Msg3 will not have
 			//   been constrained with m_minRecSizes, but constrained
 			//   with m_newMinRecSizes (x2%) and be too big for our UdpSlot
-			if ( numSources >= 2 ) {
+			if ( m_numSources >= 2 ) {
 				int64_t newmin = (int64_t)m_newMinRecSizes ;
 				newmin = (newmin * 50LL) / 49LL ;
 				// watch out for wrap around
@@ -1145,7 +1149,8 @@ void Msg5::mergeLists() {
 	//   one of them was PROBABLY in the dump queue and we decided in
 	//   Rdb::addRecord() NOT to do the annihilation, therefore it's good
 	//   to do the merge to do the annihilation
-	m_list->merge_r(m_listPtrs, m_numListPtrs, m_startKey, m_minEndKey, m_minRecSizes, m_removeNegRecs, m_rdbId, m_collnum, m_startFileNum, m_isRealMerge);
+	m_list->merge_r(m_listPtrs, m_numListPtrs, m_startKey, m_minEndKey, m_minRecSizes, m_removeNegRecs, m_rdbId, m_collnum,
+	                m_numSources, m_startFileNum, m_isRealMerge);
 
 	// maintain this info for truncation purposes
 	if ( m_list->isLastKeyValid() ) 

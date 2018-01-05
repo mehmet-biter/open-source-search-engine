@@ -77,7 +77,7 @@
 #define HASHGROUP_HEADING              2 // body implied
 #define HASHGROUP_INLIST               3 // body implied
 #define HASHGROUP_INMETATAG            4
-#define HASHGROUP_INLINKTEXT           5
+#define HASHGROUP_INLINKTEXT           5 // apparently not detected anymore
 #define HASHGROUP_INTAG                6
 #define HASHGROUP_NEIGHBORHOOD         7
 #define HASHGROUP_INTERNALINLINKTEXT   8
