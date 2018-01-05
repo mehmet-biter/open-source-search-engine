@@ -3505,11 +3505,6 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 					// are all null now?
 					int32_t k; 
 					for ( k = 0 ; k < m_numQueryTermInfos ; k++ ) {
-						// skip if to the left of a pipe operator
-						if( m_bflags[k] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
-							continue;
-						}
-
 						if ( xpos[k] ) {
 							break;
 						}
