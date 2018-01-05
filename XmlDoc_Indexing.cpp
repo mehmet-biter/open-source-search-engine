@@ -1320,37 +1320,33 @@ bool XmlDoc::hashNeighborhoods ( HashTableX *tt ) {
 	//   space in the titleRec
 	// . now we only do one or the other, not both
 	LinkInfo  *linkInfo = getLinkInfo1();
+	if(!linkInfo)
+		return true;
 
 	// loop over all the Inlinks
-	Inlink *k = NULL;
- loop:
-	// get the next inlink
-	k = linkInfo ? linkInfo->getNextInlink( k ) : NULL;
-	// break if done
-	if ( ! k ) return true;
+	for(Inlink *k = linkInfo->getNextInlink(NULL); k; k = linkInfo->getNextInlink(k)) {
+		// skip if internal, they often have the same neighborhood text
+		if((k->m_ip&0x0000ffff)==(m_ip&0x0000ffff))
+			continue;
 
-	// skip if internal, they often have the same neighborhood text
-	if ( (k->m_ip&0x0000ffff)==(m_ip&0x0000ffff) ) goto loop;
+		// get the left and right texts and hash both
+		char *s = k->getSurroundingText();
+		if(!s || k->size_surroundingText <= 1)
+			continue;
 
-	// get the left and right texts and hash both
-	char *s = k->getSurroundingText();
-	if ( ! s || k->size_surroundingText <= 1 ) goto loop;
+		// update hash parms
+		HashInfo hi;
+		hi.m_tt        = tt;
+		hi.m_desc      = "surrounding text";
+		hi.m_hashGroup = HASHGROUP_NEIGHBORHOOD;
 
-	//int32_t inlinks = *getSiteNumInlinks();
-
-	// update hash parms
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_desc      = "surrounding text";
-	hi.m_hashGroup = HASHGROUP_NEIGHBORHOOD;
-
-	// . hash that
-	// . this returns false and sets g_errno on error
-	int32_t len = k->size_surroundingText - 1;
-	if ( ! hashString ( s, len, &hi ) ) return false;
-
-	// get the next Inlink
-	goto loop;
+		// . hash that
+		// . this returns false and sets g_errno on error
+		int32_t len = k->size_surroundingText - 1;
+		if(!hashString(s, len, &hi))
+			return false;
+	}
+	return true;
 }
 
 // . we now do the title hashing here for newer titlerecs, version 80+, rather
