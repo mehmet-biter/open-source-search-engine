@@ -123,6 +123,7 @@ private:
 	bool      m_includeTree;
 
 	int32_t      m_numFiles;
+	int32_t      m_numSources;
 	int32_t      m_startFileNum;
 	int32_t      m_minRecSizes;
 	rdbid_t      m_rdbId;
