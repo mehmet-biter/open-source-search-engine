@@ -875,16 +875,27 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	bool  fixedDistance;
 	int32_t  bro;
 
+#define advance(first,wp,end,helper) \
+	if(!first) \
+		wp += 6; \
+	else { \
+		wp += 12; \
+		first = false; \
+	} \
+	if(wp >= end) \
+		break; \
+	helper.set(wp, m_derivedScoringWeights);
+
 	for(;;) {
 		// . if p1/p2 is in body and not in window, skip
 		// . this is how we restrict all body terms to the winning
 		//   sliding window
 		if ( s_inBody[helper1.hg] && wpi != bestMinTermPairWindowPtrs[i] ) {
-			goto skip1;
+			advance(firsti,wpi,endi,helper1);
 		}
 		
 		if ( s_inBody[helper2.hg] && wpj != bestMinTermPairWindowPtrs[j] ) {
-			goto skip2;
+			advance(firstj,wpj,endj,helper2);
 		}
 
 		// make this strictly < now and not <= because in the event
@@ -893,24 +904,19 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		// to fix the 'search engine' query on gigablast.com
 		if ( helper1.p <= helper2.p ) {
 			// git distance
-			int32_t dist;
-			dist = helper2.p - helper1.p;
+			int32_t dist = helper2.p - helper1.p;
 
 			// if in the same quoted phrase, order is bad!
 			if ( inSameQuotedPhrase ) {
-				// debug
-				//log("dddx: i=%" PRId32" j=%" PRId32" dist=%" PRId32" qdist=%" PRId32" posi=%" PRId32" "
-				//    "posj=%" PRId32,
-				//    i,j,dist,qdist,helper1.p,helper2.p);
 				// TODO: allow for off by 1
 				// if it has punct in it then dist will be 3, 
 				// just a space or similar then dist should be 2.
 				if ( dist > qdist && dist - qdist >= 2 ) {
-					goto skip1;
+					advance(firsti,wpi,endi,helper1);
 				}
 				
 				if ( dist < qdist && qdist - dist >= 2 ) {
-					goto skip1;
+					advance(firsti,wpi,endi,helper1);
 				}
 			}
 
@@ -918,9 +924,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			// is used by both terms. i.e. street uses the bigram 
 			// 'street light' and so does 'light'. so the wordpositions
 			// are exactly the same!
-			if ( dist < 2 ) {
-				dist = 2;
-			}
+			dist = gbmax(dist,2);
 			// fix distance if in different non-body hashgroups
 			if ( dist < 50 ) {
 				fixedDistance = false;
@@ -939,9 +943,6 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 				fixedDistance = false;
 			}
 			
-			// if both are link text and > 50 units apart that means
-			// they are from different link texts
-			//if ( helper1.hg == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip1;
 			// subtract from the dist the terms are apart in the query
 			if ( dist >= qdist ) {
 				dist =  dist - qdist;
@@ -1046,44 +1047,22 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 				}
 			}
 
-			
-		skip1:
-			// advance posdb pointer
-			if(!firsti)
-				wpi += 6;
-			else {
-				wpi += 12;
-				firsti = false;
-			}
-
-			// end of list?
-			if ( wpi >= endi ) {
-				break;	// exit for(;;) loop
-			}
-			
-			helper1.set(wpi, m_derivedScoringWeights);
+			advance(firsti,wpi,endi,helper1);
 		}
 		else {
 			// get distance
-			int32_t dist;
-			dist = helper1.p - helper2.p;
+			int32_t dist = helper1.p - helper2.p;
 
 			// if in the same quoted phrase, order is bad!
 			if ( inSameQuotedPhrase ) {
-				// debug
-				//log("dddy: i=%" PRId32" j=%" PRId32" dist=%" PRId32" qdist=%" PRId32" posi=%" PRId32" "
-				//    "posj=%" PRId32,
-				//    i,j,dist,qdist,helper1.p,p2);
-				goto skip2;
+				advance(firstj,wpj,endj,helper2);
 			}
 
 			// if zero, make sure its 2. this happens when the same bigram
 			// is used by both terms. i.e. street uses the bigram 
 			// 'street light' and so does 'light'. so the wordpositions
 			// are exactly the same!
-			if ( dist < 2 ) {
-				dist = 2;
-			}
+			dist = gbmax(dist,2);
 			
 			// fix distance if in different non-body hashgroups
 			if ( dist < 50 ) {
@@ -1101,9 +1080,6 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			}
 			else
 				fixedDistance = false;
-			// if both are link text and > 50 units apart that means
-			// they are from different link texts
-			//if ( helper1.hg == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip2;
 			// subtract from the dist the terms are apart in the query
 			if ( dist >= qdist ) {
 				dist =  dist - qdist;
@@ -1203,22 +1179,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 					lowestScoreTermIdx = k;
 				}
 			}
-
-		skip2:
-			// advance posdb pointer
-			if(!firstj)
-				wpj += 6;
-			else {
-				wpj += 12;
-				firstj = false;
-			}
-
-			// end of list?
-			if ( wpj >= endj ) {
-				break;	// exit for(;;) loop
-			}
-			
-			helper2.set(wpj, m_derivedScoringWeights);
+			advance(firstj,wpj,endj,helper2);
 		}
 	} // for(;;)
 
