@@ -3,7 +3,7 @@
 
 TEST(FxCacheTest, InsertLookup) {
 	FxCache<int64_t, std::string> cache;
-	cache.configure(60000, 10, false, "test");
+	cache.configure(60000, 10, 1000000, true, "test");
 
 	int64_t key = 1;
 	cache.insert(key, std::to_string(key));
@@ -15,7 +15,7 @@ TEST(FxCacheTest, InsertLookup) {
 
 TEST(FxCacheTest, InsertLookupExpired) {
 	FxCache<int64_t, std::string> cache;
-	cache.configure(1000, 10, false, "test");
+	cache.configure(1000, 10, 1000000, true, "test");
 
 	int64_t key = 1;
 	cache.insert(key, std::to_string(key));
@@ -27,7 +27,7 @@ TEST(FxCacheTest, InsertLookupExpired) {
 
 TEST(FxCacheTest, InsertLookupMaxed) {
 	FxCache<int64_t, std::string> cache;
-	cache.configure(60000, 5, false, "test");
+	cache.configure(60000, 5, 1000000, true, "test");
 
 	for (int64_t key = 1; key <= 10; ++key) {
 		cache.insert(key, std::to_string(key));
