@@ -38,22 +38,12 @@ public:
 		: m_mtx()
 		, m_queue()
 		, m_map()
+		, m_total_size(0)
 		, m_max_age(300000) // 5 minutes
 		, m_max_item(10000)
 		, m_max_size(20000000) // 20 Mb
 		, m_log_trace(false)
 		, m_log_cache_name("cache") {
-	}
-
-	FxCache(int64_t max_age, size_t max_item, int64_t max_size, bool log_trace, const char *log_cache_name)
-		: m_mtx()
-		, m_queue()
-		, m_map()
-		, m_max_age(max_age)
-		, m_max_item(max_item)
-		, m_max_size(max_size)
-		, m_log_trace(log_trace)
-		, m_log_cache_name(log_cache_name) {
 	}
 
 	~FxCache() {
@@ -90,11 +80,11 @@ public:
 
 		purge_step();
 
-		if (m_log_trace) {
-			logTrace(m_log_trace, "inserting key='%s' to %s", getKeyStr(key).c_str(), m_log_cache_name);
-		}
-
 		CacheItem item(data);
+
+		if (m_log_trace) {
+			logTrace(m_log_trace, "inserting key='%s' size=%zu to %s", getKeyStr(key).c_str(), item.m_dataSize, m_log_cache_name);
+		}
 
 		auto map_it = m_map.find(key);
 		if (map_it == m_map.end()) {
@@ -126,10 +116,15 @@ public:
 		purge_step();
 
 		auto map_it = m_map.find(key);
-		if (map_it != m_map.end() && !expired(map_it->second)) {
-			logTrace(m_log_trace, "found key='%s' in %s", getKeyStr(key).c_str(), m_log_cache_name);
-			*data = map_it->second.m_data;
-			return true;
+		if (map_it != m_map.end()) {
+			if (expired(map_it->second)) {
+				logTrace(m_log_trace, "expired key='%s' in %s", getKeyStr(key).c_str(), m_log_cache_name);
+				return false;
+			} else {
+				logTrace(m_log_trace, "found key='%s' in %s", getKeyStr(key).c_str(), m_log_cache_name);
+				*data = map_it->second.m_data;
+				return true;
+			}
 		} else {
 			logTrace(m_log_trace, "unable to find key='%s' in %s", getKeyStr(key).c_str(), m_log_cache_name);
 			return false;
@@ -146,7 +141,7 @@ public:
 
 		auto map_it = m_map.find(key);
 		if (map_it != m_map.end() && !expired(map_it->second)) {
-			logTrace(m_log_trace, "found key='%s' in %s", getKeyStr(key).c_str(), m_log_cache_name);
+			logTrace(m_log_trace, "removing key='%s' in %s", getKeyStr(key).c_str(), m_log_cache_name);
 			m_total_size -= map_it->second.m_dataSize;
 			m_map.erase(map_it);
 
@@ -209,6 +204,7 @@ private:
 		assert(iter != m_map.end());
 
 		if (forced || expired(iter->second)) {
+			logTrace(m_log_trace, "removing key='%s' in %s", getKeyStr(iter->first).c_str(), m_log_cache_name);
 			m_total_size -= iter->second.m_dataSize;
 			m_map.erase(iter);
 			m_queue.pop_front();
