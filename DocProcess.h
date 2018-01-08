@@ -29,27 +29,30 @@ class XmlDoc;
 class DocProcess;
 
 struct DocProcessDocItem {
-	DocProcessDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos);
+	DocProcessDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos);
 	virtual ~DocProcessDocItem();
 
 	DocProcess *m_docProcess;
 	std::string m_key;
+	uint32_t m_firstIp;
 	int64_t m_lastPos;
 	XmlDoc *m_xmlDoc;
 };
 
 class DocProcess {
 public:
-	DocProcess(const char *filename, bool isUrl);
+	DocProcess(const char *filename, bool isUrl, bool hasFirstIp);
 
 	bool init();
 	void finalize();
 
-	virtual DocProcessDocItem* createDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos);
+	virtual DocProcessDocItem* createDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos);
 	virtual void updateXmldoc(XmlDoc *xmlDoc) = 0;
 	virtual void processDocItem(DocProcessDocItem *docItem) = 0;
 
-	bool addKey(const std::string &key, int64_t currentFilePos = -1);
+	bool hasPendingFirstIp(uint32_t firstIp);
+
+	bool addKey(const std::string &key, uint32_t firstIp, int64_t currentFilePos = -1);
 
 	static void reload(int /*fd*/, void */*state*/);
 
@@ -57,6 +60,7 @@ public:
 	static void processDoc(void *item);
 	static void processedDoc(void *state);
 
+	size_t getPendingDocCount();
 	void waitPendingDocCount(unsigned maxCount);
 
 protected:
@@ -78,6 +82,8 @@ private:
 	pthread_cond_t m_pendingDocItemsCond;
 
 	std::atomic<bool> m_stop;
+
+	bool m_hasFirstIp;
 };
 
 #endif //FX_DOCPROCESS_H

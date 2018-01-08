@@ -17,6 +17,8 @@
 // License TL;DR: If you change this file, you must publish your changes.
 //
 
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "TcpSocket.h"
 #include "HttpRequest.h"
 #include "HttpServer.h"
@@ -61,6 +63,19 @@ bool sendPageDocProcess(TcpSocket *s, HttpRequest *r) {
 	const char *key = r->getString("key", &keyLen);
 	std::string keyStr(key, keyLen);
 
+	uint32_t firstIp = 0;
+	int32_t firstIpLen = 0;
+	const char *firstIpInput = r->getString("firstip", &firstIpLen);
+	if (firstIpLen > 0) {
+		std::string firstIpStr(firstIpInput, firstIpLen);
+
+		in_addr addr;
+
+		if (inet_pton(AF_INET, firstIpStr.c_str(), &addr) == 1) {
+			firstIp = addr.s_addr;
+		}
+	}
+
 	int32_t typeLen = 0;
 	const char *type = r->getString("type", &typeLen);
 
@@ -102,7 +117,7 @@ bool sendPageDocProcess(TcpSocket *s, HttpRequest *r) {
 	}
 
 	if (docProcess) {
-		docProcess->addKey(keyStr);
+		docProcess->addKey(keyStr, firstIp);
 
 		PageDocProcessState *state = new PageDocProcessState(s, r, docProcess);
 		if (!g_jobScheduler.submit(waitPendingDocCountWrapper, doneWaitPendingDocCountWrapper, state, thread_type_page_process, 0)) {

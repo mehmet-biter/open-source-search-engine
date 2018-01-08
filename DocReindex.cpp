@@ -27,8 +27,8 @@ DocReindex g_docReindex("docreindex.txt", false);
 DocReindex g_docReindexUrl("docreindexurl.txt", true);
 
 struct DocReindexDocItem : public DocProcessDocItem {
-	DocReindexDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos)
-		: DocProcessDocItem(docProcess, key, lastPos)
+	DocReindexDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos)
+		: DocProcessDocItem(docProcess, key, firstIp, lastPos)
 		, m_msg0()
 		, m_spiderdbList()
 		, m_spiderdbListRequested(false)
@@ -42,11 +42,11 @@ struct DocReindexDocItem : public DocProcessDocItem {
 };
 
 DocReindex::DocReindex(const char *filename, bool isUrl)
-	: DocProcess(filename, isUrl) {
+	: DocProcess(filename, isUrl, !isUrl) {
 }
 
-DocProcessDocItem* DocReindex::createDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos) {
-	return new DocReindexDocItem(docProcess, key, lastPos);
+DocProcessDocItem* DocReindex::createDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos) {
+	return new DocReindexDocItem(docProcess, key, firstIp, lastPos);
 }
 
 void DocReindex::updateXmldoc(XmlDoc *xmlDoc) {

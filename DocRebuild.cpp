@@ -26,8 +26,8 @@ DocRebuild g_docRebuild("docrebuild.txt", false);
 DocRebuild g_docRebuildUrl("docrebuildurl.txt", true);
 
 struct DocRebuildDocItem : public DocProcessDocItem {
-	DocRebuildDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos)
-		: DocProcessDocItem(docProcess, key, lastPos)
+	DocRebuildDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos)
+		: DocProcessDocItem(docProcess, key, firstIp, lastPos)
 		, m_msg0()
 		, m_spiderdbList()
 		, m_spiderdbListRequested(false)
@@ -43,11 +43,11 @@ struct DocRebuildDocItem : public DocProcessDocItem {
 };
 
 DocRebuild::DocRebuild(const char *filename, bool isUrl)
-	: DocProcess(filename, isUrl) {
+	: DocProcess(filename, isUrl, false) {
 }
 
-DocProcessDocItem* DocRebuild::createDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos) {
-	return new DocRebuildDocItem(docProcess, key, lastPos);
+DocProcessDocItem* DocRebuild::createDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos) {
+	return new DocRebuildDocItem(docProcess, key, firstIp, lastPos);
 }
 
 void DocRebuild::updateXmldoc(XmlDoc *xmlDoc) {
