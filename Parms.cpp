@@ -6006,6 +6006,28 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "Delay between each item for DocProcess";
+	m->m_desc  = "How long to wait between processing each item to avoid hammering hosts";
+	m->m_cgi   = "docprocessdelayms";
+	simple_m_set(Conf,m_docProcessDelayMs);
+	m->m_def   = "1000";
+	m->m_units = "ms";
+	m->m_group = false;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
+	m->m_title = "Max pending doc allowed for DocProcess";
+	m->m_desc  = "How many concurrent processes we allow for DocProcess";
+	m->m_cgi   = "docprocessmaxpending";
+	simple_m_set(Conf,m_docProcessMaxPending);
+	m->m_def   = "10";
+	m->m_units = "";
+	m->m_group = false;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
 	m->m_title = "weights.cpp slider parm (tmp)";
 	m->m_desc  = "Percent of how much to use words to phrase ratio weights.";
 	m->m_cgi   = "wsp";

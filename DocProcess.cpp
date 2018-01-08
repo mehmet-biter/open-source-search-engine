@@ -276,6 +276,7 @@ void DocProcess::processFile(void *item) {
 
 	int64_t currentFilePos = file.tellg();
 	std::string line;
+	int64_t lastAddTimeMs = 0;
 	while (std::getline(file, line)) {
 		// ignore empty lines
 		if (line.length() == 0) {
@@ -286,7 +287,8 @@ void DocProcess::processFile(void *item) {
 
 		if (foundLastPos) {
 			if (fileItem->m_docProcess->addKey(key, currentFilePos)) {
-				fileItem->m_docProcess->waitPendingDocCount(10);
+				lastAddTimeMs = gettimeofdayInMilliseconds();
+				fileItem->m_docProcess->waitPendingDocCount(g_conf.m_docProcessMaxPending);
 			}
 		} else if (lastPosKey.compare(key) == 0) {
 			foundLastPos = true;
@@ -299,6 +301,14 @@ void DocProcess::processFile(void *item) {
 		}
 
 		currentFilePos = file.tellg();
+
+		// add delay if needed
+		if (lastAddTimeMs != 0) {
+			int64_t currentDelayMs = gettimeofdayInMilliseconds() - lastAddTimeMs;
+			if (currentDelayMs < g_conf.m_docProcessDelayMs) {
+				usleep((g_conf.m_docProcessDelayMs - currentDelayMs) * 1000);
+			}
+		}
 	}
 
 	fileItem->m_docProcess->waitPendingDocCount(0);

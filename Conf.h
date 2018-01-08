@@ -252,6 +252,9 @@ class Conf {
 
 	bool m_msg20FallbackToAllHosts;
 
+	int64_t m_docProcessDelayMs;
+	int64_t m_docProcessMaxPending;
+
 	// log unfreed memory on exit
 	bool   m_detectMemLeaks;
 
