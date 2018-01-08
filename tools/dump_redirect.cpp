@@ -10,6 +10,7 @@
 #include "UrlBlockCheck.h"
 #include "UrlMatchList.h"
 #include "WantedChecker.h"
+#include "ip.h"
 #include <libgen.h>
 #include <algorithm>
 
@@ -135,9 +136,17 @@ int main(int argc, char **argv) {
 			// extract the url
 			Url **redirUrlPtr = xmlDoc.getRedirUrl();
 			if (redirUrlPtr && *redirUrlPtr) {
-				Url *url = xmlDoc.getFirstUrl();	
+				Url *url = xmlDoc.getFirstUrl();
 				Url *redirUrl = *redirUrlPtr;
-				fprintf(stdout, "%" PRId64"|redirected|%s|%s\n", docId, url->getUrl(), redirUrl->getUrl());
+
+				int32_t *firstIp = xmlDoc.getFirstIp();
+				if (!firstIp || firstIp == (int32_t *)-1) {
+					logf(LOG_TRACE, "Blocked firstIp for docId=%" PRId64, docId);
+					continue;
+				}
+
+				char ipbuf[16];
+				fprintf(stdout, "%" PRId64"|%s|redirected|%s|%s\n", docId, iptoa(*firstIp, ipbuf), url->getUrl(), redirUrl->getUrl());
 			}
 		}
 
