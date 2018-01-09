@@ -1213,13 +1213,13 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	// end the loop. return now if not collecting scoring info.
 	//
 	if ( ! pdcs ) {
-		logTrace(g_conf.m_logTracePosdb, "END.");
+		logTrace(g_conf.m_logTracePosdb, "END. sum=%.3f", sum);
 		return sum;
 	}
 	
 	// none? wtf?
 	if ( numTop <= 0 ) {
-		logTrace(g_conf.m_logTracePosdb, "END.");
+		logTrace(g_conf.m_logTracePosdb, "END. sum=%.3f", sum);
 		return sum;
 	}
 
@@ -3325,9 +3325,19 @@ static const char *findFirstBodyPosdbEntry(const char *listStart, const char *li
 		if(*p & 0x04)
 			p += 6;
 		else
-			p += 12; //not really expected
+			p += 12;
 	}
 	return NULL;
+}
+
+// Find next entry that is a body entry (determined by 's_inBody' array).
+// Returns NULL if none found
+static const char *findNextBodyPosdbEntry(const char *p, const char *listEnd) {
+	if(*p & 0x04)
+		p += 6;
+	else
+		p += 12;
+	return findFirstBodyPosdbEntry(p,listEnd);
 }
 
 
@@ -3367,7 +3377,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 	// init each list ptr to the first wordpos rec in the body
 	// for THIS DOCID and if no such rec, make it NULL
 	//
-	bool allNull = true;
+	int numNonNullLists = 0;
 	for(int i = 0; i < m_numQueryTermInfos; i++) {
 		if(m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
 			// not a ranking term
@@ -3378,7 +3388,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 		} else {
 			xpos[i] = findFirstBodyPosdbEntry(miniMergeBuffer->mergedListStart[i], miniMergeBuffer->mergedListEnd[i]);
 			if(xpos[i]) {
-				allNull = false; //ok, found one entry in body
+				numNonNullLists++;
 			} else if(!highestScoringNonBodyPos[i]) {
 				// not in nody, not in title?
 				gbshutdownLogicError();
@@ -3387,14 +3397,13 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 	}
 
 
-	// if no terms in body, no need to do sliding window
-	bool doneSliding = allNull ? true : false;
-
-	logTrace(g_conf.m_logTracePosdb, "Run sliding window algo? %s", !doneSliding?"yes":"no, no matches found in body");
+	logTrace(g_conf.m_logTracePosdb, "Run sliding window algo? %s", numNonNullLists>0 ? "yes" : "no, no matches found in body");
 
 	float bestMinTermPairWindowScore = -2.0;
 
-	while( !doneSliding ) {
+	//todo: does it make any sense to iterate after one list has been exhausted? findMinTermPairScoreInWindow() is not going to find
+	//any lower pair-score because it skips the now-null list.
+	while(numNonNullLists>0) {
 		//
 		// Now all xpos point to positions in the document body. Calc the "window" score (score
 		// for current term positions).
@@ -3414,7 +3423,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 
 		bool advanceMin = true;
 
-		while(advanceMin && !doneSliding) {
+		while(advanceMin && numNonNullLists>0) {
 			advanceMin = false;
 			
 			//
@@ -3424,72 +3433,24 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 			int32_t minPosTermIdx = -1;
 			int32_t minPos = 0;
 			for ( int32_t x = 0 ; x < m_numQueryTermInfos ; x++ ) {
-				if ( ! xpos[x] ) {
-					continue;
-				}
-
-				if ( minPosTermIdx == -1 ) {
+				if(xpos[x]!=NULL && (minPosTermIdx == -1 || Posdb::getWordPos(xpos[x]) < minPos)) {
 					minPosTermIdx = x;
-					//minRec = xpos[x];
 					minPos = Posdb::getWordPos(xpos[x]);
-					continue;
 				}
-
-				if ( Posdb::getWordPos(xpos[x]) >= minPos ) {
-					continue;
-				}
-
-				minPosTermIdx = x;
-				//minRec = xpos[x];
-				minPos = Posdb::getWordPos(xpos[x]);
 			}
-
 			// sanity
 			if ( minPosTermIdx < 0 ) {
-				gbshutdownAbort(true);
+				gbshutdownLogicError();
 			}
 
-		 	do { 
-		 		//
-		 		// Advance the list pointer of the list containing the current
-		 		// minimum position (minPosTermIdx). If no more positions, set list to NULL.
-		 		// If all lists are NULL, we are done sliding.
-		 		//
-				if ( ! (xpos[minPosTermIdx][0] & 0x04) ) {
-					xpos[minPosTermIdx] += 12;
-				}
-				else {
-					xpos[minPosTermIdx] +=  6;
-				}
-
-				// NULLify list if no more positions for this docid for that term.
-				if ( xpos[minPosTermIdx] >= miniMergeBuffer->mergedListEnd[minPosTermIdx] ) {
-					// exhausted list now
-					xpos[minPosTermIdx] = NULL;
-
-					// are all null now?
-					int32_t k; 
-					for ( k = 0 ; k < m_numQueryTermInfos ; k++ ) {
-						if ( xpos[k] ) {
-							break;
-						}
-					}
-
-					// all lists are now exhausted
-					if ( k >= m_numQueryTermInfos ) {
-						doneSliding = true;
-					}
-
-					// No more positions in current term list. Find new term list with lowest position.
-					advanceMin = true;
-				}
-				// if current term position is not in the document body, advance the pointer and look again.
-			} while( !advanceMin && !doneSliding && !s_inBody[Posdb::getHashGroup(xpos[minPosTermIdx])] );
-
-			// if current list is exhausted, find new term list with lowest position.
+			xpos[minPosTermIdx] = findNextBodyPosdbEntry(xpos[minPosTermIdx],miniMergeBuffer->mergedListEnd[minPosTermIdx]);
+			if(xpos[minPosTermIdx]==NULL) { //we exhausted the list
+				numNonNullLists--;
+				if(numNonNullLists>0)
+					advanceMin = true; //just advance the next list, if any
+			}
 		}
-
-	} // end of while( !doneSliding )
+	}
 
 
 	float minPairScore = -1.0;
