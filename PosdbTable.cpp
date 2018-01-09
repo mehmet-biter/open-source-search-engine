@@ -305,7 +305,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 		
 		bool first = true;
 		char bestmhg[MAX_TOP];
-		do {
+		while(wpi < endi) {
 			float score = 100.0;
 			PosdbDecodeHelper helper;
 			helper.set(wpi, m_derivedScoringWeights);
@@ -426,7 +426,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 				first = false;
 			}
 
-		} while( wpi < endi );
+		};
 	}
 
 	// add up the top scores
@@ -3412,9 +3412,9 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 		//
 		findMinTermPairScoreInWindow(miniMergeBuffer, xpos, &bestMinTermPairWindowPtrs, &bestMinTermPairWindowScore, highestScoringNonBodyPos, scoreMatrix);
 
-	 	bool advanceMin;
+		bool advanceMin = true;
 
-	 	do { 
+		while(advanceMin && !doneSliding) {
 			advanceMin = false;
 			
 			//
@@ -3487,7 +3487,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 			} while( !advanceMin && !doneSliding && !s_inBody[Posdb::getHashGroup(xpos[minPosTermIdx])] );
 
 			// if current list is exhausted, find new term list with lowest position.
-		} while( advanceMin && !doneSliding );
+		}
 
 	} // end of while( !doneSliding )
 
