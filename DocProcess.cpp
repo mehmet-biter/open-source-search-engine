@@ -306,6 +306,7 @@ void DocProcess::processFile(void *item) {
 		if (fileItem->m_docProcess->m_isUrl) {
 			key = line;
 
+			// we can't have first IP when it's a url
 			if (fileItem->m_docProcess->m_hasFirstIp) {
 				gbshutdownLogicError();
 			}
@@ -333,6 +334,7 @@ void DocProcess::processFile(void *item) {
 			if (fileItem->m_docProcess->m_hasFirstIp) {
 				// wait until docItem with the same firstIp is processed
 				while (fileItem->m_docProcess->hasPendingFirstIp(firstIp)) {
+					logTrace(g_conf.m_logTraceDocProcess, "Waiting for firstIp=%s in queue to be processed", firstIpStr.c_str());
 					fileItem->m_docProcess->waitPendingDocCount(fileItem->m_docProcess->getPendingDocCount() - 1);
 				}
 			}
