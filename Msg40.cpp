@@ -1202,7 +1202,14 @@ bool Msg40::gotSummary ( ) {
 	// . TODO: evaluate if this hurts us
 	if ( m_numReplies < m_numRequests )
 		return false;
+	
+	return gotSummaries();
+}
 
+
+//We got the replies we initially requested. Now set cluster levels, and filter on clustering, family filter,
+//error/show-errors, etc. After that, the summaries are ready for realtime-classification.
+bool Msg40::gotSummaries() {
 	int64_t startTime = gettimeofdayInMilliseconds();
 
 	// loop over each clusterLevel and set it
