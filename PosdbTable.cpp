@@ -305,7 +305,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 		
 		bool first = true;
 		char bestmhg[MAX_TOP];
-		do {
+		while(wpi < endi) {
 			float score = 100.0;
 			PosdbDecodeHelper helper;
 			helper.set(wpi, m_derivedScoringWeights);
@@ -426,7 +426,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(const MiniMergeBuffer *miniMergeB
 				first = false;
 			}
 
-		} while( wpi < endi );
+		};
 	}
 
 	// add up the top scores
@@ -875,16 +875,27 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	bool  fixedDistance;
 	int32_t  bro;
 
+#define advance(first,wp,end,helper) \
+	if(!first) \
+		wp += 6; \
+	else { \
+		wp += 12; \
+		first = false; \
+	} \
+	if(wp >= end) \
+		break; \
+	helper.set(wp, m_derivedScoringWeights);
+
 	for(;;) {
 		// . if p1/p2 is in body and not in window, skip
 		// . this is how we restrict all body terms to the winning
 		//   sliding window
 		if ( s_inBody[helper1.hg] && wpi != bestMinTermPairWindowPtrs[i] ) {
-			goto skip1;
+			advance(firsti,wpi,endi,helper1);
 		}
 		
 		if ( s_inBody[helper2.hg] && wpj != bestMinTermPairWindowPtrs[j] ) {
-			goto skip2;
+			advance(firstj,wpj,endj,helper2);
 		}
 
 		// make this strictly < now and not <= because in the event
@@ -893,24 +904,19 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 		// to fix the 'search engine' query on gigablast.com
 		if ( helper1.p <= helper2.p ) {
 			// git distance
-			int32_t dist;
-			dist = helper2.p - helper1.p;
+			int32_t dist = helper2.p - helper1.p;
 
 			// if in the same quoted phrase, order is bad!
 			if ( inSameQuotedPhrase ) {
-				// debug
-				//log("dddx: i=%" PRId32" j=%" PRId32" dist=%" PRId32" qdist=%" PRId32" posi=%" PRId32" "
-				//    "posj=%" PRId32,
-				//    i,j,dist,qdist,helper1.p,helper2.p);
 				// TODO: allow for off by 1
 				// if it has punct in it then dist will be 3, 
 				// just a space or similar then dist should be 2.
 				if ( dist > qdist && dist - qdist >= 2 ) {
-					goto skip1;
+					advance(firsti,wpi,endi,helper1);
 				}
 				
 				if ( dist < qdist && qdist - dist >= 2 ) {
-					goto skip1;
+					advance(firsti,wpi,endi,helper1);
 				}
 			}
 
@@ -918,9 +924,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			// is used by both terms. i.e. street uses the bigram 
 			// 'street light' and so does 'light'. so the wordpositions
 			// are exactly the same!
-			if ( dist < 2 ) {
-				dist = 2;
-			}
+			dist = gbmax(dist,2);
 			// fix distance if in different non-body hashgroups
 			if ( dist < 50 ) {
 				fixedDistance = false;
@@ -939,9 +943,6 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 				fixedDistance = false;
 			}
 			
-			// if both are link text and > 50 units apart that means
-			// they are from different link texts
-			//if ( helper1.hg == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip1;
 			// subtract from the dist the terms are apart in the query
 			if ( dist >= qdist ) {
 				dist =  dist - qdist;
@@ -1046,44 +1047,22 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 				}
 			}
 
-			
-		skip1:
-			// advance posdb pointer
-			if(!firsti)
-				wpi += 6;
-			else {
-				wpi += 12;
-				firsti = false;
-			}
-
-			// end of list?
-			if ( wpi >= endi ) {
-				break;	// exit for(;;) loop
-			}
-			
-			helper1.set(wpi, m_derivedScoringWeights);
+			advance(firsti,wpi,endi,helper1);
 		}
 		else {
 			// get distance
-			int32_t dist;
-			dist = helper1.p - helper2.p;
+			int32_t dist = helper1.p - helper2.p;
 
 			// if in the same quoted phrase, order is bad!
 			if ( inSameQuotedPhrase ) {
-				// debug
-				//log("dddy: i=%" PRId32" j=%" PRId32" dist=%" PRId32" qdist=%" PRId32" posi=%" PRId32" "
-				//    "posj=%" PRId32,
-				//    i,j,dist,qdist,helper1.p,p2);
-				goto skip2;
+				advance(firstj,wpj,endj,helper2);
 			}
 
 			// if zero, make sure its 2. this happens when the same bigram
 			// is used by both terms. i.e. street uses the bigram 
 			// 'street light' and so does 'light'. so the wordpositions
 			// are exactly the same!
-			if ( dist < 2 ) {
-				dist = 2;
-			}
+			dist = gbmax(dist,2);
 			
 			// fix distance if in different non-body hashgroups
 			if ( dist < 50 ) {
@@ -1101,9 +1080,6 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 			}
 			else
 				fixedDistance = false;
-			// if both are link text and > 50 units apart that means
-			// they are from different link texts
-			//if ( helper1.hg == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip2;
 			// subtract from the dist the terms are apart in the query
 			if ( dist >= qdist ) {
 				dist =  dist - qdist;
@@ -1203,22 +1179,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 					lowestScoreTermIdx = k;
 				}
 			}
-
-		skip2:
-			// advance posdb pointer
-			if(!firstj)
-				wpj += 6;
-			else {
-				wpj += 12;
-				firstj = false;
-			}
-
-			// end of list?
-			if ( wpj >= endj ) {
-				break;	// exit for(;;) loop
-			}
-			
-			helper2.set(wpj, m_derivedScoringWeights);
+			advance(firstj,wpj,endj,helper2);
 		}
 	} // for(;;)
 
@@ -1252,13 +1213,13 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 	// end the loop. return now if not collecting scoring info.
 	//
 	if ( ! pdcs ) {
-		logTrace(g_conf.m_logTracePosdb, "END.");
+		logTrace(g_conf.m_logTracePosdb, "END. sum=%.3f", sum);
 		return sum;
 	}
 	
 	// none? wtf?
 	if ( numTop <= 0 ) {
-		logTrace(g_conf.m_logTracePosdb, "END.");
+		logTrace(g_conf.m_logTracePosdb, "END. sum=%.3f", sum);
 		return sum;
 	}
 
@@ -3364,9 +3325,19 @@ static const char *findFirstBodyPosdbEntry(const char *listStart, const char *li
 		if(*p & 0x04)
 			p += 6;
 		else
-			p += 12; //not really expected
+			p += 12;
 	}
 	return NULL;
+}
+
+// Find next entry that is a body entry (determined by 's_inBody' array).
+// Returns NULL if none found
+static const char *findNextBodyPosdbEntry(const char *p, const char *listEnd) {
+	if(*p & 0x04)
+		p += 6;
+	else
+		p += 12;
+	return findFirstBodyPosdbEntry(p,listEnd);
 }
 
 
@@ -3406,7 +3377,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 	// init each list ptr to the first wordpos rec in the body
 	// for THIS DOCID and if no such rec, make it NULL
 	//
-	bool allNull = true;
+	int numNonNullLists = 0;
 	for(int i = 0; i < m_numQueryTermInfos; i++) {
 		if(m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
 			// not a ranking term
@@ -3417,7 +3388,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 		} else {
 			xpos[i] = findFirstBodyPosdbEntry(miniMergeBuffer->mergedListStart[i], miniMergeBuffer->mergedListEnd[i]);
 			if(xpos[i]) {
-				allNull = false; //ok, found one entry in body
+				numNonNullLists++;
 			} else if(!highestScoringNonBodyPos[i]) {
 				// not in nody, not in title?
 				gbshutdownLogicError();
@@ -3426,14 +3397,13 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 	}
 
 
-	// if no terms in body, no need to do sliding window
-	bool doneSliding = allNull ? true : false;
-
-	logTrace(g_conf.m_logTracePosdb, "Run sliding window algo? %s", !doneSliding?"yes":"no, no matches found in body");
+	logTrace(g_conf.m_logTracePosdb, "Run sliding window algo? %s", numNonNullLists>0 ? "yes" : "no, no matches found in body");
 
 	float bestMinTermPairWindowScore = -2.0;
 
-	while( !doneSliding ) {
+	//todo: does it make any sense to iterate after one list has been exhausted? findMinTermPairScoreInWindow() is not going to find
+	//any lower pair-score because it skips the now-null list.
+	while(numNonNullLists>0) {
 		//
 		// Now all xpos point to positions in the document body. Calc the "window" score (score
 		// for current term positions).
@@ -3451,9 +3421,9 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 		//
 		findMinTermPairScoreInWindow(miniMergeBuffer, xpos, &bestMinTermPairWindowPtrs, &bestMinTermPairWindowScore, highestScoringNonBodyPos, scoreMatrix);
 
-	 	bool advanceMin;
+		bool advanceMin = true;
 
-	 	do { 
+		while(advanceMin && numNonNullLists>0) {
 			advanceMin = false;
 			
 			//
@@ -3463,72 +3433,24 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 			int32_t minPosTermIdx = -1;
 			int32_t minPos = 0;
 			for ( int32_t x = 0 ; x < m_numQueryTermInfos ; x++ ) {
-				if ( ! xpos[x] ) {
-					continue;
-				}
-
-				if ( minPosTermIdx == -1 ) {
+				if(xpos[x]!=NULL && (minPosTermIdx == -1 || Posdb::getWordPos(xpos[x]) < minPos)) {
 					minPosTermIdx = x;
-					//minRec = xpos[x];
 					minPos = Posdb::getWordPos(xpos[x]);
-					continue;
 				}
-
-				if ( Posdb::getWordPos(xpos[x]) >= minPos ) {
-					continue;
-				}
-
-				minPosTermIdx = x;
-				//minRec = xpos[x];
-				minPos = Posdb::getWordPos(xpos[x]);
 			}
-
 			// sanity
 			if ( minPosTermIdx < 0 ) {
-				gbshutdownAbort(true);
+				gbshutdownLogicError();
 			}
 
-		 	do { 
-		 		//
-		 		// Advance the list pointer of the list containing the current
-		 		// minimum position (minPosTermIdx). If no more positions, set list to NULL.
-		 		// If all lists are NULL, we are done sliding.
-		 		//
-				if ( ! (xpos[minPosTermIdx][0] & 0x04) ) {
-					xpos[minPosTermIdx] += 12;
-				}
-				else {
-					xpos[minPosTermIdx] +=  6;
-				}
-
-				// NULLify list if no more positions for this docid for that term.
-				if ( xpos[minPosTermIdx] >= miniMergeBuffer->mergedListEnd[minPosTermIdx] ) {
-					// exhausted list now
-					xpos[minPosTermIdx] = NULL;
-
-					// are all null now?
-					int32_t k; 
-					for ( k = 0 ; k < m_numQueryTermInfos ; k++ ) {
-						if ( xpos[k] ) {
-							break;
-						}
-					}
-
-					// all lists are now exhausted
-					if ( k >= m_numQueryTermInfos ) {
-						doneSliding = true;
-					}
-
-					// No more positions in current term list. Find new term list with lowest position.
-					advanceMin = true;
-				}
-				// if current term position is not in the document body, advance the pointer and look again.
-			} while( !advanceMin && !doneSliding && !s_inBody[Posdb::getHashGroup(xpos[minPosTermIdx])] );
-
-			// if current list is exhausted, find new term list with lowest position.
-		} while( advanceMin && !doneSliding );
-
-	} // end of while( !doneSliding )
+			xpos[minPosTermIdx] = findNextBodyPosdbEntry(xpos[minPosTermIdx],miniMergeBuffer->mergedListEnd[minPosTermIdx]);
+			if(xpos[minPosTermIdx]==NULL) { //we exhausted the list
+				numNonNullLists--;
+				if(numNonNullLists>0)
+					advanceMin = true; //just advance the next list, if any
+			}
+		}
+	}
 
 
 	float minPairScore = -1.0;
