@@ -519,6 +519,13 @@ static bool generatePageJSON(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 		j++;
 	}
 
+	if (j > 0) {
+		sb->removeLastChar('\n');
+		sb->removeLastChar(',');
+		sb->removeLastChar('\t');
+		sb->removeLastChar('\t');
+	}
+
 	// end the table
 	sb->safePrintf("\t]\n");
 
@@ -547,6 +554,13 @@ static bool generatePageJSON(CollectionRec *cr, SafeBuf *sb, const SafeBuf *dole
 	const char *bs = doledbbuf->getBufStart();
 	if (bs && !sb->safePrintf("%s", bs)) {
 		return false;
+	}
+
+	if (doledbbuf->length() > 0) {
+		sb->removeLastChar('\n');
+		sb->removeLastChar(',');
+		sb->removeLastChar('\t');
+		sb->removeLastChar('\t');
 	}
 
 	sb->safePrintf("\t],\n");
