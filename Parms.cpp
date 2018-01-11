@@ -3523,19 +3523,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
-	m->m_title = "stream search results";
-	m->m_desc  = "Stream search results back on socket as they arrive. "
-		"Useful when thousands/millions of search results are "
-		"requested. Required when doing such things otherwise "
-		"Gigablast could run out of memory. Only supported for "
-		"JSON and XML formats, not HTML.";
-	m->m_page  = PAGE_RESULTS;
-	simple_m_set(SearchInput,m_streamResults);
-	m->m_def   = "0";
-	m->m_cgi   = "stream";
-	m->m_flags = PF_API;
-	m++;
-
 	m->m_title = "seconds back";
 	m->m_desc  = "Limit results to pages spidered this many seconds ago. "
 		"Use 0 to disable.";

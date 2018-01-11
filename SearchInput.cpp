@@ -67,7 +67,6 @@ SearchInput::SearchInput()
 	m_baseScoringParameters.clear();
 	m_numFlagScoreMultipliers=26;
 	m_numFlagRankAdjustments=26;
-	m_streamResults = false;
 	m_secsBack = 0;
 	m_sortBy = 0;
 	m_filetype = NULL;
@@ -214,14 +213,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 
 	// and set from the http request. will set m_coll, etc.
 	g_parms.setFromRequest ( &m_hr , sock , cr , (char *)this , OBJ_SI );
-
-	if ( m_streamResults &&
-	     tmpFormat != FORMAT_XML &&
-	     tmpFormat != FORMAT_JSON ) {
-		log("si: streamResults only supported for "
-		    "xml/csv/json. disabling");
-		m_streamResults = false;
-	}
 
 	m_coll = coll;
 
