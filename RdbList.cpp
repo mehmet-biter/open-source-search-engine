@@ -2309,6 +2309,8 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 	// see Posdb.h for format of a 18/12/6-byte posdb key
 	RdbBase *base = getRdbBase(rdbId, collNum);
+	if(!base)
+		gbshutdownLogicError();
 	RdbIndexQuery rdbIndexQuery(base);
 	char *new_listPtr = m_listPtr;
 	int32_t listOffset = 0;
