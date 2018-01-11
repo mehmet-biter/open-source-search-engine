@@ -37,6 +37,10 @@ public:
 					  const std::vector<std::string> &source_words,
 					  const std::vector<std::string> &lower_source_words,
 					  float weight);
+	void make_proper_noun_part_genetive(std::vector<WordVariationGenerator::Variation> &variations,
+					    const std::vector<std::string> &source_words,
+					    const std::vector<std::string> &lower_source_words,
+					    float weight);
 };
 
 static WordVariationGenerator_danish s_WordVariationGenerator_danish;
@@ -86,6 +90,9 @@ std::vector<WordVariationGenerator::Variation> WordVariationGenerator_danish::qu
 	if(weights.simple_spelling_variants >= threshold) {
 		find_simple_attribute_match_wordforms(variations,lower_source_words,weights.simple_spelling_variants);
 	}
+	
+	//currently inactive because Query.cpp/PosdbTable.cpp cannot handle wordvariations spanning more than one word
+	//make_proper_noun_part_genetive(variations,source_words,lower_source_words,1.2);
 	
 	//filter out duplicates and variations below threshold
 	//syn-todo: when filtering out duplicates choose the one with the highest weight
@@ -543,5 +550,100 @@ void WordVariationGenerator_danish::make_verb_past_past_variants(std::vector<Wor
 		prev_was_har = source_word=="har";
 		prev_was_havde = source_word=="havde";
 		prev_word_idx = i;
+	}
+}
+
+
+void WordVariationGenerator_danish::make_proper_noun_part_genetive(std::vector<WordVariationGenerator::Variation> &variations,
+					                           const std::vector<std::string> &source_words,
+					                           const std::vector<std::string> &lower_source_words,
+					                           float weight)
+{
+	//In Danish when referring to the mayor/king/president/foreman/institution of some place/organization you can use either:
+	//   <noun> <preposition> <proper-noun>
+	//or
+	//   <proper-noun><genitive s-suffix> <noun>
+	//Examples:
+	//   Kongen af Albanien. Hospitalet i Lille Ubehage. Direktøren for Nordisk Fjer
+	//vs.
+	//   Albaniens konge. Lille Ubehages hospital. Nordisk Fjers direktør.
+	//are almost equally used. Some Danes feel that the genitive variant is a bit artificial for inanimate objects, eg a bucket,
+	//but for places and organizations it feels more natural. So there are no clear-cut rules.
+	
+	//Iterate through the words and locate <noun> <preposition> <proper-noun>, and generate <proper-noun><genitive s-suffix> <noun>
+	for(unsigned i=0; i+4<lower_source_words.size(); i++) {
+		auto source_word0(lower_source_words[i]);
+		if(source_word0==" ")
+			continue;
+		
+		//find noun
+		auto matches(lexicon.query_matches(source_word0));
+		const sto::WordForm *wordform_noun = NULL;
+		for(auto match : matches) {
+			if(match->part_of_speech==sto::part_of_speech_t::commonNoun) {
+				auto wordforms(match->query_all_explicit_word_forms());
+				for(auto wordform : wordforms) {
+					if(same_wordform_as_source(*wordform,source_word0) &&
+						wordform->has_attribute(sto::word_form_attribute_t::case_unspecified))
+					{
+						wordform_noun = wordform;
+					}
+				}
+			}
+		}
+		if(!wordform_noun)
+			continue;
+		
+		if(lower_source_words[i+1]!=" ")
+			continue;
+		
+		//find preposition
+		//hack: just check of i/af/for
+		auto source_word2(lower_source_words[i+2]);
+		if(source_word2==" ")
+			continue;
+		if(source_word2!="i" && source_word2!="af" && source_word2!="for")
+			continue;
+		
+		if(lower_source_words[i+3]!=" ")
+			continue;
+		
+		auto source_word4(lower_source_words[i+4]);
+		if(source_word4==" ")
+			continue;
+		auto source_word4_capitalized(capitalize_word(source_word4));
+		
+		//find proper-noun
+		matches = lexicon.query_matches(source_word4_capitalized);
+		const sto::WordForm *wordform_proper_noun = NULL;
+		const sto::WordForm *wordform_proper_noun_genitive = NULL;
+		for(auto match : matches) {
+			if(match->part_of_speech==sto::part_of_speech_t::properNoun) {
+				auto wordforms(match->query_all_explicit_word_forms());
+				for(auto wordform : wordforms) {
+					if(wordform->has_attribute(sto::word_form_attribute_t::case_unspecified))
+						wordform_proper_noun = wordform;
+					if(wordform->has_attribute(sto::word_form_attribute_t::case_genitiveCase))
+						wordform_proper_noun_genitive = wordform;
+				}
+			}
+		}
+		if(!wordform_proper_noun)
+			continue;
+		
+		//ok, we have noun-preposition-propernoun
+		if(!wordform_proper_noun_genitive) {
+			//but no genitive case. Hmmm. why?
+			continue;
+		}
+		
+		//transform that into propernoun-genetive noun
+		
+		WordVariationGenerator::Variation v0_0;
+		v0_0.word = std::string(wordform_proper_noun_genitive->written_form,wordform_proper_noun_genitive->written_form_length) + " " + std::string(wordform_noun->written_form,wordform_noun->written_form_length);
+		v0_0.weight = weight;
+		v0_0.source_word_start = i;
+		v0_0.source_word_end = i+5;
+		variations.push_back(v0_0);
 	}
 }

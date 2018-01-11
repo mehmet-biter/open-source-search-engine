@@ -13,6 +13,8 @@ public:
 	void unload_lexicon() { lexicon.unload(); }
 
 	std::vector<std::string> lower_words(const std::vector<std::string> &source_words);
+	std::string capitalize_word(const std::string &lower_word);
+	std::vector<std::string> capitalize_words(const std::vector<std::string> &lower_words);
 };
 
 #endif

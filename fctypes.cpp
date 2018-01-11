@@ -984,6 +984,15 @@ int32_t to_lower_utf8(char *dst, char * /*dstEnd*/, const char *src ) {
 	return dst - dstart;
 }
 
+int32_t to_upper_utf8(char *dst, const char *src) {
+	if(is_ascii3(*src)) {
+		*dst = to_upper_a(*src);
+		return 1;
+	}
+	UChar32 x = utf8Decode(src);
+	UChar32 y = ucToUpper(x);
+	return utf8Encode(y, dst);
+}
 // currently unused
 // int32_t to_upper_utf8(char *dst, char *src) {
 // 	// if in ascii do it quickly

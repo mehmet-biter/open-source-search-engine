@@ -64,6 +64,7 @@ bool has_alpha_utf8(const char *s, const char *send);
 int32_t to_lower_utf8        (char *dst , const char *src ) ;
 int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src ) ;
 int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src, const char *srcEnd) ;
+int32_t to_upper_utf8(char *dst, const char *src);
 
 // . get the # of words in this string
 int32_t      getNumWords ( char *s , int32_t len ) ;
