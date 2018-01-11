@@ -158,6 +158,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t output);
 
 static bool argToBoolean(const char *arg);
 
+static void wvg_log_function(WordVariationGenerator::log_class_t log_class, const char *fmt, va_list ap);
 
 static void wakeupPollLoop() {
 	g_loop.wakeupPollLoop();
@@ -1349,6 +1350,7 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
+	WordVariationGenerator::set_log_function(wvg_log_function);
 	log(LOG_DEBUG,"main: initializing word variations: Danish");
 	if(!initializeWordVariationGenerator_Danish()) {
 		log(LOG_WARN, "word-variation-danish initialization failed" );
@@ -6341,4 +6343,20 @@ static int copyFiles(const char *dstDir) {
 	fprintf(stderr,"\nRunning cmd: %s\n",tmp.getBufStart());
 	system ( tmp.getBufStart() );
 	return 0;
+}
+
+
+static void wvg_log_function(WordVariationGenerator::log_class_t log_class, const char *fmt, va_list ap) {
+	char buf[2048];
+	vsnprintf(buf,sizeof(buf), fmt, ap);
+	buf[sizeof(buf)-1]='\0';
+	int32_t type;
+	switch(log_class) {
+		case WordVariationGenerator::log_trace: type = LOG_TRACE; break;
+		case WordVariationGenerator::log_debug: type = LOG_DEBUG; break;
+		case WordVariationGenerator::log_info: type = LOG_INFO; break;
+		case WordVariationGenerator::log_warn: type = LOG_WARN; break;
+		case WordVariationGenerator::log_error: type = LOG_ERROR; break;
+	}
+	log(type,"wordvar:%s",buf);
 }
