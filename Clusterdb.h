@@ -18,7 +18,7 @@
 //
 //   00000000 00000000 0000000d dddddddd  d = docid
 //   dddddddd dddddddd dddddddd dddddfll  f = family filter bit
-//   llllssss ssssssss ssssssss sssssshz  q = year quarter bits
+//   llllssss ssssssss ssssssss sssssshz
 //                                        l = language bits
 //   					  s = site hash
 //   					  h = half bit
