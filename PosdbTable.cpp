@@ -1160,7 +1160,7 @@ float PosdbTable::getTermPairScoreForAny(const MiniMergeBuffer *miniMergeBuffer,
 				bestFixed [numTop] = fixedDistance;
 				numTop++;
 			}
-			else if ( score > bestScores[lowestScoreTermIdx] ) {
+			else if ( lowestScoreTermIdx >= 0 && score > bestScores[lowestScoreTermIdx] ) {
 				bestScores[lowestScoreTermIdx] = score;
 				bestwpi   [lowestScoreTermIdx] = wpi;
 				bestwpj   [lowestScoreTermIdx] = wpj;
