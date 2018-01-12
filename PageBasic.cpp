@@ -306,3 +306,106 @@ bool printSitePatternExamples ( SafeBuf *sb , HttpRequest *hr ) {
 
 	return true;
 }
+
+///////////
+//
+// main > Basic > Status
+//
+///////////
+bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
+	StackBuf<128000> sb;
+
+	char format = hr->getReplyFormat();
+
+
+	// true = usedefault coll?
+	CollectionRec *cr = g_collectiondb.getRec ( hr , true );
+	if ( ! cr ) {
+		g_httpServer.sendErrorReply(socket,500,"invalid collection");
+		return true;
+	}
+
+	if ( format == FORMAT_JSON || format == FORMAT_XML) {
+		// this is in PageCrawlBot.cpp
+		printCrawlDetails2 ( &sb , cr , format );
+		const char *ct = "text/xml";
+		if ( format == FORMAT_JSON ) ct = "application/json";
+		return g_httpServer.sendDynamicPage (socket,
+						     sb.getBufStart(),
+						     sb.length(),
+						     0, // cachetime
+						     false,//POSTReply        ,
+						     ct);
+	}
+
+	// print standard header
+	if ( format == FORMAT_HTML ) {
+		// this prints the <form tag as well
+		g_pages.printAdminTop ( &sb , socket , hr );
+
+		// table to split between widget and stats in left and right panes
+		sb.safePrintf("<TABLE id=pane>"
+			      "<TR><TD valign=top>");
+	}
+
+	int32_t savedLen1, savedLen2;
+
+	//
+	// widget
+	//
+	// put the widget in here, just sort results by spidered date
+	//
+	// the scripts do "infinite" scrolling both up and down.
+	// but if you are at the top then new results will load above
+	// you and we try to maintain your current visual state even though
+	// the scrollbar position will change.
+	//
+	if ( format == FORMAT_HTML ) {
+
+		// save position so we can output the widget code
+		// so user can embed it into their own web page
+		savedLen1 = sb.length();
+		
+		savedLen2 = sb.length();
+
+		// the right table pane is the crawl stats
+		sb.safePrintf("</TD><TD valign=top>");
+
+		//
+		// show stats
+		//
+		const char *crawlMsg;
+		spider_status_t crawlStatus;
+		getSpiderStatusMsg ( cr , &crawlMsg, &crawlStatus );
+
+		sb.safePrintf(
+			      "<table id=stats border=0 cellpadding=5>"
+
+			      "<tr>"
+			      "<td><b>Crawl Status Code:</td>"
+			      "<td>%" PRId32"</td>"
+			      "</tr>"
+
+			      "<tr>"
+			      "<td><b>Crawl Status Msg:</td>"
+			      "<td>%s</td>"
+			      "</tr>"
+			      , (int)crawlStatus
+			      , crawlMsg);
+
+		sb.safePrintf("</table>\n\n");
+
+		// end the right table pane
+		sb.safePrintf("</TD></TR></TABLE>");
+	}
+
+
+	//if ( format != FORMAT_JSON )
+	//	// wrap up the form, print a submit button
+	//	g_pages.printAdminBottom ( &sb );
+
+	return g_httpServer.sendDynamicPage (socket,
+					     sb.getBufStart(),
+					     sb.length(),
+					     0); // cachetime
+}
