@@ -1063,8 +1063,6 @@ void Msg39::estimateHitsAndSendReply(double pctSearched) {
 		topDocIds[docCount] = t->m_docId;
 		topScores[docCount] = t->m_score;
 		topFlags[docCount] = t->m_flags;
-		if(m_toptree.m_useIntScores)
-			topScores[docCount] = (double)t->m_intScore;
 		// supply clusterdb rec? only for full splits
 		if(m_gotClusterRecs)
 			topRecs [docCount] = t->m_clusterRec;

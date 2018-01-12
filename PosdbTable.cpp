@@ -149,10 +149,6 @@ void PosdbTable::reset() {
 	m_topTree = NULL;
 	m_nqt = 0;
 	m_debug = false;
-	m_sortByTermNum = -1;
-	m_sortByTermNumInt = -1;
-	m_sortByTermInfoNum = 0;
-	m_sortByTermInfoNumInt = 0;
 	m_useWhiteTable = false;
 	m_numQueryTermInfos = 0;
 	m_minTermListSize = 0;
@@ -1387,10 +1383,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	
 	int32_t nrg = 0;
 
-	// assume not sorting by a numeric termlist
-	m_sortByTermNum = -1;
-	m_sortByTermNumInt = -1;
-
 	m_hasMaxSerpScore = false;
 	if ( m_msg39req->m_minSerpDocId ) {
 		m_hasMaxSerpScore = true;
@@ -2198,12 +2190,6 @@ bool PosdbTable::genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t 
 
 	dcs->m_siteRank   = siteRank;
 	dcs->m_finalScore = score;
-	
-	// a double can capture an int without dropping any bits,
-	// inlike a mere float
-	if ( m_sortByTermNumInt >= 0 ) {
-		dcs->m_finalScore = (double)intScore;
-	}
 	
 	dcs->m_docId      = m_docId;
 	dcs->m_numRequiredTerms = m_numQueryTermInfos;
@@ -3616,13 +3602,6 @@ void PosdbTable::intersectLists_real() {
 	if ( ! m_msg39req->m_doMaxScoreAlgo ) {
 		numQueryTermsToHandle = 0;
 	}
-	// do not do it if we got a gbsortby: field
-	if ( m_sortByTermNum >= 0 ) {
-		numQueryTermsToHandle = 0;
-	}
-	if ( m_sortByTermNumInt >= 0 ) {
-		numQueryTermsToHandle = 0;
-	}
 
 
  	//
@@ -3808,14 +3787,14 @@ void PosdbTable::intersectLists_real() {
 
 					prefiltMaxPossScorePass++;
 
-					if ( minWinningScore >= 0.0 && m_sortByTermNum < 0 && m_sortByTermNumInt < 0 ) {
+					if ( minWinningScore >= 0.0 ) {
 
 						if( !prefilterMaxPossibleScoreByDistance(minWinningScore*completeScoreMultiplier) ) {
 							docIdPtr += 6;
 							prefiltBestDistMaxPossScoreFail++;
 							skipToNextDocId = true;
 						}
-					} // not m_sortByTermNum or m_sortByTermNumInt
+					}
 
 					if( skipToNextDocId ) {
 						// Continue docIdPtr < docIdEnd loop
@@ -3993,47 +3972,11 @@ void PosdbTable::intersectLists_real() {
 			//# Handle sortby int/float and minimum docid/score pairs
 			//#
 
-			if( m_sortByTermNum >= 0 || m_sortByTermNumInt >= 0 || m_hasMaxSerpScore ) {
+			if( m_hasMaxSerpScore ) {
 				// assume filtered out
 				if ( currPassNum == INTERSECT_SCORING ) {
 					m_filtered++;
 				}
-
-				//
-				// if we have a gbsortby:price term then score exclusively on that
-				//
-				if ( m_sortByTermNum >= 0 ) {
-					// no term?
-					if ( ! miniMergeBuf.mergedListStart[m_sortByTermInfoNum] ) {
-						// advance to next docid
-						if( currPassNum == INTERSECT_SCORING ) {
-							docIdPtr += 6;
-						}
-						// Continue docIdPtr < docIdEnd loop
-						continue;
-					}
-
-					score = Posdb::getFloat(miniMergeBuf.mergedListStart[m_sortByTermInfoNum]);
-				}
-
-				if ( m_sortByTermNumInt >= 0 ) {
-					// no term?
-					if ( ! miniMergeBuf.mergedListStart[m_sortByTermInfoNumInt] ) {
-						// advance to next docid
-						if( currPassNum == INTERSECT_SCORING ) {
-							docIdPtr += 6;
-						}
-						// Continue docIdPtr < docIdEnd loop
-						continue;
-					}
-
-					intScore = Posdb::getInt(miniMergeBuf.mergedListStart[m_sortByTermInfoNumInt]);
-					// do this so hasMaxSerpScore below works, although
-					// because of roundoff errors we might lose a docid
-					// through the cracks in the widget.
-					//score = (float)intScore;
-				}
-
 
 				// now we have a maxscore/maxdocid upper range so the widget
 				// can append only new results to an older result set.
@@ -4041,24 +3984,13 @@ void PosdbTable::intersectLists_real() {
 					bool skipToNext = false;
 					// if dealing with an "int" score use the extra precision
 					// of the double that m_maxSerpScore is!
-					if ( m_sortByTermNumInt >= 0 ) {
-						if ( intScore > (int32_t)m_msg39req->m_maxSerpScore ) {
-							skipToNext = true;
-						}
-						else
-						if ( intScore == (int32_t)m_msg39req->m_maxSerpScore && (int64_t)m_docId <= m_msg39req->m_minSerpDocId ) {
-							skipToNext = true;
-						}
+					if ( score > (float)m_msg39req->m_maxSerpScore ) {
+						skipToNext = true;
 					}
-					else {
-						if ( score > (float)m_msg39req->m_maxSerpScore ) {
-							skipToNext = true;
-						}
-						else
-						if ( almostEqualFloat(score, (float)m_msg39req->m_maxSerpScore) && (int64_t)m_docId <= m_msg39req->m_minSerpDocId ) {
-							//@todo: Why is  m_msg39req->m_maxSerpScore double and score float?
-							skipToNext = true;
-						}
+					else
+					if ( almostEqualFloat(score, (float)m_msg39req->m_maxSerpScore) && (int64_t)m_docId <= m_msg39req->m_minSerpDocId ) {
+						//@todo: Why is  m_msg39req->m_maxSerpScore double and score float?
+						skipToNext = true;
 					}
 
 					if( skipToNext ) {				
@@ -4118,17 +4050,6 @@ void PosdbTable::intersectLists_real() {
 				t->m_docId = m_docId;
 				t->m_flags = flags;
 				logTrace(g_conf.m_logTracePosdb, "docid=%15ld score=%f", m_docId, score);
-
-				// use an integer score like lastSpidered timestamp?
-				if ( m_sortByTermNumInt >= 0 ) {
-					t->m_intScore = intScore;
-					t->m_score = 0.0;
-					
-					if ( ! m_topTree->m_useIntScores) {
-						log(LOG_LOGIC,"%s:%s:%d: Got int score, but m_topTree not setup for int scores!", __FILE__, __func__, __LINE__);
-						gbshutdownLogicError();
-					}
-				}
 
 				//
 				// This will not add if tree is full and it is less than the m_lowNode in score.

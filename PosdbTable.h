@@ -137,14 +137,6 @@ private:
 	BaseScoringParameters m_baseScoringParameters;
 	DerivedScoringWeights m_derivedScoringWeights;
 
-	// for gbsortby:item.price ...
-	int32_t m_sortByTermNum;
-	int32_t m_sortByTermNumInt;
-
-	// fix core with these two
-	int32_t m_sortByTermInfoNum;
-	int32_t m_sortByTermInfoNumInt;
-
 
 	HashTableX m_whiteListTable;
 	bool m_useWhiteTable;
@@ -292,9 +284,6 @@ class DocIdScore {
 	bool serialize   ( class SafeBuf *sb );
 
 	int64_t   m_docId;
-	// made this a double because of intScores which can't be captured
-	// fully with a float. intScores are used to sort by spidered time
-	// for example. see Posdb.cpp "intScore".
 	double      m_finalScore;
 	char        m_siteRank;
 	char        m_usePageTemperature;
