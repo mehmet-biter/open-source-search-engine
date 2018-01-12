@@ -2721,23 +2721,6 @@ void PosdbTable::mergeTermSubListsForDocId(MiniMergeBuffer *miniMergeBuffer, int
 			nsub++;
 		}
 
-		// if only one sublist had this docid, no need to merge
-		// UNLESS it's a synonym list then we gotta set the
-		// synbits on it, below!!! or a half stop wiki bigram like
-		// the term "enough for" in the wiki phrase 
-		// "time enough for love" because we wanna reward that more!
-		// this halfstopwikibigram bit is set in the indivial keys
-		// so we'd have to at least do a key cleansing, so we can't
-		// do this shortcut right now... mdw oct 10 2015
-		if ( nsub == 1 && 
-		     !(nwpFlags[0] & BF_SYNONYM) &&
-		     !(nwpFlags[0] & BF_HALFSTOPWIKIBIGRAM) ) {
-			miniMergeBuffer->mergedListStart[j] = nwp     [0];
-			miniMergeBuffer->mergedListEnd[j]   = nwpEnd  [0];
-			m_bflags[j]			= nwpFlags[0];
-			continue;
-		}
-
 		// Merge the lists into a list in miniMergeBuf.
 		// Get the min of each list
 		while( mptr < miniMergeBufSafeEnd ) {
