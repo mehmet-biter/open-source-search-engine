@@ -67,7 +67,6 @@ SearchInput::SearchInput()
 	m_baseScoringParameters.clear();
 	m_numFlagScoreMultipliers=26;
 	m_numFlagRankAdjustments=26;
-	m_secsBack = 0;
 	m_sortBy = 0;
 	m_filetype = NULL;
 	m_realMaxTop = 0;
@@ -509,15 +508,6 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 		m_sbuf1.safeStrcpy(") AND ");
 		m_sbuf2.safeStrcpy(") AND ");
 		boolq = true;
-	}
-
-	// and this
-	if ( m_secsBack > 0 ) {
-		int32_t timestamp = getTimeGlobalNoCore();
-		timestamp -= m_secsBack;
-		if ( timestamp <= 0 ) timestamp = 0;
-		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
-		m_sbuf1.safePrintf("gbminint:gbspiderdate:%" PRIu32,timestamp);
 	}
 
 	if ( m_sortBy == 1 ) {

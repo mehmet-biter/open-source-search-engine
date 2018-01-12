@@ -3523,16 +3523,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
-	m->m_title = "seconds back";
-	m->m_desc  = "Limit results to pages spidered this many seconds ago. "
-		"Use 0 to disable.";
-	m->m_page  = PAGE_RESULTS;
-	simple_m_set(SearchInput,m_secsBack);
-	m->m_def   = "0";
-	m->m_cgi   = "secsback";
-	m->m_flags = PF_API;
-	m++;
-
 	m->m_title = "sort by";
 	m->m_desc  = "Use 0 to sort results by relevance, 1 to sort by "
 		"most recent spider date down, and 2 to sort by oldest "
