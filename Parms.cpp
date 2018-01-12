@@ -3064,6 +3064,17 @@ void Parms::init ( ) {
 	m->m_title = "collection";
 	m->m_desc  = "Use this collection.";
 	m->m_cgi   = "c";
+	m->m_page  = PAGE_BASIC_STATUS;
+	m->m_obj   = OBJ_GBREQUEST;
+	m->m_type  = TYPE_CHARPTR;
+	m->m_def   = NULL;
+	m->m_flags = PF_API | PF_REQUIRED;
+	m->m_off   = offsetof(GigablastRequest,m_coll);
+	m++;
+
+	m->m_title = "collection";
+	m->m_desc  = "Use this collection.";
+	m->m_cgi   = "c";
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_GBREQUEST;
 	m->m_type  = TYPE_CHARPTR;
