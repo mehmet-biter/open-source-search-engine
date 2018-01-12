@@ -31,7 +31,6 @@
 #define BF_SYNONYM            0x04
 #define BF_NEGATIVE           0x08  // query word has a negative sign before it
 #define BF_BIGRAM             0x10
-#define BF_NUMBER             0x20  // is it like gbsortby:price? numeric?
 
 static const int INTERSECT_SCORING    = 0;
 static const int INTERSECT_DEBUG_INFO = 1;
@@ -1930,11 +1929,6 @@ bool PosdbTable::findCandidateDocIds() {
 			continue;
 		}
 		
-		// skip if numeric field like gbsortby:price gbmin:price:1.23
-		if ( qti->m_subList[0].m_bigramFlag & BF_NUMBER ) {
-			continue;
-		}
-		
 		// set it
 		if ( qti->m_wikiPhraseId == 1 ) {
 			continue;			//@@@ BR: Why only check for id = 1 ??
@@ -2736,7 +2730,6 @@ void PosdbTable::mergeTermSubListsForDocId(MiniMergeBuffer *miniMergeBuffer, int
 		// so we'd have to at least do a key cleansing, so we can't
 		// do this shortcut right now... mdw oct 10 2015
 		if ( nsub == 1 && 
-		     (nwpFlags[0] & BF_NUMBER) &&
 		     !(nwpFlags[0] & BF_SYNONYM) &&
 		     !(nwpFlags[0] & BF_HALFSTOPWIKIBIGRAM) ) {
 			miniMergeBuffer->mergedListStart[j] = nwp     [0];
@@ -2938,14 +2931,14 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const MiniMergeBuffer *miniMer
 	// QueryTermInfo)
 	for(int32_t i=0; i < m_numQueryTermInfos; i++) {
 		// skip if not part of score
-		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE) ) {
 			continue;
 		}
 
 		// and pair it with each other possible query term
 		for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
 			// skip if not part of score
-			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE) ) {
 				continue;
 			}
 
@@ -3034,7 +3027,7 @@ float PosdbTable::getMinSingleTermScoreSum(const MiniMergeBuffer *miniMergeBuffe
 		mergedListFound = true;
 
 		// skip if to the left of a pipe operator
-		if( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+		if( m_bflags[i] & (BF_PIPED|BF_NEGATIVE) ) {
 			continue;
 		}
 
@@ -3110,7 +3103,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos; i++ ) {
 		// skip if to the left of a pipe operator
-		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE) ) {
 			continue;
 		}
 		allSpecialTerms = false;
@@ -3131,7 +3124,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const MiniMergeBuffer *miniMergeBu
 		// loop over other terms
 		for(int32_t j = i + 1; j < m_numQueryTermInfos; j++) {
 			// skip if to the left of a pipe operator
-			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE) ) {
 				continue;
 			}
 
@@ -3342,7 +3335,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 	//
 	int numNonNullLists = 0;
 	for(int i = 0; i < m_numQueryTermInfos; i++) {
-		if(m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
+		if(m_bflags[i] & (BF_PIPED|BF_NEGATIVE)) {
 			// not a ranking term
 			xpos[i] = NULL;
 		} else if(miniMergeBuffer->mergedListStart[i]==NULL) {
@@ -3421,7 +3414,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 
 	for(int32_t i=0; i < m_numQueryTermInfos; i++) {
 		// skip if to the left of a pipe operator
-		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE) ) {
 			continue;
 		}
 
@@ -3432,7 +3425,7 @@ float PosdbTable::getMinTermPairScoreSlidingWindow(const MiniMergeBuffer *miniMe
 
 		for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
 			// skip if to the left of a pipe operator
-			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE) ) {
 				continue;
 			}
 
@@ -3867,12 +3860,6 @@ void PosdbTable::intersectLists_real() {
 				//#
 				for(int32_t k=0; k < m_numQueryTermInfos; k++) {
 					if ( ! miniMergeBuf.mergedListStart[k] ) {
-						continue;
-					}
-					
-					// siterank/langid is always 0 in numeric
-					// termlists so they sort by their number correctly
-					if ( m_queryTermInfos[k].m_subList[0].m_bigramFlag & (BF_NUMBER) ) {
 						continue;
 					}
 					
