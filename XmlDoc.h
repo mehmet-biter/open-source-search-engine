@@ -499,7 +499,6 @@ public:
 	
 	bool hashLinks ( class HashTableX *table ) ;
 	bool hashUrl ( class HashTableX *table, bool urlOnly );
-	bool hashDateNumbers ( class HashTableX *tt );
 	bool hashIncomingLinkText(HashTableX *table);
 	bool hashLinksForLinkdb ( class HashTableX *table ) ;
 	bool hashNeighborhoods ( class HashTableX *table ) ;
@@ -548,15 +547,6 @@ public:
 
 	bool hashString3( char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
 			  class HashTableX *wts, class SafeBuf *wbuf);
-
-	bool hashNumberForSorting( const char *beginBuf ,
-			  const char *buf , 
-			  int32_t bufLen , 
-			  class HashInfo *hi ) ;
-
-	bool hashNumberForSortingAsInt32 ( int32_t x,
-			   class HashInfo *hi ,
-			   const char *gbsortByStr ) ;
 
 	// print out for PageTitledb.cpp and PageParser.cpp
 	bool printDoc ( class SafeBuf *pbuf );

@@ -35,8 +35,6 @@ extern const char *g_msg;
 // . declare all dynamic functions here
 // . these are all defined in Page*.cpp files
 // . these are called to send a dynamic page
-bool sendPageWidgets ( TcpSocket *socket , HttpRequest *hr ) ;
-bool sendPageBasicStatus     ( TcpSocket *s , HttpRequest *r );
 
 bool printGigabotAdvice(SafeBuf *sb,
 			int32_t page,
@@ -175,7 +173,6 @@ enum {
 
 	// basic controls page /admin/basic
 	PAGE_BASIC_SETTINGS ,
-	PAGE_BASIC_STATUS ,
 	PAGE_COLLPASSWORDS ,//BASIC_SECURITY ,
 	PAGE_BASIC_SEARCH ,
 

@@ -486,8 +486,7 @@ void Msg39::controlLoop ( ) {
 			}
 			// accumulate total hits count over each docid split
 			m_numTotalHits += m_posdbTable.getTotalHits();
-			// minus the shit we filtered out because of gbminint/gbmaxint/
-			// gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
+			//obsolete comment: minus the shit we filtered out because of gbminint/gbmaxint/gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
 			m_numTotalHits -= m_posdbTable.getFilteredCount();
 			
 			chunksSearched++;

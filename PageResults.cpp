@@ -1790,7 +1790,7 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 		sb->safePrintf("</td><td>");
 		char ipbuf[16];
 		sb->safePrintf("<a href=\"/search?c=%s&q=ip%%3A%s"
-			"+gbsortbyint%%3Agbsitenuminlinks&n=100\">"
+			       "&n=100\">"
 			       ,si->m_cr->m_coll,iptoa(k->m_ip,ipbuf));
 		sb->safePrintf("%s</a>",iptoa(k->m_ip,ipbuf));
 		sb->safePrintf("</td><td>%" PRId32"</td></tr>"

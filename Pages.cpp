@@ -65,10 +65,6 @@ static WebPage s_pages[] = {
 	  "basic settings", sendPageGeneric,
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},
 
-	{ PAGE_BASIC_STATUS, "admin/status", 0 , "status",1, page_method_t::page_method_get,
-	  "basic status", sendPageBasicStatus,
-	  PG_STATUS|PG_COLLADMIN|PG_ACTIVE},
-
 	{ PAGE_COLLPASSWORDS,
 	  "admin/collectionpasswords", 0,"collection passwords",0, page_method_t::page_method_get,
 	  "passwords", sendPageGeneric,
@@ -625,7 +621,6 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 
         bool isBasic = false;
 	if ( page == PAGE_BASIC_SETTINGS ) isBasic = true;
-	if ( page == PAGE_BASIC_STATUS ) isBasic = true;
 	if ( page == PAGE_COLLPASSWORDS ) isBasic = true;
 	if ( page == PAGE_BASIC_SEARCH ) isBasic = true;
 
@@ -829,21 +824,6 @@ bool printGigabotAdvice(SafeBuf *sb,
 			// "Do not deviate from this path, or, as is always "
 			// "the case, you may "
 			// "be blasted."
-			;
-	if ( page == PAGE_BASIC_STATUS )
-		advice = 
-			"STEP 3 of 3. "
-			"<br>"
-			"<br>"
-			"Ensure you see search results appearing in "
-			"the box below. If not, then you have spider "
-			"problems."
-			"<br>"
-			"<br>"
-			"Click on the links in the lower right to expose "
-			"the source code. Copy and paste this code "
-			"into your website to make a search box that "
-			"connects to the search engine you have created. "
 			;
 
 	if ( ! advice ) return true;

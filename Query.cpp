@@ -1544,13 +1544,6 @@ bool Query::setQWords ( char boolFlag ,
 		if ( words.hasSpace(i) && inQuotes && nq>= 2 ) 
 			cancelField = true;
 
-		// likewise for gbsortby operators watch out for boolean
-		// operators at the end of the field. we also check for 
-		// parens below when computing the hash of the value.
-		if ( (fieldCode == FIELD_GBSORTBYINT) &&
-		     ( w[0] == '(' || w[0] == ')' ) )
-			cancelField = true;
-
 		// BUT if we have a quote, and they just got turned off,
 		// and the space is not after the quote, do not cancel field!
 		if ( nq == 1 && cancelField ) {
@@ -1698,10 +1691,6 @@ bool Query::setQWords ( char boolFlag ,
 		     fieldCode == FIELD_LINKS||
 		     fieldCode == FIELD_SITE ||
 		     fieldCode == FIELD_IP   ||
-
-		     fieldCode == FIELD_GBSORTBYINT ||
-		     fieldCode == FIELD_GBREVSORTBYINT ||
-
 		     fieldCode == FIELD_GBFIELDMATCH ) {
 			// . find 1st space -- that terminates the field value
 			// . make "end" point to the end of the entire query
@@ -1744,20 +1733,6 @@ bool Query::setQWords ( char boolFlag ,
 			// the fieldmatch stuff should be case-sensitive. 
 			// this may change later.
 			uint64_t wid = hash64Lower_utf8(w, wlen, 0LL);
-
-			// i've decided not to make 
-			// gbsortby:products.offerPrice 
-			// gbmin:price:1.23 case insensitive
-			// too late... we have to support what we have
-			if (fieldCode == FIELD_GBSORTBYINT ||
-				fieldCode == FIELD_GBREVSORTBYINT) {
-				wid = hash64Lower_utf8(w, wlen, 0LL);
-				// do not include this word as part of
-				// any boolean expression, so
-				// Expression::isTruth() will ignore it and we
-				// fix '(A OR B) gbsortby:offperice' query
-				qw->m_ignoreWordInBoolQuery = true;
-			}
 
 			if (fieldCode == FIELD_GBFIELDMATCH) {
 				// hash the json field name. (i.e. tag.uri)
@@ -2823,23 +2798,6 @@ const struct QueryField g_fields[] = {
 	// for content type CT_STATUS documents (Spider status docs)
 	//
 
-	{"gbsortbyint", 
-	 FIELD_GBSORTBYINT, 
-	 false,
-	 "gbsortbyint:gbdocspiderdate",
-	 "Sort all documents by the date they were spidered/downloaded.",
-	 NULL,
-	 0},
-
-	{"gbrevsortbyint", 
-	 FIELD_GBREVSORTBYINT, 
-	 false,
-	 "gbrevsortbyint:gbdocspiderdate",
-	 "Sort all documents by the date they were spidered/downloaded "
-	 "but with the oldest on top.",
-	 NULL,
-	 0},
-
 	{"gbdocspiderdate",
 	 FIELD_GENERIC,
 	 false,
@@ -2959,8 +2917,6 @@ const char *getFieldCodeName(field_code_t fc) {
 		case FIELD_GBTERMID: return "gbtermid";
 		case FIELD_GBDOCID: return "gbdocid";
 		case FIELD_GBCONTENTHASH: return "gbcontenthash";
-		case FIELD_GBSORTBYINT: return "gbsortbyint";
-		case FIELD_GBREVSORTBYINT: return "gbrevsortbyint";
 		case FIELD_GBFIELDMATCH: return "gbfieldmatch";
 		default: return NULL;
 	}

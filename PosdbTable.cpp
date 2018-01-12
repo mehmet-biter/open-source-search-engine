@@ -1420,18 +1420,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		qti->m_qpos          = qw->m_posNum;
 		qti->m_wikiPhraseId  = qw->m_wikiPhraseId;
 		qti->m_quotedStartId = qw->m_quoteStart;
-		switch(qt->m_fieldCode) {
-			// is it gbsortby:?
-			case FIELD_GBSORTBYINT:
-			case FIELD_GBREVSORTBYINT:
-				m_sortByTermNumInt = i;
-				m_sortByTermInfoNumInt = nrg;
-				// tell topTree to use int scores
-				m_topTree->m_useIntScores = true;
-				break;
-			default:
-				; //not numeric condition
-		}
 		// count
 		int32_t nn = 0;
 		// also add in bigram lists
@@ -1562,17 +1550,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// is it a negative term?
 		if ( qt->m_termSign=='-')
 			qti->m_subList[nn].m_bigramFlag |= BF_NEGATIVE;
-
-		// numeric posdb termlist flags. instead of word position
-		// they have a float stored there for sorting etc.
-		switch(qt->m_fieldCode) {
-			case FIELD_GBSORTBYINT:
-			case FIELD_GBREVSORTBYINT:
-				qti->m_subList[nn].m_bigramFlag |= BF_NUMBER;
-				break;
-			default:
-				;
-		}
 
 		// add list of member terms
 		qt->m_bitNum = nrg;

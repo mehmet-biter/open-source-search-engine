@@ -511,13 +511,15 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 	}
 
 	if ( m_sortBy == 1 ) {
-		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
-		m_sbuf1.safePrintf("gbsortbyint:gbspiderdate");
+		log(LOG_WARN, "query: m_sortBy=%d. This is currently not supported", m_sortBy);
+		//if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
+		//m_sbuf1.safePrintf("gbsortbyint:gbspiderdate");
 	}
 
 	if ( m_sortBy == 2 ) {
-		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
-		m_sbuf1.safePrintf("gbrevsortbyint:gbspiderdate");
+		log(LOG_WARN, "query: m_sortBy=%d. This is currently not supported", m_sortBy);
+		//if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
+		//m_sbuf1.safePrintf("gbrevsortbyint:gbspiderdate");
 	}
 
 	char *ft = m_filetype;
