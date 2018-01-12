@@ -3384,9 +3384,11 @@ bool *XmlDoc::getIsSiteMap ( ) {
 //   the tags in the document, including ptrs to the text in between
 //   tags.
 Xml *XmlDoc::getXml ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// return it if it is set
 	if ( m_xmlValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, m_xmlValid true" );
 		return &m_xml;
 	}
 
@@ -3394,23 +3396,30 @@ Xml *XmlDoc::getXml ( ) {
 	setStatus ( "parsing html");
 
 	// get the filtered content
+	logTrace( g_conf.m_logTraceXmlDoc, "getUtf8Content" );
 	char **u8 = getUtf8Content();
 	if ( ! u8 || u8 == (char **)-1 ) return (Xml *)u8;
 	int32_t u8len = size_utf8Content - 1;
 
+	logTrace( g_conf.m_logTraceXmlDoc, "utf8 content len: %" PRId32 "", u8len );
+
 	uint8_t *ct = getContentType();
 	if ( ! ct || ct == (void *)-1 ) return (Xml *)ct;
+
+	logTrace( g_conf.m_logTraceXmlDoc, "content type: %" PRIu8 "", *ct );
 
 	int64_t start = logQueryTimingStart();
 
 	// set it
 	if ( !m_xml.set( *u8, u8len, m_version, *ct ) ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "Could not set xml from content of length %" PRId32 "", u8len );
 		// return NULL on error with g_errno set
 		return NULL;
 	}
 
 	logQueryTimingEnd( __func__, start );
 
+	logTrace( g_conf.m_logTraceXmlDoc, "END, setting m_xmlValid to true" );
 	m_xmlValid = true;
 	return &m_xml;
 }
@@ -9338,7 +9347,9 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 }
 
 uint16_t *XmlDoc::getCharset ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN");
 	if ( m_charsetValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid");
 		return &m_charset;
 	}
 
@@ -9347,6 +9358,7 @@ uint16_t *XmlDoc::getCharset ( ) {
 	//   junk is so we can convert it!
 	char **fc = getFilteredContent();
 	if ( ! fc || fc == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getFilteredContent returned %s", (fc == (void *)-1) ? "-1" : "NULL");
 		return (uint16_t *)fc;
 	}
 
@@ -9358,6 +9370,7 @@ uint16_t *XmlDoc::getCharset ( ) {
 	// check in http mime for charset
 	HttpMime *mime = getMime();
 	if (mime && mime->getContentType() == CT_PDF) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Content type PDF, assuming utf8");
 		// assume UTF-8
 		m_charset = csUTF8;
 		m_charsetValid = true;
@@ -9366,11 +9379,13 @@ uint16_t *XmlDoc::getCharset ( ) {
 	}
 
 	if (!mime) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL (no mine found)");
 		return NULL;
 	}
 
 	m_charset = GbEncoding::getCharset(mime, m_firstUrl.getUrl(), *fc, m_filteredContentLen);
 	m_charsetValid = true;
+	logTrace( g_conf.m_logTraceXmlDoc, "END, return %" PRIu16 "", m_charset);
 	return &m_charset;
 }
 
@@ -9382,23 +9397,38 @@ static void filterStartWrapper_r ( void *state );
 
 // filters m_content if its pdf, word doc, etc.
 char **XmlDoc::getFilteredContent ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN");
 	// return it if we got it already
-	if ( m_filteredContentValid ) return &m_filteredContent;
+	if ( m_filteredContentValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid");
+		return &m_filteredContent;
+	}
 
 	// this must be valid
 	char **content = getContent();
-	if ( ! content || content == (void *)-1 ) return content;
+	if ( ! content || content == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getContent returned %s", (content == (void *)-1) ? "-1" : "NULL");
+		return content;
+	}
 	// get the content type
 	uint8_t *ct = getContentType();
-	if ( ! ct ) return NULL;
+	if ( ! ct ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, returning NULL (getContentType returned NULL)");
+		return NULL;
+	}
+	logTrace( g_conf.m_logTraceXmlDoc, "Content type %" PRIu8 "", *ct);
+
 	// it needs this
 	HttpMime *mime = getMime();
-	if ( ! mime || mime == (void *)-1 ) return (char **)mime;
+	if ( ! mime || mime == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getMime returned %s", (mime == (void *)-1) ? "-1" : "NULL");
+		return (char **)mime;
+	}
 
 	bool filterable = false;
 
 	if ( !m_calledThread ) {
-
+		logTrace( g_conf.m_logTraceXmlDoc, "Not m_calledThread");
 		// assume we do not need filtering by default
 		m_filteredContent      = m_content;
 		m_filteredContentLen   = m_contentLen;
@@ -9406,15 +9436,20 @@ char **XmlDoc::getFilteredContent ( ) {
 		m_filteredContentAllocSize = 0;
 
 		// empty content?
-		if ( ! m_content ) return &m_filteredContent;
+		if ( ! m_content ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END, no contnet");
+			return &m_filteredContent;
+		}
 
 		if (*ct == CT_HTML) {
+			logTrace( g_conf.m_logTraceXmlDoc, "CT_HTML");
 			Xml xml;
 			xml.set(m_content, m_contentLen, m_version, *ct);
 
 			Words words;
 			words.set(&xml, true);
 			if (words.getNumAlnumWords() > g_conf.m_spiderFilterableMaxWordCount) {
+				logTrace( g_conf.m_logTraceXmlDoc, "END. HTML and getNumAlnumWords too high");
 				return &m_filteredContent;
 			}
 
@@ -9427,19 +9462,37 @@ char **XmlDoc::getFilteredContent ( ) {
 			}
 
 			if (!hasScript) {
+				logTrace( g_conf.m_logTraceXmlDoc, "END. HTML and has no script");
 				return &m_filteredContent;
 			}
+
+			logTrace( g_conf.m_logTraceXmlDoc, "CT_HTML hasScript=true");
 		}
 
-		if ( *ct == CT_TEXT    ) return &m_filteredContent;
-		if ( *ct == CT_XML     ) return &m_filteredContent;
-		if ( m_contentLen == 0 ) return &m_filteredContent;
-
-		// we now support JSON for diffbot
-		if ( *ct == CT_JSON    ) return &m_filteredContent;
-
-		if ( *ct == CT_ARC     ) return &m_filteredContent;
-		if ( *ct == CT_WARC    ) return &m_filteredContent;
+		if ( *ct == CT_TEXT    ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END. CT_TEXT");
+			return &m_filteredContent;
+		}
+		if ( *ct == CT_XML     ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END. CT_XML");
+			return &m_filteredContent;
+		}
+		if ( m_contentLen == 0 ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END. m_contentLen=0");
+			return &m_filteredContent;
+		}
+		if ( *ct == CT_JSON    ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END. CT_JSON");
+			return &m_filteredContent;
+		}
+		if ( *ct == CT_ARC     ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END. CT_ARC");
+			return &m_filteredContent;
+		}
+		if ( *ct == CT_WARC    ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END. CT_WARC");
+			return &m_filteredContent;
+		}
 
 		// unknown content types are 0 since it is probably binary... and
 		// we do not want to parse it!!
@@ -9455,6 +9508,7 @@ char **XmlDoc::getFilteredContent ( ) {
 			m_filteredContent      = NULL;
 			m_filteredContentLen   = 0;
 			m_filteredContentValid = true;
+			logTrace( g_conf.m_logTraceXmlDoc, "END. NOT filterable content type");
 			return &m_filteredContent;
 		}
 
@@ -9476,10 +9530,15 @@ char **XmlDoc::getFilteredContent ( ) {
 
 		// how can this be? don't core like this in thread, because it
 		// does not save our files!!
-		if ( ! m_mimeValid ) { g_process.shutdownAbort(true); }
+		if ( ! m_mimeValid ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "SHUTTING DOWN. m_mimeValid = false");
+			g_process.shutdownAbort(true);
+		}
 
+		logTrace( g_conf.m_logTraceXmlDoc, "Submit filtering job to JobScheduler");
 		// do it
 		if ( g_jobScheduler.submit(filterStartWrapper_r, filterDoneWrapper, this, thread_type_spider_filter, MAX_NICENESS) ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. g_jobScheduler blocked");
 			// return -1 if blocked
 			return (char **) -1;
 		}
@@ -9505,10 +9564,17 @@ char **XmlDoc::getFilteredContent ( ) {
 	// did we have an error from the thread?
 	if ( m_errno ) g_errno = m_errno;
 	// but bail out if it set g_errno
-	if ( g_errno ) return NULL;
+	if ( g_errno ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Returning NULL (g_errno=%" PRId32 "", g_errno);
+		return NULL;
+	}
 	// must be valid now - sanity check
-	if ( ! m_filteredContentValid ) { g_process.shutdownAbort(true); }
+	if ( ! m_filteredContentValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "SHUTTING DOWN. m_filteredContentValid=false");
+		g_process.shutdownAbort(true);
+	}
 	// return it
+	logTrace( g_conf.m_logTraceXmlDoc, "END.");
 	return &m_filteredContent;
 }
 
@@ -9768,14 +9834,21 @@ void XmlDoc::filterStart_r(bool amThread) {
 
 // return downloaded content as utf8
 char **XmlDoc::getRawUtf8Content ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN");
 	// if we already computed it, return that
-	if ( m_rawUtf8ContentValid ) return &m_rawUtf8Content;
+	if ( m_rawUtf8ContentValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid");
+		return &m_rawUtf8Content;
+	}
 
 	// . get our characterset
 	// . crap! this can be recursive. it calls getXml() which calls
 	//   getUtf8Content() which is us!
 	uint16_t *charset = getCharset ( );
-	if ( ! charset || charset == (uint16_t *)-1 ) return (char **)charset;
+	if ( ! charset || charset == (uint16_t *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getCharset returned %s", (charset == (uint16_t *)-1) ? "-1" : "NULL");
+		return (char **)charset;
+	}
 
 	const char *csName = get_charset_str(*charset);
 
@@ -9786,17 +9859,22 @@ char **XmlDoc::getRawUtf8Content ( ) {
 		m_rawUtf8ContentSize      = 0;
 		m_rawUtf8ContentAllocSize = 0;
 		m_rawUtf8ContentValid     = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, returning NULL (unsupported charset)");
 		return &m_rawUtf8Content;
 	}
 
 	// get ptr to filtered content
 	char **fc = getFilteredContent();
-	if ( ! fc || fc == (void *)-1 ) return (char **)fc;
+	if ( ! fc || fc == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getFilteredContent returned %s", (fc == (void *)-1) ? "-1" : "NULL");
+		return (char **)fc;
+	}
 
 	// make sure NULL terminated always
 	if ( m_filteredContent &&
 	     m_filteredContentValid &&
 	     m_filteredContent[m_filteredContentLen] ) {
+	     logTrace( g_conf.m_logTraceXmlDoc, "SHUTTING DOWN. m_filteredContent is not 0-terminated");
 		g_process.shutdownAbort(true); }
 
 	// NULL out if no content
@@ -9805,6 +9883,7 @@ char **XmlDoc::getRawUtf8Content ( ) {
 		m_rawUtf8ContentSize      = 0;
 		m_rawUtf8ContentAllocSize = 0;
 		m_rawUtf8ContentValid     = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, returning NULL (no content)");
 		return &m_rawUtf8Content;
 	}
 
@@ -9827,6 +9906,7 @@ char **XmlDoc::getRawUtf8Content ( ) {
 		// log oom error
 		if ( ! buf ) {
 			log("build: xml: not enough memory for utf8 buffer");
+			logTrace( g_conf.m_logTraceXmlDoc, "END, returning NULL (out of memory)");
 			return NULL;
 		}
 		// note it
@@ -9844,15 +9924,18 @@ char **XmlDoc::getRawUtf8Content ( ) {
 		// unrecoverable error? bad charset is g_errno == E2BIG
 		// which is like argument list too long or something
 		// error from Unicode.cpp's call to iconv()
-		if ( g_errno )
+		if ( g_errno ) {
 			log(LOG_INFO, "build: xml: failed parsing buffer: %s "
 			    "(cs=%d)", mstrerror(g_errno), *charset);
+		}
+
 		if ( g_errno && g_errno != E2BIG ) {
 			mfree ( buf, need, "Xml3");
 			// do not index this doc, delete from spiderdb/tfndb
 			//if ( g_errno != ENOMEM ) m_indexCode = g_errno;
 			// if conversion failed NOT because of bad charset
 			// then return NULL now and bail out. probably ENOMEM
+			logTrace( g_conf.m_logTraceXmlDoc, "END, returning NULL (errno %" PRId32 ")", g_errno);
 			return NULL;
 		}
 		// if bad charset... just make doc empty as a utf8 doc
@@ -9935,18 +10018,25 @@ char **XmlDoc::getRawUtf8Content ( ) {
 	m_rawUtf8ContentValid = true;
 
 	//return &ptr_utf8Content;
+	logTrace( g_conf.m_logTraceXmlDoc, "END, m_rawUtf8ContentValid now true");
 	return &m_rawUtf8Content;
 }
 
 // this is so Msg13.cpp can call getExpandedUtf8Content() to do its
 // iframe expansion logic
 static void getExpandedUtf8ContentWrapper ( void *state ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 	XmlDoc *THIS = (XmlDoc *)state;
 	char **retVal = THIS->getExpandedUtf8Content();
 	// return if blocked again
-	if ( retVal == (void *)-1 ) return;
+	if ( retVal == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getExpandedUtf8Content returned -1 (blocked) again" );
+		return;
+	}
 	// otherwise, all done, call the caller callback
+	logTrace( g_conf.m_logTraceXmlDoc, "calling callback" );
 	THIS->callCallback();
+	logTrace( g_conf.m_logTraceXmlDoc, "END" );
 }
 
 // now if there are any <iframe> tags let's substitute them for
@@ -9954,8 +10044,12 @@ static void getExpandedUtf8ContentWrapper ( void *state ) {
 // information you see on the page. this is somewhat critical since
 // a lot of pages have their content in the frame.
 char **XmlDoc::getExpandedUtf8Content ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN");
 	// if we already computed it, return that
-	if ( m_expandedUtf8ContentValid ) return &m_expandedUtf8Content;
+	if ( m_expandedUtf8ContentValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );
+		return &m_expandedUtf8Content;
+	}
 
 	// if called from spider compression proxy we need to set
 	// masterLoop here now
@@ -9966,16 +10060,23 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 
 	// get the unexpanded cpontent first
 	char **up = getRawUtf8Content ();
-	if ( ! up || up == (void *)-1 ) return up;
+	if ( ! up || up == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getRawUtf8Content returned %s", (up == (void *)-1) ? "-1" : "NULL");
+		return up;
+	}
 
 	Url *cu = getCurrentUrl();
-	if ( ! cu || cu == (void *)-1 ) return (char **)cu;
+	if ( ! cu || cu == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getCurrentUrl returned %s", (cu == (void *)-1) ? "-1" : "NULL");
+		return (char **)cu;
+	}
 
 	// NULL out if no content
 	if ( ! *up ) {
 		m_expandedUtf8Content          = NULL;
 		m_expandedUtf8ContentSize      = 0;
 		m_expandedUtf8ContentValid     = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, no content");
 		return &m_expandedUtf8Content;
 	}
 
@@ -9984,11 +10085,15 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		m_expandedUtf8Content     = m_rawUtf8Content;
 		m_expandedUtf8ContentSize = m_rawUtf8ContentSize;
 		m_expandedUtf8ContentValid = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, was injected. m_expandedUtf8ContentSize=%" PRId32 "", m_expandedUtf8ContentSize);
 		return &m_expandedUtf8Content;
 	}
 
 	uint8_t *ct = getContentType();
-	if ( ! ct || ct == (void *)-1 ) return (char **)ct;
+	if ( ! ct || ct == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getContentType returned %s", (ct == (void *)-1) ? "-1" : "NULL");
+		return (char **)ct;
+	}
 
 	// if we have a json reply, leave it alone... do not expand iframes
 	// in json, it will mess up the json
@@ -9996,6 +10101,7 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		m_expandedUtf8Content     = m_rawUtf8Content;
 		m_expandedUtf8ContentSize = m_rawUtf8ContentSize;
 		m_expandedUtf8ContentValid = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, content type is JSON. Do no more.");
 		return &m_expandedUtf8Content;
 	}
 
@@ -10005,12 +10111,16 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		m_expandedUtf8Content     = m_rawUtf8Content;
 		m_expandedUtf8ContentSize = m_rawUtf8ContentSize;
 		m_expandedUtf8ContentValid = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already expanded. m_expandedUtf8ContentSize=%" PRId32 "", m_expandedUtf8ContentSize);
 		return &m_expandedUtf8Content;
 	}
 
 	// we need this so getExtraDoc does not core
 	int32_t *pfip = getFirstIp();
-	if ( ! pfip || pfip == (void *)-1 ) return (char **)pfip;
+	if ( ! pfip || pfip == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getFirstIp returned %s", (pfip == (void *)-1) ? "-1" : "NULL");
+		return (char **)pfip;
+	}
 
 	// point to it
 	char *p    = *up;
@@ -10299,8 +10409,11 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 	}
 	// sanity -- must be \0 terminated
 	if ( m_expandedUtf8Content[m_expandedUtf8ContentSize-1] ) {
-		g_process.shutdownAbort(true); }
+		logTrace( g_conf.m_logTraceXmlDoc, "SHUTTING DOWN - expanded utf8 content is null 0-terminated");
+		g_process.shutdownAbort(true);
+	}
 
+	logTrace( g_conf.m_logTraceXmlDoc, "END, m_expandedUtf8ContentSize=%" PRId32 "", m_expandedUtf8ContentSize);
 	m_expandedUtf8ContentValid = true;
 	return &m_expandedUtf8Content;
 }
@@ -10316,17 +10429,25 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 //   the json which is the output from the diffbot api. UNLESS we are getting
 //   the webpage itself for harvesting outlinks to spider later.
 char **XmlDoc::getUtf8Content ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// if we already computed it, return that
-	if ( m_utf8ContentValid ) return &ptr_utf8Content;
+	if ( m_utf8ContentValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );
+		return &ptr_utf8Content;
+	}
 
 	if ( m_setFromTitleRec ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, set from titlerec, setting m_utf8ContentValid=true" );
 		m_utf8ContentValid = true;
 		return &ptr_utf8Content;
 	}
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getCollRec returned NULL" );
+		return NULL;
+	}
 
 	setStatus("getting utf8 content");
 
@@ -10335,8 +10456,12 @@ char **XmlDoc::getUtf8Content ( ) {
 	     // if trying to delete from index, load from old titlerec
 	     m_deleteFromIndex ) {
 		// get the old xml doc from the old title rec
+		logTrace( g_conf.m_logTraceXmlDoc, "Getting old XmlDoc" );
 		XmlDoc **pod = getOldXmlDoc ( );
-		if ( ! pod || pod == (void *)-1 ) return (char **)pod;
+		if ( ! pod || pod == (void *)-1 ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END, could not get old XmlDoc" );
+			return (char **)pod;
+		}
 		// shortcut
 		XmlDoc *od = *pod;
 		// this is non-NULL if it existed
@@ -10346,9 +10471,12 @@ char **XmlDoc::getUtf8Content ( ) {
 			m_utf8ContentValid = true;
 			m_contentType      = od->m_contentType;
 			m_contentTypeValid = true;
+			logTrace( g_conf.m_logTraceXmlDoc, "Set from old XmlDoc. Size=%" PRId32 "", size_utf8Content );
+
 			// sanity check
 			if ( ptr_utf8Content &&
 			     ptr_utf8Content[size_utf8Content-1] ) {
+				logTrace( g_conf.m_logTraceXmlDoc, "Sanity check failed. Last byte in utf8Content is not 0" );
 				g_process.shutdownAbort(true); }
 			return &ptr_utf8Content;
 		}
@@ -10365,24 +10493,33 @@ char **XmlDoc::getUtf8Content ( ) {
 			m_utf8ContentValid = true;
 			m_contentType = CT_HTML;
 			m_contentTypeValid = true;
+			logTrace( g_conf.m_logTraceXmlDoc, "END. Set from docid and ENOTFOUND" );
 			return &ptr_utf8Content;
 		}
 
 	}
 
+	logTrace( g_conf.m_logTraceXmlDoc, "call getExpandedUtf8Content" );
 	char **ep = getExpandedUtf8Content();
-	if ( ! ep || ep == (void *)-1 ) return ep;
+	if ( ! ep || ep == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getExpandedUtf8Content returned %s", (ep == (void *)-1) ? "-1" : "NULL" );
+		return ep;
+	}
 
 	// NULL out if no content
 	if ( ! *ep ) {
 		ptr_utf8Content    = NULL;
 		size_utf8Content   = 0;
 		m_utf8ContentValid = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, no content" );
 		return &ptr_utf8Content;
 	}
 
 	uint8_t *ct = getContentType();
-	if ( ! ct || ct == (void *)-1 ) return (char **)ct;
+	if ( ! ct || ct == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getContentType returned %s", (ct == (void *)-1) ? "-1" : "NULL" );
+		return (char **)ct;
+	}
 
 	// if we have a json reply, leave it alone... expanding a &quot;
 	// into a double quote will mess up the JSON!
@@ -10390,6 +10527,7 @@ char **XmlDoc::getUtf8Content ( ) {
 		ptr_utf8Content  = (char *)m_expandedUtf8Content;
 		size_utf8Content = m_expandedUtf8ContentSize;
 		m_utf8ContentValid = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END. JSON, do nothing further" );
 		return &ptr_utf8Content;
 	}
 
@@ -10441,6 +10579,7 @@ char **XmlDoc::getUtf8Content ( ) {
 	//   hashXmlFields()
 	int32_t n = m_expandedUtf8ContentSize - 1;
 	if ( m_contentType != CT_XML ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "Calling htmlDecode" );
 		n = htmlDecode( m_expandedUtf8Content, m_expandedUtf8Content, m_expandedUtf8ContentSize - 1,
 						doSpecial );
 	}
@@ -10535,6 +10674,7 @@ char **XmlDoc::getUtf8Content ( ) {
 		g_process.shutdownAbort(true); }
 
 	m_utf8ContentValid = true;
+	logTrace( g_conf.m_logTraceXmlDoc, "END. m_utf8ContentValid now true" );
 	return &ptr_utf8Content;
 }
 
