@@ -11512,9 +11512,13 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 		VALGRIND_CHECK_MEM_IS_DEFINED(&m_firstIp,sizeof(m_firstIp));
 #endif
 
-	if ( m_sreqValid && m_firstIpValid && m_sreq.m_firstIp != m_firstIp ) {
+	if (m_sreqValid && m_firstIpValid && m_sreq.m_firstIp != m_firstIp) {
 		char ipbuf[16];
-		sb->safePrintf("fakesreqfirstip=%s ",iptoa(m_sreq.m_firstIp,ipbuf) );
+		if (m_sreq.m_fakeFirstIp) {
+			sb->safePrintf("fakesreqfirstip=%s ", iptoa(m_sreq.m_firstIp, ipbuf));
+		} else {
+			sb->safePrintf("sreqfirstip=%s ", iptoa(m_sreq.m_firstIp, ipbuf));
+		}
 	}
 
 	//
