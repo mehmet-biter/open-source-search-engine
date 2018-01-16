@@ -11,6 +11,7 @@
 #include <libgen.h>
 #include <arpa/inet.h>
 #include <fstream>
+#include "ip.h"
 
 static void print_usage(const char *argv0) {
 	fprintf(stdout, "Usage: %s [-h] PATH FIRSTIPFILE\n", argv0);
@@ -99,6 +100,7 @@ int main(int argc, char **argv) {
 	// load firstIp file
 	std::ifstream file(firstIpPath);
 	std::string line;
+	uint64_t count = 0;
 	while (std::getline(file, line)) {
 		// ignore empty lines
 		if (line.length() == 0) {
@@ -113,12 +115,17 @@ int main(int argc, char **argv) {
 		in_addr addr;
 		if (inet_pton(AF_INET, firstIpStr.c_str(), &addr) != 1) {
 			// invalid ip
-			logTrace(true, "Ignoring invalid firstIp=%s", firstIpStr.c_str());
+			logf(LOG_TRACE, "Ignoring invalid firstIp=%s", firstIpStr.c_str());
 			continue;
 		}
 
 		uint64_t host = strtoull(hostStr.c_str(), nullptr, 0);
 		hostFirstIpMap[host] = addr.s_addr;
+		++count;
+
+		if (count % 1000000 == 0) {
+			logf(LOG_TRACE, "count=%" PRIu64, count);
+		}
 	}
 
 	Msg5 msg5;
@@ -151,9 +158,12 @@ int main(int argc, char **argv) {
 				continue;
 			}
 
+			char ipbuf[16];
+			char ipbuf2[16];
+
 			// validate firstIP
 			if (sreq->m_firstIp != g_spiderdb.getFirstIp(&sreq->m_key)) {
-				printf("invalid firstip\n");
+				printf("%s|%s|%s\n", iptoa(sreq->m_firstIp, ipbuf), iptoa(g_spiderdb.getFirstIp(&sreq->m_key), ipbuf2), sreq->m_url);
 				continue;
 			}
 
@@ -161,7 +171,7 @@ int main(int argc, char **argv) {
 			auto it = hostFirstIpMap.find(sreq->m_key.n1);
 			if (it != hostFirstIpMap.end()) {
 				if (it->second != (uint32_t)sreq->m_firstIp) {
-					printf("invalid firstip 2\n");
+					printf("%s|%s|%s\n", iptoa(sreq->m_firstIp, ipbuf), iptoa(it->second, ipbuf2), sreq->m_url);
 					continue;
 				}
 			}
