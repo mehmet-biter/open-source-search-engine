@@ -9453,6 +9453,13 @@ char **XmlDoc::getFilteredContent ( ) {
 
 		if (*ct == CT_HTML) {
 			logTrace( g_conf.m_logTraceXmlDoc, "CT_HTML");
+
+			// only filter html content when it's successful
+			if (mime->getHttpStatus() != 200) {
+				logTrace( g_conf.m_logTraceXmlDoc, "END. http status(%d) not 200", mime->getHttpStatus());
+				return &m_filteredContent;
+			}
+
 			Xml xml;
 			xml.set(m_content, m_contentLen, m_version, *ct);
 
