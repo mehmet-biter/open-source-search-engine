@@ -94,25 +94,10 @@ void DocReindex::processDocItem(DocProcessDocItem *docItem) {
 		return;
 	}
 
-	int32_t *firstIp = nullptr;
-	if (*oldTitleRec) {
-		XmlDoc **oldXmlDoc = xmlDoc->getOldXmlDoc();
-		if (!oldXmlDoc || oldXmlDoc == (XmlDoc **)-1) {
-			// we must not be blocked/invalid at this point
-			gbshutdownLogicError();
-		}
-
-		firstIp = (*oldXmlDoc)->getFirstIp();
-		if (!firstIp || firstIp == (int32_t *)-1) {
-			// we must not be blocked/invalid at this point
-			gbshutdownLogicError();
-		}
-	} else {
-		firstIp = xmlDoc->getFirstIp();
-		if (!firstIp || firstIp == (int32_t *)-1) {
-			// blocked
-			return;
-		}
+	int32_t *firstIp = xmlDoc->getFirstIp();
+	if (!firstIp || firstIp == (int32_t *)-1) {
+		// blocked
+		return;
 	}
 
 	int32_t *siteNumInLinks = xmlDoc->getSiteNumInlinks();
