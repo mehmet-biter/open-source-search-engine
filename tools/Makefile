@@ -26,7 +26,7 @@ $(BASE_DIR)/libced.so:
 CPPFLAGS += -g
 CPPFLAGS += -Wall -Wno-write-strings
 CPPFLAGS += -Wl,-rpath=. -Wl,-rpath=$(BASE_DIR)
-CPPFLAGS += -I$(BASE_DIR) -I$(BASE_DIR)/third-party/compact_enc_det -I$(BASE_DIR)/word_variations
+CPPFLAGS += -I$(BASE_DIR) -I$(BASE_DIR)/third-party/compact_enc_det -I$(BASE_DIR)/word_variations -I$(BASE_DIR)/third-party/sparsepp
 CPPFLAGS += -std=c++11
 
 # exported in parent make
