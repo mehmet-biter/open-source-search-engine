@@ -647,7 +647,7 @@ public:
 	bool isFirstUrlRobotsTxt();
 	bool m_isRobotsTxtUrl;
 
-	bool isFirstUrlCanonical();
+	bool* isFirstUrlCanonical();
 	bool m_isUrlCanonical;
 
 	Images     m_images;

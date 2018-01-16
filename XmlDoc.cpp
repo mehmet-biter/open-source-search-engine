@@ -5749,7 +5749,13 @@ Url **XmlDoc::getRedirUrl() {
 	}
 
 	// if it's a canonical url, follow the redirect
-	if (isFirstUrlCanonical()) {
+	bool *isFirstUrlCanon = isFirstUrlCanonical();
+	if (!isFirstUrlCanon || isFirstUrlCanon == (void *)-1) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, blocked, could not get first url canonical" );
+		return (Url **)isFirstUrlCanon;
+	}
+
+	if (*isFirstUrlCanon) {
 		logTrace(g_conf.m_logTraceXmlDoc, "first url is canonical. allowSimplifiedRedirs=true");
 		allowSimplifiedRedirs = true;
 	}
@@ -7238,17 +7244,21 @@ bool XmlDoc::isFirstUrlRobotsTxt() {
 	return m_isRobotsTxtUrl;
 }
 
-bool XmlDoc::isFirstUrlCanonical() {
+bool* XmlDoc::isFirstUrlCanonical() {
 	if (m_isUrlCanonicalValid) {
-		return m_isUrlCanonical;
+		return &m_isUrlCanonical;
 	}
 
 	Url *fu = getFirstUrl();
-	Url *cu = getCanonicalUrl();
-	m_isUrlCanonical = (strcmp(fu->getUrl(), cu->getUrl()) == 0);
+	Url *canonUrl = getCanonicalUrl();
+	if (canonUrl == nullptr || canonUrl == (Url*)-1) {
+		return (bool*)canonUrl;
+	}
+
+	m_isUrlCanonical = (strcmp(fu->getUrl(), canonUrl->getUrl()) == 0);
 	m_isUrlCanonicalValid = true;
 
-	return m_isUrlCanonical;
+	return &m_isUrlCanonical;
 }
 
 // . get the Robots.txt and see if we are allowed
