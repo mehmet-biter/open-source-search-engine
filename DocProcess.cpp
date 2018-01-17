@@ -191,6 +191,7 @@ size_t DocProcess::getPendingDocCount() {
 void DocProcess::waitPendingDocCount(unsigned maxCount) {
 	ScopedLock sl(m_pendingDocItemsMtx);
 	while (!m_stop && m_pendingDocItems.size() > maxCount) {
+		logTrace(g_conf.m_logTraceDocProcess, "Waiting for max pending=%zu to fall below maxCount=%u", m_pendingDocItems.size(), maxCount);
 		pthread_cond_wait(&m_pendingDocItemsCond, &m_pendingDocItemsMtx.mtx);
 	}
 }
@@ -363,6 +364,7 @@ void DocProcess::processFile(void *item) {
 		}
 	}
 
+	logTrace(g_conf.m_logTraceDocProcess, "Waiting for all pending doc in queue to be processed");
 	fileItem->m_docProcess->waitPendingDocCount(0);
 
 	if (isInterrupted || fileItem->m_docProcess->m_stop) {
