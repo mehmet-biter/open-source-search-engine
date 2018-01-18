@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
 			continue;
 		}
 
-		uint64_t host = strtoull(hostStr.c_str(), nullptr, 0);
+		uint64_t host = strtoull(hostStr.c_str(), nullptr, 16);
 		hostFirstIpMap[host] = addr.s_addr;
 		++count;
 
