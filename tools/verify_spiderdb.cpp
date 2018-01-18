@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
 
 	g_collectiondb.addRdbBaseToAllRdbsForEachCollRec();
 
-	g_log.m_disabled = true;
+	g_log.m_disabled = false;
 	g_log.m_logPrefix = false;
 
 	CollectionRec *cr = g_collectiondb.getRec("main");
