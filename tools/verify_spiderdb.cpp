@@ -174,8 +174,12 @@ int main(int argc, char **argv) {
 				continue;
 			}
 
+			SiteGetter sg;
+			sg.getSite(sreq->m_url, nullptr, 0, 0, 0);
+			uint64_t siteHash = hash64n(sg.getSite());
+
 			// compare with tagdb
-			auto it = hostFirstIpMap.find(sreq->m_key.n1);
+			auto it = hostFirstIpMap.find(siteHash);
 			if (it != hostFirstIpMap.end()) {
 				if (it->second != (uint32_t)sreq->m_firstIp) {
 					printf("%s|%s|%s\n", iptoa(sreq->m_firstIp, ipbuf), iptoa(it->second, ipbuf2), sreq->m_url);
