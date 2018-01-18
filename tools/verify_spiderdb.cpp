@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
 		++count;
 
 		if (count % 1000000 == 0) {
-			logf(LOG_TRACE, "count=%" PRIu64, count);
+			logf(LOG_TRACE, "firstip count=%" PRIu64, count);
 		}
 	}
 
@@ -136,6 +136,7 @@ int main(int argc, char **argv) {
 	key128_t endKey;
 	endKey.setMax();
 
+	count = 0;
 	for (;;) {
 		if (!msg5.getList(RDB_SPIDERDB, cr->m_collnum, &list, &startKey, &endKey, 10000000, true, 0, -1, NULL, NULL, 0, true, -1, false)) {
 			logf(LOG_TRACE, "msg5.getlist didn't block");
@@ -147,6 +148,12 @@ int main(int argc, char **argv) {
 		}
 
 		for (list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
+			++count;
+
+			if (count % 1000000 == 0) {
+				logf(LOG_TRACE, "spiderrec count=%" PRIu64, count);
+			}
+
 			char *srec = list.getCurrentRec();
 
 			if (Spiderdb::isSpiderReply((key128_t *)srec)) {
