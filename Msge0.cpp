@@ -147,23 +147,17 @@ bool Msge0::launchRequests() {
 			continue;
 		}
 
-		// . get the next url
-		const char *p = m_urlPtrs[m_n];
-		
 		Url url;
-		url.set(p);
-		if(isUrlBlocked(url)) {
-			//if(g_conf.m_logDebug...something...)
-			//	log("...something...: skipping tagrec lookup of '%*.*s' because the URL is blocked", (int)url.getHostLen(), (int)url.getHostLen(), url.getHost());
-			m_tagRecPtrs[m_n] = (TagRec *)m_baseTagRec;
+		url.set(m_urlPtrs[m_n]);
+		if (isUrlBlocked(url)) {
+			// skip tagrec lookup if url is blocked
+			m_tagRecPtrs[m_n] = nullptr;
 			m_numRequests++;
 			m_numReplies++;
 			m_n++;
 			continue;
 		}
 
-		// get the length
-		int32_t  plen = strlen(p);
 		// . grab a slot
 		int32_t i;
 		for (i = 0; i < MAX_OUTSTANDING_MSGE0; i++) {
@@ -178,15 +172,19 @@ bool Msge0::launchRequests() {
 		}
 
 		// normalize the url
-		m_urls[i].set( p, plen );
+		m_urls[i].set(m_urlPtrs[m_n]);
+
 		// save the url number, "n"
-		m_ns  [i] = m_n++;
+		m_ns[i] = m_n;
+
 		// claim it
 		m_used[i] = true;
 
 		// . start it off
 		// . this will start the pipeline for this url
 		m_numRequests++;
+		m_n++;
+
 		sendMsg8a(i);
 	}
 
