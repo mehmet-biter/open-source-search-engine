@@ -1427,20 +1427,36 @@ bool XmlDoc::hashMetaKeywords ( HashTableX *tt ) {
 }
 
 
-bool XmlDoc::hashExplicitKeywords(HashTableX *tt) {
-	setStatus("hashing explicit keywords");
+void XmlDoc::lookupAndSetExplicitKeywords() {
 	std::string kw;
 	kw = ExplicitKeywords::lookupExplicitKeywords(m_firstUrl.getUrl());
 	if(kw.empty())
 		kw = ExplicitKeywords::lookupExplicitKeywords(m_currentUrl.getUrl());
 	if(!kw.empty()) {
-		log(LOG_DEBUG,"spider: hashing explicit keywords '%s' or %s", kw.c_str(),m_firstUrl.getUrl());
+		log(LOG_DEBUG,"spider: found explicit keywords '%s' for %s", kw.c_str(),m_firstUrl.getUrl());
+		m_explicitKeywordsBuf.set(kw.c_str());
+		ptr_explicitKeywords = m_explicitKeywordsBuf.getBufStart();
+		size_explicitKeywords = m_explicitKeywordsBuf.length();
+	} else {
+		m_explicitKeywordsBuf.purge();
+		ptr_explicitKeywords = NULL;
+		size_explicitKeywords = 0;
+	}
+}
+
+bool XmlDoc::hashExplicitKeywords(HashTableX *tt) {
+	if(m_version<128)
+		return true;
+	setStatus("hashing explicit keywords");
+	
+	if(size_explicitKeywords>0) {
+		log(LOG_DEBUG,"spider: hashing explicit keywords '%.*s' for %s", size_explicitKeywords, ptr_explicitKeywords, m_firstUrl.getUrl());
 		// update hash parms
 		HashInfo hi;
 		hi.m_tt         = tt;
 		hi.m_desc       = "explicit keywords";
 		hi.m_hashGroup  = HASHGROUP_EXPLICIT_KEYWORDS;
-		return hashString(const_cast<char*>(kw.c_str()), kw.size(), &hi);
+		return hashString(ptr_explicitKeywords, size_explicitKeywords, &hi);
 	} else
 		return true; //nothing done - no error
 }

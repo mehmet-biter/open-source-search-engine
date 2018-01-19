@@ -227,7 +227,7 @@ public:
 	char      *ptr_imageData;
 	int32_t      *ptr_unused6;
 	int32_t      *ptr_unused7;
-	char      *ptr_unused1;
+	char      *ptr_explicitKeywords;
 	char      *ptr_unused2;
 	char      *ptr_unused3;
 	char      *ptr_utf8Content;
@@ -252,7 +252,7 @@ public:
 	int32_t       size_imageData;
 	int32_t       size_unused6;
 	int32_t       size_unused7;
-	int32_t       size_unused1;
+	int32_t       size_explicitKeywords;
 	int32_t       size_unused2;
 	int32_t       size_unused3;
 	int32_t       size_utf8Content;
@@ -484,6 +484,8 @@ public:
 
 
 	char *addOutlinkSpiderRecsToMetaList ( );
+
+	void lookupAndSetExplicitKeywords();
 
 	int32_t getSiteRank ();
 	bool addTable144 ( class HashTableX *tt1 , 
@@ -908,6 +910,7 @@ public:
 	bool m_skipContentHashCheck;
 	char m_isWWWDup;	// May be -1
 
+	SafeBuf m_explicitKeywordsBuf;
 	SafeBuf m_linkSiteHashBuf;
 	SafeBuf m_linkdbDataBuf;
 	SafeBuf m_langVec;

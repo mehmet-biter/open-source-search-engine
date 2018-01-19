@@ -13129,6 +13129,8 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		return m_metaList;
 	}
 
+	if(!forDelete)
+		lookupAndSetExplicitKeywords();
 
 	// get the old meta list if we had an old doc
 	char *oldList = NULL;
