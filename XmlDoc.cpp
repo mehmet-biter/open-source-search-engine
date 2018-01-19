@@ -19703,9 +19703,11 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	linkflags_t *flags = links->m_linkFlags;
 	// scan all outlinks we have on this page
 	for ( int32_t i = 0 ; i < n ; i++ ) {
-
 		// get its tag rec
 		TagRec *gr = (*grv)[i];
+		if (!gr) {
+			continue;
+		}
 
 		// does this hostname have a "firstIp" tag?
 		const char *ips = gr->getString("firstip",NULL);
