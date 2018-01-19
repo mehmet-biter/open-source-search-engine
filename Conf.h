@@ -250,6 +250,9 @@ class Conf {
 	bool   m_verifyWrites;
 	int32_t   m_corruptRetries;
 
+	// verify tagrec while indexing
+	bool m_verifyTagRec;
+
 	bool m_msg20FallbackToAllHosts;
 
 	int64_t m_docProcessDelayMs;

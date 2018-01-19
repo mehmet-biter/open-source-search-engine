@@ -141,6 +141,7 @@ Conf::Conf ( ) {
 	m_verifyIndex = false;
 	m_flushWrites = false;
 	m_verifyWrites = false;
+	m_verifyTagRec = false;
 	m_corruptRetries = 0;
 	m_docProcessDelayMs = 1000;
 	m_docProcessMaxPending = 10;

@@ -6,6 +6,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "ScopedLock.h"
+#include "SiteGetter.h"
 
 
 Msge1::Msge1()
@@ -129,6 +130,19 @@ bool Msge1::launchRequests ( int32_t starti ) {
 		// grab the "firstip" from the tagRec if we can
 		TagRec *gr  = m_grv[m_n];
 		if (gr) {
+			// verify tagrec
+			if (g_conf.m_verifyTagRec) {
+				const char *site = gr->getString("site");
+				if (site != nullptr) {
+					SiteGetter sg;
+					sg.getSite(m_urlPtrs[m_n], nullptr, 0, 0, m_niceness);
+
+					if (strcmp(site, sg.getSite()) != 0) {
+						gbshutdownLogicError();
+					}
+				}
+			}
+
 			Tag *tag = gr->getTag("firstip");
 			if (tag) {
 				// grab the ip that was in there

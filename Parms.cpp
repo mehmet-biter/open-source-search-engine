@@ -5973,6 +5973,16 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	m->m_title = "verify tag record";
+	m->m_desc  = "Ensure that tag record being used for first ip is for the same site. Used for debugging.";
+	m->m_cgi   = "vtr";
+	simple_m_set(Conf,m_verifyTagRec);
+	m->m_def   = "0";
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
 	m->m_title = "msg20 fallback to all hosts";
 	m->m_desc  = "When getting summary or link text and the desired host(s) in the shard are dead may msg20 fall back to just asking all hosts in the shard?";
 	m->m_cgi   = "msgtwentyfallbackyoallhosts";
