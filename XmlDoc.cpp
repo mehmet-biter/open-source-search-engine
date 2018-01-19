@@ -17677,6 +17677,12 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 			       sni );
 	}
 
+	if(m_version>=128 && size_explicitKeywords>0) {
+		sb->safePrintf("<tr><td>Explicit keywords</td><td>");
+		sb->htmlEncode(ptr_explicitKeywords,size_explicitKeywords,false);
+		sb->safePrintf("</td></tr>\n");
+	}
+		
 	// close the table
 	sb->safePrintf ( "</table></center><br>\n" );
 
@@ -18236,6 +18242,11 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("<tr><td><b>good inlinks to site</b></td><td>%" PRId32"</td></tr>\n", m_siteNumInlinks);
 			sb->safePrintf("<tr><td><b>site rank</b></td><td>%" PRId32"</td></tr>\n", ::getSiteRank(m_siteNumInlinks));
 			sb->safePrintf("<tr><td>good inlinks to page</td><td>%" PRId32"</td></tr>\n", info1->getNumGoodInlinks());
+			if(m_version>=128 && size_explicitKeywords>0) {
+				sb->safePrintf("<tr><td>Explicit keywords</td><td>");
+				sb->htmlEncode(ptr_explicitKeywords,size_explicitKeywords,false);
+				sb->safePrintf("</td></tr>\n");
+			}
 
 			time_t tlu = info1->getLastUpdated();
 			struct tm *timeStruct3 = gmtime_r(&tlu,&tm_buf);
@@ -18243,8 +18254,8 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			strftime ( tmp3 , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct3 );
 			sb->safePrintf("<tr><td><nobr>page inlinks last computed</nobr></td><td>%s</td></tr>\n", tmp3);
 
-			sb->safePrintf("</td></tr>\n");
-		} break;
+			break;
+		}
 		case FORMAT_XML:
 			sb->safePrintf("\t<firstIndexedDateUTC>%" PRIu32"</firstIndexedDateUTC>\n", (uint32_t)m_firstIndexedDate);
 			sb->safePrintf("\t<lastIndexedDateUTC>%" PRIu32"</lastIndexedDateUTC>\n", (uint32_t)m_spideredTime);
