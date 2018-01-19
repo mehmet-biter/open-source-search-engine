@@ -138,6 +138,11 @@ bool Msge1::launchRequests ( int32_t starti ) {
 					sg.getSite(m_urlPtrs[m_n], nullptr, 0, 0, m_niceness);
 
 					if (strcmp(site, sg.getSite()) != 0) {
+						SafeBuf sb;
+						gr->printToBuf(&sb);
+						logError("tagrec: %s", sb.getBufStart());
+						logError("tagsite: %s sitegetter: %s", site, sg.getSite());
+
 						gbshutdownLogicError();
 					}
 				}
