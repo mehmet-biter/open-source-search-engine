@@ -94,7 +94,7 @@ enum ucScript {
 	ucScriptKatakana_Or_Hiragana,
 	ucScriptKhmer,
 	ucScriptLao,
-	ucScriptLatin,
+	ucScriptLatin,		//30
 	ucScriptLimbu,
 	ucScriptLinear_B,
 	ucScriptMalayalam,
