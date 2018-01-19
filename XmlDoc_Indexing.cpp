@@ -13,6 +13,7 @@
 #include "Conf.h"
 #include "UrlBlockCheck.h"
 #include "Domains.h"
+#include "FxExplicitKeywords.h"
 
 
 #ifdef _VALGRIND_
@@ -404,6 +405,12 @@ char *XmlDoc::hashAll(HashTableX *table) {
 	//   what is already in the hash table
 	if (!hashMetaKeywords(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashMetaKeywords failed");
+		return NULL;
+	}
+
+	//Hash explicit keywords, if any
+	if(!hashExplicitKeywords(table)) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashExplicityKeywords failed");
 		return NULL;
 	}
 
@@ -1417,6 +1424,25 @@ bool XmlDoc::hashMetaKeywords ( HashTableX *tt ) {
 
 	// call XmlDoc::hashString
 	return hashString ( mk , mklen , &hi);
+}
+
+
+bool XmlDoc::hashExplicitKeywords(HashTableX *tt) {
+	setStatus("hashing explicit keywords");
+	std::string kw;
+	kw = ExplicitKeywords::lookupExplicitKeywords(m_firstUrl.getUrl());
+	if(kw.empty())
+		kw = ExplicitKeywords::lookupExplicitKeywords(m_currentUrl.getUrl());
+	if(!kw.empty()) {
+		log(LOG_DEBUG,"spider: hashing explicit keywords '%s' or %s", kw.c_str(),m_firstUrl.getUrl());
+		// update hash parms
+		HashInfo hi;
+		hi.m_tt         = tt;
+		hi.m_desc       = "explicit keywords";
+		hi.m_hashGroup  = HASHGROUP_EXPLICIT_KEYWORDS;
+		return hashString(const_cast<char*>(kw.c_str()), kw.size(), &hi);
+	} else
+		return true; //nothing done - no error
 }
 
 

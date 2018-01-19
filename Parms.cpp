@@ -3857,6 +3857,15 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "hashGroupWeightExplicitKeywords";
+	m->m_desc  = "hashGroupWeightExplicitKeywords";
+	m->m_cgi   = "hgw_explicitkeywords";
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightExplicitKeywords);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightExplicitKeywords);
+	m->m_def   = "16.000000";
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
 
 	m->m_title = "Synonym weight";
 	m->m_desc  = "Weight of synonyms in relation to original words";
@@ -4318,6 +4327,16 @@ void Parms::init ( ) {
 	m->m_cgi   = "hgw_inmenu";
 	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightInMenu);
 	m->m_def   = "0.200000";
+	m->m_group = false;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
+	m->m_page  = PAGE_RANKING;
+	m++;
+
+	m->m_title = "Hashgroup weight - explicit keywords";
+	m->m_desc  = "";
+	m->m_cgi   = "hgw_explicitkeywords";
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightExplicitKeywords);
+	m->m_def   = "16.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;

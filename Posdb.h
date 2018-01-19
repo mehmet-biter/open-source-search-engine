@@ -83,7 +83,8 @@
 #define HASHGROUP_INTERNALINLINKTEXT   8
 #define HASHGROUP_INURL                9
 #define HASHGROUP_INMENU               10 // body implied
-#define HASHGROUP_END                  11
+#define HASHGROUP_EXPLICIT_KEYWORDS    11
+#define HASHGROUP_END                  12
 
 #define POSDB_DELETEDOC_TERMID    0
 

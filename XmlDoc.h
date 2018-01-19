@@ -505,6 +505,7 @@ public:
 	bool hashTitle ( class HashTableX *table );
 	bool hashBody2 ( class HashTableX *table );
 	bool hashMetaKeywords ( class HashTableX *table );
+	bool hashExplicitKeywords(HashTableX *table);
 	bool hashMetaGeoPlacename( class HashTableX *table );
 	bool hashMetaSummary ( class HashTableX *table );
 	bool hashLanguage ( class HashTableX *table ) ;

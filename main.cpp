@@ -97,6 +97,7 @@
 #include "GbCompress.h"
 #include "DocRebuild.h"
 #include "DocReindex.h"
+#include "FxExplicitKeywords.h"
 
 
 #include <sys/stat.h> //umask()
@@ -1425,6 +1426,11 @@ int main2 ( int argc , char *argv[] ) {
 
 	// Initialize spam detection
 	g_checkSpamList.init("spamphrases.txt");
+
+	if(!ExplicitKeywords::initialize()) {
+		log(LOG_ERROR,"Could not initialize explicit keywords file");
+		//but otherwise carry on
+	}
 
 	// initialize generate global index thread
 	if (!RdbBase::initializeGlobalIndexThread()) {

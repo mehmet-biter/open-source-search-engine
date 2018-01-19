@@ -73,6 +73,7 @@ OBJS_O3 = \
 	UrlRealtimeClassification.o UrlResultOverride.o \
 	WantedChecker.o \
 	MergeSpaceCoordinator.o \
+	FxExplicitKeywords.o \
 	GbMoveFile.o GbMoveFile2.o GbCopyFile.o GbMakePath.o \
 	GbUtil.o \
 	GbSignature.o \

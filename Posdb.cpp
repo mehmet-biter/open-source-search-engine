@@ -411,6 +411,7 @@ const char *getHashGroupString ( unsigned char hg ) {
 	if ( hg == HASHGROUP_INTERNALINLINKTEXT) return "onsite inlink text";
 	if ( hg == HASHGROUP_INURL ) return "in url";
 	if ( hg == HASHGROUP_INMENU ) return "in menu";
+	if ( hg == HASHGROUP_EXPLICIT_KEYWORDS ) return "in explicit-keywords";
 	return "unknown!";
 }
 
