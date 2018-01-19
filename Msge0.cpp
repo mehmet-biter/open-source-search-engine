@@ -140,7 +140,7 @@ bool Msge0::launchRequests() {
 	while(m_n < m_numUrls && m_numRequests - m_numReplies < maxOut) {
 		// if url is same host as the tagrec provided, just reference that!
 		if ( m_urlFlags && (m_urlFlags[m_n] & LF_SAMESITE) && m_baseTagRec) {
-			m_tagRecPtrs[m_n] = (TagRec *)m_baseTagRec;
+			m_tagRecPtrs[m_n] = m_baseTagRec;
 			m_numRequests++;
 			m_numReplies++;
 			m_n++;
@@ -166,10 +166,17 @@ bool Msge0::launchRequests() {
 		int32_t  plen = strlen(p);
 		// . grab a slot
 		int32_t i;
-		for ( i = 0; i < MAX_OUTSTANDING_MSGE0 ; i++ )
-			if ( ! m_used[i] ) break;
+		for (i = 0; i < MAX_OUTSTANDING_MSGE0; i++) {
+			if (!m_used[i]) {
+				break;
+			}
+		}
+
 		// sanity check
-		if ( i >= MAX_OUTSTANDING_MSGE0 ) { g_process.shutdownAbort(true); }
+		if (i >= MAX_OUTSTANDING_MSGE0) {
+			g_process.shutdownAbort(true);
+		}
+
 		// normalize the url
 		m_urls[i].set( p, plen );
 		// save the url number, "n"
@@ -183,8 +190,10 @@ bool Msge0::launchRequests() {
 		sendMsg8a(i);
 	}
 
-	if( m_n >= m_numUrls )
+	if (m_n >= m_numUrls) {
 		return m_numRequests == m_numReplies;
+	}
+
 	return false;
 }
 

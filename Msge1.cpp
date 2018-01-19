@@ -197,10 +197,13 @@ bool Msge1::launchRequests ( int32_t starti ) {
 
 		Url url;
 		url.set(p);
-		if(isUrlBlocked(url)) {
+		if (isUrlBlocked(url)) {
 			// debug for now
-			if(g_conf.m_logDebugDns)
-				log("dns: skipping dns lookup of '%*.*s' because the URL is blocked", (int)url.getHostLen(), (int)url.getHostLen(), url.getHost());
+			if (g_conf.m_logDebugDns) {
+				log("dns: skipping dns lookup of '%*.*s' because the URL is blocked",
+				    (int)url.getHostLen(), (int)url.getHostLen(), url.getHost());
+			}
+
 			// -1 means time out i guess
 			m_ipBuf[m_n] = -1;
 			m_numRequests++;
@@ -211,12 +214,20 @@ bool Msge1::launchRequests ( int32_t starti ) {
 		
 		// . grab a slot
 		int32_t i;
-		for ( i = starti ; i < MAX_OUTSTANDING_MSGE1 ; i++ )
-			if ( ! m_used[i] ) break;
+		for (i = starti; i < MAX_OUTSTANDING_MSGE1; i++) {
+			if (!m_used[i]) {
+				break;
+			}
+		}
+
 		// sanity check
-		if ( i >= MAX_OUTSTANDING_MSGE1 ) { g_process.shutdownAbort(true); }
+		if (i >= MAX_OUTSTANDING_MSGE1) {
+			g_process.shutdownAbort(true);
+		}
+
 		// save the url number, "n"
-		m_ns  [i] = m_n++;
+		m_ns[i] = m_n++;
+
 		// claim it
 		m_used[i] = true;
 
@@ -225,11 +236,13 @@ bool Msge1::launchRequests ( int32_t starti ) {
 		// . it will set m_used[i] to true if we use it and block
 		// . it will increment m_numRequests and NOT m_numReplies if it blocked
 		m_numRequests++;
-		sendMsgC ( i , host , hlen );
+		sendMsgC(i, host, hlen);
 	}
 
-	if( m_n >= m_numUrls )
+	if (m_n >= m_numUrls) {
 		return m_numRequests == m_numReplies;
+	}
+
 	return false;
 }
 
