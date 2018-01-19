@@ -9707,7 +9707,11 @@ void XmlDoc::filterStart_r(bool amThread) {
 			return;
 		}
 
-		m_currentUrl.set(line.c_str());
+		// cater for javascript redirect
+		if (strcmp(m_currentUrl.getUrl(), line.c_str()) != 0) {
+			m_tagRecValid = false;
+			m_currentUrl.set(line.c_str());
+		}
 	}
 
 	auto startPos = outputFile.tellg();
