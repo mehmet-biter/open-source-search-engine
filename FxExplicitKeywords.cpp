@@ -72,8 +72,6 @@ static void reload_if_needed(bool detailed_log) {
 		*p = '\0';
 		const char *url = p+1;
 		
-log(LOG_INFO,"@@@@@ key:'%s'",url);
-log(LOG_INFO,"@@@@@ value:'%s'",line);
 		new_m[url] = line;
 		entry_count++;
 	}
