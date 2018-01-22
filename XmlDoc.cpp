@@ -6821,8 +6821,6 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 		maxAge *= 3600*24;
 		// so youtube which has 2997 links will add an extra 29 days
 		maxAge += (sni / 100) * 86400;
-		// hack for global index. never affect siteinlinks i imported
-		if ( strcmp(cr->m_coll,"GLOBAL-INDEX") == 0 ) age = 0;
 		// invalidate for that as wel
 		if ( age > maxAge ) valid = false;
 	}
