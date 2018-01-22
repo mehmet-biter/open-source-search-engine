@@ -2838,13 +2838,6 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 			      Msg25          *msg25,
 			      SafeBuf        *linkInfoBuf)
 {
-	// a table for counting words per link text
-	HashTableX tt;
-	// buf for tt
-	char ttbuf[2048];
-	// must init it!
-	tt.set ( 8 ,4,128,ttbuf,2048,false,"linknfo");
-
 	// we can estimate our quality here
 	int32_t numGoodInlinks = 0;
 
