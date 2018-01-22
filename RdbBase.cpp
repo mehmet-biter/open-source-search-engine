@@ -2791,6 +2791,7 @@ void RdbBase::generateGlobalIndex() {
 	// replace with new index
 	ScopedLock sl2(m_docIdFileIndexMtx);
 	m_docIdFileIndex.swap(tmpDocIdFileIndex);
+	log(LOG_INFO, "db: Generated global index for %s", m_rdb->getDbname());
 }
 
 void RdbBase::printGlobalIndex() {

@@ -1804,8 +1804,10 @@ bool sendReply2 ( void *state ) {
 
 	// page is not more than 32k
 	StackBuf<1024*32> sb;
+	char format = r->getReplyFormat();
+
 	// do they want an xml reply?
-	if( r->getLong("xml",0) ) {
+	if (format == FORMAT_XML) {
 		sb.safePrintf("<?xml version=\"1.0\" "
 			      "encoding=\"ISO-8859-1\"?>\n"
 			      "<response>\n");
@@ -1816,8 +1818,7 @@ bool sendReply2 ( void *state ) {
 		log ( LOG_INFO,"sending raw page###\n");
 		// clear g_errno, if any, so our reply send goes through
 		g_errno = 0;
-		// extract the socket
-		TcpSocket *s = st->m_socket;
+
 		// . nuke the state
 		mdelete(st, sizeof(State12), "PageTagdb");
 		delete (st);
@@ -1828,7 +1829,23 @@ bool sendReply2 ( void *state ) {
                                                     sb.length(),
 						    0, false, "text/xml",
 						    -1, NULL, "ISO-8859-1");
+	} else if (format == FORMAT_JSON) {
+		sb.safePrintf("{\"response\":{\n");
+		st->m_tagRec.printToBufAsJson(&sb);
+		sb.safePrintf("}\n");
+		sb.safePrintf("}\n");
+
+		// clear g_errno, if any, so our reply send goes through
+		g_errno = 0;
+
+		// . nuke the state
+		mdelete(st, sizeof(State12), "PageTagdb");
+		delete (st);
+
+		// . send this page
+		return g_httpServer.sendDynamicPage(s, sb.getBufStart(), sb.length(), 0, false, "application/json");
 	}
+
 	// . print standard header
 	// . do not print big links if only an assassin, just print host ids
 	g_pages.printAdminTop ( &sb, st->m_socket , &st->m_r );

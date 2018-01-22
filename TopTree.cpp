@@ -37,7 +37,6 @@ void TopTree::reset() {
 		mfree(m_nodes,m_allocSize,"TopTree");
 	}
 	m_nodes = NULL;
-	m_useIntScores = false;
 	//m_sampleVectors  = NULL;
 	m_numNodes = 0;
 	m_numUsedNodes = 0;
@@ -195,30 +194,16 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		logTrace(g_conf.m_logTraceTopTree, "Reached vcount. m_vcount=%f, m_docsWanted=%" PRId32 "", m_vcount, m_docsWanted);
 		int32_t i = m_lowNode;
 
-		if ( m_useIntScores ) {
-			if ( t->m_intScore < m_nodes[i].m_intScore ) {
-				m_kickedOutDocIds = true;
-				logTrace(g_conf.m_logTraceTopTree, "END, int score %" PRId32 " < lowest int score %" PRId32 " - skipping", t->m_intScore, m_nodes[i].m_intScore);
-				return false;
-			}
-			if ( t->m_intScore > m_nodes[i].m_intScore) {
-				logTrace(g_conf.m_logTraceTopTree, "int score %" PRId32 " > lowest int score %" PRId32 " - adding", t->m_intScore, m_nodes[i].m_intScore);
-				goto addIt;
-			}
-			logTrace(g_conf.m_logTraceTopTree, "int score %" PRId32 " same as lowest int score %" PRId32 "", t->m_intScore, m_nodes[i].m_intScore);
+		if ( t->m_score < m_nodes[i].m_score ) {
+			logTrace(g_conf.m_logTraceTopTree, "END, score %f < lowest score %f - skipping", t->m_score, m_nodes[i].m_score);
+			m_kickedOutDocIds = true;
+			return false;
 		}
-		else {
-			if ( t->m_score < m_nodes[i].m_score ) {
-				logTrace(g_conf.m_logTraceTopTree, "END, score %f < lowest score %f - skipping", t->m_score, m_nodes[i].m_score);
-				m_kickedOutDocIds = true;
-				return false;
-			}
-			if ( t->m_score > m_nodes[i].m_score ) {
-				logTrace(g_conf.m_logTraceTopTree, "score %f > lowest score %f - adding", t->m_score, m_nodes[i].m_score);
-				goto addIt;
-			}
-			logTrace(g_conf.m_logTraceTopTree, "score %f same as lowest score %f", t->m_score, m_nodes[i].m_score);
+		if ( t->m_score > m_nodes[i].m_score ) {
+			logTrace(g_conf.m_logTraceTopTree, "score %f > lowest score %f - adding", t->m_score, m_nodes[i].m_score);
+			goto addIt;
 		}
+		logTrace(g_conf.m_logTraceTopTree, "score %f same as lowest score %f", t->m_score, m_nodes[i].m_score);
 
 		// . finally, compare docids, store lower ones first
 		// . docids should not tie...
@@ -252,29 +237,15 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		iparent = i;
 
 		// . compare to the ith node
-		if ( m_useIntScores ) {
-			if ( t->m_intScore < m_nodes[i].m_intScore ) {
-				i = LEFT(i);
-				dir = 0;
-				continue;
-			}
-			if ( t->m_intScore > m_nodes[i].m_intScore ) {
-				i = RIGHT(i);
-				dir = 1;
-				continue;
-			}
+		if ( t->m_score < m_nodes[i].m_score ) {
+			i = LEFT(i);
+			dir = 0;
+			continue;
 		}
-		else {
-			if ( t->m_score < m_nodes[i].m_score ) {
-				i = LEFT(i);
-				dir = 0;
-				continue;
-			}
-			if ( t->m_score > m_nodes[i].m_score ) {
-				i = RIGHT(i);
-				dir = 1;
-				continue;
-			}
+		if ( t->m_score > m_nodes[i].m_score ) {
+			i = RIGHT(i);
+			dir = 1;
+			continue;
 		}
 
 
@@ -312,13 +283,8 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	//   being kept.
 	uint32_t cs;
 
-	if ( m_useIntScores ) {
-		cs = (uint32_t) t->m_intScore;
-	}
-	else {
-		cs = ((uint32_t)t->m_score);
-		logTrace(g_conf.m_logTraceTopTree, "docId %" PRId64 " score %f converted to %" PRIu32"", t->m_docId, t->m_score, cs);
-	}
+	cs = ((uint32_t)t->m_score);
+	logTrace(g_conf.m_logTraceTopTree, "docId %" PRId64 " score %f converted to %" PRIu32"", t->m_docId, t->m_score, cs);
 
 	key96_t k;
 	k.n1  =  domHash                 << 24; // 1 byte domHash
@@ -460,10 +426,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// docids being kept.
 		uint32_t cs ;
 
-		if ( m_useIntScores )
-			cs = (uint32_t) t->m_intScore;
-		else
-			cs = ((uint32_t)t->m_score);
+		cs = ((uint32_t)t->m_score);
 
 		k.n1  =  domHash2                << 24; // 1 byte domHash
 		//k.n1 |= (t->m_bscore & ~0xc0)    << 16; // 1 byte bscore

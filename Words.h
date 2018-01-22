@@ -290,8 +290,6 @@ private:
  	int32_t           m_numWords;      // # of words we have
 	int32_t           m_numAlnumWords;
 
-	bool           m_hasTags;
-
 	int32_t m_numTags;
 };
 

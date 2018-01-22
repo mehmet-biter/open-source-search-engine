@@ -27,7 +27,8 @@ public:
 	          float hashGroupWeightNeighborhood,
 	          float hashGroupWeightInternalLinkText,
 	          float hashGroupWeightInUrl,
-	          float hashGroupWeightInMenu);
+	          float hashGroupWeightInMenu,
+	          float hashGroupWeightExplicitKeywords);
 	void init(const BaseScoringParameters& bsp);
 };
 

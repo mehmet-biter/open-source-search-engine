@@ -67,6 +67,8 @@ class Conf {
 
 	// max amount of memory we can use
 	size_t m_maxMem;
+	bool m_mlockAllCurrent;
+	bool m_mlockAllFuture;
 
 	// if this is false, we do not save, used by dump routines
 	// in main.cpp so they can change parms here and not worry about
@@ -251,6 +253,9 @@ class Conf {
 
 	bool m_msg20FallbackToAllHosts;
 
+	int64_t m_docProcessDelayMs;
+	int64_t m_docProcessMaxPending;
+
 	// log unfreed memory on exit
 	bool   m_detectMemLeaks;
 
@@ -332,6 +337,7 @@ class Conf {
 	bool  m_logDebugMemUsage;
 	bool  m_logDebugMerge;
 	bool  m_logDebugMsg13;
+	bool  m_logDebugMsg20;
 	bool  m_logDebugMulticast;
 	bool  m_logDebugNet;
 	bool  m_logDebugProxies;
@@ -369,6 +375,8 @@ class Conf {
 	bool m_logTraceMem;
 	bool m_logTraceMsg0;
 	bool m_logTraceMsg4;
+	bool m_logTraceMsg25;
+	bool m_logTracePageLinkdbLookup;
 	bool m_logTracePageSpiderdbLookup;
 	bool m_logTracePos;
 	bool m_logTracePosdb;

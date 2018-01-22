@@ -100,12 +100,10 @@ bool HttpServer::init ( int16_t port,
 		m_ssltcp.reset();
 	}
 	// log an innocent msg
-	log(LOG_INIT,"http: Listening on TCP port %i with sd=%i", 
-	    port, m_tcp.m_sock );
+	log(LOG_INIT,"http: Listening on TCP port %" PRIu16 " with sd=%i", (uint16_t)port, m_tcp.m_sock );
 	// log for https
 	if (m_ssltcp.m_ready)
-		log(LOG_INIT,"https: Listening on TCP port %i with sd=%i", 
-	    	    sslPort, m_ssltcp.m_sock );
+		log(LOG_INIT,"https: Listening on TCP port %" PRIu16 " with sd=%i", (uint16_t)sslPort, m_ssltcp.m_sock );
 
 	return true;
 }
@@ -805,11 +803,12 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	if ( ! strncmp ( path ,"/syntax.html", pathLen ) )
 		return sendPageHelp ( s , r );
 
-	if ( ! strncmp ( path ,"/widgets.html", pathLen ) )
-		return sendPageWidgets ( s , r );
-
 	if ( ! strncmp ( path ,"/adv.html", pathLen ) )
 		return sendPagePretty ( s , r,"adv.html","advanced");
+
+	if ( ! strncmp ( path ,"/ranktest.html", pathLen ) )
+		return sendPagePretty ( s , r,"ranktest.html","rank test");
+
 
 	// decorate the plain html page, rants.html, with our nav chrome
 	if ( ! strncmp ( path ,"/faq.html", pathLen ) )

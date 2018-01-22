@@ -24,9 +24,6 @@ class TopNode {
 	int64_t      m_docId;
 	unsigned     m_flags; //from Docid2FlagsAndSiteMap
 
-	// option for using int scores
-	int32_t m_intScore;
-	
 	// tree info, indexes into m_nodes array
 	int32_t m_parent;
 	int32_t m_left;   // kid
@@ -67,9 +64,6 @@ class TopTree {
 	int32_t getNumNodes() const { return m_numNodes; }
 	int32_t getNumUsedNodes() const { return m_numUsedNodes; }
 	int32_t getNumDocsWanted() const { return m_docsWanted; }
-
-
-	bool  m_useIntScores;
 
 private:
 	int32_t  m_docsWanted;

@@ -666,14 +666,16 @@ public:
 			   char **itemPtr   ,
 			   int32_t  *itemLen   ,
 			   int32_t   *retNode1 ,
-			   int32_t   *retLinkNum);
+			   int32_t   *retLinkNum,
+			   int32_t *errCode);
 
 	int32_t getLinkText2 ( int32_t i,
 			   char  *buf       ,
 			   int32_t   maxBufLen ,
 			   char **itemPtr   ,
 			   int32_t  *itemLen   ,
-			   int32_t   *retNode1 );
+			   int32_t   *retNode1,
+			   int32_t	*errCode);
 
 	// returns list of \0 terminated, normalized links
 	char       *getLinkBuf()       { return m_allocBuf; }

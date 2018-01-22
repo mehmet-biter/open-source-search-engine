@@ -90,7 +90,7 @@ void Msg39Request::reset() {
 	m_maxAge                  = 0;
 	m_maxQueryTerms           = 9999;
 	m_language                = 0;
-	m_queryExpansion          = false;
+	m_word_variations_config = WordVariationsConfig();
 	m_debug                   = false;
 	m_getDocIdScoringInfo     = true;
 	m_doSiteClustering        = true;
@@ -332,7 +332,9 @@ void Msg39::getDocIds2() {
 	// . set our m_query instance
 	if ( ! m_query.set2 ( m_msg39req->ptr_query,
 			      (lang_t)m_msg39req->m_language ,
-			      m_msg39req->m_queryExpansion ,
+		              m_msg39req->m_baseScoringParameters.m_bigramWeight,
+		              m_msg39req->m_baseScoringParameters.m_synonymWeight,
+			      &m_msg39req->m_word_variations_config,
 			      m_msg39req->m_useQueryStopWords ,
 	              m_msg39req->m_allowHighFrequencyTermCache,
 			      m_msg39req->m_maxQueryTerms ) ) {
@@ -341,6 +343,8 @@ void Msg39::getDocIds2() {
 		sendReply ( m_slot , this , NULL , 0 , 0 , true );
 		return ; 
 	}
+	if(m_debug)
+		m_query.dumpToLog();
 
 	// wtf?
 	if ( g_errno ) gbshutdownLogicError();
@@ -482,14 +486,21 @@ void Msg39::controlLoop ( ) {
 			}
 			// accumulate total hits count over each docid split
 			m_numTotalHits += m_posdbTable.getTotalHits();
-			// minus the shit we filtered out because of gbminint/gbmaxint/
-			// gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
+			//obsolete comment: minus the shit we filtered out because of gbminint/gbmaxint/gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
 			m_numTotalHits -= m_posdbTable.getFilteredCount();
 			
 			chunksSearched++;
 		}
 	}
 skipRest:
+
+	if(m_debug) {
+		log(LOG_DEBUG,"msg39::controlloop: dumping %d top nodes (before clustering)", m_toptree.getNumUsedNodes());
+		for(int ti = m_toptree.getHighNode(); ti >= 0; ti = m_toptree.getPrev(ti)) {
+			const TopNode *t = m_toptree.getNode(ti);
+			log(LOG_INFO,"  docid=%15ld score=%f", t->m_docId, t->m_score);
+		}
+	}
 
 	// ok, we are done, get cluster recs of the winning docids
 	// . this loads them using msg51 from clusterdb
@@ -1052,8 +1063,6 @@ void Msg39::estimateHitsAndSendReply(double pctSearched) {
 		topDocIds[docCount] = t->m_docId;
 		topScores[docCount] = t->m_score;
 		topFlags[docCount] = t->m_flags;
-		if(m_toptree.m_useIntScores)
-			topScores[docCount] = (double)t->m_intScore;
 		// supply clusterdb rec? only for full splits
 		if(m_gotClusterRecs)
 			topRecs [docCount] = t->m_clusterRec;

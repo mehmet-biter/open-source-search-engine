@@ -43,6 +43,7 @@
 #include "Speller.h"       // g_speller
 #include "Wiki.h"          // g_wiki
 #include "Wiktionary.h"    // g_wiktionary
+#include "WordVariations.h"
 #include "CountryCode.h"
 #include "Pos.h"
 #include "Title.h"
@@ -98,6 +99,7 @@
 #include "GbCompress.h"
 #include "DocRebuild.h"
 #include "DocReindex.h"
+#include "FxExplicitKeywords.h"
 
 
 #include <sys/stat.h> //umask()
@@ -132,7 +134,7 @@ static void dumpRobotsTxtCache(const char *coll);
 
 static void dumpDoledb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 static void dumpClusterdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
-static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, const char *url);
+static void dumpLinkdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, const char *url, bool urlhash);
 
 static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
 static void dumpWantedTitledbRecs(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree);
@@ -159,6 +161,7 @@ static void countdomains(const char* coll, int32_t numRecs, int32_t output);
 
 static bool argToBoolean(const char *arg);
 
+static void wvg_log_function(WordVariationGenerator::log_class_t log_class, const char *fmt, va_list ap);
 
 static void wakeupPollLoop() {
 	g_loop.wakeupPollLoop();
@@ -250,16 +253,10 @@ int main2 ( int argc , char *argv[] ) {
 	g_conf.m_runAsDaemon = false;
 	g_conf.m_logToFile = false;
 
-	// appears that linux 2.4.17 kernel would crash with this?
-	// let's try again on gk127 to make sure
-	// YES! gk0 cluster has run for months with this just fine!!
-	mlockall(MCL_CURRENT|MCL_FUTURE);
-
 #ifdef _VALGRIND_
 	//threads are incrementing the counters all over the place
 	VALGRIND_HG_DISABLE_CHECKING(&g_stats,sizeof(g_stats));
 #endif
-
 	// record time for uptime
 	g_stats.m_uptimeStart = time(NULL);
 
@@ -1013,7 +1010,6 @@ int main2 ( int argc , char *argv[] ) {
 		int32_t startFileNum =  0;
 		int32_t numFiles     = -1;
 		bool includeTree     =  true;
-		int64_t termId  = -1;
 		const char *coll = "";
 
 		// so we do not log every collection coll.conf we load
@@ -1028,27 +1024,8 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg+3 < argc ) startFileNum = atoi(argv[cmdarg+3]);
 		if ( cmdarg+4 < argc ) numFiles     = atoi(argv[cmdarg+4]);
 		if ( cmdarg+5 < argc ) includeTree  = argToBoolean(argv[cmdarg+5]);
-		if ( cmdarg+6 < argc ) {
-			char *targ = argv[cmdarg+6];
-			if ( is_alpha_a(targ[0]) ) {
-				char *colon = strstr(targ,":");
-				int64_t prefix64 = 0LL;
-				if ( colon ) {
-					*colon = '\0';
-					prefix64 = hash64n(targ);
-					targ = colon + 1;
-				}
-				// hash the term itself
-				termId = hash64n(targ);
-				// hash prefix with termhash
-				if ( prefix64 )
-					termId = hash64(termId,prefix64);
-				termId &= TERMID_MASK;
-			}
-			else {
-				termId = atoll1(targ);
-			}
-		}
+
+
 		if ( argv[cmdarg+1][0] == 't' ) {
 			int64_t docId = 0LL;
 			if ( cmdarg+6 < argc ) {
@@ -1105,11 +1082,38 @@ int main2 ( int argc , char *argv[] ) {
 			dumpTagdb( coll, startFileNum, numFiles, includeTree,   0, NULL );
 		} else if ( argv[cmdarg+1][0] == 'l' )
 			dumpClusterdb (coll,startFileNum,numFiles,includeTree);
-		else if ( argv[cmdarg+1][0] == 'L' ) {
+		else if (strcmp(argv[cmdarg+1], "Lu") == 0) {
 			char *url = NULL;
 			if ( cmdarg+6 < argc ) url = argv[cmdarg+6];
-			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url);
+			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url,true);
+		}
+		else if (strcmp(argv[cmdarg+1], "Ls") == 0) {
+			char *url = NULL;
+			if ( cmdarg+6 < argc ) url = argv[cmdarg+6];
+			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url,false);
 		}  else if ( argv[cmdarg+1][0] == 'p' ) {
+			int64_t termId  = -1;
+			if ( cmdarg+6 < argc ) {
+				char *targ = argv[cmdarg+6];
+				if ( is_alpha_a(targ[0]) ) {
+					char *colon = strstr(targ,":");
+					int64_t prefix64 = 0LL;
+					if ( colon ) {
+						*colon = '\0';
+						prefix64 = hash64n(targ);
+						targ = colon + 1;
+					}
+					// hash the term itself
+					termId = hash64n(targ);
+					// hash prefix with termhash
+					if ( prefix64 )
+						termId = hash64(termId,prefix64);
+					termId &= TERMID_MASK;
+				}
+				else {
+					termId = atoll1(targ);
+				}
+			}
 			dumpPosdb( coll, startFileNum, numFiles, includeTree, termId, false );
 		}  else if (strcmp(argv[cmdarg+1], "u") == 0) {
 			dumpUnwantedTitledbRecs(coll, startFileNum, numFiles, includeTree);
@@ -1359,6 +1363,14 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
+	WordVariationGenerator::set_log_function(wvg_log_function);
+	log(LOG_DEBUG,"main: initializing word variations: Danish");
+	if(!initializeWordVariationGenerator_Danish()) {
+		log(LOG_WARN, "word-variation-danish initialization failed" );
+		//but not fatal
+	}
+	log(LOG_DEBUG,"main: initialized word variations: Danish");
+
 	// the wiki titles
 	if ( ! g_wiki.load() ) {
 		log( LOG_ERROR, "Wiki initialization failed!" );
@@ -1426,6 +1438,11 @@ int main2 ( int argc , char *argv[] ) {
 
 	// Initialize spam detection
 	g_checkSpamList.init("spamphrases.txt");
+
+	if(!ExplicitKeywords::initialize()) {
+		log(LOG_ERROR,"Could not initialize explicit keywords file");
+		//but otherwise carry on
+	}
 
 	// initialize generate global index thread
 	if (!RdbBase::initializeGlobalIndexThread()) {
@@ -1606,6 +1623,19 @@ int main2 ( int argc , char *argv[] ) {
 
 	// allow saving of conf again
 	g_conf.m_save = true;
+
+	if(g_conf.m_mlockAllCurrent || g_conf.m_mlockAllFuture) {
+		log(LOG_DEBUG,"Locking memory");
+		int rc;
+		if(g_conf.m_mlockAllCurrent && g_conf.m_mlockAllFuture)
+			rc = mlockall(MCL_CURRENT|MCL_FUTURE);
+		else if(g_conf.m_mlockAllCurrent)
+			rc = mlockall(MCL_CURRENT);
+		else //if(g_conf.m_mlockAllFuture) //doesn't make a lot of sense to me
+			rc = mlockall(MCL_FUTURE);
+		if(rc!=0)
+			log(LOG_WARN, "mlockall() failed with errno=%d (%s)", errno, mstrerror(errno));
+	}
 
 	log("db: gb is now ready");
 
@@ -1864,8 +1894,10 @@ static void printHelp() {
 		"\tdoledb:\n"
 		"\t\tdump x <collection> <fileNum> <numFiles> <includeTree>\n"
 
-		"\tlinkdb:\n"
-		"\t\tdump L <collection> <fileNum> <numFiles> <includeTree> <url>\n"
+		"\tlinkdb (site):\n"
+		"\t\tdump Ls <collection> <fileNum> <numFiles> <includeTree> <url>\n"
+		"\tlinkdb (url):\n"
+		"\t\tdump Lu <collection> <fileNum> <numFiles> <includeTree> <url>\n"
 
 		"\tposdb (the index):\n"
 		"\t\tdump p <collection> <fileNum> <numFiles> <includeTree> <term-or-termId>\n"
@@ -4980,7 +5012,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	Matches matches;
 	Query q;
-	q.set2(query, langUnknown, false, false, true, ABS_MAX_QUERY_TERMS);
+	q.set2(query, langUnknown, 1.0, 1.0, NULL, false, true, ABS_MAX_QUERY_TERMS);
 	matches.setQuery ( &q );
 	words.set ( &xml , true ) ;
 	t = gettimeofdayInMilliseconds();
@@ -5010,7 +5042,7 @@ static bool summaryTest1(char *rec, int32_t listSize, const char *coll, int64_t 
 	int64_t t = gettimeofdayInMilliseconds();
 
 	Query q;
-	q.set2(query, langUnknown, false, false, true, ABS_MAX_QUERY_TERMS);
+	q.set2(query, langUnknown, 1.0, 1.0, NULL, false, true, ABS_MAX_QUERY_TERMS);
 
 	char *content ;
 	int32_t  contentLen ;
@@ -5286,25 +5318,38 @@ static void dumpClusterdb(const char *coll,
 	}
 }
 
-static void dumpLinkdb(const char *coll,
-		       int32_t startFileNum,
-		       int32_t numFiles,
-		       bool includeTree ,
-		       const char *url) {
+static void dumpLinkdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, const char *url, bool urlhash) {
 	g_linkdb.init ();
 	g_linkdb.getRdb()->addRdbBase1(coll );
 	key224_t startKey ;
 	key224_t endKey   ;
 	startKey.setMin();
 	endKey.setMax();
-	// set to docid
+
+	// set start/end key to url hash
 	if ( url ) {
 		Url u;
-		u.set( url, strlen( url ), true, false );
-		uint32_t h32 = u.getHostHash32();
-		int64_t uh64 = hash64n(url);
-		startKey = Linkdb::makeStartKey_uk ( h32 , uh64 );
-		endKey   = Linkdb::makeEndKey_uk   ( h32 , uh64 );
+		u.set( url, strlen( url ), false, false );
+
+		SiteGetter sg;
+		sg.getSite(url, NULL, 0, 0, 0);
+
+		uint32_t h32 = hash32(sg.getSite(), sg.getSiteLen(), 0);
+		if( urlhash ) {
+			startKey = Linkdb::makeStartKey_uk(h32, u.getUrlHash64());
+			endKey   = Linkdb::makeEndKey_uk  (h32, u.getUrlHash64());
+		}
+		else {
+			startKey = Linkdb::makeStartKey_uk(h32, 0);
+			endKey   = Linkdb::makeEndKey_uk  (h32, LDB_MAXURLHASH);
+		}
+
+
+		printf("URL=%.*s, sitehash32=0x%08" PRIx32 ", urlhash=0x%012" PRIx64 "\n",
+			u.getUrlLen(), u.getUrl(), h32, u.getUrlHash64());
+
+		printf("Startkey=%s\n", KEYSTR(&startKey,sizeof(key224_t)));
+		printf("Endkey  =%s\n", KEYSTR(&endKey,sizeof(key224_t)));
 	}
 
 	// bail if not
@@ -5360,7 +5405,7 @@ static void dumpLinkdb(const char *coll,
 			       "siterank=%02" PRId32" "
 			       //"hopcount=%03hhu "
 			       "ip32=%s "
-			       "docId=%012" PRIu64" "
+			       "docId=%" PRIu64" "
 			       "discovered=%" PRIu32" "
 			       "lost=%" PRIu32" "
 			       "sitehash32=0x%08" PRIx32" "
@@ -6318,4 +6363,20 @@ static int copyFiles(const char *dstDir) {
 	fprintf(stderr,"\nRunning cmd: %s\n",tmp.getBufStart());
 	system ( tmp.getBufStart() );
 	return 0;
+}
+
+
+static void wvg_log_function(WordVariationGenerator::log_class_t log_class, const char *fmt, va_list ap) {
+	char buf[2048];
+	vsnprintf(buf,sizeof(buf), fmt, ap);
+	buf[sizeof(buf)-1]='\0';
+	int32_t type;
+	switch(log_class) {
+		case WordVariationGenerator::log_trace: type = LOG_TRACE; break;
+		case WordVariationGenerator::log_debug: type = LOG_DEBUG; break;
+		case WordVariationGenerator::log_info: type = LOG_INFO; break;
+		case WordVariationGenerator::log_warn: type = LOG_WARN; break;
+		case WordVariationGenerator::log_error: type = LOG_ERROR; break;
+	}
+	log(type,"wordvar:%s",buf);
 }

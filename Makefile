@@ -1,4 +1,4 @@
-SHELL = /bin/bash
+'SHELL = /bin/bash
 
 config=release
 
@@ -25,9 +25,8 @@ OBJS_O0 =  \
 	Lang.o Log.o \
 	Mem.o Msg0.o Msg4In.o Msg4Out.o MsgC.o Msg13.o Msg20.o Msg22.o Msg39.o Msg3a.o Msg51.o Msge0.o Msge1.o Multicast.o \
 	Parms.o Pages.o PageAddColl.o PageAddUrl.o PageBasic.o PageCrawlBot.o PageGet.o PageHealthCheck.o PageHosts.o PageInject.o \
-	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageSpiderdbLookup.o PageSpider.o PageDoledbIPTable.o PageDocProcess.o \
+	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageThreads.o PageTitledb.o PageLinkdbLookup.o PageSpiderdbLookup.o PageSpider.o PageDoledbIPTable.o PageDocProcess.o \
 	Phrases.o HostFlags.o Process.o Proxy.o Punycode.o \
-	InstanceInfoExchange.o \
 	Query.o \
 	RdbCache.o RdbDump.o RdbMem.o RdbMerge.o RdbScan.o RdbTree.o \
 	Rebalance.o Repair.o RobotRule.o Robots.o \
@@ -77,6 +76,7 @@ OBJS_O3 = \
 	UrlRealtimeClassification.o UrlResultOverride.o \
 	WantedChecker.o \
 	MergeSpaceCoordinator.o \
+	FxExplicitKeywords.o \
 	GbMoveFile.o GbMoveFile2.o GbCopyFile.o GbMakePath.o \
 	GbUtil.o \
 	GbSignature.o \
@@ -89,7 +89,7 @@ OBJS_O3 = \
 	SpiderdbUtil.o \
 	FxBlobCache.o \
 	FxBlobCacheInstantiation.o \
-
+	InstanceInfoExchange.o \
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
@@ -99,7 +99,7 @@ OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
 
 # common flags
-DEFS = -D_REENTRANT_ -I. -Ithird-party/compact_enc_det -Ithird-party/c-ares -Ithird-party/sparsepp
+DEFS = -D_REENTRANT_ -I. -Ithird-party/compact_enc_det -Ithird-party/c-ares -Ithird-party/sparsepp -Iword_variations
 DEFS += -DDEBUG_MUTEXES
 CPPFLAGS = -g -fno-stack-protector -DPTHREADS
 CPPFLAGS += -std=c++11
@@ -289,8 +289,9 @@ all: gb
 
 
 # third party libraries
-LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so slacktee.sh
+LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so slacktee.sh libword_variations.a libsto.a
 LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced -lcares
+LIBS += -lword_variations -lsto
 
 CLD2_SRC_DIR=third-party/cld2/internal
 libcld2_full.so:
@@ -319,6 +320,17 @@ libcares.so:
 	cd $(CARES_SRC_DIR) && ./buildconf && ./configure && make
 	ln -s $(CARES_SRC_DIR)/.libs/libcares.so.2 libcares.so.2
 	ln -s libcares.so.2 libcares.so
+
+#always rebuild if needed
+.PHONY: libword_variations.a
+libword_variations.a:
+	$(MAKE) -C word_variations/
+	ln -sf word_variations/libword_variations.a libword_variations.a
+
+.PHONY: libsto.a
+libsto.a:
+	$(MAKE) -C sto/
+	ln -sf sto/libsto.a libsto.a
 
 wanted_check_api.so: WantedCheckExampleLib.o
 	$(CXX) WantedCheckExampleLib.o -shared -o $@
@@ -397,7 +409,7 @@ doc:
 
 # used for tools/unittest
 libgb.a: $(OBJS)
-	ar rcs $@ $^
+	ar rcs $@ $^ word_variations/*.o sto/*.o
 
 .PHONY: tools
 tools:
@@ -419,12 +431,13 @@ systemtest:
 
 .PHONY: clean
 clean:
-	-rm -f *.o *.d gb core core.* libgb.a
+	-rm -f *.o *.d gb core core.* libgb.a libsto.a libword_variations.a
 	-rm -f gmon.*
 	-rm -f *.gcda *.gcno coverage*.html
 	-rm -f *.ll *.ll.out pstack.txt
 	-rm -f entities.inc
 	-rm -f default_css.inc
+	-rm -f query_stop_words.??.inc query_stop_words_list.inc
 	$(MAKE) -C test $@
 
 
@@ -488,6 +501,18 @@ entities.json entities.inc:
 
 Entities.o: entities.inc
 Version.o: CPPFLAGS += -DGIT_COMMIT_ID=$(GIT_VERSION) -DGIT_BRANCH=$(GIT_BRANCH) -DBUILD_CONFIG=$(config)
+
+query_stop_words.xx.inc: query_stop_words.xx.txt generate_query_stop_words.sh
+	./generate_query_stop_words.sh xx $< $@
+query_stop_words.en.inc: query_stop_words.en.txt generate_query_stop_words.sh
+	./generate_query_stop_words.sh en $< $@
+query_stop_words.de.inc: query_stop_words.de.txt generate_query_stop_words.sh
+	./generate_query_stop_words.sh de $< $@
+query_stop_words.da.inc: query_stop_words.da.txt generate_query_stop_words.sh
+	./generate_query_stop_words.sh da $< $@
+query_stop_words_list.inc: ./generate_query_stop_word_languages.sh query_stop_words.xx.inc query_stop_words.en.inc query_stop_words.de.inc query_stop_words.da.inc
+	./generate_query_stop_word_languages.sh $@
+StopWords.o: query_stop_words_list.inc
 
 default_css.inc: default.css
 	echo "static const char embedded_default_css[] =" >$@.tmp

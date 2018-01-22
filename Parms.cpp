@@ -940,7 +940,7 @@ bool Parms::sendPageGeneric ( TcpSocket *s , HttpRequest *r ) {
 			"\t<statusCode>0</statusCode>\n"
 			"\t<statusMsg>Success</statusMsg>\n";
 	if ( format == FORMAT_JSON )
-		res = "{ \"response:\"{\n"
+		res = "{ \"response\":{\n"
 			"\t\"statusCode\":0,\n"
 			"\t\"statusMsg\":\"Success\"\n";
 	if ( res )
@@ -1158,7 +1158,9 @@ static DropLangs g_drops[] = {
 	{"italian"},
 	{"romantic"},
 #endif
-	{"privacore"}
+	{"privacore"},
+	{"privacore-DK"},
+	{"privacore-OldPages"}
 };
 
 // "url filters profile" values. used to set default crawl rules
@@ -1628,7 +1630,6 @@ bool Parms::printParm( SafeBuf* sb,
 		sb->safePrintf ( "<td width=%" PRId32"%%>" , 100/nc/2 );
 	}
 
-	// if parm value is not defaut, use orange!
 	StackBuf<1024> val1;
 	if ( m->m_type != TYPE_FILEUPLOADBUTTON )
 		m->printVal ( &val1 , collnum , j ); // occNum );
@@ -1636,10 +1637,21 @@ bool Parms::printParm( SafeBuf* sb,
 	if ( m->m_def &&
 	     m->m_obj != OBJ_NONE &&
 	     m->m_obj != OBJ_IR && // do not do for injectionrequest
-	     m->m_obj != OBJ_GBREQUEST && // do not do for GigablastRequest
-	     strcmp(val1.getBufStart(), m->m_def) != 0 )
-		// put non-default valued parms in orange!
-		bg = "ffa500";
+	     m->m_obj != OBJ_GBREQUEST) // do not do for GigablastRequest
+	{
+		bool is_non_default = false;
+		if(m->m_type==TYPE_FLOAT || m->m_type==TYPE_DOUBLE) {
+			if(!almostEqualDouble(atof(val1.getBufStart()),atof(m->m_def)))
+				is_non_default = true;
+		} else {
+			if(strcmp(val1.getBufStart(), m->m_def) != 0)
+				is_non_default = true;
+		}
+		if(is_non_default) {
+			// put non-default valued parms in orange!
+			bg = "ffa500";
+		}
+	}
 
 
 	// print the title/description in current table for non-arrays
@@ -3506,29 +3518,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
-	m->m_title = "stream search results";
-	m->m_desc  = "Stream search results back on socket as they arrive. "
-		"Useful when thousands/millions of search results are "
-		"requested. Required when doing such things otherwise "
-		"Gigablast could run out of memory. Only supported for "
-		"JSON and XML formats, not HTML.";
-	m->m_page  = PAGE_RESULTS;
-	simple_m_set(SearchInput,m_streamResults);
-	m->m_def   = "0";
-	m->m_cgi   = "stream";
-	m->m_flags = PF_API;
-	m++;
-
-	m->m_title = "seconds back";
-	m->m_desc  = "Limit results to pages spidered this many seconds ago. "
-		"Use 0 to disable.";
-	m->m_page  = PAGE_RESULTS;
-	simple_m_set(SearchInput,m_secsBack);
-	m->m_def   = "0";
-	m->m_cgi   = "secsback";
-	m->m_flags = PF_API;
-	m++;
-
 	m->m_title = "sort by";
 	m->m_desc  = "Use 0 to sort results by relevance, 1 to sort by "
 		"most recent spider date down, and 2 to sort by oldest "
@@ -3567,17 +3556,107 @@ void Parms::init ( ) {
 
 
 
-	m->m_title = "do query expansion";
-	m->m_desc  = "If enabled, query expansion will expand your query "
-		"to include the various forms and "
-		"synonyms of the query terms.";
-	simple_m_set(SearchInput,m_queryExpansion);
-	m->m_defOff= offsetof(CollectionRec,m_queryExpansion);
+	m->m_title = "wiktionary-based word variations";
+	m->m_desc  = "If enabled, queries will be expanded with \"synonyms\" from the compiled wiktionary data.";
+	simple_m_set(SearchInput,m_word_variations_config.m_wiktionaryWordVariations);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_wiktionaryWordVariations);
 	m->m_cgi  = "qe";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
+	m->m_title = "language-specific word variations";
+	m->m_desc  = "If enabled, queries will be expaneded using launguage-specific rules, eg. based on STO lexicon.";
+	simple_m_set(SearchInput,m_word_variations_config.m_languageSpecificWordVariations);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_languageSpecificWordVariations);
+	m->m_cgi  = "lwv";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "Weight threshold";
+	m->m_desc  = "Weight threshold of variations to before they are used.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_threshold);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_threshold);
+	m->m_cgi  = "lwv_wt";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "noun: indefinite->definite";
+	m->m_desc  = "Weight of indefinite to definite form variations.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.noun_indefinite_definite);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_indefinite_definite);
+	m->m_cgi  = "lwv_noun_indef_def";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "noun: definite->indefinite";
+	m->m_desc  = "Weight of definite to indefinite form variations.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.noun_definite_indefinite);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_definite_indefinite);
+	m->m_cgi  = "lwv_noun_def_indef";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "noun: singular->plural";
+	m->m_desc  = "Weight of singular to plural form variations.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.noun_singular_plural);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_singular_plural);
+	m->m_cgi  = "lwv_noun_singular_plural";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "noun: plural->singular";
+	m->m_desc  = "Weight of plural to singular form variations.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.noun_plural_singular);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_plural_singular);
+	m->m_cgi  = "lwv_noun_plural_singular";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "proper noun: common spelling differences";
+	m->m_desc  = "Weight of common spelling differences within a language, eg Danish aa<->å, German eszet, etc. "
+		     "Note that what is and isn't a proper noun is determined by heuristics.";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.proper_noun_spelling_variants);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.proper_noun_spelling_variants);
+	m->m_cgi  = "lwv_proper_noun_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "verb: common spelling differences";
+	m->m_desc  = "Weight of common spelling differences within a language, eg Danish acute accent";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.verb_spelling_variants);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.verb_spelling_variants);
+	m->m_cgi  = "lwv_verb_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "simple spelling variants";
+	m->m_desc  = "Simple spelling variantions (usually approved)";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.simple_spelling_variants);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.simple_spelling_variants);
+	m->m_cgi  = "lwv_simple_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "verb: past<->past variants";
+	m->m_desc  = "Weight of different pasts (including compound tenses). Eg 'ate' vs. 'had eaten'";
+	simple_m_set(SearchInput,m_word_variations_config.m_word_variations_weights.verb_past_past_variants);
+	m->m_defOff= offsetof(CollectionRec,m_word_variations_config.m_word_variations_weights.verb_past_past_variants);
+	m->m_cgi  = "lwv_verb_past_past_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	
 	// limit to this # of the top term pairs from inlink text whose
 	// score is accumulated
 	m->m_title = "real max top";
@@ -3770,6 +3849,15 @@ void Parms::init ( ) {
 	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightInMenu);
 	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightInMenu);
 	m->m_def   = "0.200000";
+	m->m_page  = PAGE_RESULTS;
+	m++;
+
+	m->m_title = "hashGroupWeightExplicitKeywords";
+	m->m_desc  = "hashGroupWeightExplicitKeywords";
+	m->m_cgi   = "hgw_explicitkeywords";
+	simple_m_set(SearchInput,m_baseScoringParameters.m_hashGroupWeightExplicitKeywords);
+	m->m_defOff2 = offsetof(Conf,m_baseScoringParameters.m_hashGroupWeightExplicitKeywords);
+	m->m_def   = "16.000000";
 	m->m_page  = PAGE_RESULTS;
 	m++;
 
@@ -4234,6 +4322,16 @@ void Parms::init ( ) {
 	m->m_cgi   = "hgw_inmenu";
 	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightInMenu);
 	m->m_def   = "0.200000";
+	m->m_group = false;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
+	m->m_page  = PAGE_RANKING;
+	m++;
+
+	m->m_title = "Hashgroup weight - explicit keywords";
+	m->m_desc  = "";
+	m->m_cgi   = "hgw_explicitkeywords";
+	simple_m_set(Conf,m_baseScoringParameters.m_hashGroupWeightExplicitKeywords);
+	m->m_def   = "16.000000";
 	m->m_group = false;
 	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
@@ -4813,6 +4911,24 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER; // PAGE_NONE;
 	m++;
 
+	m->m_title = "mlock-all, current";
+	m->m_desc  = "Try to lock memory after rdb caches etc has been allocated/initialized.";
+	m->m_cgi   = "mlockallcurrent";
+	simple_m_set(Conf,m_mlockAllCurrent);
+	m->m_def   = "1";
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "mlock-all, future";
+	m->m_desc  = "Try to lock future memory after rdb caches etc has been allocated/initialized.";
+	m->m_cgi   = "mlockallfuture";
+	simple_m_set(Conf,m_mlockAllFuture);
+	m->m_def   = "1";
+	m->m_page  = PAGE_MASTER;
+	m->m_group = false;
+	m++;
+
 	m->m_title = "max total spiders";
 	m->m_desc  = "What is the maximum number of web "
 		"pages the spider is allowed to download "
@@ -4824,7 +4940,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "mtsp";
 	simple_m_set(Conf,m_maxTotalSpiders);
 	m->m_def   = "100";
-	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m++;
 
@@ -5880,6 +5995,28 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m++;
 
+	m->m_title = "Delay between each item for DocProcess";
+	m->m_desc  = "How long to wait between processing each item to avoid hammering hosts";
+	m->m_cgi   = "docprocessdelayms";
+	simple_m_set(Conf,m_docProcessDelayMs);
+	m->m_def   = "1000";
+	m->m_units = "ms";
+	m->m_group = false;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
+	m->m_title = "Max pending doc allowed for DocProcess";
+	m->m_desc  = "How many concurrent processes we allow for DocProcess";
+	m->m_cgi   = "docprocessmaxpending";
+	simple_m_set(Conf,m_docProcessMaxPending);
+	m->m_def   = "10";
+	m->m_units = "";
+	m->m_group = false;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m++;
+
 	m->m_title = "weights.cpp slider parm (tmp)";
 	m->m_desc  = "Percent of how much to use words to phrase ratio weights.";
 	m->m_cgi   = "wsp";
@@ -6570,28 +6707,27 @@ void Parms::init ( ) {
 	//
 	///////////////////
 
-	m->m_title = "get scoring info by default";
+	m->m_title = "Get scoring info by default";
 	m->m_desc  = "Get scoring information for each result so you "
 		"can see how each result is scored. You must explicitly "
 		"request this using &scores=1 for the XML feed because it "
 		"is not included by default.";
-	m->m_cgi   = "scores"; // dedupResultsByDefault";
+	m->m_cgi   = "scores";
 	simple_m_set(CollectionRec,m_getDocIdScoringInfo);
 	m->m_page  = PAGE_SEARCH;
 	m->m_def   = "1";
 	m->m_flags = PF_API | PF_CLONE;
 	m++;
 
-	m->m_title = "do query expansion by default";
-	m->m_desc  = "If enabled, query expansion will expand your query "
-		"to include the various forms and "
-		"synonyms of the query terms.";
-	m->m_def   = "0";
-	simple_m_set(CollectionRec,m_queryExpansion);
-	m->m_cgi  = "qe";
+	m->m_title = "Check URL filters when searching";
+	m->m_desc  = "Run results through URL Filters to check for manual ban and force delete.";
+	m->m_cgi   = "checkuf";
+	simple_m_set(CollectionRec,m_checkURLFilters);
 	m->m_page  = PAGE_SEARCH;
+	m->m_def   = "1";
 	m->m_flags = PF_API | PF_CLONE;
 	m++;
+
 
 	m->m_title = "Detect and modify domain searches";
 	m->m_desc  = "Detect queries for domains such as example.com or www.example.com and modify the query to search more directed for that";
@@ -7063,6 +7199,114 @@ void Parms::init ( ) {
 	m->m_units = "seconds";
 	m->m_flags = 0;
 	m++;
+
+	///////////////////
+	//
+	// Word Variation Controls
+	//
+	///////////////////
+	
+	m->m_title = "wiktionary-based word variations";
+	m->m_desc  = "If enabled, queries will be expanded with \"synonyms\" from the compiled wiktionary data.";
+	m->m_def   = "0";
+	simple_m_set(CollectionRec,m_word_variations_config.m_wiktionaryWordVariations);
+	m->m_cgi  = "qe";
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m->m_flags = PF_API | PF_CLONE;
+	m++;
+
+	m->m_title = "language-specific word variations";
+	m->m_desc  = "If enabled, queries will be expaneded using launguage-specific rules, eg. based on STO lexicon.";
+	m->m_def   = "0";
+	simple_m_set(CollectionRec,m_word_variations_config.m_languageSpecificWordVariations);
+	m->m_cgi  = "langwordvariations";
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m->m_flags = PF_API | PF_CLONE;
+	m++;
+
+	m->m_title = "Weight threshold";
+	m->m_desc  = "Weight threshold of variations to before they are used.";
+	m->m_def   = "1.0";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_threshold);
+	m->m_cgi  = "lwv_wt";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "noun: indefinite->definite";
+	m->m_desc  = "Weight of indefinite to definite form variations.";
+	m->m_def   = "0.7";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_indefinite_definite);
+	m->m_cgi  = "lwv_noun_indef_def";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "noun: definite->indefinite";
+	m->m_desc  = "Weight of definite to indefinite form variations.";
+	m->m_def   = "0.6";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_definite_indefinite);
+	m->m_cgi  = "lwv_noun_def_indef";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "noun: singular->plural";
+	m->m_desc  = "Weight of singular to plural form variations.";
+	m->m_def   = "0.6";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_singular_plural);
+	m->m_cgi  = "lwv_noun_singular_plural";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "noun: plural->singular";
+	m->m_desc  = "Weight of plural to singular form variations.";
+	m->m_def   = "0.6";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.noun_plural_singular);
+	m->m_cgi  = "lwv_noun_plural_singular";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "simple spelling variants";
+	m->m_desc  = "Simple spelling variantions (usually approved)";
+	m->m_def   = "1.0";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.simple_spelling_variants);
+	m->m_cgi  = "lwv_simple_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "proper noun: common spelling differences";
+	m->m_desc  = "Weight of common spelling differences within a language, eg Danish aa<->å, German eszet, etc. "
+		     "Note that what is and isn't a proper noun is determined by heuristics.";
+	m->m_def   = "0.95";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.proper_noun_spelling_variants);
+	m->m_cgi  = "lwv_proper_noun_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "verb: common spelling differences";
+	m->m_desc  = "Weight of common spelling differences within a language, eg Danish acute accent";
+	m->m_def   = "0.95";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.verb_spelling_variants);
+	m->m_cgi  = "lwv_verb_spelling_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+	m->m_title = "verb: past<->past variants";
+	m->m_desc  = "Weight of different pasts (including compound tenses). Eg 'ate' vs. 'had eaten'";
+	m->m_def   = "0.95";
+	simple_m_set(CollectionRec,m_word_variations_config.m_word_variations_weights.verb_past_past_variants);
+	m->m_cgi  = "lwv_verb_past_past_variants";
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_WORD_VARIATIONS;
+	m++;
+
+
 
 	///////////////////////////////////////////
 	// PAGE DATAFILE CONTROLS
@@ -8471,6 +8715,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log debug msg20 messages";
+	m->m_cgi   = "ldmsgtwozero";
+	simple_m_set(Conf,m_logDebugMsg20);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log debug multicast";
 	m->m_cgi   = "ldmc";
 	simple_m_set(Conf,m_logDebugMulticast);
@@ -8742,6 +8993,19 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for Msg25";
+	m->m_cgi   = "ltrc_msgtwofive";
+	simple_m_set(Conf,m_logTraceMsg25);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for PageLinkdbLookup";
+	m->m_cgi   = "ltrc_pgldl";
+	simple_m_set(Conf,m_logTracePageLinkdbLookup);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
 
 	m->m_title = "log trace info for PageSpiderdbLookup";
 	m->m_cgi   = "ltrc_pgspl";
@@ -11111,8 +11375,8 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "<tr class=poo><td>hopcount</td>"
 			  "<td>All root urls, those that have only a single "
 			  "slash for their path, and no cgi parms, have a "
-			  "hop count of 0. Also, all RSS urls, ping "
-			  "server urls and site roots (as defined in the "
+			  "hop count of 0. Also, all RSS urls "
+			  "and site roots (as defined in the "
 			  "site rules table) have a hop count of 0. Their "
 			  "outlinks have a hop count of 1, and the outlinks "
 			  "of those outlinks a hop count of 2, etc."
@@ -11263,16 +11527,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "Which means it matches isaddurl, isinjected, "
 			  " or isreindex. as opposed to only "
 			  "being discovered from the spider. "
-			  "</td></tr>"
-
-			  "<tr class=poo><td><nobr>inpingserver | !inpingserver"
-			  "</nobr></td>"
-			  "<td>"
-			  "This is true if the url has an inlink from "
-			  "a recognized ping server. Ping server urls are "
-			  "hard-coded in Url.cpp. <b><font color=red> "
-			  "pingserver urls are assigned a hop count of 0"
-			  "</font></b>"
 			  "</td></tr>"
 
 			  "<tr class=poo><td>isindexed | !isindexed</td>"

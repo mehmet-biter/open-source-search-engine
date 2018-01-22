@@ -26,26 +26,28 @@ DocRebuild g_docRebuild("docrebuild.txt", false);
 DocRebuild g_docRebuildUrl("docrebuildurl.txt", true);
 
 struct DocRebuildDocItem : public DocProcessDocItem {
-	DocRebuildDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos)
-		: DocProcessDocItem(docProcess, key, lastPos)
-		  , m_msg0()
-		  , m_spiderdbList()
-		  , m_spiderdbListRequested(false)
-		  , m_spiderdbListProcessed(false) {
+	DocRebuildDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos)
+		: DocProcessDocItem(docProcess, key, firstIp, lastPos)
+		, m_msg0()
+		, m_spiderdbList()
+		, m_spiderdbListRequested(false)
+		, m_spiderdbListProcessed(false)
+		, m_clearedXmlDoc(false) {
 	}
 
 	Msg0 m_msg0;
 	RdbList m_spiderdbList;
 	bool m_spiderdbListRequested;
 	bool m_spiderdbListProcessed;
+	bool m_clearedXmlDoc;
 };
 
 DocRebuild::DocRebuild(const char *filename, bool isUrl)
-	: DocProcess(filename, isUrl) {
+	: DocProcess(filename, isUrl, false) {
 }
 
-DocProcessDocItem* DocRebuild::createDocItem(DocProcess *docProcess, const std::string &key, int64_t lastPos) {
-	return new DocRebuildDocItem(docProcess, key, lastPos);
+DocProcessDocItem* DocRebuild::createDocItem(DocProcess *docProcess, const std::string &key, uint32_t firstIp, int64_t lastPos) {
+	return new DocRebuildDocItem(docProcess, key, firstIp, lastPos);
 }
 
 void DocRebuild::updateXmldoc(XmlDoc *xmlDoc) {
@@ -113,17 +115,7 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 		return;
 	}
 
-	int32_t *siteNumInLinks = xmlDoc->getSiteNumInlinks();
-	if (!siteNumInLinks || siteNumInLinks == (int32_t*)-1) {
-		// blocked
-		return;
-	}
-
-	// reset callback
-	if (xmlDoc->m_masterLoop == processedDoc) {
-		xmlDoc->m_masterLoop = nullptr;
-		xmlDoc->m_masterState = nullptr;
-
+	if (!rebuildDocItem->m_clearedXmlDoc) {
 		// logic copied from Repair.cpp
 
 		// rebuild the title rec! otherwise we re-add the old one
@@ -164,8 +156,22 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 		xmlDoc->m_version = TITLEREC_CURRENT_VERSION;
 #endif
 		xmlDoc->m_versionValid = true;
+
+		rebuildDocItem->m_clearedXmlDoc = true;
 	}
 
+	int32_t *siteNumInLinks = xmlDoc->getSiteNumInlinks();
+	if (!siteNumInLinks || siteNumInLinks == (int32_t*)-1) {
+		// blocked
+		return;
+	}
+
+	// reset callback
+	if (xmlDoc->m_masterLoop == processedDoc) {
+		xmlDoc->m_masterLoop = nullptr;
+		xmlDoc->m_masterState = nullptr;
+	}
+	
 	// set spider request
 	if (!rebuildDocItem->m_spiderdbListRequested) {
 		int64_t urlHash48 = xmlDoc->getFirstUrlHash48();
@@ -188,7 +194,7 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 			xmlDoc->m_addSpiderRequest = true;
 		} else {
 			SpiderRequest *sreq = reinterpret_cast<SpiderRequest *>(rebuildDocItem->m_spiderdbList.getCurrentRec());
-			memcpy(&xmlDoc->m_sreq, sreq, sreq->m_dataSize + sizeof(key128_t));
+			memcpy(&xmlDoc->m_sreq, sreq, sreq->m_dataSize + sizeof(key128_t) + 4);
 		}
 
 		xmlDoc->m_sreqValid = true;

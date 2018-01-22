@@ -17,6 +17,7 @@
 #include "Query.h" // MAX_QUERY_LEN
 #include "HttpRequest.h"
 #include "BaseScoringParameters.h"
+#include "WordVariationsConfig.h"
 #include <string>
 
 class CollectionRec;
@@ -160,13 +161,6 @@ public:
 	// ranking algos
 	bool   m_doMaxScoreAlgo;
 
-	// stream results back on socket in streaming mode, usefule when 
-	// thousands of results are requested
-	bool   m_streamResults;
-
-	// limit search results to pages spidered this many seconds ago
-	int32_t   m_secsBack;
-
 	// 0 relevance, 1 date, 2 reverse date
 	char   m_sortBy;
 
@@ -197,8 +191,7 @@ public:
 
 	char  *m_formatStr;
 
-	// this should be part of the key because it will affect the results!
-	bool   m_queryExpansion;
+	WordVariationsConfig m_word_variations_config;
 
 	////////
 	//

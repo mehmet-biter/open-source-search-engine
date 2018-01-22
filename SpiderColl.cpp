@@ -3120,7 +3120,6 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 			"to winnerlistcache for ip %s oldjump=%" PRId32" newJump=%" PRId32" ptr=0x%" PTRFMT,
 		         doleBuf->length(),iptoa(firstIp,ipbuf),oldJump, newJump, (PTRTYPE)x);
 		//validateDoleBuf ( doleBuf );
-		//g_spiderLoop.m_winnerListCache.verify();
 		// inherit timestamp. if 0, RdbCache will set to current time
 		// don't re-add just use the same modified buffer so we
 		// don't churn the cache.

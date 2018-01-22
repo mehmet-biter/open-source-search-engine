@@ -228,10 +228,6 @@ int32_t SpiderReply::print(SafeBuf *sbarg) const {
  * }
  */
 int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, const XmlDoc *xd, int32_t row) const {
-	if (row != 0) {
-		sb->safePrintf("\t\t,\n");
-	}
-
 	sb->safePrintf("\t\t{\n");
 
 	int64_t elapsedMS = 0;
@@ -268,6 +264,7 @@ int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, const XmlDoc
 //	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 
 	sb->safePrintf("\t\t}\n");
+	sb->safePrintf("\t\t,\n");
 
 	return sb->length();
 }

@@ -227,7 +227,7 @@ public:
 	char      *ptr_imageData;
 	int32_t      *ptr_unused6;
 	int32_t      *ptr_unused7;
-	char      *ptr_unused1;
+	char      *ptr_explicitKeywords;
 	char      *ptr_unused2;
 	char      *ptr_unused3;
 	char      *ptr_utf8Content;
@@ -252,7 +252,7 @@ public:
 	int32_t       size_imageData;
 	int32_t       size_unused6;
 	int32_t       size_unused7;
-	int32_t       size_unused1;
+	int32_t       size_explicitKeywords;
 	int32_t       size_unused2;
 	int32_t       size_unused3;
 	int32_t       size_utf8Content;
@@ -395,6 +395,7 @@ public:
 	int64_t *getDocId ( ) ;
 	char *getIsIndexed ( ) ;
 	class TagRec *getTagRec ( ) ;
+	class TagRec *getCurrentTagRec ( ) ;
 	// non-dup/nondup addresses only
 	int32_t *getFirstIp ( ) ;
 	int32_t *getSiteNumInlinks ( ) ;
@@ -484,6 +485,8 @@ public:
 
 	char *addOutlinkSpiderRecsToMetaList ( );
 
+	void lookupAndSetExplicitKeywords();
+
 	int32_t getSiteRank ();
 	bool addTable144 ( class HashTableX *tt1 , 
 			   int64_t docId ,
@@ -498,13 +501,13 @@ public:
 	
 	bool hashLinks ( class HashTableX *table ) ;
 	bool hashUrl ( class HashTableX *table, bool urlOnly );
-	bool hashDateNumbers ( class HashTableX *tt );
 	bool hashIncomingLinkText(HashTableX *table);
 	bool hashLinksForLinkdb ( class HashTableX *table ) ;
 	bool hashNeighborhoods ( class HashTableX *table ) ;
 	bool hashTitle ( class HashTableX *table );
 	bool hashBody2 ( class HashTableX *table );
 	bool hashMetaKeywords ( class HashTableX *table );
+	bool hashExplicitKeywords(HashTableX *table);
 	bool hashMetaGeoPlacename( class HashTableX *table );
 	bool hashMetaSummary ( class HashTableX *table );
 	bool hashLanguage ( class HashTableX *table ) ;
@@ -547,15 +550,6 @@ public:
 
 	bool hashString3( char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
 			  class HashTableX *wts, class SafeBuf *wbuf);
-
-	bool hashNumberForSorting( const char *beginBuf ,
-			  const char *buf , 
-			  int32_t bufLen , 
-			  class HashInfo *hi ) ;
-
-	bool hashNumberForSortingAsInt32 ( int32_t x,
-			   class HashInfo *hi ,
-			   const char *gbsortByStr ) ;
 
 	// print out for PageTitledb.cpp and PageParser.cpp
 	bool printDoc ( class SafeBuf *pbuf );
@@ -656,7 +650,7 @@ public:
 	bool isFirstUrlRobotsTxt();
 	bool m_isRobotsTxtUrl;
 
-	bool isFirstUrlCanonical();
+	bool* isFirstUrlCanonical();
 	bool m_isUrlCanonical;
 
 	Images     m_images;
@@ -664,6 +658,7 @@ public:
 	HttpMime   m_mime;
 	TagRec     m_tagRec;
 	SafeBuf    m_tagRecBuf;
+	TagRec     m_currentTagRec;
 	SafeBuf    m_newTagBuf;
 	SafeBuf    m_fragBuf;
 	SafeBuf    m_wordSpamBuf;
@@ -689,6 +684,7 @@ public:
 	bool m_firstUrlHash64Valid;
 	bool m_docIdValid;
 	bool m_tagRecValid;
+	bool m_currentTagRecValid;
 	bool m_robotsTxtLenValid;
 	bool m_tagRecDataValid;
 	bool m_newTagBufValid;
@@ -914,6 +910,7 @@ public:
 	bool m_skipContentHashCheck;
 	char m_isWWWDup;	// May be -1
 
+	SafeBuf m_explicitKeywordsBuf;
 	SafeBuf m_linkSiteHashBuf;
 	SafeBuf m_linkdbDataBuf;
 	SafeBuf m_langVec;

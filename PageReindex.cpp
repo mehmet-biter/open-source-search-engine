@@ -16,6 +16,9 @@
 #include "GigablastRequest.h"
 #include "Process.h"
 #include "Mem.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 
 class State13 {
@@ -264,7 +267,7 @@ bool Msg1c::reindexQuery ( const char *query,
 	m_niceness = MAX_NICENESS;
 
 	// langunknown?
-	m_qq.set2(query, langId, false, true, false, ABS_MAX_QUERY_TERMS);
+	m_qq.set2(query, langId, 1.0, 1.0, NULL, true, false, ABS_MAX_QUERY_TERMS);
 
 	// sanity fix
 	if ( endNum - startNum > MAXDOCIDSTOCOMPUTE )
@@ -272,7 +275,9 @@ bool Msg1c::reindexQuery ( const char *query,
 
 	// reset again just in case
 	m_msg3a.m_msg39req.reset();
-
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(&m_msg3a.m_msg39req,sizeof(m_msg3a.m_msg39req));
+#endif
 	// set our Msg39Request
 	m_msg3a.m_msg39req.m_collnum = m_collnum;
 	m_msg3a.m_msg39req.m_docsToGet                 = endNum;
@@ -283,7 +288,7 @@ bool Msg1c::reindexQuery ( const char *query,
 	m_msg3a.m_msg39req.ptr_query                   = const_cast<char*>(m_qq.originalQuery()); //we promise not to modify it
 	m_msg3a.m_msg39req.size_query                  = strlen(m_qq.originalQuery())+1;
 	m_msg3a.m_msg39req.m_timeout                   = 86400*1000; // a whole day. todo: should we just go for infinite here?
-	m_msg3a.m_msg39req.m_queryExpansion            = false;
+	m_msg3a.m_msg39req.m_word_variations_config    = WordVariationsConfig();
 	// add language dropdown or take from [query reindex] link
 	m_msg3a.m_msg39req.m_language                  = langId;
 	m_msg3a.m_msg39req.m_allowHighFrequencyTermCache = false;

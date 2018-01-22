@@ -23,7 +23,7 @@ DocDelete g_docDelete("docdelete.txt", false);
 DocDelete g_docDeleteUrl("docdeleteurl.txt", true);
 
 DocDelete::DocDelete(const char *filename, bool isUrl)
-	: DocProcess(filename, isUrl) {
+	: DocProcess(filename, isUrl, false) {
 }
 
 void DocDelete::updateXmldoc(XmlDoc *xmlDoc) {

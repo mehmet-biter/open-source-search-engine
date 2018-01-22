@@ -43,6 +43,8 @@ Conf::Conf ( ) {
 
 	// set max mem to 16GB at least until we load on disk
 	m_maxMem = 16000000000;
+	m_mlockAllCurrent = true;
+	m_mlockAllFuture = true;
 
 	// Coverity.. a bit overkill, but wth...
 	m_runAsDaemon = false;
@@ -141,6 +143,8 @@ Conf::Conf ( ) {
 	m_verifyWrites = false;
 	m_corruptRetries = 0;
 	m_sqliteSynchronous = 1;
+	m_docProcessDelayMs = 1000;
+	m_docProcessMaxPending = 10;
 	m_detectMemLeaks = false;
 	m_forceIt = false;
 	m_doIncrementalUpdating = false;
@@ -189,6 +193,7 @@ Conf::Conf ( ) {
 	m_logDebugMemUsage = false;
 	m_logDebugMerge = false;
 	m_logDebugMsg13 = false;
+	m_logDebugMsg20 = false;
 	m_logDebugMulticast = false;
 	m_logDebugNet = false;
 	m_logDebugProxies = false;
@@ -225,6 +230,8 @@ Conf::Conf ( ) {
 	m_logTraceMem = false;
 	m_logTraceMsg0 = false;
 	m_logTraceMsg4 = false;
+	m_logTraceMsg25 = false;
+	m_logTracePageLinkdbLookup = false;
 	m_logTracePageSpiderdbLookup = false;
 	m_logTracePos = false;
 	m_logTracePosdb = false;

@@ -95,6 +95,11 @@ static WebPage s_pages[] = {
 	  "search controls", sendPageGeneric,
 	  PG_ACTIVE},
 
+	// use POST for html head/tail and page root html. might be large.
+	{ PAGE_WORD_VARIATIONS, "admin/wordvariations"   , 0 , "Word Variations" ,1, page_method_t::page_method_post_url,
+	  "word variation controls", sendPageGeneric,
+	  PG_ACTIVE},
+
 	{ PAGE_RANKING   , "admin/ranking"   , 0 , "Ranking controls" ,1, page_method_t::page_method_get,
 	  "ranking controls", sendPageGeneric,
 	  PG_ACTIVE},
@@ -201,6 +206,11 @@ static WebPage s_pages[] = {
 	{ PAGE_TITLEDB   , "admin/titledb" , 0 , "titledb"         ,  0, page_method_t::page_method_get,
 	  "titledb",
 	  sendPageTitledb,
+	  PG_NOAPI|PG_MASTERADMIN},
+
+	{ PAGE_LINKDBLOOKUP, "admin/linkdblookup", 0, "Linkdb",  0, page_method_t::page_method_get,
+	  "Lookup record in linkdb",
+	  sendPageLinkdbLookup,
 	  PG_NOAPI|PG_MASTERADMIN},
 
 	{ PAGE_SPIDERDBLOOKUP, "admin/spiderdblookup", 0, "Spiderdb",  0, page_method_t::page_method_get,
@@ -821,7 +831,7 @@ bool printGigabotAdvice(SafeBuf *sb,
 			// "be blasted."
 			;
 	if ( page == PAGE_BASIC_STATUS )
-		advice = 
+		advice =
 			"STEP 3 of 3. "
 			"<br>"
 			"<br>"

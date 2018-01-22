@@ -37,6 +37,7 @@ bool isSpiderTempError(int errnum) {
 	switch (errnum) {
 		case EDNSTIMEDOUT:
 		case ETCPTIMEDOUT:
+		case EUDPTIMEDOUT:
 		case EDNSDEAD:
 		case EBADIP:
 		case EDNSSERVFAIL:
@@ -260,6 +261,8 @@ const char *mstrerror ( int errnum ) {
 				return "SSL error of some kind";
 			case EPERMDENIED      :
 				return "Permission denied";
+			case ENOLINKTEXT_AREATAG      :
+				return "No link text (area tag)";
 			case EINTERNALERROR:
 				return "Internal error";
 			case EBADJSONPARSER:
@@ -448,7 +451,7 @@ static const char* s_errname[] {
 	STRINGIFY( EDOCIDCOLLISION ),
 	STRINGIFY( ESSLERROR ),
 	STRINGIFY( EPERMDENIED ),
-	STRINGIFY( EUNUSED47 ),
+	STRINGIFY( ENOLINKTEXT_AREATAG ),
 	STRINGIFY( EUNUSED47A ),
 	STRINGIFY( EUNUSED47B ),
 	STRINGIFY( EUNUSED47C ),

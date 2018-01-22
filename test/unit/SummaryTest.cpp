@@ -35,7 +35,7 @@ static void generateSummary( Summary &summary, char *htmlInput, const char *quer
 	ASSERT_TRUE(sections.set(&words, &bits, &url, "", CT_HTML));
 
 	Query query;
-	ASSERT_TRUE(query.set2(queryStr, langEnglish, true, true, false, ABS_MAX_QUERY_TERMS));
+	ASSERT_TRUE(query.set2(queryStr, langEnglish, 1.0, 1.0, nullptr, false, true, ABS_MAX_QUERY_TERMS));
 
 	LinkInfo linkInfo;
 	memset ( &linkInfo , 0 , sizeof(LinkInfo) );

@@ -12,7 +12,9 @@
 #include "third-party/cld2/public/compact_lang_det.h"
 #include "third-party/cld2/public/encodings.h"
 
-SearchInput::SearchInput() {
+SearchInput::SearchInput()
+  : m_word_variations_config()
+{
 	// Coverity
 	m_niceness = 0;
 	m_displayQuery = NULL;
@@ -65,8 +67,6 @@ SearchInput::SearchInput() {
 	m_baseScoringParameters.clear();
 	m_numFlagScoreMultipliers=26;
 	m_numFlagRankAdjustments=26;
-	m_streamResults = false;
-	m_secsBack = 0;
 	m_sortBy = 0;
 	m_filetype = NULL;
 	m_realMaxTop = 0;
@@ -80,7 +80,6 @@ SearchInput::SearchInput() {
 	m_displayInlinks = 0;
 	m_docIdsOnly = 0;
 	m_formatStr = NULL;
-	m_queryExpansion = false;
 	m_END = 0;
 }
 
@@ -213,14 +212,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 
 	// and set from the http request. will set m_coll, etc.
 	g_parms.setFromRequest ( &m_hr , sock , cr , (char *)this , OBJ_SI );
-
-	if ( m_streamResults &&
-	     tmpFormat != FORMAT_XML &&
-	     tmpFormat != FORMAT_JSON ) {
-		log("si: streamResults only supported for "
-		    "xml/csv/json. disabling");
-		m_streamResults = false;
-	}
 
 	m_coll = coll;
 
@@ -377,11 +368,11 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	// . the query to use for highlighting... can be overriden with "hq"
 	// . we need the language id for doing synonyms
 	if ( m_prepend && m_prepend[0] )
-		m_hqq.set2 ( m_prepend , m_queryLangId , m_queryExpansion , true, m_allowHighFrequencyTermCache, maxQueryTerms);
+		m_hqq.set2(m_prepend, m_queryLangId, 1.0, 1.0, &m_word_variations_config, true, m_allowHighFrequencyTermCache, maxQueryTerms);
 	else if ( m_highlightQuery && m_highlightQuery[0] )
-		m_hqq.set2 (m_highlightQuery,m_queryLangId,m_queryExpansion, true, m_allowHighFrequencyTermCache, maxQueryTerms);
+		m_hqq.set2(m_highlightQuery,m_queryLangId, 1.0, 1.0, &m_word_variations_config, true, m_allowHighFrequencyTermCache, maxQueryTerms);
 	else if ( m_query && m_query[0] )
-		m_hqq.set2 ( m_query , m_queryLangId , m_queryExpansion, true, m_allowHighFrequencyTermCache, maxQueryTerms);
+		m_hqq.set2(m_query, m_queryLangId, 1.0, 1.0, &m_word_variations_config, true, m_allowHighFrequencyTermCache, maxQueryTerms);
 
 	// log it here
 	log(LOG_INFO, "query: got query %s (len=%i)" ,m_sbuf1.getBufStart() ,m_sbuf1.length());
@@ -390,7 +381,8 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	// . returns false and sets g_errno on error (?)
 	if ( ! m_q.set2 ( m_sbuf1.getBufStart(),
 			  m_queryLangId ,
-			  m_queryExpansion ,
+			  1.0, 1.0,
+		          &m_word_variations_config,
 			  true , // use QUERY stopwords?
 			  m_allowHighFrequencyTermCache,
 			  maxQueryTerms ) ) {
@@ -518,23 +510,16 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 		boolq = true;
 	}
 
-	// and this
-	if ( m_secsBack > 0 ) {
-		int32_t timestamp = getTimeGlobalNoCore();
-		timestamp -= m_secsBack;
-		if ( timestamp <= 0 ) timestamp = 0;
-		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
-		m_sbuf1.safePrintf("gbminint:gbspiderdate:%" PRIu32,timestamp);
-	}
-
 	if ( m_sortBy == 1 ) {
-		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
-		m_sbuf1.safePrintf("gbsortbyint:gbspiderdate");
+		log(LOG_WARN, "query: m_sortBy=%d. This is currently not supported", m_sortBy);
+		//if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
+		//m_sbuf1.safePrintf("gbsortbyint:gbspiderdate");
 	}
 
 	if ( m_sortBy == 2 ) {
-		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
-		m_sbuf1.safePrintf("gbrevsortbyint:gbspiderdate");
+		log(LOG_WARN, "query: m_sortBy=%d. This is currently not supported", m_sortBy);
+		//if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
+		//m_sbuf1.safePrintf("gbrevsortbyint:gbspiderdate");
 	}
 
 	char *ft = m_filetype;

@@ -1143,7 +1143,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 
 	// set the urls i guess
 	m_firstUrl.set   ( ptr_firstUrl );
-	if ( ptr_redirUrl ) {
+	if (ptr_redirUrl && strlen(ptr_redirUrl)) {
 		m_redirUrl.set   ( ptr_redirUrl );
 		m_currentUrl.set ( ptr_redirUrl );
 		m_currentUrlValid = true;
@@ -1791,9 +1791,15 @@ bool XmlDoc::indexDoc ( ) {
 		m_indexCodeValid = true;
 	}
 
+	if ( g_errno == EDOCCONVERTFAILED ) {
+		m_indexCode = g_errno;
+		m_indexCodeValid = true;
+	}
+
 	// default to internal error which will be retried forever otherwise
 	if ( ! m_indexCodeValid ) {
-		m_indexCode = EINTERNALERROR;//g_errno;
+		logTrace(g_conf.m_logTraceXmlDoc, "Setting indexCode to EINTERNALERROR. g_errno=%s", mstrerror(g_errno));
+		m_indexCode = EINTERNALERROR;
 		m_indexCodeValid = true;
 	}
 
@@ -3383,9 +3389,11 @@ bool *XmlDoc::getIsSiteMap ( ) {
 //   the tags in the document, including ptrs to the text in between
 //   tags.
 Xml *XmlDoc::getXml ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// return it if it is set
 	if ( m_xmlValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, m_xmlValid true" );
 		return &m_xml;
 	}
 
@@ -3393,23 +3401,30 @@ Xml *XmlDoc::getXml ( ) {
 	setStatus ( "parsing html");
 
 	// get the filtered content
+	logTrace( g_conf.m_logTraceXmlDoc, "getUtf8Content" );
 	char **u8 = getUtf8Content();
 	if ( ! u8 || u8 == (char **)-1 ) return (Xml *)u8;
 	int32_t u8len = size_utf8Content - 1;
 
+	logTrace( g_conf.m_logTraceXmlDoc, "utf8 content len: %" PRId32 "", u8len );
+
 	uint8_t *ct = getContentType();
 	if ( ! ct || ct == (void *)-1 ) return (Xml *)ct;
+
+	logTrace( g_conf.m_logTraceXmlDoc, "content type: %" PRIu8 "", *ct );
 
 	int64_t start = logQueryTimingStart();
 
 	// set it
 	if ( !m_xml.set( *u8, u8len, m_version, *ct ) ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "Could not set xml from content of length %" PRId32 "", u8len );
 		// return NULL on error with g_errno set
 		return NULL;
 	}
 
 	logQueryTimingEnd( __func__, start );
 
+	logTrace( g_conf.m_logTraceXmlDoc, "END, setting m_xmlValid to true" );
 	m_xmlValid = true;
 	return &m_xml;
 }
@@ -4009,6 +4024,25 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 		return (int32_t *)links;
 	}
 
+	Url *fu = getFirstUrl();
+	Url *cu = getCurrentUrl();
+	bool isRedir = (fu->getUrlHash64() != cu->getUrlHash64());
+
+	TagRec *tr = getTagRec();
+	if (!tr || tr == (TagRec *)-1) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getTagRec returned -1" );
+		return (int32_t *)tr;
+	}
+
+	TagRec *ctr = nullptr;
+	if (isRedir) {
+		ctr = getCurrentTagRec();
+		if (!ctr || ctr == (TagRec *)-1) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getCurrentTagRec returned -1");
+			return (int32_t *)ctr;
+		}
+	}
+
 	// . get the outlink tag rec vector
 	// . each link's tagrec may have a "site" tag that is basically
 	//   the cached SiteGetter::getSite() computation
@@ -4080,15 +4114,22 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		// get the link
 		char *u = links->getLinkPtr(i);
+
 		// get full host from link
 		int32_t hostLen = 0;
 		const char *host = ::getHost ( u , &hostLen );
 		int32_t hostHash32 = hash32 ( host , hostLen , 0 );
+
 		// get the site
 		TagRec *gr = (*grv)[i];
 		const char *site = NULL;
 		int32_t  siteLen = 0;
 		if ( gr ) {
+			// we should use current tagrec instead of tagrec if it's a redirect
+			if (isRedir && gr == tr) {
+				gr = ctr;
+			}
+
 			int32_t dataSize = 0;
 			site = gr->getString("site",NULL,&dataSize);
 			if ( dataSize ) siteLen = dataSize - 1;
@@ -5610,7 +5651,7 @@ Url **XmlDoc::getRedirUrl() {
 		sameDom = false;
 	}
 
-	if ( ! sameDom ) {
+	if (httpStatus != 301 && httpStatus != 308 && !sameDom) {
 		m_redirUrl.set(loc->getUrl(), loc->getUrlLen(), false, true);
 		m_redirUrlPtr   = &m_redirUrl;
 		ptr_redirUrl    = m_redirUrl.getUrl();
@@ -5635,20 +5676,32 @@ Url **XmlDoc::getRedirUrl() {
 	int32_t rlen = loc->getUrlLen();
 	int32_t ulen = f->getUrlLen();
 
+	if (httpStatus == 301 || httpStatus == 308) {
+		logTrace(g_conf.m_logTraceXmlDoc, "permanent redirection. simplifiedRedir=true");
+		simplifiedRedir = true;
+	}
+
+	// http -> https on same hostname
+	else if (f->isHttp() && loc->isHttps() &&
+		loc->getHostLen() == f->getHostLen() && strncasecmp(loc->getHost(), f->getHost(), loc->getHostLen()) == 0) {
+		logTrace(g_conf.m_logTraceXmlDoc, "redirected from http to https on same host. simplifiedRedir=true");
+		simplifiedRedir = true;
+	}
+
 	// simpler if new path depth is shorter
-	if ( loc->getPathDepth( true ) < f->getPathDepth( true ) ) {
+	else if (loc->getPathDepth(true) < f->getPathDepth(true)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirected url path depth is shorter. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// simpler if old has cgi and new does not
-	if ( !simplifiedRedir && f->isCgi() && ! loc->isCgi() ) {
+	else if (f->isCgi() && !loc->isCgi()) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirected url doesn't have query param, old url does. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// simpler if new one is same as old but has a '/' at the end
-	if ( !simplifiedRedir && rlen == ulen+1 && r[rlen-1]=='/' && strncmp(r, u, ulen) == 0 ) {
+	else if (rlen == ulen + 1 && r[rlen - 1] == '/' && strncmp(r, u, ulen) == 0) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirected url has '/', old url doesn't. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
@@ -5656,27 +5709,25 @@ Url **XmlDoc::getRedirUrl() {
 	// . if new url does not have semicolon but old one does
 	// . http://news.yahoo.com/i/738;_ylt=AoL4eFRYKEdXbfDh6W2cF
 	//   redirected to http://news.yahoo.com/i/738
-	if ( !simplifiedRedir && strchr ( u, ';' ) &&  ! strchr ( r, ';' ) ) {
+	else if (strchr(u, ';') && !strchr(r, ';')) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirected url doesn't have semicolon, old url does. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// simpler is new host is www and old is not
-	if ( !simplifiedRedir && loc->isHostWWW() && ! f->isHostWWW() ) {
+	else if (loc->isHostWWW() && !f->isHostWWW()) {
 		logTrace(g_conf.m_logTraceXmlDoc, "redirect is www & original is not. simplifiedRedir=true");
 		simplifiedRedir = true;
 	}
 
 	// if redirect is to different domain, set simplified
 	// this helps locks from bunching on one domain
-	if ( !simplifiedRedir && ( loc->getDomainLen() != f->getDomainLen() ||
-	     strncasecmp ( loc->getDomain(), f->getDomain(), loc->getDomainLen() ) != 0 ) ) {
+	else if ((loc->getDomainLen() != f->getDomainLen() ||
+	          strncasecmp(loc->getDomain(), f->getDomain(), loc->getDomainLen()) != 0) && !f->isRoot()) {
 		// crap, but www.hotmail.com redirects to live.msn.com
 		// login page ... so add this check here
-		if ( !f->isRoot() ) {
-			logTrace(g_conf.m_logTraceXmlDoc, "different domain & not root. simplifiedRedir=true");
-			simplifiedRedir = true;
-		}
+		logTrace(g_conf.m_logTraceXmlDoc, "different domain & not root. simplifiedRedir=true");
+		simplifiedRedir = true;
 	}
 
 	bool allowSimplifiedRedirs = m_allowSimplifiedRedirs;
@@ -5703,7 +5754,13 @@ Url **XmlDoc::getRedirUrl() {
 	}
 
 	// if it's a canonical url, follow the redirect
-	if (isFirstUrlCanonical()) {
+	bool *isFirstUrlCanon = isFirstUrlCanonical();
+	if (!isFirstUrlCanon || isFirstUrlCanon == (void *)-1) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, blocked, could not get first url canonical" );
+		return (Url **)isFirstUrlCanon;
+	}
+
+	if (*isFirstUrlCanon) {
 		logTrace(g_conf.m_logTraceXmlDoc, "first url is canonical. allowSimplifiedRedirs=true");
 		allowSimplifiedRedirs = true;
 	}
@@ -6511,8 +6568,10 @@ static void gotTagRecWrapper(void *state) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// note it
 	THIS->setStatus ( "in got tag rec wrapper" );
-	// set these
-	if ( ! g_errno ) {
+
+	if (g_errno) {
+		log(LOG_WARN, "gotTagRecWrapper: url=%s error='%s'", THIS->m_firstUrl.getUrl(), mstrerror(g_errno));
+	} else {
 		THIS->m_tagRec.serialize ( THIS->m_tagRecBuf );
 		THIS->ptr_tagRecData =  THIS->m_tagRecBuf.getBufStart();
 		THIS->size_tagRecData = THIS->m_tagRecBuf.length();
@@ -6577,6 +6636,53 @@ TagRec *XmlDoc::getTagRec ( ) {
 	return &m_tagRec;
 }
 
+static void gotCurrentTagRecWrapper(void *state) {
+	XmlDoc *THIS = (XmlDoc *)state;
+	// note it
+	THIS->setStatus ( "in got current tag rec wrapper" );
+
+	if (g_errno) {
+		log(LOG_WARN, "gotCurrentTagRecWrapper: url=%s error='%s'", THIS->m_firstUrl.getUrl(), mstrerror(g_errno));
+		THIS->m_indexCode = g_errno;
+		THIS->m_indexCodeValid = true;
+	} else {
+		THIS->m_currentTagRecValid = true;
+	}
+
+	// continue
+	THIS->m_masterLoop ( THIS->m_masterState );
+}
+
+// . returns NULL and sets g_errno on error
+// . returns -1 if blocked, will re-call m_callback
+TagRec *XmlDoc::getCurrentTagRec ( ) {
+	// if we got it give it
+	if ( m_currentTagRecValid ) return &m_currentTagRec;
+
+	CollectionRec *cr = getCollRec();
+	if ( ! cr ) return NULL;
+
+	// update status msg
+	setStatus ( "getting current tagdb record" );
+
+	// nah, try this
+	Url *u = getCurrentUrl();
+
+	// get it, user our collection for lookups, not m_tagdbColl[] yet!
+	if ( !m_msg8a.getTagRec( u, cr->m_collnum, m_niceness, this, gotCurrentTagRecWrapper, &m_currentTagRec ) ) {
+		// we blocked, return -1
+		return (TagRec *) -1;
+	}
+
+	// error? ENOCOLLREC?
+	if ( g_errno ) {
+		return NULL;
+	}
+
+	// our tag rec should be all valid now
+	m_currentTagRecValid = true;
+	return &m_currentTagRec;
+}
 
 
 
@@ -7143,17 +7249,21 @@ bool XmlDoc::isFirstUrlRobotsTxt() {
 	return m_isRobotsTxtUrl;
 }
 
-bool XmlDoc::isFirstUrlCanonical() {
+bool* XmlDoc::isFirstUrlCanonical() {
 	if (m_isUrlCanonicalValid) {
-		return m_isUrlCanonical;
+		return &m_isUrlCanonical;
 	}
 
 	Url *fu = getFirstUrl();
-	Url *cu = getCanonicalUrl();
-	m_isUrlCanonical = (strcmp(fu->getUrl(), cu->getUrl()) == 0);
+	Url *canonUrl = getCanonicalUrl();
+	if (canonUrl == nullptr || canonUrl == (Url*)-1) {
+		return (bool*)canonUrl;
+	}
+
+	m_isUrlCanonical = (strcmp(fu->getUrl(), canonUrl->getUrl()) == 0);
 	m_isUrlCanonicalValid = true;
 
-	return m_isUrlCanonical;
+	return &m_isUrlCanonical;
 }
 
 // . get the Robots.txt and see if we are allowed
@@ -7545,8 +7655,9 @@ static LinkInfo s_dummy2;
 // . returns NULL and sets g_errno on error
 // . returns -1 if blocked, will re-call m_callback
 LinkInfo *XmlDoc::getLinkInfo1 ( ) {
-	if ( m_linkInfo1Valid && ptr_linkInfo1 )
+	if ( m_linkInfo1Valid && ptr_linkInfo1 ) {
 		return ptr_linkInfo1;
+	}
 
 	// do not generate in real-time from a msg20 request for a summary,
 	// because if this falls through then getFirstIp() below can return -1
@@ -7563,12 +7674,16 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	// at least get our firstip so if cr->m_getLinkInfo is false
 	// then getRevisedSpiderReq() will not core because it is invalid
 	int32_t *ip = getFirstIp();
-	if ( ! ip || ip == (int32_t *)-1 ) return (LinkInfo *)ip;
+	if ( ! ip || ip == (int32_t *)-1 ) {
+		return (LinkInfo *)ip;
+	}
 
 
 	// just return nothing if not doing link voting
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) {
+		return NULL;
+	}
 	// to keep things fast we avoid getting link info for some collections
 	if ( ! m_linkInfo1Valid && ! cr->m_getLinkInfo ) {
 		ptr_linkInfo1 = NULL;
@@ -7585,8 +7700,9 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	}
 
 	// return if we got it
-	if ( m_linkInfo1Valid )
+	if ( m_linkInfo1Valid ) {
 		return ptr_linkInfo1;
+	}
 
 	// change status
 	setStatus ( "getting local inlinkers" );
@@ -7605,6 +7721,7 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 		g_errno = EBADENGINEER;
 		return NULL;
 	}
+
 	char *mysite = getSite();
 	if ( ! mysite || mysite == (void *)-1 ) return (LinkInfo *)mysite;
 
@@ -8917,10 +9034,9 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		return (Url **)canonicalUrl;
 	}
 
-	// it's only a canon redirect if it's not us
+	// it's only a canon redirect if it's not us (first url)
 	if (m_canonicalUrl.getUrlLen() > 0 &&
-		strcmp(m_canonicalUrl.getUrl(), m_firstUrl.getUrl()) != 0 &&
-		strcmp(m_canonicalUrl.getUrl(), m_redirUrl.getUrl()) != 0) {
+		strcmp(m_canonicalUrl.getUrl(), m_firstUrl.getUrl()) != 0) {
 		// otherwise, it is not us, we are NOT the canonical url
 		// and we should not be indexed, but just ass the canonical
 		// url as a spiderrequest into spiderdb, just like
@@ -9246,7 +9362,9 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 }
 
 uint16_t *XmlDoc::getCharset ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN");
 	if ( m_charsetValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid");
 		return &m_charset;
 	}
 
@@ -9255,6 +9373,7 @@ uint16_t *XmlDoc::getCharset ( ) {
 	//   junk is so we can convert it!
 	char **fc = getFilteredContent();
 	if ( ! fc || fc == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getFilteredContent returned %s", (fc == (void *)-1) ? "-1" : "NULL");
 		return (uint16_t *)fc;
 	}
 
@@ -9266,6 +9385,7 @@ uint16_t *XmlDoc::getCharset ( ) {
 	// check in http mime for charset
 	HttpMime *mime = getMime();
 	if (mime && mime->getContentType() == CT_PDF) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Content type PDF, assuming utf8");
 		// assume UTF-8
 		m_charset = csUTF8;
 		m_charsetValid = true;
@@ -9274,11 +9394,13 @@ uint16_t *XmlDoc::getCharset ( ) {
 	}
 
 	if (!mime) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, return NULL (no mine found)");
 		return NULL;
 	}
 
 	m_charset = GbEncoding::getCharset(mime, m_firstUrl.getUrl(), *fc, m_filteredContentLen);
 	m_charsetValid = true;
+	logTrace( g_conf.m_logTraceXmlDoc, "END, return %" PRIu16 "", m_charset);
 	return &m_charset;
 }
 
@@ -9290,23 +9412,38 @@ static void filterStartWrapper_r ( void *state );
 
 // filters m_content if its pdf, word doc, etc.
 char **XmlDoc::getFilteredContent ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN");
 	// return it if we got it already
-	if ( m_filteredContentValid ) return &m_filteredContent;
+	if ( m_filteredContentValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid");
+		return &m_filteredContent;
+	}
 
 	// this must be valid
 	char **content = getContent();
-	if ( ! content || content == (void *)-1 ) return content;
+	if ( ! content || content == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getContent returned %s", (content == (void *)-1) ? "-1" : "NULL");
+		return content;
+	}
 	// get the content type
 	uint8_t *ct = getContentType();
-	if ( ! ct ) return NULL;
+	if ( ! ct ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, returning NULL (getContentType returned NULL)");
+		return NULL;
+	}
+	logTrace( g_conf.m_logTraceXmlDoc, "Content type %" PRIu8 "", *ct);
+
 	// it needs this
 	HttpMime *mime = getMime();
-	if ( ! mime || mime == (void *)-1 ) return (char **)mime;
+	if ( ! mime || mime == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getMime returned %s", (mime == (void *)-1) ? "-1" : "NULL");
+		return (char **)mime;
+	}
 
 	bool filterable = false;
 
 	if ( !m_calledThread ) {
-
+		logTrace( g_conf.m_logTraceXmlDoc, "Not m_calledThread");
 		// assume we do not need filtering by default
 		m_filteredContent      = m_content;
 		m_filteredContentLen   = m_contentLen;
@@ -9314,15 +9451,27 @@ char **XmlDoc::getFilteredContent ( ) {
 		m_filteredContentAllocSize = 0;
 
 		// empty content?
-		if ( ! m_content ) return &m_filteredContent;
+		if ( ! m_content ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END, no contnet");
+			return &m_filteredContent;
+		}
 
 		if (*ct == CT_HTML) {
+			logTrace( g_conf.m_logTraceXmlDoc, "CT_HTML");
+
+			// only filter html content when it's successful
+			if (mime->getHttpStatus() != 200) {
+				logTrace( g_conf.m_logTraceXmlDoc, "END. http status(%d) not 200", mime->getHttpStatus());
+				return &m_filteredContent;
+			}
+
 			Xml xml;
 			xml.set(m_content, m_contentLen, m_version, *ct);
 
 			Words words;
 			words.set(&xml, true);
 			if (words.getNumAlnumWords() > g_conf.m_spiderFilterableMaxWordCount) {
+				logTrace( g_conf.m_logTraceXmlDoc, "END. HTML and getNumAlnumWords too high");
 				return &m_filteredContent;
 			}
 
@@ -9335,19 +9484,37 @@ char **XmlDoc::getFilteredContent ( ) {
 			}
 
 			if (!hasScript) {
+				logTrace( g_conf.m_logTraceXmlDoc, "END. HTML and has no script");
 				return &m_filteredContent;
 			}
+
+			logTrace( g_conf.m_logTraceXmlDoc, "CT_HTML hasScript=true");
 		}
 
-		if ( *ct == CT_TEXT    ) return &m_filteredContent;
-		if ( *ct == CT_XML     ) return &m_filteredContent;
-		if ( m_contentLen == 0 ) return &m_filteredContent;
-
-		// we now support JSON for diffbot
-		if ( *ct == CT_JSON    ) return &m_filteredContent;
-
-		if ( *ct == CT_ARC     ) return &m_filteredContent;
-		if ( *ct == CT_WARC    ) return &m_filteredContent;
+		if ( *ct == CT_TEXT    ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END. CT_TEXT");
+			return &m_filteredContent;
+		}
+		if ( *ct == CT_XML     ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END. CT_XML");
+			return &m_filteredContent;
+		}
+		if ( m_contentLen == 0 ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END. m_contentLen=0");
+			return &m_filteredContent;
+		}
+		if ( *ct == CT_JSON    ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END. CT_JSON");
+			return &m_filteredContent;
+		}
+		if ( *ct == CT_ARC     ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END. CT_ARC");
+			return &m_filteredContent;
+		}
+		if ( *ct == CT_WARC    ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END. CT_WARC");
+			return &m_filteredContent;
+		}
 
 		// unknown content types are 0 since it is probably binary... and
 		// we do not want to parse it!!
@@ -9363,6 +9530,7 @@ char **XmlDoc::getFilteredContent ( ) {
 			m_filteredContent      = NULL;
 			m_filteredContentLen   = 0;
 			m_filteredContentValid = true;
+			logTrace( g_conf.m_logTraceXmlDoc, "END. NOT filterable content type");
 			return &m_filteredContent;
 		}
 
@@ -9384,10 +9552,15 @@ char **XmlDoc::getFilteredContent ( ) {
 
 		// how can this be? don't core like this in thread, because it
 		// does not save our files!!
-		if ( ! m_mimeValid ) { g_process.shutdownAbort(true); }
+		if ( ! m_mimeValid ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "SHUTTING DOWN. m_mimeValid = false");
+			g_process.shutdownAbort(true);
+		}
 
+		logTrace( g_conf.m_logTraceXmlDoc, "Submit filtering job to JobScheduler");
 		// do it
 		if ( g_jobScheduler.submit(filterStartWrapper_r, filterDoneWrapper, this, thread_type_spider_filter, MAX_NICENESS) ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. g_jobScheduler blocked");
 			// return -1 if blocked
 			return (char **) -1;
 		}
@@ -9413,10 +9586,17 @@ char **XmlDoc::getFilteredContent ( ) {
 	// did we have an error from the thread?
 	if ( m_errno ) g_errno = m_errno;
 	// but bail out if it set g_errno
-	if ( g_errno ) return NULL;
+	if ( g_errno ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Returning NULL (g_errno=%" PRId32 "", g_errno);
+		return NULL;
+	}
 	// must be valid now - sanity check
-	if ( ! m_filteredContentValid ) { g_process.shutdownAbort(true); }
+	if ( ! m_filteredContentValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "SHUTTING DOWN. m_filteredContentValid=false");
+		g_process.shutdownAbort(true);
+	}
 	// return it
+	logTrace( g_conf.m_logTraceXmlDoc, "END.");
 	return &m_filteredContent;
 }
 
@@ -9676,14 +9856,21 @@ void XmlDoc::filterStart_r(bool amThread) {
 
 // return downloaded content as utf8
 char **XmlDoc::getRawUtf8Content ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN");
 	// if we already computed it, return that
-	if ( m_rawUtf8ContentValid ) return &m_rawUtf8Content;
+	if ( m_rawUtf8ContentValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid");
+		return &m_rawUtf8Content;
+	}
 
 	// . get our characterset
 	// . crap! this can be recursive. it calls getXml() which calls
 	//   getUtf8Content() which is us!
 	uint16_t *charset = getCharset ( );
-	if ( ! charset || charset == (uint16_t *)-1 ) return (char **)charset;
+	if ( ! charset || charset == (uint16_t *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getCharset returned %s", (charset == (uint16_t *)-1) ? "-1" : "NULL");
+		return (char **)charset;
+	}
 
 	const char *csName = get_charset_str(*charset);
 
@@ -9694,17 +9881,22 @@ char **XmlDoc::getRawUtf8Content ( ) {
 		m_rawUtf8ContentSize      = 0;
 		m_rawUtf8ContentAllocSize = 0;
 		m_rawUtf8ContentValid     = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, returning NULL (unsupported charset)");
 		return &m_rawUtf8Content;
 	}
 
 	// get ptr to filtered content
 	char **fc = getFilteredContent();
-	if ( ! fc || fc == (void *)-1 ) return (char **)fc;
+	if ( ! fc || fc == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getFilteredContent returned %s", (fc == (void *)-1) ? "-1" : "NULL");
+		return (char **)fc;
+	}
 
 	// make sure NULL terminated always
 	if ( m_filteredContent &&
 	     m_filteredContentValid &&
 	     m_filteredContent[m_filteredContentLen] ) {
+	     logTrace( g_conf.m_logTraceXmlDoc, "SHUTTING DOWN. m_filteredContent is not 0-terminated");
 		g_process.shutdownAbort(true); }
 
 	// NULL out if no content
@@ -9713,6 +9905,7 @@ char **XmlDoc::getRawUtf8Content ( ) {
 		m_rawUtf8ContentSize      = 0;
 		m_rawUtf8ContentAllocSize = 0;
 		m_rawUtf8ContentValid     = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, returning NULL (no content)");
 		return &m_rawUtf8Content;
 	}
 
@@ -9735,6 +9928,7 @@ char **XmlDoc::getRawUtf8Content ( ) {
 		// log oom error
 		if ( ! buf ) {
 			log("build: xml: not enough memory for utf8 buffer");
+			logTrace( g_conf.m_logTraceXmlDoc, "END, returning NULL (out of memory)");
 			return NULL;
 		}
 		// note it
@@ -9752,15 +9946,18 @@ char **XmlDoc::getRawUtf8Content ( ) {
 		// unrecoverable error? bad charset is g_errno == E2BIG
 		// which is like argument list too long or something
 		// error from Unicode.cpp's call to iconv()
-		if ( g_errno )
+		if ( g_errno ) {
 			log(LOG_INFO, "build: xml: failed parsing buffer: %s "
 			    "(cs=%d)", mstrerror(g_errno), *charset);
+		}
+
 		if ( g_errno && g_errno != E2BIG ) {
 			mfree ( buf, need, "Xml3");
 			// do not index this doc, delete from spiderdb/tfndb
 			//if ( g_errno != ENOMEM ) m_indexCode = g_errno;
 			// if conversion failed NOT because of bad charset
 			// then return NULL now and bail out. probably ENOMEM
+			logTrace( g_conf.m_logTraceXmlDoc, "END, returning NULL (errno %" PRId32 ")", g_errno);
 			return NULL;
 		}
 		// if bad charset... just make doc empty as a utf8 doc
@@ -9843,18 +10040,25 @@ char **XmlDoc::getRawUtf8Content ( ) {
 	m_rawUtf8ContentValid = true;
 
 	//return &ptr_utf8Content;
+	logTrace( g_conf.m_logTraceXmlDoc, "END, m_rawUtf8ContentValid now true");
 	return &m_rawUtf8Content;
 }
 
 // this is so Msg13.cpp can call getExpandedUtf8Content() to do its
 // iframe expansion logic
 static void getExpandedUtf8ContentWrapper ( void *state ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 	XmlDoc *THIS = (XmlDoc *)state;
 	char **retVal = THIS->getExpandedUtf8Content();
 	// return if blocked again
-	if ( retVal == (void *)-1 ) return;
+	if ( retVal == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getExpandedUtf8Content returned -1 (blocked) again" );
+		return;
+	}
 	// otherwise, all done, call the caller callback
+	logTrace( g_conf.m_logTraceXmlDoc, "calling callback" );
 	THIS->callCallback();
+	logTrace( g_conf.m_logTraceXmlDoc, "END" );
 }
 
 // now if there are any <iframe> tags let's substitute them for
@@ -9862,8 +10066,12 @@ static void getExpandedUtf8ContentWrapper ( void *state ) {
 // information you see on the page. this is somewhat critical since
 // a lot of pages have their content in the frame.
 char **XmlDoc::getExpandedUtf8Content ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN");
 	// if we already computed it, return that
-	if ( m_expandedUtf8ContentValid ) return &m_expandedUtf8Content;
+	if ( m_expandedUtf8ContentValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );
+		return &m_expandedUtf8Content;
+	}
 
 	// if called from spider compression proxy we need to set
 	// masterLoop here now
@@ -9874,16 +10082,23 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 
 	// get the unexpanded cpontent first
 	char **up = getRawUtf8Content ();
-	if ( ! up || up == (void *)-1 ) return up;
+	if ( ! up || up == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getRawUtf8Content returned %s", (up == (void *)-1) ? "-1" : "NULL");
+		return up;
+	}
 
 	Url *cu = getCurrentUrl();
-	if ( ! cu || cu == (void *)-1 ) return (char **)cu;
+	if ( ! cu || cu == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getCurrentUrl returned %s", (cu == (void *)-1) ? "-1" : "NULL");
+		return (char **)cu;
+	}
 
 	// NULL out if no content
 	if ( ! *up ) {
 		m_expandedUtf8Content          = NULL;
 		m_expandedUtf8ContentSize      = 0;
 		m_expandedUtf8ContentValid     = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, no content");
 		return &m_expandedUtf8Content;
 	}
 
@@ -9892,11 +10107,15 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		m_expandedUtf8Content     = m_rawUtf8Content;
 		m_expandedUtf8ContentSize = m_rawUtf8ContentSize;
 		m_expandedUtf8ContentValid = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, was injected. m_expandedUtf8ContentSize=%" PRId32 "", m_expandedUtf8ContentSize);
 		return &m_expandedUtf8Content;
 	}
 
 	uint8_t *ct = getContentType();
-	if ( ! ct || ct == (void *)-1 ) return (char **)ct;
+	if ( ! ct || ct == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getContentType returned %s", (ct == (void *)-1) ? "-1" : "NULL");
+		return (char **)ct;
+	}
 
 	// if we have a json reply, leave it alone... do not expand iframes
 	// in json, it will mess up the json
@@ -9904,6 +10123,7 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		m_expandedUtf8Content     = m_rawUtf8Content;
 		m_expandedUtf8ContentSize = m_rawUtf8ContentSize;
 		m_expandedUtf8ContentValid = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, content type is JSON. Do no more.");
 		return &m_expandedUtf8Content;
 	}
 
@@ -9913,12 +10133,16 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		m_expandedUtf8Content     = m_rawUtf8Content;
 		m_expandedUtf8ContentSize = m_rawUtf8ContentSize;
 		m_expandedUtf8ContentValid = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already expanded. m_expandedUtf8ContentSize=%" PRId32 "", m_expandedUtf8ContentSize);
 		return &m_expandedUtf8Content;
 	}
 
 	// we need this so getExtraDoc does not core
 	int32_t *pfip = getFirstIp();
-	if ( ! pfip || pfip == (void *)-1 ) return (char **)pfip;
+	if ( ! pfip || pfip == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getFirstIp returned %s", (pfip == (void *)-1) ? "-1" : "NULL");
+		return (char **)pfip;
+	}
 
 	// point to it
 	char *p    = *up;
@@ -10207,8 +10431,11 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 	}
 	// sanity -- must be \0 terminated
 	if ( m_expandedUtf8Content[m_expandedUtf8ContentSize-1] ) {
-		g_process.shutdownAbort(true); }
+		logTrace( g_conf.m_logTraceXmlDoc, "SHUTTING DOWN - expanded utf8 content is null 0-terminated");
+		g_process.shutdownAbort(true);
+	}
 
+	logTrace( g_conf.m_logTraceXmlDoc, "END, m_expandedUtf8ContentSize=%" PRId32 "", m_expandedUtf8ContentSize);
 	m_expandedUtf8ContentValid = true;
 	return &m_expandedUtf8Content;
 }
@@ -10224,17 +10451,25 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 //   the json which is the output from the diffbot api. UNLESS we are getting
 //   the webpage itself for harvesting outlinks to spider later.
 char **XmlDoc::getUtf8Content ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// if we already computed it, return that
-	if ( m_utf8ContentValid ) return &ptr_utf8Content;
+	if ( m_utf8ContentValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );
+		return &ptr_utf8Content;
+	}
 
 	if ( m_setFromTitleRec ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, set from titlerec, setting m_utf8ContentValid=true" );
 		m_utf8ContentValid = true;
 		return &ptr_utf8Content;
 	}
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getCollRec returned NULL" );
+		return NULL;
+	}
 
 	setStatus("getting utf8 content");
 
@@ -10243,8 +10478,12 @@ char **XmlDoc::getUtf8Content ( ) {
 	     // if trying to delete from index, load from old titlerec
 	     m_deleteFromIndex ) {
 		// get the old xml doc from the old title rec
+		logTrace( g_conf.m_logTraceXmlDoc, "Getting old XmlDoc" );
 		XmlDoc **pod = getOldXmlDoc ( );
-		if ( ! pod || pod == (void *)-1 ) return (char **)pod;
+		if ( ! pod || pod == (void *)-1 ) {
+			logTrace( g_conf.m_logTraceXmlDoc, "END, could not get old XmlDoc" );
+			return (char **)pod;
+		}
 		// shortcut
 		XmlDoc *od = *pod;
 		// this is non-NULL if it existed
@@ -10254,9 +10493,12 @@ char **XmlDoc::getUtf8Content ( ) {
 			m_utf8ContentValid = true;
 			m_contentType      = od->m_contentType;
 			m_contentTypeValid = true;
+			logTrace( g_conf.m_logTraceXmlDoc, "Set from old XmlDoc. Size=%" PRId32 "", size_utf8Content );
+
 			// sanity check
 			if ( ptr_utf8Content &&
 			     ptr_utf8Content[size_utf8Content-1] ) {
+				logTrace( g_conf.m_logTraceXmlDoc, "Sanity check failed. Last byte in utf8Content is not 0" );
 				g_process.shutdownAbort(true); }
 			return &ptr_utf8Content;
 		}
@@ -10273,24 +10515,33 @@ char **XmlDoc::getUtf8Content ( ) {
 			m_utf8ContentValid = true;
 			m_contentType = CT_HTML;
 			m_contentTypeValid = true;
+			logTrace( g_conf.m_logTraceXmlDoc, "END. Set from docid and ENOTFOUND" );
 			return &ptr_utf8Content;
 		}
 
 	}
 
+	logTrace( g_conf.m_logTraceXmlDoc, "call getExpandedUtf8Content" );
 	char **ep = getExpandedUtf8Content();
-	if ( ! ep || ep == (void *)-1 ) return ep;
+	if ( ! ep || ep == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getExpandedUtf8Content returned %s", (ep == (void *)-1) ? "-1" : "NULL" );
+		return ep;
+	}
 
 	// NULL out if no content
 	if ( ! *ep ) {
 		ptr_utf8Content    = NULL;
 		size_utf8Content   = 0;
 		m_utf8ContentValid = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, no content" );
 		return &ptr_utf8Content;
 	}
 
 	uint8_t *ct = getContentType();
-	if ( ! ct || ct == (void *)-1 ) return (char **)ct;
+	if ( ! ct || ct == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. getContentType returned %s", (ct == (void *)-1) ? "-1" : "NULL" );
+		return (char **)ct;
+	}
 
 	// if we have a json reply, leave it alone... expanding a &quot;
 	// into a double quote will mess up the JSON!
@@ -10298,6 +10549,7 @@ char **XmlDoc::getUtf8Content ( ) {
 		ptr_utf8Content  = (char *)m_expandedUtf8Content;
 		size_utf8Content = m_expandedUtf8ContentSize;
 		m_utf8ContentValid = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END. JSON, do nothing further" );
 		return &ptr_utf8Content;
 	}
 
@@ -10349,6 +10601,7 @@ char **XmlDoc::getUtf8Content ( ) {
 	//   hashXmlFields()
 	int32_t n = m_expandedUtf8ContentSize - 1;
 	if ( m_contentType != CT_XML ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "Calling htmlDecode" );
 		n = htmlDecode( m_expandedUtf8Content, m_expandedUtf8Content, m_expandedUtf8ContentSize - 1,
 						doSpecial );
 	}
@@ -10443,6 +10696,7 @@ char **XmlDoc::getUtf8Content ( ) {
 		g_process.shutdownAbort(true); }
 
 	m_utf8ContentValid = true;
+	logTrace( g_conf.m_logTraceXmlDoc, "END. m_utf8ContentValid now true" );
 	return &ptr_utf8Content;
 }
 
@@ -10883,7 +11137,7 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 				    links->m_linkFlags ,
 				    links->m_numLinks  ,
 				    // make it point to this basetagrec if
-				    // the LF_SAMEHOST flag is set for the link
+				    // the LF_SAMESITE flag is set for the link
 				    gr ,
 				    cr->m_collnum             ,
 				    m_niceness         ,
@@ -10953,14 +11207,9 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 	setStatus ( "getting outlink first ip vector" );
 	// assume valid
 	m_outlinkIpVectorValid = true;
-	// sanity check
-	//if ( ! m_spideredTimeValid ) { g_process.shutdownAbort(true); }
+
 	// use this
 	int32_t nowGlobal = getSpideredTime();//m_spideredTime;
-	// add tags to tagdb?
-	bool addTags = true;
-	//if ( m_sreqValid && m_sreq.m_isPageParser ) addTags = false;
-	if ( getIsPageParser() ) addTags = false;
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
@@ -11158,8 +11407,6 @@ int8_t *XmlDoc::getHopCount ( ) {
 
 	setStatus ( "getting hop count" );
 
-	// the unredirected url
-	Url *f = getFirstUrl();
 	// get url as string, skip "http://" or "https://"
 	//char *u = f->getHost();
 	// if we match site, we are a site root, so hop count is 0
@@ -11170,13 +11417,6 @@ int8_t *XmlDoc::getHopCount ( ) {
 	//	m_hopCountValid = true;
 	//	return &m_hopCount;
 	//}
-	// ping servers have 0 hop counts
-	if ( f->isPingServer() ) {
-		// log("xmldoc: hc2 is 0 (pingserver) %s",m_firstUrl.m_url);
-		m_hopCount      = 0;
-		m_hopCountValid = true;
-		return &m_hopCount;
-	}
 	char *isRSS = getIsRSS();
 	if ( ! isRSS || isRSS == (char *)-1) return (int8_t *)isRSS;
 	// check for site root
@@ -11425,9 +11665,13 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 		VALGRIND_CHECK_MEM_IS_DEFINED(&m_firstIp,sizeof(m_firstIp));
 #endif
 
-	if ( m_sreqValid && m_firstIpValid && m_sreq.m_firstIp != m_firstIp ) {
+	if (m_sreqValid && m_firstIpValid && m_sreq.m_firstIp != m_firstIp) {
 		char ipbuf[16];
-		sb->safePrintf("fakesreqfirstip=%s ",iptoa(m_sreq.m_firstIp,ipbuf) );
+		if (m_sreq.m_fakeFirstIp) {
+			sb->safePrintf("fakesreqfirstip=%s ", iptoa(m_sreq.m_firstIp, ipbuf));
+		} else {
+			sb->safePrintf("sreqfirstip=%s ", iptoa(m_sreq.m_firstIp, ipbuf));
+		}
 	}
 
 	//
@@ -12881,6 +13125,8 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		return m_metaList;
 	}
 
+	if(!forDelete)
+		lookupAndSetExplicitKeywords();
 
 	// get the old meta list if we had an old doc
 	char *oldList = NULL;
@@ -13265,6 +13511,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 		// set this before calling getTitleRecBuf() below
 		uint8_t currentMetaListCheckSum8 = (uint8_t)ck32;
+
 		// see if matches what was in old titlerec
 		if (m_metaListCheckSum8Valid &&
 		    // if we were set from a titleRec, see if we got
@@ -13273,9 +13520,11 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		    // fix for import log spam
 		    !m_isImporting &&
 		    m_metaListCheckSum8 != currentMetaListCheckSum8) {
-			log(LOG_WARN, "xmldoc: checksum parsing inconsistency for %s (old)%i != %i(new). ",
-			    m_firstUrl.getUrl(), (int)m_metaListCheckSum8, (int)currentMetaListCheckSum8);
-			//tt1.print();
+
+			// ONLY log as warning if hashes differ for SAME titlerec versions -
+			// otherwise the values we hash may have changed.
+			log( m_version==TITLEREC_CURRENT_VERSION?LOG_WARN:LOG_DEBUG, "build: checksum parsing inconsistency for %s (old)%i != %i(new). Titlerec version %" PRIu16 " (current %" PRIu16 ")",
+			    m_firstUrl.getUrl(), (int)m_metaListCheckSum8, (int)currentMetaListCheckSum8, m_version, TITLEREC_CURRENT_VERSION);
 		}
 
 		// assign the new one, getTitleRecBuf() call below needs this
@@ -14082,18 +14331,6 @@ SpiderReply *XmlDoc::getFakeSpiderReply ( ) {
 		m_isPermalinkValid = true;
 	}
 
-	//if ( ! m_sreqValid ) {
-	// 	m_sreqValid = true;
-	// 	m_sreq.m_parentDocId = 0LL;
-	// }
-
-
-	// if error is EFAKEFIRSTIP, do not core
-	//if ( ! m_isIndexedValid ) {
-	//	m_isIndexed = false;
-	//	m_isIndexedValid = true;
-	//}
-
 	// if this is EABANDONED or ECORRUPTDATA (corrupt gzip reply)
 	// then this should not block. we need a spiderReply to release the
 	// url spider lock in SpiderLoop::m_lockTable.
@@ -14402,6 +14639,9 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 
 	int32_t *sni = getSiteNumInlinks();
 	if ( ! sni || sni == (int32_t *)-1 ) return (SpiderReply *)sni;
+
+	int8_t *hc = getHopCount();
+	if ( ! hc || hc == (int8_t*)-1 ) return (SpiderReply *)hc;
 
 	float *pc = getPercentChanged();
 	if ( ! pc || pc == (void *)-1 ) return (SpiderReply *)pc;
@@ -14864,7 +15104,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		bool issiteroot = isSiteRootFunc3 ( s , linkSiteHashes[i] );
 
 		// get it quick
-		bool ispingserver = url.isPingServer();
 		int32_t domHash32    = url.getDomainHash32();
 
 		// is link rss?
@@ -14910,7 +15149,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		}
 
 		if ( issiteroot   ) ksr.m_hopCount = 0;
-		if ( ispingserver ) ksr.m_hopCount = 0;
 
 		// validate it
 		ksr.m_hopCountValid = true;
@@ -15457,7 +15695,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	if ( m_contentHash32Valid ) m_reply.m_contentHash32 = m_contentHash32;
 	else                        m_reply.m_contentHash32 = 0;
 
-	if ( ! m_checkedUrlFilters ) {
+	if ( cr->m_checkURLFilters && ! m_checkedUrlFilters ) {
 		// do not re-check
 		m_checkedUrlFilters = true;
 
@@ -15673,16 +15911,26 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	// that has the provided site and domain hash, Msg20Request::
 	// m_ourHostHash32 and m_ourDomHash32?
 	int32_t nl = 0;
-	if ( links ) nl = links->getNumLinks();
+	if ( links ) {
+		nl = links->getNumLinks();
+	}
+	logTrace(g_conf.m_logTraceXmlDoc, "num links: %" PRId32 "", nl);
+
 	// scan all outlinks we have on this page
 	int32_t i ; for ( i = 0 ; i < nl ; i++ ) {
 		// get the normalized url
 		//char *url = links->getLinkPtr(i);
 		// get the site. this will not block or have an error.
 		int32_t hh32 = (int32_t)((uint32_t)links->getHostHash64(i));
-		if ( hh32 == m_req->m_ourHostHash32 ) break;
+		if ( hh32 == m_req->m_ourHostHash32 ) {
+			logTrace(g_conf.m_logTraceXmlDoc, "Stop at link #%" PRId32 " - matches request host hash32 (%" PRIx32 ")", i, hh32);
+			break;
+		}
 		int32_t dh32 = links->getDomHash32(i);
-		if ( dh32 == m_req->m_ourDomHash32 ) break;
+		if ( dh32 == m_req->m_ourDomHash32 ) {
+			logTrace(g_conf.m_logTraceXmlDoc, "Stop at link #%" PRId32 " - matches request domain hash32 (%" PRIx32 ")", i, dh32);
+			break;
+		}
 	}
 
 	// easy ones
@@ -15717,6 +15965,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
 	m_reply.m_siteNumInlinks       = m_siteNumInlinks;
+	logTrace(g_conf.m_logTraceXmlDoc, "m_siteNumInlinks: %" PRId32 "", m_siteNumInlinks);
 
 	// . get stuff from link info
 	// . this is so fast, just do it for all Msg20 requests
@@ -15735,9 +15984,12 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	// supplied url as part of the SPIDER process..
 	// this was done by Msg23 before
 	if ( ! m_req->m_getLinkText ) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, not getting link text");
 		m_replyValid = true;
 		return &m_reply;
 	}
+
+	logTrace(g_conf.m_logTraceXmlDoc, "We're here to get link text");
 
 	// use the first url of the linker by default
 	Url *linker = &m_firstUrl;
@@ -15776,6 +16028,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	// we have bad links or not.
 	int32_t linkNode = -1;
 	int32_t linkNum  = -1;
+	int32_t errcode  = 0;
 	// . get associated link text from the linker's document for our "url"
 	// . only gets from FIRST link to us
 	// . TODO: allow more link text from better quality pages?
@@ -15803,38 +16056,47 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	//   case we get the best inlink to that site, and linkee is
 	//   something like blogspot.com/mary/ or some other site.
 	int32_t blen = links->getLinkText ( m_req->ptr_linkee  ,//&linkee,
-					 m_req->m_isSiteLinkInfo ,
-					 m_linkTextBuf       ,
+					 m_req->m_isSiteLinkInfo,
+					 m_linkTextBuf,
 					 sizeof(m_linkTextBuf)-2,
-					 &rssItem            ,
-					 &rssItemLen         ,
-					 &linkNode           ,
-					 &linkNum            );
+					 &rssItem,
+					 &rssItemLen,
+					 &linkNode,
+					 &linkNum,
+					 &errcode);
 
 	// . BUT this skips the news topic stuff too. bad?
 	// . THIS HAPPENED before because we were truncating the xml(see above)
 	if ( linkNode < 0 ) {
-
 		int64_t took = gettimeofdayInMilliseconds() - start;
-		if ( took > 100 )
+		if ( took > 100 ) {
 			log("build: took %" PRId64" ms to get link text for "
 			    "%s from linker %s",
 			    took,
 			    m_req->ptr_linkee,
 			    m_firstUrl.getUrl() );
+		}
 
-		logf(LOG_DEBUG,"build: Got linknode = %" PRId32" < 0. Cached "
-		     "linker %s does not have outlink to %s like linkdb "
-		     "says it should. page is probably too big and the "
-		     "outlink is past our limit. contentLen=%" PRId32". or "
-		     "a sitehash collision, or an area tag link.",
-		     linkNode,getFirstUrl()->getUrl(),m_req->ptr_linkee,
-		     m_xml.getContentLen());
-		//g_errno = ECORRUPTDATA;
-		// do not let multicast forward to a twin! so use this instead
-		// of ECORRUTPDATA
-		g_errno = EBADENGINEER;
-		//g_process.shutdownAbort(true);
+		switch( errcode ) {
+			case ENOLINKTEXT_AREATAG:
+				log(LOG_DEBUG,"build: Got linknode=%" PRId32" < 0 trying to get link text. "
+				     "Linker %s outlink to %s is an area tag (no link text) - ignored",
+				     linkNode, getFirstUrl()->getUrl(), m_req->ptr_linkee);
+				g_errno = errcode;
+				break;
+			default:
+				logf(LOG_DEBUG,"build: Got linknode=%" PRId32" < 0. Cached "
+				     "linker %s does not have outlink to %s like linkdb "
+				     "says it should. Page is probably too big and the "
+				     "outlink is past our limit (contentLen=%" PRId32"), or "
+				     "a sitehash collision.",
+				     linkNode, getFirstUrl()->getUrl(), m_req->ptr_linkee,
+				     m_xml.getContentLen());
+
+				// do not let multicast forward to a twin! so use this instead of ECORRUTPDATA
+				g_errno = EBADENGINEER;
+				break;
+		}
 		return NULL;
 	}
 
@@ -16083,7 +16345,7 @@ Query *XmlDoc::getQuery() {
 	int64_t start = logQueryTimingStart();
 
 	// return NULL with g_errno set on error
-	if (!m_query.set2(m_req->ptr_qbuf, (lang_t)m_req->m_langId, m_req->m_queryExpansion, m_req->m_useQueryStopWords, m_req->m_allowHighFrequencyTermCache, ABS_MAX_QUERY_TERMS)) {
+	if (!m_query.set2(m_req->ptr_qbuf, (lang_t)m_req->m_langId, 1.0, 1.0, &m_req->m_word_variations_config, m_req->m_useQueryStopWords, m_req->m_allowHighFrequencyTermCache, ABS_MAX_QUERY_TERMS)) {
 		if(!g_errno)
 			g_errno = EBADENGINEER; //can fail due to a multitude of problems
 		return NULL;
@@ -17409,6 +17671,12 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 			       sni );
 	}
 
+	if(m_version>=128 && size_explicitKeywords>0) {
+		sb->safePrintf("<tr><td>Explicit keywords</td><td>");
+		sb->htmlEncode(ptr_explicitKeywords,size_explicitKeywords,false);
+		sb->safePrintf("</td></tr>\n");
+	}
+		
 	// close the table
 	sb->safePrintf ( "</table></center><br>\n" );
 
@@ -17747,11 +18015,39 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 
 	int32_t *firstIp = getFirstIp();
 	int32_t spiderHostId = -1;
+
 	if (firstIp && firstIp != (int32_t *)-1) {
 		key128_t spiderKey = Spiderdb::makeFirstKey(*firstIp);
 		int32_t spiderShardNum = getShardNum(RDB_SPIDERDB_DEPRECATED, &spiderKey);
 		spiderHostId = g_hostdb.getHostIdWithSpideringEnabled(spiderShardNum, false);
 	}
+
+	//
+	// Find LinkDB host
+	//
+	int32_t linkdbHostId = -1;
+	int32_t siteHash32 = -1;
+	int32_t *tmphash = getSiteHash32();
+	if( tmphash && *tmphash != -1 ) {
+		siteHash32 = *tmphash;
+		key224_t startKey;
+		startKey = Linkdb::makeStartKey_uk ( siteHash32 );
+		// what group has this linkdb list?
+		uint32_t linkdbShardNum = getShardNum ( RDB_LINKDB, &startKey );
+		int32_t linkdbHostNum = siteHash32 / ((0xffffffff/(int64_t)g_hostdb.getNumHostsPerShard()) + 1);
+		int32_t numHosts = g_hostdb.getNumHostsPerShard();
+		hosts = g_hostdb.getShard(linkdbShardNum);
+		if ( linkdbHostNum < numHosts ) {
+			linkdbHostId = hosts[linkdbHostNum].m_hostId ;
+			if( !hosts[linkdbHostNum].m_spiderEnabled) {
+				linkdbHostId = g_hostdb.getHostIdWithSpideringEnabled(linkdbShardNum, true);
+			}
+		}
+		else {
+			linkdbHostId = -1;
+		}
+	}
+
 
 	if ( format == FORMAT_HTML )
 		sb->safePrintf (
@@ -17763,12 +18059,32 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 				"</tr>\n"
 
 				"<tr>"
+				"<td width=\"25%%\">urlhash48</td>"
+				"<td>0x%" PRIx64"</td>"
+				"</tr>\n"
+
+				"<tr>"
+				"<td width=\"25%%\">urlhash64</td>"
+				"<td>0x%" PRIx64"</td>"
+				"</tr>\n"
+
+				"<tr>"
+				"<td width=\"25%%\">sitehash32</td>"
+				"<td>0x%" PRIx32"</td>"
+				"</tr>\n"
+
+				"<tr>"
 				"<td width=\"25%%\">on host #</td>"
 				"<td>%" PRId32"</td>"
 				"</tr>\n"
 
 				"<tr>"
 				"<td width=\"25%%\">spidered on host #</td>"
+				"<td>%" PRId32"</td>"
+				"</tr>\n"
+
+				"<tr>"
+				"<td width=\"25%%\">linkdb on host #</td>"
 				"<td>%" PRId32"</td>"
 				"</tr>\n"
 
@@ -17787,26 +18103,28 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 				"<td>%s</td>"
 				"</tr>\n"
 
-
 				"<tr>"
 				"<td>url</td>"
 				"<td><a href=\"%s\">%s</a></td>"
 				"</tr>\n"
-
 				,
 				cr->m_coll,
 				m_docId ,
 				m_docId ,
 
+				getFirstUrlHash48(),
+				getFirstUrlHash64(),
+				siteHash32,
+
 				h->m_hostId,
 				spiderHostId,
+				linkdbHostId,
 				m_version,
 				es,
 				allowed,
 
 				fu,
 				fu
-
 				);
 	else if (format == FORMAT_XML)
 		sb->safePrintf (
@@ -17874,28 +18192,6 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 		}
 	}
 
-	if ( m_indexCode || g_errno ) {
-		switch (format) {
-			case FORMAT_HTML:
-				sb->safePrintf("</table><br>\n");
-				break;
-			case FORMAT_XML:
-				sb->safePrintf("</response>\n");
-				break;
-			case FORMAT_JSON:
-				sb->removeLastChar('\n');
-				sb->removeLastChar(',');
-				sb->safePrintf("}\n");
-				sb->safePrintf("}\n");
-				break;
-			default:
-				break;
-		}
-
-		return true;
-	}
-
-
 	// must always start with http
 	if ( strncmp ( fu , "http" , 4 ) != 0 ) { g_process.shutdownAbort(true); }
 
@@ -17922,6 +18218,8 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("<tr><td>outlinks last added date</td><td>%s UTC</td></tr>\n",
 			               asctime_r(gmtime_r(&ts, &tm_buf), buf));
 
+
+
 			sb->safePrintf("<tr><td>hop count</td><td>%" PRId32"</td></tr>\n", (int32_t)m_hopCount);
 
 			sb->safePrintf("<tr><td>original charset</td><td>%s</td></tr>\n", get_charset_str(m_charset));
@@ -17930,7 +18228,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("<tr><td>is RSS feed?</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isRSS);
 			sb->safePrintf("<tr><td>ip</td><td><a href=\"/search?q=ip%%3A%s&c=%s&n=100\">%s</td></tr>\n", ipString, cr->m_coll, ipString);
 			sb->safePrintf("<tr><td>http status</td><td>%d</td></tr>", m_httpStatus);
-			sb->safePrintf("<tr><td>content len</td><td>%" PRId32" bytes</td></tr>\n", size_utf8Content - 1);
+			sb->safePrintf("<tr><td>content len</td><td>%" PRId32" bytes</td></tr>\n", size_utf8Content ? size_utf8Content - 1 : size_utf8Content);
 			sb->safePrintf("<tr><td>content truncated</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isContentTruncated);
 			sb->safePrintf("<tr><td>content type</td><td>%s</td></tr>\n", g_contentTypeStrings[(int)m_contentType]);
 			sb->safePrintf("<tr><td>language</td><td>%s</td></tr>\n", strLanguage);
@@ -17938,6 +18236,11 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("<tr><td><b>good inlinks to site</b></td><td>%" PRId32"</td></tr>\n", m_siteNumInlinks);
 			sb->safePrintf("<tr><td><b>site rank</b></td><td>%" PRId32"</td></tr>\n", ::getSiteRank(m_siteNumInlinks));
 			sb->safePrintf("<tr><td>good inlinks to page</td><td>%" PRId32"</td></tr>\n", info1->getNumGoodInlinks());
+			if(m_version>=128 && size_explicitKeywords>0) {
+				sb->safePrintf("<tr><td>Explicit keywords</td><td>");
+				sb->htmlEncode(ptr_explicitKeywords,size_explicitKeywords,false);
+				sb->safePrintf("</td></tr>\n");
+			}
 
 			time_t tlu = info1->getLastUpdated();
 			struct tm *timeStruct3 = gmtime_r(&tlu,&tm_buf);
@@ -17945,8 +18248,8 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			strftime ( tmp3 , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct3 );
 			sb->safePrintf("<tr><td><nobr>page inlinks last computed</nobr></td><td>%s</td></tr>\n", tmp3);
 
-			sb->safePrintf("</td></tr>\n");
-		} break;
+			break;
+		}
 		case FORMAT_XML:
 			sb->safePrintf("\t<firstIndexedDateUTC>%" PRIu32"</firstIndexedDateUTC>\n", (uint32_t)m_firstIndexedDate);
 			sb->safePrintf("\t<lastIndexedDateUTC>%" PRIu32"</lastIndexedDateUTC>\n", (uint32_t)m_spideredTime);
@@ -17965,7 +18268,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\t<isRSSFeed>%" PRId32"</isRSSFeed>\n", (int32_t)m_isRSS);
 			sb->safePrintf("\t<ipAddress><![CDATA[%s]]></ipAddress>\n", ipString);
 			sb->safePrintf("\t<httpStatus>%d</httpStatus>", m_httpStatus);
-			sb->safePrintf("\t<contentLenInBytes>%" PRId32"</contentLenInBytes>\n", size_utf8Content - 1);
+			sb->safePrintf("\t<contentLenInBytes>%" PRId32"</contentLenInBytes>\n", size_utf8Content ? size_utf8Content - 1 : size_utf8Content);
 			sb->safePrintf("\t<isContentTruncated>%" PRId32"</isContentTruncated>\n", (int32_t)m_isContentTruncated);
 			sb->safePrintf("\t<contentType><![CDATA[%s]]></contentType>\n", g_contentTypeStrings[(int)m_contentType]);
 			sb->safePrintf("\t<language><![CDATA[%s]]></language>\n", strLanguage);
@@ -17996,7 +18299,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\",\n");
 
 			sb->safePrintf("\t\"httpStatus\": %" PRId16",\n", m_httpStatus);
-			sb->safePrintf("\t\"contentLenInBytes\": %" PRId32",\n", size_utf8Content - 1);
+			sb->safePrintf("\t\"contentLenInBytes\": %" PRId32",\n", size_utf8Content ? size_utf8Content - 1 : size_utf8Content);
 			sb->safePrintf("\t\"isContentTruncated\": %s,\n", m_isContentTruncated ? "true" : "false");
 
 			sb->safePrintf("\t\"contentType\": \"");

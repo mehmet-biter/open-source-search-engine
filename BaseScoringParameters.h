@@ -26,7 +26,8 @@ struct BaseScoringParameters {
 	      m_hashGroupWeightNeighborhood,
 	      m_hashGroupWeightInternalLinkText,
 	      m_hashGroupWeightInUrl,
-	      m_hashGroupWeightInMenu;
+	      m_hashGroupWeightInMenu,
+	      m_hashGroupWeightExplicitKeywords;
 	
 	float m_synonymWeight;
 	float m_bigramWeight;

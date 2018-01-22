@@ -77,13 +77,14 @@
 #define HASHGROUP_HEADING              2 // body implied
 #define HASHGROUP_INLIST               3 // body implied
 #define HASHGROUP_INMETATAG            4
-#define HASHGROUP_INLINKTEXT           5
+#define HASHGROUP_INLINKTEXT           5 // apparently not detected anymore
 #define HASHGROUP_INTAG                6
 #define HASHGROUP_NEIGHBORHOOD         7
 #define HASHGROUP_INTERNALINLINKTEXT   8
 #define HASHGROUP_INURL                9
 #define HASHGROUP_INMENU               10 // body implied
-#define HASHGROUP_END                  11
+#define HASHGROUP_EXPLICIT_KEYWORDS    11
+#define HASHGROUP_END                  12
 
 #define POSDB_DELETEDOC_TERMID    0
 

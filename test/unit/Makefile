@@ -26,6 +26,14 @@ all: $(TARGET)
 libgb.a:
 	$(MAKE) -C $(BASE_DIR) libgb.a
 
+.PHONY: libword_variations.a
+libword_variations.a:
+	$(MAKE) -C $(BASE_DIR) libword_variations.a
+
+.PHONY: libsto.a
+libsto.a:
+	$(MAKE) -C $(BASE_DIR) libsto.a
+
 ucdata:
 	ln -s $(BASE_DIR)/$@ .
 
@@ -45,7 +53,7 @@ libgtest.so:
 CPPFLAGS += -g
 CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wl,-rpath=. -Wl,-rpath=$(BASE_DIR)
-CPPFLAGS += -I$(BASE_DIR) -isystem $(GTEST_DIR)/include
+CPPFLAGS += -I$(BASE_DIR) -I$(BASE_DIR)/word_variations -isystem $(GTEST_DIR)/include
 CPPFLAGS += -std=c++11
 
 # exported in parent make
@@ -53,7 +61,7 @@ CPPFLAGS += $(CONFIG_CPPFLAGS)
 
 LIBS += -L./ -lgtest 
 LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto -lpcre -lsqlite3 -ldl
-LIBS += -L$(BASE_DIR) -lcld2_full -lcld3 -lprotobuf -lced -lcares
+LIBS += -L$(BASE_DIR) -lcld2_full -lcld3 -lprotobuf -lced -lcares -lword_variations -lsto
 
 $(TARGET): libgtest.so libgb.a $(BASE_DIR)/libcld2_full.so $(BASE_DIR)/libcld3.so $(BASE_DIR)/libced.so $(OBJECTS)
 	$(CXX) $(CPPFLAGS) $(OBJECTS) $(LIBS) -o $@

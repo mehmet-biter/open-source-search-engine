@@ -139,7 +139,7 @@ bool Msge0::launchRequests() {
 	ScopedLock sl(m_mtx);
 	while(m_n < m_numUrls && m_numRequests - m_numReplies < maxOut) {
 		// if url is same host as the tagrec provided, just reference that!
-		if ( m_urlFlags && (m_urlFlags[m_n] & LF_SAMEHOST) && m_baseTagRec) {
+		if ( m_urlFlags && (m_urlFlags[m_n] & LF_SAMESITE) && m_baseTagRec) {
 			m_tagRecPtrs[m_n] = (TagRec *)m_baseTagRec;
 			m_numRequests++;
 			m_numReplies++;

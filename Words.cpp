@@ -33,7 +33,6 @@ void Words::reset ( ) {
 	m_nodes = NULL;
 	m_tagIds = NULL;
 	m_numTags = 0;
-	m_hasTags = false;
 	m_localBuf2 = NULL;
 	m_localBufSize2 = 0;
 
@@ -240,41 +239,9 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 			goto done;
 		}
 
-		// tag?
-		if ( s[i]=='<' && m_hasTags && isTagStart(s+i) ) {
-			// get the tag id
-			if( m_tagIds ) {
-				if ( s[i + 1] == '/' ) {
-					// skip over /
-					m_tagIds[m_numWords] = ::getTagId( s + i + 2 );
-					m_tagIds[m_numWords] |= BACKBIT;
-				} else {
-					m_tagIds[m_numWords] = ::getTagId( s + i + 1 );
-				}
-			}
-
-			m_words[m_numWords] = s + i;
-			m_wordIds[m_numWords] = 0LL;
-
-			// skip till end
-			int32_t tagLen = getTagLen( s + i );
-			m_wordLens[m_numWords] = tagLen;
-			m_nodes[m_numWords] = 0;
-			m_numWords++;
-
-			// advance
-			i += tagLen;
-			goto uptop;
-		}
-
 		// it is a punct word, find end of it
 		char *start = s+i;
 		for ( ; s[i] ; i += getUtf8CharSize(s+i)) {
-			// stop on < if we got tags
-			if ( s[i] == '<' && m_hasTags ) {
-				break;
-			}
-
 			// if we are simple ascii, skip quickly
 			if ( is_ascii(s[i]) ) {
 				// accumulate NON-alnum chars
@@ -299,6 +266,7 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 
 			// update first though
 			oldScript = ucGetScript ( c );
+			if ( oldScript == ucScriptLatin ) oldScript = ucScriptCommon;
 
 			// then stop
 			break;
