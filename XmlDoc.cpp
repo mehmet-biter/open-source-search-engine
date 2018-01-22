@@ -11468,6 +11468,10 @@ char *XmlDoc::getSpiderLinks ( ) {
 		m_spiderLinks = (char)false;
 
 
+	if (m_useSecondaryRdbs && !g_conf.m_rebuildAddOutlinks) {
+		m_spiderLinks = (char)false;
+	}
+
 	// also check in url filters now too
 
 
