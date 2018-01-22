@@ -266,6 +266,7 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 
 			// update first though
 			oldScript = ucGetScript ( c );
+			if ( oldScript == ucScriptLatin ) oldScript = ucScriptCommon;
 
 			// then stop
 			break;
