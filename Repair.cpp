@@ -1253,6 +1253,10 @@ bool Repair::injectTitleRec ( ) {
 	// or whatever, we want to add that to tagdb
 	xd->m_useTagdb     = true;
 
+	if (!g_conf.m_rebuildAddOutlinks) {
+		xd->m_spiderLinks2 = 0;
+	}
+
 	// not if rebuilding link info though! we assume the old link info is
 	// bad...
 	if ( m_rebuildLinkdb ) {
