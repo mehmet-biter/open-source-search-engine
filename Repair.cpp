@@ -1194,7 +1194,7 @@ bool Repair::injectTitleRec ( ) {
 	}
 
 	if(m_rebuildSpiderdbSmall) {
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: Jumping to injectTitleRecSmall", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"Jumping to injectTitleRecSmall");
 		return injectTitleRecSmall(titleRec,titleRecSize);
 	}
 	
@@ -1343,14 +1343,14 @@ struct SmallInjectState {
 
 
 bool Repair::injectTitleRecSmall(char *titleRec, int32_t titleRecSize) {
-	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	logTrace(g_conf.m_logTraceRepairs,"BEGIN");
 	
 	//decompress+decode xmldoc
 	XmlDoc xd;
 	if(!xd.set2(titleRec,titleRecSize, m_cr->m_coll, NULL, MAX_NICENESS))  {
 		m_recsetErrors++;
 		m_stage = STAGE_TITLEDB_0;
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. XmlDoc->set2 failed", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, return true. XmlDoc->set2 failed");
 		return true;
 	}
 	
@@ -1358,17 +1358,17 @@ bool Repair::injectTitleRecSmall(char *titleRec, int32_t titleRecSize) {
 	const Url *url = xd.getFirstUrl();
 	if(url->hasNonIndexableExtension(TITLEREC_CURRENT_VERSION)) {
 		m_nonIndexableExtensions++;
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. hasNonIndexableExtension", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, return true. hasNonIndexableExtension");
 		return true;
 	}
 	if(isUrlBlocked(*url)) {
 		m_urlBlocked++;
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. isUrlBlocked", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, return true. isUrlBlocked");
 		return true;
 	}
 	if(isUrlUnwanted(*url)) {
 		m_urlUnwanted++;
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. isUrlUnwanted", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, return true. isUrlUnwanted");
 		return true;
 	}
 	
@@ -1378,10 +1378,10 @@ bool Repair::injectTitleRecSmall(char *titleRec, int32_t titleRecSize) {
 		sis = new SmallInjectState();
 	} catch(std::bad_alloc&) {
 		m_recsetErrors++; //sort of
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. std::bad_alloc", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, return true. std::bad_alloc");
 		return true;
 	}
-	
+
 	sis->sreq.reset();
 	strcpy(sis->sreq.m_url, url->getUrl());
 	sis->sreq.setKey(*xd.getFirstIp(), 0, false);
@@ -1398,11 +1398,11 @@ bool Repair::injectTitleRecSmall(char *titleRec, int32_t titleRecSize) {
 	if(sis->msg4.addMetaList((const char*)&sis->sreq,sis->sreq.getRecSize(), m_collnum, sis,smallInjectCallback, RDB2_SPIDERDB2)) {
 		//failed or immediateley succeeded
 		delete sis;
-		logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. addMetaList", __FILE__, __func__, __LINE__);
+		logTrace(g_conf.m_logTraceRepairs,"END, return true. addMetaList");
 		return true;
 	}
 	//blocked
-	logTrace(g_conf.m_logTraceRepairs,"%s:%s:%d: END, return true. blocked", __FILE__, __func__, __LINE__);
+	logTrace(g_conf.m_logTraceRepairs,"END, return true. blocked");
 	return false;
 }
 
