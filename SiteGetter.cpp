@@ -582,6 +582,11 @@ bool SiteGetter::setRecognizedSite ( ) {
 		if ( ( *p == '/' ) && ( --depth == 0 ) ) {
 			break;
 		}
+
+		// exit if we reach anchor or query parameter
+		if (*p == '?' || *p == '#') {
+			break;
+		}
 	}
 
 	if ( p - host + 6 >= MAX_SITE_LEN ) {
