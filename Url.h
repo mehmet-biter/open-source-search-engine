@@ -92,9 +92,6 @@ public:
 	//badExtensions - extensions not to be parsed
 	bool hasNonIndexableExtension(int32_t xxx) const;
 
-	// is it http://rpc.weblogs.com/shortChanges.xml, etc.?
-	bool isPingServer ( ) const;
-
 	int32_t getSubUrlLen(int32_t i) const;
 	int32_t getSubPathLen(int32_t i) const;
 

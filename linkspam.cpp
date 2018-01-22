@@ -373,10 +373,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 		   Xml       *xml                ,
 		   Links     *links              ,
 		   bool       isContentTruncated ) {
-	// it is critical to get inlinks from all pingserver xml
-	// pages regardless if they are often large pages. we
-	// have to manually hard-code the ping servers in for now.
-	if ( linker->isPingServer() ) return false;
 	// if the doc got truncated we may be missing valuable identifiers
 	// that identify the doc as a guestbook or something
 	if ( isContentTruncated ) {
@@ -629,10 +625,6 @@ bool isLinkSpam ( const Url *linker,
 		  const Url *linkee ,
 		  // node position of the linkee in the linker's content
 		  int32_t  linkNode ) {
-	// it is critical to get inlinks from all pingserver xml
-	// pages regardless if they are often large pages. we
-	// have to manually hard-code the ping servers in for now.
-	if ( linker->isPingServer() ) return false;
 	// same host linkers can be link spam (TODO: make same ip block)
 	// because we only allow up to 10 to vote as a single voter
 	if ( linkee ) {
