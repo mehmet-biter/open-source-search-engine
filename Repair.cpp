@@ -273,6 +273,10 @@ void Repair::repairWrapper(int fd, void *state) {
 		if (g_hostdb.getMyHost()->m_spiderEnabled) {
 			// now start calling the loop. returns false if blocks
 			if (!g_repair.loop()) return;
+		} else {
+			// assume we have completed scan
+			g_repair.m_completedFirstScan = true;
+			g_repair.m_completedSpiderdbScan = true;
 		}
 	}
 
