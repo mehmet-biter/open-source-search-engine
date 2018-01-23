@@ -1261,14 +1261,6 @@ bool Repair::injectTitleRec ( ) {
 	// bad...
 	if ( m_rebuildLinkdb ) {
 		xd->m_useTagdb = false;
-
-		// also need to preserve the "lost link" flag somehow
-		// from the old linkdb...
-		//log("repair: would lose linkdb lost flag.");
-		// core until we find a way to preserve the old discovery
-		// date from the old linkdb!
-		//log("repair: fix linkdb rebuild. coring.");
-		//g_process.shutdownAbort(true);
 	}
 
 	if ( ! g_conf.m_rebuildRecycleLinkInfo ) {
