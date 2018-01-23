@@ -1103,17 +1103,9 @@ bool Repair::gotScanRecList ( ) {
 		return true;
 	}
 
-	bool isDelete = false;
 	// is it a negative titledb key?
 	if(KEYNEG(tkey)) {
-		// count it
 		m_recsNegativeKeys++;
-		// otherwise, we need to delete this
-		// docid from tfndb...
-		isDelete = true;
-	}
-
-	if ( isDelete ) {
 		m_stage = STAGE_TITLEDB_0;
 		return true;
 	}
