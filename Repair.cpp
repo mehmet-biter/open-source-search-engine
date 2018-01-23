@@ -90,7 +90,6 @@ Repair::Repair() {
 	m_recsCorruptErrors = 0;
 	m_recsDupDocIds = 0;
 	m_recsNegativeKeys = 0;
-	m_recsUnassigned = 0;
 	m_recsWrongGroupId = 0;
 	m_recsInjected = 0;
 	m_nonIndexableExtensions = 0;
@@ -269,8 +268,12 @@ void Repair::repairWrapper(int fd, void *state) {
 		log("repair: Starting repair scan.");
 		// advance
 		g_repairMode = REPAIR_MODE_4;
-		// now start calling the loop. returns false if blocks
-		if ( ! g_repair.loop() ) return;
+
+		// only trigger repair loop on spider hosts
+		if (g_hostdb.getMyHost()->m_spiderEnabled) {
+			// now start calling the loop. returns false if blocks
+			if (!g_repair.loop()) return;
+		}
 	}
 
 	// we can only enter mode 4 once we have completed the repairs
@@ -421,7 +424,6 @@ void Repair::initScan ( ) {
 	m_recsetErrors     = 0;
 	m_recsCorruptErrors = 0;
 	m_recsDupDocIds     = 0;
-	m_recsUnassigned   = 0;
 	m_recsWrongGroupId = 0;
 	m_nonIndexableExtensions = 0;
 	m_urlBlocked = 0;
@@ -881,7 +883,6 @@ bool Repair::loop() {
 	    " corrupt=%" PRId64
 	    " dup=%" PRId64
 	    " negative=%" PRId64
-	    " unassigned=%" PRId64
 	    " wrong-group=%" PRId64
 	    " injected=%" PRId64
 	    " m_nonIndexableExtensions=%" PRId64
@@ -892,7 +893,6 @@ bool Repair::loop() {
 	    m_recsCorruptErrors,
 	    m_recsDupDocIds,
 	    m_recsNegativeKeys,
-	    m_recsUnassigned,
 	    m_recsWrongGroupId,
 	    m_recsInjected,
 	    m_nonIndexableExtensions,
@@ -1099,21 +1099,6 @@ bool Repair::gotScanRecList ( ) {
 	uint32_t shardNum = getShardNum (RDB_TITLEDB , &tkey );
 	if ( shardNum != getMyShardNum() ) {
 		m_recsWrongGroupId++;
-		m_stage = STAGE_TITLEDB_0;
-		return true;
-	}
-
-	// . if one of our twins is responsible for it...
-	// . is it assigned to us? taken from assigendToUs() in SpiderCache.cpp
-	// . get our group from our hostId
-	int32_t  numHosts;
-	Host *hosts = g_hostdb.getShard ( shardNum , &numHosts );
-	int32_t  ii =  docId % numHosts ;
-	// . are we the host this url is meant for?
-	// . however, if you are rebuilding tfndb, each twin must scan all
-	//   title recs and make individual entries for those title recs
-	if ( hosts[ii].m_hostId != g_hostdb.m_myHostId ){
-		m_recsUnassigned++;
 		m_stage = STAGE_TITLEDB_0;
 		return true;
 	}
@@ -1573,8 +1558,6 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr class=\"bg0\"><td> &nbsp; negative keys</td>"
 			 "<td>%" PRId64"</td></tr>\n"
-			 "<tr class=\"bg0\"><td> &nbsp; twin's responsibility</td>"
-			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr class=\"bg0\"><td> &nbsp; wrong shard</td>"
 			 "<td>%" PRId64"</td></tr>\n"
 			 "<tr class=\"bg0\"><td> &nbsp; non-indexable extension</td>"
@@ -1593,7 +1576,6 @@ bool Repair::printRepairStatus(SafeBuf *sb) {
 			 m_recsCorruptErrors  ,
 			 m_recsDupDocIds ,
 			 m_recsNegativeKeys ,
-			 m_recsUnassigned ,
 			 m_recsWrongGroupId,
 			 m_nonIndexableExtensions,
 			 m_urlBlocked,
