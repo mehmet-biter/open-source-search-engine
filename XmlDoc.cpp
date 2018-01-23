@@ -3254,11 +3254,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 // . check content for adult words
 char *XmlDoc::getIsAdult ( ) {
 
-	// adult detection code replaced. Invalidate old document versions.
-	if( m_version < 126 ) {
-		m_isAdultValid = false;
-	}
-
 	if ( m_isAdultValid ) return &m_isAdult2;
 
 	// call that

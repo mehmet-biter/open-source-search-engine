@@ -1298,6 +1298,10 @@ bool Repair::injectTitleRec ( ) {
 		xd->m_tagRecDataValid = false;
 	}
 
+	// don't recalculate isAdult flag when only rebuilding spiderdb
+	if (xd->m_useSpiderdb && !xd->m_useClusterdb && !xd->m_useTitledb) {
+		xd->m_isAdultValid = true;
+	}
 
 	xd->m_priority = -1;
 	xd->m_priorityValid = true;
