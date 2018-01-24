@@ -84,7 +84,6 @@ SiteGetter::SiteGetter ( ) {
 	m_pathDepth = 0;
 	m_maxPathDepth = 0;
 	m_niceness = 0;
-	m_oldSitePathDepth = 0;
 	m_allDone = false;
 	m_hasSubdomain = false;
 	m_tryAgain = false;
@@ -122,11 +121,9 @@ bool SiteGetter::getSite ( const char *url, TagRec *gr, int32_t timestamp, colln
 	m_scheme[0] = '\0';
 	
 	m_allDone  = false;
-	m_addedTag.reset();
 
 	// set this to unknown for now
 	m_sitePathDepth    = -1;
-	m_oldSitePathDepth = -1;
 
 	// reset this just in case
 	g_errno = 0;
@@ -144,47 +141,6 @@ bool SiteGetter::getSite ( const char *url, TagRec *gr, int32_t timestamp, colln
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
 	if ( ! cr ) {
 		// g_errno should be set if this is NULL
-		return true;
-	}
-
-	// check the current tag for an age
-	Tag *tag = gr->getTag("sitepathdepth");
-
-	// if there and the age is young, skip it
-	int32_t age = -1;
-
-	// to parse conssitently for the qa test "qatest123" coll use 
-	// "timestamp" as the "current time"
-	if ( tag ) {
-		age = timestamp - tag->m_timestamp;
-
-		// if there, at least get it (might be -1)
-		m_oldSitePathDepth = atol( tag->getTagData());
-	}
-
-
-	// . if older than 10 days, we need to redo it
-	// . if caller give us a timestamp of 0, never redo it!
-	if ( age > 10*24*60*60 && timestamp != 0 ) {
-		age = -1;
-	}
-
-	// . if our site quality is low, forget about dividing it up too
-	// . if age is valid, skip it
-	// . also if caller does not want a callback, like XmlDoc.cpp,
-	//   then use whatever we got
-	if ( age >= 0 || ! m_state ) {
-		// do not add to tagdb
-		m_state = NULL;
-
-		// just use what we had, it is not expired
-		m_sitePathDepth = m_oldSitePathDepth;
-
-		// . now set the site with m_sitePathDepth
-		// . sanity check, should not block since m_state is NULL
-		if ( ! setSite () ) { g_process.shutdownAbort(true); }
-
-		// we did not block
 		return true;
 	}
 
@@ -590,25 +546,3 @@ bool SiteGetter::setRecognizedSite ( ) {
 
 	goto storeIt;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
