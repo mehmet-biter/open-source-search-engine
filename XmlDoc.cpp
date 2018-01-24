@@ -18306,6 +18306,13 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\t\"country\": \"");
 			sb->jsonEncode(g_countryCode.getName(m_countryId));
 			sb->safePrintf("\",\n");
+
+			sb->safePrintf("\t\"explicitKeywords\": \"");
+			if (m_version >= 128) {
+				sb->jsonEncode(ptr_explicitKeywords, size_explicitKeywords);
+			}
+			sb->safePrintf("\",\n");
+
 			break;
 		default:
 			break;
