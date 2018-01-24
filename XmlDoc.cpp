@@ -6740,8 +6740,6 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 		maxAge *= 3600*24;
 		// so youtube which has 2997 links will add an extra 29 days
 		maxAge += (sni / 100) * 86400;
-		// hack for global index. never affect siteinlinks i imported
-		if ( strcmp(cr->m_coll,"GLOBAL-INDEX") == 0 ) age = 0;
 		// invalidate for that as wel
 		if ( age > maxAge ) valid = false;
 	}
@@ -11326,8 +11324,6 @@ int8_t *XmlDoc::getHopCount ( ) {
 
 	setStatus ( "getting hop count" );
 
-	// the unredirected url
-	Url *f = getFirstUrl();
 	// get url as string, skip "http://" or "https://"
 	//char *u = f->getHost();
 	// if we match site, we are a site root, so hop count is 0
@@ -11338,13 +11334,6 @@ int8_t *XmlDoc::getHopCount ( ) {
 	//	m_hopCountValid = true;
 	//	return &m_hopCount;
 	//}
-	// ping servers have 0 hop counts
-	if ( f->isPingServer() ) {
-		// log("xmldoc: hc2 is 0 (pingserver) %s",m_firstUrl.m_url);
-		m_hopCount      = 0;
-		m_hopCountValid = true;
-		return &m_hopCount;
-	}
 	char *isRSS = getIsRSS();
 	if ( ! isRSS || isRSS == (char *)-1) return (int8_t *)isRSS;
 	// check for site root
@@ -15031,7 +15020,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		bool issiteroot = isSiteRootFunc3 ( s , linkSiteHashes[i] );
 
 		// get it quick
-		bool ispingserver = url.isPingServer();
 		int32_t domHash32    = url.getDomainHash32();
 
 		// is link rss?
@@ -15077,7 +15065,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		}
 
 		if ( issiteroot   ) ksr.m_hopCount = 0;
-		if ( ispingserver ) ksr.m_hopCount = 0;
 
 		// validate it
 		ksr.m_hopCountValid = true;
@@ -18242,6 +18229,13 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\t\"country\": \"");
 			sb->jsonEncode(g_countryCode.getName(m_countryId));
 			sb->safePrintf("\",\n");
+
+			sb->safePrintf("\t\"explicitKeywords\": \"");
+			if (m_version >= 128) {
+				sb->jsonEncode(ptr_explicitKeywords, size_explicitKeywords);
+			}
+			sb->safePrintf("\",\n");
+
 			break;
 		default:
 			break;

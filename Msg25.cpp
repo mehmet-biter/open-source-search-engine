@@ -1653,16 +1653,7 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 	// . linkText->getLinkTextLen()
 	if ( msg20reply && good &&
 	     msg20reply->size_linkText <= 0 &&
-	     msg20reply->size_rssItem  <= 0 &&
-	     // allow if from a ping server because like 
-	     // rpc.weblogs.com/shortChanges.xml so we can use
-	     // "inlink==xxx" in the url filters to assign any page linked
-	     // to by a pingserver into a special spider queue. then we can
-	     // spider that page quickly and get its xml feed url, and then
-	     // spider that to get new outlinks of permalinks.
-	     // Well now we use "inpingserver" instead of having to specify
-	     // the "inlink==xxx" expression for every ping server we know.
-	     ! linker.isPingServer() ) {
+	     msg20reply->size_rssItem  <= 0 ) {
 		good = false;
 		m_noText++;
 		note = "no link text";
@@ -2847,13 +2838,6 @@ static LinkInfo *makeLinkInfo(int32_t         ip,
 			      Msg25          *msg25,
 			      SafeBuf        *linkInfoBuf)
 {
-	// a table for counting words per link text
-	HashTableX tt;
-	// buf for tt
-	char ttbuf[2048];
-	// must init it!
-	tt.set ( 8 ,4,128,ttbuf,2048,false,"linknfo");
-
 	// we can estimate our quality here
 	int32_t numGoodInlinks = 0;
 

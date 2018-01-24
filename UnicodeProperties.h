@@ -94,7 +94,7 @@ enum ucScript {
 	ucScriptKatakana_Or_Hiragana,
 	ucScriptKhmer,
 	ucScriptLao,
-	ucScriptLatin,
+	ucScriptLatin,		//30
 	ucScriptLimbu,
 	ucScriptLinear_B,
 	ucScriptMalayalam,
@@ -245,11 +245,6 @@ static inline UCProps ucProperties(UChar32 c) {
 	const void *p = g_ucProps.getValue(c);
 	if (!p) return (UCProps)0;
 	return *(UCProps*)p;
-}
-
-static inline int32_t ucDigitValue(UChar32 c) {
-	if (c >= '0' && c <= '9') return (int32_t)(c-'0');
-	return 0;
 }
 
 static inline UCScript ucGetScript(UChar32 c) {

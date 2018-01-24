@@ -2421,14 +2421,6 @@ const char *getDomFast ( const char *url , int32_t *domLen , bool hasHttp ) {
 	return udom;
 }
 
-// Is it a ping server? It might respond with huge documents with thousands of
-// links, which would normally be detected as link spam. This function is kept
-// around until we have a better way of handling it  than hardcoded URLs in a
-// source file.
-bool Url::isPingServer ( ) const {
-	return false;
-}
-
 
 // "s" point to the start of a normalized url (includes http://, etc.)
 const char *getHost(const char *s, int32_t *hostLen) {

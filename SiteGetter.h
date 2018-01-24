@@ -52,7 +52,6 @@ private:
 	int32_t   m_pathDepth;
 	int32_t   m_maxPathDepth;
 	int32_t   m_niceness;
-	int32_t   m_oldSitePathDepth;
 	bool   m_allDone;
 
 	bool   m_hasSubdomain;
@@ -67,9 +66,6 @@ private:
 	bool   m_tryAgain;
 
 	int32_t   m_errno;
-
-	// the tag rec we add
-	TagRec m_addedTag;
 };
 
 #endif // GB_SITEGETTER_H
