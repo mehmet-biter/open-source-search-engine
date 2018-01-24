@@ -247,11 +247,6 @@ static inline UCProps ucProperties(UChar32 c) {
 	return *(UCProps*)p;
 }
 
-static inline int32_t ucDigitValue(UChar32 c) {
-	if (c >= '0' && c <= '9') return (int32_t)(c-'0');
-	return 0;
-}
-
 static inline UCScript ucGetScript(UChar32 c) {
 	const void *p = g_ucScripts.getValue(c);
 	if (!p) return ucScriptCommon;
