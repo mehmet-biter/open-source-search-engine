@@ -16,6 +16,9 @@
 #include "GigablastRequest.h"
 #include "Process.h"
 #include "Mem.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 
 class State13 {
@@ -272,7 +275,9 @@ bool Msg1c::reindexQuery ( const char *query,
 
 	// reset again just in case
 	m_msg3a.m_msg39req.reset();
-
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(&m_msg3a.m_msg39req,sizeof(m_msg3a.m_msg39req));
+#endif
 	// set our Msg39Request
 	m_msg3a.m_msg39req.m_collnum = m_collnum;
 	m_msg3a.m_msg39req.m_docsToGet                 = endNum;
