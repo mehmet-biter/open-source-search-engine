@@ -18185,26 +18185,25 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			break;
 	}
 
-	TagRec *ogr = NULL;
-	if ( m_tagRecDataValid ) {
-		ogr = getTagRec(); // &m_tagRec;
+	if (m_tagRecDataValid) {
+		TagRec *ogr = getTagRec(); // &m_tagRec;
 		// sanity. should be set from titlerec, so no blocking!
-		if ( ! ogr || ogr == (void *)-1 ) { g_process.shutdownAbort(true); }
-	}
+		if (!ogr || ogr == (void *)-1) { g_process.shutdownAbort(true); }
 
-	if (ogr) {
-		switch (format) {
-			case FORMAT_HTML:
-				ogr->printToBufAsHtml(sb, "tag");
-				break;
-			case FORMAT_XML:
-				ogr->printToBufAsXml(sb);
-				break;
-			case FORMAT_JSON:
-				ogr->printToBufAsJson(sb);
-				break;
-			default:
-				break;
+		if (ogr) {
+			switch (format) {
+				case FORMAT_HTML:
+					ogr->printToBufAsHtml(sb, "tag");
+					break;
+				case FORMAT_XML:
+					ogr->printToBufAsXml(sb);
+					break;
+				case FORMAT_JSON:
+					ogr->printToBufAsJson(sb);
+					break;
+				default:
+					break;
+			}
 		}
 	}
 
