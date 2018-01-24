@@ -6624,8 +6624,6 @@ int32_t *XmlDoc::getFirstIp ( ) {
 	}
 	m_firstIpValid = true;
 	return &m_firstIp;
-	// must be 4 bytes - no now its a string
-	//if ( tag->getTagDataSize() != 4 ) { g_process.shutdownAbort(true); }
 }
 
 // this is the # of GOOD INLINKS to the site. so it is no more than
@@ -11324,16 +11322,6 @@ int8_t *XmlDoc::getHopCount ( ) {
 
 	setStatus ( "getting hop count" );
 
-	// get url as string, skip "http://" or "https://"
-	//char *u = f->getHost();
-	// if we match site, we are a site root, so hop count is 0
-	//char *isr = getIsSiteRoot();
-	//if ( ! isr || isr == (char *)-1 ) return (int8_t *)isr;
-	//if ( *isr ) {
-	//	m_hopCount      = 0;
-	//	m_hopCountValid = true;
-	//	return &m_hopCount;
-	//}
 	char *isRSS = getIsRSS();
 	if ( ! isRSS || isRSS == (char *)-1) return (int8_t *)isRSS;
 	// check for site root
@@ -11357,16 +11345,6 @@ int8_t *XmlDoc::getHopCount ( ) {
 	if ( m_sreqValid ) origHopCount = m_sreq.m_hopCount;
 	// derive our hop count from our parent hop count
 	int32_t hc = -1;
-	// . BUT use inlinker if better
-	// . if m_linkInfo1Valid is true, then m_minInlinkerHopCount is valid
-	// if ( m_minInlinkerHopCount + 1 < hc && m_minInlinkerHopCount >= 0 )
-	// 	hc = m_minInlinkerHopCount + 1;
-	// or if parent is unknown, but we have a known inlinker with a
-	// valid hop count, use the inlinker hop count then
-	// if ( hc == -1 && m_minInlinkerHopCount >= 0 )
-	// 	hc = m_minInlinkerHopCount + 1;
-	// if ( origHopCount == 0 )
-	// 	log("xmldoc: hc3 is 0 (spiderreq) %s",m_firstUrl.m_url);
 	// or use our hop count from the spider rec if better
 	if ( origHopCount < hc && origHopCount >= 0 )
 		hc = origHopCount;
@@ -19523,8 +19501,6 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	if ( g_conf.m_logDebugLinkInfo )
 		log("xmldoc: adding tags for mysite=%s",mysite);
 
-	// shortcut
-	//TagRec *tr = &m_newTagRec;
 	// current time
 	int32_t now = getTimeGlobal();
 
