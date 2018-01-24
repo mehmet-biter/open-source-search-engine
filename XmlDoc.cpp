@@ -14262,7 +14262,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 
 	int32_t firstIp = -1;
 	// inherit firstIp
-	Tag *tag = m_tagRec.getTag("firstip");
+	Tag *tag = gr->getTag("firstip");
 	// tag must be there?
 	if ( tag ) firstIp = atoip(tag->getTagData());
 
