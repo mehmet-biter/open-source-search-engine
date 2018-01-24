@@ -1284,6 +1284,10 @@ bool Repair::injectTitleRec ( ) {
 		xd->m_isAdultValid = true;
 	}
 
+	if (!g_conf.m_rebuildUseTitleRecTagRec) {
+		xd->m_tagRecDataValid = false;
+	}
+
 	xd->m_priority = -1;
 	xd->m_priorityValid = true;
 

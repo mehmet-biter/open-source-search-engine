@@ -8316,6 +8316,16 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	m->m_title = "reuse tagrec from titlerec";
+	m->m_desc  = "If enabled, gigablast will use tagrec in titlerec instead of the latest from tagdb "
+		"(except for titledb rebuild)";
+	m->m_cgi   = "rtft";
+	simple_m_set(Conf,m_rebuildUseTitleRecTagRec);
+	m->m_page  = PAGE_REPAIR;
+	m->m_def   = "1";
+	m->m_group = false;
+	m++;
+
 	m->m_title = "rebuild titledb";
 	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
 	m->m_cgi   = "rrt"; // repair rebuild titledb

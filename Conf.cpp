@@ -284,6 +284,7 @@ Conf::Conf ( ) {
 	m_fullRebuild = true;
 	m_rebuildAddOutlinks = false;
 	m_rebuildRecycleLinkInfo = true;
+	m_rebuildUseTitleRecTagRec = true;
 	m_rebuildTitledb = false;
 	m_rebuildPosdb = false;
 	m_rebuildClusterdb = false;

@@ -453,6 +453,7 @@ class Conf {
 	bool  m_fullRebuild;
 	bool  m_rebuildAddOutlinks;
 	bool  m_rebuildRecycleLinkInfo;
+	bool  m_rebuildUseTitleRecTagRec;
 	bool  m_rebuildTitledb;
 	bool  m_rebuildPosdb;
 	bool  m_rebuildClusterdb;
