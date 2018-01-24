@@ -4002,25 +4002,6 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 		return (int32_t *)links;
 	}
 
-	Url *fu = getFirstUrl();
-	Url *cu = getCurrentUrl();
-	bool isRedir = (fu->getUrlHash64() != cu->getUrlHash64());
-
-	TagRec *tr = getTagRec();
-	if (!tr || tr == (TagRec *)-1) {
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getTagRec returned -1" );
-		return (int32_t *)tr;
-	}
-
-	TagRec *ctr = nullptr;
-	if (isRedir) {
-		ctr = getCurrentTagRec();
-		if (!ctr || ctr == (TagRec *)-1) {
-			logTrace(g_conf.m_logTraceXmlDoc, "END, getCurrentTagRec returned -1");
-			return (int32_t *)ctr;
-		}
-	}
-
 	// . get the outlink tag rec vector
 	// . each link's tagrec may have a "site" tag that is basically
 	//   the cached SiteGetter::getSite() computation
@@ -4103,11 +4084,6 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 		const char *site = NULL;
 		int32_t  siteLen = 0;
 		if ( gr ) {
-			// we should use current tagrec instead of tagrec if it's a redirect
-			if (isRedir && gr == tr) {
-				gr = ctr;
-			}
-
 			int32_t dataSize = 0;
 			site = gr->getString("site",NULL,&dataSize);
 			if ( dataSize ) siteLen = dataSize - 1;
@@ -11101,7 +11077,7 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 
 	// update status msg
 	setStatus ( "getting outlink tag rec vector" );
-	TagRec *gr = getTagRec();
+	TagRec *gr = getCurrentTagRec();
 	if ( ! gr || gr == (TagRec *)-1 )
 	{
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getTagRec returned -1" );
