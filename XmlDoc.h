@@ -395,6 +395,7 @@ public:
 	int64_t *getDocId ( ) ;
 	char *getIsIndexed ( ) ;
 	class TagRec *getTagRec ( ) ;
+	class TagRec *getCurrentTagRec ( ) ;
 	// non-dup/nondup addresses only
 	int32_t *getFirstIp ( ) ;
 	int32_t *getSiteNumInlinks ( ) ;
@@ -657,6 +658,7 @@ public:
 	HttpMime   m_mime;
 	TagRec     m_tagRec;
 	SafeBuf    m_tagRecBuf;
+	TagRec     m_currentTagRec;
 	SafeBuf    m_newTagBuf;
 	SafeBuf    m_fragBuf;
 	SafeBuf    m_wordSpamBuf;
@@ -682,6 +684,7 @@ public:
 	bool m_firstUrlHash64Valid;
 	bool m_docIdValid;
 	bool m_tagRecValid;
+	bool m_currentTagRecValid;
 	bool m_robotsTxtLenValid;
 	bool m_tagRecDataValid;
 	bool m_newTagBufValid;
