@@ -6591,7 +6591,7 @@ TagRec *XmlDoc::getTagRec ( ) {
 	setStatus ( "getting tagdb record" );
 
 	// nah, try this
-	Url *u = getCurrentUrl();
+	Url *u = getFirstUrl();
 
 	// get it, user our collection for lookups, not m_tagdbColl[] yet!
 	if ( !m_msg8a.getTagRec( u, cr->m_collnum, m_niceness, this, gotTagRecWrapper, &m_tagRec ) ) {
@@ -8057,7 +8057,6 @@ char **XmlDoc::getHttpReply ( ) {
 		m_filteredContentValid    = false;
 		m_contentValid            = false;
 		m_mimeValid               = false;
-		m_tagRecValid             = false;
 
 		// update our current url now to be the redirected url
 		m_currentUrl.set ( *redirp );
