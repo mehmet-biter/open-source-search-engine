@@ -2279,18 +2279,6 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
 	}
 
-	// need tagrec to see if banned
-	TagRec *gr = getTagRec();
-	if ( ! gr || gr == (TagRec *)-1 ) return (int32_t *)gr;
-	// this is an automatic ban!
-	if ( gr->getLong("manualban",0) ) {
-		m_indexCode = EDOCBANNED;
-		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCBANNED" );
-		return &m_indexCode;
-	}
-
-
 	// get the ip of the current url
 	int32_t *ip = getIp ( );
 	if ( ! ip || ip == (int32_t *)-1 ) return (int32_t *)ip;
@@ -11448,16 +11436,7 @@ int32_t *XmlDoc::getSpiderPriority ( ) {
 	}
 
 	setStatus ("getting spider priority");
-	// need tagrec to see if banned
-	TagRec *gr = getTagRec();
-	if ( ! gr || gr == (TagRec *)-1 ) return (int32_t *)gr;
-	// this is an automatic ban!
-	if ( gr->getLong("manualban",0) ) {
-		m_priority      = -3;//SPIDER_PRIORITY_BANNED;
-		m_priorityValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END. Manual ban" );
-		return &m_priority;
-	}
+
 	int32_t *ufn = getUrlFilterNum();
 	if ( ! ufn || ufn == (void *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END. Invalid ufn" );
@@ -15577,14 +15556,6 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 		}
 	}
 
-	// if we are showing sites that have been banned in tagdb, we dont
-	// have to do a tagdb lookup. that should speed things up.
-	TagRec *gr = NULL;
-	if ( cr && cr->m_doTagdbLookups ) {
-		gr = getTagRec();
-		if ( ! gr || gr == (void *)-1 ) { checkPointerError(gr); return (Msg20Reply *)gr; }
-	}
-
 	// this should be valid, it is stored in title rec
 	if ( m_contentHash32Valid ) m_reply.m_contentHash32 = m_contentHash32;
 	else                        m_reply.m_contentHash32 = 0;
@@ -15619,11 +15590,6 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 				pr = -3;
 			}
 		}
-
-
-		// this is an automatic ban!
-		if ( gr && gr->getLong("manualban",0))
-			pr=-3;//SPIDER_PRIORITY_BANNED;
 
 		// is it banned
 		if ( pr == -3 ) { // SPIDER_PRIORITY_BANNED ) { // -2

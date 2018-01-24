@@ -175,22 +175,6 @@ bool Msge1::launchRequests ( int32_t starti ) {
 					continue;
 				}
 			}
-
-			// or if banned
-			Tag *btag = gr->getTag("manualban");
-			if (btag && btag->getTagData()[0] != '0') {
-				// debug for now
-				if (g_conf.m_logDebugDns) {
-					log("dns: skipping dns lookup on banned hostname");
-				}
-
-				// -1 means time out i guess
-				m_ipBuf[m_n] = -1;
-				m_numRequests++;
-				m_numReplies++;
-				m_n++;
-				continue;
-			}
 		}
 
 		// . get the next url
