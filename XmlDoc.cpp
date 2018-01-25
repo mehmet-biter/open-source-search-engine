@@ -319,6 +319,7 @@ void XmlDoc::reset ( ) {
 	m_newTagBuf.reset();
 	m_dupList.reset();
 	m_msg8a.reset();
+	m_currentMsg8a.reset();
 	m_msg13.reset();
 	m_msge0.reset();
 	m_msge1.reset();
@@ -6623,7 +6624,7 @@ TagRec *XmlDoc::getCurrentTagRec ( ) {
 	Url *u = getCurrentUrl();
 
 	// get it, user our collection for lookups, not m_tagdbColl[] yet!
-	if ( !m_msg8a.getTagRec( u, cr->m_collnum, m_niceness, this, gotCurrentTagRecWrapper, &m_currentTagRec ) ) {
+	if ( !m_currentMsg8a.getTagRec( u, cr->m_collnum, m_niceness, this, gotCurrentTagRecWrapper, &m_currentTagRec ) ) {
 		// we blocked, return -1
 		return (TagRec *) -1;
 	}
