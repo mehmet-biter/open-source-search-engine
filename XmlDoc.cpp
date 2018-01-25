@@ -15575,38 +15575,6 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 
 	m_reply.m_collnum = m_collnum;
 
-	// lookup the tagdb rec fresh if setting for a summary. that way we
-	// can see if it is banned or not. but for getting m_getTermListBuf
-	// and stuff above, skip the tagrec lookup!
-	// save some time when SPIDERING/BUILDING by skipping fresh
-	// tagdb lookup and using tags in titlerec
-	if ( m_req && ! m_req->m_getLinkText && ! m_checkedUrlFilters )
-		m_tagRecDataValid = false;
-
-	// if  shard responsible for tagrec is dead, then
-	// just recycle!
-	if ( m_req && ! m_checkedUrlFilters && ! m_tagRecDataValid ) {
-		char *site = getSite();
-		TAGDB_KEY tk1 = Tagdb::makeStartKey ( site );
-		TAGDB_KEY tk2 = Tagdb::makeDomainStartKey ( &m_firstUrl );
-		uint32_t shardNum1 = g_hostdb.getShardNum(RDB_TAGDB,&tk1);
-		uint32_t shardNum2 = g_hostdb.getShardNum(RDB_TAGDB,&tk2);
-		// shardnum1 and shardnum2 are often different!
-		// log("db: s1=%i s2=%i",(int)shardNum1,(int)shardNum2);
-		if ( g_hostdb.isShardDead ( shardNum1 ) ) {
-			log("query: skipping tagrec lookup for dead shard "
-			    "# %" PRId32
-			    ,shardNum1);
-			m_tagRecDataValid = true;
-		}
-		if ( g_hostdb.isShardDead ( shardNum2 ) && m_firstUrlValid ) {
-			log("query: skipping tagrec lookup for dead shard "
-			    "# %" PRId32
-			    ,shardNum2);
-			m_tagRecDataValid = true;
-		}
-	}
-
 	// this should be valid, it is stored in title rec
 	if ( m_contentHash32Valid ) m_reply.m_contentHash32 = m_contentHash32;
 	else                        m_reply.m_contentHash32 = 0;
