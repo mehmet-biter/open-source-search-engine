@@ -340,6 +340,9 @@ bool SiteGetter::gotSiteList ( ) {
 		}
 	}
 
+	const char *pend = getPathEnd(m_url, m_pathDepth);
+	const char *host = getHostFast( m_url, NULL );
+	log(LOG_INFO,"site: '%.*s' detected as a site with linkcount=~%d", (int)(pend-host), host, count);
 	// ok, i guess this indicates we have a subsite level
 	m_sitePathDepth = m_pathDepth;
 
