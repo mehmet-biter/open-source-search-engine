@@ -6,6 +6,7 @@
 #include "Conf.h"
 #include "Mem.h"
 #include "ScopedLock.h"
+#include "SiteGetter.h"
 
 
 Msge1::Msge1()
@@ -128,44 +129,52 @@ bool Msge1::launchRequests ( int32_t starti ) {
 	while(m_n < m_numUrls && m_numRequests - m_numReplies < maxOut) {
 		// grab the "firstip" from the tagRec if we can
 		TagRec *gr  = m_grv[m_n];
-		Tag    *tag = NULL;
-		if ( gr ) tag = gr->getTag("firstip");
-		int32_t ip;
-		// grab the ip that was in there
-		if ( tag ) ip = atoip(tag->getTagData());
-		// if we had it but it was 0 or -1, then time that out
-		// after a day or so in case it works again! 0 and -1 mean
-		// NXDOMAIN or timeout error, etc.
-		if ( tag && ( ip == 0 || ip == -1 ) )
-			if ( m_nowGlobal - tag->m_timestamp > 3600*24 ) tag = NULL;
-		// . if we still got the tag, use that, even if ip is 0 or -1
-		// . this keeps things fast
-		// . this makes sure doConsistencyCheck() does not block too in
-		//   XmlDoc.cpp... cuz it cores if it does block
-		if ( tag ) {
-			// now "ip" might actually be -1 or 0 (invalid) so be careful
-			m_ipBuf[m_n] = ip;
-			// what is this?
-			//if ( ip == 3 ) { g_process.shutdownAbort(true); }
-			m_numRequests++;
-			m_numReplies++;
-			m_n++;
-			continue;
-		}
+		if (gr) {
+			// verify tagrec
+			if (g_conf.m_verifyTagRec) {
+				const char *site = gr->getString("site");
+				if (site != nullptr) {
+					SiteGetter sg;
+					sg.getSite(m_urlPtrs[m_n], nullptr, 0, 0, m_niceness);
 
-		// or if banned
-		Tag *btag = NULL;
-		if ( gr ) btag = gr->getTag("manualban");
-		if ( btag && btag->getTagData()[0] !='0') {
-			// debug for now
-			if ( g_conf.m_logDebugDns )
-				log("dns: skipping dns lookup on banned hostname");
-			// -1 means time out i guess
-			m_ipBuf[m_n] = -1;
-			m_numRequests++;
-			m_numReplies++;
-			m_n++;
-			continue;
+					if (strcmp(site, sg.getSite()) != 0) {
+						SafeBuf sb;
+						gr->printToBuf(&sb);
+						logError("tagrec: %s", sb.getBufStart());
+						logError("tagsite: %s sitegetter: %s", site, sg.getSite());
+
+						gbshutdownLogicError();
+					}
+				}
+			}
+
+			Tag *tag = gr->getTag("firstip");
+			if (tag) {
+				// grab the ip that was in there
+				int32_t ip = atoip(tag->getTagData());
+
+				// if we had it but it was 0 or -1, then time that out
+				// after a day or so in case it works again! 0 and -1 mean
+				// NXDOMAIN or timeout error, etc.
+				if (ip == 0 || ip == -1) {
+					if (m_nowGlobal - tag->m_timestamp > 3600 * 24) {
+						tag = NULL;
+					}
+				}
+
+				// . if we still got the tag, use that, even if ip is 0 or -1
+				// . this keeps things fast
+				// . this makes sure doConsistencyCheck() does not block too in
+				//   XmlDoc.cpp... cuz it cores if it does block
+				if (tag) {
+					// now "ip" might actually be -1 or 0 (invalid) so be careful
+					m_ipBuf[m_n] = ip;
+					m_numRequests++;
+					m_numReplies++;
+					m_n++;
+					continue;
+				}
+			}
 		}
 
 		// . get the next url
@@ -176,25 +185,28 @@ bool Msge1::launchRequests ( int32_t starti ) {
 		int32_t  hlen = 0;
 		const char *host = getHostFast ( p , &hlen );
 
-		// reset this again
-		ip = 0;
 		// see if the hostname is actually an ip like "1.2.3.4"
-		if ( host && is_digit(host[0]) ) ip = atoip ( host , hlen );
-		// if legit this is non-zero
-		if ( ip ) {
-			m_ipBuf[m_n] = ip;
-			m_numRequests++;
-			m_numReplies++;
-			m_n++;
-			continue;
+		if (host && is_digit(host[0])) {
+			int32_t ip = atoip(host, hlen);
+			// if legit this is non-zero
+			if (ip) {
+				m_ipBuf[m_n] = ip;
+				m_numRequests++;
+				m_numReplies++;
+				m_n++;
+				continue;
+			}
 		}
 
 		Url url;
 		url.set(p);
-		if(isUrlBlocked(url)) {
+		if (isUrlBlocked(url)) {
 			// debug for now
-			if(g_conf.m_logDebugDns)
-				log("dns: skipping dns lookup of '%*.*s' because the URL is blocked", (int)url.getHostLen(), (int)url.getHostLen(), url.getHost());
+			if (g_conf.m_logDebugDns) {
+				log("dns: skipping dns lookup of '%*.*s' because the URL is blocked",
+				    (int)url.getHostLen(), (int)url.getHostLen(), url.getHost());
+			}
+
 			// -1 means time out i guess
 			m_ipBuf[m_n] = -1;
 			m_numRequests++;
@@ -205,12 +217,20 @@ bool Msge1::launchRequests ( int32_t starti ) {
 		
 		// . grab a slot
 		int32_t i;
-		for ( i = starti ; i < MAX_OUTSTANDING_MSGE1 ; i++ )
-			if ( ! m_used[i] ) break;
+		for (i = starti; i < MAX_OUTSTANDING_MSGE1; i++) {
+			if (!m_used[i]) {
+				break;
+			}
+		}
+
 		// sanity check
-		if ( i >= MAX_OUTSTANDING_MSGE1 ) { g_process.shutdownAbort(true); }
+		if (i >= MAX_OUTSTANDING_MSGE1) {
+			g_process.shutdownAbort(true);
+		}
+
 		// save the url number, "n"
-		m_ns  [i] = m_n++;
+		m_ns[i] = m_n++;
+
 		// claim it
 		m_used[i] = true;
 
@@ -219,11 +239,13 @@ bool Msge1::launchRequests ( int32_t starti ) {
 		// . it will set m_used[i] to true if we use it and block
 		// . it will increment m_numRequests and NOT m_numReplies if it blocked
 		m_numRequests++;
-		sendMsgC ( i , host , hlen );
+		sendMsgC(i, host, hlen);
 	}
 
-	if( m_n >= m_numUrls )
+	if (m_n >= m_numUrls) {
 		return m_numRequests == m_numReplies;
+	}
+
 	return false;
 }
 

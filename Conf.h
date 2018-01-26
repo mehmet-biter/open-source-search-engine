@@ -251,6 +251,9 @@ class Conf {
 	int32_t   m_corruptRetries;
 	int m_sqliteSynchronous;
 
+	// verify tagrec while indexing
+	bool m_verifyTagRec;
+
 	bool m_msg20FallbackToAllHosts;
 
 	int64_t m_docProcessDelayMs;
@@ -451,6 +454,7 @@ class Conf {
 	bool  m_fullRebuild;
 	bool  m_rebuildAddOutlinks;
 	bool  m_rebuildRecycleLinkInfo;
+	bool  m_rebuildUseTitleRecTagRec;
 	bool  m_rebuildTitledb;
 	bool  m_rebuildPosdb;
 	bool  m_rebuildClusterdb;

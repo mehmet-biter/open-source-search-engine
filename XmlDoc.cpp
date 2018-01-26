@@ -319,6 +319,7 @@ void XmlDoc::reset ( ) {
 	m_newTagBuf.reset();
 	m_dupList.reset();
 	m_msg8a.reset();
+	m_currentMsg8a.reset();
 	m_msg13.reset();
 	m_msge0.reset();
 	m_msge1.reset();
@@ -2284,18 +2285,6 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
 	}
 
-	// need tagrec to see if banned
-	TagRec *gr = getTagRec();
-	if ( ! gr || gr == (TagRec *)-1 ) return (int32_t *)gr;
-	// this is an automatic ban!
-	if ( gr->getLong("manualban",0) ) {
-		m_indexCode = EDOCBANNED;
-		m_indexCodeValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCBANNED" );
-		return &m_indexCode;
-	}
-
-
 	// get the ip of the current url
 	int32_t *ip = getIp ( );
 	if ( ! ip || ip == (int32_t *)-1 ) return (int32_t *)ip;
@@ -3259,11 +3248,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 // . check content for adult words
 char *XmlDoc::getIsAdult ( ) {
 
-	// adult detection code replaced. Invalidate old document versions.
-	if( m_version < 126 ) {
-		m_isAdultValid = false;
-	}
-
 	if ( m_isAdultValid ) return &m_isAdult2;
 
 	// call that
@@ -4024,25 +4008,6 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 		return (int32_t *)links;
 	}
 
-	Url *fu = getFirstUrl();
-	Url *cu = getCurrentUrl();
-	bool isRedir = (fu->getUrlHash64() != cu->getUrlHash64());
-
-	TagRec *tr = getTagRec();
-	if (!tr || tr == (TagRec *)-1) {
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getTagRec returned -1" );
-		return (int32_t *)tr;
-	}
-
-	TagRec *ctr = nullptr;
-	if (isRedir) {
-		ctr = getCurrentTagRec();
-		if (!ctr || ctr == (TagRec *)-1) {
-			logTrace(g_conf.m_logTraceXmlDoc, "END, getCurrentTagRec returned -1");
-			return (int32_t *)ctr;
-		}
-	}
-
 	// . get the outlink tag rec vector
 	// . each link's tagrec may have a "site" tag that is basically
 	//   the cached SiteGetter::getSite() computation
@@ -4125,11 +4090,6 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 		const char *site = NULL;
 		int32_t  siteLen = 0;
 		if ( gr ) {
-			// we should use current tagrec instead of tagrec if it's a redirect
-			if (isRedir && gr == tr) {
-				gr = ctr;
-			}
-
 			int32_t dataSize = 0;
 			site = gr->getString("site",NULL,&dataSize);
 			if ( dataSize ) siteLen = dataSize - 1;
@@ -6669,7 +6629,7 @@ TagRec *XmlDoc::getCurrentTagRec ( ) {
 	Url *u = getCurrentUrl();
 
 	// get it, user our collection for lookups, not m_tagdbColl[] yet!
-	if ( !m_msg8a.getTagRec( u, cr->m_collnum, m_niceness, this, gotCurrentTagRecWrapper, &m_currentTagRec ) ) {
+	if ( !m_currentMsg8a.getTagRec( u, cr->m_collnum, m_niceness, this, gotCurrentTagRecWrapper, &m_currentTagRec ) ) {
 		// we blocked, return -1
 		return (TagRec *) -1;
 	}
@@ -6710,8 +6670,6 @@ int32_t *XmlDoc::getFirstIp ( ) {
 	}
 	m_firstIpValid = true;
 	return &m_firstIp;
-	// must be 4 bytes - no now its a string
-	//if ( tag->getTagDataSize() != 4 ) { g_process.shutdownAbort(true); }
 }
 
 // this is the # of GOOD INLINKS to the site. so it is no more than
@@ -6826,8 +6784,6 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 		maxAge *= 3600*24;
 		// so youtube which has 2997 links will add an extra 29 days
 		maxAge += (sni / 100) * 86400;
-		// hack for global index. never affect siteinlinks i imported
-		if ( strcmp(cr->m_coll,"GLOBAL-INDEX") == 0 ) age = 0;
 		// invalidate for that as wel
 		if ( age > maxAge ) valid = false;
 	}
@@ -9787,7 +9743,11 @@ void XmlDoc::filterStart_r(bool amThread) {
 			return;
 		}
 
-		m_currentUrl.set(line.c_str());
+		// cater for javascript redirect
+		if (strcmp(m_currentUrl.getUrl(), line.c_str()) != 0) {
+			m_tagRecValid = false;
+			m_currentUrl.set(line.c_str());
+		}
 	}
 
 	auto startPos = outputFile.tellg();
@@ -11123,7 +11083,7 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 
 	// update status msg
 	setStatus ( "getting outlink tag rec vector" );
-	TagRec *gr = getTagRec();
+	TagRec *gr = getCurrentTagRec();
 	if ( ! gr || gr == (TagRec *)-1 )
 	{
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getTagRec returned -1" );
@@ -11407,16 +11367,6 @@ int8_t *XmlDoc::getHopCount ( ) {
 
 	setStatus ( "getting hop count" );
 
-	// get url as string, skip "http://" or "https://"
-	//char *u = f->getHost();
-	// if we match site, we are a site root, so hop count is 0
-	//char *isr = getIsSiteRoot();
-	//if ( ! isr || isr == (char *)-1 ) return (int8_t *)isr;
-	//if ( *isr ) {
-	//	m_hopCount      = 0;
-	//	m_hopCountValid = true;
-	//	return &m_hopCount;
-	//}
 	char *isRSS = getIsRSS();
 	if ( ! isRSS || isRSS == (char *)-1) return (int8_t *)isRSS;
 	// check for site root
@@ -11440,16 +11390,6 @@ int8_t *XmlDoc::getHopCount ( ) {
 	if ( m_sreqValid ) origHopCount = m_sreq.m_hopCount;
 	// derive our hop count from our parent hop count
 	int32_t hc = -1;
-	// . BUT use inlinker if better
-	// . if m_linkInfo1Valid is true, then m_minInlinkerHopCount is valid
-	// if ( m_minInlinkerHopCount + 1 < hc && m_minInlinkerHopCount >= 0 )
-	// 	hc = m_minInlinkerHopCount + 1;
-	// or if parent is unknown, but we have a known inlinker with a
-	// valid hop count, use the inlinker hop count then
-	// if ( hc == -1 && m_minInlinkerHopCount >= 0 )
-	// 	hc = m_minInlinkerHopCount + 1;
-	// if ( origHopCount == 0 )
-	// 	log("xmldoc: hc3 is 0 (spiderreq) %s",m_firstUrl.m_url);
 	// or use our hop count from the spider rec if better
 	if ( origHopCount < hc && origHopCount >= 0 )
 		hc = origHopCount;
@@ -11534,7 +11474,6 @@ char *XmlDoc::getSpiderLinks ( ) {
 	if ( m_sreqValid && m_sreq.m_avoidSpiderLinks )
 		m_spiderLinks = (char)false;
 
-
 	// also check in url filters now too
 
 
@@ -11554,16 +11493,7 @@ int32_t *XmlDoc::getSpiderPriority ( ) {
 	}
 
 	setStatus ("getting spider priority");
-	// need tagrec to see if banned
-	TagRec *gr = getTagRec();
-	if ( ! gr || gr == (TagRec *)-1 ) return (int32_t *)gr;
-	// this is an automatic ban!
-	if ( gr->getLong("manualban",0) ) {
-		m_priority      = -3;//SPIDER_PRIORITY_BANNED;
-		m_priorityValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END. Manual ban" );
-		return &m_priority;
-	}
+
 	int32_t *ufn = getUrlFilterNum();
 	if ( ! ufn || ufn == (void *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END. Invalid ufn" );
@@ -14389,7 +14319,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 
 	int32_t firstIp = -1;
 	// inherit firstIp
-	Tag *tag = m_tagRec.getTag("firstip");
+	Tag *tag = gr->getTag("firstip");
 	// tag must be there?
 	if ( tag ) firstIp = atoip(tag->getTagData());
 
@@ -15651,46 +15581,6 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 
 	m_reply.m_collnum = m_collnum;
 
-	// lookup the tagdb rec fresh if setting for a summary. that way we
-	// can see if it is banned or not. but for getting m_getTermListBuf
-	// and stuff above, skip the tagrec lookup!
-	// save some time when SPIDERING/BUILDING by skipping fresh
-	// tagdb lookup and using tags in titlerec
-	if ( m_req && ! m_req->m_getLinkText && ! m_checkedUrlFilters )
-		m_tagRecDataValid = false;
-
-	// if  shard responsible for tagrec is dead, then
-	// just recycle!
-	if ( m_req && ! m_checkedUrlFilters && ! m_tagRecDataValid ) {
-		char *site = getSite();
-		TAGDB_KEY tk1 = Tagdb::makeStartKey ( site );
-		TAGDB_KEY tk2 = Tagdb::makeDomainStartKey ( &m_firstUrl );
-		uint32_t shardNum1 = g_hostdb.getShardNum(RDB_TAGDB,&tk1);
-		uint32_t shardNum2 = g_hostdb.getShardNum(RDB_TAGDB,&tk2);
-		// shardnum1 and shardnum2 are often different!
-		// log("db: s1=%i s2=%i",(int)shardNum1,(int)shardNum2);
-		if ( g_hostdb.isShardDead ( shardNum1 ) ) {
-			log("query: skipping tagrec lookup for dead shard "
-			    "# %" PRId32
-			    ,shardNum1);
-			m_tagRecDataValid = true;
-		}
-		if ( g_hostdb.isShardDead ( shardNum2 ) && m_firstUrlValid ) {
-			log("query: skipping tagrec lookup for dead shard "
-			    "# %" PRId32
-			    ,shardNum2);
-			m_tagRecDataValid = true;
-		}
-	}
-
-	// if we are showing sites that have been banned in tagdb, we dont
-	// have to do a tagdb lookup. that should speed things up.
-	TagRec *gr = NULL;
-	if ( cr && cr->m_doTagdbLookups ) {
-		gr = getTagRec();
-		if ( ! gr || gr == (void *)-1 ) { checkPointerError(gr); return (Msg20Reply *)gr; }
-	}
-
 	// this should be valid, it is stored in title rec
 	if ( m_contentHash32Valid ) m_reply.m_contentHash32 = m_contentHash32;
 	else                        m_reply.m_contentHash32 = 0;
@@ -15725,11 +15615,6 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 				pr = -3;
 			}
 		}
-
-
-		// this is an automatic ban!
-		if ( gr && gr->getLong("manualban",0))
-			pr=-3;//SPIDER_PRIORITY_BANNED;
 
 		// is it banned
 		if ( pr == -3 ) { // SPIDER_PRIORITY_BANNED ) { // -2
@@ -18313,31 +18198,37 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\t\"country\": \"");
 			sb->jsonEncode(g_countryCode.getName(m_countryId));
 			sb->safePrintf("\",\n");
+
+			sb->safePrintf("\t\"explicitKeywords\": \"");
+			if (m_version >= 128) {
+				sb->jsonEncode(ptr_explicitKeywords, size_explicitKeywords);
+			}
+			sb->safePrintf("\",\n");
+
 			break;
 		default:
 			break;
 	}
 
-	TagRec *ogr = NULL;
-	if ( m_tagRecDataValid ) {
-		ogr = getTagRec(); // &m_tagRec;
+	if (m_tagRecDataValid) {
+		TagRec *ogr = getTagRec(); // &m_tagRec;
 		// sanity. should be set from titlerec, so no blocking!
-		if ( ! ogr || ogr == (void *)-1 ) { g_process.shutdownAbort(true); }
-	}
+		if (!ogr || ogr == (void *)-1) { g_process.shutdownAbort(true); }
 
-	if (ogr) {
-		switch (format) {
-			case FORMAT_HTML:
-				ogr->printToBufAsHtml(sb, "tag");
-				break;
-			case FORMAT_XML:
-				ogr->printToBufAsXml(sb);
-				break;
-			case FORMAT_JSON:
-				ogr->printToBufAsJson(sb);
-				break;
-			default:
-				break;
+		if (ogr) {
+			switch (format) {
+				case FORMAT_HTML:
+					ogr->printToBufAsHtml(sb, "tag");
+					break;
+				case FORMAT_XML:
+					ogr->printToBufAsXml(sb);
+					break;
+				case FORMAT_JSON:
+					ogr->printToBufAsJson(sb);
+					break;
+				default:
+					break;
+			}
 		}
 	}
 
@@ -19600,8 +19491,6 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	if ( g_conf.m_logDebugLinkInfo )
 		log("xmldoc: adding tags for mysite=%s",mysite);
 
-	// shortcut
-	//TagRec *tr = &m_newTagRec;
 	// current time
 	int32_t now = getTimeGlobal();
 
@@ -19710,9 +19599,11 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	linkflags_t *flags = links->m_linkFlags;
 	// scan all outlinks we have on this page
 	for ( int32_t i = 0 ; i < n ; i++ ) {
-
 		// get its tag rec
 		TagRec *gr = (*grv)[i];
+		if (!gr) {
+			continue;
+		}
 
 		// does this hostname have a "firstIp" tag?
 		const char *ips = gr->getString("firstip",NULL);

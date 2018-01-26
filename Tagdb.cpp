@@ -941,8 +941,6 @@ static TagDesc s_tagDesc[] = {
 	// for determining default venue addresses
 	{"roottitles"             ,TDF_STRING|TDF_NOINDEX,0},
 
-	{"manualban"            ,0x00,0},
-
 	// we now index this. really we need it for storing into title rec.
 	{"site"                 ,TDF_STRING|TDF_ARRAY,0},
 
@@ -1004,7 +1002,9 @@ static TagDesc s_tagDesc[] = {
 	{"pagerank", TDF_DEPRECATED, 0},
 	{"ruleset", TDF_DEPRECATED, 0},
 
-	{"deep", TDF_DEPRECATED, 0}
+	{"deep", TDF_DEPRECATED, 0},
+
+	{"manualban", TDF_DEPRECATED, 0}
 };
 
 // . convert "domain_squatter" to ST_DOMAIN_SQUATTER

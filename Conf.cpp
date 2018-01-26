@@ -141,6 +141,7 @@ Conf::Conf ( ) {
 	m_verifyIndex = false;
 	m_flushWrites = false;
 	m_verifyWrites = false;
+	m_verifyTagRec = false;
 	m_corruptRetries = 0;
 	m_sqliteSynchronous = 1;
 	m_docProcessDelayMs = 1000;
@@ -284,6 +285,7 @@ Conf::Conf ( ) {
 	m_fullRebuild = true;
 	m_rebuildAddOutlinks = false;
 	m_rebuildRecycleLinkInfo = true;
+	m_rebuildUseTitleRecTagRec = true;
 	m_rebuildTitledb = false;
 	m_rebuildPosdb = false;
 	m_rebuildClusterdb = false;

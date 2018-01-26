@@ -883,6 +883,7 @@ public:
 	bool m_wasInIndex;
 
 	Msg8a   m_msg8a;
+	Msg8a   m_currentMsg8a;
 
 	Url   m_extraUrl;
 	SafeBuf m_mySiteLinkInfoBuf;
