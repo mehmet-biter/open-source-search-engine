@@ -993,10 +993,7 @@ void Process::resetAll ( ) {
 	g_speller         .reset();
 	g_spiderCache     .reset();
 	g_jobScheduler    .finalize();
-	g_ucUpperMap      .reset();
-	g_ucLowerMap      .reset();
-	g_ucProps         .reset();
-	g_ucScripts       .reset();
+	ucResetMaps();
 	g_profiler        .reset();
 
 	// reset disk page caches

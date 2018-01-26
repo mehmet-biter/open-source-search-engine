@@ -147,6 +147,13 @@ failed:
 	return false;
 }
 
+void ucResetMaps() {
+	g_ucUpperMap.reset();
+	g_ucLowerMap.reset();
+	g_ucProps.reset();
+	g_ucScripts.reset();
+}
+
 const char *ucDetectBOM(const char *buf, int32_t bufsize){
 	if (bufsize < 4) return NULL;
 	// copied from ICU
