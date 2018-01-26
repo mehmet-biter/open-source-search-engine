@@ -7,7 +7,7 @@ UCPropTable g_ucLowerMap(sizeof(UChar32), 9);
 UCPropTable g_ucUpperMap(sizeof(UChar32), 9);
 UCPropTable g_ucProps(sizeof(UCProps), 8);
 UCPropTable g_ucScripts(sizeof(UCScript), 10);
-UCPropTable g_ucKDIndex(sizeof(int32_t), 8);
+static UCPropTable g_ucKDIndex(sizeof(int32_t), 8);
 // JAB: we now have Kompatible and Canonical decomposition
 
 // Kompatible Decomposition

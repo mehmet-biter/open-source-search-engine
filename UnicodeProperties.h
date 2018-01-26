@@ -58,7 +58,6 @@ extern UCPropTable g_ucProps;
 extern UCPropTable g_ucLowerMap;
 extern UCPropTable g_ucUpperMap;
 extern UCPropTable g_ucScripts;
-extern UCPropTable g_ucKDIndex;
 
 
 enum ucScript {
