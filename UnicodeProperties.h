@@ -61,8 +61,6 @@ extern UCPropTable g_ucScripts;
 extern UCPropTable g_ucKDIndex;
 
 
-extern const char * const g_ucScriptNames[];
-
 enum ucScript {
 	ucScriptCommon = 0,
 	ucScriptArabic,
