@@ -248,6 +248,13 @@ int main ( int argc , char *argv[] ) {
 }
 
 int main2 ( int argc , char *argv[] ) {
+{
+	char *url = new char[2];
+	memcpy(url,"/",2);
+	SiteGetter sg;
+	sg.getSite(url,NULL,0,0,0);
+	return 0;
+}
 	g_conf.m_runAsDaemon = false;
 	g_conf.m_logToFile = false;
 

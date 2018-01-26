@@ -296,8 +296,6 @@ inline bool is_wspace_utf8 ( const char *src ) {
 	return ucIsWhiteSpace( x );
 }
 
-uint32_t calculateChecksum(char *buf, int32_t bufLen);
-
 // use ucIsAlnum instead...
 static inline bool ucIsWordChar(UChar32 c) {
 	if (!(c & 0xffffff80)) return is_alnum_a(c);

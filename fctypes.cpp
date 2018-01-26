@@ -897,13 +897,6 @@ time_t getTimeLocal () {
 	return (time_t)now;
 }
 
-uint32_t calculateChecksum(char *buf, int32_t bufLen){
-	uint32_t sum = 0;
-	for(int32_t i = 0; i < bufLen>>2;i++)
-		sum += ((uint32_t*)buf)[i];
-	return sum;
-}
-
 bool has_alpha_utf8(const char *s, const char *send) {
 	char cs = 0;
 	for ( ; s < send ; s += cs ) {

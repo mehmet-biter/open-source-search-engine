@@ -15,7 +15,13 @@ static char 	  *s_ucKDData = NULL;
 static u_int32_t      s_ucKDDataSize = 0;
 static u_int32_t      s_ucKDAllocSize = 0;
 
-uint32_t calculateChecksum(char *buf, int32_t bufLen);
+static uint32_t calculateChecksum(char *buf, int32_t bufLen){
+	uint32_t sum = 0;
+	for(int32_t i = 0; i < bufLen>>2;i++)
+		sum += ((uint32_t*)buf)[i];
+	return sum;
+}
+
 
 bool saveUnicodeTable(UCPropTable *table, const char *filename) {
 	size_t tableSize = table->getStoredSize();
