@@ -297,12 +297,9 @@ inline bool is_wspace_utf8 ( const char *src ) {
 }
 
 // use ucIsAlnum instead...
-static inline bool ucIsWordChar(UChar32 c) {
+static inline bool ucIsWordChar_fast(UChar32 c) {
 	if (!(c & 0xffffff80)) return is_alnum_a(c);
-	//if (c < 256) return is_alnum(c);
-	const void *p = g_ucProps.getValue(c);
-	if (!p) return false;
-	return *(UCProps*)p & UC_WORDCHAR;
+	return ucIsWordChar(c);
 }
 
 // don't allow "> in our input boxes

@@ -260,7 +260,7 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 			UChar32 c = utf8Decode ( s+i );
 
 			// stop if word char
-			if ( ! ucIsWordChar ( c ) ) {
+			if ( ! ucIsWordChar_fast( c ) ) {
 				continue;
 			}
 

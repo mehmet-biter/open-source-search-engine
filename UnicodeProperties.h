@@ -169,6 +169,12 @@ enum ucDerivedCoreProperties {
 
 
 // Inline Functions here
+static inline bool ucIsWordChar(UChar32 c) {
+	const void *p = g_ucProps.getValue(c);
+	if (!p) return false;
+	return *(UCProps*)p & UC_WORDCHAR;
+}
+
 static inline bool ucIsAlpha(UChar32 c) {
 	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;
