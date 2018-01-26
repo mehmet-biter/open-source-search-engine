@@ -26,7 +26,6 @@ bool     setKDValue(UChar32 c, UChar32* decomp, int32_t decompCount,
 const UChar32 *getKDValue(UChar32 c, int32_t *decompCount, bool *fullComp = NULL);
 int32_t     recursiveKDExpand(UChar32 c, UChar32 *buf, int32_t bufSize);
 
-unsigned char ucCombiningClass(UChar32 c);
 
 
 static inline bool ucIsWhiteSpace(UChar32 c);
