@@ -281,7 +281,7 @@ void Msg39::getDocIds ( UdpSlot *slot ) {
 		return;
 	}
 
-	log(LOG_DEBUG,"query: msg39: processing query '%*.*s', this=%p", (int)m_msg39req->size_query, (int)m_msg39req->size_query, m_msg39req->ptr_query, this);
+	log(LOG_DEBUG,"query: msg39: processing query_id='%s' query='%.*s', this=%p", m_msg39req->m_queryId, (int)m_msg39req->size_query, m_msg39req->ptr_query, this);
 	// OK, we have deserialized and checked the msg39request and we can now process
 	// it by shoveling into the jobe queue. that means that the main thread (or whoever
 	// called us) is freed up and can do other stuff.

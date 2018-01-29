@@ -124,6 +124,7 @@ bool Msg40::getResults ( SearchInput *si      ,
 			 void        *state   ,
 			 void   (* callback) ( void *state ) ) {
 
+	log(LOG_INFO, "query: Msg40 start: query_id='%s' query='%s'", si->m_queryId, si->m_query);
 	m_omitCount = 0;
 
 	// warning
@@ -459,6 +460,7 @@ void gotDocIdsWrapper ( void *state ) {
 	// return if this blocked
 	if ( ! THIS->gotDocIds() ) return;
 	// now call callback, we're done
+	log(LOG_INFO, "query: Msg40 end: query_id='%s' query='%s', results=%d", THIS->m_si->m_queryId, THIS->m_si->m_query, THIS->getNumResults());
 	THIS->m_callback ( THIS->m_state );
 }
 
@@ -1061,6 +1063,7 @@ bool gotSummaryWrapper ( void *state ) {
 	}
 
 	// now call callback, we're done
+	log(LOG_INFO, "query: Msg40 end: query_id='%s' query='%s', results=%d", THIS->m_si->m_queryId, THIS->m_si->m_query, THIS->getNumResults());
 	THIS->m_callback ( THIS->m_state );
 
 	return true;
@@ -1095,6 +1098,7 @@ static void doneSendingWrapper9(void *state, TcpSocket *sock) {
 	if ( ! THIS->gotSummary() ) return;
 
 	// all done!!!???
+	log(LOG_INFO, "query: Msg40 end: query_id='%s' query='%s', results=%d", THIS->m_si->m_queryId, THIS->m_si->m_query, THIS->getNumResults());
 	THIS->m_callback ( THIS->m_state );
 }
 
@@ -1513,6 +1517,7 @@ void Msg40::urlClassificationCallback1(int i, uint32_t classification) {
 	if(incrementRealtimeClassificationsCompleted()) {
 		log(LOG_TRACE,"msg40: all URL classifications completed");
 		if(gotEnoughSummaries()) {
+			log(LOG_INFO, "query: Msg40 end: query_id='%s' query='%s', results=%d", m_si->m_queryId, m_si->m_query, getNumResults());
 			m_callback(m_state);
 		}
 	}
@@ -1586,6 +1591,7 @@ bool Msg40::gotEnoughSummaries() {
 		// reprocess all!
 		m_lastProcessedi = -1;
 		// let's do it all from the top!
+		log(LOG_INFO, "query: Msg40 redo: query_id='%s' query='%s', visible=%d", m_si->m_queryId, m_si->m_query, visible);
 		return getDocIds ( true ) ;
 	}
 
