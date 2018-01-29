@@ -9013,9 +9013,23 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log trace info for Msg4";
-	m->m_cgi   = "ltrc_msgfour";
-	simple_m_set(Conf,m_logTraceMsg4);
+	m->m_title = "log trace info for Msg4In";
+	m->m_cgi   = "ltrc_msgfour_in";
+	simple_m_set(Conf,m_logTraceMsg4In);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for Msg4Out";
+	m->m_cgi   = "ltrc_msgfour_out";
+	simple_m_set(Conf,m_logTraceMsg4Out);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
+	m->m_title = "log trace info for Msg4Out data";
+	m->m_cgi   = "ltrc_msgfourdat";
+	simple_m_set(Conf,m_logTraceMsg4OutData);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
