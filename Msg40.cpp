@@ -1809,45 +1809,6 @@ static bool isVariantLikeSubDomain(const char *s , int32_t len) {
 	return true;
 }		
 
-// . printSearchResult into "sb"
-bool Msg40::printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
-				 Msg20Reply *mr ) {
-
-	if ( ! m_si ) { g_process.shutdownAbort(true); }
-
-	// get state0
-	State0 *st = (State0 *)m_state;
-
-	Msg40 *msg40 = &st->m_msg40;
-
-	// then print each result
-	// don't display more than docsWanted results
-	if ( m_numPrinted >= msg40->getDocsWanted() ) {
-		// i guess we can print "Next 10" link
-		m_moreToCome = true;
-		// hide if above limit
-		if ( m_printCount == 0 )
-			log(LOG_INFO,"msg40: hiding above docsWanted #%" PRId32" (%" PRIu32")(d=%" PRId64")",
-			    m_printi,mr->m_contentHash32,mr->m_docId);
-		m_printCount++;
-		if ( m_printCount == 100 ) m_printCount = 0;
-		// do not exceed what the user asked for
-		return true;
-	}
-
-	// print that out into st->m_sb safebuf
-	if ( ! printResult ( st , ix , numPrintedSoFar ) ) {
-		// oom?
-		if ( ! g_errno ) g_errno = EBADENGINEER;
-		log("query: had error: %s",mstrerror(g_errno));
-	}
-
-	// count it
-	m_numPrinted++;
-
-	return true;
-}
-	
 
 void Msg40::incrementRealtimeClassificationsStarted() {
 	ScopedLock sl(m_mtxRealtimeClassificationsCounters);

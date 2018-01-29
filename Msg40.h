@@ -90,8 +90,6 @@ public:
 	bool  moreResultsFollow() const { return m_moreToCome; }
 	time_t getCachedTime() const { return m_cachedTime; }
 
-	bool printSearchResult9 ( int32_t ix, int32_t *numPrintedSoFar, class Msg20Reply *mr ) ;
-
 	int32_t m_numMsg20sOut ;
 	int32_t m_numMsg20sIn  ;
 
