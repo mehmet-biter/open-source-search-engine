@@ -1293,14 +1293,15 @@ bool Msg40::gotSummaries() {
 			continue;
 		}
 
-		// filter simplified redirection/non-caconical document
-		if (mr && mr->size_rubuf > 1 && (mr->m_contentLen <= 0 || mr->m_httpStatus != 200 ||
-		    mr->m_indexCode == EDOCNONCANONICAL || mr->m_indexCode == EDOCSIMPLIFIEDREDIR)) {
-			if (!m_si->m_showErrors) {
-				*level = CR_EMPTY_REDIRECTION_PAGE;
-				continue;
-			}
-		}
+//              temporarily disabled: if titledb has old records with content and redirect then this ends up filtering out most results and the whole query will be very slow
+// 		// filter simplified redirection/non-caconical document
+// 		if (mr && mr->size_rubuf > 1 && (mr->m_contentLen <= 0 || mr->m_httpStatus != 200 ||
+// 		    mr->m_indexCode == EDOCNONCANONICAL || mr->m_indexCode == EDOCSIMPLIFIEDREDIR)) {
+// 			if (!m_si->m_showErrors) {
+// 				*level = CR_EMPTY_REDIRECTION_PAGE;
+// 				continue;
+// 			}
+// 		}
 
 		// filter empty title & summaries
 		if ( mr && mr->size_tbuf <= 1 && mr->size_displaySum <= 1 ) {
