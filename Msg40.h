@@ -174,6 +174,8 @@ public:
 	HashTableT<uint64_t, uint64_t> m_urlTable;
 
 private:
+	int64_t      m_deadline; //deadline for providing a result, even if empty. (not completely enforced yet)
+
 	int32_t      m_numRealtimeClassificationsStarted;
 	int32_t      m_numRealtimeClassificationsCompleted;
 	GbMutex      m_mtxRealtimeClassificationsCounters;

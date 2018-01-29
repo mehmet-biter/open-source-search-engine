@@ -33,7 +33,8 @@ static bool gotSummaryWrapper            ( void *state );
 static bool isVariantLikeSubDomain(const char *s, int32_t len);
 
 Msg40::Msg40()
-  : m_numRealtimeClassificationsStarted(0),
+  : m_deadline(0),
+    m_numRealtimeClassificationsStarted(0),
     m_numRealtimeClassificationsCompleted(0),
     m_mtxRealtimeClassificationsCounters(),
     m_realtimeClassificationsSubmitted(false)
@@ -126,6 +127,10 @@ bool Msg40::getResults ( SearchInput *si      ,
 
 	log(LOG_INFO, "query: Msg40 start: query_id='%s' query='%s'", si->m_queryId, si->m_query);
 	m_omitCount = 0;
+
+	if(g_conf.m_msg40_msg39_timeout>0) {
+		m_deadline = gettimeofdayInMilliseconds() + g_conf.m_msg40_msg39_timeout;
+	}
 
 	// warning
 	//if ( ! si->m_coll2 ) log(LOG_LOGIC,"net: NULL collection. msg40.");
@@ -1573,27 +1578,32 @@ bool Msg40::gotEnoughSummaries() {
 	     m_docsToGet <= 1000 &&
 	     // doesn't work on multi-coll just yet, it cores
 	     m_numCollsToSearch == 1 ) {
-		// can it cover us?
-		int32_t need = m_docsToGet + 20;
-		// increase by 25 percent as well
-		need *= 1.25;
-		// note it
-		log("msg40: too many summaries invisible. getting more docids from msg3a merge and getting summaries. "
-		    "%" PRId32" are visible, need %" PRId32". %" PRId32" to %" PRId32". numReplies=%" PRId32" numRequests=%" PRId32,
-		    visible, m_docsToGetVisible,
-		    m_msg3a.m_docsToGet, need,
-		    m_numReplies, m_numRequests);
+		if(m_deadline>0 && m_deadline>gettimeofdayInMilliseconds()) {
+			// can it cover us?
+			int32_t need = m_docsToGet + 20;
+			// increase by 25 percent as well
+			need *= 1.25;
+			// note it
+			log("msg40: too many summaries invisible. getting more docids from msg3a merge and getting summaries. "
+			    "%" PRId32" are visible, need %" PRId32". %" PRId32" to %" PRId32". numReplies=%" PRId32" numRequests=%" PRId32,
+			    visible, m_docsToGetVisible,
+			    m_msg3a.m_docsToGet, need,
+			    m_numReplies, m_numRequests);
 
-		// get more!
-		m_docsToGet = need;
-		// reset this before launch
-		m_numReplies  = 0;
-		m_numRequests = 0;
-		// reprocess all!
-		m_lastProcessedi = -1;
-		// let's do it all from the top!
-		log(LOG_INFO, "query: Msg40 redo: query_id='%s' query='%s', visible=%d", m_si->m_queryId, m_si->m_query, visible);
-		return getDocIds ( true ) ;
+			// get more!
+			m_docsToGet = need;
+			// reset this before launch
+			m_numReplies  = 0;
+			m_numRequests = 0;
+			// reprocess all!
+			m_lastProcessedi = -1;
+			// let's do it all from the top!
+			log(LOG_INFO, "query: Msg40 redo: query_id='%s' query='%s', visible=%d", m_si->m_queryId, m_si->m_query, visible);
+			return getDocIds ( true ) ;
+		} else {
+			log("msg40: many summaries invisible but deadline has been passed. %d are visible, wanted %d",
+			    visible, m_docsToGetVisible);
+		}
 	}
 
 	// get time now
