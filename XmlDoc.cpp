@@ -13704,57 +13704,6 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// sanity check
 	verifyMetaList(m_metaList, m_p, forDelete);
 
-
-	//////
-	//
-	// add SPIDERREPLY BEFORE and SPIDERREQUEST!!!
-	//
-	// add spider reply first so we do not immediately respider
-	// this same url if we were injecting it because no SpiderRequest
-	// may have existed, and SpiderColl::addSpiderRequest() will
-	// spawn a spider of this url again unless there is already a REPLY
-	// in spiderdb!!! crazy...
-	bool addReply = true;
-
-	// save it
-	saved = m_p;
-
-	// now add the new rescheduled time
-	if (m_useSpiderdb && addReply && !forDelete) {
-		// note it
-		setStatus("adding SpiderReply to spiderdb");
-
-		// rdbid first
-		*m_p++ = (m_useSecondaryRdbs) ? RDB2_SPIDERDB2_DEPRECATED : RDB_SPIDERDB_DEPRECATED;
-
-		// get this
-		if (!m_srepValid) {
-			g_process.shutdownAbort(true);
-		}
-
-		// store the spider rec
-		int32_t newsrSize = newsr->getRecSize();
-		gbmemcpy (m_p, newsr, newsrSize);
-		m_p += newsrSize;
-
-		m_addedSpiderReplySize = newsrSize;
-		m_addedSpiderReplySizeValid = true;
-
-		// sanity check - must not be a request, this is a reply
-		if (Spiderdb::isSpiderRequest(&newsr->m_key)) {
-			g_process.shutdownAbort(true);
-		}
-
-		// sanity check
-		if (m_p - saved != needSpiderdb1) {
-			g_process.shutdownAbort(true);
-		}
-
-		// sanity check
-		verifyMetaList(m_metaList, m_p, forDelete);
-	}
-
-
 	// if we are injecting we must add the spider request
 	// we are injecting from so the url can be scheduled to be
 	// spidered again.
@@ -13807,6 +13756,44 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 		m_addedSpiderRequestSize = revisedReq.getRecSize();
 		m_addedSpiderRequestSizeValid = true;
+	}
+
+	// now add the new rescheduled time
+	if (m_useSpiderdb && !forDelete) {
+		// note it
+		setStatus("adding SpiderReply to spiderdb");
+
+		// save it
+		saved = m_p;
+
+		// rdbid first
+		*m_p++ = (m_useSecondaryRdbs) ? RDB2_SPIDERDB2_DEPRECATED : RDB_SPIDERDB_DEPRECATED;
+
+		// get this
+		if (!m_srepValid) {
+			g_process.shutdownAbort(true);
+		}
+
+		// store the spider rec
+		int32_t newsrSize = newsr->getRecSize();
+		gbmemcpy (m_p, newsr, newsrSize);
+		m_p += newsrSize;
+
+		m_addedSpiderReplySize = newsrSize;
+		m_addedSpiderReplySizeValid = true;
+
+		// sanity check - must not be a request, this is a reply
+		if (Spiderdb::isSpiderRequest(&newsr->m_key)) {
+			g_process.shutdownAbort(true);
+		}
+
+		// sanity check
+		if (m_p - saved != needSpiderdb1) {
+			g_process.shutdownAbort(true);
+		}
+
+		// sanity check
+		verifyMetaList(m_metaList, m_p, forDelete);
 	}
 
 skipNewAdd2:

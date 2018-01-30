@@ -11,10 +11,10 @@
 #include "Conf.h"
 #include <algorithm>
 
-
+static void addSpiderCollRecords(collnum_t collnum, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator begin, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator end);
 static bool addRecords(SpiderdbSqlite &spiderdb, const std::vector<SpiderdbRdbSqliteBridge::BatchedRecord> &records);
 static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator begin, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator end);
-static bool addRecord(collnum_t collnum, sqlite3 *db, const void *record, size_t record_len);
+static bool addRecord(sqlite3 *db, const void *record, size_t record_len);
 static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len);
 static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len);
 static int map_sqlite_error_to_gb_errno(int err);
@@ -51,6 +51,29 @@ bool SpiderdbRdbSqliteBridge::addRecords2(const std::vector<BatchedRecord> &reco
 	return addRecords(g_spiderdb_sqlite2, records);
 }
 
+static void addSpiderCollRecords(collnum_t collnum, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator begin, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator end) {
+	// add spider reply first so we do not immediately respider
+	// this same url if we were injecting it because no SpiderRequest
+	// may have existed, and SpiderColl::addSpiderRequest() will
+	// spawn a spider of this url again unless there is already a REPLY
+	// in spiderdb!!! crazy...
+	std::vector<SpiderdbRdbSqliteBridge::BatchedRecord> records(begin, end);
+	std::sort(records.begin(), records.end(), [](const SpiderdbRdbSqliteBridge::BatchedRecord &a, const SpiderdbRdbSqliteBridge::BatchedRecord &b) {
+		return (Spiderdb::isSpiderReply(reinterpret_cast<const key128_t *>(a.record)) && Spiderdb::isSpiderRequest(reinterpret_cast<const key128_t *>(b.record)));
+	});
+
+	for (auto iter = records.begin(); iter != records.end(); ++iter) {
+		SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
+		if (sc) {
+			if (Spiderdb::isSpiderRequest(reinterpret_cast<const key128_t *>(iter->record))) {
+				sc->addSpiderRequest(reinterpret_cast<const SpiderRequest *>(iter->record));
+			} else {
+				sc->addSpiderReply(reinterpret_cast<const SpiderReply *>(iter->record));
+			}
+		}
+	}
+}
+
 static bool addRecords(SpiderdbSqlite &spiderdb, const std::vector<SpiderdbRdbSqliteBridge::BatchedRecord> &records) {
 	//copy&sort
 	auto records_copy(records);
@@ -75,7 +98,6 @@ static bool addRecords(SpiderdbSqlite &spiderdb, const std::vector<SpiderdbRdbSq
 	return true;
 }
 
-
 static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator begin, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator end) {
 	sqlite3 *db = spiderdb.getDb(collnum);
 	if(!db) {
@@ -97,7 +119,7 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 	
 	long records = 0;
 	for(auto iter = begin; iter!=end; ++iter) {
-		if(!addRecord(collnum, db, iter->record, iter->record_len)) {
+		if(!addRecord(db, iter->record, iter->record_len)) {
 			sqlite3_exec(db, "rollback", NULL, NULL, &errmsg);
 			return false;
 		}
@@ -108,7 +130,11 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 		int err = sqlite3_errcode(db);
 		log(LOG_ERROR,"sqlitespider: commit errror: %s", sqlite3_errstr(err));
 		g_errno = map_sqlite_error_to_gb_errno(err);
+	} else {
+		//inform the spidercollection that we have just added records
+		addSpiderCollRecords(collnum, begin, end);
 	}
+
 	transaction_timer.finish();
 	if(g_conf.m_logTimingDb)
 		log(LOG_TIMING,"db:sqlite-add:record count=%ld",records);
@@ -116,7 +142,7 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 	return true;
 }
 
-static bool addRecord(collnum_t collnum, sqlite3 *db, const void *record, size_t record_len) {
+static bool addRecord(sqlite3 *db, const void *record, size_t record_len) {
 	if(KEYNEG((const char*)record)) {
 		log(LOG_ERROR,"sqlitespider: Got negative spiderrecord");
 		gbshutdownCorrupted();
@@ -127,17 +153,6 @@ static bool addRecord(collnum_t collnum, sqlite3 *db, const void *record, size_t
 		rc = addRequestRecord(db,record,record_len);
 	else
 		rc = addReplyRecord(db,record,record_len);
-	
-	//inform the spidercollection that we have just added a record
-	if(rc) {
-		SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
-		if(sc) {
-			if(Spiderdb::isSpiderRequest(reinterpret_cast<const key128_t *>(record)))
-				sc->addSpiderRequest(reinterpret_cast<const SpiderRequest*>(record));
-			else
-				sc->addSpiderReply(reinterpret_cast<const SpiderReply*>(record));
-		}
-	}
 	
 	return rc;
 }
