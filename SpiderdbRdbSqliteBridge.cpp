@@ -116,20 +116,6 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 	return true;
 }
 
-
-bool SpiderdbRdbSqliteBridge::addRecord(collnum_t collnum, const void *record, size_t record_len) {
-	sqlite3 *db = g_spiderdb_sqlite.getDb(collnum);
-	if(!db) {
-		log(LOG_ERROR,"sqlitespider: Could not get sqlite db for collection %d", collnum);
-		return false;
-	}
-	DbTimerLogger lock_timer("sqlite-add:lock");
-	ScopedSqlitedbLock ssl(db);
-	lock_timer.finish();
-	return addRecord(collnum,db,record,record_len);
-}
-
-
 static bool addRecord(collnum_t collnum, sqlite3 *db, const void *record, size_t record_len) {
 	if(KEYNEG((const char*)record)) {
 		log(LOG_ERROR,"sqlitespider: Got negative spiderrecord");

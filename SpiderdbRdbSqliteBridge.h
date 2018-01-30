@@ -11,9 +11,6 @@ class u_int128_t;
 
 namespace SpiderdbRdbSqliteBridge {
 
-//Add a record (request or reply) to spiderdb. Returns false if something fails
-bool addRecord(collnum_t collnum, const void *record, size_t record_len);
-
 struct BatchedRecord {
 	collnum_t collnum;
 	const void *record;
