@@ -10,6 +10,7 @@
 
 // Initialize unicode word parser
 bool 	ucInit(const char *path = NULL);
+void ucResetMaps();
 
 //////////////////////////////////////////////////////
 // Converters

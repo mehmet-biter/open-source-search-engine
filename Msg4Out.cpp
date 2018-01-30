@@ -123,7 +123,7 @@ bool Msg4::initializeOutHandling() {
 	// . returns false on failure
 	bool rc = g_loop.registerSleepCallback(MSG4_WAIT, NULL, sleepCallback4, "Msg4Out::sleepCallback4");
 
-	logTrace( g_conf.m_logTraceMsg4, "END - returning %s", rc?"true":"false");
+	logTrace( g_conf.m_logTraceMsg4Out, "END - returning %s", rc?"true":"false");
 
 	return rc;
 }
@@ -173,13 +173,13 @@ Msg4::~Msg4() {
 
 // used by Repair.cpp to make sure we are not adding any more data ("writing")
 bool hasAddsInQueue() {
-	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
+	logTrace( g_conf.m_logTraceMsg4Out, "BEGIN" );
 
 	// if there is an outstanding multicast...
 	{
 		ScopedLock sl(s_mtxMcasts);
 		if ( s_multicastInUseCount>0 ) {
-			logTrace( g_conf.m_logTraceMsg4, "END - multicast waiting, returning true" );
+			logTrace( g_conf.m_logTraceMsg4Out, "END - multicast waiting, returning true" );
 			return true;
 		}
 	}
@@ -188,7 +188,7 @@ bool hasAddsInQueue() {
 	{
 		ScopedLock sl(s_mtxQueuedMsg4s);
 		if(!s_queuedMsg4s.empty()) {
-			logTrace( g_conf.m_logTraceMsg4, "END - msg4 waiting, returning true" );
+			logTrace( g_conf.m_logTraceMsg4Out, "END - msg4 waiting, returning true" );
 			return true;
 		}
 	}
@@ -201,13 +201,13 @@ bool hasAddsInQueue() {
 		}
 			
 		if ( *(int32_t *)s_hostBufs[i] > 4 ) {
-			logTrace( g_conf.m_logTraceMsg4, "END - hostbuf waiting, returning true" );
+			logTrace( g_conf.m_logTraceMsg4Out, "END - hostbuf waiting, returning true" );
 			return true;
 		}
 	}
 
 	// otherwise, we have nothing queued up to add
-	logTrace( g_conf.m_logTraceMsg4, "END - nothing queued, returning false" );
+	logTrace( g_conf.m_logTraceMsg4Out, "END - nothing queued, returning false" );
 	return false;
 }
 
@@ -358,7 +358,7 @@ void Msg4::prepareMetaList() {
 		VALGRIND_CHECK_MEM_IS_DEFINED(key,p-key);
 #endif
 
-		logTrace(g_conf.m_logTraceMsg4, "  rdb=%s key=%s keySize=%" PRId32" isDel=%d dataSize=%" PRId32" shardNum=%" PRId32" hostId=%" PRId32,
+		logTrace(g_conf.m_logTraceMsg4OutData, "  rdb=%s key=%s keySize=%" PRId32" isDel=%d dataSize=%" PRId32" shardNum=%" PRId32" hostId=%" PRId32,
 		         getDbnameFromId(rdbId), KEYSTR(key, ks), ks, del, dataSize, shardNum, hostId);
 
 		int32_t recSize = p - key;
@@ -373,7 +373,7 @@ void Msg4::prepareMetaList() {
 }
 
 bool Msg4::processMetaList() {
-	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
+	logTrace( g_conf.m_logTraceMsg4Out, "BEGIN" );
 
 	// reserve necessary space
 	for (; m_destHostId < m_destHosts.size(); ++m_destHostId) {
@@ -389,13 +389,13 @@ bool Msg4::processMetaList() {
 
 		// check size/flush buffer
 		if (!checkBufferSize(m_destHostId, destHost.first)) {
-			logTrace(g_conf.m_logTraceMsg4, "Unable to flush buffer");
+			logTrace(g_conf.m_logTraceMsg4Out, "Unable to flush buffer");
 			return false;
 		}
 
 		// prepare buffer
 		if (!prepareBuffer(m_destHostId, neededSpaceForBuf)) {
-			logTrace(g_conf.m_logTraceMsg4, "Unable to prepare buffer");
+			logTrace(g_conf.m_logTraceMsg4Out, "Unable to prepare buffer");
 			return false;
 		}
 
@@ -408,7 +408,7 @@ bool Msg4::processMetaList() {
 		}
 	}
 
-	logTrace( g_conf.m_logTraceMsg4, "END - OK, true" );
+	logTrace( g_conf.m_logTraceMsg4Out, "END - OK, true" );
 	return true;
 }
 
@@ -789,10 +789,10 @@ bool saveAddsInProgress(const char *prefix) {
 // . returns false on an unrecoverable error, true otherwise
 // . sets g_errno on error
 bool loadAddsInProgress(const char *prefix) {
-	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
+	logTrace( g_conf.m_logTraceMsg4Out, "BEGIN" );
 
 	if ( g_conf.m_readOnlyMode ) {
-		logTrace( g_conf.m_logTraceMsg4, "END - Read-only mode. Returning true" );
+		logTrace( g_conf.m_logTraceMsg4Out, "END - Read-only mode. Returning true" );
 		return true;
 	}
 
@@ -807,18 +807,18 @@ bool loadAddsInProgress(const char *prefix) {
 	if ( ! prefix ) prefix = "";
 	sprintf ( filename, "%s%saddsinprogress.dat", g_hostdb.m_dir , prefix );
 
-	logTrace( g_conf.m_logTraceMsg4, "filename [%s]", filename);
+	logTrace( g_conf.m_logTraceMsg4Out, "filename [%s]", filename);
 
 	int32_t fd = open ( filename, O_RDONLY );
 	if ( fd < 0 ) {
 		if(errno==ENOENT) {
-			logTrace( g_conf.m_logTraceMsg4, "END - not found, returning true" );
+			logTrace( g_conf.m_logTraceMsg4Out, "END - not found, returning true" );
 			return true;
 		}
 		log(LOG_ERROR, "%s:%s: Failed to open %s for reading: %s",__FILE__,__func__,filename,strerror(errno));
 		g_errno = errno;
 
-		logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+		logTrace( g_conf.m_logTraceMsg4Out, "END - returning false" );
 		return false;
 	}
 
@@ -842,7 +842,7 @@ bool loadAddsInProgress(const char *prefix) {
 	if ( nb != 4 ) {
 		close ( fd );
 		logError("Read of message size returned %" PRId32 " bytes instead of 4", nb);
-		logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+		logTrace( g_conf.m_logTraceMsg4Out, "END - returning false" );
 		return false;
 	}
 
@@ -867,7 +867,7 @@ bool loadAddsInProgress(const char *prefix) {
 		if ( nb != 4 ) {
 			close ( fd );
 			logError("Read of message size returned %" PRId32 " bytes instead of 4", nb);
-			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+			logTrace( g_conf.m_logTraceMsg4Out, "END - returning false" );
 			return false;
 		}
 		p += 4;
@@ -891,7 +891,7 @@ bool loadAddsInProgress(const char *prefix) {
 		{
 			close ( fd );
 			log(LOG_ERROR,"build: Could not alloc %" PRId32" bytes for reading %s",allocSize,filename);
-			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+			logTrace( g_conf.m_logTraceMsg4Out, "END - returning false" );
 			return false;
 		}
 		
@@ -905,7 +905,7 @@ bool loadAddsInProgress(const char *prefix) {
 			*(int32_t *)buf = 4;
 			// return false
 			log(LOG_ERROR,"%s:%s: error reading addsinprogress.dat: %s", __FILE__, __func__, mstrerror(errno));
-			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+			logTrace( g_conf.m_logTraceMsg4Out, "END - returning false" );
 			return false;
 		}
 		// skip over it
@@ -936,7 +936,7 @@ bool loadAddsInProgress(const char *prefix) {
 		if ( nb != 4 ) {
 			close ( fd );
 			logError("Read of message size returned %" PRId32 " bytes instead of 4", nb);
-			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+			logTrace( g_conf.m_logTraceMsg4Out, "END - returning false" );
 			return false;
 		}
 
@@ -948,7 +948,7 @@ bool loadAddsInProgress(const char *prefix) {
 			close (fd);
 			log(LOG_ERROR, "%s:%s: bad msg4 hostid %" PRId32,__FILE__,__func__,hostId);
 
-			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+			logTrace( g_conf.m_logTraceMsg4Out, "END - returning false" );
 			return false;
 		}
 
@@ -957,7 +957,7 @@ bool loadAddsInProgress(const char *prefix) {
 		if ( nb != 4 ) {
 			close ( fd );
 			logError("Read of message size returned %" PRId32 " bytes instead of 4", nb);
-			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+			logTrace( g_conf.m_logTraceMsg4Out, "END - returning false" );
 			return false;
 		}
 		p += 4;
@@ -968,7 +968,7 @@ bool loadAddsInProgress(const char *prefix) {
 			close ( fd );
 			log(LOG_ERROR, "%s:%s: could not alloc msg4 buf",__FILE__,__func__);
 			
-			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+			logTrace( g_conf.m_logTraceMsg4Out, "END - returning false" );
 			return false;
 		}
 		
@@ -977,7 +977,7 @@ bool loadAddsInProgress(const char *prefix) {
 		if ( nb != numBytes ) {
 			close ( fd );
 			log(LOG_ERROR,"%s:%s: build: bad msg4 buf read", __FILE__, __func__ );
-			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+			logTrace( g_conf.m_logTraceMsg4Out, "END - returning false" );
 			return false;
 		}
 		p += numBytes;
@@ -989,7 +989,7 @@ bool loadAddsInProgress(const char *prefix) {
 			log(LOG_WARN, "%s:%s: could not resend reload buf: %s",
 				   __FILE__,__func__,mstrerror(g_errno));
 
-			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+			logTrace( g_conf.m_logTraceMsg4Out, "END - returning false" );
 			return false;
 		}
 	}
@@ -998,6 +998,6 @@ bool loadAddsInProgress(const char *prefix) {
 	// all done
 	close ( fd );
 
-	logTrace( g_conf.m_logTraceMsg4, "END - OK, returning true" );
+	logTrace( g_conf.m_logTraceMsg4Out, "END - OK, returning true" );
 	return true;
 }

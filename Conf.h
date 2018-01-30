@@ -377,7 +377,9 @@ class Conf {
 	bool m_logTraceLanguageResultOverride;
 	bool m_logTraceMem;
 	bool m_logTraceMsg0;
-	bool m_logTraceMsg4;
+	bool m_logTraceMsg4In;
+	bool m_logTraceMsg4Out;
+	bool m_logTraceMsg4OutData;
 	bool m_logTraceMsg25;
 	bool m_logTracePageLinkdbLookup;
 	bool m_logTracePageSpiderdbLookup;

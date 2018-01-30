@@ -230,7 +230,9 @@ Conf::Conf ( ) {
 	m_logTraceLanguageResultOverride = false;
 	m_logTraceMem = false;
 	m_logTraceMsg0 = false;
-	m_logTraceMsg4 = false;
+	m_logTraceMsg4In = false;
+	m_logTraceMsg4Out = false;
+	m_logTraceMsg4OutData = false;
 	m_logTraceMsg25 = false;
 	m_logTracePageLinkdbLookup = false;
 	m_logTracePageSpiderdbLookup = false;

@@ -35,7 +35,7 @@ static GbThreadQueue s_incomingThreadQueue;
 
 // all these parameters should be preset
 bool Msg4In::registerHandler() {
-	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
+	logTrace( g_conf.m_logTraceMsg4In, "BEGIN" );
 
 	// register ourselves with the udp server
 	if ( ! g_udpServer.registerHandler ( msg_type_4, handleRequest4 ) ) {
@@ -43,7 +43,7 @@ bool Msg4In::registerHandler() {
 		return false;
 	}
 
-	logTrace( g_conf.m_logTraceMsg4, "END - returning true");
+	logTrace( g_conf.m_logTraceMsg4In, "END - returning true");
 
 	return true;
 }
@@ -66,7 +66,7 @@ void Msg4In::finalizeIncomingThread() {
 static void Msg4In::processMsg4(void *item) {
 	UdpSlot *slot = static_cast<UdpSlot*>(item);
 
-	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
+	logTrace( g_conf.m_logTraceMsg4In, "BEGIN" );
 
 	// extract what we read
 	char *readBuf     = slot->m_readBuf;
@@ -76,14 +76,14 @@ static void Msg4In::processMsg4(void *item) {
 		logError("calling sendErrorReply error='%s'", mstrerror(g_errno));
 		g_udpServer.sendErrorReply(slot,g_errno);
 
-		logTrace(g_conf.m_logTraceMsg4, "END - addMetaList returned false. g_errno=%d", g_errno);
+		logTrace(g_conf.m_logTraceMsg4In, "END - addMetaList returned false. g_errno=%d", g_errno);
 		return;
 	}
 
 	// good to go
 	g_udpServer.sendReply(NULL, 0, NULL, 0, slot);
 
-	logTrace(g_conf.m_logTraceMsg4, "END - OK");
+	logTrace(g_conf.m_logTraceMsg4In, "END - OK");
 }
 
 static void Msg4In::handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
@@ -165,7 +165,7 @@ static void Msg4In::handleRequest4(UdpSlot *slot, int32_t /*netnice*/) {
 		logError("call sendErrorReply");
 		g_udpServer.sendErrorReply(slot,g_errno);
 
-		logTrace( g_conf.m_logTraceMsg4, "END - ETRYAGAIN. Waiting to sync with host #0" );
+		logTrace( g_conf.m_logTraceMsg4In, "END - ETRYAGAIN. Waiting to sync with host #0" );
 		return;
 	}
 

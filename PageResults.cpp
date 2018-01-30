@@ -35,6 +35,9 @@
 #include "RobotsBlockedResultOverride.h"
 
 
+static bool printSearchResultsHeader(State0 *st);
+static bool printResult(State0 *st, int32_t ix, int32_t *numPrintedSoFar);
+static bool printSearchResultsTail(State0 *st);
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;
 static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) ;
 
@@ -603,7 +606,7 @@ static bool printIgnoredWords ( SafeBuf *sb , const SearchInput *si ) {
 	return true;
 }
 
-bool printSearchResultsHeader ( State0 *st ) {
+static bool printSearchResultsHeader(State0 *st) {
 
 	const SearchInput *si = &st->m_si;
 
@@ -1325,7 +1328,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 }
 
 
-bool printSearchResultsTail ( State0 *st ) {
+bool printSearchResultsTail(State0 *st) {
 	SafeBuf *sb = &st->m_sb;
 
 	SearchInput *si = &st->m_si;	
@@ -1817,7 +1820,7 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 }
 
 // use this for xml as well as html
-bool printResult(State0 *st, int32_t ix , int32_t *numPrintedSoFar) {
+static bool printResult(State0 *st, int32_t ix, int32_t *numPrintedSoFar) {
 	SafeBuf *sb = &st->m_sb;
 
 	HttpRequest *hr = &st->m_hr;

@@ -26,7 +26,6 @@ bool     setKDValue(UChar32 c, UChar32* decomp, int32_t decompCount,
 const UChar32 *getKDValue(UChar32 c, int32_t *decompCount, bool *fullComp = NULL);
 int32_t     recursiveKDExpand(UChar32 c, UChar32 *buf, int32_t bufSize);
 
-unsigned char ucCombiningClass(UChar32 c);
 
 
 static inline bool ucIsWhiteSpace(UChar32 c);
@@ -58,7 +57,6 @@ extern UCPropTable g_ucProps;
 extern UCPropTable g_ucLowerMap;
 extern UCPropTable g_ucUpperMap;
 extern UCPropTable g_ucScripts;
-extern UCPropTable g_ucKDIndex;
 
 
 enum ucScript {
@@ -169,6 +167,12 @@ enum ucDerivedCoreProperties {
 
 
 // Inline Functions here
+static inline bool ucIsWordChar(UChar32 c) {
+	const void *p = g_ucProps.getValue(c);
+	if (!p) return false;
+	return *(UCProps*)p & UC_WORDCHAR;
+}
+
 static inline bool ucIsAlpha(UChar32 c) {
 	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;

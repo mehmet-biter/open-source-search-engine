@@ -33,7 +33,8 @@ static bool gotSummaryWrapper            ( void *state );
 static bool isVariantLikeSubDomain(const char *s, int32_t len);
 
 Msg40::Msg40()
-  : m_numRealtimeClassificationsStarted(0),
+  : m_deadline(0),
+    m_numRealtimeClassificationsStarted(0),
     m_numRealtimeClassificationsCompleted(0),
     m_mtxRealtimeClassificationsCounters(),
     m_realtimeClassificationsSubmitted(false)
@@ -124,7 +125,12 @@ bool Msg40::getResults ( SearchInput *si      ,
 			 void        *state   ,
 			 void   (* callback) ( void *state ) ) {
 
+	log(LOG_INFO, "query: Msg40 start: query_id='%s' query='%s'", si->m_queryId, si->m_query);
 	m_omitCount = 0;
+
+	if(g_conf.m_msg40_msg39_timeout>0) {
+		m_deadline = gettimeofdayInMilliseconds() + g_conf.m_msg40_msg39_timeout;
+	}
 
 	// warning
 	//if ( ! si->m_coll2 ) log(LOG_LOGIC,"net: NULL collection. msg40.");
@@ -459,6 +465,7 @@ void gotDocIdsWrapper ( void *state ) {
 	// return if this blocked
 	if ( ! THIS->gotDocIds() ) return;
 	// now call callback, we're done
+	log(LOG_INFO, "query: Msg40 end: query_id='%s' query='%s', results=%d", THIS->m_si->m_queryId, THIS->m_si->m_query, THIS->getNumResults());
 	THIS->m_callback ( THIS->m_state );
 }
 
@@ -1061,6 +1068,7 @@ bool gotSummaryWrapper ( void *state ) {
 	}
 
 	// now call callback, we're done
+	log(LOG_INFO, "query: Msg40 end: query_id='%s' query='%s', results=%d", THIS->m_si->m_queryId, THIS->m_si->m_query, THIS->getNumResults());
 	THIS->m_callback ( THIS->m_state );
 
 	return true;
@@ -1095,6 +1103,7 @@ static void doneSendingWrapper9(void *state, TcpSocket *sock) {
 	if ( ! THIS->gotSummary() ) return;
 
 	// all done!!!???
+	log(LOG_INFO, "query: Msg40 end: query_id='%s' query='%s', results=%d", THIS->m_si->m_queryId, THIS->m_si->m_query, THIS->getNumResults());
 	THIS->m_callback ( THIS->m_state );
 }
 
@@ -1289,14 +1298,15 @@ bool Msg40::gotSummaries() {
 			continue;
 		}
 
-		// filter simplified redirection/non-caconical document
-		if (mr && mr->size_rubuf > 1 && (mr->m_contentLen <= 0 || mr->m_httpStatus != 200 ||
-		    mr->m_indexCode == EDOCNONCANONICAL || mr->m_indexCode == EDOCSIMPLIFIEDREDIR)) {
-			if (!m_si->m_showErrors) {
-				*level = CR_EMPTY_REDIRECTION_PAGE;
-				continue;
-			}
-		}
+//              temporarily disabled: if titledb has old records with content and redirect then this ends up filtering out most results and the whole query will be very slow
+// 		// filter simplified redirection/non-caconical document
+// 		if (mr && mr->size_rubuf > 1 && (mr->m_contentLen <= 0 || mr->m_httpStatus != 200 ||
+// 		    mr->m_indexCode == EDOCNONCANONICAL || mr->m_indexCode == EDOCSIMPLIFIEDREDIR)) {
+// 			if (!m_si->m_showErrors) {
+// 				*level = CR_EMPTY_REDIRECTION_PAGE;
+// 				continue;
+// 			}
+// 		}
 
 		// filter empty title & summaries
 		if ( mr && mr->size_tbuf <= 1 && mr->size_displaySum <= 1 ) {
@@ -1513,6 +1523,7 @@ void Msg40::urlClassificationCallback1(int i, uint32_t classification) {
 	if(incrementRealtimeClassificationsCompleted()) {
 		log(LOG_TRACE,"msg40: all URL classifications completed");
 		if(gotEnoughSummaries()) {
+			log(LOG_INFO, "query: Msg40 end: query_id='%s' query='%s', results=%d", m_si->m_queryId, m_si->m_query, getNumResults());
 			m_callback(m_state);
 		}
 	}
@@ -1567,26 +1578,32 @@ bool Msg40::gotEnoughSummaries() {
 	     m_docsToGet <= 1000 &&
 	     // doesn't work on multi-coll just yet, it cores
 	     m_numCollsToSearch == 1 ) {
-		// can it cover us?
-		int32_t need = m_docsToGet + 20;
-		// increase by 25 percent as well
-		need *= 1.25;
-		// note it
-		log("msg40: too many summaries invisible. getting more docids from msg3a merge and getting summaries. "
-		    "%" PRId32" are visible, need %" PRId32". %" PRId32" to %" PRId32". numReplies=%" PRId32" numRequests=%" PRId32,
-		    visible, m_docsToGetVisible,
-		    m_msg3a.m_docsToGet, need,
-		    m_numReplies, m_numRequests);
+		if(m_deadline>0 && m_deadline>gettimeofdayInMilliseconds()) {
+			// can it cover us?
+			int32_t need = m_docsToGet + 20;
+			// increase by 25 percent as well
+			need *= 1.25;
+			// note it
+			log("msg40: too many summaries invisible. getting more docids from msg3a merge and getting summaries. "
+			    "%" PRId32" are visible, need %" PRId32". %" PRId32" to %" PRId32". numReplies=%" PRId32" numRequests=%" PRId32,
+			    visible, m_docsToGetVisible,
+			    m_msg3a.m_docsToGet, need,
+			    m_numReplies, m_numRequests);
 
-		// get more!
-		m_docsToGet = need;
-		// reset this before launch
-		m_numReplies  = 0;
-		m_numRequests = 0;
-		// reprocess all!
-		m_lastProcessedi = -1;
-		// let's do it all from the top!
-		return getDocIds ( true ) ;
+			// get more!
+			m_docsToGet = need;
+			// reset this before launch
+			m_numReplies  = 0;
+			m_numRequests = 0;
+			// reprocess all!
+			m_lastProcessedi = -1;
+			// let's do it all from the top!
+			log(LOG_INFO, "query: Msg40 redo: query_id='%s' query='%s', visible=%d", m_si->m_queryId, m_si->m_query, visible);
+			return getDocIds ( true ) ;
+		} else {
+			log("msg40: many summaries invisible but deadline has been passed. %d are visible, wanted %d",
+			    visible, m_docsToGetVisible);
+		}
 	}
 
 	// get time now
@@ -1792,45 +1809,6 @@ static bool isVariantLikeSubDomain(const char *s , int32_t len) {
 	return true;
 }		
 
-// . printSearchResult into "sb"
-bool Msg40::printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
-				 Msg20Reply *mr ) {
-
-	if ( ! m_si ) { g_process.shutdownAbort(true); }
-
-	// get state0
-	State0 *st = (State0 *)m_state;
-
-	Msg40 *msg40 = &st->m_msg40;
-
-	// then print each result
-	// don't display more than docsWanted results
-	if ( m_numPrinted >= msg40->getDocsWanted() ) {
-		// i guess we can print "Next 10" link
-		m_moreToCome = true;
-		// hide if above limit
-		if ( m_printCount == 0 )
-			log(LOG_INFO,"msg40: hiding above docsWanted #%" PRId32" (%" PRIu32")(d=%" PRId64")",
-			    m_printi,mr->m_contentHash32,mr->m_docId);
-		m_printCount++;
-		if ( m_printCount == 100 ) m_printCount = 0;
-		// do not exceed what the user asked for
-		return true;
-	}
-
-	// print that out into st->m_sb safebuf
-	if ( ! printResult ( st , ix , numPrintedSoFar ) ) {
-		// oom?
-		if ( ! g_errno ) g_errno = EBADENGINEER;
-		log("query: had error: %s",mstrerror(g_errno));
-	}
-
-	// count it
-	m_numPrinted++;
-
-	return true;
-}
-	
 
 void Msg40::incrementRealtimeClassificationsStarted() {
 	ScopedLock sl(m_mtxRealtimeClassificationsCounters);

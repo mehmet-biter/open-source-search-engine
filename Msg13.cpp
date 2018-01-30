@@ -1350,7 +1350,7 @@ void gotHttpReply2 ( void *state ,
 		savedErr = g_errno = EDOCBLOCKEDSHLIBCONTENT;
 	}
 
-	if (ts->m_truncated) {
+	if (ts && ts->m_truncated) {
 		if (ts->m_blockedContentType) {
 			savedErr = g_errno = EDOCBADCONTENTTYPE;
 		} else {
