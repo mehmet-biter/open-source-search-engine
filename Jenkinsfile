@@ -36,9 +36,9 @@ pipeline {
 						])
 					},
 					'pywebtest': {
-						checkout([
+						checkout resolveScm([
 							$class: 'GitSCM',
-							branches: [[name: '*/master']],
+							targets: ["${env.BRANCH_NAME}", 'master'],
 							doGenerateSubmoduleConfigurations: false,
 							extensions: [[$class: 'RelativeTargetDirectory',
 							              relativeTargetDir: "${env.PYWEBTEST_DIR}"]] +

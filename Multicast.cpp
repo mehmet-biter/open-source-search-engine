@@ -759,7 +759,7 @@ void Multicast::sleepCallback1() {
 		    (int)m_msgType, hid,elapsed);
 		// . mark it in the stats for PageStats.cpp
 		// . this is timeout based rerouting
-		g_stats.m_reroutes[(int)m_msgType][m_niceness]++;
+		g_stats.m_reroutes[(int)m_msgType][m_niceness?1:0]++;
 		return;
 	}
 	// if we registered the sleep callback we must have launched a 
@@ -914,7 +914,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 			// . this can be timeouts as well, if the
 			//   receiver sent a request itself and that
 			//   timed out...
-			g_stats.m_reroutes[(int)m_msgType][m_niceness]++;
+			g_stats.m_reroutes[(int)m_msgType][m_niceness?1:0]++;
 			return;
 		}
 		// . otherwise we've failed on all hosts
