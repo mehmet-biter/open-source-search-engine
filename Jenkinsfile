@@ -37,14 +37,15 @@ pipeline {
 					},
 					'pywebtest': {
 						checkout resolveScm(
-							source: [
+							source: fromScm([
 								$class: 'GitSCM',
+								branches: scm.branches,
 								doGenerateSubmoduleConfigurations: false,
 								extensions: [[$class: 'RelativeTargetDirectory',
 								              relativeTargetDir: "${env.PYWEBTEST_DIR}"]] +
 								            [[$class: 'CleanBeforeCheckout']],
 								userRemoteConfigs: [[url: 'https://github.com/privacore/pywebtest.git']]
-							],
+							]),
 							targets: ["${env.BRANCH_NAME}", 'master']
 						)
 					}
