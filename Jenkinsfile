@@ -41,6 +41,7 @@ pipeline {
 								$class: 'GitSCMSource',
 								remote: 'https://github.com/privacore/pywebtest.git',
 								traits: [
+									[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
 									[$class: 'CleanBeforeCheckoutTrait']
 								],
 								extensions: [
