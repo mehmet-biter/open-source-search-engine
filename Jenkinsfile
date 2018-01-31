@@ -36,15 +36,19 @@ pipeline {
 						])
 					},
 					'pywebtest': {
-						checkout resolveScm([
-							$class: 'GitSCM',
-							targets: ["${env.BRANCH_NAME}", 'master'],
-							doGenerateSubmoduleConfigurations: false,
-							extensions: [[$class: 'RelativeTargetDirectory',
-							              relativeTargetDir: "${env.PYWEBTEST_DIR}"]] +
-							            [[$class: 'CleanBeforeCheckout']],
-							userRemoteConfigs: [[url: 'https://github.com/privacore/pywebtest.git']]
-						])
+						dir("${env.PYWEBTEST_DIR}") {
+							checkout resolveScm(
+								source: [
+									$class: 'GitSCMSource',
+									remote: 'https://github.com/privacore/pywebtest.git',
+									traits: [
+										[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
+										[$class: 'CleanBeforeCheckoutTrait']
+									]
+								],
+								targets: ["${env.BRANCH_NAME}", 'master']
+							)
+						}
 					}
 				)
 			}
