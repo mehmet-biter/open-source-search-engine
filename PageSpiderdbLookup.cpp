@@ -402,11 +402,11 @@ static void generatePageJSON(int32_t shardNum, int32_t robotsShardNum, const Spi
 		sb->safePrintf("\t\"forceDelete\": %s,\n", spiderRequest->m_forceDelete ? "true" : "false");
 		sb->safePrintf("\t\"isInjecting\": %s,\n", spiderRequest->m_isInjecting ? "true" : "false");
 		sb->safePrintf("\t\"hadReply\": %s,\n", spiderRequest->m_hadReply ? "true" : "false");
-		sb->safePrintf("\t\"fakeFirstIp\": %s\n", spiderRequest->m_fakeFirstIp ? "true" : "false");
-		sb->safePrintf("\t\"m_hasAuthorityInlink\": %s\n", spiderRequest->m_hasAuthorityInlink ? "true" : "false");
-		sb->safePrintf("\t\"m_hasAuthorityInlinkValid\": %s\n", spiderRequest->m_hasAuthorityInlinkValid ? "true" : "false");
-		sb->safePrintf("\t\"m_siteNumInlinksValid\": %s\n", spiderRequest->m_siteNumInlinksValid ? "true" : "false");
-		sb->safePrintf("\t\"m_avoidSpiderLinks\": %s\n", spiderRequest->m_avoidSpiderLinks ? "true" : "false");
+		sb->safePrintf("\t\"fakeFirstIp\": %s,\n", spiderRequest->m_fakeFirstIp ? "true" : "false");
+		sb->safePrintf("\t\"m_hasAuthorityInlink\": %s,\n", spiderRequest->m_hasAuthorityInlink ? "true" : "false");
+		sb->safePrintf("\t\"m_hasAuthorityInlinkValid\": %s,\n", spiderRequest->m_hasAuthorityInlinkValid ? "true" : "false");
+		sb->safePrintf("\t\"m_siteNumInlinksValid\": %s,\n", spiderRequest->m_siteNumInlinksValid ? "true" : "false");
+		sb->safePrintf("\t\"m_avoidSpiderLinks\": %s,\n", spiderRequest->m_avoidSpiderLinks ? "true" : "false");
 		sb->safePrintf("\t\"ufn\": %hd,\n", spiderRequest->m_ufn);
 		sb->safePrintf("\t\"priority\": %d,\n", spiderRequest->m_priority);
 		sb->safePrintf("\t\"errCount\": %d\n", spiderRequest->m_errCount);
@@ -432,13 +432,13 @@ static void generatePageJSON(int32_t shardNum, int32_t robotsShardNum, const Spi
 		sb->safePrintf("\t\"httpStatus\": %d,\n", spiderReply->m_httpStatus);
 		sb->safePrintf("\t\"errCount\": %d,\n", spiderReply->m_errCount);
 		sb->safePrintf("\t\"langId\": %d,\n", spiderReply->m_langId);
-		sb->safePrintf("\t\"isRSS\": %s\n", spiderReply->m_isRSS ? "true" : "false");
-		sb->safePrintf("\t\"isPermalink\": %s\n", spiderReply->m_isPermalink ? "true" : "false");
-		sb->safePrintf("\t\"isIndexed\": %s\n", spiderReply->m_isIndexed ? "true" : "false");
-		sb->safePrintf("\t\"hasAuthorityInlink\": %s\n", spiderReply->m_hasAuthorityInlink ? "true" : "false");
-		sb->safePrintf("\t\"isIndexedInvalid\": %s\n", spiderReply->m_isIndexedINValid ? "true" : "false");
-		sb->safePrintf("\t\"hasAuthorityInlinkValid\": %s\n", spiderReply->m_hasAuthorityInlinkValid ? "true" : "false");
-		sb->safePrintf("\t\"siteNumInlinksValid\": %s\n", spiderReply->m_siteNumInlinksValid ? "true" : "false");
+		sb->safePrintf("\t\"isRSS\": %s,\n", spiderReply->m_isRSS ? "true" : "false");
+		sb->safePrintf("\t\"isPermalink\": %s,\n", spiderReply->m_isPermalink ? "true" : "false");
+		sb->safePrintf("\t\"isIndexed\": %s,\n", spiderReply->m_isIndexed ? "true" : "false");
+		sb->safePrintf("\t\"hasAuthorityInlink\": %s,\n", spiderReply->m_hasAuthorityInlink ? "true" : "false");
+		sb->safePrintf("\t\"isIndexedInvalid\": %s,\n", spiderReply->m_isIndexedINValid ? "true" : "false");
+		sb->safePrintf("\t\"hasAuthorityInlinkValid\": %s,\n", spiderReply->m_hasAuthorityInlinkValid ? "true" : "false");
+		sb->safePrintf("\t\"siteNumInlinksValid\": %s,\n", spiderReply->m_siteNumInlinksValid ? "true" : "false");
 		sb->safePrintf("\t\"fromInjectionRequest\": %s\n", spiderReply->m_fromInjectionRequest ? "true" : "false");
 		sb->safePrintf("}\n");
 	}
