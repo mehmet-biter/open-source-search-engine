@@ -409,7 +409,7 @@ static void generatePageJSON(int32_t shardNum, int32_t robotsShardNum, const Spi
 		sb->safePrintf("\t\"m_avoidSpiderLinks\": %s\n", spiderRequest->m_avoidSpiderLinks ? "true" : "false");
 		sb->safePrintf("\t\"ufn\": %hd,\n", spiderRequest->m_ufn);
 		sb->safePrintf("\t\"priority\": %d,\n", spiderRequest->m_priority);
-		sb->safePrintf("\t\"errCount\": %d,\n", spiderRequest->m_errCount);
+		sb->safePrintf("\t\"errCount\": %d\n", spiderRequest->m_errCount);
 		sb->safePrintf("}");
 	}
 
