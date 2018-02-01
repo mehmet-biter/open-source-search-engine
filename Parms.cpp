@@ -6002,12 +6002,20 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-	m->m_title = "msg20 fallback to all hosts";
-	m->m_desc  = "When getting summary or link text and the desired host(s) in the shard are dead may msg20 fall back to just asking all hosts in the shard?";
-	m->m_cgi   = "msgtwentyfallbackyoallhosts";
-	simple_m_set(Conf,m_msg20FallbackToAllHosts);
+	m->m_title = "fallback spider->query allowed";
+	m->m_desc  = "If a spider-host is unavailable can requests fall back to any query-hosts in the shard?";
+	m->m_cgi   = "fallbackspidertoquery";
+	simple_m_set(Conf,m_spiderHostToQueryHostFallbackAllowed);
 	m->m_def   = "1";
 	m->m_group = true;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m++;
+	m->m_title = "fallback query->spider allowed";
+	m->m_desc  = "If a query-host is unavailable can requests fall back to any spider-hosts in the shard?";
+	m->m_cgi   = "fallbackquerytospider";
+	simple_m_set(Conf,m_queryHostToSpiderHostFallbackAllowed);
+	m->m_def   = "1";
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m++;
