@@ -14909,7 +14909,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		ksr.m_firstIp          = firstIp;
 		ksr.m_hostHash32       = hostHash32;
 		ksr.m_domHash32        = domHash32;
-		ksr.m_siteHash32       = linkSiteHashes[i];//siteHash32;
+		ksr.m_siteHash32       = linkSiteHashes[i];
 		ksr.m_siteNumInlinks   = ksni;
 		ksr.m_siteNumInlinksValid = true;
 		ksr.m_isRSSExt            = isRSSExt;
@@ -14919,17 +14919,12 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		}
 
 		ksr.m_addedTime        = getSpideredTime();//m_spideredTime;
-		//ksr.m_lastAttempt    = 0;
-		//ksr.m_errCode        = 0;
-
 		ksr.m_pageNumInlinks   = 0;
 
 		// get this
 		bool isupf = ::isPermalink(NULL,&url,CT_HTML,NULL,isRSSExt);
 		// set some bit flags. the rest are 0 since we call reset()
 		if ( isupf        ) ksr.m_isUrlPermalinkFormat = 1;
-		//if ( isIndexed    ) ksr.m_isIndexed          = 1;
-
 
 		// if parent is a root of a popular site, then it is considered
 		// an authority linker.  (see updateTagdb() function above)
