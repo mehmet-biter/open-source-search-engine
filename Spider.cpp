@@ -555,7 +555,6 @@ static void testWinnerTreeKey() {
 	int32_t priority2;
 	int64_t spiderTimeMS2;
 	int64_t uh482;
-	int32_t hc2;
 	parseWinnerTreeKey(&k,&firstIp2,&priority2,&spiderTimeMS2,&uh482);
 	if ( firstIp != firstIp2 ) { g_process.shutdownAbort(true); }
 	if ( priority != priority2 ) { g_process.shutdownAbort(true); }
