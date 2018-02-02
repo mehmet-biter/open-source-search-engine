@@ -6,7 +6,7 @@
 
 static HashTableX s_convTable;
 
-iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
+static iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
 	// get hash for to/from
 	uint32_t hash1 = hash32Lower_a(tocode, strlen(tocode), 0);
 	uint32_t hash2 = hash32Lower_a(fromcode, strlen(fromcode),0);
@@ -51,7 +51,7 @@ iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
 	return conv;
 }
 
-int gbiconv_close(iconv_t cd) {
+static int gbiconv_close(iconv_t cd) {
 	/// @todo ALC gbiconv_close currently does nothing
 	//int val = iconv_close(cd);
 	//return val;	
@@ -175,7 +175,7 @@ const char *ucDetectBOM(const char *buf, int32_t bufsize){
 	return NULL;
 }
 
-int32_t ucToAny(char *outbuf, int32_t outbufsize, const char *charset_out,
+static int32_t ucToAny(char *outbuf, int32_t outbufsize, const char *charset_out,
 		const char *inbuf, int32_t inbuflen, const char *charset_in,
 		 int32_t ignoreBadChars ){
 	if (inbuflen == 0) return 0;
@@ -288,6 +288,13 @@ done:
 	}
 	if (res < 0 && g_errno) return 0; 
 	return len ;
+}
+
+
+int32_t ucToUtf8(char *outbuf, int32_t outbuflen,
+		const char *inbuf, int32_t inbuflen,
+		const char *charset, int32_t ignoreBadChars) {
+  return ucToAny(outbuf, outbuflen, "UTF-8", inbuf, inbuflen, charset, ignoreBadChars);
 }
 
 int32_t stripAccentMarks (char *outbuf, int32_t outbufsize,
