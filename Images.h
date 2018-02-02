@@ -156,10 +156,6 @@ class Images {
 	class Xml      *m_xml;
 
 	Msg13Request m_msg13Request;
-
-	// . for getting # of permalinks from same hopcount/site
-	// . we need at least 10 for the uniqueness test to be effective
-	//Msg36     m_msg36;
 	
 	// . for getting docids that have the image
 	// . for the uniqueness test

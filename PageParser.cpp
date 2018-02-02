@@ -317,20 +317,6 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 		  "</tr>"
 			  */
 
-			  /*
-		  "<tr class=poo>"
-		  "<td>"
-		  "Hop count to use: "
-		  "</td>"
-		  "<td>"
-		  "<input type=text name=\"hc\" size=\"4\" value=\"%" PRId32"\"> "
-		  "</td>"
-		  "<td>"
-		  "(-1 is unknown. For root urls hopcount is always 0)<br>"
-		  "</td>"
-		  "</tr>"
-			  */
-
 		  "<tr class=poo>"
 		  "<td>"
 			  "<b>use cached</b>"

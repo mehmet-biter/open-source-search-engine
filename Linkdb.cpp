@@ -143,7 +143,6 @@ key224_t Linkdb::makeKey_uk ( uint32_t  linkeeSiteHash32       ,
 	k.n2 |= (unsigned char)~linkerSiteRank;
 
 	k.n2 <<= 8;
-	//k.n2 |= linkerHopCount;
 	// this is now part of the linkerip, steve wants the full ip
 	k.n2 |= (linkerIp >> 24);
 

@@ -55,8 +55,6 @@ static bool gotLinkTextWrapper(void *state);
 Msg25::Msg25() {
 	m_numRequests = 0;
 	m_linkSpamOut = 0;
-	// set minhopcount to unknown
-	//m_minInlinkerHopCount = -1;
 	m_numReplyPtrs = 0;
 	//m_linkInfo = NULL;
 	m_ownReplies = true;
@@ -824,8 +822,6 @@ bool Msg25::doReadLoop() {
 
 	m_minRecSizes = READSIZE; // MAX_LINKERS_IN_TERMLIST * 10 + 6;
 
-	// NO, DON't restrict because it will mess up the hopcount.
-	//bool includeTree = true;
 	//It's expensive to do include the tree. Can we avoid it?
 	//When injecting a mass number of documents, eg a dump from wikipedia
 	//then the document titles are usually ok already (inlink texts already
