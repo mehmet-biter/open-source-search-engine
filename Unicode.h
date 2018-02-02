@@ -32,41 +32,32 @@ static const int bytes_in_utf8_code[] = {
 	3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,1,1,1,1,1,1,1,1
 };
 
-// how many bytes is char pointed to by p?
-inline char getUtf8CharSize ( const uint8_t *p ) {
-	uint8_t c = *p;
+//how many bytes does this utf8 initial-byte indicate?
+inline char getUtf8CharSize(uint8_t c) {
+#if 1
 	if ( c < 128 ) {
 		return 1;
 	} else {
 		return bytes_in_utf8_code[c];
 	}
+#else
+	if( ! (c & 0x80)) return 1;
+	if( ! (c & 0x20)) return 2;
+	if( ! (c & 0x10)) return 3;
+	if( ! (c & 0x08)) return 4;
+	return 1; //illegal
+#endif
+}
+
+// how many bytes is char pointed to by p?
+inline char getUtf8CharSize ( const uint8_t *p ) {
+	return getUtf8CharSize(*p);
 }
 
 inline char getUtf8CharSize ( const char *p ) {
-	uint8_t c = (uint8_t)*p;
-	if ( c < 128 ) {
-		return 1;
-	} else {
-		return bytes_in_utf8_code[c];
-	}
+	return getUtf8CharSize((const uint8_t*)p);
 }
 
-inline char getUtf8CharSize ( uint8_t c ) {
-	if ( c < 128 ) {
-		return 1;
-	} else {
-		return bytes_in_utf8_code[c];
-	}
-}
-
-inline char getUtf8CharSize2 ( const uint8_t *p ) {
-	if ( ! (p[0] & 0x80) ) return 1;
-	if ( ! (p[0] & 0x20) ) return 2;
-	if ( ! (p[0] & 0x10) ) return 3;
-	if ( ! (p[0] & 0x08) ) return 4;
-	// crazy!!!
-	return 1;
-}
 
 // Valid UTF-8 code points
 // +--------------------+----------+----------+----------+----------+
