@@ -180,7 +180,6 @@ private:
 	int32_t m_tailPriority;
 	int64_t m_tailTimeMS;
 	int64_t m_tailUh48;
-	int32_t      m_tailHopCount;
 	int64_t m_minFutureTimeMS;
 
 	// list for loading spiderdb recs during the spiderdb scan

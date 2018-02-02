@@ -604,8 +604,6 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		sreq.m_discoveryTime            = discoveryTime;
 		sreq.m_prevErrCode              = 0; //done differently now.
 		sreq.m_contentHash32            = contentHash32;
-		sreq.m_hopCount                 = 0;
-		sreq.m_hopCountValid            = 0;
 		sreq.m_isAddUrl                 = requestFlags.m_isAddUrl;
 		sreq.m_isPageReindex            = requestFlags.m_isPageReindex;
 		sreq.m_isUrlCanonical           = requestFlags.m_isUrlCanonical;

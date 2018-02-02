@@ -69,8 +69,6 @@ public:
 
 	// call Msg16 with a versino of title rec to do
 	int32_t m_titleRecVersion;
-	
-	char m_hopCount;
 
 	//TitleRec m_tr;
 
@@ -197,8 +195,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	st->m_titleRecVersion = r->getLong("version",-1);
 	if ( st->m_titleRecVersion == -1 ) 
 		st->m_titleRecVersion = TITLEREC_CURRENT_VERSION;
-	// default to 0 if not provided
-	st->m_hopCount = r->getLong("hc",0);
+
 	//int32_t  ulen    = 0;
 	//char *u     = r->getString ( "u" , &ulen     , NULL /*default*/);
 	int32_t  old     = r->getLong   ( "old", 0 );
@@ -506,8 +503,6 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	// parentdocid of 0
 	sreq.setKey( firstIp, 0LL, false );
 	sreq.m_isPageParser = 1;
-	sreq.m_hopCount = st->m_hopCount;
-	sreq.m_hopCountValid = 1;
 	sreq.m_fakeFirstIp   = 1;
 	sreq.m_firstIp = firstIp;
 	Url nu;
@@ -699,8 +694,7 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	st->m_titleRecVersion = r->getLong("version",-1);
 	if ( st->m_titleRecVersion == -1 ) 
 		st->m_titleRecVersion = TITLEREC_CURRENT_VERSION;
-	// default to 0 if not provided
-	st->m_hopCount = r->getLong("hc",0);
+
 	int32_t  old     = r->getLong   ( "old", 0 );
 
 	// url will override docid if given
@@ -786,8 +780,6 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	// parentdocid of 0
 	sreq.setKey( firstIp, 0LL, false );
 	sreq.m_isPageParser = 1;
-	sreq.m_hopCount = st->m_hopCount;
-	sreq.m_hopCountValid = 1;
 	sreq.m_fakeFirstIp   = 1;
 	sreq.m_firstIp = firstIp;
 	Url nu;

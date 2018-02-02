@@ -2044,13 +2044,6 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 			     , cols , "\n\t\t# " , false );
 		sb->safePrintf("<b>\t\t\"url\":\"www.doi.gov\",\n\n</b>");
 
-		sb->brify2 ( "\t\t# The hopcount of the url. The minimum "
-			     "number of links we would have to click to get "
-			     "to it from a root url. If this is 0 that means "
-			     "the url is a root url, like "
-			     "http://www.root.com/.\n"
-			     , cols , "\n\t\t# " , false );
-		sb->safePrintf("<b>\t\t\"hopCount\":0,\n\n</b>");
 
 		sb->brify2 ( "\t\t# The size of the result's content. "
 			     "Always in kilobytes. k stands for kilobytes. "

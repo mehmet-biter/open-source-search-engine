@@ -581,7 +581,6 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 			       // if this doc is a 'container doc' then
 			       // hasMime applies to the SUBDOCS only!!
 			       ir->m_hasMime, // content starts with http mime?
-			       ir->m_hopCount,
 			       ir->m_charset,
 			       ir->m_langId,
 			       ir->m_deleteUrl,

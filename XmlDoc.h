@@ -174,7 +174,7 @@ public:
 
 	int16_t   m_httpStatus; // -1 if not found (empty http reply)
 	
-	int8_t    m_hopCount;
+	int8_t    m_reserved5a;
 	uint8_t   m_langId;
 	uint8_t   m_reserved6;
 	uint8_t   m_contentType;
@@ -442,7 +442,6 @@ public:
 	class TagRec ***getOutlinkTagRecVector () ;
 	int32_t **getOutlinkFirstIpVector () ;
 	char *getIsSiteRoot ( ) ;
-	int8_t *getHopCount ( ) ;
 	char *getSpiderLinks ( ) ;
 	bool getIsInjecting();
 	int32_t *getSpiderPriority ( ) ;
@@ -697,7 +696,6 @@ public:
 	bool m_wordSpamBufValid;
 	bool m_finalSummaryBufValid;
 
-	bool m_hopCountValid;
 	bool m_isInjectingValid;
 	bool m_isImportingValid;
 	bool m_metaListCheckSum8Valid;
@@ -796,7 +794,6 @@ public:
 	bool m_outlinkIpVectorValid;
 	bool m_isSiteRootValid;
 	bool m_wasContentInjectedValid;
-	bool m_outlinkHopCountVectorValid;
 	bool m_urlFilterNumValid;
 	bool m_numOutlinksAddedValid;
 	bool m_baseUrlValid;
@@ -948,8 +945,6 @@ public:
 	// cachedb related args
 	bool    m_allHashed;
 
-	int8_t *m_outlinkHopCountVector;
-	int32_t  m_outlinkHopCountVectorSize;
 	int32_t m_urlFilterNum;
 	int32_t m_numOutlinksAdded;
 	int32_t m_numRedirects;
@@ -1148,7 +1143,6 @@ public:
 			 class CollectionRec *cr ,
 			 char *content ,
 			 bool contentHasMime ,
-			 int32_t hopCount,
 			 int32_t charset,
 			 int32_t langId,
 			 bool deleteUrl,

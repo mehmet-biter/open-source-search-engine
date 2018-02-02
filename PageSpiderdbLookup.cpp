@@ -389,9 +389,7 @@ static void generatePageJSON(int32_t shardNum, int32_t robotsShardNum, const Spi
 		sb->safePrintf("\t\"discoveryTime\": %u,\n", spiderRequest->m_discoveryTime);
 		sb->safePrintf("\t\"prevErrCode\": %d,\n", spiderRequest->m_prevErrCode);
 		sb->safePrintf("\t\"contentHash32\": %u,\n", spiderRequest->m_contentHash32);
-		sb->safePrintf("\t\"hopCount\": %hu,\n", spiderRequest->m_hopCount);
 		sb->safePrintf("\t\"recycleContent\": %s,\n", spiderRequest->m_recycleContent ? "true" : "false");
-		sb->safePrintf("\t\"hopCountValid\": %s,\n", spiderRequest->m_hopCountValid ? "true" : "false");
 		sb->safePrintf("\t\"isAddUrl\": %s,\n", spiderRequest->m_isAddUrl ? "true" : "false");
 		sb->safePrintf("\t\"isPageReindex\": %s,\n", spiderRequest->m_isPageReindex ? "true" : "false");
 		sb->safePrintf("\t\"isUrlCanonical\": %s,\n", spiderRequest->m_isUrlCanonical ? "true" : "false");

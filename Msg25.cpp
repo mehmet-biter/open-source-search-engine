@@ -2291,7 +2291,6 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 				     "<td>lang</td>"
 				     "<td>discovered</td>"
 				     "<td>pubdate</td>"
-				     "<td>hop count</td>"
 				     "<td>site rank</td>"
 				     "<td># words in link text</td>"
 				     "<td>link text bytes</td>"
@@ -2471,7 +2470,6 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 				     "<td>%s</td>"   // language
 				     "<td>%s</td>"   // discoverydate
 				     "<td>%s</td>"   // datedbdate
-				     "<td>%" PRId32"</td>" // hopcount
 				     "<td><font color=red><b>%" PRId32
 				     "</b></font></td>"  // site rank
 				     "<td>%" PRId32"</td>"  // nw 
@@ -2481,7 +2479,6 @@ bool Msg25::gotLinkText(Msg20Request *msg20req) {
 				     getLanguageString(r->m_language),
 				     discBuf,
 				     dbuf,//r->m_datedbDate,
-				     (int32_t)r->m_hopcount,
 				     (int32_t)r->m_siteRank, // docQuality,
 				     (int32_t)r->m_linkTextNumWords ,
 				     tlen );
@@ -3080,7 +3077,6 @@ void Inlink::set ( const Msg20Reply *r ) {
 	m_country             = r->m_country;
 	m_language            = r->m_language;
 	m_siteRank            = r->m_siteRank;
-	m_hopcount            = r->m_hopcount;
 
 	// MDW: use a new way. construct m_buf. 64-bit stuff.
 	int32_t poff = 0;
@@ -3206,7 +3202,6 @@ void Inlink::setMsg20Reply(Msg20Reply *r) {
 	r->m_country             = m_country;
 	r->m_language            = m_language;
 	r->m_siteRank            = m_siteRank;
-	r->m_hopcount            = m_hopcount;
 	r->m_isAdult             = false;       //appears to be irrelevant when dealing with links
 	
 	r->ptr_ubuf              = const_cast<char*>(getUrl());
@@ -3329,7 +3324,6 @@ bool LinkInfo::print(SafeBuf *sb, const char *coll) const {
 			       "d=<a href=\"/admin/titledb?c=%s&"
 			       "d=%" PRId64"\">%016" PRId64"</a>, "
 			       "siterank=%" PRId32", "
-			       "hopcount=%03" PRId32" "
 			       "outlinks=%05" PRId32", "
 			       "ip=%s "
 			       "numLinksToSite=%" PRId32" "
@@ -3350,7 +3344,6 @@ bool LinkInfo::print(SafeBuf *sb, const char *coll) const {
 			       k->m_docId,
 			       //(int32_t)k->m_docQuality,
 			       (int32_t)k->m_siteRank,
-			       (int32_t)k->m_hopcount,
 			       (int32_t)k->m_numOutlinks ,
 			       iptoa(k->m_ip,ipbuf),
 			       (int32_t)k->m_siteNumInlinks,

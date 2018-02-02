@@ -123,7 +123,6 @@ XmlDoc::XmlDoc() {
 	m_isIndexed = 0;	// may be -1
 	m_isInIndex = false;
 	m_wasInIndex = false;
-	m_outlinkHopCountVector = NULL;
 	m_extraDoc = NULL;
 	m_statusMsg = NULL;
 	m_errno = 0;
@@ -283,13 +282,6 @@ void XmlDoc::reset ( ) {
 		m_rootTitleRec = NULL;
 		m_rootTitleRecValid = false;
 	}
-
-
-	if ( m_outlinkHopCountVectorValid && m_outlinkHopCountVector ) {
-		int32_t sz = m_outlinkHopCountVectorSize;
-		mfree ( m_outlinkHopCountVector,sz,"ohv");
-	}
-	m_outlinkHopCountVector = NULL;
 
 	// reset all *valid* flags to false
 	void *p    = &m_VALIDSTART;
@@ -1180,7 +1172,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_siteNumInlinksValid         = true;
 	m_metaListCheckSum8Valid      = true;
 
-	m_hopCountValid               = true;
 	m_langIdValid                 = true;
 	m_contentTypeValid            = true;
 	m_isRSSValid                  = true;
@@ -1384,7 +1375,6 @@ bool XmlDoc::injectDoc ( const char *url ,
 			 CollectionRec *cr ,
 			 char *content ,
 			 bool contentHasMimeArg ,
-			 int32_t hopCount,
 			 int32_t charset,
 			 int32_t langId,
 			 bool deleteUrl,
@@ -1464,11 +1454,6 @@ bool XmlDoc::injectDoc ( const char *url ,
 	if ( lastSpidered ) {
 		m_spideredTime      = lastSpidered;
 		m_spideredTimeValid = true;
-	}
-
-	if ( hopCount != -1 ) {
-		m_hopCount = hopCount;
-		m_hopCountValid = true;
 	}
 
 	// PageInject calls memset on gigablastrequest so add '!= 0' here
@@ -1582,8 +1567,6 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 	sreq->m_firstIp              = m_firstIp;
 	sreq->m_hostHash32           = getHostHash32a();
 	sreq->m_domHash32            = getDomHash32();
-	//sreq->m_pageNumInlinks     = m_pageNumInlinks;
-	sreq->m_hopCount             = m_hopCount;
 
 	sreq->m_pageNumInlinks       = 0;//m_sreq.m_parentFirstIp;
 
@@ -1594,9 +1577,6 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 
 	// transcribe from old spider rec, stuff should be the same
 	sreq->m_addedTime            = m_firstIndexedDate;
-
-	// validate the stuff so getUrlFilterNum() acks it
-	sreq->m_hopCountValid = 1;
 
 	// we need this now for ucp ucr upp upr new url filters that do
 	// substring matching on the url
@@ -2851,11 +2831,6 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 		return (char *)id;
 	}
 
-	int8_t *hopCount = getHopCount();
-	if (!hopCount || hopCount == (void *)-1) {
-		return (char *)hopCount;
-	}
-
 	char *spiderLinks = getSpiderLinks();
 	if (!spiderLinks || spiderLinks == (char *)-1) {
 		return spiderLinks;
@@ -3177,7 +3152,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 
 	if ( ! m_siteNumInlinksValid         ) { g_process.shutdownAbort(true); }
 
-	if ( ! m_hopCountValid               ) { g_process.shutdownAbort(true); }
 	if ( ! m_metaListCheckSum8Valid      ) { g_process.shutdownAbort(true); }
 	if ( ! m_langIdValid                 ) { g_process.shutdownAbort(true); }
 	if ( ! m_contentTypeValid            ) { g_process.shutdownAbort(true); }
@@ -7826,9 +7800,7 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 
 	// set flag
 	m_linkInfo1Valid = true;
-	// . validate the hop count thing too
-	// . i took hopcount out of linkdb to put in lower ip byte for steve
-	//m_minInlinkerHopCount = -1;//m_msg25.getMinInlinkerHopCount();
+
 	// return it
 	return ptr_linkInfo1;
 }
@@ -11361,63 +11333,6 @@ char *XmlDoc::getIsSiteRoot ( ) {
 	return &m_isSiteRoot2;
 }
 
-int8_t *XmlDoc::getHopCount ( ) {
-	// return now if valid
-	if ( m_hopCountValid ) return &m_hopCount;
-
-	setStatus ( "getting hop count" );
-
-	char *isRSS = getIsRSS();
-	if ( ! isRSS || isRSS == (char *)-1) return (int8_t *)isRSS;
-	// check for site root
-	TagRec *gr = getTagRec();
-	if ( ! gr || gr == (TagRec *)-1 ) return (int8_t *)gr;
-	// and site roots
-	char *isSiteRoot = getIsSiteRoot();
-	if (!isSiteRoot ||isSiteRoot==(char *)-1) return (int8_t *)isSiteRoot;
-	if ( *isSiteRoot ) {
-		// log("xmldoc: hc1 is 0 (siteroot) %s",m_firstUrl.m_url);
-		m_hopCount      = 0;
-		m_hopCountValid = true;
-		return &m_hopCount;
-	}
-	// make sure m_minInlinkerHopCount is valid
-	LinkInfo *info1 = getLinkInfo1();
-	if ( ! info1 || info1 == (LinkInfo *)-1 ) return (int8_t *)info1;
-	// . fix bad original hop counts
-	// . assign this hop count from the spider rec
-	int32_t origHopCount = -1;
-	if ( m_sreqValid ) origHopCount = m_sreq.m_hopCount;
-	// derive our hop count from our parent hop count
-	int32_t hc = -1;
-	// or use our hop count from the spider rec if better
-	if ( origHopCount < hc && origHopCount >= 0 )
-		hc = origHopCount;
-	// or if neither parent or inlinker was valid hop count
-	if ( hc == -1 && origHopCount >= 0 )
-		hc = origHopCount;
-	// if we have no hop count at this point, i guess just pick 1!
-	if ( hc == -1 )
-		hc = 1;
-	// truncate, hop count is only one byte in the TitleRec.h::m_hopCount
-	if ( hc > 0x7f ) hc = 0x7f;
-
-	// and now so do rss urls.
-	if ( *isRSS && hc > 1 ) {
-		// force it to one, not zero, otherwise it gets pounded
-		// too hard on the aggregator sites. spider priority
-		// is too high
-		m_hopCount      = 1;
-		m_hopCountValid = true;
-		return &m_hopCount;
-	}
-
-	// unknown hop counts (-1) are propogated, except for root urls
-	m_hopCountValid = true;
-	m_hopCount      = hc;
-	return &m_hopCount;
-}
-
 //set to false fo rinjecting and validate it... if &spiderlinks=0
 // should we spider links?
 char *XmlDoc::getSpiderLinks ( ) {
@@ -11720,10 +11635,6 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 	if ( m_countryIdValid )
 		sb->safePrintf("country=%02" PRId32"(%s) ",(int32_t)m_countryId,
 			      g_countryCode.getAbbr(m_countryId));
-
-	if ( m_hopCountValid )
-		sb->safePrintf("hopcount=%02" PRId32" ",(int32_t)m_hopCount);
-
 
 	if ( m_contentValid )
 		sb->safePrintf("contentlen=%06" PRId32" ",m_contentLen);
@@ -12330,7 +12241,6 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 				       "linkeeUrlHash=0x%016" PRIx64" "
 				       "linkSpam=%" PRId32" "
 				       "siteRank=%" PRId32" "
-				       //"hopCount=%03" PRId32" "
 				       "sitehash32=0x%" PRIx32" "
 				       "IP32=%s "
 				       "docId=%" PRIu64
@@ -14160,7 +14070,6 @@ void XmlDoc::copyFromOldDoc ( XmlDoc *od ) {
 	m_httpStatus    = od->m_httpStatus;
 	m_isRSS         = od->m_isRSS;
 	m_isPermalink   = od->m_isPermalink;
-	m_hopCount      = od->m_hopCount;
 	m_crawlDelay    = od->m_crawlDelay;
 
 	// do not forget the shadow members of the bit members
@@ -14174,7 +14083,6 @@ void XmlDoc::copyFromOldDoc ( XmlDoc *od ) {
 	m_httpStatusValid    = true;
 	m_isRSSValid         = true;
 	m_isPermalinkValid   = true;
-	m_hopCountValid      = true;
 	m_crawlDelayValid    = true;
 
 	m_langId        = od->m_langId;
@@ -14557,9 +14465,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	int32_t *sni = getSiteNumInlinks();
 	if ( ! sni || sni == (int32_t *)-1 ) return (SpiderReply *)sni;
 
-	int8_t *hc = getHopCount();
-	if ( ! hc || hc == (int8_t*)-1 ) return (SpiderReply *)hc;
-
 	float *pc = getPercentChanged();
 	if ( ! pc || pc == (void *)-1 ) return (SpiderReply *)pc;
 
@@ -14589,7 +14494,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 
 	// sanity checks
 	if ( ! m_siteNumInlinksValid       ) { g_process.shutdownAbort(true); }
-	if ( ! m_hopCountValid             ) { g_process.shutdownAbort(true); }
 	if ( ! m_langIdValid               ) { g_process.shutdownAbort(true); }
 	if ( ! m_isRSSValid                ) { g_process.shutdownAbort(true); }
 	if ( ! m_isPermalinkValid          ) { g_process.shutdownAbort(true); }
@@ -14668,7 +14572,6 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 
 	// sanity checks
 	if ( ! m_ipValid                   ) { g_process.shutdownAbort(true); }
-	if ( ! m_hopCountValid             ) { g_process.shutdownAbort(true); }
 	if ( ! m_langIdValid               ) { g_process.shutdownAbort(true); }
 	if ( ! m_isRSSValid                ) { g_process.shutdownAbort(true); }
 	if ( ! m_isPermalinkValid          ) { g_process.shutdownAbort(true); }
@@ -14686,7 +14589,6 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 	// set other fields besides key
 	sreq->m_firstIp              = m_ip;
 	sreq->m_hostHash32           = m_hostHash32a;
-	sreq->m_hopCount             = m_hopCount;
 
 	sreq->m_pageNumInlinks       = 0;//m_sreq.m_parentFirstIp;
 
@@ -14695,9 +14597,6 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 
 	// transcribe from old spider rec, stuff should be the same
 	sreq->m_addedTime          = m_firstIndexedDate;
-
-	// validate the stuff so getUrlFilterNum() acks it
-	sreq->m_hopCountValid = 1;
 
 	srep->reset();
 
@@ -14850,13 +14749,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		return (char *)linkSiteHashes;
 	}
 
-	int8_t *hopCount = getHopCount();
-	if ( ! hopCount || hopCount == (int8_t *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getHopCount failed" );
-		return (char *)hopCount;
-	}
-
 	XmlDoc  *nd  = this;
 
 	bool    isParentRSS       = false;
@@ -14880,8 +14772,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 	if ( ! m_hostHash32aValid    ) { g_process.shutdownAbort(true); }
 	if ( ! m_siteHash32Valid     ) { g_process.shutdownAbort(true); }
-	if ( ! m_hopCountValid       ) { g_process.shutdownAbort(true); }
-	//if ( ! m_spideredTimeValid   ) { g_process.shutdownAbort(true); }
 
 	int64_t myUh48 = m_firstUrl.getUrlHash48();
 
@@ -14971,15 +14861,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		if ( strncmp(s,"http://",7) && strncmp(s,"https://",8) )
 			continue;
 
-		// . do not add if "old"
-		// . Links::set() calls flagOldOutlinks()
-		// . that just means we probably added it the last time
-		//   we spidered this page
-		// . no cuz we might have a different siteNumInlinks now
-		//   and maybe this next hop count is now allowed where as
-		//   before it was not!
-		//if ( flags & LF_OLDLINK ) continue;
-
 		Url url;
 		url.set( s, slen );
 
@@ -15050,25 +14931,9 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		ksr.m_siteNumInlinksValid = true;
 		ksr.m_isRSSExt            = isRSSExt;
 
-		// hop count is now 16 bits so do not wrap that around
-		int32_t hc = m_hopCount + 1;
-		if ( hc > 65535 ) hc = 65535;
-		ksr.m_hopCount         = hc;
-
-		// keep hopcount the same for redirs
-		if ( m_indexCodeValid &&
-		     ( m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL ) ) {
-			ksr.m_hopCount = m_hopCount;
-
-			if (m_indexCode == EDOCNONCANONICAL) {
-				ksr.m_isUrlCanonical = true;
-			}
+		if (m_indexCodeValid && m_indexCode == EDOCNONCANONICAL) {
+			ksr.m_isUrlCanonical = true;
 		}
-
-		if ( issiteroot   ) ksr.m_hopCount = 0;
-
-		// validate it
-		ksr.m_hopCountValid = true;
 
 		ksr.m_addedTime        = getSpideredTime();//m_spideredTime;
 		//ksr.m_lastAttempt    = 0;
@@ -15120,9 +14985,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// set the key, ksr.m_key. isDel = false
 		ksr.setKey ( firstIp, *d , false );
 
-		// we were hopcount 0, so if we link to ourselves we override
-		// our original hopcount of 0 with this guy that has a
-		// hopcount of 1. that sux... so don't do it.
 		if ( ksr.getUrlHash48() == myUh48 ) continue;
 
 		// debug
@@ -15820,7 +15682,6 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	m_reply.m_contentType      = m_contentType;
 	m_reply.m_language         = m_langId;
 	m_reply.m_country          = *getCountryId();
-	m_reply.m_hopcount         = m_hopCount;
 	m_reply.m_siteRank         = getSiteRank();
 	m_reply.m_isAdult          = m_isAdult; //QQQ getIsAdult()? hmmm
 
@@ -17383,10 +17244,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 		       "<td>%s UTC</td></tr>\n" ,
 		       asctime_r(gmtime_r(&ts,&tm_buf),buf) );
 
-	// hop count
-	sb->safePrintf("<tr><td>hop count</td><td>%" PRId32"</td></tr>\n",
-		      (int32_t)m_hopCount);
-
 	// thumbnails
 	ThumbnailArray *ta = (ThumbnailArray *) ptr_imageData;
 	if ( ta ) {
@@ -18090,10 +17947,6 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("<tr><td>outlinks last added date</td><td>%s UTC</td></tr>\n",
 			               asctime_r(gmtime_r(&ts, &tm_buf), buf));
 
-
-
-			sb->safePrintf("<tr><td>hop count</td><td>%" PRId32"</td></tr>\n", (int32_t)m_hopCount);
-
 			sb->safePrintf("<tr><td>original charset</td><td>%s</td></tr>\n", get_charset_str(m_charset));
 			sb->safePrintf("<tr><td>adult bit</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isAdult);
 			sb->safePrintf("<tr><td>is permalink?</td><td>%" PRId32"</td></tr>\n", (int32_t)m_isPermalink);
@@ -18127,8 +17980,6 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\t<lastIndexedDateUTC>%" PRIu32"</lastIndexedDateUTC>\n", (uint32_t)m_spideredTime);
 			sb->safePrintf("\t<outlinksLastAddedUTC>%" PRIu32"</outlinksLastAddedUTC>\n", (uint32_t)m_outlinksAddedDate);
 
-			sb->safePrintf("\t<hopCount>%" PRId32"</hopCount>\n", (int32_t)m_hopCount);
-
 			sb->safePrintf("\t<charset><![CDATA[%s]]></charset>\n", get_charset_str(m_charset));
 			sb->safePrintf("\t<isAdult>%" PRId32"</isAdult>\n", (int32_t)m_isAdult);
 			sb->safePrintf("\t<isLinkSpam>%" PRId32"</isLinkSpam>\n", (int32_t)m_isLinkSpam);
@@ -18150,8 +18001,6 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\t\"firstIndexedDateUTC\": %" PRIu32",\n", m_firstIndexedDate);
 			sb->safePrintf("\t\"lastIndexedDateUTC\": %" PRIu32",\n", m_spideredTime);
 			sb->safePrintf("\t\"outlinksLastAddedUTC\": %" PRIu32",\n", m_outlinksAddedDate);
-
-			sb->safePrintf("\t\"hopCount\": %" PRId8",\n", m_hopCount);
 
 			sb->safePrintf("\t\"charset\": \"");
 			sb->jsonEncode(get_charset_str(m_charset));

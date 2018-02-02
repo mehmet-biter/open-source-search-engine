@@ -88,7 +88,6 @@ SpiderColl::SpiderColl(CollectionRec *cr) {
 	m_tailPriority = 0;
 	m_tailTimeMS = 0;
 	m_tailUh48 = 0;
-	m_tailHopCount = 0;
 	m_minFutureTimeMS = 0;
 	m_gettingWaitingTreeList = false;
 	m_lastScanTime = 0;
@@ -598,45 +597,17 @@ bool SpiderColl::isInDupCache(const SpiderRequest *sreq, bool addToCache) {
 	if ( sreq->m_hadReply    ) dupKey64 ^= 293294099;
 
 	// . maxage=86400,promoteRec=yes. returns -1 if not in there
-	// . dupKey64 is for hopcount 0, so if this url is in the dupcache
-	//   with a hopcount of zero, do not add it
 	RdbCacheLock rcl(m_dupCache);
 
-	// limit hopcount to 3 for making cache key so we don't flood cache
-	int32_t hopCount = (sreq->m_hopCount >= 3 ? 3 : sreq->m_hopCount);
-	// don't insert same hopcount
-	if (m_dupCache.getLong(0, dupKey64 ^ hopCount, 86400, true) != -1) {
-		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request same hopcount exist. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64 ^ hopCount, org_dupKey64,
-			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
-		return true;
-	}
-
 	if (m_dupCache.getLong(0, dupKey64, 86400, true) != -1) {
-		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 0 exist. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64, org_dupKey64,
-			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
-		return true;
-	}
-
-	// if our hopcount is 2 and there is a hopcount 1 in there, do not add
-	if (hopCount >= 2 && m_dupCache.getLong(0, dupKey64 ^ 0x01, 86400, true) != -1) {
-		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 1 exist. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64 ^ 0x01, org_dupKey64,
-			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
-		return true;
-	}
-
-	// likewise, if there's a hopcount 2 in there, do not add if we are 3+
-	if (hopCount >= 3 && m_dupCache.getLong(0, dupKey64 ^ 0x02, 86400, true) != -1) {
-		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request hopcount 2 exist. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64 ^ 0x02, org_dupKey64,
+		logDebug(g_conf.m_logDebugSpider, "spider: skipping dup request. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64, org_dupKey64,
 			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
 		return true;
 	}
 
 	if (addToCache) {
-		logDebug(g_conf.m_logDebugSpider, "spider: Adding to dup cache. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64 ^ hopCount, org_dupKey64,
+		logDebug(g_conf.m_logDebugSpider, "spider: Adding to dup cache. url=%s uh48=%" PRIu64 ", dupkey=%" PRIu64 ", org_dupkey=%" PRIu64 ", %s%s%s%s%s%s", sreq->m_url, sreq->getUrlHash48(), dupKey64, org_dupKey64,
 			sreq->m_fakeFirstIp?"fakeFirstIp ":"",sreq->m_isAddUrl?"isAddUrl ":"",sreq->m_isInjecting?"isInjecting ":"",sreq->m_isPageReindex?"isPageReindex ":"",sreq->m_forceDelete?"forceDelete ":"",sreq->m_hadReply?"hadReply":"");
-
-		// mangle the key with hopcount before adding it to the cache
-		dupKey64 ^= hopCount;
 
 		// add it
 		m_dupCache.addLong(0, dupKey64, 1);
@@ -2431,13 +2402,6 @@ bool SpiderColl::scanListForWinners ( ) {
 			continue;
 		}
 
-		// more corruption detection
-		if ( sreq->m_hopCount < -1 ) {
-			log( LOG_WARN, "spider: got corrupt 5 spiderRequest in scan (cn=%" PRId32")",
-			    (int32_t)m_collnum);
-			continue;
-		}
-
 		// save this shit for storing in doledb
 		sreq->m_ufn = ufn;
 		sreq->m_priority = priority;
@@ -2487,7 +2451,6 @@ bool SpiderColl::scanListForWinners ( ) {
 		// make key
 		key192_t wk = makeWinnerTreeKey( firstIp ,
 						 priority ,
-						 sreq->m_hopCount,
 						 spiderTimeMS ,
 						 uh48 );
 
@@ -2498,8 +2461,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		// replace it or we skip ourselves. 
 		//
 		// watch out for dups in winner tree, the same url can have 
-		// multiple spiderTimeMses somehow... i guess it could have 
-		// different hop counts
+		// multiple spiderTimeMses somehow...
 		// as well, resulting in different priorities...
 		// actually the dedup table could map to a priority and a node
 		// so we can kick out a lower priority version of the same url.
@@ -2507,16 +2469,9 @@ bool SpiderColl::scanListForWinners ( ) {
 		if ( winSlot >= 0 ) {
 			const key192_t *oldwk = (const key192_t *)m_winnerTable.getValueFromSlot ( winSlot );
 
-			// get the min hopcount  
 			SpiderRequest *wsreq = (SpiderRequest *)m_winnerTree.getData(0,(const char *)oldwk);
 			
 			if ( wsreq ) {
-				if ( sreq->m_hopCount < wsreq->m_hopCount )
-					wsreq->m_hopCount = sreq->m_hopCount;
-					
-				if ( wsreq->m_hopCount < sreq->m_hopCount )
-					sreq->m_hopCount = wsreq->m_hopCount;
-					
 				// and the min added time as well!
 				// get the oldest timestamp so
 				// gbssDiscoveryTime will be accurate.
@@ -2581,11 +2536,6 @@ bool SpiderColl::scanListForWinners ( ) {
 					continue;
 				if (priority > m_tailPriority)
 					goto gotNewWinner;
-				// if tied use hop counts so we are breadth first
-				if (sreq->m_hopCount > m_tailHopCount)
-					continue;
-				if (sreq->m_hopCount < m_tailHopCount)
-					goto gotNewWinner;
 				// if tied, use actual times. assuming both<nowGlobalMS
 				if (spiderTimeMS > m_tailTimeMS)
 					continue;
@@ -2649,7 +2599,7 @@ gotNewWinner:
 				// set new tail parms
 				const key192_t *tailKey = reinterpret_cast<const key192_t *>(m_winnerTree.getKey_unlocked(tailNode));
 				// convert to char first then to signed int32_t
-				parseWinnerTreeKey(tailKey, &m_tailIp, &m_tailPriority, &m_tailHopCount, &m_tailTimeMS, &m_tailUh48);
+				parseWinnerTreeKey(tailKey, &m_tailIp, &m_tailPriority, &m_tailTimeMS, &m_tailUh48);
 
 				// sanity
 				if (m_tailIp != firstIp) {
@@ -2877,11 +2827,10 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 			// parse it up
 			int32_t winIp;
 			int32_t winPriority;
-			int32_t winHopCount;
 			int64_t winSpiderTimeMS;
 			int64_t winUh48;
 			const key192_t *winKey = reinterpret_cast<const key192_t *>(m_winnerTree.getKey_unlocked(node));
-			parseWinnerTreeKey(winKey, &winIp, &winPriority, &winHopCount, &winSpiderTimeMS, &winUh48);
+			parseWinnerTreeKey(winKey, &winIp, &winPriority, &winSpiderTimeMS, &winUh48);
 
 			// sanity
 			if (winIp != firstIp) gbshutdownAbort(true);

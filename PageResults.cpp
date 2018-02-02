@@ -2474,14 +2474,6 @@ static bool printResult(State0 *st, int32_t ix, int32_t *numPrintedSoFar) {
 		sb->safePrintf("\",\n");
 	}
 
-
-	if ( si->m_format == FORMAT_XML )
-		sb->safePrintf("\t\t<hopCount>%" PRId32"</hopCount>\n",
-			       (int32_t)mr->m_hopcount);
-	if ( si->m_format == FORMAT_JSON )
-		sb->safePrintf("\t\t\"hopCount\":%" PRId32",\n",(int32_t)mr->m_hopcount);
-
-
 	// now the last spidered date of the document
 	time_t ts = mr->m_lastSpidered;
 	if(si->m_format == FORMAT_HTML && ts>0) {
@@ -3201,7 +3193,6 @@ static bool printResult(State0 *st, int32_t ix, int32_t *numPrintedSoFar) {
 	sb->safePrintf("<tr><td colspan=10><b><center>Final score</center></b></td></tr>");
 	sb->safePrintf("<tr><td>DocId</td><td>%" PRId64"</td></tr>", dp->m_docId);
 	sb->safePrintf("<tr><td>Site</td><td>%s</td></tr>", mr->ptr_site);
-	sb->safePrintf("<tr><td>Hopcount</td><td>%" PRId32 "</td></tr>", (int32_t)mr->m_hopcount);
 	sb->safePrintf("<tr><td>Language</td><td><font color=green><b>%s</b></font></td></tr>", getLanguageString(mr->m_language)); // use page language
 	sb->safePrintf("<tr><td>Language boost</td><td><font color=green><b>%.01f</b></font></td></tr>", langBoost);
 	sb->safePrintf("<tr><td>Country</td><td>%s</td></tr>", cc);

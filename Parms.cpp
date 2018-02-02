@@ -6289,8 +6289,6 @@ void Parms::init ( ) {
 	m->m_desc  = "List of urls to index. One per line or space separated. "
 		"If your url does not index as you expect you "
 		"can check it's spider history by doing a url: search on it. "
-		"Added urls will have a "
-		"<a href=\"/admin/filters#hopcount\">hopcount</a> of 0. "
 		"Added urls will match the <i><a href=\"/admin/filters#isaddurl\">"
 		"isaddurl</a></i> directive on "
 		"the url filters page. "
@@ -6360,8 +6358,6 @@ void Parms::init ( ) {
 		"<a href=\"/admin/sites\">site list</a>. You can "
 		"change that behavior in the <a href=\"/admin/filters\">url "
 		"filters</a> if you want. "
-		"Injected urls will have a "
-		"<a href=\"/admin/filters#hopcount\">hopcount</a> of 0. "
 		"The injection api is described on the "
 		"<a href=\"/admin/api\">api</a> page. "
 		"Make up a fake url if you are injecting content that "
@@ -6471,15 +6467,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN; // | PF_API
 	m->m_page  = PAGE_INJECT;
 	simple_m_set_checkbox(InjectionRequest,m_doConsistencyTesting);
-	m++;
-
-	m->m_title = "hop count";
-	m->m_desc  = "Use this hop count when injecting the page.";
-	m->m_cgi   = "hopcount";
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN; // | PF_API
-	m->m_page  = PAGE_INJECT;
-	simple_m_set(InjectionRequest,m_hopCount);
 	m++;
 
 	m->m_title = "url IP";
@@ -11408,21 +11395,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "belongs to ruleset 33. Only for assigning to "
 			  "spider priority or a banned ruleset.</td></tr>"
 			  */
-
-			  "<tr class=poo><td><a name=hopcount></a>"
-			  "hopcount<4 && iswww</td>"
-			  "<td>Matches if document has a hop count of 4, and "
-			  "is a \"www\" url (or domain-only url).</td></tr>"
-
-			  "<tr class=poo><td>hopcount</td>"
-			  "<td>All root urls, those that have only a single "
-			  "slash for their path, and no cgi parms, have a "
-			  "hop count of 0. Also, all RSS urls "
-			  "and site roots (as defined in the "
-			  "site rules table) have a hop count of 0. Their "
-			  "outlinks have a hop count of 1, and the outlinks "
-			  "of those outlinks a hop count of 2, etc."
-			  "</td></tr>"
 
 			  "<tr class=poo><td>sitepages</td>"
 			  "<td>The number of pages that are currently indexed "

@@ -13,10 +13,6 @@
 // . mmmmmmmm mmmmmm0N 00000000 000000ss N = 1 if it was added to existing page
 // . ssssssss ssssssss ssssssss sssssshZ s = sitehash32 of linker
 //   m = discovery date in days since jan 1
-//   
-// NOTE: the "c" bits were the hopcount of the inlinker, but we changed
-// them to the lower ip byte so steve can show the # of unique ips linking
-// to your page or site.
 //
 // The ip is it network order (the top 24 bit that is. The low 8 bits are a separate field)
 
@@ -410,8 +406,7 @@ class Inlink {
 	uint16_t   m_outlinkInComment : 1 ;
 	uint16_t   m_isReserved       : 1 ; // was u-n-i-c-o-d-e- bit
 	uint16_t   m_isLinkSpam       : 1 ;
-	// if we imported it from the old LinkInfo. helps us preserve rssInfo,
-	// hopcounts, etc.
+	// if we imported it from the old LinkInfo. helps us preserve rssInfo, etc.
 	uint16_t   m_recycled         : 1 ;
 	uint16_t   m_reserved4        : 1 ;
 	uint16_t   m_reserved5        : 1 ;
@@ -425,7 +420,7 @@ class Inlink {
 	uint16_t   m_country             ; // 62
 	uint8_t    m_language            ; // 64
 	char       m_siteRank; // 65
-	char       m_hopcount            ;  // 66
+	char       m_reservedc            ;  // 66
 	char       m_linkTextScoreWeight ; // 0-100% (was m_inlinkWeight) //67
 
 	const char *getUrl() const {

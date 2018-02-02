@@ -403,8 +403,7 @@ bool Msg1c::gotList ( ) {
 		// use a fake ip
 		sr.m_firstIp        =  firstIp;
 		// we are not really injecting...
-		sr.m_isInjecting    =  false;//true;
-		sr.m_hopCount       = -1;
+		sr.m_isInjecting    =  false;
 		sr.m_isPageReindex  =  1;
 		sr.m_urlIsDocId     =  1;
 		sr.m_fakeFirstIp    =  1;

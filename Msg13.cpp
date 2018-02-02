@@ -1959,9 +1959,7 @@ static bool getIframeExpandedContent(Msg13Request *r, TcpSocket *ts) {
 	int32_t firstIp = hash32n(r->ptr_url);
 	if ( firstIp == -1 || firstIp == 0 ) firstIp = 1;
 	sreq.setKey( firstIp,0LL, false );
-	sreq.m_isInjecting   = 1; 
-	sreq.m_hopCount      = 0;//m_hopCount;
-	sreq.m_hopCountValid = 1;
+	sreq.m_isInjecting   = 1;
 	sreq.m_fakeFirstIp   = 1;
 	sreq.m_firstIp       = firstIp;
 

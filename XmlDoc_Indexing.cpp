@@ -257,12 +257,6 @@ char *XmlDoc::hashAll(HashTableX *table) {
 		return (char *)1;
 	}
 
-	unsigned char *hc = (unsigned char *)getHopCount();
-	if (!hc || hc == (void *)-1) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, getHopCount returned -1");
-		return (char *)hc;
-	}
-
 	// need this for hashing
 	HashTableX *cnt = getCountTable();
 	if (!cnt) {

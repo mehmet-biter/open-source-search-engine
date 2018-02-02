@@ -31,7 +31,6 @@ class InjectionRequest {
 	bool      m_doConsistencyTesting;
 	int32_t   m_charset;
 	int32_t   m_langId;
-	int32_t   m_hopCount;
 	collnum_t m_collnum; // more reliable than m_coll
 	uint32_t  m_firstIndexed;
 	uint32_t  m_lastSpidered;

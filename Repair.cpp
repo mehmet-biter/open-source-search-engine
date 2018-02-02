@@ -1365,8 +1365,6 @@ bool Repair::injectTitleRecSmall(char *titleRec, int32_t titleRecSize) {
 	sis->sreq.m_hostHash32    = url->getHostHash32();
 	sis->sreq.m_domHash32     = url->getDomainHash32();
 	sis->sreq.m_siteHash32    = url->getHostHash32();
-	sis->sreq.m_hopCount      = xd.m_hopCountValid ? xd.m_hopCount : 0;
-	sis->sreq.m_hopCountValid = xd.m_hopCountValid;
 	sis->sreq.m_addedTime     = xd.m_firstIndexedDate;
 	if(xd.m_siteNumInlinksValid)
 		sis->sreq.m_siteNumInlinks = xd.m_siteNumInlinks;

@@ -2599,7 +2599,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 						"%s"
 						"version=%02" PRId32" "
 						//"maxLinkTextWeight=%06" PRIu32"%% "
-						"hc=%" PRId32" "
 						"redir=%s "
 						"url=%s "
 						"firstdup=1 "
@@ -2623,7 +2622,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 						foo,
 						(int32_t)xd->m_version,
 						//ms,
-						(int32_t)xd->m_hopCount,
 						ru,
 						u->getUrl() ,
 						shard );
@@ -2674,7 +2672,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 				"numLinkTexts=%04" PRId32" "
 				"%s"
 				"version=%02" PRId32" "
-				"hc=%" PRId32" "
 				"shard=%" PRId32" "
 				"metadatasize=%" PRId32" "
 				"redir=%s "
@@ -2693,7 +2690,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 				info->getNumGoodInlinks(),
 				foo,
 				(int32_t)xd->m_version,
-				(int32_t)xd->m_hopCount,
 				shard,
 				0,
 				ru,
@@ -5403,7 +5399,6 @@ static void dumpLinkdb(const char *coll, int32_t startFileNum, int32_t numFiles,
 			       "linkeeurlhash=0x%012" PRIx64" "
 			       "linkspam=%" PRId32" "
 			       "siterank=%02" PRId32" "
-			       //"hopcount=%03hhu "
 			       "ip32=%s "
 			       "docId=%" PRIu64" "
 			       "discovered=%" PRIu32" "
@@ -5416,7 +5411,6 @@ static void dumpLinkdb(const char *coll, int32_t startFileNum, int32_t numFiles,
 			       (int64_t)Linkdb::getLinkeeUrlHash64_uk(&k),
 			       (int32_t)Linkdb::isLinkSpam_uk(&k),
 			       (int32_t)Linkdb::getLinkerSiteRank_uk(&k),
-			       //hc,//Linkdb::getLinkerHopCount_uk(&k),
 			       iptoa((int32_t)Linkdb::getLinkerIp_uk(&k),ipbuf),
 			       docId,
 			       (uint32_t)Linkdb::getDiscoveryDate_uk(&k),

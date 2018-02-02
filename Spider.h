@@ -264,8 +264,7 @@ void getSpiderStatusMsg(const CollectionRec *cx, const char **msg, spider_status
 // stores one entry for each unique IP, so it tries to store
 // the entry with the earliest computed scheduled spider time, but if 
 // some times are all BEFORE the current time, it will resolve conflicts
-// by preferring those with the highest priority. Tied spider priorities
-// should be resolved by minimum hopCount probably. 
+// by preferring those with the highest priority.
 //
 // If the spidertime of the URL is overdue then evalIpLoop() will NOT add
 // it to waiting tree, but will add it to doledb directly to make it available
@@ -480,11 +479,7 @@ public:
 	// . this is zero if none or invalid
 	int32_t    m_contentHash32;
 
-	// . each request can have a different hop count
-	// . this is only valid if m_hopCountValid is true!
-	// . i made this a int16_t from int32_t to support m_parentLangId etc above
-	int16_t   m_hopCount;
-	
+	int16_t   m_reservedb7a;
 	uint8_t m_reservedb8;
 
 	unsigned char    m_reserved2k:1;
@@ -501,7 +496,7 @@ public:
 	// our bit flags
 	//
 
-	unsigned    m_hopCountValid:1;
+	unsigned    m_reserved2l:1;
 
 	// are we a request/reply from the add url page?
 	unsigned    m_isAddUrl:1;
@@ -892,13 +887,11 @@ int32_t getUrlFilterNum(const class SpiderRequest *sreq,
 void parseWinnerTreeKey ( const key192_t  *k ,
 			  int32_t      *firstIp ,
 			  int32_t      *priority ,
-			  int32_t *hopCount,
 			  int64_t  *spiderTimeMS ,
 			  int64_t *uh48 );
 
 key192_t makeWinnerTreeKey ( int32_t firstIp ,
 			     int32_t priority ,
-			     int32_t hopCount,
 			     int64_t spiderTimeMS ,
 			     int64_t uh48 );
 

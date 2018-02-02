@@ -143,7 +143,6 @@ public:
 	char       m_contentType         ;
 	char       m_siteRank            ;
 	bool       m_isBanned            ;
-	char       m_hopcount            ;
 	char       m_recycled            ;
 	uint8_t    m_language            ;
 	uint16_t   m_country             ;
