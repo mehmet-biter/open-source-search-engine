@@ -43,6 +43,7 @@ HttpMime::HttpMime () {
 	memset(m_buf, 0, sizeof(m_buf));
 	m_mimeLen = 0;
 	m_contentEncoding = 0;
+	m_fakeCurrentTime = false;
 
 	reset(); 
 }
@@ -57,8 +58,9 @@ void HttpMime::reset ( ) {
 	m_nextLineStartPos = 0;
 	m_attributeStartPos = 0;
 
-	m_currentTime = time(NULL);
-	m_fakeCurrentTime = false;
+	if (!m_fakeCurrentTime) {
+		m_currentTime = time(NULL);
+	}
 
 	m_status = -1;
 	m_contentLen = -1;
@@ -85,27 +87,7 @@ bool HttpMime::set ( const char *buf , int32_t bufLen , Url *url ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufLen);
 #endif
-	// reset some stuff
-	m_mime = NULL;
-	m_currentLine = NULL;
-	m_currentLineLen = 0;
-	m_valueStartPos = 0;
-	m_nextLineStartPos = 0;
-	m_attributeStartPos = 0;
-
-	if (!m_fakeCurrentTime) {
-		m_currentTime = time(NULL);
-	}
-
-	m_contentLen = -1;
-	m_content = NULL;
-	m_mimeLen = 0;
-	m_contentType = CT_HTML;
-	m_contentEncoding = ET_IDENTITY;
-	m_charset = NULL;
-	m_charsetLen = 0;
-
-	m_cookies.clear();
+	reset();
 
 	// at the very least we should have a "HTTP/x.x 404\[nc]"
 	if ( bufLen < 13 ) {
