@@ -11298,19 +11298,6 @@ static bool isSiteRootFunc ( const char *u , const char *site ) {
 	return false;
 }
 
-static bool isSiteRootFunc3 ( const char *u , int32_t siteRootHash32 ) {
-	// get length of each
-	int32_t ulen = strlen(u);
-	// remove trailing /
-	if ( u[ulen-1] == '/' ) ulen--;
-	// skip http:// or https://
-	if ( strncmp(u,"http://" ,7)==0 ) { u += 7; ulen -= 7; }
-	if ( strncmp(u,"https://",8)==0 ) { u += 8; ulen -= 8; }
-	// now they must match exactly
-	int32_t sh32 = hash32(u,ulen);
-	return ( sh32 == siteRootHash32 );
-}
-
 char *XmlDoc::getIsSiteRoot ( ) {
 	if ( m_isSiteRootValid ) return &m_isSiteRoot2;
 	// get our site
@@ -14897,9 +14884,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 
 		if ( min >= 0 && ksni < min )
 			ksni = min;
-
-		// get this
-		bool issiteroot = isSiteRootFunc3 ( s , linkSiteHashes[i] );
 
 		// get it quick
 		int32_t domHash32    = url.getDomainHash32();
