@@ -17,10 +17,6 @@ void ucResetMaps();
 iconv_t gbiconv_open(const char *tocode, const char *fromcode) ;
 int gbiconv_close(iconv_t cd) ;
 
-int32_t ucToAny(char *outbuf, int32_t outbuflen, const char *charset_out,
-		const char *inbuf, int32_t inbuflen, const char *charset_in,
-		int32_t ignoreBadChars);
-
 // table for decoding utf8...says how many bytes in the character
 // based on value of first byte.  0 is an illegal value
 static const int bytes_in_utf8_code[] = {
@@ -223,12 +219,9 @@ inline char *getPrevUtf8Char ( char *p , char *start ) {
 	return NULL;
 }
 
-inline int32_t ucToUtf8(char *outbuf, int32_t outbuflen,
-			const char *inbuf, int32_t inbuflen,
-			const char *charset, int32_t ignoreBadChars) {
-  return ucToAny(outbuf, outbuflen, "UTF-8",
-		 inbuf, inbuflen, charset, ignoreBadChars);
-}
+int32_t ucToUtf8(char *outbuf, int32_t outbuflen,
+		const char *inbuf, int32_t inbuflen,
+		const char *charset, int32_t ignoreBadChars);
 
 // Encode a code point in UTF-8
 int32_t	utf8Encode(UChar32 c, char* buf);

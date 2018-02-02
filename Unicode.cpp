@@ -175,7 +175,7 @@ const char *ucDetectBOM(const char *buf, int32_t bufsize){
 	return NULL;
 }
 
-int32_t ucToAny(char *outbuf, int32_t outbufsize, const char *charset_out,
+static int32_t ucToAny(char *outbuf, int32_t outbufsize, const char *charset_out,
 		const char *inbuf, int32_t inbuflen, const char *charset_in,
 		 int32_t ignoreBadChars ){
 	if (inbuflen == 0) return 0;
@@ -288,6 +288,13 @@ done:
 	}
 	if (res < 0 && g_errno) return 0; 
 	return len ;
+}
+
+
+int32_t ucToUtf8(char *outbuf, int32_t outbuflen,
+		const char *inbuf, int32_t inbuflen,
+		const char *charset, int32_t ignoreBadChars) {
+  return ucToAny(outbuf, outbuflen, "UTF-8", inbuf, inbuflen, charset, ignoreBadChars);
 }
 
 int32_t stripAccentMarks (char *outbuf, int32_t outbufsize,
