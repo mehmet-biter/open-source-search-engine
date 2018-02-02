@@ -956,7 +956,7 @@ int32_t to_lower_utf8(char *dst, const char *src) {
 	// convert to a code point
 	UChar32 x = utf8Decode(src);
 	// covert to lower
-	UChar32 y = ucToLower ( x );
+	UChar32 y = UnicodeMaps::to_lower(x);
 	// put it back to utf8. return bytes stored.
 	return utf8Encode(y, dst);
 }
@@ -976,30 +976,6 @@ int32_t to_lower_utf8(char *dst, char * /*dstEnd*/, const char *src ) {
 	// return bytes written
 	return dst - dstart;
 }
-
-int32_t to_upper_utf8(char *dst, const char *src) {
-	if(is_ascii3(*src)) {
-		*dst = to_upper_a(*src);
-		return 1;
-	}
-	UChar32 x = utf8Decode(src);
-	UChar32 y = ucToUpper(x);
-	return utf8Encode(y, dst);
-}
-// currently unused
-// int32_t to_upper_utf8(char *dst, char *src) {
-// 	// if in ascii do it quickly
-// 	if(is_ascii3(*src)) {
-// 		*dst = to_upper_a ( *src );
-// 		return 1;
-// 	}
-// 	// convert to a code point
-// 	UChar32 x = utf8Decode(src);
-// 	// covert to lower
-// 	UChar32 y = ucToUpper(x);
-// 	// put it back to utf8. return bytes stored.
-// 	return utf8Encode(y, dst);
-// }
 
 
 #include "HttpMime.h" // CT_HTML

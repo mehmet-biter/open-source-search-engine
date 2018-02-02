@@ -152,7 +152,7 @@ static inline uint64_t hash64Lower_utf8 ( const char *p, int32_t len, uint64_t s
 		// otherwise, lower case it
 		x = utf8Decode((char *)p);
 		// convert to lower
-		y = ucToLower (x);
+		y = UnicodeMaps::to_lower(x);
 		// back to utf8
 		char tmp[4];
 		char ncs = utf8Encode ( y , tmp );
@@ -202,7 +202,7 @@ static inline uint64_t hash64Lower_utf8_nospaces ( const char *p, int32_t len  )
 		// otherwise, lower case it
 		x = utf8Decode((char *)p);
 		// convert to lower
-		y = ucToLower (x);
+		y = UnicodeMaps::to_lower(x);
 		// back to utf8
 		char tmp[4];
 		char ncs = utf8Encode ( y , tmp );
@@ -255,7 +255,7 @@ static inline uint64_t hash64Lower_utf8_cont ( const char *p,
 		x = utf8Decode((char *)p);
 
 		// convert to lower
-		y = ucToLower (x);
+		y = UnicodeMaps::to_lower(x);
 
 		// back to utf8
 		char tmp[4];
@@ -328,7 +328,7 @@ static inline uint64_t hash64Lower_utf8 ( const char *p ) {
 		// otherwise, lower case it
 		x = utf8Decode(p);
 		// convert to lower
-		y = ucToLower (x);
+		y = UnicodeMaps::to_lower(x);
 		// back to utf8
 		char tmp[4];
 		char ncs = utf8Encode ( y , (char *)tmp );

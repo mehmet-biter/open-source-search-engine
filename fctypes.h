@@ -64,7 +64,6 @@ bool has_alpha_utf8(const char *s, const char *send);
 int32_t to_lower_utf8        (char *dst , const char *src ) ;
 int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src ) ;
 int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src, const char *srcEnd) ;
-int32_t to_upper_utf8(char *dst, const char *src);
 
 // . get the # of words in this string
 int32_t      getNumWords ( char *s , int32_t len ) ;
@@ -226,7 +225,7 @@ inline bool is_lower_utf8 ( const char *src ) {
 	// convert to a code point
 	UChar32 x = utf8Decode(src);
 	// is this codepoint lower?
-	return ucIsLower ( x );
+	return UnicodeMaps::is_lowercase(x);
 }
 
 inline bool is_upper_utf8 ( const char *src ) {
@@ -235,7 +234,7 @@ inline bool is_upper_utf8 ( const char *src ) {
 	// convert to a code point
 	UChar32 x = utf8Decode(src);
 	// is this codepoint upper?
-	return ucIsUpper ( x );
+	return UnicodeMaps::is_uppercase(x);
 }
 
 inline bool is_alnum_utf8 ( const char *src ) {
@@ -244,7 +243,8 @@ inline bool is_alnum_utf8 ( const char *src ) {
 	// convert to a code point
 	UChar32 x = utf8Decode(src);
 	// is this codepoint lower?
-	return ucIsAlnum ( x );
+	return UnicodeMaps::is_wordchar(x);
+	//should probably be: return UnicodeMaps::is_alfanumeric(x);
 }
 
 bool is_alnum_utf8_string(const char *s, const char *send);
@@ -256,7 +256,8 @@ inline bool is_alnum_utf8 ( const unsigned char *src ) {
 	// convert to a code point
 	UChar32 x = utf8Decode((char *)src);
 	// is this codepoint lower?
-	return ucIsAlnum ( x );
+	return UnicodeMaps::is_wordchar(x);
+	//should probably be: return UnicodeMaps::is_alfanumeric(x);
 }
 
 inline bool is_alpha_utf8 ( const char *src ) {
@@ -265,17 +266,15 @@ inline bool is_alpha_utf8 ( const char *src ) {
 	// convert to a code point
 	UChar32 x = utf8Decode(src);
 	// is this codepoint lower?
-	return ucIsAlpha ( x );
+	return UnicodeMaps::is_alphabetic(x);
 }
 
-inline bool is_punct_utf8 ( const char *src ) {
+inline bool is_punct_utf8 ( const char *src ) { //todo: misnamed/misused
 	// if in ascii do it quickly
 	if ( is_ascii3(*src) ) return is_punct_a ( *src );
 	// convert to a code point
 	UChar32 x = utf8Decode(src);
-	// is this codepoint lower?
-	if ( ucIsAlnum ( x ) ) return false;
-	else                   return true;
+	return !UnicodeMaps::is_wordchar(x); //todo: should be is_punct(x);
 }
 
 inline bool is_wspace_utf8 ( const uint8_t *src ) {
@@ -284,7 +283,7 @@ inline bool is_wspace_utf8 ( const uint8_t *src ) {
 	// convert to a code point
 	UChar32 x = utf8Decode((char *)src);
 	// is this codepoint a whitespace?
-	return ucIsWhiteSpace( x );
+	return UnicodeMaps::is_whitespace(x);
 }
 
 inline bool is_wspace_utf8 ( const char *src ) {
@@ -293,13 +292,13 @@ inline bool is_wspace_utf8 ( const char *src ) {
 	// convert to a code point
 	UChar32 x = utf8Decode((char *)src);
 	// is this codepoint a whitespace?
-	return ucIsWhiteSpace( x );
+	return UnicodeMaps::is_whitespace(x);
 }
 
 // use ucIsAlnum instead...
 static inline bool ucIsWordChar_fast(UChar32 c) {
 	if (!(c & 0xffffff80)) return is_alnum_a(c);
-	return ucIsWordChar(c);
+	return UnicodeMaps::is_wordchar(c);
 }
 
 // don't allow "> in our input boxes

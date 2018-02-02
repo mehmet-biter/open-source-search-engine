@@ -3,6 +3,7 @@
 #include "Words.h"
 #include "Xml.h"
 #include "Unicode.h" // getUtf8CharSize()
+#include "unicode/UCEnums.h"
 #include "StopWords.h"
 #include "Speller.h"
 #include "HashTableX.h"
@@ -219,9 +220,8 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 
 	bool hadApostrophe = false;
 
-	UCScript oldScript = ucScriptCommon;
-	UCScript saved;
-	UCProps props;
+	Unicode::script_t oldScript = Unicode::script_t::Common;
+	Unicode::script_t saved;
 
  uptop:
 
@@ -250,7 +250,7 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 				}
 
 				// update
-				oldScript = ucScriptCommon;
+				oldScript = Unicode::script_t::Common;
 
 				// otherwise, stop we got alnum
 				break;
@@ -265,8 +265,8 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 			}
 
 			// update first though
-			oldScript = ucGetScript ( c );
-			if ( oldScript == ucScriptLatin ) oldScript = ucScriptCommon;
+			oldScript = UnicodeMaps::query_script(c);
+			if ( oldScript == Unicode::script_t::Latin ) oldScript = Unicode::script_t::Common;
 
 			// then stop
 			break;
@@ -293,31 +293,32 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 			// accumulate alnum chars
 			if ( is_alnum_a(s[i]) ) continue;
 			// update
-			oldScript = ucScriptCommon;
+			oldScript = Unicode::script_t::Common;
 			// otherwise, stop we got punct
 			break;
 		}
 		// get the code point of the utf8 char
 		UChar32 c = utf8Decode ( s+i );
 		// get props
-		props = ucProperties ( c );
+		uint32_t props = UnicodeMaps::query_properties(c);
 		// good stuff?
-		if ( props & (UC_IGNORABLE|UC_EXTEND) ) continue;
+		if(props&(Unicode::White_Space|Unicode::Extender)) continue;
+		//something abotu ignorable
 		// stop? if UC_WORCHAR is set, that means its an alnum
-		if ( ! ( props & UC_WORDCHAR ) ) {
+		if(!UnicodeMaps::is_wordchar(c)) {
 			// reset script between words
-			oldScript = ucScriptCommon;
+			oldScript = Unicode::script_t::Common;
 			break;
 		}
 		// save it
 		saved = oldScript;
 		// update here
-		oldScript = ucGetScript(c);
+		oldScript = UnicodeMaps::query_script(c);
 		// treat ucScriptLatin (30) as common so we can have latin1
 		// like char without breaking the word!
-		if ( oldScript == ucScriptLatin ) oldScript = ucScriptCommon;
+		if ( oldScript == Unicode::script_t::Latin ) oldScript = Unicode::script_t::Common;
 		// stop on this crap too i guess. like japanes chars?
-		if ( props & ( UC_IDEOGRAPH | UC_HIRAGANA | UC_THAI ) ) {
+		if((props&Unicode::Ideographic) || oldScript==Unicode::script_t::Hiragana || oldScript==Unicode::script_t::Thai) {
 			// include it
 			i += getUtf8CharSize(s+i);
 			// but stop
@@ -459,15 +460,15 @@ unsigned char getCharacterLanguage ( const char *utf8Char ) {
 	if ( cs == 1 ) return langUnknown;
 	// convert to 32 bit unicode
 	UChar32 c = utf8Decode ( utf8Char );
-	UCScript us = ucGetScript ( c );
+	Unicode::script_t us = UnicodeMaps::query_script(c);
 	// arabic? this also returns for persian!! fix?
-	if ( us == ucScriptArabic ) 
+	if ( us == Unicode::script_t::Arabic ) 
 		return langArabic;
-	if ( us == ucScriptCyrillic )
+	if ( us == Unicode::script_t::Cyrillic )
 		return langRussian;
-	if ( us == ucScriptHebrew )
+	if ( us == Unicode::script_t::Hebrew )
 		return langHebrew;
-	if ( us == ucScriptGreek )
+	if ( us == Unicode::script_t::Greek )
 		return langGreek;
 
 	return langUnknown;

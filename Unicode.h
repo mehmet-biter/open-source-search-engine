@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <stdio.h>
-#include "UnicodeProperties.h"
+#include "unicode/UCMaps.h"
 #include <iconv.h>
 
 // Initialize unicode word parser
