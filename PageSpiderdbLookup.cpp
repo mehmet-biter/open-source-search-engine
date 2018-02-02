@@ -325,7 +325,7 @@ static void generatePageHtml(int32_t shardNum, int32_t firstIp, int32_t robotsSh
 	}
 }
 
-static void generatePageJSON(int32_t shardNum, int32_t firstIp, int32_t robotsShardNum, const SpiderRequest *spiderRequest, const SpiderReply *spiderReply, SafeBuf *sb) {
+static void generatePageJSON(int32_t shardNum, int32_t robotsShardNum, const SpiderRequest *spiderRequest, const SpiderReply *spiderReply, SafeBuf *sb) {
 	sb->safePrintf("{\n");
 	if (shardNum >= 0) {
 		sb->safePrintf("\"shard\": %u,\n", static_cast<uint32_t>(shardNum));
@@ -372,49 +372,74 @@ static void generatePageJSON(int32_t shardNum, int32_t firstIp, int32_t robotsSh
 			sb->safePrintf("]");
 		}
 	}
-	if (shardNum >= 0) {
-		char ipbuf[16];
-		iptoa(firstIp,ipbuf);
-		sb->safePrintf(",\n\"firstIp\": \"%s\"", iptoa(firstIp, ipbuf));
-	}
-
-
 
 	if (spiderRequest) {
 		sb->safePrintf(",\n\"spiderRequest\": {\n");
 
 		char ipbuf[16];
-
 		sb->safePrintf("\t\"firstIp\": \"%s\",\n", iptoa(spiderRequest->m_firstIp, ipbuf));
+		sb->safePrintf("\t\"hostHash32\": %u,\n", spiderRequest->m_hostHash32);
+		sb->safePrintf("\t\"domHash32\": %u,\n", spiderRequest->m_domHash32);
+		sb->safePrintf("\t\"siteHash32\": %u,\n", spiderRequest->m_siteHash32);
+		sb->safePrintf("\t\"siteNumInlinks\": %d,\n", spiderRequest->m_siteNumInlinks);
 		sb->safePrintf("\t\"addedTime\": %u,\n", spiderRequest->m_addedTime);
-		sb->safePrintf("\t\"priority\": %d,\n", spiderRequest->m_priority);
+		sb->safePrintf("\t\"pageNumInlinks\": %hhu,\n", spiderRequest->m_pageNumInlinks);
+		sb->safePrintf("\t\"sameErrCount\": %hhu,\n", spiderRequest->m_sameErrCount);
+		sb->safePrintf("\t\"version\": %hhu,\n", spiderRequest->m_version);
+		sb->safePrintf("\t\"discoveryTime\": %u,\n", spiderRequest->m_discoveryTime);
 		sb->safePrintf("\t\"prevErrCode\": %d,\n", spiderRequest->m_prevErrCode);
-		sb->safePrintf("\t\"errCount\": %d,\n", spiderRequest->m_errCount);
+		sb->safePrintf("\t\"contentHash32\": %u,\n", spiderRequest->m_contentHash32);
+		sb->safePrintf("\t\"hopCount\": %hu,\n", spiderRequest->m_hopCount);
+		sb->safePrintf("\t\"recycleContent\": %s,\n", spiderRequest->m_recycleContent ? "true" : "false");
+		sb->safePrintf("\t\"hopCountValid\": %s,\n", spiderRequest->m_hopCountValid ? "true" : "false");
 		sb->safePrintf("\t\"isAddUrl\": %s,\n", spiderRequest->m_isAddUrl ? "true" : "false");
 		sb->safePrintf("\t\"isPageReindex\": %s,\n", spiderRequest->m_isPageReindex ? "true" : "false");
 		sb->safePrintf("\t\"isUrlCanonical\": %s,\n", spiderRequest->m_isUrlCanonical ? "true" : "false");
 		sb->safePrintf("\t\"isPageParser\": %s,\n", spiderRequest->m_isPageParser ? "true" : "false");
 		sb->safePrintf("\t\"urlIsDocId\": %s,\n", spiderRequest->m_urlIsDocId ? "true" : "false");
+		sb->safePrintf("\t\"isRSSExt\": %s,\n", spiderRequest->m_isRSSExt ? "true" : "false");
+		sb->safePrintf("\t\"isUrlPermalinkFormat\": %s,\n", spiderRequest->m_isUrlPermalinkFormat ? "true" : "false");
 		sb->safePrintf("\t\"forceDelete\": %s,\n", spiderRequest->m_forceDelete ? "true" : "false");
-		sb->safePrintf("\t\"fakeFirstIp\": %s\n", spiderRequest->m_fakeFirstIp ? "true" : "false");
-
+		sb->safePrintf("\t\"isInjecting\": %s,\n", spiderRequest->m_isInjecting ? "true" : "false");
+		sb->safePrintf("\t\"hadReply\": %s,\n", spiderRequest->m_hadReply ? "true" : "false");
+		sb->safePrintf("\t\"fakeFirstIp\": %s,\n", spiderRequest->m_fakeFirstIp ? "true" : "false");
+		sb->safePrintf("\t\"m_hasAuthorityInlink\": %s,\n", spiderRequest->m_hasAuthorityInlink ? "true" : "false");
+		sb->safePrintf("\t\"m_hasAuthorityInlinkValid\": %s,\n", spiderRequest->m_hasAuthorityInlinkValid ? "true" : "false");
+		sb->safePrintf("\t\"m_siteNumInlinksValid\": %s,\n", spiderRequest->m_siteNumInlinksValid ? "true" : "false");
+		sb->safePrintf("\t\"m_avoidSpiderLinks\": %s,\n", spiderRequest->m_avoidSpiderLinks ? "true" : "false");
+		sb->safePrintf("\t\"ufn\": %hd,\n", spiderRequest->m_ufn);
+		sb->safePrintf("\t\"priority\": %d,\n", spiderRequest->m_priority);
+		sb->safePrintf("\t\"errCount\": %d\n", spiderRequest->m_errCount);
 		sb->safePrintf("}");
 	}
 
 	if(spiderReply) {
 		sb->safePrintf(",\n\"spiderReply\": {\n");
 
+		char ipbuf[16];
+		sb->safePrintf("\t\"firstIp\": \"%s\",\n", iptoa(spiderReply->m_firstIp, ipbuf));
+		sb->safePrintf("\t\"siteHash32\": %u,\n", spiderReply->m_siteHash32);
+		sb->safePrintf("\t\"domHash32\": %u,\n", spiderReply->m_domHash32);
+		sb->safePrintf("\t\"percentChangedPerDay\": %f,\n", spiderReply->m_percentChangedPerDay);
 		sb->safePrintf("\t\"spideredTime\": %d,\n", spiderReply->m_spideredTime);
 		sb->safePrintf("\t\"errCode\": %d,\n", spiderReply->m_errCode);
-		sb->safePrintf("\t\"percentChangedPerDay\": %f,\n", spiderReply->m_percentChangedPerDay);
+		sb->safePrintf("\t\"siteNumInlinks\": %d,\n", spiderReply->m_siteNumInlinks);
+		sb->safePrintf("\t\"sameErrCount\": %hhu,\n", spiderReply->m_sameErrCount);
+		sb->safePrintf("\t\"version\": %hhu,\n", spiderReply->m_version);
 		sb->safePrintf("\t\"contentHash32\": %u,\n", spiderReply->m_contentHash32);
 		sb->safePrintf("\t\"crawlDelayMS\": %d,\n", spiderReply->m_crawlDelayMS);
 		sb->safePrintf("\t\"downloadEndTime\": %ld,\n", spiderReply->m_downloadEndTime);
 		sb->safePrintf("\t\"httpStatus\": %d,\n", spiderReply->m_httpStatus);
 		sb->safePrintf("\t\"errCount\": %d,\n", spiderReply->m_errCount);
 		sb->safePrintf("\t\"langId\": %d,\n", spiderReply->m_langId);
-		sb->safePrintf("\t\"isIndexed\": %s\n", spiderReply->m_isIndexed ? "true" : "false");
-
+		sb->safePrintf("\t\"isRSS\": %s,\n", spiderReply->m_isRSS ? "true" : "false");
+		sb->safePrintf("\t\"isPermalink\": %s,\n", spiderReply->m_isPermalink ? "true" : "false");
+		sb->safePrintf("\t\"isIndexed\": %s,\n", spiderReply->m_isIndexed ? "true" : "false");
+		sb->safePrintf("\t\"hasAuthorityInlink\": %s,\n", spiderReply->m_hasAuthorityInlink ? "true" : "false");
+		sb->safePrintf("\t\"isIndexedInvalid\": %s,\n", spiderReply->m_isIndexedINValid ? "true" : "false");
+		sb->safePrintf("\t\"hasAuthorityInlinkValid\": %s,\n", spiderReply->m_hasAuthorityInlinkValid ? "true" : "false");
+		sb->safePrintf("\t\"siteNumInlinksValid\": %s,\n", spiderReply->m_siteNumInlinksValid ? "true" : "false");
+		sb->safePrintf("\t\"fromInjectionRequest\": %s\n", spiderReply->m_fromInjectionRequest ? "true" : "false");
 		sb->safePrintf("}\n");
 	}
 
@@ -512,7 +537,7 @@ static bool sendResult(State *st) {
 			contentType = "text/html";
 			break;
 		case FORMAT_JSON:
-			generatePageJSON(shardNum, st->m_firstip, robotsShardNum, spiderRequest, spiderReply, &sb);
+			generatePageJSON(shardNum, robotsShardNum, spiderRequest, spiderReply, &sb);
 			contentType = "application/json";
 			break;
 		default:

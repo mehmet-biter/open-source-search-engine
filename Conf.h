@@ -254,7 +254,8 @@ class Conf {
 	// verify tagrec while indexing
 	bool m_verifyTagRec;
 
-	bool m_msg20FallbackToAllHosts;
+	bool m_spiderHostToQueryHostFallbackAllowed;
+	bool m_queryHostToSpiderHostFallbackAllowed;
 
 	int64_t m_docProcessDelayMs;
 	int64_t m_docProcessMaxPending;

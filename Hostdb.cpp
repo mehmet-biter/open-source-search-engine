@@ -1217,6 +1217,14 @@ Host *Hostdb::getHostWithSpideringEnabled ( uint32_t shardNum ) {
 }
 
 
+bool Hostdb::mayWeSendRequestToHost(const Host *host, msg_type_t /*msgType*/) {
+	if(!getMyHost()->m_spiderEnabled && host->m_spiderEnabled && !g_conf.m_queryHostToSpiderHostFallbackAllowed)
+		return false;
+	if(!getMyHost()->m_queryEnabled && host->m_queryEnabled && !g_conf.m_spiderHostToQueryHostFallbackAllowed)
+		return false;
+	return true;
+}
+
 // if niceness 0 can't pick noquery host/ must pick spider host.
 // if niceness 1 can't pick nospider host/ must pick query host.
 // Used to select based on PingInfo::m_udpSlotsInUseIncoming but that information is not exchanged often enough to

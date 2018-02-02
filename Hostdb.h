@@ -15,6 +15,7 @@
 #include "types.h"
 #include "rdbid_t.h"
 #include "collnum_t.h"
+#include "msgtype_t.h"
 #include "Sanity.h"
 #include "GbMutex.h"
 #include <atomic>
@@ -213,6 +214,7 @@ class Hostdb {
 	Host *getLeastLoadedInShard ( uint32_t shardNum , char niceness );
 	int32_t getHostIdWithSpideringEnabled ( uint32_t shardNum, bool answerRequired );
 	Host *getHostWithSpideringEnabled ( uint32_t shardNum );
+	bool mayWeSendRequestToHost(const Host *host, msg_type_t msgType); //spider/query split: send requests between classes of hosts?
 
 	// in the entire cluster. return host #0 if its alive, otherwise
 	// host #1, etc.

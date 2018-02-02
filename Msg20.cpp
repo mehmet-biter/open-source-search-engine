@@ -187,15 +187,6 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 		// add it if alive
 		cand[nc++] = hh;
 	}
-	if(nc==0) {
-		logDebug(g_conf.m_logDebugMsg20, "msg20: no live candidate hosts for shard %d", shardNum);
-		if(g_conf.m_msg20FallbackToAllHosts) {
-			logDebug(g_conf.m_logDebugMsg20, "msg20: No alive desired hosts in shard %d - falling back to all hosts in the shard", shardNum);
-			for(int32_t i = 0; i < allNumHosts; i++) {
-				cand[nc++] = &allHosts[i];
-			}
-		}
-	}
 	if ( nc == 0 ) {
 		log(LOG_ERROR, "msg20: error sending mcast: no queryable hosts available to handle summary/linkinfo generation in shard %d", shardNum);
 		g_errno = EBADENGINEER;

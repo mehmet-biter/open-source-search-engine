@@ -439,7 +439,8 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 			g_process.shutdownAbort(true);
 		}
 		// if we got a match and it's not dead, return it
-		if ( i < m_numHosts && ! g_hostdb.isDead ( m_host[i].m_hostPtr ) )
+		if(g_hostdb.mayWeSendRequestToHost(m_host[i].m_hostPtr,m_msgType) &&
+		   !g_hostdb.isDead(m_host[i].m_hostPtr))
 			return i;
 	}
 
@@ -466,6 +467,7 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 		uint32_t i = hashLong ( key ) % m_numHosts;
 		// if he's not dead or retired use him right away
 		if ( ! m_host[i].m_retired &&
+		     g_hostdb.mayWeSendRequestToHost(m_host[i].m_hostPtr,m_msgType) &&
 		     ! g_hostdb.isDead ( m_host[i].m_hostPtr ) )
 			return i;
 	}
@@ -474,6 +476,7 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 	Host *fh = m_host[n].m_hostPtr;
 	// if this host is not dead, use him
 	if ( ! m_host[n].m_retired &&
+	     g_hostdb.mayWeSendRequestToHost(m_host[n].m_hostPtr,m_msgType) &&
 	     ! g_hostdb.isDead(fh) )
 		return n;
 
@@ -490,6 +493,8 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 		// skip host if we've retired it
 		if ( m_host[i].m_retired ) continue;
 		// if this host is not dead use him
+		if(!g_hostdb.mayWeSendRequestToHost(m_host[i].m_hostPtr,m_msgType))
+			continue;
 		if ( !g_hostdb.isDead(h) )
 			cand[nc++] = i;
 		// pick a dead that isn't retired
@@ -896,10 +901,8 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 
 		// ok, let's give up on ENOTFOUND, because the vast majority
 		// of time it seems it is really not on the twin either...
-		if ( g_errno == ENOTFOUND && (m_msgType == msg_type_20 || m_msgType == msg_type_22)) {
-			sendToTwin = false;
-		}
-
+		if ( g_errno == ENOTFOUND )          sendToTwin = false;
+		
 		// do not send to twin if we are out of time
 		time_t now           = getTime();
 		int32_t   timeRemaining = m_startTime + m_totalTimeout - now;
