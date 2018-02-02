@@ -314,7 +314,6 @@ void XmlDoc::reset ( ) {
 	m_synBuf.reset();
 	m_images.reset();
 	m_countTable.reset();
-	m_mime.reset();
 	m_tagRec.reset();
 	m_newTagBuf.reset();
 	m_dupList.reset();
