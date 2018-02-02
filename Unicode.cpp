@@ -6,7 +6,7 @@
 
 static HashTableX s_convTable;
 
-iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
+static iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
 	// get hash for to/from
 	uint32_t hash1 = hash32Lower_a(tocode, strlen(tocode), 0);
 	uint32_t hash2 = hash32Lower_a(fromcode, strlen(fromcode),0);
@@ -51,7 +51,7 @@ iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
 	return conv;
 }
 
-int gbiconv_close(iconv_t cd) {
+static int gbiconv_close(iconv_t cd) {
 	/// @todo ALC gbiconv_close currently does nothing
 	//int val = iconv_close(cd);
 	//return val;	

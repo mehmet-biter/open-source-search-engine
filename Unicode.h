@@ -13,9 +13,6 @@ bool 	ucInit(const char *path = NULL);
 void ucResetMaps();
 
 //////////////////////////////////////////////////////
-// Converters
-iconv_t gbiconv_open(const char *tocode, const char *fromcode) ;
-int gbiconv_close(iconv_t cd) ;
 
 // table for decoding utf8...says how many bytes in the character
 // based on value of first byte.  0 is an illegal value
