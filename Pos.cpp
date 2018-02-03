@@ -3,6 +3,7 @@
 #include "Pos.h"
 #include "Words.h"
 #include "Sections.h"
+#include "TitleSummaryCodepointFilter.h"
 #include "Conf.h"
 #include "Mem.h"
 
