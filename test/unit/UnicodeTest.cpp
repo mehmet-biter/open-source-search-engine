@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
 #include "Unicode.h"
+#include "TitleSummaryCodepointFilter.h"
+
 #include <sstream>
 
 #include "Log.h"
