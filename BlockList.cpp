@@ -127,4 +127,4 @@ void BlockList<T>::swapBlockList(blocklistconst_ptr_t<T> blockList) {
 
 // explicit instantiations
 template class BlockList<std::string>;
-
+template class BlockList<uint32_t>;

@@ -9000,6 +9000,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for IpBlockList";
+	m->m_cgi   = "ltrc_ipbl";
+	simple_m_set(Conf,m_logTraceIpBlockList);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for LanguageResultOverride";
 	m->m_cgi   = "ltrc_langro";
 	simple_m_set(Conf,m_logTraceLanguageResultOverride);
