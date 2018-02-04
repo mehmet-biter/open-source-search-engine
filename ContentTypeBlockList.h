@@ -24,7 +24,7 @@
 #include <pthread.h>
 #include <vector>
 
-class ContentTypeBlockList : public BlockList {
+class ContentTypeBlockList : public BlockList<std::string> {
 public:
 	ContentTypeBlockList();
 
