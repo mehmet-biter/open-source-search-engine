@@ -41,7 +41,7 @@ public:
 protected:
 	bool load();
 
-	void addToBlockList(blocklist_ptr_t<T> &blockList, const std::string &line);
+	virtual void addToBlockList(blocklist_ptr_t<T> &blockList, const std::string &line);
 	blocklistconst_ptr_t<T> getBlockList();
 
 	const char *m_filename;

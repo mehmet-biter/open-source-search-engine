@@ -112,6 +112,11 @@ bool BlockList<T>::load() {
 
 template <class T>
 void BlockList<T>::addToBlockList(blocklist_ptr_t<T> &blockList, const std::string &line) {
+	gbshutdownLogicError();
+}
+
+template <>
+void BlockList<std::string>::addToBlockList(blocklist_ptr_t<std::string> &blockList, const std::string &line) {
 	blockList->emplace_back(line);
 }
 
