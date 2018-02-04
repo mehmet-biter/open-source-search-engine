@@ -99,7 +99,7 @@ bool BlockList<T>::load() {
 			continue;
 		}
 
-		tmpBlockList->emplace_back(line);
+		addToBlockList(tmpBlockList, line);
 		logTrace(g_conf.m_logTraceBlockList, "Adding criteria '%s' to list", line.c_str());
 	}
 
@@ -108,6 +108,11 @@ bool BlockList<T>::load() {
 
 	logTrace(g_conf.m_logTraceBlockList, "Loaded %s", m_filename);
 	return true;
+}
+
+template <class T>
+void BlockList<T>::addToBlockList(blocklist_ptr_t<T> &blockList, const std::string &line) {
+	blockList->emplace_back(line);
 }
 
 template <class T>

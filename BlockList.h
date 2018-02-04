@@ -28,12 +28,8 @@
 template <typename T> using blocklist_t = std::vector<T>;
 template <typename T> using blocklist_ptr_t = std::shared_ptr<std::vector<T>>;
 template <typename T> using blocklistconst_ptr_t = std::shared_ptr<const std::vector<T>>;
-//typedef std::vector<std::string> blocklist_t;
-//typedef std::shared_ptr<blocklist_t> blocklist_ptr_t;
-//typedef std::shared_ptr<const blocklist_t> blocklistconst_ptr_t;
 
 template<class T> class BlockList {
-//using blocklist_t = std::vector<T>,  using blocklist_ptr_t = std::shared_ptr<blocklist_t>, using blocklistconst_ptr_t = std::shared_ptr<const blocklist_t>{
 public:
 	BlockList(const char *filename);
 
@@ -45,9 +41,10 @@ public:
 protected:
 	bool load();
 
-	const char *m_filename;
-
+	void addToBlockList(blocklist_ptr_t<T> &blockList, const std::string &line);
 	blocklistconst_ptr_t<T> getBlockList();
+
+	const char *m_filename;
 
 private:
 	void swapBlockList(blocklistconst_ptr_t<T> blockList);
