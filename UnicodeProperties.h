@@ -17,19 +17,12 @@ bool saveKDecompTable(const char *baseDir = NULL) ;
 bool loadDecompTables(const char *baseDir = NULL) ;
 void resetDecompTables() ;
 
-bool     setKDValue(UChar32 c, UChar32* decomp, int32_t decompCount,
-		    bool fullComp = false);
-const UChar32 *getKDValue(UChar32 c, int32_t *decompCount, bool *fullComp = NULL);
 int32_t     recursiveKDExpand(UChar32 c, UChar32 *buf, int32_t bufSize);
 
 
 
 static inline bool ucIsWhiteSpace(UChar32 c);
-static inline bool ucIsIdeograph(UChar32 c);
-static inline bool ucIsPunct(UChar32 c);
 static inline bool ucIsWordChar(UChar32 c);
-static inline bool ucIsIgnorable(UChar32 c);
-static inline bool ucIsExtend(UChar32 c);
 
 
 // Parse Properties
@@ -205,26 +198,6 @@ static inline bool ucIsWhiteSpace(UChar32 c) {
 	return *(UCProps*)p & UC_WHITESPACE;	
 }
 
-static inline bool ucIsIdeograph(UChar32 c) {
-	const void *p = g_ucProps.getValue(c);
-	if (!p) return false;
-	return *(UCProps*)p & UC_IDEOGRAPH;
-}
-
-static inline bool ucIsPunct(UChar32 c) {
-	return !ucIsWordChar(c);
-}
-
-static inline bool ucIsIgnorable(UChar32 c) {
-	const void *p = g_ucProps.getValue(c);
-	if (!p) return false;
-	return *(UCProps*)p & UC_IGNORABLE;
-}
-static inline bool ucIsExtend(UChar32 c) {
-	const void *p = g_ucProps.getValue(c);
-	if (!p) return false;
-	return *(UCProps*)p & UC_EXTEND;
-}
 
 
 static inline UChar32 ucToLower(UChar32 c) {
