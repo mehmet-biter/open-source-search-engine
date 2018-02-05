@@ -5,11 +5,7 @@
 #include "UCPropTable.h"
 
 
-#ifndef USE_ICU
 typedef uint32_t  UChar32;
-typedef uint16_t UChar;
-typedef unsigned char  UChar8;   // utf-8
-#endif
 typedef uint16_t UCProps;
 typedef unsigned char  UCScript;
 

@@ -224,7 +224,6 @@ static int32_t ucToAny(char *outbuf, int32_t outbufsize, const char *charset_out
 				return 0; // other error
 			}
 			len += TMP_SIZE-outRemaining;
-			//len >>= 1; // sizeof UChar
 			len += 1; // NULL terminated
 			gbiconv_close(cd);
 			return len;			
