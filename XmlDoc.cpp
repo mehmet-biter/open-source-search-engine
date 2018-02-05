@@ -10456,14 +10456,14 @@ char **XmlDoc::getUtf8Content ( ) {
 				g_process.shutdownAbort(true); }
 			return &ptr_utf8Content;
 		}
-		// if could not find title rec and we are docid-based then we can't go any further!!
-		// it should be there if trying to delete as well!
-		if (m_setFromDocId || m_deleteFromIndex) {
-			log("xmldoc: null utf8 content for docid-based titlerec (d=%" PRId64") lookup which was not found", m_docId);
-			m_indexCode = ENOTFOUND;
-			m_indexCodeValid = true;
-			m_useSpiderdb = false;
-
+		// if could not find title rec and we are docid-based then
+		// we can't go any further!!
+		if ( m_setFromDocId ||
+		     // it should be there if trying to delete as well!
+		     m_deleteFromIndex ) {
+			log("xmldoc: null utf8 content for docid-based "
+			    "titlerec (d=%" PRId64") lookup which was not found",
+			    m_docId);
 			ptr_utf8Content = NULL;
 			size_utf8Content = 0;
 			m_utf8ContentValid = true;
