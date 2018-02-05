@@ -169,11 +169,6 @@ static inline bool ucIsAlpha(UChar32 c) {
 }
 
 
-static inline bool ucIsDigit(UChar32 c) {
-	const void *p = g_ucProps.getValue(c);
-	if (!p) return false;
-	return *(UCProps*)p & UC_DIGIT;
-}
 static inline bool ucIsAlnum(UChar32 c) {
 	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;
