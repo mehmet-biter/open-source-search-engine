@@ -42,6 +42,7 @@
 #include "ScopedLock.h"
 #include "Mem.h"
 #include "UrlBlockCheck.h"
+#include "utf8_convert.h"
 #include <fcntl.h>
 #include <algorithm>
 #include "GbEncoding.h"

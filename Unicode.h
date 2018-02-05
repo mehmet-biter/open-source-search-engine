@@ -18,10 +18,6 @@ void ucResetMaps();
 
 
 
-int32_t ucToUtf8(char *outbuf, int32_t outbuflen,
-		const char *inbuf, int32_t inbuflen,
-		const char *charset, int32_t ignoreBadChars);
-
 // Try to detect the Byte Order Mark of a Unicode Document
 const char *	ucDetectBOM(const char *buf, int32_t bufsize);
 

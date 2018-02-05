@@ -8,6 +8,7 @@
 #include "Tagdb.h"
 #include "Posdb.h"
 #include "Titledb.h"
+#include "utf8_convert.h"
 #include "Sections.h"
 #include "Spider.h"
 #include "SpiderColl.h"
@@ -994,6 +995,7 @@ void Process::resetAll ( ) {
 	g_spiderCache     .reset();
 	g_jobScheduler    .finalize();
 	ucResetMaps();
+	utf8_convert_finalize();
 	g_profiler        .reset();
 
 	// reset disk page caches
