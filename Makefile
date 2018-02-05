@@ -51,7 +51,7 @@ OBJS_O2 = \
 	Rdb.o RdbBase.o \
 	Sections.o Spider.o SpiderCache.o SpiderColl.o SpiderLoop.o StopWords.o Summary.o \
 	Title.o \
-	UCPropTable.o UdpServer.o Unicode.o UnicodeProperties.o \
+	UCPropTable.o UdpServer.o Unicode.o UnicodeProperties.o utf8.o \
 	Words.o \
 	Xml.o XmlDoc.o XmlDoc_Indexing.o XmlNode.o \
 
