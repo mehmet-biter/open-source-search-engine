@@ -125,14 +125,18 @@ void PageTemperatureRegistry::unload() {
 
 
 unsigned PageTemperatureRegistry::query_page_temperature_internal(uint64_t docid) const {
+	return query_page_temperature_internal(docid,default_temperature);
+}
+
+
+unsigned PageTemperatureRegistry::query_page_temperature_internal(uint64_t docid, unsigned raw_default) const {
 	unsigned idx = ((uint32_t)docid) % hash_table_size;
 	while(slot[idx]) {
 		if(slot[idx]>>26 == docid)
 			return slot[idx]&0x3ffffff;
 		idx = (idx+1)%hash_table_size;
 	}
-	//Unregistered page. Return an default temperature
-	return default_temperature;
+	return raw_default;
 }
 
 
@@ -144,6 +148,16 @@ double PageTemperatureRegistry::query_page_temperature(uint64_t docid, double ra
 	//Then scale to a number in the rangte [0..1]
 	//It is a bit annoying to do this computation for each lookup but it saves memory
 //	return ((double)(temperature_26bit - min_temperature)) / temperature_range_for_scaling;
+	return scale_linear(temperature_26bit_log, min_temperature_log, max_temperature_log, range_min, range_max);
+}
+
+double PageTemperatureRegistry::query_page_temperature(uint64_t docid, double range_min, double range_max, unsigned raw_default) const {
+	if(hash_table_size==0)
+		return scale_linear(log(raw_default), min_temperature_log, max_temperature_log, range_min, range_max);
+
+	double temperature_26bit_log = log((double)query_page_temperature_internal(docid,raw_default));
+	//Then scale to a number in the rangte [0..1]
+	//It is a bit annoying to do this computation for each lookup but it saves memory
 	return scale_linear(temperature_26bit_log, min_temperature_log, max_temperature_log, range_min, range_max);
 }
 
