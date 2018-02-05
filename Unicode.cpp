@@ -58,7 +58,7 @@ static int gbiconv_close(iconv_t cd) {
 	return 0;
 }
 
-void gbiconv_reset(){
+static void gbiconv_reset() {
 	for (int32_t i=0;i<s_convTable.getNumSlots();i++){
 		//int32_t key = *(int32_t *)s_convTable.getKey(i);
 		//if (!key) continue;
@@ -334,6 +334,5 @@ int32_t stripAccentMarks (char *outbuf, int32_t outbufsize,
 
 
 void resetUnicode ( ) {
-	//s_convTable.reset();
 	gbiconv_reset();
 }

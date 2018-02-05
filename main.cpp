@@ -35,6 +35,7 @@
 #include "HighFrequencyTermShortcuts.h"
 #include "PageTemperatureRegistry.h"
 #include "Docid2Siteflags.h"
+#include "SiteMedianPageTemperatureRegistry.h"
 #include "UrlRealtimeClassification.h"
 #include "IPAddressChecks.h"
 #include <sys/resource.h>  // setrlimit
@@ -1410,6 +1411,9 @@ int main2 ( int argc , char *argv[] ) {
 	//load docid->flags/sitehash map
 	g_d2fasm.load();
 
+	//load sitehash32->default page temperature
+	g_smptr.load();
+	
 	// load block lists
 	g_dnsBlockList.init();
 	g_contentTypeBlockList.init();
