@@ -7,11 +7,9 @@
 #include <math.h>      // floor()
 #include <float.h>	// FLT_EPSILON, DBL_EPSILON
 #include "Unicode.h"
+#include "utf8.h"
 #include "types.h"
 #include "Sanity.h"
-
-bool verifyUtf8 ( const char *txt ) ;
-bool verifyUtf8 ( const char *txt , int32_t tlen ) ;
 
 
 class SafeBuf;
