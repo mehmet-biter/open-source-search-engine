@@ -100,6 +100,7 @@
 #include "DocRebuild.h"
 #include "DocReindex.h"
 #include "FxExplicitKeywords.h"
+#include "IpBlockList.h"
 
 
 #include <sys/stat.h> //umask()
@@ -1429,6 +1430,7 @@ int main2 ( int argc , char *argv[] ) {
 	// load block lists
 	g_dnsBlockList.init();
 	g_contentTypeBlockList.init();
+	g_ipBlockList.init();
 
 	g_urlBlackList.init();
 	g_urlWhiteList.init();

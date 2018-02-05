@@ -21,7 +21,7 @@
 
 #include "BlockList.h"
 
-class DnsBlockList : public BlockList {
+class DnsBlockList : public BlockList<std::string> {
 public:
 	DnsBlockList();
 	bool isDnsBlocked(const char *dns);

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2017 Privacore ApS - https://www.privacore.com
+// Copyright (C) 2018 Privacore ApS - https://www.privacore.com
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -16,30 +16,21 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
-#ifndef FX_CONTENTTYPEBLOCKLIST_H
-#define FX_CONTENTTYPEBLOCKLIST_H
-
+#ifndef FX_IPBLOCKLIST_H
+#define FX_IPBLOCKLIST_H
 
 #include "BlockList.h"
-#include <pthread.h>
-#include <vector>
 
-class ContentTypeBlockList : public BlockList<std::string> {
+class IpBlockList : public BlockList<uint32_t> {
 public:
-	ContentTypeBlockList();
+	IpBlockList();
+	bool isIpBlocked(uint32_t ip);
 
-	bool init();
+protected:
+	void addToBlockList(blocklist_ptr_t<uint32_t> &blockList, const std::string &line);
 
-	bool isContentTypeBlocked(const char *contentType, size_t contentTypeLen);
-
-private:
-	void addContentTypeAllowed(const char *contentType, size_t contentTypeLen);
-
-	std::vector<std::string> m_contenttype_allowed;
-	mutable pthread_mutex_t m_contenttype_allowed_mtx;
 };
 
-extern ContentTypeBlockList g_contentTypeBlockList;
+extern IpBlockList g_ipBlockList;
 
-
-#endif //FX_CONTENTTYPEBLOCKLIST_H
+#endif //FX_IPBLOCKLIST_H
