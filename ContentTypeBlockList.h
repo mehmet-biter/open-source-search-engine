@@ -28,6 +28,8 @@ class ContentTypeBlockList : public BlockList<std::string> {
 public:
 	ContentTypeBlockList();
 
+	bool init();
+
 	bool isContentTypeBlocked(const char *contentType, size_t contentTypeLen);
 
 private:

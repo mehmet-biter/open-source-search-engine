@@ -443,6 +443,7 @@ cleandb:
 cleantest: cleandb
 	rm -f fatal_error
 	rm -f urlblacklist.txt urlwhitelist.txt dnsblocklist.txt contenttypeblocklist.txt contenttypeallowed.txt
+	rm -f ipblocklist.txt
 	rm -f docdelete.txt docdelete.txt.processing docdelete.txt.lastpos
 	rm -f docrebuild.txt docrebuild.txt.processing docrebuild.txt.lastpos
 	rm -f docreindex.txt docreindex.txt.processing docreindex.txt.lastpos

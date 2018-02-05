@@ -31,9 +31,9 @@ template <typename T> using blocklistconst_ptr_t = std::shared_ptr<const std::ve
 
 template<class T> class BlockList {
 public:
-	BlockList(const char *filename);
+	explicit BlockList(const char *filename);
 
-	bool init();
+	virtual bool init();
 
 	static void reload(int /*fd*/, void *state);
 	static void reload(void *state);
