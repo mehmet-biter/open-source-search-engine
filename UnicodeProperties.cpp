@@ -114,53 +114,7 @@ bool loadUnicodeTable(UCPropTable *table, const char *filename, bool useChecksum
 }
 
 
-bool setKDValue(UChar32 c, UChar32* decomp, int32_t decompCount, bool fullComp) {
-        uint32_t size = sizeof(decompCount) + 
-		decompCount*sizeof(UChar32);
-		
-	if (s_ucKDDataSize+size > s_ucKDAllocSize){
-		if (!s_ucKDData) {
-			s_ucKDData = (char*)mmalloc(4096, 
-						    "UnicodeProperties");
-			if (!s_ucKDData) {
-				log(LOG_WARN, "uni: Out of Memory");
-				return false;
-			}
-			s_ucKDAllocSize = 4096;			
-			//dummy value for 0 index
-			*(int32_t*)s_ucKDData = 0xffffffff;
-			s_ucKDDataSize = sizeof(int32_t);
-		}
-		else {
-			uint32_t newSize = s_ucKDAllocSize + 4096;
-			char *newBuf = (char*)mrealloc(s_ucKDData, 
-						       s_ucKDAllocSize,
-						       newSize, 
-						       "UnicodeProperties");
-			if (!newBuf) {
-				log(LOG_WARN, "uni: Out of Memory");
-				return false;
-			}
-			s_ucKDAllocSize = newSize;
-			s_ucKDData = newBuf;
-		}
-		
-	}
-	// store fullComp flag in high bit of decompCount
-	if (fullComp) 
-		*(int32_t*)(s_ucKDData+s_ucKDDataSize) = decompCount | 0x80000000;
-	else
-		*(int32_t*)(s_ucKDData+s_ucKDDataSize) = decompCount;
-
-	gbmemcpy(s_ucKDData+s_ucKDDataSize+sizeof(decompCount), decomp, 
-	       decompCount*sizeof(UChar32));
-	int32_t pos = s_ucKDDataSize;
-	s_ucKDDataSize += size;
-	
-	return g_ucKDIndex.setValue(c, (void*)&pos);
-}
-
-const UChar32 *getKDValue(UChar32 c, int32_t *decompCount, bool *fullComp) {
+static const UChar32 *getKDValue(UChar32 c, int32_t *decompCount, bool *fullComp = NULL) {
 	*decompCount = 0;
 	if (fullComp) *fullComp = false;
 	int32_t *pos = (int32_t*)g_ucKDIndex.getValue(c);

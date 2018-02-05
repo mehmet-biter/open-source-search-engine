@@ -32,6 +32,9 @@ ContentTypeBlockList::ContentTypeBlockList()
 	: BlockList(s_contenttype_filename)
 	, m_contenttype_allowed()
 	, m_contenttype_allowed_mtx(PTHREAD_MUTEX_INITIALIZER) {
+}
+
+bool ContentTypeBlockList::init() {
 	std::ifstream file(s_contenttype_allowed_filename);
 	std::string line;
 
@@ -39,6 +42,8 @@ ContentTypeBlockList::ContentTypeBlockList()
 	while (std::getline(file, line)) {
 		m_contenttype_allowed.push_back(line);
 	}
+
+	return BlockList::init();
 }
 
 void ContentTypeBlockList::addContentTypeAllowed(const char *contentType, size_t contentTypeLen) {
