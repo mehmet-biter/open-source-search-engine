@@ -308,6 +308,19 @@ with open("unicode_wordchars.dat","w") as f:
 print "Done."
 
 
+print "Generating unicode_is_alphabetic.dat"
+with open("unicode_is_alphabetic.dat","w") as f:
+	for codepoint in range(0,last_codepoint+1):
+		if codepoint in UnicodeData.data:
+			cpi = UnicodeData.data[codepoint]
+			if "Alphabetic" in cpi.derived_core_props:
+				f.write('\1')
+			else:
+				f.write('\0')
+		else:
+			f.write('\0') #missing codepoint
+print "Done."
+
 #Uppercase/lowercase mapping
 #This is not a 1:1 mapping (ref: german sharp s, ligatures, etc).
 #and it is locale-specific in some cases. We'll ignore that for now (Turkish i, Greek iota, Lithuanian, i, ...)

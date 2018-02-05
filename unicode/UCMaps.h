@@ -8,6 +8,7 @@ namespace UnicodeMaps {
 extern FullMap<Unicode::script_t>           g_unicode_script_map;
 extern FullMap<Unicode::general_category_t> g_unicode_general_category_map;
 extern FullMap<uint32_t>                    g_unicode_properties_map;
+extern FullMap<bool>                        g_unicode_unicode_is_alphabetic_map;
 extern FullMap<bool>                        g_unicode_wordchars_map;
 extern SparseMap<UChar32>                   g_unicode_lowercase_map;
 extern SparseMap<UChar32>                   g_unicode_decomposition_map;
