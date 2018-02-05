@@ -8,7 +8,9 @@ namespace UnicodeMaps {
 extern FullMap<Unicode::script_t>           g_unicode_script_map;
 extern FullMap<Unicode::general_category_t> g_unicode_general_category_map;
 extern FullMap<uint32_t>                    g_unicode_properties_map;
-extern FullMap<bool>                        g_unicode_unicode_is_alphabetic_map;
+extern FullMap<bool>                        g_unicode_is_alphabetic_map;
+extern FullMap<bool>                        g_unicode_is_uppercase_map;
+extern FullMap<bool>                        g_unicode_is_lowercase_map;
 extern FullMap<bool>                        g_unicode_wordchars_map;
 extern SparseMap<UChar32>                   g_unicode_lowercase_map;
 extern SparseMap<UChar32>                   g_unicode_decomposition_map;
@@ -27,22 +29,15 @@ static inline uint32_t query_properties(UChar32 c) {
 }
 
 static inline bool is_lowercase(UChar32 c) {
-	return g_unicode_general_category_map.lookup2(c)==Unicode::general_category_t::Ll;
+	return g_unicode_is_lowercase_map.lookup2(c);
 }
 
 static inline bool is_uppercase(UChar32 c) {
-	return g_unicode_general_category_map.lookup2(c)==Unicode::general_category_t::Lu;
+	return g_unicode_is_uppercase_map.lookup2(c);
 }
 
 static inline bool is_alphabetic(UChar32 c) {
-	auto gc = g_unicode_general_category_map.lookup2(c);
-	return gc==Unicode::general_category_t::Lu ||
-	       gc==Unicode::general_category_t::Ll ||
-	       gc==Unicode::general_category_t::Lt ||
-	       gc==Unicode::general_category_t::Lm ||
-	       gc==Unicode::general_category_t::Lo ||
-	       gc==Unicode::general_category_t::Nl ||
-	       g_unicode_properties_map.lookup2(c)&Unicode::Other_Alphabetic;
+	return g_unicode_is_alphabetic_map.lookup2(c);
 }
 
 static inline bool is_whitespace(UChar32 c) {
