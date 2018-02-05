@@ -25,6 +25,10 @@ class IpBlockList : public BlockList<uint32_t> {
 public:
 	IpBlockList();
 	bool isIpBlocked(uint32_t ip);
+
+protected:
+	void addToBlockList(blocklist_ptr_t<uint32_t> &blockList, const std::string &line);
+
 };
 
 extern IpBlockList g_ipBlockList;

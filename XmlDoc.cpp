@@ -51,6 +51,7 @@
 #include "RobotsCheckList.h"
 #include "UrlResultOverride.h"
 #include "ContentTypeBlockList.h"
+#include "IpBlockList.h"
 #include <iostream>
 #include <fstream>
 #include <sysexits.h>
@@ -106,6 +107,7 @@ XmlDoc::XmlDoc() {
 	m_blockedDoc = false;
 	m_checkedUrlBlockList = false;
 	m_checkedDnsBlockList = false;
+	m_checkedIpBlockList = false;
 	m_parsedRobotsMetaTag = false;
 	m_robotsNoIndex = false;
 	m_robotsNoFollow = false;
@@ -166,12 +168,14 @@ void XmlDoc::reset ( ) {
 	m_blockedDoc = false;
 	m_checkedUrlBlockList = false;
 	m_checkedDnsBlockList = false;
+	m_checkedIpBlockList = false;
 	m_parsedRobotsMetaTag = false;
 	m_robotsNoIndex = false;
 	m_robotsNoFollow = false;
 	m_robotsNoArchive = false;
 	m_robotsNoSnippet = false;
 	m_hostNameServers.clear();
+	m_ips.clear();
 	m_addSpiderRequest = false;
 
 	m_doConsistencyTesting = g_conf.m_doConsistencyTesting;
@@ -1974,7 +1978,36 @@ bool* XmlDoc::checkBlockList() {
 		m_checkedDnsBlockList = true;
 	}
 
-	if (blocked || (m_checkedUrlBlockList && m_checkedDnsBlockList)) {
+	if (!blocked && !m_checkedIpBlockList) {
+		int32_t *ip = getIp();
+		if (ip == (int32_t*) -1) {
+			// blocked
+			return (bool*)ip;
+		}
+
+		setStatus("checking ipblocklist");
+		if (!m_ipsValid || m_ips.empty()) {
+			if (g_ipBlockList.isIpBlocked(*ip)) {
+				m_indexCodeValid = true;
+				m_indexCode = EDOCBLOCKEDIP;
+
+				blocked = true;
+			}
+		} else {
+			for (auto it = m_ips.begin(); it != m_ips.end(); ++it) {
+				if (g_ipBlockList.isIpBlocked(*it)) {
+					m_indexCodeValid = true;
+					m_indexCode = EDOCBLOCKEDIP;
+
+					blocked = true;
+					break;
+				}
+			}
+		}
+		m_checkedIpBlockList = true;
+	}
+
+	if (blocked || (m_checkedUrlBlockList && m_checkedDnsBlockList && m_checkedIpBlockList)) {
 		m_blockedDocValid = true;
 		m_blockedDoc = blocked;
 	}
@@ -6984,6 +7017,11 @@ void XmlDoc::gotIpWrapper(GbDns::DnsResponse *response, void *state) {
 	if (response) {
 		that->m_ip = response->m_ips.empty() ? 0 : response->m_ips.front();
 
+		if (!response->m_ips.empty()) {
+			that->m_ipsValid = true;
+			that->m_ips = std::move(response->m_ips);
+		}
+
 		if (!response->m_nameservers.empty()) {
 			that->m_hostNameServersValid = true;
 			that->m_hostNameServers = std::move(response->m_nameservers);
@@ -8018,8 +8056,9 @@ char **XmlDoc::getHttpReply ( ) {
 			// ip is supposed to be that of the current url, which changed
 			m_ipValid = false;
 
-			// recheck dns block list when host changes
+			// recheck dns/ip block list when host changes
 			m_checkedDnsBlockList = false;
+			m_checkedIpBlockList = false;
 		}
 
 		// we set our m_xml to the http reply to check for meta redirects

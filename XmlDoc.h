@@ -818,6 +818,7 @@ public:
 	bool m_jpValid;
 	bool m_blockedDocValid;
 	bool m_hostNameServersValid;
+	bool m_ipsValid;
 	bool m_isSiteMap;
 
 	// shadows
@@ -1121,6 +1122,7 @@ public:
 	bool m_blockedDoc;
 	bool m_checkedUrlBlockList;
 	bool m_checkedDnsBlockList;
+	bool m_checkedIpBlockList;
 
 	bool m_parsedRobotsMetaTag;
 	bool m_robotsNoIndex;
@@ -1129,6 +1131,7 @@ public:
 	bool m_robotsNoSnippet;
 
 	std::vector<std::string> m_hostNameServers;
+	std::vector<uint32_t> m_ips;
 
 	bool m_addSpiderRequest;
 

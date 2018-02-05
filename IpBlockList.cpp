@@ -16,6 +16,7 @@
 //
 // License TL;DR: If you change this file, you must publish your changes.
 //
+#include <arpa/inet.h>
 #include "IpBlockList.h"
 #include "Log.h"
 #include "Conf.h"
@@ -39,4 +40,15 @@ bool IpBlockList::isIpBlocked(uint32_t ip) {
 	}
 
 	return false;
+}
+
+void IpBlockList::addToBlockList(blocklist_ptr_t<uint32_t> &blockList, const std::string &line) {
+	in_addr addr;
+
+	if (inet_pton(AF_INET, line.c_str(), &addr) != 1) {
+		logTrace(g_conf.m_logTraceIpBlockList, "Ignoring invalid ip=%s", line.c_str());
+		return;
+	}
+
+	blockList->emplace_back(addr.s_addr);
 }

@@ -151,6 +151,8 @@ const char *mstrerror ( int errnum ) {
 				return "Doc conversion error";
 			case EDOCTOOBIG:
 				return "Doc is too big";
+			case EDOCBLOCKEDIP:
+				return "Doc blocked by ip block list";
 			case EDOCUNCHANGED    :
 				return "Doc unchanged";
 			case EDOCDUP          :
@@ -369,7 +371,7 @@ static const char* s_errname[] {
 	STRINGIFY( EDOCBADREDIRECTURL ),
 	STRINGIFY( EDOCCONVERTFAILED ),
 	STRINGIFY( EDOCTOOBIG ),
-	STRINGIFY( EUNUSED17 ),
+	STRINGIFY( EDOCBLOCKEDIP ),
 	STRINGIFY( EUNUSED18 ),
 	STRINGIFY( EUNUSED19 ),
 	STRINGIFY( EDOCUNCHANGED ),
