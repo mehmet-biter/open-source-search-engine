@@ -42,7 +42,6 @@ class Synonyms {
 	
 	bool addWithoutApostrophe ( int32_t wordNum , class HashTableX *dt ) ;
 	bool addAmpPhrase ( int32_t wordNum , class HashTableX *dt ) ;
-	bool addStripped ( const char *w,int32_t wlen, class HashTableX *dt ) ;
 
 	const class Words *m_words;
 
