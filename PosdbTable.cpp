@@ -3685,8 +3685,6 @@ void PosdbTable::intersectLists_real() {
 			//calculate complete score multiplier
 			float completeScoreMultiplier = 1.0;
 			unsigned flags = 0;
-			uint32_t sitehash32;
-			bool sitehash32_known = g_d2fasm.lookupSiteHash(m_docId,&sitehash32);
 			if(g_d2fasm.lookupFlags(m_docId,&flags) && flags) {
 				for(int i=0; i<26; i++) {
 					if(flags&(1<<i))
@@ -3935,11 +3933,19 @@ void PosdbTable::intersectLists_real() {
 
 			if(m_baseScoringParameters.m_usePageTemperatureForRanking) {
 				use_page_temperature = true;
-				unsigned default_site_page_temperature;
-				if(sitehash32_known && g_smptr.lookup(sitehash32,&default_site_page_temperature)) {
-					page_temperature = g_pageTemperatureRegistry.query_page_temperature(m_docId, m_baseScoringParameters.m_pageTemperatureWeightMin, m_baseScoringParameters.m_pageTemperatureWeightMax, default_site_page_temperature);
-				} else
-					page_temperature = g_pageTemperatureRegistry.query_page_temperature(m_docId, m_baseScoringParameters.m_pageTemperatureWeightMin, m_baseScoringParameters.m_pageTemperatureWeightMax);
+				const auto range_min = m_baseScoringParameters.m_pageTemperatureWeightMin;
+				const auto range_max = m_baseScoringParameters.m_pageTemperatureWeightMax;
+				uint32_t sitehash32;
+				unsigned raw_default_site_page_temperature;
+				if(g_pageTemperatureRegistry.query_page_temperature(m_docId, range_min, range_max, &page_temperature)) {
+					//excellent, we know the page's temperature
+				} else if(g_d2fasm.lookupSiteHash(m_docId,&sitehash32) && g_smptr.lookup(sitehash32,&raw_default_site_page_temperature)) {
+					//hmm, use the site-default page temperature
+					page_temperature = g_pageTemperatureRegistry.scale_temperature(range_min, range_max, raw_default_site_page_temperature);
+				} else {
+					//ok, last resort, use the global default page temperature
+					page_temperature = g_pageTemperatureRegistry.query_default_page_temperature(range_min, range_max);
+				}
 				score *= page_temperature;
 				logTrace(g_conf.m_logTracePosdb, "Page temperature for docId %" PRIu64 " is %.14f, score %f -> %f", m_docId, page_temperature, score_before_page_temp, score);
 			}
