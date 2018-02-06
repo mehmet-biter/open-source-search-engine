@@ -101,42 +101,5 @@ const char *ucDetectBOM(const char *buf, int32_t bufsize){
 }
 
 
-int32_t stripAccentMarks (char *outbuf, int32_t outbufsize,
-			  const unsigned char *p, int32_t inbuflen) {
-	char *s = (char *)p;
-	char *send = (char *)p + inbuflen;
-	int32_t cs;
-	char *dst = outbuf;
-	for ( ; s < send ; s += cs ) {
-		// how big is this character?
-		cs = getUtf8CharSize(s);
-		// convert the utf8 character to UChar32
-		UChar32 uc = utf8Decode ( s );
-		// break "uc" into decomposition of UChar32s
-		UChar32 ttt[32];
-		int32_t klen = recursiveKDExpand(uc,ttt,32);
-		if(klen>32) gbshutdownLogicError();
-		// sanity
-		if ( dst + 5 > outbuf+outbufsize ) return -1;
-		// if the same, leave it! it had no accent marks or other
-		// modifiers...
-		if ( klen <= 1 ) {
-			memcpy ( dst , s , cs );
-			dst += cs;
-			continue;
-		}
-		// take the first one as the stripped
-		// convert back to utf8
-		int32_t stored = utf8Encode ( ttt[0] , dst );
-		// skip over the stored utf8 char
-		dst += stored;
-	}
-	// sanity. breach check
-	if ( dst > outbuf+outbufsize ) gbshutdownLogicError();
-	// return # of bytes stored into outbuf
-	return dst - outbuf;
-}
-
-
 void resetUnicode ( ) {
 }
