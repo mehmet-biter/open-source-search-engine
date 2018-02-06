@@ -7,7 +7,6 @@
 #include "Url.h"
 #include "Linkdb.h"
 #include "Xml.h"
-#include "Unicode.h"
 #include "matches2.h"
 
 static bool isLinkChain ( Xml *xml, const Url *linker, const Url *linkee, int32_t linkNode,

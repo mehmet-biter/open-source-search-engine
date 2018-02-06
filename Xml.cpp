@@ -3,7 +3,6 @@
 #include "Xml.h"
 
 #include "Mem.h"     // mfree(), mmalloc()
-#include "Unicode.h" // for html entities that return unicode
 #include "Titledb.h"
 #include "Words.h"
 #include "Pos.h"

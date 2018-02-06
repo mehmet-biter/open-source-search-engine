@@ -1,8 +1,7 @@
 #ifndef UTF8_FAST_H_
 #define UTF8_FAST_H_
 #include "utf8.h"
-#include "Unicode.h"
-#include "UnicodeProperties.h"
+#include "unicode/UCMaps.h"
 
 //Various functions for examining and manipulating UTF8 chars/strings and
 //unicode codepoints.
@@ -15,7 +14,7 @@ bool has_alpha_utf8(const char *s, const char *send);
 int32_t to_lower_utf8(char *dst, const char *src);
 int32_t to_lower_utf8(char *dst, char *dstEnd, const char *src);
 int32_t to_lower_utf8(char *dst, char *dstEnd, const char *src, const char *srcEnd);
-int32_t to_upper_utf8(char *dst, const char *src);
+int32_t to_upper_utf8(char *dst, const char *src);                                          //one codepoint only
 
 
 extern const unsigned char g_map_to_lower[256];
@@ -70,19 +69,20 @@ static inline bool is_binary_utf8(const char *p) {
 static inline bool is_lower_utf8(const char *src) {
 	if(is_ascii3(*src))
 		return is_lower_a(*src);
-	return ucIsLower(utf8Decode(src));
+	return UnicodeMaps::is_lowercase(utf8Decode(src));
 }
 
 static inline bool is_upper_utf8(const char *src) {
 	if(is_ascii3(*src))
 		return is_upper_a(*src);
-	return ucIsUpper(utf8Decode(src));
+	return UnicodeMaps::is_uppercase(utf8Decode(src));
 }
 
 static inline bool is_alnum_utf8(const char *src) {
 	if(is_ascii3(*src))
 		return is_alnum_a(*src);
-	return ucIsAlnum(utf8Decode(src));
+	return UnicodeMaps::is_wordchar(utf8Decode(src));
+	//todo/bug: the call to is_wordchar() in is_alnum_utf8() looks suspicious. Shouldn't it be is_alfanumeric() ?
 }
 
 static inline bool is_alnum_utf8(const uint8_t *src) {
@@ -98,14 +98,14 @@ bool is_alnum_api_utf8_string(const char *s, const char *send); //starts with le
 static inline bool is_alpha_utf8(const char *src) {
 	if(is_ascii3(*src))
 		return is_alpha_a(*src);
-	return ucIsAlpha(utf8Decode(src));
+	return UnicodeMaps::is_alphabetic(utf8Decode(src));
 }
 
 
 static inline bool is_punct_utf8(const char *src) {
 	if(is_ascii3(*src)) return is_punct_a(*src);
 	UChar32 x = utf8Decode(src);
-	if(ucIsAlnum(x))
+	if(UnicodeMaps::is_wordchar(x)) //todo/bug: should it call is_alfanumeric()?
 		return false;
 	else
 		return true;
@@ -115,7 +115,7 @@ static inline bool is_punct_utf8(const char *src) {
 static inline bool is_wspace_utf8(const char *src) {
 	if(is_ascii3(*src))
 		return is_wspace_a(*src);
-	return ucIsWhiteSpace(utf8Decode(src));
+	return UnicodeMaps::is_whitespace(utf8Decode(src));
 }
 
 static inline bool is_wspace_utf8(const uint8_t *src) {
@@ -126,7 +126,7 @@ static inline bool is_wspace_utf8(const uint8_t *src) {
 static inline bool ucIsWordChar_fast(UChar32 c) {
 	if (!(c & 0xffffff80))
 		return is_alnum_a(c);
-	return ucIsWordChar(c);
+	return UnicodeMaps::is_wordchar(c);
 }
 
 

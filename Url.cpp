@@ -5,7 +5,6 @@
 #include "FxCheckAdult.h"
 #include "ip.h"      // atoip ( s,len)
 #include "Punycode.h"
-#include "Unicode.h"
 #include "SafeBuf.h"
 #include "Sanity.h"
 #include "GbMutex.h"

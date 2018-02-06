@@ -12,10 +12,12 @@ extern FullMap<bool>                        g_unicode_is_alphabetic_map;
 extern FullMap<bool>                        g_unicode_is_uppercase_map;
 extern FullMap<bool>                        g_unicode_is_lowercase_map;
 extern FullMap<bool>                        g_unicode_wordchars_map;
+extern SparseMap<UChar32>                   g_unicode_uppercase_map;
 extern SparseMap<UChar32>                   g_unicode_lowercase_map;
 extern SparseMap<UChar32>                   g_unicode_canonical_decomposition_map;
 
 bool load_maps(const char *dir, const char **errstr);
+void unload_maps();
 
 
 //convenience functions
@@ -44,10 +46,18 @@ static inline bool is_whitespace(UChar32 c) {
 	return g_unicode_properties_map.lookup2(c)&Unicode::White_Space;
 }
 
+static inline UChar32 to_upper(UChar32 c) { //assumes the mapping only produces one codepoint (which is not the case for ß)
+	auto e = g_unicode_uppercase_map.lookup(c);
+	if(e)
+		return e->values[0];
+	else
+		return c;
+}
+
 static inline UChar32 to_lower(UChar32 c) {
 	auto e = g_unicode_lowercase_map.lookup(c);
 	//currently all lowercase mappings are to one (1) codepoint
-	if(c)
+	if(e)
 		return e->values[0];
 	else
 		return c;

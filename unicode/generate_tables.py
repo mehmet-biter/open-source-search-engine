@@ -351,6 +351,16 @@ print "Done."
 #This is not a 1:1 mapping (ref: german sharp s, ligatures, etc).
 #and it is locale-specific in some cases. We'll ignore that for now (Turkish i, Greek iota, Lithuanian, i, ...)
 #Since it only applies to alphabetic codepoints and only some scripts we make a sparse map
+print "Generating unicode_to_uppercase.dat"
+with open("unicode_to_uppercase.dat","w") as f:
+	for codepoint,cpi in sorted(UnicodeData.data.iteritems()):
+		if cpi.uppercase_folding:
+			f.write(struct.pack("@I",codepoint))
+			f.write(struct.pack("@I",len(cpi.uppercase_folding)))
+			for c in cpi.uppercase_folding:
+				f.write(struct.pack("@I",c))
+print "Done."
+
 print "Generating unicode_to_lowercase.dat"
 with open("unicode_to_lowercase.dat","w") as f:
 	for codepoint,cpi in sorted(UnicodeData.data.iteritems()):

@@ -1,4 +1,5 @@
 #include "utf8_fast.h"
+#include "unicode/UCMaps.h"
 
 const unsigned char g_map_to_lower[256] = {
 	  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
@@ -298,7 +299,7 @@ int32_t to_lower_utf8(char *dst, const char *src) {
 	// convert to a code point
 	UChar32 x = utf8Decode(src);
 	// covert to lower
-	UChar32 y = ucToLower ( x );
+	UChar32 y = UnicodeMaps::to_lower(x);
 	// put it back to utf8. return bytes stored.
 	return utf8Encode(y, dst);
 }
@@ -325,6 +326,14 @@ int32_t to_upper_utf8(char *dst, const char *src) {
 		return 1;
 	}
 	UChar32 x = utf8Decode(src);
-	UChar32 y = ucToUpper(x);
-	return utf8Encode(y, dst);
+	auto e = UnicodeMaps::g_unicode_uppercase_map.lookup(x);
+	if(!e)
+		return utf8Encode(x, dst);
+	int bytes_encoded = 0;
+	for(unsigned i=0; i<e->count; i++) {
+		int l = utf8Encode(e->values[i], dst);
+		dst += l;
+		bytes_encoded += l;
+	}
+	return bytes_encoded;
 }

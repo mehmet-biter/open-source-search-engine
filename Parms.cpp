@@ -13,7 +13,6 @@
 #include "Collectiondb.h"
 #include "HttpMime.h"      // atotime()
 #include "SearchInput.h"
-#include "Unicode.h"
 #include "Spider.h" // MAX_SPIDER_PRIORITIES
 #include "SpiderColl.h"
 #include "SpiderLoop.h"

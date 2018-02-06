@@ -2,7 +2,6 @@
 
 #include "Words.h"
 #include "Xml.h"
-#include "Unicode.h" // getUtf8CharSize()
 #include "unicode/UCEnums.h"
 #include "StopWords.h"
 #include "Speller.h"

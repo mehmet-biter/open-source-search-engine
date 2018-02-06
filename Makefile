@@ -51,7 +51,7 @@ OBJS_O2 = \
 	Rdb.o RdbBase.o \
 	Sections.o Spider.o SpiderCache.o SpiderColl.o SpiderLoop.o StopWords.o Summary.o \
 	Title.o \
-	UCPropTable.o UdpServer.o Unicode.o UnicodeProperties.o utf8.o utf8_fast.o utf8_convert.o \
+	UCPropTable.o UdpServer.o \
 	Words.o \
 	Xml.o XmlDoc.o XmlDoc_Indexing.o XmlNode.o \
 
@@ -83,6 +83,8 @@ OBJS_O3 = \
 	GbEncoding.o GbLanguage.o \
 	GbDns.o \
 	InstanceInfoExchange.o \
+	ByteOrderMark.o \
+	utf8.o utf8_fast.o utf8_convert.o \
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
@@ -282,9 +284,9 @@ all: gb
 
 
 # third party libraries
-LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so slacktee.sh libword_variations.a libsto.a
+LIBFILES = libcld2_full.so libcld3.so libced.so libcares.so slacktee.sh libword_variations.a libsto.a libunicode.a
 LIBS += -Wl,-rpath=. -L. -lcld2_full -lcld3 -lprotobuf -lced -lcares
-LIBS += -lword_variations -lsto
+LIBS += -lword_variations -lsto -lunicode
 
 CLD2_SRC_DIR=third-party/cld2/internal
 libcld2_full.so:
@@ -324,6 +326,12 @@ libword_variations.a:
 libsto.a:
 	$(MAKE) -C sto/
 	ln -sf sto/libsto.a libsto.a
+
+PHONY: libunicode.a
+libunicode.a:
+	$(MAKE) -C unicode/
+	./copy_changed_files.sh ucdata/ unicode/*.dat
+	ln -sf unicode/libunicode.a libunicode.a
 
 wanted_check_api.so: WantedCheckExampleLib.o
 	$(CXX) WantedCheckExampleLib.o -shared -o $@

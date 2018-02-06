@@ -5,7 +5,6 @@
 #ifndef GB_HASH_H
 #define GB_HASH_H
 
-#include "Unicode.h"
 
 //#define SEED8  148
 //#define SEED16 22081
