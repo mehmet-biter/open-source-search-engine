@@ -140,25 +140,25 @@ unsigned PageTemperatureRegistry::query_page_temperature_internal(uint64_t docid
 }
 
 
-double PageTemperatureRegistry::query_page_temperature(uint64_t docid, double range_min, double range_max) const {
-	if(hash_table_size==0)
-		return scale_linear(default_temperature_log, min_temperature_log, max_temperature_log, range_min, range_max);
 
-	double temperature_26bit_log = log((double)query_page_temperature_internal(docid));
-	//Then scale to a number in the rangte [0..1]
-	//It is a bit annoying to do this computation for each lookup but it saves memory
-//	return ((double)(temperature_26bit - min_temperature)) / temperature_range_for_scaling;
+bool PageTemperatureRegistry::query_page_temperature(uint64_t docid, double range_min, double range_max, double *temperature) const {
+
+	unsigned idx = ((uint32_t)docid) % hash_table_size;
+	while(slot[idx]) {
+		if(slot[idx]>>26 == docid) {
+			*temperature = scale_temperature(range_min,range_max,slot[idx]&0x3ffffff);
+			return slot[idx]&0x3ffffff;
+		}
+		idx = (idx+1)%hash_table_size;
+	}
+	return false;
+}
+
+double PageTemperatureRegistry::scale_temperature(double range_min, double range_max, unsigned raw_temperature) const {
+	double temperature_26bit_log = log(raw_temperature);
 	return scale_linear(temperature_26bit_log, min_temperature_log, max_temperature_log, range_min, range_max);
 }
 
-double PageTemperatureRegistry::query_page_temperature(uint64_t docid, double range_min, double range_max, unsigned raw_default) const {
-	if(hash_table_size==0)
-		return scale_linear(log(raw_default), min_temperature_log, max_temperature_log, range_min, range_max);
-
-	double temperature_26bit_log = log((double)query_page_temperature_internal(docid,raw_default));
-	//Then scale to a number in the rangte [0..1]
-	//It is a bit annoying to do this computation for each lookup but it saves memory
-	return scale_linear(temperature_26bit_log, min_temperature_log, max_temperature_log, range_min, range_max);
+double PageTemperatureRegistry::query_default_page_temperature(double range_min, double range_max) const {
+	return scale_linear(default_temperature_log, min_temperature_log, max_temperature_log, range_min, range_max);
 }
-
-
