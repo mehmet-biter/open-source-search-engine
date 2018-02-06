@@ -142,7 +142,8 @@ unsigned PageTemperatureRegistry::query_page_temperature_internal(uint64_t docid
 
 
 bool PageTemperatureRegistry::query_page_temperature(uint64_t docid, double range_min, double range_max, double *temperature) const {
-
+	if(hash_table_size==0)
+		return false;
 	unsigned idx = ((uint32_t)docid) % hash_table_size;
 	while(slot[idx]) {
 		if(slot[idx]>>26 == docid) {
