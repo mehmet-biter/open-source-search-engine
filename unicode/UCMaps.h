@@ -13,7 +13,7 @@ extern FullMap<bool>                        g_unicode_is_uppercase_map;
 extern FullMap<bool>                        g_unicode_is_lowercase_map;
 extern FullMap<bool>                        g_unicode_wordchars_map;
 extern SparseMap<UChar32>                   g_unicode_lowercase_map;
-extern SparseMap<UChar32>                   g_unicode_decomposition_map;
+extern SparseMap<UChar32>                   g_unicode_canonical_decomposition_map;
 
 bool load_maps(const char *dir, const char **errstr);
 
