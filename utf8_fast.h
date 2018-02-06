@@ -2,6 +2,7 @@
 #define UTF8_FAST_H_
 #include "utf8.h"
 #include "Unicode.h"
+#include "UnicodeProperties.h"
 
 //Various functions for examining and manipulating UTF8 chars/strings and
 //unicode codepoints.

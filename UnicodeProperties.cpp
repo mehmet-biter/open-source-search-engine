@@ -1,7 +1,7 @@
 #include "gb-include.h"
 
 #include "Mem.h"
-#include "Unicode.h"
+#include "UnicodeProperties.h"
 
 UCPropTable g_ucLowerMap(sizeof(UChar32), 9);
 UCPropTable g_ucUpperMap(sizeof(UChar32), 9);
