@@ -568,7 +568,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 			srep.m_siteNumInlinks           = siteNumInlinks;
 			srep.m_sameErrCount             = sameErrCount;
 			srep.m_contentHash32            = contentHash32;
-			srep.m_crawlDelayMS             = 1; //probably only used in-memory.
+			srep.m_crawlDelayMS             = 0; //probably only used in-memory.
 			srep.m_downloadEndTime          = 0; //probably only used in-memory.
 			srep.m_httpStatus               = httpStatus;
 			srep.m_errCount                 = errCount;
