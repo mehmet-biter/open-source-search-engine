@@ -25,18 +25,20 @@
 #include <sys/stat.h>
 #include <atomic>
 
-BlockList::BlockList(const char *filename)
+template <class T>
+BlockList<T>::BlockList(const char *filename)
 	: m_filename(filename)
 	, m_loading(false)
-	, m_blockList(new blocklist_t)
+	, m_blockList(new blocklist_t<T>)
 	, m_lastModifiedTime(0) {
 }
 
-bool BlockList::init() {
+template <class T>
+bool BlockList<T>::init() {
 	log(LOG_INFO, "Initializing BlockList with %s", m_filename);
 
-	if (!g_loop.registerSleepCallback(60000, this, &reload, "BlockList::reload", 0)) {
-		log(LOG_WARN, "BlockList:: Failed to register callback.");
+	if (!g_loop.registerSleepCallback(60000, this, &reload, "BlockList<T>::reload", 0)) {
+		log(LOG_WARN, "BlockList<T>:: Failed to register callback.");
 		return false;
 	}
 
@@ -47,7 +49,8 @@ bool BlockList::init() {
 	return true;
 }
 
-void BlockList::reload(int /*fd*/, void *state) {
+template <class T>
+void BlockList<T>::reload(int /*fd*/, void *state) {
 	if (g_jobScheduler.submit(reload, nullptr, state, thread_type_config_load, 0)) {
 		return;
 	}
@@ -56,7 +59,8 @@ void BlockList::reload(int /*fd*/, void *state) {
 	reload(state);
 }
 
-void BlockList::reload(void *state) {
+template <class T>
+void BlockList<T>::reload(void *state) {
 	BlockList *blockList = static_cast<BlockList*>(state);
 
 	// don't load multiple times at the same time
@@ -68,13 +72,14 @@ void BlockList::reload(void *state) {
 	blockList->m_loading = false;
 }
 
-bool BlockList::load() {
+template <class T>
+bool BlockList<T>::load() {
 	logTrace(g_conf.m_logTraceBlockList, "Loading %s", m_filename);
 
 	struct stat st;
 	if (stat(m_filename, &st) != 0) {
 		// probably not found
-		log(LOG_INFO, "BlockList::load: Unable to stat %s", m_filename);
+		log(LOG_INFO, "BlockList<T>::load: Unable to stat %s", m_filename);
 		return false;
 	}
 
@@ -84,7 +89,7 @@ bool BlockList::load() {
 		return true;
 	}
 
-	blocklist_ptr_t tmpBlockList(new blocklist_t);
+	blocklist_ptr_t<T> tmpBlockList(new blocklist_t<T>);
 
 	std::ifstream file(m_filename);
 	std::string line;
@@ -94,7 +99,7 @@ bool BlockList::load() {
 			continue;
 		}
 
-		tmpBlockList->emplace_back(line);
+		addToBlockList(tmpBlockList, line);
 		logTrace(g_conf.m_logTraceBlockList, "Adding criteria '%s' to list", line.c_str());
 	}
 
@@ -105,11 +110,26 @@ bool BlockList::load() {
 	return true;
 }
 
-blocklistconst_ptr_t BlockList::getBlockList() {
+template <class T>
+void BlockList<T>::addToBlockList(blocklist_ptr_t<T> &blockList, const std::string &line) {
+	gbshutdownLogicError();
+}
+
+template <>
+void BlockList<std::string>::addToBlockList(blocklist_ptr_t<std::string> &blockList, const std::string &line) {
+	blockList->emplace_back(line);
+}
+
+template <class T>
+blocklistconst_ptr_t<T> BlockList<T>::getBlockList() {
 	return m_blockList;
 }
 
-void BlockList::swapBlockList(blocklistconst_ptr_t blockList) {
+template <class T>
+void BlockList<T>::swapBlockList(blocklistconst_ptr_t<T> blockList) {
 	std::atomic_store(&m_blockList, blockList);
 }
 
+// explicit instantiations
+template class BlockList<std::string>;
+template class BlockList<uint32_t>;

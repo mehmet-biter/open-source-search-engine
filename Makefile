@@ -19,7 +19,7 @@ OBJS_O0 =  \
 	File.o \
 	FxTermCheckList.o FxCheckAdult.o FxCheckSpam.o \
 	GbMutex.o \
-	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o Docid2Siteflags.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
+	HashTable.o HighFrequencyTermShortcuts.o PageTemperatureRegistry.o SiteMedianPageTemperatureRegistry.o Docid2Siteflags.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
 	iana_charset.o Images.o ip.o \
 	JobScheduler.o Json.o \
 	Lang.o Log.o \
@@ -54,7 +54,7 @@ OBJS_O2 = \
 	Rdb.o RdbBase.o \
 	Sections.o Spider.o SpiderCache.o SpiderColl.o SpiderLoop.o StopWords.o Summary.o \
 	Title.o \
-	UCPropTable.o UdpServer.o Unicode.o UnicodeProperties.o \
+	UCPropTable.o UdpServer.o Unicode.o UnicodeProperties.o utf8.o utf8_fast.o utf8_convert.o \
 	Words.o \
 	Xml.o XmlDoc.o XmlDoc_Indexing.o XmlNode.o \
 
@@ -63,7 +63,7 @@ OBJS_O3 = \
 	BlockList.o \
 	ContentTypeBlockList.o \
 	DocDelete.o DocProcess.o DocRebuild.o DocReindex.o DnsBlockList.o \
-	IPAddressChecks.o \
+	IPAddressChecks.o IpBlockList.o \
 	LanguageResultOverride.o Linkdb.o \
 	Msg40.o \
 	Msg25.o \
@@ -450,6 +450,7 @@ cleandb:
 cleantest: cleandb
 	rm -f fatal_error
 	rm -f urlblacklist.txt urlwhitelist.txt dnsblocklist.txt contenttypeblocklist.txt contenttypeallowed.txt
+	rm -f ipblocklist.txt
 	rm -f docdelete.txt docdelete.txt.processing docdelete.txt.lastpos
 	rm -f docrebuild.txt docrebuild.txt.processing docrebuild.txt.lastpos
 	rm -f docreindex.txt docreindex.txt.processing docreindex.txt.lastpos

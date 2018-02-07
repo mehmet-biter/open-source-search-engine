@@ -10,6 +10,7 @@
 #include "HashTable.h"
 #include "HttpMime.h"
 #include "Linkdb.h"
+#include "TitleSummaryCodepointFilter.h"
 #include "Process.h"
 #include "Conf.h"
 #include "Xml.h"

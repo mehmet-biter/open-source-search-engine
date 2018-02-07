@@ -1823,7 +1823,6 @@ bool Wiktionary::compile ( ) {
 		dd2.set(8,0,8,dbuf2,512,false,"ddttt2");
 		// how many forms? must be 2+ to get added to syntable
 		int32_t formCount = 0;
-		int32_t stripCount = 0;
 		for ( int32_t j = i ; ; j++ ) {
 			// wrap around
 			if ( j >= m_tmp.getNumSlots() ) j = 0;
@@ -1853,25 +1852,14 @@ bool Wiktionary::compile ( ) {
 			// it matches!
 			formCount++;
 
-			// if it has accent marks then we count the stripped
-			// version as a form, but we do not have to
-			// store the stripped version in wiktionary-buf.txt
-			// because it is just a waste of space.
-			char a[1024];
-			int32_t stripLen = stripAccentMarks(a,
-							 1023,
-							 (unsigned char *)word,
-							 strlen(word));
-			if ( stripLen <= 0 ) continue;
-			// if same as original word, skip
-			int32_t wlen = strlen(word);
-			if ( wlen==stripLen && strncmp(a,word,wlen)==0) 
-				continue;
-			// count as additional form
-			stripCount++;
+			//The original code generated synonyms from words with accents based on the unicode canonical-decomposition
+			//data. On the surface that sounds like a good idea, eg. if you search for 'Chloe' you'll find hits on
+			//'Chloë' too. However, that ignores whether the accent/mark is optional. Removing accents from 'bûche de Noël',
+			//'mañaja', 'Ötjendorf' or 'kål' changes the words significantly. You must either not do it or sometimes do
+			//language/orthography-dependent transliteration
 		}
 		// need 2+ forms!
-		if ( formCount +stripCount <= 1 ) continue;
+		if ( formCount <= 1 ) continue;
 		// base form
 		//int64_t wid = *(int64_t *)m_tmp.getValueFromSlot(i);
 		// remember buf start
@@ -1952,40 +1940,7 @@ bool Wiktionary::compile ( ) {
 			// so maybe allow dup keys in syntable?
 			//
 
-			// . also strip accent marks and add that key as well
-			// . so we can map a stripped word to the original
-			//   word with accent marks, although it might
-			//   actually map to multiple words! so who knows
-			//   what to pick, maybe all of them!
-			char a[1024];
-			int32_t stripLen = stripAccentMarks(a,
-							 1023,
-							 (unsigned char *)word,
-							 strlen(word));
-			// debug time
-			if ( stripLen > 0 ) {
-				a[stripLen] = 0;
-	
-				// if same as original word, ignore it
-				int32_t wlen = strlen(word);
-				if ( wlen==stripLen && 
-				     strncmp(a,word,wlen) == 0 ) 
-					stripLen = 0;
-			}
-			// if different, add it
-			if ( stripLen > 0 ) {
-				int64_t swid = hash64Lower_utf8(a);
-				// xor in the langid
-				swid ^= g_hashtab[0][langId];
-				// only add this word form once per langId
-				if ( dd.isInTable ( &swid ) ) continue;
-				dd.addKey ( &swid );
-				// . a ptr to that sequence of alt forms in buf
-				// . this uses 6 byte keys
-				m_synTable.addKey(&swid,&bufLen);
-			}
-
-
+			//see note in preceeding lop about accent-based synonym generation
 			// count em up
 			count++;
 			// limit to 100 synonyms per synset

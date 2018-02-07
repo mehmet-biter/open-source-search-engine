@@ -3,6 +3,7 @@
 #include "Pos.h"
 #include "Words.h"
 #include "Sections.h"
+#include "TitleSummaryCodepointFilter.h"
 #include "Conf.h"
 #include "Mem.h"
 
@@ -457,50 +458,54 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 	// let's remove ellipsis (...) at the end
 	if ( (f - fstart) >= minRemoveEllipsisLen && dotCount == 3 ) {
 		logTrace(g_conf.m_logTracePos, "remove ellipsis");
-		if ( is_ascii3( *dotPrevChar ) ) {
-			logTrace(g_conf.m_logTracePos, "dotPrevChar=%c", *dotPrevChar);
-			switch ( *dotPrevChar ) {
-				case ',':
-					trunc = true;
-					lastBreak = dotPrevChar + 1;
-					break;
-				case '!':
-				case '.':
-					trunc = false;
-					f = dotPrevChar + 1;
-					break;
-				case ' ':
-					trunc = false;
+		if ( dotPrevChar ) {
+			if ( is_ascii3( *dotPrevChar ) ) {
+				logTrace(g_conf.m_logTracePos, "dotPrevChar=%c", *dotPrevChar);
+				switch ( *dotPrevChar ) {
+					case ',':
+						trunc = true;
+						lastBreak = dotPrevChar + 1;
+						break;
+					case '!':
+					case '.':
+						trunc = false;
+						f = dotPrevChar + 1;
+						break;
+					case ' ':
+						trunc = false;
 
-					if ( lastBreak ) {
-						f = lastBreak;
-					}
-					break;
-				default:
-					trunc = true;
+						if ( lastBreak ) {
+							f = lastBreak;
+						}
+						break;
+					default:
+						trunc = true;
 
-					if ( lastBreakPrevChar ) {
-						logTrace(g_conf.m_logTracePos, "lastBreakPrevChar=%c", *lastBreakPrevChar);
-						if ( is_ascii( *( lastBreakPrevChar ) ) ) {
-							switch ( *( lastBreakPrevChar ) ) {
-								case '!':
-								case '.':
-									trunc = false;
+						if ( lastBreakPrevChar ) {
+							logTrace(g_conf.m_logTracePos, "lastBreakPrevChar=%c", *lastBreakPrevChar);
+							if ( is_ascii( *( lastBreakPrevChar ) ) ) {
+								switch ( *( lastBreakPrevChar ) ) {
+									case '!':
+									case '.':
+										trunc = false;
 
-									if (lastBreak) {
-										f = lastBreak;
-									}
-									break;
-								default:
-									break;
+										if (lastBreak) {
+											f = lastBreak;
+										}
+										break;
+									default:
+										break;
+								}
 							}
 						}
-					}
-					break;
+						break;
+				}
 			}
+		} else {
+			trunc = true;
+			lastBreak = nullptr;
 		}
 	}
-
 	if ( trunc ) {
 		logTrace(g_conf.m_logTracePos, "trunc");
 

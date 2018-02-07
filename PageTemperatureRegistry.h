@@ -22,6 +22,7 @@ class PageTemperatureRegistry {
 	double default_temperature_log;
 
 	unsigned query_page_temperature_internal(uint64_t docid) const;
+	unsigned query_page_temperature_internal(uint64_t docid, unsigned raw_default) const;
 public:
 	PageTemperatureRegistry()
 	  : slot(0), entries(0),
@@ -32,7 +33,9 @@ public:
 	bool load();
 	void unload();
 	
-	double query_page_temperature(uint64_t docid, double range_min, double range_max) const;
+	bool query_page_temperature(uint64_t docid, double range_min, double range_max, double *temperature) const;
+	double scale_temperature(double range_min, double range_max, unsigned raw_temperature) const;
+	double query_default_page_temperature(double range_min, double range_max) const;
 	
 	bool empty() const { return entries==0; }
 };

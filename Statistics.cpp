@@ -190,6 +190,7 @@ static void status_to_spider_statistics( std::vector<unsigned> *spiderdoc_counts
 		case EDOCBLOCKEDDNS:
 		case EDOCBLOCKEDURL:
 		case EDOCBLOCKEDURLIP:
+		case EDOCBLOCKEDIP:
 		case EDOCBLOCKEDURLCORRUPT:
 		case EDOCBLOCKEDURLINVALID:
 		case EDOCBLOCKEDSHLIBDOMAIN:

@@ -375,6 +375,7 @@ class Conf {
 	bool m_logTraceDnsCache;
 	bool m_logTraceFile;
 	bool m_logTraceHttpMime;
+	bool m_logTraceIpBlockList;
 	bool m_logTraceLanguageResultOverride;
 	bool m_logTraceMem;
 	bool m_logTraceMsg0;

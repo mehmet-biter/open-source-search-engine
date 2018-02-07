@@ -35,6 +35,7 @@
 #include "HighFrequencyTermShortcuts.h"
 #include "PageTemperatureRegistry.h"
 #include "Docid2Siteflags.h"
+#include "SiteMedianPageTemperatureRegistry.h"
 #include "UrlRealtimeClassification.h"
 #include "IPAddressChecks.h"
 #include <sys/resource.h>  // setrlimit
@@ -69,6 +70,7 @@
 #include "Pages.h"
 #include "PageInject.h"
 #include "Unicode.h"
+#include "utf8_convert.h"
 
 #include "Profiler.h"
 #include "Proxy.h"
@@ -100,6 +102,7 @@
 #include "DocRebuild.h"
 #include "DocReindex.h"
 #include "FxExplicitKeywords.h"
+#include "IpBlockList.h"
 
 
 #include <sys/stat.h> //umask()
@@ -526,6 +529,10 @@ int main2 ( int argc , char *argv[] ) {
 
 		if ( !ucInit(g_hostdb.m_dir)) {
 			log( LOG_ERROR, "db: Unicode initialization failed!" );
+			return 1;
+		}
+		if(!utf8_convert_initialize()) {
+			log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
 			return 1;
 		}
 
@@ -1238,6 +1245,10 @@ int main2 ( int argc , char *argv[] ) {
 			log("Unicode initialization failed!");
 			return 1;
 		}
+		if(!utf8_convert_initialize()) {
+			log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
+			return 1;
+		}
 
 		if ( ! g_collectiondb.loadAllCollRecs()   ) {
 			log("db: Collectiondb init failed." ); return 1; }
@@ -1350,6 +1361,10 @@ int main2 ( int argc , char *argv[] ) {
 		log( LOG_ERROR, "Unicode initialization failed!" );
 		return 1;
 	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
+		return 1;
+	}
 
 	// the wiktionary for lang identification and alternate word forms/
 	// synonyms
@@ -1421,9 +1436,13 @@ int main2 ( int argc , char *argv[] ) {
 	//load docid->flags/sitehash map
 	g_d2fasm.load();
 
+	//load sitehash32->default page temperature
+	g_smptr.load();
+	
 	// load block lists
 	g_dnsBlockList.init();
 	g_contentTypeBlockList.init();
+	g_ipBlockList.init();
 
 	g_urlBlackList.init();
 	g_urlWhiteList.init();
@@ -2452,6 +2471,10 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 	}
 	if (!ucInit(g_hostdb.m_dir)) {
 		log("Unicode initialization failed!");
+		return;
+	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
 		return;
 	}
 	// init our table for doing zobrist hashing
@@ -3888,6 +3911,10 @@ static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int3
 		log("Unicode initialization failed!");
 		return;
 	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
+		return;
+	}
 	// init our table for doing zobrist hashing
 	if ( ! hashinit() ) {
 		log("db: Failed to init hashtable." );
@@ -4057,6 +4084,10 @@ static void dumpWantedTitledbRecs(const char *coll, int32_t startFileNum, int32_
 		log("Unicode initialization failed!");
 		return;
 	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
+		return;
+	}
 	// init our table for doing zobrist hashing
 	if ( ! hashinit() ) {
 		log("db: Failed to init hashtable." );
@@ -4192,6 +4223,10 @@ static void dumpAdultTitledbRecs(const char *coll, int32_t startFileNum, int32_t
 	}
 	if (!ucInit(g_hostdb.m_dir)) {
 		log("Unicode initialization failed!");
+		return;
+	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
 		return;
 	}
 	// init our table for doing zobrist hashing
@@ -4367,6 +4402,10 @@ static void dumpSpamTitledbRecs(const char *coll, int32_t startFileNum, int32_t 
 	}
 	if (!ucInit(g_hostdb.m_dir)) {
 		log("Unicode initialization failed!");
+		return;
+	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
 		return;
 	}
 	// init our table for doing zobrist hashing
@@ -4771,6 +4810,10 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 		log(LOG_WARN, "Unicode initialization failed!");
 		return false;
 	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
+		return false;
+	}
 
 	// get raw rec from list
 	char *rec      = tlist.getCurrentRec();
@@ -4856,6 +4899,10 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	if (!ucInit(g_hostdb.m_dir)) {
 		log("Unicode initialization failed!");
+		return 1;
+	}
+	if(!utf8_convert_initialize()) {
+		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
 		return 1;
 	}
 	Words words;

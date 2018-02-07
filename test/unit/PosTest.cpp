@@ -231,3 +231,17 @@ TEST( PosTest, DecodeHTMLEntities ) {
 		EXPECT_EQ( strlen( expected_output[i] ), len );
 	}
 }
+
+TEST(PosTest, SegFaultDotPrevChar) {
+	Words words;
+	Pos pos;
+	char buf[MAX_BUF_SIZE];
+
+	const char *input_str = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .. . . . . . . . . . . . . . . . . . . .. . . . . . . . . . . ...";
+
+	ASSERT_TRUE( words.set( const_cast<char*>(input_str), true ) );
+
+	int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
+
+	EXPECT_EQ( 0, len );
+}

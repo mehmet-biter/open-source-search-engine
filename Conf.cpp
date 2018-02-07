@@ -227,6 +227,7 @@ Conf::Conf ( ) {
 	m_logTraceDnsCache = false;
 	m_logTraceFile = false;
 	m_logTraceHttpMime = false;
+	m_logTraceIpBlockList = false;
 	m_logTraceLanguageResultOverride = false;
 	m_logTraceMem = false;
 	m_logTraceMsg0 = false;
