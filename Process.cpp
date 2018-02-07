@@ -46,7 +46,6 @@
 #include "DocDelete.h"
 #include "DocRebuild.h"
 #include "DocReindex.h"
-#include "SpiderdbHostDelete.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
 #include <fcntl.h>
@@ -620,8 +619,6 @@ bool Process::shutdown2() {
 		g_docRebuildUrl.finalize();
 		g_docReindex.finalize();
 		g_docReindexUrl.finalize();
-
-		SpiderdbHostDelete::finalize();
 
 		log("gb: disabling threads");
 

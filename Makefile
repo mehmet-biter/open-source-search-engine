@@ -68,11 +68,11 @@ OBJS_O3 = \
 	Msg40.o \
 	Msg25.o \
 	RdbBuckets.o RdbIndex.o RdbIndexQuery.o RdbList.o RdbMap.o ResultOverride.o RobotsBlockedResultOverride.o RobotsCheckList.o \
-	SafeBuf.o sort.o SpiderdbHostDelete.o Statistics.o \
+	SafeBuf.o sort.o Statistics.o \
 	ScoringWeights.o \
 	BaseScoringParameters.o \
 	TopTree.o \
-	UrlMatch.o UrlMatchList.o UrlMatchHostList.o UrlBlockCheck.o UrlComponent.o UrlParser.o UdpStatistic.o \
+	UrlMatch.o UrlMatchList.o UrlBlockCheck.o UrlComponent.o UrlParser.o UdpStatistic.o \
 	UrlRealtimeClassification.o UrlResultOverride.o \
 	WantedChecker.o \
 	MergeSpaceCoordinator.o \

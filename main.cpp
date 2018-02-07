@@ -92,7 +92,6 @@
 #include "GbDns.h"
 #include "ScopedLock.h"
 #include "RobotsCheckList.h"
-#include "SpiderdbHostDelete.h"
 #include "ConvertSpiderdb.h"
 #include "RobotsBlockedResultOverride.h"
 #include "UrlResultOverride.h"
@@ -1627,12 +1626,6 @@ int main2 ( int argc , char *argv[] ) {
 
 	if (!g_docReindexUrl.init()) {
 		logError("Unwable to initialize doc reindex url");
-		return 0;
-	}
-
-	// initialize spiderdb host delete
-	if (!SpiderdbHostDelete::initialize()) {
-		logError("Unable to initialize Spiderdb host delete");
 		return 0;
 	}
 
