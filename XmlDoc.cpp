@@ -1961,7 +1961,7 @@ bool* XmlDoc::checkBlockList() {
 
 	if (!blocked && !m_checkedIpBlockList) {
 		int32_t *ip = getIp();
-		if (ip == (int32_t*) -1) {
+		if (ip == nullptr || ip == (int32_t*) -1) {
 			// blocked
 			return (bool*)ip;
 		}
@@ -2051,8 +2051,8 @@ bool XmlDoc::indexDoc2 ( ) {
 	}
 
 	bool *isPageBlocked = checkBlockList();
-	if (isPageBlocked == (void*)-1) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, return false. isPageBlocked=-1");
+	if (isPageBlocked == nullptr || isPageBlocked == (void*)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, return false. checkBlockList blocked");
 		return false;
 	}
 
@@ -6986,6 +6986,25 @@ static void delayWrapper ( int fd , void *state ) {
 	THIS->m_masterLoop ( THIS->m_masterState );
 }
 
+void XmlDoc::setIp(GbDns::DnsResponse *response) {
+	m_ip = response->m_ips.empty() ? 0 : response->m_ips.front();
+
+	if (!response->m_ips.empty()) {
+		m_ipsValid = true;
+		m_ips = std::move(response->m_ips);
+	}
+
+	if (!response->m_nameservers.empty()) {
+		m_hostNameServersValid = true;
+		m_hostNameServers = std::move(response->m_nameservers);
+	}
+
+	if (response->m_errno) {
+		m_indexCodeValid = true;
+		m_indexCode = response->m_errno;
+	}
+}
+
 void XmlDoc::gotIpWrapper(GbDns::DnsResponse *response, void *state) {
 	XmlDoc *that = static_cast<XmlDoc*>(state);
 
@@ -6995,22 +7014,7 @@ void XmlDoc::gotIpWrapper(GbDns::DnsResponse *response, void *state) {
 
 	that->m_ipValid = true;
 	if (response) {
-		that->m_ip = response->m_ips.empty() ? 0 : response->m_ips.front();
-
-		if (!response->m_ips.empty()) {
-			that->m_ipsValid = true;
-			that->m_ips = std::move(response->m_ips);
-		}
-
-		if (!response->m_nameservers.empty()) {
-			that->m_hostNameServersValid = true;
-			that->m_hostNameServers = std::move(response->m_nameservers);
-		}
-
-		if (response->m_errno) {
-			that->m_indexCodeValid = true;
-			that->m_indexCode = response->m_errno;
-		}
+		that->setIp(response);
 	}
 
 	char ipbuf[16];
@@ -7113,15 +7117,24 @@ int32_t *XmlDoc::getIp ( ) {
 		m_didDelayUnregister = true;
 	}
 
-	// update status msg
-	setStatus ( "getting ip (gbdns)" );
-
 	m_ipStartTime = gettimeofdayInMilliseconds();
 
 	setStatus("getting dns a record");
 
 	logTrace( g_conf.m_logTraceXmlDoc, "Calling GbDns::getARecord [%.*s]", u->getHostLen(), u->getHost());
-	GbDns::getARecord(u->getHost(), u->getHostLen(), gotIpWrapper, this);
+
+	GbDns::DnsResponse dnsResponse;
+	if (GbDns::getARecord(u->getHost(), u->getHostLen(), gotIpWrapper, this, &dnsResponse)) {
+		m_ipEndTime = gettimeofdayInMilliseconds();
+
+		setStatus("got ip");
+
+		m_ipValid = true;
+		setIp(&dnsResponse);
+
+		return &m_ip;
+	}
+
 	logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. Blocked." );
 	return (int32_t*)-1;
 }
