@@ -24,11 +24,6 @@ static void generateSummary( Summary &summary, char *htmlInput, const char *quer
 
 	Words words;
 	ASSERT_TRUE(words.set(&xml, true));
-printf("@@@words: %d\n", words.getNumWords());
-for(int i=0; i<words.getNumWords(); i++) {
-  printf("  #%d: '%.*s'\n", i, words.getWordLen(i), words.getWord(i));
-  printf("        wid=%d tid=%d\n", words.getWordId(i), words.getTagIds()[i]);
-}
 
 	Bits bits;
 	ASSERT_TRUE(bits.set(&words));
