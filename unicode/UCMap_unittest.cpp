@@ -85,7 +85,9 @@ int main() {
 		assert(!m.lookup2(0x2031)); //‱
 		assert(!m.lookup2(0x2289)); //⊉
 		assert(!m.lookup2(0x2327)); //⌧
-		//assert(!m.lookup2('_')); hmmm...
+		assert(!m.lookup2('_')); //underscore/low-line
+		assert(!m.lookup2(0x00B7)); //00B7;MIDDLE DOT
+		assert(!m.lookup2(0x201c)); //201C;LEFT DOUBLE QUOTATION MARK
 	}
 	
 	{
