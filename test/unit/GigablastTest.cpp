@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "Mem.h"
-#include "Unicode.h"
+#include "UCMaps.h"
 #include "hash.h"
 #include "Conf.h"
 #include "Hostdb.h"
@@ -39,7 +39,8 @@ int main(int argc, char **argv) {
 
 	/// @todo ALC cleanup tmp merge space
 
-	if ( !ucInit() ) {
+	const char *errmsg;
+	if ( !UnicodeMaps::load_maps("ucdata",&errmsg) ) {
 		log("Unicode initialization failed!");
 		exit(1);
 	}
@@ -48,7 +49,7 @@ int main(int argc, char **argv) {
 
 	int ret = RUN_ALL_TESTS();
 
-	resetDecompTables();
+	UnicodeMaps::unload_maps();
 
 	return ret;
 }
