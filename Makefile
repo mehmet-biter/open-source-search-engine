@@ -439,6 +439,9 @@ clean:
 	-rm -f default_css.inc
 	-rm -f query_stop_words.??.inc query_stop_words_list.inc
 	$(MAKE) -C test $@
+	$(MAKE) -C word_variations/ $@
+	$(MAKE) -C sto/ $@
+	$(MAKE) -C unicode/ $@
 
 
 .PHONY: cleandb
