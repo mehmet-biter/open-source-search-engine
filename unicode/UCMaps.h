@@ -64,7 +64,7 @@ static inline UChar32 to_lower(UChar32 c) {
 }
 
 static inline bool is_wordchar(UChar32 c) {
-	return g_unicode_wordchars_map.lookup(c);
+	return g_unicode_wordchars_map.lookup2(c);
 }
 
 static inline bool is_alfanumeric(UChar32 c) {
