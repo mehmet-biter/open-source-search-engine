@@ -19,7 +19,7 @@ namespace GbDns {
 
 	void finalize();
 
-	void getARecord(const char *hostname, size_t hostnameLen, void (*callback)(DnsResponse *response, void *state), void *state);
+	bool getARecord(const char *hostname, size_t hostnameLen, void (*callback)(DnsResponse *response, void *state), void *state, GbDns::DnsResponse *response);
 	void getNSRecord(const char *hostname, size_t hostnameLen, void (*callback)(DnsResponse *response, void *state), void *state);
 
 	void makeCallbacks();

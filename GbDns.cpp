@@ -112,7 +112,7 @@ static void* processing_thread(void *args) {
 		}
 	}
 
-	return 0;
+	return nullptr;
 }
 
 struct DnsItem {
@@ -336,18 +336,17 @@ static int convert_ares_errorno(int ares_errno) {
 	return 0;
 }
 
-static void addToCallbackQueue(DnsItem *item, bool addToCache=true) {
-	if (addToCache) {
-		if (item->m_reqType == DnsItem::request_type_a) {
-			s_cache.insert(item->m_hostname, item->m_response);
-		} else if (item->m_reqType == DnsItem::request_type_ns) {
-			if (!item->m_response.m_nameservers.empty()) {
-				GbDns::DnsResponse response;
-				if (s_cache.lookup(item->m_hostname, &response)) {
-					// merge response
-					response.m_nameservers = item->m_response.m_nameservers;
-					s_cache.insert(item->m_hostname, response);
-				}
+static void addToCallbackQueue(DnsItem *item) {
+	// add to cache
+	if (item->m_reqType == DnsItem::request_type_a) {
+		s_cache.insert(item->m_hostname, item->m_response);
+	} else if (item->m_reqType == DnsItem::request_type_ns) {
+		if (!item->m_response.m_nameservers.empty()) {
+			GbDns::DnsResponse response;
+			if (s_cache.lookup(item->m_hostname, &response)) {
+				// merge response
+				response.m_nameservers = item->m_response.m_nameservers;
+				s_cache.insert(item->m_hostname, response);
 			}
 		}
 	}
@@ -404,7 +403,7 @@ static void a_callback(void *arg, int status, int timeouts, unsigned char *abuf,
 	logTrace(g_conf.m_logTraceDns, "END");
 }
 
-void GbDns::getARecord(const char *hostname, size_t hostnameLen, void (*callback)(GbDns::DnsResponse *response, void *state), void *state) {
+bool GbDns::getARecord(const char *hostname, size_t hostnameLen, void (*callback)(GbDns::DnsResponse *response, void *state), void *state, GbDns::DnsResponse *response) {
 	logTrace(g_conf.m_logTraceDns, "BEGIN hostname='%.*s'", static_cast<int>(hostnameLen), hostname);
 
 	DnsItem *item = new DnsItem(DnsItem::request_type_a, hostname, hostnameLen, callback, state);
@@ -415,11 +414,11 @@ void GbDns::getARecord(const char *hostname, size_t hostnameLen, void (*callback
 
 		// hostname is ip. skip dns lookup
 		if (inet_pton(AF_INET, item->m_hostname.c_str(), &addr) == 1) {
-			item->m_response.m_ips.push_back(addr.s_addr);
-			addToCallbackQueue(item, false);
+			response->m_ips.push_back(addr.s_addr);
+			delete item;
 
 			logTrace(g_conf.m_logTraceDns, "END. hostname is IP addr");
-			return;
+			return true;
 		}
 	}
 
@@ -427,27 +426,28 @@ void GbDns::getARecord(const char *hostname, size_t hostnameLen, void (*callback
 		ScopedLock sl(s_channelMtx);
 		hostent *host = nullptr;
 		if (ares_gethostbyname_file(s_channel, item->m_hostname.c_str(), AF_INET, &host) == ARES_SUCCESS) {
-			item->m_response.m_ips.push_back(((in_addr*)host->h_addr_list[0])->s_addr);
-			addToCallbackQueue(item, false);
+			response->m_ips.push_back(((in_addr*)host->h_addr_list[0])->s_addr);
 
+			delete item;
 			ares_free_hostent(host);
 
 			logTrace(g_conf.m_logTraceDns, "END. hostname found in /etc/host");
-			return;
+			return true;
 		}
 	}
 
 	// check cache
-	if (s_cache.lookup(item->m_hostname, &(item->m_response))) {
-		addToCallbackQueue(item, false);
+	if (s_cache.lookup(item->m_hostname, response)) {
+		delete item;
 
 		logTrace(g_conf.m_logTraceDns, "END. hostname found in cache");
-		return;
+		return true;
 	}
 
 	s_requestQueue.addItem(item);
 
 	logTrace(g_conf.m_logTraceDns, "END");
+	return false;
 }
 
 static void ns_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen) {
