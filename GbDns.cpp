@@ -15,8 +15,16 @@
 
 static ares_channel s_channel;
 static pthread_t s_thread;
-static bool s_stop = false;
-static bool s_finalized = false;
+static std::atomic<bool> s_stop(false);
+static std::atomic<bool> s_finalized(false);
+
+static std::atomic<bool> s_pause(false);
+static pthread_cond_t s_pauseCond = PTHREAD_COND_INITIALIZER;
+static GbMutex s_pauseMtx;
+
+static std::atomic<bool> s_wait(false);
+static pthread_cond_t s_waitCond = PTHREAD_COND_INITIALIZER;
+static GbMutex s_waitMtx;
 
 static pthread_cond_t s_channelCond = PTHREAD_COND_INITIALIZER;
 static GbMutex s_channelMtx;
@@ -85,8 +93,15 @@ static void* processing_thread(void *args) {
 			ScopedLock sl(s_channelMtx);
 			nfds = ares_fds(s_channel, &read_fds, &write_fds);
 			if (nfds == 0) {
+				{
+					ScopedLock sl(s_waitMtx);
+					s_wait = true;
+					pthread_cond_signal(&s_waitCond);
+				}
+
 				// wait until new request comes in
 				pthread_cond_wait(&s_channelCond, &s_channelMtx.mtx);
+				s_wait = false;
 				continue;
 			}
 		}
@@ -155,12 +170,23 @@ static void processRequest(void *item) {
 			break;
 	}
 
+	{
+		ScopedLock sl(s_pauseMtx);
+		if (s_pause) {
+			pthread_cond_wait(&s_pauseCond, &s_pauseMtx.mtx);
+		}
+	}
+
 	ScopedLock sl(s_channelMtx);
 	ares_query(s_channel, dnsItem->m_hostname.c_str(), C_IN, type, callback, dnsItem);
 	pthread_cond_signal(&s_channelCond);
 }
 
-bool GbDns::initializeSettings() {
+void GbDns::reinitializeSettings(void *state) {
+	initializeSettings(true);
+}
+
+bool GbDns::initializeSettings(bool reload) {
 	log(LOG_INFO, "dns: Initializing settings");
 
 	// setup dns servers
@@ -179,6 +205,16 @@ bool GbDns::initializeSettings() {
 		servers.append(server);
 	}
 
+	if (reload) {
+		s_pause = true;
+
+		// wait until pending items have been processed
+		ScopedLock sl(s_waitMtx);
+		while (!s_wait) {
+			pthread_cond_wait(&s_waitCond, &s_waitMtx.mtx);
+		}
+	}
+
 	{
 		ScopedLock sl(s_channelMtx);
 		if (ares_set_servers_ports(s_channel, servers.getHead()) != ARES_SUCCESS) {
@@ -187,8 +223,16 @@ bool GbDns::initializeSettings() {
 		}
 	}
 
+	if (reload) {
+		s_pause = false;
+
+		ScopedLock sl(s_pauseMtx);
+		pthread_cond_signal(&s_pauseCond);
+	}
+
 	s_cache.configure(g_conf.m_dnsCacheMaxAge*1000, g_conf.m_dnsCacheSize, g_conf.m_logTraceDnsCache, "dns cache");
 
+	log(LOG_INFO, "dns: Done initializing settings");
 	return true;
 }
 

@@ -15,7 +15,8 @@ namespace GbDns {
 	};
 
 	bool initialize();
-	bool initializeSettings();
+	bool initializeSettings(bool reload = false);
+	void reinitializeSettings(void *state);
 
 	void finalize();
 
