@@ -7,14 +7,14 @@ CPPFLAGS += -Wall
 .cpp.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -c $*.cpp
 
+DATFILES=unicode_scripts.dat unicode_general_categories.dat unicode_properties.dat unicode_wordchars.dat unicode_to_lowercase.dat unicode_canonical_decomposition.dat
+
+ALL=libunicode.a
+ifneq (,$(wildcard $(UCDDIR)/UnicodeData.txt))
+ALL+=$(DATFILES)
+endif
 .PHONY: all
-all: libunicode.a \
-     unicode_scripts.dat \
-     unicode_general_categories.dat \
-     unicode_properties.dat \
-     unicode_wordchars.dat \
-     unicode_to_lowercase.dat \
-     unicode_canonical_decomposition.dat
+all: $(ALL)
 
 
 libunicode.a: UCMap.o UCMaps.o UCDecompose.o
@@ -39,17 +39,19 @@ UCDecompose_unittest: UCDecompose_unittest.o UCDecompose.o UCMap.o UCMaps.o
 	g++ -g	UCDecompose_unittest.o UCDecompose.o UCMap.o UCMaps.o -o $@
 
 .PHONY: UCDecompose_unittest_run
-UCDecompose_unittest_run: UCDecompose_unittest
+UCDecompose_unittest_run: UCDecompose_unittest $(DATFILES)
 	./UCDecompose_unittest
 
 
-unicode_scripts.dat unicode_general_categories.dat unicode_properties.dat unicode_wordchars.dat unicode_to_lowercase.dat unicode_canonical_decomposition.dat: generate_tables.py
+.PHONY: datfiles
+datfiles: $(DATFILES)
+$(DATFILES): generate_tables.py
 	./generate_tables.py $(UCDDIR)
 
 
 .PHONY: clean
 clean:
-	rm -f *.o *.a UCMap_unittest
+	rm -f *.o *.a UCMap_unittest UCDecompose_unittest
 
 .PHONY: mrproper
 mrproper: clean

@@ -330,7 +330,6 @@ libsto.a:
 PHONY: libunicode.a
 libunicode.a:
 	$(MAKE) -C unicode/
-	./copy_changed_files.sh ucdata/ unicode/*.dat
 	ln -sf unicode/libunicode.a libunicode.a
 
 wanted_check_api.so: WantedCheckExampleLib.o
@@ -432,7 +431,7 @@ systemtest:
 
 .PHONY: clean
 clean:
-	-rm -f *.o *.d gb core core.* libgb.a libsto.a libword_variations.a
+	-rm -f *.o *.d gb core core.* libgb.a libsto.a libword_variations.a libunicode.a
 	-rm -f gmon.*
 	-rm -f *.gcda *.gcno coverage*.html
 	-rm -f *.ll *.ll.out pstack.txt
