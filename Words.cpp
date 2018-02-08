@@ -301,7 +301,8 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 		// get props
 		uint32_t props = UnicodeMaps::query_properties(c);
 		// good stuff?
-		if(props&(Unicode::White_Space|Unicode::Extender)) continue;
+		if(props&(Unicode::Extender)) continue;
+		//(todo): props&ignorable (which is quite complicated)
 		//something abotu ignorable
 		// stop? if UC_WORCHAR is set, that means its an alnum
 		if(!UnicodeMaps::is_wordchar(c)) {
