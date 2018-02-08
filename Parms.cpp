@@ -10677,39 +10677,16 @@ void Parms::handleRequest3fLoop(void *weArg) {
 			g_udpServer.sendReply(NULL, 0, NULL, 0, we->m_slot, we, handleRequest3fLoop2);
 		}
 
-
-		// . determine if it alters the url filters
-		// . if those were changed we have to nuke doledb and
-		//   waiting tree in Spider.cpp and rebuild them!
-		if ( parm->m_flags & PF_REBUILDURLFILTERS )
-			we->m_doRebuilds = true;
-
-		if ( parm->m_flags & PF_REBUILDPROXYTABLE )
-			we->m_doProxyRebuild = true;
-
-		if ( parm->m_flags & PF_REBUILDACTIVELIST )
-			we->m_rebuildActiveList = true;
-
-		if ( parm->m_flags & PF_REBUILDRANKINGSETTINGS )
-			rebuildRankingSettings = true;
-
-		if (parm->m_flags & PF_REBUILDDNSSETTINGS) {
-			rebuildDnsSettings = true;
-		}
-
-		if (parm->m_flags & PF_REBUILDSPIDERSETTINGS) {
-			rebuildSpiderSettings = true;
-		}
-
 		// get collnum i guess
 		if ( parm->m_type != TYPE_CMD )
 			we->m_collnum = getCollnumFromParmRec ( rec );
 
+		bool changed = false;
 		// . this returns false if blocked, returns true and sets
 		//   g_errno on error
 		// . it'll block if trying to delete a coll when the tree
 		//   is saving or something (CommandDeleteColl())
-		if ( ! g_parms.updateParm ( rec , we ) ) {
+		if ( ! g_parms.updateParm ( rec , we, &changed ) ) {
 			////////////
 			//
 			// . it blocked! it will call we->m_callback when done
@@ -10724,6 +10701,35 @@ void Parms::handleRequest3fLoop(void *weArg) {
 
 			log("parms: updateParm blocked. waiting.");
 			return;
+		}
+
+		if (changed) {
+			// . determine if it alters the url filters
+			// . if those were changed we have to nuke doledb and
+			//   waiting tree in Spider.cpp and rebuild them!
+			if (parm->m_flags & PF_REBUILDURLFILTERS) {
+				we->m_doRebuilds = true;
+			}
+
+			if (parm->m_flags & PF_REBUILDPROXYTABLE) {
+				we->m_doProxyRebuild = true;
+			}
+
+			if (parm->m_flags & PF_REBUILDACTIVELIST) {
+				we->m_rebuildActiveList = true;
+			}
+
+			if (parm->m_flags & PF_REBUILDRANKINGSETTINGS) {
+				rebuildRankingSettings = true;
+			}
+
+			if (parm->m_flags & PF_REBUILDDNSSETTINGS) {
+				rebuildDnsSettings = true;
+			}
+
+			if (parm->m_flags & PF_REBUILDSPIDERSETTINGS) {
+				rebuildSpiderSettings = true;
+			}
 		}
 
 		// do the next parm
@@ -10742,6 +10748,7 @@ void Parms::handleRequest3fLoop(void *weArg) {
 	// basically resetting the spider here...
 	CollectionRec *cx = g_collectiondb.getRec(we->m_collnum);
 	if ( we->m_doRebuilds && cx ) {
+		log("parms: rebuild url filters");
 		// . this tells Spider.cpp to rebuild the spider queues
 		// . this is NULL if spider stuff never initialized yet,
 		//   like if you just added the collection
@@ -10755,22 +10762,30 @@ void Parms::handleRequest3fLoop(void *weArg) {
 		cx->rebuildUrlFilters();
 	}
 
-	if ( we->m_rebuildActiveList && cx )
+	if ( we->m_rebuildActiveList && cx ) {
+		log("parms: rebuild active list");
 		g_spiderLoop.invalidateActiveList();
+	}
 
 	// if user changed the list of proxy ips rebuild the binary
 	// array representation of the proxy ips we have
-	if ( we->m_doProxyRebuild )
+	if ( we->m_doProxyRebuild ) {
+		log("parms: rebuild proxy table");
 		buildProxyTable();
+	}
 
-	if ( rebuildRankingSettings )
+	if ( rebuildRankingSettings ) {
+		log("parms: rebuild ranking settings");
 		reinitializeRankingSettings();
+	}
 
 	if (rebuildDnsSettings) {
+		log("parms: rebuild dns settings");
 		GbDns::initializeSettings();
 	}
 
 	if (rebuildSpiderSettings) {
+		log("parms: rebuild spider settings");
 		g_spiderLoop.initSettings();
 	}
 
@@ -11164,15 +11179,13 @@ bool Parms::addAllParmsToList ( SafeBuf *parmList, collnum_t collnum ) {
 	return true;
 }
 
-void resetImportLoopFlag (); //in PageInject.cpp
-
 // . this adds the key if not a cmd key to parmdb rdbtree
 // . this executes cmds
 // . this updates the CollectionRec which may disappear later and be fully
 //   replaced by Parmdb, just an RdbTree really.
 // . returns false if blocked
 // . returns true and sets g_errno on error
-bool Parms::updateParm(const char *rec, WaitEntry *we) {
+bool Parms::updateParm(const char *rec, WaitEntry *we, bool *changed) {
 
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 
@@ -11310,9 +11323,9 @@ bool Parms::updateParm(const char *rec, WaitEntry *we) {
 	parm->printVal ( &val2 , collnum , occNum );
 
 	// did this parm change value?
-	bool changed = true;
+	*changed = true;
 	if ( strcmp ( val1.getBufStart() , val2.getBufStart() ) == 0 )
-		changed = false;
+		*changed = false;
 
 	// . update array count if necessary
 	// . parm might not have changed value based on what was in there
@@ -11345,7 +11358,7 @@ bool Parms::updateParm(const char *rec, WaitEntry *we) {
 	}
 
 	// all done if value was unchanged
-	if ( ! changed )
+	if ( ! *changed )
 		return true;
 
 	// show it
