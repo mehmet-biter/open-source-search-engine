@@ -1,6 +1,6 @@
 #include "STOWordVariationGenerator.h"
 #include "fctypes.h"  //to_lower_utf8
-#include "Unicode.h" //getUtf8CharSize etc
+#include "utf8.h" //getUtf8CharSize etc
 
 
 bool STOWordVariationGenerator::load_lexicon(const char *filename) {
