@@ -1981,7 +1981,7 @@ bool* XmlDoc::checkBlockList() {
 
 	if (!blocked && !m_checkedIpBlockList) {
 		int32_t *ip = getIp();
-		if (ip == (int32_t*) -1) {
+		if (ip == nullptr || ip == (int32_t*) -1) {
 			// blocked
 			return (bool*)ip;
 		}
@@ -2066,8 +2066,8 @@ bool XmlDoc::indexDoc2 ( ) {
 	}
 
 	bool *isPageBlocked = checkBlockList();
-	if (isPageBlocked == (void*)-1) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, return false. isPageBlocked=-1");
+	if (isPageBlocked == nullptr || isPageBlocked == (void*)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, return false. checkBlockList blocked");
 		return false;
 	}
 

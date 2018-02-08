@@ -267,7 +267,7 @@ private:
 	bool syncParmsWithHost0 ( ) ;
 	bool makeSyncHashList ( SafeBuf *hashList ) ;
 	bool addAllParmsToList ( SafeBuf *parmList, collnum_t collnum ) ;
-	bool updateParm(const char *rec, class WaitEntry *we);
+	bool updateParm(const char *rec, class WaitEntry *we, bool *changed);
 
 	bool cloneCollRec ( char *srcCR , char *dstCR ) ;
 
