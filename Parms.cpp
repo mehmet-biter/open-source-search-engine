@@ -11349,7 +11349,7 @@ bool Parms::updateParm(const char *rec, WaitEntry *we, bool *changed) {
 			updateCount = false;
 		// and for other pages, like master ips, skip if empty!
 		// PAGE_PASSWORDS, PAGE_MASTERPASSWORDS, ...
-		if ( parm->m_page != PAGE_FILTERS && ! changed )
+		if ( parm->m_page != PAGE_FILTERS && ! *changed )
 			updateCount = false;
 
 		// ok, increment the array count of items in the array
