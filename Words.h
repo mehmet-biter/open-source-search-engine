@@ -248,18 +248,12 @@ class Words {
 		}
 
 		return is_upper_utf8( m_words[n] );
+		//todo: handle titlecase letters (
 	}
 
 	 Words     ( );
 	~Words     ( );
 	void reset ( ); 
-
-	char *getContent() { 
-		if ( m_numWords == 0 ) return NULL;
-		return m_words[0]; 
-	}
-
-	int32_t getPreCount() const { return m_preCount; }
 
 private:
 

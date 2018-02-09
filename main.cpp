@@ -4906,8 +4906,8 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Words::set(xml,computeIds=true) took %.3f ms for %" PRId32" words"
-	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
+	    " for docId %" PRId64".",
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 	t = gettimeofdayInMilliseconds();
@@ -4920,8 +4920,8 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	e = gettimeofdayInMilliseconds();
 	log("build: Words::set(xml,computeIds=false) "
 	    "took %.3f ms for %" PRId32" words"
-	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
+	    " for docId %" PRId64".",
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 	t = gettimeofdayInMilliseconds();
@@ -5059,8 +5059,8 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Matches::set() took %.3f ms for %" PRId32" words"
-	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
+	    " for docId %" PRId64".",
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 
