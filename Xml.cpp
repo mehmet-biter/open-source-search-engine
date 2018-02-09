@@ -990,7 +990,7 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 					s[len] = saved;
 				}
 
-				if ( ( !wp.set(&xml, true) ) ) {
+				if ( ( !wp.set(&xml) ) ) {
 					// unable to allocate buffer
 					return false;
 				}
