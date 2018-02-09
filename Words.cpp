@@ -24,7 +24,6 @@ Words::~Words ( ) {
 void Words::reset ( ) {
 	m_numWords = 0;
 	m_numAlnumWords = 0;
-	m_xml = NULL;
 	m_preCount = 0;
 	if ( m_buf && m_buf != m_localBuf && m_buf != m_localBuf2 )
 		mfree ( m_buf , m_bufSize , "Words" );
@@ -115,12 +114,7 @@ static int32_t countWords ( const char *p ) {
 }
 
 bool Words::set( Xml *xml, int32_t node1, int32_t node2 ) {
-	// prevent setting with the same string
-	if ( m_xml == xml ) gbshutdownLogicError();
-
 	reset();
-
-	m_xml = xml;
 
 	// if xml is empty, bail
 	if ( !xml->getContent() ) {
