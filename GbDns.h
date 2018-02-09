@@ -15,11 +15,12 @@ namespace GbDns {
 	};
 
 	bool initialize();
-	bool initializeSettings();
+	bool initializeSettings(bool reload = false);
+	void reinitializeSettings(void *state);
 
 	void finalize();
 
-	void getARecord(const char *hostname, size_t hostnameLen, void (*callback)(DnsResponse *response, void *state), void *state);
+	bool getARecord(const char *hostname, size_t hostnameLen, void (*callback)(DnsResponse *response, void *state), void *state, GbDns::DnsResponse *response);
 	void getNSRecord(const char *hostname, size_t hostnameLen, void (*callback)(DnsResponse *response, void *state), void *state);
 
 	void makeCallbacks();

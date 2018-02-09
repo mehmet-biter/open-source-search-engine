@@ -201,3 +201,19 @@ uint64_t getCurrentTimeNanoseconds() {
 	clock_gettime(CLOCK_REALTIME,&ts_now);
 	return ts_now.tv_sec * 1000000000 + ts_now.tv_nsec;
 }
+
+const char *formatTime(time_t when, char buf[32]) {
+	struct tm t;
+	gmtime_r(&when, &t);
+	strftime(buf,32,"%Y-%m-%dT%H:%M:%SZ",&t);
+	return buf;
+}
+
+const char *formatTimeMs(int64_t when, char buf[32]) {
+	time_t when_secs = when/1000;
+	struct tm t;
+	gmtime_r(&when_secs, &t);
+	strftime(buf,32,"%Y-%m-%dT%H:%M:%S",&t);
+	sprintf(strchr(buf,'\0'),".%03dZ",(int)(when%1000));
+	return buf;
+}

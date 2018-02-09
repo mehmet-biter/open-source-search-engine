@@ -4899,20 +4899,20 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( &xml , true ) ) {
+		if ( ! words.set ( &xml ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Words::set(xml,computeIds=true) took %.3f ms for %" PRId32" words"
-	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
+	    " for docId %" PRId64".",
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( &xml , true ) ) {
+		if ( ! words.set ( &xml ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4920,13 +4920,13 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	e = gettimeofdayInMilliseconds();
 	log("build: Words::set(xml,computeIds=false) "
 	    "took %.3f ms for %" PRId32" words"
-	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
+	    " for docId %" PRId64".",
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( content , true ) ) {
+		if ( ! words.set ( content ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4940,7 +4940,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	Pos pos;
 	// computeWordIds from xml
-	words.set ( &xml , true ) ;
+	words.set ( &xml ) ;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		if ( ! pos.set ( &words ) ) {
@@ -4957,7 +4957,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	Bits bits;
 	// computeWordIds from xml
-	words.set ( &xml , true ) ;
+	words.set ( &xml ) ;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		if ( ! bits.setForSummary ( &words ) ) {
@@ -4974,7 +4974,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	Sections sections;
 	// computeWordIds from xml
-	words.set ( &xml , true ) ;
+	words.set ( &xml ) ;
 	bits.set(&words);
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
@@ -5029,7 +5029,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 			log(LOG_WARN, "build: speedtestxml: getText: %s", mstrerror(g_errno));
 			return false;
 		}
-		if ( ! words.set ( buf,true) ) {
+		if ( ! words.set ( buf ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -5047,7 +5047,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	Query q;
 	q.set2(query, langUnknown, 1.0, 1.0, NULL, false, true, ABS_MAX_QUERY_TERMS);
 	matches.setQuery ( &q );
-	words.set ( &xml , true ) ;
+	words.set ( &xml ) ;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
 		matches.reset();
@@ -5059,8 +5059,8 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Matches::set() took %.3f ms for %" PRId32" words"
-	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
+	    " for docId %" PRId64".",
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 

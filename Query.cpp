@@ -1233,7 +1233,7 @@ bool Query::setQWords ( char boolFlag ,
 	// . break query up into Words and phrases
 	// . because we now deal with boolean queries, we make parentheses
 	//   their own separate Word, so tell "words" we're setting a query
-	if ( !words.set( m_filteredQuery.getBufStart(), m_filteredQuery.length(), true ) ) {
+	if ( !words.set( m_filteredQuery.getBufStart(), m_filteredQuery.length() ) ) {
 		log(LOG_WARN, "query: Had error parsing query: %s.", mstrerror(g_errno));
 		return false;
 	}

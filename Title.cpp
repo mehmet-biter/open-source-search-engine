@@ -266,7 +266,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 			}
 
 			// now the words.
-			if ( !tw[ti].set( k->getLinkText(), k->size_linkText - 1, true ) ) {
+			if ( !tw[ti].set( k->getLinkText(), k->size_linkText - 1 ) ) {
 				return false;
 			}
 
@@ -301,7 +301,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		// skip if empty
 		if ( tslen <= 0 ) continue;
 		// now set words to that
-		if ( !tw[ti].set( ts, tslen, true ) ) {
+		if ( !tw[ti].set( ts, tslen ) ) {
 			return false;
 		}
 
@@ -448,7 +448,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		}
 
 		// ok, process it
-		if ( ! tw[ti].set ( atitle, atlen, true )) {
+		if ( ! tw[ti].set ( atitle, atlen )) {
 			return false;
 		}
 
@@ -792,7 +792,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		// did we get any?
 		if ( p > pstart && n < MAX_TIT_CANDIDATES ) {
 			// now set words to that
-			if ( ! tw[ti].set ( p, (pend - p), true )) {
+			if ( ! tw[ti].set ( p, (pend - p) )) {
 				return false;
 			}
 
@@ -1309,7 +1309,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		// last resort use file name
 		if ((contentType == CT_PDF) && (firstUrl->getFilenameLen() != 0)) {
 			Words w;
-			w.set(firstUrl->getFilename(), firstUrl->getFilenameLen(), true);
+			w.set(firstUrl->getFilename(), firstUrl->getFilenameLen());
 			if (!copyTitle(&w, 0, w.getNumWords())) {
 				return false;
 			}

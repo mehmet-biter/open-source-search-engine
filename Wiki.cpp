@@ -109,7 +109,7 @@ bool Wiki::loadText ( int32_t fileSize ) {
 		for (eol = p; eol < pend && *eol !='\n' ; eol++) ;
 		// parse into words
 		Words w;
-		if ( !w.set( p, eol - p, true ) ) {
+		if ( !w.set( p, eol - p ) ) {
 			return false;
 		}
 
