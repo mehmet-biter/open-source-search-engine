@@ -132,3 +132,26 @@ TEST(WordsTest, buffer_tokenization) {
 		EXPECT_EQ(words.getWordLen(2),2);
 	}
 }
+
+TEST(WordsTest, html_tokenization) {
+	char buf[256];
+	{
+		strcpy(buf,"<p>Hello <em>world</em>!</p>");
+		Words words;
+		EXPECT_TRUE(words.set(buf));
+		EXPECT_EQ(words.getNumWords(),13);
+		EXPECT_EQ(words.getWordLen( 0),1);
+		EXPECT_EQ(words.getWordLen( 1),1);
+		EXPECT_EQ(words.getWordLen( 2),1);
+		EXPECT_EQ(words.getWordLen( 3),5);
+		EXPECT_EQ(words.getWordLen( 4),2);
+		EXPECT_EQ(words.getWordLen( 5),2);
+		EXPECT_EQ(words.getWordLen( 6),1);
+		EXPECT_EQ(words.getWordLen( 7),5);
+		EXPECT_EQ(words.getWordLen( 8),2);
+		EXPECT_EQ(words.getWordLen( 9),2);
+		EXPECT_EQ(words.getWordLen(10),4);
+		EXPECT_EQ(words.getWordLen(11),1);
+		EXPECT_EQ(words.getWordLen(12),1);
+	}
+}
