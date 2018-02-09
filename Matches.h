@@ -80,7 +80,7 @@ class Matches {
 			  Sections *bodySections, Bits *bodyBits, Pos *bodyPos, Xml *xml,
 			  Title *tt, Url *firstUrl, LinkInfo *linkInfo );
 
-	bool addMatches(char *s, int32_t slen, mf_t flags );
+	bool addMatches(const char *s, int32_t slen, mf_t flags );
 
 	// . this sets the m_matches[] array
 	// . m_matches[i] is -1 if it matches no term in the query

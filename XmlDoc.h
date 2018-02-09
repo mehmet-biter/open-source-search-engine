@@ -543,13 +543,13 @@ public:
 
 	bool hashWords( class HashInfo *hi );
 	bool hashSingleTerm( const char *s, int32_t slen, class HashInfo *hi );
-	bool hashString( char *s, int32_t slen, class HashInfo *hi );
+	bool hashString( const char *s, int32_t slen, class HashInfo *hi );
 
 	bool hashWords3( class HashInfo *hi, const Words *words, class Phrases *phrases,
 					 class Sections *sections, class HashTableX *countTable, char *fragVec, char *wordSpamVec,
 					 char *langVec, class HashTableX *wts, class SafeBuf *wbuf );
 
-	bool hashString3( char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
+	bool hashString3( const char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
 			  class HashTableX *wts, class SafeBuf *wbuf);
 
 	// print out for PageTitledb.cpp and PageParser.cpp

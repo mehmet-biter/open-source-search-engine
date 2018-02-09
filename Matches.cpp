@@ -275,8 +275,8 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 	int32_t  a     = tt->getTitleTagStart();
 	int32_t  b     = tt->getTitleTagEnd();
 
-	char *start = NULL;
-	char *end   = NULL;
+	const char *start = NULL;
+	const char *end   = NULL;
 	if ( a >= 0 && b >= 0 && b>a ) {
 		start = bodyWords->getWord(a);
 		end   = bodyWords->getWord(b-1) + bodyWords->getWordLen(b-1);
@@ -369,7 +369,7 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 	return true;
 }
 
-bool Matches::addMatches( char *s, int32_t slen, mf_t flags ) {
+bool Matches::addMatches( const char *s, int32_t slen, mf_t flags ) {
 	// . do not breach
 	// . happens a lot with a lot of link info text
 	if ( m_numMatchGroups >= MAX_MATCHGROUPS ) {
@@ -773,7 +773,7 @@ int32_t Matches::getNumWordsInMatch(Words *words, int32_t wn, int32_t n, int32_t
 	// get word ids array for the doc
 	int64_t  *wids   = words->getWordIds();
 	//int64_t  *swids  = words->getStripWordIds();
-	char      **ws     = words->getWordPtrs();
+	const char * const *ws = words->getWordPtrs();
 	int32_t       *wl     = words->getWordLens();
 	//the word we match in the query appears in quotes in the query
 	int32_t k     = -1;

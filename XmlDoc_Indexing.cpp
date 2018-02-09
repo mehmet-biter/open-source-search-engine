@@ -1364,10 +1364,10 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	// . use "title" as both prefix and description
 	//if ( ! hashWords (a,i,&hi ) ) return false;
 
-	char **wptrs = m_words.getWordPtrs();
+	const char * const *wptrs = m_words.getWordPtrs();
 	int32_t  *wlens = m_words.getWordLens();
-	char  *title    = wptrs[a];
-	char  *titleEnd = wptrs[i-1] + wlens[i-1];
+	const char  *title    = wptrs[a];
+	const char  *titleEnd = wptrs[i-1] + wlens[i-1];
 	int32_t   titleLen = titleEnd - title;
 	if ( ! hashString ( title, titleLen, &hi) ) return false;
 
@@ -1661,7 +1661,7 @@ bool XmlDoc::hashSingleTerm( const char *s, int32_t slen, HashInfo *hi ) {
 	return true;
 }
 
-bool XmlDoc::hashString( char *s, int32_t slen, HashInfo *hi ) {
+bool XmlDoc::hashString( const char *s, int32_t slen, HashInfo *hi ) {
 	if ( ! m_versionValid        ) { g_process.shutdownAbort(true); }
 
 	if ( hi->m_useCountTable && ! m_countTableValid){g_process.shutdownAbort(true); }
@@ -1677,7 +1677,7 @@ bool XmlDoc::hashString( char *s, int32_t slen, HashInfo *hi ) {
 }
 
 
-bool XmlDoc::hashString3( char       *s              ,
+bool XmlDoc::hashString3( const char       *s              ,
 		  int32_t        slen           ,
 		  HashInfo   *hi             ,
 		  HashTableX *countTable     ,

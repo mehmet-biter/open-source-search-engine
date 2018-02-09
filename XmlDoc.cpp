@@ -16186,7 +16186,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	char *node = xml->getNodePtr(linkNode)->m_node;
 	// . find the word index, "n" for this node
 	// . this is INEFFICIENT!!
-	char **wp = ww->getWordPtrs();
+	const char * const *wp = ww->getWordPtrs();
 	int32_t   nw = ww->getNumWords();
 	int32_t   n;
 
