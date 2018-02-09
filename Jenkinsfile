@@ -104,7 +104,7 @@ pipeline {
 
 	post {
 		always {
-			sh "killall -u \$(whoami) -s SIGINT gb"
+			sh "killall -u \$(whoami) -s SIGINT gb || true"
 		}
 
 		changed {
