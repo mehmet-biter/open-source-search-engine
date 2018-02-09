@@ -10780,7 +10780,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 
 	if (rebuildDnsSettings) {
 		log("parms: rebuild dns settings");
-		g_jobScheduler.submit(GbDns::reinitializeSettings, nullptr, nullptr, thread_type_config_load, 0);
+		if (!g_jobScheduler.submit(GbDns::reinitializeSettings, nullptr, nullptr, thread_type_config_load, 0)) {
+			// run in main thread
+			GbDns::reinitializeSettings(nullptr);
+		}
 	}
 
 	if (rebuildSpiderSettings) {
