@@ -10,7 +10,8 @@
 #include "Conf.h"
 #include "ip.h"
 #include "max_url_len.h"
-#include <time.h>
+#include "GbUtil.h"
+
 
 
 namespace {
@@ -40,10 +41,6 @@ static bool getSpiderRecs(State *st);
 static void gotSpiderRecs(void *state);
 static bool gotSpiderRecs2(State *st);
 static bool sendResult(State *st);
-
-static const char *formatTime(time_t when, char buf[32]);
-static const char *formatTimeMs(int64_t when, char buf[32]);
-
 
 //Normal flow (assuming no errors):
 //	sendPageSpiderdbLookup
@@ -553,22 +550,4 @@ static bool sendResult(State *st) {
 
 	// now encapsulate it in html head/tail and send it off
 	return g_httpServer.sendDynamicPage (s, sb.getBufStart(), sb.length(), -1, false, contentType);
-}
-
-
-
-static const char *formatTime(time_t when, char buf[32]) {
-	struct tm t;
-	gmtime_r(&when, &t);
-	strftime(buf,32,"%Y-%m-%dT%H:%M:%SZ",&t);
-	return buf;
-}
-
-static const char *formatTimeMs(int64_t when, char buf[32]) {
-	time_t when_secs = when/1000;
-	struct tm t;
-	gmtime_r(&when_secs, &t);
-	strftime(buf,32,"%Y-%m-%dT%H:%M:%S",&t);
-	sprintf(strchr(buf,'\0'),".%03dZ",(int)(when%1000));
-	return buf;
 }

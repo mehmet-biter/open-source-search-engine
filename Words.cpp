@@ -42,7 +42,7 @@ void Words::reset ( ) {
 	m_wordIds = NULL;
 }
 
-bool Words::set( char *s, int32_t slen, bool computeWordIds ) {
+bool Words::set(char *s, int32_t slen) {
 	// bail if nothing
 	if ( ! s || slen == 0 ) {
 		m_numWords = 0;
@@ -55,7 +55,7 @@ bool Words::set( char *s, int32_t slen, bool computeWordIds ) {
 		s[slen] = '\0';
 	}
 
-	bool status = set( s, computeWordIds );
+	bool status = set(s);
 	if ( c != '\0' ) {
 		s[slen] = c;
 	}
@@ -114,7 +114,7 @@ static int32_t countWords ( const char *p ) {
 	return count+10;
 }
 
-bool Words::set( Xml *xml, bool computeWordIds, int32_t node1, int32_t node2 ) {
+bool Words::set( Xml *xml, int32_t node1, int32_t node2 ) {
 	// prevent setting with the same string
 	if ( m_xml == xml ) gbshutdownLogicError();
 
@@ -164,7 +164,7 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t node1, int32_t node2 ) {
 			/// addWords should be change to use nodeLen and not null terminated string
 			char c = node[nodeLen];
 			node[nodeLen] = '\0';
-			addWords( node, nodeLen, computeWordIds );
+			addWords(node, nodeLen);
 			node[nodeLen] = c;
 			continue;
 		}
@@ -199,7 +199,7 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t node1, int32_t node2 ) {
 // . doesn't do tags, only text nodes in "xml"
 // . our definition of a word is as close to English as we can get it
 // . BUT we also consider a string of punctuation characters to be a word
-bool Words::set( char *s, bool computeWordIds ) {
+bool Words::set(char *s) {
 	reset();
 
 	// determine rough upper bound on number of words by counting
@@ -209,10 +209,10 @@ bool Words::set( char *s, bool computeWordIds ) {
 		return false;
 	}
 
-	return addWords( s, 0x7fffffff, computeWordIds );
+	return addWords(s, 0x7fffffff);
 }
 
-bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
+bool Words::addWords(char *s, int32_t nodeLen) {
 	int32_t  i = 0;
 	int32_t  j;
 	int32_t  wlen;
@@ -381,7 +381,7 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 	m_words   [ m_numWords  ] = &s[j];
 	m_wordLens[ m_numWords  ] = wlen;
 
-	if ( computeWordIds ) {
+	{
 		int64_t h = hash64Lower_utf8(&s[j],wlen);
 		m_wordIds [m_numWords] = h;
 	}

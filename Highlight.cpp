@@ -44,7 +44,7 @@ int32_t Highlight::set( SafeBuf *sb, const char *content, int32_t contentLen, Qu
 			const char *backTag ) {
 	Words words;
 	//todo: get Words clas fixed for constness so we can avoaid the const_cast here
-	if ( ! words.set ( const_cast<char*>(content), contentLen, true ) ) {
+	if ( ! words.set ( const_cast<char*>(content), contentLen ) ) {
 		return -1;
 	}
 

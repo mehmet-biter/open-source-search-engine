@@ -401,6 +401,7 @@ public:
 	int32_t *getSiteNumInlinks ( ) ;
 	class LinkInfo *getSiteLinkInfo() ;
 	int32_t *getIp ( ) ;
+	void setIp(GbDns::DnsResponse *response);
 	std::vector<std::string>* getHostNameServers(const char *hostname, size_t hostnameLen);
 	static void gotHostNameServersWrapper(GbDns::DnsResponse *response, void *state);
 	static void gotIpWrapper(GbDns::DnsResponse *response, void *state);
