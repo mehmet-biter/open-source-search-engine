@@ -119,3 +119,16 @@ TEST(WordsTest, mixed_script_tokenization) {
 		EXPECT_EQ(words.getWordLen(1),16);
 	}
 }
+
+TEST(WordsTest, buffer_tokenization) {
+	char buf[256];
+	{
+		strcpy(buf,"Hello world");
+		Words words;
+		EXPECT_TRUE(words.set(buf,8));
+		EXPECT_EQ(words.getNumWords(),3);
+		EXPECT_EQ(words.getWordLen(0),5);
+		EXPECT_EQ(words.getWordLen(1),1);
+		EXPECT_EQ(words.getWordLen(2),2);
+	}
+}
