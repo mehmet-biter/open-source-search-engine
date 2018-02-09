@@ -119,7 +119,7 @@ bool Wiktionary::test2 ( ) {
 	//wid = hash64n(str);
 
 	Words words;
-	words.set ( str, strlen(str), 0 );
+	words.set ( str, strlen(str) );
 
 	int32_t wordNum = 0;
 	char tmpBuf[1000];

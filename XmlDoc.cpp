@@ -3747,7 +3747,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 		int32_t mdlen;
 		char *md = getMetaDescription(&mdlen);
 		Words mdw;
-		mdw.set(md, mdlen, true);
+		mdw.set(md, mdlen);
 
 		SafeBuf langBuf;
 		setLangVec(&mdw, &langBuf, NULL);
@@ -3759,7 +3759,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 		int32_t mdlen;
 		char *md = getMetaKeywords(&mdlen);
 		Words mdw;
-		mdw.set(md, mdlen, true);
+		mdw.set(md, mdlen);
 
 		SafeBuf langBuf;
 		setLangVec(&mdw, &langBuf, NULL);
@@ -4397,7 +4397,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 	Words   words;
 	Bits    bits;
 	Phrases phrases;
-	if ( ! words.set   ( s , slen , true ) )
+	if ( ! words.set(s, slen) )
 		return false;
 	if ( !bits.set(&words))
 		return false;
