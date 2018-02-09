@@ -69,7 +69,7 @@
 #include "Parms.h"
 #include "Pages.h"
 #include "PageInject.h"
-#include "Unicode.h"
+#include "unicode/UCMaps.h"
 #include "utf8_convert.h"
 
 #include "Profiler.h"
@@ -195,6 +195,8 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 bool doCmd ( const char *cmd , int32_t hostId , const char *filename , bool sendToHosts,
 	     bool sendToProxies, int32_t hostId2=-1 );
 
+static char unicode_data_dir[2014]; //filled in by main2() when hostdb has been initialized
+
 //void tryMergingWrapper ( int fd , void *state ) ;
 
 //void resetAll ( );
@@ -207,7 +209,6 @@ extern void resetAdultBit      ( );
 extern void resetDomains       ( );
 extern void resetEntities      ( );
 extern void resetQuery         ( );
-extern void resetUnicode       ( );
 
 
 extern bool g_recoveryMode; // HostFlags.cpp
@@ -454,6 +455,8 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
+	sprintf(unicode_data_dir,"%s/ucdata/",g_hostdb.m_dir);
+
 	// . hashinit() calls srand() w/ a fixed number
 	// . let's mix it up again
 	srand ( time(NULL) );
@@ -526,8 +529,9 @@ int main2 ( int argc , char *argv[] ) {
 			return 1;
 		}
 
-		if ( !ucInit(g_hostdb.m_dir)) {
-			log( LOG_ERROR, "db: Unicode initialization failed!" );
+		const char *errmsg=NULL;
+		if ( !UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+			log( LOG_ERROR, "db: Unicode initialization failed! %s", errmsg);
 			return 1;
 		}
 		if(!utf8_convert_initialize()) {
@@ -1240,8 +1244,9 @@ int main2 ( int argc , char *argv[] ) {
 
 		log( LOG_INFO, "countdomains: Allocated Larger Mem Table for: %" PRId32,
 		     g_mem.getMemTableSize() );
-		if (!ucInit(g_hostdb.m_dir)) {
-			log("Unicode initialization failed!");
+		const char *errmsg=NULL;
+		if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+			log("Unicode initialization failed! %s", errmsg);
 			return 1;
 		}
 		if(!utf8_convert_initialize()) {
@@ -1356,8 +1361,9 @@ int main2 ( int argc , char *argv[] ) {
 	log("host: Running as host id #%" PRId32,g_hostdb.m_myHostId );
 
 
-	if (!ucInit(g_hostdb.m_dir)) {
-		log( LOG_ERROR, "Unicode initialization failed!" );
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log( LOG_ERROR, "Unicode initialization failed! %s", errmsg);
 		return 1;
 	}
 	if(!utf8_convert_initialize()) {
@@ -2462,8 +2468,9 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
 		return;
 	}
 	if(!utf8_convert_initialize()) {
@@ -3900,8 +3907,9 @@ static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int3
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
 		return;
 	}
 	if(!utf8_convert_initialize()) {
@@ -4073,8 +4081,9 @@ static void dumpWantedTitledbRecs(const char *coll, int32_t startFileNum, int32_
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
 		return;
 	}
 	if(!utf8_convert_initialize()) {
@@ -4214,8 +4223,9 @@ static void dumpAdultTitledbRecs(const char *coll, int32_t startFileNum, int32_t
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
 		return;
 	}
 	if(!utf8_convert_initialize()) {
@@ -4393,8 +4403,9 @@ static void dumpSpamTitledbRecs(const char *coll, int32_t startFileNum, int32_t 
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
 		return;
 	}
 	if(!utf8_convert_initialize()) {
@@ -4799,8 +4810,9 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 		log(LOG_WARN, "build: speedtestxml: docId %" PRId64" not found.", docId);
 		return false;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log(LOG_WARN, "Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
 		return false;
 	}
 	if(!utf8_convert_initialize()) {
@@ -4890,32 +4902,24 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	    "parse docId %" PRId64".", (double)(e - t)/100.0,docId);
 
 
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
-		return 1;
-	}
-	if(!utf8_convert_initialize()) {
-		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
-		return 1;
-	}
 	Words words;
 
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( &xml , true ) ) {
+		if ( ! words.set ( &xml ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Words::set(xml,computeIds=true) took %.3f ms for %" PRId32" words"
-	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
+	    " for docId %" PRId64".",
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( &xml , true ) ) {
+		if ( ! words.set ( &xml ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4923,13 +4927,13 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	e = gettimeofdayInMilliseconds();
 	log("build: Words::set(xml,computeIds=false) "
 	    "took %.3f ms for %" PRId32" words"
-	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
+	    " for docId %" PRId64".",
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( content , true ) ) {
+		if ( ! words.set ( content ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4943,7 +4947,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	Pos pos;
 	// computeWordIds from xml
-	words.set ( &xml , true ) ;
+	words.set ( &xml ) ;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		if ( ! pos.set ( &words ) ) {
@@ -4960,7 +4964,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	Bits bits;
 	// computeWordIds from xml
-	words.set ( &xml , true ) ;
+	words.set ( &xml ) ;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		if ( ! bits.setForSummary ( &words ) ) {
@@ -4977,7 +4981,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 
 	Sections sections;
 	// computeWordIds from xml
-	words.set ( &xml , true ) ;
+	words.set ( &xml ) ;
 	bits.set(&words);
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
@@ -5032,7 +5036,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 			log(LOG_WARN, "build: speedtestxml: getText: %s", mstrerror(g_errno));
 			return false;
 		}
-		if ( ! words.set ( buf,true) ) {
+		if ( ! words.set ( buf ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -5050,7 +5054,7 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	Query q;
 	q.set2(query, langUnknown, 1.0, 1.0, NULL, false, true, ABS_MAX_QUERY_TERMS);
 	matches.setQuery ( &q );
-	words.set ( &xml , true ) ;
+	words.set ( &xml ) ;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
 		matches.reset();
@@ -5062,8 +5066,8 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Matches::set() took %.3f ms for %" PRId32" words"
-	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
+	    " for docId %" PRId64".",
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 

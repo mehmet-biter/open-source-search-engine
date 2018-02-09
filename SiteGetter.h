@@ -44,8 +44,6 @@ private:
 	void        (*m_callback) (void *state );
 	RdbList       m_list;
 
-	int32_t          m_sitePathDepth;
-
 	// use Msg0 for getting the no-split termlist that combines 
 	// gbpathdepth: with the site hash in a single termid
 	Msg0   m_msg0;

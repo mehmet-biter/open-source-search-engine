@@ -32,4 +32,7 @@ bool starts_with(const char *haystack, const char *needle);
 
 uint64_t getCurrentTimeNanoseconds();
 
+const char *formatTime(time_t when, char buf[32]);
+const char *formatTimeMs(int64_t when, char buf[32]);
+
 #endif

@@ -1,7 +1,7 @@
 #include "GbEncoding.h"
 #include "HttpMime.h"
 #include "iana_charset.h"
-#include "Unicode.h"
+#include "ByteOrderMark.h"
 #include "fctypes.h"
 
 #include "Log.h"

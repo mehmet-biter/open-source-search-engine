@@ -16,16 +16,18 @@ extern const int bytes_in_utf8_code[256];
 
 //how many bytes does this utf8 initial-byte indicate?
 static inline char getUtf8CharSize(uint8_t c) {
-#if 1
+#if 0
+	//partially table-driven. Seems to be slower on modern OoO processors
 	if(c < 128)
 		return 1;
 	else
 		return bytes_in_utf8_code[c];
 #else
-	if( ! (c & 0x80)) return 1;
-	if( ! (c & 0x20)) return 2;
-	if( ! (c & 0x10)) return 3;
-	if( ! (c & 0x08)) return 4;
+	//conditional-jump-driven. Seems to be faster on modern OoO processors
+	if((c & 0x80)==0) return 1;
+	if((c & 0x20)==0) return 2;
+	if((c & 0x10)==0) return 3;
+	if((c & 0x08)==0) return 4;
 	return 1; //illegal
 #endif
 }

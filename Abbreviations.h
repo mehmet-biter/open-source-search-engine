@@ -2,8 +2,8 @@
 
 #ifndef GB_ABBREVIATIONS_H
 #define GB_ABBREVIATIONS_H
+#include <inttypes.h>
 
-#include "Unicode.h"
 
 // . is the word with this word id an abbreviation?
 // . word id is just the hash64() of the word

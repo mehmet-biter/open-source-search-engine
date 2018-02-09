@@ -254,9 +254,9 @@ static UChar32 getClean_utf8 ( const char *src ) {
 	// otherwise, lower case it
 	UChar32 x = utf8Decode(src);
 	// convert to upper
-	x = ucToLower (x);
+	x = UnicodeMaps::to_lower(x);
 	// return if alnum
-	if ( ucIsAlnum ( x ) ) return x;
+	if(UnicodeMaps::is_wordchar(x)) return x; //
 	// everything else is converted to space
 	return (UChar32)' ';
 }

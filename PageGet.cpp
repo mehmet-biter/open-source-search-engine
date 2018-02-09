@@ -483,7 +483,7 @@ bool processLoop ( void *state ) {
 	Highlight hi;
 	// make words so we can set the scores to ignore fielded terms
 	Words qw;
-	qw.set(q, qlen, true);
+	qw.set(q, qlen);
 
 	// declare up here
 	Matches m;
@@ -705,7 +705,7 @@ bool processLoop ( void *state ) {
 			return sendErrorReply ( st , g_errno );
 		}
 
-		if ( ! ww.set ( &xml, true ) ) {
+		if ( ! ww.set ( &xml ) ) {
 			return sendErrorReply ( st , g_errno );
 		}
 

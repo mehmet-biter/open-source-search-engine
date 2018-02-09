@@ -23,7 +23,7 @@ static void generateSummary( Summary &summary, char *htmlInput, const char *quer
 	ASSERT_TRUE(xml.set(htmlInput, strlen(htmlInput), 0, CT_HTML));
 
 	Words words;
-	ASSERT_TRUE(words.set(&xml, true));
+	ASSERT_TRUE(words.set(&xml));
 
 	Bits bits;
 	ASSERT_TRUE(bits.set(&words));

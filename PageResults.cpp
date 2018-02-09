@@ -16,7 +16,6 @@
 #include "Bits.h"
 #include "sort.h"
 #include "CountryCode.h"
-#include "Unicode.h"
 #include "Posdb.h"
 #include "PosdbTable.h"
 #include "PageResults.h"

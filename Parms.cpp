@@ -13,7 +13,6 @@
 #include "Collectiondb.h"
 #include "HttpMime.h"      // atotime()
 #include "SearchInput.h"
-#include "Unicode.h"
 #include "Spider.h" // MAX_SPIDER_PRIORITIES
 #include "SpiderColl.h"
 #include "SpiderLoop.h"
@@ -38,7 +37,7 @@
 #include "Doledb.h"
 #include "GbDns.h"
 #include <set>
-
+#include <fstream>
 
 
 class WaitEntry {
@@ -10761,7 +10760,10 @@ void Parms::handleRequest3fLoop(void *weArg) {
 
 	if (rebuildDnsSettings) {
 		log("parms: rebuild dns settings");
-		g_jobScheduler.submit(GbDns::reinitializeSettings, nullptr, nullptr, thread_type_config_load, 0);
+		if (!g_jobScheduler.submit(GbDns::reinitializeSettings, nullptr, nullptr, thread_type_config_load, 0)) {
+			// run in main thread
+			GbDns::reinitializeSettings(nullptr);
+		}
 	}
 
 	if (rebuildSpiderSettings) {
@@ -11303,9 +11305,7 @@ bool Parms::updateParm(const char *rec, WaitEntry *we, bool *changed) {
 	parm->printVal ( &val2 , collnum , occNum );
 
 	// did this parm change value?
-	*changed = true;
-	if ( strcmp ( val1.getBufStart() , val2.getBufStart() ) == 0 )
-		*changed = false;
+	*changed = (strcmp(val1.getBufStart(), val2.getBufStart()) != 0);
 
 	// . update array count if necessary
 	// . parm might not have changed value based on what was in there
@@ -11329,7 +11329,7 @@ bool Parms::updateParm(const char *rec, WaitEntry *we, bool *changed) {
 			updateCount = false;
 		// and for other pages, like master ips, skip if empty!
 		// PAGE_PASSWORDS, PAGE_MASTERPASSWORDS, ...
-		if ( parm->m_page != PAGE_FILTERS && ! changed )
+		if ( parm->m_page != PAGE_FILTERS && ! *changed )
 			updateCount = false;
 
 		// ok, increment the array count of items in the array
@@ -11350,6 +11350,15 @@ bool Parms::updateParm(const char *rec, WaitEntry *we, bool *changed) {
 	    (int32_t)collnum,
 	    val1.getBufStart(),
 	    val2.getBufStart());
+
+	if (g_hostdb.getMyHostId() == 0) {
+		std::ofstream file("eventlog", (std::ios::out | std::ios::app));
+		char timebuf[32];
+		file << formatTime(time(nullptr), timebuf) << "|parms update|"
+		     << parm->m_title << (parm->isArray() ? " #" + std::to_string(occNum) : "") << "|"
+		     << parm->m_cgi << (parm->isArray() ? std::to_string(occNum) : "") << "|"
+		     << val1.getBufStart() << "|" << val2.getBufStart() << std::endl;
+	}
 
 	if ( cr ) cr->setNeedsSave();
 

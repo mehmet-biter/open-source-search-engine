@@ -3726,7 +3726,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 		int32_t mdlen;
 		char *md = getMetaDescription(&mdlen);
 		Words mdw;
-		mdw.set(md, mdlen, true);
+		mdw.set(md, mdlen);
 
 		SafeBuf langBuf;
 		setLangVec(&mdw, &langBuf, NULL);
@@ -3738,7 +3738,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 		int32_t mdlen;
 		char *md = getMetaKeywords(&mdlen);
 		Words mdw;
-		mdw.set(md, mdlen, true);
+		mdw.set(md, mdlen);
 
 		SafeBuf langBuf;
 		setLangVec(&mdw, &langBuf, NULL);
@@ -3839,7 +3839,7 @@ Words *XmlDoc::getWords ( ) {
 	int64_t start = logQueryTimingStart();
 
 	// now set what we need
-	if ( !m_words.set( xml, true ) ) {
+	if ( !m_words.set( xml ) ) {
 		return NULL;
 	}
 
@@ -4376,7 +4376,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 	Words   words;
 	Bits    bits;
 	Phrases phrases;
-	if ( ! words.set   ( s , slen , true ) )
+	if ( ! words.set(s, slen) )
 		return false;
 	if ( !bits.set(&words))
 		return false;
@@ -4602,7 +4602,7 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 
 	// word-ify it
 	Words words;
-	if ( ! words.set ( sb.getBufStart() , true ) ) {
+	if ( ! words.set ( sb.getBufStart() ) ) {
 		return NULL;
 	}
 
@@ -9449,7 +9449,7 @@ char **XmlDoc::getFilteredContent ( ) {
 			xml.set(m_content, m_contentLen, m_version, *ct);
 
 			Words words;
-			words.set(&xml, true);
+			words.set(&xml);
 			if (words.getNumAlnumWords() > g_conf.m_spiderFilterableMaxWordCount) {
 				logTrace( g_conf.m_logTraceXmlDoc, "END. HTML and getNumAlnumWords too high");
 				return &m_filteredContent;
