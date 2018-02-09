@@ -209,12 +209,6 @@ class Words {
 		return true;
 	}
 
-	int32_t getAsLong ( int32_t n ) const {
-		// skip if no digit
-		if ( ! is_digit ( m_words[n][0] ) ) return -1;
-		return atol2(m_words[n],m_wordLens[n]); 
-	}
-
 	bool      isNum    ( int32_t n ) const { 
 		if ( ! is_digit(m_words[n][0]) ) return false;
 		char *p    = m_words[n];

@@ -2959,9 +2959,11 @@ bool Sections::setHeadingBit ( ) {
 			// skip if not alnum word
 			if ( ! m_wids[i] ) continue;
 			// skip digits
-			if ( is_digit(m_wptrs[i][0]) ) {
-				// skip if not 4-digit year
-				if ( m_wlens[i] != 4 ) continue;
+			if(m_wlens[i] == 4 &&
+			   is_digit(m_wptrs[i][0]) &&
+			   is_digit(m_wptrs[i][1]) &&
+			   is_digit(m_wptrs[i][2]) &&
+			   is_digit(m_wptrs[i][3])) {
 				// . but if we had a year like "2010" that
 				//   is allowed to be a header.
 				// . this fixes 770kob.com because the events
@@ -2970,7 +2972,7 @@ bool Sections::setHeadingBit ( ) {
 				//   section, when they should have been in
 				//   their own section! and now they are in
 				//   their own implied section...
-				int32_t num = m_words->getAsLong(i);
+				int32_t num = atol2(m_wptrs[i],m_wlens[i]);
 				if ( num < 1800 ) continue;
 				if ( num > 2100 ) continue;
 				// mark it
