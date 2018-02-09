@@ -34,37 +34,37 @@ TEST(WordsTest, simple_tokenization) {
 	{
 		strcpy(buf,"hello");
 		Words words;
-		EXPECT_TRUE(words.set(buf,false));
+		EXPECT_TRUE(words.set(buf));
 		EXPECT_EQ(words.getNumWords(),1);
 	}
 	{
 		strcpy(buf,"  ");
 		Words words;
-		EXPECT_TRUE(words.set(buf,false));
+		EXPECT_TRUE(words.set(buf));
 		EXPECT_EQ(words.getNumWords(),1);
 	}
 	{
 		strcpy(buf,"hello ");
 		Words words;
-		EXPECT_TRUE(words.set(buf,false));
+		EXPECT_TRUE(words.set(buf));
 		EXPECT_EQ(words.getNumWords(),2);
 	}
 	{
 		strcpy(buf," hello");
 		Words words;
-		EXPECT_TRUE(words.set(buf,false));
+		EXPECT_TRUE(words.set(buf));
 		EXPECT_EQ(words.getNumWords(),2);
 	}
 	{
 		strcpy(buf,"hello world");
 		Words words;
-		EXPECT_TRUE(words.set(buf,false));
+		EXPECT_TRUE(words.set(buf));
 		EXPECT_EQ(words.getNumWords(),3);
 	}
 	{
 		strcpy(buf,"Hello world!");
 		Words words;
-		EXPECT_TRUE(words.set(buf,false));
+		EXPECT_TRUE(words.set(buf));
 		EXPECT_EQ(words.getNumWords(),4);
 		EXPECT_EQ(words.getWordLen(0),5);
 		EXPECT_EQ(words.getWordLen(1),1);
@@ -74,7 +74,7 @@ TEST(WordsTest, simple_tokenization) {
 	{
 		strcpy(buf,"Hello, world");
 		Words words;
-		EXPECT_TRUE(words.set(buf,false));
+		EXPECT_TRUE(words.set(buf));
 		EXPECT_EQ(words.getNumWords(),3);
 		EXPECT_EQ(words.getWordLen(0),5);
 		EXPECT_EQ(words.getWordLen(1),2);
@@ -87,7 +87,7 @@ TEST(WordsTest, latin1_tokenization) {
 	{
 		strcpy(buf,"Æbleflæsk og øl");
 		Words words;
-		EXPECT_TRUE(words.set(buf,false));
+		EXPECT_TRUE(words.set(buf));
 		EXPECT_EQ(words.getNumWords(),5);
 		EXPECT_EQ(words.getWordLen(0),11);
 		EXPECT_EQ(words.getWordLen(1),1);
@@ -102,7 +102,7 @@ TEST(WordsTest, mixed_script_tokenization) {
 	{
 		strcpy(buf,"Æbleflæsk og γιαούρτι");
 		Words words;
-		EXPECT_TRUE(words.set(buf,false));
+		EXPECT_TRUE(words.set(buf));
 		EXPECT_EQ(words.getNumWords(),5);
 		EXPECT_EQ(words.getWordLen(0),11);
 		EXPECT_EQ(words.getWordLen(1),1);
@@ -113,7 +113,7 @@ TEST(WordsTest, mixed_script_tokenization) {
 	{
 		strcpy(buf,"Æbleflæskγιαούρτι");
 		Words words;
-		EXPECT_TRUE(words.set(buf,false));
+		EXPECT_TRUE(words.set(buf));
 		EXPECT_EQ(words.getNumWords(),2);
 		EXPECT_EQ(words.getWordLen(0),11);
 		EXPECT_EQ(words.getWordLen(1),16);
