@@ -38,7 +38,7 @@
 #include "Doledb.h"
 #include "GbDns.h"
 #include <set>
-
+#include <fstream>
 
 
 class WaitEntry {
@@ -11323,9 +11323,7 @@ bool Parms::updateParm(const char *rec, WaitEntry *we, bool *changed) {
 	parm->printVal ( &val2 , collnum , occNum );
 
 	// did this parm change value?
-	*changed = true;
-	if ( strcmp ( val1.getBufStart() , val2.getBufStart() ) == 0 )
-		*changed = false;
+	*changed = (strcmp(val1.getBufStart(), val2.getBufStart()) != 0);
 
 	// . update array count if necessary
 	// . parm might not have changed value based on what was in there
@@ -11370,6 +11368,15 @@ bool Parms::updateParm(const char *rec, WaitEntry *we, bool *changed) {
 	    (int32_t)collnum,
 	    val1.getBufStart(),
 	    val2.getBufStart());
+
+	if (g_hostdb.getMyHostId() == 0) {
+		std::ofstream file("eventlog", (std::ios::out | std::ios::app));
+		char timebuf[32];
+		file << formatTime(time(nullptr), timebuf) << "|parms update|"
+		     << parm->m_title << (parm->isArray() ? " #" + std::to_string(occNum) : "") << "|"
+		     << parm->m_cgi << (parm->isArray() ? std::to_string(occNum) : "") << "|"
+		     << val1.getBufStart() << "|" << val2.getBufStart() << std::endl;
+	}
 
 	if ( cr ) cr->setNeedsSave();
 
