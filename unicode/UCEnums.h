@@ -212,7 +212,7 @@ static const uint32_t Sentence_Terminal = 1<<27;
 static const uint32_t Soft_Dotted = 1<<28;
 static const uint32_t Terminal_Punctuation = 1<<29;
 static const uint32_t Unified_Ideograph = 1<<30;
-static const uint32_t Variation_Selector = 1<<31;
+static const uint32_t Variation_Selector = 1U<<31;
 
 }
 
