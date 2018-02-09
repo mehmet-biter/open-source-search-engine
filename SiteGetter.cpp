@@ -80,7 +80,6 @@ SiteGetter::SiteGetter ( ) {
 	m_collnum = 0;
 	m_state = NULL;
 	m_callback = NULL;
-	m_sitePathDepth = 0;
 	m_pathDepth = 0;
 	m_maxPathDepth = 0;
 	m_niceness = 0;
@@ -122,9 +121,6 @@ bool SiteGetter::getSite ( const char *url, TagRec *gr, int32_t timestamp, colln
 	
 	m_allDone  = false;
 
-	// set this to unknown for now
-	m_sitePathDepth    = -1;
-
 	// reset this just in case
 	g_errno = 0;
 
@@ -152,12 +148,6 @@ bool SiteGetter::getSite ( const char *url, TagRec *gr, int32_t timestamp, colln
 	if ( g_hostdb.m_myHostId != 0 ) {
 		// do not add to tagdb and do not block!
 		m_state = NULL;
-
-		// . use a sitepathdepth of -1 by default then, until host #0
-		//   has a chance to evaluate
-		// . a sitepathdepth of -1 means to use the full hostname
-		//   as the site
-		m_sitePathDepth = -1;
 
 		// sanity check, should not block since m_state is NULL
 		if ( ! setSite () ) { g_process.shutdownAbort(true); }
@@ -346,11 +336,6 @@ bool SiteGetter::gotSiteList ( ) {
 	const char *pend = getPathEnd(m_url, m_pathDepth);
 	const char *host = getHostFast( m_url, NULL );
 	log(LOG_INFO,"site: '%.*s' detected as a site with linkcount=~%d", (int)(pend-host), host, count);
-	// ok, i guess this indicates we have a subsite level
-	m_sitePathDepth = m_pathDepth;
-
-	// this basically means none!
-	if ( m_pathDepth >= m_maxPathDepth ) m_sitePathDepth = -1;
 
 	// . sets m_site and m_siteLen from m_url
 	// . this returns false if blocked, true otherwise
