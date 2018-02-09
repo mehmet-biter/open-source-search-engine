@@ -3860,7 +3860,7 @@ Words *XmlDoc::getWords ( ) {
 	int64_t start = logQueryTimingStart();
 
 	// now set what we need
-	if ( !m_words.set( xml, true ) ) {
+	if ( !m_words.set( xml ) ) {
 		return NULL;
 	}
 
@@ -4623,7 +4623,7 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 
 	// word-ify it
 	Words words;
-	if ( ! words.set ( sb.getBufStart() , true ) ) {
+	if ( ! words.set ( sb.getBufStart() ) ) {
 		return NULL;
 	}
 
@@ -9472,7 +9472,7 @@ char **XmlDoc::getFilteredContent ( ) {
 			xml.set(m_content, m_contentLen, m_version, *ct);
 
 			Words words;
-			words.set(&xml, true);
+			words.set(&xml);
 			if (words.getNumAlnumWords() > g_conf.m_spiderFilterableMaxWordCount) {
 				logTrace( g_conf.m_logTraceXmlDoc, "END. HTML and getNumAlnumWords too high");
 				return &m_filteredContent;

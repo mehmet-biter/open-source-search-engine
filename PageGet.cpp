@@ -705,7 +705,7 @@ bool processLoop ( void *state ) {
 			return sendErrorReply ( st , g_errno );
 		}
 
-		if ( ! ww.set ( &xml, true ) ) {
+		if ( ! ww.set ( &xml ) ) {
 			return sendErrorReply ( st , g_errno );
 		}
 
