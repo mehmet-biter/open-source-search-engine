@@ -68,7 +68,7 @@
 #include "Parms.h"
 #include "Pages.h"
 #include "PageInject.h"
-#include "Unicode.h"
+#include "unicode/UCMaps.h"
 #include "utf8_convert.h"
 
 #include "Profiler.h"
@@ -194,6 +194,8 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 bool doCmd ( const char *cmd , int32_t hostId , const char *filename , bool sendToHosts,
 	     bool sendToProxies, int32_t hostId2=-1 );
 
+static char unicode_data_dir[2014]; //filled in by main2() when hostdb has been initialized
+
 //void tryMergingWrapper ( int fd , void *state ) ;
 
 //void resetAll ( );
@@ -206,7 +208,6 @@ extern void resetAdultBit      ( );
 extern void resetDomains       ( );
 extern void resetEntities      ( );
 extern void resetQuery         ( );
-extern void resetUnicode       ( );
 
 
 extern bool g_recoveryMode; // HostFlags.cpp
@@ -453,6 +454,8 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
+	sprintf(unicode_data_dir,"%s/ucdata/",g_hostdb.m_dir);
+
 	// . hashinit() calls srand() w/ a fixed number
 	// . let's mix it up again
 	srand ( time(NULL) );
@@ -525,8 +528,9 @@ int main2 ( int argc , char *argv[] ) {
 			return 1;
 		}
 
-		if ( !ucInit(g_hostdb.m_dir)) {
-			log( LOG_ERROR, "db: Unicode initialization failed!" );
+		const char *errmsg=NULL;
+		if ( !UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+			log( LOG_ERROR, "db: Unicode initialization failed! %s", errmsg);
 			return 1;
 		}
 		if(!utf8_convert_initialize()) {
@@ -1229,8 +1233,9 @@ int main2 ( int argc , char *argv[] ) {
 
 		log( LOG_INFO, "countdomains: Allocated Larger Mem Table for: %" PRId32,
 		     g_mem.getMemTableSize() );
-		if (!ucInit(g_hostdb.m_dir)) {
-			log("Unicode initialization failed!");
+		const char *errmsg=NULL;
+		if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+			log("Unicode initialization failed! %s", errmsg);
 			return 1;
 		}
 		if(!utf8_convert_initialize()) {
@@ -1345,8 +1350,9 @@ int main2 ( int argc , char *argv[] ) {
 	log("host: Running as host id #%" PRId32,g_hostdb.m_myHostId );
 
 
-	if (!ucInit(g_hostdb.m_dir)) {
-		log( LOG_ERROR, "Unicode initialization failed!" );
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log( LOG_ERROR, "Unicode initialization failed! %s", errmsg);
 		return 1;
 	}
 	if(!utf8_convert_initialize()) {
@@ -2457,8 +2463,9 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
 		return;
 	}
 	if(!utf8_convert_initialize()) {
@@ -3898,8 +3905,9 @@ static void dumpUnwantedTitledbRecs(const char *coll, int32_t startFileNum, int3
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
 		return;
 	}
 	if(!utf8_convert_initialize()) {
@@ -4071,8 +4079,9 @@ static void dumpWantedTitledbRecs(const char *coll, int32_t startFileNum, int32_
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
 		return;
 	}
 	if(!utf8_convert_initialize()) {
@@ -4212,8 +4221,9 @@ static void dumpAdultTitledbRecs(const char *coll, int32_t startFileNum, int32_t
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
 		return;
 	}
 	if(!utf8_convert_initialize()) {
@@ -4391,8 +4401,9 @@ static void dumpSpamTitledbRecs(const char *coll, int32_t startFileNum, int32_t 
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
 		return;
 	}
 	if(!utf8_convert_initialize()) {
@@ -4796,8 +4807,9 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 		log(LOG_WARN, "build: speedtestxml: docId %" PRId64" not found.", docId);
 		return false;
 	}
-	if (!ucInit(g_hostdb.m_dir)) {
-		log(LOG_WARN, "Unicode initialization failed!");
+	const char *errmsg=NULL;
+	if (!UnicodeMaps::load_maps(unicode_data_dir,&errmsg)) {
+		log("Unicode initialization failed! %s", errmsg);
 		return false;
 	}
 	if(!utf8_convert_initialize()) {
@@ -4887,14 +4899,6 @@ static bool parseTest(const char *coll, int64_t docId, const char *query) {
 	    "parse docId %" PRId64".", (double)(e - t)/100.0,docId);
 
 
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
-		return 1;
-	}
-	if(!utf8_convert_initialize()) {
-		log( LOG_ERROR, "db: utf-8 conversion initialization failed!" );
-		return 1;
-	}
 	Words words;
 
 	t = gettimeofdayInMilliseconds();

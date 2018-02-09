@@ -6,8 +6,6 @@
 #include <sys/time.h>  // gettimeofday()
 #include <math.h>      // floor()
 #include <float.h>	// FLT_EPSILON, DBL_EPSILON
-#include "Unicode.h"
-#include "utf8.h"
 #include "utf8_fast.h"
 #include "types.h"
 #include "Sanity.h"

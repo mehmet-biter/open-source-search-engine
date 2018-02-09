@@ -61,7 +61,6 @@ extern void resetDomains       ( );
 extern void resetEntities      ( );
 extern void resetQuery         ( );
 extern void resetAbbrTable     ( );
-extern void resetUnicode       ( );
 
 // our global instance
 Process g_process;
@@ -73,12 +72,16 @@ static const char * const g_files[] = {
 
 	//"hosts.conf",
 
-	"ucdata/kd_data.dat",
-	"ucdata/kdmap.dat",
-	"ucdata/lowermap.dat",
-	"ucdata/properties.dat",
-	"ucdata/scripts.dat",
-	"ucdata/uppermap.dat",
+	"ucdata/unicode_canonical_decomposition.dat",
+	"ucdata/unicode_general_categories.dat",
+	"ucdata/unicode_is_alphabetic.dat",
+	"ucdata/unicode_is_lowercase.dat",
+	"ucdata/unicode_is_uppercase.dat",
+	"ucdata/unicode_properties.dat",
+	"ucdata/unicode_scripts.dat",
+	"ucdata/unicode_to_lowercase.dat",
+	"ucdata/unicode_to_uppercase.dat",
+	"ucdata/unicode_wordchars.dat",
 
 	"gbstart.sh",
 	"gbconvert.sh",
@@ -994,7 +997,7 @@ void Process::resetAll ( ) {
 	g_speller         .reset();
 	g_spiderCache     .reset();
 	g_jobScheduler    .finalize();
-	ucResetMaps();
+	UnicodeMaps::unload_maps();
 	utf8_convert_finalize();
 	g_profiler        .reset();
 
@@ -1012,7 +1015,7 @@ void Process::resetAll ( ) {
 	s_clusterdbQuickCache.reset();
 	s_hammerCache.reset();
 
-	resetDecompTables();
+	UnicodeMaps::unload_maps();
 	resetPageAddUrl();
 	resetHttpMime();
 	reset_iana_charset();
@@ -1020,7 +1023,7 @@ void Process::resetAll ( ) {
 	resetEntities();
 	resetQuery();
 	resetAbbrTable();
-	resetUnicode();
+	UnicodeMaps::unload_maps();
 
 	// reset other caches
 	g_dns.reset();

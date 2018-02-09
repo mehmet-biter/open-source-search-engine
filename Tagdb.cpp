@@ -5,7 +5,6 @@
 #include "Tagdb.h"
 #include "Conf.h"       // for setting rdb from Conf file
 #include "Collectiondb.h"
-#include "Unicode.h"
 #include "JobScheduler.h"
 #include "HttpServer.h"
 #include "HttpRequest.h"

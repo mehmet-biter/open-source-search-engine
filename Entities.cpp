@@ -1,7 +1,6 @@
 #include "gb-include.h"
 
 #include "Entities.h"
-#include "Unicode.h"
 #include "HashTableX.h"
 #include "Process.h"
 #include "GbMutex.h"
