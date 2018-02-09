@@ -266,7 +266,6 @@ private:
 
 	char *m_buf;
 	int32_t  m_bufSize;
-	Xml  *m_xml ;  // if the class is set from xml, rather than a string
 
 	int32_t           m_preCount  ; // estimate of number of words in the doc
 	char          **m_words    ;  // pointers to the word
