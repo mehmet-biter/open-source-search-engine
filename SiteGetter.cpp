@@ -136,7 +136,10 @@ bool SiteGetter::getSite ( const char *url, TagRec *gr, int32_t timestamp, colln
 	}
 
 	// bail if nothing else we can do
-	if ( ! gr ) return setSite ( ) ;
+	// also if caller does not want a callback, like XmlDoc.cpp,
+	if (!gr || !m_state) {
+		return setSite();
+	}
 
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
 	if ( ! cr ) {
