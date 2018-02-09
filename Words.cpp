@@ -154,12 +154,7 @@ bool Words::set( Xml *xml, int32_t node1, int32_t node2 ) {
 
 		// is the kth node a tag?
 		if ( !xml->isTag( k ) ) {
-			/// @todo ALC why are we adding NULL and restoring it after?
-			/// addWords should be change to use nodeLen and not null terminated string
-			char c = node[nodeLen];
-			node[nodeLen] = '\0';
 			addWords(node, nodeLen);
-			node[nodeLen] = c;
 			continue;
 		}
 
@@ -234,7 +229,7 @@ bool Words::addWords(char *s, int32_t nodeLen) {
 
 		// it is a punct word, find end of it
 		char *start = s+i;
-		for ( ; s[i] ; i += getUtf8CharSize(s+i)) {
+		for ( ; i<nodeLen && s[i] ; i += getUtf8CharSize(s+i)) {
 			// if we are simple ascii, skip quickly
 			if ( is_ascii(s[i]) ) {
 				// accumulate NON-alnum chars
@@ -280,7 +275,7 @@ bool Words::addWords(char *s, int32_t nodeLen) {
 	// get an alnum word
 	j = i;
  again:
-	for ( ; s[i] ; i += getUtf8CharSize(s+i) ) {
+	for ( ; i<nodeLen && s[i] ; i += getUtf8CharSize(s+i) ) {
 		// simple ascii?
 		if ( is_ascii(s[i]) ) {
 			// accumulate alnum chars
