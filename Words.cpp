@@ -51,7 +51,7 @@ static int32_t countWords ( const char *p, int32_t plen ) {
 	while ( p < pend && *p) {
 
 		// sequence of punct
-		for  ( ; p < pend && ! is_alnum_utf8 (p) ; p += getUtf8CharSize(p) ) {
+		for  ( ; p < pend && *p && ! is_alnum_utf8 (p) ; p += getUtf8CharSize(p) ) {
 			// in case being set from xml tags, count as words now
 			if ( *p == '<' ) {
 				count++;
@@ -60,7 +60,7 @@ static int32_t countWords ( const char *p, int32_t plen ) {
 		count++;
 
 		// sequence of alnum
-		for  ( ; p < pend && is_alnum_utf8 (p) ; p += getUtf8CharSize(p) )
+		for  ( ; p < pend && *p && is_alnum_utf8 (p) ; p += getUtf8CharSize(p) )
 			;
 
 		count++;
