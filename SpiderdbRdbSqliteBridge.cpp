@@ -210,7 +210,11 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 		sqlite3_bind_int(insertStatement, 3, sreq->m_hostHash32);
 		sqlite3_bind_int(insertStatement, 4, sreq->m_domHash32);
 		sqlite3_bind_int(insertStatement, 5, sreq->m_siteHash32);
-		sqlite3_bind_int(insertStatement, 6, sreq->m_siteNumInlinks);
+		if (sreq->m_siteNumInlinksValid) {
+			sqlite3_bind_int(insertStatement, 6, sreq->m_siteNumInlinks);
+		} else {
+			sqlite3_bind_null(insertStatement, 6);
+		}
 		sqlite3_bind_int(insertStatement, 7, sreq->m_pageNumInlinks);
 		sqlite3_bind_int(insertStatement, 8, sreq->m_addedTime);
 		sqlite3_bind_int(insertStatement, 9, sreq->m_discoveryTime);
@@ -258,7 +262,7 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 		//at least one result, so the record must already be there
 		static const char update_statement[] =
 			"UPDATE spiderdb"
-			"  SET m_siteNumInlinks=MAX(m_siteNumInlinks,?),"
+			"  SET m_siteNumInlinks=FX_MAX(m_siteNumInlinks,?),"
 			"      m_pageNumInlinks=MAX(m_pageNumInlinks,?),"
 			"      m_addedTime=MIN(m_addedTime,?),"
 			"      m_discoveryTime=MIN(m_discoveryTime,?),"
@@ -273,8 +277,13 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 			g_errno = map_sqlite_error_to_gb_errno(err);
 			return false;
 		}
-		
-		sqlite3_bind_int(updateStatement, 1, sreq->m_siteNumInlinks);
+
+		if (sreq->m_siteNumInlinksValid) {
+			sqlite3_bind_int(updateStatement, 1, sreq->m_siteNumInlinks);
+		} else {
+			sqlite3_bind_null(updateStatement, 1);
+		}
+
 		sqlite3_bind_int(updateStatement, 2, sreq->m_pageNumInlinks);
 		sqlite3_bind_int(updateStatement, 3, sreq->m_addedTime);
 		sqlite3_bind_int(updateStatement, 4, sreq->m_discoveryTime);
@@ -347,6 +356,7 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			"  SET m_percentChangedPerDay = ?,"
 			"      m_spideredTime = ?,"
 			"      m_errCode = ?,"
+			"      m_siteNumInlinks=FX_MAX(m_siteNumInlinks,?),"
 			"      m_httpStatus = ?,"
 			"      m_langId = ?,"
 			"      m_replyFlags = ?,"
@@ -373,19 +383,24 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 		sqlite3_bind_double(updateStatement, 1, srep->m_percentChangedPerDay);
 		sqlite3_bind_int(updateStatement, 2, srep->m_spideredTime);
 		sqlite3_bind_int(updateStatement, 3, srep->m_errCode);
-		sqlite3_bind_int(updateStatement, 4, srep->m_httpStatus);
-		sqlite3_bind_int(updateStatement, 5, srep->m_langId);
+		if (srep->m_siteNumInlinksValid) {
+			sqlite3_bind_int(updateStatement, 4, srep->m_siteNumInlinks);
+		} else {
+			sqlite3_bind_null(updateStatement, 4);
+		}
+		sqlite3_bind_int(updateStatement, 5, srep->m_httpStatus);
+		sqlite3_bind_int(updateStatement, 6, srep->m_langId);
 		SpiderdbReplyFlags rpf;
 		rpf.m_isRSS                = srep->m_isRSS;
 		rpf.m_isPermalink          = srep->m_isPermalink;
 		rpf.m_isIndexed            = srep->m_isIndexed;
 		rpf.m_fromInjectionRequest = srep->m_fromInjectionRequest;
 		rpf.m_isIndexedINValid     = srep->m_isIndexedINValid;
-		sqlite3_bind_int(updateStatement, 6, (int)rpf);
-		sqlite3_bind_int(updateStatement, 7, srep->m_contentHash32);
-		sqlite3_bind_int(updateStatement, 8, requestFlagBits);
-		sqlite3_bind_int64(updateStatement, 9, (uint32_t)firstIp);
-		sqlite3_bind_int64(updateStatement, 10, uh48);
+		sqlite3_bind_int(updateStatement, 7, (int)rpf);
+		sqlite3_bind_int(updateStatement, 8, srep->m_contentHash32);
+		sqlite3_bind_int(updateStatement, 9, requestFlagBits);
+		sqlite3_bind_int64(updateStatement, 10, (uint32_t)firstIp);
+		sqlite3_bind_int64(updateStatement, 11, uh48);
 		
 		if(sqlite3_step(updateStatement) != SQLITE_DONE) {
 			int err = sqlite3_errcode(db);
@@ -401,6 +416,7 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			"UPDATE spiderdb"
 			"  SET m_spideredTime = ?,"
 			"      m_errCode = ?,"
+			"      m_siteNumInlinks=FX_MAX(m_siteNumInlinks,?),"
 			"      m_httpStatus = ?,"
 			"      m_errCount = m_errCount + 1,"
 			"      m_sameErrCount = CASE WHEN m_errCode=? THEN IFNULL(m_sameErrCount,0) + 1 ELSE 0 END,"
@@ -417,11 +433,16 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 		
 		sqlite3_bind_int(updateStatement, 1, srep->m_spideredTime);
 		sqlite3_bind_int(updateStatement, 2, srep->m_errCode);
-		sqlite3_bind_int(updateStatement, 3, srep->m_httpStatus);
-		sqlite3_bind_int(updateStatement, 4, srep->m_errCode);
+		if (srep->m_siteNumInlinksValid) {
+			sqlite3_bind_int(updateStatement, 3, srep->m_siteNumInlinks);
+		} else {
+			sqlite3_bind_null(updateStatement, 3);
+		}
+		sqlite3_bind_int(updateStatement, 4, srep->m_httpStatus);
 		sqlite3_bind_int(updateStatement, 5, srep->m_errCode);
-		sqlite3_bind_int64(updateStatement, 6, (uint32_t)firstIp);
-		sqlite3_bind_int64(updateStatement, 7, uh48);
+		sqlite3_bind_int(updateStatement, 6, srep->m_errCode);
+		sqlite3_bind_int64(updateStatement, 7, (uint32_t)firstIp);
+		sqlite3_bind_int64(updateStatement, 8, uh48);
 		
 		if(sqlite3_step(updateStatement) != SQLITE_DONE) {
 			int err = sqlite3_errcode(db);

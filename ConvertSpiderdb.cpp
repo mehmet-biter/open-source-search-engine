@@ -17,7 +17,7 @@ static const char create_table_statmeent[] =
 "    m_hostHash32                    INT NOT NULL,"
 "    m_domHash32                     INT NOT NULL,"
 "    m_siteHash32                    INT NOT NULL,"
-"    m_siteNumInlinks                INT NOT NULL,"
+"    m_siteNumInlinks                INT,"
 "    m_pageNumInlinks                INT NOT NULL,"
 "    m_addedTime                     INT NOT NULL,"
 "    m_discoveryTime                 INT NOT NULL,"
@@ -53,7 +53,7 @@ static const char insert_statement_with_reply[] =
 
 static const char update_statement_duplicate_request[] =
 "UPDATE spiderdb"
-"  SET m_siteNumInlinks=MAX(m_siteNumInlinks,?),"
+"  SET m_siteNumInlinks=FX_MAX(m_siteNumInlinks,?),"
 "      m_pageNumInlinks=MAX(m_pageNumInlinks,?),"
 "      m_addedTime=MIN(m_addedTime,?),"
 "      m_discoveryTime=MIN(m_discoveryTime,?),"
@@ -211,7 +211,11 @@ int convertSpiderDb(const char *collname) {
 				sqlite3_bind_int(stmt, 3, spiderRequest->m_hostHash32);
 				sqlite3_bind_int(stmt, 4, spiderRequest->m_domHash32);
 				sqlite3_bind_int(stmt, 5, spiderRequest->m_siteHash32);
-				sqlite3_bind_int(stmt, 6, spiderRequest->m_siteNumInlinks);
+				if (spiderRequest->m_siteNumInlinksValid) {
+					sqlite3_bind_int(stmt, 6, spiderRequest->m_siteNumInlinks);
+				} else {
+					sqlite3_bind_null(stmt, 6);
+				}
 				sqlite3_bind_int(stmt, 7, spiderRequest->m_pageNumInlinks);
 				sqlite3_bind_int(stmt, 8, spiderRequest->m_addedTime);
 				sqlite3_bind_int(stmt, 9, spiderRequest->m_discoveryTime);
@@ -271,7 +275,11 @@ int convertSpiderDb(const char *collname) {
 				//just update a few fields in the previously inserted row
 				update_duplicate_count++;
 				const SpiderRequest *spiderRequest = reinterpret_cast<const SpiderRequest*>(srec);
-				sqlite3_bind_int(updateStatementDuplicateRequest, 1, spiderRequest->m_siteNumInlinks);
+				if (spiderRequest->m_siteNumInlinksValid) {
+					sqlite3_bind_int(updateStatementDuplicateRequest, 1, spiderRequest->m_siteNumInlinks);
+				} else {
+					sqlite3_bind_null(updateStatementDuplicateRequest, 1);
+				}
 				sqlite3_bind_int(updateStatementDuplicateRequest, 2, spiderRequest->m_pageNumInlinks);
 				sqlite3_bind_int(updateStatementDuplicateRequest, 3, spiderRequest->m_addedTime);
 				sqlite3_bind_int(updateStatementDuplicateRequest, 4, spiderRequest->m_discoveryTime);

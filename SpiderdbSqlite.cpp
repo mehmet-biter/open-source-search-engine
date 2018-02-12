@@ -141,7 +141,7 @@ static const char create_table_statmeent[] =
 "    m_hostHash32                    INT NOT NULL,"
 "    m_domHash32                     INT NOT NULL,"
 "    m_siteHash32                    INT NOT NULL,"
-"    m_siteNumInlinks                INT NOT NULL,"
+"    m_siteNumInlinks                INT,"
 "    m_pageNumInlinks                INT NOT NULL,"
 "    m_addedTime                     INT NOT NULL,"
 "    m_discoveryTime                 INT NOT NULL,"
