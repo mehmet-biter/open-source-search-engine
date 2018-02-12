@@ -110,7 +110,7 @@ static bool getLinkdbRecs(State *st) {
 	u.set(st->m_url_str, strlen(st->m_url_str), false, false);
 
 	SiteGetter sg;
-	sg.getSite(st->m_url_str, NULL, 0, 0, 0);
+	sg.getSite(st->m_url_str, NULL, 0, 0);
 
 	uint32_t h32 = hash32(sg.getSite(), sg.getSiteLen(), 0);
 	key224_t startKey = Linkdb::makeStartKey_uk(h32, u.getUrlHash64());

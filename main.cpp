@@ -5369,7 +5369,7 @@ static void dumpLinkdb(const char *coll, int32_t startFileNum, int32_t numFiles,
 		u.set( url, strlen( url ), false, false );
 
 		SiteGetter sg;
-		sg.getSite(url, NULL, 0, 0, 0);
+		sg.getSite(url, NULL, 0, 0);
 
 		uint32_t h32 = hash32(sg.getSite(), sg.getSiteLen(), 0);
 		if( urlhash ) {

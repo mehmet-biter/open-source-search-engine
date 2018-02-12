@@ -7913,10 +7913,8 @@ char *XmlDoc::getSite ( ) {
 		return NULL;
 	}
 
-	int32_t timestamp = getSpideredTime();
-
 	// do it
-	if ( ! m_siteGetter.getSite ( f->getUrl(), gr, timestamp, cr->m_collnum, m_niceness, this, gotSiteWrapper )) {
+	if ( ! m_siteGetter.getSite ( f->getUrl(), gr, cr->m_collnum, m_niceness, this, gotSiteWrapper )) {
 		// return -1 if we blocked
 		return (char *) -1;
 	}
@@ -19673,7 +19671,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 		// get the normalized url
 		char *url = links->getLinkPtr(i);
 		// get the site. this will not block or have an error.
-		siteGetter.getSite(url,gr,timestamp,cr->m_collnum,m_niceness);
+		siteGetter.getSite(url,gr,cr->m_collnum,m_niceness);
 		// these are now valid and should reference into
 		// Links::m_buf[]
 		const char *site    = siteGetter.getSite();

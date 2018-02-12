@@ -763,7 +763,7 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 			url.set(urlPtr);
 
 			SiteGetter sg;
-			sg.getSite(url.getUrl(), NULL, 0, 0, 0);
+			sg.getSite(url.getUrl(), NULL, 0, 0);
 
 			// . add to tag rdb recs in safebuf
 			// . this pushes the rdbid as first byte
@@ -1277,7 +1277,7 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	// . if site was NULL that means we guess it. default to hostname
 	//   unless in a recognized for like /~mwells/
 	SiteGetter sg;
-	sg.getSite ( url->getUrl(), NULL, 0, collnum, m_niceness );
+	sg.getSite ( url->getUrl(), NULL, collnum, m_niceness );
 	// if it set it to a recognized site, like ~mwells, then set "site"
 	if ( sg.getSiteLen() ) {
 		site    = sg.getSite();
