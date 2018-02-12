@@ -39,30 +39,6 @@ Msg22::~Msg22(){
 }
 
 
-// . sets m_availDocId or sets g_errno to ENOTFOUND on error
-// . calls callback(state) when done
-// . returns false if blocked true otherwise
-bool Msg22::getAvailDocIdOnly ( Msg22Request  *r              ,
-				int64_t preferredDocId ,
-				const char    *coll,
-				void *state ,
-				void (* callback)(void *state) ,
-				int32_t niceness ) {
-	return getTitleRec ( r ,
-			     NULL     , //   url
-			     preferredDocId    ,
-			     coll     ,
-			     NULL     , // **titleRecPtrPtr
-			     NULL     , //  *titleRecSizePtr
-			     false    , //   justCheckTfndb
-			     true     , //   getAvailDocIdOnly
-			     state    ,
-			     callback ,
-			     niceness ,
-			     9999999  ); // timeout
-}
-
-
 // . if url is NULL use the docId to get the titleRec
 // . if titleRec is NULL use our own internal m_myTitleRec
 // . sets g_errno to ENOTFOUND if TitleRec does not exist for this url/docId
