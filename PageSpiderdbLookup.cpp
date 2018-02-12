@@ -400,10 +400,10 @@ static void generatePageJSON(int32_t shardNum, int32_t robotsShardNum, const Spi
 		sb->safePrintf("\t\"isInjecting\": %s,\n", spiderRequest->m_isInjecting ? "true" : "false");
 		sb->safePrintf("\t\"hadReply\": %s,\n", spiderRequest->m_hadReply ? "true" : "false");
 		sb->safePrintf("\t\"fakeFirstIp\": %s,\n", spiderRequest->m_fakeFirstIp ? "true" : "false");
-		sb->safePrintf("\t\"m_hasAuthorityInlink\": %s,\n", spiderRequest->m_hasAuthorityInlink ? "true" : "false");
-		sb->safePrintf("\t\"m_hasAuthorityInlinkValid\": %s,\n", spiderRequest->m_hasAuthorityInlinkValid ? "true" : "false");
-		sb->safePrintf("\t\"m_siteNumInlinksValid\": %s,\n", spiderRequest->m_siteNumInlinksValid ? "true" : "false");
-		sb->safePrintf("\t\"m_avoidSpiderLinks\": %s,\n", spiderRequest->m_avoidSpiderLinks ? "true" : "false");
+		sb->safePrintf("\t\"hasAuthorityInlink\": %s,\n", spiderRequest->m_hasAuthorityInlink ? "true" : "false");
+		sb->safePrintf("\t\"hasAuthorityInlinkValid\": %s,\n", spiderRequest->m_hasAuthorityInlinkValid ? "true" : "false");
+		sb->safePrintf("\t\"siteNumInlinksValid\": %s,\n", spiderRequest->m_siteNumInlinksValid ? "true" : "false");
+		sb->safePrintf("\t\"avoidSpiderLinks\": %s,\n", spiderRequest->m_avoidSpiderLinks ? "true" : "false");
 		sb->safePrintf("\t\"ufn\": %hd,\n", spiderRequest->m_ufn);
 		sb->safePrintf("\t\"priority\": %d,\n", spiderRequest->m_priority);
 		sb->safePrintf("\t\"errCount\": %d\n", spiderRequest->m_errCount);
