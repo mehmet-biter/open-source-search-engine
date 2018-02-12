@@ -253,7 +253,7 @@ public:
 
 	int64_t  *m_wids;
 	int32_t       *m_wlens;
-	char      **m_wptrs;
+	const char * const *m_wptrs;
 	nodeid_t   *m_tids;
 
 	int32_t       m_hiPos;

@@ -115,7 +115,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, uint8_t contentT
 	int64_t   *wids  = w->getWordIds  ();
 	nodeid_t    *tids  = w->getTagIds   ();
 	int32_t           nw  = w->getNumWords ();
-	char      **wptrs  = w->getWordPtrs();
+	const char * const *wptrs  = w->getWordPtrs();
 	int32_t        *wlens = w->getWordLens ();
 
 	// set these up
@@ -683,8 +683,8 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, uint8_t contentT
 		// custom xml tag, hash the tag itself
 		if ( tid != TAG_XMLTAG ) continue;
 		// stop at first space to avoid fields!!
-		char *p    =     m_wptrs[ws] + 1;
-		char *pend = p + m_wlens[ws];
+		const char *p    =     m_wptrs[ws] + 1;
+		const char *pend = p + m_wlens[ws];
 		// skip back tags
 		if ( *p == '/' ) continue;
 		// reset hash
@@ -1142,17 +1142,17 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, uint8_t contentT
 
 		// get the style tag in there and check it for "display: none"!
 		int32_t  slen = wlens[wn];
-		char *s    = wptrs[wn];
-		char *send = s + slen;
+		const char *s    = wptrs[wn];
+		const char *send = s + slen;
 
 		// check out any div tag that has a style
-		char *style = gb_strncasestr(s,slen,"style=") ;
+		const char *style = gb_strncasestr(s,slen,"style=") ;
 		if ( ! style ) continue;
 
 		// . check for hidden
 		// . if no hidden tag assume it is UNhidden
 		// . TODO: later push & pop on stack
-		char *ds = gb_strncasestr(style,send-style,"display:");
+		const char *ds = gb_strncasestr(style,send-style,"display:");
 		// if display:none not found turn off SEC_HIDDEN
 		if ( ! ds || ! gb_strncasestr(s,slen,"none") ) {
 			// turn off the hiding
@@ -1568,8 +1568,8 @@ bool Sections::addSentenceSections ( ) {
 			// was last punct containing a comma?
 			lastWasComma = false;
 			// scan the punct chars, stop if we hit a sent breaker
-			char *p    =     m_wptrs[j];
-			char *pend = p + m_wlens[j];
+			const char *p    =     m_wptrs[j];
+			const char *pend = p + m_wlens[j];
 			for ( ; p < pend ; p++ ) {
 				// punct word...
 				if ( *p == '.' ) break;
@@ -2420,10 +2420,10 @@ bool Sections::setMenus ( ) {
 
 		// . if it is a mailto link forget it
 		// . fixes abtango.com from detecting a bad menu
-		char *ptr  = m_wptrs[si->m_a];
+		const char *ptr  = m_wptrs[si->m_a];
 		int32_t  plen = m_wlens[si->m_a];
 
-		char *mailto = strncasestr(ptr,plen,"mailto:");
+		const char *mailto = strncasestr(ptr,plen,"mailto:");
 		if ( mailto ) {
 			last = NULL;
 		}
@@ -3091,7 +3091,7 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 
 	//verifySections();
 
-	char  **wptrs = m_words->getWordPtrs();
+	const char * const *wptrs = m_words->getWordPtrs();
 	int32_t   *wlens = m_words->getWordLens ();
 	int32_t    nw    = m_words->getNumWords ();
 
@@ -3202,7 +3202,7 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 		char   truncated = 0;
 		// do not print last word/tag in section
 		for ( int32_t i = a ; i < b - 1 && count < max ; i++ ) {
-			char *s    = wptrs[i];
+			const char *s = wptrs[i];
 			int32_t  slen = wlens[i];
 			if ( count + slen > max ) {
 				truncated = 1; 

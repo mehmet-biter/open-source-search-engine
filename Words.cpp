@@ -41,35 +41,14 @@ void Words::reset ( ) {
 	m_wordIds = NULL;
 }
 
-bool Words::set(char *s, int32_t slen) {
-	// bail if nothing
-	if ( ! s || slen == 0 ) {
-		m_numWords = 0;
-		m_numAlnumWords = 0;
-		return true;
-	}
-
-	char c = s[slen];
-	if ( c != '\0' ) {
-		s[slen] = '\0';
-	}
-
-	bool status = set(s);
-	if ( c != '\0' ) {
-		s[slen] = c;
-	}
-
-	return status;
-}
-
 // a quickie
 // this url gives a m_preCount that is too low. why?
 // http://go.tfol.com/163/speed.asp
-static int32_t countWords ( const char *p , int32_t plen ) {
+static int32_t countWords ( const char *p, int32_t plen ) {
 	const char *pend  = p + plen;
 	int32_t  count = 1;
 
-	while ( p < pend ) {
+	while ( p < pend && *p) {
 
 		// sequence of punct
 		for  ( ; p < pend && ! is_alnum_utf8 (p) ; p += getUtf8CharSize(p) ) {
@@ -87,28 +66,6 @@ static int32_t countWords ( const char *p , int32_t plen ) {
 		count++;
 
 	};
-	// some extra for good meaure
-	return count+10;
-}
-
-static int32_t countWords ( const char *p ) {
-	int32_t  count = 1;
-
-	while ( *p ) {
-		// sequence of punct
-		for  ( ; *p && ! is_alnum_utf8 (p) ; p += getUtf8CharSize(p) ) {
-			// in case being set from xml tags, count as words now
-			if ( *p=='<') count++; 
-		}
-		count++;
-
-		// sequence of alnum
-		for  ( ; *p && is_alnum_utf8 (p) ; p += getUtf8CharSize(p) )
-			;
-
-		count++;
-
-	}
 	// some extra for good meaure
 	return count+10;
 }
@@ -180,6 +137,7 @@ bool Words::set( Xml *xml, int32_t node1, int32_t node2 ) {
 	return true;
 }
 
+
 // . set words from a string
 // . assume no HTML entities in the string "s"
 // . s must be NULL terminated
@@ -188,20 +146,28 @@ bool Words::set( Xml *xml, int32_t node1, int32_t node2 ) {
 // . doesn't do tags, only text nodes in "xml"
 // . our definition of a word is as close to English as we can get it
 // . BUT we also consider a string of punctuation characters to be a word
-bool Words::set(char *s) {
+bool Words::set(const char *s) {
+	return set(s,0x7fffffff);
+}
+
+bool Words::set(const char *s, int32_t slen) {
 	reset();
+	// bail if nothing
+	if ( ! s || slen == 0 ) {
+		return true;
+	}
 
 	// determine rough upper bound on number of words by counting
 	// punct/alnum boundaries
-	m_preCount = countWords ( s );
+	m_preCount = countWords(s,slen);
 	if ( !allocateWordBuffers( m_preCount ) ) {
 		return false;
 	}
 
-	return addWords(s, 0x7fffffff);
+	return addWords(s, slen);
 }
 
-bool Words::addWords(char *s, int32_t nodeLen) {
+bool Words::addWords(const char *s, int32_t nodeLen) {
 	int32_t  i = 0;
 	int32_t  j;
 	int32_t  wlen;
@@ -228,7 +194,7 @@ bool Words::addWords(char *s, int32_t nodeLen) {
 		}
 
 		// it is a punct word, find end of it
-		char *start = s+i;
+		const char *start = s+i;
 		for ( ; i<nodeLen && s[i] ; i += getUtf8CharSize(s+i)) {
 			// if we are simple ascii, skip quickly
 			if ( is_ascii(s[i]) ) {
@@ -423,7 +389,7 @@ bool Words::allocateWordBuffers(int32_t count, bool tagIds) {
 
 	// set ptrs
 	char *p = m_buf;
-	m_words    = (char     **)p ;
+	m_words    = (const char **)p ;
 	p += sizeof(char*) * count;
 	m_wordLens = (int32_t      *)p ;
 	p += sizeof(int32_t)* count;

@@ -138,7 +138,7 @@ bool TermCheckList::getScore(Words *w, Phrases *p, HashTableX *uniqueTermIds, in
 			continue;
 		}
 
-		char *s = NULL;
+		const char *s = NULL;
 		int32_t slen = 0;
 		if( g_conf.m_logTraceTermCheckList || debbuf ) {
 			s = w->getWord(i);

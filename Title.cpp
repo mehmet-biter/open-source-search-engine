@@ -140,7 +140,7 @@ bool Title::setTitleFromTags( Xml *xml, int32_t maxTitleLen, uint8_t contentType
 #define MAX_TIT_CANDIDATES 100
 
 // does word qualify as a subtitle delimeter?
-static bool isWordQualified(char *wp, int32_t wlen) {
+static bool isWordQualified(const char *wp, int32_t wlen) {
 	// must be punct word
 	if ( is_alnum_utf8( wp ) ) {
 		return false;
@@ -492,7 +492,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 	memset ( table , 0 , 512 );
 
 	// the first word
-	char *wstart = NULL;
+	const char *wstart = NULL;
 	if ( NW > 0 ) {
 		wstart = words->getWord(0);
 	}
@@ -892,7 +892,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 			//int32_t charlen = 1;
 			// see how many we add
 			int32_t added = 0;
-			char *skipTo = NULL;
+			const char *skipTo = NULL;
 			bool qualified = true;
 			// . scan the words looking for a token
 			// . sometimes the candidates end in ": " so put in "k < b-1"
@@ -900,7 +900,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 			//   "Hot Tub Time Machine (2010) - IMDb" to strip IMDb
 			for ( int32_t k = a ; k < b && n + 3 < MAX_TIT_CANDIDATES; k++){
 				// get word
-				char *wp = w->getWord(k);
+				const char *wp = w->getWord(k);
 				// skip if not alnum
 				if ( ! w->isAlnum(k) ) {
 					// in order for next alnum word to
@@ -1019,7 +1019,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		}
 
 		// the word ptrs
-		char **wptrs = w->getWordPtrs();
+		const char * const *wptrs = w->getWordPtrs();
 
 		// skip if empty
 		if ( w->getNumWords() <= 0 ) {
@@ -1071,7 +1071,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		}
 
 		// punish if a http:// title thingy
-		char *s = wptrs[a];
+		const char *s = wptrs[a];
 		int32_t size = w->getStringSize(a,b);
 		if ( size > 9 && memcmp("http://", s, 7) == 0 ) {
 			ncb *= .10;
