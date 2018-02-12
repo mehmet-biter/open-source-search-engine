@@ -161,7 +161,31 @@ static const char create_table_statmeent[] =
 ");"
 ;
 
+static void fx_max(sqlite3_context *context, int argc, sqlite3_value **argv) {
+	int bestIdx = 0;
+	int bestIdxValueType = sqlite3_value_type(argv[bestIdx]);
+	for (int i = 1; i < argc; ++i) {
+		switch (sqlite3_value_type(argv[i])) {
+			case SQLITE_INTEGER:
+				if (bestIdxValueType == SQLITE_NULL || sqlite3_value_int64(argv[bestIdx]) < sqlite3_value_int64(argv[i])) {
+					bestIdx = i;
+				}
+				break;
+			case SQLITE_FLOAT:
+				if (bestIdxValueType == SQLITE_NULL || sqlite3_value_double(argv[bestIdx]) < sqlite3_value_double(argv[i])) {
+					bestIdx = i;
+				}
+				break;
+			case SQLITE_NULL:
+				// do nothing
+				break;
+			default:
+				gbshutdownLogicError();
+		}
+	}
 
+	sqlite3_result_value(context, argv[bestIdx]);
+}
 
 static sqlite3 *openDb(const char *sqlitedbName) {
 	sqlite3 *db;
@@ -183,10 +207,18 @@ static sqlite3 *openDb(const char *sqlitedbName) {
 			log(LOG_ERROR,"sqlite: Could not open %s: %s", sqlitedbName, sqlite3_errmsg(db));
 			return NULL;
 		}
+
 		if(!setSqliteSynchronous(db,g_conf.m_sqliteSynchronous)) {
 			sqlite3_close(db);
 			return NULL;
 		}
+
+		rc = sqlite3_create_function(db, "fx_max", -1, (SQLITE_UTF8 | SQLITE_DETERMINISTIC), nullptr, &fx_max, nullptr, nullptr);
+		if (rc!=SQLITE_OK) {
+			sqlite3_close(db);
+			return NULL;
+		}
+
 		return db;
 	}
 	
@@ -209,7 +241,13 @@ static sqlite3 *openDb(const char *sqlitedbName) {
 		unlink(sqlitedbName);
 		return NULL;
 	}
-	
+
+	if (sqlite3_create_function(db, "fx_max", -1, (SQLITE_UTF8 | SQLITE_DETERMINISTIC), nullptr, &fx_max, nullptr, nullptr) != SQLITE_OK) {
+		sqlite3_close(db);
+		unlink(sqlitedbName);
+		return NULL;
+	}
+
 	return db;
 }
 
