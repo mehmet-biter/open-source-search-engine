@@ -372,14 +372,16 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			g_errno = map_sqlite_error_to_gb_errno(err);
 			return false;
 		}
+
 		int requestFlagBits = 0;
-		if(srep->m_hasAuthorityInlinkValid && srep->m_hasAuthorityInlink) {
+		if(srep->m_hasAuthorityInlinkValid) {
 			//a bit cumbersome but flexible when we rearrange the bitmasks
 			SpiderdbRequestFlags a(0), b(0);
-			b.m_hasAuthorityInlink |= true;
+			b.m_hasAuthorityInlinkValid = true;
+			b.m_hasAuthorityInlink = srep->m_hasAuthorityInlink;
 			requestFlagBits = ((int)b) - ((int)a);
 		}
-		
+
 		sqlite3_bind_double(updateStatement, 1, srep->m_percentChangedPerDay);
 		sqlite3_bind_int(updateStatement, 2, srep->m_spideredTime);
 		sqlite3_bind_int(updateStatement, 3, srep->m_errCode);
