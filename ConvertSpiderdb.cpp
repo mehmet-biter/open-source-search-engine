@@ -57,7 +57,7 @@ static const char update_statement_duplicate_request[] =
 "      m_pageNumInlinks=MAX(m_pageNumInlinks,?),"
 "      m_addedTime=MIN(m_addedTime,?),"
 "      m_discoveryTime=MIN(m_discoveryTime,?),"
-"      m_priority=MAX(m_priority,?)"
+"      m_priority=FX_MAX(m_priority,?)"
 "  WHERE m_firstIp=? AND m_uh48=?";
 
 

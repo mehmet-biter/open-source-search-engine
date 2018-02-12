@@ -262,7 +262,7 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 			"      m_pageNumInlinks=MAX(m_pageNumInlinks,?),"
 			"      m_addedTime=MIN(m_addedTime,?),"
 			"      m_discoveryTime=MIN(m_discoveryTime,?),"
-			"      m_priority=MAX(m_priority,?)"
+			"      m_priority=FX_MAX(m_priority,?)"
 			"  WHERE m_firstIp=? AND m_uh48=?";
 		
 		sqlite3_stmt *updateStatement = NULL;
@@ -531,7 +531,12 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		int32_t discoveryTime             = sqlite3_column_int(stmt, 8);
 		int32_t contentHash32             = sqlite3_column_int(stmt, 9);
 		SpiderdbRequestFlags requestFlags = sqlite3_column_int(stmt, 10);
-		int32_t priority                  = sqlite3_column_int(stmt, 11);
+
+		int32_t priority = -1;
+		if (sqlite3_column_type(stmt, 11) != SQLITE_NULL) {
+			priority = sqlite3_column_int(stmt, 11);
+		}
+
 		int32_t errCount                  = sqlite3_column_int(stmt, 12);
 		int32_t sameErrCount              = sqlite3_column_int(stmt, 13);
 		const unsigned char *url          = sqlite3_column_text(stmt, 14);
