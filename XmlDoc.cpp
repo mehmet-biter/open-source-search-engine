@@ -4122,13 +4122,14 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 			site = gr->getString("site",NULL,&dataSize);
 			if ( dataSize ) siteLen = dataSize - 1;
 		}
-		// otherwise, make it the host or make it cut off at
-		// a "/user/" or "/~xxxx" or whatever path component
-		if ( ! site ) {
-			// GUESS link site... like /~xxx
-			site    = host;
-			siteLen = hostLen;
+
+		SiteGetter sg;
+		if (!site) {
+			sg.getSite(u, nullptr, 0, 0);
+			site    = sg.getSite();
+			siteLen = sg.getSiteLen();
 		}
+
 		int32_t linkeeSiteHash32 = hash32 ( site , siteLen , 0 );
 		// only store if different form host itself
 		if ( linkeeSiteHash32 != hostHash32 ) {
