@@ -4098,9 +4098,9 @@ bool Links::addLink(const char *link, int32_t linkLen, int32_t nodeNum,
 	// same site?
 	if (m_parentUrl) {
 		SiteGetter parentSiteGetter;
-		parentSiteGetter.getSite(m_parentUrl->getUrl(), nullptr, 0, 0, 0);
+		parentSiteGetter.getSite(m_parentUrl->getUrl(), nullptr, 0, 0);
 		SiteGetter siteGetter;
-		siteGetter.getSite(url.getUrl(), nullptr, 0, 0, 0);
+		siteGetter.getSite(url.getUrl(), nullptr, 0, 0);
 
 		if (strcmp(siteGetter.getSite(), parentSiteGetter.getSite()) == 0) {
 			flags |= LF_SAMESITE;

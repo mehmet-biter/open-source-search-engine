@@ -608,7 +608,7 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 		return false;
 	}
 
-	char *s = NULL;
+	const char *s = NULL;
 
 	setStatus ( "hashing content type" );
 
@@ -878,7 +878,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		gbshutdownLogicError();
 	}
 
-	char *s = fu->getUrl();
+	const char *s = fu->getUrl();
 	int32_t slen = fu->getUrlLen();
 
 	if (!*ini || m_version <= 126) {
@@ -1106,7 +1106,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	//   wikipedia.org as subsites!!
 	if ( ! m_links.hasSubdirOutlink() ) add = false;
 
-	char *host = fu->getHost        ();
+	const char *host = fu->getHost();
 	int32_t  hlen = fu->getHostLen     ();
 
 	// tags from here out
@@ -1115,7 +1115,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// hash it
 	if ( add ) {
 		// remove the last path component
-		char *end2 = s + slen - 2;
+		const char *end2 = s + slen - 2;
 		// back up over last component
 		for ( ; end2 > fu->getPath() && *end2 != '/' ; end2-- ) ;
 		// hash that part of the url
@@ -1163,7 +1163,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 
 	if (size_utf8Content - 1 > 0) {
 		setStatus("hashing url path");
-		char *path = fu->getPath();
+		const char *path = fu->getPath();
 		int32_t plen = fu->getPathLen();
 
 		// BR 20160113: Do not hash and combine the page filename extension with the page name (skip e.g. .com)
@@ -1228,7 +1228,7 @@ bool XmlDoc::hashIncomingLinkText(HashTableX *tt) {
 		int32_t tlen = k->size_linkText;
 		if ( tlen > 0 ) tlen--;
 		// get the text
-		char *txt = k->getLinkText();
+		const char *txt = k->getLinkText();
 		// sanity check
 		if ( ! verifyUtf8 ( txt , tlen ) ) {
 			log("xmldoc: bad link text 2 from url=%s for %s",
@@ -1285,7 +1285,7 @@ bool XmlDoc::hashNeighborhoods ( HashTableX *tt ) {
 			continue;
 
 		// get the left and right texts and hash both
-		char *s = k->getSurroundingText();
+		const char *s = k->getSurroundingText();
 		if(!s || k->size_surroundingText <= 1)
 			continue;
 
@@ -1408,7 +1408,7 @@ bool XmlDoc::hashMetaKeywords ( HashTableX *tt ) {
 	//char buf [ 2048 + 2 ];
 	//int32_t len=m_xml.getMetaContentPointer ( buf , 2048 , "keywords" , 8 );
 	int32_t mklen;
-	char *mk = getMetaKeywords( &mklen );
+	const char *mk = getMetaKeywords( &mklen );
 
 	// update hash parms
 	HashInfo hi;
@@ -1476,7 +1476,7 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 	//char buf [ 2048 + 2 ];
 	//int32_t len = m_xml.getMetaContent ( buf , 2048 , "summary" , 7 );
 	int32_t mslen;
-	char *ms = getMetaSummary ( &mslen );
+	const char *ms = getMetaSummary ( &mslen );
 
 	// update hash parms
 	HashInfo hi;
@@ -1507,7 +1507,7 @@ bool XmlDoc::hashMetaGeoPlacename( HashTableX *tt ) {
 	setStatus ( "hashing meta geo.placename" );
 
 	int32_t mgplen;
-	char *mgp = getMetaGeoPlacename( &mgplen );
+	const char *mgp = getMetaGeoPlacename( &mgplen );
 
 	// update hash parms
 	HashInfo hi;

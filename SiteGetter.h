@@ -18,7 +18,7 @@ public:
 
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on erorr
-	bool getSite ( const char *url, class TagRec *gr, int32_t timestamp, collnum_t collnum, int32_t niceness,
+	bool getSite ( const char *url, class TagRec *gr, collnum_t collnum, int32_t niceness,
 	               void *state    = NULL, void (* callback)(void *) = NULL ) ;
 
 	const char *getSite() const { return m_site; }

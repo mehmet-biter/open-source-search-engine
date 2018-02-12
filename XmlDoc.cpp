@@ -4101,13 +4101,14 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 			site = gr->getString("site",NULL,&dataSize);
 			if ( dataSize ) siteLen = dataSize - 1;
 		}
-		// otherwise, make it the host or make it cut off at
-		// a "/user/" or "/~xxxx" or whatever path component
-		if ( ! site ) {
-			// GUESS link site... like /~xxx
-			site    = host;
-			siteLen = hostLen;
+
+		SiteGetter sg;
+		if (!site) {
+			sg.getSite(u, nullptr, 0, 0);
+			site    = sg.getSite();
+			siteLen = sg.getSiteLen();
 		}
+
 		int32_t linkeeSiteHash32 = hash32 ( site , siteLen , 0 );
 		// only store if different form host itself
 		if ( linkeeSiteHash32 != hostHash32 ) {
@@ -7890,10 +7891,8 @@ char *XmlDoc::getSite ( ) {
 		return NULL;
 	}
 
-	int32_t timestamp = getSpideredTime();
-
 	// do it
-	if ( ! m_siteGetter.getSite ( f->getUrl(), gr, timestamp, cr->m_collnum, m_niceness, this, gotSiteWrapper )) {
+	if ( ! m_siteGetter.getSite ( f->getUrl(), gr, cr->m_collnum, m_niceness, this, gotSiteWrapper )) {
 		// return -1 if we blocked
 		return (char *) -1;
 	}
@@ -19493,7 +19492,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 		// get the normalized url
 		char *url = links->getLinkPtr(i);
 		// get the site. this will not block or have an error.
-		siteGetter.getSite(url,gr,timestamp,cr->m_collnum,m_niceness);
+		siteGetter.getSite(url,gr,cr->m_collnum,m_niceness);
 		// these are now valid and should reference into
 		// Links::m_buf[]
 		const char *site    = siteGetter.getSite();

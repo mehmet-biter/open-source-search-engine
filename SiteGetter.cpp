@@ -99,7 +99,7 @@ SiteGetter::~SiteGetter ( ) {
 //   pass a bunch of site ptrs to msg9a
 // . "url" MUST BE NORMALIZED via Url.cpp. so using Links' buffer is ok!
 // . TODO: consider setting "state" to null if your url host has tons of inlinx
-bool SiteGetter::getSite ( const char *url, TagRec *gr, int32_t timestamp, collnum_t collnum, int32_t niceness,
+bool SiteGetter::getSite ( const char *url, TagRec *gr, collnum_t collnum, int32_t niceness,
                            void   *state, void (* callback)(void *) ) {
 	// save it
 	m_url      = url;

@@ -135,7 +135,7 @@ bool Msge1::launchRequests ( int32_t starti ) {
 				const char *site = gr->getString("site");
 				if (site != nullptr) {
 					SiteGetter sg;
-					sg.getSite(m_urlPtrs[m_n], nullptr, 0, 0, m_niceness);
+					sg.getSite(m_urlPtrs[m_n], nullptr, 0, m_niceness);
 
 					if (strcmp(site, sg.getSite()) != 0) {
 						SafeBuf sb;
