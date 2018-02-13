@@ -127,7 +127,7 @@ int convertSpiderDb(const char *collname) {
 
 	if (sqlite3_create_function(db, "fx_max", -1, (SQLITE_UTF8 | SQLITE_DETERMINISTIC), nullptr, &fx_max, nullptr, nullptr) != SQLITE_OK) {
 		sqlite3_close(db);
-		return NULL;
+		return 12;
 	}
 	
 	sqlite3_stmt *insertStatementNoReply = NULL;
