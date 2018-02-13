@@ -3278,12 +3278,6 @@ int32_t dumpSpiderdb(const char *coll, int32_t startFileNum, int32_t numFiles, b
 					} else {
 						printf( " errcode=%" PRId32, ( int32_t ) s_lastErrCode );
 					}
-
-					if ( sreq->m_prevErrCode ) {
-						printf( " preverrcode=%" PRId32"(%s)", ( int32_t ) sreq->m_prevErrCode, mstrerror( sreq->m_prevErrCode ) );
-					} else {
-						printf( " preverrcode=%" PRId32, ( int32_t ) sreq->m_prevErrCode );
-					}
 				}
 
 				printf("\n");
@@ -3590,7 +3584,6 @@ static int32_t dumpSpiderdbCsv(const char *coll) {
 				printf("%d,",spiderRequest->m_sameErrCount);
 				printf("%d,",spiderRequest->m_version);
 				printf("%d,",spiderRequest->m_discoveryTime);
-				printf("%d,",spiderRequest->m_prevErrCode);
 				printf("%d,",spiderRequest->m_contentHash32);
 				printf("%d,",spiderRequest->m_hopCount);
 				printf("%d,",spiderRequest->m_recycleContent);

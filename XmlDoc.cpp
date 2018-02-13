@@ -11912,18 +11912,6 @@ void XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("oldsiteinlinks=%04" PRId32" ",sni);
 	}
 
-
-	// Spider.cpp sets m_sreq.m_errCount before adding it to doledb
-	if ( m_sreqValid ) // && m_sreq.m_errCount )
-		sb->safePrintf("errcnt=%" PRId32" ",(int32_t)m_sreq.m_errCount );
-	else
-		sb->safePrintf("errcnt=? ");
-
-	if ( m_sreqValid )
-		sb->safePrintf("sameerrcnt=%" PRId32" ",(int32_t)m_sreq.m_sameErrCount );
-	else
-		sb->safePrintf("sameerrcnt=? ");
-
 	if ( ptr_redirUrl ) { // m_redirUrlValid && m_redirUrlPtr ) {
 		sb->safePrintf("redir=%s ",ptr_redirUrl);//m_redirUrl.getUrl());
 		if ( m_numRedirects > 2 )
@@ -14410,42 +14398,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			n->m_hasAuthorityInlink = o->m_hasAuthorityInlink;
 			// the validator flags
 			n->m_hasAuthorityInlinkValid = o->m_hasAuthorityInlinkValid;
-
-			// get error count from original spider request
-			int32_t newc = m_sreq.m_errCount;
-			// inc for us, since we had an error
-			newc++;
-			// contain to one byte
-			if ( newc > 255 ) {
-				newc = 255;
-			}
-			// store in our spiderreply
-			m_srep.m_errCount = newc;
-
-
-			// Number of times we have seen the same error code in a row
-			if( m_sreq.m_prevErrCode == m_srep.m_errCode ) {
-				int32_t newc = m_sreq.m_sameErrCount;
-
-				// Sanity. Must not be same or larger here.
-				if( newc >= m_srep.m_errCount ) {
-					log(LOG_WARN,"Correcting sameErrCount. Count=%" PRId32 ", sameErrCount=%" PRId32 ", prev_errCode=%" PRId32 ", curr_errCode=%" PRId32 ", url=%s, uh48=%" PRIx64 ", err=%s", m_srep.m_errCount, m_srep.m_sameErrCount, m_sreq.m_prevErrCode, m_srep.m_errCode, m_sreq.m_url, uh48, mstrerror( m_srep.m_errCode ));
-					newc = 0;
-				}
-
-				// inc for us, since we had an error
-				newc++;
-
-				// contain to one byte
-				if ( newc > 255 ) {
-					newc = 255;
-				}
-				// store in our spiderreply
-				m_srep.m_sameErrCount = newc;
-			}
-			else {
-				m_srep.m_sameErrCount = 0;
-			}
 		}
 		// . and do not really consider this an error
 		// . i don't want the url filters treating it as an error reply

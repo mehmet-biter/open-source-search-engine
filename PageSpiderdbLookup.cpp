@@ -282,9 +282,7 @@ static void generatePageHtml(int32_t shardNum, int32_t firstIp, int32_t robotsSh
 		sb->safePrintf("  <tr class=\"level2\"><th>Field</th><th>Value</th></tr>\n");
 		sb->safePrintf("  <tr><td>m_firstIp</td><td>%s</td></tr>\n", iptoa(spiderRequest->m_firstIp, ipbuf));
 		sb->safePrintf("  <tr><td>m_addedTime</td><td>%s (%d)</td></tr>\n", formatTime(spiderRequest->m_addedTime, timebuf), spiderRequest->m_addedTime);
-		sb->safePrintf("  <tr><td>m_prevErrCode</td><td>%d</td></tr>\n", spiderRequest->m_prevErrCode);
 		sb->safePrintf("  <tr><td>m_priority</td><td>%d</td></tr>\n", spiderRequest->m_priority);
-		sb->safePrintf("  <tr><td>m_errCount</td><td>%d</td></tr>\n", spiderRequest->m_errCount);
 		sb->safePrintf("  <tr><td>m_isAddUrl</td><td>%s</td></tr>\n", spiderRequest->m_isAddUrl ? "true" : "false");
 		sb->safePrintf("  <tr><td>m_isPageReindex</td><td>%s</td></tr>\n", spiderRequest->m_isPageReindex ? "true" : "false");
 		sb->safePrintf("  <tr><td>m_isUrlCanonical</td><td>%s</td></tr>\n", spiderRequest->m_isUrlCanonical ? "true" : "false");
@@ -381,10 +379,8 @@ static void generatePageJSON(int32_t shardNum, int32_t robotsShardNum, const Spi
 		sb->safePrintf("\t\"siteNumInlinks\": %d,\n", spiderRequest->m_siteNumInlinks);
 		sb->safePrintf("\t\"addedTime\": %u,\n", spiderRequest->m_addedTime);
 		sb->safePrintf("\t\"pageNumInlinks\": %hhu,\n", spiderRequest->m_pageNumInlinks);
-		sb->safePrintf("\t\"sameErrCount\": %hhu,\n", spiderRequest->m_sameErrCount);
 		sb->safePrintf("\t\"version\": %hhu,\n", spiderRequest->m_version);
 		sb->safePrintf("\t\"discoveryTime\": %u,\n", spiderRequest->m_discoveryTime);
-		sb->safePrintf("\t\"prevErrCode\": %d,\n", spiderRequest->m_prevErrCode);
 		sb->safePrintf("\t\"contentHash32\": %u,\n", spiderRequest->m_contentHash32);
 		sb->safePrintf("\t\"recycleContent\": %s,\n", spiderRequest->m_recycleContent ? "true" : "false");
 		sb->safePrintf("\t\"isAddUrl\": %s,\n", spiderRequest->m_isAddUrl ? "true" : "false");
@@ -403,8 +399,7 @@ static void generatePageJSON(int32_t shardNum, int32_t robotsShardNum, const Spi
 		sb->safePrintf("\t\"siteNumInlinksValid\": %s,\n", spiderRequest->m_siteNumInlinksValid ? "true" : "false");
 		sb->safePrintf("\t\"avoidSpiderLinks\": %s,\n", spiderRequest->m_avoidSpiderLinks ? "true" : "false");
 		sb->safePrintf("\t\"ufn\": %hd,\n", spiderRequest->m_ufn);
-		sb->safePrintf("\t\"priority\": %d,\n", spiderRequest->m_priority);
-		sb->safePrintf("\t\"errCount\": %d\n", spiderRequest->m_errCount);
+		sb->safePrintf("\t\"priority\": %d\n", spiderRequest->m_priority);
 		sb->safePrintf("}");
 	}
 

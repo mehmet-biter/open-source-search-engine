@@ -194,8 +194,8 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 		static const char insert_statement[] =
 			"INSERT INTO spiderdb (m_firstIp, m_uh48, m_hostHash32, m_domHash32, m_siteHash32,"
 			"		       m_siteNumInlinks, m_pageNumInlinks, m_addedTime, m_discoveryTime, m_contentHash32,"
-			"		       m_requestFlags, m_priority, m_errCount, m_sameErrCount, m_url)"
-			"VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+			"		       m_requestFlags, m_priority, m_url)"
+			"VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
 		sqlite3_stmt *insertStatement = NULL;
 		if(sqlite3_prepare_v2(db, insert_statement, -1, &insertStatement, &pzTail) != SQLITE_OK) {
 			int err = sqlite3_errcode(db);
@@ -243,9 +243,7 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 			sqlite3_bind_int(insertStatement, 12, sreq->m_priority);
 		else
 			sqlite3_bind_null(insertStatement, 12);
-		sqlite3_bind_int(insertStatement, 13, sreq->m_errCount);
-		sqlite3_bind_int(insertStatement, 14, sreq->m_sameErrCount);
-		sqlite3_bind_text(insertStatement, 15, sreq->m_url,-1,SQLITE_TRANSIENT);
+		sqlite3_bind_text(insertStatement, 13, sreq->m_url,-1,SQLITE_TRANSIENT);
 		
 		if(sqlite3_step(insertStatement) != SQLITE_DONE) {
 			int err = sqlite3_errcode(db);
@@ -263,7 +261,7 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 		static const char update_statement[] =
 			"UPDATE spiderdb"
 			"  SET m_siteNumInlinks=FX_MAX(m_siteNumInlinks,?),"
-			"      m_pageNumInlinks=MAX(m_pageNumInlinks,?),"
+			"      m_pageNumInlinks=FX_MAX(m_pageNumInlinks,?),"
 			"      m_addedTime=MIN(m_addedTime,?),"
 			"      m_discoveryTime=MIN(m_discoveryTime,?),"
 			"      m_priority=FX_MAX(m_priority,?)"
@@ -414,13 +412,14 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 		sqlite3_finalize(updateStatement);
 		return true;
 	} else {
+		logTrace(true, "@@@@@@ errCode=%d uh48=%lu", srep->m_errCode, uh48);
 		static const char update_statement[] =
 			"UPDATE spiderdb"
 			"  SET m_spideredTime = ?,"
 			"      m_errCode = ?,"
 			"      m_siteNumInlinks=FX_MAX(m_siteNumInlinks,?),"
 			"      m_httpStatus = ?,"
-			"      m_errCount = m_errCount + 1,"
+			"      m_errCount = IFNULL(m_errCount,0) + 1,"
 			"      m_sameErrCount = CASE WHEN m_errCode=? THEN IFNULL(m_sameErrCount,0) + 1 ELSE 0 END,"
 			"      m_errCode = ?,"
 			"      m_replyFlags = IFNULL(m_replyFlags,0)"
@@ -628,9 +627,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		sreq.m_siteNumInlinks           = siteNumInlinks;
 		sreq.m_addedTime                = addedTime;
 		sreq.m_pageNumInlinks           = pageNumInlinks;
-		sreq.m_sameErrCount             = sameErrCount;
 		sreq.m_discoveryTime            = discoveryTime;
-		sreq.m_prevErrCode              = 0; //done differently now.
 		sreq.m_contentHash32            = contentHash32;
 		sreq.m_isAddUrl                 = requestFlags.m_isAddUrl;
 		sreq.m_isPageReindex            = requestFlags.m_isPageReindex;
@@ -650,7 +647,6 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		sreq.m_avoidSpiderLinks         = requestFlags.m_avoidSpiderLinks;
 		sreq.m_ufn                      = 0; //only used in-memory
 		sreq.m_priority                 = priority;
-		sreq.m_errCount                 = errCount;
 		strcpy(sreq.m_url,(const char*)url);
 		sreq.setDataSize();
 

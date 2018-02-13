@@ -24,8 +24,8 @@ static const char create_table_statmeent[] =
 "    m_contentHash32                 INT,"
 "    m_requestFlags                  INT NOT NULL,"
 "    m_priority                      INT,"
-"    m_errCount                      INT NOT NULL,"
-"    m_sameErrCount                  INT NOT NULL,"
+"    m_errCount                      INT,"
+"    m_sameErrCount                  INT,"
 "    m_url                           TEXT NOT NULL,"
 "    m_percentChangedPerDay          REAL,"
 "    m_spideredTime                  INT,"
@@ -39,22 +39,22 @@ static const char create_table_statmeent[] =
 
 static const char insert_statement_no_reply[] =
 "INSERT INTO spiderdb (m_firstIp, m_uh48, m_hostHash32, m_domHash32, m_siteHash32,"
-"		       m_siteNumInlinks, m_pageNumInlinks, m_addedTime, m_discoveryTime, m_contentHash32,"
-"		       m_requestFlags, m_priority, m_errCount, m_sameErrCount, m_url)"
-"VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+"                      m_siteNumInlinks, m_pageNumInlinks, m_addedTime, m_discoveryTime, m_contentHash32,"
+"                      m_requestFlags, m_priority, m_url)"
+"VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 static const char insert_statement_with_reply[] =
 "INSERT INTO spiderdb (m_firstIp, m_uh48, m_hostHash32, m_domHash32, m_siteHash32,"
-"		       m_siteNumInlinks, m_pageNumInlinks, m_addedTime, m_discoveryTime, m_contentHash32,"
-"		       m_requestFlags, m_priority, m_errCount, m_sameErrCount, m_url,"
-"                      m_percentChangedPerDay, m_spideredTime, m_errCode, m_httpStatus, m_langId,"
+"                      m_siteNumInlinks, m_pageNumInlinks, m_addedTime, m_discoveryTime, m_contentHash32,"
+"                      m_requestFlags, m_priority, m_url,"
+"                      m_errCount, m_sameErrCount, m_percentChangedPerDay, m_spideredTime, m_errCode, m_httpStatus, m_langId,"
 "                      m_replyFlags)"
 "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 static const char update_statement_duplicate_request[] =
 "UPDATE spiderdb"
 "  SET m_siteNumInlinks=FX_MAX(m_siteNumInlinks,?),"
-"      m_pageNumInlinks=MAX(m_pageNumInlinks,?),"
+"      m_pageNumInlinks=FX_MAX(m_pageNumInlinks,?),"
 "      m_addedTime=MIN(m_addedTime,?),"
 "      m_discoveryTime=MIN(m_discoveryTime,?),"
 "      m_priority=FX_MAX(m_priority,?)"
@@ -244,10 +244,10 @@ int convertSpiderDb(const char *collname) {
 					sqlite3_bind_int(stmt, 12, spiderRequest->m_priority);
 				else
 					sqlite3_bind_null(stmt, 12);
-				sqlite3_bind_int(stmt, 13, spiderRequest->m_errCount);
-				sqlite3_bind_int(stmt, 14, spiderRequest->m_sameErrCount);
-				sqlite3_bind_text(stmt, 15, spiderRequest->m_url,-1,SQLITE_TRANSIENT);
+				sqlite3_bind_text(stmt, 13, spiderRequest->m_url,-1,SQLITE_TRANSIENT);
 				if(hadReply) {
+					sqlite3_bind_int(stmt, 14, prevSpiderReply->m_errCount);
+					sqlite3_bind_int(stmt, 15, prevSpiderReply->m_sameErrCount);
 					sqlite3_bind_double(stmt, 16, prevSpiderReply->m_percentChangedPerDay);
 					sqlite3_bind_int(stmt, 17, prevSpiderReply->m_spideredTime);
 					sqlite3_bind_int(stmt, 18, prevSpiderReply->m_errCode);

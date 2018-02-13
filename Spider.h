@@ -450,11 +450,7 @@ public:
 	// taken from the # of SpiderRequests.
 	uint8_t    m_pageNumInlinks;
 
-	// . this is copied from the most recent SpiderReply into here
-	// . its so XMlDoc.cpp can increment it and add it to the new
-	//   SpiderReply it adds in case there is another download error ,
-	//   like ETCPTIMEDOUT or EDNSTIMEDOUT
-	uint8_t    m_sameErrCount;
+	uint8_t    m_reservedb3;
 
 
 	uint8_t    m_version;
@@ -471,9 +467,7 @@ public:
 	// when we scan all of the SpiderRequests it has.
 	int32_t m_discoveryTime;
 
-	// Used to compare previous errcode with current errcode, for counting
-	// sameErrCode value.
-	int32_t m_prevErrCode;	// m_reservedc2;
+	int32_t m_reservedc2;
 
 	// . replace this with something we need for smart compression
 	// . this is zero if none or invalid
@@ -603,11 +597,7 @@ public:
 	//   the priority we used!
 	char    m_priority;
 
-	// . this is copied from the most recent SpiderReply into here
-	// . its so XMlDoc.cpp can increment it and add it to the new
-	//   SpiderReply it adds in case there is another download error ,
-	//   like ETCPTIMEDOUT or EDNSTIMEDOUT
-	char    m_errCount;
+	char    m_reserved4;
 
 	// we really only need store the url for *requests* and not replies
 	char    m_url[MAX_URL_LEN+1];

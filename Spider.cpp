@@ -242,8 +242,6 @@ int32_t SpiderRequest::printToJSON(SafeBuf *sb, const char *status, const XmlDoc
 
 	char ipbuf[16];
 	sb->safePrintf("\t\t\t\"firstIp\": \"%s\",\n", iptoa(m_firstIp,ipbuf));
-	sb->safePrintf("\t\t\t\"errCount\": %hhd,\n", m_errCount);
-	sb->safePrintf("\t\t\t\"sameErrCount\": %hhd,\n", m_sameErrCount);
 	sb->safePrintf("\t\t\t\"urlHash48\": %" PRId64",\n", getUrlHash48());
 	sb->safePrintf("\t\t\t\"siteInLinks\": %" PRId32",\n", m_siteNumInlinks);
 	sb->safePrintf("\t\t\t\"addedTime\": %" PRIu32",\n", m_addedTime);
@@ -293,8 +291,6 @@ int32_t SpiderRequest::printToTable(SafeBuf *sb, const char *status, const XmlDo
 
 	char ipbuf[16];
 	sb->safePrintf(" <td>%s</td>\n",iptoa(m_firstIp,ipbuf) );
-	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_errCount );
-	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_sameErrCount );
 	sb->safePrintf(" <td>%" PRIu64"</td>\n",getUrlHash48());
 	sb->safePrintf(" <td>%" PRId32"</td>\n",m_siteNumInlinks );
 
