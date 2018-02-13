@@ -347,11 +347,8 @@ int32_t SpiderRequest::printTableHeader ( SafeBuf *sb , bool currentlySpidering)
 	sb->safePrintf(" <th>ufn</th>\n");
 
 	sb->safePrintf(" <th>firstIp</th>\n");
-	sb->safePrintf(" <th>errCount</th>\n");
-	sb->safePrintf(" <th>sameErrCount</th>\n");
 	sb->safePrintf(" <th>urlHash48</th>\n");
 	sb->safePrintf(" <th>siteInlinks</th>\n");
-	sb->safePrintf(" <th>hops</th>\n");
 	sb->safePrintf(" <th>addedTime</th>\n");
 	sb->safePrintf(" <th>pageNumInLinks</th>\n");
 	sb->safePrintf(" <th>parentDocId</th>\n");
