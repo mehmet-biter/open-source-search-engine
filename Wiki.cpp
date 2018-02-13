@@ -141,7 +141,7 @@ bool Wiki::loadText ( int32_t fileSize ) {
 		*eol = c;
 		if ( pp ) continue;
 		// get these
-		int64_t *wids = w.getWordIds();
+		const int64_t *wids = w.getWordIds();
 		// reset hash
 		uint32_t h = 0;
 		// count the words in the phrase

@@ -1365,7 +1365,7 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	//if ( ! hashWords (a,i,&hi ) ) return false;
 
 	const char * const *wptrs = m_words.getWordPtrs();
-	int32_t  *wlens = m_words.getWordLens();
+	const int32_t  *wlens = m_words.getWordLens();
 	const char  *title    = wptrs[a];
 	const char  *titleEnd = wptrs[i-1] + wlens[i-1];
 	int32_t   titleLen = titleEnd - title;

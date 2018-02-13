@@ -135,8 +135,8 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *
 	//m_pageSite  = pageSite;
 	// scan the words
 	int32_t       nw     = words->getNumWords();
-	nodeid_t  *tids   = words->getTagIds();
-	int64_t *wids   = words->getWordIds();
+	const nodeid_t *tids   = words->getTagIds();
+	const int64_t  *wids   = words->getWordIds();
 	//int32_t      *scores = scoresArg->m_scores;
 	Section **sp = NULL; 
 	if ( sections ) sp = sections->m_sectionPtrs;

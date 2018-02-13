@@ -459,7 +459,7 @@ bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bit
 	const int64_t *wids = words->getWordIds();
 	const int32_t *wlens = words->getWordLens();
 	const char * const *wptrs = words->getWordPtrs();
-	nodeid_t *tids = words->getTagIds();
+	const nodeid_t *tids = words->getTagIds();
 	int32_t nw = words->getNumWords();
 	int32_t n;
 	int32_t matchStack = 0;
@@ -771,10 +771,10 @@ int32_t Matches::getNumWordsInMatch(Words *words, int32_t wn, int32_t n, int32_t
 	if ( ! (m_qtableFlags[n] & 0x02) ) { *numQWords = 1; return 1; }
 
 	// get word ids array for the doc
-	int64_t  *wids   = words->getWordIds();
+	const int64_t  *wids   = words->getWordIds();
 	//int64_t  *swids  = words->getStripWordIds();
 	const char * const *ws = words->getWordPtrs();
-	int32_t       *wl     = words->getWordLens();
+	const int32_t      *wl     = words->getWordLens();
 	//the word we match in the query appears in quotes in the query
 	int32_t k     = -1;
 	int32_t count = 0;

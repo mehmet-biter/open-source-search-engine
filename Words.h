@@ -186,12 +186,9 @@ class Words {
 	// want the pure tagid!!!!
 	//
 	// CAUTION!!!
-	nodeid_t       *getTagIds()       { return m_tagIds; }
 	const nodeid_t *getTagIds() const { return m_tagIds; }
 	const char     * const *getWordPtrs() const { return (const char*const*)m_words; }
-	int32_t        *getWordLens()       { return m_wordLens; }
 	const int32_t  *getWordLens() const { return m_wordLens; }
-	int64_t        *getWordIds()       { return m_wordIds; }
 	const int64_t  *getWordIds() const { return m_wordIds; }
 	const int32_t  *getNodes() const { return m_nodes; }
 	

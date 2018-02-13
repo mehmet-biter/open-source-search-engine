@@ -18399,7 +18399,7 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 
 
 	int32_t nw = words->getNumWords();
-	int64_t *wids = words->getWordIds();
+	const int64_t *wids = words->getWordIds();
 
 	int32_t isXml = 0;
 	if ( hr ) isXml = hr->getLong("xml",0);
@@ -19873,7 +19873,7 @@ char *XmlDoc::getWordSpamVec() {
     }
 
 
-	int64_t *wids = words->getWordIds();
+	const int64_t *wids = words->getWordIds();
 	const char *const*wptrs = words->getWordPtrs();
 	const int32_t  *wlens = words->getWordLens();
 
