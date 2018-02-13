@@ -112,6 +112,9 @@ bool PageTemperatureRegistry::load() {
 	log(LOG_DEBUG, "pagetemp: default_temperature=%u",default_temperature);
 
 	log(LOG_DEBUG, "%s loaded (%lu items)", filename, (unsigned long)new_entries);
+	
+	stat_ino = st.st_ino;
+	stat_mtime = st.st_mtime;
 	return true;
 }
 
@@ -121,6 +124,15 @@ void PageTemperatureRegistry::unload() {
 	slot = 0;
 	entries = 0;
 	//min/max temperatures are kept as-is
+}
+
+
+void PageTemperatureRegistry::reload_if_needed() {
+	struct stat st;
+	if(stat(filename,&st)!=0)
+		return;
+	if(st.st_ino!=stat_ino || st.st_mtime!=stat_mtime)
+		load();
 }
 
 

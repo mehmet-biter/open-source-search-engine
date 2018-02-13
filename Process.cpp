@@ -35,6 +35,7 @@
 #include "CountryCode.h"
 #include "File.h"
 #include "Docid2Siteflags.h"
+#include "PageTemperatureRegistry.h"
 #include "UrlRealtimeClassification.h"
 #include "InstanceInfoExchange.h"
 #include "WantedChecker.h"
@@ -236,6 +237,7 @@ bool Process::checkFiles ( const char *dir ) {
 static void heartbeatWrapper(int fd, void *state);
 static void processSleepWrapper(int fd, void *state);
 static void reloadDocid2SiteFlags(int fd, void *state);
+static void reloadPageTemperatureRegistry(int fd, void *state);
 
 
 Process::Process ( ) {
@@ -331,6 +333,9 @@ bool Process::init ( ) {
 		return false;
 	}
 
+	if(!g_loop.registerSleepCallback(60000, NULL, reloadPageTemperatureRegistry, "Process::reloadPageTemperatureRegistry", 0))
+		return false;
+
 	// success
 	return true;
 }
@@ -369,6 +374,10 @@ void heartbeatWrapper(int /*fd*/, void * /*state*/) {
 
 static void reloadDocid2SiteFlags(int fd, void *state) {
 	g_d2fasm.reload_if_needed();
+}
+
+static void reloadPageTemperatureRegistry(int fd, void *state) {
+	g_pageTemperatureRegistry.reload_if_needed();
 }
 
 
