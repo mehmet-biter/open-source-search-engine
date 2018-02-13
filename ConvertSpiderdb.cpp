@@ -60,6 +60,31 @@ static const char update_statement_duplicate_request[] =
 "      m_priority=FX_MAX(m_priority,?)"
 "  WHERE m_firstIp=? AND m_uh48=?";
 
+static void fx_max(sqlite3_context *context, int argc, sqlite3_value **argv) {
+	int bestIdx = 0;
+	int bestIdxValueType = sqlite3_value_type(argv[bestIdx]);
+	for (int i = 1; i < argc; ++i) {
+		switch (sqlite3_value_type(argv[i])) {
+			case SQLITE_INTEGER:
+				if (bestIdxValueType == SQLITE_NULL || sqlite3_value_int64(argv[bestIdx]) < sqlite3_value_int64(argv[i])) {
+					bestIdx = i;
+				}
+				break;
+			case SQLITE_FLOAT:
+				if (bestIdxValueType == SQLITE_NULL || sqlite3_value_double(argv[bestIdx]) < sqlite3_value_double(argv[i])) {
+					bestIdx = i;
+				}
+				break;
+			case SQLITE_NULL:
+				// do nothing
+				break;
+			default:
+				gbshutdownLogicError();
+		}
+	}
+
+	sqlite3_result_value(context, argv[bestIdx]);
+}
 
 //Convert spiderdb from Rdb format to sqlite3
 int convertSpiderDb(const char *collname) {
@@ -99,7 +124,11 @@ int convertSpiderDb(const char *collname) {
 		sqlite3_close(db);
 		return 5;
 	}
-	
+
+	if (sqlite3_create_function(db, "fx_max", -1, (SQLITE_UTF8 | SQLITE_DETERMINISTIC), nullptr, &fx_max, nullptr, nullptr) != SQLITE_OK) {
+		sqlite3_close(db);
+		return NULL;
+	}
 	
 	sqlite3_stmt *insertStatementNoReply = NULL;
 	sqlite3_stmt *insertStatementWithReply = NULL;
