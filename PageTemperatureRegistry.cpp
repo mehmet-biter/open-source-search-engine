@@ -1,4 +1,5 @@
 #include "PageTemperatureRegistry.h"
+#include "ScopedLock.h"
 #include "ScalingFunctions.h"
 #include "Log.h"
 #include <stdio.h>
@@ -9,11 +10,13 @@
 #include <float.h>      // FLT_EPSILON, DBL_EPSILON
 
 PageTemperatureRegistry g_pageTemperatureRegistry;
+static GbMutex load_lock;
 
 static const char filename[] = "page_temperatures.dat";
 
 
 bool PageTemperatureRegistry::load() {
+	ScopedLock sl(load_lock);
 	log(LOG_DEBUG, "Loading %s", filename);
 
 	FILE *fp = fopen(filename, "r");
