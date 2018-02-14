@@ -312,7 +312,7 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 	const SpiderReply *srep = reinterpret_cast<const SpiderReply*>(record);
 	bool isDel = KEYNEG((const char *)&srep->m_key);
 
-	if ((isDel && record_len != sizeof(srep->m_key)) || (!isDel && record_len != sizeof(SpiderReply))) {
+	if (isDel && record_len != sizeof(srep->m_key) || !isDel && record_len != sizeof(SpiderReply)) {
 		log(LOG_ERROR,"sqlitespider: Got spiderreply with isdel=%d record_len=%zu sizeof(m_key)=%zu sizeof(SpiderReply)=%zu",
 		    isDel, record_len, sizeof(srep->m_key), sizeof(SpiderReply));
 		gbshutdownCorrupted();
