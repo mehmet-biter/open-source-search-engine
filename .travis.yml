@@ -28,3 +28,4 @@ addons:
     - protobuf-compiler
     - libprotobuf-dev
     - libc-ares-dev
+    - sqlite3
