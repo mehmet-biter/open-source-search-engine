@@ -1417,16 +1417,6 @@ bool CollectionRec::rebuildPrivacoreOldOnlyRules() {
 
 	int32_t n = 0;
 
-	m_regExs[n].set("isreindex");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 0; 		// 0 days default
-	m_maxSpidersPerRule  [n] = 99; 		// max spiders
-	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
-	m_spiderIpWaits      [n] = 1000; 	// same ip wait
-	m_spiderPriorities   [n] = 90;
-	m_forceDelete        [n] = 0;
-	n++;
-
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("lang!=%s", langWhitelistStr);
 	m_harvestLinks       [n] = false;
@@ -1487,6 +1477,15 @@ bool CollectionRec::rebuildPrivacoreOldOnlyRules() {
 	m_forceDelete        [n] = 1;		// Delete it
 	n++;
 
+	m_regExs[n].set("isreindex");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 0; 		// 0 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 90;
+	m_forceDelete        [n] = 0;
+	n++;
 
 	m_regExs[n].set("isaddurl");
 	m_harvestLinks       [n] = true;
@@ -1539,16 +1538,6 @@ bool CollectionRec::rebuildPrivacoreDKOnlyRules() {
 	int32_t ipms = 1;
 
 	int32_t n = 0;
-
-	m_regExs[n].set("isreindex");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 0; 		// 0 days default
-	m_maxSpidersPerRule  [n] = 99; 		// max spiders
-	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
-	m_spiderIpWaits      [n] = 1000; 	// same ip wait
-	m_spiderPriorities   [n] = 90;
-	m_forceDelete        [n] = 0;
-	n++;
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("lang!=%s", langWhitelistStr);
@@ -1658,6 +1647,16 @@ bool CollectionRec::rebuildPrivacoreDKOnlyRules() {
 	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
 
+	m_regExs[n].set("isreindex");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 0; 		// 0 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 90;
+	m_forceDelete        [n] = 0;
+	n++;
+
 	m_regExs[n].set("isaddurl");
 	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7; 		// 7 days default
@@ -1750,16 +1749,6 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	int32_t ipms = 1;
 
 	int32_t n = 0;
-
-	m_regExs[n].set("isreindex");
-	m_harvestLinks       [n] = true;
-	m_spiderFreqs        [n] = 0; 		// 0 days default
-	m_maxSpidersPerRule  [n] = 99; 		// max spiders
-	m_spiderIpMaxSpiders [n] = ipms; 		// max spiders per ip
-	m_spiderIpWaits      [n] = 1000; 	// same ip wait
-	m_spiderPriorities   [n] = 90;
-	m_forceDelete        [n] = 0;
-	n++;
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("lang!=%s", langWhitelistStr);
@@ -1867,6 +1856,16 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 45;
 	m_forceDelete        [n] = 0;		// Do NOT delete
+	n++;
+
+	m_regExs[n].set("isreindex");
+	m_harvestLinks       [n] = true;
+	m_spiderFreqs        [n] = 0; 		// 0 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 		// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 90;
+	m_forceDelete        [n] = 0;
 	n++;
 
 	m_regExs[n].set("isaddurl");
