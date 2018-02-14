@@ -361,7 +361,7 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			"      m_errCount = 0,"
 			"      m_sameErrCount = 0,"
 			"      m_contentHash32 = ?,"
-			"      m_requestFlags = (IFNULL(m_requestFlags,0) | ?)"
+			"      m_requestFlags = ((IFNULL(m_requestFlags,0) & ?) | ?)"
 			"  WHERE m_firstIp=? and m_uh48=?";
 		sqlite3_stmt *updateStatement = NULL;
 		if(sqlite3_prepare_v2(db, update_statement, -1, &updateStatement, &pzTail) != SQLITE_OK) {
@@ -371,13 +371,23 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			return false;
 		}
 
-		int requestFlagBits = 0;
+		int requestFlagOrBits = 0;
 		if(srep->m_hasAuthorityInlinkValid) {
 			//a bit cumbersome but flexible when we rearrange the bitmasks
 			SpiderdbRequestFlags a(0), b(0);
 			b.m_hasAuthorityInlinkValid = true;
 			b.m_hasAuthorityInlink = srep->m_hasAuthorityInlink;
-			requestFlagBits = ((int)b) - ((int)a);
+			requestFlagOrBits = ((int)b) - ((int)a);
+		}
+
+		// reset bits after successful reply
+		int requestFlagAndBits = 0;
+		{
+			SpiderdbRequestFlags a(0);
+			a.m_isAddUrl = true;
+			a.m_isInjecting = true;
+			a.m_isPageParser = true;
+			requestFlagAndBits = ~((int)a);
 		}
 
 		sqlite3_bind_double(updateStatement, 1, srep->m_percentChangedPerDay);
@@ -398,9 +408,10 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 		rpf.m_isIndexedINValid     = srep->m_isIndexedINValid;
 		sqlite3_bind_int(updateStatement, 7, (int)rpf);
 		sqlite3_bind_int(updateStatement, 8, srep->m_contentHash32);
-		sqlite3_bind_int(updateStatement, 9, requestFlagBits);
-		sqlite3_bind_int64(updateStatement, 10, (uint32_t)firstIp);
-		sqlite3_bind_int64(updateStatement, 11, uh48);
+		sqlite3_bind_int(updateStatement, 9, requestFlagAndBits);
+		sqlite3_bind_int(updateStatement, 10, requestFlagOrBits);
+		sqlite3_bind_int64(updateStatement, 11, (uint32_t)firstIp);
+		sqlite3_bind_int64(updateStatement, 12, uh48);
 		
 		if(sqlite3_step(updateStatement) != SQLITE_DONE) {
 			int err = sqlite3_errcode(db);
@@ -412,7 +423,6 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 		sqlite3_finalize(updateStatement);
 		return true;
 	} else {
-		logTrace(true, "@@@@@@ errCode=%d uh48=%lu", srep->m_errCode, uh48);
 		static const char update_statement[] =
 			"UPDATE spiderdb"
 			"  SET m_spideredTime = ?,"
