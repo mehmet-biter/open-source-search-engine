@@ -251,10 +251,10 @@ public:
 	// assume no malloc
 	char  m_localBuf [ SECTIONS_LOCALBUFSIZE ];
 
-	int64_t  *m_wids;
-	int32_t       *m_wlens;
+	const int64_t  *m_wids;
+	const int32_t      *m_wlens;
 	const char * const *m_wptrs;
-	nodeid_t   *m_tids;
+	const nodeid_t   *m_tids;
 
 	int32_t       m_hiPos;
 

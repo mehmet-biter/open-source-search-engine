@@ -16180,41 +16180,36 @@ SafeBuf *XmlDoc::getHeaderTagBuf() {
 	Sections *ss = getSections();
 	if ( ! ss || ss == (void *)-1) return (SafeBuf *)ss;
 
-	int32_t count = 0;
-
 	// scan sections
 	Section *si = ss->m_rootSection;
 
- moreloop:
+	for(int count=0; count<3; count++) {
+		for ( ; si ; si = si->m_next ) {
+			if ( si->m_tagId != TAG_H1 ) continue;
+			// if it contains now text, this will be -1
+			// so give up on it
+			if ( si->m_firstWordPos < 0 ) continue;
+			if ( si->m_lastWordPos  < 0 ) continue;
+			// ok, it works, get it
+			break;
+		}
+		// if no h1 tag then make buf empty
+		if ( ! si ) {
+			m_htb.nullTerm();
+			m_htbValid = true;
+			return &m_htb;
+		}
+		// otherwise, set it
+		const char *a = m_words.getWord(si->m_firstWordPos);
+		const char *b = m_words.getWord(si->m_lastWordPos);
+		b += m_words.getWordLen(si->m_lastWordPos);
 
-	for ( ; si ; si = si->m_next ) {
-		if ( si->m_tagId != TAG_H1 ) continue;
-		// if it contains now text, this will be -1
-		// so give up on it
-		if ( si->m_firstWordPos < 0 ) continue;
-		if ( si->m_lastWordPos  < 0 ) continue;
-		// ok, it works, get it
-		break;
+		// copy it
+		m_htb.safeMemcpy ( a , b - a );
+		m_htb.pushChar('\0');
+
+		si = si->m_next;
 	}
-	// if no h1 tag then make buf empty
-	if ( ! si ) {
-		m_htb.nullTerm();
-		m_htbValid = true;
-		return &m_htb;
-	}
-	// otherwise, set it
-	const char *a = m_words.getWord(si->m_firstWordPos);
-	const char *b = m_words.getWord(si->m_lastWordPos);
-	b += m_words.getWordLen(si->m_lastWordPos);
-
-	// copy it
-	m_htb.safeMemcpy ( a , b - a );
-	m_htb.pushChar('\0');
-
-	si = si->m_next;
-
-	// add more?
-	if ( count++ < 3 ) goto moreloop;
 
 	m_htbValid = true;
 	return &m_htb;
@@ -18162,7 +18157,7 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 
 
 	int32_t nw = words->getNumWords();
-	int64_t *wids = words->getWordIds();
+	const int64_t *wids = words->getWordIds();
 
 	int32_t isXml = 0;
 	if ( hr ) isXml = hr->getLong("xml",0);
@@ -19636,7 +19631,7 @@ char *XmlDoc::getWordSpamVec() {
     }
 
 
-	int64_t *wids = words->getWordIds();
+	const int64_t *wids = words->getWordIds();
 	const char *const*wptrs = words->getWordPtrs();
 	const int32_t  *wlens = words->getWordLens();
 

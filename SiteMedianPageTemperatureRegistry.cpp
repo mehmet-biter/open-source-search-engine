@@ -1,4 +1,5 @@
 #include "SiteMedianPageTemperatureRegistry.h"
+#include "ScopedLock.h"
 #include "Log.h"
 #include <stdio.h>
 #include <string.h>
@@ -11,6 +12,7 @@
 
 
 SiteMedianPageTemperatureRegistry g_smptr;
+static GbMutex load_lock;
 
 static const char filename[] = "site_median_page_temperatures.dat";
 
@@ -22,6 +24,7 @@ struct Entry {
 }
 
 bool SiteMedianPageTemperatureRegistry::load() {
+	ScopedLock sl(load_lock);
 	log(LOG_DEBUG, "Loading %s", filename);
 
 	unload();
@@ -52,6 +55,8 @@ bool SiteMedianPageTemperatureRegistry::load() {
 	}
 	
 	bytes = st.st_size;
+	stat_ino = st.st_ino;
+	stat_mtime = st.st_mtime;
 	close(fd);
 	
 	log(LOG_DEBUG, "%s loaded (%lu items)", filename, bytes/sizeof(Entry));
@@ -68,6 +73,15 @@ void SiteMedianPageTemperatureRegistry::unload() {
 }
 
 
+void SiteMedianPageTemperatureRegistry::reload_if_needed() {
+	struct stat st;
+	if(stat(filename,&st)!=0)
+		return;
+	if(st.st_ino!=stat_ino || st.st_mtime!=stat_mtime)
+		load();
+}
+
+	
 static bool cmp(const Entry &e1, const Entry &e2) {
 	return e1.sitehash32 < e2.sitehash32;
 }

@@ -351,7 +351,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 	memset ( flags , 0 , need );
 
 	// check tags in body
-	nodeid_t *tids = words->getTagIds();
+	const nodeid_t *tids = words->getTagIds();
 
 	// scan to set link text flags
 	// loop over all "words" in the html body

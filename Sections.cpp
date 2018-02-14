@@ -112,11 +112,11 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, uint8_t contentT
 	if ( w->getNumWords() <= 0 ) return true;
 
 	// shortcuts
-	int64_t   *wids  = w->getWordIds  ();
-	nodeid_t    *tids  = w->getTagIds   ();
+	const int64_t      *wids  = w->getWordIds  ();
+	const nodeid_t     *tids  = w->getTagIds   ();
 	int32_t           nw  = w->getNumWords ();
 	const char * const *wptrs  = w->getWordPtrs();
-	int32_t        *wlens = w->getWordLens ();
+	const int32_t      *wlens = w->getWordLens ();
 
 	// set these up
 	m_wids  = wids;
@@ -3092,7 +3092,7 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 	//verifySections();
 
 	const char * const *wptrs = m_words->getWordPtrs();
-	int32_t   *wlens = m_words->getWordLens ();
+	const int32_t *wlens = m_words->getWordLens ();
 	int32_t    nw    = m_words->getNumWords ();
 
 	// check words

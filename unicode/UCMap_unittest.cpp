@@ -125,8 +125,15 @@ int main() {
 			assert(e->values[0]=='i');
 		}
 		{
-			//german shar-s is already lowercase
+			//german sharp-s is already lowercase
 			assert(!m.lookup(0x00DF)); //ß
+		}
+		{
+			//german sharp-s uppercase is rarely used, but if we see it then its lowercase version is 0x00DF
+			auto e = m.lookup(0x1E9E); //ẞ
+			assert(e);
+			assert(e->count==1);
+			assert(e->values[0]==0x00DF);
 		}
 		{
 			auto e = m.lookup(0x0410); //А (cyrillic)

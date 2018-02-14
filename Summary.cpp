@@ -640,8 +640,8 @@ int64_t Summary::getBestWindow(const Matches *matches, int32_t mm, int32_t *last
 	}
 
 	int32_t nw = words->getNumWords();
-	int64_t *wids = words->getWordIds();
-	nodeid_t *tids = words->getTagIds();
+	const int64_t *wids = words->getWordIds();
+	const nodeid_t *tids = words->getTagIds();
 
 	// . sanity check
 	// . this prevents a core i've seen
