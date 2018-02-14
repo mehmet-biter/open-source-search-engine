@@ -764,7 +764,7 @@ public:
 	// was the page a permalink?
 	unsigned    m_isPermalink:1;
 
-	unsigned    m_reserved4a; //m_isPingServer:1;
+	unsigned    m_reserved4a;
 
 	// was it in the index when we were done?
 	unsigned    m_isIndexed:1;
@@ -802,15 +802,8 @@ public:
 
 	unsigned    m_reserved008             :1;
 	unsigned    m_reserved009             :1;
-
-	// . was it in the index when we started?
-	// . we use this with m_isIndexed above to adjust quota counts for
-	//   this m_siteHash32 which is basically just the subdomain/host
-	//   for SpiderColl::m_quotaTable
-	unsigned    m_reserved010             :1; //m_wasIndexed
-
-	// this also pertains to m_isIndexed as well:
-	unsigned    m_reserved011             :1; //m_wasIndexedValid
+	unsigned    m_reserved010             :1;
+	unsigned    m_reserved011             :1;
 
 	// how much buf will we need to serialize ourselves?
 	int32_t getRecSize () const { return m_dataSize + 4 + sizeof(key128_t); }
