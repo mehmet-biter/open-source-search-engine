@@ -2016,12 +2016,6 @@ bool XmlDoc::indexDoc2 ( ) {
 		return true;
 	}
 
-
-	//log(LOG_DEBUG,"@ XmlDoc::indexDoc2: m_sreqValid            = %s", m_sreqValid?"true":"false");
-	//log(LOG_DEBUG,"@ XmlDoc::indexDoc2: m_sreq.m_fakeFirstIp   = %s", m_sreq.m_fakeFirstIp?"true":"false");
-	//log(LOG_DEBUG,"@ XmlDoc::indexDoc2: m_sreq.m_isInjecting   = %s", m_sreq.m_isInjecting?"true":"false");
-	//log(LOG_DEBUG,"@ XmlDoc::indexDoc2: m_sreq.m_isPageReindex = %s", m_sreq.m_isPageReindex?"true":"false");
-	//log(LOG_DEBUG,"@ XmlDoc::indexDoc2: m_sreq.m_isAddUrl      = %s", m_sreq.m_isAddUrl?"true":"false");
 	// do this before we increment pageDownloadAttempts below so that
 	// john's smoke tests, which use those counts, are not affected
 	if ( m_sreqValid && m_sreq.m_fakeFirstIp &&
@@ -14331,7 +14325,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		m_srep.m_contentHash32 = m_contentHash32;
 
 	// injecting the content (url implied)
-	if ( m_contentInjected ) // m_sreqValid && m_sreq.m_isInjecting )
+	if ( m_contentInjected )
 		m_srep.m_fromInjectionRequest = 1;
 
 	// can be injecting a url too, content not necessarily implied
@@ -14347,10 +14341,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	if ( m_isInIndexValid ) m_srep.m_isIndexedINValid = false;
 	else                    m_srep.m_isIndexedINValid = true;
 
-	// likewise, we need to know if we deleted it so we can decrement the
-	// quota count for this subdomain/host in SpiderColl::m_quotaTable
-	//if ( m_srep.m_wasIndexed ) m_srep.m_isIndexed = true;
-
 	// treat error replies special i guess, since langId, etc. will be
 	// invalid
 	if ( m_indexCode ) {
@@ -14362,8 +14352,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			m_srep.m_siteNumInlinks = m_siteNumInlinks;
 			m_srep.m_siteNumInlinksValid = true;
 		}
-		//if ( m_percentChangedValid )
-		//	m_srep.m_percentChangedPerDay = m_percentChanged;
+
 		if ( m_crawlDelayValid && m_crawlDelay >= 0 )
 			m_srep.m_crawlDelayMS = m_crawlDelay;
 		else
@@ -14374,8 +14363,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		if ( m_isPermalinkValid ) m_srep.m_isPermalink =m_isPermalink;
 		if ( m_httpStatusValid  ) m_srep.m_httpStatus = m_httpStatus;
 
-		// this was replaced by m_contentHash32
-		//m_srep.m_newRequests  = 0;
 		m_srep.m_errCode      = m_indexCode;
 
 		if ( m_downloadEndTimeValid )
@@ -14437,10 +14424,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// this will help us avoid hammering ips & respect same ip wait
 	if ( ! m_downloadEndTimeValid ) { g_process.shutdownAbort(true); }
 	m_srep.m_downloadEndTime      = m_downloadEndTime;
-
-	// . if m_indexCode was 0, we are indexed then...
-	// . this logic is now above
-	//m_srep.m_isIndexed = 1;
 
 	// get ptr to old doc/titlerec
 	XmlDoc **pod = getOldXmlDoc ( );
