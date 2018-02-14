@@ -8,7 +8,6 @@
 #include <sys/stat.h>
 #include <stddef.h>
 
-
 static sqlite3 *openDb(const char *sqlitedbName);
 static bool setSqliteSynchronous(sqlite3 *db, int value);
 
@@ -199,8 +198,13 @@ static sqlite3 *openDb(const char *sqlitedbName) {
 		(void)setSqliteSynchronous(db,g_conf.m_sqliteSynchronous);
 		return db;
 	}
+
+	int createFunctionFlags = SQLITE_UTF8;
+#ifdef SQLITE_DETERMINISTIC
+	createFunctionFlags |= SQLITE_DETERMINISTIC;
+#endif
+
 	//read-write, creation is allowed
-	
 	if(access(sqlitedbName,F_OK)==0) {
 		int rc = sqlite3_open_v2(sqlitedbName,&db,SQLITE_OPEN_READWRITE,NULL);
 		if(rc!=SQLITE_OK) {
@@ -213,7 +217,7 @@ static sqlite3 *openDb(const char *sqlitedbName) {
 			return NULL;
 		}
 
-		rc = sqlite3_create_function(db, "fx_max", -1, (SQLITE_UTF8 | SQLITE_DETERMINISTIC), nullptr, &fx_max, nullptr, nullptr);
+		rc = sqlite3_create_function(db, "fx_max", -1, createFunctionFlags, nullptr, &fx_max, nullptr, nullptr);
 		if (rc!=SQLITE_OK) {
 			sqlite3_close(db);
 			return NULL;
@@ -242,7 +246,7 @@ static sqlite3 *openDb(const char *sqlitedbName) {
 		return NULL;
 	}
 
-	if (sqlite3_create_function(db, "fx_max", -1, (SQLITE_UTF8 | SQLITE_DETERMINISTIC), nullptr, &fx_max, nullptr, nullptr) != SQLITE_OK) {
+	if (sqlite3_create_function(db, "fx_max", -1, createFunctionFlags, nullptr, &fx_max, nullptr, nullptr) != SQLITE_OK) {
 		sqlite3_close(db);
 		unlink(sqlitedbName);
 		return NULL;

@@ -9,7 +9,6 @@
 #include "Hostdb.h"
 #include "SpiderdbSqlite.h"
 
-
 static const char create_table_statmeent[] =
 "CREATE TABLE spiderdb ("
 "    m_firstIp                       INT NOT NULL,"
@@ -125,7 +124,12 @@ int convertSpiderDb(const char *collname) {
 		return 5;
 	}
 
-	if (sqlite3_create_function(db, "fx_max", -1, (SQLITE_UTF8 | SQLITE_DETERMINISTIC), nullptr, &fx_max, nullptr, nullptr) != SQLITE_OK) {
+	int createFunctionFlags = SQLITE_UTF8;
+#ifdef SQLITE_DETERMINISTIC
+	createFunctionFlags |= SQLITE_DETERMINISTIC;
+#endif
+
+	if (sqlite3_create_function(db, "fx_max", -1, createFunctionFlags, nullptr, &fx_max, nullptr, nullptr) != SQLITE_OK) {
 		sqlite3_close(db);
 		return 12;
 	}
