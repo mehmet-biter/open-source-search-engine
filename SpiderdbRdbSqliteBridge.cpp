@@ -143,18 +143,16 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 }
 
 static bool addRecord(sqlite3 *db, const void *record, size_t record_len) {
-	if(KEYNEG((const char*)record)) {
-		log(LOG_ERROR,"sqlitespider: Got negative spiderrecord");
-		gbshutdownCorrupted();
+	if(Spiderdb::isSpiderRequest(reinterpret_cast<const key128_t *>(record))) {
+		if (KEYNEG((const char *)record)) {
+			log(LOG_ERROR, "sqlitespider: Got negative spiderrequest");
+			gbshutdownCorrupted();
+		}
+
+		return addRequestRecord(db, record, record_len);
+	} else {
+		return addReplyRecord(db, record, record_len);
 	}
-	
-	bool rc;
-	if(Spiderdb::isSpiderRequest(reinterpret_cast<const key128_t *>(record)))
-		rc = addRequestRecord(db,record,record_len);
-	else
-		rc = addReplyRecord(db,record,record_len);
-	
-	return rc;
 }
 
 
@@ -309,21 +307,22 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 
 
 static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
-	if(record_len!=sizeof(SpiderReply)) {
-		log(LOG_ERROR,"sqlitespider: Got spiderreply with record_len=%zu and sizeof(SpiderReply)=%zu", record_len, sizeof(SpiderReply));
-		gbshutdownCorrupted();
-	}
-	
 	//assumption: the record is already there
 
 	const SpiderReply *srep = reinterpret_cast<const SpiderReply*>(record);
+	bool isDel = KEYNEG((const char *)&srep->m_key);
+
+	if (isDel && record_len != sizeof(srep->m_key) || !isDel && record_len != sizeof(SpiderReply)) {
+		log(LOG_ERROR,"sqlitespider: Got spiderreply with isdel=%d record_len=%zu sizeof(m_key)=%zu sizeof(SpiderReply)=%zu",
+		    isDel, record_len, sizeof(srep->m_key), sizeof(SpiderReply));
+		gbshutdownCorrupted();
+	}
+
 	int32_t firstIp = Spiderdb::getFirstIp(&srep->m_key);
 	int64_t uh48 = Spiderdb::getUrlHash48(&srep->m_key);
 
 	const char *pzTail="";
-	if(srep->m_errCode==EFAKEFIRSTIP || srep->m_errCode==EDOCFORCEDELETE) {
-		//To clean up the spider-requests with the fakeip key (and flag) Gb generates spider-replies with a specific
-		//error code that tells this logic to delete the equivalent spider-request row
+	if (KEYNEG((const char *)&srep->m_key)) {
 		static const char delete_statement[] =
 			"DELETE FROM spiderdb"
 			"  WHERE m_firstIp=? and m_uh48=?";

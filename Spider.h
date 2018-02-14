@@ -813,7 +813,13 @@ public:
 	unsigned    m_reserved011             :1; //m_wasIndexedValid
 
 	// how much buf will we need to serialize ourselves?
-	int32_t getRecSize () const { return m_dataSize + 4 + sizeof(key128_t); }
+	int32_t getRecSize () const {
+		if (KEYNEG((const char *)&m_key)) {
+			return sizeof(key128_t);
+		} else {
+			return m_dataSize + 4 + sizeof(key128_t);
+		}
+	}
 
 	// clear all
 	void reset() {

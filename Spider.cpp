@@ -142,7 +142,11 @@ int32_t SpiderRequest::print(SafeBuf *sbarg) const {
 void SpiderReply::setKey ( int32_t firstIp, int64_t parentDocId, int64_t uh48, bool isDel ) {
 	m_key = Spiderdb::makeKey ( firstIp, uh48, false, parentDocId, isDel );
 	// set dataSize too!
-	m_dataSize = sizeof(SpiderReply) - sizeof(key128_t) - 4;
+	if (isDel) {
+		m_dataSize = 0;
+	} else {
+		m_dataSize = sizeof(SpiderReply) - sizeof(key128_t) - 4;
+	}
 }
 
 int32_t SpiderReply::print(SafeBuf *sbarg) const {

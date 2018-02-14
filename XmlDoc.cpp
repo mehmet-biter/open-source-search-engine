@@ -13718,7 +13718,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		}
 
 		// sanity check
-		if (m_p - saved != needSpiderdb1) {
+		if (m_p - saved > needSpiderdb1) {
 			g_process.shutdownAbort(true);
 		}
 
@@ -14316,8 +14316,11 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// note it
 	logDebug( g_conf.m_logDebugSpider, "xmldoc: uh48=%" PRIu64" parentdocid=%" PRIu64, uh48, parentDocId );
 
+	// delete spider row when necessary
+	bool isDel = (m_sreq.m_isPageReindex || m_indexCode == EFAKEFIRSTIP || m_indexCode == EDOCFORCEDELETE);
+
 	// set the key, m_srep.m_key
-	m_srep.setKey (  firstIp, parentDocId, uh48, false );
+	m_srep.setKey(firstIp, parentDocId, uh48, isDel);
 
 	// . did we download a page? even if indexcode is set we might have
 	// . if this is non-zero that means its valid
