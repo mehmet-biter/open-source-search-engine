@@ -14332,6 +14332,8 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	if ( m_sreqValid && m_sreq.m_isInjecting )
 		m_srep.m_fromInjectionRequest = 1;
 
+	m_srep.m_fromPageReindex = m_sreq.m_isPageReindex;
+
 	// assume no change
 	m_srep.m_isIndexed = m_isInIndex;
 

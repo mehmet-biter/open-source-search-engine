@@ -799,8 +799,8 @@ public:
 
 	// was the request an injection request
 	unsigned    m_fromInjectionRequest    :1;
+	unsigned    m_fromPageReindex         :1;
 
-	unsigned    m_reserved008             :1;
 	unsigned    m_reserved009             :1;
 	unsigned    m_reserved010             :1;
 	unsigned    m_reserved011             :1;

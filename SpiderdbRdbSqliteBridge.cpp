@@ -321,7 +321,7 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 	int64_t uh48 = Spiderdb::getUrlHash48(&srep->m_key);
 
 	const char *pzTail="";
-	if(srep->m_errCode==EFAKEFIRSTIP || srep->m_errCode==EDOCFORCEDELETE) {
+	if(srep->m_fromPageReindex || srep->m_errCode==EFAKEFIRSTIP || srep->m_errCode==EDOCFORCEDELETE) {
 		//To clean up the spider-requests with the fakeip key (and flag) Gb generates spider-replies with a specific
 		//error code that tells this logic to delete the equivalent spider-request row
 		static const char delete_statement[] =
