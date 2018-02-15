@@ -960,7 +960,6 @@ bool Process::saveBlockingFiles1 ( ) {
 	// . these are records in the middle of being added to rdbs across
 	//   the cluster
 	// . saves to "addsinprogress.saving" and moves to .saved
-	// . eventually this may replace "spiderrestore.dat"
 	if (g_repair.isRepairActive()) {
 		saveAddsInProgress("repair-");
 	} else {
