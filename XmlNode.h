@@ -175,12 +175,6 @@ enum {
 	// support sitemap.xml
 	TAG_LOC = 143,
 
-	//
-	// fake tags below here
-	//
-	// a fake tag used by Sections.cpp
-	TAG_SENTENCE = 144,
-
 	LAST_TAG
 };
 
