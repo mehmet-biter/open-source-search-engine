@@ -11,7 +11,6 @@ typedef int16_t nodeid_t;
 int32_t getNumXmlNodes ( ) ;
 bool isBreakingTagId ( nodeid_t tagId ) ;
 bool hasBackTag ( nodeid_t tagId ) ;
-int32_t getTagLen ( const char *node );
 
 // s points to tag name - first char
 nodeid_t getTagId ( const char *s , class NodeType **retp = NULL );

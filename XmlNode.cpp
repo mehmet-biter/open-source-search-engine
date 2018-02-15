@@ -4,6 +4,7 @@
 #include "Mem.h"
 #include "Sanity.h"
 
+static int32_t getTagLen(const char *node);
 
 // . Here's a nice list of all the html nodes names, lengths, whether they're
 //   a breaking node or not and their node id
@@ -399,7 +400,7 @@ int32_t XmlNode::set( char *node, bool pureXml ) {
 }
 
 // . return the length of a node starting at "node"
-int32_t getTagLen ( const char *node ) {
+static int32_t getTagLen ( const char *node ) {
 	// skip over first <
 	int32_t i ;
 
