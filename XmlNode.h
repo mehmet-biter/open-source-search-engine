@@ -301,9 +301,5 @@ public:
 
 extern const class NodeType g_nodes[];
 
-static inline const char *getTagName( nodeid_t tagId ) {
-	return g_nodes[tagId].m_nodeName;
-}
-
 #endif // GB_XMLNODE_H
 
