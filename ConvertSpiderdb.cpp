@@ -206,10 +206,10 @@ int convertSpiderDb(const char *collname) {
 		sqlite3_exec(db,"BEGIN TRANSACTION",NULL,NULL,NULL);
 		// loop over entries in list
 		for(list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
-			source_record_count++;
 			if((source_record_count%100000) == 0)
-				printf("Processed %u records.\n", source_record_count-1);
+				printf("Processed %u records.\n", source_record_count);
 
+			source_record_count++;
 			const char *srec = list.getCurrentRec();
 
 			if(Spiderdb::isSpiderReply((const key128_t *)srec)) {
