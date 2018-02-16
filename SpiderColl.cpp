@@ -2261,19 +2261,19 @@ bool SpiderColl::scanListForWinners ( ) {
 			continue;
 		}
 
-		if(!sreq->m_urlIsDocId) {
+		if (!sreq->m_urlIsDocId) {
 			//delete request if it is an url we don't want to index
 			Url url;
 			url.set(sreq->m_url);
-			if(url.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION)) {
-				log(LOG_DEBUG, "Found non-indexable URL '%s' in spiderdb. Deleting it", sreq->m_url);
-				SpiderdbUtil::deleteRecord(m_collnum,sreq->m_firstIp, uh48);
-				continue;
-			}
-			if(isUrlBlocked(url,NULL)) {
-				log(LOG_DEBUG, "Found unwanted URL '%s' in spiderdb. Deleting it", sreq->m_url);
-				SpiderdbUtil::deleteRecord(m_collnum,sreq->m_firstIp, uh48);
-				continue;
+			if (url.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION) || isUrlBlocked(url,NULL)) {
+				if (srep && !srep->m_isIndexedINValid && srep->m_isIndexed) {
+					log(LOG_DEBUG, "Found unwanted/non-indexable URL '%s' in spiderdb. Force deleting it", sreq->m_url);
+					sreq->m_forceDelete = true;
+				} else {
+					log(LOG_DEBUG, "Found unwanted/non-indexable URL '%s' in spiderdb. Deleting it", sreq->m_url);
+					SpiderdbUtil::deleteRecord(m_collnum, sreq->m_firstIp, uh48);
+					continue;
+				}
 			}
 		}
 
