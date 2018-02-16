@@ -4704,17 +4704,8 @@ int32_t *XmlDoc::getPostLinkTextVector ( int32_t linkNode ) {
 
 // . was kinda like "m_tagVector.setTagPairHashes(&m_xml, niceness);"
 // . this is used by getIsDup() (below)
-// . this is used by Dates.cpp to see how much a doc has changed
 // . this is also now used for getting the title/summary vector for deduping
 //   search results
-// . if we couldn't extract a good pub date for the doc, and it has changed
-//   since last spidered, use the bisection method to come up with our own
-//   "last modified date" which we use as the pub date.
-// . this replaces the clusterdb.getSimilarity() logic in Msg14.cpp used
-//   to do the same thing. but we call Vector::setForDates() from
-//   Dates.cpp. that way the logic is more contained in Dates!
-// . doesn't Msg14 already do that?
-// . yes, but it uses two TermTables and calls Clusterdb::getSimilarity()
 // . returns false and sets g_errno on error
 // . these words classes should have been set by a call to Words::set(Xml *...)
 //   so that we have "tids1" and "tids2"
