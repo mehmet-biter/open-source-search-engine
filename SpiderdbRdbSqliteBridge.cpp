@@ -130,6 +130,7 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 		int err = sqlite3_errcode(db);
 		log(LOG_ERROR,"sqlitespider: commit errror: %s", sqlite3_errstr(err));
 		g_errno = map_sqlite_error_to_gb_errno(err);
+		sqlite3_exec(db, "rollback", NULL, NULL, &errmsg);
 	} else {
 		//inform the spidercollection that we have just added records
 		addSpiderCollRecords(collnum, begin, end);
