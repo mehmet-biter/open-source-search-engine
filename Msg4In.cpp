@@ -19,7 +19,6 @@
 #include <valgrind/memcheck.h>
 #endif
 
-// . TODO: use this instead of spiderrestore.dat
 // . call this once for every Msg14 so it can add all at once...
 // . make Msg14 add the links before anything else since that uses Msg10
 // . also, need to update spiderdb rec for the url in Msg14 using Msg4 too!

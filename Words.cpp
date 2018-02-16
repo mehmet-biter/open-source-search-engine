@@ -122,8 +122,7 @@ bool Words::set( Xml *xml, int32_t node1, int32_t node2 ) {
 		m_wordIds  [m_numWords] = 0LL;
 		m_nodes    [m_numWords] = k;
 
-		// we have less than 127 HTML tags, so set 
-		// the high bit for back tags
+		// If it is an end-tag then set the bit
 		if ( xml->isBackTag(k)) {
 			m_tagIds[m_numWords] |= BACKBIT;
 		}
