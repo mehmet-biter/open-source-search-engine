@@ -1394,7 +1394,7 @@ int main2 ( int argc , char *argv[] ) {
 	g_d2fasm.load();
 
 	//load sitehash32->default page temperature
-	g_smptr.load();
+	g_smptr.open();
 	
 	// load block lists
 	g_dnsBlockList.init();

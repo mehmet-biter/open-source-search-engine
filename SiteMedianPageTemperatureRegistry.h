@@ -1,27 +1,31 @@
 #ifndef SITE_MEDIAN_PAGE_TEMPERATURE_REGISTRY_H_
 #define SITE_MEDIAN_PAGE_TEMPERATURE_REGISTRY_H_
-#include <stddef.h>
 #include <inttypes.h>
-#include <sys/types.h>
+#include <map>
 
 
 class SiteMedianPageTemperatureRegistry {
 	SiteMedianPageTemperatureRegistry(const SiteMedianPageTemperatureRegistry&) = delete;
 	SiteMedianPageTemperatureRegistry& operator=(const SiteMedianPageTemperatureRegistry&) = delete;
 public:
-	SiteMedianPageTemperatureRegistry() : ptr(nullptr), bytes(0), stat_ino(0), stat_mtime(-1) {}
-	~SiteMedianPageTemperatureRegistry() { unload(); }
+	SiteMedianPageTemperatureRegistry() : primary_fd(-1), secondary_fd(-1), primary_map(), secondary_map() {}
+	~SiteMedianPageTemperatureRegistry() { close(); }
 	
-	bool load();
-	void unload();
-	void reload_if_needed();
+	bool open();
+	void close();
 	
-	bool lookup(uint32_t sitehash32, unsigned *default_site_page_temperature);
+	bool lookup(uint32_t sitehash32, unsigned *default_site_page_temperature) const;
+	
+	bool add(uint32_t sitehash32, unsigned default_site_page_temperature);
+	
+	bool prepare_new_generation();                     //prepare to make current data obsolete and replaced with new incoming data
+	void switch_generation();                          //replace with data since preparation
 private:
-	void *ptr;
-	size_t bytes;
-	ino_t stat_ino;
-	time_t stat_mtime;
+	int primary_fd;
+	int secondary_fd;
+	std::map<uint32_t,unsigned> primary_map;
+	std::map<uint32_t,unsigned> secondary_map;
+	bool load(int fd, std::map<uint32_t,unsigned> *m, const char *filename);
 };
 
 
