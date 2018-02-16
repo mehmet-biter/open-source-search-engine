@@ -109,6 +109,20 @@ void SpiderdbSqlite::swapinSecondarySpiderdb(collnum_t collnum, const char *coll
 	//done
 }
 
+bool SpiderdbSqlite::existDb(collnum_t collnum) {
+	const auto cr = g_collectiondb.getRec(collnum);
+
+	char collectionDirName[1024];
+	sprintf(collectionDirName, "%scoll.%s.%d", g_hostdb.m_dir, cr->m_coll, (int)collnum);
+
+	char sqlitedbName[1024];
+	if(rdbid==RDB_SPIDERDB_SQLITE)
+		sprintf(sqlitedbName, "%s/spiderdb.sqlite3", collectionDirName);
+	else
+		sprintf(sqlitedbName, "%s/spiderdbRebuild.sqlite3", collectionDirName);
+
+	return (access(sqlitedbName,F_OK)==0);
+}
 
 sqlite3 *SpiderdbSqlite::getOrCreateDb(collnum_t collnum) {
 	const auto cr = g_collectiondb.getRec(collnum);

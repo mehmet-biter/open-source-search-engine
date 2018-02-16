@@ -20,9 +20,11 @@ public:
 	SpiderdbSqlite& operator=(const SpiderdbSqlite&) = delete;
 	
 	void finalize(); //closes all DBs
-	
+
+	bool existDb(collnum_t collnum);
+
 	sqlite3 *getDb(collnum_t collnum);
-	
+
 	void closeDb(collnum_t collnum);
 	
 	static void swapinSecondarySpiderdb(collnum_t collnum, const char *collname);

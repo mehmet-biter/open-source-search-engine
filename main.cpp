@@ -102,6 +102,7 @@
 #include "DocReindex.h"
 #include "FxExplicitKeywords.h"
 #include "IpBlockList.h"
+#include "SpiderdbSqlite.h"
 
 
 #include <sys/stat.h> //umask()
@@ -1367,6 +1368,20 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! g_collectiondb.addRdbBaseToAllRdbsForEachCollRec ( ) ) {
 		log("db: Collectiondb init failed." );
 		_exit(1);
+	}
+
+	// make sure the we have spiderdb sqlite if we still have spiderdb rdb files
+	for (collnum_t collNum = g_collectiondb.getFirstCollnum(); collNum < g_collectiondb.getNumRecs(); ++collNum) {
+		CollectionRec *collRec = g_collectiondb.getRec(collNum);
+		if (collRec != nullptr) {
+			RdbBase *base = collRec->getBase(RDB_SPIDERDB_DEPRECATED);
+			if (base->getNumFiles() != 0 && !g_spiderdb_sqlite.existDb(collNum)) {
+				// has rdb files but no sqlite file
+				log(LOG_ERROR, "Found spiderdb rdb files but no spiderdb sqlite files.");
+				log(LOG_ERROR, "Run ./gb convertspiderdb before starting up gb instances");
+				gbshutdownCorrupted();
+			}
+		}
 	}
 
 	//Load the high-frequency term shortcuts (if they exist)
