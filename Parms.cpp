@@ -221,7 +221,7 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 		case TYPE_FILEUPLOADBUTTON:
 			return true; //silently ignored
 		case TYPE_UNSET:
-			log(LOG_LOGIC,"admin: attempt to print vlaue of unset parameter %s", m_title);
+			log(LOG_LOGIC,"admin: attempt to print value of unset parameter %s", m_title);
 			return true;
 	}
 
