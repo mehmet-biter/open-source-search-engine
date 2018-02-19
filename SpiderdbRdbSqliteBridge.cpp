@@ -546,7 +546,9 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 	int32_t firstIpEnd = Spiderdb::getFirstIp(&endKey);
 	int64_t uh48Start = Spiderdb::getUrlHash48(&startKey);
 	int64_t uh48End = Spiderdb::getUrlHash48(&endKey);
-	
+	bool isReplyStart = Spiderdb::isSpiderReply(&startKey);
+	bool isRequestEnd = Spiderdb::isSpiderRequest(&endKey);
+
 	DbTimerLogger prepare_timer("sqlite-getlist:prepare");
 	bool breakMidIPAddressAllowed;
 	const char *pzTail="";
@@ -678,10 +680,14 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 			srep.m_hasAuthorityInlinkValid  = requestFlags.m_hasAuthorityInlinkValid;
 			srep.m_siteNumInlinksValid      = sqlite3_column_type(stmt,5)!=SQLITE_NULL;
 
-			if(io_buffer.spare()<(size_t)srep.getRecSize())
-				io_buffer.reserve_extra(io_buffer.used()/2+srep.getRecSize());
-			memcpy(io_buffer.end(), &srep, sizeof(srep));
-			io_buffer.push_back(sizeof(srep));
+			if (firstIpStart == firstIp && uh48Start == uh48 && !isReplyStart) {
+				// don't return first SpiderReply if not requested
+			} else {
+				if (io_buffer.spare() < (size_t)srep.getRecSize())
+					io_buffer.reserve_extra(io_buffer.used() / 2 + srep.getRecSize());
+				memcpy(io_buffer.end(), &srep, sizeof(srep));
+				io_buffer.push_back(sizeof(srep));
+			}
 		} else
 			replyFlags = 0;
 		
@@ -719,10 +725,14 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		strcpy(sreq.m_url,(const char*)url);
 		sreq.setDataSize();
 
-		if(io_buffer.spare()<(size_t)sreq.getRecSize())
-			io_buffer.reserve_extra(io_buffer.used()/2+sreq.getRecSize());
-		memcpy(io_buffer.end(), &sreq, sreq.getRecSize());
-		io_buffer.push_back(sreq.getRecSize());
+		if (firstIpEnd == firstIp && uh48End == uh48 && !isRequestEnd) {
+			// don't return last SpiderRequest if not requested
+		} else {
+			if (io_buffer.spare() < (size_t)sreq.getRecSize())
+				io_buffer.reserve_extra(io_buffer.used() / 2 + sreq.getRecSize());
+			memcpy(io_buffer.end(), &sreq, sreq.getRecSize());
+			io_buffer.push_back(sreq.getRecSize());
+		}
 		
 		listLastKey = sreq.m_key;
 	}
