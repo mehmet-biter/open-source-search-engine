@@ -180,7 +180,6 @@ while true; do
 	# leftover from previous run
 	rm -f cleanexit
 
-	GB_PRE=
 	cpu_affinity=$(get_cpu_affinity)
 	if [ ! -z ${cpu_affinity} ]; then
 		GB_PRE="taskset -c ${cpu_affinity}"
