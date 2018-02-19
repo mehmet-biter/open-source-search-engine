@@ -1132,6 +1132,33 @@ int main2 ( int argc , char *argv[] ) {
 		g_collectiondb.reset();
 		return 0;
 	}
+	
+	if(strcmp(cmd, "sitedeftemp") == 0) {
+		int32_t h1=-1;
+		int32_t h2=-1;
+		if(cmdarg + 2 < argc) {
+			int n = sscanf(argv[cmdarg+2],"%d-%d",&h1,&h2);
+			if(n<1) {
+				fprintf(stderr,"Unrecognized host range: '%s'\n", argv[cmdarg+2]);
+				printHelp();
+				return 1;
+			} else if(h2<h1) {
+				fprintf(stderr,"host2<host1 in host range: '%s'\n", argv[cmdarg+2]);
+				printHelp();
+				return 1;
+			}
+			if(n==1)
+				h2 = h1;
+		}
+		if(strcmp(argv[cmdarg+1],"prepare")==0)
+			return doCmd("sitedeftemp=prepare", h1, "master", true, false, h2);
+		else if(strcmp(argv[cmdarg+1],"switch")==0)
+			return doCmd("sitedeftemp=switch", h1, "master", true, false, h2);
+		else {
+			printHelp();
+			return 1;
+		}
+	}
 
 	if(strcmp(cmd, "dumpcsv") == 0) {
 		g_conf.m_readOnlyMode = true; //we don't need write access
@@ -1901,6 +1928,13 @@ static void printHelp() {
 
 		"\trobots.txt.cache:\n"
 		"\t\tdump rtc <url>\n"
+		"\n"
+		"sitedeftemp\n"
+		"\tPrepares or switches to a new site-default-page-temperature generation.\n"
+		"\tsitedeftemp prepare\n"
+		"\t\tPrepares a new site-default-page-temperature generation\n"
+		"\tsitedeftemp switch\n"
+		"\t\tSwitches to a new site-default-page-temperature generation previously prepared with 'sitedeftemp prepare'\n"
 		"\n"
 		);
 

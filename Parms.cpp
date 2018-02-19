@@ -36,6 +36,7 @@
 #include "Collectiondb.h"
 #include "Doledb.h"
 #include "GbDns.h"
+#include "SiteMedianPageTemperatureRegistry.h"
 #include <set>
 #include <fstream>
 
@@ -710,6 +711,18 @@ static bool CommandMergeTagdb(const char *rec) {
 	return true;
 }
 
+
+static bool CommandSiteDefaultPageTemperature(const char *rec) {
+	const char *subCommand = getDataFromParmRec(rec);
+	log(LOG_DEBUG,"admin: stedeftemp: subCommand=%s'", subCommand);
+	if(strcmp(subCommand,"prepare")==0)
+		return g_smptr.prepare_new_generation();
+	if(strcmp(subCommand,"switch")==0) {
+		g_smptr.switch_generation();
+		return true;
+	}
+	return false;
+}
 
 static bool CommandDiskPageCacheOff(const char *rec) {
 	g_process.resetPageCaches();
@@ -5206,6 +5219,18 @@ void Parms::init ( ) {
         m->m_func  = CommandMergeTagdb;
         m->m_cast  = true;
         m->m_group = false;
+        m->m_page  = PAGE_MASTER;
+        m->m_obj   = OBJ_CONF;
+        m++;
+
+        m->m_title = "sitedeftemp";
+        m->m_desc  = "prepares or switches to a new site-default-page-temperature file generation.";
+        m->m_cgi   = "sitedeftemp";
+        m->m_type  = TYPE_CMD;
+        m->m_func  = CommandSiteDefaultPageTemperature;
+        m->m_cast  = true;
+        m->m_group = false;
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
         m->m_page  = PAGE_MASTER;
         m->m_obj   = OBJ_CONF;
         m++;
