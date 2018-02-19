@@ -8543,6 +8543,16 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log sqlite transaction time threshold";
+	m->m_desc  = "If a sqlite transaction took this many millliseconds or longer, then log the "
+		"time it took to process.";
+	m->m_cgi   = "lsqltt";
+	simple_m_set(Conf,m_logSqliteTransactionTimeThreshold);
+	m->m_def   = "1000";
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log http requests";
 	m->m_desc  = "Log GET and POST requests received from the "
 		"http server?";

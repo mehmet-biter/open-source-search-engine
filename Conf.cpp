@@ -169,6 +169,7 @@ Conf::Conf ( ) {
 	m_logRdbMapAddListTimeThreshold = 50;
 	m_logQueryTimeThreshold = 0;
 	m_logDiskReadTimeThreshold = 0;
+	m_logSqliteTransactionTimeThreshold = 0;
 	m_logQueryReply = false;
 	m_logSpideredUrls = false;
 	m_logInfo = false;

@@ -309,7 +309,9 @@ class Conf {
 	int32_t  m_logQueryTimeThreshold;
 	// if disk read took this or more milliseconds, log its time
 	int32_t  m_logDiskReadTimeThreshold;
-	
+
+	int32_t m_logSqliteTransactionTimeThreshold;
+
 	bool  m_logQueryReply;
 	// log what gets into the index
 	bool  m_logSpideredUrls;

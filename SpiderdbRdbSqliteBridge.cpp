@@ -32,10 +32,12 @@ public:
 		finish();
 	}
 	void finish() {
-		if(name && g_conf.m_logTimingDb) {
+		if(name) {
 			int64_t timing_lock_end = gettimeofdayInMillisecondsGlobal();
 			int64_t duration = timing_lock_end-timing_lock_start;
-			log(LOG_TIMING,"db:%s: lock: %ld ms", name, duration);
+			if (g_conf.m_logTimingDb || duration >= g_conf.m_logSqliteTransactionTimeThreshold) {
+				log(LOG_TIMING, "db:%s: lock: %ld ms", name, duration);
+			}
 			name = NULL;
 		}
 	}
