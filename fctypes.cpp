@@ -330,7 +330,7 @@ int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial )
 			int32_t utf8Len=0;
 
 			// "skip" is how many bytes the entites was in "src"
-			int32_t skip = getEntity_a( src, srcEnd - src, codepoint, &codepointCount, &utf8Len );
+			int32_t skip = getHtmlEntity(src, srcEnd - src, codepoint, &codepointCount, &utf8Len);
 
 			// If the entity is invalid/unknown then store it as text
 

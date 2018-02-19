@@ -598,9 +598,6 @@ bool Xml::set( char *s, int32_t slen, int32_t version, char contentType ) {
 	return true;
 }
 
-// for translating HTML entities to an iso char
-#include "Entities.h"
-
 // . replaces line-breaking html tags with 2 returns if "includeTags" is false
 // . stores tags too if "includeTags" is true
 // . returns # chars written to buf
