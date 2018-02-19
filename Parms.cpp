@@ -9179,14 +9179,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
-	m->m_title = "log trace info for SpiderdbHostDelete";
-	m->m_cgi   = "ltrc_sphdel";
-	simple_m_set(Conf,m_logTraceSpiderdbHostDelete);
-	m->m_def   = "0";
-	m->m_flags = PF_REBUILDSPIDERSETTINGS;
-	m->m_page  = PAGE_LOG;
-	m++;
-
 	m->m_title = "log trace info for reindex";
 	m->m_cgi   = "ltrc_reindex";
 	simple_m_set(Conf,m_logTraceReindex);
@@ -9225,13 +9217,6 @@ void Parms::init ( ) {
 	m->m_title = "log trace info for UrlMatchList";
 	m->m_cgi   = "ltrc_urlbl";
 	simple_m_set(Conf,m_logTraceUrlMatchList);
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m++;
-
-	m->m_title = "log trace info for UrlMatchHostList";
-	m->m_cgi   = "ltrc_urlhbl";
-	simple_m_set(Conf,m_logTraceUrlMatchHostList);
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
 	m++;
