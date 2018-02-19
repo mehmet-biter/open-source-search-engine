@@ -406,6 +406,7 @@ class Conf {
 	bool m_logTraceSpider;
 	bool m_logTraceSpiderUrlCache;
 	bool m_logTraceReindex;
+	bool m_logTraceSpiderdbRdbSqliteBridge;
 	bool m_logTraceSummary;
 	bool m_logTraceTitledb;
 	bool m_logTraceXmlDoc;

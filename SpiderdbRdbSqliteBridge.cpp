@@ -101,9 +101,12 @@ static bool addRecords(SpiderdbSqlite &spiderdb, const std::vector<SpiderdbRdbSq
 }
 
 static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator begin, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator end) {
+	logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "BEGIN");
 	sqlite3 *db = spiderdb.getDb(collnum);
 	if(!db) {
 		log(LOG_ERROR,"sqlitespider: Could not get sqlite db for collection %d", collnum);
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 		return false;
 	}
 	
@@ -116,6 +119,8 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 	int rc = sqlite3_exec(db, "begin transaction", NULL, NULL, &errmsg);
 	if(rc!=SQLITE_OK) {
 		log(LOG_ERROR,"sqlitespider: could not start transaction: %s", errmsg);
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 		return false;
 	}
 	
@@ -123,6 +128,8 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 	for(auto iter = begin; iter!=end; ++iter) {
 		if(!addRecord(db, iter->record, iter->record_len)) {
 			sqlite3_exec(db, "rollback", NULL, NULL, &errmsg);
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 			return false;
 		}
 		records++;
@@ -133,6 +140,8 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 		log(LOG_ERROR,"sqlitespider: commit errror: %s", sqlite3_errstr(err));
 		g_errno = map_sqlite_error_to_gb_errno(err);
 		sqlite3_exec(db, "rollback", NULL, NULL, &errmsg);
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 		return false;
 	}
 	
@@ -142,7 +151,8 @@ static bool addRecords(SpiderdbSqlite &spiderdb, collnum_t collnum, std::vector<
 	transaction_timer.finish();
 	if(g_conf.m_logTimingDb)
 		log(LOG_TIMING,"db:sqlite-add:record count=%ld",records);
-	
+
+	logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning true");
 	return true;
 }
 
@@ -163,6 +173,8 @@ static bool addRecord(sqlite3 *db, const void *record, size_t record_len) {
 
 
 static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len) {
+	logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "BEGIN");
+
 	if(record_len<(unsigned)SpiderRequest::getNeededSize(0)) {
 		log(LOG_ERROR,"sqlitespider: Got spiderrequest with record_len=%zu and SpiderRequest::getNeededSize(0)=%d", record_len, SpiderRequest::getNeededSize(0));
 		gbshutdownCorrupted();
@@ -187,6 +199,8 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 		int err = sqlite3_errcode(db);
 		log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
 		g_errno = map_sqlite_error_to_gb_errno(err);
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 		return false;
 	}
 	
@@ -206,6 +220,8 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
 			sqlite3_finalize(selectStatement);
 			g_errno = map_sqlite_error_to_gb_errno(err);
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 			return false;
 		}
 		
@@ -255,10 +271,14 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 			sqlite3_finalize(insertStatement);
 			sqlite3_finalize(selectStatement);
 			g_errno = map_sqlite_error_to_gb_errno(err);
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 			return false;
 		}
 		sqlite3_finalize(insertStatement);
 		sqlite3_finalize(selectStatement);
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning true");
 		return true;
 	} else if(select_rc==SQLITE_ROW) {
 		//at least one result, so the record must already be there
@@ -277,6 +297,8 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
 			sqlite3_finalize(selectStatement);
 			g_errno = map_sqlite_error_to_gb_errno(err);
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 			return false;
 		}
 
@@ -299,20 +321,28 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 			sqlite3_finalize(updateStatement);
 			sqlite3_finalize(selectStatement);
 			g_errno = map_sqlite_error_to_gb_errno(err);
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 			return false;
 		}
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning true");
 		return true;
 	} else {
 		int err = sqlite3_errcode(db);
 		log(LOG_WARN,"sqlitespider: sqlite3_step(...select...) failed with %s", sqlite3_errstr(err));
 		sqlite3_finalize(selectStatement);
 		g_errno = map_sqlite_error_to_gb_errno(err);
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 		return false;
 	}
 }
 
 
 static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
+	logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "BEGIN");
+
 	if(record_len!=sizeof(SpiderReply)) {
 		log(LOG_ERROR,"sqlitespider: Got spiderreply with record_len=%zu and sizeof(SpiderReply)=%zu", record_len, sizeof(SpiderReply));
 		gbshutdownCorrupted();
@@ -337,6 +367,8 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			int err = sqlite3_errcode(db);
 			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
 			g_errno = map_sqlite_error_to_gb_errno(err);
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 			return false;
 		}
 		
@@ -348,9 +380,13 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			log(LOG_ERROR,"sqlitespider: delete error: %s",sqlite3_errstr(err));
 			sqlite3_finalize(deleteStatement);
 			g_errno = map_sqlite_error_to_gb_errno(err);
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 			return false;
 		}
 		sqlite3_finalize(deleteStatement);
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning true");
 		return true;
 	} else if(srep->m_errCode==0) {
 		static const char update_statement[] =
@@ -372,6 +408,8 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			int err = sqlite3_errcode(db);
 			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
 			g_errno = map_sqlite_error_to_gb_errno(err);
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 			return false;
 		}
 
@@ -422,9 +460,13 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			log(LOG_ERROR,"sqlitespider: Update error: %s",sqlite3_errstr(err));
 			sqlite3_finalize(updateStatement);
 			g_errno = map_sqlite_error_to_gb_errno(err);
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 			return false;
 		}
 		sqlite3_finalize(updateStatement);
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning true");
 		return true;
 	} else {
 		static const char update_statement[] =
@@ -443,6 +485,8 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			int err = sqlite3_errcode(db);
 			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
 			g_errno = map_sqlite_error_to_gb_errno(err);
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 			return false;
 		}
 		
@@ -464,9 +508,13 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 			log(LOG_ERROR,"sqlitespider: Update error: %s",sqlite3_errstr(err));
 			sqlite3_finalize(updateStatement);
 			g_errno = map_sqlite_error_to_gb_errno(err);
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 			return false;
 		}
 		sqlite3_finalize(updateStatement);
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning true");
 		return true;
 	}
 }
@@ -479,11 +527,14 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 				      const key128_t &endKey,
 				      int32_t         minRecSizes)
 {
-	logTrace(g_conf.m_logTraceSpider, "SpiderdbRdbSqliteBridge::getList() ->");
+	logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "BEGIN");
+
 	sqlite3 *db = g_spiderdb_sqlite.getDb(collnum);
 	if(!db) {
 		log(LOG_ERROR,"sqlitespider: Could not get sqlite db for collection %d", collnum);
 		g_errno = ENOCOLLREC;
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 		return false;
 	}
 	
@@ -501,7 +552,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 	const char *pzTail="";
 	sqlite3_stmt *stmt;
 	if(firstIpStart==firstIpEnd) {
-		logTrace(g_conf.m_logTraceSpider, "single ip-range");
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "single ip-range");
 		//since we are dealing with just a single ip-address it is fine to cut the data into chunks
 		breakMidIPAddressAllowed = true;
 		static const char statement_text[] =
@@ -517,13 +568,15 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 			int err = sqlite3_errcode(db);
 			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
 			g_errno = EBADENGINEER;
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 			return false;
 		}
 		sqlite3_bind_int64(stmt, 1, (uint32_t)firstIpStart);
 		sqlite3_bind_int64(stmt, 2, uh48Start);
 		sqlite3_bind_int64(stmt, 3, uh48End);
 	} else {
-		logTrace(g_conf.m_logTraceSpider, "multiple-ip range");
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "multiple-ip range");
 		if(uh48Start!=0) {
 			log(LOG_ERROR, " SpiderdbRdbSqliteBridge::getList(): startip!=endip, and uh48Start!=0");
 			gbshutdownLogicError();
@@ -543,6 +596,8 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 			int err = sqlite3_errcode(db);
 			log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
 			g_errno = EBADENGINEER;
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 			return false;
 		}
 		sqlite3_bind_int64(stmt, 1, (uint32_t)firstIpStart);
@@ -675,6 +730,8 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		int err = sqlite3_errcode(db);
 		log(LOG_ERROR,"sqlitespider: Fetch error: %s",sqlite3_errstr(err));
 		g_errno = EBADENGINEER; //TODO
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 		return false;
 	}
 	sqlite3_finalize(stmt);
@@ -688,6 +745,8 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		listMemory = (char*)mmalloc(listSize, "sqliterdblist");
 		if(!listMemory) {
 			log(LOG_ERROR,"sqlitespider: OOM allocating spiderdb rdblist (%d bytes)", listSize);
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
 			return false;
 		}
 		memcpy(listMemory, io_buffer.begin(), io_buffer.used());
@@ -709,8 +768,9 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		  sizeof(key128_t));    //keysize
 	if(listSize!=0)
 		list->setLastKey((const char*)&listLastKey);
-	logTrace( g_conf.m_logTraceSpider, "sqlitespider: listSize = %d", list->getListSize());
-	
+	logTrace( g_conf.m_logTraceSpiderdbRdbSqliteBridge, "sqlitespider: listSize = %d", list->getListSize());
+
+	logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning true");
 	return true;
 }
 

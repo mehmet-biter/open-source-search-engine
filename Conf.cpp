@@ -256,6 +256,7 @@ Conf::Conf ( ) {
 	m_logTraceSpider = false;
 	m_logTraceSpiderUrlCache = false;
 	m_logTraceReindex = false;
+	m_logTraceSpiderdbRdbSqliteBridge = false;
 	m_logTraceSummary = false;
 	m_logTraceTitledb = false;
 	m_logTraceXmlDoc = false;

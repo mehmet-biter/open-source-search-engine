@@ -9186,6 +9186,13 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m++;
 
+	m->m_title = "log trace info for SpiderdbRdbSqliteBridge";
+	m->m_cgi   = "ltrc_sqlitebridge";
+	simple_m_set(Conf,m_logTraceSpiderdbRdbSqliteBridge);
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m++;
+
 	m->m_title = "log trace info for Summary";
 	m->m_cgi   = "ltrc_sum";
 	simple_m_set(Conf,m_logTraceSummary);
