@@ -10551,27 +10551,25 @@ char **XmlDoc::getUtf8Content ( ) {
 	// sanity
 	if ( ! m_contentTypeValid ) { g_process.shutdownAbort(true); }
 
-	// richmondspca.org has &quot; in some tags and we do not like
-	// expanding that to " because it messes up XmlNode::getTagLen()
-	// and creates big problems. same for www.first-avenue.com. so
-	// by setting doSpecial to try we change &lt; &gt and &quot; to
-	// [ ] and ' which have no meaning in html per se.
-	bool doSpecial = ( m_contentType != CT_XML );
-
-	// . now decode those html entites into utf8 so that we never have to
-	//   check for html entities anywhere else in the code. a big win!!
-	// . doSpecial = true, so that &lt, &gt, &amp; and &quot; are
-	//   encoded into high value
-	//   utf8 chars so that Xml::set(), etc. still work properly and don't
-	//   add any more html tags than it should
-	// . this will decode in place
-	// . MDW: 9/28/2014. no longer do for xml docs since i added
-	//   hashXmlFields()
 	int32_t n = m_expandedUtf8ContentSize - 1;
 	if ( m_contentType != CT_XML ) {
+		// richmondspca.org has &quot; in some tags and we do not like
+		// expanding that to " because it messes up XmlNode::getTagLen()
+		// and creates big problems. same for www.first-avenue.com. so
+		// by setting doSpecial to try we change &lt; &gt and &quot; to
+		// [ ] and ' which have no meaning in html per se.
+
+		// . now decode those html entites into utf8 so that we never have to
+		//   check for html entities anywhere else in the code. a big win!!
+		// . doSpecial = true, so that &lt, &gt, &amp; and &quot; are
+		//   encoded into high value
+		//   utf8 chars so that Xml::set(), etc. still work properly and don't
+		//   add any more html tags than it should
+		// . this will decode in place
+		// . MDW: 9/28/2014. no longer do for xml docs since i added
+		//   hashXmlFields()
 		logTrace( g_conf.m_logTraceXmlDoc, "Calling htmlDecode" );
-		n = htmlDecode( m_expandedUtf8Content, m_expandedUtf8Content, m_expandedUtf8ContentSize - 1,
-						doSpecial );
+		n = htmlDecode( m_expandedUtf8Content, m_expandedUtf8Content, m_expandedUtf8ContentSize - 1, true );
 	}
 
 	// can't exceed this! n does not include the final \0 even though
