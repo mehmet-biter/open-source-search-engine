@@ -361,6 +361,7 @@ int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial )
 						entityLen = 5;
 					}
 	
+					//fixme: this mangles &nvlt; and &nvgt; because it only takes the < or > character and drops the long-vertical-link-overlay codepoint
 					memcpy(dst, entityStr, entityLen);
 					src += skip;
 					dst += entityLen;
