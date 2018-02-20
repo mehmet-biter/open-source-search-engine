@@ -556,7 +556,7 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 	sqlite3_stmt *stmt;
 	if(firstIpStart==firstIpEnd) {
 		char ipbuf[16];
-		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "single ip-range firstIp=%s uh48Start=%d uh48End=%d",
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "single ip-range firstIp=%s uh48Start=%ld uh48End=%ld",
 		         iptoa(firstIpStart, ipbuf), uh48Start, uh48End);
 		//since we are dealing with just a single ip-address it is fine to cut the data into chunks
 		breakMidIPAddressAllowed = true;
