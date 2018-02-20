@@ -9,6 +9,7 @@
 #include "SpiderCache.h"
 #include "SpiderColl.h"
 #include "Conf.h"
+#include "ip.h"
 #include <algorithm>
 
 static void addSpiderCollRecords(collnum_t collnum, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator begin, std::vector<SpiderdbRdbSqliteBridge::BatchedRecord>::const_iterator end);
@@ -554,7 +555,9 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 	const char *pzTail="";
 	sqlite3_stmt *stmt;
 	if(firstIpStart==firstIpEnd) {
-		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "single ip-range");
+		char ipbuf[16];
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "single ip-range firstIp=%s uh48Start=%d uh48End=%d",
+		         iptoa(firstIpStart, ipbuf), uh48Start, uh48End);
 		//since we are dealing with just a single ip-address it is fine to cut the data into chunks
 		breakMidIPAddressAllowed = true;
 		static const char statement_text[] =
@@ -578,7 +581,11 @@ bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 		sqlite3_bind_int64(stmt, 2, uh48Start);
 		sqlite3_bind_int64(stmt, 3, uh48End);
 	} else {
-		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "multiple-ip range");
+		char ipbuf[16];
+		char ipbuf2[16];
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "multiple ip-range firstIpStart=%s firstIpEnd=%s",
+		         iptoa(firstIpStart, ipbuf), iptoa(firstIpEnd, ipbuf2));
+
 		if(uh48Start!=0) {
 			log(LOG_ERROR, " SpiderdbRdbSqliteBridge::getList(): startip!=endip, and uh48Start!=0");
 			gbshutdownLogicError();
