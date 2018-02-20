@@ -157,6 +157,7 @@ static bool cacheTest();
 static void countdomains(const char* coll, int32_t numRecs, int32_t output);
 
 static bool argToBoolean(const char *arg);
+static bool parseOptionalHostRange(int rangearg, int argc, char **argv, int *h1, int *h2);
 
 static void wvg_log_function(WordVariationGenerator::log_class_t log_class, const char *fmt, va_list ap);
 
@@ -579,7 +580,7 @@ int main2 ( int argc , char *argv[] ) {
 		g_loop.runLoop();
 	}
 
-	// gb dsh
+	// gb dsh cmd [hostrange]
 	if ( strcmp ( cmd , "dsh" ) == 0 ) {	
 		if ( cmdarg+1 >= argc ) {
 			printHelp();
@@ -588,23 +589,14 @@ int main2 ( int argc , char *argv[] ) {
 
 		char *cmd = argv[cmdarg+1];
 
-		// get hostId to install TO (-1 means all)
-		int32_t h1 = -1;
-		int32_t h2 = -1;
-
-		if (cmdarg + 2 < argc) {
-			h1 = atoi(argv[cmdarg + 2]);
-
-			// might have a range
-			if (strstr(argv[cmdarg + 2], "-")) {
-				sscanf(argv[cmdarg + 2], "%" PRId32"-%" PRId32, &h1, &h2);
-			}
-		}
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+2,argc,argv,&h1,&h2))
+			return 1;
 
 		return install ( ifk_dsh, h1, NULL, h2, cmd );
 	}
 
-	// gb dsh2
+	// gb dsh2 cmd [hostrange]
 	if ( strcmp ( cmd , "dsh2" ) == 0 ) {
 		if ( cmdarg+1 >= argc ) {
 			printHelp();
@@ -612,18 +604,9 @@ int main2 ( int argc , char *argv[] ) {
 		}
 		char *cmd = argv[cmdarg+1];
 
-		// get hostId to install TO (-1 means all)
-		int32_t h1 = -1;
-		int32_t h2 = -1;
-
-		if (cmdarg + 2 < argc) {
-			h1 = atoi(argv[cmdarg + 2]);
-
-			// might have a range
-			if (strstr(argv[cmdarg + 2], "-")) {
-				sscanf(argv[cmdarg + 2], "%" PRId32"-%" PRId32, &h1, &h2);
-			}
-		}
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+2,argc,argv,&h1,&h2))
+			return 1;
 
 		return install ( ifk_dsh2, h1, NULL, h2, cmd );
 	}
@@ -638,135 +621,82 @@ int main2 ( int argc , char *argv[] ) {
 		return copyFiles ( dir );
 	}
 
-	// gb install
+	// gb install [hostrange]
 	if ( strcmp ( cmd , "install" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t h1 = -1;
-		int32_t h2 = -1;
-		if ( cmdarg + 1 < argc ) h1 = atoi ( argv[cmdarg+1] );
-		// might have a range
-		if (cmdarg + 1 < argc && strstr(argv[cmdarg+1],"-") )
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
 		return install ( ifk_install, h1, NULL, h2 );
 	}
 
-	// gb installgb
+	// gb installgb [hostrange]
 	if ( strcmp ( cmd , "installgb" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return install ( ifk_installgb , hostId );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return install(ifk_installgb, h1, NULL, h2);
 	}
 
-	// gb installfile
+	// gb installfile filename [hostrange]
 	if ( strcmp ( cmd , "installfile" ) == 0 ) {
-		if (cmdarg+1 < argc) {
-			// get hostId to install TO (-1 means all)
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-
-			if (cmdarg + 2 < argc) {
-				h1 = atoi(argv[cmdarg + 2]);
-
-				// might have a range
-				if (strstr(argv[cmdarg + 2], "-")) {
-					sscanf(argv[cmdarg + 2], "%" PRId32"-%" PRId32, &h1, &h2);
-				}
-			}
-
-			return install_file(argv[cmdarg + 1], h1, h2);
-		}
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+2,argc,argv,&h1,&h2))
+			return 1;
+		return install_file(argv[cmdarg + 1], h1, h2);
 	}
 
-	// gb installtmpgb
+	// gb installtmpgb [hostrange]
 	if ( strcmp ( cmd , "installtmpgb" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return install ( ifk_installtmpgb , hostId );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return install(ifk_installtmpgb, h1, NULL, h2);
 	}
 
-	// gb installconf
+	// gb installconf [hostrange]
 	if ( strcmp ( cmd , "installconf" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return install ( ifk_installconf , hostId );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return install(ifk_installconf, h1, NULL, h2);
 	}
 
-	// gb installconf2
+	// gb installconf2 [hostrange]
 	if ( strcmp ( cmd , "installconf2" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return install ( ifk_installconf2 , hostId );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return install(ifk_installconf2, h1, NULL, h2);
 	}
 
 	// gb start [hostId]
 	if ( strcmp ( cmd , "start" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi( argv[ cmdarg + 1 ] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf( argv[cmdarg+1], "%" PRId32"-%" PRId32, &h1, &h2 );
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return install ( ifk_start, h1, NULL, h2 );
-		}
-
-		// default to keepalive start for now!!
-		return install ( ifk_start , hostId );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return install(ifk_start, h1, NULL, h2);
 	}
 
 	// gb tmpstart [hostId]
 	if ( strcmp ( cmd , "tmpstart" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return install ( ifk_tmpstart, h1, NULL, h2 );
-		}
-		return install ( ifk_tmpstart, hostId );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return install(ifk_tmpstart, h1, NULL, h2);
 	}
 
 	if ( strcmp ( cmd , "tmpstop" ) == 0 ) {	
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "save=1", h1, "master", true, false, h2 );
-		}
-		return doCmd( "save=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("save=1", h1, "master", true, false, h2);
 	}
 
 	if ( strcmp ( cmd , "kstop" ) == 0 ) {	
-		//same as stop, here for consistency
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-			// might have a range
-
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "save=1", h1, "master", true, false, h2 );
-		}
-		return doCmd( "save=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("save=1", h1, "master", true, false, h2);
 	}
 
 	// gb backupcopy [hostId] <backupSubdirName>
@@ -798,34 +728,18 @@ int main2 ( int argc , char *argv[] ) {
 
 	// gb stop [hostId]
 	if ( strcmp ( cmd , "stop" ) == 0 ) {	
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd ( "save=1" , h1 , "master" , true, false, h2 );
-		}
-		return doCmd( "save=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("save=1" , h1 , "master", true, false, h2);
 	}
 
 	// gb save [hostId]
 	if ( strcmp ( cmd , "save" ) == 0 ) {	
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-			// might have a range
-
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd ( "js=1", h1, "master", true, false, h2 );
-		}
-		return doCmd( "js=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("js=1", h1, "master", true, false, h2);
 	}
 
 	// gb spidersoff [hostId]
@@ -858,66 +772,34 @@ int main2 ( int argc , char *argv[] ) {
 
 	// gb pmerge [hostId]
 	if ( strcmp ( cmd , "pmerge" ) == 0 ) {	
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "pmerge=1", h1, "master", true, false, h2 );
-		}
-		return doCmd( "pmerge=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("pmerge=1", h1, "master", true, false, h2);
 	}
 
 	// gb spmerge [hostId]
 	if ( strcmp ( cmd , "spmerge" ) == 0 ) {
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "spmerge=1", h1, "master", true, false, h2 );
-		}
-		return doCmd( "spmerge=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("spmerge=1", h1, "master", true, false, h2);
 	}
 
 	// gb tmerge [hostId]
 	if ( strcmp ( cmd , "tmerge" ) == 0 ) {	
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "tmerge=1", h1, "master", true, false, h2 );
-		}
-		return doCmd( "tmerge=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("tmerge=1", h1, "master", true, false, h2);
 	}
 
 	// gb merge [hostId]
 	if ( strcmp ( cmd , "merge" ) == 0 ) {	
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) {
-			hostId = atoi ( argv[cmdarg+1] );
-
-			// might have a range
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd( "merge=1", h1, "master", true, false, h2 );
-		}
-		return doCmd( "merge=1", hostId, "master", true, false );
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+1,argc,argv,&h1,&h2))
+			return 1;
+		return doCmd("merge=1", h1, "master", true, false, h2);
 	}
 
 	// gb setnote <hostid> <note>
@@ -1133,23 +1015,11 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 	
+	// gb sitedeftemp prepare|switch [hostrange]
 	if(strcmp(cmd, "sitedeftemp") == 0) {
-		int32_t h1=-1;
-		int32_t h2=-1;
-		if(cmdarg + 2 < argc) {
-			int n = sscanf(argv[cmdarg+2],"%d-%d",&h1,&h2);
-			if(n<1) {
-				fprintf(stderr,"Unrecognized host range: '%s'\n", argv[cmdarg+2]);
-				printHelp();
-				return 1;
-			} else if(h2<h1) {
-				fprintf(stderr,"host2<host1 in host range: '%s'\n", argv[cmdarg+2]);
-				printHelp();
-				return 1;
-			}
-			if(n==1)
-				h2 = h1;
-		}
+		int h1,h2;
+		if(!parseOptionalHostRange(cmdarg+2,argc,argv,&h1,&h2))
+			return 1;
 		if(strcmp(argv[cmdarg+1],"prepare")==0)
 			return doCmd("sitedeftemp=prepare", h1, "master", true, false, h2);
 		else if(strcmp(argv[cmdarg+1],"switch")==0)
@@ -1976,6 +1846,26 @@ static bool argToBoolean(const char *arg) {
 	return strcmp(arg,"1")==0 ||
 	       strcmp(arg,"true")==0;
 }
+
+static bool parseOptionalHostRange(int rangearg, int argc, char **argv, int *h1, int *h2) {
+	if(rangearg < argc) {
+		int n = sscanf(argv[rangearg],"%u-%u", h1, h2);
+		if(n==0) {
+			fprintf(stderr,"Unrecognized host range: '%s'\n", argv[rangearg]);
+			return false;
+		} else if(n==1) {
+			*h2 = -1;
+		} else if(*h2<*h1) {
+			fprintf(stderr,"host2<host1 in host range: '%s'\n", argv[rangearg]);
+			return false;
+		}
+	} else {
+		*h1 = -1;
+		*h2 = -1;
+	}
+	return true;
+}
+
 
 // save them all
 static       void doCmdAll   ( int fd, void *state ) ;
