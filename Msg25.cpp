@@ -72,7 +72,6 @@ Msg25::Msg25() {
 	m_retried = false;
 	m_prependWWW = false;
 	m_onlyNeedGoodInlinks = false;
-	m_getLinkerTitles = false;
 	m_docId = 0;
 	m_collnum = 0;
 	m_state = NULL;
@@ -220,7 +219,6 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 		 void      *state,
 		 void (* callback)(void *state),
 		 bool       isInjecting,
-		 SafeBuf   *pbuf,
 		 bool       printInXml,
 		 int32_t       siteNumInlinks,
 		 const LinkInfo  *oldLinkInfo,
@@ -230,7 +228,6 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 		 bool       canBeCancelled,
 		 int32_t       lastUpdateTime,
 		 bool       onlyNeedGoodInlinks,
-		 bool       getLinkerTitles,
 		 int32_t       ourHostHash32,
 		 int32_t       ourDomHash32,
 		 SafeBuf   *linkInfoBuf)
@@ -296,7 +293,6 @@ bool getLinkInfo(SafeBuf   *reqBuf,
 	req->m_canBeCancelled = canBeCancelled;
 	req->m_lastUpdateTime = lastUpdateTime;
 	req->m_onlyNeedGoodInlinks = onlyNeedGoodInlinks;
-	req->m_getLinkerTitles = getLinkerTitles;
 	req->m_ourHostHash32 = ourHostHash32;
 	req->m_ourDomHash32 = ourDomHash32;
 
@@ -555,7 +551,6 @@ void handleRequest25(UdpSlot *slot, int32_t netnice) {
 				   req->m_canBeCancelled      ,
 				   req->m_lastUpdateTime      ,
 				   req->m_onlyNeedGoodInlinks  ,
-				   req->m_getLinkerTitles ,
 				   req->m_ourHostHash32 ,
 				   req->m_ourDomHash32 ,
 				   m25->m_linkInfoBuf ) ) // SafeBuf 4 output
@@ -666,13 +661,12 @@ bool Msg25::getLinkInfo2(const char      *site,
 			 bool       canBeCancelled,
 			 int32_t       lastUpdateTime,
 			 bool       onlyNeedGoodInlinks,
-			 bool       getLinkerTitles,
 			 int32_t       ourHostHash32,
 			 int32_t       ourDomHash32,
 			 // put LinkInfo output class in here
 			 SafeBuf   *linkInfoBuf )
 {
-	logTrace(g_conf.m_logTraceMsg25,"site [%s] url [%s] isSiteLinkInfo [%s] docId [%" PRId64 "] getLinkerTitles [%s]", site, url, isSiteLinkInfo?"true":"false", docId, getLinkerTitles?"true":"false");
+	logTrace(g_conf.m_logTraceMsg25,"site [%s] url [%s] isSiteLinkInfo [%s] docId [%" PRId64 "]", site, url, isSiteLinkInfo?"true":"false", docId);
 
 	// reset the ip table
 	reset();
@@ -689,7 +683,6 @@ bool Msg25::getLinkInfo2(const char      *site,
 		m_pbuf = NULL;
 
 	m_onlyNeedGoodInlinks = onlyNeedGoodInlinks;
-	m_getLinkerTitles     = getLinkerTitles;
 	// save safebuf ptr, where we store the link info
 	m_linkInfoBuf = linkInfoBuf;
 	if ( ! linkInfoBuf ) { g_process.shutdownAbort(true); }

@@ -45,7 +45,6 @@ public:
 	bool          m_canBeCancelled;
 	int32_t       m_lastUpdateTime;
 	bool          m_onlyNeedGoodInlinks;
-	bool          m_getLinkerTitles;
 	int32_t       m_ourHostHash32;
 	int32_t       m_ourDomHash32;
 
@@ -144,7 +143,6 @@ class Msg25 {
 			   bool       canBeCancelled,
 			   int32_t    lastUpdateTime,
 			   bool       onlyNeedGoodInlinks,
-			   bool       getLinkerTitles, //= false,
 			   // if an inlinking document has an outlink
 			   // of one of these hashes then we set
 			   // Msg20Reply::m_hadLinkToOurDomOrHost.
@@ -205,7 +203,6 @@ class Msg25 {
 	bool       m_retried;
 	bool       m_prependWWW;
 	bool       m_onlyNeedGoodInlinks;
-	bool       m_getLinkerTitles;
 	int64_t  m_docId;
 	collnum_t m_collnum;
 	void      *m_state;

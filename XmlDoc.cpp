@@ -6911,28 +6911,18 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 	if ( ! m_sreqValid ) canBeCancelled = false;
 	// assume valid when it returns
 	m_siteLinkInfoValid = true;
-	// use this buffer so XmlDoc::print() can display it where it wants
-	SafeBuf *sb = NULL;
-	if ( m_pbuf ) sb = &m_siteLinkBuf;
-	// only do this for showing them!!!
-	if ( m_useSiteLinkBuf ) sb = &m_siteLinkBuf;
-	//bool onlyGetGoodInlinks = true;
-	//if ( m_useSiteLinkBuf ) onlyGetGoodInlinks = false;
-	// get this
+
 	int32_t lastUpdateTime = getTimeGlobal();
-	// get from spider request if there
-	//bool injected = false;
-	//if ( m_sreqValid && m_sreq.m_isInjecting ) injected = true;
 
 	bool onlyNeedGoodInlinks = true;
 	// so if steve wants to display all links then set this
 	// to false so we get titles of bad inlinks
 	// seems like pageparser.cpp just sets m_pbuf and not
 	// m_usePageLinkBuf any more
-	if ( sb ) onlyNeedGoodInlinks = false;
+	if ( m_pbuf || m_useSiteLinkBuf ) {
+		onlyNeedGoodInlinks = false;
+	}
 
-	// shortcut
-	//Msg25 *m = &m_msg25;
 	if ( ! getLinkInfo ( &m_tmpBuf11,
 			     &m_mcast11,
 			     mysite , // site
@@ -6944,7 +6934,6 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 				m_masterState       ,
 				m_masterLoop        ,
 				m_contentInjected ,// isInjecting?
-				sb                  ,
 			     m_printInXml        ,
 				0 , // sitenuminlinks -- dunno!
 				NULL , // oldLinkInfo1        ,
@@ -6954,7 +6943,6 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 				canBeCancelled        ,
 				lastUpdateTime ,
 				onlyNeedGoodInlinks ,
-				false,
 				0,
 				0,
 				// it will store the linkinfo into this safebuf
@@ -7741,14 +7729,7 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 		if ( m_pbuf ) canBeCancelled = false;
 		// not if injecting
 		if ( ! m_sreqValid ) canBeCancelled = false;
-		// use this buffer so XmlDoc::print() can display wherever
-		SafeBuf *sb = NULL;
-		if ( m_pbuf ) sb = &m_pageLinkBuf;
-		// only do this for showing them!!!
-		if ( m_usePageLinkBuf ) sb = &m_pageLinkBuf;
-		// get from spider request if there
-		//bool injected = false;
-		//if ( m_sreqValid && m_sreq.m_isInjecting ) injected = true;
+
 		// we do not want to waste time computing the page title
 		// of bad inlinks if we only want the good inlinks, because
 		// as of oct 25, 2012 we only store the "good" inlinks
@@ -7756,10 +7737,12 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 		bool onlyNeedGoodInlinks = true;
 		// so if steve wants to display all links then set this
 		// to false so we get titles of bad inlinks
-		if ( m_usePageLinkBuf ) onlyNeedGoodInlinks = false;
 		// seems like pageparser.cpp just sets m_pbuf and not
 		// m_usePageLinkBuf any more
-		if ( m_pbuf           ) onlyNeedGoodInlinks = false;
+		if ( m_usePageLinkBuf || m_pbuf ) {
+			onlyNeedGoodInlinks = false;
+		}
+
 		// status update
 		setStatus ( "calling msg25 for url" );
 		CollectionRec *cr = getCollRec();
@@ -7783,7 +7766,6 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 					m_masterState       ,
 					m_masterLoop        ,
 					m_contentInjected ,//m_injectedReply ,
-					sb                  ,
 					m_printInXml        ,
 					*sni                ,
 					oldLinkInfo1        ,
@@ -7793,7 +7775,6 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 					canBeCancelled        ,
 					lastUpdateTime ,
 					onlyNeedGoodInlinks ,
-					false, // getlinkertitles
 					0, // ourhosthash32 (special)
 					0,  // ourdomhash32 (special)
 					&m_myPageLinkInfoBuf

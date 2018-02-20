@@ -54,7 +54,6 @@ bool getLinkInfo ( SafeBuf *reqBuf , // store msg25 request in here
 		   void      *state               ,
 		   void (* callback)(void *state) ,
 		   bool       isInjecting         ,
-		   SafeBuf   *pbuf                ,
 		   bool printInXml ,
 		   int32_t       siteNumInlinks      ,
 		   const LinkInfo  *oldLinkInfo         ,
@@ -64,7 +63,6 @@ bool getLinkInfo ( SafeBuf *reqBuf , // store msg25 request in here
 		   bool       canBeCancelled      ,
 		   int32_t       lastUpdateTime      ,
 		   bool       onlyNeedGoodInlinks  ,
-		   bool       getLinkerTitles , //= false ,
 		   // if an inlinking document has an outlink
 		   // of one of these hashes then we set
 		   // Msg20Reply::m_hadLinkToOurDomOrHost.
