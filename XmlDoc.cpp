@@ -1556,14 +1556,9 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 	// memset 0
 	sreq->reset();
 
-	// assume not valid
-	sreq->m_siteNumInlinks = -1;
-
-	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
-
 	// how many site inlinks?
 	sreq->m_siteNumInlinks       = m_siteNumInlinks;
-	sreq->m_siteNumInlinksValid  = true;
+	sreq->m_siteNumInlinksValid  = m_siteNumInlinksValid;
 
 	if ( ! m_firstIpValid ) { g_process.shutdownAbort(true); }
 

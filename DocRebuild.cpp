@@ -160,12 +160,6 @@ void DocRebuild::processDocItem(DocProcessDocItem *docItem) {
 		rebuildDocItem->m_clearedXmlDoc = true;
 	}
 
-	int32_t *siteNumInLinks = xmlDoc->getSiteNumInlinks();
-	if (!siteNumInLinks || siteNumInLinks == (int32_t*)-1) {
-		// blocked
-		return;
-	}
-
 	// reset callback
 	if (xmlDoc->m_masterLoop == processedDoc) {
 		xmlDoc->m_masterLoop = nullptr;
