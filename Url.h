@@ -133,7 +133,7 @@ public:
 	const char *getFilename() const { return m_filename; }
 	int32_t getFilenameLen() const { return m_flen; }
 
-	const char *getExtension() { return m_extension; }
+	const char *getExtension() const { return m_extension; }
 	int32_t getExtensionLen() const { return m_elen; }
 
 	char       *getQuery()       { return m_query; }

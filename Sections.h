@@ -1,17 +1,13 @@
 #ifndef GB_SECTIONS_H
 #define GB_SECTIONS_H
 
-#include "HashTableX.h"
-#include "Msg0.h"
-#include "Bits.h"
-#include "Words.h"
-#include "Rdb.h"
+#include "SafeBuf.h"
+#include "XmlNode.h"
 
-// KEY:
-// ssssssss ssssssss ssssssss ssssssss  s = 48 bit site hash
-// ssssssss ssssssss hhhhhhhh hhhhhhhh  h = hash value (32 bits of the 64 bits!)
-// hhhhhhhh hhhhhhhh tttttttt dddddddd  t = tag type
-// dddddddd dddddddd dddddddd ddddddHD  d = docid
+class Words;
+class Bits;
+class Url;
+
 
 // h: hash value. typically the lower 32 bits of the 
 //    Section::m_contentHash64 vars. we
@@ -80,28 +76,28 @@ public:
 
 	// . the section immediately containing us
 	// . used by Events.cpp to count # of timeofdays in section
-	class Section *m_parent;
+	Section *m_parent;
 
 	// . we are in a linked list of sections
 	// . this is how we keep order
-	class Section *m_next;
-	class Section *m_prev;
+	Section *m_next;
+	Section *m_prev;
 
 	// . if we are an element in a list, what is the list container section
 	// . a containing section is a section containing MULTIPLE 
 	//   smaller sections
 	// . right now we limit such contained elements to text sections only
 	// . used to set SEC_HAS_MENUBROTHER flag
-	class Section *m_listContainer;
+	Section *m_listContainer;
 
 	// the sibling section before/after us. can be NULL.
-	class Section *m_prevBrother;
-	class Section *m_nextBrother;
+	Section *m_prevBrother;
+	Section *m_nextBrother;
 
 	// if we are in a bold section in a sentence section then this
 	// will point to the sentence section that contains us. if we already
 	// are a sentence section then this points to itself.
-	class Section *m_sentenceSection;
+	Section *m_sentenceSection;
 
 	// position of the first and last alnum word contained directly OR
 	// indirectly in this section. use -1 if no text contained...
@@ -119,7 +115,7 @@ public:
 	int32_t m_senta;
 	int32_t m_sentb;
 
-	class Section *m_nextSent;
+	Section *m_nextSent;
 
 	// hash of this tag's baseHash and all its parents baseHashes combined
 	uint32_t  m_tagHash;
@@ -161,19 +157,18 @@ public:
 	int32_t m_gbFrameNum;
 
 	// do we contain section "arg"?
-	bool contains( class Section *arg ) {
+	bool contains(const Section *arg) const {
 		return ( m_a <= arg->m_a && m_b >= arg->m_b );
 	}
 
 	// do we contain section "arg"?
-	bool strictlyContains ( class Section *arg ) {
+	bool strictlyContains(const Section *arg) const {
 		if ( m_a <  arg->m_a && m_b >= arg->m_b ) return true;
 		if ( m_a <= arg->m_a && m_b >  arg->m_b ) return true;
 		return false;
 	}
 };
 
-#define SECTIONS_LOCALBUFSIZE 500
 
 class Sections {
 public:
@@ -185,8 +180,9 @@ public:
 	// . returns false if blocked, true otherwise
 	// . returns true and sets g_errno on error
 	// . sets m_sections[] array, 1-1 with words array "w"
-	bool set(class Words *w, class Bits *bits, class Url *url, char *coll, uint8_t contentType );
+	bool set(const Words *w, Bits *bits, const Url *url, const char *coll, uint8_t contentType );
 
+private:
 	bool verifySections ( ) ;
 
 	void setNextBrotherPtrs ( bool setContainer ) ;
@@ -194,15 +190,16 @@ public:
 	// this is used by Events.cpp Section::m_nextSent
 	void setNextSentPtrs();
 
-	void printFlags ( class SafeBuf *sbuf , class Section *sn ) ;
+	static void printFlags(SafeBuf *sbuf , const Section *sn );
 
-	bool print(SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *densityVec,
-			   char *wordSpamVec, char *fragVec );
+public:
+	bool print(SafeBuf *sbuf, int32_t hiPos, const int32_t *wposVec, const char *densityVec, const char *wordSpamVec, const char *fragVec);
 
-	bool printSectionDiv( Section *sk );
-	class SafeBuf *m_sbuf;
+private:
+	bool printSectionDiv(const Section *);
+	SafeBuf *m_sbuf;
 
-	bool isHardSection ( Section *sn );
+	bool isHardSection(const Section *sn) const;
 
 	bool setMenus ( );
 
@@ -213,16 +210,16 @@ public:
 	void setTagHashes ( ) ;
 
 	// save it
-	class Words *m_words    ;
-	class Bits  *m_bits     ;
-	class Url   *m_url      ;
-	char        *m_coll     ;
-	uint8_t      m_contentType;
+	const Words    *m_words;
+	Bits           *m_bits;
+	const Url      *m_url;
+	const char     *m_coll;
+	uint8_t         m_contentType;
 
-	int32_t *m_wposVec;
-	char *m_densityVec;
-	char *m_wordSpamVec;
-	char *m_fragVec;
+	const int32_t  *m_wposVec;
+	const char     *m_densityVec;
+	const char     *m_wordSpamVec;
+	const char     *m_fragVec;
 	
 	// url ends in .rss or .xml ?
 	bool  m_isRSSExt;
@@ -230,16 +227,20 @@ public:
 	// word #'s (-1 means invalid)
 	int32_t m_titleStart;
 
+public:
 	// these are 1-1 with the Words::m_words[] array
-	class Section **m_sectionPtrs;
+	Section **m_sectionPtrs;
 
+private:
 	// save this too
 	int32_t m_nw ;
 
+public:
 	// allocate m_sections[] buffer
-	class Section  *m_sections;
-	int32_t            m_numSections;
-	int32_t            m_maxNumSections;
+	Section        *m_sections;
+	int32_t         m_numSections;
+private:
+	int32_t         m_maxNumSections;
 
 	// this holds the Sections instances in a growable array
 	SafeBuf m_sectionBuf;
@@ -247,9 +248,6 @@ public:
 	// this holds ptrs to sections 1-1 with words array, so we can
 	// see what section a word is in.
 	SafeBuf m_sectionPtrBuf;
-
-	// assume no malloc
-	char  m_localBuf [ SECTIONS_LOCALBUFSIZE ];
 
 	const int64_t  *m_wids;
 	const int32_t      *m_wlens;
@@ -260,16 +258,19 @@ public:
 
 	bool addSentenceSections ( ) ;
 
-	class Section *insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash ) ;
+	Section *insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash ) ;
 
-	class Section *m_rootSection; // the first section, aka m_firstSection
-	class Section *m_lastSection;
+public:
+	Section *m_rootSection; // the first section, aka m_firstSection
+private:
+	Section *m_lastSection;
 
-	class Section *m_lastAdded;
+	Section *m_lastAdded;
 
+public:
 	// kinda like m_rootSection, the first sentence section that occurs
 	// in the document, is NULL iff no sentences in document
-	class Section *m_firstSent;
+	Section *m_firstSent;
 };
 
 #endif // GB_SECTIONS_H

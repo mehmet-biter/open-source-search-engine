@@ -51,7 +51,6 @@ void Sections::reset() {
 	m_isRSSExt = false;
 	m_titleStart = 0;
 	m_maxNumSections = 0;
-	memset(m_localBuf, 0, sizeof(m_localBuf));
 	m_wids = NULL;
 	m_wlens = NULL;
 	m_wptrs = NULL;
@@ -88,7 +87,7 @@ public:
 // . sets m_sections[] array, 1-1 with words array "w"
 // . the Weights class can look at these sections and zero out the weights
 //   for words in script, style, select and marquee sections
-bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, uint8_t contentType ) {
+bool Sections::set(const Words *w, Bits *bits, const Url *url, const char *coll, uint8_t contentType ) {
 	reset();
 
 	if ( ! w ) return true;
@@ -2276,7 +2275,7 @@ void Sections::setNextSentPtrs ( ) {
 
 #define TABLE_ROWS 25
 
-void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
+void Sections::printFlags(SafeBuf *sbuf, const Section *sn) {
 	sec_t f = sn->m_flags;
 
 	if ( f & SEC_HEADING )
@@ -2335,7 +2334,7 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 		sbuf->safePrintf("iniframe ");
 }
 
-bool Sections::isHardSection ( Section *sn ) {
+bool Sections::isHardSection(const Section *sn) const {
 	int32_t a = sn->m_a;
 	// . treat this as hard... kinda like a div section...
 	//   fixes gwair.org date from stealing address of another date
@@ -3076,7 +3075,7 @@ void Sections::setTagHashes ( ) {
 }
 
 // make this replace ::print() when it works
-bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *densityVec, char *wordSpamVec, char *fragVec ) {
+bool Sections::print( SafeBuf *sbuf, int32_t hiPos, const int32_t *wposVec, const char *densityVec, const char *wordSpamVec, const char *fragVec ) {
 	// save ptrs
 	m_sbuf = sbuf;
 
@@ -3235,7 +3234,7 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 	return true;
 }
 
-bool Sections::printSectionDiv( Section *sk ) {
+bool Sections::printSectionDiv(const Section *sk) {
 	// enter a new div section now
 	m_sbuf->safePrintf("<br>");
 	// only make font color different
