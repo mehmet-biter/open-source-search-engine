@@ -523,7 +523,121 @@ static bool addReplyRecord(sqlite3 *db, const void *record, size_t record_len) {
 	}
 }
 
+bool SpiderdbRdbSqliteBridge::getFirstIps(collnum_t collnum, RdbList *list, int32_t firstIpStart, int32_t firstIpEnd, int32_t minRecSizes) {
+	char ipbuf[16];
+	char ipbuf2[16];
+	logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "BEGIN firstIpStart=%s (%u) firstIpEnd=%s (%u)",
+		iptoa(firstIpStart, ipbuf), firstIpStart, iptoa(firstIpEnd, ipbuf2), firstIpEnd);
 
+	sqlite3 *db = g_spiderdb_sqlite.getDb(collnum);
+	if(!db) {
+		log(LOG_ERROR,"sqlitespider: Could not get sqlite db for collection %d", collnum);
+		g_errno = ENOCOLLREC;
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
+		return false;
+	}
+
+	DbTimerLogger lock_timer("sqlite-getlist:lock");
+	ScopedSqlitedbLock ssl(db);
+	lock_timer.finish();
+
+	DbTimerLogger prepare_timer("sqlite-getlist:prepare");
+	const char *pzTail="";
+	sqlite3_stmt *stmt;
+
+	static const char statement_text[] =
+		"SELECT DISTINCT m_firstIp"
+			" FROM spiderdb"
+			" WHERE m_firstIp>=? and m_firstIp<=?"
+			" ORDER BY m_firstIp";
+	if(sqlite3_prepare_v2(db, statement_text, -1, &stmt, &pzTail) != SQLITE_OK) {
+		int err = sqlite3_errcode(db);
+		log(LOG_ERROR,"sqlitespider: Statement preparation error %s at or near %s",sqlite3_errstr(err),pzTail);
+		g_errno = EBADENGINEER;
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
+		return false;
+	}
+	sqlite3_bind_int64(stmt, 1, (uint32_t)firstIpStart);
+	sqlite3_bind_int64(stmt, 2, (uint32_t)firstIpEnd);
+
+	prepare_timer.finish();
+
+	DbTimerLogger read_timer("sqlite-getlist:read");
+	key128_t listLastKey;
+	IOBuffer io_buffer;
+	int rc;
+	while((rc=sqlite3_step(stmt))==SQLITE_ROW) {
+		//fetch all columns. null checks are done later
+		int32_t firstIp                   = sqlite3_column_int(stmt, 0);
+
+		//this code is not clever enough to deal with mid-ip breaks when spanning multiple ips
+		if(!io_buffer.empty() && Spiderdb::getFirstIp(&listLastKey)!=firstIp) {
+			if(minRecSizes>0 && io_buffer.used() >= (size_t)minRecSizes)
+				break;
+		}
+
+		SpiderRequest sreq;
+		sreq.reset();
+		sreq.m_key = Spiderdb::makeKey(firstIp,0,true,0,false);
+		sreq.m_firstIp                  = firstIp;
+
+		if (io_buffer.spare() < (size_t)sreq.getRecSize())
+			io_buffer.reserve_extra(io_buffer.used() / 2 + sreq.getRecSize());
+		memcpy(io_buffer.end(), &sreq, sreq.getRecSize());
+		io_buffer.push_back(sreq.getRecSize());
+
+		listLastKey = sreq.m_key;
+	}
+
+	if(rc!=SQLITE_DONE && rc!=SQLITE_ROW) {
+		int err = sqlite3_errcode(db);
+		log(LOG_ERROR,"sqlitespider: Fetch error: %s",sqlite3_errstr(err));
+		g_errno = EBADENGINEER; //TODO
+
+		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
+		return false;
+	}
+	sqlite3_finalize(stmt);
+	read_timer.finish();
+	ssl.unlock();
+
+
+	int32_t listSize = io_buffer.used();
+	char *listMemory;
+	if(listSize>0) {
+		listMemory = (char*)mmalloc(listSize, "sqliterdblist");
+		if(!listMemory) {
+			log(LOG_ERROR,"sqlitespider: OOM allocating spiderdb rdblist (%d bytes)", listSize);
+
+			logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning false");
+			return false;
+		}
+		memcpy(listMemory, io_buffer.begin(), io_buffer.used());
+	} else
+		listMemory = NULL;
+	key128_t listFirstKey = Spiderdb::makeFirstKey(firstIpStart, 0);
+	if(rc==SQLITE_ROW) {
+		//early break, so use the listLastKey as-is
+	} else {
+		//select exhaustion, so jump to last specified key
+		listLastKey = Spiderdb::makeFirstKey(firstIpEnd, 0xffffffffffffLL);
+	}
+	list->set(listMemory, listSize,
+	          listMemory, listSize,
+	          (const char*)&listFirstKey, (const char*)&listLastKey,
+	          -1,                   //datasize(variable)
+	          true,                 //owndata
+	          false,                //halfkeys
+	          sizeof(key128_t));    //keysize
+	if(listSize!=0)
+		list->setLastKey((const char*)&listLastKey);
+	logTrace( g_conf.m_logTraceSpiderdbRdbSqliteBridge, "sqlitespider: listSize = %d", list->getListSize());
+
+	logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning true");
+	return true;
+}
 
 bool SpiderdbRdbSqliteBridge::getList(collnum_t       collnum,
 				      RdbList        *list,

@@ -1161,12 +1161,11 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// make state
 		//int32_t state2 = (int32_t)m_cr->m_collnum;
 		// read the list from local disk
-		if(!SpiderdbRdbSqliteBridge::getList(m_cr->m_collnum,
-						     &m_waitingTreeList,
-						     m_waitingTreeNextKey,
-						     *(const key128_t*)KEYMAX(),
-						     SR_READ_SIZE))
-		{
+		if (!SpiderdbRdbSqliteBridge::getFirstIps(m_cr->m_collnum,
+		                                          &m_waitingTreeList,
+		                                          Spiderdb::getFirstIp(&m_waitingTreeNextKey),
+		                                          -1,
+		                                          SR_READ_SIZE)) {
 			if(!g_errno) {
 				g_errno = EIO; //imprecise
 				logTrace( g_conf.m_logTraceSpider, "END, got io-error from sqlite" );
