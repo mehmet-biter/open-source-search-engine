@@ -13477,12 +13477,14 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		need += sizeof(key96_t);
 	}
 
+	if(m_defaultSitePageTemperatureValid)
+		need += 1 + sizeof(uint64_t) + sizeof(uint32_t) + sizeof(unsigned);
+
 	// . alloc mem for metalist
 	// . sanity
 	if (m_metaListSize > 0) {
 		g_process.shutdownAbort(true);
 	}
-
 	// make the buffer
 	m_metaList = (char *)mmalloc(need, "metalist");
 	if (!m_metaList) {
@@ -13535,6 +13537,17 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// sanity check
 	if (m_p - saved > needTitledb) {
 		g_process.shutdownAbort(true);
+	}
+
+	if(m_defaultSitePageTemperatureValid) {
+		*m_p++ = RDB_SITEDEFAULTPAGETEMPERATURE;
+		uint64_t k = (m_docId<<1) | 0x01; //magic bit shuffling so msg4 can treat it as a normal rdb key with negative-bit etc.
+		memcpy(m_p, &k, 8);
+		m_p += 8;
+		memcpy(m_p, &m_siteHash32, 4);
+		m_p += 4;
+		memcpy(m_p, &m_defaultSitePageTemperature, 4);
+		m_p += 4;
 	}
 
 	// sanity check

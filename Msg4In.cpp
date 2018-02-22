@@ -12,6 +12,7 @@
 #include "Mem.h"
 #include "Titledb.h"	// for Titledb::validateSerializedRecord
 #include "SpiderdbRdbSqliteBridge.h"
+#include "SiteMedianPageTemperatureRegistry.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
 
@@ -240,67 +241,89 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 			Titledb::validateSerializedRecord( rec, recSize );
 		}
 
-		if(rdbId!=RDB_SPIDERDB_DEPRECATED && rdbId!=RDB2_SPIDERDB2_DEPRECATED) {
-			// . get the rdb to which it belongs, use Msg0::getRdb()
-			// . do not call this for every rec if we do not have to
-			if (rdbId != lastRdbId || !rdb) {
-				rdb = getRdbFromId(rdbId);
+		switch(rdbId) {
+			case RDB_SPIDERDB_DEPRECATED:
+			case RDB2_SPIDERDB2_DEPRECATED: {
+				//spiderdb records no longer reside in an Rdb
+				
+				// don't add to spiderdb when we're nospider host
+				if(g_hostdb.getMyHost()->m_spiderEnabled) {
+					auto &rdbItem = rdbItems[rdbId];
+					++rdbItem.m_numRecs;
 
-				if (!rdb) {
-					char ipbuf[16];
-					log(LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized from hostip=%s. dropping WHOLE request",
-					(int32_t)rdbId, slot ? iptoa(slot->getIp(),ipbuf) : "unknown");
+					int32_t dataSize = recSize - sizeof(key128_t) - 4;
+
+					rdbItem.m_dataSizes += dataSize;
+
+					rdbItem.m_items.emplace_back(collnum, rec, recSize);
+				}
+				break;
+			}
+			case RDB_SITEDEFAULTPAGETEMPERATURE: {
+				//not an Rdb
+				//only used in queries, so if we are a noquery host then just drop it
+				if(g_hostdb.getMyHost()->m_queryEnabled) {
+					auto &rdbItem = rdbItems[rdbId];
+					++rdbItem.m_numRecs;
+
+					int32_t dataSize = 8+4+4;
+
+					rdbItem.m_dataSizes += dataSize;
+
+					rdbItem.m_items.emplace_back(collnum, rec, recSize);
+				}
+				break;
+				
+			}
+			default: {
+				// . get the rdb to which it belongs, use Msg0::getRdb()
+				// . do not call this for every rec if we do not have to
+				if (rdbId != lastRdbId || !rdb) {
+					rdb = getRdbFromId(rdbId);
+
+					if (!rdb) {
+						char ipbuf[16];
+						log(LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized from hostip=%s. dropping WHOLE request",
+						(int32_t)rdbId, slot ? iptoa(slot->getIp(),ipbuf) : "unknown");
+						gbshutdownAbort(true);
+					}
+
+					// an uninitialized secondary rdb?
+					// don't core any more, we probably restarted this shard
+					// and it needs to wait for host #0 to syncs its
+					// g_conf.m_repairingEnabled to '1' so it can start its
+					// Repair.cpp repairWrapper() loop and init the secondary
+					// rdbs so "rdb" here won't be NULL any more.
+					if (!rdb->isInitialized()) {
+						time_t currentTime = getTime();
+						static time_t s_lastTime = 0;
+						if (currentTime > s_lastTime + 10) {
+							s_lastTime = currentTime;
+							log(LOG_WARN, "msg4: oops. got an rdbId key for a secondary "
+									"rdb and not in repair mode. waiting to be in repair mode.");
+						}
+						g_errno = ETRYAGAIN;
+						return false;
+					}
+				}
+
+				// if we don't have data, recSize must be the same with keySize
+				if (rdb->getFixedDataSize() == 0 && recSize != rdb->getKeySize()) {
 					gbshutdownAbort(true);
 				}
 
-				// an uninitialized secondary rdb?
-				// don't core any more, we probably restarted this shard
-				// and it needs to wait for host #0 to syncs its
-				// g_conf.m_repairingEnabled to '1' so it can start its
-				// Repair.cpp repairWrapper() loop and init the secondary
-				// rdbs so "rdb" here won't be NULL any more.
-				if (!rdb->isInitialized()) {
-					time_t currentTime = getTime();
-					static time_t s_lastTime = 0;
-					if (currentTime > s_lastTime + 10) {
-						s_lastTime = currentTime;
-						log(LOG_WARN, "msg4: oops. got an rdbId key for a secondary "
-								"rdb and not in repair mode. waiting to be in repair mode.");
-					}
-					g_errno = ETRYAGAIN;
-					return false;
-				}
-			}
-
-			// if we don't have data, recSize must be the same with keySize
-			if (rdb->getFixedDataSize() == 0 && recSize != rdb->getKeySize()) {
-				gbshutdownAbort(true);
-			}
-
-			auto &rdbItem = rdbItems[rdbId];
-			++rdbItem.m_numRecs;
-
-			int32_t dataSize = recSize - rdb->getKeySize();
-			if (rdb->getFixedDataSize() == -1) {
-				dataSize -= 4;
-			}
-
-			rdbItem.m_dataSizes += dataSize;
-
-			rdbItem.m_items.emplace_back(collnum, rec, recSize);
-		} else {
-			//spiderdb records no longer reside in an Rdb
-			
-			// don't add to spiderdb when we're nospider host
-			if(g_hostdb.getMyHost()->m_spiderEnabled) {
 				auto &rdbItem = rdbItems[rdbId];
 				++rdbItem.m_numRecs;
 
-				int32_t dataSize = recSize - sizeof(key128_t) - 4;
+				int32_t dataSize = recSize - rdb->getKeySize();
+				if (rdb->getFixedDataSize() == -1) {
+					dataSize -= 4;
+				}
 
 				rdbItem.m_dataSizes += dataSize;
 
 				rdbItem.m_items.emplace_back(collnum, rec, recSize);
+				break;
 			}
 		}
 		
@@ -311,7 +334,7 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 	bool hasRoom = true;
 	bool anyDumping = false;
 	for (auto const &rdbItem : rdbItems) {
-		if(rdbItem.first!=RDB_SPIDERDB_DEPRECATED && rdbItem.first!=RDB2_SPIDERDB2_DEPRECATED) {
+		if(rdbItem.first!=RDB_SPIDERDB_DEPRECATED && rdbItem.first!=RDB2_SPIDERDB2_DEPRECATED && rdbItem.first!=RDB_SITEDEFAULTPAGETEMPERATURE) {
 			Rdb *rdb = getRdbFromId(rdbItem.first);
 			if (rdb->isDumping()) {
 				anyDumping = true;
@@ -336,63 +359,79 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 
 
 	for (auto const &rdbItem : rdbItems) {
-		if(rdbItem.first!=RDB_SPIDERDB_DEPRECATED && rdbItem.first!=RDB2_SPIDERDB2_DEPRECATED) {
-			Rdb *rdb = getRdbFromId(rdbItem.first);
+		switch(rdbItem.first) {
+			case RDB_SPIDERDB_DEPRECATED:
+			case RDB2_SPIDERDB2_DEPRECATED: {
+				//transform record list into something the sqlite bridge understands
+				std::vector<SpiderdbRdbSqliteBridge::BatchedRecord> v;
+				for(auto const &item : rdbItem.second.m_items)
+					v.emplace_back(item.m_collNum, item.m_rec, item.m_recSize);
+				//then insert all at once
+				bool status = rdbItem.first==RDB_SPIDERDB_DEPRECATED ?  SpiderdbRdbSqliteBridge::addRecords(v) : SpiderdbRdbSqliteBridge::addRecords2(v);
+				if(!status)
+					goto break_out_of_for;
+				break;
+			}
+			case RDB_SITEDEFAULTPAGETEMPERATURE: {
+				for(auto const &item : rdbItem.second.m_items) {
+					//uint64_t docId = (*(uint64_t*)(item.m_rec+0))>>1;
+					uint32_t sitehash32 = *(uint32_t*)(item.m_rec+8);
+					unsigned sdpt = *(unsigned*)(item.m_rec+12);
+					g_smptr.add(sitehash32,sdpt);
+				}
+				break;
+			}
+			default: {
+				Rdb *rdb = getRdbFromId(rdbItem.first);
 
-			bool status = true;
-			for (auto const &item : rdbItem.second.m_items) {
-				// reset g_errno
-				g_errno = 0;
-
-				// . make a list from this data
-				// . skip over the first 4 bytes which is the rdbId
-				// . TODO: embed the rdbId in the msgtype or something...
-				RdbList list;
-
-				// set the list
-				// todo: dodgy cast to char*. RdbList should be fixed
-				list.set((char *)item.m_rec, item.m_recSize, (char *)item.m_rec, item.m_recSize,
-					rdb->getFixedDataSize(), false, rdb->useHalfKeys(), rdb->getKeySize());
-
-				// keep track of stats
-				rdb->readRequestAdd(item.m_recSize);
-
-				// this returns false and sets g_errno on error
-				status = rdb->addListNoSpaceCheck(item.m_collNum, &list);
-
-				// bad coll #? ignore it. common when deleting and resetting
-				// collections using crawlbot. but there are other recs in this
-				// list from different collections, so do not abandon the whole
-				// meta list!! otherwise we lose data!!
-				if (g_errno == ENOCOLLREC && !status) {
+				bool status = true;
+				for (auto const &item : rdbItem.second.m_items) {
+					// reset g_errno
 					g_errno = 0;
-					status = true;
+
+					// . make a list from this data
+					// . skip over the first 4 bytes which is the rdbId
+					// . TODO: embed the rdbId in the msgtype or something...
+					RdbList list;
+
+					// set the list
+					// todo: dodgy cast to char*. RdbList should be fixed
+					list.set((char *)item.m_rec, item.m_recSize, (char *)item.m_rec, item.m_recSize,
+						rdb->getFixedDataSize(), false, rdb->useHalfKeys(), rdb->getKeySize());
+
+					// keep track of stats
+					rdb->readRequestAdd(item.m_recSize);
+
+					// this returns false and sets g_errno on error
+					status = rdb->addListNoSpaceCheck(item.m_collNum, &list);
+
+					// bad coll #? ignore it. common when deleting and resetting
+					// collections using crawlbot. but there are other recs in this
+					// list from different collections, so do not abandon the whole
+					// meta list!! otherwise we lose data!!
+					if (g_errno == ENOCOLLREC && !status) {
+						g_errno = 0;
+						status = true;
+					}
+
+					if (!status) {
+						goto break_out_of_for;
+					}
 				}
 
 				if (!status) {
-					break;
+					goto break_out_of_for;
 				}
-			}
-
-			if (!status) {
 				break;
 			}
-		} else {
-			//transform record list into something the sqlite bridge understands
-			std::vector<SpiderdbRdbSqliteBridge::BatchedRecord> v;
-			for(auto const &item : rdbItem.second.m_items)
-				v.emplace_back(item.m_collNum, item.m_rec, item.m_recSize);
-			//then insert all at once
-			bool status = rdbItem.first==RDB_SPIDERDB_DEPRECATED ?  SpiderdbRdbSqliteBridge::addRecords(v) : SpiderdbRdbSqliteBridge::addRecords2(v);
-			if(!status)
-				break;
 		}
 	}
+break_out_of_for:
 
 	// verify integrity if wanted
 	if (g_conf.m_verifyTreeIntegrity) {
 		for(auto const &rdbItem : rdbItems) {
-			if(rdbItem.first!=RDB_SPIDERDB_DEPRECATED && rdbItem.first!=RDB2_SPIDERDB2_DEPRECATED) {
+			if(rdbItem.first!=RDB_SPIDERDB_DEPRECATED && rdbItem.first!=RDB2_SPIDERDB2_DEPRECATED && rdbItem.first!=RDB_SITEDEFAULTPAGETEMPERATURE) {
 				Rdb *rdb = getRdbFromId(rdbItem.first);
 				rdb->verifyTreeIntegrity();
 			}
@@ -416,8 +455,10 @@ static bool Msg4In::addMetaList(const char *p, UdpSlot *slot) {
 
 	// Initiate dumps for any Rdbs wanting it
 	for (auto const &rdbItem : rdbItems) {
-		Rdb *rdb = getRdbFromId(rdbItem.first);
-		rdb->submitRdbDumpJob(false);
+		if(rdbItem.first!=RDB_SPIDERDB_DEPRECATED && rdbItem.first!=RDB2_SPIDERDB2_DEPRECATED && rdbItem.first!=RDB_SITEDEFAULTPAGETEMPERATURE) {
+			Rdb *rdb = getRdbFromId(rdbItem.first);
+			rdb->submitRdbDumpJob(false);
+		}
 	}
 
 	// success

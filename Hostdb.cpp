@@ -1549,6 +1549,12 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) const {
 			//return m_myHost->m_groupId;
 			return m_myHost->m_shardNum;
 
+		case RDB_SITEDEFAULTPAGETEMPERATURE: {
+			//first 64 bit (shl'ed 1)are docid, and shared the same way as titledb
+			uint64_t d = (*(const uint64_t*)k)>>1;
+			return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
+		}
+
 		default:
 			// core -- must be provided
 			g_process.shutdownAbort(true);

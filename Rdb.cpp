@@ -1834,6 +1834,8 @@ char getKeySizeFromRdbId(rdbid_t rdbId) {
 		case RDB_END:
 			log(LOG_ERROR, "rdb: bad lookup rdbid of %i", (int)rdbId);
 			g_process.shutdownAbort(true);
+		case RDB_SITEDEFAULTPAGETEMPERATURE:
+			return 8; //fake
 		default:
 			return sizeof(key96_t); // 12
 	}
@@ -1871,6 +1873,8 @@ int32_t getDataSizeFromRdbId ( rdbid_t rdbId ) {
 				  i == RDB2_SPIDERDB2_DEPRECATED ||
 				  i == RDB2_SPIDERDB2_SQLITE )
 				ds = -1;
+			else if ( i == RDB_SITEDEFAULTPAGETEMPERATURE )
+				ds = 4+4; //fake
 			else {
 				continue;
 			}
