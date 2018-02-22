@@ -53,6 +53,9 @@
 #include "UrlResultOverride.h"
 #include "ContentTypeBlockList.h"
 #include "IpBlockList.h"
+#include "PageTemperatureRegistry.h"
+#include "SiteMedianPageTemperatureRegistry.h"
+#include "SiteDefaultPageTemperatureRemoteRegistry.h"
 #include <iostream>
 #include <fstream>
 #include <sysexits.h>
@@ -169,6 +172,9 @@ void XmlDoc::reset ( ) {
 	m_checkedUrlBlockList = false;
 	m_checkedDnsBlockList = false;
 	m_checkedIpBlockList = false;
+	m_defaultSitePageTemperature = 0;
+	m_defaultSitePageTemperatureValid = false;
+	m_defaultSitePageTemperatureIsUnset = false;
 	m_parsedRobotsMetaTag = false;
 	m_robotsNoIndex = false;
 	m_robotsNoFollow = false;
@@ -1993,6 +1999,59 @@ bool* XmlDoc::checkBlockList() {
 	return &m_blockedDoc;
 }
 
+
+unsigned *XmlDoc::getDefaultSitePageTemperature() {
+	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
+	if(m_defaultSitePageTemperatureIsUnset) {
+		//already tried to look up. Don't try it again
+		logTrace(g_conf.m_logTraceXmlDoc, "END, already tried, (unset)");
+		return NULL;
+	}
+	if(m_defaultSitePageTemperatureValid) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, already valid. m_defaultSitePageTemperature=%u" , m_defaultSitePageTemperature);
+		return &m_defaultSitePageTemperature;
+	}
+	
+	int64_t *docId = getDocId();
+	if(!docId || docId==(int64_t*)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getDocId() failed or blocked");
+		return (unsigned*)docId;
+	}
+	
+	int32_t *sitehash32 = getSiteHash32();
+	if(sitehash32==NULL || sitehash32==(int32_t*)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getSiteHash32 failed/blocked");
+		return (unsigned*)sitehash32;
+	}
+	
+	if(g_smptr.lookup(*sitehash32, &m_defaultSitePageTemperature)) {
+		m_defaultSitePageTemperatureValid = true;
+		logTrace(g_conf.m_logTraceXmlDoc, "END, SiteMedianPageTemperatureRegistry hit");
+		return &m_defaultSitePageTemperature;
+	}
+	
+	m_defaultSitePageTemperatureIsUnset = true; //make sure we try this only once
+	if(!SiteDefaultPageTemperatureRemoteRegistry::lookup(*sitehash32, m_docId, this, &XmlDoc::gotDefaultSitePageTemperature)) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, SiteDefaultPageTemperatureRemoteRegistry is disabled");
+		return NULL;
+	}
+	
+	logTrace(g_conf.m_logTraceXmlDoc, "END, SiteDefaultPageTemperatureRemoteRegistry::lookup() blocked");
+	return (unsigned*)-1;
+}
+
+void XmlDoc::gotDefaultSitePageTemperature(void *ctx, unsigned siteDefaultPageTemperature, SiteDefaultPageTemperatureRemoteRegistry::lookup_result_t result) {
+	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN, siteDefaultPageTemperature=%u, result=%d", siteDefaultPageTemperature,(int)result);
+	XmlDoc *that = reinterpret_cast<XmlDoc*>(ctx);
+	if(result==SiteDefaultPageTemperatureRemoteRegistry::lookup_result_t::site_temperature_known) {
+		that->m_defaultSitePageTemperature = siteDefaultPageTemperature;
+		that->m_defaultSitePageTemperatureValid = true;
+	} else
+		that->m_defaultSitePageTemperatureIsUnset = true;
+	indexDocWrapper(that);
+}
+
+
 // . returns false if blocked, true otherwise
 // . sets g_errno on error and returns true
 bool XmlDoc::indexDoc2 ( ) {
@@ -2049,6 +2108,7 @@ bool XmlDoc::indexDoc2 ( ) {
 		m_deleteFromIndex = true;
 	}
 
+
 	// . now get the meta list from it to add
 	// . returns NULL and sets g_errno on error
 	char *metaList = getMetaList ( );
@@ -2093,7 +2153,6 @@ bool XmlDoc::indexDoc2 ( ) {
 	if ( ! *indexCode ) doConsistencyTest ( false );
 	// ignore errors from that
 	g_errno = 0;
-
 
 	// now add it
 	if ( ! m_listAdded && m_metaListSize ) {
@@ -12732,6 +12791,20 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getDocId failed");
 		return (char *)mydocid;
 	}
+
+	if(!m_deleteFromIndex) {
+		double dont_care;
+		if(!g_pageTemperatureRegistry.query_page_temperature(m_docId,0,1,&dont_care)) {
+			unsigned *defaultSitePageTemperature = getDefaultSitePageTemperature();
+			if(defaultSitePageTemperature==(unsigned*)-1) {
+				logTrace( g_conf.m_logTraceXmlDoc, "END, return %s based on defaultSitePageTemperature() blocking", defaultSitePageTemperature?"true":"false");
+				return (char *)defaultSitePageTemperature;
+			}
+			//failed or succedded. Continue in both cases
+		}
+		//else: specific pagetemp is know so no need for looking up site-default
+	}
+
 
 	// . get the old version of our XmlDoc from the previous spider time
 	// . set using the old title rec in titledb

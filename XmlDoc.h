@@ -51,6 +51,8 @@
 #include "HttpMime.h" // ET_DEFLAT
 #include "Json.h"
 #include "Posdb.h"
+#include "SiteDefaultPageTemperatureRemoteRegistry.h" //SiteDefaultPageTemperatureRemoteRegistry::lookup_result_t
+
 
 // forward declaration
 class GetMsg20State;
@@ -333,6 +335,8 @@ public:
 	char *getIsAdult ( ) ;
 
 	bool *checkBlockList();
+	unsigned *getDefaultSitePageTemperature();
+	static void gotDefaultSitePageTemperature(void *ctx, unsigned siteDefaultPageTemperature, SiteDefaultPageTemperatureRemoteRegistry::lookup_result_t result);
 
 	bool *parseRobotsMetaTag();
 	void parseRobotsMetaTagContent(const char *content, int32_t contentLen);
@@ -815,6 +819,7 @@ public:
 	bool m_exactContentHash64Valid;
 	bool m_jpValid;
 	bool m_blockedDocValid;
+	bool m_defaultSitePageTemperatureValid;
 	bool m_hostNameServersValid;
 	bool m_ipsValid;
 	bool m_isSiteMap;
@@ -1120,6 +1125,8 @@ public:
 	bool m_checkedDnsBlockList;
 	bool m_checkedIpBlockList;
 
+	unsigned m_defaultSitePageTemperature;
+	bool m_defaultSitePageTemperatureIsUnset;
 	bool m_parsedRobotsMetaTag;
 	bool m_robotsNoIndex;
 	bool m_robotsNoFollow;
