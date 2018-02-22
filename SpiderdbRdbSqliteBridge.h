@@ -24,10 +24,12 @@ bool addRecords2(const std::vector<BatchedRecord> &records); //secondary db
 
 //Fetch all records or a subset of the recoreds with startKey<=key<=endKey, and try to limit the rdblist size of recSizes
 //Returns false on error
-bool getList(collnum_t collnum, RdbList *list, const u_int128_t &startKey, const u_int128_t &endKey,
-             int32_t minRecSizes);
+bool getList(collnum_t        collnum,
+	     RdbList         *list,
+	     const u_int128_t &startKey,
+	     const u_int128_t &endKey,
+	     int32_t          minRecSizes);
 
-bool getFirstIps(collnum_t collnum, RdbList *list, int32_t firstIpStart, int32_t firstIpEnd, int32_t minRecSizes);
 }
 
 #endif

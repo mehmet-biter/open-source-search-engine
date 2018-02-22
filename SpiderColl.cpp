@@ -1161,11 +1161,11 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// make state
 		//int32_t state2 = (int32_t)m_cr->m_collnum;
 		// read the list from local disk
-		if (!SpiderdbRdbSqliteBridge::getFirstIps(m_cr->m_collnum,
-		                                          &m_waitingTreeList,
-		                                          Spiderdb::getFirstIp(&m_waitingTreeNextKey),
-		                                          -1,
-		                                          SR_READ_SIZE))
+		if(!SpiderdbRdbSqliteBridge::getList(m_cr->m_collnum,
+						     &m_waitingTreeList,
+						     m_waitingTreeNextKey,
+						     *(const key128_t*)KEYMAX(),
+						     SR_READ_SIZE))
 		{
 			if(!g_errno) {
 				g_errno = EIO; //imprecise
@@ -1341,7 +1341,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		if ( m_waitingTreeNextKey < lastKey ) shortRead = true;
 		// nah, advance the firstip, should be a lot faster when
 		// we are only a few firstips...
-		if ( lastOne && lastOne != -1 ) {
+		if ( lastOne && lastOne != -1 ) { // && ! gotCorruption ) {
 			key128_t cand = Spiderdb::makeFirstKey(lastOne+1);
 			// corruption still seems to happen, so only
 			// do this part if it increases the key to avoid
