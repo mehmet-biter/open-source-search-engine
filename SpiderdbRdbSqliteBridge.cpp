@@ -327,6 +327,9 @@ static bool addRequestRecord(sqlite3 *db, const void *record, size_t record_len)
 			return false;
 		}
 
+		sqlite3_finalize(updateStatement);
+		sqlite3_finalize(selectStatement);
+
 		logTrace(g_conf.m_logTraceSpiderdbRdbSqliteBridge, "END. Returning true");
 		return true;
 	} else {
