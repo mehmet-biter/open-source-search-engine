@@ -3382,16 +3382,12 @@ bool Sections::verifySections ( ) {
 		// get it
 		//Section *sn = &m_sections[i];
 		// get parent
-		Section *sp = sn->m_parent;
-	subloop3:
-		// skip if no parent
-		if ( ! sp ) continue;
-		// make sure parent fully contains
-		if ( sp->m_a > sn->m_a ) { g_process.shutdownAbort(true); }
-		if ( sp->m_b < sn->m_b ) { g_process.shutdownAbort(true); }
-		// and make sure every grandparent fully contains us too!
-		sp = sp->m_parent;
-		goto subloop3;
+		for(const Section *sp = sn->m_parent; sp; sp = sp->m_parent) {
+			// make sure parent fully contains
+			if ( sp->m_a > sn->m_a ) { g_process.shutdownAbort(true); }
+			if ( sp->m_b < sn->m_b ) { g_process.shutdownAbort(true); }
+			// and make sure every grandparent fully contains us too!
+		}
 	}
 
 	// sanity check
