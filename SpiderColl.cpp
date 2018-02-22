@@ -1749,36 +1749,74 @@ bool SpiderColl::evalIpLoop ( ) {
 		}
 	}
 
-	// did our collection rec get deleted? since we were doing a read
-	// the SpiderColl will have been preserved in that case but its
-	// m_deleteMyself flag will have been set.
-	if ( tryToDeleteSpiderColl ( this, "5" ) ) {
-		// pretend to block since we got deleted!!!
-		logTrace( g_conf.m_logTraceSpider, "END, after tryToDeleteSpiderColl (5)" );
-		return false;
+	for(;;) {
+		// did our collection rec get deleted? since we were doing a read
+		// the SpiderColl will have been preserved in that case but its
+		// m_deleteMyself flag will have been set.
+		if ( tryToDeleteSpiderColl ( this, "5" ) ) {
+			// pretend to block since we got deleted!!!
+			logTrace( g_conf.m_logTraceSpider, "END, after tryToDeleteSpiderColl (5)" );
+			return false;
+		}
+
+		// . did reading the list from spiderdb have an error?
+		// . i guess we don't add to doledb then
+		if ( g_errno ) {
+			log(LOG_ERROR,"spider: Had error getting list of urls from spiderdb: %s.",mstrerror(g_errno));
+
+			// save mem
+			m_list.freeList();
+
+			logTrace( g_conf.m_logTraceSpider, "END, g_errno %" PRId32, g_errno );
+			return true;
+		}
+
+
+		// if we started reading, then assume we got a fresh list here
+		logDebug( g_conf.m_logDebugSpider, "spider: back from msg5 spiderdb read2 of %" PRId32" bytes (cn=%" PRId32")",
+		         m_list.getListSize(), (int32_t)m_collnum );
+
+		// . set the winning request for all lists we read so far
+		// . if m_countingPagesIndexed is true this will just fill in
+		//   quota info into m_localTable...
+		scanListForWinners();
+
+		// if list not empty, keep reading!
+		if(m_list.isEmpty())
+			break;
+		// update m_nextKey for successive reads of spiderdb by
+		// calling readListFromSpiderdb()
+		key128_t lastKey  = *(key128_t *)m_list.getLastKey();
+		// sanity
+		//if ( endKey != finalKey ) gbshutdownLogicError();
+		// crazy corruption?
+		if ( lastKey < m_nextKey ) {
+			char ipbuf[16];
+			log(LOG_WARN, "spider: got corruption. spiderdb keys out of order for "
+			    "collnum=%" PRId32" for evaluation of firstip=%s so terminating evaluation of that firstip." ,
+			    (int32_t)m_collnum, iptoa(m_scanningIp,ipbuf));
+
+			// this should result in an empty list read for
+			// m_scanningIp in spiderdb
+			m_nextKey  = m_endKey;
+		}
+		else {
+			m_nextKey  = lastKey;
+			m_nextKey++;
+		}
+		// . watch out for wrap around
+		// . normally i would go by this to indicate that we are
+		//   done reading, but there's some bugs... so we go
+		//   by whether our list is empty or not for now
+		if(m_nextKey < lastKey)
+			m_nextKey = lastKey;
+		// reset list to save mem
+		m_list.reset();
+		// read more! return if it blocked
+		if(!readListFromSpiderdb())
+			return false;
+		// we got a list without blocking
 	}
-
-	// . did reading the list from spiderdb have an error?
-	// . i guess we don't add to doledb then
-	if ( g_errno ) {
-		log(LOG_ERROR,"spider: Had error getting list of urls from spiderdb: %s.",mstrerror(g_errno));
-
-		// save mem
-		m_list.freeList();
-
-		logTrace( g_conf.m_logTraceSpider, "END, g_errno %" PRId32, g_errno );
-		return true;
-	}
-
-
-	// if we started reading, then assume we got a fresh list here
-	logDebug( g_conf.m_logDebugSpider, "spider: back from msg5 spiderdb read2 of %" PRId32" bytes (cn=%" PRId32")",
-	         m_list.getListSize(), (int32_t)m_collnum );
-
-	// . set the winning request for all lists we read so far
-	// . if m_countingPagesIndexed is true this will just fill in
-	//   quota info into m_localTable...
-	scanListForWinners();
 
 
 	// . we are all done if last list read was empty
