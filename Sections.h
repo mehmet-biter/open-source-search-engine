@@ -68,7 +68,6 @@ class Url;
 
 #define NOINDEXFLAGS (SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_IFRAME)
 
-// the section type (bit flag vector for SEC_*) is currently 32 bits
 typedef int64_t sec_t;
 
 class Section {
@@ -180,7 +179,7 @@ public:
 	// . returns false if blocked, true otherwise
 	// . returns true and sets g_errno on error
 	// . sets m_sections[] array, 1-1 with words array "w"
-	bool set(const Words *w, Bits *bits, const Url *url, const char *coll, uint8_t contentType );
+	bool set(const Words *w, Bits *bits, const Url *url, uint8_t contentType);
 
 private:
 	bool verifySections ( ) ;
@@ -193,17 +192,25 @@ private:
 	static void printFlags(SafeBuf *sbuf , const Section *sn );
 
 public:
-	bool print(SafeBuf *sbuf, int32_t hiPos, const int32_t *wposVec, const char *densityVec, const char *wordSpamVec, const char *fragVec);
+	bool print(SafeBuf *sbuf, int32_t hiPos, const int32_t *wposVec, const char *densityVec, const char *wordSpamVec, const char *fragVec) const;
 
 private:
-	bool printSectionDiv(const Section *);
-	SafeBuf *m_sbuf;
+	struct PrintData {
+		SafeBuf *sbuf;
+		int32_t hiPos;
+		const int32_t *wposVec;
+		const char *densityVec;
+		const char *wordSpamVec;
+		const char *fragVec;
+	};
+	bool print(PrintData *pd) const;
+	bool printSectionDiv(PrintData *pd, const Section *) const;
 
 	bool isHardSection(const Section *sn) const;
 
 	bool setMenus ( );
 
-	void setHeader ( int32_t r , class Section *first , sec_t flag ) ;
+	void setHeader(int32_t r,  Section *first, sec_t flag);
 
 	bool setHeadingBit ( ) ;
 
@@ -211,31 +218,17 @@ private:
 
 	// save it
 	const Words    *m_words;
+	int32_t         m_nw;       //from m_word->getNumWords()
 	Bits           *m_bits;
-	const Url      *m_url;
-	const char     *m_coll;
 	uint8_t         m_contentType;
 
-	const int32_t  *m_wposVec;
-	const char     *m_densityVec;
-	const char     *m_wordSpamVec;
-	const char     *m_fragVec;
-	
 	// url ends in .rss or .xml ?
 	bool  m_isRSSExt;
-
-	// word #'s (-1 means invalid)
-	int32_t m_titleStart;
 
 public:
 	// these are 1-1 with the Words::m_words[] array
 	Section **m_sectionPtrs;
 
-private:
-	// save this too
-	int32_t m_nw ;
-
-public:
 	// allocate m_sections[] buffer
 	Section        *m_sections;
 	int32_t         m_numSections;
@@ -253,8 +246,6 @@ private:
 	const int32_t      *m_wlens;
 	const char * const *m_wptrs;
 	const nodeid_t   *m_tids;
-
-	int32_t       m_hiPos;
 
 	bool addSentenceSections ( ) ;
 

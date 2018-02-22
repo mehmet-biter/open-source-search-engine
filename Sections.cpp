@@ -39,23 +39,14 @@ void Sections::reset() {
 	m_sectionPtrs = NULL;
 	
 	// Coverity
-	m_sbuf = NULL;
 	m_words = NULL;
-	m_url = NULL;
-	m_coll = NULL;
 	m_contentType = 0;
-	m_wposVec = NULL;
-	m_densityVec = NULL;
-	m_wordSpamVec = NULL;
-	m_fragVec = NULL;
 	m_isRSSExt = false;
-	m_titleStart = 0;
 	m_maxNumSections = 0;
 	m_wids = NULL;
 	m_wlens = NULL;
 	m_wptrs = NULL;
 	m_tids = NULL;
-	m_hiPos = 0;
 }
 
 Sections::~Sections ( ) {
@@ -87,7 +78,7 @@ public:
 // . sets m_sections[] array, 1-1 with words array "w"
 // . the Weights class can look at these sections and zero out the weights
 //   for words in script, style, select and marquee sections
-bool Sections::set(const Words *w, Bits *bits, const Url *url, const char *coll, uint8_t contentType ) {
+bool Sections::set(const Words *w, Bits *bits, const Url *url, uint8_t contentType ) {
 	reset();
 
 	if ( ! w ) return true;
@@ -101,8 +92,6 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, const char *coll,
 	// save it
 	m_words           = w;
 	m_bits            = bits;
-	m_url             = url;
-	m_coll            = coll;
 	m_contentType     = contentType;
 
 	// reset this just in case
@@ -124,7 +113,7 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, const char *coll,
 	m_tids  = tids;
 
 	m_isRSSExt = false;
-	const char *ext = m_url->getExtension();
+	const char *ext = url->getExtension();
 	if ( ext && strcasecmp(ext,"rss") == 0 ) m_isRSSExt = true;
 	if ( m_contentType == CT_XML ) m_isRSSExt = true;
 
@@ -185,8 +174,6 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, const char *coll,
 
 	// point into it
 	m_sections = (Section *)m_sectionBuf.getBufStart();
-
-	m_titleStart = -1;
 
 	// save this too
 	m_nw = nw;
@@ -1062,11 +1049,6 @@ bool Sections::set(const Words *w, Bits *bits, const Url *url, const char *coll,
 		istack[ni] = si->m_b;
 		iflags[ni] = mf;
 		ni++;
-
-		// title is special
-		if ( tid == TAG_TITLE && m_titleStart == -1 ) {
-			m_titleStart = si->m_a; // i;
-		}
 	}
 
 	// . now we insert sentence sections
@@ -3075,18 +3057,19 @@ void Sections::setTagHashes ( ) {
 }
 
 // make this replace ::print() when it works
-bool Sections::print( SafeBuf *sbuf, int32_t hiPos, const int32_t *wposVec, const char *densityVec, const char *wordSpamVec, const char *fragVec ) {
-	// save ptrs
-	m_sbuf = sbuf;
+bool Sections::print( SafeBuf *sbuf, int32_t hiPos, const int32_t *wposVec, const char *densityVec, const char *wordSpamVec, const char *fragVec ) const {
+	PrintData pd;
+	pd.sbuf = sbuf;
+	pd.hiPos = hiPos;
+	pd.wposVec = wposVec;
+	pd.densityVec = densityVec;
+	pd.wordSpamVec = wordSpamVec;
+	pd.fragVec = fragVec;
+	return print(&pd);
+}
 
-	m_sbuf->setLabel ("sectprnt");
-
-	m_hiPos = hiPos;
-
-	m_wposVec      = wposVec;
-	m_densityVec   = densityVec;
-	m_wordSpamVec  = wordSpamVec;
-	m_fragVec      = fragVec;
+bool Sections::print(PrintData *pd) const {
+	pd->sbuf->setLabel ("sectprnt");
 
 	//verifySections();
 
@@ -3106,7 +3089,7 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, const int32_t *wposVec, cons
 	// print sections out
 	for ( Section *sk = m_rootSection ; sk ; ) {
 		// print this section
-		printSectionDiv(sk);
+		printSectionDiv(pd,sk);
 		// advance
 		int32_t b = sk->m_b;
 		// stop if last
@@ -3133,7 +3116,7 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, const int32_t *wposVec, cons
 		"<td><b>evIds</b></td>"
 		"<td><b>text snippet</b></td>"
 		"</tr>\n";
-	sbuf->safePrintf("%s",hdr);
+	pd->sbuf->safePrintf("%s",hdr);
 
 	int32_t rcount = 0;
 	int32_t scount = 0;
@@ -3143,7 +3126,7 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, const int32_t *wposVec, cons
 	for ( Section *sn = m_rootSection ; sn ; sn = sn->m_next ) {
 		// see if one big table causes a browser slowdown
 		if ( (++rcount % TABLE_ROWS ) == 0 ) 
-			sbuf->safePrintf("</table>%s\n",hdr);
+			pd->sbuf->safePrintf("</table>%s\n",hdr);
 		const char *xs = "--";
 		char ttt[100];
 		if ( sn->m_contentHash64 ) {
@@ -3161,7 +3144,7 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, const int32_t *wposVec, cons
 		}
 
 		// print it
-		sbuf->safePrintf("<tr><td>%" PRId32"</td>\n"
+		pd->sbuf->safePrintf("<tr><td>%" PRId32"</td>\n"
 				 "<td>%" PRId32"</td>"
 				 "<td>%" PRId32"</td>"
 				 "<td>0x%" PRIx32"</td>"
@@ -3184,17 +3167,17 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, const int32_t *wposVec, cons
 				 pswn,
 				 pewn);
 		// now show the flags
-		printFlags ( sbuf , sn );
+		printFlags ( pd->sbuf , sn );
 		// first few words of section
 		int32_t a = sn->m_a;
 		int32_t b = sn->m_b;
 		// -1 means an unclosed tag!! should no longer be the case
 		if ( b == -1 ) { g_process.shutdownAbort(true); }//b=m_words->m_numWords;
-		sbuf->safePrintf("</nobr></td>");
+		pd->sbuf->safePrintf("</nobr></td>");
 
-		sbuf->safePrintf("<td>&nbsp;</td>");
+		pd->sbuf->safePrintf("<td>&nbsp;</td>");
 
-		sbuf->safePrintf("<td><nobr>");
+		pd->sbuf->safePrintf("<td><nobr>");
 		// 70 chars max
 		int32_t   max   = 70; 
 		int32_t   count = 0;
@@ -3209,34 +3192,34 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, const int32_t *wposVec, cons
 			}
 			count += slen;
 			// boldify front tag
-			if ( i == a ) sbuf->safePrintf("<b>");
-			sbuf->htmlEncode(s,slen,false);
+			if ( i == a ) pd->sbuf->safePrintf("<b>");
+			pd->sbuf->htmlEncode(s,slen,false);
 			// boldify front tag
-			if ( i == a ) sbuf->safePrintf("</b>");
+			if ( i == a ) pd->sbuf->safePrintf("</b>");
 		}
 		// if we truncated print a ...
-		if ( truncated ) sbuf->safePrintf("<b>...</b>");
+		if ( truncated ) pd->sbuf->safePrintf("<b>...</b>");
 		// then print ending tag
 		if ( b < nw ) {
 			int32_t blen = wlens[b-1];
 			if ( blen>20 ) blen = 20;
-			sbuf->safePrintf("<b>");
-			sbuf->htmlEncode(wptrs[b-1],blen,false);
-			sbuf->safePrintf("</b>");
+			pd->sbuf->safePrintf("<b>");
+			pd->sbuf->htmlEncode(wptrs[b-1],blen,false);
+			pd->sbuf->safePrintf("</b>");
 		}
 
-		sbuf->safePrintf("</nobr></td></tr>\n");
+		pd->sbuf->safePrintf("</nobr></td></tr>\n");
 	}
 			 
-	sbuf->safePrintf("</table>\n<br>\n");
+	pd->sbuf->safePrintf("</table>\n<br>\n");
 
 
 	return true;
 }
 
-bool Sections::printSectionDiv(const Section *sk) {
+bool Sections::printSectionDiv(PrintData *pd, const Section *sk) const {
 	// enter a new div section now
-	m_sbuf->safePrintf("<br>");
+	pd->sbuf->safePrintf("<br>");
 	// only make font color different
 	int32_t bcolor = (int32_t)sk->m_colorHash& 0x00ffffff;
 	int32_t fcolor = 0x000000;
@@ -3254,7 +3237,7 @@ bool Sections::printSectionDiv(const Section *sk) {
 		rcolor = 0x00ffffff;
 	}
 	// start the new div
-	m_sbuf->safePrintf("<div "
+	pd->sbuf->safePrintf("<div "
 			 "style=\""
 			 "background-color:#%06" PRIx32";"
 			 "margin-left:20px;"
@@ -3272,25 +3255,25 @@ bool Sections::printSectionDiv(const Section *sk) {
 	// print word/tag #i
 	if ( !(sk->m_flags&SEC_FAKE) && sk->m_tagId && printWord )
 		// only encode if it is a tag
-		m_sbuf->htmlEncode(m_wptrs[sk->m_a],m_wlens[sk->m_a],false );
+		pd->sbuf->htmlEncode(m_wptrs[sk->m_a],m_wlens[sk->m_a],false );
 
-	m_sbuf->safePrintf("<i>");
+	pd->sbuf->safePrintf("<i>");
 
 	// print the flags
-	m_sbuf->safePrintf("A=%" PRId32" ",sk->m_a);
+	pd->sbuf->safePrintf("A=%" PRId32" ",sk->m_a);
 
 	// print tag hash now
-	m_sbuf->safePrintf("taghash=%" PRIu32" ",(int32_t)sk->m_tagHash);
+	pd->sbuf->safePrintf("taghash=%" PRIu32" ",(int32_t)sk->m_tagHash);
 
 	if ( sk->m_contentHash64 )
-		m_sbuf->safePrintf("ch64=%" PRIu64" ",sk->m_contentHash64);
+		pd->sbuf->safePrintf("ch64=%" PRIu64" ",sk->m_contentHash64);
 
-	printFlags ( m_sbuf , sk );
+	printFlags ( pd->sbuf , sk );
 	
 	if ( isHardSection(sk) )
-		m_sbuf->safePrintf("hardsec ");
+		pd->sbuf->safePrintf("hardsec ");
 	
-	m_sbuf->safePrintf("</i>\n");
+	pd->sbuf->safePrintf("</i>\n");
 
 	// now print each word and subsections in this section
 	int32_t a = sk->m_a;
@@ -3316,7 +3299,7 @@ bool Sections::printSectionDiv(const Section *sk) {
 		// if it belongs to another sections, print that section
 		if ( ws != sk ) {
 			// print out this subsection
-			printSectionDiv(ws);
+			printSectionDiv(pd,ws);
 			// advance to end of that then
 			i = ws->m_b - 1;
 			// and try next word
@@ -3325,55 +3308,55 @@ bool Sections::printSectionDiv(const Section *sk) {
 
 		// ignore if in style section, etc. just print it out
 		if ( sk->m_flags & NOINDEXFLAGS ) {
-			m_sbuf->htmlEncode(m_wptrs[i],m_wlens[i],false );
+			pd->sbuf->htmlEncode(m_wptrs[i],m_wlens[i],false );
 			continue;
 		}
 
 		// boldify alnum words
 		if ( m_wids[i] ) {
-			if ( m_wposVec[i] == m_hiPos )
-				m_sbuf->safePrintf("<a name=hipos></a>");
-			m_sbuf->safePrintf("<nobr><b>");
-			if ( i <  MAXFRAGWORDS && m_fragVec[i] == 0 ) 
-				m_sbuf->safePrintf("<strike>");
+			if ( pd->wposVec[i] == pd->hiPos )
+				pd->sbuf->safePrintf("<a name=hipos></a>");
+			pd->sbuf->safePrintf("<nobr><b>");
+			if ( i <  MAXFRAGWORDS && pd->fragVec[i] == 0 )
+				pd->sbuf->safePrintf("<strike>");
 		}
-		if ( m_wids[i] && m_wposVec[i] == m_hiPos )
-			m_sbuf->safePrintf("<blink style=\""
+		if ( m_wids[i] && pd->wposVec[i] == pd->hiPos )
+			pd->sbuf->safePrintf("<blink style=\""
 					   "background-color:yellow;"
 					   "color:black;\">");
 		// print that word
-		m_sbuf->htmlEncode(m_wptrs[i],m_wlens[i],false );
-		if ( m_wids[i] && m_wposVec[i] == m_hiPos )
-			m_sbuf->safePrintf("</blink>");
+		pd->sbuf->htmlEncode(m_wptrs[i],m_wlens[i],false );
+		if ( m_wids[i] && pd->wposVec[i] == pd->hiPos )
+			pd->sbuf->safePrintf("</blink>");
 		// boldify alnum words
 		if ( m_wids[i] ) {
-			if ( i < MAXFRAGWORDS && m_fragVec[i] == 0 ) 
-				m_sbuf->safePrintf("</strike>");
-			m_sbuf->safePrintf("</b>");
+			if ( i < MAXFRAGWORDS && pd->fragVec[i] == 0 )
+				pd->sbuf->safePrintf("</strike>");
+			pd->sbuf->safePrintf("</b>");
 		}
 		// and print out their pos/div/spam sub
 		if ( m_wids[i] ) {
-			m_sbuf->safePrintf("<sub "
+			pd->sbuf->safePrintf("<sub "
 					   "style=\"background-color:white;"
 					   "font-size:10px;"
 					   "border:black 1px solid;"
 					   "color:black;\">");
-			m_sbuf->safePrintf("%" PRId32,m_wposVec[i]);
-			if ( m_densityVec[i] != MAXDENSITYRANK )
-				m_sbuf->safePrintf("/<font color=purple><b>%" PRId32
+			pd->sbuf->safePrintf("%" PRId32, pd->wposVec[i]);
+			if ( pd->densityVec[i] != MAXDENSITYRANK )
+				pd->sbuf->safePrintf("/<font color=purple><b>%" PRId32
 						   "</b></font>"
 						   ,
-						   (int32_t)m_densityVec[i]);
+						   (int32_t)pd->densityVec[i]);
 
-			if ( m_wordSpamVec[i] != MAXWORDSPAMRANK )
-				m_sbuf->safePrintf("/<font color=red><b>%" PRId32
+			if ( pd->wordSpamVec[i] != MAXWORDSPAMRANK )
+				pd->sbuf->safePrintf("/<font color=red><b>%" PRId32
 						   "</b></font>"
 						   ,
-						   (int32_t)m_wordSpamVec[i]);
-			m_sbuf->safePrintf("</sub></nobr>");
+						   (int32_t)pd->wordSpamVec[i]);
+			pd->sbuf->safePrintf("</sub></nobr>");
 		}
 	}
-	m_sbuf->safePrintf("</div>\n");
+	pd->sbuf->safePrintf("</div>\n");
 
 	return true;
 }
