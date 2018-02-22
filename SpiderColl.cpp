@@ -1784,11 +1784,17 @@ bool SpiderColl::evalIpLoop ( ) {
 		// if list not empty, keep reading!
 		if(m_list.isEmpty())
 			break;
+
 		// update m_nextKey for successive reads of spiderdb by
 		// calling readListFromSpiderdb()
 		key128_t lastKey  = *(key128_t *)m_list.getLastKey();
-		// sanity
-		//if ( endKey != finalKey ) gbshutdownLogicError();
+
+		// we're already done with this ip
+		int64_t lastUh48 = Spiderdb::getUrlHash48(&lastKey);
+		if (lastUh48 == 0xffffffffffffLL) {
+			break;
+		}
+
 		// crazy corruption?
 		if ( lastKey < m_nextKey ) {
 			char ipbuf[16];
@@ -1801,8 +1807,7 @@ bool SpiderColl::evalIpLoop ( ) {
 			m_nextKey  = m_endKey;
 		}
 		else {
-			m_nextKey  = lastKey;
-			m_nextKey++;
+			m_nextKey = Spiderdb::makeLastKey(Spiderdb::getFirstIp(&lastKey), ++lastUh48);
 		}
 		// . watch out for wrap around
 		// . normally i would go by this to indicate that we are
