@@ -2843,8 +2843,11 @@ bool SpiderRequest::setFromAddUrl(const char *url) {
 	const char *host = getHostFast(url, &hlen);
 	m_hostHash32 = hash32(host, hlen);
 
+	SiteGetter sg;
+	sg.getSite(url, nullptr, 0, 0, 0);
+
 	int32_t slen = 0;
-	const char *site = getHost(url, &slen);
+	const char *site = sg.getSite();
 	m_siteHash32 = hash32(site, slen);
 
 	logTrace( g_conf.m_logTraceSpider, "END, done" );
