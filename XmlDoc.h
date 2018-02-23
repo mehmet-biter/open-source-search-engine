@@ -586,7 +586,6 @@ public:
 
 	// we we started spidering it, in milliseconds since the epoch
 	int64_t    m_startTime;
-	int64_t    m_injectStartTime;
 
 	class XmlDoc *m_prevInject;
 	class XmlDoc *m_nextInject;
@@ -804,8 +803,6 @@ public:
 	bool m_baseUrlValid;
 	bool m_replyValid;
 	bool m_isPageParserValid;
-	bool m_imageUrlValid;
-	bool m_imageUrl2Valid;
 	bool m_queryValid;
 	bool m_matchesValid;
 	bool m_dbufValid;

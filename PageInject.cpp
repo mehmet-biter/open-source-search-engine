@@ -556,7 +556,6 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 	mnew ( xd, sizeof(XmlDoc) , "PageInject" );
 
 	xd->m_injectionSlot = slot;
-	xd->m_injectStartTime = gettimeofdayInMilliseconds();
 
 	// add to linked list
 	xd->m_nextInject = NULL;
